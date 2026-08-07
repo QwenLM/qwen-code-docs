@@ -1,3 +1,5 @@
+---
+
 # 守护进程模式（`qwen serve`）
 
 将 Qwen Code 作为本地 HTTP 守护进程运行，使多个客户端（IDE 插件、Web UI、CI 脚本、自定义 CLI）能够通过 HTTP + Server-Sent Events 共享同一个 agent 会话，而不是各自生成独立的子进程。
@@ -11,13 +13,14 @@
 ## 核心功能
 
 - **内置 Web Shell UI** — `qwen serve` 开箱即在根路径（`http://127.0.0.1:4170/`）提供基于浏览器的 Web Shell；运行 `qwen serve --open` 可在浏览器中自动打开。它与 API 同源，无需额外端口或反向代理。传入 `--no-web` 可启动纯 API 守护进程。
-- **一个 agent 进程，多个客户端** — 在默认的 `sessionScope: 'single'` 下，连接到守护进程的每个客户端共享同一个 ACP 会话。支持在同一对话、同一文件 diff、同一权限提示上进行跨客户端实时协作。
+- **最多一个主 ACP 子进程加上每个受信任次要工作区一个按需子进程，多客户端** — 生产模式会尝试预热主 bridge 并在失败后于首次使用时重试；受信任的次要运行时按需启动自己的子进程，而不受信任的次要运行时永远不会启动子进程。在默认的 `sessionScope: 'single'` 下， targeting 同一工作区的客户端共享同一个 ACP 会话，并在同一对话、同一文件 diff、同一权限提示上进行协作。
 - **支持安全重连的流式传输** — 带有 `Last-Event-ID` 重连机制的 SSE 允许客户端断开后从断点处（在 ring 的重放窗口内）精确恢复。
+- **分页持久化转录** — `GET /session/:id/transcript` 以重放页的形式返回完整的活跃磁盘转录，无需附加客户端或更改实时 SSE 重放窗口。
 - **首个响应者权限机制** — 当 agent 请求运行工具的权限时，所有连接的客户端都会看到该请求；首个响应的客户端获得处理权。
-- **一个守护进程，一个工作区** — 每个 `qwen serve` 进程在启动时严格绑定到一个工作区（参见 [#3803](https://github.com/QwenLM/qwen-code/issues/3803) §02）。多工作区部署需在独立端口上为每个工作区运行一个守护进程（或置于编排器之后）。
-- **实验性的守护进程托管通道** — `qwen serve --channel <name>` 启动一个由守护进程生命周期管理的通道 worker。该 worker 是一个独立进程，通过 SDK 连回守护进程，并在 `GET /daemon/status` 中报告其状态。
-- **远程运行时控制**（[#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 17）— 更改会话的审批模式（`POST /session/:id/approval-mode`），按工作区启用/禁用工具（`POST /workspace/tools/:name/enable`），生成空的 `QWEN.md`（`POST /workspace/init`，仅机械生成 — 不调用模型；若需 AI 填充，请接着调用 `POST /session/:id/prompt`），使用预算预检重启单个 MCP 服务器（`POST /workspace/mcp/:server/restart`），或在运行时添加/移除 MCP 服务器而无需重启守护进程（`POST /workspace/mcp/servers`，`DELETE /workspace/mcp/servers/:name`）。所有操作均受严格门控 — 需先配置 `--token`。
-- **会话回顾**（[#4175](https://github.com/QwenLM/qwen-code/issues/4175) 后续）— 获取活跃会话的单句“我上次进行到哪了”摘要（`POST /session/:id/recap`）。它将核心的 `generateSessionRecap` 封装为针对快速模型的 side-query；不会污染主聊天历史或 SSE 流。非严格门控（与 `/prompt` 策略相同）；SDK 辅助方法 `client.recapSession(sessionId)`。
+- **一个守护进程，一个或多个工作区** — 重复 `--workspace` 可在一个监听器下注册隔离的工作区运行时。第一个工作区为主工作区，并在请求省略 `cwd` 时作为默认值。
+- **实验性的守护进程托管频道** — 使用 `qwen serve --channel <name>` 启动，或先不带频道启动，之后使用 `qwen channel set` 选择。Worker 是由守护进程生命周期拥有的独立进程。其选择可以被查询、替换、重新加载和停止，而无需重启守护进程。
+- **远程运行时控制** — 更改会话的审批模式（`POST /session/:id/approval-mode`），按工作区启用/禁用工具（`POST /workspace/tools/:name/enable`）或加载的 skill（`POST /workspace/skills/:name/enable`），生成空的 `QWEN.md`（`POST /workspace/init`，仅机械生成 — 不调用模型；若需 AI 填充，请接着调用 `POST /session/:id/prompt`），使用预算预检重启单个 MCP 服务器（`POST /workspace/mcp/:server/restart`），或在运行时添加/移除 MCP 服务器而无需重启守护进程（`POST /workspace/mcp/servers`，`DELETE /workspace/mcp/servers/:name`）。所有操作均受严格门控 — 需先配置 `--token`。
+- **会话回顾**（[#4175](https://github.com/QwenLM/qwen-code/issues/4175) 后续）— 获取活跃会话的单句"我上次进行到哪了"摘要（`POST /session/:id/recap`）。它将核心的 `generateSessionRecap` 封装为针对快速模型的 side-query；不会污染主聊天历史或 SSE 流。非严格门控（与 `/prompt` 策略相同）；SDK 辅助方法 `client.recapSession(sessionId)`。
   - **已知限制 — token 成本放大**：该路由是纯成本端点（每次调用都是一次 LLM side-query，无状态收益），且守护进程在 v1 中没有单路由速率限制。在默认的无 token 环回配置下，有缺陷或恶意的本地客户端可能会通过大量请求消耗 token。在共享开发主机上暴露守护进程前，请配置 `--token`（以及可选的 `--require-auth`）。
   - **并发回顾安全性**：对同一会话同时发起的两个 `/recap` 调用会运行两个独立的 side-query。`generateSessionRecap` 通过 `GeminiClient.getChat().getHistory()` 读取聊天历史的快照，并将其提供给单独的 `BaseLlmClient.generateText` 调用（通过 `runSideQuery`）；它永远不会追加或修改会话的 `GeminiChat`。可安全地从多个客户端并发调用，无需协调。
 
@@ -37,7 +40,7 @@
 - ✅ 通过 `systemd` / `launchd` / `nohup &` / `tmux` 本地启动 — 参见 [本地启动模板](./qwen-serve-deploy-local.md)
 - ✅ 通过 `QWEN_SERVER_TOKEN` 环境变量自带 bearer token（设置详见[身份验证](#身份验证)）
 - ❌ **容器化部署** — Docker / Compose / Kubernetes / 带 TLS 终止的 nginx 反向代理不包含在 v0.16-alpha 中。延期至 v0.16.x，待企业试点确认后实施（否则将因无人验证而荒废）。
-- ❌ **单主机上的多守护进程协调** — 强制执行 `1 个守护进程 = 1 个工作区 × N 个会话`。跨主机联邦、实例路径 token 键控和过期 token 清理延期至 v0.16.x。
+- ❌ **单主机上的多守护进程协调** — 一个守护进程可以托管多个显式注册的工作区，但守护进程之间不会相互协调。跨主机联邦、实例路径 token 键控和过期 token 清理延期至 v0.16.x。
 - ❌ **自动生成守护进程 token** — alpha 版本需自带 token（只需执行一次 `openssl rand -hex 32`）。自动生成 + token 存储基础设施延期至 v0.16.x。
 
 **安全加固 — 本地单用户最低可用：**
@@ -50,7 +53,7 @@
 - ⏸️ **Prometheus 指标 + 负载测试工具** — 延期至 v0.17 F4 Phase-1 规模 instrumentation，待 30-50 个活跃会话成为实际目标时实施。
 - ⏸️ **`--max-body-size` CLI 标志** — 守护进程默认强制执行 `express.json({ limit: '10mb' })`，这足以覆盖纯文本 prompt（模型上下文窗口远小于 10 MiB 字符）。可在 v0.16.x 中通过标志调整。
 
-有关“阶段 1 中我们不会修复什么”的更详细枚举（单主机会话状态变更模型 + N 个并行会话共享一个 ACP 子进程），请参阅下方的[阶段 1 范围边界 — 阶段 1.5 中我们不会修复什么](#stage-1-scope-boundaries--what-we-wont-fix-in-stage-15)。
+有关"阶段 1 中我们不会修复什么"的更详细枚举（单主机会话状态变更模型 + N 个并行会话共享每个工作区运行时内的一个 ACP 子进程），请参阅下方的[阶段 1 范围边界 — 阶段 1.5 中我们不会修复什么](#stage-1-scope-boundaries--what-we-wont-fix-in-stage-15)。
 
 ## 快速开始
 
@@ -63,9 +66,9 @@ qwen serve
 # → qwen serve: bearer auth disabled (loopback default). Set QWEN_SERVER_TOKEN to enable.
 ```
 
-默认绑定为 `127.0.0.1:4170`。在环回地址上 bearer 身份验证**默认关闭**，以便本地开发“开箱即用”。守护进程绑定到当前工作目录；使用 `--workspace /path/to/dir` 可覆盖此设置。
+默认绑定为 `127.0.0.1:4170`。在环回地址上 bearer 身份验证**默认关闭**，以便本地开发"开箱即用"。守护进程将当前工作目录注册为主工作区；使用绝对路径 `--workspace /path/to/dir` 可覆盖，重复该标志可注册额外的隔离运行时。
 
-**打开 Web Shell UI。** 浏览至 `http://127.0.0.1:4170/`（或使用 `qwen serve --open` 启动守护进程以自动打开）即可进入完整的浏览器终端 — 包含聊天、diff、工具调用和权限提示。UI 在守护进程根路径提供，与 API 同源。本指南的其余部分使用原始 HTTP，以便你可以直接通过脚本调用 API。
+**打开 Web Shell UI。** 浏览至 `http://127.0.0.1:4170/`（或使用 `qwen serve --open` 启动守护进程以自动打开）即可进入完整的浏览器终端 — 包含聊天、diff、提交历史、工具调用和权限提示。UI 在守护进程根路径提供，与 API 同源。本指南的其余部分使用原始 HTTP，以便你可以直接通过脚本调用 API。
 
 ### 2. 基础检查
 
@@ -80,27 +83,57 @@ curl http://127.0.0.1:4170/daemon/status
 # → {"v":1,"detail":"summary","status":"ok","runtime":{...}}
 ```
 
-`workspaceCwd` 字段暴露了绑定的工作区，以便客户端进行预检并在 `POST /session` 中省略 `cwd`。
-`limits.maxPendingPromptsPerSession` 字段公布了当前每个会话的 prompt 准入上限；`null` 表示禁用该上限。
+`workspaceCwd` 字段暴露主兼容性工作区，以便客户端可以在 `POST /session` 中有意省略 `cwd`。当前客户端应从 `workspaces[]` 中选择一个受信任条目，并在显式 targeting 某个运行时发送该条目的 `cwd`。
+`limits.maxPendingPromptsPerSession` 字段公布了当前每个会话的 prompt 准入上限；`null` 表示禁用该上限。`limits.maxTotalSessions` 公布可选的守护进程级新会话上限；`null` 表示无限制。
 
-### 从守护进程运行通道
+### 从守护进程运行频道
 
 ```bash
 # Start one configured channel under qwen serve
 qwen serve --channel telegram
 
-# Start several configured channels under one daemon-owned worker
+# Start several configured channels under daemon-owned workspace workers
 qwen serve --channel telegram --channel feishu
 
 # Start all configured channels
 qwen serve --channel all
+
+# Or start a token-protected daemon with no channel worker
+QWEN_SERVER_TOKEN=secret qwen serve
+
+
+# Enable or replace its runtime selection later
+qwen channel set telegram --token secret
+qwen channel set telegram feishu --token secret
+qwen channel set all --token secret
+
+# Inspect or stop daemon-managed channels
+qwen channel status --daemon-url http://127.0.0.1:4170 --token secret
+qwen channel stop --daemon-url http://127.0.0.1:4170 --token secret
 ```
 
-此模式为实验性且由守护进程管理。它不会取代独立的 `qwen channel start` 命令：独立通道仍使用 ACP 支持的 `AcpBridge` 服务。使用 `qwen serve --channel` 时，守护进程会在 HTTP 运行时就绪后启动一个通道 worker 进程。如果 worker 在启动后退出，守护进程将继续运行，且 `GET /daemon/status` 会报告 `channel_worker_exited` 警告。自动重启 worker 的功能被延期。
+此模式为实验性且由守护进程管理。它不会取代独立的 `qwen channel start` 命令：不带 `--daemon-url` 时，现有的 `qwen channel start`、`stop` 和 `status` 行为保持独立。使用 `qwen serve --channel` 时，守护进程会在监听之前预留频道服务租约，如果初始 worker 无法就绪则启动失败。不带 `--channel` 时，它不加载任何频道运行时，也不预留频道服务租约，直到第一次运行时 PUT。如果已就绪的 worker 后来崩溃，守护进程会继续运行，在有界重启策略下重新启动它，并在 `GET /daemon/status` 中报告其状态（包括 `channel_worker_exited` 警告）。
 
-守护进程绑定到一个工作区，因此每个选定通道的 `cwd` 必须解析为守护进程的工作区。`--channel all` 不能与命名通道结合使用。
+运行时控制通过 `GET`、`PUT` 和 `DELETE /workspace/channel` 暴露；SDK 辅助方法为 `getChannelWorkerControl()`、`setChannelWorkerSelection()` 和 `stopChannelWorker()`。PUT/DELETE/reload 使用严格变更门控，因此守护进程必须配置 bearer token。运行时选择是故意临时性的：PUT 不会编辑设置或启动选项，重启会回到 `qwen serve --channel` 的选择（省略该标志时则为禁用）。命名选择会按首次出现顺序去重和修剪；顺序会被保留，因为第一个频道可能影响共享模型选择。
 
-守护进程还为客户端 UI 和运维人员暴露只读的运行时快照：`GET /daemon/status`、`GET /workspace/mcp`、`GET /workspace/skills`、`GET /workspace/providers`、`GET /workspace/env`、`GET /workspace/preflight`、`GET /session/:id/status`、`GET /session/:id/context`、`GET /session/:id/supported-commands`、`GET /session/:id/tasks` 和 `GET /session/:id/lsp`。
+守护进程在其 worker 启动时读取每个频道的设置（token、`proxy`、每频道 `model`）。要在不更改已提交选择的情况下重新读取设置，请调用 `POST /workspace/channel/reload`（SDK `client.reloadChannelWorker()`，或 `qwen channel reload`）。Reload 会重新解析工作区归属，并通过相同的回滚安全协调路径重启选定的 worker。`channel_control` capability 在运行时控制被接入时始终存在；`channel_reload` 仅在管理器启用时存在。持久化线程会从磁盘恢复。
+
+每个选定频道的 `cwd` 必须解析为已注册的工作区，频道按所属工作区分组：单工作区守护进程运行一个 worker（与之前相同）；多工作区守护进程（`--workspace` 重复）为每个拥有选定频道的工作区运行一个 worker，每个 worker 绑定到该工作区的 cwd、`QWEN_DAEMON_WORKSPACE` 和环境变量覆盖。要在非主工作区中托管频道，请在该工作区自己的 `.qwen/settings.json` 中定义它（无需 `cwd`）或设置显式 `cwd` 等于工作区路径；仅在用户/系统作用域中定义且没有 `cwd` 的频道在工作区间是模糊的，会导致启动错误。`--channel all` 保持仅主工作区（它托管主工作区的频道），不能与命名频道结合使用。
+
+替换选择会在停止任何内容之前预检配置、归属和信任。它会保留有序选择未更改的工作区 worker。如果更改后的 worker 无法启动，守护进程会停止新 worker 并恢复旧选择。如果守护进程无法确认旧子进程即使在 SIGKILL 后也已退出，它会保留 PID 租约并拒绝创建重复 worker。当至少一个请求的适配器连接时，worker 仍被视为就绪；PUT 然后返回 `partial: true`，`/daemon/status` 为缺失的适配器报告 `channel_worker_partial_connect`。
+
+当适配器拒绝 `connect()` 时，当前 worker 快照可能包含 `startupFailures` 条目，其中有频道、`phase: "connect"`、可选的适配器代码和凭据已编辑的消息。`qwen channel set`、`qwen channel reload` 和远程 `qwen channel status --daemon-url …` 会打印这些原因。如果在动态 set 或 reload 期间每个适配器都失败，命令会收到 `502 channel_worker_start_failed`；响应原因描述该次尝试，其 `state` 描述回滚后的结果。后续状态请求不会保留失败尝试。每个 worker 启动最多保留 64 个原因，适配器代码应被视为诊断性的而非稳定类别。初始 `qwen serve --channel …` 启动在没有适配器连接时仍然退出。
+
+守护进程还为客户端 UI 和运维人员暴露只读的运行时快照：`GET /daemon/status`、`GET /workspace/mcp`、`GET /workspace/skills`、`GET /workspace/providers`、`GET /workspace/env`、`GET /workspace/preflight`、`GET /workspace/:id/session-info`、`GET /session/:id/status`、`GET /session/:id/context`、`GET /session/:id/supported-commands`、`GET /session/:id/tasks`、`GET /session/:id/lsp` 和 `GET /session/:id/transcript`。
+
+`GET /workspace/:id/session-info`（以及复数形式 `GET /workspaces/:workspace/session-info`）返回工作区的聚合会话计数：持久化的 `active` / `archived` / `total`，加上当实时状态可用时的当前内存中 `live` 计数。已注册的不受信任次要工作区会省略 `live`，因为其目录读取不会查询实时 bridge。分页的 `GET /workspace/:id/sessions` 列表不包含总数，因此这是"存在多少会话？"的专用接口 — 在计划任务或定期任务留下大量本地存储时很有用。
+
+> ⚠️ **磁盘扫描 — 请勿轮询。** 此端点会遍历工作区 chats 目录下的本地会话 JSONL 文件。响应始终包含 `expensive: true` 和 `cost: "disk_scan"`。请低频调用（手动刷新、运维工具、偶尔的 UI 加载）— 绝不要在紧密计时器上或每次侧边栏渲染时调用。浏览页面请使用 `GET /workspace/:id/sessions`，获取实时内存中会话计数请使用 `GET /daemon/status`。`truncated: true` 的响应意味着扫描达到了安全限制或无法分类每个候选文件，因此持久化计数是下界。
+
+```bash
+curl http://127.0.0.1:4170/workspace/$(python3 -c "import urllib.parse,os; print(urllib.parse.quote(os.getcwd(), safe=''))")/session-info
+# → {"active":450,"archived":30,"total":480,"live":2,"expensive":true,"cost":"disk_scan"}
+```
 
 `GET /session/:id/status` 返回单个会话的实时 bridge 摘要：`sessionId`、`workspaceCwd`、`createdAt`、可选的 `displayName`、`clientCount` 和 `hasActivePrompt`。当守护进程持有该 id 的活跃会话时返回 `200` 及摘要，否则返回 `404`（body 为 `{ "error": …, "sessionId": … }`）。使用它来轮询某个已知会话是否仍在运行（`hasActivePrompt`）或有多少客户端连接（`clientCount`），而无需获取并扫描整个分页会话列表：
 
@@ -117,6 +150,8 @@ curl http://127.0.0.1:4170/session/$SESSION_ID/status
 
 `GET /workspace/mcp`、`GET /workspace/skills` 和 `GET /workspace/providers` 报告实时的 ACP 运行时，且在空闲时不会启动 ACP 子进程；空闲的守护进程返回 `initialized: false` 及空快照。一旦会话存活，它们将切换为 `initialized: true` 并暴露真实状态。
 
+要远程镜像 CLI `/skills` 面板，请在检查 `workspace_skill_toggle` capability 后调用 `POST /workspace/skills/:name/enable` 并传入 `{ "enabled": true | false }`。该路由根据需要更新工作区的 `skills.disabled` 和 `skills.enabled`，拒绝未知、隐藏、非活跃扩展、高作用域锁定和不受信任的目标，并立即刷新活跃的 ACP 会话。启用 `skills.defaultDisabled` 的 skill 会在 `skills.enabled` 中写入规范的选择加入；从更高作用域继承的硬 `skills.disabled` 条目仍然无法被覆盖。Skill 状态单元格暴露 `disabledReason`（`hard`、`default` 或 `inactive_extension`）和可选的 `lockedScope`。`deferred` 响应表示在没有 ACP 子进程运行时保存了设置；它将在子进程启动时生效。`skills.disabled` 同时禁用手动和模型使用，不同于 `disable-model-invocation: true`（后者保留直接 `/skill-name` 调用可用）。
+
 `GET /workspace/env` 和 `GET /workspace/preflight` 无论 ACP 状态如何，始终返回 `initialized: true`。`env` 从不咨询 ACP（仅守护进程信息）；`preflight` 从 `process.*` 响应守护进程级单元格，并在子进程空闲时为 ACP 级单元格发出 `status: 'not_started'` 占位符。
 
 `GET /workspace/env` 报告守护进程运行时的 runtime、platform、sandbox、proxy，以及白名单 secret 环境变量（如 `OPENAI_API_KEY`）的**存在性**（绝不返回值）。代理 URL 在发送到网络前会被剥离凭据并简化为 `host:port`。该路由始终直接从守护进程响应，且从不生成 ACP 子进程。
@@ -125,12 +160,12 @@ curl http://127.0.0.1:4170/session/$SESSION_ID/status
 
 守护进程还暴露工作区文件辅助工具：
 
-- `GET /file` 读取文本文件并返回原始字节的 `sha256:<hex>` 哈希。
+- `GET /file` 读取文本文件。完整快照响应返回原始字节的 `sha256:<hex>` 哈希；来自超过 256 KiB 文件的有限行窗口会省略它。
 - `GET /file/bytes` 读取有界的原始字节窗口并返回 base64 内容。
 - `POST /file/write` 创建或替换文本文件。
 - `POST /file/edit` 应用一次精确的文本替换。
 
-Write/edit 是**严格变更路由**：即使在环回地址上也需要配置 bearer token，否则返回 `token_required`。替换和编辑需要来自 `GET /file`（或全窗口 `GET /file/bytes`）的最新 `expectedHash`。`create` 永远不会覆盖。允许对忽略路径进行显式写入，但会被审计。二进制写入、删除/移动/mkdir 以及递归父目录创建不属于此接口范围。
+Write/edit 是**严格变更路由**：即使在环回地址上也需要配置 bearer token，否则返回 `token_required`。替换和编辑需要来自完整快照 `GET /file`（或全窗口 `GET /file/bytes`）的最新 `expectedHash`。部分大文件窗口不能用作乐观并发 token。`create` 永远不会覆盖。允许对忽略路径进行显式写入，但会被审计。二进制写入、删除/移动/mkdir 以及递归父目录创建不属于此接口范围。
 
 ### 3. 打开会话
 
@@ -141,9 +176,9 @@ curl -X POST http://127.0.0.1:4170/session \
 # → {"sessionId":"<uuid>","workspaceCwd":"…","attached":false}
 ```
 
-可以省略 `cwd` — 路由将回退到守护进程绑定的工作区。提交与绑定工作区不匹配的 `cwd` 会返回 `400 workspace_mismatch`（守护进程严格绑定到一个工作区；若需不同工作区，请启动单独的守护进程）。
+可以省略 `cwd` — 路由将回退到守护进程的主工作区。提交无法规范化为任何已注册工作区的 `cwd` 会返回 `400 workspace_mismatch`。
 
-第二个向 `/session` 提交的客户端（无论 `cwd` 是否匹配或是否提供）都会得到 `"attached": true` — 他们现在共享该 agent。
+第二个向同一已解析工作区运行时提交 `/session` 的客户端在默认的 `sessionScope: 'single'` 下会得到 `"attached": true` — 他们现在共享该运行时的 agent 会话。省略 `cwd` 会解析为主工作区；选择另一个已注册的工作区会创建或附加到该运行时的独立默认会话。
 
 ### 4. 订阅事件流（先在另一个终端中执行）
 
@@ -157,7 +192,7 @@ curl -N http://127.0.0.1:4170/session/$SESSION_ID/events
 
 `data:` 行是**完整的事件信封** — `{id?, v, type, data, originatorClientId?}` — 在单行上进行 JSON 字符串化。ACP 负载（本例中的 `sessionUpdate` 块）位于该信封内的 `data` 下。SSE 级的 `id:` / `event:` 行是为了方便 EventSource 客户端；相同的值也出现在 JSON 信封内，因此 raw-`fetch` 消费者也能获取它们。
 
-请在发送 prompt **之前**打开此流 — SSE 重放缓冲区保存最近的 8000 个事件，因此迟到的订阅者可以通过 `Last-Event-ID` 赶上进度，但对于简单的“观察单个 prompt”场景，最简单的方法是先订阅并让其实时流式传输。
+请在发送 prompt **之前**打开此流 — SSE 重放缓冲区保存最近的 8000 个事件，因此迟到的订阅者可以通过 `Last-Event-ID` 赶上进度，但对于简单的"观察单个 prompt"场景，最简单的方法是先订阅并让其实时流式传输。
 
 该流发出 `session_update`（LLM 块、工具调用、使用情况）、`permission_request`（工具需要审批）、`permission_resolved`（有人投票）、`model_switched`、`model_switch_failed`，以及终止帧 `session_died`（agent 子进程崩溃 — SSE 随后关闭）和 `client_evicted`（你的队列溢出 — SSE 随后关闭）。
 
@@ -171,6 +206,24 @@ curl -X POST http://127.0.0.1:4170/session/$SESSION_ID/prompt \
 ```
 
 步骤 4 中的 `curl -N` 会在帧到达时打印它们。
+
+### 可选的 Todo 停止守卫
+
+长时间运行的守护进程客户端可以选择在当前工作链成功写入顶级 Todo 列表并在仍有待处理或进行中的项目时停止的情况下，进行有界续写。将此添加到 `settings.json` 并重启守护进程：
+
+```json
+{
+  "experimental": {
+    "todoStopGuard": true
+  }
+}
+```
+
+该守卫最多添加两次连续的 primary-model 调用（无新用户输入）。中途的用户消息会首先运行并开始一个新的两阶段尝试；retry/continue 和相关的后台结果保留当前阶段的预算。每次调用和最终的耗尽状态都作为可重放的 `session_update` 事件出现，带有 `_meta.source: "todo_stop_guard"`；元数据包含尝试次数和未完成计数，但从不包含 Todo 文本。排队的完整 prompt 也会首先运行，现有的权限/取消规则不变。
+
+当已武装的链在等待相关后台工作时，不相关的 cron/loop 触发和旧任务通知会被延迟。定期工作在每个任务上有界并合并，直到链让出。
+
+该选项默认为 `false`，需要重启，在安全模式、裸模式和审批 `plan` 模式下被强制关闭。它仅在内存中：从磁盘加载 Todo 状态或重启守护进程不会武装它。新的普通 prompt 必须成功运行自己的顶级 `todo_write`；retry/continue 和实时客户端重新附加保留当前的内存中工作链。成功更改会话工作目录会清除它，因此旧 Todo 无法在新工作区中恢复。
 
 ## 身份验证
 
@@ -201,11 +254,12 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" http://your-host:4170/capabil
 # Wrong token → 401
 ```
 
-token 比较是恒定时间的（SHA-256 + `crypto.timingSafeEqual`）；401 响应在“缺少 header”、“错误 scheme”和“错误 token”之间是统一的，因此侧信道无法区分。
+token 比较是恒定时间的（SHA-256 + `crypto.timingSafeEqual`）；401 响应在"缺少 header"、"错误 scheme"和"错误 token"之间是统一的，因此侧信道无法区分。
 
 ## HTTPS / TLS（用于移动端/跨设备访问）
 
 默认情况下，守护进程提供纯 HTTP 服务。这在 `localhost` 上没问题，但通过 `http://` 访问 LAN IP（`https://192.168.x.x:4170`）的手机或平板**不是**[安全上下文](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts) — 因此浏览器会阻止 `getUserMedia`（语音输入）、WebRTC 和其他仅限安全上下文的 API。传递 `--tls-cert` + `--tls-key` 可通过 HTTPS 提供 Web Shell 并解锁这些功能：
+
 ```bash
 # 1. 安装本地 CA 并信任它（一次性操作）。移动设备也必须
 #    信任此 CA —— mkcert 会打印根证书所在的路径。
@@ -241,45 +295,82 @@ qwen serve \
 | `--port <n>`                            | `4170`          | TCP 端口。`0` 表示操作系统分配的临时端口。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `--hostname <addr>`                     | `127.0.0.1`     | 绑定接口。除环回地址外的任何绑定都需要 token。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `--token <str>`                         | —               | Bearer token。回退到 `QWEN_SERVER_TOKEN` 环境变量（会自动去除首尾空格 —— 方便使用 `$(cat token.txt)`）。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `--require-auth`                        | `false`         | 如果没有 bearer token 则拒绝启动，即使在环回地址上也是如此。加固了 `127.0.0.1` 的开发者默认配置，适用于共享开发主机 / CI 运行器 / 多租户工作站等任何本地用户都能访问监听器的场景。仅在设置了 `--token` 或 `QWEN_SERVER_TOKEN` 时才能启动；同时也会将 `/health` 置于 bearer token 保护之下。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `--tls-cert <path>`                     | —               | PEM 证书文件的路径。通过 **HTTPS** 而非 HTTP 提供服务。必须与 `--tls-key` 配对使用（如果只提供一个则启动失败）。通过局域网 IP 解锁安全上下文浏览器 API —— 如语音输入（`getUserMedia`）、WebRTC —— 否则浏览器会在纯 `http://` 下阻止这些 API。仅限 TLS 终端；不支持自动生成 / ACME。参见下方的 [HTTPS / TLS](#https--tls-for-mobile--cross-device-access)。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `--require-auth`                        | `false`         | 如果没有 bearer token 则拒绝启动，即使在环回地址上也是如此。加固了 `127.0.0.1` 的开发者默认配置，适用于共享开发主机 / CI 运行器 / 多租户工作站等任何本地用户都能访问监听器的场景。仅在设置了 `--token` 或 `QWEN_SERVER_TOKEN` 时才能启动；同时也会将 `/health` 置于 bearer token 保护之下。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `--tls-cert <path>`                     | —               | PEM 证书文件的路径。通过 **HTTPS** 而非 HTTP 提供服务。必须与 `--tls-key` 配对使用（如果只提供一个则启动失败）。通过局域网 IP 解锁安全上下文浏览器 API —— 如语音输入（`getUserMedia`）、WebRTC —— 否则浏览器会在纯 `http://` 下阻止这些 API。仅限 TLS 终端；不支持自动生成 / ACME。参见下方的 [HTTPS / TLS](#https--tls-for-mobile--cross-device-access)。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `--tls-key <path>`                      | —               | PEM 私钥文件的路径。必须与 `--tls-cert` 配对使用。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `--max-sessions <n>`                    | `20`            | 并发活跃会话的上限。当达到上限时，会生成新子进程的新 `POST /session` 请求将返回 `503`（并带有 `Retry-After: 5`）；附加到现有会话的请求不计入此限制。设置为 `0` 可禁用。此默认值适用于单用户/小团队使用；如果你的部署环境有足够的 RAM/文件描述符余量（每个会话约 30–50 MB），可以调高此值。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `--max-pending-prompts-per-session <n>` | `5`             | 每个会话中由 `POST /session/:id/prompt` 接受但尚未处理的 prompt 上限，包括排队的 prompt 和当前活动的 prompt。当溢出时，bridge 会在返回 `promptId` 之前同步拒绝，返回 `503`、`Retry-After: 5` 和 `code: "prompt_queue_full"`。设置为 `0` 可禁用。`branchSession` 在同一个 FIFO 上串行化，但不计入此 prompt 上限。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `--workspace <path>`                    | `process.cwd()` | 此守护进程绑定的绝对工作区路径（根据 [#3803](https://github.com/QwenLM/qwen-code/issues/3803) §02 —— 1 个守护进程 = 1 个工作区）。如果 `POST /session` 请求的 `cwd` 不匹配，将返回 `400 workspace_mismatch`。对于多工作区部署，请在不同的端口上为每个工作区运行一个 `qwen serve`。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `--channel <name\|all>`                 | —               | 实验性的守护进程管理的 channel worker。重复此参数可选择多个已配置的 channel，或传递 `all` 以启动所有已配置的 channel。`all` 不能与具名 channel 结合使用。所选 channel 的 `cwd` 值必须解析为守护进程的工作区。worker 由 `qwen serve` 拥有；停止守护进程即可停止由 serve 管理的 channel。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `--max-connections <n>`                 | `256`           | 监听器级别的 TCP 连接上限（`server.maxConnections`）。限制原始 socket 数量，与会话数量无关 —— 一旦达到上限，缓慢/幽灵 SSE 客户端将在 accept 时被拒绝。如果你的部署预期每个会话有许多 SSE 订阅者，请将其与 `--max-sessions` 一起调高。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `--event-ring-size <n>`                 | `8000`          | 每个会话的 SSE 重放环形缓冲区深度（#3803 §02 目标）。设置 `GET /session/:id/events` 配合 `Last-Event-ID: N` 可用的积压量。值越大 = 重连余量越多，代价是每个会话多消耗几百 KB 的 RAM。SDK 客户端还可以通过 `?maxQueued=N`（范围 `[16, 2048]`，默认 256）为特定订阅请求更大的每订阅者积压上限。守护进程还会在队列填充达到 75% 时发出非终止的 `slow_client_warning` SSE 帧，以便客户端在被驱逐前进行排空/重连。预检 `caps.features.slow_client_warning`。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `--mcp-client-budget <n>`               | —               | **每个 ACP 会话**的活跃 MCP 客户端正整数上限（issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 14 v1；PR 23 通过共享 MCP 池将其升级为每个工作区）。与 `--mcp-budget-mode` 结合使用。未设置时，不进行基于计数的强制执行（但 `GET /workspace/mcp` 仍会报告 `clientCount`）。不同于 claude-code 的 `MCP_SERVER_CONNECTION_BATCH_SIZE`（后者限制启动并发，而非总客户端数）。预检 `caps.features.mcp_guardrails`。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `--mcp-budget-mode <m>`                 | `warn` / `off`  | `--mcp-client-budget` 的执行方式。`warn`（设置 budget 时的默认值）：不拒绝，当达到 budget 的 ≥75% 时，快照的 `budgets[0].status` 翻转为 `warning`。`enforce`：拒绝超过上限的连接，每个 server 的单元格显示 `disabledReason: 'budget'`，由 `mcpServers` 的声明顺序决定。`off`（未设置 budget 时的默认值）：纯可观测性。如果没有设置 budget，启动时会拒绝 `enforce`。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `--http-bridge`                         | `true`          | 阶段 1 模式：每个守护进程一个 `qwen --acp` 子进程（在启动时绑定到一个工作区，根据 [#3803](https://github.com/QwenLM/qwen-code/issues/3803) §02）；N 个会话通过 ACP `newSession()` 多路复用到该子进程上。阶段 2 的原生进程内模式将在后续提供。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `--max-sessions <n>`                    | `32`            | 并发活跃会话的上限。当达到上限时，会生成新子进程的新 `POST /session` 请求将返回 `503`（并带有 `Retry-After: 5`）；附加到现有会话的请求不计入此限制。设置为 `0` 可禁用。此默认值适用于单用户/小团队使用；如果你的部署环境有足够的 RAM/文件描述符余量（每个会话约 30–50 MB），可以调高此值。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `--max-total-sessions <n>`              | 派生值          | 可选的非负整数，跨所有已注册工作区运行时的守护进程级新会话创建上限。它适用于新子会话、会话恢复和分支/派生创建的会话；附加到现有活跃会话不消耗名额。设置为 `0` 表示无限制。当省略且有多个启动/恢复的工作区时，守护进程根据每工作区上限和启动工作区数量派生一个固定上限；后续动态注册不会重新计算。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `--max-pending-prompts-per-session <n>` | `5`             | 每个会话中由 `POST /session/:id/prompt` 接受但尚未处理的 prompt 上限，包括排队的 prompt 和当前活动的 prompt。当溢出时，bridge 会在返回 `promptId` 之前同步拒绝，返回 `503`、`Retry-After: 5` 和 `code: "prompt_queue_full"`。设置为 `0` 可禁用。`branchSession` 在同一个 FIFO 上串行化，但不计入此 prompt 上限。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `--workspace <path>`                    | `process.cwd()` | 此守护进程注册的绝对工作区目录。重复该标志可在一个进程中托管多个工作区；第一个为主工作区，并在请求省略 `cwd` 时作为默认值。相对路径会被拒绝。`cwd` 未注册的会话请求返回 `400 workspace_mismatch`。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `--memory-project-scope <mode>`         | `git-root`      | 项目内存分区模式。`git-root`（默认）在解析到同一 Git 根的工作区间共享内存；`workspace` 按精确的已注册工作区目录键控内存，使每个守护进程工作区获得自己的隔离内存。提供时覆盖 `QWEN_CODE_MEMORY_PROJECT_SCOPE`；无法识别的环境变量值会被忽略并带有一次性警告，然后回退到 `git-root`。切换到 `workspace` 不会迁移现有的 git-root 项目内存 — 这些条目在你切换回来之前将不再可见。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `--channel <name\|all>`                 | —               | 实验性的守护进程管理的频道 worker。重复此参数可选择多个已配置的频道，或传递 `all` 以启动所有已配置的频道。`all` 不能与命名频道结合使用。所选频道的 `cwd` 值必须解析为已注册的工作区；多工作区守护进程为每个拥有频道的工作区运行一个 worker。worker 由 `qwen serve` 拥有；停止守护进程即可停止由 serve 管理的频道。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `--max-connections <n>`                 | `256`           | 监听器级别的 TCP 连接上限（`server.maxConnections`）。限制原始 socket 数量，与会话数量无关 —— 一旦达到上限，缓慢/幽灵 SSE 客户端将在 accept 时被拒绝。如果你的部署预期每个会话有许多 SSE 订阅者，请将其与 `--max-sessions` 一起调高。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `--memory-budget-mb <n>`                | cgroup/主机的 50% | 整个守护进程进程树的总内存预算（MB）。未设置时，派生为 cgroup 限制或主机内存的 50%；无论如何，有效值被限制为已解析的可用内存，配置值和有效值都会被报告。目前仅用于观测 — 它不会更改任何 `qwen --acp` 子进程的大小。已解析的数字出现在 `GET /daemon/status` 的 `limits.memory` 下，以及已注册和活跃子进程计数和 `runtime.memory` 下的建议每子进程份额。太小的主机会报告 `insufficientMemory` 而不是向上钳制；由于派生比例为 50%，任何低于 ~2 GB 的主机都会触发此警告。在此类主机上传递显式的 `--memory-budget-mb 1024` 以覆盖派生值（该标志仍需要至少 1024 MB 的可用内存才能清除警告）。必须是 `[1024, 1048576]` 范围内的整数。                                                                                                                                                                                                                                                              |
+| `--event-ring-size <n>`                 | `8000`          | 每个会话的 SSE 重放环形缓冲区深度（#3803 §02 目标）。设置 `GET /session/:id/events` 配合 `Last-Event-ID: N` 可用的积压量。值越大 = 重连余量越多，代价是每个会话多消耗几百 KB 的 RAM。SDK 客户端还可以通过 `?maxQueued=N`（范围 `[16, 2048]`，默认 256）为特定订阅请求更大的每订阅者积压上限。守护进程还会在队列填充达到 75% 时发出非终止的 `slow_client_warning` SSE 帧，以便客户端在被驱逐前进行排空/重连。预检 `caps.features.slow_client_warning`。                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `--compacted-replay-max-bytes <n>`      | `4194304`          | `POST /session/:id/load` 返回的有界快照中保留的重放事件的每会话字节上限。该上限适用于 `compactedReplay`；当前飞行中的 `liveJournal` 由 `--max-journal-events` 和 `--max-journal-bytes` 分别限制。值必须是正安全整数；无效值在启动时失败，硬上限为 256 MiB。当较旧的保留重放被丢弃时，快照以 `history_truncated` 开头。这不会限制磁盘上的转录。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `--max-journal-events <n>`              | `10000`            | 每个会话在飞行中实时日志（当前未完成的 turn）中保留的原始事件数量上限。超出时，最旧的日志条目会被丢弃，并在前面加上 `history_truncated` 标记。必须是正安全整数。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `--max-journal-bytes <n>`               | `8388608`          | 每个会话的飞行中实时日志字节上限。超出时，最旧的日志条目会被丢弃（始终至少保留一个条目）。必须是正安全整数。默认为 8 MiB。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `--mcp-client-budget <n>`               | —                  | 活跃 MCP 客户端的正整数上限。当 `mcp_workspace_pool` 被公布时，上限和传输在每个工作区运行时中共享；当该标签不存在时，由旧版每会话管理器执行。结合 `--mcp-budget-mode` 使用。未设置时，不进行基于计数的执行（但 `GET /workspace/mcp` 仍会报告 `clientCount`）。不同于 claude-code 的 `MCP_SERVER_CONNECTION_BATCH_SIZE`（后者限制启动并发，而非总活跃客户端数）。预检 `caps.features.mcp_guardrails` 和 `caps.features.mcp_workspace_pool`。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `--mcp-budget-mode <m>`                 | `warn` / `off`     | `--mcp-client-budget` 的执行方式。`warn`（设置 budget 时的默认值）：不拒绝，当达到 budget 的 ≥75% 时，快照的 `budgets[0].status` 翻转为 `warning`。`enforce`：拒绝超过上限的连接，每个 server 的单元格显示 `disabledReason: 'budget'`，由 `mcpServers` 的声明顺序决定。`off`（未设置 budget 时的默认值）：纯可观测性。如果没有设置 budget，启动时会拒绝 `enforce`。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `--external-tool-guard-mode <m>`        | `off`              | 托管 ACP 的外部预执行策略。`off` 不进行提供程序调用也不公布 capability。`required` 除非兼容的提供程序完成 v1 握手否则启动失败，然后对每个受支持的顶级工具调用封闭式失败，除非其单个 prepare 请求被允许。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `--external-tool-guard-endpoint <url>`  | —                  | 仅 origin 的环回 HTTP(S) 提供程序 URL，用于 `required` 模式，例如 `http://127.0.0.1:8787`。不接受路径、URL 凭据、重定向、非环回主机和代理路由。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `--external-tool-guard-timeout-ms <n>`  | `3000`             | 整数 `100..30000`；分别应用于启动握手和每个 prepare 请求。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `--http-bridge`                         | `true`             | 阶段 1 模式：生产模式会尝试预热一个主 `qwen --acp` 子进程以兼容并在失败后于首次使用时重试，而每个受信任的次要工作区可以按需启动一个子进程。targeting 运行时的会话通过 ACP `newSession()` 多路复用到其子进程上；不受信任的次要工作区无法启动 ACP。阶段 2 的原生进程内模式将在后续提供。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `--initialize-timeout-ms <n>`           | `10000`            | ACP 子进程请求超时，包括 `initialize` 握手（毫秒）。必须是正整数，最大到 `2147483647`。高于 JS 计时器上限（`2^31-1`）的值在启动时被拒绝，因为 Node 会将其静默压缩为 1 毫秒。需要额外子进程启动余量的冷容器部署可以调高此值；同一个值还控制 `newSession`、工作区状态轮询和其他 ACP 扩展方法截止时间。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `--allow-origin <pat>`                  | —               | T2.4 ([#4514](https://github.com/QwenLM/qwen-code/issues/4514))。浏览器 webui 客户端的跨域白名单。可重复。每个值为 `*`（任意 origin —— 如果未配置 bearer token 则拒绝启动；建议在环回地址上使用 `--require-auth`，以便 `/health` 和 `/demo` 也受 bearer token 保护，因为默认情况下两者在环回地址上是预认证的）或规范的 URL origin（`<scheme>://<host>[:<port>]`，无尾部斜杠 / 路径 / 用户信息 / 查询参数）。**故意不支持子域名通配符（`https://*.example.com`）** —— 请显式列出每个子域名，或者使用 `*` 并配置 token（以及使用 `--require-auth` 进行完全加固）。匹配的 origin 会收到 CORS 响应头（`Access-Control-Allow-Origin`、`Vary: Origin`、methods、headers、max-age 以及暴露的 `Retry-After`）；不匹配的 origin 仍会收到 403，并带有与当前 wall 相同的信封。`Origin: null`（沙箱 iframe、file:// 文档）总是被拒绝，即使在 `*` 下也是如此。通过 `caps.features.allow_origin` 进行预检。环回地址自身的 origin 命中不受影响。 |
-| `--web` / `--no-web`                    | `true`          | 在守护进程根目录提供构建好的 Web Shell SPA（`GET /`、`/assets/*` 以及 SPA 深度链接回退）。静态 shell 注册在 bearer 认证网关**之前** —— 浏览器无法将 token 附加到 `<script>` 子资源或地址栏导航，shell 不携带任何机密，并且每个 API 路由无论如何都受 token 保护。在非环回地址绑定时，stderr 会输出一行警告，提示 UI 可在无认证的情况下访问。对于纯 API 守护进程，请使用 `--no-web`。当构建时省略了 Web Shell 资源时，此参数无效（守护进程会记录一条 breadcrumb 并以纯 API 模式运行）。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `--open`                                | `false`         | 监听器启动后，在默认浏览器中打开守护进程 URL 处的 Web Shell（如果配置了 token，则会在 URL 片段中追加 `#token=` —— 片段永远不会发送到服务器，从而避免 token 出现在访问日志和 Referer 头中）。如果使用 `--no-web`，或者在没有浏览器的无头 / CI / SSH 环境中，则此操作无效。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-> **调整负载参数。** `--max-sessions` 是 **new-child** 的上限。
-> 另外三个层级也会限制负载——在为高并发部署调整大小时，请将它们一起调优：
+| `--web` / `--no-web`                    | `true`          | 在守护进程根目录提供构建好的 Web Shell SPA（`GET /`、`/assets/*` 以及 `GET /session/<id>` 文档导航）。这些入口点注册在 bearer 认证网关**之前** —— 浏览器无法将 token 附加到 `<script>` 子资源或地址栏导航，shell 不携带任何机密。每个 API 路由无论如何都受 token 保护，所有其他路径的 SPA 深度链接回退也位于 bearer 门控之后。在非环回地址绑定时，stderr 会输出一行警告，提示 UI 可在无认证的情况下访问。对于纯 API 守护进程，请使用 `--no-web`。当构建时省略了 Web Shell 资源时，此参数无效（守护进程会记录一条 breadcrumb 并以纯 API 模式运行）。                                                                                                                                                                                                                                                                                                          |
+| `--open`                                | `false`         | 监听器启动后，在默认浏览器中打开守护进程 URL 处的 Web Shell（如果配置了 token，则会在 URL 片段中追加 `#token=` —— 片段永远不会发送到服务器，从而避免 token 出现在访问日志和 Referer 头中）。如果使用 `--no-web`，或者在没有浏览器的无头 / CI / SSH 环境中，则此操作无效。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+
+> **Memory project scope 注意事项。**
 >
-> - **listener 层级**：`--max-connections` / `server.maxConnections=256`
->   限制原始 TCP 连接数（慢速客户端背压）。
-> - **每个 session 的 subscriber**：EventBus 默认将每个 session 的 SSE subscriber 上限
->   设为 64；第 65 个客户端会收到终端
->   `stream_error` 并被关闭。
-> - **每个 session 的 prompt 准入**：
->   `--max-pending-prompts-per-session=5` 限制单个 session 接受的排队 + 活跃 prompt
->   数量。溢出会返回 `503` 及 `Retry-After: 5`。
-> - **每个 subscriber 的 backlog**：每个 SSE 客户端 256 个 frame 的队列；
->   超容量的客户端会收到终端 `client_evicted` frame 并
->   被关闭（一个慢速消费者无法拖垮 daemon）。
+> - **守护进程 vs. 独立 CLI。** `--memory-project-scope`（和 `QWEN_CODE_MEMORY_PROJECT_SCOPE`）仅影响守护进程管理的运行时。在同一目录中启动的独立 `qwen` TUI 仍使用 git-root 作用域，除非该环境变量已全局导出。要保持两个入口点一致，请在工作区 `.env` 或 `settings.env` 中固定作用域，以便每个读取工作区的进程达成一致。
+> - **目录名冲突。** 存储键由 `sanitizeCwd` 派生，它将每个非字母数字字符替换为 `-`。仅在标点上不同的兄弟目录（例如 `feature_1` 和 `feature-1`）即使在 `workspace` 作用域下也会映射到同一个内存目录。在依赖工作区隔离时请避免此类命名。
+> - **标志和环境变量的规范化不同。** 环境变量会被修剪和小写化（`"  Workspace  "` 可以工作）；CLI 标志由 yargs `choices` 进行大小写敏感匹配（`--memory-project-scope Workspace` 会被拒绝）。在两者之间复制时使用小写值。
+
+### 必需的外部工具守卫
+
+此可选功能适用于需要在最终工具执行边界进行外部允许/拒绝决策的托管 ACP 部署。除非存在 `--external-tool-guard-mode=required`，否则它完全处于静默状态：
+
+```sh
+export QWEN_CODE_EXTERNAL_TOOL_GUARD_TOKEN='replace-with-local-secret'
+
+qwen serve \
+  --external-tool-guard-mode=required \
+  --external-tool-guard-endpoint=http://127.0.0.1:8787 \
+  --external-tool-guard-timeout-ms=3000
+```
+
+提供程序必须暴露 `POST /v1/handshake` 和 `POST /v1/prepare`，要求 `Authorization: Bearer <token>`，返回 JSON，回显提供的 nonce 或请求 ID，并使用协议版本 `1`。token 必须非空，最多 8192 个 UTF-16 代码单元，且不含控制字符。请求限制为 1 MiB，响应限制为 64 KiB，可选拒绝原因限制为 500 个 UTF-16 代码单元且不含控制字符。成功的 prepare 响应为：
+
+```json
+{ "protocolVersion": 1, "requestId": "<echo>", "allowed": true }
+```
+
+拒绝使用 `allowed:false` 并可以添加简短的 `reason`。对于每个通过现有权限和 `PreToolUse` 门控并到达最终执行边界的受支持顶级工具调用，Qwen Code 发送一个 prepare 请求且从不重试。更早的权限/hook 拒绝不会发送 prepare 请求。超时、取消、传输失败、格式错误或不匹配的响应以及显式拒绝都会阻止执行器运行。每个生成的 ACP 通道还必须确认它安装了必需的回调；缺失或不兼容的确认会在 Session 创建之前拒绝该通道。提供程序请求携带 `sessionId`、`promptId`、`toolCallId`、规范的 `toolName` 和最终 `arguments`；`toolCallId` 是关联标签，不是身份验证身份或独立的幂等键。
+
+最终参数可能包含敏感的应用程序数据。在提供程序日志和审计存储中将其视为敏感数据。
+
+`PreToolUse` hook 在此最终执行器决策之前运行。必需守卫模式不授权或沙箱化 hook 行为；需要在每个可能的副作用周围设置边界的部署必须禁用 hook 或单独管理其实现。
+
+Slash command 操作也在模型/工具调度之前运行，不是守卫调用。一些内置命令可以直接更改文件或设置。需要全效果边界的托管部署必须通过 `slashCommands.disabled` 或 `--disabled-slash-commands` 拒绝 slash command 输入或禁用每个未批准的命令。
+
+v1 托管作用域是由活跃前台托管 Prompt 调用的顶级工具。嵌套或委托的 `agent`、`workflow`、`create_sub_session`、`send_message`、直接 `/fork` 以及 agent 支持的工作区记忆 remember/dream 控制在必需模式活跃时会被拒绝。顶级后台 shell 或 monitor 启动仍然是一次受守卫的调用，其最终参数会到达提供程序，但此功能不会持续授权该进程或添加进程完成审计协议；需要前台完成的策略应拒绝这些形态。受守卫的 MCP 调用也会在传输错误后禁用自动重连/重放。成功启动握手后，`/capabilities` 会公布 `external_tool_guard`；其缺失意味着客户端不得假设已执行。
+
+此功能不授权显式的守护进程 REST/ACP 管理调用；那些继续使用守护进程现有的身份验证和路由契约。它也不使已允许的工具或 shell 命令具有确定性或沙箱化其内部；托管部署必须将提供程序决策与其正常的工具策略和隔离边界结合使用。
+
+> **调整负载参数。** `--max-sessions` 是每个工作区的新会话上限。`--max-total-sessions` 在设置时是守护进程级的新会话上限。另外三个层级也会限制负载——在为高并发部署调整大小时，请将它们一起调优：
 >
-> 这些上限会相互影响：`--max-sessions × 64 个 subscriber × 256 个 frame`
-> 是 EventBus 层最坏情况下的内存中占用，而
-> `--max-sessions × --max-pending-prompts-per-session` 限制准入层接受的
-> prompt 工作量。默认大小假设是单用户/小团队负载；对于多租户
-> 部署，请逐步提高（并观察 RSS）。
+> - **listener 层级**：`--max-connections` / `server.maxConnections=256` 限制原始 TCP 连接数（慢速客户端背压）。
+> - **每个 session 的 subscriber**：EventBus 默认将每个 session 的 SSE subscriber 上限设为 64；第 65 个客户端会收到终端 `stream_error` 并被关闭。
+> - **每个 session 的 prompt 准入**：`--max-pending-prompts-per-session=5` 限制单个 session 接受的排队 + 活跃 prompt 数量。溢出会返回 `503` 及 `Retry-After: 5`。
+> - **守护进程级的新会话**：`--max-total-sessions=N` 限制跨守护进程的新会话创建。溢出会得到相同的 `session_limit_exceeded` 形态，带有 `scope: "total"`。
+> - **每个 subscriber 的 backlog**：每个 SSE 客户端 256 个 frame 的队列；超容量的客户端会收到终端 `client_evicted` frame 并被关闭（一个慢速消费者无法拖垮 daemon）。
+>
+> 这些上限会相互影响：每个运行时受 `--max-sessions` 限制，而 `--max-total-sessions` 限制其聚合。有效会话上限是任何有限守护进程级上限和聚合每运行时上限中的较低者（如果每工作区上限无限制，则将该聚合视为无限制）。如果两者都不是有限的，则没有有限会话上限。有限上限 × 64 个 subscriber × 256 个 frame 是 EventBus 层最坏情况下的内存中占用，再乘以 `--max-pending-prompts-per-session` 限制准入层接受的 prompt 工作量。默认大小假设是单用户/小团队负载；对于更大的部署，请逐步提高（并观察 RSS）。
 
 > **MCP client 防护栏（issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 14）。** 如果在 `mcpServers` 中声明了 30 个 MCP server，workspace 将启动 30 个 client，除非你设置了上限，否则没有上游限制。`--mcp-client-budget=N` 限制活跃的 MCP client 数量；`--mcp-budget-mode={enforce,warn,off}` 选择行为模式。设置 budget 时默认为 `warn`（快照会显示警告，但不会拒绝任何 client——在开启强制执行之前，这对于测量实际扇出很有用）。在 `enforce` 模式下被拒绝的 server 会在其 per-server cell 中获得 `disabledReason: 'budget'`，并且 `budgets[0]` cell 会显示 `status: 'error'` + `errorKind: 'budget_exhausted'`。Slot 预留按 server 名称进行，并在重连/发现超时后保留——被拒绝的 server 无法从健康的 server 那里抢占 slot。
 >
-> ⚠️ **v1 范围：per-session，而非 per-workspace。** daemon 内部的每个 ACP session 都有自己的 `Config`/`McpClientManager`（通过 `newSessionConfig` 为每个 session 创建）。budget 限制的是**每个 session** 的活跃 MCP client 数量，而不是跨 workspace 中所有 session 的聚合数量。`GET /workspace/mcp` 处的快照反映了 bootstrap session 的视图（该 cell 带有 `scope: 'session'` 以保证准确性）。如果你运行 5 个并发的 ACP session 且 `--mcp-client-budget=10`，daemon 中最多可能有 50 个活跃的 MCP client——上限是按 session 保持的。**Wave 5 PR 23（共享 MCP pool）** 引入了 workspace 范围的 manager，并将其升级为真正的 per-workspace 强制执行。
+> **当前作用域是基于 capability 的。** 当 `mcp_workspace_pool` 存在时，一个工作区运行时中的所有会话共享其 MCP 传输池和预算控制器；`GET /workspace/mcp` 发出 `scope: 'workspace'`。第二个工作区有独立的池和预算。当该标签不存在时（包括 `QWEN_SERVE_NO_MCP_POOL=1`），守护进程使用旧版每会话 `McpClientManager` 并发出 `scope: 'session'`；在该回退中，N 个会话可以各自消耗配置的上限。
 >
 > ```sh
 > qwen serve --mcp-client-budget=10 --mcp-budget-mode=warn
@@ -287,7 +378,7 @@ qwen serve \
 > qwen serve --mcp-client-budget=10 --mcp-budget-mode=enforce
 > ```
 >
-> 这与 claude-code 的 `MCP_SERVER_CONNECTION_BATCH_SIZE`（控制启动并发）**不**是一回事；它们是正交的。PR 23 将添加一个真正的共享 MCP pool（在 `budgets[]` 中 alongside per-session cell 添加一个 `scope: 'workspace'` cell）；PR 14 v1 是现有 per-session manager 上的进程内计数器 + 软强制执行。
+> 这与 claude-code 的 `MCP_SERVER_CONNECTION_BATCH_SIZE`（控制启动并发）**不**是一回事；它们是正交的。客户端必须基于 `mcp_workspace_pool` 进行分支，而不是仅从协议版本假设作用域。
 >
 > **Push events（issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 14b）。** 订阅了 `GET /session/:id/events` 的 SDK client 会在 budget 阈值被跨越时收到类型化的 frame——`mcp_budget_warning`（合成的，每次向上跨越 75% 时触发一次，并在 37.5% 时通过滞后重新武装，通过 `mcp_guardrail_events` 广播）和 `mcp_child_refused_batch`（在 `enforce` 模式下的每次发现过程中合并一次；来自 `readResource` 延迟生成拒绝的长度为 1 的 batch）。`GET /workspace/mcp` 处的快照仍然是重连后状态的 single source of truth；events 是变化边缘。在无需轮询的情况下实时构建 dashboard 时非常有用。
 
@@ -297,124 +388,120 @@ qwen serve \
 - **`--hostname 0.0.0.0` 需要 token** —— 启动时如果没有 token 会拒绝。
 - **`LOOPBACK_BINDS` 包含 IPv6** —— `::1` 和 `[::1]` 在无 token 规则下被视为 loopback。
 - **Host header 白名单** —— 在 **loopback** 绑定上，daemon 会检查 `Host:` 是否匹配 `localhost:port` / `127.0.0.1:port` / `[::1]:port` / `host.docker.internal:port`（根据 RFC 7230 §5.4 不区分大小写）以防御 DNS rebinding。**非 loopback 绑定（`--hostname 0.0.0.0`）故意绕过 Host 白名单** —— 运维人员已经选择了暴露面，因此 bearer-token 网关是唯一的身份验证层；反向代理 / SNI / client cert pinning 是运维人员的责任，而不是 daemon 的责任。如果你需要在非 loopback 绑定上实现基于 Host 的隔离，请在前端代理处终止 TLS 并检查 Host。
-- **CORS 默认拒绝任何浏览器 Origin** —— 返回 `403` JSON。传递 **`--allow-origin <pattern>`**（可重复，T2.4 #4514）以允许特定的浏览器 origin。每个值要么是字面量 `*`（任何 origin——如果未配置 bearer token，启动时会拒绝；对于完全加固，建议在 loopback 上开启 `--require-auth`，因为默认情况下 `/health` 和 `/demo` 在 loopback 上处于 pre-auth 状态），要么是规范的 URL origin（`<scheme>://<host>[:<port>]`，无尾随斜杠/路径/userinfo）。匹配的 origin 会收到正确的 CORS 响应头（`Access-Control-Allow-Origin: <echoed>`、`Vary: Origin`，以及标准的 methods / headers / max-age 和暴露的 `Retry-After`）；不匹配的 origin 仍会收到 403，并使用与默认墙相同的 envelope。`caps.features.allow_origin` 是有条件广播的，因此 SDK / webui client 可以在发出跨域请求之前预检 daemon 是否支持。示例：`qwen serve --allow-origin http://localhost:3000 --allow-origin http://localhost:5173`。Loopback 自身 origin 的请求（例如 `/demo` 页面）不受影响——一个单独的 Origin 剥离 shim 会处理它们，无论 `--allow-origin` 如何配置。**未配置 `--allow-origin` 的浏览器 webui** 仍会回退到与之前相同的 Stage 1 选项：打包为原生 shell（Electron/Tauri）以便不发送 `Origin` header，或者使用同源反向代理前置 daemon。
-- **生成的 `qwen --acp` 子进程继承 daemon 的环境**，并进行一项显式清理：在子进程启动前移除 `QWEN_SERVER_TOKEN`（daemon 自身的 bearer；agent 不需要它）。其他所有内容——`OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `QWEN_*` / `DASHSCOPE_API_KEY` / 你的自定义 `modelProviders[].envKey` / 等——都会透传，因为 agent 确实需要这些来向 LLM 进行身份验证。**这是有意为之的，不是沙箱。** agent 以相同的 UID 运行并具有 shell-tool 访问权限，因此无论怎样，`~/.bashrc` / `~/.aws/credentials` / `~/.npmrc` 中的任何内容都可以通过 prompt 注入访问。env 透传不是安全边界；用户作为 trust root 才是。不要在你不信任 agent 的具有 env 驻留凭据的身份下运行 `qwen serve`。
-- **每个 subscriber 的有界 SSE 队列** —— 溢出队列的慢速 client 会收到 `client_evicted` 终端 frame 并被关闭；一个卡住的消费者无法拖垮 daemon。
-- **每个 session 的 prompt 准入上限** —— 默认每个 session 接受但未解决的 prompt 数量为 5。有 bug 的 client 无法为一个 session 排队无限制的 prompt promise 或临时 SSE 等待。
-- **优雅关闭** —— SIGINT/SIGTERM 会在关闭 listener 之前排空 agent 子进程（每个子进程 10 秒超时）。
+- **CORS 默认拒绝任何浏览器 Origin** —— 返回 `403` JSON。传递 **`--allow-origin <pattern>`**（可重复，T2.4 #4514）以允许特定的浏览器 origin。每个值要么是字面量 `*`（任何 origin——如果未配置 bearer token，启动时会拒绝；对于完全加固，建议在 loopback 上开启 `--require-auth`，因为默认情况下 `/health` 和 `/demo` 在 loopback 上处于 pre-auth 状态），要么是规范的 URL origin（`<scheme>://<host>[:<port>]`，无尾随斜杠/路径/userinfo）。匹配的 origin 会收到正确的 CORS 响应头（`Access-Control-Allow-Origin: <echoed>`、`Vary: Origin`，以及标准的 methods / headers / max-age 和暴露的 `Retry-After`）；不匹配的 origin 仍会收到 403，并使用与默认墙相同的 envelope。`caps.features.allow_origin` 是有条件广播的，因此 SDK / webui client 可以在发出跨域请求之前预检 daemon 是否支持。示例：`qwen serve --allow-origin http://localhost:3000 --allow-origin http://localhost:5173`。Loopback 自身 origin 的请求（例如 `/demo` 页面）不受影响——一个单独的 Origin 剥离 shim 会处理它们，无论 `--allow-origin` 如何配置。**未配置 `--allow-origin` 的浏览器 webui** 仍会回退到与之前相同的 Stage 1 选项：打包为原生 shell（Electron/Tauri）以便不发送 `Origin` header，或者在 daemon 前面放置一个同源的反向代理。
+- **Chrome 扩展浏览器自动化与 framing 是分开的。** `qwen serve --allow-origin chrome-extension://<id>` 允许扩展 frame Web Shell 并连接到守护进程。Console/network/screenshot/click 工具需要外部 CDP MCP 适配器命令：`QWEN_CDP_MCP_COMMAND=/path/to/cdp-mcp-adapter qwen serve --allow-origin chrome-extension://<id>`。主 CLI 打包的浏览器自动化工具在扩展上下文中不可用。
 
-> ⚠️ **Stage 1 已知缺陷 —— 权限是 daemon 全局的，而非 per-session（BUy4H）。** `pendingPermissions` 存在于 daemon 作用域；任何持有 bearer token 的 client 都可以对其能看到的任何 session 的任何 `requestId` 进行投票（并且 SSE `permission_request` events 在其 payload 中携带 requestId）。这在单用户/小团队信任模型下是可以接受的，其中每个经过身份验证的 client 都是同一个人或他们信任的协作者。Stage 1.5 将迁移到 `POST /session/:id/permission/:requestId` + session 范围的 pending map + per-client 身份（下游审查中的 must-have #3）；在此之前，不要在与不受信任方共享的 bearer 后面运行 `qwen serve`。
->
-> ⚠️ **Stage 1 已知缺陷 —— `POST /session/:id/prompt` body 上限为 10 MB（BUy4L）。** 包含超过 10 MB 的图像 / PDF / 音频的多模态 prompt 将在 route 逻辑运行之前在 body 解析时失败（无流式传输，无上传中途终止）。解决方法：在客户端缩小内容，或传递路径引用并让 agent 通过 `readTextFile` 读取文件。Stage 1.5 将在 `/prompt` 上接受 `multipart/form-data` 或分块编码，以便大型 prompt 不会遇到硬限制。
->
-> ⚠️ **Stage 1 已知缺陷 —— NAT 后的幽灵 SSE 连接。** daemon 通过心跳（15 秒间隔）上的 TCP 背压检测死掉的 client。一个消失而**没有** TCP RST 的 client（例如，NAT 盒子静默丢弃空闲流）将保持内核级 socket “存活”，直到 Node 的 keepalive 探测超时——在 Linux 默认设置下通常约为 2 小时。在位于此类 NAT 后面的 `--hostname 0.0.0.0` 部署中，幽灵 SSE 连接可能会累积并最终达到 256 的 `server.maxConnections` 上限。
->
-> 设置 [`--writer-idle-timeout-ms <n>`](#deadlines-and-writer-idle-timeout)
-> （issue [#4514](https://github.com/QwenLM/qwen-code/issues/4514) T2.9）
-> 以通过显式的应用层空闲截止时间来弥补这一缺陷：
-> 当 `n` 毫秒内没有成功 flush 任何写入时，daemon 会发出
-> 一个终端 `client_evicted` frame，其
-> `reason: 'writer_idle_timeout'` 并关闭流。默认情况下该标志关闭以保留旧版契约——在吞噬 RST 的网络上的运维人员应选择一个远高于 15 秒心跳间隔的值（例如 `60000`–`300000`），以便合法的空闲连接不会被驱逐，同时真正卡住的写入者会被迅速清理。从你的 SDK 预检 `caps.features.includes('writer_idle_timeout')` 以确认 daemon 支持它。
+## 多会话和多工作区部署
 
-### 截止时间和 writer 空闲超时
+重复 `--workspace` 可在一个 `qwen serve` 进程中注册多个不重叠的工作区。第一个路径为主工作区。每个已注册的工作区拥有一个隔离的运行时边界，而守护进程级的监听器、身份验证策略和总会话上限是共享的。生产模式会尝试预热主 ACP 子进程以兼容并在失败后于首次使用时重试；受信任的次要工作区按需启动自己的子进程，而不受信任的次要工作区不会启动 ACP。请求可以通过规范的 `cwd` 选择已注册的工作区；省略 `cwd` 的请求使用主工作区。每个用户或安全主体使用一个守护进程；工作区信任是执行门控，不是 ACL。
 
-Issue [#4514](https://github.com/QwenLM/qwen-code/issues/4514) T2.9 提供了两个可选标志，用于弥补 15 秒心跳 + AbortSignal 未涵盖的长时间运行/远程部署缺陷。两者默认均关闭——单用户 loopback 工作流保持完全不变。
+不受信任的次要工作区在 Web Shell 中显示为 `untrusted` 和 `read-only`。它可以展开以查看持久化会话目录，但目前无法在 Web Shell 中选择或打开、恢复、用于创建会话或完整导出。REST API 遵循现有的有界文件系统读取策略，还暴露其持久化会话组目录，以及当 `workspace_persisted_transcript` 被公布时，通过有界的工作区限定分页器暴露其活跃持久化转录。这些读取不包含实时运行时状态，也不会启动 ACP 子进程。完整的工作区限定导出需要受信任的工作区和单独的 `workspace_session_export` capability。在使用执行、变更或导出功能之前，请先信任该工作区并重启守护进程。不受信任的主工作区在 Web Shell 中保持禁用状态。
 
-| 标志                           | 环境变量                             | 默认值 | 作用                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| ------------------------------ | ----------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--prompt-deadline-ms <n>`     | `QWEN_SERVE_PROMPT_DEADLINE_MS`     | 未设置   | 单个 `POST /session/:id/prompt` 的服务端挂钟时间上限。到期时，daemon 中止 prompt 的 AbortController 并返回 HTTP `504`，附带 `{code:"prompt_deadline_exceeded", errorKind:"prompt_deadline_exceeded", deadlineMs:n}`。per-prompt 请求 body 字段 `deadlineMs` 可以**缩短**有效截止时间至低于该标志的值，但绝不能延长它。能力标签（条件性）：`prompt_absolute_deadline`。                                                                                                                                                                                                |
-| `--writer-idle-timeout-ms <n>` | `QWEN_SERVE_WRITER_IDLE_TIMEOUT_MS` | 未设置   | 每个 SSE 连接的空闲截止时间。当 `n` 毫秒内没有**成功** flush 任何写入（既没有真实 event，也没有 15 秒心跳）时，daemon 会发出一个终端 `client_evicted` frame，其 `data.reason = 'writer_idle_timeout'`（在 `data.errorKind` 上镜像）并关闭流。**选择一个远高于 15 秒心跳的值**（例如 `30000`–`300000`），以免合法的空闲流被驱逐；`< 15000` 的值**将**在第一次心跳触发之前驱逐原本健康的空闲连接（仅用于测试/短期开发会话）。能力标签（条件性）：`writer_idle_timeout`。 |
+当你需要更小的故障或安全边界、独立的 bearer token、配额、审计边界、操作系统隔离或独立的资源监督时，请使用独立的守护进程。多工作区模式适用于一个运维人员托管多个仓库；它不是多租户隔离边界。单个守护进程 token 授权守护进程暴露的每个路由，包括所有已注册工作区的允许只读目录。
 
-这两个标志都接受以毫秒为单位的正整数；`0`、`NaN`、非整数或负值会在启动时被拒绝，并显示清晰的错误消息。CLI 标志优先于环境变量；显式的 `ServeOptions` 字段（嵌入式调用者）优先于环境变量。SDK 消费者在依赖这两种行为之前应预检匹配的能力标签——早于此 PR 的 daemon 会省略这两个标签，并且请求的 `deadlineMs` 字段会被静默丢弃。
+> **在附加时提交 `modelServiceId` 之前先订阅。** 当客户端 `POST /session` 带有 `modelServiceId` 且工作区已有一个运行不同模型的会话时，守护进程会发出内部 `setSessionModel` 调用 — 失败**不会**作为 HTTP 错误传播（会话在其当前模型上保持运行）。可见的失败信号是会话 SSE 流上的 `model_switch_failed` 事件。如果你先调用 `POST /session` 然后才打开 `GET /session/:id/events`，你会错过失败事件并继续与错误的模型对话。先打开 SSE 流，或在订阅时传递 `Last-Event-ID: 0` 以重放环中最旧的可用事件。
 
-## 多 session 与多 workspace 部署
+要处理多个**用户或安全主体**（每个都有独立的 token、配额、审计日志、沙箱或进程故障边界），或者要扩展超出单个进程的范围（冷启动预算、FD 数量、RSS），请在外部编排器后面为每个主体生成一个守护进程。每个这样的守护进程仍然可以为该主体托管多个工作区。编排器（多租户 / OIDC / 配额 / 审计 / k8s）**不在** qwen-code 项目的范围内 — 请参阅 issue [#3803](https://github.com/QwenLM/qwen-code/issues/3803) "External Reference Architecture" 获取设计指引。
 
-根据 [#3803](https://github.com/QwenLM/qwen-code/issues/3803) §02，每个 `qwen serve` 进程在启动时绑定到**一个 workspace**。在该 workspace 内，它通过 agent 的原生 session map 将 N 个 session 多路复用到单个 `qwen --acp` 子进程上——session 共享子进程的进程 / OAuth 状态 / 文件读取缓存 / 层级记忆解析。
+## 加载和恢复持久化会话
 
-要托管**多个 workspace**（一个用户，多个 repo；或同一主机上的多个用户），请运行**多个 daemon 进程**——每个 workspace 一个，每个都在自己的端口上，由 systemd / docker-compose / k8s / `qwen-coordinator` 参考编排器监督。这种权衡是有意为之的：每个子进程一个 workspace 意味着 `loadSettings(cwd)` / OAuth / MCP server 范围与绑定目录保持一致，并且不会在请求之间漂移。
+守护进程通过 HTTP 暴露 ACP 的 `session/load` 和恢复流程，以及一个独立的只读转录分页器：
 
-> **在 attach 时 posting `modelServiceId` 之前先 Subscribe。** 当 client `POST /session` 带有 `modelServiceId` 且 workspace 已经有一个运行不同模型的 session 时，daemon 会发出内部 `setSessionModel` 调用——失败**不会**作为 HTTP 错误传播（session 在其当前模型上保持运行）。可见的失败信号是 session 的 SSE 流上的 `model_switch_failed` event。如果你调用 `POST /session` 并**仅在那之后**打开 `GET /session/:id/events`，你将错过失败 event 并静默地继续与错误的模型对话。先打开 SSE 流，或者在 subscribe 时传递 `Last-Event-ID: 0` 以重播 ring 中最老的可用 event。
+| 路由                                                    | 使用时机                                                                                                                                                                                                                                                                                       |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `POST /session/:id/load`                                | 客户端**没有**有用的本地历史渲染（冷重连、先选择再打开）。对于活跃会话，守护进程返回并注入当前的有界重放快照窗口；如果较旧的重放已被丢弃，快照以 `history_truncated` 开头。Capability 标签：`session_load`。                                                                                       |
+| `POST /session/:id/resume`                              | 客户端已经在屏幕上显示了 turn，只需要守护进程端的句柄。模型上下文在代理端恢复，无需 UI 重放 — SSE 流保持干净。Capability 标签：`session_resume`（`unstable_session_resume` 仍然是旧版客户端的弃用别名）。                                                                                             |
+| `GET /session/:id/transcript`                           | 客户端需要完整的活跃持久化转录。它以游标分页返回无 id 的重放帧，不调用 `/load`、不附加客户端、不植入实时 EventBus、不创建活跃会话，也不更改实时重放窗口。Capability 标签：`session_transcript`。                                                                                                   |
+| `GET /workspaces/:workspace/session/:id/transcript`     | 客户端需要从选定工作区获取活跃持久化转录，而不启动 ACP 或加载工作区设置。已注册的不受信任次要工作区可以使用此只读路径。Capability 标签：`workspace_persisted_transcript`。                                                                                                                          |
+| `GET /workspaces/:workspace/session/:id/export`         | 客户端需要从选定的受信任工作区获取完整的 `html`、`md`、`json` 或 `jsonl` 附件。它读取活跃持久化存储而不启动 ACP 或回退到主工作区。Capability 标签：`workspace_session_export`。                                                                                                                     |
+| `GET /workspaces/:workspace/session/:id/archive/export` | 客户端需要从选定的受信任工作区中已归档的持久化存储获取相同的附件格式。它不会取消归档、启动 ACP 或回退到活跃或主会话。Capability 标签：`workspace_archived_session_export`。                                                                                                                          |
 
-要处理多个**用户**（每个用户都有自己的配额、审计日志、沙箱）或扩展到超出单个进程的范围（冷启动预算、FD 数量、RSS），请在外部编排器后面为每个用户的每个 workspace 生成一个 daemon。该编排器（多租户 / OIDC / 配额 / 审计 / k8s）**不在** qwen-code 项目的范围内——请参阅 issue [#3803](https://github.com/QwenLM/qwen-code/issues/3803) “External Reference Architecture” 以获取设计指针。
-
-## 加载和恢复持久化 session
-
-daemon 通过两条路由在 HTTP 上暴露 ACP 的 `session/load` 和 resume 流程：
-
-| 路由                      | 使用场景                                                                                                                                                                                                                                                                                      |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /session/:id/load`   | 客户端**没有**渲染任何历史记录（冷重连，先选择后打开）。daemon 通过 SSE 重播每个持久化的 turn，以便订阅者看到完整的对话记录。能力标签：`session_load`。                                                                                        |
-| `POST /session/:id/resume` | 客户端已经在屏幕上显示了 turns，只需要 daemon 端的句柄。模型上下文在 agent 端恢复，无需 UI 重播——SSE 流保持干净。能力标签：`session_resume`（`unstable_session_resume` 仍然是旧客户端的已弃用别名）。 |
-
-TypeScript SDK 将两者作为 `DaemonSessionClient` 上的静态工厂暴露：
+对于 load 和 resume，TypeScript SDK 在 `DaemonSessionClient` 上暴露静态工厂方法：
 
 ```ts
 import { DaemonClient, DaemonSessionClient } from '@qwen-code/sdk';
 
 const client = new DaemonClient({ baseUrl: 'http://127.0.0.1:4170' });
 
-// 冷重连 —— daemon 将通过 SSE 重播历史记录。
+// 冷重连 — 守护进程将通过 SSE 重放有界的快照窗口。
 const session = await DaemonSessionClient.load(client, 'persisted-id');
 
-// 或者，如果你的 UI 已经有历史记录，跳过重播：
+// 或者，如果你的 UI 已经有历史记录，跳过重放：
 // const session = await DaemonSessionClient.resume(client, 'persisted-id');
 
 for await (const event of session.events()) {
-  // 首先是重播的 `session_update` frames（仅限 load），
-  // 然后是实时 events。
+  // 首先是重放的 `session_update` 帧（仅 load），
+  // 然后是实时事件。
 }
 ```
 
-在调用前预检 `caps.features.session_load` / `caps.features.session_resume`——旧版 daemon 会返回 `404`。`unstable_session_resume` 仍然作为已弃用的兼容性别名被广播。对同一 id 的并发相同操作请求会合并；跨操作竞争（`load` 与 `resume` 竞争）会得到 `409 restore_in_progress` 及 `Retry-After: 5`。有关完整的错误 envelope，请参阅[协议参考](../developers/qwen-serve-protocol.md)。
+在调用匹配路由之前预检 `caps.features.session_load`、`caps.features.session_resume` 或 `caps.features.session_transcript` — 旧版守护进程返回 `404`。`unstable_session_resume` 仍然作为弃用的兼容性别名被公布。同一 id 的并发同操作请求会合并；跨操作竞争（`load` 和 `resume` 竞争）会得到 `409 restore_in_progress` 和 `Retry-After: 5`。完整错误信封请参阅[协议参考](../developers/qwen-serve-protocol.md)。
 
-注意：历史重播受 SSE ring 限制（默认 8000 个 frames）。具有大量对话的长历史记录可能会超过该限制——最早的 frames 会被静默丢弃。对于非常长的 session，建议使用 `resume` 并依赖客户端本地持久化的 UI。
+对于完整的持久化重放，请使用 `DaemonClient.getSessionTranscriptPage(sessionId, { cursor, limit })` 或原始 REST 路由进行分页：
 
-## 持久性模型
+```bash
+curl "http://127.0.0.1:4170/session/$SESSION_ID/transcript?limit=100"
+```
 
-**在 Stage 1 中，session 在 daemon 重启时仍然是短暂的**，但磁盘上持久化的 session 可以重新加载：
+对于已注册的工作区，请使用 `client.workspaceById(workspaceId).getSessionTranscriptPage(sessionId, { cursor, limit })` 或 `/workspaces/:workspace/session/:id/transcript`。工作区限定方法始终使用原生 REST，即使 SDK 客户端有可替换的 ACP 传输。其游标仅限守护进程生命周期，守护进程重启后必须从第一页重新开始。
 
-- 子进程崩溃会发布 `session_died` 并从 daemon 的 maps 中移除 live session。如果可以生成新的 agent 子进程，则可以通过 `POST /session/:id/load` 重新加载磁盘上持久化的 session。
-- daemon 重启会丢失所有进行中的 live session。持久化的 session 保留在磁盘上，可以针对新的 daemon 进程加载，并遵循相同的 workspace 绑定规则。
-- 长时间的客户端断开连接（在对话密集的 turn 上 >5 分钟）可能会超出 SSE 重播 ring（默认 8000 个 frames）—— `Last-Event-ID` 重连成功，但状态可能不一致。对于移动设备/网络不稳定的客户端，计划在长时间断开时重新打开 SSE，或调用 `POST /session/:id/load` 从磁盘重播。
-- 文件操作（`writeTextFile`）在崩溃时是原子的（先写后重命名）；它们在 daemon 重启时不是原子的（就重播而言）——文件写入要么成功，要么失败。
+对于来自受信任已注册工作区的完整附件，请预检 `workspace_session_export` 并调用 `client.workspaceById(workspaceId).exportSession(sessionId, { format: 'html' })` 或原始 `/workspaces/:workspace/session/:id/export` 路由。不要从 `session_export` 或 `workspace_qualified_rest_core` 推断支持：旧版守护进程可能同时公布两者但仍保留仅主工作区导出。当前的 Web Shell 导出操作仍然是仅主工作区的；请使用 SDK 或 REST 路由来导出其他工作区。
 
-如果你的集成需要超出 `session/load` 涵盖范围的服务端跨重启持久性（例如，服务端管理的重试队列），你仍然需要应用级别的状态恢复。不要在 daemon 的 session 中保留长时间运行、对重启敏感的状态。
+对于已归档的附件，请预检 `workspace_archived_session_export` 并调用 `client.workspaceById(workspaceId).exportArchivedSession(sessionId, { format: 'html' })` 或 `/workspaces/:workspace/session/:id/archive/export`。此路径就地读取已归档的存储，对于仅活跃的 id 返回 `409 session_not_archived`；它不会取消归档会话。当 capability 存在时，Web Shell 为受信任的主工作区和次要工作区中的已归档行暴露相同的导出。
 
-## Stage 1.5+ 运行时保证
+`limit` 计算的是活跃聊天记录数，而不是发出的重放帧数；一条记录可以产生多个 `session_update` 事件。第一个响应冻结 JSONL 快照大小，并在 `hasMore` 为 true 时返回 `nextCursor`。后续页面忽略第 1 页之后的追加，但如果文件被删除、截断、替换、归档或以其他方式与冻结的游标冲突，则返回 `409`。非常大的快照会在索引之前返回 `413 transcript_too_large`，以便守护进程不会在请求路径上扫描无限制的转录文件。
 
-Stage 1 的契约是为原型设计而设定的。根据 [#3889 chiga0 downstream-consumer review](https://github.com/QwenLM/qwen-code/pull/3889#issuecomment-4427875644)，以下内容**不在** Stage 1 中——生产级集成在依赖它们之前需要 Stage 1.5+：
-**正式下游使用的关键阻碍：**
+对于通过旧版单数路由的重复分页，请将 `--channel-idle-timeout-ms` 设置为正值。在默认的 `0` 下，空闲工作区的 ACP 子进程 — 以及它持有的进程内转录索引缓存 — 会在每页之后被回收，因此每页都会重新生成子进程并通过重新扫描整个冻结前缀来重建索引（每页 `O(snapshotSize)`）。正值超时会在游标遍历期间保持子进程活跃，以便它重用缓存的转录索引和重放配置。工作区限定的持久化路由永远不会启动 ACP 子进程，不受此超时的影响。
 
-1. **通过 HTTP 实现 `loadSession` / `unstable_resumeSession`** —— 如果没有此功能，任何集成都无法在子进程崩溃或守护进程重启后存活，协调守护进程的编排器也无法恢复状态。
-2. **持久化客户端身份（配对 token + 按客户端撤销）** —— 第一阶段使用一个共享的 bearer token；泄露的 token 会导致所有客户端被撤销，且 `originatorClientId` 是客户端自行声明的，而不是由守护进程基于已认证身份注入的。
+注意：实时会话历史重放有双重限制：`Last-Event-ID` 重连受 SSE 环限制，`POST /session/:id/load` 返回的快照受 `--compacted-replay-max-bytes` 限制。具有大量对话轮次的长历史可能超过任一限制。守护进程通过 `history_truncated` 暴露快照截断；当你需要完整的活跃持久化历史时请使用 `/transcript`。
+
+## 持久化模型
+
+**在阶段 1 中，会话在守护进程重启间仍然是临时的**，但磁盘上的持久化会话可以重新加载：
+
+- 子进程崩溃会发布 `session_died` 并从守护进程的映射中移除活跃会话。如果可以生成新的 agent 子进程，持久化的磁盘上会话**可以**通过 `POST /session/:id/load` 重新加载。
+- 守护进程重启会丢失所有进行中的活跃会话。持久化的会话保留在磁盘上，可以针对新的守护进程进程加载，遵循相同的工作区绑定规则。
+- 长时间客户端断开（在大量对话轮次中 >5 分钟）可能超过 SSE 重放环（默认 8000 帧）— `Last-Event-ID` 重连触发 `state_resync_required`。对于移动端/网络不稳定的客户端，计划在长时间断开时重新打开 SSE 或调用 `POST /session/:id/load` 来恢复当前的有界重放快照；不要假设该路由返回完整转录。
+- 文件操作（`writeTextFile`）在崩溃间是原子的（先写后重命名）；它们在守护进程重启间不是原子的（就重放而言）— 文件写入要么成功了，要么没有。
+
+如果你的集成需要超出 `session/load` 覆盖范围的服务端跨重启持久性（例如服务器管理的重试队列），你仍然需要应用级状态恢复。不要在守护进程的会话中持有长时间运行的、重启敏感的状态。
+
+## 阶段 1.5+ 运行时保障
+
+阶段 1 的合约面向原型开发。根据 [#3889 chiga0 downstream-consumer review](https://github.com/QwenLM/qwen-code/pull/3889#issuecomment-4427875644)，以下内容**不在**阶段 1 中 —— 生产级集成需要阶段 1.5+ 后才能依赖它们：
+
+**严重下游使用的阻塞项：**
+
+1. **`loadSession` / `unstable_resumeSession` over HTTP** —— 没有此功能，任何集成都无法在子进程崩溃或守护进程重启后存活，任何协调守护进程的编排器也无法恢复状态。
+2. **持久化客户端身份（pair token + 每客户端撤销）** —— 阶段 1 使用一个共享的 bearer；泄露的 token 会撤销所有人，`originatorClientId` 是客户端自声明的，而不是守护进程从已认证身份中盖章的。
 
 **可靠性基线：**
 
-3. ~~**客户端发起的心跳路径**~~ —— 已通过 [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 9 发布。`POST /session/:id/heartbeat` 在守护进程上记录最后可见时间戳（能力标签 `client_heartbeat`）；SDK 辅助方法为 `DaemonClient.heartbeat()` / `DaemonSessionClient.heartbeat()`。
-4. 当投票在首个响应者竞争中失败时触发 **`permission_already_resolved` 事件** —— 目前 UI 必须从 `404` 推断状态。
-5. ~~**更大的重放环（replay ring）**~~ —— 已提升至 8000。**按会话配置的重放环** 仍待解决 —— 移动端/多轮对话工作负载可能需要按会话覆盖配置。
-6. 在 `client_evicted` 之前触发 **`slow_client_warning` 事件** —— 提供软反压，使表现良好的慢速客户端在被终止前能够自我限流（裁剪渲染深度、丢弃数据块）。
+3. ~~**客户端发起的心跳路径**~~ —— 已通过 [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 9 发布。`POST /session/:id/heartbeat` 在守护进程上记录最后可见时间戳（capability 标签 `client_heartbeat`）；SDK 辅助方法为 `DaemonClient.heartbeat()` / `DaemonSessionClient.heartbeat()`。
+4. 当投票在首个响应者竞争中落败时发出 **`permission_already_resolved` 事件** —— 目前 UI 必须从 `404` 推断状态。
+5. ~~**更大的重放环**~~ —— 已提升到 8000。**每会话可配置环**仍然开放 —— 移动端/多对话轮次工作负载可能需要每会话覆盖。
+6. 在 `client_evicted` 之前发出 **`slow_client_warning` 事件** —— 软背压，使行为良好的慢速客户端可以在被终止前自行节流（减少渲染深度、丢弃块）。
 
-**集成易用性：**
+**集成人体工程学：**
 
-7. **用于 IM 风格上下文的 `POST /session/:id/_meta`** —— 附加到后续提示的按会话键值对（聊天 ID、发送者、线程 ID）取代了按通道的临时拼凑方案。
-8. **`/capabilities` 实际特性协商** —— `protocol_versions: { acp: '0.14.x', daemon_envelope: 1 }`，以便客户端能够检测到偏差，而不是直接回退到“未知帧，忽略”。
+7. **`POST /session/:id/_meta` 用于 IM 风格的上下文** —— 附加到后续 prompt 的每会话键值对（聊天 id、发送者、线程 id），取代每通道的临时方案。
+8. **`/capabilities` 实际特性协商** —— `protocol_versions: { acp: '0.14.x', daemon_envelope: 1 }`，以便客户端能够检测到偏差，而不是直接回退到"未知帧，忽略"。
 9. **一等公民的持久化文档**（本节） —— 已在上方发布。
 
 完整的融合路线图在 [#3803](https://github.com/QwenLM/qwen-code/issues/3803) 中跟踪。
 
-## 第一阶段范围边界 —— 我们在第一阶段 1.5 中不会修复的问题
+## 第一阶段范围边界 —— 我们在阶段 1.5 中不会修复的问题
 
-有两个结构性选择被明确列为第一 / 1.5 / 2 阶段主线路线图的非目标。如果你的用例依赖于其中任何一个，请围绕它们进行规划，而不是等待我们。
+有两个结构性选择被明确列为阶段 1 / 1.5 / 2 主线路线图的非目标。如果你的用例依赖于其中任何一个，请围绕它们进行规划，而不是等待我们。
 
 ### 会话状态仅限本地修改（根据 [LaZzyMan review #4270256721](https://github.com/QwenLM/qwen-code/pull/3889#pullrequestreview-4270256721)）
 
-第一阶段 1.5 计划将 TUI 描述为进程内 EventBus 订阅者。实际上，**TUI UI 严格大于线路协议（wire protocol）**：
+阶段 1.5 计划将 TUI 描述为进程内 EventBus 订阅者。实际上，**TUI UI 严格大于线路协议（wire protocol）**：
 
 - **仅限本地的 UI** —— 约 15 个 Ink 对话框组件（`ModelDialog`、`MemoryDialog`、`PermissionsDialog`、`SessionPicker`、`WelcomeBackDialog`、`FolderTrustDialog` 等）以及 `local-jsx` 斜杠命令（`/ide`、`/auth`、`/init`、`/resume`、`/rename`、`/delete`、`/language`、`/arena` 等）渲染特定于终端的 Ink JSX。通过 HTTP/SSE 连接的远程客户端无法等效渲染 Ink，且这些流程不会发出线路事件。
 - **没有线路事件的会话状态修改** —— `/approval-mode`、`/memory add`、`/mcp add-server`、`/agents`、`/tools enable/disable`、`/auth`、`/init`（写入 `CLAUDE.md`）都会改变代理行为，但目前只有 `/model` 会发布事件（`model_switched`）。
 
-**第一阶段的选择 —— 评审中的选项 (A)**：不将这些修改提升为线路事件。这两种部署模式会产生不同的后果。
+**阶段 1 的选择 —— 评审中的选项 (A)**：不将这些修改提升为线路事件。这两种部署模式会产生不同的后果。
 
 #### 模式 1 —— 无头 `qwen serve`（本 PR）
 
@@ -425,11 +512,11 @@ Stage 1 的契约是为原型设计而设定的。根据 [#3889 chiga0 downstrea
 
 **后果：** 无头模式下的远程客户端可以看到**完整的会话状态**。没有 TUI 隐藏额外状态；不可能出现状态漂移。如果你想更改 `approval-mode`，请使用新设置重启守护进程。MCP 服务器现在可以通过修改路由（`POST /workspace/mcp/servers`、`DELETE /workspace/mcp/servers/:name`）在运行时添加/删除 —— 请参阅[运行时 MCP 服务器管理](#runtime-mcp-server-management-issue-4514)。
 
-#### 模式 2 —— 第一阶段 1.5 `qwen --serve` 协同托管 TUI（不在本 PR 中）
+#### 模式 2 —— 阶段 1.5 `qwen --serve` 协同托管 TUI（不在本 PR 中）
 
-当第一阶段 1.5 落地 `qwen --serve`（TUI 进程协同托管同一个 HTTP 服务器）时，TUI **确实**与远程客户端并存。本地操作员输入 `/approval-mode yolo` 或 `/mcp add-server` 会修改会话状态，而 HTTP 上的远程客户端没有事件可以观察到此更改。
+当阶段 1.5 落地 `qwen --serve`（TUI 进程协同托管同一个 HTTP 服务器）时，TUI **确实**与远程客户端并存。本地操作员输入 `/approval-mode yolo` 或 `/mcp add-server` 会修改会话状态，而 HTTP 上的远程客户端没有事件可以观察到此更改。
 
-在此模式下，TUI 是一个 **“超级客户端”** —— 它观察远程客户端看到的相同代理对话，并且可以修改远程客户端无法修改的会话状态。这种不对称性体现在：
+在此模式下，TUI 是一个 **"超级客户端"** —— 它观察远程客户端看到的相同代理对话，并且可以修改远程客户端无法修改的会话状态。这种不对称性体现在：
 
 - ✅ TUI 和远程客户端都能看到相同的代理消息、工具调用、文件差异和权限提示。
 - ❌ 只有 TUI 能看到/修改 approval-mode / memory / MCP 服务器列表 / agents / tools 允许列表 / auth 状态。
@@ -438,30 +525,30 @@ Stage 1 的契约是为原型设计而设定的。根据 [#3889 chiga0 downstrea
 
 #### 为什么选择 (A) 而不是 (B)（将修改提升为 `session_state_changed` 事件族）
 
-(B) 是更具野心的答案，但会将第一阶段 1.5 锁定在一个大得多的线路表面上，且该表面还必须干净地通过计划中的进程内重构。我们宁愿诚实地走较小的范围。会话状态事件分类工作 —— 列举哪些 TUI 流程在设计上仅限本地，哪些可以在未来选择加入的 (B) 风格扩展中合理地升级为线路事件 —— 将移至 [#3803](https://github.com/QwenLM/qwen-code/issues/3803)，而不是第一阶段 1.5 代码中。
+(B) 是更具野心的答案，但会将阶段 1.5 锁定在一个大得多的线路表面上，且该表面还必须干净地通过计划中的进程内重构。我们宁愿诚实地走较小的范围。会话状态事件分类工作 —— 列举哪些 TUI 流程在设计上仅限本地，哪些可以在未来选择加入的 (B) 风格扩展中合理地升级为线路事件 —— 将移至 [#3803](https://github.com/QwenLM/qwen-code/issues/3803)，而不是阶段 1.5 代码中。
 
-### N 个并行会话共享一个 `qwen --acp` 子进程
+### 每个工作区运行时 N 个并行会话共享一个 `qwen --acp` 子进程
 
-同一工作区上的多个会话通过代理的原生多会话支持（`packages/cli/src/acp-integration/acpAgent.ts:194: private sessions: Map<string, Session>`）**共享一个 `qwen --acp` 子进程**。桥接器为每个会话调用 `connection.newSession({cwd, mcpServers})` —— 代理将它们存储在其会话映射中，并按调用解复用 sessionId。
+同一受信任工作区上的多个会话通过代理的原生多会话支持（`packages/cli/src/acp-integration/acpAgent.ts:194: private sessions: Map<string, Session>`）**共享该运行时的 `qwen --acp` 子进程**。桥接器为每个会话调用 `connection.newSession({cwd, mcpServers})` —— 代理将它们存储在其会话映射中，并按调用解复用 sessionId。生产模式最多可以拥有一个主子进程（默认尝试预热）加上每个受信任次要工作区一个按需子进程；不受信任的次要工作区不拥有任何子进程。
 
 在同一工作区上 N=5 个会话的具体开销：
 
-| 资源                             | 每会话 | N=5 时                       |
-| ------------------------------------ | ----------- | ---------------------------- |
-| Daemon Node 进程                  | 一个         | **30–50 MB**（一个守护进程）    |
-| `qwen --acp` 子进程                   | 共享      | **60–100 MB**（一个子进程）    |
-| MCP 服务器子进程                  | 按会话 | 如果配置不同则为 3×N        |
-| `FileReadCache`（子进程堆内）      | 共享      | 解析一次                  |
-| `CLAUDE.md` / 层级记忆解析 | 共享      | 解析一次                  |
-| OAuth 刷新 token 状态            | 共享      | **一条刷新路径**         |
-| 自动记忆学习到的事实            | 共享      | 每个子进程一个知识库 |
-| 冷启动                           | 仅首次  | 首个会话后 <200 ms  |
+| 资源                             | 每会话                                                | N=5 时                                                             |
+| ------------------------------------ | ----------------------------------------------------- | ------------------------------------------------------------------ |
+| Daemon Node 进程                  | 一个                                                   | **30–50 MB**（一个守护进程）                                         |
+| `qwen --acp` 子进程                   | 共享                                                  | **60–100 MB**（一个子进程）                                          |
+| MCP 服务器子进程                  | 公布时使用工作区池；否则按会话                            | 按匹配的池条目共享，或在旧版回退中最多 3×N                                   |
+| `FileReadCache`（子进程堆内）      | 共享                                                  | 解析一次                                                           |
+| `CLAUDE.md` / 层级记忆解析 | 共享                                                  | 解析一次                                                           |
+| OAuth 刷新 token 状态            | 共享                                                  | **一条刷新路径**                                                    |
+| 自动记忆学习到的事实            | 共享                                                  | 每个子进程一个知识库                                                  |
+| 冷启动                           | 仅首次                                                 | 首个会话后 <200 ms                                                    |
 
-桥接器保持**每个守护进程一个通道**（每个工作区一个守护进程，参见 §02）。只要至少有一个会话处于活动状态，通道就会保持活动；最后一个 `killSession`（或通道级崩溃）会终止子进程。
+每个活跃的工作区运行时保持**一个 bridge 边界**。生产模式会尝试预热主通道并在失败后于首次使用时重试；受信任的次要工作区按需打开其通道和子进程，而不受信任的次要工作区永远不会这样做。只要至少有一个会话处于活动状态，通道就会保持活动。在最后一个 `killSession` 之后，运行时默认立即终止其子进程，或在配置的通道空闲宽限期后终止；通道级崩溃也会终止它而不选择另一个运行时。
 
-今天，**MCP 服务器子进程**仍然是按会话的 —— 每个会话的配置可以指定不同的服务器，因此它们是独立生成的。第一阶段 1.5 后续：通过 `(workspace, config-hash)` 对 MCP 服务器子进程进行引用计数，以便相同配置可以共享。不在本 PR 范围内。
+**MCP 服务器子进程**在 `mcp_workspace_pool` 被公布时使用工作区范围的传输池：匹配的 `(workspace runtime, server name, config fingerprint)` 条目跨会话进行引用计数。如果该 capability 不存在，旧版每会话管理器会独立生成它们。
 
-**对等代理（Cursor / Continue / Claude Code / OpenCode / Gemini CLI）都采用单进程多会话模式。** qwen-code 在代理层与它们匹配；本 PR 中的第一阶段桥接器使相同的架构在 HTTP 上可见。
+**对等代理（Cursor / Continue / Claude Code / OpenCode / Gemini CLI）都采用单进程多会话模式。** qwen-code 在代理层与它们匹配；本 PR 中的阶段 1 桥接器使相同的架构在 HTTP 上可见。
 
 ## 登录远程守护进程（issue #4175 PR 21）
 
@@ -506,25 +593,37 @@ const result = await flow.awaitCompletion({ signal: abortCtrl.signal });
 // result.status === 'authorized'
 ```
 
-**守护进程绝不会代你打开浏览器。** 即使在本地运行，守护进程也保持被动 —— 它返回 URL 并让 SDK/用户选择在哪里打开它。这是有意为之：在无头 pod 上调用 `xdg-open` 的守护进程会静默失败，从而掩盖了实际的 auth 表面。在你的客户端中模仿 `gh auth login` 的“按 Enter 键打开浏览器”UX。
+**守护进程绝不会代你打开浏览器。** 即使在本地运行，守护进程也保持被动 —— 它返回 URL 并让 SDK/用户选择在哪里打开它。这是有意为之：在无头 pod 上调用 `xdg-open` 的守护进程会静默失败，从而掩盖了实际的 auth 表面。在你的客户端中模仿 `gh auth login` 的"按 Enter 键打开浏览器"UX。
 
 **`--require-auth` 与开发便利性。** 设备流路由使用严格的修改门控（PR 15），这意味着无 token 的环回默认设置会返回 `401 token_required`。在本地开发期间，解决此问题的最简单方法是 `qwen serve --token=dev-token`；除非你要加固环回默认设置，否则不需要 `--require-auth`。
 
 **跨守护进程限制。** `oauth_creds.json` 是守护进程共享的（`~/.qwen/oauth_creds.json`），因此在守护进程 A 中成功登录会被守护进程 B 的下一次 token 刷新自动获取 —— 但守护进程 B 的 SDK 客户端不会收到 `auth_device_flow_authorized` 事件（事件是按守护进程隔离的）。
 
-**跨客户端接管。** 同一守护进程上的两个 SDK 客户端如果都针对同一提供程序 `POST /workspace/auth/device-flow`，将获得按提供程序隔离的单例：第一次调用启动全新的 IdP 请求并返回 `attached: false`；第二次调用返回**现有**的进行中条目，且 `attached: true`。接管操作会记录在审计跟踪中（在第二个客户端的 `X-Qwen-Client-Id` 下），但**不会**发出单独的事件 —— 一旦用户完成 IdP 页面，两个客户端最终都会观察到**相同的** `auth_device_flow_authorized`。如果你的 UI 区分“我发起了这个”和“我加入了别人的流程”，请根据 `start()` 返回的 `attached` 字段进行分支处理。
+**跨客户端接管。** 同一守护进程上的两个 SDK 客户端如果都针对同一提供程序 `POST /workspace/auth/device-flow`，将获得按提供程序隔离的单例：第一次调用启动全新的 IdP 请求并返回 `attached: false`；第二次调用返回**现有**的进行中条目，且 `attached: true`。接管操作会记录在审计跟踪中（在第二个客户端的 `X-Qwen-Client-Id` 下），但**不会**发出单独的事件 —— 一旦用户完成 IdP 页面，两个客户端最终都会观察到**相同的** `auth_device_flow_authorized`。如果你的 UI 区分"我发起了这个"和"我加入了别人的流程"，请根据 `start()` 返回的 `attached` 字段进行分支处理。
 
 ## 守护进程日志文件
 
-`qwen serve` 将每个进程的诊断日志写入：
+`qwen serve` 在稳定的活跃路径上跨正常重启追加诊断记录：
 
 ```
-${QWEN_RUNTIME_DIR or ~/.qwen}/debug/daemon/serve-<pid>-<workspaceHash>.log
+${QWEN_RUNTIME_DIR or ~/.qwen}/debug/daemon/daemon.log
 ```
 
-同一目录中的 `latest` 符号链接始终指向当前进程的日志，因此 `tail -f ~/.qwen/debug/daemon/latest` 将跟踪正在运行的任何守护进程。
+每条文件记录包含一个随机的每启动 `runId` 和守护进程 PID。成功的稳定拥有者还会在支持符号链接的平台上将 `debug/daemon/latest` 更新为指向 `daemon.log`。在 macOS/Linux 上，使用以下命令跟踪轮转：
+
+```bash
+tail -F ~/.qwen/debug/daemon/daemon.log
+```
+
+在其他平台上，配置查看器在路径名被替换后重新打开。仅保留旧文件句柄的查看器将在轮转后停留在归档上。
 
 日志捕获生命周期消息、路由错误（带有 `route=` 和 `sessionId=` 上下文）、ACP 子进程 stderr，以及 —— 当设置 `QWEN_SERVE_DEBUG=1` 时 —— 额外的桥接面包屑。今天输出到 stderr 的行仍然输出到 stderr；文件日志是**附加的**，而不是替代。
+
+活跃文件在超过 10 MiB 之前轮转。每个家族在 `archive/` 下保留四个归档，每个文件记录上限为 256 KiB。内存中队列最多接受 4 MiB 的未结算文件负载。因此队列压力、轮转失败或文件系统失败可能会导致文件副本丢失；`GET /daemon/status?detail=full` 暴露记录器健康状况、问题和丢弃的记录/字节计数器。
+
+一个日志命名空间中只有一个守护进程可以拥有稳定家族。并发守护进程写入 `debug/daemon/runs/run-<runId>/daemon.log`；启动横幅和完整状态包含权威路径。`runs/recent-fallback` 是最近回退家族的最佳努力定位器，可能指向仍然活跃的家族。健康的命名空间收敛到大约 100 MiB：稳定家族约 50 MiB 加上一个非活跃的回退家族。活跃或尚未过时的回退家族会被保留，因此并发守护进程或崩溃/重启风暴可能会临时使用更多空间。
+
+一个运行时目录是一个归属和保留命名空间。当守护进程需要独立历史时，请使用不同的 `QWEN_RUNTIME_DIR` 值。新的守护进程日志目录对用户是私有的（`0700`），新文件在 POSIX 上使用 `0600`。没有基于年龄的过期。
 
 ### 禁用
 
@@ -534,9 +633,9 @@ ${QWEN_RUNTIME_DIR or ~/.qwen}/debug/daemon/serve-<pid>-<workspaceHash>.log
 
 会话范围的调试日志（`~/.qwen/debug/<sessionId>.txt` 和 `~/.qwen/debug/latest` 符号链接）是独立的。守护进程日志位于同级的 `daemon/` 子目录中；此功能不会改变按会话调试的语义。
 
-### 无轮转
+### 外部轮转
 
-守护进程日志会无限追加。如果变得太大，请手动轮转。未来的增强功能可能会添加自动轮转；请通过 [#4548](https://github.com/QwenLM/qwen-code/issues/4548) 后续跟踪。
+不要将外部 logrotate 规则指向活跃的 `daemon.log`。守护进程是唯一受支持的写入者和轮转器；外部重命名、删除或截断会使其大小模型失效。复制或传送记录而不修改家族是安全的。旧版 `serve-<pid>.log` 和 `serve-<pid>-<workspaceHash>.log` 文件保持不动，不计入新的保留策略。
 
 ## 运行时 MCP 服务器管理（issue [#4514](https://github.com/QwenLM/qwen-code/issues/4514)）
 
@@ -661,6 +760,7 @@ ${QWEN_RUNTIME_DIR or ~/.qwen}/debug/daemon/serve-<pid>-<workspaceHash>.log
 | -------------------- | ------------------------------- | -------------------------------------------------------------------------------------- |
 | `mcp_server_added`   | `POST` 成功（未跳过）   | `name`、`transport`、`replaced`、`shadowedSettings`、`toolCount`、`originatorClientId` |
 | `mcp_server_removed` | `DELETE` 成功（未跳过） | `name`、`wasShadowingSettings`、`originatorClientId`                                   |
+
 被跳过的响应（`budget_warning_only`、`not_present`）**不会**触发事件。
 
 现有 `mcp_guardrail_events` 接口中的预算相关事件（`mcp_budget_warning`、`mcp_child_refused_batch`），在运行时新增内容超出预算阈值时也会被触发。

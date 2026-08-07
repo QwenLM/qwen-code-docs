@@ -227,7 +227,15 @@ Wenn du das alte synchrone Verhalten benötigst (die CLI wartet auf jeden MCP-Se
 
 ### Trust (Bestätigungen überspringen)
 
-- **Server trust** (`trust: true`): Umgeht Bestätigungsabfragen für diesen Server (sparsam verwenden).
+- **Server trust** (`trust: true`): Umgeht Bestätigungsabfragen für diesen Server nur in einem vertrauenswürdigen Workspace (sparsam verwenden).
+
+### Connection-loss replay
+
+Qwen Code verbindet nur dann erneut und replayt den aktuellen MCP-Tool-Call, wenn der Server `trust: true` hat, der Workspace vertrauenswürdig ist und das Tool explizit entweder `idempotentHint: true` oder eine konsistente Read-only-Annotation deklariert. Read-only-Annotationen stehen im Konflikt mit `destructiveHint: true` oder `idempotentHint: false` und werden nicht replayt.
+
+Calls mit fehlenden Annotationen, widersprüchlichen Annotationen, einem nicht vertrauenswürdigen Server oder einem nicht vertrauenswürdigen Workspace werden nach einem Verbindungsfehler nicht replayt. Qwen Code meldet, dass das Ergebnis unbekannt sein könnte, weil der Server die Operation vor dem Verlust der Antwort abgeschlossen haben könnte. Überprüfe das Ergebnis, bevor du es erneut versuchst. Dieses konservative Verhalten kann von früheren Versionen abweichen, die unannotierte Tools transparent retryt haben.
+
+Annotationen sind vom Server bereitgestellte Verhalten-Hinweise, keine Berechtigungen oder Autorisierungsgrenze. Konfiguriere `trust: true` nur für Server, die du kontrollierst und deren Annotationen du überprüft hast.
 
 ### OAuth-Authentifizierung
 
@@ -251,13 +259,21 @@ Der OAuth-Flow erfordert eine Redirect-URI, an die der Autorisierungsprovider de
 
 - **Lokale Entwicklung**: Standardmäßig verwendet Qwen Code `http://localhost:7777/oauth/callback`. Dies funktioniert, wenn du Qwen Code auf deinem lokalen Rechner mit einem lokalen Browser ausführst.
 
-- **Remote-/Cloud-Deployments**: Wenn du Qwen Code auf Remote-Servern, Cloud-IDEs oder Web-Terminals ausführst, funktioniert die Standard-`localhost`-Redirect **nicht**. Du **musst** `--oauth-redirect-uri` so konfigurieren, dass es auf eine öffentlich zugängliche URL zeigt, die den OAuth-Callback empfangen kann.
+- **Remote-/Cloud-Deployments**: Wenn du Qwen Code auf Remote-Servern, Cloud-IDEs oder Web-Terminals ausführst, funktioniert die Standard-`localhost`-Redirect **nicht**. Konfiguriere `--oauth-redirect-uri` mit einer öffentlichen URL, die auf `/oauth/callback` endet, und reverse-proxye diesen Pfad zu `http://127.0.0.1:7777/oauth/callback` auf dem Rechner, der Qwen Code ausführt. Qwen Code terminiert kein TLS; der Proxy muss dies übernehmen.
 
 Beispiel für Remote-Server:
 
 ```bash
 qwen mcp add --transport sse remote-server https://api.example.com/sse/ \
   --oauth-redirect-uri https://your-remote-server.example.com/oauth/callback
+```
+
+Ein Reverse Proxy kann beispielsweise nur diesen Callback-Pfad an den lokalen Listener weiterleiten:
+
+```nginx
+location = /oauth/callback {
+  proxy_pass http://127.0.0.1:7777;
+}
 ```
 
 #### Manuelle Konfiguration über settings.json
@@ -400,7 +416,7 @@ Optional:
 | `env`                  | object                       | Umgebungsvariablen für den Serverprozess. Werte können über die Syntax `$VAR_NAME` oder `${VAR_NAME}` auf Umgebungsvariablen verweisen                                                                                                                                |
 | `cwd`                  | string                       | Arbeitsverzeichnis für den Stdio-Transport                                                                                                                                                                                                                             |
 | `timeout`              | number<br>(Standard: 600.000) | Anfrage-Timeout in Millisekunden (Standard: 600.000 ms = 10 Minuten)                                                                                                                                                                                                 |
-| `trust`                | boolean<br>(Standard: false)  | Wenn `true`, werden alle Tool-Call-Bestätigungen für diesen Server umgangen (Standard: `false`)                                                                                                                                                                              |
+| `trust`                | boolean<br>(Standard: false)  | Wenn `true`, werden Tool-Call-Bestätigungen für diesen Server in einem vertrauenswürdigen Workspace umgangen (Standard: `false`)                                                                                                                                              |
 | `includeTools`         | array                        | Liste der Tool-Namen, die von diesem MCP-Server eingeschlossen werden sollen. Wenn angegeben, sind nur die hier aufgeführten Tools von diesem Server verfügbar (Allowlist-Verhalten). Wenn nicht angegeben, sind standardmäßig alle Tools des Servers aktiviert.                                       |
 | `excludeTools`         | array                        | Liste der Tool-Namen, die von diesem MCP-Server ausgeschlossen werden sollen. Die hier aufgeführten Tools stehen dem Modell nicht zur Verfügung, auch wenn sie vom Server bereitgestellt werden.<br>Hinweis: `excludeTools` hat Vorrang vor `includeTools` – wenn ein Tool in beiden Listen enthalten ist, wird es ausgeschlossen. |
 | `targetAudience`       | string                       | Die OAuth-Client-ID, die auf der IAP-geschützten Anwendung, auf die du zugreifen möchtest, in der Allowlist steht. Wird mit `authProviderType: 'service_account_impersonation'` verwendet.                                                                                                         |
