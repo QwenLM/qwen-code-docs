@@ -2,11 +2,20 @@ name: Daily Incremental Translation
 
 # Once a day, runs the orchestrator's incremental pipeline against the
 # upstream qwen-code docs, then (if anything changed) commits the new
-# translations to main, rebuilds the site and deploys it - all in one job.
+# translations to main, rebuilds the site and deploys it.
+#
+# Split into jobs (#184/#185): the translate job commits verified
+# translations to main BEFORE any build runs, so a build/deploy failure
+# can never discard translation work again — the old single-job layout
+# lost complete multi-hour runs that way (e.g. run 31115350719). The
+# build-deploy job then rebuilds from a fresh checkout of main; if it
+# fails, only the deploy is delayed (next run or manual retry), never
+# the translations.
 #
 # Pipeline (translator/orchestrator/orchestrator.mjs):
 #   sync-en    mirror upstream English docs into website/content/en
 #   detect     per-language backlog vs website/last-sync.json (the baseline)
+#   preflight  validate the model credential in seconds (#189)
 #   translate  dispatch the qwen CLI agent for up to N backlog files per lang
 #   verify     structural gate (fence parity, frontmatter, non-empty, mtime)
 #   advance    promote only verified translations into the baseline
@@ -26,9 +35,9 @@ name: Daily Incremental Translation
 # selecting the "openai" auth type - headless mode does not infer the auth
 # type from env alone.
 #
-# Note: this job pushes to main with GITHUB_TOKEN, which by design does NOT
-# trigger other workflows (e.g. deploy-docs.yml), so there is no double
-# build. This job therefore builds + deploys itself.
+# Note: the translate job pushes to main with GITHUB_TOKEN, which by design
+# does NOT trigger other workflows (e.g. deploy-docs.yml), so there is no
+# double build. The build-deploy job therefore builds + deploys itself.
 #
 # If main is a protected branch that forbids direct pushes, either allow the
 # github-actions bot to bypass protection, or switch the push step to a PR.
@@ -41,7 +50,7 @@ on:
 
 permissions:
   contents: write
-  # Needed by the failure-reporting step below, which files/updates a tracking
+  # Needed by the failure-reporting job, which files/updates a tracking
   # issue when a scheduled run fails.
   issues: write
   # Needed by the translation-output artifact upload on non-main dispatches;
@@ -62,23 +71,26 @@ env:
   QWEN_MODEL: ${{ vars.QWEN_MODEL || 'qwen3.7-plus' }}
 
 jobs:
-  sync-translate-deploy:
+  translate:
+    name: Sync, translate & commit content
     runs-on: ubuntu-latest
     timeout-minutes: 360
+    outputs:
+      changed: ${{ steps.detect.outputs.changed }}
     steps:
-      # The commit and deploy steps below are gated on `main`, so a dispatch
-      # on any other ref translates for hours at real API cost and then throws
-      # the result away when the runner is torn down — while still reporting
-      # success. Run 31074093979 lost a complete 1h53m catch-up that way.
-      # Say so before the spend rather than after it (see #196).
+      # The commit step below is gated on `main`, so a dispatch on any other
+      # ref translates for hours at real API cost and then throws the result
+      # away when the runner is torn down — while still reporting success.
+      # Run 31074093979 lost a complete 1h53m catch-up that way. Say so
+      # before the spend rather than after it (see #196).
       - name: Warn that this run cannot commit
         if: github.ref_name != 'main'
         run: |
-          echo "::warning title=Translations will not be committed::This run is on '${GITHUB_REF_NAME}', not main, so the commit and deploy steps are skipped. If changes are detected, any translation produced is kept only as the 'translation-output' artifact on this run."
+          echo "::warning title=Translations will not be committed::This run is on '${GITHUB_REF_NAME}', not main, so the commit step is skipped. If changes are detected, any translation produced is kept only as the 'translation-output' artifact on this run."
           {
             echo "### ⚠️ This run cannot commit"
             echo
-            echo "Ref \`${GITHUB_REF_NAME}\` is not \`main\`, so **Commit translations to main** and **Deploy to GitHub Pages** will be skipped."
+            echo "Ref \`${GITHUB_REF_NAME}\` is not \`main\`, so **Commit translations to main** will be skipped and the site will not be rebuilt."
             echo
             echo "If changes are detected, translated content is uploaded as the \`translation-output\` artifact — download it from this run if you need the work."
           } >> "$GITHUB_STEP_SUMMARY"
@@ -98,12 +110,9 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 22
-          # Restores ~/.npm keyed on the lockfile. Benefits both the global
-          # qwen CLI install below and the website `npm ci` on days that have
-          # changes; on quiet days the restore is cheap and `npm ci` is skipped.
-          # translator/package-lock.json is deliberately not in the key: this
-          # workflow never runs npm ci in translator (the orchestrator is
-          # plain node), so including it would only bust the cache uselessly.
+          # Restores ~/.npm keyed on the lockfile. Benefits the global qwen
+          # CLI install below; website dependencies are installed by the
+          # build-deploy job on its own fresh checkout.
           cache: npm
           cache-dependency-path: website/package-lock.json
 
@@ -151,15 +160,6 @@ jobs:
           OPENAI_BASE_URL: ${{ vars.TRANSLATE_BASE_URL || 'https://coding.dashscope.aliyuncs.com/v1' }}
         run: node orchestrator.mjs preflight
 
-      # Installs BEFORE translation on purpose: the agent runs auto-edit over
-      # the whole checkout, so a malicious translation could modify
-      # website/package.json. If `npm ci` ran after translation, it would
-      # execute that modified tree's install scripts with the checkout token.
-      - name: Install website dependencies
-        if: steps.detect.outputs.changed == 'true'
-        working-directory: ./website
-        run: npm ci --no-audit --no-fund
-
       - name: Translate languages in parallel, then advance baseline
         if: steps.detect.outputs.changed == 'true'
         run: |
@@ -180,20 +180,17 @@ jobs:
           done < /tmp/orch-langs.txt
         env:
           TRANSLATE_DAILY_LIMIT: ${{ vars.TRANSLATE_DAILY_LIMIT }}
-          # Scoped to this step: only the agent talks to the model. At job
-          # level the key was also exposed to `npm ci`/`npm run build` over
-          # the website dependency tree and to the commit/deploy steps.
+          # Scoped to this step: only the agent talks to the model.
           OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
           OPENAI_BASE_URL: ${{ vars.TRANSLATE_BASE_URL || 'https://coding.dashscope.aliyuncs.com/v1' }}
 
       # advance wrote per-language .failed.txt quarantine lists. Broken files
-      # must be restored to HEAD BEFORE the build: run 31115350719 proved
-      # that a single verify-evading broken file fails `npm run build`,
-      # which skips the commit step and discards the whole run's good
-      # translations (#185). Restoring early keeps the build green; the
-      # failed files simply stay in the backlog for the next run. The commit
-      # step repeats the same restore as a safety net.
-      - name: Quarantine failed translations before build
+      # are restored from HEAD so the commit below stages only verified
+      # translations; they stay in the backlog for the next run. (The old
+      # single-job layout quarantined "before build"; after the #184 split
+      # there is no build in this job — the restore exists so broken output
+      # never reaches main, which is what kept the build green before.)
+      - name: Quarantine failed translations
         if: steps.detect.outputs.changed == 'true'
         run: |
           shopt -s nullglob
@@ -205,10 +202,12 @@ jobs:
             done < "$fl"
           done
 
-      # Runs after the sync has rewritten last-sync.json, so the age reported
-      # here reflects this run's outcome. Catches the failure mode a
+      # Runs after the sync/translate cycle, so the age reported here
+      # reflects this run's outcome. Catches the failure mode a
       # failure()-gated alert cannot: the job goes green but the baseline
       # never actually advanced, so the backlog keeps growing silently.
+      # Not gated on `changed`: quiet days are exactly when a frozen
+      # baseline must be noticed.
       - name: Warn if baseline is stale
         run: |
           set -euo pipefail
@@ -223,49 +222,17 @@ jobs:
             echo "::warning::last-sync.json has not advanced in ${AGE} days — the translation backlog is growing."
           fi
 
-      - name: Build website
-        if: steps.detect.outputs.changed == 'true'
-        working-directory: ./website
-        env:
-          # Full multi-locale docs set is memory-heavy to statically export.
-          NODE_OPTIONS: --max-old-space-size=12288
-        run: npm run build
-
-      # Runs that cannot commit would otherwise lose their translation when the
-      # runner is torn down. Keep it downloadable so a dispatch used for
-      # testing is recoverable rather than a total loss (#196). `always()`
-      # because a failed build must not discard the translation work too —
-      # that is the exact loss this step exists to prevent.
-      #
-      # This also covers `main`, but only on failure: a green run on main
-      # commits the work, so there is nothing to preserve. A red one used to
-      # discard hours of translation *and* the advanced baseline, because
-      # `advance` writes last-sync.json into the working tree and only the
-      # commit step persists it — the acute half of #184/#185.
-      - name: Upload translations that cannot be committed
-        if: always() && steps.detect.outputs.changed == 'true' && (github.ref_name != 'main' || failure())
-        uses: actions/upload-artifact@v4
-        with:
-          name: translation-output
-          # translation-changelog.json is deliberately not listed: the
-          # orchestrator pipeline does not produce it (legacy-pipeline
-          # residue from #197), so every non-main run warned about it.
-          path: |
-            website/content
-            website/last-sync.json
-          retention-days: 14
-          if-no-files-found: warn
-
+      # Commits BEFORE any build runs (#184): a build/deploy failure can no
+      # longer discard this run's verified translations — they are already
+      # on main when the build-deploy job starts.
       - name: Commit translations to main
         if: steps.detect.outputs.changed == 'true' && github.ref_name == 'main'
         run: |
           git config user.name "qwen-docs-bot"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Quarantine: staging `website/content` wholesale would also commit
-          # files the verify gate rejected (empty output, fence mismatch...).
-          # advance writes per-language .failed.txt lists; restore those files
-          # from HEAD (or remove ones that never existed) so only verified
-          # translations plus the deterministic EN mirror get committed.
+          # Quarantine safety net: the dedicated step above already restored
+          # verify-failed files; repeat the restore so staging
+          # `website/content` wholesale can never pick one up.
           shopt -s nullglob
           for fl in website/orchestrator-manifest-*.failed.txt; do
             while IFS= read -r p; do
@@ -299,25 +266,87 @@ jobs:
             fi
           fi
 
+      # Runs that cannot commit would otherwise lose their translation when the
+      # runner is torn down. Keep it downloadable so a dispatch used for
+      # testing is recoverable rather than a total loss (#196). `always()`
+      # so a failed translate step still preserves whatever was written.
+      #
+      # This also covers `main`, but only on failure: a green run on main
+      # commits the work, so there is nothing to preserve.
+      - name: Upload translations that cannot be committed
+        if: always() && steps.detect.outputs.changed == 'true' && (github.ref_name != 'main' || failure())
+        uses: actions/upload-artifact@v4
+        with:
+          name: translation-output
+          # translation-changelog.json is deliberately not listed: the
+          # orchestrator pipeline does not produce it (legacy-pipeline
+          # residue from #197), so every non-main run warned about it.
+          path: |
+            website/content
+            website/last-sync.json
+          retention-days: 14
+          if-no-files-found: warn
+
+  build-deploy:
+    name: Build & deploy site
+    runs-on: ubuntu-latest
+    needs: translate
+    # Only after a successful translate job, only on main, only when there
+    # is something new: non-main dispatches keep their output as an
+    # artifact; quiet days have nothing to rebuild (deploy-docs.yml already
+    # rebuilds on every push to main).
+    if: needs.translate.result == 'success' && needs.translate.outputs.changed == 'true' && github.ref_name == 'main'
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # Fresh checkout of main, which now INCLUDES the translations the
+          # translate job just committed (#184: build and translate no longer
+          # share a working tree, so a build failure can never touch them).
+          fetch-depth: 0
+          filter: blob:none
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./website
+        run: npm ci --no-audit --no-fund
+
+      - name: Build website
+        working-directory: ./website
+        env:
+          # Full multi-locale docs set is memory-heavy to statically export.
+          NODE_OPTIONS: --max-old-space-size=12288
+        run: npm run build
+
       - name: Deploy to GitHub Pages
-        if: steps.detect.outputs.changed == 'true' && github.ref_name == 'main'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./website/out
 
-      # Must stay last so it observes failures from any step above.
-      #
-      # Scheduled failures are otherwise invisible: GitHub only emails the
-      # workflow author on cron-triggered failures, and that mail is easy to
-      # filter. An expired API key took down six consecutive nightly runs
-      # (07-29..08-03) before anyone noticed, freezing the sync baseline at
-      # 2026-07-08 while the backlog grew to ~1800 file-translations.
-      #
-      # Gated to `schedule` so manual workflow_dispatch debugging runs — which
-      # are expected to fail while iterating — never file issues.
-      - name: Report scheduled failure
-        if: failure() && github.event_name == 'schedule'
+  report-failure:
+    name: Report scheduled failure
+    runs-on: ubuntu-latest
+    needs: [translate, build-deploy]
+    # Observes BOTH jobs above. Scheduled failures are otherwise invisible:
+    # GitHub only emails the workflow author on cron-triggered failures, and
+    # that mail is easy to filter. An expired API key took down six
+    # consecutive nightly runs (07-29..08-03) before anyone noticed,
+    # freezing the sync baseline at 2026-07-08 while the backlog grew to
+    # ~1800 file-translations. Gated to `schedule` so manual
+    # workflow_dispatch debugging runs — which are expected to fail while
+    # iterating — never file issues.
+    if: always() && github.event_name == 'schedule' && (needs.translate.result == 'failure' || needs.build-deploy.result == 'failure')
+    timeout-minutes: 10
+    steps:
+      - name: File or update tracking issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
