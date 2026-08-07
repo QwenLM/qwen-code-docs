@@ -8,7 +8,10 @@ import path from "node:path";
 
 const nextDir = path.resolve(process.cwd(), ".next");
 const cacheDir = path.join(nextDir, "cache");
-const stashDir = path.join(nextDir, ".cache-stash");
+// The stash MUST live outside .next: stashing inside and then rmSync-ing
+// .next would delete the stash along with it (the exact bug this script
+// exists to prevent would silently persist nothing).
+const stashDir = path.join(nextDir, "..", ".next-cache-stash");
 
 if (fs.existsSync(cacheDir)) {
   fs.rmSync(stashDir, { recursive: true, force: true });
