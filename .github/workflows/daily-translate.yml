@@ -314,6 +314,19 @@ jobs:
           cache: npm
           cache-dependency-path: website/package-lock.json
 
+      # Persistent webpack cache: with a warm cache the compile phase drops
+      # from ~4-5min to ~1min (scripts/clean-next.mjs keeps .next/cache
+      # across `next build`). Keyed on the lockfile so dependency changes
+      # invalidate it; the sha suffix + restore-keys prefix give
+      # "most recent previous run" semantics.
+      - name: Cache Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: website/.next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('website/package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            next-${{ runner.os }}-${{ hashFiles('website/package-lock.json') }}-
+
       - name: Install dependencies
         working-directory: ./website
         run: npm ci --no-audit --no-fund

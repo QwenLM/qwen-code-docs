@@ -8,6 +8,15 @@ on:
 permissions:
   contents: write
 
+# Only the newest deploy matters: a push that arrives while an older
+# build is still running makes that older build pure waste (~8min of
+# runner time). Cancel the stale one and let the new one finish.
+# (daily-translate.yml deliberately keeps cancel-in-progress: false —
+# cancelling a translation run loses hours of agent work.)
+concurrency:
+  group: deploy-docs
+  cancel-in-progress: true
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -32,6 +41,16 @@ jobs:
           # from cache instead of re-downloading the whole tree every run.
           cache: npm
           cache-dependency-path: website/package-lock.json
+
+      # Persistent webpack cache (see scripts/clean-next.mjs): warm cache
+      # cuts the compile phase from ~4-5min to ~1min.
+      - name: Cache Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: website/.next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('website/package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            next-${{ runner.os }}-${{ hashFiles('website/package-lock.json') }}-
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
