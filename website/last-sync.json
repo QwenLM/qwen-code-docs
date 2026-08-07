@@ -1,6 +1,6 @@
 {
-  "commit": "6405714c9d82507dd55b46dfcf7c25d4f6bcb8d0",
-  "timestamp": "2026-08-07T01:22:41.943Z",
+  "commit": "a8fb97d16f3ce393377a14ad6c45f656b191c718",
+  "timestamp": "2026-08-07T02:39:28.972Z",
   "files": {
     "docs/design/2026-05-15-async-memory-recall-design.md": {
       "langs": {
@@ -1543,12 +1543,12 @@
     },
     "docs/users/configuration/settings.md": {
       "langs": {
-        "zh": "4e28ddede2dacd789f82c3fbbce6405a4fac09d4fffc1c4ee7af18e42a0a83f9",
-        "fr": "4e28ddede2dacd789f82c3fbbce6405a4fac09d4fffc1c4ee7af18e42a0a83f9",
-        "ja": "4e28ddede2dacd789f82c3fbbce6405a4fac09d4fffc1c4ee7af18e42a0a83f9",
-        "pt-BR": "4e28ddede2dacd789f82c3fbbce6405a4fac09d4fffc1c4ee7af18e42a0a83f9",
-        "de": "4e28ddede2dacd789f82c3fbbce6405a4fac09d4fffc1c4ee7af18e42a0a83f9",
-        "ru": "4e28ddede2dacd789f82c3fbbce6405a4fac09d4fffc1c4ee7af18e42a0a83f9"
+        "zh": "24934f2974b0838e680321cdd9d6dbf9e928d50ebbb9594c48001e6586a6280b",
+        "fr": "24934f2974b0838e680321cdd9d6dbf9e928d50ebbb9594c48001e6586a6280b",
+        "ja": "24934f2974b0838e680321cdd9d6dbf9e928d50ebbb9594c48001e6586a6280b",
+        "pt-BR": "24934f2974b0838e680321cdd9d6dbf9e928d50ebbb9594c48001e6586a6280b",
+        "de": "24934f2974b0838e680321cdd9d6dbf9e928d50ebbb9594c48001e6586a6280b",
+        "ru": "24934f2974b0838e680321cdd9d6dbf9e928d50ebbb9594c48001e6586a6280b"
       }
     },
     "docs/users/features/approval-mode.md": {
