@@ -8,6 +8,7 @@ const LOCALE_MAP: Record<string, string> = {
   ru: "ru-RU",
   ja: "ja-JP",
   "pt-BR": "pt-BR",
+  ko: "ko-KR",
 };
 
 export function getLocale(lang: string): string {
@@ -50,6 +51,7 @@ const CATEGORY_I18N: Record<string, Record<string, CategoryInfo>> = {
     ja: { title: "はじめに", description: "Qwen Code のコアコンセプトを学び、AI プログラミングを素早く始めましょう。" },
     ru: { title: "Начало работы", description: "Изучите основные концепции Qwen Code и быстро начните программировать с ИИ." },
     "pt-BR": { title: "Introdução", description: "Aprenda os conceitos fundamentais do Qwen Code e comece a programar com IA rapidamente." },
+    ko: { title: "시작하기", description: "Qwen Code의 핵심 개념을 익히고 AI 코딩을 빠르게 시작해 보세요." },
   },
   cases: {
     zh: { title: "实战案例", description: "真实使用场景和教程，从办公自动化到代码开发。" },
@@ -59,6 +61,7 @@ const CATEGORY_I18N: Record<string, Record<string, CategoryInfo>> = {
     ja: { title: "活用事例", description: "オフィス自動化からコード開発まで、実際の使用シナリオとチュートリアル。" },
     ru: { title: "Примеры использования", description: "Реальные сценарии и руководства: от автоматизации офиса до разработки кода." },
     "pt-BR": { title: "Casos de Uso", description: "Cenários reais e tutoriais, desde automação de escritório até desenvolvimento de código." },
+    ko: { title: "활용 사례", description: "업무 자동화부터 코드 개발까지, 실제 사용 시나리오와 튜토리얼." },
   },
   advanced: {
     zh: { title: "进阶应用", description: "Skills、百炼 CLI、公众号封面等高级功能指南。" },
@@ -68,6 +71,7 @@ const CATEGORY_I18N: Record<string, Record<string, CategoryInfo>> = {
     ja: { title: "上級ガイド", description: "Skills、Bailian CLI、WeChat カバー生成などの高度な機能ガイド。" },
     ru: { title: "Продвинутый", description: "Расширенные руководства по Skills, Bailian CLI, генерации обложек WeChat и другому." },
     "pt-BR": { title: "Avançado", description: "Guias avançados para Skills, Bailian CLI, geração de capas WeChat e mais." },
+    ko: { title: "고급 활용", description: "Skills, Bailian CLI, WeChat 커버 생성 등 고급 기능 가이드." },
   },
   updates: {
     zh: { title: "功能更新", description: "每周产品版本发布记录、新功能与社区动态。" },
@@ -77,6 +81,7 @@ const CATEGORY_I18N: Record<string, Record<string, CategoryInfo>> = {
     ja: { title: "機能アップデート", description: "毎週の製品リリース、新機能、コミュニティのハイライト。" },
     ru: { title: "Обновления функций", description: "Еженедельные релизы, новые функции и новости сообщества." },
     "pt-BR": { title: "Atualizações de Recursos", description: "Lançamentos semanais, novos recursos e destaques da comunidade." },
+    ko: { title: "기능 업데이트", description: "주간 제품 릴리스, 새로운 기능, 커뮤니티 소식." },
   },
 };
 
@@ -89,6 +94,7 @@ const BLOG_I18N: Record<string, Record<string, string>> = {
     ja: "Qwen Code ブログ",
     ru: "Блог Qwen Code",
     "pt-BR": "Blog Qwen Code",
+    ko: "Qwen Code 블로그",
   },
   blogDescription: {
     zh: "获取产品更新、AI 编程实践、功能发布和真实案例。",
@@ -98,6 +104,7 @@ const BLOG_I18N: Record<string, Record<string, string>> = {
     ja: "製品アップデート、AI プログラミング実践、機能リリース、実際の活用事例。",
     ru: "Обновления продукта, практики AI-программирования, выпуски функций и реальные кейсы.",
     "pt-BR": "Atualizações de produto, práticas de codificação IA, lançamentos e casos reais.",
+    ko: "제품 업데이트, AI 코딩 실전 노하우, 기능 릴리스, 실제 활용 사례.",
   },
   recentUpdates: {
     zh: "最近更新",
@@ -107,6 +114,7 @@ const BLOG_I18N: Record<string, Record<string, string>> = {
     ja: "最近の更新",
     ru: "Последние обновления",
     "pt-BR": "Atualizações Recentes",
+    ko: "최근 업데이트",
   },
   noArticles: {
     zh: "暂无文章",
@@ -116,6 +124,7 @@ const BLOG_I18N: Record<string, Record<string, string>> = {
     ja: "記事はまだありません",
     ru: "Статей пока нет",
     "pt-BR": "Nenhum artigo ainda",
+    ko: "아직 게시글이 없습니다",
   },
   pastUpdates: {
     zh: "往期更新",
@@ -125,6 +134,7 @@ const BLOG_I18N: Record<string, Record<string, string>> = {
     ja: "過去の更新",
     ru: "Предыдущие обновления",
     "pt-BR": "Atualizações Anteriores",
+    ko: "지난 업데이트",
   },
   allArticles: {
     zh: "全部",
@@ -134,6 +144,7 @@ const BLOG_I18N: Record<string, Record<string, string>> = {
     ja: "すべて",
     ru: "Все",
     "pt-BR": "Todos",
+    ko: "전체",
   },
   loadMore: {
     zh: "显示更多",
@@ -143,6 +154,7 @@ const BLOG_I18N: Record<string, Record<string, string>> = {
     ja: "もっと見る",
     ru: "Показать ещё",
     "pt-BR": "Mostrar mais",
+    ko: "더 보기",
   },
 };
 

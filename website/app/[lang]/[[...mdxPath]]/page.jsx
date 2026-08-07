@@ -23,7 +23,7 @@ export const generateStaticParams = async () => {
   });
 };
 
-const LOCALES = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR"];
+const LOCALES = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR", "ko"];
 
 // OG 图片映射
 const OG_IMAGE_MAP = {
