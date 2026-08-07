@@ -8,6 +8,7 @@ import { GitHubIcon, DiscordIcon } from "nextra/icons";
 import { Button } from "nextra/components";
 import { FileText, Star, BookOpen } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
+import { locales } from "../../asset-prefix.mjs";
 
 // 定义接口类型
 interface NavbarProps {
@@ -70,6 +71,18 @@ const useGitHubStars = (repoUrl?: string) => {
   return { stars, loading };
 };
 
+// 浏览器语言前缀 -> 站点 locale
+const BROWSER_LANG_MAP: Record<string, string> = {
+  zh: "zh",
+  de: "de",
+  fr: "fr",
+  ru: "ru",
+  ja: "ja",
+  es: "es",
+  pt: "pt-BR",
+  ko: "ko",
+};
+
 // 获取用户语言的函数
 const getUserLanguage = (): string => {
   if (typeof window === "undefined") return "en";
@@ -80,22 +93,15 @@ const getUserLanguage = (): string => {
 
   if (pathSegments.length > 0) {
     const possibleLang = pathSegments[0];
-    const supportedLanguages = ["en", "zh", "de", "fr", "ru", "ja", "es", "pt-BR", "ko"];
-    if (supportedLanguages.includes(possibleLang)) {
+    if (locales.includes(possibleLang)) {
       return possibleLang;
     }
   }
 
   // 如果URL中没有语言信息，使用浏览器语言
   const browserLang = navigator.language.toLowerCase();
-  if (browserLang.startsWith("zh")) return "zh";
-  if (browserLang.startsWith("de")) return "de";
-  if (browserLang.startsWith("fr")) return "fr";
-  if (browserLang.startsWith("ru")) return "ru";
-  if (browserLang.startsWith("ja")) return "ja";
-  if (browserLang.startsWith("es")) return "es";
-  if (browserLang.startsWith("pt")) return "pt-BR";
-  if (browserLang.startsWith("ko")) return "ko";
+  const matched = BROWSER_LANG_MAP[browserLang.split("-")[0]];
+  if (matched && locales.includes(matched)) return matched;
 
   return "en"; // 默认英文
 };
