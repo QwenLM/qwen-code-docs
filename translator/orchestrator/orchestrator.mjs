@@ -38,14 +38,44 @@ const ROOT = path.resolve(HERE, "../..");
 const { positional, flags } = parseFlags(process.argv.slice(2));
 const cmd = positional[0];
 
+/**
+ * Target languages come from website/translation.config.json — the same
+ * source the legacy sync pipeline and the website itself read — so adding
+ * a locale there (e.g. ko via #181) reaches the orchestrator too. The old
+ * hardcoded default silently kept ko out of every detect/translate run:
+ * the baseline never gained ko entries and the backlog never listed them.
+ */
+function configTargetLangs(contentDir) {
+  try {
+    const cfg = JSON.parse(
+      fs.readFileSync(
+        path.join(contentDir, "..", "translation.config.json"),
+        "utf8"
+      )
+    );
+    if (Array.isArray(cfg.targetLanguages) && cfg.targetLanguages.length)
+      return cfg.targetLanguages.map(String);
+  } catch {
+    // Missing/unreadable config: fall back to the historical list.
+  }
+  return ["zh", "de", "fr", "ja", "ru", "pt-BR"];
+}
+
+const CONTENT_DIR = path.resolve(
+  ROOT,
+  flags["content-dir"] || "website/content"
+);
+
 const OPTS = {
   repo: flags.repo || "https://github.com/QwenLM/qwen-code.git",
   branch: flags.branch || "main",
   docsPath: flags["docs-path"] || "docs",
-  contentDir: path.resolve(ROOT, flags["content-dir"] || "website/content"),
+  contentDir: CONTENT_DIR,
   baseline: path.resolve(ROOT, flags.baseline || "website/last-sync.json"),
   tempDir: path.resolve(ROOT, flags["temp-dir"] || ".temp-source-repo"),
-  langs: String(flags.langs || "zh,de,fr,ja,ru,pt-BR").split(","),
+  langs: flags.langs
+    ? String(flags.langs).split(",")
+    : configTargetLangs(CONTENT_DIR),
   limit: flags.limit ? parseInt(flags.limit, 10) : Infinity,
   model: flags.model || null,
 };
