@@ -296,6 +296,15 @@ jobs:
     # artifact; quiet days have nothing to rebuild (deploy-docs.yml already
     # rebuilds on every push to main).
     if: needs.translate.result == 'success' && needs.translate.outputs.changed == 'true' && github.ref_name == 'main'
+    # Same deployment group as deploy-docs.yml: both publish to gh-pages,
+    # and without a shared group an older daily build-deploy could finish
+    # after a newer push-triggered deploy and overwrite it with stale
+    # content. Sharing the group serializes deploys; cancel-in-progress
+    # lets the newest one win. The TRANSLATE job stays in its own
+    # non-canceling group — cancelling translation loses hours of work.
+    concurrency:
+      group: deploy-pages
+      cancel-in-progress: true
     timeout-minutes: 90
     steps:
       - name: Checkout
@@ -319,6 +328,19 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: website/package-lock.json
+
+      # Persistent webpack cache: with a warm cache the compile phase drops
+      # from ~4-5min to ~1min (scripts/clean-next.mjs keeps .next/cache
+      # across `next build`). Keyed on the lockfile so dependency changes
+      # invalidate it; the sha suffix + restore-keys prefix give
+      # "most recent previous run" semantics.
+      - name: Cache Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: website/.next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('website/package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            next-${{ runner.os }}-${{ hashFiles('website/package-lock.json') }}-
 
       - name: Install dependencies
         working-directory: ./website
