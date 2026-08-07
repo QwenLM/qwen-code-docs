@@ -717,11 +717,61 @@ function cmdAdvance(lang) {
   );
 }
 
+// ---------- preflight ----------
+
+/**
+ * Validate the translation credential in seconds, before hours of agent
+ * work: a dead key used to surface as thousands of per-file translation
+ * errors at the end of the run (#189). One minimal completion request;
+ * any non-2xx or network failure exits non-zero so the workflow step
+ * fails fast.
+ */
+async function cmdPreflight() {
+  const base = (
+    process.env.OPENAI_BASE_URL || "https://coding.dashscope.aliyuncs.com/v1"
+  ).replace(/\/+$/, "");
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) {
+    console.log("::error::preflight: OPENAI_API_KEY is not set.");
+    process.exit(1);
+  }
+  const model = OPTS.model || process.env.QWEN_MODEL || "qwen3.7-plus";
+  try {
+    const res = await fetch(`${base}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: "user", content: "ping" }],
+        max_tokens: 1,
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.log(
+        `::error::preflight: HTTP ${res.status} from ${base}: ${text.slice(0, 300)}`
+      );
+      process.exit(1);
+    }
+    console.log(`[orch] preflight: credentials OK (${model} @ ${base})`);
+  } catch (err) {
+    console.log(`::error::preflight: ${err.message}`);
+    process.exit(1);
+  }
+}
+
 // ---------- main ----------
 
 switch (cmd) {
   case "detect":
     cmdDetect();
+    break;
+  case "preflight":
+    await cmdPreflight();
     break;
   case "sync-en":
     cmdSyncEn();
@@ -740,7 +790,7 @@ switch (cmd) {
     break;
   default:
     console.log(
-      "usage: orchestrator.mjs <detect|sync-en|seed|translate|verify|advance> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv]"
+      "usage: orchestrator.mjs <detect|preflight|sync-en|seed|translate|verify|advance> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv]"
     );
     process.exitCode = cmd ? 1 : 0;
 }
