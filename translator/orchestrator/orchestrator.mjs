@@ -38,14 +38,44 @@ const ROOT = path.resolve(HERE, "../..");
 const { positional, flags } = parseFlags(process.argv.slice(2));
 const cmd = positional[0];
 
+/**
+ * Target languages come from website/translation.config.json — the same
+ * source the legacy sync pipeline and the website itself read — so adding
+ * a locale there (e.g. ko via #181) reaches the orchestrator too. The old
+ * hardcoded default silently kept ko out of every detect/translate run:
+ * the baseline never gained ko entries and the backlog never listed them.
+ */
+function configTargetLangs(contentDir) {
+  try {
+    const cfg = JSON.parse(
+      fs.readFileSync(
+        path.join(contentDir, "..", "translation.config.json"),
+        "utf8"
+      )
+    );
+    if (Array.isArray(cfg.targetLanguages) && cfg.targetLanguages.length)
+      return cfg.targetLanguages.map(String);
+  } catch {
+    // Missing/unreadable config: fall back to the historical list.
+  }
+  return ["zh", "de", "fr", "ja", "ru", "pt-BR"];
+}
+
+const CONTENT_DIR = path.resolve(
+  ROOT,
+  flags["content-dir"] || "website/content"
+);
+
 const OPTS = {
   repo: flags.repo || "https://github.com/QwenLM/qwen-code.git",
   branch: flags.branch || "main",
   docsPath: flags["docs-path"] || "docs",
-  contentDir: path.resolve(ROOT, flags["content-dir"] || "website/content"),
+  contentDir: CONTENT_DIR,
   baseline: path.resolve(ROOT, flags.baseline || "website/last-sync.json"),
   tempDir: path.resolve(ROOT, flags["temp-dir"] || ".temp-source-repo"),
-  langs: String(flags.langs || "zh,de,fr,ja,ru,pt-BR").split(","),
+  langs: flags.langs
+    ? String(flags.langs).split(",")
+    : configTargetLangs(CONTENT_DIR),
   limit: flags.limit ? parseInt(flags.limit, 10) : Infinity,
   model: flags.model || null,
 };
@@ -717,11 +747,61 @@ function cmdAdvance(lang) {
   );
 }
 
+// ---------- preflight ----------
+
+/**
+ * Validate the translation credential in seconds, before hours of agent
+ * work: a dead key used to surface as thousands of per-file translation
+ * errors at the end of the run (#189). One minimal completion request;
+ * any non-2xx or network failure exits non-zero so the workflow step
+ * fails fast.
+ */
+async function cmdPreflight() {
+  const base = (
+    process.env.OPENAI_BASE_URL || "https://coding.dashscope.aliyuncs.com/v1"
+  ).replace(/\/+$/, "");
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) {
+    console.log("::error::preflight: OPENAI_API_KEY is not set.");
+    process.exit(1);
+  }
+  const model = OPTS.model || process.env.QWEN_MODEL || "qwen3.7-plus";
+  try {
+    const res = await fetch(`${base}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: "user", content: "ping" }],
+        max_tokens: 1,
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.log(
+        `::error::preflight: HTTP ${res.status} from ${base}: ${text.slice(0, 300)}`
+      );
+      process.exit(1);
+    }
+    console.log(`[orch] preflight: credentials OK (${model} @ ${base})`);
+  } catch (err) {
+    console.log(`::error::preflight: ${err.message}`);
+    process.exit(1);
+  }
+}
+
 // ---------- main ----------
 
 switch (cmd) {
   case "detect":
     cmdDetect();
+    break;
+  case "preflight":
+    await cmdPreflight();
     break;
   case "sync-en":
     cmdSyncEn();
@@ -740,7 +820,7 @@ switch (cmd) {
     break;
   default:
     console.log(
-      "usage: orchestrator.mjs <detect|sync-en|seed|translate|verify|advance> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv]"
+      "usage: orchestrator.mjs <detect|preflight|sync-en|seed|translate|verify|advance> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv]"
     );
     process.exitCode = cmd ? 1 : 0;
 }
