@@ -11,7 +11,13 @@
 ## 创建机器人
 
 1. 打开 WeCom 管理后台并创建一个智能机器人。
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN017w1jWj1TTvNBcfya8_!!6000000002384-2-tps-2212-887.png)
+
 2. 选择 API 模式。
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01buuik0207paQUuLQW_!!6000000006803-1-tps-1276-720.gif)
+
 3. 复制 Bot ID 和 Secret。
 4. 将机器人添加到需要使用的单聊或群聊中。
 
@@ -73,7 +79,7 @@ qwen channel start my-wecom
 - `pairing`：用户必须先完成配对才能使用该机器人。
 - `open`：任何可以向机器人发送消息的人都可以使用它。
 
-对于群聊，将 `groupPolicy` 设置为 `"allowlist"` 或 `"open"`。WeCom 仅投递提及智能机器人的群消息，因此每个投递的群回调都被视为已提及。`requireMention` 设置无法启用对未提及群消息的响应，因为这些消息不会投递到机器人。
+对于群聊，将 `groupPolicy` 设置为 `"allowlist"`、`"pairing"` 或 `"open"`。在 `"pairing"` 模式下，群聊中首次提及时会创建一个配对请求，需要审批一次后才能开始响应。请注意，在 `groupPolicy: "pairing"` 下，访问权限按群聊授予：一旦某个群聊被批准，**该群聊的任何成员**都可以使用该机器人；`senderPolicy` 和 `allowedUsers` 不会限制已批准群聊的成员。WeCom 仅投递提及智能机器人的群消息，因此每个投递的群回调都被视为已提及。`requireMention` 设置无法启用对未提及群消息的响应，因为这些消息不会投递到机器人。
 
 ### 群提及兼容性
 

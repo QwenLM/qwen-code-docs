@@ -138,6 +138,42 @@ curl -s 'http://127.0.0.1:4170/daemon/status?detail=full' | \
 - `qwen-code.daemon.prompt.queue_wait`, 밀리초 단위 히스토그램.
 - `qwen-code.daemon.pipe.message_bytes`, 바이트 단위 히스토그램, `direction=inbound|outbound`.
 
+### 11. 데몬이 메모리 압박을 받고 있는가?
+
+```bash
+curl -s 'http://127.0.0.1:4170/daemon/status' | \
+  jq '.runtime.memory.pressure'
+```
+
+`level`은 `normal` / `soft` / `hard` / `critical`이며, `ratio`에서 분류됨 —
+`rssRatio`(OOM killer가 관찰하는 cgroup/호스트 메모리 대비 RSS)와 `heapRatio`(이 프로세스의
+`heap_size_limit` 대비 사용된 V8 힙 — `--max-old-space-size`가 지칭하는 old space뿐만 아니라 전체 힙) 중 더 나쁜 값.
+`source`는 어느 쪽이 생성했는지 나타냄. 조치 전 `source`를 확인:
+`unknown`은 데몬이 양쪽 모두 측정할 수 없음을 의미하므로, 여기서는 `normal`이 읽기 부재이지
+건강의 증거가 아님. 각 측은 분자와 분모 모두 사용 가능할 때만 보고되므로, `source`는
+0인 `rssBytes` / `heapUsedBytes`와 실제 값을 구분하는 기준이기도 함.
+
+**`rssRatio`는 분모만큼 정확하며,
+`limits.memory.availableMemorySource`가 이를 평가.** cgroup (`constrained`)에서는
+OOM killer가 강제하는 정확한 제한이므로 비율은 말 그대로 의미 있음. 베어메탈 (`host`)에서는
+전체 머신 크기이지만, 데몬은 _머신_이 다 달았을 때 죽음 — 이는 박스의
+다른 모든 프로세스에 따라 다름. 64 GB 호스트의 20%를 차지하는 데몬이 55 GB 이웃 옆에서
+`level: normal, source: rss`를 보고하다 죽을 수 있음. `source: 'host'` 아래에서는 `rssRatio`를
+실제 압박의 **하한**으로 읽을 것. 이는 임계값 보정과 별개 문제: 잘못된 분모를 측정하고 있을 때
+임계값 선택으로 해결되지 않음.
+
+두 가지 더 다루지 **않는** 사항. 데몬 **루트** 프로세스만 해당하므로,
+`qwen --acp` 자식이 성장 중인 경우 데몬은 내내 `normal`을 보고할 수 있음 —
+곁에서 `runtime.memory.children`을 확인. 이는 라이브 자식의 RSS를 합산하며
+(`sampled`를 통해 실제로 보고한 수를 알림).
+그리고 아무것도 remediation하지 않음: `normal`을 벗어나면 `daemon_memory_pressure`
+경고를 발생시키지만 동작은 변경하지 않음.
+
+`--memory-pressure-mode off`에서는 위의 모든 수치가 계속 보고되며
+이슈가 발생하지 않으므로, 최상위 `status`는 기존과 동일하게 유지됨.
+실제 워크로드에 대해 임계값을 보정 중이거나, `status`에 알림을 걸면서
+보정되지 않은 신호가 상태를 변경하지 않게 하려면 `off`를 사용.
+
 ## 흐름
 
 ### 일반적인 트리아지 흐름

@@ -54,7 +54,7 @@ qwen extensions link /path/to/my-channel-extension
 | `cwd`            | agent 的工作目录                               |
 | `instructions`   | 追加到每个会话的第一条消息之前                 |
 | `model`          | 该 channel 的模型覆盖配置                      |
-| `groupPolicy`    | `disabled`、`allowlist` 或 `open`              |
+| `groupPolicy`    | `disabled`、`allowlist`、`pairing` 或 `open`   |
 | `dmPolicy`       | `open` 或 `disabled`                           |
 | `groups`         | 每个群组的设置                                 |
 
@@ -77,7 +77,7 @@ qwen channel start my-bot
 - **发送者策略** — `allowlist`、`pairing` 和 `open` 访问控制
 - **群组策略** — 每个群组的设置，支持可选的 @提及 门控
 - **会话路由** — 按用户、按线程或单一共享会话
-- **私信配对** — 针对未知用户的完整配对码流程
+- **私信和群组配对** — 针对未知用户和群组的完整配对码流程
 - **斜杠命令** — `/help`、`/clear`、`/status` 开箱即用
 - **自定义指令** — 追加到每个会话的第一条消息之前
 - **崩溃恢复** — 自动重启并保留会话

@@ -79,7 +79,7 @@ Abra o WeCom e envie uma mensagem para o robô inteligente.
 - `pairing`: os usuários devem fazer o pareamento antes de usar o bot.
 - `open`: qualquer pessoa que possa enviar mensagens para o robô pode usá-lo.
 
-Para grupos, defina `groupPolicy` como `"allowlist"` ou `"open"`. O WeCom só entrega mensagens de grupo que mencionam o robô inteligente, então todo callback de grupo entregue é tratado como mencionado. A configuração `requireMention` não pode habilitar respostas a mensagens de grupo não mencionadas porque essas mensagens não são entregues ao bot.
+Para grupos, defina `groupPolicy` como `"allowlist"`, `"pairing"` ou `"open"`. Sob `"pairing"`, a primeira menção do grupo cria uma solicitação de pareamento que deve ser aprovada uma vez antes que as respostas comecem. Note que sob `groupPolicy: "pairing"`, o acesso é concedido por grupo: uma vez que um grupo é aprovado, **qualquer membro desse grupo** pode usar o bot; `senderPolicy` e `allowedUsers` não controlam o acesso de membros de um grupo aprovado. O WeCom só entrega mensagens de grupo que mencionam o robô inteligente, então todo callback de grupo entregue é tratado como mencionado. A configuração `requireMention` não pode habilitar respostas a mensagens de grupo não mencionadas porque essas mensagens não são entregues ao bot.
 
 ### Compatibilidade de Menções em Grupo
 

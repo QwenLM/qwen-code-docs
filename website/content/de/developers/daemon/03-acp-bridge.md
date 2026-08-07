@@ -15,7 +15,7 @@ Jede aktive `WorkspaceRuntime` besitzt eine `HttpAcpBridge`-Instanz. Die Produkt
 - Sessionbezogener FIFO für `setSessionModel`-Aufrufe, damit gleichzeitige Attaches mit unterschiedlichen Modellen nicht beim Agenten zu Race Conditions führen.
 - Sessionbezogener `EventBus`, der `GET /session/:id/events` antreibt (siehe [`10-event-bus.md`](./10-event-bus.md)).
 - Permission-Flow: `BridgeClient.requestPermission` → `MultiClientPermissionMediator.request` → Fan-out → Vote-Sammlung → ACP-Antwort (siehe [`04-permission-mediation.md`](./04-permission-mediation.md)).
-- Datei-I/O: `BridgeFileSystem`-Adapter für ACP `readTextFile` / `writeTextFile`-Aufrufe (siehe [`07-workspace-filesystem.md`](./07-workspace-filesystem.md)).
+- Datei-I/O: `BridgeFileSystem`-Adapter für ACP-Lese- und Schreibvorgänge; Same-Host-Daemon-Runtimes bewerben `readTextFile: false`, sodass normale Text-Lesevorgänge im Child bleiben, während finale Text-Schreibvorgänge delegiert bleiben (siehe [`07-workspace-filesystem.md`](./07-workspace-filesystem.md)).
 - extMethod-RPCs für Workspace-weiten Status (`/workspace/mcp`, `/workspace/skills`, `/workspace/providers`), MCP-Restart und den optionalen privaten Managed-Tool-Guard-Callback.
 - Lifecycle: Graceful `shutdown()` mit `KILL_HARD_DEADLINE_MS` (10s) pro Channel; synchrones `killAllSync()` für erzwungenes Beenden beim zweiten Signal.
 
@@ -202,6 +202,7 @@ sequenceDiagram
 | `persistApprovalMode`, `persistDisabledTools` | —                                                  | Settings-Write-Hooks für die Wave-4-Mutationsrouten.                                                                  |
 | `contextFilename`                             | aus `context.fileName` in `settings.json`          | Überschreibt `getCurrentGeminiMdFilename`.                                                                               |
 | `statusProvider`                              | (keine)                                             | Daemon-Host-Preflight-Zellen (`DaemonStatusProvider`).                                                                 |
+| `delegateReadTextFileToClient`                | `true`                                              | Nur auf `false` setzen für Same-Host-Runtimes, damit jeder `FileSystemService.readTextFile`-Consumer im Child den regulären CLI-Dateisystemdienst verwendet. |
 | `fileSystem`                                  | (keine)                                             | `BridgeFileSystem`-Adapter für ACP `readTextFile` / `writeTextFile`.                                                  |
 | `permissionPolicy`                            | aus `policy.permissionStrategy` in `settings.json` | Einer von `first-responder` / `designated` / `consensus` / `local-only`.                                                 |
 | `permissionConsensusQuorum`                   | aus `settings.json`                               | N für Consensus-Policy.                                                                                               |

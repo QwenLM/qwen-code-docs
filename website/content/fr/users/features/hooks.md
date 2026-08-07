@@ -522,6 +522,8 @@ La valeur de `permissionDecision` contrôle si l'outil s'exécute :
 - `"deny"` — bloque l'outil ; il ne s'exécute pas et une erreur est renvoyée au modèle.
 - `"ask"` — met en pause et demande à l'utilisateur de confirmer l'appel de l'outil dans la TUI avant son exécution. Confirmer exécute l'outil une fois ; refuser l'annule. Dans les contextes qui ne peuvent pas demander de confirmation — exécutions headless (`--prompt`) et sous-agents en arrière-plan — `"ask"` revient à `"deny"`.
 
+Pour `"ask"`, la TUI affiche `permissionDecisionReason` comme du texte littéral plutôt que d'interpréter le Markdown inline. Cela garde les marqueurs de formatage et les cibles de liens visibles pour l'utilisateur.
+
 **Remarque** : Bien que les champs de sortie standard des hooks comme `decision` et `reason` soient techniquement pris en charge par la classe sous-jacente, l'interface officielle attend le `hookSpecificOutput` avec `permissionDecision` et `permissionDecisionReason`.
 
 **Exemple de sortie** :
@@ -1436,9 +1438,11 @@ Un hook HTTP `PostToolUse` qui envoie tous les enregistrements d'exécution des 
 }
 ```
 
-### Exemple 3 : Hook de validation des prompts utilisateur
+### Exemple 3 : Hook de validation des soumissions TUI interactives
 
-Un hook `UserPromptSubmit` qui valide les prompts utilisateur pour détecter des informations sensibles et fournit du contexte pour les prompts longs :
+Pour inspecter le contenu lié au modèle actuel à la place, lisez `prompt`. Ce champ peut inclure du contenu généré ou développé, n'est pas l'entrée utilisateur originale, et n'implique pas que `UserPromptSubmit` couvre chaque envoi du modèle. Ne revenez pas silencieusement de `submitted_prompt` à `prompt` lorsque la provenance source est requise.
+
+Un hook `UserPromptSubmit` qui valide les soumissions TUI interactives prises en charge pour détecter des informations sensibles et fournit du contexte pour les prompts longs. Il ignore les invocations où la provenance source n'est pas disponible. La vérification de mots-clés est illustrative et ne constitue pas une politique DLP complète :
 
 **prompt_validator.py**
 
@@ -1452,9 +1456,12 @@ try:
     input_data = json.load(sys.stdin)
 except json.JSONDecodeError as e:
     print(f"Error: Invalid JSON input: {e}", file=sys.stderr)
-    exit(1)
+    sys.exit(1)
 
-user_prompt = input_data.get("prompt", "")
+user_prompt = input_data.get("submitted_prompt")
+if user_prompt is None:
+    # Do not mistake model-bound or machine-generated content for raw input.
+    sys.exit(0)
 
 # Sensitive words list
 sensitive_words = ["password", "secret", "token", "api_key"]
@@ -1471,7 +1478,7 @@ for word in sensitive_words:
             }
         }
         print(json.dumps(output))
-        exit(0)
+        sys.exit(0)
 
 # Check prompt length and add warning context if too long
 if len(user_prompt) > 1000:
@@ -1482,10 +1489,10 @@ if len(user_prompt) > 1000:
         }
     }
     print(json.dumps(output))
-    exit(0)
+    sys.exit(0)
 
 # No processing needed for normal cases
-exit(0)
+sys.exit(0)
 ```
 
 ## Dépannage
@@ -1494,5 +1501,5 @@ exit(0)
 - Vérifiez les permissions et l'exécutabilité des scripts de hooks
 - Assurez-vous que le format JSON est correct dans les sorties des hooks
 - Utilisez des patterns de matcher spécifiques pour éviter l'exécution involontaire des hooks
-- Utilisez le mode `--debug` pour voir les informations détaillées sur le matching et l'exécution des hooks
+- Utilisez le mode `--debug` pour voir les informations détaillées sur le matching et l'exécution des hooks. Les entrées des prompt hooks peuvent être écrites dans le log de debug de la session, appliquez donc des contrôles d'accès et de rétention appropriés.
 - Désactivez temporairement tous les hooks : ajoutez `"disableAllHooks": true` dans les paramètres

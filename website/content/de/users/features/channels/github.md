@@ -84,7 +84,7 @@ Lokale `gh`-Authentifizierung erfordert eine HTTPS-`baseUrl`, damit das Daemon-H
 | `useLocalGh`            | `false`                  | Explizit die kontoweite GitHub-CLI-Authentifizierung des Daemon-Hosts wiederverwenden |
 | `pollInterval`          | `60000`                  | Poll-Intervall in ms                                                               |
 | `baseUrl`               | `https://api.github.com` | API-Basis-URL (für GHE)                                                            |
-| `groupPolicy`           | `"disabled"`             | Muss `"open"` sein, damit Benachrichtigungen fließen können                        |
+| `groupPolicy`           | `"disabled"`             | Muss `"open"`, `"allowlist"` mit dem Repo (`owner/repo`) in `groups` aufgelistet, oder `"pairing"` mit genehmigtem Repo sein, damit Benachrichtigungen fließen können |
 | `senderPolicy`          | `"allowlist"`            | Wer den Bot auslösen kann                                                          |
 | `groups.*.requireMention` | `true`                 | @Erwähnungen für gewöhnliche Kommentare erforderlich; direkte Benachrichtigungsgründe laufen trotzdem |
 | `blockStreaming`          | `"off"`                  | Immer auf `"off"` erzwungen; zwischengeschriebene Modell-Chunks werden nicht veröffentlicht; `"on"` wird nicht unterstützt |
@@ -103,6 +103,8 @@ Bei einem **öffentlichen Repository** erlaubt `senderPolicy: "open"` **jedem Gi
 Verwende immer `senderPolicy: "allowlist"` mit expliziten `allowedUsers` bei öffentlichen Repos.
 
 Allowlist- und Pairing-Einträge folgen dem **Benutzernamen**, nicht der unveränderlichen Konto-ID. Wenn ein auf der Allowlist stehender Benutzer sein GitHub-Konto umbenennt, entferne den veralteten Eintrag — GitHub gibt den alten Benutzernamen zur Beanspruchung durch andere frei, und der neue Inhaber würde die Allowlist-/Pairing-Autorisierung erben.
+
+Beachte, dass unter `groupPolicy: "pairing"` der Zugriff pro Repository gewährt wird: Sobald ein Repository genehmigt ist, kann **jeder GitHub-Benutzer** den Bot über die Issues und Pull Requests dieses Repositories steuern. Der gesamte GitHub-Traffic ist Gruppen-Traffic, daher beschränken `senderPolicy` und `allowedUsers` nicht die Mitglieder eines genehmigten Repositories. Genehmigungen werden über den vollständigen Repository-Namen (`owner/repo`) geführt, der sich bei Umbenennung oder Transfer ändert — widerrufe veraltete Gruppen-Genehmigungen nach jeder Repository-Umbenennung, jedem Transfer oder jeder Löschung.
 
 ## Erwähnungserkennung
 

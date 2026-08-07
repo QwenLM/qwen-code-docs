@@ -15,7 +15,7 @@
 - 異なるモデルでの同時アタッチがエージェントと競合しないように、`setSessionModel` 呼び出しに対してセッションごとの FIFO を提供します。
 - `GET /session/:id/events` を駆動するセッションごとの `EventBus`（[`10-event-bus.md`](./10-event-bus.md) を参照）。
 - 権限フロー: `BridgeClient.requestPermission` → `MultiClientPermissionMediator.request` → ファンアウト → 投票収集 → ACP レスポンス（[`04-permission-mediation.md`](./04-permission-mediation.md) を参照）。
-- ファイル I/O: ACP の `readTextFile` / `writeTextFile` 呼び出し用の `BridgeFileSystem` アダプター（[`07-workspace-filesystem.md`](./07-workspace-filesystem.md) を参照）。
+- ファイル I/O: ACP の読み取りと書き込み用の `BridgeFileSystem` アダプター。同一ホストのデーモンランタイムは `readTextFile: false` を通知するため、通常のテキスト読み取りは子プロセス内に留まり、最終的なテキスト書き込みは委譲されたままです（[`07-workspace-filesystem.md`](./07-workspace-filesystem.md) を参照）。
 - ワークスペースレベルのステータス（`/workspace/mcp`、`/workspace/skills`、`/workspace/providers`）、MCP 再起動、およびオプションのプライベート管理 Tool Guard コールバック用の extMethod RPC。
 - ライフサイクル: チャネルごとに `KILL_HARD_DEADLINE_MS`（10秒）の猶予を持つグレースフルな `shutdown()`。2番目のシグナルによる強制終了用の同期的な `killAllSync()`。
 
@@ -202,6 +202,7 @@ sequenceDiagram
 | `persistApprovalMode`, `persistDisabledTools` | —                                                  | Wave 4 変更ルート用の設定書き込みフック。                                                                  |
 | `contextFilename`                             | `settings.json` の `context.fileName` から          | `getCurrentGeminiMdFilename` をオーバーライド。                                                                               |
 | `statusProvider`                              | （なし）                                             | デーモンホストのプレフライトセル（`DaemonStatusProvider`）。                                                                 |
+| `delegateReadTextFileToClient`                | `true`                                             | 同一ホストのランタイムでのみ `false` に設定し、子プロセスの `FileSystemService.readTextFile` の全コンシューマーが通常の CLI ファイルシステムサービスを使用するようにします。                    |
 | `fileSystem`                                  | （なし）                                             | ACP `readTextFile` / `writeTextFile` 用の `BridgeFileSystem` アダプター。                                                  |
 | `permissionPolicy`                            | `settings.json` の `policy.permissionStrategy` から | `first-responder` / `designated` / `consensus` / `local-only` のいずれか。                                                 |
 | `permissionConsensusQuorum`                   | `settings.json` から                               | コンセンサスポリシーの N。                                                                                               |

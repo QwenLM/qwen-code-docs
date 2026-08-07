@@ -504,6 +504,8 @@ O valor de `permissionDecision` controla se a ferramenta é executada:
 - `"deny"` — bloqueia a ferramenta; ela não é executada e um erro é retornado ao modelo.
 - `"ask"` — pausa e pede ao usuário para confirmar a chamada da ferramenta na TUI antes que ela seja executada. Confirmar executa a ferramenta uma vez; recusar a cancela. Em contextos que não podem pedir confirmação — execuções headless (`--prompt`) e subagentes em segundo plano — `"ask"` reverte para `"deny"`.
 
+Para `"ask"`, a TUI exibe `permissionDecisionReason` como texto literal em vez de interpretar Markdown inline. Isso mantém marcadores de formatação e targets de links visíveis para o usuário.
+
 **Nota**: Embora campos padrão de saída de hook como `decision` e `reason` sejam tecnicamente suportados pela classe subjacente, a interface oficial espera o `hookSpecificOutput` com `permissionDecision` e `permissionDecisionReason`.
 
 **Exemplo de Saída**:

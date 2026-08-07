@@ -508,6 +508,8 @@ Hook 输出支持三类字段：
 - `"deny"` — 阻止工具；工具不会执行，并向模型返回错误。
 - `"ask"` — 暂停并在 TUI 中要求用户确认工具调用，然后再运行。确认则运行一次工具；拒绝则取消。在无法提示确认的上下文中（如无头 `--prompt` 运行和后台子代理），`"ask"` 会回退到 `"deny"`。
 
+对于 `"ask"`，TUI 将 `permissionDecisionReason` 作为纯文本显示，而不是解析内联 Markdown。这使格式标记和链接目标对用户保持可见。
+
 **注意**：虽然底层类在技术上支持 `decision` 和 `reason` 等标准 Hook 输出字段，但官方接口期望使用包含 `permissionDecision` 和 `permissionDecisionReason` 的 `hookSpecificOutput`。
 
 **输出示例**：

@@ -544,10 +544,12 @@ Response-Shape:
     "sessionShellCommandEnabled": false
   },
   "limits": {
-    "maxSessions": 20,
+    "maxSessions": 32,
+    "maxTotalSessions": null,
     "maxPendingPromptsPerSession": 5,
     "listenerMaxConnections": 256,
     "eventRingSize": 8000,
+    "compactedReplayMaxBytes": 4194304,
     "promptDeadlineMs": null,
     "writerIdleTimeoutMs": null,
     "channelIdleTimeoutMs": 0,
@@ -621,7 +623,11 @@ Runtime-Routen `503` zurückgeben.
 
 `runtime.activity` meldet die Daemon-weite Prompt-Aktivität. `activePrompts` zählt Sessions mit einem laufenden Prompt. `pendingPrompts` zählt alle akzeptierten Prompts, die noch nicht abgeschlossen sind, einschließlich des laufenden Prompts und der in der FIFO-Warteschlange wartenden Prompts. `queuedPrompts` zählt die in der FIFO-Warteschlange wartenden Prompts, die akzeptiert, aber noch nicht dispatched wurden. `lastActivityAt` ist der ISO-8601-Timestamp des letzten Prompt-Starts/-Endes oder Session-Spawns; `null`, wenn der Daemon seit dem Booten noch keine Aktivität verarbeitet hat. `idleSinceMs` wird zum Zeitpunkt der Response-Generierung aus `lastActivityAt` berechnet.
 
-`limits.memory` ist additiv und meldet die aufgelösten Speicherzahlen des Daemons: ein erforderliches `enforced: false`, `configuredBudgetMb`, `effectiveBudgetMb` (der konfigurierte Wert, begrenzt auf aufgelösten Cgroup/Host-Speicher), `budgetSource` (`flag` / `derived`), `availableMemoryMb`, `availableMemorySource` (`constrained` / `host`), `insufficientMemory` und ein `modeled`-Objekt mit `rootReserveMb`, `childPoolMb`, `minChildHeapMb`, `maxChildHeapMb` und `legacyChildCeilingMb` (ein konservatives Modell der Obergrenze, die ein ACP-Child heute erhält, das unter dem tatsächlichen Wert liegen kann). `runtime.memory` meldet zusätzlich `registeredWorkspaces` (die Registrierungszahl – nicht entfernte Workspace-Einträge, einschließlich drainender, wechselnder oder blockierter; keine Live-Child-Zahl), `activeAcpChildren` (Daemon-verwaltete ACP-Children mit einem live, nicht sterbenden Channel – umfasst wechselnde oder blockierte Einträge, schließt aber einen Workspace aus, dessen Kill begonnen hat, auch wenn das Child nicht beendet ist; keine Channel-Worker, MCP-Descendants oder nicht angehängte Spawn-Reservierungen), `childRssCoverage` (`primary_only` heute) und ein `modeled`-Objekt mit `recommendedShareAtRegisteredMb` (`null`, wenn kein Workspace registriert ist) und `recommendedShareAtActiveMb` (`null`, wenn kein Child aktiv ist). Jede Share wird auf die Legacy-Child-Obergrenze begrenzt und nur auf den minimalen Child-Heap gesetzt, wenn die Obergrenze dies zulässt – auf einem kleinen Host liegt die Obergrenze unter dem Minimum, sodass Share × Anzahl den Child-Pool überschreiten kann. Lies eine Share als beratend, nicht als Partition des Pools. All dies ist Beobachtung: Kein Child-Spawn-Argument leitet sich aus diesen Werten ab, und keine Anfrage wird auf ihrer Grundlage abgelehnt. Auf dem normalen `runQwenServe`-Pfad wird das Budget aufgelöst, bevor die Bootstrap-App erstellt wird, sodass `limits.memory` bereits während des Bootstrap-Fensters belegt ist. Es ist nur `null` auf Pfaden, die kein Budget auflösen (wie Direct-Embed, das `runQwenServeImpl` umgeht). Der SDK-Typ erlaubt `null`, daher kommen korrekte Clients damit zurecht.
+`limits.memory` ist additiv und meldet die aufgelösten Speicherzahlen des Daemons: ein erforderliches `enforced: false`, ein `childHeap`-Objekt (`mode`; `maxConcurrentChildren` und `perChildCeilingMb`, beide `null` unter `mode: 'off'`, was nichts modelliert – und `perChildCeilingMb` zusätzlich `null`, wo immer keine Partition innerhalb von `modeled.minChildHeapMb` modelliert werden kann – entweder deckt der Pool nicht ein Child auf diesem Floor, oder die Obergrenze würde darunter liegen, sobald sie auf `modeled.legacyChildCeilingMb` begrenzt wird, was `floor(available / 2)` ist und somit auf einem Host unter 1024 MB unter den Floor fällt. Es ist niemals 0, und `maxConcurrentChildren` ist `0` in diesen Fällen, da ein Host, der keine Partition modelliert, eine berechnete Antwort ist und kein fehlendes Modell; sowie `refusals`, die Spawns, die das modellierte Limit überschritten hätten), `configuredBudgetMb`, `effectiveBudgetMb` (der konfigurierte Wert, begrenzt auf aufgelösten Cgroup/Host-Speicher), `budgetSource` (`flag` / `derived`), `availableMemoryMb`, `availableMemorySource` (`constrained` / `host`), `insufficientMemory` und ein `modeled`-Objekt mit `rootReserveMb`, `childPoolMb`, `minChildHeapMb`, `maxChildHeapMb` und `legacyChildCeilingMb` (ein konservatives Modell der Obergrenze, die ein ACP-Child heute erhält, das unter dem tatsächlichen Wert liegen kann). `runtime.memory` meldet zusätzlich `registeredWorkspaces` (die Registrierungszahl – nicht entfernte Workspace-Einträge, einschließlich drainender, wechselnder oder blockierter; keine Live-Child-Zahl), `activeAcpChildren` (Daemon-verwaltete ACP-Children mit einem live, nicht sterbenden Channel – umfasst wechselnde oder blockierte Einträge, schließt aber einen Workspace aus, dessen Kill begonnen hat, auch wenn das Child nicht beendet ist; keine Channel-Worker, MCP-Descendants oder nicht angehängte Spawn-Reservierungen), `childRssCoverage` (`active_children` – jedes ACP-Child mit einem live Channel, also die Menge, die `activeAcpChildren` zählt; ältere Daemons senden `primary_only`), ein unten beschriebenes `children`-Objekt und ein `modeled`-Objekt mit `recommendedShareAtRegisteredMb` (`null`, wenn kein Workspace registriert ist) und `recommendedShareAtActiveMb` (`null`, wenn kein Child aktiv ist). Jede Share wird auf die Legacy-Child-Obergrenze begrenzt und nur auf den minimalen Child-Heap gesetzt, wenn die Obergrenze dies zulässt – auf einem kleinen Host liegt die Obergrenze unter dem Minimum, sodass Share × Anzahl den Child-Pool überschreiten kann. Lies eine Share als beratend, nicht als Partition des Pools. All dies ist Beobachtung: Kein Child-Spawn-Argument leitet sich aus diesen Werten ab, und keine Anfrage wird auf ihrer Grundlage abgelehnt. `childHeap` modelliert eine feste Partition von `modeled.childPoolMb` – jedes Child würde dieselbe `perChildCeilingMb` erhalten, sodass das modellierte Total innerhalb des Pools bleibt, anstatt sich als pro-Spawn-Share zu akkumulieren. Lies `refusals` nur als Admission-Druck: Ein Count von 0 bedeutet **nicht**, dass die Partition sicher anwendbar ist, da Children auf der viel größeren Host-abgeleiteten Obergrenze laufen, sodass ein Workload, der mehr Old Space als `perChildCeilingMb` benötigt, hier gesund ist und erst nach Anwendung der Partition fehlschlagen würde. Zwei weitere Gründe, warum ein Count ungleich null keinen Capacity-Druck bedeuten muss: die Admission-Entscheidung zählt ein terminierendes Child bis es beendet ist, sodass auf einem Daemon bereits bei `maxConcurrentChildren` jeder Channel-Ersatz eine Refusal während des Überlappungsfensters bucht; und auf einem Host, der zu klein ist, um eine Partition zu modellieren, ist `maxConcurrentChildren` `0`, sodass `refusals` dem gesamten ACP-Spawn-Count entspricht, wobei `insufficientMemory` das erklärende Feld ist. Auf dem normalen `runQwenServe`-Pfad wird das Budget aufgelöst, bevor die Bootstrap-App erstellt wird, sodass `limits.memory` bereits während des Bootstrap-Fensters belegt ist. Es ist nur `null` auf Pfaden, die kein Budget auflösen (wie Direct-Embed, das `runQwenServeImpl` umgeht). Der SDK-Typ erlaubt `null`, daher kommen korrekte Clients damit zurecht.
+
+`runtime.memory.children` ist additiv innerhalb dieses Blocks und meldet aggregiertes RSS über die Children, die `childRssCoverage` benennt: `rssBytes` (ihre summierten selbstberichteten RSS), `sampled` (wie viele einen Messwert geliefert haben) und `oldestReadingAgeMs` (das Alter des ältesten Messwerts in der Summe, sodass ein Aufrufer erkennen kann, wie weit auseinander die Teile aufgenommen wurden). Der Nenner für `sampled` ist das Geschwisterfeld `activeAcpChildren`, das nicht innerhalb des Blocks wiederholt wird; wenn `sampled` niedriger ist, ist `rssBytes` ein Floor statt ein Total. Sampling erfordert einen aktiven SSE/WS-Watcher, sodass eine Status-Anfrage an einen Daemon, von dem niemand streamt, `sampled: 0` meldet, selbst mit live Children – `activeAcpChildren` daneben macht diese Lücke sichtbar, und `rssBytes: 0` mit `sampled: 0` bedeutet niemals eine gemessene Null. `oldestReadingAgeMs` ist `null`, wenn nichts gesampled wurde, und auch wenn jeder Beiträger eine Bridge ist, die das Feld noch nicht kennt, es bedeutet also niemals "frisch". Lies die Summe gleichzeitig als Über- und Unterzählung: Das Summieren von Pro-Zessess-RSS zählt Seiten doppelt, die die Children teilen, während jedes Child nur seinen eigenen Prozess meldet, sodass seine MCP-Descendants und alle Channel-Worker fehlen. Es ist nicht der Speicher des Daemon-Trees. Das Feld ist im SDK-Mirror optional, da Daemons, die `primary_only` melden, es niemals senden.
+
+`runtime.memory.pressure` ist additiv innerhalb dieses Blocks und meldet den eigenen Speicherdruck des Daemon-Root: `mode` (`off` / `observe`), `level` (`normal` / `soft` / `hard` / `critical`), `source` (`rss` / `heap` / `unknown`), `ratio` und die sechs Rohwerte, aus denen die Verhältnisse berechnet werden – `rssBytes`, `rssRatio`, `availableBytes`, `heapUsedBytes`, `heapRatio`, `heapLimitBytes`. `ratio` ist das größere von `rssRatio` und `heapRatio`, und `source` benennt, welches es war; Gleichstände werden als `rss` gemeldet. `availableBytes` ist `limits.memory.availableMemoryMb` in Bytes – absichtlich der erkannte Cgroup/Host-Wert statt `effectiveBudgetMb`, weil den Prozess die reale Grenze beendet, nicht die Policy-Zahl eines Operators. `source: "unknown"` bedeutet, dass keiner der Nenner messbar war, und darf nicht als gesund gelesen werden; `level` ist nur in diesem Fall `normal`, weil es nichts zu klassifizieren gibt. Die Werte betreffen ausschließlich den **Daemon-Root-Prozess**: es ist das eigene `memoryUsage()` dieses Prozesses, sodass wachsende Children sie nicht bewegen. `runtime.memory.children` meldet diese separat, und keiner der Werte ist der Prozess-Tree-Speicher. Beide Modi melden den gesamten Block; nur `observe` löst zusätzlich die pfadlose `daemon_memory_pressure`-Warnung in das Status-Rollup aus, sodass `off` den Top-Level-`status` unverändert lässt. In keinem Modus wird etwas remediiert. Das Feld ist im SDK-Mirror optional, da Daemons, die `runtime.memory` vor dessen Existenz ausgeliefert haben, den Block ohne es senden.
 
 `limits.maxTotalSessions` ist additiv. `null` bedeutet, dass das effektive Daemon-weite Frisch-Session-Limit deaktiviert ist. Wenn mehrere Startup/wiederhergestellte Workspaces vorhanden sind, `--max-total-sessions` weggelassen wird und `maxSessionsPerWorkspace` endlich ist, leitet der Daemon das effektive Gesamtlimit einmal als `maxSessionsPerWorkspace * startupWorkspaceCount` ab; spätere dynamische Registrierung berechnet es nicht neu. Wenn gesetzt, begrenzt es die Frisch-Session-Erstellung Daemon-weit und meldet Gesamtlimit-Fehler mit der bestehenden `session_limit_exceeded`-Fehlerform plus `scope: "total"`.
 
@@ -779,6 +785,17 @@ Der Katalog markiert die von dieser Management-API unterstützten Typen mit
 Präsenzmetadaten, Startup-Zustand und Runtime-Zustand; literale Secrets werden niemals
 zurückgegeben. Channel-Snapshots verwenden `Cache-Control: no-store`.
 
+Field-Deskriptoren können über `properties` verschachtelte Objekt-Metadaten bereitstellen.
+Numerische Deskriptoren können `exclusiveMinimum` für offene Untergrenzen verwenden. Clients,
+die einen beworbenen Field-Kind nicht rendern, müssen seinen bestehenden Konfigurationswert
+beibehalten, anstatt ihn zu erzwingen oder zu löschen. Objekt-Felder können nicht erforderlich sein,
+und verschachtelte Properties können keine Secrets oder Environment-auflösbaren Felder sein;
+diese Management-Protokolle bleiben nur auf Top-Level-Ebene. Eine verschachtelte `required`-Property
+wird nur durchgesetzt, während ihr Elternobjekt im Write vorhanden ist; das Weglassen des
+Elternobjekts lässt seine verschachtelten Anforderungen ungeprüft. Writes ersetzen den
+gespeicherten Wert jedes Feldes vollständig, sodass das Beibehalten eines Objekts das erneute Senden des
+gespeicherten Objekts bedeutet; der Daemon führt keine partiellen Objekte zusammen.
+
 Konfigurationsschreibvorgänge verwenden optimistische Concurrency und das strikte Bearer-Token-
 Gate:
 
@@ -796,19 +813,20 @@ Runtime-Aktionen sind strikt-gated `POST`-Anfragen an
 Worker, der dem aufgelösten Workspace gehört.
 
 Pairing-Management ist nur für Instanzen verfügbar, die mit der
-`pairing`-Sender-Policy konfiguriert sind:
+`pairing`-Sender-Policy oder Group-Policy konfiguriert sind:
 
 - `GET .../channels/:name/pairing-requests`
 - `POST .../channels/:name/pairing-requests/approve` mit `{ "code": "..." }`
 - `GET .../channels/:name/pairing-approvals`
 - `DELETE .../channels/:name/pairing-approvals` mit
-  `{ "senderId": "..." }`
+  entweder `{ "senderId": "..." }` oder `{ "groupId": "..." }`
 
 Alle Pairing-Routen erfordern einen Bearer-Token und verwenden `Cache-Control: no-store`.
 Anfragen, Genehmigungen und Widerrufe sind auf die ausgewählte Channel-
-Instanz und den Workspace beschränkt. Der Genehmigungs-Snapshot enthält Sender-IDs, da die
-Allowlist keine Sender-Anzeigenamen persistiert. Der Widerruf einer unbekannten Sender-ID
-gibt `404 channel_pairing_approval_not_found` zurück.
+Instanz und den Workspace beschränkt. Ausstehende Anfragen enthalten ein typisiertes User- oder Group-Subject;
+Group-Anfragen behalten zusätzlich den Sender, der die Anfrage initiiert hat. Genehmigungs-Snapshots enthalten
+`senderIds` und `groupIds`, da Allowlist keine Anzeigenamen persistieren. Der Widerruf eines unbekannten Users
+oder einer unbekannten Group gibt `404 channel_pairing_approval_not_found` zurück.
 
 ### Channel-Delivery und Notify
 

@@ -504,6 +504,8 @@ Der `permissionDecision`-Wert steuert, ob das Tool ausgeführt wird:
 - `"deny"` — Blockiert das Tool; es wird nicht ausgeführt und ein Fehler wird an das Modell zurückgegeben.
 - `"ask"` — Pausiert und fordert den Benutzer auf, den Tool-Aufruf in der TUI zu bestätigen, bevor er ausgeführt wird. Bestätigen führt das Tool einmal aus; Ablehnen bricht es ab. In Kontexten, die keine Bestätigungsaufforderung ermöglichen können — Headless- (`--prompt`) Ausführungen und Hintergrund-Subagenten — fällt `"ask"` auf `"deny"` zurück.
 
+Für `"ask"` zeigt die TUI `permissionDecisionReason` als Literaltext an, statt Inline-Markdown zu interpretieren. Dadurch bleiben Formatierungsmarker und Link-Ziele für den Benutzer sichtbar.
+
 **Hinweis**: Obwohl Standard-Hook-Output-Felder wie `decision` und `reason` technisch von der zugrunde liegenden Klasse unterstützt werden, erwartet das offizielle Interface das `hookSpecificOutput` mit `permissionDecision` und `permissionDecisionReason`.
 
 **Beispiel-Output**:
@@ -622,7 +624,7 @@ Sequentielle UserPromptSubmit-Hooks können `additionalContext` an `prompt` anh�
 - `reason`: Menschlich lesbare Begründung für die Entscheidung
 - `hookSpecificOutput.additionalContext`: Zusätzlicher Context, der an den Prompt angehängt wird (optional)
 
-Wenn das injizierte `additionalContext` an das Modell gesendet wird, wird es als eigener Nachrichtenteil in einem reservierten `<qwen:user-prompt-submit-context>...</qwen:user-prompt-submit-context>`-Tag gewrappt, sodass es in der Modell-History und Session-Transkripten unterscheidbar von vom Benutzer verfasstem Text bleibt. spitze Klammern in der Hook-Ausgabe werden vor dem Wrappen escapet, sodass Hook-Inhalte den Tag nicht schließen oder fälschen können. Das Session-Transkript zeichnet den ursprünglichen Prompttext des Benutzers ebenfalls separat auf; das interaktive TUI und der ACP/Export-Transkript-Wiedergabepfad zeigen diesen ursprünglichen Text anstatt des injizierten Kontexts.
+Wenn das injizierte `additionalContext` an das Modell gesendet wird, wird es als eigener Nachrichtenteil in einem reservierten `<qwen:user-prompt-submit-context>...</qwen:user-prompt-submit-context>`-Tag gewrappt, sodass es in der Modell-History und Session-Transkripten unterscheidbar von vom Benutzer verfasstem Text bleibt. Spitze Klammern in der Hook-Ausgabe werden vor dem Wrappen escapet, sodass Hook-Inhalte den Tag nicht schließen oder fälschen können. Das Session-Transkript zeichnet den ursprünglichen Prompttext des Benutzers ebenfalls separat auf; das interaktive TUI und der ACP/Export-Transkript-Wiedergabepfad zeigen diesen ursprünglichen Text anstatt des injizierten Kontexts.
 
 **Hinweis**: Da `UserPromptSubmitOutput` `HookOutput` erweitert, sind alle Standardfelder verfügbar, aber nur `additionalContext` in `hookSpecificOutput` ist spezifisch für dieses Event definiert.
 

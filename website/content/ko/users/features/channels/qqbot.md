@@ -100,9 +100,10 @@ QQ를 열고 봇에게 메시지를 보내세요. 채팅에서 응답이 도착�
 
 QQ 그룹에서 봇을 사용하려면:
 
-1. 채널 구성에서 `groupPolicy`를 `"allowlist"` 또는 `"open"`으로 설정하세요
+1. 채널 구성에서 `groupPolicy`를 `"allowlist"`, `"pairing"` 또는 `"open"`으로 설정하세요
 2. QQ Bot Open Platform 대시보드에서 그룹 관리자가 봇을 초대하여 QQ 그룹에 추가하세요
 3. 그룹 멤버는 봇에게 **@멘션**해야 응답이 트리거됩니다
+4. `groupPolicy: "pairing"`을 사용하는 경우, 응답이 시작되기 전에 그룹의 페어링 요청을 한 번 승인하세요. 그룹이 승인되면 **해당 그룹의 모든 멤버**가 봇을 사용할 수 있습니다. `senderPolicy`와 `allowedUsers`는 승인된 그룹의 멤버를 제한하지 않습니다.
 
 QQ Bot API V2는 봇을 @멘션한 그룹 메시지만 전달합니다 — 봇은 모든 그룹 메시지를 볼 수 없습니다. 기본적으로 `requireMention`은 `true`이며 QQ에서는 그대로 두는 것이 좋습니다.
 
@@ -159,7 +160,8 @@ QQ 서버가 어떤 이유로든 Markdown 메시지를 거부하면, 채널이 �
 
 ### 봇이 그룹에서 응답하지 않음
 
-- `groupPolicy`가 `"allowlist"` 또는 `"open"`으로 설정되어 있는지 확인하세요 (기본값은 `"disabled"`)
+- `groupPolicy`가 `"allowlist"`, `"pairing"` 또는 `"open"`으로 설정되어 있는지 확인하세요 (기본값은 `"disabled"`)
+- `"pairing"`을 사용하는 경우, 그룹의 페어링 요청이 승인되었는지 확인하세요
 - **봇을 @멘션해야 합니다** — QQ는 봇을 태그한 메시지만 전달합니다
 - 봇이 그룹에 추가되었는지 확인하세요
 

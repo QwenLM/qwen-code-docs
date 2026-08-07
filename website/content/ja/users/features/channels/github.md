@@ -84,7 +84,7 @@ GitHub Enterprise Server の場合は、`baseUrl` を設定します。
 | `useLocalGh`              | `false`                  | デーモンホストのアカウント全体の GitHub CLI 認証を明示的に再利用する                         |
 | `pollInterval`            | `60000`                  | ポーリング間隔（ミリ秒）                                                                    |
 | `baseUrl`                 | `https://api.github.com` | API ベース URL（GHE 用）                                                                    |
-| `groupPolicy`             | `"disabled"`             | 通知を流すには `"open"` が必要                                                              |
+| `groupPolicy`             | `"disabled"`             | 通知を流すには `"open"`、`groups` にリポジトリ（`owner/repo`）をリストした `"allowlist"`、またはリポジトリを承認済みの `"pairing"` が必要 |
 | `senderPolicy`            | `"allowlist"`            | ボットをトリガーできるユーザー                                                              |
 | `groups.*.requireMention` | `true`                   | 通常のコメントに @メンションを要求する。通知理由が直接指定されている場合は引き続き実行される |
 | `blockStreaming`          | `"off"`                  | 常に `"off"` に固定される。中間モデルチャンクは公開されない。`"on"` はサポートされない      |
@@ -103,6 +103,8 @@ GitHub Enterprise Server の場合は、`baseUrl` を設定します。
 パブリックリポジトリでは、常に `senderPolicy: "allowlist"` を明示的な `allowedUsers` とともに使用してください。
 
 許可リストとペアリングのエントリは、不変のアカウント ID ではなく**ユーザー名**に従います。許可されたユーザーが GitHub アカウント名を変更した場合、古いエントリを削除してください。GitHub は古いユーザー名を誰でも取得できるようにリリースするため、新しい保持者が許可リスト/ペアリングの認証を継承してしまいます。
+
+`groupPolicy: "pairing"` では、アクセスはリポジトリごとに付与されます。リポジトリが承認されると、**任意の GitHub ユーザー**がそのリポジトリの issue とプルリクエストを通じてボットを操作できます。GitHub のすべてのトラフィックはグループトラフィックであるため、`senderPolicy` と `allowedUsers` は承認済みリポジトリのメンバーを制限しません。承認はリポジトリの完全名（`owner/repo`）でキー付けされ、リネームまたは移転時に変更されます。リポジトリのリネーム、移転、削除後は古いグループ承認を取り消してください。
 
 ## メンション検出
 

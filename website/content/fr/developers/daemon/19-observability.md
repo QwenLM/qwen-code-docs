@@ -133,6 +133,21 @@ Nouveaux noms de métriques OTel :
 - `qwen-code.daemon.prompt.queue_wait`, histogramme en millisecondes.
 - `qwen-code.daemon.pipe.message_bytes`, histogramme en octets avec `direction=inbound|outbound`.
 
+### 11. Le démon est-il sous pression mémoire ?
+
+```bash
+curl -s 'http://127.0.0.1:4170/daemon/status' | \
+  jq '.runtime.memory.pressure'
+```
+
+`level` est `normal` / `soft` / `hard` / `critical`, classifié à partir de `ratio` — le pire entre `rssRatio` (RSS par rapport à la mémoire cgroup/hôte détectée, c'est-à-dire ce que l'OOM killer surveille) et `heapRatio` (heap V8 utilisée par rapport à `heap_size_limit` de ce processus — le heap entier, pas seulement l'old space que `--max-old-space-size` nomme). `source` indique lequel l'a produit. Vérifiez `source` avant d'agir : `unknown` signifie que le démon n'a pu mesurer aucun des deux côtés, donc `normal` dans ce cas est l'absence de lecture, pas une preuve de santé. Un côté n'est rapporté que lorsque son numérateur et son dénominateur étaient tous deux utilisables, donc `source` est aussi ce qui distingue un `rssBytes` / `heapUsedBytes` à zéro d'une valeur réelle.
+
+**`rssRatio` n'est aussi bon que son dénominateur, et `limits.memory.availableMemorySource` est ce qui l'évalue.** Sous un cgroup (`constrained`), c'est exactement la limite que l'OOM killer applique, donc le ratio a le sens qu'il affiche. Sur du métal nu (`host`), c'est la taille de la machine entière, alors que le démon meurt réellement quand la _machine_ est à court — ce qui dépend de tous les autres processus sur la machine. Un démon occupant 20 % d'un hôte de 64 Go à côté d'un voisin de 55 Go rapporte `level: normal, source: rss` jusqu'à ce qu'il soit tué. Sous `source: 'host'`, lisez `rssRatio` comme une **limite inférieure** de la pression réelle. Ceci est distinct du fait que les seuils ne sont pas calibrés : aucun choix de seuil ne corrige un dénominateur qui mesure la mauvaise chose.
+
+Deux choses supplémentaires que cela ne couvre **pas**. C'est uniquement le processus **racine** du démon, donc un démon dont les enfants `qwen --acp` sont ceux qui grossissent peut rapporter `normal` en permanence — lisez `runtime.memory.children` à côté, qui somme le RSS propre des enfants actifs (et indique via `sampled` combien ont effectivement rapporté). Et rien ne remédie : quitter `normal` lève un avertissement `daemon_memory_pressure` et ne change aucun comportement.
+
+Sous `--memory-pressure-mode off`, chaque chiffre ci-dessus est toujours rapporté et le problème n'est pas levé, donc le `status` de premier niveau reste ce qu'il aurait été. Utilisez `off` lors du calibrage des seuils par rapport à une charge réelle, ou si vous alertez sur `status` et ne voulez pas qu'un signal non calibré le modifie.
+
 ## Flux
 
 ```mermaid

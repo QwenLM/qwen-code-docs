@@ -63,6 +63,32 @@ export DINGTALK_CLIENT_SECRET=<your-app-secret>
 }
 ```
 
+### インタラクティブカード
+
+`interactiveCards` オブジェクトを追加すると、DingTalk のステータスカードと質問カードをオプトインできます。このオブジェクトを省略すると、インタラクティブカードは無効になります。オブジェクトが存在する場合、全体のスイッチと両方のカードタイプはデフォルトで有効になり、質問カードは 270,000 ミリ秒（270 秒）後にタイムアウトします。
+
+```json
+{
+  "channels": {
+    "my-dingtalk": {
+      "type": "dingtalk",
+      "clientId": "$DINGTALK_CLIENT_ID",
+      "clientSecret": "$DINGTALK_CLIENT_SECRET",
+      "interactiveCards": {
+        "enabled": true,
+        "statusCard": { "enabled": true },
+        "questionCard": {
+          "enabled": true,
+          "timeoutMs": 270000
+        }
+      }
+    }
+  }
+}
+```
+
+`interactiveCards.enabled` を `false` に設定すると、すべてのインタラクティブカードを無効にします。`statusCard.enabled` または `questionCard.enabled` を使用してカードタイプを 1 つずつ無効にし、`questionCard.timeoutMs` に有限の正の数を設定して、Qwen Code が質問カードの応答を待機する時間を変更できます。2,147,483,647 ミリ秒（約 24.8 日）を超える値はその最大値に切り詰められます。インタラクティブカードは `settings.json` または管理 API を通じて設定されます。Web Shell チャンネルエディターはそれらを描画せず、他のフィールドを編集しても保存されたオブジェクトを保持します。
+
 ### 接続リカバリ
 
 `useConnectionManager` のデフォルトは `true` です。接続マネージャーは Stream WebSocket を監視し、接続が応答を停止した際に DingTalk SDK クライアントを置き換えます。通常は有効のままにしておくべきです。
@@ -115,9 +141,10 @@ DingTalk を開き、ボットにメッセージを送信します。エージ�
 
 DingTalk ボットは DM とグループ会話の両方で動作します。グループ対応を有効にするには:
 
-1. チャンネル設定で `groupPolicy` を `"allowlist"` または `"open"` に設定します。
+1. チャンネル設定で `groupPolicy` を `"allowlist"`、`"pairing"`、または `"open"` に設定します。
 2. ボットを DingTalk グループに追加します。
 3. グループ内でボットを @メンションすると応答がトリガーされます。
+4. `groupPolicy: "pairing"` を使用している場合、応答が開始される前にグループのペアリングリクエストを一度承認してください。
 
 デフォルトでは、グループチャットでは @メンションが必要です（`requireMention: true`）。特定のグループで全メッセージに応答させるには、`"requireMention": false` に設定します。詳細は [グループチャット](./overview#group-chats) を参照してください。
 
@@ -161,7 +188,8 @@ DingTalk ではグループを識別するために `conversationId` が使用�
 
 ### グループ内でボットが応答しない
 
-- `groupPolicy` が `"allowlist"` または `"open"` に設定されていることを確認してください（デフォルトは `"disabled"` です）。
+- `groupPolicy` が `"allowlist"`、`"pairing"`、または `"open"` に設定されていることを確認してください（デフォルトは `"disabled"` です）。
+- `"pairing"` を使用している場合、グループのペアリングリクエストが承認されていることを確認してください。
 - グループメッセージでボットを @メンションしていることを確認してください。
 - ボットがグループに追加されていることを確認してください。
 

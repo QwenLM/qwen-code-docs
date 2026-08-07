@@ -15,7 +15,7 @@
 - FIFO-очередь для вызовов `setSessionModel` в каждой сессии, чтобы одновременные подключения с разными моделями не создавали гонку у агента.
 - `EventBus` для каждой сессии, который обслуживает `GET /session/:id/events` (см. [`10-event-bus.md`](./10-event-bus.md)).
 - Поток разрешений: `BridgeClient.requestPermission` → `MultiClientPermissionMediator.request` → рассылка → сбор голосов → ответ ACP (см. [`04-permission-mediation.md`](./04-permission-mediation.md)).
-- Файловый ввод-вывод: адаптер `BridgeFileSystem` для вызовов ACP `readTextFile` / `writeTextFile` (см. [`07-workspace-filesystem.md`](./07-workspace-filesystem.md)).
+- Файловый ввод-вывод: адаптер `BridgeFileSystem` для чтений и записей ACP; среды выполнения демона на одном хосте объявляют `readTextFile: false`, чтобы обычное чтение текста оставалось в дочернем процессе, а итоговые записи текста по-прежнему делегировались (см. [`07-workspace-filesystem.md`](./07-workspace-filesystem.md)).
 - RPC-вызовы extMethod для статуса на уровне рабочего пространства (`/workspace/mcp`, `/workspace/skills`, `/workspace/providers`), перезапуска MCP и опционального приватного управляемого Tool Guard callback.
 - Жизненный цикл: корректный `shutdown()` с `KILL_HARD_DEADLINE_MS` (10 с) на канал; синхронный `killAllSync()` для принудительного завершения по второму сигналу.
 
@@ -202,6 +202,7 @@ sequenceDiagram
 | `persistApprovalMode`, `persistDisabledTools` | —                                                  | Хуки записи настроек для маршрутов мутации Wave 4.                                                                  |
 | `contextFilename`                             | из `context.fileName` в `settings.json`          | Переопределяет `getCurrentGeminiMdFilename`.                                                                               |
 | `statusProvider`                              | (none)                                             | Предварительные проверки хоста демона (`DaemonStatusProvider`).                                                                 |
+| `delegateReadTextFileToClient`                | `true`                                             | Установите `false` только для сред выполнения на одном хосте, чтобы каждый потребитель `FileSystemService.readTextFile` в дочернем процессе использовал обычный сервис файловой системы CLI.                    |
 | `fileSystem`                                  | (none)                                             | Адаптер `BridgeFileSystem` для ACP `readTextFile` / `writeTextFile`.                                                  |
 | `permissionPolicy`                            | из `policy.permissionStrategy` в `settings.json` | Одно из `first-responder` / `designated` / `consensus` / `local-only`.                                                 |
 | `permissionConsensusQuorum`                   | из `settings.json`                               | N для политики консенсуса.                                                                                               |

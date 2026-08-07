@@ -62,7 +62,7 @@ export GITLAB_TOKEN="glpat-your_token_here"
 | `pollInterval`           | `60000`                   | ポーリング間隔（ミリ秒）                                     |
 | `baseUrl`                | `https://gitlab.com`      | GitLab インスタンスの URL                                    |
 | `action_prompt_template` | (処理に必要)              | GitLab アクション名とメタデータテンプレートをマッピングする  |
-| `groupPolicy`            | `"disabled"`              | `"open"` またはプロジェクトをリストした `"allowlist"` を指定 |
+| `groupPolicy`            | `"disabled"`              | `"open"`、リストしたプロジェクトの `"allowlist"`、または承認済みプロジェクトの `"pairing"` が必要 |
 | `senderPolicy`           | `"allowlist"`             | ボットをトリガーできるユーザー                               |
 
 ## action_prompt_template
@@ -132,13 +132,15 @@ Project: owner/repo | URL: https://gitlab.com/owner/repo | Author: alice | Type:
 
 パブリックプロジェクトでは、常に `senderPolicy: "allowlist"` を明示的な `allowedUsers` とともに使用してください。
 
+`groupPolicy: "pairing"` では、アクセスはプロジェクトごとに付与されます。プロジェクトが承認されると、**任意の GitLab ユーザー**がそのプロジェクトの issue と merge request を通じてボットを操作できます。GitLab のすべてのトラフィックはグループトラフィックであるため、`senderPolicy` と `allowedUsers` は承認済みプロジェクトのメンバーを制限しません。承認はプロジェクトパス（`owner/repo`）でキー付けされ、リネームまたは移転時に変更されます。プロジェクトのリネーム、移転、削除後は古いグループ承認を取り消してください。
+
 ## メンションの検出
 
 アダプターは、ディスパッチされるエンベロープに対して常に `isMentioned = true` を設定します。これは、GitLab が todo の作成時にメンションをすでに判定しているためです。`action_prompt_template` の設定が実際のイベントフィルターであり、テンプレートが設定されているアクションのみが処理されます。`@bot` メンションは、ディスパッチ前に `stripBotMention` によってメッセージテキストから除去されます。
 
-### ⚠️ groupPolicy は "open" または "allowlist" を設定すること
+### ⚠️ groupPolicy は "open"、"allowlist"、または "pairing" を設定すること
 
-todo を処理するには、`groupPolicy` を `"open"` またはプロジェクトを明示的にリストした `"allowlist"` に設定する必要があります。デフォルト値の `"disabled"` はすべてのメンションを破棄します。todo は完了マークが付けられ、カーソルが進みますが、ディスパッチは行われません。拒否はログに記録されます（`preflight rejected reason=group_disabled`）が、todo は引き続き消費されます。ボットがメンションに応答しない場合は、`groupPolicy` が `"disabled"` でないことを確認してください。
+todo を処理するには、`groupPolicy` を `"open"`、プロジェクトを明示的にリストした `"allowlist"`、または `"pairing"` に設定する必要があります。`"pairing"` では、未承認プロジェクトからの最初のメンションによってグループペアリングリクエストが作成されます。`qwen channel pairing approve` で一度承認すると、以降そのプロジェクトからの todo がディスパッチされます。デフォルト値の `"disabled"` はすべてのメンションを破棄します。todo は完了マークが付けられ、カーソルが進みますが、ディスパッチは行われません。拒否はログに記録されます（`preflight rejected reason=group_disabled`）が、todo は引き続き消費されます。ボットがメンションに応答しない場合は、`groupPolicy` が `"disabled"` でないことを確認してください。
 
 ## 動作の仕組み
 
@@ -151,7 +153,7 @@ todo を処理するには、`groupPolicy` を `"open"` またはプロジェク
 5. **メンションタイプの検出**: `target_url` のアンカーで判定:
    - `#note_123` が存在 → コメントメンション → テキストは `todo.body`（コメント）
    - アンカーなし → 説明メンション → テキストは issue/MR の説明
-6. **ディスパッチ**: `handleInbound` を通じてエンベロープをディスパッチする（`groupPolicy: "open"` またはプロジェクトをリストした `"allowlist"` が必要）
+6. **ディスパッチ**: `handleInbound` を通じてエンベロープをディスパッチする（`groupPolicy: "open"`、プロジェクトをリストした `"allowlist"`、またはプロジェクトを承認済みの `"pairing"` が必要）
 7. **カーソルの前進** と **todo の完了マーク**（ベストエフォート）
 
 カーソル（`lastProcessedId`）は、ディスパッチの成功・失敗にかかわらず前進します。失敗したディスパッチは issue/MR に ⚠️ エラーコメントを投稿し、リトライは行われません。ユーザーはボットを再メンションして新しい todo をトリガーできます。

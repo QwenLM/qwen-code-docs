@@ -2,16 +2,25 @@
 
 ## Vue d'ensemble
 
-Le démon ne laisse jamais les routes HTTP ou les appels d'agent côté ACP toucher directement le système de fichiers hôte. Chaque lecture, écriture, listage, glob et stat passe par la limite `WorkspaceFileSystem` (`packages/cli/src/serve/fs/`), qui fournit :
+Les routes HTTP de fichiers du démon et les appels ACP délégués `readTextFile` / `writeTextFile` passent par la limite `WorkspaceFileSystem` (`packages/cli/src/serve/fs/`), qui fournit :
 
-- **Résolution de chemin** — canonicalise les chemins et rejette tout ce qui sort de l'espace de travail lié, y compris via les liens symboliques.
-- **Protection par confiance** — refuse les écritures lorsque l'espace de travail n'est pas approuvé (`untrusted_workspace`).
+- **Résolution de chemin** — canonicalise les chemins et rejette tout ce qui sort du workspace lié, y compris via les liens symboliques.
+- **Protection par confiance** — refuse les écritures lorsque le workspace n'est pas fiable (`untrusted_workspace`).
 - **Politique de taille et de contenu** — limite de snapshot complet/retour (`MAX_READ_BYTES = 256 KiB`), fenêtres de texte large bornées à la fois en sortie et en coût de scan (`MAX_TEXT_SCAN_BYTES = 8 MiB`), limite d'écriture (`MAX_WRITE_BYTES = 5 MiB`), détection binaire.
 - **Atomicité** — écriture puis renommage avec préservation du mode cible et valeur par défaut `0o600` pour les nouveaux fichiers.
 - **Audit** — chaque accès / refus émet un événement structuré pour `PermissionAuditRing` / la supervision.
 - **Erreurs typées** — union fermée `FsErrorKind` mappée sur des statuts HTTP.
 
-Les routes HTTP de fichiers (`GET /file`, `GET /file/bytes`, `POST /file/write`, `POST /file/edit`, `GET /list`, `GET /glob`, `GET /stat`) et l'adaptateur côté ACP `BridgeFileSystem` (afin que les appels `readTextFile` / `writeTextFile` pilotés par agent passent par les mêmes protections) passent tous par cette limite.
+Les routes HTTP de fichiers (`GET /file`, `GET /file/bytes`, `POST /file/write`, `POST /file/edit`, `GET /list`, `GET /glob`, `GET /stat`) utilisent cette limite. Dans le démon en production, les appels ACP qui restent délégués atteignent WFS via l'adaptateur de bridge injecté ; les appelants bridge génériques utilisent WFS uniquement lorsqu'ils injectent un tel adaptateur. Les runtimes `qwen serve` en production sur le même hôte annoncent `readTextFile: false`, donc tous les consommateurs de `FileSystemService.readTextFile` de l'enfant utilisent le service de système de fichiers CLI normal ; les écritures de contenu ACP `writeTextFile` finales restent déléguées via WFS.
+
+Cette tranche de capacité de lecture de texte couvre le `read_file` direct plus les pré-lectures partagées utilisées par les opérations write, edit, notebook, sed et artifact :
+
+- Elle accepte intentionnellement le comportement de lecture CLI normal plutôt que les garanties côté lecture de WFS. [Le document de conception](../../design/daemon-local-text-reads.md) possède la liste exacte de ce à quoi on renonce.
+- Le même document explique pourquoi #8618 se reproduit encore pour les familles write et edit même après ce changement, et le sens borné dans lequel le chemin de lecture adaptateur conservé « fail closed ».
+- Le `read_file` externe direct conserve les règles de permission CLI normales et la télémétrie principale des opérations sur les fichiers.
+- Les routes HTTP du système de fichiers restent limitées au workspace, et le comportement des outils de découverte de l'agent n'est pas modifié par cette capacité.
+- Les actions auxiliaires telles que la création du répertoire parent et les commandes shell sont des chemins existants séparés, non couverts par cette limite.
+- `qwen serve` suppose un principal de sécurité same-machine, same-UID et n'est pas une sandbox OS.
 
 ## Responsabilités
 
@@ -45,7 +54,7 @@ Les routes HTTP de fichiers (`GET /file`, `GET /file/bytes`, `POST /file/write`,
 | `path_not_found`           | 404             | `ENOENT`.                                                                                                                                                                                            |
 | `binary_file`              | 422             | Contenu détecté binaire sur une route texte, ou texte large dans un encodage que la route texte ne peut pas décoder.                                                                                                        |
 | `file_too_large`           | 413             | Texte de snapshot complet/sans fenêtre au-dessus de `MAX_READ_BYTES`, un décalage de ligne au-delà de `MAX_TEXT_SCAN_BYTES`, ou une écriture au-dessus de `MAX_WRITE_BYTES`.                                                 |
-| `hash_mismatch`            | 409             | Échec de la concurrence optimiste `expectedSha256`.                                                                                                                                                  |
+| `hash_mismatch`            | 409             | Échec de la concurrence optimiste `expectedSha256`, ou le fichier a changé pendant une lecture stable.                                                                                                     |
 | `file_already_exists`      | 409             | `mode: 'create'` contre un fichier existant.                                                                                                                                                         |
 | `text_not_found`           | 422             | La chaîne de recherche de `POST /file/edit` n'a pas été trouvée dans le fichier.                                                                                                                     |
 | `ambiguous_text_match`     | 422             | Plusieurs correspondances alors qu'une seule était requise.                                                                                                                                          |
@@ -66,7 +75,7 @@ interface BridgeFileSystem {
 }
 ```
 
-C'est le point d'injection pour `readTextFile` / `writeTextFile` de l'ACP. Les tests du pont et les appelants intégrés en Mode A peuvent l'omettre sur `BridgeOptions` ; `BridgeClient` utilise alors son proxy `fs.readFile` / `fs.writeFile` en ligne (comportement pré-F1 conservé). En production, `qwen serve` câble `BridgeFileSystem` via `createBridgeFileSystemAdapter(fsFactory)` (`packages/cli/src/serve/bridge-file-system-adapter.ts`) afin que les écritures ACP côté agent bénéficient des mêmes protections TOCTOU, liens symboliques, confiance et audit que les routes HTTP.
+C'est le point d'injection pour `readTextFile` / `writeTextFile` de l'ACP. Les tests du bridge et les appelants intégrés en Mode A peuvent l'omettre sur `BridgeOptions` ; `BridgeClient` utilise alors son proxy `fs.readFile` / `fs.writeFile` en ligne (comportement pré-F1 conservé). En production, `qwen serve` câble `BridgeFileSystem` via `createBridgeFileSystemAdapter(fsFactory)` (`packages/cli/src/serve/bridge-file-system-adapter.ts`) et définit `delegateReadTextFileToClient: false`. Les enfants conformes en capacité lisent donc le texte localement et délèguent les écritures de texte ACP finales. L'adaptateur conserve son implémentation de lecture afin que les lectures déléguées inattendues ou violant la capacité rencontrent toujours la limite de workspace de WFS.
 
 Deux protections défensives que l'adaptateur DOIT reproduire (car le proxy en ligne est totalement contourné lorsque l'adaptateur est injecté) :
 

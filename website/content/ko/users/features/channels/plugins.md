@@ -58,7 +58,7 @@ qwen extensions link /path/to/my-channel-extension
 | `cwd`          | 에이전트의 작업 디렉토리               |
 | `instructions` | 각 세션의 첫 번째 메시지에 앞에 추가   |
 | `model`        | 채널의 모델 재정의                     |
-| `groupPolicy`  | `disabled`, `allowlist` 또는 `open`    |
+| `groupPolicy`  | `disabled`, `allowlist`, `pairing` 또는 `open`  |
 | `dmPolicy`     | `open` 또는 `disabled`                 |
 | `groups`       | 그룹별 설정                            |
 
@@ -81,7 +81,7 @@ qwen channel start my-bot
 - **발신자 정책** — `allowlist`, `pairing` 및 `open` 접근 제어
 - **그룹 정책** — 선택적 @mention 게이팅이 있는 그룹별 설정
 - **세션 라우팅** — 사용자별, 스레드별 또는 단일 공유 세션
-- **DM 페어링** — 알 수 없는 사용자를 위한 전체 페어링 코드 흐름
+- **DM 및 그룹 페어링** — 알 수 없는 사용자와 그룹을 위한 전체 페어링 코드 흐름
 - **슬래시 명령어** — `/help`, `/clear`, `/status`가 바로 작동
 - **사용자 정의 지시** — 각 세션의 첫 번째 메시지에 앞에 추가
 - **충돌 복구** — 세션 보존과 함께 자동 재시작

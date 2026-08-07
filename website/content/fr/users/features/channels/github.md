@@ -84,7 +84,7 @@ L'authentification locale `gh` nécessite un `baseUrl` HTTPS afin que le credent
 | `useLocalGh`              | `false`                  | Réutiliser explicitement l'authentification GitHub CLI du compte de l'hôte du démon           |
 | `pollInterval`            | `60000`                  | Intervalle de polling en ms                                                                   |
 | `baseUrl`                 | `https://api.github.com` | URL de base de l'API (pour GHE)                                                               |
-| `groupPolicy`             | `"disabled"`             | Doit être `"open"` pour que les notifications circulent                                       |
+| `groupPolicy`             | `"disabled"`             | Doit être `"open"`, `"allowlist"` avec le dépôt (`owner/repo`) listé dans `groups`, ou `"pairing"` avec le dépôt approuvé pour que les notifications circulent |
 | `senderPolicy`            | `"allowlist"`            | Qui peut déclencher le bot                                                                    |
 | `groups.*.requireMention` | `true`                   | Exiger les @mentions pour les commentaires ordinaires ; les raisons de notification dirigées s'exécutent toujours |
 | `blockStreaming`          | `"off"`                  | Toujours forcé à `"off"` ; les chunks intermédiaires du modèle ne sont pas publiés ; `"on"` n'est pas supporté |
@@ -103,6 +103,8 @@ Sur un **dépôt public**, définir `senderPolicy: "open"` permet à **tout util
 Utilisez toujours `senderPolicy: "allowlist"` avec des `allowedUsers` explicites sur les dépôts publics.
 
 Les entrées d'allowlist et de pairing suivent le **nom d'utilisateur**, pas l'ID de compte immuable. Si un utilisateur en allowlist renomme son compte GitHub, supprimez l'entrée obsolète — GitHub libère l'ancien nom d'utilisateur pour que n'importe qui d'autre puisse se l'approprier, et le nouveau titulaire hériterait de l'autorisation d'allowlist/pairing.
+
+Notez que sous `groupPolicy: "pairing"`, l'accès est accordé par dépôt : une fois qu'un dépôt est approuvé, **tout utilisateur GitHub** peut piloter le bot via les issues et pull requests de ce dépôt. Tout le trafic GitHub est du trafic de groupe, donc `senderPolicy` et `allowedUsers` ne filtrent pas les membres d'un dépôt approuvé. Les approbations sont indexées par le nom complet du dépôt (`owner/repo`), qui change en cas de renommage ou de transfert — révoquez les approbations de groupe obsolètes après tout renommage, transfert ou suppression de dépôt.
 
 ## Détection des mentions
 

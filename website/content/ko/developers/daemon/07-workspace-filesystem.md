@@ -2,7 +2,7 @@
 
 ## 개요
 
-데몬은 HTTP 라우트나 ACP 측 에이전트 호출이 호스트 파일시스템에 직접 접근하는 것을 절대 허용하지 않습니다. 모든 읽기, 쓰기, 목록, glob, stat은 `WorkspaceFileSystem` 경계(`packages/cli/src/serve/fs/`)를 통과하며, 다음은 이 경계가 제공하는 기능입니다:
+데몬 HTTP 파일 라우트와 위임된 ACP `readTextFile` / `writeTextFile` 호출은 `WorkspaceFileSystem` 경계(`packages/cli/src/serve/fs/`)를 통과하며, 이 경계가 제공하는 기능은 다음과 같습니다:
 
 - **경로 해석** — 경로를 정규화하고 심볼릭 링크를 포함한 워크스페이스 이탈을 거부합니다.
 - **신뢰 게이트** — 워크스페이스가 신뢰되지 않을 때(`untrusted_workspace`) 쓰기를 거부합니다.
@@ -11,7 +11,16 @@
 - **감사** — 모든 접근/거부가 `PermissionAuditRing`/모니터링용 구조화 이벤트를 발생시킵니다.
 - **타입화된 에러** — HTTP 상태로 매핑되는 닫힌 `FsErrorKind` 유니언.
 
-HTTP 파일 라우트(`GET /file`, `GET /file/bytes`, `POST /file/write`, `POST /file/edit`, `GET /list`, `GET /glob`, `GET /stat`)와 ACP 측 `BridgeFileSystem` 어댑터(에이전트 기반 `readTextFile` / `writeTextFile` 호출이 동일한 게이트를 통과하도록 함) 모두 이 경계를 통과합니다.
+HTTP 파일 라우트(`GET /file`, `GET /file/bytes`, `POST /file/write`, `POST /file/edit`, `GET /list`, `GET /glob`, `GET /stat`)는 이 경계를 사용합니다. 프로덕션 데몬에서 위임된 상태로 남는 ACP 호출은 주입된 브리지 어댑터를 통해 WFS에 도달합니다. 일반 브리지 호출자는 이러한 어댑터를 주입할 때만 WFS를 사용합니다. 프로덕션 동일 호스트 `qwen serve` 런타임은 `readTextFile: false`를 광고하므로, 모든 자식 `FileSystemService.readTextFile` 소비자는 일반 CLI 파일시스템 서비스를 사용합니다. 최종 ACP `writeTextFile` 콘텐츠 쓰기는 WFS를 통해 위임된 상태로 유지됩니다.
+
+이 텍스트 읽기 기능 슬라이스는 직접 `read_file`과 write, edit, notebook, sed, artifact 작업에서 사용되는 공유 사전 읽기를 포함합니다:
+
+- 의도적으로 일반 CLI 읽기 동작을 수용하며 WFS 읽기 측 보장은 수용하지 않습니다. [설계 문서](../../design/daemon-local-text-reads.md)가 포기하는 항목의 정확한 목록을 소유합니다.
+- 같은 문서가 이 변경 후에도 write 및 edit 계열에 대해 #8618이 여전히 재현되는 이유와, 유지된 어댑터 읽기 경로가 "안전하게 실패하는" 제한된 의미를 기록합니다.
+- 직접 외부 `read_file`은 일반 CLI 권한 규칙과 핵심 파일 작업 텔레메트리를 유지합니다.
+- HTTP 파일시스템 라우트는 워크스페이스 범위로 유지되며, 에이전트 발견 도구 동작은 이 기능에 의해 변경되지 않습니다.
+- 상위 디렉토리 생성 및 셸 명령과 같은 보조 작업은 별도의 기존 경로이며 이 경계에서 다루지 않습니다.
+- `qwen serve`은 동일 머신, 동일 UID 보안 주체를 가정하며 OS 샌드박스가 아닙니다.
 
 ## 책임
 
@@ -66,7 +75,7 @@ interface BridgeFileSystem {
 }
 ```
 
-이것은 ACP `readTextFile` / `writeTextFile`의 주입 지점입니다. Bridge 테스트와 Mode A 임베디드 호출자는 `BridgeOptions`에서 이를 생략할 수 있으며, `BridgeClient`는 인라인 `fs.readFile` / `fs.writeFile` 프록시로 폴백합니다(pre-F1 동작 보존). 프로덕션 `qwen serve`는 `createBridgeFileSystemAdapter(fsFactory)`(`packages/cli/src/serve/bridge-file-system-adapter.ts`)를 통해 `BridgeFileSystem`를 연결하므로, 에이전트 측 ACP 쓰기가 HTTP 라우트와 동일한 TOCTOU, 심볼릭 링크, 신뢰 게이트 및 감사 게이트를 적용받습니다.
+이것은 ACP `readTextFile` / `writeTextFile`의 주입 지점입니다. Bridge 테스트와 Mode A 임베디드 호출자는 `BridgeOptions`에서 이를 생략할 수 있으며, `BridgeClient`는 인라인 `fs.readFile` / `fs.writeFile` 프록시로 폴백합니다(pre-F1 동작 보존). 프로덕션 `qwen serve`는 `createBridgeFileSystemAdapter(fsFactory)`(`packages/cli/src/serve/bridge-file-system-adapter.ts`)를 통해 `BridgeFileSystem`를 연결하고 `delegateReadTextFileToClient: false`를 설정합니다. 따라서 기능을 준수하는 자식은 텍스트를 로컬에서 읽고 최종 ACP 텍스트 쓰기를 위임합니다. 어댑터는 읽기 구현을 유지하므로 예기치 않거나 기능을 위반하는 위임 읽기도 여전히 WFS의 워크스페이스 경계에 도달합니다.
 
 어댑터가 반드시 보존해야 하는 두 가지 방어적 속성(어댑터가 주입되면 인라인 프록시는 완전히 우회되므로):
 

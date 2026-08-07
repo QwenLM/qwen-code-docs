@@ -42,6 +42,15 @@ title: Feishu
 - `im:message:send_as_bot` — 봇으로 메시지 전송
 - `im:resource` — 메시지 리소스(이미지, 파일) 접근
 
+데몬에서 발견된 연락처에 ID 대신 사용자 및 그룹 이름을 표시하려면
+다음 권한을 선택적으로 활성화하세요:
+
+- `contact:user.basic_profile:readonly` — 사용자 표시 이름 읽기
+- `im:chat:readonly` — 그룹 이름 읽기
+
+이 선택적 권한이 없어도 메시지는 정상 작동하며 발견된 연락처는
+Feishu 사용자 및 채팅 ID를 레이블로 유지합니다.
+
 ### 애플리케이션 게시
 
 권한 및 이벤트를 구성한 후 버전을 생성하고 게시하세요. 애플리케이션이 게시되고 승인될 때까지 봇이 작동하지 않습니다.
@@ -125,9 +134,10 @@ WebSocket 모드는 아웃바운드 긴 연결을 사용하므로 공개 URL이�
 
 Feishu 봇은 DM과 그룹 대화 모두에서 작동합니다. 그룹 지원을 활성화하려면:
 
-1. 채널 구성에서 `groupPolicy`를 `"allowlist"` 또는 `"open"`으로 설정
+1. 채널 구성에서 `groupPolicy`를 `"allowlist"`, `"pairing"` 또는 `"open"`으로 설정
 2. Feishu 그룹에 봇 추가
 3. 그룹에서 봇을 @mention하여 응답 트리거
+4. `groupPolicy: "pairing"`을 사용하는 경우, 응답이 시작되기 전에 그룹의 페어링 요청을 한 번 승인하세요
 
 기본적으로 봇은 그룹 채팅에서 @mention을 필요로 합니다(`requireMention: true`). 특정 그룹에 대해 `"requireMention": false`로 설정하면 모든 메시지에 응답합니다.
 
@@ -174,7 +184,8 @@ Feishu 봇은 DM과 그룹 대화 모두에서 작동합니다. 그룹 지원을
 
 ### 봇이 그룹에서 응답하지 않음
 
-- `groupPolicy`가 `"allowlist"` 또는 `"open"`으로 설정되어 있는지 확인(기본값은 `"disabled"`)
+- `groupPolicy`가 `"allowlist"`, `"pairing"` 또는 `"open"`으로 설정되어 있는지 확인(기본값은 `"disabled"`)
+- `"pairing"`을 사용하는 경우, 그룹의 페어링 요청이 승인되었는지 확인
 - 그룹 메시지에서 봇을 @mention하고 있는지 확인
 - 봇이 그룹에 추가되어 있는지 확인
 

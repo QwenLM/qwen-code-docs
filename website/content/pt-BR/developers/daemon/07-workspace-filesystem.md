@@ -1,8 +1,8 @@
 # Limite do Sistema de Arquivos do Workspace
 
-## Visão Geral
+## Visão geral
 
-O daemon nunca permite que rotas HTTP ou chamadas de agente do lado ACP toquem diretamente no sistema de arquivos do host. Cada leitura, escrita, listagem, glob e stat passa pelo limite `WorkspaceFileSystem` (`packages/cli/src/serve/fs/`), que fornece:
+Rotas HTTP de arquivo do daemon e chamadas delegadas ACP `readTextFile` / `writeTextFile` passam pelo limite `WorkspaceFileSystem` (`packages/cli/src/serve/fs/`), que fornece:
 
 - **Resolução de caminhos** — canonicaliza caminhos e rejeita qualquer coisa que escape do workspace delimitado, inclusive via symlinks.
 - **Controle de confiança** — recusa escritas quando o workspace não é confiável (`untrusted_workspace`).
@@ -11,7 +11,16 @@ O daemon nunca permite que rotas HTTP ou chamadas de agente do lado ACP toquem d
 - **Auditoria** — cada acesso/negação emite um evento estruturado para `PermissionAuditRing` / monitoramento.
 - **Erros tipados** — união fechada `FsErrorKind` mapeada para códigos HTTP.
 
-As rotas HTTP de arquivo (`GET /file`, `GET /file/bytes`, `POST /file/write`, `POST /file/edit`, `GET /list`, `GET /glob`, `GET /stat`) e o adaptador `BridgeFileSystem` do lado ACP (para que chamadas orientadas por agente `readTextFile` / `writeTextFile` passem pelas mesmas barreiras) passam por esse limite.
+As rotas HTTP de arquivo (`GET /file`, `GET /file/bytes`, `POST /file/write`, `POST /file/edit`, `GET /list`, `GET /glob`, `GET /stat`) usam esse limite. No daemon em produção, chamadas ACP que permanecem delegadas alcançam o WFS através do adaptador da bridge injetado; chamadores genéricos da bridge usam o WFS apenas quando injetam tal adaptador. Runtimes `qwen serve` em produção no mesmo host anunciam `readTextFile: false`, então todos os consumidores filhos de `FileSystemService.readTextFile` usam o serviço de filesystem regular da CLI; escritas finais de conteúdo ACP `writeTextFile` permanecem delegadas através do WFS.
+
+Essa fatia de capacidade de leitura de texto cobre `read_file` direto mais as pré-leituras compartilhadas usadas pelas operações de write, edit, notebook, sed e artifact:
+
+- Intencionalmente aceita o comportamento de leitura regular da CLI em vez das garantias do lado de leitura do WFS. [O documento de design](../../design/daemon-local-text-reads.md) possui a lista exata do que é renunciado.
+- O mesmo documento registra por que #8618 ainda se reproduz para a família write e edit mesmo após essa mudança, e o sentido limitado em que o caminho de leitura do adaptador retido "fail closed".
+- `read_file` externo direto mantém as regras normais de permissão da CLI e telemetria principal de operações de arquivo.
+- Rotas HTTP de filesystem permanecem escopo de workspace, e o comportamento da ferramenta de descoberta do agente não muda com essa capacidade.
+- Ações auxiliares como criação de diretório pai e comandos shell são caminhos existentes separados, não cobertos por este limite.
+- `qwen serve` assume um principal de segurança na mesma máquina e mesmo UID e não é um sandbox de SO.
 
 ## Responsabilidades
 
@@ -66,9 +75,9 @@ interface BridgeFileSystem {
 }
 ```
 
-Este é o ponto de injeção para `readTextFile` / `writeTextFile` do ACP. Testes da bridge e chamadores embutidos do Mode A podem omiti-lo em `BridgeOptions`; `BridgeClient` cai de volta para seu proxy inline `fs.readFile` / `fs.writeFile` (preserva o comportamento pré-F1). Em produção, `qwen serve` conecta `BridgeFileSystem` através de `createBridgeFileSystemAdapter(fsFactory)` (`packages/cli/src/serve/bridge-file-system-adapter.ts`) para que escritas ACP do lado do agente também passem pelas mesmas barreiras TOCTOU, symlink, controle de confiança e auditoria que as rotas HTTP usam.
+Este é o ponto de injeção para `readTextFile` / `writeTextFile` do ACP. Testes da bridge e chamadores embutidos do Mode A podem omiti-lo em `BridgeOptions`; `BridgeClient` cai de volta para seu proxy inline `fs.readFile` / `fs.writeFile` (preserva o comportamento pré-F1). O `qwen serve` em produção conecta `BridgeFileSystem` através de `createBridgeFileSystemAdapter(fsFactory)` (`packages/cli/src/serve/bridge-file-system-adapter.ts`) e define `delegateReadTextFileToClient: false`. Filhos compatíveis com a capacidade portanto leem texto localmente e delegam escritas finais de texto ACP. O adaptador retém sua implementação de leitura para que leituras delegadas inesperadas ou que violem a capacidade ainda encontrem o limite de workspace do WFS.
 
-Duas barreiras defensivas que o adaptador DEVE replicar (porque o proxy inline é completamente ignorado quando o adaptador é injetado):
+Duas propriedades defensivas que o adaptador DEVE preservar (porque o proxy inline é completamente ignorado quando o adaptador é injetado):
 
 1. **Rejeitar arquivos não regulares** — soquetes / pipes / dispositivos de caractere / entradas procfs / sysfs podem transmitir dados ilimitados apesar de `stats.size === 0`. O caminho inline lança exceção com `describeStatKind(stats)` na mensagem.
 2. **Evitar buffer ilimitado de arquivo completo.** O fallback inline limita uma leitura em buffer a `READ_FILE_SIZE_CAP = 100 MiB`. O adaptador injetado aplica em vez disso o contrato mais estrito do WorkspaceFileSystem: snapshots completos param em 256 KiB, enquanto arquivos UTF-8 maiores exigem um `limit` finito e são transmitidos a partir de um handle limitado por inode com no máximo 256 KiB retornados. Não deve ler um log inteiro de 500 MB apenas para retornar `{ line: 1, limit: 10 }`.

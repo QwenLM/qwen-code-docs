@@ -84,7 +84,7 @@ export GITHUB_TOKEN="ghp_your_token_here"
 | `useLocalGh`              | `false`                  | 显式复用 daemon 主机的账户级别 GitHub CLI 身份验证                                          |
 | `pollInterval`            | `60000`                  | 轮询间隔（毫秒）                                                                            |
 | `baseUrl`                 | `https://api.github.com` | API base URL（用于 GHE）                                                                    |
-| `groupPolicy`             | `"disabled"`             | 必须为 `"open"` 才能接收通知                                                                |
+| `groupPolicy`             | `"disabled"`             | 必须为 `"open"`、`"allowlist"`（需在 `groups` 中列出仓库 `owner/repo`）或 `"pairing"`（需批准仓库）才能接收通知 |
 | `senderPolicy`            | `"allowlist"`            | 谁可以触发 bot                                                                              |
 | `groups.*.requireMention` | `true`                   | 普通评论需要 @提及；定向通知原因仍会运行                                                    |
 | `blockStreaming`          | `"off"`                  | 始终强制为 `"off"`；中间模型片段不会发布；不支持 `"on"`                                     |
@@ -103,6 +103,8 @@ export GITHUB_TOKEN="ghp_your_token_here"
 在公共仓库上始终使用 `senderPolicy: "allowlist"` 并显式设置 `allowedUsers`。
 
 允许列表和配对条目遵循**用户名**，而非不可变的账户 ID。如果允许列表中的用户重命名了其 GitHub 账户，请移除旧条目——GitHub 会释放旧用户名供任何人认领，新的持有者将继承允许列表/配对授权。
+
+注意，在 `groupPolicy: "pairing"` 下，访问权限按仓库授予：一旦仓库被批准，**任何 GitHub 用户**都可以通过该仓库的 issue 和 pull request 驱动 bot。所有 GitHub 流量都是群组流量，因此 `senderPolicy` 和 `allowedUsers` 不会限制已批准仓库的成员。批准以仓库全名（`owner/repo`）为键，重命名或转移时会发生变化——在任何仓库重命名、转移或删除后，撤销过期的群组批准。
 
 ## 提及检测
 

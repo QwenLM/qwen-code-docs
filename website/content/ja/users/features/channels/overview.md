@@ -68,9 +68,9 @@
 | `approvalMode`           | いいえ           | チャンネルセッションのツール承認モード。無人の Webhook タスクには `yolo` が必要です。この設定はチャンネル上のすべてのセッションに適用されます                       |
 | `instructions`           | いいえ           | 各セッションの最初のメッセージの前に追加されるカスタム指示                                                                                                         |
 | `webhooks`               | いいえ           | デーモン管理チャンネルの Webhook ソースと配信ターゲット。[Webhook トリガータスク](#webhook-triggered-tasks) を参照                                                 |
-| `groupPolicy`            | いいえ           | グループチャットへのアクセス：`disabled`（デフォルト）、`allowlist`、または `open`。[Group Chats](#group-chats) を参照                                             |
+| `groupPolicy`            | いいえ           | グループチャットへのアクセス：`disabled`（デフォルト）、`allowlist`、`pairing`、または `open`。[Group Chats](#group-chats) を参照                                  |
 | `dmPolicy`               | いいえ           | プライベート/DM へのアクセス：`open`（デフォルト）または `disabled`（すべての DM を暗黙に破棄）。グループ専用ボットに便利です                                     |
-| `groupHistoryLimit`      | いいえ           | グループ履歴のバックフィルをオプトインします。`0` または省略すると無効になります。正の数を指定すると、次のボットのメンションや返信に対して、許可されたメンションなしのグループメッセージがその数だけ永続化されます。 |
+| `groupHistoryLimit`      | いいえ           | グループ履歴のバックフィルをオプトインします。`0` または省略すると無効になります。正の数を指定すると、許可された送信者または承認済みペアリンググループのメンバーからのメンションなしグループメッセージが、次のボットのメンション/返信用にその数だけ永続化されます。 |
 | `groups`                 | いいえ           | グループごとの設定。キーはグループチャット ID またはデフォルト値の `"*"` です。[Group Chats](#group-chats) を参照                                                  |
 | `dispatchMode`           | いいえ           | ボットがビジーのときにメッセージを送信したときの動作：`steer`（デフォルト）、`collect`、または `followup`。[Dispatch Modes](#dispatch-modes) を参照                |
 | `blockStreaming`         | いいえ           | プログレッシブなレスポンス配信：`on` または `off`（デフォルト）。[Block Streaming](#block-streaming) を参照                                                        |
@@ -163,13 +163,13 @@ qwen channel pairing approve my-channel <CODE>
 
 - コードは 8 文字の大文字で、曖昧さのないアルファベットを使用します（`0`/`O`/`1`/`I` は除く）。
 - コードは 1 時間後に期限切れになります。
-- チャンネルごとに同時に保留中のリクエストは最大 3 つまでです。追加のリクエストは、いずれかが期限切れになるか承認されるまで無視されます。
-- `settings.json` の `allowedUsers` にリストされているユーザーは、常にペアリングをスキップします。
+- チャンネルごとに同時に保留中のリクエストは最大 3 つまで、送信者ごとに最大 1 つまでです。追加のリクエストは、いずれかが期限切れになるか承認されるまで拒否されます。
+- `settings.json` の `allowedUsers` にリストされているユーザーはユーザーペアリングをスキップします。`groupPolicy: "pairing"` では、グループ自体の承認が必要です。
 - 承認されたユーザーはワークスペースごとに `~/.qwen/channels/<workspace-scope>/<name>-allowlist.json` に保存されます。このファイルは機密として扱ってください。
 
 ## グループチャット
 
-デフォルトでは、ボットはダイレクトメッセージでのみ動作します。グループチャットのサポートを有効にするには、`groupPolicy` を `"allowlist"` または `"open"` に設定します。
+デフォルトでは、ボットはダイレクトメッセージでのみ動作します。グループチャットのサポートを有効にするには、`groupPolicy` を `"allowlist"`、`"pairing"`、または `"open"` に設定します。
 
 ### グループポリシー
 
@@ -177,7 +177,20 @@ qwen channel pairing approve my-channel <CODE>
 
 - **`disabled`**（デフォルト）— ボットはすべてのグループメッセージを無視します。最も安全なオプションです。
 - **`allowlist`** — ボットは `groups` にチャット ID で明示的にリストされているグループでのみ応答します。`"*"` キーはデフォルト設定を提供しますが、ワイルドカード許可としては機能**しません**。
+- **`pairing`** — 不明なグループからの意図的なメンションまたは返信により、グループ用のペアリングリクエストが 1 つ作成されます。承認されると、すべてのメンバーがそのグループでボットを使用できます。`senderPolicy` はダイレクトメッセージを引き続き制御します。
 - **`open`** — ボットは追加されたすべてのグループで応答します。使用には注意が必要です。
+
+ユーザーペアリングと同じ CLI コマンドでグループを承認します。保留中の
+リクエストにはグループとそれを開始したメンバーが識別されます。
+
+```bash
+qwen channel pairing approve my-channel <CODE>
+```
+
+グループ承認は、グループのチャット ID をキーとしてチャンネルのワークスペーススコープに保存されます。GitHub と GitLab ではチャット ID はリポジトリ/プロジェクトパスであるため、リネームまたは移転時に保存された承認が切り離されます。リネーム後にグループを再承認してください。同じパスで再作成されたリポジトリやプロジェクトは古い承認を継承します。リネーム、移転、削除後はグループ承認を取り消してください。
+メンションのないメッセージは、グループが `requireMention` を `false` に設定している場合でも、グループペアリングリクエストを作成することはありません。承認後は、設定されたメンションポリシーが通常通り適用されます。
+
+グループペアリングリクエストは DM ペアリングリクエストと同じ保留キューを共有します。チャンネルは最大 3 つの保留中リクエストを保持し、送信者はユーザーとグループのリクエストを合わせて最大 1 つの保留中リクエストを持ちます（[ペアリングルール](#ペアリングルール)を参照）。
 
 ### メンションゲーティング
 
@@ -225,7 +238,7 @@ qwen channel pairing approve my-channel <CODE>
 
 - 省略または `0` はバックフィルを無効にします。
 - グループレベルの `groupHistoryLimit` はチャンネルレベルの値を上書きします。
-- 許可された送信者からのメッセージのみが永続化されます。
+- 許可された送信者、または承認済みペアリンググループのメンバーからのメッセージのみが永続化されます。
 - `groupPolicy` またはグループ許可リストによって拒否されたメッセージは永続化されません。
 - 保留中のグループ履歴は、`~/.qwen/channels/<channel-name>-group-history.jsonl` または `$QWEN_HOME/channels/<channel-name>-group-history.jsonl` 配下のローカル JSONL として保存されます。
 - キャッシュされたメッセージは、次の実際のトリガーで信頼できないコンテキストとして注入され、独立したセッションのターンとして書き込まれません。
@@ -233,10 +246,10 @@ qwen channel pairing approve my-channel <CODE>
 ### グループメッセージの評価方法
 
 ```
-1. groupPolicy — is this group allowed?           (no → ignore)
-2. dmPolicy  — is this DM allowed?               (disabled → ignore)
+1. groupPolicy — is this group disabled, listed, paired, or open? (no → ignore/pairing flow)
+2. dmPolicy — is this DM allowed?                      (disabled → ignore)
 3. requireMention — was the bot mentioned/replied to? (no → ignore)
-4. senderPolicy — is this sender approved?         (no → pairing flow)
+4. senderPolicy — is this sender approved?             (skipped for a paired group; otherwise no → user pairing flow)
 5. Route to session
 ```
 
@@ -496,7 +509,7 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
   http://127.0.0.1:4170/workspace/channel/observed-contacts
 ```
 
-別の登録済みの信頼されたワークスペースを選択するには `GET /workspaces/:workspace/channel/observed-contacts` を使用します。1 秒から 365 日までのウィンドウを選択するには `?freshWithinSeconds=N` を追加します。デーモンはこの API を `workspace_channel_observed_topics` ケイパビリティで公開します。
+別の登録済みの信頼されたワークスペースを選択するには `GET /workspaces/:workspace/channel/observed-contacts` を使用します。1 秒から 365 日までのウィンドウを選択するには `?freshWithinSeconds=N` を追加します。デーモンはこの API を `workspace_channel_observed_contacts` ケイパビリティで公開します。
 
 レスポンスは完全なプラットフォーム ID とラベルを返します。グループラベルは、利用可能な場合、受け入れられた受信メッセージにすでに存在する名前を使用します。DingTalk は `conversationTitle` を提供し、Telegram は `chat.title` を提供します。Feishu と WeCom のグループラベルは現在完全な ID にフォールバックします。プラットフォームディレクトリやグループ詳細 API はクエリされません。トピクラベルも完全な ID にフォールバックします。各 `lastObservedAt` はミリ秒精度の正規化された ISO 8601 UTC タイムスタンプです。クライアントはこれをユーザーのローカルタイムゾーンに変換して表示できます。トップレベルの `users` にはダイレクトメッセージで観測されたユーザーが含まれます。`groups` には観測されたグループ会話が含まれ、`groups[].users` には各グループで観測されたユーザーが含まれ、`groups[].topics[].users` には Feishu または Telegram のトピックで観測されたユーザーが含まれます。
 

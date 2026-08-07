@@ -70,10 +70,11 @@ qwen channel start
 
 Telegram 그룹에서 봇을 사용하려면:
 
-1. 채널 구성에서 `groupPolicy`를 `"allowlist"` 또는 `"open"`으로 설정하세요
+1. 채널 구성에서 `groupPolicy`를 `"allowlist"`, `"pairing"` 또는 `"open"`으로 설정하세요
 2. BotFather에서 **privacy mode를 비활성화**하세요: `/mybots` → 봇 선택 → Bot Settings → Group Privacy → Turn Off
 3. 봇을 그룹에 추가하세요. 이미 그룹에 있었다면 **제거했다가 다시 추가**하세요 (Telegram은 봇이 참여할 때의 privacy 설정을 캐시합니다)
 4. `groupPolicy: "allowlist"`를 사용하는 경우, 그룹의 chat ID를 구성의 `groups`에 추가하세요
+5. `groupPolicy: "pairing"`을 사용하는 경우, 응답이 시작되기 전에 그룹의 페어링 요청을 한 번 승인하세요. 그룹이 승인되면 **해당 그룹의 모든 멤버**가 봇을 사용할 수 있습니다. `senderPolicy`와 `allowedUsers`는 승인된 그룹의 멤버를 제한하지 않습니다.
 
 기본적으로 봇은 그룹에서 응답하기 위해 @멘션이나 답장을 요구합니다. 특정 그룹에 대해 `"requireMention": false`를 설정하면 모든 메시지에 응답합니다(전용 작업 그룹에 유용). 자세한 내용은 [그룹 채팅](./overview#group-chats)을 참조하세요.
 
@@ -105,8 +106,9 @@ Telegram 그룹에서 봇을 사용하려면:
 
 ### 봇이 그룹에서 응답하지 않음
 
-- `groupPolicy`가 `"allowlist"` 또는 `"open"`으로 설정되어 있는지 확인하세요 (기본값은 `"disabled"`)
+- `groupPolicy`가 `"allowlist"`, `"pairing"` 또는 `"open"`으로 설정되어 있는지 확인하세요 (기본값은 `"disabled"`)
 - `"allowlist"`를 사용하는 경우, 그룹의 chat ID가 `groups` 구성에 있는지 확인하세요
+- `"pairing"`을 사용하는 경우, 그룹의 페어링 요청이 승인되었는지 확인하세요
 - BotFather에서 **Group Privacy가 꺼져 있는지** 확인하세요 — 그렇지 않으면 봇이 그룹에서 명령어가 아닌 메시지를 볼 수 없습니다
 - 봇을 그룹에 추가한 후 privacy mode를 변경했다면, 그룹에서 봇을 **제거했다가 다시 추가**하세요
 - 기본적으로 봇은 @멘션이나 답장을 요구합니다. `@yourbotname hello`을 보내서 테스트하세요

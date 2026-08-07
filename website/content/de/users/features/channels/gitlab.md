@@ -62,7 +62,7 @@ Für self-hosted Instanzen setze `baseUrl`:
 | `pollInterval`           | `60000`                     | Poll-Intervall in ms                                      |
 | `baseUrl`                | `https://gitlab.com`        | GitLab-Instanz-URL                                        |
 | `action_prompt_template` | (erforderlich für Verarbeitung) | Bildet GitLab-Aktionsnamen auf Metadaten-Templates ab  |
-| `groupPolicy`            | `"disabled"`                | Muss `"open"` sein oder `"allowlist"` mit dem aufgelisteten Projekt |
+| `groupPolicy`            | `"disabled"`                | Muss `"open"`, `"allowlist"` mit dem aufgelisteten Projekt oder `"pairing"` mit genehmigtem Projekt sein |
 | `senderPolicy`           | `"allowlist"`               | Wer den Bot auslösen kann                                 |
 
 ## action_prompt_template
@@ -132,13 +132,15 @@ Bei einem **öffentlichen Projekt** erlaubt `senderPolicy: "open"` **jedem GitLa
 
 Verwende immer `senderPolicy: "allowlist"` mit expliziten `allowedUsers` bei öffentlichen Projekten.
 
+Beachte, dass unter `groupPolicy: "pairing"` der Zugriff pro Projekt gewährt wird: Sobald ein Projekt genehmigt ist, kann **jeder GitLab-Benutzer** den Bot über die Issues und Merge Requests dieses Projekts steuern. Der gesamte GitLab-Traffic ist Gruppen-Traffic, daher beschränken `senderPolicy` und `allowedUsers` nicht die Mitglieder eines genehmigten Projekts. Genehmigungen werden über den Projektpfad (`owner/repo`) geführt, der sich bei Umbenennung oder Transfer ändert — widerrufe veraltete Gruppen-Genehmigungen nach jeder Projekt-Umbenennung, jedem Transfer oder jeder Löschung.
+
 ## Erwähnungserkennung
 
 Der Adapter setzt immer `isMentioned = true` bei dispatched Envelopes, da GitLab die Erwähnung bereits bei der Todo-Erstellung bestimmt hat. Die `action_prompt_template`-Konfiguration ist der eigentliche Ereignisfilter — nur Aktionen mit einem konfigurierten Template werden verarbeitet. Die `@bot`-Erwähnung wird vor dem Dispatch über `stripBotMention` aus dem Nachrichtentext entfernt.
 
-### ⚠️ groupPolicy muss "open" oder "allowlist" sein
+### ⚠️ groupPolicy muss "open", "allowlist" oder "pairing" sein
 
-`groupPolicy` muss auf `"open"` gesetzt sein oder auf `"allowlist"` mit explizit aufgeführtem Projekt, damit Todos verarbeitet werden. Der Standardwert `"disabled"` verwirft alle Erwähnungen: Todos werden als erledigt markiert und der Cursor vorgerückt, aber kein Dispatch erfolgt. Eine Ablehnung wird protokolliert (`preflight rejected reason=group_disabled`), aber das Todo wird trotzdem konsumiert. Wenn dein Bot nicht auf Erwähnungen reagiert, prüfe, dass `groupPolicy` nicht `"disabled"` ist.
+`groupPolicy` muss auf `"open"`, `"allowlist"` mit explizit aufgeführtem Projekt oder `"pairing"` gesetzt sein, damit Todos verarbeitet werden. Unter `"pairing"` erstellt die erste Erwähnung aus einem nicht genehmigten Projekt eine Gruppen-Pairing-Anfrage; genehmige sie einmal mit `qwen channel pairing approve`, und Todos aus diesem Projekt werden von da an dispatched. Der Standardwert `"disabled"` verwirft alle Erwähnungen: Todos werden als erledigt markiert und der Cursor vorgerückt, aber kein Dispatch erfolgt. Eine Ablehnung wird protokolliert (`preflight rejected reason=group_disabled`), aber das Todo wird trotzdem konsumiert. Wenn dein Bot nicht auf Erwähnungen reagiert, prüfe, dass `groupPolicy` nicht `"disabled"` ist.
 
 ## Funktionsweise
 
@@ -151,7 +153,7 @@ Der Adapter verwendet GitLabs Todos-API als Nachrichtenquelle:
 5. **Erwähnungstyp erkennen** über den `target_url`-Anker:
    - `#note_123` vorhanden → Kommentar-Erwähnung → Text ist `todo.body` (der Kommentar)
    - Kein Anker → Beschreibungs-Erwähnung → Text ist die Issue/MR-Beschreibung
-6. **Dispatch** des Envelopes über `handleInbound` (erfordert `groupPolicy: "open"` oder `"allowlist"` mit aufgeführtem Projekt)
+6. **Dispatch** des Envelopes über `handleInbound` (erfordert `groupPolicy: "open"`, `"allowlist"` mit aufgeführtem Projekt oder `"pairing"` mit genehmigtem Projekt)
 7. **Cursor vorrücken** und **Todo als erledigt markieren** (Best-Effort)
 
 Der Cursor (`lastProcessedId`) rückt vor, unabhängig von Dispatch-Erfolg oder -Fehler. Fehlgeschlagene Dispatches posten einen ⚠️-Fehlerkommentar beim Issue/MR und werden nicht erneut versucht — der Benutzer kann den Bot erneut erwähnen, um ein neues Todo auszulösen.

@@ -80,7 +80,9 @@ CLI は **`packages/cli/src/commands/serve.ts`** で定義されています:
 | `--token <s>`                           | string                         | env / none                                   | 非ループバックおよび `--require-auth`        | ベアラートークン。1回だけトリミングされます。**`/proc/<pid>/cmdline` に表示されるため、`QWEN_SERVER_TOKEN` の使用を推奨します**。起動時の stderr でもこれについて警告されます。                                                                                |
 | `--max-sessions <n>`                    | number                         | `32`                                         | -                                        | ワークスペースごとのアクティブセッション上限。超過した spawn は 503 を返します。`0` は無制限を意味します。`NaN` / 負の値は例外をスローします。                                                                                                                     |
 | `--max-total-sessions <n>`              | number                         | 複数のワークスペース起動用に導出される値 | -                                        | デーモン全体のアクティブセッション上限。省略時は、ワークスペースごとの上限と起動/復元ワークスペース数から有限のデフォルト値が 1 回だけ導出されます。動的な登録では再計算されません。`0` は無制限を意味します。                                                                                                      |
-| `--memory-budget-mb <n>`                | `[1024, 1048576]` の整数   | cgroup/ホストメモリの 50%                  | 観察のみ                             | デーモンプロセスツリーの合計メモリバジェット。解決された利用可能メモリで上限が設定されます。`limits.memory` の下に報告されます。子プロセスのサイズには使用されません。                                                                                                                                                                        |
+| `--memory-budget-mb <n>`                | `[1024, 1048576]` の整数   | cgroup/ホストメモリの 50%                  | 観察のみ                             | デーモンプロセスツリーの合計メモリバジェット。解決された利用可能メモリで上限が設定されます。`limits.memory` の下に報告されます。モデル化されたパーティションに適用されることはありません。                                                                                                                                                                        |
+| `--memory-pressure-mode <mode>`         | `off` \| `observe`             | `observe`                                    | 観察のみ                             | 両モードで `runtime.memory.pressure` を報告します。`observe` のみ `daemon_memory_pressure` issue を発生させます。ルートプロセスのみ。                                                                                                                                                                                         |
+| `--child-heap-mode <mode>`              | `off` \| `observe`             | `observe`                                    | 観察のみ                             | `observe` の下では、モデル化されたパーティションを `limits.memory.childHeap` の下に報告します。何も適用せず、何も拒否しません。`off` の下では、そのブロックの 2 つの数値は `null` になります。                                                                                                                                                |
 | `--max-pending-prompts-per-session <n>` | number                         | `5`                                          | -                                        | セッションごとに受け入れられたが pending/running 状態のプロンプトの上限。超過したプロンプトは 503 を返します。`0` / `Infinity` は無制限を意味します。負の値または非整数値は例外をスローします。                                                               |
 | `--workspace <dir>`                     | string / 繰り返し可能           | `process.cwd()`                              | -                                        | 起動ワークスペースランタイム。繰り返して追加の分離されたランタイムを登録できます。最初がプライマリです。各値は**絶対パスであり、存在し、かつディレクトリでなければなりません**。起動時に `canonicalizeWorkspace` を介してすべての値を正規化します。`cwd` が一致しない `POST /session` は `400 workspace_mismatch` を返します。 |
 | `--max-connections <n>`                 | number                         | `256`                                        | -                                        | リスナーレベルの `server.maxConnections`。`0` / `Infinity` は無制限を意味します。`NaN` / 負の値は、fail-open 動作を避けるために起動を失敗させます。                                                                              |
@@ -160,6 +162,7 @@ CLI は **`packages/cli/src/commands/serve.ts`** で定義されています:
 | `--prompt-deadline-ms` / `--writer-idle-timeout-ms` が正の整数ではない | `Must be a positive integer`                                                                        |
 | `--initialize-timeout-ms` が正の整数ではないか `2^31-1` を超える       | `Must be a positive integer` / `Exceeds maximum JS timer delay`                                     |
 | 不明な `policy.permissionStrategy` または正でない `policy.consensusQuorum`  | `InvalidPolicyConfigError`                                                                          |
+
 ## 7. Curl 検証チェックリスト
 
 ```bash
@@ -264,7 +267,7 @@ serve/run-qwen-serve.ts              server = app.listen(port, hostname, cb)
    |  `- resolve(handle: RunHandle)
    |
    v
-commands/serve.ts                  await blockForever()    // シグナルがあるまで永久にブロック
+commands/serve.ts                  await blockForever()    // block forever until signal
 ```
 
 重要な事実:

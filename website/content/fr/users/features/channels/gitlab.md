@@ -62,7 +62,7 @@ Pour les instances auto-hébergées, définissez `baseUrl` :
 | `pollInterval`           | `60000`                   | Intervalle de polling en ms                                |
 | `baseUrl`                | `https://gitlab.com`      | URL de l'instance GitLab                                   |
 | `action_prompt_template` | (requis pour le traitement) | Associe les noms d'actions GitLab à des templates de métadonnées |
-| `groupPolicy`            | `"disabled"`              | Doit être `"open"`, ou `"allowlist"` avec le projet listé  |
+| `groupPolicy`            | `"disabled"`              | Doit être `"open"`, `"allowlist"` avec le projet listé, ou `"pairing"` avec le projet approuvé |
 | `senderPolicy`           | `"allowlist"`             | Qui peut déclencher le bot                                 |
 
 ## action_prompt_template
@@ -132,13 +132,15 @@ Sur un **projet public**, définir `senderPolicy: "open"` permet à **tout utili
 
 Utilisez toujours `senderPolicy: "allowlist"` avec des `allowedUsers` explicites sur les projets publics.
 
+Notez que sous `groupPolicy: "pairing"`, l'accès est accordé par projet : une fois qu'un projet est approuvé, **tout utilisateur GitLab** peut piloter le bot via les issues et merge requests de ce projet. Tout le trafic GitLab est du trafic de groupe, donc `senderPolicy` et `allowedUsers` ne filtrent pas les membres d'un projet approuvé. Les approbations sont indexées par le chemin du projet (`owner/repo`), qui change en cas de renommage ou de transfert — révoquez les approbations de groupe obsolètes après tout renommage, transfert ou suppression de projet.
+
 ## Détection des mentions
 
 L'adaptateur définit toujours `isMentioned = true` sur les enveloppes dispatchées, car GitLab a déjà déterminé la mention lors de la création du todo. La configuration `action_prompt_template` est le véritable filtre d'événements — seules les actions avec un template configuré sont traitées. La mention `@bot` est supprimée du texte du message avant le dispatch via `stripBotMention`.
 
-### ⚠️ groupPolicy doit être "open" ou "allowlist"
+### ⚠️ groupPolicy doit être "open", "allowlist" ou "pairing"
 
-`groupPolicy` doit être défini à `"open"`, ou `"allowlist"` avec le projet explicitement listé, pour que les todos soient traités. La valeur par défaut `"disabled"` ignore toutes les mentions : les todos sont marqués comme terminés et le curseur avance, mais aucun dispatch n'a lieu. Un rejet est journalisé (`preflight rejected reason=group_disabled`) mais le todo est toujours consommé. Si votre bot ne répond pas aux mentions, vérifiez que `groupPolicy` n'est pas `"disabled"`.
+`groupPolicy` doit être défini à `"open"`, `"allowlist"` avec le projet explicitement listé, ou `"pairing"` pour que les todos soient traités. Sous `"pairing"`, la première mention provenant d'un projet non approuvé crée une demande d'appairage de groupe ; approuvez-la une fois avec `qwen channel pairing approve`, et les todos de ce projet seront dispatchés à partir de ce moment. La valeur par défaut `"disabled"` ignore toutes les mentions : les todos sont marqués comme terminés et le curseur avance, mais aucun dispatch n'a lieu. Un rejet est journalisé (`preflight rejected reason=group_disabled`) mais le todo est toujours consommé. Si votre bot ne répond pas aux mentions, vérifiez que `groupPolicy` n'est pas `"disabled"`.
 
 ## Comment ça marche
 
@@ -151,7 +153,7 @@ L'adaptateur utilise l'API Todos de GitLab comme source de messages :
 5. **Détecter le type de mention** via l'ancre `target_url` :
    - `#note_123` présent → mention dans un commentaire → le texte est `todo.body` (le commentaire)
    - Pas d'ancre → mention dans la description → le texte est la description de l'issue/MR
-6. **Dispatcher** l'enveloppe via `handleInbound` (nécessite `groupPolicy: "open"` ou `"allowlist"` avec le projet listé)
+6. **Dispatcher** l'enveloppe via `handleInbound` (nécessite `groupPolicy: "open"`, `"allowlist"` avec le projet listé, ou `"pairing"` avec le projet approuvé)
 7. **Avancer le curseur** et **marquer le todo comme terminé** (best-effort)
 
 Le curseur (`lastProcessedId`) avance indépendamment du succès ou de l'échec du dispatch. Les dispatchs échoués publient un commentaire d'erreur ⚠️ sur l'issue/MR et ne sont pas re-tentés — l'utilisateur peut re-mentionner le bot pour déclencher un nouveau todo.

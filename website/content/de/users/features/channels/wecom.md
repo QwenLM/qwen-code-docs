@@ -81,7 +81,7 @@ qwen channel start my-wecom
 - `pairing`: Benutzer müssen sich koppeln, bevor sie den Bot verwenden können.
 - `open`: Jeder, der dem Roboter Nachrichten senden kann, kann ihn verwenden.
 
-Für Gruppen setze `groupPolicy` auf `"allowlist"` oder `"open"`. WeCom stellt nur Gruppennachrichten zu, die den intelligenten Roboter erwähnen, daher wird jeder zugestellte Gruppen-Callback als erwähnt behandelt. Die `requireMention`-Einstellung kann keine Antworten auf nicht erwähnte Gruppennachrichten aktivieren, da diese Nachrichten nicht an den Bot zugestellt werden.
+Für Gruppen setze `groupPolicy` auf `"allowlist"`, `"pairing"` oder `"open"`. Unter `"pairing"` erzeugt die erste Erwähnung der Gruppe eine Pairing-Anfrage, die einmalig genehmigt werden muss, bevor Antworten gestartet werden. Beachte, dass unter `groupPolicy: "pairing"` der Zugriff pro Gruppe erteilt wird: Sobald eine Gruppe genehmigt ist, kann **jedes Mitglied dieser Gruppe** den Bot verwenden; `senderPolicy` und `allowedUsers` beschränken nicht die Mitglieder einer genehmigten Gruppe. WeCom stellt nur Gruppennachrichten zu, die den intelligenten Roboter erwähnen, daher wird jeder zugestellte Gruppen-Callback als erwähnt behandelt. Die `requireMention`-Einstellung kann keine Antworten auf nicht erwähnte Gruppennachrichten aktivieren, da diese Nachrichten nicht an den Bot zugestellt werden.
 
 ### Group Mention Compatibility
 

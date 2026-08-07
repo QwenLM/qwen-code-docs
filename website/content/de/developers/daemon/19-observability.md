@@ -133,6 +133,49 @@ curl -s 'http://127.0.0.1:4170/daemon/status?detail=full' | \
 
 `stable` ist der normale Owner, `fallback` bedeutet, dass ein anderer Daemon die stabile Familie besitzt, und `stderr-only` bedeutet, dass die Datei-Protokollierung deaktiviert oder nicht verfügbar ist. `fallback/ok` ist unter beabsichtigter Nebenläufigkeit zu erwarten. Eine `daemon_log_degraded`-Warnung enthält keinen Pfad; fordere vollständige Details an, um den tatsächlichen Pfad und die Logger-Issue-Codes zu erhalten. Verwende `runId`, um Neustarts innerhalb der stabilen Datei zu trennen.
 
+### 11. Steht der Daemon unter Memory-Druck?
+
+```bash
+curl -s 'http://127.0.0.1:4170/daemon/status' | \
+  jq '.runtime.memory.pressure'
+```
+
+`level` ist `normal` / `soft` / `hard` / `critical`, klassifiziert aus `ratio` —
+dem schlechteren Wert aus `rssRatio` (RSS gegen erkanntes Cgroup/Host-Speicherlimit,
+das ist, was der OOM-Killer beobachtet) und `heapRatio` (V8-Heap-Nutzung gegen
+`heap_size_limit` dieses Prozesses — der gesamte Heap, nicht nur der Old-Space,
+den `--max-old-space-size` benennt). `source` gibt an, welcher Wert ihn erzeugt hat.
+Prüfe `source` vor Aktionen: `unknown` bedeutet, dass der Daemon keine Seite
+messen konnte, `normal` ist dort also das Fehlen eines Messwerts, kein
+Gesundheitsbeweis. Eine Seite wird nur gemeldet, wenn sowohl Zähler als auch
+Nenner verwendbar waren, `source` unterscheidet also auch ein Null-`rssBytes` /
+`heapUsedBytes` von einem echten Wert.
+
+**`rssRatio` ist nur so gut wie ihr Nenner, und
+`limits.memory.availableMemorySource` ist die Note dafür.** Unter einer Cgroup
+(`constrained`) ist es exakt das Limit, das der OOM-Killer durchsetzt, die Ratio
+bedeutet also, was sie sagt. Auf Bare-Metal (`host`) ist es die Größe der
+gesamten Maschine, während der Daemon tatsächlich abstirbt, wenn die _Maschine_
+keinen Speicher mehr hat — was von jedem anderen Prozess auf der Kiste abhängt.
+Ein Daemon, der 20 % eines 64-GB-Hosts neben einem 55-GB-Nachbarn hält, meldet
+`level: normal, source: rss` bis er getötet wird. Unter `source: 'host'` ist
+`rssRatio` als **Untergrenze** des tatsächlichen Drucks zu lesen. Das ist
+unabhängig von unkalibrierten Schwellwerten: Keine Schwellwertwahl korrigiert
+einen Nenner, der das Falsche misst.
+
+Zwei weitere Dinge, die dies **nicht** abdeckt. Es ist nur der Daemon-**Root**-Prozess,
+ein Daemon, dessen `qwen --acp`-Children die Wachstumstreiber sind, kann durchgehend
+`normal` melden — lies `runtime.memory.children` daneben, das den RSS der live
+Children summiert (und über `sampled` angibt, wie viele tatsächlich gemeldet haben).
+Und nichts stellt Abhilfe her: `normal` zu verlassen löst eine
+`daemon_memory_pressure`-Warnung aus und ändert kein Verhalten.
+
+Unter `--memory-pressure-mode off` wird jeder obige Wert weiterhin gemeldet und
+das Issue nicht ausgelöst, der Top-Level-`status` bleibt also, was er gewesen
+wäre. Verwende `off` beim Kalibrieren der Schwellwerte gegen eine reale
+Workload, oder wenn du auf `status` alertest und kein unkalibriertes Signal ihn
+verändern soll.
+
 ## Ablauf
 
 ### Typischer Triage-Ablauf

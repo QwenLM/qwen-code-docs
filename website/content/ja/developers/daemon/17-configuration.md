@@ -1,3 +1,5 @@
+---
+
 # 設定リファレンス
 
 ## 概要
@@ -22,6 +24,8 @@
 | `--event-ring-size <n>`                 | number                       | `8000`                                                                            | セッションごとのSSEリプレイリング。ソフトキャップは `1_000_000` です。                                                                                                                                                                     |
 | `--compacted-replay-max-bytes <n>`      | positive integer             | `4194304`                                                                         | `POST /session/:id/load` が返す有界インメモリリプレイスナップショットのバイト上限。ハードキャップは `268435456` です。                                                                                                         |
 | `--memory-budget-mb <n>`                | integer in `[1024, 1048576]` | cgroup 制約またはホストメモリの 50%、フラグの最大値（1048576 MB）を上限 | デーモンプロセスツリーの合計メモリ予算。解決された利用可能メモリの上限でキャップされます。デーモンステータスの `limits.memory` で観測・報告されます。子プロセスのサイズ決定には使用されません。起動時は範囲外の値を拒否します。 |
+| `--memory-pressure-mode <mode>`         | `off` \| `observe`           | `observe`                                                                         | デーモンが自身の RSS と V8 ヒープからメモリプレッシャーレベルを導出するかどうか。両モードとも `runtime.memory.pressure` を報告します。`observe` のみ `daemon_memory_pressure` を発生させます。ルートプロセスのみ。是正措置はありません。                               |
+| `--child-heap-mode <mode>`              | `off` \| `observe`           | `observe`                                                                         | デーモンが予算の子ごとのヒープパーティションをモデル化するかどうか。`observe` はそれを報告し、それを超えたスポーンをカウントします。何も適用されません。`off` はパーティションを一切公開しません。`maxConcurrentChildren` と `perChildCeilingMb` は両方とも `null` になります。 |
 | `--http-bridge`                         | boolean                      | `true`                                                                            | ステージ1ブリッジモード。`--no-http-bridge` でも http-bridge にフォールバックし、stderrに出力します。                                                                                       |
 | `--mcp-client-budget <n>`               | positive integer             | unset                                                                             | `WorkspaceMcpBudget.clientBudget` を設定し、`childEnvOverrides` を通じてACP子プロセスに転送します。                                                                                                                      |
 | `--mcp-budget-mode <m>`                 | `off` / `warn` / `enforce`   | `warn` when budget is set, otherwise `off`                                        | `WorkspaceMcpBudget.mode` を設定します。`enforce` には `--mcp-client-budget` が必要です。                                                                                                           |
@@ -149,7 +153,7 @@
 | `DEFAULT_MAX_QUEUED`              | `eventBus.ts`           | `256`             | サブスクライバーごとのキュー上限。                                                     |
 | `DEFAULT_MAX_SUBSCRIBERS`         | `eventBus.ts`           | `64`              | バスごとのサブスクライバー上限。                                                       |
 | `WARN_THRESHOLD_RATIO`            | `eventBus.ts`           | `0.75`            | `slow_client_warning` のトリガー。                                                    |
-| `WARN_RESET_RATIO`                | `eventBus.ts`           | `0.375`           | ヒステリシスの再設定しきい値。                                                         |
+| `WARN_RESET_RATIO`               | `eventBus.ts`           | `0.375`           | ヒステリシスの再設定しきい値。                                                         |
 | `DEFAULT_INIT_TIMEOUT_MS`         | `bridge.ts`             | `10_000`          | ACP `initialize` ハンドシェイクのタイムアウト。                                        |
 | `MCP_RESTART_TIMEOUT_MS`          | `bridge.ts`             | `300_000`         | `/workspace/mcp/:server/restart` のブリッジタイムアウト。                              |
 | `DEFAULT_PERMISSION_TIMEOUT_MS`   | `bridge.ts`             | `5 * 60_000`      | 権限リクエストごとのタイムアウト時間。                                                 |

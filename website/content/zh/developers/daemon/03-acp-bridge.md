@@ -15,7 +15,7 @@
 - 为 `setSessionModel` 调用提供每个 session 的 FIFO 队列，防止使用不同模型的并发附加操作与 agent 产生竞争。
 - 每个 session 的 `EventBus` 驱动 `GET /session/:id/events`（参见 [`10-event-bus.md`](./10-event-bus.md)）。
 - 权限流程：`BridgeClient.requestPermission` → `MultiClientPermissionMediator.request` → 扇出（fan-out） → 投票收集 → ACP 响应（参见 [`04-permission-mediation.md`](./04-permission-mediation.md)）。
-- 文件 I/O：`BridgeFileSystem` 适配器用于处理 ACP 的 `readTextFile` / `writeTextFile` 调用（参见 [`07-workspace-filesystem.md`](./07-workspace-filesystem.md)）。
+- 文件 I/O：`BridgeFileSystem` 适配器用于处理 ACP 的读取和写入；同主机 daemon runtime 会广播 `readTextFile: false`，使常规文本读取留在子进程中，而最终的文本写入仍通过委托完成（参见 [`07-workspace-filesystem.md`](./07-workspace-filesystem.md)）。
 - 用于 workspace 级别状态（`/workspace/mcp`、`/workspace/skills`、`/workspace/providers`）、MCP 重启以及可选的私有托管 Tool Guard 回调的 extMethod RPC。
 - 生命周期：优雅的 `shutdown()`，每个 channel 的超时时间为 `KILL_HARD_DEADLINE_MS`（10 秒）；同步的 `killAllSync()` 用于二次信号强制退出。
 
@@ -202,6 +202,7 @@ sequenceDiagram
 | `persistApprovalMode`、`persistDisabledTools` | —                                                  | Wave 4 mutation 路由的设置写入钩子。                                                                  |
 | `contextFilename`                             | 来自 `settings.json` 的 `context.fileName`          | 覆盖 `getCurrentGeminiMdFilename`。                                                                               |
 | `statusProvider`                              | （无）                                             | 守护进程宿主预检单元（`DaemonStatusProvider`）。                                                                 |
+| `delegateReadTextFileToClient`                | `true`                                             | 仅对同主机 runtime 设为 `false`，使子进程的所有 `FileSystemService.readTextFile` 消费者使用常规 CLI 文件系统服务。                    |
 | `fileSystem`                                  | （无）                                             | 用于 ACP `readTextFile` / `writeTextFile` 的 `BridgeFileSystem` 适配器。                                                  |
 | `permissionPolicy`                            | 来自 `settings.json` 的 `policy.permissionStrategy` | `first-responder` / `designated` / `consensus` / `local-only` 之一。                                                 |
 | `permissionConsensusQuorum`                   | 来自 `settings.json`                               | consensus 策略的 N 值。                                                                                               |

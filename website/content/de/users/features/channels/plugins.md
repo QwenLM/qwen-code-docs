@@ -54,7 +54,7 @@ Alle Standard-Channel-Optionen funktionieren auch mit benutzerdefinierten Channe
 | `cwd`          | Arbeitsverzeichnis für den Agenten             |
 | `instructions` | Wird der ersten Nachricht jeder Session vorangestellt |
 | `model`        | Model-Override für den Channel                 |
-| `groupPolicy`  | `disabled`, `allowlist` oder `open`            |
+| `groupPolicy`  | `disabled`, `allowlist`, `pairing` oder `open`     |
 | `dmPolicy`     | `open` oder `disabled`                           |
 | `groups`       | Einstellungen pro Gruppe                       |
 
@@ -77,7 +77,7 @@ Benutzerdefinierte Channels unterstützen automatisch alles, was auch integriert
 - **Sender Policies** — Zugriffskontrolle via `allowlist`, `pairing` und `open`
 - **Group Policies** — Einstellungen pro Gruppe mit optionalem @mention-Gating
 - **Session-Routing** — Sessions pro Benutzer, pro Thread oder eine einzige gemeinsame Session
-- **DM-Pairing** — Vollständiger Pairing-Code-Flow für unbekannte Benutzer
+- **DM- und Gruppen-Pairing** — Vollständiger Pairing-Code-Flow für unbekannte Benutzer und Gruppen
 - **Slash Commands** — `/help`, `/clear`, `/status` funktionieren out of the box
 - **Custom Instructions** — Werden der ersten Nachricht in jeder Session vorangestellt
 - **Crash-Recovery** — Automatischer Neustart unter Beibehaltung der Session

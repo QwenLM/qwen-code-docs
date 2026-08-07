@@ -63,6 +63,39 @@ Oder definiere sie im `env`-Abschnitt der `settings.json`:
 }
 ```
 
+### Interactive Cards
+
+Füge ein `interactiveCards`-Objekt hinzu, um DingTalk-Status- und Frage-Karten zu aktivieren. Das Weglassen des Objekts deaktiviert interaktive Karten. Wenn das Objekt vorhanden ist, sind der Gesamtschalter und beide Kartentypen standardmäßig aktiviert, und Frage-Karten laufen nach 270.000 Millisekunden (270 Sekunden) ab.
+
+```json
+{
+  "channels": {
+    "my-dingtalk": {
+      "type": "dingtalk",
+      "clientId": "$DINGTALK_CLIENT_ID",
+      "clientSecret": "$DINGTALK_CLIENT_SECRET",
+      "interactiveCards": {
+        "enabled": true,
+        "statusCard": { "enabled": true },
+        "questionCard": {
+          "enabled": true,
+          "timeoutMs": 270000
+        }
+      }
+    }
+  }
+}
+```
+
+Setze `interactiveCards.enabled` auf `false`, um alle interaktiven Karten zu deaktivieren.
+Verwende `statusCard.enabled` oder `questionCard.enabled`, um einen Kartentyp zu deaktivieren,
+und setze `questionCard.timeoutMs` auf eine endliche positive Zahl, um zu ändern, wie lange
+Qwen Code auf eine Frage-Karten-Antwort wartet. Werte über 2.147.483.647
+Millisekunden (ca. 24,8 Tage) werden auf dieses Maximum begrenzt. Interaktive Karten
+werden über `settings.json` oder die Management-API konfiguriert; der Web-Shell-
+Channel-Editor rendert sie nicht und behält das gespeicherte Objekt bei, wenn
+du andere Felder bearbeitest.
+
 ### Connection Recovery
 
 `useConnectionManager` ist standardmäßig `true`. Der Connection Manager überwacht das Stream-WebSocket und ersetzt den DingTalk-SDK-Client, wenn die Verbindung nicht mehr reagiert. Du solltest ihn normalerweise aktiviert lassen.
@@ -115,9 +148,10 @@ Jedes Ziel muss `isGroup` explizit setzen. Für eine Direktnachricht ist `chatId
 
 DingTalk-Bots funktionieren sowohl in Direktnachrichten als auch in Gruppenunterhaltungen. Um die Gruppenunterstützung zu aktivieren:
 
-1. Setze `groupPolicy` in deiner Kanalkonfiguration auf `"allowlist"` oder `"open"`
+1. Setze `groupPolicy` in deiner Kanalkonfiguration auf `"allowlist"`, `"pairing"` oder `"open"`
 2. Füge den Bot zu einer DingTalk-Gruppe hinzu
 3. Erwähne den Bot in der Gruppe mit @, um eine Antwort auszulösen
+4. Wenn du `groupPolicy: "pairing"` verwendest, genehmige die Pairing-Anfrage der Gruppe einmal, bevor Antworten starten
 
 Standardmäßig erfordert der Bot eine @-Erwähnung in Gruppenchats (`requireMention: true`). Setze `"requireMention": false` für eine bestimmte Gruppe, damit der Bot auf alle Nachrichten antwortet. Vollständige Details findest du unter [Gruppenchats](./overview#group-chats).
 
@@ -161,7 +195,8 @@ Du kannst Fotos und Dokumente an den Bot senden, nicht nur Text.
 
 ### Bot antwortet nicht in Gruppen
 
-- Überprüfe, ob `groupPolicy` auf `"allowlist"` oder `"open"` gesetzt ist (Standard ist `"disabled"`)
+- Überprüfe, ob `groupPolicy` auf `"allowlist"`, `"pairing"` oder `"open"` gesetzt ist (Standard ist `"disabled"`)
+- Wenn du `"pairing"` verwendest, überprüfe, ob die Pairing-Anfrage der Gruppe genehmigt wurde
 - Stelle sicher, dass du den Bot in der Gruppennachricht mit @ erwähnst
 - Überprüfe, ob der Bot zur Gruppe hinzugefügt wurde
 

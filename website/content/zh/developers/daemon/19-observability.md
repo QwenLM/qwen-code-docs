@@ -138,6 +138,21 @@ curl -s 'http://127.0.0.1:4170/daemon/status?detail=full' | \
 - `qwen-code.daemon.prompt.queue_wait`，以毫秒为单位的 histogram。
 - `qwen-code.daemon.pipe.message_bytes`，以字节为单位的 histogram，包含 `direction=inbound|outbound`。
 
+### 11. daemon 是否处于内存压力下？
+
+```bash
+curl -s 'http://127.0.0.1:4170/daemon/status' | \
+  jq '.runtime.memory.pressure'
+```
+
+`level` 为 `normal` / `soft` / `hard` / `critical`，根据 `ratio` 分类——取 `rssRatio`（RSS 相对于检测到的 cgroup/主机内存，即 OOM killer 监控的指标）和 `heapRatio`（V8 堆已用相对于此进程的 `heap_size_limit`——整个堆，而不仅是 `--max-old-space-size` 命名的老年代）中更严重的一个。`source` 表示是哪一个产生的。在采取行动前请检查 `source`：`unknown` 表示 daemon 无法测量两侧的值，因此此处的 `normal` 表示缺少读数，而非健康的证据。只有当分子和分母都可用时才会报告对应的一侧，因此 `source` 也能区分零值 `rssBytes` / `heapUsedBytes` 和真实值。
+
+**`rssRatio` 的准确性取决于其分母，而 `limits.memory.availableMemorySource` 决定其可信度。** 在 cgroup 下（`constrained`）它正是 OOM killer 执行的限制，因此 ratio 含义明确。在裸机上（`host`）它是整台机器的大小，而 daemon 实际上在_机器_内存耗尽时才会死亡——这取决于机器上的所有其他进程。一个在 64 GB 主机上占用 20% 的 daemon，旁边有一个 55 GB 的邻居，会一直报告 `level: normal, source: rss` 直到被杀死。在 `source: 'host'` 下，将 `rssRatio` 视为实际压力的**下界**。这与阈值未校准是两个问题：没有任何阈值选择能修正测量对象错误的分母。
+
+还有两点**不**覆盖的内容。它仅监控 daemon **根**进程，因此如果 `qwen --acp` 子进程才是增长的，daemon 可能全程报告 `normal`——请同时查看 `runtime.memory.children`，它汇总了活跃子进程自身的 RSS（并通过 `sampled` 说明实际有多少子进程报告了数据）。而且没有任何自动修复措施：离开 `normal` 会触发 `daemon_memory_pressure` 警告，但不会改变任何行为。
+
+在 `--memory-pressure-mode off` 下，上述所有数据仍会被报告，但不会触发 issue，因此顶层 `status` 保持原本的值。在校准阈值与实际工作负载时使用 `off`，或者如果你根据 `status` 进行告警且不希望未校准的信号影响它。
+
 ## 流程
 
 ### 典型排查流程

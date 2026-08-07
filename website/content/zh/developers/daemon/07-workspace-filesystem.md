@@ -11,7 +11,16 @@
 - **审计** — 每次访问/拒绝都会发出结构化事件，供 `PermissionAuditRing` / 监控使用。
 - **类型化错误** — 封闭的 `FsErrorKind` 联合类型，映射到 HTTP 状态码。
 
-HTTP 文件路由（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST /file/edit`、`GET /list`、`GET /glob`、`GET /stat`）以及 ACP 侧的 `BridgeFileSystem` 适配器（使 Agent 驱动的 `readTextFile` / `writeTextFile` 调用获得相同的门控限制）都经过此边界。
+HTTP 文件路由（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST /file/edit`、`GET /list`、`GET /glob`、`GET /stat`）使用此边界。在生产环境的 daemon 中，仍被委托的 ACP 调用通过注入的 bridge 适配器到达 WFS；通用的 bridge 调用者仅在注入此类适配器时才使用 WFS。生产环境的同主机 `qwen serve` runtime 会广播 `readTextFile: false`，因此所有子进程的 `FileSystemService.readTextFile` 消费者使用常规 CLI 文件系统服务；最终的 ACP `writeTextFile` 内容写入仍通过 WFS 委托。
+
+该文本读取能力切片覆盖了直接的 `read_file` 以及 write、edit、notebook、sed 和 artifact 操作使用的共享预读取：
+
+- 它有意接受常规 CLI 读取行为而非 WFS 读取侧的保证。[设计文档](../../design/daemon-local-text-reads.md)记录了放弃的具体内容。
+- 同一文档记录了为什么 #8618 在此更改后仍会对 write 和 edit 系列复现，以及保留的适配器读取路径"fail closed"的有界含义。
+- 直接的外部 `read_file` 保留正常的 CLI 权限规则和核心文件操作遥测。
+- HTTP 文件系统路由仍为 workspace 作用域，agent 发现工具的行为不受此能力影响。
+- 父目录创建和 shell 命令等辅助操作是独立的现有路径，不在此边界覆盖范围内。
+- `qwen serve` 假设同机器、同 UID 的安全主体，不是操作系统沙箱。
 
 ## 职责
 
@@ -43,9 +52,9 @@ HTTP 文件路由（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST
 | `path_outside_workspace` | 400       | 解析后的路径位于绑定工作区之外。                                                                                                                                                           |
 | `symlink_escape`         | 400       | 目标是符号链接（根据保守的 PR 18 + PR 20 的立场拒绝）。                                                                                                                                 |
 | `path_not_found`         | 404       | `ENOENT`。                                                                                                                                                                                |
-| `binary_file`            | 422       | 在文本路径上内容被嗅探为二进制。                                                                                                                                                           |
-| `file_too_large`         | 413       | 超过 `MAX_READ_BYTES` 或 `MAX_WRITE_BYTES`。                                                                                                                                              |
-| `hash_mismatch`          | 409       | 乐观并发检查 `expectedSha256` 失败。                                                                                                                                                      |
+| `binary_file`            | 422       | 在文本路径上内容被嗅探为二进制，或文本路径无法解码的编码中的大文本。                                                                                                                               |
+| `file_too_large`         | 413       | 超过 `MAX_READ_BYTES` 的无窗口/完整快照文本，超过 `MAX_TEXT_SCAN_BYTES` 的行偏移，或超过 `MAX_WRITE_BYTES` 的写入。                                                                                  |
+| `hash_mismatch`          | 409       | 乐观并发检查 `expectedSha256` 失败，或文件在稳定读取期间发生了变化。                                                                                                                            |
 | `file_already_exists`    | 409       | `mode: 'create'` 但文件已存在。                                                                                                                                                          |
 | `text_not_found`         | 422       | `POST /file/edit` 的搜索字符串未在文件中找到。                                                                                                                                               |
 | `ambiguous_text_match`   | 422       | 需要恰好一个匹配时找到了多个匹配。                                                                                                                                                         |
@@ -66,7 +75,7 @@ interface BridgeFileSystem {
 }
 ```
 
-这是 ACP `readTextFile` / `writeTextFile` 的注入点。Bridge 测试和 Mode A 嵌入式调用者可以在 `BridgeOptions` 上省略它；`BridgeClient` 会回退到其内联的 `fs.readFile` / `fs.writeFile` 代理（保留 F1 之前的行为）。生产环境的 `qwen serve` 通过 `createBridgeFileSystemAdapter(fsFactory)`（`packages/cli/src/serve/bridge-file-system-adapter.ts`）将 `BridgeFileSystem` 连接起来，以便 Agent 侧的 ACP 写入能够应用与 HTTP 路由相同的 TOCTOU、符号链接、信任门控和审计门控。
+这是 ACP `readTextFile` / `writeTextFile` 的注入点。Bridge 测试和 Mode A 嵌入式调用者可以在 `BridgeOptions` 上省略它；`BridgeClient` 会回退到其内联的 `fs.readFile` / `fs.writeFile` 代理（保留 F1 之前的行为）。生产环境的 `qwen serve` 通过 `createBridgeFileSystemAdapter(fsFactory)`（`packages/cli/src/serve/bridge-file-system-adapter.ts`）连接 `BridgeFileSystem`，并设置 `delegateReadTextFileToClient: false`。符合能力声明的子进程因此在本地读取文本并委托最终的 ACP 文本写入。适配器保留了其读取实现，因此意外的或违反能力声明的委托读取仍会遇到 WFS 的 workspace 边界。
 
 适配器必须保留以下两个防御属性（因为当适配器被注入时，内联代理会完全绕过）：
 

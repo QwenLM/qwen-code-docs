@@ -63,6 +63,32 @@ export DINGTALK_CLIENT_SECRET=<your-app-secret>
 }
 ```
 
+### 互动卡片
+
+添加 `interactiveCards` 对象以启用钉钉状态和问题卡片。省略该对象则禁用互动卡片。当该对象存在时，总开关和两种卡片类型默认启用，问题卡片在 270,000 毫秒（270 秒）后超时。
+
+```json
+{
+  "channels": {
+    "my-dingtalk": {
+      "type": "dingtalk",
+      "clientId": "$DINGTALK_CLIENT_ID",
+      "clientSecret": "$DINGTALK_CLIENT_SECRET",
+      "interactiveCards": {
+        "enabled": true,
+        "statusCard": { "enabled": true },
+        "questionCard": {
+          "enabled": true,
+          "timeoutMs": 270000
+        }
+      }
+    }
+  }
+}
+```
+
+将 `interactiveCards.enabled` 设为 `false` 可禁用所有互动卡片。使用 `statusCard.enabled` 或 `questionCard.enabled` 可禁用某一种卡片类型，设置 `questionCard.timeoutMs` 为一个有限的正整数可更改 Qwen Code 等待问题卡片响应的时间。超过 2,147,483,647 毫秒（约 24.8 天）的值会被限制在该最大值。互动卡片通过 `settings.json` 或管理 API 配置；Web Shell 频道编辑器不会渲染它们，编辑其他字段时会保留已存储的对象。
+
 ### 连接恢复
 
 `useConnectionManager` 默认为 `true`。连接管理器监控 Stream WebSocket，并在连接停止响应时替换 DingTalk SDK 客户端。通常应保持启用状态。
@@ -115,9 +141,10 @@ qwen channel start
 
 钉钉机器人支持私聊和群聊。要启用群聊支持：
 
-1. 在频道配置中将 `groupPolicy` 设置为 `"allowlist"` 或 `"open"`
+1. 在频道配置中将 `groupPolicy` 设置为 `"allowlist"`、`"pairing"` 或 `"open"`
 2. 将机器人添加到钉钉群组
 3. 在群组中 @提及 机器人以触发响应
+4. 如果使用 `groupPolicy: "pairing"`，在响应开始前批准该群组的配对请求
 
 默认情况下，机器人在群聊中需要 @提及（`requireMention: true`）。将特定群组的 `"requireMention": false` 可使其响应所有消息。参见[群聊](./overview#group-chats)了解完整详情。
 
@@ -161,7 +188,8 @@ qwen channel start
 
 ### 机器人在群聊中无响应
 
-- 检查 `groupPolicy` 是否设置为 `"allowlist"` 或 `"open"`（默认为 `"disabled"`）
+- 检查 `groupPolicy` 是否设置为 `"allowlist"`、`"pairing"` 或 `"open"`（默认为 `"disabled"`）
+- 如果使用 `"pairing"`，确认群组的配对请求已被批准
 - 确保在群消息中 @提及 了机器人
 - 确认机器人已添加到群组
 

@@ -138,6 +138,21 @@ curl -s 'http://127.0.0.1:4170/daemon/status?detail=full' | \
 
 `stable` é o proprietário normal, `fallback` significa que outro daemon possui a família estável, e `stderr-only` significa que o log em arquivo está desabilitado ou indisponível. `fallback/ok` é esperado sob concorrência intencional. Um aviso `daemon_log_degraded` não contém caminho; solicite o detalhe completo para o caminho real e os códigos de problema do logger. Use `runId` para separar reinicializações dentro do arquivo estável.
 
+### 11. O daemon está sob pressão de memória?
+
+```bash
+curl -s 'http://127.0.0.1:4170/daemon/status' | \
+  jq '.runtime.memory.pressure'
+```
+
+`level` é `normal` / `soft` / `hard` / `critical`, classificado a partir de `ratio` — o pior entre `rssRatio` (RSS contra memória detectada do cgroup/host, que é o que o OOM killer observa) e `heapRatio` (heap V8 usado contra o `heap_size_limit` deste processo — o heap inteiro, não apenas o old space que `--max-old-space-size` nomeia). `source` indica qual produziu o valor. Verifique `source` antes de agir: `unknown` significa que o daemon não conseguiu medir nenhum dos lados, então `normal` ali é a ausência de uma leitura, não evidência de saúde. Um lado só é reportado quando tanto seu numerador quanto seu denominador estavam utilizáveis, então `source` também é o que diferencia um `rssBytes` / `heapUsedBytes` zero de um valor real.
+
+**`rssRatio` é tão bom quanto seu denominador, e `limits.memory.availableMemorySource` é o que o avalia.** Sob um cgroup (`constrained`), é exatamente o limite que o OOM killer impõe, então a razão significa o que diz. Em bare metal (`host`), é o tamanho da máquina inteira, enquanto o daemon realmente morre quando a _máquina_ fica sem memória — o que depende de todos os outros processos na máquina. Um daemon ocupando 20% de um host de 64 GB ao lado de um vizinho de 55 GB reporta `level: normal, source: rss` até ser morto. Sob `source: 'host'`, leia `rssRatio` como um **limite inferior** da pressão real. Isso é separado dos limites não calibrados: nenhuma escolha de limite corrige um denominador que está medindo a coisa errada.
+
+Duas coisas adicionais que isso **não** cobre. É apenas o processo **raiz** do daemon, então um daemon cujos filhos `qwen --acp` são os que crescem pode reportar `normal` o tempo todo — leia `runtime.memory.children` ao lado, que soma o RSS dos filhos ativos (e diz via `sampled` quantos realmente reportaram). E nada remedia: sair de `normal` levanta um aviso `daemon_memory_pressure` e não muda nenhum comportamento.
+
+Sob `--memory-pressure-mode off`, todos os valores acima ainda são reportados e o issue não é levantado, então o `status` de nível superior permanece o que seria. Use `off` enquanto calibra limites contra uma carga de trabalho real, ou se você alerta sobre `status` e não quer que um sinal não calibrado o mova.
+
 ## Fluxo
 
 ### Fluxo de triagem típico

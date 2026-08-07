@@ -15,7 +15,7 @@
 - `setSessionModel` 호출에 대한 세션별 FIFO로, 다른 모델을 가진 동시 연결이 에이전트와 경합하지 않습니다.
 - `GET /session/:id/events`를 구동하는 세션별 `EventBus`([`10-event-bus.md`](./10-event-bus.md) 참조).
 - 권한 플로우: `BridgeClient.requestPermission` → `MultiClientPermissionMediator.request` → 팬아웃 → 투표 수집 → ACP 응답([`04-permission-mediation.md`](./04-permission-mediation.md) 참조).
-- 파일 I/O: ACP `readTextFile` / `writeTextFile` 호출을 위한 `BridgeFileSystem` 어댑터([`07-workspace-filesystem.md`](./07-workspace-filesystem.md) 참조).
+- 파일 I/O: ACP 읽기 및 쓰기를 위한 `BridgeFileSystem` 어댑터. 동일 호스트 데몬 런타임은 `readTextFile: false`를 광고하므로 일반 텍스트 읽기는 자식 내에 유지되고 최종 텍스트 쓰기는 위임된 상태로 유지됩니다([`07-workspace-filesystem.md`](./07-workspace-filesystem.md) 참조).
 - 워크스페이스 수준 상태(`/workspace/mcp`, `/workspace/skills`, `/workspace/providers`), MCP 재시작, 선택적 비공개 관리 Tool Guard 콜백을 위한 extMethod RPC.
 - 수명주기: 채널당 `KILL_HARD_DEADLINE_MS`(10초)를 가진 우아한 `shutdown()`. 두 번째 시그널 강제 종료를 위한 동기 `killAllSync()`.
 
@@ -198,10 +198,11 @@ sequenceDiagram
 | `permissionResponseTimeoutMs`                 | `DEFAULT_PERMISSION_TIMEOUT_MS = 5분`               | 중재자의 요청별 월클럭.                                                                                                                                  |
 | `maxPendingPermissionsPerSession`             | `DEFAULT_MAX_PENDING_PER_SESSION = 64`             | 대량 에이전트에 대한 배크프레셔.                                                                                                                         |
 | `childEnvOverrides`                           | `{}`                                               | ACP 자식에 대한 핸들별 환경 추가/제거.                                                                                                                   |
-| `externalToolGuard`                           | (없음)                                             | 현재 활성 프롬프트의 소유 채널에서만 수락합니다.                                                                                                          |
+| `externalToolGuard`                           | (없음)                                             | 비공개 자식→부모 사전 실행 결정을 위한 선택적 핸들러. 브리지는 현재 활성 프롬프트의 소유 채널에서만 수락합니다.                                             |
 | `persistApprovalMode`, `persistDisabledTools` | —                                                  | Wave 4 뮤테이션 라우트를 위한 설정 쓰기 hook.                                                                                                            |
 | `contextFilename`                             | `settings.json`의 `context.fileName`에서            | `getCurrentGeminiMdFilename`을 재정의합니다.                                                                                                             |
 | `statusProvider`                              | (없음)                                             | 데몬 호스트 프리플라이트 셀(`DaemonStatusProvider`).                                                                                                     |
+| `delegateReadTextFileToClient`                | `true`                                             | 동일 호스트 런타임에서만 `false`로 설정하여 자식 `FileSystemService.readTextFile` 소비자가 일반 CLI 파일시스템 서비스를 사용하도록 합니다.                    |
 | `fileSystem`                                  | (없음)                                             | ACP `readTextFile` / `writeTextFile`을 위한 `BridgeFileSystem` 어댑터.                                                                                   |
 | `permissionPolicy`                            | `settings.json`의 `policy.permissionStrategy`에서    | `first-responder` / `designated` / `consensus` / `local-only` 중 하나.                                                                                   |
 | `permissionConsensusQuorum`                   | `settings.json`에서                                 | consensus 정책의 N.                                                                                                                                      |

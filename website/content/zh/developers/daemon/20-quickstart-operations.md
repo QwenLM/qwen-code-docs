@@ -18,8 +18,6 @@ qwen serve: bearer auth disabled (loopback default). Set QWEN_SERVER_TOKEN to en
 
 在浏览器中打开 `http://127.0.0.1:4170/demo` 即可查看调试控制台：包含聊天 UI、事件流和工作区检查功能。在默认的 loopback 开发模式下，`createServeApp()` 会在 `bearerAuth` **之前**挂载来自 `packages/cli/src/serve/routes/health-demo.ts` 的 `/demo` 路由，因此无需 token。
 
-每个 `--workspace` 值必须是绝对目录。第一个启动工作区为主运行时，并保持为省略 `cwd` 的请求的兼容性默认值；`/capabilities.workspaces[]` 是客户端在显式选择任何运行时应使用的目录。
-
 ## 2. 启动方案
 
 ```bash
@@ -83,6 +81,8 @@ CLI 定义在 **`packages/cli/src/commands/serve.ts`** 中：
 | `--max-sessions <n>`                    | number                         | `32`                                         | -                                        | 每个工作区的活跃会话上限。超出限制的 spawn 请求将返回 503。`0` 表示无限制。`NaN` 或负值会抛出异常。                                                                                                                     |
 | `--max-total-sessions <n>`              | number                         | 多个启动/恢复工作区时推导   | -                                        | Daemon 级别的活跃会话上限。省略时，从每个工作区的上限和启动/恢复的工作区数量一次性推导出有限默认值；动态注册不会重新计算。`0` 表示无限制。                                                                                   |
 | `--memory-budget-mb <n>`                | integer in `[1024, 1048576]`   | 50% of cgroup/host memory                    | Observation only                         | Daemon 进程树的总内存预算，上限为解析后的可用内存。在 `limits.memory` 下报告；不影响任何子进程的大小。                                                                                                               |
+| `--memory-pressure-mode <mode>`         | `off` \| `observe`             | `observe`                                    | Observation only                         | 两种模式下均报告 `runtime.memory.pressure`；仅 `observe` 会触发 `daemon_memory_pressure` issue。仅限根进程。                                                                                                                                              |
+| `--child-heap-mode <mode>`              | `off` \| `observe`             | `observe`                                    | Observation only                         | 在 `observe` 下，报告 `limits.memory.childHeap` 下的建模分区；不应用任何限制也不拒绝任何请求。在 `off` 下，该块的两个数据为 `null`。                                                                                                                                          |
 | `--max-pending-prompts-per-session <n>` | number                         | `5`                                          | -                                        | 每个会话已接受但处于 pending/running 状态的 prompt 上限。超出的 prompt 将返回 503。`0` / `Infinity` 表示无限制。负值或非整数值会抛出异常。                                                               |
 | `--workspace <dir>`                     | string / repeatable            | `process.cwd()`                              | -                                        | 启动工作区运行时；重复以注册额外的隔离运行时。第一个为主运行时。每个值**必须是绝对路径、必须存在且必须是目录**。启动时通过 `canonicalizeWorkspace` 对每个值进行规范化。`POST /session` 的 `cwd` 不匹配时返回 `400 workspace_mismatch`。 |
 | `--max-connections <n>`                 | number                         | `256`                                        | -                                        | 监听器级别的 `server.maxConnections`。`0` / `Infinity` 表示无限制。`NaN` 或负值会导致启动失败，以避免 fail-open 行为。                                                                              |

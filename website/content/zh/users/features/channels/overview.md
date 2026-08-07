@@ -66,9 +66,9 @@
 | `approvalMode`           | 否               | 频道会话的工具审批模式。无人值守的 webhook 任务需要 `yolo`；该设置应用于频道上的每个会话                                                                          |
 | `instructions`           | 否               | 自定义指令，会追加到每个会话的第一条消息之前                                                                                                                     |
 | `webhooks`               | 否               | 守护进程管理频道的 webhook 来源和投递目标。参见 [Webhook 触发的任务](#webhook-triggered-tasks)                                                                  |
-| `groupPolicy`            | 否               | 群聊访问权限：`disabled`（默认）、`allowlist` 或 `open`。参见 [群聊](#group-chats)                                                                               |
+| `groupPolicy`            | 否               | 群聊访问权限：`disabled`（默认）、`allowlist`、`pairing` 或 `open`。参见 [群聊](#group-chats)                                                                     |
 | `dmPolicy`               | 否               | 私聊/DM 访问权限：`open`（默认）或 `disabled`（静默丢弃所有私聊）。适用于仅限群聊的机器人                                                                         |
-| `groupHistoryLimit`      | 否               | 可选的群聊历史回填。`0` 或省略则禁用。正整数表示在下次机器人被 @提及/回复时，持久化保存该数量的已授权且未被提及的群消息。                                          |
+| `groupHistoryLimit`      | 否               | 可选的群聊历史回填。`0` 或省略则禁用。正整数表示在下次机器人被 @提及/回复时，持久化保存该数量的来自已授权发送者或已批准配对群组成员的未被提及群消息。              |
 | `groups`                 | 否               | 每个群组的设置。键为群聊 ID 或 `"*"`（表示默认设置）。参见 [群聊](#group-chats)                                                                                  |
 | `dispatchMode`           | 否               | 当机器人繁忙时发送消息的处理方式：`steer`（默认）、`collect` 或 `followup`。参见 [调度模式](#dispatch-modes)                                                       |
 | `blockStreaming`         | 否               | 渐进式响应交付：`on` 或 `off`（默认）。参见 [分块流式输出](#block-streaming)                                                                                       |
@@ -160,13 +160,13 @@ qwen channel pairing approve my-channel <CODE>
 
 - 配对码为 8 个大写字符，使用无歧义的字母表（不包含 `0`/`O`/`1`/`I`）
 - 配对码 1 小时后过期
-- 每个频道同时最多 3 个待处理请求 — 在有请求过期或被批准之前，额外的请求会被忽略
-- `settings.json` 中 `allowedUsers` 列出的用户始终跳过配对
+- 每个频道同时最多 3 个待处理请求，每个发送者最多 1 个 — 额外的请求会被拒绝，直到有请求过期或被批准
+- `settings.json` 中 `allowedUsers` 列出的用户会跳过用户配对；在 `groupPolicy: "pairing"` 下，群组本身仍需被批准
 - 已批准的用户按工作区存储在 `~/.qwen/channels/<workspace-scope>/<name>-allowlist.json` 中 — 请将此文件视为敏感文件
 
 ## 群聊
 
-默认情况下，机器人仅在私聊中工作。要启用群聊支持，请将 `groupPolicy` 设置为 `"allowlist"` 或 `"open"`。
+默认情况下，机器人仅在私聊中工作。要启用群聊支持，请将 `groupPolicy` 设置为 `"allowlist"`、`"pairing"` 或 `"open"`。
 
 ### 群聊策略
 
@@ -174,7 +174,19 @@ qwen channel pairing approve my-channel <CODE>
 
 - **`disabled`**（默认）— 机器人忽略所有群消息。最安全的选项。
 - **`allowlist`** — 机器人仅在 `groups` 中通过群聊 ID 明确列出的群组中响应。`"*"` 键提供默认设置，但**不**作为通配符允许所有群组。
+- **`pairing`** — 来自未知群组的有意 @提及或回复会为该群组创建一个配对请求。批准后，该群组中的每个成员都可以在该群组中使用机器人；`senderPolicy` 继续控制私聊。
 - **`open`** — 机器人在其加入的所有群组中响应。请谨慎使用。
+
+使用与用户配对相同的 CLI 命令批准群组。待处理请求会标识群组和发起它的成员：
+
+```bash
+qwen channel pairing approve my-channel <CODE>
+```
+
+群组批准按群组的聊天 ID 存储在频道的工作区作用域中。在 GitHub 和 GitLab 上，聊天 ID 是仓库/项目路径，因此重命名或转移会分离存储的批准 — 重命名后请重新批准群组。在同一路径下重新创建的仓库或项目会继承任何过期的批准 — 在任何重命名、转移或删除后撤销群组批准。
+未被提及的消息永远不会创建群组配对请求，即使群组将 `requireMention` 设置为 `false`；批准后，配置的 @提及策略会正常应用。
+
+群组配对请求与私聊配对请求共享同一个待处理队列：一个频道最多持有 3 个待处理请求，一个发送者在用户和群组请求中最多持有 1 个待处理请求（参见[配对规则](#pairing-rules)）。
 
 ### @提及触发
 
@@ -222,7 +234,7 @@ qwen channel pairing approve my-channel <CODE>
 
 - 省略或设置为 `0` 将禁用回填。
 - 群组级别的 `groupHistoryLimit` 会覆盖频道级别的值。
-- 仅持久化来自已授权发送者的消息。
+- 仅持久化来自已授权发送者或已批准配对群组成员的消息。
 - 被 `groupPolicy` 或群组白名单拒绝的消息不会被持久化。
 - 待处理的群聊历史以本地 JSONL 格式存储在 `~/.qwen/channels/<channel-name>-group-history.jsonl` 或 `$QWEN_HOME/channels/<channel-name>-group-history.jsonl` 中。
 - 缓存的消息会在下次实际触发时作为不受信任的上下文注入，且不会作为独立的会话轮次写入。
@@ -230,10 +242,10 @@ qwen channel pairing approve my-channel <CODE>
 ### 群聊消息评估流程
 
 ```
-1. groupPolicy — 是否允许此群组？           (否 → 忽略)
-2. dmPolicy  — 是否允许此私聊？             (disabled → 忽略)
-3. requireMention — 机器人是否被 @提及/回复？ (否 → 忽略)
-4. senderPolicy — 此发送者是否已获批准？     (否 → 配对流程)
+1. groupPolicy — 此群组是 disabled、listed、paired 还是 open？ (否 → 忽略/配对流程)
+2. dmPolicy — 是否允许此私聊？                      (disabled → 忽略)
+3. requireMention — 机器人是否被 @提及/回复？         (否 → 忽略)
+4. senderPolicy — 此发送者是否已获批准？             (已配对群组跳过；否则否 → 用户配对流程)
 5. 路由到会话
 ```
 

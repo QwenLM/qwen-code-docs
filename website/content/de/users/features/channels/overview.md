@@ -68,9 +68,9 @@ Channels werden unter dem Schlüssel `channels` in der `settings.json` konfiguri
 | `approvalMode`           | Nein             | Tool-Genehmigungsmodus für Channel-Sessions. Unbeaufsichtigte Webhook-Tasks erfordern `yolo`; die Einstellung gilt für jede Session auf dem Channel                                  |
 | `instructions`           | Nein             | Benutzerdefinierte Anweisungen, die der ersten Nachricht jeder Session vorangestellt werden                                                                                                     |
 | `webhooks`               | Nein             | Webhook-Quellen und Zustellziele für daemon-verwaltete Channels. Siehe [Webhook-triggered tasks](#webhook-triggered-tasks)                                              |
-| `groupPolicy`            | Nein             | Gruppenchat-Zugriff: `disabled` (Standard), `allowlist` oder `open`. Siehe [Group Chats](#group-chats)                                                                       |
+| `groupPolicy`            | Nein             | Gruppenchat-Zugriff: `disabled` (Standard), `allowlist`, `pairing` oder `open`. Siehe [Group Chats](#group-chats)                                                                       |
 | `dmPolicy`               | Nein             | Private/DM-Zugriff: `open` (Standard) oder `disabled` (alle DMs still verwerfen). Nützlich für Bots nur für Gruppen                                                                  |
-| `groupHistoryLimit`      | Nein             | Optionales Nachladen der Gruppenhistorie. `0` oder weggelassen deaktiviert es. Eine positive Zahl speichert so viele autorisierte, nicht erwähnte Gruppennachrichten für die nächste Bot-Erwähnung/Antwort. |
+| `groupHistoryLimit`      | Nein             | Optionales Nachladen der Gruppenhistorie. `0` oder weggelassen deaktiviert es. Eine positive Zahl speichert so viele nicht erwähnte Gruppennachrichten von autorisierten Absendern oder Mitgliedern genehmigter gepaarter Gruppen für die nächste Bot-Erwähnung/Antwort. |
 | `groups`                 | Nein             | Einstellungen pro Gruppe. Schlüssel sind Gruppenchat-IDs oder `"*"` für Standardwerte. Siehe [Group Chats](#group-chats)                                                                     |
 | `dispatchMode`           | Nein             | Was passiert, wenn du eine Nachricht sendest, während der Bot beschäftigt ist: `steer` (Standard), `collect` oder `followup`. Siehe [Dispatch Modes](#dispatch-modes)                         |
 | `blockStreaming`         | Nein             | Progressive Antwortauslieferung: `on` oder `off` (Standard). Siehe [Block Streaming](#block-streaming)                                                                        |
@@ -207,13 +207,13 @@ Führe diese im Workspace-Verzeichnis des Channels aus (oder übergib `--cwd <di
 
 - Codes sind 8 Zeichen lang, großgeschrieben und verwenden ein eindeutiges Alphabet (keine `0`/`O`/`1`/`I`)
 - Codes laufen nach 1 Stunde ab
-- Maximal 3 ausstehende Anfragen pro Channel gleichzeitig — zusätzliche Anfragen werden ignoriert, bis eine abläuft oder genehmigt wird
-- Benutzer, die in `allowedUsers` in der `settings.json` aufgeführt sind, überspringen das Pairing immer
+- Maximal 3 ausstehende Anfragen pro Channel gleichzeitig und höchstens eine pro Absender — zusätzliche Anfragen werden abgelehnt, bis eine abläuft oder genehmigt wird
+- Benutzer, die in `allowedUsers` in der `settings.json` aufgeführt sind, überspringen das Benutzer-Pairing; unter `groupPolicy: "pairing"` muss die Gruppe selbst weiterhin genehmigt werden
 - Genehmigte Benutzer werden pro Workspace in `~/.qwen/channels/<workspace-scope>/<name>-allowlist.json` gespeichert — behandle diese Datei als vertraulich
 
 ## Gruppenchats
 
-Standardmäßig funktioniert der Bot nur in Direktnachrichten. Um die Gruppenchat-Unterstützung zu aktivieren, setze `groupPolicy` auf `"allowlist"` oder `"open"`.
+Standardmäßig funktioniert der Bot nur in Direktnachrichten. Um die Gruppenchat-Unterstützung zu aktivieren, setze `groupPolicy` auf `"allowlist"`, `"pairing"` oder `"open"`.
 
 ### Gruppenrichtlinie
 
@@ -221,7 +221,22 @@ Steuert, ob der Bot überhaupt an Gruppenchats teilnimmt:
 
 - **`disabled`** (Standard) — Der Bot ignoriert alle Gruppennachrichten. Sicherste Option.
 - **`allowlist`** — Der Bot antwortet nur in Gruppen, die explizit in `groups` nach Chat-ID aufgeführt sind. Der Schlüssel `"*"` liefert Standardeinstellungen, fungiert aber **nicht** als Wildcard-Erlaubnis.
+- **`pairing`** — Eine bewusste Erwähnung oder Antwort aus einer unbekannten Gruppe erstellt eine Pairing-Anfrage für die Gruppe. Nach der Genehmigung kann jedes Mitglied den Bot in dieser Gruppe verwenden; `senderPolicy` steuert weiterhin Direktnachrichten.
 - **`open`** — Der Bot antwortet in allen Gruppen, zu denen er hinzugefügt wird. Mit Vorsicht zu verwenden.
+
+Genehmige eine Gruppe mit demselben CLI-Befehl, der für das Benutzer-Pairing verwendet wird. Die ausstehende Anfrage identifiziert die Gruppe und das Mitglied, das sie initiiert hat:
+
+```bash
+qwen channel pairing approve my-channel <CODE>
+```
+
+Gruppen-Genehmigungen werden nach der Chat-ID der Gruppe im Workspace-Bereich des Channels gespeichert. Auf GitHub und GitLab ist die Chat-ID der Repository-/Projektpfad, sodass eine Umbenennung oder ein Transfer die gespeicherte Genehmigung ablöst — genehmige die Gruppe nach einer Umbenennung erneut. Ein Repo oder Projekt, das unter demselben Pfad neu erstellt wird, erbt jede veraltete Genehmigung — widerrufe Gruppen-Genehmigungen nach jeder Umbenennung, jedem Transfer oder jeder Löschung.
+Eine nicht erwähnte Nachricht erstellt niemals eine Gruppen-Pairing-Anfrage, auch wenn eine Gruppe `requireMention` auf `false` setzt; nach der Genehmigung gilt die konfigurierte Erwähnungsrichtlinie normal.
+
+Gruppen-Pairing-Anfragen teilen sich dieselbe Warteschlange wie DM-Pairing-Anfragen:
+ein Channel hat insgesamt höchstens 3 ausstehende Anfragen, und ein Absender hat
+höchstens eine ausstehende Anfrage über Benutzer- und Gruppen-Anfragen hinweg (siehe
+[Pairing-Regeln](#pairing-regeln)).
 
 ### Mention Gating
 
@@ -269,7 +284,7 @@ Standardmäßig ignoriert Qwen nicht erwähnte Gruppennachrichten und speichert 
 
 - Weggelassen oder `0` deaktiviert das Nachladen.
 - `groupHistoryLimit` auf Gruppenebene überschreibt den Wert auf Channel-Ebene.
-- Nur Nachrichten von autorisierten Absendern werden persistent gespeichert.
+- Nur Nachrichten von autorisierten Absendern oder Mitgliedern einer genehmigten gepaarten Gruppe werden persistent gespeichert.
 - Nachrichten, die von `groupPolicy` oder der Gruppen-Allowlist abgelehnt werden, werden nicht persistent gespeichert.
 - Ausstehende Gruppenhistorie wird als lokales JSONL unter `~/.qwen/channels/<channel-name>-group-history.jsonl` oder `$QWEN_HOME/channels/<channel-name>-group-history.jsonl` gespeichert.
 - Zwischengespeicherte Nachrichten werden beim nächsten echten Trigger als nicht vertrauenswürdiger Kontext injiziert und nicht als eigenständige Session-Turns geschrieben.
@@ -277,10 +292,10 @@ Standardmäßig ignoriert Qwen nicht erwähnte Gruppennachrichten und speichert 
 ### Wie Gruppennachrichten ausgewertet werden
 
 ```
-1. groupPolicy — ist diese Gruppe erlaubt?           (nein → ignorieren)
-2. dmPolicy  — ist diese DM erlaubt?                 (disabled → ignorieren)
+1. groupPolicy — ist diese Gruppe deaktiviert, aufgelistet, gepaart oder offen? (nein → ignorieren/Pairing-Flow)
+2. dmPolicy — ist diese DM erlaubt?                      (disabled → ignorieren)
 3. requireMention — wurde der Bot erwähnt/auf ihn geantwortet? (nein → ignorieren)
-4. senderPolicy — ist dieser Absender genehmigt?     (nein → Pairing-Prozess)
+4. senderPolicy — ist dieser Absender genehmigt?             (übersprungen für eine gepaarte Gruppe; sonst nein → Benutzer-Pairing-Flow)
 5. An Session weiterleiten
 ```
 
@@ -497,7 +512,7 @@ qwen channel set my-channel --token secret
 
 # Die daemon-verwaltete Auswahl abfragen oder stoppen
 qwen channel status --daemon-url http://127.0.0.1:4170 --token secret
-qwen channel stop --daemon-url http://127.0.0.1:4170 --token ...
+qwen channel stop --daemon-url http://127.0.0.1:4170 --token secret
 ```
 
 Dieser Modus startet workspace-gruppierte Channel-Worker-Prozesse, die `qwen serve` gehören. Worker verbinden sich über das SDK zurück mit dem Daemon und verwenden dieselben Channel-Adapter. Sie sind vom Daemon-Prozess getrennt, sodass ein Absturz eines Channel-Adapters nicht den Daemon zum Absturz bringt. Ein Daemon, der ohne `--channel` gestartet wurde, lädt keine Channel-Adapter und reserviert nicht die Channel-Service-PID-Lease bis zum ersten `qwen channel set`.

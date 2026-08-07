@@ -54,7 +54,7 @@ Toutes les options de canal standard fonctionnent avec les canaux personnalisés
 | `cwd`          | Répertoire de travail pour l'agent             |
 | `instructions` | Ajoutées au début du premier message de chaque session |
 | `model`        | Remplacement de modèle pour le canal           |
-| `groupPolicy`  | `disabled`, `allowlist` ou `open`              |
+| `groupPolicy`  | `disabled`, `allowlist`, `pairing` ou `open`   |
 | `dmPolicy`     | `open` ou `disabled`                           |
 | `groups`       | Paramètres par groupe                          |
 
@@ -77,7 +77,7 @@ Les canaux personnalisés prennent automatiquement en charge tout ce que les can
 - **Politiques d'expéditeur** — Contrôle d'accès `allowlist`, `pairing` et `open`
 - **Politiques de groupe** — Paramètres par groupe avec filtrage optionnel par @mention
 - **Routage de session** — Sessions par utilisateur, par fil de discussion ou session unique partagée
-- **Appairage en MP** — Flux complet de code d'appairage pour les utilisateurs inconnus
+- **Appairage en MP et groupe** — Flux complet de code d'appairage pour les utilisateurs et groupes inconnus
 - **Commandes slash** — `/help`, `/clear`, `/status` fonctionnent d'emblée
 - **Instructions personnalisées** — Ajoutées au début du premier message de chaque session
 - **Récupération après crash** — Redémarrage automatique avec préservation de la session

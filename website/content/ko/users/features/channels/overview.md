@@ -70,9 +70,9 @@ title: Channels
 | `approvalMode`         | 아니오                | 채널 세션의 도구 승인 모드. 무인 웹훅 작업은 `yolo`가 필요합니다. 설정은 채널의 모든 세션에 적용됩니다                                                            |
 | `instructions`         | 아니오                | 각 세션의 첫 번째 메시지에 앞에 추가되는 사용자 정의 지시                                                                                                         |
 | `webhooks`             | 아니오                | 데몬 관리 채널의 웹훅 소스 및 전달 대상. [웹훅 트리거 작업](#webhook-triggered-tasks) 참조                                                                       |
-| `groupPolicy`          | 아니오                | 그룹 채팅 접근: `disabled`(기본값), `allowlist` 또는 `open`. [Group Chats](#group-chats) 참조                                                                    |
+| `groupPolicy`          | 아니오                | 그룹 채팅 접근: `disabled`(기본값), `allowlist`, `pairing` 또는 `open`. [Group Chats](#group-chats) 참조                                                         |
 | `dmPolicy`             | 아니오                | 비공개/DM 접근: `open`(기본값) 또는 `disabled`(모든 DM을 조용히 삭제). 그룹 전용 봇에 유용                                                                       |
-| `groupHistoryLimit`    | 아니오                | 옵트인 그룹 기록 백필. `0` 또는 생략하면 비활성화. 양수는 다음 봇 mention/응답까지 해당 수의 승인된, mention되지 않은 그룹 메시지를 저장합니다.                    |
+| `groupHistoryLimit`    | 아니오                | 옵트인 그룹 기록 백필. `0` 또는 생략하면 비활성화. 양수는 다음 봇 mention/응답까지 승인된 발신자 또는 승인된 페어링 그룹의 멤버로부터 해당 수의 mention되지 않은 그룹 메시지를 저장합니다. |
 | `groups`               | 아니오                | 그룹별 설정. 키는 그룹 채팅 ID 또는 기본값의 `"*"`. [Group Chats](#group-chats) 참조                                                                              |
 | `dispatchMode`         | 아니오                | 봇이 바쁠 때 메시지를 보내면 어떻게 되는가: `steer`(기본값), `collect` 또는 `followup`. [Dispatch Modes](#dispatch-modes) 참조                                     |
 | `blockStreaming`       | 아니오                | 프로그레시브 응답 전달: `on` 또는 `off`(기본값). [Block Streaming](#block-streaming) 참조                                                                          |
@@ -164,13 +164,13 @@ qwen channel pairing approve my-channel <CODE>
 
 - 코드는 8자리, 대문자, 모호하지 않은 알파벳(`0`/`O`/`1`/`I` 없음)
 - 코드는 1시간 후 만료
-- 채널당 최대 3개의 보류 중인 요청 — 추가 요청은 하나가 만료되거나 승인될 때까지 무시됨
-- `settings.json`의 `allowedUsers`에 나열된 사용자는 항상 페어링을 건너뜀
+- 채널당 동시에 최대 3개의 보류 중인 요청과 발신자당 최대 1개의 보류 중인 요청 — 추가 요청은 하나가 만료되거나 승인될 때까지 거부됨
+- `settings.json`의 `allowedUsers`에 나열된 사용자는 사용자 페어링을 건너뜁니다. `groupPolicy: "pairing"`에서는 그룹 자체가 여전히 승인되어야 합니다
 - 승인된 사용자는 워크스페이스별로 `~/.qwen/channels/<workspace-scope>/<name>-allowlist.json`에 저장 — 이 파일을 민감한 것으로 취급
 
 ## 그룹 채팅
 
-기본적으로 봇은 직접 메시지에서만 작동합니다. 그룹 채팅 지원을 활성화하려면 `groupPolicy`를 `"allowlist"` 또는 `"open"`으로 설정하세요.
+기본적으로 봇은 직접 메시지에서만 작동합니다. 그룹 채팅 지원을 활성화하려면 `groupPolicy`를 `"allowlist"`, `"pairing"` 또는 `"open"`으로 설정하세요.
 
 ### 그룹 정책
 
@@ -178,7 +178,19 @@ qwen channel pairing approve my-channel <CODE>
 
 - **`disabled`**(기본값) — 봇이 모든 그룹 메시지를 무시합니다. 가장 안전한 옵션.
 - **`allowlist`** — 봇이 `groups`에 채팅 ID로 명시적으로 나열된 그룹에서만 응답합니다. `"*"` 키는 기본 설정을 제공하지만 와일드카드 허용으로는 작동**하지 않습니다**.
+- **`pairing`** — 알 수 없는 그룹의 의도적인 mention이나 답장은 해당 그룹에 대한 하나의 페어링 요청을 생성합니다. 승인되면 모든 멤버가 해당 그룹에서 봇을 사용할 수 있으며, `senderPolicy`는 직접 메시지를 계속 제어합니다.
 - **`open`** — 봇이 추가된 모든 그룹에서 응답합니다. 주의해서 사용하세요.
+
+사용자 페어링에 사용된 것과 동일한 CLI 명령어로 그룹을 승인합니다. 보류 중인 요청은 그룹과 이를 시작한 멤버를 식별합니다:
+
+```bash
+qwen channel pairing approve my-channel <CODE>
+```
+
+그룹 승인은 채널의 워크스페이스 범위에서 그룹의 채팅 ID로 저장됩니다. GitHub 및 GitLab에서 채팅 ID는 저장소/프로젝트 경로이므로, 이름 변경이나 이전은 저장된 승인을 분리합니다 — 이름 변경 후 그룹을 다시 승인하세요. 같은 경로에서 새로 생성된 저장소나 프로젝트는 오래된 승인을 상속합니다 — 이름 변경, 이전 또는 삭제 후 그룹 승인을 취소하세요.
+mention되지 않은 메시지는 그룹이 `requireMention`을 `false`로 설정한 경우에도 그룹 페어링 요청을 생성하지 않습니다. 승인 후 구성된 mention 정책이 정상적으로 적용됩니다.
+
+그룹 페어링 요청은 DM 페어링 요청과 동일한 보류 큐를 공유합니다: 채널은 최대 3개의 보류 요청을 보유하며, 발신자는 사용자 및 그룹 요청을 통틀어 최대 하나의 보류 요청을 가집니다([페어링 규칙](#페어링-규칙) 참조).
 
 ### Mention 게이팅
 
@@ -226,7 +238,7 @@ qwen channel pairing approve my-channel <CODE>
 
 - 생략 또는 `0`은 백필을 비활성화합니다.
 - 그룹 수준 `groupHistoryLimit`이 채널 수준 값을 재정의합니다.
-- 승인된 발신자의 메시지만 저장됩니다.
+- 승인된 발신자 또는 승인된 페어링 그룹의 멤버의 메시지만 저장됩니다.
 - `groupPolicy` 또는 그룹 허용 목록에 의해 거부된 메시지는 저장되지 않습니다.
 - 보류 중인 그룹 기록은 로컬 JSONL로 `~/.qwen/channels/<channel-name>-group-history.jsonl` 또는 `$QWEN_HOME/channels/<channel-name>-group-history.jsonl` 아래에 저장됩니다.
 - 캐시된 메시지는 다음 실제 트리거에서 신뢰할 수 없는 컨텍스트로 주입되며 독립 세션 턴으로 작성되지 않습니다.
@@ -234,10 +246,10 @@ qwen channel pairing approve my-channel <CODE>
 ### 그룹 메시지 평가 방식
 
 ```
-1. groupPolicy — 이 그룹이 허용되는가?           (아니요 → 무시)
-2. dmPolicy  — 이 DM이 허용되는가?              (disabled → 무시)
-3. requireMention — 봇이 mention/답장 받았는가? (아니요 → 무시)
-4. senderPolicy — 이 발신자가 승인되었는가?      (아니요 → 페어링 흐름)
+1. groupPolicy — 이 그룹이 비활성화, 나열, 페어링 또는 개방인가? (아니요 → 무시/페어링 흐름)
+2. dmPolicy — 이 DM이 허용되는가?                      (disabled → 무시)
+3. requireMention — 봇이 mention/답장 받았는가?       (아니요 → 무시)
+4. senderPolicy — 이 발신자가 승인되었는가?             (페어링된 그룹에서는 건너뜀; 아니면 → 사용자 페어링 흐름)
 5. 세션으로 라우팅
 ```
 
@@ -377,9 +389,9 @@ curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates" | python3
 
 - `$QWEN_HOME/channels/` 아래에 저장됩니다 — 독립 실행형 채널은 `cron.json`을 직접 사용하고, 데몬 관리 채널은 `daemon/` 아래 워크스페이스별 파일을 사용합니다. 둘 다 채널 재시작에서 생존합니다.
 - 현재 채널 채팅이나 스레드에 범위가 지정됩니다. 각 대상은 최대 10개의 활성화된 루프를 가질 수 있으며 각 프롬프트는 4,000자로 제한됩니다.
-- 능동 전달을 지원하는 어댑터와 대상이 필요합니다. Telegram, DingTalk, Feishu 및 WeCom이 옵트인하며 플랫폼별 대상 제한이 적용됩니다.
+- 능동 전달을 지원하는 어댑터와 대상이 필요합니다. Telegram, DingTalk, Feishu 및 WeCom이 옵트인이며 플랫폼별 대상 제한이 적용됩니다.
 - `sessionScope: "single"`에서는 사용할 수 없습니다. 해당 범위가 하나의 채팅 대상에 연결되지 않기 때문입니다.
-- 저장된 루프는_due_일 때 대상이 더 이상 승인되지 않으면 비활성화됩니다.
+- 저장된 루프는 실행 시 대상이 더 이상 승인되지 않으면 비활성화됩니다.
 
 ## 백그라운드 에이전트 결과
 

@@ -62,7 +62,7 @@ export GITLAB_TOKEN="glpat-your_token_here"
 | `pollInterval`           | `60000`                   | 轮询间隔（毫秒）                                       |
 | `baseUrl`                | `https://gitlab.com`      | GitLab 实例 URL                                        |
 | `action_prompt_template` | （处理时必需）            | 将 GitLab 操作名称映射到元数据模板                     |
-| `groupPolicy`            | `"disabled"`              | 必须为 `"open"`，或 `"allowlist"` 并列出项目           |
+| `groupPolicy`            | `"disabled"`              | 必须为 `"open"`、`"allowlist"`（需列出项目）或 `"pairing"`（需批准项目） |
 | `senderPolicy`           | `"allowlist"`             | 谁可以触发 bot                                         |
 
 ## action_prompt_template
@@ -132,13 +132,15 @@ Project: owner/repo | URL: https://gitlab.com/owner/repo | Author: alice | Type:
 
 在公共项目上始终使用 `senderPolicy: "allowlist"` 并显式设置 `allowedUsers`。
 
+注意，在 `groupPolicy: "pairing"` 下，访问权限按项目授予：一旦项目被批准，**任何 GitLab 用户**都可以通过该项目的 issue 和 merge request 驱动 bot。所有 GitLab 流量都是群组流量，因此 `senderPolicy` 和 `allowedUsers` 不会限制已批准项目的成员。批准以项目路径（`owner/repo`）为键，重命名或转移时会发生变化——在任何项目重命名、转移或删除后，撤销过期的群组批准。
+
 ## 提及检测
 
 适配器始终在分发的信封上设置 `isMentioned = true`，因为 GitLab 在创建 todo 时已经确定了提及。`action_prompt_template` 配置是真正的事件过滤器——只有配置了模板的操作才会被处理。`@bot` 提及在分发前通过 `stripBotMention` 从消息文本中去除。
 
-### ⚠️ groupPolicy 必须为 "open" 或 "allowlist"
+### ⚠️ groupPolicy 必须为 "open"、"allowlist" 或 "pairing"
 
-`groupPolicy` 必须设置为 `"open"`，或 `"allowlist"` 并显式列出项目，才能处理 todos。默认值 `"disabled"` 会丢弃所有提及：todos 被标记为已完成，游标推进，但不会进行分发。拒绝会被记录（`preflight rejected reason=group_disabled`），但 todo 仍会被消费。如果你的 bot 不响应提及，请检查 `groupPolicy` 是否不是 `"disabled"`。
+`groupPolicy` 必须设置为 `"open"`、`"allowlist"`（需显式列出项目）或 `"pairing"` 才能处理 todos。在 `"pairing"` 下，来自未批准项目的首次提及会创建群组配对请求；使用 `qwen channel pairing approve` 批准一次后，来自该项目的 todos 即会被分发。默认值 `"disabled"` 会丢弃所有提及：todos 被标记为已完成，游标推进，但不会进行分发。拒绝会被记录（`preflight rejected reason=group_disabled`），但 todo 仍会被消费。如果你的 bot 不响应提及，请检查 `groupPolicy` 是否不是 `"disabled"`。
 
 ## 工作原理
 
@@ -151,7 +153,7 @@ Project: owner/repo | URL: https://gitlab.com/owner/repo | Author: alice | Type:
 5. **检测提及类型** 通过 `target_url` 锚点：
    - 存在 `#note_123` → 评论提及 → 文本为 `todo.body`（评论内容）
    - 无锚点 → 描述提及 → 文本为 issue/MR 描述
-6. **分发** 信封通过 `handleInbound`（需要 `groupPolicy: "open"` 或 `"allowlist"` 并列出项目）
+6. **分发** 信封通过 `handleInbound`（需要 `groupPolicy: "open"`、`"allowlist"`（需列出项目）或 `"pairing"`（需批准项目））
 7. **推进游标**并**标记 todo 为已完成**（尽力而为）
 
 游标（`lastProcessedId`）无论分发成功或失败都会推进。失败的分发会在 issue/MR 上发布 ⚠️ 错误评论，且不会重试——用户可以重新提及 bot 以触发新的 todo。

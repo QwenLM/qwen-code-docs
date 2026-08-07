@@ -15,7 +15,7 @@ Chaque `WorkspaceRuntime` actif possède une instance `HttpAcpBridge`. Les tenta
 - FIFO par session pour les appels à `setSessionModel` afin que les attachements simultanés avec des modèles différents n'entrent pas en concurrence au niveau de l'agent.
 - `EventBus` par session qui alimente `GET /session/:id/events` (voir [`10-event-bus.md`](./10-event-bus.md)).
 - Flux de permissions : `BridgeClient.requestPermission` → `MultiClientPermissionMediator.request` → diffusion → collecte des votes → réponse ACP (voir [`04-permission-mediation.md`](./04-permission-mediation.md)).
-- E/S de fichiers : adaptateur `BridgeFileSystem` pour les appels ACP `readTextFile` / `writeTextFile` (voir [`07-workspace-filesystem.md`](./07-workspace-filesystem.md)).
+- E/S de fichiers : adaptateur `BridgeFileSystem` pour les lectures et écritures ACP ; les runtimes démon sur le même hôte annoncent `readTextFile: false` afin que les lectures de texte normales restent dans l'enfant tandis que les écritures de texte finales restent déléguées (voir [`07-workspace-filesystem.md`](./07-workspace-filesystem.md)).
 - RPC extMethod pour le statut au niveau du workspace (`/workspace/mcp`, `/workspace/skills`, `/workspace/providers`), le redémarrage MCP, et le callback privé optionnel de Tool Guard géré.
 - Cycle de vie : `shutdown()` gracieux avec `KILL_HARD_DEADLINE_MS` (10s) par canal ; `killAllSync()` synchrone pour une sortie forcée au second signal.
 
@@ -176,7 +176,7 @@ sequenceDiagram
 
 ## État et cycle de vie
 
-- La construction du bridge est synchrone ; le premier `spawnOrAttach` démarre à froid l'enfant ACP.
+- La construction du bridge est synchrone. Un appelant peut préchauffer le canal avant la première session ; sinon le premier `spawnOrAttach` démarre à froid l'enfant ACP. Un préchauffage échoué laisse la première utilisation libre de réessayer.
 - `defaultEntry` vit pendant toute la durée de vie du bridge sous `sessionScope: 'single'` ; le canal est récupéré lorsque `sessionIds.size === 0` (après `killSession`) ET que `isDying` passe à true.
 - `MAX_EVENT_RING_SIZE = 1_000_000` est une limite supérieure souple pour `BridgeOptions.eventRingSize` afin de détecter les fautes de frappe de l'opérateur avant des OOM d'environ 500 Mo par session.
 - `DEFAULT_PERMISSION_TIMEOUT_MS = 5 * 60 * 1000` empêche une demande de permission bloquée de bloquer indéfiniment la `promptQueue` par session.
@@ -209,7 +209,8 @@ sequenceDiagram
 | `persistApprovalMode`, `persistDisabledTools` | —                                                  | Hooks d'écriture de paramètres pour les routes de mutation Wave 4.                                                                  |
 | `contextFilename`                             | depuis `context.fileName` de `settings.json`          | Remplace `getCurrentGeminiMdFilename`.                                                                               |
 | `statusProvider`                              | (aucun)                                             | Cellules de pré-vérification de l'hôte du démon (`DaemonStatusProvider`).                                                                 |
-| `fileSystem`                                  | (aucun)                                             | Adaptateur `BridgeFileSystem` pour les appels ACP `readTextFile` / `writeTextFile`.                                                  |
+| `delegateReadTextFileToClient`                | `true`                                             | Mettre à `false` uniquement pour les runtimes sur le même hôte afin que chaque consommateur de `FileSystemService.readTextFile` de l'enfant utilise le service de système de fichiers CLI normal.                    |
+| `fileSystem`                                  | (aucun)                                             | Adaptateur `BridgeFileSystem` pour les appels ACP `readTextFile` / `writeTextFile`.                                                                                         |
 | `permissionPolicy`                            | depuis `policy.permissionStrategy` de `settings.json` | Parmi `first-responder` / `designated` / `consensus` / `local-only`.                                                 |
 | `permissionConsensusQuorum`                   | depuis `settings.json`                               | N pour la politique de consensus.                                                                                               |
 | `permissionAudit`                             | `createNoOpPermissionAuditPublisher()`             | Câblage à `PermissionAuditRing` pour la piste d'audit.                                                                    |

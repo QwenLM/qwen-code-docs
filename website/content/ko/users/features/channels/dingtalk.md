@@ -67,11 +67,37 @@ export DINGTALK_CLIENT_SECRET=<your-app-secret>
 }
 ```
 
+### 인터랙티브 카드
+
+`interactiveCards` 객체를 추가하여 DingTalk 상태 및 질문 카드를 활성화하세요. 이 객체를 생략하면 인터랙티브 카드가 비활성화됩니다. 객체가 존재하면 전체 스위치와 두 카드 유형 모두 기본적으로 활성화되며, 질문 카드는 270,000밀리초(270초) 후 시간 초과됩니다.
+
+```json
+{
+  "channels": {
+    "my-dingtalk": {
+      "type": "dingtalk",
+      "clientId": "$DINGTALK_CLIENT_ID",
+      "clientSecret": "$DINGTALK_CLIENT_SECRET",
+      "interactiveCards": {
+        "enabled": true,
+        "statusCard": { "enabled": true },
+        "questionCard": {
+          "enabled": true,
+          "timeoutMs": 270000
+        }
+      }
+    }
+  }
+}
+```
+
+모든 인터랙티브 카드를 비활성화하려면 `interactiveCards.enabled`를 `false`로 설정하세요. 하나의 카드 유형만 비활성화하려면 `statusCard.enabled` 또는 `questionCard.enabled`를 사용하고, `questionCard.timeoutMs`를 유한한 양수로 설정하여 Qwen Code가 질문 카드 응답을 기다리는 시간을 변경하세요. 2,147,483,647밀리초(약 24.8일)를 초과하는 값은 해당 최대값으로 제한됩니다. 인터랙티브 카드는 `settings.json` 또는 관리 API를 통해 구성되며, Web Shell 채널 편집기는 이를 렌더링하지 않고 다른 필드를 편집할 때 저장된 객체를 보존합니다.
+
 ### 연결 복구
 
 `useConnectionManager`는 기본값이 `true`입니다. 연결 관리자는 Stream WebSocket을 모니터링하고 연결이 응답을 중단하면 DingTalk SDK 클라이언트를 교체합니다. 일반적으로 활성화 상태로 두어야 합니다.
 
-`"useConnectionManager": false`로 설정하면 Qwen Code의 연결 관리자를 비활성화하고 SDK의 키alive 및 자동 재연결 동작으로 폴백합니다.
+`"useConnectionManager": false`로 설정하면 Qwen Code의 연결 관리자를 비활성화하고 SDK의 keepalive 및 자동 재연결 동작으로 폴백합니다.
 
 ## 실행
 
@@ -119,9 +145,10 @@ DingTalk을 열고 봇에게 메시지를 보내세요. 에이전트가 처리�
 
 DingTalk 봇은 DM과 그룹 대화 모두에서 작동합니다. 그룹 지원을 활성화하려면:
 
-1. 채널 구성에서 `groupPolicy`를 `"allowlist"` 또는 `"open"`으로 설정
+1. 채널 구성에서 `groupPolicy`를 `"allowlist"`, `"pairing"` 또는 `"open"`으로 설정
 2. DingTalk 그룹에 봇 추가
 3. 그룹에서 봇을 @mention하여 응답 트리거
+4. `groupPolicy: "pairing"`을 사용하는 경우, 응답이 시작되기 전에 그룹의 페어링 요청을 한 번 승인하세요
 
 기본적으로 봇은 그룹 채팅에서 @mention을 필요로 합니다(`requireMention: true`). 특정 그룹에 대해 `"requireMention": false`로 설정하면 모든 메시지에 응답합니다. 전체 세부 정보는 [Group Chats](./overview#group-chats)를 참조하세요.
 
@@ -150,7 +177,7 @@ DingTalk은 그룹을 식별하기 위해 `conversationId`를 사용합니다. �
 
 ## 팁
 
-- **DingTalk markdown 인식 지시 사용** — DingTalk은 제목, 굵은 텍스트, 링크, 코드 블록 및 테이블을 지원합니다. 좁은 화면에서 수평 스크롤이 될 수 있으므로 테이블을 kompak트하게 유지하세요.
+- **DingTalk markdown 인식 지시 사용** — DingTalk은 제목, 굵은 텍스트, 링크, 코드 블록 및 테이블을 지원합니다. 좁은 화면에서 수평 스크롤이 될 수 있으므로 테이블을 간결하게 유지하세요.
 - **접근 제한** — 조직 컨텍스트에서 `senderPolicy: "open"`이 허용될 수 있습니다. 더 엄격한 제어를 위해 `"allowlist"` 또는 `"pairing"`을 사용하세요. 자세한 내용은 [DM Pairing](./overview#dm-pairing)을 참조하세요.
 - **참조된 메시지** — 사용자 메시지를 인용(답글)하면 인용된 텍스트가 에이전트의 컨텍스트로 포함됩니다. 봇 응답 인용은 아직 지원되지 않습니다.
 
@@ -165,7 +192,8 @@ DingTalk은 그룹을 식별하기 위해 `conversationId`를 사용합니다. �
 
 ### 봇이 그룹에서 응답하지 않음
 
-- `groupPolicy`가 `"allowlist"` 또는 `"open"`으로 설정되어 있는지 확인(기본값은 `"disabled"`)
+- `groupPolicy`가 `"allowlist"`, `"pairing"` 또는 `"open"`으로 설정되어 있는지 확인(기본값은 `"disabled"`)
+- `"pairing"`을 사용하는 경우, 그룹의 페어링 요청이 승인되었는지 확인
 - 그룹 메시지에서 봇을 @mention하고 있는지 확인
 - 봇이 그룹에 추가되어 있는지 확인
 

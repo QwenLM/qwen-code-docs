@@ -2,7 +2,7 @@
 
 ## Übersicht
 
-Der Daemon lässt niemals zu, dass HTTP-Routen oder ACP-seitige Agent-Aufrufe direkt auf das Host-Dateisystem zugreifen. Jeder Lese-, Schreib-, Auflistungs-, Glob- und Stat-Vorgang durchläuft die `WorkspaceFileSystem`-Grenze (`packages/cli/src/serve/fs/`), die Folgendes bereitstellt:
+Daemon-HTTP-Dateirouten und delegierte ACP-`readTextFile`-/`writeTextFile`-Aufrufe durchlaufen die `WorkspaceFileSystem`-Grenze (`packages/cli/src/serve/fs/`), die Folgendes bereitstellt:
 
 - **Pfadauflösung** – Pfade kanonisieren und alles ablehnen, was den gebundenen Arbeitsbereich verlässt, auch über Symlinks.
 - **Vertrauensprüfung** – Schreibvorgänge verweigern, wenn der Arbeitsbereich nicht vertrauenswürdig ist (`untrusted_workspace`).
@@ -11,7 +11,16 @@ Der Daemon lässt niemals zu, dass HTTP-Routen oder ACP-seitige Agent-Aufrufe di
 - **Prüfung** – Jeder Zugriff / jede Ablehnung erzeugt ein strukturiertes Ereignis für `PermissionAuditRing` / Monitoring.
 - **Typisierte Fehler** – Geschlossene `FsErrorKind`-Union, die auf HTTP-Status abgebildet wird.
 
-Die HTTP-Dateirouten (`GET /file`, `GET /file/bytes`, `POST /file/write`, `POST /file/edit`, `GET /list`, `GET /glob`, `GET /stat`) und der ACP-seitige `BridgeFileSystem`-Adapter (damit agentengesteuerte `readTextFile`/`writeTextFile`-Aufrufe dieselben Prüfungen durchlaufen) gehen beide durch diese Grenze.
+Die HTTP-Dateirouten (`GET /file`, `GET /file/bytes`, `POST /file/write`, `POST /file/edit`, `GET /list`, `GET /glob`, `GET /stat`) verwenden diese Grenze. Im Produktions-Daemon erreichen ACP-Aufrufe, die delegiert bleiben, WFS über den injizierten Bridge-Adapter; generische Bridge-Aufrufer verwenden WFS nur, wenn sie einen solchen Adapter injizieren. Produktions-Same-Host-`qwen serve`-Runtimes bewerben `readTextFile: false`, sodass alle kindlichen `FileSystemService.readTextFile`-Consumer den regulären CLI-Dateisystemdienst verwenden; finale ACP-`writeTextFile`-Inhaltsschreibvorgänge bleiben über WFS delegiert.
+
+Dieser Text-Read-Capability-Slice deckt direkte `read_file`-Aufrufe ab sowie die gemeinsamen Pre-Reads, die von Write-, Edit-, Notebook-, Sed- und Artifact-Operationen verwendet werden:
+
+- Er akzeptiert absichtlich das reguläre CLI-Leseverhalten und nicht die WFS-Leseseite-Garantien. [Das Design-Dokument](../../design/daemon-local-text-reads.md) enthält die genaue Liste dessen, was aufgegeben wird.
+- Dasselbe Dokument dokumentiert, warum #8618 auch nach dieser Änderung weiterhin für die Write- und Edit-Familie reproduzierbar ist, sowie den begrenzten Sinn, in dem der beibehaltene Adapter-Lesepfad „fail-closed" ist.
+- Direktes externes `read_file` behält die normalen CLI-Permission-Regeln und die Core-Dateioperations-Telemetrie.
+- HTTP-Dateisystemrouten bleiben Workspace-scoped, und das Verhalten von Agent-Discovery-Tools wird durch diese Capability nicht geändert.
+- Hilfsaktionen wie Elternverzeichnis-Erstellung und Shell-Befehle sind separate bestehende Pfade, die nicht von dieser Grenze abgedeckt werden.
+- `qwen serve` nimmt einen Same-Machine-Same-UID-Sicherheitsprinzipal an und ist keine OS-Sandbox.
 
 ## Verantwortlichkeiten
 
@@ -66,7 +75,7 @@ interface BridgeFileSystem {
 }
 ```
 
-Dies ist der Injektionspunkt für ACP `readTextFile`/`writeTextFile`. Bridge-Tests und eingebettete Mode-A-Aufrufer können ihn in `BridgeOptions` weglassen; `BridgeClient` greift auf seinen Inline-`fs.readFile`-/`fs.writeFile`-Proxy zurück (bewahrt das Pre-F1-Verhalten). Die Produktion `qwen serve` verdrahtet `BridgeFileSystem` über `createBridgeFileSystemAdapter(fsFactory)` (`packages/cli/src/serve/bridge-file-system-adapter.ts`), sodass agentenseitige ACP-Schreibvorgänge dieselben TOCTOU-, Symlink-, Vertrauens- und Prüfungsgates wie die HTTP-Routen übernehmen.
+Dies ist der Injektionspunkt für ACP `readTextFile`/`writeTextFile`. Bridge-Tests und eingebettete Mode-A-Aufrufer können ihn in `BridgeOptions` weglassen; `BridgeClient` greift auf seinen Inline-`fs.readFile`-/`fs.writeFile`-Proxy zurück (bewahrt das Pre-F1-Verhalten). Die Produktion `qwen serve` verdrahtet `BridgeFileSystem` über `createBridgeFileSystemAdapter(fsFactory)` (`packages/cli/src/serve/bridge-file-system-adapter.ts`) und setzt `delegateReadTextFileToClient: false`. Capability-konforme Children lesen daher Text lokal und delegieren finale ACP-Textschreibvorgänge. Der Adapter behält seine Leseimplementierung bei, sodass unerwartete oder Capability-verletzende delegierte Lesevorgänge weiterhin auf die Workspace-Grenze von WFS treffen.
 
 Zwei defensive Eigenschaften, die der Adapter bewahren MUSS (da der Inline-Proxy vollständig umgangen wird, wenn der Adapter injiziert ist):
 

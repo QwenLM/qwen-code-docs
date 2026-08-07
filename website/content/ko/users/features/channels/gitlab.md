@@ -66,12 +66,12 @@ export GITLAB_TOKEN="glpat-your_token_here"
 | `pollInterval`         | `60000`                   | 폴 간격(ms)                                         |
 | `baseUrl`              | `https://gitlab.com`      | GitLab 인스턴스 URL                                 |
 | `action_prompt_template` | (처리에 필수)            | GitLab 작업 이름을 메타데이터 템플릿에 매핑          |
-| `groupPolicy`          | `"disabled"`              | `"open"` 또는 프로젝트가 나열된 `"allowlist"`여야 함 |
+| `groupPolicy`          | `"disabled"`              | `"open"`, 프로젝트가 나열된 `"allowlist"` 또는 프로젝트가 승인된 `"pairing"`이어야 함 |
 | `senderPolicy`         | `"allowlist"`             | 봇을 트리거할 수 있는 사용자                        |
 
 ## action_prompt_template
 
-이 필드는 어떤 todo 작업이 처리되고 메타데이터가 어떻게 렌더링되는지를 제어합니다. 구성된 템플릿이 있는 작업만 디스패치되며, 나머지는 건너뛰어지고 완료로 표시されます.
+이 필드는 어떤 todo 작업이 처리되고 메타데이터가 어떻게 렌더링되는지를 제어합니다. 구성된 템플릿이 있는 작업만 디스패치되며, 나머지는 건너뛰어지고 완료로 표시됩니다.
 
 ```json
 {
@@ -136,13 +136,15 @@ Project: owner/repo | URL: https://gitlab.com/owner/repo | Author: alice | Type:
 
 공개 프로젝트에서는 항상 명시적 `allowedUsers`가 있는 `senderPolicy: "allowlist"`를 사용하세요.
 
+`groupPolicy: "pairing"` 아래에서는 프로젝트 단위로 접근이 부여됩니다: 프로젝트가 승인되면 **모든 GitLab 사용자**가 해당 프로젝트의 이슈와 merge request를 통해 봇을 구동할 수 있습니다. 모든 GitLab 트래픽은 그룹 트래픽이므로 `senderPolicy`와 `allowedUsers`는 승인된 프로젝트의 멤버를 제한하지 않습니다. 승인은 프로젝트 경로(`owner/repo`)를 기준으로 저장되며, 이름 변경이나 이전 시 변경됩니다 — 프로젝트 이름 변경, 이전 또는 삭제 후 오래된 그룹 승인을 취소하세요.
+
 ## Mention 감지
 
 어댑터는 항상 디스패치된 인벨롭프에서 `isMentioned = true`를 설정합니다. GitLab이 이미 todo를 생성할 때 mention을 결정했기 때문입니다. `action_prompt_template` 구성이 실제 이벤트 필터입니다 — 구성된 템플릿이 있는 작업만 처리됩니다. `@bot` mention은 `stripBotMention`을 통해 디스패치 전에 메시지 텍스트에서 제거됩니다.
 
-### ⚠️ groupPolicy는 "open" 또는 "allowlist"여야 합니다
+### ⚠️ groupPolicy는 "open", "allowlist" 또는 "pairing"이어야 합니다
 
-`groupPolicy`는 todo가 처리되려면 `"open"` 또는 프로젝트가 명시적으로 나열된 `"allowlist"`로 설정되어야 합니다. 기본값 `"disabled"`는 모든 mention을 삭제합니다: todo는 완료로 표시되고 커서가 진행되지만 디스패치는 발생하지 않습니다. 거부가 로그에 기록되지만(`preflight rejected reason=group_disabled`) todo는 여전히 소비됩니다. 봇이 mention에 응답하지 않으면 `groupPolicy`가 `"disabled"`가 아닌지 확인하세요.
+`groupPolicy`는 todo가 처리되려면 `"open"`, 프로젝트가 명시적으로 나열된 `"allowlist"` 또는 `"pairing"`으로 설정되어야 합니다. `"pairing"` 아래에서는 승인되지 않은 프로젝트의 첫 mention이 그룹 페어링 요청을 생성합니다. `qwen channel pairing approve`로 한 번 승인하면 그 후 해당 프로젝트의 todo가 디스패치됩니다. 기본값 `"disabled"`는 모든 mention을 삭제합니다: todo는 완료로 표시되고 커서가 진행되지만 디스패치는 발생하지 않습니다. 거부가 로그에 기록되지만(`preflight rejected reason=group_disabled`) todo는 여전히 소비됩니다. 봇이 mention에 응답하지 않으면 `groupPolicy`가 `"disabled"`가 아닌지 확인하세요.
 
 ## 작동 방식
 
@@ -155,7 +157,7 @@ Project: owner/repo | URL: https://gitlab.com/owner/repo | Author: alice | Type:
 5. `target_url` 앵커를 통해 mention 유형 **감지**:
    - `#note_123` 존재 → 댓글 mention → 텍스트는 `todo.body`(댓글)
    - 앵커 없음 → 설명 mention → 텍스트는 이슈/MR 설명
-6. `handleInbound`를 통해 인벨롭프 **디스패치**(`groupPolicy: "open"` 또는 프로젝트가 나열된 `"allowlist"` 필요)
+6. `handleInbound`를 통해 인벨롭프 **디스패치**(`groupPolicy: "open"`, 프로젝트가 나열된 `"allowlist"` 또는 프로젝트가 승인된 `"pairing"` 필요)
 7. 커서 **진행** 및 todo **완료 표시**(최선 노력)
 
 커서(`lastProcessedId`)는 디스패치 성공 또는 실패와 관계없이 진행됩니다. 실패한 디스패치는 이슈/MR에 ⚠️ 오류 댓글을 게시하며 재시도되지 않습니다. 사용자가 봇을 다시 mention하여 새 todo를 트리거할 수 있습니다.
