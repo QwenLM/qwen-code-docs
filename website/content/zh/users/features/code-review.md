@@ -230,11 +230,15 @@ description: "Review code changes for correctness, security, performance, and co
 
 已确认的发现在其他任何消费者使用之前被规范化为 `.qwen/tmp/qwen-review-<target>-findings.json`——终端报告、保存的 Markdown 报告和 PR 审查 JSON 都读取这一个产物，而非重新输入列表。每个发现携带唯一的 `id`（结果和 resolved 锚点的连接依据）、`severity`、`confidence`、`source`、`summary`、限制在 60 个字符以内用于列表渲染的 `shortSummary`、`failureScenario`，以及一个或多个 `locations`——按模式聚合的发现为**每次出现保留一个 location**，因此每个仍然获得自己的行内评论。
 
+**首先，审查会确认它在运行你的代码。** 每个 `qwen review …` 步骤运行的是打包后的 bundle，而非工作树，因此自上次构建以来编辑过的审查命令不会生效，运行衡量的是旧行为。构建会记录它所打包的审查源码的摘要；`parse-args` 重新推导并进行比较，`drive` 也会再次检查，因为 verifier 简报直接将 agent 发送到那里而跳过了步骤 1。不匹配时会在 stderr 上说明 bundle 不是从这些源码构建的，以及如何重新构建。此检查在 CLI 解析为打包后的 `dist/cli.js`（`qwen` 二进制文件，或 `node dist/cli.js`）时运行；运行未打包输出的启动器（如 `npm start` 和 `npm run dev`）会跳过它。两种无法比较的情况会被区别对待：构建早于摘要记录的 checkout 会被告知检查无法运行及原因，而已安装的包——没有可比较的源码——则静默跳过。摘要覆盖审查命令、注册这些命令的文件、它们从目录外部导入的审查专用 lease，以及打包的审查 skill；它不跟踪这些文件导入的共享 helper，因此检查通过意味着审查代码与 bundle 匹配，而非整棵树都匹配。
+
+**基础树已经失败的 Critical 会被搁置，而非归档。** 当测试命令失败且 merge base 可以构建时，`test-delta` 会记录哪些失败文件在没有 pull request 的情况下也会失败。规范化会读回该测量结果（`qwen review findings --test-delta`，与 `--outcomes` 并列）：一个自身文本提到了这些文件之一的 Critical 会被降级为 Suggestion，保留其证据，获得降级它的测量结果和 `heldByMeasurement` 字段，并宣布降级。已经标红的测试不是这个 pull request 导致标红的测试——如果它现在因_新_原因失败，说明是哪个测试，引用双方，并重新以 Critical 归档：已经携带该测量结果但仍被提升的发现会保持你放置的位置。
+
 该命令在写入时进行验证：重复的 id、没有失败场景的发现、空的 locations 数组或未知的 severity 都是错误，而非被静默损坏的条目。
 
 ## PR 评论中的证据图片
 
-GitHub 的 API 无法将图片附加到审查评论，因此 `/review` 可以将证据图片（TUI 屏幕截图、渲染的图表等）托管到指定的 GitHub 仓库，并在评论中以 commit-pinned URL 引用它们。
+GitHub 的 API 无法将图片附加到审查评论，因此 `/review` 可以将证据图片（TUI 屏幕截图、渲染输出比较）托管到你指定的仓库，并在评论中以 commit-pinned URL 引用它们。
 
 ```bash
 export QWEN_REVIEW_ASSETS_REPO=your-org/your-repo   # 你可以推送的仓库

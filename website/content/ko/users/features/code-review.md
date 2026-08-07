@@ -205,7 +205,7 @@ PR을 리뷰할 때, `/review`는 현재 브랜치를 전환하는 대신 임시
 /review src/auth.ts --fix     # 단일 파일
 ```
 
-**PR 대상에서는 경고와 함께 무시됩니다** — PR 리뷰는 리뷰가 끝나면 삭제되는 일시적 worktree에서 실행되므로,那里的 "수정된" 편집은 몇 분 후에 폐기됩니다. 대신 `--comment`를 사용하여 발견을 게시하세요.
+**PR 대상에서는 경고와 함께 무시됩니다** — PR 리뷰는 리뷰가 끝나면 삭제되는 일시적 worktree에서 실행되므로, 해당 "수정된" 편집은 몇 분 후에 폐기됩니다. 대신 `--comment`를 사용하여 발견을 게시하세요.
 
 효과적인 `--fix`는 **노력을 medium으로 바닥**으로 설정합니다. 파일을 편집하고 `low`는 검증을 실행하지 않기 때문입니다: 미검증 발견을 적용하는 것은 PR이 아닌 작업 트리를 대상으로 한다는 점만 제외하면 게시하는 것과 같은 실수입니다. `high`를 강제하지는 않습니다 — medium의 발견은 검증되며, `high`가 추가하는 역감사는 _누락된_ 발견을 찾지만, 적용 여부를 결정하는 것은 이에 의존하지 않습니다.
 
@@ -229,7 +229,7 @@ PR을 리뷰할 때, `/review`는 현재 브랜치를 전환하는 대신 임시
 
 ## PR 댓글의 증거 이미지
 
-GitHub API는 리뷰 댓글에 이미지를 첨부할 수 없으므로, `/review`는 증거 이미지(TUI 스크린샷, Mermaid 렌더링, diff 하이라이트)를 게시된 PR 댓글에 포함하기 위해 전용 에셋 저장소에 업로드할 수 있습니다.
+GitHub의 API는 리뷰 댓글에 이미지를 첨부할 수 없으므로, `/review`는 증거 이미지(TUI 스크린샷, 렌더링 출력 비교)를 지정된 저장소에서 호스팅하고 URL로 삽입할 수 있습니다.
 
 에셋 저장소는 PR이 병합되거나 닫힐 때 자동으로 정리되는 전용 GitHub 저장소입니다. 리뷰는 이미지 참조를 **커밋 고정** URL로 작성합니다 — 브랜치가 나중에 이동해도 불변이며, GitHub Enterprise에서도 변경 없이 작동합니다.
 
@@ -270,6 +270,17 @@ GitHub 트리거 리뷰(PR 리뷰 워크플로)의 경우, 같은 이름의 **�
 
 규칙은 LLM 리뷰 에이전트(0-6)에 추가 기준으로 주입됩니다. PR 리뷰의 경우, 악의적인 PR이 우회 규칙을 주입하는 것을 방지하기 위해 **기본 브랜치**에서 규칙이 읽힙니다.
 
+`.qwen/review-rules.md` 예시:
+
+```markdown
+# Review Rules
+
+- All API endpoints must validate authentication
+- Database queries must use parameterized statements
+- React components must not use inline styles
+- Error messages must not expose internal paths
+```
+
 ## 저장소 컨텍스트
 
 저장소는 `.qwen/review-context.json`에 엄격한 JSON 매니페스트를 커밋하여 리뷰어에게 유한한 저장소별 가이드를 제공할 수 있습니다. medium 또는 high 노력에서, `/review`는 계획을 캡처한 후 매니페스트를 읽고 에이전트가 실행되기 전에 일치하는 가이드를 첨부합니다:
@@ -304,17 +315,6 @@ PR 리뷰의 경우 매니페스트는 병합 기반에서 읽히므로 리뷰 �
 `closingIssuesReferences`는 발견 힌트이지 작성자가 올바른 이슈를 연결했다는 증명은 아닙니다: 비어 있지만 PR이 명백한 대상 이슈를 참조하면, 에이전트는 관련성을 판단한 후 여전히 가져옵니다. 가져온 이슈 텍스트는 신뢰할 수 없는 데이터로 처리됩니다(사실 추출, 포함된 지시 무시). 관련 이슈의 경우, 원본 재현, 관찰된 페이로드, 예상 동작 및 유지관리자 댓글이 PR이 올바른 문제를 수정하는지에 대한 최우선 증거로 처리됩니다.
 
 이슈 증거가 업스트림 서비스나 제공자가 클라이언트 계약을 벗어난 잘못된 데이터를 반환한 것을 보여주면, 클라이언트 측 파서 또는 새니타이저 변경은 유지관리자가 명시적으로 방어적 우회 방법을 요청하지 않는 한 유효한 근인 수정으로 처리되지 않습니다. 잘못된 업스트림 출력을 재생하는 테스트는 우회 방법이 해당 형태를 처리한다는 것만 증명하며; 우회 방법이 아키텍처적으로 적절한지는 증명하지 않습니다.
-
-`.qwen/review-rules.md` 예시:
-
-```markdown
-# Review Rules
-
-- All API endpoints must validate authentication
-- Database queries must use parameterized statements
-- React components must not use inline styles
-- Error messages must not expose internal paths
-```
 
 ## 증분 리뷰
 

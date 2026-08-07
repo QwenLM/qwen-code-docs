@@ -87,7 +87,7 @@ Lokale `gh`-Authentifizierung erfordert eine HTTPS-`baseUrl`, damit das Daemon-H
 | `groupPolicy`           | `"disabled"`             | Muss `"open"` sein, damit Benachrichtigungen fließen können                        |
 | `senderPolicy`          | `"allowlist"`            | Wer den Bot auslösen kann                                                          |
 | `groups.*.requireMention` | `true`                 | @Erwähnungen für gewöhnliche Kommentare erforderlich; direkte Benachrichtigungsgründe laufen trotzdem |
-| `blockStreaming`        | `"off"`                  | Immer auf `"off"` erzwungen; zwischengeschriebene Modell-Chunks werden nicht veröffentlicht; `"on"` wird nicht unterstützt |
+| `blockStreaming`          | `"off"`                  | Immer auf `"off"` erzwungen; zwischengeschriebene Modell-Chunks werden nicht veröffentlicht; `"on"` wird nicht unterstützt |
 | `reasonFilter`          | nicht gesetzt            | Optionale Allowlist von GitHub-Benachrichtigungsgründen zur Verarbeitung            |
 
 Verwende `reasonFilter`, um laute Benachrichtigungsklassen wie `ci_activity` oder `state_change` auszufiltern. Verwende nicht `reasonFilter: ["mention"]` als Ersatz für `groups.*.requireMention`: GitHubs `mention`-Grund ist auf Thread-Ebene klebrig (sticky), sodass echte neue @Erwähnungen später unter `comment`, `subscribed`, `author` oder anderen Gründen eintreffen können und übersprungen würden.
