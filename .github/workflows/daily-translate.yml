@@ -140,6 +140,17 @@ jobs:
           grep -oE 'backlog [A-Za-z-]+: [1-9][0-9]*' /tmp/orch-detect.log \
             | awk '{print $2}' | tr -d ':' > /tmp/orch-langs.txt || true
 
+      # Fail fast on a dead credential (#189): one minimal completion request
+      # before any real work. A dead key used to cost a full multi-hour run
+      # that ended in thousands of per-file errors instead of a 5-second stop.
+      - name: Preflight translation credentials
+        if: steps.detect.outputs.changed == 'true'
+        working-directory: ./translator/orchestrator
+        env:
+          OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
+          OPENAI_BASE_URL: ${{ vars.TRANSLATE_BASE_URL || 'https://coding.dashscope.aliyuncs.com/v1' }}
+        run: node orchestrator.mjs preflight
+
       # Installs BEFORE translation on purpose: the agent runs auto-edit over
       # the whole checkout, so a malicious translation could modify
       # website/package.json. If `npm ci` ran after translation, it would
