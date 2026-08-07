@@ -310,9 +310,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          # Fresh checkout of main, which now INCLUDES the translations the
-          # translate job just committed (#184: build and translate no longer
-          # share a working tree, so a build failure can never touch them).
+          # ref: main is load-bearing: without it, checkout resolves
+          # github.sha — the commit PINNED when the workflow was
+          # triggered — which predates the translations the translate
+          # job committed mid-run. Run 31142844576 deployed exactly
+          # this stale tree (gh-pages "deploy: 72cffb8" while main was
+          # already at a0a5fd4), leaving every new translation
+          # unpublished until the NEXT run. Checking out the moving
+          # branch tip picks up the translate job's commit.
+          ref: main
           fetch-depth: 0
           filter: blob:none
 
