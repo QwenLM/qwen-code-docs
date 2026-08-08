@@ -54,7 +54,7 @@ Todas as opções padrão de canal funcionam com canais personalizados:
 | `cwd`          | Diretório de trabalho para o agente            |
 | `instructions` | Prefixado à primeira mensagem de cada sessão   |
 | `model`        | Substituição do modelo para o canal            |
-| `groupPolicy`  | `disabled`, `allowlist` ou `open`              |
+| `groupPolicy`  | `disabled`, `allowlist`, `pairing` ou `open`   |
 | `dmPolicy`     | `open` ou `disabled`                           |
 | `groups`       | Configurações por grupo                        |
 
@@ -77,7 +77,7 @@ Os canais personalizados suportam automaticamente tudo o que os canais integrado
 - **Políticas de remetentes** — Controle de acesso `allowlist`, `pairing` e `open`
 - **Políticas de grupo** — Configurações por grupo com controle opcional por @menção
 - **Roteamento de sessões** — Sessões por usuário, por thread ou compartilhadas únicas
-- **Pareamento de DM** — Fluxo completo de código de pareamento para usuários desconhecidos
+- **Pareamento de DM e grupo** — Fluxo completo de código de pareamento para usuários e grupos desconhecidos
 - **Comandos slash** — `/help`, `/clear`, `/status` funcionam imediatamente
 - **Instruções personalizadas** — Prefixadas à primeira mensagem em cada sessão
 - **Recuperação de falhas** — Reinicialização automática com preservação da sessão

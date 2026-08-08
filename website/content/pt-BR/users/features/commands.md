@@ -119,7 +119,7 @@ Comandos para gerenciar ferramentas e modelos de IA.
 | `/arena`          | Gerenciar sessões da Arena                                                            | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (alias `choose`)                          |
 | `/goal`           | Definir um objetivo — continuar trabalhando até que a condição seja atendida                                    | `/goal <condition>`, `/goal clear`                                                                        |
 | `/tasks`          | Listar tarefas em segundo plano                                                            | `/tasks`                                                                                                  |
-| `/workflows`      | Inspecionar execuções de workflow                                                            | `/workflows`, `/workflows <runId>`                                                                        |
+| `/workflows`      | Inspecionar execuções de workflow; pausar/retomar cooperativamente uma execução em segundo plano | `/workflows`, `/workflows <runId>`, `/workflows p <runId>`                                                |
 | `/lsp`            | Mostrar o status do servidor LSP                                                           | `/lsp`                                                                                                    |
 | `/trust`          | Gerenciar configurações de confiança de pasta                                                     | `/trust`                                                                                                  |
 > [!warning]
@@ -138,7 +138,7 @@ Comandos para gerenciar ferramentas e modelos de IA.
 
 Estes comandos invocam skills integradas que fornecem fluxos de trabalho especializados.
 
-| Command      | Description                                                 | Usage Examples                                                            |
+| Comando      | Descrição                                                   | Exemplos de Uso                                                           |
 | ------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------- |
 | `/review`    | Revisão de código multi-agente (12 agentes paralelos no esforço alto) | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
 | `/loop`      | Executar um prompt em um cronograma recorrente              | `/loop 5m check the build`                                                |
@@ -151,7 +151,7 @@ Consulte [Code Review](./code-review.md) para a documentação completa do `/rev
 
 O comando `/btw` permite que você faça perguntas paralelas rápidas sem interromper ou afetar o fluxo da conversa principal.
 
-| Command                | Description                           |
+| Comando                | Descrição                             |
 | ---------------------- | ------------------------------------- |
 | `/btw <your question>` | Fazer uma pergunta paralela rápida    |
 | `?btw <your question>` | Sintaxe alternativa para perguntas paralelas |
@@ -166,7 +166,7 @@ O comando `/btw` permite que você faça perguntas paralelas rápidas sem interr
 
 **Atalhos de Teclado (Modo Interativo):**
 
-| Shortcut             | Action                                              |
+| Atalho               | Ação                                                |
 | -------------------- | --------------------------------------------------- |
 | `Escape`             | Cancelar (durante o carregamento) ou dispensar (após a conclusão) |
 | `Space` or `Enter`   | Dispensar a resposta (quando a entrada está vazia)  |
@@ -208,8 +208,8 @@ O comando `/btw` permite que você faça perguntas paralelas rápidas sem interr
 
 **Modos de Execução Suportados:**
 
-| Mode                 | Behavior                                     |
-| -------------------- | -------------------------------------------- |
+| Modo                 | Comportamento                                  |
+| -------------------- | ---------------------------------------------- |
 | Interactive          | Mostra acima do Composer com renderização Markdown |
 | Non-interactive      | Retorna o resultado em texto: `btw> question\nanswer` |
 | ACP (Agent Protocol) | Retorna o gerador assíncrono stream_messages |
@@ -222,7 +222,7 @@ O comando `/btw` permite que você faça perguntas paralelas rápidas sem interr
 
 O comando `/recap` gera um breve resumo de "onde você parou" da sessão atual, permitindo que você retome uma conversa antiga sem precisar rolar por páginas de histórico.
 
-| Command  | Description                                |
+| Comando  | Descrição                                  |
 | -------- | ------------------------------------------ |
 | `/recap` | Gerar e mostrar um resumo da sessão em uma linha |
 
@@ -271,7 +271,7 @@ Diffs por turno requerem que o file checkpointing esteja habilitado (ativado por
 
 **Atalhos de teclado:**
 
-| Key       | Action                                      |
+| Tecla     | Ação                                        |
 | --------- | ------------------------------------------- |
 | `←` / `→` | Alternar entre origens (Current / T1 / T2…) |
 | `↑` / `↓` | Navegar pela lista de arquivos              |
@@ -363,7 +363,7 @@ Use **Load more** na parte inferior para buscar a próxima página de commits (5
 
 Comandos para obter informações e realizar configurações do sistema.
 
-| Command          | Description                                                                                                                    | Usage Examples                                                                      |
+| Comando          | Descrição                                                                                                                      | Exemplos de Uso                                                                     |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
 | `/help`          | Exibir informações de ajuda para os comandos disponíveis                                                                       | `/help` or `/?`                                                                     |
 | `/status`        | Exibir informações da versão                                                                                                   | `/status` or `/about`                                                               |

@@ -486,6 +486,9 @@ Passe `?deep=1` (também aceita `?deep=true` ou `?deep` simples) para uma sondag
   "sessions": 3,
   "pendingPermissions": 1,
   "activePrompts": 1,
+  "activeWork": true,
+  "activeWorkReporting": "full",
+  "activeWorkStaleMs": 4200,
   "connectedClients": 2,
   "channelAlive": true,
   "lastActivityAt": "2026-07-15T08:30:00.000Z",
@@ -493,9 +496,22 @@ Passe `?deep=1` (também aceita `?deep=true` ou `?deep` simples) para uma sondag
 }
 ```
 
-`sessions`, `pendingPermissions`, e `activePrompts` são somas. `lastActivityAt` é o horário de atividade mais recente não-nulo do workspace e `idleSinceMs` é derivado desse mesmo snapshot. `channelAlive` significa que pelo menos um channel de workspace gerenciado está ativo; não significa que todo workspace está saudável. `connectedClients` e o `rateLimitHits` opcional permanecem como contadores de todo o daemon em vez de somas por workspace.
+`sessions`, `pendingPermissions`, e `activePrompts` são somas. `activeWork` **não conta background shells, Monitors, workflows, cron jobs, nem sugestões de follow-up** — é true quando qualquer runtime tem um prompt aceito mas não liquidado (incluindo um prompt em espera FIFO), um Agent em execução em background, ou uma notificação terminal de Agent enfileirada/em progresso, e nada mais. É escopado por sessão: trabalho de nível de channel sem sessão anexada ainda — um spawn em andamento, um restore pendente, descoberta ou autenticação MCP — não é contado, então `activeWork` pode ler false enquanto o daemon ainda se recusa a reclaimar aquele channel. Não leia este campo como "o daemon é reclaimável"; ele descreve apenas trabalho de propriedade de sessão. `activeWorkReporting` diz quanto desse booleano é realmente garantido: `full` quando toda sessão ao vivo é coberta por um relatório fresco de um filho que reporta todas as categorias, `none` quando nenhuma sessão está, `partial` para qualquer coisa entre — incluindo um snapshot obsoleto ou um filho mais antigo que nunca reconheceu a capability. Um snapshot mais antigo que três intervalos de relatório para de contar como cobertura: não é um relatório de que a sessão está ociosa, então a sessão volta a ler como retida, exatamente como se o filho nunca tivesse reportado. `activeWorkStaleMs` é a idade do snapshot mais antigo no qual o booleano se baseia **entre as sessões cobertas**, e é `0` quando nenhuma sessão está coberta; é diagnóstico, porque a frescura já é graduada em `activeWorkReporting` pelo daemon (apenas o daemon conhece a cadência negociada de cada channel). O grau é computado uma vez sobre todo runtime gerenciado em vez de por runtime e depois combinado — um runtime sem sessões é vacuamente completo, e tratar isso como evidência deixaria um workspace vazio garantir sessões não reportadas de outro workspace. `lastActivityAt` é o horário de atividade mais recente não-nulo do workspace e `idleSinceMs` é derivado desse mesmo snapshot. `channelAlive` significa que pelo menos um channel de workspace gerenciado está ativo; não significa que todo workspace está saudável. `connectedClients` e o `rateLimitHits` opcional permanecem como contadores de todo o daemon em vez de somas por workspace.
 
-> ⚠️ A sondagem profunda é **informativa**, não uma verificação real de liveness ou um lease de reclaim atômico. Lê acessores de contadores que não fazem ping em processos filhos / channels individuais e portanto não detectam uma sessão travada mas ainda contada. `connectedClients` conta conexões REST SSE, não todo transporte ACP. Use amostras repetidas e shutdown gracioso para reclaim por ociosidade; use `/daemon/status` autenticado para diagnósticos de transporte e por workspace. Se qualquer getter de runtime gerenciado lançar exceção, a sondagem profunda fail closed com `503 {"status":"degraded","reason":"aggregation_failed"}` em vez de retornar totais parciais, e o log do daemon identifica o runtime de workspace com falha. Durante bootstrap, antes do registry de runtime estar pronto, retorna `503 {"status":"degraded","reason":"bootstrap"}` com `Retry-After: 1`. Para liveness do listener, use o `/health` padrão sem `?deep`.
+Controllers de restart devem tratar o daemon como ocupado quando:
+
+```ts
+const busy =
+  health.activePrompts > 0 ||
+  health.activeWork ||
+  health.activeWorkReporting !== 'full';
+```
+
+Remover o terceiro termo torna `activeWork === false` indistinguível de "nenhum filho me disse nada", que é o único caso em que agir sobre isso é inseguro. Respostas desconhecidas e sondagens falhadas também devem impedir o restart. `activePrompts` permanece como um sinal de compatibilidade independente.
+
+Esses campos são um cache de observação, não um lease de restart: mesmo uma resposta fresca, totalmente graduada e vazia descreve o momento em que foi amostrada, e o trabalho pode começar imediatamente depois. A regra acima reduz substancialmente o risco de um restart errado, mas não o elimina — segurança estrita precisa de uma cerca de prepare-restart que pare a admissão de novo trabalho, confirme a drenagem, e só então desligue.
+
+> ⚠️ A sondagem profunda é **informativa**, não uma verificação real de liveness ou um lease de reclaim atômico. Filhos ACP negociados publicam snapshots de trabalho ativo de todo o channel em uma cadência negociada, e o daemon gradua sua frescura em `activeWorkReporting` — mas nunca mata um channel por um relatório ausente, porque o silêncio de uma sessão não é evidência de que o processo morreu. Liveness de transporte e detecção de Agent travado são mecanismos separados. `connectedClients` conta conexões REST SSE, não todo transporte ACP. Use amostras repetidas e shutdown gracioso para reclaim por ociosidade; use `/daemon/status` autenticado para diagnósticos de transporte e por workspace. Se qualquer getter de runtime gerenciado lançar exceção, a sondagem profunda fail closed com `503 {"status":"degraded","reason":"aggregation_failed"}` em vez de retornar totais parciais, e o log do daemon identifica o runtime de workspace com falha. Durante bootstrap, antes do registry de runtime estar pronto, retorna `503 {"status":"degraded","reason":"bootstrap"}` com `Retry-After: 1`. Para liveness do listener, use o `/health` padrão sem `?deep`.
 
 **Auth:** obrigatório **apenas em binds fora do loopback**. Em loopback (`127.0.0.1`, `::1`, `[::1]`) `/health` é registrado antes do middleware bearer para que sondas k8s/Compose dentro do pod não precisem incluir o token. Fora do loopback (`--hostname 0.0.0.0`, etc.) a rota é registrada após o middleware bearer e retorna 401 sem um token válido — caso contrário, um chamador não autenticado poderia sondar endereços arbitrários para confirmar que um `qwen serve` existe, um vazamento de informação de baixa severidade que se combina mal com port scanning. Negação CORS + allowlist de Host ainda se aplicam na isenção de loopback.
 
@@ -781,6 +797,17 @@ O catálogo marca os tipos suportados por esta API de gerenciamento com
 segredo redigido, estado de inicialização, e estado de runtime; segredos literais nunca
 são retornados. Snapshots de Channel usam `Cache-Control: no-store`.
 
+Descritores de campo podem expor metadados de objetos aninhados através de `properties`.
+Descritores numéricos podem usar `exclusiveMinimum` para limites inferiores abertos. Clientes
+que não renderizam um tipo de campo anunciado devem preservar seu valor de configuração
+existente em vez de coergir ou deletá-lo. Campos de objeto não podem ser obrigatórios,
+e propriedades aninhadas não podem ser segredos ou campos resolvíveis por ambiente;
+esses protocolos de gerenciamento permanecem apenas no nível superior. Uma propriedade `required`
+aninhada é aplicada apenas enquanto seu objeto pai está presente na escrita; omitir o
+objeto pai deixa seus requisitos aninhados sem verificação. Escritas substituem o valor
+armazenado de cada campo integralmente, então preservar um objeto significa reenviar o
+objeto armazenado; o daemon não mescla objetos parciais.
+
 Escritas de configuração usam concorrência otimista e o gate estrito de token bearer:
 
 - `PUT /workspace/channels/:name`
@@ -798,19 +825,20 @@ Ações de runtime são requisições `POST` protegidas pelo gate estrito para
 worker de propriedade do workspace resolvido.
 
 Gerenciamento de pairing está disponível apenas para instâncias configuradas com a
-política de envio `pairing`:
+política de envio `pairing` ou política de grupo:
 
 - `GET .../channels/:name/pairing-requests`
 - `POST .../channels/:name/pairing-requests/approve` com `{ "code": "..." }`
 - `GET .../channels/:name/pairing-approvals`
 - `DELETE .../channels/:name/pairing-approvals` com
-  `{ "senderId": "..." }`
+  `{ "senderId": "..." }` ou `{ "groupId": "..." }`
 
 Todas as rotas de pairing requerem um token bearer e usam `Cache-Control: no-store`.
 Requisições, aprovações e revogações são escopadas à instância de Channel
-selecionada e workspace. O snapshot de aprovações contém IDs de remetente porque a
-allowlist não persiste nomes de exibição de remetentes. Revogar um remetente desconhecido
-retorna `404 channel_pairing_approval_not_found`.
+selecionada e workspace. Requisições pendentes incluem um sujeito tipado de usuário ou grupo;
+requisições de grupo também retêm o remetente que iniciou a requisição. Snapshots de aprovação
+contêm `senderIds` e `groupIds` porque allowlists não persistem nomes de exibição. Revogar um
+usuário ou grupo desconhecido retorna `404 channel_pairing_approval_not_found`.
 
 ### Entrega de Channel e Notify
 
@@ -2221,7 +2249,7 @@ Resposta:
 
 ### `PATCH /workspace/:id/session-groups/:groupId`
 
-Atualiza um grupo de sessão personalizado. Gate estrito de mutação. Faça preflight de `caps.features.includes('session_organization')`. Campos do corpo são opcionais: `{ "name": "Novo Nome" }`, `{ "color": "green" }`, `{ "order": 3 }`. Nomes duplicados retornam `409 { code: "group_name_conflict" }`. Cores desconhecidas retornam `400 { code: "invalid_group_color" }`. Resposta é o grupo atualizado.
+Atualiza um grupo de sessão personalizado. Gate estrito de mutação. Faça preflight de `caps.features.includes('session_organization')`. Campos do corpo são opcionais: `{ "name"?: string, "color"?: string, "order"?: number }`. Ids de grupo desconhecidos retornam `404 { code: "group_not_found" }`; nomes e cores duplicados/inválidos usam os mesmos erros que a criação.
 
 ### `DELETE /workspace/:id/session-groups/:groupId`
 
@@ -2664,7 +2692,7 @@ A mutação reutiliza o evento `settings_changed` escopado por workspace para ca
 
 Tag de capability: `workspace_init`. IO de arquivo puro — sem roundtrip ACP, **sem invocação LLM**.
 
-Cria um `QWEN.md` vazio (ou o que `getCurrentGeminiMdFilename()` retorna sob overrides `--memory-file-name`) na raiz do workspace primário do daemon.
+Cria um `QWEN.md` vazio (ou o que `getCurrentGeminiMdFilename()` retorna sob overrides `--memory-file-name`) na raiz do workspace primário do daemon. Apenas mecânico — para preenchimento de conteúdo por IA, faça follow-up com `POST /session/:id/prompt`.
 
 Padrão recusa sobrescrever quando o arquivo alvo existe com conteúdo não-vazio. Arquivos apenas com espaços em branco são tratados como ausentes (corresponde ao comando slash `/init` local).
 
@@ -2760,13 +2788,17 @@ Headers:
 ```
 Accept: text/event-stream
 Last-Event-ID: 42        ← opcional, replaya a partir de após id 42
+X-Qwen-Event-Epoch: ...  ← opcional, emparelha o cursor com seu bus epoch
+X-Qwen-Client-Id: ...    ← opcional identidade de cliente e correlação diagnóstica
 ```
 
 Query params:
 
-| Param       | Obrigatório | Notas                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| ----------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `maxQueued` | não         | Limite de **backlog de frames ao vivo** por assinante. Faixa `[16, 2048]`, padrão 256. Frames de replay forçados no momento da assinatura são isentos dos limites de frame e bytes; o que realmente os consome são eventos ao vivo que chegam enquanto o assinante ainda está drenando um replay grande de `Last-Event-ID: 0`. Aumente para reconexões frias para que a cauda ao vivo não dispare o aviso de cliente lento / evicção antes do consumidor alcançar. O limite de bytes serializados ao vivo é fixo no lado do daemon (padrão 2 MiB) e não tem query parameter. Valores fora da faixa / não-decimais / presentes-mas-vazios retornam `400 invalid_max_queued` antes do handshake SSE abrir. Faça preflight de `caps.features.slow_client_warning` — daemons antigos ignoram o param silenciosamente. |
+| Param              | Obrigatório | Notas                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ------------------ | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `maxQueued`        | não         | Limite de **backlog de frames ao vivo** por assinante. Faixa `[16, 2048]`, padrão 256. Frames de replay forçados no momento da assinatura são isentos dos limites de frame e bytes; o que realmente os consome são eventos ao vivo que chegam enquanto o assinante ainda está drenando um replay grande de `Last-Event-ID: 0`. Aumente para reconexões frias para que a cauda ao vivo não dispare o aviso de cliente lento / evicção antes do consumidor alcançar. O limite de bytes serializados ao vivo é fixo no lado do daemon (padrão 2 MiB) e não tem query parameter. Valores fora da faixa / não-decimais / presentes-mas-vazios retornam `400 invalid_max_queued` antes do handshake SSE abrir. Faça preflight de `caps.features.slow_client_warning` — daemons antigos ignoram o param silenciosamente. |
+| `connectReason`    | não         | Hint diagnóstico reportado pelo cliente: `initial`, `resume`, `prompt_restart`, `stream_end`, `transport_error`, `state_resync`, ou `unknown`. Valores inválidos normalizam para `unknown` e nunca rejeitam o handshake. O daemon não usa este campo para auth, replay, evicção, deduplicação, ou substituição de stream.                                                                                                                                                                                                                                                                                        |
+| `previousStreamId` | não         | UUID do stream REST/SSE aceito anterior reportado pelo cliente. Valores inválidos são ignorados. Esta é apenas linhagem best-effort e nunca muda o comportamento do stream.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 Formato de frame. A linha `data:` é o **envelope de evento completo**, JSON-stringificado em uma única linha — `{id?, v, type, data, originatorClientId?}`. O payload específico ACP (`sessionUpdate`, argumentos `requestPermission`, etc.) fica sob o campo `data` do envelope; o `type` do envelope corresponde à linha `event:` do SSE.
 
@@ -2789,6 +2821,8 @@ data: {"v":1,"type":"client_evicted","data":{"reason":"queue_bytes_overflow","dr
 ```
 
 As linhas SSE `id:` / `event:` duplicam `envelope.id` / `envelope.type` para compatibilidade com EventSource. Consumidores raw-`fetch` (o `parseSseStream` do SDK) leem tudo do envelope JSON e ignoram as linhas de preâmbulo SSE.
+
+Um handshake bem-sucedido inclui `X-Qwen-SSE-Stream-Id: <uuid>`. Gateways de navegador devem preservar esse header de resposta e expô-lo através de `Access-Control-Expose-Headers`. Daemons antigos ou intermediários podem omiti-lo; clientes devem continuar normalmente e tratar a linhagem como indisponível. O id identifica esta conexão REST/SSE física e correlaciona seu ciclo de vida do daemon, diagnósticos de fila, e rastreamento de requisição.
 
 | Tipo de evento            | Gatilho                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2965,7 +2999,7 @@ Cinco eventos tipados (escopados por workspace, fan-out para todo bus de sessão
 
 - `auth_device_flow_started` `{deviceFlowId, providerId, expiresAt}` — POST teve sucesso; SDK deve assinar (sem userCode aqui, busque via GET se necessário)
 - `auth_device_flow_throttled` `{deviceFlowId, intervalMs}` — daemon honrou `slow_down` do upstream; clientes fazendo poll GET devem aumentar seu intervalo para corresponder
-- `auth_device_flow_authorized` `{deviceFlowId, providerId, expiresAt?, accountAlias?}` — credenciais persistidas; `accountAlias` é um label não-PII derivado da resposta do IdP (nome da organização, ID da conta, etc)
+- `auth_device_flow_authorized` `{deviceFlowId, providerId, expiresAt?, accountAlias?}` — credenciais persistidas; `accountAlias` é um label não-PII (nunca email/telefone)
 - `auth_device_flow_failed` `{deviceFlowId, errorKind, hint?}` — terminal; `errorKind` é um de `expired_token | access_denied | invalid_grant | upstream_error | persist_failed`. `persist_failed` é interno ao daemon: o exchange do IdP teve sucesso mas o daemon não pôde armazenar credenciais de forma durável (EACCES / EROFS / ENOSPC). O usuário deve tentar novamente quando a condição de disco subjacente for corrigida.
 - `auth_device_flow_cancelled` `{deviceFlowId}` — DELETE teve sucesso contra uma entrada pendente
 

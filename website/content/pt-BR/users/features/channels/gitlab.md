@@ -62,7 +62,7 @@ Para instâncias self-hosted, defina `baseUrl`:
 | `pollInterval`           | `60000`                   | Intervalo de polling em ms                                 |
 | `baseUrl`                | `https://gitlab.com`      | URL da instância GitLab                                    |
 | `action_prompt_template` | (obrigatório para processamento) | Mapeia nomes de ações do GitLab para templates de metadados |
-| `groupPolicy`            | `"disabled"`              | Deve ser `"open"` ou `"allowlist"` com o projeto listado   |
+| `groupPolicy`            | `"disabled"`              | Deve ser `"open"`, `"allowlist"` com o projeto listado, ou `"pairing"` com o projeto aprovado |
 | `senderPolicy`           | `"allowlist"`             | Quem pode acionar o bot                                    |
 
 ## action_prompt_template
@@ -132,13 +132,15 @@ Em um **projeto público**, definir `senderPolicy: "open"` permite que **qualque
 
 Sempre use `senderPolicy: "allowlist"` com `allowedUsers` explícito em projetos públicos.
 
+Note que sob `groupPolicy: "pairing"`, o acesso é concedido por projeto: uma vez que um projeto é aprovado, **qualquer usuário do GitLab** pode controlar o bot através das issues e merge requests daquele projeto. Todo o tráfego do GitLab é tráfego de grupo, então `senderPolicy` e `allowedUsers` não controlam os membros de um projeto aprovado. As aprovações são indexadas pelo caminho do projeto (`owner/repo`), que muda em renomeações ou transferências — revogue aprovações de grupo obsoletas após qualquer renomeação, transferência ou exclusão de projeto.
+
 ## Detecção de Menção
 
 O adapter sempre define `isMentioned = true` nos envelopes disparados, porque o GitLab já determinou a menção ao criar o todo. A configuração `action_prompt_template` é o filtro real de eventos — apenas ações com um template configurado são processadas. A menção `@bot` é removida do texto da mensagem antes do disparo via `stripBotMention`.
 
-### ⚠️ groupPolicy Deve Ser "open" ou "allowlist"
+### ⚠️ groupPolicy Deve Ser "open", "allowlist" ou "pairing"
 
-`groupPolicy` deve ser definido como `"open"` ou `"allowlist"` com o projeto explicitamente listado para que os todos sejam processados. O valor padrão `"disabled"` descarta todas as menções: os todos são marcados como concluídos e o cursor avança, mas nenhum disparo ocorre. Uma rejeição é registrada no log (`preflight rejected reason=group_disabled`), mas o todo ainda é consumido. Se o bot não estiver respondendo a menções, verifique se `groupPolicy` não está como `"disabled"`.
+`groupPolicy` deve ser definido como `"open"`, `"allowlist"` com o projeto explicitamente listado, ou `"pairing"` para que os todos sejam processados. Sob `"pairing"`, a primeira menção de um projeto não aprovado cria uma solicitação de pareamento de grupo; aprove-a uma vez com `qwen channel pairing approve`, e os todos daquele projeto serão disparados a partir daí. O valor padrão `"disabled"` descarta todas as menções: os todos são marcados como concluídos e o cursor avança, mas nenhum disparo ocorre. Uma rejeição é registrada no log (`preflight rejected reason=group_disabled`), mas o todo ainda é consumido. Se o bot não estiver respondendo a menções, verifique se `groupPolicy` não está como `"disabled"`.
 
 ## Como Funciona
 
@@ -151,7 +153,7 @@ O adapter usa a API de Todos do GitLab como fonte de mensagens:
 5. **Detectar tipo de menção** via âncora `target_url`:
    - `#note_123` presente → menção em comentário → texto é `todo.body` (o comentário)
    - Sem âncora → menção em descrição → texto é a descrição da issue/MR
-6. **Disparar** o envelope via `handleInbound` (requer `groupPolicy: "open"` ou `"allowlist"` com o projeto listado)
+6. **Disparar** o envelope via `handleInbound` (requer `groupPolicy: "open"`, `"allowlist"` com o projeto listado, ou `"pairing"` com o projeto aprovado)
 7. **Avançar cursor** e **marcar todo como concluído** (melhor esforço)
 
 O cursor (`lastProcessedId`) avança independentemente do sucesso ou falha do disparo. Disparos com falha postam um comentário de erro ⚠️ na issue/MR e não são re-tentados — o usuário pode @mencionar o bot novamente para disparar um novo todo.

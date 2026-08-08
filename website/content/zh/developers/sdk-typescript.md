@@ -158,6 +158,8 @@ const detail = await q.getContextUsage(true);
 await q.close();
 ```
 
+`interrupt()` 仅取消当前活跃的轮次。对于通过异步可迭代对象创建的多轮查询，查询及其输入流仍然保持打开，后续来自可迭代对象的消息会被正常处理。当你想结束整个会话时，使用 `close()` 或调用已配置的 `AbortController` 的 `abort()` 方法。
+
 ## 权限模式
 
 SDK 支持不同的权限模式来控制工具执行：

@@ -29,7 +29,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `/restore`       | 将项目文件还原到工具调用运行前的检查点            | `/restore` (list) 或 `/restore <ID>`                          |
 | `/delete`        | 删除之前的会话                                                | `/delete`                                                     |
 | `/branch`        | 将当前对话分叉到新会话中                         | `/branch`                                                     |
-| `/fork`          | 生成一个继承完整对话的后台 agent | `/fork <directive>`                                           |
+| `/fork`          | 生成一个继承完整对话的后台代理                         | `/fork <directive>`                                           |
 | `/rewind`        | 将对话回退到上一轮                                   | `/rewind` 或 `/rollback`                                      |
 | `/export`        | 将会话历史导出到文件                                           | `/export html`, `/export md`, `/export json`, `/export jsonl` |
 | `/rename`        | 重命名或标记当前会话                                        | `/rename My Feature` 或 `/tag`                                |
@@ -61,7 +61,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `/cd`                | 将会话移动到新的工作目录                                                                                                                                      | `/cd ../other-project`                                                            |
 | `/editor`            | 打开对话框以选择支持的编辑器                                                                                                                                            | `/editor`                                                                         |
 | `/statusline`        | 打开交互式[状态栏](./status-line.md)预设对话框                                                                                                                    | `/statusline`                                                                     |
-| `/statusline <text>` | 通过 agent 生成命令模式的[状态栏](./status-line.md)                                                                                                                 | `/statusline show model and git branch`                                           |
+| `/statusline <text>` | 通过代理生成命令模式的[状态栏](./status-line.md)                                                                                                                 | `/statusline show model and git branch`                                           |
 | `/terminal-setup`    | 配置终端多行输入快捷键                                                                                                                                | `/terminal-setup`                                                                 |
 
 ### 1.3 语言设置
@@ -119,7 +119,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `/arena`          | 管理 Arena 会话                                                            | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (别名 `choose`)                          |
 | `/goal`           | 设置目标 — 持续工作直到满足条件                                    | `/goal <condition>`, `/goal clear`                                                                        |
 | `/tasks`          | 列出后台任务                                                            | `/tasks`                                                                                                  |
-| `/workflows`      | 检查 workflow 运行                                                            | `/workflows`, `/workflows <runId>`                                                                        |
+| `/workflows`      | 检查 workflow 运行；协作式暂停/恢复后台运行                                  | `/workflows`, `/workflows <runId>`, `/workflows p <runId>`                                                |
 | `/lsp`            | 显示 LSP 服务器状态                                                           | `/lsp`                                                                                                    |
 | `/trust`          | 管理文件夹信任设置                                                     | `/trust`                                                                                                  |
 > [!warning]
@@ -140,7 +140,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 | 命令         | 描述                                                        | 使用示例                                          |
 | ------------ | ----------------------------------------------------------- | ------------------------------------------------- |
-| `/review`    | 多 agent 代码审查（high effort 下 12 个并行 agent）         | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
+| `/review`    | 多代理代码审查（high effort 下 12 个并行代理）         | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
 | `/loop`      | 按定期计划运行 prompt                                       | `/loop 5m check the build`                        |
 | `/simplify`  | 审查最近的更改并直接应用安全的清理编辑                      | `/simplify`, `/simplify focus on duplication`     |
 | `/qc-helper` | 回答有关 Qwen Code 使用和配置的问题                         | `/qc-helper how do I configure MCP?`              |
@@ -228,11 +228,11 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 - 可用时使用配置的快速模型（`fastModel` 设置），否则回退到主会话模型。对于回顾来说，一个小巧、低成本的模型就足够了。
 - 最近的对话（最多 30 条消息，仅限文本——工具调用和工具响应会被过滤掉）会连同严格的 system prompt 一起发送给模型。
 - 回顾内容以暗色渲染，并带有 `❯` 前缀，以便与真实的助手回复区分开来。
-- 如果模型回合正在进行或另一个命令正在处理，则会以内联错误拒绝。如果没有可用的对话，或者底层生成失败，`/recap` 会显示一条简短的信息消息而不是回顾——手动命令始终会返回某些内容。
+- 如果模型轮次正在进行或另一个命令正在处理，则会以内联错误拒绝。如果没有可用的对话，或者底层生成失败，`/recap` 会显示一条简短的信息消息而不是回顾——手动命令始终会返回某些内容。
 
 **离开后返回时自动触发：**
 
-如果终端失去焦点 **5 分钟以上**并重新获得焦点，会自动生成并显示回顾（仅在没有模型响应正在进行时；否则会等待当前回合完成后再触发）。与手动命令不同，自动触发在失败时完全静默：如果生成出错或没有可总结的内容，则不会向历史记录中添加任何消息。由 `general.showSessionRecap` 设置控制（默认值：`false`）；手动 `/recap` 命令始终有效，不受此设置影响。
+如果终端失去焦点 **5 分钟以上**并重新获得焦点，会自动生成并显示回顾（仅在没有模型响应正在进行时；否则会等待当前轮次完成后再触发）。与手动命令不同，自动触发在失败时完全静默：如果生成出错或没有可总结的内容，则不会向历史记录中添加任何消息。由 `general.showSessionRecap` 设置控制（默认值：`false`）；手动 `/recap` 命令始终有效，不受此设置影响。
 
 **示例：**
 
@@ -250,18 +250,18 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 ### 1.8 Diff 查看器 (`/diff`)
 
-`/diff` 命令打开一个交互式 diff 查看器，显示未提交的更改和每个回合的 diff。使用 ←/→ 在当前 git diff 和各个对话回合之间切换，使用 ↑/↓ 浏览文件，按 Enter 查看内联 diff。
+`/diff` 命令打开一个交互式 diff 查看器，显示未提交的更改和每个轮次的 diff。使用 ←/→ 在当前 git diff 和各个对话轮次之间切换，使用 ↑/↓ 浏览文件，按 Enter 查看内联 diff。
 
 **工作原理：**
 
 在交互模式下，`/diff` 会打开一个对话框，顶部带有**来源选择器**：
 
 - **Current** — 工作树与 HEAD 对比（`git diff HEAD`）。显示所有未提交的更改，包括已暂存、未暂存和未跟踪的文件。
-- **T1, T2, T3, …** — 每个回合的 diff，每个修改了文件的模型回合对应一个标签页。最近的回合显示在最前面。每个标签页会显示原始 prompt 的预览以提供上下文。
+- **T1, T2, T3, …** — 每个轮次的 diff，每个修改了文件的轮次对应一个标签页。最近的轮次显示在最前面。每个标签页会显示原始 prompt 的预览以提供上下文。
 
 文件列表显示每个文件的统计信息（增加/删除的行数），并带有特殊状态的标签（`new`、`deleted`、`untracked`、`binary`、`truncated`、`oversized`）。在文件上按 Enter 可查看其内联 diff，并带有语法高亮的代码块。
 
-每个回合的 diff 需要启用文件检查点（在交互模式下默认开启）。当文件检查点关闭时，仅“Current”来源可用。
+每个轮次的 diff 需要启用文件检查点（在交互模式下默认开启）。当文件检查点关闭时，仅"Current"来源可用。
 
 **键盘快捷键：**
 
@@ -277,7 +277,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 **示例：**
 
 ```
-┌ /diff · 回合 3 "重构 auth 中间件" ──── 3 个文件 +45 -12 ──────────┐
+┌ /diff · 轮次 3 "重构 auth 中间件" ──── 3 个文件 +45 -12 ──────────┐
 │                                                                     │
 │ ◀ Current · T3 · T2 · T1 ▶                                         │
 │                                                                     │
@@ -291,7 +291,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 **非交互模式：**
 
-在无头（`--prompt`）或非交互上下文中，`/diff` 会打印工作树与 HEAD 对比的纯文本摘要。不提供每个回合的导航。
+在无头（`--prompt`）或非交互上下文中，`/diff` 会打印工作树与 HEAD 对比的纯文本摘要。不提供每个轮次的导航。
 
 ```
 3 个文件已更改，+45 / -12
@@ -615,7 +615,7 @@ description: 将代码重构为纯函数
 
 ## 5. CLI 子命令
 
-在启动交互式会话之前，可以在 shell 中通过 `qwen <subcommand>` 的形式运行这些命令。
+这些命令在启动交互式会话之前从 shell 中以 `qwen <subcommand>` 的形式运行。
 
 ### 会话管理
 
@@ -627,12 +627,12 @@ description: 将代码重构为纯函数
 
 列出你最近的 Qwen Code 会话及其元数据。
 
-**选项：**
+**标志：**
 
-| 选项 | 类型 | 默认值 | 描述 |
+| 标志 | 类型 | 默认值 | 描述 |
 | --------- | ------- | ------- | ----------------------------------------------- |
 | `--json` | 布尔 | `false` | 以 JSON Lines 格式输出（每行一个 JSON 对象） |
-| `--limit` | 数值 | `20` | 显示的最大会话数 |
+| `--limit` | number | `20` | 要显示的最大会话数 |
 
 **人类可读输出（默认）：**
 

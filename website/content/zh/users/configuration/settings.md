@@ -319,7 +319,7 @@ Qwen Code 会自动将旧版配置设置迁移到新格式。旧设置文件会�
 | `context.fileFiltering.enableFuzzySearch` | boolean | 当为 `true` 时，在搜索文件时启用模糊搜索功能。设置为 `false` 可提高包含大量文件的项目的性能。 | `true` |
 | `context.clearContextOnIdle.toolResultsThresholdMinutes` | number | 清除旧工具结果内容前的不活动分钟数。使用 `-1` 禁用空闲触发器。 | `60` |
 | `context.clearContextOnIdle.toolResultsNumToKeep` | integer | 清除时要保留的最近可压缩工具结果的整数数量。低于 1 的值将按 1 处理。 | `5` |
-| `context.clearContextOnIdle.toolResultsTotalCharsThreshold` | number | 在清除最旧结果之前，历史记录中允许的可压缩工具结果输出总字符数。使用 `-1` 禁用大小触发器。这是一个软阈值：受保护的最近工具结果可能会使总数保持在该阈值之上。 | `500000` |
+| `context.clearContextOnIdle.toolResultsTotalCharsThreshold` | number | 在清除最旧结果之前，历史记录中允许的可压缩工具结果输出总字符数。超过阈值时，最旧的结果会被清除到该阈值的一半（尽力而为），以便后续轮次继续重用提供商的 prompt 缓存，而不是每轮都重写历史记录。使用 `-1` 禁用大小触发器。这是一个软阈值：受保护的最近工具结果可能会使总数保持在该阈值之上。 | `500000` |
 #### 排查文件搜索性能问题
 
 如果你在文件搜索（例如 `@` 补全）时遇到性能问题，尤其是在包含大量文件的项目中，可以按照以下推荐顺序尝试一些解决方法：
@@ -562,7 +562,7 @@ LSP 服务器配置通过项目根目录下的 `.lsp.json` 文件进行，而不
 | --- | --- | --- | --- |
 | `advanced.autoConfigureMemory` | boolean | 自动配置 Node.js 内存限制。 | `false` |
 | `advanced.dnsResolutionOrder` | string | DNS 解析顺序。 | `undefined` |
-| `advanced.excludedEnvVars` | array of strings | 从项目上下文中排除的环境变量。指定不应从项目 `.env` 文件中加载的环境变量。这可以防止特定于项目的环境变量（如 `DEBUG=true`）干扰 CLI 行为。来自 `.qwen/.env` 文件的变量永远不会被排除。 | `["DEBUG","DEBUG_MODE"]` |
+| `advanced.excludedEnvVars` | array of strings | 从项目上下文中排除的环境变量。指定不应从项目 `.env` 文件中加载的环境变量。这可以防止特定于项目的环境变量（如 `DEBUG=true`）干扰 CLI 行为。来自 `.qwen/.env` 文件的变量永远不会被此列表排除；影响加载器的变量始终从每个 `.env` 作用域中被拒绝（见下文）。 | `["DEBUG","DEBUG_MODE"]` |
 | `advanced.bugCommand` | object | Bug 报告命令的配置。覆盖 `/bug` 命令的默认 URL。属性：`urlTemplate` (string)：可包含 `{title}` 和 `{info}` 占位符的 URL。示例：`"bugCommand": { "urlTemplate": "https://bug.example.com/new?title={title}&info={info}" }` | `undefined` |
 | `plansDirectory` | string | 已批准的 Plan Mode 文件的自定义目录。相对路径从项目根目录解析，且解析后的路径必须保留在项目根目录内。如果未设置，plan 文件将存储在 `~/.qwen/plans` 中。**需要重启。** 如果该目录位于项目根目录内，请将其添加到 `.gitignore` 以避免提交 plan 文件。 | `undefined` |
 
@@ -703,6 +703,10 @@ Qwen Code 可以自动从 `.env` 文件加载环境变量。
 > [!tip]
 >
 > **环境变量排除：** 默认情况下，某些环境变量（如 `DEBUG` 和 `DEBUG_MODE`）会自动从项目 `.env` 文件中排除，以防止干扰 CLI 行为。来自 `.qwen/.env` 文件的变量永远不会被排除。你可以使用 `settings.json` 文件中的 `advanced.excludedEnvVars` 设置来自定义此行为。
+
+> [!warning]
+>
+> **影响加载器的变量始终被拒绝：** 使生成的 Node.js 进程或操作系统加载器执行攻击者选择的文件的变量——`NODE_OPTIONS`、`npm_config_node_options`（以及 npm 的配置文件重定向 `npm_config_userconfig`、`npm_config_globalconfig`、`npm_config_script_shell`、`npm_config_prefix`）、`NODE_PATH`、`LD_PRELOAD`、`LD_AUDIT`、`DYLD_INSERT_LIBRARIES`、`BASH_ENV`、`ZDOTDIR` 以及导出的 bash 函数定义（`BASH_FUNC_*`）——永远不会从 `.env` 文件（任何作用域，包括 `.qwen/.env` 和用户级文件）或顶层 `settings.json` 的 `env` 部分加载。工作区控制的值可能会劫持 Qwen Code 生成的每个子进程的模块解析，因此 Qwen Code 在拒绝此类键时会打印警告（每个进程每个键和来源打印一次——在多工作区守护进程中，每个工作区的拒绝会单独报告）。要使用这些变量之一，请在启动 Qwen Code 的环境中将其导出；由 `qwen serve` 托管的会话故意不继承它们，而直接编辑器（ACP）会话和普通 CLI 保留导出的值。库_搜索_路径（`LD_LIBRARY_PATH`、`DYLD_LIBRARY_PATH`）和仅限交互式 shell 的 `ENV` 故意不在此列表中——拒绝它们会破坏主流工具链（`ENV=production`、conda/CUDA 库目录）——但项目 `.env` 仍然无法在重新加载时应用它们。此拒绝仅适用于顶层 `env` 部分：每个 server 的 `mcpServers[].env` 和每个 hook 的 `hooks[].env` 故意限定在该 server 或 hook 范围内，仍然适用（两个入口都通过 trusted folder 对工作区提供的配置进行门控）。另外，项目 `.env` 永远不能设置 `QWEN_CLI_ENTRY`（守护进程的会话进程入口点）、`NODE_EXTRA_CA_CERTS` 或 `DEV`（开发环境启动标记）；这些仍然可以从 shell 环境或用户级 `.env` 设置。升级说明：在此拒绝列表存在之前，其中一些键可以从某些路径上的 `.env` 文件或 `settings.json` 的 `env` 加载；现在它们会在所有地方被拒绝并显示警告，并且 `qwen serve` 守护进程不再将它们继承的值传递给会话子进程。
 
 ### 环境变量表
 

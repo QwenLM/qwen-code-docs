@@ -29,7 +29,7 @@ Este documento lista os atalhos de teclado disponíveis no Qwen Code.
 | `Down Arrow`                                          | Desce uma linha, depois salta para o final, e então avança no histórico.                                                            |
 | `Enter`                                               | Envia o prompt atual. Enquanto uma resposta estiver em execução, direciona o turno atual.                                           |
 | `Ctrl+Q`                                              | Enfileira o prompt ou comando atual para o próximo turno em vez de direcionar; ele é executado após o Qwen Code retornar ao estado ocioso. |
-| `Up Arrow` (no topo) / `Esc`                          | Quando mensagens enfileiradas estão presentes, move-as de volta para a entrada para edição.                                         |
+| `Up Arrow` (no topo) / `Esc`                          | Quando mensagens enfileiradas estão presentes, move-as de volta para a entrada para edição (`Up Arrow` no topo sempre que a entrada estiver visível; `Esc` apenas quando o agente estiver ocioso). Enquanto o agente estiver respondendo e a entrada estiver vazia, `Esc` cancela a solicitação em andamento (as mensagens enfileiradas são então movidas de volta para a entrada). |
 | `Meta+D` / `Meta+Delete` / `Ctrl+Delete`              | Exclui a palavra à direita do cursor.                                                                                               |
 | `Tab`                                                 | Preenche automaticamente a sugestão atual, se houver uma.                                                                           |
 | `Up Arrow`                                            | Sobe uma linha, depois salta para o início, e então retrocede no histórico.                                                         |
@@ -64,6 +64,20 @@ Estes atalhos se aplicam enquanto um comando shell interativo em primeiro plano 
 | `Ctrl+F`                            | Alterna o foco do teclado entre o shell e o prompt. Quando nenhum shell está em execução, `Ctrl+F` move o cursor do prompt para a direita.                     |
 | `Ctrl+Shift+Up` / `Ctrl+Shift+Down` | Rola o shell focado para cima ou para baixo.                                                                                                                   |
 | `Ctrl+B`                            | Promove o shell para uma tarefa em segundo plano. O processo filho continua em execução, o turno do agente é desbloqueado, e o shell aparece em `/tasks` e no diálogo de Tarefas em segundo plano. |
+
+## Diálogo de Tarefas em segundo plano
+
+Foque o pill de Tarefas em segundo plano no rodapé (use `Down Arrow` a partir de um compositor vazio — isso atravessa o painel de agente ao vivo e, se presente, a barra de abas da Arena primeiro) e pressione `Enter` para abrir o diálogo. Ele lista agentes em segundo plano, shells, monitores, execuções de fluxo de trabalho e memory dreams.
+
+| Atalho                    | Descrição                                                                                                                                                          |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Up Arrow` / `Down Arrow` | Move a seleção entre as tarefas.                                                                                                                                   |
+| `Enter`                   | Abre a visualização de detalhes da tarefa selecionada.                                                                                                             |
+| `x`                       | Para a tarefa selecionada (abandona um agente pausado). Um agente em primeiro plano que bloqueia seu turno precisa de um segundo `x` para confirmar.                 |
+| `r`                       | Retoma o agente pausado selecionado.                                                                                                                               |
+| `p`                       | Pausa ou retoma cooperativamente a execução de fluxo de trabalho em segundo plano selecionada. Nenhum novo agente é iniciado enquanto pausado, mas o código de script entre chamadas de agente continua executando. |
+| `s`                       | Salva o script de uma execução de fluxo de trabalho finalizada (concluída, com falha ou cancelada) (somente na visualização de detalhes).                           |
+| `Left Arrow` / `Esc`      | Retorna à lista a partir da visualização de detalhes, ou fecha o diálogo.                                                                                          |
 
 ## Sugestões
 

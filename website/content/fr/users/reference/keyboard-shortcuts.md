@@ -29,7 +29,7 @@ Ce document liste les raccourcis clavier disponibles dans Qwen Code.
 | `Flèche bas`                                          | Descend d'une ligne, puis saute à la fin, puis passe à l'historique suivant.                                                                                      |
 | `Enter`                                               | Soumet le prompt actuel. Pendant l'exécution d'une réponse, oriente le tour en cours.                                                     |
 | `Ctrl+Q`                                              | Met en file d'attente le prompt ou la commande actuel pour le prochain tour au lieu d'orienter ; il s'exécute quand Qwen Code revient en mode inactif.                 |
-| `Flèche haut` (en haut) / `Esc`                       | Lorsque des messages en attente sont présents, les replace dans la saisie pour édition.                                                        |
+| `Flèche haut` (en haut) / `Esc`                       | Lorsque des messages en attente sont présents, les replace dans la saisie pour édition (`Flèche haut` en haut chaque fois que la saisie est affichée ; `Esc` uniquement quand l'agent est inactif). Pendant que l'agent répond et que la saisie est vide, `Esc` annule plutôt la requête en cours (les messages en attente sont alors replacés dans la saisie). |
 | `Meta+D` / `Meta+Delete` / `Ctrl+Delete`              | Supprime le mot à droite du curseur.                                                                                         |
 | `Tab`                                                 | Complète automatiquement la suggestion actuelle si elle existe.                                                                                  |
 | `Flèche haut`                                            | Remonte d'une ligne, puis saute au début, puis passe à l'historique précédent.                                                                                      |
@@ -64,6 +64,20 @@ Ces raccourcis s'appliquent lorsqu'une commande shell interactive au premier pla
 | `Ctrl+F`                            | Bascule le focus clavier entre le shell et le prompt. Quand aucun shell n'est en cours, `Ctrl+F` déplace le curseur du prompt vers la droite.                                      |
 | `Ctrl+Shift+Haut` / `Ctrl+Shift+Bas` | Fait défiler le shell ciblé vers le haut ou le bas.                                                                                                                           |
 | `Ctrl+B`                            | Transforme le shell en tâche d'arrière-plan. Le processus enfant continue de s'exécuter, le tour de l'agent se débloque, et le shell apparaît dans `/tasks` et la boîte de dialogue des tâches d'arrière-plan. |
+
+## Boîte de dialogue des tâches en arrière-plan
+
+Focusrez la pilule des tâches en arrière-plan dans le pied de page (utilisez `Flèche bas` depuis un composer vide — cela traverse le panneau des agents en direct et, s'il est présent, la barre d'onglets Arena d'abord) et appuyez sur `Enter` pour ouvrir la boîte de dialogue. Elle liste les agents en arrière-plan, les shells, les moniteurs, les exécutions de workflow et les rêves mémoire.
+
+| Shortcut                  | Description                                                                                                                                              |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Flèche haut` / `Flèche bas` | Déplace la sélection entre les tâches.                                                                                                                        |
+| `Enter`                   | Ouvre la vue détaillée de la tâche sélectionnée.                                                                                                              |
+| `x`                       | Arrête la tâche sélectionnée (abandonne un agent en pause). Un agent au premier plan qui bloque votre tour nécessite un second `x` pour confirmer.                                 |
+| `r`                       | Reprend l'agent en pause sélectionné.                                                                                                                        |
+| `p`                       | Met en pause ou reprend de manière coopérative l'exécution de workflow en arrière-plan sélectionnée. Aucun nouvel agent ne démarre pendant la pause, mais le code de script entre les appels d'agent continue de s'exécuter. |
+| `s`                       | Sauvegarde le script d'une exécution de workflow terminée (terminée, échouée ou annulée) (vue détaillée uniquement).                                                         |
+| `Flèche gauche` / `Esc`      | Retour à la liste depuis la vue détaillée, ou fermeture de la boîte de dialogue.                                                                                            |
 
 ## Suggestions
 

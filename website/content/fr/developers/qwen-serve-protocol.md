@@ -483,6 +483,9 @@ Passez `?deep=1` (accepte aussi `?deep=true` ou simplement `?deep`) pour une son
   "sessions": 3,
   "pendingPermissions": 1,
   "activePrompts": 1,
+  "activeWork": true,
+  "activeWorkReporting": "full",
+  "activeWorkStaleMs": 4200,
   "connectedClients": 2,
   "channelAlive": true,
   "lastActivityAt": "2026-07-15T08:30:00.000Z",
@@ -490,9 +493,22 @@ Passez `?deep=1` (accepte aussi `?deep=true` ou simplement `?deep`) pour une son
 }
 ```
 
-`sessions`, `pendingPermissions` et `activePrompts` sont des sommes. `lastActivityAt` est l'heure d'activité la plus récente non nulle d'un workspace et `idleSinceMs` est dérivé de ce même snapshot. `channelAlive` signifie qu'au moins un canal workspace géré est actif ; cela ne signifie pas que chaque workspace est sain. `connectedClients` et le `rateLimitHits` optionnel restent des compteurs à l'échelle du daemon plutôt que des sommes par workspace.
+`sessions`, `pendingPermissions` et `activePrompts` sont des sommes. `activeWork` **ne compte pas les shells en arrière-plan, les Monitors, les workflows, les cron jobs ni les suggestions de suivi** — il est vrai lorsque tout runtime a un prompt accepté mais non réglé (y compris un prompt en attente FIFO), un Agent en arrière-plan en cours d'exécution, ou une notification de terminal d'Agent en file/ en cours, et rien d'autre. Il est limité aux sessions : le travail au niveau du canal sans session encore attachée — un spawn en cours, une restauration en attente, une découverte ou une authentification MCP — n'est pas compté, donc `activeWork` peut être faux alors que le daemon refuse toujours de récupérer ce canal. Ne lisez pas ce champ comme « le daemon est récupérable » ; il décrit uniquement le travail possédé par une session. `activeWorkReporting` indique quelle partie de ce booléen est réellement garantie : `full` lorsque chaque session live est couverte par un rapport frais d'un enfant qui rapporte toutes les catégories, `none` lorsqu'aucune session ne l'est, `partial` pour tout ce qui se trouve entre les deux — y compris un snapshot périmé ou un ancien enfant qui n'a jamais reconnu la capacité. Un snapshot de plus de trois intervalles de rapport cesse de compter comme une couverture : ce n'est pas un rapport indiquant que la session est inactive, donc la session revient à une lecture conservée, exactement comme si l'enfant n'avait jamais rapporté. `activeWorkStaleMs` est l'âge du plus ancien snapshot sur lequel le booléen s'appuie **parmi les sessions couvertes**, et est `0` lorsqu'aucune session n'est couverte ; il est diagnostique, car la fraîcheur est déjà graduée dans `activeWorkReporting` par le daemon (seul le daemon connaît la cadence négociée de chaque canal). Le grade est calculé une fois sur chaque runtime géré plutôt que par runtime puis combiné — un runtime sans sessions est vacuellement complet, et traiter cela comme une preuve permettrait à un workspace vide de se porter garant des sessions non rapportées d'un autre workspace. `lastActivityAt` est l'heure d'activité la plus récente non nulle d'un workspace et `idleSinceMs` est dérivé de ce même snapshot. `channelAlive` signifie qu'au moins un canal workspace géré est actif ; cela ne signifie pas que chaque workspace est sain. `connectedClients` et le `rateLimitHits` optionnel restent des compteurs à l'échelle du daemon plutôt que des sommes par workspace.
 
-> ⚠️ La sonde profonde (deep probe) est **informatif**, pas une véritable vérification de liveness ni un bail de réclamation atomique. Elle lit des accesseurs de compteurs qui ne pingent pas les processus enfants / canaux individuels et ne détecteront donc pas une session bloquée mais toujours comptabilisée. `connectedClients` compte les connexions REST SSE, pas chaque transport ACP. Utilisez des échantillons répétés et l'arrêt gracieux pour la réclamation d'inactivité ; utilisez `/daemon/status` authentifié pour les diagnostics par transport et par workspace. Si un getter d'un runtime géré lève une exception, la sonde profonde échoue strictement avec `503 {"status":"degraded","reason":"aggregation_failed"}` plutôt que de renvoyer des totaux partiels, et le log du daemon identifie le runtime workspace en échec. Pendant le bootstrap, avant que le registre de runtimes ne soit prêt, elle renvoie `503 {"status":"degraded","reason":"bootstrap"}` avec `Retry-After: 1`. Pour la liveness du listener, utilisez le `/health` par défaut sans `?deep`.
+Les contrôleurs de redémarrage doivent traiter le daemon comme occupé lorsque :
+
+```ts
+const busy =
+  health.activePrompts > 0 ||
+  health.activeWork ||
+  health.activeWorkReporting !== 'full';
+```
+
+Supprimer le troisième terme rend `activeWork === false` indiscernable de « aucun enfant ne m'a rien dit », ce qui est le seul cas où agir dessus n'est pas sûr. Les réponses inconnues et les sondes échouées doivent également empêcher le redémarrage. `activePrompts` reste un signal de compatibilité indépendant.
+
+Ces champs sont un cache d'observation, pas un bail de redémarrage : même une réponse fraîche, entièrement graduée et vide décrit le moment où elle a été échantillonnée, et le travail peut commencer immédiatement après. La règle ci-dessus réduit substantiellement le risque d'un mauvais redémarrage mais ne l'élimine pas — une sécurité stricte nécessite une barrière de préparation au redémarrage qui arrête l'admission de nouveau travail, confirme le drainage, puis seulement arrête le système.
+
+> ⚠️ La sonde profonde (deep probe) est **informatif**, pas une véritable vérification de liveness ni un bail de réclamation atomique. Les enfants ACP négociés publient des snapshots de travail actif à l'échelle du canal sur une cadence négociée, et le daemon gradue leur fraîcheur dans `activeWorkReporting` — mais il ne tue jamais un canal pour un rapport manquant, car le silence d'une session n'est pas une preuve que le processus est mort. La liveness du transport et la détection d'Agent bloqué sont des mécanismes séparés. `connectedClients` compte les connexions REST SSE, pas chaque transport ACP. Utilisez des échantillons répétés et l'arrêt gracieux pour la réclamation d'inactivité ; utilisez `/daemon/status` authentifié pour les diagnostics par transport et par workspace. Si un getter d'un runtime géré lève une exception, la sonde profonde échoue strictement avec `503 {"status":"degraded","reason":"aggregation_failed"}` plutôt que de renvoyer des totaux partiels, et le log du daemon identifie le runtime workspace en échec. Pendant le bootstrap, avant que le registre de runtimes ne soit prêt, elle renvoie `503 {"status":"degraded","reason":"bootstrap"}` avec `Retry-After: 1`. Pour la liveness du listener, utilisez le `/health` par défaut sans `?deep`.
 
 **Auth :** requise **uniquement sur les binds non-loopback**. Sur loopback (`127.0.0.1`, `::1`, `[::1]`), `/health` est enregistré avant le middleware bearer, de sorte que les sondes k8s/Compose à l'intérieur du pod n'ont pas besoin de porter le token. Sur non-loopback (`--hostname 0.0.0.0`, etc.), la route est enregistrée après le middleware bearer et renvoie 401 sans token valide — sinon, un appelant non authentifié pourrait sonder des adresses arbitraires pour confirmer l'existence d'un `qwen serve`, une fuite d'informations de faible gravité qui se combine mal avec le port scanning. Le refus CORS + la liste blanche Host s'appliquent toujours sur l'exemption loopback.
 
@@ -2544,7 +2560,7 @@ Déconnecter le client HTTP annule la requête de génération.
 
 ### Mutation: approval, tools, skills, init, MCP restart
 
-Issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175). Le daemon expose cinq routes de contrôle de mutation qui permettent aux clients distants de modifier la posture d'exécution sans toucher au CLI de l'hôte du démon. Les cinq :
+Le daemon expose cinq routes de contrôle de mutation qui permettent aux clients distants de modifier la posture d'exécution sans toucher au CLI de l'hôte du démon. Les cinq :
 
 - Sont protégées par la gate de mutation **strict** de la PR 15. Un démon configuré sans bearer token les rejette avec `401 {code: 'token_required'}`. Configurez `--token` (ou `QWEN_SERVER_TOKEN`) avant d'y souscrire.
 - Acceptent et estampillent le header `X-Qwen-Client-Id` (chaîne d'audit de la PR 7). Lorsque le header contient un id de confiance, le démon émet `originatorClientId` sur l'événement SSE correspondant, afin que les UI multi-clients puissent supprimer les échos de leurs propres mutations.

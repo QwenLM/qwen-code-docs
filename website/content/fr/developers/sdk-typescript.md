@@ -157,6 +157,8 @@ const detail = await q.getContextUsage(true);
 await q.close();
 ```
 
+`interrupt()` annule uniquement le tour actif. Pour une requête multi-tours créée avec un prompt itérable asynchrone, la requête et son flux d'entrée restent ouverts, donc les messages ultérieurs de l'itérable sont traités normalement. Utilisez `close()` ou abortez le `AbortController` configuré lorsque vous souhaitez terminer la session entière.
+
 ## Modes de permission
 
 Le SDK prend en charge différents modes de permission pour contrôler l'exécution des outils :

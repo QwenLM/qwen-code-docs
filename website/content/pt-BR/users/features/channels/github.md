@@ -84,7 +84,7 @@ A autenticação local do `gh` requer um `baseUrl` HTTPS para que a credencial d
 | `useLocalGh`              | `false`                  | Reutilizar explicitamente a autenticação do GitHub CLI da conta do host do daemon            |
 | `pollInterval`            | `60000`                  | Intervalo de poll em ms                                                                      |
 | `baseUrl`                 | `https://api.github.com` | URL base da API (para GHE)                                                                   |
-| `groupPolicy`             | `"disabled"`             | Deve ser `"open"` para que as notificações fluam                                             |
+| `groupPolicy`             | `"disabled"`             | Deve ser `"open"`, `"allowlist"` com o repo (`owner/repo`) listado em `groups`, ou `"pairing"` com o repo aprovado para que as notificações fluam |
 | `senderPolicy`            | `"allowlist"`            | Quem pode acionar o bot                                                                      |
 | `groups.*.requireMention` | `true`                   | Exigir @menções para comentários comuns; motivos de notificação direcionados ainda executam  |
 | `blockStreaming`          | `"off"`                  | Sempre forçado para `"off"`; chunks intermediários do modelo não são publicados; `"on"` não é suportado |
@@ -103,6 +103,8 @@ Em um **repositório público**, definir `senderPolicy: "open"` permite que **qu
 Sempre use `senderPolicy: "allowlist"` com `allowedUsers` explícito em repos públicos.
 
 Entradas de allowlist e pairing seguem o **username**, não o ID imutável da conta. Se um usuário na allowlist renomear sua conta do GitHub, remova a entrada obsoleta — o GitHub libera o username antigo para qualquer outra pessoa reivindicar, e o novo detentor herdaria a autorização da allowlist/pairing.
+
+Note que sob `groupPolicy: "pairing"`, o acesso é concedido por repositório: uma vez que um repositório é aprovado, **qualquer usuário do GitHub** pode controlar o bot através das issues e pull requests daquele repositório. Todo tráfego do GitHub é tráfego de grupo, então `senderPolicy` e `allowedUsers` não controlam membros de um repositório aprovado. As aprovações são chaveadas pelo nome completo do repositório (`owner/repo`), que muda em caso de renomeação ou transferência — revogue aprovações de grupo obsoletas após qualquer renomeação, transferência ou exclusão de repositório.
 
 ## Detecção de Menções
 

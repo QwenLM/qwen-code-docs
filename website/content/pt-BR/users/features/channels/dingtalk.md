@@ -63,6 +63,43 @@ Ou defina-as na seção `env` do `settings.json`:
 }
 ```
 
+### Cartões Interativos
+
+Adicione um objeto `interactiveCards` para ativar os cartões de status e
+pergunta do DingTalk. Omitir o objeto desativa os cartões interativos. Quando o
+objeto está presente, o switch geral e ambos os tipos de cartão ficam habilitados
+por padrão, e os cartões de pergunta expiram após 270.000 milissegundos (270
+segundos).
+
+```json
+{
+  "channels": {
+    "my-dingtalk": {
+      "type": "dingtalk",
+      "clientId": "$DINGTALK_CLIENT_ID",
+      "clientSecret": "$DINGTALK_CLIENT_SECRET",
+      "interactiveCards": {
+        "enabled": true,
+        "statusCard": { "enabled": true },
+        "questionCard": {
+          "enabled": true,
+          "timeoutMs": 270000
+        }
+      }
+    }
+  }
+}
+```
+
+Defina `interactiveCards.enabled` como `false` para desativar todos os cartões
+interativos. Use `statusCard.enabled` ou `questionCard.enabled` para desativar
+um tipo de cartão e defina `questionCard.timeoutMs` como um número positivo
+finito para alterar o tempo de espera do Qwen Code por uma resposta do cartão
+de pergunta. Valores acima de 2.147.483.647 milissegundos (cerca de 24,8 dias)
+são limitados a esse máximo. Cartões interativos são configurados via
+`settings.json` ou pela API de gerenciamento; o editor de canal Web Shell não
+os renderiza e preserva o objeto armazenado ao editar outros campos.
+
 ### Recuperação de Conexão
 
 `useConnectionManager` é `true` por padrão. O gerenciador de conexão monitora o WebSocket do Stream e substitui o cliente do SDK do DingTalk quando a conexão para de responder. Normalmente você deve deixá-lo habilitado.
@@ -115,9 +152,10 @@ Cada destino deve definir `isGroup` explicitamente. Para mensagens diretas, `cha
 
 Os bots do DingTalk funcionam tanto em conversas DM quanto em grupos. Para habilitar o suporte a grupos:
 
-1. Defina `groupPolicy` como `"allowlist"` ou `"open"` na configuração do seu canal
+1. Defina `groupPolicy` como `"allowlist"`, `"pairing"` ou `"open"` na configuração do seu canal
 2. Adicione o bot a um grupo do DingTalk
 3. Mencione o bot com @ no grupo para acionar uma resposta
+4. Se estiver usando `groupPolicy: "pairing"`, aprove a solicitação de pairing do grupo uma vez antes que as respostas comecem
 
 Por padrão, o bot exige menção com @ em conversas de grupo (`requireMention: true`). Defina `"requireMention": false` para um grupo específico para fazê-lo responder a todas as mensagens. Consulte [Conversas em Grupo](./overview#group-chats) para detalhes completos.
 
@@ -161,7 +199,8 @@ Você pode enviar fotos e documentos para o bot, não apenas texto.
 
 ### O bot não responde em grupos
 
-- Verifique se `groupPolicy` está definido como `"allowlist"` ou `"open"` (o padrão é `"disabled"`)
+- Verifique se `groupPolicy` está definido como `"allowlist"`, `"pairing"` ou `"open"` (o padrão é `"disabled"`)
+- Se estiver usando `"pairing"`, verifique se a solicitação de pairing do grupo foi aprovada
 - Certifique-se de mencionar o bot com @ na mensagem do grupo
 - Verifique se o bot foi adicionado ao grupo
 

@@ -157,6 +157,8 @@ const detail = await q.getContextUsage(true);
 await q.close();
 ```
 
+`interrupt()` bricht nur den aktiven Turn ab. Bei einer Multi-Turn-Query, die mit einem asynchronen iterierbaren Prompt erstellt wurde, bleiben die Query und ihr Input-Stream offen, sodass spätere Nachrichten aus dem Iterable normal verarbeitet werden. Verwende `close()` oder breche den konfigurierten `AbortController` ab, wenn du die gesamte Session beenden möchtest.
+
 ## Berechtigungsmodi
 
 Das SDK unterstützt verschiedene Berechtigungsmodi zur Steuerung der Tool-Ausführung:

@@ -479,6 +479,9 @@ Workspace 限定的变更使用相同的全局 `/extensions/operations/:operatio
   "sessions": 3,
   "pendingPermissions": 1,
   "activePrompts": 1,
+  "activeWork": true,
+  "activeWorkReporting": "full",
+  "activeWorkStaleMs": 4200,
   "connectedClients": 2,
   "channelAlive": true,
   "lastActivityAt": "2026-07-15T08:30:00.000Z",
@@ -486,9 +489,22 @@ Workspace 限定的变更使用相同的全局 `/extensions/operations/:operatio
 }
 ```
 
-`sessions`、`pendingPermissions` 和 `activePrompts` 为汇总值。`lastActivityAt` 是最新的非空 workspace 活动时间，`idleSinceMs` 由同一快照推导得出。`channelAlive` 表示至少有一个受管 workspace channel 存活；并不意味着每个 workspace 都健康。`connectedClients` 和可选的 `rateLimitHits` 仍然是 daemon 全局计数器，而非按 workspace 汇总。
+`sessions`、`pendingPermissions` 和 `activePrompts` 为汇总值。`activeWork` **不统计后台 shell、Monitor、workflow、cron 任务或后续建议** — 当任何 runtime 拥有一个已接受但未结算的 prompt（包括 FIFO 等待中的 prompt）、一个运行中的后台 Agent，或一个排队/进行中的 Agent 终端通知时为 true，仅此而已。它是 session 作用域的：尚无 session 附加的 channel 级工作 — 进行中的 spawn、待处理的恢复、MCP 发现或身份验证 — 不会被计入，因此 `activeWork` 可能为 false，而 daemon 仍拒绝回收该 channel。不要将此字段解读为"daemon 可被回收"；它仅描述 session 拥有的工作。`activeWorkReporting` 说明该布尔值中有多少实际被担保：`full` 表示每个活跃 session 都有来自报告所有类别的子进程的新鲜报告，`none` 表示没有 session 有，`partial` 表示介于两者之间的任何情况 — 包括过时的快照或从未确认该能力的旧版子进程。超过三个报告间隔的快照不再算作覆盖：它不是该 session 空闲的报告，因此该 session 回到保留状态，就像子进程从未报告过一样。`activeWorkStaleMs` 是该布尔值所依据的最旧快照的年龄，**仅限于被覆盖的 session**，当没有 session 被覆盖时为 `0`；它是诊断性的，因为新鲜度已由 daemon 分级到 `activeWorkReporting` 中（只有 daemon 知道每个 channel 的协商节奏）。该分级在每个受管 runtime 上计算一次而非按 runtime 计算，然后合并 — 没有 session 的 runtime 是空真的完整，将其视为证据会让空 workspace 为另一个 workspace 未报告的 session 作担保。`lastActivityAt` 是最新的非空 workspace 活动时间，`idleSinceMs` 由同一快照推导得出。`channelAlive` 表示至少有一个受管 workspace channel 存活；并不意味着每个 workspace 都健康。`connectedClients` 和可选的 `rateLimitHits` 仍然是 daemon 全局计数器，而非按 workspace 汇总。
 
-> ⚠️ 深度探针是**信息性的**，并非真正的存活验证或原子回收租约。它读取计数器访问器，不会 ping 各个子进程/通道，因此无法检测到卡住但仍被计数的 session。`connectedClients` 统计的是 REST SSE 连接，而非所有 ACP 传输。使用重复采样和优雅关闭进行空闲回收；使用经过认证的 `/daemon/status` 进行传输和按 workspace 的诊断。如果任何受管 runtime getter 抛出异常，理论上可能会返回 `503 {"status":"degraded"}`，但真实 bridge 的 getter 永远不会这样做——在正常操作下，深度探针始终返回 200。
+重启控制器应在以下条件时将 daemon 视为忙碌：
+
+```ts
+const busy =
+  health.activePrompts > 0 ||
+  health.activeWork ||
+  health.activeWorkReporting !== 'full';
+```
+
+去掉第三项会使 `activeWork === false` 与"没有子进程告诉我任何事"无法区分，而这正是据此行动不安全的唯一情况。未知响应和失败的探针也必须阻止重启。`activePrompts` 保留为独立的兼容性信号。
+
+这些字段是观察缓存，而非重启租约：即使是新鲜的、完全分级的、空的答案也描述的是采样时刻，工作可能在此之后立即开始。上述规则大幅降低了错误重启的风险，但并未消除它 — 严格安全需要一个 prepare-restart 栅栏，停止新的工作准入，确认 drain，然后才关闭。
+
+> ⚠️ 深度探针是**信息性的**，并非真正的存活验证或原子回收租约。协商的 ACP 子进程按协商的节奏发布 channel 范围的活跃工作快照，daemon 将其新鲜度分级到 `activeWorkReporting` 中 — 但它绝不会因缺失报告而终止 channel，因为一个 session 的沉默不是进程已死亡的证据。传输活跃性和停滞 Agent 检测是独立的机制。`connectedClients` 统计的是 REST SSE 连接，而非所有 ACP 传输。使用重复采样和优雅关闭进行空闲回收；使用经过认证的 `/daemon/status` 进行传输和按 workspace 的诊断。如果任何受管 runtime getter 抛出异常，深度探针会 fail closed 并返回 `503 {"status":"degraded","reason":"aggregation_failed"}`，而不是返回部分汇总，daemon 日志会标识失败的 workspace runtime。在引导期间，runtime 注册表就绪之前，它返回 `503 {"status":"degraded","reason":"bootstrap"}` 并带有 `Retry-After: 1`。对于 listener 存活检查，请使用不带 `?deep` 的默认 `/health`。
 
 **Auth：** **仅在非环回绑定（non-loopback binds）时需要**。在环回地址（`127.0.0.1`、`::1`、`[::1]`）上，`/health` 在 bearer 中间件之前注册，因此 pod 内的 k8s/Compose 探针无需携带 token。在非环回地址（`--hostname 0.0.0.0` 等）上，该路由在 bearer 中间件之后注册，如果没有有效 token 则返回 401——否则未经身份验证的调用者可以探测任意地址以确认 `qwen serve` 是否存在，这是一种低严重性的信息泄露，与端口扫描结合会产生不良影响。CORS 拒绝 + Host 白名单在环回豁免中依然适用。
 
@@ -606,7 +622,7 @@ Workspace 限定的变更使用相同的全局 `/extensions/operations/:operatio
 
 Daemon 管理的 channel worker 启动依然保持快速失败（fail-fast）：如果 `qwen serve --channel ...` 无法启动一个达到 ready 状态的 worker，则 serve 启动失败。在 worker 达到 ready 状态后，意外退出将由 serve supervisor 在有限策略内重启：在 5 分钟窗口内最多尝试重启 3 次，退避时间分别为 1s、5s 和 15s。Worker 每 15s 发送一次 IPC 心跳；如果 45s 内未观察到心跳，supervisor 会将 worker 视为过期，将其终止，记录 `staleHeartbeatAt`，并使用相同的路径进行重启。
 
-`runtime.channelWorker` 可能包含附加的操作字段：`requestedChannels`、`pid`、`startedAt`、`exitCode`、`signal`、`error`、`restartCount`、`lastExitAt`、`lastRestartAt`、`nextRestartAt`、`lastHeartbeatAt`、`startupFailures` 和 `startupFailuresTruncated`。每个启动失败包含 `channel`、`phase`（当前为 `connect`）、可选的 adapter 提供的 `code`，以及经过凭证脱敏的 `message`。当前 worker 代最多保留 64 个失败；截断标志表示观察到了更多失败。`code` 是诊断性的，不是稳定的跨适配器分类。`restartCount` 是此 serve 进程在其生命周期内进行的重新启动尝试次数；除非存在其他 issue，否则 `restartCount > 0` 的运行中 worker 是健康的。如果运行中 worker 的 `requestedChannels` 包含 `channels` 中缺失的名称，则报告 `channel_worker_partial_connect`。
+`runtime.channelWorker` 可能包含附加的操作字段：`requestedChannels`、`pid`、`startedAt`、`exitCode`、`signal`、`error`、`restartCount`、`lastExitAt`、`lastRestartAt`、`nextRestartAt`、`lastHeartbeatAt`、`staleHeartbeatAt`、`startupFailures` 和 `startupFailuresTruncated`。每个启动失败包含 `channel`、`phase`（当前为 `connect`）、可选的 adapter 提供的 `code`，以及经过凭证脱敏的 `message`。当前 worker 代最多保留 64 个失败；截断标志表示观察到了更多失败。`code` 是诊断性的，不是稳定的跨适配器分类。`restartCount` 是此 serve 进程在其生命周期内进行的重新启动尝试次数；除非存在其他 issue，否则 `restartCount > 0` 的运行中 worker 是健康的。如果运行中 worker 的 `requestedChannels` 包含 `channels` 中缺失的名称，则报告 `channel_worker_partial_connect`。
 
 在多 workspace daemon（`--workspace` 重复）上，`runtime` 还包含 `channelWorkers[]`——每个拥有 workspace 一个条目，每个都是带有 `workspaceId`、`workspaceCwd` 和 `primary` 注解的 `channelWorker` 快照。`channelWorker` 保持填充为主 workspace 的快照以兼容。单 workspace daemon 省略 `channelWorkers[]`。
 
@@ -682,6 +698,8 @@ Daemon 管理的 channel worker 启动依然保持快速失败（fail-fast）：
 
 目录将本管理 API 支持的类型标记为 `manageable: true`。实例快照包含修订版、脱敏的秘密存在状态元数据、启动状态和 runtime 状态；字面秘密永远不会被返回。Channel 快照使用 `Cache-Control: no-store`。
 
+字段描述符可以通过 `properties` 暴露嵌套对象元数据。数值描述符可以使用 `exclusiveMinimum` 表示开放下界。不渲染已通告字段类型的客户端必须保留其现有配置值，而不是强制转换或删除它。对象字段不能是必需的，嵌套属性不能是秘密或环境可解析字段；这些管理协议仍然仅限顶层。嵌套的 `required` 属性仅在其父对象存在于写入中时才被强制执行；省略父对象则其嵌套要求不被检查。写入会整体替换每个字段的存储值，因此保留对象意味着重新发送存储的对象；daemon 不会合并部分对象。
+
 配置写入使用乐观并发和严格的 bearer token 门控：
 
 - `PUT /workspace/channels/:name`
@@ -693,14 +711,14 @@ Daemon 管理的 channel worker 启动依然保持快速失败（fail-fast）：
 
 Runtime 操作是严格门控的 `POST` 请求，目标为 `.../channels/:name/start`、`stop` 或 `restart`。它们仅操作由已解析 workspace 拥有的 worker。
 
-配对管理仅适用于配置了 `pairing` sender 策略的实例：
+配对管理仅适用于配置了 `pairing` sender 策略或 group policy 的实例：
 
 - `GET .../channels/:name/pairing-requests`
 - `POST .../channels/:name/pairing-requests/approve` 携带 `{ "code": "..." }`
 - `GET .../channels/:name/pairing-approvals`
-- `DELETE .../channels/:name/pairing-approvals` 携带 `{ "senderId": "..." }`
+- `DELETE .../channels/:name/pairing-approvals` 携带 `{ "senderId": "..." }` 或 `{ "groupId": "..." }`
 
-所有配对路由都需要 bearer token 并使用 `Cache-Control: no-store`。请求、批准和撤销的作用域限定在选定的 Channel 实例和 workspace。批准快照包含 sender ID，因为允许列表不持久化 sender 显示名称。撤销未知的 sender 返回 `404 channel_pairing_approval_not_found`。
+所有配对路由都需要 bearer token 并使用 `Cache-Control: no-store`。请求、批准和撤销的作用域限定在选定的 Channel 实例和 workspace。待处理的请求包含类型化的 user 或 group subject；group 请求还保留发起请求的 sender。批准快照包含 `senderIds` 和 `groupIds`，因为允许列表不持久化显示名称。撤销未知的 user 或 group 返回 `404 channel_pairing_approval_not_found`。
 
 ### Channel 投递和 Notify
 
@@ -2247,7 +2265,7 @@ curl -X DELETE http://127.0.0.1:4170/session/$SID
 { "prompt": "Translate into Chinese: Hello" }
 ```
 
-响应为 `text/event-stream`。流式传输以 `started` 立即开始，然后是 `started`，可选的 `thinking` 进度事件，零个或多个 `delta` 事件，以及 `done`。`thinking` 事件不携带推理内容。流式传输开始后的模型失败会产生 `error` 事件；它不会用另一个模型重试。Prompt 限制为 32 KiB 的 UTF-8 文本。断开 HTTP 客户端会取消生成请求。
+响应为 `text/event-stream`。服务器立即写入一个初始 SSE 注释，随后是 `started`、可选的 `thinking` 进度事件、零个或多个 `delta` 事件，以及 `done`。`thinking` 事件不携带推理内容。流式传输开始后的模型失败会产生 `error` 事件；它不会用另一个模型重试。Prompt 限制为 32 KiB 的 UTF-8 文本。断开 HTTP 客户端会取消生成请求。
 
 ### 变更：approval, tools, skills, init, MCP restart
 

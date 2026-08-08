@@ -119,7 +119,7 @@ AI 도구와 모델을 관리하는 명령어입니다.
 | `/arena`              | Arena 세션을 관리                                                                     | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (`choose` 별칭)                           |
 | `/goal`               | 목표를 설정 — 조건이 충족될 때까지 작업을 계속                                        | `/goal <condition>`, `/goal clear`                                                                        |
 | `/tasks`              | 백그라운드 작업을 나열                                                                | `/tasks`                                                                                                  |
-| `/workflows`          | 워크플로우 실행을 검사                                                                | `/workflows`, `/workflows <runId>`                                                                        |
+| `/workflows`          | 워크플로우 실행을 검사; 백그라운드 실행을 협력적으로 일시정지/재개                    | `/workflows`, `/workflows <runId>`, `/workflows p <runId>`                                                |
 | `/lsp`                | LSP 서버 상태를 표시                                                                  | `/lsp`                                                                                                    |
 | `/trust`              | 폴더 신뢰 설정을 관리                                                                 | `/trust`                                                                                                  |
 

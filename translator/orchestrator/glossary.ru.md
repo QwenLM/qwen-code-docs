@@ -83,3 +83,4 @@ English term → Russian rendering. Follow existing entries; append new ones as 
 - warmup → warmup (не переводится)
 - baseline → baseline (не переводится)
 - security principal → принципал безопасности
+- pairing → сопряжение

@@ -119,7 +119,7 @@ Slash-команды используются для управления сес
 | `/arena`          | Управление сессиями Arena                                                            | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (алиас `choose`)                          |
 | `/goal`           | Установка цели — продолжение работы до выполнения условия                                    | `/goal <condition>`, `/goal clear`                                                                        |
 | `/tasks`          | Список фоновых задач                                                            | `/tasks`                                                                                                  |
-| `/workflows`      | Проверка запусков workflow                                                            | `/workflows`, `/workflows <runId>`                                                                        |
+| `/workflows`      | Проверка запусков workflow; кооперативная пауза/возобновление фонового запуска         | `/workflows`, `/workflows <runId>`, `/workflows p <runId>`                                                |
 | `/lsp`            | Отображение статуса LSP-сервера                                                           | `/lsp`                                                                                                    |
 | `/trust`          | Управление настройками доверия к папкам                                                     | `/trust`                                                                                                  |
 > [!warning]

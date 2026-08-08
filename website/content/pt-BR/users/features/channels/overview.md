@@ -66,9 +66,9 @@ Os canais são configurados sob a chave `channels` no `settings.json`. Cada cana
 | `approvalMode`           | Não              | Modo de aprovação de ferramentas para sessões de canal. Tarefas não supervisionadas via webhook exigem `yolo`; a configuração se aplica a todas as sessões do canal                                  |
 | `instructions`           | Não              | Instruções personalizadas adicionadas no início da primeira mensagem de cada sessão                                                                                                     |
 | `webhooks`               | Não              | Fontes de webhook e destinos de entrega para canais gerenciados pelo daemon. Consulte [Tarefas disparadas por webhook](#webhook-triggered-tasks)                                              |
-| `groupPolicy`            | Não              | Acesso a chats em grupo: `disabled` (padrão), `allowlist` ou `open`. Consulte [Chats em Grupo](#group-chats)                                                                       |
+| `groupPolicy`            | Não              | Acesso a chats em grupo: `disabled` (padrão), `allowlist`, `pairing` ou `open`. Consulte [Chats em Grupo](#group-chats)                                                                       |
 | `dmPolicy`               | Não              | Acesso a DMs privadas: `open` (padrão) ou `disabled` (descarta todas as DMs silenciosamente). Útil para bots apenas em grupo                                                                  |
-| `groupHistoryLimit`      | Não              | Preenchimento retroativo opt-in do histórico do grupo. `0` ou omitido desativa. Um número positivo persiste essa quantidade de mensagens de grupo autorizadas e não mencionadas para a próxima menção/resposta do bot. |
+| `groupHistoryLimit`      | Não              | Preenchimento retroativo opt-in do histórico do grupo. `0` ou omitido desativa. Um número positivo persiste essa quantidade de mensagens de grupo não mencionadas de remetentes autorizados ou membros de grupos pareados aprovados para a próxima menção/resposta do bot. |
 | `groups`                 | Não              | Configurações por grupo. As chaves são IDs de chats em grupo ou `"*"` para os padrões. Consulte [Chats em Grupo](#group-chats)                                                                     |
 | `dispatchMode`           | Não              | O que acontece quando você envia uma mensagem enquanto o bot está ocupado: `steer` (padrão), `collect` ou `followup`. Consulte [Modos de Despacho](#dispatch-modes)                         |
 | `blockStreaming`         | Não              | Entrega progressiva de respostas: `on` ou `off` (padrão). Consulte [Block Streaming](#block-streaming)                                                                        |
@@ -160,13 +160,13 @@ Execute esses comandos a partir do diretório de workspace do canal (ou passe `-
 
 - Os códigos têm 8 caracteres, em maiúsculas, usando um alfabeto não ambíguo (sem `0`/`O`/`1`/`I`)
 - Os códigos expiram após 1 hora
-- Máximo de 3 solicitações pendentes por canal por vez — solicitações adicionais são ignoradas até que uma expire ou seja aprovada
-- Os usuários listados em `allowedUsers` no `settings.json` sempre pulam o pareamento
+- Máximo de 3 solicitações pendentes por canal por vez, e no máximo uma por remetente — solicitações adicionais são recusadas até que uma expire ou seja aprovada
+- Os usuários listados em `allowedUsers` no `settings.json` pulam o pareamento de usuário; sob `groupPolicy: "pairing"`, o grupo em si ainda precisa ser aprovado
 - Os usuários aprovados são armazenados por workspace em `~/.qwen/channels/<workspace-scope>/<name>-allowlist.json` — trate este arquivo como sensível
 
 ## Chats em Grupo
 
-Por padrão, o bot funciona apenas em mensagens diretas. Para ativar o suporte a chats em grupo, defina `groupPolicy` como `"allowlist"` ou `"open"`.
+Por padrão, o bot funciona apenas em mensagens diretas. Para ativar o suporte a chats em grupo, defina `groupPolicy` como `"allowlist"`, `"pairing"` ou `"open"`.
 
 ### Política de Grupo
 
@@ -174,7 +174,19 @@ Controla se o bot participa de chats em grupo:
 
 - **`disabled`** (padrão) — O bot ignora todas as mensagens de grupo. Opção mais segura.
 - **`allowlist`** — O bot responde apenas em grupos listados explicitamente em `groups` pelo ID do chat. A chave `"*"` fornece configurações padrão, mas **não** atua como um curinga de permissão.
+- **`pairing`** — Uma menção deliberada ou resposta de um grupo desconhecido cria uma solicitação de pareamento para o grupo. Uma vez aprovado, todo membro pode usar o bot naquele grupo; `senderPolicy` continua a controlar mensagens diretas.
 - **`open`** — O bot responde em todos os grupos aos quais é adicionado. Use com cautela.
+
+Aprove um grupo com o mesmo comando CLI usado para pareamento de usuário. A solicitação pendente identifica o grupo e o membro que a iniciou:
+
+```bash
+qwen channel pairing approve my-channel <CODE>
+```
+
+As aprovações de grupo são armazenadas pelo chat ID do grupo no escopo de workspace do canal. No GitHub e GitLab, o chat ID é o caminho do repositório/projeto, então uma renomeação ou transferência desvincula a aprovação armazenada — reaprove o grupo após renomear. Um repositório ou projeto recriado sob o mesmo caminho herda qualquer aprovação obsoleta — revogue aprovações de grupo após qualquer renomeação, transferência ou exclusão.
+Uma mensagem não mencionada nunca cria uma solicitação de pareamento de grupo, mesmo quando um grupo define `requireMention` como `false`; após a aprovação, a política de menção configurada se aplica normalmente.
+
+Solicitações de pareamento de grupo compartilham a mesma fila pendente que solicitações de pareamento de DM: um canal holds no máximo 3 solicitações pendentes no total, e um remetente holds no máximo uma solicitação pendente entre solicitações de usuário e grupo (consulte [Regras de Pareamento](#pairing-rules)).
 
 ### Filtragem por Menção
 
@@ -222,7 +234,7 @@ Por padrão, o Qwen ignora mensagens de grupo não mencionadas e não as armazen
 
 - Omitido ou `0` desativa o preenchimento retroativo.
 - O `groupHistoryLimit` no nível do grupo substitui o valor no nível do canal.
-- Apenas mensagens de remetentes autorizados são persistidas.
+- Apenas mensagens de remetentes autorizados ou membros de um grupo pareado aprovado são persistidas.
 - Mensagens rejeitadas por `groupPolicy` ou pela allowlist do grupo não são persistidas.
 - O histórico de grupo pendente é armazenado como JSONL local em `~/.qwen/channels/<channel-name>-group-history.jsonl` ou `$QWEN_HOME/channels/<channel-name>-group-history.jsonl`.
 - As mensagens em cache são injetadas como contexto não confiável no próximo gatilho real e não são escritas como turnos de sessão independentes.
@@ -230,10 +242,10 @@ Por padrão, o Qwen ignora mensagens de grupo não mencionadas e não as armazen
 ### Como as mensagens de grupo são avaliadas
 
 ```
-1. groupPolicy — este grupo é permitido?           (não → ignorar)
-2. dmPolicy  — esta DM é permitida?               (disabled → ignorar)
+1. groupPolicy — este grupo está desativado, listado, pareado ou aberto? (não → ignorar/fluxo de pareamento)
+2. dmPolicy — esta DM é permitida?                      (disabled → ignorar)
 3. requireMention — o bot foi mencionado/teve resposta? (não → ignorar)
-4. senderPolicy — este remetente é aprovado?         (não → fluxo de pareamento)
+4. senderPolicy — este remetente é aprovado?             (ignorado para um grupo pareado; caso contrário, não → fluxo de pareamento de usuário)
 5. Roteia para a sessão
 ```
 

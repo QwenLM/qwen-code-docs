@@ -29,7 +29,7 @@ Dieses Dokument listet die verfügbaren Tastaturkürzel in Qwen Code auf.
 | `Down Arrow`                                          | Zeile nach unten, dann ans Ende springen, dann nächster Verlaufseintrag.                                                                                      |
 | `Enter`                                               | Sendet den aktuellen Prompt ab. Während eine Antwort läuft, wird der aktuelle Turn gesteuert.                                                     |
 | `Ctrl+Q`                                              | Reiht den aktuellen Prompt oder Befehl für den nächsten Turn ein, anstatt den laufenden zu steuern; er wird ausgeführt, nachdem Qwen Code in den Leerlauf zurückkehrt.                 |
-| `Up Arrow` (am Anfang) / `Esc`                       | Wenn eingereihte Nachrichten vorhanden sind, werden diese zurück in die Eingabe zum Bearbeiten verschoben.                                                        |
+| `Up Arrow` (am Anfang) / `Esc`                       | Wenn eingereihte Nachrichten vorhanden sind, werden diese zurück in die Eingabe zum Bearbeiten verschoben (`Up Arrow` am Anfang, solange die Eingabe angezeigt wird; `Esc` nur wenn der Agent im Leerlauf ist). Während der Agent antwortet und die Eingabe leer ist, bricht `Esc` stattdessen die laufende Anfrage ab (eingereihte Nachrichten werden dann zurück in die Eingabe verschoben). |
 | `Meta+D` / `Meta+Delete` / `Ctrl+Delete`              | Löscht das Wort rechts vom Cursor.                                                                                         |
 | `Tab`                                                 | Schließt den aktuellen Vorschlag automatisch ab, falls einer vorhanden ist.                                                                                  |
 | `Up Arrow`                                            | Zeile nach oben, dann an den Anfang springen, dann vorheriger Verlaufseintrag.                                                                                      |
@@ -64,6 +64,20 @@ Diese Tastenkürzel gelten, während ein interaktiver foreground Shell-Befehl l�
 | `Ctrl+F`                            | Schaltet den Tastaturfokus zwischen Shell und Prompt um. Wenn keine Shell läuft, bewegt `Ctrl+F` den Prompt-Cursor nach rechts.                                      |
 | `Ctrl+Shift+Up` / `Ctrl+Shift+Down` | Scrollt die fokussierte Shell nach oben oder unten.                                                                                                                           |
 | `Ctrl+B`                            | Befördert die Shell in eine Hintergrundaufgabe. Der Child-Prozess läuft weiter, der Turn des Agenten wird entblockt, und die Shell erscheint in `/tasks` und im Dialog „Background tasks". |
+
+## Background-tasks-Dialog
+
+Fokussiere die Background-tasks-Pille im Footer (verwende `Down Arrow` bei leerem Composer – dies bewegt sich durch das Live-Agent-Panel und, falls vorhanden, die Arena-Tab-Leiste zuerst) und drücke `Enter`, um den Dialog zu öffnen. Er listet Hintergrund-Agenten, Shells, Monitore, Workflow-Ausführungen und Memory-Dreams auf.
+
+| Shortcut                  | Beschreibung                                                                                                                                              |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Up Arrow` / `Down Arrow` | Verschiebt die Auswahl zwischen Tasks.                                                                                                                    |
+| `Enter`                   | Öffnet die Detailansicht für den ausgewählten Task.                                                                                                       |
+| `x`                       | Stoppt den ausgewählten Task (gibt einen pausierten Agenten auf). Ein foreground Agent, der deinen Turn blockiert, benötigt ein zweites `x` zur Bestätigung. |
+| `r`                       | Setzt den ausgewählten pausierten Agenten fort.                                                                                                           |
+| `p`                       | Pausiert oder setzt den ausgewählten Hintergrund-Workflowlauf kooperativ fort. Während der Pause werden keine neuen Agenten gestartet, aber Skriptcode zwischen Agentaufrufen läuft weiter. |
+| `s`                       | Speichert das Skript eines abgeschlossenen (completed, failed oder cancelled) Workflowlaufs (nur Detailansicht).                                           |
+| `Left Arrow` / `Esc`      | Kehrt von der Detailansicht zur Liste zurück oder schließt den Dialog.                                                                                    |
 
 ## Vorschläge
 

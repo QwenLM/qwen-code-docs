@@ -119,9 +119,10 @@ Commandes pour gérer les outils et les modèles d'IA.
 | `/arena`          | Gérer les sessions Arena                                                            | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (alias `choose`)                          |
 | `/goal`           | Définir un objectif — continuer à travailler jusqu'à ce que la condition soit remplie                                    | `/goal <condition>`, `/goal clear`                                                                        |
 | `/tasks`          | Lister les tâches en arrière-plan                                                            | `/tasks`                                                                                                  |
-| `/workflows`      | Inspecter les exécutions de workflow                                                            | `/workflows`, `/workflows <runId>`                                                                        |
+| `/workflows`      | Inspecter les exécutions de workflow ; mettre en pause/reprendre coopérativement une exécution en arrière-plan | `/workflows`, `/workflows <runId>`, `/workflows p <runId>`                                                |
 | `/lsp`            | Afficher le statut du serveur LSP                                                           | `/lsp`                                                                                                    |
 | `/trust`          | Gérer les paramètres de confiance des dossiers                                                     | `/trust`                                                                                                  |
+
 > [!warning]
 >
 > Installez uniquement des extensions (`/extensions install`) provenant de sources fiables. Les extensions peuvent inclure des serveurs MCP, des skills et des commandes qui s'exécutent avec les mêmes permissions que Qwen Code lui-même — elles peuvent accéder à vos fichiers, clés API et données de conversation. `/extensions install` ne demande pas de confirmation.
@@ -383,6 +384,7 @@ Commandes pour obtenir des informations et configurer le système.
 | `/bug`           | Soumet un problème concernant Qwen Code                                                                                        | `/bug Button click unresponsive`                                                    |
 | `/copy`          | Copie dans le presse-papiers : réponse (N-ième avant la fin), code (par lang), LaTeX ou Mermaid                                | `/copy`, `/copy 2`, `/copy python`, `/copy latex`, `/copy mermaid`                  |
 | `/quit`          | Quitte Qwen Code immédiatement                                                                                                 | `/quit` ou `/exit`                                                                  |
+
 > [!warning]
 >
 > `/doctor memory --snapshot` écrit un instantané du tas V8 (heap snapshot) qui peut contenir des prompts, des contenus de fichiers, des clés API et des résultats d'outils de la session en cours. Vérifiez le fichier avant de le partager.

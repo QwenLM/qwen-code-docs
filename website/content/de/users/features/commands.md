@@ -119,7 +119,7 @@ Befehle zur Verwaltung von KI-Tools und -Modellen.
 | `/arena` | Arena-Sitzungen verwalten | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (Alias `choose`) |
 | `/goal` | Ein Ziel festlegen – weiterarbeiten, bis die Bedingung erfüllt ist | `/goal <condition>`, `/goal clear` |
 | `/tasks` | Hintergrundtasks auflisten | `/tasks` |
-| `/workflows` | Workflow-Ausführungen inspizieren | `/workflows`, `/workflows <runId>` |
+| `/workflows` | Workflow-Ausführungen inspizieren; einen Hintergrundlauf kooperativ pausieren/fortsetzen | `/workflows`, `/workflows <runId>`, `/workflows p <runId>` |
 | `/lsp` | LSP-Server-Status anzeigen | `/lsp` |
 | `/trust` | Einstellungen für die Ordner-Vertrauenswürdigkeit verwalten | `/trust` |
 > [!warning]

@@ -618,6 +618,32 @@ Quando ambos os campos estão presentes, payloads de hook de prompt contêm text
 
 Hooks UserPromptSubmit sequenciais podem anexar `additionalContext` ao `prompt`; `submitted_prompt` continua representando a submissão capturada. Hooks de função são código confiável no mesmo processo e não são restritos por uma garantia de imutabilidade.
 
+Quando a saída final do hook contém `additionalContext` não vazio, o Qwen primeiro sanitiza o valor e então o envia ao modelo como uma parte de texto separada:
+
+```xml
+<qwen:user-prompt-submit-context>
+contexto do hook sanitizado
+</qwen:user-prompt-submit-context>
+```
+
+A tag indica ao modelo e aos consumidores da transcrição que a parte veio de um hook configurado em vez de vir do prompt do usuário. É um marcador de proveniência, não autenticação, autorização ou um limite geral de confiança.
+
+Para um `UserQuery` com esse contexto adicionado, o registro JSONL da sessão preserva as partes vinculadas ao modelo, incluindo a parte com tag, e adiciona o seguinte `systemPayload`:
+
+```json
+{
+  "displayText": "projeção de exibição pré-hook",
+  "hookContext": "contexto do hook sanitizado"
+}
+```
+
+Esse payload de dois campos é escrito apenas para este tipo de registro de prompt do usuário. `hookContext` duplica intencionalmente a parte com tag para que consumidores offline e de terceiros possam identificar sua proveniência sem analisar o texto do modelo. `displayText` é a projeção de exibição pré-hook e nunca inclui o contexto do hook. Para uma submissão interativa suportada pela TUI, é a projeção bruta do compositor carregada por `submitted_prompt`; caminhos ACP, headless, `serve`, SDK, entrada remota e outros sem essa proveniência registram o prompt expandido pré-hook em vez disso.
+
+Consumidores de exibição de transcrição tratam `displayText` como essa projeção de prompt do usuário quando `systemPayload.hookContext` é uma string. Para compatibilidade com registros de prompt do usuário lançados apenas com `displayText`, um contexto com tag completo na parte final após pelo menos uma outra parte é evidência de pareamento equivalente. Registros de notificação, cron e meio de turno também podem ter `displayText`, mas esses valores são rótulos de exibição compactos e não devem ser substituídos pelo texto vinculado ao modelo sem essa evidência.
+Registros legados com contexto bruto mantêm seu comportamento de exibição vinculado ao modelo porque o contexto não pode ser separado de forma confiável. Para registros sem metadados que usam a forma com tag atual, consumidores de compatibilidade podem remover a mesma parte final com tag completa; não devem inferir que texto arbitrário semelhante a tag do usuário é proveniência de hook.
+
+Atributos sensíveis de telemetria de prompt, quando habilitados, e a recordação de auto-memória gerenciada ambos usam o prompt pré-hook. Eles não incluem o contexto adicionado por `UserPromptSubmit`.
+
 **Opções de Saída**:
 
 - `decision`: "allow", "deny", "block" ou "ask"

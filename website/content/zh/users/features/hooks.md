@@ -188,7 +188,6 @@ def review(tool_name, tool_input):
 class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         payload = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
-
         tool_name, tool_input = payload.get("tool_name", "unknown"), payload.get("tool_input", {})
         try:
             verdict = review(tool_name, tool_input)
@@ -621,6 +620,32 @@ Hook 输出支持三类字段：
 当两个字段都存在时，prompt 钩子的有效载荷包含重叠的文本，可能会消耗额外的模型输入 token。当前版本中没有按钩子的字段抑制机制。
 
 连续的 UserPromptSubmit 钩子可以将 `additionalContext` 追加到 `prompt`；`submitted_prompt` 继续表示捕获的提交。函数钩子是受信任的同进程代码，不受不可变性保证的约束。
+
+当最终钩子输出包含非空的 `additionalContext` 时，Qwen 首先对该值进行清理，然后将其作为独立的文本部分发送给模型：
+
+```xml
+<qwen:user-prompt-submit-context>
+sanitized hook context
+</qwen:user-prompt-submit-context>
+```
+
+该标签告诉模型和会话记录消费者，该部分来自配置的钩子而非用户 prompt。它是一个来源标记，而非身份验证、授权或通用信任边界。
+
+对于带有此附加上下文的 `UserQuery`，会话 JSONL 记录保留模型绑定的各部分（包括带标签的部分），并添加以下 `systemPayload`：
+
+```json
+{
+  "displayText": "pre-hook display projection",
+  "hookContext": "sanitized hook context"
+}
+```
+
+此双字段载荷仅针对此类用户 prompt 记录写入。`hookContext` 故意重复带标签的部分，以便离线和第三方消费者无需解析模型文本即可识别其来源。`displayText` 是钩子前的显示投影，绝不包含钩子上下文。对于受支持的交互式 TUI 提交，它是由 `submitted_prompt` 携带的原始编辑器投影；ACP、无头模式、`serve`、SDK、远程输入以及没有该来源信息的其他路径则记录展开后的钩子前 prompt。
+
+当 `systemPayload.hookContext` 为字符串时，会话记录显示消费者将 `displayText` 视为此用户 prompt 投影。为了与已发布的仅含 `displayText` 的用户 prompt 记录兼容，在至少一个其他部分之后的最后一个部分中包含完整的带标签上下文可作为等效的配对证据。通知、cron 和轮次中间记录也可能具有 `displayText`，但这些值是紧凑的显示标签，在没有该证据的情况下不得替换其模型绑定文本。
+传统的裸上下文记录保留其模型绑定的显示行为，因为无法可靠地分离上下文。对于使用当前带标签形状的无元数据记录，兼容性消费者可以移除相同的完整最终带标签部分；他们不得推断任意类似标签的用户文本是钩子来源。
+
+敏感 prompt 遥测属性（启用时）和托管自动记忆召回均使用钩子前的 prompt。它们不包含 `UserPromptSubmit` 添加的上下文。
 
 **输出选项**：
 
