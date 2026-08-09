@@ -119,7 +119,7 @@ AI ツールとモデルを管理するためのコマンド。
 | `/arena` | Arena セッションを管理する | `/arena start`、`/arena stop`、`/arena status`、`/arena select`（エイリアス `choose`） |
 | `/goal` | ゴールを設定する — 条件が満たされるまで作業を継続する | `/goal <condition>`、`/goal clear` |
 | `/tasks` | バックグラウンドタスクを一覧表示する | `/tasks` |
-| `/workflows` | ワークフローの実行を検査する | `/workflows`、`/workflows <runId>` |
+| `/workflows` | ワークフローの実行を検査する。バックグラウンドの実行を協調的に一時停止/再開する | `/workflows`、`/workflows <runId>`、`/workflows p <runId>` |
 | `/lsp` | LSP サーバーのステータスを表示する | `/lsp` |
 | `/trust` | フォルダの信頼設定を管理する | `/trust` |
 > [!warning]

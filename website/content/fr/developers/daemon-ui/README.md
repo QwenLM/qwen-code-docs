@@ -289,7 +289,7 @@ Le corpus de fixtures (`DAEMON_UI_CONFORMANCE_FIXTURES`) couvre le chat, le cycl
 
 ```ts
 import type { DaemonErrorKind } from '@qwen-code/sdk/daemon';
-// 'missing_binary' | 'blocked_egress' | 'auth_env_error' | 'init_timeout'
+// 'missing_binary' | 'blocked_egress' | 'auth_env_error' | 'init_timeout' | 'restore_timeout'
 // | 'protocol_error' | 'missing_file' | 'parse_error' | 'budget_exhausted'
 ```
 

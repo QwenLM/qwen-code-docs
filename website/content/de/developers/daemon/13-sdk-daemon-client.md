@@ -154,6 +154,19 @@ await client
 
 Pre-flight `capabilities.features.includes('workspace_skill_toggle')`. Der typisierte `DaemonSkillToggleResult` berichtet den kanonischen `skillName`, ob der Disk-State `changed` wurde, den Aktivierungszustand (`applied`, `deferred` oder `partial`) und die aktualisierten/fehlgeschlagenen Session-Zahlen. `DaemonWorkspaceSkillStatus.userInvocable` ist ein optionales False-only-Feld; Fehlen bedeutet, dass der Skill vom Benutzer aufrufbar ist.
 
+Für Batch-Änderungen pre-flight `workspace_skill_batch_toggle` prüfen und dann beide Client-Formen mit demselben Contract aufrufen:
+
+```ts
+await client.setWorkspaceSkillsEnabled(['review', 'deploy'], false, {
+  clientId: 'dashboard-1',
+});
+await client
+  .workspaceByCwd('/work/secondary')
+  .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
+```
+
+`DaemonSkillBatchToggleResult` enthält sortierte erfolgreiche `results`, zielbezogene `errors` und batchweite Aktivierungs-/Session-Refresh-Zahlen. Der Daemon persistiert gültige Ziele zusammen und refreshed aktive Sessions einmalig; ein erwarteter Fehler bei einem Ziel blockiert andere gültige Ziele nicht. Die Methode throwt nur bei einer Non-200-Antwort; ein 200 bedeutet nicht, dass jedes Ziel angewendet wurde, daher immer `errors` prüfen, bevor der Batch als erfolgreich behandelt wird.
+
 Workspace-Anzeigenamen sind optionale Präsentationsmetadaten. Pre-flight `capabilities.features.includes('workspace_display_name')`; Workspace-IDs und kanonische Pfade bleiben die einzigen Selektoren, und doppelte Anzeigenamen sind zulässig.
 
 ```ts

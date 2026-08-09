@@ -160,6 +160,26 @@ await q.close();
 
 `interrupt()` 仅取消当前活跃的轮次。对于通过异步可迭代对象创建的多轮查询，查询及其输入流仍然保持打开，后续来自可迭代对象的消息会被正常处理。当你想结束整个会话时，使用 `close()` 或调用已配置的 `AbortController` 的 `abort()` 方法。
 
+## Daemon 调用方提供的会话 ID
+
+`DaemonClient.createOrAttachSession` 接受一个可选的 `sessionId`，供需要在会话创建前持久化身份的调用方使用：
+
+```typescript
+import { DaemonClient } from '@qwen-code/sdk';
+
+const daemon = new DaemonClient({ baseUrl: 'http://127.0.0.1:4170' });
+const session = await daemon.createOrAttachSession({
+  workspaceCwd: '/path/to/project',
+  sessionId: '550E8400-E29B-41D4-A716-446655440000',
+});
+
+console.log(session.sessionId); // 550e8400-e29b-41d4-a716-446655440000
+```
+
+SDK 在发送变更之前要求 daemon 具备 `session_id_override` 能力。REST 模式直接序列化 `sessionId`；活跃的 ACP 适配器将其映射为 `session/new._meta["qwen-code/sessionId"]`。SDK 会验证成功响应，如果 daemon 返回不同的 ID 则抛出 `DaemonSessionIdProtocolError`。
+
+此选项始终创建新的线程会话，而非幂等附加。如果创建结果不明确，请使用已知 ID 进行加载或恢复。省略此选项则保留现有的创建或附加行为。
+
 ## 权限模式
 
 SDK 支持不同的权限模式来控制工具执行：

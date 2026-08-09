@@ -39,7 +39,7 @@ La première release npm de `qwen serve` (v0.16-alpha) est volontairement restre
 - ✅ Apportez votre propre bearer token via la variable d'env `QWEN_SERVER_TOKEN` ([Authentication](#authentication) pour la configuration)
 - ❌ **Déploiement conteneurisé** — Docker / Compose / Kubernetes / nginx reverse-proxy avec terminaison TLS NON inclus dans la v0.16-alpha. Reporté à la v0.16.x une fois qu'un pilote entreprise sera confirmé (sinon cela pourrirait faute de validation).
 - ❌ **Coordination multi-démon sur un même hôte** — un démon peut héberger plusieurs workspaces explicitement enregistrés, mais les démons ne se coordonnent pas entre eux. La fédération cross-host, le keying de token par chemin d'instance et le nettoyage des tokens obsolètes sont reportés à la v0.16.x.
-- ❌ **Tokens de démon auto-générés** — l'alpha est en BYO-token (à un `openssl rand -hex 32` près). L'infra d'auto-génération + de stockage de tokens est reportée à la v0.16.x.
+- ✅ **Jetons Local Control frais** — `--local-control` génère un jeton pour ce processus. Le stockage général des jetons du démon reste BYO-token.
 
 **Sécurisation — minimum viable pour le local mono-utilisateur :**
 

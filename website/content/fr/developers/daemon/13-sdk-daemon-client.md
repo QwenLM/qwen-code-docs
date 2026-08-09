@@ -154,6 +154,19 @@ await client
 
 Pré-vérifiez `capabilities.features.includes('workspace_skill_toggle')`. Le `DaemonSkillToggleResult` typé rapporte le `skillName` canonique, si l'état disque a changé (`changed`), l'état d'activation (`applied`, `deferred` ou `partial`), et les comptes de sessions rafraîchies/échouées. `DaemonWorkspaceSkillStatus.userInvocable` est un champ optionnel false-only ; l'absence signifie que le skill est invocable par l'utilisateur.
 
+Pour les modifications par lot, pré-vérifiez `workspace_skill_batch_toggle` et appelez l'une ou l'autre forme du client avec le même contrat :
+
+```ts
+await client.setWorkspaceSkillsEnabled(['review', 'deploy'], false, {
+  clientId: 'dashboard-1',
+});
+await client
+  .workspaceByCwd('/work/secondary')
+  .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
+```
+
+`DaemonSkillBatchToggleResult` contient les `results` ordonnés des succès, les `errors` par cible, et les comptes de niveau lot pour l'activation et le rafraîchissement de session. Le démon persiste les cibles valides ensemble et rafraîchit les sessions actives une seule fois ; une erreur attendue sur une cible ne bloque pas les autres cibles valides. La méthode lève une erreur uniquement en cas de réponse non-200 ; un 200 ne signifie pas que chaque cible a été appliquée, inspectez donc toujours `errors` avant de considérer le lot comme réussi.
+
 Les noms d'affichage de workspace sont des métadonnées de présentation optionnelles. Pré-vérifiez `capabilities.features.includes('workspace_display_name')` ; les IDs de workspace et les chemins canoniques restent les seuls sélecteurs, et les noms d'affichage dupliqués sont valides.
 
 ```ts

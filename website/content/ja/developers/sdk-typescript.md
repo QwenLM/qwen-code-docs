@@ -17,7 +17,6 @@ npm install @qwen-code/sdk
 - Node.js >= 22.0.0
 - [Qwen Code](https://github.com/QwenLM/qwen-code) >= 0.4.0（安定版）がインストールされ、PATH が通っていること
 
-> [!note]
 > **nvm ユーザーへの注意**: nvm を使用して Node.js のバージョンを管理している場合、SDK が Qwen Code の実行ファイルを自動検出できない可能性があります。`pathToQwenExecutable` オプションに `qwen` バイナリのフルパスを明示的に設定してください。
 
 ## クイックスタート
@@ -159,6 +158,26 @@ await q.close();
 ```
 
 `interrupt()` はアクティブなターンのみをキャンセルします。非同期イテラブルプロンプトで作成されたマルチターンのクエリでは、クエリとその入力ストリームはオープンなままとなり、イテラブルからの後続のメッセージが通常通り処理されます。セッション全体を終了したい場合は、`close()` を使用するか、設定した `AbortController` をアボートしてください。
+
+## デーモンでの呼び出し元指定セッション ID
+
+`DaemonClient.createOrAttachSession` は、セッション作成前に ID を永続化する必要がある呼び出し元のために、オプションの `sessionId` を受け付けます。
+
+```typescript
+import { DaemonClient } from '@qwen-code/sdk';
+
+const daemon = new DaemonClient({ baseUrl: 'http://127.0.0.1:4170' });
+const session = await daemon.createOrAttachSession({
+  workspaceCwd: '/path/to/project',
+  sessionId: '550E8400-E29B-41D4-A716-446655440000',
+});
+
+console.log(session.sessionId); // 550e8400-e29b-41d4-a716-446655440000
+```
+
+SDK は変更を送信する前にデーモンの `session_id_override` ケーパビリティを要求します。REST モードでは `sessionId` が直接シリアライズされ、アクティブな ACP アダプタはそれを `session/new._meta["qwen-code/sessionId"]` にマッピングします。SDK は成功レスポンスを検証し、デーモンが異なる ID を返した場合に `DaemonSessionIdProtocolError` をスローします。
+
+このオプションは常に新しいスレッドセッションを作成し、冪等なアタッチではありません。作成の結果が曖昧な場合は、既知の ID を使用して load または resume してください。オプションを省略すると、既存の create-or-attach 動作が維持されます。
 
 ## パーミッションモード
 

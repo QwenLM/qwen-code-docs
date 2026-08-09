@@ -159,6 +159,26 @@ await q.close();
 
 `interrupt()` annule uniquement le tour actif. Pour une requête multi-tours créée avec un prompt itérable asynchrone, la requête et son flux d'entrée restent ouverts, donc les messages ultérieurs de l'itérable sont traités normalement. Utilisez `close()` ou abortez le `AbortController` configuré lorsque vous souhaitez terminer la session entière.
 
+## IDs de session fournis par l'appelant du démon
+
+`DaemonClient.createOrAttachSession` accepte un `sessionId` optionnel pour les appelants qui doivent persister une identité avant la création de session :
+
+```typescript
+import { DaemonClient } from '@qwen-code/sdk';
+
+const daemon = new DaemonClient({ baseUrl: 'http://127.0.0.1:4170' });
+const session = await daemon.createOrAttachSession({
+  workspaceCwd: '/path/to/project',
+  sessionId: '550E8400-E29B-41D4-A716-446655440000',
+});
+
+console.log(session.sessionId); // 550e8400-e29b-41d4-a716-446655440000
+```
+
+Le SDK exige la capacité `session_id_override` du démon avant d'envoyer la mutation. En mode REST, `sessionId` est sérialisé directement ; un adaptateur ACP actif le mappe vers `session/new._meta["qwen-code/sessionId"]`. Le SDK vérifie la réponse de succès et lève `DaemonSessionIdProtocolError` si le démon retourne un ID différent.
+
+Cette option crée toujours une nouvelle session thread et n'est pas un attach idempotent. Si le résultat de création est ambigu, utilisez l'ID connu avec load ou resume. Omettre l'option préserve le comportement existant de create-or-attach.
+
 ## Modes de permission
 
 Le SDK prend en charge différents modes de permission pour contrôler l'exécution des outils :

@@ -86,6 +86,20 @@ try (DaemonClient daemon = DaemonClient.builder()
 }
 ```
 
+作成前にセッション ID を割り当てる必要がある呼び出し元は、RFC UUID v1-v5 を渡すことができます。SDK は変更前に `session_id_override` をチェックし、異なる ID が返された場合は `SessionCreationOutcomeUnknownException` として報告します。
+
+```java
+CreateSessionRequest request = CreateSessionRequest.builder()
+        .sessionId("550E8400-E29B-41D4-A716-446655440000")
+        .build();
+
+try (DaemonSessionClient session = daemon.createSession(request)) {
+    System.out.println(session.getSession().getSessionId());
+}
+```
+
+デーモンは ID を小文字に正規化し、新しいスレッドセッションを作成します。これは冪等なアタッチではありません。作成の結果が曖昧な場合は、作成をリトライせず、既知の ID で回復してください。
+
 `qwen serve` が認証を必要とする場合は、`DaemonClient` ビルダーに `.bearerToken(System.getenv("QWEN_SERVER_TOKEN"))` を追加します。SDK は REST と SSE リクエストに Bearer を送信し、URL に入れることはありません。
 
 順序付けされたテキスト、思考、ツール、使用量、権限、および raw イベントコールバックが必要な場合は、`PromptObserver` とともに `startPrompt` を使用します。`acceptanceFuture()` と `completionFuture()` ビューは、デーモンの admission と信頼できるターンの終了を個別に公開します。`respondToPermission()` は、リクエストがすでに解決済みまたは保留中でない場合、`false` を返します。Future ビューをキャンセルしてもデーモンのプロンプトはキャンセルされません。セッションレベルのデーモンキャンセル操作には `cancelActivePrompt()` を使用し、引き続き一致するターミナルを待機します。協調的キャンセルは `turn_complete` と `stopReason=cancelled` で完了します。`promptText()` はその `PromptTextResult` を返すため、キャンセルを区別する呼び出し元は `result.getTerminal().getStopReason()` を検査する必要があります。エージェントまたはプロバイダーがキャンセル中に失敗した場合、デーモンは代わりに `turn_error` を公開する可能性があり、`promptText()` は `PromptTurnException` をスローします。

@@ -193,6 +193,7 @@ sequenceDiagram
 | `sessionScope`                                | `'single'`                                         | `'single'` 在所有客户端之间共享一个 session；`'thread'` 为每个对话线程创建独立的 session。 |
 | `channelFactory`                              | `defaultSpawnChannelFactory`                       | 可插拔的 ACP 子进程 factory。                                                                                          |
 | `initializeTimeoutMs`                         | `DEFAULT_INIT_TIMEOUT_MS = 10_000`                 | ACP `initialize` 握手超时时间。                                                                                   |
+| `sessionRestoreTimeoutMs`                     | `60_000`                                           | ACP `loadSession` / `unstable_resumeSession` 超时时间；默认 60 秒，显式配置的 initialize 超时可以提高但不能降低此值。 |
 | `maxSessions`                                 | `DEFAULT_MAX_SESSIONS = 32`                        | `byId.size` 的上限。`0` / `Infinity` = 无限制；NaN/负数会抛出异常。                                                |
 | `eventRingSize`                               | `DEFAULT_RING_SIZE`（来自 `eventBus.ts`）           | 每个 session 的事件环；软上限为 `MAX_EVENT_RING_SIZE`。                                                         |
 | `permissionResponseTimeoutMs`                 | `DEFAULT_PERMISSION_TIMEOUT_MS = 5 min`            | mediator 的每个请求挂钟时间。                                                                               |

@@ -105,19 +105,30 @@ Wenn `--max-total-sessions` eine neue Session ablehnt, wird dieselbe Antwortform
 
 Anhängungen (Attaches) an bestehende Sessions werden NICHT auf die Obergrenze angerechnet, sodass Reconnects eines inaktiven Daemons auch bei voller Kapazität weiterhin funktionieren.
 
-`RestoreInProgressError` – wird nur von `POST /session/:id/load` und `POST /session/:id/resume` ausgegeben – gibt `409` mit einem `Retry-After: 5`-Header (passend zu `session_limit_exceeded`) zurück und:
+`RestoreInProgressError` – wird von `POST /session/:id/load`, `POST /session/:id/resume` oder einer `POST /session` mit vom Aufrufer bereitgestellter ID ausgegeben, wenn eine andere Registrierung diese ID bereits besitzt – gibt `409` zurück und:
 
 ```json
 {
   "error": "Session \"<sid>\" is already being restored via session/<resume|load>; retry session/<load|resume> after it completes",
   "code": "restore_in_progress",
+  "reason": "restore_in_progress",
+  "retryable": true,
   "sessionId": "<sid>",
   "activeAction": "load",
   "requestedAction": "resume"
 }
 ```
 
-Wird ausgelöst, wenn ein `session/load` für eine ID ausgegeben wird, bei der bereits ein `session/resume` läuft (oder umgekehrt). Warte mindestens `Retry-After` Sekunden und versuche es erneut – der zugrunde liegende Restore wird innerhalb von `initTimeoutMs` (Standard 10 s) abgeschlossen. Races mit derselben Aktion (`load` vs. `load`, `resume` vs. `resume`) werden zusammengeführt (coalesce), anstatt einen Fehler zu verursachen.
+Wird ausgelöst, wenn ein `session/load` für eine ID ausgegeben wird, bei der bereits ein `session/resume` läuft (oder umgekehrt), oder wenn ein Spawn mit vom Aufrufer bereitgestellter ID gegen eine der beiden Restore-Richtungen racet. Warte mindestens `Retry-After` Sekunden und versuche es erneut. Races mit derselben Aktion (`load` vs. `load`, `resume` vs. `resume`) werden zusammengeführt (coalesce), anstatt einen Fehler zu verursachen, solange der Restore aktiv ist.
+
+`reason` unterscheidet zwei Zäune, die diesen Code teilen, und der `Retry-After`-Header verfolgt ihn:
+
+| `reason`                     | Bedeutung                                                                                                       | `Retry-After`                                                    |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `restore_in_progress`        | Ein gewöhnlicher Restore läuft.                                                                                 | `5` (passend zu `session_limit_exceeded`)                        |
+| `awaiting_abandoned_cleanup` | Der öffentliche Caller hat bereits einen `504` erhalten und die nicht abbrechbare ACP-Anfrage samt Cleanup ist noch nicht abgeschlossen. | das effektive Restore-Budget in Sekunden, begrenzt auf `5`–`120` |
+
+Die öffentliche Restore-Anfrage unterliegt `limits.sessionRestoreTimeoutMs` (Standard 60 s). Nach einem `504` bleibt die ID eingezäunt, bis die späte ACP-Anfrage und das Cleanup abgeschlossen sind – ein Client, der im gewöhnlichen 5-Sekunden-Takt weiter retryt, würde sich gegen einen 409 drehen, den er nicht auflösen kann. Beachte den Budget-abgeleiteten Hinweis, der mit `awaiting_abandoned_cleanup` kommt.
 
 `SessionWorkspaceConflictError` – wird von `POST /session/:id/load` und `POST /session/:id/resume` ausgegeben, wenn das angeforderte `cwd` auf einen registrierten Workspace zielt, aber dieselbe Session-ID bereits in einer anderen Runtime live ist oder wiederhergestellt wird – gibt `409` zurück mit:
 
@@ -164,7 +175,7 @@ mit Status `409` und `Retry-After: 5`.
 Der Daemon bewirbt seine unterstützten Feature-Tags aus der Serve-Capability-Registry. Clients **müssen** die UI anhand von `features` steuern, nicht anhand von `mode` (gemäß Design §10).
 
 ```
-['health', 'capabilities', 'session_create', 'session_scope_override',
+['health', 'capabilities', 'session_create', 'session_id_override', 'session_scope_override',
  'session_load', 'session_resume', 'session_transcript',
  'unstable_session_resume',
  'session_list', 'session_info', 'session_prompt', 'session_mid_turn_message_mutation',
@@ -206,6 +217,8 @@ Der Daemon bewirbt seine unterstützten Feature-Tags aus der Serve-Capability-Re
 
 `session_scope_override` ist der Negotiation-Handle für das anfragebezogene `sessionScope`-Feld bei `POST /session` (siehe unten). Ältere Daemons ignorieren dieses Feld stillschweigend, daher sollten SDK-Clients `caps.features` vor dem Senden auf dieses Tag prüfen.
 
+`session_id_override` ist der Negotiation-Handle für die optionale vom Aufrufer bereitgestellte `sessionId` bei `POST /session` und ACP `session/new`-Metadaten. Clients müssen bestätigen, dass `caps.features` dieses Tag enthält, bevor sie das Feld senden, da ältere Daemons es stillschweigend ignorieren können.
+
 `persistent_workspace_registration` bewirbt dauerhafte Registrierung für zur Laufzeit hinzugefügte Workspaces. `POST /workspaces` akzeptiert `{ "cwd": "/absolute/path", "persist": true }`; der Erfolg enthält `persisted: true`. Registrierungen sind auf den kanonischen primären Workspace des Daemons unter dem Qwen-Home-Verzeichnis des Benutzers beschränkt und werden beim nächsten Daemon-Start wiederhergestellt. Das Weglassen von `persist` bewahrt die prozesslokale Registrierung. `GET /workspace-registrations` listet die gespeicherte gewünschte Menge auf, und `DELETE /workspace-registrations/:id` vergisst einen Eintrag für den nächsten Neustart, ohne eine aktive Runtime hot zu entfernen.
 
 `workspace_display_name` bewirbt die optionale `displayName`-Eingabe bei `POST /workspaces`, Workspace-Metadatenupdates über `PATCH /workspaces/:workspace` und optionale Display-Name-Felder in Workspace-Projektionen. Namen nehmen nicht an Lookup oder Routing teil: `id` und kanonisches `cwd` bleiben die einzigen Selektoren, und doppelte Namen sind erlaubt.
@@ -213,6 +226,8 @@ Der Daemon bewirbt seine unterstützten Feature-Tags aus der Serve-Capability-Re
 `workspace_runtime_removal` bewirbt das synchrone Hot Removal über `DELETE /workspaces/:workspace`. Capability-Workspace-Einträge fügen ein optionales `removable` hinzu; nur Zeilen mit `removable: true` dürfen entfernt werden. Das Entfernen vergisst auch alle persistenten Registrierungsaliase für die Runtime, löscht aber niemals Dateien, Einstellungen, Transkripte oder Archive.
 
 `session_load` und `session_resume` bewerben die Explicit-Restore-Routen (`POST /session/:id/load` und `POST /session/:id/resume`). Ältere Daemons geben für diese Pfade `404` zurück, daher sollten SDK-Clients `caps.features` vor dem Aufruf prüfen. `unstable_session_resume` wird weiterhin als veraltetes Alias für die Kompatibilität mit SDKs beworben, die ausgeliefert wurden, als die zugrunde liegende ACP-Methode noch `connection.unstable_resumeSession` hieß; neue Clients sollten auf `session_resume` prüfen.
+
+`limits.sessionRestoreTimeoutMs` ist, wenn vorhanden, das Wall-Clock-Budget des Daemons für die zugrunde liegende ACP-`loadSession`- / `unstable_resumeSession`-Anfrage. Es ist ein additives v1-Feld. Das TypeScript-SDK gibt dem Daemon 10 Sekunden Client-Headroom, und der WebUI-Watchdog gibt ihm 15 Sekunden; Clients, die mit einem älteren Daemon sprechen, sollten jeweils 70 Sekunden und 75 Sekunden verwenden.
 
 `session_transcript` bewirbt `GET /session/:id/transcript`, eine schreibgeschützte seitenweise Replay-Ansicht über das persistierte aktive Session-JSONL. Sie ist getrennt von `/load`: Sie hängt keinen Client an, seedet nicht den live EventBus, erstellt keine Live-Session und ändert nicht das Live-Replay-Fenster. Clients sollten sie verwenden, wenn sie das vollständige Transkript auf der Festplatte für eine lange Session benötigen, und weiterhin `/load` nur für begrenztes Live-Replay beim Cold-UI-Restore verwenden.
 
@@ -246,7 +261,7 @@ Der Daemon bewirbt seine unterstützten Feature-Tags aus der Serve-Capability-Re
 
 `session_info` bewirbt `GET /workspace/:id/session-info` und seinen `/workspaces/:workspace/session-info`-Zwilling. Die Antwort aggregiert persistierte aktive und archivierte Session-Zahlen ohne Hydratierung von Listen-Metadaten. Sie ist ein expliziter O(n)-Disk-Scan und darf nicht gepollt werden; Clients sollten `truncated: true` als Untergrenze behandeln.
 
-`session_approval_mode_control`, `workspace_tool_toggle`, `workspace_skill_toggle`, `workspace_init` und `workspace_mcp_restart` bewerben die unten dokumentierten Mutations-Control-Routen. Sie sind streng durch das Mutations-Gate geschützt (ein Daemon, der ohne Bearer-Token konfiguriert ist, weist sie mit 401 `token_required` ab). Ältere Daemons geben `404` zurück; prüfe jedes Tag, bevor du die entsprechende Funktion bereitstellst.
+`session_approval_mode_control`, `workspace_tool_toggle`, `workspace_skill_toggle`, `workspace_skill_batch_toggle`, `workspace_init` und `workspace_mcp_restart` bewerben die unten dokumentierten Mutations-Control-Routen. Sie sind streng durch das Mutations-Gate geschützt (ein Daemon, der ohne Bearer-Token konfiguriert ist, weist sie mit 401 `token_required` ab). Ältere Daemons geben `404` zurück; prüfe jedes Tag, bevor du die entsprechende Funktion bereitstellst.
 
 `mcp_guardrails` (Issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 14) deckt die MCP-Budget-Oberfläche ab: die Felder `clientCount` / `clientBudget` / `budgetMode` / `budgets[]` bei `GET /workspace/mcp`, das Feld `disabledReason` in den Server-Zellen und die CLI-Flags `--mcp-client-budget` / `--mcp-budget-mode`. Ältere Daemons lassen die neuen Felder vollständig weg; SDK-Clients sollten dieses Tag prüfen, bevor sie sich auf die `budgets[]`-Semantik verlassen. Der Registry-Descriptor enthält außerdem `modes: ['warn', 'enforce']` für die zukünftige Bereitstellung von Feature-Modi – vorerst leiten Clients den Modus aus dem Feld `budgetMode` des Snapshots ab. Server-Ablehnungen im `enforce`-Modus sind deterministisch nach der Deklarationsreihenfolge von `Object.entries(mcpServers)`; eine zukünftige Scope-Precedence-Schicht (falls Qwen Code eine einführt) würde dies auf "niedrigste Priorität zuerst" umstellen, um die Konvention `plugin < user < project < local` von claude-code zu spiegeln.
 
@@ -401,7 +416,7 @@ Ein dauerhafter Commit gefolgt von unvollständiger Bereinigung oder Runtime-Rec
     "status": "disabled",
     "name": "demo",
     "refreshed": 1,
-    "failed": 0
+    "failed": 1
   },
   "warnings": [
     {
@@ -489,6 +504,9 @@ Liveness Probe. Die Standardform gibt `200 {"status":"ok"}` zurück, wenn der Li
   "sessions": 3,
   "pendingPermissions": 1,
   "activePrompts": 1,
+  "activeWork": true,
+  "activeWorkReporting": "full",
+  "activeWorkStaleMs": 4200,
   "connectedClients": 2,
   "channelAlive": true,
   "lastActivityAt": "2026-07-15T08:30:00.000Z",
@@ -496,9 +514,22 @@ Liveness Probe. Die Standardform gibt `200 {"status":"ok"}` zurück, wenn der Li
 }
 ```
 
-`sessions`, `pendingPermissions` und `activePrompts` sind Summen. `lastActivityAt` ist der späteste nicht-null Workspace-Aktivitätszeitpunkt und `idleSinceMs` wird aus demselben Snapshot abgeleitet. `channelAlive` bedeutet, dass mindestens ein verwalteter Workspace-Channel live ist; es bedeutet nicht, dass jeder Workspace gesund ist. `connectedClients` und das optionale `rateLimitHits` bleiben Daemon-weite Zähler und keine pro-Workspace-Summen.
+`sessions`, `pendingPermissions` und `activePrompts` sind Summen. `activeWork` **zählt keine Hintergrund-Shells, Monitore, Workflows, Cron-Jobs oder Follow-up-Vorschläge** – es ist true, wenn eine Runtime einen akzeptierten aber nicht abgeschlossenen Prompt hat (einschließlich eines FIFO-waitenden Prompts), einen laufenden Hintergrund-Agenten oder eine queued/in-progress Agent-Terminal-Benachrichtigung, und sonst nichts. Es ist Session-scopig: Channel-Level-Arbeit ohne angehängte Session – ein Spawn im Flug, ein ausstehender Restore, MCP-Discovery oder Authentifizierung – wird nicht gezählt, daher kann `activeWork` false lesen, während der Daemon weiterhin ablehnt, den Channel zurückzufordern. Lies dieses Feld nicht als "der Daemon kann zurückgefordert werden"; es beschreibt nur Session-eigene Arbeit. `activeWorkReporting` gibt an, wie viel dieses Booleans tatsächlich bestätigt wird: `full`, wenn jede Live-Session durch einen frischen Report eines Childs abgedeckt ist, der alle Kategorien meldet, `none`, wenn keine Session abgedeckt ist, `partial` für alles dazwischen – einschließlich eines veralteten Snapshots oder eines älteren Childs, das die Capability nie bestätigt hat. Ein Snapshot, der älter als drei Report-Intervalle ist, zählt nicht mehr als Abdeckung: Er ist kein Report, dass die Session idle ist, daher geht die Session zurück auf "beibehalten", genau als hätte das Child nie berichtet. `activeWorkStaleMs` ist das Alter des ältesten Snapshots, auf dem der Boolean basiert **unter den abgedeckten Sessions**, und `0`, wenn keine Session abgedeckt ist; er ist diagnostisch, weil die Frische bereits in `activeWorkReporting` durch den Daemon eingestuft wird (nur der Daemon kennt das ausgehandelte Tempo jedes Channels). Die Einstufung wird einmal über jede verwaltete Runtime berechnet, nicht pro Runtime, und dann kombiniert – eine Runtime ohne Sessions ist trivialerweise vollständig, und das als Beweis zu behandeln würde einem leeren Workspace erlauben, für nicht gemeldete Sessions eines anderen Workspaces zu bürgen. `lastActivityAt` ist der späteste nicht-null Workspace-Aktivitätszeitpunkt und `idleSinceMs` wird aus demselben Snapshot abgeleitet. `channelAlive` bedeutet, dass mindestens ein verwalteter Workspace-Channel live ist; es bedeutet nicht, dass jeder Workspace gesund ist. `connectedClients` und das optionale `rateLimitHits` bleiben Daemon-weite Zähler und keine pro-Workspace-Summen.
 
-> ⚠️ Die Deep Probe ist **informativ**, keine echte Liveness-Verifizierung oder ein atomarer Reclaim-Lease. Sie liest Zähler-Accessoren, die keine einzelnen Child-Prozesse / Channels pingen und daher keine blockierte, aber dennoch gezählte Session erkennen. `connectedClients` zählt REST-SSE-Connections über alle Workspace-Busse hinweg; es ist kein Proxy für "wie viele Clients actively lesen". Nutze sie für Capacity-Dashboards (aktuelle Parallelität vs. `--max-sessions`, Queue-Tiefe) und nicht als Auslöser für "nimm diesen Daemon aus der Rotation". Eine `503 {"status":"degraded"}`-Antwort ist theoretisch möglich, wenn die Getter einer benutzerdefinierten Bridge-Implementierung einen Fehler werfen, aber die Getter der echten Bridge tun dies niemals – im normalen Betrieb gibt die Deep Probe immer 200 zurück. Verlasse dich für echte Liveness darauf, ob der Listener überhaupt eine TCP-Verbindung akzeptiert (d. h. das Standard-`/health` ohne `?deep`).
+Restart-Controller sollten den Daemon als beschäftigt behandeln, wenn:
+
+```ts
+const busy =
+  health.activePrompts > 0 ||
+  health.activeWork ||
+  health.activeWorkReporting !== 'full';
+```
+
+Das Weglassen des dritten Terms macht `activeWork === false` nicht unterscheidbar von "kein Child hat mir etwas erzählt", was der einzige Fall ist, in dem das Handeln unsicher ist. Unbekannte Antworten und fehlgeschlagene Probes müssen ebenfalls einen Restart verhindern. `activePrompts` bleibt ein unabhängiges Kompatibilitätssignal.
+
+Diese Felder sind ein Beobachtungs-Cache, keine Restart-Lease: Auch eine frische, vollständig eingestufte, leere Antwort beschreibt den Moment, in dem sie abgetastet wurde, und Arbeit kann sofort danach beginnen. Die obige Regel senkt das Risiko eines falschen Restarts erheblich, beseitigt es aber nicht – strikte Sicherheit benötigt einen Prepare-Restart-Zaun, der neue Work-Zulassung stoppt, den Drain bestätigt und erst dann herunterfährt.
+
+> ⚠️ Die Deep Probe ist **informativ**, keine echte Liveness-Verifizierung oder ein atomarer Reclaim-Lease. Ausgehandelte ACP-Children veröffentlichen Channel-weite Active-Work-Snapshots im ausgehandelten Takt, und der Daemon stuft ihre Frische in `activeWorkReporting` ein – aber er tötet niemals einen Channel wegen eines fehlenden Reports, weil das Schweigen einer Session kein Beweis ist, dass der Prozess gestorben ist. Transport-Liveness und Stalled-Agent-Erkennung sind separate Mechanismen. `connectedClients` zählt REST-SSE-Connections, nicht jeden ACP-Transport. Verwende wiederholte Samples und Graceful Shutdown für Idle-Reclaiming; verwende authentifiziertes `/daemon/status` für Transport- und pro-Workspace-Diagnostik. Wenn ein Getter einer verwalteten Runtime einen Fehler wirft, failt die Deep Probe fail-closed mit `503 {"status":"degraded","reason":"aggregation_failed"}`, anstatt Teilsummen zurückzugeben, und das Daemon-Log identifiziert die fehlschlagende Workspace-Runtime. Während des Bootstraps, bevor die Runtime-Registry bereit ist, gibt sie `503 {"status":"degraded","reason":"bootstrap"}` mit `Retry-After: 1` zurück. Verwende für Listener-Liveness das Standard-`/health` ohne `?deep`.
 
 **Auth:** nur bei **Non-Loopback-Binds** erforderlich. Bei Loopback (`127.0.0.1`, `::1`, `[::1]`) wird `/health` vor der Bearer-Middleware registriert, sodass k8s/Compose-Probes innerhalb des Pods kein Token mitführen müssen. Bei Non-Loopback (`--hostname 0.0.0.0` usw.) wird die Route nach der Bearer-Middleware registriert und gibt ohne gültiges Token 401 zurück – andernfalls könnte ein unauthentifizierter Caller beliebige Adressen abfragen, um zu bestätigen, dass ein `qwen serve` existiert, was ein Info-Leak mit geringer Schwere ist, das sich schlecht mit Port-Scanning verträgt. CORS-Deny + Host-Allowlist gelten weiterhin für die Loopback-Ausnahme.
 
@@ -939,8 +970,10 @@ pfadfreien `daemon_log_degraded`-Warning zur normalen Status-Zusammenfassung hin
   "limits": {
     "maxPendingPromptsPerSession": 5,
     "maxSessionsPerWorkspace": 32,
-    "maxTotalSessions": 64
+    "maxTotalSessions": 64,
+    "sessionRestoreTimeoutMs": 60000
   },
+  "modelServices": [],
   "workspaceCwd": "/canonical/path/to/primary-workspace",
   "workspaces": [
     {
@@ -1158,6 +1191,7 @@ type DaemonErrorKind =
   | 'blocked_egress'
   | 'auth_env_error'
   | 'init_timeout'
+  | 'restore_timeout'
   | 'protocol_error'
   | 'missing_file'
   | 'parse_error';
@@ -1172,8 +1206,7 @@ interface DaemonStatusCell {
 ```
 
 `errorKind` ist eine geschlossene Enum, die von `/workspace/preflight`,
-`/workspace/env` und (schließlich) MCP-Guardrails gemeinsam genutzt wird, damit SDK-Clients Remediation pro Kategorie rendern können, anstatt Freiform-Nachrichten zu parsen. PR 13
-(#4175) hat die sieben oben aufgeführten Literale eingeführt; PR 14 wird `blocked_egress` befüllen, sobald der Egress-Check implementiert ist.
+`/workspace/env` und (schließlich) MCP-Guardrails gemeinsam genutzt wird, damit SDK-Clients Remediation pro Kategorie rendern können, anstatt Freiform-Nachrichten zu parsen. Die ursprünglichen sieben Status-Literale stammen aus #4175; `restore_timeout` wurde separat für Session-Restore-Anfragen hinzugefügt. `blocked_egress` bleibt reserviert, bis die Egress-Probe implementiert ist.
 
 Status-Payloads legen niemals MCP-Umgebungsvariablen-Werte, Header, OAuth/Service-Account-Details, Provider-API-Keys, Provider-`baseUrl` / `envKey`, Skill-Body, Skill-Dateisystempfade, Hook-Definitionen oder Werte geheimer Umgebungsvariablen offen. `/workspace/env` meldet nur das **Vorhandensein** von Whitelist-Umgebungsvariablen; Proxy-URLs werden vor der Übertragung von Zugangsdaten bereinigt und auf `host:port` reduziert.
 
@@ -1547,6 +1580,7 @@ interface DaemonPreflightCell extends DaemonStatusCell {
   `BridgeTimeoutError` erkannt. Hinweis: Eine vorübergehende `mcp_discovery`-
   `warning`-Zelle mit `connecting > 0` trägt NICHT diesen Kind – das ist
   ein normaler Handshake-in-Progress-Zustand, der sich von einem echten Timeout unterscheidet.
+- `restore_timeout` — ein Session-Load oder -Resume hat das dedizierte Restore-Budget überschritten. Die REST-Antwort ist `504` und retrybar; er unterscheidet sich von der Child-Initialisierung und den begrenzten Replay-Fenster-Limits.
 - `protocol_error` — ACP-`extMethod` wurde abgelehnt, weil der Kanal mitten in der Anfrage
   geschlossen wurde oder weil die Tool-Registry unerwartet fehlte.
 - `blocked_egress` — reserviert für PR 14 (#4175). PR 13 belässt die
@@ -1895,6 +1929,7 @@ Request:
 {
   "cwd": "/absolute/path/to/workspace",
   "modelServiceId": "qwen-prod",
+  "sessionId": "550e8400-e29b-41d4-a716-446655440000",
   "sessionScope": "thread"
 }
 ```
@@ -1903,6 +1938,7 @@ Request:
 | ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `cwd`            | nein       | Absoluter Pfad, der einem registrierten Workspace entspricht. Wenn weggelassen, fällt die Route auf den primären Workspace zurück (über `/capabilities.workspaceCwd` auslesen). Wenn `features` `multi_workspace_sessions` enthält, können Clients jedes vertrauenswürdige `workspaces[].cwd` übergeben; andernfalls wird nur der primäre Workspace akzeptiert. Ein nicht übereinstimmendes, nicht leeres `cwd` gibt `400 workspace_mismatch` zurück. Workspace-Pfade werden über `realpathSync.native` kanonisiert (mit einem Resolve-only-Fallback für nicht existierende Pfade), damit Case-insensitive Dateisysteme Sessions nicht aufgrund der Schreibweise ablehnen. |
 | `modelServiceId` | nein       | Wählt aus, durch welchen konfigurierten _Model Service_ der Agent routet (der Backend-Provider – Alibaba ModelStudio, OpenRouter, usw.). Wenn weggelassen, verwendet der Agent seinen Standard. Wenn der Workspace bereits eine Session hat, ruft dies `setSessionModel` auf der bestehenden Session auf und sendet `model_switched`. Unterscheidet sich von `modelId` bei `POST /session/:id/model`, welches das Modell **innerhalb** eines bereits gebundenen Service auswählt. Das `modelServices`-Array bei `/capabilities` ist für die Bekanntgabe konfigurierter Services reserviert; in Stage 1 ist es immer `[]` (der Standard-Service des Agents wird verwendet und nicht über HTTP aufgezählt). |
+| `sessionId`      | nein       | RFC-Variante UUID v1–v5, vom Aufrufer gewählt. Der Daemon normalisiert sie auf Kleinbuchstaben und erstellt immer eine frische Thread-Session; er behandelt dieses Feld niemals als idempotentes Attach. Bestätige, dass `caps.features` `session_id_override` enthält, bevor du es sendest, da ältere Daemons unbekannte Felder ignorieren können. `null` ist äquivalent zum Weglassen.                                                                                                                                                                                                                              |
 | `sessionScope`   | nein       | Pro-Request-Override für das Session-Sharing. `'single'` (der Daemon-weite Standard) bewirkt, dass ein zweiter `POST /session` für denselben Workspace die bestehende Session wiederverwendet (`attached: true`); `'thread'` erzwingt bei jedem Aufruf eine neue, eigenständige Session. Weglassen, um den Daemon-weiten Standard zu erben. Werte außerhalb der Enum geben `400 { code: 'invalid_session_scope' }` zurück. Ältere Daemons (vor #4175 PR 5) ignorieren das Feld stillschweigend – vor dem Senden `caps.features.session_scope_override` im Pre-flight prüfen. Der Daemon-weite Standard ist in der Produktion derzeit hart auf `'single'` codiert; #4175 könnte in einem Follow-up ein `--sessionScope`-CLI-Flag hinzufügen.         |
 
 Antwort:
@@ -1917,11 +1953,35 @@ Antwort:
 
 `attached: true` bedeutet, dass für diesen Workspace bereits eine Session existierte und du sie nun teilst.
 
+Vom Aufrufer bereitgestellte IDs sind über alle derzeit registrierten Workspace-Runtimes und jede noch lebende Bridge-Generation eindeutig, einschließlich drainender Ersetzungen. Ein lebendes, ausstehendes, aktives, archiviertes oder Worktree-gestütztes Duplikat gibt `409 session_id_conflict` zurück. Ungültige Werte geben `400 invalid_session_id` zurück; eine nicht verfügbare Live-Owner- oder Persisted-State-Prüfung gibt das retrybare `503 session_id_admission_unavailable` zurück. Retry mit begrenztem Backoff nach Bridge- oder Storage-Gesundheitsänderungen; `retryable` bedeutet, dass ein weiterer Versuch sicher ist, nicht dass ein sofortiger Retry erfolgreich sein wird. Wenn der nachgelagerte Agent eine andere ID zurückgibt, entfernt der Daemon diesen Waisen und gibt `500 session_id_not_honored` zurück. Nach einer mehrdeutigen Antwort lade oder setze die bekannte ID fort, anstatt Create als Attach erneut zu versuchen.
+
 Multi-Client-Integrationen, die unabhängige Konversationen wünschen, sollten bei jedem `POST /session` `sessionScope: "thread"` senden. Verwende den Standard-Scope `single` nur, wenn Clients absichtlich eine gemeinsame kollaborative Session teilen; gemeinsame Sessions serialisieren Prompts über eine FIFO, sichtbar über `/daemon/status` als `runtime.activity.pendingPrompts` und `runtime.activity.queuedPrompts`.
 
 Gleichzeitige `POST /session`-Aufrufe für denselben Workspace werden zu einem einzigen Spawn **zusammengeführt** — beide Aufrufer erhalten dieselbe `sessionId`, genau einer meldet `attached: false`. Wenn der zugrunde liegende Spawn fehlschlägt (Init-Timeout, fehlerhafte Agent-Ausgabe, OOM), **erhalten alle zusammengeführten Aufrufer denselben Fehler** — der In-Flight-Slot wird freigegeben, sodass ein Folgeaufruf den Vorgang von Grund auf neu starten kann.
 
 > ⚠️ **Die Ablehnung einer `modelServiceId` bei einer neuen Session bleibt in der HTTP-Antwort stumm.** Eine fehlerhafte `modelServiceId` (Tippfehler, nicht konfigurierter Service) löst beim Erstellen KEINEN 500-Fehler aus — die Session bleibt auf dem Standardmodell des Agenten betriebsbereit, sodass der Aufrufer dennoch eine `sessionId` erhält, mit der er den Modellwechsel erneut versuchen kann (via `POST /session/:id/model`). Das sichtbare Fehlersignal ist ein `model_switch_failed`-Event auf dem SSE-Stream der Session, das zwischen dem Spawn-Handshake und deinem ersten Subscribe ausgelöst wird. **Subscriber, die dieses Event beobachten müssen, sollten bei ihrem ersten `GET /session/:id/events` `Last-Event-ID: 0` übergeben**, um vom ältesten verfügbaren Event des Rings zu replayen (deckt das `model_switch_failed` zur Spawn-Zeit ab, selbst wenn das Subscribe erst ein paar ms nach der Create-Antwort eintrifft).
+
+### ACP `session/new` vom Aufrufer bereitgestellte ID
+
+ACP-Clients fordern dasselbe Verhalten über das Extension-Metadatenfeld an:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "session/new",
+  "params": {
+    "cwd": "/absolute/path/to/workspace",
+    "_meta": {
+      "qwen-code/sessionId": "550E8400-E29B-41D4-A716-446655440000"
+    }
+  }
+}
+```
+
+Die Antwort enthält die normalisierte Kleinbuchstaben-ID. Primary- und Workspace-qualifizierte ACP-Mounts teilen sich die Admission mit REST, einschließlich `session/load` und `session/resume`. Ungültige IDs verwenden ACP `INVALID_PARAMS` mit `data.httpStatus=400` und `data.errorKind="invalid_session_id"`; Konflikte verwenden `data.httpStatus=409`; nicht verfügbare Live-Owner- oder Persisted-State-Prüfungen verwenden `data.httpStatus=503` und `data.retryable=true`.
+
+Eine über ACP erstellte Session, die niemals einen Prompt erhält, hinterlässt keine persistierte Spur, und der Daemon entfernt sie (reap), wenn ihre besitzende Connection mit null angehängten Sessions geschlossen wird. Nach diesem Reap kann dieselbe ID erneut erstellt werden – das ist Connection-Lifecycle, nicht ID-Reuse: Während die Connection (oder irgendein Attach) lebt, lehnt die Admission das Duplikat ab.
 
 ### `POST /session/:id/load`
 
@@ -1960,13 +2020,17 @@ Antwort:
 
 **Historien-Replay über SSE.** Während `loadSession` auf der Agentenseite in-flight ist, kann der Agent `session_update`-Benachrichtigungen für persistierte Turns emittieren oder Bulk-Replay-Updates in den Response-Metadaten zurückgeben. Der Daemon seedet diese Events in das begrenzte Replay-Snapshot-Fenster der Session, bevor die Route-Antwort zurückkehrt. Für Live-Sessions verspricht `POST /session/:id/load` nur dieses begrenzte Fenster (`compactedReplay`, `liveJournal`, `lastEventId`), nicht das vollständige Transkript. Das Fenster ist byte-begrenzt durch `--compacted-replay-max-bytes` (Standard 4 MiB, Maximum 256 MiB); wenn ältere Replay-Einträge verworfen wurden, ist `compactedReplay[0]` ein ID-loser `history_truncated`-Marker. Das in-flight `liveJournal` ist separat durch `--max-journal-events` (Standard 10 000) und `--max-journal-bytes` (Standard 8 MiB) begrenzt; wenn überschritten, werden die ältesten Journal-Einträge verworfen und ein `history_truncated`-Marker mit `scope: 'live_journal'` vorangestellt. Clients sollten diesen Marker als Status rendern und angewandte beibehaltene Events weiter verarbeiten. Der vollständige persistierte Transkript-Zugriff wird separat über `GET /session/:id/transcript` bereitgestellt.
 
+Die Replay-Fenster-Byte-Caps gelten, nachdem das Child das persistierte Transkript rekonstruiert hat; sie begrenzen nicht das On-Disk-JSONL-Lesen. Ein Restore, der das Daemon-Budget überschreitet, gibt `504` zurück mit einem `Retry-After`, der vom Restore-Budget abgeleitet ist (begrenzt auf 5–120 s), und `{code: "session_restore_timeout", errorKind: "restore_timeout", retryable: true, sessionId, action, timeoutMs}`. Der Daemon zäunt die noch laufende ACP-Anfrage ein und räumt jede späte Session auf, anstatt sie zu registrieren. Ein Retry für dieselbe ID gibt `409 restore_in_progress` mit `reason: "awaiting_abandoned_cleanup"` und einem `Retry-After` des Restore-Budgets (begrenzt auf 5–120 s) zurück, bis das Cleanup abgeschlossen ist. Wenn das späte Cleanup ungewiss ist oder der aufgegebene Restore ein volles Restore-Budget nach seiner Frist noch nicht abgeschlossen hat, geben neue Sessions auf diesem Workspace `503 acp_channel_unavailable` zurück mit `reason: "restore_cleanup_failed"` oder `"restore_settlement_overdue"`; bereits lebende Sessions bleiben verwendbar, während der Channel drainend ist.
+
 **Fehler:**
 
 - `404` — Persistierte Session-ID existiert nicht (`SessionNotFoundError`).
 - `400` — `workspace_mismatch` (gleiche Form wie bei `POST /session`).
 - `403` — `untrusted_workspace`, wenn `cwd` auf einen nicht vertrauenswürdigen nicht primären Workspace zielt.
 - `503` — `session_limit_exceeded` (zählt auf `--max-sessions` an; In-Flight-Restores werden ebenfalls berücksichtigt).
-- `409` — `restore_in_progress` (ein `session/resume` für dieselbe ID ist bereits in-flight). `Retry-After: 5`. Gleichartige Race-Conditions (zwei gleichzeitige `session/load` für dieselbe ID) werden zusammengeführt — genau eines gibt `attached: false` zurück, die anderen geben `attached: true` mit demselben `state` zurück.
+- `504` — `session_restore_timeout`; retrybar, mit einem `Retry-After`, der vom Restore-Budget abgeleitet ist (begrenzt auf 5–120 s), da dieselbe Session-ID eingezäunt bleibt, bis das späte Cleanup abgeschlossen ist.
+- `503` — `acp_channel_unavailable`, wenn der Workspace-Channel für neue Session-Arbeit geschlossen ist. `reason` gibt an, warum: `restore_cleanup_failed`, wenn ein aufgegebener Restore nicht endgültig aufgeräumt werden konnte, oder `restore_settlement_overdue`, wenn ein aufgegebener Restore ein volles Restore-Budget nach seiner Frist noch nicht abgeschlossen hat. In beiden Fällen bleiben vorhandene Sessions verfügbar, und neue Session-Arbeit kann retryt werden, nachdem der Workspace-Channel gedrainet ist – der Body trägt `retryAfterSeconds` und der Header ein passendes Budget-abgeleitetes `Retry-After`, weil die Quarantäne den Zaun überdauert und eine frische ID niemals den 409 sieht, der den Hinweis tragen würde.
+- `409` — `restore_in_progress` (ein `session/resume` für dieselbe ID ist bereits in-flight, oder ein frischer Spawn hat eine ID bereitgestellt, die ein Restore besitzt). `Retry-After: 5`, solange der Restore aktiv ist; ein Budget-abgeleiteter Hinweis, sobald er als `awaiting_abandoned_cleanup` eingezäunt ist. Gleichartige Race-Conditions (zwei gleichzeitige `session/load` für dieselbe ID) werden zusammengeführt — genau eines gibt `attached: false` zurück, die anderen geben `attached: true` mit demselben `state` zurück.
 - `409` — `session_workspace_conflict`, wenn dieselbe Session-ID bereits in einer anderen Workspace-Runtime live ist oder wiederhergestellt wird.
 - `409` — `session_archived`, wenn die ID nur unter `chats/archive/` existiert; rufe `POST /sessions/unarchive` vor `load` oder `resume` auf.
 - `409` — `session_archiving`, wenn Archive oder Unarchive für dieselbe ID in-flight ist. `Retry-After: 5`.
@@ -2617,6 +2681,53 @@ Fehler:
 - `409 {code: 'skill_not_toggleable', reason: 'not_user_invocable' | 'inactive_extension' | 'locked', lockedScope?: 'system' | 'user' | 'systemDefaults'}` — das CLI-Panel würde das Ziel nicht zum Umschalten zulassen. `lockedScope` ist nur vorhanden, wenn `reason` `locked` ist.
 
 Die Mutation verwendet das Workspace-scopige `settings_changed`-Event für jeden geänderten Key (`skills.disabled` und/oder `skills.enabled`); sie fügt keinen neuen Event-Typ hinzu. Workspace-Skill-Status-Zellen enthalten optionale `disabledReason: 'hard' | 'default' | 'inactive_extension'`- und `lockedScope: 'system' | 'user' | 'systemDefaults'`-Felder.
+
+#### `POST /workspace/skills/enable`
+
+Capability-Tag: `workspace_skill_batch_toggle`. Die Workspace-qualifizierte Form ist `POST /workspaces/:workspace/skills/enable`.
+
+Schalte bis zu 100 geladene Skills in einer Anfrage um; die Obergrenze zählt die rohen `skillNames`-Einträge vor der Deduplizierung. Namen werden getrimmt und case-insensitiv dedupliziert unter Beibehaltung der zuerst gesehenen Reihenfolge. Der Daemon validiert gegen einen Skill-Status-Snapshot, persistiert alle gültigen Änderungen in einem gesperrten Settings-Write und aktualisiert aktive Sessions einmal. Die Verarbeitung ist best-effort für erwartete Ziel-Fehler: Ein unbekanntes, verstecktes, inaktive-Extension- oder gesperrtes Ziel wird in `errors` aufgezeichnet, ohne andere gültige Ziele an der Anwendung zu hindern. Unerwartete Persistenz- oder Runtime-Generation-Fehler schlagen weiterhin die gesamte Anfrage fehl.
+
+Request:
+
+```json
+{
+  "skillNames": ["review", "deploy", "missing"],
+  "enabled": false
+}
+```
+
+Response (200):
+
+```json
+{
+  "enabled": false,
+  "activation": "applied",
+  "sessionsRefreshed": 2,
+  "sessionsFailed": 0,
+  "results": [
+    {
+      "skillName": "review",
+      "enabled": false,
+      "changed": true
+    },
+    {
+      "skillName": "deploy",
+      "enabled": false,
+      "changed": true
+    }
+  ],
+  "errors": [
+    {
+      "skillName": "missing",
+      "code": "skill_not_found",
+      "error": "Skill not found: missing"
+    }
+  ]
+}
+```
+
+Ziel-Fehler verwenden `skill_not_found`, `skill_not_toggleable` oder `skill_inactive_extension`. Falsche Anfragen geben HTTP 400 mit `invalid_skill_names`, `invalid_skill_name` oder `invalid_enabled_flag` zurück. Authentifizierung, Workspace-Trust, Client-Identität, unerwartete Persistenz-Fehler und Runtime-Generation-Fehler schlagen die gesamte Anfrage durch die Standard-Route-Gates fehl. Batch-Level `activation`, `sessionsRefreshed` und `sessionsFailed` beschreiben den einzigen Live-Session-Refresh, der von allen geänderten Ergebnissen geteilt wird. `activation` berichtet den Refresh-Versuch, nicht das Ergebnis: Ein Batch, in dem kein Ziel geändert wurde (z. B. jedes Ziel hat einen Fehler), antwortet dennoch mit `applied`, wenn eine Session lebt, passend zur Single-Skill-No-Op-Antwort – leite also tatsächlich Geändertes aus dem `changed`-Flag jedes Ergebnisses und dem `errors`-Array ab.
 
 #### `POST /workspace/init`
 

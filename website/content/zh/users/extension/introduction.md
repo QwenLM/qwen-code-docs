@@ -2,7 +2,7 @@
 
 Qwen Code 扩展将提示词、MCP 服务器、子代理、技能和自定义指令打包成熟悉且用户友好的格式。通过扩展，你可以扩展 Qwen Code 的能力，并与他人共享这些能力。它们被设计为易于安装和共享。
 
-来自 [Gemini CLI Extensions Gallery](https://geminicli.com/extensions/) 和 [Claude Code Marketplace](https://claudemarketplaces.com/) 的扩展和插件可以直接安装到 Qwen Code 中。这种跨平台兼容性让你能够访问丰富的扩展和插件生态，极大地扩展 Qwen Code 的功能，而无需扩展作者维护单独的版本。
+来自 [Gemini CLI Extensions Gallery](https://geminicli.com/extensions/)、[Claude Code Marketplace](https://claudemarketplaces.com/) 和 Qoder 的扩展和插件可以直接安装到 Qwen Code 中。这种跨平台兼容性让你能够访问丰富的扩展和插件生态，极大地扩展 Qwen Code 的功能，而无需扩展作者维护单独的版本。
 
 ## 扩展管理
 
@@ -98,6 +98,20 @@ Gemini 扩展在安装过程中会自动转换为 Qwen Code 格式：
 - `gemini-extension.json` 转换为 `qwen-extension.json`
 - TOML 命令文件自动迁移为 Markdown 格式
 - MCP 服务器、上下文文件和设置保持不变
+
+#### 从 Qoder 插件
+
+Qwen Code 支持包含 `.qoder-plugin/plugin.json` 清单的 [Qoder 插件](https://docs.qoder.com/en/cli/sdk/plugins)。使用现有的 `qwen extensions install` 命令安装本地目录、归档、Git 仓库、归档 URL 或 scoped npm 包：
+
+```bash
+qwen extensions install ./sample-qoder-plugin
+qwen extensions install ./sample-qoder-plugin.zip
+qwen extensions install owner/sample-qoder-plugin
+```
+
+安装器会将 Qoder 清单转换为 `qwen-extension.json`，并保留标准的 `commands/`、`agents/` 和 `skills/` 目录。在根 `.mcp.json` 文件中声明的 MCP 服务器会作为扩展 MCP 服务器包含在内。
+
+当 Qoder 插件在其根目录包含 `system-prompt.md` 时，Qwen Code 会将其作为扩展上下文加载。如果插件还包含 `QWEN.md` 或声明了其他上下文文件，所有上下文文件都会被保留并去重。
 
 #### 从 npm 注册表
 

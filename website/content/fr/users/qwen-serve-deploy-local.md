@@ -255,7 +255,7 @@ Un **redémarrage** du démon supprime toutes les sessions en mémoire ; les cli
 
 - **Déploiement conteneurisé** — Dockerfile, docker-compose, manifests Kubernetes, nginx + proxy inverse TLS, isolation des jetons multi-instances. Reporté à la v0.16.x dès qu'un pilote entreprise est engagé ; la documentation pourrirait faute de validation.
 - **Fédération inter-hôtes / coordination multi-démon sur un seul hôte** — un démon peut héberger plusieurs environnements d'exécution d'espaces de travail enregistrés, mais les démons ne se coordonnent pas. Le keying des jetons par chemin d'instance et le nettoyage des jetons obsolètes sont reportés à la v0.16.x.
-- **Jetons de démon générés automatiquement** — l'alpha est BYO (apportez votre propre jeton). L'infrastructure d'auto-génération et de stockage des jetons est reportée à la v0.16.x.
+- **Stockage général des jetons du démon** — `--local-control` génère un nouveau jeton pour ce processus ; les déploiements longue durée restent BYO-token. L'infrastructure persistante de stockage de jetons est reportée à la v0.16.x.
 - **Service natif Windows** (`nssm`, wrapper Service Control Manager) — pour l'instant, utilisez [WSL2](https://learn.microsoft.com/fr-fr/windows/wsl/) et suivez la section systemd ci-dessus.
 
 Consultez l'encadré [Limites connues de la v0.16-alpha](./qwen-serve.md#v016-alpha-known-limits) dans le guide utilisateur principal pour la liste complète des fonctionnalités reportées, et [#4175](https://github.com/QwenLM/qwen-code/issues/4175) pour le suivi du déploiement de la v0.16-alpha.

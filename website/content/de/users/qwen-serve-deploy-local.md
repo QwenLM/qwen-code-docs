@@ -48,8 +48,8 @@ ACP/MCP-Ressource-Grenze. Production versucht, das primäre ACP-Child
 vorzuwärmen und wiederholt den ersten Versuch nach einem Fehlschlag;
 vertrauenswürdige Sekundärworkspaces starten ihres bei Bedarf, und nicht
 vertrauenswürdige Sekundärworkspaces starten keinen ACP.
-Authentifizierung, HTTP-Rate-Limits, Listener- und Voice-Aufnahmegrenzen,
-Gesamt-Session-Aufnahme, Metriken, Shutdown und der Prozess-Fehlerradius
+Authentifizierung, HTTP-Rate-Limits, Listener- und Voice-Admission-Caps,
+Gesamt-Session-Admission, Metriken, Shutdown und der Prozess-Fehlerradius
 bleiben daemon-global. Verwende separate Daemons, wenn diese Prozessgrenzen
 unabhängig sein müssen.
 
@@ -254,7 +254,7 @@ Ein **Neustart** des Daemons verwirft alle In-Memory-Sitzungen; Clients verbinde
 
 - **Containerisierte Bereitstellung** – Dockerfile, docker-compose, Kubernetes-Manifeste, nginx + TLS-Reverse-Proxy, Multi-Instanz-Token-Isolation. Verschiebt sich auf v0.16.x, sobald ein Enterprise-Pilot festgelegt ist; das Dokument würde sonst veralten, da es niemand validiert.
 - **Hostübergreifende Föderation / Multi-Daemon-Koordination auf einem Host** – ein Daemon kann mehrere registrierte Workspace-Runtimes hosten, aber Daemons koordinieren sich nicht untereinander. Token-Verknüpfung auf Instanzebene + Bereinigung alter Token verschiebt sich auf v0.16.x.
-- **Automatisch generierte Daemon-Token** – Alpha ist BYO-Token. Auto-Gen + Token-Speicher-Infrastruktur verschiebt sich auf v0.16.x.
+- **Allgemeine Daemon-Token-Speicherung** – `--local-control` generiert einen frischen Token für diesen Prozess; langlebige Deployments bleiben BYO-Token. Persistente Token-Store-Infrastruktur wird auf v0.16.x verschoben.
 - **Windows-nativer Dienst** (`nssm`, Service Control Manager-Wrapper) – verwenden Sie vorerst [WSL2](https://learn.microsoft.com/en-us/windows/wsl/) und folgen Sie dem obigen systemd-Abschnitt.
 
 Siehe den Hinweis zu den [v0.16-alpha bekannten Einschränkungen](./qwen-serve.md#v016-alpha-known-limits) im Hauptbenutzerhandbuch für die vollständige Liste der verschobenen Funktionen und [#4175](https://github.com/QwenLM/qwen-code/issues/4175) für das v0.16-alpha-Rollout-Tracking-Issue.

@@ -618,6 +618,32 @@ Wenn beide Felder vorhanden sind, enthalten Prompt-Hook-Payloads überlappenden 
 
 Sequentielle UserPromptSubmit-Hooks können `additionalContext` an `prompt` anhängen; `submitted_prompt` repräsentiert weiterhin die erfasste Übermittlung. Function-Hooks sind vertrauenswürdiger Same-Process-Code und unterliegen keiner Unveränderlichkeitsgarantie.
 
+Wenn die finale Hook-Ausgabe nicht-leeres `additionalContext` enthält, bereinigt Qwen den Wert und sendet ihn dann als separaten Textteil an das Modell:
+
+```xml
+<qwen:user-prompt-submit-context>
+bereinigter Hook-Kontext
+</qwen:user-prompt-submit-context>
+```
+
+Der Tag teilt dem Modell und Transkript-Konsumenten mit, dass der Teil von einem konfigurierten Hook stammt und nicht vom Benutzer-Prompt. Er ist ein Provenienz-Marker, keine Authentifizierung, Autorisierung oder allgemeine Vertrauensgrenze.
+
+Für eine `UserQuery` mit diesem hinzugefügten Kontext bewahrt die Session-JSONL-Zeile die modellgebundenen Teile auf, einschließlich des getaggten Teils, und fügt das folgende `systemPayload` hinzu:
+
+```json
+{
+  "displayText": "Pre-Hook-Anzeige-Projektion",
+  "hookContext": "bereinigter Hook-Kontext"
+}
+```
+
+Dieses Zwei-Feld-Payload wird nur für diese Art von Benutzer-Prompt-Zeile geschrieben. `hookContext` dupliziert absichtlich den getaggten Teil, damit Offline- und Drittanbieter-Konsumenten seine Provenienz erkennen können, ohne Modelltext zu parsen. `displayText` ist die Pre-Hook-Anzeige-Projektion und enthält niemals den Hook-Kontext. Für eine unterstützte interaktive TUI-Übermittlung ist es die rohe Composer-Projektion, die von `submitted_prompt` getragen wird; ACP-, Headless-, `serve`-, SDK-, Remote-Input- und andere Pfade ohne diese Provenienz zeichnen stattdessen den expandierten Pre-Hook-Prompt auf.
+
+Transkript-Anzeige-Konsumenten behandeln `displayText` als diese Benutzer-Prompt-Projektion, wenn `systemPayload.hookContext` ein String ist. Für Kompatibilität mit veröffentlichten `displayText`-only Benutzer-Prompt-Zeilen ist ein vollständiger getaggter Kontext im letzten Teil nach mindestens einem weiteren Teil ein gleichwertiger pairing-Hinweis. Notification-, Cron- und Mid-Turn-Zeilen können ebenfalls `displayText` haben, aber diese Werte sind kompakte Anzeige-Labels und dürfen nicht ohne diesen Nachweis für ihren modellgebundenen Text substituiert werden.
+Legacy-nackte Kontext-Zeilen behalten ihr modellgebundenes Anzeige-Verhalten, da der Kontext nicht zuverlässig getrennt werden kann. Für Metadaten-freie Zeilen, die die aktuelle getaggte Form verwenden, dürfen Kompatibilitäts-Konsumenten den gleichen vollständigen finalen getaggten Teil entfernen; sie dürfen nicht ableiten, dass beliebiger tag-artiger Benutzer-Text Hook-Provenienz ist.
+
+Sensitive-Prompt-Telemetrie-Attribute (wenn aktiviert) und Managed-AutoMemory-Abfrage verwenden beide den Pre-Hook-Prompt. Sie enthalten keinen durch `UserPromptSubmit` hinzugefügten Kontext.
+
 **Output-Optionen**:
 
 - `decision`: "allow", "deny", "block" oder "ask"

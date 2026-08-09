@@ -30,12 +30,13 @@
   mode: 'http-bridge',
   features: ServeFeature[],
   workspaceCwd: string,
+  workspaces?: Array<{ id: string, cwd: string, primary: boolean, trusted: boolean }>,
   protocol?: { current: 'v1', supported: ['v1'] },
   policy?: { permission: PermissionPolicy },
 }
 ```
 
-`workspaceCwd` 是在 daemon 启动时绑定的规范 workspace（参见 [`02-serve-runtime.md`](./02-serve-runtime.md)）。`policy.permission` 是活动的 mediator policy。
+`workspaceCwd` 是规范的主 workspace 路径（参见 [`02-serve-runtime.md`](./02-serve-runtime.md)）。当前 daemon 使用 `workspaces[]` 作为已注册的 runtime 目录；`multi_workspace_sessions` 表示有多个 runtime 处于活跃状态。`policy.permission` 是活动的 mediator policy。
 
 ### `ServeCapabilityDescriptor`
 
@@ -80,6 +81,16 @@ export const CONDITIONAL_SERVE_FEATURES: ReadonlyMap<
     (t) => t.voiceTranscriptionAvailable === true,
   ],
   ['session_shell_command', (t) => t.sessionShellCommandEnabled === true],
+  [
+    'multi_workspace_session_rewind',
+    (t) => t.multiWorkspaceSessionsEnabled === true,
+  ],
+  [
+    'multi_workspace_session_shell',
+    (t) =>
+      t.multiWorkspaceSessionsEnabled === true &&
+      t.sessionShellCommandEnabled === true,
+  ],
   ['rate_limit', (t) => t.rateLimit === true],
   ['workspace_reload', (t) => t.reloadAvailable === true],
   ['voice_transcribe', (t) => t.voiceWsAvailable !== false],
@@ -93,11 +104,11 @@ export const CONDITIONAL_SERVE_FEATURES: ReadonlyMap<
 
 Baseline tags 不存在于 `Map` 中，并且是无条件广播的。这是故意通过缺失来表示的，而不是通过单独的 Set。
 
-### 75 个 tags（v1，按领域分组）
+### v1 tags 按领域分组
 
 基础（Foundation）：`health`, `daemon_status`, `capabilities`。
 
-会话（Sessions）：`session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_prompt`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (conditional), `session_language`, `session_rewind`, `session_hooks`, `session_branch`。
+会话（Sessions）：`session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (conditional), `session_language`, `session_rewind`, `session_hooks`, `session_branch`。
 
 流式传输（Streaming）：`slow_client_warning`, `typed_event_schema`。
 
@@ -105,9 +116,13 @@ Baseline tags 不存在于 `Map` 中，并且是无条件广播的。这是故�
 
 权限（Permissions）：`session_permission_vote`, `permission_vote`, **`permission_mediation`** (`modes: ['first-responder', 'designated', 'consensus', 'local-only']`)。
 
-Workspace 只读快照（Workspace read-only snapshots）：`workspace_mcp`, `workspace_skills`, `workspace_providers`, `workspace_env`, `workspace_preflight`, `workspace_hooks`, `workspace_extensions`。
+Workspace 只读快照（Workspace read-only snapshots）：`workspace_mcp`, `workspace_skills`, `workspace_providers`, `workspace_acp_status`, `workspace_env`, `workspace_preflight`, `workspace_hooks`, `workspace_extensions`。
 
-Workspace 变更（Wave 4+）：`workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_tool_toggle`, **`workspace_settings`** (conditional), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_write`, **`workspace_reload`** (conditional)。
+扩展管理（Extension management）：`extension_management_v2` 添加全局 `/extensions/*` 目录/变更/操作契约以及 workspace 激活投影。它与已发布的 `workspace_extensions` 兼容表面以及 `workspace_qualified_rest_core` 是独立的。
+
+Workspace 限定会话读取（Workspace-qualified session reads）：`workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`。活跃和已归档的导出 tag 彼此独立，也与 `session_export` 和 `workspace_qualified_rest_core` 独立，因此客户端必须预检其打算导出的确切存储状态。持久化转录分页允许在受限读取策略下的不受信任次级运行时；两条完整导出路径仍然仅限受信任运行时。
+
+Workspace 变更（Wave 4+）：`workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, **`workspace_settings`** (conditional), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, **`workspace_reload`** (conditional)。
 
 MCP 防护栏（MCP guardrails）：**`mcp_guardrails`** (`modes: ['warn', 'enforce']`), `mcp_guardrail_events`, `mcp_server_runtime_mutation`, **`mcp_workspace_pool`** (conditional), **`mcp_pool_restart`** (conditional)。
 
@@ -118,6 +133,8 @@ Prompt 控制（Prompt control）：**`prompt_absolute_deadline`** (conditional)
 语音（Voice）：**`workspace_voice`** (conditional), **`workspace_voice_transcription`** (conditional, `modes: ['batch']`), **`voice_transcribe`** (conditional, `modes: ['streaming', 'batch']`)。
 
 速率限制（Rate limiting）：**`rate_limit`** (conditional)。
+
+多 workspace 会话路由（Multi-workspace session routing）：**`multi_workspace_sessions`** (conditional)、**`multi_workspace_session_rewind`** (conditional) 和 **`multi_workspace_session_shell`** (conditional)。客户端可以使用 `session_rewind` 对主会话进行回退；次级活跃会话还需要 `multi_workspace_session_rewind`。Shell 使用等效的 `session_shell_command` 加上 `multi_workspace_session_shell` 配对来处理次级会话。ACP 原生客户端继续使用 initialize 返回的 `_qwen.methods`；不广播 ACP 回退供应商方法。
 
 加粗的 tags 具有 `modes` 或是 conditional 的。
 
@@ -166,7 +183,7 @@ sequenceDiagram
 ## 依赖
 
 - 在构建 `/capabilities` 响应时由 `packages/cli/src/serve/server.ts` 读取。
-- 开关输入来自 `runQwenServe` / `createServeApp`：`{ requireAuth, mcpPoolActive, allowOriginActive, promptDeadlineMs, writerIdleTimeoutMs, persistSettingAvailable, sessionShellCommandEnabled, rateLimit, reloadAvailable }`。
+- 开关输入来自 `runQwenServe` / `createServeApp`，包括认证、MCP、origin、prompt、settings、shell、rate-limit、reload 以及活跃 workspace runtime 数量的状态。
 - envelope 中活动的 `permission` policy 来自 `BridgeOptions.permissionPolicy`，它本身读取 `settings.json` 的 `policy.permissionStrategy`。
 
 ## 配置
@@ -180,6 +197,7 @@ sequenceDiagram
 | Embedded option            | `persistSettingAvailable`                                       | 广播 `workspace_settings` 和 `workspace_voice`。                                                                              |
 | Embedded option            | `voiceTranscriptionAvailable`                                   | 广播 `workspace_voice_transcription`。                                                                                        |
 | CLI flag / embedded option | `--enable-session-shell` / `sessionShellCommandEnabled`         | 广播 `session_shell_command`。                                                                                                |
+| Runtime state              | 多个已注册的 workspace runtime                                   | 广播 `multi_workspace_sessions` 和 `multi_workspace_session_rewind`；当 session shell 有效启用时还广播 `multi_workspace_session_shell`。 |
 | Embedded option            | `reloadAvailable`                                               | 广播 `workspace_reload`。                                                                                                     |
 | Embedded option            | `voiceWsAvailable`                                              | 广播 `voice_transcribe`。                                                                                                     |
 | `settings.json`            | `policy.permissionStrategy`                                     | 设置 envelope 的 `policy.permission`。                                                                                        |

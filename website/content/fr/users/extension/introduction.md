@@ -99,6 +99,20 @@ Les extensions Gemini sont automatiquement converties au format Qwen Code lors d
 - Les fichiers de commandes TOML sont automatiquement migrés au format Markdown
 - Les serveurs MCP, les fichiers de contexte et les paramètres sont conservés
 
+#### Depuis les plugins Qoder
+
+Qwen Code prend en charge les [plugins Qoder](https://docs.qoder.com/en/cli/sdk/plugins) qui contiennent un manifeste `.qoder-plugin/plugin.json`. Installez un répertoire local, une archive, un dépôt Git, une URL d'archive ou un package npm scopé avec la commande existante `qwen extensions install` :
+
+```bash
+qwen extensions install ./sample-qoder-plugin
+qwen extensions install ./sample-qoder-plugin.zip
+qwen extensions install owner/sample-qoder-plugin
+```
+
+L'installateur convertit le manifeste Qoder en `qwen-extension.json` et préserve les répertoires standard `commands/`, `agents/` et `skills/`. Les serveurs MCP déclarés dans un fichier `.mcp.json` à la racine sont inclus en tant que serveurs MCP de l'extension.
+
+Lorsqu'un plugin Qoder contient `system-prompt.md` à sa racine, Qwen Code le charge en tant que contexte d'extension. Si le plugin contient également `QWEN.md` ou déclare d'autres fichiers de contexte, tous les fichiers de contexte sont conservés et dédupliqués.
+
 #### Depuis le registre npm
 
 Qwen Code prend en charge l'installation d'extensions depuis des registres npm en utilisant des noms de packages scoped. C'est idéal pour les équipes disposant de registres privés qui ont déjà une infrastructure d'authentification, de versioning et de publication.

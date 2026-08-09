@@ -193,6 +193,7 @@ sequenceDiagram
 | `sessionScope`                                | `'single'`                                         | `'single'` はすべてのクライアント間で1つのセッションを共有します。`'thread'` は会話スレッドごとに個別のセッションを作成します。 |
 | `channelFactory`                              | `defaultSpawnChannelFactory`                       | プラグイン可能な ACP 子プロセスファクトリ。                                                                                          |
 | `initializeTimeoutMs`                         | `DEFAULT_INIT_TIMEOUT_MS = 10_000`                 | ACP `initialize` ハンドシェイクのタイムアウト。                                                                                   |
+| `sessionRestoreTimeoutMs`                     | `60_000`                                           | ACP `loadSession` / `unstable_resumeSession` のタイムアウト。デフォルトは 60 秒で、明示的に設定された initialize タイムアウトはこれを上げることができますが、下げることはできません。      |
 | `maxSessions`                                 | `DEFAULT_MAX_SESSIONS = 32`                        | `byId.size` の上限。`0` / `Infinity` = 無制限。NaN/負の値はスロー。                                                |
 | `eventRingSize`                               | `DEFAULT_RING_SIZE`（`eventBus.ts` から）           | セッションごとのイベントリング。`MAX_EVENT_RING_SIZE` でソフトキャップ。                                                         |
 | `permissionResponseTimeoutMs`                 | `DEFAULT_PERMISSION_TIMEOUT_MS = 5 min`            | メディエーターの1リクエストあたりの経過時間（wallclock）。                                                                               |

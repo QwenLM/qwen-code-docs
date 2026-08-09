@@ -230,7 +230,7 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
 
 - **容器化部署** —— Dockerfile、docker-compose、Kubernetes 清单、nginx + TLS 反向代理、多实例 token 隔离。推迟至 v0.16.x，届时将有一个企业试点项目；否则文档会因无人验证而过时。
 - **跨主机联邦 / 单主机上的多守护进程协调** —— 一个守护进程可以托管多个已注册的工作区运行时，但守护进程之间不会协调。实例路径 token 键控 + 过期 token 清理推迟至 v0.16.x。
-- **自动生成守护进程 token** —— alpha 版本为 BYO token。自动生成 + token 存储基础设施推迟至 v0.16.x。
+- **通用守护进程 token 存储** —— `--local-control` 为该进程生成一个 token；长期部署仍需自带 token。持久化 token 存储基础设施推迟至 v0.16.x。
 - **Windows 原生服务**（`nssm`、服务控制管理器包装器）—— 目前请使用 [WSL2](https://learn.microsoft.com/en-us/windows/wsl/) 并参考上面的 systemd 章节。
 
 请参阅主用户指南中的 [v0.16-alpha 已知限制](./qwen-serve.md#v016-alpha-已知限制) 提醒，了解完整的推迟功能列表，以及 [#4175](https://github.com/QwenLM/qwen-code/issues/4175) 了解 v0.16-alpha 发布跟踪问题。

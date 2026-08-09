@@ -45,7 +45,7 @@
 | `InvalidClientIdError`               | 400  | `X-Qwen-Client-Id` が `[A-Za-z0-9._:-]{1,128}` の範囲外。                              | クライアント ID をサニタイズする。                                                                                                                                               |
 | `InvalidSessionMetadataError`        | 400  | `displayName` が 256 文字を超える、または制御文字を含む。                                | トリム / サニタイズする。                                                                                                                                                        |
 | `InvalidSessionScopeError`           | 400  | 未知の `sessionScope` 値。                                                               | `'single'` または `'thread'` を使用する。                                                                                                                                        |
-| `RestoreInProgressError`             | 409  | 同時の `loadSession` / `resumeSession`。                                                 | 待機 + 再試行。                                                                                                                                                                  |
+| `RestoreInProgressError`             | 409  | `loadSession`、`resumeSession`、または `POST /session` の呼び出し元指定 ID が、同じ ID をすでに所有する別の登録と競合する。                                                                                                                                                                    | アナウンスされた遅延を待ってから、要求された restore または spawn を再試行します。放棄されたクリーンアップは予算から導出されたバックオフを伴います。                                                      |
 | `WorkspaceInitConflictError`         | 409  | 既存のファイルに対して `POST /workspace/init` を `force` なしで実行。                      | `force: true` を渡すか、別のパスを選択する。                                                                                                                                    |
 | `WorkspaceInitPathEscapeError`       | 400  | init パスがワークスペース外に出る。                                                       | `workspaceCwd` 内のパスを使用する。                                                                                                                                              |
 | `WorkspaceInitSymlinkError`          | 400  | init パスがシンボリックリンク。                                                           | 解決されたパスを指定する。                                                                                                                                                        |
@@ -57,8 +57,10 @@
 | `CancelSentinelCollisionError`       | 500  | エージェントが `'__cancelled__'` を正当なオプションラベルとして公開した。                 | エージェントのバグ — オプションラベルをセンチネル以外のものに変更する。                                                                                                          |
 | `PermissionPolicyNotImplementedError` | 500  | 要求されたポリシーがこのデーモンに組み込まれていない。                                   | デーモンを更新するか、`policy.permissionStrategy` を変更する。                                                                                                                   |
 | `BridgeChannelClosedError`           | 503  | 呼び出し中に ACP 子プロセスのチャネルが閉じた。                                           | 再接続 / 再試行。原因は `session_died` を確認する。                                                                                                                               |
-| `BridgeTimeoutError`                 | 504  | ブリッジレベルのウォールクロックを超過。                                                   | 再試行。根本的な遅延を調査する。                                                                                                                                                  |
-| `MissingCliEntryError`               | 500  | `qwen` CLI エントリファイルが見つからない（`status.ts` で定義、`bridgeErrors.ts` ではない）。 | CLI インストールが完全であることを確認する。`packages/cli/index.ts` が存在するかチェックする。                                                                                   |
+| `BridgeTimeoutError`                  | 504  | ブリッジレベルのウォールクロックを超過。                                                   | 再試行。根本的な遅延を調査する。                                                                                                                                                  |
+| `SessionRestoreTimeoutError`          | 504  | ACP セッションのロード/再開が専用の restore 予算を超過した。                                                                                                                                                           | アナウンスされた遅延の後に再試行。予算を引き上げる前に restore ステージのトレースを調査する。                                                                                        |
+| `BridgeChannelQuarantinedError`       | 503  | 放棄された restore のクリーンアップが結論が出なかった（`restore_cleanup_failed`）、または放棄された restore がデッドライン後に完全な予算 settling を完了していない（`restore_settlement_overdue`）。どちらの場合もワークスペースチャネルは drain するまで新しいセッションを拒否します。503 ボディは `reason` と `retryAfterSeconds` を保持します。 | 既存のセッションを引き続き使用し、チャネルがリサイクルされるのを待ってから、新しいセッションの作業を再試行します。                                                                    |
+| `MissingCliEntryError`                | 500  | `qwen` CLI エントリファイルが見つからない（`status.ts` で定義、`bridgeErrors.ts` ではない）。 | CLI インストールが完全であることを確認する。`packages/cli/index.ts` が存在するかチェックする。                                                                                   |
 
 ## 起動時設定エラー (`packages/cli/src/serve/run-qwen-serve.ts`)
 
@@ -83,6 +85,7 @@
 | `blocked_egress`           | 送信ネットワークプローブが失敗した。                                        |
 | `auth_env_error`           | 認証関連の環境変数、プロバイダ、または信頼ゲート設定が無効である。             |
 | `init_timeout`             | デーモン側の初期化ステップがウォールクロックを超過した。                      |
+| `restore_timeout`          | ACP セッションのロード/再開が専用の restore 予算を超過した。                  |
 | `protocol_error`           | ACP / HTTP プロトコルの不一致。                                              |
 | `missing_file`             | 必要なローカルファイルが見つからない。                                       |
 | `parse_error`              | ローカルファイルまたはリクエストのパースエラー。                               |

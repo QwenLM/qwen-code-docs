@@ -279,7 +279,7 @@ it('my adapter conforms to daemon UI corpus', () => {
 });
 ```
 
-フィクスチャコーパス（`DAEMON_UI_CONFORMANCE_FIXTURES`）は、チャット、ツールライフサイクル、ファイル編集、MCP、権限、MCP予算警告、キャンセル、不正ペイロードの編集、OAuth、コマンド更新、サブエージェントのネストをカバーします。（カウントは実行時に取得可能 — `DAEMON_UI_CONFORMANCE_FIXTURES.length` を読み取ってください。）
+フィクスチャコーパス（`DAEMON_UI_CONFORMANCE_FIXTURES`）は、チャット、ツールライフサイクル、ファイル編集、MCP、権限、MCP予算警告、キャンセル、不正ペイロードのマスク、OAuth、コマンド更新、サブエージェントのネストをカバーします。（カウントは実行時に取得可能 — `DAEMON_UI_CONFORMANCE_FIXTURES.length` を読み取ってください。）
 
 **形式に依存しません** — アダプターはANSI / HTML / Markdown / JSXでレンダリングできます。フレームワークは `expectedContains` と `expectedAbsent` を介して意味的内容のみをチェックします。
 
@@ -289,7 +289,7 @@ it('my adapter conforms to daemon UI corpus', () => {
 
 ```ts
 import type { DaemonErrorKind } from '@qwen-code/sdk/daemon';
-// 'missing_binary' | 'blocked_egress' | 'auth_env_error' | 'init_timeout'
+// 'missing_binary' | 'blocked_egress' | 'auth_env_error' | 'init_timeout' | 'restore_timeout'
 // | 'protocol_error' | 'missing_file' | 'parse_error' | 'budget_exhausted'
 ```
 

@@ -306,8 +306,9 @@ nouvelle session arrive.
 - `BridgeOptions.maxSessions` (par défaut 32) — limite maximale.
 - `BridgeOptions.sessionScope` (par défaut `'single'` ; optionnel `'thread'`).
 - `BridgeOptions.initializeTimeoutMs` (par défaut 10s) — handshake ACP `initialize`.
+- `BridgeOptions.sessionRestoreTimeoutMs` (par défaut 60s) — délai pour `loadSession` / `unstable_resumeSession` ACP. Par défaut 60s ; un timeout d'initialize configuré explicitement peut l'augmenter, mais jamais le diminuer.
 - `BridgeOptions.channelIdleTimeoutMs` (par défaut 0 ; nettoie l'enfant ACP immédiatement).
-- Tags de capacité : `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (alias obsolète), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
+- Tags de capacité : `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (alias obsolète), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
 
 ### Génération sans état (tag de capacité `session_generation`)
 

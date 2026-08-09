@@ -232,7 +232,7 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
 
 - **コンテナ化デプロイメント** — Dockerfile、docker-compose、Kubernetes マニフェスト、nginx + TLS リバースプロキシ、マルチインスタンストークン分離。エンタープライズパイロットが確定したら v0.16.x で対応予定。検証する人がいないとドキュメントは腐ります。
 - **クロスホスト連携 / 単一ホスト上のマルチデーモン調整** — 1つのデーモンで複数の登録されたワークスペースランタイムをホストできますが、デーモン間の調整は行いません。インスタンスパストークンキーイングと期限切れトークンのクリーンアップは v0.16.x で対応予定。
-- **自動生成デーモントークン** — アルファ版は BYO トークン。自動生成 + トークンストアのインフラは v0.16.x で対応予定。
+- **一般的なデーモントークンストレージ** — `--local-control` はそのプロセス用に新しいトークンを生成します。長期稼働のデプロイメントは引き続き BYO トークンです。永続的なトークンストアのインフラは v0.16.x で対応予定です。
 - **Windows ネイティブサービス** (`nssm`、Service Control Manager ラッパー) — 当面は [WSL2](https://learn.microsoft.com/ja-jp/windows/wsl/) を使用し、上記の systemd セクションに従ってください。
 
 完全な延期機能リストについては、メインユーザーガイドの [v0.16-alpha 既知の制限](./qwen-serve.md#v016-alpha-known-limits) コールアウト、および v0.16-alpha ロールアウト追跡 Issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) を参照してください。

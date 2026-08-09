@@ -36,6 +36,7 @@
 | `--writer-idle-timeout-ms <n>`          | positive integer           | unset                                     | 每个 SSE 连接的空闲超时时间（毫秒）。如果在此时间内没有发送事件，守护进程将关闭 SSE 连接。                                                                |
 | `--channel-idle-timeout-ms <n>`         | non-negative integer       | `0`                                       | 在最后一个会话关闭后，保持 ACP 子进程存活的时间。`0` 表示立即回收。                                                                                  |
 | `--initialize-timeout-ms <n>`           | positive integer           | `10000`                                   | ACP 子进程请求超时时间，包括 initialize 握手（毫秒）。                                                                                                                                                       |
+| `--session-restore-timeout-ms <n>`      | positive integer             | `60000`                                                                           | ACP 会话 load/resume 超时时间（毫秒）。省略此参数时，显式提供的 initialize 超时时间会提高预算，但不会将其降低到默认值以下。                                                                            |
 | `--session-reap-interval-ms <n>`        | non-negative integer       | `60000`                                   | 会话回收扫描间隔；`0` 表示禁用。                                                                                                                                      |
 | `--session-idle-timeout-ms <n>`         | non-negative integer       | `1800000`                                 | 已断开连接会话的空闲回收时间；`0` 表示禁用。                                                                                                                            |
 | `--rate-limit` / `--no-rate-limit`      | boolean                    | env / off                                 | 为 prompt、mutation 和 read 路由启用分层 HTTP 速率限制。                                                                                                          |
@@ -119,6 +120,7 @@
 | `writerIdleTimeoutMs`         | SSE writer 空闲超时时间。                                                                      |
 | `channelIdleTimeoutMs`        | 在最后一个会话关闭后，保持 ACP 子进程预热状态的时间。                            |
 | `initializeTimeoutMs`         | ACP 子进程请求超时时间，包括 initialize 握手。                                                                                    |
+| `sessionRestoreTimeoutMs`     | ACP 会话 load/resume 超时时间。优先级：显式的 restore 值；否则显式的 initialize 值会提高 60000 默认值但不会降低它；否则为 60000。 |
 | `sessionReapIntervalMs`       | 会话回收扫描间隔。                                                                 |
 | `sessionIdleTimeoutMs`        | 已断开连接会话的空闲回收时间。                                                       |
 | `rateLimit*`                  | 分层 HTTP 速率限制开关、阈值和时间窗口。                                      |
@@ -130,7 +132,7 @@
 | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | `boundWorkspace`                                                                                                        | 必需的规范工作区。                                                                            |
 | `sessionScope`                                                                                                          | `'single'`（默认）或 `'thread'`。                                                             |
-| `initializeTimeoutMs`, `maxSessions`, `eventRingSize`, `permissionResponseTimeoutMs`, `maxPendingPermissionsPerSession` | 资源上限约束。                                                                                |
+| `initializeTimeoutMs`, `sessionRestoreTimeoutMs`, `maxSessions`, `eventRingSize`, `permissionResponseTimeoutMs`, `maxPendingPermissionsPerSession` | 资源上限约束。                                                                                |
 | `channelFactory`                                                                                                        | 可插拔的 ACP 子进程工厂；默认为 `defaultSpawnChannelFactory`。                                |
 | `fileSystem`                                                                                                            | `BridgeFileSystem` 适配器。参见 [`07-workspace-filesystem.md`](./07-workspace-filesystem.md)。|
 | `permissionPolicy`, `permissionConsensusQuorum`, `permissionAudit`                                                      | 中介器组件配置。                                                                              |

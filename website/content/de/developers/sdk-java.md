@@ -86,6 +86,20 @@ try (DaemonClient daemon = DaemonClient.builder()
 }
 ```
 
+Aufrufer, die die Session-Identität vor der Erstellung zuweisen müssen, können eine RFC-UUID v1–v5 übergeben. Das SDK prüft `session_id_override` vor der Mutation und meldet eine abweichende zurückgegebene ID als `SessionCreationOutcomeUnknownException`:
+
+```java
+CreateSessionRequest request = CreateSessionRequest.builder()
+        .sessionId("550E8400-E29B-41D4-A716-446655440000")
+        .build();
+
+try (DaemonSessionClient session = daemon.createSession(request)) {
+    System.out.println(session.getSession().getSessionId());
+}
+```
+
+Der Daemon normalisiert die ID auf Kleinbuchstaben und erstellt eine neue Thread-Session. Dies ist kein idempotentes Attach; stelle nach einem mehrdeutigen Create-Ergebnis die Wiederherstellung mit der bekannten ID sicher, anstatt die Erstellung zu wiederholen.
+
 Wenn `qwen serve` Authentifizierung erfordert, füge
 `.bearerToken(System.getenv("QWEN_SERVER_TOKEN"))` zum `DaemonClient`-Builder
 hinzu. Das SDK sendet das Bearer-Token bei REST- und SSE-Anfragen und setzt es

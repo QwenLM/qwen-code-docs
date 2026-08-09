@@ -99,6 +99,20 @@ Gemini-Erweiterungen werden während der Installation automatisch in das Qwen Co
 - TOML-Befehlsdateien werden automatisch in das Markdown-Format migriert
 - MCP-Server, Kontextdateien und Einstellungen bleiben erhalten
 
+#### Aus Qoder-Plugins
+
+Qwen Code unterstützt [Qoder-Plugins](https://docs.qoder.com/en/cli/sdk/plugins), die ein `.qoder-plugin/plugin.json`-Manifest enthalten. Installieren Sie ein lokales Verzeichnis, ein Archiv, ein Git-Repository, eine Archiv-URL oder ein Scoped-npm-Paket mit dem vorhandenen Befehl `qwen extensions install`:
+
+```bash
+qwen extensions install ./sample-qoder-plugin
+qwen extensions install ./sample-qoder-plugin.zip
+qwen extensions install owner/sample-qoder-plugin
+```
+
+Der Installer konvertiert das Qoder-Manifest in `qwen-extension.json` und übernimmt die Standardverzeichnisse `commands/`, `agents/` und `skills/`. MCP-Server, die in einer `.mcp.json`-Datei im Stammverzeichnis deklariert sind, werden als Erweiterungs-MCP-Server übernommen.
+
+Wenn ein Qoder-Plugin eine `system-prompt.md` im Stammverzeichnis enthält, lädt Qwen Code diese als Erweiterungskontext. Wenn das Plugin außerdem eine `QWEN.md` enthält oder weitere Kontextdateien deklariert, werden alle Kontextdateien beibehalten und dedupliziert.
+
 #### Aus der npm-Registry
 
 Qwen Code unterstützt die Installation von Erweiterungen aus npm-Registries mit scoped Package-Namen. Dies ist ideal für Teams mit privaten Registries, die bereits über Authentifizierung, Versionierung und Veröffentlichungsinfrastruktur verfügen.

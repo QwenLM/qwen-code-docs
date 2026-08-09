@@ -81,6 +81,16 @@ export const CONDITIONAL_SERVE_FEATURES: ReadonlyMap<
     (t) => t.voiceTranscriptionAvailable === true,
   ],
   ['session_shell_command', (t) => t.sessionShellCommandEnabled === true],
+  [
+    'multi_workspace_session_rewind',
+    (t) => t.multiWorkspaceSessionsEnabled === true,
+  ],
+  [
+    'multi_workspace_session_shell',
+    (t) =>
+      t.multiWorkspaceSessionsEnabled === true &&
+      t.sessionShellCommandEnabled === true,
+  ],
   ['rate_limit', (t) => t.rateLimit === true],
   ['workspace_reload', (t) => t.reloadAvailable === true],
   ['voice_transcribe', (t) => t.voiceWsAvailable !== false],
@@ -94,11 +104,11 @@ Die `Map` speichert Mitgliedschaft und Prädikat zusammen. Das Hinzufügen eines
 
 Baseline-Tags sind nicht in der `Map` vorhanden und werden bedingungslos beworben. Dies wird absichtlich durch Abwesenheit dargestellt und nicht durch ein separates Set.
 
-### 75 Tags (v1, nach Domänen gruppiert)
+### v1-Tags nach Domänen gruppiert
 
 Grundlagen: `health`, `daemon_status`, `capabilities`.
 
-Sessions: `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_prompt`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (konditional), `session_language`, `session_rewind`, `session_hooks`, `session_branch`.
+Sessions: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (konditional), `session_language`, `session_rewind`, `session_hooks`, `session_branch`.
 
 Streaming: `slow_client_warning`, `typed_event_schema`.
 
@@ -106,7 +116,11 @@ Identität und Heartbeat: `client_identity`, `client_heartbeat`.
 
 Berechtigungen: `session_permission_vote`, `permission_vote`, **`permission_mediation`** (`modes: ['first-responder', 'designated', 'consensus', 'local-only']`).
 
-Workspace-Read-Only-Snapshots: `workspace_mcp`, `workspace_skills`, `workspace_providers`, `workspace_env`, `workspace_preflight`, `workspace_hooks`, `workspace_extensions`.
+Workspace-Read-Only-Snapshots: `workspace_mcp`, `workspace_skills`, `workspace_providers`, `workspace_acp_status`, `workspace_env`, `workspace_preflight`, `workspace_hooks`, `workspace_extensions`.
+
+Extension-Management: `extension_management_v2` fügt den globalen `/extensions/*` Katalog-/Mutations-/Operations-Vertrag und die Workspace-Aktivierungsprojektion hinzu. Es ist getrennt von der veröffentlichten `workspace_extensions`-Kompatibilitätsoberfläche und von `workspace_qualified_rest_core`.
+
+Workspace-qualifizierte Session-Lesezugriffe: `workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`. Die aktiven und archivierten Export-Tags sind unabhängig voneinander und von `session_export` sowie `workspace_qualified_rest_core`, daher müssen Clients den exakten Speicherzustand, den sie exportieren möchten, vorab per Preflight prüfen. Das Paging für persistierte Transkripte erlaubt einen nicht vertrauenswürdigen sekundären Client im Rahmen seiner begrenzten Lese-Richtlinie; beide vollständigen Export-Pfade bleiben nur für vertrauenswürdige Clients zugänglich.
 
 Workspace-Mutation (Wave 4+): `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_tool_toggle`, **`workspace_settings`** (konditional), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_write`, **`workspace_reload`** (konditional).
 
@@ -119,6 +133,16 @@ Auth: `auth_provider_install`, `auth_device_flow`, **`require_auth`** (kondition
 Voice: **`workspace_voice`** (konditional), **`workspace_voice_transcription`** (konditional, `modes: ['batch']`), **`voice_transcribe`** (konditional, `modes: ['streaming', 'batch']`).
 
 Rate-Limiting: **`rate_limit`** (konditional).
+
+Multi-Workspace-Session-Routing: **`multi_workspace_sessions`** (konditional),
+**`multi_workspace_session_rewind`** (konditional) und
+**`multi_workspace_session_shell`** (konditional). Ein Client kann Rewind für
+eine primäre Session mit `session_rewind` verwenden; eine sekundäre Live-Session
+erfordert zusätzlich `multi_workspace_session_rewind`. Shell verwendet das
+äquivalente `session_shell_command` plus `multi_workspace_session_shell`-Paarung
+für eine sekundäre Session. ACP-native Clients verwenden weiterhin die von
+initialize zurückgegebenen `_qwen.methods`; es wird keine ACP-Rewind-Vendor-Methode
+beworben.
 
 Fettgedruckte Tags haben `modes` oder sind konditional.
 
@@ -167,7 +191,9 @@ sequenceDiagram
 ## Abhängigkeiten
 
 - Wird von `packages/cli/src/serve/server.ts` beim Erstellen von `/capabilities`-Antworten gelesen.
-- Die Toggle-Eingabe stammt von `runQwenServe` / `createServeApp`: `{ requireAuth, mcpPoolActive, allowOriginActive, promptDeadlineMs, writerIdleTimeoutMs, persistSettingAvailable, sessionShellCommandEnabled, rateLimit, reloadAvailable }`.
+- Die Toggle-Eingabe stammt von `runQwenServe` / `createServeApp`, einschließlich
+  Authentifizierung, MCP, Origin, Prompt, Einstellungen, Shell, Rate-Limit, Reload und
+  Live-Workspace-Runtime-Count-Status.
 - Die aktive `permission`-Richtlinie im Envelope stammt von `BridgeOptions.permissionPolicy`, welches seinerseits `settings.json` `policy.permissionStrategy` liest.
 
 ## Konfiguration
@@ -181,6 +207,7 @@ sequenceDiagram
 | Eingebettete Option        | `persistSettingAvailable`                                       | Bewirbt `workspace_settings` und `workspace_voice`.                                                                         |
 | Eingebettete Option        | `voiceTranscriptionAvailable`                                   | Bewirbt `workspace_voice_transcription`.                                                                                    |
 | CLI-Flag / Eingebettete Option | `--enable-session-shell` / `sessionShellCommandEnabled`     | Bewirbt `session_shell_command`.                                                                                            |
+| Runtime-Status              | Mehr als eine registrierte Workspace-Runtime                   | Bewirbt `multi_workspace_sessions` und `multi_workspace_session_rewind`; bewirbt auch `multi_workspace_session_shell`, wenn Session-Shell effektiv aktiviert ist. |
 | Eingebettete Option        | `reloadAvailable`                                               | Bewirbt `workspace_reload`.                                                                                                 |
 | Eingebettete Option        | `voiceWsAvailable`                                              | Bewirbt `voice_transcribe`.                                                                                                 |
 | `settings.json`            | `policy.permissionStrategy`                                     | Setzt Envelope-`policy.permission`.                                                                                         |

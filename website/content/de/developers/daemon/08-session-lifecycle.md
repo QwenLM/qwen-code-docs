@@ -182,6 +182,19 @@ eigentliche Ergebnis trifft auf SSE als `turn_complete` / `turn_error` ein, und 
 
 `POST /session/:id/shell` führt einen Shell-Befehl direkt auf dem Daemon-Host aus, ohne Routing über das LLM. Es streamt die Ausgabe über den Session-SSE-Bus via `user_shell_command` / `user_shell_result` Events und injiziert den Befehl sowie das Ergebnis in den LLM-Konversationsverlauf. Die Antwort ist `{ exitCode, output, aborted }`. Für eine Live-Secondary-Workspace-Session löst die singuläre REST-Route den Session-Owner auf und führt auf der Bridge dieser Runtime aus, sodass der Befehl im Workspace-Cwd des Owners startet. Die Route stellt keine Pfad-Sandbox bereit. Workspace-qualifizierte ACP-Clients können weiterhin `_qwen/session/shell` auf der Owner-Workspace-Verbindung verwenden.
 
+### Session Rewind
+
+`GET /session/:id/rewind/snapshots` und `POST /session/:id/rewind` lösen die
+besitzende Live-Workspace-Runtime auf. Persistierte Sessions müssen vor dem
+Rewind geladen oder fortgesetzt werden. Rewind kürzt den Konversationsverlauf
+und stellt optional Dateien wieder her, die von `edit` und `write_file`
+getrackt werden; er macht Shell-Befehle, Git, Skripte oder manuelle Änderungen
+nicht rückgängig. Die Dateiwiederherstellung ist Best-Effort, sodass eine
+Antwort `rewound: false` und `filesFailed[]` melden kann, nachdem der
+Konversationsverlauf bereits verschoben wurde. SDK-Rewind-Aufrufe verwenden
+immer Owner-aware-REST, auch wenn der Client ansonsten ACP-Transport nutzt,
+weil die Mutation eine strikte REST-Authentifizierung beibehalten muss.
+
 ### Session Detach
 
 `POST /session/:id/detach` trennt einen Client explizit von einer Session, indem `attachCount` dekrementiert wird; es schließt die Session nicht von selbst. Wenn kein weiterer Attach oder Subscriber verbleibt, wird die Session bereinigt. Der Endpoint gibt 204 zurück.
@@ -227,8 +240,18 @@ Die `session_monitor_tool_correlation`-Capability garantiert zusätzlich, dass M
 - `BridgeOptions.maxSessions` (Standard 32) — Obergrenze.
 - `BridgeOptions.sessionScope` (Standard `'single'`; optional `'thread'`).
 - `BridgeOptions.initializeTimeoutMs` (Standard 10s) — ACP-`initialize`-Handshake.
+- `BridgeOptions.sessionRestoreTimeoutMs` (Standard 60s) — ACP-`loadSession` / `unstable_resumeSession`-Deadline. Standardmäßig 60s; eine explizit konfigurierte Initialize-Timeout kann sie erhöhen, aber niemals senken.
 - `BridgeOptions.channelIdleTimeoutMs` (Standard 0; ACP-Child sofort bereinigen).
-- Capability-Tags: `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (deprecated alias), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
+- Capability-Tags: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (deprecated alias), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
+
+### Zustandslose Generierung (`session_generation` Capability-Tag)
+
+`POST /session/:id/generate` akzeptiert `{ "prompt": string }` und gibt einen
+request-scoped SSE-Stream mit `started`, optionalem `thinking`, `delta`, `done`
+oder `error` Events zurück. Der Request liest keinen Konversationsverlauf,
+zeichnet keinen Turn auf und stellt keine Tools bereit. Das ACP-Child verwendet
+ein gültiges konfiguriertes schnelles Modell, falls verfügbar, und andernfalls
+das Hauptmodell der Session.
 
 ## Hinweise & bekannte Grenzen
 
