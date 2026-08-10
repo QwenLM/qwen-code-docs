@@ -94,3 +94,4 @@ English term → pt-BR rendering. Follow existing entries; append new ones as `-
 - rollback → rollback (não traduzir)
 - dwell → dwell (não traduzir)
 - warmup → warmup (não traduzir)
+- Web Shell → Web Shell (não traduzir)

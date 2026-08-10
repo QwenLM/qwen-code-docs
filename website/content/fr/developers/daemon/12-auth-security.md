@@ -54,7 +54,7 @@ Ces trois refus sont des échecs de démarrage explicites (visibles dans stderr 
 
 ```mermaid
 flowchart LR
-    REQ[Requête] --> SO["supprimer Origin même origine<br/>(support page de démonstration)"]
+    REQ[Requête] --> SO["supprimer Origin même origine<br/>(support Web Shell)"]
     SO --> CORS{"--allow-origin?"}
     CORS -->|oui| AO["allowOriginCors<br/>(correspondance liste blanche)"]
     CORS -->|non| DC["denyBrowserOriginCors<br/>(rejeter tout Origin)"]
@@ -93,7 +93,7 @@ Les liaisons non-loopback contournent ce middleware (l'opérateur a choisi la su
 
 Rejette toute requête avec un en-tête `Origin`. Les CLI/SDK ne définissent jamais Origin ; seuls les navigateurs le font. Retourne un `403 { error: 'Request denied by CORS policy' }` déterministe plutôt que le 500 HTML que produirait le callback d'erreur du paquet `cors`.
 
-Exception : les XHR de même origine de la page de démonstration sont gérées par un middleware séparé (dans `server.ts`) qui supprime `Origin` quand il correspond à l'adresse du démon lui-même.
+Exception : les XHR de même origine du Web Shell sur une liaison **loopback** sont gérées par un middleware séparé (dans `server/self-origin.ts`) qui supprime `Origin` lorsqu'il correspond à l'une des auto-origines loopback (`127.0.0.1`, `localhost`, `[::1]`, `host.docker.internal`). Sur les liaisons non-loopback, les XHR du shell portent un `Origin` sans correspondance et nécessitent `--allow-origin` pour l'origine du démon.
 
 ### `allowOriginCors` (mode `--allow-origin`)
 
@@ -290,7 +290,7 @@ sequenceDiagram
 
 - **L'ombrage `--require-auth` empêche la pré-découverte des fonctionnalités.** Les clients non authentifiés ne peuvent pas découvrir la balise `require_auth` ; leur surface de découverte est le corps 401 lui-même.
 - **Ordre analyseur de corps / porte de mutation** : les réponses 401 de `mutationGate({strict: true})` sont déclenchées **après** que `express.json()` a analysé le corps. Dans le pire cas sur un écouteur loopback saturé : `--max-connections × express.json({limit: '10mb'})` ≈ 2,5 Go transitoires. Surface d'attaque loopback uniquement, intentionnellement acceptée.
-- **Suppression de l'en-tête Origin de même origine** dans `server.ts` a lieu _avant_ `denyBrowserOriginCors`. Si un changement futur déplace la suppression ailleurs, la page de démonstration se casse.
+- **Suppression de l'en-tête Origin de même origine** dans `server.ts` a lieu _avant_ `denyBrowserOriginCors`. Si un changement futur déplace la suppression ailleurs, le Web Shell se casse.
 - **La comparaison du jeton se fait sur le digest SHA-256**, pas le jeton brut. Réduit les fuites temporelles en réduisant la comparaison de jetons de longueur variable à une comparaison de digest de taille fixe.
 - Le démon **ne porte pas** mTLS, signature de requête, ou preuve de possession par paire de jetons aujourd'hui. `--rate-limit` fournit une limitation de débit HTTP par clé client-id / IP ; ce n'est pas une authentification d'identité client.
 

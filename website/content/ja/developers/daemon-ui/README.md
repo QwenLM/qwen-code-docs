@@ -323,11 +323,36 @@ function toolIcon(event: DaemonUiToolUpdateEvent): React.ReactNode {
 
 SDKには `mcp__<server>__<tool>` 命名ヒューリスティックのフォールバックがあります。デーモンが明示的にプロバイダンスをスタンプしない場合でも、MCPツールは検出可能です。
 
+## デバッグ理由の分類
+
+`DaemonUiStatusEvent.debugReason` は、ノーマライザーが型付きイベントの代わりに `debug` ブロックを投影するときにスタンプするクローズド列挙型です（トランスクリプト消費者用に `DaemonStatusTranscriptBlock` にも反映されます）：
+
+```ts
+import type { DaemonUiDebugReason } from '@qwen-code/sdk/daemon';
+// 'unrecognized_event' | 'unrecognized_session_update' | 'malformed_payload'
+```
+
+正規のリストは `DAEMON_UI_DEBUG_REASONS` としてエクスポートされます。理由名はワイルドカード命名カテゴリです：`unrecognized_*` はデーモンがこのSDKバージョンにケースがないフレームを送信したことを意味します — 前方互換のノイズであり、会話コンテンツではなく開発者診断です。`malformed_*` はSDKが認識するフレームが使用不可能なペイロードで到着したことを意味します — 実際の欠陥シグナルです。
+
+レンダラーはデバッグテキストではなく `debugReason` で分岐する必要があります。テキストプレフィックスは診断文言であり、予告なく変更されます：
+
+```ts
+function hideDebugBlock(reason?: DaemonUiDebugReason): boolean {
+  // カテゴリごとに前方互換ノイズを非表示にするため、
+  // 新しいSDKが追加する理由も自動的にカバーされます。
+  // 欠陥シグナルとクライアントディスパッチのデバッグイベント
+  // （理由を持たない）はレンダリングを維持します。
+  return reason?.startsWith('unrecognized_') ?? false;
+}
+```
+
+`status` イベントは `debugReason` を持ちません。クライアント自身がディスパッチするデバッグイベント（例：Webシェルのモデル切り替えサマリー）も同様です。どちらもレンダリングを維持する必要があります。
+
 ## 前方互換の原則
 
 デーモンUI SDKのすべてのレイヤーは**前方互換の原則**に従います。未知の値はスローせず、グレースフルに低下します。
 
-- 未知のデーモンイベントタイプ → 生のタイプ名を持つ `debug` イベント
+- 未知のデーモンイベントタイプ → 生のタイプ名を持つ `debug` イベント。`unrecognized_*` の `debugReason` がスタンプされる（上記参照）
 - 未知のツールステータス → `currentToolCallId` はそのまま（クリアしない）
 - 未知のエラー種別 → `errorKind` は undefined（レンダラーはテキストにフォールバック）
 - 欠落した serverTimestamp → `clientReceivedAt` にフォールバック

@@ -323,11 +323,37 @@ function toolIcon(event: DaemonUiToolUpdateEvent): React.ReactNode {
 
 Das SDK hat eine `mcp__<server>__<tool>`-Namensheuristik als Fallback – selbst wenn der Daemon die Herkunft nicht explizit stempelt, sind MCP-Tools erkennbar.
 
+## Debug-Reason-Kategorisierung
+
+`DaemonUiStatusEvent.debugReason` ist ein geschlossener Enum, den der Normalizer stempelt, wenn er einen `debug`-Block anstelle eines typisierten Events projiziert (auf `DaemonStatusTranscriptBlock` für Transkript-Konsumenten gespiegelt):
+
+```ts
+import type { DaemonUiDebugReason } from '@qwen-code/sdk/daemon';
+// 'unrecognized_event' | 'unrecognized_session_update' | 'malformed_payload'
+```
+
+Die kanonische Liste wird als `DAEMON_UI_DEBUG_REASONS` exportiert. Reason-Namen sind wildcard-benannte Kategorien: `unrecognized_*` bedeutet, dass der Daemon ein Frame gesendet hat, für das diese SDK-Version keinen Case hat – Vorwärtskompatibilitäts-Rauschen, Entwicklerdiagnostik statt Gesprächsinhalt. `malformed_*` bedeutet, dass ein Frame, das das SDK _kennt_, mit einer unbrauchbaren Nutzlast ankam – ein echtes Defektsignal.
+
+Renderer sollten auf `debugReason` verzweigen, nicht auf den Debug-Text – das Textpräfix ist diagnostische Formulierung und ändert sich ohne Ankündigung:
+
+```ts
+function hideDebugBlock(reason?: DaemonUiDebugReason): boolean {
+  // Vorwärtskompatibilitäts-Rauschen nach Kategorie ausblenden, sodass
+  // Reasons, die ein neueres SDK hinzufügt, automatisch abgedeckt sind.
+  // Defektsignale und client-seitig dispatchierte Debug-Events (die keinen
+  // Reason tragen) bleiben gerendert.
+  return reason?.startsWith('unrecognized_') ?? false;
+}
+```
+
+`status`-Events tragen niemals einen `debugReason`, und Debug-Events, die von Clients selbst dispatchiert werden (z. B. die Modellwechsel-Zusammenfassung der Web Shell), ebenfalls nicht – beide müssen weiterhin gerendert werden.
+
 ## Vorwärtskompatibilitätsprinzipien
 
 Jede Schicht im Daemon-UI-SDK folgt dem **Vorwärtskompatibilitätsprinzip**: Unbekannte Werte werfen KEINE Exceptions; sie degradieren elegant.
 
-- Unbekannte Daemon-Event-Typen → `debug`-Event mit dem rohen Typnamen
+- Unbekannte Daemon-Event-Typen → `debug`-Event mit dem rohen Typnamen,
+  gestempelt mit einem `unrecognized_*` `debugReason` (siehe oben)
 - Unbekannter Tool-Status → `currentToolCallId` bleibt unberührt (kein Löschen)
 - Unbekannte Error-Art → `errorKind` undefined (Renderer fällt auf Text zurück)
 - Fehlender serverTimestamp → fällt auf `clientReceivedAt` zurück

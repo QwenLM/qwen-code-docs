@@ -251,7 +251,7 @@ Uma **reinicialização** do daemon descarta todas as sessões na memória; os c
 
 - **Implantação em contêiner** — Dockerfile, docker‑compose, manifestos Kubernetes, nginx + proxy reverso TLS, isolamento de token em múltiplas instâncias. Adiado para v0.16.x assim que um piloto empresarial for comprometido; a documentação, caso contrário, se deterioraria por ninguém validar.
 - **Federação entre hosts / coordenação de múltiplos daemons em um único host** — um daemon pode hospedar vários runtimes de workspace registrados, mas daemons não se coordenam. Chaveamento de token por caminho de instância + limpeza de tokens obsoletos são adiados para v0.16.x.
-- **Tokens de daemon gerados automaticamente** — alfa é traga seu próprio token. A geração automática + infraestrutura de armazenamento de tokens são adiadas para v0.16.x.
+- **Armazenamento geral de tokens do daemon** — `--local-control` gera um token fresco para esse processo; implantações de longa duração permanecem como BYO-token. A infraestrutura persistente de armazenamento de tokens é adiada para a v0.16.x.
 - **Serviço nativo do Windows** (nssm, wrapper do Service Control Manager) — por enquanto use [WSL2](https://learn.microsoft.com/en-us/windows/wsl/) e siga a seção systemd acima.
 
 Consulte o aviso [limites conhecidos da v0.16‑alpha](./qwen-serve.md#v016-alpha-known-limits) no guia do usuário principal para a lista completa de recursos adiados, e [#4175](https://github.com/QwenLM/qwen-code/issues/4175) para a issue de acompanhamento do lançamento da v0.16‑alpha.

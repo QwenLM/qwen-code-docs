@@ -159,6 +159,26 @@ await q.close();
 
 `interrupt()` cancela apenas o turno ativo. Para uma consulta de múltiplos turnos criada com um prompt iterável assíncrono, a consulta e seu stream de entrada permanecem abertos, então mensagens posteriores do iterável são processadas normalmente. Use `close()` ou aborte o `AbortController` configurado quando quiser encerrar toda a sessão.
 
+## IDs de sessão fornecidos pelo chamador no daemon
+
+`DaemonClient.createOrAttachSession` aceita um `sessionId` opcional para chamadores que precisam persistir uma identidade antes da criação da sessão:
+
+```typescript
+import { DaemonClient } from '@qwen-code/sdk';
+
+const daemon = new DaemonClient({ baseUrl: 'http://127.0.0.1:4170' });
+const session = await daemon.createOrAttachSession({
+  workspaceCwd: '/path/to/project',
+  sessionId: '550E8400-E29B-41D4-A716-446655440000',
+});
+
+console.log(session.sessionId); // 550e8400-e29b-41d4-a716-446655440000
+```
+
+O SDK requer a capability `session_id_override` do daemon antes de enviar a mutação. O modo REST serializa `sessionId` diretamente; um adapter ACP ativo o mapeia para `session/new._meta["qwen-code/sessionId"]`. O SDK verifica a resposta de sucesso e lança `DaemonSessionIdProtocolError` se o daemon retornar um ID diferente.
+
+Esta opção sempre cria uma nova sessão de thread e não é um attach idempotente. Se o resultado da criação for ambíguo, use o ID conhecido com load ou resume. Omitir a opção preserva o comportamento existente de create-or-attach.
+
 ## Modos de Permissão
 
 O SDK suporta diferentes modos de permissão para controlar a execução de ferramentas:

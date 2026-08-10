@@ -16,7 +16,7 @@ qwen serve: bound to workspace "/your/cwd"
 qwen serve: bearer auth disabled (loopback default). Set QWEN_SERVER_TOKEN to enable.
 ```
 
-Ouvrez `http://127.0.0.1:4170/demo` dans un navigateur pour voir la console de débogage : l'interface de chat, le flux d'événements et l'inspection du workspace. En mode développement loopback par défaut, `createServeApp()` monte la route `/demo` depuis `packages/cli/src/serve/routes/health-demo.ts` **avant** `bearerAuth`, aucun token n'est donc requis.
+Ouvrez `http://127.0.0.1:4170/` dans un navigateur pour obtenir l'interface Web Shell : chat, liste de sessions et inspection du workspace. `createServeApp()` monte les assets Web Shell bundled (`packages/cli/src/serve/web-shell-static.ts`) **avant** `bearerAuth`, donc le shell lui-même se charge sans token ; ses propres appels API portent le bearer lorsqu'un token est configuré — démarrez le démon avec `--open` (qui place le token dans le fragment d'URL, jamais envoyé au serveur) ou ajoutez `#token=…` manuellement lorsque l'authentification est activée. `--no-web` désactive et laisse le démon en API-only.
 
 ## 2. Recettes de lancement
 
@@ -67,7 +67,7 @@ qwen serve --channel-idle-timeout-ms 60000
 QWEN_SERVE_RATE_LIMIT=1 qwen serve
 ```
 
-Avec la recette loopback renforcée (3), `/demo` est enregistré après `bearerAuth`. Une navigation classique dans le navigateur nécessite un en-tête d'authentification, utilisez plutôt curl ou un script SDK.
+Avec la recette loopback renforcée (3), `/health` est enregistré après `bearerAuth`, donc les sondes doivent porter le token comme toute autre route API (la surface statique du Web Shell reste pre-auth par conception ; passez `--no-web` pour un démon API-only).
 
 ## 3. Flags de démarrage complets
 
@@ -197,23 +197,21 @@ curl -N \
   -H 'Last-Event-ID: 0' \
   'http://127.0.0.1:4170/session/<sid>/events'
 
-# 8. Demo page
-open http://127.0.0.1:4170/demo
+# 8. Web Shell UI
+open http://127.0.0.1:4170/
 ```
 
 Lorsque l'authentification bearer est activée, ajoutez `-H "Authorization: Bearer $QWEN_SERVER_TOKEN"` à chaque requête.
 
-## 8. La page de démo peut-elle être utilisée ?
+## 8. Y a-t-il une interface navigateur ?
 
-**Oui.** Elle est implémentée par `getDemoHtml(port)` dans `packages/cli/src/serve/demo.ts` sous forme de HTML autonome sans dépendance externe.
+**Oui — le Web Shell.** `resolveWebShellDir()` trouve les assets construits (bundlés à côté du bundle CLI dans une release, `packages/web-shell/dist` dans un checkout) et `mountWebShellAssets()` les sert à `/`, `/assets` et `/session/:id` pour les navigations de documents (liens profonds du navigateur — un simple `curl /session/<id>` obtient le 401/404 de l'API, pas le shell). Lorsque les assets sont absents, le démon dégrade vers API-only au lieu de planter ; `--no-web` désactive explicitement.
 
-| Mode de lancement                       | Où `/demo` est enregistré                                                    | Navigation directe depuis le navigateur                              |
-| --------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------ |
-| Loopback sans `--require-auth` | `routes/health-demo.ts`, monté par `createServeApp()` **avant** `bearerAuth` | Fonctionne sans token                                    |
-| Loopback avec `--require-auth`    | `routes/health-demo.ts`, monté par `createServeApp()` **après** `bearerAuth`  | Difficile à utiliser depuis un navigateur standard ; utilisez curl ou le SDK |
-| Bind non-loopback                 | `routes/health-demo.ts`, monté par `createServeApp()` **après** `bearerAuth`  | Identique au précédent                                          |
+Le shell statique est monté **avant** `bearerAuth` dans tous les modes de lancement — un navigateur ne peut pas attacher un en-tête `Authorization` à une navigation dans la barre d'adresse ou à une sous-ressource `<script src>`, donc le conditionner casserait simplement l'UI. Chaque route API qu'il appelle reste conditionnée par le token, et le front-end attache le bearer lui-même. Sur un bind non-loopback, le shell est en lecture seule sauf si `--allow-origin <origin>` est passé — les POST same-origin portent un en-tête `Origin` que le mur CORS rejette (403) — donc passez `--allow-origin` pour tout bind au-delà du loopback.
 
-La CSP est `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'`, ainsi que `X-Frame-Options: DENY`. La page peut uniquement effectuer des requêtes vers `'self'` (le daemon) et ne peut pas charger de scripts ou de styles externes.
+La CSP est construite par `buildWebShellCsp()` et est délibérément plus souple que celle d'une page statique (`'unsafe-inline'` pour le patch inline `performance.measure`, `eval`/wasm/blob workers pour shiki et mermaid, `data:` pour les polices katex, `connect-src 'self'` pour le SSE). `frame-ancestors 'none'` plus `X-Frame-Options: DENY` bloquent le clickjacking, sauf lorsqu'une origin d'extension est explicitement autorisée via `--allow-origin` pour que l'UI puisse être hébergée dans un panneau latéral Chrome (#5626).
+
+Pour l'inspection brute du protocole, abonnez-vous au flux SSE directement (`routes/sse-events.ts`) — voir les recettes curl de la section 7.
 
 ## 9. Chaîne d'appel de `qwen serve` au serveur en écoute
 
@@ -254,7 +252,7 @@ serve/run-qwen-serve.ts              const app = createServeApp(opts, () => actu
    v
 serve/server.ts                    createServeApp() - builds Express app (**does not listen**)
    |  |- middleware chain (Host allowlist / CORS / bearerAuth / mutation gate / rate limit)
-   |  |- route mounting (health / demo / capabilities / workspace / session / SSE / ACP HTTP)
+   |  |- route mounting (health / web-shell static / capabilities / workspace / session / SSE / ACP HTTP)
    |  `- return app
    |
    v
@@ -281,7 +279,7 @@ L'assemblage principal a lieu dans `createServeApp()` dans `server.ts`, qui conn
 
 | Routes                                                                                       | Fichier                                                    | Point de montage                                                                 |
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `/health`, `/demo`                                                                           | `packages/cli/src/serve/routes/health-demo.ts`          | `healthDemoRoutes.register()`                                                  |
+| `/health`                                                                                    | `packages/cli/src/serve/routes/health.ts`               | `healthRoutes.register()`                                                      |
 | `/daemon/status`                                                                             | `packages/cli/src/serve/routes/daemon-status.ts`        | `registerDaemonStatusRoutes()`                                                 |
 | `/capabilities`, routes d'initialisation d'espace de travail/outils/mutations MCP, bridge HTTP ACP                    | `packages/cli/src/serve/server.ts`                      | Enregistré directement dans `createServeApp()`                                  |
 | Statut de l'espace de travail, env, preflight, résumés MCP/outils/provider/skill                          | `packages/cli/src/serve/routes/workspace-status.ts`     | `registerWorkspaceStatusRoutes()`, `registerWorkspaceDiagnosticStatusRoutes()` |
@@ -379,6 +377,6 @@ QWEN_SERVE_DEBUG=1 qwen serve
 - Factory Express : `packages/cli/src/serve/server.ts`
 - Middleware : `packages/cli/src/serve/auth.ts`
 - Factory de bridge : `packages/acp-bridge/src/bridge.ts`
-- HTML de la page de démo : `packages/cli/src/serve/demo.ts`
+- Montage statique Web Shell : `packages/cli/src/serve/web-shell-static.ts`
 - Documentation utilisateur : [`../../users/qwen-serve.md`](../../users/qwen-serve.md)
 - Protocole de communication (Wire protocol) : [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md)

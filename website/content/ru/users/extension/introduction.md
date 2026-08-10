@@ -2,7 +2,7 @@
 
 Расширения Qwen Code объединяют промпты, MCP-серверы, субагентов, навыки и пользовательские команды в удобный и понятный формат. С помощью расширений вы можете расширить возможности Qwen Code и делиться этими возможностями с другими. Они спроектированы так, чтобы их было легко устанавливать и распространять.
 
-Расширения и плагины из [Gemini CLI Extensions Gallery](https://geminicli.com/extensions/) и [Claude Code Marketplace](https://claudemarketplaces.com/) можно напрямую устанавливать в Qwen Code. Эта кроссплатформенная совместимость даёт вам доступ к богатой экосистеме расширений и плагинов, значительно расширяя возможности Qwen Code без необходимости поддерживать отдельные версии для авторов расширений.
+Расширения и плагины из [Gemini CLI Extensions Gallery](https://geminicli.com/extensions/), [Claude Code Marketplace](https://claudemarketplaces.com/) и Qoder можно напрямую устанавливать в Qwen Code. Эта кроссплатформенная совместимость даёт вам доступ к богатой экосистеме расширений и плагинов, значительно расширяя возможности Qwen Code без необходимости поддерживать отдельные версии для авторов расширений.
 
 ## Управление расширениями
 
@@ -98,6 +98,20 @@ qwen extensions install <owner>/<repo>
 - `gemini-extension.json` преобразуется в `qwen-extension.json`
 - TOML-файлы команд автоматически переносятся в формат Markdown
 - MCP-серверы, контекстные файлы и настройки сохраняются
+
+#### Из плагинов Qoder
+
+Qwen Code поддерживает [плагины Qoder](https://docs.qoder.com/en/cli/sdk/plugins), содержащие манифест `.qoder-plugin/plugin.json`. Установите локальную директорию, архив, Git-репозиторий, URL архива или скоуп-пакет npm с помощью существующей команды `qwen extensions install`:
+
+```bash
+qwen extensions install ./sample-qoder-plugin
+qwen extensions install ./sample-qoder-plugin.zip
+qwen extensions install owner/sample-qoder-plugin
+```
+
+Установщик конвертирует манифест Qoder в `qwen-extension.json` и сохраняет стандартные директории `commands/`, `agents/` и `skills/`. MCP-серверы, объявленные в корневом файле `.mcp.json`, включаются как MCP-серверы расширения.
+
+Когда плагин Qoder содержит `system-prompt.md` в корне, Qwen Code загружает его как контекст расширения. Если плагин также содержит `QWEN.md` или объявляет другие контекстные файлы, все контекстные файлы сохраняются и дедуплицируются.
 
 #### Из npm-реестра
 

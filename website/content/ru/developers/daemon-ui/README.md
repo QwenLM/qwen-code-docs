@@ -289,7 +289,7 @@ it('my adapter conforms to daemon UI corpus', () => {
 
 ```ts
 import type { DaemonErrorKind } from '@qwen-code/sdk/daemon';
-// 'missing_binary' | 'blocked_egress' | 'auth_env_error' | 'init_timeout'
+// 'missing_binary' | 'blocked_egress' | 'auth_env_error' | 'init_timeout' | 'restore_timeout'
 // | 'protocol_error' | 'missing_file' | 'parse_error' | 'budget_exhausted'
 ```
 
@@ -323,11 +323,36 @@ function toolIcon(event: DaemonUiToolUpdateEvent): React.ReactNode {
 
 В SDK есть эвристический запасной вариант именования `mcp__<server>__<tool>` — даже когда демон явно не указывает происхождение, инструменты MCP можно обнаружить.
 
+## Категоризация причин отладки
+
+`DaemonUiStatusEvent.debugReason` — это закрытое перечисление, которое нормализатор проставляет, когда проецирует блок `debug` вместо типизированного события (зеркалируется в `DaemonStatusTranscriptBlock` для потребителей транскрипта):
+
+```ts
+import type { DaemonUiDebugReason } from '@qwen-code/sdk/daemon';
+// 'unrecognized_event' | 'unrecognized_session_update' | 'malformed_payload'
+```
+
+Канонический список экспортируется как `DAEMON_UI_DEBUG_REASONS`. Имена причин — это категории с wildcards: `unrecognized_*` означает, что демон отправил фрейм, для которого в этой версии SDK нет случая — шум прямой совместимости, диагностические данные разработчика, а не содержимое разговора. `malformed_*` означает, что фрейм, который SDK _знает_, пришёл с непригодной полезной нагрузкой — реальный сигнал дефекта.
+
+Рендереры должны разветвляться по `debugReason`, а не по тексту отладки — текстовый префикс является диагностической формулировкой и может измениться без уведомления:
+
+```ts
+function hideDebugBlock(reason?: DaemonUiDebugReason): boolean {
+  // Скрываем шум прямой совместимости по категории, чтобы причины,
+  // добавленные в более новой версии SDK, покрывались автоматически.
+  // Сигналы дефектов и отлаженные события, диспетчеризированные клиентами
+  // (которые не несут причины), продолжают отображаться.
+  return reason?.startsWith('unrecognized_') ?? false;
+}
+```
+
+События `status` никогда не несут `debugReason`, как и debug-события, диспетчеризированные самими клиентами (например, сводка переключения модели Web Shell) — оба должны продолжать отображаться.
+
 ## Принципы прямой совместимости
 
 Каждый слой в SDK UI демона следует **принципу прямой совместимости**: неизвестные значения НЕ вызывают исключений; они деградируют корректно.
 
-- Неизвестные типы событий демона → событие `debug` с сырым именем типа
+- Неизвестные типы событий демона → событие `debug` с сырым именем типа, с простановкой `unrecognized_*` `debugReason` (см. выше)
 - Неизвестный статус инструмента → `currentToolCallId` остаётся без изменений (не очищается)
 - Неизвестный вид ошибки → `errorKind` undefined (рендерер переходит к тексту)
 - Отсутствующий serverTimestamp → используется `clientReceivedAt`

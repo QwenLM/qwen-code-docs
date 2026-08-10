@@ -45,7 +45,7 @@
 | `InvalidClientIdError`                | 400  | `X-Qwen-Client-Id`가 `[A-Za-z0-9._:-]{1,128}` 범위를 벗어남.                          | 클라이언트 ID를 정리.                                                                                                                                                             |
 | `InvalidSessionMetadataError`         | 400  | `displayName`이 256자를 초과하거나 제어 문자를 포함.                                   | 잘라내기 / 정리.                                                                                                                                                                  |
 | `InvalidSessionScopeError`            | 400  | 알 수 없는 `sessionScope` 값.                                                          | `'single'` 또는 `'thread'`를 사용.                                                                                                                                                |
-| `RestoreInProgressError`              | 409  | `loadSession` / `resumeSession`의 동시 실행.                                           | 대기 후 재시도.                                                                                                                                                                   |
+| `RestoreInProgressError`              | 409  | `loadSession`, `resumeSession`, 또는 `POST /session`의 호출자 제공 id가 동일한 id를 이미 소유한 다른 등록과 충돌.                                                                                                                                          | 공지된 지연 후 재시도; 요청된 복원 또는 spawn을 재시도. 포기된 정리는 예산 파생 백오프를 수행.                                                                                     |
 | `WorkspaceInitConflictError`          | 409  | `force` 없이 기존 파일에 `POST /workspace/init` 실행.                                  | `force: true`를 전달하거나 다른 경로를 선택.                                                                                                                                      |
 | `WorkspaceInitPathEscapeError`        | 400  | 초기화 경로가 워크스페이스를 벗어남.                                                   | `workspaceCwd` 내부 경로를 사용.                                                                                                                                                  |
 | `WorkspaceInitSymlinkError`           | 400  | 초기화 경로가 심볼릭 링크.                                                            | 해석된 경로를 지정.                                                                                                                                                               |
@@ -58,6 +58,8 @@
 | `PermissionPolicyNotImplementedError` | 500  | 요청된 정책이 이 데몬에 내장되어 있지 않음.                                            | 데몬을 업데이트하거나 `policy.permissionStrategy`를 변경.                                                                                                                          |
 | `BridgeChannelClosedError`            | 503  | 호출 중 ACP 자식 채널이 닫힘.                                                          | 재연결 / 재시도; `session_died`에서 원인을 확인.                                                                                                                                  |
 | `BridgeTimeoutError`                  | 504  | 브리지 수준의 벽시계 초과.                                                              | 재시도; 근본적인 지연을 조사.                                                                                                                                                     |
+| `SessionRestoreTimeoutError`          | 504  | ACP 세션 로드/재개가 전용 복원 예산을 초과.                                              | 공지된 지연 후 재시도; 예산을 늘리기 전 복원 단계 트레이스를 확인.                                                                                                                 |
+| `BridgeChannelQuarantinedError`       | 503  | 포기된 복원 정리가 불확실(`restore_cleanup_failed`)하거나, 포기된 복원이 기한 후 전체 예산 동안 정착되지 않음(`restore_settlement_overdue`); 어느 쪽이든 워크스페이스 채널이 배출될 때까지 새 세션을 거부. 503 본문에 `reason`과 `retryAfterSeconds` 포함. | 기존 세션을 계속 사용하고, 채널이 순환될 때까지 기다린 후 새 세션 작업을 재시도.                                                          |
 | `MissingCliEntryError`                | 500  | `qwen` CLI 진입 파일이 없음(`bridgeErrors.ts`가 아닌 `status.ts`에 정의).              | CLI 설치가 완료되었는지 확인; `packages/cli/index.ts`가 존재하는지 확인.                                                                                                          |
 
 ## 부트 시 설정 오류 (`packages/cli/src/serve/run-qwen-serve.ts`)
@@ -83,6 +85,7 @@
 | `blocked_egress`           | 아웃바운드 네트워크 프루브 실패.                                      |
 | `auth_env_error`           | 인증 관련 환경 변수, 제공자, 또는 trust-gate 설정이 유효하지 않음.   |
 | `init_timeout`             | 데몬 측 초기화 단계가 벽시계를 초과.                                  |
+| `restore_timeout`          | ACP 세션 로드/재개가 전용 복원 예산을 초과.                           |
 | `protocol_error`           | ACP / HTTP 프로토콜 불일치.                                           |
 | `missing_file`             | 필수 로컬 파일이 누락.                                                |
 | `parse_error`              | 로컬 파일 또는 요청 파싱 오류.                                        |

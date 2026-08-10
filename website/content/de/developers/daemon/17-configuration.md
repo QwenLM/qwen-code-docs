@@ -118,6 +118,7 @@ Der Daemon konstruiert jede Workspace-Runtime aus den zusammengeführten Einstel
 | `externalToolGuard`           | Optional `{mode:'required', endpoint, token, timeoutMs?}`. Weglassen ist vollständig aus; im Required-Modus wird der Provider-Handshake vor dem Lauschen durchgeführt. |
 | `allowOrigins`                | Cross-Origin-Allowlist (`string[]`), entspricht `--allow-origin`.                                                                                 |
 | `allowPrivateAuthBaseUrl`     | Erlaubt die Installation der `baseUrl` für private / Localhost-Auth-Provider.                                                                     |
+| `serveWebShell`               | Stellt die gebaute Web-Shell-SPA am Daemon-Root bereit (Standard `true`); `false` (das `--no-web` der CLI) lässt den Daemon API-only. Keine Wirkung, wenn der Build die Shell-Assets auslässt. |
 | `enableSessionShell`          | Aktiviert die Session-Shell-Ausführung; Bearer-Token und session-gebundene Client-ID sind weiterhin erforderlich.                                  |
 | `promptDeadlineMs`            | Prompt-Wallclock-Limit.                                                                                                                           |
 | `writerIdleTimeoutMs`         | SSE-Writer-Idle-Timeout.                                                                                                                          |

@@ -103,6 +103,20 @@ Gemini 확장은 설치 시 자동으로 Qwen Code 형식으로 변환됩니다:
 - TOML 명령어 파일이 자동으로 Markdown 형식으로 마이그레이션됩니다
 - MCP 서버, 컨텍스트 파일 및 설정이 보존됩니다
 
+#### Qoder 플러그인에서
+
+Qwen Code는 `.qoder-plugin/plugin.json` 매니페스트를 포함하는 [Qoder 플러그인](https://docs.qoder.com/en/cli/sdk/plugins)을 지원합니다. 로컬 디렉토리, 아카이브, Git 저장소, 아카이브 URL 또는 스코프된 npm 패키지를 기존 `qwen extensions install` 명령어로 설치하세요:
+
+```bash
+qwen extensions install ./sample-qoder-plugin
+qwen extensions install ./sample-qoder-plugin.zip
+qwen extensions install owner/sample-qoder-plugin
+```
+
+설치 프로그램은 Qoder 매니페스트를 `qwen-extension.json`으로 변환하고 표준 `commands/`, `agents/`, `skills/` 디렉토리를 보존합니다. 루트 `.mcp.json` 파일에 선언된 MCP 서버는 확장 MCP 서버로 포함됩니다.
+
+Qoder 플러그인에 루트의 `system-prompt.md`가 있으면 Qwen Code가 확장 컨텍스트로 로드합니다. 플러그인에 `QWEN.md`가 있거나 다른 컨텍스트 파일이 선언되어 있으면 모든 컨텍스트 파일이 유지되고 중복이 제거됩니다.
+
 #### npm 레지스트리에서
 
 Qwen Code는 스코프된 패키지 이름을 사용하여 npm 레지스트리에서 확장을 설치하는 것을 지원합니다. 인증, 버전 관리 및 게시 인프라가 이미 갖춰진 프라이빗 레지스트리를 사용하는 팀에 이상적입니다.

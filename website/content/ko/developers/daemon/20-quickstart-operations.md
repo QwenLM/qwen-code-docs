@@ -16,7 +16,7 @@ qwen serve: bound to workspace "/your/cwd"
 qwen serve: bearer auth disabled (loopback default). Set QWEN_SERVER_TOKEN to enable.
 ```
 
-브라우저에서 `http://127.0.0.1:4170/demo`를 열면 디버그 콘솔을 확인할 수 있습니다: 채팅 UI, 이벤트 스트림, 워크스페이스 검사. 기본 루프백 개발 모드에서 `createServeApp()`는 `bearerAuth` **이전에** `packages/cli/src/serve/routes/health-demo.ts`에서 `/demo` 라우트를 마운트하므로 토큰이 필요 없습니다.
+브라우저에서 `http://127.0.0.1:4170/`를 열면 Web Shell UI를 확인할 수 있습니다: 채팅, 세션 목록, 워크스페이스 검사. `createServeApp()`는 번들된 Web Shell 자산(`packages/cli/src/serve/web-shell-static.ts`)을 `bearerAuth` **이전에** 마운트하므로 토큰 없이 셸 자체가 로드됩니다; 셸의 API 호출은 bearer가 설정되어 있으면 이를 전달합니다 — 인증이 활성화되어 있으면 `--open`(토큰을 URL 프래그먼트에 넣어 서버로 전송되지 않음)으로 데몬을 시작하거나 `#token=…`을 수동으로 추가하세요. `--no-web`은 이를.opt-out하여 데몬을 API 전용으로 남깁니다.
 
 ## 2. 실행 레시피
 
@@ -67,7 +67,7 @@ qwen serve --channel-idle-timeout-ms 60000
 QWEN_SERVE_RATE_LIMIT=1 qwen serve
 ```
 
-강화된 루프백 레시피(3)에서 `/demo`는 `bearerAuth` 이후에 등록됨. 일반 브라우저 탐색에는 인증 헤더가 필요하므로 curl 또는 SDK 스크립트를 사용.
+강화된 루프백 레시피(3)에서 `/health`는 `bearerAuth` 이후에 등록되므로, 다른 API 라우트와 마찬가지로 프로브도 토큰을 전달해야 합니다(Web Shell 정적 표면은 설계상 pre-auth를 유지; API 전용 데몬은 `--no-web`을 전달).
 
 ## 3. 전체 시작 플래그
 
@@ -80,7 +80,7 @@ CLI는 **`packages/cli/src/commands/serve.ts`**에 정의됨:
 | `--token <s>`                           | string                         | env / none                                       | 비루프백 및 `--require-auth`             | Bearer 토큰; 한 번 trim됨. **`/proc/<pid>/cmdline`에 나타나므로 `QWEN_SERVER_TOKEN`을 선호**. 부트 stderr에서도 이에 대해 경고.                                                                                                                                                                                       |
 | `--max-sessions <n>`                    | number                         | `32`                                             | -                                        | 워크스페이스별 활성 세션 상한. 초과 시 503 반환. `0`은 무제한. `NaN` / 음수 값은 throw.                                                                                                                                                                                                                                |
 | `--max-total-sessions <n>`              | number                         | 다중 워크스페이스 시작/복원에 따라 파생          | -                                        | 데몬 전체 활성 세션 상한. 생략 시 워크스페이스별 상한과 시작/복원 워크스페이스 수에서 유한 기본값이 한 번 파생되며, 동적 등록은 재계산하지 않음. `0`은 무제한.                                                                                                                                                          |
-| `--memory-budget-mb <n>`                | `[1024, 1048576]` 범위의 정수   | cgroup/호스트 메모리의 50%                        | 관찰 전용                                | 데몬 프로세스 트리의 총 메모리 예산, 해석된 사용 가능 메모리로 제한. `limits.memory` 아래에 보고되며 자식 크기를 결정하지 않음.                                                                                                                                                                                        |
+| `--memory-budget-mb <n>`                | `[1024, 1048576]` 범위의 정수   | cgroup/호스트 메모리의 50%                        | 관찰 전용                                | 데몬 프로세스 트리의 총 메모리 예산, 해석된 사용 가능 메모리로 제한. `limits.memory` 아래에 보고되며 아무것도 적용하지 않는 파티션으로 모델링됨.                                                                                                                                                                      |
 | `--memory-pressure-mode <mode>`         | `off` \| `observe`             | `observe`                                        | 관찰 전용                                | 두 모드 모두 `runtime.memory.pressure`를 보고; `observe`만 `daemon_memory_pressure` 이슈를 발생. 루트 프로세스만 해당.                                                                                                                                                                                                |
 | `--child-heap-mode <mode>`              | `off` \| `observe`             | `observe`                                        | 관찰 전용                                | `observe`에서는 모델링된 파티션을 `limits.memory.childHeap` 아래에 보고; 아무것도 적용하거나 거부하지 않음. `off`에서는 해당 블록의 두 수치가 `null`.                                                                                                                                                                  |
 | `--max-pending-prompts-per-session <n>` | number                         | `5`                                              | -                                        | 세션당 수락되었지만 대기/실행 중인 프롬프트 상한. 초과 시 503 반환. `0` / `Infinity`는 무제한. 음수 또는 비정수 값은 throw.                                                                                                                                                                                            |
@@ -155,7 +155,7 @@ CLI는 **`packages/cli/src/commands/serve.ts`**에 정의됨:
 | `--mcp-client-budget`이 양의 정수가 아님                                      | `Must be a positive integer`                                                                        |
 | 예산 없는 `--mcp-budget-mode=enforce`                                         | `requires a positive mcpClientBudget`                                                               |
 | `--hostname`이 `localhost:4170` 형식으로 작성됨                                | `looks like a "host:port" combination. Use --port`                                                  |
-| `--hostname [::1]:8080`                                                       | `Invalid --hostname ... brackets indi... [truncated]`                                               |
+| `--hostname [::1]:8080`                                                       | `Invalid --hostname ... brackets indicate an IPv6 literal but the value is not a clean [addr] form` |
 | `--max-connections`가 `NaN` 또는 음수                                         | `Must be >= 0`                                                                                      |
 | `--event-ring-size > 1_000_000`                                               | 브리지 생성 시 throw                                                                                 |
 | 토큰 없는 `--allow-origin '*'`                                                | `Refusing to start with --allow-origin '*' but no bearer token configured`                          |
@@ -198,23 +198,21 @@ curl -N \
   -H 'Last-Event-ID: 0' \
   'http://127.0.0.1:4170/session/<sid>/events'
 
-# 8. 데모 페이지
-open http://127.0.0.1:4170/demo
+# 8. Web Shell UI
+open http://127.0.0.1:4170/
 ```
 
 Bearer 인증이 활성화되면 모든 요청에 `-H "Authorization: Bearer $QWEN_SERVER_TOKEN"`을 추가.
 
-## 8. 데모 페이지를 사용할 수 있는가?
+## 8. 브라우저 UI가 있는가?
 
-**예.** `packages/cli/src/serve/demo.ts`의 `getDemoHtml(port)`로 구현되며, 외부 의존성 없는 자체 포함 HTML.
+**예 — Web Shell.** `resolveWebShellDir()`가 빌드된 자산을 찾고(릴리스에서는 CLI 번들 옆에 번들됨, 체크아웃에서는 `packages/web-shell/dist`), `mountWebShellAssets()`가 `/`, `/assets`, `/session/:id` 문서 탐색(브라우저 딥 링크 — 일반 `curl /session/<id>`는 셸이 아닌 API의 401/404를 받음)에서 이를 제공합니다. 자산이 없으면 데몬은 크래시 대신 API 전용으로 저하됩니다; `--no-web`은 명시적으로 opt-out합니다.
 
-| 실행 모드                             | `/demo` 등록 위치                                                        | 직접 브라우저 탐색                                     |
-| ----------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------ |
-| `--require-auth` 없는 루프백          | `routes/health-demo.ts`, `createServeApp()`이 `bearerAuth` **이전에** 마운트 | 토큰 없이 작동                                           |
-| `--require-auth` 있는 루프백          | `routes/health-demo.ts`, `createServeApp()`이 `bearerAuth` **이후에** 마운트  | 일반 브라우저에서는 사용 어려움; curl 또는 SDK 사용        |
-| 비루프백 바인드                       | `routes/health-demo.ts`, `createServeApp()`이 `bearerAuth` **이후에** 마운트  | 위와 동일                                                |
+정적 셸은 모든 실행 모드에서 `bearerAuth` **이전에** 마운트됩니다 — 브라우저는 주소창 탐색이나 `<script src>` 하위 리소스에 `Authorization` 헤더를 첨부할 수 없으므로, 게이팅하면 UI가 깨집니다. 셸이 호출하는 모든 API 라우트는 토큰 게이팅을 유지하며, 프론트엔드가 bearer를 직접 첨부합니다. 비루프백 바인드에서 셸은 `--allow-origin <origin>`이 전달되지 않으면 읽기 전용입니다 — 동일 출처 POST는 `Origin` 헤더를 전달하며 CORS 벽이 거부(403)합니다 — 루프백 외 바인드에는 `--allow-origin`을 전달하세요.
 
-CSP는 `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'`이며 `X-Frame-Options: DENY`도 포함. 페이지는 `'self'`(데몬)만 fetch할 수 있으며 외부 스크립트나 스타일을 로드할 수 없음.
+CSP는 `buildWebShellCsp()`가 빌드하며 정적 페이지보다 의도적으로 관대합니다(인라인 `performance.measure` 패치를 위한 `'unsafe-inline'`, shiki와 mermaid를 위한 `eval`/wasm/blob 워커, katex 폰트를 위한 `data:`, SSE를 위한 `connect-src 'self'`). `frame-ancestors 'none'`과 `X-Frame-Options: DENY`는 클릭재킹을 차단합니다. 단, `--allow-origin`으로 확장 출처가 명시적으로 허용되는 경우 UI를 Chrome 사이드 패널에 호스팅할 수 있습니다(#5626).
+
+원시 프로토콜 검사를 위해서는 SSE 스트림을 직접 구독하세요(`routes/sse-events.ts`) — 섹션 7의 curl 레시피를 참조.
 
 ## 9. `qwen serve`부터 리스닝 서버까지의 호출 체인
 
@@ -255,7 +253,7 @@ serve/run-qwen-serve.ts              const app = createServeApp(opts, () => actu
    v
 serve/server.ts                    createServeApp() - Express 앱 빌드 (**리스닝하지 않음**)
    |  |- 미들웨어 체인 (Host 허용 목록 / CORS / bearerAuth / mutation gate / 속도 제한)
-   |  |- 라우트 마운팅 (health / demo / capabilities / workspace / session / SSE / ACP HTTP)
+   |  |- 라우트 마운팅 (health / web-shell 정적 / capabilities / workspace / session / SSE / ACP HTTP)
    |  `- return app
    |
    v
@@ -282,7 +280,7 @@ commands/serve.ts                  await blockForever()    // 시그널까지 �
 
 | 라우트                                                                                         | 파일                                                    | 마운팅 진입점                                                                    |
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `/health`, `/demo`                                                                           | `packages/cli/src/serve/routes/health-demo.ts`          | `healthDemoRoutes.register()`                                                    |
+| `/health`                                                                                    | `packages/cli/src/serve/routes/health.ts`               | `healthRoutes.register()`                                                        |
 | `/daemon/status`                                                                             | `packages/cli/src/serve/routes/daemon-status.ts`        | `registerDaemonStatusRoutes()`                                                   |
 | `/capabilities`, 워크스페이스 초기화/도구/MCP 변경 라우트, ACP HTTP 브리지                      | `packages/cli/src/serve/server.ts`                      | `createServeApp()` 내부에서 직접 등록                                              |
 | 워크스페이스 상태, env, preflight, MCP/도구/제공자/skill 요약                                  | `packages/cli/src/serve/routes/workspace-status.ts`     | `registerWorkspaceStatusRoutes()`, `registerWorkspaceDiagnosticStatusRoutes()`   |
@@ -380,6 +378,6 @@ QWEN_SERVE_DEBUG=1 qwen serve
 - Express 팩토리: `packages/cli/src/serve/server.ts`
 - 미들웨어: `packages/cli/src/serve/auth.ts`
 - 브리지 팩토리: `packages/acp-bridge/src/bridge.ts`
-- 데모 페이지 HTML: `packages/cli/src/serve/demo.ts`
+- Web Shell 정적 마운트: `packages/cli/src/serve/web-shell-static.ts`
 - 사용자 문서: [`../../users/qwen-serve.md`](../../users/qwen-serve.md)
 - 와이어 프로토콜: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md)

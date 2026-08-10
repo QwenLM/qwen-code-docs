@@ -54,7 +54,7 @@ Todas as três recusas são falhas explícitas de inicialização (visíveis em 
 
 ```mermaid
 flowchart LR
-    REQ[Request] --> SO["strip same-origin Origin<br/>(demo page support)"]
+    REQ[Request] --> SO["strip same-origin Origin<br/>(Web Shell support)"]
     SO --> CORS{"--allow-origin?"}
     CORS -->|yes| AO["allowOriginCors<br/>(allowlist match)"]
     CORS -->|no| DC["denyBrowserOriginCors<br/>(reject all Origin)"]
@@ -93,7 +93,7 @@ Binds fora do loopback ignoram este middleware (o operador escolheu a superfíci
 
 Rejeita qualquer requisição com cabeçalho `Origin`. CLI/SDK nunca definem Origin; apenas navegadores o fazem. Retorna `403 { error: 'Request denied by CORS policy' }` deterministicamente, em vez do 500 HTML que o callback de erro do pacote `cors` produziria.
 
-Exceção: as XHRs de mesma origem da página de demonstração são tratadas por um middleware separado (em `server.ts`) que remove `Origin` quando coincide com o próprio endereço do daemon.
+Exceção: as XHRs de mesma origem do Web Shell em um bind de **loopback** são tratadas por um middleware separado (em `server/self-origin.ts`) que remove `Origin` quando coincide com um dos self-origins de loopback (`127.0.0.1`, `localhost`, `[::1]`, `host.docker.internal`). Em binds fora do loopback, as XHRs do shell carregam um `Origin` não correspondido e precisam de `--allow-origin` para o origin do daemon.
 
 ### `allowOriginCors` (modo `--allow-origin`)
 
@@ -261,7 +261,7 @@ sequenceDiagram
 
 - **`--require-auth` oculta o preflight de recursos.** Clientes não autenticados não podem descobrir a tag `require_auth`; sua superfície de descoberta é o próprio corpo 401.
 - **Ordenção do body-parser no portão de mutação**: respostas 401 do `mutationGate({strict: true})` são disparadas **depois** que `express.json()` faz o parsing do corpo. Pior caso em um listener loopback saturado: `--max-connections × express.json({limit: '10mb'})` ≈ 2,5 GB transitórios. Superfície de ataque apenas no loopback, aceita intencionalmente.
-- **Remoção de Origin de mesma origem** em `server.ts` ocorre _antes_ de `denyBrowserOriginCors`. Se uma mudança futura mover a remoção para outro lugar, a página de demonstração quebrará.
+- **Remoção de Origin de mesma origem** em `server.ts` ocorre _antes_ de `denyBrowserOriginCors`. Se uma mudança futura mover a remoção para outro lugar, o Web Shell quebrará.
 - **A comparação de token é sobre o digest SHA-256**, não sobre o token bruto. Reduz o vazamento de tempo ao colapsar comparações de token de tamanho variável em uma comparação de digest de tamanho fixo.
 - O daemon **não** possui mTLS, assinatura de requisições ou prova de posse via pair-token atualmente. `--rate-limit` fornece rate limiting HTTP por chave de client-id / IP; não é autenticação de identidade de cliente.
 

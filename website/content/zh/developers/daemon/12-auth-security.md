@@ -54,7 +54,7 @@ if (parsed.allowAny && !token) {
 
 ```mermaid
 flowchart LR
-    REQ[请求] --> SO["剥离同源 Origin<br/>(demo 页面支持)"]
+    REQ[请求] --> SO["剥离同源 Origin<br/>(Web Shell 支持)"]
     SO --> CORS{"--allow-origin?"}
     CORS -->|yes| AO["allowOriginCors<br/>(允许列表匹配)"]
     CORS -->|no| DC["denyBrowserOriginCors<br/>(拒绝所有 Origin)"]
@@ -93,7 +93,7 @@ flowchart LR
 
 拒绝任何带有 `Origin` 头的请求。CLI/SDK 从不设置 Origin；只有浏览器会设置。返回确定性的 `403 { error: 'Request denied by CORS policy' }`，而不是 `cors` 包的 error-callback 会产生的 500 HTML。
 
-例外：demo 页面的同源 XHR 由单独中间件（在 `server.ts` 中）处理，该中间件在 `Origin` 与守护进程自身地址匹配时将其剥离。
+例外：Web Shell 在**回环**绑定上的同源 XHR 由单独的中间件（在 `server/self-origin.ts` 中）处理，该中间件在 `Origin` 与回环自身来源（`127.0.0.1`、`localhost`、`[::1]`、`host.docker.internal`）之一匹配时将其剥离。在非回环绑定上，Shell 的 XHR 携带不匹配的 `Origin`，需要为守护进程来源配置 `--allow-origin`。
 
 ### `allowOriginCors`（`--allow-origin` 模式）
 
@@ -254,7 +254,7 @@ sequenceDiagram
 
 - **`--require-auth` 遮蔽了特性预检。** 未认证的客户端无法发现 `require_auth` 标签；它们的发现面就是 401 响应体本身。
 - **变更门控的 body 解析顺序**：`mutationGate({strict: true})` 的 401 响应在 `express.json()` 解析 body **之后** 触发。在饱和的回环监听器上的最坏情况：`--max-connections × express.json({limit: '10mb'})` ≈ 2.5 GB 瞬时内存。这是故意接受的仅回环攻击面。
-- **同源 Origin 剥离** 在 `server.ts` 中发生在 `denyBrowserOriginCors` _之前_。如果未来的改动将剥离移到其他地方，demo 页面将失效。
+- **同源 Origin 剥离** 在 `server.ts` 中发生在 `denyBrowserOriginCors` _之前_。如果未来的改动将剥离移到其他地方，Web Shell 将失效。
 - **令牌比较是基于 SHA-256 摘要**，而不是原始令牌。通过将可变长度的令牌比较缩减为固定大小的摘要比较，减少了时间泄露。
 - 守护进程目前**不**支持 mTLS、请求签名或配对令牌持有证明。`--rate-limit` 提供基于 client-id / IP 键的 HTTP 限流；它不是客户端身份认证。
 

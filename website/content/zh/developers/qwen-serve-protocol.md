@@ -25,7 +25,7 @@ Authorization: Bearer <token>
 
 **`--allow-origin <pattern>`（T2.4 [#4514](https://github.com/QwenLM/qwen-code/issues/4514)）。** 默认情况下，跨域访问守护进程的浏览器 webui 会被阻止——任何携带 `Origin` header 的请求都会返回 `403 {"error":"Request denied by CORS policy"}`，因为 CLI/SDK 客户端从不发送 `Origin`，守护进程将其存在视为请求来自操作员未加入的浏览器上下文的标志。在启动时传递 `--allow-origin <pattern>`（可重复）以安装允许列表（allowlist）来替代拦截墙。每个 pattern 可以是：
 
-- 字面量 `*` —— 允许任何 origin。**风险**：当配置了 `*` 但未设置 bearer token（来源可以是 `--token`、`QWEN_SERVER_TOKEN` 或要求在启动时提供 token 的 `--require-auth`）时，启动将被拒绝。当列表中包含 `*` 时，启动日志会在 stderr 发出警告。**建议**：在环回绑定上与 `--require-auth` 结合使用，这样 `/health` 和 `/demo` 也会受 bearer 拦截——默认情况下它们在环回绑定时注册在 bearer 中间件之前（因此 k8s/Compose 探针可以在没有 token 的情况下访问 `/health`），而 `*` 允许列表使它们可以从任何跨域浏览器访问。在非环回绑定上，bearer 在启动时已经是强制的，因此 `*` 暴露面仅为 `/health`（状态 JSON）和 `/demo`（一个静态页面，其 JS 仍会调用受 token 拦截的路由）——无论如何，实际的 API 暴露面都是受拦截的。
+- 字面量 `*` —— 允许任何 origin。**风险**：当配置了 `*` 但未设置 bearer token（来源可以是 `--token`、`QWEN_SERVER_TOKEN` 或要求在启动时提供 token 的 `--require-auth`）时，启动将被拒绝。当列表中包含 `*` 时，启动日志会在 stderr 发出警告。**建议**：在环回绑定上与 `--require-auth` 结合使用，这样 `/health` 也会受 bearer 拦截——默认情况下它在环回绑定时注册在 bearer 中间件之前（因此 k8s/Compose 探针可以在没有 token 的情况下访问它），而 `*` 允许列表使它可以被任何跨域浏览器访问。`--require-auth` 仍然让 Web Shell 静态资源（`/`、`/assets/*` 和 `/session/:id` 文档导航）在环回上保持预认证——它们被设计为挂载在 bearer 中间件之前——因此在 `*` 允许列表下它们仍然可以被任何跨域浏览器读取；`--no-web` 移除了该暴露面。在非环回绑定上，bearer 在启动时已经是强制的，且 `/health` 注册在其之后，因此 `*` 在无 token 情况下暴露的唯一表面是 Web Shell 静态资源（`/`、`/assets/*` 和 `/session/:id` 文档导航——它们的 JS 仍然调用受 token 拦截的路由）。`--no-web` 甚至可以移除该表面；实际的 API 暴露面无论如何都是受拦截的。
 - 规范的 URL origin —— `<scheme>://<host>[:<port>]`。**无尾部斜杠、无路径、无用户信息、无查询参数。** 如果条目未通过往返测试 `new URL(pattern).origin === pattern`，启动将拒绝并抛出 `InvalidAllowOriginPatternError`；错误信息会指出错误的 pattern 和规范形式。严格设计：静默规范化（例如去除尾部 `/`）会让拼写错误溜走并接受模糊输入。
 
 匹配的 origin 在每个请求中都会收到标准的 CORS 响应 header：
@@ -47,7 +47,7 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 
 配置的 pattern 列表故意**不**在 `/capabilities` 中回显——浏览器 webui 已经知道自己的 origin（毕竟它调用了守护进程），并且暴露该列表会让 `/capabilities` 的未身份验证读取者枚举每个受信任的 origin（这对于配置错误的部署是有用的侦察信息）。SDK 客户端通过 `caps.features.allow_origin` 标签来判断"此守护进程允许跨域浏览器访问"，而无需知道具体是哪些 origin。
 
-环回自 origin 请求（例如 `/demo` 页面在相同的 `127.0.0.1:port` 调用守护进程）由一个**独立**的 Origin 剥离 shim 处理，该 shim 在 CORS 中间件**之前**运行，并移除 `127.0.0.1:port` / `localhost:port` / `[::1]:port` / `host.docker.internal:port` 的 `Origin` header。因此，无论 `--allow-origin` 如何配置，它们都能通过——操作员无需列出守护进程自身的端口即可使 demo 页面正常工作。
+环回自 origin 请求（例如 Web Shell 在相同的 `127.0.0.1:port` 调用守护进程）由一个**独立**的 Origin 剥离 shim 处理，该 shim 在 CORS 中间件**之前**运行，并移除 `127.0.0.1:port` / `localhost:port` / `[::1]:port` / `host.docker.internal:port` 的 `Origin` header。因此，无论 `--allow-origin` 如何配置，它们都能通过——操作员无需列出守护进程自身的端口即可使 Web Shell 正常工作。
 
 ## 常见错误格式
 
@@ -105,19 +105,30 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 
 附加到现有 session 的操作**不**计入上限，因此即使达到容量上限，空闲守护进程的重连也能继续工作。
 
-`RestoreInProgressError` —— 仅由 `POST /session/:id/load` 和 `POST /session/:id/resume` 发出 —— 返回 `409`，并带有 `Retry-After: 5` header（与 `session_limit_exceeded` 匹配）和：
+`RestoreInProgressError` —— 由 `POST /session/:id/load`、`POST /session/:id/resume` 或调用者指定 ID 的 `POST /session`（当另一个注册已拥有该 id 时）发出 —— 返回 `409` 和：
 
 ```json
 {
   "error": "Session \"<sid>\" is already being restored via session/<resume|load>; retry session/<load|resume> after it completes",
   "code": "restore_in_progress",
+  "reason": "restore_in_progress",
+  "retryable": true,
   "sessionId": "<sid>",
   "activeAction": "load",
   "requestedAction": "resume"
 }
 ```
 
-当对已经有一个正在进行的 `session/resume` 的 id 发出 `session/load` 时（反之亦然）会触发此错误。请至少等待 `Retry-After` 秒后重试——底层恢复操作会在 `initTimeoutMs`（默认 10 秒）内完成。相同操作竞争（`load` 对 `load`，`resume` 对 `resume`）会合并而不是报错。
+当对已经有一个正在进行的 `session/resume` 的 id 发出 `session/load` 时（反之亦然），或当调用者指定 ID 的 spawn 与任一恢复方向发生竞争时会触发此错误。请至少等待 `Retry-After` 秒后重试。相同操作竞争（`load` 对 `load`，`resume` 对 `resume`）在恢复活跃期间会合并而不是报错。
+
+`reason` 区分共享此 code 的两个围栏，`Retry-After` header 会跟踪它：
+
+| `reason`                     | 含义                                                                                                           | `Retry-After`                                                  |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `restore_in_progress`        | 普通恢复正在运行。                                                                                              | `5`（与 `session_limit_exceeded` 匹配）                         |
+| `awaiting_abandoned_cleanup` | 公共调用者已收到 `504`，不可取消的 ACP 请求及其清理尚未结算。                                                      | 有效恢复预算（秒），限制在 `5`–`120` 之间                       |
+
+公共恢复请求受 `limits.sessionRestoreTimeoutMs`（默认 60 秒）管控。在 `504` 之后，该 id 保持围栏状态，直到迟到的 ACP 请求和清理结算完毕，因此以普通 5 秒节奏持续重试的客户端会在无法清除的 409 上空转——请遵循 `awaiting_abandoned_cleanup` 附带的预算派生提示。
 
 `SessionWorkspaceConflictError` —— 由 `POST /session/:id/load` 和 `POST /session/:id/resume` 发出，当请求的 `cwd` 指向一个已注册的 workspace，但同一个 session id 已在另一个 runtime 中活跃或正在被恢复时 —— 返回 `409`，并带有：
 
@@ -206,13 +217,19 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 
 `session_scope_override` 是 `POST /session` 请求中 `sessionScope` 字段的协商句柄（见下文）。旧版 daemon 会静默忽略该字段，因此 SDK 客户端在发送前应预先检查 `caps.features` 中是否包含此 tag。
 
+`session_id_override` 是 `POST /session` 和 ACP `session/new` 元数据中可选的调用者提供 `sessionId` 的协商句柄。客户端必须在发送该字段前确认 `caps.features` 包含此 tag，因为旧版 daemon 可能会静默忽略它。
+
 `persistent_workspace_registration` 通告在运行时添加的 workspace 的持久化注册。`POST /workspaces` 接受 `{ "cwd": "/absolute/path", "persist": true }`；成功响应包含 `persisted: true`。注册的作用域限定在守护进程的规范主 workspace 下、用户的 Qwen home 目录中，并在下次守护进程启动时恢复。省略 `persist` 则保留进程内注册。`GET /workspace-registrations` 列出存储的期望集合，`DELETE /workspace-registrations/:id` 遗忘一个条目使其在下次启动时消失，而不会热移除活跃的 runtime。
 
 `workspace_display_name` 通告 `POST /workspaces` 上的可选 `displayName` 输入、通过 `PATCH /workspaces/:workspace` 进行的 workspace 元数据更新，以及 workspace 投影中的可选 display-name 字段。名称不参与查找或路由：`id` 和规范 `cwd` 仍然是唯一的选择器，且允许重复名称。
 
+`workspace_runtime_removal` 通告通过 `DELETE /workspaces/:workspace` 进行的同步热移除。Capability 中的 workspace 条目新增可选 `removable`；仅 `removable: true` 的行可被移除。移除同时会遗忘该 runtime 的每个持久化注册别名，但不会删除文件、设置、转录或归档。
+
 `session_load` 和 `session_resume` 宣告了显式恢复路由（`POST /session/:id/load` 和 `POST /session/:id/resume`）。旧版 daemon 对这些路径返回 `404`，因此 SDK 客户端在调用前应预先检查 `caps.features`。`unstable_session_resume` 仍作为已弃用的别名被宣告，以兼容在底层 ACP 方法名为 `connection.unstable_resumeSession` 时发布的 SDK；新客户端应使用 `session_resume` 进行门控。
 
 `session_transcript` 通告 `GET /session/:id/transcript`，一个对持久化活跃 session JSONL 的只读分页重放视图。它与 `/load` 不同：不会附加客户端、不会为活跃 EventBus 播种、不会创建活跃 session，也不会改变活跃重放窗口。客户端应在需要长 session 的完整磁盘转录时使用它，并继续仅在冷 UI 恢复期间使用 `/load` 进行有界的活跃重放。
+
+`limits.sessionRestoreTimeoutMs`（存在时）是 daemon 对底层 ACP `loadSession` / `unstable_resumeSession` 请求的挂钟预算。它是一个附加的 v1 字段。TypeScript SDK 给 daemon 10 秒的客户端裕量，WebUI watchdog 给 15 秒；与旧版 daemon 通信的客户端应分别使用 70 秒和 75 秒。
 
 `workspace_persisted_transcript` 通告 `GET /workspaces/:workspace/session/:id/transcript`，一个 daemon 本地的仅持久化分页器，不启动 ACP、不查询活跃 bridge 状态、不加载设置、不发现项目能力，也不创建旧版持久化 cursor key。该标签是无条件的，因为受信任的单 workspace 主实例可以使用复数路由；每个 workspace 的信任授权仍然在每个请求上进行评估。已注册的不受信任的次要 workspace 可以读取，而不受信任的主 workspace 仍然会被拒绝。
 
@@ -240,11 +257,11 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 
 `session_lsp` 宣告了 `GET /session/:id/lsp`，即为 daemon 客户端提供的只读结构化 LSP 状态快照。旧版 daemon 返回 `404`；在暴露远程 LSP 状态前，请预先检查此 tag。
 
-`session_status` 宣告了 `GET /session/:id/status`，即按 id 查询单个会话的实时桥接摘要。除了 `clientCount` 和 `hasActivePrompt` 外，活跃 session 还暴露 `isWaitingForPermission`、`isWaitingForUserQuestion`、`pendingInteractionCount`，以及失败 turn 后保留的 `turnError`。该错误在下一次 prompt 实际开始时清除。旧版 daemon 返回 `404`；在轮询单个 session 状态而非扫描完整 session 列表前，请预先检查此 tag。
+`session_status` 宣告了 `GET /session/:id/status`，即按 id 查询单个会话的实时桥接摘要。除了 `clientCount` 和 `hasActivePrompt` 外，活跃 session 还暴露 `isWaitingForPermission`、`isWaitingForUserQuestion`、`pendingInteractionCount`，以及失败 turn 后保留的 `turnError`。该错误在下一次 prompt 实际开始时清除。单 session 状态响应和 workspace session 列表都包含 `turnError` 和 `pendingInteractions`：可渲染的权限操作或 `ask_user_question` 问题，加上现有权限投票路由所需的 `requestId` 和可选选项。每个用户问题都有一个 `answerKey`；使用 `answers` 投票，例如 `{ "0": "Polling" }`，以该值为键。仅持久化的 session 省略 runtime 状态，因为不存在 runtime。旧版 daemon 返回 `404`；在轮询单个 session 状态而非扫描完整 session 列表前，请预先检查此 tag。
 
 `session_info` 宣告 `GET /workspace/:id/session-info` 及其 `/workspaces/:workspace/session-info` 对应路由。响应聚合持久化的活跃和归档 session 计数，而不加载列表元数据。这是一个显式的 O(n) 磁盘扫描，不得被轮询；客户端应将 `truncated: true` 视为下界结果。
 
-`session_approval_mode_control`、`workspace_tool_toggle`、`workspace_skill_toggle`、`workspace_init` 和 `workspace_mcp_restart` 宣告了下文记录的变更控制路由。它们受变更门控的严格限制（未配置 bearer token 的 daemon 会以 401 `token_required` 拒绝它们）。旧版 daemon 返回 `404`；在暴露相应功能前，请预先检查每个 tag。
+`session_approval_mode_control`、`workspace_tool_toggle`、`workspace_skill_toggle`、`workspace_skill_batch_toggle`、`workspace_init` 和 `workspace_mcp_restart` 宣告了下文记录的变更控制路由。它们受变更门控的严格限制（未配置 bearer token 的 daemon 会以 401 `token_required` 拒绝它们）。旧版 daemon 返回 `404`；在暴露相应功能前，请预先检查每个 tag。
 
 `mcp_guardrails`（issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 14）涵盖 MCP 预算层面：`GET /workspace/mcp` 上的 `clientCount` / `clientBudget` / `budgetMode` / `budgets[]` 字段、每个服务器单元上的 `disabledReason` 字段，以及 `--mcp-client-budget` / `--mcp-budget-mode` CLI 标志。旧版 daemon 会完全省略这些新字段；SDK 客户端在依赖 `budgets[]` 语义前应预先检查此 tag。注册表描述符还包含 `modes: ['warn', 'enforce']`，以便未来暴露功能模式——目前，客户端从快照的 `budgetMode` 字段推断模式。在 `enforce` 模式下，服务器拒绝行为由 `Object.entries(mcpServers)` 的声明顺序决定；未来的作用域优先级层（如果 qwen-code 采用）会将其转变为"最低优先级优先"，以镜像 claude-code 的 `plugin < user < project < local` 约定。
 
@@ -438,8 +455,8 @@ Workspace 限定的变更使用相同的全局 `/extensions/operations/:operatio
 | `channel_control`                   | daemon 管理的 channel worker runtime 控制已连接。                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `channel_management`                | workspace 作用域的 Channel 设置、生命周期和配对管理已连接。                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `multi_workspace_sessions`          | 注册了多个 workspace runtime，因此 session 创建可以通过 cwd 选择受信任的 runtime。                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `multi_workspace_session_rewind`    | 注册了多个 workspace runtime，因此 session 回退可以路由到拥有该 session 的 runtime。                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `multi_workspace_session_shell`     | 注册了多个 workspace runtime，因此 session shell 执行可以路由到拥有该 session 的 runtime。                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `multi_workspace_session_rewind`    | 注册了多个 workspace runtime；单数活跃 session 回退路由解析拥有该 session 的 runtime。                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `multi_workspace_session_shell`     | 注册了多个 workspace runtime 且 session shell 执行已明确启用；单数 REST shell 解析拥有该 session 的 runtime。                                                                                                                                                                                                                                                                                                                                                                                 |
 | `dynamic_workspace_registration`    | workspace runtime 工厂已连接到 daemon，因此现有的受信任目录可以在运行时被注册为次要 runtime。                                                                                                                                                                                                                                                                                                                                                                                                |
 | `persistent_workspace_registration` | workspace 注册的持久化存储已配置。`runQwenServe` 会自动提供用户级存储；直接的 `createServeApp` 嵌入必须显式注入一个并自行管理启动时的 workspace 注册表恢复。                                                                                                                                                                                                                                                                                                                                   |
 | `scratch_workspace_registration`    | 托管的 scratch workspace 创建可用——runtime 工厂、经过验证的托管 scratch 根目录和 runtime 处置已连接，且每个托管 runtime 都遵守 scratch 根目录边界。                                                                                                                                                                                                                                                                                                                                          |
@@ -1677,6 +1694,7 @@ Request：
 {
   "cwd": "/absolute/path/to/workspace",
   "modelServiceId": "qwen-prod",
+  "sessionId": "550e8400-e29b-41d4-a716-446655440000",
   "sessionScope": "thread"
 }
 ```
@@ -1685,6 +1703,7 @@ Request：
 | ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `cwd`            | no       | 匹配一个已注册 workspace 的绝对路径。如果省略，路由会回退到主 workspace（从 `/capabilities.workspaceCwd` 读取）。不匹配的非空 `cwd` 会返回 `400 workspace_mismatch`。当 `features` 包含 `multi_workspace_sessions` 时，客户端可以传递任何受信任的 `workspaces[].cwd`；否则仅接受主 workspace。Workspace 路径通过 `realpathSync.native` 进行规范化（对于不存在的路径使用仅解析的回退），因此不区分大小写的文件系统不会因拼写不同而拒绝 session。                                          |
 | `modelServiceId` | no       | 选择 agent 将通过哪个配置的*模型服务*（后端 provider — 阿里云百炼、OpenRouter 等）进行路由。如果省略，agent 将使用其默认值。如果 workspace 已经有一个 session，这会在现有 session 上调用 `setSessionModel` 并广播 `model_switched`。这与 `POST /session/:id/model` 上的 `modelId` 不同，后者选择在已绑定服务**内部**的模型。`/capabilities` 上的 `modelServices` 数组保留用于广播配置的服务；在 Stage 1 中它始终为 `[]`（使用 agent 的默认服务，不通过 HTTP 枚举）。 |
+| `sessionId`      | no       | 调用者选择的 RFC 变体 UUID v1-v5。Daemon 将其规范化为小写并始终创建新的线程 session；不会将此字段视为幂等附加。发送前请确认 `caps.features` 包含 `session_id_override`，因为旧版 daemon 可能会忽略未知字段。`null` 等价于省略。                                                                                                                                                                                                                                                                                                                              |
 | `sessionScope`   | no       | 每次请求的 session 共享覆盖。`'single'`（daemon 全局默认值）使第二个相同 workspace 的 `POST /session` 重用现有 session（`attached: true`）；`'thread'` 强制每次调用都创建一个新的独立 session。省略则继承 daemon 全局默认值。枚举之外的值返回 `400 { code: 'invalid_session_scope' }`。旧版 daemon（#4175 PR 5 之前）会静默忽略此字段 — 发送前请预检 `caps.features.session_scope_override`。目前生产环境中 daemon 全局默认值硬编码为 `'single'`；#4175 可能会在后续版本中添加 `--sessionScope` CLI 标志。         |
 Response:
 
@@ -1698,11 +1717,35 @@ Response:
 
 `attached: true` 表示该 workspace 的 session 已存在，你现在正在共享它。
 
+调用者提供的 ID 在所有当前已注册的 workspace runtime 和每个仍然活跃的 bridge generation（包括排空中的替换）中是唯一的。活跃的、待处理的、活动的、归档的或 worktree 支持的重复返回 `409 session_id_conflict`。无效值返回 `400 invalid_session_id`；不可用的活跃所有者或持久化状态检查返回可重试的 `503 session_id_admission_unavailable`。在 bridge 或存储健康状况变更后使用有界退避重试；`retryable` 表示另一次尝试是安全的，而非立即重试会成功。如果下游 agent 返回不同的 ID，daemon 会移除该孤儿并返回 `500 session_id_not_honored`。在模糊响应之后，加载或恢复已知 ID，而不是重试创建作为附加。
+
 需要独立对话的多客户端集成应在每次 `POST /session` 时发送 `sessionScope: "thread"`。仅当客户端有意共享一个协作 session 时，才使用默认的 `single` scope；共享 session 会通过一个 FIFO 队列串行化 prompts，这可以通过 `/daemon/status` 中的 `runtime.activity.pendingPrompts` 和 `runtime.activity.queuedPrompts` 看到。
 
 针对同一 workspace 的并发 `POST /session` 调用会被**合并 (coalesced)** 为一次 spawn —— 两个调用方都会获得相同的 `sessionId`，且恰好只有一个会返回 `attached: false`。如果底层 spawn 失败（初始化超时、agent 输出格式错误、OOM），**所有合并的调用方都会收到相同的错误** —— 进行中的 slot 会被清除，以便后续调用可以从头重试。
 
 > ⚠️ **在全新 session 上拒绝 `modelServiceId` 在 HTTP 响应中是静默的。** 错误的 `modelServiceId`（拼写错误、未配置的服务）**不会**导致创建时返回 500 错误 —— session 会在 agent 的默认 model 上保持运行，因此调用方仍然会获得一个 `sessionId`，他们可以借此重试切换 model（通过 `POST /session/:id/model`）。可见的失败信号是 session 的 SSE 流上的 `model_switch_failed` 事件，该事件在 spawn 握手和你的第一次 subscribe 之间触发。**需要观察此事件的订阅者应在第一次 `GET /session/:id/events` 时传递 `Last-Event-ID: 0`**，以便从 ring 中最旧的可用事件开始重放（即使 subscribe 在 create 响应之后几毫秒才到达，也能覆盖 spawn 时的 `model_switch_failed`）。
+
+### ACP `session/new` 调用者提供的 ID
+
+ACP 客户端通过 extension 元数据字段请求相同的行为：
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "session/new",
+  "params": {
+    "cwd": "/absolute/path/to/workspace",
+    "_meta": {
+      "qwen-code/sessionId": "550E8400-E29B-41D4-A716-446655440000"
+    }
+  }
+}
+```
+
+响应包含规范化为小写的 ID。主 workspace 和 workspace 限定的 ACP 挂载与 REST 共享准入，包括 `session/load` 和 `session/resume`。无效 ID 使用 ACP `INVALID_PARAMS` 并附带 `data.httpStatus=400` 和 `data.errorKind="invalid_session_id"`；冲突使用 `data.httpStatus=409`；不可用的活跃所有者或持久化状态检查使用 `data.httpStatus=503` 和 `data.retryable=true`。
+
+从未收到 prompt 的 ACP 创建的 session 不会留下持久化痕迹，当其所属连接关闭且附加 session 为零时，daemon 会回收它。回收后，同一 ID 可以再次被创建——这是连接生命周期，而非 ID 重用：当连接（或任何附加）活跃时，准入会拒绝重复。
 
 ### `POST /session/:id/load`
 
@@ -2380,6 +2423,53 @@ Capability tag: `workspace_skill_toggle`。Workspace 限定形式为 `POST /work
 - `409 {code: 'skill_not_toggleable', reason: 'not_user_invocable' | 'inactive_extension' | 'locked', lockedScope?: 'system' | 'user' | 'systemDefaults'}` — CLI 面板不允许切换目标。`lockedScope` 仅在 `reason` 为 `locked` 时存在。
 
 该变更复用 workspace 作用域的 `settings_changed` 事件（针对每个变更的 key，`skills.disabled` 和/或 `skills.enabled`）；它不添加新的事件类型。Workspace skill 状态 cell 包含可选的 `disabledReason: 'hard' | 'default' | 'inactive_extension'` 和 `lockedScope: 'system' | 'user' | 'systemDefaults'` 字段。
+
+#### `POST /workspace/skills/enable`
+
+Capability tag：`workspace_skill_batch_toggle`。Workspace 限定形式为 `POST /workspaces/:workspace/skills/enable`。
+
+在一个请求中切换最多 100 个已加载的 Skill；上限按去重前的原始 `skillNames` 条目计数。名称会被修剪并按大小写不敏感去重，同时保留首次出现的顺序。Daemon 根据一个 Skill 状态快照进行验证，在一次锁定的设置写入中持久化所有有效变更，并刷新活跃 session 一次。对于预期的目标错误采用尽力处理：未知、隐藏、非活跃 extension 或锁定的目标会被记录在 `errors` 中，不会阻止其他有效目标被应用。意外的持久化或 runtime generation 失败仍会使整个请求失败。
+
+请求：
+
+```json
+{
+  "skillNames": ["review", "deploy", "missing"],
+  "enabled": false
+}
+```
+
+响应 (200)：
+
+```json
+{
+  "enabled": false,
+  "activation": "applied",
+  "sessionsRefreshed": 2,
+  "sessionsFailed": 0,
+  "results": [
+    {
+      "skillName": "review",
+      "enabled": false,
+      "changed": true
+    },
+    {
+      "skillName": "deploy",
+      "enabled": false,
+      "changed": true
+    }
+  ],
+  "errors": [
+    {
+      "skillName": "missing",
+      "code": "skill_not_found",
+      "error": "Skill not found: missing"
+    }
+  ]
+}
+```
+
+目标错误使用 `skill_not_found`、`skill_not_toggleable` 或 `skill_inactive_extension`。格式错误的请求返回 HTTP 400 并附带 `invalid_skill_names`、`invalid_skill_name` 或 `invalid_enabled_flag`。身份验证、workspace 信任、客户端身份、意外的持久化失败和 runtime generation 失败通过标准路由门控使整个请求失败。批次级的 `activation`、`sessionsRefreshed` 和 `sessionsFailed` 描述所有已变更结果共享的单次活跃 session 刷新。`activation` 报告刷新尝试而非结果：没有目标变更的批次（例如每个目标都出错）在 session 活跃时仍然回答 `applied`，匹配单个 Skill 的无操作响应，因此请从每个结果的 `changed` 标志和 `errors` 数组派生实际变更内容。
 
 #### `POST /workspace/init`
 

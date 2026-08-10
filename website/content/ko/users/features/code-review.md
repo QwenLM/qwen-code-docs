@@ -225,8 +225,6 @@ PR을 리뷰할 때, `/review`는 현재 브랜치를 전환하는 대신 임시
 
 확인된 발견은 다른 무엇이 소비하기 전에 `.qwen/tmp/qwen-review-<target>-findings.json`으로 표준화됩니다 — 터미널 보고서, 저장된 Markdown 보고서 및 PR 리뷰 JSON이 모두 목록을 재입력하는 대신 이 단일 아티팩트를 읽습니다. 각 발견은 고유한 `id`(결과와 해결된 앵커가 조인하는 것), `severity`, `confidence`, `source`, `summary`, 목록 렌더링용 60자 제한 `shortSummary`, `failureScenario` 및 하나 이상의 `locations`를 가집니다 — 패턴 집계 발견은 **발생당 하나의 위치**를 유지하므로 각각 고유한 인라인 댓글을 받습니다.
 
-명령은 쓰기 시 유효성을 검사합니다: 중복 id, 실패 시나리오가 없는 발견, 빈 locations 배열 또는 알 수 없는 심각도는 조용히 망가진 항목이 아닌 오류입니다.
-
 ## PR 댓글의 증거 이미지
 
 GitHub의 API는 리뷰 댓글에 이미지를 첨부할 수 없으므로, `/review`는 증거 이미지(TUI 스크린샷, 렌더링 출력 비교)를 지정된 저장소에서 호스팅하고 URL로 삽입할 수 있습니다.
@@ -270,17 +268,6 @@ GitHub 트리거 리뷰(PR 리뷰 워크플로)의 경우, 같은 이름의 **�
 
 규칙은 LLM 리뷰 에이전트(0-6)에 추가 기준으로 주입됩니다. PR 리뷰의 경우, 악의적인 PR이 우회 규칙을 주입하는 것을 방지하기 위해 **기본 브랜치**에서 규칙이 읽힙니다.
 
-`.qwen/review-rules.md` 예시:
-
-```markdown
-# Review Rules
-
-- All API endpoints must validate authentication
-- Database queries must use parameterized statements
-- React components must not use inline styles
-- Error messages must not expose internal paths
-```
-
 ## 저장소 컨텍스트
 
 저장소는 `.qwen/review-context.json`에 엄격한 JSON 매니페스트를 커밋하여 리뷰어에게 유한한 저장소별 가이드를 제공할 수 있습니다. medium 또는 high 노력에서, `/review`는 계획을 캡처한 후 매니페스트를 읽고 에이전트가 실행되기 전에 일치하는 가이드를 첨부합니다:
@@ -315,6 +302,17 @@ PR 리뷰의 경우 매니페스트는 병합 기반에서 읽히므로 리뷰 �
 `closingIssuesReferences`는 발견 힌트이지 작성자가 올바른 이슈를 연결했다는 증명은 아닙니다: 비어 있지만 PR이 명백한 대상 이슈를 참조하면, 에이전트는 관련성을 판단한 후 여전히 가져옵니다. 가져온 이슈 텍스트는 신뢰할 수 없는 데이터로 처리됩니다(사실 추출, 포함된 지시 무시). 관련 이슈의 경우, 원본 재현, 관찰된 페이로드, 예상 동작 및 유지관리자 댓글이 PR이 올바른 문제를 수정하는지에 대한 최우선 증거로 처리됩니다.
 
 이슈 증거가 업스트림 서비스나 제공자가 클라이언트 계약을 벗어난 잘못된 데이터를 반환한 것을 보여주면, 클라이언트 측 파서 또는 새니타이저 변경은 유지관리자가 명시적으로 방어적 우회 방법을 요청하지 않는 한 유효한 근인 수정으로 처리되지 않습니다. 잘못된 업스트림 출력을 재생하는 테스트는 우회 방법이 해당 형태를 처리한다는 것만 증명하며; 우회 방법이 아키텍처적으로 적절한지는 증명하지 않습니다.
+
+`.qwen/review-rules.md` 예시:
+
+```markdown
+# Review Rules
+
+- All API endpoints must validate authentication
+- Database queries must use parameterized statements
+- React components must not use inline styles
+- Error messages must not expose internal paths
+```
 
 ## 증분 리뷰
 
@@ -386,6 +384,10 @@ qwen review run [target] [--json] [--fail-on request-changes] [--comment] [--qui
 `3`(이 아닌 `2`)은 게이트가 "리뷰가 차단 중"과 "도구가 고장남"을 구분할 수 있게 합니다 — yargs는 이미 `1`을 사용 오류에 사용합니다 — 출력 파싱 없이. `--timeout-minutes`(기본 120, 최소 1)는 중단된 리뷰를 종료하고 `1`로 종료하며, 명령 취소(Ctrl+C / SIGTERM)는 리뷰의 프로세스 그룹을 종료하여 고아로 만들지 않습니다.
 
 시간 예산 실행은 또한 **소프트** 마감 시간을 내보낼 수 있어 리뷰가 아직 검증, 합성 및 게시할 시간이 있는 동안 오픈 엔디드 역감사 루프를 중지합니다: `QWEN_REVIEW_DEADLINE_EPOCH`는 실행이 종료될 Unix-초 순간이며, `QWEN_REVIEW_DEADLINE_RESERVE_SECONDS`(기본 3600; `0`은 라운드 추정만 유지)는 마지막 라운드의 검증, `compose-review` 및 제출을 위해 남아 있어야 하는 꼬리입니다. 남은 예산이 또 다른 라운드와 해당 꼬리에 맞지 않으면, 라운드 빌더가 구축을 거부하고, 합성 판정은 잘린 감사를 공개합니다(그렇지 않으면-Approve 판정이 Comment로 제한됨). 누락되거나 잘못된 마감 시간은 리뷰를 게이트 없이 둡니다 — 외부 타임아웃이 여전히 실행을 제한합니다.
+
+**이미 기본 트리에서 실패한 Critical은 유보되며 제출되지 않습니다.** 테스트 명령이 실패했고 병합 베이스를 빌드할 수 있을 때, `test-delta`는 실패하는 파일 중 pull request 없이도 실패하는 파일을 기록합니다. 표준화는 해당 측정을 다시 읽습니다(`qwen review findings --test-delta`, `--outcomes` 옆에): 자신의 텍스트가 해당 파일 중 하나를 이름으로 언급하는 Critical은 Suggestion으로 낮아지고, 증거를 유지하며, 이를 강등한 측정과 `heldByMeasurement` 필드를 얻고, 강등이 공지됩니다. 이미 빨간색이었던 테스트는 이 pull request가 빨간색으로 만드는 테스트가 아닙니다 — 그리고 만약 _새로운_ 이유로 실패한다면, 어떤 테스트인지 말하고 양쪽을 인용하고 다시 Critical로 제출하세요: 이미 측정을 가지고 있더라도 상승되는 발견은 그대로 둡니다.
+
+명령은 쓰기 시 유효성을 검사합니다: 중복 id, 실패 시나리오가 없는 발견, 빈 locations 배열 또는 알 수 없는 심각도는 조용히 망가진 항목이 아닌 오류입니다.
 
 ## 교차 파일 영향 분석
 

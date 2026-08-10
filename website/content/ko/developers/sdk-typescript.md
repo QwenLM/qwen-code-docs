@@ -157,6 +157,28 @@ const detail = await q.getContextUsage(true);
 await q.close();
 ```
 
+`interrupt()`는 활성 턴만 취소합니다. async iterable 프롬프트로 생성된 멀티 턴 쿼리의 경우, 쿼리와 입력 스트림이 열린 상태로 유지되므로 이후 iterable의 메시지가 정상적으로 처리됩니다. 전체 세션을 종료하려면 `close()`를 사용하거나 구성된 `AbortController`를 abort하세요.
+
+## Daemon 호출자 제공 세션 ID
+
+`DaemonClient.createOrAttachSession`는 세션 생성 전에 identity를 영속화해야 하는 호출자를 위한 선택적 `sessionId`를 받습니다:
+
+```typescript
+import { DaemonClient } from '@qwen-code/sdk';
+
+const daemon = new DaemonClient({ baseUrl: 'http://127.0.0.1:4170' });
+const session = await daemon.createOrAttachSession({
+  workspaceCwd: '/path/to/project',
+  sessionId: '550E8400-E29B-41D4-A716-446655440000',
+});
+
+console.log(session.sessionId); // 550e8400-e29b-41d4-a716-446655440000
+```
+
+SDK는 mutation을 전송하기 전에 daemon의 `session_id_override` capability를 요구합니다. REST 모드는 `sessionId`를 직접 직렬화하고, 활성 ACP 어댑터는 이를 `session/new._meta["qwen-code/sessionId"]`에 매핑합니다. SDK는 성공 응답을 확인하고 daemon이 다른 ID를 반환하면 `DaemonSessionIdProtocolError`를 throw합니다.
+
+이 옵션은 항상 새 스레드 세션을 생성하며 멱등적인 attach가 아닙니다. 생성 결과가 모호한 경우, 알려진 ID를 load 또는 resume과 함께 사용하세요. 이 옵션을 생략하면 기존 create-or-attach 동작이 유지됩니다.
+
 ## 승인 모드
 
 SDK는 도구 실행을 제어하기 위해 다양한 승인 모드를 지원합니다:

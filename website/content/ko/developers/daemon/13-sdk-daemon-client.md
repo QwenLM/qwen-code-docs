@@ -154,6 +154,19 @@ await client
 
 프리플라이트 `capabilities.features.includes('workspace_skill_toggle')`. 타입화된 `DaemonSkillToggleResult`은 표준 `skillName`, 디스크 상태 `changed` 여부, 활성화 상태(`applied`, `deferred`, `partial`), 새로고침/실패한 세션 수를 보고합니다. `DaemonWorkspaceSkillStatus.userInvocable`은 선택적 false 전용 필드입니다. 부재는 skill이 사용자 호출 가능함을 의미합니다.
 
+일괄 변경의 경우, `workspace_skill_batch_toggle`를 프리플라이트하고 동일한 계약으로 두 클라이언트 형태 중 하나를 호출합니다:
+
+```ts
+await client.setWorkspaceSkillsEnabled(['review', 'deploy'], false, {
+  clientId: 'dashboard-1',
+});
+await client
+  .workspaceByCwd('/work/secondary')
+  .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
+```
+
+`DaemonSkillBatchToggleResult`은 정렬된 성공 `results`, 대상별 `errors`, 그리고 일괄 수준 활성화/세션 새로고침 카운트를 포함합니다. 데몬은 유효한 대상을 함께 지속하고 활성 세션을 한 번 새로고칩니다. 하나의 예상 대상 오류가 다른 유효한 대상을 차단하지 않습니다. 이 메서드는 200이 아닌 응답에서만 throw합니다. 200이 모든 대상이 적용되었음을 의미하지 않으므로 일괄을 성공으로 처리하기 전에 항상 `errors`를 확인하십시오.
+
 워크스페이스 표시 이름은 선택적 프레젠테이션 메타데이터입니다. 프리플라이트 `capabilities.features.includes('workspace_display_name')`. 워크스페이스 ID와 표준 경로는 유일한 선택자이며, 중복 표시 이름도 유효합니다.
 
 ```ts

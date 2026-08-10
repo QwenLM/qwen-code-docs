@@ -16,7 +16,7 @@ qwen serve: bound to workspace "/your/cwd"
 qwen serve: bearer auth disabled (loopback default). Set QWEN_SERVER_TOKEN to enable.
 ```
 
-Abra `http://127.0.0.1:4170/demo` em um navegador para ver o console de depuração: UI de chat, stream de eventos e inspeção de workspace. No modo de desenvolvimento loopback padrão, `createServeApp()` monta a rota `/demo` de `packages/cli/src/serve/routes/health-demo.ts` **antes** de `bearerAuth`, portanto nenhum token é necessário.
+Abra `http://127.0.0.1:4170/` em um navegador para obter a UI do Web Shell: chat, lista de sessões e inspeção de workspace. `createServeApp()` monta os assets do Web Shell empacotados (`packages/cli/src/serve/web-shell-static.ts`) **antes** de `bearerAuth`, então o shell carrega sem token; suas próprias chamadas de API carregam o bearer quando um está configurado — inicie o daemon com `--open` (que coloca o token no fragmento da URL, nunca enviado ao servidor) ou adicione `#token=…` manualmente quando a autenticação estiver habilitada. `--no-web` desativa e deixa o daemon apenas com API.
 
 ## 2. Receitas de inicialização
 
@@ -67,7 +67,7 @@ qwen serve --channel-idle-timeout-ms 60000
 QWEN_SERVE_RATE_LIMIT=1 qwen serve
 ```
 
-Com a receita de loopback reforçado (3), `/demo` é registrado após `bearerAuth`. Uma navegação normal no navegador precisa de um header de autenticação, então use curl ou um script de SDK em vez disso.
+Com a receita de loopback reforçado (3), `/health` é registrado após `bearerAuth`, então as sondas devem carregar o token como qualquer outra rota de API (a superfície estática do Web Shell permanece pré-auth por design; use `--no-web` para um daemon apenas com API).
 
 ## 3. Flags de inicialização completas
 
@@ -158,6 +158,7 @@ Falhas de I/O de configurações, como JSON malformado, fazem fallback para os p
 | `--hostname [::1]:8080`                                                       | `Invalid --hostname ... brackets indicate an IPv6 literal but the value is not a clean [addr] form` |
 | `--max-connections` é `NaN` ou negativo                                       | `Must be >= 0`                                                                                      |
 | `--event-ring-size > 1_000_000`                                               | Lançado durante a construção da bridge                                                              |
+| `--initialize-timeout-ms` não é um inteiro positivo ou excede `2^31-1`         | `Must be a positive integer` / `Exceeds maximum JS timer delay`                                     |
 | `--allow-origin '*'` sem token                                                | `Refusing to start with --allow-origin '*' but no bearer token configured`                          |
 | `--prompt-deadline-ms` / `--writer-idle-timeout-ms` não é um inteiro positivo | `Must be a positive integer`                                                                        |
 | `policy.permissionStrategy` desconhecido ou `policy.consensusQuorum` não positivo | `InvalidPolicyConfigError`                                                                          |
@@ -196,23 +197,21 @@ curl -N \
   -H 'Last-Event-ID: 0' \
   'http://127.0.0.1:4170/session/<sid>/events'
 
-# 8. Demo page
-open http://127.0.0.1:4170/demo
+# 8. Web Shell UI
+open http://127.0.0.1:4170/
 ```
 
 Quando a autenticação bearer está habilitada, adicione `-H "Authorization: Bearer $QWEN_SERVER_TOKEN"` a cada requisição.
 
-## 8. A página de demonstração pode ser usada?
+## 8. Existe uma UI no navegador?
 
-**Sim.** Ela é implementada por `getDemoHtml(port)` em `packages/cli/src/serve/demo.ts` como um HTML autossuficiente, sem dependências externas.
+**Sim — o Web Shell.** `resolveWebShellDir()` localiza os assets compilados (empacotados ao lado do bundle da CLI em um release, `packages/web-shell/dist` em um checkout) e `mountWebShellAssets()` os serve em `/`, `/assets` e nas navegações de documento `/session/:id` (deep links do navegador — um `curl /session/<id>` simples recebe o 401/404 da API, não o shell). Quando os assets estão ausentes, o daemon degrada para apenas API em vez de quebrar; `--no-web` desativa explicitamente.
 
-| Modo de inicialização               | Onde `/demo` é registrado                                                    | Navegação direta no navegador                        |
-| ----------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------- |
-| Loopback sem `--require-auth`       | `routes/health-demo.ts`, montado por `createServeApp()` **antes** de `bearerAuth` | Funciona sem token                                   |
-| Loopback com `--require-auth`       | `routes/health-demo.ts`, montado por `createServeApp()` **depois** de `bearerAuth`  | Difícil de usar em um navegador comum; use curl ou SDK |
-| Bind não-loopback                   | `routes/health-demo.ts`, montado por `createServeApp()` **depois** de `bearerAuth`  | Mesmo caso acima                                     |
+O shell estático é montado **antes** de `bearerAuth` em qualquer modo de inicialização — um navegador não pode anexar um header `Authorization` a uma navegação na barra de endereços ou a um sub-recurso `<script src>`, então protegê-lo simplesmente quebraria a UI. Toda rota de API que ele chama permanece protegida por token, e o front-end anexa o bearer por conta própria. Em um bind não-loopback, o shell é somente leitura, a menos que `--allow-origin <origin>` seja passado — POSTs same-origin carregam um header `Origin` que a barreira CORS rejeita (403) — então use `--allow-origin` para qualquer bind além do loopback.
 
-A CSP é `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'`, além de `X-Frame-Options: DENY`. A página só pode fazer requisições para `'self'` (o daemon) e não pode carregar scripts ou estilos externos.
+A CSP é construída por `buildWebShellCsp()` e é deliberadamente mais permissiva que a de uma página estática (`'unsafe-inline'` para o patch inline `performance.measure`, workers `eval`/wasm/blob para shiki e mermaid, `data:` para fontes katex, `connect-src 'self'` para SSE). `frame-ancestors 'none'` mais `X-Frame-Options: DENY` bloqueiam clickjacking, exceto quando um origin de extensão é explicitamente permitido via `--allow-origin` para que a UI possa ser hospedada em um painel lateral do Chrome (#5626).
+
+Para inspeção direta do protocolo, assine o stream SSE diretamente (`routes/sse-events.ts`) — veja as receitas com curl na seção 7.
 
 ## 9. Cadeia de chamadas do `qwen serve` até o servidor em escuta
 
@@ -253,7 +252,7 @@ serve/run-qwen-serve.ts              const app = createServeApp(opts, () => actu
    v
 serve/server.ts                    createServeApp() - builds Express app (**does not listen**)
    |  |- middleware chain (Host allowlist / CORS / bearerAuth / mutation gate / rate limit)
-   |  |- route mounting (health / demo / capabilities / workspace / session / SSE / ACP HTTP)
+   |  |- route mounting (health / web-shell static / capabilities / workspace / session / SSE / ACP HTTP)
    |  `- return app
    |
    v
@@ -280,7 +279,7 @@ A montagem principal acontece em `createServeApp()` no `server.ts`, que conecta 
 
 | Rotas                                                                                          | Arquivo                                                 | Ponto de montagem                                                              |
 | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `/health`, `/demo`                                                                             | `packages/cli/src/serve/routes/health-demo.ts`          | `healthDemoRoutes.register()`                                                  |
+| `/health`                                                                                      | `packages/cli/src/serve/routes/health.ts`               | `healthRoutes.register()`                                                      |
 | `/daemon/status`                                                                               | `packages/cli/src/serve/routes/daemon-status.ts`        | `registerDaemonStatusRoutes()`                                                 |
 | `/capabilities`, rotas de mutação de init/ferramenta/MCP do workspace, bridge HTTP ACP         | `packages/cli/src/serve/server.ts`                      | Registrado diretamente dentro de `createServeApp()`                            |
 | Status do workspace, env, preflight, resumos de MCP/ferramenta/provedor/skill                  | `packages/cli/src/serve/routes/workspace-status.ts`     | `registerWorkspaceStatusRoutes()`, `registerWorkspaceDiagnosticStatusRoutes()` |
@@ -378,6 +377,6 @@ QWEN_SERVE_DEBUG=1 qwen serve
 - Factory do Express: `packages/cli/src/serve/server.ts`
 - Middleware: `packages/cli/src/serve/auth.ts`
 - Factory da bridge: `packages/acp-bridge/src/bridge.ts`
-- HTML da página de demonstração: `packages/cli/src/serve/demo.ts`
+- Montagem estática do Web Shell: `packages/cli/src/serve/web-shell-static.ts`
 - Docs do usuário: [`../../users/qwen-serve.md`](../../users/qwen-serve.md)
 - Protocolo de comunicação: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md)

@@ -49,7 +49,7 @@
 | `serve/daemon-logger.ts`                                         | `DaemonLogger` 结构化文件日志。参见 [`19-observability.md`](./19-observability.md)。                                                                                                                                                                                                                                                                                                                                                                         |
 | `serve/debug-mode.ts`                                            | 共享的 `isServeDebugMode()` 谓词，用于控制 HTTP 响应中的详细错误上下文。                                                                                                                                                                                                                                                                                                                                                                                       |
 | `serve/acp-http/`                                                | ACP Streamable HTTP 传输（RFD #721），挂载在 `/acp`。七个文件实现了 JSON-RPC POST、SSE GET、DELETE 拆卸，以及与 REST 表面并行的共享 bridge 使用。                                                                                                                                                                                                                                                                                                              |
-| `serve/demo.ts`                                                  | `GET /demo` 的独立内联 HTML：带有聊天 UI、事件日志和工作区检查器的浏览器调试控制台。在无 `--require-auth` 的环回地址上，它在 `bearerAuth` **之前**注册；在非环回地址或带有 `--require-auth` 时，它在 `bearerAuth` **之后**注册。使用 CSP `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'` 以及 `X-Frame-Options: DENY` 提供服务。 |
+| `serve/web-shell-static.ts`, `serve/web-shell-resolver.ts`       | 定位并挂载已构建的 Web Shell 资源（daemon 的浏览器 UI）到 `/`、`/assets` 和 `/session/:id`，以及在所有 API 路由之后注册的 SPA 深度链接回退。在每种启动模式下均挂载在 `bearerAuth` **之前** — 浏览器无法在导航或子资源请求中附加 `Authorization` — 而其调用的每个 API 路由仍受 token 保护。资源缺失时降级为纯 API 模式；`--no-web` 可显式关闭。 |
 
 **ACP bridge 包导入**：
 
@@ -125,6 +125,7 @@
 | Flags           | `--max-sessions`, `--max-pending-prompts-per-session`, `--max-connections`, `--event-ring-size` | Bridge / Express 上限。                                                                               |
 | Flags           | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}`                                 | 转发给 ACP 子进程。                                                                                   |
 | Flags           | `--allow-origin`, `--allow-private-auth-base-url`                                               | 浏览器 CORS 允许列表及 localhost/私有认证提供者安装开关。                                             |
+| Flag            | `--web` / `--no-web`                                                                            | 在 daemon 根路径提供或跳过 Web Shell UI（默认提供）。`--no-web` 使 daemon 仅保留 API。                 |
 | Flags           | `--prompt-deadline-ms`, `--writer-idle-timeout-ms`, `--channel-idle-timeout-ms`, `--initialize-timeout-ms` | Prompt、SSE writer、ACP 子进程空闲生命周期及 ACP 子进程请求超时控制。         |
 | Flags           | `--session-reap-interval-ms`, `--session-idle-timeout-ms`                                       | 断开连接的会话回收控制。                                                                              |
 | Flags           | `--rate-limit*`                                                                                 | 每层 HTTP 速率限制。                                                                                  |
@@ -135,7 +136,7 @@
 ## 注意事项与已知限制
 
 - 直接调用 `createServeApp` 时，若未提供 `deps.fsFactory` 或 `deps.bridge`，则默认 `trusted: false`；agent 端的 ACP `writeTextFile` 会因 `untrusted_workspace` 而拒绝执行。该警告仅打印一次。
-- `denyBrowserOriginCors` 会拒绝**所有**携带 `Origin` 的请求；demo 页面能正常工作是因为另一个中间件会先剥离匹配的同源值。
+- `denyBrowserOriginCors` 会拒绝**所有**携带 `Origin` 的请求；**环回地址**上的 Web Shell 能正常工作是因为另一个中间件会先剥离匹配的环回同源值 — 非环回绑定需要 `--allow-origin` 才能支持 Shell 的 XHR 请求。
 - Body-parser 顺序：使用 `mutate({ strict: true })` 的路由只有在 `express.json()` 之后才会返回 401。最坏情况下的内存占用为 `--max-connections × express.json({limit: '10mb'})`，在饱和的 loopback 监听器上可能产生高达约 2.5 GB 的瞬态内存；这种权衡是有意为之的。
 - 同一进程中的多个 daemon 必须使用针对每个 handle 的 `childEnvOverrides`；修改 `process.env` 会产生竞态条件，因为 `defaultSpawnChannelFactory` 会在 spawn 时对 env 进行快照。
 
