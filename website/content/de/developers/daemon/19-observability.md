@@ -219,6 +219,7 @@ flowchart TD
 ## Einschränkungen und bekannte Grenzen
 
 - **DaemonLogger-Datei-Logs sind strukturiert** und können nach `route`, `sessionId` und `clientId` gefiltert werden. `QWEN_SERVE_DEBUG`-Stderr-Logs bleiben unstrukturierter Text.
+- **Akzeptierte Prompt-, Continuation- und Cancellation-Mutationen haben Lifecycle-Logs.** `prompt enqueued`, `continuation enqueued` und `cancel sent` enthalten `sessionId`, `promptId` (falls zutreffend) und `clientId` (falls angegeben); Prompt-Inhalt wird nicht geloggt. Verwende eine eigene, stabile Client-ID für jeden unabhängigen Controller. Controller, die absichtlich eine ID teilen, sind in diesen Datensätzen nicht unterscheidbar.
 - **DaemonLogger-Retention ist größenbasiert, nicht altersbasiert.** Die aktive Datei und vier Archive sind pro Familie begrenzt; lebende Fallback-Owner werden niemals gelöscht.
 - **Access-Summaries sind bewusste Verlustbuchhaltung.** Eine WARN-`access logs suppressed`-Meldung repräsentiert einzelne Access-Datensätze, die sowohl von stderr als auch von der Datei weggelassen wurden; sie bedeutet nicht, dass HTTP-Requests verworfen wurden.
 - **Externes Logrotate darf die aktive Familie nicht verändern.** Verwende einen Shipper, der liest/kopiert und den stabilen Pfadnamen nach dem Ersetzen wieder öffnet.

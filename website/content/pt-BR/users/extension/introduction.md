@@ -2,7 +2,7 @@
 
 As extensões do Qwen Code empacotam prompts, servidores MCP, subagentes, habilidades e comandos personalizados em um formato familiar e amigável. Com as extensões, você pode expandir as capacidades do Qwen Code e compartilhá-las com outras pessoas. Elas são projetadas para serem facilmente instaláveis e compartilháveis.
 
-Extensões e plugins da [Gemini CLI Extensions Gallery](https://geminicli.com/extensions/), do [Claude Code Marketplace](https://claudemarketplaces.com/) e do Qoder podem ser instalados diretamente no Qwen Code. Essa compatibilidade entre plataformas oferece acesso a um rico ecossistema de extensões e plugins, expandindo dramaticamente as capacidades do Qwen Code sem exigir que os autores das extensões mantenham versões separadas.
+Extensões e plugins da [Gemini CLI Extensions Gallery](https://geminicli.com/extensions/), do [Claude Code Marketplace](https://claudemarketplaces.com/), do Qoder e o formato portável [Agent Plugins v1](./agent-plugins.md) podem ser instalados diretamente no Qwen Code. Essa compatibilidade entre plataformas oferece acesso a um rico ecossistema de extensões e plugins, expandindo dramaticamente as capacidades do Qwen Code sem exigir que os autores das extensões mantenham versões separadas.
 
 ## Gerenciamento de extensões
 
@@ -113,6 +113,18 @@ O instalador converte o manifesto do Qoder para `qwen-extension.json` e preserva
 
 Quando um plugin do Qoder contém `system-prompt.md` em sua raiz, o Qwen Code o carrega como contexto da extensão. Se o plugin também contém `QWEN.md` ou declara outros arquivos de contexto, todos os arquivos de contexto são mantidos e desduplicados.
 
+#### De Agent Plugins v1
+
+O Qwen Code carrega nativamente pacotes portáteis Agent Plugins v1 sem converter ou reescrever arquivos `plugin.json`, `mcp.json` ou `SKILL.md`:
+
+```bash
+qwen extensions install ./my-agent-plugin
+qwen extensions link ./my-agent-plugin
+qwen extensions install owner/my-agent-plugin
+```
+
+O runtime portável suporta Agent Skills além de servidores MCP stdio e Streamable HTTP. Comandos, agentes, hooks, namespaces de cliente e MCP SSE legado não são ativados. Consulte [Agent Plugins v1](./agent-plugins.md) para a matriz completa de suporte.
+
 #### Do registro npm
 
 O Qwen Code suporta a instalação de extensões de registros npm usando nomes de pacotes com escopo. Isso é ideal para equipes com registros privados que já possuem infraestrutura de autenticação, versionamento e publicação.
@@ -139,7 +151,7 @@ Apenas pacotes com escopo (`@escopo/nome-pacote`) são suportados para evitar am
 
 **A autenticação** é tratada automaticamente via variável de ambiente `NPM_TOKEN` ou entradas `_authToken` específicas do registro no seu arquivo `.npmrc`.
 
-> **Observação:** Extensões npm devem incluir um arquivo `qwen-extension.json` na raiz do pacote, seguindo o mesmo formato de qualquer outra extensão do Qwen Code. Consulte [Liberação de Extensões](./extension-releasing.md#liberando-atraves-do-registro-npm) para detalhes de empacotamento.
+> **Observação:** Extensões npm devem incluir um `qwen-extension.json` nativo ou um `plugin.json` de Agent Plugins v1 na raiz do pacote. Consulte [Liberação de Extensões](./extension-releasing.md#liberando-atraves-do-registro-npm) para detalhes de empacotamento.
 
 #### De um repositório Git
 
@@ -237,9 +249,11 @@ qwen extensions update --all
 
 Na inicialização, o Qwen Code procura por extensões em `<home>/.qwen/extensions`
 
-As extensões existem como um diretório que contém um arquivo `qwen-extension.json`. Por exemplo:
+Extensões nativas do Qwen existem como um diretório que contém um arquivo `qwen-extension.json`. Pacotes Agent Plugins v1, em vez disso, mantêm seu `plugin.json` raiz; consulte [Agent Plugins v1](./agent-plugins.md).
 
-`<home>/.qwen/extensions/minha-extensao/qwen-extension.json`
+Por exemplo, uma extensão nativa do Qwen é armazenada em:
+
+`<home>/.qwen/extensions/my-extension/qwen-extension.json`
 
 ### `qwen-extension.json`
 

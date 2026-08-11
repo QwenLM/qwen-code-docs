@@ -2,7 +2,7 @@
 
 Les extensions Qwen Code regroupent les prompts, les serveurs MCP, les sous-agents, les skills et les commandes personnalisées dans un format familier et convivial. Avec les extensions, vous pouvez étendre les capacités de Qwen Code et les partager avec d'autres. Elles sont conçues pour être facilement installables et partageables.
 
-Les extensions et plugins provenant de la [Gemini CLI Extensions Gallery](https://geminicli.com/extensions/) et du [Claude Code Marketplace](https://claudemarketplaces.com/) peuvent être installés directement dans Qwen Code. Cette compatibilité multiplateforme vous donne accès à un riche écosystème d'extensions et de plugins, élargissant considérablement les capacités de Qwen Code sans obliger les auteurs d'extensions à maintenir des versions séparées.
+Les extensions et plugins provenant de la [Gemini CLI Extensions Gallery](https://geminicli.com/extensions/), du [Claude Code Marketplace](https://claudemarketplaces.com/), de Qoder, et le format portable [Agent Plugins v1](./agent-plugins.md) peuvent être installés directement dans Qwen Code. Cette compatibilité multiplateforme vous donne accès à un riche écosystème d'extensions et de plugins, élargissant considérablement les capacités de Qwen Code sans obliger les auteurs d'extensions à maintenir des versions séparées.
 
 ## Gestion des extensions
 
@@ -113,6 +113,18 @@ L'installateur convertit le manifeste Qoder en `qwen-extension.json` et préserv
 
 Lorsqu'un plugin Qoder contient `system-prompt.md` à sa racine, Qwen Code le charge en tant que contexte d'extension. Si le plugin contient également `QWEN.md` ou déclare d'autres fichiers de contexte, tous les fichiers de contexte sont conservés et dédupliqués.
 
+#### Depuis Agent Plugins v1
+
+Qwen Code charge nativement les packages portables Agent Plugins v1 sans convertir ni réécrire les fichiers `plugin.json`, `mcp.json` ou `SKILL.md` :
+
+```bash
+qwen extensions install ./my-agent-plugin
+qwen extensions link ./my-agent-plugin
+qwen extensions install owner/my-agent-plugin
+```
+
+Le runtime portable prend en charge les Agent Skills ainsi que les serveurs MCP stdio et Streamable HTTP. Les commandes, agents, hooks, namespaces client et les MCP SSE legacy ne sont pas activés. Consultez [Agent Plugins v1](./agent-plugins.md) pour la matrice de support complète.
+
 #### Depuis le registre npm
 
 Qwen Code prend en charge l'installation d'extensions depuis des registres npm en utilisant des noms de packages scoped. C'est idéal pour les équipes disposant de registres privés qui ont déjà une infrastructure d'authentification, de versioning et de publication.
@@ -139,7 +151,7 @@ Seuls les packages scoped (`@scope/package-name`) sont pris en charge pour évit
 
 **L'authentification** est gérée automatiquement via la variable d'environnement `NPM_TOKEN` ou les entrées `_authToken` spécifiques au registre dans votre fichier `.npmrc`.
 
-> **Note :** Les extensions npm doivent inclure un fichier `qwen-extension.json` à la racine du package, suivant le même format que toute autre extension Qwen Code. Consultez [Publication d'extensions](./extension-releasing.md#releasing-through-npm-registry) pour les détails d'empaquetage.
+> **Note :** Les extensions npm doivent inclure soit un `qwen-extension.json` natif soit un `plugin.json` Agent Plugins v1 à la racine du package. Consultez [Publication d'extensions](./extension-releasing.md#releasing-through-npm-registry) pour les détails d'empaquetage.
 
 #### Depuis un dépôt Git
 
@@ -237,7 +249,9 @@ qwen extensions update --all
 
 Au démarrage, Qwen Code cherche les extensions dans `<home>/.qwen/extensions`
 
-Les extensions sont des répertoires contenant un fichier `qwen-extension.json`. Par exemple :
+Les extensions natives Qwen Code existent sous forme d'un répertoire contenant un fichier `qwen-extension.json`. Les packages Agent Plugins v1 conservent quant à eux leur `plugin.json` racine ; consultez [Agent Plugins v1](./agent-plugins.md).
+
+Par exemple, une extension native Qwen Code est stockée à :
 
 `<home>/.qwen/extensions/my-extension/qwen-extension.json`
 

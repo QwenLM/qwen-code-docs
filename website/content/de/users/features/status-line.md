@@ -78,7 +78,7 @@ Füge ein `statusLine`-Objekt unter dem `ui`-Schlüssel in `~/.qwen/settings.jso
 | `type`                 | `"preset"` | Yes      | Muss `"preset"` sein                                                                                       |
 | `items`                | string[]   | Yes      | Geordnete Liste der anzuzeigenden Preset-Element-IDs (siehe Tabelle unten). Elemente werden mit `\|` als Trennzeichen verbunden. |
 | `useThemeColors`       | boolean    | No       | Wendet die Farbe des aktiven `/theme` auf den Text der Statuszeile an. Standardmäßig `true`.               |
-| `hideContextIndicator` | boolean    | No       | Verbirgt den integrierten Kontextnutzungs-Indikator im rechten Bereich des Footers. Standardmäßig `false`. |
+| `hideContextIndicator` | boolean    | No       | Verbirgt den integrierten Kontextnutzungs-Indikator im rechten Bereich des Footers. Wenn nicht gesetzt, wird er automatisch verborgen, wenn `items` `context-used` oder `context-remaining` enthält, sodass die Kontextnutzung nicht doppelt angezeigt wird. Setze `false`, um ihn immer anzuzeigen. |
 
 ### Verfügbare Preset-Elemente
 
@@ -175,7 +175,7 @@ Füge ein `statusLine`-Objekt unter dem `ui`-Schlüssel in `~/.qwen/settings.jso
 | `command`              | string      | Yes      | Auszuführender Shell-Befehl. Empfängt JSON über stdin, stdout wird angezeigt (bis zu 2 Zeilen).                                           |
 | `refreshInterval`      | number      | No       | Führt den Befehl alle N Sekunden erneut aus (Minimum 1). Nützlich für Daten, die sich ohne ein Agent-State-Event ändern (Uhr, Quota, Uptime). |
 | `respectUserColors`    | boolean     | No       | Behält ANSI-Farbcodes in der Befehlsausgabe bei, anstatt gedimmtes Footer-Styling anzuwenden. Standardmäßig `false`.                       |
-| `hideContextIndicator` | boolean     | No       | Verbirgt den integrierten Kontextnutzungs-Indikator im rechten Bereich des Footers. Standardmäßig `false`.                                       |
+| `hideContextIndicator` | boolean     | No       | Verbirgt den integrierten Kontextnutzungs-Indikator im rechten Bereich des Footers. Standardmäßig `false` — die Befehlsausgabe wird nicht auf Kontextinformationen geprüft, also setze es explizit, wenn dein Befehl bereits die Kontextnutzung ausgibt. |
 
 ### JSON-Eingabe
 

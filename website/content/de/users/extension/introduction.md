@@ -2,7 +2,7 @@
 
 Qwen Code Erweiterungen bündeln Prompts, MCP-Server, Subagents, Skills und benutzerdefinierte Befehle in einem vertrauten und benutzerfreundlichen Format. Mit Erweiterungen können Sie die Fähigkeiten von Qwen Code erweitern und diese Fähigkeiten mit anderen teilen. Sie sind so konzipiert, dass sie einfach installiert und geteilt werden können.
 
-Erweiterungen und Plugins aus der [Gemini CLI Extensions Gallery](https://geminicli.com/extensions/) und dem [Claude Code Marketplace](https://claudemarketplaces.com/) können direkt in Qwen Code installiert werden. Diese plattformübergreifende Kompatibilität gibt Ihnen Zugriff auf ein reichhaltiges Ökosystem an Erweiterungen und Plugins und erweitert die Fähigkeiten von Qwen Code erheblich, ohne dass die Autoren der Erweiterungen separate Versionen pflegen müssen.
+Erweiterungen und Plugins aus der [Gemini CLI Extensions Gallery](https://geminicli.com/extensions/), dem [Claude Code Marketplace](https://claudemarketplaces.com/), Qoder und dem portablen [Agent Plugins v1](./agent-plugins.md)-Format können direkt in Qwen Code installiert werden. Diese plattformübergreifende Kompatibilität gibt Ihnen Zugriff auf ein reichhaltiges Ökosystem an Erweiterungen und Plugins und erweitert die Fähigkeiten von Qwen Code erheblich, ohne dass die Autoren der Erweiterungen separate Versionen pflegen müssen.
 
 ## Erweiterungsverwaltung
 
@@ -113,6 +113,18 @@ Der Installer konvertiert das Qoder-Manifest in `qwen-extension.json` und übern
 
 Wenn ein Qoder-Plugin eine `system-prompt.md` im Stammverzeichnis enthält, lädt Qwen Code diese als Erweiterungskontext. Wenn das Plugin außerdem eine `QWEN.md` enthält oder weitere Kontextdateien deklariert, werden alle Kontextdateien beibehalten und dedupliziert.
 
+#### Aus Agent Plugins v1
+
+Qwen Code lädt portable Agent Plugins v1-Pakete nativ, ohne `plugin.json`, `mcp.json` oder `SKILL.md`-Dateien zu konvertieren oder umzuschreiben:
+
+```bash
+qwen extensions install ./my-agent-plugin
+qwen extensions link ./my-agent-plugin
+qwen extensions install owner/my-agent-plugin
+```
+
+Die portable Runtime unterstützt Agent Skills sowie Stdio- und Streamable-HTTP-MCP-Server. Commands, Agents, Hooks, Client-Namespaces und Legacy-SSE-MCP werden nicht aktiviert. Siehe [Agent Plugins v1](./agent-plugins.md) für die vollständige Unterstützungsmatrix.
+
 #### Aus der npm-Registry
 
 Qwen Code unterstützt die Installation von Erweiterungen aus npm-Registries mit scoped Package-Namen. Dies ist ideal für Teams mit privaten Registries, die bereits über Authentifizierung, Versionierung und Veröffentlichungsinfrastruktur verfügen.
@@ -139,7 +151,7 @@ Es werden nur scoped Packages (`@scope/package-name`) unterstützt, um Verwechsl
 
 **Authentifizierung** wird automatisch über die Umgebungsvariable `NPM_TOKEN` oder registriespezifische `_authToken`-Einträge in Ihrer `.npmrc`-Datei gehandhabt.
 
-> **Hinweis:** npm-Erweiterungen müssen eine `qwen-extension.json`-Datei im Paketstammverzeichnis enthalten, die dem gleichen Format wie jede andere Qwen Code-Erweiterung folgt. Siehe [Erweiterungen veröffentlichen](./extension-releasing.md#releasing-through-npm-registry) für Details zur Paketierung.
+> **Hinweis:** npm-Erweiterungen müssen entweder eine native `qwen-extension.json` oder eine Agent Plugins v1 `plugin.json` im Paketstammverzeichnis enthalten. Siehe [Erweiterungen veröffentlichen](./extension-releasing.md#releasing-through-npm-registry) für Details zur Paketierung.
 
 #### Aus einem Git-Repository
 
@@ -237,7 +249,9 @@ qwen extensions update --all
 
 Beim Start sucht Qwen Code im Verzeichnis `<home>/.qwen/extensions` nach Erweiterungen.
 
-Erweiterungen liegen als Verzeichnis vor, das eine `qwen-extension.json`-Datei enthält. Zum Beispiel:
+Native Qwen Code-Erweiterungen liegen als Verzeichnis vor, das eine `qwen-extension.json`-Datei enthält. Agent Plugins v1-Pakete behalten stattdessen ihr Root-`plugin.json`; siehe [Agent Plugins v1](./agent-plugins.md).
+
+Zum Beispiel wird eine native Qwen Code-Erweiterung gespeichert unter:
 
 `<home>/.qwen/extensions/my-extension/qwen-extension.json`
 

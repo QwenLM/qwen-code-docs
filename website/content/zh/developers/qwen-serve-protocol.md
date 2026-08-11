@@ -72,10 +72,14 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 未知 session id 的 `SessionNotFoundError` 会返回：
 
 ```json
-{ "error": "No session with id \"<sid>\"", "sessionId": "<sid>" }
+{
+  "error": "No session with id \"<sid>\"",
+  "sessionId": "<sid>",
+  "code": "session_not_found"
+}
 ```
 
-状态码为 `404`。
+状态码为 `404`。并发关闭使用 `code: "session_closing"`。
 
 `WorkspaceMismatchError` 对于 `POST /session`，如果其 `cwd` 无法规范化为已注册的 workspace，返回 `400`，并带有：
 
@@ -175,7 +179,7 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 守护进程从 serve 能力注册表中公布其支持的功能标签。客户端**必须**根据 `features` 来控制 UI，而不是根据 `mode`（根据设计 §10）。
 
 ```
-['health', 'capabilities', 'session_create', 'session_scope_override',
+['health', 'capabilities', 'session_create', 'session_id_override', 'session_scope_override',
  'session_load', 'session_resume', 'session_transcript',
  'unstable_session_resume',
  'session_list', 'session_info', 'session_prompt', 'session_mid_turn_message_mutation',

@@ -78,7 +78,7 @@ Status line을 설정하는 가장 쉬운 방법은 `/statusline` 명령어입�
 | `type`                 | `"preset"` | 예   | `"preset"`이어야 합니다                                                                                   |
 | `items`                | string[]   | 예   | 표시할 프리셋 항목 ID의 정렬된 목록 (아래 표 참조). 항목은 `\|`를 구분자로 결합됩니다.                   |
 | `useThemeColors`       | boolean    | 아니오 | 활성 `/theme` 색상을 status line 텍스트에 적용합니다. 기본값 `true`.                                    |
-| `hideContextIndicator` | boolean    | 아니오 | 푸터 오른쪽 섹션의 내장 컨텍스트 사용량 표시기를 숨깁니다. 기본값 `false`.                               |
+| `hideContextIndicator` | boolean    | 아니오 | 푸터 오른쪽 섹션의 내장 컨텍스트 사용량 표시기를 숨깁니다. 설정하지 않으면 `items`에 `context-used` 또는 `context-remaining`이 포함될 때 컨텍스트 사용량이 두 번 표시되지 않도록 자동으로 숨겨집니다. 항상 표시하려면 `false`로 설정합니다. |
 
 ### 사용 가능한 프리셋 항목
 

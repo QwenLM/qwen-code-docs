@@ -218,6 +218,7 @@ flowchart TD
 ## 주의사항 및 알려진 제한
 
 - **DaemonLogger 파일 로그는 구조화되어** `route`, `sessionId`, `clientId`로 필터링 가능. `QWEN_SERVE_DEBUG` stderr 로그는 구조화되지 않은 텍스트.
+- **수락된 프롬프트, 계속 및 취소 변이는 수명 주기 로그를 가짐.** `prompt enqueued`, `continuation enqueued`, `cancel sent`는 해당 `sessionId`, `promptId`(해당 시), `clientId`(제공 시)를 포함하며 프롬프트 내용은 기록되지 않음. 각 독립 컨트롤러에 대해 고유한 안정 클라이언트 ID를 사용할 것. 의도적으로 ID를 공유하는 컨트롤러는 이 레코드에서 구별 불가.
 - **DaemonLogger 보존은 크기 기반, 기간 기반이 아님.** 활성 파일과 4개의 아카이브가 패밀리당 제한; 라이브 폴백 소유자는 삭제되지 않음.
 - **접근 요약은 의도적인 손실 회계.** WARN `access logs suppressed`는 stderr와 파일 모두에서 생략된 개별 접근 레코드를 나타내며, 삭제된 HTTP 요청을 의미하지 않음.
 - **외부 logrotate는 활성 패밀리를 변경하면 안 됨.** 읽기/복사 후 안정적 경로명을 다시 여는 shipper를 사용.

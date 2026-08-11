@@ -197,6 +197,7 @@ flowchart TD
 ## Ressalvas e limitações conhecidas
 
 - **Os logs em arquivo do DaemonLogger são estruturados** e podem ser filtrados por `route`, `sessionId` e `clientId`. Os logs de stderr do `QWEN_SERVE_DEBUG` permanecem como texto não estruturado.
+- **Mutações aceitas de prompt, continuação e cancelamento possuem logs de ciclo de vida.** `prompt enqueued`, `continuation enqueued` e `cancel sent` incluem `sessionId`, `promptId` quando aplicável, e `clientId` quando fornecido; o conteúdo do prompt não é logado. Use um ID de cliente estável distinto para cada controlador independente. Controladores que compartilham intencionalmente um ID são indistinguíveis nesses registros.
 - **A retenção do DaemonLogger é baseada em tamanho, não em idade.** O arquivo ativo e quatro arquivos são limitados por família; proprietários fallback ativos nunca são excluídos.
 - **Os resumos de acesso são contabilidade intencional de perda.** Um WARN `access logs suppressed` representa registros de acesso individuais omitidos tanto do stderr quanto do arquivo; não indica requisições HTTP perdidas.
 - **O logrotate externo não deve mutar a família ativa.** Use um shipper que lê/copia e reabre o caminho estável após a substituição.

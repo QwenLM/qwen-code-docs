@@ -86,6 +86,20 @@ try (DaemonClient daemon = DaemonClient.builder()
 }
 ```
 
+需要在创建前分配会话身份的调用者可以传递 RFC UUID v1-v5。SDK 在变更前检查 `session_id_override`，并将不同的返回 ID 报告为 `SessionCreationOutcomeUnknownException`：
+
+```java
+CreateSessionRequest request = CreateSessionRequest.builder()
+        .sessionId("550E8400-E29B-41D4-A716-446655440000")
+        .build();
+
+try (DaemonSessionClient session = daemon.createSession(request)) {
+    System.out.println(session.getSession().getSessionId());
+}
+```
+
+daemon 会将 ID 规范为小写并创建一个新的线程会话。这不是幂等的附加；在创建结果不明确时，使用已知的 ID 进行恢复，而不是重试创建。
+
 如果 `qwen serve` 需要身份验证，请在 `DaemonClient` builder 中添加
 `.bearerToken(System.getenv("QWEN_SERVER_TOKEN"))`。SDK 在 REST 和 SSE 请求上发送 bearer，
 永远不会将其放在 URL 中。

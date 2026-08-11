@@ -6,7 +6,7 @@ title: Qwen Code Extensions
 
 Qwen Code 확장은 프롬프트, MCP 서버, 서브에이전트, skill 및 사용자 정의 명령어를 친숙하고 사용자 친화적인 형식으로 패키징합니다. 확장을 통해 Qwen Code의 기능을 확장하고 그 기능을 다른 사람과 공유할 수 있습니다. 쉽게 설치하고 공유할 수 있도록 설계되었습니다.
 
-[Gemini CLI Extensions Gallery](https://geminicli.com/extensions/) 및 [Claude Code Marketplace](https://claudemarketplaces.com/)의 확장 및 플러그인을 Qwen Code에 직접 설치할 수 있습니다. 이 크로스 플랫폼 호환성은 확장 작성자가 별도의 버전을 유지 관리할 필요 없이 Qwen Code의 기능을 크게 확장하는 풍부한 확장 및 플러그인 생태계에 대한 접근을 제공합니다.
+[Gemini CLI Extensions Gallery](https://geminicli.com/extensions/) 및 [Claude Code Marketplace](https://claudemarketplaces.com/)의 확장 및 플러그인, Qoder, 그리고 휴대 가능한 [Agent Plugins v1](./agent-plugins.md) 형식을 Qwen Code에 직접 설치할 수 있습니다. 이 크로스 플랫폼 호환성은 확장 작성자가 별도의 버전을 유지 관리할 필요 없이 Qwen Code의 기능을 크게 확장하는 풍부한 확장 및 플러그인 생태계에 대한 접근을 제공합니다.
 
 ## 확장 관리
 
@@ -117,6 +117,18 @@ qwen extensions install owner/sample-qoder-plugin
 
 Qoder 플러그인에 루트의 `system-prompt.md`가 있으면 Qwen Code가 확장 컨텍스트로 로드합니다. 플러그인에 `QWEN.md`가 있거나 다른 컨텍스트 파일이 선언되어 있으면 모든 컨텍스트 파일이 유지되고 중복이 제거됩니다.
 
+#### Agent Plugins v1에서
+
+Qwen Code는 휴대 가능한 Agent Plugins v1 패키지를 `plugin.json`, `mcp.json`, `SKILL.md` 파일을 변환하거나 다시 작성하지 않고도 네이티브로 로드합니다:
+
+```bash
+qwen extensions install ./my-agent-plugin
+qwen extensions link ./my-agent-plugin
+qwen extensions install owner/my-agent-plugin
+```
+
+휴대 가능한 런타임은 Agent Skills와 stdio 및 Streamable HTTP MCP 서버를 지원합니다. Commands, agents, hooks, 클라이언트 네임스페이스 및 레거시 SSE MCP는 활성화되지 않습니다. 전체 지원 매트릭스는 [Agent Plugins v1](./agent-plugins.md)을 참조하세요.
+
 #### npm 레지스트리에서
 
 Qwen Code는 스코프된 패키지 이름을 사용하여 npm 레지스트리에서 확장을 설치하는 것을 지원합니다. 인증, 버전 관리 및 게시 인프라가 이미 갖춰진 프라이빗 레지스트리를 사용하는 팀에 이상적입니다.
@@ -143,7 +155,7 @@ qwen extensions install @scope/my-extension --registry https://your-registry.com
 
 **인증**은 `NPM_TOKEN` 환경 변수 또는 `.npmrc` 파일의 레지스트리별 `_authToken` 항목을 통해 자동으로 처리됩니다.
 
-> **참고:** npm 확장은 패키지 루트에 `qwen-extension.json` 파일을 포함해야 하며 다른 Qwen Code 확장과 동일한 형식을 따릅니다. 패키징 세부 정보는 [Extension Releasing](./extension-releasing.md#releasing-through-npm-registry)을 참조하세요.
+> **참고:** npm 확장은 패키지 루트에 네이티브 `qwen-extension.json` 또는 Agent Plugins v1 `plugin.json`을 포함해야 합니다. 패키징 세부 정보는 [Extension Releasing](./extension-releasing.md#releasing-through-npm-registry)을 참조하세요.
 
 #### Git 저장소에서
 
@@ -241,7 +253,9 @@ qwen extensions update --all
 
 시작 시 Qwen Code는 `<home>/.qwen/extensions`에서 확장을 찾습니다.
 
-확장은 `qwen-extension.json` 파일을 포함하는 디렉토리로 존재합니다. 예:
+네이티브 Qwen 확장은 `qwen-extension.json` 파일을 포함하는 디렉토리로 존재합니다. Agent Plugins v1 패키지는 대신 루트 `plugin.json`을 유지합니다. [Agent Plugins v1](./agent-plugins.md)을 참조하세요.
+
+예를 들어 네이티브 Qwen 확장은 다음 경로에 저장됩니다:
 
 `<home>/.qwen/extensions/my-extension/qwen-extension.json`
 

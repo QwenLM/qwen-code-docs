@@ -73,7 +73,7 @@ Damit Qwen Code das richtige Release-Asset für jede Plattform automatisch finde
 
 #### Archivstruktur
 
-Archive müssen vollständig in sich geschlossene Erweiterungen sein und alle Standardanforderungen erfüllen – insbesondere muss sich die `qwen-extension.json`-Datei im Stammverzeichnis des Archivs befinden.
+Archive müssen vollständig in sich geschlossene Erweiterungen sein und ein unterstütztes Root-Manifest haben: `qwen-extension.json` für eine native Qwen-Erweiterung oder `plugin.json` für ein [Agent Plugins v1](./agent-plugins.md)-Paket.
 
 Der Rest des Layouts sollte genau wie eine typische Erweiterung aussehen, siehe [introduction.md](./introduction.md).
 
@@ -131,7 +131,7 @@ Sie können Qwen Code-Erweiterungen als gescopte npm-Pakete veröffentlichen (z.
 
 ### Paketanforderungen
 
-Ihr npm-Paket muss eine `qwen-extension.json`-Datei im Paketstammverzeichnis enthalten. Dies ist dieselbe Konfigurationsdatei, die von allen Qwen Code-Erweiterungen verwendet wird – der npm-Tarball ist lediglich ein anderer Auslieferungsmechanismus.
+Ihr npm-Paket muss ein unterstütztes Manifest im Paketstammverzeichnis enthalten: `qwen-extension.json` für eine native Qwen-Erweiterung oder `plugin.json` für ein [Agent Plugins v1](./agent-plugins.md)-Paket. Der npm-Tarball ist lediglich ein anderer Auslieferungsmechanismus.
 
 Eine minimale Paketstruktur sieht wie folgt aus:
 
@@ -145,7 +145,7 @@ my-extension/
 └── agents/               # optionale benutzerdefinierte Unteragenten
 ```
 
-Stellen Sie sicher, dass `qwen-extension.json` in Ihrem veröffentlichten Paket enthalten ist (d. h. nicht durch `.npmignore` oder das `files`-Feld in `package.json` ausgeschlossen wird).
+Stellen Sie sicher, dass das gewählte Root-Manifest und alle referenzierten Paketdateien in Ihrem veröffentlichten Paket enthalten sind (d. h. nicht durch `.npmignore` oder das `files`-Feld in `package.json` ausgeschlossen werden).
 
 ### Veröffentlichen
 

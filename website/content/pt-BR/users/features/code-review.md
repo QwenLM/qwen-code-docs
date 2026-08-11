@@ -1,5 +1,3 @@
----
-
 # Revisão de Código
 
 > Revise alterações de código quanto à correção, segurança, performance e qualidade de código usando o `/review`.
@@ -428,7 +426,7 @@ O pipeline de esforço high limita cada estágio (tamanho de shard, rodadas de a
 | Auditoria reversa iterativa (Etapa 5) | 2-5 (3A); rodadas × chunks (3B) | Duas rodadas consecutivas sem achados para parar (limite 5); 3B lança um auditor por chunk por rodada           |
 | **Total**                            | **~17-23 (~15-22)**            | 3A mesmo repositório: ~17-23 (típico ~17-19); entre repositórios ou local/arquivo: ~15-22; 3B escala com chunks (ver DESIGN.md) |
 
-A maioria dos PRs converge para o limite inferior do intervalo; os limites evitam custos descontrolados em casos patológicos. Com `--effort low`, a revisão executa inteiramente inline — **0 chamadas de subagente** — percorrendo o diff uma vez por ângulo em vez de uma vez no total.
+A maioria dos PRs converge para o extremo inferior da faixa; os limites previnem custos descontrolados em casos patológicos. Com `--effort low`, a revisão é executada inteiramente inline — **0 chamadas de subagentes** — percorrendo o diff uma vez por ângulo em vez de uma vez no total.
 
 ## O que NÃO é Sinalizado
 

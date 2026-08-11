@@ -175,6 +175,7 @@ flowchart TD
 - `QWEN_SERVE_DEBUG` 在每次检查时通过 `debug-mode.ts` 中的 `isServeDebugMode()` 读取；切换它不需要重启。除非在启动时设置了该环境变量，否则无法获取启动日志。
 - `PermissionAuditRing` 限制为 512 个 FIFO 条目；较旧的记录会被静默丢弃。
 - `DaemonStatusProvider` 按请求重建单元且不做缓存；避免不必要的高频轮询。
+
 ## 依赖
 
 - 使用 `process.stderr.write` 进行调试 stderr 输出。
@@ -196,6 +197,7 @@ flowchart TD
 ## 注意事项与已知限制
 
 - **DaemonLogger 文件日志是结构化的**，可通过 `route`、`sessionId` 和 `clientId` 进行过滤。`QWEN_SERVE_DEBUG` 的 stderr 日志仍为非结构化文本。
+- **已接受的 prompt、continuation 和 cancellation 变更具有生命周期日志。** `prompt enqueued`、`continuation enqueued` 和 `cancel sent` 包含 `sessionId`、适用时的 `promptId` 以及提供时的 `clientId`；prompt 内容不会被记录。为每个独立的控制器使用不同的稳定 client ID。故意共享 ID 的控制器在这些记录中是无法区分的。
 - **DaemonLogger 保留策略基于大小，而非基于时间。** 活动文件和四个归档按每个系列限制；活跃的 fallback 所有者永远不会被删除。
 - **访问摘要有意的丢失统计。** WARN 级别的 `access logs suppressed` 表示从 stderr 和文件中省略的单独访问记录；它不表示丢弃的 HTTP 请求。
 - **外部 logrotate 不得修改活动系列。** 使用读取/拷贝并在替换后重新打开稳定路径名的发送器。

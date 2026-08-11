@@ -65,3 +65,6 @@ English term → Chinese rendering. Follow existing entries; append new ones as 
 - immediate prompt → immediate prompt（不翻译）
 - non-inferiority → 非劣性
 - sidecar → sidecar（不翻译）
+- stateless generation → 无状态 generation
+- reasoning effort → 推理力度
+- retired → 已退役（用于设置/功能描述，区别于 deprecated/已弃用）

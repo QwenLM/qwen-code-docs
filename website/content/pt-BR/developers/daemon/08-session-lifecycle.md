@@ -57,6 +57,8 @@ Sob `sessionScope: 'thread'`, cada thread pode criar uma sessão distinta. O cha
 
 `X-Qwen-Client-Id` é **opcional**, mas **fortemente recomendado**. O daemon não gera um em nome do chamador — os clientes escolhem o seu próprio e o reutilizam entre requisições para que o daemon possa atribuir votos, auditar eventos e detectar reconexões.
 
+Cada controlador independente deve usar um ID distinto e estável. O WebUI gera IDs com o prefixo `webui_` por padrão. Um host e um WebShell incorporado devem compartilhar um ID apenas quando intencionalmente atuam como um único controlador lógico; uma vez compartilhado, os logs do daemon não conseguem distinguir qual deles originou uma requisição.
+
 Regras de validação:
 
 - Charset: `[A-Za-z0-9._:-]`.
