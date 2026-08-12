@@ -168,7 +168,10 @@ jobs:
           while read -r lang; do
             { node orchestrator.mjs translate --lang "$lang" --limit "${TRANSLATE_DAILY_LIMIT:-20}" --model "$QWEN_MODEL" || true
               node orchestrator.mjs verify --lang "$lang" || true
-            } 2>&1 | sed -u "s/^/${lang} | /" &
+            # tee to a per-language file as well as the step log: the
+            # batch-loss check below tallies verify's counts, and scraping
+            # them back out of the live step log is not possible from here.
+            } 2>&1 | sed -u "s/^/${lang} | /" | tee "/tmp/orch-out-${lang}.log" &
             pids="$pids $!"
           done < /tmp/orch-langs.txt
           for pid in $pids; do wait "$pid"; done
@@ -183,6 +186,42 @@ jobs:
           # Scoped to this step: only the agent talks to the model.
           OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
           OPENAI_BASE_URL: ${{ vars.TRANSLATE_BASE_URL || 'https://coding.dashscope.aliyuncs.com/v1' }}
+
+      # Every loss observed so far happened inside a GREEN run: report-failure
+      # only fires when a job fails, and the stale-baseline warning below only
+      # fires when the baseline does not move at all. Neither catches "the run
+      # succeeded, the baseline advanced, and 50% of the batch was silently
+      # dropped" — run 31334857246 verified 52 of 105 dispatched
+      # file-translations and reported success. This is the signal for that.
+      - name: Warn if an unusual share of the batch was lost
+        if: always() && steps.detect.outputs.changed == 'true'
+        run: |
+          set -uo pipefail
+          shopt -s nullglob
+          logs=(/tmp/orch-out-*.log)
+          if [ ${#logs[@]} -eq 0 ]; then
+            echo "no per-language logs to tally"
+            exit 0
+          fi
+          # `|| true`: grep exits 1 when no language reached verify at all
+          # (e.g. every dispatch died early), which must not fail the step —
+          # the awk below reports the zero case.
+          grep -hoE 'verify [0-9]+/[0-9]+ passed' "${logs[@]}" \
+            > /tmp/orch-verify-counts.txt || true
+          awk '{ split($2, a, "/"); ok += a[1]; total += a[2] }
+               END {
+                 if (total == 0) {
+                   print "::warning::no verify results found — no language completed a dispatch";
+                   exit 0;
+                 }
+                 pct = 100 * ok / total;
+                 printf "Verified %d/%d dispatched file-translations (%.0f%%)\n", ok, total, pct;
+                 summary = ENVIRON["GITHUB_STEP_SUMMARY"];
+                 if (summary != "")
+                   printf "- Verified **%d/%d** dispatched file-translations (%.0f%%)\n", ok, total, pct > summary;
+                 if (pct < 80)
+                   printf "::warning::only %d of %d dispatched file-translations verified (%.0f%%) — check the per-language logs above for halted agent sessions\n", ok, total, pct;
+               }' /tmp/orch-verify-counts.txt
 
       # advance wrote per-language .failed.txt quarantine lists. Broken files
       # are restored from HEAD so the commit below stages only verified
