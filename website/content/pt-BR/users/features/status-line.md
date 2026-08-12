@@ -78,7 +78,7 @@ Adicione um objeto `statusLine` sob a chave `ui` em `~/.qwen/settings.json`:
 | `type`                 | `"preset"` | Sim         | Deve ser `"preset"`                                                                                        |
 | `items`                | string[]   | Sim         | Lista ordenada de IDs de itens predefinidos para exibir (veja a tabela abaixo). Os itens são unidos com `\|` como separador. |
 | `useThemeColors`       | boolean    | Não         | Aplica a cor do `/theme` ativo ao texto da linha de status. O padrão é `true`.                             |
-| `hideContextIndicator` | boolean    | Não         | Oculta o indicador de uso de contexto integrado na seção direita do rodapé. O padrão é `false`.            |
+| `hideContextIndicator` | boolean    | Não         | Oculta o indicador de uso de contexto integrado na seção direita do rodapé. Quando não definido, é ocultado automaticamente se `items` contiver `context-used` ou `context-remaining`, para que o uso de contexto não seja exibido duas vezes. Defina como `false` para sempre exibi-lo. |
 
 ### Itens predefinidos disponíveis
 
@@ -175,7 +175,7 @@ Adicione um objeto `statusLine` sob a chave `ui` em `~/.qwen/settings.json`:
 | `command`              | string      | Sim         | Comando shell para executar. Recebe JSON via stdin, o stdout é exibido (até 2 linhas).                                            |
 | `refreshInterval`      | number      | Não         | Reexecuta o comando a cada N segundos (mínimo 1). Útil para dados que mudam sem um evento de estado do Agent (relógio, cota, uptime). |
 | `respectUserColors`    | boolean     | Não         | Preserva códigos de cores ANSI na saída do comando em vez de aplicar o estilo de rodapé esmaecido. O padrão é `false`.            |
-| `hideContextIndicator` | boolean     | Não         | Oculta o indicador de uso de contexto integrado na seção direita do rodapé. O padrão é `false`.                                   |
+| `hideContextIndicator` | boolean     | Não         | Oculta o indicador de uso de contexto integrado na seção direita do rodapé. O padrão é `false` — a saída do comando não é inspecionada para buscar informações de contexto, portanto defina explicitamente se o seu comando já imprime o uso de contexto. |
 
 ### Entrada JSON
 

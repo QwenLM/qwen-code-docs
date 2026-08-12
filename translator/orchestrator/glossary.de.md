@@ -91,3 +91,6 @@ English term → German rendering. Follow existing entries; append new ones as `
 - ghost text → Ghost-Text
 - foreground shell → Foreground Shell
 - mouse tracking → Maus-Tracking
+- reasoning effort → Reasoning-Aufwand
+- reconciliation ring → Versöhnungs-Ring
+- dedupe signal → Dedup-Signal

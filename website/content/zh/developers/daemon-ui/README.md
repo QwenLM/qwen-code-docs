@@ -323,15 +323,38 @@ function toolIcon(event: DaemonUiToolUpdateEvent): React.ReactNode {
 
 SDK 包含一个 `mcp__<server>__<tool>` 命名启发式回退 — 即使 daemon 未明确标记来源，MCP 工具仍可被检测。
 
+## 调试原因分类
+
+`DaemonUiStatusEvent.debugReason` 是一个封闭枚举，当规范化器将 `debug` 块投影为类型化事件（而非类型化事件）时标记（同时镜像到 `DaemonStatusTranscriptBlock` 上供转录消费者使用）：
+
+```ts
+import type { DaemonUiDebugReason } from '@qwen-code/sdk/daemon';
+// 'unrecognized_event' | 'unrecognized_session_update' | 'malformed_payload'
+```
+
+规范列表以 `DAEMON_UI_DEBUG_REASONS` 导出。原因名称采用通配符命名：`unrecognized_*` 表示 daemon 发送了此 SDK 版本没有对应处理分支的帧——向前兼容噪音，属于开发者诊断信息而非会话内容。`malformed_*` 表示 SDK **确实**知道的帧以不可用的负载到达——真正的缺陷信号。
+
+渲染器应根据 `debugReason` 分支，而非调试文本——文本前缀是诊断措辞，可能随时变更：
+
+```ts
+function hideDebugBlock(reason?: DaemonUiDebugReason): boolean {
+  // 按类别隐藏向前兼容噪音，这样较新 SDK 添加的原因会自动被覆盖。
+  // 缺陷信号和客户端分派的调试事件（不携带 reason）继续渲染。
+  return reason?.startsWith('unrecognized_') ?? false;
+}
+```
+
+`status` 事件永远不携带 `debugReason`，客户端自身分派的调试事件（例如 Web Shell 的模型切换摘要）也不携带——两者都必须继续渲染。
+
 ## 向前兼容原则
 
 Daemon UI SDK 的每一层都遵循**向前兼容原则**：未知值不会抛错，而是优雅降级。
 
-- 未知的 daemon 事件类型 → 生成立即类型名称的 `debug` 事件
+- 未知的 daemon 事件类型 → 生成立即类型名称的 `debug` 事件，标记 `unrecognized_*` `debugReason`（见上文）
 - 未知的工具状态 → `currentToolCallId` 保持不变（不清除）
 - 未知的错误类型 → `errorKind` 为 undefined（渲染器回退到文本）
 - 缺失 serverTimestamp → 回退到 `clientReceivedAt`
-- 无法识别的预览形状 → 以 `summary` 为核心的 `generic` 类型
+- 无法识别的预览形状 → `generic` 类型，附带 `summary`
 
 这意味着 **SDK 可以提前于 daemon 的发送能力发布**。PR-A 的工具来源启发式、PR-B 的三位置时间戳提取以及 PR-E 的未知状态保留都是“daemon 发送时即可用；daemon 未发送时也安全”的范例。
 

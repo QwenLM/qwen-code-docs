@@ -233,7 +233,7 @@ sequenceDiagram
 | `getWorkspaceToolsStatus()`                                  | 返回内置工具注册表快照。                      |
 | `getWorkspaceMcpToolsStatus(serverName)`                     | 返回特定 MCP 服务器的工具。                   |
 
-`BridgeSpawnRequest.sessionScope` 已从 `'per-client'` 重命名为 `'thread'`。`BridgeRestoredSession` 现在包含 `compactedReplay`、`liveJournal` 和 `lastEventId`。这些重放字段是活跃会话的有界内存窗口，上限由 `BridgeOptions.compactedReplayMaxBytes`（默认 4 MiB，硬上限 256 MiB）控制。正在进行的 `liveJournal` 由 `BridgeOptions.maxJournalEvents`（默认 10 000）和 `BridgeOptions.maxJournalBytes`（默认 8 MiB）单独限制。如果较旧的保留重放被丢弃，`compactedReplay[0]` 是无 id 的 `history_truncated` 标记；如果日志条目被丢弃，`liveJournal[0]` 携带 `scope: 'live_journal'` 的 `history_truncated` 标记。完整的持久化转录保留在磁盘上，不由此 bridge 响应暴露。
+`BridgeSpawnRequest.sessionScope` 已从 `'per-client'` 重命名为 `'thread'`。`BridgeRestoredSession` 现在包含 `compactedReplay`、`liveJournal` 和 `lastEventId`。这些重放字段是活跃会话的有界内存窗口，上限由 `BridgeOptions.compactedReplayMaxBytes`（默认 4 MiB，硬上限 256 MiB）控制。正在进行的 `liveJournal` 由 `BridgeOptions.maxJournalEvents`（默认 10 000 条重放条目）和 `BridgeOptions.maxJournalBytes`（默认 8 MiB 的序列化源事件）单独限制。连续的兼容文本或思考 chunk 共享一个重放条目，每个条目最多 256 个源事件；其他事件和归属边界保持不变。如果较旧的保留重放被丢弃，`compactedReplay[0]` 是无 id 的 `history_truncated` 标记；如果日志条目被丢弃，`liveJournal[0]` 携带 `scope: 'live_journal'` 的 `history_truncated` 标记。其 retained 和 truncated 计数描述的是源事件，而非重放条目。完整的持久化转录保留在磁盘上，不由此 bridge 响应暴露。
 `BridgeClientRequestContext` 是贯穿 bridge 调用的请求上下文；它包含 `clientId`、`fromLoopback: boolean` 和 `promptId`。
 
 ## 注意事项与已知限制

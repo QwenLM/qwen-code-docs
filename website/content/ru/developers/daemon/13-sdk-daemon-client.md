@@ -154,6 +154,19 @@ await client
 
 Pre-flight `capabilities.features.includes('workspace_skill_toggle')`. Типизированный `DaemonSkillToggleResult` сообщает канонический `skillName`, изменилось ли состояние на диске (`changed`), состояние активации (`applied`, `deferred` или `partial`) и количество обновлённых/ошибочных сессий. `DaemonWorkspaceSkillStatus.userInvocable` — опциональное поле только для `false`; отсутствие означает, что навык доступен для вызова пользователем.
 
+Для пакетных изменений выполните pre-flight `workspace_skill_batch_toggle` и вызовите любой из вариантов клиента с тем же контрактом:
+
+```ts
+await client.setWorkspaceSkillsEnabled(['review', 'deploy'], false, {
+  clientId: 'dashboard-1',
+});
+await client
+  .workspaceByCwd('/work/secondary')
+  .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
+```
+
+`DaemonSkillBatchToggleResult` содержит упорядоченные успешные `results`, `errors` для каждой цели и batch-level счётчики активации/обновления сессий. Демон сохраняет валидные цели вместе и обновляет активные сессии один раз; одна ожидаемая ошибка цели не блокирует остальные валидные цели. Метод выбрасывает исключение только при ответе с кодом, отличным от 200; ответ 200 не означает, что каждая цель была применена, поэтому всегда проверяйте `errors` перед тем, как считать пакет успешным.
+
 Отображаемые имена рабочего пространства — это опциональные метаданные для представления. Pre-flight `capabilities.features.includes('workspace_display_name')`; id рабочего пространства и канонические пути остаются единственными селекторами, дублирующиеся отображаемые имена допустимы.
 
 ```ts

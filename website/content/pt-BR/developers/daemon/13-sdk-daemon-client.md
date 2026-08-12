@@ -154,6 +154,19 @@ await client
 
 Pre-flight `capabilities.features.includes('workspace_skill_toggle')`. O `DaemonSkillToggleResult` tipado reporta o `skillName` canônico, se o estado em disco foi alterado (`changed`), o estado de ativação (`applied`, `deferred` ou `partial`) e contagens de sessões atualizadas/com falha. `DaemonWorkspaceSkillStatus.userInvocable` é um campo opcional apenas false; ausência significa que a skill pode ser invocada pelo usuário.
 
+Para alterações em lote, faça pre-flight de `workspace_skill_batch_toggle` e chame qualquer forma do cliente com o mesmo contrato:
+
+```ts
+await client.setWorkspaceSkillsEnabled(['review', 'deploy'], false, {
+  clientId: 'dashboard-1',
+});
+await client
+  .workspaceByCwd('/work/secondary')
+  .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
+```
+
+`DaemonSkillBatchToggleResult` contém `results` bem-sucedidos ordenados, `errors` por alvo e contagens de ativação/refresh de sessão em nível de lote. O daemon persiste alvos válidos juntos e atualiza sessões ativas uma vez; um erro esperado de alvo não bloqueia outros alvos válidos. O método lança apenas em resposta não-200; um 200 não significa que todo alvo foi aplicado, então sempre inspecione `errors` antes de tratar o lote como bem-sucedido.
+
 Nomes de exibição de workspace são metadados de apresentação opcionais. Pre-flight `capabilities.features.includes('workspace_display_name')`; os ids de workspace e os caminhos canônicos continuam sendo os únicos seletores, e nomes de exibição duplicados são válidos.
 
 ```ts

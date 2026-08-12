@@ -193,6 +193,7 @@ sequenceDiagram
 | `sessionScope`                                | `'single'`                                         | `'single'` разделяет одну сессию между всеми клиентами; `'thread'` создает отдельную сессию для каждого потока разговора. |
 | `channelFactory`                              | `defaultSpawnChannelFactory`                       | Подключаемая фабрика дочерних процессов ACP.                                                                                          |
 | `initializeTimeoutMs`                         | `DEFAULT_INIT_TIMEOUT_MS = 10_000`                 | Таймаут рукопожатия `initialize` ACP.                                                                                   |
+| `sessionRestoreTimeoutMs`                     | `60_000`                                           | Таймаут ACP `loadSession` / `unstable_resumeSession`; по умолчанию 60 с, явно настроенный таймаут инициализации может увеличить его, но не уменьшить.      |
 | `maxSessions`                                 | `DEFAULT_MAX_SESSIONS = 32`                        | Ограничение на `byId.size`. `0` / `Infinity` = без ограничений; NaN/отрицательное значение вызывает ошибку.                                                |
 | `eventRingSize`                               | `DEFAULT_RING_SIZE` (из `eventBus.ts`)           | Кольцо событий для каждой сессии; мягко ограничено `MAX_EVENT_RING_SIZE`.                                                         |
 | `permissionResponseTimeoutMs`                 | `DEFAULT_PERMISSION_TIMEOUT_MS = 5 min`            | Абсолютное время ожидания для медиатора на каждый запрос.                                                                               |
@@ -208,6 +209,9 @@ sequenceDiagram
 | `permissionConsensusQuorum`                   | из `settings.json`                               | N для политики консенсуса.                                                                                               |
 | `permissionAudit`                             | `createNoOpPermissionAuditPublisher()`             | Подключение к `PermissionAuditRing` для журнала аудита.                                                                    |
 | `channelIdleTimeoutMs`                        | `0`                                                | Поддерживать дочерний процесс ACP активным в течение этого количества миллисекунд после закрытия последней сессии.                                    |
+
+Таймауты восстановлений не могут быть отменены в текущем ACP SDK. Поэтому мост сохраняет ограждение урегулирования (settlement fence) и допуск возможности (capacity admission) до тех пор, пока реальный запрос не урегулируется или его транспорт не закроется. Поздний результат закрывается ровно один раз и никогда не регистрируется. Неопределённость очистки помещает в карантин только новую работу сессии в этом рабочем пространстве; существующий трафик сессии и управления рабочим пространством продолжается до тех пор, пока канал не дренируется и не будет переработан.
+
 ## Дополнительные методы bridge
 
 В дополнение к основным вызовам `spawnOrAttach`, `sendPrompt`, `cancelSession`,
@@ -239,12 +243,11 @@ sequenceDiagram
 `liveJournal` и `lastEventId`. Эти поля повторного воспроизведения представляют
 ограниченное окно в памяти для live-сессий, ограниченное `BridgeOptions.compactedReplayMaxBytes`
 (по умолчанию 4 МиБ, жёсткий потолок 256 МиБ). `liveJournal` в полёте
-отдельно ограничен `BridgeOptions.maxJournalEvents` (по умолчанию 10 000) и
-`BridgeOptions.maxJournalBytes` (по умолчанию 8 МиБ). Если более старые сохранённые
+отдельно ограничен `BridgeOptions.maxJournalEvents` (по умолчанию 10 000 записей воспроизведения) и
+`BridgeOptions.maxJournalBytes` (по умолчанию 8 МиБ сериализованных исходных событий). Последовательные совместимые фрагменты текста или мыслей разделяют одну запись воспроизведения, с не более чем 256 исходными событиями на запись; другие границы событий и атрибуции остаются нетронутыми. Если более старые сохранённые
 данные повторного воспроизведения были отброшены, `compactedReplay[0]` является
 маркером `history_truncated` без id; если записи журнала были отброшены,
-`liveJournal[0]` содержит маркер `history_truncated` с `scope: 'live_journal'`.
-Полный сохранённый транскрипт остаётся на диске и не раскрывается этим ответом bridge.
+`liveJournal[0]` содержит маркер `history_truncated` с `scope: 'live_journal'`. Его подсчёты сохранённых и усечённых событий описывают исходные события, а не записи воспроизведения. Полный сохранённый транскрипт остаётся на диске и не раскрывается этим ответом bridge.
 `BridgeClientRequestContext` — это контекст запроса,
 передаваемый через вызовы bridge; он включает `clientId`,
 `fromLoopback: boolean` и `promptId`.

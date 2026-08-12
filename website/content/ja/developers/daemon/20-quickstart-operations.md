@@ -16,7 +16,7 @@ qwen serve: bound to workspace "/your/cwd"
 qwen serve: bearer auth disabled (loopback default). Set QWEN_SERVER_TOKEN to enable.
 ```
 
-ブラウザで `http://127.0.0.1:4170/demo` を開くと、デバッグコンソール（チャット UI、イベントストリーム、ワークスペース検査）を確認できます。デフォルトのループバック開発モードでは、`createServeApp()` が `bearerAuth` の **前** に `packages/cli/src/serve/routes/health-demo.ts` から `/demo` ルートをマウントするため、トークンは不要です。
+ブラウザで `http://127.0.0.1:4170/` を開くと、Web Shell UI（チャット、セッションリスト、ワークスペース検査）を確認できます。`createServeApp()` はバンドルされた Web Shell アセット（`packages/cli/src/serve/web-shell-static.ts`）を `bearerAuth` の **前** にマウントするため、シェル自体はトークンなしでロードされます。シェル自身の API 呼び出しは、トークンが設定されている場合はベアラートークンを付与します。認証が有効な場合は、デーモンを `--open`（URL フラグメントにトークンを配置し、サーバーには送信されない）で起動するか、`#token=…` を手動で追加してください。`--no-web` でオプトアウトし、デーモンを API のみにします。
 
 ## 2. 起動レシピ
 
@@ -67,7 +67,7 @@ qwen serve --channel-idle-timeout-ms 60000
 QWEN_SERVE_RATE_LIMIT=1 qwen serve
 ```
 
-強化されたループバックのレシピ (3) では、`/demo` は `bearerAuth` の後に登録されます。通常のブラウザナビゲーションには認証ヘッダーが必要なため、代わりに curl や SDK スクリプトを使用してください。
+強化されたループバックのレシピ (3) では、`/health` は `bearerAuth` の後に登録されるため、プローブは他の API ルートと同様にトークンを運ぶ必要があります（Web Shell の静的サーフェスは設計上プレ認証のままです。API のみのデーモンにするには `--no-web` を渡してください）。
 
 ## 3. 完全な起動フラグ
 
@@ -198,23 +198,21 @@ curl -N \
   -H 'Last-Event-ID: 0' \
   'http://127.0.0.1:4170/session/<sid>/events'
 
-# 8. デモページ
-open http://127.0.0.1:4170/demo
+# 8. Web Shell UI
+open http://127.0.0.1:4170/
 ```
 
 Bearer 認証が有効な場合、すべてのリクエストに `-H "Authorization: Bearer $QWEN_SERVER_TOKEN"` を追加します。
 
-## 8. デモページは使用可能か？
+## 8. ブラウザ UI はあるか？
 
-**はい。** これは `packages/cli/src/serve/demo.ts` 内の `getDemoHtml(port)` によって実装されており、外部依存を持たない自己完結型の HTML です。
+**はい — Web Shell です。** `resolveWebShellDir()` がビルド済みアセットを見つけ（リリースでは CLI バンドルの隣、チェックアウトでは `packages/web-shell/dist`）、`mountWebShellAssets()` が `/`、`/assets`、および `/session/:id` のドキュメントナビゲーション（ブラウザのディープリンク — 通常の `curl /session/<id>` ではシェルの代わりに API の 401/404 が返されます）にそれらを提供します。アセットが存在しない場合、デーモンはクラッシュせずに API のみにフォールバックします。`--no-web` で明示的にオプトアウトできます。
 
-| 起動モード | `/demo` が登録される場所 | ブラウザからの直接ナビゲーション |
-| --- | --- | --- |
-| `--require-auth` なしのループバック | `routes/health-demo.ts`、`createServeApp()` によって `bearerAuth` の **前** にマウント | トークンなしで動作 |
-| `--require-auth` ありのループバック | `routes/health-demo.ts`、`createServeApp()` によって `bearerAuth` の **後** にマウント | 通常のブラウザからの使用は困難。curl または SDK を使用 |
-| ループバック以外のバインド | `routes/health-demo.ts`、`createServeApp()` によって `bearerAuth` の **後** にマウント | 上記と同じ |
+静的シェルはすべての起動モードで `bearerAuth` の **前** にマウントされます。ブラウザはアドレスバーのナビゲーションや `<script src>` サブリソースに `Authorization` ヘッダーを付与できないため、ゲートすると UI が壊れるだけです。シェルが呼び出すすべての API ルートはトークン保護されたままであり、フロントエンド自身がベアラートークンを付与します。非ループバックのバインドでは、`--allow-origin <origin>` が渡されない限りシェルは読み取り専用です。同一オリジンの POST は `Origin` ヘッダーを運び、CORS ウォールが拒否（403）します。ループバック以外のバインドには `--allow-origin` を渡してください。
 
-CSP は `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'` であり、さらに `X-Frame-Options: DENY` が設定されています。このページは `'self'`（デーモン）のみをフェッチでき、外部スクリプトやスタイルを読み込むことはできません。
+CSP は `buildWebShellCsp()` によって構築され、静的ページのそれよりも意図的に緩くなっています（インラインの `performance.measure` パッチ用の `'unsafe-inline'`、shiki と mermaid 用の `eval`/wasm/blob ワーカー、katex フォント用の `data:`、SSE 用の `connect-src 'self'`）。`frame-ancestors 'none'` と `X-Frame-Options: DENY` でクリックジャッキングをブロックしますが、`--allow-origin` で拡張オリジンが明示的に許可されている場合は例外です（UI を Chrome サイドパネルにホストできるようにするため、#5626）。
+
+生のプロトコル検査には、SSE ストリームを直接購読してください（`routes/sse-events.ts`）— セクション 7 の curl レシピを参照してください。
 
 ## 9. `qwen serve` からリスニングサーバーまでのコールチェーン
 
@@ -255,7 +253,7 @@ serve/run-qwen-serve.ts              const app = createServeApp(opts, () => actu
    v
 serve/server.ts                    createServeApp() - builds Express app (**does not listen**)
    |  |- middleware chain (Host allowlist / CORS / bearerAuth / mutation gate / rate limit)
-   |  |- route mounting (health / demo / capabilities / workspace / session / SSE / ACP HTTP)
+   |  |- route mounting (health / web-shell static / capabilities / workspace / session / SSE / ACP HTTP)
    |  `- return app
    |
    v
@@ -282,7 +280,7 @@ commands/serve.ts                  await blockForever()    // block forever unti
 
 | ルート | ファイル | マウントエントリ |
 | --- | --- | --- |
-| `/health`, `/demo` | `packages/cli/src/serve/routes/health-demo.ts` | `healthDemoRoutes.register()` |
+| `/health` | `packages/cli/src/serve/routes/health.ts` | `healthRoutes.register()` |
 | `/daemon/status` | `packages/cli/src/serve/routes/daemon-status.ts` | `registerDaemonStatusRoutes()` |
 | `/capabilities`、ワークスペースの初期化/ツール/MCP 変更ルート、ACP HTTP ブリッジ | `packages/cli/src/serve/server.ts` | `createServeApp()` 内で直接登録 |
 | ワークスペースのステータス、環境、プリフライト、MCP/ツール/プロバイダー/スキルのサマリー | `packages/cli/src/serve/routes/workspace-status.ts` | `registerWorkspaceStatusRoutes()`, `registerWorkspaceDiagnosticStatusRoutes()` |
@@ -380,6 +378,6 @@ QWEN_SERVE_DEBUG=1 qwen serve
 - Express ファクトリ: `packages/cli/src/serve/server.ts`
 - ミドルウェア: `packages/cli/src/serve/auth.ts`
 - ブリッジファクトリ: `packages/acp-bridge/src/bridge.ts`
-- デモページ HTML: `packages/cli/src/serve/demo.ts`
+- Web Shell 静的マウント: `packages/cli/src/serve/web-shell-static.ts`
 - ユーザードキュメント: [`../../users/qwen-serve.md`](../../users/qwen-serve.md)
 - ワイヤープロトコル: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md)

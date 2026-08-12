@@ -34,6 +34,7 @@
 | `--external-tool-guard-timeout-ms <n>`  | integer `100..30000`         | `3000`                                                                            | ハンドシェイクおよび prepare ごとのデッドライン。タイムアウトはハンドシェイク中は起動を失敗させ、ターン中は呼び出しを fail closed します。                                                                                        |
 | `--allow-origin <pattern>`              | repeatable string            | unset                                                                             | デフォルトのCORS拒否を置き換えるクロスオリジン許可リスト。`*` は任意のオリジンを許可しますが、トークンが必要です。                                                                           |
 | `--allow-private-auth-base-url`         | boolean                      | `false`                                                                           | `/workspace/auth/provider` による localhost / プライベートネットワーク認証プロバイダーの `baseUrl` のインストールを許可します。信頼されたローカル開発環境でのみ使用してください。                                            |
+| `--web` / `--no-web`                    | boolean                      | `true`                                                                            | デーモンルートでビルド済み Web Shell SPA を提供します（`GET /`、`/assets/*`、および `/session/:id` のドキュメントナビゲーション）。これらのエントリーポイントは `bearerAuth` より前にマウントされます。すべての API ルートはトークン保護されたままです。`--no-web` でデーモンを API のみにします。 |
 | `--prompt-deadline-ms <n>`              | positive integer             | unset                                                                             | サーバー側のプロンプトの実時間制限（ミリ秒）。タイムアウトすると中止され、エラーが返されます。                                                                                                      |
 | `--writer-idle-timeout-ms <n>`          | positive integer             | unset                                                                             | SSE接続ごとのアイドルタイムアウト（ミリ秒）。この時間イベントが送信されない場合、デーモンはSSE接続を閉じます。                                                                |
 | `--channel-idle-timeout-ms <n>`         | non-negative integer         | `0`                                                                               | 最後のセッションが閉じられた後、ACP子プロセスを存続させる時間。`0` は即座に回収することを意味します。                                                                                  |
@@ -117,6 +118,7 @@
 | `externalToolGuard`           | オプションの `{mode:'required', endpoint, token, timeoutMs?}`。省略時は完全にオフ。required モードはリスニング前にプロバイダーハンドシェイクを実行します。 |
 | `allowOrigins`                | クロスオリジン許可リスト（`string[]`）。`--allow-origin` に対応します。                       |
 | `allowPrivateAuthBaseUrl`     | プライベート / localhost 認証プロバイダーの `baseUrl` のインストールを許可します。                              |
+| `serveWebShell`               | デーモンルートでビルド済み Web Shell SPA を提供します（デフォルト `true`）。`false`（CLI の `--no-web`）はデーモンを API のみにします。ビルドがシェルアセットを省略する場合は効果はありません。 |
 | `enableSessionShell`          | セッションシェル実行を有効にします。ベアラートークンとセッションにバインドされたクライアントIDは引き続き必要です。 |
 | `promptDeadlineMs`            | プロンプトの実時間制限。                                                                       |
 | `writerIdleTimeoutMs`         | SSEライターアイドルタイムアウト。                                                                      |

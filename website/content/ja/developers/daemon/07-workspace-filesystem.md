@@ -11,7 +11,7 @@
 - **監査** — すべてのアクセス／拒否は、`PermissionAuditRing` / モニタリングのための構造化イベントを発行します。
 - **型付きエラー** — 閉じた `FsErrorKind` ユニオンを HTTP ステータスにマッピングします。
 
-HTTP ファイルルート（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST /file/edit`、`GET /list`、`GET /glob`、`GET /stat`）はこの境界を使用します。本番デーモンでは、委譲されたままの ACP 呼び出しは注入されたブリッジアダプタを通じて WFS に到達します。汎用のブリッジ呼び出し元は、そのようなアダプタを注入する場合にのみ WFS を使用します。本番の同一ホスト `qwen serve` ランタイムは `readTextFile: false` を通知するため、すべての子プロセスの `FileSystemService.readTextFile` コンシューマーは通常の CLI ファイルシステムサービスを使用します。最終的な ACP `writeTextFile` コンテンツ書き込みは WFS を通じて委譲されたままです。
+HTTP ファイルルート（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST /file/edit`、`GET /list`、`GET /glob`、`GET /stat`）はこの境界を使用します。本番デーモンでは、委譲されたままの ACP 呼び出しは注入されたブリッジアダプタを通じて WFS に到達します。汎用のブリッジ呼び出し元は、そのようなアダプタを注入する場合にのみ WFS を使用します。本番の同一ホスト `qwen serve` ランタイムは `readTextFile: false` を通知するため、すべての子プロセスの `FileSystemService.readTextFile` コンシューマーは通常の CLI ファイルシステムサービスを使用します。最終的な ACP `writeTextFile` コンテンツ書き込みは委譲されたままです。ワークスペースのターゲットは WFS を使用し、厳格な組み込みツールマーカーは、デーモンが作成した同一ホストアダプター上でのみ外部パスに対して同等のホストライターを選択する場合があります。[外部書き込みの設計ドキュメント](../../design/daemon-external-tool-text-writes.md)を参照してください。
 
 このテキスト読み取りケイパビリティスライスは、直接の `read_file` と、write、edit、notebook、sed、artifact 操作で使用される共有の事前読み取りをカバーします：
 
@@ -75,7 +75,7 @@ interface BridgeFileSystem {
 }
 ```
 
-これは、ACP `readTextFile` / `writeTextFile` の注入ポイントです。ブリッジテストや Mode A 組み込み呼び出し元は、`BridgeOptions` でこれを省略できます。その場合、`BridgeClient` はインラインの `fs.readFile` / `fs.writeFile` プロキシにフォールバックします（F1 以前の動作を維持）。本番の `qwen serve` は、`createBridgeFileSystemAdapter(fsFactory)`（`packages/cli/src/serve/bridge-file-system-adapter.ts`）を介して `BridgeFileSystem` を配線し、`delegateReadTextFileToClient: false` を設定します。ケイパビリティに準拠した子プロセスはテキストをローカルで読み取り、最終的な ACP テキスト書き込みを委譲します。アダプタは読み取り実装も保持しているため、予期しないまたはケイパビリティに違反する委譲読み取りも WFS のワークスペース境界に到達します。
+これは、ACP `readTextFile` / `writeTextFile` の注入ポイントです。ブリッジテストや Mode A 組み込み呼び出し元は、`BridgeOptions` でこれを省略できます。その場合、`BridgeClient` はインラインの `fs.readFile` / `fs.writeFile` プロキシにフォールバックします（F1 以前の動作を維持）。本番の `qwen serve` は、`createBridgeFileSystemAdapter(fsFactory)`（`packages/cli/src/serve/bridge-file-system-adapter.ts`）を介して `BridgeFileSystem` を配線し、`delegateReadTextFileToClient: false` を設定します。ケイパビリティに準拠した子プロセスはテキストをローカルで読み取り、最終的な ACP テキスト書き込みを委譲します。アダプタは読み取り実装も保持しているため、予期しないまたはケイパビリティに違反する委譲読み取りも WFS のワークスペース境界に到達します。外部のホストライターパスはデフォルトで無効化されており、デーモン所有の同一ホストアダプター上でのみバージョン付き来歴によって選択されます。注入されたブリッジ、ワークスペースレジストリとファクトリ、汎用 ACP、および HTTP は通常の境界を維持します。
 
 アダプタが必ず複製しなければならない2つの防御ゲート（アダプタが注入されるとインラインプロキシが完全にバイパスされるため）:
 

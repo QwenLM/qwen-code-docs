@@ -77,7 +77,7 @@ Qwen Code가 각 플랫폼에 대해 올바른 릴리스 자산을 자동으로 
 
 #### 아카이브 구조
 
-아카이브는 완전히 포함된 확장이어야 하며 모든 표준 요구 사항을 충족해야 합니다. 특히 `qwen-extension.json` 파일이 아카이브의 루트에 있어야 합니다.
+아카이브는 완전히 포함된 확장이어야 하며 지원되는 루트 매니페스트가 있어야 합니다: 네이티브 Qwen 확장의 경우 `qwen-extension.json`, [Agent Plugins v1](./agent-plugins.md) 패키지의 경우 `plugin.json`.
 
 나머지 레이아웃은 일반적인 확장과 정확히 동일해야 합니다. [introduction.md](./introduction.md)를 참조하세요.
 
@@ -135,7 +135,7 @@ Qwen Code 확장을 스코프된 npm 패키지(예: `@your-org/my-extension`)로
 
 ### 패키지 요구 사항
 
-npm 패키지는 패키지 루트에 `qwen-extension.json` 파일을 포함해야 합니다. 이것은 모든 Qwen Code 확장에서 사용하는 동일한 구성 파일입니다 — npm tarball은 단순히 또 다른 전달 메커니즘일 뿐입니다.
+npm 패키지에는 패키지 루트에 지원되는 매니페스트가 있어야 합니다: 네이티브 Qwen 확장의 경우 `qwen-extension.json`, [Agent Plugins v1](./agent-plugins.md) 패키지의 경우 `plugin.json`. npm tarball은 단순히 또 다른 전달 메커니즘일 뿐입니다.
 
 최소 패키지 구조는 다음과 같습니다:
 
@@ -149,7 +149,7 @@ my-extension/
 └── agents/               # 선택적 사용자 정의 서브에이전트
 ```
 
-`qwen-extension.json`이 게시된 패키지에 포함되도록 하세요(즉, `.npmignore` 또는 `package.json`의 `files` 필드에서 제외되지 않도록).
+선택한 루트 매니페스트와 모든 참조된 패키지 파일이 게시된 패키지에 포함되도록 하세요(즉, `.npmignore` 또는 `package.json`의 `files` 필드에서 제외되지 않도록).
 
 ### 게시
 

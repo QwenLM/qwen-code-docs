@@ -323,11 +323,35 @@ function toolIcon(event: DaemonUiToolUpdateEvent): React.ReactNode {
 
 SDK에는 `mcp__<server>__<tool>` 명명 휴리스틱 폴백이 있습니다 — daemon이 명시적으로 provenance를 기록하지 않아도 MCP 도구를 감지할 수 있습니다.
 
+## 디버그 이유 분류
+
+`DaemonUiStatusEvent.debugReason`는 normalizer가 타입화된 이벤트 대신 `debug` 블록을 프로젝션할 때 기록하는 닫힌 열거형입니다(`DaemonStatusTranscriptBlock`에도 미러링됨):
+
+```ts
+import type { DaemonUiDebugReason } from '@qwen-code/sdk/daemon';
+// 'unrecognized_event' | 'unrecognized_session_update' | 'malformed_payload'
+```
+
+정식 목록은 `DAEMON_UI_DEBUG_REASONS`로 내보냅니다. 이유 이름은 와일드카드 이름 범주입니다: `unrecognized_*`는 daemon이 이 SDK 버전에 case가 없는 프레임을 보낸 것을 의미합니다 — forward-compat 노이즈이며 대화 콘텐츠가 아닌 개발자 진단입니다. `malformed_*`는 SDK가 _알고 있는_ 프레임이 사용 불가능한 페이로드로 도착한 것을 의미합니다 — 실제 결함 신호입니다.
+
+렌더러는 디버그 텍스트가 아닌 `debugReason`로 분기해야 합니다 — 텍스트 접두사는 진단 문구이며 예고 없이 변경됩니다:
+
+```ts
+function hideDebugBlock(reason?: DaemonUiDebugReason): boolean {
+  // forward-compat 노이즈를 범주별로 숨겨서 새로운 SDK가 추가하는 이유도
+  // 자동으로 커버됩니다. 결함 신호와 클라이언트가 디스패치한 디버그
+  // 이벤트(이유를 가지지 않음)는 렌더링을 유지합니다.
+  return reason?.startsWith('unrecognized_') ?? false;
+}
+```
+
+`status` 이벤트는 `debugReason`를 가지지 않으며, 클라이언트 자체가 디스패치한 디버그 이벤트(예: Web Shell의 모델 전환 요약)도 가지지 않습니다 — 둘 다 렌더링을 유지해야 합니다.
+
 ## Forward-compat 원칙
 
 daemon UI SDK의 모든 계층은 **forward-compat 원칙**을 따릅니다: 알 수 없는 값은 예외를 발생시키지 않으며, 점진적으로 저하됩니다.
 
-- 알 수 없는 daemon 이벤트 타입 → 원시 타입 이름을 가진 `debug` 이벤트
+- 알 수 없는 daemon 이벤트 타입 → 원시 타입 이름을 가진 `debug` 이벤트, `unrecognized_*` `debugReason` 기록(위 참조)
 - 알 수 없는 도구 상태 → `currentToolCallId` 변경 없음 (해제하지 않음)
 - 알 수 없는 오류 종류 → `errorKind` undefined (렌더러가 텍스트로 폴백)
 - 누락된 serverTimestamp → `clientReceivedAt`으로 폴백

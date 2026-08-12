@@ -34,12 +34,12 @@ Este documento lista os atalhos de teclado disponíveis no Qwen Code.
 | `Tab`                                                 | Preenche automaticamente a sugestão atual, se houver uma.                                                                           |
 | `Up Arrow`                                            | Sobe uma linha, depois salta para o início, e então retrocede no histórico.                                                         |
 | `Ctrl+A` / `Home`                                     | Move o cursor para o início da linha.                                                                                               |
-| `Ctrl+B` / `Left Arrow`                               | Move o cursor um caractere para a esquerda.                                                                                         |
+| `Ctrl+B` / `Left Arrow`                               | Move o cursor um caractere para a esquerda. Enquanto o menu de complementação `@` exibe abas de categoria, use `Ctrl+B` (a seta alterna as abas). |
 | `Ctrl+C`                                              | Limpa o prompt de entrada                                                                                                           |
 | `Esc` (pressione duas vezes)                          | Limpa o prompt de entrada.                                                                                                          |
 | `Ctrl+D` / `Delete`                                   | Exclui o caractere à direita do cursor.                                                                                             |
 | `Ctrl+E` / `End`                                      | Move o cursor para o final da linha.                                                                                                |
-| `Ctrl+F` / `Right Arrow`                              | Move o cursor um caractere para a direita.                                                                                          |
+| `Ctrl+F` / `Right Arrow`                              | Move o cursor um caractere para a direita. Enquanto o menu de complementação `@` exibe abas de categoria, use `Ctrl+F` (a seta alterna as abas). |
 | `Ctrl+H` / `Backspace`                                | Exclui o caractere à esquerda do cursor.                                                                                            |
 | `Ctrl+K`                                              | Exclui do cursor até o final da linha.                                                                                              |
 | `Ctrl+Left Arrow` / `Meta+Left Arrow` / `Meta+B`      | Move o cursor uma palavra para a esquerda.                                                                                          |
@@ -86,9 +86,8 @@ Foque o pill de Tarefas em segundo plano no rodapé (use `Down Arrow` a partir d
 | `Down Arrow` / `Ctrl+N`              | Navega para baixo nas sugestões.                                        |
 | `Tab` / `Enter`                      | Aceita a sugestão selecionada.                                          |
 | `Up Arrow` / `Ctrl+P`                | Navega para cima nas sugestões.                                         |
-| `Right Arrow`                        | Aceita uma sugestão ghost-text quando o prompt está vazio.              |
-| `Ctrl+Tab` / `Ctrl+Right Arrow`      | Muda para a próxima categoria de complementação quando as abas de categoria estão visíveis. |
-| `Ctrl+Shift+Tab` / `Ctrl+Left Arrow` | Muda para a categoria anterior de complementação quando as abas de categoria estão visíveis. |
+| `Right Arrow`                        | Muda para a próxima categoria de complementação quando as abas de categoria estão visíveis. Também aceita uma sugestão ghost-text quando o prompt está vazio. |
+| `Left Arrow`                         | Muda para a categoria anterior de complementação quando as abas de categoria estão visíveis. |
 
 ## Pesquisa no histórico
 

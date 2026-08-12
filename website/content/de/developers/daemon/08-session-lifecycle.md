@@ -57,6 +57,8 @@ Unter `sessionScope: 'thread'` kann jeder Thread eine eigene Session minten. Der
 
 `X-Qwen-Client-Id` ist **optional**, wird aber **dringend empfohlen**. Der Daemon generiert keine im Namen des Callers – Clients wählen ihre eigene und verwenden sie über Requests hinweg wieder, damit der Daemon Votes zuordnen, Events auditieren und Reconnects erkennen kann.
 
+Jeder unabhängige Controller sollte eine eigene, stabile ID verwenden. Die WebUI generiert standardmäßig IDs mit dem Präfix `webui_`. Ein Host und eine eingebettete WebShell sollten sich eine ID nur teilen, wenn sie absichtlich als ein logischer Controller agieren; sobald sie geteilt wird, können Daemon-Logs nicht unterscheiden, welcher der beiden einen Request ausgelöst hat.
+
 Validierungsregeln:
 
 - Zeichensatz: `[A-Za-z0-9._:-]`.

@@ -20,7 +20,7 @@
 | `/workspace/mcp`                            | 路由 -> bridge extMethod                      | 池、预算和拒绝快照。                                                                                                                                                                                                                                                       |
 | `/workspace/skills`, `/workspace/providers` | 路由                                         | ACP 侧的实时快照；当不存在 session 时返回空的空闲数据。                                                                                                                                                                                                                   |
 | 按 session 的 SSE                             | `GET /session/:id/events`                      | 实时事件流。                                                                                                                                                                                                                                                                   |
-| `/demo` 调试控制台                       | `GET /demo` (`packages/cli/src/serve/demo.ts`) | 浏览器可访问的单页控制台：聊天、事件日志、workspace 检查器和权限 UX。在环回地址上，`http://127.0.0.1:4170/demo` 是无需编写 SDK 代码即可进行最快端到端验证的路径。注册规则在 [`02-serve-runtime.md`](./02-serve-runtime.md) 中。 |
+| Web Shell UI                                | `GET /` (`packages/cli/src/serve/web-shell-static.ts`) | 从打包的 Web Shell 资源提供的浏览器 UI：聊天、会话列表、工作区检查器和权限 UX。在环回地址上，`http://127.0.0.1:4170/` 是无需编写 SDK 代码即可进行最快端到端验证的路径。注册规则在 [`02-serve-runtime.md`](./02-serve-runtime.md) 中。 |
 | `PermissionAuditRing`                       | `permission-audit.ts`                          | 包含 512 个权限决策的内存 FIFO 队列。                                                                                                                                                                                                                                               |
 | Mediator `decisionReason` 审计             | `permissionMediator.ts`                        | 内部结构化记录，解释权限请求为何以该方式解析。                                                                                                                                                                                                   |
 
@@ -175,6 +175,7 @@ flowchart TD
 - `QWEN_SERVE_DEBUG` 在每次检查时通过 `debug-mode.ts` 中的 `isServeDebugMode()` 读取；切换它不需要重启。除非在启动时设置了该环境变量，否则无法获取启动日志。
 - `PermissionAuditRing` 限制为 512 个 FIFO 条目；较旧的记录会被静默丢弃。
 - `DaemonStatusProvider` 按请求重建单元且不做缓存；避免不必要的高频轮询。
+
 ## 依赖
 
 - 使用 `process.stderr.write` 进行调试 stderr 输出。
@@ -196,6 +197,7 @@ flowchart TD
 ## 注意事项与已知限制
 
 - **DaemonLogger 文件日志是结构化的**，可通过 `route`、`sessionId` 和 `clientId` 进行过滤。`QWEN_SERVE_DEBUG` 的 stderr 日志仍为非结构化文本。
+- **已接受的 prompt、continuation 和 cancellation 变更具有生命周期日志。** `prompt enqueued`、`continuation enqueued` 和 `cancel sent` 包含 `sessionId`、适用时的 `promptId` 以及提供时的 `clientId`；prompt 内容不会被记录。为每个独立的控制器使用不同的稳定 client ID。故意共享 ID 的控制器在这些记录中是无法区分的。
 - **DaemonLogger 保留策略基于大小，而非基于时间。** 活动文件和四个归档按每个系列限制；活跃的 fallback 所有者永远不会被删除。
 - **访问摘要有意的丢失统计。** WARN 级别的 `access logs suppressed` 表示从 stderr 和文件中省略的单独访问记录；它不表示丢弃的 HTTP 请求。
 - **外部 logrotate 不得修改活动系列。** 使用读取/拷贝并在替换后重新打开稳定路径名的发送器。

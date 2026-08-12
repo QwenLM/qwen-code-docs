@@ -78,7 +78,7 @@
 | `type` | `"preset"` | 是 | 必须为 `"preset"` |
 | `items` | string[] | 是 | 要显示的预设项 ID 的有序列表（见下表）。各项之间使用 `\|` 作为分隔符连接。 |
 | `useThemeColors` | boolean | 否 | 将当前 `/theme` 的颜色应用到状态栏文本。默认为 `true`。 |
-| `hideContextIndicator` | boolean | 否 | 隐藏底部右侧区域内置的上下文使用指示器。默认为 `false`。 |
+| `hideContextIndicator` | boolean | 否 | 隐藏底部右侧区域内置的上下文使用指示器。未设置时，如果 `items` 包含 `context-used` 或 `context-remaining`，则会自动隐藏，避免上下文使用量重复显示。设置为 `false` 可始终显示。 |
 
 ### 可用的预设项
 
@@ -175,7 +175,7 @@ qwen-3-235b high | main | Context 65.7% left | /home/user/project | Context 34.3
 | `command` | string | 是 | 要执行的 Shell 命令。通过 stdin 接收 JSON，stdout 会被显示（最多 2 行）。 |
 | `refreshInterval` | number | 否 | 每 N 秒重新运行一次命令（最小为 1）。适用于在没有 Agent 状态事件时发生变化的数据（时钟、配额、运行时间）。 |
 | `respectUserColors` | boolean | 否 | 保留命令输出中的 ANSI 颜色代码，而不是应用变暗的底部样式。默认为 `false`。 |
-| `hideContextIndicator` | boolean | 否 | 隐藏底部右侧区域内置的上下文使用指示器。默认为 `false`。 |
+| `hideContextIndicator` | boolean | 否 | 隐藏底部右侧区域内置的上下文使用指示器。默认为 `false`——命令输出不会被检查上下文信息，因此如果你的命令已经输出上下文使用量，请显式设置此项。 |
 
 ### JSON 输入
 

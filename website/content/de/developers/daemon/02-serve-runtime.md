@@ -32,7 +32,7 @@
 | `bearerAuth(token)` | SHA-256 plus `timingSafeEqual` Constant-Time-Bearer-Vergleich. | Offener Passthrough, wenn kein Token konfiguriert ist (Loopback-Dev-Standard). Das `Bearer`-Schema ist case-insensitive. |
 | Rate-Limit-Middleware | Optionaler Token-Bucket pro Stufe für Prompt-, Mutations- und Read-Routen. | Nach `bearerAuth` und vor dem JSON-Parsing registriert; gibt 429 vor dem Parsing zurück, wenn ein Bucket erschöpft ist. |
 | `express.json({ limit: '10mb' })` | JSON-Body-Parsing. | Parse-Fehler geben 400 zurück. |
-| `daemonTelemetryMiddleware` | Wrapper für jeden HTTP-Request in einem OpenTelemetry-Span durch `withDaemonRequestSpan`. | Attribute umfassen Route, sessionId, clientId und Statuscode. |
+| `daemonTelemetryMiddleware` | Wrapper für klassifizierte Daemon-API-Requests, die diesen Punkt erreichen, in einem OpenTelemetry-Span durch `withDaemonRequestSpan`. | Attribute umfassen kanonische Route, aufgelösten Workspace-Hash, sessionId, clientId und Statuscode. Frühere Auth-, Rate-Limit- und Body-Parser-Ablehnungen liegen außerhalb dieser Span-Grenze. |
 | `createMutationGate` (pro Route) | Opt-in-Gate auf Routen-Ebene für Mutations-Routen, die auch auf Loopback ein Token erfordern. | Gibt `401 { code: 'token_required' }` zurück. Kein globales `app.use`; Routen rufen bei Bedarf `mutate({ strict: true })` auf. |
 
 **Subsystems**:
@@ -49,7 +49,7 @@
 | `serve/daemon-logger.ts` | `DaemonLogger` strukturierte Datei-Logs. Siehe [`19-observability.md`](./19-observability.md). |
 | `serve/debug-mode.ts` | Gemeinsames `isServeDebugMode()`-Prädikat zur Steuerung des ausführlichen Fehlerkontexts in HTTP-Antworten. |
 | `serve/acp-http/` | ACP Streamable HTTP Transport (RFD #721), gemountet unter `/acp`. Sieben Dateien implementieren JSON-RPC POST, SSE GET, DELETE-Teardown und die gemeinsame Bridge-Nutzung parallel zur REST-Oberfläche. |
-| `serve/demo.ts` | In sich geschlossenes Inline-HTML für `GET /demo`: Browser-Debug-Konsole mit Chat-UI, Event-Log und Workspace-Inspector. Auf Loopback ohne `--require-auth` wird es **vor** `bearerAuth` registriert; auf Non-Loopback oder mit `--require-auth` wird es **nach** `bearerAuth` registriert. Wird mit CSP `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'` sowie `X-Frame-Options: DENY` ausgeliefert. |
+| `serve/web-shell-static.ts`, `serve/web-shell-resolver.ts` | Lokalisieren und mounten der gebauten Web-Shell-Assets (die Browser-UI des Daemons) unter `/`, `/assets` und `/session/:id`, sowie den SPA-Deep-Link-Fallback, der nach allen API-Routen registriert wird. Wird in jedem Launch-Modus **vor** `bearerAuth` gemountet – ein Browser kann `Authorization` nicht bei einer Navigation oder Subresource anhängen – während jede API-Route, die er aufruft, token-geschützt bleibt. Fällt auf API-only zurück, wenn die Assets fehlen; `--no-web` optet aus. |
 
 **ACP-Bridge-Package-Imports**:
 
@@ -121,11 +121,12 @@ Der direkte Aufruf von `createServeApp` gibt nur eine `Application` zurück; der
 | Env | `QWEN_SERVE_DEBUG=1` | Ausführliche Stderr-Logs. Siehe [`19-observability.md`](./19-observability.md). |
 | Flags | `--hostname`, `--port` | Listen-Binding. |
 | Flags | `--token`, `--require-auth`, `--enable-session-shell` | Bearer-Token, Loopback-Auth-Härtung und expliziter Shell-Ausführungsschalter. |
-| Flag | `--workspace` | Überschreibt `process.cwd()`. |
+| Flag            | `--workspace`                                                                                              | Überschreibt `process.cwd()`; wiederholbar, um zusätzliche isolierte Workspace-Runtimes zu registrieren.                      |
 | Flags | `--max-sessions`, `--max-pending-prompts-per-session`, `--max-connections`, `--event-ring-size` | Bridge-/Express-Caps. |
 | Flags | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}` | An das ACP-Child weitergeleitet. |
 | Flags | `--allow-origin`, `--allow-private-auth-base-url` | Browser-CORS-Allowlist und Installationsschalter für Localhost/Private-Auth-Provider. |
-| Flags | `--prompt-deadline-ms`, `--writer-idle-timeout-ms`, `--channel-idle-timeout-ms` | Prompt-, SSE-Writer- und ACP-Child-Idle-Lifecycle-Steuerung. |
+| Flag            | `--web` / `--no-web`                                                                                       | Web-Shell-UI am Daemon-Root ausliefern oder überspringen (Standard: ausliefern). `--no-web` lässt den Daemon API-only. |
+| Flags           | `--prompt-deadline-ms`, `--writer-idle-timeout-ms`, `--channel-idle-timeout-ms`, `--initialize-timeout-ms` | Prompt-, SSE-Writer-, ACP-Child-Idle-Lifecycle- und ACP-Child-Request-Timeout-Steuerung.               |
 | Flags | `--session-reap-interval-ms`, `--session-idle-timeout-ms` | Steuerung des Reapings getrennter Sessions. |
 | Flags | `--rate-limit*` | HTTP-Rate-Limit pro Stufe. |
 | `settings.json` | `policy.permissionStrategy`, `policy.consensusQuorum` | `MultiClientPermissionMediator`-Policy und Quorum. |
@@ -135,7 +136,7 @@ Siehe [`17-configuration.md`](./17-configuration.md) für die zusammengeführte 
 ## Einschränkungen und bekannte Limits
 
 - Bei direktem Aufruf von `createServeApp` ohne `deps.fsFactory` oder `deps.bridge` ist der Standardwert `trusted: false`; das agentenseitige ACP `writeTextFile` wird mit `untrusted_workspace` abgelehnt. Die Warnung wird einmalig ausgegeben.
-- `denyBrowserOriginCors` lehnt **alle** Requests ab, die einen `Origin`-Header enthalten; die Demo-Seite funktioniert, weil eine andere Middleware zuvor übereinstimmende Same-Origin-Werte entfernt.
+- `denyBrowserOriginCors` lehnt **alle** Requests ab, die einen `Origin`-Header enthalten; die **Loopback**-Web-Shell funktioniert, weil eine andere Middleware zuvor übereinstimmende Loopback-Same-Origin-Werte entfernt – Non-Loopback-Binds erfordern `--allow-origin` für die XHRs der Shell.
 - Body-Parser-Reihenfolge: Routes, die `mutate({ strict: true })` verwenden, geben 401 erst nach `express.json()` zurück. Der Worst-Case ist `--max-connections × express.json({limit: '10mb'})`, was bis zu etwa 2,5 GB temporären Speicher auf einem ausgelasteten Loopback-Listener bedeutet; dieser Kompromiss ist beabsichtigt.
 - Mehrere Daemons in einem Prozess müssen `childEnvOverrides` pro Handle verwenden; das Mutieren von `process.env` führt zu Race Conditions, da `defaultSpawnChannelFactory` die Umgebungsvariablen zum Zeitpunkt des Spawns als Snapshot erfasst.
 

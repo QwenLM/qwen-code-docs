@@ -56,7 +56,7 @@ if (parsed.allowAny && !token) {
 
 ```mermaid
 flowchart LR
-    REQ[Request] --> SO["strip same-origin Origin<br/>(demo page support)"]
+    REQ[Request] --> SO["strip same-origin Origin<br/>(Web Shell サポート)"]
     SO --> CORS{"--allow-origin?"}
     CORS -->|yes| AO["allowOriginCors<br/>(allowlist match)"]
     CORS -->|no| DC["denyBrowserOriginCors<br/>(reject all Origin)"]
@@ -95,7 +95,7 @@ flowchart LR
 
 `Origin` ヘッダーを持つリクエストをすべて拒否します。CLI/SDK は Origin を設定しません。ブラウザのみが設定します。`cors` パッケージのエラーコールバックが生成する 500 HTML ではなく、決定論的な `403 { error: 'Request denied by CORS policy' }` を返します。
 
-例外: デモページの同一オリジン XHR は、別のミドルウェア（`server.ts` 内）で処理され、Origin がデーモン自身のアドレスと一致する場合に `Origin` を削除します。
+例外: **ループバック**バインドでの Web Shell の同一オリジン XHR は、別のミドルウェア（`server/self-origin.ts` 内）で処理され、ループバックの自己オリジン（`127.0.0.1`、`localhost`、`[::1]`、`host.docker.internal`）のいずれかと一致する場合に `Origin` を削除します。ループバック以外のバインドでは、シェルの XHR は一致しない `Origin` を持つため、デーモンオリジン用に `--allow-origin` が必要です。
 
 ### `allowOriginCors`（`--allow-origin` モード）
 
@@ -268,7 +268,7 @@ sequenceDiagram
 
 - **`--require-auth` は機能プリフライトをシャドウする**。未認証のクライアントは `require_auth` タグを発見できません。発見面は 401 ボディそのものです。
 - **ミューテーションゲートのボディパーサー順序**: `mutationGate({strict: true})` の 401 レスポンスは、`express.json()` がボディをパースした**後に**発生します。飽和したループバックリスナーでの最悪のケース: `--max-connections × express.json({limit: '10mb'})` ≈ 2.5 GB の一時的なメモリ。ループバックのみの攻撃面であり、意図的に許容されています。
-- **同一オリジンの Origin 削除**は `server.ts` 内で `denyBrowserOriginCors` の**前**に行われます。将来の変更で削除位置が変わると、デモページが機能しなくなります。
+- **同一オリジンの Origin 削除**は `server.ts` 内で `denyBrowserOriginCors` の**前**に行われます。将来の変更で削除位置が変わると、Web Shell が機能しなくなります。
 - **トークン比較は SHA-256 ダイジェストに対して行われます**。生のトークンではありません。可変長のトークン比較を固定長のダイジェスト比較にすることで、タイミング漏洩を低減します。
 - デーモンは現在、mTLS、リクエスト署名、ペアトークンの Proof-of-Possession を**サポートしていません**。`--rate-limit` はクライアント ID / IP キーによる HTTP レート制限を提供しますが、クライアント ID 認証ではありません。
 

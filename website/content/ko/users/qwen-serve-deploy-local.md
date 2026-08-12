@@ -250,7 +250,7 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
 
 - **컨테이너화 배포** — Dockerfile, docker-compose, Kubernetes 매니페스트, nginx + TLS 리버스 프록시, 다중 인스턴스 token 격리. 엔터프라이즈 파일럿이 확정되면 v0.16.x로 연기됩니다. 아무도 검증하지 않으면 문서가 부패하기 때문입니다.
 - **교차 호스트 페더레이션 / 한 호스트에서 다중 데몬 조정** — 하나의 데몬이 여러 등록된 작업 공간 런타임을 호스팅할 수 있지만 데몬 간 조정은 없습니다. 인스턴스 경로 token 키잉 + 오래된 token 정리는 v0.16.x로 연기됩니다.
-- **자동 생성 데몬 token** — alpha는 BYO-token입니다. 자동 생성 + token 저장소 인프라는 v0.16.x로 연기됩니다.
+- **일반 데몬 token 저장** — `--local-control`은 해당 프로세스에 대해 새 token을 생성합니다; 장기 배포는 BYO-token을 유지합니다. 영구 token 저장소 인프라는 v0.16.x로 연기됩니다.
 - **Windows 네이티브 서비스**(`nssm`, Service Control Manager 래퍼) — 지금은 [WSL2](https://learn.microsoft.com/en-us/windows/wsl/)를 사용하고 위 systemd 섹션을 따르세요.
 
 전체 연기된 기능 목록에 대해서는 메인 사용자 가이드의 [v0.16-alpha 알려진 제한](./qwen-serve.md#v016-alpha-known-limits) 콜아웃을 참조하고, v0.16-alpha 롤아웃 추적 이슈에 대해서는 [#4175](https://github.com/QwenLM/qwen-code/issues/4175)를 참조하세요.

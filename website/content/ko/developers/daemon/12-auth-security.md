@@ -55,7 +55,7 @@ if (parsed.allowAny && !token) {
 
 ```mermaid
 flowchart LR
-    REQ[Request] --> SO["strip same-origin Origin<br/>(demo page support)"]
+    REQ[Request] --> SO["strip same-origin Origin<br/>(Web Shell support)"]
     SO --> CORS{"--allow-origin?"}
     CORS -->|yes| AO["allowOriginCors<br/>(allowlist match)"]
     CORS -->|no| DC["denyBrowserOriginCors<br/>(reject all Origin)"]
@@ -94,7 +94,7 @@ Host 비교는 **대소문자를 구분하지 않습니다**. Express는 헤더 
 
 `Origin` 헤더가 포함된 모든 요청을 거부합니다. CLI/SDK는 Origin을 설정하지 않습니다. 브라우저만 설정합니다. `cors` 패키지의 오류 콜백이 생성할 500 HTML 대신 결정론적인 `403 { error: 'Request denied by CORS policy' }`를 반환합니다.
 
-예외: 데모 페이지의 동일 출처 XHR은 별도 미들웨어(`server.ts` 내)에서 처리되며, Origin이 데몬 자체 주소와 일치할 때 Origin을 제거합니다.
+예외: **루프백** 바인드에서 Web Shell의 동일 출처 XHR은 별도 미들웨어(`server/self-origin.ts`)에서 처리되며, Origin이 루프백 자체 Origin(`127.0.0.1`, `localhost`, `[::1]`, `host.docker.internal`) 중 하나와 일치할 때 `Origin`을 제거합니다. 루프백이 아닌 바인드에서 셸의 XHR은 일치하지 않는 `Origin`을 가지며 데몬에 대해 `--allow-origin`이 필요합니다.
 
 ### `allowOriginCors` (`--allow-origin` 모드)
 
@@ -261,7 +261,7 @@ sequenceDiagram
 
 - **`--require-auth`는 기능 프리플라이트를 가립니다.** 인증되지 않은 클라이언트는 `require_auth` 태그를 검색할 수 없습니다. 검색 표면은 401 본문 자체입니다.
 - **뮤테이션 게이트 body-parser 순서**: `mutationGate({strict: true})` 401 응답은 `express.json()`이 본문을 파싱한 **후에** 발생합니다. 포화된 루프백 리스너의 최악의 경우: `--max-connections × express.json({limit: '10mb'})` ≈ 2.5GB 일시적 메모리. 루프백 전용 공격 표면이며 의도적으로 허용됩니다.
-- **동일 출처 Origin 제거**는 `server.ts`에서 `denyBrowserOriginCors` _이전에_ 발생합니다. 향후 변경으로 제거 위치가 이동하면 데모 페이지가 깨집니다.
+- **동일 출처 Origin 제거**는 `server.ts`에서 `denyBrowserOriginCors` _이전에_ 발생합니다. 향후 변경으로 제거 위치가 이동하면 Web Shell이 깨집니다.
 - **토큰 비교는 SHA-256 다이제스트**로 수행되며 원시 토큰이 아닙니다. 가변 길이 토큰 비교를 고정 크기 다이제스트 비교로 축소하여 시간 누출을 줄입니다.
 - 데몬은 현재 mTLS, 요청 서명, 페어 토큰 소유 증명을 지원하지 않습니다. `--rate-limit`은 클라이언트 ID / IP 키별로 HTTP 속도 제한을 제공합니다. 클라이언트 ID 인증이 아닙니다.
 

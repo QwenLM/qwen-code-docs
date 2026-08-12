@@ -229,8 +229,9 @@ spawn 소유 클라이언트의 HTTP 응답을 작성할 수 없을 때(TCP 핸�
 - `BridgeOptions.maxSessions`(기본값 32) — 상한.
 - `BridgeOptions.sessionScope`(기본값 `'single'`; 선택적 `'thread'`).
 - `BridgeOptions.initializeTimeoutMs`(기본값 10s) — ACP `initialize` 핸드셰이크.
+- `BridgeOptions.sessionRestoreTimeoutMs`(기본값 60s) — ACP `loadSession` / `unstable_resumeSession` 기한. 기본값 60s이며, 명시적으로 설정된 initialize 타임아웃이 이를 올릴 수 있지만 낮출 수는 없습니다.
 - `BridgeOptions.channelIdleTimeoutMs`(기본값 0; ACP 자식을 즉시 정리).
-- Capability 태그: `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`(더 이상 사용되지 않는 별칭), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
+- Capability 태그: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`(더 이상 사용되지 않는 별칭), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
 
 ### 무상태 생성(`session_generation` capability 태그)
 

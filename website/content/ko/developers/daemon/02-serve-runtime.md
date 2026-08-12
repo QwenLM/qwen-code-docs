@@ -49,7 +49,7 @@
 | `serve/daemon-logger.ts`                                           | `DaemonLogger` 구조화된 파일 로그. [`19-observability.md`](./19-observability.md) 참조.                                                                                                                                                                                                                                                                                                                                                                   |
 | `serve/debug-mode.ts`                                              | HTTP 응답에서 상세 오류 컨텍스트를 제어하는 공유 `isServeDebugMode()` 술어.                                                                                                                                                                                                                                                                                                                                                                               |
 | `serve/acp-http/`                                                  | ACP Streamable HTTP 트랜스포트 (RFD #721), `/acp`에 마운트. 7개 파일이 JSON-RPC POST, SSE GET, DELETE 분해, REST 표면과 병행하는 공유 브리지 사용을 구현합니다.                                                                                                                                                                                                                             |
-| `serve/demo.ts`                                                    | `GET /demo`의 자체 포함 인라인 HTML: 채팅 UI, 이벤트 로그, 워크스페이스 인스펙터가 있는 브라우저 디버그 콘솔. `--require-auth` 없는 루프백에서는 `bearerAuth` **이전에** 등록됩니다. 루프백이 아니거나 `--require-auth`가 있으면 `bearerAuth` **이후에** 등록됩니다. CSP `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'` + `X-Frame-Options: DENY`로 제공됩니다. |
+| `serve/web-shell-static.ts`, `serve/web-shell-resolver.ts`       | 빌드된 Web Shell 에셋(데몬의 브라우저 UI)을 `/`, `/assets`, `/session/:id`에 위치 및 마운트하고, 모든 API 라우트 이후에 등록되는 SPA 딥링크 폴백. 모든 시작 모드에서 `bearerAuth` **이전에** 마운트됩니다 — 브라우저는 탐색이나 하위 리소스에 `Authorization`을 첨부할 수 없기 때문이며, Web Shell이 호출하는 모든 API 라우트는 토큰 게이트를 유지합니다. 에셋이 없으면 API 전용으로 디그레이드됩니다. `--no-web`으로 옵트아웃합니다. |
 
 **ACP 브리지 패키지 임포트**:
 
@@ -125,6 +125,7 @@
 | 플래그          | `--max-sessions`, `--max-pending-prompts-per-session`, `--max-connections`, `--event-ring-size`            | 브리지 / Express 캡.                                                                                  |
 | 플래그          | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}`                                            | ACP 자식에게 전달됩니다.                                                                              |
 | 플래그          | `--allow-origin`, `--allow-private-auth-base-url`                                                          | 브라우저 CORS 허용 목록 및 로컬호스트/비공개 인증 제공자 설치 스위치.                                  |
+| 플래그          | `--web` / `--no-web`                                                                                       | 데몬 루트에서 Web Shell UI를 제공하거나 건너뜁니다(기본값: 제공). `--no-web`은 데몬을 API 전용으로 남깁니다. |
 | 플래그          | `--prompt-deadline-ms`, `--writer-idle-timeout-ms`, `--channel-idle-timeout-ms`, `--initialize-timeout-ms` | 프롬프트, SSE writer, ACP 자식 유휴 수명주기, ACP 자식 요청 타임아웃 제어.                             |
 | 플래그          | `--session-reap-interval-ms`, `--session-idle-timeout-ms`                                                  | 연결 끊긴 세션 정리 제어.                                                                             |
 | 플래그          | `--rate-limit*`                                                                                            | 티어별 HTTP 속도 제한.                                                                                |
@@ -136,7 +137,7 @@
 ## 주의사항 및 알려진 제한
 
 - `deps.fsFactory` 또는 `deps.bridge` 없는 직접 `createServeApp`은 `trusted: false`를 기본값으로 사용합니다. 에이전트 측 ACP `writeTextFile`은 `untrusted_workspace`로 거부합니다. 경고는 한 번만 출력됩니다.
-- `denyBrowserOriginCors`는 `Origin`을 포함하는 **모든** 요청을 거부합니다. 데모 페이지는 다른 미들웨어가 먼저 일치하는 동일 출처 값을 제거하기 때문에 작동합니다.
+- `denyBrowserOriginCors`는 `Origin`을 포함하는 **모든** 요청을 거부합니다. **루프백** Web Shell은 다른 미들웨어가 먼저 일치하는 루프백 동일 출처 값을 제거하기 때문에 작동합니다. 루프백이 아닌 바인드는 Web Shell의 XHR에 `--allow-origin`이 필요합니다.
 - 본문 파서 순서: `mutate({ strict: true })`를 사용하는 라우트는 `express.json()` 이후에만 401을 반환합니다. 최악의 경우는 `--max-connections × express.json({limit: '10mb'})`로, 포화된 루프백 리스너에서 최대 약 2.5GB의 일시적 메모리입니다. 이 트레이드오프는 의도적입니다.
 - 하나의 프로세스에서 여러 데몬은 핸들별 `childEnvOverrides`를 사용해야 합니다. `defaultSpawnChannelFactory`가 생성 시 환경의 스냅샷을 찍기 때문에 `process.env`를 변경하면 경합이 발생합니다.
 

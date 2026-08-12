@@ -2,7 +2,7 @@
 
 Расширения Qwen Code объединяют промпты, MCP-серверы, субагентов, навыки и пользовательские команды в удобный и понятный формат. С помощью расширений вы можете расширить возможности Qwen Code и делиться этими возможностями с другими. Они спроектированы так, чтобы их было легко устанавливать и распространять.
 
-Расширения и плагины из [Gemini CLI Extensions Gallery](https://geminicli.com/extensions/) и [Claude Code Marketplace](https://claudemarketplaces.com/) можно напрямую устанавливать в Qwen Code. Эта кроссплатформенная совместимость даёт вам доступ к богатой экосистеме расширений и плагинов, значительно расширяя возможности Qwen Code без необходимости поддерживать отдельные версии для авторов расширений.
+Расширения и плагины из [Gemini CLI Extensions Gallery](https://geminicli.com/extensions/), [Claude Code Marketplace](https://claudemarketplaces.com/), Qoder и переносимого формата [Agent Plugins v1](./agent-plugins.md) можно напрямую устанавливать в Qwen Code. Эта кроссплатформенная совместимость даёт вам доступ к богатой экосистеме расширений и плагинов, значительно расширяя возможности Qwen Code без необходимости поддерживать отдельные версии для авторов расширений.
 
 ## Управление расширениями
 
@@ -99,6 +99,32 @@ qwen extensions install <owner>/<repo>
 - TOML-файлы команд автоматически переносятся в формат Markdown
 - MCP-серверы, контекстные файлы и настройки сохраняются
 
+#### Из плагинов Qoder
+
+Qwen Code поддерживает [плагины Qoder](https://docs.qoder.com/en/cli/sdk/plugins), содержащие манифест `.qoder-plugin/plugin.json`. Установите локальную директорию, архив, Git-репозиторий, URL архива или скоуп-пакет npm с помощью существующей команды `qwen extensions install`:
+
+```bash
+qwen extensions install ./sample-qoder-plugin
+qwen extensions install ./sample-qoder-plugin.zip
+qwen extensions install owner/sample-qoder-plugin
+```
+
+Установщик конвертирует манифест Qoder в `qwen-extension.json` и сохраняет стандартные директории `commands/`, `agents/` и `skills/`. MCP-серверы, объявленные в корневом файле `.mcp.json`, включаются как MCP-серверы расширения.
+
+Когда плагин Qoder содержит `system-prompt.md` в корне, Qwen Code загружает его как контекст расширения. Если плагин также содержит `QWEN.md` или объявляет другие контекстные файлы, все контекстные файлы сохраняются и дедуплицируются.
+
+#### Из Agent Plugins v1
+
+Qwen Code нативно загружает переносимые пакеты Agent Plugins v1 без конвертации или перезаписи файлов `plugin.json`, `mcp.json` или `SKILL.md`:
+
+```bash
+qwen extensions install ./my-agent-plugin
+qwen extensions link ./my-agent-plugin
+qwen extensions install owner/my-agent-plugin
+```
+
+Переносимый runtime поддерживает Agent Skills, а также stdio и Streamable HTTP MCP-серверы. Команды, агенты, хуки, клиентские неймспейсы и legacy SSE MCP не активируются. См. [Agent Plugins v1](./agent-plugins.md) для полной таблицы поддержки.
+
 #### Из npm-реестра
 
 Qwen Code поддерживает установку расширений из npm-реестров с использованием имён в скоупе. Это идеально подходит для команд, у которых уже есть инфраструктура аутентификации, версионирования и публикации в частных реестрах.
@@ -125,7 +151,7 @@ qwen extensions install @scope/my-extension --registry https://your-registry.com
 
 **Аутентификация** обрабатывается автоматически через переменную окружения `NPM_TOKEN` или записи `_authToken` для конкретного реестра в вашем файле `.npmrc`.
 
-> **Примечание:** npm-расширения должны содержать файл `qwen-extension.json` в корне пакета, следуя тому же формату, что и любое другое расширение Qwen Code. См. [Публикация расширений](./extension-releasing.md#releasing-through-npm-registry) для получения информации об упаковке.
+> **Примечание:** npm-расширения должны содержать либо нативный `qwen-extension.json`, либо `plugin.json` для Agent Plugins v1 в корне пакета. См. [Публикация расширений](./extension-releasing.md#releasing-through-npm-registry) для получения информации об упаковке.
 
 #### Из Git-репозитория
 
@@ -223,7 +249,9 @@ qwen extensions update --all
 
 При запуске Qwen Code ищет расширения в `<home>/.qwen/extensions`
 
-Расширения существуют как директория, содержащая файл `qwen-extension.json`. Например:
+Нативные расширения Qwen существуют как директория, содержащая файл `qwen-extension.json`. Пакеты Agent Plugins v1 вместо этого сохраняют свой корневой `plugin.json`; см. [Agent Plugins v1](./agent-plugins.md).
+
+Например, нативное расширение Qwen Code хранится по пути:
 
 `<home>/.qwen/extensions/my-extension/qwen-extension.json`
 

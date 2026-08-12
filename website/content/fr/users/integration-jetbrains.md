@@ -8,6 +8,7 @@
 - **Agent Client Protocol** : Prise en charge complète d'ACP pour des interactions avancées avec l'IDE
 - **Gestion des symboles** : Mentionner des fichiers avec # pour les ajouter au contexte de la conversation
 - **Historique des conversations** : Accès aux conversations passées dans l'IDE
+- **Effort de raisonnement** : Choisissez Default, Low, Medium, High, Extra high ou Max depuis les options de session de l'agent ; chaque fournisseur mappe ou limite le niveau demandé pour le modèle actif
 - **Utilisation du contexte** : Consultez l'occupation actuelle de la fenêtre de contexte pendant que Qwen Code travaille
 
 ### Prérequis

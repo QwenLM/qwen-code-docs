@@ -244,13 +244,17 @@ Neben den Kernaufrufen `spawnOrAttach`, `sendPrompt`, `cancelSession`,
 In-Memory-Fenster für Live-Sessions, gedeckelt durch
 `BridgeOptions.compactedReplayMaxBytes` (Standard 4 MiB, harte Obergrenze
 256 MiB). Das laufende `liveJournal` ist separat durch
-`BridgeOptions.maxJournalEvents` (Standard 10 000) und
-`BridgeOptions.maxJournalBytes` (Standard 8 MiB) begrenzt. Wenn älteres
-aufbewahrtes Replay verworfen wurde, ist `compactedReplay[0]` der
-id-lose `history_truncated`-Marker; wenn Journal-Einträge verworfen wurden,
-enthält `liveJournal[0]` einen `history_truncated`-Marker mit
-`scope: 'live_journal'`. Das vollständig persistierte Transkript verbleibt
-auf der Festplatte und wird von dieser Bridge-Antwort nicht offengelegt.
+`BridgeOptions.maxJournalEvents` (Standard 10 000 Replay-Einträge) und
+`BridgeOptions.maxJournalBytes` (Standard 8 MiB serialisierter Source-Events)
+begrenzt. Aufeinanderfolgende kompatible Text- oder Thought-Chunks teilen sich
+einen Replay-Eintrag mit höchstens 256 Source-Events pro Eintrag; andere Event-
+und Attributionsgrenzen bleiben erhalten. Wenn älteres aufbewahrtes Replay
+verworfen wurde, ist `compactedReplay[0]` der id-lose `history_truncated`-Marker;
+wenn Journal-Einträge verworfen wurden, enthält `liveJournal[0]` einen
+`history_truncated`-Marker mit `scope: 'live_journal'`. Seine Retained- und
+Truncated-Counts beschreiben Source-Events, nicht Replay-Einträge. Das
+vollständig persistierte Transkript verbleibt auf der Festplatte und wird von
+dieser Bridge-Antwort nicht offengelegt.
 `BridgeClientRequestContext` ist der Request-
 Context, der durch die Bridge-Aufrufe gereicht wird; er enthält `clientId`,
 `fromLoopback: boolean` und `promptId`.

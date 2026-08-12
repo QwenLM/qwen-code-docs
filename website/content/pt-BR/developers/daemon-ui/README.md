@@ -368,12 +368,47 @@ function toolIcon(event: DaemonUiToolUpdateEvent): React.ReactNode {
 O SDK tem uma heurística de fallback de nomenclatura `mcp__<server>__<tool>` — mesmo
 quando o daemon não carimba explicitamente a proveniência, ferramentas MCP são detectáveis.
 
+## Categorização de razão de debug
+
+`DaemonUiStatusEvent.debugReason` é uma enumeração fechada que o normalizador carimba
+quando projeta um bloco `debug` em vez de um evento tipado (espelhado em
+`DaemonStatusTranscriptBlock` para consumidores de transcrição):
+
+```ts
+import type { DaemonUiDebugReason } from '@qwen-code/sdk/daemon';
+// 'unrecognized_event' | 'unrecognized_session_update' | 'malformed_payload'
+```
+
+A lista canônica é exportada como `DAEMON_UI_DEBUG_REASONS`. Os nomes de razão
+são categorias com wildcard: `unrecognized_*` significa que o daemon enviou um
+frame para o qual esta versão do SDK não tem caso — ruído de compatibilidade futura,
+diagnóstico para desenvolvedores em vez de conteúdo de conversa. `malformed_*` significa
+que um frame que o SDK _conhece_ chegou com um payload inutilizável — um sinal real de defeito.
+
+Renderizadores devem alternar com base em `debugReason`, não no texto de debug — o
+prefixo de texto é wording de diagnóstico e muda sem aviso:
+
+```ts
+function hideDebugBlock(reason?: DaemonUiDebugReason): boolean {
+  // Oculta ruído de compatibilidade futura por categoria para que razões que um SDK
+  // mais novo adiciona sejam cobertas automaticamente. Sinais de defeito e eventos
+  // de debug despachados pelos próprios clientes (que não carregam razão) continuam
+  // sendo renderizados.
+  return reason?.startsWith('unrecognized_') ?? false;
+}
+```
+
+Eventos `status` nunca carregam um `debugReason`, nem eventos de debug despachados
+pelos próprios clientes (por exemplo, o resumo de troca de modelo do Web Shell) —
+ambos devem continuar sendo renderizados.
+
 ## Princípios de compatibilidade futura
 
 Cada camada no SDK de UI do daemon segue o **princípio de compatibilidade futura**:
 valores desconhecidos NÃO lançam exceções; eles degradam graciosamente.
 
-- Tipos de evento do daemon desconhecidos → evento `debug` com o nome do tipo bruto
+- Tipos de evento do daemon desconhecidos → evento `debug` com o nome do tipo bruto,
+  carimbado com um `debugReason` `unrecognized_*` (veja acima)
 - Status de ferramenta desconhecido → `currentToolCallId` não alterado (sem limpeza)
 - Tipo de erro desconhecido → `errorKind` undefined (renderizador cai para texto)
 - serverTimestamp ausente → cai para `clientReceivedAt`

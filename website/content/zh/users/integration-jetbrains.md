@@ -8,6 +8,7 @@
 - **Agent Client Protocol**：完全支持 ACP，实现高级 IDE 交互
 - **符号管理**：使用 #-mention 文件将其添加到对话上下文中
 - **对话历史**：在 IDE 中访问历史对话
+- **推理力度**：从 agent 的会话选项中选择 Default、Low、Medium、High、Extra high 或 Max；每个 provider 会为当前模型映射或钳制请求的级别
 - **上下文使用**：在 Qwen Code 工作时查看当前上下文窗口的占用情况
 
 ### 要求

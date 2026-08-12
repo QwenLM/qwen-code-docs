@@ -247,15 +247,19 @@ En plus des appels principaux `spawnOrAttach`, `sendPrompt`, `cancelSession`,
 `liveJournal` et `lastEventId`. Ces champs de relecture sont une fenêtre
 mémoire bornée pour les sessions live, limitée par `BridgeOptions.compactedReplayMaxBytes`
 (par défaut 4 MiB, plafond dur 256 MiB). Le `liveJournal` en cours est
-limité séparément par `BridgeOptions.maxJournalEvents` (par défaut 10 000) et
-`BridgeOptions.maxJournalBytes` (par défaut 8 Mo). Si une relecture conservée
-plus ancienne a été supprimée, `compactedReplay[0]` est le marqueur sans id `history_truncated` ; si
-des entrées de journal ont été supprimées, `liveJournal[0]` porte un marqueur `history_truncated`
-avec `scope: 'live_journal'`. La transcription persistée complète reste sur
-disque et n'est pas exposée par cette réponse du bridge.
-`BridgeClientRequestContext` est le contexte
-de requête transmis à travers les appels de bridge ; il contient `clientId`,
-`fromLoopback: boolean` et `promptId`.
+limité séparément par `BridgeOptions.maxJournalEvents` (par défaut 10 000 entrées
+de relecture) et `BridgeOptions.maxJournalBytes` (par défaut 8 Mo d'événements
+source sérialisés). Les chunks de texte ou de pensée consécutifs et compatibles
+partagent une entrée de relecture, avec au plus 256 événements source par entrée ;
+les autres limites d'événements et d'attribution restent intactes. Si une relecture
+conservée plus ancienne a été supprimée, `compactedReplay[0]` est le marqueur sans
+id `history_truncated` ; si des entrées de journal ont été supprimées,
+`liveJournal[0]` porte un marqueur `history_truncated` avec `scope: 'live_journal'`.
+Ses compteurs retained et truncated décrivent les événements source, pas les entrées
+de relecture. La transcription persistée complète reste sur disque et n'est pas
+exposée par cette réponse du bridge.
+`BridgeClientRequestContext` est le contexte de requête transmis à travers les
+appels de bridge ; il contient `clientId`, `fromLoopback: boolean` et `promptId`.
 
 ## Mises en garde et limites connues
 

@@ -20,7 +20,7 @@
 | `/workspace/mcp`                            | Route -> bridge extMethod                         | Snapshot du pool, du budget et des refus.                                                                                                                                                                                                                                                  |
 | `/workspace/skills`, `/workspace/providers` | Routes                                            | Snapshots en direct côté ACP ; renvoient des données inactives vides lorsqu'aucune session n'existe.                                                                                                                                                                                       |
 | SSE par session                             | `GET /session/:id/events`                         | Flux d'événements en temps réel.                                                                                                                                                                                                                                                           |
-| Console de débogage `/demo`                 | `GET /demo` (`packages/cli/src/serve/demo.ts`)    | Console monopage accessible via le navigateur : chat, log d'événements, inspecteur de workspace et UX de permissions. Sur loopback, `http://127.0.0.1:4170/demo` est le chemin de validation de bout en bout le plus rapide sans écrire de code SDK. Les règles d'enregistrement se trouvent dans [`02-serve-runtime.md`](./02-serve-runtime.md). |
+| Web Shell UI                                | `GET /` (`packages/cli/src/serve/web-shell-static.ts`) | UI navigateur servie depuis les assets Web Shell bundled : chat, liste de sessions, inspecteur de workspace et UX de permissions. Sur loopback, `http://127.0.0.1:4170/` est le chemin de validation de bout en bout le plus rapide sans écrire de code SDK. Les règles d'enregistrement se trouvent dans [`02-serve-runtime.md`](./02-serve-runtime.md). |
 | `PermissionAuditRing`                       | `permission-audit.ts`                             | FIFO en mémoire de 512 décisions de permission.                                                                                                                                                                                                                                            |
 | Audit `decisionReason` du médiateur         | `permissionMediator.ts`                           | Enregistrement structuré interne expliquant pourquoi une demande de permission a été résolue de telle ou telle manière.                                                                                                                                                                    |
 
@@ -149,6 +149,8 @@ Deux choses supplémentaires que cela ne couvre **pas**. C'est uniquement le pro
 Sous `--memory-pressure-mode off`, chaque chiffre ci-dessus est toujours rapporté et le problème n'est pas levé, donc le `status` de premier niveau reste ce qu'il aurait été. Utilisez `off` lors du calibrage des seuils par rapport à une charge réelle, ou si vous alertez sur `status` et ne voulez pas qu'un signal non calibré le modifie.
 
 ## Flux
+
+### Flux de triage typique
 
 ```mermaid
 flowchart TD

@@ -57,6 +57,8 @@ Sob `sessionScope: 'thread'`, cada thread pode criar uma sessão distinta. O cha
 
 `X-Qwen-Client-Id` é **opcional**, mas **fortemente recomendado**. O daemon não gera um em nome do chamador — os clientes escolhem o seu próprio e o reutilizam entre requisições para que o daemon possa atribuir votos, auditar eventos e detectar reconexões.
 
+Cada controlador independente deve usar um ID distinto e estável. O WebUI gera IDs com o prefixo `webui_` por padrão. Um host e um WebShell incorporado devem compartilhar um ID apenas quando intencionalmente atuam como um único controlador lógico; uma vez compartilhado, os logs do daemon não conseguem distinguir qual deles originou uma requisição.
+
 Regras de validação:
 
 - Charset: `[A-Za-z0-9._:-]`.
@@ -236,8 +238,9 @@ A capability `session_monitor_tool_correlation` garante adicionalmente que entra
 - `BridgeOptions.maxSessions` (padrão 32) — limite máximo.
 - `BridgeOptions.sessionScope` (padrão `'single'`; opcional `'thread'`).
 - `BridgeOptions.initializeTimeoutMs` (padrão 10s) — handshake `initialize` do ACP.
+- `BridgeOptions.sessionRestoreTimeoutMs` (padrão 60s) — deadline do ACP `loadSession` / `unstable_resumeSession`. O padrão é 60s; um timeout de initialize configurado explicitamente pode elevá-lo, mas nunca reduzi-lo.
 - `BridgeOptions.channelIdleTimeoutMs` (padrão 0; descarta o filho ACP imediatamente).
-- Tags de capability: `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (alias depreciado), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
+- Tags de capability: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (alias depreciado), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
 
 ### Geração sem estado (tag de capability `session_generation`)
 

@@ -34,12 +34,12 @@ Dieses Dokument listet die verfügbaren Tastaturkürzel in Qwen Code auf.
 | `Tab`                                                 | Schließt den aktuellen Vorschlag automatisch ab, falls einer vorhanden ist.                                                                                  |
 | `Up Arrow`                                            | Zeile nach oben, dann an den Anfang springen, dann vorheriger Verlaufseintrag.                                                                                      |
 | `Ctrl+A` / `Home`                                     | Bewegt den Cursor an den Zeilenanfang.                                                                                       |
-| `Ctrl+B` / `Left Arrow`                               | Bewegt den Cursor ein Zeichen nach links.                                                                                          |
+| `Ctrl+B` / `Left Arrow`                               | Bewegt den Cursor ein Zeichen nach links. Während das `@`-Autovervollständigungsmenü Kategorie-Tabs anzeigt, verwende `Ctrl+B` (der Pfeil wechselt die Tabs). |
 | `Ctrl+C`                                              | Löscht den Input Prompt                                                                                                              |
 | `Esc` (double press)                                  | Löscht den Input Prompt.                                                                                                             |
 | `Ctrl+D` / `Delete`                                   | Löscht das Zeichen rechts vom Cursor.                                                                                    |
 | `Ctrl+E` / `End`                                      | Bewegt den Cursor an das Zeilenende.                                                                                             |
-| `Ctrl+F` / `Right Arrow`                              | Bewegt den Cursor ein Zeichen nach rechts.                                                                                         |
+| `Ctrl+F` / `Right Arrow`                              | Bewegt den Cursor ein Zeichen nach rechts. Während das `@`-Autovervollständigungsmenü Kategorie-Tabs anzeigt, verwende `Ctrl+F` (der Pfeil wechselt die Tabs). |
 | `Ctrl+H` / `Backspace`                                | Löscht das Zeichen links vom Cursor.                                                                                     |
 | `Ctrl+K`                                              | Löscht vom Cursor bis zum Zeilenende.                                                                                      |
 | `Ctrl+Left Arrow` / `Meta+Left Arrow` / `Meta+B`      | Bewegt den Cursor ein Wort nach links.                                                                                               |
@@ -86,9 +86,10 @@ Fokussiere die Background-tasks-Pille im Footer (verwende `Down Arrow` bei leere
 | `Down Arrow` / `Ctrl+N`              | Navigiert in den Vorschlägen nach unten.                                   |
 | `Tab` / `Enter`                      | Übernimmt den ausgewählten Vorschlag.                                          |
 | `Up Arrow` / `Ctrl+P`                | Navigiert in den Vorschlägen nach oben.                                     |
-| `Right Arrow`                        | Übernimmt einen Ghost-Text-Vorschlag, wenn der Prompt leer ist.                 |
-| `Ctrl+Tab` / `Ctrl+Right Arrow`      | Wechselt zur nächsten Autovervollständigungs-Kategorie, wenn Kategorie-Tabs angezeigt werden.     |
-| `Ctrl+Shift+Tab` / `Ctrl+Left Arrow` | Wechselt zur vorherigen Autovervollständigungs-Kategorie, wenn Kategorie-Tabs angezeigt werden. |
+| `Right Arrow`                        | Wechselt zur nächsten Autovervollständigungs-Kategorie, wenn Kategorie-Tabs angezeigt werden. Übernimmt auch einen Ghost-Text-Vorschlag, wenn der Prompt leer ist. |
+| `Left Arrow`                         | Wechselt zur vorherigen Autovervollständigungs-Kategorie, wenn Kategorie-Tabs angezeigt werden. |
+
+> Hinweis: Während das `@`-Autovervollständigungsmenü Kategorie-Tabs anzeigt, wechseln `Left Arrow` und `Right Arrow` die Kategorien, anstatt den Cursor zu bewegen. Drücke `Esc`, um das Menü zuerst zu schließen, wenn du den Cursor bewegen möchtest. `Alt/Option+Arrow`-Wortbewegung bleibt davon unberührt.
 
 ## History-Suche
 

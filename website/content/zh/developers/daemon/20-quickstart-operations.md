@@ -16,7 +16,7 @@ qwen serve: bound to workspace "/your/cwd"
 qwen serve: bearer auth disabled (loopback default). Set QWEN_SERVER_TOKEN to enable.
 ```
 
-在浏览器中打开 `http://127.0.0.1:4170/demo` 即可查看调试控制台：包含聊天 UI、事件流和工作区检查功能。在默认的 loopback 开发模式下，`createServeApp()` 会在 `bearerAuth` **之前**挂载来自 `packages/cli/src/serve/routes/health-demo.ts` 的 `/demo` 路由，因此无需 token。
+在浏览器中打开 `http://127.0.0.1:4170/` 即可获取 Web Shell UI：聊天、会话列表和工作区检查。`createServeApp()` 在 `bearerAuth` **之前**挂载打包的 Web Shell 资源（`packages/cli/src/serve/web-shell-static.ts`），因此 Shell 本身无需 token 即可加载；其自身的 API 调用在配置了 bearer 时会携带 bearer token——启动 daemon 时使用 `--open`（将 token 放在 URL fragment 中，永远不会发送到服务器）或在启用认证时手动追加 `#token=…`。`--no-web` 退出 Web Shell，使 daemon 仅提供 API。
 
 ## 2. 启动方案
 
@@ -67,7 +67,7 @@ qwen serve --channel-idle-timeout-ms 60000
 QWEN_SERVE_RATE_LIMIT=1 qwen serve
 ```
 
-使用加固的 loopback 方案 (3) 时，`/demo` 会在 `bearerAuth` 之后注册。普通的浏览器导航需要 auth header，因此请改用 curl 或 SDK 脚本。
+使用加固的 loopback 方案 (3) 时，`/health` 在 `bearerAuth` 之后注册，因此探针必须像其他 API 路由一样携带 token（Web Shell 静态资源按设计保持预认证；传递 `--no-web` 可获得纯 API 的 daemon）。
 
 ## 3. 完整启动选项
 
@@ -196,23 +196,21 @@ curl -N \
   -H 'Last-Event-ID: 0' \
   'http://127.0.0.1:4170/session/<sid>/events'
 
-# 8. Demo page
-open http://127.0.0.1:4170/demo
+# 8. Web Shell UI
+open http://127.0.0.1:4170/
 ```
 
 启用 Bearer 认证时，请在每个请求中添加 `-H "Authorization: Bearer $QWEN_SERVER_TOKEN"`。
 
-## 8. 可以使用 demo 页面吗？
+## 8. 是否有浏览器 UI？
 
-**可以。** 它由 `packages/cli/src/serve/demo.ts` 中的 `getDemoHtml(port)` 实现，是一个自包含的 HTML，没有外部依赖。
+**有——Web Shell。** `resolveWebShellDir()` 查找构建好的资源（在发布版中与 CLI bundle 一起打包，在 checkout 中位于 `packages/web-shell/dist`），`mountWebShellAssets()` 将它们挂载在 `/`、`/assets` 和 `/session/:id` 的文档导航上（浏览器深度链接——纯 `curl /session/<id>` 只会得到 API 的 401/404，而非 Shell）。当资源缺失时，daemon 会降级为纯 API 模式而不是崩溃；`--no-web` 可以显式退出。
 
-| 启动模式 | `/demo` 的注册位置 | 浏览器直接访问 |
-| --- | --- | --- |
-| 未使用 `--require-auth` 的 Loopback | `routes/health-demo.ts`，由 `createServeApp()` 在 `bearerAuth` 之前挂载 | 无需 token 即可访问 |
-| 使用 `--require-auth` 的 Loopback | `routes/health-demo.ts`，由 `createServeApp()` 在 `bearerAuth` 之后挂载 | 难以通过普通浏览器使用；请使用 curl 或 SDK |
-| 非 Loopback 绑定 | `routes/health-demo.ts`，由 `createServeApp()` 在 `bearerAuth` 之后挂载 | 同上 |
+静态 Shell 在所有启动模式下都挂载在 `bearerAuth` **之前**——浏览器无法为地址栏导航或 `<script src>` 子资源附加 `Authorization` 头，因此对其进行门控只会破坏 UI。它调用的每个 API 路由仍然受 token 门控，前端自行附加 bearer。在非 loopback 绑定下，Shell 是只读的，除非传递 `--allow-origin <origin>`——同源 POST 携带的 `Origin` 头会被 CORS 墙拒绝（403）——因此在 loopback 以外的任何绑定都需要传递 `--allow-origin`。
 
-CSP 为 `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'`，并附加 `X-Frame-Options: DENY`。该页面只能请求 `'self'`（即 daemon），无法加载外部脚本或样式。
+CSP 由 `buildWebShellCsp()` 构建，比静态页面的策略更宽松（内联 `performance.measure` 补丁使用 `'unsafe-inline'`，shiki 和 mermaid 使用 `eval`/wasm/blob worker，katex 字体使用 `data:`，SSE 使用 `connect-src 'self'`）。`frame-ancestors 'none'` 加 `X-Frame-Options: DENY` 阻止点击劫持，除非通过 `--allow-origin` 显式允许了扩展源以便 UI 可以托管在 Chrome 侧边栏中（#5626）。
+
+如需原始协议检查，请直接订阅 SSE 流（`routes/sse-events.ts`）——参见第 7 节中的 curl 方案。
 
 ## 9. 从 `qwen serve` 到监听服务器的调用链
 
@@ -253,7 +251,7 @@ serve/run-qwen-serve.ts              const app = createServeApp(opts, () => actu
    v
 serve/server.ts                    createServeApp() - builds Express app (**does not listen**)
    |  |- middleware chain (Host allowlist / CORS / bearerAuth / mutation gate / rate limit)
-   |  |- route mounting (health / demo / capabilities / workspace / session / SSE / ACP HTTP)
+   |  |- route mounting (health / web-shell static / capabilities / workspace / session / SSE / ACP HTTP)
    |  `- return app
    |
    v
@@ -280,7 +278,7 @@ commands/serve.ts                  await blockForever()    // block forever unti
 
 | 路由 | 文件 | 挂载入口 |
 | --- | --- | --- |
-| `/health`, `/demo` | `packages/cli/src/serve/routes/health-demo.ts` | `healthDemoRoutes.register()` |
+| `/health` | `packages/cli/src/serve/routes/health.ts` | `healthRoutes.register()` |
 | `/daemon/status` | `packages/cli/src/serve/routes/daemon-status.ts` | `registerDaemonStatusRoutes()` |
 | `/capabilities`、workspace init/tool/MCP mutation 路由、ACP HTTP bridge | `packages/cli/src/serve/server.ts` | 直接在 `createServeApp()` 内部注册 |
 | Workspace 状态、env、preflight、MCP/tool/provider/skill 摘要 | `packages/cli/src/serve/routes/workspace-status.ts` | `registerWorkspaceStatusRoutes()`, `registerWorkspaceDiagnosticStatusRoutes()` |
@@ -378,6 +376,6 @@ QWEN_SERVE_DEBUG=1 qwen serve
 - Express 工厂函数：`packages/cli/src/serve/server.ts`
 - 中间件：`packages/cli/src/serve/auth.ts`
 - Bridge 工厂函数：`packages/acp-bridge/src/bridge.ts`
-- Demo 页面 HTML：`packages/cli/src/serve/demo.ts`
+- Web Shell 静态挂载：`packages/cli/src/serve/web-shell-static.ts`
 - 用户文档：[`../../users/qwen-serve.md`](../../users/qwen-serve.md)
 - 有线协议：[`../qwen-serve-protocol.md`](../qwen-serve-protocol.md)

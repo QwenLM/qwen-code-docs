@@ -623,6 +623,32 @@ Vim 모드가 활성화된 상태에서 존재하는 비어 있지 않은 입력
 
 순차적 UserPromptSubmit hooks는 `additionalContext`를 `prompt`에 추가할 수 있습니다; `submitted_prompt`는 캡처된 제출을 계속 나타냅니다. Function hooks는 신뢰할 수 있는 동일 프로세스 코드이며 불변성 보증에 의해 제약되지 않습니다.
 
+최종 hook 출력에 비어 있지 않은 `additionalContext`가 포함되면, Qwen은 먼저 값을 삭제한 다음 별도의 텍스트 파트로 모델에 전송합니다:
+
+```xml
+<qwen:user-prompt-submit-context>
+sanitized hook context
+</qwen:user-prompt-submit-context>
+```
+
+이 태그는 파트가 사용자 프롬프트가 아닌 구성된 hook에서 왔음을 모델과 트랜스크립트 소비자에게 알립니다. 이는 출처 마커이며 인증, 권한 부여 또는 일반 신뢰 경계가 아닙니다.
+
+이 추가 컨텍스트가 있는 `UserQuery`의 경우, 세션 JSONL 레코드는 태그된 파트를 포함하여 모델 바인딩 파트를 보존하고 다음 `systemPayload`를 추가합니다:
+
+```json
+{
+  "displayText": "pre-hook display projection",
+  "hookContext": "sanitized hook context"
+}
+```
+
+이 두 필드 페이로드는 이 유형의 사용자 프롬프트 레코드에만 기록됩니다. `hookContext`는 태그된 파트를 의도적으로 중복하여 오프라인 및 서드파티 소비자가 모델 텍스트를 파싱하지 않고도 출처를 식별할 수 있게 합니다. `displayText`는 pre-hook 디스플레이 프로젝션이며 hook 컨텍스트를 절대 포함하지 않습니다. 지원되는 인터랙티브 TUI 제출의 경우 `submitted_prompt`가 운반하는 원본 composer 프로젝션입니다; ACP, 헤드리스, `serve`, SDK, 원격 입력 및 해당 출처 기록이 없는 다른 경로는 대신 확장된 pre-hook 프롬프트를 기록합니다.
+
+트랜스크립트 디스플레이 소비자는 `systemPayload.hookContext`가 문자열일 때 `displayText`를 이 사용자 프롬프트 프로젝션으로 취급합니다. 릴리스된 `displayText` 전용 사용자 프롬프트 레코드와의 호환성을 위해, 하나 이상의 다른 파트 뒤에 있는 최종 파트의 완전한 태그된 컨텍스트는 동등한 페어링 증거입니다. Notification, cron 및 mid-turn 레코드도 `displayText`를 가질 수 있지만, 해당 값은 컴팩트 디스플레이 레이블이며 해당 증거 없이는 모델 바인딩 텍스트로 대체되어서는 안 됩니다.
+레거시 베어 컨텍스트 레코드는 컨텍스트를 안정적으로 분리할 수 없으므로 모델 바인딩 디스플레이 동작을 유지합니다. 현재 태그된 형태를 사용하는 메타데이터 없는 레코드의 경우, 호환성 소비자는 동일한 완전한 최종 태그된 파트를 제거할 수 있습니다; 임의의 태그 유사 사용자 텍스트가 hook 출처라고 추론해서는 안 됩니다.
+
+민감한 프롬프트 telemetry 속성(활성화된 경우) 및 관리되는 자동 메모리 리콜은 모두 pre-hook 프롬프트를 사용합니다. `UserPromptSubmit`에서 추가된 컨텍스트는 포함하지 않습니다.
+
 **출력 옵션**:
 
 - `decision`: "allow", "deny", "block" 또는 "ask"

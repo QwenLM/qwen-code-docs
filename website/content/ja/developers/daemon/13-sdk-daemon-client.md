@@ -156,6 +156,19 @@ await client
 
 事前に `capabilities.features.includes('workspace_skill_toggle')` を確認してください。型付きの `DaemonSkillToggleResult` は、正規の `skillName`、ディスク状態の `changed`、アクティベーション状態（`applied`、`deferred`、または `partial`）、およびリフレッシュ/失敗したセッション数を報告します。`DaemonWorkspaceSkillStatus.userInvocable` はオプションの false のみのフィールドです。不在の場合、スキルはユーザーが呼び出し可能であることを意味します。
 
+バッチ変更の場合は、事前に `workspace_skill_batch_toggle` を確認し、同じコントラクトでどちらのクライアント形状でも呼び出せます。
+
+```ts
+await client.setWorkspaceSkillsEnabled(['review', 'deploy'], false, {
+  clientId: 'dashboard-1',
+});
+await client
+  .workspaceByCwd('/work/secondary')
+  .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
+```
+
+`DaemonSkillBatchToggleResult` には、順序付きの成功 `results`、ターゲットごとの `errors`、およびバッチレベルのアクティベーション/セッションリフレッシュのカウントが含まれます。デーモンは有効なターゲットを一緒に永続化し、アクティブなセッションを一度だけリフレッシュします。1つの期待されるターゲットエラーが他の有効なターゲットをブロックすることはありません。このメソッドは非 200 レスポンスの場合にのみスローします。200 はすべてのターゲットが適用されたことを意味しないため、バッチを成功として扱う前に常に `errors` を確認してください。
+
 ワークスペースの表示名はオプションのプレゼンテーションメタデータです。事前に `capabilities.features.includes('workspace_display_name')` を確認してください。ワークスペース ID と正規パスが唯一のセレクターであり、表示名の重複は有効です。
 
 ```ts

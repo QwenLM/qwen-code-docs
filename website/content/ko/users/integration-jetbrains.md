@@ -8,6 +8,7 @@
 - **Agent Client Protocol**: 고급 IDE 상호작용을 가능하게 하는 ACP 완전 지원
 - **심볼 관리**: #-mention 파일로 대화 컨텍스트에 추가
 - **대화 기록**: IDE 내에서 과거 대화 접근
+- **Reasoning effort**: 에이전트의 세션 옵션에서 Default, Low, Medium, High, Extra high 또는 Max를 선택할 수 있으며, 각 제공자는 활성 모델에 대해 요청된 티어를 매핑하거나 제한합니다
 - **컨텍스트 사용량**: Qwen Code 작동 중 현재 컨텍스트 창 점유율 확인
 
 ### 요구사항

@@ -11,15 +11,15 @@
 - **审计** — 每次访问/拒绝都会发出结构化事件，供 `PermissionAuditRing` / 监控使用。
 - **类型化错误** — 封闭的 `FsErrorKind` 联合类型，映射到 HTTP 状态码。
 
-HTTP 文件路由（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST /file/edit`、`GET /list`、`GET /glob`、`GET /stat`）使用此边界。在生产环境的 daemon 中，仍被委托的 ACP 调用通过注入的 bridge 适配器到达 WFS；通用的 bridge 调用者仅在注入此类适配器时才使用 WFS。生产环境的同主机 `qwen serve` runtime 会广播 `readTextFile: false`，因此所有子进程的 `FileSystemService.readTextFile` 消费者使用常规 CLI 文件系统服务；最终的 ACP `writeTextFile` 内容写入仍通过 WFS 委托。
+HTTP 文件路由（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST /file/edit`、`GET /list`、`GET /glob`、`GET /stat`）使用此边界，且不会接收同主机例外。在生产环境的 daemon 中，仍被委托的 ACP 调用通过注入的 bridge 适配器到达 WFS；通用的 bridge 调用者仅在注入此类适配器时才使用 WFS。生产环境的同主机 `qwen serve` runtime 会广播 `readTextFile: false`，因此所有子进程的 `FileSystemService.readTextFile` 消费者使用常规 CLI 文件系统服务。最终的 ACP `writeTextFile` 内容写入仍被委托：workspace 目标使用 WFS，而严格的内置工具标记可能仅在守护进程创建的同主机适配器上为外部路径选择等效的宿主写入器。参见[外部写入设计](../../design/daemon-external-tool-text-writes.md)。
 
 该文本读取能力切片覆盖了直接的 `read_file` 以及 write、edit、notebook、sed 和 artifact 操作使用的共享预读取：
 
 - 它有意接受常规 CLI 读取行为而非 WFS 读取侧的保证。[设计文档](../../design/daemon-local-text-reads.md)记录了放弃的具体内容。
-- 同一文档记录了为什么 #8618 在此更改后仍会对 write 和 edit 系列复现，以及保留的适配器读取路径"fail closed"的有界含义。
+- 同一文档记录了保留的适配器读取路径"fail closed"的有界含义；独立的外部写入设计记录了已批准的最终写入失败是如何 fail closed 的。
 - 直接的外部 `read_file` 保留正常的 CLI 权限规则和核心文件操作遥测。
 - HTTP 文件系统路由仍为 workspace 作用域，agent 发现工具的行为不受此能力影响。
-- 父目录创建和 shell 命令等辅助操作是独立的现有路径，不在此边界覆盖范围内。
+- 父目录创建和任意 shell 命令等辅助操作是独立的现有路径，不在此边界覆盖范围内。
 - `qwen serve` 假设同机器、同 UID 的安全主体，不是操作系统沙箱。
 
 ## 职责
@@ -75,14 +75,14 @@ interface BridgeFileSystem {
 }
 ```
 
-这是 ACP `readTextFile` / `writeTextFile` 的注入点。Bridge 测试和 Mode A 嵌入式调用者可以在 `BridgeOptions` 上省略它；`BridgeClient` 会回退到其内联的 `fs.readFile` / `fs.writeFile` 代理（保留 F1 之前的行为）。生产环境的 `qwen serve` 通过 `createBridgeFileSystemAdapter(fsFactory)`（`packages/cli/src/serve/bridge-file-system-adapter.ts`）连接 `BridgeFileSystem`，并设置 `delegateReadTextFileToClient: false`。符合能力声明的子进程因此在本地读取文本并委托最终的 ACP 文本写入。适配器保留了其读取实现，因此意外的或违反能力声明的委托读取仍会遇到 WFS 的 workspace 边界。
+这是 ACP `readTextFile` / `writeTextFile` 的注入点。Bridge 测试和 Mode A 嵌入式调用者可以在 `BridgeOptions` 上省略它；`BridgeClient` 会回退到其内联的 `fs.readFile` / `fs.writeFile` 代理（保留 F1 之前的行为）。生产环境的 `qwen serve` 通过 `createBridgeFileSystemAdapter(fsFactory)`（`packages/cli/src/serve/bridge-file-system-adapter.ts`）连接 `BridgeFileSystem`，并设置 `delegateReadTextFileToClient: false`。符合能力声明的子进程因此在本地读取文本并委托最终的 ACP 文本写入。适配器保留了其读取实现，因此意外的或违反能力声明的委托读取仍会遇到 WFS 的 workspace 边界。其外部宿主写入器路径默认禁用，仅在守护进程拥有的同主机适配器上通过精确的版本化来源进行选择；注入的 bridge、workspace 注册表和工厂、通用 ACP 以及 HTTP 保留普通边界。
 
 适配器必须保留以下两个防御属性（因为当适配器被注入时，内联代理会完全绕过）：
 
 1. **拒绝非普通文件** — 套接字/管道/字符设备/procfs/sysfs 条目尽管 `stats.size === 0` 也能流式传输无界数据。内联路径会抛出异常，消息中包含 `describeStatKind(stats)`。
 2. **避免无界的全文件缓冲。** 内联回退将缓冲读取上限设为 `READ_FILE_SIZE_CAP = 100 MiB`。注入的适配器则应用更严格的 WorkspaceFileSystem 契约：完整快照在 256 KiB 处停止，而较大的 UTF-8 文件需要有限的 `limit`，并从 inode 绑定的句柄流式传输，最多返回 256 KiB。它不能为了返回 `{ line: 1, limit: 10 }` 而读取整个 500 MB 的日志。
 
-适配器更进一步：它使用 `WorkspaceFileSystem.writeTextOverwrite`（PR 18 原语）执行原子性的临时文件与重命名写入，保留权限模式，默认 `0o600`，并在每个路径的锁内拒绝符号链接。这与 **F1 之前的内联代理有所不同**，后者会解析符号链接并写入其目标——依赖通过符号链接点文件写入的 Agent 现在必须直接处理已解析的路径。
+适配器更进一步：它对 workspace 写入使用 `WorkspaceFileSystem.writeTextOverwrite`（PR 18 原语），对严格标记的外部内置工具写入使用工厂拥有的等效实现。两者都使用原子性的临时文件与重命名写入，保留权限模式，默认 `0o600`，并在共享的规范路径锁内拒绝符号链接。这与 **F1 之前的内联代理有所不同**，后者会解析符号链接并写入其目标——依赖通过符号链接点文件写入的 Agent 现在必须直接处理已解析的路径。
 
 ### 通过 ACP 线缆保留 `FsError`
 

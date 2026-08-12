@@ -34,12 +34,12 @@ Ce document liste les raccourcis clavier disponibles dans Qwen Code.
 | `Tab`                                                 | Complète automatiquement la suggestion actuelle si elle existe.                                                                                  |
 | `Flèche haut`                                            | Remonte d'une ligne, puis saute au début, puis passe à l'historique précédent.                                                                                      |
 | `Ctrl+A` / `Home`                                     | Déplace le curseur au début de la ligne.                                                                                       |
-| `Ctrl+B` / `Flèche gauche`                               | Déplace le curseur d'un caractère vers la gauche.                                                                                          |
+| `Ctrl+B` / `Flèche gauche`                               | Déplace le curseur d'un caractère vers la gauche. Lorsque le menu de complétion `@` affiche les onglets de catégorie, utilisez `Ctrl+B` (la flèche change d'onglet).                                                                                          |
 | `Ctrl+C`                                              | Efface l'invite de saisie.                                                                                                              |
 | `Esc` (double appui)                                  | Efface l'invite de saisie.                                                                                                             |
 | `Ctrl+D` / `Delete`                                   | Supprime le caractère à droite du curseur.                                                                                    |
 | `Ctrl+E` / `End`                                      | Déplace le curseur à la fin de la ligne.                                                                                             |
-| `Ctrl+F` / `Flèche droite`                              | Déplace le curseur d'un caractère vers la droite.                                                                                         |
+| `Ctrl+F` / `Flèche droite`                              | Déplace le curseur d'un caractère vers la droite. Lorsque le menu de complétion `@` affiche les onglets de catégorie, utilisez `Ctrl+F` (la flèche change d'onglet).                                                                                         |
 | `Ctrl+H` / `Backspace`                                | Supprime le caractère à gauche du curseur.                                                                                     |
 | `Ctrl+K`                                              | Supprime du curseur jusqu'à la fin de la ligne.                                                                                      |
 | `Ctrl+Flèche gauche` / `Meta+Flèche gauche` / `Meta+B`      | Déplace le curseur d'un mot vers la gauche.                                                                                               |
@@ -81,14 +81,15 @@ Focusrez la pilule des tâches en arrière-plan dans le pied de page (utilisez `
 
 ## Suggestions
 
-| Shortcut                             | Description                                                              |
-| ------------------------------------ | ------------------------------------------------------------------------ |
-| `Flèche bas` / `Ctrl+N`              | Navigue vers le bas dans les suggestions.                                   |
-| `Tab` / `Enter`                      | Accepte la suggestion sélectionnée.                                          |
-| `Flèche haut` / `Ctrl+P`             | Navigue vers le haut dans les suggestions.                                     |
-| `Flèche droite`                      | Accepte une suggestion en texte fantôme lorsque le prompt est vide.                 |
-| `Ctrl+Tab` / `Ctrl+Flèche droite`    | Passe à la catégorie de complétion suivante lorsque les onglets de catégorie sont affichés.     |
-| `Ctrl+Shift+Tab` / `Ctrl+Flèche gauche` | Passe à la catégorie de complétion précédente lorsque les onglets de catégorie sont affichés. |
+| Shortcut                | Description                                                                                                                         |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `Flèche bas` / `Ctrl+N` | Navigue vers le bas dans les suggestions.                                                                                              |
+| `Tab` / `Enter`         | Accepte la suggestion sélectionnée.                                                                                                     |
+| `Flèche haut` / `Ctrl+P`   | Navigue vers le haut dans les suggestions.                                                                                             |
+| `Flèche droite`           | Passe à la catégorie de complétion suivante lorsque les onglets de catégorie sont affichés. Accepte également une suggestion en texte fantôme lorsque le prompt est vide. |
+| `Flèche gauche`            | Passe à la catégorie de complétion précédente lorsque les onglets de catégorie sont affichés.                                                            |
+
+> Remarque : lorsque le menu de complétion `@` affiche les onglets de catégorie, `Flèche gauche` et `Flèche droite` changent de catégorie au lieu de déplacer le curseur. Appuyez sur `Esc` pour fermer d'abord le menu si vous devez déplacer le curseur. Les mouvements de mots `Alt/Option+Flèche` ne sont pas affectés.
 
 ## Recherche dans l'historique
 

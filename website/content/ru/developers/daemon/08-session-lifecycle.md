@@ -223,8 +223,9 @@ sequenceDiagram
 - `BridgeOptions.maxSessions` (по умолчанию 32) — лимит.
 - `BridgeOptions.sessionScope` (по умолчанию `'single'`; опционально `'thread'`).
 - `BridgeOptions.initializeTimeoutMs` (по умолчанию 10 с) — рукопожатие ACP `initialize`.
+- `BridgeOptions.sessionRestoreTimeoutMs` (по умолчанию 60 с) — дедлайн ACP `loadSession` / `unstable_resumeSession`. По умолчанию 60 с; явно настроенный таймаут инициализации может увеличить его, но не уменьшить.
 - `BridgeOptions.channelIdleTimeoutMs` (по умолчанию 0; немедленное уничтожение дочернего процесса ACP).
-- Теги возможностей: `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (устаревший псевдоним), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
+- Теги возможностей: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (устаревший псевдоним), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
 
 ### Stateless generation (тег возможности `session_generation`)
 

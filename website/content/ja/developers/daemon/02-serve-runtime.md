@@ -49,7 +49,7 @@
 | `serve/daemon-logger.ts`                                         | `DaemonLogger` 構造化ファイルログ。[`19-observability.md`](./19-observability.md) を参照。                                                                                                                                                                                                                                                                                                                                                                     |
 | `serve/debug-mode.ts`                                            | HTTP レスポンスの詳細なエラーコンテキストを制御する共有 `isServeDebugMode()` 述語。                                                                                                                                                                                                                                                                                                                                                                   |
 | `serve/acp-http/`                                                | `/acp` にマウントされる ACP Streamable HTTP トランスポート (RFD #721)。7 つのファイルで、JSON-RPC POST、SSE GET、DELETE テアダウン、および REST サーフェスと並行した共有ブリッジの使用を実装します。                                                                                                                                                                                                                                                                       |
-| `serve/demo.ts`                                                  | `GET /demo` 用の自己完結型インライン HTML: チャット UI、イベントログ、ワークスペースインスペクターを備えたブラウザデバッグコンソール。`--require-auth` なしのループバックでは、`bearerAuth` の**前**に登録されます。非ループバックまたは `--require-auth` ありの場合は、`bearerAuth` の**後**に登録されます。CSP `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'` と `X-Frame-Options: DENY` で提供されます。 |
+| `serve/web-shell-static.ts`、`serve/web-shell-resolver.ts`       | ビルド済み Web Shell アセット（デーモンのブラウザ UI）を `/`、`/assets`、`/session/:id` に配置し、すべての API ルート後に登録される SPA ディープリンクのフォールバック。すべての起動モードで `bearerAuth` の**前**にマウントされます（ブラウザはナビゲーションやサブリソースに `Authorization` を付与できません）が、呼び出す API ルートはすべてトークン保護されています。アセットが存在しない場合は API のみの動作にフォールバックします。`--no-web` で無効化できます。 |
 
 **ACP ブリッジパッケージのインポート**:
 
@@ -125,6 +125,7 @@
 | フラグ           | `--max-sessions`、`--max-pending-prompts-per-session`、`--max-connections`、`--event-ring-size` | ブリッジ / Express の上限。                                                                                |
 | フラグ           | `--mcp-client-budget=N`、`--mcp-budget-mode={off,warn,enforce}`                                 | ACP 子プロセスに転送されます。                                                                           |
 | フラグ           | `--allow-origin`、`--allow-private-auth-base-url`                                               | ブラウザ CORS 許可リストと、localhost/プライベート認証プロバイダーのインストールスイッチ。                       |
+| フラグ            | `--web` / `--no-web`                                                                                       | デーモンルートで Web Shell UI を提供するかどうか（デフォルトは提供する）。`--no-web` でデーモンを API のみにします。 |
 | フラグ           | `--prompt-deadline-ms`、`--writer-idle-timeout-ms`、`--channel-idle-timeout-ms`、`--initialize-timeout-ms` | プロンプト、SSE ライター、ACP 子プロセスのアイドルライフサイクル、および ACP 子プロセスのリクエストタイムアウト制御。                  |
 | フラグ           | `--session-reap-interval-ms`、`--session-idle-timeout-ms`                                       | 切断されたセッションの回収制御。                                                                 |
 | フラグ           | `--rate-limit*`                                                                                 | 階層ごとの HTTP レート制限。                                                                             |
@@ -135,7 +136,7 @@
 ## 注意事項と既知の制限
 
 - `deps.fsFactory` または `deps.bridge` を指定せずに `createServeApp` を直接呼び出すと、デフォルトで `trusted: false` になります。エージェント側の ACP `writeTextFile` は `untrusted_workspace` として拒否されます。警告は一度だけ出力されます。
-- `denyBrowserOriginCors` は `Origin` を含む**すべて**のリクエストを拒否します。デモページが動作するのは、別のミドルウェアが先に一致する同一オリジンの値を削除するためです。
+- `denyBrowserOriginCors` は `Origin` を含む**すべて**のリクエストを拒否します。**ループバック**の Web Shell が動作するのは、別のミドルウェアが先に一致するループバック同一オリジンの値を削除するためです。非ループバックのバインドでは、シェルの XHR に `--allow-origin` が必要です。
 - Body-parser の順序: `mutate({ strict: true })` を使用するルートは、`express.json()` の後にのみ 401 を返します。最悪のケースは `--max-connections × express.json({limit: '10mb'})` となり、飽和したループバックリスナーで最大約 2.5 GB の一時的なメモリを消費します。このトレードオフは意図的なものです。
 - 1つのプロセスで複数のデーモンを実行する場合は、ハンドルごとに `childEnvOverrides` を使用する必要があります。`defaultSpawnChannelFactory` が spawn 時に環境変数のスナップショットを取得するため、`process.env` の変更は競合を引き起こします。
 

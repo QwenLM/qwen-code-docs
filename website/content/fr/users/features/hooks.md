@@ -636,13 +636,66 @@ Lorsque les deux champs sont présents, les payloads de prompt-hook contiennent 
 
 Les hooks UserPromptSubmit séquentiels peuvent ajouter du `additionalContext` à `prompt` ; `submitted_prompt` continue de représenter la soumission capturée. Les function hooks sont du code de confiance dans le même processus et ne sont pas contraints par une garantie d'immutabilité.
 
-Lorsqu'il est envoyé au modèle, l'`additionalContext` injecté est ajouté comme sa propre partie de message encapsulée dans une balise réservée `<qwen:user-prompt-submit-context>...</qwen:user-prompt-submit-context>`, afin qu'il reste distinguable du texte rédigé par l'utilisateur dans l'historique du modèle et les transcriptions de session. Les crochets angulaires dans la sortie du hook sont échappés avant l'encapsulation, donc le contenu du hook ne peut pas fermer ou falsifier la balise. La transcription de session enregistre également le texte original du prompt de l'utilisateur séparément ; le TUI interactif et le chemin de replay de transcription ACP/export affichent ce texte original plutôt que le contexte injecté.
+Lorsque la sortie finale du hook contient du `additionalContext` non vide, Qwen
+sanitise d'abord la valeur puis l'envoie au modèle comme une partie de texte séparée :
+
+```xml
+<qwen:user-prompt-submit-context>
+contexte du hook sanitisé
+</qwen:user-prompt-submit-context>
+```
+
+La balise indique au modèle et aux consommateurs de transcription que la partie
+provient d'un hook configuré plutôt que du prompt utilisateur. C'est un marqueur
+de provenance, pas de l'authentification, de l'autorisation ou une limite de
+confiance générale.
+
+Pour une `UserQuery` avec ce contexte ajouté, l'enregistrement JSONL de la session
+conserve les parties liées au modèle, y compris la partie taguée, et ajoute le
+`systemPayload` suivant :
+
+```json
+{
+  "displayText": "projection d'affichage pré-hook",
+  "hookContext": "contexte du hook sanitisé"
+}
+```
+
+Ce payload à deux champs n'est écrit que pour ce type d'enregistrement de prompt
+utilisateur. `hookContext` duplique intentionnellement la partie taguée afin que
+les consommateurs offline et tiers puissent identifier sa provenance sans parser
+le texte du modèle. `displayText` est la projection d'affichage pré-hook et
+n'inclut jamais le contexte du hook. Pour une soumission TUI interactive prise en
+charge, il s'agit de la projection brute du composer portée par `submitted_prompt` ;
+ACP, headless, `serve`, SDK, les entrées distantes et les autres chemins sans
+cette provenance enregistrent plutôt le prompt pré-hook développé.
+
+Les consommateurs d'affichage de transcription traitent `displayText` comme cette
+projection de prompt utilisateur lorsque `systemPayload.hookContext` est une
+chaîne. Pour la compatibilité avec les enregistrements de prompt utilisateur
+`displayText`-only publiés, un contexte tagué complet dans la dernière partie
+après au moins une autre partie est une preuve d'appariement équivalente. Les
+enregistrements de notification, cron et mid-turn peuvent aussi avoir du
+`displayText`, mais ces valeurs sont des labels d'affichage compacts et ne
+doivent pas être substitués à leur texte lié au modèle sans cette preuve.
+Les enregistrements legacy de contexte nu conservent leur comportement
+d'affichage lié au modèle car le contexte ne peut pas être séparé de manière
+fiable. Pour les enregistrements sans métadonnées utilisant la forme taguée
+actuelle, les consommateurs de compatibilité peuvent retirer la même partie
+taguée finale complète ; ils ne doivent pas inférer qu'un texte utilisateur
+arbitraire de type balise est de la provenance de hook.
+
+Les attributs de télémétrie de prompt sensible, lorsqu'ils sont activés, et le
+rappel auto-memory géré utilisent tous deux le prompt pré-hook. Ils n'incluent
+pas le contexte ajouté par `UserPromptSubmit`.
 
 **Options de sortie** :
 
 - `decision` : "allow", "deny", "block" ou "ask"
 - `reason` : explication lisible par un humain pour la décision
 - `hookSpecificOutput.additionalContext` : contexte supplémentaire à ajouter au prompt (optionnel)
+
+Lorsqu'il est envoyé au modèle, l'`additionalContext` injecté est ajouté comme sa propre partie de message encapsulée dans une balise réservée `<qwen:user-prompt-submit-context>...</qwen:user-prompt-submit-context>`, afin qu'il reste distinguable du texte rédigé par l'utilisateur dans l'historique du modèle et les transcriptions de session. Les crochets angulaires dans la sortie du hook sont échappés avant l'encapsulation, donc le contenu du hook ne peut pas fermer ou falsifier la balise. La transcription de session enregistre également le texte original du prompt de l'utilisateur séparément ; le TUI interactif et le chemin de replay de transcription ACP/export affichent ce texte original plutôt que le contexte injecté.
 
 **Remarque** : Étant donné que `UserPromptSubmitOutput` étend `HookOutput`, tous les champs standard sont disponibles, mais seul `additionalContext` dans `hookSpecificOutput` est spécifiquement défini pour cet événement.
 

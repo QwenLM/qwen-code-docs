@@ -193,6 +193,7 @@ sequenceDiagram
 | `sessionScope`                                | `'single'`                                         | `'single'`은 모든 클라이언트 간에 하나의 세션을 공유합니다. `'thread'`는 각 대화 스레드별로 별도 세션을 생성합니다.                                       |
 | `channelFactory`                              | `defaultSpawnChannelFactory`                       | 플러그 가능한 ACP 자식 팩토리.                                                                                                                           |
 | `initializeTimeoutMs`                         | `DEFAULT_INIT_TIMEOUT_MS = 10_000`                 | ACP `initialize` 핸드셰이크 타임아웃.                                                                                                                    |
+| `sessionRestoreTimeoutMs`                     | `60_000`                                           | ACP `loadSession` / `unstable_resumeSession` 타임아웃. 기본값 60초이며, 명시적으로 구성된 initialize 타임아웃이 이를 높일 수 있지만 낮출 수는 없습니다.      |
 | `maxSessions`                                 | `DEFAULT_MAX_SESSIONS = 32`                        | `byId.size`의 캡. `0` / `Infinity` = 무제한. NaN/음수는 throw.                                                                                           |
 | `eventRingSize`                               | `DEFAULT_RING_SIZE` (`eventBus.ts`에서)             | 세션별 이벤트 링. `MAX_EVENT_RING_SIZE`로 소프트 캡.                                                                                                     |
 | `permissionResponseTimeoutMs`                 | `DEFAULT_PERMISSION_TIMEOUT_MS = 5분`               | 중재자의 요청별 월클럭.                                                                                                                                  |
@@ -233,7 +234,8 @@ sequenceDiagram
 | `getWorkspaceToolsStatus()`                                  | 내장 도구 레지스트리 스냅샷을 반환합니다. |
 | `getWorkspaceMcpToolsStatus(serverName)`                     | 특정 MCP 서버의 도구를 반환합니다. |
 
-`BridgeSpawnRequest.sessionScope`는 `'per-client'`에서 `'thread'`로 이름 변경되었습니다. `BridgeRestoredSession`은 이제 `compactedReplay`, `liveJournal`, `lastEventId`를 포함합니다. 해당 리플레이 필드는 활성 세션의 제한된 인메모리 창으로, `BridgeOptions.compactedReplayMaxBytes`(기본 4MiB, 하드 상한 256MiB)로 캡됩니다. 인플라이트 `liveJournal`은 `BridgeOptions.maxJournalEvents`(기본 10,000)와 `BridgeOptions.maxJournalBytes`(기본 8MiB)로 별도로 캡됩니다. 오래된 보존 리플레이가 삭제된 경우 `compactedReplay[0]`은 ID 없는 `history_truncated` 마커입니다. 저널 엔트리가 삭제된 경우 `liveJournal[0]`은 `scope: 'live_journal'`를 가진 `history_truncated` 마커를 가집니다. 전체 지속 트랜스크립트는 디스크에 남아 있으며 이 브리지 응답으로 노출되지 않습니다. `BridgeClientRequestContext`는 브리지 호출을 통해 스레딩되는 요청 컨텍스트입니다. `clientId`, `fromLoopback: boolean`, `promptId`를 포함합니다.
+`BridgeSpawnRequest.sessionScope`는 `'per-client'`에서 `'thread'`로 이름 변경되었습니다. `BridgeRestoredSession`은 이제 `compactedReplay`, `liveJournal`, `lastEventId`를 포함합니다. 해당 리플레이 필드는 활성 세션의 제한된 인메모리 창으로, `BridgeOptions.compactedReplayMaxBytes`(기본 4MiB, 하드 상한 256MiB)로 캡됩니다. 인플라이트 `liveJournal`은 `BridgeOptions.maxJournalEvents`(기본 10,000개의 리플레이 엔트리)와 `BridgeOptions.maxJournalBytes`(기본 8MiB의 직렬화된 소스 이벤트)로 별도로 캡됩니다. 연속적인 호환 텍스트 또는 사고 청크는 리플레이 엔트리를 공유하며, 엔트리당 최대 256개의 소스 이벤트입니다. 다른 이벤트 및 속성 경계는 그대로 유지됩니다. 오래된 보존 리플레이가 삭제된 경우 `compactedReplay[0]`은 ID 없는 `history_truncated` 마커입니다. 저널 엔트리가 삭제된 경우 `liveJournal[0]`은 `scope: 'live_journal'`를 가진 `history_truncated` 마커를 포함합니다. 보존 및 삭제 카운트는 리플레이 엔트리가 아닌 소스 이벤트를 설명합니다. 전체 지속 트랜스크립트는 디스크에 남아 있으며 이 브리지 응답으로 노출되지 않습니다.
+`BridgeClientRequestContext`는 브리지 호출을 통해 스레딩되는 요청 컨텍스트입니다. `clientId`, `fromLoopback: boolean`, `promptId`를 포함합니다.
 
 ## 주의사항 및 알려진 제한
 

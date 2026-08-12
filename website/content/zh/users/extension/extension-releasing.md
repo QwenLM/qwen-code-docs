@@ -73,7 +73,7 @@ Qwen Code 扩展可以通过 [GitHub Releases](https://docs.github.com/en/reposi
 
 #### 归档结构
 
-归档必须是完全自包含的扩展，并满足所有标准要求——特别是 `qwen-extension.json` 文件必须位于归档根目录。
+归档必须是完全自包含的扩展，并包含受支持的根清单：原生 Qwen 扩展使用 `qwen-extension.json`，或 [Agent Plugins v1](./agent-plugins.md) 包使用 `plugin.json`。
 
 其余布局应与典型扩展完全相同，参见 [introduction.md](./introduction.md)。
 
@@ -131,7 +131,7 @@ jobs:
 
 ### 包要求
 
-你的 npm 包必须在包根目录中包含 `qwen-extension.json` 文件。这是所有 Qwen Code 扩展使用的同一配置文件——npm tarball 只是另一种分发机制。
+你的 npm 包必须在包根目录包含受支持的清单：原生 Qwen 扩展使用 `qwen-extension.json`，或 [Agent Plugins v1](./agent-plugins.md) 包使用 `plugin.json`。npm tarball 只是另一种分发机制。
 
 一个最小的包结构如下：
 
@@ -145,7 +145,7 @@ my-extension/
 └── agents/               # 可选的子代理
 ```
 
-确保 `qwen-extension.json` 包含在你发布的包中（即不要被 `.npmignore` 或 `package.json` 的 `files` 字段排除）。
+确保所选的根清单及所有引用的包文件包含在你发布的包中（即不要被 `.npmignore` 或 `package.json` 的 `files` 字段排除）。
 
 ### 发布
 

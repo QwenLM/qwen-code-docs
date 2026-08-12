@@ -231,6 +231,10 @@ sequenceDiagram
 - `BridgeOptions.channelIdleTimeoutMs`（默认 0；立即回收 ACP 子进程）。
 - Capability tags：`session_create`、`session_id_override`、`session_scope_override`、`session_load`、`session_resume`、`unstable_session_resume`（已弃用的别名）、`session_list`、`session_info`、`session_close`、`session_metadata`、`session_set_model`、`client_identity`、`client_heartbeat`、`session_recap`、`session_generation`、`session_btw`、`session_context_usage`、`session_tasks`、`session_monitor_tool_correlation`、`session_stats`、`session_lsp`、`session_status`、`non_blocking_prompt`。
 
+### 无状态 generation（`session_generation` 能力标签）
+
+`POST /session/:id/generate` 接受 `{ "prompt": string }` 并返回一个请求作用域的 SSE 流，包含 `started`、可选的 `thinking`、`delta`、`done` 或 `error` 事件。该请求不读取对话历史、不记录轮次，也不暴露任何工具。ACP 子进程在可用时使用已配置的有效快速模型，否则使用会话的主模型。
+
 ## 注意事项与已知限制
 
 - `connection.unstable_resumeSession` 在 ACP 层可能仍然不稳定，但 daemon 通过 `session_resume` 宣传已提交的 v1 路由契约。`unstable_session_resume` 仅作为已弃用的兼容性别名保留。

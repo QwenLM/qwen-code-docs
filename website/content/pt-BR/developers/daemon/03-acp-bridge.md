@@ -200,6 +200,7 @@ sequenceDiagram
 | `sessionScope`                                | `'single'`                                         | `'single'` compartilha uma sessão entre todos os clientes; `'thread'` cria uma sessão separada para cada thread de conversa. |
 | `channelFactory`                              | `defaultSpawnChannelFactory`                       | Fábrica plugável do processo filho ACP.                                                                               |
 | `initializeTimeoutMs`                         | `DEFAULT_INIT_TIMEOUT_MS = 10_000`                 | Timeout do handshake `initialize` do ACP.                                                                             |
+| `sessionRestoreTimeoutMs`                     | `60_000`                                           | Timeout do ACP `loadSession` / `unstable_resumeSession`; padrão 60s, e um timeout de initialize configurado explicitamente pode elevá-lo, mas nunca reduzi-lo. |
 | `maxSessions`                                 | `DEFAULT_MAX_SESSIONS = 32`                        | Limite para `byId.size`. `0` / `Infinity` = ilimitado; NaN/negativo lança erro.                                       |
 | `eventRingSize`                               | `DEFAULT_RING_SIZE` (de `eventBus.ts`)             | Anel de eventos por sessão; limite flexível em `MAX_EVENT_RING_SIZE`.                                                 |
 | `permissionResponseTimeoutMs`                 | `DEFAULT_PERMISSION_TIMEOUT_MS = 5 min`            | Tempo de relógio (wallclock) por requisição para o mediador.                                                          |
@@ -215,6 +216,9 @@ sequenceDiagram
 | `permissionConsensusQuorum`                   | de `settings.json`                                 | N para a política de consenso.                                                                                        |
 | `permissionAudit`                             | `createNoOpPermissionAuditPublisher()`             | Conecta ao `PermissionAuditRing` para a trilha de auditoria.                                                          |
 | `channelIdleTimeoutMs`                        | `0`                                                | Mantém o processo filho ACP vivo por esta quantidade de milissegundos após o fechamento da última sessão.             |
+
+Restaurações com timeout expirado não são canceláveis no SDK ACP atual. A bridge portanto mantém uma cerca de settlement e admissão de capacidade até que a requisição real seja concluída ou seu transporte feche. Um resultado tardio é fechado exatamente uma vez e nunca registrado. Incerteza de limpeza coloca em quarentena apenas trabalho novo de sessão naquele workspace; tráfego existente de sessão e controle de workspace continua até que o canal drene e seja reciclado.
+
 ## Métodos adicionais da bridge
 
 Além das chamadas principais `spawnOrAttach`, `sendPrompt`, `cancelSession`,

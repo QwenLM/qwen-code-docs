@@ -54,7 +54,7 @@ if (parsed.allowAny && !token) {
 
 ```mermaid
 flowchart LR
-    REQ[Request] --> SO["strip same-origin Origin<br/>(demo page support)"]
+    REQ[Request] --> SO["strip same-origin Origin<br/>(Web Shell support)"]
     SO --> CORS{"--allow-origin?"}
     CORS -->|yes| AO["allowOriginCors<br/>(allowlist match)"]
     CORS -->|no| DC["denyBrowserOriginCors<br/>(reject all Origin)"]
@@ -93,7 +93,7 @@ flowchart LR
 
 Отклоняет любой запрос с заголовком `Origin`. CLI/SDK никогда не устанавливают Origin; только браузеры. Возвращает детерминированный `403 { error: 'Request denied by CORS policy' }`, а не 500 HTML, который мог бы выдать пакет `cors` в колбэке ошибки.
 
-Исключение: запросы демонстрационной страницы с тем же источником обрабатываются отдельным middleware (в `server.ts`), который удаляет `Origin`, если он совпадает с собственным адресом демона.
+Исключение: same-origin XHR-запросы Web Shell при привязке к **loopback** обрабатываются отдельным middleware (в `server/self-origin.ts`), который удаляет `Origin`, если он совпадает с одним из loopback self-origin (`127.0.0.1`, `localhost`, `[::1]`, `host.docker.internal`). При привязке не к loopback XHR-запросы оболочки несут несовпадающий `Origin` и требуют `--allow-origin` для origin демона.
 
 ### `allowOriginCors` (режим `--allow-origin`)
 
@@ -265,7 +265,7 @@ sequenceDiagram
 
 - **`--require-auth` скрывает предварительный просмотр возможностей.** Неаутентифицированные клиенты не могут обнаружить тег `require_auth`; их поверхность обнаружения — само тело 401.
 - **Порядок шлюза мутаций и парсера тела**: ответы `mutationGate({strict: true})` 401 срабатывают **после** того, как `express.json()` разобрал тело. В худшем случае на насыщенном loopback-слушателе: `--max-connections × express.json({limit: '10mb'})` ≈ 2.5 ГБ временных данных. Поверхность атаки только через loopback, намеренно принятая.
-- **Удаление Origin для того же источника** в `server.ts` происходит _до_ `denyBrowserOriginCors`. Если будущее изменение переместит удаление в другое место, демонстрационная страница сломается.
+- **Удаление Origin для того же источника** в `server.ts` происходит _до_ `denyBrowserOriginCors`. Если будущее изменение переместит удаление в другое место, Web Shell сломается.
 - **Сравнение токенов выполняется по дайджесту SHA-256**, а не по сырому токену. Уменьшает утечку времени, заменяя сравнение токенов переменной длины на сравнение дайджеста фиксированного размера.
 - Демон **не** поддерживает mTLS, подпись запросов или pair-token proof-of-possession на данный момент. `--rate-limit` обеспечивает ограничение частоты HTTP по ключу client-id / IP; это не аутентификация клиента.
 
