@@ -73,6 +73,7 @@ jspm_packages/
 # Orchestrator run artifacts (per-language manifests and agent logs)
 website/orchestrator-manifest-*.json
 website/orchestrator-agent-*.log
+website/translation-metrics.json
 website/tsconfig.tsbuildinfo
 
 # other
