@@ -587,6 +587,32 @@ function frontmatterYamlish(text) {
   return false; // no closing delimiter
 }
 
+/**
+ * The hard structural problems with a translated document, judged purely on
+ * its own bytes against the EN source: emptiness, code-fence parity, and
+ * frontmatter shape. Deliberately excludes the mtime gate ("touched this
+ * session") and the link-count WARN — those describe how a file was
+ * produced, not whether the document itself is structurally sound.
+ *
+ * Split out of verifyFile so `quarantine` can ask the same question about a
+ * candidate it did not just translate — specifically about the copy in HEAD.
+ */
+function structuralProblems(en, tg, lang) {
+  const problems = [];
+  if (tg.trim().length === 0) problems.push("empty target");
+  if (fenceCount(en) !== fenceCount(tg))
+    problems.push(
+      `code fence mismatch (en=${fenceCount(en)} ${lang}=${fenceCount(tg)})`
+    );
+  if (hasFrontmatter(en)) {
+    if (!hasFrontmatter(tg) || !frontmatterClosed(tg))
+      problems.push("frontmatter missing/unclosed");
+    else if (!frontmatterYamlish(tg))
+      problems.push("frontmatter not parseable YAML");
+  }
+  return problems;
+}
+
 function verifyFile(lang, f, manifest) {
   const rel = relInContent(f);
   const enPath = path.join(OPTS.contentDir, "en", rel);
@@ -609,18 +635,8 @@ function verifyFile(lang, f, manifest) {
     fs.writeFileSync(target, healed);
     tg = healed;
   }
-  if (tg.trim().length === 0) problems.push("empty target");
   if (!touchedThisSession) problems.push("target not touched this session");
-  if (fenceCount(en) !== fenceCount(tg))
-    problems.push(
-      `code fence mismatch (en=${fenceCount(en)} ${lang}=${fenceCount(tg)})`
-    );
-  if (hasFrontmatter(en)) {
-    if (!hasFrontmatter(tg) || !frontmatterClosed(tg))
-      problems.push("frontmatter missing/unclosed");
-    else if (!frontmatterYamlish(tg))
-      problems.push("frontmatter not parseable YAML");
-  }
+  problems.push(...structuralProblems(en, tg, lang));
   const linksEn = (en.match(/\]\(/g) || []).length;
   const linksTg = (tg.match(/\]\(/g) || []).length;
   if (linksEn !== linksTg)
@@ -747,6 +763,136 @@ function cmdAdvance(lang) {
   );
 }
 
+// ---------- quarantine ----------
+
+/** The bytes a path has in HEAD, or null when HEAD has no such file. */
+function readFromHead(repoRel) {
+  try {
+    return execSync(`git show HEAD:${q(repoRel)}`, {
+      cwd: ROOT,
+      encoding: "utf8",
+      maxBuffer: 1 << 28,
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Resolve the verify gate's quarantine lists before the commit step stages
+ * anything.
+ *
+ * This used to be inline shell: `git checkout HEAD -- <path> || rm -f <path>`.
+ * That treats HEAD as an unconditionally trustworthy recovery source, which
+ * it is not. When HEAD's own copy is structurally corrupt, restoring it
+ * reinstates the corruption and discards whatever this run produced — so a
+ * file that was once committed broken can never be repaired by the pipeline.
+ * `website/content/de/developers/daemon/12-auth-security.md` sat in exactly
+ * that loop, failing `code fence mismatch (en=12 de=14)` on five consecutive
+ * runs while the broken copy stayed live (#216).
+ *
+ * The decision is now made per file, on structure alone:
+ *
+ *   HEAD sound                  -> restore HEAD (unchanged behaviour)
+ *   HEAD corrupt, new sound     -> KEEP the new file; HEAD was not a valid
+ *                                  recovery source and this run has a
+ *                                  structurally sound replacement
+ *   HEAD corrupt, new corrupt   -> restore HEAD, but say so loudly: neither
+ *                                  candidate is publishable and the file
+ *                                  needs manual repair
+ *   HEAD absent                 -> remove the new file (unchanged behaviour)
+ *
+ * Deliberately NOT deleting a page whose only copies are corrupt: the static
+ * export still fails on a locale that is missing a page an EN doc exists for
+ * (#185), so deleting here would trade a badly rendered page for a broken
+ * build. Choosing between those is a policy call and belongs to #216.
+ */
+function cmdQuarantine() {
+  const dir = path.dirname(OPTS.baseline);
+  const lists = fs
+    .readdirSync(dir)
+    .filter((f) => /^orchestrator-manifest-.*\.failed\.txt$/.test(f));
+  let restored = 0;
+  let kept = 0;
+  let removed = 0;
+  const unrepairable = [];
+  for (const listName of lists) {
+    const listPath = path.join(dir, listName);
+    const entries = fs
+      .readFileSync(listPath, "utf8")
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    for (const entry of entries) {
+      const slash = entry.indexOf("/");
+      if (slash < 0) continue;
+      const lang = entry.slice(0, slash);
+      const rel = entry.slice(slash + 1);
+      const target = path.join(OPTS.contentDir, lang, rel);
+      const repoRel = path.relative(ROOT, target).split(path.sep).join("/");
+      const head = readFromHead(repoRel);
+      if (head === null) {
+        // Nothing to fall back to: this run created the file and it failed.
+        fs.rmSync(target, { force: true });
+        removed++;
+        continue;
+      }
+      const enPath = path.join(OPTS.contentDir, "en", rel);
+      if (!fs.existsSync(enPath)) {
+        // No EN source to judge structure against; keep the old behaviour.
+        fs.writeFileSync(target, head);
+        restored++;
+        continue;
+      }
+      const en = fs.readFileSync(enPath, "utf8");
+      const headBad = structuralProblems(en, head, lang);
+      const current = fs.existsSync(target)
+        ? fs.readFileSync(target, "utf8")
+        : null;
+      const newBad =
+        current === null ? ["missing target"] : structuralProblems(en, current, lang);
+      if (headBad.length === 0) {
+        fs.writeFileSync(target, head);
+        restored++;
+        continue;
+      }
+      if (newBad.length === 0) {
+        console.log(
+          `::warning::${entry}: HEAD is structurally corrupt [${headBad.join(
+            "; "
+          )}]; keeping this run's structurally sound translation instead of restoring it`
+        );
+        kept++;
+        continue;
+      }
+      fs.writeFileSync(target, head);
+      restored++;
+      unrepairable.push({ entry, headBad, newBad });
+      console.log(
+        `::warning::${entry}: HEAD is structurally corrupt [${headBad.join(
+          "; "
+        )}] and this run's output is too [${newBad.join(
+          "; "
+        )}]; restoring HEAD, file needs manual repair (see #216)`
+      );
+    }
+    // The lists are deliberately left in place: the workflow's commit step
+    // runs this command a second time as a safety net before staging
+    // `website/content` wholesale, and deletes them itself. Every branch
+    // above is idempotent, so the second pass is a no-op.
+  }
+  console.log(
+    `[orch] quarantine: ${restored} restored from HEAD, ${kept} kept over a corrupt HEAD, ` +
+      `${removed} removed, ${unrepairable.length} unrepairable`
+  );
+  if (unrepairable.length) {
+    const report = path.join(dir, "quarantine-unrepairable.json");
+    fs.writeFileSync(report, JSON.stringify(unrepairable, null, 2) + "\n");
+    console.log(`[orch] quarantine: wrote ${report}`);
+  }
+}
+
 // ---------- preflight ----------
 
 /**
@@ -815,12 +961,15 @@ switch (cmd) {
   case "advance":
     cmdAdvance(flags.lang);
     break;
+  case "quarantine":
+    cmdQuarantine();
+    break;
   case "seed":
     cmdSeed();
     break;
   default:
     console.log(
-      "usage: orchestrator.mjs <detect|preflight|sync-en|seed|translate|verify|advance> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv]"
+      "usage: orchestrator.mjs <detect|preflight|sync-en|seed|translate|verify|advance|quarantine> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv]"
     );
     process.exitCode = cmd ? 1 : 0;
 }
