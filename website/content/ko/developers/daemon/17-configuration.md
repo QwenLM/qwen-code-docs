@@ -13,7 +13,7 @@
 | `--token <s>`                           | string                       | env                                                                               | Bearer 토큰. `QWEN_SERVER_TOKEN`을 오버라이드하며 부팅 시 트리밍됩니다. 프로세스 명령줄에 표시되므로, 배포에서는 env를 권장.                                                                                 |
 | `--require-auth`                        | boolean                      | `false`                                                                           | Bearer 인증을 루프백과 `/health`로 확장. 토큰 없이는 부팅 거부.                                                                                                                                     |
 | `--workspace <dir>`                     | 절대 경로 / 반복 가능   | `process.cwd()`                                                                   | 시작 워크스페이스 런타임. 반복하면 추가 격리 런타임 등록. 첫 번째가 primary. 모든 값은 절대 경로이고 디렉토리여야 하며, 부팅 시 표준화.                                                    |
-| `--memory-project-scope <mode>`         | `git-root` / `workspace`     | `git-root`                                                                        | 프로젝트 메모리 분할. `git-root`는 동일한 Git 루트의 워크스페이스 간 메모리 공유. `workspace`는 정확한 워크스페이스 디렉토리별 격리. `QWEN_CODE_MEMORY_PROJECT_SCOPE` 오버라이드.                               |
+| `--memory-project-scope <mode>`         | `git-root` / `workspace`     | `workspace`                                                                       | 프로젝트 메모리 분할. `workspace`는 정확한 워크스페이스 디렉토리별로 격리. `git-root`는 동일한 Git 루트의 워크스페이스가 공유하는 레거시 호환 스코프. `QWEN_CODE_MEMORY_PROJECT_SCOPE` 오버라이드.                               |
 | `--max-sessions <n>`                    | number                       | `32`                                                                              | 워크스페이스당 활성 세션 상한. `0` / `Infinity`는 무제한. `NaN` / 음수 값은 예외 발생.                                                                                                                        |
 | `--max-total-sessions <n>`              | number                       | 여러 시작/복원 워크스페이스에 대해 파생                                  | Daemon 전체 활성 세션 상한. 생략 시 워크스페이스당 상한과 시작/복원 워크스페이스 수에서 유한 기본값이 한 번 파생. `0` / `Infinity`는 무제한.                                         |
 | `--max-pending-prompts-per-session <n>` | number                       | `5`                                                                               | 세션당 수락되었지만 대기 중/실행 중인 프롬프트 상한. 초과 시 503 반환. `0` / `Infinity`는 무제한. 음수 또는 비정수 값은 예외 발생.                                                                   |
@@ -65,6 +65,8 @@
 | `QWEN_SERVE_RATE_LIMIT_WINDOW_MS`   | `--rate-limit-window-ms`의 env 폴백.                                                                                                                                                                                                                                                                                                                                                   |
 | `QWEN_CODE_MEMORY_PROJECT_SCOPE`    | `workspace`는 프로젝트 메모리를 정확한 워크스페이스 디렉토리 기준으로 키잉. 다른 값은 `git-root` 스코프 유지(인식 불가능한 값은 한 번 경고). 런타임 기본 env를 통해 전파되며 `childEnvOverrides`가 아님. `--memory-project-scope`가 우선. 각 워크스페이스의 remember/forget/dream 레인은 대기 작업을 `MAX_PENDING = 16`으로 제한. N개 워크스페이스는 daemon 전체 상한 없이 최대 16·N개의 대기 작업을 허용. |
 
+빈 `QWEN_CODE_MEMORY_PROJECT_SCOPE` 값은 설정되지 않은 것으로 처리되어 기본값 `workspace`를 사용하며, 인식할 수 없는 비어 있지 않은 값은 여전히 한 번 경고하고 레거시 `git-root` 동작을 유지합니다.
+
 ### `qwen serve` CLI 래퍼에서 읽는 변수
 
 | 환경 변수                                   | 효과                                                                                                                                                                                                                                                                                                                      |
@@ -105,12 +107,12 @@ daemon은 각 워크스페이스의 병합된 설정과 환경 오버레이에�
 
 ## `ServeOptions` (프로그래밍 임베딩)
 
-`packages/cli/src/serve/types.ts`는 `runQwenServe`와 `createServeApp` 모두에서 허용되는 타입화된 옵션 객체를 정의합니다. 위의 CLI 플래그를 미러링하며 다음을 추가합니다:
+`packages/cli/src/serve/types.ts`는 공개 serve API를 통해 전달되는 타입화된 옵션을 정의합니다. 위의 CLI 플래그를 미러링하며 다음을 추가합니다:
 
 | 필드                         | 효과                                                                                                                                            |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `eventRingSize`               | 기본 세션당 링 크기를 오버라이드.                                                                                                      |
-| `memoryProjectScope`          | `'git-root' \| 'workspace'` 프로젝트 메모리 분할. `QWEN_CODE_MEMORY_PROJECT_SCOPE`로 폴백.                                          |
+| `memoryProjectScope`          | `runQwenServe` 전용. 우선순위: 옵션, 런치 env, 그다음 `workspace`. 직접 `createServeApp` 호출자는 `deps.daemonEnv`를 사용.              |
 | `maxPendingPromptsPerSession` | 세션당 대기 프롬프트 상한. `0` / `Infinity`는 무제한.                                                                                 |
 | `mcpPoolActive`               | 프로그래밍 스위치. `QWEN_SERVE_NO_MCP_POOL`에서 기본값 결정.                                                                                    |
 | `externalToolGuard`           | 선택적 `{mode:'required', endpoint, token, timeoutMs?}`. 생략하면 완전히 비활성화. required 모드는 수신 전에 프로바이더 핸드셰이크 수행. |

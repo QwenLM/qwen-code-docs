@@ -2,7 +2,7 @@
 
 Qwen Code 拡張機能は、プロンプト、MCPサーバー、サブエージェント、スキル、カスタムコマンドを、使い慣れたユーザーフレンドリーな形式にパッケージ化します。拡張機能を使用すると、Qwen Code の機能を拡張し、それらの機能を他のユーザーと共有できます。拡張機能は、簡単にインストールして共有できるように設計されています。
 
-[Gemini CLI Extensions Gallery](https://geminicli.com/extensions/) および [Claude Code Marketplace](https://claudemarketplaces.com/) の拡張機能とプラグインは、Qwen Code に直接インストールできます。このクロスプラットフォーム互換性により、拡張機能の作成者が別バージョンを維持する必要なく、豊富な拡張機能エコシステムにアクセスでき、Qwen Code の機能を大幅に拡張できます。
+[Gemini CLI Extensions Gallery](https://geminicli.com/extensions/)、[Claude Code Marketplace](https://claudemarketplaces.com/)、Qoder、およびポータブルな [Agent Plugins v1](./agent-plugins.md) 形式の拡張機能とプラグインは、Qwen Code に直接インストールできます。このクロスプラットフォーム互換性により、拡張機能の作成者が別バージョンを維持する必要なく、豊富な拡張機能エコシステムにアクセスでき、Qwen Code の機能を大幅に拡張できます。
 
 ## 拡張機能の管理
 
@@ -113,6 +113,18 @@ qwen extensions install owner/sample-qoder-plugin
 
 Qoder プラグインにルートの `system-prompt.md` が含まれている場合、Qwen Code はそれを拡張機能のコンテキストとして読み込みます。プラグインに `QWEN.md` が含まれているか、他のコンテキストファイルが宣言されている場合、すべてのコンテキストファイルが保持され、重複が排除されます。
 
+#### Agent Plugins v1 から
+
+Qwen Code は、ポータブルな Agent Plugins v1 パッケージをネイティブに読み込みます。`plugin.json`、`mcp.json`、`SKILL.md` ファイルの変換や書き換えは行いません。
+
+```bash
+qwen extensions install ./my-agent-plugin
+qwen extensions link ./my-agent-plugin
+qwen extensions install owner/my-agent-plugin
+```
+
+ポータブルランタイムは Agent Skills および stdio と Streamable HTTP MCP サーバーをサポートしています。コマンド、エージェント、フック、クライアント名前空間、レガシー SSE MCP は有効化されません。完全なサポートマトリクスについては、[Agent Plugins v1](./agent-plugins.md) を参照してください。
+
 #### npm レジストリから
 
 Qwen Code は、スコープ付きパッケージ名を使用した npm レジストリからの拡張機能のインストールをサポートしています。これは、認証、バージョン管理、公開インフラがすでに整っているチームのプライベートレジストリに最適です。
@@ -139,7 +151,7 @@ qwen extensions install @scope/my-extension --registry https://your-registry.com
 
 **認証** は、`NPM_TOKEN` 環境変数、または `.npmrc` ファイルのレジストリ固有の `_authToken` エントリを介して自動的に処理されます。
 
-> **注:** npm 拡張機能は、パッケージルートに `qwen-extension.json` ファイルを含める必要があります。形式は他の Qwen Code 拡張機能と同じです。パッケージの詳細については、[拡張機能のリリース](./extension-releasing.md#releasing-through-npm-registry) を参照してください。
+> **注:** npm 拡張機能は、パッケージルートにネイティブの `qwen-extension.json` または Agent Plugins v1 の `plugin.json` を含める必要があります。パッケージの詳細については、[拡張機能のリリース](./extension-releasing.md#releasing-through-npm-registry) を参照してください。
 
 #### Git リポジトリから
 
@@ -237,7 +249,9 @@ qwen extensions update --all
 
 起動時に、Qwen Code は `<home>/.qwen/extensions` 内の拡張機能を検索します。
 
-拡張機能は、`qwen-extension.json` ファイルを含むディレクトリとして存在します。例:
+ネイティブ Qwen 拡張機能は、`qwen-extension.json` ファイルを含むディレクトリとして存在します。Agent Plugins v1 パッケージは、代わりにルートの `plugin.json` を保持します。[Agent Plugins v1](./agent-plugins.md) を参照してください。
+
+例えば、ネイティブ Qwen 拡張機能は次の場所に保存されます。
 
 `<home>/.qwen/extensions/my-extension/qwen-extension.json`
 

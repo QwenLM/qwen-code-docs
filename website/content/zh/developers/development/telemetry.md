@@ -386,6 +386,12 @@ traceparent: 00-<32-hex traceId>-<16-hex parentSpanId>-<01-sampled | 00-not-samp
 - `qwen-code.config`：启动时发出一次，包含 CLI 配置。
   - **属性**：`model`、`sandbox_enabled`、`core_tools_enabled`、`approval_mode`、`file_filtering_respect_git_ignore`、`debug_mode`、`truncate_tool_output_threshold`、`truncate_tool_output_lines`、`hooks`（逗号分隔，禁用时省略）、`ide_enabled`、`interactive_shell_enabled`、`mcp_servers`、`mcp_servers_count`、`mcp_tools`、`mcp_tools_count`、`output_format`、`skills`、`subagents`
 
+- `session.start`：会话开始。在启动时遥测初始化后发出，并在每次会话切换时再次发出；生命周期语义在 Spans 部分中描述。
+  - **属性**：`session.id`（string）、`session.previous_id`（string，仅当此启动在新的会话 id 下继续已持久化的对话时存在）
+
+- `session.end`：会话结束。在会话切换替换当前会话之前以及遥测关闭时发出。
+  - **属性**：`session.id`（string）
+
 - `qwen-code.user_prompt`：用户提交 prompt。
   - **属性**：`prompt_length`（int）、`prompt_id`（string）、`prompt`（string，如果 `log_prompts_enabled` 为 false 则排除）、`auth_type`（string）
 
@@ -680,6 +686,10 @@ Daemon 进程（长时间运行的 HTTP 服务器模式）会暴露其自身的�
 ### Spans
 
 分布式追踪 span 构成一棵以 `qwen-code.interaction` 为根的树。每个 interaction 都是一个带有自身 `traceId` 的 trace root；跨 prompt 关联使用 `session.id` 属性。
+
+会话生命周期也通过 OpenTelemetry General Session 语义约定导出。当 OTel logs 管道启用时，Qwen Code 会发出带有必需 `session.id` 属性的 `session.start` 和 `session.end` 日志事件（已在上方核心会话事件中列出）。已恢复的持久化对话仅当恢复的会话 id 与当前 id 不同时，才在其 `session.start` 事件中包含 `session.previous_id`；冷启动恢复（`--resume`、`--continue`、`--fork-session`）不携带该属性。`/clear` 和其他替换流程有意不声明延续，因为它们会丢弃之前的对话。
+
+现有的 Qwen 特有的 `qwen-code.config`/`cli_config` 和 RUM `session_start` 记录仍可用于兼容。GenAI 请求 span 继续使用 `gen_ai.conversation.id` 表示同一个所属会话 ID。
 
 - `qwen-code.interaction`：每个用户 prompt 轮次的 root span。
   - **属性**：`session.id`，可选 ARMS 扩展 `gen_ai.user.id`，`qwen-code.prompt_id`，`qwen-code.message_type`，`qwen-code.model`，`qwen-code.approval_mode`，`interaction.sequence`，`interaction.duration_ms`，`qwen-code.turn_status`（"ok"/"error"/"cancelled"）

@@ -140,10 +140,11 @@ Estes comandos invocam skills integradas que fornecem fluxos de trabalho especia
 
 | Comando      | Descrição                                                   | Exemplos de Uso                                                           |
 | ------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `/review`    | Revisão de código multi-agente (12 agentes paralelos no esforço alto) | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
-| `/loop`      | Executar um prompt em um cronograma recorrente              | `/loop 5m check the build`                                                |
-| `/simplify`  | Revisar alterações recentes e aplicar edições seguras de limpeza diretamente | `/simplify`, `/simplify focus on duplication`                             |
-| `/qc-helper` | Responder perguntas sobre o uso e configuração do Qwen Code | `/qc-helper how do I configure MCP?`                                      |
+| `/review`     | Revisão de código multi-agente (12 agentes paralelos no esforço alto) | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
+| `/coordinate` | Coordenar workers somente leitura e um escritor opcional de worktree  | `/coordinate investigate and fix the authentication regression`           |
+| `/loop`       | Executar um prompt em um cronograma recorrente                        | `/loop 5m check the build`                                                |
+| `/simplify`   | Revisar alterações recentes e aplicar edições seguras de limpeza diretamente | `/simplify`, `/simplify focus on duplication`                             |
+| `/qc-helper`  | Responder perguntas sobre o uso e configuração do Qwen Code           | `/qc-helper how do I configure MCP?`                                      |
 
 Consulte [Code Review](./code-review.md) para a documentação completa do `/review`.
 

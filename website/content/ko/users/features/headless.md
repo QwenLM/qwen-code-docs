@@ -215,6 +215,8 @@ qwen -p "Explain TypeScript" --output-format stream-json
 
 `--include-partial-messages`와 함께 사용하면, 실시간 UI 업데이트를 위한 추가 스트림 이벤트(message_start, content_block_delta 등)가 실시간으로 발행된다.
 
+JSON 및 stream-json 출력에서 텍스트 `tool_result.content` 값은 JSON 문자열 직렬화 후 65,536 UTF-8 바이트로 제한된다. 초과하는 값은 결정적 헤드/테일 미리보기로 발행된다. 동일한 제한이 영속 stream-json 세션, SDK 전송, 서브에이전트 도구 결과 및 Dual Output에도 적용된다. 텍스트 모드는 최종 응답만 출력하며 내부적으로 제한된 미리보기만 유지한다. 이 제한은 전체 JSON 세션, JSONL 이벤트, 도구 입력 또는 부분 메시지의 크기를 제한하지 않는다.
+
 ```bash
 qwen -p "Write a Python script" --output-format stream-json --include-partial-messages
 ```

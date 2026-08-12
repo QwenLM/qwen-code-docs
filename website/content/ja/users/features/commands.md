@@ -138,12 +138,13 @@ AI ツールとモデルを管理するためのコマンド。
 
 これらのコマンドは、特殊なワークフローを提供するバンドルされた skill を呼び出します。
 
-| Command      | Description                                                 | Usage Examples                                                            |
-| ------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `/review`    | マルチエージェントによるコードレビュー（高努力で12の並列エージェント） | `/review`、`/review 123`、`/review 123 --comment`、`/review --effort low` |
-| `/loop`      | 定期的なスケジュールでプロンプトを実行する                  | `/loop 5m check the build`                        |
-| `/simplify`  | 最近の変更をレビューし、安全なクリーンアップ編集を直接適用する | `/simplify`, `/simplify focus on duplication`     |
-| `/qc-helper` | Qwen Code の使用方法と設定に関する質問に答える              | `/qc-helper how do I configure MCP?`              |
+| コマンド       | 説明                                                   | 使用例                                                            |
+| -------------- | ------------------------------------------------------ | ----------------------------------------------------------------- |
+| `/review`      | マルチエージェントによるコードレビュー（高努力で12の並列エージェント） | `/review`、`/review 123`、`/review 123 --comment`、`/review --effort low` |
+| `/coordinate`  | 読み取り専用ワーカーと1つのオプションなワークツリーライターを調整する | `/coordinate investigate and fix the authentication regression`   |
+| `/loop`        | 定期的なスケジュールでプロンプトを実行する             | `/loop 5m check the build`                                        |
+| `/simplify`    | 最近の変更をレビューし、安全なクリーンアップ編集を直接適用する | `/simplify`、`/simplify focus on duplication`                     |
+| `/qc-helper`   | Qwen Code の使用方法と設定に関する質問に答える         | `/qc-helper how do I configure MCP?`                              |
 
 `/review` の完全なドキュメントについては、[Code Review](./code-review.md) を参照してください。
 

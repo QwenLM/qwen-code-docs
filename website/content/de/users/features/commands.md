@@ -141,6 +141,7 @@ Diese Befehle rufen gebündelte Skills auf, die spezialisierte Workflows bereits
 | Befehl       | Beschreibung                                                | Anwendungsbeispiele                               |
 | ------------ | ----------------------------------------------------------- | ------------------------------------------------- |
 | `/review`    | Multi-Agent-Code-Review (12 parallele Agenten bei hohem Aufwand) | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
+| `/coordinate` | Read-only-Worker und einen optionalen Worktree-Writer koordinieren | `/coordinate investigate and fix the authentication regression`           |
 | `/loop`      | Einen Prompt nach einem wiederkehrenden Zeitplan ausführen  | `/loop 5m check the build`                        |
 | `/simplify`  | Kürzliche Änderungen prüfen und sichere Bereinigungs-Edits direkt anwenden | `/simplify`, `/simplify focus on duplication`     |
 | `/qc-helper` | Beantwortet Fragen zur Nutzung und Konfiguration von Qwen Code | `/qc-helper how do I configure MCP?`              |

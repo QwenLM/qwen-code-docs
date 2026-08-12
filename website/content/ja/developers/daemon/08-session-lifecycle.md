@@ -57,6 +57,8 @@ stateDiagram-v2
 
 `X-Qwen-Client-Id` は**任意**ですが、**強く推奨**されます。デーモンは呼び出し元に代わってこれを生成しません。クライアントは自分で選択し、リクエスト間で再利用することで、デーモンが投票の属性付け、イベントの監査、再接続の検出を行えるようにします。
 
+各独立したコントローラーは、個別の安定した ID を使用する必要があります。WebUI はデフォルトで `webui_` プレフィックス付きの ID を生成します。ホストと埋め込み WebShell は、意図的に 1 つの論理コントローラーとして動作する場合のみ ID を共有すべきです。一度共有すると、デーモンログはどちらがリクエストを発信したかを区別できなくなります。
+
 検証ルール:
 
 - 文字セット: `[A-Za-z0-9._:-]`。
@@ -222,10 +224,6 @@ sequenceDiagram
 
 `bridge.preheat()` は、最初のセッションの前に ACP 子プロセスをウォームアップし、最初の本セッションでコールドスタートのレイテンシを回避します。これは、最後のセッションが閉じた後も ACP 子プロセスを存続させる `channelIdleTimeoutMs` と、新しいセッションが到着したときにすでにアイドル状態の子プロセスを再利用する skip-relaunch 動作と組み合わせて使用されます。
 
-### ステートレス生成（`session_generation` ケーパビリティタグ）
-
-`POST /session/:id/generate` は `{ "prompt": string }` を受け取り、`started`、オプションの `thinking`、`delta`、`done`、または `error` イベントを含むリクエストスコープの SSE ストリームを返します。リクエストは会話履歴を読み取らず、ターンを記録せず、ツールを公開しません。ACP 子プロセスは、有効な設定済みの高速モデルが利用可能な場合はそれを使用し、そうでない場合はセッションのメインモデルを使用します。
-
 ## 設定
 
 - `BridgeOptions.maxSessions`（デフォルト 32）— 上限。
@@ -233,9 +231,13 @@ sequenceDiagram
 - `BridgeOptions.initializeTimeoutMs`（デフォルト 10s）— ACP `initialize` ハンドシェイク。
 - `BridgeOptions.sessionRestoreTimeoutMs`（デフォルト 60s）— ACP `loadSession` / `unstable_resumeSession` のデッドライン。デフォルトは 60 秒で、明示的に設定された initialize タイムアウトはこれを上げることができますが、下げることはできません。
 - `BridgeOptions.channelIdleTimeoutMs`（デフォルト 0、ACP 子プロセスを即座に回収）。
-- Capability tags: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`（非推奨のエイリアス）, `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
+- 機能タグ: `session_create`、`session_id_override`、`session_scope_override`、`session_load`、`session_resume`、`unstable_session_resume`（非推奨のエイリアス）、`session_list`、`session_info`、`session_close`、`session_metadata`、`session_set_model`、`client_identity`、`client_heartbeat`、`session_recap`、`session_generation`、`session_btw`、`session_context_usage`、`session_tasks`、`session_monitor_tool_correlation`、`session_stats`、`session_lsp`、`session_status`、`non_blocking_prompt`。
 
-## 注意事項と既知の制限
+### ステートレス生成（`session_generation` 機能タグ）
+
+`POST /session/:id/generate` は `{ "prompt": string }` を受け付け、`started`、オプションの `thinking`、`delta`、`done`、または `error` イベントを含むリクエストスコープの SSE ストリームを返します。リクエストは会話履歴を読み取らず、ターンを記録せず、ツールも公開しません。ACP 子プロセスは、利用可能な場合は有効な設定済みの高速モデルを使用し、そうでない場合はセッションのメインモデルを使用します。
+
+## 注意点および既知の制限
 
 - `connection.unstable_resumeSession` は ACP レイヤーではまだ不安定な場合がありますが、daemon は `session_resume` でコミットされた v1 ルート契約を公開します。`unstable_session_resume` は、非推奨の互換性エイリアスとしてのみ保持されています。
 - v1 には**クライアントごとのエビクションはありません**。セッションごとおよびサブスクライバーごとの終了のみです。取り消しポリシーは F-series Wave 5 / PR 24 です。

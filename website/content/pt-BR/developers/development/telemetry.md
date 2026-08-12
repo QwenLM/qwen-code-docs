@@ -387,6 +387,12 @@ Os seguintes eventos são registrados em log:
 - `qwen-code.config`: Emitido uma vez na inicialização com a configuração da CLI.
   - **Atributos**: `model`, `sandbox_enabled`, `core_tools_enabled`, `approval_mode`, `file_filtering_respect_git_ignore`, `debug_mode`, `truncate_tool_output_threshold`, `truncate_tool_output_lines`, `hooks` (separados por vírgula, omitido se desativado), `ide_enabled`, `interactive_shell_enabled`, `mcp_servers`, `mcp_servers_count`, `mcp_tools`, `mcp_tools_count`, `output_format`, `skills`, `subagents`
 
+- `session.start`: Uma sessão começa. Emitido após a inicialização da telemetria na inicialização e novamente em cada troca de sessão; a semântica do ciclo de vida está descrita na seção de Spans.
+  - **Atributos**: `session.id` (string), `session.previous_id` (string, presente apenas quando este start continua uma conversa persistida sob um novo session id)
+
+- `session.end`: Uma sessão termina. Emitido antes de uma troca de sessão substituir a sessão atual e no encerramento da telemetria.
+  - **Atributos**: `session.id` (string)
+
 - `qwen-code.user_prompt`: O usuário envia um prompt.
   - **Atributos**: `prompt_length` (int), `prompt_id` (string), `prompt` (string, excluído se `log_prompts_enabled` for false), `auth_type` (string)
 
@@ -682,6 +688,10 @@ O processo daemon (modo de servidor HTTP de longa duração) expõe suas própri
 
 Os spans de rastreamento distribuído formam uma árvore enraizada em `qwen-code.interaction`. Cada interação é uma raiz de rastreamento com seu próprio `traceId`; a correlação entre prompts usa o atributo `session.id`.
 
+O ciclo de vida da sessão também é exportado através das convenções semânticas OpenTelemetry General Session. Quando o pipeline de logs do OTel está habilitado, o Qwen Code emite eventos de log `session.start` e `session.end` com o atributo obrigatório `session.id` (catalogados em Eventos Principais da Sessão acima). Uma conversa persistida retomada inclui `session.previous_id` em seu evento `session.start` apenas quando o session id retomado difere do atual; retomadas de cold start (`--resume`, `--continue`, `--fork-session`) não o carregam. `/clear` e outros fluxos de substituição intencionalmente não reivindicam continuação porque descartam a conversa anterior.
+
+Os registros `qwen-code.config`/`cli_config` específicos do Qwen e `session_start` do RUM existentes permanecem disponíveis para compatibilidade. Spans de requisição GenAI continuam usando `gen_ai.conversation.id` para o mesmo session ID proprietário.
+
 - `qwen-code.interaction`: Span raiz para cada turno de prompt do usuário.
   - **Atributos**: `session.id`, extensão ARMS opcional `gen_ai.user.id`, `qwen-code.prompt_id`, `qwen-code.message_type`, `qwen-code.model`, `qwen-code.approval_mode`, `interaction.sequence`, `interaction.duration_ms`, `qwen-code.turn_status` ("ok"/"error"/"cancelled")
 
@@ -705,7 +715,7 @@ Os spans de rastreamento distribuído formam uma árvore enraizada em `qwen-code
   - **Atributos**: `session.id`, `hook_event` ("PreToolUse"/"PostToolUse"/"PostToolUseFailure"/"PostToolBatch"), `tool.name`, `tool.use_id` (optional), `is_interrupt` (boolean, optional), `duration_ms`, `success`, `should_proceed` (optional), `should_stop` (optional), `block_type` (optional), `error` (optional)
 
 - `qwen-code.subagent`: Encapsula uma única invocação de subagente.
-  - **Atributos**: `gen_ai.operation.name`, `gen_ai.provider.name`, `gen_ai.agent.id`, `gen_ai.agent.name`, `gen_ai.conversation.id`, `qwen-code.subagent.id`, `qwen-code.subagent.name`, `qwen-code.subagent.invocation_kind` ("foreground"/"fork"/"background"), `qwen-code.subagent.is_built_in`, `qwen-code.subagent.depth`, `qwen-code.subagent.status`, `qwen-code.subagent.terminate_reason`, `qwen-code.subagent.duration_ms`
+  - **Atributos**: `gen_ai.operation.name` (`invoke_agent`), `gen_ai.agent.name`, `gen_ai.agent.description`, `gen_ai.conversation.id`, extensão ARMS opcional `gen_ai.user.id`, opcional `gen_ai.request.model`, `qwen-code.subagent.id`, `qwen-code.subagent.name`, `qwen-code.subagent.invocation_kind` ("foreground"/"fork"/"background"), `qwen-code.subagent.is_built_in`, `qwen-code.subagent.depth`, `qwen-code.subagent.status`, `qwen-code.subagent.terminate_reason`, `qwen-code.subagent.duration_ms`
 
 - `qwen-code.daemon.request`: Encapsula uma requisição HTTP do daemon.
   - **Atributos**: `http.request.method`, `http.route`, `qwen-code.daemon.operation`, `session.id`, `http.response.status_code`

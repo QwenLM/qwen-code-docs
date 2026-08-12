@@ -35,7 +35,7 @@ Qwen Code의 OpenTelemetry를 활성화하고 설정하는 방법을 알아봅�
 - **📊 워크플로 최적화**: 구성과 프로세스를 개선하기 위한 정보에 기반한 의사결정
 - **🏢 엔터프라이즈 거버넌스**: 팀 간 사용량을 모니터링하고, 비용을 추적하고, 규정 준수를 보장하고, 기존 모니터링 인프라와 통합
 
-## OpenTelemetry Integration
+## OpenTelemetry 통합
 
 **[OpenTelemetry]** — 벤더 중립적 업계 표준 관찰 가능성 프레임워크 위에 구축된 Qwen Code의 관찰 가능성 시스템은 다음을 제공합니다:
 
@@ -378,6 +378,12 @@ Alibaba Cloud Managed Service for OpenTelemetry에서 Qwen Code telemetry를 보
 - `qwen-code.config`: CLI 구성과 함께 시작 시 한 번 배출됨.
   - **속성**: `model`, `sandbox_enabled`, `core_tools_enabled`, `approval_mode`, `file_filtering_respect_git_ignore`, `debug_mode`, `truncate_tool_output_threshold`, `truncate_tool_output_lines`, `hooks`(쉼표로 구분, 비활성화 시 생략), `ide_enabled`, `interactive_shell_enabled`, `mcp_servers`, `mcp_servers_count`, `mcp_tools`, `mcp_tools_count`, `output_format`, `skills`, `subagents`
 
+- `session.start`: 세션 시작. 시작 시 telemetry 초기화 후에 배출되며 세션 전환 시마다 다시 배출됩니다. 수명 주기 의미는 스팬 섹션에 설명되어 있습니다.
+  - **속성**: `session.id`(string), `session.previous_id`(string, 이 시작이 새 세션 ID로 지속된 대화를 이어갈 때만 존재)
+
+- `session.end`: 세션 종료. 세션 전환이 현재 세션을 대체하기 전에, 그리고 telemetry 종료 시 배출됩니다.
+  - **속성**: `session.id`(string)
+
 - `qwen-code.user_prompt`: 사용자가 프롬프트를 제출.
   - **속성**: `prompt_length`(int), `prompt_id`(string), `prompt`(string, `log_prompts_enabled`가 false이면 제외), `auth_type`(string)
 
@@ -674,6 +680,10 @@ Alibaba Cloud Managed Service for OpenTelemetry에서 Qwen Code telemetry를 보
 
 분산 추적 스팬은 `qwen-code.interaction`을 루트로 하는 트리를 형성합니다. 각 인터랙션은 자체 `traceId`를 가진 trace 루트이며, 크로스 프롬프트 상관관계는 `session.id` 속성을 사용합니다.
 
+세션 수명 주기는 OpenTelemetry General Session 시맨틱 컨벤션을 통해서도 내보내집니다. OTel 로그 파이프라인이 활성화되면 Qwen Code는 필수 `session.id` 속성을 가진 `session.start` 및 `session.end` 로그 이벤트를 배출합니다(위의 핵심 세션 이벤트에 분류됨). 재개된 지속 대화는 재개된 세션 ID가 현재 것과 다를 때만 `session.start` 이벤트에 `session.previous_id`를 포함합니다. 콜드 스타트 재개(`--resume`, `--continue`, `--fork-session`)는 이를 전달하지 않습니다. `/clear` 및 기타 대체 흐름은 이전 대화를 폐기하므로 의도적으로 연속을 주장하지 않습니다.
+
+기존 Qwen 전용 `qwen-code.config`/`cli_config` 및 RUM `session_start` 레코드는 호환성을 위해 계속 제공됩니다. GenAI 요청 스팬은 동일한 소유 세션 ID에 대해 `gen_ai.conversation.id`를 계속 사용합니다.
+
 - `qwen-code.interaction`: 각 사용자 프롬프트 턴의 루트 스팬.
   - **속성**: `session.id`, 선택적 ARMS 확장 `gen_ai.user.id`, `qwen-code.prompt_id`, `qwen-code.message_type`, `qwen-code.model`, `qwen-code.approval_mode`, `interaction.sequence`, `interaction.duration_ms`, `qwen-code.turn_status`("ok"/"error"/"cancelled")
 
@@ -697,13 +707,7 @@ Alibaba Cloud Managed Service for OpenTelemetry에서 Qwen Code telemetry를 보
   - **속성**: `session.id`, `hook_event`("PreToolUse"/"PostToolUse"/"PostToolUseFailure"/"PostToolBatch"), `tool.name`, `tool.use_id`(선택), `is_interrupt`(boolean, 선택), `duration_ms`, `success`, `should_proceed`(선택), `should_stop`(선택), `block_type`(선택), `error`(선택)
 
 - `qwen-code.subagent`: 단일 서브에이전트 호출을 래핑.
-  - **속성**: `session.id`, `gen_ai.operation.name`(`execute_agent`), `gen_ai.agent.name`, `gen_ai.request.model`, `gen_ai.response.finish_reasons`, `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`, `gen_ai.usage.cache_read.input_tokens`, `gen_ai.usage.cache_creation.input_tokens`, `agent.type`, `agent.session_id`, `duration_ms`, `success`, `error`, `error_type`, `terminate_reason`, `result`
-
-- `qwen-code.daemon.request`: 데몬 HTTP 요청을 래핑.
-  - **속성**: `http.request.method`, `http.route`, `qwen-code.daemon.operation`, `session.id`, `http.response.status_code`
-
-- `qwen-code.daemon.bridge`: 데몬 브리지 작업을 래핑.
-  - **속성**: `qwen-code.daemon.operation`
+  - **속성**: `gen_ai.operation.name`(`invoke_agent`), `gen_ai.agent.name`, `gen_ai.agent.description`, `gen_ai.conversation.id`, 선택적 ARMS 확장 `gen_ai.user.id`, 선택적 `gen_ai.request.model`, `qwen-code.subagent.id`, `qwen-code.subagent.name`, `qwen-code.subagent.invocation_kind`("foreground"/"fork"/"background"), `qwen-code.subagent.is_built_in`, `qwen-code.subagent.depth`, `qwen-code.subagent.status`, `qwen-code.subagent.terminate_reason`, `qwen-code.subagent.duration_ms`
 
 #### GenAI 필드 마이그레이션 및 ARMS 인식
 
@@ -722,6 +726,12 @@ ARMS가 내보내진 스팬을 GenAI 애플리케이션으로 인식하도록 �
 ```
 
 Qwen Code는 이 ARMS별 리소스 속성이나 `gen_ai.span.kind`를 주입하지 않습니다. ARMS는 `gen_ai.operation.name`에서 LLM, Tool 및 Agent 역할을 추론할 수 있습니다.
+
+- `qwen-code.daemon.request`: 데몬 HTTP 요청을 래핑.
+  - **속성**: `http.request.method`, `http.route`, `qwen-code.daemon.operation`, `session.id`, `http.response.status_code`
+
+- `qwen-code.daemon.bridge`: 데몬 브리지 작업을 래핑.
+  - **속성**: `qwen-code.daemon.operation`
 
 #### 리소스 메트릭
 

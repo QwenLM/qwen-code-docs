@@ -15,7 +15,7 @@
 | `--token <s>`                           | string                       | env                                                                               | ベアラートークン。`QWEN_SERVER_TOKEN` をオーバーライドし、起動時にトリミングされます。プロセスのコマンドラインに表示されるため、デプロイ時には環境変数の使用を推奨します。                                                                                 |
 | `--require-auth`                        | boolean                      | `false`                                                                           | ベアラ認証をループバックおよび `/health` に拡張します。トークンなしでは起動が拒否されます。                                                                                                                                     |
 | `--workspace <dir>`                     | absolute path / repeatable   | `process.cwd()`                                                                   | 起動時のワークスペースランタイム。繰り返して追加の分離されたランタイムを登録できます。最初がプライマリです。すべての値は絶対パスかつディレクトリである必要があります。起動時に正規化されます。                                                    |
-| `--memory-project-scope <mode>`         | `git-root` / `workspace`     | `git-root`                                                                        | プロジェクトメモリのパーティション。`git-root` は同じ Git ルートにあるワークスペース間でメモリを共有します。`workspace` は正確なワークスペースディレクトリごとに分離します。`QWEN_CODE_MEMORY_PROJECT_SCOPE` をオーバーライドします。                               |
+| `--memory-project-scope <mode>`         | `git-root` / `workspace`     | `workspace`                                                                       | プロジェクトメモリのパーティション。`workspace` は正確なワークスペースディレクトリごとに分離します。`git-root` は同じ Git ルートにあるワークスペース間で共有されるレガシー互換スコープです。`QWEN_CODE_MEMORY_PROJECT_SCOPE` をオーバーライドします。                               |
 | `--max-sessions <n>`                    | number                       | `32`                                                                              | ワークスペースごとのアクティブセッション上限。`0` / `Infinity` は無制限を意味します。`NaN` / 負の値はエラーをスローします。                                                                                                                        |
 | `--max-total-sessions <n>`              | number                       | 複数の起動時/復元ワークスペース用に導出                                  | デーモン全体のアクティブセッション上限。省略時、ワークスペースごとの上限と起動時/復元ワークスペース数から有限のデフォルト値が 1 回だけ導出されます。`0` / `Infinity` は無制限を意味します。                                         |
 | `--max-pending-prompts-per-session <n>` | number                       | `5`                                                                               | セッションごとに受け入れられたが保留中または実行中のプロンプトの上限。超過したプロンプトは 503 を返します。`0` / `Infinity` は無制限を意味します。負の値または非整数値はエラーをスローします。                             |
@@ -65,7 +65,9 @@
 | `QWEN_SERVE_RATE_LIMIT_MUTATION`    | `--rate-limit-mutation` の環境変数フォールバック。                                                                                                                                                                                                                                                                                                                                                    |
 | `QWEN_SERVE_RATE_LIMIT_READ`        | `--rate-limit-read` の環境変数フォールバック。                                                                                                                                                                                                                                                                                                                                                        |
 | `QWEN_SERVE_RATE_LIMIT_WINDOW_MS`   | `--rate-limit-window-ms` の環境変数フォールバック。                                                                                                                                                                                                                                                                                                                                                   |
-| `QWEN_CODE_MEMORY_PROJECT_SCOPE`    | `workspace` はプロジェクトメモリを正確なワークスペースディレクトリごとにキー付けします。他の値は `git-root` スコープを保持します（認識されない値は 1 回だけ警告します）。`childEnvOverrides` ではなくランタイムベース環境経由で伝播します。`--memory-project-scope` が優先されます。各ワークスペースの remember/forget/dream レーンは保留中タスクを `MAX_PENDING = 16` にキャップします。N ワークスペースでは最大 16·N のキューイングされたタスクを許可し、デーモン全体のキャップはありません。 |
+| `QWEN_CODE_MEMORY_PROJECT_SCOPE`    | `workspace` はプロジェクトメモリを正確なワークスペースディレクトリごとにキー付けします。`git-root` はレガシーの共有スコープを選択します。未設定時、デーモンは `workspace` を注入します。認識されない値は 1 回だけ警告し、レガシーの `git-root` 動作を保持します。`childEnvOverrides` ではなくランタイムベース環境経由で伝播します。`--memory-project-scope` が優先されます。各ワークスペースの remember/forget/dream レーンは保留中タスクを `MAX_PENDING = 16` にキャップします。N ワークスペースでは最大 16·N のキューイングされたタスクを許可し、デーモン全体のキャップはありません。 |
+
+空の `QWEN_CODE_MEMORY_PROJECT_SCOPE` 値は未設定として扱われ、デフォルトで `workspace` になります。空でない認識されない値は引き続き 1 回だけ警告し、レガシーの `git-root` 動作を保持します。
 
 ### `qwen serve` CLIラッパーによって読み込まれる変数
 
@@ -107,12 +109,12 @@
 
 ## `ServeOptions`（プログラムによる組み込み）
 
-`packages/cli/src/serve/types.ts` は、`runQwenServe` と `createServeApp` の両方で受け入れられる型付きオプションオブジェクトを定義します。これは上記のCLIフラグを反映し、以下を追加します。
+`packages/cli/src/serve/types.ts` は、パブリックな serve API を通じて渡される型付きオプションを定義します。これは上記の CLI フラグを反映し、以下を追加します。
 
 | フィールド                         | 効果                                                                                        |
 | ----------------------------- | --------------------------------------------------------------------------------------------- |
 | `eventRingSize`               | デフォルトのセッションごとのリングサイズをオーバーライドします。                                                  |
-| `memoryProjectScope`          | `'git-root' \| 'workspace'` プロジェクトメモリのパーティション。`QWEN_CODE_MEMORY_PROJECT_SCOPE` にフォールバックします。                          |
+| `memoryProjectScope`          | `runQwenServe` のみ。優先順位はオプション、起動環境変数、そして `workspace` です。直接の `createServeApp` 呼び出し元は `deps.daemonEnv` を使用します。 |
 | `maxPendingPromptsPerSession` | セッションごとの保留中プロンプトの上限。`0` / `Infinity` は無制限を意味します。                             |
 | `mcpPoolActive`               | プログラムによるスイッチ。デフォルトは `QWEN_SERVE_NO_MCP_POOL` から取得されます。                                |
 | `externalToolGuard`           | オプションの `{mode:'required', endpoint, token, timeoutMs?}`。省略時は完全にオフ。required モードはリスニング前にプロバイダーハンドシェイクを実行します。 |

@@ -437,10 +437,9 @@ Définir uniquement `"target": "gcp"` ne configure pas la destination d'exportat
    ```
 
    Pour les déploiements en conteneur, définissez
-   `QWEN_TELEMETRY_USER_ID` dans l'environnement du conteneur.
-
-   `telemetry.resourceAttributes.user.id` reste une dimension Resource
-   sans rapport et ne remplit pas l'analyse de session ARMS ; supprimez-la lors
+   `QWEN_TELEMETRY_USER_ID=user-079458` à la place. Un
+   `telemetry.resourceAttributes.user.id` personnalisé reste une dimension Resource
+   sans rapport et ne remplit pas l'analyse de session ARMS ; supprimez-le lors
    de la migration vers le paramètre au niveau du span.
 
 2. Si votre point de terminaison Alibaba Cloud nécessite une authentification, fournissez les en-têtes OTLP via les variables d'environnement OpenTelemetry standard telles que `OTEL_EXPORTER_OTLP_HEADERS` (ou les variantes spécifiques au signal). Qwen Code n'expose actuellement pas les en-têtes d'authentification OTLP directement dans `.qwen/settings.json`.
@@ -518,6 +517,12 @@ Les événements suivants sont enregistrés :
 
 - `qwen-code.config` : Émis une fois au démarrage avec la configuration de la CLI.
   - **Attributs** : `model`, `sandbox_enabled`, `core_tools_enabled`, `approval_mode`, `file_filtering_respect_git_ignore`, `debug_mode`, `truncate_tool_output_threshold`, `truncate_tool_output_lines`, `hooks` (séparés par des virgules, omis si désactivés), `ide_enabled`, `interactive_shell_enabled`, `mcp_servers`, `mcp_servers_count`, `mcp_tools`, `mcp_tools_count`, `output_format`, `skills`, `subagents`
+
+- `session.start` : Une session commence. Émis après l'initialisation de la télémétrie au démarrage et à chaque changement de session ; les sémantiques de cycle de vie sont décrites dans la section Spans.
+  - **Attributs** : `session.id` (string), `session.previous_id` (string, présent uniquement lorsque ce démarrage poursuit une conversation persistée sous un nouvel identifiant de session)
+
+- `session.end` : Une session se termine. Émis avant qu'un changement de session ne remplace la session actuelle, et à l'arrêt de la télémétrie.
+  - **Attributs** : `session.id` (string)
 
 - `qwen-code.user_prompt` : L'utilisateur soumet un prompt.
   - **Attributs** : `prompt_length` (int), `prompt_id` (string), `prompt` (string, exclu si `log_prompts_enabled` est false), `auth_type` (string)
@@ -813,6 +818,20 @@ Le processus daemon (mode serveur HTTP à exécution longue) expose ses propres 
 ### Spans
 
 Les spans de traçage distribué forment un arbre enraciné à `qwen-code.interaction`. Chaque interaction est une racine de trace avec son propre `traceId` ; la corrélation inter-prompts utilise l'attribut `session.id`.
+
+Le cycle de vie des sessions est également exporté via les conventions sémantiques
+OpenTelemetry General Session. Lorsque le pipeline de logs OTel est activé, Qwen Code émet
+des événements de log `session.start` et `session.end` avec l'attribut requis `session.id`
+(catalogués sous Événements de session principaux ci-dessus). Une conversation persistée
+reprise inclut `session.previous_id` sur son événement `session.start` uniquement
+lorsque l'identifiant de session repris diffère de l'identifiant courant ; les reprises
+à froid (`--resume`, `--continue`, `--fork-session`) ne le portent pas.
+`/clear` et les autres flux de remplacement ne revendiquent intentionnellement pas
+la continuation car ils suppriment la conversation précédente.
+
+Les enregistrements spécifiques à Qwen `qwen-code.config`/`cli_config` et RUM
+`session_start` restent disponibles pour compatibilité. Les spans de requêtes GenAI
+continuent d'utiliser `gen_ai.conversation.id` pour le même identifiant de session propriétaire.
 
 - `qwen-code.interaction` : Span racine pour chaque tour de prompt utilisateur.
   - **Attributs** : `session.id`, extension ARMS optionnelle `gen_ai.user.id`, `qwen-code.prompt_id`, `qwen-code.message_type`, `qwen-code.model`, `qwen-code.approval_mode`, `interaction.sequence`, `interaction.duration_ms`, `qwen-code.turn_status` ("ok"/"error"/"cancelled")

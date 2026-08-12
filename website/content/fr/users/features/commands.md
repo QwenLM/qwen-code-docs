@@ -142,6 +142,7 @@ Ces commandes invoquent des skills intégrées qui fournissent des workflows sp�
 | Commande     | Description                                                 | Exemples d'utilisation                            |
 | ------------ | ----------------------------------------------------------- | ------------------------------------------------- |
 | `/review`    | Revue de code multi-agents (12 agents parallèles à effort élevé) | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
+| `/coordinate` | Coordonner des workers en lecture seule et un writer worktree optionnel | `/coordinate investigate and fix the authentication regression`           |
 | `/loop`      | Exécute un prompt de manière récurrente                     | `/loop 5m check the build`                        |
 | `/simplify`  | Révise les modifications récentes et applique directement des edits de nettoyage sûrs | `/simplify`, `/simplify focus on duplication`     |
 | `/qc-helper` | Répond aux questions sur l'utilisation et la configuration de Qwen Code | `/qc-helper how do I configure MCP?`              |

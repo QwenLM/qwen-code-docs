@@ -141,6 +141,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | 命令         | 描述                                                        | 使用示例                                          |
 | ------------ | ----------------------------------------------------------- | ------------------------------------------------- |
 | `/review`    | 多代理代码审查（high effort 下 12 个并行代理）         | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
+| `/coordinate`| 协调只读 worker 和一个可选的 worktree writer            | `/coordinate investigate and fix the authentication regression`           |
 | `/loop`      | 按定期计划运行 prompt                                       | `/loop 5m check the build`                        |
 | `/simplify`  | 审查最近的更改并直接应用安全的清理编辑                      | `/simplify`, `/simplify focus on duplication`     |
 | `/qc-helper` | 回答有关 Qwen Code 使用和配置的问题                         | `/qc-helper how do I configure MCP?`              |

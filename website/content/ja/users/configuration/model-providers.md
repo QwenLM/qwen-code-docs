@@ -578,6 +578,7 @@ Coding Plan モデルを手動で構成したい場合は、他の OpenAI 互換
 
 | プロトコル / プロバイダー | 通信時の形状 | 備考 |
 | --- | --- | --- |
+| **OpenAI / DashScope**（`qwen3.8-max` ファミリー） | フラットな `reasoning_effort: <effort>` ボディパラメータ | 5 つの `/effort` ティア（`low`、`medium`、`high`、`xhigh`、`max`）は、`qwen3.8-max` で始まるモデル ID（日付付きスナップショットや `-latest` エイリアスを含む）に対してそのまま透過的に渡されます。DashScope がモデル固有のマッピングを適用します。`reasoning_effort` と `thinking_budget` が競合する場合、通常の `extra_body` > `samplingParams` > `reasoning` の優先順位により、より高優先度のフィールドのみが保持されます。明示的な同一レイヤーのペアは `reasoning_effort` を保持し、クロスレイヤー解決前のプロバイダーの動作と一致します。静的フィールドが優先された場合、`/effort` はリクエストされたティアが有効であることを示唆する代わりにそのフィールドを報告します。effort ティアが優先された場合、競合する `enable_thinking` も削除されます。`extra_body` 内の明示的な `enable_thinking: false` は、削除されるのではなく尊重されます。設定されたティアを `reasoning_effort: 'none'` としてオーバーライドし、`extra_body` がそのまま勝つ数少ない場所の 1 つです。他の Qwen モデルは、選択された effort を `enable_thinking: true` にマッピングし続けます。`reasoning_effort` のオーバーライドは、`thinking_budget` と競合しない限りそのまま渡されます（DashScope が拒否するペアであり、その場合、不活性な `reasoning_effort` が削除され、`enable_thinking` と `thinking_budget` の両方が保持されます）。 |
 | **OpenAI / DeepSeek** (`api.deepseek.com`) | フラットな `reasoning_effort: <effort>` ボディパラメータ | ネストされた設定形状で `reasoning.effort` が設定されている場合、フラットな `reasoning_effort` に書き換えられ、`'low'`/`'medium'` は `'high'` に、`'xhigh'` は `'max'` に正規化されます。これは DeepSeek の[サーバー側の後方互換性](https://api-docs.deepseek.com/zh-cn/api/create-chat-completion)を反映しています。トップレベルの `samplingParams.reasoning_effort` または `extra_body.reasoning_effort` のオーバーライドは、この正規化をスキップしてそのまま送信されます。 |
 | **OpenAI**（その他の互換サーバー） | `reasoning: { effort, ... }` がそのまま渡される | プロバイダーが異なる形状を期待している場合、`samplingParams` 経由で設定します（例: GPT-5/o シリーズの場合は `samplingParams.reasoning_effort`）。 |
 | **Anthropic**（実際の `api.anthropic.com`） | `output_config: { effort }` と `effort-2025-11-24` ベータヘッダー | 実際の Anthropic は `'low'`/`'medium'`/`'high'` のみを受け付けます。`'max'` は `debugLogger.warn` のログ（ジェネレーターごとに1回）と共に **`'high'` にクランプ**されます。最大限の effort を得たい場合は、baseURL をそれをサポートする DeepSeek 互換エンドポイントに切り替えてください。 |
@@ -595,6 +596,8 @@ Coding Plan モデルを手動で構成したい場合は、他の OpenAI 互換
 > [!warning]
 >
 > OpenAI 互換プロバイダーで `generationConfig.samplingParams` が設定されている場合、パイプラインはそれらのキーを**そのまま**通信時に送信し、個別の `reasoning` の注入を完全にスキップします。したがって、`{ samplingParams: { temperature: 0.5 }, reasoning: { effort: 'max' } }` のような設定では、OpenAI/DeepSeek リクエストにおいて reasoning フィールドが暗黙に破棄されます。
+>
+> DashScope Qwen モデルは例外です。プロバイダーは `reasoning` を直接読み取り、`reasoning_effort` または `enable_thinking` にマッピングします。qwen3.8-max ファミリーでは、ワイヤーパラメータが競合する場合、プロバイダー固有の `samplingParams` フィールドが引き続き優先されます。古い qwen ハイブリッドでは、設定された effort ティアは `enable_thinking: true` に折りたたまれ、`samplingParams.enable_thinking` の値をオーバーライドします。
 >
 > `samplingParams` を設定する場合は、その中に直接 reasoning の設定を含めてください。DeepSeek の場合は `samplingParams.reasoning_effort`、GPT-5/o シリーズの場合は `samplingParams.reasoning_effort`（フラットなフィールド）または `samplingParams.reasoning`（ネストされたオブジェクト）です。OpenRouter やその他のプロバイダーではフィールド名が異なる場合があります。プロバイダーのドキュメントを参照してください。
 >

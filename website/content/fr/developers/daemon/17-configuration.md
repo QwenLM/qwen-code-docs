@@ -15,7 +15,7 @@ Cette page regroupe tous les paramètres qui affectent le démon `qwen serve` et
 | `--token <s>`                           | string                     | env                                      | Bearer token. Remplace `QWEN_SERVER_TOKEN` et est nettoyé (trim) au démarrage. Il apparaît dans la ligne de commande du processus, préférez donc les variables d'environnement en production. |
 | `--require-auth`                        | boolean                    | `false`                                  | Étend l'authentification bearer à la boucle locale et à `/health` ; le démarrage refuse de se lancer sans token.                                                                   |
 | `--workspace <dir>`                     | absolute path / repeatable | `process.cwd()`                          | Runtime workspace de démarrage ; répétez pour enregistrer des runtimes isolés supplémentaires. Le premier est primaire. Chaque valeur doit être absolue et un répertoire ; canonisé au démarrage. |
-| `--memory-project-scope <mode>`         | `git-root` / `workspace`   | `git-root`                               | Partitionnement de la mémoire projet. `git-root` partage la mémoire entre les workspaces ayant la même racine Git ; `workspace` isole par répertoire workspace exact. Remplace `QWEN_CODE_MEMORY_PROJECT_SCOPE`. |
+| `--memory-project-scope <mode>`         | `git-root` / `workspace`   | `workspace`                              | Partitionnement de la mémoire projet. `workspace` isole par répertoire workspace exact ; `git-root` est le scope de compatibilité hérité partagé par les workspaces ayant la même racine Git. Remplace `QWEN_CODE_MEMORY_PROJECT_SCOPE`. |
 | `--max-sessions <n>`                    | number                     | `32`                                     | Limite de sessions actives par workspace. `0` / `Infinity` signifie illimité ; les valeurs `NaN` / négatives lèvent une erreur.                                                     |
 | `--max-total-sessions <n>`              | number                       | dérivé pour plusieurs workspaces au démarrage/restaurés | Limite de sessions actives à l'échelle du démon. Lorsqu'omis, une valeur par défaut finie est dérivée une fois à partir de la limite par workspace et du nombre de workspaces au démarrage/restaurés. `0` / `Infinity` signifie illimité.                                                               |
 | `--max-pending-prompts-per-session <n>` | number                       | `5`                                      | Limite de prompts acceptés mais en attente/en cours d'exécution par session. Un prompt en excès retourne 503. `0` / `Infinity` signifie illimité ; les valeurs négatives ou non entières lèvent une erreur.                                                                                         |
@@ -65,7 +65,9 @@ Cette page regroupe tous les paramètres qui affectent le démon `qwen serve` et
 | `QWEN_SERVE_RATE_LIMIT_MUTATION`    | Variable d'environnement de fallback pour `--rate-limit-mutation`.                                                                                                     |
 | `QWEN_SERVE_RATE_LIMIT_READ`        | Variable d'environnement de fallback pour `--rate-limit-read`.                                                                                                         |
 | `QWEN_SERVE_RATE_LIMIT_WINDOW_MS`   | Variable d'environnement de fallback pour `--rate-limit-window-ms`.                                                                                                    |
-| `QWEN_CODE_MEMORY_PROJECT_SCOPE`    | `workspace` clé la mémoire projet par répertoire workspace exact ; toute autre valeur conserve le scope `git-root` (les valeurs non reconnues émettent un avertissement unique). Propagé via le base env du runtime, pas `childEnvOverrides` ; `--memory-project-scope` est prioritaire. Chaque lane remember/forget/dream par workspace limite les tâches en attente à `MAX_PENDING = 16` ; N workspaces permettent jusqu'à 16·N tâches en file d'attente sans limite à l'échelle du démon. |
+| `QWEN_CODE_MEMORY_PROJECT_SCOPE`    | `workspace` clé la mémoire projet par répertoire workspace exact ; `git-root` sélectionne le scope hérité partagé. Lorsque non définie, le démon injecte `workspace` ; les valeurs non reconnues émettent un avertissement unique et conservent le comportement hérité `git-root`. Propagé via le base env du runtime, pas `childEnvOverrides` ; `--memory-project-scope` est prioritaire. Chaque lane remember/forget/dream par workspace limite les tâches en attente à `MAX_PENDING = 16` ; N workspaces permettent jusqu'à 16·N tâches en file d'attente sans limite à l'échelle du démon. |
+
+Les valeurs vides de `QWEN_CODE_MEMORY_PROJECT_SCOPE` sont traitées comme non définies et prennent donc la valeur par défaut `workspace` ; les valeurs non vides non reconnues émettent tout de même un avertissement unique et conservent le comportement hérité `git-root`.
 
 ### Lues par le wrapper CLI `qwen serve`
 
@@ -107,12 +109,12 @@ Le démon construit chaque runtime workspace à partir des paramètres fusionné
 
 ## `ServeOptions` (intégration programmatique)
 
-`packages/cli/src/serve/types.ts` définit l'objet d'options typé accepté à la fois par `runQwenServe` et `createServeApp`. Il reflète les flags CLI ci-dessus et ajoute :
+`packages/cli/src/serve/types.ts` définit les options typées transmises via les API serve publiques. Il reflète les flags CLI ci-dessus et ajoute :
 
 | Field                         | Effet                                                                                       |
 | ----------------------------- | ------------------------------------------------------------------------------------------- |
 | `eventRingSize`               | Remplace la taille d'anneau par défaut par session.                                         |
-| `memoryProjectScope`          | Partitionnement de la mémoire projet `'git-root' \| 'workspace'` ; fallback vers `QWEN_CODE_MEMORY_PROJECT_SCOPE`. |
+| `memoryProjectScope`          | `runQwenServe` uniquement ; la priorité est l'option, puis l'environnement de lancement, puis `workspace`. Les appelants directs de `createServeApp` utilisent `deps.daemonEnv`. |
 | `maxPendingPromptsPerSession` | Limite de prompts en attente par session ; `0` / `Infinity` signifie illimité.              |
 | `mcpPoolActive`               | Interrupteur programmatique, ayant pour valeur par défaut celle de `QWEN_SERVE_NO_MCP_POOL`.|
 | `externalToolGuard`           | Optionnel `{mode:'required', endpoint, token, timeoutMs?}`. L'omission désactive complètement ; le mode required effectue le handshake avec le fournisseur avant l'écoute. |

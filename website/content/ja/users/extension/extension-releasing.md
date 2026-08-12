@@ -73,7 +73,7 @@ Qwen Code が各プラットフォームに適切なリリースアセットを�
 
 #### アーカイブ構造
 
-アーカイブは完全に自己完結型の拡張機能である必要があり、すべての標準要件を満たす必要があります。具体的には、`qwen-extension.json` ファイルがアーカイブのルートにある必要があります。
+アーカイブは完全に自己完結型の拡張機能である必要があり、サポートされるルートマニフェストを持つ必要があります。ネイティブ Qwen 拡張機能の場合は `qwen-extension.json`、[Agent Plugins v1](./agent-plugins.md) パッケージの場合は `plugin.json` です。
 
 残りのレイアウトは、通常の拡張機能とまったく同じである必要があります。[introduction.md](./introduction.md) を参照してください。
 
@@ -131,7 +131,7 @@ Qwen Code 拡張機能は、スコープ付き npm パッケージ（例: `@your
 
 ### パッケージの要件
 
-npm パッケージのルートには `qwen-extension.json` ファイルを含める必要があります。これはすべての Qwen Code 拡張機能で使用される同じ設定ファイルです。npm の tarball は単なる別の配信メカニズムです。
+npm パッケージのルートには、サポートされるマニフェストを含める必要があります。ネイティブ Qwen 拡張機能の場合は `qwen-extension.json`、[Agent Plugins v1](./agent-plugins.md) パッケージの場合は `plugin.json` です。npm の tarball は単なる別の配信メカニズムです。
 
 最小限のパッケージ構造は次のようになります:
 
@@ -145,7 +145,7 @@ my-extension/
 └── agents/               # オプションのカスタムサブエージェント
 ```
 
-公開パッケージに `qwen-extension.json` が含まれていることを確認してください（つまり、`.npmignore` や `package.json` の `files` フィールドで除外されていないこと）。
+選択したルートマニフェストと参照されるパッケージファイルのすべてが公開パッケージに含まれていることを確認してください（つまり、`.npmignore` や `package.json` の `files` フィールドで除外されていないこと）。
 
 ### 公開
 

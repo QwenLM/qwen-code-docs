@@ -141,8 +141,9 @@ AI 도구와 모델을 관리하는 명령어입니다.
 
 | 명령어       | 설명                                                 | 사용 예시                                                                       |
 | ------------ | ---------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `/review`    | 다중 에이전트 코드 리뷰 (높은 강도에서 12개 병렬 에이전트) | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low`       |
-| `/loop`      | 반복 일정에 따라 프롬프트를 실행                     | `/loop 5m check the build`                                                      |
+| `/review`     | 다중 에이전트 코드 리뷰 (높은 강도에서 12개 병렬 에이전트) | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
+| `/coordinate` | 읽기 전용 워커와 선택적 worktree 작성자를 조율         | `/coordinate investigate and fix the authentication regression`           |
+| `/loop`       | 반복 일정에 따라 프롬프트를 실행                     | `/loop 5m check the build`                                                |
 | `/simplify`  | 최근 변경 사항을 검토하고 안전한 정리 편집을 직접 적용 | `/simplify`, `/simplify focus on duplication`                                   |
 | `/qc-helper` | Qwen Code 사용 및 구성에 대한 질문에 답변            | `/qc-helper how do I configure MCP?`                                            |
 

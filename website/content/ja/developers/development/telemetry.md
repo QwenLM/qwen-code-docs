@@ -386,6 +386,12 @@ Alibaba Cloud Managed Service for OpenTelemetry で Qwen Code のテレメトリ
 - `qwen-code.config`: 起動時に CLI 構成とともに 1 回だけ発行されます。
   - **属性**: `model`, `sandbox_enabled`, `core_tools_enabled`, `approval_mode`, `file_filtering_respect_git_ignore`, `debug_mode`, `truncate_tool_output_threshold`, `truncate_tool_output_lines`, `hooks`（カンマ区切り、無効な場合は省略）, `ide_enabled`, `interactive_shell_enabled`, `mcp_servers`, `mcp_servers_count`, `mcp_tools`, `mcp_tools_count`, `output_format`, `skills`, `subagents`
 
+- `session.start`: セッションが開始されます。起動時のテレメトリ初期化後およびセッション切り替えごとに出力されます。ライフサイクルセマンティクスはスパンセクションで説明されています。
+  - **属性**: `session.id` (string)、`session.previous_id` (string、この開始が新しいセッション ID で永続化された会話を継続する場合にのみ存在)
+
+- `session.end`: セッションが終了します。セッション切り替えが現在のセッションを置き換える前、およびテレメトリシャットダウン時に出力されます。
+  - **属性**: `session.id` (string)
+
 - `qwen-code.user_prompt`: ユーザーがプロンプトを送信します。
   - **属性**: `prompt_length` (int), `prompt_id` (string), `prompt` (string, `log_prompts_enabled` が false の場合は除外), `auth_type` (string)
 
@@ -680,6 +686,10 @@ Alibaba Cloud Managed Service for OpenTelemetry で Qwen Code のテレメトリ
 ### Spans
 
 分散トレースの span は `qwen-code.interaction` をルートとするツリーを形成します。各 interaction は独自の `traceId` を持つトレースルートであり、プロンプト間の相関には `session.id` 属性が使用されます。
+
+セッションライフサイクルは、OpenTelemetry General Session セマンティック規約を通じてエクスポートされます。OTel ログパイプラインが有効な場合、Qwen Code は必須の `session.id` 属性を持つ `session.start` および `session.end` ログイベントを出力します（上記のコアセッションイベントに記載）。再開された永続化会話には、再開されたセッション ID が現在のものと異なる場合にのみ `session.start` イベントに `session.previous_id` が含まれます。コールドスタートの再開（`--resume`、`--continue`、`--fork-session`）には含まれません。`/clear` およびその他の置換フローは、以前の会話を破棄するため、意図的に継続を主張しません。
+
+既存の Qwen 固有の `qwen-code.config`/`cli_config` および RUM `session_start` レコードは互換性のために引き続き利用可能です。GenAI リクエストスパンは、同じ所有セッション ID に `gen_ai.conversation.id` を引き続き使用します。
 
 - `qwen-code.interaction`: 各ユーザープロンプトターンのルート span。
   - **Attributes**: `session.id`, オプションのARMS拡張 `gen_ai.user.id`, `qwen-code.prompt_id`, `qwen-code.message_type`, `qwen-code.model`, `qwen-code.approval_mode`, `interaction.sequence`, `interaction.duration_ms`, `qwen-code.turn_status` ("ok"/"error"/"cancelled")
