@@ -42,7 +42,7 @@
 - [`07-workspace-filesystem.md`](./07-workspace-filesystem.md) - `WorkspaceFileSystem` 샌드박스, 경로 정책, 감사, `BridgeFileSystem` 계약.
 - [`08-session-lifecycle.md`](./08-session-lifecycle.md) - 생성 / 연결 / 로드 / 재개, `X-Qwen-Client-Id`, 하트비트, 축출, 메타데이터.
 - [`09-event-schema.md`](./09-event-schema.md) - 타입화된 이벤트 스키마 v1: 페이로드, 리듀서, 전방 호환성을 갖춘 53개의 알려진 이벤트 타입.
-- [`10-event-bus.md`](./10-event-bus.md) - `EventBus`, 단조 ID, 링 리플레이, `Last-Event-ID`, 느린 클라이언트 배크프레셔, `client_evicted`.
+- [`10-event-bus.md`](./10-event-bus.md) - `EventBus`, 단조 ID, 링 리플레이, `Last-Event-ID`, 느린 클라이언트 백프레셔, `client_evicted`.
 - [`11-capabilities-versioning.md`](./11-capabilities-versioning.md) - 기능 레지스트리, 프로토콜 버전, 스키마 버전, 조건부 광고.
 - [`12-auth-security.md`](./12-auth-security.md) - 베어러 미들웨어, 호스트 허용 목록, CORS 거부, 뮤테이션 게이트, `--require-auth`, `/health` 면제, 디바이스 플로우.
 
@@ -69,7 +69,7 @@
 - **채널 팩토리** - ACP 자식을 생성하거나 연결하는 플러그 가능한 전략입니다. 기본 `spawnChannel`은 `qwen --acp`를 서브프로세스로 실행합니다. `inMemoryChannel`은 테스트에서 인프로세스로 실행합니다.
 - **DaemonClient** - `packages/sdk-typescript/src/daemon/DaemonClient.ts`. 데몬 위의 TypeScript SDK HTTP 수준 파사드입니다.
 - **DaemonSessionClient** - `packages/sdk-typescript/src/daemon/DaemonSessionClient.ts`. SSE 리플레이를 위해 `lastSeenEventId`를 추적하는 세션 범위 래퍼입니다.
-- **EventBus** - `packages/acp-bridge/src/eventBus.ts`. 단조 ID, 제한된 링, 구독자별 배크프레셔를 갖춘 세션별 인메모리 pub/sub입니다.
+- **EventBus** - `packages/acp-bridge/src/eventBus.ts`. 단조 ID, 제한된 링, 구독자별 백프레셔를 갖춘 세션별 인메모리 pub/sub입니다.
 - **F1 / F2 / F3 / F4** - [#4175](https://github.com/QwenLM/qwen-code/issues/4175)에서 추적되는 내부 마일스톤입니다. F1: 브리지 추출 및 `BridgeFileSystem`. F2: 워크스페이스 범위 MCP 트랜스포트 풀. F3: 멀티 클라이언트 권한 중재. F4: 프로토콜 완성 및 데몬 클라이언트 표면.
 - **MCP** - Model Context Protocol. 서버가 도구, 리소스, 프롬프트를 노출하고, 데몬 ACP 자식이 연결합니다.
 - **McpTransportPool** - `packages/core/src/tools/mcp-transport-pool.ts`. F2 워크스페이스 범위 풀로, 서버 이름과 구성 핑거프린트당 하나의 MCP 트랜스포트를 공유합니다.
