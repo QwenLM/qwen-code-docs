@@ -198,7 +198,9 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
  'workspace_mcp_manage', 'mcp_guardrail_events',
  'mcp_server_runtime_mutation',
  'workspace_file_read', 'workspace_file_bytes', 'workspace_file_write',
+ 'workspace_file_upload',
  'session_approval_mode_control', 'workspace_tool_toggle', 'workspace_skill_toggle',
+ 'workspace_skill_batch_toggle',
  'workspace_settings', 'workspace_init', 'workspace_mcp_restart',
  'session_recap', 'session_generation', 'session_btw', 'session_shell_command',
  'mcp_workspace_pool', 'mcp_pool_restart',
@@ -271,9 +273,9 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 
 > **作用域是能力驱动的。** 使用 `mcp_workspace_pool` 时，一个 workspace runtime 内的 session 共享传输池和 `WorkspaceMcpBudget`，快照发出 `budgets[0].scope: 'workspace'`。不同的 workspace runtime 拥有独立的池。没有该标签时，每个 ACP session 使用其旧版 `McpClientManager`，快照发出 `scope: 'session'`，N 个 session 可能各自消耗配置的上限。
 
-`workspace_file_read` 涵盖文本/列表/状态/glob 工作区文件路由（`GET /file`、`GET /list`、`GET /glob`、`GET /stat`）。`workspace_file_bytes` 涵盖 `GET /file/bytes`，该路由是后续添加的，以便客户端可以针对 PR19 时代的 daemon 预先检查原始字节窗口支持。`workspace_file_write` 涵盖感知哈希的文本变更路由（`POST /file/write`、`POST /file/edit`）。write tag 表示路由契约存在；并不意味着当前部署对匿名变更开放。write/edit 是严格的变更路由，即使在环回地址上也需要配置 bearer token。
+`workspace_file_read` 涵盖文本/列表/状态/glob 工作区文件路由（`GET /file`、`GET /list`、`GET /glob`、`GET /stat`）。`workspace_file_bytes` 涵盖 `GET /file/bytes`，该路由是后续添加的，以便客户端可以针对 PR19 时代的 daemon 预先检查原始字节窗口支持。`workspace_file_write` 涵盖感知哈希的文本变更路由（`POST /file/write`、`POST /file/edit`）。write tag 表示路由契约存在；并不意味着当前部署对匿名变更开放。write/edit 是严格的变更路由，即使在环回地址上也需要配置 bearer token。`workspace_file_upload` 涵盖 `POST /file/upload`，即二进制导入路由：`application/octet-stream` body 上限为 `MAX_UPLOAD_BYTES`（50 MiB），写入 workspace 时不会覆盖——已占用的名称会自动编号（`name (1).ext`、`name (2).ext`、...）。它也是严格的变更路由。
 
-当 `workspace_qualified_rest_core` 被通告时，相同的文件暴露面也可在 `/workspaces/:workspace/file`、`/workspaces/:workspace/file/bytes`、`/workspaces/:workspace/stat`、`/workspaces/:workspace/list`、`/workspaces/:workspace/glob`、`/workspaces/:workspace/file/write` 和 `/workspaces/:workspace/file/edit` 使用。
+当 `workspace_qualified_rest_core` 被通告时，相同的文件暴露面也可在 `/workspaces/:workspace/file`、`/workspaces/:workspace/file/bytes`、`/workspaces/:workspace/stat`、`/workspaces/:workspace/list`、`/workspaces/:workspace/glob`、`/workspaces/:workspace/file/write`、`/workspaces/:workspace/file/edit` 和 `/workspaces/:workspace/file/upload` 使用。
 
 同一标签还暴露了 workspace 限定的项目 agent CRUD，位于 `/workspaces/:workspace/agents` 和 `/workspaces/:workspace/agents/:agentType`。这些复数路由仅读取或变更选定 workspace 的项目级 agent；`global` 和 `user` 作用域请求返回 `400 { code: "global_scope_not_supported_for_workspace_route" }`。无 workspace 的 `/workspace/agents` 路由保留其现有的主 workspace 行为，并且仍然是 user 级 agent 作用域的唯一 REST 暴露面。
 

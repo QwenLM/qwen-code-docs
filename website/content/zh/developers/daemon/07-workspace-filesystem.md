@@ -40,7 +40,7 @@ HTTP 文件路由（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST
 | 文件                       | 用途                                                                                                                                                                                                                         |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `paths.ts`               | `canonicalizeWorkspace`、`resolveWithinWorkspace`、`hasSuspiciousPathPattern`、品牌标记 `ResolvedPath`、`Intent` 联合类型（`read \| write \| list \| stat \| glob`）。                                                                 |
-| `policy.ts`              | `MAX_READ_BYTES`、`MAX_TEXT_SCAN_BYTES`、`MAX_WRITE_BYTES`、`BINARY_PROBE_BYTES`、`assertTrustedForIntent`、`detectBinary`、`enforceReadBytesSize`、`enforceReadSize`、`enforceWriteSize`、`shouldIgnore`。                                      |
+| `policy.ts`              | `MAX_READ_BYTES`、`MAX_TEXT_SCAN_BYTES`、`MAX_WRITE_BYTES`、`MAX_UPLOAD_BYTES`、`BINARY_PROBE_BYTES`、`assertTrustedForIntent`、`detectBinary`、`enforceReadBytesSize`、`enforceReadSize`、`enforceWriteSize`、`shouldIgnore`。                          |
 | `audit.ts`               | `FS_ACCESS_EVENT_TYPE`、`FS_DENIED_EVENT_TYPE`、`createAuditPublisher`、审计载荷类型。                                                                                                                                         |
 | `errors.ts`              | `FsError` 类、`isFsError`、`FsErrorKind` 联合类型（14 种）、`FsErrorStatus` 联合类型（`400 / 403 / 404 / 409 / 413 / 422 / 500 / 503`）。                                                                                          |
 | `workspace-file-system.ts` | `createWorkspaceFileSystemFactory`、`WorkspaceFileSystem`（编排器，执行读/写/列出操作）、`WriteMode`、`ContentHash`、`FsEntry`、`FsStat`、`ListOptions`、`GlobOptions`、`ReadTextOptions`、`ReadBytesOptions`、`WriteTextAtomicOptions`。 |
@@ -229,8 +229,9 @@ flowchart LR
 | 常量                                              | `MAX_READ_BYTES = 256 KiB`                                            | 完整快照和返回文本的上限；更大的文本需要显式窗口参数。                                                             |
 | 常量                                              | `MAX_TEXT_SCAN_BYTES = 8 MiB`                                         | 大文本读取为定位行偏移可扫描的字节数；超过则返回 `file_too_large`。                                                |
 | 常量                                              | `MAX_WRITE_BYTES = 5 MiB`                                             | 写入上限；大小低于 `express.json({ limit: '10mb' })`。                                                           |
+| 常量                                              | `MAX_UPLOAD_BYTES = 50 MiB`                                           | `POST /file/upload` 的二进制上传上限；上传不会覆盖，自动为已占用的名称编号。                                        |
 | 常量                                              | `BINARY_PROBE_BYTES = 4096`                                           | 基于内容的二进制检测采样大小。                                                                                 |
-| 能力标签                                          | `workspace_file_read`、`workspace_file_bytes`、`workspace_file_write` | 参见 [`11-capabilities-versioning.md`](./11-capabilities-versioning.md)。                                       |
+| 能力标签                                          | `workspace_file_read`、`workspace_file_bytes`、`workspace_file_write`、`workspace_file_upload` | 参见 [`11-capabilities-versioning.md`](./11-capabilities-versioning.md)。                                       |
 | 工作区文件                                        | `.gitignore`、`.qwenignore`                                           | 被忽略的路径从 `shouldIgnore` 中返回 `ignored: true`。                                                          |
 
 ## 注意事项与已知限制

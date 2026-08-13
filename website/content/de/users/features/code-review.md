@@ -183,7 +183,7 @@ Oder gib nach dem Ausführen von `/review 123` den Befehl `post comments` ein, u
 - Wenn der Fix ein einzelner lokaler Edit ist, ein ` ```suggestion `-Block, den du mit einem Klick anwenden kannst
 - Bei Approve/Request-Changes-Fazit: eine Review-Zusammenfassung mit dem Fazit
 - Bei Comment-Fazit, wenn alle Inline-Kommentare gepostet wurden: keine separate Zusammenfassung (Inline-Kommentare sind ausreichend)
-- Modell- und CLI-Versionszuordnungs-Footer in jedem Kommentar (z. B. _— qwen3-coder via Qwen Code /review (v0.21.2)_)
+- Modell- und CLI-Versionszuordnungs-Footer in jedem Kommentar (z. B. _— qwen3-coder via Qwen Code /review (v0.21.2)_); setze `review.attribution` auf `false` in deiner User- oder System-`settings.json` (die Workspace-`.qwen/settings.json` wird für `review.*`-Einstellungen ignoriert), um ohne ihn zu posten
 
 **Was nur im Terminal bleibt:**
 

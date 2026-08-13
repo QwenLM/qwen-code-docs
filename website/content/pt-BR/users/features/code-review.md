@@ -183,7 +183,7 @@ Ou, após executar `/review 123`, digite `post comments` para publicar os achado
 - Quando a correção é uma edição localizada única, um bloco ` ```suggestion ` que você pode aplicar com um clique
 - Para vereditos de Approve/Request changes: um resumo da revisão com o veredito
 - Para o veredito Comment com todos os comentários inline publicados: nenhum resumo separado (os comentários inline são suficientes)
-- Rodapé de atribuição do modelo e da versão da CLI em cada comentário (ex.: _— qwen3-coder via Qwen Code /review (v0.21.2)_)
+- Rodapé de atribuição do modelo e da versão da CLI em cada comentário (ex.: _— qwen3-coder via Qwen Code /review (v0.21.2)_); defina `review.attribution` como `false` no seu `settings.json` de usuário ou sistema (o `.qwen/settings.json` do workspace é ignorado para configurações `review.*`) para publicar sem ele
 
 **O que fica apenas no terminal:**
 
@@ -386,6 +386,8 @@ O código de saída é o contrato que um gate deve ler:
 `3` (não `2`) permite que um gate distinga "a revisão está bloqueando" de "a ferramenta quebrou" — o yargs já usa `1` para erros de uso — sem analisar nenhuma saída. `--timeout-minutes` (padrão 120, mínimo 1) termina uma revisão travada e sai com `1`, e cancelar o comando (Ctrl+C / SIGTERM) termina o grupo de processos da revisão em vez de orphaná-lo.
 
 Uma execução com orçamento de tempo também pode exportar um deadline **soft** para que a revisão pare seu loop de auditoria reversa aberta enquanto ainda há tempo para verificar, compor e publicar: `QWEN_REVIEW_DEADLINE_EPOCH` é o momento em segundos Unix em que a execução será encerrada, e `QWEN_REVIEW_DEADLINE_RESERVE_SECONDS` (padrão 3600; `0` mantém apenas a estimativa da rodada) é a cauda que deve restar para a verificação da última rodada, `compose-review` e submissão. Quando o orçamento restante não cabe mais uma rodada mais essa cauda, o construtor de rodadas recusa construí-la, e o veredito composto divulga a auditoria truncada (um veredito Approve é limitado a Comment). Um deadline ausente ou malformado deixa a revisão sem gate — o timeout externo ainda limita a execução.
+
+Aninhado dentro dessa reserva há um **compose floor** menor, `QWEN_REVIEW_DEADLINE_COMPOSE_FLOOR_SECONDS` (padrão 1200; `0` desabilita este gate inteiramente, em todo ponto incluindo após o deadline). A reserva é um número que cobre "verificar a última rodada **mais** compor **mais** submeter", o que cabe em uma re-rastreamento normal por achado, mas não em uma revisão de segurança cuja verificação re-executa cargas de trabalho reais de filesystem/git sem limite. Então o verificador — não o construtor de rodadas — é controlado por este floor: quando resta o floor ou menos, `agent-prompt --role verify` recusa construir (uma linha `VERIFY BUDGET:`, saída **4**), os achados em mãos mantêm sua tag de não verificados (o que limita o veredito), e o `compose-review` e a submissão executam. O floor é estritamente abaixo da reserva, então uma execução saudável atinge o gate de auditoria reversa primeiro e nunca chega a ele; é a cobertura para o único intervalo que a reserva não consegue delimitar.
 
 ## Análise de Impacto Entre Arquivos
 

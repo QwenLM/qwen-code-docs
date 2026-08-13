@@ -198,6 +198,7 @@ Der Daemon bewirbt seine unterstützten Feature-Tags aus der Serve-Capability-Re
  'workspace_mcp_manage', 'mcp_guardrail_events',
  'mcp_server_runtime_mutation',
  'workspace_file_read', 'workspace_file_bytes', 'workspace_file_write',
+ 'workspace_file_upload',
  'session_approval_mode_control', 'workspace_tool_toggle', 'workspace_skill_toggle',
  'workspace_skill_batch_toggle',
  'workspace_settings', 'workspace_init', 'workspace_mcp_restart',
@@ -280,8 +281,13 @@ die Hash-bewussten Textmutationsrouten ab (`POST /file/write`, `POST /file/edit`
 Das Write-Tag bedeutet, dass der Routen-Contract existiert; es bedeutet nicht, dass die aktuelle
 Bereitstellung für anonyme Mutationen offen ist. Write/Edit sind strikte Mutationsrouten
 und erfordern auch auf Loopback einen konfigurierten Bearer-Token.
+`workspace_file_upload` deckt `POST /file/upload` ab, die binäre Ingress-Route:
+ein `application/octet-stream`-Body, gedeckelt bei `MAX_UPLOAD_BYTES` (50 MiB),
+wird in den Workspace geschrieben, ohne jemals zu überschreiben – ein belegter Name
+wird automatisch nummeriert (`name (1).ext`, `name (2).ext`, ...). Es ist ebenfalls
+eine strikte Mutationsroute.
 
-Wenn `workspace_qualified_rest_core` beworben wird, ist dieselbe Datei-Oberfläche auch unter `/workspaces/:workspace/file`, `/workspaces/:workspace/file/bytes`, `/workspaces/:workspace/stat`, `/workspaces/:workspace/list`, `/workspaces/:workspace/glob`, `/workspaces/:workspace/file/write` und `/workspaces/:workspace/file/edit` verfügbar.
+Wenn `workspace_qualified_rest_core` beworben wird, ist dieselbe Datei-Oberfläche auch unter `/workspaces/:workspace/file`, `/workspaces/:workspace/file/bytes`, `/workspaces/:workspace/stat`, `/workspaces/:workspace/list`, `/workspaces/:workspace/glob`, `/workspaces/:workspace/file/write`, `/workspaces/:workspace/file/edit` und `/workspaces/:workspace/file/upload` verfügbar.
 
 Dasselbe Tag legt auch Workspace-qualifizierten Projekt-Agent-CRUD unter `/workspaces/:workspace/agents` und `/workspaces/:workspace/agents/:agentType` offen. Diese Plural-Routen lesen oder mutieren nur Projekt-Level-Agenten für den ausgewählten Workspace; `global`- und `user`-Scope-Anfragen geben `400 { code: "global_scope_not_supported_for_workspace_route" }` zurück. Workspace-lose `/workspace/agents`-Routen behalten ihr bestehendes Primary-Workspace-Verhalten und bleiben die einzige REST-Oberfläche für User-Level-Agent-Scope.
 

@@ -69,10 +69,14 @@ Loopback self-origin запросы (например, когда Web Shell об
 `SessionNotFoundError` для неизвестного id сессии возвращает:
 
 ```json
-{ "error": "No session with id \"<sid>\"", "sessionId": "<sid>" }
+{
+  "error": "No session with id \"<sid>\"",
+  "sessionId": "<sid>",
+  "code": "session_not_found"
+}
 ```
 
-со статусом `404`.
+со статусом `404`. Одновременное закрытие использует `code: "session_closing"`.
 
 `WorkspaceMismatchError` для `POST /session`, чей `cwd` не канонизируется к зарегистрированному рабочему пространству, возвращает `400` с:
 
@@ -191,6 +195,7 @@ Loopback self-origin запросы (например, когда Web Shell об
  'workspace_mcp_manage', 'mcp_guardrail_events',
  'mcp_server_runtime_mutation',
  'workspace_file_read', 'workspace_file_bytes', 'workspace_file_write',
+ 'workspace_file_upload',
  'session_approval_mode_control', 'workspace_tool_toggle', 'workspace_skill_toggle',
  'workspace_skill_batch_toggle',
  'workspace_settings', 'workspace_init', 'workspace_mcp_restart',
@@ -273,8 +278,13 @@ Loopback self-origin запросы (например, когда Web Shell об
 Тег write означает, что контракт маршрута существует; это не означает, что текущий
 деплоймент открыт для анонимной мутации. Write/edit — это строгие маршруты мутации
 и требуют настроенного bearer-токена даже на loopback.
+`workspace_file_upload` охватывает `POST /file/upload` — маршрут загрузки бинарных данных:
+тело `application/octet-stream` ограничено `MAX_UPLOAD_BYTES` (50 МиБ) и
+записывается в рабочее пространство без перезаписи — занятое имя
+автоматически нумеруется (`name (1).ext`, `name (2).ext`, ...). Это также строгий
+маршрут мутации.
 
-Когда анонсирован `workspace_qualified_rest_core`, та же поверхность файлов также доступна по маршрутам `/workspaces/:workspace/file`, `/workspaces/:workspace/file/bytes`, `/workspaces/:workspace/stat`, `/workspaces/:workspace/list`, `/workspaces/:workspace/glob`, `/workspaces/:workspace/file/write` и `/workspaces/:workspace/file/edit`.
+Когда анонсирован `workspace_qualified_rest_core`, та же поверхность файлов также доступна по маршрутам `/workspaces/:workspace/file`, `/workspaces/:workspace/file/bytes`, `/workspaces/:workspace/stat`, `/workspaces/:workspace/list`, `/workspaces/:workspace/glob`, `/workspaces/:workspace/file/write`, `/workspaces/:workspace/file/edit` и `/workspaces/:workspace/file/upload`.
 
 Тот же тег также предоставляет CRUD проектных агентов с указанием рабочего пространства по маршрутам `/workspaces/:workspace/agents` и `/workspaces/:workspace/agents/:agentType`. Эти маршруты с множественным числом читают или изменяют только проектных агентов выбранного рабочего пространства; запросы с областью действия `global` и `user` возвращают `400 { code: "global_scope_not_supported_for_workspace_route" }`. Маршруты `/workspace/agents` без указания рабочего пространства сохраняют своё существующее поведение только для основного рабочего пространства и остаются единственной REST-поверхностью для области действия агентов на уровне пользователя.
 
@@ -544,7 +554,7 @@ Content-Type: application/json
 
 Для `502 channel_worker_start_failed` ответ также может включать `startupFailures[]` и `startupFailuresTruncated`. Каждая ошибка добавляет доверенный `workspaceCwd`attempted воркера. Эти поля описывают неудачную транзакцию, тогда как `state` описывает текущее состояние после отката; последующий GET не сохраняет неудачную попытку. Частично подключенный воркер вместо этого возвращает успех и раскрывает свои ошибки в снимке воркера. Ошибки во время запуска по-прежнему прерывают `qwen serve` до появления доступного для запросов демона.
 
-`qwen channel status` без `--daemon-url` продолжает читать метаданные pidfile; с `--daemon-url` он читает `GET /workspace/channel`. Во время окна перезапуска pidfile, принадлежащий serve, остаётся зарезервированным, но `workerPid` опускается, чтобы клиенты не отображали устаревший процесс воркера. stdout/stderr воркера перенаправляются в лог демона с маскированием bearer-токенов, конфиденциальных значений окружения воркера и учётных данных URL прокси.
+`qwen channel status` без `--daemon-url` продолжает читать метаданные pidfile; с `--daemon-url` он читает `GET /workspace/channel`. Во время окна перезапуска pidfile, принадлежащий serve, остаётся зарезервированным, но `workerPid` опускается, чтобы клиенты не отображали устаревший процесс воркера. На демоне с несколькими рабочими пространствами pidfile также несёт аддитивный массив `workers[]` (для каждого рабочего пространства `workspaceId` / `workspaceCwd` / `channels` / живой `workerPid`), тогда как верхнеуровневые `channels` (объединение) и `workerPid` (основное) остаются заполненными для старых клиентов; демоны с одним рабочим пространством сохраняют исходную форму с одним воркером. stdout/stderr воркера перенаправляются в лог демона с маскированием bearer-токенов, конфиденциальных значений окружения воркера и учётных данных URL прокси.
 
 ### Управление Channel рабочего пространства
 
@@ -853,10 +863,6 @@ pipe между демоном и дочерним процессом; заде�
 снимок `channelWorker` с аннотациями `workspaceId`, `workspaceCwd` и
 `primary`. `channelWorker` остаётся заполненным как снимок основного рабочего пространства
 для совместимости. Демоны с одним рабочим пространством опускают `channelWorkers[]`.
-
-`qwen channel status` без `--daemon-url` продолжает читать метаданные pidfile; с `--daemon-url` он читает `GET /workspace/channel`. Во время окна перезапуска pidfile, принадлежащий serve, остаётся зарезервированным, но `workerPid` опускается, чтобы клиенты не отображали устаревший процесс воркера. На демоне с несколькими рабочими пространствами pidfile также несёт аддитивный массив `workers[]` (для каждого рабочего пространства `workspaceId` / `workspaceCwd` / `channels` / живой `workerPid`), тогда как верхнеуровневые `channels` (объединение) и `workerPid` (основное) остаются заполненными для старых клиентов; демоны с одним рабочим пространством сохраняют исходную форму с одним воркером. stdout/stderr воркера перенаправляются в лог демона с маскированием bearer-токенов, конфиденциальных значений окружения воркера и учётных данных URL прокси.
-
-Безопасность: ответ никогда не включает bearer-токены, client id, полные ACP connection id, user-коды device-flow или URL-адреса верификации. Оба уровня детализации могут включать аддитивные `daemon.runId`, `daemon.logMode` и `daemon.logHealth`. `summary` опускает путь к логу демона и детали потерь; `full` может включать `logPath`, `logIssues`, `logDroppedRecords` и `logDroppedBytes` для аутентифицированных операторов. Деградированное логирование файлов добавляет предупреждение `daemon_log_degraded` без пути к обычной сводке статуса.
 
 ### `GET /capabilities`
 

@@ -138,12 +138,13 @@ Slash-команды используются для управления сес
 
 Эти команды вызывают встроенные skills, которые предоставляют специализированные рабочие процессы.
 
-| Command      | Description                                                 | Usage Examples                                    |
-| ------------ | ----------------------------------------------------------- | ------------------------------------------------- |
-| `/review`    | Multi-agent code review (12 parallel agents at high effort) | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
-| `/loop`      | Запуск промпта по расписанию                                | `/loop 5m check the build`                        |
-| `/simplify`  | Проверка недавних изменений и прямое применение безопасных правок для очистки кода | `/simplify`, `/simplify focus on duplication`     |
-| `/qc-helper` | Ответы на вопросы по использованию и настройке Qwen Code    | `/qc-helper how do I configure MCP?`              |
+| Command       | Description                                                   | Usage Examples                                                            |
+| ------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `/review`     | Multi-agent code review (12 parallel agents at high effort)   | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
+| `/coordinate` | Coordinate read-only workers and one optional worktree writer | `/coordinate investigate and fix the authentication regression`           |
+| `/loop`       | Запуск промпта по расписанию                                | `/loop 5m check the build`                                                |
+| `/simplify`   | Проверка недавних изменений и прямое применение безопасных правок для очистки кода | `/simplify`, `/simplify focus on duplication`     |
+| `/qc-helper`  | Ответы на вопросы по использованию и настройке Qwen Code    | `/qc-helper how do I configure MCP?`                                      |
 
 Полную документацию по `/review` см. в разделе [Code Review](./code-review.md).
 

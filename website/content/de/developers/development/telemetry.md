@@ -388,6 +388,12 @@ Die folgenden Ereignisse werden geloggt:
 - `qwen-code.config`: Wird einmal beim Start mit der CLI-Konfiguration ausgegeben.
   - **Attribute**: `model`, `sandbox_enabled`, `core_tools_enabled`, `approval_mode`, `file_filtering_respect_git_ignore`, `debug_mode`, `truncate_tool_output_threshold`, `truncate_tool_output_lines`, `hooks` (kommagetrennt, weggelassen wenn deaktiviert), `ide_enabled`, `interactive_shell_enabled`, `mcp_servers`, `mcp_servers_count`, `mcp_tools`, `mcp_tools_count`, `output_format`, `skills`, `subagents`
 
+- `session.start`: Eine Session beginnt. Wird nach der Telemetrie-Initialisierung beim Start und erneut bei jedem Session-Wechsel emittiert; die Lifecycle-Semantik wird im Spans-Abschnitt beschrieben.
+  - **Attribute**: `session.id` (string), `session.previous_id` (string, nur vorhanden, wenn dieser Start eine persistierte Konversation unter einer neuen Session-ID fortsetzt)
+
+- `session.end`: Eine Session endet. Wird vor einem Session-Wechsel, der die aktuelle Session ersetzt, und beim Telemetrie-Shutdown emittiert.
+  - **Attribute**: `session.id` (string)
+
 - `qwen-code.user_prompt`: Benutzer reicht einen Prompt ein.
   - **Attribute**: `prompt_length` (int), `prompt_id` (string), `prompt` (string, ausgeschlossen wenn `log_prompts_enabled` false ist), `auth_type` (string)
 
@@ -683,6 +689,22 @@ Der Daemon-Prozess (langlaufender HTTP-Server-Modus) stellt seine eigenen Metrik
 
 Distributed-Tracing-Spans bilden einen Baum, der in `qwen-code.interaction` verwurzelt ist. Jede Interaktion ist ein Trace-Root mit einer eigenen `traceId`; die promptübergreifende Korrelation verwendet das `session.id`-Attribut.
 
+Der Session-Lifecycle wird auch über die OpenTelemetry General Session
+semantischen Konventionen exportiert. Wenn die OTel-Logs-Pipeline aktiviert
+ist, emittiert Qwen Code `session.start`- und `session.end`-Log-Events mit
+dem erforderlichen `session.id`-Attribut (katalogisiert unter
+Kern-Sitzungsereignisse oben). Eine fortgesetzte persistierte Konversation
+enthält `session.previous_id` nur dann in ihrem `session.start`-Event, wenn
+die fortgesetzte Session-ID von der aktuellen abweicht;
+Cold-Start-Fortsetzungen (`--resume`, `--continue`, `--fork-session`) tragen
+es nicht. `/clear` und andere Ersetzungs-Flows beanspruchen absichtlich keine
+Fortsetzung, da sie die vorherige Konversation verwerfen.
+
+Die bestehenden Qwen-spezifischen `qwen-code.config`/`cli_config`- und
+RUM-`session_start`-Datensätze bleiben aus Kompatibilität verfügbar.
+GenAI-Request-Spans verwenden weiterhin `gen_ai.conversation.id` für dieselbe
+besitzende Session-ID.
+
 - `qwen-code.interaction`: Root-Span für jeden User-Prompt-Turn.
   - **Attributes**: `session.id`, optionale ARMS-Erweiterung `gen_ai.user.id`, `qwen-code.prompt_id`, `qwen-code.message_type`, `qwen-code.model`, `qwen-code.approval_mode`, `interaction.sequence`, `interaction.duration_ms`, `qwen-code.turn_status` ("ok"/"error"/"cancelled")
 
@@ -706,7 +728,7 @@ Distributed-Tracing-Spans bilden einen Baum, der in `qwen-code.interaction` verw
   - **Attributes**: `session.id`, `hook_event` ("PreToolUse"/"PostToolUse"/"PostToolUseFailure"/"PostToolBatch"), `tool.name`, `tool.use_id` (optional), `is_interrupt` (boolean, optional), `duration_ms`, `success`, `should_proceed` (optional), `should_stop` (optional), `block_type` (optional), `error` (optional)
 
 - `qwen-code.subagent`: Umschließt einen einzelnen Subagent-Aufruf.
-  - **Attributes**: `gen_ai.operation.name`, `gen_ai.provider.name`, `gen_ai.agent.id`, `gen_ai.agent.name`, `gen_ai.conversation.id`, `qwen-code.subagent.id`, `qwen-code.subagent.name`, `qwen-code.subagent.invocation_kind` ("foreground"/"fork"/"background"), `qwen-code.subagent.is_built_in`, `qwen-code.subagent.depth`, `qwen-code.subagent.status`, `qwen-code.subagent.terminate_reason`, `qwen-code.subagent.duration_ms`
+  - **Attributes**: `gen_ai.operation.name` (`invoke_agent`), `gen_ai.agent.name`, `gen_ai.agent.description`, `gen_ai.conversation.id`, optionale ARMS-Erweiterung `gen_ai.user.id`, optionales `gen_ai.request.model`, `qwen-code.subagent.id`, `qwen-code.subagent.name`, `qwen-code.subagent.invocation_kind` ("foreground"/"fork"/"background"), `qwen-code.subagent.is_built_in`, `qwen-code.subagent.depth`, `qwen-code.subagent.status`, `qwen-code.subagent.terminate_reason`, `qwen-code.subagent.duration_ms`
 
 #### GenAI-Feldmigration und ARMS-Erkennung
 

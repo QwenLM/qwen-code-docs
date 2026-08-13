@@ -16,7 +16,7 @@ HTTP ファイルルート（`GET /file`、`GET /file/bytes`、`POST /file/write
 このテキスト読み取りケイパビリティスライスは、直接の `read_file` と、write、edit、notebook、sed、artifact 操作で使用される共有の事前読み取りをカバーします：
 
 - WFS の読み取り側の保証ではなく、通常の CLI の読み取り動作を意図的に受け入れます。[設計ドキュメント](../../design/daemon-local-text-reads.md) に、何が放棄されるかの正確なリストが記載されています。
-- 同じドキュメントに、この変更後も #8618 が write および edit ファミリーでまだ再現する理由と、保持されたアダプタの読み取りパスが「fail closed」する限定的な意味が記録されています。
+- 同じドキュメントに、保持されたアダプタの読み取りパスが「fail closed」する限定的な意味が記録されています。また、別の外部書き込み設計ドキュメントに、承認された最終書き込みの失敗がどのように fail closed するかが記録されています。
 - 直接の外部 `read_file` は、通常の CLI 権限ルールとコアファイル操作テレメトリを保持します。
 - HTTP ファイルシステムルートはワークスペーススコープのままであり、エージェントの検出ツール動作はこのケイパビリティによって変更されません。
 - 親ディレクトリの作成やシェルコマンドなどの補助的なアクションは、既存の別のパスであり、この境界ではカバーされません。
@@ -40,7 +40,7 @@ HTTP ファイルルート（`GET /file`、`GET /file/bytes`、`POST /file/write
 | ファイル                     | 目的                                                                                                                                                                                                                                                   |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `paths.ts`               | `canonicalizeWorkspace`、`resolveWithinWorkspace`、`hasSuspiciousPathPattern`、ブランド化された `ResolvedPath`、`Intent` ユニオン（`read \| write \| list \| stat \| glob`）。                                                                                      |
-| `policy.ts`              | `MAX_READ_BYTES`、`MAX_TEXT_SCAN_BYTES`、`MAX_WRITE_BYTES`、`BINARY_PROBE_BYTES`、`assertTrustedForIntent`、`detectBinary`、`enforceReadBytesSize`、`enforceReadSize`、`enforceWriteSize`、`shouldIgnore`。                                                                   |
+| `policy.ts`              | `MAX_READ_BYTES`、`MAX_TEXT_SCAN_BYTES`、`MAX_WRITE_BYTES`、`MAX_UPLOAD_BYTES`、`BINARY_PROBE_BYTES`、`assertTrustedForIntent`、`detectBinary`、`enforceReadBytesSize`、`enforceReadSize`、`enforceWriteSize`、`shouldIgnore`。                        |
 | `audit.ts`               | `FS_ACCESS_EVENT_TYPE`、`FS_DENIED_EVENT_TYPE`、`createAuditPublisher`、監査ペイロード型。                                                                                                                                                          |
 | `errors.ts`              | `FsError` クラス、`isFsError`、`FsErrorKind` ユニオン（14種類）、`FsErrorStatus` ユニオン（`400 / 403 / 404 / 409 / 413 / 422 / 500 / 503`）。                                                                                                                |
 | `workspace-file-system.ts` | `createWorkspaceFileSystemFactory`、`WorkspaceFileSystem`（読み取り/書き込み/リストを実行するオーケストレーター）、`WriteMode`、`ContentHash`、`FsEntry`、`FsStat`、`ListOptions`、`GlobOptions`、`ReadTextOptions`、`ReadBytesOptions`、`WriteTextAtomicOptions`。 |
@@ -229,8 +229,9 @@ flowchart LR
 | 定数                                          | `MAX_READ_BYTES = 256 KiB`                                            | フルスナップショットおよび返却テキストの上限。それより大きいテキストには明示的なウィンドウ引数が必要。                            |
 | 定数                                          | `MAX_TEXT_SCAN_BYTES = 8 MiB`                                         | ラージテキスト読み取りが行オフセットを特定するためにスキャンできるバイト数。これを超えると `file_too_large`。                              |
 | 定数                                          | `MAX_WRITE_BYTES = 5 MiB`                                             | 書き込み上限。`express.json({ limit: '10mb' })` より小さいサイズに設定。                                                         |
+| 定数                                          | `MAX_UPLOAD_BYTES = 50 MiB`                                           | `POST /file/upload` のバイナリアップロード上限。アップロードは上書きせず、占有済みの名前には自動採番します。                |
 | 定数                                          | `BINARY_PROBE_BYTES = 4096`                                           | コンテンツベースのバイナリ検出のためのサンプルサイズ。                                                                   |
-| 機能タグ                                   | `workspace_file_read`、`workspace_file_bytes`、`workspace_file_write` | [`11-capabilities-versioning.md`](./11-capabilities-versioning.md) を参照。                                           |
+| 機能タグ                                   | `workspace_file_read`、`workspace_file_bytes`、`workspace_file_write`、`workspace_file_upload` | [`11-capabilities-versioning.md`](./11-capabilities-versioning.md) を参照。                                           |
 | ワークスペースファイル                                   | `.gitignore`、`.qwenignore`                                           | 無視されたパスは `shouldIgnore` から `ignored: true` として表示される。                                                     |
 
 ## 注意点と既知の制限

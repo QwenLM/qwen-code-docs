@@ -122,7 +122,7 @@ Identity 및 heartbeat: `client_identity`, `client_heartbeat`.
 
 워크스페이스 한정 세션 읽기: `workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`. 활성 및 보관된 내보내기 태그는 서로 독립적이며 `session_export` 및 `workspace_qualified_rest_core`와도 독립적이므로, 클라이언트는 내보내려는 정확한 저장 상태를 프리플라이트해야 합니다. 지속된 전사 페이징은 제한된 읽기 정책 하에서 신뢰할 수 없는 보조를 허용합니다. 두 전체 내보내기 경로는 모두 신뢰 전용입니다.
 
-워크스페이스 변경 (Wave 4+): `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, **`workspace_settings`** (조건부), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, **`workspace_reload`** (조건부).
+워크스페이스 변경 (Wave 4+): `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, **`workspace_settings`** (조건부), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, `workspace_file_upload`, **`workspace_reload`** (조건부).
 
 MCP 가드레일: **`mcp_guardrails`** (`modes: ['warn', 'enforce']`), `mcp_guardrail_events`, `mcp_server_runtime_mutation`, **`mcp_workspace_pool`** (조건부), **`mcp_pool_restart`** (조건부).
 

@@ -122,7 +122,7 @@ Workspace 只读快照（Workspace read-only snapshots）：`workspace_mcp`, `wo
 
 Workspace 限定会话读取（Workspace-qualified session reads）：`workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`。活跃和已归档的导出 tag 彼此独立，也与 `session_export` 和 `workspace_qualified_rest_core` 独立，因此客户端必须预检其打算导出的确切存储状态。持久化转录分页允许在受限读取策略下的不受信任次级运行时；两条完整导出路径仍然仅限受信任运行时。
 
-Workspace 变更（Wave 4+）：`workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, **`workspace_settings`** (conditional), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, **`workspace_reload`** (conditional)。
+Workspace 变更（Wave 4+）：`workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, **`workspace_settings`** (conditional), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, `workspace_file_upload`, **`workspace_reload`** (conditional)。
 
 MCP 防护栏（MCP guardrails）：**`mcp_guardrails`** (`modes: ['warn', 'enforce']`), `mcp_guardrail_events`, `mcp_server_runtime_mutation`, **`mcp_workspace_pool`** (conditional), **`mcp_pool_restart`** (conditional)。
 

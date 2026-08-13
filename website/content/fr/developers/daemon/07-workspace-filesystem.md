@@ -40,7 +40,7 @@ Cette tranche de capacité de lecture de texte couvre le `read_file` direct plus
 | Fichier                     | Objectif                                                                                                                                                                                                                                                 |
 | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `paths.ts`                 | `canonicalizeWorkspace`, `resolveWithinWorkspace`, `hasSuspiciousPathPattern`, `ResolvedPath` typé, union `Intent` (`read \| write \| list \| stat \| glob`).                                                                                           |
-| `policy.ts`                | `MAX_READ_BYTES`, `MAX_TEXT_SCAN_BYTES`, `MAX_WRITE_BYTES`, `BINARY_PROBE_BYTES`, `assertTrustedForIntent`, `detectBinary`, `enforceReadBytesSize`, `enforceReadSize`, `enforceWriteSize`, `shouldIgnore`.                                            |
+| `policy.ts`                | `MAX_READ_BYTES`, `MAX_TEXT_SCAN_BYTES`, `MAX_WRITE_BYTES`, `MAX_UPLOAD_BYTES`, `BINARY_PROBE_BYTES`, `assertTrustedForIntent`, `detectBinary`, `enforceReadBytesSize`, `enforceReadSize`, `enforceWriteSize`, `shouldIgnore`.                        |
 | `audit.ts`                 | `FS_ACCESS_EVENT_TYPE`, `FS_DENIED_EVENT_TYPE`, `createAuditPublisher`, types de charge utile d'audit.                                                                                                                                                   |
 | `errors.ts`                | Classe `FsError`, `isFsError`, union `FsErrorKind` (14 types), union `FsErrorStatus` (`400 / 403 / 404 / 409 / 413 / 422 / 500 / 503`).                                                                                                                 |
 | `workspace-file-system.ts` | `createWorkspaceFileSystemFactory`, `WorkspaceFileSystem` (l'orchestrateur qui lit/écrit/liste), `WriteMode`, `ContentHash`, `FsEntry`, `FsStat`, `ListOptions`, `GlobOptions`, `ReadTextOptions`, `ReadBytesOptions`, `WriteTextAtomicOptions`. |
@@ -75,7 +75,7 @@ interface BridgeFileSystem {
 }
 ```
 
-C'est le point d'injection pour `readTextFile` / `writeTextFile` de l'ACP. Les tests du bridge et les appelants intégrés en Mode A peuvent l'omettre sur `BridgeOptions` ; `BridgeClient` utilise alors son proxy `fs.readFile` / `fs.writeFile` en ligne (comportement pré-F1 conservé). En production, `qwen serve` câble `BridgeFileSystem` via `createBridgeFileSystemAdapter(fsFactory)` (`packages/cli/src/serve/bridge-file-system-adapter.ts`) et définit `delegateReadTextFileToClient: false`. Les enfants conformes en capacité lisent donc le texte localement et délèguent les écritures de texte ACP finales. L'adaptateur conserve son implémentation de lecture afin que les lectures déléguées inattendues ou violant la capacité rencontrent toujours la limite de workspace de WFS.
+C'est le point d'injection pour `readTextFile` / `writeTextFile` de l'ACP. Les tests du bridge et les appelants intégrés en Mode A peuvent l'omettre sur `BridgeOptions` ; `BridgeClient` utilise alors son proxy `fs.readFile` / `fs.writeFile` en ligne (comportement pré-F1 conservé). En production, `qwen serve` câble `BridgeFileSystem` via `createBridgeFileSystemAdapter(fsFactory)` (`packages/cli/src/serve/bridge-file-system-adapter.ts`) et définit `delegateReadTextFileToClient: false`. Les enfants conformes en capacité lisent donc le texte localement et délèguent les écritures de texte ACP finales. L'adaptateur conserve son implémentation de lecture afin que les lectures déléguées inattendues ou violant la capacité rencontrent toujours la limite de workspace de WFS. Son chemin externe de writer hôte est désactivé par défaut et sélectionné uniquement par provenance versionnée exacte sur les adaptateurs same-host appartenant au démon ; les bridges injectés, les registres et fabriques de workspace, l'ACP générique et HTTP conservent la limite ordinaire.
 
 Deux protections défensives que l'adaptateur DOIT reproduire (car le proxy en ligne est totalement contourné lorsque l'adaptateur est injecté) :
 
@@ -229,8 +229,9 @@ flowchart LR
 | Constante                                         | `MAX_READ_BYTES = 256 KiB`                                         | Limite de snapshot complet et de texte retourné ; un texte plus large nécessite un argument de fenêtre explicite.   |
 | Constante                                         | `MAX_TEXT_SCAN_BYTES = 8 MiB`                                      | Octets qu'une lecture de texte large peut scanner pour localiser un décalage de ligne ; au-delà, `file_too_large`. |
 | Constante                                         | `MAX_WRITE_BYTES = 5 MiB`                                          | Limite d'écriture ; dimensionnée en dessous de `express.json({ limit: '10mb' })`.                                  |
+| Constante                                         | `MAX_UPLOAD_BYTES = 50 MiB`                                        | Limite d'upload binaire pour `POST /file/upload` ; les uploads n'écrasent jamais et numérotent automatiquement les noms occupés. |
 | Constante                                         | `BINARY_PROBE_BYTES = 4096`                                        | Taille d'échantillon pour la détection binaire basée sur le contenu.                                               |
-| Étiquettes de capacité                            | `workspace_file_read`, `workspace_file_bytes`, `workspace_file_write` | Voir [`11-capabilities-versioning.md`](./11-capabilities-versioning.md).                                          |
+| Étiquettes de capacité                            | `workspace_file_read`, `workspace_file_bytes`, `workspace_file_write`, `workspace_file_upload` | Voir [`11-capabilities-versioning.md`](./11-capabilities-versioning.md).                                          |
 | Fichiers de l'espace de travail                   | `.gitignore`, `.qwenignore`                                        | Les chemins ignorés remontent comme `ignored: true` depuis `shouldIgnore`.                                         |
 
 ## Mises en garde et limitations connues
@@ -248,7 +249,7 @@ flowchart LR
 
 ## Références
 
-- `packages/cli/src/serve/fs/index.ts` (baril)
+- `packages/cli/src/serve/fs/index.ts` (barrel)
 - `packages/cli/src/serve/fs/paths.ts`
 - `packages/cli/src/serve/fs/policy.ts`
 - `packages/cli/src/serve/fs/errors.ts`

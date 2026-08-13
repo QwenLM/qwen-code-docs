@@ -56,7 +56,7 @@ Step 1:  スコープ + 努力レベルの決定（ローカル diff / PR worktr
 Step 2:  プロジェクトのレビュールールを読み込む（medium/high）
 Step 3C: low effort: 3-6 インライン角度 + ギャップスイープ     [0 サブエージェント呼び出し]
 Step 3A: high, <=500 src かつ <=3200 total: 14 エージェント       [14+ LLM calls]
-           |-- Agent 0: Issue Fidelity & 根本原因の特定
+           |-- Agent 0: Issue Fidelity & Root-Cause Ownership
            |-- Agent 1a: 正確性 — 行単位スキャン
            |     （言語の落とし穴 + ラッパールーティングチェック含む）
            |-- Agent 1b: 正確性 — 削除された動作の監査
@@ -189,7 +189,7 @@ PRをレビューする際、`/review` は現在のブランチを切り替え�
 - 修正が単一のローカライズされた編集である場合、ワンクリックで適用できる ` ```suggestion ` ブロック
 - Approve/Request changes の判定の場合: 判定を含むレビュー要約
 - すべてのインラインコメントが投稿された Comment の判定の場合: 個別の要約はなし（インラインコメントで十分）
-- 各コメントのモデルとCLIバージョンの帰属フッター（例: _— qwen3-coder via Qwen Code /review (v0.21.2)_）
+- 各コメントのモデルとCLIバージョンの帰属フッター（例: _— qwen3-coder via Qwen Code /review (v0.21.2)_）。ユーザーまたはシステムの `settings.json` で `review.attribution` を `false` に設定すると、帰属フッターなしで投稿できます（ワークスペースの `.qwen/settings.json` は `review.*` の設定では無視されます）
 
 **ターミナルのみに留まる内容:**
 

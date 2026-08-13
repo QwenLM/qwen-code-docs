@@ -188,7 +188,7 @@ Ou, après avoir exécuté `/review 123`, tapez `post comments` pour publier les
 - Lorsque la correction est une édition localisée unique, un bloc ` ```suggestion ` applicable en un clic
 - Pour les verdicts Approve/Request changes : un résumé de la revue avec le verdict
 - Pour le verdict Comment avec tous les commentaires inline publiés : pas de résumé séparé (les commentaires inline sont suffisants)
-- Pied de page d'attribution du modèle et de la version CLI sur chaque commentaire (par ex., _— qwen3-coder via Qwen Code /review (v0.21.2)_)
+- Pied de page d'attribution du modèle et de la version CLI sur chaque commentaire (par ex., _— qwen3-coder via Qwen Code /review (v0.21.2)_) ; définissez `review.attribution` à `false` dans votre `settings.json` utilisateur ou système (le `.qwen/settings.json` du workspace est ignoré pour les paramètres `review.*`) pour publier sans lui
 
 **Ce qui reste uniquement dans le terminal :**
 
