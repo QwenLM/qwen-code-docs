@@ -1,4 +1,3 @@
-```markdown
 # Python SDK
 
 ## `qwen-code-sdk`
@@ -491,4 +490,3 @@ npm run smoke:sdk:python -- --qwen qwen
 - 同步 `query_sync` 查询
 
 它会打印 JSON，并在失败时返回非零退出码。
-```

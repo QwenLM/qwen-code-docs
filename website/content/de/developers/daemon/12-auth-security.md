@@ -1,4 +1,3 @@
-```markdown
 # Authentifizierungs- & Sicherheitsmodell
 
 ## Überblick
@@ -274,4 +273,3 @@ sequenceDiagram
 - `packages/cli/src/serve/auth/qwen-device-flow-provider.ts`
 - Benutzerseitiges Bedrohungsmodell: [`../../users/qwen-serve.md`](../../users/qwen-serve.md).
 - Wire-Referenz: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md).
-```
