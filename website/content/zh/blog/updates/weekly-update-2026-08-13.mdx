@@ -1,7 +1,7 @@
 ---
 title: "Qwen Code 周报：手机扫码接管电脑上的会话、Goal 长任务不再 50 轮被掐断、插件生态向 Agent Plugins 和 Qoder 插件开放"
 date: "2026-08-13"
-description: "本周发布 v0.21.7 至 v0.21.11 五个正式版本。Local Control 扫二维码就能用手机接管电脑上跑的会话；Goal 不再 50 轮被掐断，长任务能压证据继续跑；扩展生态向 Agent Plugins v1 和 Qoder 插件开放。"
+description: "本周发布 v0.21.7 至 v0.21.11 五个正式版本。Local Control 扫二维码就能用手机接管电脑上跑的会话；Goal 不再 50 轮被掐断，长任务能压证据继续跑；插件生态向 Agent Plugins v1 和 Qoder 插件开放。"
 author: "Qwen Team"
 tags: ["Product Updates", "release", "weekly"]
 image: "https://img.alicdn.com/imgextra/i2/O1CN01jddm4nOmFBB2jBZY_!!6000000003554-2-tps-1344-576.png"
@@ -22,7 +22,7 @@ Qwen Code 本周发布 v0.21.7 到 v0.21.11 五个正式版本，220+ 个 PR 合
 
 **长任务能跑完了。** Goal 不再 50 轮被掐断，还能压缩证据存档后继续。Review 也支持给你的仓库定制审查规则了。
 
-**扩展生态开放。** Agent Plugins v1 标准包和 Qoder 插件现在原样安装就能用，Web Shell 也支持安装扩展压缩包。
+**插件生态开放。** Agent Plugins v1 标准包和 Qoder 插件现在原样安装就能用，Web Shell 也支持安装扩展压缩包。
 
 **多个 AI 能分工干活了。** 上周子 Agent 刚有了权限管控，这周 `/coordinate` 更进一步，直接带一支队伍：调查员默认只读，写代码的只派一个，结果自动汇报给领头。
 
@@ -56,7 +56,7 @@ Goal 不只终端能用了。 Web Shell 里的 Goal 换成了和终端同一套�
 
 详见 PR [#8421](https://github.com/QwenLM/qwen-code/pull/8421)、[#8465](https://github.com/QwenLM/qwen-code/pull/8465)、[#8732](https://github.com/QwenLM/qwen-code/pull/8732)
 
-### 扩展生态：Agent Plugins v1 和 Qoder 插件原样安装就能用
+### 插件生态：Agent Plugins v1 和 Qoder 插件原样安装就能用
 
 之前装第三方扩展，得先把它转换成 Qwen Code 自己的格式。这周两种标准插件格式都能原样用了：
 
@@ -68,7 +68,7 @@ Web Shell 的扩展管理器支持从本地 `.zip` / `.tar.gz` 压缩包安装�
 
 详见 PR [#8834](https://github.com/QwenLM/qwen-code/pull/8834)、[#8661](https://github.com/QwenLM/qwen-code/pull/8661)、[#8621](https://github.com/QwenLM/qwen-code/pull/8621)
 
-![扩展生态：标准插件包原样安装](https://img.alicdn.com/imgextra/i2/O1CN01p935k9v0zGG7nOLI_!!6000000005936-2-tps-3840-2160.png)
+![插件生态：标准插件包原样安装](https://img.alicdn.com/imgextra/i2/O1CN01p935k9v0zGG7nOLI_!!6000000005936-2-tps-3840-2160.png)
 
 ### Review 系列：给仓库定制审查规则，大 PR 不再超时
 
