@@ -1,5 +1,6 @@
 export default {
   index: { display: 'hidden' },
+  'weekly-update-2026-08-13': '08-13 Produkt-Update',
   'weekly-update-2026-08-06': '08-06 Produkt-Update',
   'weekly-update-2026-07-30': '07-30 Produkt-Update',
   'weekly-update-2026-07-23': '07-23 Produkt-Update',

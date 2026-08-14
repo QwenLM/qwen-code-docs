@@ -2366,6 +2366,53 @@ export const showcaseItems = [
       { title: "压缩自动跑", description: "长对话触发压缩时由便宜模型做总结，主对话照常进行。" },
     ],
   },
+  {
+    id: "coordinate-multi-agent-team",
+    title: "一个 /coordinate，AI 组队分工干活",
+    description: "派多个 AI 并行调查，调查员默认只读，只有一个人能动手改，结论自动汇总给领头。",
+    category: "编程开发",
+    features: ["Agent 模式"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01CfP0oTZoMcH7nOLI_!!6000000007713-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "复杂问题丢给 Qwen Code，它能派出一支队伍：几个调查员并行看代码，全部只读、改不了一个字；调查完只派一个写手动手，改动落在独立 worktree，不碰主分支；队友干完活结论自动汇总给领头，不用追着问。",
+    steps: [
+      { title: "开启实验开关", description: "把环境变量 QWEN_CODE_ENABLE_AGENT_TEAM 设为 1，新开终端生效。" },
+      { title: "派出队伍并行调查", description: "输入 /coordinate 加上任务，领头自动拆成几路、派出只读调查员，各看各的部分，底部标签栏实时看进度。" },
+      { title: "单人改动、自动汇总", description: "调查结束后一个写手在独立 worktree 里改，干完全员结论自动汇总给领头。" },
+    ],
+  },
+  {
+    id: "local-control-phone-takeover",
+    title: "手机扫一扫，接管电脑上的 AI",
+    description: "开启 Local Control 出现二维码，同一网络里手机扫码就能接管电脑上正在跑的会话，随时看进度、做审批。",
+    category: "办公提效",
+    features: ["终端操作"],
+    thumbnail: "https://img.alicdn.com/imgextra/i2/O1CN01KrhXalaMzHJ3OTaQ_!!6000000003127-2-tps-1672-942.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "AI 跑在电脑上，但人不必一直守在电脑前。开启 Local Control，屏幕上出现二维码，同一网络里用手机扫一下，就能接管电脑上正在跑的会话——手机上打开的就是电脑上那个会话，接着聊、接着审批；离开工位，任务跑到哪、有什么等你审批，手机上看。用完关掉控制窗口，连接立即断开。",
+    steps: [
+      { title: "开启 Local Control", description: "终端运行 qwen serve --local-control，或桌面端菜单选 Control → Local Control。" },
+      { title: "手机扫码接管", description: "同一网络里用手机扫屏幕上的二维码，打开当前正在跑的会话。" },
+      { title: "用完即断", description: "关掉控制窗口，连接立即断开，配对令牌立即失效。" },
+    ],
+  },
+  {
+    id: "agent-plugins-qoder-install",
+    title: "Agent Plugins 和 Qoder 插件，原样装直接用",
+    description: "两种标准插件格式直接装进 Qwen Code，不用转换格式，包里的技能和 MCP 服务器装上就能用。",
+    category: "编程开发",
+    features: ["Skills", "MCP"],
+    thumbnail: "https://img.alicdn.com/imgextra/i2/O1CN01p935k9v0zGG7nOLI_!!6000000005936-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "以前装第三方插件要先转换成 Qwen Code 自己的格式。现在 Agent Plugins v1 标准包和 Qoder 插件原样就能装：包里的技能和 MCP 服务器装上直接可用，还能更新、启停；Web Shell 的扩展管理器也支持从本地压缩包安装。",
+    steps: [
+      { title: "安装插件包", description: "/extensions install 指向插件包路径或仓库，标准格式直接装。" },
+      { title: "直接用", description: "包里的技能和 MCP 服务器在会话里立即可用，无需额外配置。" },
+    ],
+  },
 ]
 
 
