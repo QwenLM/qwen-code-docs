@@ -81,21 +81,21 @@ Todo o comportamento de telemetria é controlado através do seu arquivo `.qwen/
 **Atributos de span sensíveis:** Quando `includeSensitiveSpanAttributes` está habilitado, duas coisas acontecem:
 
 1. **Atributos de span nativos** carregam JSON GenAI padrão do OpenTelemetry:
-   - Mensagens de entrada do LLM (`gen_ai.input.messages`)
+   - Mensagens de entrada do agente principal e LLM (`gen_ai.input.messages`)
    - Instruções do sistema (`gen_ai.system_instructions`)
    - Definições de ferramentas (`gen_ai.tool.definitions`)
-   - Mensagens de saída do LLM (`gen_ai.output.messages`)
+   - Mensagens de saída do agente principal e LLM (`gen_ai.output.messages`)
    - Argumentos finais da ferramenta executada (`gen_ai.tool.call.arguments`)
    - Resultados bem-sucedidos de ferramentas (`gen_ai.tool.call.result`)
-   - Spans de interação continuam usando `new_context` porque não são spans de inferência GenAI.
+   - Spans de interação retêm o atributo de compatibilidade `new_context`.
 
-   Os valores do LLM vêm de objetos de requisição SDK finalizados pelo provedor e respostas brutas do provedor, não da configuração lógica original. Os valores de ferramentas vêm dos parâmetros finais de invocação e do resultado bem-sucedido voltado ao modelo. Cada valor GenAI padrão é JSON compacto e deve ser completo e válido quanto ao schema. Um valor inválido, cíclico ou maior que `sensitiveSpanAttributeMaxLength` é omitido por completo; o JSON nunca é truncado e nenhuma prévia, hash ou metadado de truncamento é emitido. O atributo `new_context` específico de interação mantém seu comportamento de truncamento existente. O padrão máximo é 1 MiB (`1048576`) por atributo e o intervalo aceito é `1..104857600` (100 MiB). O limite é medido como comprimento de string JavaScript, não como bytes UTF-8. Conteúdo não-ASCII pode, portanto, ocupar mais bytes após a exportação OTLP.
+   A entrada do agente principal é uma projeção original do texto do usuário antes da expansão de contexto, e a saída do agente principal é uma resposta final visível ao usuário após todo o trabalho de ferramenta e continuação ser resolvido. Os valores do LLM ainda vêm de objetos de requisição SDK finalizados pelo provedor e respostas brutas do provedor, então sua entrada pode incluir histórico, arquivos expandidos, instruções do sistema e resultados de ferramentas, e sua saída pode incluir cada candidato do provedor. Os valores de ferramentas vêm dos parâmetros finais de invocação e do resultado bem-sucedido voltado ao modelo. Cada valor GenAI padrão é JSON compacto e deve ser completo e válido quanto ao schema. Um valor inválido, cíclico ou maior que `sensitiveSpanAttributeMaxLength` é omitido por completo; o JSON nunca é truncado e nenhuma prévia, hash ou metadado de truncamento é emitido. O atributo `new_context` específico de interação mantém seu comportamento de truncamento existente. O padrão máximo é 1 MiB (`1048576`) por atributo e o intervalo aceito é `1..104857600` (100 MiB). O limite é medido como comprimento de string JavaScript, não como bytes UTF-8. Conteúdo não-ASCII pode, portanto, ocupar mais bytes após a exportação OTLP.
 
 2. **Spans da ponte log-to-span** (usados quando traces HTTP são exportados sem um endpoint de logs) mantêm seus campos existentes `prompt`, `function_args` e `response_text`, em vez de serem descartados.
 
 ⚠️ **Aviso de segurança:** habilitar esta flag transmite o histórico completo da conversa, conteúdos de arquivos lidos por `read_file`, comandos de shell e suas saídas (incluindo segredos em variáveis de ambiente ou argumentos) e respostas do modelo para o backend OTLP configurado. Trate o backend como um sink de dados privilegiado. A flag é `false` por padrão.
 
-**Custo / tamanho do payload:** No limite padrão, um span de LLM pode carregar no máximo cerca de 4 MiB entre entrada, saída, instruções do sistema e definições de ferramentas; um span de Tool pode carregar cerca de 2 MiB entre argumentos e resultado. Este é o limite do lado da aplicação do Qwen Code, não uma garantia de que cada coletor ou backend aceite um atributo tão grande. Se spans forem rejeitados ou descartados, reduza `sensitiveSpanAttributeMaxLength` (por exemplo, para `61440`) e monitore o throughput do exportador.
+**Custo / tamanho do payload:** No limite padrão, um span de LLM pode carregar no máximo cerca de 4 MiB entre entrada, saída, instruções do sistema e definições de ferramentas; um span de Tool pode carregar cerca de 2 MiB entre argumentos e resultado; e uma interação pode carregar cerca de 3 MiB entre entrada do Agent, saída do Agent e `new_context` de compatibilidade. Este é o limite do lado da aplicação do Qwen Code, não uma garantia de que cada coletor ou backend aceite um atributo tão grande. Se spans forem rejeitados ou descartados, reduza `sensitiveSpanAttributeMaxLength` (por exemplo, para `61440`) e monitore o throughput do exportador.
 
 Esta configuração não desabilita dados sensíveis nos logs do OTel ou em outros sinks de telemetria; a telemetria de resposta de API não interna pode popular `response_text`, então logs do OTel, telemetria de UI e gravação de chat podem receber texto de resposta independentemente desta configuração. O QwenLogger não inclui `response_text`.
 

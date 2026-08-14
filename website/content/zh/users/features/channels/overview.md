@@ -61,7 +61,7 @@
 | `model`                  | 否               | 此频道使用的模型（例如 `qwen3.5-plus`）。覆盖默认模型。适用于支持图像输入的多模态模型                                                                            |
 | `senderPolicy`           | 否               | 允许与机器人交互的用户：`allowlist`（默认）、`open` 或 `pairing`                                                                                                 |
 | `allowedUsers`           | 否               | 允许使用机器人的用户 ID 列表（由 `allowlist` 和 `pairing` 策略使用）                                                                                             |
-| `sessionScope`           | 否               | 会话作用域：`user`（默认）、`thread` 或 `single`                                                                                                                 |
+| `sessionScope`           | 否               | 会话作用域：`user`（默认）、`chat_thread` 或 `single`。旧版 `thread` 在已配置时仍兼容，但不再为新的 Web Shell 配置提供                                                  |
 | `cwd`                    | 否               | agent 的工作目录。默认为当前目录                                                                                                                                 |
 | `approvalMode`           | 否               | 频道会话的工具审批模式。无人值守的 webhook 任务需要 `yolo`；该设置应用于频道上的每个会话                                                                          |
 | `instructions`           | 否               | 自定义指令，会追加到每个会话的第一条消息之前                                                                                                                     |

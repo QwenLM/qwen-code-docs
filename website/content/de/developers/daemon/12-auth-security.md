@@ -1,4 +1,3 @@
-```markdown
 # Authentifizierungs- & Sicherheitsmodell
 
 ## Überblick
@@ -55,7 +54,7 @@ Alle drei Verweigerungen sind explizite Bootfehler (sichtbar in stderr / werden 
 
 ```mermaid
 flowchart LR
-    REQ[Request] --> SO["strip same-origin Origin<br/>(demo page support)"]
+    REQ[Request] --> SO["strip same-origin Origin<br/>(Web Shell support)"]
     SO --> CORS{"--allow-origin?"}
     CORS -->|yes| AO["allowOriginCors<br/>(allowlist match)"]
     CORS -->|no| DC["denyBrowserOriginCors<br/>(reject all Origin)"]
@@ -94,7 +93,7 @@ Nicht-Loopback-Bindings umgehen diese Middleware (der Betreiber wählt die Angri
 
 Lehnt jede Anfrage mit einem `Origin`-Header ab. CLI/SDK setzen nie Origin; nur Browser tun das. Gibt deterministisch `403 { error: 'Request denied by CORS policy' }` zurück, statt des 500 HTML, das der Fehler-Callback des `cors`-Pakets produzieren würde.
 
-Ausnahme: Die Same-Origin-XHRs der Demoseite werden von einer separaten Middleware (in `server.ts`) behandelt, die `Origin` entfernt, wenn es mit der eigenen Adresse des Daemons übereinstimmt.
+Ausnahme: Die Same-Origin-XHRs der WebShell bei einem **Loopback**-Bind werden von einer separaten Middleware (in `server/self-origin.ts`) behandelt, die `Origin` entfernt, wenn es mit einer der Loopback-Self-Origins übereinstimmt (`127.0.0.1`, `localhost`, `[::1]`, `host.docker.internal`). Bei Nicht-Loopback-Binds tragen die XHRs der Shell einen nicht passenden `Origin` und benötigen `--allow-origin` für die Daemon-Origin.
 
 ### `allowOriginCors` (`--allow-origin`-Modus)
 
@@ -127,7 +126,10 @@ Das `code: 'token_required'`-Format unterscheidet sich von `bearerAuth`s einfach
 `/workspace/tools/:name/enable`, `/workspace/mcp/:server/restart`,
 `/workspace/mcp/:server/{enable,disable,authenticate,clear-auth}`,
 `/workspace/mcp/servers` (POST/DELETE), `/workspace/auth/device-flow`,
-`/workspace/init`, `/session/:id/approval-mode`.
+`/workspace/init`, `/session/:id/approval-mode`, `/session/:id/rewind` und
+`/session/:id/shell`.
+
+Rewind bleibt auch bei konfiguriertem ACP-Transport REST-only im TypeScript-SDK. Das bewahrt das strenge Mutations-Gate und die Bearer/Client-Identitäts-Header; die ACP-Route-Tabelle hat absichtlich kein Rewind-Mapping. Das Owner-Routing prüft außerdem die Workspace-Trust erneut, bevor entweder Rewind oder Shell eine sekundäre Runtime-Bridge erreicht. Doppelte Live-Session-IDs schlagen fehl als `ambiguous_session_owner`, statt auf die primäre Runtime zurückzufallen.
 
 ### `/health`-Ausnahme
 
@@ -261,7 +263,7 @@ sequenceDiagram
 
 - **`--require-auth` verdeckt Feature-Preflight.** Nicht authentifizierte Clients können das `require_auth`-Tag nicht entdecken; ihre Erkennungsoberfläche ist der 401-Body selbst.
 - **Reihenfolge Mutations-Gate/Body-Parser**: `mutationGate({strict: true})`-401-Antworten feuern **nachdem** `express.json()` den Body geparst hat. Schlimmster Fall bei einem gesättigten Loopback-Listener: `--max-connections × express.json({limit: '10mb'})` ≈ 2,5 GB transient. Nur Loopback-Angriffsfläche, bewusst akzeptiert.
-- **Same-Origin-Origin-Entfernung** in `server.ts` erfolgt _vor_ `denyBrowserOriginCors`. Wenn eine zukünftige Änderung die Entfernung an eine andere Stelle verschiebt, wird die Demoseite brechen.
+- **Same-Origin-Origin-Entfernung** in `server.ts` erfolgt _vor_ `denyBrowserOriginCors`. Wenn eine zukünftige Änderung die Entfernung an eine andere Stelle verschiebt, wird die WebShell brechen.
 - **Token-Vergleich erfolgt über den SHA-256-Digest**, nicht über das rohe Token. Reduziert Timing-Lecks, indem variable Längen auf feste Größen verglichen werden.
 - Der Daemon führt heute **kein** mTLS, keine Anfragesignatur und keinen Pair-Token-Proof-of-Possession. `--rate-limit` bietet HTTP-Rate-Limiting nach Client-ID/IP; es ist keine Client-Identitätsauthentifizierung.
 
@@ -274,4 +276,3 @@ sequenceDiagram
 - `packages/cli/src/serve/auth/qwen-device-flow-provider.ts`
 - Benutzerseitiges Bedrohungsmodell: [`../../users/qwen-serve.md`](../../users/qwen-serve.md).
 - Wire-Referenz: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md).
-```

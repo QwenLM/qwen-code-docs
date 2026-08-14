@@ -9,7 +9,7 @@ Existem dois modos de host atuais:
 - `qwen channel start [name]` é o serviço de canal independente com suporte a ACP. Ele passa aos adaptadores uma implementação `AcpBridge` de `ChannelAgentBridge`.
 - `qwen serve --channel <name>` e `qwen serve --channel all` são modos experimentais gerenciados por daemon. As seleções nomeadas são agrupadas por workspace proprietário e o `qwen serve` inicia um worker fora do processo por runtime proprietário; cada worker se conecta ao daemon através do SDK e os adaptadores recebem uma fachada `ChannelAgentBridge` com suporte de `DaemonChannelBridge`. `--channel all` continua sendo uma seleção apenas do primário.
 
-No modo gerenciado por daemon, cada canal mapeia o tráfego de chat recebido para sessões do daemon sob um `SessionScope` configurável (`user`, `thread` ou `single`). O adaptador delega para o `DaemonChannelBridge`, que por sua vez delega para o `DaemonSessionClient` do SDK (consulte [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)). Cada canal nomeado deve resolver para um workspace registrado e confiável. O worker usa o cwd canônico desse runtime, `QWEN_DAEMON_WORKSPACE` e a sobreposição de ambiente; a resolução de propriedade nunca faz fallback para o primário.
+No modo gerenciado por daemon, cada canal mapeia o tráfego de chat recebido para sessões do daemon sob um `SessionScope` configurável (`user`, `chat_thread` ou `single`). O valor legado `thread` do Channel permanece legível e editável para configurações existentes, mas novas configurações do Web Shell não o oferecem; isso é separado do próprio controle de criação de sessão `single`/`thread` da bridge do daemon. O adaptador delega para o `DaemonChannelBridge`, que por sua vez delega para o `DaemonSessionClient` do SDK (consulte [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)). Cada canal nomeado deve resolver para um workspace registrado e confiável. O worker usa o cwd canônico desse runtime, `QWEN_DAEMON_WORKSPACE` e a sobreposição de ambiente; a resolução de propriedade nunca faz fallback para o primário.
 
 ### Tarefas de canal disparadas por webhook
 
@@ -196,7 +196,7 @@ Falhas no `connect()` do adaptador são reportadas separamente dos erros de cicl
 
 | Parâmetro                                | Efeito                                                                                                      |
 | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `sessionScope`                           | `'user'` (remetente + chat), `'thread'` (id da thread ou chat), `'chat_thread'` (canal + chatId + threadId, para adaptadores de polling) ou `'single'` (uma sessão compartilhada por canal). |
+| `sessionScope`                           | `'user'` (remetente + chat), `'chat_thread'` (canal + chatId + threadId) ou `'single'` (uma sessão compartilhada por canal). O `'thread'` legado é preservado quando já configurado, mas não é oferecido para novas configurações do Web Shell. |
 | `approvalMode`                           | `'auto'` (resposta automática) / `'prompt'` (renderiza UI).                                                 |
 | `allowlist?: string[]`                   | IDs de remetente permitidos; ausente = aberto.                                                              |
 | `denylist?: string[]`                    | IDs de remetente negados.                                                                                   |

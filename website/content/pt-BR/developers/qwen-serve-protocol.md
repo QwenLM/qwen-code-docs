@@ -226,7 +226,7 @@ O daemon anuncia suas tags de feature suportadas do registry de capability do se
 
 `workspace_display_name` anuncia entrada opcional de `displayName` no `POST /workspaces`, atualizações de metadados de workspace via `PATCH /workspaces/:workspace`, e campos opcionais de display-name em projeções de workspace. Nomes não participam de busca ou roteamento: `id` e `cwd` canônico permanecem como os únicos seletores, e nomes duplicados são permitidos.
 
-`workspace_runtime_removal` anuncia remoção a quente síncrona via `DELETE /workspaces/:workspace`. Entradas de capability workspace adicionam `removable` opcional; apenas linhas com `removable: true` podem ser removidas. A remoção também esquece todo alias de registro persistente para o runtime, mas nunca deleta arquivos, configurações, transcrições ou arquivos.
+`workspace_runtime_removal` anuncia remoção a quente síncrona via `DELETE /workspaces/:workspace`. Entradas de capability workspace adicionam `removable` opcional; apenas linhas com `removable: true` podem ser removidas. A remoção também esquece todo alias de registro persistente para o runtime, mas nunca deleta arquivos, configurações, transcrições ou arquivos arquivados.
 
 `session_load` e `session_resume` anunciam as rotas de restore explícito (`POST /session/:id/load` e `POST /session/:id/resume`). Daemons mais antigos retornam `404` para esses paths, então clientes SDK devem fazer preflight de `caps.features` antes de chamar. `unstable_session_resume` ainda é anunciado como um alias depreciado para compatibilidade com SDKs que foram publicados enquanto o método ACP subjacente se chamava `connection.unstable_resumeSession`; novos clientes devem verificar `session_resume`.
 

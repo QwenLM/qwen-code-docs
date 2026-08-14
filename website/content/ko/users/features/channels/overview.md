@@ -65,7 +65,7 @@ title: Channels
 | `model`                | 아니오                | 이 채널에 사용할 모델(예: `qwen3.5-plus`). 기본 모델을 재정의합니다. 이미지 입력을 지원하는 멀티모달 모델에 유용                                                 |
 | `senderPolicy`         | 아니오                | 봇과 대화할 수 있는 사용자: `allowlist`(기본값), `open` 또는 `pairing`                                                                                           |
 | `allowedUsers`         | 아니오                | 봇을 사용할 수 있는 사용자 ID 목록(`allowlist` 및 `pairing` 정책에서 사용)                                                                                       |
-| `sessionScope`         | 아니오                | 세션 범위 방식: `user`(기본값), `thread` 또는 `single`                                                                                                           |
+| `sessionScope`         | 아니오                | 세션 범위 방식: `user`(기본값), `chat_thread` 또는 `single`. 레거시 `thread`는 이미 구성된 경우 호환되지만 새 Web Shell 구성에서는 제공되지 않음                   |
 | `cwd`                  | 아니오                | 에이전트의 작업 디렉토리. 기본값은 현재 디렉토리                                                                                                                 |
 | `approvalMode`         | 아니오                | 채널 세션의 도구 승인 모드. 무인 웹훅 작업은 `yolo`가 필요합니다. 설정은 채널의 모든 세션에 적용됩니다                                                            |
 | `instructions`         | 아니오                | 각 세션의 첫 번째 메시지에 앞에 추가되는 사용자 정의 지시                                                                                                         |
@@ -92,7 +92,7 @@ title: Channels
 대화 세션이 관리되는 방식을 제어합니다:
 
 - **`user`**(기본값) — 사용자당 하나의 세션. 같은 사용자의 모든 메시지가 대화를 공유합니다.
-- **`thread`** — 스레드/토픽당 하나의 세션. 스레드가 있는 그룹 채팅에 유용합니다.
+- **`chat_thread`** — 채널 + chatId + threadId당 하나의 세션. 스레드가 있는 그룹 채팅에 유용합니다.
 - **`single`** — 모든 사용자를 위한 하나의 공유 세션. 모두가 같은 대화를 공유합니다.
 
 ### 채널 메모리

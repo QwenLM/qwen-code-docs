@@ -106,6 +106,16 @@ Qwen Code 会自动将旧版配置设置迁移到新格式。旧设置文件会�
 | `output.format`         | string  | CLI 输出的格式。                                             | `"text"` | `"text"`, `"json"` |
 | `output.showTimestamps` | boolean | 在每个助手响应前显示 `[HH:MM:SS]` 时间戳。                   | `false`  |                    |
 
+#### review
+
+| 设置 | 类型 | 描述 | 默认值 |
+| --- | --- | --- | --- |
+| `review.attribution` | boolean | 在 `/review` 发布的审查正文和行内评论末尾追加归属脚注，注明模型和 CLI 版本（例如 _— qwen3-coder via Qwen Code /review (v0.21.2)_）。禁用此选项可在不附带 AI 归属的情况下发布审查。关闭脚注后，提交前的重复检测仍然能识别同一 GitHub 账号的早期发布，但来自其他账号的无脚注发布将无法被识别。 | `true` |
+| `review.effort` | enum | 未指定 `--effort` 时 `/review` 的默认 effort：`"low"`、`"medium"`、`"high"` 或 `"auto"`（内置规则：PR 为 high，本地变更为 medium）。显式的 `--effort` 优先；有效的 `--comment` 仍然强制 high，`--fix` 仍然将下限设为 medium。 | `"auto"` |
+| `review.comment` | boolean | 将每次 PR `/review` 视为传入了 `--comment`：无需该标志即可将发现发布到 pull request。发布仍然绑定到调用中指定的 PR。仅当你始终希望发布审查时才启用。 | `false` |
+
+这些设置仅从操作员作用域（User、System 和 SystemDefaults）读取；工作区 `.qwen/settings.json` 中的值会被忽略，因此仓库无法为其审查者设置审查策略。
+
 #### ui
 
 | 设置                                  | 类型             | 描述                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 默认值        |

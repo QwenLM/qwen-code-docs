@@ -1,5 +1,7 @@
 ---
 
+---
+
 # Channels
 
 Mit Channels kannst du über Messaging-Plattformen wie Telegram, WeChat, QQ, DingTalk, WeCom oder Feishu mit einem Qwen Code Agenten interagieren, anstatt über das Terminal. Du sendest Nachrichten von deinem Smartphone oder einer Desktop-Chat-App, und der Agent antwortet genauso wie in der CLI.
@@ -63,7 +65,7 @@ Channels werden unter dem Schlüssel `channels` in der `settings.json` konfiguri
 | `model`                  | Nein             | Modell, das für diesen Channel verwendet werden soll (z. B. `qwen3.5-plus`). Überschreibt das Standardmodell. Nützlich für multimodale Modelle, die Bildeingaben unterstützen                               |
 | `senderPolicy`           | Nein             | Wer mit dem Bot kommunizieren kann: `allowlist` (Standard), `open` oder `pairing`                                                                                                   |
 | `allowedUsers`           | Nein             | Liste der Benutzer-IDs, die den Bot verwenden dürfen (wird von den Richtlinien `allowlist` und `pairing` verwendet)                                                                                   |
-| `sessionScope`           | Nein             | Wie Sessions abgegrenzt werden: `user` (Standard), `thread` oder `single`                                                                                                       |
+| `sessionScope`           | Nein             | Wie Sessions abgegrenzt werden: `user` (Standard), `chat_thread` oder `single`. Legacy `thread` bleibt kompatibel, wenn bereits konfiguriert, wird aber für neue WebShell-Konfigurationen nicht mehr angeboten |
 | `cwd`                    | Nein             | Arbeitsverzeichnis für den Agenten. Standardmäßig das aktuelle Verzeichnis                                                                                                     |
 | `approvalMode`           | Nein             | Tool-Genehmigungsmodus für Channel-Sessions. Unbeaufsichtigte Webhook-Tasks erfordern `yolo`; die Einstellung gilt für jede Session auf dem Channel                                  |
 | `instructions`           | Nein             | Benutzerdefinierte Anweisungen, die der ersten Nachricht jeder Session vorangestellt werden                                                                                                     |
@@ -392,7 +394,8 @@ Du kannst den Dispatch-Modus auch pro Gruppe festlegen und damit den Channel-Sta
 
 ## Block-Streaming
 
-Standardmäßig arbeitet der Agent eine Weile und sendet dann eine einzige große Response. Wenn Block-Streaming aktiviert ist, trifft die Response in mehreren kürzeren Nachrichten ein, während der Agent noch arbeitet – ähnlich wie ChatGPT oder Claude progressive Ausgaben anzeigen.
+Standardmäßig arbeitet der Agent eine Weile und sendet dann eine einzige große Response. Wenn Block-Streaming aktiviert ist...
+
 
 ```json
 {

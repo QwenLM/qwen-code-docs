@@ -309,7 +309,7 @@ Alibaba Cloud Managed Service for OpenTelemetry에서 Qwen Code telemetry를 보
    }
    ```
 
-   컨테이너 배포의 경우 `telemetry.resourceAttributes.user.id`는 관련 없는 Resource 차원으로 남아 있으며 ARMS 세션 분석을 채우지 않습니다. 스팬 수준 설정으로 마이그레이션할 때 제거하세요.
+   컨테이너 배포의 경우 대신 `QWEN_TELEMETRY_USER_ID=user-079458`을 설정하세요. 사용자 정의 `telemetry.resourceAttributes.user.id`는 관련 없는 Resource 차원으로 남아 있으며 ARMS 세션 분석을 채우지 않으므로 스팬 수준 설정으로 마이그레이션할 때 제거하세요.
 
 2. Alibaba Cloud 엔드포인트에 인증이 필요한 경우 `OTEL_EXPORTER_OTLP_HEADERS`(또는 시그널별 변형)와 같은 표준 OpenTelemetry 환경 변수를 통해 OTLP 헤더를 제공합니다. Qwen Code는 현재 `.qwen/settings.json`에서 OTLP 인증 헤더를 직접 노출하지 않습니다.
 3. Qwen Code를 실행하고 프롬프트를 전송합니다.
@@ -684,8 +684,11 @@ Alibaba Cloud Managed Service for OpenTelemetry에서 Qwen Code telemetry를 보
 
 기존 Qwen 전용 `qwen-code.config`/`cli_config` 및 RUM `session_start` 레코드는 호환성을 위해 계속 제공됩니다. GenAI 요청 스팬은 동일한 소유 세션 ID에 대해 `gen_ai.conversation.id`를 계속 사용합니다.
 
-- `qwen-code.interaction`: 각 사용자 프롬프트 턴의 루트 스팬.
-  - **속성**: `session.id`, 선택적 ARMS 확장 `gen_ai.user.id`, `qwen-code.prompt_id`, `qwen-code.message_type`, `qwen-code.model`, `qwen-code.approval_mode`, `interaction.sequence`, `interaction.duration_ms`, `qwen-code.turn_status`("ok"/"error"/"cancelled")
+- `qwen-code.interaction`: 메인 에이전트 호출 스팬. 하나의 논리적 프롬프트에 대한 모든 LLM 요청, 도구 승인/실행 및 계속을 포함합니다. 사용자 쿼리, 재시도, cron 프롬프트, 알림, 팀메이트 메시지 및 Goal 턴은 호출을 생성하며; 도구 결과, hook 및 스티어링은 정확한 활성 프롬프트 ID를 재사용합니다.
+  - **GenAI 속성**: `gen_ai.operation.name`(`invoke_agent`), `gen_ai.agent.name`(`qwen-code`), `gen_ai.conversation.id`, 선택적 `gen_ai.output.type`(구성된 JSON Schema가 있는 경우 `json`만), 민감한 `gen_ai.input.messages`, 민감한 `gen_ai.output.messages` 및 선택적 ARMS 확장 `gen_ai.user.id`
+  - **호환성 속성**: `session.id`, `qwen-code.prompt_id`, `qwen-code.message_type`, `qwen-code.model`, `qwen-code.approval_mode`, `interaction.sequence`, `interaction.duration_ms`, `qwen-code.turn_status`("ok"/"error"/"cancelled")
+  - `gen_ai.request.model`은 에이전트가 재정의, 폴백 및 동적 모델 선택을 지원하므로 의도적으로 생략됩니다. `gen_ai.provider.name` 및 에이전트 ID/버전/설명 또한 생략됩니다.
+  - 에이전트 입력은 하나의 원본 사용자 프롬프트이며 확장된 모델 요청이 아닙니다. 에이전트 출력은 하나의 최종 사용자 가시 텍스트 투영이며, 구조화된 JSON은 `finish_reason=tool_call`과 함께 압축 JSON 텍스트를 사용합니다. 둘 다 민감한 스팬 속성이 활성화되고 완전한 JSON이 속성당 제한에 맞지 않는 한 생략됩니다.
 
 - `qwen-code.llm_request`: 단일 LLM API 호출을 래핑.
   - **GenAI 속성**: `gen_ai.operation.name`, `gen_ai.provider.name`, `gen_ai.conversation.id`, 선택적 ARMS 확장 `gen_ai.user.id`, `gen_ai.request.model`, `gen_ai.request.stream`, `gen_ai.request.choice.count`, `gen_ai.request.max_tokens`, `gen_ai.request.temperature`, `gen_ai.request.top_p`, `gen_ai.request.frequency_penalty`, `gen_ai.request.presence_penalty`, `gen_ai.request.stop_sequences`, 선택적 `gen_ai.output.type`, `gen_ai.response.id`, `gen_ai.response.model`, `gen_ai.response.finish_reasons`, `gen_ai.response.time_to_first_chunk`, `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`, `gen_ai.usage.cache_read.input_tokens`, `gen_ai.usage.cache_creation.input_tokens`
@@ -695,10 +698,10 @@ Alibaba Cloud Managed Service for OpenTelemetry에서 Qwen Code telemetry를 보
   - 스트리밍 요청은 `gen_ai.request.stream=true`를 배출합니다. `gen_ai.response.time_to_first_chunk`는 프로바이더 호출부터 프로바이더 어댑터가 산출한 첫 정규화된 응답까지의 초를 측정합니다. 이는 첫 원시 네트워크 프레임과 다를 수 있습니다. 비스트리밍 요청은 두 표준 스트리밍 속성을 모두 생략합니다. 표준 시맨틱 컨벤션에서 부재하는 `gen_ai.request.stream`은 비스트리밍을 의미하기 때문입니다.
 
 - `qwen-code.tool`: 전체 도구 수명주기(승인 대기 + 실행)를 래핑.
-  - **속성**: `session.id`, 선택적 ARMS 확장 `gen_ai.user.id`, `gen_ai.operation.name`(`execute_tool`), `gen_ai.tool.name`, `gen_ai.tool.type`(`function`), `gen_ai.tool.call.id`, `tool.call_id`, `duration_ms`, `success`, `error`, `tool.failure_kind`(string, 선택 — 구체적인 실패 이유, 예: "cancelled", "tool_error", "tool_exception", "timeout", "permission_denied", "pre_hook_blocked")
+  - **속성**: `session.id`, 선택적 ARMS 확장 `gen_ai.user.id`, `gen_ai.operation.name`(`execute_tool`), 선택적 상속 `gen_ai.agent.name`, `gen_ai.tool.name`, `gen_ai.tool.type`(`function`), `gen_ai.tool.call.id`, `tool.call_id`, `duration_ms`, `success`, `error`, 실패 시 `error.type`, `tool.failure_kind`(string, 선택 — 구체적인 실패 이유, 예: "cancelled", "tool_error", "tool_exception", "timeout", "permission_denied", "pre_hook_blocked")
 
 - `qwen-code.tool.execution`: 도구 실행 단계(승인 후)를 래핑. 시도된 실행에 대해서만 배출됨.
-  - **속성**: `session.id`, `gen_ai.tool.name`(선택), `tool.call_id`(선택), `duration_ms`, `success`, `error`, `execution_status`("success"/"error"/"cancelled"), `error_type`, `error.type`
+  - **속성**: `session.id`, `gen_ai.tool.name`(선택), `tool.call_id`(선택), `duration_ms`, `success`, `error`, `execution_status`("success"/"error"/"cancelled"), `error_type`, 실패 시 `error.type`
 
 - `qwen-code.tool.blocked_on_user`: 도구가 사용자 승인을 기다리는 시간.
   - **속성**: `session.id`, `tool.name`, `tool.call_id`, `duration_ms`, `decision`("proceed_once"/"proceed_always"/"cancel"/"aborted"/"auto_approved"/"error"), `source`("cli"/"ide"/"hook"/"auto"/"system")
@@ -708,6 +711,8 @@ Alibaba Cloud Managed Service for OpenTelemetry에서 Qwen Code telemetry를 보
 
 - `qwen-code.subagent`: 단일 서브에이전트 호출을 래핑.
   - **속성**: `gen_ai.operation.name`(`invoke_agent`), `gen_ai.agent.name`, `gen_ai.agent.description`, `gen_ai.conversation.id`, 선택적 ARMS 확장 `gen_ai.user.id`, 선택적 `gen_ai.request.model`, `qwen-code.subagent.id`, `qwen-code.subagent.name`, `qwen-code.subagent.invocation_kind`("foreground"/"fork"/"background"), `qwen-code.subagent.is_built_in`, `qwen-code.subagent.depth`, `qwen-code.subagent.status`, `qwen-code.subagent.terminate_reason`, `qwen-code.subagent.duration_ms`
+
+성공 및 취소된 GenAI 스팬은 `SpanStatus`를 `UNSET`으로 유지합니다. 실패는 `ERROR`, 제한된 상태 설명 및 낮은 카디널리티의 `error.type`을 설정합니다.
 
 #### GenAI 필드 마이그레이션 및 ARMS 인식
 

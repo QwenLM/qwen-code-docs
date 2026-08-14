@@ -331,6 +331,18 @@ qwen serve \
 > - **目录名冲突。** 存储键由 `sanitizeCwd` 派生，它将每个非字母数字字符替换为 `-`。仅在标点上不同的兄弟目录（例如 `feature_1` 和 `feature-1`）即使在 `workspace` 作用域下也会映射到同一个内存目录。在依赖工作区隔离时请避免此类命名。
 > - **标志和环境变量的规范化不同。** 环境变量会被修剪和小写化（`"  Workspace  "` 可以工作）；CLI 标志由 yargs `choices` 进行大小写敏感匹配（`--memory-project-scope Workspace` 会被拒绝）。在两者之间复制时使用小写值。
 
+### 内置的守护进程 Git 重定位守卫
+
+每个托管的守护进程 ACP 会话都会对模型 shell 命令应用内置的预执行守卫，独立于 `--external-tool-guard-mode`，且无需能力通告。守护进程拥有绑定的工作区和会话当前的有效工作目录；两者都来自受信任的会话状态，从不接受来自 ACP 子进程的值。
+
+该守卫检查运行 shell 命令行的工具——`run_shell_command` 和 `monitor`——并在执行前拒绝仓库位置解析到会话有效工作目录之外的变更性 Git 命令。重定位的识别范围包括：`git -C <path>`、`git --git-dir[=]<path>`、`git --work-tree[=]<path>` 的字面形式，前导的 `GIT_DIR`/`GIT_WORK_TREE`/`GIT_COMMON_DIR`/`GIT_INDEX_FILE` 赋值（包括通过 `export`/`declare`/`readonly` 进行的形式，这会使它们保留在链中后续每个命令的环境中），目录切换的 wrapper 标志（`env -C`、`sudo -D`），以及同一命令链中较早的 `cd`、`pushd` 或 `popd` 内置命令。常见的 wrapper 前缀（`sh -c`、`bash -c`、`eval`、`sudo`、`nohup`、`timeout`、`exec`、`command`、`builtin`、`env`、路径限定的 `git` 二进制文件，以及 `{ …; }` / `! …` shell 语法）会被解包，以便相同的策略应用于内部的 Git 调用，`$(…)` 或反引号替换体也会作为独立命令进行分析。
+
+固定到自身 worktree 的子代理被限制在该 worktree 内，而非会话的目录；守护进程无法确定执行目录的 shell 调用会被拒绝。
+
+相对目标在规范路径解析（包括 `.git` gitfile 重定向、符号链接和每 worktree 管理目录）后，从命令的有效起始目录（存在时为 `arguments.directory`，否则为会话当前的有效工作目录）解析。在无法完全解析的重定位目标上——动态目标（`$VAR`、反引号、`~`、glob）、尚不存在的路径或不可读的间接引用——对于变更性或不可分类的子命令会被拒绝。无法解析的重定位目标无论子命令是什么都会被拒绝——包括只读子命令。重定位命令的子命令属于经过验证的只读集合（`rev-parse`、`cat-file`）时，在目标可解析后仍然允许，除非命令携带了执行命令的 `-c` 配置，或携带了 `--output`、`--textconv` 或 `--filters` 标志：这些会写入文件或运行目标仓库配置的驱动程序。没有识别到重定位的命令保持其现有行为。拒绝是最终的，对于已解析、动态或不可解析的仓库位置，会向模型报告为 `Daemon shell guard denied a mutating Git command…`；当命令无法解析、其负载无法解析或不可识别的程序可能运行重定位的 Git 命令时，报告为 `Daemon shell guard denied a shell command…`。
+
+该守卫对上述字面形式的 Git 重定位是可靠的——这正是此控制措施所针对的错误目标命令——但对旨在绕过它的 shell 文本是**尽力而为的，而非安全边界**：对静态读取器隐藏重定位的结构可能会通过，新的结构也会被不断发现。不要因此给予守护进程更广泛的信任。它不解释脚本文件，不跨命令跟踪环境变量的值，也不分析 heredoc 体（heredoc 中的 Git 形状文本即使 shell 从不执行也可以被拒绝）。`/fork` 和 agent 支持的 workspace memory remember/dream 在内置守卫下仍然可用；它们仅在下面的外部提供者模式激活时才受限。可选的外部工具守卫仍然是额外的策略，只有在内置策略允许后才接收相同的请求。
+
 ### 必需的外部工具守卫
 
 此可选功能适用于需要在最终工具执行边界进行外部允许/拒绝决策的托管 ACP 部署。除非存在 `--external-tool-guard-mode=required`，否则它完全处于静默状态：

@@ -81,21 +81,21 @@
 **敏感 span 属性：** 启用 `includeSensitiveSpanAttributes` 后，会发生两件事：
 
 1. **原生 span 属性**携带标准 OpenTelemetry GenAI JSON：
-   - LLM 输入消息（`gen_ai.input.messages`）
+   - 主代理和 LLM 输入消息（`gen_ai.input.messages`）
    - 系统指令（`gen_ai.system_instructions`）
    - 工具定义（`gen_ai.tool.definitions`）
-   - LLM 输出消息（`gen_ai.output.messages`）
+   - 主代理和 LLM 输出消息（`gen_ai.output.messages`）
    - 最终执行的工具参数（`gen_ai.tool.call.arguments`）
    - 成功的工具结果（`gen_ai.tool.call.result`）
-   - Interaction span 继续使用 `new_context`，因为它们不是 GenAI 推理 span。
+   - Interaction span 继续使用兼容性的 `new_context` 属性。
 
-   LLM 值来自 provider 最终的 SDK 请求对象和原始 provider 响应，而非原始逻辑配置。Tool 值来自最终调用参数和面向模型的成功结果。每个标准 GenAI 值都是紧凑 JSON，必须完整且符合 schema。无效、循环引用或超过 `sensitiveSpanAttributeMaxLength` 的值将被整体省略；JSON 永远不会被截断，也不会发出预览、哈希或截断元数据。interaction 特有的 `new_context` 属性保留其现有的截断行为。每个属性的默认最大值为 1 MiB（`1048576`），接受范围为 `1..104857600`（100 MiB）。限制以 JavaScript 字符串长度而非 UTF-8 字节数衡量。因此，非 ASCII 内容在 OTLP 导出后可能会占用更多字节。
+   主代理输入是上下文扩展前的一个原始用户文本投影，主代理输出是所有工具和续接工作结算后的一个最终用户可见答案。LLM 值仍然来自 provider 最终的 SDK 请求对象和原始 provider 响应，因此其输入可以包含历史、扩展的文件、系统指令和工具结果，其输出可以包含每个 provider 候选。Tool 值来自最终调用参数和面向模型的成功结果。每个标准 GenAI 值都是紧凑 JSON，必须完整且符合 schema。无效、循环引用或超过 `sensitiveSpanAttributeMaxLength` 的值将被整体省略；JSON 永远不会被截断，也不会发出预览、哈希或截断元数据。interaction 特有的 `new_context` 属性保留其现有的截断行为。每个属性的默认最大值为 1 MiB（`1048576`），接受范围为 `1..104857600`（100 MiB）。限制以 JavaScript 字符串长度而非 UTF-8 字节数衡量。因此，非 ASCII 内容在 OTLP 导出后可能会占用更多字节。
 
 2. **Log-to-span 桥接 span**（在未配置 logs 端点而导出 HTTP traces 时使用）保留其现有的 `prompt`、`function_args` 和 `response_text` 字段，而不是被丢弃。
 
 ⚠️ **安全警告：** 启用此标志会将完整的对话历史记录、`read_file` 读取的文件内容、shell 命令及其输出（包括环境变量或参数中的 secrets）以及模型响应流式传输到配置的 OTLP 后端。请将后端视为特权数据接收器。该标志默认为 `false`。
 
-**成本 / 负载大小：** 在默认限制下，一个 LLM span 最多可在输入、输出、系统指令和工具定义中携带约 4 MiB 的数据；一个 Tool span 可在参数和结果中携带约 2 MiB。这是 Qwen Code 的应用端上限，并不保证每个 collector 或后端都能接受这么大的单个属性。如果 span 被拒绝或丢弃，请降低 `sensitiveSpanAttributeMaxLength`（例如，降至 `61440`）并监控导出器吞吐量。
+**成本 / 负载大小：** 在默认限制下，一个 LLM span 最多可在输入、输出、系统指令和工具定义中携带约 4 MiB 的数据；一个 Tool span 可在参数和结果中携带约 2 MiB；一个 interaction 可在 Agent 输入、Agent 输出和兼容性 `new_context` 中携带约 3 MiB。这是 Qwen Code 的应用端上限，并不保证每个 collector 或后端都能接受这么大的单个属性。如果 span 被拒绝或丢弃，请降低 `sensitiveSpanAttributeMaxLength`（例如，降至 `61440`）并监控导出器吞吐量。
 
 此设置不会禁用 OTel 日志或其他遥测接收器中的敏感数据；非内部 API 响应遥测可能会填充 `response_text`，因此 OTel 日志、UI 遥测和聊天记录可能会独立于此设置接收响应文本。QwenLogger 不包含 `response_text`。
 
