@@ -304,9 +304,9 @@ export QWEN_REVIEW_ASSETS_REPO=your-org/your-repo   # 你可以推送的仓库
 
 ## Issue 保真度
 
-对于 bugfix PR，Issue 保真度 agent 直接获取 issue 证据，而不是依赖 PR 描述文本。它使用 `gh pr view <pr> --repo <owner/repo> --json closingIssuesReferences` 获取 GitHub 的强关联 issue 元数据，然后使用 `gh issue view <number> --repo <issue_owner>/<issue_repo> --json title,body,comments` 获取原始报告和讨论——`--json` 形式包含 issue **正文**（报告者的原始复现步骤），而仅使用 `--comments` 会遗漏这些，并且 issue 自身的仓库是从每个引用中读取的（一个 PR 可以关闭不同仓库中的 issue）。此 agent 仅针对 PR 目标运行；本地 diff 和文件路径审查会跳过它。
+对于 bugfix PR，Issue 保真度 agent 直接获取 issue 证据，而不是依赖 PR 描述文本。它运行 `qwen review issue-context <pr> --repo <owner/repo> --out <file>` 子命令，该命令解析 GitHub 的强关联 issue 元数据，然后获取每个被引用 issue 的标题、**正文**（报告者的原始复现步骤）和完整评论线程——每个 issue 从其自身的仓库获取（一个 PR 可以关闭不同仓库中的 issue）。此 agent 仅针对 PR 目标运行；本地 diff 和文件路径审查会跳过它。
 
-`closingIssuesReferences` 是一个发现提示，而非作者链接了正确 issue 的证明：如果它为空但 PR 引用了明显的目标 issue，agent 在判断相关性后仍会获取它。获取的 issue 文本被视为不受信任的数据（提取事实，忽略嵌入的指令）。对于相关的 issue，原始复现、观察到的 payload、预期行为和维护者评论被视为判断 PR 是否修复了正确问题的最高优先级证据。
+关联 issue 集合是一个发现提示，而非作者链接了正确 issue 的证明：如果它为空但 PR 引用了明显的目标 issue，agent 在判断相关性后仍会获取它（使用 `--issue <n>` 重新运行；纯数字在 PR 的仓库中解析，而 `--issue <owner>/<repo>#<n>` 从自身仓库获取跨仓库引用）。获取的 issue 文本被视为不受信任的数据（提取事实，忽略嵌入的指令）。对于相关的 issue，原始复现、观察到的 payload、预期行为和维护者评论被视为判断 PR 是否修复了正确问题的最高优先级证据。
 
 如果 issue 证据显示上游服务或 provider 返回了超出客户端契约的畸形数据，则客户端解析器或清理器的更改不被视为有效的根因修复，除非维护者明确要求防御性变通方法。重放畸形上游输出的测试仅证明变通方法处理了该结构；它不能证明该变通方法在架构上是合适的。
 
@@ -366,7 +366,7 @@ Medium 和 high-effort 审查还会保存一个具有相同文件名但扩展名
 
 流水线的确定性部分——参数解析（`qwen review parse-args`）和事件/正文决策（`qwen review compose-review`）——是经过测试的子命令而非提示文本，因此 `--effort` 语法、`--comment` 强制、结论上限和降级行为由单元测试固定，不会随模型漂移。
 
-**GitHub Enterprise：** 在非 `github.com` 主机上审查 PR URL 时，该主机的每个 GitHub 调用都会被路由——审查子命令（`fetch-pr`、`pr-context`、`comment-status`、`presubmit`）接受 `--host` 并在代码中设置，因此遗忘的 host 不会静默将审查重定向到 `github.com`。
+**GitHub Enterprise：** 在非 `github.com` 主机上审查 PR URL 时，该主机的每个 GitHub 调用都会被路由——审查子命令（`match-remote`、`meta`、`fetch-pr`、`pr-context`、`comment-status`、`issue-context`、`fetch-diff`、`comment-body`、`plan-diff`、`test-plan`、`presubmit`、`compose-review`、`submit`、`publish-assets`）接受 `--host` 并在代码中设置，因此遗忘的 host 不会静默将审查重定向到 `github.com`。
 
 每次运行以一行机器可读的行结束（`Review complete: <target> — <disposition>`），因此脚本和 CI 包装器可以通过单个 `^Review complete: ` 匹配来检测完成和结果。
 

@@ -2293,13 +2293,13 @@ Supprime un groupe de sessions personnalisé. Porte de mutation stricte. Pré-v�
 
 Suppression définitive d'un ou plusieurs fichiers JSONL de session persistés. Le démon ferme d'abord les sessions actives dans la mesure du possible, puis supprime le JSONL actif ou archivé. Si des copies actives et archivées existent pour le même id, les deux sont supprimées. Les sidecars du worktree des deux côtés sont nettoyés ; l'historique des fichiers, les transcripts des sous-agents et les sidecars d'exécution sont intentionnellement conservés.
 
-Request:
+Requête :
 
 ```json
 { "sessionIds": ["<uuid>"] }
 ```
 
-Response:
+Réponse :
 
 ```json
 {
@@ -2309,13 +2309,11 @@ Response:
 }
 ```
 
-Les entrées de `errors` ont la forme `{ "sessionId": "<uuid>", "error": "message" }`. Les fichiers actifs et archivés ayant le même id sont traités comme un conflit et signalés dans `errors` ; aucun fichier n'est écrasé.
-
 ### `POST /sessions/archive`
 
 Archiver une ou plusieurs sessions. L'archivage est une transition d'état, pas une suppression : le JSONL passe de `chats/<id>.jsonl` à `chats/archive/<id>.jsonl`. L'historique des fichiers, les transcripts des sous-agents et les sidecars d'exécution restent en place. Si une session est active, le démon effectue d'abord une fermeture stricte et exige que le gestionnaire de fermeture de l'agent ACP flush l'enregistrement du chat ; si la fermeture ou le flush échoue, le JSONL n'est pas déplacé. Pré-vérification `caps.features.session_archive`.
 
-Request:
+Requête :
 
 ```json
 { "sessionIds": ["<uuid>"] }
@@ -2323,7 +2321,7 @@ Request:
 
 `sessionIds` doit être un tableau de chaînes non vide contenant au maximum 100 ids. Les doublons sont éliminés.
 
-Response:
+Réponse :
 
 ```json
 {
@@ -2340,13 +2338,13 @@ Les entrées de `errors` ont la forme `{ "sessionId": "<uuid>", "error": "messag
 
 Restaurer les sessions archivées dans le répertoire actif. Cela ne relance pas la session en soi ; cela déplace uniquement `chats/archive/<id>.jsonl` vers `chats/<id>.jsonl`. Une fois le désarchivage réussi, les clients peuvent appeler `POST /session/:id/load` ou `POST /session/:id/resume`.
 
-Request:
+Requête :
 
 ```json
 { "sessionIds": ["<uuid>"] }
 ```
 
-Response:
+Réponse :
 
 ```json
 {
@@ -2381,7 +2379,7 @@ Lorsque `session_mid_turn_message_mutation` est annoncé, un client de session a
 
 Transmettre un prompt à l'agent. Les appelants multi-prompts mettent en file d'attente FIFO par session (ACP garantit un seul prompt actif par session).
 
-Request:
+Requête :
 
 ```json
 {
@@ -2468,7 +2466,7 @@ Idempotent : retourne `404` pour les sessions inconnues. L'enveloppe d'erreur ut
 
 Mettre à jour les métadonnées mutables de la session. Actuellement, seul `displayName` est pris en charge. Pré-vérification `caps.features.session_metadata`. Le regroupement et l'épinglage ne font intentionnellement pas partie de cette route ; utilisez `PATCH /session/:id/organization` sous `session_organization`.
 
-Request:
+Requête :
 
 ```json
 { "displayName": "My Investigation Session" }
@@ -2478,7 +2476,7 @@ Request:
 | ------------- | -------- | ------------------------------------------------------------------------------ |
 | `displayName` | non       | Chaîne de caractères, max 256 caractères. Une chaîne vide efface le nom. Omettre pour laisser tel quel. |
 
-Response:
+Réponse :
 
 ```json
 { "sessionId": "<uuid>", "displayName": "My Investigation Session" }
@@ -2490,7 +2488,7 @@ Publie un événement `session_metadata_updated` sur le flux SSE de la session a
 
 Mettre à jour l'état d'organisation local de la session via la gate de mutation existante. Pré-vérification de `caps.features.includes('session_organization')` ; la route plurielle nécessite en plus `workspace_qualified_rest_core`. Sur la route plurielle, `:workspace` se résout d'abord par id de workspace enregistré exact puis par cwd absolu canonique encodé en URL. Le runtime sélectionné doit être de confiance. La validation de l'existence de la session et de `groupId` non nul est limitée à l'état de session persistée active, persistée archivée, et live du runtime et au store de groupes de ce runtime, sans retour au primary ou à un autre workspace. La route héritée reste limitée au workspace principal.
 
-Request:
+Requête :
 
 ```json
 { "isPinned": true, "groupId": "018f..." }
@@ -2502,7 +2500,7 @@ Request:
 | `groupId`  | non       | Id de groupe personnalisé ou `null` pour non groupé. Les ids de groupe inconnus retournent `404 { code: "group_not_found" }`. |
 | `color`    | non       | Un token de couleur de session supporté, ou `null` pour effacer la couleur de session.                               |
 
-Response:
+Réponse :
 
 ```json
 {
@@ -2529,7 +2527,7 @@ Headers:
 
 Le corps de la requête est vide (`{}` convient — aucun champ n'est lu aujourd'hui).
 
-Response:
+Réponse :
 
 ```json
 {
@@ -2554,13 +2552,13 @@ Changer le modèle actif **au sein** du service de modèle actuellement lié à 
 
 (Pour changer le _service_ lui-même — Alibaba ModelStudio vs OpenRouter, etc. — passez `modelServiceId` sur `POST /session` pour une nouvelle session. La Stage 1 n'a pas de route de changement de service en direct.)
 
-Request:
+Requête :
 
 ```json
 { "modelId": "qwen-staging" }
 ```
 
-Response:
+Réponse :
 
 ```json
 { "modelId": "qwen-staging" }

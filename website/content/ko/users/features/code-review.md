@@ -303,9 +303,9 @@ PR 리뷰의 경우 매니페스트는 병합 기반에서 읽히므로 리뷰 �
 
 ## Issue Fidelity
 
-버그 수정 PR의 경우, Issue Fidelity 에이전트는 PR 설명 텍스트에 의존하는 대신 이슈 증거를 직접 가져옵니다. GitHub의 강력한 closing-issue 메타데이터를 위해 `gh pr view <pr> --repo <owner/repo> --json closingIssuesReferences`를 사용한 후, 원본 보고서 및 토론을 위해 `gh issue view <number> --repo <issue_owner>/<issue_repo> --json title,body,comments`를 사용합니다 — `--json` 형식은 이슈 **body**(보고자의 원본 재현)를 포함하며, `--comments`만으로는 생략되는 부분이며, 이슈의 자체 저장소는 각 참조에서 읽힙니다(PR은 다른 저장소의 이슈를 닫을 수 있음). 이 에이전트는 PR 대상에서만 실행됩니다; 로컬 diff 및 파일 경로 리뷰는 건너뜁니다.
+버그 수정 PR의 경우, Issue Fidelity 에이전트는 PR 설명 텍스트에 의존하는 대신 이슈 증거를 직접 가져옵니다. `qwen review issue-context <pr> --repo <owner/repo> --out <file>` 서브커맨드를 실행하여 GitHub의 강력한 closing-issue 메타데이터를 해결한 다음, 각 참조 이슈의 제목, **body**(보고자의 원본 재현) 및 전체 댓글 스레드를 가져옵니다 — 각각 이슈의 자체 저장소에서( PR은 다른 저장소의 이슈를 닫을 수 있음). 이 에이전트는 PR 대상에서만 실행됩니다; 로컬 diff 및 파일 경로 리뷰는 건너뜁니다.
 
-`closingIssuesReferences`는 발견 힌트이지 작성자가 올바른 이슈를 연결했다는 증명은 아닙니다: 비어 있지만 PR이 명백한 대상 이슈를 참조하면, 에이전트는 관련성을 판단한 후 여전히 가져옵니다. 가져온 이슈 텍스트는 신뢰할 수 없는 데이터로 처리됩니다(사실 추출, 포함된 지시 무시). 관련 이슈의 경우, 원본 재현, 관찰된 페이로드, 예상 동작 및 유지관리자 댓글이 PR이 올바른 문제를 수정하는지에 대한 최우선 증거로 처리됩니다.
+Closing 이슈 집합은 작성자가 올바른 이슈를 연결했다는 증명이 아닌 발견 힌트입니다: 비어 있지만 PR이 명백한 대상 이슈를 참조하면, 에이전트는 관련성을 판단한 후 여전히 가져옵니다(`--issue <n>`으로 재실행; bare 숫자는 PR의 저장소에서 해석되며, `--issue <owner>/<repo>#<n>`은 교차 저장소 참조를 자체 저장소에서 가져옴). 가져온 이슈 텍스트는 신뢰할 수 없는 데이터로 처리됩니다(사실 추출, 포함된 지시 무시). 관련 이슈의 경우, 원본 재현, 관찰된 페이로드, 예상 동작 및 유지관리자 댓글이 PR이 올바른 문제를 수정하는지에 대한 최우선 증거로 처리됩니다.
 
 이슈 증거가 업스트림 서비스나 제공자가 클라이언트 계약을 벗어난 잘못된 데이터를 반환한 것을 보여주면, 클라이언트 측 파서 또는 새니타이저 변경은 유지관리자가 명시적으로 방어적 우회 방법을 요청하지 않는 한 유효한 근인 수정으로 처리되지 않습니다. 잘못된 업스트림 출력을 재생하는 테스트는 우회 방법이 해당 형태를 처리한다는 것만 증명하며; 우회 방법이 아키텍처적으로 적절한지는 증명하지 않습니다.
 
@@ -365,7 +365,7 @@ Medium 및 High 노력 리뷰는 또한 같은 스템을 가진 구조화된 JSO
 
 파이프라인의 결정적 부분 — 인수 파싱(`qwen review parse-args`) 및 이벤트/본문 결정(`qwen review compose-review`) — 은 프롬프트 텍스트가 아닌 테스트된 서브커맨드이므로, `--effort` 문법, `--comment` 강제, 판정 캡 및 다운그레이드 동작은 단위 테스트로 고정되며 모델에 따라 변하지 않습니다.
 
-**GitHub Enterprise:** `github.com`이 아닌 호스트의 PR URL을 리뷰하면 해당 호스트의 모든 GitHub 호출이 라우팅됩니다 — 리뷰 서브커맨드(`fetch-pr`, `pr-context`, `comment-status`, `presubmit`)가 `--host`를 수용하고 코드에서 설정하므로, 잊힌 호스트가 조용히 `github.com`으로 리뷰를 재타겟팅할 수 없습니다.
+**GitHub Enterprise:** `github.com`이 아닌 호스트의 PR URL을 리뷰하면 해당 호스트의 모든 GitHub 호출이 라우팅됩니다 — 리뷰 서브커맨드(`match-remote`, `meta`, `fetch-pr`, `pr-context`, `comment-status`, `issue-context`, `fetch-diff`, `comment-body`, `plan-diff`, `test-plan`, `presubmit`, `compose-review`, `submit`, `publish-assets`)가 `--host`를 수용하고 코드에서 설정하므로, 잊힌 호스트가 조용히 `github.com`으로 리뷰를 재타겟팅할 수 없습니다.
 
 모든 실행은 하나의 기계 판독 가능한 라인(`Review complete: <target> — <disposition>`)으로 끝나므로, 스크립트와 CI 래퍼가 단일 `^Review complete: ` 매치로 완료와 결과를 감지할 수 있습니다.
 
@@ -390,6 +390,8 @@ qwen review run [target] [--json] [--fail-on request-changes] [--comment] [--qui
 `3`(이 아닌 `2`)은 게이트가 "리뷰가 차단 중"과 "도구가 고장남"을 구분할 수 있게 합니다 — yargs는 이미 `1`을 사용 오류에 사용합니다 — 출력 파싱 없이. `--timeout-minutes`(기본 120, 최소 1)는 중단된 리뷰를 종료하고 `1`로 종료하며, 명령 취소(Ctrl+C / SIGTERM)는 리뷰의 프로세스 그룹을 종료하여 고아로 만들지 않습니다.
 
 시간 예산 실행은 또한 **소프트** 마감 시간을 내보낼 수 있어 리뷰가 아직 검증, 합성 및 게시할 시간이 있는 동안 오픈 엔디드 역감사 루프를 중지합니다: `QWEN_REVIEW_DEADLINE_EPOCH`는 실행이 종료될 Unix-초 순간이며, `QWEN_REVIEW_DEADLINE_RESERVE_SECONDS`(기본 3600; `0`은 라운드 추정만 유지)는 마지막 라운드의 검증, `compose-review` 및 제출을 위해 남아 있어야 하는 꼬리입니다. 남은 예산이 또 다른 라운드와 해당 꼬리에 맞지 않으면, 라운드 빌더가 구축을 거부하고, 합성 판정은 잘린 감사를 공개합니다(그렇지 않으면-Approve 판정이 Comment로 제한됨). 누락되거나 잘못된 마감 시간은 리뷰를 게이트 없이 둡니다 — 외부 타임아웃이 여전히 실행을 제한합니다.
+
+그 reserve 안에 더 작은 **합성 바닥**인 `QWEN_REVIEW_DEADLINE_COMPOSE_FLOOR_SECONDS`(기본 1200; `0`은 이 게이트를 완전히 비활성화)가 있습니다. reserve는 "마지막 라운드 검증 **및** 합성 **및** 제출"을 커버하는 하나의 숫자이며, 일반적인 발견당 재추적에는 충분하지만 검증이 실제 파일시스템/git 작업을 무제한으로 재실행하는 보안 리뷰에는 부족합니다. 따라서 검증자 — 라운드 빌더가 아닌 — 가 이 바닥으로 게이팅됩니다: 바닥 이하가 남으면 `agent-prompt --role verify`는 구축을 거부하고(`VERIFY BUDGET:` 라인, 종료 **4**), 손에 있는 발견은 미검증 태그를 유지하며(이는 판정을 제한), `compose-review`와 제출이 실행됩니다. 바닥은 reserve보다 엄격히 아래에 있으므로 건강한 실행은 역감사 게이트에 먼저 도달하고 이곳까지 도달하지 않습니다; reserve가 바인딩할 수 없는 구간을 위한 보호막입니다.
 
 **이미 기본 트리에서 실패한 Critical은 유보되며 제출되지 않습니다.** 테스트 명령이 실패했고 병합 베이스를 빌드할 수 있을 때, `test-delta`는 실패하는 파일 중 pull request 없이도 실패하는 파일을 기록합니다. 표준화는 해당 측정을 다시 읽습니다(`qwen review findings --test-delta`, `--outcomes` 옆에): 자신의 텍스트가 해당 파일 중 하나를 이름으로 언급하는 Critical은 Suggestion으로 낮아지고, 증거를 유지하며, 이를 강등한 측정과 `heldByMeasurement` 필드를 얻고, 강등이 공지됩니다. 이미 빨간색이었던 테스트는 이 pull request가 빨간색으로 만드는 테스트가 아닙니다 — 그리고 만약 _새로운_ 이유로 실패한다면, 어떤 테스트인지 말하고 양쪽을 인용하고 다시 Critical로 제출하세요: 이미 측정을 가지고 있더라도 상승되는 발견은 그대로 둡니다.
 
