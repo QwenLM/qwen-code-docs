@@ -259,7 +259,9 @@ serve/server.ts                    createServeApp() - Express 앱 빌드 (**리�
    |  `- return app
    |
    v
-serve/run-qwen-serve.ts              server = app.listen(port, hostname, cb)
+serve/run-qwen-serve.ts              server = createServer(app) / https.createServer(..., app)
+   |  |- lifecycle.bindServer(server, { startupReady, drainHost })
+   |  |- server.listen(port, hostname)
    |  |- server.maxConnections = cap
    |  |- actualPort = server.address().port
    |  |- "qwen serve listening on ..." 출력
@@ -272,8 +274,8 @@ commands/serve.ts                  await blockForever()    // 시그널까지 �
 
 핵심 사실:
 
-- **`createServeApp`은 빌드만 수행; 리스닝하지 않음.** 미들웨어와 라우트가 마운트된 `express()` 인스턴스를 반환. 호출자가 `app.listen()`을 소유. `server.test.ts`는 약 25개 케이스에서 이 방식으로 팩토리를 사용하므로, 팩토리는 의도적으로 수명 주기를 소유하지 않음.
-- **`() => actualPort`는 지연 클로저.** `actualPort`는 `app.listen` 콜백에서 할당됨. `hostAllowlist` 미들웨어는 필요 시 이를 읽으므로 임시 포트(`--port 0`)도 `Host` 헤더를 올바르게 게이트.
+- **`createServeApp`은 빌드만 수행; 리스닝하지 않음.** 미들웨어와 라우트가 마운트된 `express()` 인스턴스를 반환. 일반 전용 임베더는 계속 `app.listen()`을 소유할 수 있음. Live/Conversations를 사용하는 임베더는 리스닝 전에 실제 Node 서버를 내보낸 앱 수명주기에 바인딩하고 종료 시 해당 수명주기를 대기해야 함.
+- **`() => actualPort`는 지연 클로저.** `actualPort`는 `server.listen` 콜백에서 할당됨. `hostAllowlist` 미들웨어는 필요 시 이를 읽으므로 임시 포트(`--port 0`)도 `Host` 헤더를 올바르게 게이트.
 - **`await blockForever()`는 의도적.** `yargs.parse()`가 resolve되면 CLI 최상위 레벨이 대화형 TUI 진입점(`gemini.tsx`)으로 전달됨. SIGINT / SIGTERM은 `runQwenServe`의 `onSignal` 경로를 통해 종료.
 
 ## 10. HTTP 라우트 파일 분할
@@ -325,11 +327,17 @@ console.log(`Daemon at ${handle.url}`);
 await handle.close(); // 프로그래밍적 종료
 ```
 
-또는 Express 앱을 직접 가져와 직접 리스닝:
+또는 Express 앱을 직접 가져와 리스너 수명주기를 직접 바인딩합니다. 이 형태는 임베더가 Live/Conversations를 사용할 때 필요합니다:
 
 ```ts
-import { createServeApp } from '@qwen-code/qwen-code/serve';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import {
+  createServeApp,
+  getServeAppLifecycle,
+} from '@qwen-code/qwen-code/serve';
 
+let actualPort = 0;
 const app = createServeApp(
   {
     port: 0,
@@ -337,16 +345,27 @@ const app = createServeApp(
     mode: 'http-bridge',
     maxSessions: 20,
   },
-  () => 0,
+  () => actualPort,
   {
     /* deps: bridge, fsFactory, ... */
   },
 );
 
-const server = app.listen(0, '127.0.0.1', () => {
-  console.log('listening on', server.address());
+const lifecycle = getServeAppLifecycle(app);
+const server = createServer(app);
+lifecycle.bindServer(server);
+await new Promise<void>((resolve, reject) => {
+  server.once('error', reject);
+  server.listen(0, '127.0.0.1', () => resolve());
 });
+actualPort = (server.address() as AddressInfo).port;
+console.log('listening on', server.address());
+
+// 수용을 중지하고, 앱 작업을 드레인하고, 리스너를 종료하고, 소유권을 해제합니다.
+await lifecycle.close();
 ```
+
+원시 `server.close()`를 호출해도 동일한 이벤트 기반 정리가 시작되지만, 프로세스가 살아 있지 않으면 최선 노력일 뿐입니다. 항상 `lifecycle.close()`를 대기하여 종료 오류를 수신하세요. 서버가 바인딩되지 않으면 Live/Conversations 요청은 닫히지만 일반 전용 앱 동작은 변하지 않습니다.
 
 참고: `createServeApp`을 직접 호출할 때 기본 `fsFactory.trusted = false`. 에이전트 측 ACP `writeTextFile`이 `untrusted_workspace`로 거부되며 stderr 경고가 한 번 출력됨. 명시적 trust와 함께 `deps.fsFactory`를 주입하거나, `deps.bridge`를 주입하거나, trust-gate 기본 동작을 수용.
 

@@ -259,7 +259,9 @@ serve/server.ts                    createServeApp() - builds Express app (**does
    |  `- return app
    |
    v
-serve/run-qwen-serve.ts              server = app.listen(port, hostname, cb)
+serve/run-qwen-serve.ts              server = createServer(app) / https.createServer(..., app)
+   |  |- lifecycle.bindServer(server, { startupReady, drainHost })
+   |  |- server.listen(port, hostname)
    |  |- server.maxConnections = cap
    |  |- actualPort = server.address().port
    |  |- write "qwen serve listening on ..."
@@ -272,8 +274,8 @@ commands/serve.ts                  await blockForever()    // block forever unti
 
 重要な事実:
 
-- **`createServeApp` はビルドのみを行い、リスニングは行いません。** ミドルウェアとルートがマウントされた `express()` インスタンスを返します。`app.listen()` の所有権は呼び出し側にあります。`server.test.ts` は約 25 のケースでこのファクトリを使用しているため、ファクトリは意図的にライフサイクルの所有を回避しています。
-- **`() => actualPort` は遅延クロージャです。** `actualPort` は `app.listen` のコールバック内で代入されます。`hostAllowlist` ミドルウェアはオンデマンドでそれを読み取るため、エフェメラルポート（`--port 0`）でも `Host` ヘッダーを正しくゲートします。
+- **`createServeApp` はビルドのみを行い、リスニングは行いません。** ミドルウェアとルートがマウントされた `express()` インスタンスを返します。Ordinary-only の組み込み側は `app.listen()` を所有し続けることができます。Live/Conversations を使用する組み込み側は、リスニング前に実際の Node サーバーをエクスポートされたアプリライフサイクルにバインドし、シャットダウン時にそのライフサイクルを待機する必要があります。
+- **`() => actualPort` は遅延クロージャです。** `actualPort` は `server.listen` のコールバック内で代入されます。`hostAllowlist` ミドルウェアはオンデマンドでそれを読み取るため、エフェメラルポート（`--port 0`）でも `Host` ヘッダーを正しくゲートします。
 - **`await blockForever()` は意図的なものです。** `yargs.parse()` が解決すると、CLI のトップレベルは対話型 TUI のエントリポイント（`gemini.tsx`）にフォールスルーします。SIGINT / SIGTERM は `runQwenServe` の `onSignal` パスを通じて終了します。
 
 ## 10. HTTP ルートファイルの分割
@@ -325,11 +327,17 @@ console.log(`Daemon at ${handle.url}`);
 await handle.close(); // programmatic shutdown
 ```
 
-または、Express アプリを直接取得して自分でリスニングします。
+または、Express アプリを直接取得し、リスナーのライフサイクルを自分でバインドします。この形式は Live/Conversations を使用する組み込みに必要です。
 
 ```ts
-import { createServeApp } from '@qwen-code/qwen-code/serve';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import {
+  createServeApp,
+  getServeAppLifecycle,
+} from '@qwen-code/qwen-code/serve';
 
+let actualPort = 0;
 const app = createServeApp(
   {
     port: 0,
@@ -337,16 +345,27 @@ const app = createServeApp(
     mode: 'http-bridge',
     maxSessions: 20,
   },
-  () => 0,
+  () => actualPort,
   {
     /* deps: bridge, fsFactory, ... */
   },
 );
 
-const server = app.listen(0, '127.0.0.1', () => {
-  console.log('listening on', server.address());
+const lifecycle = getServeAppLifecycle(app);
+const server = createServer(app);
+lifecycle.bindServer(server);
+await new Promise<void>((resolve, reject) => {
+  server.once('error', reject);
+  server.listen(0, '127.0.0.1', () => resolve());
 });
+actualPort = (server.address() as AddressInfo).port;
+console.log('listening on', server.address());
+
+// 受け入れを停止し、アプリの作業を drain し、リスナーをクローズし、所有権を解放します。
+await lifecycle.close();
 ```
+
+生の `server.close()` を呼び出すと、同じイベント駆動のクリーンアップが開始されますが、プロセスが存続しない限りベストエフォートに過ぎません。シャットダウンエラーを受け取るには常に `lifecycle.close()` を待機してください。サーバーがバインドされていない場合、Live/Conversations のリクエストは fail closed になりますが、Ordinary-only のアプリの動作は変わりません。
 
 注: `createServeApp` を直接呼び出す場合、デフォルトでは `fsFactory.trusted = false` となります。エージェント側の ACP `writeTextFile` は `untrusted_workspace` として拒否され、stderr に警告が一度出力されます。明示的な信頼を持つ `deps.fsFactory` を注入するか、`deps.bridge` を注入するか、信頼ゲートされたデフォルトの動作を受け入れてください。
 

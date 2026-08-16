@@ -75,19 +75,20 @@
 12. **`fsFactory` bauen**: `runQwenServe` ist standardmäßig `trusted: true`; direkte `createServeApp`-Aufrufer sind standardmäßig `trusted: false` und warnen einmalig.
 13. **`createHttpAcpBridge`**, siehe [`03-acp-bridge.md`](./03-acp-bridge.md).
 14. **`createServeApp`** assembliert Express.
-15. **`server.listen(port, hostname)`**, dann den tatsächlichen `getPort()` für die Host-Allowlist auflösen.
-16. **SIGINT-/SIGTERM-Handler registrieren** für Graceful Shutdown.
+15. **HTTP(S)-Server erstellen und lifecycle-binden vor dem Lauschen**, dann `server.listen(port, hostname)` aufrufen und den tatsächlichen `getPort()` für die Host-Allowlist auflösen. Die Conversations-Ownership kann erst starten, wenn dieser Listener und die verbleibenden Host-Startup-Gates bereit sind.
+16. **SIGINT-/SIGTERM-Handler registrieren** für Graceful Shutdown über den gemeinsamen App-Lifecycle.
 
 ### Graceful Shutdown
 
-1. **Phase 1 - Bridge-Teardown** beim ersten Signal:
+1. **Admission versiegeln und alle Drains beginnen** beim ersten Signal:
    - Die Device-Flow-Registry verwerfen und ausstehende Flows abbrechen.
    - `bridge.shutdown()` markiert jeden Kanal mit `isDying = true`, sendet Graceful Close an die Stdin jedes ACP-Childs, wartet `KILL_HARD_DEADLINE_MS` (10s) pro Kanal und ruft dann bei Bedarf `channel.kill()` auf.
-2. **Phase 2 - HTTP-Teardown**:
+2. **Den Listener schließen, während App- und Host-Drains laufen**:
    - `server.close()` stoppt die Annahme neuer Verbindungen und lässt laufende Requests abschließen.
    - `SHUTDOWN_FORCE_CLOSE_MS` (5s) löst `server.closeAllConnections()` aus.
    - Eine zweite 2s-Frist eskaliert bei Bedarf erneut.
-3. **Zweites Signal beim Beenden**:
+3. **Conversations-Ownership erst nach positivem Shutdown-Nachweis freigeben** vom Listener, App-lokaler Arbeit, Host-eigener Arbeit, Live-Discovery-Cleanup und Runtime-Drains. Jeder unvollständige Nachweis lehnt den Shutdown ab, anstatt eine unsichere Übergabe zuzulassen.
+4. **Zweites Signal beim Beenden**:
    - `bridge.killAllSync()` + `process.exit(1)`, um zu verhindern, dass verwaiste Childs den Daemon-Exit blockieren.
 
 ## State und Lifecycle
@@ -96,9 +97,9 @@
 
 - `url`: aufgelöste Listen-URL, nach der Auflösung des ephemeren Ports.
 - `port`: tatsächlicher Port, einschließlich der `0`-Auflösung.
-- `close({ timeoutMs? })`: programmatischer Shutdown für Embedder und Tests.
+- `close()`: programmatischer Shutdown für Embedder und Tests.
 
-Der direkte Aufruf von `createServeApp` gibt nur eine `Application` zurück; der Embedder ist verantwortlich für `listen` und Shutdown.
+Der direkte Aufruf von `createServeApp` gibt weiterhin nur eine `Application` zurück. Ein Embedder, der Live/Conversations benötigt, muss den tatsächlichen Node-Server erstellen, `getServeAppLifecycle(app).bindServer(server)` vor dem ersten `listen()` aufrufen und `lifecycle.close()` während des Shutdowns awaiten. Ohne Binding bleiben gewöhnliche Routen verfügbar, aber Live/Conversations schlagen fail-closed fehl. Der Aufruf von `server.close()` löst eine ereignisgesteuerte Aufräumaktion aus, aber der Embedder muss dennoch `lifecycle.close()` awaiten, um Drain- oder Ownership-Fehler zu beobachten.
 
 ## Dependencies
 

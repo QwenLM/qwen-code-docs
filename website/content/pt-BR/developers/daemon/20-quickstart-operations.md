@@ -160,9 +160,9 @@ Falhas de I/O de configurações, como JSON malformado, fazem fallback para os p
 | `--hostname [::1]:8080`                                                       | `Invalid --hostname ... brackets indicate an IPv6 literal but the value is not a clean [addr] form` |
 | `--max-connections` é `NaN` ou negativo                                       | `Must be >= 0`                                                                                      |
 | `--event-ring-size > 1_000_000`                                               | Lançado durante a construção da bridge                                                              |
-| `--initialize-timeout-ms` não é um inteiro positivo ou excede `2^31-1`         | `Must be a positive integer` / `Exceeds maximum JS timer delay`                                     |
 | `--allow-origin '*'` sem token                                                | `Refusing to start with --allow-origin '*' but no bearer token configured`                          |
 | `--prompt-deadline-ms` / `--writer-idle-timeout-ms` não é um inteiro positivo | `Must be a positive integer`                                                                        |
+| `--initialize-timeout-ms` não é um inteiro positivo ou excede `2^31-1`         | `Must be a positive integer` / `Exceeds maximum JS timer delay`                                     |
 | `policy.permissionStrategy` desconhecido ou `policy.consensusQuorum` não positivo | `InvalidPolicyConfigError`                                                                          |
 ## 7. Checklist de verificação com Curl
 
@@ -258,7 +258,9 @@ serve/server.ts                    createServeApp() - builds Express app (**does
    |  `- return app
    |
    v
-serve/run-qwen-serve.ts              server = app.listen(port, hostname, cb)
+serve/run-qwen-serve.ts              server = createServer(app) / https.createServer(..., app)
+   |  |- lifecycle.bindServer(server, { startupReady, drainHost })
+   |  |- server.listen(port, hostname)
    |  |- server.maxConnections = cap
    |  |- actualPort = server.address().port
    |  |- write "qwen serve listening on ..."
@@ -271,8 +273,8 @@ commands/serve.ts                  await blockForever()    // block forever unti
 
 Pontos-chave:
 
-- **`createServeApp` apenas constrói; ele não inicia a escuta.** Ele retorna uma instância `express()` com middlewares e rotas montadas. O chamador é responsável pelo `app.listen()`. O `server.test.ts` usa a factory dessa forma em cerca de 25 casos, então a factory intencionalmente evita gerenciar o ciclo de vida.
-- **`() => actualPort` é uma closure preguiçosa (lazy).** `actualPort` é atribuído no callback do `app.listen`. O middleware `hostAllowlist` o lê sob demanda, então portas efêmeras (`--port 0`) ainda controlam o cabeçalho `Host` corretamente.
+- **`createServeApp` apenas constrói; ele não inicia a escuta.** Ele retorna uma instância `express()` com middlewares e rotas montadas. Embedders apenas ordinários podem continuar sendo donos do `app.listen()`. Embedders que usam Live/Conversations devem vincular o servidor Node real ao ciclo de vida do app exportado antes de ouvir (listen) e aguardar esse ciclo de vida durante o desligamento.
+- **`() => actualPort` é uma closure preguiçosa (lazy).** `actualPort` é atribuído no callback do `server.listen`. O middleware `hostAllowlist` o lê sob demanda, então portas efêmeras (`--port 0`) ainda controlam o cabeçalho `Host` corretamente.
 - **`await blockForever()` é intencional.** Se `yargs.parse()` for resolvido, o nível superior da CLI cai no ponto de entrada da TUI interativa (`gemini.tsx`). SIGINT / SIGTERM saem através do caminho `onSignal` do `runQwenServe`.
 
 ## 10. Divisão de arquivos de rotas HTTP
@@ -324,11 +326,17 @@ console.log(`Daemon at ${handle.url}`);
 await handle.close(); // programmatic shutdown
 ```
 
-Ou obtenha o app Express diretamente e inicie a escuta por conta própria:
+Ou obtenha o app Express diretamente e vincule o ciclo de vida do listener você mesmo. Essa forma é necessária quando o embed usa Live/Conversations:
 
 ```ts
-import { createServeApp } from '@qwen-code/qwen-code/serve';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import {
+  createServeApp,
+  getServeAppLifecycle,
+} from '@qwen-code/qwen-code/serve';
 
+let actualPort = 0;
 const app = createServeApp(
   {
     port: 0,
@@ -336,16 +344,27 @@ const app = createServeApp(
     mode: 'http-bridge',
     maxSessions: 20,
   },
-  () => 0,
+  () => actualPort,
   {
     /* deps: bridge, fsFactory, ... */
   },
 );
 
-const server = app.listen(0, '127.0.0.1', () => {
-  console.log('listening on', server.address());
+const lifecycle = getServeAppLifecycle(app);
+const server = createServer(app);
+lifecycle.bindServer(server);
+await new Promise<void>((resolve, reject) => {
+  server.once('error', reject);
+  server.listen(0, '127.0.0.1', () => resolve());
 });
+actualPort = (server.address() as AddressInfo).port;
+console.log('listening on', server.address());
+
+// Stop admission, drain app work, close the listener, and release ownership.
+await lifecycle.close();
 ```
+
+Chamar `server.close()` diretamente também inicia a mesma limpeza orientada por eventos, mas é apenas melhor esforço a menos que o processo permaneça vivo; sempre aguarde `lifecycle.close()` para receber erros de desligamento. Se nenhum servidor estiver vinculado, as requisições de Live/Conversations falham com fail closed, enquanto o comportamento do app apenas ordinário permanece inalterado.
 
 Nota: ao chamar `createServeApp` diretamente, o padrão é `fsFactory.trusted = false`. O `writeTextFile` do ACP no lado do agente é rejeitado como `untrusted_workspace`, e um aviso é impresso no stderr uma única vez. Injete `deps.fsFactory` com confiança explícita, injete `deps.bridge` ou aceite o comportamento padrão restrito por confiança.
 

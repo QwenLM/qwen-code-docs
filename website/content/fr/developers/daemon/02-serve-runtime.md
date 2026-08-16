@@ -75,19 +75,20 @@
 12. **Construire `fsFactory`** : `runQwenServe` a par défaut `trusted: true` ; les appelants directs de `createServeApp` ont par défaut `trusted: false` et avertissent une fois.
 13. **`createHttpAcpBridge`**, voir [`03-acp-bridge.md`](./03-acp-bridge.md).
 14. **`createServeApp`** assemble Express.
-15. **`server.listen(port, hostname)`**, puis résoudre le `getPort()` réel pour l'allowlist d'hôtes.
-16. **Enregistrer les gestionnaires SIGINT / SIGTERM** pour l'arrêt progressif.
+15. **Créer et lier au cycle de vie le serveur HTTP(S) avant l'écoute**, puis appeler `server.listen(port, hostname)` et résoudre le `getPort()` réel pour l'allowlist d'hôtes. La propriété Conversations ne peut pas démarrer tant que cet écouteur et les restantes gates de démarrage de l'hôte ne sont pas prêts.
+16. **Enregistrer les gestionnaires SIGINT / SIGTERM** pour l'arrêt progressif via le cycle de vie partagé de l'application.
 
 ### Arrêt progressif
 
-1. **Phase 1 - démontage du bridge** au premier signal :
+1. **Sceller l'admission et commencer tous les drainages** au premier signal :
    - Supprimer le registre device-flow et annuler les flux en attente.
-   - `bridge.shutdown()` marque chaque canal avec `isDying = true`, envoie une fermeture progressive à l'stdin de chaque enfant ACP, attend `KILL_HARD_DEADLINE_MS` (10s) par canal, puis appelle `channel.kill()` si nécessaire.
-2. **Phase 2 - démontage HTTP** :
+   - `bridge.shutdown()` marque chaque canal `isDying = true`, envoie une fermeture progressive à l'stdin de chaque enfant ACP, attend `KILL_HARD_DEADLINE_MS` (10s) par canal, puis appelle `channel.kill()` si nécessaire.
+2. **Fermer l'écouteur pendant que les drainages de l'application et de l'hôte s'exécutent** :
    - `server.close()` arrête d'accepter les nouvelles connexions et laisse les requêtes en cours se terminer.
    - `SHUTDOWN_FORCE_CLOSE_MS` (5s) déclenche `server.closeAllConnections()`.
    - Un second délai de 2s escalade à nouveau si nécessaire.
-3. **Second signal pendant la sortie** :
+3. **Libérer la propriété Conversations uniquement après une preuve d'arrêt positive** de l'écouteur, du travail local de l'application, du travail possédé par l'hôte, du nettoyage de la découverte Live et des drainages du runtime. Toute preuve incomplète rejette l'arrêt au lieu de permettre un handoff non sûr.
+4. **Second signal pendant la sortie** :
    - `bridge.killAllSync()` + `process.exit(1)` pour éviter que des enfants orphelins ne bloquent la sortie du daemon.
 
 ## État et cycle de vie
@@ -96,9 +97,9 @@
 
 - `url` : URL d'écoute résolue, après la résolution du port éphémère.
 - `port` : port réel, y compris la résolution de `0`.
-- `close({ timeoutMs? })` : arrêt programmatique pour les intégrateurs et les tests.
+- `close()` : arrêt programmatique pour les intégrateurs et les tests.
 
-Appeler `createServeApp` directement retourne seulement une `Application` ; l'intégrateur possède `listen` et l'arrêt.
+Appeler `createServeApp` directement retourne seulement une `Application`. Un intégrateur qui a besoin de Live/Conversations doit créer le serveur Node réel, appeler `getServeAppLifecycle(app).bindServer(server)` avant son premier `listen()`, et attendre `lifecycle.close()` pendant l'arrêt. Sans liaison, les routes ordinaires restent disponibles mais Live/Conversations échouent fermement. Appeler `server.close()` brut déclenche le nettoyage piloté par les événements, mais l'intégrateur doit tout de même attendre `lifecycle.close()` pour observer les échecs de drainage ou de libération de propriété.
 
 ## Dépendances
 

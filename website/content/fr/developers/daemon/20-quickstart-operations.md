@@ -259,7 +259,9 @@ serve/server.ts                    createServeApp() - builds Express app (**does
    |  `- return app
    |
    v
-serve/run-qwen-serve.ts              server = app.listen(port, hostname, cb)
+serve/run-qwen-serve.ts              server = createServer(app) / https.createServer(..., app)
+   |  |- lifecycle.bindServer(server, { startupReady, drainHost })
+   |  |- server.listen(port, hostname)
    |  |- server.maxConnections = cap
    |  |- actualPort = server.address().port
    |  |- write "qwen serve listening on ..."
@@ -272,7 +274,7 @@ commands/serve.ts                  await blockForever()    // block forever unti
 
 Points clés :
 
-- **`createServeApp` se contente de construire ; il ne met pas le serveur en écoute.** Il retourne une instance `express()` avec les middlewares et les routes montés. L'appelant est propriétaire de `app.listen()`. `server.test.ts` utilise la factory de cette manière dans environ 25 cas, la factory évite donc intentionnellement de gérer le cycle de vie.
+- **`createServeApp` se contente de construire ; il ne met pas le serveur en écoute.** Il retourne une instance `express()` avec les middlewares et les routes montés. Les intégrateurs à usage ordinaire peuvent continuer à posséder `app.listen()`. Les intégrateurs qui utilisent Live/Conversations doivent lier le serveur Node réel au cycle de vie exporté de l'application avant l'écoute et attendre ce cycle de vie pendant l'arrêt.
 - **`() => actualPort` est une closure paresseuse (lazy closure).** `actualPort` est assigné dans le callback de `app.listen`. Le middleware `hostAllowlist` le lit à la demande, de sorte que les ports éphémères (`--port 0`) filtrent toujours correctement l'en-tête `Host`.
 - **`await blockForever()` est intentionnel.** Si `yargs.parse()` résout, le niveau supérieur du CLI passe au point d'entrée de l'interface TUI interactive (`gemini.tsx`). SIGINT / SIGTERM quittent via le chemin `onSignal` de `runQwenServe`.
 
@@ -325,11 +327,17 @@ console.log(`Daemon at ${handle.url}`);
 await handle.close(); // programmatic shutdown
 ```
 
-Ou obtenez l'application Express directement et mettez-la en écoute vous-même :
+Ou obtenez l'application Express directement et liez vous-même le cycle de vie de l'écouteur. Cette forme est requise lorsque l'intégrateur utilise Live/Conversations :
 
 ```ts
-import { createServeApp } from '@qwen-code/qwen-code/serve';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import {
+  createServeApp,
+  getServeAppLifecycle,
+} from '@qwen-code/qwen-code/serve';
 
+let actualPort = 0;
 const app = createServeApp(
   {
     port: 0,
@@ -337,16 +345,27 @@ const app = createServeApp(
     mode: 'http-bridge',
     maxSessions: 20,
   },
-  () => 0,
+  () => actualPort,
   {
     /* deps: bridge, fsFactory, ... */
   },
 );
 
-const server = app.listen(0, '127.0.0.1', () => {
-  console.log('listening on', server.address());
+const lifecycle = getServeAppLifecycle(app);
+const server = createServer(app);
+lifecycle.bindServer(server);
+await new Promise<void>((resolve, reject) => {
+  server.once('error', reject);
+  server.listen(0, '127.0.0.1', () => resolve());
 });
+actualPort = (server.address() as AddressInfo).port;
+console.log('listening on', server.address());
+
+// Stop admission, drain app work, close the listener, and release ownership.
+await lifecycle.close();
 ```
+
+Appeler `server.close()` brut déclenche également le même nettoyage piloté par les événements, mais ce n'est que du best-effort sauf si le processus reste en vie ; attendez toujours `lifecycle.close()` pour recevoir les erreurs d'arrêt. Si aucun serveur n'est lié, les requêtes Live/Conversations échouent fermement tandis que le comportement applicatif à usage ordinaire reste inchangé.
 
 Remarque : lors de l'appel direct à `createServeApp`, la valeur par défaut est `fsFactory.trusted = false`. L'ACP côté agent `writeTextFile` est rejeté en tant que `untrusted_workspace`, et un avertissement est affiché une fois sur stderr. Vous pouvez soit injecter `deps.fsFactory` avec une confiance explicite, injecter `deps.bridge`, soit accepter le comportement par défaut conditionné par la confiance (trust-gated).
 

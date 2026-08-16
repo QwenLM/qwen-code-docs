@@ -75,19 +75,20 @@
 12. **Construir `fsFactory`**: `runQwenServe` usa como padrão `trusted: true`; chamadores diretos de `createServeApp` usam como padrão `trusted: false` e avisam uma vez.
 13. **`createHttpAcpBridge`**, consulte [`03-acp-bridge.md`](./03-acp-bridge.md).
 14. **`createServeApp`** monta o Express.
-15. **`server.listen(port, hostname)`**, depois resolve o `getPort()` real para a allowlist de hosts.
-16. **Registrar manipuladores SIGINT / SIGTERM** para desligamento gracioso.
+15. **Criar e vincular o ciclo de vida do servidor HTTP(S) antes de ouvir (listen)**, depois chamar `server.listen(port, hostname)` e resolver o `getPort()` real para a allowlist de hosts. A propriedade (ownership) do Conversations não pode iniciar até que esse listener e os demais gates de inicialização do host estejam prontos.
+16. **Registrar manipuladores SIGINT / SIGTERM** para desligamento gracioso através do ciclo de vida compartilhado do app.
 
 ### Desligamento gracioso
 
-1. **Fase 1 - teardown da bridge** no primeiro sinal:
+1. **Selar a admissão e iniciar todas as drenagens** no primeiro sinal:
    - Descartar o registro de device-flow e cancelar fluxos pendentes.
    - `bridge.shutdown()` marca cada canal como `isDying = true`, envia um fechamento gracioso para o stdin de cada filho ACP, aguarda `KILL_HARD_DEADLINE_MS` (10s) por canal e então chama `channel.kill()` se necessário.
-2. **Fase 2 - teardown HTTP**:
+2. **Fechar o listener enquanto o app e o host drenam**:
    - `server.close()` para de aceitar novas conexões e deixa as requisições em andamento terminarem.
    - `SHUTDOWN_FORCE_CLOSE_MS` (5s) aciona `server.closeAllConnections()`.
    - Um segundo prazo de 2s escala novamente se necessário.
-3. **Segundo sinal durante a saída**:
+3. **Liberar a propriedade (ownership) do Conversations somente após prova positiva de desligamento** do listener, trabalho local do app, trabalho de propriedade do host, limpeza do Live discovery e drenagens do runtime. Qualquer prova incompleita rejeita o desligamento em vez de permitir uma transferência insegura.
+4. **Segundo sinal durante a saída**:
    - `bridge.killAllSync()` + `process.exit(1)` para evitar que filhos órfãos bloqueiem a saída do daemon.
 
 ## Estado e ciclo de vida
@@ -96,9 +97,9 @@
 
 - `url`: URL de escuta resolvida, após a resolução da porta efêmera.
 - `port`: porta real, incluindo a resolução de `0`.
-- `close({ timeoutMs? })`: desligamento programático para embedders e testes.
+- `close()`: desligamento programático para embedders e testes.
 
-Chamar `createServeApp` diretamente retorna apenas um `Application`; o embedder é responsável pelo `listen` e pelo desligamento.
+Chamar `createServeApp` diretamente ainda retorna apenas um `Application`. Um embedder que precisa de Live/Conversations deve criar o servidor Node real, chamar `getServeAppLifecycle(app).bindServer(server)` antes do seu primeiro `listen()` e aguardar `lifecycle.close()` durante o desligamento. Sem a vinculação, as rotas comuns permanecem disponíveis, mas Live/Conversations falham com fail closed. Chamar `server.close()` diretamente aciona a limpeza orientada por eventos, mas o embedder ainda deve aguardar `lifecycle.close()` para observar falhas de drenagem ou liberação de propriedade.
 
 ## Dependências
 
@@ -125,6 +126,7 @@ Chamar `createServeApp` diretamente retorna apenas um `Application`; o embedder 
 | Flags           | `--max-sessions`, `--max-pending-prompts-per-session`, `--max-connections`, `--event-ring-size` | Limites da Bridge / Express.                                                                          |
 | Flags           | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}`                                 | Encaminhado para o filho ACP.                                                                         |
 | Flags           | `--allow-origin`, `--allow-private-auth-base-url`                                               | Allowlist de CORS do navegador e switch de instalação do provedor de autenticação localhost/privado.  |
+| Flag            | `--web` / `--no-web`                                                                            | Serve ou pula a UI do Web Shell na raiz do daemon (o padrão é servir). `--no-web` deixa o daemon apenas API. |
 | Flags           | `--prompt-deadline-ms`, `--writer-idle-timeout-ms`, `--channel-idle-timeout-ms`, `--initialize-timeout-ms` | Controle do ciclo de vida de inatividade de prompt, writer SSE e filho ACP, e timeout de requisição do filho ACP. |
 | Flags           | `--session-reap-interval-ms`, `--session-idle-timeout-ms`                                       | Controle de reaping de sessões desconectadas.                                                         |
 | Flags           | `--rate-limit*`                                                                                 | Limite de taxa HTTP por tier.                                                                         |

@@ -83,7 +83,7 @@ Step 3B: high, >500 src OR >3200 total: territory x dim.   [N+5..7+3H calls]
 Step 4:  Deduplicate --> Sharded verify (<=8 findings each)
            --> Aggregate                    [ceil(F/8) calls, F=findings]
 Step 5:  Iterative reverse audit, fanned out per chunk;
-           stop after 2 consecutive dry rounds (cap 5)
+           stop after 2 consecutive dry rounds (cap 10/5/3 by topology)
 Step 6:  Present findings + verdict (high; low pass: findings only)
          Canonicalize findings -> .qwen/tmp/...-findings.json
 Step 6B: Apply findings + record per-finding outcomes  (--fix only)
@@ -124,7 +124,7 @@ Um arquivo **fonte** que é majoritariamente reescrito (um arquivo existente de 
 
 O checklist é dividido em três partes de propósito. Entregar todas as oito verificações para um agente em um arquivo de 2.400 linhas faz com que uma seja feita corretamente; três agentes com duas ou três verificações cada fazem todas elas. Agentes de chunk não substituem isso — no PR #6457 eles continham cada um desses defeitos dentro de seu território atribuído e não reportaram nenhum. O que lhes faltava não eram as linhas, mas a pergunta.
 
-Os achados são verificados em **shards** (no máximo 8 achados por agente de verificação, todos lançados juntos). Um verificador pode rejeitar um Crítico apenas citando o código que o contradiz (ou quando os próprios comentários do diff documentam o comportamento sinalizado como deliberado); qualquer coisa menos certa é rebaixada para baixa confiança em vez de deletada — um Crítico silenciosamente rejeitado é invisível para todo estágio posterior, enquanto um rebaixado ainda chega a um humano. Após a verificação, a **auditoria reversa iterativa** busca lacunas, com um auditor por chunk por rodada, cada um com a lista cumulativa de achados. O loop para após **duas rodadas consecutivas sem achados** (ou 5 rodadas, limite rígido — reportado como tal em vez de como convergência). Uma rodada sem achados não é evidência de convergência, e achados da auditoria reversa são verificados como qualquer outro.
+Os achados são verificados em **shards** (no máximo 8 achados por agente de verificação, todos lançados juntos). Um verificador pode rejeitar um Crítico apenas citando o código que o contradiz (ou quando os próprios comentários do diff documentam o comportamento sinalizado como deliberado); qualquer coisa menos certa é rebaixada para baixa confiança em vez de deletada — um Crítico silenciosamente rejeitado é invisível para todo estágio posterior, enquanto um rebaixado ainda chega a um humano. Após a verificação, a **auditoria reversa iterativa** busca lacunas, com um auditor por chunk por rodada, cada um com a lista cumulativa de achados. O loop para após **duas rodadas consecutivas sem achados** (ou no limite de rodadas do plano — reportado como tal em vez de como convergência). Esse limite segue a topologia do diff: **10** em um diff pequeno, onde uma rodada é um único auditor; **5** em um diff fragmentado em chunks, onde é um auditor por chunk; e **3** em um diff enorme (≥ 3000 linhas efetivas) _quando a execução tem um deadline_, porque cinco rodadas de ~90 minutos não cabem em um teto de CI de seis horas e uma revisão interrompida no meio não publica nada — sem deadline, um diff enorme mantém o limite fragmentado de 5. Um operador pode reduzir qualquer limite que se aplique em todas as revisões com a configuração `review.reverseAuditRounds`; ela nunca pode aumentá-lo. Uma rodada sem achados não é evidência de convergência, e achados da auditoria reversa são verificados como qualquer outro.
 
 ## Níveis de Severidade
 
@@ -425,8 +425,8 @@ O pipeline de esforço high limita cada estágio (tamanho de shard, rodadas de a
 | ------------------------------------ | ------------------------------ | --------------------------------------------------------------------------------------------------------------- |
 | Agentes de revisão (Etapa 3)         | 14 (+0-2)                      | Executados em paralelo; entre repositórios ignora Agentes 1c e 7 (12), local/arquivo ignora Agente 0 (13)       |
 | Verificação em shards (Etapa 4)      | ceil(F/8)                      | F = achados; no máximo 8 por agente de verificação, lançados juntos                                             |
-| Auditoria reversa iterativa (Etapa 5) | 2-5 (3A); rodadas × chunks (3B) | Duas rodadas consecutivas sem achados para parar (limite 5); 3B lança um auditor por chunk por rodada           |
-| **Total**                            | **~17-23 (~15-22)**            | 3A mesmo repositório: ~17-23 (típico ~17-19); entre repositórios ou local/arquivo: ~15-22; 3B escala com chunks (ver DESIGN.md) |
+| Auditoria reversa iterativa (Etapa 5) | 2-10 (3A); rodadas × chunks (3B) | Duas rodadas consecutivas sem achados para parar; o limite segue a topologia — 10 em um diff pequeno, 5 em um fragmentado, 3 em um enorme quando a execução tem deadline. 3B lança um auditor por chunk por rodada |
+| **Total**                            | **~17-28 (~15-27)**            | 3A mesmo repositório: ~17-28 (típico ~17-19); entre repositórios ou local/arquivo: ~15-27; 3B escala com chunks (ver DESIGN.md) |
 
 A maioria dos PRs converge para o extremo inferior da faixa; os limites previnem custos descontrolados em casos patológicos. Com `--effort low`, a revisão é executada inteiramente inline — **0 chamadas de subagentes** — percorrendo o diff uma vez por ângulo em vez de uma vez no total.
 

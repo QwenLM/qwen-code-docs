@@ -83,7 +83,7 @@ Schritt 3B: high, >500 Src ODER >3200 gesamt: Territory × Dim.  [N+5..7+3H Aufr
 Schritt 4:  Deduplizierung --> Sharded Verify (<=8 Ergebnisse je Shard)
             --> Aggregation                  [ceil(F/8) Aufrufe, F=Ergebnisse]
 Schritt 5:  Iterativer Reverse-Audit, pro Chunk gefächert;
-            Stopp nach 2 aufeinanderfolgenden trockenen Runden (Obergrenze 5)
+            Stopp nach 2 aufeinanderfolgenden trockenen Runden (Obergrenze 10/5/3 nach Topologie)
 Schritt 6:  Ergebnisse präsentieren + Fazit (high; Low-Durchlauf: nur Ergebnisse)
             Ergebnisse kanonisieren -> .qwen/tmp/...-findings.json
 Schritt 6B: Ergebnisse anwenden + pro-Ergebnis Outcomes aufzeichnen (nur --fix)
@@ -124,7 +124,7 @@ Eine **Quellcode**-Datei, die größtenteils umgeschrieben wurde (eine bestehend
 
 Die Checkliste wird absichtlich auf drei Teile aufgeteilt. Einem Agent alle acht Prüfungen über eine 2 400-Zeilen-Datei zu geben, erledigt eine davon ordentlich; drei Agents mit je zwei oder drei Prüfungen erledigen alle. Chunk-Agents ersetzen das nicht – bei PR #6457 hielten sie jeden dieser Defekte in ihrem zugewiesenen Territory und meldeten keinen. Was ihnen fehlte, waren nicht die Zeilen, sondern die Frage.
 
-Ergebnisse werden in **Sharded Batches** verifiziert (höchstens 8 Ergebnisse pro Verifizierungs-Agent, alle gleichzeitig gestartet). Ein Verifizierer darf ein Critical nur ablehnen, indem er den Code zitiert, der ihm widerspricht (oder wenn die Kommentare des Diffs das markierte Verhalten als absichtlich dokumentieren); alles weniger Sichere wird auf Low Confidence herabgestuft statt gelöscht – ein still verworfenes Critical ist für jede spätere Stufe unsichtbar, während ein herabgestuftes immer noch einen Menschen erreicht. Nach der Verifizierung sucht ein **iterativer Reverse-Audit** nach Lücken, gefächert mit einem Auditor pro Chunk pro Runde, jeder mit der kumulierten Ergebnisliste. Die Schleife stoppt nach **zwei aufeinanderfolgenden trockenen Runden** (oder 5 Runden, Hard Cap – so gemeldet statt als Konvergenz). Eine trockene Runde ist kein Beleg für Konvergenz, und Reverse-Audit-Ergebnisse werden wie alle anderen verifiziert.
+Ergebnisse werden in **Sharded Batches** verifiziert (höchstens 8 Ergebnisse pro Verifizierungs-Agent, alle gleichzeitig gestartet). Ein Verifizierer darf ein Critical nur ablehnen, indem er den Code zitiert, der ihm widerspricht (oder wenn die Kommentare des Diffs das markierte Verhalten als absichtlich dokumentieren); alles weniger Sichere wird auf Low Confidence herabgestuft statt gelöscht – ein still verworfenes Critical ist für jede spätere Stufe unsichtbar, während ein herabgestuftes immer noch einen Menschen erreicht. Nach der Verifizierung sucht ein **iterativer Reverse-Audit** nach Lücken, gefächert mit einem Auditor pro Chunk pro Runde, jeder mit der kumulierten Ergebnisliste. Die Schleife stoppt nach **zwei aufeinanderfolgenden trockenen Runden** (oder bei der Runden-Obergrenze des Plans – so gemeldet statt als Konvergenz). Diese Obergrenze folgt der Diff-Topologie: **10** bei einem kleinen Diff, wo eine Runde ein einzelner Auditor ist; **5** bei einem gechunkten, wo es ein Auditor pro Chunk ist; und **3** bei einem riesigen Diff (≥ 3000 effektive Zeilen) _wenn der Lauf eine Deadline hat_, weil fünf ~90-minütige Runden nicht in eine sechs-Stunden-CI-Obergrenze passen und ein mitten im Flug abgebrochenes Review nichts postet – ohne Deadline behält ein riesiges Diff die gechunkte Obergrenze von 5. Ein Operator kann die jeweils geltende Obergrenze für jedes Review mit der Einstellung `review.reverseAuditRounds` senken; erhöhen kann sie nie. Eine trockene Runde ist kein Beleg für Konvergenz, und Reverse-Audit-Ergebnisse werden wie alle anderen verifiziert.
 
 ## Schweregrade
 
@@ -426,8 +426,8 @@ Die High-Effort-Pipeline begrenzt jede Stufe (Shard-Größe, Audit-Runden), aber
 | -------------------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------- |
 | Review-Agents (Schritt 3)        | 14 (+0-2)                      | Laufen parallel; Cross-Repo überspringt Agents 1c und 7 (12), Local/File überspringt Agent 0 (13)              |
 | Sharded Verification (Schritt 4) | ceil(F/8)                      | F = Ergebnisse; höchstens 8 pro Verifizierungs-Agent, alle gleichzeitig gestartet                            |
-| Iterativer Reverse-Audit (Schritt 5) | 2-5 (3A); Runden × Chunks (3B) | Zwei aufeinanderfolgende trockene Runden zum Stoppen (Obergrenze 5); 3B fächert einen Auditor pro Chunk pro Runde |
-| **Gesamt**                       | **~17-23 (~15-22)**            | 3A Same-Repo: ~17-23 (typisch ~17-19); Cross-Repo oder Local/File: ~15-22; 3B skaliert mit Chunks (siehe DESIGN.md) |
+| Iterativer Reverse-Audit (Schritt 5) | 2-10 (3A); Runden × Chunks (3B) | Zwei aufeinanderfolgende trockene Runden zum Stoppen; die Obergrenze folgt der Topologie – 10 bei einem kleinen Diff, 5 bei einem gechunkten, 3 bei einem riesigen wenn der Lauf eine Deadline hat. 3B fächert einen Auditor pro Chunk pro Runde |
+| **Gesamt**                       | **~17-28 (~15-27)**            | 3A Same-Repo: ~17-28 (typisch ~17-19); Cross-Repo oder Local/File: ~15-27; 3B skaliert mit Chunks (siehe DESIGN.md) |
 
 Die meisten PRs konvergieren zum unteren Ende des Bereichs; die Obergrenzen verhindern explodierende Kosten bei pathologischen Fällen. Bei `--effort low` läuft das Review vollständig inline – **0 Subagent-Aufrufe** – und geht das Diff einmal pro Blickwinkel durch statt einmal insgesamt.
 

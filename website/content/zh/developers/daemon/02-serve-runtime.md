@@ -75,19 +75,20 @@
 12. **构建 `fsFactory`**：`runQwenServe` 默认为 `trusted: true`；直接调用 `createServeApp` 的调用者默认为 `trusted: false` 并警告一次。
 13. **`createHttpAcpBridge`**，参见 [`03-acp-bridge.md`](./03-acp-bridge.md)。
 14. **`createServeApp`** 组装 Express。
-15. **`server.listen(port, hostname)`**，然后解析实际的 `getPort()` 用于主机允许列表。
-16. **注册 SIGINT / SIGTERM 处理器**以实现优雅关闭。
+15. **在监听之前创建并绑定 HTTP(S) 服务器的生命周期**，然后调用 `server.listen(port, hostname)` 并解析实际的 `getPort()` 用于主机允许列表。在此监听器和其余主机启动闸门就绪之前，Conversations 所有权无法启动。
+16. **注册 SIGINT / SIGTERM 处理器**，通过共享的应用生命周期实现优雅关闭。
 
 ### 优雅关闭
 
-1. 收到第一个信号时的**第一阶段 - bridge 拆卸**：
+1. 收到第一个信号时**封闭准入并开始所有 drain**：
    - 处置设备流注册表并取消待处理的流。
    - `bridge.shutdown()` 将每个 channel 标记为 `isDying = true`，向每个 ACP 子进程的 stdin 发送优雅关闭信号，每个 channel 等待 `KILL_HARD_DEADLINE_MS`（10 秒），然后在需要时调用 `channel.kill()`。
-2. **第二阶段 - HTTP 拆卸**：
+2. **在应用和主机 drain 运行时关闭监听器**：
    - `server.close()` 停止接受新连接并让进行中的请求完成。
    - `SHUTDOWN_FORCE_CLOSE_MS`（5 秒）触发 `server.closeAllConnections()`。
    - 如果需要，第二个 2 秒的截止时间会再次升级。
-3. **退出时收到第二个信号**：
+3. **仅在收到监听器、应用本地工作、主机所有工作、Live 发现清理和运行时 drain 的正向关闭证明后，才释放 Conversations 所有权**。任何未完成的证明都会拒绝关闭，而不是允许不安全的交接。
+4. **退出过程中收到第二个信号**：
    - `bridge.killAllSync()` + `process.exit(1)` 以避免孤儿子进程阻塞守护进程退出。
 
 ## 状态与生命周期
@@ -96,9 +97,9 @@
 
 - `url`：解析后的监听 URL，在临时端口解析之后。
 - `port`：实际端口，包括 `0` 的解析。
-- `close({ timeoutMs? })`：供嵌入者和测试使用的编程式关闭。
+- `close()`：供嵌入者和测试使用的编程式关闭。
 
-直接调用 `createServeApp` 仅返回一个 `Application`；由嵌入者负责 `listen` 和关闭。
+直接调用 `createServeApp` 仅返回一个 `Application`。需要 Live/Conversations 的嵌入者必须创建实际的 Node 服务器，在首次 `listen()` 之前调用 `getServeAppLifecycle(app).bindServer(server)`，并在关闭期间 await `lifecycle.close()`。未绑定时，普通路由仍可用，但 Live/Conversations 会 fail closed。调用原始的 `server.close()` 会触发事件驱动的清理，但嵌入者仍必须 await `lifecycle.close()` 以观察 drain 或所有权释放失败。
 
 ## 依赖
 

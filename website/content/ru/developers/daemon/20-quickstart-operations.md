@@ -258,7 +258,9 @@ serve/server.ts                    createServeApp() - builds Express app (**does
    |  `- return app
    |
    v
-serve/run-qwen-serve.ts              server = app.listen(port, hostname, cb)
+serve/run-qwen-serve.ts              server = createServer(app) / https.createServer(..., app)
+   |  |- lifecycle.bindServer(server, { startupReady, drainHost })
+   |  |- server.listen(port, hostname)
    |  |- server.maxConnections = cap
    |  |- actualPort = server.address().port
    |  |- write "qwen serve listening on ..."
@@ -271,8 +273,8 @@ commands/serve.ts                  await blockForever()    // блокировк
 
 Ключевые факты:
 
-- **`createServeApp` только собирает приложение; он не начинает прослушивание.** Он возвращает экземпляр `express()` с подключенными middleware и маршрутами. Вызывающая сторона отвечает за `app.listen()`. `server.test.ts` использует эту фабрику именно так примерно в 25 тестах, поэтому фабрика намеренно не управляет жизненным циклом.
-- **`() => actualPort` — это ленивое замыкание.** `actualPort` присваивается в колбэке `app.listen`. Middleware `hostAllowlist` читает его по требованию, поэтому эфемерные порты (`--port 0`) по-прежнему корректно проверяют заголовок `Host`.
+- **`createServeApp` только собирает приложение; он не начинает прослушивание.** Он возвращает экземпляр `express()` с подключенными middleware и маршрутами. Встраивающие модули только для обычных маршрутов могут продолжать управлять `app.listen()` самостоятельно. Встраивающие модули, использующие Live/Conversations, должны привязать actual Node-сервер к экспортируемому жизненному циклу приложения перед прослушиванием и ожидать этот жизненный цикл при завершении работы.
+- **`() => actualPort` — это ленивое замыкание.** `actualPort` присваивается в колбэке `server.listen`. Middleware `hostAllowlist` читает его по требованию, поэтому эфемерные порты (`--port 0`) по-прежнему корректно проверяют заголовок `Host`.
 - **`await blockForever()` используется намеренно.** Если `yargs.parse()` завершается, верхний уровень CLI переходит к точке входа интерактивного TUI (`gemini.tsx`). SIGINT / SIGTERM завершают работу через путь `onSignal` в `runQwenServe`.
 
 ## 10. Разделение файлов HTTP-маршрутов
@@ -324,11 +326,17 @@ console.log(`Daemon at ${handle.url}`);
 await handle.close(); // programmatic shutdown
 ```
 
-Или получите приложение Express напрямую и начните прослушивание самостоятельно:
+Или получите приложение Express напрямую и привяжите жизненный цикл слушателя самостоятельно. Эта форма необходима, когда встраивающий модуль использует Live/Conversations:
 
 ```ts
-import { createServeApp } from '@qwen-code/qwen-code/serve';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import {
+  createServeApp,
+  getServeAppLifecycle,
+} from '@qwen-code/qwen-code/serve';
 
+let actualPort = 0;
 const app = createServeApp(
   {
     port: 0,
@@ -336,16 +344,27 @@ const app = createServeApp(
     mode: 'http-bridge',
     maxSessions: 20,
   },
-  () => 0,
+  () => actualPort,
   {
     /* deps: bridge, fsFactory, ... */
   },
 );
 
-const server = app.listen(0, '127.0.0.1', () => {
-  console.log('listening on', server.address());
+const lifecycle = getServeAppLifecycle(app);
+const server = createServer(app);
+lifecycle.bindServer(server);
+await new Promise<void>((resolve, reject) => {
+  server.once('error', reject);
+  server.listen(0, '127.0.0.1', () => resolve());
 });
+actualPort = (server.address() as AddressInfo).port;
+console.log('listening on', server.address());
+
+// Остановка допуска, дренирование работы приложения, закрытие слушателя и освобождение владения.
+await lifecycle.close();
 ```
+
+Вызов обычного `server.close()` также запускает ту же очистку на основе событий, но она выполняется по мере возможности (best-effort), если процесс не остаётся активным; всегда ожидайте `lifecycle.close()`, чтобы получить ошибки завершения работы. Если сервер не привязан, запросы Live/Conversations завершаются с ошибкой (fail closed), а обычное поведение приложения остаётся неизменным.
 
 Примечание: при прямом вызове `createServeApp` значение по умолчанию для `fsFactory.trusted` равно `false`. ACP-метод `writeTextFile` на стороне агента отклоняется с ошибкой `untrusted_workspace`, и в stderr выводится предупреждение (один раз). Либо внедрите `deps.fsFactory` с явным указанием доверия, либо внедрите `deps.bridge`, либо примите поведение по умолчанию, ограниченное проверкой доверия.
 

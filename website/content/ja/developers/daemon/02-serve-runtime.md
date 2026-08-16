@@ -75,19 +75,20 @@
 12. **`fsFactory` を構築**: `runQwenServe` はデフォルトで `trusted: true` です。直接 `createServeApp` を呼び出す場合はデフォルトで `trusted: false` になり、1 回警告します。
 13. **`createHttpAcpBridge`**、[`03-acp-bridge.md`](./03-acp-bridge.md) を参照。
 14. **`createServeApp`** が Express を組み立てます。
-15. **`server.listen(port, hostname)`**、次にホスト許可リストのために実際の `getPort()` を解決します。
-16. グレースフルシャットダウンのために **SIGINT / SIGTERM ハンドラを登録**します。
+15. **リッスン前に HTTP(S) サーバーを作成し、ライフサイクルにバインド**してから、`server.listen(port, hostname)` を呼び出し、ホスト許可リストのために実際の `getPort()` を解決します。このリスナーと残りのホスト起動ゲートが準備できるまで、Conversations の所有権を開始できません。
+16. 共有アプリライフサイクルを介したグレースフルシャットダウンのために **SIGINT / SIGTERM ハンドラを登録**します。
 
 ### グレースフルシャットダウン
 
-1. 最初のシグナルでの**フェーズ 1 - ブリッジのティアダウン**:
+1. 最初のシグナルで**受け入れを封印し、すべての drain を開始**します:
    - デバイスフローレジストリを破棄し、保留中のフローをキャンセルします。
    - `bridge.shutdown()` は各チャネルを `isDying = true` にマークし、各 ACP 子プロセスの stdin にグレースフルクローズを送信し、チャネルごとに `KILL_HARD_DEADLINE_MS` (10 秒) 待機し、必要に応じて `channel.kill()` を呼び出します。
-2. **フェーズ 2 - HTTP のティアダウン**:
+2. **アプリとホストの drain の実行中にリスナーをクローズ**します:
    - `server.close()` は新しい接続の受け入れを停止し、実行中のリクエストが完了するのを待ちます。
    - `SHUTDOWN_FORCE_CLOSE_MS` (5 秒) で `server.closeAllConnections()` がトリガーされます。
    - 必要に応じて、2 番目の 2 秒のデッドラインで再度エスカレーションします。
-3. **終了中の 2 回目のシグナル**:
+3. **リスナー、アプリローカルの作業、ホスト所有の作業、Live 検出のクリーンアップ、およびランタイム drain からのポジティブなシャットダウン証明の後でのみ Conversations の所有権を解放**します。未完了の証明は、安全でないハンドオフを許可するのではなく、シャットダウンを拒否します。
+4. **終了中の 2 回目のシグナル**:
    - 孤立した子プロセスがデーモンの終了をブロックするのを防ぐために、`bridge.killAllSync()` + `process.exit(1)` を実行します。
 
 ## 状態とライフサイクル
@@ -98,7 +99,7 @@
 - `port`: `0` の解決を含む実際のポート。
 - `close({ timeoutMs? })`: 組み込み用およびテスト用のプログラムによるシャットダウン。
 
-`createServeApp` を直接呼び出すと `Application` のみが返されます。組み込み側が `listen` とシャットダウンを所有します。
+`createServeApp` を直接呼び出すと `Application` のみが返されます。Live/Conversations を必要とする組み込み側は実際の Node サーバーを作成し、最初の `listen()` 前に `getServeAppLifecycle(app).bindServer(server)` を呼び出し、シャットダウン時に `lifecycle.close()` を待機する必要があります。バインディングなしでは、通常のルートは利用可能なままですが、Live/Conversations は fail closed になります。生の `server.close()` を呼び出すとイベント駆動のクリーンアップが開始されますが、ドレインまたは所有権解放の失敗を観察するには `lifecycle.close()` を待機する必要があります。
 
 ## 依存関係
 

@@ -75,19 +75,20 @@
 12. **`fsFactory` 빌드**: `runQwenServe`는 `trusted: true`를 기본값으로 사용합니다. 직접 `createServeApp` 호출자는 `trusted: false`를 기본값으로 사용하며 한 번 경고합니다.
 13. **`createHttpAcpBridge`**, [`03-acp-bridge.md`](./03-acp-bridge.md) 참조.
 14. **`createServeApp`**가 Express를 조합합니다.
-15. **`server.listen(port, hostname)`**, 그 후 호스트 허용 목록을 위한 실제 `getPort()`를 해석합니다.
-16. **우아한 종료를 위한 SIGINT / SIGTERM 핸들러 등록**.
+15. **리스닝 전에 HTTP(S) 서버를 생성하고 수명주기를 바인딩**한 다음, `server.listen(port, hostname)`을 호출하고 호스트 허용 목록을 위한 실제 `getPort()`를 해석합니다. Conversations 소유권은 이 리스너와 나머지 호스트 시작 게이트가 준비될 때까지 시작할 수 없습니다.
+16. **공유 앱 수명주기를 통한 우아한 종료를 위한 SIGINT / SIGTERM 핸들러를 등록**합니다.
 
 ### 우아한 종료
 
-1. **1단계 - 브리지 분해** 첫 번째 시그널에서:
+1. **첫 번째 시그널에서 수용을 차단하고 모든 드레인 시작**:
    - 디바이스 플로우 레지스트리를 해제하고 대기 중인 플로우를 취소합니다.
    - `bridge.shutdown()`은 각 채널을 `isDying = true`로 표시하고, 각 ACP 자식 stdin에 우아한 종료를 전송하고, 채널당 `KILL_HARD_DEADLINE_MS`(10초)를 기다린 다음 필요시 `channel.kill()`을 호출합니다.
-2. **2단계 - HTTP 분해**:
+2. **앱 및 호스트 드레인 실행 중 리스너 종료**:
    - `server.close()`는 새 연결 수락을 중지하고 인플라이트 요청이 완료되도록 합니다.
    - `SHUTDOWN_FORCE_CLOSE_MS`(5초)가 `server.closeAllConnections()`를 트리거합니다.
-   - 두 번째 2초 데드라인이 필요시 다시 에스컬레이션합니다.
-3. **종료 중 두 번째 시그널**:
+   - 필요시 두 번째 2초 데드라인이 다시 에스컬레이션합니다.
+3. **Conversations 소유권 해제**는 리스너, 앱 로컬 작업, 호스트 소유 작업, Live 검색 정리 및 런타임 드레인으로부터 확인된 종료 증거를 받은 후에만 가능합니다. 완료되지 않은 증거는 안전하지 않은 핸드오프를 허용하는 대신 종료를 거부합니다.
+4. **종료 중 두 번째 시그널**:
    - `bridge.killAllSync()` + `process.exit(1)`로 고아 자식이 데몬 종료를 차단하는 것을 방지합니다.
 
 ## 상태 및 수명주기
@@ -96,9 +97,9 @@
 
 - `url`: 임시 포트 해석 후 해석된 리슨 URL.
 - `port`: `0` 해석을 포함한 실제 포트.
-- `close({ timeoutMs? })`: 임베더 및 테스트용 프로그램적 종료.
+- `close()`: 임베더 및 테스트용 프로그램적 종료.
 
-`createServeApp`을 직접 호출하면 `Application`만 반환됩니다. 임베더가 `listen`과 종료를 소유합니다.
+`createServeApp`을 직접 호출해도 `Application`만 반환됩니다. Live/Conversations가 필요한 임베더는 실제 Node 서버를 생성하고, 첫 `listen()` 전에 `getServeAppLifecycle(app).bindServer(server)`를 호출하고, 종료 시 `lifecycle.close()`를 대기해야 합니다. 바인딩 없으면 일반 라우트는 사용 가능하지만 Live/Conversations는 닫힙니다. 원시 `server.close()`를 호출하면 이벤트 기반 정리가 트리거되지만, 임베더는 여전히 `lifecycle.close()`를 대기하여 드레인 또는 소유권 해제 실패를 관찰해야 합니다.
 
 ## 의존성
 

@@ -432,6 +432,71 @@ Remarques :
 >   sensible à la casse par les `choices` yargs (`--memory-project-scope
 Workspace` est rejeté). Utilisez des valeurs en minuscules lors de la copie entre les deux.
 
+### Garde de relocation Git intégrée au démon
+
+Chaque session ACP gérée par le démon applique une garde de pré-exécution intégrée pour
+les commandes shell du modèle, indépendante de `--external-tool-guard-mode` et sans
+aucune annonce de capacité. Le démon possède le workspace lié et le répertoire de travail
+effectif actuel de la session ; les deux sont fournis depuis l'état de session de confiance
+et ne sont jamais acceptés depuis l'enfant ACP.
+
+La garde inspecte les outils qui exécutent une ligne de commande shell — `run_shell_command`
+et `monitor` — et refuse une commande Git
+mutante avant l'exécution lorsque son emplacement de dépôt résout en dehors du répertoire
+de travail effectif de la session. La relocation est reconnue pour les formes littérales
+de `git -C <path>`, `git --git-dir[=]<path>`,
+`git --work-tree[=]<path>`, les assignations
+`GIT_DIR`/`GIT_WORK_TREE`/`GIT_COMMON_DIR`/`GIT_INDEX_FILE` en tête de commande (également
+lorsqu'elles sont faites via `export`/`declare`/`readonly`, qui les conservent dans
+l'environnement de chaque commande ultérieure dans la chaîne),
+les flags de wrapper changeant de répertoire (`env -C`, `sudo -D`), et les builtins `cd`,
+`pushd` ou `popd` plus tôt dans la même chaîne de commande. Les préfixes de wrapper
+courants (`sh -c`, `bash -c`, `eval`, `sudo`, `nohup`, `timeout`, `exec`, `command`,
+`builtin`,
+`env`, les binaires `git` qualifiés par un chemin, et la syntaxe shell `{ …; }` / `! …`)
+sont déballés pour que la même politique s'applique à l'invocation Git interne, et les
+corps de substitution `$(…)` ou backticks sont analysés comme des commandes à part entière.
+
+Un sous-agent épinglé à son propre worktree est contenu dans ce worktree plutôt que
+dans le répertoire de la session ; un appel shell dont le démon ne peut pas placer le
+répertoire d'exécution est refusé.
+
+Les cibles relatives résolvent depuis le répertoire de départ effectif de la commande
+(`arguments.directory` lorsqu'il est présent, sinon le répertoire de travail effectif
+actuel de la session) après la résolution canonique du chemin, y compris les redirections
+gitfile `.git`, les liens symboliques et les répertoires administratifs par worktree. Une
+cible relocalisée qui ne peut pas être entièrement résolue avant l'exécution — une cible
+dynamique (`$VAR`, backticks, `~`, globs), un chemin qui n'existe pas encore, ou une
+indirection illisible — est refusée pour les sous-commandes mutantes ou non classifiables.
+Une cible relocalisée qui ne peut pas être résolue est refusée quel que soit le
+sous-commande — y compris les commandes en lecture seule. Les commandes relocalisées
+dont le sous-commande fait partie d'un petit ensemble vérifié en lecture seule
+(`rev-parse`, `cat-file`) restent autorisées une fois la cible résolue, sauf si la
+commande porte une config `-c` exécutant des commandes, ou
+si elle porte un flag `--output`, `--textconv` ou `--filters` : ceux-ci écrivent un
+fichier ou exécutent les pilotes configurés du dépôt cible. Les commandes sans relocation
+reconnue conservent leur comportement existant.
+Les refus sont définitifs et sont signalés au modèle comme
+`Daemon shell guard denied a mutating Git command…` pour un emplacement de dépôt résolu,
+dynamique ou non résolvable, et comme
+`Daemon shell guard denied a shell command…` lorsque la commande n'a pas pu être
+analysée, que son payload n'a pas pu être résolu, ou qu'un programme non reconnu pourrait
+exécuter une commande Git relocalisée.
+
+La garde est fiable contre la relocation Git écrite dans les formes littérales
+ci-dessus — la commande mal ciblée pour laquelle ce contrôle existe — et est
+**best-effort, pas une frontière**, contre le texte shell écrit pour la déjouer :
+les constructions qui cachent la relocation à un lecteur statique peuvent passer, et de
+nouvelles continueront à être trouvées. N'accordez pas à un démon une confiance plus large
+sur la base de celle-ci. Elle n'interprète pas les fichiers de script,
+ne suit pas les valeurs de variables d'environnement entre les commandes, et n'analyse pas
+les corps heredoc (le texte en forme de Git dans un heredoc peut être refusé même si le
+shell ne l'exécute jamais). `/fork` et les contrôles remember/dream de mémoire de
+workspace adossés à un agent restent disponibles sous la garde intégrée ; ils ne sont
+restreints que lorsque le mode de fournisseur externe ci-dessous est actif. Une garde
+d'outil externe optionnelle reste une politique supplémentaire et reçoit la même requête
+uniquement après que la politique intégrée l'autorise.
+
 ### Tool Guard externe requis
 
 Cet opt-in est destiné aux déploiements ACP gérés qui nécessitent une décision externe

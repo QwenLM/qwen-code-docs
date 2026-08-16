@@ -114,6 +114,7 @@ Qwen Code 会自动将旧版配置设置迁移到新格式。旧设置文件会�
 | `review.effort` | enum | 未指定 `--effort` 时 `/review` 的默认 effort：`"low"`、`"medium"`、`"high"` 或 `"auto"`（内置规则：PR 为 high，本地变更为 medium）。显式的 `--effort` 优先；有效的 `--comment` 仍然强制 high，`--fix` 仍然将下限设为 medium。 | `"auto"` |
 | `review.comment` | boolean | 将每次 PR `/review` 视为传入了 `--comment`：无需该标志即可将发现发布到 pull request。发布仍然绑定到调用中指定的 PR。仅当你始终希望发布审查时才启用。 | `false` |
 | `review.severityFloor` | enum | 未指定 `--severity-floor` 时 PR `/review` 发布的最低严重级别：`"auto"`（轮次自适应默认值——建议通过第 5 轮发布，从第 6 轮起仅发布 Critical，否则可发布的高置信度建议会被记录并延迟，第 2-5 轮延迟自上一轮以来未更改的代码上的新建议；低置信度和 Nice-to-have 的发现仅限终端），`"critical"`（从第 1 轮开始采用该策略），或 `"suggestion"`（每轮都发布建议；关闭收敛策略）。非 PR 目标没有轮次，会忽略此设置。 | `"auto"` |
+| `review.reverseAuditRounds` | number | 降低每次 high-effort 审查的反向审计循环轮次上限。该上限原本遵循 diff 拓扑（10 小型 / 5 分 chunk；大型 diff 有审查截止时间为 3，无截止时间为 5）。此设置只能**降低**适用的任一层级：低于 3、高于该层级或不是大于零的整数的值会被忽略。降低上限不会使审查更快收敛——循环在连续两轮无新发现后结束——而是使它们更频繁地在收敛前停止，且每次此类停止都将结论上限为 Comment。 | `0`（未设置） |
 
 这些设置仅从操作员作用域（User、System 和 SystemDefaults）读取；工作区 `.qwen/settings.json` 中的值会被忽略，因此仓库无法为其审查者设置审查策略。
 

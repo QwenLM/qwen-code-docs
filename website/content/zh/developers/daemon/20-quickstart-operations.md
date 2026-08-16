@@ -258,7 +258,9 @@ serve/server.ts                    createServeApp() - builds Express app (**does
    |  `- return app
    |
    v
-serve/run-qwen-serve.ts              server = app.listen(port, hostname, cb)
+serve/run-qwen-serve.ts              server = createServer(app) / https.createServer(..., app)
+   |  |- lifecycle.bindServer(server, { startupReady, drainHost })
+   |  |- server.listen(port, hostname)
    |  |- server.maxConnections = cap
    |  |- actualPort = server.address().port
    |  |- write "qwen serve listening on ..."
@@ -271,8 +273,8 @@ commands/serve.ts                  await blockForever()    // block forever unti
 
 关键事实：
 
-- **`createServeApp` 仅负责构建，不负责监听。** 它返回一个挂载了中间件和路由的 `express()` 实例。调用方负责 `app.listen()`。`server.test.ts` 在大约 25 个用例中以这种方式使用该工厂函数，因此该工厂函数有意不管理生命周期。
-- **`() => actualPort` 是一个惰性闭包。** `actualPort` 在 `app.listen` 的回调中赋值。`hostAllowlist` 中间件按需读取它，因此临时端口（`--port 0`）仍能正确校验 `Host` 请求头。
+- **`createServeApp` 仅负责构建，不负责监听。** 它返回一个挂载了中间件和路由的 `express()` 实例。仅需普通路由的嵌入者可以继续自行管理 `app.listen()`。使用 Live/Conversations 的嵌入者必须在监听之前将实际的 Node 服务器绑定到导出的应用生命周期，并在关闭期间 await 该生命周期。
+- **`() => actualPort` 是一个惰性闭包。** `actualPort` 在 `server.listen` 的回调中赋值。`hostAllowlist` 中间件按需读取它，因此临时端口（`--port 0`）仍能正确校验 `Host` 请求头。
 - **`await blockForever()` 是有意为之。** 如果 `yargs.parse()` 解析完成，CLI 顶层会进入交互式 TUI 入口（`gemini.tsx`）。SIGINT / SIGTERM 通过 `runQwenServe` 的 `onSignal` 路径退出。
 
 ## 10. HTTP 路由文件拆分
@@ -324,11 +326,17 @@ console.log(`Daemon at ${handle.url}`);
 await handle.close(); // programmatic shutdown
 ```
 
-或者直接获取 Express app 并自行监听：
+或者直接获取 Express app 并自行绑定监听器生命周期。当嵌入方使用 Live/Conversations 时必须使用此形式：
 
 ```ts
-import { createServeApp } from '@qwen-code/qwen-code/serve';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import {
+  createServeApp,
+  getServeAppLifecycle,
+} from '@qwen-code/qwen-code/serve';
 
+let actualPort = 0;
 const app = createServeApp(
   {
     port: 0,
@@ -336,16 +344,27 @@ const app = createServeApp(
     mode: 'http-bridge',
     maxSessions: 20,
   },
-  () => 0,
+  () => actualPort,
   {
     /* deps: bridge, fsFactory, ... */
   },
 );
 
-const server = app.listen(0, '127.0.0.1', () => {
-  console.log('listening on', server.address());
+const lifecycle = getServeAppLifecycle(app);
+const server = createServer(app);
+lifecycle.bindServer(server);
+await new Promise<void>((resolve, reject) => {
+  server.once('error', reject);
+  server.listen(0, '127.0.0.1', () => resolve());
 });
+actualPort = (server.address() as AddressInfo).port;
+console.log('listening on', server.address());
+
+// 停止准入，排空应用工作，关闭监听器，并释放所有权。
+await lifecycle.close();
 ```
+
+调用原始的 `server.close()` 也会启动相同的事件驱动清理，但只有当进程保持存活时才是尽力而为的；始终 await `lifecycle.close()` 以接收关闭错误。如果未绑定服务器，Live/Conversations 请求会 fail closed，而普通应用行为不受影响。
 
 注意：直接调用 `createServeApp` 时，默认的 `fsFactory.trusted = false`。Agent 端的 ACP `writeTextFile` 会被作为 `untrusted_workspace` 拒绝，并在 stderr 打印一次警告。你可以注入带有显式信任配置的 `deps.fsFactory`，注入 `deps.bridge`，或者接受默认的信任门控行为。
 
