@@ -290,7 +290,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/daemon/02-serve-runtime/</loc>
-<lastmod>2026-08-10T21:34:46.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -398,7 +398,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/daemon/20-quickstart-operations/</loc>
-<lastmod>2026-08-13T22:31:46.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -656,7 +656,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/configuration/settings/</loc>
-<lastmod>2026-08-15T20:56:33.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -782,7 +782,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/code-review/</loc>
-<lastmod>2026-08-15T20:56:33.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1292,7 +1292,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/developers/daemon/02-serve-runtime/</loc>
-<lastmod>2026-08-10T21:34:46.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1400,7 +1400,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/developers/daemon/20-quickstart-operations/</loc>
-<lastmod>2026-08-13T22:31:46.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1508,7 +1508,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/developers/qwen-serve-protocol/</loc>
-<lastmod>2026-08-13T22:31:46.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1658,7 +1658,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/configuration/settings/</loc>
-<lastmod>2026-08-15T20:56:33.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1784,7 +1784,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/code-review/</loc>
-<lastmod>2026-08-15T20:56:33.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2294,7 +2294,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/developers/daemon/02-serve-runtime/</loc>
-<lastmod>2026-08-10T21:34:46.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2402,7 +2402,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/developers/daemon/20-quickstart-operations/</loc>
-<lastmod>2026-08-13T22:31:46.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2660,7 +2660,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/configuration/settings/</loc>
-<lastmod>2026-08-15T20:56:33.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2786,7 +2786,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/features/code-review/</loc>
-<lastmod>2026-08-15T20:56:33.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3296,7 +3296,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/developers/daemon/02-serve-runtime/</loc>
-<lastmod>2026-08-10T21:34:46.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3404,7 +3404,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/developers/daemon/20-quickstart-operations/</loc>
-<lastmod>2026-08-13T22:31:46.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3788,7 +3788,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/features/code-review/</loc>
-<lastmod>2026-08-15T20:56:33.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4004,7 +4004,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/qwen-serve/</loc>
-<lastmod>2026-08-13T22:31:46.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4322,7 +4322,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/developers/daemon/02-serve-runtime/</loc>
-<lastmod>2026-08-10T21:34:46.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4430,7 +4430,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/developers/daemon/20-quickstart-operations/</loc>
-<lastmod>2026-08-13T22:31:46.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4688,7 +4688,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/configuration/settings/</loc>
-<lastmod>2026-08-15T20:56:33.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4814,7 +4814,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/features/code-review/</loc>
-<lastmod>2026-08-15T20:56:33.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5324,7 +5324,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/developers/daemon/02-serve-runtime/</loc>
-<lastmod>2026-08-10T21:34:46.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5432,7 +5432,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/developers/daemon/20-quickstart-operations/</loc>
-<lastmod>2026-08-13T22:31:46.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5714,7 +5714,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/configuration/settings/</loc>
-<lastmod>2026-08-15T20:56:33.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5840,7 +5840,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/code-review/</loc>
-<lastmod>2026-08-15T20:56:33.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6350,7 +6350,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/developers/daemon/02-serve-runtime/</loc>
-<lastmod>2026-08-10T21:34:46.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6458,7 +6458,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/developers/daemon/20-quickstart-operations/</loc>
-<lastmod>2026-08-13T22:31:46.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6716,7 +6716,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/configuration/settings/</loc>
-<lastmod>2026-08-15T20:56:33.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6842,7 +6842,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/features/code-review/</loc>
-<lastmod>2026-08-15T20:56:33.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7112,7 +7112,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ko/developers/daemon/02-serve-runtime/</loc>
-<lastmod>2026-08-10T21:34:46.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7220,7 +7220,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ko/developers/daemon/20-quickstart-operations/</loc>
-<lastmod>2026-08-13T22:31:46.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7436,7 +7436,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ko/users/configuration/settings/</loc>
-<lastmod>2026-08-15T20:56:33.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7556,7 +7556,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ko/users/features/code-review/</loc>
-<lastmod>2026-08-15T20:56:33.000Z</lastmod>
+<lastmod>2026-08-16T21:44:27.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
