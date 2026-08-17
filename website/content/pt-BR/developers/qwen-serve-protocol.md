@@ -213,6 +213,7 @@ O daemon anuncia suas tags de feature suportadas do registry de capability do se
  'workspace_qualified_memory', 'extension_management_v2',
  'workspace_persisted_transcript',
  'workspace_session_export', 'workspace_archived_session_export',
+ 'workspace_session_live_state',
  'client_mcp_over_ws', 'cdp_tunnel_over_ws', 'browser_automation_mcp']
 ```
 
@@ -239,6 +240,8 @@ O daemon anuncia suas tags de feature suportadas do registry de capability do se
 `workspace_session_export` anuncia `GET /workspaces/:workspace/session/:id/export`, uma exportação completa somente para confiáveis da sessão ativa persistida do workspace selecionado. É independente de `session_export` e `workspace_qualified_rest_core`: daemons lançados podem anunciar ambas as tags antigas sem implementar a rota plural, então clientes devem fazer preflight desta tag diretamente. A tag é incondicional porque um primário single-workspace confiável pode usar a rota por id ou cwd. A exportação não resolve um proprietário ao vivo, não inicia ACP, não anexa um cliente, nem faz fallback para outro workspace.
 
 `workspace_archived_session_export` anuncia `GET /workspaces/:workspace/session/:id/archive/export`, uma exportação completa somente para confiáveis do armazenamento persistido arquivado do workspace selecionado. É independente de `workspace_session_export` e `workspace_qualified_rest_core`; clientes devem fazer preflight desta tag diretamente. Uma rota distinta impede que um daemon mais antigo ignore a intenção de arquivo e retorne uma transcrição ativa com o mesmo id.
+
+`workspace_session_live_state` anuncia `GET /workspaces/:workspace/sessions/live-state`, um snapshot somente em memória e apenas para confiáveis das sessões ao vivo do runtime de workspace selecionado mais uma versão de catálogo em memória que indica aos clientes quando um reload completo do catálogo persistido é necessário. É independente de `workspace_qualified_rest_core`: daemons lançados podem anunciar a capability REST de workspace mais ampla sem implementar esta rota, então clientes devem fazer preflight desta tag diretamente. A tag é incondicional porque um primário single-workspace confiável pode usar a rota por id ou cwd; verificações de confiança por workspace ainda se aplicam em cada requisição, e a rota não estende a política permissiva de leitura de catálogo persistido de secundário não confiável para estado de bridge ao vivo.
 
 `slow_client_warning` cobre o comportamento de backpressure de SSE: (a) o daemon emite um frame sintético `slow_client_warning` no stream de eventos quando o backlog de frames ao vivo ou o backlog de bytes serializados ao vivo de um assinante ultrapassa 75% de capacidade, uma vez por episódio de overflow (rearmado após ambas as medições drenarem abaixo de 37,5%); (b) `GET /session/:id/events` aceita um query param `?maxQueued=N` (faixa `[16, 2048]`) para pré-dimensionar o backlog de frames por assinante para reconexões frias contra um anel de replay grande. O limite de bytes serializados é de propriedade do daemon (padrão **2 MiB** por assinante), somente ao vivo, e intencionalmente não tem query parameter. O tamanho do anel global do daemon é controlado por `--event-ring-size` (padrão **8000**, conforme #3803 §02). Daemons antigos não possuem silenciosamente o comportamento de aviso/query — faça preflight desta tag antes de optar.
 
@@ -452,7 +455,7 @@ operacional consolidado somente-leitura documentado abaixo.
 | `require_auth`                      | o daemon foi iniciado com `--require-auth` (ou `requireAuth: true` via API embedded). Token bearer é obrigatório em toda rota, incluindo `/health` em binds de loopback.                                                                                                                                                                                                                                                                                                                                        |
 | `mcp_workspace_pool`                | o pool de transporte MCP compartilhado está ativo. Omitido quando `QWEN_SERVE_NO_MCP_POOL=1` desabilita o pool.                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `mcp_pool_restart`                  | o pool de transporte MCP compartilhado está ativo; respostas de restart podem incluir formas multi-entrada com awareness de pool.                                                                                                                                                                                                                                                                                                                                                                                 |
-| `external_tool_guard`               | `qwen serve` completou o handshake de inicialização para `--external-tool-guard-mode=required`; todo canal ACP spawned deve reconhecer o callback instalado antes da criação de sessão, e toda invocação de ferramenta ACP gerenciada de nível superior suportada que alcança o limite final de execução deve receber uma permissão pré-execução externa. Negações anteriores de permissão/hook não fazem requisição ao provider. Execução aninhada do AgentCore está fora do v1 e é rejeitada.                   |
+| `external_tool_guard`               | `qwen serve` completou o handshake de inicialização para `--external-tool-guard-mode=required`; todo canal ACP spawned deve reconhecer o callback instalado antes da criação de sessão, e toda invocação de ferramenta ACP gerenciada de nível superior suportada que alcança o limite final de execução deve receber uma permissão pré-execução externa. Negações anteriores de permissão/hook não fazem requisição ao provider. Execução aninhada do AgentCore está fora do v1 e é rejeitada enquanto este modo de provider externo está ativo. A tag reflete apenas o provider externo: independentemente dele, todo daemon aplica a guarda de relocação de Git embutida às ferramentas gerenciadas que carregam uma linha de comando shell (`run_shell_command` e `monitor`), então a ausência desta tag não significa que não há negações pré-execução. |
 | `allow_origin`                      | T2.4 ([#4514](https://github.com/QwenLM/qwen-code/issues/4514)). O daemon foi iniciado com pelo menos um `--allow-origin <pattern>` (ou `allowOrigins: [...]` via API embedded). Requisições cross-origin de origins correspondentes recebem cabeçalhos de resposta CORS adequados; origins não correspondentes ainda recebem o 403 padrão. A lista de padrões configurada intencionalmente NÃO é ecoada em `/capabilities` para evitar vazar o conjunto de origins confiáveis para leitores não autenticados — a webUI do navegador já conhece seu próprio origin. |
 | `prompt_absolute_deadline`          | `--prompt-deadline-ms` / `QWEN_SERVE_PROMPT_DEADLINE_MS` / `ServeOptions.promptDeadlineMs` está definido como um inteiro positivo.                                                                                                                                                                                                                                                                                                                                                                                |
 | `writer_idle_timeout`               | `--writer-idle-timeout-ms` / `QWEN_SERVE_WRITER_IDLE_TIMEOUT_MS` / `ServeOptions.writerIdleTimeoutMs` está definido como um inteiro positivo.                                                                                                                                                                                                                                                                                                                                                                    |
@@ -1139,6 +1142,7 @@ Tags de capability:
 - `workspace_persisted_transcript` → `GET /workspaces/:workspace/session/:id/transcript`
 - `workspace_session_export` → `GET /workspaces/:workspace/session/:id/export`
 - `workspace_archived_session_export` → `GET /workspaces/:workspace/session/:id/archive/export`
+- `workspace_session_live_state` → `GET /workspaces/:workspace/sessions/live-state`
 - `workspace_qualified_memory` → `POST /workspaces/:workspace/memory/{remember,forget,dream}` e `GET /workspaces/:workspace/memory/{remember,forget,dream}/:taskId`
 
 `workspace_acp_status` reporta a liveness pontual do channel ACP do workspace primário
@@ -2255,6 +2259,44 @@ Campos adicionais podem aparecer em cada sessão quando `view=organized`:
 ```
 
 Listas ativas confiáveis incluem campos de overlay do daemon ao vivo como `clientCount` e `hasActivePrompt`. Listas de secundário não confiável e arquivadas são somente de armazenamento: campos de overlay ao vivo permanecem ausentes ou falsos, e entradas arquivadas definem `isArchived` como `true`. Array vazio (não 404) quando nenhuma sessão existe — uma UI de seletor de sessão não deve errar só porque o workspace está ocioso.
+
+### `GET /workspaces/:workspace/sessions/live-state`
+
+Retorna o snapshot somente em memória de sessões ao vivo do runtime de workspace selecionado mais uma versão de catálogo em memória, para que clientes possam parar de fazer poll do catálogo persistido em `GET /workspaces/:workspace/sessions` para estado volátil como `hasActivePrompt`, flags de espera e `clientCount`. Faça preflight de `workspace_session_live_state`; a tag é independente de `workspace_qualified_rest_core`, então daemons mais antigos que anunciam a capability REST de workspace mais ampla não implementam esta rota. O seletor resolve primeiro como id exato de workspace, depois como cwd absoluto URL-encoded após canonização, correspondendo às outras rotas plurais de sessão. A rota é somente para confiáveis tanto para runtimes primários quanto secundários: nunca faz fallback para o runtime primário, e não usa a política permissiva de catálogo persistido que concede a um secundário não confiável leituras limitadas de catálogo. O endpoint não tem parâmetros de query e não faz round trips de armazenamento de sessão, configurações, comando externo ou ACP, então seu custo é independente da contagem de sessões persistidas e do tamanho do JSONL; o limite padrão de sessões ao vivo mantém a resposta limitada, e com o limite desabilitado o custo permanece proporcional apenas ao número de sessões ao vivo.
+
+Resposta:
+
+```json
+{
+  "v": 1,
+  "catalogVersion": {
+    "generation": "7eca3164-bce1-4f50-94d8-c842c480f213",
+    "revision": 17
+  },
+  "sessions": [
+    {
+      "sessionId": "session-123",
+      "clientCount": 1,
+      "hasActivePrompt": true,
+      "isWaitingForPermission": false,
+      "isWaitingForUserQuestion": false
+    }
+  ]
+}
+```
+
+`v` é a versão do schema da resposta. Toda resposta bem-sucedida inclui `Cache-Control: no-store`. `sessions` é o conjunto completo, não paginado e não ordenado de sessões atualmente ao vivo no runtime selecionado; um runtime ao vivo vazio retorna `200` com `sessions: []`. `clientCount`, `hasActivePrompt`, `isWaitingForPermission` e `isWaitingForUserQuestion` são campos de wire obrigatórios, e valores opcionais ausentes da bridge projetam para `0` ou `false`. Campos estáticos do catálogo como display name, timestamps, organização e metadados de fonte são deliberadamente excluídos e permanecem pertencentes ao catálogo completo. Uma linha ausente no live-state apenas limpa os campos voláteis de uma linha conhecida do catálogo; nunca deleta uma linha do catálogo persistido.
+
+`catalogVersion` é um token de igualdade para mudanças de catálogo observadas pelo daemon. `generation` é um UUID aleatório criado com cada instância de bridge e muda no restart do daemon ou substituição de runtime de workspace; `revision` começa em zero e aumenta monotonicamente dentro de uma geração. A única operação suportada é igualdade sobre o par inteiro: mesma generation e revision significa nenhuma mudança de catálogo observada pelo daemon, e qualquer diferença significa recarregar o catálogo completo. Clientes não devem fazer aritmética de revision nem comparar revisions entre gerações, e incrementos conservadores extras são permitidos. A versão cobre mudanças de associação de catálogo e metadados estáticos observados pelo daemon; atividade ordinária de turno, ciclo de vida de prompt, attach/detach e transições de estado de espera não a avançam porque o snapshot ao vivo já carrega os campos voláteis correspondentes. Dois valores de overlay volátil são deliberadamente fora de ambos os sinais: estado de erro de turno (`hasTurnError`/`turnError`) e a contagem/conteúdo de interação pendente (`pendingInteractionCount`/`pendingInteractions`) não avançam a versão nem aparecem no snapshot, então um cliente que precisa deles deve continuar lendo o stream de eventos por sessão ou o catálogo completo em vez de depender desta rota; qualquer campo pode ser adicionado de forma wire-aditiva quando um consumidor concreto o exigir. Mutações escritas diretamente por outro daemon, um TUI ou um processo externo não são observadas, então uma vez que um cliente para o poll periódico de catálogo completo aquelas escritas não têm tempo de descoberta limitado e aparecem apenas após um reload completo explícito, outra mutação de catálogo observada, reconexão ou substituição de daemon/runtime.
+
+Clientes reconciliam um pacote de catálogo com um handshake de duas leituras: leia live-state A, carregue a lista completa de sessões (mais `GET /workspaces/:workspace/session-groups` quando o cliente consome `session_organization`), depois leia live-state B. Versões A e B iguais aceitam o pacote; versões diferentes marcam o catálogo como obsoleto e coalescem no máximo um reload atrasado em vez de entrar em um loop de retry apertado. Toda requisição de catálogo aceita deve ser iniciada após A — uma requisição ou promessa deduplicada que começou antes de A não pode satisfazer a reconciliação. Reloads orientados por versão são single-flight por workspace e obedecem a um intervalo mínimo de background não zero, então churn sustentado de catálogo não pode gerar um scan completo de catálogo por poll de live-state; mutações locais explícitas ainda podem solicitar um refresh imediato através da mesma operação single-flight.
+
+**Erros:**
+
+- `400` — comportamento existente de validação de seletor ou `workspace_mismatch` para um seletor desconhecido, malformado, aninhado ou não registrado; a rota nunca resolve um seletor desconhecido para o runtime primário.
+- `403` — `untrusted_workspace` para qualquer runtime não confiável, incluindo um primário não confiável.
+- `503` — `workspace_runtime_unavailable` com `Retry-After` para um runtime em bootstrap, em transição, em drenagem, bloqueado ou removido, ou uma geração de runtime que fecha durante a requisição.
+- `500` — erros locais inesperados usam o mapeamento de erros da bridge existente.
 
 ### `GET /workspace/:id/session-groups`
 

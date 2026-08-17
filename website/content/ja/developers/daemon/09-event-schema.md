@@ -79,7 +79,7 @@ SDK は `asKnownDaemonEvent(evt)` を公開しています。これは既知の�
 | `agent_changed`          | S->C      | `change: 'created' \| 'updated' \| 'deleted', name, level: 'project' \| 'user'`                                                                |
 | `approval_mode_changed`  | S->C      | `sessionId, previous, next, persisted: boolean`                                                                                                |
 | `tool_toggled`           | S->C      | `toolName, enabled`; 次回の ACP 子プロセスの生成に影響し、すでに実行中のセッションは変更しません。                                            |
-| `settings_changed`       | S->C      | ワークスペース設定の書き込みが完了しました。ペイロードはオープンです。コンシューマーは read-after-write でリフレッシュする必要があります。                                           |
+| `settings_changed`       | S->C      | ワークスペース設定の書き込みが完了しました。ペイロードは `key` を含みます。`value`、`scope`、および Skill トグルの `mutation` はオプションです。                        |
 | `settings_reloaded`      | S->C      | デーモンのワークスペースサービスが設定を再読み込みしました。ペイロードはオープンです。                                                                                     |
 | `trust_change_requested` | S->C      | `workspaceCwd, desiredState: 'trusted' \| 'untrusted', reason?`                                                                                |
 | `workspace_initialized`  | S->C      | `path, action: 'created' \| 'overwrote' \| 'noop', originatorClientId?`                                                                        |
@@ -170,7 +170,7 @@ SDK は `asKnownDaemonEvent(evt)` を公開しています。これは既知の�
 - `workspaceInitCount`, `lastWorkspaceInit?` - `workspace_initialized` から。
 - `mcpRestartCount`, `lastMcpRestart?` - `mcp_server_restarted` から。
 - `mcpRestartRefusedCount`, `lastMcpRestartRefused?` - `mcp_server_restart_refused` から。
-- `settings_changed` / `settings_reloaded` - `asKnownDaemonEvent` によって認識されます。セッションリデューサーは専用のビューステートフィールドを保持せず、UI は通常これらをリフレッシュシグナルとして扱います。
+- `settings_changed` / `settings_reloaded` - `asKnownDaemonEvent` によって認識されます。セッションリデューサーは専用のビューステートフィールドを保持しません。Skill トグルの `settings_changed` イベントにはオプションの `mutation` メタデータが付随し、ホストはタスクをリロードせずに Skill 専用の変更を段階的に適用できます。他の UI では引き続きこれをリフレッシュシグナルとして扱う場合があります。
 - `permissionVoteProgress: Record<string, DaemonPermissionPartialVoteData>` - コンセンサス投票の進捗。
 - `forbiddenVotes: DaemonPermissionForbiddenData[]`, `forbiddenVoteCount` - ポリシーによって拒否された投票レコード。最大 32 件まで。
 - `awaitingResync: boolean` - `state_resync_required` によってセットされます。コンシューマーがビューステートをリセットするとクリアされます。

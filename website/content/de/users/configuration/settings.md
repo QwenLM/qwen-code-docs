@@ -277,6 +277,12 @@ Das Feld `extra_body` ermöglicht das Hinzufügen benutzerdefinierter Parameter 
 | ----------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
 | `fastModel` | string | Modell, das zur Generierung von [Prompt-Vorschlägen](../features/followup-suggestions) und spekulativer Ausführung verwendet wird. Leer lassen, um das Hauptmodell zu verwenden. Ein kleineres/schnelleres Modell (z. B. `qwen3-coder-flash`) reduziert Latenz und Kosten. Kann auch über `/model --fast` gesetzt werden. | `""`    |
 
+#### advisorModel
+
+| Einstellung    | Typ    | Beschreibung                                                                                                                                                                                                                                                                                                                             | Standard |
+| -------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `advisorModel` | string | Modell, das von [`/advisor`](../features/commands.md#17-second-opinion-advisor) für Second-Opinion-Überprüfungen der Konversation verwendet wird. Leer lassen, um das Hauptmodell zu verwenden. Ein mindestens gleichwertiges Modell wie das Hauptmodell wird empfohlen. Die Einstellung sendet das aktuelle Konversationstranskript an dieses Modell, auch wenn es einen anderen Provider verwendet. | `""`    |
+
 #### visionModel
 
 | Einstellung | Typ | Beschreibung | Standard |

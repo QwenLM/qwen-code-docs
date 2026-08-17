@@ -120,7 +120,7 @@ Workspace 只读快照（Workspace read-only snapshots）：`workspace_mcp`, `wo
 
 扩展管理（Extension management）：`extension_management_v2` 添加全局 `/extensions/*` 目录/变更/操作契约以及 workspace 激活投影。它与已发布的 `workspace_extensions` 兼容表面以及 `workspace_qualified_rest_core` 是独立的。
 
-Workspace 限定会话读取（Workspace-qualified session reads）：`workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`。活跃和已归档的导出 tag 彼此独立，也与 `session_export` 和 `workspace_qualified_rest_core` 独立，因此客户端必须预检其打算导出的确切存储状态。持久化转录分页允许在受限读取策略下的不受信任次级运行时；两条完整导出路径仍然仅限受信任运行时。
+Workspace 限定会话读取（Workspace-qualified session reads）：`workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`, `workspace_session_live_state`。活跃和已归档的导出 tag 彼此独立，也与 `session_export` 和 `workspace_qualified_rest_core` 独立，因此客户端必须预检其打算导出的确切存储状态。持久化转录分页允许在受限读取策略下的不受信任次级运行时；两条完整导出路径仍然仅限受信任运行时。`workspace_session_live_state` 同样独立于 `workspace_qualified_rest_core` 且仅限受信任运行时：它提供所选运行时的纯内存活跃会话快照和目录版本，不会将不受信任次级运行时的持久化读取策略扩展到活跃 bridge 状态。
 
 Workspace 变更（Wave 4+）：`workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, **`workspace_settings`** (conditional), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, `workspace_file_upload`, **`workspace_reload`** (conditional)。
 

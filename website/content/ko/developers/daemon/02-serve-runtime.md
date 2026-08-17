@@ -10,7 +10,7 @@
 - 기본 워크스페이스를 정확히 한 번 **정규화**하고, 세션 런타임을 등록하기 전에 반복되는 모든 `--workspace`를 정규화합니다. 기본 정규 형태는 `/capabilities.workspaceCwd`, `POST /session` 폴백, 기본 브리지가 공유합니다.
 - 안전하지 않거나 잘못된 시작 구성을 거부합니다: 토큰 없는 루프백이 아닌 바인드, 토큰 없는 `--require-auth`, 토큰 없는 `--allow-origin '*'`, 양의 `mcpClientBudget` 없는 `mcpBudgetMode='enforce'`, 존재하지 않거나 디렉토리가 아닌 `--workspace`, 잘못된 타임아웃 또는 속도 제한 값.
 - `WorkspaceFileSystem` 팩토리, 권한 감사 발행자, `DaemonStatusProvider`, `acp-bridge`를 생성합니다.
-- Express 앱을 빌드하고, 미들웨어를 연결하고(`denyBrowserOriginCors` / `allowOriginCors` -> `hostAllowlist` -> 접근 로그 -> `bearerAuth` -> 속도 제한 -> JSON 파서 -> 텔레메트리 -> 라우트별 `mutationGate`), 세션, 워크스페이스 CRUD, 파일, 디바이스 플로우 인증, 권한 투표, ACP HTTP 라우트를 마운트합니다.
+- Express 앱을 빌드하고, 미들웨어를 연결하고(`allowOriginCors`를 가변 origin 허용 목록 위에 -> `hostAllowlist` -> 접근 로그 -> `bearerAuth` -> 속도 제한 -> JSON 파서 -> 텔레메트리 -> 라우트별 `mutationGate`), 세션, 워크스페이스 CRUD, 파일, 디바이스 플로우 인증, 권한 투표, ACP HTTP 라우트를 마운트합니다. (무조건적인 `denyBrowserOriginCors` 방어벽은 부트스트랩 앱 `run-qwen-serve.ts`에만 남아 있습니다.)
 - 리슨 포트를 바인딩하고 시그널 핸들러를 등록합니다.
 - SIGINT/SIGTERM에서 2단계 종료를 실행합니다. 두 번째 시그널에서 강제 종료합니다.
 
@@ -26,7 +26,7 @@
 
 | 미들웨어 (등록 순서)                          | 목적                                                                                                                   | 참고                                                                                                                                                                                  |
 | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `denyBrowserOriginCors` / `allowOriginCors`   | 기본적으로 모든 `Origin` 헤더를 거부합니다. `--allow-origin <pattern>`이 설정되면 허용 목록 모드로 전환합니다.         | [`12-auth-security.md`](./12-auth-security.md) 참조.                                                                                                                                  |
+| `allowOriginCors` (가변 origin 허용 목록)      | `--allow-origin <pattern>`이 설정되면 허용 목록 모드로 전환합니다. 일치하지 않는 origin은 403을 받습니다.              | [`12-auth-security.md`](./12-auth-security.md) 참조. 무조건적인 `denyBrowserOriginCors` 방어벽은 부트스트랩 앱에만 남아 있습니다.                                                      |
 | `hostAllowlist(bind, getPort)`                | 루프백에서 `Host`가 `localhost`, `127.0.0.1`, `[::1]`, `host.docker.internal` 및 실제 포트에 속하는지 검증합니다.       | DNS 리바인딩에 대한 방어입니다. 비교는 대소문자를 구분하지 않으며 포트당 캐시됩니다.                                                                                                   |
 | 접근 로그 미들웨어                            | 요청이 완료되면 메서드, 경로, 상태, durationMs, sessionId, clientId를 `DaemonLogger`에 기록합니다.                      | `bearerAuth` **이전에** 등록되므로 401 거부도 기록됩니다. `/health`와 하트비트는 건너뜁니다.                                                                                          |
 | `bearerAuth(token)`                           | SHA-256 + `timingSafeEqual` 상수 시간 베어러 비교.                                                                     | 토큰이 구성되지 않으면 개방형 통과(루프백 개발 기본값). `Bearer` 스킴은 대소문자를 구분하지 않습니다.                                                                                 |
@@ -138,7 +138,7 @@
 ## 주의사항 및 알려진 제한
 
 - `deps.fsFactory` 또는 `deps.bridge` 없는 직접 `createServeApp`은 `trusted: false`를 기본값으로 사용합니다. 에이전트 측 ACP `writeTextFile`은 `untrusted_workspace`로 거부합니다. 경고는 한 번만 출력됩니다.
-- `denyBrowserOriginCors`는 `Origin`을 포함하는 **모든** 요청을 거부합니다. **루프백** Web Shell은 다른 미들웨어가 먼저 일치하는 루프백 동일 출처 값을 제거하기 때문에 작동합니다. 루프백이 아닌 바인드는 Web Shell의 XHR에 `--allow-origin`이 필요합니다.
+- 런타임 앱은 가변 허용 목록 위에서 `allowOriginCors`를 실행합니다. 일치하지 않는 `Origin` 값은 403 거부 엔벨로프를 받습니다(무조건적인 `denyBrowserOriginCors` 방어벽은 부트스트랩 앱에만 남아 있습니다). **루프백** Web Shell은 다른 미들웨어가 먼저 일치하는 루프백 동일 출처 값을 제거하기 때문에 작동합니다 — 루프백이 아닌 바인드는 Web Shell의 XHR에 `--allow-origin`이 필요합니다.
 - 본문 파서 순서: `mutate({ strict: true })`를 사용하는 라우트는 `express.json()` 이후에만 401을 반환합니다. 최악의 경우는 `--max-connections × express.json({limit: '10mb'})`로, 포화된 루프백 리스너에서 최대 약 2.5GB의 일시적 메모리입니다. 이 트레이드오프는 의도적입니다.
 - 하나의 프로세스에서 여러 데몬은 핸들별 `childEnvOverrides`를 사용해야 합니다. `defaultSpawnChannelFactory`가 생성 시 환경의 스냅샷을 찍기 때문에 `process.env`를 변경하면 경합이 발생합니다.
 

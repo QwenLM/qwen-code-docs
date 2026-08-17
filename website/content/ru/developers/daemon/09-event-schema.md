@@ -68,6 +68,7 @@ SDK предоставляет метод `asKnownDaemonEvent(evt)`. Он воз
 | `mcp_child_refused_batch` | S->C | `refusedServers: [{ name, transport, reason: 'budget_exhausted' }], budget, liveCount, reservedCount, mode: 'enforce', scope?: 'workspace' \| 'session'` |
 | `mcp_server_restarted` | S->C | `serverName, durationMs, entryIndex?` для перезапусков пула с несколькими записями F2 |
 | `mcp_server_restart_refused` | S->C | `serverName, reason: 'budget_would_exceed' \| 'in_flight' \| 'disabled' \| 'restart_failed', entryIndex?, details?`. Четвертое значение, `restart_failed`, содержит информацию о базовой жесткой ошибке при перезапуске пула с несколькими записями. `MCP_RESTART_REFUSED_REASONS` отклоняет неизвестные причины; старый редьюсер SDK молча отбрасывает новые добавленные значения причин, поскольку `parseDaemonEvent` возвращает `undefined`. Отправляйте новую причину вместе с SDK, который её поддерживает. |
+
 ### Управление мутациями (Wave 4 PR 16+17)
 
 | Тип                      | Направление | Полезная нагрузка                                                                                                                              |
@@ -76,7 +77,7 @@ SDK предоставляет метод `asKnownDaemonEvent(evt)`. Он воз
 | `agent_changed`          | S->C        | `change: 'created' \| 'updated' \| 'deleted', name, level: 'project' \| 'user'`                                                                |
 | `approval_mode_changed`  | S->C        | `sessionId, previous, next, persisted: boolean`                                                                                                |
 | `tool_toggled`           | S->C        | `toolName, enabled`; влияет на следующий запуск дочернего процесса ACP и не изменяет уже запущенные сессии.                                            |
-| `settings_changed`       | S->C        | Запись настроек рабочего пространства завершена. Полезная нагрузка открыта; потребителям следует обновить данные с помощью чтения после записи.                                           |
+| `settings_changed`       | S->C        | Запись настроек рабочего пространства завершена. Полезная нагрузка включает `key`; `value`, `scope` и `mutation` (Skill-toggle) опциональны.                        |
 | `settings_reloaded`      | S->C        | Сервис рабочего пространства демона перечитал настройки. Полезная нагрузка открыта.                                                                                     |
 | `trust_change_requested` | S->C        | `workspaceCwd, desiredState: 'trusted' \| 'untrusted', reason?`                                                                                |
 | `workspace_initialized`  | S->C        | `path, action: 'created' \| 'overwrote' \| 'noop', originatorClientId?`                                                                        |

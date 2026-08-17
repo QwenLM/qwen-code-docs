@@ -105,7 +105,7 @@ Estes são expostos através do `errorKind` da célula de preflight para que UIs
 | ------ | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `401`  | `{ error: 'Unauthorized' }`                   | Token bearer ausente / errado / sem esquema. Uniforme entre `cabeçalho ausente` / `esquema errado` / `token errado` para que sondagem não possa distinguir. |
 | `401`  | `{ error: '...', code: 'token_required' }`    | Rota estrita de gate de mutação em um daemon loopback sem token. SDKs renderizam dica "configure --token / --require-auth".                          |
-| `403`  | `{ error: 'Request denied by CORS policy' }`  | `denyBrowserOriginCors` rejeitou uma requisição com cabeçalho `Origin`.                                                                             |
+| `403`  | `{ error: 'Request denied by CORS policy' }` | `allowOriginCors` (runtime) / `denyBrowserOriginCors` (bootstrap) rejeitou uma requisição com cabeçalho `Origin`.                                                                             |
 | `403`  | `{ error: 'Invalid Host header' }`            | `hostAllowlist` rejeitou o cabeçalho `Host` (defesa contra rebinding de DNS).                                                                       |
 
 Consulte [`12-auth-security.md`](./12-auth-security.md) para o modelo completo de autenticação.

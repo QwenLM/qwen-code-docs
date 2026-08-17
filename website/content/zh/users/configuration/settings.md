@@ -275,6 +275,12 @@ Qwen Code 会自动将旧版配置设置迁移到新格式。旧设置文件会�
 | --- | --- | --- | --- |
 | `fastModel` | string | 用于生成[提示建议](../features/followup-suggestions)和推测执行的模型。留空则使用主模型。使用更小/更快的模型（例如 `qwen3-coder-flash`）可降低延迟和成本。也可以通过 `/model --fast` 进行设置。 | `""` |
 
+#### advisorModel
+
+| 设置 | 类型 | 描述 | 默认值 |
+| --- | --- | --- | --- |
+| `advisorModel` | string | [`/advisor`](../features/commands.md#17-second-opinion-advisor) 用于对对话进行二次审查的模型。留空则使用主模型。建议使用至少与主模型同等能力的模型。设置此选项会将最近的对话转录发送到该模型，即使它使用其他提供商。 | `""` |
+
 #### visionModel
 
 | 设置 | 类型 | 描述 | 默认值 |

@@ -150,7 +150,8 @@ description: "Review code changes for correctness, security, performance, and co
 - 构建和测试命令在隔离环境中运行，不会污染本地构建缓存
 - 如果出现任何问题，你的环境不受影响——只需删除 worktree
 - 审查完成后，worktree 会自动清理
-- 如果审查被中断（Ctrl+C、崩溃），下次对同一 PR 执行 `/review` 时，会在重新开始前自动清理过期的 worktree
+- 如果审查被中断（Ctrl+C、崩溃），下次对同一 PR 执行 `/review` 时，会在重新开始前自动清理过期的 worktree。如果被中断的会话仍留下了其租约——跳过此步骤的强制终止，或在后续 prompt 期间被中断的多 prompt 审查——`/review` 会拒绝并指出要删除的租约文件。正常停止会释放租约：已完成的审查和提前停止（空 diff、自上次审查以来无新变更）都会运行 `cleanup`，释放租约
+- worktree 租约绑定到其会话：对已在审查中的 PR 执行第二次 `/review` 会拒绝启动（指出持有者），而不是拆除正在运行的审查的 worktree
 - 审查报告和缓存保存在主项目目录中（而非 worktree）
 
 ## 跨仓库 PR 审查

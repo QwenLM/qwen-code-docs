@@ -39,7 +39,7 @@ Die erste npm-Veröffentlichung von `qwen serve` (v0.16-alpha) ist absichtlich e
 - ✅ Bring-Your-Own-Bearer-Token via `QWEN_SERVER_TOKEN` Umgebungsvariable ([Authentication](#authentication) für das Setup)
 - ❌ **Containerisiertes Deployment** — Docker / Compose / Kubernetes / nginx Reverse-Proxy mit TLS-Terminierung NICHT in v0.16-alpha. Wird auf v0.16.x verschoben, sobald ein Enterprise-Pilot fest zugesagt ist (würde sonst verrotten, weil niemand es validiert).
 - ❌ **Multi-Daemon-Koordination auf einem Host** — ein Daemon kann mehrere explizit registrierte Workspaces hosten, aber Daemons koordinieren sich nicht untereinander. Cross-Host-Föderation, Instance-Path-Token-Keying und Stale-Token-Bereinigung werden auf v0.16.x verschoben.
-- ✅ **Fresh Local Control tokens** — `--local-control` generiert ein Token für diesen Prozess. Die allgemeine Daemon-Token-Speicherung bleibt BYO-Token.
+- ✅ **Revokierbare Local-Control-Pairing-Tokens** — `--local-control` prägt ein separates LAN-Pairing-Token, das im Besitz des Daemons ist. Die allgemeine Daemon-Token-Speicherung bleibt BYO-Token.
 
 **Härtung — minimal überlebensfähig für lokalen Single-User:**
 

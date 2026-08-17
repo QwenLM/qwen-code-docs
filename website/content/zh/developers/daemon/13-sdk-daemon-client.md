@@ -385,6 +385,8 @@ async function resilientSubscribe(session: DaemonSessionClient) {
 
 当 `workspace_archived_session_export` 被广播时，使用 `client.workspaceById(workspaceId).exportArchivedSession(sessionId, { format })` 或相应的 `workspaceByCwd` 方法仅导出选定工作区的已归档持久化转录。该方法使用与活动导出相同的结果类型和原生 REST 行为，但它永远不会回退到活动会话；不能从任何活动导出能力推断其支持。
 
+当 `workspace_session_live_state` 被广播时，`client.getWorkspaceSessionLiveState(workspaceCwd)` 或作用域方法 `client.workspaceById(workspaceId).getSessionLiveState()` / `client.workspaceByCwd(workspaceCwd).getSessionLiveState()` 读取选定可信工作区的纯内存活跃会话快照及其目录版本，返回 `DaemonWorkspaceSessionLiveState`（`{ v: 1, catalogVersion: DaemonSessionCatalogVersion, sessions: DaemonSessionLiveState[] }`）。这些方法始终使用原生 REST 配合 bearer 认证和编码的工作区选择器，保留可选的客户端标识，并使用现有的短请求超时。它们不调用 `requireCapability()` — 每次轮询都进行能力探测会使请求量翻倍 — 因此消费者应从已加载的 capabilities 中预检一次 `workspace_session_live_state`，并在缺少该标签时回退到现有的目录轮询。不要从 `workspace_qualified_rest_core` 推断其支持。
+
 ### 在构造时设置 `lastEventId` 初始值
 
 跨进程重启持久化游标的调用方可以为其设置初始值：

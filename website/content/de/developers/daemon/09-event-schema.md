@@ -76,7 +76,7 @@ Gruppiert nach Domäne.
 | `agent_changed`          | S->C     | `change: 'created' \| 'updated' \| 'deleted', name, level: 'project' \| 'user'`                                                                |
 | `approval_mode_changed`  | S->C     | `sessionId, previous, next, persisted: boolean`                                                                                                |
 | `tool_toggled`           | S->C     | `toolName, enabled`; betrifft den nächsten ACP-Child-Spawn und mutiert nicht bereits laufende Sessions.                                            |
-| `settings_changed`       | S->C     | Workspace-Einstellungen erfolgreich geschrieben. Payload ist offen; Consumer sollten mit Read-after-write aktualisieren.                                           |
+| `settings_changed`       | S->C      | Workspace-Einstellungen erfolgreich geschrieben. Payload enthält `key`; `value`, `scope` und Skill-Toggle-`mutation` sind optional.                        |
 | `settings_reloaded`      | S->C     | Daemon-Workspace-Service hat Einstellungen neu eingelesen. Payload ist offen.                                                                                     |
 | `trust_change_requested` | S->C     | `workspaceCwd, desiredState: 'trusted' \| 'untrusted', reason?`                                                                                |
 | `workspace_initialized`  | S->C     | `path, action: 'created' \| 'overwrote' \| 'noop', originatorClientId?`                                                                        |

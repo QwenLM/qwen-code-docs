@@ -10,7 +10,7 @@
 - Den primären Workspace genau einmal **kanonisieren** und jedes wiederholte `--workspace` kanonisieren, bevor Session-Runtimes registriert werden. Die primäre kanonische Form wird von `/capabilities.workspaceCwd`, dem `POST /session`-Fallback und der primären Bridge gemeinsam genutzt.
 - Unsichere oder ungültige Startkonfigurationen ablehnen: Non-Loopback-Bind ohne Token, `--require-auth` ohne Token, `--allow-origin '*'` ohne Token, `mcpBudgetMode='enforce'` ohne positives `mcpClientBudget`, ein nicht existierender oder kein Verzeichnis-`--workspace` sowie ungültige Timeout- oder Rate-Limit-Werte.
 - Die `WorkspaceFileSystem`-Factory, den Permission-Audit-Publisher, den `DaemonStatusProvider` und die `acp-bridge` konstruieren.
-- Die Express-App bauen, Middleware verdrahten (`denyBrowserOriginCors` / `allowOriginCors` -> `hostAllowlist` -> Access-Log -> `bearerAuth` -> Rate-Limit -> JSON-Parser -> Telemetrie -> routenbezogene `mutationGate`) sowie Session-, Workspace-CRUD-, File-, Device-Flow-Auth-, Permission-Vote- und ACP-HTTP-Routen mounten.
+- Die Express-App bauen, Middleware verdrahten (`allowOriginCors` über die mutable Origin-Allowlist -> `hostAllowlist` -> Access-Log -> `bearerAuth` -> Rate-Limit -> JSON-Parser -> Telemetrie -> routenbezogene `mutationGate`) sowie Session-, Workspace-CRUD-, File-, Device-Flow-Auth-, Permission-Vote- und ACP-HTTP-Routen mounten. (Die bedingungslose `denyBrowserOriginCors`-Mauer bleibt nur in der Bootstrap-App, `run-qwen-serve.ts`.)
 - Den Listening-Port binden und Signal-Handler registrieren.
 - Zweiphasigen Shutdown bei SIGINT/SIGTERM ausführen; Force-Exit bei einem zweiten Signal.
 
@@ -26,8 +26,8 @@
 
 | Middleware, in Registrierungsreihenfolge | Zweck | Hinweise |
 | --- | --- | --- |
-| `denyBrowserOriginCors` / `allowOriginCors` | Standardmäßig alle `Origin`-Header ablehnen; zu einer Allowlist wechseln, wenn `--allow-origin <pattern>` konfiguriert ist. | Siehe [`12-auth-security.md`](./12-auth-security.md). |
-| `hostAllowlist(bind, getPort)` | Auf Loopback validieren, dass `Host` zu `localhost`, `127.0.0.1`, `[::1]` oder `host.docker.internal` sowie dem tatsächlichen Port gehört. | Schutz gegen DNS-Rebinding. Der Vergleich ist case-insensitive und wird pro Port gecacht. |
+| `allowOriginCors` | `Origin`-Header gegen eine mutable Allowlist prüfen; die `--allow-origin <pattern>`-Einträge seeden sie, und Local Control fügt die LAN-Origin hinzu, während es aktiviert ist. Nicht übereinstimmende Origins erhalten den 403- deny-Envelope. | Siehe [`12-auth-security.md`](./12-auth-security.md). |
+| `hostAllowlist(bind, getPort)` | Auf Loopback validieren, dass `Host` zu `localhost`, `127.0.0.1`, `[::1]` oder `host.docker.internal` sowie dem tatsächlichen Port gehört. Der Local-Control-LAN-Listener ist die Ausnahme, die immer ihre beworbene-Autorität-Hostprüfung erzwingt, unabhängig vom primären Bind. | Schutz gegen DNS-Rebinding. Der Vergleich ist case-insensitive und wird pro Port gecacht. |
 | Access-Log-Middleware | Protokolliert Methode, Pfad, Status, durationMs, sessionId und clientId im `DaemonLogger`, wenn ein Request abgeschlossen ist. | **Vor** `bearerAuth` registriert, sodass 401-Ablehnungen ebenfalls protokolliert werden. Überspringt `/health` und Heartbeat. |
 | `bearerAuth(token)` | SHA-256 plus `timingSafeEqual` Constant-Time-Bearer-Vergleich. | Offener Passthrough, wenn kein Token konfiguriert ist (Loopback-Dev-Standard). Das `Bearer`-Schema ist case-insensitive. |
 | Rate-Limit-Middleware | Optionaler Token-Bucket pro Stufe für Prompt-, Mutations- und Read-Routen. | Nach `bearerAuth` und vor dem JSON-Parsing registriert; gibt 429 vor dem Parsing zurück, wenn ein Bucket erschöpft ist. |
@@ -137,7 +137,7 @@ Siehe [`17-configuration.md`](./17-configuration.md) für die zusammengeführte 
 ## Einschränkungen und bekannte Limits
 
 - Bei direktem Aufruf von `createServeApp` ohne `deps.fsFactory` oder `deps.bridge` ist der Standardwert `trusted: false`; das agentenseitige ACP `writeTextFile` wird mit `untrusted_workspace` abgelehnt. Die Warnung wird einmalig ausgegeben.
-- `denyBrowserOriginCors` lehnt **alle** Requests ab, die einen `Origin`-Header enthalten; die **Loopback**-Web-Shell funktioniert, weil eine andere Middleware zuvor übereinstimmende Loopback-Same-Origin-Werte entfernt – Non-Loopback-Binds erfordern `--allow-origin` für die XHRs der Shell.
+- Die Runtime-App betreibt `allowOriginCors` über die mutable Allowlist; nicht übereinstimmende `Origin`-Werte erhalten den 403-Deny-Envelope (die bedingungslose `denyBrowserOriginCors`-Mauer überlebt nur in der Bootstrap-App). Die **Loopback**-Web-Shell funktioniert, weil eine andere Middleware zuvor übereinstimmende Loopback-Same-Origin-Werte entfernt – Non-Loopback-Binds erfordern `--allow-origin` für die XHRs der Shell.
 - Body-Parser-Reihenfolge: Routes, die `mutate({ strict: true })` verwenden, geben 401 erst nach `express.json()` zurück. Der Worst-Case ist `--max-connections × express.json({limit: '10mb'})`, was bis zu etwa 2,5 GB temporären Speicher auf einem ausgelasteten Loopback-Listener bedeutet; dieser Kompromiss ist beabsichtigt.
 - Mehrere Daemons in einem Prozess müssen `childEnvOverrides` pro Handle verwenden; das Mutieren von `process.env` führt zu Race Conditions, da `defaultSpawnChannelFactory` die Umgebungsvariablen zum Zeitpunkt des Spawns als Snapshot erfasst.
 

@@ -216,6 +216,7 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
  'workspace_qualified_memory', 'extension_management_v2',
  'workspace_persisted_transcript',
  'workspace_session_export', 'workspace_archived_session_export',
+ 'workspace_session_live_state',
  'client_mcp_over_ws', 'cdp_tunnel_over_ws', 'browser_automation_mcp']
 ```
 
@@ -242,6 +243,8 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 `workspace_session_export` 通告 `GET /workspaces/:workspace/session/:id/export`，一个仅限受信任的选定 workspace 活跃持久化 session 的完整导出。它独立于 `session_export` 和 `workspace_qualified_rest_core`：已发布的 daemon 可以同时通告旧标签而不实现复数路由，因此客户端必须直接预检此标签。该标签是无条件的，因为受信任的单 workspace 主实例可以通过 id 或 cwd 使用该路由。导出不会解析活跃所有者、启动 ACP、附加客户端或回退到另一个 workspace。
 
 `workspace_archived_session_export` 通告 `GET /workspaces/:workspace/session/:id/archive/export`，一个仅限受信任的选定 workspace 归档持久化存储的完整导出。它独立于 `workspace_session_export` 和 `workspace_qualified_rest_core`；客户端必须直接预检此标签。独立的路由防止旧版 daemon 忽略归档意图并返回具有相同 id 的活跃转录。
+
+`workspace_session_live_state` 通告 `GET /workspaces/:workspace/sessions/live-state`，一个仅限受信任的、仅内存的选定 workspace runtime 活跃 session 快照，以及一个内存中的目录版本，告知客户端何时需要进行完整的持久化目录重新加载。它独立于 `workspace_qualified_rest_core`：已发布的 daemon 可以通告更广泛的 workspace REST 能力而不实现此路由，因此客户端必须直接预检此标签。该标签是无条件的，因为受信任的单 workspace 主实例可以通过 id 或 cwd 使用该路由；每个 workspace 的信任检查仍然在每个请求上适用，且该路由不会将宽松的不受信任次要持久化目录读取策略扩展到活跃 bridge 状态。
 
 `slow_client_warning` 涵盖 SSE 背压行为：(a) 当订阅者的实时帧积压或实时序列化字节积压超过 75% 时，daemon 会发出一个 `slow_client_warning` 合成事件流帧，每次溢出事件仅发出一次（当两项指标均降至 37.5% 以下时重新触发）；(b) `GET /session/:id/events` 接受 `?maxQueued=N` 查询参数（范围 `[16, 2048]`），用于在针对大型重放环进行冷重连时，预设每个订阅者的帧积压大小。序列化字节上限由 daemon 控制（默认每个订阅者 **2 MiB**），仅限实时数据，且故意不提供查询参数。全局 ring 大小由 `--event-ring-size` 控制（默认 **8000**，参见 #3803 §02）。旧版 daemon 会静默缺失该警告/查询行为——在启用前请预先检查此 tag。
 
@@ -991,6 +994,7 @@ Workspace 功能标签和 `workspaces[]` 是动态的。添加 workspace 的客�
 - `workspace_persisted_transcript` → `GET /workspaces/:workspace/session/:id/transcript`
 - `workspace_session_export` → `GET /workspaces/:workspace/session/:id/export`
 - `workspace_archived_session_export` → `GET /workspaces/:workspace/session/:id/archive/export`
+- `workspace_session_live_state` → `GET /workspaces/:workspace/sessions/live-state`
 - `workspace_qualified_memory` → `POST /workspaces/:workspace/memory/{remember,forget,dream}` 和 `GET /workspaces/:workspace/memory/{remember,forget,dream}/:taskId`
 
 `workspace_acp_status` 报告主 workspace ACP channel 的时间点活跃状态，为 `{ channelLive: boolean }`。handler 不创建 channel，但到达 runtime 路由可能首先启动延迟的 daemon runtime，其配置的启动策略可能独立地预热 ACP。快照不是租约：客户端必须让 Session 创建重新验证或启动 channel。
@@ -1964,6 +1968,44 @@ Response:
 ```
 
 受信任的活跃列表包含实时的 daemon 覆盖字段，如 `clientCount` 和 `hasActivePrompt`。不受信任的次要和归档列表仅来自存储：活跃覆盖字段保持缺失或为 false，归档条目将 `isArchived` 设置为 `true`。当没有 sessions 存在时返回空数组（而不是 404）—— session-picker UI 不应仅仅因为 workspace 处于空闲状态就报错。
+
+### `GET /workspaces/:workspace/sessions/live-state`
+
+返回选定 workspace runtime 的仅内存活跃 session 快照以及内存中的目录版本，使客户端无需在 `GET /workspaces/:workspace/sessions` 的持久化目录上轮询 `hasActivePrompt`、等待标志和 `clientCount` 等易变状态。预检 `workspace_session_live_state`；该标签独立于 `workspace_qualified_rest_core`，因此通告更广泛 workspace REST 能力的旧版 daemon 不会实现此路由。选择器首先解析为精确的 workspace id，然后解析为规范化后的 URL 编码绝对 cwd，与其他复数 session 路由一致。该路由对主 runtime 和次要 runtime 均为仅限受信任：它从不回退到主 runtime，也不使用授予不受信任次要 workspace 有限目录读取权限的宽松持久化目录策略。该端点没有查询参数，也不执行 session 存储、设置、外部命令或 ACP 往返，因此其成本与持久化 session 数量和 JSONL 大小无关；默认的活跃 session 上限保持响应有界，禁用上限后成本仍仅与活跃 session 数量成正比。
+
+Response:
+
+```json
+{
+  "v": 1,
+  "catalogVersion": {
+    "generation": "7eca3164-bce1-4f50-94d8-c842c480f213",
+    "revision": 17
+  },
+  "sessions": [
+    {
+      "sessionId": "session-123",
+      "clientCount": 1,
+      "hasActivePrompt": true,
+      "isWaitingForPermission": false,
+      "isWaitingForUserQuestion": false
+    }
+  ]
+}
+```
+
+`v` 是响应 schema 版本。每个成功响应都包含 `Cache-Control: no-store`。`sessions` 是选定 runtime 中当前活跃的完整、未分页、无序的 session 集合；空的活跃 runtime 返回 `200` 和 `sessions: []`。`clientCount`、`hasActivePrompt`、`isWaitingForPermission` 和 `isWaitingForUserQuestion` 是必需的线格式字段，缺失的可选 bridge 值投影为 `0` 或 `false`。显示名称、时间戳、组织和来源元数据等静态目录字段被故意排除，仍由完整目录拥有。缺失的活跃状态行仅清除已知目录行的易变字段；它从不删除持久化目录行。
+
+`catalogVersion` 是 daemon 观测的目录变更的相等性令牌。`generation` 是每个 bridge 实例创建的随机 UUID，在 daemon 重启或 workspace runtime 替换时变更；`revision` 从零开始，在一个 generation 内单调递增。唯一支持的操作是整个配对上的相等性判断：相同的 generation 和 revision 表示没有 daemon 观测的目录变更，任何差异表示重新加载完整目录。客户端不得对 revision 进行算术运算或跨 generation 比较 revision，允许保守的额外递增。该版本涵盖 daemon 观测的目录成员资格和静态元数据变更；普通的轮次活动、prompt 生命周期、附加/分离和等待状态转换不会推进它，因为活跃快照已经携带了相应的易变字段。两个易变覆盖值被故意排除在两个信号之外：turn-error 状态（`hasTurnError`/`turnError`）和待处理交互计数/内容（`pendingInteractionCount`/`pendingInteractions`）既不推进版本也不出现在快照中，因此需要它们的客户端必须继续读取每个 session 的事件流或完整目录，而不是依赖此路由；当有具体消费者需要时，这两个字段可以以线格式附加方式添加。由另一个 daemon、TUI 或外部进程直接写入的变更不会被观测，因此一旦客户端停止周期性完整目录轮询，这些写入就没有有界的发现时间，仅在显式完整重新加载、另一个观测到的目录变更、重连或 daemon/runtime 替换后才出现。
+
+客户端通过两次读取握手来调和目录包：读取活跃状态 A，加载完整 session 列表（当客户端消费 `session_organization` 时加上 `GET /workspaces/:workspace/session-groups`），然后读取活跃状态 B。A 和 B 版本相等则接受该包；不同版本将目录标记为过期，并合并最多一次尾随重新加载，而不是进入紧密重试循环。每个接受的目录请求必须在 A 之后发起——在 A 之前开始的请求或去重承诺不能满足调和要求。版本驱动的重新加载在每个 workspace 上是单飞的，并遵循非零的最小后台间隔，因此持续的目录变动不会驱动每个活跃状态轮询进行一次完整目录扫描；显式的本地变更仍然可以通过同一个单飞操作请求立即刷新。
+
+**错误：**
+
+- `400` —— 未知、格式错误、嵌套或未注册的选择器的现有选择器验证或 `workspace_mismatch` 行为；该路由从不将未知选择器解析到主 runtime。
+- `403` —— 任何不受信任的 runtime（包括不受信任的主 workspace）返回 `untrusted_workspace`。
+- `503` —— 引导中、转换中、排空中、被阻止或已移除的 runtime，或请求中途关闭的 runtime generation，返回 `workspace_runtime_unavailable` 和 `Retry-After`。
+- `500` —— 意外的本地错误使用现有的 bridge 错误映射。
 
 ### `GET /workspace/:id/session-groups`
 

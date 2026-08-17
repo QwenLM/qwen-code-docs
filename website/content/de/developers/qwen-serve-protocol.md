@@ -216,6 +216,7 @@ Der Daemon bewirbt seine unterstützten Feature-Tags aus der Serve-Capability-Re
  'workspace_qualified_memory', 'extension_management_v2',
  'workspace_persisted_transcript',
  'workspace_session_export', 'workspace_archived_session_export',
+ 'workspace_session_live_state',
  'client_mcp_over_ws', 'cdp_tunnel_over_ws', 'browser_automation_mcp']
 ```
 
@@ -242,6 +243,8 @@ Der Daemon bewirbt seine unterstützten Feature-Tags aus der Serve-Capability-Re
 `workspace_session_export` bewirbt `GET /workspaces/:workspace/session/:id/export`, einen rein vertrauenswürdigen vollständigen Export der aktiven persistierten Session des ausgewählten Workspaces. Er ist unabhängig von `session_export` und `workspace_qualified_rest_core`: Veröffentlichte Daemons können beide älteren Tags bewerben, ohne die Plural-Route zu implementieren, daher müssen Clients dieses Tag direkt vorab prüfen. Das Tag ist bedingungslos, da ein vertrauenswürdiger Single-Workspace-Primary die Route nach ID oder CWD verwenden kann. Der Export löst keinen Live-Owner auf, startet keinen ACP, hängt keinen Client an oder fällt auf einen anderen Workspace zurück.
 
 `workspace_archived_session_export` bewirbt `GET /workspaces/:workspace/session/:id/archive/export`, einen rein vertrauenswürdigen vollständigen Export aus dem archivierten persistierten Speicher des ausgewählten Workspaces. Er ist unabhängig von `workspace_session_export` und `workspace_qualified_rest_core`; Clients müssen dieses Tag direkt vorab prüfen. Eine eigene Route verhindert, dass ein älterer Daemon die Archiv-Absicht ignoriert und ein aktives Transkript mit derselben ID zurückgibt.
+
+`workspace_session_live_state` bewirbt `GET /workspaces/:workspace/sessions/live-state`, einen rein vertrauenswürdigen, speicherbasierten Snapshot der Live-Sessions der ausgewählten Workspace-Runtime plus eine speicherinterne Katalogversion, die Clients mitteilt, wann ein vollständiges persistiertes Katalog-Reload erforderlich ist. Er ist unabhängig von `workspace_qualified_rest_core`: Veröffentliche Daemons können die breitere Workspace-REST-Capability bewerben, ohne diese Route zu implementieren, daher müssen Clients dieses Tag direkt vorab prüfen. Das Tag ist bedingungslos, weil ein vertrauenswürdiger Single-Workspace-Primary die Route nach ID oder CWD verwenden kann; Pro-Workspace-Trust-Prüfungen gelten weiterhin bei jeder Anfrage, und die Route erweitert nicht die permissive Lese-Richtlinie für nicht vertrauenswürdige Secondaries auf den Live-Bridge-State.
 
 `slow_client_warning` deckt das SSE-Backpressure-Verhalten ab: (a) Der Daemon emittiert einen synthetischen `slow_client_warning`-Event-Stream-Frame, wenn der Live-Frame-Backlog oder der Live-Serialized-Byte-Backlog eines Subscribers 75 % Kapazität überschreitet, einmal pro Überlauf-Episode (wird wieder aktiviert, nachdem beide Messwerte unter 37,5 % abgefallen sind); (b) `GET /session/:id/events` akzeptiert einen `?maxQueued=N`-Query-Parameter (Bereich `[16, 2048]`), um den subscriberbezogenen Frame-Backlog für Cold-Reconnects gegen einen großen Replay-Ring vorzudimensionieren. Das Serialized-Byte-Limit liegt in der Verantwortung des Daemons (Standard **2 MiB** pro Subscriber), ist nur für Live-Daten gedacht und hat absichtlich keinen Query-Parameter. Die Daemon-weite Ringgröße wird durch `--event-ring-size` gesteuert (Standard **8000**, gemäß #3803 §02). Ältere Daemons unterstützen das Warnungs-/Query-Verhalten nicht und ignorieren es stillschweigend – prüfe dieses Tag vor der Aktivierung.
 
@@ -1147,6 +1150,7 @@ Capability-Tags:
 - `workspace_persisted_transcript` → `GET /workspaces/:workspace/session/:id/transcript`
 - `workspace_session_export` → `GET /workspaces/:workspace/session/:id/export`
 - `workspace_archived_session_export` → `GET /workspaces/:workspace/session/:id/archive/export`
+- `workspace_session_live_state` → `GET /workspaces/:workspace/sessions/live-state`
 - `workspace_qualified_memory` → `POST /workspaces/:workspace/memory/{remember,forget,dream}` und `GET /workspaces/:workspace/memory/{remember,forget,dream}/:taskId`
 
 `workspace_acp_status` meldet die punktuelle Liveness des primären Workspace-ACP-Channels
@@ -2125,6 +2129,44 @@ TypeScript-SDK-Aufrufer verwenden `WorkspaceDaemonClient.exportArchivedSession(s
 Der optionale `format`-Query, Antwort-Body, MIME-Typ, bereinigter Dateiname, Cache-Policy, Sicherheits-Header und Attachment-Disposition sind identisch mit dem aktiven Workspace-Export. Das archivierte Quell-JSONL ist vor der Rekonstruktion auf 256 MiB begrenzt; eine größere Datei gibt `413 transcript_too_large` mit `sessionId`, `snapshotSize` und `maxBytes` zurück. Der aktive Export behält sein bestehendes Größenverhalten.
 
 Die Route liest nur `chats/archive/<id>.jsonl` im ausgewählten vertrauenswürdigen Workspace unter einer gemeinsamen Archive-Koordinator-Lease. Sie inspiziert keinen aktiven Inhalt für Fallback, scannt keinen anderen Workspace, löst keinen Live-Owner auf, ruft keine Bridge auf, startet keinen ACP, hängt keinen Client an oder lädt keine Einstellungen. Eine nur-aktive ID gibt `409 { code: "session_not_archived" }` zurück; eine fehlende ID gibt `404 { code: "session_not_found" }` zurück; gleichzeitige aktive und archivierte Dateien geben `409 session_conflict` zurück; und ein Archiv-Übergang gibt `409 session_archiving` mit `Retry-After: 5` zurück.
+
+### `GET /workspaces/:workspace/sessions/live-state`
+
+Gibt den speicherbasierten Live-Session-Snapshot der ausgewählten Workspace-Runtime plus eine speicherinterne Katalogversion zurück, sodass Clients das persistierte Katalog-Polling unter `GET /workspaces/:workspace/sessions` für flüchtigen State wie `hasActivePrompt`, Waiting-Flags und `clientCount` einstellen können. Pre-flight `workspace_session_live_state`; das Tag ist unabhängig von `workspace_qualified_rest_core`, daher implementieren ältere Daemons, die die breitere Workspace-REST-Capability bewerben, diese Route nicht. Der Selektor löst sich zuerst als exakte Workspace-ID auf, dann als URL-kodiertes absolutes CWD nach Kanonisierung, passend zu den anderen pluralen Session-Routen. Die Route ist nur für vertrauenswürdige Primary- und Secondary-Runtimes: Sie fällt niemals auf die Primary-Runtime zurück und verwendet nicht die permissive persistierte-Katalog-Policy, die einem nicht vertrauenswürdigen Secondary begrenzte Katalog-Lesevorgänge gewährt. Der Endpunkt hat keine Query-Parameter und führt keine Session-Speicher-, Einstellungs-, externen Befehls- oder ACP-Roundtrips durch, sodass seine Kosten unabhängig von der Anzahl persistierter Sessions und der JSONL-Größe sind; das Standard-Live-Session-Limit hält die Antwort begrenzt, und bei deaktiviertem Limit bleiben die Kosten proportional nur zur Anzahl der Live-Sessions.
+
+Response:
+
+```json
+{
+  "v": 1,
+  "catalogVersion": {
+    "generation": "7eca3164-bce1-4f50-94d8-c842c480f213",
+    "revision": 17
+  },
+  "sessions": [
+    {
+      "sessionId": "session-123",
+      "clientCount": 1,
+      "hasActivePrompt": true,
+      "isWaitingForPermission": false,
+      "isWaitingForUserQuestion": false
+    }
+  ]
+}
+```
+
+`v` ist die Response-Schema-Version. Jede erfolgreiche Response enthält `Cache-Control: no-store`. `sessions` ist die vollständige, nicht-paginierte, unsortierte Menge der derzeit in der ausgewählten Runtime live vorhandenen Sessions; eine leere Live-Runtime gibt `200` mit `sessions: []` zurück. `clientCount`, `hasActivePrompt`, `isWaitingForPermission` und `isWaitingForUserQuestion` sind erforderliche Wire-Felder, und fehlende optionale Bridge-Werte projizieren auf `0` oder `false`. Statische Katalogfelder wie Anzeigename, Zeitstempel, Organisation und Quellmetadaten sind absichtlich ausgeschlossen und bleiben im Besitz des vollständigen Katalogs. Eine fehlende Live-State-Zeile löscht nur die flüchtigen Felder einer bekannten Katalogzeile; sie löscht niemals eine persistierte Katalogzeile.
+
+`catalogVersion` ist ein Gleichheitstoken für vom Daemon beobachtete Katalogänderungen. `generation` ist eine zufällige UUID, die mit jeder Bridge-Instanz erstellt wird und sich bei Daemon-Neustart oder Workspace-Runtime-Ersetzung ändert; `revision` beginnt bei null und steigt monoton innerhalb einer Generation. Die einzige unterstützte Operation ist Gleichheit über das gesamte Paar: Gleiche Generation und Revision bedeutet keine vom Daemon beobachtete Katalogänderung, und jeder Unterschied bedeutet, den vollständigen Katalog neu zu laden. Clients dürfen keine Revisionsarithmetik durchführen oder Revisionen über Generationen hinweg vergleichen, und konservative zusätzliche Inkremente sind erlaubt. Die Version deckt vom Daemon beobachtete Katalogmitgliedschaft und statische Metadatenänderungen ab; gewöhnliche Turn-Aktivität, Prompt-Lifecycle, Attach/Detach und Waiting-State-Übergänge rücken sie nicht vor, da der Live-Snapshot bereits die entsprechenden flüchtigen Felder trägt. Zwei flüchtige Overlay-Werte liegen absichtlich außerhalb beider Signale: Turn-Error-State (`hasTurnError`/`turnError`) und der Pending-Interaction-Count/Content (`pendingInteractionCount`/`pendingInteractions`) rücken die Version weder vor noch erscheinen sie im Snapshot, sodass ein Client, der sie benötigt, weiterhin den pro-Session-Event-Stream oder den vollständigen Katalog lesen muss, anstatt sich auf diese Route zu verlassen; jedes Feld kann wire-additiv hinzugefügt werden, wenn ein konkreter Consumer es benötigt. Mutationen, die direkt von einem anderen Daemon, einer TUI oder einem externen Prozess geschrieben werden, werden nicht beobachtet, sodass ein Client, der das periodische Vollkatalog-Polling einstellt, diese Schreibvorgänge ohne begrenzte Entdeckungszeit hat und sie nur nach einem expliziten vollständigen Reload, einer anderen beobachteten Katalogmutation, einem Reconnect oder einem Daemon-/Runtime-Ersatz erscheinen.
+
+Clients gleichen ein Katalog-Bündel mit einem Two-Read-Handshake ab: Lese Live-State A, lade die vollständige Session-Liste (plus `GET /workspaces/:workspace/session-groups`, wenn der Client `session_organization` konsumiert), dann lese Live-State B. Gleiche A- und B-Versionen akzeptieren das Bündel; unterschiedliche Versionen markieren den Katalog als veraltet und kooaleszieren höchstens einen nachlaufenden Reload, anstatt in eine enge Retry-Schleife zu geraten. Jede akzeptierte Kataloganfrage muss nach A initiiert werden – eine Anfrage oder deduplizierte Promise, die vor A begann, kann die Versöhnung nicht erfüllen. Versionsgesteuerte Reloads sind Single-Flight pro Workspace und gehorchen einem nicht-null Hintergrund-Mindestintervall, sodass anhaltende Katalog-Änderungen nicht einen vollständigen Katalog-Scan pro Live-State-Poll auslösen können; explizite lokale Mutationen dürfen weiterhin eine sofortige Aktualisierung über dieselbe Single-Flight-Operation anfordern.
+
+**Fehler:**
+
+- `400` — bestehendes Selektor-Validierungs- oder `workspace_mismatch`-Verhalten für einen unbekannten, fehlerhaften, verschachtelten oder nicht registrierten Selektor; die Route löst einen unbekannten Selektor niemals auf die Primary-Runtime auf.
+- `403` — `untrusted_workspace` für jede nicht vertrauenswürdige Runtime, einschließlich eines nicht vertrauenswürdigen Primary.
+- `503` — `workspace_runtime_unavailable` mit `Retry-After` für eine bootstrapende, transitionierende, drainierende, blockierte oder entfernte Runtime oder eine Runtime-Generation, die während der Anfrage schließt.
+- `500` — unerwartete lokale Fehler verwenden das bestehende Bridge-Fehler-Mapping.
 
 ### `POST /session/:id/resume`
 

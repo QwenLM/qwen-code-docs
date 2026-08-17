@@ -145,7 +145,8 @@ Ao revisar um PR, o `/review` cria um worktree temporário do git (`.qwen/tmp/re
 - Os comandos de build e teste são executados em isolamento, sem poluir o seu cache de build local
 - Se algo der errado, seu ambiente não é afetado — basta deletar o worktree
 - O worktree é limpo automaticamente após a conclusão da revisão
-- Se uma revisão for interrompida (Ctrl+C, crash), o próximo `/review` do mesmo PR limpa automaticamente o worktree obsoleto antes de começar do zero
+- Se uma revisão for interrompida (Ctrl+C, crash), o próximo `/review` do mesmo PR limpa automaticamente o worktree obsoleto antes de começar do zero. Se a sessão interrompida ainda deixar seu lease para trás — um kill forçado que pula isso, ou uma revisão multi-prompt interrompida durante um prompt posterior — o `/review` recusa e nomeia o arquivo de lease a ser deletado. Paradas limpas o liberam: uma revisão concluída e as paradas antecipadas (diff vazio, sem novas alterações desde a última revisão) executam `cleanup`, que libera o lease
+- O worktree tem lease para sua sessão: um segundo `/review` de um PR já em revisão recusa iniciar (nomeando o detentor) em vez de derrubar o worktree da revisão em execução
 - Os relatórios de revisão e o cache são salvos no diretório principal do projeto (não no worktree)
 
 ## Revisão de PR entre Repositórios

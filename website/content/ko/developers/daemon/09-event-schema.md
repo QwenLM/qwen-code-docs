@@ -79,11 +79,13 @@ wire 형식은 [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md)에 있�
 | `agent_changed`          | S->C      | `change: 'created' \| 'updated' \| 'deleted', name, level: 'project' \| 'user'`                                                                |
 | `approval_mode_changed`  | S->C      | `sessionId, previous, next, persisted: boolean`                                                                                                |
 | `tool_toggled`           | S->C      | `toolName, enabled`; 다음 ACP 자식 spawn에 영향을 미치며 이미 실행 중인 세션은 변경하지 않음.                                                  |
-| `settings_changed`       | S->C      | 워크스페이스 설정 쓰기가 완료됨. 페이로드는 개방적이며 소비자는 read-after-write로 새로고침해야 함.                                            |
+| `settings_changed`       | S->C      | 워크스페이스 설정 쓰기가 완료됨. 페이로드는 `key`를 포함하며, `value`, `scope`, Skill 토글 `mutation`은 선택 사항.                                            |
 | `settings_reloaded`      | S->C      | Daemon 워크스페이스 서비스가 설정을 다시 읽음. 페이로드는 개방적.                                                                              |
 | `trust_change_requested` | S->C      | `workspaceCwd, desiredState: 'trusted' \| 'untrusted', reason?`                                                                                |
 | `workspace_initialized`  | S->C      | `path, action: 'created' \| 'overwrote' \| 'noop', originatorClientId?`                                                                        |
 | `github_setup_completed` | S->C      | `releaseTag, readmeUrl, secretsUrl?, workflows: [{path, status, sizeBytes?, error?}], gitignore: {path, status, added?, error?}`               |
+
+Skill 토글 API는 선택적 `mutation: { id, kind: 'skill_toggle', skills: [{ name, enabled }], activation, sessionsRefreshed, sessionsFailed }`을 첨부합니다. 동일한 요청의 모든 `skills.disabled` / `skills.enabled` 이벤트는 하나의 mutation id를 공유합니다. 다른 설정 쓰기는 `mutation`을 생략합니다. 워크스페이스 서비스 쓰기는 `scope`를 포함하며, 다른 일부 이미터(예: 세션 모델 전환)는 생략합니다. SDK normalizer는 누락된 `scope`의 기본값을 `'workspace'`로 설정합니다.
 
 `memory_changed`는 세션 없는 관리 메모리 작업도 포함한다. 해당 페이로드에서 `scope`는 `"managed"`이고, `source`는 `"workspace_memory_remember"`, `"workspace_memory_forget"`, `"workspace_memory_dream"` 중 하나이며, `taskId`는 큐에 대기된 작업 id이고, `touchedScopes`는 변경된 관리 메모리 scope(`"user"` 및/또는 `"project"`)를 나열한다. remember/forget/dream 작업이 관리 메모리를 변경하지 않고 완료되면 이벤트가 발행되지 않는다.
 
@@ -170,7 +172,7 @@ wire 형식은 [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md)에 있�
 - `workspaceInitCount`, `lastWorkspaceInit?` - `workspace_initialized`에서.
 - `mcpRestartCount`, `lastMcpRestart?` - `mcp_server_restarted`에서.
 - `mcpRestartRefusedCount`, `lastMcpRestartRefused?` - `mcp_server_restart_refused`에서.
-- `settings_changed` / `settings_reloaded` - `asKnownDaemonEvent`에 의해 인식됨. 세션 reducer는 전용 뷰 상태 필드를 유지하지 않으며, UI는 일반적으로 이를 새로고침 신호로 처리함.
+- `settings_changed` / `settings_reloaded` - `asKnownDaemonEvent`에 의해 인식됨. 세션 reducer는 전용 뷰 상태 필드를 유지하지 않음. Skill 토글 `settings_changed` 이벤트는 선택적 `mutation` 메타데이터를 포함하므로 호스트가 작업을 다시 로드하지 않고 Skill 전용 변경을 증분적으로 적용할 수 있음. 다른 UI는 여전히 이벤트를 새로고침 신호로 처리할 수 있음.
 - `permissionVoteProgress: Record<string, DaemonPermissionPartialVoteData>` - 합의 투표 진행 상태.
 - `forbiddenVotes: DaemonPermissionForbiddenData[]`, `forbiddenVoteCount` - 정책에 의해 거부된 투표 기록. 최대 32개.
 - `awaitingResync: boolean` - `state_resync_required`에 의해 설정됨. 소비자가 뷰 상태를 초기화하면 해제됨.

@@ -135,7 +135,7 @@ Use continuação para trabalho de acompanhamento relacionado. Lance um novo age
 
 Para um subagente regular nomeado, `working_dir` fixa o agente em um git worktree existente no repositório atual. Caminhos relativos resolvem a partir do diretório atual, e o worktree já deve estar registrado no git e viver dentro do repositório.
 
-Um lançamento com `working_dir` executa em primeiro plano porque o Qwen Code não possui o ciclo de vida desse worktree. Não pode ser combinado com `subagent_type: "fork"` ou execução em segundo plano. Se tanto `working_dir` quanto `isolation: "worktree"` forem fornecidos, o Qwen Code reutiliza o worktree do chamador em vez de criar outro.
+Um lançamento com `working_dir` executa em primeiro plano porque o Qwen Code não possui o ciclo de vida desse worktree. Não pode ser combinado com `subagent_type: "fork"` ou execução em segundo plano. Se tanto `working_dir` quanto `isolation: "worktree"` forem fornecidos, o Qwen Code reutiliza o worktree do chamador em vez de criar outro. Scripts de workflow são deliberadamente mais rigorosos: uma chamada `agent()` de workflow que recebe ambos `workingDir` e `isolation` é rejeitada em vez de executar com `isolation` ignorado.
 
 ## Primeiros Passos
 

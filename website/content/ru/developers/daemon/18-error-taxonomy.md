@@ -105,7 +105,7 @@
 | ------ | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `401`  | `{ error: 'Unauthorized' }`                   | Отсутствует/неверный/без схемы bearer-токен. Единообразно для `отсутствует заголовок` / `неверная схема` / `неверный токен`, чтобы зондирование не могло различить. |
 | `401`  | `{ error: '...', code: 'token_required' }`    | Mutation-gate строгий маршрут на демоне без токена с loopback. SDK отображают подсказку "настройте --token / --require-auth".                            |
-| `403`  | `{ error: 'Request denied by CORS policy' }`  | `denyBrowserOriginCors` отклонил запрос с заголовком `Origin`.                                                                                         |
+| `403`  | `{ error: 'Request denied by CORS policy' }`  | `allowOriginCors` (runtime) / `denyBrowserOriginCors` (bootstrap) отклонил запрос с заголовком `Origin`.                                                  |
 | `403`  | `{ error: 'Invalid Host header' }`            | `hostAllowlist` отклонил заголовок `Host` (защита от DNS rebinding).                                                                                    |
 
 Полная модель аутентификации описана в [`12-auth-security.md`](./12-auth-security.md).

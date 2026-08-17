@@ -387,6 +387,8 @@ async function resilientSubscribe(session: DaemonSessionClient) {
 
 `workspace_archived_session_export` がアドバタイズされている場合、`client.workspaceById(workspaceId).exportArchivedSession(sessionId, { format })` または対応する `workspaceByCwd` メソッドを使用して、選択されたワークスペースのアーカイブされた永続化トランスクリプトのみをエクスポートします。このメソッドはアクティブエクスポートと同じ結果型とネイティブ REST 動作を使用しますが、アクティブセッションにフォールバックすることはありません。サポートはアクティブエクスポートのケイパビリティから推測できません。
 
+`workspace_session_live_state` がアドバタイズされている場合、`client.getWorkspaceSessionLiveState(workspaceCwd)` またはスコープ付きの `client.workspaceById(workspaceId).getSessionLiveState()` / `client.workspaceByCwd(workspaceCwd).getSessionLiveState()` は、選択された信頼されたワークスペースのメモリ内のみのライブセッションスナップショットとそのカタログバージョンを読み取り、`DaemonWorkspaceSessionLiveState`（`{ v: 1, catalogVersion: DaemonSessionCatalogVersion, sessions: DaemonSessionLiveState[] }`）を返します。これらのメソッドは常にベアラー認証とエンコードされたワークスペースセレクターでネイティブ REST を使用し、オプションのクライアント ID を保持し、既存の短時間リクエストタイムアウトを使用します。`requireCapability()` は呼び出しません — ポールごとにケイパビリティプローブを行うとリクエスト数が倍増するため — 代わりに、コンシューマーは既にロードされたケイパビリティから `workspace_session_live_state` を一度プリフライトし、タグがない場合は既存のカタログポーリングにフォールバックします。`workspace_qualified_rest_core` からサポートを推測しないでください。
+
 ### 構築時の `lastEventId` のシード
 
 プロセスの再起動をまたいでカーソルを永続化する呼び出し元は、それをシードできます。

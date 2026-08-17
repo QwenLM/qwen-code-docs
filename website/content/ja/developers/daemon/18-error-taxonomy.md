@@ -105,7 +105,7 @@
 | ---------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `401`      | `{ error: 'Unauthorized' }`                   | Bearer トークンがない / 間違っている / スキームがない。`missing header` / `wrong scheme` / `wrong token` で統一されており、プローブで区別できない。            |
 | `401`      | `{ error: '...', code: 'token_required' }`    | トークンなしのループバックデーモンで、変更ゲートの厳格なルートにアクセス。SDK は「--token / --require-auth を設定」というヒントを表示する。                       |
-| `403`      | `{ error: 'Request denied by CORS policy' }`  | `denyBrowserOriginCors` が `Origin` ヘッダーを含むリクエストを拒否した。                                                                                        |
+| `403`      | `{ error: 'Request denied by CORS policy' }`  | `allowOriginCors`（ランタイム）/ `denyBrowserOriginCors`（ブートストラップ）が `Origin` ヘッダーを含むリクエストを拒否した。                                      |
 | `403`      | `{ error: 'Invalid Host header' }`            | `hostAllowlist` が `Host` ヘッダーを拒否した（DNS リバインディング防御）。                                                                                      |
 
 完全な認証モデルは [`12-auth-security.md`](./12-auth-security.md) を参照。

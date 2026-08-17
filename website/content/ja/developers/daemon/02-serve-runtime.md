@@ -10,7 +10,7 @@
 - プライマリワークスペースを正確に 1 回だけ**正規化**し、セッションランタイムを登録する前に繰り返された `--workspace` もすべて正規化します。プライマリの正規化形式は、`/capabilities.workspaceCwd`、`POST /session` のフォールバック、およびプライマリブリッジで共有されます。
 - 安全でない、または無効な起動構成を拒否します: トークンなしの非ループバックバインド、トークンなしの `--require-auth`、トークンなしの `--allow-origin '*'`、正の `mcpClientBudget` なしの `mcpBudgetMode='enforce'`、存在しないまたはディレクトリではない `--workspace`、および無効なタイムアウトまたはレート制限値。
 - `WorkspaceFileSystem` ファクトリ、権限監査パブリッシャー、`DaemonStatusProvider`、および `acp-bridge` を構築します。
-- Express アプリを構築し、ミドルウェア（`denyBrowserOriginCors` / `allowOriginCors` -> `hostAllowlist` -> アクセスログ -> `bearerAuth` -> レート制限 -> JSON パーサー -> テレメトリ -> ルートごとの `mutationGate`）を接続し、セッション、ワークスペース CRUD、ファイル、デバイスフロー認証、権限投票、および ACP HTTP ルートをマウントします。
+- Express アプリを構築し、ミドルウェア（可変オリジン許可リスト上の `allowOriginCors` -> `hostAllowlist` -> アクセスログ -> `bearerAuth` -> レート制限 -> JSON パーサー -> テレメトリ -> ルートごとの `mutationGate`）を接続し、セッション、ワークスペース CRUD、ファイル、デバイスフロー認証、権限投票、および ACP HTTP ルートをマウントします。（無条件の `denyBrowserOriginCors` ウォールは、ブートストラップアプリ `run-qwen-serve.ts` にのみ残っています。）
 - リッスンポートをバインドし、シグナルハンドラを登録します。
 - SIGINT/SIGTERM で 2 段階のシャットダウンを実行します。2 回目のシグナルで強制終了します。
 
@@ -26,8 +26,8 @@
 
 | ミドルウェア（登録順）                          | 目的                                                                                                                     | 備考                                                                                                              |
 | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `denyBrowserOriginCors` / `allowOriginCors` | デフォルトですべての `Origin` ヘッダーを拒否します。`--allow-origin <pattern>` が設定されている場合は許可リストに切り替えます。                | [`12-auth-security.md`](./12-auth-security.md) を参照。                                                               |
-| `hostAllowlist(bind, getPort)`              | ループバックでは、`Host` が `localhost`、`127.0.0.1`、`[::1]`、または `host.docker.internal` と実際のポートに属することを検証します。 | DNS リバインディングに対する防御。比較は大文字と小文字を区別せず、ポートごとにキャッシュされます。                                |
+| `allowOriginCors`                          | `MutableOriginAllowlist` 上の可変オリジン許可リスト: `--allow-origin <pattern>` エントリがシードし、Local Control は有効な間に LAN オリジンを追加します。一致しないオリジンは 403 拒否エンベロープを受け取ります。 | [`12-auth-security.md`](./12-auth-security.md) を参照。                                                               |
+| `hostAllowlist(bind, getPort)`              | ループバックでは、`Host` が `localhost`、`127.0.0.1`、`[::1]`、または `host.docker.internal` と実際のポートに属することを検証します。 | DNS リバインディングに対する防御。比較は大文字と小文字を区別せず、ポートごとにキャッシュされます。Local Control LAN リスナーは、プライマリのバインドに関係なく、常に広告された権限の Host チェックを強制します。 |
 | アクセスログミドルウェア                       | リクエストが完了したときに、メソッド、パス、ステータス、durationMs、sessionId、および clientId を `DaemonLogger` に記録します。               | `bearerAuth` の**前**に登録されるため、401 拒否もログに記録されます。`/health` とハートビートはスキップされます。                 |
 | `bearerAuth(token)`                         | SHA-256 と `timingSafeEqual` による定数時間ベアラートークン比較。                                                            | トークンが設定されていない場合（ループバック開発のデフォルト）はオープンパススルーになります。`Bearer` スキームは大文字と小文字を区別しません。         |
 | レート制限ミドルウェア                       | プロンプト、ミューテーション、および読み取りルート用のオプションの階層ごとのトークンバケット。                                                      | `bearerAuth` の後、JSON 解析の前に登録されます。バケットが枯渇した場合、解析前に 429 を返します。     |
@@ -97,7 +97,7 @@
 
 - `url`: エフェメラルポート解決後の解決済みリッスン URL。
 - `port`: `0` の解決を含む実際のポート。
-- `close({ timeoutMs? })`: 組み込み用およびテスト用のプログラムによるシャットダウン。
+- `close()`: 組み込み用およびテスト用のプログラムによるシャットダウン。
 
 `createServeApp` を直接呼び出すと `Application` のみが返されます。Live/Conversations を必要とする組み込み側は実際の Node サーバーを作成し、最初の `listen()` 前に `getServeAppLifecycle(app).bindServer(server)` を呼び出し、シャットダウン時に `lifecycle.close()` を待機する必要があります。バインディングなしでは、通常のルートは利用可能なままですが、Live/Conversations は fail closed になります。生の `server.close()` を呼び出すとイベント駆動のクリーンアップが開始されますが、ドレインまたは所有権解放の失敗を観察するには `lifecycle.close()` を待機する必要があります。
 
@@ -137,7 +137,7 @@
 ## 注意事項と既知の制限
 
 - `deps.fsFactory` または `deps.bridge` を指定せずに `createServeApp` を直接呼び出すと、デフォルトで `trusted: false` になります。エージェント側の ACP `writeTextFile` は `untrusted_workspace` として拒否されます。警告は一度だけ出力されます。
-- `denyBrowserOriginCors` は `Origin` を含む**すべて**のリクエストを拒否します。**ループバック**の Web Shell が動作するのは、別のミドルウェアが先に一致するループバック同一オリジンの値を削除するためです。非ループバックのバインドでは、シェルの XHR に `--allow-origin` が必要です。
+- ランタイムアプリは可変許可リスト上で `allowOriginCors` を実行します。一致しない `Origin` 値は 403 拒否エンベロープを受け取ります（無条件の `denyBrowserOriginCors` ウォールはブートストラップアプリにのみ残っています）。**ループバック**の Web Shell が動作するのは、別のミドルウェアが先に一致するループバック同一オリジンの値を削除するためです — 非ループバックのバインドでは、シェルの XHR に `--allow-origin` が必要です。
 - Body-parser の順序: `mutate({ strict: true })` を使用するルートは、`express.json()` の後にのみ 401 を返します。最悪のケースは `--max-connections × express.json({limit: '10mb'})` となり、飽和したループバックリスナーで最大約 2.5 GB の一時的なメモリを消費します。このトレードオフは意図的なものです。
 - 1つのプロセスで複数のデーモンを実行する場合は、ハンドルごとに `childEnvOverrides` を使用する必要があります。`defaultSpawnChannelFactory` が spawn 時に環境変数のスナップショットを取得するため、`process.env` の変更は競合を引き起こします。
 

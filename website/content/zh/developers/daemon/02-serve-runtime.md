@@ -10,7 +10,7 @@
 - 对主工作区进行**规范化**处理，且仅执行一次；在注册会话运行时之前，对每个重复的 `--workspace` 也进行规范化。主规范化形式由 `/capabilities.workspaceCwd`、`POST /session` 回退机制和主 bridge 共享。
 - 拒绝不安全或无效的启动配置：无 token 的非环回绑定、无 token 的 `--require-auth`、无 token 的 `--allow-origin '*'`、无正数 `mcpClientBudget` 的 `mcpBudgetMode='enforce'`、不存在或非目录的 `--workspace`，以及无效的超时或速率限制值。
 - 构建 `WorkspaceFileSystem` 工厂、权限审计发布者、`DaemonStatusProvider` 和 `acp-bridge`。
-- 构建 Express 应用，连接中间件（`denyBrowserOriginCors` / `allowOriginCors` -> `hostAllowlist` -> 访问日志 -> `bearerAuth` -> 速率限制 -> JSON 解析器 -> 遥测 -> 每路由 `mutationGate`），并挂载会话、工作区 CRUD、文件、设备流认证、权限投票和 ACP HTTP 路由。
+- 构建 Express 应用，连接中间件（`allowOriginCors`（基于可变来源允许列表） -> `hostAllowlist` -> 访问日志 -> `bearerAuth` -> 速率限制 -> JSON 解析器 -> 遥测 -> 每路由 `mutationGate`），并挂载会话、工作区 CRUD、文件、设备流认证、权限投票和 ACP HTTP 路由。（无条件拒绝的 `denyBrowserOriginCors` 墙仅保留在引导应用 `run-qwen-serve.ts` 中。）
 - 绑定监听端口并注册信号处理器。
 - 在 SIGINT/SIGTERM 上运行两阶段关闭；在收到第二个信号时强制退出。
 
@@ -26,8 +26,8 @@
 
 | 中间件（按注册顺序）                      | 用途                                                                                                                     | 备注                                                                                                              |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| `denyBrowserOriginCors` / `allowOriginCors` | 默认拒绝所有 `Origin` 请求头；当配置了 `--allow-origin <pattern>` 时切换为允许列表。                                     | 参见 [`12-auth-security.md`](./12-auth-security.md)。                                                             |
-| `hostAllowlist(bind, getPort)`              | 在环回地址上，验证 `Host` 是否属于 `localhost`、`127.0.0.1`、`[::1]` 或 `host.docker.internal` 加上实际端口。              | 防御 DNS 重绑定攻击。比较时不区分大小写，并按端口缓存。                                                           |
+| `allowOriginCors`                          | 始终安装在运行时应用上，基于 `MutableOriginAllowlist`：`--allow-origin <pattern>` 条目作为种子，Local Control 在启用时添加 LAN 来源；未匹配的来源收到 403 拒绝信封。 | 参见 [`12-auth-security.md`](./12-auth-security.md)。 |
+| `hostAllowlist(bind, getPort)`              | 在环回地址上，验证 `Host` 是否属于 `localhost`、`127.0.0.1`、`[::1]` 或 `host.docker.internal` 加上实际端口。              | 防御 DNS 重绑定攻击。比较时不区分大小写，并按端口缓存。Local Control LAN 监听器始终强制执行其通告权限的 Host 检查，无论主绑定是什么。 |
 | 访问日志中间件                            | 请求完成时，将 method、path、status、durationMs、sessionId 和 clientId 记录到 `DaemonLogger`。                             | 在 `bearerAuth` **之前**注册，因此 401 拒绝也会被记录。跳过 `/health` 和心跳。                                    |
 | `bearerAuth(token)`                         | SHA-256 加上 `timingSafeEqual` 恒定时间 bearer 比较。                                                                    | 未配置 token 时开放直通（环回开发默认值）。`Bearer` scheme 不区分大小写。                                         |
 | 速率限制中间件                            | 为 prompt、mutation 和 read 路由提供可选的每层令牌桶。                                                                   | 在 `bearerAuth` 之后、JSON 解析之前注册；当令牌桶耗尽时，在解析前返回 429。                                       |
@@ -137,7 +137,7 @@
 ## 注意事项与已知限制
 
 - 直接调用 `createServeApp` 时，若未提供 `deps.fsFactory` 或 `deps.bridge`，则默认 `trusted: false`；agent 端的 ACP `writeTextFile` 会因 `untrusted_workspace` 而拒绝执行。该警告仅打印一次。
-- `denyBrowserOriginCors` 会拒绝**所有**携带 `Origin` 的请求；**环回地址**上的 Web Shell 能正常工作是因为另一个中间件会先剥离匹配的环回同源值 — 非环回绑定需要 `--allow-origin` 才能支持 Shell 的 XHR 请求。
+- 运行时应用运行 `allowOriginCors`，基于可变允许列表；未匹配的 `Origin` 值收到 403 拒绝信封（无条件拒绝的 `denyBrowserOriginCors` 墙仅保留在引导应用中）。**环回地址**上的 Web Shell 能正常工作是因为另一个中间件会先剥离匹配的环回同源值 — 非环回绑定需要 `--allow-origin` 才能支持 Shell 的 XHR 请求。
 - Body-parser 顺序：使用 `mutate({ strict: true })` 的路由只有在 `express.json()` 之后才会返回 401。最坏情况下的内存占用为 `--max-connections × express.json({limit: '10mb'})`，在饱和的 loopback 监听器上可能产生高达约 2.5 GB 的瞬态内存；这种权衡是有意为之的。
 - 同一进程中的多个 daemon 必须使用针对每个 handle 的 `childEnvOverrides`；修改 `process.env` 会产生竞态条件，因为 `defaultSpawnChannelFactory` 会在 spawn 时对 env 进行快照。
 

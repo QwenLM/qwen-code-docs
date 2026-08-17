@@ -135,7 +135,7 @@ Fork 子节点不能创建任何进一步的子代理。这在运行时强制执
 
 对于命名的常规子代理，`working_dir` 将代理固定到当前仓库中的现有 git worktree。相对路径从当前目录解析，worktree 必须已向 git 注册并位于仓库内部。
 
-`working_dir` 启动在前台运行，因为 Qwen Code 不拥有该 worktree 的生命周期。它不能与 `subagent_type: "fork"` 或后台执行组合。如果同时提供 `working_dir` 和 `isolation: "worktree"`，Qwen Code 会重用调用者拥有的 worktree，而不是创建新的。
+`working_dir` 启动在前台运行，因为 Qwen Code 不拥有该 worktree 的生命周期。它不能与 `subagent_type: "fork"` 或后台执行组合。如果同时提供 `working_dir` 和 `isolation: "worktree"`，Qwen Code 会重用调用者拥有的 worktree，而不是创建新的。Workflow 脚本故意更严格：同时收到 `workingDir` 和 `isolation` 的 workflow `agent()` 调用会被拒绝，而不是在忽略 `isolation` 的情况下运行。
 
 ## 入门指南
 

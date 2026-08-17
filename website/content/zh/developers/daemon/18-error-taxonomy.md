@@ -105,7 +105,7 @@ Daemon 的故障模式故意设计为封闭联合类型（closed unions），以
 | ---- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `401` | `{ error: 'Unauthorized' }`                     | 缺少/错误/无 scheme 的 bearer token。在 `缺少头部` / `错误 scheme` / `错误 token` 情况下统一返回，使探测无法区分。                    |
 | `401` | `{ error: '...', code: 'token_required' }`      | 在无 token 的 loopback daemon 上，突变门控严格路由。SDK 渲染 "configure --token / --require-auth" 提示。                  |
-| `403` | `{ error: 'Request denied by CORS policy' }`    | `denyBrowserOriginCors` 拒绝了包含 `Origin` 的请求。                                                                                     |
+| `403` | `{ error: 'Request denied by CORS policy' }`    | `allowOriginCors`（运行时）/ `denyBrowserOriginCors`（引导）拒绝了包含 `Origin` 的请求。                                                                             |
 | `403` | `{ error: 'Invalid Host header' }`              | `hostAllowlist` 拒绝了 `Host` 头部（DNS 重绑定防御）。                                                                                   |
 
 详见 [`12-auth-security.md`](./12-auth-security.md) 了解完整认证模型。
