@@ -1,0 +1,54 @@
+# Chinese fragments that may legitimately appear verbatim in the prose of
+# non-CJK target languages (ko, de, fr, pt-BR, ru): product names and
+# Chinese-product UI labels that the English source itself quotes.
+#
+# Consumed by orchestrator.mjs verifyFile (source-language contamination
+# gate). Exact-match entries, one per line; # starts a comment. When a
+# legitimate new Chinese UI label trips the gate, append it here instead
+# of weakening the gate.
+
+# product names
+阿里云百炼
+百炼
+智谱AI
+QQ机器人
+机器人
+钉钉
+飞书
+企业微信
+智能机器人
+
+# channel-setup UI labels quoted from the Chinese product interface
+机器人协议
+模式
+添加应用能力
+权限管理
+事件与回调
+使用长连接接收事件
+接收消息
+
+# Chinese character variants discussed as subject matter in
+# users/features/language.md
+文件
+檔案
+服務器
+服务器
+伺服器
+菜單
+菜单
+選單
+鏈接
+链接
+連結
+打開
+開啟
+爲
+啓
+為
+啟
+曆史
+歷史
+日曆
+農曆
+西曆
+區塊鏈
