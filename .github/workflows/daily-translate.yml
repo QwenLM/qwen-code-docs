@@ -222,6 +222,29 @@ jobs:
             echo "::warning::last-sync.json has not advanced in ${AGE} days — the translation backlog is growing."
           fi
 
+      # Every loss this pipeline has had so far happened inside a GREEN run,
+      # and the only record was the step log — which cannot be compared
+      # across runs without scraping it after the fact. `report` turns the
+      # per-language metrics `advance` wrote into a step-summary table plus a
+      # machine-readable artifact, so runs can be compared directly.
+      #
+      # `always()` so a partial run still reports what it managed, and `|| true`
+      # because reporting must never be what fails a translation run.
+      - name: Publish translation metrics
+        if: always() && steps.detect.outputs.changed == 'true'
+        run: node translator/orchestrator/orchestrator.mjs report || true
+
+      - name: Upload translation metrics
+        if: always() && steps.detect.outputs.changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: translation-metrics
+          path: |
+            website/translation-metrics.json
+            website/orchestrator-manifest-*.metrics.json
+          retention-days: 90
+          if-no-files-found: ignore
+
       # Commits BEFORE any build runs (#184): a build/deploy failure can no
       # longer discard this run's verified translations — they are already
       # on main when the build-deploy job starts.
