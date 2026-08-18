@@ -120,6 +120,7 @@ Consulte [`12-auth-security.md`](./12-auth-security.md) para o modelo completo d
 ## Empacotamento de erros no lado do SDK
 
 `DaemonClient` retorna erros HTTP como Promises rejeitadas com o corpo parseado como valor de rejeição. Métodos que encontram `404` para sessões desconhecidas rejeitam com `{error, sessionId}`; o SDK não os encapsula em uma classe tipada hoje. Os chamadores não devem confiar em `instanceof Error` mais `.message.includes(...)`; alterne em `err.code` ou `err.kind` do corpo.
+
 `parseSseStream` interrompe o iterador em caso de estouro do buffer de 16 MiB (limite defensivo).
 
 ## Fluxo de trabalho

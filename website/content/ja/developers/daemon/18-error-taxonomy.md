@@ -161,3 +161,4 @@ flowchart TD
 - `packages/acp-bridge/src/status.ts` (`SERVE_ERROR_KINDS`, `ServeErrorKind`)
 - `packages/cli/src/serve/auth.ts` (認証ボディ)
 - ワイヤーリファレンス: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md).
+

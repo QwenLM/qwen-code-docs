@@ -7,7 +7,7 @@
 - **경로 해석** — 경로를 정규화하고 심볼릭 링크를 포함한 워크스페이스 이탈을 거부합니다.
 - **신뢰 게이트** — 워크스페이스가 신뢰되지 않을 때(`untrusted_workspace`) 쓰기를 거부합니다.
 - **크기 및 콘텐츠 정책** — 전체 스냅샷/출력 상한(`MAX_READ_BYTES = 256 KiB`), 큰 텍스트 창의 출력 및 스캔 비용 상한(`MAX_TEXT_SCAN_BYTES = 8 MiB`), 쓰기 상한(`MAX_WRITE_BYTES = 5 MiB`), 이진 파일 감지.
-- **원자성** — 대상 모드 보존과 새 파일 기본 `0o600`을 사용한 write-then-rename.
+- **원자성** — 대상 모드 보존과 함께 write-then-rename; 새 파일은 기본 `0o600`을 사용하거나, 팩토리의 `system` 새 파일 모드 정책(`QWEN_SERVE_NEW_FILE_MODE`)에서 프로세스 umask를 따릅니다.
 - **감사** — 모든 접근/거부가 `PermissionAuditRing`/모니터링용 구조화 이벤트를 발생시킵니다.
 - **타입화된 에러** — HTTP 상태로 매핑되는 닫힌 `FsErrorKind` 유니언.
 
@@ -29,7 +29,7 @@ HTTP 파일 라우트(`GET /file`, `GET /file/bytes`, `POST /file/write`, `POST 
 - `MAX_READ_BYTES`를 초과하는 전체 스냅샷 읽기를 거부하되, 출력이 `MAX_READ_BYTES`로 제한되고 스캔 비용이 `MAX_TEXT_SCAN_BYTES`로 제한되는 명시적 창은 허용합니다. `MAX_WRITE_BYTES`를 초과하는 쓰기 및 이진 파일(`binary_file`)을 거부합니다.
 - 워크스페이스가 신뢰되지 않을 때 쓰기/편집을 거부합니다(`untrusted_workspace`) — `assertTrustedForIntent(trusted, intent)`로 게이트됩니다.
 - `shouldIgnore`를 통해 `.gitignore` / `.qwenignore` 패턴을 준수합니다.
-- 대상 모드 보존과 함께 원자적 write-then-rename을 수행합니다. 새 파일 기본 모드는 `0o600`입니다.
+- 대상 모드 보존과 함께 원자적 write-then-rename을 수행합니다; 새 파일 기본 모드는 `0o600`입니다(`system` 새 파일 모드 정책에서는 umask에서 파생된 `0o666 & ~umask`).
 - 모든 작업에서 `fs.access` / `fs.denied` 감사 이벤트를 발생시킵니다.
 - 모든 실패를 종류와 HTTP 상태가 포함된 `FsError`로 매핑합니다. 라우트 핸들러는 이를 일관되게 직렬화합니다.
 
@@ -82,7 +82,7 @@ interface BridgeFileSystem {
 1. **일반 파일이 아닌 것 거부** — 소켓 / 파이프 / 문자 디바이스 / procfs / sysfs 항목은 `stats.size === 0`이어도 무제한 데이터를 스트리밍할 수 있습니다. 인라인 경로는 메시지에 `describeStatKind(stats)`와 함께 예외를 발생시킵니다.
 2. **무제한 전체 파일 버퍼링 방지.** 인라인 폴백은 버퍼링 읽기를 `READ_FILE_SIZE_CAP = 100 MiB`로 제한합니다. 주입된 어댑터는 더 엄격한 WorkspaceFileSystem 계약을 적용합니다. 전체 스냅샷은 256 KiB에서 멈추고, 더 큰 UTF-8 파일은 유한한 `limit`이 필요하며 inode에 바운드된 핸들에서 스트리밍되어 최대 256 KiB만 반환됩니다. 500 MB 로그 전체를 읽어서 `{ line: 1, limit: 10 }`만 반환해서는 안 됩니다.
 
-어댑터는 더 나아가서: 워크스페이스 쓰기에 `WorkspaceFileSystem.writeTextOverwrite`(PR 18 프리미티브)를 사용하고 엄격히 표시된 외부 내장 도구 쓰기에 팩토리 소유 동등물을 사용합니다. 둘 다 모드 보존, `0o600` 기본값, 그리고 공유 정규 경로 잠금 내의 심볼릭 링크 거부와 함께 원자적 임시 파일 및 rename 쓰기를 사용합니다. 이것은 심볼릭 링크를 해석하여 대상으로 쓰기를 수행했던 **pre-F1 인라인 프록시와의 차이점**입니다 — 심볼릭 링크된 dotfile을 통해 쓰기에 의존하던 에이전트는 이제 해석된 경로로 직접 접근해야 합니다.
+어댑터는 더 나아가서: 워크스페이스 쓰기에 `WorkspaceFileSystem.writeTextOverwrite`(PR 18 프리미티브)를 사용하고 엄격히 표시된 외부 내장 도구 쓰기에 팩토리 소유 동등물을 사용합니다. 둘 다 모드 보존, 팩토리의 `NewFileModePolicy`에 따른 새 파일 모드(`0o600` 기본값; `system`에서는 umask를 따름), 그리고 공유 정규 경로 잠금 내의 심볼릭 링크 거부와 함께 원자적 임시 파일 및 rename 쓰기를 사용합니다. 이것은 심볼릭 링크를 해석하여 대상으로 쓰기를 수행했던 **pre-F1 인라인 프록시와의 차이점**입니다 — 심볼릭 링크된 dotfile을 통해 쓰기에 의존하던 에이전트는 이제 해석된 경로로 직접 접근해야 합니다.
 
 ### ACP 와이어에서의 FsError 보존
 
@@ -238,7 +238,7 @@ flowchart LR
 
 - **심볼릭 링크는 해석되지 않고 거부됩니다.** 이것은 심볼릭 링크를 해석했던 pre-F1 인라인 `BridgeClient.writeTextFile` 프록시와의 차이점입니다. 심볼릭 링크된 dotfile을 통해 쓰는 에이전트는 해석된 경로로 직접 접근해야 합니다.
 - **`io_error`와 `permission_denied`는 구별됩니다.** 혼동하지 마세요. 모니터링 파이프라인은 알림에 `errorKind`를 사용합니다. ENOSPC를 permission_denied로 합치면 보안 담당자가 `df -h` 문제로 호출받게 됩니다.
-- **새 파일 모드는 umask 기본값이 아닌 `0o600`이 기본값입니다.** 쓰기 syscall의 `mode` 인수는 umask를 우회합니다. 공개 파일을 쓰는 에이전트는 명시적으로 모드 오버라이드를 전달해야 합니다.
+- **새 파일 모드는 umask 기본값이 아닌 `0o600`이 기본값입니다.** 쓰기 syscall의 `mode` 인수는 umask를 우회합니다. 에이전트는 쓰기별 모드 오버라이드를 전달할 수 없습니다. 데몬이 생성한 파일이 데몬의 umask를 따르도록 하려는 운영자는 데몬별로 `QWEN_SERVE_NEW_FILE_MODE=system`으로 옵트인할 수 있습니다(기존 파일은 모드를 유지함). [`17-configuration.md`](./17-configuration.md)를 참조하세요.
 - **`createServeApp`의 기본 `trusted: false`**는 커스텀 `fsFactory` 또는 `bridge`를 주입하지 않는 임베더에 대해 ACP 쓰기를 `untrusted_workspace`로 조용히 거부합니다. 첫 번째 호출 시 한 번의 stderr 경고가 발생하며, 이후 호출자는 알림을 받지 못합니다. [`02-serve-runtime.md`](./02-serve-runtime.md) 참조.
 - **큰 텍스트는 명시적 창 인수가 필요합니다.** `line` / `limit` / `maxBytes` 중 하나. 이 중 아무것도 없는 읽기는 `file_too_large`로 남습니다. 전체 파일을 가지고 있다고 생각하는 호출자가 잘린 상태로 다시 쓸 수 있기 때문입니다. 창은 inode에 바운드된 핸들에서 스트리밍되며 `MAX_READ_BYTES`를 초과하여 반환하지 않습니다.
 - **`MAX_READ_BYTES`는 읽기가 반환하는 것을 제한하고, `MAX_TEXT_SCAN_BYTES`는 비용을 제한합니다.** 라인 오프셋은 바이트 0부터 스캔하여 해석되므로, `{ line: 900_000_000, limit: 20 }`은 거의 아무것도 반환하지 않으면서도 파일을 끝까지 스캔합니다. 8 MiB 이상의 스캔 후 읽기는 `file_too_large`로 거부되며, 어떤 오프셋이든 O(1)에 도달하는 `readBytes`를 가리킵니다.

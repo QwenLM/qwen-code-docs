@@ -593,6 +593,22 @@ A issue [#4514](https://github.com/QwenLM/qwen-code/issues/4514) T2.9 traz duas 
 
 Ambas as flags aceitam um inteiro positivo em milissegundos; `0`, `NaN`, valores não inteiros ou negativos são rejeitados na inicialização com uma mensagem de erro clara. A flag CLI vence a env var; o campo `ServeOptions` explícito (chamadores incorporados) vence a env. Consumidores de SDK devem fazer pre-flight da tag de capacidade correspondente antes de confiar em qualquer comportamento — daemons anteriores a este PR omitem ambas as tags e o campo `deadlineMs` da requisição é descartado silenciosamente.
 
+### Modo de arquivo novo para escritas de texto do agente
+
+As escritas de texto do agente (`write_file`, `edit`, `notebook_edit` e o editor sed simulado da ferramenta shell) são publicadas através do writer atômico do daemon, que preserva o modo de um target existente e — para arquivos **novos** — usa como padrão o `0600` apenas para o proprietário, ignorando o umask do processo do daemon. Esse padrão fail-closed é intencional: um arquivo recém-criado pelo agente nunca é legível por grupo/outros acidentalmente, não importa quão permissivo seja o umask do supervisor.
+
+Operadores cuja convenção de deployment é baseada em umask (ex: uma unit do systemd com `UMask=0002`, repositórios com grupo compartilhado) podem optar por novos arquivos no tratamento POSIX padrão com:
+
+| Env var                    | Valores             | Padrão  | O que faz                                                                                                                                                                                                                                                                                                                                                                                                        |
+| -------------------------- | ------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `QWEN_SERVE_NEW_FILE_MODE` | `owner` \| `system` | `owner` | `system` cria arquivos NOVOS em `0o666 & ~umask`, então arquivos criados pelo agente seguem o umask do processo do daemon como qualquer outro processo na máquina. `owner` mantém o padrão `0600` independente de umask. Os valores são case-insensitive; o literal `0600` é aceito como um alias para `owner` (nenhum outro modo octal é suportado), e qualquer outro valor é rejeitado com um aviso no stderr e o padrão `0600` é mantido. |
+
+Escopo e limites:
+
+- Aplica-se a arquivos NOVOS criados pelas rotas de escrita de texto (targets de workspace, o host writer externo no mesmo host e escritas de texto HTTP). Arquivos existentes sempre mantêm seu modo em disco — editar um segredo `0600` o mantém `0600`, um executável mantém `+x`.
+- Uploads binários (`POST /file/upload`) sempre criam com `0600` independentemente desta configuração.
+- O daemon lê a variável na construção do workspace-filesystem; reinicie o daemon após alterá-la.
+
 ## Deploy multi-sessão e multi-workspace
 
 Passe `--workspace` mais de uma vez para registrar vários workspaces não sobrepostos em um processo `qwen serve`. O primeiro caminho é o primário. Cada workspace registrado possui um limite de runtime isolado, enquanto o listener em todo o daemon, a política de autenticação e o limite de sessões totais são compartilhados. A produção tenta pré-aquecer o filho ACP primário para compatibilidade e tenta novamente no primeiro uso após falha; secundários confiáveis iniciam seu próprio filho sob demanda, e secundários não confiáveis não iniciam ACP. Requisições podem selecionar um workspace registrado por `cwd` canônico; requisições que omitem `cwd` usam o workspace primário. Use um daemon por usuário ou principal de segurança; a confiança de workspace é um gate de execução, não um ACL.

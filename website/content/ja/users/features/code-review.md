@@ -349,6 +349,8 @@ PRレビューでは、マニフェストはマージベースから読み取ら
 # → "Previous review used qwen3-coder. Running full review with gpt-4o for a second opinion."
 ```
 
+モデルマッチはスキップだけでなくインクリメンタルスコープもゲートします。「キャッシュされたコミットまでクリーンアップ」は前のモデルの判定であるため、キャッシュされたレビュー以降に新しいコミットが追加された場合、モデルの不一致は `lastCommitSha..HEAD` にスコープしません — 範囲は全体 diff となり、「Previous round was reviewed by qwen3-coder. Running full review with gpt-4o.」と記録されます。ただし、最後に投稿されたレビュー（下記）から現在実行中のモデルが証明したアンカーが回復された場合は除きます。その場合は範囲が代わりにスコープされます。前のラウンドの発見は引き続き持ち越されて再判定されます。アンカーのみが持ち越されません。キャッシュが存在しない、またはそのアンカーが使用できない場合（CI、別のクローン）も同じゲートが、最後に投稿されたレビューのマシンレジャーマーカーから回復されたアンカーに適用されます。現在実行中のモデルが証明した場合にのみインクリメンタル範囲をスコープします。異なるモデルによって証明されたマーカー、またはモデルを持たないマーカー（`review.attribution` をオフにして投稿されたレビュー、またはそのフィールドが存在する前のレビュー）は、全体 diff にフォールバックします。
+
 キャッシュは `.qwen/review-cache/` に保存され、コミット SHA とモデル ID の両方を追跡します。このディレクトリが `.gitignore` に含まれていることを確認してください（`.qwen/*` のようなより広いルールでも機能します）。キャッシュされたコミットがリベースで消去されていた場合、全体レビューにフォールバックします。high努力のレビューのみがキャッシュを参照または書き込みます。`--effort low|medium` のクイックパスは「レビュー済み」としてカウントされません。
 
 ## レビューレポート
@@ -367,6 +369,8 @@ Mediumおよびhigh努力のレビューは、同じステムを持つ構造化J
 パイプラインの決定的な部分 — 引数解析（`qwen review parse-args`）とイベント/ボディの決定（`qwen review compose-review`）— はプロンプトテキストではなくテストされたサブコマンドです。そのため、`--effort` の文法、`--comment` の強制、判定キャップ、ダウングレードの動作はユニットテストで固定されており、モデルによってずれることはありません。
 
 **GitHub Enterprise:** `github.com` 以外のホストのPR URLをレビューする場合、そのホストのすべてのGitHub呼び出しがルーティングされます。レビューサブコマンド（`match-remote`、`meta`、`fetch-pr`、`pr-context`、`comment-status`、`issue-context`、`fetch-diff`、`comment-body`、`plan-diff`、`test-plan`、`presubmit`、`compose-review`、`submit`、`publish-assets`）は `--host` を受け取り、コード内で設定します。そのため、ホストの忘れによってレビューがサイレントに `github.com` にリターゲットされることはありません。
+
+**Aone Code:** オリジンが `gitlab.alibaba-inc.com` 上にあるクローンをレビューする場合、そのクローン内から `/review` を実行します。プラットフォームがリモートから検出され、読み取りサブコマンドは `a1` CLI に基づいて動作します。ターゲット番号はグローバル MR ID です。`fetch-pr` は `refs/merge-requests/<id>/head` をフェッチして worktree + diff を構築するため、worktree のエージェントレビューは変更されません。このフェーズでは、すべての Aone 実行はコンテキスト利用不可であり、いくつかのフローがスキップされます（`github.com` の同名リポジトリにヒットする代わりに）。`pr-context`/`comment-status`/`presubmit` は Aone のバックイングを持たないため、判定は `COMMENT` にキャップされます。`test-plan` はバックイングなし、Agent 0 はスキップ、`publish-assets` の書き込みはスキップされます。`--comment` も拒否されるため、このフェーズでは Aone 実行はプラットフォームに対して読み取り専用です。発見はターミナル出力と保存されたレポートに記録されます。`docs/design/2026-08-15-review-aone-provider.md` を参照してください。
 
 すべての実行は1つの機械可読行で終わります（`Review complete: <target> — <disposition>`）。スクリプトとCIラッパーは単一の `^Review complete: ` マッチで完了と結果を検出できます。
 

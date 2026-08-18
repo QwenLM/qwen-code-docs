@@ -2848,3 +2848,4 @@ data: {"v":1,"type":"stream_error","data":{"error":"<message>"}}
 | `packages/sdk-typescript/src/daemon/sse.ts`          | EventSource フレームパーサー                                                                                    |
 | `integration-tests/cli/qwen-serve-routes.test.ts`    | 18 ケース、LLM なし                                                                                             |
 | `integration-tests/cli/qwen-serve-streaming.test.ts` | 3 ケース、ローカルのフェイク OpenAI サーバーによってバックエンドされる実際の `qwen --acp` 子プロセス（POSIX のみ。Windows ではスキップ） |
+

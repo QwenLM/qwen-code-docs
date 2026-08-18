@@ -145,7 +145,8 @@ PR을 리뷰할 때, `/review`는 현재 브랜치를 전환하는 대신 임시
 - 빌드 및 테스트 명령이 로컬 빌드 캐시를 오염시키지 않고 격리되어 실행됩니다
 - 문제가 발생하면 환경에 영향을 주지 않습니다 — worktree를 삭제하면 됩니다
 - 리뷰 완료 후 worktree가 자동으로 정리됩니다
-- 리뷰가 중단되면(Ctrl+C, 크래시), 같은 PR의 다음 `/review`가 오래된 worktree를 자동으로 정리하고 새로 시작합니다
+- 리뷰가 중단되면(Ctrl+C, 크래시), 같은 PR의 다음 `/review`가 오래된 worktree를 자동으로 정리하고 새로 시작합니다. 중단된 세션이 여전히 리스를 남긴 경우(이를 건너뛰는 하드 킬 또는 이후 프롬프트 중에 중단된 멀티 프롬프트 리뷰) `/review`가 거부하고 삭제할 리스 파일을 이름으로 지정합니다. 정상 중지는 이를 해제합니다: 완료된 리뷰와 조기 중지(empty diff, 마지막 리뷰 이후 새 변경 없음)는 모두 `cleanup`을 실행하여 리스를 해제합니다
+- worktree는 세션에 리스됩니다: 이미 리뷰 중인 PR의 두 번째 `/review`는 실행 중인 리뷰의 worktree를 철거하는 대신 시작을 거부합니다(보유자를 이름으로 지정)
 - 리뷰 보고서와 캐시는 메인 프로젝트 디렉토리에 저장됩니다(worktree가 아님)
 
 ## 교차 저장소 PR 리뷰
@@ -183,7 +184,7 @@ PR을 리뷰할 때, `/review`는 현재 브랜치를 전환하는 대신 임시
 - 수정이 단일 로컬 편집인 경우, 한 번의 클릭으로 적용할 수 있는 ` ```suggestion ` 블록
 - Approve/Request changes 판정의 경우: 판정이 포함된 리뷰 요약
 - 모든 인라인 댓글이 게시된 Comment 판정의 경우: 별도 요약 없음 (인라인 댓글으로 충분)
-- 각 댓글에 모델 및 CLI 버전 속성 푸터 (예: _— qwen3-coder via Qwen Code /review (v0.21.2)_); 제거하려면 사용자 또는 시스템 `settings.json`에서 `review.attribution`을 `false`로 설정하세요 (workspace `.qwen/settings.json`은 `review.*` 설정에서 무시됨)
+- 각 댓글에 모델 및 CLI 버전 속성 푸터 (예: _— qwen3-coder via Qwen Code /review (v0.21.2)_); 제거하려면 사용자 또는 시스템 `settings.json`에서 `review.attribution`을 `false`로 설정하세요 (workspace `.qwen/settings.json`은 `review.*` 설정에서 무시됨) — 그러면 댓글과 본문 목록에서 `**[Critical]**`/`**[Suggestion]**` 심각도 마커도 제거되며, 리뷰의 머신 레저 마커에서 모델이 제거되어 새 환경(리뷰 캐시 없음)에서 복구된 증분 앵커가 동일 모델 검사에 실패하고 재리뷰가 전체 범위로 폴백합니다
 
 **터미널에만 남는 내용:**
 
@@ -348,6 +349,8 @@ Closing 이슈 집합은 작성자가 올바른 이슈를 연결했다는 증명
 # → "Previous review used qwen3-coder. Running full review with gpt-4o for a second opinion."
 ```
 
+모델 일치는 건너뛰기뿐만 아니라 증분 스코핑도 제어합니다: "캐시된 커밋까지 정리"는 이전 모델의 판정이므로, 캐시된 리뷰 이후 새 커밋이 추가되면 모델 불일치는 절대 `lastCommitSha..HEAD`로 스코핑하지 않습니다 — 범위는 전체 diff이며 "Previous round was reviewed by qwen3-coder. Running full review with gpt-4o."로 기록합니다. 단, 현재 실행 중인 모델이 인증한 앵커가 마지막 게시 리뷰에서 복구되면(아래) 해당 범위로 대신 스코핑합니다. 이전 라운드의 발견은 재규칙화를 위해 계속 전달됩니다; 앵커만 전달되지 않습니다. 동일한 게이트는 캐시가 없거나 앵커를 사용할 수 없을 때(CI, 다른 클론) 마지막 게시 리뷰의 머신 레저 마커에서 복구된 앵커에도 적용됩니다: 현재 실행 중인 모델이 인증한 경우에만 증분 범위를 스코핑하며, 다른 모델이 인증했거나 모델이 없는 마커(`review.attribution`을 끄고 게시된 리뷰 또는 해당 필드 이전의 리뷰)는 전체 diff로 폴백합니다.
+
 캐시는 `.qwen/review-cache/`에 저장되며 커밋 SHA와 모델 ID를 모두 추적합니다. 이 디렉토리가 `.gitignore`에 있는지 확인하세요(`.qwen/*`와 같은 더 넓은 규칙도 작동합니다). 캐시된 커밋이 리베이스로 사라진 경우 전체 리뷰로 폴백합니다. High 노력 리뷰만 캐시를 참조하거나 작성합니다 — `--effort low|medium` 퀵 패스는 절대 "이미 리뷰됨"으로 간주되지 않습니다.
 
 ## 리뷰 보고서
@@ -366,6 +369,8 @@ Medium 및 High 노력 리뷰는 또한 같은 스템을 가진 구조화된 JSO
 파이프라인의 결정적 부분 — 인수 파싱(`qwen review parse-args`) 및 이벤트/본문 결정(`qwen review compose-review`) — 은 프롬프트 텍스트가 아닌 테스트된 서브커맨드이므로, `--effort` 문법, `--comment` 강제, 판정 캡 및 다운그레이드 동작은 단위 테스트로 고정되며 모델에 따라 변하지 않습니다.
 
 **GitHub Enterprise:** `github.com`이 아닌 호스트의 PR URL을 리뷰하면 해당 호스트의 모든 GitHub 호출이 라우팅됩니다 — 리뷰 서브커맨드(`match-remote`, `meta`, `fetch-pr`, `pr-context`, `comment-status`, `issue-context`, `fetch-diff`, `comment-body`, `plan-diff`, `test-plan`, `presubmit`, `compose-review`, `submit`, `publish-assets`)가 `--host`를 수용하고 코드에서 설정하므로, 잊힌 호스트가 조용히 `github.com`으로 리뷰를 재타겟팅할 수 없습니다.
+
+**Aone Code:** origin이 `gitlab.alibaba-inc.com`에 있는 클론의 경우, 해당 클론 내부에서 `/review`를 실행하세요 — 플랫폼이 원격에서 감지되고 읽기 서브커맨드가 `a1` CLI를 기반으로 동작하며, 대상 번호는 전역 MR id입니다. `fetch-pr`이 `refs/merge-requests/<id>/head`를 가져오고 worktree + diff를 구축하므로 worktree의 에이전트 리뷰는 동일하게 유지됩니다. 이 단계에서 모든 Aone 실행은 컨텍스트를 사용할 수 없으며 여러 흐름이 건너뛰어집니다(github.com의 동일 이름 저장소에 도달하는 대신): `pr-context`/`comment-status`/`presubmit`은 Aone 백킹이 없고(판정이 `COMMENT`로 제한), `test-plan`은 백킹이 없으며, 에이전트 0이 건너뛰어지고 `publish-assets` 쓰기가 건너뛰어집니다 — `--comment`도 거부되므로 이 단계에서 Aone 실행은 플랫폼에 대해 읽기 전용입니다; 발견은 터미널 출력과 저장된 보고서에 기록됩니다. `docs/design/2026-08-15-review-aone-provider.md`를 참조하세요.
 
 모든 실행은 하나의 기계 판독 가능한 라인(`Review complete: <target> — <disposition>`)으로 끝나므로, 스크립트와 CI 래퍼가 단일 `^Review complete: ` 매치로 완료와 결과를 감지할 수 있습니다.
 
@@ -457,3 +462,4 @@ High 노력 파이프라인은 각 단계를 제한하지만(샤드 크기, 감�
 - 모든 발견은 구체적인 실패 시나리오(트리거 → 잘못된 결과) 또는 구체적인 비용을 명시합니다 — 그렇지 못한 발견은 도달 전에 삭제됩니다
 - N개 파일에 걸친 같은 패턴 → 하나의 발견으로 집계
 - PR 댓글은 높은 신뢰도만 (high 노력, 검증된 리뷰에서만)
+- 코드베이스 규칙에 맞는 표면적 스타일/포맷은 제외

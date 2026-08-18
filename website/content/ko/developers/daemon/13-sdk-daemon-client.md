@@ -385,6 +385,8 @@ async function resilientSubscribe(session: DaemonSessionClient) {
 
 `workspace_archived_session_export`가 광고되면 `client.workspaceById(workspaceId).exportArchivedSession(sessionId, { format })` 또는 해당 `workspaceByCwd` 메서드를 사용하여 선택된 워크스페이스의 아카이브된 영구 트랜스크립트만 내보냅니다. 이 메서드는 활성 내보내기와 동일한 결과 타입과 네이티브 REST 동작을 사용하지만 활성 세션으로 폴백하지 않습니다. 지원 여부는 활성 내보내기 기능으로부터 추론할 수 없습니다.
 
+`workspace_session_live_state`가 광고되면, `client.getWorkspaceSessionLiveState(workspaceCwd)` 또는 범위 지정된 `client.workspaceById(workspaceId).getSessionLiveState()` / `client.workspaceByCwd(workspaceCwd).getSessionLiveState()`가 선택된 신뢰 워크스페이스의 메모리 전용 라이브 세션 스냅샷과 카탈로그 버전을 읽으며, `DaemonWorkspaceSessionLiveState`(`{ v: 1, catalogVersion: DaemonSessionCatalogVersion, sessions: DaemonSessionLiveState[] }`)를 반환합니다. 이 메서드는 항상 베어러 인증과 인코딩된 워크스페이스 선택자가 포함된 네이티브 REST를 사용하며, 선택적 클라이언트 ID를 보존하고 기존 단축 요청 타임아웃을 사용합니다. `requireCapability()`를 호출하지 않습니다 — 폴마다 기능 프로브를 수행하면 요청 볼륨이 두 배가 되기 때문입니다 — 따라서 소비자는 이미 로드된 기능에서 `workspace_session_live_state`를 한 번 프리플라이트하고, 해당 태그가 없으면 기존 카탈로그 폴링으로 폴백합니다. `workspace_qualified_rest_core`에서 지원을 추론하지 마십시오.
+
 ### 생성 시 `lastEventId` 시딩
 
 프로세스 재시작 간에 커서를 유지하는 호출자는 시딩할 수 있습니다:

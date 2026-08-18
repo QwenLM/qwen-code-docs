@@ -65,6 +65,7 @@
 | `QWEN_SERVE_RATE_LIMIT_MUTATION`    | `--rate-limit-mutation`의 env 폴백.                                                                                                                                                                                                                                                                                                                                                    |
 | `QWEN_SERVE_RATE_LIMIT_READ`        | `--rate-limit-read`의 env 폴백.                                                                                                                                                                                                                                                                                                                                                        |
 | `QWEN_SERVE_RATE_LIMIT_WINDOW_MS`   | `--rate-limit-window-ms`의 env 폴백.                                                                                                                                                                                                                                                                                                                                                   |
+| `QWEN_SERVE_NEW_FILE_MODE`          | 데몬 텍스트 쓰기에 대한 새 파일 모드 정책: `owner`(기본값 — 새 파일이 `0600`으로 생성되며 umask와 무관) 또는 `system`(새 파일은 `0o666 & ~umask`를 따름). 대소문자 무관. 리터럴 `0600`은 `owner`의 별칭으로 허용됨(다른 8진 모드는 지원되지 않음). 인식할 수 없는 값은 stderr에 경고하고 기본 `0600`을 유지. 기존 파일은 항상 모드를 유지. [`qwen-serve.md` — 에이전트 텍스트 쓰기의 새 파일 모드](../../users/qwen-serve.md#new-file-mode-for-agent-text-writes) 참조. |
 | `QWEN_CODE_MEMORY_PROJECT_SCOPE`    | `workspace`는 프로젝트 메모리를 정확한 워크스페이스 디렉토리로 키잉. `git-root`는 레거시 공유 스코프. 미설정 시 daemon이 `workspace`를 주입. 인식 불가능한 값은 한 번 경고하고 레거시 `git-root` 동작을 유지. 런타임 기본 env를 통해 전파되며 `childEnvOverrides`가 아님. `--memory-project-scope`가 우선. 각 워크스페이스의 remember/forget/dream 레인은 대기 작업을 `MAX_PENDING = 16`으로 제한. N개 워크스페이스는 daemon 전체 상한 없이 최대 16·N개의 대기 작업을 허용. |
 
 빈 `QWEN_CODE_MEMORY_PROJECT_SCOPE` 값은 설정되지 않은 것으로 처리되어 기본값 `workspace`를 사용하며, 인식할 수 없는 비어 있지 않은 값은 여전히 한 번 경고하고 레거시 `git-root` 동작을 유지합니다.
@@ -90,7 +91,7 @@
 
 | 환경 변수                     | 효과                                                            |
 | ----------------------- | ----------------------------------------------------------------- |
-| `QWEN_DAEMON_URL`       | CLI TUI adapter, 채널, IDE companion용 daemon 기본 URL. |
+| `QWEN_DAEMON_URL`       | CLI TUI adapter, 채널 및 IDE companion용 데몬 기본 URL. |
 | `QWEN_DAEMON_TOKEN`     | Bearer 토큰.                                                     |
 | `QWEN_DAEMON_WORKSPACE` | `POST /session`에 전송되는 `cwd`를 오버라이드.                      |
 

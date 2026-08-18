@@ -409,7 +409,7 @@ v1 托管作用域是由活跃前台托管 Prompt 调用的顶级工具。嵌套
 - **Chrome 扩展浏览器自动化与 framing 是分开的。** `qwen serve --allow-origin chrome-extension://<id>` 允许扩展 frame Web Shell 并连接到守护进程。Console/network/screenshot/click 工具需要外部 CDP MCP 适配器命令：`QWEN_CDP_MCP_COMMAND=/path/to/cdp-mcp-adapter qwen serve --allow-origin chrome-extension://<id>`。主 CLI 包不包含浏览器自动化适配器；客户端可以在展示这些工具为可用之前检查 `caps.features.includes('browser_automation_mcp')`。
 - **生成的 `qwen --acp` 子进程接收其所属运行时的有效环境。** 守护进程冻结 process-env 基础，将该工作区的 settings/env-file 覆盖应用到运行时本地快照，且永远不会将覆盖写回 `process.env`；另一个运行时中同名的键不会跨越。`QWEN_SERVER_TOKEN` 在生成前被清除，因为 agent 不需要守护进程 bearer。影响加载器的变量（`NODE_OPTIONS`、`npm_config_node_options` 和 npm 的配置文件重定向、`NODE_PATH`、`OPENSSL_CONF`、`NODE_REPL_EXTERNAL_MODULE`、`npm_config_node_gyp`、`npm_config_init_module`、`LD_PRELOAD`、`LD_AUDIT`、`DYLD_INSERT_LIBRARIES`、`BASH_ENV`、`ZDOTDIR`、导出的 bash 函数定义 `BASH_FUNC_*`）同样永远不会传递给会话子进程 — 守护进程从自己的 `process.env` 和会话托管子进程生成的冻结基础环境中清除它们（基础环境仅在 `DEV=true` 工具链下保留它们，其 `.ts` 入口仍需要 tsx 加载器），且 `.env` / `settings.json` `env` 源拒绝它们（参见 [settings](./configuration/settings.md)）；这适用于守护进程托管的每个会话。基础凭据如 `OPENAI_API_KEY`、`ANTHROPIC_API_KEY`、`QWEN_*` 和 `DASHSCOPE_API_KEY` 否则直接传递，除非运行时覆盖更改它们。**这是有意的，不是沙箱。** agent 以相同的 UID 运行并具有 shell 工具访问权限，因此 `~/.bashrc`、`~/.aws/credentials` 或 `~/.npmrc` 中的任何内容无论如何都可以通过 prompt 注入到达。运行时之间的环境隔离不是操作系统安全边界；不要在拥有你不会信任 agent 的凭据的身份下运行 `qwen serve`。
 - **Agent 文本读取是子进程本地的，遵循常规 CLI 权限规则，而不是工作区文件系统边界。** 直接的 `read_file` 可以到达每个已注册工作区之外的主机文本路径：外部路径默认为确认，允许规则或审批模式可能会自动批准它们。批准的读取使用可配置的 CLI 输出限制，而不是工作区文件系统的返回输出、完整快照和大文本扫描上限。这适用于每个共享文本读取消费者，因此 write、edit、notebook、sed 和 artifact 操作执行的预读取会失去这些上限以及工作区文件系统的读取审计、符号链接拒绝和读取端 TOCTOU 保护 — 确切列表请参阅[设计文档](../design/daemon-local-text-reads.md)。由于确认有效负载是通过读取文件构建的，工作区外的 diff 会在任何人批准之前分发给**每个**附加的 SSE 订阅者 — 在交互式 CLI 中，该内容仅由终端前的人看到。将已认证的守护进程客户端视为相同的安全主体。HTTP 文件系统路由仍保持工作区作用域，agent 发现工具行为不变。
-- **内置文本工具的已批准最终写入具有窄小的同主机路由。** `write_file`、`edit`、`notebook_edit` 和 shell 工具的模拟 sed 编辑器仅在现有权限策略允许执行后才附加内部来源。因此，它们的最终 ACP 文本写入可以 targeting 拥有工作区之外的绝对路径，而无需二次确认；允许规则、AUTO/AUTO_EDIT 和 YOLO 的行为与 CLI 相同，而拒绝、Plan、Hook/Guard 拒绝和预执行取消不会发送最终写入。工具已进入不可取消的文件系统操作后的取消保留该工具的现有行为。工作区目标仍使用 WFS。外部目标使用守护进程宿主写入器，具有相同的信任快照、5 MiB 编码限制、叶子符号链接拒绝、规范路径锁定、原子重命名、模式保留、`0600` 新文件模式、generation guard 和文件系统审计。HTTP 写入、通用或未标记的 ACP 写入、注入的 bridge/workspace-registry/factory 集成和任意 shell 重定向不接收此例外。请参阅[外部写入设计](../design/daemon-external-tool-text-writes.md)。
+- **内置文本工具的已批准最终写入具有窄小的同主机路由。** `write_file`、`edit`、`notebook_edit` 和 shell 工具的模拟 sed 编辑器仅在现有权限策略允许执行后才附加内部来源。因此，它们的最终 ACP 文本写入可以 targeting 拥有工作区之外的绝对路径，而无需二次确认；允许规则、AUTO/AUTO_EDIT 和 YOLO 的行为与 CLI 相同，而拒绝、Plan、Hook/Guard 拒绝和预执行取消不会发送最终写入。工具已进入不可取消的文件系统操作后的取消保留该工具的现有行为。工作区目标仍使用 WFS。外部目标使用守护进程宿主写入器，具有相同的信任快照、5 MiB 编码限制、叶子符号链接拒绝、规范路径锁定、原子重命名、模式保留、默认 `0600` 新文件模式（可配置 — 参见 [Agent 文本写入的新文件权限模式](#agent-文本写入的新文件权限模式)）、generation guard 和文件系统审计。HTTP 写入、通用或未标记的 ACP 写入、注入的 bridge/workspace-registry/factory 集成和任意 shell 重定向不接收此例外。请参阅[外部写入设计](../design/daemon-external-tool-text-writes.md)。
 - **每个订阅者有界的 SSE 队列** — 溢出队列的慢速客户端会收到 `client_evicted` 终止帧并被关闭；一个卡住的消费者无法拖累守护进程。
 - **每会话 prompt 准入上限** — 默认为每个会话 5 个已接受但未处理的 prompt。有缺陷的客户端无法为一个会话排队无限制的 prompt promise 或临时 SSE 等待。
 - **优雅关闭** — SIGINT/SIGTERM 在关闭监听器之前 drain agent 子进程（每个子进程 10 秒截止时间）。
@@ -432,6 +432,22 @@ Issue [#4514](https://github.com/QwenLM/qwen-code/issues/4514) T2.9 提供了两
 | `--writer-idle-timeout-ms <n>` | `QWEN_SERVE_WRITER_IDLE_TIMEOUT_MS` | 未设置   | 每 SSE 连接的空闲截止时间。当在 `n` 毫秒内没有**成功**刷新写入时 — 既没有真实事件也没有 15 秒心跳 — 守护进程发出 `data.reason = 'writer_idle_timeout'`（在 `data.errorKind` 上镜像）的终止 `client_evicted` 帧并关闭流。**选择远高于 15 秒心跳的值**（例如 `30000`–`300000`），以免合法的空闲流被驱逐；值 `< 15000` **会**在第一次心跳触发之前驱逐 otherwise-healthy 的空闲连接（仅用于测试/短生命周期开发会话）。Capability 标签（有条件的）：`writer_idle_timeout`。 |
 
 两个标志都接受毫秒为单位的正整数；`0`、`NaN`、非整数或负值在启动时被拒绝，并带有清晰的错误消息。CLI 标志优先于环境变量；显式 `ServeOptions` 字段（嵌入式调用者）优先于环境变量。SDK 消费者应在依赖任一行为之前预检匹配的 capability 标签 — 此 PR 之前的守护进程省略两个标签，且请求的 `deadlineMs` 字段会被静默丢弃。
+
+### Agent 文本写入的新文件权限模式
+
+Agent 文本写入（`write_file`、`edit`、`notebook_edit` 以及 shell 工具的模拟 sed 编辑器）通过守护进程的原子写入器发布，它会保留现有目标的权限模式，而对于**新**文件，默认使用仅限所有者的 `0600`，忽略守护进程进程的 umask。这种 fail closed 的默认值是有意为之的：无论主管 umask 多么宽松，新创建的 agent 文件都不会意外地对组/其他用户可读。
+
+部署约定基于 umask 的运维人员（例如带有 `UMask=0002` 的 systemd 单元、共享组仓库）可以通过以下方式让新文件使用标准 POSIX 处理：
+
+| 环境变量                   | 值                | 默认值  | 功能                                                                                                                                                                                                                                                                                                                                                                                                        |
+| -------------------------- | ----------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `QWEN_SERVE_NEW_FILE_MODE` | `owner` \| `system` | `owner` | `system` 以 `0o666 & ~umask` 创建新文件，因此 agent 创建的文件会像机器上的其他进程一样跟随守护进程进程的 umask。`owner` 保持不受 umask 影响的 `0600` 默认值。值不区分大小写；字面值 `0600` 作为 `owner` 的别名被接受（不支持其他八进制模式），任何其他值都会被拒绝，并在 stderr 输出警告后保持 `0600` 默认值。 |
+
+范围和限制：
+
+- 适用于文本写入路由创建的新文件（工作区目标、同主机外部宿主写入器和 HTTP 文本写入）。现有文件始终保留其磁盘上的权限模式 — 编辑 `0600` 的密钥文件仍保持 `0600`，可执行文件保持 `+x`。
+- 二进制上传（`POST /file/upload`）无论此设置如何，始终以 `0600` 创建。
+- 守护进程在工作区文件系统构建时读取该变量；更改后请重启守护进程。
 
 ## 多会话和多工作区部署
 

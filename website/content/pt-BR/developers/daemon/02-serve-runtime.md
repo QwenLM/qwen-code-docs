@@ -61,7 +61,9 @@
 
 ### Sequência de inicialização
 
-1. **Resolver e remover espaços do token** em `opts.token` ou `QWEN_SERVER_TOKEN`; isso evita que uma nova linha final de `cat token.txt` quebre silenciosamente a comparação do bearer.
+1. **Resolver e remover espaços do token** em `opts.token` ou
+   `QWEN_SERVER_TOKEN`; isso evita que uma nova linha final de
+   `cat token.txt` quebre silenciosamente a comparação do bearer.
 2. **Proteção contra erro de digitação no hostname**: `--hostname localhost:4170` gera um erro e sugere `--port`.
 3. **Preflight de autenticação**: fora do loopback sem token é recusado; `--require-auth` sem token é recusado.
 4. **Validação do workspace**: caminho absoluto, existe, é diretório. `EACCES` / `EPERM` são encapsulados para apontar para a flag.
@@ -132,6 +134,7 @@ Chamar `createServeApp` diretamente ainda retorna apenas um `Application`. Um em
 | Flags           | `--rate-limit*`                                                                                 | Limite de taxa HTTP por tier.                                                                         |
 | `settings.json` | `policy.permissionStrategy`, `policy.consensusQuorum`                                           | Política e quórum do `MultiClientPermissionMediator`.                                                 |
 | `settings.json` | `context.fileName`                                                                              | Substituição de `getCurrentGeminiMdFilename` para a bridge.                                           |
+
 Consulte [`17-configuration.md`](./17-configuration.md) para a referência consolidada.
 
 ## Ressalvas e limites conhecidos

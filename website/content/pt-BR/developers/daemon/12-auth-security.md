@@ -6,7 +6,7 @@ O `qwen serve` é um daemon local por padrão e uma superfície exposta em confi
 
 1. **Bind** — bind fora do loopback sem um token bearer **se recusa a iniciar**.
 2. **Autenticação Bearer** — o middleware `bearerAuth` com comparação SHA-256 em tempo constante protege todas as rotas, exceto `/health` no loopback (`require_auth` estende essa proteção também para loopback e `/health`).
-3. **Lista de permissão do cabeçalho Host** — no loopback, apenas `localhost`, `127.0.0.1`, `[::1]`, `host.docker.internal` (mais porta) são aceitos; defesa contra DNS rebinding.
+3. **Lista de permissão do cabeçalho Host** — no loopback, apenas `localhost`, `127.0.0.1`, `[::1]`, `host.docker.internal` (mais porta) são aceitos; defesa contra DNS rebinding. O listener LAN do Local Control é a exceção que sempre impõe sua verificação de Host por autoridade anunciada, qualquer que seja o bind primário.
 4. **Controle de Origin** — o app de runtime sempre instala `allowOriginCors` sobre uma allowlist mutável (`MutableOriginAllowlist`): as entradas `--allow-origin <pattern>` a semeiam, e o Local Control adiciona o origin da LAN enquanto ativo. Origins não correspondentes recebem o envelope de negação 403. A muralha de negação incondicional (`denyBrowserOriginCors`) sobrevive apenas no app de bootstrap que responde antes do runtime iniciar.
 5. **Portão de mutação por rota** — rotas de mutação da Wave 4 podem optar por respostas `401` mesmo no loopback quando nenhum token está configurado, usando um erro distinto com `code: 'token_required'`.
 6. **Autenticação via device-flow** — superfície OAuth separada para provedores (`POST /workspace/auth/device-flow` + GET/DELETE em `/:id`).

@@ -2446,7 +2446,7 @@ Wenn der HTTP-Client mitten im Prompt die Verbindung trennt, sendet der Daemon e
 
 Wenn `prompt_absolute_deadline` beworben wird, kann `deadlineMs` die
 konfigurierte Server-Deadline verkürzen. Ablauf emittiert ein korreliertes `turn_error` mit
-`errorKind: "prompt_deadline_exceeded"`.
+`errorKind: "prompt_deadline_exceeded"`. Die Deadline entlässt den Caller, ohne den Agenten zu töten; wenn der Agent später abschließt, geben Turn-Status-Polls für diese `promptId` das abgeschlossene Transkript-Ergebnis zurück statt des Deadline-Fehlers.
 
 ### `POST /session/:id/cancel`
 

@@ -29,7 +29,7 @@ Essa fatia de capacidade de leitura de texto cobre `read_file` direto mais as pr
 - Recusar leituras de snapshot completo acima de `MAX_READ_BYTES`, permitindo janelas explícitas com saída limitada a `MAX_READ_BYTES` e custo de scan limitado a `MAX_TEXT_SCAN_BYTES`; recusar escritas acima de `MAX_WRITE_BYTES` e arquivos binários (`binary_file`).
 - Recusar escritas/edições quando o workspace não é confiável (`untrusted_workspace`) — controlado por `assertTrustedForIntent(trusted, intent)`.
 - Respeitar padrões `.gitignore` / `.qwenignore` via `shouldIgnore`.
-- Realizar escrita atômica com renomeação e preservação do modo alvo; o modo padrão para novos arquivos é `0o600`.
+- Realizar escrita atômica com renomeação e preservação do modo alvo; novos arquivos usam `0o600` como padrão (`0o666 & ~umask` derivado do umask sob a política de modo de novos arquivos `system`).
 - Emitir eventos de auditoria `fs.access` / `fs.denied` em toda operação.
 - Mapear cada falha para um `FsError` com tipo e status HTTP; os manipuladores de rota os serializam uniformemente.
 
@@ -238,7 +238,7 @@ flowchart LR
 
 - **Symlinks são rejeitados, não seguidos.** Isso é uma divergência do proxy inline `BridgeClient.writeTextFile` pré-F1 que resolvia symlinks. Agentes escrevendo através de dotfiles com symlink precisam endereçar o caminho resolvido diretamente.
 - **`io_error` e `permission_denied` são distintos.** Não os confunda. Pipelines de monitoramento usam `errorKind` para alertas — incluir ENOSPC em permission_denied dispararia alertas para problemas de `df -h`.
-- **O modo padrão de novos arquivos é `0o600`, não o padrão do umask.** O argumento `mode` da syscall de escrita ignora o umask. Agentes escrevendo arquivos públicos devem passar explicitamente uma sobreposição de modo.
+- **O modo padrão de novos arquivos é `0o600`, não o padrão do umask.** O argumento `mode` da syscall de escrita ignora o umask. Agentes não podem passar uma sobreposição de modo por escrita. Operadores que desejam que arquivos criados pelo agente sigam o umask do daemon podem optar por daemon com `QWEN_SERVE_NEW_FILE_MODE=system` (arquivos existentes ainda preservam seu modo); consulte [`17-configuration.md`](./17-configuration.md).
 - **`createServeApp` com `trusted: false` padrão** rejeita silenciosamente escritas ACP com `untrusted_workspace` para embedders que não injetam um `fsFactory` ou `bridge` personalizados. Um aviso único em stderr é emitido na primeira vez; chamadores subsequentes não veem lembrete. Veja [`02-serve-runtime.md`](./02-serve-runtime.md).
 - **Texto grande exige um argumento de janela explícito**, qualquer um de `line` / `limit` / `maxBytes`. Uma leitura sem nenhum deles resulta em `file_too_large`, porque um chamador que acredita ter o arquivo inteiro pode escrevê-lo de volta truncado. Janelas fazem stream a partir de um handle limitado por inode e nunca retornam mais que `MAX_READ_BYTES`.
 - **`MAX_READ_BYTES` limita o que uma leitura retorna; `MAX_TEXT_SCAN_BYTES` limita o que ela custa.** Offsets de linha são resolvidos escaneando a partir do byte 0, então `{ line: 900_000_000, limit: 20 }` retorna quase nada e ainda percorre o arquivo. Após 8 MiB de scan a leitura é recusada com `file_too_large` apontando para `readBytes`, que alcança qualquer offset em O(1).

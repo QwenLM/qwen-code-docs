@@ -184,7 +184,7 @@ Ou, após executar `/review 123`, digite `post comments` para publicar os achado
 - Quando a correção é uma edição localizada única, um bloco ` ```suggestion ` que você pode aplicar com um clique
 - Para vereditos de Approve/Request changes: um resumo da revisão com o veredito
 - Para o veredito Comment com todos os comentários inline publicados: nenhum resumo separado (os comentários inline são suficientes)
-- Rodapé de atribuição do modelo e da versão da CLI em cada comentário (ex.: _— qwen3-coder via Qwen Code /review (v0.21.2)_); defina `review.attribution` como `false` no seu `settings.json` de usuário ou sistema (o `.qwen/settings.json` do workspace é ignorado para configurações `review.*`) para publicar sem ele
+- Rodapé de atribuição do modelo e da versão da CLI em cada comentário (ex.: _— qwen3-coder via Qwen Code /review (v0.21.2)_); defina `review.attribution` como `false` no seu `settings.json` de usuário ou sistema (o `.qwen/settings.json` do workspace é ignorado para configurações `review.*`) para publicar sem ele — comentários e listas de corpo então também perdem os marcadores de severidade `**[Critical]**`/`**[Suggestion]**`, e o modelo é omitido do marcador de ledger da revisão, então em ambientes novos (sem cache de revisão) a âncora incremental recuperada falha na verificação de mesmo modelo e a re-revisão volta ao range completo
 
 **O que fica apenas no terminal:**
 
@@ -345,6 +345,8 @@ Se você trocar de modelo (via `/model`) e revisar o mesmo PR novamente, o `/rev
 # → "A revisão anterior usou qwen3-coder. Executando revisão completa com gpt-4o para uma segunda opinião."
 ```
 
+A correspondência de modelo também controla o escopo incremental, não apenas o skip: "limpar até o commit em cache" é o veredito do modelo anterior, então quando novos commits chegaram desde a revisão em cache, uma incompatibilidade de modelo nunca faz escopo para `lastCommitSha..HEAD` — o range é o diff completo, notando "A rodada anterior foi revisada por qwen3-coder. Executando revisão completa com gpt-4o." — a menos que uma âncora certificada pelo modelo em execução seja recuperada da última revisão publicada (abaixo), que então define o range. Os achados da rodada anterior ainda são transportados para serem reavaliados; apenas a âncora não. O mesmo gate vincula a âncora recuperada do marcador de ledger da última revisão publicada quando o cache está ausente ou sua âncora é inutilizável (CI, outro clone): ela define o range incremental apenas se o modelo em execução a certificou — um marcador certificado por um modelo diferente, ou sem modelo (uma revisão publicada com `review.attribution` desativado, ou uma anterior ao campo), volta ao diff completo.
+
 O cache é armazenado em `.qwen/review-cache/` e rastreia tanto o SHA do commit quanto o ID do modelo. Certifique-se de que este diretório esteja no seu `.gitignore` (uma regra mais ampla como `.qwen/*` também funciona). Se o commit em cache foi removido por um rebase, o sistema volta a fazer uma revisão completa. Apenas revisões de esforço high consultam ou escrevem o cache — uma passagem rápida com `--effort low|medium` nunca conta como "já revisado".
 
 ## Relatórios de Revisão
@@ -363,6 +365,8 @@ Revisões de esforço medium e high também salvam um companion JSON estruturado
 As metades determinísticas do pipeline — análise de argumentos (`qwen review parse-args`) e a decisão de evento/corpo (`qwen review compose-review`) — são subcomandos testados em vez de texto de prompt, então a gramática de `--effort`, o forçamento de `--comment`, os limites de veredito e o comportamento de downgrade são fixados por testes unitários e não podem divergir com o modelo.
 
 **GitHub Enterprise:** revisar uma URL de PR em um host diferente de `github.com` roteia todas as chamadas do GitHub nesse host — os subcomandos de revisão (`match-remote`, `meta`, `fetch-pr`, `pr-context`, `comment-status`, `issue-context`, `fetch-diff`, `comment-body`, `plan-diff`, `test-plan`, `presubmit`, `compose-review`, `submit`, `publish-assets`) aceitam `--host` e o definem no código, então um host esquecido não pode redirecionar silenciosamente a revisão para `github.com`.
+
+**Aone Code:** para um clone cuja origem está em `gitlab.alibaba-inc.com`, execute o `/review` de dentro desse clone — a plataforma é detectada a partir do remote e os subcomandos de leitura funcionam, com suporte do CLI `a1` — o número alvo é o id global do MR. O `fetch-pr` busca `refs/merge-requests/<id>/head` e constrói o worktree + diff, então a revisão por agentes do worktree não é alterada. Nesta fase, toda execução Aone é sem contexto e vários fluxos são ignorados (em vez de acessar o repositório com o mesmo nome no github.com): `pr-context`/`comment-status`/`presubmit` não têm suporte Aone (veredito limitado a `COMMENT`), `test-plan` não tem suporte, o Agente 0 é ignorado, e a escrita do `publish-assets` é ignorada — com `--comment` também recusado, uma execução Aone é somente leitura em relação à plataforma nesta fase; os achados vão para a saída do terminal e o relatório salvo. Veja `docs/design/2026-08-15-review-aone-provider.md`.
 
 Cada execução termina com uma linha legível por máquina (`Review complete: <target> — <disposition>`), então scripts e wrappers de CI podem detectar a conclusão e o resultado com um único match `^Review complete: `.
 

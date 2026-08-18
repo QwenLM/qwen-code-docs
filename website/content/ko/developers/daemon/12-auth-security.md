@@ -112,10 +112,12 @@ Host 비교는 **대소문자를 구분하지 않습니다**. Express는 헤더 
 | `requireAuth=true`      | 아무 값         | 통과¹                            |
 | `token` 설정됨          | 아무 값         | 통과²                            |
 | 토큰 없음 (루프백 개발) | `strict: false` | 통과                             |
-| 토큰 없음 (루프백 개발) | `strict: true`  | `401 { code: 'token_required' }` |
+| 토큰 없음 (루프백 개발) | `strict: true`, 미인증³ | `401 { code: 'token_required' }` |
+| 토큰 없음 (루프백 개발) | `strict: true`, 인증³    | 통과                               |
 
 ¹ `--require-auth`는 토큰이 있어야 부팅되므로 전역 `bearerAuth`가 이미 인증되지 않은 호출자를 401로 차단합니다.
 ² 토큰 설정이 있으면 전역 `bearerAuth`가 모든 곳에서 베어러를 요구합니다. 게이트는 중복이지만 무해합니다.
+³ 리스너 범위 자격 증명을 통한 인증: Local Control LAN 리스너는 토큰 없는 데몬에서도 페어링 자격 증명을 검증하고 요청을 인증된 것으로 스탬프하므로, strict 라우트도 페어링된 LAN 클라이언트에 대해 통과합니다.
 
 `code: 'token_required'` 형태는 `bearerAuth`의 단순 `Unauthorized`와 구별되므로, SDK 클라이언트가 일반적인 401 대신 "configure --token / --require-auth" 힌트를 표시할 수 있습니다.
 

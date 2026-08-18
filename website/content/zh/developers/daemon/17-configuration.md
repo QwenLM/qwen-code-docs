@@ -65,6 +65,7 @@
 | `QWEN_SERVE_RATE_LIMIT_MUTATION`    | `--rate-limit-mutation` 的环境变量回退值。                                                                                                                                |
 | `QWEN_SERVE_RATE_LIMIT_READ`        | `--rate-limit-read` 的环境变量回退值。                                                                                                                                    |
 | `QWEN_SERVE_RATE_LIMIT_WINDOW_MS`   | `--rate-limit-window-ms` 的环境变量回退值。                                                                                                                               |
+| `QWEN_SERVE_NEW_FILE_MODE`          | 守护进程文本写入的新文件权限模式策略：`owner`（默认值 — 新文件创建为 `0600`，不受 umask 影响）或 `system`（新文件遵循 `0o666 & ~umask`）。不区分大小写；字面值 `0600` 作为 `owner` 的别名被接受（不支持其他八进制模式），无法识别的值会在 stderr 警告并保持 `0600` 默认值。现有文件始终保留其权限模式。参见 [`qwen-serve.md` — Agent 文本写入的新文件权限模式](../../users/qwen-serve.md#new-file-mode-for-agent-text-writes)。 |
 | `QWEN_CODE_MEMORY_PROJECT_SCOPE`    | `workspace` 按精确的工作区目录键控项目内存；`git-root` 选择旧版共享作用域。未设置时，守护进程注入 `workspace`；无法识别的值警告一次并保留旧版 `git-root` 行为。通过运行时 base env 传播，而非 `childEnvOverrides`；`--memory-project-scope` 优先级更高。每个工作区的 remember/forget/dream lane 将 pending 任务上限设为 `MAX_PENDING = 16`；N 个工作区最多允许 16·N 个排队任务，无守护进程级别上限。 |
 
 空白的 `QWEN_CODE_MEMORY_PROJECT_SCOPE` 值被视为未设置，因此默认为 `workspace`；无法识别的非空值仍然警告一次并保留旧版 `git-root` 行为。

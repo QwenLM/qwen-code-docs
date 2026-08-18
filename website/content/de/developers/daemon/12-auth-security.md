@@ -111,15 +111,17 @@ dem Listener hinzugefügt/entfernt):
 
 Per-Route-Opt-in-Gate. Verhaltensmatrix:
 
-| Daemon-Konfiguration      | Routen-Optionen | Ergebnis                         |
-| ------------------------- | --------------- | -------------------------------- |
-| `requireAuth=true`        | beliebig        | Durchleitung¹                     |
-| `token` konfiguriert      | beliebig        | Durchleitung²                     |
-| kein Token (Loopback-Dev) | `strict: false` | Durchleitung                      |
-| kein Token (Loopback-Dev) | `strict: true`  | `401 { code: 'token_required' }` |
+| Daemon-Konfiguration      | Routen-Optionen                            | Ergebnis                         |
+| ------------------------- | ------------------------------------------ | -------------------------------- |
+| `requireAuth=true`        | beliebig                                   | Durchleitung¹                     |
+| `token` konfiguriert      | beliebig                                   | Durchleitung²                     |
+| kein Token (Loopback-Dev) | `strict: false`                            | Durchleitung                      |
+| kein Token (Loopback-Dev) | `strict: true`, nicht authentifiziert      | `401 { code: 'token_required' }` |
+| kein Token (Loopback-Dev) | `strict: true`, authentifiziert³           | Durchleitung                      |
 
 ¹ `--require-auth` startet nur mit einem Token, daher würde die globale `bearerAuth` nicht authentifizierte Aufrufer bereits mit 401 abweisen.
 ² Jede Token-Konfiguration zwingt die globale `bearerAuth` dazu, Bearer überall durchzusetzen; das Gate ist redundant, aber harmlos.
+³ Authentifiziert über ein Listener-spezifisches Credential: Der Local-Control-LAN-Listener verifiziert sein Pairing-Credential auch bei einem Daemon ohne Token und stempelt die Anfrage als authentifiziert, sodass strenge Routes für den gepairten LAN-Client passieren.
 
 Das `code: 'token_required'`-Format unterscheidet sich von `bearerAuth`s einfachem `Unauthorized`, damit SDK-Clients einen Hinweis "konfiguriere --token / --require-auth" anzeigen können, statt einer generischen 401.
 
