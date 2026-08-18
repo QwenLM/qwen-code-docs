@@ -457,7 +457,28 @@ function renderPrompt(lang, batch) {
 // loop detection kills an entire session on one blocked/retried tool call
 // (runs 31115350719/31119970640 lost de almost entirely that way). Chunks
 // bound the blast radius of a halted session.
-const TRANSLATE_CHUNK = 15;
+//
+// 15 was too coarse to actually bind: at steady state a language's daily
+// backlog is 11-22 files, so nearly every dispatch was a single `part 1/1`
+// chunk and the blast radius was still "the whole language". A halt then
+// cost the entire day — run 31535310718 logged `ja: verify 0/12 passed`,
+// and run 31334857246 lost ru (0/15), ko (0/15) and pt-BR (0/14) the same
+// way, 44 file-translations in one night. Across runs 31217518428,
+// 31277357843, 31334857246, 31431085427 and 31535310718: 511 dispatched,
+// 386 verified, and the per-run loss tracks the number of halted sessions
+// almost linearly (1 halt -> ~14 lost, 4 halts -> ~53 lost).
+//
+// 5 makes the bound real (a halt costs ~5 files, not ~15) and keeps the
+// whole-chunk retry below cheap. The cost is more sessions per language;
+// nightly runs take 15-50min against a 360min timeout, so there is room.
+const TRANSLATE_CHUNK = 5;
+
+// A halted session is usually transient — the same chunk typically succeeds
+// on a second dispatch, whereas leaving it failed costs a full day (the
+// files sit in the backlog until the next scheduled run). One retry only:
+// a chunk that halts twice is likely hitting something structural, and
+// retrying it further just spends tokens on the same wall.
+const TRANSLATE_ATTEMPTS = 2;
 
 // --safe-mode is read-only (no write/edit tools), so the agent could never
 // write translations. auto-edit approves read/write/edit (shell stays
@@ -523,18 +544,40 @@ async function cmdTranslate(lang) {
       `[orch] ${lang}: dispatching agent for ${chunk.length} file(s)` +
         (chunks.length > 1 ? ` (part ${part}/${chunks.length})...` : "...")
     );
-    const { status, log } = await runAgent(
-      lang,
-      renderPrompt(lang, chunk),
-      suffix
-    );
-    console.log(`[orch] ${lang}: agent exit=${status} (log: ${log})`);
+    let status;
+    let log;
+    for (let attempt = 1; attempt <= TRANSLATE_ATTEMPTS; attempt++) {
+      // Distinct log suffix per attempt: runAgent opens the log with "w",
+      // so a retry would otherwise overwrite the halted attempt's log —
+      // exactly the log needed to tell a loop-detection halt from a real
+      // failure.
+      ({ status, log } = await runAgent(
+        lang,
+        renderPrompt(lang, chunk),
+        attempt === 1 ? suffix : `${suffix}-retry${attempt - 1}`
+      ));
+      console.log(
+        `[orch] ${lang}: agent exit=${status}` +
+          (attempt > 1 ? ` on retry ${attempt - 1}` : "") +
+          ` (log: ${log})`
+      );
+      if (status === 0) break;
+      if (attempt < TRANSLATE_ATTEMPTS) {
+        // Re-dispatches the whole chunk, including any file the halted
+        // attempt already translated. That redundancy is what keeps this
+        // simple, and at TRANSLATE_CHUNK=5 it is cheap; verify's "touched
+        // this session" check is satisfied by the rewrite either way.
+        console.log(
+          `[orch] ${lang}: part ${part}/${chunks.length} halted; retrying once...`
+        );
+      }
+    }
     if (status !== 0) {
       // The workflow's `|| true` keeps the step alive; surface the failure
       // in the run summary anyway, and leave the chunk's files in the
       // backlog (verify fails them; they are retried next run).
       console.log(
-        `::warning::${lang}: agent exited ${status} on part ${part}/${chunks.length}; its files stay in the backlog`
+        `::warning::${lang}: agent exited ${status} on part ${part}/${chunks.length} after ${TRANSLATE_ATTEMPTS} attempts; its files stay in the backlog`
       );
       process.exitCode = 1;
     }
