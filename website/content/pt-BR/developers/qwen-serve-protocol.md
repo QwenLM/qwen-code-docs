@@ -198,6 +198,7 @@ O daemon anuncia suas tags de feature suportadas do registry de capability do se
  'workspace_file_upload',
  'session_approval_mode_control', 'workspace_tool_toggle', 'workspace_skill_toggle',
  'workspace_skill_batch_toggle',
+ 'extension_batch_activation_v2',
  'workspace_settings', 'workspace_init', 'workspace_mcp_restart',
  'session_recap', 'session_generation', 'session_btw', 'session_shell_command',
  'mcp_workspace_pool', 'mcp_pool_restart',
@@ -210,7 +211,7 @@ O daemon anuncia suas tags de feature suportadas do registry de capability do se
  'multi_workspace_session_shell', 'persistent_workspace_registration',
  'workspace_display_name',
  'workspace_qualified_rest_core', 'workspace_qualified_voice',
- 'workspace_qualified_memory', 'extension_management_v2',
+ 'workspace_qualified_memory', 'extension_management_v2', 'extension_git_credentials',
  'workspace_persisted_transcript',
  'workspace_session_export', 'workspace_archived_session_export',
  'workspace_session_live_state',
@@ -241,7 +242,7 @@ O daemon anuncia suas tags de feature suportadas do registry de capability do se
 
 `workspace_archived_session_export` anuncia `GET /workspaces/:workspace/session/:id/archive/export`, uma exportação completa somente para confiáveis do armazenamento persistido arquivado do workspace selecionado. É independente de `workspace_session_export` e `workspace_qualified_rest_core`; clientes devem fazer preflight desta tag diretamente. Uma rota distinta impede que um daemon mais antigo ignore a intenção de arquivo e retorne uma transcrição ativa com o mesmo id.
 
-`workspace_session_live_state` anuncia `GET /workspaces/:workspace/sessions/live-state`, um snapshot somente em memória e apenas para confiáveis das sessões ao vivo do runtime de workspace selecionado mais uma versão de catálogo em memória que indica aos clientes quando um reload completo do catálogo persistido é necessário. É independente de `workspace_qualified_rest_core`: daemons lançados podem anunciar a capability REST de workspace mais ampla sem implementar esta rota, então clientes devem fazer preflight desta tag diretamente. A tag é incondicional porque um primário single-workspace confiável pode usar a rota por id ou cwd; verificações de confiança por workspace ainda se aplicam em cada requisição, e a rota não estende a política permissiva de leitura de catálogo persistido de secundário não confiável para estado de bridge ao vivo.
+`workspace_session_live_state` anuncia `GET /workspaces/:workspace/sessions/live-state`, um snapshot somente em memória e apenas para confiáveis das sessões ao vivo do runtime de workspace selecionado mais uma versão de catálogo em memória que indica aos clientes quando um reload completo do catálogo persistido é necessário. É independente de `workspace_qualified_rest_core`: daemons lançados podem anunciar a capability REST de workspace mais ampla sem implementar esta rota, então clientes devem fazer preflight desta tag diretamente. A tag é incondicional porque um primário single-workspace confiável pode usar a rota por id ou cwd; verificações de confiança por workspace ainda se aplicam em cada requisição, e a rota não estende a política permissiva de leitura de catálogo persistido de secundário não confiável para estado de bridge ao vivo. A tag significa que o endpoint existe; não promete que todo item ao vivo carrega a marca d'água de atividade opcional `updatedAt`, que depende do ciclo de vida.
 
 `slow_client_warning` cobre o comportamento de backpressure de SSE: (a) o daemon emite um frame sintético `slow_client_warning` no stream de eventos quando o backlog de frames ao vivo ou o backlog de bytes serializados ao vivo de um assinante ultrapassa 75% de capacidade, uma vez por episódio de overflow (rearmado após ambas as medições drenarem abaixo de 37,5%); (b) `GET /session/:id/events` aceita um query param `?maxQueued=N` (faixa `[16, 2048]`) para pré-dimensionar o backlog de frames por assinante para reconexões frias contra um anel de replay grande. O limite de bytes serializados é de propriedade do daemon (padrão **2 MiB** por assinante), somente ao vivo, e intencionalmente não tem query parameter. O tamanho do anel global do daemon é controlado por `--event-ring-size` (padrão **8000**, conforme #3803 §02). Daemons antigos não possuem silenciosamente o comportamento de aviso/query — faça preflight desta tag antes de optar.
 
@@ -267,7 +268,7 @@ O daemon anuncia suas tags de feature suportadas do registry de capability do se
 
 `session_info` anuncia `GET /workspace/:id/session-info` e seu gêmeo `/workspaces/:workspace/session-info`. A resposta agrega contagens de sessões ativas persistidas e arquivadas sem hidratar metadados de lista. É um scan explícito de disco O(n) e não deve ser feito poll; clientes devem tratar `truncated: true` como um resultado de limite inferior.
 
-`session_approval_mode_control`, `workspace_tool_toggle`, `workspace_skill_toggle`, `workspace_skill_batch_toggle`, `workspace_init`, e `workspace_mcp_restart` anunciam as rotas de controle de mutação documentadas abaixo. São protegidas pelo gate de mutação estrito (um daemon configurado sem token bearer as rejeita com 401 `token_required`). Daemons mais antigos retornam `404`; faça preflight de cada tag antes de expor a affordance correspondente.
+`session_approval_mode_control`, `workspace_tool_toggle`, `workspace_skill_toggle`, `workspace_skill_batch_toggle`, `extension_batch_activation_v2`, `workspace_init`, e `workspace_mcp_restart` anunciam as rotas de controle de mutação documentadas abaixo. São protegidas pelo gate de mutação estrito (um daemon configurado sem token bearer as rejeita com 401 `token_required`). Daemons mais antigos retornam `404`; faça preflight de cada tag antes de expor a affordance correspondente.
 
 `mcp_guardrails` (issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 14) cobre a superfície de budget MCP: os campos `clientCount` / `clientBudget` / `budgetMode` / `budgets[]` no `GET /workspace/mcp`, o campo `disabledReason` nas células por servidor, e as flags CLI `--mcp-client-budget` / `--mcp-budget-mode`. Daemons mais antigos omitem os novos campos inteiramente; clientes SDK fazem preflight desta tag antes de depender da semântica de `budgets[]`. O descritor do registry também carrega `modes: ['warn', 'enforce']` para exposição futura de feature-modes — por enquanto, clientes inferem o modo do campo `budgetMode` do snapshot. A aplicação do servidor sob modo `enforce` é determinística pela ordem de declaração `Object.entries(mcpServers)`; uma camada futura de precedência por escopo (se o qwen-code adotar uma) mudaria isso para "menor precedência primeiro" para espelhar a convenção `plugin < user < project < local` do claude-code.
 
@@ -299,6 +300,7 @@ Todas as rotas usam as regras de autenticação bearer do daemon acima. `X-Qwen-
 | Method e path                                                        | Sucesso                                                                   |
 | -------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | `GET /extensions`                                                    | `200` catálogo global de artefatos                                        |
+| `PUT /extensions/activation`                                         | `202` operação batch de ativação padrão global                            |
 | `PUT /extensions/:extensionId/activation`                            | `202` operação de ativação padrão global                                  |
 | `POST /extensions/install`                                           | `202` operação de instalação                                              |
 | `POST /extensions/check-updates`                                     | `202` operação de verificação de atualização                              |
@@ -306,6 +308,7 @@ Todas as rotas usam as regras de autenticação bearer do daemon acima. `X-Qwen-
 | `DELETE /extensions/:extensionId`                                    | `202` operação de desinstalação, ou `204` idempotente quando a extensão está ausente |
 | `GET /extensions/operations/:operationId`                            | `200` snapshot da operação                                                |
 | `GET /workspaces/:workspace/extensions`                              | `200` projeção de ativação por workspace                                  |
+| `PUT /workspaces/:workspace/extensions/activation`                   | `202` operação batch de ativação por workspace exata                      |
 | `PUT /workspaces/:workspace/extensions/:extensionId/activation`      | `202` operação de ativação por workspace exata                            |
 | `DELETE /workspaces/:workspace/extensions/:extensionId/activation`   | `202` operação de limpeza de override                                     |
 | `POST /workspaces/:workspace/extensions/refresh`                     | `202` operação de refresh de runtime                                      |
@@ -373,6 +376,14 @@ Instalação requer consentimento explícito e uma ativação inicial:
 
 Para ativação inicial somente por workspace use `{ "scope": "workspace", "workspaceId": "target-workspace-id" }`; o alvo deve existir e ser confiável. Instalações do daemon aceitam fontes GitHub, Git e npm. `ref` não se aplica a npm, e `registry` aplica-se apenas a npm. `ref`, `autoUpdate`, `allowPreRelease`, e `registry` são opcionais.
 
+Quando `extension_git_credentials` é anunciado, uma fonte HTTPS Git pode incluir userinfo, por exemplo `https://username:token@git.example.com/org/repository.git`. `credentialPersistence` é válido apenas com tal fonte. É `stored` ou `one_time` e o padrão é `one_time` quando omitido. O modo stored salva a credencial através do armazenamento de segredos híbrido do daemon e mantém apenas a URL limpa do repositório nos metadados de instalação, então a extensão permanece atualizável. O modo one-time não salva nem a URL do repositório nem a credencial e cria um `snapshot` não atualizável; `autoUpdate: true` é rejeitado para este modo. Fornecer o campo sem credenciais URL, fornecer credenciais inválidas, ou usar credenciais com fontes npm, archive, local, SSH ou não-Git retorna `400`.
+
+Respostas e operações de instalação com credenciais expõem `credentialPersistence` e podem expor `credentialStorage` como `keychain` ou `encrypted_file`. Operações one-time omitem `source`; operações stored podem retornar a source limpa. Entradas de catálogo/status de snapshot omitem source, definem `credentialPersistence` como `one_time`, e reportam `not updatable`. Atualização falha com `extension_not_updatable`; um segredo stored indisponível falha antes do acesso à rede com `extension_credential_unavailable`.
+
+`extension_git_credentials` anuncia instalações Git HTTPS autenticadas tanto em `POST /workspace/extensions/install` quanto em `POST /extensions/install`. Clientes devem fazer preflight desta tag antes de enviar userinfo de URL ou `credentialPersistence`; daemons mais antigos rejeitam credenciais de URL. A tag descreve suporte de protocolo backend, não a disponibilidade de um keychain: o modo stored reporta o backend selecionado no resultado da operação terminal.
+
+`extension_batch_activation_v2` adiciona `PUT /extensions/activation` e `PUT /workspaces/:workspace/extensions/activation`. Ambos aceitam 1–100 nomes em `extensionNames`, deduplicam case-insensitively preservando a ordem de primeira ocorrência, persistem alvos alterados em uma geração, e retornam um handle de operação `202`. Um alvo não precisa estar instalado ao definir `enabled` ou `disabled`: seu nome cria uma declaração de desired-state que é preservada quando uma Extension com aquele nome é instalada. A rota global aceita `state: "enabled" | "disabled"`, escreve `defaultActivation` V2, e reconcilia todo runtime registrado. A rota de workspace também aceita `"inherit"`, aplica ou limpa overrides exatos para o runtime confiável selecionado, e reconcilia apenas aquele runtime. `inherit` não declara um nome desconhecido; uma limpeza all-unknown reporta `updated: false` e pula a reconciliação. Rotas de ativação singulares permanecem installed-only e endereçadas por id.
+
 Requisições `PUT` de ativação global e por workspace usam o mesmo corpo:
 
 ```json
@@ -380,6 +391,17 @@ Requisições `PUT` de ativação global e por workspace usam o mesmo corpo:
 ```
 
 `state` é `enabled` ou `disabled`. Requisições de atualização, desinstalação, verificação de atualizações, limpeza de ativação e refresh não têm corpo obrigatório.
+
+Requisições de ativação batch usam nomes de Extension:
+
+```json
+{
+  "extensionNames": ["formatter", "review-tools"],
+  "state": "disabled"
+}
+```
+
+O batch de workspace também aceita `"state": "inherit"`. Resultados globais terminais contêm `name` e `defaultActivation`; resultados de workspace contêm `name`, `workspaceActivation` (`null` para inherit), e `effectiveActivation`. Nomes malformados rejeitam a requisição; conflitos com identidades existentes da Store falham atomicamente sem commit parcial. Um alvo `inherit` desconhecido não é persistido, porque limpar um override não deve fabricar uma declaração de ativação padrão nem substituir o consentimento de instalação posterior.
 
 Cada mutação assíncrona aceita retorna:
 
@@ -410,7 +432,7 @@ Um snapshot de operação tem esta forma:
 }
 ```
 
-`status` transita de `queued` para `running`, depois para `succeeded`, `succeeded_with_warnings`, ou `failed`. Enquanto em execução, `phase` é `preparing`, `committing`, ou `reconciling`. Sucesso terminal pode incluir `result` com `status` igual a `installed`, `enabled`, `disabled`, `updated`, `uninstalled`, `checked`, ou `refreshed`; resultados de reconciliação podem adicionalmente conter `refreshed`, `failed`, e `error`. Verificações de atualização retornam `result.states`, chaveado por nome de extensão, com valores como `checking for updates`, `update available`, `up to date`, `not updatable`, ou `error`.
+`status` transita de `queued` para `running`, depois para `succeeded`, `succeeded_with_warnings`, ou `failed`. Enquanto em execução, `phase` é `preparing`, `committing`, ou `reconciling`. Sucesso terminal pode incluir `result` com `status` igual a `installed`, `enabled`, `disabled`, `updated`, `uninstalled`, `checked`, ou `refreshed`; resultados de reconciliação podem adicionalmente conter `refreshed`, `failed`, e `error`, enquanto resultados de ativação batch contêm `results` ordenados. Verificações de atualização retornam `result.states`, chaveado por nome de extensão, com valores como `checking for updates`, `update available`, `up to date`, `not updatable`, ou `error`. Credenciais e cabeçalhos de autorização nunca são campos de operação.
 
 Um commit durável seguido de limpeza incompleta ou reconciliação de runtime não é reportado como mutação com falha. Retorna `succeeded_with_warnings` e preserva o resultado commitado:
 
@@ -441,7 +463,7 @@ Um commit durável seguido de limpeza incompleta ou reconciliação de runtime n
 
 `workspaceId` e `code` do warning são opcionais; `workspaceCwd` e `error` estão sempre presentes. Clientes devem exibir warnings, atualizar seu catálogo/projeção, e não devem fazer retry cego da mutação durável.
 
-Falhas de validação e autorização são erros HTTP síncronos usando `{ "error": "...", "code": "..." }` quando um código estável existe. Casos importantes são `400 invalid_extension_id`, `400 invalid_extension_activation`, `400 workspace_mismatch`, `403 untrusted_workspace`, `404 extension_operation_not_found`, e `429 extension_queue_full`. Validação de instalação também retorna `400` para opções inválidas de source/ref/registry, consentimento ausente, ou ativação inicial ausente/inválida. Uma mutação que falha após `202` é representada, enquanto retida no histórico de operações, com `status: "failed"`, `error`, e um `code` estável opcional; códigos comuns incluem `extension_prepare_timeout` e `extension_conflict`. HTTP `404` para uma operação não implica rollback porque o histórico de operações não é durável.
+Falhas de validação e autorização são erros HTTP síncronos usando `{ "error": "...", "code": "..." }` quando um código estável existe. Casos importantes são `400 invalid_extension_id`, `400 invalid_extension_names`, `400 invalid_extension_name`, `400 invalid_extension_activation`, `400 workspace_mismatch`, `403 untrusted_workspace`, `404 extension_operation_not_found`, e `429 extension_queue_full`. Validação de instalação também retorna `400` para opções inválidas de source/ref/registry, consentimento ausente, ou ativação inicial ausente/inválida. Uma mutação que falha após `202` é representada, enquanto retida no histórico de operações, com `status: "failed"`, `error`, e um `code` estável opcional; códigos comuns incluem `extension_prepare_timeout` e `extension_conflict`. HTTP `404` para uma operação não implica rollback porque o histórico de operações não é durável.
 
 `daemon_status` anuncia `GET /daemon/status`, o snapshot de diagnóstico
 operacional consolidado somente-leitura documentado abaixo.
@@ -2248,6 +2270,8 @@ Resposta:
 
 Com `view=organized`, o daemon lê `<Storage.getProjectDir(cwd)>/session-organization.v1.json`, retorna sessões fixadas primeiro, depois tempo de atividade descendente, e depois `sessionId` para empates estáveis. O cursor organizado é JSON base64url opaco e não deve ser reutilizado com a lista recente legada. `pinned` é um filtro virtual, não um grupo. `groupId: null` significa não agrupado. Sessões arquivadas mantêm seus metadados de organização, mas `archiveState=archived&view=organized` ainda retorna apenas sessões arquivadas.
 
+Cursores ordenados por atividade — a visão organizada e as listas filtradas por `parentSessionId` / `sourceType` — não são snapshot-isolados, e uma lista ativa confiável ordena linhas pelo posterior entre o mtime da transcrição e a marca d'água de atividade ao vivo. Uma marca d'água ao vivo é somente em memória, então a chave de uma sessão pode regredir para seu mtime quando a entrada ao vivo é aposentada entre duas buscas de página. O cursor compensa: ele carrega as identidades já emitidas em uma chave derivada ao vivo — retendo-as enquanto a linha está ausente da coleção de uma página e enquanto uma inversão de pin poderia readmiti-las — e as exclui pelo restante da passagem, então movimento de chave derivada ao vivo retorna uma sessão no máximo uma vez por passagem. A garantia é escopada ao carry: é limitada a 64 identidades (identidades em excesso em uma passagem degradam para uma duplicata no-máximo-uma-vez em vez de um erro), e uma linha somente-persistida emitida antes de seu estado de pin mudar nunca é carregada, então um unpin entre buscas pode retornar aquela linha uma segunda vez exatamente como antes deste campo existir. Chamadores que acumulam páginas devem portanto sempre chavear linhas por `sessionId`, não apenas no caso acima de 64. Linhas ainda podem mover ou ser puladas sob atividade concorrente, exatamente como antes; um chamador que precisa de uma visão coerente recarrega da primeira página após uma mudança de atividade.
+
 Campos adicionais podem aparecer em cada sessão quando `view=organized`:
 
 ```json
@@ -2279,7 +2303,8 @@ Resposta:
       "clientCount": 1,
       "hasActivePrompt": true,
       "isWaitingForPermission": false,
-      "isWaitingForUserQuestion": false
+      "isWaitingForUserQuestion": false,
+      "updatedAt": "2026-08-18T08:12:30.123Z"
     }
   ]
 }
@@ -2287,7 +2312,9 @@ Resposta:
 
 `v` é a versão do schema da resposta. Toda resposta bem-sucedida inclui `Cache-Control: no-store`. `sessions` é o conjunto completo, não paginado e não ordenado de sessões atualmente ao vivo no runtime selecionado; um runtime ao vivo vazio retorna `200` com `sessions: []`. `clientCount`, `hasActivePrompt`, `isWaitingForPermission` e `isWaitingForUserQuestion` são campos de wire obrigatórios, e valores opcionais ausentes da bridge projetam para `0` ou `false`. Campos estáticos do catálogo como display name, timestamps, organização e metadados de fonte são deliberadamente excluídos e permanecem pertencentes ao catálogo completo. Uma linha ausente no live-state apenas limpa os campos voláteis de uma linha conhecida do catálogo; nunca deleta uma linha do catálogo persistido.
 
-`catalogVersion` é um token de igualdade para mudanças de catálogo observadas pelo daemon. `generation` é um UUID aleatório criado com cada instância de bridge e muda no restart do daemon ou substituição de runtime de workspace; `revision` começa em zero e aumenta monotonicamente dentro de uma geração. A única operação suportada é igualdade sobre o par inteiro: mesma generation e revision significa nenhuma mudança de catálogo observada pelo daemon, e qualquer diferença significa recarregar o catálogo completo. Clientes não devem fazer aritmética de revision nem comparar revisions entre gerações, e incrementos conservadores extras são permitidos. A versão cobre mudanças de associação de catálogo e metadados estáticos observados pelo daemon; atividade ordinária de turno, ciclo de vida de prompt, attach/detach e transições de estado de espera não a avançam porque o snapshot ao vivo já carrega os campos voláteis correspondentes. Dois valores de overlay volátil são deliberadamente fora de ambos os sinais: estado de erro de turno (`hasTurnError`/`turnError`) e a contagem/conteúdo de interação pendente (`pendingInteractionCount`/`pendingInteractions`) não avançam a versão nem aparecem no snapshot, então um cliente que precisa deles deve continuar lendo o stream de eventos por sessão ou o catálogo completo em vez de depender desta rota; qualquer campo pode ser adicionado de forma wire-aditiva quando um consumidor concreto o exigir. Mutações escritas diretamente por outro daemon, um TUI ou um processo externo não são observadas, então uma vez que um cliente para o poll periódico de catálogo completo aquelas escritas não têm tempo de descoberta limitado e aparecem apenas após um reload completo explícito, outra mutação de catálogo observada, reconexão ou substituição de daemon/runtime.
+`updatedAt` é uma marca d'água de atividade opcional observada pelo daemon, presente quando um prompt que alcançou o estado running publicou um terminal formal na bridge atual. Ele avança exatamente uma vez por tal terminal — sucesso, erro, cancelamento e deadline igualmente — é escrito antes do evento terminal ser publicado, e é estritamente crescente por sessão ao vivo mesmo quando dois terminais chegam em um milissegundo de wall-clock ou o relógio volta; um salto forward de relógio portanto persiste até o wall time alcançá-lo. Nunca é anterior ao `createdAt` da sessão: o primeiro avanço tem floor no tempo de criação, então um rollback de relógio entre criação e o primeiro terminal não pode colocar uma linha atrás do `createdAt` no qual ela já foi listada. Admissão de prompt, esperas de fila, updates streamados, cancelamento somente-fila, heartbeats e esperas de interação nunca o avançam. Clientes o usam para refrescar a recentidade de uma linha de catálogo que já possuem em vez de recarregar o catálogo completo após um turno completado. Não é uma confirmação de persistência: o gravador escreve resultados de turno assincronamente, então o valor prova apenas que o daemon observou uma tentativa running estabilizar. Está ausente antes do primeiro terminal running em uma geração de bridge — incluindo para uma sessão restaurada do disco — então ausência não é uma sonda de suporte, e desaparece quando um restart do daemon ou substituição de runtime de workspace instala uma nova bridge. Quando tanto um resumo ao vivo quanto um persistido existem para uma sessão, respostas de catálogo completo reportam o timestamp válido posterior, então `GET /session/:id/status`, que retorna o resumo da bridge diretamente sem essa fusão, pode reportar um valor anterior a uma resposta de lista.
+
+`catalogVersion` é um token de igualdade para mudanças de catálogo observadas pelo daemon. `generation` é um UUID aleatório criado com cada instância de bridge e muda no restart do daemon ou substituição de runtime de workspace; `revision` começa em zero e aumenta monotonicamente dentro de uma geração. A única operação suportada é igualdade sobre o par inteiro: mesma generation e revision significa nenhuma mudança de catálogo observada pelo daemon, e qualquer diferença significa recarregar o catálogo completo. Clientes não devem fazer aritmética de revision nem comparar revisions entre gerações, e incrementos conservadores extras são permitidos. A versão cobre mudanças de associação de catálogo e metadados estáticos observados pelo daemon; atividade ordinária de turno, ciclo de vida de prompt, attach/detach e transições de estado de espera não a avançam porque o snapshot ao vivo já carrega os campos voláteis correspondentes. Um `updatedAt` alterado sob uma versão inalterada é portanto válido e esperado, e não invalida os caches de lista persistida do daemon. Dois valores de overlay volátil são deliberadamente fora de ambos os sinais: estado de erro de turno (`hasTurnError`/`turnError`) e a contagem/conteúdo de interação pendente (`pendingInteractionCount`/`pendingInteractions`) não avançam a versão nem aparecem no snapshot, então um cliente que precisa deles deve continuar lendo o stream de eventos por sessão ou o catálogo completo em vez de depender desta rota; qualquer campo pode ser adicionado de forma wire-aditiva quando um consumidor concreto o exigir. Mutações escritas diretamente por outro daemon, um TUI ou um processo externo não são observadas, então uma vez que um cliente para o poll periódico de catálogo completo aquelas escritas não têm tempo de descoberta limitado e aparecem apenas após um reload completo explícito, outra mutação de catálogo observada, reconexão ou substituição de daemon/runtime.
 
 Clientes reconciliam um pacote de catálogo com um handshake de duas leituras: leia live-state A, carregue a lista completa de sessões (mais `GET /workspaces/:workspace/session-groups` quando o cliente consome `session_organization`), depois leia live-state B. Versões A e B iguais aceitam o pacote; versões diferentes marcam o catálogo como obsoleto e coalescem no máximo um reload atrasado em vez de entrar em um loop de retry apertado. Toda requisição de catálogo aceita deve ser iniciada após A — uma requisição ou promessa deduplicada que começou antes de A não pode satisfazer a reconciliação. Reloads orientados por versão são single-flight por workspace e obedecem a um intervalo mínimo de background não zero, então churn sustentado de catálogo não pode gerar um scan completo de catálogo por poll de live-state; mutações locais explícitas ainda podem solicitar um refresh imediato através da mesma operação single-flight.
 
@@ -2492,7 +2519,7 @@ Se o cliente HTTP desconectar no meio do prompt, o daemon envia uma notificaçã
 
 Quando `prompt_absolute_deadline` é anunciado, `deadlineMs` pode encurtar o
 deadline do servidor configurado. Expiração emite um `turn_error` correlacionado com
-`errorKind: "prompt_deadline_exceeded"`.
+`errorKind: "prompt_deadline_exceeded"`. O deadline libera o chamador sem matar o agente; se o agente estabilizar depois, polls de status de turno para aquele `promptId` retornam o resultado de transcrição estabilizado em vez do erro de deadline.
 
 ### `POST /session/:id/cancel`
 
@@ -2792,7 +2819,7 @@ Erros:
 - `404 {code: 'skill_not_found'}` — nenhuma skill carregada corresponde ao nome.
 - `409 {code: 'skill_not_toggleable', reason: 'not_user_invocable' | 'inactive_extension' | 'locked', lockedScope?: 'system' | 'user' | 'systemDefaults'}` — o painel CLI não permitiria que o alvo fosse alternado. `lockedScope` está presente apenas quando `reason` é `locked`.
 
-A mutação reutiliza o evento `settings_changed` escopado por workspace para cada chave alterada (`skills.disabled` e/ou `skills.enabled`); não adiciona um novo tipo de evento. Células de status de skill do workspace incluem campos opcionais `disabledReason: 'hard' | 'default' | 'inactive_extension'` e `lockedScope: 'system' | 'user' | 'systemDefaults'`.
+A mutação reutiliza o evento `settings_changed` escopado por workspace para cada chave alterada (`skills.disabled` e/ou `skills.enabled`); não adiciona um novo tipo de evento. Cada um desses eventos inclui o mesmo objeto `mutation`: `{ id, kind: 'skill_toggle', skills: [{ name, enabled }], activation, sessionsRefreshed, sessionsFailed }`. `id` correlaciona todo evento de configurações produzido por uma requisição de toggle. `skills` lista os nomes canônicos e estados habilitados resultantes das Skills que realmente mudaram. Células de status de skill do workspace incluem campos opcionais `disabledReason: 'hard' | 'default' | 'inactive_extension'` e `lockedScope: 'system' | 'user' | 'systemDefaults'`.
 
 #### `POST /workspace/skills/enable`
 

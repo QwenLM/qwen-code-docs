@@ -383,6 +383,21 @@ N'activez cette option que si le fournisseur LLM envoie également des données 
 
 `X-Qwen-Code-Session-Id` et `X-Qwen-Code-Request-Id` ne font **pas partie de cette PR**. Ils seront conçus et proposés dans leur(s) propre(s) PR de suivi sous le même namespace `outboundCorrelation.*`, chacun avec son propre modèle de menace et son flux de consentement de l'opérateur. La revue de la PR #4390 (LaZzyMan) a établi le principe suivant : "le périmètre de la télémétrie n'inclut pas l'envoi d'identifiants aux fournisseurs LLM" ; le travail sur les en-têtes de corrélation fait l'objet de sa propre discussion de conception plutôt que d'être intégré à la télémétrie.
 
+## Corrélation entrante (API HTTP du daemon)
+
+L'API HTTP du daemon accepte l'en-tête W3C standard `traceparent` sur chaque requête. Deux consommateurs le lisent indépendamment :
+
+- **Re-parenting du span de requête (télémétrie activée).** Lorsque le SDK de télémétrie est initialisé, un en-tête valide est extrait comme parent distant du span de requête, de sorte que les spans du daemon se rattachent sous la trace de l'appelant au lieu d'en démarrer une nouvelle. Le chemin de forwarding `_meta` lit la même chaîne de parents, de sorte que les spans de sous-processus de session transférés via une requête daemon en héritent également.
+- **Champ `traceId` du log d'accès (les deux modes).** Un middleware de capture pré-auth dédié analyse l'en-tête sur chaque requête — y compris celles court-circuitées à l'authentification (401), au rate limiter (429), à l'analyseur de corps JSON (400), ou jamais correspondant à aucune route (404) — et le log d'accès émet l'id de trace de l'appelant sous forme d'un champ camelCase `traceId`. Avec la télémétrie désactivée, ce champ est le seul lien entre une ligne de log du daemon et les logs de l'appelant (ou le backend de traces), donc une requête sauvegardée fonctionne pour les deux modes sans configuration de télémétrie.
+
+Un en-tête invalide mais présent est rejeté (le span reste sans parent) et laisse un fil d'Ariane DEBUG à taux limité (`qwen-code.daemon.traceparent.invalid`) enregistrant la valeur rejetée, de sorte qu'un joint cross-service cassé est diagnostiquable à partir des logs du daemon seuls.
+
+### Échantillonnage forcé sous les parents entrants
+
+Sous le sampler par défaut `parentbased_always_on` (et d'autres valeurs par défaut parentbased), le flag `sampled=0` d'un parent distant est une décision côté appelant, pas une demande d'abandonner la télémétrie du daemon, donc l'extraction force le flag SAMPLED sur les parents entrants. Le seul opt-out est `OTEL_TRACES_SAMPLER=parentbased_always_off`, qui honore les flags de l'appelant — notez qu'il désactive également l'échantillonnage de span racine pour l'ensemble du daemon, pas seulement pour les requêtes liées en entrée.
+
+**Avertissement :** un `traceparent` constant (par exemple, codé en dur dans un client de test de charge) re-parente chaque requête du daemon dans une seule et même trace ; générez un en-tête frais par requête.
+
 ## Télémétrie Aliyun
 
 ### Export OTLP manuel

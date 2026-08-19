@@ -68,3 +68,6 @@ English term → Chinese rendering. Follow existing entries; append new ones as 
 - stateless generation → 无状态 generation
 - reasoning effort → 推理力度
 - retired → 已退役（用于设置/功能描述，区别于 deprecated/已弃用）
+- activity watermark → 活动水位标记
+- inbound correlation → 入站关联
+- forced sampling → 强制采样

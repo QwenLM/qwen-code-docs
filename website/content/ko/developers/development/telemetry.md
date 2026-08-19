@@ -81,21 +81,21 @@ Qwen Code의 OpenTelemetry를 활성화하고 설정하는 방법을 알아봅�
 **민감한 스팬 속성:** `includeSensitiveSpanAttributes`가 활성화되면 두 가지 일이 발생합니다:
 
 1. **네이티브 스팬 속성**이 표준 OpenTelemetry GenAI JSON을 전달:
-   - LLM 입력 메시지(`gen_ai.input.messages`)
+   - 메인 에이전트 및 LLM 입력 메시지(`gen_ai.input.messages`)
    - 시스템 지시사항(`gen_ai.system_instructions`)
    - 도구 정의(`gen_ai.tool.definitions`)
-   - LLM 출력 메시지(`gen_ai.output.messages`)
+   - 메인 에이전트 및 LLM 출력 메시지(`gen_ai.output.messages`)
    - 최종 실행된 도구 인수(`gen_ai.tool.call.arguments`)
    - 성공한 도구 결과(`gen_ai.tool.call.result`)
    - 인터랙션 스팬은 GenAI 추론 스팬이 아니므로 계속 `new_context`를 사용합니다.
 
-   LLM 값은 프로바이더 최종 SDK 요청 객체와 원본 프로바이더 응답에서 가져오며, 원래 논리적 구성에서 가져오지 않습니다. 도구 값은 최종 호출 매개변수와 성공한 모델 대면 결과에서 가져옵니다. 각 표준 GenAI 값은 압축 JSON이며 완전하고 스키마 유효해야 합니다. 유효하지 않거나 순환적이거나 `sensitiveSpanAttributeMaxLength`를 초과하는 값은 전체가 생략됩니다. JSON은 절대 잘리지 않으며 미리보기, 해시 또는 잘림 메타데이터가 배출되지 않습니다. 인터랙션별 `new_context` 속성은 기존 잘림 동작을 유지합니다. 기본 최대값은 속성당 1 MiB(`1048576`)이며 허용 범위는 `1..104857600`(100 MiB)입니다. 제한은 UTF-8 바이트가 아닌 JavaScript 문자열 길이로 측정됩니다. 따라서 비 ASCII 콘텐츠는 OTLP 내보내기 후에 더 많은 바이트를 차지할 수 있습니다.
+   메인 에이전트 입력은 컨텍스트 확장 전 하나의 원본 사용자 텍스트 프로젝션이며, 메인 에이전트 출력은 모든 도구 및 계속 작업이 정리된 후 하나의 최종 사용자 표시 답변입니다. LLM 값은 여전히 프로바이더 최종 SDK 요청 객체와 원본 프로바이더 응답에서 가져오므로, 입력에는 기록, 확장된 파일, 시스템 지시사항 및 도구 결과가 포함될 수 있고 출력에는 모든 프로바이더 후보가 포함될 수 있습니다. 도구 값은 최종 호출 매개변수와 성공한 모델 대면 결과에서 가져옵니다. 각 표준 GenAI 값은 압축 JSON이며 완전하고 스키마 유효해야 합니다. 유효하지 않거나 순환적이거나 `sensitiveSpanAttributeMaxLength`를 초과하는 값은 전체가 생략됩니다. JSON은 절대 잘리지 않으며 미리보기, 해시 또는 잘림 메타데이터가 배출되지 않습니다. 인터랙션별 `new_context` 속성은 기존 잘림 동작을 유지합니다. 기본 최대값은 속성당 1 MiB(`1048576`)이며 허용 범위는 `1..104857600`(100 MiB)입니다. 제한은 UTF-8 바이트가 아닌 JavaScript 문자열 길이로 측정됩니다. 따라서 비 ASCII 콘텐츠는 OTLP 내보내기 후에 더 많은 바이트를 차지할 수 있습니다.
 
 2. **로그-스팬 브리지 스팬**(로그 엔드포인트 없이 HTTP trace가 내보내기될 때 사용)은 기존 `prompt`, `function_args` 및 `response_text` 필드를 유지합니다(삭제되지 않음).
 
 ⚠️ **보안 경고:** 이 플래그를 활성화하면 전체 대화 기록, `read_file`이 읽은 파일 내용, 셸 명령어와 그 출력(환경 변수나 인수의 비밀 포함), 모델 응답이 구성된 OTLP 백엔드로 스트리밍됩니다. 백엔드를 특권 데이터 싱크로 취급하세요. 플래그의 기본값은 `false`입니다.
 
-**비용 / 페이로드 크기:** 기본 제한에서 하나의 LLM 스팬은 입력, 출력, 시스템 지시사항 및 도구 정의에 걸쳐 최대 약 4 MiB를 전달할 수 있으며, 하나의 Tool 스팬은 인수와 결과에 걸쳐 약 2 MiB를 전달할 수 있습니다. 이것은 Qwen Code의 애플리케이션 측 상한이며, 모든 컬렉터나 백엔드가 그만큼 큰 단일 속성을 수락한다는 보장은 아닙니다. 스팬이 거부되거나 삭제되면 `sensitiveSpanAttributeMaxLength`를 낮추고(예: `61440`) 내보내기 처리량을 모니터링하세요.
+**비용 / 페이로드 크기:** 기본 제한에서 하나의 LLM 스팬은 입력, 출력, 시스템 지시사항 및 도구 정의에 걸쳐 최대 약 4 MiB를 전달할 수 있으며, 하나의 Tool 스팬은 인수와 결과에 걸쳐 약 2 MiB를 전달할 수 있고, 하나의 인터랙션은 Agent 입력, Agent 출력 및 호환성 `new_context`에 걸쳐 약 3 MiB를 전달할 수 있습니다. 이것은 Qwen Code의 애플리케이션 측 상한이며, 모든 컬렉터나 백엔드가 그만큼 큰 단일 속성을 수락한다는 보장은 아닙니다. 스팬이 거부되거나 삭제되면 `sensitiveSpanAttributeMaxLength`를 낮추고(예: `61440`) 내보내기 처리량을 모니터링하세요.
 
 이 설정은 OTel 로그나 다른 telemetry 싱크의 민감한 데이터를 비활성화하지 않습니다. 비 내부 API 응답 telemetry는 `response_text`를 채울 수 있으므로 OTel 로그, UI telemetry 및 채팅 기록은 이 설정과 독립적으로 응답 텍스트를 수신할 수 있습니다. QwenLogger는 `response_text`를 포함하지 않습니다.
 
@@ -256,6 +256,21 @@ LLM 프로바이더도 크로스 프로세스 trace 스티칭을 위해 사용�
 ### 기타 아웃바운드 상관관계 헤더
 
 `X-Qwen-Code-Session-Id`와 `X-Qwen-Code-Request-Id`는 **이 PR의 일부가 아닙니다**. 동일한 `outboundCorrelation.*` 네임스페이스에서 각각의 위협 모델과 운영자 동의 흐름을 갖춘 후속 PR에서 설계 및 제안될 예정입니다. PR #4390 리뷰(LaZzyMan)는 원칙을 수립했습니다: "telemetry의 작업 범위에 LLM 프로바이더에게 식별자를 전송하는 것은 포함되지 않습니다"; 상관관계 헤더 작업은 telemetry 아래로 들어가지 않고 자체 설계 토론으로 이동합니다.
+
+## 인바운드 상관관계 (데몬 HTTP API)
+
+데몬 HTTP API는 모든 요청에서 표준 W3C `traceparent` 헤더를 허용합니다. 두 소비자가 이를 독립적으로 읽습니다:
+
+- **요청 스팬 재-부모화 (telemetry 활성화).** telemetry SDK가 초기화되면 유효한 헤더가 요청 스팬의 원격 부모로 추출되어 데몬 스팬이 새 trace를 시작하는 대신 호출자의 trace 아래에 첨부됩니다. `_meta` 포워딩 경로도 동일한 부모 체인을 읽으므로 데몬 요청을 통해 포워딩되는 세션 서브프로세스 스팬도 이를 상속합니다.
+- **액세스 로그 `traceId` 필드 (두 모드 모두).** 전용 사전 인증 캡처 미들웨어가 모든 요청에서 헤더를 파싱합니다 — 인증(401), 속도 제한(429), JSON 본문 파서(400)에서 단락회로되거나 어떤 라우트와도 매칭되지 않는(404) 요청을 포함 — 액세스 로그는 호출자 trace ID를 camelCase `traceId` 필드로 배출합니다. telemetry가 비활성화되면 이 필드가 데몬 로그 라인과 호출자의 로그(또는 trace 백엔드)를 연결하는 유일한 방법이므로, telemetry 구성 없이 두 모드 모두에서 하나의 저장된 쿼리가 작동합니다.
+
+유효하지만 존재하는 헤더는 거부되고(스팬은 부모 없이 유지) 속도 제한된 DEBUG 브레드크럼(`qwen-code.daemon.traceparent.invalid`)이 거부된 값을 기록하므로, 손상된 크로스 서비스 조인을 데몬 로그만으로도 진단할 수 있습니다.
+
+### 인바운드 부모에서의 강제 샘플링
+
+기본 `parentbased_always_on` 샘플러(및 기타 parentbased 기본값)에서 원격 부모의 `sampled=0` 플래그는 호출자 측의 헤드 기반 결정이며 데몬 telemetry를 삭제하라는 요청이 아니므로, 추출은 인바운드 부모에서 SAMPLED 플래그를 강제합니다. 유일한 옵트아웃은 `OTEL_TRACES_SAMPLER=parentbased_always_off`이며, 이는 호출자의 플래그를 존중합니다 — 전체 데몬에 대해 루트 스팬 샘플링도 비활성화된다는 점에 유의하세요, 인바운드 연결 요청만은 아닙니다.
+
+**경고:** 상수 `traceparent`(예: 부하 테스트 클라이언트에 하드코딩된 값)는 모든 데몬 요청을 하나의 단일 trace로 재-부모화합니다; 요청마다 새 헤더를 생성하세요.
 
 ## Aliyun Telemetry
 
@@ -678,7 +693,7 @@ Alibaba Cloud Managed Service for OpenTelemetry에서 Qwen Code telemetry를 보
 
 ### 스팬
 
-분산 추적 스팬은 `qwen-code.interaction`을 루트로 하는 트리를 형성합니다. 각 인터랙션은 자체 `traceId`를 가진 trace 루트이며, 크로스 프롬프트 상관관계는 `session.id` 속성을 사용합니다.
+분산 추적 스팬은 `qwen-code.interaction`을 루트로 하는 트리를 형성합니다. CLI에서 각 인터랙션은 자체 `traceId`를 가진 trace 루트이며, ACP 및 데몬 경로는 인바운드 부모 컨텍스트를 상속할 수 있습니다. 크로스 프롬프트 상관관계는 `session.id` 속성을 사용합니다.
 
 세션 수명 주기는 OpenTelemetry General Session 시맨틱 컨벤션을 통해서도 내보내집니다. OTel 로그 파이프라인이 활성화되면 Qwen Code는 필수 `session.id` 속성을 가진 `session.start` 및 `session.end` 로그 이벤트를 배출합니다(위의 핵심 세션 이벤트에 분류됨). 재개된 지속 대화는 재개된 세션 ID가 현재 것과 다를 때만 `session.start` 이벤트에 `session.previous_id`를 포함합니다. 콜드 스타트 재개(`--resume`, `--continue`, `--fork-session`)는 이를 전달하지 않습니다. `/clear` 및 기타 대체 흐름은 이전 대화를 폐기하므로 의도적으로 연속을 주장하지 않습니다.
 

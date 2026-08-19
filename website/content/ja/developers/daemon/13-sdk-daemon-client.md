@@ -169,6 +169,26 @@ await client
 
 `DaemonSkillBatchToggleResult` には、順序付きの成功 `results`、ターゲットごとの `errors`、およびバッチレベルのアクティベーション/セッションリフレッシュのカウントが含まれます。デーモンは有効なターゲットを一緒に永続化し、アクティブなセッションを一度だけリフレッシュします。1つの期待されるターゲットエラーが他の有効なターゲットをブロックすることはありません。このメソッドは非 200 レスポンスの場合にのみスローします。200 はすべてのターゲットが適用されたことを意味しないため、バッチを成功として扱う前に常に `errors` を確認してください。
 
+V2 Extension バッチアクティベーションは非同期の Extension 操作モデルを保持します。事前に `extension_batch_activation_v2` を確認し、グローバルデフォルトバッチまたは選択されたワークスペースのオーバーライドバッチを提出し、既存の操作ヘルパーでポーリングします。
+
+```ts
+const globalHandle = await client.setExtensionDefaultActivations(
+  ['formatter', 'review-tools'],
+  'disabled',
+  'dashboard-1',
+);
+const workspaceHandle = await client
+  .workspaceByCwd('/work/secondary')
+  .setExtensionActivations(
+    ['formatter', 'review-tools'],
+    'inherit',
+    'dashboard-1',
+  );
+const operation = await client.waitForExtensionOperation(workspaceHandle);
+```
+
+最終的な操作結果には順序付きの `results` が含まれます。`enabled` または `disabled` を設定する際、ターゲットはインストールされている必要はありません。デーモンは名前宣言を保存し、その名前の Extension が後からインストールされたときにそのアクティベーションポリシーを保持します。変更されたすべてのターゲットは 1 つの Extension Store 世代と 1 回の reconciliation を共有します。グローバルデフォルトバッチは登録されたすべてのランタイムを reconciliation します。ワークスペースバッチは選択された信頼されたランタイムのみを解決および reconciliation します。ワークスペースの `inherit` は正確なオーバーライドをクリアしますが、不明な名前の宣言は作成しません。すべて不明なクリアは reconciliation なしの no-op として成功します。単一のアクティベーションメソッドはインストール済みのみのままです。
+
 ワークスペースの表示名はオプションのプレゼンテーションメタデータです。事前に `capabilities.features.includes('workspace_display_name')` を確認してください。ワークスペース ID と正規パスが唯一のセレクターであり、表示名の重複は有効です。
 
 ```ts
@@ -387,7 +407,7 @@ async function resilientSubscribe(session: DaemonSessionClient) {
 
 `workspace_archived_session_export` がアドバタイズされている場合、`client.workspaceById(workspaceId).exportArchivedSession(sessionId, { format })` または対応する `workspaceByCwd` メソッドを使用して、選択されたワークスペースのアーカイブされた永続化トランスクリプトのみをエクスポートします。このメソッドはアクティブエクスポートと同じ結果型とネイティブ REST 動作を使用しますが、アクティブセッションにフォールバックすることはありません。サポートはアクティブエクスポートのケイパビリティから推測できません。
 
-`workspace_session_live_state` がアドバタイズされている場合、`client.getWorkspaceSessionLiveState(workspaceCwd)` またはスコープ付きの `client.workspaceById(workspaceId).getSessionLiveState()` / `client.workspaceByCwd(workspaceCwd).getSessionLiveState()` は、選択された信頼されたワークスペースのメモリ内のみのライブセッションスナップショットとそのカタログバージョンを読み取り、`DaemonWorkspaceSessionLiveState`（`{ v: 1, catalogVersion: DaemonSessionCatalogVersion, sessions: DaemonSessionLiveState[] }`）を返します。これらのメソッドは常にベアラー認証とエンコードされたワークスペースセレクターでネイティブ REST を使用し、オプションのクライアント ID を保持し、既存の短時間リクエストタイムアウトを使用します。`requireCapability()` は呼び出しません — ポールごとにケイパビリティプローブを行うとリクエスト数が倍増するため — 代わりに、コンシューマーは既にロードされたケイパビリティから `workspace_session_live_state` を一度プリフライトし、タグがない場合は既存のカタログポーリングにフォールバックします。`workspace_qualified_rest_core` からサポートを推測しないでください。
+`workspace_session_live_state` がアドバタイズされている場合、`client.getWorkspaceSessionLiveState(workspaceCwd)` またはスコープ付きの `client.workspaceById(workspaceId).getSessionLiveState()` / `client.workspaceByCwd(workspaceCwd).getSessionLiveState()` は、選択された信頼されたワークスペースのメモリ内のみのライブセッションスナップショットとそのカタログバージョンを読み取り、`DaemonWorkspaceSessionLiveState`（`{ v: 1, catalogVersion: DaemonSessionCatalogVersion, sessions: DaemonSessionLiveState[] }`）を返します。これらのメソッドは常にベアラー認証とエンコードされたワークスペースセレクターでネイティブ REST を使用し、オプションのクライアント ID を保持し、既存の短時間リクエストタイムアウトを使用します。`requireCapability()` は呼び出しません — ポールごとにケイパビリティプローブを行うとリクエスト数が倍増するため — 代わりに、コンシューマーは既にロードされたケイパビリティから `workspace_session_live_state` を一度プリフライトし、タグがない場合は既存のカタログポーリングにフォールバックします。`workspace_qualified_rest_core` からサポートを推測しないでください。各 `DaemonSessionLiveState` はオプションの `updatedAt` アクティビティ watermark を保持し、コンシューマーは完了したターンの後にカタログをリロードする代わりに、既に保持しているカタログ行の最新性をリフレッシュできます。これは現在のブリッジ内の最初の running-turn terminal より前、およびデーモンまたはランタイムの置換後には存在しないため、コンシューマーは欠落値を未サポートとして扱うのではなく、既存のカタログフォールバックを保持する必要があります。
 
 ### 構築時の `lastEventId` のシード
 

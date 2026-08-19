@@ -325,7 +325,7 @@ SDK 包含一个 `mcp__<server>__<tool>` 命名启发式回退 — 即使 daemon
 
 ## 调试原因分类
 
-`DaemonUiStatusEvent.debugReason` 是一个封闭枚举，当规范化器将 `debug` 块投影为类型化事件（而非类型化事件）时标记（同时镜像到 `DaemonStatusTranscriptBlock` 上供转录消费者使用）：
+`DaemonUiStatusEvent.debugReason` 是一个封闭枚举，当规范化器将 `debug` 事件投影而非类型化事件时标记：
 
 ```ts
 import type { DaemonUiDebugReason } from '@qwen-code/sdk/daemon';
@@ -350,13 +350,15 @@ function hideDebugBlock(reason?: DaemonUiDebugReason): boolean {
 
 Daemon UI SDK 的每一层都遵循**向前兼容原则**：未知值不会抛错，而是优雅降级。
 
-- 未知的 daemon 事件类型 → 生成立即类型名称的 `debug` 事件，标记 `unrecognized_*` `debugReason`（见上文）
+- 未知的 daemon 事件类型 → 带有原始类型名称的 `debug` 事件，
+  标记 `unrecognized_*` `debugReason` 并路由到有界的
+  `unrecognizedDiagnostics` 侧通道（见上文）
 - 未知的工具状态 → `currentToolCallId` 保持不变（不清除）
 - 未知的错误类型 → `errorKind` 为 undefined（渲染器回退到文本）
 - 缺失 serverTimestamp → 回退到 `clientReceivedAt`
 - 无法识别的预览形状 → `generic` 类型，附带 `summary`
 
-这意味着 **SDK 可以提前于 daemon 的发送能力发布**。PR-A 的工具来源启发式、PR-B 的三位置时间戳提取以及 PR-E 的未知状态保留都是“daemon 发送时即可用；daemon 未发送时也安全”的范例。
+这意味着 **SDK 可以先于 daemon 发出新事件而安全发布**。
 
 ## 交叉参考
 

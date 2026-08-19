@@ -23,6 +23,9 @@ description: "Évaluez les modifications de code pour la correction, la sécurit
 # Revoir les modifications locales et appliquer les résultats à votre working tree
 /review --fix
 
+# Reprendre une revue de la même PR qui a été interrompue, au lieu de recommencer
+/review 123 --resume
+
 # Revoir un fichier spécifique
 /review src/utils/auth.ts
 
@@ -150,7 +153,8 @@ Lors de la revue d'une PR, `/review` crée un worktree git temporaire (`.qwen/tm
 - Les commandes de build et de test s'exécutent en isolation sans polluer votre cache de build local
 - Si quelque chose tourne mal, votre environnement n'est pas affecté — supprimez simplement le worktree
 - Le worktree est automatiquement nettoyé après la fin de la revue
-- Si une revue est interrompue (Ctrl+C, crash), la prochaine `/review` de la même PR nettoie automatiquement le worktree obsolète avant de recommencer à zéro
+- Si une revue est interrompue (Ctrl+C, crash), la prochaine `/review` de la même PR nettoie automatiquement le worktree obsolète avant de recommencer à zéro. Si la session interrompue laisse encore son bail derrière elle — un kill brutal qui saute cette étape, ou une revue multi-prompt interrompue pendant un prompt ultérieur — `/review` refuse et nomme le fichier de bail à supprimer. Les arrêts propres le libèrent : une revue terminée et les arrêts précoces (diff vide, pas de nouvelles modifications depuis la dernière revue) exécutent tous `cleanup`, qui libère le bail
+- Le worktree est sous bail à sa session : une seconde `/review` d'une PR déjà en cours de revue refuse de démarrer (en nommant le détenteur) plutôt que de démonter le worktree de la revue en cours
 - Les rapports de revue et le cache sont sauvegardés dans le répertoire principal du projet (pas dans le worktree)
 
 ## Revue de PR inter-repos
@@ -188,7 +192,7 @@ Ou, après avoir exécuté `/review 123`, tapez `post comments` pour publier les
 - Lorsque la correction est une édition localisée unique, un bloc ` ```suggestion ` applicable en un clic
 - Pour les verdicts Approve/Request changes : un résumé de la revue avec le verdict
 - Pour le verdict Comment avec tous les commentaires inline publiés : pas de résumé séparé (les commentaires inline sont suffisants)
-- Pied de page d'attribution du modèle et de la version CLI sur chaque commentaire (par ex., _— qwen3-coder via Qwen Code /review (v0.21.2)_) ; définissez `review.attribution` à `false` dans votre `settings.json` utilisateur ou système (le `.qwen/settings.json` du workspace est ignoré pour les paramètres `review.*`) pour publier sans lui
+- Pied de page d'attribution du modèle et de la version CLI sur chaque commentaire (par ex., _— qwen3-coder via Qwen Code /review (v0.21.2)_) ; définissez `review.attribution` à `false` dans votre `settings.json` utilisateur ou système (le `.qwen/settings.json` du workspace est ignoré pour les paramètres `review.*`) pour publier sans lui — les commentaires et les listes de corps perdent alors aussi les marqueurs de sévérité `**[Critical]**`/`**[Suggestion]**`, et le modèle est retiré du marqueur de registre machine de la revue, donc dans les environnements frais (pas de cache de revue) l'ancre incrémentale récupérée échoue au check de même modèle et la re-revue revient à la plage complète
 
 **Ce qui reste uniquement dans le terminal :**
 
@@ -225,6 +229,18 @@ Après la revue, chaque résultat est appliqué avec l'outil `edit` puis **compt
 Un résultat est ignoré (skipped) lorsque sa correction modifierait le comportement prévu, nécessiterait des changements bien au-delà du diff examiné, ou s'avère être un faux positif après un second regard.
 
 **Chaque résultat obtient un outcome, et c'est imposé plutôt que demandé.** Le registre passe par `qwen review findings --outcomes`, qui refuse un ensemble ne couvrant pas tous les résultats — un fixer qui applique six résultats sur neuf et en rapporte six n'a menti sur aucun d'eux, il a silencieusement raccourci la liste, et vous n'auriez aucun moyen de voir les trois qui ont disparu.
+
+## Reprendre une revue interrompue (`--resume`)
+
+Une revue longue qui meurt en cours de route — une connexion interrompue, un timeout, un terminal tué — laisse tout ce qu'elle avait fait sur le disque : le worktree, le diff capturé, et le propre enregistrement du harnais de chaque agent exécuté. `--resume` continue à partir de là au lieu de recommencer :
+
+```bash
+/review 123 --resume
+```
+
+Cela s'applique **uniquement aux cibles PR** (le diff d'une revue locale provient d'un working tree actif, qui n'a pas d'état interrompu stable pour continuer), et il est sûr de le passer lorsque vous n'êtes pas sûr : la revue vérifie l'état sur le disque lui-même — le worktree toujours au commit récupéré et propre, le diff capturé inchangé octet pour octet, le head de la PR immobile, la limite de reprise non dépensée — et recommence silencieusement à zéro lorsque quelque chose ne correspond plus, en vous indiquant quel check a refusé. Une continuation réutilise les résultats certifiés d'agents de la tentative précédente, donc le rapport indique combien ont été récupérés ; c'est divulgué, jamais un trou de couverture.
+
+Deux choses à savoir. Une continuation conserve l'**effort** de l'exécution interrompue : passer un `--effort` différent refuse la reprise et exécute une nouvelle revue au niveau demandé, car un effort différent est un travail différent. Et si le head de la PR a bougé pendant que la revue était arrêtée, la reprise refuse (`head-moved`) et la nouvelle revue examine les nouveaux commits — c'est ce que vous souhaitez, et cela compte comme le seul redémarrage de cette revue.
 
 ## Résultats en tant que données
 
@@ -349,6 +365,8 @@ Si vous changez de modèle (via `/model`) et revoyez la même PR, `/review` dét
 # → "La revue précédente a utilisé qwen3-coder. Exécution d'une revue complète avec gpt-4o pour un second avis."
 ```
 
+La correspondance de modèle contrôle également le scope incrémental, pas seulement l'ignorance : « nettoyer jusqu'au commit en cache » est le verdict du modèle précédent, donc lorsque de nouveaux commits sont arrivés depuis la revue en cache, une incompatibilité de modèle ne scope jamais à `lastCommitSha..HEAD` — la plage est le diff complet, notant « La ronde précédente a été examinée par qwen3-coder. Exécution d'une revue complète avec gpt-4o. » — sauf si une ancre certifiée par le modèle en cours d'exécution est récupérée depuis la dernière revue publiée (ci-dessous), qui scope la plage à la place. Les résultats de la ronde précédente sont toujours reportés pour être re-réglés ; seule l'ancre ne l'est pas. La même gate lie l'ancre récupérée depuis le marqueur de registre machine de la dernière revue publiée lorsque le cache est absent ou que son ancre est inutilisable (CI, un autre clone) : elle scope la plage incrémentale uniquement si le modèle en cours d'exécution l'a certifiée — un marqueur certifié par un modèle différent, ou ne portant aucun modèle (une revue publiée avec `review.attribution` désactivé, ou une revue d'avant l'existence du champ), revient au diff complet.
+
 Le cache est stocké dans `.qwen/review-cache/` et suit à la fois le SHA du commit et l'ID du modèle. Assurez-vous que ce répertoire est dans votre `.gitignore` (une règle plus large comme `.qwen/*` fonctionne également). Si le commit en cache a été supprimé lors d'un rebase, le système revient à une revue complète. Seules les revues à effort élevé consultent ou écrivent le cache — une passe rapide avec `--effort low|medium` ne compte jamais comme « déjà revue ».
 
 ## Rapports de revue
@@ -368,6 +386,8 @@ Les moitiés déterministes du pipeline — l'analyse des arguments (`qwen revie
 
 **GitHub Enterprise :** la revue d'une URL de PR sur un hôte autre que `github.com` achemine chaque appel GitHub vers cet hôte — les sous-commandes de revue (`match-remote`, `meta`, `fetch-pr`, `pr-context`, `comment-status`, `issue-context`, `fetch-diff`, `comment-body`, `plan-diff`, `test-plan`, `presubmit`, `compose-review`, `submit`, `publish-assets`) acceptent `--host` et le définissent en code, de sorte qu'un hôte oublié ne peut pas rediriger silencieusement la revue vers `github.com`.
 
+**Aone Code :** pour un clone dont l'origine est sur `gitlab.alibaba-inc.com`, exécutez `/review` depuis l'intérieur de ce clone — la plateforme est détectée depuis le remote et les sous-commandes de lecture fonctionnent, supportées par le CLI `a1` — le numéro cible est l'id global de MR. `fetch-pr` récupère `refs/merge-requests/<id>/head` et construit le worktree + diff, donc la revue par les agents du worktree est inchangée. Dans cette phase, chaque exécution Aone est sans contexte disponible et plusieurs flux sont ignorés (plutôt que de toucher le repo homonyme de github.com) : `pr-context`/`comment-status`/`presubmit` n'ont pas de support Aone (le verdict est plafonné à `COMMENT`), `test-plan` n'est pas supporté, l'Agent 0 est ignoré, et l'écriture `publish-assets` est ignorée — avec `--comment` également refusé, une exécution Aone est en lecture seule envers la plateforme dans cette phase ; les résultats atterrissent dans la sortie du terminal et le rapport sauvegardé. Voir `docs/design/2026-08-15-review-aone-provider.md`.
+
 Chaque exécution se termine par une ligne lisible par machine (`Review complete: <target> — <disposition>`), de sorte que les scripts et les wrappers CI peuvent détecter la fin et le résultat avec un simple match `^Review complete: `.
 
 ## Exécutions headless (`qwen review run`)
@@ -375,7 +395,7 @@ Chaque exécution se termine par une ligne lisible par machine (`Review complete
 `/review` est interactif. Lorsqu'un script ou un job CI a besoin d'exécuter une revue et d'agir sur son résultat, utilisez le wrapper headless :
 
 ```bash
-qwen review run [target] [--json] [--fail-on request-changes] [--comment] [--quiet]
+qwen review run [target] [--json] [--fail-on request-changes] [--comment] [--resume] [--quiet]
 ```
 
 `target` est un numéro de PR, une URL de PR ou un chemin de fichier ; omettez-le pour revoir le working tree local. La commande exécute le CLI de cette build de manière non interactive (avec stdin fermée, de sorte que la détection de slash commands survit), diffuse la progression de l'enfant sur **stderr**, et affiche le verdict sur **stdout** — ou, avec `--json`, l'objet résultat complet. Le verdict est lu depuis l'artifact que `compose-review` écrit (le même JSON que le skill traite comme autorité de verdict), jamais parsé depuis la prose du modèle.
@@ -389,6 +409,8 @@ Le code de sortie est le contrat qu'une gate doit lire :
 | `3`    | Elle a terminé avec `REQUEST_CHANGES` **et** `--fail-on request-changes` était défini (blocage opt-in) |
 
 `3` (et non `2`) permet à une gate de distinguer « la revue bloque » de « l'outil est cassé » — yargs utilise déjà `1` pour les erreurs d'utilisation — sans parser aucune sortie. `--timeout-minutes` (défaut 120, plafonné à 1 minimum) termine une revue bloquée et sort avec le code `1`, et l'annulation de la commande (Ctrl+C / SIGTERM) termine le groupe de processus de la revue plutôt que de le laisser orphelin.
+
+`--resume` continue une revue interrompue de la même PR au lieu de recommencer — lorsqu'une longue exécution locale meurt en cours de route (une connexion interrompue, un timeout, un terminal tué), la tentative aurait sinon re-récupéré, re-découpé et re-lancé des agents dont le travail est déjà sur le disque. Il est sûr de le passer sans condition lors d'une nouvelle tentative : `fetch-pr` vérifie l'état sur le disque lui-même (worktree toujours au SHA récupéré et propre, octets de diff inchangés, head de la PR immobile, plafond de reprise non dépensé) et revient silencieusement à une revue fraîche lorsque quelque chose ne correspond plus, donc le flag ne fait jamais échouer une exécution qui pourrait recommencer. Une continuation est épinglée à l'effort enregistré de l'exécution interrompue — un `--effort` explicitement différent refuse la reprise et exécute une nouvelle revue au niveau demandé. Cibles PR uniquement (le diff d'une revue locale est capturé depuis un working tree actif, qui n'a pas d'état interrompu stable pour continuer). La reprise est une **commodité locale** : le workflow CI de revue du dépôt ne reprend **pas** — chaque nouvelle tentative ré-exécute à partir de zéro, car une tentative CI s'exécute sans sandbox et son worktree est supprimé à la sortie, ne laissant aucun état interrompu pour continuer.
 
 Une exécution avec budget temps peut aussi exporter une deadline **souple** pour que la revue arrête sa boucle d'audit inverse ouverte tandis qu'il reste encore du temps pour vérifier, composer et publier : `QWEN_REVIEW_DEADLINE_EPOCH` est le moment en secondes Unix auquel l'exécution sera tuée, et `QWEN_REVIEW_DEADLINE_RESERVE_SECONDS` (défaut 3600 ; `0` garde uniquement l'estimation du tour) est la queue qui doit rester pour la vérification du dernier tour, `compose-review` et la soumission. Lorsque le budget restant ne peut plus accueillir un autre tour plus cette queue, le constructeur de tours refuse de le construire, et le verdict composé divulgue l'audit tronqué (un verdict autrement Approve est plafonné à Comment). Une deadline manquante ou malformée laisse la revue non plafonnée — le timeout externe borne toujours l'exécution.
 

@@ -7,7 +7,7 @@ Les routes HTTP de fichiers du démon et les appels ACP délégués `readTextFil
 - **Résolution de chemin** — canonicalise les chemins et rejette tout ce qui sort du workspace lié, y compris via les liens symboliques.
 - **Protection par confiance** — refuse les écritures lorsque le workspace n'est pas fiable (`untrusted_workspace`).
 - **Politique de taille et de contenu** — limite de snapshot complet/retour (`MAX_READ_BYTES = 256 KiB`), fenêtres de texte large bornées à la fois en sortie et en coût de scan (`MAX_TEXT_SCAN_BYTES = 8 MiB`), limite d'écriture (`MAX_WRITE_BYTES = 5 MiB`), détection binaire.
-- **Atomicité** — écriture puis renommage avec préservation du mode cible et valeur par défaut `0o600` pour les nouveaux fichiers.
+- **Atomicité** — écriture puis renommage avec préservation du mode cible ; les nouveaux fichiers ont par défaut `0o600`, ou suivent l'umask du processus sous la politique de mode de nouveau fichier `system` de la fabrique (`QWEN_SERVE_NEW_FILE_MODE`).
 - **Audit** — chaque accès / refus émet un événement structuré pour `PermissionAuditRing` / la supervision.
 - **Erreurs typées** — union fermée `FsErrorKind` mappée sur des statuts HTTP.
 
@@ -29,7 +29,7 @@ Cette tranche de capacité de lecture de texte couvre le `read_file` direct plus
 - Refuser les lectures de snapshot complet au-dessus de `MAX_READ_BYTES`, tout en autorisant des fenêtres explicites avec une sortie limitée à `MAX_READ_BYTES` et un coût de scan limité à `MAX_TEXT_SCAN_BYTES` ; refuser les écritures au-dessus de `MAX_WRITE_BYTES` et les fichiers binaires (`binary_file`).
 - Refuser les écritures/éditions lorsque l'espace de travail n'est pas approuvé (`untrusted_workspace`) — protégé par `assertTrustedForIntent(trusted, intent)`.
 - Respecter les motifs `.gitignore` / `.qwenignore` via `shouldIgnore`.
-- Effectuer une écriture atomique (écriture puis renommage) avec préservation du mode cible ; le mode par défaut pour un nouveau fichier est `0o600`.
+- Effectuer une écriture atomique (écriture puis renommage) avec préservation du mode cible ; les nouveaux fichiers ont par défaut `0o600` (`0o666 & ~umask` dérivé de l'umask sous la politique de mode de nouveau fichier `system`).
 - Émettre des événements d'audit `fs.access` / `fs.denied` pour chaque opération.
 - Mapper chaque échec à une `FsError` avec un type et un statut HTTP ; les gestionnaires de route les sérialisent uniformément.
 
@@ -238,7 +238,7 @@ flowchart LR
 
 - **Les liens symboliques sont rejetés, pas suivis.** C'est une divergence par rapport au proxy en ligne pré-F1 `BridgeClient.writeTextFile` qui résolvait les liens symboliques. Les agents qui écrivent via des fichiers points liés symboliquement doivent utiliser le chemin résolu directement.
 - **`io_error` et `permission_denied` sont distincts.** Ne pas les confondre. Les pipelines de supervision se basent sur `errorKind` pour les alertes — fusionner ENOSPC dans permission_denied déclencherait des alertes de sécurité pour des problèmes de `df -h`.
-- **Le mode par défaut des nouveaux fichiers est `0o600`, pas les valeurs par défaut d'umask.** L'argument `mode` de l'appel système d'écriture contourne umask. Les agents qui écrivent des fichiers publics doivent passer explicitement un mode différent.
+- **Le mode par défaut des nouveaux fichiers est `0o600`, pas les valeurs par défaut d'umask.** L'argument `mode` de l'appel système d'écriture contourne umask. Les agents ne peuvent pas passer de mode par écriture. Les opérateurs qui souhaitent que les fichiers créés par l'agent suivent l'umask du démon peuvent opt-in par démon avec `QWEN_SERVE_NEW_FILE_MODE=system` (les fichiers existants conservent leur mode) ; voir [`17-configuration.md`](./17-configuration.md).
 - **`createServeApp` avec `trusted: false` par défaut** rejette silencieusement les écritures ACP avec `untrusted_workspace` pour les intégrateurs qui n'injectent pas de `fsFactory` ou `bridge` personnalisé. Un avertissement sur stderr est émis une fois la première fois ; les appelants suivants ne voient pas de rappel. Voir [`02-serve-runtime.md`](./02-serve-runtime.md).
 - **Un texte large nécessite un argument de fenêtre explicite**, parmi `line` / `limit` / `maxBytes`. Une lecture sans aucun de ces arguments reste `file_too_large`, car un appelant qui croit détenir le fichier entier pourrait le réécrire tronqué. Les fenêtres sont streamées depuis un handle lié à l'inode et ne retournent jamais plus de `MAX_READ_BYTES`.
 - **`MAX_READ_BYTES` limite ce qu'une lecture retourne ; `MAX_TEXT_SCAN_BYTES` limite ce qu'elle coûte.** Les décalages de ligne sont résolus en scannant depuis l'octet 0, donc `{ line: 900_000_000, limit: 20 }` ne retourne presque rien mais parcourt quand même le fichier. Au-delà de 8 MiB de scan, la lecture est refusée avec `file_too_large` pointant vers `readBytes`, qui atteint n'importe quel décalage en O(1).

@@ -167,6 +167,26 @@ await client
 
 `DaemonSkillBatchToggleResult`은 정렬된 성공 `results`, 대상별 `errors`, 그리고 일괄 수준 활성화/세션 새로고침 카운트를 포함합니다. 데몬은 유효한 대상을 함께 지속하고 활성 세션을 한 번 새로고칩니다. 하나의 예상 대상 오류가 다른 유효한 대상을 차단하지 않습니다. 이 메서드는 200이 아닌 응답에서만 throw합니다. 200이 모든 대상이 적용되었음을 의미하지 않으므로 일괄을 성공으로 처리하기 전에 항상 `errors`를 확인하십시오.
 
+V2 Extension 배치 활성화는 비동기 Extension 작업 모델을 유지합니다. `extension_batch_activation_v2`를 프리플라이트하고, 전역 기본 배치 또는 선택된 워크스페이스 오버배치 배치를 제출한 다음 기존 작업 헬퍼로 폴링합니다:
+
+```ts
+const globalHandle = await client.setExtensionDefaultActivations(
+  ['formatter', 'review-tools'],
+  'disabled',
+  'dashboard-1',
+);
+const workspaceHandle = await client
+  .workspaceByCwd('/work/secondary')
+  .setExtensionActivations(
+    ['formatter', 'review-tools'],
+    'inherit',
+    'dashboard-1',
+  );
+const operation = await client.waitForExtensionOperation(workspaceHandle);
+```
+
+최종 작업 결과는 정렬된 `results`를 포함합니다. `enabled` 또는 `disabled` 설정 시 대상이 설치되어 있을 필요는 없습니다. 데몬이 이름 선언을 저장하고 해당 이름의 Extension이 나중에 설치될 때 해당 활성화 정책을 보존합니다. 변경된 모든 대상은 하나의 Extension Store 세대와 한 번의 조정 패스를 공유합니다. 전역 기본 배치는 등록된 모든 런타임을 조정하고, 워크스페이스 배치는 선택된 신뢰 런타임만 해결하고 조정합니다. 워크스페이스 `inherit`은 정확한 오버배치를 제거하지만 알 수 없는 이름에 대한 선언을 생성하지 않습니다. 모두 알 수 없는 이름의 제거는 조정 없이 no-op로 성공합니다. 단일 활성화 메서드는 설치된 대상만 유지합니다.
+
 워크스페이스 표시 이름은 선택적 프레젠테이션 메타데이터입니다. 프리플라이트 `capabilities.features.includes('workspace_display_name')`. 워크스페이스 ID와 표준 경로는 유일한 선택자이며, 중복 표시 이름도 유효합니다.
 
 ```ts
@@ -385,7 +405,7 @@ async function resilientSubscribe(session: DaemonSessionClient) {
 
 `workspace_archived_session_export`가 광고되면 `client.workspaceById(workspaceId).exportArchivedSession(sessionId, { format })` 또는 해당 `workspaceByCwd` 메서드를 사용하여 선택된 워크스페이스의 아카이브된 영구 트랜스크립트만 내보냅니다. 이 메서드는 활성 내보내기와 동일한 결과 타입과 네이티브 REST 동작을 사용하지만 활성 세션으로 폴백하지 않습니다. 지원 여부는 활성 내보내기 기능으로부터 추론할 수 없습니다.
 
-`workspace_session_live_state`가 광고되면, `client.getWorkspaceSessionLiveState(workspaceCwd)` 또는 범위 지정된 `client.workspaceById(workspaceId).getSessionLiveState()` / `client.workspaceByCwd(workspaceCwd).getSessionLiveState()`가 선택된 신뢰 워크스페이스의 메모리 전용 라이브 세션 스냅샷과 카탈로그 버전을 읽으며, `DaemonWorkspaceSessionLiveState`(`{ v: 1, catalogVersion: DaemonSessionCatalogVersion, sessions: DaemonSessionLiveState[] }`)를 반환합니다. 이 메서드는 항상 베어러 인증과 인코딩된 워크스페이스 선택자가 포함된 네이티브 REST를 사용하며, 선택적 클라이언트 ID를 보존하고 기존 단축 요청 타임아웃을 사용합니다. `requireCapability()`를 호출하지 않습니다 — 폴마다 기능 프로브를 수행하면 요청 볼륨이 두 배가 되기 때문입니다 — 따라서 소비자는 이미 로드된 기능에서 `workspace_session_live_state`를 한 번 프리플라이트하고, 해당 태그가 없으면 기존 카탈로그 폴링으로 폴백합니다. `workspace_qualified_rest_core`에서 지원을 추론하지 마십시오.
+`workspace_session_live_state`가 광고되면, `client.getWorkspaceSessionLiveState(workspaceCwd)` 또는 범위 지정된 `client.workspaceById(workspaceId).getSessionLiveState()` / `client.workspaceByCwd(workspaceCwd).getSessionLiveState()`가 선택된 신뢰 워크스페이스의 메모리 전용 라이브 세션 스냅샷과 카탈로그 버전을 읽으며, `DaemonWorkspaceSessionLiveState`(`{ v: 1, catalogVersion: DaemonSessionCatalogVersion, sessions: DaemonSessionLiveState[] }`)를 반환합니다. 이 메서드는 항상 베어러 인증과 인코딩된 워크스페이스 선택자가 포함된 네이티브 REST를 사용하며, 선택적 클라이언트 ID를 보존하고 기존 단축 요청 타임아웃을 사용합니다. `requireCapability()`를 호출하지 않습니다 — 폴마다 기능 프로브를 수행하면 요청 볼륨이 두 배가 되기 때문입니다 — 따라서 소비자는 이미 로드된 기능에서 `workspace_session_live_state`를 한 번 프리플라이트하고, 해당 태그가 없으면 기존 카탈로그 폴링으로 폴백합니다. `workspace_qualified_rest_core`에서 지원을 추론하지 마십시오. 각 `DaemonSessionLiveState`는 선택적 `updatedAt` 활동 워터마크를 포함하므로, 소비자가 완료된 턴 이후 카탈로그를 다시 로드하지 않고도 이미 보유한 카탈로그 행의 최신성을 갱신할 수 있습니다. 현재 브리지의 첫 실행 턴 종료 전과 데몬 또는 런타임 교체 이후에는 이 값이 부재하므로, 소비자는 부재를 미지원으로 취급하지 않고 기존 카탈로그 폴백을 유지해야 합니다.
 
 ### 생성 시 `lastEventId` 시딩
 

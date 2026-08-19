@@ -201,6 +201,7 @@ OPTIONS プリフライトリクエスト（`Access-Control-Request-Method` ま�
  'workspace_file_upload',
  'session_approval_mode_control', 'workspace_tool_toggle', 'workspace_skill_toggle',
  'workspace_skill_batch_toggle',
+ 'extension_batch_activation_v2',
  'workspace_settings', 'workspace_init', 'workspace_mcp_restart',
  'session_recap', 'session_generation', 'session_btw', 'session_shell_command',
  'mcp_workspace_pool', 'mcp_pool_restart',
@@ -213,7 +214,7 @@ OPTIONS プリフライトリクエスト（`Access-Control-Request-Method` ま�
  'multi_workspace_session_shell', 'persistent_workspace_registration',
  'workspace_display_name',
  'workspace_qualified_rest_core', 'workspace_qualified_voice',
- 'workspace_qualified_memory', 'extension_management_v2',
+ 'workspace_qualified_memory', 'extension_management_v2', 'extension_git_credentials',
  'workspace_persisted_transcript',
  'workspace_session_export', 'workspace_archived_session_export',
  'workspace_session_live_state',
@@ -244,7 +245,7 @@ OPTIONS プリフライトリクエスト（`Access-Control-Request-Method` ま�
 
 `workspace_archived_session_export` は `GET /workspaces/:workspace/session/:id/archive/export` を公開します。これは、選択されたワークスペースのアーカイブされた永続ストレージからの信頼された専用の完全エクスポートです。`workspace_session_export` および `workspace_qualified_rest_core` とは独立しています。クライアントはこのタグを直接プリフライトする必要があります。別のルートであることで、古いデーモンがアーカイブの意図を無視して同じ ID のアクティブなトランスクリプトを返すことを防ぎます。
 
-`workspace_session_live_state` は `GET /workspaces/:workspace/sessions/live-state` を公開します。これは、選択されたワークスペースランタイムのライブセッションのメモリ上のみのスナップショットと、インメモリカタログバージョンであり、クライアントが `hasActivePrompt`、待機フラグ、および `clientCount` などの揮発性状態のために `GET /workspaces/:workspace/sessions` の永続化カタログをポーリングするのをやめられるようにします。`workspace_qualified_rest_core` とは独立しています。リリースされたデーモンはより広範なワークスペース REST ケイパビリティを公開しながらこのルートを実装しない可能性があるため、クライアントはこのタグを直接プリフライトする必要があります。セレクターは他の複数形セッションルートと同じく、まず正確なワークスペース ID として解決され、次に正規化後の URL エンコードされた絶対 cwd として解決されます。ルートはプライマリおよびセカンダリランタイムの両方に対して信頼された専用のみです。プライマリランタイムへのフォールバックは行わず、信頼されていないセカンダリに有界カタログ読み取りを許可する寛容な永続化カタログポリシーも使用しません。エンドポイントにはクエリパラメータがなく、セッションストレージ、設定、外部コマンド、または ACP のラウンドトリップを実行しないため、そのコストは永続化セッション数や JSONL サイズに依存しません。デフォルトのライブセッション上限がレスポンスを有界に保ち、上限が無効化されていてもコストはライブセッション数にのみ比例します。
+`workspace_session_live_state` は `GET /workspaces/:workspace/sessions/live-state` を公開します。これは、選択されたワークスペースランタイムのライブセッションのメモリ上のみのスナップショットと、インメモリカタログバージョンであり、クライアントにフルの永続化カタログリロードが必要なタイミングを知らせます。`workspace_qualified_rest_core` とは独立しています。リリースされたデーモンは両方の古いタグを公開しながらこのルートを実装しない可能性があるため、クライアントはこのタグを直接プリフライトする必要があります。このタグは無条件です。信頼された単一ワークスペースのプライマリは ID または cwd でルートを使用できるためです。ワークスペースごとの信頼チェックは引き続きすべてのリクエストで適用され、ルートは寛容な信頼されていないセカンダリの永続化カタログ読み取りポリシーをライブブリッジ状態には拡張しません。このタグはエンドポイントの存在を意味します。オプションの `updatedAt` アクティビティ watermark がすべてのライブ項目に付与されることを約束するものではありません。これはライフサイクル依存です。
 
 `slow_client_warning` は SSE バックプレッシャの動作をカバーします。(a) デーモンは、サブスクライバーのライブフレームバックログまたはライブシリアライズバイトバックログが 75% を超えたときに `slow_client_warning` 合成イベントストリームフレームを出力します（オーバーフローエピソードごとに 1 回。両方の測定値が 37.5% 未満に減少した後に再設定されます）。(b) `GET /session/:id/events` は `?maxQueued=N` クエリパラメータ（範囲 `[16, 2048]`）を受け付け、大規模なリプレイリングに対するコールド再接続時のサブスクライバーごとのフレームバックログを事前にサイズ設定します。シリアライズバイトの上限はデーモンが管理し（デフォルトはサブスクライバーごとに **2 MiB**）、ライブ専用であり、意図的にクエリパラメータはありません。デーモン全体のリングサイズは `--event-ring-size`（デフォルト **8000**、#3803 §02 に準拠）によって制御されます。古いデーモンは警告/クエリの動作を暗黙に欠いているため、オプトインする前にこのタグをプリフライトしてください。
 
@@ -266,11 +267,11 @@ OPTIONS プリフライトリクエスト（`Access-Control-Request-Method` ま�
 
 `session_lsp` は `GET /session/:id/lsp` を公開します。デーモンクライアント用の読み取り専用構造化 LSP ステータススナップショットです。古いデーモンは `404` を返します。リモート LSP ステータスを公開する前に、このタグをプリフライトしてください。
 
-`session_status` は `GET /session/:id/status` を公開します。ID ごとの単一セッションのライブブリッジサマリーです。`clientCount` と `hasActivePrompt` に加えて、ライブセッションは `isWaitingForPermission`、`isWaitingForUserQuestion`、`pendingInteractionCount`、および失敗したターンの後の保持された `turnError` を公開します。エラーは次のプロンプトが実際に開始したときにクリアされます。単一セッションのステータスレスポンスとワークスペースセッションリストの両方に `turnError` と `pendingInteractions` が含まれます。レンダリング準備ができたパーミッションアクションまたは `ask_user_question` の質問と、既存のパーミッション投票ルートに必要な `requestId` と選択可能なオプションです。各ユーザー質問には `answerKey` があります。`answers` で投票します。例: `{ "0": "Polling" }`。その値でキー付けされます。永続化専用のセッションはランタイム状態を省略します（ランタイムが存在しないため）。古いデーモンは `404` を返します。完全なセッションリストをスキャンする代わりに単一セッションのステータスをポーリングする前に、このタグをプリフライトしてください。
+`session_status` は `GET /session/:id/status` を公開します。ID ごとの単一セッションのライブブリッジサマリーです。`clientCount` と `hasActivePrompt` に加えて、ライブセッションは `isWaitingForPermission`、`isWaitingForUserQuestion`、`pendingInteractionCount`、および失敗したターンの後の保持された `turnError` を公開します。エラーは次のプロンプトが実際に開始したときにクリアされます。現在のブリッジで実行中のターンを収束させたライブセッションは `updatedAt` も保持します。live-state ルートで文書化されているのと同じアクティビティ watermark です。このルートはブリッジサマリーを直接返すため、値は永続化されたトランスクリプトの mtime とマージされず、セッションリストが報告するものより早い場合があります。単一セッションのステータスレスポンスとワークスペースセッションリストの両方に `turnError` と `pendingInteractions` が含まれます。レンダリング準備ができたパーミッションアクションまたは `ask_user_question` の質問と、既存のパーミッション投票ルートに必要な `requestId` と選択可能なオプションです。各ユーザー質問には `answerKey` があります。`answers` で投票します。例: `{ "0": "Polling" }`。その値でキー付けされます。永続化専用のセッションはランタイム状態を省略します（ランタイムが存在しないため）。古いデーモンは `404` を返します。完全なセッションリストをスキャンする代わりに単一セッションのステータスをポーリングする前に、このタグをプリフライトしてください。
 
 `session_info` は `GET /workspace/:id/session-info` とその `/workspaces/:workspace/session-info` ツインを公開します。レスポンスは永続化されたアクティブおよびアーカイブされたセッションカウントを、リストメタデータのハイドレーションなしに集約します。これは明示的な O(n) ディスクスキャンであり、ポーリングしてはいけません。クライアントは `truncated: true` を下限結果として扱う必要があります。
 
-`session_approval_mode_control`、`workspace_tool_toggle`、`workspace_skill_toggle`、`workspace_skill_batch_toggle`、`workspace_init`、および `workspace_mcp_restart` は、後述の変更制御ルートを公開します。これらはミューテーションゲートによって厳密にゲーティングされています（ベアラートークンなしで構成されたデーモンは、それらを 401 `token_required` で拒否します）。古いデーモンは `404` を返します。対応するアフォーダンスを公開する前に、各タグをプリフライトしてください。
+`session_approval_mode_control`、`workspace_tool_toggle`、`workspace_skill_toggle`、`workspace_skill_batch_toggle`、`extension_batch_activation_v2`、`workspace_init`、および `workspace_mcp_restart` は、後述の変更制御ルートを公開します。これらはミューテーションゲートによって厳密にゲーティングされています（ベアラートークンなしで構成されたデーモンは、それらを 401 `token_required` で拒否します）。古いデーモンは `404` を返します。対応するアフォーダンスを公開する前に、各タグをプリフライトしてください。
 
 `mcp_guardrails` (issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 14) は MCP バジェットサーフェスをカバーします。`GET /workspace/mcp` の `clientCount` / `clientBudget` / `budgetMode` / `budgets[]` フィールド、サーバーごとのセルの `disabledReason` フィールド、および `--mcp-client-budget` / `--mcp-budget-mode` CLI フラグです。古いデーモンは新しいフィールドを完全に省略します。SDK クライアントは `budgets[]` のセマンティクスに依存する前にこのタグをプリフライトします。レジストリ記述子には、将来の機能モード公開のために `modes: ['warn', 'enforce']` も含まれています。現時点では、クライアントはスナップショットの `budgetMode` フィールドからモードを推測します。`enforce` モードでのサーバー拒否は `Object.entries(mcpServers)` の宣言順序によって決定的になります。将来のスコープ優先度レイヤー（qwen-code が採用する場合）では、claude-code の `plugin < user < project < local` 規則を反映して、「最低優先度から」にシフトします。
 
@@ -296,6 +297,10 @@ OPTIONS プリフライトリクエスト（`Access-Control-Request-Method` ま�
 
 `extension_management_v2` は `/extensions/*` のユーザーレベル拡張カタログと変更表面、および `/workspaces/:workspace/extensions/*` のワークスペースアクティベーションプロジェクションを公開します。アーティファクトはグローバルです。ワークスペースルートはプロジェクションの読み取り、正確なアクティベーションオーバーライド、およびランタイムリフレッシュのみを公開します。読み取りは信頼されていない登録ワークスペースをターゲットにできますが、アクティベーション、リフレッシュ、およびワークスペーススコープのインストールには信頼されたターゲットが必要です。遅い変更は `/extensions/operations/:operationId` のデーモンローカル操作を使用します。ストアの世代（操作履歴ではない）が再起動間およびデーモン間で信頼できる情報源です。公開された `workspace_extensions` ケイパビリティと `/workspace/extensions/*` ルートは、プライマリワークスペースの互換性アダプターのままです。クライアントは `extension_management_v2` をプリフライトしなければならず、デーモンモードや `workspace_qualified_rest_core` から推論してはなりません。
 
+`extension_git_credentials` は `POST /workspace/extensions/install` と `POST /extensions/install` の両方で認証付き HTTPS Git インストールを公開します。クライアントは URL userinfo または `credentialPersistence` を送信する前にこのタグをプリフライトしなければなりません。古いデーモンは URL 認証情報を拒否します。このタグはバックエンドプロトコルのサポートを記述するものであり、キーチェーンの可用性ではありません。stored モードはターミナルの操作結果で選択されたバックエンドを報告します。
+
+`extension_batch_activation_v2` は `PUT /extensions/activation` と `PUT /workspaces/:workspace/extensions/activation` を追加します。両方とも `extensionNames` で 1〜100 個の名前を受け付け、最初に見た順序を保持しながら大文字と小文字を区別せずに重複排除し、変更されたターゲットを 1 世代で永続化し、1 つの `202` 操作ハンドルを返します。ターゲットは `enabled` または `disabled` を設定する際にインストールされている必要はありません。その名前は希望状態の宣言を作成し、その名前の Extension がインストールされたときに保持されます。グローバルルートは `state: "enabled" | "disabled"` を受け付け、V2 の `defaultActivation` を書き込み、登録されたすべてのランタイムを reconciliation します。ワークスペースルートは `"inherit"` も受け付け、選択された信頼されたランタイムに対して正確なオーバーライドを適用またはクリアし、そのランタイムのみを reconciliation します。`inherit` は不明な名前を宣言しません。すべて不明なクリアは `updated: false` を報告し、reconciliation をスキップします。単数形のアクティベーションルートはインストール済みのみで ID アドレス指定のままです。
+
 ### Extension Management V2 ワイア契約
 
 すべてのルートは上記のデーモン Bearer 認証ルールを使用します。`X-Qwen-Client-Id` は V2 変更ルートで任意です。指定する場合、変更のターゲットワークスペースランタイムの 1 つに登録されたクライアントを識別しなければなりません。`:extensionId` は小文字 64 文字の 16 進拡張 ID です。`:workspace` は最初に正確なワークスペース ID として解決され、それ以外の場合は正規化後の URL エンコードされた絶対 cwd として解決されます。
@@ -303,6 +308,7 @@ OPTIONS プリフライトリクエスト（`Access-Control-Request-Method` ま�
 | メソッドとパス                                                     | 成功                                                                        |
 | ------------------------------------------------------------------ | --------------------------------------------------------------------------- |
 | `GET /extensions`                                                  | `200` グローバルアーティファクトカタログ                                    |
+| `PUT /extensions/activation`                                       | `202` グローバルデフォルトアクティベーションバッチ操作                      |
 | `PUT /extensions/:extensionId/activation`                          | `202` グローバルデフォルトアクティベーション操作                            |
 | `POST /extensions/install`                                         | `202` インストール操作                                                      |
 | `POST /extensions/check-updates`                                   | `202` アップデートチェック操作                                              |
@@ -310,6 +316,7 @@ OPTIONS プリフライトリクエスト（`Access-Control-Request-Method` ま�
 | `DELETE /extensions/:extensionId`                                  | `202` アンインストール操作。拡張機能が存在しない場合は冪等な `204`          |
 | `GET /extensions/operations/:operationId`                          | `200` 操作スナップショット                                                  |
 | `GET /workspaces/:workspace/extensions`                            | `200` ワークスペースアクティベーションプロジェクション                      |
+| `PUT /workspaces/:workspace/extensions/activation`                 | `202` 正確なワークスペースアクティベーションバッチ操作                      |
 | `PUT /workspaces/:workspace/extensions/:extensionId/activation`    | `202` 正確なワークスペースアクティベーション操作                            |
 | `DELETE /workspaces/:workspace/extensions/:extensionId/activation` | `202` オーバーライドクリア操作                                              |
 | `POST /workspaces/:workspace/extensions/refresh`                   | `202` ランタイムリフレッシュ操作                                            |
@@ -377,6 +384,10 @@ OPTIONS プリフライトリクエスト（`Access-Control-Request-Method` ま�
 
 ワークスペースのみの初期アクティベーションには `{ "scope": "workspace", "workspaceId": "target-workspace-id" }` を使用します。ターゲットは存在し、信頼されている必要があります。デーモンのインストールは GitHub、Git、および npm ソースを受け入れます。`ref` は npm には適用されず、`registry` は npm にのみ適用されます。`ref`、`autoUpdate`、`allowPreRelease`、および `registry` は任意です。
 
+`extension_git_credentials` が公開されている場合、HTTPS Git ソースには userinfo を含めることができます。例: `https://username:token@git.example.com/org/repository.git`。`credentialPersistence` はこのようなソースでのみ有効です。`stored` または `one_time` であり、省略時は `one_time` がデフォルトです。stored モードはデーモンのハイブリッドシークレットストレージを通じて認証情報を保存し、インストールメタデータにはクリーンなリポジトリ URL のみを保持するため、拡張機能は更新可能です。one-time モードはリポジトリ URL も認証情報も保存せず、更新不可能な `snapshot` を作成します。このモードでは `autoUpdate: true` は拒否されます。URL 認証情報なしでフィールドを供給する場合、無効な認証情報を供給する場合、または npm、アーカイブ、ローカル、SSH、または非 Git ソースで認証情報を使用すると `400` が返されます。
+
+認証情報付きインストールのレスポンスと操作は `credentialPersistence` を公開し、`credentialStorage` を `keychain` または `encrypted_file` として公開する場合があります。one-time の操作は `source` を省略します。stored の操作はクリーンなソースを返す場合があります。スナップショットのカタログ/ステータスエントリはソースを省略し、`credentialPersistence` を `one_time` に設定し、`not updatable` を報告します。アップデートは `extension_not_updatable` で失敗します。利用できない stored シークレットはネットワークアクセス前に `extension_credential_unavailable` で失敗します。
+
 グローバルおよびワークスペースのアクティベーション `PUT` リクエストは同じボディを使用します。
 
 ```json
@@ -384,6 +395,17 @@ OPTIONS プリフライトリクエスト（`Access-Control-Request-Method` ま�
 ```
 
 `state` は `enabled` または `disabled` です。アップデート、アンインストール、アップデートチェック、アクティベーションクリア、およびリフレッシュリクエストには必須のボディはありません。
+
+バッチアクティベーションリクエストは Extension 名を使用します。
+
+```json
+{
+  "extensionNames": ["formatter", "review-tools"],
+  "state": "disabled"
+}
+```
+
+ワークスペースバッチは `"state": "inherit"` も受け付けます。終端のグローバル結果には `name` と `defaultActivation` が含まれます。ワークスペースの結果には `name`、`workspaceActivation`（inherit の場合は `null`）、および `effectiveActivation` が含まれます。不正な名前はリクエストを拒否します。既存の Store ID との競合は部分コミットなしに原子的に失敗します。不明な `inherit` ターゲットは永続化されません。オーバーライドのクリアはデフォルトアクティベーション宣言を製造したり、後続のインストールの同意を置き換えたりしてはならないためです。
 
 受け入れられた非同期変更はすべて以下を返します。
 
@@ -414,7 +436,7 @@ Content-Type: application/json
 }
 ```
 
-`status` は `queued` から `running` に遷移し、次に `succeeded`、`succeeded_with_warnings`、または `failed` になります。実行中、`phase` は `preparing`、`committing`、または `reconciling` です。終端の成功には `result` が含まれる場合があります。`status` は `installed`、`enabled`、`disabled`、`updated`、`uninstalled`、`checked`、または `refreshed` のいずれかです。調整結果にはさらに `refreshed`、`failed`、および `error` が含まれることがあります。アップデートチェックは `result.states` を返します。拡張名でキー付けされ、値は `checking for updates`、`update available`、`up to date`、`not updatable`、または `error` などです。
+`status` は `queued` から `running` に遷移し、次に `succeeded`、`succeeded_with_warnings`、または `failed` になります。実行中、`phase` は `preparing`、`committing`、または `reconciling` です。終端の成功には `result` が含まれる場合があります。`status` は `installed`、`enabled`、`disabled`、`updated`、`uninstalled`、`checked`、または `refreshed` のいずれかです。調整結果にはさらに `refreshed`、`failed`、および `error` が含まれることがあります。バッチアクティベーションの結果には順序付きの `results` が含まれます。アップデートチェックは `result.states` を返します。拡張名でキー付けされ、値は `checking for updates`、`update available`、`up to date`、`not updatable`、または `error` などです。認証情報と認証ヘッダーは操作フィールドになりません。
 
 永続的なコミットの後に不完全なクリーンアップやランタイムの調整が残った場合、失敗した変更としては報告されません。`succeeded_with_warnings` を返し、コミットされた結果を保持します。
 
@@ -445,7 +467,7 @@ Content-Type: application/json
 
 警告の `workspaceId` と `code` は任意です。`workspaceCwd` と `error` は常に存在します。クライアントは警告を表示し、カタログ/プロジェクションをリフレッシュし、永続的な変更を盲目的に再試行してはなりません。
 
-バリデーションと認証の失敗は、安定したコードが存在する場合に `{ "error": "...", "code": "..." }` を使用する同期的な HTTP エラーです。重要なケースは `400 invalid_extension_id`、`400 invalid_extension_activation`、`400 workspace_mismatch`、`403 untrusted_workspace`、`404 extension_operation_not_found`、および `429 extension_queue_full` です。インストールのバリデーションは、無効な source/ref/registry オプション、同意の欠如、または初期アクティベーションの欠如/無効性に対しても `400` を返します。`202` の後に失敗した変更は、操作履歴に保持されている間、`status: "failed"`、`error`、およびオプションの安定した `code` で表現されます。一般的なコードには `extension_prepare_timeout` と `extension_conflict` が含まれます。操作に対する HTTP `404` はロールバックを意味しません（操作履歴は永続的ではないため）。
+バリデーションと認証の失敗は、安定したコードが存在する場合に `{ "error": "...", "code": "..." }` を使用する同期的な HTTP エラーです。重要なケースは `400 invalid_extension_id`、`400 invalid_extension_names`、`400 invalid_extension_name`、`400 invalid_extension_activation`、`400 workspace_mismatch`、`403 untrusted_workspace`、`404 extension_operation_not_found`、および `429 extension_queue_full` です。インストールのバリデーションは、無効な source/ref/registry オプション、同意の欠如、または初期アクティベーションの欠如/無効性に対しても `400` を返します。`202` の後に失敗した変更は、操作履歴に保持されている間、`status: "failed"`、`error`、およびオプションの安定した `code` で表現されます。一般的なコードには `extension_prepare_timeout` と `extension_conflict` が含まれます。操作に対する HTTP `404` はロールバックを意味しません（操作履歴は永続的ではないため）。
 
 `daemon_status` は `GET /daemon/status` を公開します。後述する統合された読み取り専用オペレーター診断スナップショットです。
 
@@ -503,6 +525,8 @@ Content-Type: application/json
 どちらのイベントもセッションごとの SSE リプレイリングに保存され（`id` を持ちます）、`Last-Event-ID` で再接続するクライアントはこれらを介して再開できます。長時間の切断後の状態については、`GET /workspace/mcp` のスナップショットが引き続き信頼できる情報源（source-of-truth）となります。一度アドバタイズされると常に有効になり、条件付きの切り替えはありません。SDK のリデューサー状態（`DaemonSessionViewState`）は、シンプルな遅延表示風の UI を必要とするアダプター向けに、`mcpBudgetWarningCount`、`lastMcpBudgetWarning`、`mcpChildRefusedBatchCount`、`lastMcpChildRefusedBatch` を公開します。
 
 ## ルート
+
+クライアントは `session_turn_status` をフィーチャーディテクションし、`GET /session/:id/turns/current` または `GET /session/:id/turns/:promptId` をポーリングできます。これらのルートはライブの所有セッションを必要とし、別のワークスペースをロードまたはスキャンすることはありません。確定結果はアクティブなブランチから読み取られたベストエフォートのトランスクリプレコードであり、有界のスキャンを行います。`prompt_not_found` はライブキュー、64 エントリのターミナルオーバーレイ、または有界アクティブウィンドウで結果が見つからなかったことを意味します。`resultText` は最後のツール境界以降の生の最終親モデル回答であり、オプションのメッセージ書き換えの前であり、欠落する場合があります。32,768 UTF-16 コードユニットを超える結果には `resultTruncated: true` と `resultCode: "RESULT_TEXT_TRUNCATED"` が含まれます。
 
 ### `GET /health`
 
@@ -661,6 +685,8 @@ ACP 子プロセスのイベントループ遅延は `/daemon/status` には含�
 `limits.memory` は加算的であり、デーモンの解決されたメモリ数値を報告します。必須の `enforced: false`、`childHeap` オブジェクト（`mode`、`maxConcurrentChildren` と `perChildCeilingMb` は両方とも `mode: 'off'` の下では `null` で、何もモデル化しないことを示します。また `perChildCeilingMb` は `modeled.minChildHeapMb` 内でパーティションをモデル化できない場合にも追加で `null` になります。プールがそのフロアで 1 つの子もカバーできない場合、または `modeled.legacyChildCeilingMb`（`floor(available / 2)` であり、1024 MB 未満のホストではフロアを下回ります）でキャップするとフロアの下にランディングする場合です。0 になることはなく、`maxConcurrentChildren` はそのような場合に `0` です。パーティションをモデル化しないホストは、計算された回答であり、欠落したモデルではないためです）、`configuredBudgetMb`、`effectiveBudgetMb`（解決された cgroup/ホストメモリでキャップされた設定値）、`budgetSource`（`flag` / `derived`）、`availableMemoryMb`、`availableMemorySource`（`constrained` / `host`）、`insufficientMemory`、および `modeled` オブジェクト（`rootReserveMb`、`childPoolMb`、`minChildHeapMb`、`maxChildHeapMb`、および `legacyChildCeilingMb` — ACP 子が今日受け取る上限の保守的なモデルで、実際の数値を下回ることがあります）。`runtime.memory` はさらに `registeredWorkspaces`（登録カウント — 削除されていないワークスペースエントリ。drain 中、遷移中、またはブロックされたものを含む。ライブ子カウントではない）、`activeAcpChildren`（ライブで非 dying チャネルを持つデーモン管理 ACP 子 — 遷移中またはブロックされたエントリを含むが、キルが開始されたワークスペースは子がまだ終了していない場合でも除外。チャネルワーカー、MCP 子孫、または未アタッチのスポーン予約ではない）、`childRssCoverage`（`active_children` — ライブチャネルを持つすべての ACP 子。`activeAcpChildren` がカウントするセット。古いデーモンは `primary_only` を送信）、以下で説明する `children` オブジェクト、および `modeled` オブジェクト（`recommendedShareAtRegisteredMb`（登録されたワークスペースがない場合は `null`）と `recommendedShareAtActiveMb`（アクティブな子がない場合は `null`）。各シェアはレガシーな子の上限でキャップされ、上限が許可する場合にのみ最小子ヒープでフロアリングされます。小さなホストでは上限がフロアを下回るため、シェア × カウントが子プールを超えることがあります）。シェアはプールのパーティションではなく、助言として読んでください。すべてが観測です。これらの値から派生する子のスポーン引数はありません。これらの値に基づいてリクエストが拒否されることもありません。`childHeap` は `modeled.childPoolMb` の固定パーティションをモデル化します。すべての子が同じ `perChildCeilingMb` を受け取るため、モデル化された合計はプール内に収まります（スポーンごとのシェアとして蓄積するのではなく）。`refusals` は受け入れ圧力としてのみ読んでください。カウント 0 はパーティションが安全に適用できることを意味**しません**。子ははるかに大きなホスト全体で実行されるためです。非ゼロのカウントが必ずしもキャパシティプレッシャーを意味しない理由はさらに 2 つあります。受け入れ判定は終了する子をそれが退出するまでカウントするため、すでに `maxConcurrentChildren` に達しているデーモンでは、チャネル置換ごとにオーバーラップウィンドウ中に拒否が記録されます。また、パーティションをモデル化できないほど小さなホストでは `maxConcurrentChildren` が `0` であるため、`refusals` は ACP の総スポーン数と等しくなり、`insufficientMemory` がそれを説明するフィールドとなります。通常の `runQwenServe` パスでは、ブートストラップアプリが作成される前にバジェットが解決されるため、`limits.memory` はブートストラップウィンドウ中すでに投入されています。バジェットを解決しないパス（`runQwenServeImpl` をバイパスする直接組み込みなど）でのみ `null` となります。SDK 型は `null` を許可するため、正しいクライアントはそれに対応します。
 
 `runtime.memory.children` はそのブロック内で加算的であり、`childRssCoverage` が名前を付ける子の集約 RSS を報告します。`rssBytes`（それらの合計された自己報告 RSS）、`sampled`（読み取りを生成した子の数）、および `oldestReadingAgeMs`（合計内の最も古い読み取りの経過時間。呼び出し元がその部分をどれだけ離れて取得したかを判断できます）。`sampled` の分母は兄弟の `activeAcpChildren` であり、ブロック内で繰り返されません。`sampled` が低い場合、`rssBytes` は合計ではなく下限です。サンプリングはアクティブな SSE/WS ウォッチャーにゲーティングされているため、誰もストリーミングしていないデーモンに対するステータスリクエストは、ライブ子があっても `sampled: 0` を報告します。隣の `activeAcpChildren` がそのギャップを可視化し、`sampled: 0` の `rssBytes: 0` は測定されたゼロを意味することはありません。`oldestReadingAgeMs` は何もサンプリングされなかった場合、およびすべての貢献者がそのフィールドより前のブリッジである場合にも `null` です。「新鮮」を意味することはありません。合計を過算と下算の両方として読んでください。プロセスごとの RSS を合計すると、子が共有するページが二重カウントされます。各子は自身のプロセスのみを報告するため、MCP 子孫とすべてのチャネルワーカーが欠落します。デーモンツリーのメモリではありません。SDK ミラーではオプションです。`primary_only` を報告するデーモンは決して送信しないためです。
+
+`runtime.memory.children.heap` はそのブロック内で加算的であり、各 ACP 子のライフタイム V8 旧世代ハイウォーターマークを報告し、**合計ではなく最大値**として集約されます。`peakOldGenerationBytes`、`peakLiveSetBytes`、`peakTotalHeapBytes`、`majorGcCount`、`majorGcMs`、`unclassifiedSpaceNames`、および `reported` です。ヒープの上限は子ごとに適用され、ピークは異なる時点で到達されたため、合計はいかなる疑問にも答えません。各フィールドは報告する子全体の独立した最大値であり、1 つの子のスナップショットではなく、子ごとの上限は各軸に対して個別に判定されます。`reported` は `sampled` のうちいくつが貢献したかをカウントし、一部の子がフィールドより前の場合に低くなります。すべてのバイト数値は**旧世代**（`--max-old-space-size` が実際に制限するもの）をカバーし、`old_space` 単独ではありません。子は `old_space` が数メガバイトでも `large_object_space` がすべてを保持している状態で上限を使い切ることができるためです。`peakOldGenerationBytes` はコミットされたバイト数であり、子に与えられた上限とともに上昇するため、ワークロードが必要とする量の上限として読んでください。要件ではありません。`peakLiveSetBytes` はメジャー GC で生き残るものであり、上限とともに動きません。子が 1 つに収まらないことを伝えられる数値です。正確なライブセットではなく上限として読んでください。GC エントリは非同期に到着し、コレクションと読み取りの間に割り当てられた任何东西もカウントされるためです。`peakLiveSetBytes` はメジャー GC が観測されるまで `0` であり、測定ではなく不在です。`unclassifiedSpaceNames` は報告する子がいずれも分類できなかったヒープスペースの和集合です。V8 はバージョン間でスペースの名前変更と追加を行うため、不明なスペースは合計から削除されます。削除は過少カウントになるため、空でない配列はバイト数値が不完全であり、完全な測定として読んで서는ならないことを意味します。このオブジェクト全体は、サンプリングされた子が 1 つも報告しなかった場合、ゼロ化されたオブジェクトではなく `null` になります。SSE/WS ウォッチャーがアタッチされていない場合、何もサンプリングされないため、通常の状態でありエッジケースではありません。すべてが観測です。ここにある何もが子のサイズを決定したり、スポーンを拒否したり、`limits.memory.enforced` を `false` から動かしたりすることはありません。
 
 `runtime.memory.pressure` はそのブロック内で加算的であり、デーモンルートプロセス自身のメモリプレッシャーを報告します。`mode`（`off` / `observe`）、`level`（`normal` / `soft` / `hard` / `critical`）、`source`（`rss` / `heap` / `unknown`）、`ratio`、および比率の元となる 6 つの生の数値 — `rssBytes`、`rssRatio`、`availableBytes`、`heapUsedBytes`、`heapRatio`、`heapLimitBytes`。`ratio` は `rssRatio` と `heapRatio` の大きい方であり、`source` はどちらであったかを名前付けします。タイは `rss` として報告されます。`availableBytes` は `limits.memory.availableMemoryMb` のバイト単位です。意図的に検出された cgroup/ホストの数値であり、`effectiveBudgetMb` ではありません。プロセスを終了させるのは実際の制限であり、オペレーターのポリシー数値ではないためです。`source: "unknown"` はどちらの分母も測定できなかったことを意味し、健全と解釈してはなりません。その場合のみ `level` は `normal` です。分類するものがないためです。数値はデーモンの**ルートプロセスのみ**をカバーします。このプロセス自身の `memoryUsage()` であり、子が増殖しても動きません。`runtime.memory.children` はそれらを個別に報告し、どちらの数値もプロセスツリーのメモリではありません。両方のモードがブロック全体を報告します。`observe` のみ、パスフリーの `daemon_memory_pressure` 警告をステータス集約に追加します。`off` はトップレベルの `status` を変更しません。どちらのモードでも何も是正しません。SDK ミラーではオプションです。それが存在する前に `runtime.memory` を出荷したデーモンは、それなしでブロックを送信するためです。
 
@@ -1171,7 +1197,7 @@ budget の強制はケイパビリティ駆動です。`mcp_workspace_pool` が�
 - `budgets[0].status === 'error'` ⇔ `refusedCount > 0`（この discovery パスで 1 つ以上のサーバーが拒否された）。
 - `budgets[0].status === 'ok'` ⇔ 75% の閾値を下回り、かつ拒否がない。
 
-推奨されるポーリング頻度: すでに `/workspace/mcp` をポーリングしているものと同期させます。スナップショットは軽量であり、budget セルに追加の discovery コストはかかりません。push イベントをサブスクライブしている SDK クライアントでも、長時間の切断後の状態把握にスナップショットが役立ちます。
+推奨されるポーリング頻度: すでに `/workspace/mcp` をポーリングしているものと同期させます。スナップショットは軽量であり、budget セルに追加の discovery コストはかかりません。push イベントをサブスクライブしている SDK クライアントでも、長時間の切断後の状態把握にスナップショットが役立ちます（SSE リプレイリングの深さは有限です — `--event-ring-size`、デフォルト 8000 — そのため、リングのカバレッジより長くオフラインのクライアントはスナップショットの再同期にフォールバックします）。
 
 ### `GET /workspace/skills`
 
@@ -1951,6 +1977,8 @@ curl http://127.0.0.1:4170/workspaces/<workspace-id>/sessions
 
 `view=organized` を指定すると、デーモンは `<Storage.getProjectDir(cwd)>/session-organization.v1.json` を読み取り、ピン留めされたセッションを最初に返し、次にアクティビティ時刻の降順、最後に安定したタイブレーカーとして `sessionId` でソートして返す。組織化されたカーソルは不透明な base64url JSON であり、従来の最近の一覧で再利用してはならない。`pinned` はグループではなく仮想フィルターである。`groupId: null` は未グループ化を意味する。アーカイブされたセッションは組織化メタデータを保持するが、`archiveState=archived&view=organized` はアーカイブされたセッションのみを返す。
 
+アクティビティ順序のカーソル — 組織化ビューおよび `parentSessionId` / `sourceType` フィルタリングリスト — はスナップショット分離されておらず、信頼されたアクティブリストはトランスクリプトの mtime とライブアクティビティ watermark の遅い方で行を順序付けする。ライブ watermark はメモリ上のみのため、2 回のページフェッチ間でライブエントリが退職すると、セッションのキーが mtime に回帰することがある。カーソルはこれを補償する。ライブ由来のキーですでに出力された ID を保持し、行がページのコレクションに存在しない間、およびピンの反転がそれらを再許可する可能性がある間それらを保持し、パスの残りの間それらを除外する。そのため、ライブ由来のキーの移動はパスごとにセッションを最大 1 回返す。保証はキャリーにスコープされる。64 ID に制限され（1 パス内の過剰な ID はエラーではなく高々 1 回の重複に劣化する）、ピン状態が変更される前に出力された永続化のみの行はキャリーされないため、フェッチ間のピン解除はその行を 2 回目に戻すことがある。これはこのフィールドの存在前と全く同じである。したがって、ページを蓄積する呼び出し元は、常に `sessionId` で行をキー付けすべきである。64 を超える場合だけでなく。並行アクティビティの下で行はまだ移動またはスキップされる可能性がある。一貫したビューが必要な呼び出し元は、アクティビティ変更後に最初のページからリロードする。
+
 `view=organized` の場合、各セッションに追加のフィールドが表示されることがある。
 
 ```json
@@ -1965,7 +1993,7 @@ curl http://127.0.0.1:4170/workspaces/<workspace-id>/sessions
 
 ### `GET /workspaces/:workspace/sessions/live-state`
 
-選択されたワークスペースランタイムのメモリ上のみのライブセッションスナップショットとインメモリカタログバージョンを返します。これにより、クライアントは `hasActivePrompt`、待機フラグ、`clientCount` などの揮発性状態のために `GET /workspaces/:workspace/sessions` の永続化カタログをポーリングする必要がなくなります。事前チェックとして `workspace_session_live_state` が必要です。このタグは `workspace_qualified_rest_core` とは独立しているため、より広範なワークスペース REST ケイパビリティを公開する古いデーモンはこのルートを実装しません。セレクターは他の複数形セッションルートと同じく、まず正確なワークスペース ID として解決され、次に正規化後の URL エンコードされた絶対 cwd として解決されます。ルートはプライマリおよびセカンダリランタイムの両方に対して信頼された専用のみです。プライマリランタイムへのフォールバックは行わず、信頼されていないセカンダリに有界カタログ読み取りを許可する寛容な永続化カタログポリシーも使用しません。エンドポイントにはクエリパラメータがなく、セッションストレージ、設定、外部コマンド、または ACP のラウンドトリップを実行しないため、そのコストは永続化セッション数や JSONL サイズに依存しません。デフォルトのライブセッション上限がレスポンスを有界に保ち、上限が無効化されていてもコストはライブセッション数にのみ比例します。
+選択されたワークスペースランタイムのライブセッションのメモリ上のみのスナップショットと、インメモリカタログバージョンを返します。これにより、クライアントはフルの永続化カタログリロードが正当化されるタイミングを知ることができます。事前チェックとして `workspace_session_live_state` が必要です。このタグは `workspace_qualified_rest_core` とは独立しているため、より広範なワークスペース REST ケイパビリティを公開するデーモンはこのルートを実装しない可能性があります。クライアントはこのタグを直接プリフライトする必要があります。このタグは無条件です。信頼された単一ワークスペースのプライマリは ID または cwd でルートを使用できるためです。ワークスペースごとの信頼チェックは引き続きすべてのリクエストで適用され、ルートは寛容な信頼されていないセカンダリの永続化カタログ読み取りポリシーをライブブリッジ状態には拡張しません。エンドポイントにはクエリパラメータがなく、セッションストレージ、設定、外部コマンド、または ACP のラウンドトリップを実行しないため、そのコストは永続化セッション数や JSONL サイズに依存しません。デフォルトのライブセッション上限がレスポンスを有界に保ち、上限が無効化されていてもコストはライブセッション数にのみ比例します。
 
 レスポンス:
 
@@ -1982,13 +2010,16 @@ curl http://127.0.0.1:4170/workspaces/<workspace-id>/sessions
       "clientCount": 1,
       "hasActivePrompt": true,
       "isWaitingForPermission": false,
-      "isWaitingForUserQuestion": false
+      "isWaitingForUserQuestion": false,
+      "updatedAt": "2026-08-18T08:12:30.123Z"
     }
   ]
 }
 ```
 
-`v` はレスポンススキーマバージョンです。すべての成功レスポンスには `Cache-Control: no-store` が含まれます。`sessions` は選択されたランタイムで現在ライブのセッションの完全な、ページネーションされていない、順序付けされていないセットです。空のライブランタイムは `sessions: []` で `200` を返します。`clientCount`、`hasActivePrompt`、`isWaitingForPermission`、および `isWaitingForUserQuestion` は必須のワイヤフィールドであり、欠落しているオプションのブリッジ値は `0` または `false` にプロジェクションされます。表示名、タイムスタンプ、組織化、およびソースメタデータなどの静的カタログフィールドは意図的に除外され、フルカタログが所有し続けます。ライブステート行が存在しない場合は、既知のカタログ行の揮発性フィールドをクリアするだけです。永続化カタログ行を削除することはありません。
+`v` はレスポンススキーマバージョンです。すべての成功レスポンスには `Cache-Control: no-store` が含まれます。`sessions` は選択されたランタイムで現在ライブのセッションの完全な、ページネーションされていない、順序付けされていないセットです。空のライブランタイムは `sessions: []` で `200` を返します。`clientCount`、`hasActivePrompt`、`isWaitingForPermission`、および `isWaitingForUserQuestion` は必須のワイヤフィールドであり、欠落しているオプションのブリッジ値は `0` または `false` にプロジェクションされます。表示名、作成時刻、組織化、およびソースメタデータなどの静的カタログフィールドは意図的に除外され、フルカタログが所有し続けます。ライブステート行が存在しない場合は、既知のカタログ行の揮発性フィールドをクリアするだけです。永続化カタログ行を削除することはありません。
+
+`updatedAt` はオプションのデーモン観測アクティビティ watermark であり、実行状態に到達したプロンプトが現在のブリッジで正式なターミナルを公開したときに存在します。このようなターミナルごとに正確に 1 回進みます — 成功、エラー、キャンセル、デッドラインのすべて — であり、ターミナルイベントが公開される前に書き込まれ、1 つの壁時計ミリ秒以内に 2 つのターミナルが到着する場合や壁時計が逆行する場合でも、ライブセッションごとに厳密に増加します。前方のクロックジャンプはしたがって、壁時計時間が追いつくまで持続します。セッションの `createdAt` より早くなることはありません。最初のadvance は作成時にフロアされるため、作成と最初のターミナルの間の壁時計のロールバックは、すでにリストされていた `createdAt` に行をキー付けすることはありません。プロンプトの受け入れ、キュー待ち、ストリーミング更新、キューのみのキャンセル、ハートビート、およびインタラクション待ちは決してそれを進めません。クライアントはこれを使用して、完了したターンの後にフルカタログをリロードする代わりに、すでに保持しているカタログ行の最新性を更新します。永続化の確認ではありません。レコーダーはターンの結果を非同期に書き込むため、この値はデーモンが実行の試行が収束したことを観測したことのみに証明されます。ブリッジ世代の最初の実行ターミナルの前には存在しません — ディスクから復元されたセッションも含む — ため、不在はサポートプローブではなく、デーモンの再起動またはワークスペースランタイムの置換が新しいブリッジをインストールすると消えます。ライブと永続化の両方のサマリーが 1 つのセッションに存在する場合、フルカタログレスポンスは後の有効なタイムスタンプを報告するため、ブリッジサマリーを直接返しそのマージを行わない `GET /session/:id/status` はリストレスポンスより早い値を報告する場合があります。
 
 `catalogVersion` はデーモンが観測したカタログ変更の等価トークンです。`generation` は各ブリッジインスタンスで作成されるランダム UUID であり、デーモンの再起動またはワークスペースランタイムの置換時に変更されます。`revision` はゼロから始まり、世代内で単調に増加します。サポートされる操作はペア全体の等価比較のみです。世代とリビジョンが同じであればデーモンが観測したカタログ変更はなく、いずれかが異なればフルカタログをリロードする必要があります。クライアントはリビジョンの算術演算や世代をまたいだリビジョンの比較を行ってはなりません。保守的な追加のインクリメントは許可されます。バージョンはデーモンが観測したカタログメンバーシップと静的メタデータの変更をカバーします。通常のターンアクティビティ、プロンプトライフサイクル、アタッチ/デタッチ、および待機状態の遷移はバージョンを進めません。ライブスナップショットが対応する揮発性フィールドをすでに保持しているためです。2 つの揮発性オーバーレイ値は意図的に両方のシグナルの外にあります。ターンエラーステート（`hasTurnError`/`turnError`）と保留中インタラクションのカウント/コンテンツ（`pendingInteractionCount`/`pendingInteractions`）はバージョンを進めず、スナップショットにも表示されません。そのため、それらが必要なクライアントは、セッションごとのイベントストリームまたはフルカタログの読み取りを続ける必要があります。いずれのフィールドも、具体的なコンシューマーが必要になったときにワイヤ追加できます。別のデーモン、TUI、または外部プロセスによって直接書き込まれた変更は観測されないため、クライアントが定期フルカタログポーリングを停止すると、それらの書き込みには有界な検出時間がなく、明示的なフルリロード、別の観測されたカタログ変更、再接続、またはデーモン/ランタイムの置換後にのみ表面化します。
 
@@ -2180,7 +2211,7 @@ ACP-over-HTTP は、ベンダーメソッド `_qwen/sessions/archive` および 
 
 HTTP クライアントがプロンプトの途中で切断された場合、デーモンはエージェントに ACP `cancel` 通知を送信し、エージェントは `stopReason: "cancelled"` でプロンプトを終了する。
 
-`prompt_absolute_deadline` が公開されている場合、`deadlineMs` は設定されたサーバーデッドラインを短縮する場合がある。期限超過は、`errorKind: "prompt_deadline_exceeded"` を持つ相関のある `turn_error` を出力する。
+`prompt_absolute_deadline` が公開されている場合、`deadlineMs` は設定されたサーバーデッドラインを短縮する場合がある。期限超過は、`errorKind: "prompt_deadline_exceeded"` を持つ相関のある `turn_error` を出力する。デッドラインは呼び出し元をエージェントを.kill せずに解放する。エージェントが後に収束した場合、その `promptId` のターンステータスポーリングはデッドラインエラーではなく確定したトランスクリプトの結果を返す。
 
 ### `POST /session/:id/cancel`
 
@@ -2468,7 +2499,7 @@ SSE イベント（ワークスペーススコープ）: `{toolName, enabled, or
 - `404 {code: 'skill_not_found'}` — 名前に一致する読み込まれたスキルがない。
 - `409 {code: 'skill_not_toggleable', reason: 'not_user_invocable' | 'inactive_extension' | 'locked', lockedScope?: 'system' | 'user' | 'systemDefaults'}` — CLI パネルが対象の切り替えを許可しない。`lockedScope` は `reason` が `locked` の場合にのみ存在する。
 
-このミューテーションは、変更されたキー（`skills.disabled` および/または `skills.enabled`）ごとにワークスペーススコープの `settings_changed` イベントを再利用する。新しいイベントタイプは追加しない。ワークスペースのスキルステータスセルには、オプションの `disabledReason: 'hard' | 'default' | 'inactive_extension'` および `lockedScope: 'system' | 'user' | 'systemDefaults'` フィールドが含まれる。
+このミューテーションは、変更されたキー（`skills.disabled` および/または `skills.enabled`）ごとにワークスペーススコープの `settings_changed` イベントを再利用する。新しいイベントタイプは追加しない。それらのイベントはそれぞれ同じ `mutation` オブジェクトを含む: `{ id, kind: 'skill_toggle', skills: [{ name, enabled }], activation, sessionsRefreshed, sessionsFailed }`。`id` は 1 つのトグルリクエストによって生成されるすべての設定イベントを相関付ける。`skills` は実際に変更されたスキルの正規名と結果の有効状態をリストする。ワークスペースのスキルステータスセルには、オプションの `disabledReason: 'hard' | 'default' | 'inactive_extension'` および `lockedScope: 'system' | 'user' | 'systemDefaults'` フィールドが含まれる。
 
 #### `POST /workspace/skills/enable`
 

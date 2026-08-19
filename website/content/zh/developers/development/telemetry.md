@@ -256,6 +256,21 @@ traceparent: 00-<32-hex traceId>-<16-hex parentSpanId>-<01-sampled | 00-not-samp
 
 `X-Qwen-Code-Session-Id` 和 `X-Qwen-Code-Request-Id` **不属于本 PR 的范围**。它们将在后续的独立 PR 中进行设计和提案，使用相同的 `outboundCorrelation.*` 命名空间，每个都有各自的威胁模型和 operator 同意流程。PR #4390 的 review（LaZzyMan）确立了一项原则：“telemetry 的工作范围不包括向 LLM provider 发送标识符”；关联 header 的工作将转移到其独立的设计讨论中，而不是归入 telemetry 之下。
 
+## 入站关联（daemon HTTP API）
+
+daemon HTTP API 在每个请求上接受标准 W3C `traceparent` header。两个消费者独立读取它：
+
+- **请求 span 重-parenting（telemetry 启用）。** 当 telemetry SDK 初始化时，有效的 header 被提取为请求 span 的远程 parent，因此 daemon span 附加到调用方的 trace 下，而不是启动新的 trace。`_meta` 转发路径读取相同的 parent 链，因此通过 daemon 请求转发的会话子进程 span 也会继承它。
+- **访问日志 `traceId` 字段（两种模式）。** 专用的预认证捕获中间件在每个请求上解析该 header——包括在认证（401）、速率限制器（429）、JSON body 解析器（400）处被短路的请求，或从未匹配任何路由的请求（404）——访问日志将调用方 trace id 作为 camelCase 的 `traceId` 字段发出。在 telemetry 禁用时，该字段是 daemon 日志行与调用方日志（或 trace 后端）之间的唯一关联，因此一个保存的查询无需 telemetry 配置即可同时适用于两种模式。
+
+无效但存在的 header 会被拒绝（span 保持无 parent），并留下一个速率限制的 DEBUG 面包屑（`qwen-code.daemon.traceparent.invalid`）记录被拒绝的值，因此损坏的跨服务关联可以仅从 daemon 日志中诊断。
+
+### 入站 parent 下的强制采样
+
+在默认的 `parentbased_always_on` 采样器（及其他 parentbased 默认值）下，远程 parent 的 `sampled=0` 标志是调用方端的 head-based 决策，而非丢弃 daemon telemetry 的请求，因此提取会强制在入站 parent 上设置 SAMPLED 标志。唯一的退出方式是 `OTEL_TRACES_SAMPLER=parentbased_always_off`，它会尊重调用方的标志——注意它也会为整个 daemon 禁用 root-span 采样，而不仅仅是入站链接的请求。
+
+**警告：** 恒定的 `traceparent`（例如在负载测试客户端中硬编码）会将每个 daemon 请求重-parent 到单个 trace 中；请为每个请求生成新鲜的 header。
+
 ## 阿里云 Telemetry
 
 ### 手动 OTLP 导出
@@ -685,7 +700,7 @@ Daemon 进程（长时间运行的 HTTP 服务器模式）会暴露其自身的�
 
 ### Spans
 
-分布式追踪 span 构成一棵以 `qwen-code.interaction` 为根的树。每个 interaction 都是一个带有自身 `traceId` 的 trace root；跨 prompt 关联使用 `session.id` 属性。
+分布式追踪 span 构成一棵以 `qwen-code.interaction` 为根的树。在 CLI 中，每个 interaction 都是一个带有自身 `traceId` 的 trace root；ACP 和 daemon 路径可能继承入站 parent 上下文。跨 prompt 关联使用 `session.id` 属性。
 
 会话生命周期也通过 OpenTelemetry General Session 语义约定导出。当 OTel logs 管道启用时，Qwen Code 会发出带有必需 `session.id` 属性的 `session.start` 和 `session.end` 日志事件（已在上方核心会话事件中列出）。已恢复的持久化对话仅当恢复的会话 id 与当前 id 不同时，才在其 `session.start` 事件中包含 `session.previous_id`；冷启动恢复（`--resume`、`--continue`、`--fork-session`）不携带该属性。`/clear` 和其他替换流程有意不声明延续，因为它们会丢弃之前的对话。
 

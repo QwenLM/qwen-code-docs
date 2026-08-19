@@ -18,6 +18,9 @@
 # Review local changes and apply the findings to your working tree
 /review --fix
 
+# Continue a review of the same PR that was interrupted, instead of starting over
+/review 123 --resume
+
 # Review a specific file
 /review src/utils/auth.ts
 
@@ -145,7 +148,8 @@ Beim Reviewen eines PRs erstellt `/review` einen temporären Git-Worktree (`.qwe
 - Build- und Testbefehle laufen isoliert, ohne deinen lokalen Build-Cache zu verunreinigen
 - Wenn etwas schiefgeht, ist deine Umgebung nicht betroffen – lösche einfach den Worktree
 - Der Worktree wird nach Abschluss des Reviews automatisch aufgeräumt
-- Wenn ein Review unterbrochen wird (Strg+C, Crash), räumt das nächste `/review` für denselben PR den veralteten Worktree automatisch auf, bevor es frisch startet
+- Wenn ein Review unterbrochen wird (Strg+C, Crash), räumt das nächste `/review` für denselben PR den veralteten Worktree automatisch auf, bevor es frisch startet. Wenn die unterbrochene Session noch ihr Lease hinterlässt – ein Hard Kill, der das überspringt, oder ein Multi-Prompt-Review, der während eines späteren Prompts unterbrochen wurde – verweigert `/review` und nennt die zu löschende Lease-Datei. Saubere Stops geben sie frei: ein abgeschlossenes Review und die Early-Stops (leeres Diff, keine neuen Changes seit dem letzten Review) führen alle `cleanup` aus, was das Lease freigibt
+- Der Worktree ist an seine Session geleast: ein zweites `/review` für einen PR, der bereits reviewed wird, verweigert den Start (nennt den Holder) statt den Worktree des laufenden Reviews abzureißen
 - Review-Reports und Cache werden im Hauptprojektverzeichnis gespeichert (nicht im Worktree)
 
 ## Cross-Repo-PR-Review
@@ -183,7 +187,7 @@ Oder gib nach dem Ausführen von `/review 123` den Befehl `post comments` ein, u
 - Wenn der Fix ein einzelner lokaler Edit ist, ein ` ```suggestion `-Block, den du mit einem Klick anwenden kannst
 - Bei Approve/Request-Changes-Fazit: eine Review-Zusammenfassung mit dem Fazit
 - Bei Comment-Fazit, wenn alle Inline-Kommentare gepostet wurden: keine separate Zusammenfassung (Inline-Kommentare sind ausreichend)
-- Modell- und CLI-Versionszuordnungs-Footer in jedem Kommentar (z. B. _— qwen3-coder via Qwen Code /review (v0.21.2)_); setze `review.attribution` auf `false` in deiner User- oder System-`settings.json` (die Workspace-`.qwen/settings.json` wird für `review.*`-Einstellungen ignoriert), um ohne ihn zu posten
+- Modell- und CLI-Versionszuordnungs-Footer in jedem Kommentar (z. B. _— qwen3-coder via Qwen Code /review (v0.21.2)_); setze `review.attribution` auf `false` in deiner User- oder System-`settings.json` (die Workspace-`.qwen/settings.json` wird für `review.*`-Einstellungen ignoriert), um ohne ihn zu posten – Kommentare und Body-Listen verlieren dann auch die `**[Critical]**`/`**[Suggestion]**`-Schweregrad-Marker, und das Modell wird vom Machine-Ledger-Marker des Reviews zurückgehalten, sodass in frischen Umgebungen (kein Review-Cache) der wiederhergestellte inkrementelle Anker die Same-Model-Prüfung fehlschlagen lässt und das Re-Revert auf Full-Range zurückfällt
 
 **Was nur im Terminal bleibt:**
 
@@ -220,6 +224,18 @@ Nach dem Review wird jedes Ergebnis mit dem `edit`-Tool angewendet und dann **ab
 Ein Ergebnis wird übersprungen, wenn sein Fix beabsichtigtes Verhalten ändern würde, Änderungen weit außerhalb des reviewten Diffs erfordern würde oder sich bei zweitem Hinsehen als False Positive herausstellt.
 
 **Jedes Ergebnis bekommt ein Outcome, und das wird erzwungen statt nur angefordert.** Der Ledger läuft über `qwen review findings --outcomes`, das eine Menge verweigert, die nicht alle abdeckt – ein Fixer, der sechs von neun Ergebnissen anwendet und sechs meldet, hat über keines gelogen, er hat die Liste still verkürzt, und du hättest keine Möglichkeit, die drei zu sehen, die herausgefallen sind.
+
+## Review fortsetzen (`--resume`)
+
+Ein langes Review, das unterwegs abbricht – eine abgebrochene Verbindung, ein Timeout, ein gekilltes Terminal – hinterlässt alles, was es getan hat, auf der Festplatte: den Worktree, das erfasste Diff und die eigene Aufzeichnung des Harness über jeden ausgeführten Agenten. `--resume` setzt dort fort, statt von vorne zu beginnen:
+
+```bash
+/review 123 --resume
+```
+
+Es gilt **nur für PR-Targets** (das Diff eines lokalen Reviews kommt von einem live Working Tree, der keinen stabilen unterbrochenen Zustand zum Fortsetzen hat), und es kann jederzeit bedenkenlos übergeben werden: das Review prüft den Zustand auf der Festplatte selbst – der Worktree noch beim gefetchten Commit und clean, das erfasste Diff Byte für Byte unverändert, der PR-Head unbewegt, das Resume-Limit nicht aufgebraucht – und startet stillschweigend frisch, wenn etwas nicht mehr übereinstimmt, und sagt dir, welche Prüfung abgelehnt hat. Eine Fortsetzung verwendet die zertifizierten Agent-Ergebnisse des vorherigen Versuchs wieder, sodass der Report angibt, wie viele wiederhergestellt wurden; es wird offengelegt, niemals eine Coverage-Lücke.
+
+Zwei Dinge zu wissen. Eine Fortsetzung behält den **Effort** des unterbrochenen Laufs: ein anderer `--effort` verweigert das Resume und läuft frisch auf dem angefragten Level, weil anderer Effort andere Arbeit ist. Und wenn der PR-Head während der Ausfallzeit des Reviews gewandert ist, verweigert das Resume (`head-moved`) und der frische Lauf reviewed die neuen Commits – was du willst, und es zählt als der eine Neustart dieses Reviews.
 
 ## Ergebnisse als Daten
 
@@ -375,7 +391,7 @@ Jeder Lauf endet mit einer maschinenlesbaren Zeile (`Review complete: <target> �
 `/review` ist interaktiv. Wenn ein Skript oder CI-Job ein Review ausführen und auf dessen Ergebnis reagieren muss, verwende den Headless-Wrapper:
 
 ```bash
-qwen review run [target] [--json] [--fail-on request-changes] [--comment] [--quiet]
+qwen review run [target] [--json] [--fail-on request-changes] [--comment] [--resume] [--quiet]
 ```
 
 `target` ist eine PR-Nummer, eine PR-URL oder ein Dateipfad; lass es weg, um das lokale Working Tree zu reviewen. Der Befehl führt den eigenen CLI dieses Builds nicht-interaktiv aus (mit geschlossener Stdin, sodass Slash-Command-Erkennung überlebt), streamt den Fortschritt des Childs nach **stderr** und gibt das Fazit nach **stdout** aus – oder, mit `--json`, das vollständige Ergebnisobjekt. Das Fazit wird aus dem Artefakt gelesen, das `compose-review` schreibt (dasselbe JSON, das der Skill als Fazit-Autorität behandelt), niemals aus der Prosa des Modells geparst.
@@ -389,6 +405,8 @@ Der Exit-Code ist der Vertrag, den ein Gate lesen sollte:
 | `3`  | Es wurde mit `REQUEST_CHANGES` abgeschlossen **und** `--fail-on request-changes` war gesetzt (opt-in Blocking) |
 
 `3` (nicht `2`) ermöglicht es einem Gate, "das Review blockiert" von "das Tool ist kaputt" zu unterscheiden – yargs verwendet bereits `1` für Usage-Errors – ohne Ausgabe zu parsen. `--timeout-minutes` (Standard 120, Untergrenze 1) beendet ein hängendes Review und exitet `1`, und das Abbrechen des Befehls (Strg+C / SIGTERM) beendet die Prozessgruppe des Reviews statt sie zu verwaisen.
+
+`--resume` setzt ein unterbrochenes Review desselben PRs fort, statt von vorne zu beginnen – wenn ein langer lokaler Lauf unterwegs abbricht (eine abgebrochene Verbindung, ein Timeout, ein gekilltes Terminal), würde der Retry andernfalls erneut fetchen, erneut chunken und Agents erneut starten, deren Arbeit bereits auf der Festplatte liegt. Es kann bedenkenlos bei einem Retry übergeben werden: `fetch-pr` prüft den Zustand auf der Festplatte selbst (Worktree noch beim gefetchten SHA und clean, Diff-Bytes unverändert, PR-Head unbewegt, Resume-Obergrenze nicht aufgebraucht) und fällt stillschweigend auf ein frisches Review zurück, wenn etwas nicht mehr übereinstimmt, sodass der Flag niemals einen Run fehlschlagen lässt, der von vorne beginnen könnte. Eine Fortsetzung ist auf den aufgezeichneten Effort des unterbrochenen Laufs festgelegt – ein explizit anderer `--effort` verweigert das Resume und läuft frisch auf dem angefragten Level. Nur PR-Targets (das Diff eines lokalen Reviews wird von einem live Working Tree erfasst, der keinen stabilen unterbrochenen Zustand zum Fortsetzen hat). Resume ist eine **lokale Bequemlichkeit**: der CI-Review-Workflow des Repositories selbst setzt **nicht** fort – jeder Retry läuft frisch, weil ein CI-Versuch No-Sandbox läuft und sein Worktree beim Exit gelöscht wird, sodass kein unterbrochener Zustand zum Fortsetzen bleibt.
 
 Ein laufzeitbudgetierter Run kann auch eine **weiche** Deadline exportieren, sodass das Review seine Open-End-Reverse-Audit-Schleife stoppt, während noch Zeit zum Verifizieren, Komponieren und Posten bleibt: `QWEN_REVIEW_DEADLINE_EPOCH` ist der Unix-Sekunden-Moment, zu dem der Run gekillt wird, und `QWEN_REVIEW_DEADLINE_RESERVE_SECONDS` (Standard 3600; `0` behält nur die Runden-Schätzung) ist das Tail, das für die Verifizierung der letzten Runde, `compose-review` und Submission verbleiben muss. Wenn das verbleibende Budget keine weitere Runde plus dieses Tail mehr fasst, weigert sich der Round-Builder, sie zu bauen, und das komponierte Fazit legt den gekürzten Audit offen (ein sonstiges Approve-Fazit wird auf Comment gedeckelt). Eine fehlende oder fehlerhafte Deadline lässt das Review ungegated – der äußere Timeout begrenzt den Lauf weiterhin.
 

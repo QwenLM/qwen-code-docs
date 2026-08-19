@@ -76,7 +76,7 @@ Regroupés par domaine.
 | `agent_changed`          | S->C      | `change: 'created' \| 'updated' \| 'deleted', name, level: 'project' \| 'user'`                                                                |
 | `approval_mode_changed`  | S->C      | `sessionId, previous, next, persisted: boolean`                                                                                                |
 | `tool_toggled`           | S->C      | `toolName, enabled` ; affecte le prochain spawn d'enfant ACP et ne modifie pas les sessions déjà en cours d'exécution.                                            |
-| `settings_changed`       | S->C      | L'écriture des paramètres du workspace est terminée. Le payload est ouvert ; les consommateurs doivent actualiser avec un read-after-write.                                           |
+| `settings_changed`       | S->C      | L'écriture des paramètres du workspace est terminée. Le payload inclut `key` ; `value`, `scope` et `mutation` (skill-toggle) sont optionnels.                        |
 | `settings_reloaded`      | S->C      | Le service workspace du daemon relit les paramètres. Le payload est ouvert.                                                                                     |
 | `trust_change_requested` | S->C      | `workspaceCwd, desiredState: 'trusted' \| 'untrusted', reason?`                                                                                |
 | `workspace_initialized`  | S->C      | `path, action: 'created' \| 'overwrote' \| 'noop', originatorClientId?`                                                                        |
@@ -167,7 +167,7 @@ Ces événements sont indexés par workspace, et non par session. Le reducer de 
 - `workspaceInitCount`, `lastWorkspaceInit?` - provenant de `workspace_initialized`.
 - `mcpRestartCount`, `lastMcpRestart?` - provenant de `mcp_server_restarted`.
 - `mcpRestartRefusedCount`, `lastMcpRestartRefused?` - provenant de `mcp_server_restart_refused`.
-- `settings_changed` / `settings_reloaded` - reconnus par `asKnownDaemonEvent` ; le reducer de session ne maintient pas de champs d'état de vue dédiés, et les UI les traitent généralement comme des signaux d'actualisation.
+- `settings_changed` / `settings_reloaded` - reconnus par `asKnownDaemonEvent` ; le reducer de session ne maintient pas de champs d'état de vue dédiés. Les événements `settings_changed` de skill-toggle portent des métadonnées `mutation` optionnelles pour que les hôtes puissent appliquer les changements uniquement liés aux skills de manière incrémentale au lieu de recharger la tâche. Les autres UI peuvent toujours traiter l'événement comme un signal d'actualisation.
 - `permissionVoteProgress: Record<string, DaemonPermissionPartialVoteData>` - progression du vote par consensus.
 - `forbiddenVotes: DaemonPermissionForbiddenData[]`, `forbiddenVoteCount` - enregistrements de votes rejetés par la politique, plafonnés à 32.
 - `awaitingResync: boolean` - défini par `state_resync_required` ; vidé lorsque le consommateur réinitialise l'état de vue.

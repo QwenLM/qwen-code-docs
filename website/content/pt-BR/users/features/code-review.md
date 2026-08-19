@@ -18,6 +18,9 @@
 # Review local changes and apply the findings to your working tree
 /review --fix
 
+# Continue a review of the same PR that was interrupted, instead of starting over
+/review 123 --resume
+
 # Review a specific file
 /review src/utils/auth.ts
 
@@ -222,6 +225,18 @@ Um achado é ignorado quando sua correção alteraria o comportamento pretendido
 
 **Todo achado recebe um resultado, e isso é imposto em vez de solicitado.** O registro passa por `qwen review findings --outcomes`, que recusa um conjunto que não cubra todos — um fixer que aplica seis de nove achados e reporta seis não mentiu sobre nenhum deles, ele encurtou a lista silenciosamente, e você não teria como ver os três que caíram.
 
+## Retomando uma revisão interrompida (`--resume`)
+
+Uma revisão longa que morre no meio — uma conexão caída, um timeout, um terminal encerrado — deixa tudo que fez no disco: o worktree, o diff capturado e o registro do próprio harness de cada agente que executou. O `--resume` continua a partir daí em vez de recomeçar:
+
+```bash
+/review 123 --resume
+```
+
+Aplica-se **apenas a alvos de PR** (o diff de uma revisão local vem de uma árvore de trabalho ativa, que não tem um estado interrompido estável para continuar), e é seguro passar sempre que você estiver inseguro: as regras de revisão verificam o estado em disco — o worktree ainda no commit buscado e limpo, o diff capturado inalterado byte por byte, o head do PR imóvel, o limite de retomada não gasto — e silenciosamente recomeça quando algo não confere mais, informando qual verificação recusou. Uma continuação reutiliza os resultados certificados dos agentes da tentativa anterior, então o relatório diz quantos foram recuperados; é divulgado, nunca uma lacuna de cobertura.
+
+Duas coisas para saber. Uma continuação mantém o **esforço** da execução interrompida: passar um `--effort` diferente recusa a retomada e executa do zero no nível que você pediu, porque esforço diferente é trabalho diferente. E se o head do PR se moveu enquanto a revisão estava fora, a retomada recusa (`head-moved`) e a execução nova revisa os novos commits — que é o que você quer, e conta como a única reinicialização desta revisão.
+
 ## Achados como Dados
 
 Achados confirmados são canonicalizados em `.qwen/tmp/qwen-review-<target>-findings.json` antes de qualquer outra coisa consumi-los — o relatório do terminal, o relatório Markdown salvo e o JSON da revisão do PR leem esse único artefato em vez de re-digitar a lista. Cada achado carrega um `id` único (no que resultados e âncoras resolvidas se juntam), `severity`, `confidence`, `source`, `summary`, um `shortSummary` limitado a 60 caracteres para renderização em listas, `failureScenario`, e uma ou mais `locations` — um achado agregado por padrão mantém **uma localização por ocorrência**, então cada um ainda recebe seu próprio comentário inline.
@@ -375,7 +390,7 @@ Cada execução termina com uma linha legível por máquina (`Review complete: <
 O `/review` é interativo. Quando um script ou job de CI precisa executar uma revisão e agir sobre seu resultado, use o wrapper headless:
 
 ```bash
-qwen review run [target] [--json] [--fail-on request-changes] [--comment] [--quiet]
+qwen review run [target] [--json] [--fail-on request-changes] [--comment] [--resume] [--quiet]
 ```
 
 `target` é um número de PR, uma URL de PR ou um caminho de arquivo; omita para revisar a árvore de trabalho local. O comando executa o próprio CLI desta build de forma não interativa (com stdin fechado, para que a detecção de comando slash sobreviva), transmite o progresso do filho para o **stderr**, e imprime o veredito no **stdout** — ou, com `--json`, o objeto de resultado completo. O veredito é lido do artefato que o `compose-review` escreve (o mesmo JSON que a skill trata como autoridade do veredito), nunca analisado da prosa do modelo.
@@ -389,6 +404,8 @@ O código de saída é o contrato que um gate deve ler:
 | `3`   | Completou com `REQUEST_CHANGES` **e** `--fail-on request-changes` estava definido (bloqueio opt-in) |
 
 `3` (não `2`) permite que um gate distinga "a revisão está bloqueando" de "a ferramenta quebrou" — o yargs já usa `1` para erros de uso — sem analisar nenhuma saída. `--timeout-minutes` (padrão 120, mínimo 1) termina uma revisão travada e sai com `1`, e cancelar o comando (Ctrl+C / SIGTERM) termina o grupo de processos da revisão em vez de orphaná-lo.
+
+`--resume` continua uma revisão interrompida do mesmo PR em vez de recomeçar — quando uma execução local longa morre no meio (uma conexão caída, um timeout, um terminal encerrado), a tentativa re-buscaria, re-fragmentaria e re-lançaria agentes cujo trabalho já está no disco. É seguro passar incondicionalmente em uma nova tentativa: o `fetch-pr` verifica o estado em disco (worktree ainda no SHA buscado e limpo, bytes do diff inalterados, head do PR imóvel, limite de retomada não gasto) e silenciosamente volta a uma revisão nova quando algo não confere mais, então a flag nunca falha uma execução que poderia recomeçar. Uma continuação é fixada no esforço gravado da execução interrompida — um `--effort` explicitamente diferente recusa a retomada e executa do zero no nível solicitado. Apenas alvos de PR (o diff de uma revisão local é capturado de uma árvore de trabalho ativa, que não tem um estado interrompido estável para continuar). A retomada é uma **conveniência local**: o workflow de revisão de CI do repositório **não** retoma — cada nova tentativa executa do zero, porque uma tentativa de CI executa sem sandbox e seu worktree é deletado na saída, não deixando estado interrompido para continuar.
 
 Uma execução com orçamento de tempo também pode exportar um deadline **soft** para que a revisão pare seu loop de auditoria reversa aberta enquanto ainda há tempo para verificar, compor e publicar: `QWEN_REVIEW_DEADLINE_EPOCH` é o momento em segundos Unix em que a execução será encerrada, e `QWEN_REVIEW_DEADLINE_RESERVE_SECONDS` (padrão 3600; `0` mantém apenas a estimativa da rodada) é a cauda que deve restar para a verificação da última rodada, `compose-review` e submissão. Quando o orçamento restante não cabe mais uma rodada mais essa cauda, o construtor de rodadas recusa construí-la, e o veredito composto divulga a auditoria truncada (um veredito Approve é limitado a Comment). Um deadline ausente ou malformado deixa a revisão sem gate — o timeout externo ainda limita a execução.
 

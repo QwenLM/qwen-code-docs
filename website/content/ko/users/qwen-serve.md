@@ -199,7 +199,7 @@ SSE/ACP 전송 카운트, 속도 제한 거부, 프로세스 메모리, 해석�
 함께 영속화하며, 활성 ACP 세션을 한 번에 새로 고칩니다. 라우트는 워크스페이스
 `skills.disabled` 및 `skills.enabled`를
 필요에 따라 업데이트하고, 알 수 없거나, 숨겨진, 비활성 확장, 상위 범위 잠금,
-신뢰할 수 없는 대상을 거부하며, 활성 ACP 세션을 즉시 새로 고칩니다.
+신뢰할 수 없는 대상을 거부합니다.
 `skills.defaultDisabled` skill을 활성화하면 `skills.enabled`에 정식 옵트인이
 기록됩니다; 더 높은 범위에서 상속된 하드 `skills.disabled` 항목은 여전히
 재정의할 수 없습니다. Skill 상태 셀은 `disabledReason`(`hard`, `default`
@@ -207,7 +207,7 @@ SSE/ACP 전송 카운트, 속도 제한 거부, 프로세스 메모리, 해석�
 응답은 ACP 자식이 실행되지 않는 동안 설정이 저장되었음을 의미합니다;
 자식이 시작될 때 적용됩니다. `skills.disabled`는 수동 및 모델 사용을 모두
 비활성화합니다. `disable-model-invocation: true`와 달리 직접 `/skill-name`
-호출은 계속 사용할 수 있습니다.
+호출은 계속 사용할 수 있습니다. V2 Extension 배치의 경우 `extension_batch_activation_v2`를 확인하세요: `PUT /extensions/activation`은 전역 기본값을 변경하고, `PUT /workspaces/:workspace/extensions/activation`은 선택된 워크스페이스의 정확한 오버라이드를 변경하며 `"inherit"`를 받아 정리합니다. 둘 다 `extensionNames`로 이름을 받습니다; `enabled`와 `disabled`는 설치 전에 선언할 수 있으며, 알 수 없는 이름에 대한 `inherit`는 no-op입니다. 각 요청은 폴링할 작업 하나를 반환합니다.
 
 `GET /workspace/env`와 `GET /workspace/preflight`는 ACP 상태와 관계없이
 항상 `initialized: true`로 응답합니다. `env`는 ACP를 참조하지 않습니다(데몬

@@ -2,7 +2,7 @@
 
 ## Обзор
 
-`GET /capabilities` — это preflight-эндпоинт демона. Каждый клиент SDK должен вызывать его перед обращением к любому другому маршруту, чтобы узнать, какую версию протокола поддерживает демон, какие теги функций включены и к какому рабочему пространству привязан демон. Контракт:
+`GET /capabilities` — это preflight-эндпоинт демона. Каждый клиент SDK должен вызывать его перед обращением к любому другому маршруту, чтобы узнать, какую версию протокола поддерживает демон, какие теги функций включены и какие runtime рабочих пространств принимает демон. Контракт:
 
 - **Существует только одна версия протокола: `v1`.** `SERVE_PROTOCOL_VERSION = 'v1'` и `SUPPORTED_SERVE_PROTOCOL_VERSIONS = ['v1']`. v1 внутренне аддитивна; критические изменения формы фрейма зарезервированы для v2.
 - **У каждого тега есть версия `since`.** Будущие демоны v2 могут анонсировать как теги v1, так и v2.
@@ -120,7 +120,9 @@ Read-only снимки рабочего пространства: `workspace_mcp
 
 Управление расширениями: `extension_management_v2` добавляет глобальный контракт каталога/мутации/операций `/extensions/*` и проекцию активации рабочего пространства. Он отделён от опубликованной поверхности совместимости `workspace_extensions` и от `workspace_qualified_rest_core`.
 
-Read-операции сессии с квалификацией рабочего пространства: `workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`, `workspace_session_live_state`. Теги активного и архивного экспорта независимы друг от друга, а также от `session_export` и `workspace_qualified_rest_core`, поэтому клиенты должны делать preflight точного состояния хранилища, которое они намерены экспортировать. Постраничный просмотр сохранённого транскрипта допускает не доверенный вторичный клиент в рамках его политики ограниченного чтения; оба пути полного экспорта остаются только для доверенных. `workspace_session_live_state` также независим от `workspace_qualified_rest_core` и является только для доверенных: он обслуживает live-снимок сессии из памяти и версию каталога выбранного runtime и не расширяет политику не доверенного вторичного клиента для сохранённого чтения на состояние live-bridge.
+Пакетная активация расширений V2: `extension_batch_activation_v2` добавляет очередь глобальной активации по умолчанию и пакетов переопределения для выбранных рабочих пространств к `extension_management_v2`. Клиенты должны делать pre-flight независимо, поскольку старые демоны V2 предоставляют только одиночные маршруты активации.
+
+Read-операции сессии с квалификацией рабочего пространства: `workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`, `workspace_session_live_state`. Теги активного и архивного экспорта независимы друг от друга, а также от `session_export` и `workspace_qualified_rest_core`, поэтому клиенты должны делать pre-flight точного состояния хранилища, которое они намерены экспортировать. Постраничный просмотр сохранённого транскрипта допускает недоверенный вторичный клиент в рамках его политики ограниченного чтения; оба пути полного экспорта остаются только для доверенных. `workspace_session_live_state` также независим от `workspace_qualified_rest_core` и является только для доверенных: он отдаёт снимок live-сессии только из памяти и версию каталога выбранного runtime и не расширяет политику сохранённого чтения недоверенного вторичного клиента на состояние live-bridge.
 
 Мутации рабочего пространства (Wave 4+): `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, **`workspace_settings`** (условный), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, `workspace_file_upload`, **`workspace_reload`** (условный).
 
