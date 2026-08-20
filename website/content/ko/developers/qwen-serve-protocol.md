@@ -1,5 +1,3 @@
----
-
 # `qwen serve` HTTP 프로토콜 레퍼런스
 
 [qwen-code 데몬 디자인](https://github.com/QwenLM/qwen-code/issues/3803)의 Stage 1. 모든 라우트는 데몬의 기본 URL(기본값 `http://127.0.0.1:4170`) 아래에 존재합니다.
