@@ -23,6 +23,9 @@ description: "Review code changes for correctness, security, performance, and co
 # 审查本地更改并将发现应用到工作树
 /review --fix
 
+# 继续同一 PR 被中断的审查，而不是重新开始
+/review 123 --resume
+
 # 审查特定文件
 /review src/utils/auth.ts
 
@@ -153,6 +156,7 @@ description: "Review code changes for correctness, security, performance, and co
 - 如果审查被中断（Ctrl+C、崩溃），下次对同一 PR 执行 `/review` 时，会在重新开始前自动清理过期的 worktree。如果被中断的会话仍留下了其租约——跳过此步骤的强制终止，或在后续 prompt 期间被中断的多 prompt 审查——`/review` 会拒绝并指出要删除的租约文件。正常停止会释放租约：已完成的审查和提前停止（空 diff、自上次审查以来无新变更）都会运行 `cleanup`，释放租约
 - worktree 租约绑定到其会话：对已在审查中的 PR 执行第二次 `/review` 会拒绝启动（指出持有者），而不是拆除正在运行的审查的 worktree
 - 审查报告和缓存保存在主项目目录中（而非 worktree）
+- **修改**代码以进行测量的步骤——测试效力探测的变异体，以及验证器对特定发现的探测——各自在旁边的临时 worktree 中运行（`…-probe`、`…-scratch-<agent>`），因此一个 agent 的实验对其他读取共享树的 agent 不可见。作为保底，每波中的每个 agent 都会被告知哪些路径（如果有）在启动时与正在审查的 commit 不同，以及仅限于这些路径的失败不是一个发现。所有这些树在审查结束时与 worktree 一起被清理。
 
 ## 跨仓库 PR 审查
 
@@ -189,7 +193,7 @@ description: "Review code changes for correctness, security, performance, and co
 - 修复为单个局部编辑时，附带一个可一键应用的 ` ```suggestion ` 代码块
 - 对于 Approve/Request changes 结论：包含结论的审查摘要
 - 对于 Comment 结论且所有行内评论已发布：无单独摘要（行内评论已足够）
-- 每条评论底部的模型和 CLI 版本归属说明（例如，_— qwen3-coder via Qwen Code /review (v0.21.2)_）；在用户或系统 `settings.json` 中将 `review.attribution` 设为 `false` 可取消归属（工作区 `.qwen/settings.json` 中的 `review.*` 设置会被忽略）
+- 每条评论底部的模型和 CLI 版本归属说明（例如，_— qwen3-coder via Qwen Code /review (v0.21.2)_）；在用户或系统 `settings.json` 中将 `review.attribution` 设为 `false` 可取消归属（工作区 `.qwen/settings.json` 中的 `review.*` 设置会被忽略）——评论和正文列表同时会失去 `**[Critical]**`/`**[Suggestion]**` 严重级别标记，并且模型会从审查的 machine-ledger 标记中被隐去，因此在全新环境中（无审查缓存）恢复的增量锚点无法通过同模型检查，重新审查会回退到全量范围
 
 **仅在终端显示的内容：**
 
@@ -224,6 +228,18 @@ description: "Review code changes for correctness, security, performance, and co
 | `no_change_needed` | 发现是错误的，或代码已经处理了它 | 否                   |
 
 当发现的修复会改变预期行为、需要在审查 diff 之外进行更改，或在二次检查时被确认为误报时，该发现会被跳过。
+
+## 恢复被中断的审查（`--resume`）
+
+一个中途终止的长时间审查——连接断开、超时、终端被终止——会将其所有工作留在磁盘上：worktree、捕获的 diff，以及调度器对每个运行过的 agent 的记录。`--resume` 从那里继续，而不是重新开始：
+
+```bash
+/review 123 --resume
+```
+
+它仅适用于 **PR 目标**（本地审查的 diff 来自活跃的工作树，没有稳定的中断状态可以继续），并且在不确定时可以安全地传递：审查会判断磁盘上的状态本身——worktree 仍在获取的 commit 处且干净、捕获的 diff 逐字节未变、PR head 未移动、resume 限额未使用——并在任何内容不再匹配时静默重新开始，并告诉你哪个检查拒绝了。继续运行会重用之前尝试的已认证 agent 结果，因此报告会说明恢复了多少；这是公开的，永远不会是覆盖缺口。
+
+两点需要注意。继续运行会保持被中断运行的 **effort**：传递不同的 `--effort` 会拒绝 resume 并以你请求的级别重新运行，因为不同的 effort 是不同的工作。如果 PR head 在审查中断期间移动了，resume 会拒绝（`head-moved`），新的运行会审查新的 commit——这正是你想要的，而且它算作本次审查的一次重启。
 
 **每个发现都会有一个结果，这是强制执行而非请求的。** 账本通过 `qwen review findings --outcomes` 进行，它拒绝不覆盖所有发现的结果集——一个修复了九个发现中的六个并报告六个的修复器并没有对任何一个撒谎，它只是静默缩短了列表，你将无法看到消失的三个。
 
@@ -350,6 +366,8 @@ export QWEN_REVIEW_ASSETS_REPO=your-org/your-repo   # 你可以推送的仓库
 # → "上次审查使用了 qwen3-coder。正在使用 gpt-4o 进行全量审查以获取第二意见。"
 ```
 
+模型匹配还会控制增量范围，而不仅仅是跳过："清理到缓存的 commit"是上一个模型的结论，因此当自缓存审查以来有新的 commit 时，模型不匹配永远不会将范围限定为 `lastCommitSha..HEAD`——范围是完整的 diff，并注明"上一轮由 qwen3-coder 审查。正在使用 gpt-4o 进行全量审查。"——除非从上次发布的审查中恢复了由当前运行模型认证的锚点（见下文），此时范围由该锚点决定。上一轮的发现仍然会被继承以重新裁定；只有锚点不会。当缓存不存在或其锚点不可用时（CI、另一个克隆），从上次发布审查的 machine-ledger 标记中恢复的锚点也受同样的门控：只有当当前运行的模型认证了它时，它才会限定增量范围——由不同模型认证的标记，或不携带模型的标记（在 `review.attribution` 关闭时发布的审查，或在该字段之前的审查），会回退到完整 diff。
+
 缓存存储在 `.qwen/review-cache/` 中，并同时跟踪 commit SHA 和 model ID。请确保将此目录加入 `.gitignore`（使用更宽泛的规则如 `.qwen/*` 也可以）。如果缓存的 commit 在 rebase 中被移除，系统将回退到全量审查。只有 high-effort 审查会查阅或写入缓存——`--effort low|medium` 的快速 pass 永远不会被视为"已审查"。
 
 ## 审查报告
@@ -369,6 +387,8 @@ Medium 和 high-effort 审查还会保存一个具有相同文件名但扩展名
 
 **GitHub Enterprise：** 在非 `github.com` 主机上审查 PR URL 时，该主机的每个 GitHub 调用都会被路由——审查子命令（`match-remote`、`meta`、`fetch-pr`、`pr-context`、`comment-status`、`issue-context`、`fetch-diff`、`comment-body`、`plan-diff`、`test-plan`、`presubmit`、`compose-review`、`submit`、`publish-assets`）接受 `--host` 并在代码中设置，因此遗忘的 host 不会静默将审查重定向到 `github.com`。
 
+**Aone Code：** 对于 origin 在 `gitlab.alibaba-inc.com` 上的克隆，从该克隆内部运行 `/review`——平台从 remote 检测，子命令正常工作，由 `a1` CLI 支持——目标编号是全局 MR id。`fetch-pr` 获取 `refs/merge-requests/<id>/head` 并构建 worktree + diff，因此 agent 对 worktree 的审查不变。每次 Aone 运行都是 context-unavailable，多个流程会被跳过（而不是访问 github.com 的同名仓库）：`pr-context`/`comment-status`/`presubmit` 没有 Aone 支持（结论上限为 `COMMENT`），`test-plan` 无支持，Agent 0 被跳过，`publish-assets` 的写入被跳过。`--comment` 通过 `a1` CLI **发布**审查：每个行内发现一条评论，然后是摘要评论。Aone 没有原生的 request-changes 状态——在该结论下，摘要评论携带一个阻塞头，实际发布的行内 Critical 通过讨论门阻塞合并，同时其讨论保持未解决状态（当没有发布行内 Critical 时，该头是建议性的，不会在机械上阻塞合并）。原生的 `a1 repo mr approve` 已为 Approve 结论接线但不会触发此阶段：context-unavailable 上限使每次 Aone 结论保持在 Comment。重复轮次有两个注意事项：目前还没有去重支持，因此第二轮 `--comment` 会重新发布每个仍然有效的发现作为新评论，且自我 PR 检测没有 Aone 支持。参见 `docs/design/2026-08-15-review-aone-provider.md`。
+
 每次运行以一行机器可读的行结束（`Review complete: <target> — <disposition>`），因此脚本和 CI 包装器可以通过单个 `^Review complete: ` 匹配来检测完成和结果。
 
 ## 无头运行（`qwen review run`）
@@ -376,7 +396,7 @@ Medium 和 high-effort 审查还会保存一个具有相同文件名但扩展名
 `/review` 是交互式的。当脚本或 CI 作业需要运行审查并根据其结果采取行动时，请使用无头包装器：
 
 ```bash
-qwen review run [target] [--json] [--fail-on request-changes] [--comment] [--quiet]
+qwen review run [target] [--json] [--fail-on request-changes] [--comment] [--resume] [--quiet]
 ```
 
 `target` 是 PR 编号、PR URL 或文件路径；省略则审查本地工作树。该命令以非交互方式运行当前构建的 CLI（stdin 关闭，因此斜杠命令检测仍然有效），将子进程的进度流式输出到 **stderr**，并将结论打印到 **stdout**——或使用 `--json` 输出完整的结果对象。结论从 `compose-review` 写入的产物中读取（与 skill 视为结论权威的 JSON 相同），而非从模型的文本中解析。
@@ -390,6 +410,8 @@ qwen review run [target] [--json] [--fail-on request-changes] [--comment] [--qui
 | `3`  | 已完成且结论为 `REQUEST_CHANGES`，**并且**设置了 `--fail-on request-changes`（可选阻塞） |
 
 `3`（而非 `2`）让门控区分"审查在阻塞"和"工具出错"——yargs 已将 `1` 用于使用错误——无需解析任何输出。`--timeout-minutes`（默认 120，下限为 1）终止挂起的审查并退出 `1`，取消命令（Ctrl+C / SIGTERM）会终止审查的进程组而非使其成为孤儿。
+
+`--resume` 继续同一 PR 被中断的审查，而不是重新开始——当长时间的本地运行中途终止时（连接断开、超时、终端被终止），重试否则会重新获取、重新分 chunk 并重新启动那些工作已在磁盘上的 agent。在重试时无条件传递是安全的：`fetch-pr` 会判断磁盘上的状态本身（worktree 仍在获取的 SHA 处且干净、diff 字节未变、PR head 未移动、resume 限额未使用），并在任何内容不再匹配时静默回退到全新审查，因此该标志永远不会失败一个可以重新开始的运行。继续运行被固定在被中断运行记录的 effort——显式指定不同的 `--effort` 会拒绝 resume 并以请求的级别重新运行。仅适用于 PR 目标（本地审查的 diff 从活跃工作树捕获，没有稳定的中断状态可以继续）。Resume 是一个**本地便利功能**：仓库自身的 CI 审查工作流**不会** resume——每次重试都会全新运行，因为 CI 尝试运行 no-sandbox，其 worktree 在退出时被删除，没有中断状态可以继续。
 
 有时间预算的运行还可以导出**软**截止时间，以便审查在仍有时间进行验证、组合和发布时停止其开放式反向审计循环：`QWEN_REVIEW_DEADLINE_EPOCH` 是运行将被终止的 Unix 秒时刻，`QWEN_REVIEW_DEADLINE_RESERVE_SECONDS`（默认 3600；`0` 仅保留轮次估计）是为最后一轮的验证、`compose-review` 和提交保留的尾部时间。当剩余预算不足以容纳另一轮加上该尾部时，轮次构建器将拒绝构建，组合结论会披露截断的审计（否则为 Approve 的结论被上限为 Comment）。缺失或格式错误的截止时间会使审查不受门控——外部超时仍然限制运行。
 

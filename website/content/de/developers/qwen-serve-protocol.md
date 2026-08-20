@@ -201,6 +201,7 @@ Der Daemon bewirbt seine unterstützten Feature-Tags aus der Serve-Capability-Re
  'workspace_file_upload',
  'session_approval_mode_control', 'workspace_tool_toggle', 'workspace_skill_toggle',
  'workspace_skill_batch_toggle',
+ 'extension_batch_activation_v2',
  'workspace_settings', 'workspace_init', 'workspace_mcp_restart',
  'session_recap', 'session_generation', 'session_btw', 'session_shell_command',
  'mcp_workspace_pool', 'mcp_pool_restart',
@@ -213,7 +214,7 @@ Der Daemon bewirbt seine unterstützten Feature-Tags aus der Serve-Capability-Re
  'multi_workspace_session_shell', 'persistent_workspace_registration',
  'workspace_display_name',
  'workspace_qualified_rest_core', 'workspace_qualified_voice',
- 'workspace_qualified_memory', 'extension_management_v2',
+ 'workspace_qualified_memory', 'extension_management_v2', 'extension_git_credentials',
  'workspace_persisted_transcript',
  'workspace_session_export', 'workspace_archived_session_export',
  'workspace_session_live_state',
@@ -244,7 +245,7 @@ Der Daemon bewirbt seine unterstützten Feature-Tags aus der Serve-Capability-Re
 
 `workspace_archived_session_export` bewirbt `GET /workspaces/:workspace/session/:id/archive/export`, einen rein vertrauenswürdigen vollständigen Export aus dem archivierten persistierten Speicher des ausgewählten Workspaces. Er ist unabhängig von `workspace_session_export` und `workspace_qualified_rest_core`; Clients müssen dieses Tag direkt vorab prüfen. Eine eigene Route verhindert, dass ein älterer Daemon die Archiv-Absicht ignoriert und ein aktives Transkript mit derselben ID zurückgibt.
 
-`workspace_session_live_state` bewirbt `GET /workspaces/:workspace/sessions/live-state`, einen rein vertrauenswürdigen, speicherbasierten Snapshot der Live-Sessions der ausgewählten Workspace-Runtime plus eine speicherinterne Katalogversion, die Clients mitteilt, wann ein vollständiges persistiertes Katalog-Reload erforderlich ist. Er ist unabhängig von `workspace_qualified_rest_core`: Veröffentliche Daemons können die breitere Workspace-REST-Capability bewerben, ohne diese Route zu implementieren, daher müssen Clients dieses Tag direkt vorab prüfen. Das Tag ist bedingungslos, weil ein vertrauenswürdiger Single-Workspace-Primary die Route nach ID oder CWD verwenden kann; Pro-Workspace-Trust-Prüfungen gelten weiterhin bei jeder Anfrage, und die Route erweitert nicht die permissive Lese-Richtlinie für nicht vertrauenswürdige Secondaries auf den Live-Bridge-State.
+`workspace_session_live_state` bewirbt `GET /workspaces/:workspace/sessions/live-state`, einen rein vertrauenswürdigen, speicherbasierten Snapshot der Live-Sessions der ausgewählten Workspace-Runtime plus eine speicherinterne Katalogversion, die Clients mitteilt, wann ein vollständiges persistiertes Katalog-Reload erforderlich ist. Er ist unabhängig von `workspace_qualified_rest_core`: Veröffentliche Daemons können die breitere Workspace-REST-Capability bewerben, ohne diese Route zu implementieren, daher müssen Clients dieses Tag direkt vorab prüfen. Das Tag ist bedingungslos, weil ein vertrauenswürdiger Single-Workspace-Primary die Route nach ID oder CWD verwenden kann; Pro-Workspace-Trust-Prüfungen gelten weiterhin bei jeder Anfrage, und die Route erweitert nicht die permissive Lese-Richtlinie für nicht vertrauenswürdige Secondaries auf den Live-Bridge-State. Das Tag bedeutet, dass der Endpunkt existiert; es verspricht nicht, dass jedes Live-Element den optionalen `updatedAt`-Aktivitäts-Watermark trägt, der lebenszyklusabhängig ist.
 
 `slow_client_warning` deckt das SSE-Backpressure-Verhalten ab: (a) Der Daemon emittiert einen synthetischen `slow_client_warning`-Event-Stream-Frame, wenn der Live-Frame-Backlog oder der Live-Serialized-Byte-Backlog eines Subscribers 75 % Kapazität überschreitet, einmal pro Überlauf-Episode (wird wieder aktiviert, nachdem beide Messwerte unter 37,5 % abgefallen sind); (b) `GET /session/:id/events` akzeptiert einen `?maxQueued=N`-Query-Parameter (Bereich `[16, 2048]`), um den subscriberbezogenen Frame-Backlog für Cold-Reconnects gegen einen großen Replay-Ring vorzudimensionieren. Das Serialized-Byte-Limit liegt in der Verantwortung des Daemons (Standard **2 MiB** pro Subscriber), ist nur für Live-Daten gedacht und hat absichtlich keinen Query-Parameter. Die Daemon-weite Ringgröße wird durch `--event-ring-size` gesteuert (Standard **8000**, gemäß #3803 §02). Ältere Daemons unterstützen das Warnungs-/Query-Verhalten nicht und ignorieren es stillschweigend – prüfe dieses Tag vor der Aktivierung.
 
@@ -266,11 +267,11 @@ Der Daemon bewirbt seine unterstützten Feature-Tags aus der Serve-Capability-Re
 
 `session_lsp` bewirbt `GET /session/:id/lsp`, den schreibgeschützten strukturierten LSP-Status-Snapshot für Daemon-Clients. Ältere Daemons geben `404` zurück; prüfe dieses Tag, bevor du den Remote-LSP-Status bereitstellst.
 
-`session_status` bewirbt `GET /session/:id/status`, die Live-Bridge-Zusammenfassung für eine einzelne Session anhand der ID. Neben `clientCount` und `hasActivePrompt` legen Live-Sessions `isWaitingForPermission`, `isWaitingForUserQuestion`, `pendingInteractionCount` und einen beibehaltenen `turnError` nach einem fehlgeschlagenen Turn offen. Der Fehler wird gelöscht, wenn der nächste Prompt tatsächlich startet. Sowohl die Single-Session-Status-Antwort als auch Workspace-Session-Listen enthalten `turnError` und `pendingInteractions`: renderbereite Berechtigungsaktionen oder `ask_user_question`-Fragen plus die `requestId` und auswählbaren Optionen, die von den bestehenden Permission-Vote-Routen erforderlich sind. Jede Benutzerfrage hat einen `answerKey`; stimme mit `answers` ab, z. B. `{ "0": "Polling" }`, nach diesem Wert keyiert. Rein persistierte Sessions lassen Runtime-Zustand weg, da keine Runtime existiert. Ältere Daemons geben `404` zurück; prüfe dieses Tag, bevor du den Status einer einzelnen Session abfragst, anstatt die gesamte Session-Liste zu scannen.
+`session_status` bewirbt `GET /session/:id/status`, die Live-Bridge-Zusammenfassung für eine einzelne Session anhand der ID. Neben `clientCount` und `hasActivePrompt` legen Live-Sessions `isWaitingForPermission`, `isWaitingForUserQuestion`, `pendingInteractionCount` und einen beibehaltenen `turnError` nach einem fehlgeschlagenen Turn offen. Der Fehler wird gelöscht, wenn der nächste Prompt tatsächlich startet. Eine Live-Session, die einen laufenden Turn in der aktuellen Bridge abgeschlossen hat, trägt außerdem `updatedAt`, denselben Aktivitäts-Watermark, der unter der Live-State-Route dokumentiert ist; da diese Route die Bridge-Zusammenfassung direkt zurückgibt, wird der Wert nicht mit der persistierten Transkript-Mtime zusammengeführt und kann früher sein als der, den eine Session-Liste meldet. Sowohl die Single-Session-Status-Antwort als auch Workspace-Session-Listen enthalten `turnError` und `pendingInteractions`: renderbereite Berechtigungsaktionen oder `ask_user_question`-Fragen plus die `requestId` und auswählbaren Optionen, die von den bestehenden Permission-Vote-Routen erforderlich sind. Jede Benutzerfrage hat einen `answerKey`; stimme mit `answers` ab, z. B. `{ "0": "Polling" }`, nach diesem Wert keyiert. Rein persistierte Sessions lassen Runtime-Zustand weg, da keine Runtime existiert. Ältere Daemons geben `404` zurück; prüfe dieses Tag, bevor du den Status einer einzelnen Session abfragst, anstatt die gesamte Session-Liste zu scannen.
 
 `session_info` bewirbt `GET /workspace/:id/session-info` und seinen `/workspaces/:workspace/session-info`-Zwilling. Die Antwort aggregiert persistierte aktive und archivierte Session-Zahlen ohne Hydratierung von Listen-Metadaten. Sie ist ein expliziter O(n)-Disk-Scan und darf nicht gepollt werden; Clients sollten `truncated: true` als Untergrenze behandeln.
 
-`session_approval_mode_control`, `workspace_tool_toggle`, `workspace_skill_toggle`, `workspace_skill_batch_toggle`, `workspace_init` und `workspace_mcp_restart` bewerben die unten dokumentierten Mutations-Control-Routen. Sie sind streng durch das Mutations-Gate geschützt (ein Daemon, der ohne Bearer-Token konfiguriert ist, weist sie mit 401 `token_required` ab). Ältere Daemons geben `404` zurück; prüfe jedes Tag, bevor du die entsprechende Funktion bereitstellst.
+`session_approval_mode_control`, `workspace_tool_toggle`, `workspace_skill_toggle`, `workspace_skill_batch_toggle`, `extension_batch_activation_v2`, `workspace_init` und `workspace_mcp_restart` bewerben die unten dokumentierten Mutations-Control-Routen. Sie sind streng durch das Mutations-Gate geschützt (ein Daemon, der ohne Bearer-Token konfiguriert ist, weist sie mit 401 `token_required` ab). Ältere Daemons geben `404` zurück; prüfe jedes Tag, bevor du die entsprechende Funktion bereitstellst.
 
 `mcp_guardrails` (Issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 14) deckt die MCP-Budget-Oberfläche ab: die Felder `clientCount` / `clientBudget` / `budgetMode` / `budgets[]` bei `GET /workspace/mcp`, das Feld `disabledReason` in den Server-Zellen und die CLI-Flags `--mcp-client-budget` / `--mcp-budget-mode`. Ältere Daemons lassen die neuen Felder vollständig weg; SDK-Clients sollten dieses Tag prüfen, bevor sie sich auf die `budgets[]`-Semantik verlassen. Der Registry-Descriptor enthält außerdem `modes: ['warn', 'enforce']` für die zukünftige Bereitstellung von Feature-Modi – vorerst leiten Clients den Modus aus dem Feld `budgetMode` des Snapshots ab. Server-Ablehnungen im `enforce`-Modus sind deterministisch nach der Deklarationsreihenfolge von `Object.entries(mcpServers)`; eine zukünftige Scope-Precedence-Schicht (falls Qwen Code eine einführt) würde dies auf "niedrigste Priorität zuerst" umstellen, um die Konvention `plugin < user < project < local` von claude-code zu spiegeln.
 
@@ -296,6 +297,10 @@ Dasselbe Tag legt auch Workspace-qualifizierten Projekt-Agent-CRUD unter `/works
 
 `extension_management_v2` bewirbt einen User-Level-Extension-Katalog und eine Mutationsoberfläche unter `/extensions/*` sowie Workspace-Aktivierungs-Projektionen unter `/workspaces/:workspace/extensions/*`. Artefakte sind global; Workspace-Routen legen nur Projektions-Lesevorgänge, exakte Aktivierungs-Overrides und Runtime-Refresh offen. Lesevorgänge dürfen auf einen nicht vertrauenswürdigen registrierten Workspace zielen, während Aktivierung, Refresh und Workspace-scopige Installation ein vertrauenswürdiges Ziel erfordern. Langsame Mutationen verwenden daemon-lokale Vorgänge unter `/extensions/operations/:operationId`; Store-Generation, nicht Vorgangshistorie, ist maßgeblich über Neustarts und Daemons hinweg. Die veröffentlichte `workspace_extensions`-Capability und `/workspace/extensions/*`-Routen bleiben ein Primary-Workspace-Kompatibilitätsadapter. Clients müssen `extension_management_v2` vorab prüfen und dürfen es nicht vom Daemon-Modus oder `workspace_qualified_rest_core` ableiten.
 
+`extension_git_credentials` bewirbt authentifizierte HTTPS-Git-Installationen auf sowohl `POST /workspace/extensions/install` als auch `POST /extensions/install`. Clients müssen dieses Tag vorab prüfen, bevor sie URL-Userinfo oder `credentialPersistence` senden; ältere Daemons weisen URL-Anmeldedaten zurück. Das Tag beschreibt die Backend-Protokollunterstützung, nicht die Verfügbarkeit eines Keychains: Der gespeicherte Modus meldet das ausgewählte Backend im terminalen Operationsergebnis.
+
+`extension_batch_activation_v2` fügt `PUT /extensions/activation` und `PUT /workspaces/:workspace/extensions/activation` hinzu. Beide akzeptieren 1–100 Namen in `extensionNames`, deduplizieren sie case-insensitive unter Beibehaltung der Erstsehens-Reihenfolge, persistieren geänderte Ziele in einer Generation und geben einen einzigen `202`-Operations-Handle zurück. Ein Ziel muss nicht installiert sein, wenn `enabled` oder `disabled` gesetzt wird: Sein Name erzeugt eine Desired-State-Deklaration, die erhalten bleibt, wenn eine Extension mit diesem Namen installiert wird. Die globale Route akzeptiert `state: "enabled" | "disabled"`, schreibt V2-`defaultActivation` und reconciliert jede registrierte Runtime. Die Workspace-Route akzeptiert außerdem `"inherit"`, wendet exakte Overrides für die ausgewählte vertrauenswürdige Runtime an oder löscht sie und reconciliert nur diese Runtime. `inherit` deklariert keinen unbekannten Namen; ein Clear mit nur unbekannten Namen meldet `updated: false` und überspringt die reconciliation. Singuläre Aktivierungsrouten bleiben install-only und ID-adressiert.
+
 ### Extension Management V2 Wire-Contract
 
 Alle Routen verwenden die oben beschriebenen Bearer-Authentifizierungsregeln des Daemons. `X-Qwen-Client-Id` ist für die V2-Mutationsrouten optional; wenn angegeben, muss es einen Client identifizieren, der bei einer der Workspace-Runtimes des Mutationsziels registriert ist. `:extensionId` ist die 64-Hex-Extension-Identität in Kleinbuchstaben. `:workspace` wird zuerst als exakte Workspace-ID aufgelöst und andernfalls als URL-kodiertes absolutes CWD nach Kanonisierung.
@@ -303,6 +308,7 @@ Alle Routen verwenden die oben beschriebenen Bearer-Authentifizierungsregeln des
 | Methode und Pfad                                                     | Erfolg                                                                      |
 | -------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | `GET /extensions`                                                    | `200` globaler Artefaktkatalog                                              |
+| `PUT /extensions/activation`                                         | `202` globale Standard-Aktivierungs-Batch-Operation                         |
 | `PUT /extensions/:extensionId/activation`                            | `202` globale Standard-Aktivierungs-Operation                               |
 | `POST /extensions/install`                                           | `202` Installations-Operation                                               |
 | `POST /extensions/check-updates`                                     | `202` Update-Check-Operation                                                |
@@ -310,6 +316,7 @@ Alle Routen verwenden die oben beschriebenen Bearer-Authentifizierungsregeln des
 | `DELETE /extensions/:extensionId`                                    | `202` Deinstallations-Operation oder idempotentes `204` wenn die Extension fehlt |
 | `GET /extensions/operations/:operationId`                            | `200` Operations-Snapshot                                                   |
 | `GET /workspaces/:workspace/extensions`                              | `200` Workspace-Aktivierungs-Projektion                                     |
+| `PUT /workspaces/:workspace/extensions/activation`                   | `202` exakte Workspace-Aktivierungs-Batch-Operation                         |
 | `PUT /workspaces/:workspace/extensions/:extensionId/activation`      | `202` exakte Workspace-Aktivierungs-Operation                               |
 | `DELETE /workspaces/:workspace/extensions/:extensionId/activation`   | `202` Clear-Override-Operation                                              |
 | `POST /workspaces/:workspace/extensions/refresh`                     | `202` Runtime-Refresh-Operation                                             |
@@ -377,6 +384,10 @@ Die Installation erfordert explizite Zustimmung und eine initiale Aktivierung:
 
 Für eine rein Workspace-initiale Aktivierung verwende `{ "scope": "workspace", "workspaceId": "target-workspace-id" }`; das Ziel muss existieren und vertrauenswürdig sein. Daemon-Installationen akzeptieren GitHub-, Git- und npm-Quellen. `ref` gilt nicht für npm, und `registry` gilt nur für npm. `ref`, `autoUpdate`, `allowPreRelease` und `registry` sind optional.
 
+Wenn `extension_git_credentials` beworben wird, darf eine HTTPS-Git-Quelle Userinfo enthalten, zum Beispiel `https://username:token@git.example.com/org/repository.git`. `credentialPersistence` ist nur mit einer solchen Quelle gültig. Es ist `stored` oder `one_time` und standardmäßig `one_time`, wenn weggelassen. Der gespeicherte Modus speichert die Anmeldedaten über den hybriden Secret-Speicher des Daemons und behält nur die saubere Repository-URL in den Installationsmetadaten, sodass die Extension aktualisierbar bleibt. Der Einmal-Modus speichert weder die Repository-URL noch die Anmeldedaten und erstellt einen nicht aktualisierbaren `snapshot`; `autoUpdate: true` wird für diesen Modus abgelehnt. Die Angabe des Felds ohne URL-Anmeldedaten, die Angabe ungültiger Anmeldedaten oder die Verwendung von Anmeldedaten mit npm-, Archiv-, lokalen-, SSH- oder Nicht-Git-Quellen gibt `400` zurück.
+
+Installationsantworten und -operationen mit Anmeldedaten legen `credentialPersistence` offen und können `credentialStorage` als `keychain` oder `encrypted_file` offenlegen. Einmal-Operationen lassen `source` weg; gespeicherte Operationen können die saubere Quelle zurückgeben. Snapshot-Katalog-/Statuseinträge lassen die Quelle weg, setzen `credentialPersistence` auf `one_time` und melden `not updatable`. Update schlägt mit `extension_not_updatable` fehl; ein nicht verfügbarer gespeicherter Secret schlägt vor dem Netzwerkzugriff mit `extension_credential_unavailable` fehl.
+
 Globale und Workspace-Aktivierungs-`PUT`-Anfragen verwenden denselben Body:
 
 ```json
@@ -384,6 +395,17 @@ Globale und Workspace-Aktivierungs-`PUT`-Anfragen verwenden denselben Body:
 ```
 
 `state` ist `enabled` oder `disabled`. Update-, Deinstallations-, Check-Updates-, Clear-Activation- und Refresh-Anfragen haben keinen erforderlichen Body.
+
+Batch-Aktivierungsanfragen verwenden Extension-Namen:
+
+```json
+{
+  "extensionNames": ["formatter", "review-tools"],
+  "state": "disabled"
+}
+```
+
+Der Workspace-Batch akzeptiert außerdem `"state": "inherit"`. Terminale globale Ergebnisse enthalten `name` und `defaultActivation`; Workspace-Ergebnisse enthalten `name`, `workspaceActivation` (`null` für inherit) und `effectiveActivation`. Fehlerhafte Namen weisen die Anfrage ab; Konflikte mit bestehenden Store-Identitäten schlagen atomar ohne partiellen Commit fehl. Ein unbekanntes `inherit`-Ziel wird nicht persistiert, da das Löschen eines Overrides keine Default-Activation-Deklaration erzeugen oder eine spätere Installations-Zustimmung ersetzen darf.
 
 Jede akzeptierte asynchrone Mutation gibt Folgendes zurück:
 

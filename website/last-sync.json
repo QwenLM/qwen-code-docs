@@ -1,6 +1,6 @@
 {
-  "commit": "39fc769d3a49a883d250914d8f705b6b3735720c",
-  "timestamp": "2026-08-19T21:12:17.987Z",
+  "commit": "5715782279938080ee664004db4b93ae19231384",
+  "timestamp": "2026-08-20T20:47:10.476Z",
   "files": {
     "docs/design/2026-05-15-async-memory-recall-design.md": {
       "langs": {
@@ -1619,7 +1619,7 @@
     },
     "docs/users/configuration/settings.md": {
       "langs": {
-        "zh": "42c2ca106445e9c923f96f6a2f897be017cf11b89b42b640090c26894dfd0f4c",
+        "zh": "6d5c50b9e5ba93153a527d732cab697f2b5f8c5136226316034940944b7d1259",
         "fr": "6d5c50b9e5ba93153a527d732cab697f2b5f8c5136226316034940944b7d1259",
         "ja": "6d5c50b9e5ba93153a527d732cab697f2b5f8c5136226316034940944b7d1259",
         "pt-BR": "6d5c50b9e5ba93153a527d732cab697f2b5f8c5136226316034940944b7d1259",
@@ -1652,13 +1652,13 @@
     },
     "docs/users/features/channels/dingtalk.md": {
       "langs": {
-        "zh": "3c3e2938ea21f2c2ffe3062d34a8285547d695d773e873a4f791f67a085c96d4",
-        "fr": "3c3e2938ea21f2c2ffe3062d34a8285547d695d773e873a4f791f67a085c96d4",
-        "ja": "3c3e2938ea21f2c2ffe3062d34a8285547d695d773e873a4f791f67a085c96d4",
-        "ru": "3c3e2938ea21f2c2ffe3062d34a8285547d695d773e873a4f791f67a085c96d4",
-        "pt-BR": "3c3e2938ea21f2c2ffe3062d34a8285547d695d773e873a4f791f67a085c96d4",
-        "de": "3c3e2938ea21f2c2ffe3062d34a8285547d695d773e873a4f791f67a085c96d4",
-        "ko": "3c3e2938ea21f2c2ffe3062d34a8285547d695d773e873a4f791f67a085c96d4"
+        "zh": "49956f9593ccce8f9a64dd22ad5c6c708b29899d13cb57aef7f28d3556467d2f",
+        "fr": "49956f9593ccce8f9a64dd22ad5c6c708b29899d13cb57aef7f28d3556467d2f",
+        "ja": "49956f9593ccce8f9a64dd22ad5c6c708b29899d13cb57aef7f28d3556467d2f",
+        "ru": "49956f9593ccce8f9a64dd22ad5c6c708b29899d13cb57aef7f28d3556467d2f",
+        "pt-BR": "49956f9593ccce8f9a64dd22ad5c6c708b29899d13cb57aef7f28d3556467d2f",
+        "de": "49956f9593ccce8f9a64dd22ad5c6c708b29899d13cb57aef7f28d3556467d2f",
+        "ko": "49956f9593ccce8f9a64dd22ad5c6c708b29899d13cb57aef7f28d3556467d2f"
       }
     },
     "docs/users/features/channels/plugins.md": {
@@ -1850,13 +1850,13 @@
     },
     "docs/users/features/code-review.md": {
       "langs": {
-        "fr": "72e2ff81b6389893f5b720f63c40d5303bc34dd1f22b8f41705c8e52ecdec440",
-        "ja": "72e2ff81b6389893f5b720f63c40d5303bc34dd1f22b8f41705c8e52ecdec440",
-        "ru": "72e2ff81b6389893f5b720f63c40d5303bc34dd1f22b8f41705c8e52ecdec440",
-        "pt-BR": "72e2ff81b6389893f5b720f63c40d5303bc34dd1f22b8f41705c8e52ecdec440",
-        "zh": "dc9a4a1349a596aa381c23bbaf57ff93905da8d3fb9691092cc89918878eb9b2",
-        "de": "72e2ff81b6389893f5b720f63c40d5303bc34dd1f22b8f41705c8e52ecdec440",
-        "ko": "72e2ff81b6389893f5b720f63c40d5303bc34dd1f22b8f41705c8e52ecdec440"
+        "fr": "df3593ac941017b8fdf223dcadef810feab28ad3fed3cc196702fcf6ee09760d",
+        "ja": "df3593ac941017b8fdf223dcadef810feab28ad3fed3cc196702fcf6ee09760d",
+        "ru": "df3593ac941017b8fdf223dcadef810feab28ad3fed3cc196702fcf6ee09760d",
+        "pt-BR": "df3593ac941017b8fdf223dcadef810feab28ad3fed3cc196702fcf6ee09760d",
+        "zh": "df3593ac941017b8fdf223dcadef810feab28ad3fed3cc196702fcf6ee09760d",
+        "de": "df3593ac941017b8fdf223dcadef810feab28ad3fed3cc196702fcf6ee09760d",
+        "ko": "df3593ac941017b8fdf223dcadef810feab28ad3fed3cc196702fcf6ee09760d"
       }
     },
     "docs/users/features/commands.md": {
@@ -2028,7 +2028,7 @@
       "langs": {
         "ru": "97bc89b5f1afee5f69a73671340f6cb815da87948f38eb126a13576470ad656c",
         "pt-BR": "97bc89b5f1afee5f69a73671340f6cb815da87948f38eb126a13576470ad656c",
-        "de": "fe7a97918b1e4717c86f6982acac8b4b380470324b5a87d807e7a43172a36e60",
+        "de": "97bc89b5f1afee5f69a73671340f6cb815da87948f38eb126a13576470ad656c",
         "zh": "178f8939fd85f9fd0270b96e79c9b51c21fb6804199f860f2c06c9161805c94d",
         "fr": "97bc89b5f1afee5f69a73671340f6cb815da87948f38eb126a13576470ad656c",
         "ja": "97bc89b5f1afee5f69a73671340f6cb815da87948f38eb126a13576470ad656c",

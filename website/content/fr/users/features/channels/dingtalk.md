@@ -184,7 +184,7 @@ Vous pouvez envoyer des photos et des documents au bot, pas seulement du texte.
 
 - **Utilisez des instructions adaptées au markdown DingTalk** — DingTalk prend en charge les en-têtes, le texte en gras, les liens, les blocs de code et les tableaux. Gardez les tableaux compacts car les écrans étroits peuvent défiler horizontalement.
 - **Restreignez l'accès** — Dans un contexte organisationnel, `senderPolicy: "open"` peut être acceptable. Pour un contrôle plus strict, utilisez `"allowlist"` ou `"pairing"`. Consultez [Appairage DM](./overview#dm-pairing) pour plus de détails.
-- **Messages cités** — Citer (répondre à) un message utilisateur inclut le texte cité comme contexte pour l'agent. Citer les réponses du bot n'est pas encore pris en charge.
+- **Messages cités** — Citer (répondre à) un message utilisateur inclut le texte cité comme contexte pour l'agent. Si le message cité est une image, un fichier, un audio ou une vidéo, le bot le télécharge et le joint de la même manière que lorsqu'il est envoyé directement. Citer les réponses du bot n'est pas encore pris en charge.
 
 ## Dépannage
 

@@ -186,7 +186,7 @@ Você pode enviar fotos e documentos para o bot, não apenas texto.
 
 - **Use instruções que considerem o markdown do DingTalk** — O DingTalk suporta cabeçalhos, negrito, links, blocos de código e tabelas. Mantenha as tabelas compactas porque telas estreitas podem rolar horizontalmente.
 - **Restrinja o acesso** — Em um contexto organizacional, `senderPolicy: "open"` pode ser aceitável. Para um controle mais rigoroso, use `"allowlist"` ou `"pairing"`. Consulte [Emparelhamento DM](./overview#dm-pairing) para detalhes.
-- **Mensagens referenciadas** — Citar (responder a) uma mensagem de usuário inclui o texto citado como contexto para o agente. Citar respostas do bot ainda não é suportado.
+- **Mensagens referenciadas** — Citar (responder a) uma mensagem de usuário inclui o texto citado como contexto para o agente. Se a mensagem citada for uma imagem, arquivo, áudio ou vídeo, o bot a baixa e anexa da mesma forma que quando enviada diretamente. Citar respostas do bot ainda não é suportado.
 
 ## Solução de Problemas
 

@@ -182,7 +182,7 @@ Du kannst Fotos und Dokumente an den Bot senden, nicht nur Text.
 
 - **Verwende DingTalk-Markdown-bewusste Anweisungen** – DingTalk unterstützt Überschriften, Fettdruck, Links, Codeblöcke und Tabellen. Halte Tabellen kompakt, da schmale Bildschirme horizontal scrollen können.
 - **Zugriff einschränken** – In einem Organisationskontext kann `senderPolicy: "open"` akzeptabel sein. Für strengere Kontrolle verwende `"allowlist"` oder `"pairing"`. Details findest du unter [DM Pairing](./overview#dm-pairing).
-- **Referenzierte Nachrichten** – Das Zitieren (Antworten auf) einer Benutzernachricht fügt den zitierten Text als Kontext für den Agenten hinzu. Das Zitieren von Bot-Antworten wird noch nicht unterstützt.
+- **Referenzierte Nachrichten** – Das Zitieren (Antworten auf) einer Benutzernachricht fügt den zitierten Text als Kontext für den Agenten hinzu. Wenn die zitierte Nachricht ein Bild, eine Datei, eine Audio- oder Videonachricht ist, lädt der Bot sie herunter und fügt sie auf dieselbe Weise bei wie bei direktem Senden. Das Zitieren von Bot-Antworten wird noch nicht unterstützt.
 
 ## Fehlerbehebung
 

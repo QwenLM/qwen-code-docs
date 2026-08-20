@@ -110,7 +110,7 @@ Qwen Code 会自动将旧版配置设置迁移到新格式。旧设置文件会�
 
 | 设置 | 类型 | 描述 | 默认值 |
 | --- | --- | --- | --- |
-| `review.attribution` | boolean | 在 `/review` 发布的审查正文和行内评论末尾追加归属脚注，注明模型和 CLI 版本（例如 _— qwen3-coder via Qwen Code /review (v0.21.2)_）。禁用此选项可在不附带 AI 归属的情况下发布审查。关闭脚注后，提交前的重复检测仍然能识别同一 GitHub 账号的早期发布，但来自其他账号的无脚注发布将无法被识别。 | `true` |
+| `review.attribution` | boolean | 在 `/review` 发布的审查正文和行内评论末尾追加归属脚注，注明模型和 CLI 版本（例如 `_— qwen3-coder via Qwen Code /review (v0.21.2)_`）。禁用此选项可在不附带 AI 归属的情况下发布审查：脚注会被省略，发布的评论和正文列表会失去 `**[Critical]**`/`**[Suggestion]**` 标记。这些帖子在原始源码中仍然可识别：每个携带一个不可见的严重级别标记（`<!-- qwen-review critical -->`），审查正文携带一个账本标记（`<!-- qwen-review-ledger ... -->`）——任何读取评论正文的内容（GitHub API 自动化、与此设置耦合的工作流）仍然能识别 `/review` 产物，提交前重复检测通过严重级别标记识别审查账号的早期帖子，但来自其他账号的无归属帖子无法被识别。另一个后果：qwen-autofix 的 Critical-only 模式（在第 5 轮之后启用，或当计数窗口的 diff 增长预算触发时更早启用）不再将已发布的发现识别为 Critical 并延迟它们。禁用还会从嵌入审查正文的 machine-ledger 标记中隐去模型，因此在全新环境中（CI、另一个克隆——任何没有审查缓存的地方）从上次发布的审查恢复的增量锚点无法通过同模型检查，重新审查会回退到全量范围。 | `true` |
 | `review.effort` | enum | 未指定 `--effort` 时 `/review` 的默认 effort：`"low"`、`"medium"`、`"high"` 或 `"auto"`（内置规则：PR 为 high，本地变更为 medium）。显式的 `--effort` 优先；有效的 `--comment` 仍然强制 high，`--fix` 仍然将下限设为 medium。 | `"auto"` |
 | `review.comment` | boolean | 将每次 PR `/review` 视为传入了 `--comment`：无需该标志即可将发现发布到 pull request。发布仍然绑定到调用中指定的 PR。仅当你始终希望发布审查时才启用。 | `false` |
 | `review.severityFloor` | enum | 未指定 `--severity-floor` 时 PR `/review` 发布的最低严重级别：`"auto"`（轮次自适应默认值——建议通过第 5 轮发布，从第 6 轮起仅发布 Critical，否则可发布的高置信度建议会被记录并延迟，第 2-5 轮延迟自上一轮以来未更改的代码上的新建议；低置信度和 Nice-to-have 的发现仅限终端），`"critical"`（从第 1 轮开始采用该策略），或 `"suggestion"`（每轮都发布建议；关闭收敛策略）。非 PR 目标没有轮次，会忽略此设置。 | `"auto"` |

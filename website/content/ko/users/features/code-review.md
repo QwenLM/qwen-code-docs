@@ -151,6 +151,7 @@ PR을 리뷰할 때, `/review`는 현재 브랜치를 전환하는 대신 임시
 - 리뷰가 중단되면(Ctrl+C, 크래시), 같은 PR의 다음 `/review`가 오래된 worktree를 자동으로 정리하고 새로 시작합니다. 중단된 세션이 여전히 리스를 남긴 경우(이를 건너뛰는 하드 킬 또는 이후 프롬프트 중에 중단된 멀티 프롬프트 리뷰) `/review`가 거부하고 삭제할 리스 파일을 이름으로 지정합니다. 정상 중지는 이를 해제합니다: 완료된 리뷰와 조기 중지(empty diff, 마지막 리뷰 이후 새 변경 없음)는 모두 `cleanup`을 실행하여 리스를 해제합니다
 - worktree는 세션에 리스됩니다: 이미 리뷰 중인 PR의 두 번째 `/review`는 실행 중인 리뷰의 worktree를 철거하는 대신 시작을 거부합니다(보유자를 이름으로 지정)
 - 리뷰 보고서와 캐시는 메인 프로젝트 디렉토리에 저장됩니다(worktree가 아님)
+- 코드를 **수정하여** 무언가를 측정하는 단계 — 테스트 효율성 프로브의 뮤탄트와 검증자의 특정 발견 프로브 — 는 각각 옆의 자체 일회용 worktree(`…-probe`, `…-scratch-<agent>`)에서 실행되므로, 한 에이전트의 실험이 공유 트리를 읽는 다른 에이전트에게 보이지 않습니다. 안전장치로, 각 웨이브의 모든 에이전트에게 시작 시점에 리뷰 중인 커밋과 다른 경로(있는 경우)가 무엇인지, 그리고 해당 경로에만 국한된 실패는 발견이 아님을 알려줍니다. 이러한 모든 트리는 리뷰 종료 시 worktree와 함께 정리됩니다.
 
 ## 교차 저장소 PR 리뷰
 
@@ -249,11 +250,7 @@ PR을 리뷰할 때, `/review`는 현재 브랜치를 전환하는 대신 임시
 
 ## PR 댓글의 증거 이미지
 
-GitHub의 API는 리뷰 댓글에 이미지를 첨부할 수 없으므로, `/review`는 증거 이미지(TUI 스크린샷, 렌더링 출력 비교)를 지정된 저장소에서 호스팅하고 URL로 삽입할 수 있습니다.
-
-에셋 저장소는 PR이 병합되거나 닫힐 때 자동으로 정리되는 전용 GitHub 저장소입니다. 리뷰는 이미지 참조를 **커밋 고정** URL로 작성합니다 — 브랜치가 나중에 이동해도 불변이며, GitHub Enterprise에서도 변경 없이 작동합니다.
-
-에셋 저장소를 구성하려면:
+GitHub의 API는 리뷰 댓글에 이미지를 첨부할 수 없으므로, `/review`는 증거 이미지(TUI 스크린샷, 렌더링 출력 비교)를 지정된 저장소에서 호스팅하고 URL로 삽입할 수 있습니다:
 
 ```bash
 export QWEN_REVIEW_ASSETS_REPO=your-org/your-repo   # push할 수 있는 저장소
@@ -385,7 +382,7 @@ Medium 및 High 노력 리뷰는 또한 같은 스템을 가진 구조화된 JSO
 
 **GitHub Enterprise:** `github.com`이 아닌 호스트의 PR URL을 리뷰하면 해당 호스트의 모든 GitHub 호출이 라우팅됩니다 — 리뷰 서브커맨드(`match-remote`, `meta`, `fetch-pr`, `pr-context`, `comment-status`, `issue-context`, `fetch-diff`, `comment-body`, `plan-diff`, `test-plan`, `presubmit`, `compose-review`, `submit`, `publish-assets`)가 `--host`를 수용하고 코드에서 설정하므로, 잊힌 호스트가 조용히 `github.com`으로 리뷰를 재타겟팅할 수 없습니다.
 
-**Aone Code:** origin이 `gitlab.alibaba-inc.com`에 있는 클론의 경우, 해당 클론 내부에서 `/review`를 실행하세요 — 플랫폼이 원격에서 감지되고 읽기 서브커맨드가 `a1` CLI를 기반으로 동작하며, 대상 번호는 전역 MR id입니다. `fetch-pr`이 `refs/merge-requests/<id>/head`를 가져오고 worktree + diff를 구축하므로 worktree의 에이전트 리뷰는 동일하게 유지됩니다. 이 단계에서 모든 Aone 실행은 컨텍스트를 사용할 수 없으며 여러 흐름이 건너뛰어집니다(github.com의 동일 이름 저장소에 도달하는 대신): `pr-context`/`comment-status`/`presubmit`은 Aone 백킹이 없고(판정이 `COMMENT`로 제한), `test-plan`은 백킹이 없으며, 에이전트 0이 건너뛰어지고 `publish-assets` 쓰기가 건너뛰어집니다 — `--comment`도 거부되므로 이 단계에서 Aone 실행은 플랫폼에 대해 읽기 전용입니다; 발견은 터미널 출력과 저장된 보고서에 기록됩니다. `docs/design/2026-08-15-review-aone-provider.md`를 참조하세요.
+**Aone Code:** origin이 `gitlab.alibaba-inc.com`에 있는 클론의 경우, 해당 클론 내부에서 `/review`를 실행하세요 — 플랫폼이 원격에서 감지되고 서브커맨드가 `a1` CLI를 기반으로 동작하며, 대상 번호는 전역 MR id입니다. `fetch-pr`이 `refs/merge-requests/<id>/head`를 가져오고 worktree + diff를 구축하므로 worktree의 에이전트 리뷰는 동일하게 유지됩니다. 모든 Aone 실행은 컨텍스트를 사용할 수 없으며 여러 흐름이 건너뛰어집니다(github.com의 동일 이름 저장소에 도달하는 대신): `pr-context`/`comment-status`/`presubmit`은 Aone 백킹이 없고(판정이 `COMMENT`로 제한), `test-plan`은 백킹이 없으며, 에이전트 0이 건너뛰어지고 `publish-assets` 쓰기가 건너뛰어집니다. `--comment`는 `a1` CLI를 통해 리뷰를 **게시**합니다: 인라인 발견당 하나의 댓글, 그 다음 요약 댓글. Aone에는 네이티브 request-changes 상태가 없습니다 — 해당 판정에서 요약 댓글에 차단 헤더가 포함되며, 실제로 게시된 인라인 Critical은 토론이 해결되지 않는 한 토론 게이트를 통해 병합을 차단합니다(인라인 Critical이 게시되지 않으면 헤더는 참고용이며 기계적으로 병합을 차단하지 않습니다). 네이티브 `a1 repo mr approve`는 Approve 판정에 연결되어 있지만 이 단계에서는 실행되지 않습니다: 컨텍스트 사용 불가 캡이 모든 Aone 판정을 Comment로 유지합니다. 반복 라운드에 대한 두 가지 주의 사항: 아직 중복 제거 백킹이 없으므로 두 번째 `--comment` 라운드는 여전히 유효한 모든 발견을 새 댓글로 다시 게시하며, 자체 PR 감지는 Aone 백킹이 없습니다. `docs/design/2026-08-15-review-aone-provider.md`를 참조하세요.
 
 모든 실행은 하나의 기계 판독 가능한 라인(`Review complete: <target> — <disposition>`)으로 끝나므로, 스크립트와 CI 래퍼가 단일 `^Review complete: ` 매치로 완료와 결과를 감지할 수 있습니다.
 
@@ -414,10 +411,6 @@ qwen review run [target] [--json] [--fail-on request-changes] [--comment] [--res
 시간 예산 실행은 또한 **소프트** 마감 시간을 내보낼 수 있어 리뷰가 아직 검증, 합성 및 게시할 시간이 있는 동안 오픈 엔디드 역감사 루프를 중지합니다: `QWEN_REVIEW_DEADLINE_EPOCH`는 실행이 종료될 Unix-초 순간이며, `QWEN_REVIEW_DEADLINE_RESERVE_SECONDS`(기본 3600; `0`은 라운드 추정만 유지)는 마지막 라운드의 검증, `compose-review` 및 제출을 위해 남아 있어야 하는 꼬리입니다. 남은 예산이 또 다른 라운드와 해당 꼬리에 맞지 않으면, 라운드 빌더가 구축을 거부하고, 합성 판정은 잘린 감사를 공개합니다(그렇지 않으면-Approve 판정이 Comment로 제한됨). 누락되거나 잘못된 마감 시간은 리뷰를 게이트 없이 둡니다 — 외부 타임아웃이 여전히 실행을 제한합니다.
 
 그 reserve 안에 더 작은 **합성 바닥**인 `QWEN_REVIEW_DEADLINE_COMPOSE_FLOOR_SECONDS`(기본 1200; `0`은 이 게이트를 완전히 비활성화)가 있습니다. reserve는 "마지막 라운드 검증 **및** 합성 **및** 제출"을 커버하는 하나의 숫자이며, 일반적인 발견당 재추적에는 충분하지만 검증이 실제 파일시스템/git 작업을 무제한으로 재실행하는 보안 리뷰에는 부족합니다. 따라서 검증자 — 라운드 빌더가 아닌 — 가 이 바닥으로 게이팅됩니다: 바닥 이하가 남으면 `agent-prompt --role verify`는 구축을 거부하고(`VERIFY BUDGET:` 라인, 종료 **4**), 손에 있는 발견은 미검증 태그를 유지하며(이는 판정을 제한), `compose-review`와 제출이 실행됩니다. 바닥은 reserve보다 엄격히 아래에 있으므로 건강한 실행은 역감사 게이트에 먼저 도달하고 이곳까지 도달하지 않습니다; reserve가 바인딩할 수 없는 구간을 위한 보호막입니다.
-
-**이미 기본 트리에서 실패한 Critical은 유보되며 제출되지 않습니다.** 테스트 명령이 실패했고 병합 베이스를 빌드할 수 있을 때, `test-delta`는 실패하는 파일 중 pull request 없이도 실패하는 파일을 기록합니다. 표준화는 해당 측정을 다시 읽습니다(`qwen review findings --test-delta`, `--outcomes` 옆에): 자신의 텍스트가 해당 파일 중 하나를 이름으로 언급하는 Critical은 Suggestion으로 낮아지고, 증거를 유지하며, 이를 강등한 측정과 `heldByMeasurement` 필드를 얻고, 강등이 공지됩니다. 이미 빨간색이었던 테스트는 이 pull request가 빨간색으로 만드는 테스트가 아닙니다 — 그리고 만약 _새로운_ 이유로 실패한다면, 어떤 테스트인지 말하고 양쪽을 인용하고 다시 Critical로 제출하세요: 이미 측정을 가지고 있더라도 상승되는 발견은 그대로 둡니다.
-
-명령은 쓰기 시 유효성을 검사합니다: 중복 id, 실패 시나리오가 없는 발견, 빈 locations 배열 또는 알 수 없는 심각도는 조용히 망가진 항목이 아닌 오류입니다.
 
 ## 교차 파일 영향 분석
 
