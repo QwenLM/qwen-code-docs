@@ -1,5 +1,3 @@
----
-
 # WeCom (Enterprise WeChat)
 
 Dieser Leitfaden behandelt die Einrichtung von Qwen Code mit einem intelligenten WeCom-Roboter (企业微信智能机器人).

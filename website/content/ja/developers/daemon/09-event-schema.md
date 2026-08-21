@@ -1,5 +1,3 @@
----
-
 # Typed Daemon Event Schema v1
 
 ## 概要
