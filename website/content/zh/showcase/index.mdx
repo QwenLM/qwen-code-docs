@@ -2413,6 +2413,36 @@ export const showcaseItems = [
       { title: "直接用", description: "包里的技能和 MCP 服务器在会话里立即可用，无需额外配置。" },
     ],
   },
+  // === 8月20日周报演示 ===
+  {
+    id: "advisor-independent-review",
+    title: "思路卡住时，让另一个 AI 独立评审全对话",
+    description: "`/advisor` 给当前对话派一个只读旁路会话，通读全部上下文，给出结论、风险、缺的证据、建议四项，不动主对话。",
+    category: "编程开发",
+    features: ["Agent 模式"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01x6UkJeTG4kD7nOLI_!!6000000004249-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "对话跑长了容易困在一条思路里，自己上下文里的盲区很难察觉。`/advisor` 给当前对话请一个独立的第二意见：一个只读旁路会话通读全部上下文，给出结论、风险、缺的证据、建议四项。全程不改主对话、不执行任何动作，评审完对话照常继续。可以带着关注点问，比如 `/advisor 这个方案安全吗`，也能指定专门的评审模型。",
+    steps: [
+      { title: "输入 /advisor", description: "在对话里输入 `/advisor`，可以带上你关心的关注点。", command: "/advisor 这个方案安全吗" },
+      { title: "独立评审返回四项", description: "只读旁路会话通读全部上下文，给出结论、风险、缺的证据、建议，全程不碰主对话。" },
+    ],
+  },
+  {
+    id: "sessions-ps-running-list",
+    title: "一条命令，看清哪些会话还在跑",
+    description: "`qwen sessions ps` 列出本机正在跑的所有会话：会话名、进程号、运行时长、所在目录，一行一个，加 `--json` 还能接脚本。",
+    category: "编程开发",
+    features: ["终端操作"],
+    thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01edM2ef0oKxI7nOLI_!!6000000005536-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "同时开着好几个 Qwen Code 会话，很容易搞不清哪个是哪个。`qwen sessions ps` 命令列出本机当前正在运行的所有交互式会话，一行一个：会话名、进程号、运行时长、所在目录。列出来的都是真正在跑的——关掉一个会话，它立刻从列表里消失。要接脚本的话，加 `--json` 就行。",
+    steps: [
+      { title: "一条命令列出在跑的会话", description: "在终端运行 `qwen sessions ps`，本机正在跑的交互式会话一行一个，带会话名、进程号、运行时长和目录。", command: "qwen sessions ps" },
+    ],
+  },
 ]
 
 

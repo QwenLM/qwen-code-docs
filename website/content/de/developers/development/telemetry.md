@@ -1,5 +1,3 @@
----
-
 # Observability mit OpenTelemetry
 
 Erfahre, wie du OpenTelemetry für Qwen Code aktivierst und einrichtest.

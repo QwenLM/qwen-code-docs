@@ -1,5 +1,3 @@
----
-
 # MCP를 통해 Qwen Code를 도구에 연결하기
 
 Qwen Code는 [모델 컨텍스트 프로토콜(Model Context Protocol, MCP)](https://modelcontextprotocol.io/introduction)을 통해 외부 도구 및 데이터 소스에 연결할 수 있습니다. MCP 서버는 Qwen Code에 도구, 데이터베이스, API에 대한 접근 권한을 제공합니다.

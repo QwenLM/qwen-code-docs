@@ -2413,6 +2413,36 @@ export const showcaseItems = [
       { title: "Sofort nutzen", description: "Skills und MCP-Server aus dem Paket sind in der Sitzung sofort verfügbar – ganz ohne Zusatzkonfiguration." },
     ],
   },
+  // === 20.8. Weekly-Demos ===
+  {
+    id: "advisor-independent-review",
+    title: "Festgefahren? Eine zweite KI prüft die ganze Konversation",
+    description: "`/advisor` stellt der aktuellen Konversation eine Read-only-Zweitsitzung zur Seite: Sie liest den kompletten Kontext und liefert Fazit, Risiken, fehlende Belege und Empfehlungen – ohne den Hauptdialog anzufassen.",
+    category: "Entwicklung",
+    features: ["Agent-Modus"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01x6UkJeTG4kD7nOLI_!!6000000004249-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "Läuft eine Konversation lange, steckt man schnell in einer einzigen Denkschiene fest – blinde Flecken im eigenen Kontext fallen kaum auf. `/advisor` holt eine unabhängige zweite Meinung dazu: Eine Read-only-Zweitsitzung liest den kompletten Kontext und liefert vier Dinge – Fazit, Risiken, fehlende Belege und Empfehlungen. Der Hauptdialog wird dabei weder verändert, noch werden Aktionen ausgeführt; nach dem Review geht alles einfach weiter. Du kannst einen Fokus mitgeben, etwa `/advisor ist dieser Ansatz sicher`, oder ein eigenes Review-Modell festlegen.",
+    steps: [
+      { title: "/advisor eingeben", description: "Gib in der Konversation `/advisor` ein – optional mit dem Fokus, der dich interessiert.", command: "/advisor ist dieser Ansatz sicher" },
+      { title: "Vier Punkte vom unabhängigen Review", description: "Die Read-only-Zweitsitzung liest den kompletten Kontext und liefert Fazit, Risiken, fehlende Belege und Empfehlungen – ohne den Hauptdialog anzufassen." },
+    ],
+  },
+  {
+    id: "sessions-ps-running-list",
+    title: "Ein Befehl zeigt dir, welche Sitzungen noch laufen",
+    description: "`qwen sessions ps` listet alle laufenden Sitzungen auf deinem Rechner auf: Name, Prozess-ID, Laufzeit und Verzeichnis – eine pro Zeile. Mit `--json` bindest du die Ausgabe direkt in Skripte ein.",
+    category: "Entwicklung",
+    features: ["Terminal"],
+    thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01edM2ef0oKxI7nOLI_!!6000000005536-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "Mehrere Qwen Code-Sitzungen gleichzeitig offen – da verliert man schnell den Überblick, welche welche ist. `qwen sessions ps` listet alle interaktiven Sitzungen auf deinem Rechner auf, eine pro Zeile: Name, Prozess-ID, Laufzeit und Verzeichnis. Was in der Liste steht, läuft wirklich – schließt du eine Sitzung, verschwindet sie sofort aus der Liste. Für Skripte hängst du einfach `--json` an.",
+    steps: [
+      { title: "Ein Befehl für alle laufenden Sitzungen", description: "Führe im Terminal `qwen sessions ps` aus. Alle laufenden interaktiven Sitzungen erscheinen zeilenweise – mit Name, Prozess-ID, Laufzeit und Verzeichnis.", command: "qwen sessions ps" },
+    ],
+  },
 ]
 
 

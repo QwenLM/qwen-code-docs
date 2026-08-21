@@ -1,5 +1,3 @@
----
-
 # 守护进程模式（`qwen serve`）
 
 将 Qwen Code 作为本地 HTTP 守护进程运行，使多个客户端（IDE 插件、Web UI、CI 脚本、自定义 CLI）能够通过 HTTP + Server-Sent Events 共享同一个 agent 会话，而不是各自生成独立的子进程。

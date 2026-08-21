@@ -2413,6 +2413,36 @@ export const showcaseItems = [
       { title: "Usar na hora", description: "As skills e os servidores MCP do pacote ficam disponíveis na sessão imediatamente, sem nenhuma configuração extra." },
     ],
   },
+  // === Demos do weekly de 20 de agosto ===
+  {
+    id: "advisor-independent-review",
+    title: "Travou numa ideia? Outra IA revisa a conversa inteira de forma independente",
+    description: "`/advisor` abre uma sessão paralela somente leitura que lê todo o contexto da conversa atual e devolve quatro itens — conclusão, riscos, evidências faltando e recomendações — sem mexer na conversa principal.",
+    category: "Desenvolvimento",
+    features: ["Modo Agent"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01x6UkJeTG4kD7nOLI_!!6000000004249-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "Conversas longas costumam prender a gente numa única linha de raciocínio, e os pontos cegos do próprio contexto passam despercebidos. O `/advisor` traz uma segunda opinião independente para a conversa atual: uma sessão paralela somente leitura lê todo o contexto e devolve quatro itens — conclusão, riscos, evidências faltando e recomendações. Do início ao fim, não altera a conversa principal nem executa nenhuma ação; terminada a revisão, a conversa continua normalmente. Dá para perguntar levando uma preocupação específica, como `/advisor essa abordagem é segura`, e também dá para indicar um modelo dedicado para a revisão.",
+    steps: [
+      { title: "Digitar /advisor", description: "Digite `/advisor` na conversa e, se quiser, inclua a preocupação que você quer verificar.", command: "/advisor essa abordagem é segura" },
+      { title: "A revisão independente devolve quatro itens", description: "A sessão paralela somente leitura lê todo o contexto e devolve conclusão, riscos, evidências faltando e recomendações — sem tocar na conversa principal." },
+    ],
+  },
+  {
+    id: "sessions-ps-running-list",
+    title: "Um comando para ver quais sessões ainda estão rodando",
+    description: "`qwen sessions ps` lista todas as sessões em execução na máquina: nome da sessão, PID, tempo de execução e diretório, uma por linha. Com `--json`, dá para integrar com scripts.",
+    category: "Desenvolvimento",
+    features: ["Operações no terminal"],
+    thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01edM2ef0oKxI7nOLI_!!6000000005536-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "Com várias sessões do Qwen Code abertas ao mesmo tempo, é fácil perder a noção de qual é qual. O comando `qwen sessions ps` lista todas as sessões interativas em execução na máquina, uma por linha: nome da sessão, PID, tempo de execução e diretório. Só aparece o que está realmente rodando — feche uma sessão e ela some da lista na hora. Para integrar com scripts, é só adicionar `--json`.",
+    steps: [
+      { title: "Um comando lista as sessões em execução", description: "Execute `qwen sessions ps` no terminal: cada sessão interativa em execução na máquina aparece em uma linha, com nome da sessão, PID, tempo de execução e diretório.", command: "qwen sessions ps" },
+    ],
+  },
 ]
 
 <VideoShowcaseIndex
