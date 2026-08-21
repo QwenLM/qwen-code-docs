@@ -155,6 +155,8 @@ Apenas pacotes com escopo (`@escopo/nome-pacote`) são suportados para evitar am
 
 #### De um repositório Git
 
+Instalações de repositórios Git públicos e verificações de atualização requerem Git 2.37 ou mais recente. O Qwen Code usa a configuração `http.curloptResolve` introduzida no Git 2.37 para fixar conexões de rede públicas em resultados de DNS validados. Se sua distribuição possui uma versão mais antiga do Git, atualize o Git ou instale uma release local/arquivo.
+
 ```bash
 qwen extensions install https://github.com/github/github-mcp-server
 ```

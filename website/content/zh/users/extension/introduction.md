@@ -155,6 +155,8 @@ qwen extensions install @scope/my-extension --registry https://your-registry.com
 
 #### 从 Git 仓库
 
+公共 Git 仓库的安装和更新检查需要 Git 2.37 或更新版本。Qwen Code 使用 Git 2.37 引入的 `http.curloptResolve` 设置将公共网络连接固定到已验证的 DNS 结果。如果你的发行版提供了较旧的 Git 版本，请升级 Git 或改为安装本地/归档发布版。
+
 ```bash
 qwen extensions install https://github.com/github/github-mcp-server
 ```

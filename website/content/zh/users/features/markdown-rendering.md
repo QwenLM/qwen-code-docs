@@ -30,6 +30,10 @@ Qwen Code 直接在 TUI 中渲染常见的 Markdown 结构，让模型答案更�
 
 可接受的值是 `"render"` 和 `"raw"`。该快捷键仅更改当前会话的视图，不会修改你的设置文件。
 
+## 助手与工具图像
+
+图像部分使用独立的 TUI 显示路径，在 Markdown 的 `render` 和 `raw` 模式下行为一致。有关终端支持、回退、限制、channel 传递和会话历史行为，请参阅[终端图像](./terminal-images.md)。
+
 ## Mermaid
 
 Fenced 的 `mermaid` 代码块在 `render` 模式下会进行视觉渲染。TUI 使用分层策略：

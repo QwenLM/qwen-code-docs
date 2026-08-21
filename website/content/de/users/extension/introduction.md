@@ -155,6 +155,8 @@ Es werden nur scoped Packages (`@scope/package-name`) unterstützt, um Verwechsl
 
 #### Aus einem Git-Repository
 
+Öffentliche Git-Repository-Installationen und Update-Prüfungen erfordern Git 2.37 oder neuer. Qwen Code verwendet die in Git 2.37 eingeführte Einstellung `http.curloptResolve`, um öffentliche Netzwerkverbindungen an validierte DNS-Ergebnisse zu binden. Wenn deine Distribution eine ältere Git-Version mitbringt, aktualisiere Git oder installiere stattdessen ein lokales/Archiv-Release.
+
 ```bash
 qwen extensions install https://github.com/github/github-mcp-server
 ```

@@ -43,7 +43,7 @@ description: "Review code changes for correctness, security, performance, and co
 | 级别     | 运行内容                                                                                                                                                   | 发现上限            | 结论                                     | 是否发布到 PR    |
 | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | ----------------------------------- | ---------------- |
 | `low`    | 3-6 个针对 diff 的定向行内角度（按 diff 大小缩放）加上 gap sweep——无 subagent，无构建/测试，无项目规则                             | 10（未验证）     | 无                                | 从不            |
-| `medium` | 完整流水线减去最昂贵的 pass：在缩减的维度集上进行并行 finder fan-out，加上构建/测试和单次验证 pass | 无上限（已验证） | Approve 上限为 Comment           | 从不            |
+| `medium` | high 流水线减去最昂贵的 pass：在缩减的维度集上进行并行 finder fan-out，加上构建/测试和单次验证 pass | 无上限（已验证） | Approve 上限为 Comment           | 从不            |
 | `high`   | 完整流水线：14 个并行 agent → 分片验证 → 迭代反向审计                                                                          | 无上限（已验证） | Approve / Request changes / Comment | 使用 `--comment` 时 |
 
 默认值：PR 审查为 **high**，本地和文件审查为 **medium**。有效的 `--comment` 会强制使用 high（发布的评论必须通过验证）——在非 PR 目标上 `--comment` 会被忽略并发出警告，**不会**更改 effort。Medium 保留了安全性和测试覆盖率 agent 以及构建/测试，但去掉了对手角色、diff 专家 finder 和反向审计——因此只有第二次审查才能发现的微妙 Critical 可能会漏掉；对安全性敏感或发布前的审查请使用 `--effort high`。只有 `low` 是未验证的。Worktree 隔离适用于同仓库 PR 审查；跨仓库 PR 以轻量模式运行（仅 diff，无 worktree 或构建/测试）。Low pass 标记为未验证，不发出结论，也不写入增量审查缓存，因此后续的 `--effort high` 运行不会被跳过为"已审查"；medium 是已验证的，但其 Approve 上限为 Comment，因为没有对第一次 pass 遗漏的内容进行二次审查。获取 diff 的机制在每个级别都相同——PR 审查始终使用隔离的 worktree 和相同的 base 解析，因此审查永远不会针对错误的 base。一个范围差异仍然存在：增量缓存仅用于 high，因此 high 重新审查可能只覆盖新的 commit（`lastCommitSha..HEAD`），而 low/medium 始终审查完整的 PR diff。
@@ -91,7 +91,7 @@ description: "Review code changes for correctness, security, performance, and co
 步骤 4：  去重 --> 分片验证（每个 <=8 个发现）
            --> 聚合                    [ceil(F/8) 次调用，F=发现数]
 步骤 5：  迭代反向审计，按 chunk fan-out；
-          连续 2 轮无新发现后停止（上限 10/5/3 按拓扑）
+          连续 2 轮无新发现后停止（上限 10/5/3 按拓扑；3 仅适用于有截止时间的运行）
 步骤 6：  展示发现 + 结论（high；low pass：仅发现）
           规范化发现 -> .qwen/tmp/...-findings.json
 步骤 6B：应用发现 + 记录每个发现的结果（仅 --fix）
@@ -237,7 +237,7 @@ description: "Review code changes for correctness, security, performance, and co
 /review 123 --resume
 ```
 
-它仅适用于 **PR 目标**（本地审查的 diff 来自活跃的工作树，没有稳定的中断状态可以继续），并且在不确定时可以安全地传递：审查会判断磁盘上的状态本身——worktree 仍在获取的 commit 处且干净、捕获的 diff 逐字节未变、PR head 未移动、resume 限额未使用——并在任何内容不再匹配时静默重新开始，并告诉你哪个检查拒绝了。继续运行会重用之前尝试的已认证 agent 结果，因此报告会说明恢复了多少；这是公开的，永远不会是覆盖缺口。
+它仅适用于 **PR 目标**（本地审查的 diff 来自活跃的工作树，没有稳定的中断状态可以继续）。Resume 是一种**本地便利**：仓库自身的 CI 审查工作流**不会** resume——每次重试都会全新运行，因为 CI 尝试在无沙箱环境下运行，且其 worktree 在退出时被删除，不会留下可继续的中断状态。并且在不确定时可以安全地传递：审查会判断磁盘上的状态本身——worktree 仍在获取的 commit 处且干净、捕获的 diff 逐字节未变、PR head 未移动、resume 限额未使用——并在任何内容不再匹配时静默重新开始，并告诉你哪个检查拒绝了。继续运行会重用之前尝试的已认证 agent 结果，因此报告会说明恢复了多少；这是公开的，永远不会是覆盖缺口。
 
 两点需要注意。继续运行会保持被中断运行的 **effort**：传递不同的 `--effort` 会拒绝 resume 并以你请求的级别重新运行，因为不同的 effort 是不同的工作。如果 PR head 在审查中断期间移动了，resume 会拒绝（`head-moved`），新的运行会审查新的 commit——这正是你想要的，而且它算作本次审查的一次重启。
 
@@ -368,7 +368,7 @@ export QWEN_REVIEW_ASSETS_REPO=your-org/your-repo   # 你可以推送的仓库
 
 模型匹配还会控制增量范围，而不仅仅是跳过："清理到缓存的 commit"是上一个模型的结论，因此当自缓存审查以来有新的 commit 时，模型不匹配永远不会将范围限定为 `lastCommitSha..HEAD`——范围是完整的 diff，并注明"上一轮由 qwen3-coder 审查。正在使用 gpt-4o 进行全量审查。"——除非从上次发布的审查中恢复了由当前运行模型认证的锚点（见下文），此时范围由该锚点决定。上一轮的发现仍然会被继承以重新裁定；只有锚点不会。当缓存不存在或其锚点不可用时（CI、另一个克隆），从上次发布审查的 machine-ledger 标记中恢复的锚点也受同样的门控：只有当当前运行的模型认证了它时，它才会限定增量范围——由不同模型认证的标记，或不携带模型的标记（在 `review.attribution` 关闭时发布的审查，或在该字段之前的审查），会回退到完整 diff。
 
-缓存存储在 `.qwen/review-cache/` 中，并同时跟踪 commit SHA 和 model ID。请确保将此目录加入 `.gitignore`（使用更宽泛的规则如 `.qwen/*` 也可以）。如果缓存的 commit 在 rebase 中被移除，系统将回退到全量审查。只有 high-effort 审查会查阅或写入缓存——`--effort low|medium` 的快速 pass 永远不会被视为"已审查"。
+缓存存储在 `.qwen/review-cache/` 中，并同时跟踪 commit SHA 和 model ID。请确保将此目录加入 `.gitignore`（使用更宽泛的规则如 `.qwen/*` 也可以）。在 GitHub 上，如果缓存的 commit 被 rebase 或 force-push 移除，系统将回退到全量审查；Aone 对缓存锚点的规则不同——见其下方段落。只有 high-effort 审查会查阅或写入缓存——`--effort low|medium` 的快速 pass 永远不会被视为"已审查"。
 
 ## 审查报告
 
@@ -387,7 +387,7 @@ Medium 和 high-effort 审查还会保存一个具有相同文件名但扩展名
 
 **GitHub Enterprise：** 在非 `github.com` 主机上审查 PR URL 时，该主机的每个 GitHub 调用都会被路由——审查子命令（`match-remote`、`meta`、`fetch-pr`、`pr-context`、`comment-status`、`issue-context`、`fetch-diff`、`comment-body`、`plan-diff`、`test-plan`、`presubmit`、`compose-review`、`submit`、`publish-assets`）接受 `--host` 并在代码中设置，因此遗忘的 host 不会静默将审查重定向到 `github.com`。
 
-**Aone Code：** 对于 origin 在 `gitlab.alibaba-inc.com` 上的克隆，从该克隆内部运行 `/review`——平台从 remote 检测，子命令正常工作，由 `a1` CLI 支持——目标编号是全局 MR id。`fetch-pr` 获取 `refs/merge-requests/<id>/head` 并构建 worktree + diff，因此 agent 对 worktree 的审查不变。每次 Aone 运行都是 context-unavailable，多个流程会被跳过（而不是访问 github.com 的同名仓库）：`pr-context`/`comment-status`/`presubmit` 没有 Aone 支持（结论上限为 `COMMENT`），`test-plan` 无支持，Agent 0 被跳过，`publish-assets` 的写入被跳过。`--comment` 通过 `a1` CLI **发布**审查：每个行内发现一条评论，然后是摘要评论。Aone 没有原生的 request-changes 状态——在该结论下，摘要评论携带一个阻塞头，实际发布的行内 Critical 通过讨论门阻塞合并，同时其讨论保持未解决状态（当没有发布行内 Critical 时，该头是建议性的，不会在机械上阻塞合并）。原生的 `a1 repo mr approve` 已为 Approve 结论接线但不会触发此阶段：context-unavailable 上限使每次 Aone 结论保持在 Comment。重复轮次有两个注意事项：目前还没有去重支持，因此第二轮 `--comment` 会重新发布每个仍然有效的发现作为新评论，且自我 PR 检测没有 Aone 支持。参见 `docs/design/2026-08-15-review-aone-provider.md`。
+**Aone Code：** 对于 origin 在 `gitlab.alibaba-inc.com` 上的克隆，从该克隆内部运行 `/review`——平台从 remote 检测，子命令正常工作，由 `a1` CLI 支持——目标编号是全局 MR id。`fetch-pr` 获取 `refs/merge-requests/<id>/head` 并构建 worktree + diff，因此 agent 对 worktree 的审查不变。每次 Aone 运行都是 context-unavailable，多个流程会被跳过（而不是访问 github.com 的同名仓库）：`pr-context`/`comment-status` 没有 Aone 支持（结论上限为 `COMMENT`），`presubmit` 仅支持自我 PR 检测（`a1 auth whoami` 账户与 MR 作者）和 head 漂移——其 CI 和现有评论检查返回中立——`test-plan` 无支持，Agent 0 被跳过，`publish-assets` 的写入被跳过。`--comment` 通过 `a1` CLI **发布**审查：每个行内发现一条评论，然后是摘要评论。Aone 没有原生的 request-changes 状态——在该结论下，摘要评论携带一个阻塞头，实际发布的行内 Critical 通过讨论门阻塞合并，同时其讨论保持未解决状态（当没有发布行内 Critical 时，该头是建议性的，不会在机械上阻塞合并）。发布的评论不携带 AI 评论标记——`a1` 无法设置——因此仓库专用的 `ai_comment` 合并门不会追踪它们。原生的 `a1 repo mr approve` 已为 Approve 结论接线但不会触发此阶段：context-unavailable 上限使每次 Aone 结论保持在 Comment。增量重新审查遵循 AGit-Flow 更新模型：更新会就地 AMEND 单个 CR commit，使上一轮审查的 head 成为孤儿——因此缓存锚点在判断时**不考虑**祖先关系（anchor-behind-head 测试会在每次更新时失败），重新审查将 PR 自身的 diff 限定为更新所涉及的文件，而不是回退到全量审查；如果更新同时 rebase 到了更新的 master，则仅当 rebase 的漂移保持在 CR 文件内时保留该范围——触及任何其他文件的漂移会回退到全量审查，且无论如何没有漂移字节进入发布的范围。重复轮次有一个注意事项：目前还没有去重支持，因此第二轮 `--comment` 会重新发布每个仍然有效的发现作为新评论（自我 PR 检测已支持：审查自己的 MR 会获得与 GitHub 相同的结论降级）。参见 `docs/design/2026-08-15-review-aone-provider.md`。
 
 每次运行以一行机器可读的行结束（`Review complete: <target> — <disposition>`），因此脚本和 CI 包装器可以通过单个 `^Review complete: ` 匹配来检测完成和结果。
 
@@ -453,7 +453,7 @@ High-effort 流水线限制每个阶段（分片大小、审计轮次），但�
 | -------------------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------- |
 | 审查 agent（步骤 3）           | 14 (+0-2)                      | 并行运行；跨仓库跳过 Agent 1c 和 7（12），本地/文件跳过 Agent 0（13）                          |
 | 分片验证（步骤 4）    | ceil(F/8)                      | F = 发现数；每个验证 agent 最多 8 个，同时启动                                              |
-| 迭代反向审计（步骤 5） | 2-10 (3A)；轮次 × chunk (3B) | 连续 2 轮无新发现后停止（上限 10/5/3 按拓扑）；3B 按 chunk 按轮次 fan-out 一个审计员                        |
+| 迭代反向审计（步骤 5） | 2-10 (3A)；轮次 × chunk (3B) | 连续 2 轮无新发现后停止；上限按拓扑——小 diff 为 10，分 chunk 的 diff 为 5，大型 diff 在运行有截止时间时为 3。3B 按 chunk 按轮次 fan-out 一个审计员                        |
 | **总计**                        | **~17-28 (~15-27)**             | 3A 同仓库：~17-28（典型 ~17-19）；跨仓库或本地/文件：~15-27；3B 随 chunk 缩放（参见 DESIGN.md）                                                                                      |
 
 大多数 PR 收敛到范围的下限；上限防止在极端情况下成本失控。在 `--effort low` 下，审查完全在行内运行——**0 次 subagent 调用**——每个角度遍历 diff 一次而非总共一次。

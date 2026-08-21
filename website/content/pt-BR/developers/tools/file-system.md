@@ -8,6 +8,8 @@ O Qwen Code fornece um conjunto abrangente de ferramentas para interagir com o s
 
 `list_directory` lista os nomes de arquivos e subdiretórios diretamente dentro de um caminho de diretório especificado. Opcionalmente, pode ignorar entradas que correspondam aos padrões glob fornecidos.
 
+**Nota:** Esta ferramenta é opt-in e desabilitada por padrão porque o `glob` cobre a listagem de diretórios na maioria dos casos. Habilite-a definindo `tools.listDirectory.enabled` como `true` nas suas configurações, ou listando explicitamente `list_directory` na allowlist `coreTools` (`--core-tools` / `tools.core`).
+
 - **Nome da ferramenta:** `list_directory`
 - **Nome de exibição:** ListFiles
 - **Arquivo:** `ls.ts`
@@ -30,7 +32,7 @@ O Qwen Code fornece um conjunto abrangente de ferramentas para interagir com o s
 - **Nome de exibição:** ReadFile
 - **Arquivo:** `read-file.ts`
 - **Parâmetros:**
-  - `path` (string, obrigatório): O caminho absoluto para o arquivo a ser lido.
+  - `file_path` (string, obrigatório): O caminho absoluto para o arquivo a ser lido.
   - `offset` (número, opcional): Para arquivos de texto, o número da linha baseado em 0 para começar a ler. Requer que `limit` seja definido.
   - `limit` (número, opcional): Para arquivos de texto, o número máximo de linhas a serem lidas. Se omitido, lê um máximo padrão (ex.: 2000 linhas) ou o arquivo inteiro se viável.
   - `pages` (string, opcional): Para PDFs, uma página 1-indexada ou intervalo fechado de páginas como `"3"` ou `"20-25"`. Uma requisição pode conter no máximo 20 páginas.

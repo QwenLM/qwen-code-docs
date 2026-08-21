@@ -337,7 +337,7 @@ tools:
   - read_file
   - grep_search
   - glob
-  - list_directory
+  - web_fetch
 ---
 ```
 
@@ -477,7 +477,7 @@ You are a testing specialist focused on creating high-quality, maintainable test
 
 Your expertise includes:
 
-- Unit testing with appropriate mocking
+- Unit testing with appropriate mocking and isolation
 - Integration testing for component interactions
 - Test-driven development practices
 - Edge case identification and comprehensive coverage

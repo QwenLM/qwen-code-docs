@@ -65,11 +65,11 @@ agent(description="Research", prompt="Inspect the retry path", subagent_type="fo
 - `fork_profile` é válido apenas para um fork e não pode ser combinado com `fork_tools` ou um colega de equipe nomeado.
 - Perfis são atualmente apenas de projeto. O nome solicitado, o nome do arquivo e o `name` do frontmatter devem corresponder exatamente. O perfil deve resolver para um arquivo regular dentro de `.qwen/fork-profiles/` e não pode exceder 64 KiB.
 - `tools` é obrigatório e segue as regras de `fork_tools`, incluindo o comportamento deny-all de array vazio.
-- `promptHint` é opcional e limitado a 200 caracteres. É escapado e enquadrado como orientação fornecida pelo projeto após a diretiva do fork e antes da restrição de ferramenta autoritativa.
+- `promptHint` é opcional e limitado a 200 caracteres. É escapado e enquadrado como orientação fornecida pelo projeto após a diretiva do fork e antes da restrição de ferramenta autoritativa; não altera a instrução de sistema herdada nem as declarações de ferramentas visíveis pelo modelo. Arquivos de perfil são apenas frontmatter, então Markdown não vazio após o `---` de fechamento é rejeitado em vez de ignorado silenciosamente.
 - O perfil é resolvido uma vez no lançamento. Um fork retido continua com o snapshot de ferramentas resolvido mesmo que o arquivo do projeto mude depois.
 - Perfis de fork de projeto não estão disponíveis em modo seguro e modo bare, que desabilitam personalizações locais.
 
-Como `fork_tools`, um perfil de fork é uma restrição selecionada pelo chamador em vez de um sandbox de administrador.
+Como `fork_tools`, um perfil de fork é uma restrição selecionada pelo chamador em vez de um sandbox de administrador. Sua orientação de prompt opcional é conteúdo controlado pelo projeto.
 
 ### Como o Fork Difere dos Subagentes Nomeados
 

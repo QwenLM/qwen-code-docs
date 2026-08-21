@@ -155,6 +155,8 @@ qwen extensions install @scope/my-extension --registry https://your-registry.com
 
 #### Git リポジトリから
 
+公開 Git リポジトリのインストールとアップデートチェックには、Git 2.37 以降が必要です。Qwen Code は Git 2.37 で導入された `http.curloptResolve` 設定を使用して、公開ネットワーク接続を検証済みの DNS 結果に固定します。お使いのディストリビューションがそれより古い Git を提供している場合は、Git をアップグレードするか、ローカルまたはアーカイブリリースをインストールしてください。
+
 ```bash
 qwen extensions install https://github.com/github/github-mcp-server
 ```

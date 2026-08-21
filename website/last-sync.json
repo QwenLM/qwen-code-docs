@@ -1,6 +1,6 @@
 {
-  "commit": "5715782279938080ee664004db4b93ae19231384",
-  "timestamp": "2026-08-20T20:47:10.476Z",
+  "commit": "7a4566cb3b03da268b53f112d08a38b47f43ca27",
+  "timestamp": "2026-08-21T23:56:15.677Z",
   "files": {
     "docs/design/2026-05-15-async-memory-recall-design.md": {
       "langs": {
@@ -1091,12 +1091,12 @@
     },
     "docs/users/extension/introduction.md": {
       "langs": {
-        "zh": "b02e38e5fac476f4d4594f1ec9aba907abf1930ff815f95c10e40712ae8d35dc",
-        "de": "b02e38e5fac476f4d4594f1ec9aba907abf1930ff815f95c10e40712ae8d35dc",
-        "fr": "b02e38e5fac476f4d4594f1ec9aba907abf1930ff815f95c10e40712ae8d35dc",
-        "ja": "b02e38e5fac476f4d4594f1ec9aba907abf1930ff815f95c10e40712ae8d35dc",
+        "zh": "2826a5eaedec7a0c853ea73e4fe404c06785f605966fdab0e03f5e02ea1607f9",
+        "de": "2826a5eaedec7a0c853ea73e4fe404c06785f605966fdab0e03f5e02ea1607f9",
+        "fr": "2826a5eaedec7a0c853ea73e4fe404c06785f605966fdab0e03f5e02ea1607f9",
+        "ja": "2826a5eaedec7a0c853ea73e4fe404c06785f605966fdab0e03f5e02ea1607f9",
         "ru": "b02e38e5fac476f4d4594f1ec9aba907abf1930ff815f95c10e40712ae8d35dc",
-        "pt-BR": "b02e38e5fac476f4d4594f1ec9aba907abf1930ff815f95c10e40712ae8d35dc",
+        "pt-BR": "2826a5eaedec7a0c853ea73e4fe404c06785f605966fdab0e03f5e02ea1607f9",
         "ko": "b02e38e5fac476f4d4594f1ec9aba907abf1930ff815f95c10e40712ae8d35dc"
       }
     },
@@ -1201,13 +1201,13 @@
     },
     "docs/users/features/markdown-rendering.md": {
       "langs": {
-        "zh": "8da1e1576f10d4a07ee3e355d5ed07322a0f18f25ab907ef0f7b46aa5ff8a4d6",
-        "de": "8da1e1576f10d4a07ee3e355d5ed07322a0f18f25ab907ef0f7b46aa5ff8a4d6",
-        "fr": "8da1e1576f10d4a07ee3e355d5ed07322a0f18f25ab907ef0f7b46aa5ff8a4d6",
-        "ja": "8da1e1576f10d4a07ee3e355d5ed07322a0f18f25ab907ef0f7b46aa5ff8a4d6",
-        "ru": "8da1e1576f10d4a07ee3e355d5ed07322a0f18f25ab907ef0f7b46aa5ff8a4d6",
-        "pt-BR": "8da1e1576f10d4a07ee3e355d5ed07322a0f18f25ab907ef0f7b46aa5ff8a4d6",
-        "ko": "8da1e1576f10d4a07ee3e355d5ed07322a0f18f25ab907ef0f7b46aa5ff8a4d6"
+        "zh": "f8dca6fdf603cfcd4d1ea884bb209ea816310968fa4764f7ab20f6c54f67fe13",
+        "de": "f8dca6fdf603cfcd4d1ea884bb209ea816310968fa4764f7ab20f6c54f67fe13",
+        "fr": "f8dca6fdf603cfcd4d1ea884bb209ea816310968fa4764f7ab20f6c54f67fe13",
+        "ja": "f8dca6fdf603cfcd4d1ea884bb209ea816310968fa4764f7ab20f6c54f67fe13",
+        "ru": "f8dca6fdf603cfcd4d1ea884bb209ea816310968fa4764f7ab20f6c54f67fe13",
+        "pt-BR": "f8dca6fdf603cfcd4d1ea884bb209ea816310968fa4764f7ab20f6c54f67fe13",
+        "ko": "f8dca6fdf603cfcd4d1ea884bb209ea816310968fa4764f7ab20f6c54f67fe13"
       }
     },
     "docs/users/features/status-line.md": {
@@ -1466,7 +1466,7 @@
     "docs/developers/daemon/13-sdk-daemon-client.md": {
       "langs": {
         "zh": "ecc3643057a06152dd70fa5a05a1ebe1b434461238592813b74915c746048dd7",
-        "fr": "c15955061021e8a4db46b2c8461cac116f4367252760bd94ab8cb2e270c1a148",
+        "fr": "51785a3cc465701961b6b2499351df6d53fe1056f083d7440013cab1a06d05cd",
         "ja": "51785a3cc465701961b6b2499351df6d53fe1056f083d7440013cab1a06d05cd",
         "ru": "51785a3cc465701961b6b2499351df6d53fe1056f083d7440013cab1a06d05cd",
         "pt-BR": "51785a3cc465701961b6b2499351df6d53fe1056f083d7440013cab1a06d05cd",
@@ -1564,13 +1564,13 @@
     },
     "docs/developers/tools/file-system.md": {
       "langs": {
-        "zh": "183095abca952d0bfbc450869762d9b173d435db0459022a6a805f9a884e02cc",
-        "fr": "183095abca952d0bfbc450869762d9b173d435db0459022a6a805f9a884e02cc",
-        "ja": "183095abca952d0bfbc450869762d9b173d435db0459022a6a805f9a884e02cc",
-        "ru": "183095abca952d0bfbc450869762d9b173d435db0459022a6a805f9a884e02cc",
-        "pt-BR": "183095abca952d0bfbc450869762d9b173d435db0459022a6a805f9a884e02cc",
-        "de": "183095abca952d0bfbc450869762d9b173d435db0459022a6a805f9a884e02cc",
-        "ko": "183095abca952d0bfbc450869762d9b173d435db0459022a6a805f9a884e02cc"
+        "zh": "54d9bd14d55b899da3e5939676d93219b33c4b4eba94f981f75cb9915e2feb04",
+        "fr": "54d9bd14d55b899da3e5939676d93219b33c4b4eba94f981f75cb9915e2feb04",
+        "ja": "54d9bd14d55b899da3e5939676d93219b33c4b4eba94f981f75cb9915e2feb04",
+        "ru": "54d9bd14d55b899da3e5939676d93219b33c4b4eba94f981f75cb9915e2feb04",
+        "pt-BR": "54d9bd14d55b899da3e5939676d93219b33c4b4eba94f981f75cb9915e2feb04",
+        "de": "54d9bd14d55b899da3e5939676d93219b33c4b4eba94f981f75cb9915e2feb04",
+        "ko": "54d9bd14d55b899da3e5939676d93219b33c4b4eba94f981f75cb9915e2feb04"
       }
     },
     "docs/developers/tools/task.md": {
@@ -1619,12 +1619,12 @@
     },
     "docs/users/configuration/settings.md": {
       "langs": {
-        "zh": "6d5c50b9e5ba93153a527d732cab697f2b5f8c5136226316034940944b7d1259",
-        "fr": "6d5c50b9e5ba93153a527d732cab697f2b5f8c5136226316034940944b7d1259",
-        "ja": "6d5c50b9e5ba93153a527d732cab697f2b5f8c5136226316034940944b7d1259",
-        "pt-BR": "6d5c50b9e5ba93153a527d732cab697f2b5f8c5136226316034940944b7d1259",
+        "zh": "c2bd34883664e2a076a9820f7d6779baaa7d0086e6971dfeffee4bd25bf8e234",
+        "fr": "c2bd34883664e2a076a9820f7d6779baaa7d0086e6971dfeffee4bd25bf8e234",
+        "ja": "c2bd34883664e2a076a9820f7d6779baaa7d0086e6971dfeffee4bd25bf8e234",
+        "pt-BR": "c2bd34883664e2a076a9820f7d6779baaa7d0086e6971dfeffee4bd25bf8e234",
         "de": "6d5c50b9e5ba93153a527d732cab697f2b5f8c5136226316034940944b7d1259",
-        "ru": "6d5c50b9e5ba93153a527d732cab697f2b5f8c5136226316034940944b7d1259",
+        "ru": "c2bd34883664e2a076a9820f7d6779baaa7d0086e6971dfeffee4bd25bf8e234",
         "ko": "6d5c50b9e5ba93153a527d732cab697f2b5f8c5136226316034940944b7d1259"
       }
     },
@@ -1817,13 +1817,13 @@
     },
     "docs/developers/sdk-java.md": {
       "langs": {
-        "fr": "a27c720b69fa51373e567234f1745983d8cadaf1ee438895ab75bf6eeee32cf2",
-        "ja": "a27c720b69fa51373e567234f1745983d8cadaf1ee438895ab75bf6eeee32cf2",
-        "ru": "a27c720b69fa51373e567234f1745983d8cadaf1ee438895ab75bf6eeee32cf2",
-        "pt-BR": "a27c720b69fa51373e567234f1745983d8cadaf1ee438895ab75bf6eeee32cf2",
-        "zh": "a27c720b69fa51373e567234f1745983d8cadaf1ee438895ab75bf6eeee32cf2",
-        "de": "a27c720b69fa51373e567234f1745983d8cadaf1ee438895ab75bf6eeee32cf2",
-        "ko": "a27c720b69fa51373e567234f1745983d8cadaf1ee438895ab75bf6eeee32cf2"
+        "fr": "b62c9ddaf65b0ce660f88265c004722a941649966fae7c8522084d55091f46e9",
+        "ja": "b62c9ddaf65b0ce660f88265c004722a941649966fae7c8522084d55091f46e9",
+        "ru": "b62c9ddaf65b0ce660f88265c004722a941649966fae7c8522084d55091f46e9",
+        "pt-BR": "b62c9ddaf65b0ce660f88265c004722a941649966fae7c8522084d55091f46e9",
+        "zh": "b62c9ddaf65b0ce660f88265c004722a941649966fae7c8522084d55091f46e9",
+        "de": "b62c9ddaf65b0ce660f88265c004722a941649966fae7c8522084d55091f46e9",
+        "ko": "b62c9ddaf65b0ce660f88265c004722a941649966fae7c8522084d55091f46e9"
       }
     },
     "docs/developers/tools/mcp-server.md": {
@@ -1850,11 +1850,11 @@
     },
     "docs/users/features/code-review.md": {
       "langs": {
-        "fr": "df3593ac941017b8fdf223dcadef810feab28ad3fed3cc196702fcf6ee09760d",
-        "ja": "df3593ac941017b8fdf223dcadef810feab28ad3fed3cc196702fcf6ee09760d",
+        "fr": "525b84333f6627b5bd04f2158bf99b3b27dcdb56d795defb37f81871f66291d0",
+        "ja": "525b84333f6627b5bd04f2158bf99b3b27dcdb56d795defb37f81871f66291d0",
         "ru": "df3593ac941017b8fdf223dcadef810feab28ad3fed3cc196702fcf6ee09760d",
-        "pt-BR": "df3593ac941017b8fdf223dcadef810feab28ad3fed3cc196702fcf6ee09760d",
-        "zh": "df3593ac941017b8fdf223dcadef810feab28ad3fed3cc196702fcf6ee09760d",
+        "pt-BR": "525b84333f6627b5bd04f2158bf99b3b27dcdb56d795defb37f81871f66291d0",
+        "zh": "525b84333f6627b5bd04f2158bf99b3b27dcdb56d795defb37f81871f66291d0",
         "de": "df3593ac941017b8fdf223dcadef810feab28ad3fed3cc196702fcf6ee09760d",
         "ko": "df3593ac941017b8fdf223dcadef810feab28ad3fed3cc196702fcf6ee09760d"
       }
@@ -1905,13 +1905,13 @@
     },
     "docs/users/features/sub-agents.md": {
       "langs": {
-        "fr": "44c59186527a401b895f62deec36e4f8417710cd009ab98d2990d309e39cc389",
-        "ja": "44c59186527a401b895f62deec36e4f8417710cd009ab98d2990d309e39cc389",
+        "fr": "95b041343c414745aa39173a2d3f3e38f52ecf16810c104477bad3583539e52b",
+        "ja": "95b041343c414745aa39173a2d3f3e38f52ecf16810c104477bad3583539e52b",
         "ru": "44c59186527a401b895f62deec36e4f8417710cd009ab98d2990d309e39cc389",
-        "pt-BR": "44c59186527a401b895f62deec36e4f8417710cd009ab98d2990d309e39cc389",
-        "zh": "44c59186527a401b895f62deec36e4f8417710cd009ab98d2990d309e39cc389",
+        "pt-BR": "95b041343c414745aa39173a2d3f3e38f52ecf16810c104477bad3583539e52b",
+        "zh": "95b041343c414745aa39173a2d3f3e38f52ecf16810c104477bad3583539e52b",
         "de": "44c59186527a401b895f62deec36e4f8417710cd009ab98d2990d309e39cc389",
-        "ko": "44c59186527a401b895f62deec36e4f8417710cd009ab98d2990d309e39cc389"
+        "ko": "95b041343c414745aa39173a2d3f3e38f52ecf16810c104477bad3583539e52b"
       }
     },
     "docs/users/features/tool-use-summaries.md": {
@@ -2077,6 +2077,17 @@
         "pt-BR": "cfe915d06259189f0e93c324fb9b12e52b9302ec65005bc8814eed863bcde647",
         "ko": "cfe915d06259189f0e93c324fb9b12e52b9302ec65005bc8814eed863bcde647",
         "ru": "cfe915d06259189f0e93c324fb9b12e52b9302ec65005bc8814eed863bcde647"
+      }
+    },
+    "docs/users/features/terminal-images.md": {
+      "langs": {
+        "zh": "c1783b89476441938addc26f2aaa8e64b7056d10c5609596d1ff60dc020d0801",
+        "de": "c1783b89476441938addc26f2aaa8e64b7056d10c5609596d1ff60dc020d0801",
+        "fr": "c1783b89476441938addc26f2aaa8e64b7056d10c5609596d1ff60dc020d0801",
+        "ru": "c1783b89476441938addc26f2aaa8e64b7056d10c5609596d1ff60dc020d0801",
+        "ja": "c1783b89476441938addc26f2aaa8e64b7056d10c5609596d1ff60dc020d0801",
+        "pt-BR": "c1783b89476441938addc26f2aaa8e64b7056d10c5609596d1ff60dc020d0801",
+        "ko": "c1783b89476441938addc26f2aaa8e64b7056d10c5609596d1ff60dc020d0801"
       }
     }
   }

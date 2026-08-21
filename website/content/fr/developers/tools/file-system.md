@@ -8,6 +8,8 @@ Qwen Code fournit une suite complète d'outils pour interagir avec le système d
 
 `list_directory` liste les noms des fichiers et sous-répertoires directement dans un chemin de répertoire spécifié. Il peut éventuellement ignorer les entrées correspondant aux motifs glob fournis.
 
+**Remarque :** Cet outil est opt-in et désactivé par défaut car `glob` couvre le listage de répertoires dans la plupart des cas. Activez-le en définissant `tools.listDirectory.enabled` sur `true` dans vos paramètres, ou en listant explicitement `list_directory` dans la liste blanche `coreTools` (`--core-tools` / `tools.core`).
+
 - **Tool name :** `list_directory`
 - **Display name :** ListFiles
 - **File :** `ls.ts`
