@@ -2413,6 +2413,36 @@ export const showcaseItems = [
       { title: "Prêts à l'emploi", description: "Les skills et serveurs MCP du paquet sont immédiatement disponibles dans la session, sans configuration supplémentaire." },
     ],
   },
+  // === Démos du weekly du 20 août ===
+  {
+    id: "advisor-independent-review",
+    title: "Bloqué ? Une autre IA relit toute la conversation et rend son verdict",
+    description: "`/advisor` envoie à la conversation en cours une session parallèle en lecture seule : elle relit tout le contexte et rend quatre points — conclusion, risques, preuves manquantes, recommandations — sans toucher à la conversation principale.",
+    category: "Développement",
+    features: ["Mode Agent"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01x6UkJeTG4kD7nOLI_!!6000000004249-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "Quand une conversation s'éternise, on finit enfermé dans une seule piste, et les angles morts de son propre contexte sont difficiles à repérer. `/advisor` donne à la conversation en cours un deuxième avis indépendant : une session parallèle en lecture seule relit tout le contexte et rend quatre points — conclusion, risques, preuves manquantes, recommandations. Elle ne modifie jamais la conversation principale et n'exécute aucune action ; une fois la revue terminée, la conversation reprend comme si de rien n'était. Vous pouvez venir avec une préoccupation précise, par exemple `/advisor cette approche est-elle sûre`, ou désigner un modèle dédié à la revue.",
+    steps: [
+      { title: "Taper /advisor", description: "Dans la conversation, tapez `/advisor`, en précisant éventuellement le point qui vous préoccupe.", command: "/advisor cette approche est-elle sûre" },
+      { title: "La revue indépendante rend quatre points", description: "La session parallèle en lecture seule relit tout le contexte et rend la conclusion, les risques, les preuves manquantes et les recommandations, sans jamais toucher à la conversation principale." },
+    ],
+  },
+  {
+    id: "sessions-ps-running-list",
+    title: "Une seule commande pour voir quelles sessions tournent encore",
+    description: "`qwen sessions ps` liste toutes les sessions en cours sur votre machine : nom de session, PID, durée d'exécution, dossier — une par ligne. Ajoutez `--json` pour brancher un script.",
+    category: "Développement",
+    features: ["Terminal"],
+    thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01edM2ef0oKxI7nOLI_!!6000000005536-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "Avec plusieurs sessions Qwen Code ouvertes en même temps, difficile de savoir laquelle est laquelle. `qwen sessions ps` liste toutes les sessions interactives qui tournent en ce moment sur votre machine, une par ligne : nom de session, PID, durée d'exécution, dossier. Tout ce qui s'affiche est réellement en cours — fermez une session, elle disparaît aussitôt de la liste. Pour brancher un script, ajoutez simplement `--json`.",
+    steps: [
+      { title: "Une commande, la liste des sessions en cours", description: "Dans le terminal, lancez `qwen sessions ps` : chaque session interactive en cours sur votre machine apparaît sur une ligne, avec son nom, son PID, sa durée d'exécution et son dossier.", command: "qwen sessions ps" },
+    ],
+  },
 ]
 
 
