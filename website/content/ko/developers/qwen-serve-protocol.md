@@ -2224,6 +2224,8 @@ curl http://127.0.0.1:4170/workspaces/<workspace-id>/sessions
 
 `view=organized`에서 데몬은 `<Storage.getProjectDir(cwd)>/session-organization.v1.json`을 읽고, 핀된 세션을 먼저 반환한 다음 활동 시간 내림차순, 그리고 안정적인 동점 처리를 위해 `sessionId`를 반환합니다. 정리된 커서는 불투명 base64url JSON이며 레거시 최근 목록과 재사용하면 안 됩니다. `pinned`는 그룹이 아닌 가상 필터입니다. `groupId: null`은 그룹 없음을 의미합니다. 아카이브된 세션은 조직 메타데이터를 유지하지만 `archiveState=archived&view=organized`는 여전히 아카이브된 세션만 반환합니다.
 
+활동 순 커서 — 정리된 뷰 및 `parentSessionId` / `sourceType` 필터링 목록 — 는 스냅샷 격리되지 않으며, 신뢰되는 활성 목록은 행을 트랜스크립트 mtime과 활성 활동 워터마크 중 더 나중 값으로 정렬합니다. 활성 워터마크는 인메모리 전용이므로, 활성 항목이 두 페이지 가져오기 사이에 은퇴하면 세션의 키가 mtime으로 회귀할 수 있습니다. 커서는 이를 보상합니다: 활성 유도 키에서 이미 발행된 ID를 운반하며 — 행이 페이지 컬렉션에서 absent인 동안과 핀 뒤집기가 이를 다시 허용할 수 있는 동안 유지하고 — 패스의 나머지 동안 제외하므로, 활성 유도 키 이동은 패스당 세션을 최대 한 번 반환합니다. 보장은 운반 범위로 제한됩니다: 64개 ID로 제한되며(한 패스에서 초과 ID는 오류가 아닌 최대 1회 중복으로 저하되며), 핀 상태 변경 전에 발행된 영구적 전용 행은 운반되지 않으므로, 가져오기 사이의 핀 해제는 해당 행을 이 필드가 존재하기 전과 동일하게 두 번째로 반환할 수 있습니다. 페이지를 누적하는 호출자는 따라서 64 초과 경우뿐만 아니라 항상 `sessionId`로 행을 키해야 합니다. 동시 활동 아래에서 행은 이전과 동일하게 이동하거나 건너뛸 수 있습니다; 일관된 뷰가 필요한 호출자는 활동 변경 후 첫 페이지에서 다시 로드합니다.
+
 `view=organized`에서 각 세션에 추가 필드가 나타날 수 있습니다:
 
 ```json
@@ -2423,6 +2425,8 @@ ACP-over-HTTP는 벤더 메서드 `_qwen/sessions/archive` 및 `_qwen/sessions/u
 `session_mid_turn_message_mutation`이 광고되면 첨부된 세션 클라이언트는 `DELETE /session/:id/mid-turn-messages/:messageId`를 호출할 수 있습니다. 턴 중간 큐나 승격된 펜딩 프롬프트 상태에서 메시지를 제거합니다; 이미 실행 중인 승격된 메시지를 제거하면 해당 턴이 중단되어 일반 펜딩 프롬프트 제거와 일치합니다. 데몬 소유 큐 추가 및 제거는 기존 `pending_prompt_added` 및 `pending_prompt_completed` 세션 이벤트를 발행하여 첨부된 클라이언트가 두 권위 있는 큐 스냅샷을 새로 고칩니다. `{ "removed": false }`는 메시지가 이미 주입되었거나, 완료되었거나, 찾을 수 없었음을 의미합니다.
 
 ### `POST /session/:id/prompt`
+
+에이전트에 프롬프트를 전달합니다. 다중 프롬프트 호출자는 세션별로 FIFO 대기열에 들어갑니다(ACP는 세션당 하나의 활성 프롬프트를 보장).
 
 요청:
 
@@ -2792,6 +2796,8 @@ SSE 이벤트(워크스페이스 범위): `{toolName, enabled, originatorClientI
 대상 오류는 `skill_not_found`, `skill_not_toggleable`, 또는 `skill_inactive_extension`을 사용합니다. 잘못된 요청은 `invalid_skill_names`, `invalid_skill_name`, 또는 `invalid_enabled_flag`와 함께 HTTP 400을 반환합니다. 인증, 워크스페이스 신뢰, 클라이언트 정체성, 예기치 않은 영속성 실패, 그리고 런타임 생성 실패는 표준 라우트 게이트를 통해 전체 요청을 실패시킵니다. 일괄 수준의 `activation`, `sessionsRefreshed`, 그리고 `sessionsFailed`는 모든 변경된 결과가 공유하는 단일 활성 세션 새로 고침을 설명합니다. `activation`은 결과가 아닌 새로 고침 시도를 보고합니다: 대상이 변경되지 않은 일괄(예: 모든 대상에 오류)도 세션이 활성이면 `applied`로 응답하며, 단일 Skill no-op 응답과 일치하므로 실제로 변경된 내용은 각 결과의 `changed` 플래그와 `errors` 배열에서 파생합니다. 하나 이상의 대상이 변경되면 데몬은 단일 Skill 라우트와 동일한 `settings_changed` 변경 메타데이터를 발행합니다; 해당 요청의 모든 `skills.disabled` / `skills.enabled` 이벤트는 하나의 `mutation.id`를 공유합니다.
 
 #### `POST /workspace/init`
+
+기능 태그: `workspace_init`. 순수 파일 IO — ACP 라운드트립 없음, **LLM 호출 없음**.
 
 데몬의 기본 워크스페이스 루트에 빈 `QWEN.md`(또는 `--memory-file-name` 재정의 아래에서 `getCurrentGeminiMdFilename()`이 반환하는 것)를 스캐폴딩합니다. 기계적 작업뿐입니다 — AI 기반 콘텐츠 채우려면 `POST /session/:id/prompt`를 후속 호출하십시오.
 

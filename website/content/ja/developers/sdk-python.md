@@ -140,7 +140,7 @@ with query_sync(
 | `cwd`                      | `str`                                                      | CLI プロセスの作業ディレクトリ。                                                                          |
 | `model`                    | `str`                                                      | この SDK セッションのモデル上書き。                                                                            |
 | `path_to_qwen_executable`  | `str`                                                      | `qwen`、明示的なバイナリパス、または `.js` CLI バンドル。                                                         |
-| `permission_mode`          | `default`, `plan`, `auto-edit`, `yolo`                     | ツール実行の承認モード。`yolo` はすべてのツールを自動承認します。信頼できる環境またはサンドボックス環境でのみ使用してください。 |
+| `permission_mode`          | `default`, `plan`, `auto-edit`, `auto`, `yolo`             | ツール実行の承認モード。`auto` は LLM クラシファイアがツール呼び出しを承認します。`yolo` はすべてのツールを自動承認します。信頼できる環境またはサンドボックス環境でのみ使用してください。 |
 | `can_use_tool`             | async callback                                             | ツールリクエスト用のカスタム権限コールバック。                                                                   |
 | `env`                      | `dict[str, str]`                                           | CLI プロセスに渡す追加の環境変数。                                                          |
 | `system_prompt`            | `str`                                                      | システムプロンプトを上書きします。                                                                                     |

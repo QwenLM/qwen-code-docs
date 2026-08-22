@@ -2652,7 +2652,7 @@ Resposta:
 { "modelId": "qwen-staging" }
 ```
 
-Em sucesso, publica `model_switched` no stream SSE. Em falha, publica `model_switch_failed` (para que assinantes passivos vejam a falha, não apenas o chamador). Compete com a saída do channel do agente para que um filho travado não possa bloquear o handler HTTP.
+Em sucesso, publica `model_switched` no stream SSE. Em falha, publica `model_switch_failed` (para que assinantes passivos vejam a falha, não apenas o chamador). Compete com a saída do channel do agente para que um filho travado não possa bloquear o handler HTTP. Uma troca bem-sucedida também registra o modelo da sessão no JSONL da sessão no melhor esforço; quando o registro é escrito, o load/resume do daemon tenta restaurar o modelo desta sessão antes da autenticação. Se o modelo registrado não puder mais ser aplicado (modelo removido, credenciais indisponíveis), o restore usa uma rota de registry de mesmo id quando existe uma — para um registro de snapshot de runtime isso pode ser um endpoint diferente do binding registrado — e continua com o padrão `settings.model.name` apenas quando nenhuma rota resolve. `settings.model.name` ainda é atualizado como padrão para **novas** sessões.
 
 ### `POST /session/:id/recap`
 

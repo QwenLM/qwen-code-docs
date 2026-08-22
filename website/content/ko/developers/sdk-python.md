@@ -140,7 +140,7 @@ with query_sync(
 | `cwd`                      | `str`                                                      | CLI 프로세스의 작업 디렉토리.                                                                                       |
 | `model`                    | `str`                                                      | 이 SDK 세션의 모델 오버라이드.                                                                                      |
 | `path_to_qwen_executable`  | `str`                                                      | `qwen`, 명시적 바이너리 경로, 또는 `.js` CLI 번들.                                                                 |
-| `permission_mode`          | `default`, `plan`, `auto-edit`, `yolo`                     | 도구 실행 승인 모드. `yolo`는 모든 도구를 자동 승인합니다. 신뢰할 수 있거나 샌드박스 환경에서만 사용하세요.                    |
+| `permission_mode`          | `default`, `plan`, `auto-edit`, `auto`, `yolo`             | 도구 실행 승인 모드. `auto`는 LLM 분류기가 도구 호출을 승인합니다. `yolo`는 모든 도구를 자동 승인합니다. 신뢰할 수 있거나 샌드박스 환경에서만 사용하세요. |
 | `can_use_tool`             | async 콜백                                                  | 도구 요청에 대한 커스텀 권한 콜백.                                                                                    |
 | `env`                      | `dict[str, str]`                                           | CLI 프로세스에 전달할 추가 환경 변수.                                                                                  |
 | `system_prompt`            | `str`                                                      | 시스템 프롬프트를 오버라이드합니다.                                                                                    |
@@ -156,7 +156,7 @@ with query_sync(
 | `continue_session`         | `bool`                                                     | 최신 CLI 세션을 계속합니다.                                                                                          |
 | `session_id`               | UUID 문자열                                                 | 알려진 id로 세션을 시작하거나 연관시킵니다.                                                                               |
 | `timeout`                  | 매핑                                                        | 초 단위의 타임아웃.                                                                                               |
-| `stderr`                   | 콜블러                                                      | CLI stderr 라인을 받습니다.                                                                                          |
+| `stderr`                   | 콜백                                                        | CLI stderr 라인을 받습니다.                                                                                          |
 
 요청에서 `resume`, `continue_session`, `session_id` 중 하나만 사용하세요.
 이 세션 옵션들을 조합하면 SDK가 `ValidationError`를 발생시킵니다.

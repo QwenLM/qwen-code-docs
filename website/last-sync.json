@@ -1,6 +1,6 @@
 {
-  "commit": "7a4566cb3b03da268b53f112d08a38b47f43ca27",
-  "timestamp": "2026-08-21T23:56:15.677Z",
+  "commit": "db0519563db2c11b33c132e3ac248dbf032a70b9",
+  "timestamp": "2026-08-22T22:30:54.264Z",
   "files": {
     "docs/design/2026-05-15-async-memory-recall-design.md": {
       "langs": {
@@ -927,12 +927,12 @@
     "docs/developers/sdk-python.md": {
       "langs": {
         "zh": "2e2593ddbf53aab9a072c595bc6862e209764c83feb7dc5dc96924cfa035c67c",
-        "de": "2e2593ddbf53aab9a072c595bc6862e209764c83feb7dc5dc96924cfa035c67c",
-        "fr": "2e2593ddbf53aab9a072c595bc6862e209764c83feb7dc5dc96924cfa035c67c",
-        "ja": "2e2593ddbf53aab9a072c595bc6862e209764c83feb7dc5dc96924cfa035c67c",
-        "ru": "2e2593ddbf53aab9a072c595bc6862e209764c83feb7dc5dc96924cfa035c67c",
-        "pt-BR": "2e2593ddbf53aab9a072c595bc6862e209764c83feb7dc5dc96924cfa035c67c",
-        "ko": "2e2593ddbf53aab9a072c595bc6862e209764c83feb7dc5dc96924cfa035c67c"
+        "de": "b30a2bf962b49fc3ef49fc755a731f80ae2bb84d1fc63dad557ddc11347b222f",
+        "fr": "b30a2bf962b49fc3ef49fc755a731f80ae2bb84d1fc63dad557ddc11347b222f",
+        "ja": "b30a2bf962b49fc3ef49fc755a731f80ae2bb84d1fc63dad557ddc11347b222f",
+        "ru": "b30a2bf962b49fc3ef49fc755a731f80ae2bb84d1fc63dad557ddc11347b222f",
+        "pt-BR": "b30a2bf962b49fc3ef49fc755a731f80ae2bb84d1fc63dad557ddc11347b222f",
+        "ko": "b30a2bf962b49fc3ef49fc755a731f80ae2bb84d1fc63dad557ddc11347b222f"
       }
     },
     "docs/developers/tools/introduction.md": {
@@ -1095,9 +1095,9 @@
         "de": "2826a5eaedec7a0c853ea73e4fe404c06785f605966fdab0e03f5e02ea1607f9",
         "fr": "2826a5eaedec7a0c853ea73e4fe404c06785f605966fdab0e03f5e02ea1607f9",
         "ja": "2826a5eaedec7a0c853ea73e4fe404c06785f605966fdab0e03f5e02ea1607f9",
-        "ru": "b02e38e5fac476f4d4594f1ec9aba907abf1930ff815f95c10e40712ae8d35dc",
+        "ru": "2826a5eaedec7a0c853ea73e4fe404c06785f605966fdab0e03f5e02ea1607f9",
         "pt-BR": "2826a5eaedec7a0c853ea73e4fe404c06785f605966fdab0e03f5e02ea1607f9",
-        "ko": "b02e38e5fac476f4d4594f1ec9aba907abf1930ff815f95c10e40712ae8d35dc"
+        "ko": "2826a5eaedec7a0c853ea73e4fe404c06785f605966fdab0e03f5e02ea1607f9"
       }
     },
     "docs/users/features/arena.md": {
@@ -1625,7 +1625,7 @@
         "pt-BR": "c2bd34883664e2a076a9820f7d6779baaa7d0086e6971dfeffee4bd25bf8e234",
         "de": "6d5c50b9e5ba93153a527d732cab697f2b5f8c5136226316034940944b7d1259",
         "ru": "c2bd34883664e2a076a9820f7d6779baaa7d0086e6971dfeffee4bd25bf8e234",
-        "ko": "6d5c50b9e5ba93153a527d732cab697f2b5f8c5136226316034940944b7d1259"
+        "ko": "c2bd34883664e2a076a9820f7d6779baaa7d0086e6971dfeffee4bd25bf8e234"
       }
     },
     "docs/users/features/approval-mode.md": {
@@ -1850,13 +1850,13 @@
     },
     "docs/users/features/code-review.md": {
       "langs": {
-        "fr": "525b84333f6627b5bd04f2158bf99b3b27dcdb56d795defb37f81871f66291d0",
-        "ja": "525b84333f6627b5bd04f2158bf99b3b27dcdb56d795defb37f81871f66291d0",
-        "ru": "df3593ac941017b8fdf223dcadef810feab28ad3fed3cc196702fcf6ee09760d",
-        "pt-BR": "525b84333f6627b5bd04f2158bf99b3b27dcdb56d795defb37f81871f66291d0",
-        "zh": "525b84333f6627b5bd04f2158bf99b3b27dcdb56d795defb37f81871f66291d0",
-        "de": "df3593ac941017b8fdf223dcadef810feab28ad3fed3cc196702fcf6ee09760d",
-        "ko": "df3593ac941017b8fdf223dcadef810feab28ad3fed3cc196702fcf6ee09760d"
+        "fr": "cba70087aa84bb5bb869767d9a235afc20c3e40f4c74df668730ea53c3606007",
+        "ja": "cba70087aa84bb5bb869767d9a235afc20c3e40f4c74df668730ea53c3606007",
+        "ru": "cba70087aa84bb5bb869767d9a235afc20c3e40f4c74df668730ea53c3606007",
+        "pt-BR": "cba70087aa84bb5bb869767d9a235afc20c3e40f4c74df668730ea53c3606007",
+        "zh": "cba70087aa84bb5bb869767d9a235afc20c3e40f4c74df668730ea53c3606007",
+        "de": "cba70087aa84bb5bb869767d9a235afc20c3e40f4c74df668730ea53c3606007",
+        "ko": "cba70087aa84bb5bb869767d9a235afc20c3e40f4c74df668730ea53c3606007"
       }
     },
     "docs/users/features/commands.md": {
@@ -1907,10 +1907,10 @@
       "langs": {
         "fr": "95b041343c414745aa39173a2d3f3e38f52ecf16810c104477bad3583539e52b",
         "ja": "95b041343c414745aa39173a2d3f3e38f52ecf16810c104477bad3583539e52b",
-        "ru": "44c59186527a401b895f62deec36e4f8417710cd009ab98d2990d309e39cc389",
+        "ru": "95b041343c414745aa39173a2d3f3e38f52ecf16810c104477bad3583539e52b",
         "pt-BR": "95b041343c414745aa39173a2d3f3e38f52ecf16810c104477bad3583539e52b",
         "zh": "95b041343c414745aa39173a2d3f3e38f52ecf16810c104477bad3583539e52b",
-        "de": "44c59186527a401b895f62deec36e4f8417710cd009ab98d2990d309e39cc389",
+        "de": "95b041343c414745aa39173a2d3f3e38f52ecf16810c104477bad3583539e52b",
         "ko": "95b041343c414745aa39173a2d3f3e38f52ecf16810c104477bad3583539e52b"
       }
     },
@@ -2027,12 +2027,12 @@
     "docs/developers/qwen-serve-protocol.md": {
       "langs": {
         "ru": "97bc89b5f1afee5f69a73671340f6cb815da87948f38eb126a13576470ad656c",
-        "pt-BR": "97bc89b5f1afee5f69a73671340f6cb815da87948f38eb126a13576470ad656c",
-        "de": "97bc89b5f1afee5f69a73671340f6cb815da87948f38eb126a13576470ad656c",
-        "zh": "178f8939fd85f9fd0270b96e79c9b51c21fb6804199f860f2c06c9161805c94d",
-        "fr": "97bc89b5f1afee5f69a73671340f6cb815da87948f38eb126a13576470ad656c",
-        "ja": "97bc89b5f1afee5f69a73671340f6cb815da87948f38eb126a13576470ad656c",
-        "ko": "97bc89b5f1afee5f69a73671340f6cb815da87948f38eb126a13576470ad656c"
+        "pt-BR": "8684fe88a4edf420ff93495e4fd57ec13748e77794f0a0f46f33727d0300d39b",
+        "de": "8684fe88a4edf420ff93495e4fd57ec13748e77794f0a0f46f33727d0300d39b",
+        "zh": "8684fe88a4edf420ff93495e4fd57ec13748e77794f0a0f46f33727d0300d39b",
+        "fr": "8684fe88a4edf420ff93495e4fd57ec13748e77794f0a0f46f33727d0300d39b",
+        "ja": "8684fe88a4edf420ff93495e4fd57ec13748e77794f0a0f46f33727d0300d39b",
+        "ko": "8684fe88a4edf420ff93495e4fd57ec13748e77794f0a0f46f33727d0300d39b"
       }
     },
     "docs/developers/daemon/19-observability.md": {
