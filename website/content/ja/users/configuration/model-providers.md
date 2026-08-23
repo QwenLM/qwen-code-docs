@@ -18,6 +18,43 @@ Qwen Code では、`settings.json` の `modelProviders` 設定を通じて複数
 >
 > **モデルの一意性:** 同じ `authType` 内のモデルは、`id` と `baseUrl` の組み合わせによって一意に識別されます。つまり、各エントリが異なる `baseUrl` を持っている限り（例えば、1つは OpenAI に直接、もう1つはプロキシエンドポイントを指すなど）、同じモデル ID（例: `"gpt-4o"`）を単一の `authType` 内で複数回定義できます。2つのエントリが同じ `id` と同じ `baseUrl` を共有する場合（または両方とも `baseUrl` を省略している場合）、最初に出現したものが優先され、その後の重複は警告とともにスキップされます。
 
+### 画像生成ルート
+
+組み込みの `image_gen` ツールでルートを使用できる場合、`supportsImageGeneration: true` を設定します。この機能は、`capabilities.vision` や `generationConfig.modalities.image` などの画像入力サポートとは独立しています。
+
+ルートが画像生成専用で、通常のモデルセレクターに表示しない場合は、`imageOnly: true` を使用します。後方互換性のため、`imageOnly: true` は画像生成機能も暗黙に持つため、既存の設定を移行する必要はありません。
+
+二重の役割を持つルートは、メインモデルとして、また `/model --image` 経由の両方で選択できます。
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "omni-model",
+        "envKey": "MODEL_API_KEY",
+        "baseUrl": "https://gateway.example.com/model-api",
+        "supportsImageGeneration": true
+      }
+    ]
+  }
+}
+```
+
+専用画像ルートは両方のフィールドを設定します。`imageOnly: true` のみのレガシー形式も引き続き有効です。
+
+```json
+{
+  "id": "image-model",
+  "envKey": "MODEL_API_KEY",
+  "baseUrl": "https://images.example.com/api/v1",
+  "supportsImageGeneration": true,
+  "imageOnly": true
+}
+```
+
+選択されたルートは、明示的な HTTPS `baseUrl` と空でない `envKey` を宣言する必要があります。画像生成はルートと同じエンドポイントと認証情報を使用します。チャットと画像生成で異なるエンドポイントや認証情報が必要な場合は、代わりに2つのルートを構成してください。
+
 ## 認証タイプ別の設定例
 
 以下は、利用可能なパラメータとその組み合わせを示す、さまざまな認証タイプの包括的な設定例です。
@@ -33,6 +70,9 @@ Qwen Code では、`settings.json` の `modelProviders` 設定を通じて複数
 | `gemini`     | Google Gemini API                                                                                                                               |
 | `qwen-oauth` | Qwen OAuth（ハードコードされており、`modelProviders` で上書きできません）                                                                       |
 | `vertex-ai`  | Google Vertex AI（Vertex AI モードで `gemini` プロトコルと `@google/genai` SDK を使用します。選択すると `GOOGLE_GENAI_USE_VERTEXAI=true` が設定されます） |
+
+> [!note]
+> Vertex AI エントリは**Application Default Credentials** で認証できます。`GOOGLE_CLOUD_PROJECT`（およびオプションで `GOOGLE_CLOUD_LOCATION`、デフォルトは `global`）を設定し、`envKey` を未設定のままにします。リゾルバーが読み取る他のすべてのキーソース（`GOOGLE_API_KEY`、`settings.security.auth.apiKey`、CLI のキーフラグ）も未設定にしてください。Vertex エントリに到達した API キー値は、Google SDK を Vertex Express モードに切り替えます。このモードでは、プロジェクト、ロケーション、ADC 認証情報は無視されます。`envKey` を宣言するエントリは ADC にルーティングされないため、注入に失敗したキーは、別のプリンシパルとしてサイレントに認証される代わりに、その変数で失敗し続けます。
 
 > [!warning]
 > 組み込みプロトコルでも `providerProtocol` 経由でマッピングされていないプロバイダー ID（例: `"openai-custom"` のようなタイプミス）はルーティングできないため、エントリ全体が警告とともに**スキップ**されます。モデルは `/model` ピッカーに表示されません。組み込みプロバイダーには上記のサポートされている認証タイプ値のいずれかを使用するか、カスタム ID には [`providerProtocol`](#カスタムプロバイダー-idproviderprotocol) マッピングを追加してください。

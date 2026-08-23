@@ -22,6 +22,43 @@ Qwen Code는 `settings.json`의 `modelProviders` 설정을 통해 여러 모델 
 >
 > **모델 고유성:** 동일한 `authType` 내의 모델은 `id` + `baseUrl`의 조합으로 고유하게 식별됩니다. 즉, 각 항목이 다른 `baseUrl`을 가지는 한 동일한 모델 ID(예: `"gpt-4o"`)를 단일 `authType` 아래에 여러 번 정의할 수 있습니다 — 예를 들어, 하나는 OpenAI를 직접 가리키고 다른 하나는 프록시 엔드포인트를 가리킵니다. 두 항목이 동일한 `id`와 동일한 `baseUrl`을 공유하면(또는 둘 다 `baseUrl`을 생략하면) 첫 번째 항목이 우선하며 후속 중복은 경고와 함께 건너뛰어집니다.
 
+### 이미지 생성 라우트
+
+라우트가 내장 `image_gen` 도구에서 사용될 수 있으려면 `supportsImageGeneration: true`를 설정하세요. 이 기능은 `capabilities.vision`이나 `generationConfig.modalities.image`와 같은 이미지 입력 지원과는 독립적입니다.
+
+라우트가 이미지 생성 전용이고 일반 모델 선택기에 나타나서는 안 되는 경우 `imageOnly: true`를 사용하세요. 하위 호환성을 위해 `imageOnly: true`는 이미지 생성 기능도 암시하므로 기존 설정을 마이그레이션할 필요는 없습니다.
+
+이중 역할 라우트는 메인 모델로 선택될 수도 있고 `/model --image`를 통해서도 선택될 수 있습니다:
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "omni-model",
+        "envKey": "MODEL_API_KEY",
+        "baseUrl": "https://gateway.example.com/model-api",
+        "supportsImageGeneration": true
+      }
+    ]
+  }
+}
+```
+
+전용 이미지 라우트는 두 필드를 모두 설정합니다. `imageOnly: true`만 있는 레거시 형식도 유효합니다:
+
+```json
+{
+  "id": "image-model",
+  "envKey": "MODEL_API_KEY",
+  "baseUrl": "https://images.example.com/api/v1",
+  "supportsImageGeneration": true,
+  "imageOnly": true
+}
+```
+
+선택된 라우트는 명시적 HTTPS `baseUrl`과 비어 있지 않은 `envKey`를 선언해야 합니다. 이미지 생성은 라우트와 동일한 엔드포인트 및 자격 증명을 사용합니다. 채팅과 이미지 생성에 다른 엔드포인트나 자격 증명이 필요하면 두 개의 라우트를 구성하세요.
+
 ## Auth 유형별 구성 예시
 
 아래는 다양한 인증 유형에 대한 포괄적인 구성 예시로, 사용 가능한 매개변수와 그 조합을 보여줍니다.
@@ -36,7 +73,7 @@ Qwen Code는 `settings.json`의 `modelProviders` 설정을 통해 여러 모델 
 | `anthropic`  | Anthropic Claude API                                                                                                                        |
 | `gemini`     | Google Gemini API                                                                                                                           |
 | `qwen-oauth` | Qwen OAuth(하드코딩됨, `modelProviders`에서 재정의 불가)                                                                                    |
-| `vertex-ai`  | Google Vertex AI(`gemini` 프로토콜과 Vertex AI 모드의 `@google/genai` SDK 사용; 선택 시 `GOOGLE_GENAI_USE_VERTEXAI=true` 설정)              |
+| `vertex-ai`  | Google Vertex AI(`gemini` 프로토콜과 Vertex AI 모드의 `@google/genai` SDK 사용)                                                            |
 
 > [!warning]
 > 내장 프로토콜이 아니거나 `providerProtocol`을 통해 매핑되지 않은 제공자 id(예: `"openai-custom"`과 같은 오타)는 라우팅할 수 없으므로 전체 항목이 경고와 함께 **건너뛰어집니다** — 모델이 `/model` 선택기에 표시되지 않습니다. 내장 제공자의 경우 위의 지원되는 auth 유형 값 중 하나를 사용하거나, 사용자 정의 id에 대한 [`providerProtocol`](#custom-provider-ids-providerprotocol) 매핑을 추가하세요.

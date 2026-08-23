@@ -291,9 +291,9 @@ W77 竞态条件（`cb206da36`）：`createUnpooledConnection` 在等待 `client
 
 池键源自 `mcp-pool-key.ts` 中的 `fingerprint(cfg)`。哈希覆盖所有传输定义字段：
 
-> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, oauth`
+> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, versionNegotiation, oauth`
 
-会话级过滤和元数据字段（`includeTools`、`excludeTools`、`trust`、`description`、`extensionName`、`discoveryTimeoutMs`）不参与哈希，因此不同过滤条件的会话可以共享同一个条目。
+会话级过滤和元数据字段（`includeTools`、`excludeTools`、`trust`、`description`、`extensionName`、`discoveryTimeoutMs`）不参与哈希，因此不同过滤条件的会话可以共享同一个条目。自动协商的 opt-in 被包含在内，因为它改变了底层进程的连接方式。
 
 对于 OAuth 单元，`canonicalOAuth(o)` 对每个 `MCPOAuthConfig` 字段进行哈希：`clientId`、`clientSecret`、排序后的 `scopes`、排序后的 `audiences`、`authorizationUrl`、`tokenUrl`、`redirectUri`、`tokenParamName` 和 `registrationUrl`。这是凭证隔离的契约：两个会话配置如果仅在 `clientSecret`、`audiences` 或 `redirectUri` 上不同，将产生不同的指纹，且无法共享同一个条目。机密客户端和多受众令牌部署依赖于此。
 

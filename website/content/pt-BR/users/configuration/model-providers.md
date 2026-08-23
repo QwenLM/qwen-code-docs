@@ -18,6 +18,54 @@ Use `modelProviders` para declarar modelos por id de provedor que podem ser alte
 >
 > **Unicidade do modelo:** Modelos dentro do mesmo `authType` são identificados exclusivamente pela combinação de `id` + `baseUrl`. Isso significa que você pode definir o mesmo ID de modelo (por exemplo, `"gpt-4o"`) várias vezes sob um único `authType`, desde que cada entrada tenha um `baseUrl` diferente — por exemplo, um apontando diretamente para a OpenAI e outro para um endpoint de proxy. Se duas entradas compartilharem o mesmo `id` e o mesmo `baseUrl` (ou ambas omitirem o `baseUrl`), a primeira ocorrência prevalece e as duplicatas subsequentes são ignoradas com um aviso.
 
+### Rotas de geração de imagens
+
+Defina `supportsImageGeneration: true` quando uma rota puder ser usada pela
+ferramenta integrada `image_gen`. Essa capacidade é independente do suporte a
+entrada de imagens como `capabilities.vision` ou
+`generationConfig.modalities.image`.
+
+Use `imageOnly: true` quando a rota for dedicada à geração de imagens e não
+dever aparecer nos seletores de modelo comuns. Para compatibilidade retroativa,
+`imageOnly: true` também implica capacidade de geração de imagens, então
+configurações existentes não precisam ser migradas.
+
+Uma rota de papel duplo pode ser selecionada tanto como modelo principal quanto
+via `/model --image`:
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "omni-model",
+        "envKey": "MODEL_API_KEY",
+        "baseUrl": "https://gateway.example.com/model-api",
+        "supportsImageGeneration": true
+      }
+    ]
+  }
+}
+```
+
+Uma rota dedicada de imagens define ambos os campos. A forma legada com apenas
+`imageOnly: true` permanece válida:
+
+```json
+{
+  "id": "image-model",
+  "envKey": "MODEL_API_KEY",
+  "baseUrl": "https://images.example.com/api/v1",
+  "supportsImageGeneration": true,
+  "imageOnly": true
+}
+```
+
+A rota selecionada deve declarar um `baseUrl` HTTPS explícito e um `envKey`
+não vazio. A geração de imagens usa o mesmo endpoint e a mesma credencial da
+rota; se chat e geração de imagens requerem endpoints ou credenciais
+diferentes, configure duas rotas.
+
 ## Exemplos de Configuração por Tipo de Autenticação
 
 Abaixo estão exemplos abrangentes de configuração para diferentes tipos de autenticação, mostrando os parâmetros disponíveis e suas combinações.
@@ -33,6 +81,9 @@ As chaves do objeto `modelProviders` devem ser valores válidos de `authType`. O
 | `gemini`     | API Google Gemini                                                                                                                               |
 | `qwen-oauth` | Qwen OAuth (hard-coded, não pode ser sobrescrito em `modelProviders`)                                                                           |
 | `vertex-ai`  | Google Vertex AI (usa o protocolo `gemini` e o SDK `@google/genai` no modo Vertex AI; selecioná-lo define `GOOGLE_GENAI_USE_VERTEXAI=true`)     |
+
+> [!note]
+> Entradas do Vertex AI podem autenticar com **Application Default Credentials**. Defina `GOOGLE_CLOUD_PROJECT` (e opcionalmente `GOOGLE_CLOUD_LOCATION`, cujo padrão é `global`) e deixe `envKey` não definido, junto com todas as outras fontes de chave que o resolvedor lê: `GOOGLE_API_KEY`, `settings.security.auth.apiKey` e as flags de CLI de chave. Qualquer valor de chave de API que chegue a uma entrada do Vertex ativa o modo Vertex Express do SDK Google, que ignora o projeto, a localização e suas credenciais ADC. Uma entrada que declara um `envKey` nunca é roteada para ADC, então uma chave que falhe ao ser injetada continuará falhando nessa variável em vez de autenticar silenciosamente como um principal diferente.
 
 > [!warning]
 > Um id de provedor que não é um protocolo integrado nem mapeado via `providerProtocol` (por exemplo, um erro de digitação como `"openai-custom"`) não pode ser roteado, então toda a sua entrada é **ignorada** com um aviso — seus modelos simplesmente não aparecerão no seletor `/model`. Use um dos valores de tipo de auth suportados acima para provedores integrados, ou adicione um mapeamento [`providerProtocol`](#ids-de-provedor-personalizados-providerprotocol) para um id personalizado.

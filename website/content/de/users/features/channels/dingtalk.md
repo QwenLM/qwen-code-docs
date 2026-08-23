@@ -169,6 +169,18 @@ Du kannst Fotos und Dokumente an den Bot senden, nicht nur Text.
 
 **Dateien:** Sende eine PDF-, Code-Datei oder ein beliebiges Dokument. Der Bot lädt sie von DingTalks Servern herunter und speichert sie lokal, damit der Agent sie mit seinen Dateiwerkzeugen lesen kann. Audio- und Videodateien werden ebenfalls unterstützt. Dies funktioniert mit jedem Modell.
 
+## Weitergeleitete Chat-Verläufe
+
+Du kannst eine Reihe von Nachrichten aus einem anderen Chat an den Bot weiterleiten (DingTalks „combined forward"), entweder als eigenständige Nachricht oder als Nachricht, auf die du antwortest. Der Bot expandiert den Verlauf in Text für den Agenten: Titel und Zusammenfassung des Verlaufs werden zu einer Kopfzeile, und jede weitergeleitete Nachricht wird unter `[Chat record messages]` als `Absender: Nachricht` aufgelistet. Eine weitergeleitete Nachricht, deren Inhalt nicht textbasiert ist, wird als Platzhalter angezeigt – `[image]`, `[file: <Name>]`, `[audio]`, `[video]`.
+
+Lange Verläufe werden **begrenzt, und die Begrenzung wird angekündigt**: maximal 50 Nachrichten, maximal 4000 Zeichen insgesamt und maximal 500 Zeichen pro Nachricht. Was abgeschnitten wird, wird dem Agenten im selben Text mitgeteilt – eine abschließende Zeile `[N more message(s) not shown]` für verworfene Nachrichten und ein ` [truncated]`-Marker bei jeder gekürzten Nachricht. Der Agent weiß also, dass er auf einen unvollständigen Verlauf antwortet; wenn du den kompletten Inhalt brauchst, leite ihn in kleineren Paketen weiter.
+
+Ein Verlauf, auf den du **antwortest**, wird zitiert statt gesendet, und zitierter Text wird auf jedem Channel auf 500 Zeichen begrenzt – der Verlauf wird also auf dieses 500-Zeichen-Budget statt auf das 4000-Zeichen-Budget gerendert, und dieselben Ankündigungen gelten innerhalb dessen. Erwarte bei einem zitierten Verlauf seine Kopfzeile und die erste Nachricht oder zwei; leite ihn als eigenständige Nachricht weiter, um dem Agenten den kompletten Inhalt zu geben.
+
+Da ein weitergeleiteter Verlauf von anderen Personen als dir verfasst wird, wird alles daraus entnommene – Titel, Absendernamen, Nachrichteninhalt – neutralisiert, bevor es den Agenten erreicht, sodass eine weitergeleitete Nachricht sich nicht als Anweisung an den Bot ausgeben kann.
+
+Das mehrzeilige Layout oben ist das, was der Agent in einem 1:1-Chat sieht. In einer Gruppe wird die gesamte Nachricht ein zweites Mal neutralisiert, bevor sie den Agenten erreicht – sie wird auf eine Zeile gefaltet und die eckigen Klammern um die Marker werden entfernt; der Inhalt und die Begrenzungsankündigungen sind in beiden Fällen gleich.
+
 ## Hauptunterschiede zu Telegram
 
 - **Authentifizierung:** AppKey + AppSecret anstelle eines statischen Bot-Tokens. Das SDK verwaltet die Aktualisierung des Zugriffstokens automatisch.

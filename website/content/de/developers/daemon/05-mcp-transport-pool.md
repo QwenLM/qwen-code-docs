@@ -314,9 +314,9 @@ zu hängen. `forceShutdown` verwendet dieselbe Reihenfolge (Emit-dann-Detach).
 
 Der Pool-Key stammt von `fingerprint(cfg)` in `mcp-pool-key.ts`. Der Hash umfasst alle transportdefinierenden Felder:
 
-> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, oauth`
+> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, versionNegotiation, oauth`
 
-Filter- und Metadatenfelder pro Sitzung (`includeTools`, `excludeTools`, `trust`, `description`, `extensionName`, `discoveryTimeoutMs`) werden ausgeschlossen, sodass Sitzungen mit unterschiedlichen Filtern einen gemeinsamen Eintrag nutzen können.
+Filter- und Metadatenfelder pro Sitzung (`includeTools`, `excludeTools`, `trust`, `description`, `extensionName`, `discoveryTimeoutMs`) werden ausgeschlossen, sodass Sitzungen mit unterschiedlichen Filtern einen gemeinsamen Eintrag nutzen können. Die automatische Negotiation-Opt-In ist enthalten, da sie ändert, wie der zugrunde liegende Prozess sich verbindet.
 
 Für die OAuth-Zelle hasht `canonicalOAuth(o)` jedes `MCPOAuthConfig`-Feld: `clientId`, `clientSecret`, sortierte `scopes`, sortierte `audiences`, `authorizationUrl`, `tokenUrl`, `redirectUri`, `tokenParamName` und `registrationUrl`. Dies ist der Credential-Isolationsvertrag: Zwei Sitzungskonfigurationen, die sich nur durch `clientSecret`, `audiences` oder `redirectUri` unterscheiden, erhalten unterschiedliche Fingerprints und können keinen gemeinsamen Eintrag nutzen. Vertrauliche Clients und Multi-Audience-Token-Bereitstellungen hängen davon ab.
 

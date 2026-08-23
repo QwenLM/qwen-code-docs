@@ -133,7 +133,7 @@ AI 도구와 모델을 관리하는 명령어입니다.
 
 > [!note]
 >
-> `/workflows`, `/lsp`, `/trust`는 각 기능이 활성화되었을 때만 등록됩니다 — 각각 `QWEN_CODE_ENABLE_WORKFLOWS=1` 환경 변수, `--experimental-lsp` CLI 플래그, `security.folderTrust.enabled` 설정을 통해 활성화됩니다. 비활성화되면 표시되지 않으며 알 수 없는 명령어로 보고됩니다. 마찬가지로, `/dream`과 `/forget`은 관리되는 자동 memory가 사용 가능한 경우에만 등록됩니다; 그렇지 않으면 표시되지 않습니다.
+> `/workflows`, `/lsp`, `/trust`는 각 기능이 활성화되었을 때만 등록됩니다 — 각각 사용자/시스템 범위의 `tools.workflowsEnabled` 설정 또는 `QWEN_CODE_ENABLE_WORKFLOWS=1` 환경 변수, `--experimental-lsp` CLI 플래그, `security.folderTrust.enabled` 설정을 통해 활성화됩니다. `tools.workflowsEnabled`의 워크스페이스 값은 무시됩니다. 비활성화되면 표시되지 않으며 알 수 없는 명령어로 보고됩니다. 마찬가지로, `/dream`과 `/forget`은 관리되는 자동 memory가 사용 가능한 경우에만 등록됩니다; 그렇지 않으면 표시되지 않습니다.
 
 ### 1.5 내장 Skill
 

@@ -75,18 +75,15 @@ Wenn du den interaktiven `/auth`-Flow überspringen möchtest, füge Folgendes z
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "qwen3-coder-plus",
-          "name": "qwen3-coder-plus (Coding Plan)",
-          "baseUrl": "https://coding.dashscope.aliyuncs.com/v1",
-          "description": "qwen3-coder-plus from Alibaba Cloud Coding Plan",
-          "envKey": "BAILIAN_CODING_PLAN_API_KEY"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "qwen3-coder-plus",
+        "name": "qwen3-coder-plus (Coding Plan)",
+        "baseUrl": "https://coding.dashscope.aliyuncs.com/v1",
+        "description": "qwen3-coder-plus from Alibaba Cloud Coding Plan",
+        "envKey": "BAILIAN_CODING_PLAN_API_KEY"
+      }
+    ]
   },
   "env": {
     "BAILIAN_CODING_PLAN_API_KEY": "sk-sp-xxxxxxxxx"
@@ -117,18 +114,15 @@ Der einfachste Weg, um mit der API-Key-Authentifizierung zu beginnen, besteht da
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "qwen3-coder-plus",
-          "name": "qwen3-coder-plus",
-          "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-          "description": "Qwen3-Coder via Dashscope",
-          "envKey": "DASHSCOPE_API_KEY"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "qwen3-coder-plus",
+        "name": "qwen3-coder-plus",
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "description": "Qwen3-Coder via Dashscope",
+        "envKey": "DASHSCOPE_API_KEY"
+      }
+    ]
   },
   "env": {
     "DASHSCOPE_API_KEY": "sk-xxxxxxxxxxxxx"
@@ -168,7 +162,7 @@ Das Schlüsselkonzept sind **Model Providers** (`modelProviders`): Qwen Code unt
 | OpenAI-kompatibel | `openai`             | `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL` (Alias: `QWEN_MODEL`)                            | OpenAI, Azure OpenAI, OpenRouter, Requesty, ModelScope, Alibaba Cloud, jeder OpenAI-kompatible Endpunkt |
 | Anthropic         | `anthropic`          | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`                                         | Anthropic Claude                                                                                      |
 | Google GenAI      | `gemini`             | `GEMINI_API_KEY`, `GEMINI_MODEL`                                                                     | Google Gemini                                                                                         |
-| Vertex AI         | `vertex-ai`          | `GOOGLE_API_KEY`, `GOOGLE_MODEL` (setzt `GOOGLE_GENAI_USE_VERTEXAI=true`; verwendet das `gemini`-Protokoll) | Google Vertex AI                                                                                      |
+| Vertex AI         | `vertex-ai`          | `GOOGLE_API_KEY` oder `GOOGLE_CLOUD_PROJECT` (+ optional `GOOGLE_CLOUD_LOCATION`), `GOOGLE_MODEL` (verwendet das `gemini`-Protokoll; ein keyless Project-only-Setup wird nicht automatisch aus der Umgebung erkannt, daher den Auth-Typ explizit mit `--auth-type vertex-ai` oder `security.auth.selectedType` auswählen) | Google Vertex AI                                                                                      |
 
 #### Schritt 1: Modelle und Provider in `~/.qwen/settings.json` konfigurieren
 
@@ -183,37 +177,28 @@ Bearbeite `~/.qwen/settings.json` (erstelle sie, falls sie nicht existiert). Du 
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "gpt-4o",
-          "name": "GPT-4o",
-          "envKey": "OPENAI_API_KEY",
-          "baseUrl": "https://api.openai.com/v1"
-        }
-      ]
-    },
-    "anthropic": {
-      "protocol": "anthropic",
-      "models": [
-        {
-          "id": "claude-sonnet-4-20250514",
-          "name": "Claude Sonnet 4",
-          "envKey": "ANTHROPIC_API_KEY"
-        }
-      ]
-    },
-    "gemini": {
-      "protocol": "gemini",
-      "models": [
-        {
-          "id": "gemini-2.5-pro",
-          "name": "Gemini 2.5 Pro",
-          "envKey": "GEMINI_API_KEY"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "gpt-4o",
+        "name": "GPT-4o",
+        "envKey": "OPENAI_API_KEY",
+        "baseUrl": "https://api.openai.com/v1"
+      }
+    ],
+    "anthropic": [
+      {
+        "id": "claude-sonnet-4-20250514",
+        "name": "Claude Sonnet 4",
+        "envKey": "ANTHROPIC_API_KEY"
+      }
+    ],
+    "gemini": [
+      {
+        "id": "gemini-2.5-pro",
+        "name": "Gemini 2.5 Pro",
+        "envKey": "GEMINI_API_KEY"
+      }
+    ]
   }
 }
 ```

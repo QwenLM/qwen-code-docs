@@ -90,18 +90,18 @@ Befehle zur Verwaltung von KI-Tools und -Modellen.
 | `/learn` | Einen wiederverwendbaren Projekt-Skill aus einer Datei, einem Verzeichnis, einer URL, einem Video oder Text erstellen | `/learn https://docs.example.com/api`, `/learn ./tutorial.mp4 focus on deployment` |
 | `/curator` | Inaktive Projekt-Auto-Skills inspizieren, pinnen, archivieren oder wiederherstellen | `/curator`, `/curator run --dry-run`, `/curator pin <directory>`, `/curator restore <directory>` |
 | `/plan` | In den Plan-Modus wechseln oder den Plan-Modus beenden | `/plan`, `/plan <task>`, `/plan exit` |
-| `/approval-mode` | Den Tool-Freigabemodus ändern (nur aktuelle Sitzung) | `/approval-mode`, `/approval-mode auto-edit` |
+| `/approval-mode` | Den Genehmigungsmodus ändern (nur aktuelle Sitzung) | `/approval-mode`, `/approval-mode auto-edit` |
 | → `plan` | Nur Analyse, keine Ausführung (sichere Überprüfung) | `/approval-mode plan` |
-| → `default` | Freigabe für Änderungen erforderlich (tägliche Nutzung) | `/approval-mode default` |
+| → `default` | Genehmigung für Änderungen erforderlich (tägliche Nutzung) | `/approval-mode default` |
 | → `auto-edit` | Änderungen automatisch genehmigen (vertrauenswürdige Umgebung) | `/approval-mode auto-edit` |
-| → `auto` | Vom Classifier bewertete Freigabe (autonom) | `/approval-mode auto` |
+| → `auto` | Vom Classifier bewertete Genehmigung (autonom) | `/approval-mode auto` |
 | → `yolo` | Alles automatisch genehmigen (schnelles Prototyping) | `/approval-mode yolo` |
 | `/model` | In der aktuellen Sitzung verwendetes Modell wechseln | `/model`, `/model <model-id>` (sofortiger Wechsel) |
 | `/model --fast` | Ein leichteres Modell für Prompt-Vorschläge festlegen | `/model --fast qwen3-coder-flash` |
 | `/model --voice` | Das für die Sprachtranskription verwendete Modell festlegen | `/model --voice <model-id>` |
 | `/model --vision` | Das Vision-Bridge-Modell festlegen, das verwendet wird, um Bilder für ein reines Text-Hauptmodell zu transkribieren | `/model --vision <model-id>` |
 | `/model --compaction` | Das für die Chat-Komprimierung verwendete Modell festlegen | `/model --compaction <model-id>`, `/model --compaction clear` |
-| `/model --image` | Ein reines Bildmodell für das integrierte Bildgenerierungs-Tool festlegen | `/model --image <model-id>` |
+| `/model --image` | Ein Modell mit Bildgenerierungsfähigkeit für das integrierte Bildgenerierungs-Tool festlegen | `/model --image <model-id>` |
 | `/effort` | Reasoning-Aufwand für denkfähige Modelle festlegen | `/effort` (öffnet Picker), `/effort high` (low/medium/high/xhigh/max; wird je nach Provider gemappt und begrenzt) |
 | `/extensions` | Extensions verwalten | `/extensions list`, `/extensions manage` |
 | → `list` | Installierte Extensions auflisten | `/extensions list` |
@@ -128,11 +128,11 @@ Befehle zur Verwaltung von KI-Tools und -Modellen.
 
 > [!warning]
 >
-> Die Approval-Modi `auto-edit`, `auto` und `yolo` umgehen die Bestätigungsabfragen für Tool-Ausführungen. Im `yolo`-Modus werden alle Aktionen – einschließlich Shell-Befehle, Datei-Schreibvorgänge und Netzwerkanfragen – ohne Bestätigung ausgeführt. Verwende diese Modi nur in vertrauenswürdigen, isolierten (sandboxed) oder wegwerfbaren Umgebungen.
+> Die Genehmigungsmodi `auto-edit`, `auto` und `yolo` umgehen die Genehmigungsabfragen für Tool-Ausführungen. Im `yolo`-Modus werden alle Aktionen – einschließlich Shell-Befehle, Datei-Schreibvorgänge und Netzwerkanfragen – ohne Bestätigung ausgeführt. Verwende diese Modi nur in vertrauenswürdigen, isolierten (sandboxed) oder wegwerfbaren Umgebungen.
 
 > [!note]
 >
-> `/workflows`, `/lsp` und `/trust` werden nur registriert, wenn die jeweilige Funktion aktiviert ist – über die Umgebungsvariable `QWEN_CODE_ENABLE_WORKFLOWS=1`, das CLI-Flag `--experimental-lsp` bzw. die Einstellung `security.folderTrust.enabled`. Wenn sie deaktiviert sind, werden sie nicht angezeigt und melden einen unbekannten Befehl. Ebenso werden `/dream` und `/forget` nur registriert, wenn verwaltetes Auto-Memory verfügbar ist; andernfalls werden sie nicht angezeigt.
+> `/workflows`, `/lsp` und `/trust` werden nur registriert, wenn die jeweilige Funktion aktiviert ist – über die user/system-scoped Einstellung `tools.workflowsEnabled` oder die Umgebungsvariable `QWEN_CODE_ENABLE_WORKFLOWS=1`, das CLI-Flag `--experimental-lsp` bzw. die Einstellung `security.folderTrust.enabled`. Workspace-Werte für `tools.workflowsEnabled` werden ignoriert. Wenn sie deaktiviert sind, werden sie nicht angezeigt und melden einen unbekannten Befehl. Ebenso werden `/dream` und `/forget` nur registriert, wenn verwaltetes Auto-Memory verfügbar ist; andernfalls werden sie nicht angezeigt.
 
 ### 1.5 Integrierte Skills
 

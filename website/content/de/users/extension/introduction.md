@@ -155,7 +155,9 @@ Es werden nur scoped Packages (`@scope/package-name`) unterstützt, um Verwechsl
 
 #### Aus einem Git-Repository
 
-Öffentliche Git-Repository-Installationen und Update-Prüfungen erfordern Git 2.37 oder neuer. Qwen Code verwendet die in Git 2.37 eingeführte Einstellung `http.curloptResolve`, um öffentliche Netzwerkverbindungen an validierte DNS-Ergebnisse zu binden. Wenn deine Distribution eine ältere Git-Version mitbringt, aktualisiere Git oder installiere stattdessen ein lokales/Archiv-Release.
+Git 2.37 oder neuer ist für authentifizierte, nicht-GitHub-, verschachtelte Marktplatz-, Submodul- und Git-LFS-Quellen erforderlich, da Qwen Code `http.curloptResolve` verwendet, um Git-Verbindungen an validierte DNS-Ergebnisse zu binden. Bei älteren Git-Versionen unterstützt Qwen Code nur anonyme öffentliche `https://github.com/{owner}/{repo}[.git]`-Root-Repositories, indem es den angeforderten Ref auf einen Commit auflöst und das GitHub-Quellarchiv mit denselben öffentlichen Netzwerk- und Archiv-Sicherheitsprüfungen herunterlädt.
+
+Da das Fallback für ältere Git-Versionen von einem Quellarchiv statt von einem Clone installiert, kann es keine Repositories installieren, die auf Symlinks, Submodulen oder Git LFS angewiesen sind, und begrenzt Downloads auf 100 MiB komprimiert und Archive auf 100.000 Einträge / 1 GiB entpackt. Release-basierte Installationen werden weiterhin bevorzugt, wenn ein Repository Releases veröffentlicht.
 
 ```bash
 qwen extensions install https://github.com/github/github-mcp-server

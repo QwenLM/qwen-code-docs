@@ -101,7 +101,7 @@ Commandes pour gérer les outils et les modèles d'IA.
 | `/model --voice`  | Définir le modèle utilisé pour la transcription vocale                                       | `/model --voice <model-id>`                                                                               |
 | `/model --vision`     | Définir le modèle vision-bridge utilisé pour transcrire les images pour un modèle principal textuel                 | `/model --vision <model-id>`                                                                              |
 | `/model --compaction` | Définir le modèle utilisé pour la compression du chat                                                                | `/model --compaction <model-id>`, `/model --compaction clear`                                             |
-| `/model --image`      | Définir un modèle image-only pour l'outil de génération d'images intégré                                             | `/model --image <model-id>`                                                                               |
+| `/model --image`      | Définir un modèle capable de générer des images pour l'outil de génération d'images intégré                          | `/model --image <model-id>`                                                                               |
 | `/effort`             | Définir l'effort de raisonnement pour les modèles capables de réflexion                                              | `/effort` (ouvre le sélecteur), `/effort high` (low/medium/high/xhigh/max ; mappé et plafonné par fournisseur)       |
 | `/extensions`     | Gérer les extensions                                                                | `/extensions list`, `/extensions manage`                                                                  |
 | → `list`          | Lister les extensions installées                                                        | `/extensions list`                                                                                        |
@@ -133,7 +133,7 @@ Commandes pour gérer les outils et les modèles d'IA.
 
 > [!note]
 >
-> `/workflows`, `/lsp` et `/trust` ne sont enregistrés que lorsque leur fonctionnalité est activée — respectivement via la variable d'environnement `QWEN_CODE_ENABLE_WORKFLOWS=1`, le flag CLI `--experimental-lsp` et le paramètre `security.folderTrust.enabled`. Lorsqu'ils sont désactivés, ils n'apparaîtront pas et signaleront une commande inconnue. De même, `/dream` et `/forget` ne sont enregistrés que lorsque l'auto-mémoire managée est disponible ; sans elle, ils n'apparaîtront pas.
+> `/workflows`, `/lsp` et `/trust` ne sont enregistrés que lorsque leur fonctionnalité est activée — respectivement via le paramètre `tools.workflowsEnabled` (portée utilisateur/système) ou la variable d'environnement `QWEN_CODE_ENABLE_WORKFLOWS=1`, le flag CLI `--experimental-lsp` et le paramètre `security.folderTrust.enabled`. Les valeurs workspace pour `tools.workflowsEnabled` sont ignorées. Lorsqu'ils sont désactivés, ils n'apparaîtront pas et signaleront une commande inconnue. De même, `/dream` et `/forget` ne sont enregistrés que lorsque l'auto-mémoire managée est disponible ; sans elle, ils n'apparaîtront pas.
 
 ### 1.5 Skills intégrées
 

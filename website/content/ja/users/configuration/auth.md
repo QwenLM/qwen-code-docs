@@ -157,12 +157,12 @@ API キー認証を開始する最も簡単な方法は、すべてを単一の 
 
 #### サポートされているプロトコル
 
-| プロトコル          | `modelProviders` キー | 環境変数                                                                                | プロバイダー                                                                                             |
-| ----------------- | -------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| OpenAI 互換 | `openai`             | `OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_MODEL`（エイリアス: `QWEN_MODEL`）                            | OpenAI、Azure OpenAI、OpenRouter、Requesty、ModelScope、Alibaba Cloud、その他の OpenAI 互換エンドポイント |
-| Anthropic         | `anthropic`          | `ANTHROPIC_API_KEY`、`ANTHROPIC_BASE_URL`、`ANTHROPIC_MODEL`                                         | Anthropic Claude                                                                                      |
-| Google GenAI      | `gemini`             | `GEMINI_API_KEY`、`GEMINI_MODEL`                                                                     | Google Gemini                                                                                         |
-| Vertex AI         | `vertex-ai`          | `GOOGLE_API_KEY`、`GOOGLE_MODEL`（`GOOGLE_GENAI_USE_VERTEXAI=true` を設定し、`gemini` プロトコルを使用） | Google Vertex AI                                                                                      |
+| プロトコル          | `modelProviders` キー | 環境変数                                                                                                                        | プロバイダー                                                                                             |
+| ----------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| OpenAI 互換 | `openai`             | `OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_MODEL`（エイリアス: `QWEN_MODEL`）                                                    | OpenAI、Azure OpenAI、OpenRouter、Requesty、ModelScope、Alibaba Cloud、その他の OpenAI 互換エンドポイント |
+| Anthropic         | `anthropic`          | `ANTHROPIC_API_KEY`、`ANTHROPIC_BASE_URL`、`ANTHROPIC_MODEL`                                                                 | Anthropic Claude                                                                                      |
+| Google GenAI      | `gemini`             | `GEMINI_API_KEY`、`GEMINI_MODEL`                                                                                             | Google Gemini                                                                                         |
+| Vertex AI         | `vertex-ai`          | `GOOGLE_API_KEY` または `GOOGLE_CLOUD_PROJECT`（+ オプションの `GOOGLE_CLOUD_LOCATION`）、`GOOGLE_MODEL`（`gemini` プロトコルを使用。キーなしのプロジェクトのみのセットアップは環境から自動検出されないため、`--auth-type vertex-ai` または `security.auth.selectedType` で認証タイプを明示的に選択） | Google Vertex AI                                                                                      |
 
 #### ステップ 1: `~/.qwen/settings.json` でモデルとプロバイダーを設定する
 

@@ -167,6 +167,26 @@ await client
 
 `DaemonSkillBatchToggleResult` 包含有序的 `results` 成功列表、每个目标的 `errors`，以及批次级别的激活/会话刷新计数。daemon 会将有效目标一起持久化并一次性刷新活跃会话；一个预期的目标错误不会阻止其他有效目标。该方法仅在非 200 响应时抛出；200 并不意味着每个目标都已应用，因此在将批次视为成功之前务必检查 `errors`。
 
+V2 Extension 批量激活保留了异步 Extension 操作模型。预检 `extension_batch_activation_v2`，提交全局默认批次或选定工作区覆盖批次，然后使用现有的操作辅助方法进行轮询：
+
+```ts
+const globalHandle = await client.setExtensionDefaultActivations(
+  ['formatter', 'review-tools'],
+  'disabled',
+  'dashboard-1',
+);
+const workspaceHandle = await client
+  .workspaceByCwd('/work/secondary')
+  .setExtensionActivations(
+    ['formatter', 'review-tools'],
+    'inherit',
+    'dashboard-1',
+  );
+const operation = await client.waitForExtensionOperation(workspaceHandle);
+```
+
+终端操作结果包含有序的 `results`。设置 `enabled` 或 `disabled` 时目标不需要已安装：daemon 会存储一个名称声明，并在之后安装同名 Extension 时保留该激活策略。所有变更的目标共享一个 Extension Store generation 和一次调和。全局默认批次会调和每个已注册的运行时；工作区批次仅解析和调和选定的可信运行时。工作区的 `inherit` 会清除确切的覆盖但不会为未知名称创建声明；全部未知的清除会作为无操作成功而不进行调和。单一激活方法仍然仅限已安装的目标。
+
 工作区显示名称是可选的展示元数据。预检 `capabilities.features.includes('workspace_display_name')`；工作区 ID 和规范路径仍然是唯一的选择器，重复的显示名称是合法的。
 
 ```ts
@@ -385,7 +405,7 @@ async function resilientSubscribe(session: DaemonSessionClient) {
 
 当 `workspace_archived_session_export` 被广播时，使用 `client.workspaceById(workspaceId).exportArchivedSession(sessionId, { format })` 或相应的 `workspaceByCwd` 方法仅导出选定工作区的已归档持久化转录。该方法使用与活动导出相同的结果类型和原生 REST 行为，但它永远不会回退到活动会话；不能从任何活动导出能力推断其支持。
 
-当 `workspace_session_live_state` 被广播时，`client.getWorkspaceSessionLiveState(workspaceCwd)` 或作用域方法 `client.workspaceById(workspaceId).getSessionLiveState()` / `client.workspaceByCwd(workspaceCwd).getSessionLiveState()` 读取选定可信工作区的纯内存活跃会话快照及其目录版本，返回 `DaemonWorkspaceSessionLiveState`（`{ v: 1, catalogVersion: DaemonSessionCatalogVersion, sessions: DaemonSessionLiveState[] }`）。这些方法始终使用原生 REST 配合 bearer 认证和编码的工作区选择器，保留可选的客户端标识，并使用现有的短请求超时。它们不调用 `requireCapability()` — 每次轮询都进行能力探测会使请求量翻倍 — 因此消费者应从已加载的 capabilities 中预检一次 `workspace_session_live_state`，并在缺少该标签时回退到现有的目录轮询。不要从 `workspace_qualified_rest_core` 推断其支持。
+当 `workspace_session_live_state` 被广播时，`client.getWorkspaceSessionLiveState(workspaceCwd)` 或作用域方法 `client.workspaceById(workspaceId).getSessionLiveState()` / `client.workspaceByCwd(workspaceCwd).getSessionLiveState()` 读取选定可信工作区的纯内存活跃会话快照及其目录版本，返回 `DaemonWorkspaceSessionLiveState`（`{ v: 1, catalogVersion: DaemonSessionCatalogVersion, sessions: DaemonSessionLiveState[] }`）。这些方法始终使用原生 REST 配合 bearer 认证和编码的工作区选择器，保留可选的客户端标识，并使用现有的短请求超时。它们不调用 `requireCapability()` — 每次轮询都进行能力探测会使请求量翻倍 — 因此消费者应从已加载的 capabilities 中预检一次 `workspace_session_live_state`，并在缺少该标签时回退到现有的目录轮询。不要从 `workspace_qualified_rest_core` 推断其支持。每个 `DaemonSessionLiveState` 携带一个可选的 `updatedAt` 活动水位标记，使消费者能够刷新其已持有的目录行的时效性，而不是在完成一个轮次后重新加载目录；它在当前 bridge 中第一个运行中轮次的终端事件之前以及 daemon 或运行时替换之后缺失，因此消费者必须对缺失值保留其现有的目录回退，而不是将缺失视为不支持。
 
 ### 在构造时设置 `lastEventId` 初始值
 

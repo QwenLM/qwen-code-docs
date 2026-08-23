@@ -101,7 +101,7 @@ Comandos para gerenciar ferramentas e modelos de IA.
 | `/model --voice`  | Definir o modelo usado para transcrição de voz                                       | `/model --voice <model-id>`                                                                               |
 | `/model --vision` | Definir o modelo de vision bridge usado para transcrever imagens para um modelo principal somente de texto | `/model --vision <model-id>`                                                                              |
 | `/model --compaction` | Definir o modelo usado para compressão de chat                                               | `/model --compaction <model-id>`, `/model --compaction clear`                                             |
-| `/model --image`  | Definir um modelo somente de imagem para a ferramenta integrada de geração de imagens                        | `/model --image <model-id>`                                                                               |
+| `/model --image`  | Definir um modelo com capacidade de geração de imagens para a ferramenta integrada de geração de imagens     | `/model --image <model-id>`                                                                               |
 | `/effort`         | Definir o esforço de raciocínio para modelos com capacidade de pensamento                                 | `/effort` (abre o seletor), `/effort high` (low/medium/high/xhigh/max; mapeado e limitado por provedor)       |
 | `/extensions`     | Gerenciar extensões                                                                | `/extensions list`, `/extensions manage`                                                                  |
 | → `list`          | Listar extensões instaladas                                                        | `/extensions list`                                                                                        |
@@ -132,7 +132,7 @@ Comandos para gerenciar ferramentas e modelos de IA.
 
 > [!note]
 >
-> `/workflows`, `/lsp` e `/trust` são registrados apenas quando seus respectivos recursos estão habilitados — por meio da env var `QWEN_CODE_ENABLE_WORKFLOWS=1`, da flag CLI `--experimental-lsp` e da configuração `security.folderTrust.enabled`, respectivamente. Quando desabilitados, eles não aparecerão e retornarão um erro de comando desconhecido. Da mesma forma, `/dream` e `/forget` são registrados apenas quando a auto-memória gerenciada está disponível; sem ela, não aparecerão.
+> `/workflows`, `/lsp` e `/trust` são registrados apenas quando seus respectivos recursos estão habilitados — por meio da configuração `tools.workflowsEnabled` com escopo de usuário/sistema ou da env var `QWEN_CODE_ENABLE_WORKFLOWS=1`, da flag CLI `--experimental-lsp` e da configuração `security.folderTrust.enabled`, respectivamente. Valores de workspace para `tools.workflowsEnabled` são ignorados. Quando desabilitados, eles não aparecerão e retornarão um erro de comando desconhecido. Da mesma forma, `/dream` e `/forget` são registrados apenas quando a auto-memória gerenciada está disponível; sem ela, não aparecerão.
 
 ### 1.5 Skills Integradas
 
@@ -226,7 +226,7 @@ O comando `/advisor` executa uma revisão independente e somente leitura da conv
 | Comando            | Descrição                            |
 | ------------------ | ------------------------------------ |
 | `/advisor`         | Revisar a conversa acima             |
-| `/advisor <focus>` | Focar a revisão em...               |
+| `/advisor <focus>` | Focar a revisão em uma preocupação específica |
 
 **Como Funciona:**
 

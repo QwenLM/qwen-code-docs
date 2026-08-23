@@ -75,18 +75,15 @@ export OPENAI_MODEL="qwen3-coder-plus"
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "qwen3-coder-plus",
-          "name": "qwen3-coder-plus (Coding Plan)",
-          "baseUrl": "https://coding.dashscope.aliyuncs.com/v1",
-          "description": "qwen3-coder-plus from Alibaba Cloud Coding Plan",
-          "envKey": "BAILIAN_CODING_PLAN_API_KEY"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "qwen3-coder-plus",
+        "name": "qwen3-coder-plus (Coding Plan)",
+        "baseUrl": "https://coding.dashscope.aliyuncs.com/v1",
+        "description": "qwen3-coder-plus from Alibaba Cloud Coding Plan",
+        "envKey": "BAILIAN_CODING_PLAN_API_KEY"
+      }
+    ]
   },
   "env": {
     "BAILIAN_CODING_PLAN_API_KEY": "sk-sp-xxxxxxxxx"
@@ -117,18 +114,15 @@ export OPENAI_MODEL="qwen3-coder-plus"
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "qwen3-coder-plus",
-          "name": "qwen3-coder-plus",
-          "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-          "description": "Qwen3-Coder via Dashscope",
-          "envKey": "DASHSCOPE_API_KEY"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "qwen3-coder-plus",
+        "name": "qwen3-coder-plus",
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "description": "Qwen3-Coder via Dashscope",
+        "envKey": "DASHSCOPE_API_KEY"
+      }
+    ]
   },
   "env": {
     "DASHSCOPE_API_KEY": "sk-xxxxxxxxxxxxx"
@@ -168,7 +162,7 @@ export OPENAI_MODEL="qwen3-coder-plus"
 | OpenAI 兼容 | `openai` | `OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_MODEL`（别名：`QWEN_MODEL`） | OpenAI、Azure OpenAI、OpenRouter、Requesty、ModelScope、Alibaba Cloud、任何兼容 OpenAI 的 endpoint |
 | Anthropic | `anthropic` | `ANTHROPIC_API_KEY`、`ANTHROPIC_BASE_URL`、`ANTHROPIC_MODEL` | Anthropic Claude |
 | Google GenAI | `gemini` | `GEMINI_API_KEY`、`GEMINI_MODEL` | Google Gemini |
-| Vertex AI | `vertex-ai` | `GOOGLE_API_KEY`、`GOOGLE_MODEL`（设置 `GOOGLE_GENAI_USE_VERTEXAI=true`；使用 `gemini` 协议） | Google Vertex AI |
+| Vertex AI | `vertex-ai` | `GOOGLE_API_KEY` 或 `GOOGLE_CLOUD_PROJECT`（+ 可选 `GOOGLE_CLOUD_LOCATION`），`GOOGLE_MODEL`（使用 `gemini` 协议；无 key 的纯项目设置不会从环境中自动检测，因此需要使用 `--auth-type vertex-ai` 或 `security.auth.selectedType` 显式选择 auth type） | Google Vertex AI |
 
 #### 步骤 1：在 `~/.qwen/settings.json` 中配置模型和 provider
 
@@ -183,37 +177,28 @@ export OPENAI_MODEL="qwen3-coder-plus"
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "gpt-4o",
-          "name": "GPT-4o",
-          "envKey": "OPENAI_API_KEY",
-          "baseUrl": "https://api.openai.com/v1"
-        }
-      ]
-    },
-    "anthropic": {
-      "protocol": "anthropic",
-      "models": [
-        {
-          "id": "claude-sonnet-4-20250514",
-          "name": "Claude Sonnet 4",
-          "envKey": "ANTHROPIC_API_KEY"
-        }
-      ]
-    },
-    "gemini": {
-      "protocol": "gemini",
-      "models": [
-        {
-          "id": "gemini-2.5-pro",
-          "name": "Gemini 2.5 Pro",
-          "envKey": "GEMINI_API_KEY"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "gpt-4o",
+        "name": "GPT-4o",
+        "envKey": "OPENAI_API_KEY",
+        "baseUrl": "https://api.openai.com/v1"
+      }
+    ],
+    "anthropic": [
+      {
+        "id": "claude-sonnet-4-20250514",
+        "name": "Claude Sonnet 4",
+        "envKey": "ANTHROPIC_API_KEY"
+      }
+    ],
+    "gemini": [
+      {
+        "id": "gemini-2.5-pro",
+        "name": "Gemini 2.5 Pro",
+        "envKey": "GEMINI_API_KEY"
+      }
+    ]
   }
 }
 ```

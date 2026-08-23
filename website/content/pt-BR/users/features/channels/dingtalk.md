@@ -173,6 +173,18 @@ Você pode enviar fotos e documentos para o bot, não apenas texto.
 
 **Arquivos:** Envie um PDF, arquivo de código ou qualquer documento. O bot baixa o arquivo dos servidores do DingTalk e o salva localmente para que o agente possa lê-lo com suas ferramentas de arquivo. Arquivos de áudio e vídeo também são suportados. Isso funciona com qualquer modelo.
 
+## Mensagens Encaminhadas
+
+Você pode encaminhar uma sequência de mensagens de outra conversa para o bot (o "encaminhamento combinado" do DingTalk), seja como uma mensagem própria ou como a mensagem à qual você está respondendo. O bot expande o registro em texto para o agente: o título e o resumo do registro viram uma linha de cabeçalho, e cada mensagem encaminhada é listada sob `[Chat record messages]` como `Remetente: mensagem`. Uma mensagem encaminhada cujo conteúdo não seja texto é exibida como um placeholder — `[image]`, `[file: <name>]`, `[audio]`, `[video]`.
+
+Registros longos são **limitados, e o limite é informado**: no máximo 50 mensagens, no máximo 4000 caracteres no total e no máximo 500 caracteres por mensagem. O que for cortado é reportado ao agente no mesmo texto — uma linha final `[N more message(s) not shown]` para mensagens descartadas e um marcador ` [truncated]` em qualquer mensagem que tenha sido encurtada. Assim, o agente sabe que está respondendo sobre um registro parcial; se você precisa do conteúdo completo, encaminhe em lotes menores.
+
+Um registro ao qual você está **respondendo** é citado em vez de enviado, e o texto citado é limitado a 500 caracteres em qualquer channel — então o registro é renderizado dentro desse orçamento de 500 caracteres em vez do limite de 4000 caracteres, e os mesmos avisos se aplicam. Espere que um registro citado traga seu cabeçalho e a primeira mensagem ou duas; encaminhe-o como mensagem própria para fornecer o conteúdo completo ao agente.
+
+Como um registro encaminhado é escrito por outras pessoas, todo conteúdo extraído dele — títulos, nomes de remetentes, corpos de mensagens — é neutralizado antes de chegar ao agente, para que uma mensagem encaminhada não possa se passar por uma instrução ao bot.
+
+O layout multilinhas acima é o que o agente vê em um chat 1:1. Em um grupo, a mensagem inteira é neutralizada uma segunda vez antes de chegar ao agente, que a compacta em uma linha e remove os colchetes ao redor dos marcadores; o conteúdo e os avisos de limite são os mesmos de qualquer forma.
+
 ## Principais Diferenças do Telegram
 
 - **Autenticação:** AppKey + AppSecret em vez de um token de bot estático. O SDK gerencia a renovação do token de acesso automaticamente.

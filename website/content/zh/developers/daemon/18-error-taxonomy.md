@@ -85,8 +85,8 @@ Daemon 的故障模式故意设计为封闭联合类型（closed unions），以
 | `blocked_egress`                | 出站网络探测失败。                           |
 | `auth_env_error`                | 与认证相关的环境变量、提供者或信任门配置无效。 |
 | `init_timeout`                  | Daemon 端初始化步骤超过墙钟时间。            |
-| `protocol_error`                | ACP / HTTP 协议不匹配。                      |
 | `restore_timeout`               | ACP 会话 load/resume 超过了其专用的 restore 预算。 |
+| `protocol_error`                | ACP / HTTP 协议不匹配。                      |
 | `missing_file`                  | 所需的本地文件缺失。                         |
 | `parse_error`                   | 本地文件或请求解析错误。                     |
 | `stat_failed`                   | 本地文件系统状态查询失败。                    |

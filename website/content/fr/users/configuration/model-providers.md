@@ -18,6 +18,53 @@ Utilisez `modelProviders` pour déclarer des modèles par id de fournisseur entr
 >
 > **Unicité des modèles :** Les modèles au sein du même `authType` sont identifiés de manière unique par la combinaison de `id` + `baseUrl`. Cela signifie que vous pouvez définir le même ID de modèle (par ex. `"gpt-4o"`) plusieurs fois sous un seul `authType`, tant que chaque entrée a une `baseUrl` différente — par exemple, l'une pointant directement vers OpenAI et l'autre vers un point de terminaison proxy. Si deux entrées partagent le même `id` et la même `baseUrl` (ou si les deux omettent `baseUrl`), la première occurrence l'emporte et les doublons suivants sont ignorés avec un avertissement.
 
+### Routes de génération d'images
+
+Définissez `supportsImageGeneration: true` lorsqu'une route peut être utilisée par l'outil intégré
+`image_gen`. Cette capacité est indépendante de la prise en charge de l'entrée d'images telle que
+`capabilities.vision` ou `generationConfig.modalities.image`.
+
+Utilisez `imageOnly: true` lorsque la route est dédiée à la génération d'images et ne doit
+pas apparaître dans les sélecteurs de modèles ordinaires. Pour des raisons de rétrocompatibilité,
+`imageOnly: true` implique également la capacité de génération d'images, donc les paramètres
+existants n'ont pas besoin d'être migrés.
+
+Une route à double rôle peut être sélectionnée comme modèle principal et via
+`/model --image` :
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "omni-model",
+        "envKey": "MODEL_API_KEY",
+        "baseUrl": "https://gateway.example.com/model-api",
+        "supportsImageGeneration": true
+      }
+    ]
+  }
+}
+```
+
+Une route image dédiée définit les deux champs. La forme legacy avec seulement
+`imageOnly: true` reste valide :
+
+```json
+{
+  "id": "image-model",
+  "envKey": "MODEL_API_KEY",
+  "baseUrl": "https://images.example.com/api/v1",
+  "supportsImageGeneration": true,
+  "imageOnly": true
+}
+```
+
+La route sélectionnée doit déclarer une `baseUrl` HTTPS explicite et un `envKey` non vide.
+La génération d'images utilise le même endpoint et le même identifiant que la route ;
+si le chat et la génération d'images nécessitent des endpoints ou des identifiants différents,
+configurez plutôt deux routes.
+
 ## Exemples de configuration par type d'authentification
 
 Vous trouverez ci-dessous des exemples de configuration complets pour différents types d'authentification, montrant les paramètres disponibles et leurs combinaisons.
@@ -33,6 +80,9 @@ Les clés de l'objet `modelProviders` doivent être des valeurs `authType` valid
 | `gemini`     | API Google Gemini                                                                                                                               |
 | `qwen-oauth` | Qwen OAuth (codé en dur, ne peut pas être remplacé dans `modelProviders`)                                                                       |
 | `vertex-ai`  | Google Vertex AI (utilise le protocole `gemini` et le SDK `@google/genai` en mode Vertex AI ; sa sélection définit `GOOGLE_GENAI_USE_VERTEXAI=true`) |
+
+> [!note]
+> Les entrées Vertex AI peuvent s'authentifier avec les **Application Default Credentials**. Définissez `GOOGLE_CLOUD_PROJECT` (et facultativement `GOOGLE_CLOUD_LOCATION`, qui vaut `global` par défaut) et laissez `envKey` non défini, ainsi que toutes les autres sources de clé lues par le résolveur : `GOOGLE_API_KEY`, `settings.security.auth.apiKey` et les indicateurs CLI de clé. Toute valeur de clé API qui atteint une entrée Vertex bascule le SDK Google en mode Vertex Express, qui ignore le projet, la localisation et vos identifiants ADC. Une entrée déclarant un `envKey` n'est jamais routée vers ADC, donc une clé dont l'injection échoue continue d'échouer sur cette variable au lieu de s'authentifier silencieusement auprès d'un autre principal.
 
 > [!warning]
 > Un id de fournisseur qui n'est ni un protocole intégré ni mappé via `providerProtocol` (par ex. une faute de frappe comme `"openai-custom"`) ne peut pas être routé, donc son entrée entière est **ignorée** avec un avertissement — ses modèles n'apparaîtront simplement pas dans le sélecteur `/model`. Utilisez l'une des valeurs de type d'authentification prises en charge ci-dessus pour les fournisseurs intégrés, ou ajoutez un mapping [`providerProtocol`](#custom-provider-ids-providerprotocol) pour un id personnalisé.

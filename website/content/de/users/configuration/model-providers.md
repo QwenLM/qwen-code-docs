@@ -23,6 +23,56 @@ Verwende `modelProviders`, um Modelle pro Provider-ID zu deklarieren, zwischen d
 >
 > **Modell-Eindeutigkeit:** Modelle innerhalb desselben `authType` werden eindeutig durch die Kombination von `id` + `baseUrl` identifiziert. Das bedeutet, du kannst dieselbe Modell-ID (z. B. `"gpt-4o"`) mehrfach unter einem einzigen `authType` definieren, solange jeder Eintrag eine unterschiedliche `baseUrl` hat – zum Beispiel eine, die direkt auf OpenAI zeigt, und eine andere auf einen Proxy-Endpunkt. Wenn zwei Einträge dieselbe `id` und dieselbe `baseUrl` haben (oder beide `baseUrl` weglassen), gewinnt das erste Vorkommen und nachfolgende Duplikate werden mit einer Warnung übersprungen.
 
+### Bildgenerierung-Routen
+
+Setze `supportsImageGeneration: true`, wenn eine Route vom eingebauten
+`image_gen`-Tool verwendet werden kann. Diese Fähigkeit ist unabhängig von der
+Bild-Eingabeunterstützung wie `capabilities.vision` oder
+`generationConfig.modalities.image`.
+
+Verwende `imageOnly: true`, wenn die Route ausschließlich der Bildgenerierung
+dient und nicht in gewöhnlichen Modell-Selektoren erscheinen soll. Aus
+Abwärtskompatibilität impliziert `imageOnly: true` auch
+Bildgenerierungs-Fähigkeit, sodass bestehende Einstellungen nicht migriert
+werden müssen.
+
+Eine Dual-Role-Route kann sowohl als Hauptmodell als auch über
+`/model --image` ausgewählt werden:
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "omni-model",
+        "envKey": "MODEL_API_KEY",
+        "baseUrl": "https://gateway.example.com/model-api",
+        "supportsImageGeneration": true
+      }
+    ]
+  }
+}
+```
+
+Eine dedizierte Bild-Route setzt beide Felder. Die Legacy-Form mit nur
+`imageOnly: true` bleibt gültig:
+
+```json
+{
+  "id": "image-model",
+  "envKey": "MODEL_API_KEY",
+  "baseUrl": "https://images.example.com/api/v1",
+  "supportsImageGeneration": true,
+  "imageOnly": true
+}
+```
+
+Die ausgewählte Route muss eine explizite HTTPS-`baseUrl` und einen
+nicht-leeren `envKey` deklarieren. Die Bildgenerierung verwendet denselben
+Endpunkt und dieselben Credentials wie die Route; wenn Chat und
+Bildgenerierung unterschiedliche Endpunkte oder Credentials erfordern,
+konfiguriere stattdessen zwei Routen.
+
 ## Konfigurationsbeispiele nach Auth-Typ
 
 Im Folgenden findest du umfassende Konfigurationsbeispiele für verschiedene Authentifizierungstypen, die die verfügbaren Parameter und ihre Kombinationen zeigen.
@@ -38,6 +88,9 @@ Die Keys des `modelProviders`-Objekts müssen gültige `authType`-Werte sein. De
 | `gemini`     | Google Gemini API                                                                                                                                   |
 | `qwen-oauth` | Qwen OAuth (hartcodiert, kann in `modelProviders` nicht überschrieben werden)                                                                       |
 | `vertex-ai`  | Google Vertex AI (verwendet das `gemini`-Protokoll und das `@google/genai` SDK im Vertex AI Modus; die Auswahl setzt `GOOGLE_GENAI_USE_VERTEXAI=true`)|
+
+> [!note]
+> Vertex-AI-Einträge können sich mit **Application Default Credentials** authentifizieren. Setze `GOOGLE_CLOUD_PROJECT` (und optional `GOOGLE_CLOUD_LOCATION`, was standardmäßig `global` ist) und lasse `envKey` unset, zusammen mit jeder anderen Key-Quelle, die der Resolver liest: `GOOGLE_API_KEY`, `settings.security.auth.apiKey` und die CLI-Key-Flags. Jeder API-Key-Wert, der einen Vertex-Eintrag erreicht, schaltet das Google SDK in den Vertex Express mode, der das Projekt, den Standort und deine ADC-Credentials ignoriert. Ein Eintrag, der einen `envKey` deklariert, wird niemals an ADC weitergeleitet, sodass ein Key, der nicht injiziert werden kann, auf dieser Variablen weiterhin fehlschlägt, anstatt sich stillschweigend als ein anderes Principal zu authentifizieren.
 
 > [!warning]
 > Eine Provider-ID, die weder ein eingebautes Protokoll ist noch über `providerProtocol` zugeordnet wird (z. B. ein Tippfehler wie `"openai-custom"`), kann nicht geroutet werden, daher wird der gesamte Eintrag mit einer Warnung **übersprungen** — seine Modelle erscheinen einfach nicht im `/model`-Picker. Verwende einen der oben aufgeführten unterstützten Auth-Typ-Werte für eingebaute Provider oder füge ein [`providerProtocol`](#benutzerdefinierte-provider-ids-providerprotocol)-Mapping für eine benutzerdefinierte ID hinzu.
