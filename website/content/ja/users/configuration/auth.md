@@ -3,7 +3,7 @@
 Qwen Code の初回起動時に表示される `/auth` メニューには、3つのトップレベルオプションがあります。CLI の実行方法に合わせて選択してください。
 
 - **Alibaba ModelStudio**: 公式推奨セットアップ。**Coding Plan**（個人開発者向け・週間クォータ含む）、**Token Plan**（チーム・企業向け・専用エンドポイントでの従量課金）、または **Standard API Key**（既存の ModelStudio API キーで接続）のサブメニューを開きます。
-- **Third-party Providers**: 組み込みプロバイダーを選択し、API キーで接続します（DeepSeek、MiniMax、Z.AI、Idealab、ModelScope、OpenRouter、Requesty）。
+- **Third-party Providers**: 組み込みプロバイダーを選択し、API キーで接続します（DeepSeek、Grok、MiniMax、Z.AI、Kimi、Idealab、ModelScope、OpenRouter、Requesty）。
 - **Custom Provider**: ローカルサーバー、プロキシ、またはサポートされていないプロバイダーに手動で接続します。OpenAI、Anthropic、Gemini、およびその他の互換エンドポイントをサポートします。
 
 > [!note]

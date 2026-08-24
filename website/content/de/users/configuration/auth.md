@@ -3,7 +3,7 @@
 Das `/auth`-Menü von Qwen Code beim ersten Start bietet drei Hauptoptionen. Wähle diejenige aus, die deiner gewünschten CLI-Nutzung entspricht:
 
 - **Alibaba ModelStudio**: offiziell empfohlene Einrichtung. Öffnet ein Untermenü mit **Coding Plan** (für einzelne Entwickler · wöchentliches Kontingent inklusive), **Token Plan** (für Teams und Unternehmen · nutzungsbasierte Abrechnung mit dediziertem Endpunkt) oder **Standard API Key** (Verbindung mit einem bestehenden ModelStudio API Key).
-- **Third-party Providers**: Wähle einen integrierten Provider und verbinde dich mit einem API Key (DeepSeek, MiniMax, Z.AI, Idealab, ModelScope, OpenRouter, Requesty).
+- **Third-party Providers**: Wähle einen integrierten Provider und verbinde dich mit einem API Key (DeepSeek, Grok, MiniMax, Z.AI, Kimi, Idealab, ModelScope, OpenRouter, Requesty).
 - **Custom Provider**: Verbinde manuell einen lokalen Server, Proxy oder nicht unterstützten Provider – unterstützt OpenAI, Anthropic, Gemini und andere kompatible Endpunkte.
 
 > [!note]

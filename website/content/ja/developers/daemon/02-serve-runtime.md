@@ -61,6 +61,8 @@
 
 ### ブートシーケンス
 
+`runQwenServe()` がこのシーケンスを開始する前に、CLI 専用の `--open-with-auth` モードがループバック/Web Shell の適格性を検証し、`ServeOptions.token` を選択された構成トークンで、またはその選択が空の場合は base64url でエンコードされた 32 ランダムバイトで埋めます。直接組み込む場合や、このデフォルトオフのフラグなしの呼び出しではトークンは生成されません。
+
 1. `opts.token` または `QWEN_SERVER_TOKEN` から**トークンを解決してトリミング**します。これにより、`cat token.txt` の末尾の改行がベアラー比較を静かに壊すのを防ぎます。
 2. **ホスト名のタイプミスガード**: `--hostname localhost:4170` はエラーになり、`--port` を提案します。
 3. **認証プレフライト**: トークンなしの非ループバックは拒否されます。トークンなしの `--require-auth` は拒否されます。
@@ -122,6 +124,7 @@
 | 環境変数             | `QWEN_SERVE_DEBUG=1`                                                                            | 詳細な stderr ログ。[`19-observability.md`](./19-observability.md) を参照。                              |
 | フラグ           | `--hostname`、`--port`                                                                          | リッスンバインディング。                                                                                       |
 | フラグ           | `--token`、`--require-auth`、`--enable-session-shell`                                           | ベアラートークン、ループバック認証の強化、および明示的なシェル実行スイッチ。                           |
+| CLI フラグ      | `--open-with-auth`                                                                                         | ランタイム前にプロセス生存期間のベアラートを再利用または生成する、デフォルトオフのループバック Web Shell 起動。   |
 | フラグ            | `--workspace`                                                                                   | `process.cwd()` をオーバーライドします。繰り返して追加の分離されたワークスペースランタイムを登録できます。                 |
 | フラグ           | `--max-sessions`、`--max-pending-prompts-per-session`、`--max-connections`、`--event-ring-size` | ブリッジ / Express の上限。                                                                                |
 | フラグ           | `--mcp-client-budget=N`、`--mcp-budget-mode={off,warn,enforce}`                                 | ACP 子プロセスに転送されます。                                                                           |

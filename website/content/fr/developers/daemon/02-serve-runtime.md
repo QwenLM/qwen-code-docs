@@ -27,7 +27,7 @@
 | Middleware, dans l'ordre d'enregistrement             | Objectif                                                                                                                     | Notes                                                                                                             |
 | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `allowOriginCors`                                     | Toujours installé sur l'app runtime sur une `MutableOriginAllowlist` : les entrées `--allow-origin <pattern>` l'initialisent, le Local Control ajoute l'origine LAN lorsqu'il est activé ; les origines sans correspondance reçoivent l'enveloppe de refus 403. | Voir [`12-auth-security.md`](./12-auth-security.md).                                                              |
-| `hostAllowlist(bind, getPort)`                        | Sur loopback, valider que `Host` appartient à `localhost`, `127.0.0.1`, `[::1]`, ou `host.docker.internal` plus le port réel.| Défense contre le DNS rebinding. La comparaison est insensible à la casse et mise en cache par port.              |
+| `hostAllowlist(bind, getPort)`                        | Sur loopback, valider que `Host` appartient à `localhost`, `127.0.0.1`, `[::1]`, ou `host.docker.internal` plus le port réel.| Défense contre le DNS rebinding. La comparaison est insensible à la casse et mise en cache par port. L'écouteur LAN Local Control applique toujours sa vérification Host d'autorité annoncée, quelle que soit la liaison principale. |
 | Access-log middleware                                 | Enregistre la méthode, le chemin, le statut, durationMs, sessionId, et clientId dans `DaemonLogger` lorsqu'une requête se termine. | Enregistré **avant** `bearerAuth`, donc les refus 401 sont également journalisés. Ignore `/health` et le heartbeat. |
 | `bearerAuth(token)`                                   | Comparaison bearer en temps constant avec SHA-256 plus `timingSafeEqual`.                                                      | Passthrough ouvert lorsqu'aucun token n'est configuré (défaut pour le dev en loopback). Le schéma `Bearer` est insensible à la casse. |
 | Rate-limit middleware                                 | Token bucket optionnel par niveau pour les routes de prompt, mutation et lecture.                                              | Enregistré après `bearerAuth` et avant le parsing JSON ; retourne 429 avant le parsing lorsqu'un bucket est épuisé. |
@@ -60,6 +60,8 @@
 ## Flow
 
 ### Séquence de démarrage
+
+Avant que `runQwenServe()` ne démarre cette séquence, le mode CLI-only `--open-with-auth` valide l'éligibilité loopback/Web Shell et remplit `ServeOptions.token` avec le token configuré sélectionné, ou avec 32 octets aléatoires encodés en base64url lorsque cette sélection est vide. Les intégrateurs directs et les invocations sans ce flag désactivé par défaut ne génèrent pas de token.
 
 1. **Résoudre et tronquer le token** depuis `opts.token` ou `QWEN_SERVER_TOKEN` ; cela évite qu'un saut de ligne final provenant de `cat token.txt` ne rompe silencieusement la comparaison bearer.
 2. **Garde contre les fautes de frappe du hostname** : `--hostname localhost:4170` génère une erreur et suggère `--port`.
@@ -122,6 +124,7 @@ Appeler `createServeApp` directement retourne seulement une `Application`. Un in
 | Env             | `QWEN_SERVE_DEBUG=1`                                                                          | Logs stderr verbeux. Voir [`19-observability.md`](./19-observability.md).                             |
 | Flags           | `--hostname`, `--port`                                                                        | Liaison d'écoute.                                                                                     |
 | Flags           | `--token`, `--require-auth`, `--enable-session-shell`                                         | Token bearer, durcissement de l'auth loopback, et switch d'exécution de shell explicite.              |
+| CLI flags       | `--open-with-auth`                                                                            | Lancement loopback Web Shell désactivé par défaut qui réutilise ou génère un bearer durée de vie processus avant le runtime. |
 | Flag            | `--workspace`                                                                                 | Remplace `process.cwd()` ; répéter pour enregistrer des runtimes de workspace isolés supplémentaires. |
 | Flags           | `--max-sessions`, `--max-pending-prompts-per-session`, `--max-connections`, `--event-ring-size`| Limites Bridge / Express.                                                                             |
 | Flags           | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}`                               | Transmis à l'enfant ACP.                                                                              |

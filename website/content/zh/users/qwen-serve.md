@@ -70,6 +70,21 @@ qwen serve
 
 **打开 Web Shell UI。** 浏览至 `http://127.0.0.1:4170/`（或使用 `qwen serve --open` 启动守护进程以自动打开）即可进入完整的浏览器终端 — 包含聊天、diff、提交历史、工具调用和权限提示。UI 在守护进程根路径提供，与 API 同源。本指南的其余部分使用原始 HTTP，以便你可以直接通过脚本调用 API。
 
+对于无需手动创建 token 的已认证单用户启动，请显式选择：
+
+```bash
+qwen serve --open-with-auth
+```
+
+此仅限环回的模式在 `--token` 和 `QWEN_SERVER_TOKEN` 都未提供时生成一个 256 位的 bearer token，然后将其作为 `#token=` URL 片段传递给打开的 Web Shell。Shell 会移除片段并将凭据保留在该标签的 `sessionStorage` 中；刷新有效，但关闭标签或重启守护进程会丢失凭据。在 CI、SSH 或其他无法自动打开的环境中，守护进程会启动并打印包含机密的片段 URL 以供手动打开。
+
+该标志默认关闭，包含浏览器打开行为，需要 Web Shell、已构建的 Web Shell 资源和环回绑定。裸 `qwen serve --open` 在环回地址上仍然无 token。在已认证打开模式下，普通 API 路由会拒绝没有 bearer 的其他本地客户端；静态 Web Shell 资源和环回 `/health` 保持其现有的预认证行为，除非同时设置了 `--require-auth`。对于多个客户端或可重新打开的 Web Shell，请使用稳定的共享 token：
+
+```bash
+export QWEN_SERVER_TOKEN="$(openssl rand -hex 32)"
+qwen serve --open
+```
+
 ### 2. 基础检查
 
 ```bash
@@ -256,6 +271,8 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" http://your-host:4170/capabil
 
 token 比较是恒定时间的（SHA-256 + `crypto.timingSafeEqual`）；401 响应在"缺少 header"、"错误 scheme"和"错误 token"之间是统一的，因此侧信道无法区分。
 
+`--open-with-auth` 是 CLI 拥有的便利功能，不是另一个守护进程 token 来源：当该选项已定义时（即使是空白），它选择 `--token`，否则选择 `QWEN_SERVER_TOKEN`，然后修剪选定的值，仅在结果为空时生成。守护进程不会持久化生成的值，也不会将其导出为 `QWEN_SERVER_TOKEN`；现有的内部已认证子进程交接保持不变。Web Shell 仅将浏览器副本存储在接收标签的 `sessionStorage` 中；此模式不添加跨标签或外部客户端的凭据发现机制。该 token 不可独立撤销，也不与客户端身份绑定。持有者获得与任何其他 bearer token 相同的守护进程权限。请参阅[已认证 Web Shell 启动设计](../design/2026-08-22-serve-open-with-auth.md)以及 [#4514](https://github.com/QwenLM/qwen-code/issues/4514) 中的相关后续工作。
+
 ## HTTPS / TLS（用于移动端/跨设备访问）
 
 默认情况下，守护进程提供纯 HTTP 服务。这在 `localhost` 上没问题，但通过 `http://` 访问 LAN IP（`https://192.168.x.x:4170`）的手机或平板**不是**[安全上下文](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts) — 因此浏览器会阻止 `getUserMedia`（语音输入）、WebRTC 和其他仅限安全上下文的 API。传递 `--tls-cert` + `--tls-key` 可通过 HTTPS 提供 Web Shell 并解锁这些功能：
@@ -325,6 +342,7 @@ qwen serve \
 | `--allow-origin <pat>`                  | —               | T2.4 ([#4514](https://github.com/QwenLM/qwen-code/issues/4514))。浏览器 webui 客户端的跨域白名单。可重复。每个值为 `*`（任意 origin —— 如果未配置 bearer token 则拒绝启动；建议在环回地址上使用 `--require-auth` 以进行完全加固，因为默认情况下 `/health` 在环回地址上是预认证的 — 注意 Web Shell 静态资源（`/`、`/assets/*`、`/session/:id` 文档导航）在任何模式下都在 bearer 之前挂载，即使在 `--require-auth` 下也保持预认证，所以当残留浏览器暴露面很重要时使用 `--no-web`）或规范的 URL origin（`<scheme>://<host>[:<port>]`，无尾部斜杠 / 路径 / 用户信息 / 查询参数）。**故意不支持子域名通配符（`https://*.example.com`）** —— 请显式列出每个子域名，或者使用 `*` 并配置 token（以及使用 `--require-auth` 进行完全加固）。匹配的 origin 会收到 CORS 响应头（`Access-Control-Allow-Origin`、`Vary: Origin`、methods、headers、max-age 以及暴露的 `Retry-After`）；不匹配的 origin 仍会收到 403，并带有与当前 wall 相同的信封。`Origin: null`（沙箱 iframe、file:// 文档）总是被拒绝，即使在 `*` 下也是如此。通过 `caps.features.allow_origin` 进行预检。环回地址自身的 origin 命中不受影响。 |
 | `--web` / `--no-web`                    | `true`          | 在守护进程根目录提供构建好的 Web Shell SPA（`GET /`、`/assets/*` 以及 `GET /session/<id>` 文档导航）。这些入口点注册在 bearer 认证网关**之前** —— 浏览器无法将 token 附加到 `<script>` 子资源或地址栏导航，shell 不携带任何机密。每个 API 路由无论如何都受 token 保护，所有其他路径的 SPA 深度链接回退也位于 bearer 门控之后。在非环回地址绑定时，stderr 会输出一行警告，提示 UI 可在无认证的情况下访问。对于纯 API 守护进程，请使用 `--no-web`。当构建时省略了 Web Shell 资源时，此参数无效（守护进程会记录一条 breadcrumb 并以纯 API 模式运行）。                                                                                                                                                                                                                                                                                                          |
 | `--open`                                | `false`         | 监听器启动后，在默认浏览器中打开守护进程 URL 处的 Web Shell（如果配置了 token，则会在 URL 片段中追加 `#token=` —— 片段永远不会发送到服务器，从而避免 token 出现在访问日志和 Referer 头中）。如果使用 `--no-web`，或者在没有浏览器的无头 / CI / SSH 环境中，则此操作无效。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `--open-with-auth`                      | `false`         | 在环回地址上使用 bearer 身份验证打开 Web Shell。需要启用 Web Shell 和已构建的资源。重用已配置的 token 或生成进程生命周期的 256 位 bearer 并通过 Web Shell 片段传递。不支持浏览器的环境会打印包含机密的手动 URL。其他客户端需要相同的显式配置的共享 token。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 > **Memory project scope 注意事项。**
 >
@@ -430,8 +448,9 @@ Issue [#4514](https://github.com/QwenLM/qwen-code/issues/4514) T2.9 提供了两
 | ------------------------------ | ----------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--prompt-deadline-ms <n>`     | `QWEN_SERVE_PROMPT_DEADLINE_MS`     | 未设置   | 单个 `POST /session/:id/prompt` 的服务端挂钟上限。到期时守护进程中止 prompt 的 AbortController 并返回 HTTP `504`，body 为 `{code:"prompt_deadline_exceeded", errorKind:"prompt_deadline_exceeded", deadlineMs:n}`。每 prompt 请求 body 字段 `deadlineMs` 可以**缩短**有效截止时间到标志值以下，但不能延长它。Capability 标签（有条件的）：`prompt_absolute_deadline`。                                                                                                                                                                                                |
 | `--writer-idle-timeout-ms <n>` | `QWEN_SERVE_WRITER_IDLE_TIMEOUT_MS` | 未设置   | 每 SSE 连接的空闲截止时间。当在 `n` 毫秒内没有**成功**刷新写入时 — 既没有真实事件也没有 15 秒心跳 — 守护进程发出 `data.reason = 'writer_idle_timeout'`（在 `data.errorKind` 上镜像）的终止 `client_evicted` 帧并关闭流。**选择远高于 15 秒心跳的值**（例如 `30000`–`300000`），以免合法的空闲流被驱逐；值 `< 15000` **会**在第一次心跳触发之前驱逐 otherwise-healthy 的空闲连接（仅用于测试/短生命周期开发会话）。Capability 标签（有条件的）：`writer_idle_timeout`。 |
+| `--permission-response-timeout-ms <n>` | —                                   | `0`     | 守护进程模式下普通权限和 `ask_user_question` 响应的共享挂钟时间。`0` 或省略该标志会无限等待；正整数对两者都施加截止时间。投票者取消、会话取消和守护进程关闭仍然会在计时器禁用时解析待处理的交互。                                                                                                                                                                                                                                                                                                            |
 
-两个标志都接受毫秒为单位的正整数；`0`、`NaN`、非整数或负值在启动时被拒绝，并带有清晰的错误消息。CLI 标志优先于环境变量；显式 `ServeOptions` 字段（嵌入式调用者）优先于环境变量。SDK 消费者应在依赖任一行为之前预检匹配的 capability 标签 — 此 PR 之前的守护进程省略两个标签，且请求的 `deadlineMs` 字段会被静默丢弃。
+prompt 和 writer 标志都接受毫秒为单位的正整数；`0`、`NaN`、非整数或负值在启动时被拒绝，并带有清晰的错误消息。权限响应超时接受 `0` 或正整数。对于两个环境支持的截止时间，显式 `ServeOptions` 字段优先于环境变量。SDK 消费者应在依赖 prompt 和 writer 行为之前预检匹配的 capability 标签。
 
 ### Agent 文本写入的新文件权限模式
 

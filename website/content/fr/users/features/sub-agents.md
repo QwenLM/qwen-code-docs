@@ -133,9 +133,9 @@ Utilisez la continuation pour un travail de suivi connexe. Lancez un nouvel agen
 
 ## Répertoire de travail de l'agent
 
-Pour un sous-agent ordinaire nommé, `working_dir` épingle l'agent à un worktree git existant dans le dépôt en cours. Les chemins relatifs sont résolus depuis le répertoire courant, et le worktree doit déjà être enregistré auprès git et vivre à l'intérieur du dépôt.
+Pour un sous-agent ordinaire nommé, `working_dir` épingle l'agent à un worktree git existant du dépôt en cours. Les chemins relatifs sont résolus depuis le répertoire courant, et le worktree doit déjà être enregistré auprès git en tant que worktree lié de ce dépôt.
 
-Un lancement avec `working_dir` s'exécute au premier plan car Qwen Code ne possède pas le cycle de vie de ce worktree. Il ne peut pas être combiné avec `subagent_type: "fork"` ni avec l'exécution en arrière-plan. Si `working_dir` et `isolation: "worktree"` sont tous deux fournis, Qwen Code réutilise le worktree appartenant à l'appelant au lieu d'en créer un autre. Les scripts de workflow sont délibérément plus stricts : un appel `agent()` de workflow qui reçoit à la fois `workingDir` et `isolation` est rejeté plutôt qu'exécuté avec `isolation` ignoré.
+`working_dir` ne peut pas être combiné avec `subagent_type: "fork"`. Un lancement anonyme avec `working_dir` appartenant à l'appelant s'exécute au premier plan car Qwen Code ne possède pas le cycle de vie de ce worktree : une demande explicite `run_in_background: true` est rejetée, tandis qu'un défaut d'arrière-plan configuré (`background: true` dans une définition de sous-agent) est rejeté au niveau supérieur et rétrogradé au premier plan lorsqu'il est imbriqué. Si `working_dir` et `isolation: "worktree"` sont tous deux fournis, Qwen Code réutilise le worktree appartenant à l'appelant au lieu d'en créer un autre. Les scripts de workflow sont délibérément plus stricts : un appel `agent()` de workflow qui reçoit à la fois `workingDir` et `isolation` est rejeté plutôt qu'exécuté avec `isolation` ignoré.
 
 ## Pour commencer
 

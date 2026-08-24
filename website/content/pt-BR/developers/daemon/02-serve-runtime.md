@@ -61,6 +61,8 @@
 
 ### Sequência de inicialização
 
+Antes de `runQwenServe()` iniciar esta sequência, o modo `--open-with-auth` (exclusivo da CLI) valida a elegibilidade de loopback/Web Shell e preenche `ServeOptions.token` com o token configurado selecionado, ou com 32 bytes aleatórios codificados em base64url quando essa seleção estiver vazia. Embedders diretos e invocações sem essa flag (desativada por padrão) não geram um token.
+
 1. **Resolver e remover espaços do token** em `opts.token` ou
    `QWEN_SERVER_TOKEN`; isso evita que uma nova linha final de
    `cat token.txt` quebre silenciosamente a comparação do bearer.
@@ -124,6 +126,7 @@ Chamar `createServeApp` diretamente ainda retorna apenas um `Application`. Um em
 | Env             | `QWEN_SERVE_DEBUG=1`                                                                            | Logs detalhados no stderr. Consulte [`19-observability.md`](./19-observability.md).                   |
 | Flags           | `--hostname`, `--port`                                                                          | Vinculação de escuta.                                                                                 |
 | Flags           | `--token`, `--require-auth`, `--enable-session-shell`                                           | Token bearer, reforço de autenticação no loopback e switch explícito de execução de shell.            |
+| CLI flags       | `--open-with-auth`                                                                              | Launch do Web Shell no loopback (desativado por padrão) que reutiliza ou gera um bearer com vida útil do processo antes do runtime. |
 | Flag            | `--workspace`                                                                                   | Substitui `process.cwd()`; repita para registrar runtimes de workspace isolados adicionais.            |
 | Flags           | `--max-sessions`, `--max-pending-prompts-per-session`, `--max-connections`, `--event-ring-size` | Limites da Bridge / Express.                                                                          |
 | Flags           | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}`                                 | Encaminhado para o filho ACP.                                                                         |

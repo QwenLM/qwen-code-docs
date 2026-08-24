@@ -7,7 +7,7 @@ title: Authentication
 Qwen Code의 첫 실행 `/auth` 메뉴에는 세 가지 최상위 옵션이 있습니다. CLI를 실행하려는 방식에 맞는 것을 선택하세요:
 
 - **Alibaba ModelStudio**: 공식 권장 설정. **Coding Plan**(개인 개발자용 · 주간 할당량 포함), **Token Plan**(팀 및 회사용 · 전용 엔드포인트의 사용량 기반 과금) 또는 **Standard API Key**(기존 ModelStudio API 키로 연결) 중 하나를 선택하는 하위 메뉴를 엽니다.
-- **Third-party Providers**: 내장 제공자를 선택하고 API 키로 연결합니다(DeepSeek, MiniMax, Z.AI, Idealab, ModelScope, OpenRouter, Requesty).
+- **Third-party Providers**: 내장 제공자를 선택하고 API 키로 연결합니다(DeepSeek, Grok, MiniMax, Z.AI, Idealab, ModelScope, OpenRouter, Requesty).
 - **Custom Provider**: 로컬 서버, 프록시 또는 지원되지 않는 제공자를 수동으로 연결합니다 — OpenAI, Anthropic, Gemini 및 기타 호환 엔드포인트를 지원합니다.
 
 > [!note]

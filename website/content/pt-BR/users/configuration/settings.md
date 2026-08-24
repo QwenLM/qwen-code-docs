@@ -103,7 +103,7 @@ As configurações são organizadas em categorias. A maioria das configurações
 
 | Configuração            | Tipo    | Descrição                                                    | Padrão   | Valores Possíveis  |
 | ----------------------- | ------- | ------------------------------------------------------------ | -------- | ------------------ |
-| `output.format`         | string  | O formato da saída da CLI.                                   | `"text"` | `"text"`, `"json"` |
+| `output.format`         | string  | O formato da saída da CLI. Com `stream-json`, execuções iniciadas com um prompt se comportam como não interativas (headless), correspondendo a `--output-format stream-json`. Flags validadas no parse de argv (`--include-partial-messages`, `--input-format stream-json`) ainda exigem a flag explícita `--output-format stream-json`. | `"text"` | `"text"`, `"json"`, `"stream-json"` |
 | `output.showTimestamps` | boolean | Mostra um timestamp `[HH:MM:SS]` antes de cada resposta do assistente. | `false`  |                    |
 
 #### review
@@ -229,10 +229,10 @@ Essas configurações são lidas apenas de escopos do operador (User, System e S
 
 Dois guardas delimitam uma resposta em streaming, cada um aceitando `0` para desativar. Nenhum é implementado pelos geradores Anthropic/Gemini, que deixam a forma alimentada gota-a-gota abaixo sem limite.
 
-- `QWEN_STREAM_IDLE_TIMEOUT_MS` (padrão `240000`) limita a inatividade _entre_ chunks transmitidos: um stream que fica silencioso por esse tempo é abortado como um `ETIMEDOUT` recuperável.
+- `streamIdleTimeoutMs` (padrão `240000`) limita a inatividade _entre_ chunks transmitidos: um stream que fica silencioso por esse tempo é abortado como um `ETIMEDOUT` recuperável. Para modelos de provedores, defina-o sob o `modelProviders[providerId][].generationConfig` correspondente; para modelos de runtime, use `model.generationConfig`. Um valor explícito de modelo tem precedência sobre `QWEN_STREAM_IDLE_TIMEOUT_MS`, e `0` desativa o guarda de ociosidade.
 - `QWEN_STREAM_MAX_LIFETIME_MS` (padrão `900000`) limita o tempo _total_ de espera upstream de uma resposta em streaming, independentemente do fluxo de chunks — o limite que um stream alimentado gota-a-gota que nunca completa não pode resetar.
 
-Estas são **apenas variáveis de ambiente (ou, para embedders, `ContentGeneratorConfig.streamIdleTimeoutMs` / `streamMaxLifetimeMs`) — não há chave no settings.json**; escrever `"streamMaxLifetimeMs"` no settings.json não tem efeito. Notas de atualização: uma implantação que anteriormente definia `QWEN_STREAM_IDLE_TIMEOUT_MS=0` — ou passava `streamIdleTimeoutMs: 0` no `ContentGeneratorConfig` — para desativar abortos de stream agora também precisa de `QWEN_STREAM_MAX_LIFETIME_MS=0` (ou `streamMaxLifetimeMs: 0`) para manter isso; e o limite de tempo de vida de 15 minutos limita mesmo um stream cujo tempo limite de inatividade você aumentou acima dele (por exemplo, `QWEN_STREAM_IDLE_TIMEOUT_MS=1800000`) — aumente o limite igualmente ou defina-o como `0`, se você depende de uma janela maior.
+`streamMaxLifetimeMs` permanece disponível apenas através de `QWEN_STREAM_MAX_LIFETIME_MS` ou, para embedders, `ContentGeneratorConfig.streamMaxLifetimeMs`; escrevê-lo no `settings.json` não tem efeito. O limite de tempo de vida de 15 minutos ainda limita um stream cujo tempo limite de inatividade você aumentou acima dele. Aumente a variável de ambiente de tempo de vida igualmente, ou defina-a como `0`, se você depende de uma janela maior. Desativar `streamIdleTimeoutMs` sozinho não desativa este limite de tempo de vida.
 
 **max_tokens (limite de tokens de saída):**
 

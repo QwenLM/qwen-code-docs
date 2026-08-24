@@ -61,6 +61,8 @@
 
 ### Boot-Sequenz
 
+Bevor `runQwenServe()` diese Sequenz startet, validiert der CLI-exklusive `--open-with-auth`-Modus die Loopback/Web-Shell-Eignung und füllt `ServeOptions.token` mit dem ausgewählten konfigurierten Token oder mit 32 zufälligen Bytes, kodiert als base64url, wenn diese Auswahl leer ist. Direkte Embedder und Aufrufe ohne diesen standardmäßig deaktivierten Flag generieren kein Token.
+
 1. **Token auflösen und trimmen** aus `opts.token` oder `QWEN_SERVER_TOKEN`; dies verhindert, dass ein abschließender Newline von `cat token.txt` den Bearer-Vergleich stillschweigend fehlschlagen lässt.
 2. **Hostname-Typo-Guard**: `--hostname localhost:4170` erzeugt einen Fehler und schlägt `--port` vor.
 3. **Auth-Pre-Flight**: Non-Loopback ohne Token wird abgelehnt; `--require-auth` ohne Token wird abgelehnt.
@@ -122,6 +124,7 @@ Der direkte Aufruf von `createServeApp` gibt weiterhin nur eine `Application` zu
 | Env | `QWEN_SERVE_DEBUG=1` | Ausführliche Stderr-Logs. Siehe [`19-observability.md`](./19-observability.md). |
 | Flags | `--hostname`, `--port` | Listen-Binding. |
 | Flags | `--token`, `--require-auth`, `--enable-session-shell` | Bearer-Token, Loopback-Auth-Härtung und expliziter Shell-Ausführungsschalter. |
+| CLI-Flags       | `--open-with-auth`                                                                                         | Standardmäßig deaktivierter Loopback-Web-Shell-Start, der einen prozesslebenslangen Bearer vor der Runtime wiederverwendet oder generiert. |
 | Flag            | `--workspace`                                                                                              | Überschreibt `process.cwd()`; wiederholbar, um zusätzliche isolierte Workspace-Runtimes zu registrieren.                      |
 | Flags | `--max-sessions`, `--max-pending-prompts-per-session`, `--max-connections`, `--event-ring-size` | Bridge-/Express-Caps. |
 | Flags | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}` | An das ACP-Child weitergeleitet. |

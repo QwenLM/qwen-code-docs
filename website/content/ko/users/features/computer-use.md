@@ -1,77 +1,66 @@
 # Computer Use
 
-Qwen Code는 에이전트가 데스크톱을 제어할 수 있는 내장 **Computer Use** 도구를 제공합니다 — 클릭, 타이핑, 스크롤, 앱 실행, 창 내용 읽기, 스크린샷 촬영. 이를 통해 Qwen Code는 터미널에 국한된 코딩 어시스턴트가 아닌 일반적인 데스크톱 자동화 에이전트가 됩니다.
+Qwen Code에는 모델이 데스크톱 애플리케이션을 조작하는 방법을 가르치는 `computer-use` skill이 있으며, 별도로 설치되는 두 패키지를 통해 동작합니다:
 
-Computer Use는 [`cua-driver`](https://github.com/trycua/cua) 네이티브 드라이버로 구동됩니다. 도구는 `computer_use__` 접두사 아래에 지연(deferred, 지연 로드) 내장 도구로 등록되므로, 모델이 실제로 사용할 때만 프롬프트 공간을 소비합니다.
+```text
+bundled computer-use skill
+  -> @qwen-code/node-repl-mcp
+  -> @qwen-code/cua-sdk/computer-use
+  -> native cua-driver accessibility backend
+```
+
+Qwen Code는 MCP 서버, SDK 또는 네이티브 드라이버를 번들하지 않습니다. skill은 외부 패키지가 누락되어 있을 때 자동으로 설치합니다.
 
 > [!warning]
 >
-> Computer Use는 에이전트에게 마우스, 키보드 및 창에 대한 제어 권한을 부여하며 화면 내용을 읽을 수 있게 합니다. 신뢰할 수 있는 프롬프트와 함께 사용하고, 가능한 경우 샌드박스 또는 일회용 환경에서만 사용하세요. 작업 도구(click, type, drag 등)는 일반적인 [승인 흐름](./approval-mode.md)을 거칩니다; 창 목록과 같은 읽기 전용 도구는 프롬프트 없이 실행될 수 있습니다.
+> Computer Use는 애플리케이션 UI를 읽고 마우스 및 키보드 입력을 제어할 수 있습니다.
+> 신뢰할 수 있는 환경에서만 사용하고 MCP 승인을 신중하게 확인하세요.
 
-## 활성화 및 비활성화
+## 자동 설정
 
-Computer Use는 **기본적으로 활성화**되어 있습니다. `computer_use__*` 도구는 시작 시 자동으로 등록됩니다.
+Node.js 22 이상이 필요하며 npm도 필요합니다.
 
-전체를 비활성화하려면 — 네이티브 드라이버가 다운로드되거나 실행되는 것도 방지합니다 — `settings.json`에서 `tools.computerUse.enabled`를 `false`로 설정하세요:
+처음 사용 시 skill이 다음 명령을 직접 실행합니다:
 
-```jsonc
-{
-  "tools": {
-    "computerUse": {
-      "enabled": false,
-    },
-  },
-}
+```bash
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.0
+npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.0
 ```
 
-이 설정은 적용되려면 재시작이 필요합니다.
+MCP 서버가 처음 추가된 후 Qwen Code를 재시작하세요. 그런 다음 skill이 `node_repl`을 통해 데스크톱 작업을 계속합니다.
 
-## 첫 실행과 네이티브 드라이버
+SDK 설치는 `package.json`과 lockfile을 변경하지 않지만, 워크스페이스의 `node_modules`에는 씁니다. postinstall 스크립트가 현재 플랫폼의 네이티브 페이로드를 다운로드하고 검증합니다.
 
-에이전트가 Computer Use 도구를 처음 호출하면, Qwen Code는 고정된 서명된 `cua-driver` 바이너리(~20MB)를 `~/.qwen/computer-use/`에 다운로드하고 로컬 프로세스로 실행합니다. 사전 빌드된 바이너리는 macOS(Apple Silicon 및 Intel), Linux(x86_64) 및 Windows(x86_64)용으로 게시됩니다.
+MCP 구성이나 워크스페이스 SDK 설치를 제거하면 실행 경로가 비활성화됩니다. 레거시 폴백은 없습니다.
 
-### macOS 권한
+## 사용
 
-macOS에서 데스크톱 자동화에는 두 가지 시스템 권한이 필요합니다:
+Qwen Code에게 데스크톱 작업에 `$computer-use`를 사용하도록 요청하세요. 부트스트랩 후 표준 Computer Use 워크플로를 따릅니다:
 
-- **접근성** — 창/UI 상태를 읽고 입력을 합성하기 위해
-- **화면 기록** — 스크린샷을 캡처하기 위해
+1. 정확한 애플리케이션과 창을 발견합니다.
+2. 전체 접근성 상태를 관찰합니다.
+3. 현재 시맨틱 요소 토큰을 통해 가능한 경우 동작을 수행합니다.
+4. 모든 변경 후 새 상태를 가져옵니다.
+5. 요청된 결과를 검증합니다.
+6. SDK 클라이언트를 닫고 REPL을 초기화합니다.
 
-첫 사용 시 드라이버가 표준 macOS 시스템 대화 상자를 통해 이러한 권한을 부여하는 과정을 안내합니다. 에이전트는 필요에 따라 권한 상태를 확인할 수도 있습니다(`check_permissions` 도구). macOS는 권한 부여를 _책임_ 프로세스에 속하므로, Qwen Code를 실행한 터미널이나 IDE에 권한을 부여해야 할 수 있습니다.
+드라이버만이 관찰 diff를 계산하는 유일한 구성 요소입니다. 모델 코드는 타입화된 SDK 메서드를 사용하며 임의의 드라이버 도구 이름을 디스패치하지 않습니다.
 
-## 에이전트가 할 수 있는 것
+## 권한
 
-전체 `cua-driver` 도구 표면이 노출됩니다. 주요 기능:
+Node REPL은 일반적인 Node.js 권한으로 모델이 작성한 JavaScript를 실행하는 MCP 서버입니다. 호출은 Qwen Code의 일반 [MCP 승인 흐름](./approval-mode.md)을 따릅니다. SDK는 네이티브 인증도 강제합니다.
 
-| 카테고리      | 도구 (일부)                                                                      |
-| ------------- | -------------------------------------------------------------------------------- |
-| 마우스        | `click`, `double_click`, `right_click`, `drag`, `move_cursor`, `scroll`          |
-| 키보드        | `type_text`, `press_key`, `hotkey`                                               |
-| 창 / UI       | `list_windows`, `get_window_state`, `get_accessibility_tree`, `set_value`, `zoom`|
-| 앱            | `launch_app`, `list_apps`, `bring_to_front`, `kill_app`                          |
-| 브라우저 페이지| `page` (JavaScript 실행, 텍스트 읽기, DOM 조회, 요소 클릭)                        |
-| 스크린샷      | `get_window_state` (PNG 캡처), `page`                                            |
-| 녹화          | `start_recording`, `stop_recording`, `replay_trajectory` (세션 기록/재생)         |
-| 세션          | `start_session`, `end_session`, 에이전트 커서 오버레이 제어                        |
+macOS에서 접근성 관찰과 입력에는 Accessibility 권한이 필요합니다. 스크린샷은 추가로 Screen Recording 권한이 필요합니다. macOS는 권한 부여를 Qwen Code를 실행한 터미널이나 IDE에 귀속시킬 수 있습니다. Windows와 Linux는 플랫폼별 접근성 및 입력 기능을 사용합니다.
 
-요소 주소 지정 작업이 원시 픽셀 좌표보다 선호됩니다: `get_window_state`는 창의 접근성 트리를 Markdown으로 렌더링하여 각 작업 가능한 요소에 안정적인 `element_index`를 부여하며, 입력 도구가 이를 직접 대상으로 할 수 있습니다.
+## 문제 해결
 
-macOS에서 지원이 가장 완전합니다; 일부 도구는 플랫폼별입니다(예: `bring_to_front`는 Windows 전용, `launch_app`은 macOS 앱을 대상으로 함).
-
-## 구성
-
-모든 Computer Use 설정은 `settings.json`의 `tools.computerUse` 아래에 있습니다. 전체 목록은 [설정 레퍼런스](../configuration/settings.md)를 참조하세요.
-
-| 설정                                  | 타입    | 기본값   | 설명                                                                                                                                                                                                                                                |
-| ------------------------------------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tools.computerUse.enabled`           | boolean | `true`   | `computer_use__*` 도구를 등록합니다. `false`이면 드라이버가 다운로드되거나 실행되지 않습니다.                                                                                                                                                       |
-| `tools.computerUse.maxImageDimension` | number  | `-1`     | 스크린샷의 최대 변 픽셀 캡. `-1`은 드라이버 기본값(1568)을 유지; `0`은 크기 조정 비활성화(전체 해상도); 양수 값은 최대 변을 제한합니다. 낮은 캡은 비전 토큰 비용을 줄입니다. 환경 변수 오버라이드: `QWEN_COMPUTER_USE_MAX_IMAGE_DIMENSION`.          |
-| `tools.computerUse.idleTimeoutMs`     | number  | `300000` | 마지막 `computer_use__*` 호출 후 드라이버 프로세스를 유지하는 밀리초(기본 5분). `0`은 Qwen Code가 종료될 때까지 계속 실행합니다.                                                                                                                     |
-
-세 설정 모두 적용되려면 재시작이 필요합니다.
+- 자동 설정 후에도 `node_repl`을 사용할 수 없으면, Qwen Code를 재시작하고 `qwen mcp list`로 서버를 확인하세요.
+- 자동 설정 후에도 SDK 가져오기가 실패하면, Qwen Code가 패키지가 설치된 워크스페이스에서 실행 중인지 확인하세요.
+- 타임아웃, 취소, 초기화 또는 커널 크래시 후, SDK 클라이언트를 다시 부트스트랩하고 새 상태를 요청하세요.
 
 ## 참고 자료
 
-- [승인 모드](./approval-mode.md) — 도구 실행이 게이팅되는 방식
-- [샌드박싱](./sandbox.md) — 도구가 접근할 수 있는 것을 격리
-- [설정 레퍼런스](../configuration/settings.md) — 전체 `tools.computerUse.*` 스키마
+- [Skills](./skills.md)
+- [MCP servers](./mcp.md)
+- [승인 모드](./approval-mode.md)
+- [샌드박싱](./sandbox.md)

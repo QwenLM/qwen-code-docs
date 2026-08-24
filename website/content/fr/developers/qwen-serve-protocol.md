@@ -13,6 +13,8 @@ Authorization: Bearer <token>
 
 Sans token configuré (valeur par défaut pour le développement en loopback), l'en-tête est optionnel. La comparaison des tokens s'effectue en temps constant. Les réponses 401 sont uniformes pour `missing header` / `wrong scheme` / `wrong token`.
 
+**`--open-with-auth`.** Ce mode CLI désactivé par défaut nécessite une liaison loopback et un Web Shell disponible. Il réutilise la sélection normale `--token`-sur-`QWEN_SERVER_TOKEN`, ou génère 32 octets aléatoires encodés en base64url avant le démarrage du démon lorsque cette sélection est vide. Le navigateur reçoit le bearer sélectionné via `#token=` et le stocke par onglet ; le protocole et le middleware voient un token configuré ordinaire. Les `--open` nus, les appelants intégrés directs, les liaisons non-loopback et les autres clients ne reçoivent pas d'identifiants automatiques. Les environnements inéligibles au navigateur affichent l'URL fragment contenant le secret pour ouverture manuelle. Le `/health` loopback et les assets statiques du Web Shell conservent les exemptions décrites ci-dessous ; `--require-auth` protège toujours `/health`.
+
 **Exemption de `/health`** (Bctum) : sur les liaisons loopback (`127.0.0.1` / `localhost` / `::1` / `[::1]`), `/health` est enregistré AVANT le middleware bearer, de sorte que les sondes de liveness à l'intérieur du pod n'ont pas besoin d'inclure le token, même si le démon a été démarré avec `--token`. Les liaisons non-loopback (`--hostname 0.0.0.0`, etc.) protègent `/health` derrière le bearer comme n'importe quelle autre route — consultez la section [`GET /health`](#get-health) pour connaître la raison.
 
 **`--require-auth` (PR #4175 15).** Passez ce flag au démarrage pour étendre la règle « doit avoir un token » au loopback également. Le démarrage échoue sans token ; l'exemption de `/health` est supprimée (donc `/health` exige également `Authorization: Bearer …`).
@@ -3032,20 +3034,22 @@ La politique active est configurée dans `settings.json` sous `policy.permission
 
 > **F3 (#4175) : coordination des permissions multi-clients.** F3 a ajouté les quatre politiques ci-dessus. Les démons pré-F3 avaient first-responder en dur ; le format sur le fil reste strictement identique bit pour bit lorsque la politique configurée est `first-responder`. Les nouveaux événements (`permission_partial_vote`, `permission_forbidden`) sont additifs — les anciens SDK les voient comme `unrecognized_known_event` et les ignorent gracieusement.
 
-> **Délai d'expiration des permissions (par défaut 5 minutes).** Une `permission_request`
+> **Délai d'expiration des permissions (désactivé par défaut).** Une `permission_request`
 > reste en attente jusqu'à ce que : (a) un client vote ici, (b) `POST /session/:id/cancel`
 > soit déclenché, (c) le client HTTP qui pilote le prompt se déconnecte
 > (l'annulation en cours de prompt résout les permissions en attente comme `cancelled`),
 > (d) la session soit tuée, (e) le démon s'arrête, **ou
-> (f) le délai d'expiration des permissions par session se déclenche** (`DEFAULT_PERMISSION_TIMEOUT_MS`,
-> 5 minutes). Lors du déclenchement du délai, le `requestPermission` de l'agent se résout
-> avec `{outcome: 'cancelled'}`, le ring d'audit enregistre une
-> entrée `permission.timeout`, le stderr du démon émet un breadcrumb
+> (f) son délai d'expiration configuré se déclenche**. Lors du déclenchement du délai, le
+> `requestPermission` de l'agent se résout avec `{outcome: 'cancelled'}`, le ring d'audit
+> enregistre une entrée `permission.timeout`, le stderr du démon émet un breadcrumb
 > d'une ligne, et le bus SSE diffuse la trame annulée standard
 > `permission_resolved` afin que les abonnés nettoient leurs états. Le
-> délai est configurable via `BridgeOptions.permissionResponseTimeoutMs` ;
-> les appelants headless exécutant des prompts de longue durée voudront
-> peut-être l'étendre.
+> délai partagé est configurable via
+> `BridgeOptions.permissionResponseTimeoutMs` ou
+> `qwen serve --permission-response-timeout-ms`. Sa valeur par défaut est `0`, donc
+> les permissions ordinaires et `ask_user_question` attendent indéfiniment une décision
+> humaine. L'annulation par un votant, l'annulation de session, le nettoyage de déconnexion et
+> l'arrêt du démon résolvent toujours les interactions en attente comme annulées.
 
 Requête :
 

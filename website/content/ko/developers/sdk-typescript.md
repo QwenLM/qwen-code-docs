@@ -1,3 +1,5 @@
+---
+
 # Typescript SDK
 
 ## @qwen-code/sdk
@@ -94,12 +96,17 @@ SDK는 다음 기본 타임아웃을 적용합니다:
 `timeout` 옵션을 통해 이 타임아웃을 커스터마이즈할 수 있습니다:
 
 ```typescript
-const query = qwen.query('Your prompt', {
-  timeout: {
-    canUseTool: 60000, // 권한 콜백에 60초
-    mcpRequest: 600000, // MCP 도구 호출에 10분
-    controlRequest: 60000, // 제어 요청에 60초
-    streamClose: 15000, // 스트림 close 대기에 15초
+import { query } from '@qwen-code/sdk';
+
+const q = query({
+  prompt: 'Your prompt',
+  options: {
+    timeout: {
+      canUseTool: 60000, // 권한 콜백에 60초
+      mcpRequest: 600000, // MCP 도구 호출에 10분
+      controlRequest: 60000, // 제어 요청에 60초
+      streamClose: 15000, // 스트림 close 대기에 15초
+    },
   },
 });
 ```

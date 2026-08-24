@@ -234,6 +234,7 @@ sequenceDiagram
 ## Estado e Ciclo de Vida
 
 - O token bearer é lido na inicialização e sofre trim (newlines de `cat token.txt` quebrariam a comparação silenciosamente).
+- O modo `--open-with-auth` (exclusivo da CLI) executa antes da inicialização: após verificações determinísticas de loopback/Web Shell, aplica a mesma seleção de opção sobre ambiente e preenche `ServeOptions.token` com 32 bytes aleatórios codificados em base64url somente quando nenhum token selecionado não vazio existe. A credencial gerada tem tempo de vida do processo, não é escrita em `process.env` nem persistida pelo daemon, e chega ao navegador através do fragmento de URL existente. O Web Shell retém sua cópia no navegador em `sessionStorage` por aba. `--open` simples e chamadores diretos de `runQwenServe()` nunca a geram.
 - O Set de Hosts permitidos é cacheado por porta; reconstruído na mudança de porta (efêmera `0` → porta real após `listen`).
 - O portão de mutação constrói `passthrough` e `strictDenier` uma vez por build do app; a chamada por rota retorna o closure cacheado (sem alocação por requisição).
 - O registro de device-flow é descartado na Fase 1 do `shutdown()` para que fluxos pendentes resolvam como `cancelled` antes do teardown HTTP.
@@ -251,6 +252,7 @@ sequenceDiagram
 | --------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | Env             | `QWEN_SERVER_TOKEN`                                                                     | Token bearer (com trim).                                                |
 | Flag            | `--token`                                                                               | Token bearer (sobrescreve o env).                                       |
+| CLI flags       | `--open-with-auth`                                                                      | Reutiliza ou gera um bearer do Web Shell no loopback antes da inicialização do daemon. |
 | Flag            | `--require-auth`                                                                        | Estende bearer para loopback + `/health`. Inicia apenas com um token.   |
 | Flag            | `--hostname`                                                                            | Bind fora do loopback exige `--token` (ou env).                         |
 | Flag            | `--allow-origin <pattern>`                                                              | Alterna para modo de lista de permissão CORS. `'*'` exige um token.     |

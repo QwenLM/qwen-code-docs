@@ -1,78 +1,65 @@
 # Computer Use
 
-Qwen Code には組み込みの **Computer Use** ツールが搭載されており、エージェントがデスクトップを操作できます。クリック、入力、スクロール、アプリの起動、ウィンドウ内容の読み取り、スクリーンショットの撮影などが可能です。これにより、Qwen Code はターミナル内に閉じない汎用デスクトップ自動化エージェントになります。
+Qwen Code には `computer-use` スキルが含まれており、別途インストールされる 2 つのパッケージを通じてデスクトップアプリケーションを操作する方法をモデルに指示します。
 
-Computer Use は [`cua-driver`](https://github.com/trycua/cua) ネイティブドライバーによって動作します。ツールは `computer_use__` プレフィックスの遅延ロード組み込みツールとして登録されるため、モデルが実際に使用するまでプロンプトスペースを消費しません。
+```text
+bundled computer-use skill
+  -> @qwen-code/node-repl-mcp
+  -> @qwen-code/cua-sdk/computer-use
+  -> native cua-driver accessibility backend
+```
+
+Qwen Code は MCP サーバー、SDK、またはネイティブドライバーをバンドルしていません。スキルは外部パッケージが不足している場合に自動的にインストールします。
 
 > [!warning]
 >
-> Computer Use はエージェントにマウス、キーボード、ウィンドウの操作権限を与え、画面の内容を読み取れるようにします。信頼できるプロンプトでのみ使用し、可能な限りサンドボックス化または使い捨ての環境で利用してください。アクションツール（click、type、drag など）は通常の[承認モード](./approval-mode.md)のフローに従いますが、ウィンドウ一覧取得などの読み取り専用ツールは確認なしで実行される場合があります。
+> Computer Use はアプリケーション UI を読み取り、マウスとキーボード入力を制御できます。信頼された環境でのみ使用し、MCP の承認を注意深くレビューしてください。
 
-## 有効化と無効化
+## 自動セットアップ
 
-Computer Use は**デフォルトで有効**です。`computer_use__*` ツールは起動時に自動的に登録されます。
+Node.js 22 以降と npm が必要です。
 
-完全に無効化するには（ネイティブドライバーのダウンロードや起動も防止されます）、`settings.json` で `tools.computerUse.enabled` を `false` に設定します。
+初回使用時に、スキルが以下のコマンドを自分で実行します。
 
-```jsonc
-{
-  "tools": {
-    "computerUse": {
-      "enabled": false,
-    },
-  },
-}
+```bash
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.0
+npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.0
 ```
 
-この設定は再起動後に反映されます。
+MCP サーバーが最初に追加された後、Qwen Code を再起動します。その後、スキルは `node_repl` を通じてデスクトップタスクを再開します。
 
-## 初回実行とネイティブドライバー
+SDK のインストールは `package.json` とロックファイルを変更しませんが、ワークスペースの `node_modules` に書き込みます。postinstall で現在のプラットフォームのネイティブペイロードをダウンロードして検証します。
 
-エージェントが初めて Computer Use ツールを呼び出すと、Qwen Code は署名付きの `cua-driver` バイナリ（約 20 MB）を `~/.qwen/computer-use/` にダウンロードし、ローカルプロセスとして起動します。ビルド済みバイナリは macOS（Apple Silicon および Intel）、Linux（x86_64）、Windows（x86_64）向けに提供されています。
+MCP 設定またはワークスペースの SDK インストールを削除すると、実行パスが無効になります。レガシーなフォールバックはありません。
 
-### macOS の権限
+## 使用法
 
-macOS では、デスクトップ自動化に 2 つのシステム権限が必要です。
+Qwen Code にデスクトップタスクで `$computer-use` を使用するよう指示します。ブートストラップ後、標準の Computer Use ワークフローに従います。
 
-- **アクセシビリティ** — ウィンドウ/UI 状態の読み取りと入力の合成
-- **画面収録** — スクリーンショットのキャプチャ
+1. 正確なアプリケーションとウィンドウを検出します。
+2. 完全なアクセシビリティ状態を観測します。
+3. 可能な場合は現在のセマンティック要素トークンを通じてアクションを実行します。
+4. 変更ごとに新しい状態を取得します。
+5. リクエストされた結果を検証します。
+6. SDK クライアントを閉じ、REPL をリセットします。
 
-初回使用時に、macOS の標準システムダイアログを通じてこれらの権限付与をガイドします。エージェントは権限ステータスをオンデマンドで確認することもできます（`check_permissions` ツール）。macOS は権限付与を_責任ある_プロセスに帰属させるため、Qwen Code を起動したターミナルや IDE に対して権限を付与する必要がある場合があります。
+ドライバーのみが観測差分を計算するコンポーネントです。モデルコードは型付き SDK メソッドを使用し、任意のドライバーツール名をディスパッチしません。
 
-## エージェントができること
+## 権限
 
-`cua-driver` の全ツール群が公開されます。主なものは以下の通りです。
+Node REPL は、モデルが作成した JavaScript を通常の Node.js 権限で実行する MCP サーバーです。その呼び出しは Qwen Code の通常の [MCP 承認フロー](./approval-mode.md) に従います。SDK もネイティブの認可を強制します。
 
-| カテゴリ        | ツール（抜粋）                                                                       |
-| --------------- | ------------------------------------------------------------------------------------ |
-| マウス          | `click`、`double_click`、`right_click`、`drag`、`move_cursor`、`scroll`              |
-| キーボード      | `type_text`、`press_key`、`hotkey`                                                   |
-| ウィンドウ / UI | `list_windows`、`get_window_state`、`get_accessibility_tree`、`set_value`、`zoom`    |
-| アプリ          | `launch_app`、`list_apps`、`bring_to_front`、`kill_app`                              |
-| ブラウザページ  | `page`（JavaScript の実行、テキストの読み取り、DOM クエリ、要素のクリック）           |
-| スクリーンショット | `get_window_state`（PNG をキャプチャ）、`page`                                    |
-| 録画            | `start_recording`、`stop_recording`、`replay_trajectory`（セッションの記録/リプレイ） |
-| セッション      | `start_session`、`end_session`、エージェントカーソルオーバーレイ制御                  |
+macOS では、アクセシビリティの観測と入力に Accessibility 権限が必要です。スクリーンショットにはさらに Screen Recording 権限が必要です。macOS は Qwen Code を起動したターミナルまたは IDE に付与を帰属させる場合があります。Windows と Linux はプラットフォームのアクセシビリティおよび入力機能を使用します。
 
-要素指定のアクションは、生のピクセル座標よりも優先されます。`get_window_state` はウィンドウのアクセシビリティツリーの Markdown レンダリングを返し、各操作可能な要素に安定した `element_index` を付与します。入力ツールはこのインデックスを直接ターゲットにできます。
+## トラブルシューティング
 
-サポートは macOS が最も充実しています。一部のツールはプラットフォーム固有です（例：`bring_to_front` は Windows のみ、`launch_app` は macOS アプリが対象）。
-
-## 設定
-
-Computer Use のすべての設定は `settings.json` の `tools.computerUse` 配下に存在します。詳細は[設定リファレンス](../configuration/settings.md)を参照してください。
-
-| 設定項目                              | 型      | デフォルト | 説明                                                                                                                                                                                                                                                         |
-| ------------------------------------- | ------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `tools.computerUse.enabled`           | boolean | `true`     | `computer_use__*` ツールを登録します。`false` の場合、ドライバーのダウンロードや起動は一切行われません。                                                                                                                                                       |
-| `tools.computerUse.maxImageDimension` | number  | `-1`       | スクリーンショットの最長辺ピクセル上限。`-1` はドライバーのデフォルト（1568）を維持。`0` はリサイズ無効（フル解像度）。正の値は最長辺をキャップします。低いキャップは vision トークンコストを削減します。環境変数オーバーライド：`QWEN_COMPUTER_USE_MAX_IMAGE_DIMENSION`。 |
-| `tools.computerUse.idleTimeoutMs`     | number  | `300000`   | 最後の `computer_use__*` 呼び出し後にドライバープロセスを維持するミリ秒（デフォルト 5 分）。`0` は Qwen Code 終了までプロセスを維持します。                                                                                                                   |
-
-3 つの設定はいずれも再起動後に反映されます。
+- 自動セットアップ後も `node_repl` が利用できない場合は、Qwen Code を再起動し、`qwen mcp list` でサーバーを確認してください。
+- 自動セットアップ後も SDK のインポートが失敗する場合は、Qwen Code がパッケージがインストールされたワークスペースから実行されていることを確認してください。
+- タイムアウト、キャンセル、リセット、またはカーネルクラッシュ後は、SDK クライアントを再度ブートストラップし、新しい状態をリクエストしてください。
 
 ## 関連項目
 
-- [承認モード](./approval-mode.md) — ツール実行の許可方法
-- [サンドボックス](./sandbox.md) — ツールがアクセス可能な範囲の隔離
-- [設定リファレンス](../configuration/settings.md) — `tools.computerUse.*` の完全なスキーマ
-
+- [Skills](./skills.md)
+- [MCP サーバー](./mcp.md)
+- [承認モード](./approval-mode.md)
+- [サンドボックス化](./sandbox.md)

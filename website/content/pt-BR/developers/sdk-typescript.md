@@ -94,12 +94,17 @@ O SDK impõe os seguintes timeouts padrão:
 Você pode personalizar esses timeouts através da opção `timeout`:
 
 ```typescript
-const query = qwen.query('Your prompt', {
-  timeout: {
-    canUseTool: 60000, // 60 segundos para callback de permissão
-    mcpRequest: 600000, // 10 minutos para chamadas de ferramentas MCP
-    controlRequest: 60000, // 60 segundos para solicitações de controle
-    streamClose: 15000, // 15 segundos para espera de fechamento do stream
+import { query } from '@qwen-code/sdk';
+
+const q = query({
+  prompt: 'Your prompt',
+  options: {
+    timeout: {
+      canUseTool: 60000, // 60 segundos para callback de permissão
+      mcpRequest: 600000, // 10 minutos para chamadas de ferramentas MCP
+      controlRequest: 60000, // 60 segundos para solicitações de controle
+      streamClose: 15000, // 15 segundos para espera de fechamento do stream
+    },
   },
 });
 ```

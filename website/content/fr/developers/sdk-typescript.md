@@ -94,12 +94,17 @@ Le SDK applique les timeouts par défaut suivants :
 Vous pouvez personnaliser ces timeouts via l'option `timeout` :
 
 ```typescript
-const query = qwen.query('Votre prompt', {
-  timeout: {
-    canUseTool: 60000, // 60 secondes pour le callback de permission
-    mcpRequest: 600000, // 10 minutes pour les appels d'outils MCP
-    controlRequest: 60000, // 60 secondes pour les requêtes de contrôle
-    streamClose: 15000, // 15 secondes pour l'attente de fermeture du flux
+import { query } from '@qwen-code/sdk';
+
+const q = query({
+  prompt: 'Your prompt',
+  options: {
+    timeout: {
+      canUseTool: 60000, // 60 secondes pour le callback de permission
+      mcpRequest: 600000, // 10 minutes pour les appels d'outils MCP
+      controlRequest: 60000, // 60 secondes pour les requêtes de contrôle
+      streamClose: 15000, // 15 secondes pour l'attente de fermeture du flux
+    },
   },
 });
 ```
@@ -186,7 +191,7 @@ Le SDK prend en charge différents modes de permission pour contrôler l'exécut
 - **`default`** : Les outils d'écriture sont refusés sauf approbation via le callback `canUseTool` ou s'ils sont dans `allowedTools`. Les outils en lecture seule s'exécutent sans confirmation.
 - **`plan`** : Bloque tous les outils d'écriture, en demandant à l'IA de présenter d'abord un plan.
 - **`auto-edit`** : Approuve automatiquement les outils d'édition (`edit`, `write_file`, `notebook_edit`) tandis que les autres outils nécessitent une confirmation.
-- **`auto`** : Utilise le classificateur intégré pour approuver automatiquement les appels d'outils sûrs et bloquer les risqués, avec un repli vers l'approbation manuelle après des blocages répétés par la politique ou des pannes du classificateur.
+- **`auto`** : Utilise le classificateur intégré pour approuver automatiquement les appels d'outils sûrs et bloquer les risqués, avec un fallback vers l'approbation manuelle après des blocages répétés par la politique ou des pannes du classificateur.
 - **`yolo`** : Tous les outils s'exécutent automatiquement sans confirmation.
 
 ### Chaîne de priorité des permissions

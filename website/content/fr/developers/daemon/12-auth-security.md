@@ -266,6 +266,7 @@ sequenceDiagram
 ## État & Cycle de vie
 
 - Le jeton Bearer est lu au démarrage et tronqué (les nouvelles lignes de `cat token.txt` casseraient autrement la comparaison silencieusement).
+- Le mode CLI `--open-with-auth` s'exécute avant le démarrage : après les vérifications déterministes loopback/Web Shell, il applique la même sélection option-sur-environnement et remplit `ServeOptions.token` avec 32 octets aléatoires encodés en base64url uniquement lorsqu'aucun jeton sélectionné non vide n'existe. L'identifiant généré a une durée de vie processus, n'est pas écrit dans `process.env` ni persisté par le démon, et atteint le navigateur via le fragment URL existant. Le Web Shell conserve sa copie navigateur dans le `sessionStorage` par onglet. Le `--open` nu et les appelants directs de `runQwenServe()` ne le génèrent jamais.
 - L'ensemble des hôtes autorisés est mis en cache par port ; reconstruit en cas de changement de port (`0` éphémère → port réel après `listen`).
 - La porte de mutation construit `passthrough` et `strictDenier` une fois par construction d'application ; l'appel par route retourne la fermeture mise en cache (pas d'allocation par requête).
 - Le registre de flux d'appareil est supprimé lors de `shutdown()` Phase 1 afin que les flux en attente se résolvent en `cancelled` avant le démontage HTTP.
@@ -283,6 +284,7 @@ sequenceDiagram
 | --------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | Env             | `QWEN_SERVER_TOKEN`                                                                    | Jeton Bearer (tronqué).                                                 |
 | Drapeau         | `--token`                                                                              | Jeton Bearer (remplace l'environnement).                                |
+| Flags CLI       | `--open-with-auth`                                                                     | Réutiliser ou générer un bearer Web Shell loopback avant le démarrage du démon. |
 | Drapeau         | `--require-auth`                                                                       | Étend bearer à loopback + `/health`. Démarre uniquement avec un jeton.  |
 | Drapeau         | `--hostname`                                                                           | Liaison non-loopback nécessite `--token` (ou env).                      |
 | Drapeau         | `--allow-origin <pattern>`                                                             | Passer en mode liste blanche CORS. `'*'` nécessite un jeton.            |

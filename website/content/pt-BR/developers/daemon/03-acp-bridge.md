@@ -45,7 +45,7 @@ Cada `WorkspaceRuntime` ativo possui uma instância de `HttpAcpBridge`. A produ�
 | `defaultEntry`  | `SessionEntry \| null`          | A sessão "única" usada quando `sessionScope: 'single'`.                                                                                                                                                                                                                                                                                                                                                  |
 | `defaultPolicy` | `PermissionPolicy`              | Configurado via `BridgeOptions.permissionPolicy`.                                                                                                                                                                                                                                                                                                                                                        |
 | `mediator`      | `MultiClientPermissionMediator` | Um por instância da bridge.                                                                                                                                                                                                                                                                                                                                                                              |
-| Constants       | —                               | `DEFAULT_INIT_TIMEOUT_MS = 10_000`, `MCP_RESTART_TIMEOUT_MS = 300_000`, `DEFAULT_MAX_SESSIONS = 32`, `MAX_EVENT_RING_SIZE = 1_000_000`, `DEFAULT_PERMISSION_TIMEOUT_MS = 5min`, `DEFAULT_MAX_PENDING_PER_SESSION = 64`.                                                                                                                                                                                  |
+| Constants       | —                               | `DEFAULT_INIT_TIMEOUT_MS = 10_000`, `MCP_RESTART_TIMEOUT_MS = 300_000`, `DEFAULT_MAX_SESSIONS = 32`, `MAX_EVENT_RING_SIZE = 1_000_000`, `DEFAULT_PERMISSION_TIMEOUT_MS = 0`, `DEFAULT_MAX_PENDING_PER_SESSION = 64`.                                                                                                                                                                                     |
 
 **Invariante `isDying`**: qualquer caminho de teardown deve definir `ChannelInfo.isDying = true` de forma síncrona **antes** de aguardar `channel.kill()`. `ensureChannel` trata um canal moribundo como ausente e cria (spawn) um novo. Sem essa flag, um `spawnOrAttach` concorrente chegando durante a janela de graça do SIGTERM (até 10s) se anexaria a um transporte prestes a fechar e o sessionId do chamador retornaria 404 em todas as requisições subsequentes. **Locais de definição** (devem ser mantidos sincronizados): `ensureChannel` (falha de inicialização + re-verificação de shutdown tardio), `doSpawn` (falha de newSession em canal vazio), `killSession` (última sessão saindo), `shutdown` (em massa).
 
@@ -179,7 +179,7 @@ sequenceDiagram
 - A construção da bridge é síncrona. O chamador pode pré-aquecer o canal antes da primeira sessão; caso contrário, o primeiro `spawnOrAttach` inicializa a frio o processo filho ACP. Um pré-aquecimento com falha deixa o primeiro uso livre para tentar novamente.
 - `defaultEntry` vive durante todo o ciclo de vida da bridge sob `sessionScope: 'single'`; o canal é recolhido (reaped) quando `sessionIds.size === 0` (após `killSession`) E `isDying` vira true.
 - `MAX_EVENT_RING_SIZE = 1_000_000` é um limite superior flexível para `BridgeOptions.eventRingSize` para capturar erros de digitação do operador antes de OOMs de ~500 MB por sessão.
-- `DEFAULT_PERMISSION_TIMEOUT_MS = 5 * 60 * 1000` impede que uma requisição de permissão travada bloqueie o `promptQueue` por sessão para sempre.
+- `DEFAULT_PERMISSION_TIMEOUT_MS = 0` permite que permissões humanas e perguntas aguardem indefinidamente por padrão. `permissionResponseTimeoutMs` habilita um limite de relógio (wall-clock) quando os operadores precisarem de um; o cancelamento de voto, o cancelamento de sessão e o shutdown permanecem disponíveis sem ele.
 - `DEFAULT_MAX_PENDING_PER_SESSION = 64` espelha `DEFAULT_MAX_SUBSCRIBERS`; chamadas excessivas de `requestPermission` são resolvidas como canceladas com um aviso no stderr.
 
 ## Dependências
@@ -203,7 +203,7 @@ sequenceDiagram
 | `sessionRestoreTimeoutMs`                     | `60_000`                                           | Timeout do ACP `loadSession` / `unstable_resumeSession`; padrão 60s, e um timeout de initialize configurado explicitamente pode elevá-lo, mas nunca reduzi-lo. |
 | `maxSessions`                                 | `DEFAULT_MAX_SESSIONS = 32`                        | Limite para `byId.size`. `0` / `Infinity` = ilimitado; NaN/negativo lança erro.                                       |
 | `eventRingSize`                               | `DEFAULT_RING_SIZE` (de `eventBus.ts`)             | Anel de eventos por sessão; limite flexível em `MAX_EVENT_RING_SIZE`.                                                 |
-| `permissionResponseTimeoutMs`                 | `DEFAULT_PERMISSION_TIMEOUT_MS = 5 min`            | Tempo de relógio (wallclock) por requisição para o mediador.                                                          |
+| `permissionResponseTimeoutMs`                 | `DEFAULT_PERMISSION_TIMEOUT_MS = 0`                | Tempo de relógio (wallclock) por requisição para o mediador; `0` desativa.                                                                     |
 | `maxPendingPermissionsPerSession`             | `DEFAULT_MAX_PENDING_PER_SESSION = 64`             | Backpressure para agentes de alto volume.                                                                             |
 | `childEnvOverrides`                           | `{}`                                               | Adições / limpezas de variáveis de ambiente por handle para o processo filho ACP.                                     |
 | `externalToolGuard`                           | (nenhum)                                           | Handler opcional para a decisão privada filho-para-pai de pré-execução. A bridge o aceita apenas do canal proprietário para o Prompt ativo no momento. |
@@ -250,11 +250,15 @@ Além das chamadas principais `spawnOrAttach`, `sendPrompt`, `cancelSession`,
 `liveJournal` e `lastEventId`. Esses campos de replay são uma janela limitada
 em memória para sessões ativas, limitada por `BridgeOptions.compactedReplayMaxBytes`
 (padrão 4 MiB, teto rígido 256 MiB). O `liveJournal` em voo é limitado
-separadamente por `BridgeOptions.maxJournalEvents` (padrão 10 000) e
-`BridgeOptions.maxJournalBytes` (padrão 8 MiB). Se um replay retido mais antigo
+separadamente por `BridgeOptions.maxJournalEvents` (padrão 10 000 entradas de replay) e
+`BridgeOptions.maxJournalBytes` (padrão 8 MiB de eventos fonte serializados).
+Chunks de texto ou pensamento consecutivos e compatíveis compartilham uma entrada
+de replay, com no máximo 256 eventos fonte por entrada; outras fronteiras de
+evento e atribuição permanecem intactas. Se um replay retido mais antigo
 foi descartado, `compactedReplay[0]` é o marcador `history_truncated` sem id;
 se entradas do journal foram descartadas, `liveJournal[0]` carrega um marcador
-`history_truncated` com `scope: 'live_journal'`. A transcrição persistida
+`history_truncated` com `scope: 'live_journal'`. Suas contagens de retidos e
+truncados descrevem eventos fonte, não entradas de replay. A transcrição persistida
 completa permanece em disco e não é exposta por essa resposta da bridge.
 `BridgeClientRequestContext` é o contexto de
 requisição propagado através das chamadas da bridge; ele carrega `clientId`,

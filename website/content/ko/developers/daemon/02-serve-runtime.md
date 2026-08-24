@@ -61,6 +61,8 @@
 
 ### 부트 시퀀스
 
+`runQwenServe()`가 이 시퀀스를 시작하기 전에, CLI 전용 `--open-with-auth` 모드가 루프백/Web Shell 적격성을 검증하고 `ServeOptions.token`을 선택된 구성 토큰으로 채우거나, 해당 선택이 비어 있으면 base64url로 인코딩된 32바이트 무작위 값으로 채웁니다. 직접 임베더와 해당 기본값 해제 플래그 없는 호출은 토큰을 생성하지 않습니다.
+
 1. `opts.token` 또는 `QWEN_SERVER_TOKEN`에서 토큰을 **해석하고 트림**합니다. `cat token.txt`의 후행 개행이 베어러 비교를 조용히 깨뜨리는 것을 방지합니다.
 2. **호스트네임 오타 가드**: `--hostname localhost:4170`은 오류를 발생시키고 `--port`를 제안합니다.
 3. **인증 프리플라이트**: 토큰 없는 루프백이 아닌 바인드는 거부합니다. 토큰 없는 `--require-auth`는 거부합니다.
@@ -122,6 +124,7 @@
 | 환경 변수       | `QWEN_SERVE_DEBUG=1`                                                                                       | 상세 stderr 로그. [`19-observability.md`](./19-observability.md) 참조.                                 |
 | 플래그          | `--hostname`, `--port`                                                                                     | 리슨 바인딩.                                                                                          |
 | 플래그          | `--token`, `--require-auth`, `--enable-session-shell`                                                      | 베어러 토큰, 루프백 인증 강화, 명시적 셸 실행 스위치.                                                |
+| CLI 플래그      | `--open-with-auth`                                                                                         | 런타임 전 프로세스 수명 베어러를 재사용하거나 생성하는 기본값 해제 루프백 Web Shell 시작.              |
 | 플래그          | `--workspace`                                                                                              | `process.cwd()`를 재정의합니다. 추가 격리 워크스페이스 런타임을 등록하려면 반복합니다.                  |
 | 플래그          | `--max-sessions`, `--max-pending-prompts-per-session`, `--max-connections`, `--event-ring-size`            | 브리지 / Express 캡.                                                                                  |
 | 플래그          | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}`                                            | ACP 자식에게 전달됩니다.                                                                              |
