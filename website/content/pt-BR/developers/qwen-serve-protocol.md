@@ -1,5 +1,3 @@
----
-
 # Referência do protocolo HTTP do `qwen serve`
 
 Estágio 1 do [design do daemon qwen-code](https://github.com/QwenLM/qwen-code/issues/3803). Todas as rotas ficam sob a URL base do daemon (padrão `http://127.0.0.1:4170`).

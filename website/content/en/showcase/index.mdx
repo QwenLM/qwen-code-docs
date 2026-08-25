@@ -2413,6 +2413,36 @@ export const showcaseItems = [
       { title: "Use it right away", description: "The skills and MCP servers in the package are available in your session immediately, with no extra configuration." },
     ],
   },
+  // === Aug 20 weekly demos ===
+  {
+    id: "advisor-independent-review",
+    title: "Stuck Mid-Task? Let a Second AI Review the Whole Conversation",
+    description: "`/advisor` sends a read-only side session to review your current conversation. It reads the full context and returns four things — conclusion, risks, missing evidence, and recommendations — without touching your main conversation.",
+    category: "Development",
+    features: ["Agent Mode"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01x6UkJeTG4kD7nOLI_!!6000000004249-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "Long conversations can trap you in a single line of thinking — blind spots in your own context are hard to spot. `/advisor` brings in an independent second opinion: a read-only side session reads the full context and returns four things — conclusion, risks, missing evidence, and recommendations. It never edits the main conversation or runs any actions; when the review is done, you pick up right where you left off. You can ask with a specific concern, like `/advisor is this approach safe?`, or point it at a dedicated review model.",
+    steps: [
+      { title: "Type /advisor", description: "Type `/advisor` in the conversation, optionally with the concern you care about.", command: "/advisor is this approach safe?" },
+      { title: "The review comes back with four items", description: "The read-only side session reads the full context and returns conclusion, risks, missing evidence, and recommendations — never touching the main conversation." },
+    ],
+  },
+  {
+    id: "sessions-ps-running-list",
+    title: "One Command Lists Every Session Still Running",
+    description: "`qwen sessions ps` lists every session running on your machine: session name, process ID, uptime, and working directory — one per line. Add `--json` to pipe it into scripts.",
+    category: "Development",
+    features: ["Terminal"],
+    thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01edM2ef0oKxI7nOLI_!!6000000005536-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "With several Qwen Code sessions open at once, it's easy to lose track of which is which. `qwen sessions ps` lists every interactive session currently running on your machine, one per line: session name, process ID, uptime, and working directory. Everything listed is genuinely running — close a session and it disappears from the list immediately. To pipe it into scripts, just add `--json`.",
+    steps: [
+      { title: "One command lists running sessions", description: "Run `qwen sessions ps` in the terminal. Every interactive session running on your machine shows up one per line, with session name, process ID, uptime, and directory.", command: "qwen sessions ps" },
+    ],
+  },
 ]
 
 <VideoShowcaseIndex

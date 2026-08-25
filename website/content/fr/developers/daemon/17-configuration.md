@@ -1,5 +1,3 @@
----
-
 # Référence de configuration
 
 ## Vue d'ensemble

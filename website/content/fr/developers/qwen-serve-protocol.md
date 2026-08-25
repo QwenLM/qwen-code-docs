@@ -1,4 +1,3 @@
----
 # Référence du protocole HTTP de `qwen serve`
 
 Étape 1 de la [conception du démon qwen-code](https://github.com/QwenLM/qwen-code/issues/3803). Toutes les routes se trouvent sous l'URL de base du démon (par défaut `http://127.0.0.1:4170`).

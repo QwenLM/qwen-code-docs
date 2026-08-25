@@ -1,0 +1,144 @@
+---
+title: "Qwen Code Wochenbericht: /advisor liefert eine unabhängige Zweitmeinung, ein Befehl zeigt alle laufenden Sitzungen auf dem Rechner, unterbrochene Reviews starten nicht mehr von vorn"
+date: "2026-08-20"
+description: "Diese Woche erschienen mit v0.21.12 bis v0.21.14 drei stabile Versionen. /advisor liefert eine unabhängige Zweitmeinung zur laufenden Konversation; qwen sessions ps zeigt auf einen Blick, welche Sitzungen auf dem Rechner laufen; /review setzt nach einer Unterbrechung am Unterbrechungspunkt fort."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i2/O1CN01aC8NjamgAjF2jBZY_!!6000000003218-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Wochenbericht: /advisor liefert eine unabhängige Zweitmeinung, ein Befehl zeigt alle laufenden Sitzungen auf dem Rechner, unterbrochene Reviews starten nicht mehr von vorn"
+  date="2026-08-20"
+  author="Qwen Team"
+/>
+
+Qwen Code hat diese Woche drei stabile Versionen veröffentlicht (v0.21.12 bis v0.21.14), mit über 140 gemergten PRs.
+
+**Unabhängige Zweitmeinung.** `/advisor` prüft die laufende Konversation unabhängig und liefert vier Punkte: Fazit, Risiken, fehlende Belege und Empfehlungen. Alles bleibt dabei nur lesend — die Hauptkonversation wird nicht angerührt.
+
+**Ein Befehl zeigt alle laufenden Sitzungen.** Der neue Befehl `qwen sessions ps` listet auf, welche Sitzungen gerade auf dem Rechner laufen: in welchem Verzeichnis, wie lange schon und mit welcher Prozess-ID.
+
+**Unterbrochene Reviews starten nicht mehr von vorn.** Eine unterbrochene PR-Prüfung lässt sich mit `--resume` fortsetzen — stimmt der gespeicherte Zustand noch, geht es am Unterbrechungspunkt weiter.
+
+## ✨ Neue Features
+
+### /advisor: ein unabhängiges Modell prüft die laufende Konversation
+
+Wer lange an einer Konversation sitzt, verfängt sich leicht in einem einzigen Ansatz — blinde Flecken im eigenen Kontext fallen dann kaum noch auf. `/advisor` holt eine unabhängige Zweitmeinung zur laufenden Konversation ein: Eine nur lesende Seitensitzung liest den gesamten Kontext und liefert vier Punkte: Fazit, Risiken, fehlende Belege und Empfehlungen. Die Zweitmeinung ist strikt nur lesend — sie ändert nichts an der Hauptkonversation und führt auch nichts aus. Nach der Prüfung geht die Konversation unbeeinflusst weiter.
+
+Du kannst mit einem konkreten Fokus fragen, etwa `/advisor ist dieser Ansatz sicher?`. Über die Einstellung `advisorModel` lässt sich ein festes Review-Modell bestimmen; ohne Angabe prüft das aktuelle Modell.
+
+Siehe PR [#7567](https://github.com/QwenLM/qwen-code/pull/7567)
+
+![Die vier Prüfpunkte von /advisor](https://img.alicdn.com/imgextra/i4/O1CN01x6UkJeTG4kD7nOLI_!!6000000004249-2-tps-3840-2160.png)
+
+### qwen sessions ps: ein Befehl zeigt alle laufenden Sitzungen
+
+Mehrere Qwen-Code-Sitzungen gleichzeitig offen — da verliert man schnell den Überblick, welche welche ist. Der neue Befehl `qwen sessions ps` listet alle interaktiven Sitzungen auf dem Rechner auf, eine pro Zeile: Sitzungsname, Prozess-ID, Laufzeit und Verzeichnis. Wer sie in Skripte einbinden will, holt mit `--json` JSON-Ausgabe heraus.
+
+Gelistet wird nur, was wirklich läuft: Schließt du eine Sitzung, verschwindet sie sofort aus der Liste.
+
+Siehe PR [#8969](https://github.com/QwenLM/qwen-code/pull/8969)
+
+![qwen sessions ps listet laufende Sitzungen auf](https://img.alicdn.com/imgextra/i1/O1CN01edM2ef0oKxI7nOLI_!!6000000005536-2-tps-3840-2160.png)
+
+### Review: unterbrochene PR-Prüfungen fortsetzen, Kommentare in natürlicher Sprache
+
+`/review` bekommt diese Woche mehrere praktische Verbesserungen.
+
+**Unterbrochene Prüfungen setzen am Unterbrechungspunkt fort.** Wer einen großen PR prüft und mittendrin abbricht, musste bisher von vorn anfangen. Jetzt hat `qwen review fetch-pr` ein `--resume`: Zuerst wird der Zustand auf der Festplatte abgeglichen — letzter Prüfbericht, Arbeitsbaum und Diff unverändert, der PR nicht aktualisiert. Stimmt alles, geht es am Unterbrechungspunkt weiter; weicht nur ein Punkt ab, startet die Prüfung automatisch von vorn.
+
+**Prüfkommentare klingen jetzt natürlich.** Wenn `/review` einen PR prüft und Kommentare postet, lasen sich die Kommentare bisher sehr schablonenhaft. Jetzt sind sie in natürlicher Review-Sprache formuliert: wo das Problem liegt, wann es auffällt und wie man es behebt. Für Kommentare, die auf dem PR landen, lässt sich in den Einstellungen festlegen: mit oder ohne Schweregrad-Markierung und Signatur, wie tief geprüft wird und ob überhaupt gepostet wird.
+
+**Skript-Prüfung achtet auf die Ausführungsumgebung.** Bei Shell-Skripten und CI-Konfigurationen ist das Problem „läuft hier, bricht woanders" schwer zu finden. Die Prüfung ermittelt jetzt, in welchen Umgebungen diese Dateien tatsächlich ausgeführt werden, und prüft gezielt nach den Eigenheiten dieser Umgebungen.
+
+Siehe PRs [#9092](https://github.com/QwenLM/qwen-code/pull/9092), [#9027](https://github.com/QwenLM/qwen-code/pull/9027), [#8994](https://github.com/QwenLM/qwen-code/pull/8994), [#9263](https://github.com/QwenLM/qwen-code/pull/9263)
+
+### Web Shell: lokale Dateien direkt in die Konversation ziehen
+
+Sobald ein Remote-Verbindungs-Token konfiguriert ist (`QWEN_SERVER_TOKEN` oder `--token`), kannst du Dateien direkt ins Eingabefeld der Web Shell ziehen oder dort einfügen — sie gehen damit an Qwen Code: Beliebige Dateien landen im Workspace, und die Konversation bekommt automatisch eine Referenz, mit der die AI direkt arbeiten kann. Bei Textdateien lässt sich der Inhalt direkt in die Konversation einfügen — die AI liest ihn sofort, ohne die Datei öffnen zu müssen.
+
+Auch der Zielordner für den Upload lässt sich festlegen; ein fehlender Ordner wird automatisch angelegt. Ohne konfiguriertes Token werden Drag & Drop und Einfügen ins Eingabefeld noch nicht unterstützt.
+
+Siehe PRs [#8874](https://github.com/QwenLM/qwen-code/pull/8874), [#9180](https://github.com/QwenLM/qwen-code/pull/9180), [#9382](https://github.com/QwenLM/qwen-code/pull/9382)
+
+![Dateien per Drag & Drop in die Web Shell übergeben](https://img.alicdn.com/imgextra/i3/O1CN01S1rjVR6KBVL7nOLI_!!6000000007767-2-tps-3840-2160.png)
+
+## 📊 Weitere neue Funktionen
+
+**Workflow-Agenten lassen sich auf ein Verzeichnis festlegen.** In Workflows pinnt `agent({workingDir})` einen Agenten an ein bestimmtes Verzeichnis — unabhängig vom standardmäßigen Verzeichnisbereich. Siehe PR [#8972](https://github.com/QwenLM/qwen-code/pull/8972)
+
+**Release Notes mit zweisprachigen Zusammenfassungen.** Die Veröffentlichungshinweise sind nicht mehr bloß eine Aneinanderreihung von PRs: Einträge werden nach Funktionsthemen gruppiert, jede Gruppe bekommt eine leicht verständliche Zusammenfassung samt chinesischer Fassung, und auch Vorher-nachher-Screenshots aus den PRs werden übernommen. Siehe PR [#9216](https://github.com/QwenLM/qwen-code/pull/9216)
+
+**Einheitliche Spezifikation für externe Wissensquellen.** Anbieter von Retrieval-Diensten können nach der Spezifikation Plugins für Qwen Code entwickeln; einmal installiert, kann die AI deren Korpora durchsuchen. Was durchsuchbar ist, bestimmen allein die installierten Plugins — die AI sucht nur in diesem Rahmen. Siehe PR [#9068](https://github.com/QwenLM/qwen-code/pull/9068)
+
+## 👏 Erlebnisverbesserungen
+
+**Channel-Verwaltung als vollwertige Verwaltungsseite.** Die Channel-Verwaltung in der Web Shell bekommt dasselbe Vollbild-Layout wie geplante Aufgaben: Wer welchen Channel nutzen darf, ob Freigabe oder Whitelist, wie Sitzungen aufgeteilt werden und an welchen Workspace sie gebunden sind — alles auf einer Seite. Siehe PR [#8848](https://github.com/QwenLM/qwen-code/pull/8848)
+
+**Der WeChat-Tipp-Status bleibt bei langen Aufgaben erhalten.** Der „schreibt gerade"-Status in WeChat läuft ab — bei langen Aufgaben verschwand der Hinweis bisher mittendrin, als wäre die Verbindung weg. Jetzt wird er während der gesamten Laufzeit alle 4 Sekunden aufgefrischt und erst nach Abschluss entfernt. Siehe PR [#9358](https://github.com/QwenLM/qwen-code/pull/9358)
+
+**Der Kompaktmodus zeigt jetzt die Denkarbeit der AI.** Der Kompaktmodus der Web Shell (Ctrl+O) hat bisher sämtliche Thinking-Inhalte ausgeblendet. Jetzt zeigt die Zusammenfassung während des Denkens „denkt gerade" an; danach klappt das Denken in die Tool-Zusammenfassung ein und lässt sich per Klick öffnen. Siehe PR [#9148](https://github.com/QwenLM/qwen-code/pull/9148)
+
+**Sitzungswechsel auch bei eingeklappter Seitenleiste.** Ist die Seitenleiste der Web Shell eingeklappt, öffnet ein Überfahren des Projektsymbols den vollständigen Sitzungs-Browser. Zustände wie wartende Freigaben, offene Fragen oder abgeschlossene Vorgänge zeigt das Symbol farblich an. Siehe PR [#9311](https://github.com/QwenLM/qwen-code/pull/9311)
+
+**Bildvorschauen überstehen einen Refresh.** In der Web Shell gesendete Bilder bleiben nach einem Seiten-Refresh sichtbar — egal ob sie noch in der Warteschlange liegen oder mitten in eine Aufgabe eingefügt wurden. Mehrere Bilder werden weder zusammengelegt noch gehen sie verloren. Siehe PR [#9310](https://github.com/QwenLM/qwen-code/pull/9310)
+
+**Fragen senden auch bei getrennter Verbindung.** Das Eingabefeld der Web Shell ist jetzt vom Verbindungsstatus entkoppelt: Reißt der Stream ab, lassen sich Fragen weiterhin absenden — das Eingabefeld wird nicht mehr gesperrt. Siehe PR [#9323](https://github.com/QwenLM/qwen-code/pull/9323)
+
+**Exportiertes HTML auf einen Klick aus- und einklappen.** Oben auf der mit `/export` exportierten HTML-Seite gibt es jetzt zwei Buttons „Alle ausklappen / Alle einklappen" — damit lassen sich alle Thinking-Blöcke und Tool-Ausgaben auf einmal umschalten. Siehe PR [#9367](https://github.com/QwenLM/qwen-code/pull/9367)
+
+**Große Sitzungen schneller wiederhergestellt.** Der Daemon stellt Sitzungen jetzt bedarfsgesteuert wieder her und liest nur die Datensätze, die zum Aufbau des Zustands nötig sind — bei großen Sitzungen ein deutlicher Gewinn. Siehe PR [#9055](https://github.com/QwenLM/qwen-code/pull/9055)
+
+**Hintergrund-Shells werden nicht mehr versehentlich aufgeräumt.** Im Hintergrund laufende Shells zählen jetzt als aktive Aufgaben und werden während der Aktivität nicht automatisch bereinigt. Siehe PR [#9042](https://github.com/QwenLM/qwen-code/pull/9042)
+
+## 🔧 Wichtige Fehlerbehebungen
+
+| Behebung | Auswirkung | PR |
+|------|-----------|-----|
+| **Modell-Befehle erreichen kein Git in anderen Worktrees mehr** | Greifen vom Modell ausgeführte Git-Befehle auf ein Repository außerhalb des aktuellen Sitzungsverzeichnisses zu, werden sie direkt blockiert | [#8687](https://github.com/QwenLM/qwen-code/pull/8687) |
+| **Zeilenumbrüche in Shell-Befehlen umgehen die Erkennung nicht mehr** | Befehle, die per Fortsetzungszeichen auf mehrere Zeilen verteilt oder mit Ersetzungsschreibweisen notiert werden, erkennt die Befehlsprüfung trotzdem | [#8590](https://github.com/QwenLM/qwen-code/pull/8590) |
+| **Inline-Referenzen umgehen keine Freigabeprüfung mehr** | Inline-Referenzen auf Dateien können die Prüfung der Freigabestufen nicht mehr umgehen | [#9020](https://github.com/QwenLM/qwen-code/pull/9020) |
+| **Flackern der Desktop-Seitenleiste behoben** | Die Projektliste der Desktop-Seitenleiste springt nicht mehr, wenn eine Bildlaufleiste erscheint | [#9073](https://github.com/QwenLM/qwen-code/pull/9073) |
+| **Externe Links in der Desktop-App** | Externe Links in Markdown und Artefakten — einschließlich OAuth-Links — öffnen sich jetzt im Systembrowser statt still zu verschwinden | [#9069](https://github.com/QwenLM/qwen-code/pull/9069), [#9111](https://github.com/QwenLM/qwen-code/pull/9111) |
+| **Kein Terminal-Fenster mehr beim Windows-Start** | Das Runtime-Terminal-Fenster beim Start unter Windows wird jetzt ausgeblendet | [#9064](https://github.com/QwenLM/qwen-code/pull/9064) |
+| **Desktop-Migration deckt jetzt Windows und Linux ab** | Die einmalige Migration von der alten Electron-Desktop-Version auf die neue gibt es jetzt auch für Windows und Linux — Nutzerdaten bleiben erhalten | [#9079](https://github.com/QwenLM/qwen-code/pull/9079) |
+| **Nicht unterstützte Bilder bringen keine Sitzung mehr zum Absturz** | Nicht unterstützte Bildformate wie HEIC und TIFF werden übersprungen und mit einem Texthinweis gemeldet, statt die Sitzung abstürzen zu lassen | [#9295](https://github.com/QwenLM/qwen-code/pull/9295) |
+| **Fehler im Sub-Agenten-Panel beenden nicht mehr die ganze Sitzung** | Renderfehler in einem einzelnen Agenten-Tab werden abgefangen und lassen nicht mehr die gesamte Sitzung beenden | [#9292](https://github.com/QwenLM/qwen-code/pull/9292) |
+| **Speicherwachstum in langen Sitzungen begrenzt** | Caches wie die Zeichenbreiten-Berechnung haben jetzt ein Limit; ist es erreicht, werden alte Einträge verdrängt — der Speicher wächst in langen Sitzungen nicht mehr unbegrenzt | [#9185](https://github.com/QwenLM/qwen-code/pull/9185) |
+| **Komprimierungsausgabe richtet sich nach dem verbleibenden Kontext** | Das Limit der Komprimierungsausgabe wird jetzt aus dem verbleibenden Kontextfenster berechnet statt aus einem festen Wert | [#9109](https://github.com/QwenLM/qwen-code/pull/9109) |
+| **Sitzung bleibt erhalten, wenn das Schließen blockiert ist** | Wird das Schließen einer Sitzung durch aktive Arbeit blockiert, bekommen Aufgaben in der Warteschlange 8 Sekunden zum Abschluss — statt sofort abgebrochen zu werden | [#9134](https://github.com/QwenLM/qwen-code/pull/9134) |
+| **Gedächtnisabruf stabiler** | Reagiert der Gedächtnisabruf nicht innerhalb des Timeouts, springen deterministische Kandidaten ein — der Abruf geht nicht mehr leer aus | [#8716](https://github.com/QwenLM/qwen-code/pull/8716) |
+| **Team-Aufgaben werden korrekt zugestellt** | Manuell zugewiesene Aufgaben in Agent Teams gehen korrekt an den Verantwortlichen | [#9289](https://github.com/QwenLM/qwen-code/pull/9289) |
+| **Standardwert für Cache-Sharing korrigiert** | `enableCacheSharing` war fälschlicherweise standardmäßig ausgeschaltet — jetzt ist es standardmäßig aktiviert | [#9233](https://github.com/QwenLM/qwen-code/pull/9233) |
+| **Schwellwert für Shell-Ausgaben-Kürzung greift** | `tools.truncateToolOutputThreshold` wird nicht mehr ignoriert — statt einer festen Zeichenanzahl gilt jetzt der eingestellte Wert | [#9014](https://github.com/QwenLM/qwen-code/pull/9014) |
+
+## 👥 Mitwirkende
+
+| Mitwirkende(r) | Beiträge | Referenz-PRs |
+|--------|---------|-------------|
+| **[@wenshao](https://github.com/wenshao)** | Review und Autofix auf ganzer Linie gestärkt: Fortsetzen unterbrochener Prüfungen, natürlich formulierte Kommentare, Prüfung der Skript-Ausführungsumgebung, zweisprachige Veröffentlichungshinweise | [#9092](https://github.com/QwenLM/qwen-code/pull/9092), [#9027](https://github.com/QwenLM/qwen-code/pull/9027), [#9263](https://github.com/QwenLM/qwen-code/pull/9263), [#9216](https://github.com/QwenLM/qwen-code/pull/9216) |
+| **[@yiliang114](https://github.com/yiliang114)** | /advisor-Zweitmeinung, Eindämmen überflüssiger Kommentare, eine Reihe von Stabilitätsfixes für Desktop-App und Sitzungen | [#7567](https://github.com/QwenLM/qwen-code/pull/7567), [#9266](https://github.com/QwenLM/qwen-code/pull/9266), [#9295](https://github.com/QwenLM/qwen-code/pull/9295), [#9185](https://github.com/QwenLM/qwen-code/pull/9185), [#9289](https://github.com/QwenLM/qwen-code/pull/9289) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | Text-Anhänge in der Web Shell, Spezifikation für externe Korpus-Integration, Laufzeitgrenzen für Sitzungen, Ressourcenlimits und selektive Wiederherstellung im Daemon | [#9180](https://github.com/QwenLM/qwen-code/pull/9180), [#9068](https://github.com/QwenLM/qwen-code/pull/9068), [#9181](https://github.com/QwenLM/qwen-code/pull/9181), [#9055](https://github.com/QwenLM/qwen-code/pull/9055) |
+| **[@ytahdn](https://github.com/ytahdn)** | Direkter Upload von Workspace-Dateien in der Web Shell, Sitzungsverwaltung über die Seitenleiste, bleibende Bildreferenzen in Sitzungen, Stabilität von Eingabe und Warteschlange | [#8874](https://github.com/QwenLM/qwen-code/pull/8874), [#9311](https://github.com/QwenLM/qwen-code/pull/9311), [#9310](https://github.com/QwenLM/qwen-code/pull/9310), [#9407](https://github.com/QwenLM/qwen-code/pull/9407) |
+| **[@qqqys](https://github.com/qqqys)** | qwen sessions ps, Verzeichnis-Pinning für Workflow-Agenten, neue Channel-Verwaltungsseite, Fix für die Paginierung von Review-Threads | [#8969](https://github.com/QwenLM/qwen-code/pull/8969), [#8972](https://github.com/QwenLM/qwen-code/pull/8972), [#8848](https://github.com/QwenLM/qwen-code/pull/8848), [#9390](https://github.com/QwenLM/qwen-code/pull/9390) |
+| **[@qwen-code-dev-bot](https://github.com/qwen-code-dev-bot)** | Retries in der Release-Pipeline, Fixes an Integrationstest-Fixtures | [#9082](https://github.com/QwenLM/qwen-code/pull/9082), [#9161](https://github.com/QwenLM/qwen-code/pull/9161), [#9162](https://github.com/QwenLM/qwen-code/pull/9162) |
+| **[@callmeYe](https://github.com/callmeYe)** | Skills im Workspace per Batch aktivieren und deaktivieren, deaktivierte Skills zählen nicht mehr zur Kontextnutzung | [#9139](https://github.com/QwenLM/qwen-code/pull/9139), [#9346](https://github.com/QwenLM/qwen-code/pull/9346) |
+| **[@samuelhsin](https://github.com/samuelhsin)** | Konfigurationssynchronisation für @-Erwähnungen im Split-Screen, Metadaten für Skill-Umschalt-Ereignisse | [#9052](https://github.com/QwenLM/qwen-code/pull/9052), [#9051](https://github.com/QwenLM/qwen-code/pull/9051) |
+| **[@BenGuanRan](https://github.com/BenGuanRan)** | Polling-Schnittstelle für den Rundenstatus des Daemons | [#9080](https://github.com/QwenLM/qwen-code/pull/9080) |
+| **[@carffuca](https://github.com/carffuca)** | Timing der Fußzeilen-Aktionen in der Web Shell | [#8787](https://github.com/QwenLM/qwen-code/pull/8787) |
+| **[@cxruan](https://github.com/cxruan)** | Der Schwellwert für die Shell-Ausgaben-Kürzung greift jetzt | [#9014](https://github.com/QwenLM/qwen-code/pull/9014) |
+| **[@DennisYu07](https://github.com/DennisYu07)** | Verknüpfung von Release-Evaluationsaufgaben | [#9120](https://github.com/QwenLM/qwen-code/pull/9120) |
+| **[@ZijianZhang989](https://github.com/ZijianZhang989)** | Komprimierungsausgabe richtet sich nach dem verbleibenden Kontext | [#9109](https://github.com/QwenLM/qwen-code/pull/9109) |
+| **[@zjgzx1988](https://github.com/zjgzx1988)** | Pfadvalidierung und Normalisierung für Artefakte | [#9142](https://github.com/QwenLM/qwen-code/pull/9142) |
+| 🆕 **[@MichaelYochpaz](https://github.com/MichaelYochpaz)** | 🎉 Erster Beitrag: Fix der Prüfsummen-Verifizierung im Windows-Installer | [#9112](https://github.com/QwenLM/qwen-code/pull/9112) |
+
+<Callout type="info">
+  **Upgrade**: Führe `npm i @qwen-code/qwen-code@latest -g` aus, um auf die neueste Version zu aktualisieren.
+</Callout>
+
+Bei Fragen oder Anregungen freuen wir uns über Feedback auf [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
