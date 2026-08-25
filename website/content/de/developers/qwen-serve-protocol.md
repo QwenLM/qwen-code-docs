@@ -259,7 +259,7 @@ Der Daemon bewirbt seine unterstützten Feature-Tags aus der Serve-Capability-Re
 
 `session_organization` bewirbt benutzerdefinierte Session-Gruppen und Pinning. Es fügt `GET/POST/PATCH/DELETE /workspace/:id/session-groups`, `PATCH /session/:id/organization` und die optionale organisierte Listenansicht `GET /workspace/:id/sessions?view=organized` hinzu. Wenn sowohl `session_organization` als auch `workspace_qualified_rest_core` beworben werden, ist auch die Workspace-qualifizierte Organisationsmutation `PATCH /workspaces/:workspace/session/:id/organization` verfügbar. Die Legacy-Mutation bleibt nur für den primären Workspace. Ältere Daemons geben für die Mutations-/Gruppenrouten `404` zurück und ignorieren den Contract der organisierten Ansicht. WebShell-/SDK-Clients müssen diese Tags daher prüfen, bevor sie die entsprechende Gruppierungs- oder Pinning-UI anzeigen.
 
-`session_archive` bewirbt die v1 Directory-State-Archive-API: `POST /sessions/archive`, `POST /sessions/unarchive` und `GET /workspace/:id/sessions?archiveState=active|archived`. Archivierte Sessions können erst wieder geladen oder fortgesetzt werden, wenn sie dearchiviert (unarchived) sind.
+`session_archive` bewirbt die v1 Directory-State-Archive-API: `POST /sessions/archive`, `POST /sessions/unarchive` und `GET /workspace/:id/sessions?archiveState=active|archived`. Archivierte Sessions können erst wieder geladen oder fortgesetzt werden, wenn sie dearchiviert (unarchived) sind. `session_storage_conflict_repair` bewirbt die additive `resolveConflicts`-Request-Option und den `resolvedConflicts`-Response-Block, die unten beschrieben werden.
 
 `workspace_qualified_rest_core` bewirbt die pluralen Core-REST-Routen unter `/workspaces/:workspace/...`. Der Selektor löst sich zuerst als exakte Workspace-ID auf, dann als URL-kodiertes absolutes CWD nach Kanonisierung. Neuere Single-Workspace-Daemons schließen die primäre Runtime in `workspaces[]` ein, auch wenn `multi_workspace_sessions` fehlt, sodass Clients die für Workspace-qualifizierte Routen erforderliche ID entdecken können; Clients sollten für ältere Daemons, die das Array weglassen, auf `capabilities.workspaceCwd` zurückfallen. Trust-Status und Trust-Request-Routen sind für registrierte nicht vertrauenswürdige Workspaces verfügbar; Datei-Lese-Routen folgen der bestehenden Dateisystem-Lese-Policy. Registrierte nicht vertrauenswürdige sekundäre Workspaces legen auch rein persistierte Session- und Session-Group-Kataloge offen: Diese Lesevorgänge hängen sich nicht an eine Session an, starten keinen ACP oder mergen Live-Bridge-Zustand. Dateischreibvorgänge, Katalogmutationen und andere Plural-Core-Routen erfordern einen vertrauenswürdigen Workspace, es sei denn, eine separate Capability definiert explizit eine engere schreibgeschützte Policy, wie `workspace_persisted_transcript`. Ein nicht vertrauenswürdiger Primary erhält weiterhin `403 { code: "untrusted_workspace" }` von den Plural-Katalog- und Transkript-Routen; Legacy-Singular-Primary-Routen behalten ihr bestehendes Kompatibilitätsverhalten. Dieses Tag deckt die Core-Datei-, Status-, Einstellungs-, Berechtigungs-, Trust-, Lifecycle-, MCP-Control-, Tool- und Skill-Toggle-, Memory-, Workspace-Agent-CRUD- und Session-Speicher-Oberflächen ab. Es deckt nicht Auth, Voice, Extensions, ACP/WebSocket-Transport, Channel-Worker-Routing oder Workspace-qualifizierten Session-Export ab; prüfe `workspace_session_export` oder `workspace_archived_session_export` separat. Workspace-Trust ist keine ACL: Ein Client, der das Daemon-Token besitzt, kann jede registrierte Workspace-Oberfläche lesen, die von dieser Policy erlaubt ist.
 
@@ -2366,7 +2366,7 @@ Archiviert eine oder mehrere Sessions. Das Archivieren ist ein Zustandsübergang
 Request:
 
 ```json
-{ "sessionIds": ["<uuid>"] }
+{ "sessionIds": ["<uuid>"], "resolveConflicts": true }
 ```
 
 `sessionIds` muss ein nicht leeres String-Array mit höchstens 100 IDs sein. Duplikate werden zusammengeführt.
@@ -2377,12 +2377,15 @@ Response:
 {
   "archived": ["<uuid>"],
   "alreadyArchived": [],
+  "resolvedConflicts": ["<uuid>"],
   "notFound": [],
   "errors": []
 }
 ```
 
-`errors`-Einträge haben das Format `{ "sessionId": "<uuid>", "error": "message" }`. Aktive und archivierte Dateien mit derselben ID werden als Konflikt behandelt und in `errors` gemeldet; keine Datei wird überschrieben.
+`resolveConflicts` ist optional und standardmäßig `false`. Standardmäßig werden aktive und archivierte Dateien mit derselben ID in `errors` gemeldet, und keine Kopie wird verschoben, entfernt oder überschrieben. Das Archivieren einer Live-Session führt weiterhin das oben beschriebene strikte Schließen durch, bevor der Konflikt klassifiziert wird, sodass dieses Schließen Warteschlangen-Datensätze in das aktive Transkript flushen kann. Mit `resolveConflicts: true` behält Archive die archivierte Kopie, entfernt die aktive Kopie und meldet die ID sowohl in `archived` als auch in `resolvedConflicts`. `errors`-Einträge haben das Format `{ "sessionId": "<uuid>", "error": "message" }`.
+
+Lifecycle-Konflikte sind Batch-Item-Ergebnisse: die Workspace-losen und Workspace-qualifizierten Routen geben HTTP `200` mit dem Konflikt in `errors` zurück. Dies ersetzt das frühere Workspace-qualifizierte HTTP-`409 session_conflict`-Envelope; Clients, die diese Route aufgerufen haben, müssen die Batch-Antwort prüfen. Internal-Runtime-REST-Batches behalten die sichere Konfliktmeldung bei und redaktieren weiterhin andere details zu fehlgeschlagenen Sessions.
 
 ### `POST /sessions/unarchive`
 
@@ -2391,7 +2394,7 @@ Stellt archivierte Sessions im aktiven Verzeichnis wieder her. Dies setzt die Se
 Request:
 
 ```json
-{ "sessionIds": ["<uuid>"] }
+{ "sessionIds": ["<uuid>"], "resolveConflicts": true }
 ```
 
 Response:
@@ -2400,12 +2403,13 @@ Response:
 {
   "unarchived": ["<uuid>"],
   "alreadyActive": [],
+  "resolvedConflicts": ["<uuid>"],
   "notFound": [],
   "errors": []
 }
 ```
 
-Wenn für die ID bereits eine aktive JSONL existiert, meldet das Unarchivieren einen Konflikt in `errors` und überschreibt sie nicht. Wenn für dieselbe ID bereits ein Archivierungs- oder Unarchivierungsvorgang läuft, wird `409 session_archiving` zurückgegeben, bevor der Batch gestartet wird.
+`resolveConflicts` ist optional und standardmäßig `false`. Standardmäßig erzeugen gleichzeitige aktive und archivierte JSONL-Dateien einen Konflikt in `errors`, und keine Kopie wird verschoben, entfernt oder überschrieben; eine nur aktive Session wird in `alreadyActive` zurückgegeben. Mit `resolveConflicts: true` behält Unarchive die aktive Kopie, entfernt die archivierte Kopie und meldet die ID sowohl in `unarchived` als auch in `resolvedConflicts`. Archive oder Unarchive, die für dieselbe ID bereits laufen, geben `409 session_archiving` zurück, bevor der Batch gestartet wird.
 
 ACP-over-HTTP verwendet dieselben Request- und Response-Bodies über die Vendor-Methoden `_qwen/sessions/archive` und `_qwen/sessions/unarchive`. Die REST-Route-Tabelle mappt `POST /sessions/archive` und `POST /sessions/unarchive` für ACP-Transports auf diese Methoden.
 

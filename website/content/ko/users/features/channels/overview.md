@@ -6,7 +6,7 @@ title: Channels
 
 채널을 사용하면 터미널 대신 Telegram, WeChat, QQ, DingTalk, WeCom 또는 Feishu 같은 메시징 플랫폼에서 Qwen Code 에이전트와 상호작용할 수 있습니다. 휴대전화나 데스크톱 채팅 앱에서 메시지를 보내면 에이전트가 CLI에서와 마찬가지로 응답합니다.
 
-코드 호스팅 플랫폼([GitHub](./github)부터)도 폴링 어댑터를 통해 지원됩니다 — 에이전트가 알림을 모니터링하고 이슈 및 pull request의 @mention에 응답합니다.
+코드 호스팅 플랫폼([GitHub](./github)부터) 및 인증된 워크스페이스 계정([DingTalk Workspace](./dws)부터)도 채널을 통해 지원됩니다.
 
 ## 작동 방식
 
@@ -21,7 +21,7 @@ title: Channels
 
 ## 빠른 시작
 
-1. 메시징 플랫폼에서 봇을 설정하세요(채널별 가이드 참조: [Telegram](./telegram), [WeChat](./weixin), [QQ Bot](./qqbot), [DingTalk](./dingtalk), [WeCom](./wecom), [Feishu](./feishu), [GitHub](./github))
+1. 봇 또는 인증된 워크스페이스 계정을 설정하세요(채널별 가이드 참조: [Telegram](./telegram), [WeChat](./weixin), [QQ Bot](./qqbot), [DingTalk](./dingtalk), [DingTalk Workspace](./dws), [WeCom](./wecom), [Feishu](./feishu), [GitHub](./github))
 2. `~/.qwen/settings.json`에 채널 구성을 추가하세요
 3. `qwen channel start`를 실행하여 모든 채널을 시작하거나 `qwen channel start <name>`으로 단일 채널을 시작하세요
 
@@ -56,7 +56,7 @@ title: Channels
 
 | 옵션                   | 필수                  | 설명                                                                                                                                                            |
 | ---------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `type`                 | 예                    | 채널 유형: `telegram`, `weixin`, `qq`, `dingtalk`, `wecom`, `feishu`, `github` 또는 확장의 사용자 정의 유형([Plugins](./plugins) 참조)                           |
+| `type`                 | 예                    | 채널 유형: `telegram`, `weixin`, `qq`, `dingtalk`, `dws`, `wecom`, `feishu`, `github`, `gitlab` 또는 확장의 사용자 정의 유형([Plugins](./plugins) 참조)              |
 | `token`                | Telegram              | 봇 토큰. 환경 변수에서 읽기 위해 `$ENV_VAR` 구문을 지원합니다. WeChat, DingTalk, WeCom 또는 Feishu에는 필요하지 않음                                            |
 | `clientId`             | DingTalk, Feishu      | DingTalk AppKey 또는 Feishu App ID. `$ENV_VAR` 구문 지원                                                                                                        |
 | `clientSecret`         | DingTalk, Feishu      | DingTalk AppSecret 또는 Feishu App Secret. `$ENV_VAR` 구문 지원                                                                                                 |
@@ -92,7 +92,7 @@ title: Channels
 대화 세션이 관리되는 방식을 제어합니다:
 
 - **`user`**(기본값) — 사용자당 하나의 세션. 같은 사용자의 모든 메시지가 대화를 공유합니다.
-- **`chat_thread`** — 채널 + chatId + threadId당 하나의 세션. 스레드가 있는 그룹 채팅에 유용합니다.
+- **`thread`** — 스레드/토픽당 하나의 세션. 스레드가 있는 그룹 채팅에 유용합니다.
 - **`single`** — 모든 사용자를 위한 하나의 공유 세션. 모두가 같은 대화를 공유합니다.
 
 ### 채널 메모리

@@ -2,7 +2,7 @@
 
 Os canais permitem que você interaja com um agente do Qwen Code a partir de plataformas de mensagens como Telegram, WeChat, QQ, DingTalk, WeCom ou Feishu, em vez do terminal. Você envia mensagens do seu celular ou aplicativo de chat no desktop, e o agente responde exatamente como faria na CLI.
 
-Plataformas de hospedagem de código (começando com [GitHub](./github)) também são suportadas via adaptadores de polling — o agente monitora notificações e responde a @menções em issues e pull requests.
+Plataformas de hospedagem de código (começando com [GitHub](./github)) e contas autenticadas de workspace (começando com [DingTalk Workspace](./dws)) também são suportadas via canais.
 
 ## Como Funciona
 
@@ -17,7 +17,7 @@ Todos os canais compartilham um único processo de agente com sessões isoladas 
 
 ## Início Rápido
 
-1. Configure um bot na sua plataforma de mensagens (consulte os guias específicos de cada canal: [Telegram](./telegram), [WeChat](./weixin), [QQ Bot](./qqbot), [DingTalk](./dingtalk), [WeCom](./wecom), [Feishu](./feishu), [GitHub](./github))
+1. Configure um bot ou uma conta autenticada de workspace (consulte os guias específicos de cada canal: [Telegram](./telegram), [WeChat](./weixin), [QQ Bot](./qqbot), [DingTalk](./dingtalk), [DingTalk Workspace](./dws), [WeCom](./wecom), [Feishu](./feishu), [GitHub](./github))
 2. Adicione a configuração do canal em `~/.qwen/settings.json`
 3. Execute `qwen channel start` para iniciar todos os canais, ou `qwen channel start <name>` para um único canal
 
@@ -52,7 +52,7 @@ Os canais são configurados sob a chave `channels` no `settings.json`. Cada cana
 
 | Opção                    | Obrigatório      | Descrição                                                                                                                                                            |
 | ------------------------ | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `type`                   | Sim              | Tipo de canal: `telegram`, `weixin`, `qq`, `dingtalk`, `wecom`, `feishu`, `github` ou um tipo personalizado de uma extensão (consulte [Plugins](./plugins))                       |
+| `type`                   | Sim              | Tipo de canal: `telegram`, `weixin`, `qq`, `dingtalk`, `dws`, `wecom`, `feishu`, `github`, `gitlab` ou um tipo personalizado de uma extensão (consulte [Plugins](./plugins)) |
 | `token`                  | Telegram         | Token do bot. Suporta a sintaxe `$ENV_VAR` para ler de variáveis de ambiente. Não é necessário para WeChat, DingTalk, WeCom ou Feishu                                            |
 | `clientId`               | DingTalk, Feishu | AppKey do DingTalk ou App ID do Feishu. Suporta a sintaxe `$ENV_VAR`                                                                                                           |
 | `clientSecret`           | DingTalk, Feishu | AppSecret do DingTalk ou App Secret do Feishu. Suporta a sintaxe `$ENV_VAR`                                                                                                    |

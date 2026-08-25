@@ -640,11 +640,13 @@ Coding Plan 모델을 수동으로 구성하려면 다른 OpenAI 호환 제공�
 
 `api.deepseek.com` baseURL에서 OpenAI 파이프라인은 DeepSeek V4+가 요구하는 명시적 `thinking: { type: 'disabled' }` 필드를 내보냅니다 — 서버 측 기본값은 `'enabled'`이므로 `reasoning_effort`를 생략하기만 하면 여전히 사고 지연/비용이 발생합니다. 자체 호스팅 DeepSeek 백엔드(sglang/vllm) 및 기타 OpenAI 호환 서버는 이 필드를 받지 **않습니다**. 이러한 서버에서 사고를 비활성화해야 하는 경우 `samplingParams`/`extra_body`를 통해 `thinking: { type: 'disabled' }`(또는 추론 프레임워크가 노출하는 Knob)를 주입하세요.
 
+`openrouter.ai` baseURL에서 OpenAI 파이프라인은 추론이 비활성화되면 OpenRouter의 제공자 수준 `reasoning: { enabled: false }` 필드를 내보냅니다. 다른 OpenAI 호환 서버는 이 OpenRouter 전용 필드를 받지 않습니다. 해당 서버의 기본 비활성화 knob에는 `samplingParams`/`extra_body`를 사용하세요.
+
 ### `samplingParams`와의 상호 작용 (OpenAI 호환만)
 
 > [!warning]
 >
-> OpenAI 호환 제공자에서 `generationConfig.samplingParams`가 설정되면 파이프라인은 해당 키를 **그대로** 전송하고 별도의 `reasoning` 주입을 완전히 건너뜁니다. 따라서 `{ samplingParams: { temperature: 0.5 }, reasoning: { effort: 'max' } }`와 같은 구성은 OpenAI/DeepSeek 요청에서 추론 필드를 조용히 삭제합니다.
+> OpenAI 호환 제공자에서 `generationConfig.samplingParams`가 설정되면 파이프라인은 해당 키를 **그대로** 전송하고 별도의 `reasoning` 주입을 완전히 건너뜁니다. 따라서 `{ samplingParams: { temperature: 0.5 }, reasoning: { effort: 'max' } }`와 같은 구성은 OpenAI/DeepSeek 요청에서 추론 필드를 조용히 삭제합니다. `samplingParams` 안에 배치된 `reasoning` 객체는 사용자 자신의 값이며 변경 없이 전송됩니다. 위의 effort 상한은 파이프라인이 `/effort`에서 주입하는 티어에만 적용됩니다.
 >
 > DashScope Qwen 모델은 예외입니다. 해당 제공자는 `reasoning`을 직접 읽고 `reasoning_effort` 또는 `enable_thinking`으로 매핑합니다. qwen3.8-max 패밀리에서는 제공자별 `samplingParams` 필드가 와이어 매개변수가 충돌할 때 여전히 우선합니다. 이전 qwen 하이브리드에서는 구성된 effort 티어가 `enable_thinking: true`로 축약되어 `samplingParams.enable_thinking` 값을 재정의합니다.
 >

@@ -658,6 +658,8 @@ Das Setzen von `reasoning: false` (der boolesche Literalwert) deaktiviert Thinki
 
 Bei einer `api.deepseek.com`-baseURL gibt die OpenAI-Pipeline das explizite Feld `thinking: { type: 'disabled' }` aus, das DeepSeek V4+ erfordert – der serverseitige Standard ist `'enabled'`, daher würde das einfache Weglassen von `reasoning_effort` immer noch Thinking-Latenz/-Kosten verursachen. Self-hosted DeepSeek-Backends (sglang/vllm) und andere OpenAI-kompatible Server erhalten dieses Feld **nicht**; wenn du Thinking dort deaktivieren musst, injiziere `thinking: { type: 'disabled' }` (oder welchen Regler dein Inference-Framework auch immer bereitstellt) über `samplingParams`/`extra_body`.
 
+Bei einer `openrouter.ai`-baseURL gibt die OpenAI-Pipeline OpenRouters Provider-level `reasoning: { enabled: false }`-Feld aus, wenn Reasoning deaktiviert ist. Andere OpenAI-kompatible Server erhalten dieses OpenRouter-spezifische Feld nicht; verwende `samplingParams`/`extra_body` für deren nativen Deaktivierungs-Regler.
+
 ### Interaktion mit `samplingParams` (nur OpenAI-kompatibel)
 
 > [!warning]

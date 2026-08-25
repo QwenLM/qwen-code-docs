@@ -44,9 +44,9 @@ description: "Review code changes for correctness, security, performance, and co
 | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | ----------------------------------- | ---------------- |
 | `low`    | 3-6 个针对 diff 的定向行内角度（按 diff 大小缩放）加上 gap sweep——无 subagent，无构建/测试，无项目规则                             | 10（未验证）     | 无                                | 从不            |
 | `medium` | high 流水线减去最昂贵的 pass：在缩减的维度集上进行并行 finder fan-out，加上构建/测试和单次验证 pass | 无上限（已验证） | Approve 上限为 Comment           | 从不            |
-| `high`   | 完整流水线：14 个并行 agent → 分片验证 → 迭代反向审计                                                                          | 无上限（已验证） | Approve / Request changes / Comment | 使用 `--comment` 时 |
+| `high`   | 完整流水线：最多 16 个并行 agent → 分片验证 → 迭代反向审计                                                                    | 无上限（已验证） | Approve / Request changes / Comment | 使用 `--comment` 时 |
 
-默认值：PR 审查为 **high**，本地和文件审查为 **medium**。有效的 `--comment` 会强制使用 high（发布的评论必须通过验证）——在非 PR 目标上 `--comment` 会被忽略并发出警告，**不会**更改 effort。Medium 保留了安全性和测试覆盖率 agent 以及构建/测试，但去掉了对手角色、diff 专家 finder 和反向审计——因此只有第二次审查才能发现的微妙 Critical 可能会漏掉；对安全性敏感或发布前的审查请使用 `--effort high`。只有 `low` 是未验证的。Worktree 隔离适用于同仓库 PR 审查；跨仓库 PR 以轻量模式运行（仅 diff，无 worktree 或构建/测试）。Low pass 标记为未验证，不发出结论，也不写入增量审查缓存，因此后续的 `--effort high` 运行不会被跳过为"已审查"；medium 是已验证的，但其 Approve 上限为 Comment，因为没有对第一次 pass 遗漏的内容进行二次审查。获取 diff 的机制在每个级别都相同——PR 审查始终使用隔离的 worktree 和相同的 base 解析，因此审查永远不会针对错误的 base。一个范围差异仍然存在：增量缓存仅用于 high，因此 high 重新审查可能只覆盖新的 commit（`lastCommitSha..HEAD`），而 low/medium 始终审查完整的 PR diff。
+默认值：PR 审查为 **high**，本地和文件审查为 **medium**。有效的 `--comment` 会强制使用 high（发布的评论必须通过验证）——在非 PR 目标上 `--comment` 会被忽略并发出警告，**不会**更改 effort。Medium 保留了安全性和测试覆盖率 agent 以及构建/测试，但去掉了对手角色、语言陷阱和 wrapper/proxy 专家（Agent 1d/1e）、diff 专家 finder 和反向审计——因此只有第二次审查才能发现的微妙 Critical 可能会漏掉；对安全性敏感或发布前的审查请使用 `--effort high`。只有 `low` 是未验证的。Worktree 隔离适用于同仓库 PR 审查；跨仓库 PR 以轻量模式运行（仅 diff，无 worktree 或构建/测试）。Low pass 标记为未验证，不发出结论，也不写入增量审查缓存，因此后续的 `--effort high` 运行不会被跳过为"已审查"；medium 是已验证的，但其 Approve 上限为 Comment，因为没有对第一次 pass 遗漏的内容进行二次审查。获取 diff 的机制在每个级别都相同——PR 审查始终使用隔离的 worktree 和相同的 base 解析，因此审查永远不会针对错误的 base。一个范围差异仍然存在：增量缓存仅用于 high，因此 high 重新审查可能只覆盖新的 commit（`lastCommitSha..HEAD`），而 low/medium 始终审查完整的 PR diff。
 
 ## 工作原理
 
@@ -57,12 +57,14 @@ description: "Review code changes for correctness, security, performance, and co
           将 diff 捕获到文件 + 将其分割为 chunk
 步骤 2：  加载项目审查规则（medium/high）
 步骤 3C：low effort：3-6 个行内角度 + gap sweep     [0 次 subagent 调用]
-步骤 3A：high，<=500 行源码且 <=3200 行总计：14 个 agent       [14+ 次 LLM 调用]
+步骤 3A：high，<=500 行源码且 <=3200 行总计：最多 16 个 agent  [16+ 次 LLM 调用]
            |-- Agent 0：Issue 保真度与根因归属
            |-- Agent 1a：正确性——逐行扫描
-           |     （含语言陷阱 + wrapper 路由检查）
            |-- Agent 1b：正确性——已移除行为审计
            |-- Agent 1c：正确性——跨文件追踪器
+           |-- Agent 1d：正确性——语言陷阱扫描
+           |-- Agent 1e：正确性——wrapper/proxy 路由
+           |     （仅在 diff 信号为 wrapping 类型时启用）
            |-- Agent 2：安全性
            |-- Agent 3a：复用与重复
            |-- Agent 3b：层次与抽象适配
@@ -91,7 +93,7 @@ description: "Review code changes for correctness, security, performance, and co
 步骤 4：  去重 --> 分片验证（每个 <=8 个发现）
            --> 聚合                    [ceil(F/8) 次调用，F=发现数]
 步骤 5：  迭代反向审计，按 chunk fan-out；
-          连续 2 轮无新发现后停止（上限 10/5/3 按拓扑；3 仅适用于有截止时间的运行）
+          连续 2 轮无新发现后停止（上限 10/5/3 按拓扑）
 步骤 6：  展示发现 + 结论（high；low pass：仅发现）
           规范化发现 -> .qwen/tmp/...-findings.json
 步骤 6B：应用发现 + 记录每个发现的结果（仅 --fix）
@@ -107,9 +109,11 @@ description: "Review code changes for correctness, security, performance, and co
 | Agent                             | 关注点                                                                                                                                                                                                                                                                                           |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Agent 0：Issue 保真度           | 关联 issue 证据、根因归属，以及 PR 是否解决了报告的问题                                                                                                                                                                                                     |
-| Agent 1a：逐行扫描       | 遍历每个 hunk 及其所在函数：错误条件、边界差一、缺失 `await`、语言特定陷阱、wrapper/proxy 路由                                                                                                                                                  |
+| Agent 1a：逐行扫描       | 遍历每个 hunk 及其所在函数：错误条件、边界差一、缺失 `await`、边界情况、竞态条件                                                                                                                                                  |
 | Agent 1b：已移除行为审计  | 遍历每行被删除/替换的代码：指出其强制的不变量，并寻找新代码在哪里重新建立了它——包括被移除的 **export**，其替代通常位于另一个文件且悄悄更改了默认值。在 3B 中以整个 diff 运行（chunk agent 保留本地一半） |
 | Agent 1c：跨文件追踪器       | 遍历每个已更改符号的调用方（consumer 方向）和每个新增字段的读取位置（producer 方向），以及同一 PR 内的被调用方变更                                                                                                                                                  |
+| Agent 1d：语言陷阱扫描   | 携带该 diff 所用语言的经典陷阱检查清单（`==` 强制转换、falsy 值陷阱、循环变量捕获、可变默认参数、nil-map 写入、SQL 拼接、DST 算术运算），并对每个 hunk 进行模式匹配                                                          |
+| Agent 1e：Wrapper/proxy 路由   | 对于 diff 中新增或修改的每个包装其他类型的类型（cache、proxy、decorator、adapter）：每个方法都通过被包装的实例路由，且 wrapper 转发了调用者使用的每个方法。仅在 diff 信号为 wrapping 类型时启用                                        |
 | Agent 2：安全性                 | 注入、XSS、SSRF、认证绕过、敏感数据泄露                                                                                                                                                                                                                                      |
 | Agent 3a：复用与重复     | 代码库中是否已有此功能？搜索该行为，指出应调用的现有 helper，并标记 diff 遗留的死代码                                                                                                                                              |
 | Agent 3b：层次与抽象  | 修复是否在正确的深度——还是在共享基础设施上贴创可贴、为上游 bug 做下游补偿，或创建只服务一个调用点的抽象？                                                                                                                                  |
@@ -120,13 +124,13 @@ description: "Review code changes for correctness, security, performance, and co
 | Agent 7：构建与测试             | 运行构建和测试命令，报告失败                                                                                                                                                                                                                                                  |
 | Agent 8：Diff 专家 finder | 每次审查根据 diff 集中在具有已知失败模式的领域（重连逻辑、模块加载器、调度器、编解码器）时编写 0-2 个额外 finder                                                                                                                                                                                                      |
 
-三个正确性 agent 是**程序化的**：每个由其遍历 diff 的方式定义（逐行 / 已删除行 / 跨文件边），而非由 bug 分类法定义——因此它们的覆盖是互补的而非重叠的。同样的推理将**代码质量拆分为三个**（3a/3b/3c）：一个持有六项检查清单的 agent 完成了一项——在大幅重写的文件上衡量，一个持有八项检查清单的 agent 发现了 5 个缺陷中的 1 个，而同一模型分三路后找到了全部 5 个——因此质量清单在问题真正不同的地方被切割。所有 agent 并行运行（Agent 1 启动 3 个程序化变体，Agent 3 启动 3 个清单切片，Agent 6 启动 3 个角色变体并发执行，同仓库 PR 审查共计 14 个并行任务，加上 diff 领域需要时的 0-2 个 Agent 8 finder——因此实际为 14-16 个；Agent 0 在本地 diff 和文件路径审查中跳过，运行 13-15 个；跨仓库轻量模式还跳过 Agent 1c 和 7，运行 12-14 个）。
+三个正确性 agent 是**程序化的**：每个由其遍历 diff 的方式定义（逐行 / 已删除行 / 跨文件边），而非由 bug 分类法定义——因此它们的覆盖是互补的而非重叠的。另外两个专用角度（1d/1e）将语言陷阱检查清单和 wrapper/proxy 路由从逐行遍历中分离出来：清单模式匹配和结构性路由预期是不同的注意力模式，折叠到逐行遍历中会被其节奏稀释。同样的推理将**代码质量拆分为三个**（3a/3b/3c）：一个持有六项检查清单的 agent 完成了一项——在大幅重写的文件上衡量，一个持有八项检查清单的 agent 发现了 5 个缺陷中的 1 个，而同一模型分三路后找到了全部 5 个——因此质量清单在问题真正不同的地方被切割。所有 agent 并行运行（Agent 1 启动 3 个程序化变体和 2 个专用角度，Agent 3 启动 3 个清单切片，Agent 6 启动 3 个角色变体并发执行，同仓库 PR 审查共计最多 16 个并行任务——Agent 1e 仅在 diff 信号为 wrapping 类型时启用——加上 diff 领域需要时的 0-2 个 Agent 8 finder——因此实际为 15-18 个；Agent 0 在本地 diff 和文件路径审查中跳过，运行 14-17 个；跨仓库轻量模式还跳过 Agent 1c 和 7，运行 13-16 个）。
 
 每个发现必须说明一个**失败场景**——触发它的具体输入、状态或时序，以及导致的错误结果（对于质量发现，则是具体的代价）。无法说明其场景的发现会在源头被丢弃，验证会通过真实代码重新追踪所声称的场景，而非判断发现的文字描述。
 
-一旦 PR 的**源码**变更超过 500 行——或总 diff 行数超过 3,200 行，超过此限度后十一个全 diff 阅读器各自过于稀释而无法仔细阅读（这是一个注意力边界，而非更少调用的承诺——重写较多的文件和专家 finder 可能使 3B 花费更多）——这种维度 fan-out 会被**territory × 维度** fan-out 替代：diff 被分割为约 400 行的 chunk——边界落在 hunk 边界上，太大的 hunk 仅在顶层声明处分割，永远不会在函数内部——每个 chunk 获得自己的 agent，将每个审查维度仅应用于该 chunk。
+一旦 PR 的**源码**变更超过 500 行——或总 diff 行数超过 3,200 行，超过此限度后十五个全 diff 阅读器各自过于稀释而无法仔细阅读（这是一个注意力边界，而非更少调用的承诺——重写较多的文件和专家 finder 可能使 3B 花费更多）——这种维度 fan-out 会被**territory × 维度** fan-out 替代：diff 被分割为约 400 行的 chunk——边界落在 hunk 边界上，太大的 hunk 仅在顶层声明处分割，永远不会在函数内部——每个 chunk 获得自己的 agent，将每个审查维度仅应用于该 chunk。
 
-该门控故意计算源码行数而非 diff 行数。测试代码、文档和 lockfile 占据了 diff 的大部分——在此仓库最近 40 个合并的 PR 中，中位数 diff 有 41% 是测试——因此基于原始大小的门控会将 173 行的生产代码变更分割为 territory，仅仅因为它附带了 489 行新测试，使该生产代码只有一个审查者而非十个视角（读取 diff 的维度 agent——十二个减去 Issue 保真度和构建与测试）。无论如何分 chunk 都覆盖每一行，包括测试；门控决定的是有多少审查者以及每个审查者的任务。十个读取 diff 的视角都走一个大 diff 会将相同的前几个 hunk 读十遍；每个 chunk 一个 agent 意味着 diff 的每一行恰好有一个负责的审查者。每个 chunk agent 返回一个 `Covered:` 收据，没有收据的 chunk 会在运行继续前被重新审查——因此"无阻塞问题"永远不可能对无人阅读的代码报告。
+该门控故意计算源码行数而非 diff 行数。测试代码、文档和 lockfile 占据了 diff 的大部分——在此仓库最近 40 个合并的 PR 中，中位数 diff 有 41% 是测试——因此基于原始大小的门控会将 173 行的生产代码变更分割为 territory，仅仅因为它附带了 489 行新测试，使该生产代码只有一个审查者而非十四个视角（读取 diff 的维度 agent——十六个减去 Issue 保真度和构建与测试）。无论如何分 chunk 都覆盖每一行，包括测试；门控决定的是有多少审查者以及每个审查者的任务。十四个读取 diff 的视角都走一个大 diff 会将相同的前几个 hunk 读十四遍；每个 chunk 一个 agent 意味着 diff 的每一行恰好有一个负责的审查者。每个 chunk agent 返回一个 `Covered:` 收据，没有收据的 chunk 会在运行继续前被重新审查——因此"无阻塞问题"永远不可能对无人阅读的代码报告。
 
 一个被大幅重写的**源码**文件（300+ 行的现有文件中 40%+ 是新内容，或有 800+ 行变更）还会获得**三个全文件不变量 agent**。测试和生成的文件永远不符合条件——检查清单询问的是字段、timer 和错误分类，而重写后的测试文件没有这些。其 bug 通常不在任何单个 hunk 内部，而在_新行之间_——文件顶部附近设置的 timer 和两千行以下的 teardown 路径。每个 agent 阅读整个变更后的文件并遍历固定检查清单的两到三项：每个退出路径都清除的可变字段、每个关闭都取消的 timer（且取消不会丢弃已捕获的数据）、map 插入与删除匹配、每次入口都递增的重试计数器、实际被检查的状态返回值、穷举分类为永久性与暂时性的错误代码、每条路径都遵循的 config 字段，以及跳过必需副作用的 early return。
 
@@ -170,7 +174,7 @@ description: "Review code changes for correctness, security, performance, and co
 
 | 能力                                                            | 同仓库 | 跨仓库                    |
 | --------------------------------------------------------------------- | --------- | ----------------------------- |
-| LLM 审查（Agent 0、1a、1b、2-6 + 验证 + 迭代反向审计） | ✅        | ✅                            |
+| LLM 审查（Agent 0、1a、1b、1d、1e、2-6 + 验证 + 迭代反向审计） | ✅        | ✅                            |
 | Agent 1c：跨文件追踪器                                           | ✅        | ❌（无本地代码库可供搜索） |
 | Agent 7：构建与测试                                                 | ✅        | ❌（无本地代码库）         |
 | Agent 8：Diff 专家 finder（0-2 个，领域需要时启用） | ✅        | ✅（仅需 diff）       |
@@ -387,7 +391,7 @@ Medium 和 high-effort 审查还会保存一个具有相同文件名但扩展名
 
 **GitHub Enterprise：** 在非 `github.com` 主机上审查 PR URL 时，该主机的每个 GitHub 调用都会被路由——审查子命令（`match-remote`、`meta`、`fetch-pr`、`pr-context`、`comment-status`、`issue-context`、`fetch-diff`、`comment-body`、`plan-diff`、`test-plan`、`presubmit`、`compose-review`、`submit`、`publish-assets`）接受 `--host` 并在代码中设置，因此遗忘的 host 不会静默将审查重定向到 `github.com`。
 
-**Aone Code：** 对于 origin 在 `gitlab.alibaba-inc.com` 上的克隆，从该克隆内部运行 `/review`——平台从 remote 检测，子命令正常工作，由 `a1` CLI 支持——目标编号是全局 MR id。`fetch-pr` 获取 `refs/merge-requests/<id>/head` 并构建 worktree + diff，因此 agent 对 worktree 的审查不变。每次 Aone 运行都是 context-unavailable，多个流程会被跳过（而不是访问 github.com 的同名仓库）：`pr-context`/`comment-status` 没有 Aone 支持（结论上限为 `COMMENT`），`presubmit` 仅支持自我 PR 检测（`a1 auth whoami` 账户与 MR 作者）和 head 漂移——其 CI 和现有评论检查返回中立——`test-plan` 无支持，Agent 0 被跳过，`publish-assets` 的写入被跳过。`--comment` 通过 `a1` CLI **发布**审查：每个行内发现一条评论，然后是摘要评论。Aone 没有原生的 request-changes 状态——在该结论下，摘要评论携带一个阻塞头，实际发布的行内 Critical 通过讨论门阻塞合并，同时其讨论保持未解决状态（当没有发布行内 Critical 时，该头是建议性的，不会在机械上阻塞合并）。发布的评论不携带 AI 评论标记——`a1` 无法设置——因此仓库专用的 `ai_comment` 合并门不会追踪它们。原生的 `a1 repo mr approve` 已为 Approve 结论接线但不会触发此阶段：context-unavailable 上限使每次 Aone 结论保持在 Comment。增量重新审查遵循 AGit-Flow 更新模型：更新会就地 AMEND 单个 CR commit，使上一轮审查的 head 成为孤儿——因此缓存锚点在判断时**不考虑**祖先关系（anchor-behind-head 测试会在每次更新时失败），重新审查将 PR 自身的 diff 限定为更新所涉及的文件，而不是回退到全量审查；如果更新同时 rebase 到了更新的 master，则仅当 rebase 的漂移保持在 CR 文件内时保留该范围——触及任何其他文件的漂移会回退到全量审查，且无论如何没有漂移字节进入发布的范围。重复轮次有一个注意事项：目前还没有去重支持，因此第二轮 `--comment` 会重新发布每个仍然有效的发现作为新评论（自我 PR 检测已支持：审查自己的 MR 会获得与 GitHub 相同的结论降级）。参见 `docs/design/2026-08-15-review-aone-provider.md`。
+**Aone Code：** 对于 origin 在 `gitlab.alibaba-inc.com` 上的克隆，从该克隆内部运行 `/review`——平台从 remote 检测，子命令正常工作，由 `a1` CLI 支持（至少 0.1.90——较旧的安装在认证时会被拒绝并提示升级）——目标编号是全局 MR id。`fetch-pr` 获取 `refs/merge-requests/<id>/head` 并构建 worktree + diff，因此 agent 对 worktree 的审查不变，`test-plan` 也可以工作——它通过同一个 reader 读取 MR 描述。`pr-context` 也有支持：它读取 MR 的元数据、讨论线程和之前发布的 qwen 摘要（machine ledger 从中恢复），因此 Aone 运行看到 MR 的现有讨论，正如 GitHub 运行看到 PR 的一样。`comment-status` 和 `presubmit` 也由 a1 支持（presubmit 完全支持：自我 PR 检测、head 漂移、merge-gate CI，以及现有评论去重），因此重复的 `--comment` 轮次会对 MR 的现有评论进行去重，而不是重新发布它们（平台标记为过时的线程——其行在修改后不再映射——仍可重新发布），自我 PR 检测也可以工作。`publish-assets` 的写入被跳过。`--comment` 通过 `a1` CLI **发布**审查：每个行内发现一条评论，然后是摘要评论。Aone 没有原生的 request-changes 状态——在该结论下，摘要评论携带一个阻塞头，实际发布的行内 Critical 通过讨论门阻塞合并，同时其讨论保持未解决状态（当没有发布行内 Critical 时，该头是建议性的，不会在机械上阻塞合并）。发布的评论不携带 AI 评论标记——`a1` 无法设置——因此仓库专用的 `ai_comment` 合并门不会追踪它们。原生的 `a1 repo mr approve` 在 Approve 结论且运行读取了 MR 的上下文时触发（与 GitHub 相同的门控；context-unavailable 的运行上限为 Comment）。增量重新审查遵循 AGit-Flow 更新模型：更新会就地 AMEND 单个 CR commit，使上一轮审查的 head 成为孤儿——因此缓存锚点在判断时**不考虑**祖先关系（anchor-behind-head 测试会在每次更新时失败），重新审查将 PR 自身的 diff 限定为更新所涉及的文件，而不是回退到全量审查；如果更新同时 rebase 到了更新的 master，则仅当 rebase 的漂移保持在 CR 文件内时保留该范围——触及任何其他文件的漂移会回退到全量审查，且无论如何没有漂移字节进入发布的范围。参见 `docs/design/2026-08-15-review-aone-provider.md`。
 
 每次运行以一行机器可读的行结束（`Review complete: <target> — <disposition>`），因此脚本和 CI 包装器可以通过单个 `^Review complete: ` 匹配来检测完成和结果。
 
@@ -451,10 +455,10 @@ High-effort 流水线限制每个阶段（分片大小、审计轮次），但�
 
 | 阶段                            | LLM 调用次数                      | 说明                                                                                                          |
 | -------------------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| 审查 agent（步骤 3）           | 14 (+0-2)                      | 并行运行；跨仓库跳过 Agent 1c 和 7（12），本地/文件跳过 Agent 0（13）                          |
+| 审查 agent（步骤 3）           | 16 (+0-2)                       | 并行运行；Agent 1e 仅在 diff 信号为 wrapping 类型时启用（无 1e 时为 15）；跨仓库跳过 Agent 1c 和 7（14），本地/文件跳过 Agent 0（15）                                          |
 | 分片验证（步骤 4）    | ceil(F/8)                      | F = 发现数；每个验证 agent 最多 8 个，同时启动                                              |
 | 迭代反向审计（步骤 5） | 2-10 (3A)；轮次 × chunk (3B) | 连续 2 轮无新发现后停止；上限按拓扑——小 diff 为 10，分 chunk 的 diff 为 5，大型 diff 在运行有截止时间时为 3。3B 按 chunk 按轮次 fan-out 一个审计员                        |
-| **总计**                        | **~17-28 (~15-27)**             | 3A 同仓库：~17-28（典型 ~17-19）；跨仓库或本地/文件：~15-27；3B 随 chunk 缩放（参见 DESIGN.md）                                                                                      |
+| **总计**                        | **~19-30 (~17-29)**             | 3A 同仓库：~19-30（典型 ~19-21）；跨仓库或本地/文件：~17-29；Agent 1e 未启用时少一个；3B 随 chunk 缩放（参见 DESIGN.md）                                             |
 
 大多数 PR 收敛到范围的下限；上限防止在极端情况下成本失控。在 `--effort low` 下，审查完全在行内运行——**0 次 subagent 调用**——每个角度遍历 diff 一次而非总共一次。
 

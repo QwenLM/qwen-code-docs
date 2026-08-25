@@ -1,3 +1,5 @@
+---
+
 # 命令
 
 本文档详细介绍了 Qwen Code 支持的所有命令，帮助你高效管理会话、自定义界面并控制其行为。
@@ -101,7 +103,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `/model --voice`  | 设置用于语音转录的模型                                       | `/model --voice <model-id>`                                                                               |
 | `/model --vision` | 设置 vision-bridge 模型，用于为纯文本主模型转录图像 | `/model --vision <model-id>`                                                                              |
 | `/model --compaction` | 设置用于聊天压缩的模型                                                                 | `/model --compaction <model-id>`, `/model --compaction clear`                                             |
-| `/model --image`  | 为内置图片生成工具设置纯图片模型                                                           | `/model --image <model-id>`                                                                               |
+| `/model --image`  | 为内置图片生成工具设置具备图片生成能力的模型                                               | `/model --image <model-id>`                                                                               |
 | `/effort`         | 设置具备思考能力的模型的推理 effort                                 | `/effort` (打开选择器), `/effort high` (low/medium/high/xhigh/max；根据提供商进行映射和限制)       |
 | `/extensions`     | 管理扩展                                                                | `/extensions list`, `/extensions manage`                                                                  |
 | → `list`          | 列出已安装的扩展                                                        | `/extensions list`                                                                                        |
@@ -132,7 +134,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 > [!note]
 >
-> `/workflows`、`/lsp` 和 `/trust` 仅在其对应功能启用时才会注册——分别通过 `QWEN_CODE_ENABLE_WORKFLOWS=1` 环境变量、`--experimental-lsp` CLI 标志和 `security.folderTrust.enabled` 设置。禁用时它们不会出现，并会报告未知命令。同样，`/dream` 和 `/forget` 仅在托管 auto-memory 可用时才会注册；不可用时它们不会出现。
+> `/workflows`、`/lsp` 和 `/trust` 仅在其对应功能启用时才会注册——分别通过用户/系统作用域的 `tools.workflowsEnabled` 设置或 `QWEN_CODE_ENABLE_WORKFLOWS=1` 环境变量、`--experimental-lsp` CLI 标志和 `security.folderTrust.enabled` 设置。`tools.workflowsEnabled` 的工作区值会被忽略。禁用时它们不会出现，并会报告未知命令。同样，`/dream` 和 `/forget` 仅在托管 auto-memory 可用时才会注册；不可用时它们不会出现。
 
 ### 1.5 内置 Skills
 
@@ -281,7 +283,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 ### 1.8 会话回顾 (`/recap`)
 
-`/recap` 命令会生成当前会话的简短“上次离开时”摘要，以便你可以恢复旧对话，而无需向上翻阅数页历史记录。
+`/recap` 命令会生成当前会话的简短"上次离开时"摘要，以便你可以恢复旧对话，而无需向上翻阅数页历史记录。
 
 | 命令     | 描述                                     |
 | -------- | ---------------------------------------- |
@@ -431,7 +433,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `/stats tools`   | 显示每个工具的调用次数                                                                                                       | `/stats tools`                                                                      |
 | `/stats skills`  | 显示当前实时会话中每个 skill 的调用次数（仅限实时；不包括跨会话的每日/每月活动）                                             | `/stats skills`                                                                     |
 | `/stats daily`   | 显示每日 token 使用统计                                                                                                      | `/stats daily`（别名 `day`），`/stats day [YYYY-MM-DD]`                             |
-| `/stats monthly` | 显示每月 token 使用统计                                                                                                      | `/stats monthly`（别名 `month`），`/stats month [YYYY-MM]`                          |
+| `/stats monthly` | 显示每月 token 使用统计                                                                                                      | `/stats monthly`（别名 `month`），`/stats month [YYYY-MM-DD]`                          |
 | `/stats export`  | 将使用统计导出为 CSV 或 JSON                                                                                                 | `/stats export <daily\|monthly> [date\|month] [--format csv\|json] [--output path]` |
 | `/settings`      | 打开设置编辑器                                                                                                               | `/settings`                                                                         |
 | `/config`        | 通过点路径键获取或设置任何配置（写入用户设置）                                                                               | `/config`（列出所有），`/config <key>`，`/config <key>=<value>`                     |
@@ -636,7 +638,7 @@ description: 基于最佳实践的代码审查
 
 ### 实际创建示例
 
-#### “纯函数重构”命令创建步骤表
+#### "纯函数重构"命令创建步骤表
 
 | 操作                        | 命令/代码                                 |
 | --------------------------- | ----------------------------------------- |
@@ -711,7 +713,7 @@ description: 将代码重构为纯函数
 sessionId, startTime, mtime, prompt, gitBranch, customTitle, titleSource, filePath, cwd
 ```
 
-“还有更多会话”的提示信息会通过 stderr 输出，因此通过管道传递给 `jq` 依然是安全的。
+"还有更多会话"的提示信息会通过 stderr 输出，因此通过管道传递给 `jq` 依然是安全的。
 
 **示例：**
 

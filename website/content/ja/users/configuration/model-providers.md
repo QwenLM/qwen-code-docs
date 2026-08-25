@@ -310,6 +310,7 @@ Qwen Code は、各プロバイダーへのリクエスト送信に以下の公�
         "baseUrl": "http://localhost:11434/v1",
         "generationConfig": {
           "timeout": 300000,
+          "streamIdleTimeoutMs": 600000,
           "maxRetries": 1,
           "contextWindowSize": 32768,
           "samplingParams": {
@@ -632,6 +633,8 @@ Coding Plan モデルを手動で構成したい場合は、他の OpenAI 互換
 `reasoning: false`（リテラルのブール値）を設定すると、すべてのプロバイダーで明示的に思考が無効になります。これは、推論の恩恵を受けない安価なサイドクエリに便利です。これはリクエストレベルでも尊重され、ワンオフの呼び出し（例: 提案の生成）では `request.config.thinkingConfig.includeThoughts: false` 経由で有効になります。
 
 `api.deepseek.com` の baseURL では、OpenAI パイプラインは DeepSeek V4+ が要求する明示的な `thinking: { type: 'disabled' }` フィールドを出力します。サーバー側のデフォルトは `'enabled'` であるため、単に `reasoning_effort` を省略するだけでは思考のレイテンシ/コストが発生してしまいます。セルフホストの DeepSeek バックエンド（sglang/vllm）やその他の OpenAI 互換サーバーは、このフィールドを受け取り**ません**。それらで思考を無効にする必要がある場合は、`samplingParams`/`extra_body` 経由で `thinking: { type: 'disabled' }`（または推論フレームワークが公開している任意の設定値）を注入してください。
+
+`openrouter.ai` の baseURL では、OpenAI パイプラインは reasoning が無効な場合に OpenRouter のプロバイダーレベルの `reasoning: { enabled: false }` フィールドを出力します。他の OpenAI 互換サーバーはこの OpenRouter 固有のフィールドを受け取りません。それらのネイティブな無効化ノブには `samplingParams`/`extra_body` を使用してください。
 
 ### `samplingParams` との相互作用（OpenAI 互換のみ）
 

@@ -2,7 +2,7 @@
 
 チャンネルを使用すると、ターミナルではなく、Telegram、WeChat、QQ、DingTalk、WeCom、Feishu などのメッセージングプラットフォームから Qwen Code エージェントと対話できます。スマートフォンやデスクトップのチャットアプリからメッセージを送信すると、エージェントは CLI の場合と同じように応答します。
 
-コードホスティングプラットフォーム（[GitHub](./github) から開始）もポーリングアダプタ経由でサポートされています。エージェントが通知を監視し、Issue やプルリクエストでの @メンションに応答します。
+コードホスティングプラットフォーム（[GitHub](./github) から開始）および認証済みワークスペースアカウント（[DingTalk Workspace](./dws) から開始）もチャンネル経由でサポートされています。
 
 ## 仕組み
 
@@ -17,7 +17,7 @@
 
 ## クイックスタート
 
-1. メッセージングプラットフォームでボットをセットアップします（チャンネル固有のガイドを参照してください：[Telegram](./telegram)、[WeChat](./weixin)、[QQ Bot](./qqbot)、[DingTalk](./dingtalk)、[WeCom](./wecom)、[Feishu](./feishu)、[GitHub](./github)）
+1. ボットまたは認証済みワークスペースアカウントをセットアップします（チャンネル固有のガイドを参照してください：[Telegram](./telegram)、[WeChat](./weixin)、[QQ Bot](./qqbot)、[DingTalk](./dingtalk)、[DingTalk Workspace](./dws)、[WeCom](./wecom)、[Feishu](./feishu)、[GitHub](./github)）
 2. チャンネル設定を `~/.qwen/settings.json` に追加します
 3. `qwen channel start` を実行してすべてのチャンネルを開始するか、`qwen channel start <name>` で単一のチャンネルを開始します
 
@@ -52,7 +52,7 @@
 
 | オプション               | 必須             | 説明                                                                                                                                                             |
 | ------------------------ | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `type`                   | はい             | チャンネルタイプ：`telegram`、`weixin`、`qq`、`dingtalk`、`wecom`、`feishu`、`github`、または拡張機能のカスタムタイプ（[Plugins](./plugins) を参照）              |
+| `type`                   | はい             | チャンネルタイプ：`telegram`、`weixin`、`qq`、`dingtalk`、`dws`、`wecom`、`feishu`、`github`、`gitlab`、または拡張機能のカスタムタイプ（[Plugins](./plugins) を参照）              |
 | `token`                  | Telegram         | ボットトークン。環境変数から読み取るための `$ENV_VAR` 構文をサポートします。WeChat、DingTalk、WeCom、Feishu では不要です                                          |
 | `clientId`               | DingTalk, Feishu | DingTalk AppKey または Feishu App ID。`$ENV_VAR` 構文をサポートします                                                                                             |
 | `clientSecret`           | DingTalk, Feishu | DingTalk AppSecret または Feishu App Secret。`$ENV_VAR` 構文をサポートします                                                                                      |

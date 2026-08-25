@@ -256,7 +256,7 @@ OPTIONS 프리플라이트 요청(`Access-Control-Request-Method` 또는 `Access
 
 `session_organization`은 커스텀 세션 그룹과 핀을 광고합니다. `GET/POST/PATCH/DELETE /workspace/:id/session-groups`, `PATCH /session/:id/organization`, 그리고 옵트인 구성된 목록 뷰 `GET /workspace/:id/sessions?view=organized`를 추가합니다. `session_organization`과 `workspace_qualified_rest_core`가 모두 광고될 때, 워크스페이스 한정 구성 변이 `PATCH /workspaces/:workspace/session/:id/organization`도 사용할 수 있습니다. 레거시 변이는 기본 워크스페이스 전용으로 유지됩니다. 이전 데몬은 변이/그룹 라우트에 대해 `404`를 반환하고 구성된 뷰 계약을 무시하므로, WebShell/SDK 클라이언트는 해당 그룹화 또는 핀 UI를 표시하기 전에 이 태그들을 프리플라이트해야 합니다.
 
-`session_archive`는 v1 디렉토리 상태 아카이브 API를 광고합니다: `POST /sessions/archive`, `POST /sessions/unarchive`, `GET /workspace/:id/sessions?archiveState=active|archived`. 아카이브된 세션은 아카이브 해제 전까지 로드하거나 재개할 수 없습니다.
+`session_archive`는 v1 디렉토리 상태 아카이브 API를 광고합니다: `POST /sessions/archive`, `POST /sessions/unarchive`, `GET /workspace/:id/sessions?archiveState=active|archived`. 아카이브된 세션은 아카이브 해제 전까지 로드하거나 재개할 수 없습니다. `session_storage_conflict_repair`는 아래에 설명된 부가적인 `resolveConflicts` 요청 옵션과 `resolvedConflicts` 응답 버킷을 광고합니다.
 
 `workspace_qualified_rest_core`는 `/workspaces/:workspace/...` 아래의 복수 핵심 REST 라우트를 광고합니다. 선택자는 먼저 정확히 워크스페이스 ID로 해석되고, 그 다음 정규화 후 URL 인코딩된 절대 cwd로 해석됩니다. 최신 단일 워크스페이스 데몬은 `multi_workspace_sessions`가 없을 때도 `workspaces[]`에 기본 런타임을 포함하므로 클라이언트가 워크스페이스 한정 라우트에 필요한 ID를 발견할 수 있습니다; 클라이언트는 배열을 생략하는 이전 데몬에 대해 `capabilities.workspaceCwd`로 폴백해야 합니다. 신뢰 상태 및 신뢰 요청 라우트는 등록된 신뢰되지 않은 워크스페이스에서 사용할 수 있습니다; 파일 읽기 라우트는 기존 파일시스템 읽기 정책을 따릅니다. 등록된 신뢰되지 않은 보조 워크스페이스도 지속 전용 세션 및 세션 그룹 카탈로그를 노출합니다: 이러한 읽기는 세션에 attach하거나, ACP를 시작하거나, 라이브 브리지 상태를 병합하지 않습니다. 파일 쓰기, 카탈로그 변이 및 기타 복수 핵심 라우트는 별도의 기능이 명시적으로 더 좁은 읽기 전용 정책을 정의하지 않는 한 신뢰되는 워크스페이스가 필요합니다(예: `workspace_persisted_transcript`). 신뢰되지 않은 기본값은 여전히 복수 카탈로그 및 트랜스크립트 라우트에서 `403 { code: "untrusted_workspace" }`를 받습니다; 레거시 단일 기본 라우트는 기존 호환성 동작을 유지합니다. 이 태그는 핵심 파일, 상태, 설정, 권한, 신뢰, 라이프사이클, MCP 제어, 도구 및 skill 토글, 메모리, 워크스페이스 에이전트 CRUD, 세션 스토리지 표면을 다룹니다. 인증, 음성, 확장, ACP/WebSocket 전송, 채널 워커 라우팅, 또는 워크스페이스 한정 세션 내보내기는 다루지 않습니다; `workspace_session_export` 또는 `workspace_archived_session_export`를 별도로 프리플라이트하세요. 워크스페이스 신뢰는 ACL이 아닙니다: 데몬 토큰을 가진 클라이언트는 이 정책에서 허용하는 등록된 모든 워크스페이스 표면을 읽을 수 있습니다.
 
@@ -2367,7 +2367,7 @@ curl http://127.0.0.1:4170/workspaces/<workspace-id>/sessions
 요청:
 
 ```json
-{ "sessionIds": ["<uuid>"] }
+{ "sessionIds": ["<uuid>"], "resolveConflicts": true }
 ```
 
 `sessionIds`는 최대 100개 id를 가진 비어 있지 않은 문자열 배열이어야 합니다. 중복은 축약됩니다.
@@ -2378,12 +2378,15 @@ curl http://127.0.0.1:4170/workspaces/<workspace-id>/sessions
 {
   "archived": ["<uuid>"],
   "alreadyArchived": [],
+  "resolvedConflicts": ["<uuid>"],
   "notFound": [],
   "errors": []
 }
 ```
 
-`errors` 항목은 `{ "sessionId": "<uuid>", "error": "message" }` 형태입니다. 같은 id의 활성 및 아카이브 파일은 충돌로 처리되어 `errors`에 보고됩니다; 파일이 덮어쓰여지지 않습니다.
+`resolveConflicts`는 선택 사항이며 기본값은 `false`입니다. 기본적으로 같은 id의 활성 및 아카이브 파일은 `errors`에 보고되며, 어느 복사본도 이동, 제거 또는 덮어쓰기되지 않습니다. 활성 세션을 아카이브하면 여전히 충돌을 분류하기 전에 위에서 설명한 엄격한 종료를 수행하므로, 해당 종료가 활성 트랜스크립트에 큐에 있는 레코드를 플러시할 수 있습니다. `resolveConflicts: true`이면, 아카이브는 아카이브된 복사본을 유지하고 활성 복사본을 제거하며, id를 `archived`와 `resolvedConflicts` 모두에 보고합니다. `errors` 항목은 `{ "sessionId": "<uuid>", "error": "message" }` 형태입니다.
+
+라이프사이클 충돌은 일괄 항목 결과입니다: 워크스페이스 없는 및 워크스페이스 한정 라우트는 HTTP `200`과 `errors`의 충돌을 반환합니다. 이는 이전의 워크스페이스 한정 HTTP `409 session_conflict` 인벨롭을 대체합니다; 해당 라우트를 호출한 클라이언트는 일괄 응답을 검사해야 합니다. 내부 런타임 REST 일괄은 안전한 충돌 메시지를 보존하면서 다른 세션별 실패 세부사항의 보고를 계속 생략합니다.
 
 ### `POST /sessions/unarchive`
 
@@ -2392,7 +2395,7 @@ curl http://127.0.0.1:4170/workspaces/<workspace-id>/sessions
 요청:
 
 ```json
-{ "sessionIds": ["<uuid>"] }
+{ "sessionIds": ["<uuid>"], "resolveConflicts": true }
 ```
 
 응답:
@@ -2401,12 +2404,13 @@ curl http://127.0.0.1:4170/workspaces/<workspace-id>/sessions
 {
   "unarchived": ["<uuid>"],
   "alreadyActive": [],
+  "resolvedConflicts": ["<uuid>"],
   "notFound": [],
   "errors": []
 }
 ```
 
-해당 id에 대한 활성 JSONL이 이미 존재하면 아카이브 해제는 `errors`에 충돌을 보고하고 덮어쓰지 않습니다. 같은 id에 대한 아카이브 또는 아카이브 해제가 진행 중이면 일괄 처리 시작 전 `409 session_archiving`를 반환합니다.
+`resolveConflicts`는 선택 사항이며 기본값은 `false`입니다. 기본적으로 동시에 존재하는 활성 및 아카이브 JSONL 파일은 `errors`에 충돌을 생성하며, 어느 복사본도 이동, 제거 또는 덮어쓰기되지 않습니다; 활성 전용 세션은 `alreadyActive`에 반환됩니다. `resolveConflicts: true`이면, 아카이브 해제는 활성 복사본을 유지하고 아카이브된 복사본을 제거하며, id를 `unarchived`와 `resolvedConflicts` 모두에 보고합니다. 같은 id에 대한 아카이브 또는 아카이브 해제가 진행 중이면 일괄 처리 시작 전 `409 session_archiving`를 반환합니다.
 
 ACP-over-HTTP는 벤더 메서드 `_qwen/sessions/archive` 및 `_qwen/sessions/unarchive`를 통해 동일한 요청 및 응답 본문을 사용합니다. REST 라우트 테이블은 ACP 전송을 위해 `POST /sessions/archive` 및 `POST /sessions/unarchive`를 해당 메서드에 매핑합니다.
 

@@ -98,7 +98,7 @@ Les paramètres sont organisés en catégories. La plupart des paramètres doive
 | `general.dynamicCommandTranslation` | boolean | Active la traduction par IA des descriptions des commandes slash dynamiques. Lorsqu'elle est désactivée, les commandes dynamiques conservent leurs descriptions d'origine et ignorent les appels au modèle de traduction. | `false` |
 | `general.terminalBell` | boolean | Joue un son de cloche du terminal lorsqu'une réponse est terminée ou nécessite une approbation. | `true` |
 | `general.preventSystemSleep` | boolean | Empêche le système de se mettre en veille pendant que Qwen Code diffuse une réponse du modèle ou exécute des outils. Le temps d'inactivité du prompt et les demandes d'autorisation n'inhibent pas la mise en veille. Lu une seule fois au démarrage, les modifications prennent donc effet après le redémarrage. | `true` |
-| `general.chatRecording` | boolean | Enregistre l'historique des discussions sur le disque. La désactivation de cette option empêche également `--continue` et `--resume` de fonctionner. Nécessite un redémarrage. | `true` |
+| `general.chatRecording`                    | boolean | Enregistre l'historique des discussions sur le disque. La désactivation de cette option empêche également `--continue` et `--resume` de fonctionner. Nécessite un redémarrage.                                                                                                                                                                                                       | `true`      |
 #### output
 
 | Paramètre               | Type    | Description                                                    | Par défaut | Valeurs possibles    |

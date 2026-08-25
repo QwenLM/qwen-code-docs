@@ -253,7 +253,7 @@ Le démon annonce ses tags de fonctionnalités pris en charge depuis le registre
 
 `session_organization` annonce les groupes de sessions personnalisés et l'épinglage. Il ajoute `GET/POST/PATCH/DELETE /workspace/:id/session-groups`, `PATCH /session/:id/organization`, et la vue de liste organisée en option `GET /workspace/:id/sessions?view=organized`. Lorsque `session_organization` et `workspace_qualified_rest_core` sont tous deux annoncés, la mutation d'organisation qualifiée par workspace `PATCH /workspaces/:workspace/session/:id/organization` est également disponible. La mutation héritée reste limitée au workspace principal. Les anciens daemons retournent `404` pour les routes de mutation/groupe et ignorent le contrat de vue organisée, les clients WebShell/SDK doivent donc vérifier ces balises en amont avant d'afficher l'interface utilisateur de groupement ou d'épinglage correspondante.
 
-`session_archive` annonce l'API d'archive d'état de répertoire v1 : `POST /sessions/archive`, `POST /sessions/unarchive`, et `GET /workspace/:id/sessions?archiveState=active|archived`. Les sessions archivées ne peuvent pas être chargées ou reprises tant qu'elles n'ont pas été désarchivées.
+`session_archive` annonce l'API d'archive d'état de répertoire v1 : `POST /sessions/archive`, `POST /sessions/unarchive`, et `GET /workspace/:id/sessions?archiveState=active|archived`. Les sessions archivées ne peuvent pas être chargées ou reprises tant qu'elles n'ont pas été désarchivées. `session_storage_conflict_repair` annonce l'option de requête additive `resolveConflicts` et le compartiment de réponse `resolvedConflicts` décrits ci-dessous.
 
 `workspace_qualified_rest_core` annonce les routes REST core plurielles sous `/workspaces/:workspace/...`. Le sélecteur se résout d'abord par id de workspace exact, puis par cwd absolu encodé en URL après canonisation. Les nouveaux daemons mono-workspace incluent le runtime principal dans `workspaces[]` même lorsque `multi_workspace_sessions` est absent, permettant aux clients de découvrir l'id requis par les routes qualifiées par workspace ; les clients doivent revenir à `capabilities.workspaceCwd` pour les anciens daemons qui omettent le tableau. Le statut de confiance et les routes de demande de confiance sont disponibles pour les workspaces non fiables enregistrés ; les routes de lecture de fichiers suivent la politique de lecture du système de fichiers existante. Les workspaces secondaires non fiables enregistrés exposent également les catalogues de sessions et de groupes de sessions en lecture seule persistée : ces lectures ne s'attachent pas à une session, ne démarrent pas ACP et ne fusionnent pas l'état du bridge live. Les écritures de fichiers, les mutations de catalogue et les autres routes core plurielles nécessitent un workspace de confiance sauf si une capacité distincte définit explicitement une politique en lecture seule plus étroite, comme `workspace_persisted_transcript`. Un primary non fiable continue de recevoir `403 { code: "untrusted_workspace" }` des routes de catalogue pluriel et de transcript ; les routes singulières héritées du primary conservent leur comportement de compatibilité existant. Ce tag couvre les surfaces core de fichiers, statut, paramètres, permissions, confiance, cycle de vie, contrôle MCP, toggles d'outils et de skills, mémoire, CRUD d'agents workspace et stockage de sessions. Il ne couvre pas l'auth, la voix, les extensions, le transport ACP/WebSocket, le routage channel-worker ou l'export de session qualifié par workspace ; pré-vérifiez `workspace_session_export` ou `workspace_archived_session_export` séparément. La confiance workspace n'est pas une ACL : un client détenant le token du daemon peut lire chaque surface de workspace enregistré autorisée par cette politique.
 
@@ -2390,7 +2390,7 @@ Archiver une ou plusieurs sessions. L'archivage est une transition d'état, pas 
 Requête :
 
 ```json
-{ "sessionIds": ["<uuid>"] }
+{ "sessionIds": ["<uuid>"], "resolveConflicts": true }
 ```
 
 `sessionIds` doit être un tableau de chaînes non vide contenant au maximum 100 ids. Les doublons sont éliminés.
@@ -2401,12 +2401,15 @@ Réponse :
 {
   "archived": ["<uuid>"],
   "alreadyArchived": [],
+  "resolvedConflicts": ["<uuid>"],
   "notFound": [],
   "errors": []
 }
 ```
 
-Les entrées de `errors` ont la forme `{ "sessionId": "<uuid>", "error": "message" }`. Les fichiers actifs et archivés ayant le même id sont traités comme un conflit et signalés dans `errors` ; aucun fichier n'est écrasé.
+`resolveConflicts` est optionnel et vaut `false` par défaut. Par défaut, les fichiers actifs et archivés ayant le même id sont signalés dans `errors`, et aucune copie n'est déplacée, supprimée ni écrasée. L'archivage d'une session live effectue toujours la fermeture stricte décrite ci-dessus avant de classifier le conflit, de sorte que cette fermeture peut flusher les enregistrements en file dans le transcript actif. Avec `resolveConflicts: true`, l'archive conserve la copie archivée, supprime la copie active et signale l'id dans `archived` et `resolvedConflicts`. Les entrées de `errors` ont la forme `{ "sessionId": "<uuid>", "error": "message" }`.
+
+Les conflits de cycle de vie sont des résultats d'éléments de lot : les routes sans workspace et qualifiées par workspace renvoient HTTP `200` avec le conflit dans `errors`. Cela remplace l'ancienne enveloppe HTTP `409 session_conflict` des routes qualifiées par workspace ; les clients qui ont appelé cette route doivent inspecter la réponse de lot. Les lots REST internes au runtime préservent le message de conflit sûr tout en continuant à masquer les autres détails d'échec par session.
 
 ### `POST /sessions/unarchive`
 
@@ -2415,7 +2418,7 @@ Restaurer les sessions archivées dans le répertoire actif. Cela ne relance pas
 Requête :
 
 ```json
-{ "sessionIds": ["<uuid>"] }
+{ "sessionIds": ["<uuid>"], "resolveConflicts": true }
 ```
 
 Réponse :
@@ -2424,12 +2427,13 @@ Réponse :
 {
   "unarchived": ["<uuid>"],
   "alreadyActive": [],
+  "resolvedConflicts": ["<uuid>"],
   "notFound": [],
   "errors": []
 }
 ```
 
-Si un JSONL actif existe déjà pour l'id, le désarchivage signale un conflit dans `errors` et ne l'écrase pas. Une opération d'archivage ou de désarchivage en cours pour le même id retourne `409 session_archiving` avant de démarrer le lot.
+`resolveConflicts` est optionnel et vaut `false` par défaut. Par défaut, des fichiers JSONL actifs et archivés simultanés produisent un conflit dans `errors`, et aucune copie n'est déplacée, supprimée ni écrasée ; une session active uniquement est renvoyée dans `alreadyActive`. Avec `resolveConflicts: true`, le désarchivage conserve la copie active, supprime la copie archivée et signale l'id dans `unarchived` et `resolvedConflicts`. Une opération d'archivage ou de désarchivage en cours pour le même id retourne `409 session_archiving` avant de démarrer le lot.
 
 ACP-over-HTTP utilise les mêmes corps de requête et de réponse via les méthodes vendor `_qwen/sessions/archive` et `_qwen/sessions/unarchive`. La table de routes REST mappe `POST /sessions/archive` et `POST /sessions/unarchive` à ces méthodes pour les transports ACP.
 

@@ -655,6 +655,8 @@ Alibaba Cloud Coding Plan поддерживает два региона:
 
 На baseURL `api.deepseek.com` пайплайн OpenAI отправляет явное поле `thinking: { type: 'disabled' }`, которое требуется для DeepSeek V4+ — по умолчанию на сервере установлено `'enabled'`, поэтому простое отсутствие `reasoning_effort` всё равно приведет к задержкам и затратам на рассуждения. Самостоятельно развернутые бэкенды DeepSeek (sglang/vllm) и другие OpenAI-совместимые серверы **не получают** это поле; если вам нужно отключить рассуждения на них, внедрите `thinking: { type: 'disabled' }` (или любой другой переключатель, который предоставляет ваш фреймворк инференса) через `samplingParams`/`extra_body`.
 
+На baseURL `openrouter.ai` пайплайн OpenAI отправляет поле `reasoning: { enabled: false }` на уровне провайдера OpenRouter при отключении рассуждений. Другие OpenAI-совместимые серверы не получают это специфичное для OpenRouter поле; используйте `samplingParams`/`extra_body` для их нативного переключателя отключения.
+
 ### Взаимодействие с `samplingParams` (только для OpenAI-совместимых)
 
 > [!warning]

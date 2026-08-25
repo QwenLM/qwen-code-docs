@@ -2,7 +2,7 @@
 
 通过频道，你可以从 Telegram、微信、QQ、钉钉、企业微信或飞书等消息平台与 Qwen Code agent 进行交互，而无需使用终端。你可以从手机或桌面聊天应用发送消息，agent 的响应方式与在 CLI 中完全一致。
 
-代码托管平台（目前支持 [GitHub](./github)）也通过轮询适配器支持 —— agent 会监控通知并响应 issue 和 pull request 中的 @提及。
+代码托管平台（目前支持 [GitHub](./github)）和经过认证的工作区账户（目前支持[钉钉工作区](./dws)）也通过频道提供支持。
 
 ## 工作原理
 
@@ -17,7 +17,7 @@
 
 ## 快速开始
 
-1. 在消息平台上设置机器人（请参阅各频道专属指南：[Telegram](./telegram)、[微信](./weixin)、[QQ Bot](./qqbot)、[钉钉](./dingtalk)、[企业微信](./wecom)、[飞书](./feishu)、[GitHub](./github)）
+1. 设置机器人或经过认证的工作区账户（请参阅各频道专属指南：[Telegram](./telegram)、[微信](./weixin)、[QQ Bot](./qqbot)、[钉钉](./dingtalk)、[钉钉工作区](./dws)、[企业微信](./wecom)、[飞书](./feishu)、[GitHub](./github)）
 2. 将频道配置添加到 `~/.qwen/settings.json`
 3. 运行 `qwen channel start` 启动所有频道，或运行 `qwen channel start <name>` 启动单个频道
 
@@ -52,7 +52,7 @@
 
 | 选项                     | 是否必需         | 描述                                                                                                                                                             |
 | ------------------------ | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `type`                   | 是               | 频道类型：`telegram`、`weixin`、`qq`、`dingtalk`、`wecom`、`feishu`、`github` 或来自扩展的自定义类型（参见 [插件](./plugins)）                                     |
+| `type`                   | 是               | 频道类型：`telegram`、`weixin`、`qq`、`dingtalk`、`dws`、`wecom`、`feishu`、`github`、`gitlab` 或来自扩展的自定义类型（参见 [插件](./plugins)）                       |
 | `token`                  | Telegram         | 机器人 Token。支持 `$ENV_VAR` 语法从环境变量读取。微信、钉钉、企业微信或飞书不需要此项                                                                             |
 | `clientId`               | 钉钉, 飞书       | 钉钉 AppKey 或飞书 App ID。支持 `$ENV_VAR` 语法                                                                                                                  |
 | `clientSecret`           | 钉钉, 飞书       | 钉钉 AppSecret 或飞书 App Secret。支持 `$ENV_VAR` 语法                                                                                                           |
