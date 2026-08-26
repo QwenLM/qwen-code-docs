@@ -115,3 +115,35 @@ test("quarantine keeps a sound replacement over corrupt HEAD", () => {
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("report-batch counts dispatches that never reach verify", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "qwen-report-test-"));
+  const summary = path.join(root, "summary.md");
+
+  try {
+    fs.writeFileSync(
+      path.join(root, "orch-out-zh.log"),
+      "dispatching agent for 5 file(s)\nverify 5/5 passed\n"
+    );
+    fs.writeFileSync(
+      path.join(root, "orch-out-ja.log"),
+      "dispatching agent for 5 file(s)\nagent exited before verify\n"
+    );
+
+    const result = spawnSync(
+      process.execPath,
+      [orchestrator, "report-batch", "--log-dir", root],
+      {
+        encoding: "utf8",
+        env: { ...process.env, GITHUB_STEP_SUMMARY: summary },
+      }
+    );
+
+    assert.equal(result.status, 0, result.stdout || result.stderr);
+    assert.match(result.stdout, /Verified 5\/10.*\(50%\)/);
+    assert.match(result.stdout, /5 dispatched file-translations had no verify result/);
+    assert.match(fs.readFileSync(summary, "utf8"), /Verified 5\/10/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});

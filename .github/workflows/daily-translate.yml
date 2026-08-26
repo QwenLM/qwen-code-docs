@@ -187,41 +187,11 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
           OPENAI_BASE_URL: ${{ vars.TRANSLATE_BASE_URL || 'https://coding.dashscope.aliyuncs.com/v1' }}
 
-      # Every loss observed so far happened inside a GREEN run: report-failure
-      # only fires when a job fails, and the stale-baseline warning below only
-      # fires when the baseline does not move at all. Neither catches "the run
-      # succeeded, the baseline advanced, and 50% of the batch was silently
-      # dropped" — run 31334857246 verified 52 of 105 dispatched
-      # file-translations and reported success. This is the signal for that.
+      # A run can stay green while some agent sessions lose their whole batch;
+      # compare dispatch logs with verify totals so those losses are visible.
       - name: Warn if an unusual share of the batch was lost
         if: always() && steps.detect.outputs.changed == 'true'
-        run: |
-          set -uo pipefail
-          shopt -s nullglob
-          logs=(/tmp/orch-out-*.log)
-          if [ ${#logs[@]} -eq 0 ]; then
-            echo "no per-language logs to tally"
-            exit 0
-          fi
-          # `|| true`: grep exits 1 when no language reached verify at all
-          # (e.g. every dispatch died early), which must not fail the step —
-          # the awk below reports the zero case.
-          grep -hoE 'verify [0-9]+/[0-9]+ passed' "${logs[@]}" \
-            > /tmp/orch-verify-counts.txt || true
-          awk '{ split($2, a, "/"); ok += a[1]; total += a[2] }
-               END {
-                 if (total == 0) {
-                   print "::warning::no verify results found — no language completed a dispatch";
-                   exit 0;
-                 }
-                 pct = 100 * ok / total;
-                 printf "Verified %d/%d dispatched file-translations (%.0f%%)\n", ok, total, pct;
-                 summary = ENVIRON["GITHUB_STEP_SUMMARY"];
-                 if (summary != "")
-                   printf "- Verified **%d/%d** dispatched file-translations (%.0f%%)\n", ok, total, pct > summary;
-                 if (pct < 80)
-                   printf "::warning::only %d of %d dispatched file-translations verified (%.0f%%) — check the per-language logs above for halted agent sessions\n", ok, total, pct;
-               }' /tmp/orch-verify-counts.txt
+        run: node translator/orchestrator/orchestrator.mjs report-batch --log-dir /tmp
 
       # advance wrote per-language .failed.txt quarantine lists. Broken files
       # are resolved against HEAD so the commit below stages only sound

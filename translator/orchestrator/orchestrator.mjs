@@ -22,6 +22,7 @@
  *   verify    --lang L     structural gate over the dispatched manifest
  *   advance   --lang L     verify + record hashes of passing files
  *   quarantine             resolve failed translations against HEAD
+ *   report-batch           report dispatched/verified totals from run logs
  *
  * Flags (all optional): --repo --branch --docs-path --content-dir
  *   --baseline --temp-dir --langs csv --limit N --manifest --model
@@ -454,31 +455,10 @@ function renderPrompt(lang, batch) {
     .replaceAll("{{FILES}}", files);
 }
 
-// One agent session per chunk, not one session per language: the CLI's
-// loop detection kills an entire session on one blocked/retried tool call
-// (runs 31115350719/31119970640 lost de almost entirely that way). Chunks
-// bound the blast radius of a halted session.
-//
-// 15 was too coarse to actually bind: at steady state a language's daily
-// backlog is 11-22 files, so nearly every dispatch was a single `part 1/1`
-// chunk and the blast radius was still "the whole language". A halt then
-// cost the entire day — run 31535310718 logged `ja: verify 0/12 passed`,
-// and run 31334857246 lost ru (0/15), ko (0/15) and pt-BR (0/14) the same
-// way, 44 file-translations in one night. Across runs 31217518428,
-// 31277357843, 31334857246, 31431085427 and 31535310718: 511 dispatched,
-// 386 verified, and the per-run loss tracks the number of halted sessions
-// almost linearly (1 halt -> ~14 lost, 4 halts -> ~53 lost).
-//
-// 5 makes the bound real (a halt costs ~5 files, not ~15) and keeps the
-// whole-chunk retry below cheap. The cost is more sessions per language;
-// nightly runs take 15-50min against a 360min timeout, so there is room.
+// Bound one failed agent session to five files instead of a whole language.
 const TRANSLATE_CHUNK = 5;
 
-// A halted session is usually transient — the same chunk typically succeeds
-// on a second dispatch, whereas leaving it failed costs a full day (the
-// files sit in the backlog until the next scheduled run). One retry only:
-// a chunk that halts twice is likely hitting something structural, and
-// retrying it further just spends tokens on the same wall.
+// Retry once; repeated failures stay in the next run's backlog.
 const TRANSLATE_ATTEMPTS = 2;
 
 // --safe-mode is read-only (no write/edit tools), so the agent could never
@@ -885,6 +865,42 @@ function cmdQuarantine() {
   }
 }
 
+function cmdReportBatch() {
+  const logDir = path.resolve(flags["log-dir"] || "/tmp");
+  const logs = fs.existsSync(logDir)
+    ? fs.readdirSync(logDir).filter((f) => /^orch-out-.*\.log$/.test(f))
+    : [];
+  let dispatched = 0;
+  let reported = 0;
+  let passed = 0;
+  for (const log of logs) {
+    const text = fs.readFileSync(path.join(logDir, log), "utf8");
+    for (const match of text.matchAll(/dispatching agent for (\d+) file/g))
+      dispatched += Number(match[1]);
+    for (const match of text.matchAll(/verify (\d+)\/(\d+) passed/g)) {
+      passed += Number(match[1]);
+      reported += Number(match[2]);
+    }
+  }
+  if (dispatched === 0) {
+    console.log("::warning::no translation dispatch results found");
+    return;
+  }
+  const pct = (100 * passed) / dispatched;
+  const line = `Verified ${passed}/${dispatched} dispatched file-translations (${pct.toFixed(0)}%)`;
+  console.log(line);
+  if (process.env.GITHUB_STEP_SUMMARY)
+    fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `- ${line}\n`);
+  if (reported < dispatched)
+    console.log(
+      `::warning::${dispatched - reported} dispatched file-translations had no verify result`
+    );
+  if (pct < 80)
+    console.log(
+      `::warning::only ${passed} of ${dispatched} dispatched file-translations verified (${pct.toFixed(0)}%) — check the per-language logs above for halted agent sessions`
+    );
+}
+
 // ---------- preflight ----------
 
 /**
@@ -956,12 +972,15 @@ switch (cmd) {
   case "quarantine":
     cmdQuarantine();
     break;
+  case "report-batch":
+    cmdReportBatch();
+    break;
   case "seed":
     cmdSeed();
     break;
   default:
     console.log(
-      "usage: orchestrator.mjs <detect|preflight|sync-en|seed|translate|verify|advance|quarantine> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv]"
+      "usage: orchestrator.mjs <detect|preflight|sync-en|seed|translate|verify|advance|quarantine|report-batch> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv]"
     );
     process.exitCode = cmd ? 1 : 0;
 }
