@@ -331,7 +331,7 @@ taxonomia de erros tipados do daemon (quando o daemon a carimba):
 
 ```ts
 import type { DaemonErrorKind } from '@qwen-code/sdk/daemon';
-// 'missing_binary' | 'blocked_egress' | 'auth_env_error' | 'init_timeout'
+// 'missing_binary' | 'blocked_egress' | 'auth_env_error' | 'init_timeout' | 'restore_timeout'
 // | 'protocol_error' | 'missing_file' | 'parse_error' | 'budget_exhausted'
 ```
 
@@ -385,6 +385,8 @@ frame para o qual esta versão do SDK não tem caso — ruído de compatibilidad
 diagnóstico para desenvolvedores em vez de conteúdo de conversa. `malformed_*` significa
 que um frame que o SDK _conhece_ chegou com um payload inutilizável — um sinal real de defeito.
 
+**O roteamento difere por categoria.** Os diagnósticos `unrecognized_*` são roteados para o sidechannel limitado `unrecognizedDiagnostics` e nunca entram em `blocks[]` (portanto, não podem finalizar um bloco assistente/pensamento em streaming nem consumir o orçamento `maxBlocks`). Leia-os com `selectUnrecognizedDiagnostics`; o limite é `UNRECOGNIZED_DIAGNOSTICS_LIMIT` e o subconjunto roteado é `DAEMON_UI_UNRECOGNIZED_DIAGNOSTIC_REASONS`. Os diagnósticos `malformed_*` — e blocos legados persistidos antes desta divisão — permanecem na transcrição como `DaemonStatusTranscriptBlock`s, então o tratamento de `debugReason` em nível de bloco agora se aplica apenas a eles.
+
 Renderizadores devem alternar com base em `debugReason`, não no texto de debug — o
 prefixo de texto é wording de diagnóstico e muda sem aviso:
 
@@ -408,7 +410,8 @@ Cada camada no SDK de UI do daemon segue o **princípio de compatibilidade futur
 valores desconhecidos NÃO lançam exceções; eles degradam graciosamente.
 
 - Tipos de evento do daemon desconhecidos → evento `debug` com o nome do tipo bruto,
-  carimbado com um `debugReason` `unrecognized_*` (veja acima)
+  carimbado com um `debugReason` `unrecognized_*` e roteado para o sidechannel limitado
+  `unrecognizedDiagnostics` (veja acima)
 - Status de ferramenta desconhecido → `currentToolCallId` não alterado (sem limpeza)
 - Tipo de erro desconhecido → `errorKind` undefined (renderizador cai para texto)
 - serverTimestamp ausente → cai para `clientReceivedAt`

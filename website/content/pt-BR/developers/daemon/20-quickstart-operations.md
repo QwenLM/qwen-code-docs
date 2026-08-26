@@ -80,7 +80,9 @@ A CLI é definida em **`packages/cli/src/commands/serve.ts`**:
 | `--token <s>`                           | string                         | env / none                                       | Non-loopback and `--require-auth`        | Token Bearer; aparado uma vez. **Ele aparece em `/proc/<pid>/cmdline`, então prefira `QWEN_SERVER_TOKEN`**. O stderr de inicialização também avisa sobre isso.                                                                                                                                                         |
 | `--max-sessions <n>`                    | number                         | `32`                                             | -                                        | Limite de sessões ativas por workspace. Spawn em excesso retorna 503. `0` significa ilimitado. Valores `NaN` / negativos lançam erro.                                                                                                                                                                                  |
 | `--max-total-sessions <n>`              | number                         | derivado para múltiplos workspaces na inicialização/restaurados | -                       | Limite de sessões ativas em todo o daemon. Quando omitido, um padrão finito é derivado uma vez do limite por workspace e da contagem de workspaces na inicialização/restaurados; o registro dinâmico não o recalcula. `0` significa ilimitado.                                                                          |
-| `--memory-budget-mb <n>`                | integer em `[1024, 1048576]`   | 50% da memória do cgroup/host                    | Somente observação                       | Orçamento total de memória para a árvore de processos do daemon, limitado à memória disponível resolvida. Reportado em `limits.memory`; modelado em uma partição que nada aplica.                                                                                                                                                   |
+| `--memory-budget-mb <n>`                | integer em `[1024, 1048576]`   | 50% da memória do cgroup/host                    | -                                        | Orçamento total de memória para a árvore de processos do daemon, limitado à memória disponível resolvida. Nenhum filho é dimensionado a partir dele; o único consumidor hoje é o pool adaptativo de crescimento de live journal (veja `--max-journal-bytes`). Reportado em `limits.memory`, incluindo uma partição modelada por filho. |
+| `--max-journal-events <n>`              | inteiro positivo seguro          | `10000`                                          | -                                        | Limite base por sessão de entradas de replay `liveJournal` em andamento. O crescimento adaptativo pode elevá-lo (veja `--max-journal-bytes`); fixar qualquer flag de journal desativa o crescimento.                                                                                                                                                                    |
+| `--max-journal-bytes <n>`               | inteiro positivo seguro          | `8388608`                                        | -                                        | Limite base por sessão em bytes do `liveJournal` em andamento. Brechas aumentam os limites sob demanda (até o dobro, limitado pela folga restante do pool) dentro de um pool único do daemon de 5% do `--memory-budget-mb` efetivo (limitado a `1024` MB; 0 — crescimento desativado — quando o orçamento efetivo cai abaixo do mínimo de 1024 MB), nunca além de um limite rígido de 256 MiB por sessão; fixar qualquer flag de journal desativa o crescimento. |
 | `--memory-pressure-mode <mode>`         | `off` \| `observe`             | `observe`                                        | Somente observação                       | Reporta `runtime.memory.pressure` em ambos os modos; apenas `observe` levanta o issue `daemon_memory_pressure`. Apenas o processo raiz.                                                                                                                                                                                         |
 | `--child-heap-mode <mode>`              | `off` \| `observe`             | `observe`                                        | Somente observação                       | Sob `observe`, reporta a partição modelada em `limits.memory.childHeap`; não aplica nada e não recusa nada. Sob `off`, os dois valores desse bloco são `null`.                                                                                                                                                |
 | `--max-pending-prompts-per-session <n>` | number                         | `5`                                              | -                                        | Limite de prompts aceitos, mas pendentes/em execução por sessão. Prompt em excesso retorna 503. `0` / `Infinity` significa ilimitado. Valores negativos ou não inteiros lançam erro.                                                                                                                                   |
@@ -158,9 +160,9 @@ Falhas de I/O de configurações, como JSON malformado, fazem fallback para os p
 | `--hostname [::1]:8080`                                                       | `Invalid --hostname ... brackets indicate an IPv6 literal but the value is not a clean [addr] form` |
 | `--max-connections` é `NaN` ou negativo                                       | `Must be >= 0`                                                                                      |
 | `--event-ring-size > 1_000_000`                                               | Lançado durante a construção da bridge                                                              |
-| `--initialize-timeout-ms` não é um inteiro positivo ou excede `2^31-1`         | `Must be a positive integer` / `Exceeds maximum JS timer delay`                                     |
 | `--allow-origin '*'` sem token                                                | `Refusing to start with --allow-origin '*' but no bearer token configured`                          |
 | `--prompt-deadline-ms` / `--writer-idle-timeout-ms` não é um inteiro positivo | `Must be a positive integer`                                                                        |
+| `--initialize-timeout-ms` não é um inteiro positivo ou excede `2^31-1`         | `Must be a positive integer` / `Exceeds maximum JS timer delay`                                     |
 | `policy.permissionStrategy` desconhecido ou `policy.consensusQuorum` não positivo | `InvalidPolicyConfigError`                                                                          |
 ## 7. Checklist de verificação com Curl
 
@@ -256,7 +258,9 @@ serve/server.ts                    createServeApp() - builds Express app (**does
    |  `- return app
    |
    v
-serve/run-qwen-serve.ts              server = app.listen(port, hostname, cb)
+serve/run-qwen-serve.ts              server = createServer(app) / https.createServer(..., app)
+   |  |- lifecycle.bindServer(server, { startupReady, drainHost })
+   |  |- server.listen(port, hostname)
    |  |- server.maxConnections = cap
    |  |- actualPort = server.address().port
    |  |- write "qwen serve listening on ..."
@@ -269,8 +273,8 @@ commands/serve.ts                  await blockForever()    // block forever unti
 
 Pontos-chave:
 
-- **`createServeApp` apenas constrói; ele não inicia a escuta.** Ele retorna uma instância `express()` com middlewares e rotas montadas. O chamador é responsável pelo `app.listen()`. O `server.test.ts` usa a factory dessa forma em cerca de 25 casos, então a factory intencionalmente evita gerenciar o ciclo de vida.
-- **`() => actualPort` é uma closure preguiçosa (lazy).** `actualPort` é atribuído no callback do `app.listen`. O middleware `hostAllowlist` o lê sob demanda, então portas efêmeras (`--port 0`) ainda controlam o cabeçalho `Host` corretamente.
+- **`createServeApp` apenas constrói; ele não inicia a escuta.** Ele retorna uma instância `express()` com middlewares e rotas montadas. Embedders apenas ordinários podem continuar sendo donos do `app.listen()`. Embedders que usam Live/Conversations devem vincular o servidor Node real ao ciclo de vida do app exportado antes de ouvir (listen) e aguardar esse ciclo de vida durante o desligamento.
+- **`() => actualPort` é uma closure preguiçosa (lazy).** `actualPort` é atribuído no callback do `server.listen`. O middleware `hostAllowlist` o lê sob demanda, então portas efêmeras (`--port 0`) ainda controlam o cabeçalho `Host` corretamente.
 - **`await blockForever()` é intencional.** Se `yargs.parse()` for resolvido, o nível superior da CLI cai no ponto de entrada da TUI interativa (`gemini.tsx`). SIGINT / SIGTERM saem através do caminho `onSignal` do `runQwenServe`.
 
 ## 10. Divisão de arquivos de rotas HTTP
@@ -322,11 +326,17 @@ console.log(`Daemon at ${handle.url}`);
 await handle.close(); // programmatic shutdown
 ```
 
-Ou obtenha o app Express diretamente e inicie a escuta por conta própria:
+Ou obtenha o app Express diretamente e vincule o ciclo de vida do listener você mesmo. Essa forma é necessária quando o embed usa Live/Conversations:
 
 ```ts
-import { createServeApp } from '@qwen-code/qwen-code/serve';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import {
+  createServeApp,
+  getServeAppLifecycle,
+} from '@qwen-code/qwen-code/serve';
 
+let actualPort = 0;
 const app = createServeApp(
   {
     port: 0,
@@ -334,16 +344,27 @@ const app = createServeApp(
     mode: 'http-bridge',
     maxSessions: 20,
   },
-  () => 0,
+  () => actualPort,
   {
     /* deps: bridge, fsFactory, ... */
   },
 );
 
-const server = app.listen(0, '127.0.0.1', () => {
-  console.log('listening on', server.address());
+const lifecycle = getServeAppLifecycle(app);
+const server = createServer(app);
+lifecycle.bindServer(server);
+await new Promise<void>((resolve, reject) => {
+  server.once('error', reject);
+  server.listen(0, '127.0.0.1', () => resolve());
 });
+actualPort = (server.address() as AddressInfo).port;
+console.log('listening on', server.address());
+
+// Stop admission, drain app work, close the listener, and release ownership.
+await lifecycle.close();
 ```
+
+Chamar `server.close()` diretamente também inicia a mesma limpeza orientada por eventos, mas é apenas melhor esforço a menos que o processo permaneça vivo; sempre aguarde `lifecycle.close()` para receber erros de desligamento. Se nenhum servidor estiver vinculado, as requisições de Live/Conversations falham com fail closed, enquanto o comportamento do app apenas ordinário permanece inalterado.
 
 Nota: ao chamar `createServeApp` diretamente, o padrão é `fsFactory.trusted = false`. O `writeTextFile` do ACP no lado do agente é rejeitado como `untrusted_workspace`, e um aviso é impresso no stderr uma única vez. Injete `deps.fsFactory` com confiança explícita, injete `deps.bridge` ou aceite o comportamento padrão restrito por confiança.
 

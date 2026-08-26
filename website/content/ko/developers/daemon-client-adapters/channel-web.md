@@ -1,5 +1,3 @@
----
-
 # Channel 및 Web 백엔드 Daemon Adapter 드래프트
 
 ## 목표

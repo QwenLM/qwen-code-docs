@@ -3,7 +3,7 @@
 Меню `/auth` при первом запуске Qwen Code содержит три основных варианта. Выберите тот, который соответствует вашему способу использования CLI:
 
 - **Alibaba ModelStudio**: официальный рекомендуемый вариант. Открывает подменю с **Coding Plan** (для индивидуальных разработчиков · включена недельная квота), **Token Plan** (для команд и компаний · оплата по мере использования с выделенным эндпоинтом) или **Standard API Key** (подключение с существующим API-ключом ModelStudio).
-- **Third-party Providers**: выберите встроенного провайдера и подключитесь с помощью API-ключа (DeepSeek, MiniMax, Z.AI, Idealab, ModelScope, OpenRouter, Requesty).
+- **Third-party Providers**: выберите встроенного провайдера и подключитесь с помощью API-ключа (DeepSeek, Grok, MiniMax, Z.AI, Kimi, Idealab, ModelScope, OpenRouter, Requesty).
 - **Custom Provider**: вручную подключите локальный сервер, прокси или неподдерживаемого провайдера — поддерживаются OpenAI, Anthropic, Gemini и другие совместимые эндпоинты.
 
 > [!note]
@@ -162,7 +162,7 @@ export OPENAI_MODEL="qwen3-coder-plus"
 | OpenAI-совместимый | `openai`             | `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL` (алиас: `QWEN_MODEL`)                            | OpenAI, Azure OpenAI, OpenRouter, Requesty, ModelScope, Alibaba Cloud, любой OpenAI-совместимый эндпоинт |
 | Anthropic         | `anthropic`          | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`                                         | Anthropic Claude                                                                                      |
 | Google GenAI      | `gemini`             | `GEMINI_API_KEY`, `GEMINI_MODEL`                                                                     | Google Gemini                                                                                         |
-| Vertex AI         | `vertex-ai`          | `GOOGLE_API_KEY`, `GOOGLE_MODEL` (устанавливает `GOOGLE_GENAI_USE_VERTEXAI=true`; использует протокол `gemini`) | Google Vertex AI                                                                                      |
+| Vertex AI         | `vertex-ai`          | `GOOGLE_API_KEY` или `GOOGLE_CLOUD_PROJECT` (+ опционально `GOOGLE_CLOUD_LOCATION`), `GOOGLE_MODEL` (использует протокол `gemini`; беспарольная настройка только с проектом не определяется автоматически из окружения, поэтому выберите тип аутентификации явно через `--auth-type vertex-ai` или `security.auth.selectedType`) | Google Vertex AI                                                                                      |
 
 #### Шаг 1: Настройка моделей и провайдеров в `~/.qwen/settings.json`
 

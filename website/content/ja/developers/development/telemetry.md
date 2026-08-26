@@ -89,13 +89,13 @@ Qwen CodeでOpenTelemetryを有効化し、セットアップする方法につ�
    - 成功したツール結果（`gen_ai.tool.call.result`）
    - インタラクションスパンはGenAI推論スパンではないため、引き続き `new_context` を使用します。
 
-   LLM値はプロバイダー最終のSDKリクエストオブジェクトと生プロバイダー応答から取得され、元の論理設定からは取得されません。ツール値は最終呼び出しパラメータと成功したモデル向け結果から取得されます。各標準GenAI値はコンパクトJSONであり、完全でスキーマ有効である必要があります。無効、循環参照、または `sensitiveSpanAttributeMaxLength` より長い値は全体として省略されます。JSONが切り詰められることはなく、プレビュー、ハッシュ、または切り詰めメタデータは出力されません。インタラクション固有の `new_context` 属性は既存の切り詰め動作を保持します。デフォルトの最大値は属性ごとに1 MiB（`1048576`）で、受け入れ範囲は `1..104857600`（100 MiB）です。上限はUTF-8バイト数ではなくJavaScript文字列長として測定されます。したがって、非ASCIIコンテンツはOTLPエクスポート後にバイト数が増加する可能性があります。
+   メインエージェントの入力はコンテキスト展開前の元のユーザーテキスト投影であり、メインエージェントの出力はすべてのツールおよび継続の作業が確定した後の最終的なユーザー可視回答です。LLM値はプロバイダー最終のSDKリクエストオブジェクトと生プロバイダー応答から取得され、その入力には履歴、展開されたファイル、システム指示、およびツール結果が含まれる可能性があり、その出力にはすべてのプロバイダー候補が含まれる可能性があります。ツール値は最終呼び出しパラメータと成功したモデル向け結果から取得されます。各標準GenAI値はコンパクトJSONであり、完全でスキーマ有効である必要があります。無効、循環参照、または `sensitiveSpanAttributeMaxLength` より長い値は全体として省略されます。JSONが切り詰められることはなく、プレビュー、ハッシュ、または切り詰めメタデータは出力されません。インタラクション固有の `new_context` 属性は既存の切り詰め動作を保持します。デフォルトの最大値は属性ごとに1 MiB（`1048576`）で、受け入れ範囲は `1..104857600`（100 MiB）です。上限はUTF-8バイト数ではなくJavaScript文字列長として測定されます。したがって、非ASCIIコンテンツはOTLPエクスポート後にバイト数が増加する可能性があります。
 
 2. **ログからスパンへのブリッジスパン**（ログエンドポイントなしでHTTPトレースがエクスポートされる場合に使用）は、ドロップされる代わりに既存の `prompt`、`function_args`、`response_text` フィールドを保持します。
 
 ⚠️ **セキュリティ警告:** このフラグを有効にすると、完全な会話履歴、`read_file` によって読み取られたファイルの内容、シェルコマンドとその出力（環境変数や引数に含まれるシークレットを含む）、およびモデルの応答が設定されたOTLPバックエンドにストリーミングされます。バックエンドは特権的なデータシンクとして扱ってください。このフラグのデフォルトは `false` です。
 
-**コスト / ペイロードサイズ:** デフォルトの上限では、1つのLLMスパンは入力、出力、システム指示、ツール定義を合わせて最大約4 MiBを保持する可能性があります。1つのToolスパンは引数と結果を合わせて約2 MiBを保持する可能性があります。これはQwen Codeのアプリケーション側の上限であり、すべてのコレクターやバックエンドがそれほど大きな単一の属性を受け入れるという保証ではありません。スパンが拒否またはドロップされる場合は、`sensitiveSpanAttributeMaxLength` を下げ（例: `61440`）、エクスポートのスループットを監視してください。
+**コスト / ペイロードサイズ:** デフォルトの上限では、1つのLLMスパンは入力、出力、システム指示、ツール定義を合わせて最大約4 MiBを保持する可能性があります。1つのToolスパンは引数と結果を合わせて約2 MiBを保持する可能性があります。1つのインタラクションはAgent入力、Agent出力、および互換性の `new_context` を合わせて約3 MiBを保持する可能性があります。これはQwen Codeのアプリケーション側の上限であり、すべてのコレクターやバックエンドがそれほど大きな単一の属性を受け入れるという保証ではありません。スパンが拒否またはドロップされる場合は、`sensitiveSpanAttributeMaxLength` を下げ（例: `61440`）、エクスポートのスループットを監視してください。
 
 この設定はOTelログやその他のTelemetryシンク内のセンシティブデータを無効にするものではありません。非内部API応答のTelemetryは `response_text` を設定する可能性があるため、OTelログ、UI Telemetry、およびチャット記録は、この設定とは独立して応答テキストを受け取る可能性があります。QwenLoggerには `response_text` は含まれません。
 
@@ -256,6 +256,21 @@ LLM プロバイダーもクロスプロセスのトレース結合のために 
 
 `X-Qwen-Code-Session-Id` と `X-Qwen-Code-Request-Id` は **この PR の対象外です**。これらは、同じ `outboundCorrelation.*` 名前空間の下で、それぞれ独自の脅威モデルとオペレーターの同意フローを備えた後続の PR で設計・提案される予定です。PR #4390 のレビュー（LaZzyMan）で、「テレメトリの作業範囲には LLM プロバイダーへの識別子の送信は含まれない」という原則が確立されました。相関ヘッダーの作業は、テレメトリの下に実装するのではなく、独自の設計議論に移行されます。
 
+## インバウンド相関（デーモン HTTP API）
+
+デーモン HTTP API は、すべてのリクエストで標準の W3C `traceparent` ヘッダーを受け付けます。2つのコンシューマーが独立して読み取ります:
+
+- **リクエストスパンの親付け替え（Telemetry有効）。** Telemetry SDK が初期化されると、有効なヘッダーがリクエストスパンのリモート親として抽出されるため、デーモンスパンは新しいトレースを開始する代わりに呼び出し元のトレースの下に配置されます。`_meta` フォワーディングパスも同じ親チェーンを読み取るため、デーモンリクエスト経由でフォワードされるセッションサブプロセススパンもそれを継承します。
+- **アクセスログの `traceId` フィールド（両モード）。** 専用の事前認証キャプチャミドルウェアが、認証（401）で短絡されたもの、レートリミッター（429）、JSONボディパーサー（400）、またはどのルートにもマッチしなかったもの（404）を含むすべてのリクエストでヘッダーを解析し、アクセスログは呼び出し元のトレースIDをキャメルケースの `traceId` フィールドとして出力します。Telemetryが無効な場合、このフィールドはデーモンのログ行と呼び出し元のログ（またはトレースバックエンド）の間の唯一の結合点となるため、1つの保存済みクエリでTelemetry設定なしに両モードで機能します。
+
+無効だが存在するヘッダーは拒否され（スパンは親なしのまま）、レート制限付きのDEBUGブレッドクラム（`qwen-code.daemon.traceparent.invalid`）に拒否された値が記録されるため、壊れたクロスサービス結合はデーモンログのみから診断可能です。
+
+### インバウンド親の下の強制サンプリング
+
+デフォルトの `parentbased_always_on` サンプラー（およびその他のparentbasedデフォルト）では、リモート親の `sampled=0` フラグは呼び出し元側のヘッドベースの決定であり、デーモンTelemetryをドロップするリクエストではないため、抽出はインバウンド親にSAMPLEDフラグを強制します。唯一のオプトアウトは `OTEL_TRACES_SAMPLER=parentbased_always_off` で、これは呼び出し元のフラグを尊重します。これはデーモン全体のルートスパンサンプリングも無効にする点に注意してください。インバウンドリンクされたリクエストだけでなく。
+
+**警告:** 定数の `traceparent`（例: 負荷テストクライアントにハードコードされたもの）は、すべてのデーモンリクエストを1つの単一のトレースに親付け替えします。リクエストごとに新しいヘッダーを生成してください。
+
 ## Aliyun Telemetry
 
 ### 手動 OTLP エクスポート
@@ -385,6 +400,12 @@ Alibaba Cloud Managed Service for OpenTelemetry で Qwen Code のテレメトリ
 
 - `qwen-code.config`: 起動時に CLI 構成とともに 1 回だけ発行されます。
   - **属性**: `model`, `sandbox_enabled`, `core_tools_enabled`, `approval_mode`, `file_filtering_respect_git_ignore`, `debug_mode`, `truncate_tool_output_threshold`, `truncate_tool_output_lines`, `hooks`（カンマ区切り、無効な場合は省略）, `ide_enabled`, `interactive_shell_enabled`, `mcp_servers`, `mcp_servers_count`, `mcp_tools`, `mcp_tools_count`, `output_format`, `skills`, `subagents`
+
+- `session.start`: セッションが開始されます。起動時のテレメトリ初期化後およびセッション切り替えごとに出力されます。ライフサイクルセマンティクスはスパンセクションで説明されています。
+  - **属性**: `session.id` (string)、`session.previous_id` (string、この開始が新しいセッション ID で永続化された会話を継続する場合にのみ存在)
+
+- `session.end`: セッションが終了します。セッション切り替えが現在のセッションを置き換える前、およびテレメトリシャットダウン時に出力されます。
+  - **属性**: `session.id` (string)
 
 - `qwen-code.user_prompt`: ユーザーがプロンプトを送信します。
   - **属性**: `prompt_length` (int), `prompt_id` (string), `prompt` (string, `log_prompts_enabled` が false の場合は除外), `auth_type` (string)
@@ -679,10 +700,17 @@ Alibaba Cloud Managed Service for OpenTelemetry で Qwen Code のテレメトリ
 
 ### Spans
 
-分散トレースの span は `qwen-code.interaction` をルートとするツリーを形成します。各 interaction は独自の `traceId` を持つトレースルートであり、プロンプト間の相関には `session.id` 属性が使用されます。
+分散トレースの span は `qwen-code.interaction` をルートとするツリーを形成します。CLI では、各 interaction は独自の `traceId` を持つトレースルートであり、ACP とデーモンパスはインバウンドの親コンテキストを継承する場合があります。プロンプト間の相関には `session.id` 属性が使用されます。
 
-- `qwen-code.interaction`: 各ユーザープロンプトターンのルート span。
-  - **Attributes**: `session.id`, オプションのARMS拡張 `gen_ai.user.id`, `qwen-code.prompt_id`, `qwen-code.message_type`, `qwen-code.model`, `qwen-code.approval_mode`, `interaction.sequence`, `interaction.duration_ms`, `qwen-code.turn_status` ("ok"/"error"/"cancelled")
+セッションライフサイクルは、OpenTelemetry General Session セマンティック規約を通じてエクスポートされます。OTel ログパイプラインが有効な場合、Qwen Code は必須の `session.id` 属性を持つ `session.start` および `session.end` ログイベントを出力します（上記のコアセッションイベントに記載）。再開された永続化会話には、再開されたセッション ID が現在のものと異なる場合にのみ `session.start` イベントに `session.previous_id` が含まれます。コールドスタートの再開（`--resume`、`--continue`、`--fork-session`）には含まれません。`/clear` およびその他の置換フローは、以前の会話を破棄するため、意図的に継続を主張しません。
+
+既存の Qwen 固有の `qwen-code.config`/`cli_config` および RUM `session_start` レコードは互換性のために引き続き利用可能です。GenAI リクエストスパンは、同じ所有セッション ID に `gen_ai.conversation.id` を引き続き使用します。
+
+- `qwen-code.interaction`: メインエージェントの呼び出し span。1 つの論理プロンプトに対するすべての LLM リクエスト、ツールの承認/実行、および継続をカバーします。ユーザークエリ、リトライ、cron プロンプト、通知、チームメートメッセージ、および Goal ターンは invocation を生成し、ツール結果、フック、および steering は正確なアクティブプロンプト ID を再利用します。
+  - **GenAI 属性**: `gen_ai.operation.name` (`invoke_agent`)、`gen_ai.agent.name` (`qwen-code`)、`gen_ai.conversation.id`、オプションの `gen_ai.output.type`（設定された JSON Schema の場合のみ `json`）、センシティブな `gen_ai.input.messages`、センシティブな `gen_ai.output.messages`、およびオプションの ARMS 拡張 `gen_ai.user.id`
+  - **互換性属性**: `session.id`、`qwen-code.prompt_id`、`qwen-code.message_type`、`qwen-code.model`、`qwen-code.approval_mode`、`interaction.sequence`、`interaction.duration_ms`、`qwen-code.turn_status` ("ok"/"error"/"cancelled")
+  - `gen_ai.request.model` は意図的に省略されています。エージェントはオーバーライド、フォールバック、および動的モデル選択をサポートしているためです。`gen_ai.provider.name` およびエージェント ID/バージョン/説明も省略されています。
+  - エージェント入力は 1 つの元のユーザープロンプトであり、展開されたモデルリクエストではありません。エージェント出力は 1 つの最終的なユーザー可視テキスト投影です。構造化 JSON は `finish_reason=tool_call` を持つコンパクト JSON テキストを使用します。どちらも、センシティブなスパン属性が有効で、完全な JSON が属性ごとの制限に収まる場合を除き省略されます。
 
 - `qwen-code.llm_request`: 単一の LLM API 呼び出しをラップします。
   - **GenAI属性**: `gen_ai.operation.name`, `gen_ai.provider.name`, `gen_ai.conversation.id`, オプションのARMS拡張 `gen_ai.user.id`, `gen_ai.request.model`, `gen_ai.request.stream`, `gen_ai.request.choice.count`, `gen_ai.request.max_tokens`, `gen_ai.request.temperature`, `gen_ai.request.top_p`, `gen_ai.request.frequency_penalty`, `gen_ai.request.presence_penalty`, `gen_ai.request.stop_sequences`, オプションの `gen_ai.output.type`, `gen_ai.response.id`, `gen_ai.response.model`, `gen_ai.response.finish_reasons`, `gen_ai.response.time_to_first_chunk`, `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`, `gen_ai.usage.cache_read.input_tokens`, `gen_ai.usage.cache_creation.input_tokens`
@@ -692,7 +720,7 @@ Alibaba Cloud Managed Service for OpenTelemetry で Qwen Code のテレメトリ
   - ストリーミングリクエストは `gen_ai.request.stream=true` を出力します。`gen_ai.response.time_to_first_chunk` はプロバイダー呼び出しからプロバイダーアダプターによって生成された最初の正規化レスポンスまでの秒数を測定します（生のネットワークフレームと異なる場合があります）。非ストリーミングリクエストは両方の標準ストリーミング属性を省略します。セマンティック規約では `gen_ai.request.stream` が absent の場合、非ストリーミングを意味するためです。
 
 - `qwen-code.tool`: ツールの完全なライフサイクル（承認待機 + 実行）をラップします。
-  - **Attributes**: `session.id`, オプションのARMS拡張 `gen_ai.user.id`, `gen_ai.operation.name` (`execute_tool`), `gen_ai.tool.name`, `gen_ai.tool.type` (`function`), `gen_ai.tool.call.id`, `tool.call_id`, `duration_ms`, `success`, `error`, `tool.failure_kind` (string, オプション — 特定の失敗理由、例: "cancelled", "tool_error", "tool_exception", "timeout", "permission_denied", "pre_hook_blocked")
+  - **Attributes**: `session.id`、オプションの ARMS 拡張 `gen_ai.user.id`、`gen_ai.operation.name` (`execute_tool`)、オプションの継承された `gen_ai.agent.name`、`gen_ai.tool.name`、`gen_ai.tool.type` (`function`)、`gen_ai.tool.call.id`、`tool.call_id`、`duration_ms`、`success`、`error`、失敗時の `error.type`、`tool.failure_kind` (string、オプション — 特定の失敗理由、例: "cancelled", "tool_error", "tool_exception", "timeout", "permission_denied", "pre_hook_blocked")
 
 - `qwen-code.tool.execution`: ツール実行フェーズ（承認後）をラップします。試行された実行に対してのみ出力されます。
   - **Attributes**: `session.id`, `gen_ai.tool.name` (オプション), `tool.call_id` (オプション), `duration_ms`, `success`, `error`, `execution_status` ("success"/"error"/"cancelled"), `error_type`, `error.type`
@@ -705,6 +733,8 @@ Alibaba Cloud Managed Service for OpenTelemetry で Qwen Code のテレメトリ
 
 - `qwen-code.subagent`: 単一のサブエージェント呼び出しをラップします。
   - **Attributes**: `gen_ai.operation.name` (`invoke_agent`), `gen_ai.agent.name`, `gen_ai.agent.description`, `gen_ai.conversation.id`, オプションのARMS拡張 `gen_ai.user.id`, オプションの `gen_ai.request.model`, `qwen-code.subagent.id`, `qwen-code.subagent.name`, `qwen-code.subagent.invocation_kind` ("foreground"/"fork"/"background"), `qwen-code.subagent.is_built_in`, `qwen-code.subagent.depth`, `qwen-code.subagent.status`, `qwen-code.subagent.terminate_reason`, `qwen-code.subagent.duration_ms`
+
+成功およびキャンセルされた GenAI スパンは `SpanStatus` を `UNSET` のままにします。失敗時は `ERROR`、境界付きのステータス説明、および低カーディナリティの `error.type` を設定します。
 
 #### GenAIフィールドの移行とARMS認識
 

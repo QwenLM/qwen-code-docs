@@ -9,7 +9,7 @@ Il existe actuellement deux modes d'hébergement :
 - `qwen channel start [name]` est le service de canal autonome pris en charge par ACP. Il transmet aux adaptateurs une implémentation `AcpBridge` de `ChannelAgentBridge`.
 - `qwen serve --channel <name>` et `qwen serve --channel all` sont des modes expérimentaux gérés par le daemon. Les sélections nommées sont regroupées par workspace propriétaire et `qwen serve` démarre un worker hors processus par runtime propriétaire ; chaque worker se connecte au daemon via le SDK et les adaptateurs reçoivent une façade `ChannelAgentBridge` basée sur `DaemonChannelBridge`. `--channel all` reste une sélection primary uniquement.
 
-En mode géré par le daemon, chaque canal mappe le trafic de chat entrant aux sessions du daemon sous un `SessionScope` configurable (`user`, `thread` ou `single`). L'adaptateur délègue à `DaemonChannelBridge`, qui délègue au `DaemonSessionClient` du SDK (voir [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)). Chaque canal nommé doit résoudre vers exactement un workspace enregistré et fiable. Le worker utilise le cwd canonique de ce runtime, `QWEN_DAEMON_WORKSPACE` et la surcouche d'environnement ; la résolution de propriété ne fallback jamais vers le primary.
+En mode géré par le daemon, chaque canal mappe le trafic de chat entrant aux sessions du daemon sous un `SessionScope` configurable (`user`, `chat_thread` ou `single`). La valeur héritée `thread` reste lisible et modifiable pour les configurations existantes, mais les nouvelles configurations Web Shell ne la proposent pas ; ceci est distinct du knob de création de session `single`/`thread` propre au bridge du daemon. L'adaptateur délègue à `DaemonChannelBridge`, qui délègue au `DaemonSessionClient` du SDK (voir [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)). Chaque canal nommé doit résoudre vers exactement un workspace enregistré et fiable. Le worker utilise le cwd canonique de ce runtime, `QWEN_DAEMON_WORKSPACE` et la surcouche d'environnement ; la résolution de propriété ne fallback jamais vers le primary.
 
 ### Tâches de canal déclenchées par webhook
 
@@ -196,7 +196,7 @@ Les échecs de `connect()` des adaptateurs sont rapportés séparément des erre
 
 | Paramètre                                  | Effet                                                                                                    |
 | ---------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `sessionScope`                           | `'user'` (expéditeur + chat), `'thread'` (thread id ou chat), `'chat_thread'` (canal + chatId + threadId, pour les adaptateurs de polling) ou `'single'` (une session partagée par canal). |
+| `sessionScope`                           | `'user'` (expéditeur + chat), `'chat_thread'` (canal + chatId + threadId), ou `'single'` (une session partagée par canal). L'ancien `'thread'` est préservé lorsqu'il est déjà configuré mais n'est pas proposé pour les nouvelles configurations Web Shell. |
 | `approvalMode`                           | `'auto'` (réponse automatique) / `'prompt'` (affichage de l'UI).                                                         |
 | `allowlist?: string[]`                   | IDs des expéditeurs autorisés ; vide = ouvert à tous.                                                                       |
 | `denylist?: string[]`                    | IDs des expéditeurs refusés.                                                                                        |

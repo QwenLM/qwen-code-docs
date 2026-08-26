@@ -34,7 +34,7 @@ cd your-project
 qwen
 ```
 
-首次启动时，系统会提示你连接一个模型提供商。菜单提供 **Alibaba ModelStudio**（编码计划、Token 计划或标准 API Key）、**第三方提供商**（内置提供商，如 DeepSeek、MiniMax、Z.AI 和 OpenRouter，通过 API key 连接）以及 **自定义提供商**（本地服务器、代理或不支持的提供商）。对于[阿里云编码计划](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index)（[国际版](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)），选择 **Alibaba ModelStudio → Coding Plan**；要使用 ModelStudio API key，选择 **Alibaba ModelStudio → Standard API Key** 并按照 API 设置指南（[北京](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [国际版](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)）操作。然后让我们开始了解你的代码库。试试以下命令之一：
+首次启动时，系统会提示你连接一个模型提供商。菜单提供 **Alibaba ModelStudio**（编码计划、Token 计划或标准 API Key）、**第三方提供商**（内置提供商，如 DeepSeek、MiniMax、Z.AI、Kimi 和 OpenRouter，通过 API key 连接）以及 **自定义提供商**（本地服务器、代理或不支持的提供商）。对于[阿里云编码计划](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index)（[国际版](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)），选择 **Alibaba ModelStudio → Coding Plan**；要使用 ModelStudio API key，选择 **Alibaba ModelStudio → Standard API Key** 并按照 API 设置指南（[北京](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [国际版](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)）操作。然后让我们开始了解你的代码库。试试以下命令之一：
 
 ```
 what does this project do?

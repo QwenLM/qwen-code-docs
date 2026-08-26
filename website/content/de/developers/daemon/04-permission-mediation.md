@@ -198,7 +198,7 @@ Math.max(1, Math.floor(m / 2) + 1);
 | 5                        | 3          | Mehrheit.                       |
 | 6                        | 4          | Mehr als die Hälfte.            |
 
-Für **M = 2** können Split-Votes (A wählt X, B wählt Y) nur durch den anfragebezogenen Permission-Timeout aufgelöst werden: Keine Option erreicht Einstimmigkeit, daher wartet die Anfrage bis `permissionResponseTimeoutMs` (Standard 5 Min.) und löst sich als `{cancelled, timeout}` auf. Der Vote-Advance-Pfad loggt dieses Verhalten „Einstimmigkeit bedeutet, dass Split-Votes ein Timeout haben“ auf stderr für Operatoren.
+Für **M = 2** können Split-Votes (A wählt X, B wählt Y) nur durch Voter-Cancellation, Session-Cancellation oder den optionalen Interaktions-Timeout aufgelöst werden: Keine Option erreicht Einstimmigkeit. `permissionResponseTimeoutMs` ist standardmäßig deaktiviert; wenn konfiguriert, wird ein ungelöster Split als `{cancelled, timeout}` zu diesem Deadline aufgelöst. Der Vote-Advance-Pfad loggt das zutreffende Verhalten auf stderr für Operatoren.
 
 Operatoren, die für M = 2 ein First-Vote-Wins-Verhalten wünschen, können explizit `policy.consensusQuorum: 1` setzen. Strengere Konfigurationen, wie das Erfordernis von Einstimmigkeit für M = 4, verwenden dasselbe Feld.
 

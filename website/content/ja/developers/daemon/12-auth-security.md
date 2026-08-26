@@ -1,5 +1,3 @@
----
-
 # 認証・セキュリティモデル
 
 ## 概要
@@ -8,8 +6,8 @@
 
 1. **バインド** — ループバック以外のバインドでベアラートークンがない場合、**起動を拒否**します。
 2. **ベアラー認証** — `bearerAuth` ミドルウェアは、ループバック上の `/health` を除くすべてのルートを定数時間の SHA-256 比較で保護します（`require_auth` を有効にすると、ループバックと `/health` にも適用されます）。
-3. **ホストヘッダー許可リスト** — ループバックでは、`localhost`、`127.0.0.1`、`[::1]`、`host.docker.internal`（ポート付き）のみを受け入れます。DNS リバインディング攻撃に対する防御です。
-4. **オリジン制御** — デフォルトでは、`Origin` ヘッダーを持つリクエストはすべて 403 で拒否されます。`--allow-origin <pattern>` が設定されると、デーモンは CORS 許可リストモード（`allowOriginCors`）に切り替わり、一致するオリジンのみを許可します。
+3. **ホストヘッダー許可リスト** — ループバックでは、`localhost`、`127.0.0.1`、`[::1]`、`host.docker.internal`（ポート付き）のみを受け入れます。DNS リバインディング攻撃に対する防御です。Local Control LAN リスナーは例外であり、プライマリバインドに関わらず常にアドバタイズされたオーソリティの Host チェックを強制します。
+4. **オリジン制御** — ランタイムアプリは常に可変許可リスト（`MutableOriginAllowlist`）上に `allowOriginCors` をインストールします。`--allow-origin <pattern>` のエントリがシードとなり、Local Control が有効な間は LAN オリジンを追加します。一致しないオリジンには 403 の拒否エンベロープが返されます。無条件の拒否ウォール（`denyBrowserOriginCors`）は、ランタイム起動前にリクエストに応答するブートストラップアプリにのみ残っています。
 5. **ルートごとのミューテーションゲート** — Wave 4 のミューテーションルートは、トークンが設定されていない場合でもループバック上で `401` を返すことをオプトインできます。その際、固有の `code: 'token_required'` エラーを使用します。
 6. **デバイスフロー認証** — プロバイダー向けの独立した OAuth 面（`POST /workspace/auth/device-flow` + `GET/DELETE /:id`）。
 
@@ -57,11 +55,8 @@ if (parsed.allowAny && !token) {
 ```mermaid
 flowchart LR
     REQ[Request] --> SO["strip same-origin Origin<br/>(Web Shell サポート)"]
-    SO --> CORS{"--allow-origin?"}
-    CORS -->|yes| AO["allowOriginCors<br/>(allowlist match)"]
-    CORS -->|no| DC["denyBrowserOriginCors<br/>(reject all Origin)"]
+    SO --> AO["allowOriginCors<br/>(mutable allowlist: --allow-origin<br/>patterns + Local Control LAN origin)"]
     AO --> HA["hostAllowlist"]
-    DC --> HA
     HA --> LOG["access-log middleware<br/>(DaemonLogger)"]
     LOG --> BA["bearerAuth"]
     BA --> RL["rate-limit middleware<br/>(when enabled)"]
@@ -75,7 +70,7 @@ flowchart LR
 
 ### `bearerAuth`
 
-- **トークン未設定** → ミドルウェアは何もしません（ループバック開発者のデフォルト）。
+- **トークン未設定** → ミドルウェアは何もしません（ループバック開発者のデフォルト）。例外: Local Control **LAN リスナー**はリスナースコープであり、常にペアリングされた資格情報を要求します（`CredentialStore.isOpen` は `local-control` に対して true にならないため）、トークンなしのデーモンでもオープンになることはありません。
 - **トークン設定済み** → 設定されたトークンを構築時に SHA-256 で一度ハッシュ化し、リクエストごとに候補をハッシュ化して `timingSafeEqual` で比較します。文字列の等価性によるショートサーキットはありません。タイミング漏洩もありません。
 - **スキーム解析**: RFC 7235 §2.1 に従い、大文字小文字を区別しない `Bearer`。RFC 7230 §3.2.6 BWS に従い、スキームと資格情報の間の `SP\tHTAB` を許容します。HTAB のみを区切り文字として使用する場合は拒否します。
 - **CodeQL による強化**: 手書きの `indexOf` パースを使用し、正規表現の `\s+` / `.+` の重複を避けています（多項式正規表現のリスクなし）。
@@ -89,17 +84,18 @@ flowchart LR
 
 ホスト比較は**大文字小文字を区別しません** — Express はヘッダー名を正規化しますが、値は正規化しないため、ホストを大文字にする Docker プロキシ（`Localhost:4170`、`HOST.docker.internal`）は、完全一致比較では 403 になります。
 
-ループバック以外のバインドはこのミドルウェアをバイパスします（オペレーターが攻撃面を選択したものであり、ベアラートークンがホストスプーフィングを防ぎます）。
+ループバック以外のバインドはプライマリゲートをバイパスします（オペレーターが攻撃面を選択したものであり、ベアラートークンがホストスプーフィングを防ぎます）。Local Control LAN リスナーは例外です: プライマリバインドに関わらず、常にアドバタイズされたオーソリティの Host チェックを強制します。
 
-### `denyBrowserOriginCors`
+### `denyBrowserOriginCors`（ブートストラップアプリのみ）
 
-`Origin` ヘッダーを持つリクエストをすべて拒否します。CLI/SDK は Origin を設定しません。ブラウザのみが設定します。`cors` パッケージのエラーコールバックが生成する 500 HTML ではなく、決定論的な `403 { error: 'Request denied by CORS policy' }` を返します。
+`Origin` ヘッダーを持つリクエストをすべて拒否します。CLI/SDK は Origin を設定しません。ブラウザのみが設定します。`cors` パッケージのエラーコールバックが生成する 500 HTML ではなく、決定論的な `403 { error: 'Request denied by CORS policy' }` を返します。ランタイムアプリはこのウォールをインストールしなくなりました — 可変許可リスト上の `allowOriginCors` を実行します（下記参照）。一致しないオリジンの拒否動作は、マッチしなかったオリジンの分岐としてそこに残っています。このウォールはランタイム起動前にリクエストに応答するブートストラップアプリ（run-qwen-serve.ts）に残っています。
 
 例外: **ループバック**バインドでの Web Shell の同一オリジン XHR は、別のミドルウェア（`server/self-origin.ts` 内）で処理され、ループバックの自己オリジン（`127.0.0.1`、`localhost`、`[::1]`、`host.docker.internal`）のいずれかと一致する場合に `Origin` を削除します。ループバック以外のバインドでは、シェルの XHR は一致しない `Origin` を持つため、デーモンオリジン用に `--allow-origin` が必要です。
 
-### `allowOriginCors`（`--allow-origin` モード）
+### `allowOriginCors`（ランタイムアプリ、常にインストール）
 
-`--allow-origin <pattern>` が設定されると、`denyBrowserOriginCors` は `allowOriginCors(parsed_patterns)` に置き換えられます:
+ランタイムアプリは `allowOriginCors(originAllowlist)` を無条件にインストールします。
+許可リストは `MutableOriginAllowlist` であり、`--allow-origin <pattern>` のエントリ（ない場合もあります）からシードされ、Local Control が有効な間に実行時に拡張されます（LAN オリジンがリスナーとともに追加/削除されます）。
 
 - 一致する `Origin` 値には、`Access-Control-Allow-Origin`、`Access-Control-Allow-Headers`、`Access-Control-Allow-Methods` が付与されます。`OPTIONS` プリフライトは `204` を返します。
 - 一致しない `Origin` 値には、拒否モードと同じ決定論的な `403 { error: 'Request denied by CORS policy' }` が返されます。
@@ -116,10 +112,12 @@ flowchart LR
 | `requireAuth=true`      | any             | パススルー¹                       |
 | `token` 設定済み         | any             | パススルー²                       |
 | トークンなし（ループバック開発） | `strict: false` | パススルー                        |
-| トークンなし（ループバック開発） | `strict: true`  | `401 { code: 'token_required' }` |
+| トークンなし（ループバック開発） | `strict: true`、未認証 | `401 { code: 'token_required' }` |
+| トークンなし（ループバック開発） | `strict: true`、認証済み³ | パススルー          |
 
 ¹ `--require-auth` はトークンがある場合のみ起動するため、グローバル `bearerAuth` が既に未認証の呼び出し元を 401 にしています。
 ² トークンが設定されていると、グローバル `bearerAuth` がどこでもベアラー必須を強制するため、このゲートは冗長ですが無害です。
+³ リスナースコープの資格情報で認証: Local Control LAN リスナーはトークンなしのデーモンでもペアリング資格情報を検証し、リクエストを認証済みとしてスタンプするため、strict ルートはペアリングされた LAN クライアントに対してパススルーされます。
 
 `code: 'token_required'` の形式は `bearerAuth` の単なる `Unauthorized` とは異なり、SDK クライアントは汎用的な 401 の代わりに「`--token` / `--require-auth` を設定してください」というヒントを表示できます。
 
@@ -242,6 +240,7 @@ sequenceDiagram
 ## 状態とライフサイクル
 
 - ベアラートークンは起動時に読み取られ、トリミングされます（`cat token.txt` からの改行が、そうしないと静かに比較を破壊するため）。
+- CLI 専用の `--open-with-auth` モードはブート前に実行されます。決定論的なループバック/Web Shell チェックの後、同じオプション優先環境変数選択を適用し、空でない選択トークンが存在しない場合にのみ、base64url でエンコードされた 32 ランダムバイトで `ServeOptions.token` を埋めます。生成された資格情報はプロセス生存期間を持ち、`process.env` に書き込まれたりデーモンによって永続化されたりせず、既存の URL フラグメントを通じてブラウザに渡されます。Web Shell はブラウザのコピーをタブごとの `sessionStorage` に保持します。素の `--open` と直接の `runQwenServe()` 呼び出し元は決して生成しません。
 - Allowed-Host セットはポートごとにキャッシュされ、ポート変更時に再構築されます（一時的な `0` → `listen` 後の実際のポート）。
 - ミューテーションゲートは `passthrough` と `strictDenier` をアプリビルドごとに一度構築し、ルートごとの呼び出しはキャッシュされたクロージャを返します（リクエストごとのアロケーションはありません）。
 - デバイスフローレジストリは `shutdown()` フェーズ 1 で破棄され、保留中のフローは HTTP ティアダウンの前に `cancelled` として解決されます。
@@ -259,6 +258,7 @@ sequenceDiagram
 | -------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
 | Env            | `QWEN_SERVER_TOKEN`                                                                     | ベアラートークン（トリミング済み）。                                   |
 | フラグ         | `--token`                                                                               | ベアラートークン（環境変数を上書き）。                                 |
+| CLI フラグ     | `--open-with-auth`                                                                      | デーモンブート前にループバック Web Shell のベアラートを再利用または生成。 |
 | フラグ         | `--require-auth`                                                                        | ベアラーをループバックと `/health` に拡張。トークンがないと起動しない。 |
 | フラグ         | `--hostname`                                                                            | ループバック以外のバインドには `--token`（または環境変数）が必要。      |
 | フラグ         | `--allow-origin <pattern>`                                                              | CORS 許可リストモードに切り替え。`'*'` にはトークンが必要。            |
@@ -268,7 +268,7 @@ sequenceDiagram
 
 - **`--require-auth` は機能プリフライトをシャドウする**。未認証のクライアントは `require_auth` タグを発見できません。発見面は 401 ボディそのものです。
 - **ミューテーションゲートのボディパーサー順序**: `mutationGate({strict: true})` の 401 レスポンスは、`express.json()` がボディをパースした**後に**発生します。飽和したループバックリスナーでの最悪のケース: `--max-connections × express.json({limit: '10mb'})` ≈ 2.5 GB の一時的なメモリ。ループバックのみの攻撃面であり、意図的に許容されています。
-- **同一オリジンの Origin 削除**は `server.ts` 内で `denyBrowserOriginCors` の**前**に行われます。将来の変更で削除位置が変わると、Web Shell が機能しなくなります。
+- **同一オリジンの Origin 削除**は `server.ts` 内で `allowOriginCors` の**前**に行われます。将来の変更で削除位置が変わると、Web Shell が機能しなくなります。
 - **トークン比較は SHA-256 ダイジェストに対して行われます**。生のトークンではありません。可変長のトークン比較を固定長のダイジェスト比較にすることで、タイミング漏洩を低減します。
 - デーモンは現在、mTLS、リクエスト署名、ペアトークンの Proof-of-Possession を**サポートしていません**。`--rate-limit` はクライアント ID / IP キーによる HTTP レート制限を提供しますが、クライアント ID 認証ではありません。
 
@@ -281,3 +281,4 @@ sequenceDiagram
 - `packages/cli/src/serve/auth/qwen-device-flow-provider.ts`
 - ユーザー向け脅威モデル: [`../../users/qwen-serve.md`](../../users/qwen-serve.md)
 - ワイヤーリファレンス: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md)
+

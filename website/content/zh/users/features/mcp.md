@@ -219,6 +219,24 @@ summarize @myserver:file:///docs/spec.md and list the open questions
 
 现有的 `timeout` 字段是 **tool-call** 超时（用于每个 `tools/call` 请求，默认 10 分钟），不受 `discoveryTimeoutMs` 影响——长时间运行的工具调用不是启动问题。
 
+### 自动 stdio 协商
+
+Stdio 服务器默认使用单进程旧版初始化流程。要连接到仅支持现代协议的 stdio 服务器，请启用自动协议协商：
+
+```jsonc
+{
+  "mcpServers": {
+    "modern-server": {
+      "command": "node",
+      "args": ["./server.js"],
+      "versionNegotiation": "auto",
+    },
+  },
+}
+```
+
+自动协商会在启动会话进程之前运行一个短期存在的已配置服务器副本，最多可占用五秒的发现预算。对于具有非幂等启动副作用、单所有者锁或 PID 文件、或初始化握手缓慢的服务器，请保留默认的旧版策略。
+
 ### 回退渐进式 MCP
 
 如果你需要旧的同步行为（CLI 在显示任何 UI 之前等待每个 MCP 服务器），请在你的环境中设置 `QWEN_CODE_LEGACY_MCP_BLOCKING=1`。这至少会作为一个逃生舱保留一个版本。
@@ -416,6 +434,7 @@ OAuth 令牌会自动：
 | `env`                  | object                       | 服务器进程的环境变量。值可以使用 `$VAR_NAME` 或 `${VAR_NAME}` 语法引用环境变量                                                                                                                                |
 | `cwd`                  | string                       | Stdio 传输的工作目录                                                                                                                                                                                                                             |
 | `timeout`              | number<br>(default: 600,000) | 请求超时时间（毫秒）（默认值：600,000 毫秒 = 10 分钟）                                                                                                                                                                                                 |
+| `versionNegotiation`   | `"auto" \| "legacy"`<br>(default: `"legacy"`) | 对于 Stdio 服务器，`"auto"` 会在一次性的兄弟进程上进行协议协商。默认值 `"legacy"` 仅启动会话进程。                                                                                                               |
 | `trust`                | boolean<br>(default: false)  | 当为 `true` 时，绕过该服务器的所有工具调用确认（默认值：`false`）                                                                                                                                                                              |
 | `includeTools`         | array                        | 从此 MCP 服务器包含的工具名称列表。指定后，仅此处的工具将从该服务器可用（白名单行为）。如果未指定，默认启用服务器的所有工具。                                       |
 | `excludeTools`         | array                        | 从此 MCP 服务器排除的工具名称列表。此处列出的工具将对模型不可用，即使它们由服务器暴露。<br>注意：`excludeTools` 优先于 `includeTools` - 如果工具同时存在于两个列表中，它将被排除。 |

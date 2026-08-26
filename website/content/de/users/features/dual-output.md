@@ -181,6 +181,8 @@ Wenn nie ein Leser verbunden wird, deaktiviert sich die Brücke automatisch, sob
 
 Ereignisse werden als JSON Lines (ein Objekt pro Zeile) ausgegeben. Das Schema ist dasselbe wie im nicht-interaktiven Modus `--output-format=stream-json`, wobei `includePartialMessages` immer aktiviert ist.
 
+Protokollversion 2 begrenzt textuelle `tool_result.content`-Werte nach der JSON-String-Serialisierung auf 65.536 UTF-8 Bytes. Übergroße Werte werden zu deterministischen Kopf-/Ende-Vorschauen; der Event-Typ und das Feldschema bleiben unverändert. Dies ist ein Feld-Limit, kein universelles JSONL-Frame-Größenlimit.
+
 Das erste Ereignis auf dem Kanal ist immer `system` / `session_start`, das beim Aufbau der Brücke ausgegeben wird. Verwenden Sie es, um den Kanal mit einer Sitzungs-ID zu korrelieren, bevor andere Ereignisse eintreffen.
 
 ```jsonc
@@ -445,7 +447,7 @@ npx tsx demo-embedder.ts
 # Handshake-, Turn-Ende- und Session_End-Ereignisse an die Standardausgabe des Elternprozesses.
 ```
 
-### POC 5 — capability handshake feature detection
+### POC 5 — Capability-Handshake-Feature-Erkennung
 
 Ältere Qwen Code Versionen senden kein `protocol_version`. Behandle das Feld
 als optional und verwende Feature-Detection:

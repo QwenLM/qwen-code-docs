@@ -50,7 +50,7 @@ Todas as opções padrão de canal funcionam com canais personalizados:
 | -------------- | ---------------------------------------------- |
 | `senderPolicy` | `allowlist`, `pairing` ou `open`               |
 | `allowedUsers` | Lista de permissões estática de IDs de remetentes |
-| `sessionScope` | `user`, `thread` ou `single`                   |
+| `sessionScope` | `user`, `chat_thread` ou `single`; o `thread` legado permanece compatível para configurações existentes |
 | `cwd`          | Diretório de trabalho para o agente            |
 | `instructions` | Prefixado à primeira mensagem de cada sessão   |
 | `model`        | Substituição do modelo para o canal            |

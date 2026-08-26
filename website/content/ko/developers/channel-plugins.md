@@ -14,7 +14,7 @@ ChannelBase  →  calls your sendMessage() with the agent's response
 
 `ChannelAgentBridge`는 어댑터 대상 브리지 계약입니다. 현재 독립 실행 `qwen channel start` 경로는 `AcpBridge`를 제공하지만, 플러그인 코드는 생성자 매개변수를 `ChannelAgentBridge`로 타입 지정하여 동일한 어댑터가 나중에 다른 브리지 구현 뒤에서 실행될 수 있도록 해야 합니다.
 
-기존 TypeScript 플러그인을 위한 마이그레이션 노트: 어댑터 생성자 또는 팩토리에서 `bridge`를 `AcpBridge`로 명시적 타입 지정했다면, 해당 타입注解를 `ChannelAgentBridge`로 변경하고 해당 계약이 노출하는 메서드만 계속 사용하세요. JavaScript 플러그인은 런타임에 영향을 받지 않으며, 독립 실행 `qwen channel start`는 여전히 현재 `AcpBridge` 구현을 전달합니다.
+기존 TypeScript 플러그인을 위한 마이그레이션 노트: 어댑터 생성자 또는 팩토리에서 `bridge`를 `AcpBridge`로 명시적 타입 지정했다면, 해당 타입 표기를 `ChannelAgentBridge`로 변경하고 해당 계약이 노출하는 메서드만 계속 사용하세요. JavaScript 플러그인은 런타임에 영향을 받지 않으며, 독립 실행 `qwen channel start`는 여전히 현재 `AcpBridge` 구현을 전달합니다.
 
 ## 런타임 모드
 

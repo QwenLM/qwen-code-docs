@@ -80,7 +80,9 @@ CLI определен в **`packages/cli/src/commands/serve.ts`**:
 | `--token <s>`                           | string                         | env / none                                   | Не-loopback и `--require-auth`           | Bearer-токен; обрезается один раз. **Он отображается в `/proc/<pid>/cmdline`, поэтому предпочтительнее использовать `QWEN_SERVER_TOKEN`**. При запуске в stderr также выводится предупреждение об этом.               |
 | `--max-sessions <n>`                    | number                         | `32`                                         | -                                        | Лимит активных сессий на рабочее пространство. Превышение лимита при создании возвращает 503. `0` означает без ограничений. Значения `NaN` / отрицательные значения вызывают ошибку.                                                          |
 | `--max-total-sessions <n>`              | number                         | вычисляется для нескольких рабочих пространств при запуске/восстановлении | -                                        | Лимит активных сессий для всего демона. Если не указан, конечное значение по умолчанию вычисляется один раз из лимита на рабочее пространство и количества рабочих пространств при запуске/восстановлении; динамическая регистрация не пересчитывает его. `0` означает без ограничений. |
-| `--memory-budget-mb <n>`                | integer в `[1024, 1048576]`    | 50% памяти cgroup/хоста                      | Только наблюдение                        | Общий бюджет памяти для дерева процессов демона, ограниченный доступной памятью. Сообщается в `limits.memory`; моделируется в разделение, которое ничего не применяет.                                                                                                                                                  |
+| `--memory-budget-mb <n>`                | integer в `[1024, 1048576]`    | 50% памяти cgroup/хоста                      | -                                        | Общий бюджет памяти для дерева процессов демона, ограниченный доступной памятью. Ни один дочерний процесс не sizing из него; единственный потребитель на сегодня — адаптивный пул роста live-journal (см. `--max-journal-bytes`). Сообщается в `limits.memory`, включая моделированное разделение на дочерние процессы.                                                                                                                                            |
+| `--max-journal-events <n>`              | positive safe integer          | `10000`                                        | -                                        | Базовый лимит на сессию для записей повтора `liveJournal` в процессе выполнения. Адаптивный рост может увеличить его (см. `--max-journal-bytes`); фиксация любого из флагов journal отключает рост.                                                                                                                                                                                                                                                        |
+| `--max-journal-bytes <n>`               | positive safe integer          | `8388608`                                      | -                                        | Базовый байтовый лимит на сессию для `liveJournal` в процессе выполнения. Превышение увеличивает лимиты по требованию (вдвое, ограничено оставшимся запасом пула) в рамках общесистемного пула 5% от эффективного `--memory-budget-mb` (ограничено `1024` МБ; 0 — рост отключен — когда эффективный бюджет ниже минимума 1024 МБ), не более 256 МиБ на сессию; фиксация любого из флагов journal отключает рост. |
 | `--memory-pressure-mode <mode>`         | `off` \| `observe`             | `observe`                                        | Только наблюдение                        | Сообщает `runtime.memory.pressure` в обоих режимах; только `observe` вызывает проблему `daemon_memory_pressure`. Только корневой процесс.                                                                                                                                                                                |
 | `--child-heap-mode <mode>`              | `off` \| `observe`             | `observe`                                        | Только наблюдение                        | При `observe` сообщает моделированное разделение в `limits.memory.childHeap`; ничего не применяет и ничего не отклоняет. При `off` оба значения этого блока равны `null`.                                                                                                                                               |
 | `--max-pending-prompts-per-session <n>` | number                         | `5`                                          | -                                        | Лимит принятых, но ожидающих/выполняющихся промптов на сессию. Превышение лимита промптов возвращает 503. `0` / `Infinity` означает без ограничений. Отрицательные или нецелые значения вызывают ошибку.              |
@@ -197,23 +199,21 @@ curl -N \
   -H 'Last-Event-ID: 0' \
   'http://127.0.0.1:4170/session/<sid>/events'
 
-# 8. Демо-страница
-open http://127.0.0.1:4170/demo
+# 8. Web Shell UI
+open http://127.0.0.1:4170/
 ```
 
 Если включена bearer-аутентификация, добавьте `-H "Authorization: Bearer $QWEN_SERVER_TOKEN"` к каждому запросу.
 
-## 8. Можно ли использовать демо-страницу?
+## 8. Есть ли браузерный UI?
 
-**Да.** Она реализована через `getDemoHtml(port)` в `packages/cli/src/serve/demo.ts` как самодостаточный HTML без внешних зависимостей.
+**Да — Web Shell.** `resolveWebShellDir()` находит собранные ассеты (bundled рядом с CLI-бандлом в релизе, `packages/web-shell/dist` в репозитории), и `mountWebShellAssets()` раздаёт их по путям `/`, `/assets` и навигациям по документам `/session/:id` (deep links браузера — обычный `curl /session/<id>` получает 401/404 API, а не shell). Если ассеты отсутствуют, демон деградирует до API-only вместо падения; `--no-web` явно отключает UI.
 
-| Режим запуска                       | Где регистрируется `/demo`                                                     | Прямая навигация в браузере                          |
-| --------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------ |
-| Loopback без `--require-auth` | `routes/health-demo.ts`, монтируется `createServeApp()` **до** `bearerAuth` | Работает без токена                                    |
-| Loopback с `--require-auth`    | `routes/health-demo.ts`, монтируется `createServeApp()` **после** `bearerAuth`  | Затруднительно использовать из обычного браузера; используйте curl или SDK |
-| Привязка не к loopback                 | `routes/health-demo.ts`, монтируется `createServeApp()` **после** `bearerAuth`  | Аналогично вышеуказанному                                          |
+Статический shell монтируется **до** `bearerAuth` во всех режимах запуска — браузер не может добавить заголовок `Authorization` к навигации в адресной строке или под ресурсу `<script src>`, поэтому проверка только сломала бы UI. Каждый API-маршрут, который он вызывает, остаётся защищённым токеном, и фронтенд сам прикрепляет bearer. При привязке не к loopback shell доступен только для чтения, если не передан `--allow-origin <origin>` — одноисточниковые POST-запросы несут заголовок `Origin`, который CORS-стена отклоняет (403) — поэтому передавайте `--allow-origin` для любой привязки за пределами loopback.
 
-CSP равен `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'`, плюс `X-Frame-Options: DENY`. Страница может загружать ресурсы только с `'self'` (демона) и не может загружать внешние скрипты или стили.
+CSP собирается через `buildWebShellCsp()` и намеренно мягче, чем для статической страницы (`'unsafe-inline'` для встроенного патча `performance.measure`, `eval`/wasm/blob-воркеры для shiki и mermaid, `data:` для шрифтов katex, `connect-src 'self'` для SSE). `frame-ancestors 'none'` плюс `X-Frame-Options: DENY` блокируют clickjacking, кроме случая, когда origin расширения явно разрешён через `--allow-origin`, чтобы UI можно было размещать в боковой панели Chrome (#5626).
+
+Для прямой инспекции протокола подпишитесь на SSE-поток напрямую (`routes/sse-events.ts`) — см. рецепты curl в разделе 7.
 
 ## 9. Цепочка вызовов от `qwen serve` до прослушивающего сервера
 
@@ -254,11 +254,13 @@ serve/run-qwen-serve.ts              const app = createServeApp(opts, () => actu
    v
 serve/server.ts                    createServeApp() - builds Express app (**does not listen**)
    |  |- middleware chain (Host allowlist / CORS / bearerAuth / mutation gate / rate limit)
-   |  |- route mounting (health / demo / capabilities / workspace / session / SSE / ACP HTTP)
+   |  |- route mounting (health / web-shell static / capabilities / workspace / session / SSE / ACP HTTP)
    |  `- return app
    |
    v
-serve/run-qwen-serve.ts              server = app.listen(port, hostname, cb)
+serve/run-qwen-serve.ts              server = createServer(app) / https.createServer(..., app)
+   |  |- lifecycle.bindServer(server, { startupReady, drainHost })
+   |  |- server.listen(port, hostname)
    |  |- server.maxConnections = cap
    |  |- actualPort = server.address().port
    |  |- write "qwen serve listening on ..."
@@ -271,8 +273,8 @@ commands/serve.ts                  await blockForever()    // блокировк
 
 Ключевые факты:
 
-- **`createServeApp` только собирает приложение; он не начинает прослушивание.** Он возвращает экземпляр `express()` с подключенными middleware и маршрутами. Вызывающая сторона отвечает за `app.listen()`. `server.test.ts` использует эту фабрику именно так примерно в 25 тестах, поэтому фабрика намеренно не управляет жизненным циклом.
-- **`() => actualPort` — это ленивое замыкание.** `actualPort` присваивается в колбэке `app.listen`. Middleware `hostAllowlist` читает его по требованию, поэтому эфемерные порты (`--port 0`) по-прежнему корректно проверяют заголовок `Host`.
+- **`createServeApp` только собирает приложение; он не начинает прослушивание.** Он возвращает экземпляр `express()` с подключенными middleware и маршрутами. Встраивающие модули только для обычных маршрутов могут продолжать управлять `app.listen()` самостоятельно. Встраивающие модули, использующие Live/Conversations, должны привязать actual Node-сервер к экспортируемому жизненному циклу приложения перед прослушиванием и ожидать этот жизненный цикл при завершении работы.
+- **`() => actualPort` — это ленивое замыкание.** `actualPort` присваивается в колбэке `server.listen`. Middleware `hostAllowlist` читает его по требованию, поэтому эфемерные порты (`--port 0`) по-прежнему корректно проверяют заголовок `Host`.
 - **`await blockForever()` используется намеренно.** Если `yargs.parse()` завершается, верхний уровень CLI переходит к точке входа интерактивного TUI (`gemini.tsx`). SIGINT / SIGTERM завершают работу через путь `onSignal` в `runQwenServe`.
 
 ## 10. Разделение файлов HTTP-маршрутов
@@ -281,7 +283,7 @@ commands/serve.ts                  await blockForever()    // блокировк
 
 | Маршруты                                                                                       | Файл                                                    | Точка монтирования                                                                 |
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `/health`, `/demo`                                                                           | `packages/cli/src/serve/routes/health-demo.ts`          | `healthDemoRoutes.register()`                                                  |
+| `/health`                                                                                    | `packages/cli/src/serve/routes/health.ts`               | `healthRoutes.register()`                                                      |
 | `/daemon/status`                                                                             | `packages/cli/src/serve/routes/daemon-status.ts`        | `registerDaemonStatusRoutes()`                                                 |
 | `/capabilities`, маршруты инициализации workspace/инструментов/мутации MCP, HTTP-мост ACP                    | `packages/cli/src/serve/server.ts`                      | Регистрируются напрямую внутри `createServeApp()`                                  |
 | Статус workspace, окружение, preflight, сводки MCP/инструментов/провайдеров/навыков                          | `packages/cli/src/serve/routes/workspace-status.ts`     | `registerWorkspaceStatusRoutes()`, `registerWorkspaceDiagnosticStatusRoutes()` |
@@ -324,11 +326,17 @@ console.log(`Daemon at ${handle.url}`);
 await handle.close(); // programmatic shutdown
 ```
 
-Или получите приложение Express напрямую и начните прослушивание самостоятельно:
+Или получите приложение Express напрямую и привяжите жизненный цикл слушателя самостоятельно. Эта форма необходима, когда встраивающий модуль использует Live/Conversations:
 
 ```ts
-import { createServeApp } from '@qwen-code/qwen-code/serve';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import {
+  createServeApp,
+  getServeAppLifecycle,
+} from '@qwen-code/qwen-code/serve';
 
+let actualPort = 0;
 const app = createServeApp(
   {
     port: 0,
@@ -336,16 +344,27 @@ const app = createServeApp(
     mode: 'http-bridge',
     maxSessions: 20,
   },
-  () => 0,
+  () => actualPort,
   {
     /* deps: bridge, fsFactory, ... */
   },
 );
 
-const server = app.listen(0, '127.0.0.1', () => {
-  console.log('listening on', server.address());
+const lifecycle = getServeAppLifecycle(app);
+const server = createServer(app);
+lifecycle.bindServer(server);
+await new Promise<void>((resolve, reject) => {
+  server.once('error', reject);
+  server.listen(0, '127.0.0.1', () => resolve());
 });
+actualPort = (server.address() as AddressInfo).port;
+console.log('listening on', server.address());
+
+// Остановка допуска, дренирование работы приложения, закрытие слушателя и освобождение владения.
+await lifecycle.close();
 ```
+
+Вызов обычного `server.close()` также запускает ту же очистку на основе событий, но она выполняется по мере возможности (best-effort), если процесс не остаётся активным; всегда ожидайте `lifecycle.close()`, чтобы получить ошибки завершения работы. Если сервер не привязан, запросы Live/Conversations завершаются с ошибкой (fail closed), а обычное поведение приложения остаётся неизменным.
 
 Примечание: при прямом вызове `createServeApp` значение по умолчанию для `fsFactory.trusted` равно `false`. ACP-метод `writeTextFile` на стороне агента отклоняется с ошибкой `untrusted_workspace`, и в stderr выводится предупреждение (один раз). Либо внедрите `deps.fsFactory` с явным указанием доверия, либо внедрите `deps.bridge`, либо примите поведение по умолчанию, ограниченное проверкой доверия.
 
@@ -379,6 +398,6 @@ QWEN_SERVE_DEBUG=1 qwen serve
 - Фабрика Express: `packages/cli/src/serve/server.ts`
 - Middleware: `packages/cli/src/serve/auth.ts`
 - Фабрика моста (Bridge): `packages/acp-bridge/src/bridge.ts`
-- HTML демо-страницы: `packages/cli/src/serve/demo.ts`
+- Статический монтаж Web Shell: `packages/cli/src/serve/web-shell-static.ts`
 - Документация для пользователей: [`../../users/qwen-serve.md`](../../users/qwen-serve.md)
 - Wire-протокол: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md)

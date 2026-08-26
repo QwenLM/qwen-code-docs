@@ -34,7 +34,7 @@ SDK 暴露了 `asKnownDaemonEvent(evt)`。它为已知事件类型返回一个�
 
 | Type                    | Trigger                                                                                                                                                                                                                              | Notes                                                                                                                                                                                                                                                                                                                          |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `client_evicted`        | 每个订阅者的 EventBus 队列溢出。**无 `id`**                                                                                                                                                                                  | `reason: 'queue_overflow' \| 'queue_bytes_overflow' \| string, droppedAfter?: number, queueSize?: number, maxQueued?: number, queuedBytes?: number, maxQueuedBytes?: number, eventBytes?: number`；仅对当前订阅者终止，而 session 保持存活。                                                  |
+| `client_evicted`        | 每个订阅者的 EventBus 队列溢出。**无 `id`**                                                                                                                                                                                  | `reason: 'queue_overflow' \| 'queue_bytes_overflow' \| string, droppedAfter?: number, queueSize?: number, maxQueued?: number, queuedBytes?: number, maxQueuedBytes?: number, eventBytes?: number`；仅对当前订阅者终止，而会话保持存活。                                                  |
 | `slow_client_warning`   | 实时帧积压或实时序列化字节积压 >= 75%；强制推送且**无 `id`**                                                                                                                                          | `queueSize, maxQueued, lastEventId, queuedBytes?, maxQueuedBytes?, threshold?: 'frames' \| 'bytes' \| 'frames_and_bytes'`；当帧和字节测量值均降至 37.5% 以下时重新触发。                                                                                                                                   |
 | `stream_error`          | `SubscriberLimitExceededError` 或其他路由流错误                                                                                                                                                                         | `error: string`；对订阅终止。                                                                                                                                                                                                                                                                                |
 | `state_resync_required` | `subscribe({lastEventId})` 检测到 daemon ring 不再包含 `[lastEventId+1, earliestInRing-1]`，或者客户端游标来自上一个 bus epoch。在剩余的重放帧**之前**强制推送且**无 `id`**。 | `reason: 'ring_evicted' \| 'epoch_reset' \| string`, `lastDeliveredId: number`, `earliestAvailableId: number`。这是一个恢复信号，而非终止信号：SSE 流保持打开，重放 + 实时帧继续。SDK reducer 设置 `awaitingResync = true` 并跳过增量，直到调用者使用 `loadSession` 重置。 |
@@ -76,11 +76,13 @@ SDK 暴露了 `asKnownDaemonEvent(evt)`。它为已知事件类型返回一个�
 | `agent_changed`          | S->C      | `change: 'created' \| 'updated' \| 'deleted', name, level: 'project' \| 'user'`                                                                |
 | `approval_mode_changed`  | S->C      | `sessionId, previous, next, persisted: boolean`                                                                                                |
 | `tool_toggled`           | S->C      | `toolName, enabled`；影响下一次 ACP 子进程生成，不会变更已运行的会话。                                            |
-| `settings_changed`       | S->C      | 工作区设置写入完成。Payload 是开放的；消费者应通过写后读（read-after-write）进行刷新。                                           |
+| `settings_changed`       | S->C      | 工作区设置写入完成。Payload 包含 `key`；`value`、`scope` 和 skill-toggle 的 `mutation` 为可选。                        |
 | `settings_reloaded`      | S->C      | Daemon 工作区服务重新读取设置。Payload 是开放的。                                                                                     |
 | `trust_change_requested` | S->C      | `workspaceCwd, desiredState: 'trusted' \| 'untrusted', reason?`                                                                                |
 | `workspace_initialized`  | S->C      | `path, action: 'created' \| 'overwrote' \| 'noop', originatorClientId?`                                                                        |
 | `github_setup_completed` | S->C      | `releaseTag, readmeUrl, secretsUrl?, workflows: [{path, status, sizeBytes?, error?}], gitignore: {path, status, added?, error?}`               |
+
+Skill toggle API 会附加可选的 `mutation: { id, kind: 'skill_toggle', skills: [{ name, enabled }], activation, sessionsRefreshed, sessionsFailed }`。同一请求产生的每个 `skills.disabled` / `skills.enabled` 事件共享一个 mutation id。其他设置写入省略 `mutation`。工作区服务写入包含 `scope`；其他一些发射器（例如会话模型切换）则省略它。SDK 规范化器将缺失的 `scope` 默认为 `'workspace'`。
 
 `memory_changed` 还涵盖无会话的托管内存任务。对于这些 payload，`scope` 为 `"managed"`，`source` 为 `"workspace_memory_remember"`、`"workspace_memory_forget"` 或 `"workspace_memory_dream"` 之一，`taskId` 是排队的任务 ID，`touchedScopes` 列出已变更的托管内存作用域（`"user"` 和/或 `"project"`）。当 remember/forget/dream 任务完成但未触及托管内存时，不会发出任何事件。
 
@@ -120,10 +122,10 @@ SDK 暴露了 `asKnownDaemonEvent(evt)`。它为已知事件类型返回一个�
 | Type                  | Direction | Trigger                                                                                                             | Key payload fields                                                                                                                                                                               |
 | --------------------- | --------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `prompt_cancelled`    | S->C      | 提示词通过显式的 `cancelSession` 路由**或**发起方 SSE 断开连接而被取消                        | Envelope 为取消客户端打上 `originatorClientId` 戳记。这表示“已请求取消”，而非“已确认取消”。对等订阅者借此得知提示词已结束。              |
-| `turn_complete`       | S->C      | 轮次成功完成                                                                                       | `sessionId, stopReason, promptId?`。`promptId` 关联非阻塞提示词响应（`202`）。SDK 通过它将 SSE 事件与发起的提示词进行匹配。                                  |
+| `turn_complete`       | S->C      | 轮次成功完成                                                                                       | `sessionId, stopReason, promptId?, branchPoint?`。`promptId` 关联非阻塞提示词响应（`202`）。符合条件的已完成轮次包含 `branchPoint: { assistantRecordUuid, checkpointUuid }`。 |
 | `turn_error`          | S->C      | 轮次失败                                                                                                       | `sessionId, message, code?, promptId?`；使用相同的 `promptId` 关联机制。                                                                                                                   |
 | `session_rewound`     | S->C      | `POST /session/:id/rewind` 成功                                                                                | `sessionId, promptId, targetTurnIndex, filesChanged[], filesFailed[], originatorClientId?`                                                                                                       |
-| `session_branched`    | S->C      | `POST /session/:id/branch` 从现有会话创建了一个分支                                                | `sourceSessionId, newSessionId, displayName, originatorClientId?`                                                                                                                                |
+| `session_branched`    | S->C      | 旧版兼容事件；当前 branch 端点直接返回结果，不再发布此事件                                          | `sourceSessionId, newSessionId, displayName, originatorClientId?`。读者保留对旧版生产者的支持。                                                                                                   |
 | `followup_suggestion` | S->C      | ACP 子进程在 `end_turn` 后生成了幽灵文本（ghost-text）后续建议，并通过每个会话的 SSE 转发               | `sessionId, suggestion, promptId`；线路仅传输 `getFilterReason()===null` 的建议。客户端将它们渲染为输入占位符的幽灵文本，并在下一次 `sendPrompt` 时使其失效。 |
 | `user_shell_command`  | S->C      | 用户通过 `POST /session/:id/shell` 启动了 shell 命令；扇出（fanned out）到同一会话中的其他订阅者 | `sessionId, command, shellId, originatorClientId?`。目前还没有类型化的 `DaemonXxxData` 接口；`asKnownDaemonEvent` 返回 `undefined`，UI 规范化器会临时（ad hoc）解析它。            |
 | `user_shell_result`   | S->C      | 上述 shell 命令的结果                                                                                   | `sessionId, shellId, exitCode, output, aborted`。与 `user_shell_command` 相同的临时解析说明。                                                                                               |
@@ -149,6 +151,7 @@ SDK 暴露了 `asKnownDaemonEvent(evt)`。它为已知事件类型返回一个�
 - `alive: boolean` - 在收到终止帧（`session_died`、`session_closed`、`client_evicted`、`stream_error`）后变为 `false`。
 - `currentModelId?: string` - 来自 `model_switched`。
 - `displayName?: string` - 来自 `session_metadata_updated`。
+- `recordingDegraded: boolean` - 来自 `session_recording_degraded` 的粘性会话录制状态；显式的 `session_snapshot.recordingDegraded` 值具有权威性。
 - `pendingPermissions: Record<string, DaemonPermissionRequestData>` - 以 `requestId` 为键的未决请求；通过 `permission_resolved` / `permission_already_resolved` 清除。
 - `lastSessionUpdate?: DaemonSessionUpdateData` - 最新的 `session_update`。
 - `lastModelSwitchFailure?: DaemonModelSwitchFailedData` - 来自 `model_switch_failed`。
@@ -166,7 +169,7 @@ SDK 暴露了 `asKnownDaemonEvent(evt)`。它为已知事件类型返回一个�
 - `workspaceInitCount`, `lastWorkspaceInit?` - 来自 `workspace_initialized`。
 - `mcpRestartCount`, `lastMcpRestart?` - 来自 `mcp_server_restarted`。
 - `mcpRestartRefusedCount`, `lastMcpRestartRefused?` - 来自 `mcp_server_restart_refused`。
-- `settings_changed` / `settings_reloaded` - 被 `asKnownDaemonEvent` 识别；会话 reducer 不维护专用的视图状态字段，UI 通常将它们视为刷新信号。
+- `settings_changed` / `settings_reloaded` - 被 `asKnownDaemonEvent` 识别；会话 reducer 不维护专用的视图状态字段。Skill-toggle 的 `settings_changed` 事件携带可选的 `mutation` 元数据，使宿主可以增量应用 Skill 专属变更而无需重新加载任务。其他 UI 仍可将其视为刷新信号。
 - `permissionVoteProgress: Record<string, DaemonPermissionPartialVoteData>` - 共识投票进度。
 - `forbiddenVotes: DaemonPermissionForbiddenData[]`, `forbiddenVoteCount` - 被策略拒绝的投票记录，上限为 32。
 - `awaitingResync: boolean` - 由 `state_resync_required` 设置；当消费者重置视图状态时清除。
@@ -289,7 +292,7 @@ SDK 访问方式：优先使用 `event._meta?.serverTimestamp`。兼容路径可
 
 ## 注意事项与已知限制
 
-- 七种合成帧类型故意没有 `id`；SDK 代码不得假设每个事件都有 id。
+- 六种合成帧类型故意没有 `id`；SDK 代码不得假设每个事件都有 id。
 - `permission_partial_vote` 仅出现在 `consensus` 下。`permission_forbidden` 出现在 `designated`、`consensus` 和 `local-only` 下，但不出现在 `first-responder` 下。
 - `mcp_child_refused_batch` 仅出现在 `mode: 'enforce'` 中；`warn` 模式永远不会拒绝。
 - `auth_device_flow_*` 事件不是 session 键控的。通过 `DaemonSessionClient` 消费时，请使用 `reduceDaemonAuthEvent` 处理它们，而不是使用 session reducer。

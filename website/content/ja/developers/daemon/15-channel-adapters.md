@@ -9,7 +9,7 @@
 - `qwen channel start [name]` は、スタンドアロンの ACP バックチャネルサービスです。アダプターに `ChannelAgentBridge` の `AcpBridge` 実装を渡します。
 - `qwen serve --channel <name>` および `qwen serve --channel all` は、実験的なデーモン管理モードです。名前付きセレクションは所有ワークスペースごとにグループ化され、`qwen serve` は所有ランタイムごとにプロセス外のワーカーを 1 つ起動します。各ワーカーは SDK を介してデーモンに接続し、アダプターは `DaemonChannelBridge` ベースの `ChannelAgentBridge` ファサードを受け取ります。`--channel all` は引き続きプライマリのみのセレクションです。
 
-デーモン管理モードでは、各チャネルは受信チャットトラフィックを、設定可能な `SessionScope` (`user`、`thread`、または `single`) の下のデーモンセッションにマッピングします。アダプターは `DaemonChannelBridge` に委任し、それは SDK の `DaemonSessionClient` に委任します ([`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md) を参照)。各名前付きチャネルは、登録された 1 つの信頼されたワークスペースに解決される必要があります。ワーカーはそのランタイムの標準 cwd、`QWEN_DAEMON_WORKSPACE`、および環境オーバーレイを使用します。所有権の解決はプライマリにフォールバックすることはありません。
+デーモン管理モードでは、各チャネルは受信チャットトラフィックを、設定可能な `SessionScope` (`user`、`chat_thread`、または `single`) の下のデーモンセッションにマッピングします。レガシーな Channel 値 `thread` は既存の設定では読み書き可能ですが、新しい Web Shell の設定では提供されません。これはデーモンブリッジ独自の `single`/`thread` セッション作成ノブとは別のものです。アダプターは `DaemonChannelBridge` に委任し、それは SDK の `DaemonSessionClient` に委任します ([`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md) を参照)。各名前付きチャネルは、登録された 1 つの信頼されたワークスペースに解決される必要があります。ワーカーはそのランタイムの標準 cwd、`QWEN_DAEMON_WORKSPACE`、および環境オーバーレイを使用します。所有権の解決はプライマリにフォールバックすることはありません。
 
 ### Webhook トリガーのチャネルタスク
 
@@ -96,7 +96,7 @@ abstract class ChannelBase {
 | ------------ | ------------------------------- | -------------------------------------------------------- | ----------------------------------- | ------------------------------------------------- |
 | **DingTalk** | WebSocket ストリーム                | `senderStaffId` (グループの場合はオプションで `conversationId`) | DT markdown 経由のインラインボタン      | `ChannelConfig.approvalMode = 'auto' \| 'prompt'` |
 | **WeChat**   | HTTP ロングポール                  | `senderWxid` (グループの場合はオプションで `groupWxid`)                    | 応答トークンを使用したテキストのみのプロンプト | 同上                                              |
-| **Telegram** | Bot API ロングポール               | `from.id` (グループの場合はオプションで `chat.id` for groups)              | インラインキーボードボタン             | 同上                                              |
+| **Telegram** | Bot API ロングポール               | `from.id` (グループの場合はオプションで `chat.id`)              | インラインキーボードボタン             | 同上                                              |
 | **Feishu**   | WebSocket ストリーム / HTTP webhook | `sender.open_id` (グループの場合はオプションで `chat_id`)       | インタラクティブカードボタン            | 同上                                              |
 | **GitHub**   | Notifications API ポーリング       | 数値の `user.id` (不変。ログイン名は接続時に解決) | エラーコメント + 再メンション          | `senderPolicy: 'allowlist' \| 'open'`             |
 | **GitLab**   | Todos API ポーリング               | `author.username` (小文字化)                           | ログ + 再メンション                    | `senderPolicy: 'allowlist' \| 'open'`             |
@@ -196,7 +196,7 @@ sequenceDiagram
 
 | 設定項目                                     | 効果                                                                                                                                                                         |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `sessionScope`                           | `'user'` (送信者 + チャット)、`'thread'` (スレッド ID またはチャット)、`'chat_thread'` (チャネル + chatId + threadId、ポーリングアダプター用)、または `'single'` (チャネルごとに 1 つの共有セッション)。 |
+| `sessionScope`                           | `'user'` (送信者 + チャット)、`'chat_thread'` (チャネル + chatId + threadId)、または `'single'` (チャネルごとに 1 つの共有セッション)。レガシーの `'thread'` はすでに設定されている場合は保持されますが、新しい Web Shell の設定では提供されません。 |
 | `approvalMode`                           | `'auto'` (自動応答) / `'prompt'` (UI のレンダリング)。                                                                                                                              |
 | `allowlist?: string[]`                   | 許可される送信者 ID。未指定 = オープン。                                                                                                                                            |
 | `denylist?: string[]`                    | 拒否される送信者 ID。                                                                                                                                                             |

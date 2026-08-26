@@ -553,6 +553,7 @@ export function VideoShowcaseIndex({ items, learningPaths, viewLabel = "查看�
       </section>
 
       {/* Learning Paths */}
+      {learningPaths.length > 0 && (
       <section className="w-full px-4 md:px-8 pt-4 pb-10">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-2xl font-bold tracking-tight text-zinc-900 [html.dark_&]:text-zinc-100 mb-2">
@@ -604,6 +605,7 @@ export function VideoShowcaseIndex({ items, learningPaths, viewLabel = "查看�
           </div>
         </div>
       </section>
+      )}
 
       {/* Divider */}
       <div className="w-full px-4 md:px-8">

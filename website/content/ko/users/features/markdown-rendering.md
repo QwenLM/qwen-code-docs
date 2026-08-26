@@ -30,6 +30,10 @@ Qwen Code는 일반적인 Markdown 구조를 TUI에서 직접 렌더링하여 �
 
 허용되는 값은 `"render"`와 `"raw"`입니다. 단축키는 현재 세션 뷰만 변경하며 설정 파일을 다시 작성하지 않습니다.
 
+## 어시스턴트 및 도구 이미지
+
+이미지 파트는 별도의 TUI 표시 경로를 사용하며 Markdown `render`와 `raw` 모드에서 동일하게 동작합니다. 터미널 지원, 폴백, 제한, 채널 전달 및 세션 기록 동작은 [Terminal Images](./terminal-images.md)를 참조하세요.
+
 ## Mermaid
 
 `render` 모드에서 펜스 `mermaid` 코드 블록이 시각적으로 렌더링됩니다. TUI는 계층적 전략을 사용합니다:

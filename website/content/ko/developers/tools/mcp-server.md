@@ -120,6 +120,7 @@ MCP 서버는 `settings.json` 파일에서 두 가지 주요 방식으로 구성
 - **`env`** (object): 서버 프로세스를 위한 환경 변수. 값은 `$VAR_NAME` 또는 `${VAR_NAME}` 구문을 사용하여 환경 변수를 참조할 수 있습니다.
 - **`cwd`** (string): Stdio 전송을 위한 작업 디렉터리
 - **`timeout`** (number): 밀리초 단위의 요청 타임아웃 (기본값: 600,000ms = 10분)
+- **`versionNegotiation`** (`"auto" | "legacy"`, 기본값: `"legacy"`): Stdio 서버의 경우, `"auto"`는 일회용 형제 프로세스에서 `server/discover` 프로브를 활성화합니다.
 - **`trust`** (boolean): `true`일 때, 신뢰할 수 있는 워크스페이스에서 이 서버에 대한 도구 호출 확인을 건너뜁니다 (기본값: `false`)
 - **`includeTools`** (string[]): 이 MCP 서버에서 포함할 도구 이름 목록입니다. 지정되면 이 목록에 있는 도구만 이 서버에서 사용할 수 있습니다(허용 목록 동작). 지정되지 않으면 서버의 모든 도구가 기본적으로 활성화됩니다.
 - **`excludeTools`** (string[]): 이 MCP 서버에서 제외할 도구 이름 목록입니다. 여기에 나열된 도구는 서버에서 노출되더라도 모델에서 사용할 수 없습니다. **참고:** `excludeTools`는 `includeTools`보다 우선합니다. 도구가 두 목록 모두에 있으면 제외됩니다.

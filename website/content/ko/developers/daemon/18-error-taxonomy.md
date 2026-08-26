@@ -39,7 +39,7 @@
 
 | Class                                 | HTTP | 원인                                                                                  | 해결 방법                                                                                                                                                                         |
 | ------------------------------------- | ---- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SessionNotFoundError`                | 404  | sessionId가 `byId`에 없음.                                                            | 세션을 재생성하거나 attach; 세션이 회수되었을 수 있음.                                                                                                                            |
+| `SessionNotFoundError`                | 404  | sessionId가 `byId`에 없음(`code: "session_not_found"`) 또는 세션이 종료 중(`code: "session_closing"`).                                                | `session_not_found`의 경우: 세션을 재생성하거나 attach; 세션이 회수되었을 수 있음. `session_closing`의 경우: 대기 후 재시도; 동시 close가 진행 중. DELETE 라우트는 `session_closing`을 멱등 성공으로 처리. |
 | `WorkspaceMismatchError`              | 400  | `POST /session` `cwd` ≠ 데몬의 `boundWorkspace`.                                      | `cwd`를 생략(바인딩된 값 사용)하거나 해당 `cwd`에 바인딩된 데몬으로 라우팅.                                                                                                       |
 | `SessionLimitExceededError`           | 503  | `byId.size >= maxSessions`.                                                           | 오래된 세션을 종료; `--max-sessions`를 증가.                                                                                                                                      |
 | `InvalidClientIdError`                | 400  | `X-Qwen-Client-Id`가 `[A-Za-z0-9._:-]{1,128}` 범위를 벗어남.                          | 클라이언트 ID를 정리.                                                                                                                                                             |
@@ -105,7 +105,7 @@
 | ------ | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `401`  | `{ error: 'Unauthorized' }`                  | 누락 / 잘못된 / 스킴 없는 bearer 토큰. `missing header` / `wrong scheme` / `wrong token`에 대해 동일하게 응답하여 프로빙으로 구별할 수 없음.   |
 | `401`  | `{ error: '...', code: 'token_required' }`   | 토큰 없는 루프백 데몬의 mutation-gate strict 라우트. SDK가 "configure --token / --require-auth" 힌트를 렌더링.                                |
-| `403`  | `{ error: 'Request denied by CORS policy' }` | `denyBrowserOriginCors`가 `Origin` 헤더가 포함된 요청을 거부.                                                                                 |
+| `403`  | `{ error: 'Request denied by CORS policy' }` | `allowOriginCors`(런타임) / `denyBrowserOriginCors`(부트스트랩)가 `Origin` 헤더가 포함된 요청을 거부.                                        |
 | `403`  | `{ error: 'Invalid Host header' }`           | `hostAllowlist`가 `Host` 헤더를 거부(DNS rebinding 방어).                                                                                     |
 
 전체 인증 모델은 [`12-auth-security.md`](./12-auth-security.md)를 참조.

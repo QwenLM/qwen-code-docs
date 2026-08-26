@@ -46,17 +46,17 @@ Der `type` muss mit einem Channel-Typ übereinstimmen, der von einer installiert
 
 Alle Standard-Channel-Optionen funktionieren auch mit benutzerdefinierten Channels:
 
-| Option         | Beschreibung                                   |
-| -------------- | ---------------------------------------------- |
-| `senderPolicy` | `allowlist`, `pairing` oder `open`             |
-| `allowedUsers` | Statische Allowlist der Sender-IDs             |
-| `sessionScope` | `user`, `thread` oder `single`                 |
-| `cwd`          | Arbeitsverzeichnis für den Agenten             |
-| `instructions` | Wird der ersten Nachricht jeder Session vorangestellt |
-| `model`        | Model-Override für den Channel                 |
-| `groupPolicy`  | `disabled`, `allowlist`, `pairing` oder `open`     |
-| `dmPolicy`     | `open` oder `disabled`                           |
-| `groups`       | Einstellungen pro Gruppe                       |
+| Option         | Beschreibung                                                                                        |
+| -------------- | -------------------------------------------------------------------------------------------------- |
+| `senderPolicy` | `allowlist`, `pairing` oder `open`                                                                  |
+| `allowedUsers` | Statische Allowlist der Sender-IDs                                                                     |
+| `sessionScope` | `user`, `chat_thread` oder `single`; Legacy-`thread` bleibt für bestehende Konfigurationen kompatibel |
+| `cwd`          | Arbeitsverzeichnis für den Agenten                                                                    |
+| `instructions` | Wird der ersten Nachricht jeder Session vorangestellt                                                     |
+| `model`        | Model-Override für den Channel                                                                     |
+| `groupPolicy`  | `disabled`, `allowlist`, `pairing` oder `open`                                                      |
+| `dmPolicy`     | `open` oder `disabled`                                                                               |
+| `groups`       | Einstellungen pro Gruppe                                                                                 |
 
 Details zu den einzelnen Optionen findest du in der [Übersicht](./overview).
 

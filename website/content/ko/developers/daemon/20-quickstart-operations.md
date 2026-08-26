@@ -16,7 +16,7 @@ qwen serve: bound to workspace "/your/cwd"
 qwen serve: bearer auth disabled (loopback default). Set QWEN_SERVER_TOKEN to enable.
 ```
 
-브라우저에서 `http://127.0.0.1:4170/`를 열면 Web Shell UI를 확인할 수 있습니다: 채팅, 세션 목록, 워크스페이스 검사. `createServeApp()`는 번들된 Web Shell 자산(`packages/cli/src/serve/web-shell-static.ts`)을 `bearerAuth` **이전에** 마운트하므로 토큰 없이 셸 자체가 로드됩니다; 셸의 API 호출은 bearer가 설정되어 있으면 이를 전달합니다 — 인증이 활성화되어 있으면 `--open`(토큰을 URL 프래그먼트에 넣어 서버로 전송되지 않음)으로 데몬을 시작하거나 `#token=…`을 수동으로 추가하세요. `--no-web`은 이를.opt-out하여 데몬을 API 전용으로 남깁니다.
+브라우저에서 `http://127.0.0.1:4170/`를 열면 Web Shell UI를 확인할 수 있습니다: 채팅, 세션 목록, 워크스페이스 검사. `createServeApp()`는 번들된 Web Shell 자산(`packages/cli/src/serve/web-shell-static.ts`)을 `bearerAuth` **이전에** 마운트하므로 토큰 없이 셸 자체가 로드됩니다; 셸의 API 호출은 bearer가 설정되어 있으면 이를 전달합니다 — 인증이 활성화되어 있으면 `--open`(토큰을 URL 프래그먼트에 넣어 서버로 전송되지 않음)으로 데몬을 시작하거나 `#token=…`을 수동으로 추가하세요. `--no-web`은 opt-out하여 데몬을 API 전용으로 남깁니다.
 
 ## 2. 실행 레시피
 
@@ -80,7 +80,9 @@ CLI는 **`packages/cli/src/commands/serve.ts`**에 정의됨:
 | `--token <s>`                           | string                         | env / none                                       | 비루프백 및 `--require-auth`             | Bearer 토큰; 한 번 trim됨. **`/proc/<pid>/cmdline`에 나타나므로 `QWEN_SERVER_TOKEN`을 선호**. 부트 stderr에서도 이에 대해 경고.                                                                                                                                                                                       |
 | `--max-sessions <n>`                    | number                         | `32`                                             | -                                        | 워크스페이스별 활성 세션 상한. 초과 시 503 반환. `0`은 무제한. `NaN` / 음수 값은 throw.                                                                                                                                                                                                                                |
 | `--max-total-sessions <n>`              | number                         | 다중 워크스페이스 시작/복원에 따라 파생          | -                                        | 데몬 전체 활성 세션 상한. 생략 시 워크스페이스별 상한과 시작/복원 워크스페이스 수에서 유한 기본값이 한 번 파생되며, 동적 등록은 재계산하지 않음. `0`은 무제한.                                                                                                                                                          |
-| `--memory-budget-mb <n>`                | `[1024, 1048576]` 범위의 정수   | cgroup/호스트 메모리의 50%                        | 관찰 전용                                | 데몬 프로세스 트리의 총 메모리 예산, 해석된 사용 가능 메모리로 제한. `limits.memory` 아래에 보고되며 아무것도 적용하지 않는 파티션으로 모델링됨.                                                                                                                                                                      |
+| `--memory-budget-mb <n>`                | `[1024, 1048576]` 범위의 정수   | cgroup/호스트 메모리의 50%                        | -                                        | 데몬 프로세스 트리의 총 메모리 예산, 해석된 사용 가능 메모리로 상한. 어떤 자식도 이 값으로부터 크기가 정해지지 않으며, 유일한 소비자는 적응형 live-journal 성장 풀(`--max-journal-bytes` 참조). 모델링된 자식별 파티션을 포함하여 `limits.memory` 아래에 보고.                                                                                                                        |
+| `--max-journal-events <n>`              | 양의 안전 정수                 | `10000`                                          | -                                        | 세션별 인-플라이트 `liveJournal` 리플레이 항목의 기본 상한. 적응형 성장이 이를 올릴 수 있음(`--max-journal-bytes` 참조); 어느 journal 플래그라도 고정하면 성장 비활성화.                                                                                                                                                                                                             |
+| `--max-journal-bytes <n>`               | 양의 안전 정수                 | `8388608`                                        | -                                        | 인-플라이트 `liveJournal`의 세션별 기본 바이트 상한. 증가하는 turn이 요구에 따라 상한을 성장시킴(풀의 남은 여유 내에서 2배까지, 데몬 전체 풀의 유효 `--memory-budget-mb`의 5% 이내, `1024` MB 상한; 유효 예산이 1024 MB 최소값 미만이면 0 — 성장 비활성화), 세션당 256 MiB 하드 상한을 초과하지 않음; 어느 journal 플래그라도 고정하면 성장 비활성화. |
 | `--memory-pressure-mode <mode>`         | `off` \| `observe`             | `observe`                                        | 관찰 전용                                | 두 모드 모두 `runtime.memory.pressure`를 보고; `observe`만 `daemon_memory_pressure` 이슈를 발생. 루트 프로세스만 해당.                                                                                                                                                                                                |
 | `--child-heap-mode <mode>`              | `off` \| `observe`             | `observe`                                        | 관찰 전용                                | `observe`에서는 모델링된 파티션을 `limits.memory.childHeap` 아래에 보고; 아무것도 적용하거나 거부하지 않음. `off`에서는 해당 블록의 두 수치가 `null`.                                                                                                                                                                  |
 | `--max-pending-prompts-per-session <n>` | number                         | `5`                                              | -                                        | 세션당 수락되었지만 대기/실행 중인 프롬프트 상한. 초과 시 503 반환. `0` / `Infinity`는 무제한. 음수 또는 비정수 값은 throw.                                                                                                                                                                                            |
@@ -257,7 +259,9 @@ serve/server.ts                    createServeApp() - Express 앱 빌드 (**리�
    |  `- return app
    |
    v
-serve/run-qwen-serve.ts              server = app.listen(port, hostname, cb)
+serve/run-qwen-serve.ts              server = createServer(app) / https.createServer(..., app)
+   |  |- lifecycle.bindServer(server, { startupReady, drainHost })
+   |  |- server.listen(port, hostname)
    |  |- server.maxConnections = cap
    |  |- actualPort = server.address().port
    |  |- "qwen serve listening on ..." 출력
@@ -270,8 +274,8 @@ commands/serve.ts                  await blockForever()    // 시그널까지 �
 
 핵심 사실:
 
-- **`createServeApp`은 빌드만 수행; 리스닝하지 않음.** 미들웨어와 라우트가 마운트된 `express()` 인스턴스를 반환. 호출자가 `app.listen()`을 소유. `server.test.ts`는 약 25개 케이스에서 이 방식으로 팩토리를 사용하므로, 팩토리는 의도적으로 수명 주기를 소유하지 않음.
-- **`() => actualPort`는 지연 클로저.** `actualPort`는 `app.listen` 콜백에서 할당됨. `hostAllowlist` 미들웨어는 필요 시 이를 읽으므로 임시 포트(`--port 0`)도 `Host` 헤더를 올바르게 게이트.
+- **`createServeApp`은 빌드만 수행; 리스닝하지 않음.** 미들웨어와 라우트가 마운트된 `express()` 인스턴스를 반환. 일반 전용 임베더는 계속 `app.listen()`을 소유할 수 있음. Live/Conversations를 사용하는 임베더는 리스닝 전에 실제 Node 서버를 내보낸 앱 수명주기에 바인딩하고 종료 시 해당 수명주기를 대기해야 함.
+- **`() => actualPort`는 지연 클로저.** `actualPort`는 `server.listen` 콜백에서 할당됨. `hostAllowlist` 미들웨어는 필요 시 이를 읽으므로 임시 포트(`--port 0`)도 `Host` 헤더를 올바르게 게이트.
 - **`await blockForever()`는 의도적.** `yargs.parse()`가 resolve되면 CLI 최상위 레벨이 대화형 TUI 진입점(`gemini.tsx`)으로 전달됨. SIGINT / SIGTERM은 `runQwenServe`의 `onSignal` 경로를 통해 종료.
 
 ## 10. HTTP 라우트 파일 분할
@@ -323,11 +327,17 @@ console.log(`Daemon at ${handle.url}`);
 await handle.close(); // 프로그래밍적 종료
 ```
 
-또는 Express 앱을 직접 가져와 직접 리스닝:
+또는 Express 앱을 직접 가져와 리스너 수명주기를 직접 바인딩합니다. 이 형태는 임베더가 Live/Conversations를 사용할 때 필요합니다:
 
 ```ts
-import { createServeApp } from '@qwen-code/qwen-code/serve';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import {
+  createServeApp,
+  getServeAppLifecycle,
+} from '@qwen-code/qwen-code/serve';
 
+let actualPort = 0;
 const app = createServeApp(
   {
     port: 0,
@@ -335,16 +345,27 @@ const app = createServeApp(
     mode: 'http-bridge',
     maxSessions: 20,
   },
-  () => 0,
+  () => actualPort,
   {
     /* deps: bridge, fsFactory, ... */
   },
 );
 
-const server = app.listen(0, '127.0.0.1', () => {
-  console.log('listening on', server.address());
+const lifecycle = getServeAppLifecycle(app);
+const server = createServer(app);
+lifecycle.bindServer(server);
+await new Promise<void>((resolve, reject) => {
+  server.once('error', reject);
+  server.listen(0, '127.0.0.1', () => resolve());
 });
+actualPort = (server.address() as AddressInfo).port;
+console.log('listening on', server.address());
+
+// 수용을 중지하고, 앱 작업을 드레인하고, 리스너를 종료하고, 소유권을 해제합니다.
+await lifecycle.close();
 ```
+
+원시 `server.close()`를 호출해도 동일한 이벤트 기반 정리가 시작되지만, 프로세스가 살아 있지 않으면 최선 노력일 뿐입니다. 항상 `lifecycle.close()`를 대기하여 종료 오류를 수신하세요. 서버가 바인딩되지 않으면 Live/Conversations 요청은 닫히지만 일반 전용 앱 동작은 변하지 않습니다.
 
 참고: `createServeApp`을 직접 호출할 때 기본 `fsFactory.trusted = false`. 에이전트 측 ACP `writeTextFile`이 `untrusted_workspace`로 거부되며 stderr 경고가 한 번 출력됨. 명시적 trust와 함께 `deps.fsFactory`를 주입하거나, `deps.bridge`를 주입하거나, trust-gate 기본 동작을 수용.
 

@@ -1,5 +1,3 @@
----
-
 # SSE Event Bus と Backpressure
 
 ## 概要

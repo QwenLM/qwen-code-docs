@@ -101,7 +101,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `/model --voice`  | 设置用于语音转录的模型                                       | `/model --voice <model-id>`                                                                               |
 | `/model --vision` | 设置 vision-bridge 模型，用于为纯文本主模型转录图像 | `/model --vision <model-id>`                                                                              |
 | `/model --compaction` | 设置用于聊天压缩的模型                                                                 | `/model --compaction <model-id>`, `/model --compaction clear`                                             |
-| `/model --image`  | 为内置图片生成工具设置纯图片模型                                                           | `/model --image <model-id>`                                                                               |
+| `/model --image`  | 为内置图片生成工具设置具备图片生成能力的模型                                               | `/model --image <model-id>`                                                                               |
 | `/effort`         | 设置具备思考能力的模型的推理 effort                                 | `/effort` (打开选择器), `/effort high` (low/medium/high/xhigh/max；根据提供商进行映射和限制)       |
 | `/extensions`     | 管理扩展                                                                | `/extensions list`, `/extensions manage`                                                                  |
 | → `list`          | 列出已安装的扩展                                                        | `/extensions list`                                                                                        |
@@ -132,7 +132,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 > [!note]
 >
-> `/workflows`、`/lsp` 和 `/trust` 仅在其对应功能启用时才会注册——分别通过 `QWEN_CODE_ENABLE_WORKFLOWS=1` 环境变量、`--experimental-lsp` CLI 标志和 `security.folderTrust.enabled` 设置。禁用时它们不会出现，并会报告未知命令。同样，`/dream` 和 `/forget` 仅在托管 auto-memory 可用时才会注册；不可用时它们不会出现。
+> `/workflows`、`/lsp` 和 `/trust` 仅在其对应功能启用时才会注册——分别通过用户/系统作用域的 `tools.workflowsEnabled` 设置或 `QWEN_CODE_ENABLE_WORKFLOWS=1` 环境变量、`--experimental-lsp` CLI 标志和 `security.folderTrust.enabled` 设置。`tools.workflowsEnabled` 的工作区值会被忽略。禁用时它们不会出现，并会报告未知命令。同样，`/dream` 和 `/forget` 仅在托管 auto-memory 可用时才会注册；不可用时它们不会出现。
 
 ### 1.5 内置 Skills
 
@@ -141,6 +141,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | 命令         | 描述                                                        | 使用示例                                          |
 | ------------ | ----------------------------------------------------------- | ------------------------------------------------- |
 | `/review`    | 多代理代码审查（high effort 下 12 个并行代理）         | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
+| `/coordinate`| 协调只读 worker 和一个可选的 worktree writer            | `/coordinate investigate and fix the authentication regression`           |
 | `/loop`      | 按定期计划运行 prompt                                       | `/loop 5m check the build`                        |
 | `/simplify`  | 审查最近的更改并直接应用安全的清理编辑                      | `/simplify`, `/simplify focus on duplication`     |
 | `/qc-helper` | 回答有关 Qwen Code 使用和配置的问题                         | `/qc-helper how do I configure MCP?`              |
@@ -215,9 +216,72 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 >
 > 当你需要快速得到答案而不偏离主任务时，请使用 `/btw`。它对于澄清概念、核实事实或在专注于主要工作流时获取快速解释特别有用。
 
-### 1.7 会话回顾 (`/recap`)
+### 1.7 第二意见 (`/advisor`)
 
-`/recap` 命令会生成当前会话的简短“上次离开时”摘要，以便你可以恢复旧对话，而无需向上翻阅数页历史记录。
+`/advisor` 命令对目前为止的对话进行独立的只读审查，并返回结构化的第二意见——不会执行任务，也不会中断主对话。
+
+| 命令               | 描述                           |
+| ------------------ | ------------------------------ |
+| `/advisor`         | 审查上面的对话                 |
+| `/advisor <focus>` | 将审查聚焦于特定关注点         |
+
+**工作原理：**
+
+- 审查以单独的单轮 API 调用发送，带有最近的对话上下文（最多 40 条消息）
+- 审查模型**无法执行工具**——工具在请求级别被剥离（与 `/btw` 相同的机制），因此审查永远不会编写代码或运行命令；每个结论都必须基于可见的对话记录
+- 主对话**不会**被中断；审查结果仅展示给你
+- 审查渲染为带边框的 markdown 块，包含四个固定部分——**裁决**、**风险**、**缺失证据**和**建议**——在 `/advisor · <model>` 标题下标注解析后的审查模型
+- 与 `/btw` 不同（`/btw` 是 fire-and-forget，会话保持可用），`/advisor` 会阻塞输入直到审查返回；在完整上下文窗口上使用强审查模型时，这可能需要数十秒
+- 默认使用主模型；设置 [`advisorModel`](../configuration/settings.md#advisormodel) 可将审查路由到不同（通常更强）的模型——最近的对话记录会发送给该模型，即使它使用另一个提供者
+
+**示例：**
+
+```
+> /advisor is my fix for the null check actually correct?
+
+  Consulting advisor...
+
+  ╭──────────────────────────────────────────────────────╮
+  │ /advisor · qwen3-max                                 │
+  │                                                      │
+  │ Verdict                                              │
+  │ The approach is sound, but the edge case at line 42  │
+  │ is unverified.                                       │
+  │                                                      │
+  │ Risks                                                │
+  │  - The fix assumes the config is always loaded; a    │
+  │    startup race could leave it null.                 │
+  │                                                      │
+  │ Missing evidence                                     │
+  │  - No test exercises the null-config path in the     │
+  │    visible transcript.                               │
+  │                                                      │
+  │ Recommendation                                       │
+  │ Add a focused unit test for the null-config branch   │
+  │ before merging.                                      │
+  ╰──────────────────────────────────────────────────────╯
+```
+
+审查渲染在带边框的框中，其标题标注解析后的审查模型。未知的 `advisorModel` 不会预先验证——如果提供者拒绝它，`/advisor` 会报告失败，因此请检查模型名称；只有无法解析的别名选择器（例如 `fast` 但未配置快速模型）才会回退到主模型。Advisor 请求不使用配置的模型回退。
+
+**支持的执行模式：**
+
+| 模式                 | 行为                                            |
+| -------------------- | ----------------------------------------------- |
+| Interactive          | 在对话中渲染四部分审查                          |
+| ACP (Agent Protocol) | 将审查作为消息结果返回                          |
+
+> [!tip]
+>
+> 在确定方向之前使用 `/advisor` 获取第二意见——它对于捕捉有缺陷的假设、未验证的声明或有风险的下一步特别有用。配置 `advisorModel` 可以从不同于驱动主对话的模型获取审查。
+
+> [!note]
+>
+> `advisorModel` 仅在设置中配置；与 `fastModel` 和 `visionModel` 不同，它目前没有对应的 `/model` 标志。
+
+### 1.8 会话回顾 (`/recap`)
+
+`/recap` 命令会生成当前会话的简短"上次离开时"摘要，以便你可以恢复旧对话，而无需向上翻阅数页历史记录。
 
 | 命令     | 描述                                     |
 | -------- | ---------------------------------------- |
@@ -248,7 +312,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 >
 > 通过 `/model --fast <model>`（例如 `qwen3-coder-flash`）配置快速模型，以使 `/recap` 快速且低成本。将 `general.showSessionRecap` 设置为 `true` 以启用自动触发；手动 `/recap` 命令始终有效，不受此设置影响。
 
-### 1.8 Diff 查看器 (`/diff`)
+### 1.9 Diff 查看器 (`/diff`)
 
 `/diff` 命令打开一个交互式 diff 查看器，显示未提交的更改和每个轮次的 diff。使用 ←/→ 在当前 git diff 和各个对话轮次之间切换，使用 ↑/↓ 浏览文件，按 Enter 查看内联 diff。
 
@@ -353,7 +417,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 >
 > `/log` 需要 git 仓库工作区。如果工作区不是 git 仓库或没有 commit，对话框会显示占位消息。
 
-### 1.9 信息、设置和帮助
+### 1.10 信息、设置和帮助
 
 用于获取信息和执行系统设置的命令。
 
@@ -367,7 +431,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `/stats tools`   | 显示每个工具的调用次数                                                                                                       | `/stats tools`                                                                      |
 | `/stats skills`  | 显示当前实时会话中每个 skill 的调用次数（仅限实时；不包括跨会话的每日/每月活动）                                             | `/stats skills`                                                                     |
 | `/stats daily`   | 显示每日 token 使用统计                                                                                                      | `/stats daily`（别名 `day`），`/stats day [YYYY-MM-DD]`                             |
-| `/stats monthly` | 显示每月 token 使用统计                                                                                                      | `/stats monthly`（别名 `month`），`/stats month [YYYY-MM]`                          |
+| `/stats monthly` | 显示每月 token 使用统计                                                                                                      | `/stats monthly`（别名 `month`），`/stats month [YYYY-MM-DD]`                          |
 | `/stats export`  | 将使用统计导出为 CSV 或 JSON                                                                                                 | `/stats export <daily\|monthly> [date\|month] [--format csv\|json] [--output path]` |
 | `/settings`      | 打开设置编辑器                                                                                                               | `/settings`                                                                         |
 | `/config`        | 通过点路径键获取或设置任何配置（写入用户设置）                                                                               | `/config`（列出所有），`/config <key>`，`/config <key>=<value>`                     |
@@ -391,7 +455,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 >
 > `/config` 通过点分路径键（如 `general.vimMode`）读写各项设置，作为交互式 `/settings` 编辑器的补充。不带参数（或带 `--help`）运行 `/config` 会列出所有可设置的键及其类型和当前值。`/config <key>` 会打印当前值——但对于布尔键，它会切换该值。`/config <key>=<value>` 用于设置值。更改会写入用户设置文件（`~/.qwen/settings.json`）。只有 `boolean`、`string`、`number` 和 `enum` 类型的设置可以通过这种方式修改——`array` 和 `object` 类型的设置必须直接在 `settings.json` 中编辑。敏感值（API 密钥、token、base URL）在输出中会被掩码处理，并且禁止将 `tools.approvalMode` 设置为 `yolo`。
 
-### 1.10 常用快捷键
+### 1.11 常用快捷键
 
 | 快捷键             | 功能                  | 说明                                                                      |
 | ------------------ | --------------------- | ------------------------------------------------------------------------- |
@@ -401,7 +465,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `Ctrl/cmd+Z`       | 撤销输入              | 文本编辑                                                                  |
 | `Ctrl/cmd+Shift+Z` | 重做输入              | 文本编辑                                                                  |
 
-### 1.11 身份验证命令
+### 1.12 身份验证命令
 
 在 Qwen Code 会话中使用 `/auth` 来配置身份验证。使用 `/doctor` 检查当前的身份验证和环境状态。
 
@@ -572,7 +636,7 @@ description: 基于最佳实践的代码审查
 
 ### 实际创建示例
 
-#### “纯函数重构”命令创建步骤表
+#### "纯函数重构"命令创建步骤表
 
 | 操作                        | 命令/代码                                 |
 | --------------------------- | ----------------------------------------- |
@@ -619,9 +683,10 @@ description: 将代码重构为纯函数
 
 ### 会话管理
 
-| 命令 | 描述 | 使用示例 |
-| -------------------- | --------------------------------- | ------------------------------------------------------------ |
-| `qwen sessions list` | 列出最近的对话会话 | `qwen sessions list`, `qwen sessions list --json --limit 50` |
+| 命令                 | 描述                             | 使用示例                                                       |
+| -------------------- | -------------------------------- | -------------------------------------------------------------- |
+| `qwen sessions list` | 列出最近的对话会话               | `qwen sessions list`, `qwen sessions list --json --limit 50`   |
+| `qwen sessions ps`   | 列出当前正在运行的交互式会话     | `qwen sessions ps`, `qwen sessions ps --json`                  |
 
 #### `qwen sessions list`
 
@@ -646,7 +711,7 @@ description: 将代码重构为纯函数
 sessionId, startTime, mtime, prompt, gitBranch, customTitle, titleSource, filePath, cwd
 ```
 
-“还有更多会话”的提示信息会通过 stderr 输出，因此通过管道传递给 `jq` 依然是安全的。
+"还有更多会话"的提示信息会通过 stderr 输出，因此通过管道传递给 `jq` 依然是安全的。
 
 **示例：**
 
@@ -659,4 +724,43 @@ qwen sessions list --limit 50
 
 # 以 JSON 格式输出，便于脚本处理
 qwen sessions list --json | jq .
+```
+
+#### `qwen sessions ps`
+
+列出当前在此机器上运行的交互式 Qwen Code 会话。`sessions list` 遍历已保存的对话记录（"我做过什么"）；而此命令遍历实时进程注册表（"此刻正在运行什么"）。被终止的会话留下的记录会在发现时被清理。无头会话（`qwen -p`）不会向实时进程注册表注册，因此不会显示。
+
+**标志：**
+
+| 标志     | 类型    | 默认值  | 描述                                            |
+| -------- | ------- | ------- | ----------------------------------------------- |
+| `--json` | 布尔    | `false` | 以 JSON Lines 格式输出（每行一个 JSON 对象）    |
+
+**人类可读输出（默认）：**
+
+包含以下列的表格：NAME、PID、AGE、DIRECTORY。
+
+**JSON 输出（`--json`）：**
+
+在 stdout 输出 JSON Lines，最新的会话排在前面。每行是一个包含以下字段的 JSON 对象：
+
+```
+schemaVersion, pid, procStart, pidNs, sessionId, cwd, name, startedAt,
+qwenVersion
+```
+
+不会向 stdout 写入其他内容——空列表完全不输出任何内容——因此 `qwen sessions ps --json | jq .` 可以安全地用于脚本。
+
+JSON 输出是原始数据：字段值按记录原样发出，不经过终端净化。请将它们视为数据，在终端中渲染前进行净化处理。
+
+**示例：**
+
+```bash
+# 显示其他活跃会话
+qwen sessions ps
+
+# 哪些目录当前正在使用中？
+# 注意：`jq -r` 会在终端中渲染原始记录值（参见上方
+# 原始数据说明）；如果路径不受信任，请通过净化器管道处理。
+qwen sessions ps --json | jq -r .cwd
 ```

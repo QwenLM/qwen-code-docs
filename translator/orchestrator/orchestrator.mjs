@@ -615,9 +615,12 @@ function verifyFile(lang, f, manifest) {
     problems.push(
       `code fence mismatch (en=${fenceCount(en)} ${lang}=${fenceCount(tg)})`
     );
-  if (hasFrontmatter(en)) {
-    if (!hasFrontmatter(tg) || !frontmatterClosed(tg))
-      problems.push("frontmatter missing/unclosed");
+  const enHasFrontmatter = hasFrontmatter(en);
+  const targetHasFrontmatter = hasFrontmatter(tg);
+  if (enHasFrontmatter !== targetHasFrontmatter) {
+    problems.push("frontmatter mismatch");
+  } else if (enHasFrontmatter) {
+    if (!frontmatterClosed(tg)) problems.push("frontmatter unclosed");
     else if (!frontmatterYamlish(tg))
       problems.push("frontmatter not parseable YAML");
   }

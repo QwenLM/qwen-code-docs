@@ -7,7 +7,7 @@ Les routes HTTP de fichiers du démon et les appels ACP délégués `readTextFil
 - **Résolution de chemin** — canonicalise les chemins et rejette tout ce qui sort du workspace lié, y compris via les liens symboliques.
 - **Protection par confiance** — refuse les écritures lorsque le workspace n'est pas fiable (`untrusted_workspace`).
 - **Politique de taille et de contenu** — limite de snapshot complet/retour (`MAX_READ_BYTES = 256 KiB`), fenêtres de texte large bornées à la fois en sortie et en coût de scan (`MAX_TEXT_SCAN_BYTES = 8 MiB`), limite d'écriture (`MAX_WRITE_BYTES = 5 MiB`), détection binaire.
-- **Atomicité** — écriture puis renommage avec préservation du mode cible et valeur par défaut `0o600` pour les nouveaux fichiers.
+- **Atomicité** — écriture puis renommage avec préservation du mode cible ; les nouveaux fichiers ont par défaut `0o600`, ou suivent l'umask du processus sous la politique de mode de nouveau fichier `system` de la fabrique (`QWEN_SERVE_NEW_FILE_MODE`).
 - **Audit** — chaque accès / refus émet un événement structuré pour `PermissionAuditRing` / la supervision.
 - **Erreurs typées** — union fermée `FsErrorKind` mappée sur des statuts HTTP.
 
@@ -29,7 +29,7 @@ Cette tranche de capacité de lecture de texte couvre le `read_file` direct plus
 - Refuser les lectures de snapshot complet au-dessus de `MAX_READ_BYTES`, tout en autorisant des fenêtres explicites avec une sortie limitée à `MAX_READ_BYTES` et un coût de scan limité à `MAX_TEXT_SCAN_BYTES` ; refuser les écritures au-dessus de `MAX_WRITE_BYTES` et les fichiers binaires (`binary_file`).
 - Refuser les écritures/éditions lorsque l'espace de travail n'est pas approuvé (`untrusted_workspace`) — protégé par `assertTrustedForIntent(trusted, intent)`.
 - Respecter les motifs `.gitignore` / `.qwenignore` via `shouldIgnore`.
-- Effectuer une écriture atomique (écriture puis renommage) avec préservation du mode cible ; le mode par défaut pour un nouveau fichier est `0o600`.
+- Effectuer une écriture atomique (écriture puis renommage) avec préservation du mode cible ; les nouveaux fichiers ont par défaut `0o600` (`0o666 & ~umask` dérivé de l'umask sous la politique de mode de nouveau fichier `system`).
 - Émettre des événements d'audit `fs.access` / `fs.denied` pour chaque opération.
 - Mapper chaque échec à une `FsError` avec un type et un statut HTTP ; les gestionnaires de route les sérialisent uniformément.
 
@@ -40,7 +40,7 @@ Cette tranche de capacité de lecture de texte couvre le `read_file` direct plus
 | Fichier                     | Objectif                                                                                                                                                                                                                                                 |
 | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `paths.ts`                 | `canonicalizeWorkspace`, `resolveWithinWorkspace`, `hasSuspiciousPathPattern`, `ResolvedPath` typé, union `Intent` (`read \| write \| list \| stat \| glob`).                                                                                           |
-| `policy.ts`                | `MAX_READ_BYTES`, `MAX_TEXT_SCAN_BYTES`, `MAX_WRITE_BYTES`, `BINARY_PROBE_BYTES`, `assertTrustedForIntent`, `detectBinary`, `enforceReadBytesSize`, `enforceReadSize`, `enforceWriteSize`, `shouldIgnore`.                                            |
+| `policy.ts`                | `MAX_READ_BYTES`, `MAX_TEXT_SCAN_BYTES`, `MAX_WRITE_BYTES`, `MAX_UPLOAD_BYTES`, `BINARY_PROBE_BYTES`, `assertTrustedForIntent`, `detectBinary`, `enforceReadBytesSize`, `enforceReadSize`, `enforceWriteSize`, `shouldIgnore`.                        |
 | `audit.ts`                 | `FS_ACCESS_EVENT_TYPE`, `FS_DENIED_EVENT_TYPE`, `createAuditPublisher`, types de charge utile d'audit.                                                                                                                                                   |
 | `errors.ts`                | Classe `FsError`, `isFsError`, union `FsErrorKind` (14 types), union `FsErrorStatus` (`400 / 403 / 404 / 409 / 413 / 422 / 500 / 503`).                                                                                                                 |
 | `workspace-file-system.ts` | `createWorkspaceFileSystemFactory`, `WorkspaceFileSystem` (l'orchestrateur qui lit/écrit/liste), `WriteMode`, `ContentHash`, `FsEntry`, `FsStat`, `ListOptions`, `GlobOptions`, `ReadTextOptions`, `ReadBytesOptions`, `WriteTextAtomicOptions`. |
@@ -75,7 +75,7 @@ interface BridgeFileSystem {
 }
 ```
 
-C'est le point d'injection pour `readTextFile` / `writeTextFile` de l'ACP. Les tests du bridge et les appelants intégrés en Mode A peuvent l'omettre sur `BridgeOptions` ; `BridgeClient` utilise alors son proxy `fs.readFile` / `fs.writeFile` en ligne (comportement pré-F1 conservé). En production, `qwen serve` câble `BridgeFileSystem` via `createBridgeFileSystemAdapter(fsFactory)` (`packages/cli/src/serve/bridge-file-system-adapter.ts`) et définit `delegateReadTextFileToClient: false`. Les enfants conformes en capacité lisent donc le texte localement et délèguent les écritures de texte ACP finales. L'adaptateur conserve son implémentation de lecture afin que les lectures déléguées inattendues ou violant la capacité rencontrent toujours la limite de workspace de WFS.
+C'est le point d'injection pour `readTextFile` / `writeTextFile` de l'ACP. Les tests du bridge et les appelants intégrés en Mode A peuvent l'omettre sur `BridgeOptions` ; `BridgeClient` utilise alors son proxy `fs.readFile` / `fs.writeFile` en ligne (comportement pré-F1 conservé). En production, `qwen serve` câble `BridgeFileSystem` via `createBridgeFileSystemAdapter(fsFactory)` (`packages/cli/src/serve/bridge-file-system-adapter.ts`) et définit `delegateReadTextFileToClient: false`. Les enfants conformes en capacité lisent donc le texte localement et délèguent les écritures de texte ACP finales. L'adaptateur conserve son implémentation de lecture afin que les lectures déléguées inattendues ou violant la capacité rencontrent toujours la limite de workspace de WFS. Son chemin externe de writer hôte est désactivé par défaut et sélectionné uniquement par provenance versionnée exacte sur les adaptateurs same-host appartenant au démon ; les bridges injectés, les registres et fabriques de workspace, l'ACP générique et HTTP conservent la limite ordinaire.
 
 Deux protections défensives que l'adaptateur DOIT reproduire (car le proxy en ligne est totalement contourné lorsque l'adaptateur est injecté) :
 
@@ -229,15 +229,16 @@ flowchart LR
 | Constante                                         | `MAX_READ_BYTES = 256 KiB`                                         | Limite de snapshot complet et de texte retourné ; un texte plus large nécessite un argument de fenêtre explicite.   |
 | Constante                                         | `MAX_TEXT_SCAN_BYTES = 8 MiB`                                      | Octets qu'une lecture de texte large peut scanner pour localiser un décalage de ligne ; au-delà, `file_too_large`. |
 | Constante                                         | `MAX_WRITE_BYTES = 5 MiB`                                          | Limite d'écriture ; dimensionnée en dessous de `express.json({ limit: '10mb' })`.                                  |
+| Constante                                         | `MAX_UPLOAD_BYTES = 50 MiB`                                        | Limite d'upload binaire pour `POST /file/upload` ; les uploads n'écrasent jamais et numérotent automatiquement les noms occupés. |
 | Constante                                         | `BINARY_PROBE_BYTES = 4096`                                        | Taille d'échantillon pour la détection binaire basée sur le contenu.                                               |
-| Étiquettes de capacité                            | `workspace_file_read`, `workspace_file_bytes`, `workspace_file_write` | Voir [`11-capabilities-versioning.md`](./11-capabilities-versioning.md).                                          |
+| Étiquettes de capacité                            | `workspace_file_read`, `workspace_file_bytes`, `workspace_file_write`, `workspace_file_upload` | Voir [`11-capabilities-versioning.md`](./11-capabilities-versioning.md).                                          |
 | Fichiers de l'espace de travail                   | `.gitignore`, `.qwenignore`                                        | Les chemins ignorés remontent comme `ignored: true` depuis `shouldIgnore`.                                         |
 
 ## Mises en garde et limitations connues
 
 - **Les liens symboliques sont rejetés, pas suivis.** C'est une divergence par rapport au proxy en ligne pré-F1 `BridgeClient.writeTextFile` qui résolvait les liens symboliques. Les agents qui écrivent via des fichiers points liés symboliquement doivent utiliser le chemin résolu directement.
 - **`io_error` et `permission_denied` sont distincts.** Ne pas les confondre. Les pipelines de supervision se basent sur `errorKind` pour les alertes — fusionner ENOSPC dans permission_denied déclencherait des alertes de sécurité pour des problèmes de `df -h`.
-- **Le mode par défaut des nouveaux fichiers est `0o600`, pas les valeurs par défaut d'umask.** L'argument `mode` de l'appel système d'écriture contourne umask. Les agents qui écrivent des fichiers publics doivent passer explicitement un mode différent.
+- **Le mode par défaut des nouveaux fichiers est `0o600`, pas les valeurs par défaut d'umask.** L'argument `mode` de l'appel système d'écriture contourne umask. Les agents ne peuvent pas passer de mode par écriture. Les opérateurs qui souhaitent que les fichiers créés par l'agent suivent l'umask du démon peuvent opt-in par démon avec `QWEN_SERVE_NEW_FILE_MODE=system` (les fichiers existants conservent leur mode) ; voir [`17-configuration.md`](./17-configuration.md).
 - **`createServeApp` avec `trusted: false` par défaut** rejette silencieusement les écritures ACP avec `untrusted_workspace` pour les intégrateurs qui n'injectent pas de `fsFactory` ou `bridge` personnalisé. Un avertissement sur stderr est émis une fois la première fois ; les appelants suivants ne voient pas de rappel. Voir [`02-serve-runtime.md`](./02-serve-runtime.md).
 - **Un texte large nécessite un argument de fenêtre explicite**, parmi `line` / `limit` / `maxBytes`. Une lecture sans aucun de ces arguments reste `file_too_large`, car un appelant qui croit détenir le fichier entier pourrait le réécrire tronqué. Les fenêtres sont streamées depuis un handle lié à l'inode et ne retournent jamais plus de `MAX_READ_BYTES`.
 - **`MAX_READ_BYTES` limite ce qu'une lecture retourne ; `MAX_TEXT_SCAN_BYTES` limite ce qu'elle coûte.** Les décalages de ligne sont résolus en scannant depuis l'octet 0, donc `{ line: 900_000_000, limit: 20 }` ne retourne presque rien mais parcourt quand même le fichier. Au-delà de 8 MiB de scan, la lecture est refusée avec `file_too_large` pointant vers `readBytes`, qui atteint n'importe quel décalage en O(1).
@@ -248,7 +249,7 @@ flowchart LR
 
 ## Références
 
-- `packages/cli/src/serve/fs/index.ts` (baril)
+- `packages/cli/src/serve/fs/index.ts` (barrel)
 - `packages/cli/src/serve/fs/paths.ts`
 - `packages/cli/src/serve/fs/policy.ts`
 - `packages/cli/src/serve/fs/errors.ts`
