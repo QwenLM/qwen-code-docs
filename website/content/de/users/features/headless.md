@@ -213,6 +213,8 @@ Ausgabe (Streaming beim Auftreten von Events):
 
 In Kombination mit `--include-partial-messages` werden zusätzliche Stream-Events in Echtzeit (message_start, content_block_delta, etc.) für Echtzeit-UI-Updates ausgegeben.
 
+Für JSON- und Stream-JSON-Ausgabe sind textuelle `tool_result.content`-Werte nach der JSON-String-Serialisierung auf 65.536 UTF-8 Bytes begrenzt. Übergroße Werte werden als deterministische Kopf-/Ende-Vorschauen ausgegeben. Dieselbe Grenze gilt für persistente Stream-JSON-Sessions, SDK-Transports, Subagent-Tool-Ergebnisse und Dual Output. Der Textmodus gibt weiterhin nur die finale Antwort aus, behält aber intern nur die begrenzte Vorschau. Dieses Limit begrenzt nicht eine gesamte JSON-Session, ein JSONL-Event, eine Tool-Eingabe oder eine Partial-Message.
+
 ```bash
 qwen -p "Write a Python script" --output-format stream-json --include-partial-messages
 ```

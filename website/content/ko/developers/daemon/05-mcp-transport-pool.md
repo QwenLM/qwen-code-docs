@@ -294,7 +294,7 @@ W77 레이스(`cb206da36`): `createUnpooledConnection`은 `client.connect()` / `
 
 풀 키는 `mcp-pool-key.ts`의 `fingerprint(cfg)`에서 옵니다. 해시는 모든 트랜스포트 정의 필드를 포함합니다.
 
-> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, oauth`
+> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, versionNegotiation, oauth`
 
 세션별 필터링 및 메타데이터 필드(`includeTools`, `excludeTools`, `trust`, `description`, `extensionName`, `discoveryTimeoutMs`)는 제외되므로, 필터가 다른 세션도 하나의 엔트리를 공유할 수 있습니다.
 

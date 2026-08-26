@@ -181,6 +181,8 @@ cat /tmp/qwen-events.jsonl
 
 事件以 JSON Lines 格式发出（每行一个对象）。模式与交互式模式 `--output-format=stream-json` 使用的相同，其中 `includePartialMessages` 始终启用。
 
+Protocol version 2 将文本 `tool_result.content` 值限制为 JSON 字符串序列化后最多 65,536 个 UTF-8 字节。超大的值会变为确定性的 head/tail 预览；事件类型和字段模式不变。这是一个字段限制，而非通用的 JSONL 帧大小限制。
+
 通道上的第一个事件始终是 `system` / `session_start`，在桥接器构建时发出。在任何其他事件到达之前，用它来将会话与 session id 关联。
 
 ```jsonc

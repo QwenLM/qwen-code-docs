@@ -10,7 +10,7 @@
 - Den primären Workspace genau einmal **kanonisieren** und jedes wiederholte `--workspace` kanonisieren, bevor Session-Runtimes registriert werden. Die primäre kanonische Form wird von `/capabilities.workspaceCwd`, dem `POST /session`-Fallback und der primären Bridge gemeinsam genutzt.
 - Unsichere oder ungültige Startkonfigurationen ablehnen: Non-Loopback-Bind ohne Token, `--require-auth` ohne Token, `--allow-origin '*'` ohne Token, `mcpBudgetMode='enforce'` ohne positives `mcpClientBudget`, ein nicht existierender oder kein Verzeichnis-`--workspace` sowie ungültige Timeout- oder Rate-Limit-Werte.
 - Die `WorkspaceFileSystem`-Factory, den Permission-Audit-Publisher, den `DaemonStatusProvider` und die `acp-bridge` konstruieren.
-- Die Express-App bauen, Middleware verdrahten (`denyBrowserOriginCors` / `allowOriginCors` -> `hostAllowlist` -> Access-Log -> `bearerAuth` -> Rate-Limit -> JSON-Parser -> Telemetrie -> routenbezogene `mutationGate`) sowie Session-, Workspace-CRUD-, File-, Device-Flow-Auth-, Permission-Vote- und ACP-HTTP-Routen mounten.
+- Die Express-App bauen, Middleware verdrahten (`allowOriginCors` über die mutable Origin-Allowlist -> `hostAllowlist` -> Access-Log -> `bearerAuth` -> Rate-Limit -> JSON-Parser -> Telemetrie -> routenbezogene `mutationGate`) sowie Session-, Workspace-CRUD-, File-, Device-Flow-Auth-, Permission-Vote- und ACP-HTTP-Routen mounten. (Die bedingungslose `denyBrowserOriginCors`-Mauer bleibt nur in der Bootstrap-App, `run-qwen-serve.ts`.)
 - Den Listening-Port binden und Signal-Handler registrieren.
 - Zweiphasigen Shutdown bei SIGINT/SIGTERM ausführen; Force-Exit bei einem zweiten Signal.
 
@@ -26,8 +26,8 @@
 
 | Middleware, in Registrierungsreihenfolge | Zweck | Hinweise |
 | --- | --- | --- |
-| `denyBrowserOriginCors` / `allowOriginCors` | Standardmäßig alle `Origin`-Header ablehnen; zu einer Allowlist wechseln, wenn `--allow-origin <pattern>` konfiguriert ist. | Siehe [`12-auth-security.md`](./12-auth-security.md). |
-| `hostAllowlist(bind, getPort)` | Auf Loopback validieren, dass `Host` zu `localhost`, `127.0.0.1`, `[::1]` oder `host.docker.internal` sowie dem tatsächlichen Port gehört. | Schutz gegen DNS-Rebinding. Der Vergleich ist case-insensitive und wird pro Port gecacht. |
+| `allowOriginCors` | `Origin`-Header gegen eine mutable Allowlist prüfen; die `--allow-origin <pattern>`-Einträge seeden sie, und Local Control fügt die LAN-Origin hinzu, während es aktiviert ist. Nicht übereinstimmende Origins erhalten den 403- deny-Envelope. | Siehe [`12-auth-security.md`](./12-auth-security.md). |
+| `hostAllowlist(bind, getPort)` | Auf Loopback validieren, dass `Host` zu `localhost`, `127.0.0.1`, `[::1]` oder `host.docker.internal` sowie dem tatsächlichen Port gehört. Der Local-Control-LAN-Listener ist die Ausnahme, die immer ihre beworbene-Autorität-Hostprüfung erzwingt, unabhängig vom primären Bind. | Schutz gegen DNS-Rebinding. Der Vergleich ist case-insensitive und wird pro Port gecacht. |
 | Access-Log-Middleware | Protokolliert Methode, Pfad, Status, durationMs, sessionId und clientId im `DaemonLogger`, wenn ein Request abgeschlossen ist. | **Vor** `bearerAuth` registriert, sodass 401-Ablehnungen ebenfalls protokolliert werden. Überspringt `/health` und Heartbeat. |
 | `bearerAuth(token)` | SHA-256 plus `timingSafeEqual` Constant-Time-Bearer-Vergleich. | Offener Passthrough, wenn kein Token konfiguriert ist (Loopback-Dev-Standard). Das `Bearer`-Schema ist case-insensitive. |
 | Rate-Limit-Middleware | Optionaler Token-Bucket pro Stufe für Prompt-, Mutations- und Read-Routen. | Nach `bearerAuth` und vor dem JSON-Parsing registriert; gibt 429 vor dem Parsing zurück, wenn ein Bucket erschöpft ist. |
@@ -61,6 +61,8 @@
 
 ### Boot-Sequenz
 
+Bevor `runQwenServe()` diese Sequenz startet, validiert der CLI-exklusive `--open-with-auth`-Modus die Loopback/Web-Shell-Eignung und füllt `ServeOptions.token` mit dem ausgewählten konfigurierten Token oder mit 32 zufälligen Bytes, kodiert als base64url, wenn diese Auswahl leer ist. Direkte Embedder und Aufrufe ohne diesen standardmäßig deaktivierten Flag generieren kein Token.
+
 1. **Token auflösen und trimmen** aus `opts.token` oder `QWEN_SERVER_TOKEN`; dies verhindert, dass ein abschließender Newline von `cat token.txt` den Bearer-Vergleich stillschweigend fehlschlagen lässt.
 2. **Hostname-Typo-Guard**: `--hostname localhost:4170` erzeugt einen Fehler und schlägt `--port` vor.
 3. **Auth-Pre-Flight**: Non-Loopback ohne Token wird abgelehnt; `--require-auth` ohne Token wird abgelehnt.
@@ -70,24 +72,25 @@
 7. **MCP-Pool-Toggle-Inferenz**: Parent-Env `QWEN_SERVE_NO_MCP_POOL=1` setzt `mcpPoolActive=false`, sodass die Capabilities `mcp_workspace_pool` und `mcp_pool_restart` korrekt weglassen.
 8. **CORS-/Timeout-/Rate-Limit-Validierung**: `--allow-origin '*'` erfordert ein Token; Prompt-, Writer-, Channel-Idle-, Session-Idle-, Reaper- und Rate-Limit-Window-Werte schlagen bei Ungültigkeit sofort fehl (fail fast).
 9. **Handle-spezifische `childEnvOverrides`**: `QWEN_SERVE_MCP_CLIENT_BUDGET` und `QWEN_SERVE_MCP_BUDGET_MODE` über `BridgeOptions.childEnvOverrides` an das ACP-Child übergeben, anstatt `process.env` zu mutieren.
-10. **`settings.json` einmalig laden**: `context.fileName`, `policy.permissionStrategy` und `policy.consensusQuorum` lesen. Beschädigte Dateien fallen auf Standardwerte zurück. `validatePolicyConfig()` prüft `policy.*` gegen `SERVE_CAPABILITY_REGISTRY.permission_mediation.modes`; unbekannte Strategien oder ein nicht-positives `consensusQuorum` werfen `InvalidPolicyConfigError`. Ein unter einer Nicht-`consensus`-Strategie gesetztes Quorum protokolliert eine Stderr-Warnung.
+10. **`settings.json` einmalig laden**: `context.fileName`, `policy.permissionStrategy` und `policy.consensusQuorum` lesen. Beschädigte Dateien fallen auf Standardwerte zurück. `validatePolicyConfig()` prüft `policy.*` gegen `SERVE_CAPABILITY_REGISTRY.permission_medication.modes`; unbekannte Strategien oder ein nicht-positives `consensusQuorum` werfen `InvalidPolicyConfigError`. Ein unter einer Nicht-`consensus`-Strategie gesetztes Quorum protokolliert eine Stderr-Warnung.
 11. **`PermissionAuditRing` allokieren** (512 Einträge).
 12. **`fsFactory` bauen**: `runQwenServe` ist standardmäßig `trusted: true`; direkte `createServeApp`-Aufrufer sind standardmäßig `trusted: false` und warnen einmalig.
 13. **`createHttpAcpBridge`**, siehe [`03-acp-bridge.md`](./03-acp-bridge.md).
 14. **`createServeApp`** assembliert Express.
-15. **`server.listen(port, hostname)`**, dann den tatsächlichen `getPort()` für die Host-Allowlist auflösen.
-16. **SIGINT-/SIGTERM-Handler registrieren** für Graceful Shutdown.
+15. **HTTP(S)-Server erstellen und lifecycle-binden vor dem Lauschen**, dann `server.listen(port, hostname)` aufrufen und den tatsächlichen `getPort()` für die Host-Allowlist auflösen. Die Conversations-Ownership kann erst starten, wenn dieser Listener und die verbleibenden Host-Startup-Gates bereit sind.
+16. **SIGINT-/SIGTERM-Handler registrieren** für Graceful Shutdown über den gemeinsamen App-Lifecycle.
 
 ### Graceful Shutdown
 
-1. **Phase 1 - Bridge-Teardown** beim ersten Signal:
+1. **Admission versiegeln und alle Drains beginnen** beim ersten Signal:
    - Die Device-Flow-Registry verwerfen und ausstehende Flows abbrechen.
    - `bridge.shutdown()` markiert jeden Kanal mit `isDying = true`, sendet Graceful Close an die Stdin jedes ACP-Childs, wartet `KILL_HARD_DEADLINE_MS` (10s) pro Kanal und ruft dann bei Bedarf `channel.kill()` auf.
-2. **Phase 2 - HTTP-Teardown**:
+2. **Den Listener schließen, während App- und Host-Drains laufen**:
    - `server.close()` stoppt die Annahme neuer Verbindungen und lässt laufende Requests abschließen.
    - `SHUTDOWN_FORCE_CLOSE_MS` (5s) löst `server.closeAllConnections()` aus.
    - Eine zweite 2s-Frist eskaliert bei Bedarf erneut.
-3. **Zweites Signal beim Beenden**:
+3. **Conversations-Ownership erst nach positivem Shutdown-Nachweis freigeben** vom Listener, App-lokaler Arbeit, Host-eigener Arbeit, Live-Discovery-Cleanup und Runtime-Drains. Jeder unvollständige Nachweis lehnt den Shutdown ab, anstatt eine unsichere Übergabe zuzulassen.
+4. **Zweites Signal beim Beenden**:
    - `bridge.killAllSync()` + `process.exit(1)`, um zu verhindern, dass verwaiste Childs den Daemon-Exit blockieren.
 
 ## State und Lifecycle
@@ -96,9 +99,9 @@
 
 - `url`: aufgelöste Listen-URL, nach der Auflösung des ephemeren Ports.
 - `port`: tatsächlicher Port, einschließlich der `0`-Auflösung.
-- `close({ timeoutMs? })`: programmatischer Shutdown für Embedder und Tests.
+- `close()`: programmatischer Shutdown für Embedder und Tests.
 
-Der direkte Aufruf von `createServeApp` gibt nur eine `Application` zurück; der Embedder ist verantwortlich für `listen` und Shutdown.
+Der direkte Aufruf von `createServeApp` gibt weiterhin nur eine `Application` zurück. Ein Embedder, der Live/Conversations benötigt, muss den tatsächlichen Node-Server erstellen, `getServeAppLifecycle(app).bindServer(server)` vor dem ersten `listen()` aufrufen und `lifecycle.close()` während des Shutdowns awaiten. Ohne Binding bleiben gewöhnliche Routen verfügbar, aber Live/Conversations schlagen fail-closed fehl. Der Aufruf von `server.close()` löst eine ereignisgesteuerte Aufräumaktion aus, aber der Embedder muss dennoch `lifecycle.close()` awaiten, um Drain- oder Ownership-Fehler zu beobachten.
 
 ## Dependencies
 
@@ -121,6 +124,7 @@ Der direkte Aufruf von `createServeApp` gibt nur eine `Application` zurück; der
 | Env | `QWEN_SERVE_DEBUG=1` | Ausführliche Stderr-Logs. Siehe [`19-observability.md`](./19-observability.md). |
 | Flags | `--hostname`, `--port` | Listen-Binding. |
 | Flags | `--token`, `--require-auth`, `--enable-session-shell` | Bearer-Token, Loopback-Auth-Härtung und expliziter Shell-Ausführungsschalter. |
+| CLI-Flags       | `--open-with-auth`                                                                                         | Standardmäßig deaktivierter Loopback-Web-Shell-Start, der einen prozesslebenslangen Bearer vor der Runtime wiederverwendet oder generiert. |
 | Flag            | `--workspace`                                                                                              | Überschreibt `process.cwd()`; wiederholbar, um zusätzliche isolierte Workspace-Runtimes zu registrieren.                      |
 | Flags | `--max-sessions`, `--max-pending-prompts-per-session`, `--max-connections`, `--event-ring-size` | Bridge-/Express-Caps. |
 | Flags | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}` | An das ACP-Child weitergeleitet. |
@@ -136,7 +140,7 @@ Siehe [`17-configuration.md`](./17-configuration.md) für die zusammengeführte 
 ## Einschränkungen und bekannte Limits
 
 - Bei direktem Aufruf von `createServeApp` ohne `deps.fsFactory` oder `deps.bridge` ist der Standardwert `trusted: false`; das agentenseitige ACP `writeTextFile` wird mit `untrusted_workspace` abgelehnt. Die Warnung wird einmalig ausgegeben.
-- `denyBrowserOriginCors` lehnt **alle** Requests ab, die einen `Origin`-Header enthalten; die **Loopback**-Web-Shell funktioniert, weil eine andere Middleware zuvor übereinstimmende Loopback-Same-Origin-Werte entfernt – Non-Loopback-Binds erfordern `--allow-origin` für die XHRs der Shell.
+- Die Runtime-App betreibt `allowOriginCors` über die mutable Allowlist; nicht übereinstimmende `Origin`-Werte erhalten den 403-Deny-Envelope (die bedingungslose `denyBrowserOriginCors`-Mauer überlebt nur in der Bootstrap-App). Die **Loopback**-Web-Shell funktioniert, weil eine andere Middleware zuvor übereinstimmende Loopback-Same-Origin-Werte entfernt – Non-Loopback-Binds erfordern `--allow-origin` für die XHRs der Shell.
 - Body-Parser-Reihenfolge: Routes, die `mutate({ strict: true })` verwenden, geben 401 erst nach `express.json()` zurück. Der Worst-Case ist `--max-connections × express.json({limit: '10mb'})`, was bis zu etwa 2,5 GB temporären Speicher auf einem ausgelasteten Loopback-Listener bedeutet; dieser Kompromiss ist beabsichtigt.
 - Mehrere Daemons in einem Prozess müssen `childEnvOverrides` pro Handle verwenden; das Mutieren von `process.env` führt zu Race Conditions, da `defaultSpawnChannelFactory` die Umgebungsvariablen zum Zeitpunkt des Spawns als Snapshot erfasst.
 

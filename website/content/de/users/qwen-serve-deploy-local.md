@@ -254,7 +254,7 @@ Ein **Neustart** des Daemons verwirft alle In-Memory-Sitzungen; Clients verbinde
 
 - **Containerisierte Bereitstellung** – Dockerfile, docker-compose, Kubernetes-Manifeste, nginx + TLS-Reverse-Proxy, Multi-Instanz-Token-Isolation. Verschiebt sich auf v0.16.x, sobald ein Enterprise-Pilot festgelegt ist; das Dokument würde sonst veralten, da es niemand validiert.
 - **Hostübergreifende Föderation / Multi-Daemon-Koordination auf einem Host** – ein Daemon kann mehrere registrierte Workspace-Runtimes hosten, aber Daemons koordinieren sich nicht untereinander. Token-Verknüpfung auf Instanzebene + Bereinigung alter Token verschiebt sich auf v0.16.x.
-- **Allgemeine Daemon-Token-Speicherung** – `--local-control` generiert einen frischen Token für diesen Prozess; langlebige Deployments bleiben BYO-Token. Persistente Token-Store-Infrastruktur wird auf v0.16.x verschoben.
+- **Allgemeine Daemon-Token-Speicherung** – Local Control verwendet revokierbare, Daemon-besessene Pairing-Tokens, aber die langlebige Runtime-Token-Speicherung bleibt BYO-Token. Persistente Token-Store-Infrastruktur wird auf v0.16.x verschoben.
 - **Windows-nativer Dienst** (`nssm`, Service Control Manager-Wrapper) – verwenden Sie vorerst [WSL2](https://learn.microsoft.com/en-us/windows/wsl/) und folgen Sie dem obigen systemd-Abschnitt.
 
 Siehe den Hinweis zu den [v0.16-alpha bekannten Einschränkungen](./qwen-serve.md#v016-alpha-known-limits) im Hauptbenutzerhandbuch für die vollständige Liste der verschobenen Funktionen und [#4175](https://github.com/QwenLM/qwen-code/issues/4175) für das v0.16-alpha-Rollout-Tracking-Issue.

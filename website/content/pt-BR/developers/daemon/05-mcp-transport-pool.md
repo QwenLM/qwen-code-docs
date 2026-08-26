@@ -1,3 +1,5 @@
+---
+
 # Pool de Transporte MCP do Workspace
 
 ## Visão Geral
@@ -316,11 +318,12 @@ desanexar.
 A chave do pool vem de `fingerprint(cfg)` em `mcp-pool-key.ts`. O hash cobre
 todos os campos que definem o transporte:
 
-> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, oauth`
+> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, versionNegotiation, oauth`
 
 Campos de filtragem por sessão e metadados (`includeTools`, `excludeTools`,
 `trust`, `description`, `extensionName`, `discoveryTimeoutMs`) são excluídos, para que
-sessões com filtros diferentes possam compartilhar uma única entrada.
+sessões com filtros diferentes possam compartilhar uma única entrada. A opt-in
+de negociação automática está incluída porque altera como o processo subjacente se conecta.
 
 Para a célula OAuth, `canonicalOAuth(o)` faz o hash de cada campo de `MCPOAuthConfig`:
 `clientId`, `clientSecret`, `scopes` ordenados, `audiences` ordenados,

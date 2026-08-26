@@ -315,9 +315,9 @@ reçoivent l’événement `failed` suffisamment tôt pour orienter les promesse
 
 La clé du pool provient de `fingerprint(cfg)` dans `mcp-pool-key.ts`. Le hachage couvre tous les champs définissant le transport :
 
-> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, oauth`
+> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, versionNegotiation, oauth`
 
-Les champs de filtrage par session et de métadonnées (`includeTools`, `excludeTools`, `trust`, `description`, `extensionName`, `discoveryTimeoutMs`) sont exclus, afin que des sessions avec des filtres différents puissent partager une même entrée.
+Les champs de filtrage par session et de métadonnées (`includeTools`, `excludeTools`, `trust`, `description`, `extensionName`, `discoveryTimeoutMs`) sont exclus, afin que des sessions avec des filtres différents puissent partager une même entrée. L'opt-in de négociation automatique est inclus car il modifie la façon dont le processus sous-jacent se connecte.
 
 Pour la cellule OAuth, `canonicalOAuth(o)` hache tous les champs de `MCPOAuthConfig` : `clientId`, `clientSecret`, `scopes` triés, `audiences` triés, `authorizationUrl`, `tokenUrl`, `redirectUri`, `tokenParamName`, et `registrationUrl`. C'est le contrat d'isolation des credentials : deux configurations de session qui ne diffèrent que par `clientSecret`, `audiences` ou `redirectUri` obtiennent des empreintes différentes et ne peuvent pas partager une même entrée. Les clients confidentiels et les déploiements multi-audience en dépendent.
 

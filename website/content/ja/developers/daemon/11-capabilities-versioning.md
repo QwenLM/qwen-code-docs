@@ -1,5 +1,3 @@
----
-
 # ケイパビリティとプロトコルバージョニング
 
 ## 概要
@@ -110,7 +108,7 @@ export const CONDITIONAL_SERVE_FEATURES: ReadonlyMap<
 
 基盤: `health`, `daemon_status`, `capabilities`.
 
-セッション: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (conditional), `session_language`, `session_rewind`, `session_hooks`, `session_branch`.
+セッション: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_storage_conflict_repair`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (conditional), `session_language`, `session_rewind`, `session_hooks`, `session_branch`.
 
 ストリーミング: `slow_client_warning`, `typed_event_schema`.
 
@@ -122,9 +120,11 @@ ID と heartbeat: `client_identity`, `client_heartbeat`.
 
 拡張機能管理: `extension_management_v2` は、グローバルな `/extensions/*` カタログ/ミューテーション/オペレーションの契約と、ワークスペースアクティベーションの投影を追加します。これは公開されている `workspace_extensions` 互換性サーフェスおよび `workspace_qualified_rest_core` とは別物です。
 
-ワークスペース修飾セッション読み取り: `workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`。アクティブおよびアーカイブのエクスポートタグは互いに、また `session_export` や `workspace_qualified_rest_core` とも独立しています。そのため、クライアントはエクスポートする正確なストレージ状態をプリフライトする必要があります。永続化トランスクリプトのページングは、バウンドされた読み取りポリシーの下で信頼されないセカンダリを許可します。両方のフルエクスポートパスは信頼されたのみです。
+V2 拡張機能のバッチアクティベーション: `extension_batch_activation_v2` は、`extension_management_v2` にキューイングされたグローバルデフォルトアクティベーションおよび選択ワークスペースオーバーライドのバッチを追加します。古い V2 デーモンは単一のアクティベーションルートのみを公開するため、クライアントはこれを独立してプリフライトする必要があります。
 
-ワークスペースのミューテーション（Wave 4 以降）: `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, **`workspace_settings`** (conditional), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, **`workspace_reload`** (conditional).
+ワークスペース修飾セッション読み取り: `workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`, `workspace_session_live_state`。アクティブおよびアーカイブのエクスポートタグは互いに、また `session_export` や `workspace_qualified_rest_core` とも独立しています。そのため、クライアントはエクスポートする正確なストレージ状態をプリフライトする必要があります。永続化トランスクリプトのページングは、バウンドされた読み取りポリシーの下で信頼されないセカンダリを許可します。両方のフルエクスポートパスは信頼されたのみです。`workspace_session_live_state` も同様に `workspace_qualified_rest_core` から独立しており、信頼されたのみです。選択されたランタイムのメモリ内のライブセッションスナップショットとカタログバージョンを提供し、信頼されないセカンダリの永続化読み取りポリシーをライブブリッジ状態には拡張しません。
+
+ワークスペースのミューテーション（Wave 4 以降）: `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, **`workspace_settings`** (conditional), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, `workspace_file_upload`, **`workspace_reload`** (conditional).
 
 MCP ガードレール: **`mcp_guardrails`** (`modes: ['warn', 'enforce']`), `mcp_guardrail_events`, `mcp_server_runtime_mutation`, **`mcp_workspace_pool`** (conditional), **`mcp_pool_restart`** (conditional).
 

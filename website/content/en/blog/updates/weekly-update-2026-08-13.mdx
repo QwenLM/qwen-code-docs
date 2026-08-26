@@ -1,0 +1,232 @@
+---
+title: "Qwen Code Weekly: Take Over Computer Sessions from Your Phone with a QR Scan, Goal Long Tasks No Longer Cut Off at 50 Rounds, Plugin Ecosystem Opens to Agent Plugins and Qoder Plugins"
+date: "2026-08-13"
+description: "This week we shipped five stable releases from v0.21.7 through v0.21.11. Scan the Local Control QR code and take over the session running on your computer from your phone; Goal no longer gets cut off at 50 rounds — long tasks compress their evidence and keep going; the plugin ecosystem opens to Agent Plugins v1 and Qoder plugins."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i2/O1CN01jddm4nOmFBB2jBZY_!!6000000003554-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Weekly: Take Over Computer Sessions from Your Phone with a QR Scan, Goal Long Tasks No Longer Cut Off at 50 Rounds, Plugin Ecosystem Opens to Agent Plugins and Qoder Plugins"
+  date="2026-08-13"
+  author="Qwen Team"
+/>
+
+Qwen Code shipped five stable releases this week — v0.21.7 through v0.21.11 — with 220+ PRs merged, and the desktop app released v0.2.1.
+
+**Your phone can take over Qwen Code on your computer now.** Local Control generates a QR code — scan it from a phone on the same network and take over the session running on your computer.
+
+**Long tasks can finish now.** Goal no longer gets cut off at 50 rounds, and can compress its evidence into an archive and keep going. Review also supports custom review rules for your repo.
+
+**The plugin ecosystem is open.** Agent Plugins v1 standard packages and Qoder plugins now install as-is and just work, and the Web Shell supports installing extension archives too.
+
+**Multiple AIs can split the work now.** Last week sub-Agents got permission controls; this week `/coordinate` goes a step further — run a whole team. Investigators are read-only by default, only one writer gets dispatched, and results auto-report to the lead.
+
+## ✨ New Features
+
+### Local Control: Take Over Desktop Sessions from Your Phone with a QR Scan
+
+Last week the Qwen Code desktop app officially launched. This week it picks up a new trick: turn on Local Control on your computer, a QR code appears on screen, scan it from your phone and take over the session running on the computer. What opens on your phone is the same session as on the computer — keep chatting, keep approving. One catch: it only works when the phone and the computer are on the same LAN — remote over the public internet isn't supported yet. Enterprise LANs work too.
+
+Works on both the terminal and the desktop app: run `qwen serve --local-control` in the terminal, or pick Control → Local Control… from the menu in the desktop app. Each start generates a fresh pairing token; while it's on, the computer stays awake and the current session is unaffected. Toggle it off or close the control window and the connection drops and the token dies on the spot.
+
+What you can do with this:
+
+- Scan and go — nothing to download, nothing to configure on the phone
+- Step away from your desk and still see where the task is and what's waiting on your approval, from your phone
+- Close the control window when you're done and the connection drops immediately
+
+See PRs [#8727](https://github.com/QwenLM/qwen-code/pull/8727), [#8866](https://github.com/QwenLM/qwen-code/pull/8866), [#8806](https://github.com/QwenLM/qwen-code/pull/8806), [#8800](https://github.com/QwenLM/qwen-code/pull/8800)
+
+![Local Control: take over sessions from your phone with a QR scan](https://img.alicdn.com/imgextra/i2/O1CN01KrhXalaMzHJ3OTaQ_!!6000000003127-2-tps-1672-942.png)
+
+### Goal: 50-Round Cap Removed, Long Tasks Run to Completion
+
+Goal's long-task mode got two major upgrades this week.
+
+**The fixed 50-round cap is gone.** Previously Goal stopped at 50 rounds — task done or not — and the round counter reset on resume. Now Goal is driven by the task itself: if the task isn't done and you haven't paused or cleared it, it keeps going, and round counts carry across pauses and resumes.
+
+**Long tasks get an evidence archive.** When the evidence Goal has collected nears its limit, the runtime pauses auto-continuation first: an independent verifier with no tool access compresses the accumulated evidence into a tight set of conclusions, checks each conclusion's citations one by one, archives them, then moves on to the next round. Archives survive even if the process exits unexpectedly. If the compression check fails, it stops and waits for you instead of pushing forward with bad data.
+
+**Goal isn't terminal-only anymore.** Goal in the Web Shell now runs on the same runtime as the terminal — create, edit, pause, resume, clear, all there. Third-party tools hooked in via ACP can call the same Goal capabilities at the protocol layer.
+
+See PRs [#8421](https://github.com/QwenLM/qwen-code/pull/8421), [#8465](https://github.com/QwenLM/qwen-code/pull/8465), [#8732](https://github.com/QwenLM/qwen-code/pull/8732)
+
+### Plugin Ecosystem: Agent Plugins v1 and Qoder Plugins Install As-Is
+
+Previously, installing a third-party extension meant converting it to Qwen Code's own format first. This week both standard plugin formats work as-is:
+
+**Agent Plugins v1.** This is an open plugin format, and Qwen Code now speaks it too: plugin packages conforming to the `plugin.json` standard install into Qwen Code as-is. Once installed, they can be updated, enabled, and disabled — and the skills and MCP servers inside work right away.
+
+**Qoder plugins.** Five install sources: local directories, archives, Git repos, archive URLs, npm packages. Commands, agents, skills, and MCP servers inside the package get converted to Qwen Code extensions automatically; if there's a `system-prompt.md` at the package root, it loads as context automatically.
+
+The Web Shell's extension manager supports installing extensions from local `.zip` / `.tar.gz` archives.
+
+See PRs [#8834](https://github.com/QwenLM/qwen-code/pull/8834), [#8661](https://github.com/QwenLM/qwen-code/pull/8661), [#8621](https://github.com/QwenLM/qwen-code/pull/8621)
+
+![Plugin ecosystem: install standard plugin packages as-is](https://img.alicdn.com/imgextra/i2/O1CN01p935k9v0zGG7nOLI_!!6000000005936-2-tps-3840-2160.png)
+
+### Review: Repo-Level Review Rules, Big PRs No Longer Time Out
+
+Review got upgrades in two directions this week.
+
+**Review rules can be tailored per repo.** Drop a `.qwen/review-context.json` file in the repo declaring which modules it has, which related paths to reference when a path changes, and which tests to run — `/review` uses those rules when building its review plan. When reviewing a PR, this file is read from the base version of the branch under review, so a branch can't rewrite its own review rules.
+
+**Faster and steadier.** The whole review pipeline got faster: changes over 3,000 lines no longer time out, small changes of a few dozen lines get results faster, and the final review report always gets time to be written — no more churning for ages and ending in silence. `/review submit` prints the review link when it's done.
+
+See PRs [#8401](https://github.com/QwenLM/qwen-code/pull/8401), [#8654](https://github.com/QwenLM/qwen-code/pull/8654), [#8658](https://github.com/QwenLM/qwen-code/pull/8658), [#8642](https://github.com/QwenLM/qwen-code/pull/8642), [#8773](https://github.com/QwenLM/qwen-code/pull/8773), [#8791](https://github.com/QwenLM/qwen-code/pull/8791), [#8774](https://github.com/QwenLM/qwen-code/pull/8774), [#8770](https://github.com/QwenLM/qwen-code/pull/8770)
+
+![Review: rules live in the repo, reviews follow the plan](https://img.alicdn.com/imgextra/i2/O1CN01r5BaUyv5OYC7nOLI_!!6000000002521-2-tps-3840-2160.png)
+
+### /coordinate: Multiple AIs Split the Work — Read-Only Investigation, One Writer, Auto-Summary
+
+Last week sub-Agents got permission controls — "keys handed out per job." This week goes one step further: `/coordinate` can actually run a team of AIs splitting the work. Before, `/coordinate` only described a team process in prompts — whether teammates actually "looked but never touched" was entirely up to the model's self-discipline. Now the runtime enforces it:
+
+- **Investigators are read-only by default**: dispatched investigator teammates can only read the repo, message each other, and update the task list — file changes and command execution get blocked at the execution layer
+- **Only one writer**: the lead creates a Git worktree and dispatches a single writer role into it — the main checkout stays untouched
+- **Results auto-report**: when a teammate finishes, its conclusions flow to the lead automatically — no explicit message needed, the lead never sits waiting
+
+The feature is still experimental. Set the environment variable `QWEN_CODE_ENABLE_AGENT_TEAM` to `1` first to turn on Agent Team.
+
+What you can do with this:
+
+- Have multiple AIs investigate a complex problem in parallel — faster than one thread digging through code
+- Investigators stay read-only and only one pair of hands writes — permissions kept tight
+- Changes land in a separate worktree — the main branch stays clean
+
+See PR [#8804](https://github.com/QwenLM/qwen-code/pull/8804)
+
+![/coordinate: multiple AIs split the work](https://img.alicdn.com/imgextra/i4/O1CN01CfP0oTZoMcH7nOLI_!!6000000007713-2-tps-3840-2160.png)
+
+### Channel Ecosystem: One Group Approval for Everyone, Feishu Gets Option Cards
+
+**Approve a group once and everyone in it can use it.** Previously pairing mode was per-person: hook up a group and every member needed a separate approval. Now you can pair per group: approve the whole group by group ID once and every member can use it; DMs still approve one person at a time. Group approvals can be revoked separately, and each workspace keeps its own list.
+
+**Feishu got option cards.** The AI sometimes asks you to pick while it works — "which of these two options?" Previously these questions rendered as plain text in Feishu: you could see them but couldn't answer, and the task stalled. Now the question becomes a card with options — tap one, submit, and the task keeps going. People and groups in Feishu sessions also show real names instead of unreadable IDs.
+
+**DingTalk status cards got better.** Previously when the AI worked in DingTalk, its output splintered across several cards. Now one task uses a single card throughout: in-progress status from the start, output updating on the card in real time, and the final answer replacing the process content when it's done. When @-mentioning someone, the final card shows exactly one @. In a DingTalk group, if someone @s the bot along with someone else, the AI can still tell who was mentioned.
+
+**Channel sessions now show up in the Web Shell.** Sessions started from DingTalk, Feishu, or WeCom show up in the Web Shell sidebar grouped by platform, viewable alongside regular tasks. Each Channel can also set how sessions are split: per user, per topic, per chat, or one session shared across the whole channel.
+
+See PRs [#8440](https://github.com/QwenLM/qwen-code/pull/8440), [#8578](https://github.com/QwenLM/qwen-code/pull/8578), [#8569](https://github.com/QwenLM/qwen-code/pull/8569), [#8565](https://github.com/QwenLM/qwen-code/pull/8565), [#8639](https://github.com/QwenLM/qwen-code/pull/8639), [#8457](https://github.com/QwenLM/qwen-code/pull/8457)
+
+![Channel entry in the Web Shell sidebar](https://img.alicdn.com/imgextra/i2/O1CN01oaDSs3TrwqE5bgpe_!!6000000002642-0-tps-2762-1704.jpg)
+
+## 📊 More New Features
+
+**Compaction is cheaper and faster.** When a conversation gets too long, Qwen Code compresses it into a shorter version — but the compaction itself had to send the whole long conversation through the model again. Now content the model already processed in the main conversation is reused during compaction — no starting from scratch. Works with OpenAI-compatible services, Gemini, and Vertex AI. When reuse isn't possible, it falls back to the old way automatically. See PRs [#8418](https://github.com/QwenLM/qwen-code/pull/8418), [#8425](https://github.com/QwenLM/qwen-code/pull/8425)
+
+**Qwen 3.8 thinking depth lands in the Web Shell and ACP.** The model chip menu in the Web Shell can toggle Thinking on/off directly and pick from three effort levels — low/medium/xhigh (currently supported on qwen3.8-max). ACP clients (like JetBrains) get the standard thinking-depth options — six levels from Default to Max. See PRs [#8974](https://github.com/QwenLM/qwen-code/pull/8974), [#8526](https://github.com/QwenLM/qwen-code/pull/8526)
+
+**Workflows can pause and resume.** Dynamic workflows support cooperative pause/resume: press `p` in the background task view, or run `/workflows p <runId>` in the terminal. Pausing doesn't interrupt subtasks that are running; while paused, no new tasks dispatch and finished results are held back; on resume it picks up where it left off. See PR [#8320](https://github.com/QwenLM/qwen-code/pull/8320)
+
+**Batch enable/disable for skills.** The daemon exposes a batch API to enable/disable up to 100 skills at once — management tools built on Qwen Code don't have to fire requests one at a time. See PR [#8664](https://github.com/QwenLM/qwen-code/pull/8664)
+
+**Auto-cleanup for OpenAI API logs.** With `model.enableOpenAILogging` on, expired request logs are cleaned up automatically. Retention defaults to 7 days; tune it with `model.openAILogRetentionDays`. See PRs [#8862](https://github.com/QwenLM/qwen-code/pull/8862), [#8893](https://github.com/QwenLM/qwen-code/pull/8893)
+
+**External corpus can write to Mem0.** The external corpus integration can write approved content back to Mem0 as memories — enable it explicitly in config. See PR [#8507](https://github.com/QwenLM/qwen-code/pull/8507)
+
+**Voice transcription supports a trusted gateway.** New `security.allowedInsecureVoiceBaseUrls` setting: hosted deployments can route voice transcription to a designated HTTP or intranet ASR service. See PR [#8350](https://github.com/QwenLM/qwen-code/pull/8350)
+
+**/doctor memory shows the tool-result share.** `/doctor memory` adds tool-result occupancy stats: how many tool results the current session is holding, their total character count, and the size of the biggest one — past 30K characters it prompts you to run `/compress`. See PR [#8875](https://github.com/QwenLM/qwen-code/pull/8875)
+
+## 👏 Experience Improvements
+
+**Images returned directly by the model now display too.** Last week we hooked up terminal display for images saved as files; this week images returned directly in model replies and images inside tool results are hooked up too — rendered alongside text in output order. See PR [#8305](https://github.com/QwenLM/qwen-code/pull/8305)
+
+**Drag-and-drop images in the Web Shell.** Drag PNG, JPEG, GIF, WebP, or BMP images straight into the input box. Multiple images keep their order; sending images with no text works too. See PR [#8696](https://github.com/QwenLM/qwen-code/pull/8696)
+
+**Click an image to view it large.** Click an uploaded or pasted image to open a preview tab in the right panel; hover to reveal the download button. See PR [#8930](https://github.com/QwenLM/qwen-code/pull/8930)
+
+**One-click full screen for the right panel.** Right-panel views — artifacts, sub-Agents, diffs — can go full screen with one click. See PR [#8614](https://github.com/QwenLM/qwen-code/pull/8614)
+
+**Context usage at a glance.** A new progress ring next to the input box shows how much of the context window is in use; past 60% and 80% it switches to a warning color, hover for exact numbers, click to open the `/context` panel. See PR [#8794](https://github.com/QwenLM/qwen-code/pull/8794)
+
+**Sub-Agent status is clearer.** While parallel sub-Agents run, a status block stays pinned at the bottom of the conversation — it expands automatically while they work and collapses when they finish. Each sub-Agent row is expandable at any time, with type and metrics shown directly. See PRs [#8559](https://github.com/QwenLM/qwen-code/pull/8559), [#8780](https://github.com/QwenLM/qwen-code/pull/8780)
+
+**One Esc press stops it.** Previously, with messages queued, you had to press Esc three times to stop the AI mid-output. Now the first press cancels in-progress work. See PR [#8353](https://github.com/QwenLM/qwen-code/pull/8353)
+
+**Mouse text selection feels better.** In the terminal, double-click to select a word, then hold and drag to extend the selection word by word; triple-click to select a line, drag to extend line by line. See PR [#8739](https://github.com/QwenLM/qwen-code/pull/8739)
+
+**Task status in the window title.** While the AI is outputting or waiting for confirmation, ◐ / ✳ symbols appear in front of the terminal window/tab title — tell each window's state at a glance in tmux and other multiplexers. See PR [#8970](https://github.com/QwenLM/qwen-code/pull/8970)
+
+**Completion category switching moves to the arrow keys.** Switching between @ completion categories moves from Ctrl+Tab to the left/right arrow keys. See PR [#8576](https://github.com/QwenLM/qwen-code/pull/8576)
+
+**Wayland copy and Chinese links.** Copying text on Linux Wayland prefers `wl-copy`; bare links in Chinese text no longer swallow the full-width punctuation after them into the URL. See PRs [#8481](https://github.com/QwenLM/qwen-code/pull/8481), [#8755](https://github.com/QwenLM/qwen-code/pull/8755)
+
+**Smoother streaming output.** Markdown parsing during streaming now runs at fixed intervals — long replies don't stall. Internal hook output no longer leaks into the conversation display. See PRs [#7904](https://github.com/QwenLM/qwen-code/pull/7904), [#7948](https://github.com/QwenLM/qwen-code/pull/7948)
+
+**Status display in narrow windows.** Slash command names no longer get truncated in narrow terminals; when streaming output blocks the queue display, the status bar keeps a persistent "N queued" badge. See PRs [#8657](https://github.com/QwenLM/qwen-code/pull/8657), [#8667](https://github.com/QwenLM/qwen-code/pull/8667)
+
+**Parallel ACP tool calls.** Tool calls dispatched by ACP agents now run in parallel up to a configurable cap — previously they queued serially. See PR [#8631](https://github.com/QwenLM/qwen-code/pull/8631)
+
+**Faster desktop downloads.** Desktop installers used to download from GitHub — slow and flaky in China. Now a copy lives on Alibaba Cloud OSS too; update checks download from Alibaba Cloud first and only fall back to GitHub if that fails. See PR [#8976](https://github.com/QwenLM/qwen-code/pull/8976)
+
+**Desktop details.** First launch auto-creates a default workspace — ready to use right away, no picking a directory first. Closing the main window on macOS now hides it instead; click the Dock to bring it back. Failed auto-updates show the specific reason. Picking "later" on a provider update reminder starts a 24-hour cooldown. See PRs [#8814](https://github.com/QwenLM/qwen-code/pull/8814), [#8802](https://github.com/QwenLM/qwen-code/pull/8802), [#8807](https://github.com/QwenLM/qwen-code/pull/8807), [#8829](https://github.com/QwenLM/qwen-code/pull/8829)
+
+**Session-switch errors name the blockers.** When switching sessions fails because background tasks are still running, the error lists those tasks' IDs and statuses. See PR [#8742](https://github.com/QwenLM/qwen-code/pull/8742)
+
+## 🔧 Important Fixes
+
+| Fix | What it means for you | PR |
+|------|-----------------------|-----|
+| **Explicitly distrusted directories no longer get "whitewashed"** | When a parent directory is trusted, a child marked distrusted stays distrusted — its config and environment variables don't get loaded | [#8628](https://github.com/QwenLM/qwen-code/pull/8628) |
+| **Project .env trust evaluated on its own** | When a trusted project sits inside a distrusted parent directory, secrets in the parent's .env no longer leak in | [#8706](https://github.com/QwenLM/qwen-code/pull/8706) |
+| **External programs in Git config need confirmation** | When a repo sets `diff.external` or `core.fsmonitor` to run an external program, even "read-only" git diff / git status asks you first | [#8645](https://github.com/QwenLM/qwen-code/pull/8645) |
+| **Env var leakage tightened** | Untrusted workspace environment variables no longer flow into session subprocesses via inherited environment | [#8763](https://github.com/QwenLM/qwen-code/pull/8763) |
+| **Qwen 3.8 parameter conflict** | DashScope Qwen 3.8 requests no longer fail when two thinking parameters conflict | [#8525](https://github.com/QwenLM/qwen-code/pull/8525) |
+| **Claude model aliases and token caps** | Claude models with dotted minor versions are recognized correctly, and Opus 5's token cap is corrected | [#8585](https://github.com/QwenLM/qwen-code/pull/8585) |
+| **Windows desktop launch failures** | Paths with special prefixes on Windows no longer break desktop startup | [#8619](https://github.com/QwenLM/qwen-code/pull/8619), [#8936](https://github.com/QwenLM/qwen-code/pull/8936) |
+| **Incomplete replies after reconnect** | When a session resumes after a network drop, already-delivered content is no longer missing | [#8624](https://github.com/QwenLM/qwen-code/pull/8624) |
+| **Deferred MCP tools lost** | Deferred-loaded MCP tools are restored too when a session resumes | [#8475](https://github.com/QwenLM/qwen-code/pull/8475) |
+| **qwen mcp list hangs** | Unresponsive SSE endpoints time out and exit instead of hanging forever | [#8555](https://github.com/QwenLM/qwen-code/pull/8555) |
+| **Killed commands reported as errors** | Shell commands killed by a signal report the real error instead of showing success | [#8501](https://github.com/QwenLM/qwen-code/pull/8501) |
+| **AutoFix timeout false alarms** | Long-running headless autofix tasks stream progress and no longer get misjudged as timed out | [#8895](https://github.com/QwenLM/qwen-code/pull/8895) |
+| **Repeated tool failures in ACP sessions** | When tools fail over and over in an interactive ACP session, execution pauses instead of failing forever | [#8469](https://github.com/QwenLM/qwen-code/pull/8469) |
+| **Sandbox runtime probed first** | Sandbox runtimes are probed for availability before being picked; clearer errors when none is available | [#7734](https://github.com/QwenLM/qwen-code/pull/7734) |
+| **Manual cancels misreported as errors** | Requests you cancel yourself no longer misreport API errors | [#8399](https://github.com/QwenLM/qwen-code/pull/8399) |
+
+## 👥 Contributors
+
+| Contributor | Contributions | PR Links |
+|--------|---------|-------------|
+| **[@wenshao](https://github.com/wenshao)** | Review repo context manifest and performance across the pipeline, Web Shell full-screen panels and context usage ring, /review link output, sandbox container naming | [#8401](https://github.com/QwenLM/qwen-code/pull/8401), [#8658](https://github.com/QwenLM/qwen-code/pull/8658), [#8614](https://github.com/QwenLM/qwen-code/pull/8614), [#8794](https://github.com/QwenLM/qwen-code/pull/8794), [#8770](https://github.com/QwenLM/qwen-code/pull/8770) |
+| **[@yiliang114](https://github.com/yiliang114)** | /coordinate multi-AI division of labor, Local Control pairing, desktop default workspace and OSS mirror, a batch of Windows path and window behavior fixes | [#8804](https://github.com/QwenLM/qwen-code/pull/8804), [#8727](https://github.com/QwenLM/qwen-code/pull/8727), [#8814](https://github.com/QwenLM/qwen-code/pull/8814), [#8976](https://github.com/QwenLM/qwen-code/pull/8976), [#8619](https://github.com/QwenLM/qwen-code/pull/8619) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | A batch of daemon and Web Shell session stability fixes — transactional switching, refresh races, resource exhaustion; plus OpenAI log cleanup and Mem0 writes | [#8882](https://github.com/QwenLM/qwen-code/pull/8882), [#8939](https://github.com/QwenLM/qwen-code/pull/8939), [#8862](https://github.com/QwenLM/qwen-code/pull/8862), [#8507](https://github.com/QwenLM/qwen-code/pull/8507) |
+| **[@zjunothing](https://github.com/zjunothing)** | ACP thinking depth options, MCP tool restore and metadata refresh, .env trust boundary, Wayland copy, telemetry hardening | [#8526](https://github.com/QwenLM/qwen-code/pull/8526), [#8475](https://github.com/QwenLM/qwen-code/pull/8475), [#8706](https://github.com/QwenLM/qwen-code/pull/8706), [#8481](https://github.com/QwenLM/qwen-code/pull/8481), [#8616](https://github.com/QwenLM/qwen-code/pull/8616) |
+| **[@qqqys](https://github.com/qqqys)** | Goal 50-round cap removal and evidence archiving, group pairing, DingTalk status card consolidation, workflow pause/resume | [#8421](https://github.com/QwenLM/qwen-code/pull/8421), [#8465](https://github.com/QwenLM/qwen-code/pull/8465), [#8440](https://github.com/QwenLM/qwen-code/pull/8440), [#8565](https://github.com/QwenLM/qwen-code/pull/8565), [#8320](https://github.com/QwenLM/qwen-code/pull/8320) |
+| **[@ytahdn](https://github.com/ytahdn)** | Web Shell image preview, sub-Agent panel responsiveness, long-conversation scroll stability, changed-line counts for large files | [#8930](https://github.com/QwenLM/qwen-code/pull/8930), [#8915](https://github.com/QwenLM/qwen-code/pull/8915), [#8914](https://github.com/QwenLM/qwen-code/pull/8914), [#8924](https://github.com/QwenLM/qwen-code/pull/8924) |
+| **[@carffuca](https://github.com/carffuca)** | Web Shell parallel sub-Agent feedback and row interactions, command-name retention in narrow terminals, keyboard operation for question cards | [#8559](https://github.com/QwenLM/qwen-code/pull/8559), [#8780](https://github.com/QwenLM/qwen-code/pull/8780), [#8657](https://github.com/QwenLM/qwen-code/pull/8657), [#8876](https://github.com/QwenLM/qwen-code/pull/8876) |
+| **[@DragonnZhang](https://github.com/DragonnZhang)** | Compaction cache sharing across OpenAI/Gemini/Vertex, Qwen 3.8 parameter conflict fix, VP-mode footer text selection | [#8418](https://github.com/QwenLM/qwen-code/pull/8418), [#8425](https://github.com/QwenLM/qwen-code/pull/8425), [#8525](https://github.com/QwenLM/qwen-code/pull/8525), [#8329](https://github.com/QwenLM/qwen-code/pull/8329) |
+| **[@callmeYe](https://github.com/callmeYe)** | Agent Plugins v1, Qoder plugins, archive extension installs, batch skill enable/disable, Web Shell Qwen 3.8 thinking controls | [#8834](https://github.com/QwenLM/qwen-code/pull/8834), [#8661](https://github.com/QwenLM/qwen-code/pull/8661), [#8621](https://github.com/QwenLM/qwen-code/pull/8621), [#8664](https://github.com/QwenLM/qwen-code/pull/8664), [#8974](https://github.com/QwenLM/qwen-code/pull/8974) |
+| **[@qwen-code-dev-bot](https://github.com/qwen-code-dev-bot)** | Double-click-drag word selection, window title status symbols, queued badge, provider update cooldown, WebSearch config example | [#8739](https://github.com/QwenLM/qwen-code/pull/8739), [#8970](https://github.com/QwenLM/qwen-code/pull/8970), [#8667](https://github.com/QwenLM/qwen-code/pull/8667), [#8829](https://github.com/QwenLM/qwen-code/pull/8829), [#8665](https://github.com/QwenLM/qwen-code/pull/8665) |
+| **[@BenGuanRan](https://github.com/BenGuanRan)** | Feishu option cards and contact display names, DingTalk mention identification and interactive card configuration | [#8578](https://github.com/QwenLM/qwen-code/pull/8578), [#8569](https://github.com/QwenLM/qwen-code/pull/8569), [#8639](https://github.com/QwenLM/qwen-code/pull/8639), [#8517](https://github.com/QwenLM/qwen-code/pull/8517) |
+| **[@LaZzyMan](https://github.com/LaZzyMan)** | Live Host signing and OSS mirror, arrow-key switching for @ completion | [#8579](https://github.com/QwenLM/qwen-code/pull/8579), [#8674](https://github.com/QwenLM/qwen-code/pull/8674), [#8917](https://github.com/QwenLM/qwen-code/pull/8917), [#8576](https://github.com/QwenLM/qwen-code/pull/8576) |
+| **[@chiga0](https://github.com/chiga0)** | Resume command echo, space reclamation from collapsed thinking blocks, window resize flicker fix | [#8455](https://github.com/QwenLM/qwen-code/pull/8455), [#8570](https://github.com/QwenLM/qwen-code/pull/8570), [#8831](https://github.com/QwenLM/qwen-code/pull/8831) |
+| 🆕 **[@daleselaji-dev](https://github.com/daleselaji-dev)** | 🎉 First contribution: explicit distrust takes priority, killed-command error reporting, MCP SSE timeout | [#8628](https://github.com/QwenLM/qwen-code/pull/8628), [#8501](https://github.com/QwenLM/qwen-code/pull/8501), [#8555](https://github.com/QwenLM/qwen-code/pull/8555) |
+| **[@harjothkhara](https://github.com/harjothkhara)** | Sandbox runtime probing, reply completion on disconnect recovery, OpenAI SDK cancel recognition | [#7734](https://github.com/QwenLM/qwen-code/pull/7734), [#8624](https://github.com/QwenLM/qwen-code/pull/8624), [#8399](https://github.com/QwenLM/qwen-code/pull/8399) |
+| **[@ZijianZhang989](https://github.com/ZijianZhang989)** | /doctor memory tool result stats, instant context refresh after memory writes | [#8875](https://github.com/QwenLM/qwen-code/pull/8875), [#8640](https://github.com/QwenLM/qwen-code/pull/8640), [#8809](https://github.com/QwenLM/qwen-code/pull/8809) |
+| **[@BZ-D](https://github.com/BZ-D)** | Web Shell Channels sidebar view, session refresh auth fix | [#8457](https://github.com/QwenLM/qwen-code/pull/8457), [#8445](https://github.com/QwenLM/qwen-code/pull/8445) |
+| **[@C0d3N1nja97342](https://github.com/C0d3N1nja97342)** | One Esc press cancels in-progress work | [#8353](https://github.com/QwenLM/qwen-code/pull/8353) |
+| **[@ComplexSimply](https://github.com/ComplexSimply)** | Model selection stability regression test | [#8879](https://github.com/QwenLM/qwen-code/pull/8879) |
+| **[@destire-mio](https://github.com/destire-mio)** | Hook context separated from conversation display | [#7948](https://github.com/QwenLM/qwen-code/pull/7948) |
+| **[@dreamWB](https://github.com/dreamWB)** | Mobile input box layout fix | [#8601](https://github.com/QwenLM/qwen-code/pull/8601) |
+| 🆕 **[@dss1222](https://github.com/dss1222)** | 🎉 First contribution: Korean added to the README language bar | [#8836](https://github.com/QwenLM/qwen-code/pull/8836) |
+| 🆕 **[@Maddock-MDF](https://github.com/Maddock-MDF)** | 🎉 First contribution: bailian-cli added to the docs ecosystem section | [#8710](https://github.com/QwenLM/qwen-code/pull/8710) |
+| **[@netbrah](https://github.com/netbrah)** | Claude alias parsing and Opus 5 token cap | [#8585](https://github.com/QwenLM/qwen-code/pull/8585) |
+| **[@PratikWayase](https://github.com/PratikWayase)** | Streaming Markdown parsing throttle | [#7904](https://github.com/QwenLM/qwen-code/pull/7904) |
+| 🆕 **[@rbalachandar](https://github.com/rbalachandar)** | 🎉 First contribution: macOS path normalization test fix | [#8759](https://github.com/QwenLM/qwen-code/pull/8759) |
+| 🆕 **[@rockybot2026](https://github.com/rockybot2026)** | 🎉 First contribution: trusted ASR gateway setting | [#8350](https://github.com/QwenLM/qwen-code/pull/8350) |
+| 🆕 **[@tlysanhuo](https://github.com/tlysanhuo)** | 🎉 First contribution: terminal inline image rendering | [#8305](https://github.com/QwenLM/qwen-code/pull/8305) |
+| **[@water-in-stone](https://github.com/water-in-stone)** | Web Shell drag-and-drop image attachment | [#8696](https://github.com/QwenLM/qwen-code/pull/8696) |
+| **[@xianjianlf2](https://github.com/xianjianlf2)** | File cache fails gracefully when inodes run out | [#8290](https://github.com/QwenLM/qwen-code/pull/8290) |
+
+<Callout type="info">
+  **Upgrade**: Run `npm i @qwen-code/qwen-code@latest -g` to upgrade to the latest version.
+</Callout>
+
+If you have questions or feedback, feel free to open an issue on [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!

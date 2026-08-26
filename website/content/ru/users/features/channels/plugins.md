@@ -50,7 +50,7 @@ qwen extensions link /path/to/my-channel-extension
 | -------------- | ---------------------------------------------- |
 | `senderPolicy` | `allowlist`, `pairing` или `open`              |
 | `allowedUsers` | Статический список разрешенных ID отправителей |
-| `sessionScope` | `user`, `thread` или `single`                  |
+| `sessionScope` | `user`, `chat_thread` или `single`; устаревшее значение `thread` остаётся совместимым с существующими конфигурациями |
 | `cwd`          | Рабочая директория для агента                  |
 | `instructions` | Добавляются в начало первого сообщения каждой сессии |
 | `model`        | Переопределение модели для канала              |

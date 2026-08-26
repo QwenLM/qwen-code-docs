@@ -7,7 +7,7 @@
 - **路径解析** — 规范化路径，拒绝任何逃逸出绑定工作区的路径（包括通过符号链接逃逸）。
 - **信任门控** — 当工作区不被信任时拒绝写入（`untrusted_workspace`）。
 - **大小与内容策略** — 完整快照/输出上限（`MAX_READ_BYTES = 256 KiB`），大文本窗口在输出和扫描成本上均有限制（`MAX_TEXT_SCAN_BYTES = 8 MiB`），写入上限（`MAX_WRITE_BYTES = 5 MiB`），二进制文件检测。
-- **原子性** — 先写入再重命名，保留目标文件权限模式，新文件默认权限为 `0o600`。
+- **原子性** — 先写入再重命名，保留目标文件权限模式；新文件默认权限为 `0o600`，或在工厂的 `system` 新文件权限模式策略（`QWEN_SERVE_NEW_FILE_MODE`）下跟随进程 umask。
 - **审计** — 每次访问/拒绝都会发出结构化事件，供 `PermissionAuditRing` / 监控使用。
 - **类型化错误** — 封闭的 `FsErrorKind` 联合类型，映射到 HTTP 状态码。
 
@@ -29,7 +29,7 @@ HTTP 文件路由（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST
 - 拒绝超过 `MAX_READ_BYTES` 的完整快照读取，同时允许显式窗口（输出上限为 `MAX_READ_BYTES`，扫描成本上限为 `MAX_TEXT_SCAN_BYTES`）；拒绝超过 `MAX_WRITE_BYTES` 的写入以及二进制文件（`binary_file`）。
 - 当工作区不被信任时，拒绝写入/编辑（`untrusted_workspace`）— 通过 `assertTrustedForIntent(trusted, intent)` 门控。
 - 通过 `shouldIgnore` 遵循 `.gitignore` / `.qwenignore` 模式。
-- 执行原子性的写入-重命名操作，并保留目标文件权限模式；新文件默认权限为 `0o600`。
+- 执行原子性的写入-重命名操作，并保留目标文件权限模式；新文件默认权限为 `0o600`（在 `system` 新文件权限模式策略下为 umask 推导的 `0o666 & ~umask`）。
 - 每次操作均发出 `fs.access` / `fs.denied` 审计事件。
 - 将每次失败映射为带有 kind 和 HTTP 状态码的 `FsError`；路由处理器统一序列化它们。
 
@@ -40,7 +40,7 @@ HTTP 文件路由（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST
 | 文件                       | 用途                                                                                                                                                                                                                         |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `paths.ts`               | `canonicalizeWorkspace`、`resolveWithinWorkspace`、`hasSuspiciousPathPattern`、品牌标记 `ResolvedPath`、`Intent` 联合类型（`read \| write \| list \| stat \| glob`）。                                                                 |
-| `policy.ts`              | `MAX_READ_BYTES`、`MAX_TEXT_SCAN_BYTES`、`MAX_WRITE_BYTES`、`BINARY_PROBE_BYTES`、`assertTrustedForIntent`、`detectBinary`、`enforceReadBytesSize`、`enforceReadSize`、`enforceWriteSize`、`shouldIgnore`。                                      |
+| `policy.ts`              | `MAX_READ_BYTES`、`MAX_TEXT_SCAN_BYTES`、`MAX_WRITE_BYTES`、`MAX_UPLOAD_BYTES`、`BINARY_PROBE_BYTES`、`assertTrustedForIntent`、`detectBinary`、`enforceReadBytesSize`、`enforceReadSize`、`enforceWriteSize`、`shouldIgnore`。                          |
 | `audit.ts`               | `FS_ACCESS_EVENT_TYPE`、`FS_DENIED_EVENT_TYPE`、`createAuditPublisher`、审计载荷类型。                                                                                                                                         |
 | `errors.ts`              | `FsError` 类、`isFsError`、`FsErrorKind` 联合类型（14 种）、`FsErrorStatus` 联合类型（`400 / 403 / 404 / 409 / 413 / 422 / 500 / 503`）。                                                                                          |
 | `workspace-file-system.ts` | `createWorkspaceFileSystemFactory`、`WorkspaceFileSystem`（编排器，执行读/写/列出操作）、`WriteMode`、`ContentHash`、`FsEntry`、`FsStat`、`ListOptions`、`GlobOptions`、`ReadTextOptions`、`ReadBytesOptions`、`WriteTextAtomicOptions`。 |
@@ -229,15 +229,16 @@ flowchart LR
 | 常量                                              | `MAX_READ_BYTES = 256 KiB`                                            | 完整快照和返回文本的上限；更大的文本需要显式窗口参数。                                                             |
 | 常量                                              | `MAX_TEXT_SCAN_BYTES = 8 MiB`                                         | 大文本读取为定位行偏移可扫描的字节数；超过则返回 `file_too_large`。                                                |
 | 常量                                              | `MAX_WRITE_BYTES = 5 MiB`                                             | 写入上限；大小低于 `express.json({ limit: '10mb' })`。                                                           |
+| 常量                                              | `MAX_UPLOAD_BYTES = 50 MiB`                                           | `POST /file/upload` 的二进制上传上限；上传不会覆盖，自动为已占用的名称编号。                                        |
 | 常量                                              | `BINARY_PROBE_BYTES = 4096`                                           | 基于内容的二进制检测采样大小。                                                                                 |
-| 能力标签                                          | `workspace_file_read`、`workspace_file_bytes`、`workspace_file_write` | 参见 [`11-capabilities-versioning.md`](./11-capabilities-versioning.md)。                                       |
+| 能力标签                                          | `workspace_file_read`、`workspace_file_bytes`、`workspace_file_write`、`workspace_file_upload` | 参见 [`11-capabilities-versioning.md`](./11-capabilities-versioning.md)。                                       |
 | 工作区文件                                        | `.gitignore`、`.qwenignore`                                           | 被忽略的路径从 `shouldIgnore` 中返回 `ignored: true`。                                                          |
 
 ## 注意事项与已知限制
 
 - **符号链接被拒绝，而非跟随。** 这与 F1 之前的内联 `BridgeClient.writeTextFile` 代理有所不同，后者会解析符号链接。通过符号链接点文件写入的 Agent 需要直接处理已解析的路径。
 - **`io_error` 与 `permission_denied` 是分开的。** 不要混为一谈。监控流水线依靠 `errorKind` 进行告警 — 将 ENOSPC 归入 permission_denied 会因 `df -h` 问题而通知安全响应人员。
-- **新文件权限默认为 `0o600`，而非 umask 默认值。** 写入系统调用的 `mode` 参数会绕过 umask。写入公开文件的 Agent 应显式传递权限覆盖。
+- **新文件权限默认为 `0o600`，而非 umask 默认值。** 写入系统调用的 `mode` 参数会绕过 umask。Agent 无法传递每次写入的权限覆盖。希望 Agent 创建的文件跟随守护进程 umask 的操作者可以通过 `QWEN_SERVE_NEW_FILE_MODE=system` 按守护进程启用（现有文件仍保留其权限模式）；参见 [`17-configuration.md`](./17-configuration.md)。
 - **`createServeApp` 默认 `trusted: false`** 对于没有注入自定义 `fsFactory` 或 `bridge` 的嵌入器，会静默拒绝 ACP 写入并返回 `untrusted_workspace`。第一次使用时会在 stderr 发出一次性警告；后续调用者看不到提醒。参见 [`02-serve-runtime.md`](./02-serve-runtime.md)。
 - **大文本需要显式窗口参数**，可以是 `line` / `limit` / `maxBytes` 中的任意一个。如果都不提供，读取将返回 `file_too_large`，因为认为自身持有整个文件的调用方可能会将其截断后写回。窗口从 inode 绑定的句柄流式传输，且永远不会返回超过 `MAX_READ_BYTES` 的内容。
 - **`MAX_READ_BYTES` 限制读取返回的内容；`MAX_TEXT_SCAN_BYTES` 限制读取的成本。** 行偏移通过从字节 0 扫描来解析，因此 `{ line: 900_000_000, limit: 20 }` 几乎不返回内容但仍需遍历整个文件。扫描超过 8 MiB 后，读取将以 `file_too_large` 被拒绝，指向 `readBytes`，它可以以 O(1) 复杂度到达任何偏移量。

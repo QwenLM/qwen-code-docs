@@ -7,7 +7,7 @@ title: Authentication
 Qwen Code의 첫 실행 `/auth` 메뉴에는 세 가지 최상위 옵션이 있습니다. CLI를 실행하려는 방식에 맞는 것을 선택하세요:
 
 - **Alibaba ModelStudio**: 공식 권장 설정. **Coding Plan**(개인 개발자용 · 주간 할당량 포함), **Token Plan**(팀 및 회사용 · 전용 엔드포인트의 사용량 기반 과금) 또는 **Standard API Key**(기존 ModelStudio API 키로 연결) 중 하나를 선택하는 하위 메뉴를 엽니다.
-- **Third-party Providers**: 내장 제공자를 선택하고 API 키로 연결합니다(DeepSeek, MiniMax, Z.AI, Idealab, ModelScope, OpenRouter, Requesty).
+- **Third-party Providers**: 내장 제공자를 선택하고 API 키로 연결합니다(DeepSeek, Grok, MiniMax, Z.AI, Idealab, ModelScope, OpenRouter, Requesty).
 - **Custom Provider**: 로컬 서버, 프록시 또는 지원되지 않는 제공자를 수동으로 연결합니다 — OpenAI, Anthropic, Gemini 및 기타 호환 엔드포인트를 지원합니다.
 
 > [!note]
@@ -166,7 +166,7 @@ API Key 인증으로 시작하는 가장 간단한 방법은 모든 것을 단�
 | OpenAI 호환       | `openai`             | `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`(별칭: `QWEN_MODEL`)                        | OpenAI, Azure OpenAI, OpenRouter, Requesty, ModelScope, Alibaba Cloud, 모든 OpenAI 호환 엔드포인트 |
 | Anthropic         | `anthropic`          | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`                                   | Anthropic Claude                                                                                    |
 | Google GenAI      | `gemini`             | `GEMINI_API_KEY`, `GEMINI_MODEL`                                                                | Google Gemini                                                                                       |
-| Vertex AI         | `vertex-ai`          | `GOOGLE_API_KEY`, `GOOGLE_MODEL`(`GOOGLE_GENAI_USE_VERTEXAI=true` 설정; `gemini` 프로토콜 사용) | Google Vertex AI                                                                                    |
+| Vertex AI         | `vertex-ai`          | `GOOGLE_API_KEY` 또는 `GOOGLE_CLOUD_PROJECT` (+ 선택적 `GOOGLE_CLOUD_LOCATION`), `GOOGLE_MODEL`(`gemini` 프로토콜 사용; 키 없는 프로젝트 전용 설정은 환경에서 자동 감지되지 않으므로 `--auth-type vertex-ai` 또는 `security.auth.selectedType`으로 auth 유형을 명시적으로 선택) | Google Vertex AI                                                                                    |
 
 #### 1단계: `~/.qwen/settings.json`에서 모델 및 제공자 구성
 

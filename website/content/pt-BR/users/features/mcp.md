@@ -1,3 +1,5 @@
+---
+
 # Conecte o Qwen Code a ferramentas via MCP
 
 O Qwen Code pode se conectar a ferramentas e fontes de dados externas através do [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction). Os servidores MCP dão ao Qwen Code acesso às suas ferramentas, bancos de dados e APIs.
@@ -260,6 +262,29 @@ requisição `tools/call`, padrão de 10 minutos) e não é afetado por
 `discoveryTimeoutMs` — uma invocação de ferramenta de longa duração não é uma
 patologia de inicialização.
 
+### Negociação automática de stdio
+
+Os servidores stdio usam o fluxo de inicialização legado de processo único por padrão. Para
+conectar a um servidor stdio moderno (apenas novo protocolo), ative a negociação automática de protocolo:
+
+```jsonc
+{
+  "mcpServers": {
+    "modern-server": {
+      "command": "node",
+      "args": ["./server.js"],
+      "versionNegotiation": "auto",
+    },
+  },
+}
+```
+
+A negociação automática executa uma cópia de curta duração do servidor configurado antes
+de iniciar o processo da sessão e pode usar até cinco segundos do orçamento de
+descoberta. Mantenha a política legado padrão para servidores com efeitos colaterais de
+inicialização não idempotentes, locks de proprietário único ou arquivos PID, ou handshakes
+lentos de inicialização.
+
 ### Revertendo o MCP progressivo
 
 Se você precisar do comportamento síncrono antigo (a CLI espera por todos os servidores MCP
@@ -274,7 +299,7 @@ ambiente. Isso é mantido como uma saída de emergência por pelo menos um relea
 
 ### Replay em caso de perda de conexão
 
-O Qwen Code somente reconecta e faz replay da chamada de ferramenta MCP atual quando o servidor tem `trust: true`, o workspace é confiável e a ferramenta declara explicitamente `idempotentHint: true` ou uma anotação consistente de somente leitura. Anotações de somente leitura conflitam com `destructiveHint: true` ou `idempotentHint: false` e não são replayadas.
+O Qwen Code somente reconecta e faz replay da chamada de ferramenta MCP atual quando o servidor tem `trust: true`, o workspace é confiável e a ferramenta declara explicitamente `idempotentHint: true` ou uma anotação consistente de somente leitura. Anotações de somente leitura conflitem com `destructiveHint: true` ou `idempotentHint: false` e não são replayadas.
 
 Chamadas sem anotações, com anotações conflitantes, um servidor não confiável ou um workspace não confiável não são replayadas após uma falha de conexão. O Qwen Code reporta que o resultado pode ser desconhecido porque o servidor poderia ter concluído a operação antes que a resposta fosse perdida. Verifique o resultado antes de tentar novamente. Esse comportamento conservador pode diferir de releases anteriores que faziam retry transparente de ferramentas sem anotações.
 
@@ -460,6 +485,7 @@ Opcional:
 | `env`                  | object                       | Variáveis de ambiente para o processo do servidor. Os valores podem referenciar variáveis de ambiente usando a sintaxe `$VAR_NAME` ou `${VAR_NAME}`                                                                                                                                |
 | `cwd`                  | string                       | Diretório de trabalho para o transporte Stdio                                                                                                                                                                                                                             |
 | `timeout`              | number<br>(default: 600,000) | Timeout da requisição em milissegundos (padrão: 600.000ms = 10 minutos)                                                                                                                                                                                                 |
+| `versionNegotiation`   | `"auto" \| "legacy"`<br>(default: `"legacy"`) | Para servidores Stdio, `"auto"` ativa a negociação de protocolo em um processo irmão descartável. O padrão `"legacy"` inicia apenas o processo da sessão.                                                                                                               |
 | `trust`                | boolean<br>(default: false)  | Quando `true`, ignora as confirmações de chamada de ferramenta para este servidor em um workspace confiável (padrão: `false`)                                                                                                                                                           |
 | `includeTools`         | array                        | Lista de nomes de ferramentas a serem incluídas deste servidor MCP. Quando especificado, apenas as ferramentas listadas aqui estarão disponíveis neste servidor (comportamento de lista de permissão). Se não especificado, todas as ferramentas do servidor são habilitadas por padrão.                                       |
 | `excludeTools`         | array                        | Lista de nomes de ferramentas a serem excluídas deste servidor MCP. As ferramentas listadas aqui não estarão disponíveis para o modelo, mesmo que sejam expostas pelo servidor.<br>Nota: `excludeTools` tem precedência sobre `includeTools` - se uma ferramenta estiver em ambas as listas, ela será excluída. |

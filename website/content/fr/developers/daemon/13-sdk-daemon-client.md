@@ -167,6 +167,26 @@ await client
 
 `DaemonSkillBatchToggleResult` contient les `results` ordonnés des succès, les `errors` par cible, et les comptes de niveau lot pour l'activation et le rafraîchissement de session. Le démon persiste les cibles valides ensemble et rafraîchit les sessions actives une seule fois ; une erreur attendue sur une cible ne bloque pas les autres cibles valides. La méthode lève une erreur uniquement en cas de réponse non-200 ; un 200 ne signifie pas que chaque cible a été appliquée, inspectez donc toujours `errors` avant de considérer le lot comme réussi.
 
+L'activation par lot d'extensions V2 conserve le modèle opérationnel asynchrone des extensions. Pré-vérifiez `extension_batch_activation_v2`, soumettez un lot global par défaut ou un lot de surcharge pour un workspace sélectionné, puis interrogez-le avec l'assistant d'opération existant :
+
+```ts
+const globalHandle = await client.setExtensionDefaultActivations(
+  ['formatter', 'review-tools'],
+  'disabled',
+  'dashboard-1',
+);
+const workspaceHandle = await client
+  .workspaceByCwd('/work/secondary')
+  .setExtensionActivations(
+    ['formatter', 'review-tools'],
+    'inherit',
+    'dashboard-1',
+  );
+const operation = await client.waitForExtensionOperation(workspaceHandle);
+```
+
+Le résultat terminal de l'opération contient les `results` ordonnés. Les cibles n'ont pas besoin d'être installées lors de la définition de `enabled` ou `disabled` : le daemon stocke une déclaration de nom et préserve cette politique d'activation lorsqu'une extension portant ce nom est installée ultérieurement. Toutes les cibles modifiées partagent une génération de store d'extensions et une passe de réconciliation. Les lots globaux par défaut réconcilient chaque runtime enregistré ; les lots de workspace résolvent et réconcilient uniquement le runtime fiable sélectionné. Le `inherit` de workspace efface la surcharge exacte mais ne crée pas de déclaration pour un nom inconnu ; un effacement tout-inconnu réussit comme une opération vide sans réconciliation. Les méthodes d'activation singulières restent limitées aux installations.
+
 Les noms d'affichage de workspace sont des métadonnées de présentation optionnelles. Pré-vérifiez `capabilities.features.includes('workspace_display_name')` ; les IDs de workspace et les chemins canoniques restent les seuls sélecteurs, et les noms d'affichage dupliqués sont valides.
 
 ```ts
@@ -384,6 +404,8 @@ Lorsque `workspace_persisted_transcript` est annoncé, `client.workspaceById(wor
 Lorsque `workspace_session_export` est annoncé, `client.workspaceById(workspaceId).exportSession(sessionId, { format })` ou `client.workspaceByCwd(workspaceCwd).exportSession(...)` exporte la transcription persistée active du workspace fiable sélectionné. Elle renvoie le `DaemonSessionExportResult` existant, préserve l'identité client optionnelle et le comportement de timeout de fetch global du client, et utilise toujours le REST natif même si le client a un transport remplaçable. Ne déduisez pas la prise en charge serveur de cette méthode depuis `session_export` ou `workspace_qualified_rest_core` ; les anciens démons conservent l'export primaire uniquement.
 
 Lorsque `workspace_archived_session_export` est annoncé, utilisez `client.workspaceById(workspaceId).exportArchivedSession(sessionId, { format })` ou la méthode `workspaceByCwd` correspondante pour exporter uniquement la transcription persistée archivée du workspace sélectionné. La méthode utilise le même type de résultat et le même comportement REST natif que l'export actif, mais elle ne revient jamais à une session active ; la prise en charge ne peut pas être déduite d'une quelconque capacité d'export actif.
+
+Lorsque `workspace_session_live_state` est annoncé, `client.getWorkspaceSessionLiveState(workspaceCwd)` ou les variantes qualifiées `client.workspaceById(workspaceId).getSessionLiveState()` / `client.workspaceByCwd(workspaceCwd).getSessionLiveState()` lisent l'instantané mémoire des sessions actives du workspace fiable sélectionné ainsi que sa version de catalogue, et renvoient `DaemonWorkspaceSessionLiveState` (`{ v: 1, catalogVersion: DaemonSessionCatalogVersion, sessions: DaemonSessionLiveState[] }`). Ces méthodes utilisent toujours le REST natif avec une authentification bearer et un sélecteur de workspace encodé, préservent l'identité client optionnelle et utilisent le timeout de requête courte existant. Elles n'appellent pas `requireCapability()` — une vérification de capacité à chaque interrogation doublerait le volume de requêtes — donc les consommateurs pré-vérifient `workspace_session_live_state` une seule fois depuis leurs capacités déjà chargées et se rabattent sur le polling de catalogue existant lorsque le tag est absent. Ne déduisez pas la prise en charge depuis `workspace_qualified_rest_core`. Chaque `DaemonSessionLiveState` porte un watermark d'activité optionnel `updatedAt` qui permet au consommateur de rafraîchir la récence d'une ligne de catalogue déjà en sa possession au lieu de recharger le catalogue après un tour terminé ; il est absent avant le premier terminal de tour en cours dans le bridge actuel et après un remplacement de daemon ou de runtime, donc le consommateur doit conserver son fallback de catalogue existant pour une valeur absente plutôt que de traiter l'absence comme une non-prise en charge.
 
 ### Initialisation de `lastEventId` à la construction
 

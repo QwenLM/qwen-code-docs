@@ -8,6 +8,8 @@ Qwen Code bietet eine umfassende Sammlung von Werkzeugen für die Interaktion mi
 
 `list_directory` listet die Namen von Dateien und Unterverzeichnissen direkt innerhalb eines angegebenen Verzeichnispfads auf. Es kann optional Einträge ignorieren, die auf angegebene Glob-Muster passen.
 
+**Hinweis:** Dieses Tool ist opt-in und standardmäßig deaktiviert, da `glob` in den meisten Fällen die Verzeichnisauflistung abdeckt. Aktiviere es, indem du `tools.listDirectory.enabled` in deinen Einstellungen auf `true` setzt oder `list_directory` explizit in der `coreTools`-Allowlist (`--core-tools` / `tools.core`) auflistest.
+
 - **Werkzeugname:** `list_directory`
 - **Anzeigename:** ListFiles
 - **Datei:** `ls.ts`
@@ -30,7 +32,7 @@ Qwen Code bietet eine umfassende Sammlung von Werkzeugen für die Interaktion mi
 - **Anzeigename:** ReadFile
 - **Datei:** `read-file.ts`
 - **Parameter:**
-  - `path` (string, erforderlich): Der absolute Pfad zur zu lesenden Datei.
+  - `file_path` (string, erforderlich): Der absolute Pfad zur zu lesenden Datei.
   - `offset` (number, optional): Bei Textdateien die 0-basierte Zeilennummer, ab der gelesen werden soll. Erfordert, dass `limit` gesetzt ist.
   - `limit` (number, optional): Bei Textdateien die maximale Anzahl zu lesender Zeilen. Wenn nicht angegeben, wird ein Standardmaximum (z. B. 2000 Zeilen) oder die gesamte Datei gelesen, falls möglich.
   - `pages` (string, optional): Bei PDFs eine 1-indizierte Seite oder geschlossener Seitenbereich wie `"3"` oder `"20-25"`. Eine Anfrage darf höchstens 20 Seiten umfassen.

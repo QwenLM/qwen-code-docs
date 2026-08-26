@@ -34,7 +34,7 @@ cd your-project
 qwen
 ```
 
-初回起動時に、モデルプロバイダーに接続するよう促されます。メニューには、**Alibaba ModelStudio** (Coding Plan、Token Plan、Standard API Key)、**サードパーティプロバイダー** (DeepSeek、MiniMax、Z.AI、OpenRouter などのビルトインプロバイダー。API key で接続)、**カスタムプロバイダー** (ローカルサーバー、プロキシ、またはサポート外のプロバイダー) があります。[Alibaba Cloud Coding Plan](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) ([国際版](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)) を使用する場合は、**Alibaba ModelStudio → Coding Plan** を選択してください。ModelStudio API key を使用する場合は、**Alibaba ModelStudio → Standard API Key** を選択し、API 設定ガイド ([北京](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [国際版](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)) に従ってください。それでは、コードベースを理解することから始めましょう。次のコマンドのいずれかを試してみてください:
+初回起動時に、モデルプロバイダーに接続するよう促されます。メニューには、**Alibaba ModelStudio** (Coding Plan、Token Plan、Standard API Key)、**サードパーティプロバイダー** (DeepSeek、MiniMax、Z.AI、Kimi、OpenRouter などのビルトインプロバイダー。API key で接続)、**カスタムプロバイダー** (ローカルサーバー、プロキシ、またはサポート外のプロバイダー) があります。[Alibaba Cloud Coding Plan](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) ([国際版](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)) を使用する場合は、**Alibaba ModelStudio → Coding Plan** を選択してください。ModelStudio API key を使用する場合は、**Alibaba ModelStudio → Standard API Key** を選択し、API 設定ガイド ([北京](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [国際版](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)) に従ってください。それでは、コードベースを理解することから始めましょう。次のコマンドのいずれかを試してみてください:
 
 ```
 what does this project do?

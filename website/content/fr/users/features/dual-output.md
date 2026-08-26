@@ -182,6 +182,8 @@ Si aucun lecteur ne se connecte jamais, le pont se désactive automatiquement un
 
 Les événements sont émis sous forme de JSON Lines (un objet par ligne). Le schéma est le même que celui utilisé par le mode non interactif `--output-format=stream-json`, avec `includePartialMessages` toujours activé.
 
+La version 2 du protocole limite les valeurs textuelles de `tool_result.content` à 65 536 octets UTF-8 après sérialisation en chaîne JSON. Les valeurs trop volumineuses deviennent des aperçus déterministes tête/queue ; le type d'événement et le schéma de champ restent inchangés. Il s'agit d'une limite de champ, pas d'une limite universelle de taille de trame JSONL.
+
 Le premier événement sur le canal est toujours `system` / `session_start`, émis lors de la construction du pont. Utilisez-le pour corréler le canal avec un identifiant de session avant l'arrivée de tout autre événement.
 
 ```jsonc
@@ -191,7 +193,7 @@ Le premier événement sur le canal est toujours `system` / `session_start`, ém
   "subtype": "session_start",
   "uuid": "...",
   "session_id": "...",
-  "data": { "session_id": "...", "cwd": "/chemin/vers/cwd" }
+  "data": { "session_id": "...", "cwd": "/path/to/cwd" }
 }
 
 // Événements de streaming pour un tour d'assistant en cours

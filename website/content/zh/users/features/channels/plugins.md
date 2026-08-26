@@ -50,7 +50,7 @@ qwen extensions link /path/to/my-channel-extension
 | ---------------- | ---------------------------------------------- |
 | `senderPolicy`   | `allowlist`、`pairing` 或 `open`               |
 | `allowedUsers`   | 发送者 ID 的静态白名单                         |
-| `sessionScope`   | `user`、`thread` 或 `single`                   |
+| `sessionScope`   | `user`、`chat_thread` 或 `single`；旧版 `thread` 在已配置时仍兼容 |
 | `cwd`            | agent 的工作目录                               |
 | `instructions`   | 追加到每个会话的第一条消息之前                 |
 | `model`          | 该 channel 的模型覆盖配置                      |

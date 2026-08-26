@@ -21,6 +21,9 @@
  *   translate --lang L     dispatch a qwen -p agent for a backlog batch
  *   verify    --lang L     structural gate over the dispatched manifest
  *   advance   --lang L     verify + record hashes of passing files
+ *   quarantine             resolve failed translations against HEAD
+ *   report-batch           report dispatched/verified totals from run logs
+ *   report                 publish per-language translation metrics
  *
  * Flags (all optional): --repo --branch --docs-path --content-dir
  *   --baseline --temp-dir --langs csv --limit N --manifest --model
@@ -453,11 +456,11 @@ function renderPrompt(lang, batch) {
     .replaceAll("{{FILES}}", files);
 }
 
-// One agent session per chunk, not one session per language: the CLI's
-// loop detection kills an entire session on one blocked/retried tool call
-// (runs 31115350719/31119970640 lost de almost entirely that way). Chunks
-// bound the blast radius of a halted session.
-const TRANSLATE_CHUNK = 15;
+// Bound one failed agent session to five files instead of a whole language.
+const TRANSLATE_CHUNK = 5;
+
+// Retry once; repeated failures stay in the next run's backlog.
+const TRANSLATE_ATTEMPTS = 2;
 
 // --safe-mode is read-only (no write/edit tools), so the agent could never
 // write translations. auto-edit approves read/write/edit (shell stays
@@ -485,6 +488,7 @@ async function runAgent(lang, prompt, logSuffix) {
     fs.writeSync(fd, c);
   });
   const status = await new Promise((resolve) => child.on("close", resolve));
+  fs.writeSync(fd, `\n[orch] agent exit=${status}\n`);
   fs.closeSync(fd);
   return { status, log };
 }
@@ -523,18 +527,40 @@ async function cmdTranslate(lang) {
       `[orch] ${lang}: dispatching agent for ${chunk.length} file(s)` +
         (chunks.length > 1 ? ` (part ${part}/${chunks.length})...` : "...")
     );
-    const { status, log } = await runAgent(
-      lang,
-      renderPrompt(lang, chunk),
-      suffix
-    );
-    console.log(`[orch] ${lang}: agent exit=${status} (log: ${log})`);
+    let status;
+    let log;
+    for (let attempt = 1; attempt <= TRANSLATE_ATTEMPTS; attempt++) {
+      // Distinct log suffix per attempt: runAgent opens the log with "w",
+      // so a retry would otherwise overwrite the halted attempt's log —
+      // exactly the log needed to tell a loop-detection halt from a real
+      // failure.
+      ({ status, log } = await runAgent(
+        lang,
+        renderPrompt(lang, chunk),
+        attempt === 1 ? suffix : `${suffix}-retry${attempt - 1}`
+      ));
+      console.log(
+        `[orch] ${lang}: agent exit=${status}` +
+          (attempt > 1 ? ` on retry ${attempt - 1}` : "") +
+          ` (log: ${log})`
+      );
+      if (status === 0) break;
+      if (attempt < TRANSLATE_ATTEMPTS) {
+        // Re-dispatches the whole chunk, including any file the halted
+        // attempt already translated. That redundancy is what keeps this
+        // simple, and at TRANSLATE_CHUNK=5 it is cheap; verify's "touched
+        // this session" check is satisfied by the rewrite either way.
+        console.log(
+          `[orch] ${lang}: part ${part}/${chunks.length} failed; retrying once...`
+        );
+      }
+    }
     if (status !== 0) {
       // The workflow's `|| true` keeps the step alive; surface the failure
       // in the run summary anyway, and leave the chunk's files in the
       // backlog (verify fails them; they are retried next run).
       console.log(
-        `::warning::${lang}: agent exited ${status} on part ${part}/${chunks.length}; its files stay in the backlog`
+        `::warning::${lang}: agent exited ${status} on part ${part}/${chunks.length} after ${TRANSLATE_ATTEMPTS} attempts; its files stay in the backlog`
       );
       process.exitCode = 1;
     }
@@ -587,6 +613,25 @@ function frontmatterYamlish(text) {
   return false; // no closing delimiter
 }
 
+function structuralProblems(en, target, lang) {
+  const problems = [];
+  if (target.trim().length === 0) problems.push("empty target");
+  if (fenceCount(en) !== fenceCount(target))
+    problems.push(
+      `code fence mismatch (en=${fenceCount(en)} ${lang}=${fenceCount(target)})`
+    );
+  const enHasFrontmatter = hasFrontmatter(en);
+  const targetHasFrontmatter = hasFrontmatter(target);
+  if (enHasFrontmatter !== targetHasFrontmatter) {
+    problems.push("frontmatter mismatch");
+  } else if (enHasFrontmatter) {
+    if (!frontmatterClosed(target)) problems.push("frontmatter unclosed");
+    else if (!frontmatterYamlish(target))
+      problems.push("frontmatter not parseable YAML");
+  }
+  return problems;
+}
+
 function verifyFile(lang, f, manifest) {
   const rel = relInContent(f);
   const enPath = path.join(OPTS.contentDir, "en", rel);
@@ -609,18 +654,8 @@ function verifyFile(lang, f, manifest) {
     fs.writeFileSync(target, healed);
     tg = healed;
   }
-  if (tg.trim().length === 0) problems.push("empty target");
   if (!touchedThisSession) problems.push("target not touched this session");
-  if (fenceCount(en) !== fenceCount(tg))
-    problems.push(
-      `code fence mismatch (en=${fenceCount(en)} ${lang}=${fenceCount(tg)})`
-    );
-  if (hasFrontmatter(en)) {
-    if (!hasFrontmatter(tg) || !frontmatterClosed(tg))
-      problems.push("frontmatter missing/unclosed");
-    else if (!frontmatterYamlish(tg))
-      problems.push("frontmatter not parseable YAML");
-  }
+  problems.push(...structuralProblems(en, tg, lang));
   const linksEn = (en.match(/\]\(/g) || []).length;
   const linksTg = (tg.match(/\]\(/g) || []).length;
   if (linksEn !== linksTg)
@@ -801,9 +836,8 @@ function isStructural(problem) {
  *
  * Retry logs only exist once the halted-chunk retry from #217 is in place;
  * until then `attempted` is simply 0 and the retry columns read as "-".
- * `recovered` is inferred from the retry log not carrying a halt marker of
- * its own, which is the only signal the log files carry — the agent's exit
- * status is not recorded in them.
+ * `runAgent` records the exit status in each log, so a non-halt failure is
+ * not misreported as a recovered retry.
  */
 function agentLogStats(lang, dir) {
   const prefix = `orchestrator-agent-${lang}`;
@@ -824,7 +858,7 @@ function agentLogStats(lang, dir) {
     if (thisHalted) halted++;
     if (/-retry\d+\.log$/.test(name)) {
       attempted++;
-      if (!thisHalted) recovered++;
+      if (text.includes("[orch] agent exit=0")) recovered++;
     }
   }
   return { halted, retriesAttempted: attempted, retriesRecovered: recovered };
@@ -858,7 +892,6 @@ function cmdReport() {
   }
   if (langs.length === 0) {
     console.log("[orch] report: no per-language metrics this run");
-    return;
   }
   langs.sort((a, b) => a.lang.localeCompare(b.lang));
   const stuck = [];
@@ -894,8 +927,13 @@ function cmdReport() {
       } | ${structural.length} | ${mins}m |`
     );
   }
-  const started = Math.min(...langs.map((m) => m.dispatchedAt));
-  const finished = Math.max(...langs.map((m) => m.completedAt));
+  const now = Date.now();
+  const started = langs.length
+    ? Math.min(...langs.map((m) => m.dispatchedAt))
+    : now;
+  const finished = langs.length
+    ? Math.max(...langs.map((m) => m.completedAt))
+    : now;
   const wallMins = Math.round((finished - started) / 60000);
   const lines = [
     "### Translation run metrics",
@@ -953,6 +991,127 @@ function cmdReport() {
     ) + "\n"
   );
   console.log(`[orch] report: wrote ${out}`);
+}
+
+function readFromHead(repoRel) {
+  try {
+    return execSync(`git show HEAD:${q(repoRel)}`, {
+      cwd: ROOT,
+      encoding: "utf8",
+      maxBuffer: 1 << 28,
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+  } catch {
+    return null;
+  }
+}
+
+function cmdQuarantine() {
+  const dir = path.dirname(OPTS.baseline);
+  const lists = fs
+    .readdirSync(dir)
+    .filter((f) => /^orchestrator-manifest-.*\.failed\.txt$/.test(f));
+  let restored = 0;
+  let kept = 0;
+  let removed = 0;
+  const unrepairable = [];
+  for (const listName of lists) {
+    const entries = fs
+      .readFileSync(path.join(dir, listName), "utf8")
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    for (const entry of entries) {
+      const slash = entry.indexOf("/");
+      if (slash < 0) continue;
+      const lang = entry.slice(0, slash);
+      const rel = entry.slice(slash + 1);
+      const target = path.join(OPTS.contentDir, lang, rel);
+      const repoRel = path.relative(ROOT, target).split(path.sep).join("/");
+      const head = readFromHead(repoRel);
+      if (head === null) {
+        fs.rmSync(target, { force: true });
+        removed++;
+        continue;
+      }
+      const enPath = path.join(OPTS.contentDir, "en", rel);
+      if (!fs.existsSync(enPath)) {
+        fs.writeFileSync(target, head);
+        restored++;
+        continue;
+      }
+      const en = fs.readFileSync(enPath, "utf8");
+      const headBad = structuralProblems(en, head, lang);
+      const current = fs.existsSync(target)
+        ? fs.readFileSync(target, "utf8")
+        : null;
+      const newBad =
+        current === null ? ["missing target"] : structuralProblems(en, current, lang);
+      if (headBad.length === 0) {
+        fs.writeFileSync(target, head);
+        restored++;
+      } else if (newBad.length === 0) {
+        console.log(
+          `::warning::${entry}: HEAD is structurally corrupt [${headBad.join(
+            "; "
+          )}]; keeping this run's structurally sound translation`
+        );
+        kept++;
+      } else {
+        fs.writeFileSync(target, head);
+        restored++;
+        unrepairable.push({ entry, headBad, newBad });
+        console.log(
+          `::warning::${entry}: HEAD and this run's output are structurally corrupt; restoring HEAD`
+        );
+      }
+    }
+  }
+  console.log(
+    `[orch] quarantine: ${restored} restored from HEAD, ${kept} kept over a corrupt HEAD, ` +
+      `${removed} removed, ${unrepairable.length} unrepairable`
+  );
+  if (unrepairable.length) {
+    const report = path.join(dir, "quarantine-unrepairable.json");
+    fs.writeFileSync(report, JSON.stringify(unrepairable, null, 2) + "\n");
+    console.log(`[orch] quarantine: wrote ${report}`);
+  }
+}
+
+function cmdReportBatch() {
+  const logDir = path.resolve(flags["log-dir"] || "/tmp");
+  const logs = fs.existsSync(logDir)
+    ? fs.readdirSync(logDir).filter((f) => /^orch-out-.*\.log$/.test(f))
+    : [];
+  let dispatched = 0;
+  let reported = 0;
+  let passed = 0;
+  for (const log of logs) {
+    const text = fs.readFileSync(path.join(logDir, log), "utf8");
+    for (const match of text.matchAll(/dispatching agent for (\d+) file/g))
+      dispatched += Number(match[1]);
+    for (const match of text.matchAll(/verify (\d+)\/(\d+) passed/g)) {
+      passed += Number(match[1]);
+      reported += Number(match[2]);
+    }
+  }
+  if (dispatched === 0) {
+    console.log("::warning::no translation dispatch results found");
+    return;
+  }
+  const pct = (100 * passed) / dispatched;
+  const line = `Verified ${passed}/${dispatched} dispatched file-translations (${pct.toFixed(0)}%)`;
+  console.log(line);
+  if (process.env.GITHUB_STEP_SUMMARY)
+    fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `- ${line}\n`);
+  if (reported < dispatched)
+    console.log(
+      `::warning::${dispatched - reported} dispatched file-translations had no verify result`
+    );
+  if (pct < 80)
+    console.log(
+      `::warning::only ${passed} of ${dispatched} dispatched file-translations verified (${pct.toFixed(0)}%) — check the per-language logs above for halted agent sessions`
+    );
 }
 
 // ---------- preflight ----------
@@ -1026,12 +1185,18 @@ switch (cmd) {
   case "report":
     cmdReport();
     break;
+  case "quarantine":
+    cmdQuarantine();
+    break;
+  case "report-batch":
+    cmdReportBatch();
+    break;
   case "seed":
     cmdSeed();
     break;
   default:
     console.log(
-      "usage: orchestrator.mjs <detect|preflight|sync-en|seed|translate|verify|advance|report> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv]"
+      "usage: orchestrator.mjs <detect|preflight|sync-en|seed|translate|verify|advance|quarantine|report-batch|report> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv]"
     );
     process.exitCode = cmd ? 1 : 0;
 }

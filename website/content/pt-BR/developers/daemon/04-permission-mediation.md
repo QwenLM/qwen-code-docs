@@ -202,10 +202,12 @@ Math.max(1, Math.floor(m / 2) + 1);
 | 5                        | 3         | Maioria.                        |
 | 6                        | 4         | Mais da metade.                 |
 
-Para **M = 2**, votos divididos (A seleciona X, B seleciona Y) só podem ser resolvidos pelo
-timeout por permissão: nenhuma opção atinge a unanimidade, então a requisição aguarda
-até `permissionResponseTimeoutMs` (padrão 5 min) e resolve como
-`{cancelled, timeout}`. O caminho de avanço de voto registra esse comportamento de "unanimidade significa que votos divididos expiram" no stderr para os operadores.
+Para **M = 2**, votos divididos (A seleciona X, B seleciona Y) só podem ser resolvidos por
+cancelamento do votante, cancelamento da sessão ou o timeout opcional de interação:
+nenhuma opção atinge a unanimidade. `permissionResponseTimeoutMs` está desativado por
+padrão; quando configurado, um voto dividido não resolvido resolve como
+`{cancelled, timeout}` nesse prazo. O caminho de avanço de voto registra o
+comportamento aplicável no stderr para os operadores.
 
 Operadores que desejam o comportamento de primeiro-voto-vence para M = 2 podem definir explicitamente
 `policy.consensusQuorum: 1`. Configurações mais estritas, como exigir
