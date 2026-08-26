@@ -181,6 +181,8 @@ Se nenhum leitor nunca se conectar, a ponte se desativa automaticamente assim qu
 
 Os eventos são emitidos como JSON Lines (um objeto por linha). O esquema é o mesmo usado pelo modo não interativo `--output-format=stream-json`, com `includePartialMessages` sempre ativado.
 
+O protocol version 2 limita valores textuais de `tool_result.content` a 65.536 bytes UTF-8 após a serialização da string JSON. Valores acima desse limite se tornam pré-visualizações determinísticas de início/fim; o tipo do evento e o esquema do campo permanecem inalterados. Este é um limite de campo, não um limite universal de tamanho de frame JSONL.
+
 O primeiro evento no canal é sempre `system` / `session_start`, emitido quando a ponte é construída. Use-o para correlacionar o canal com um ID de sessão antes que qualquer outro evento chegue.
 
 ```jsonc

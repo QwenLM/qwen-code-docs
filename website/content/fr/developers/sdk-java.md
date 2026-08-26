@@ -115,15 +115,13 @@ La sélection de modèle à la création n'est intentionnellement pas exposée p
 
 `PromptRequest.Builder.deadline(Duration)` demande une deadline de prompt appliquée par le démon et n'est acceptée que lorsque le démon annonce `prompt_absolute_deadline` ; sinon le SDK échoue avant d'envoyer le prompt. La valeur doit être comprise entre 1 et 2 147 483 647 millisecondes, correspondant à la plage de temporisation Node du démon. Ceci est distinct de `observationTimeout(Duration)`, qui borne uniquement l'observation SSE locale et n'envoie jamais de mutation d'annulation.
 
-Avant de créer une session, le SDK exige que le démon annonce le transport REST et `session_scope_override` ; cela empêche un démon plus ancien d'ignorer silencieusement la portée `thread` demandée et d'attacher le client à une session partagée. Lorsqu'un appelant fournit un ID de session, le SDK exige en plus `session_id_override` avant d'envoyer la mutation. Lorsque `client_heartbeat` est annoncé, une session ouverte envoie un nouveau heartbeat chaque minute afin que le démon ne moissonne pas un client autrement inactif. Définissez `heartbeatInterval(Duration.ZERO)` sur le builder `DaemonClient` pour désactiver ce comportement, ou choisissez un intervalle positif différent. Un heartbeat n'est jamais réessayé ; le prochain heartbeat planifié est un keepalive séparé. L'observation de prompt est limitée à 30 prompts simultanés par client par défaut et peut être ajustée avec `maximumConcurrentPrompts`. Les callbacks d'admission et de terminal futur s'exécutent en dehors des workers de transport ; les callbacks qui restent bloqués consomment une capacité de publication bornée. Le nettoyage du flux SSE est également borné, et une fermeture bloquée conserve sa réservation de nettoyage. L'une ou l'autre condition peut faire échouer un `startPrompt` ultérieur avec `DaemonClientCapacityException` plutôt que d'abandonner une fermeture par timeout ou de développer les threads et le travail en file sans limite.
+Avant de créer une session, le SDK exige que le démon annonce le transport REST et `session_scope_override` ; cela empêche un démon plus ancien d'ignorer silencieusement la portée `thread` demandée et d'attacher le client à une session partagée. Lorsqu'un appelant fournit un ID de session, le SDK exige en plus `session_id_override` avant d'envoyer la mutation. Lorsque `client_heartbeat` est annoncé, une session ouverte envoie un nouveau heartbeat chaque minute afin que le démon ne moissonne pas un client autrement inactif. Définissez `heartbeatInterval(Duration.ZERO)` sur le builder `DaemonClient` pour désactiver ce comportement, ou choisissez un intervalle positif différent. Un heartbeat n'est jamais réessayé ; le prochain heartbeat planifié est un keepalive séparé. L'observation de prompt est limitée à 32 prompts simultanés par client par défaut et peut être ajustée avec `maximumConcurrentPrompts`. Les callbacks d'admission et de terminal futur s'exécutent en dehors des workers de transport ; les callbacks qui restent bloqués consomment une capacité de publication bornée. Le nettoyage du flux SSE est également borné, et une fermeture bloquée conserve sa réservation de nettoyage. L'une ou l'autre condition peut faire échouer un `startPrompt` ultérieur avec `DaemonClientCapacityException` plutôt que d'abandonner une fermeture par timeout ou de développer les threads et le travail en file sans limite.
 
 Une complétion indéterminée est une limite de résultat, pas une limite de réutilisation de session. Après `PromptAdmissionUnknownException` ou `PromptOutcomeIndeterminateException`, ce `DaemonSessionClient` rejette définitivement les prompts ultérieurs même si le nettoyage local du flux réussit plus tard ; fermez ou détruisez la session à la place. Un timeout d'observation est publié sans attendre indéfiniment une fermeture de flux bloquée, tandis que le nettoyage continue de manière asynchrone et conserve la capacité bornée du client jusqu'à son terme.
 
 ## API stdio legacy
 
 L'API `com.alibaba.qwen.code.cli` existante reste disponible :
-
-La façon la plus simple d'utiliser le SDK legacy est via la méthode `QwenCodeCli.simpleQuery()` :
 
 ```java
 public static void runSimpleExample() {
@@ -144,7 +142,7 @@ public static void runTransportOptionsExample() {
             .setIncludePartialMessages(true)
             .setTurnTimeout(new Timeout(120L, TimeUnit.SECONDS))
             .setMessageTimeout(new Timeout(90L, TimeUnit.SECONDS))
-            .setAllowedTools(Arrays.asList("read_file", "write_file", "list_directory"));
+            .setAllowedTools(Arrays.asList("read_file", "write_file", "glob"));
 
     List<String> result = QwenCodeCli.simpleQuery("who are you, what are your capabilities?", options);
     result.forEach(logger::info);
@@ -361,7 +359,8 @@ Le SDK fournit des types d'exceptions spécifiques pour différents scénarios d
 
 ### Q : Dois-je installer la CLI Qwen séparément ?
 
-R : Oui. L'API démon nécessite un `qwen serve` compatible ; l'API stdio legacy nécessite qwen-code 0.5.0 ou supérieur.
+R : Oui. L'API démon nécessite un `qwen serve` compatible ; l'API stdio legacy
+nécessite qwen-code 0.5.0 ou supérieur.
 
 ### Q : Quelles versions de Java sont prises en charge ?
 

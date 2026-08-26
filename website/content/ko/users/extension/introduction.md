@@ -159,6 +159,10 @@ qwen extensions install @scope/my-extension --registry https://your-registry.com
 
 #### Git 저장소에서
 
+자격 증명이 필요한 비 GitHub, 중첩 마켓플레이스, 서브모듈 및 Git LFS 소스에는 Git 2.37 이상이 필요합니다. Qwen Code는 `http.curloptResolve`를 사용하여 Git 연결을 검증된 DNS 결과에 고정합니다. 이전 Git 버전에서는 Qwen Code가 익명 공개 `https://github.com/{owner}/{repo}[.git]` 루트 저장소만 지원하며, 요청된 ref를 커밋으로 해석하고 동일한 공개 네트워크 및 아카이브 안전 검사로 GitHub의 소스 아카이브를 다운로드합니다.
+
+이전 Git 폴백은 클론이 아닌 소스 아카이브에서 설치하므로 심볼릭 링크, 서브모듈 또는 Git LFS에 의존하는 저장소는 설치할 수 없으며, 다운로드가 압축 시 100 MiB, 아카이브가 100,000 항목 / 1 GiB 확장 크기로 제한됩니다. 저장소가 릴리스를 게시하는 경우 릴리스 기반 설치가 여전히 선호됩니다.
+
 ```bash
 qwen extensions install https://github.com/github/github-mcp-server
 ```

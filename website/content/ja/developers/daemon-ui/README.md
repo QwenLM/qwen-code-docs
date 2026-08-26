@@ -325,7 +325,7 @@ SDKには `mcp__<server>__<tool>` 命名ヒューリスティックのフォー�
 
 ## デバッグ理由の分類
 
-`DaemonUiStatusEvent.debugReason` は、ノーマライザーが型付きイベントの代わりに `debug` ブロックを投影するときにスタンプするクローズド列挙型です（トランスクリプト消費者用に `DaemonStatusTranscriptBlock` にも反映されます）：
+`DaemonUiStatusEvent.debugReason` は、ノーマライザーが型付きイベントの代わりに `debug` イベントを投影するときにスタンプするクローズド列挙型です：
 
 ```ts
 import type { DaemonUiDebugReason } from '@qwen-code/sdk/daemon';
@@ -333,6 +333,8 @@ import type { DaemonUiDebugReason } from '@qwen-code/sdk/daemon';
 ```
 
 正規のリストは `DAEMON_UI_DEBUG_REASONS` としてエクスポートされます。理由名はワイルドカード命名カテゴリです：`unrecognized_*` はデーモンがこのSDKバージョンにケースがないフレームを送信したことを意味します — 前方互換のノイズであり、会話コンテンツではなく開発者診断です。`malformed_*` はSDKが認識するフレームが使用不可能なペイロードで到着したことを意味します — 実際の欠陥シグナルです。
+
+**カテゴリによってルーティングが異なります。** `unrecognized_*` 診断は有界の `unrecognizedDiagnostics` サイドチャネルにルーティングされ、`blocks[]` に入ることはありません（ストリーミング中のassistant/thoughtブロックをファイナライズしたり、`maxBlocks` 予算を消費したりしないため）。`selectUnrecognizedDiagnostics` で読み取れます。上限は `UNRECOGNIZED_DIAGNOSTICS_LIMIT`、ルーティング対象のサブセットは `DAEMON_UI_UNRECOGNIZED_DIAGNOSTIC_REASONS` です。`malformed_*` 診断 — およびこの分割以前に永続化されたレガシーブロック — はトランスクリプト内に `DaemonStatusTranscriptBlock` として残るため、ブロックレベルの `debugReason` 処理はそれらのみに適用されます。
 
 レンダラーはデバッグテキストではなく `debugReason` で分岐する必要があります。テキストプレフィックスは診断文言であり、予告なく変更されます：
 
@@ -352,7 +354,7 @@ function hideDebugBlock(reason?: DaemonUiDebugReason): boolean {
 
 デーモンUI SDKのすべてのレイヤーは**前方互換の原則**に従います。未知の値はスローせず、グレースフルに低下します。
 
-- 未知のデーモンイベントタイプ → 生のタイプ名を持つ `debug` イベント。`unrecognized_*` の `debugReason` がスタンプされる（上記参照）
+- 未知のデーモンイベントタイプ → 生のタイプ名を持つ `debug` イベント。`unrecognized_*` の `debugReason` がスタンプされ、有界な `unrecognizedDiagnostics` サイドチャネルにルーティングされる（上記参照）
 - 未知のツールステータス → `currentToolCallId` はそのまま（クリアしない）
 - 未知のエラー種別 → `errorKind` は undefined（レンダラーはテキストにフォールバック）
 - 欠落した serverTimestamp → `clientReceivedAt` にフォールバック

@@ -10,11 +10,11 @@ title: Sandbox
 2. 이러한 빌드 스크립트는 npm이 릴리스하는 패키지에는 포함되지 않습니다.
 3. 코드에는 소스 코드 환경이 아닌 빌드 요청을 명시적으로 거부하는 하드코딩된 경로 검사가 포함되어 있습니다.
 
-컨테이너 안에 추가 도구(예: `git`, `python`, `rg`)가 필요한 경우, 사용자 정의 Dockerfile을 생성하세요. 구체적인操作步骤는 다음과 같습니다.
+컨테이너 안에 추가 도구(예: `git`, `python`, `rg`)가 필요한 경우, 사용자 정의 Dockerfile을 생성하세요. 구체적인 작업 절차는 다음과 같습니다.
 
-#### 1、먼저 qwen code 프로젝트를 클론합니다. https://github.com/QwenLM/qwen-code.git
+#### 1. 먼저 qwen code 프로젝트를 클론합니다. https://github.com/QwenLM/qwen-code.git
 
-#### 2、소스 코드 리포지토리 디렉토리에서 다음 작업을 수행하세요
+#### 2. 소스 코드 리포지토리 디렉토리에서 다음 작업을 수행하세요
 
 ```bash
 # 1. 먼저 프로젝트 의존성을 설치합니다
@@ -45,7 +45,7 @@ qwen -v
 
 ```
 
-#### 3、자체 프로젝트의 루트 디렉토리 아래에 샌드박스 Dockerfile을 생성합니다
+#### 3. 자체 프로젝트의 루트 디렉토리 아래에 샌드박스 Dockerfile을 생성합니다
 
 - 경로: `.qwen/sandbox.Dockerfile`
 
@@ -61,7 +61,7 @@ RUN apt-get update && apt-get install -y \
     ripgrep
 ```
 
-#### 4、프로젝트의 루트 디렉토리에서 첫 번째 샌드박스 이미지를 생성합니다
+#### 4. 프로젝트의 루트 디렉토리에서 첫 번째 샌드박스 이미지를 생성합니다
 
 ```bash
 QWEN_SANDBOX=docker BUILD_SANDBOX=1 qwen -s

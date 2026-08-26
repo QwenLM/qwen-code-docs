@@ -13,7 +13,7 @@
 | `--token <s>`                           | string                     | env                                       | Bearer token。覆盖 `QWEN_SERVER_TOKEN` 并在启动时进行 trim 处理。由于它会出现在进程命令行中，因此在部署时建议使用环境变量。                                           |
 | `--require-auth`                        | boolean                    | `false`                                   | 将 bearer 认证扩展到环回地址和 `/health` 端点；如果没有 token，启动时将拒绝运行。                                                                                               |
 | `--workspace <dir>`                     | absolute path / repeatable   | `process.cwd()`                           | 启动时的工作区运行时；重复使用可注册额外的隔离运行时。第一个为主运行时。每个值必须是绝对路径且为目录；在启动时进行规范化处理。                                                                                                      |
-| `--memory-project-scope <mode>`         | `git-root` / `workspace`     | `git-root`                                | 项目内存分区。`git-root` 在同一 Git root 下的工作区之间共享内存；`workspace` 按精确的工作区目录隔离。覆盖 `QWEN_CODE_MEMORY_PROJECT_SCOPE`。                               |
+| `--memory-project-scope <mode>`         | `git-root` / `workspace`     | `workspace`                               | 项目内存分区。`workspace` 按精确的工作区目录隔离；`git-root` 是同一 Git root 下工作区共享的旧版兼容作用域。覆盖 `QWEN_CODE_MEMORY_PROJECT_SCOPE`。                               |
 | `--max-sessions <n>`                    | number                     | `32`                                      | 每个工作区的活跃会话上限。`0` / `Infinity` 表示无限制；`NaN` 或负值会抛出异常。                                                                                                |
 | `--max-total-sessions <n>`              | number                       | 多个启动/恢复的工作区时派生                  | 守护进程级别的活跃会话上限。省略时，根据每个工作区的上限和启动/恢复的工作区数量派生一个有限的默认值。`0` / `Infinity` 表示无限制。                                         |
 | `--max-pending-prompts-per-session <n>` | number                       | `5`                                       | 每个会话已接受但处于 pending/running 状态的 prompt 上限。超出的 prompt 将返回 503。`0` / `Infinity` 表示无限制；负值或非整数值会抛出异常。                             |
@@ -21,7 +21,9 @@
 | `--enable-session-shell`                | boolean                      | `false`                                   | 启用直接的 `POST /session/:id/shell` 执行。需要 bearer token，且每次调用都必须携带绑定到会话的 `X-Qwen-Client-Id`。                                            |
 | `--event-ring-size <n>`                 | number                       | `8000`                                    | 每个会话的 SSE 重放 ring；软上限为 `1_000_000`。                                                                                                                               |
 | `--compacted-replay-max-bytes <n>`      | positive integer             | `4194304`                                 | `POST /session/:id/load` 返回的有界内存重放快照的字节上限；硬上限为 `268435456`。                                                                                                         |
-| `--memory-budget-mb <n>`                | integer in `[1024, 1048576]` | 受 cgroup 限制或主机内存的 50%，上限为参数最大值（1048576 MB） | 守护进程进程树的总内存预算，上限为解析后的可用内存。在守护进程状态的 `limits.memory` 中观察和报告；它不影响子进程的大小。启动时拒绝超出范围的值。 |
+| `--max-journal-events <n>`              | positive safe integer        | `10000`                                                                           | 每个会话未完成的轮次的 `liveJournal` 重放条目的基线上限。自适应增长可以提高它（参见 `--max-journal-bytes`）；固定任一 journal 标志都会禁用增长。                                                                                                            |
+| `--max-journal-bytes <n>`               | positive safe integer        | `8388608` (8 MiB)                                                                 | 每个会话 `liveJournal` 的基线字节上限。当轮次超过它时，自适应增长会按需提高会话的上限，向双倍增长但受限于剩余 pool 余量，且不超过每会话 256 MiB 的硬上限 — 在有效的 `--memory-budget-mb` 的 5% 的守护进程级别 pool 内（上限为 `1024` MB；当有效预算低于 1024 MB 最小值时为 0 — 增长禁用），由每个 workspace bridge 共享；没有余量时最旧的条目会被丢弃并标记 `history_truncated`。固定任一 journal 标志都会禁用增长。 |
+| `--memory-budget-mb <n>`                | integer in `[1024, 1048576]` | 受 cgroup 限制或主机内存的 50%，上限为参数最大值（1048576 MB） | 守护进程进程树的总内存预算，上限为解析后的可用内存。在守护进程状态的 `limits.memory` 中观察和报告；它不影响子进程的大小 — 当前的唯一消费者是自适应 live-journal 增长（参见 `--max-journal-bytes`）。启动时拒绝超出范围的值。 |
 | `--memory-pressure-mode <mode>`         | `off` \| `observe`           | `observe`                                                                         | 守护进程是否根据自身 RSS 和 V8 堆派生内存压力级别。两种模式都会报告 `runtime.memory.pressure`；仅 `observe` 会触发 `daemon_memory_pressure`。仅限根进程；无自动修复措施。                               |
 | `--child-heap-mode <mode>`              | `off` \| `observe`           | `observe`                                                                         | 守护进程是否为预算中的每个子进程建模堆分区。`observe` 会报告该分区并统计超出分区的 spawn 次数；不应用任何限制。`off` 完全不发布分区 — `maxConcurrentChildren` 和 `perChildCeilingMb` 均为 `null`。 |
 | `--http-bridge`                         | boolean                    | `true`                                    | Stage 1 bridge 模式。`--no-http-bridge` 仍会回退到 http-bridge 并将信息打印到 stderr。                                                                                       |
@@ -63,7 +65,10 @@
 | `QWEN_SERVE_RATE_LIMIT_MUTATION`    | `--rate-limit-mutation` 的环境变量回退值。                                                                                                                                |
 | `QWEN_SERVE_RATE_LIMIT_READ`        | `--rate-limit-read` 的环境变量回退值。                                                                                                                                    |
 | `QWEN_SERVE_RATE_LIMIT_WINDOW_MS`   | `--rate-limit-window-ms` 的环境变量回退值。                                                                                                                               |
-| `QWEN_CODE_MEMORY_PROJECT_SCOPE`    | `workspace` 按精确的工作区目录键控项目内存；任何其他值保持 `git-root` 作用域（无法识别的值会警告一次）。通过运行时 base env 传播，而非 `childEnvOverrides`；`--memory-project-scope` 优先级更高。每个工作区的 remember/forget/dream lane 将 pending 任务上限设为 `MAX_PENDING = 16`；N 个工作区最多允许 16·N 个排队任务，无守护进程级别上限。 |
+| `QWEN_SERVE_NEW_FILE_MODE`          | 守护进程文本写入的新文件权限模式策略：`owner`（默认值 — 新文件创建为 `0600`，不受 umask 影响）或 `system`（新文件遵循 `0o666 & ~umask`）。不区分大小写；字面值 `0600` 作为 `owner` 的别名被接受（不支持其他八进制模式），无法识别的值会在 stderr 警告并保持 `0600` 默认值。现有文件始终保留其权限模式。参见 [`qwen-serve.md` — Agent 文本写入的新文件权限模式](../../users/qwen-serve.md#new-file-mode-for-agent-text-writes)。 |
+| `QWEN_CODE_MEMORY_PROJECT_SCOPE`    | `workspace` 按精确的工作区目录键控项目内存；`git-root` 选择旧版共享作用域。未设置时，守护进程注入 `workspace`；无法识别的值警告一次并保留旧版 `git-root` 行为。通过运行时 base env 传播，而非 `childEnvOverrides`；`--memory-project-scope` 优先级更高。每个工作区的 remember/forget/dream lane 将 pending 任务上限设为 `MAX_PENDING = 16`；N 个工作区最多允许 16·N 个排队任务，无守护进程级别上限。 |
+
+空白的 `QWEN_CODE_MEMORY_PROJECT_SCOPE` 值被视为未设置，因此默认为 `workspace`；无法识别的非空值仍然警告一次并保留旧版 `git-root` 行为。
 
 ### 由 `qwen serve` CLI 包装器读取
 
@@ -105,17 +110,18 @@
 
 ## `ServeOptions`（编程式嵌入）
 
-`packages/cli/src/serve/types.ts` 定义了 `runQwenServe` 和 `createServeApp` 均接受的类型化选项对象。它映射了上述 CLI 参数并增加了以下内容：
+`packages/cli/src/serve/types.ts` 定义了通过公开 serve API 传递的类型化选项。它映射了上述 CLI 参数并增加了以下内容：
 
 | 字段                         | 作用                                                                                        |
 | ----------------------------- | --------------------------------------------------------------------------------------------- |
 | `eventRingSize`               | 覆盖默认的每个会话 ring 大小。                                                  |
-| `memoryProjectScope`          | `'git-root' \| 'workspace'` 项目内存分区；回退到 `QWEN_CODE_MEMORY_PROJECT_SCOPE`。                                          |
+| `memoryProjectScope`          | 仅限 `runQwenServe`；优先级为选项、启动时环境变量，然后回退到 `workspace`。直接调用 `createServeApp` 的使用 `deps.daemonEnv`。                                          |
 | `maxPendingPromptsPerSession` | 每个会话的 pending prompt 上限；`0` / `Infinity` 表示无限制。                             |
 | `mcpPoolActive`               | 编程式开关，默认值来自 `QWEN_SERVE_NO_MCP_POOL`。                                |
 | `externalToolGuard`           | 可选的 `{mode:'required', endpoint, token, timeoutMs?}`。省略表示完全关闭；required 模式在监听前执行 provider 握手。 |
 | `allowOrigins`                | 跨域白名单（`string[]`），对应 `--allow-origin`。                       |
 | `allowPrivateAuthBaseUrl`     | 允许安装私有 / localhost auth provider 的 `baseUrl`。                              |
+| `serveWebShell`               | 在守护进程根路径提供构建好的 Web Shell SPA（默认 `true`）；`false`（CLI 的 `--no-web`）使守护进程仅提供 API。当构建产物不包含 shell 资源时无效。 |
 | `enableSessionShell`          | 启用会话 shell 执行；仍然需要 bearer token 和绑定到会话的 client id。 |
 | `promptDeadlineMs`            | Prompt 绝对时间限制。                                                                       |
 | `writerIdleTimeoutMs`         | SSE writer 空闲超时时间。                                                                      |

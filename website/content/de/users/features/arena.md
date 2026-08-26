@@ -205,14 +205,14 @@ Agent Arena ist experimentell. Aktuelle Einschränkungen:
 
 ## Vergleich mit anderen Multi-Agent-Modi
 
-Agent Arena ist einer von mehreren geplanten Multi-Agent-Modi in Qwen Code. **Agent Team** und **Agent Swarm** sind noch nicht implementiert – die folgende Tabelle beschreibt ihr beabsichtigtes Design als Referenz.
+Agent Arena und die experimentelle Agent-Team-Runtime bedienen unterschiedliche Multi-Agent-Workflows. Agent Swarm bleibt ein geplanter Modus.
 
-|                    | **Agent Arena**                                        | **Agent Team** (geplant)                            | **Agent Swarm** (geplant)                                |
+|                    | **Agent Arena**                                        | **Agent Team**                                      | **Agent Swarm** (geplant)                                |
 | :----------------- | :----------------------------------------------------- | :-------------------------------------------------- | :------------------------------------------------------- |
 | **Ziel**           | Wettbewerbsorientiert: Finde die beste Lösung für _dieselbe_ Aufgabe | Kollaborativ: Bearbeite _verschiedene_ Aspekte gemeinsam | Stapelparallel: Spawne dynamisch Worker für Massenaufgaben |
 | **Agenten**        | Vorkonfigurierte Modelle treten unabhängig gegeneinander an | Teammitglieder arbeiten mit zugewiesenen Rollen zusammen | Worker werden bei Bedarf erstellt und nach Abschluss zerstört |
 | **Kommunikation**  | Keine Kommunikation zwischen den Agenten               | Direkte Peer-to-Peer-Nachrichten                    | Einweg: Ergebnisse werden vom übergeordneten Agenten aggregiert |
-| **Isolation**      | Vollständig: separate Git-Worktrees                    | Unabhängige Sitzungen mit gemeinsamem Aufgabenliste | Leichter, flüchtiger Kontext pro Worker                  |
+| **Isolation**      | Vollständig: separate Git-Worktrees                    | In-Prozess-Teammitglieder mit gemeinsamer Aufgabenliste | Leichter, flüchtiger Kontext pro Worker                  |
 | **Ausgabe**        | Eine ausgewählte Lösung wird auf den Arbeitsbereich angewendet | Synthetisierte Ergebnisse aus mehreren Perspektiven | Aggregierte Ergebnisse aus paralleler Verarbeitung       |
 | **Am besten für**  | Benchmarking, Auswahl zwischen Modellansätzen          | Recherche, komplexe Zusammenarbeit, schichtübergreifende Arbeit | Batch-Operationen, Datenverarbeitung, Map-Reduce-Aufgaben |
 
@@ -221,4 +221,5 @@ Agent Arena ist einer von mehreren geplanten Multi-Agent-Modi in Qwen Code. **Ag
 Erkunde verwandte Ansätze für parallele und delegierte Arbeit:
 
 - **Leichte Delegation**: [Unteragenten](./sub-agents.md) bearbeiten fokussierte Teilaufgaben innerhalb deiner Sitzung – besser, wenn du keinen Modellvergleich benötigst.
+- **Kollaborative Ausführung**: [Multi-Agent-Koordination](./multi-agent-coordination.md) verwendet Agent Team für gemeinsame Aufgaben und Teammitglied-Nachrichten.
 - **Manuelle parallele Sitzungen**: Führe mehrere Qwen Code-Sitzungen selbst in separaten Terminals mit [Git-Worktrees](https://git-scm.com/docs/git-worktree) aus, für vollständige manuelle Kontrolle.

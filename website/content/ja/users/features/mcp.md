@@ -1,3 +1,5 @@
+---
+
 # MCP経由でQwen Codeをツールに接続する
 
 Qwen Codeは、[Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction)を通じて外部ツールやデータソースに接続できます。MCPサーバーにより、Qwen Codeはあなたのツール、データベース、APIにアクセスできるようになります。
@@ -219,6 +221,24 @@ Qwen Codeは、UIがすでにインタラクティブになった後、バック
 
 既存の`timeout`フィールドは**ツール呼び出し**のタイムアウト（各`tools/call`リクエストに使用され、デフォルトは10分）であり、`discoveryTimeoutMs`の影響は受けません。長時間実行されるツール呼び出しはスタートアップの問題ではありません。
 
+### 自動Stdioネゴシエーション
+
+Stdioサーバーはデフォルトでシングルプロセスのレガシー初期化フローを使用します。モダン専用のStdioサーバーに接続するには、自動プロトコルネゴシエーションを有効にします:
+
+```jsonc
+{
+  "mcpServers": {
+    "modern-server": {
+      "command": "node",
+      "args": ["./server.js"],
+      "versionNegotiation": "auto",
+    },
+  },
+}
+```
+
+自動ネゴシエーションは、セッションプロセスを起動する前に設定されたサーバーの短命なコピーを実行し、検出バジェットのうち最大5秒を使用します。非冪等なスタートアップ副作用を持つサーバー、単一オーナーのロックやPIDファイルを持つサーバー、または遅い初期化ハンドシェイクを持つサーバーには、デフォルトのレガシーポリシーを維持してください。
+
 ### 段階的MCPのロールバック
 
 古い同期動作（CLIがUIを表示する前にすべてのMCPサーバーを待つ）が必要な場合は、環境変数に`QWEN_CODE_LEGACY_MCP_BLOCKING=1`を設定してください。これは少なくとも1リリースの間、エスケープハッチとして保持されます。
@@ -227,7 +247,7 @@ Qwen Codeは、UIがすでにインタラクティブになった後、バック
 
 ### 信頼（確認のスキップ）
 
-- **サーバー信頼**（`trust: true`）: そのサーバーの確認プロンプトをバイパスします（使用は慎重に）。
+- **サーバー信頼**（`trust: true`）: 信頼されたワークスペース内でのみ、そのサーバーの確認プロンプトをバイパスします（使用は慎重に）。
 
 ### 接続損失時のリプレイ
 
@@ -416,7 +436,8 @@ Qwen Code内の`/mcp`ダイアログを使用して、MCPサーバーを検査�
 | `env`                  | object                       | サーバープロセスの環境変数。値は`$VAR_NAME`または`${VAR_NAME}`構文を使用して環境変数を参照できます                                                                                                                                |
 | `cwd`                  | string                       | Stdioトランスポートの作業ディレクトリ                                                                                                                                                                                                                             |
 | `timeout`              | number<br>(default: 600,000) | ミリ秒単位の要求タイムアウト（デフォルト: 600,000ミリ秒 = 10分）                                                                                                                                                                                                 |
-| `trust`                | boolean<br>(default: false)  | `true`の場合、このサーバーのすべてのツール呼び出し確認をバイパスします（デフォルト: `false`）                                                                                                                                                                              |
+| `versionNegotiation`   | `"auto" \| "legacy"`<br>(default: `"legacy"`) | Stdioサーバーの場合、`"auto"`は使い捨ての兄弟プロセスでのプロトコルネゴシエーションを有効にします。デフォルトの`"legacy"`はセッションプロセスのみを起動します。                                                                                                               |
+| `trust`                | boolean<br>(default: false)  | `true`の場合、信頼されたワークスペース内でこのサーバーのツール呼び出し確認をバイパスします（デフォルト: `false`）                                                                                                                                                                              |
 | `includeTools`         | array                        | このMCPサーバーから含めるツール名のリスト。指定した場合、ここにリストされているツールのみがこのサーバーから利用可能になります（許可リスト動作）。指定しない場合、デフォルトですべてのツールが有効になります。                                       |
 | `excludeTools`         | array                        | このMCPサーバーから除外するツール名のリスト。ここにリストされているツールは、サーバーによって公開されていてもモデルが利用できません。<br>注: `excludeTools`は`includeTools`よりも優先されます。ツールが両方のリストにある場合、除外されます。 |
 | `targetAudience`       | string                       | アクセスしようとしているIAP保護アプリケーションで許可リストに登録されているOAuthクライアントID。`authProviderType: 'service_account_impersonation'`と併用します。                                                                                                         |
@@ -444,7 +465,7 @@ qwen mcp add [options] <name> <commandOrUrl> [args...]
 | `-e`, `--env`               | 環境変数を設定します。                                          | —                                      | `-e KEY=value`                                                     |
 | `-H`, `--header`            | SSEおよびHTTPトランスポートのHTTPヘッダーを設定します。                       | —                                      | `-H "X-Api-Key: abc123"`                                           |
 | `--timeout`                 | 接続タイムアウトをミリ秒で設定します。                             | —                                      | `--timeout 30000`                                                  |
-| `--trust`                   | サーバーを信頼します（すべてのツール呼び出し確認プロンプトをバイパス）。       | — (`false`)                            | `--trust`                                                          |
+| `--trust`                   | サーバーを信頼します。信頼されたワークスペースでの確認をスキップします。         | — (`false`)                            | `--trust`                                                          |
 | `--description`             | サーバーの説明を設定します。                                 | —                                      | `--description "Local tools"`                                      |
 | `--include-tools`           | 含めるツールのカンマ区切りリスト。                         | すべてのツールが含まれる                     | `--include-tools mytool,othertool`                                 |
 | `--exclude-tools`           | 除外するツールのカンマ区切りリスト。                         | なし                                   | `--exclude-tools mytool`                                           |

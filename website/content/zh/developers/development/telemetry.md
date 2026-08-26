@@ -81,21 +81,21 @@
 **敏感 span 属性：** 启用 `includeSensitiveSpanAttributes` 后，会发生两件事：
 
 1. **原生 span 属性**携带标准 OpenTelemetry GenAI JSON：
-   - LLM 输入消息（`gen_ai.input.messages`）
+   - 主代理和 LLM 输入消息（`gen_ai.input.messages`）
    - 系统指令（`gen_ai.system_instructions`）
    - 工具定义（`gen_ai.tool.definitions`）
-   - LLM 输出消息（`gen_ai.output.messages`）
+   - 主代理和 LLM 输出消息（`gen_ai.output.messages`）
    - 最终执行的工具参数（`gen_ai.tool.call.arguments`）
    - 成功的工具结果（`gen_ai.tool.call.result`）
-   - Interaction span 继续使用 `new_context`，因为它们不是 GenAI 推理 span。
+   - Interaction span 继续使用兼容性的 `new_context` 属性。
 
-   LLM 值来自 provider 最终的 SDK 请求对象和原始 provider 响应，而非原始逻辑配置。Tool 值来自最终调用参数和面向模型的成功结果。每个标准 GenAI 值都是紧凑 JSON，必须完整且符合 schema。无效、循环引用或超过 `sensitiveSpanAttributeMaxLength` 的值将被整体省略；JSON 永远不会被截断，也不会发出预览、哈希或截断元数据。interaction 特有的 `new_context` 属性保留其现有的截断行为。每个属性的默认最大值为 1 MiB（`1048576`），接受范围为 `1..104857600`（100 MiB）。限制以 JavaScript 字符串长度而非 UTF-8 字节数衡量。因此，非 ASCII 内容在 OTLP 导出后可能会占用更多字节。
+   主代理输入是上下文扩展前的一个原始用户文本投影，主代理输出是所有工具和续接工作结算后的一个最终用户可见答案。LLM 值仍然来自 provider 最终的 SDK 请求对象和原始 provider 响应，因此其输入可以包含历史、扩展的文件、系统指令和工具结果，其输出可以包含每个 provider 候选。Tool 值来自最终调用参数和面向模型的成功结果。每个标准 GenAI 值都是紧凑 JSON，必须完整且符合 schema。无效、循环引用或超过 `sensitiveSpanAttributeMaxLength` 的值将被整体省略；JSON 永远不会被截断，也不会发出预览、哈希或截断元数据。interaction 特有的 `new_context` 属性保留其现有的截断行为。每个属性的默认最大值为 1 MiB（`1048576`），接受范围为 `1..104857600`（100 MiB）。限制以 JavaScript 字符串长度而非 UTF-8 字节数衡量。因此，非 ASCII 内容在 OTLP 导出后可能会占用更多字节。
 
 2. **Log-to-span 桥接 span**（在未配置 logs 端点而导出 HTTP traces 时使用）保留其现有的 `prompt`、`function_args` 和 `response_text` 字段，而不是被丢弃。
 
 ⚠️ **安全警告：** 启用此标志会将完整的对话历史记录、`read_file` 读取的文件内容、shell 命令及其输出（包括环境变量或参数中的 secrets）以及模型响应流式传输到配置的 OTLP 后端。请将后端视为特权数据接收器。该标志默认为 `false`。
 
-**成本 / 负载大小：** 在默认限制下，一个 LLM span 最多可在输入、输出、系统指令和工具定义中携带约 4 MiB 的数据；一个 Tool span 可在参数和结果中携带约 2 MiB。这是 Qwen Code 的应用端上限，并不保证每个 collector 或后端都能接受这么大的单个属性。如果 span 被拒绝或丢弃，请降低 `sensitiveSpanAttributeMaxLength`（例如，降至 `61440`）并监控导出器吞吐量。
+**成本 / 负载大小：** 在默认限制下，一个 LLM span 最多可在输入、输出、系统指令和工具定义中携带约 4 MiB 的数据；一个 Tool span 可在参数和结果中携带约 2 MiB；一个 interaction 可在 Agent 输入、Agent 输出和兼容性 `new_context` 中携带约 3 MiB。这是 Qwen Code 的应用端上限，并不保证每个 collector 或后端都能接受这么大的单个属性。如果 span 被拒绝或丢弃，请降低 `sensitiveSpanAttributeMaxLength`（例如，降至 `61440`）并监控导出器吞吐量。
 
 此设置不会禁用 OTel 日志或其他遥测接收器中的敏感数据；非内部 API 响应遥测可能会填充 `response_text`，因此 OTel 日志、UI 遥测和聊天记录可能会独立于此设置接收响应文本。QwenLogger 不包含 `response_text`。
 
@@ -256,6 +256,21 @@ traceparent: 00-<32-hex traceId>-<16-hex parentSpanId>-<01-sampled | 00-not-samp
 
 `X-Qwen-Code-Session-Id` 和 `X-Qwen-Code-Request-Id` **不属于本 PR 的范围**。它们将在后续的独立 PR 中进行设计和提案，使用相同的 `outboundCorrelation.*` 命名空间，每个都有各自的威胁模型和 operator 同意流程。PR #4390 的 review（LaZzyMan）确立了一项原则：“telemetry 的工作范围不包括向 LLM provider 发送标识符”；关联 header 的工作将转移到其独立的设计讨论中，而不是归入 telemetry 之下。
 
+## 入站关联（daemon HTTP API）
+
+daemon HTTP API 在每个请求上接受标准 W3C `traceparent` header。两个消费者独立读取它：
+
+- **请求 span 重-parenting（telemetry 启用）。** 当 telemetry SDK 初始化时，有效的 header 被提取为请求 span 的远程 parent，因此 daemon span 附加到调用方的 trace 下，而不是启动新的 trace。`_meta` 转发路径读取相同的 parent 链，因此通过 daemon 请求转发的会话子进程 span 也会继承它。
+- **访问日志 `traceId` 字段（两种模式）。** 专用的预认证捕获中间件在每个请求上解析该 header——包括在认证（401）、速率限制器（429）、JSON body 解析器（400）处被短路的请求，或从未匹配任何路由的请求（404）——访问日志将调用方 trace id 作为 camelCase 的 `traceId` 字段发出。在 telemetry 禁用时，该字段是 daemon 日志行与调用方日志（或 trace 后端）之间的唯一关联，因此一个保存的查询无需 telemetry 配置即可同时适用于两种模式。
+
+无效但存在的 header 会被拒绝（span 保持无 parent），并留下一个速率限制的 DEBUG 面包屑（`qwen-code.daemon.traceparent.invalid`）记录被拒绝的值，因此损坏的跨服务关联可以仅从 daemon 日志中诊断。
+
+### 入站 parent 下的强制采样
+
+在默认的 `parentbased_always_on` 采样器（及其他 parentbased 默认值）下，远程 parent 的 `sampled=0` 标志是调用方端的 head-based 决策，而非丢弃 daemon telemetry 的请求，因此提取会强制在入站 parent 上设置 SAMPLED 标志。唯一的退出方式是 `OTEL_TRACES_SAMPLER=parentbased_always_off`，它会尊重调用方的标志——注意它也会为整个 daemon 禁用 root-span 采样，而不仅仅是入站链接的请求。
+
+**警告：** 恒定的 `traceparent`（例如在负载测试客户端中硬编码）会将每个 daemon 请求重-parent 到单个 trace 中；请为每个请求生成新鲜的 header。
+
 ## 阿里云 Telemetry
 
 ### 手动 OTLP 导出
@@ -385,6 +400,12 @@ traceparent: 00-<32-hex traceId>-<16-hex parentSpanId>-<01-sampled | 00-not-samp
 
 - `qwen-code.config`：启动时发出一次，包含 CLI 配置。
   - **属性**：`model`、`sandbox_enabled`、`core_tools_enabled`、`approval_mode`、`file_filtering_respect_git_ignore`、`debug_mode`、`truncate_tool_output_threshold`、`truncate_tool_output_lines`、`hooks`（逗号分隔，禁用时省略）、`ide_enabled`、`interactive_shell_enabled`、`mcp_servers`、`mcp_servers_count`、`mcp_tools`、`mcp_tools_count`、`output_format`、`skills`、`subagents`
+
+- `session.start`：会话开始。在启动时遥测初始化后发出，并在每次会话切换时再次发出；生命周期语义在 Spans 部分中描述。
+  - **属性**：`session.id`（string）、`session.previous_id`（string，仅当此启动在新的会话 id 下继续已持久化的对话时存在）
+
+- `session.end`：会话结束。在会话切换替换当前会话之前以及遥测关闭时发出。
+  - **属性**：`session.id`（string）
 
 - `qwen-code.user_prompt`：用户提交 prompt。
   - **属性**：`prompt_length`（int）、`prompt_id`（string）、`prompt`（string，如果 `log_prompts_enabled` 为 false 则排除）、`auth_type`（string）
@@ -679,7 +700,11 @@ Daemon 进程（长时间运行的 HTTP 服务器模式）会暴露其自身的�
 
 ### Spans
 
-分布式追踪 span 构成一棵以 `qwen-code.interaction` 为根的树。每个 interaction 都是一个带有自身 `traceId` 的 trace root；跨 prompt 关联使用 `session.id` 属性。
+分布式追踪 span 构成一棵以 `qwen-code.interaction` 为根的树。在 CLI 中，每个 interaction 都是一个带有自身 `traceId` 的 trace root；ACP 和 daemon 路径可能继承入站 parent 上下文。跨 prompt 关联使用 `session.id` 属性。
+
+会话生命周期也通过 OpenTelemetry General Session 语义约定导出。当 OTel logs 管道启用时，Qwen Code 会发出带有必需 `session.id` 属性的 `session.start` 和 `session.end` 日志事件（已在上方核心会话事件中列出）。已恢复的持久化对话仅当恢复的会话 id 与当前 id 不同时，才在其 `session.start` 事件中包含 `session.previous_id`；冷启动恢复（`--resume`、`--continue`、`--fork-session`）不携带该属性。`/clear` 和其他替换流程有意不声明延续，因为它们会丢弃之前的对话。
+
+现有的 Qwen 特有的 `qwen-code.config`/`cli_config` 和 RUM `session_start` 记录仍可用于兼容。GenAI 请求 span 继续使用 `gen_ai.conversation.id` 表示同一个所属会话 ID。
 
 - `qwen-code.interaction`：每个用户 prompt 轮次的 root span。
   - **属性**：`session.id`，可选 ARMS 扩展 `gen_ai.user.id`，`qwen-code.prompt_id`，`qwen-code.message_type`，`qwen-code.model`，`qwen-code.approval_mode`，`interaction.sequence`，`interaction.duration_ms`，`qwen-code.turn_status`（"ok"/"error"/"cancelled"）

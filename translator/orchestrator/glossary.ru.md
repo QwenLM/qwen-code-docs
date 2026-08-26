@@ -84,3 +84,6 @@ English term → Russian rendering. Follow existing entries; append new ones as 
 - baseline → baseline (не переводится)
 - security principal → принципал безопасности
 - pairing → сопряжение
+- compose floor → compose floor (минимальный резерв времени для композиции вердикта)
+- shell registry → реестр оболочек
+- aggregate hold → агрегированный удержатель

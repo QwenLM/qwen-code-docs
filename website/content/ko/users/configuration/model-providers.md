@@ -22,6 +22,43 @@ Qwen Code는 `settings.json`의 `modelProviders` 설정을 통해 여러 모델 
 >
 > **모델 고유성:** 동일한 `authType` 내의 모델은 `id` + `baseUrl`의 조합으로 고유하게 식별됩니다. 즉, 각 항목이 다른 `baseUrl`을 가지는 한 동일한 모델 ID(예: `"gpt-4o"`)를 단일 `authType` 아래에 여러 번 정의할 수 있습니다 — 예를 들어, 하나는 OpenAI를 직접 가리키고 다른 하나는 프록시 엔드포인트를 가리킵니다. 두 항목이 동일한 `id`와 동일한 `baseUrl`을 공유하면(또는 둘 다 `baseUrl`을 생략하면) 첫 번째 항목이 우선하며 후속 중복은 경고와 함께 건너뛰어집니다.
 
+### 이미지 생성 라우트
+
+라우트가 내장 `image_gen` 도구에서 사용될 수 있으려면 `supportsImageGeneration: true`를 설정하세요. 이 기능은 `capabilities.vision`이나 `generationConfig.modalities.image`와 같은 이미지 입력 지원과는 독립적입니다.
+
+라우트가 이미지 생성 전용이고 일반 모델 선택기에 나타나서는 안 되는 경우 `imageOnly: true`를 사용하세요. 하위 호환성을 위해 `imageOnly: true`는 이미지 생성 기능도 암시하므로 기존 설정을 마이그레이션할 필요는 없습니다.
+
+이중 역할 라우트는 메인 모델로 선택될 수도 있고 `/model --image`를 통해서도 선택될 수 있습니다:
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "omni-model",
+        "envKey": "MODEL_API_KEY",
+        "baseUrl": "https://gateway.example.com/model-api",
+        "supportsImageGeneration": true
+      }
+    ]
+  }
+}
+```
+
+전용 이미지 라우트는 두 필드를 모두 설정합니다. `imageOnly: true`만 있는 레거시 형식도 유효합니다:
+
+```json
+{
+  "id": "image-model",
+  "envKey": "MODEL_API_KEY",
+  "baseUrl": "https://images.example.com/api/v1",
+  "supportsImageGeneration": true,
+  "imageOnly": true
+}
+```
+
+선택된 라우트는 명시적 HTTPS `baseUrl`과 비어 있지 않은 `envKey`를 선언해야 합니다. 이미지 생성은 라우트와 동일한 엔드포인트 및 자격 증명을 사용합니다. 채팅과 이미지 생성에 다른 엔드포인트나 자격 증명이 필요하면 두 개의 라우트를 구성하세요.
+
 ## Auth 유형별 구성 예시
 
 아래는 다양한 인증 유형에 대한 포괄적인 구성 예시로, 사용 가능한 매개변수와 그 조합을 보여줍니다.
@@ -36,7 +73,10 @@ Qwen Code는 `settings.json`의 `modelProviders` 설정을 통해 여러 모델 
 | `anthropic`  | Anthropic Claude API                                                                                                                        |
 | `gemini`     | Google Gemini API                                                                                                                           |
 | `qwen-oauth` | Qwen OAuth(하드코딩됨, `modelProviders`에서 재정의 불가)                                                                                    |
-| `vertex-ai`  | Google Vertex AI(`gemini` 프로토콜과 Vertex AI 모드의 `@google/genai` SDK 사용; 선택 시 `GOOGLE_GENAI_USE_VERTEXAI=true` 설정)              |
+| `vertex-ai`  | Google Vertex AI(`gemini` 프로토콜과 Vertex AI 모드의 `@google/genai` SDK 사용; 선택 시 `GOOGLE_GENAI_USE_VERTEXAI=true`를 설정) |
+
+> [!note]
+> Vertex AI 항목은 **Application Default Credentials**로 인증할 수 있습니다. `GOOGLE_CLOUD_PROJECT`를 설정하고(선택적으로 `GOOGLE_CLOUD_LOCATION`, 기본값 `global`), `envKey`를 설정하지 않은 채 해결자가 읽는 다른 모든 키 소스(`GOOGLE_API_KEY`, `settings.security.auth.apiKey`, CLI 키 플래그)도 설정하지 마세요. Vertex 항목에 도달하는 API 키 값은 Google SDK를 Vertex Express 모드로 전환하여 프로젝트, 위치 및 ADC 자격 증명을 무시합니다. `envKey`를 선언하는 항목은 절대 ADC로 라우팅되지 않으므로 주입에 실패한 키는 다른 principal로 조용히 인증하는 대신 해당 변수에서 계속 실패합니다.
 
 > [!warning]
 > 내장 프로토콜이 아니거나 `providerProtocol`을 통해 매핑되지 않은 제공자 id(예: `"openai-custom"`과 같은 오타)는 라우팅할 수 없으므로 전체 항목이 경고와 함께 **건너뛰어집니다** — 모델이 `/model` 선택기에 표시되지 않습니다. 내장 제공자의 경우 위의 지원되는 auth 유형 값 중 하나를 사용하거나, 사용자 정의 id에 대한 [`providerProtocol`](#custom-provider-ids-providerprotocol) 매핑을 추가하세요.
@@ -315,6 +355,8 @@ Qwen Code는 각 제공자에 요청을 전송하기 위해 다음 공식 SDK를
 }
 ```
 
+큐에 대기되거나 느린 로컬 OpenAI 호환 서버의 경우, `streamIdleTimeoutMs`는 이 모델이 스트리밍된 청크 사이에 얼마나 오래 침묵할 수 있는지를 제어합니다. 선택된 제공자 항목에 대해 전역 `QWEN_STREAM_IDLE_TIMEOUT_MS` 값을 재정의합니다; `0`으로 설정하면 유휴 가드를 비활성화합니다. 별도의 15분 스트림 수명 상한은 `QWEN_STREAM_MAX_LIFETIME_MS`가 증가되거나 비활성화되지 않는 한 여전히 적용됩니다.
+
 인증이 필요 없는 로컬 서버의 경우, API 키에 임의의 플레이스홀더 값을 사용할 수 있습니다:
 
 ```bash
@@ -584,9 +626,10 @@ Coding Plan 모델을 수동으로 구성하려면 다른 OpenAI 호환 제공�
 
 | 프로토콜 / 제공자                            | 전송 형태                                                            | 참고 사항                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | -------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **OpenAI / DashScope** (`qwen3.8-max` 패밀리) | 플랫 `reasoning_effort: <effort>` 본문 매개변수                     | 5단계 `/effort` 티어(`low`, `medium`, `high`, `xhigh`, `max`)는 `qwen3.8-max`로 시작하는 모델 id에 대해 그대로 전달됩니다(날짜 스냅샷 및 `-latest` 별칭 포함). DashScope는 모델별 매핑을 적용합니다. 이 패밀리의 경우 티어만 단독으로 전송됩니다: 충돌하는 `enable_thinking` 또는 `thinking_budget`는 삭제됩니다(경고 로그, 생성기당 한 번) — DashScope는 `reasoning_effort`와 `thinking_budget`를 결합한 요청을 거부하며, 두 사고 제어는 함께 전송되지 않아야 합니다. `extra_body`의 명시적 `enable_thinking: false`는 삭제되지 않고 존중됩니다: 구성된 티어를 `reasoning_effort: 'none'`으로 재정의하며, `extra_body`가 그대로 이기지 않는 몇 안 되는 장소 중 하나입니다. 다른 Qwen 모델은 선택된 effort를 `enable_thinking: true`로 계속 매핑합니다. `reasoning_effort` 재정의는 `thinking_budget`와 충돌하지 않는 한 그대로 전달됩니다(DashScope가 거부하는 쌍). 충돌하는 경우 비활성 `reasoning_effort`가 삭제되고 `enable_thinking`과 `thinking_budget` 모두 유지됩니다. |
-| **OpenAI / DeepSeek** (`api.deepseek.com`)    | 플랫 `reasoning_effort: <effort>` 본문 매개변수                     | 중첩 구성 형태에서 `reasoning.effort`가 설정되면 플랫 `reasoning_effort`로 재작성되고 `'low'`/`'medium'`은 `'high'`로, `'xhigh'`는 `'max'`로 정규화됩니다 — DeepSeek의 [서버 측 하위 호환성](https://api-docs.deepseek.com/zh-cn/api/create-chat-completion)을 미러링합니다. 최상위 `samplingParams.reasoning_effort` 또는 `extra_body.reasoning_effort` 재정의는 이 정규화를 건너뛰고 그대로 전송됩니다.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| **OpenAI** (기타 호환 서버)                   | `reasoning: { effort, ... }` 그대로 전달                             | 제공자가 다른 형태를 예상하는 경우 `samplingParams`를 통해 설정합니다(예: GPT-5/o-series의 `samplingParams.reasoning_effort`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **OpenAI / DashScope** (`qwen3.8-max` 패밀리) | 플랫 `reasoning_effort: <effort>` 본문 매개변수                     | `/effort` 티어는 `qwen3.8-max`로 시작하는 모델 id(날짜 스냅샷 및 `-latest` 별칭 포함)에 대해 그대로 전달되며, DashScope는 모델별 매핑을 적용합니다. 이 패밀리의 사다리는 `xhigh`에서 멈추므로 구성된 `max`는 전송 후 거부되는 대신 `xhigh`로 제한됩니다(한 번 로그됨). `samplingParams` 또는 `extra_body`의 명시적 `reasoning_effort`는 그대로 재정의되며 제한되지 않습니다. `reasoning_effort`와 `thinking_budget`가 충돌하면 일반적인 `extra_body` > `samplingParams` > `reasoning` 우선순위로 더 높은 우선순위의 필드만 유지됩니다. 명시적 동일 계층 쌍은 `reasoning_effort`를 유지하여 교차 계층 해석 전 제공자의 동작과 일치합니다. 정적 필드가 이기면 `/effort`는 요청된 티어가 유효하다고 암시하는 대신 해당 필드를 보고합니다. effort 티어가 이기면 충돌하는 `enable_thinking`도 삭제됩니다. `extra_body`의 명시적 `enable_thinking: false`는 삭제되지 않고 존중됩니다: 구성된 티어를 `reasoning_effort: 'none'`으로 재정의하며, `extra_body`가 그대로 이기지 않는 몇 안 되는 장소 중 하나입니다. 다른 Qwen 모델은 선택된 effort를 `enable_thinking: true`로 계속 매핑합니다. `reasoning_effort` 재정의는 `thinking_budget`와 충돌하지 않는 한 그대로 전달됩니다(DashScope가 거부하는 쌍). 충돌하는 경우 비활성 `reasoning_effort`가 삭제되고 `enable_thinking`과 `thinking_budget` 모두 유지됩니다. |
+| **OpenAI / DeepSeek** (`api.deepseek.com`)    | 플랫 `reasoning_effort: <effort>` 본문 매개변수                     | 중첩 구성 형태에서 `reasoning.effort`가 설정되면 플랫 `reasoning_effort`로 재작성되고 `'low'`/`'medium'`은 `'high'`로, `'xhigh'`는 `'max'`로 정규화됩니다 — DeepSeek의 [서버 측 하위 호환성](https://api-docs.deepseek.com/zh-cn/api/create-chat-completion)을 미러링합니다. 최상위 `samplingParams.reasoning_effort` 또는 `extra_body.reasoning_effort` 재정의는 이 정규화를 건너뛰고 그대로 전송됩니다. `max`는 실제 DeepSeek 호스트에서만 수락되며, 다른 호스트의 `deepseek` 이름 모델은 일반적인 `xhigh` 상한을 유지합니다.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **OpenAI / Z.ai** (`z.ai`, `bigmodel.cn`)     | 플랫 `reasoning_effort: <effort>` 본문 매개변수                     | Z.ai 호스트의 GLM-5.2+는 `max`를 포함한 전체 사다리를 사용하며, 중첩된 `reasoning.effort`가 플랫 필드로 재작성됩니다. 이전 GLM id와 다른 호스트의 `glm-*` 모델은 일반적인 `xhigh` 상한을 유지합니다: 모델 이름만으로는 해당 엔드포인트가 무엇을 수락하는지 알 수 없습니다.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| **OpenAI** (기타 호환 서버)                   | `reasoning: { effort, ... }` 그대로 전달                             | 구성된 `max`는 `xhigh`로 제한됩니다(한 번 로그됨). `max`는 일반 OpenAI 사다리의 일부가 아닌 벤더 확장입니다. 제공자가 다른 형태를 예상하는 경우 `samplingParams`를 통해 설정합니다(예: GPT-5/o-series의 `samplingParams.reasoning_effort`). 명시적 `samplingParams` / `extra_body` 값은 제한되지 않습니다.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | **Anthropic** (실제 `api.anthropic.com`)      | `output_config: { effort }` 및 `effort-2025-11-24` 베타 헤더       | 실제 Anthropic은 `'low'`/`'medium'`/`'high'`만 수락합니다. `'max'`는 `debugLogger.warn` 라인과 함께 **`'high'`로 제한됩니다**(생성기당 한 번). 최대 effort를 원하려면 지원하는 DeepSeek 호환 엔드포인트로 baseURL을 전환하세요.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | **Anthropic** (`api.deepseek.com/anthropic`)  | 동일한 `output_config: { effort }` + 베타 헤더                     | `'max'`가 변경 없이 전달됩니다.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **Gemini** (`@google/genai`)                  | `thinkingConfig: { includeThoughts: true, thinkingLevel }`           | `'low'` → `LOW`, `'high'`/`'max'` → `HIGH`, 기타 → `THINKING_LEVEL_UNSPECIFIED`(Gemini에는 `MAX` 티어가 없음).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -597,11 +640,15 @@ Coding Plan 모델을 수동으로 구성하려면 다른 OpenAI 호환 제공�
 
 `api.deepseek.com` baseURL에서 OpenAI 파이프라인은 DeepSeek V4+가 요구하는 명시적 `thinking: { type: 'disabled' }` 필드를 내보냅니다 — 서버 측 기본값은 `'enabled'`이므로 `reasoning_effort`를 생략하기만 하면 여전히 사고 지연/비용이 발생합니다. 자체 호스팅 DeepSeek 백엔드(sglang/vllm) 및 기타 OpenAI 호환 서버는 이 필드를 받지 **않습니다**. 이러한 서버에서 사고를 비활성화해야 하는 경우 `samplingParams`/`extra_body`를 통해 `thinking: { type: 'disabled' }`(또는 추론 프레임워크가 노출하는 Knob)를 주입하세요.
 
+`openrouter.ai` baseURL에서 OpenAI 파이프라인은 추론이 비활성화되면 OpenRouter의 제공자 수준 `reasoning: { enabled: false }` 필드를 내보냅니다. 다른 OpenAI 호환 서버는 이 OpenRouter 전용 필드를 받지 않습니다. 해당 서버의 기본 비활성화 knob에는 `samplingParams`/`extra_body`를 사용하세요.
+
 ### `samplingParams`와의 상호 작용 (OpenAI 호환만)
 
 > [!warning]
 >
-> OpenAI 호환 제공자에서 `generationConfig.samplingParams`가 설정되면 파이프라인은 해당 키를 **그대로** 전송하고 별도의 `reasoning` 주입을 완전히 건너뜁니다. 따라서 `{ samplingParams: { temperature: 0.5 }, reasoning: { effort: 'max' } }`와 같은 구성은 OpenAI/DeepSeek 요청에서 추론 필드를 조용히 삭제합니다.
+> OpenAI 호환 제공자에서 `generationConfig.samplingParams`가 설정되면 파이프라인은 해당 키를 **그대로** 전송하고 별도의 `reasoning` 주입을 완전히 건너뜁니다. 따라서 `{ samplingParams: { temperature: 0.5 }, reasoning: { effort: 'max' } }`와 같은 구성은 OpenAI/DeepSeek 요청에서 추론 필드를 조용히 삭제합니다. `samplingParams` 안에 배치된 `reasoning` 객체는 사용자 자신의 값이며 변경 없이 전송됩니다. 위의 effort 상한은 파이프라인이 `/effort`에서 주입하는 티어에만 적용됩니다.
+>
+> DashScope Qwen 모델은 예외입니다. 해당 제공자는 `reasoning`을 직접 읽고 `reasoning_effort` 또는 `enable_thinking`으로 매핑합니다. qwen3.8-max 패밀리에서는 제공자별 `samplingParams` 필드가 와이어 매개변수가 충돌할 때 여전히 우선합니다. 이전 qwen 하이브리드에서는 구성된 effort 티어가 `enable_thinking: true`로 축약되어 `samplingParams.enable_thinking` 값을 재정의합니다.
 >
 > `samplingParams`를 설정하면 그 안에 추론 knob을 직접 포함하세요 — DeepSeek의 경우 `samplingParams.reasoning_effort`, GPT-5/o-series의 경우 `samplingParams.reasoning_effort`(플랫 필드) 또는 `samplingParams.reasoning`(중첩 객체). OpenRouter 및 기타 제공자의 경우 필드 이름이 다릅니다. 제공자 문서를 참조하세요.
 >

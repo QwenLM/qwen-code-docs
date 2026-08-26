@@ -1,77 +1,65 @@
 # Computer Use
 
-Qwen Code 内置了 **Computer Use** 工具，让 agent 可以操控你的桌面——点击、输入、滚动、启动应用、读取窗口内容和截屏。这使 Qwen Code 成为一个通用的桌面自动化 agent，而不仅仅是局限于终端的编码助手。
+Qwen Code 包含一个 `computer-use` skill，通过两个独立安装的包来教模型如何操作桌面应用：
 
-Computer Use 由 [`cua-driver`](https://github.com/trycua/cua) 原生驱动提供支持。这些工具作为延迟加载（lazy-loaded）的内置工具注册在 `computer_use__` 前缀下，因此只有在模型实际使用它们时才会占用 prompt 空间。
+```text
+bundled computer-use skill
+  -> @qwen-code/node-repl-mcp
+  -> @qwen-code/cua-sdk/computer-use
+  -> native cua-driver accessibility backend
+```
+
+Qwen Code 不捆绑 MCP server、SDK 或原生驱动。skill 会在缺少这些外部包时自动安装。
 
 > [!warning]
 >
-> Computer Use 赋予 agent 对鼠标、键盘和窗口的控制权，并允许它读取屏幕内容。请仅在受信任的 prompt 下使用，并尽可能在沙箱或一次性环境中使用。操作工具（click、type、drag 等）经过正常的[审批流程](./approval-mode.md)；只读工具（如列出窗口）可能在不提示的情况下运行。
+> Computer Use 可以读取应用 UI 并控制鼠标和键盘输入。请仅在受信任的环境中使用，并仔细审查 MCP 审批。
 
-## 启用和禁用
+## 自动设置
 
-Computer Use **默认启用**。`computer_use__*` 工具在启动时自动注册。
+需要 Node.js 22 或更高版本以及 npm。
 
-要完全禁用它——同时阻止原生驱动被下载或启动——请在 `settings.json` 中将 `tools.computerUse.enabled` 设置为 `false`：
+首次使用时，skill 会自行运行以下命令：
 
-```jsonc
-{
-  "tools": {
-    "computerUse": {
-      "enabled": false,
-    },
-  },
-}
+```bash
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.0
+npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.0
 ```
 
-此设置需要重启才能生效。
+MCP server 首次添加后请重启 Qwen Code。skill 随后通过 `node_repl` 继续执行桌面任务。
 
-## 首次运行和原生驱动
+SDK 安装不会修改 `package.json` 和 lockfile，但会写入工作区的 `node_modules`。其 postinstall 会下载并验证当前平台的原生 payload。
 
-当 agent 首次调用 Computer Use 工具时，Qwen Code 会下载一个固定的、已签名的 `cua-driver` 二进制文件（约 20 MB）到 `~/.qwen/computer-use/`，并作为本地进程启动它。预构建的二进制文件适用于 macOS（Apple Silicon 和 Intel）、Linux（x86_64）和 Windows（x86_64）。
+移除 MCP 配置或工作区中的 SDK 安装即可禁用该执行路径；没有旧版回退。
 
-### macOS 权限
+## 使用
 
-在 macOS 上，桌面自动化需要两个系统权限：
+要求 Qwen Code 使用 `$computer-use` 执行桌面任务。引导完成后，它会遵循标准的 Computer Use 工作流：
 
-- **Accessibility** — 读取窗口/UI 状态和合成输入
-- **Screen Recording** — 捕获截屏
+1. 发现目标应用和窗口；
+2. 观察完整的辅助功能状态；
+3. 尽可能通过当前的语义元素 token 执行操作；
+4. 每次变更后获取最新状态；
+5. 验证请求的结果；以及
+6. 关闭 SDK 客户端并重置 REPL。
 
-首次使用时，驱动会引导你通过标准的 macOS 系统对话框授予这些权限。agent 还可以按需检查权限状态（`check_permissions` 工具）。由于 macOS 将权限授予归因于_负责_进程，因此可能需要将权限授予启动 Qwen Code 的终端或 IDE。
+驱动是唯一计算观察差异的组件。模型代码使用类型化的 SDK 方法，不会分发任意的驱动工具名称。
 
-## Agent 可以做什么
+## 权限
 
-完整的 `cua-driver` 工具集都被暴露。主要功能：
+Node REPL 是一个 MCP server，以普通 Node.js 权限执行模型编写的 JavaScript。其调用遵循 Qwen Code 正常的[审批流程](./approval-mode.md)。SDK 还会强制执行原生授权。
 
-| 类别          | 工具（部分）                                                                       |
-| ------------- | ---------------------------------------------------------------------------------- |
-| 鼠标          | `click`、`double_click`、`right_click`、`drag`、`move_cursor`、`scroll`            |
-| 键盘          | `type_text`、`press_key`、`hotkey`                                                 |
-| 窗口 / UI     | `list_windows`、`get_window_state`、`get_accessibility_tree`、`set_value`、`zoom`  |
-| 应用          | `launch_app`、`list_apps`、`bring_to_front`、`kill_app`                            |
-| 浏览器页面    | `page`（执行 JavaScript、读取文本、查询 DOM、点击元素）                            |
-| 截屏          | `get_window_state`（捕获 PNG）、`page`                                             |
-| 录制          | `start_recording`、`stop_recording`、`replay_trajectory`（录制/重放会话）          |
-| 会话          | `start_session`、`end_session`、agent 光标覆盖控制                                 |
+在 macOS 上，辅助功能观察和输入需要 Accessibility 权限。截屏还需要 Screen Recording 权限。macOS 可能会将授权归因于启动 Qwen Code 的终端或 IDE。Windows 和 Linux 使用各自平台的辅助功能和输入机制。
 
-元素定位操作优先于原始像素坐标：`get_window_state` 返回窗口辅助功能树的 Markdown 渲染，每个可操作元素都有一个稳定的 `element_index`，输入工具可以直接定位。
+## 故障排除
 
-macOS 上的支持最为完整；部分工具是平台特定的（例如，`bring_to_front` 仅限 Windows，`launch_app` 针对 macOS 应用）。
-
-## 配置
-
-所有 Computer Use 设置位于 `settings.json` 的 `tools.computerUse` 下。完整列表请参见[设置参考](../configuration/settings.md)。
-
-| 设置                                  | 类型    | 默认值   | 描述                                                                                                                                                                                                                                              |
-| ------------------------------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tools.computerUse.enabled`           | boolean | `true`   | 注册 `computer_use__*` 工具。为 `false` 时，驱动不会被下载或启动。                                                                                                                                                                                |
-| `tools.computerUse.maxImageDimension` | number  | `-1`     | 截屏的最长边像素上限。`-1` 保持驱动默认值（1568）；`0` 禁用缩放（全分辨率）；正值限制最长边。较低的上限可降低 vision token 成本。环境变量覆盖：`QWEN_COMPUTER_USE_MAX_IMAGE_DIMENSION`。                                                       |
-| `tools.computerUse.idleTimeoutMs`     | number  | `300000` | 最后一次 `computer_use__*` 调用后保持驱动进程存活的毫秒数（默认 5 分钟）。`0` 保持运行直到 Qwen Code 退出。                                                                                                                                       |
-
-以上三个设置均需重启才能生效。
+- 如果自动设置后 `node_repl` 仍不可用，请重启 Qwen Code 并使用 `qwen mcp list` 验证 server。
+- 如果自动设置后 SDK 导入仍然失败，请确认 Qwen Code 运行在安装该包的工作区中。
+- 超时、取消、重置或内核崩溃后，请重新引导 SDK 客户端并请求最新状态。
 
 ## 另请参阅
 
-- [审批模式](./approval-mode.md) — 工具执行如何被门控
-- [沙箱](./sandbox.md) — 隔离工具可触及的范围
-- [设置参考](../configuration/settings.md) — 完整的 `tools.computerUse.*` schema
+- [Skills](./skills.md)
+- [MCP servers](./mcp.md)
+- [审批模式](./approval-mode.md)
+- [沙箱](./sandbox.md)

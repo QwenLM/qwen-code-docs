@@ -21,6 +21,7 @@
  *   translate --lang L     dispatch a qwen -p agent for a backlog batch
  *   verify    --lang L     structural gate over the dispatched manifest
  *   advance   --lang L     verify + record hashes of passing files
+ *   quarantine             resolve failed translations against HEAD
  *
  * Flags (all optional): --repo --branch --docs-path --content-dir
  *   --baseline --temp-dir --langs csv --limit N --manifest --model
@@ -630,6 +631,25 @@ function frontmatterYamlish(text) {
   return false; // no closing delimiter
 }
 
+function structuralProblems(en, target, lang) {
+  const problems = [];
+  if (target.trim().length === 0) problems.push("empty target");
+  if (fenceCount(en) !== fenceCount(target))
+    problems.push(
+      `code fence mismatch (en=${fenceCount(en)} ${lang}=${fenceCount(target)})`
+    );
+  const enHasFrontmatter = hasFrontmatter(en);
+  const targetHasFrontmatter = hasFrontmatter(target);
+  if (enHasFrontmatter !== targetHasFrontmatter) {
+    problems.push("frontmatter mismatch");
+  } else if (enHasFrontmatter) {
+    if (!frontmatterClosed(target)) problems.push("frontmatter unclosed");
+    else if (!frontmatterYamlish(target))
+      problems.push("frontmatter not parseable YAML");
+  }
+  return problems;
+}
+
 function verifyFile(lang, f, manifest) {
   const rel = relInContent(f);
   const enPath = path.join(OPTS.contentDir, "en", rel);
@@ -652,18 +672,8 @@ function verifyFile(lang, f, manifest) {
     fs.writeFileSync(target, healed);
     tg = healed;
   }
-  if (tg.trim().length === 0) problems.push("empty target");
   if (!touchedThisSession) problems.push("target not touched this session");
-  if (fenceCount(en) !== fenceCount(tg))
-    problems.push(
-      `code fence mismatch (en=${fenceCount(en)} ${lang}=${fenceCount(tg)})`
-    );
-  if (hasFrontmatter(en)) {
-    if (!hasFrontmatter(tg) || !frontmatterClosed(tg))
-      problems.push("frontmatter missing/unclosed");
-    else if (!frontmatterYamlish(tg))
-      problems.push("frontmatter not parseable YAML");
-  }
+  problems.push(...structuralProblems(en, tg, lang));
   const linksEn = (en.match(/\]\(/g) || []).length;
   const linksTg = (tg.match(/\]\(/g) || []).length;
   if (linksEn !== linksTg)
@@ -790,6 +800,91 @@ function cmdAdvance(lang) {
   );
 }
 
+function readFromHead(repoRel) {
+  try {
+    return execSync(`git show HEAD:${q(repoRel)}`, {
+      cwd: ROOT,
+      encoding: "utf8",
+      maxBuffer: 1 << 28,
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+  } catch {
+    return null;
+  }
+}
+
+function cmdQuarantine() {
+  const dir = path.dirname(OPTS.baseline);
+  const lists = fs
+    .readdirSync(dir)
+    .filter((f) => /^orchestrator-manifest-.*\.failed\.txt$/.test(f));
+  let restored = 0;
+  let kept = 0;
+  let removed = 0;
+  const unrepairable = [];
+  for (const listName of lists) {
+    const entries = fs
+      .readFileSync(path.join(dir, listName), "utf8")
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    for (const entry of entries) {
+      const slash = entry.indexOf("/");
+      if (slash < 0) continue;
+      const lang = entry.slice(0, slash);
+      const rel = entry.slice(slash + 1);
+      const target = path.join(OPTS.contentDir, lang, rel);
+      const repoRel = path.relative(ROOT, target).split(path.sep).join("/");
+      const head = readFromHead(repoRel);
+      if (head === null) {
+        fs.rmSync(target, { force: true });
+        removed++;
+        continue;
+      }
+      const enPath = path.join(OPTS.contentDir, "en", rel);
+      if (!fs.existsSync(enPath)) {
+        fs.writeFileSync(target, head);
+        restored++;
+        continue;
+      }
+      const en = fs.readFileSync(enPath, "utf8");
+      const headBad = structuralProblems(en, head, lang);
+      const current = fs.existsSync(target)
+        ? fs.readFileSync(target, "utf8")
+        : null;
+      const newBad =
+        current === null ? ["missing target"] : structuralProblems(en, current, lang);
+      if (headBad.length === 0) {
+        fs.writeFileSync(target, head);
+        restored++;
+      } else if (newBad.length === 0) {
+        console.log(
+          `::warning::${entry}: HEAD is structurally corrupt [${headBad.join(
+            "; "
+          )}]; keeping this run's structurally sound translation`
+        );
+        kept++;
+      } else {
+        fs.writeFileSync(target, head);
+        restored++;
+        unrepairable.push({ entry, headBad, newBad });
+        console.log(
+          `::warning::${entry}: HEAD and this run's output are structurally corrupt; restoring HEAD`
+        );
+      }
+    }
+  }
+  console.log(
+    `[orch] quarantine: ${restored} restored from HEAD, ${kept} kept over a corrupt HEAD, ` +
+      `${removed} removed, ${unrepairable.length} unrepairable`
+  );
+  if (unrepairable.length) {
+    const report = path.join(dir, "quarantine-unrepairable.json");
+    fs.writeFileSync(report, JSON.stringify(unrepairable, null, 2) + "\n");
+    console.log(`[orch] quarantine: wrote ${report}`);
+  }
+}
+
 // ---------- preflight ----------
 
 /**
@@ -858,12 +953,15 @@ switch (cmd) {
   case "advance":
     cmdAdvance(flags.lang);
     break;
+  case "quarantine":
+    cmdQuarantine();
+    break;
   case "seed":
     cmdSeed();
     break;
   default:
     console.log(
-      "usage: orchestrator.mjs <detect|preflight|sync-en|seed|translate|verify|advance> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv]"
+      "usage: orchestrator.mjs <detect|preflight|sync-en|seed|translate|verify|advance|quarantine> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv]"
     );
     process.exitCode = cmd ? 1 : 0;
 }

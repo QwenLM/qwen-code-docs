@@ -325,7 +325,7 @@ function toolIcon(event: DaemonUiToolUpdateEvent): React.ReactNode {
 
 ## Категоризация причин отладки
 
-`DaemonUiStatusEvent.debugReason` — это закрытое перечисление, которое нормализатор проставляет, когда проецирует блок `debug` вместо типизированного события (зеркалируется в `DaemonStatusTranscriptBlock` для потребителей транскрипта):
+`DaemonUiStatusEvent.debugReason` — это закрытое перечисление, которое нормализатор проставляет, когда проецирует событие `debug` вместо типизированного события:
 
 ```ts
 import type { DaemonUiDebugReason } from '@qwen-code/sdk/daemon';
@@ -334,7 +334,9 @@ import type { DaemonUiDebugReason } from '@qwen-code/sdk/daemon';
 
 Канонический список экспортируется как `DAEMON_UI_DEBUG_REASONS`. Имена причин — это категории с wildcards: `unrecognized_*` означает, что демон отправил фрейм, для которого в этой версии SDK нет случая — шум прямой совместимости, диагностические данные разработчика, а не содержимое разговора. `malformed_*` означает, что фрейм, который SDK _знает_, пришёл с непригодной полезной нагрузкой — реальный сигнал дефекта.
 
-Рендереры должны разветвляться по `debugReason`, а не по тексту отладки — текстовый префикс является диагностической формулировкой и может измениться без уведомления:
+**Маршрутизация различается по категории.** Диагностика `unrecognized_*` направляется в ограниченный sidechannel `unrecognizedDiagnostics` и никогда не попадает в `blocks[]` (поэтому они не могут завершить потоковый блок ассистента/мысли или потребить бюджет `maxBlocks`). Читайте их через `selectUnrecognizedDiagnostics`; лимит — `UNRECOGNIZED_DIAGNOSTICS_LIMIT`, а маршрутизируемое подмножество — `DAEMON_UI_UNRECOGNIZED_DIAGNOSTIC_REASONS`. Диагностика `malformed_*` — и устаревшие блоки, сохранённые до этого разделения — остаются в транскрипте как `DaemonStatusTranscriptBlock`, поэтому обработка `debugReason` на уровне блоков теперь применяется только к ним.
+
+Рендереры, фильтрующие блоки, должны разветвляться по `debugReason`, а не по тексту отладки — текстовый префикс является диагностической формулировкой и может измениться без уведомления:
 
 ```ts
 function hideDebugBlock(reason?: DaemonUiDebugReason): boolean {
@@ -352,7 +354,7 @@ function hideDebugBlock(reason?: DaemonUiDebugReason): boolean {
 
 Каждый слой в SDK UI демона следует **принципу прямой совместимости**: неизвестные значения НЕ вызывают исключений; они деградируют корректно.
 
-- Неизвестные типы событий демона → событие `debug` с сырым именем типа, с простановкой `unrecognized_*` `debugReason` (см. выше)
+- Неизвестные типы событий демона → событие `debug` с сырым именем типа, с простановкой `unrecognized_*` `debugReason` и маршрутизацией в ограниченный sidechannel `unrecognizedDiagnostics` (см. выше)
 - Неизвестный статус инструмента → `currentToolCallId` остаётся без изменений (не очищается)
 - Неизвестный вид ошибки → `errorKind` undefined (рендерер переходит к тексту)
 - Отсутствующий serverTimestamp → используется `clientReceivedAt`

@@ -72,7 +72,7 @@ O menu de primeira execução permite conectar um provedor de modelo. Escolha um
   - **Coding Plan**: para desenvolvedores individuais, com uma cota semanal inclusa e diversas opções de modelos. Veja o [guia do Coding Plan](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) ([intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)) para instruções de configuração.
   - **Token Plan**: faturamento baseado em uso com um endpoint dedicado, voltado para equipes e empresas.
   - **Standard API Key**: conecte-se com uma chave de API existente do Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)). Veja o guia de configuração de API ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)) para detalhes.
-- **Provedores de terceiros** — escolha um provedor embutido (DeepSeek, MiniMax, Z.AI, ModelScope, OpenRouter, Requesty e outros) e conecte-se com uma chave de API.
+- **Provedores de terceiros** — escolha um provedor embutido (DeepSeek, Grok, MiniMax, Z.AI, Kimi, Idealab, ModelScope, OpenRouter, Requesty e outros) e conecte-se com uma chave de API.
 - **Provedor personalizado** — conecte manualmente um servidor local, proxy ou provedor não suportado.
 
 > ⚠️ **Nota**: O Qwen OAuth foi descontinuado em 15 de abril de 2026. Se você estava usando o Qwen OAuth anteriormente, alterne para um dos métodos acima.

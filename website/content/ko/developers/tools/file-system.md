@@ -12,6 +12,8 @@ Qwen Code는 로컬 파일 시스템과 상호 작용하기 위한 포괄적인 
 
 `list_directory`는 지정된 디렉토리 경로 내의 파일 및 하위 디렉토리 이름을 나열합니다. 제공된 glob 패턴과 일치하는 항목을 선택적으로 무시할 수 있습니다.
 
+**참고:** 이 도구는 옵트인이며 기본적으로 비활성되어 있습니다. 대부분의 경우 `glob`이 디렉토리 나열을 커버하기 때문입니다. 설정에서 `tools.listDirectory.enabled`를 `true`로 설정하거나 `coreTools` 허용 목록(`--core-tools` / `tools.core`)에 `list_directory`를 명시적으로 추가하여 활성화하세요.
+
 - **도구 이름:** `list_directory`
 - **표시 이름:** ListFiles
 - **파일:** `ls.ts`

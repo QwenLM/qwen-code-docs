@@ -325,7 +325,7 @@ Das SDK hat eine `mcp__<server>__<tool>`-Namensheuristik als Fallback – selbst
 
 ## Debug-Reason-Kategorisierung
 
-`DaemonUiStatusEvent.debugReason` ist ein geschlossener Enum, den der Normalizer stempelt, wenn er einen `debug`-Block anstelle eines typisierten Events projiziert (auf `DaemonStatusTranscriptBlock` für Transkript-Konsumenten gespiegelt):
+`DaemonUiStatusEvent.debugReason` ist ein geschlossener Enum, den der Normalizer stempelt, wenn er einen `debug`-Block anstelle eines typisierten Events projiziert:
 
 ```ts
 import type { DaemonUiDebugReason } from '@qwen-code/sdk/daemon';
@@ -333,6 +333,8 @@ import type { DaemonUiDebugReason } from '@qwen-code/sdk/daemon';
 ```
 
 Die kanonische Liste wird als `DAEMON_UI_DEBUG_REASONS` exportiert. Reason-Namen sind wildcard-benannte Kategorien: `unrecognized_*` bedeutet, dass der Daemon ein Frame gesendet hat, für das diese SDK-Version keinen Case hat – Vorwärtskompatibilitäts-Rauschen, Entwicklerdiagnostik statt Gesprächsinhalt. `malformed_*` bedeutet, dass ein Frame, das das SDK _kennt_, mit einer unbrauchbaren Nutzlast ankam – ein echtes Defektsignal.
+
+**Das Routing unterscheidet sich nach Kategorie.** `unrecognized_*`-Diagnostiken werden in den begrenzten `unrecognizedDiagnostics`-Sidechannel geleitet und gelangen niemals in `blocks[]` (sie können also keinen streaming Assistant/Thought-Block finalisieren oder das `maxBlocks`-Budget verbrauchen). Lies sie mit `selectUnrecognizedDiagnostics`; das Limit ist `UNRECOGNIZED_DIAGNOSTICS_LIMIT` und die geroutete Teilmenge ist `DAEMON_UI_UNRECOGNIZED_DIAGNOSTIC_REASONS`. `malformed_*`-Diagnostiken – und legacy-Blöcke, die vor dieser Aufteilung persistiert wurden – bleiben als `DaemonStatusTranscriptBlock`s im Transkript, sodass die blockbezogene `debugReason`-Behandlung jetzt nur noch auf diese zutrifft.
 
 Renderer sollten auf `debugReason` verzweigen, nicht auf den Debug-Text – das Textpräfix ist diagnostische Formulierung und ändert sich ohne Ankündigung:
 
@@ -353,7 +355,8 @@ function hideDebugBlock(reason?: DaemonUiDebugReason): boolean {
 Jede Schicht im Daemon-UI-SDK folgt dem **Vorwärtskompatibilitätsprinzip**: Unbekannte Werte werfen KEINE Exceptions; sie degradieren elegant.
 
 - Unbekannte Daemon-Event-Typen → `debug`-Event mit dem rohen Typnamen,
-  gestempelt mit einem `unrecognized_*` `debugReason` (siehe oben)
+  gestempelt mit einem `unrecognized_*` `debugReason` und in den begrenzten
+  `unrecognizedDiagnostics`-Sidechannel geleitet (siehe oben)
 - Unbekannter Tool-Status → `currentToolCallId` bleibt unberührt (kein Löschen)
 - Unbekannte Error-Art → `errorKind` undefined (Renderer fällt auf Text zurück)
 - Fehlender serverTimestamp → fällt auf `clientReceivedAt` zurück

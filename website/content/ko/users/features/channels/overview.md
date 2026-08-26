@@ -6,7 +6,7 @@ title: Channels
 
 채널을 사용하면 터미널 대신 Telegram, WeChat, QQ, DingTalk, WeCom 또는 Feishu 같은 메시징 플랫폼에서 Qwen Code 에이전트와 상호작용할 수 있습니다. 휴대전화나 데스크톱 채팅 앱에서 메시지를 보내면 에이전트가 CLI에서와 마찬가지로 응답합니다.
 
-코드 호스팅 플랫폼([GitHub](./github)부터)도 폴링 어댑터를 통해 지원됩니다 — 에이전트가 알림을 모니터링하고 이슈 및 pull request의 @mention에 응답합니다.
+코드 호스팅 플랫폼([GitHub](./github)부터) 및 인증된 워크스페이스 계정([DingTalk Workspace](./dws)부터)도 채널을 통해 지원됩니다.
 
 ## 작동 방식
 
@@ -21,7 +21,7 @@ title: Channels
 
 ## 빠른 시작
 
-1. 메시징 플랫폼에서 봇을 설정하세요(채널별 가이드 참조: [Telegram](./telegram), [WeChat](./weixin), [QQ Bot](./qqbot), [DingTalk](./dingtalk), [WeCom](./wecom), [Feishu](./feishu), [GitHub](./github))
+1. 봇 또는 인증된 워크스페이스 계정을 설정하세요(채널별 가이드 참조: [Telegram](./telegram), [WeChat](./weixin), [QQ Bot](./qqbot), [DingTalk](./dingtalk), [DingTalk Workspace](./dws), [WeCom](./wecom), [Feishu](./feishu), [GitHub](./github))
 2. `~/.qwen/settings.json`에 채널 구성을 추가하세요
 3. `qwen channel start`를 실행하여 모든 채널을 시작하거나 `qwen channel start <name>`으로 단일 채널을 시작하세요
 
@@ -56,7 +56,7 @@ title: Channels
 
 | 옵션                   | 필수                  | 설명                                                                                                                                                            |
 | ---------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `type`                 | 예                    | 채널 유형: `telegram`, `weixin`, `qq`, `dingtalk`, `wecom`, `feishu`, `github` 또는 확장의 사용자 정의 유형([Plugins](./plugins) 참조)                           |
+| `type`                 | 예                    | 채널 유형: `telegram`, `weixin`, `qq`, `dingtalk`, `dws`, `wecom`, `feishu`, `github`, `gitlab` 또는 확장의 사용자 정의 유형([Plugins](./plugins) 참조)              |
 | `token`                | Telegram              | 봇 토큰. 환경 변수에서 읽기 위해 `$ENV_VAR` 구문을 지원합니다. WeChat, DingTalk, WeCom 또는 Feishu에는 필요하지 않음                                            |
 | `clientId`             | DingTalk, Feishu      | DingTalk AppKey 또는 Feishu App ID. `$ENV_VAR` 구문 지원                                                                                                        |
 | `clientSecret`         | DingTalk, Feishu      | DingTalk AppSecret 또는 Feishu App Secret. `$ENV_VAR` 구문 지원                                                                                                 |
@@ -65,7 +65,7 @@ title: Channels
 | `model`                | 아니오                | 이 채널에 사용할 모델(예: `qwen3.5-plus`). 기본 모델을 재정의합니다. 이미지 입력을 지원하는 멀티모달 모델에 유용                                                 |
 | `senderPolicy`         | 아니오                | 봇과 대화할 수 있는 사용자: `allowlist`(기본값), `open` 또는 `pairing`                                                                                           |
 | `allowedUsers`         | 아니오                | 봇을 사용할 수 있는 사용자 ID 목록(`allowlist` 및 `pairing` 정책에서 사용)                                                                                       |
-| `sessionScope`         | 아니오                | 세션 범위 방식: `user`(기본값), `thread` 또는 `single`                                                                                                           |
+| `sessionScope`         | 아니오                | 세션 범위 방식: `user`(기본값), `chat_thread` 또는 `single`. 레거시 `thread`는 이미 구성된 경우 호환되지만 새 Web Shell 구성에서는 제공되지 않음                   |
 | `cwd`                  | 아니오                | 에이전트의 작업 디렉토리. 기본값은 현재 디렉토리                                                                                                                 |
 | `approvalMode`         | 아니오                | 채널 세션의 도구 승인 모드. 무인 웹훅 작업은 `yolo`가 필요합니다. 설정은 채널의 모든 세션에 적용됩니다                                                            |
 | `instructions`         | 아니오                | 각 세션의 첫 번째 메시지에 앞에 추가되는 사용자 정의 지시                                                                                                         |

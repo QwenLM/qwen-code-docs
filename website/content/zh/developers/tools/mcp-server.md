@@ -116,6 +116,7 @@ Qwen Code 使用 `settings.json` 文件中的 `mcpServers` 配置来定位并连
 - **`env`** (对象)：服务器进程的环境变量。值可以使用 `$VAR_NAME` 或 `${VAR_NAME}` 语法引用环境变量
 - **`cwd`** (字符串)：Stdio 传输的工作目录
 - **`timeout`** (数字)：请求超时时间（毫秒，默认 600,000 毫秒 = 10 分钟）
+- **`versionNegotiation`** (`"auto" | "legacy"`，默认 `"legacy"`)：对于 Stdio 服务器，`"auto"` 会在一次性的兄弟进程上启用 `server/discover` 探测。
 - **`trust`** (布尔值)：为 `true` 时，在 trusted workspace 中绕过此服务器的工具调用确认（默认 `false`）
 - **`includeTools`** (字符串数组)：从此 MCP 服务器中包含的工具名称列表。指定后，只有此处列出的工具才可从此服务器使用（白名单行为）。如果未指定，则默认启用该服务器的所有工具。
 - **`excludeTools`** (字符串数组)：从此 MCP 服务器中排除的工具名称列表。即使服务器暴露了这些工具，它们也不会对模型可用。**注意：** `excludeTools` 优先于 `includeTools`——如果一个工具同时出现在两个列表中，它将被排除。
@@ -163,13 +164,13 @@ CLI 将自动：
 **重要：** OAuth 身份验证要求重定向 URI 是可访问的：
 
 - **默认行为**：重定向到 `http://localhost:7777/oauth/callback`（适用于本地设置）
-- **自定义重定向 URI**：使用 `--oauth-redirect-uri` 或在 settings.json 中配置 `redirectUri` 以指定不同的 URL
+- **自定义重定向 URI**：使用 `--oauth-redirect-uri` 或在 settings.json 中配置 `redirectUri` 以指定一个以 `/oauth/callback` 结尾的公开 URL。将该路径反向代理到运行 Qwen Code 的机器上的 `http://127.0.0.1:7777/oauth/callback`。
 
 对于**远程/云服务器部署**（例如 Web 终端、SSH 会话、云 IDE）：
 
 - 默认的 `localhost` 重定向**不起作用**
-- 你**必须**配置一个指向可公开访问 URL 的自定义 `redirectUri`
-- 用户的浏览器必须能够访问此 URL 并重定向回服务器
+- 你**必须**配置一个指向可公开访问 URL 的自定义 `redirectUri`，且以 `/oauth/callback` 结尾
+- 在反向代理处终止 TLS，并仅将该路径转发到 `http://127.0.0.1:7777/oauth/callback`
 
 远程服务器示例：
 

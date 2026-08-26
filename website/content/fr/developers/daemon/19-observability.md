@@ -11,7 +11,7 @@
 | Logs stderr `QWEN_SERVE_DEBUG`              | `bridge.ts` et sites d'appel                      | Les valeurs d'env `1` / `true` / `on` / `yes` (insensibles à la casse) affichent les lignes `qwen serve debug: ...` sur stderr.                                                                                                                                                            |
 | OpenTelemetry span instrumentation          | `server.ts` `daemonTelemetryMiddleware`           | Les requêtes API du démon classifiées qui atteignent le middleware de télémétrie sont enveloppées dans `withDaemonRequestSpan` ; les attributs incluent la route canonique, le hachage de workspace lorsqu'il est résolu, le sessionId, le clientId et le code de statut. Les routes de permissions ont des spans dédiés. Le cycle de vie des prompts est tracé de bout en bout. La configuration se trouve dans `settings.json` `telemetry`. |
 | Métriques de performance du daemon OpenTelemetry | `telemetry/*event-loop-lag*`, `daemon-metrics` | Jauges de latence de la boucle d'événements pour le daemon et les processus enfants ACP, ainsi qu'histogrammes des octets des messages du pipe daemon-enfant.                                                                                                                              |
-| Logs de fichiers structurés `DaemonLogger`  | `serve/daemon-logger.ts`                          | Ajoute les entrées à un `daemon.log` stable à rotation par taille. Les enregistrements fichier incluent `runId` et le PID. Le boot affiche le chemin stable/fallback sélectionné ; le statut complet expose la santé, les problèmes et les compteurs de perte de copie de fichier.             |
+| Logs de fichiers structurés `DaemonLogger`  | `serve/daemon-logger.ts`                          | Ajoute les entrées à un `daemon.log` stable à rotation par taille. Les enregistrements `info` / `warn` / `error` émis avec un span OTel actif, enregistrant et échantillonné incluent `trace_id` et `span_id` ; les enregistrements fichier incluent aussi `runId` et le PID. Le boot affiche le chemin stable/fallback sélectionné ; le statut complet expose la santé, les problèmes et les compteurs de perte de copie de fichier. |
 | Middleware de log d'accès par requête       | `server/access-log.ts`                         | Log `method`/`path`, statut, durée, session et premier ID client brut après chaque requête. Un bucket de burst de 60 jetons / 2 par seconde agrège le trafic excessif dans cinq compteurs de statut fixes. Les exclusions de health, heartbeat et SSE réussies restent.                                                                                                         |
 | `/health`                                   | Route `server.ts`                                 | Sonde de liveness ; `?deep=1` renvoie des détails étendus.                                                                                                                                                                                                                                 |
 | `/capabilities`                             | Route `server.ts`                                 | Découverte des fonctionnalités preflight. Voir [`11-capabilities-versioning.md`](./11-capabilities-versioning.md).                                                                                                                                                                         |
@@ -103,7 +103,12 @@ Un **deuxième** SIGTERM/SIGINT déclenche intentionnellement `bridge.killAllSyn
   "runtime": {
     "perf": {
       "eventLoop": { "meanMs": 1.2, "p50Ms": 1.0, "p99Ms": 9.5, "maxMs": 25 },
-      "promptQueueWait": { "count": 3, "meanMs": 12.5, "maxMs": 35, "lastMs": 4 },
+      "promptQueueWait": {
+        "count": 3,
+        "meanMs": 12.5,
+        "maxMs": 35,
+        "lastMs": 4
+      },
       "pipe": {
         "inbound": { "count": 42, "totalBytes": 100000, "maxBytes": 12000 },
         "outbound": { "count": 41, "totalBytes": 90000, "maxBytes": 11000 }
@@ -190,7 +195,8 @@ flowchart TD
 
 ## Mises en garde et limites connues
 
-- **Les logs fichiers de DaemonLogger sont structurés** et peuvent être filtrés par `route`, `sessionId` et `clientId`. Les logs stderr de `QWEN_SERVE_DEBUG` restent du texte non structuré.
+- **Les logs fichiers de DaemonLogger sont du texte structuré** dont les champs `trace_id`, `span_id`, `route`, `sessionId` et `clientId` peuvent être recherchés ou extraits avec une expression régulière. Les enregistrements `info` / `warn` / `error` incluent les champs de trace uniquement lorsque l'appel de log s'exécute avec un span OTel actif, enregistrant et échantillonné. Les enregistrements `raw` et de boot, les résumés de perte de fichier et les résumés de suppression de log d'accès les omettent intentionnellement. La corrélation est au mieux effort : une défaillance d'exporter peut rendre une trace échantillonnée indisponible dans le backend. Ces identifiants à haute cardinalité servent à la recherche diagnostique, pas aux labels de métriques ou à l'agrégation. Les logs stderr de `QWEN_SERVE_DEBUG` restent du texte non structuré.
+- **Les mutations de prompt accepté, de continuation et d'annulation ont des logs de cycle de vie.** `prompt enqueued`, `continuation enqueued` et `cancel sent` incluent `sessionId`, `promptId` lorsque applicable, et `clientId` lorsqu'il est fourni ; le contenu du prompt n'est pas journalisé. Utilisez un ID client stable distinct pour chaque contrôleur indépendant. Les contrôleurs qui partagent intentionnellement un ID sont indiscernables dans ces enregistrements.
 - **La rétention de DaemonLogger est basée sur la taille, pas sur l'âge.** Le fichier actif et quatre archives sont bornés par famille ; les propriétaires fallback en direct ne sont jamais supprimés.
 - **Les résumés d'accès sont une comptabilité de perte intentionnelle.** Un WARN `access logs suppressed` représente des enregistrements d'accès individuels omis à la fois de stderr et du fichier ; il n'indique pas des requêtes HTTP abandonnées.
 - **Un logrotate externe ne doit pas muter la famille active.** Utilisez un expéditeur qui lit/copie et rouvre le chemin stable après remplacement.
