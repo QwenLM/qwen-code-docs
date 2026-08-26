@@ -154,7 +154,7 @@ sequenceDiagram
     participant CH as Filho ACP
 
     C->>MW: POST /session/:id/prompt<br/>Authorization: Bearer …<br/>X-Qwen-Client-Id: …
-    MW->>MW: denyBrowserOriginCors
+    MW->>MW: allowOriginCors (allowlist mutável; Origin sem match -> 403)
     MW->>MW: hostAllowlist (proteção contra DNS rebinding)
     MW->>MW: hook de access-log
     MW->>MW: bearerAuth (comparação em tempo constante)
@@ -228,7 +228,7 @@ sequenceDiagram
         MED-->>C2: 403 permission_forbidden
         C1->>MED: voto (corresponde ao originador)
         MED-->>BC: resolvido
-    else consenso (N-de-M)
+    else consensus (N-of-M)
         C1->>MED: voto
         MED->>EB: permission_partial_vote (1/N)
         C2->>MED: voto

@@ -50,7 +50,7 @@ qwen extensions link /path/to/my-channel-extension
 | -------------- | -------------------------------------------- |
 | `senderPolicy` | `allowlist`、`pairing`、または `open`         |
 | `allowedUsers` | 送信者 ID の静的な許可リスト                 |
-| `sessionScope` | `user`、`thread`、または `single`             |
+| `sessionScope` | `user`、`chat_thread`、または `single`。レガシーの `thread` は既存の設定では互換性が保たれます |
 | `cwd`          | エージェントの作業ディレクトリ               |
 | `instructions` | 各セッションの最初のメッセージに付加される指示 |
 | `model`        | チャネルのモデルオーバーライド               |

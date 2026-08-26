@@ -101,7 +101,7 @@ Commandes pour gérer les outils et les modèles d'IA.
 | `/model --voice`  | Définir le modèle utilisé pour la transcription vocale                                       | `/model --voice <model-id>`                                                                               |
 | `/model --vision`     | Définir le modèle vision-bridge utilisé pour transcrire les images pour un modèle principal textuel                 | `/model --vision <model-id>`                                                                              |
 | `/model --compaction` | Définir le modèle utilisé pour la compression du chat                                                                | `/model --compaction <model-id>`, `/model --compaction clear`                                             |
-| `/model --image`      | Définir un modèle image-only pour l'outil de génération d'images intégré                                             | `/model --image <model-id>`                                                                               |
+| `/model --image`      | Définir un modèle capable de générer des images pour l'outil de génération d'images intégré                          | `/model --image <model-id>`                                                                               |
 | `/effort`             | Définir l'effort de raisonnement pour les modèles capables de réflexion                                              | `/effort` (ouvre le sélecteur), `/effort high` (low/medium/high/xhigh/max ; mappé et plafonné par fournisseur)       |
 | `/extensions`     | Gérer les extensions                                                                | `/extensions list`, `/extensions manage`                                                                  |
 | → `list`          | Lister les extensions installées                                                        | `/extensions list`                                                                                        |
@@ -133,7 +133,7 @@ Commandes pour gérer les outils et les modèles d'IA.
 
 > [!note]
 >
-> `/workflows`, `/lsp` et `/trust` ne sont enregistrés que lorsque leur fonctionnalité est activée — respectivement via la variable d'environnement `QWEN_CODE_ENABLE_WORKFLOWS=1`, le flag CLI `--experimental-lsp` et le paramètre `security.folderTrust.enabled`. Lorsqu'ils sont désactivés, ils n'apparaîtront pas et signaleront une commande inconnue. De même, `/dream` et `/forget` ne sont enregistrés que lorsque l'auto-mémoire managée est disponible ; sans elle, ils n'apparaîtront pas.
+> `/workflows`, `/lsp` et `/trust` ne sont enregistrés que lorsque leur fonctionnalité est activée — respectivement via le paramètre `tools.workflowsEnabled` (portée utilisateur/système) ou la variable d'environnement `QWEN_CODE_ENABLE_WORKFLOWS=1`, le flag CLI `--experimental-lsp` et le paramètre `security.folderTrust.enabled`. Les valeurs workspace pour `tools.workflowsEnabled` sont ignorées. Lorsqu'ils sont désactivés, ils n'apparaîtront pas et signaleront une commande inconnue. De même, `/dream` et `/forget` ne sont enregistrés que lorsque l'auto-mémoire managée est disponible ; sans elle, ils n'apparaîtront pas.
 
 ### 1.5 Skills intégrées
 
@@ -142,6 +142,7 @@ Ces commandes invoquent des skills intégrées qui fournissent des workflows sp�
 | Commande     | Description                                                 | Exemples d'utilisation                            |
 | ------------ | ----------------------------------------------------------- | ------------------------------------------------- |
 | `/review`    | Revue de code multi-agents (12 agents parallèles à effort élevé) | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
+| `/coordinate` | Coordonner des workers en lecture seule et un writer worktree optionnel | `/coordinate investigate and fix the authentication regression`           |
 | `/loop`      | Exécute un prompt de manière récurrente                     | `/loop 5m check the build`                        |
 | `/simplify`  | Révise les modifications récentes et applique directement des edits de nettoyage sûrs | `/simplify`, `/simplify focus on duplication`     |
 | `/qc-helper` | Répond aux questions sur l'utilisation et la configuration de Qwen Code | `/qc-helper how do I configure MCP?`              |
@@ -216,7 +217,70 @@ La commande `/btw` vous permet de poser des questions annexes rapides sans inter
 >
 > Utilisez `/btw` lorsque vous avez besoin d'une réponse rapide sans perdre le fil de votre tâche principale. C'est particulièrement utile pour clarifier des concepts, vérifier des faits ou obtenir des explications rapides tout en restant concentré sur votre workflow principal.
 
-### 1.7 Récapitulatif de session (`/recap`)
+### 1.7 Second avis (`/advisor`)
+
+La commande `/advisor` exécute une revue indépendante et en lecture seule de la conversation jusqu'à ce point et renvoie un second avis structuré — sans effectuer la tâche ni interrompre la conversation principale.
+
+| Commande           | Description                            |
+| ------------------ | -------------------------------------- |
+| `/advisor`         | Revoir la conversation ci-dessus       |
+| `/advisor <focus>` | Centrer la revue sur un sujet précis   |
+
+**Fonctionnement :**
+
+- La revue est envoyée via un appel API séparé et en tour unique avec le contexte de conversation récent (jusqu'aux 40 derniers messages)
+- Le modèle relecteur **ne peut pas exécuter d'outils** — les outils sont retirés au niveau de la requête (le même mécanisme que `/btw`), donc la revue n'écrit jamais de code ni n'exécute de commandes ; chaque affirmation doit être ancrée dans la transcription visible
+- La conversation principale n'est **pas** interrompue ; la revue vous est montrée uniquement
+- La revue est rendue sous forme de bloc markdown encadré avec quatre sections fixes — **Verdict**, **Risques**, **Preuves manquantes**, et **Recommandation** — sous un en-tête `/advisor · <model>` qui nomme le modèle relecteur résolu
+- Contrairement à `/btw`, qui est fire-and-forget et laisse la session utilisable, `/advisor` bloque la saisie jusqu'au retour de la revue ; sur une fenêtre de contexte complète avec un relecteur puissant, cela peut prendre des dizaines de secondes
+- Par défaut, le modèle principal est utilisé ; définissez [`advisorModel`](../configuration/settings.md#advisormodel) pour acheminer la revue vers un modèle différent (généralement plus puissant) — la transcription récente est envoyée à ce modèle même s'il utilise un autre fournisseur
+
+**Exemple :**
+
+```
+> /advisor is my fix for the null check actually correct?
+
+  Consulting advisor...
+
+  ╭──────────────────────────────────────────────────────╮
+  │ /advisor · qwen3-max                                 │
+  │                                                      │
+  │ Verdict                                              │
+  │ The approach is sound, but the edge case at line 42  │
+  │ is unverified.                                       │
+  │                                                      │
+  │ Risks                                                │
+  │  - The fix assumes the config is always loaded; a    │
+  │    startup race could leave it null.                 │
+  │                                                      │
+  │ Missing evidence                                     │
+  │  - No test exercises the null-config path in the     │
+  │    visible transcript.                               │
+  │                                                      │
+  │ Recommendation                                       │
+  │ Add a focused unit test for the null-config branch   │
+  │ before merging.                                      │
+  ╰──────────────────────────────────────────────────────╯
+```
+
+La revue s'affiche dans une boîte encadrée dont l'en-tête nomme le modèle relecteur résolu. Un `advisorModel` inconnu n'est pas validé au préalable — si le fournisseur le rejette, `/advisor` signale l'échec, vérifiez donc le nom du modèle ; seuls les sélecteurs d'alias non résolus (par ex. `fast` sans modèle rapide configuré) reviennent au modèle principal. Les requêtes Advisor n'utilisent pas les fallbacks de modèle configurés.
+
+**Modes d'exécution supportés :**
+
+| Mode                 | Comportement                                        |
+| -------------------- | --------------------------------------------------- |
+| Interactive          | Rend la revue en quatre sections dans la conversation |
+| ACP (Agent Protocol) | Renvoie la revue en tant que résultat de message    |
+
+> [!tip]
+>
+> Utilisez `/advisor` pour un second avis avant de vous engager dans une direction — c'est particulièrement utile pour détecter des hypothèses erronées, des affirmations non vérifiées ou des prochaines étapes risquées. Configurez `advisorModel` pour obtenir la revue d'un modèle différent de celui qui pilote la conversation principale.
+
+> [!note]
+>
+> `advisorModel` est défini dans les paramètres uniquement ; contrairement à `fastModel` et `visionModel`, il n'a pas encore de pendant via un flag `/model`.
+
+### 1.8 Récapitulatif de session (`/recap`)
 
 La commande `/recap` génère un court résumé "où vous en étiez" de la session en cours, afin que vous puissiez reprendre une ancienne conversation sans avoir à faire défiler des pages d'historique.
 
@@ -249,7 +313,7 @@ Si le terminal perd le focus pendant **5 minutes ou plus** et le récupère, un 
 >
 > Configurez un modèle rapide via `/model --fast <model>` (par ex. `qwen3-coder-flash`) pour rendre `/recap` rapide et peu coûteux. Définissez `general.showSessionRecap` sur `true` pour activer le déclenchement automatique ; la commande manuelle `/recap` fonctionne toujours indépendamment de ce paramètre.
 
-### 1.8 Visionneuse de diff (`/diff`)
+### 1.9 Visionneuse de diff (`/diff`)
 
 La commande `/diff` ouvre une visionneuse de diff interactive affichant les modifications non commitées et les diffs par tour. Utilisez ←/→ pour basculer entre le git diff actuel et les tours de conversation individuels, ↑/↓ pour parcourir les fichiers, et Enter pour voir les diffs inline.
 
@@ -354,7 +418,7 @@ Utilisez **Load more** en bas pour récupérer la page suivante de commits (50 p
 >
 > `/log` nécessite un workspace de dépôt git. Si le workspace n'est pas un dépôt git ou n'a pas de commits, la boîte de dialogue affiche un message placeholder.
 
-### 1.9 Informations, paramètres et aide
+### 1.10 Informations, paramètres et aide
 
 Commandes pour obtenir des informations et configurer le système.
 
@@ -393,7 +457,7 @@ Commandes pour obtenir des informations et configurer le système.
 >
 > `/config` lit et écrit des paramètres individuels via une clé dot-path (par ex. `general.vimMode`), en complément de l'éditeur interactif `/settings`. Exécuter `/config` sans argument (ou avec `--help`) liste toutes les clés configurables avec leur type et leur valeur actuelle. `/config <key>` affiche la valeur actuelle — sauf pour les clés booléennes, où cela bascule la valeur. `/config <key>=<value>` définit la valeur. Les modifications sont écrites dans les paramètres utilisateur (`~/.qwen/settings.json`). Seuls les paramètres de type `boolean`, `string`, `number` et `enum` peuvent être modifiés de cette façon — les paramètres `array` et `object` doivent être édités directement dans `settings.json`. Les valeurs sensibles (clés API, tokens, URLs de base) sont masquées dans la sortie, et la définition de `tools.approvalMode` à `yolo` est bloquée.
 
-### 1.10 Raccourcis courants
+### 1.11 Raccourcis courants
 
 | Raccourci          | Fonction                | Note                                                                      |
 | ------------------ | ----------------------- | ------------------------------------------------------------------------- |
@@ -403,7 +467,7 @@ Commandes pour obtenir des informations et configurer le système.
 | `Ctrl/cmd+Z`       | Annuler la saisie       | Édition de texte                                                          |
 | `Ctrl/cmd+Shift+Z` | Rétablir la saisie      | Édition de texte                                                          |
 
-### 1.11 Commandes d'authentification
+### 1.12 Commandes d'authentification
 
 Utilisez `/auth` dans une session Qwen Code pour configurer l'authentification. Utilisez `/doctor` pour inspecter l'état actuel de l'authentification et de l'environnement.
 
@@ -624,6 +688,7 @@ Ces commandes sont exécutées depuis le shell sous la forme `qwen <subcommand>`
 | Commande             | Description                           | Exemples d'utilisation                                         |
 | -------------------- | ------------------------------------- | -------------------------------------------------------------- |
 | `qwen sessions list` | Liste les sessions de conversation récentes | `qwen sessions list`, `qwen sessions list --json --limit 50` |
+| `qwen sessions ps`   | Liste les sessions interactives en cours d'exécution | `qwen sessions ps`, `qwen sessions ps --json`                |
 
 #### `qwen sessions list`
 
@@ -661,4 +726,43 @@ qwen sessions list --limit 50
 
 # Sortie au format JSON pour les scripts
 qwen sessions list --json | jq .
+```
+
+#### `qwen sessions ps`
+
+Liste les sessions interactives Qwen Code en cours d'exécution sur cette machine. `sessions list` parcourt les transcriptions sauvegardées (« sur quoi ai-je travaillé ») ; celui-ci parcourt le registre des processus actifs (« qu'est-ce qui tourne en ce moment »). Les enregistrements laissés par une session tuée sont balayés au fur et à mesure. Les sessions headless (`qwen -p`) ne s'enregistrent pas dans le registre des processus actifs, elles ne sont donc pas affichées.
+
+**Options :**
+
+| Option   | Type    | Défaut | Description                                     |
+| -------- | ------- | ------- | ----------------------------------------------- |
+| `--json` | boolean | `false` | Sortie au format JSON Lines (un objet JSON par ligne) |
+
+**Sortie lisible par l'homme (par défaut) :**
+
+Un tableau avec les colonnes : NAME, PID, AGE, DIRECTORY.
+
+**Sortie JSON (`--json`) :**
+
+Génère des JSON Lines sur stdout, la session la plus récente en premier. Chaque ligne est un objet JSON contenant les champs suivants :
+
+```
+schemaVersion, pid, procStart, pidNs, sessionId, cwd, name, startedAt,
+qwenVersion
+```
+
+Rien d'autre n'est écrit sur stdout — un listing vide n'imprime rien du tout — donc `qwen sessions ps --json | jq .` est sûr pour les scripts.
+
+La sortie JSON est des données brutes : les valeurs des champs sont émises exactement telles qu'enregistrées, sans assainissement de terminal. Traitez-les comme des données, et assainissez-les avant de les afficher dans un terminal.
+
+**Exemples :**
+
+```bash
+# Afficher les autres sessions live
+qwen sessions ps
+
+# Quels répertoires sont occupés en ce moment ?
+# Note : `jq -r` affiche la valeur brute enregistrée dans votre terminal (voir
+# la note sur les données brutes ci-dessus) ; faites passer par un assainisseur si le chemin n'est pas fiable.
+qwen sessions ps --json | jq -r .cwd
 ```

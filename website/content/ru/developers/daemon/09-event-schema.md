@@ -68,6 +68,7 @@ SDK предоставляет метод `asKnownDaemonEvent(evt)`. Он воз
 | `mcp_child_refused_batch` | S->C | `refusedServers: [{ name, transport, reason: 'budget_exhausted' }], budget, liveCount, reservedCount, mode: 'enforce', scope?: 'workspace' \| 'session'` |
 | `mcp_server_restarted` | S->C | `serverName, durationMs, entryIndex?` для перезапусков пула с несколькими записями F2 |
 | `mcp_server_restart_refused` | S->C | `serverName, reason: 'budget_would_exceed' \| 'in_flight' \| 'disabled' \| 'restart_failed', entryIndex?, details?`. Четвертое значение, `restart_failed`, содержит информацию о базовой жесткой ошибке при перезапуске пула с несколькими записями. `MCP_RESTART_REFUSED_REASONS` отклоняет неизвестные причины; старый редьюсер SDK молча отбрасывает новые добавленные значения причин, поскольку `parseDaemonEvent` возвращает `undefined`. Отправляйте новую причину вместе с SDK, который её поддерживает. |
+
 ### Управление мутациями (Wave 4 PR 16+17)
 
 | Тип                      | Направление | Полезная нагрузка                                                                                                                              |
@@ -76,7 +77,7 @@ SDK предоставляет метод `asKnownDaemonEvent(evt)`. Он воз
 | `agent_changed`          | S->C        | `change: 'created' \| 'updated' \| 'deleted', name, level: 'project' \| 'user'`                                                                |
 | `approval_mode_changed`  | S->C        | `sessionId, previous, next, persisted: boolean`                                                                                                |
 | `tool_toggled`           | S->C        | `toolName, enabled`; влияет на следующий запуск дочернего процесса ACP и не изменяет уже запущенные сессии.                                            |
-| `settings_changed`       | S->C        | Запись настроек рабочего пространства завершена. Полезная нагрузка открыта; потребителям следует обновить данные с помощью чтения после записи.                                           |
+| `settings_changed`       | S->C        | Запись настроек рабочего пространства завершена. Полезная нагрузка включает `key`; `value`, `scope` и `mutation` (Skill-toggle) опциональны.                        |
 | `settings_reloaded`      | S->C        | Сервис рабочего пространства демона перечитал настройки. Полезная нагрузка открыта.                                                                                     |
 | `trust_change_requested` | S->C        | `workspaceCwd, desiredState: 'trusted' \| 'untrusted', reason?`                                                                                |
 | `workspace_initialized`  | S->C        | `path, action: 'created' \| 'overwrote' \| 'noop', originatorClientId?`                                                                        |
@@ -120,10 +121,10 @@ SDK предоставляет метод `asKnownDaemonEvent(evt)`. Он воз
 | Тип                 | Направление | Триггер                                                                                                             | Ключевые поля полезной нагрузки                                                                                                                                                                  |
 | ------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `prompt_cancelled`  | S->C        | Промпт был отменен через явный маршрут `cancelSession` или из-за отключения SSE инициатора                        | Оболочка добавляет `originatorClientId` для отменяющего клиента. Это означает "запрошена отмена", а не "отмена подтверждена". Равноправные подписчики узнают, что промпт завершен.              |
-| `turn_complete`     | S->C        | Ход успешно завершен                                                                                                | `sessionId, stopReason, promptId?`. `promptId` связывает с неблокирующими ответами на промпт (`202`). SDK сопоставляет события SSE с исходным промптом с его помощью.                                  |
+| `turn_complete`     | S->C        | Ход успешно завершен                                                                                                | `sessionId, stopReason, promptId?, branchPoint?`. `promptId` связывает с неблокирующими ответами на промпт (`202`). Завершенные ходы с правом на ветвление включают `branchPoint: { assistantRecordUuid, checkpointUuid }`. |
 | `turn_error`        | S->C        | Сбой хода                                                                                                           | `sessionId, message, code?, promptId?`; тот же механизм корреляции `promptId`.                                                                                                                   |
 | `session_rewound`   | S->C        | `POST /session/:id/rewind` выполнен успешно                                                                         | `sessionId, promptId, targetTurnIndex, filesChanged[], filesFailed[], originatorClientId?`                                                                                                       |
-| `session_branched`  | S->C        | `POST /session/:id/branch` создал ветку из существующей сессии                                                      | `sourceSessionId, newSessionId, displayName, originatorClientId?`                                                                                                                                |
+| `session_branched`  | S->C        | Устаревшее событие совместимости; текущий эндпоинт ветвления возвращает результат напрямую и не публикует это событие | `sourceSessionId, newSessionId, displayName, originatorClientId?`. Читатели сохраняют поддержку старых продюсеров.                                                                                |
 | `followup_suggestion` | S->C      | Дочерний процесс ACP сгенерировал follow-up предложения в виде ghost-текста после `end_turn`, которые были пересланы через SSE для каждой сессии | `sessionId, suggestion, promptId`; по каналу передаются только предложения, у которых `getFilterReason()===null`. Клиенты отображают их как ghost-текст в плейсхолдере ввода и инвалидируют их при следующем `sendPrompt`. |
 | `user_shell_command` | S->C       | Пользователь запустил shell-команду через `POST /session/:id/shell`; событие рассылается другим подписчикам в той же сессии | `sessionId, command, shellId, originatorClientId?`. Типизированного интерфейса `DaemonXxxData` пока нет; `asKnownDaemonEvent` возвращает `undefined`, и нормализатор UI разбирает его ad hoc.            |
 | `user_shell_result` | S->C        | Результат выполнения вышеуказанной shell-команды                                                                    | `sessionId, shellId, exitCode, output, aborted`. То же замечание о разборе ad hoc, что и для `user_shell_command`.                                                                                               |
@@ -149,6 +150,7 @@ SDK предоставляет метод `asKnownDaemonEvent(evt)`. Он воз
 - `alive: boolean` — становится `false` после терминального фрейма (`session_died`, `session_closed`, `client_evicted`, `stream_error`).
 - `currentModelId?: string` — из `model_switched`.
 - `displayName?: string` — из `session_metadata_updated`.
+- `recordingDegraded: boolean` — липкое состояние записи транскрипта сессии из `session_recording_degraded`; явное значение `session_snapshot.recordingDegraded` является авторитетным.
 - `pendingPermissions: Record<string, DaemonPermissionRequestData>` — открытые запросы, сгруппированные по `requestId`; очищается с помощью `permission_resolved` / `permission_already_resolved`.
 - `lastSessionUpdate?: DaemonSessionUpdateData` — последний `session_update`.
 - `lastModelSwitchFailure?: DaemonModelSwitchFailedData` — из `model_switch_failed`.
@@ -237,7 +239,7 @@ flowchart LR
 
 ## `_meta` вызова инструмента (provenance / serverId)
 
-Это отдельно от `_meta` оболочки: полезные нагрузки ACP `session/update` могут содержать собственный `_meta` в `event.data._meta`. `ToolCallEmitter` (`packages/cli/src/acp-integration/session/emitters/ToolCallEmitter.ts`) добавляет два поля при `emitStart`, `emitResult` и `emitError`:
+Это отдельно от `_meta` оболочки: полезные нагрузки ACP `session/update` могут содержать собственный `_meta` в `event.data._meta`. `ToolCallEmitter` (`packages/cli/src/acp-integration/session/emitters/tool-call-emitter.ts`) добавляет два поля при `emitStart`, `emitResult` и `emitError`:
 
 | Поле        | Тип                                      | Правило определения                                                                                                                                                            |
 | ------------ | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -264,6 +266,7 @@ flowchart LR
 | `client_evicted`        | Аналогично.                                                                 |
 | `stream_error`          | Аналогично.                                                                 |
 | `session_snapshot`      | Авторитативный фрейм с полным состоянием; безопасно применять во время ресинка.                   |
+| `session_recording_degraded` | Липкий сигнал безопасности, независимый от состояния дельт транскрипта.                    |
 
 `lastEventId` по-прежнему монотонно увеличивается через `advanceLastEventId(base)` во время ресинка. После того как вызывающая сторона сбрасывает и очищает `awaitingResync`, последующие дельты выравниваются по правильному курсору.
 

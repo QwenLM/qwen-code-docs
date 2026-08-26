@@ -42,3 +42,5 @@ English term → Korean rendering. Follow existing entries; append new ones as `
 - deprecated → 지원 중단
 - plan mode → 계획 모드
 - cold start → 콜드 스타트
+- lease → 리스
+- ledger → 레저

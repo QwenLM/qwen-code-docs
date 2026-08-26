@@ -11,7 +11,7 @@
 | `QWEN_SERVE_DEBUG` stderr 日志              | `bridge.ts` 及调用点                     | 环境变量值为 `1` / `true` / `on` / `yes`（不区分大小写）时，会将 `qwen serve debug: ...` 行打印到 stderr。                                                                                                                                                                                  |
 | OpenTelemetry span 插桩          | `server.ts` `daemonTelemetryMiddleware`        | 到达遥测中间件的已分类守护进程 API 请求被包裹在 `withDaemonRequestSpan` 中；属性包括规范 route、解析后的 workspace hash、sessionId、clientId 和状态码。权限路由有专属的 span。Prompt 生命周期被端到端追踪。配置位于 `settings.json` 的 `telemetry` 中。                               |
 | OpenTelemetry daemon 性能指标           | `telemetry/*event-loop-lag*`, `daemon-metrics` | daemon 和 ACP 子进程的事件循环延迟 gauge，以及 daemon 与子进程管道消息字节数的 histogram。                                                                                                                                                                                 |
-| `DaemonLogger` 结构化文件日志         | `serve/daemon-logger.ts`                       | 追加到稳定的、按大小轮转的 `daemon.log`。文件记录包含 `runId` 和 PID。启动时打印选定的稳定/回退路径；完整状态暴露健康状态、问题和文件拷贝丢失计数器。                                                                                                                                                 |
+| `DaemonLogger` 结构化文件日志         | `serve/daemon-logger.ts`                       | 追加到稳定的、按大小轮转的 `daemon.log`。在活跃、正在录制且已采样的 OTel span 下发出的 Caller `info` / `warn` / `error` 记录包含 `trace_id` 和 `span_id`；文件记录还包含 `runId` 和 PID。启动时打印选定的稳定/回退路径；完整状态暴露健康状态、问题和文件拷贝丢失计数器。                                                                                                    |
 | 按请求的访问日志中间件           | `server/access-log.ts`                         | 在每个请求后记录 method/path、status、duration、session 和第一个原始 client ID。60-token 突发 / 每秒 2 个的桶将超额流量聚合为五个固定状态计数器。保留 health、heartbeat 和成功的 SSE 排除。                                                                                                   |
 | `/health`                                   | `server.ts` 路由                              | 存活探针；`?deep=1` 返回扩展详情。                                                                                                                                                                                                                                       |
 | `/capabilities`                             | `server.ts` 路由                              | 预检功能发现。参见 [`11-capabilities-versioning.md`](./11-capabilities-versioning.md)。                                                                                                                                                                                      |
@@ -196,7 +196,7 @@ flowchart TD
 
 ## 注意事项与已知限制
 
-- **DaemonLogger 文件日志是结构化的**，可通过 `route`、`sessionId` 和 `clientId` 进行过滤。`QWEN_SERVE_DEBUG` 的 stderr 日志仍为非结构化文本。
+- **DaemonLogger 文件日志是结构化文本**，其 `trace_id`、`span_id`、`route`、`sessionId` 和 `clientId` 字段可以通过正则表达式搜索或提取。Caller `info` / `warn` / `error` 记录仅在日志调用在活跃、正在录制且已采样的 OTel span 下运行时才包含 trace 字段。`raw` 和启动记录、文件丢弃摘要以及访问日志抑制摘要故意省略这些字段。关联是尽力而为的：导出器故障可能导致已采样的 trace 在后端不可用。这些高基数标识符用于诊断查找，而非指标标签或聚合。`QWEN_SERVE_DEBUG` 的 stderr 日志仍为非结构化文本。
 - **已接受的 prompt、continuation 和 cancellation 变更具有生命周期日志。** `prompt enqueued`、`continuation enqueued` 和 `cancel sent` 包含 `sessionId`、适用时的 `promptId` 以及提供时的 `clientId`；prompt 内容不会被记录。为每个独立的控制器使用不同的稳定 client ID。故意共享 ID 的控制器在这些记录中是无法区分的。
 - **DaemonLogger 保留策略基于大小，而非基于时间。** 活动文件和四个归档按每个系列限制；活跃的 fallback 所有者永远不会被删除。
 - **访问摘要有意的丢失统计。** WARN 级别的 `access logs suppressed` 表示从 stderr 和文件中省略的单独访问记录；它不表示丢弃的 HTTP 请求。

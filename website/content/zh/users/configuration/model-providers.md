@@ -85,79 +85,78 @@ Qwen Code 使用以下官方 SDK 向各个提供商发送请求：
     "REQUESTY_API_KEY": "sk-your-actual-requesty-key-here"
   },
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "gpt-4o",
-          "name": "GPT-4o",
-          "envKey": "OPENAI_API_KEY",
-          "baseUrl": "https://api.openai.com/v1",
-          "generationConfig": {
-            "timeout": 60000,
-            "maxRetries": 3,
-            "enableCacheControl": true,
-            "contextWindowSize": 128000,
-            "modalities": {
-              "image": true
-            },
-            "customHeaders": {
-              "X-Client-Request-ID": "req-123"
-            },
-            "extra_body": {
-              "enable_thinking": true,
-              "service_tier": "priority"
-            },
-            "samplingParams": {
-              "temperature": 0.2,
-              "top_p": 0.8,
-              "max_tokens": 4096,
-              "presence_penalty": 0.1,
-              "frequency_penalty": 0.1
-            }
-          }
-        },
-        {
-          "id": "gpt-4o-mini",
-          "name": "GPT-4o Mini",
-          "envKey": "OPENAI_API_KEY",
-          "baseUrl": "https://api.openai.com/v1",
-          "generationConfig": {
-            "timeout": 30000,
-            "samplingParams": {
-              "temperature": 0.5,
-              "max_tokens": 2048
-            }
-          }
-        },
-        {
-          "id": "openai/gpt-4o",
-          "name": "GPT-4o (via OpenRouter)",
-          "envKey": "OPENROUTER_API_KEY",
-          "baseUrl": "https://openrouter.ai/api/v1",
-          "generationConfig": {
-            "timeout": 120000,
-            "maxRetries": 3,
-            "samplingParams": {
-              "temperature": 0.7
-            }
-          }
-        },
-        {
-          "id": "openai/gpt-4o-mini",
-          "name": "GPT-4o Mini (via Requesty)",
-          "envKey": "REQUESTY_API_KEY",
-          "baseUrl": "https://router.requesty.ai/v1",
-          "generationConfig": {
-            "timeout": 120000,
-            "maxRetries": 3,
-            "samplingParams": {
-              "temperature": 0.7
-            }
+    "openai": [
+      {
+        "id": "gpt-4o",
+        "name": "GPT-4o",
+        "envKey": "OPENAI_API_KEY",
+        "baseUrl": "https://api.openai.com/v1",
+        "generationConfig": {
+          "timeout": 60000,
+          "maxRetries": 3,
+          "retryInitialDelayMs": 3000,
+          "retryMaxDelayMs": 30000,
+          "enableCacheControl": true,
+          "contextWindowSize": 128000,
+          "modalities": {
+            "image": true
+          },
+          "customHeaders": {
+            "X-Client-Request-ID": "req-123"
+          },
+          "extra_body": {
+            "enable_thinking": true,
+            "service_tier": "priority"
+          },
+          "samplingParams": {
+            "temperature": 0.2,
+            "top_p": 0.8,
+            "max_tokens": 4096,
+            "presence_penalty": 0.1,
+            "frequency_penalty": 0.1
           }
         }
-      ]
-    }
+      },
+      {
+        "id": "gpt-4o-mini",
+        "name": "GPT-4o Mini",
+        "envKey": "OPENAI_API_KEY",
+        "baseUrl": "https://api.openai.com/v1",
+        "generationConfig": {
+          "timeout": 30000,
+          "samplingParams": {
+            "temperature": 0.5,
+            "max_tokens": 2048
+          }
+        }
+      },
+      {
+        "id": "openai/gpt-4o",
+        "name": "GPT-4o (via OpenRouter)",
+        "envKey": "OPENROUTER_API_KEY",
+        "baseUrl": "https://openrouter.ai/api/v1",
+        "generationConfig": {
+          "timeout": 120000,
+          "maxRetries": 3,
+          "samplingParams": {
+            "temperature": 0.7
+          }
+        }
+      },
+      {
+        "id": "openai/gpt-4o-mini",
+        "name": "GPT-4o Mini (via Requesty)",
+        "envKey": "REQUESTY_API_KEY",
+        "baseUrl": "https://router.requesty.ai/v1",
+        "generationConfig": {
+          "timeout": 120000,
+          "maxRetries": 3,
+          "samplingParams": {
+            "temperature": 0.7
+          }
+        }
+      }
+    ]
   }
 }
 ```
@@ -170,40 +169,37 @@ Qwen Code 使用以下官方 SDK 向各个提供商发送请求：
     "ANTHROPIC_API_KEY": "sk-ant-your-actual-anthropic-key-here"
   },
   "modelProviders": {
-    "anthropic": {
-      "protocol": "anthropic",
-      "models": [
-        {
-          "id": "claude-3-5-sonnet",
-          "name": "Claude 3.5 Sonnet",
-          "envKey": "ANTHROPIC_API_KEY",
-          "baseUrl": "https://api.anthropic.com/v1",
-          "generationConfig": {
-            "timeout": 120000,
-            "maxRetries": 3,
-            "contextWindowSize": 200000,
-            "samplingParams": {
-              "temperature": 0.7,
-              "max_tokens": 8192,
-              "top_p": 0.9
-            }
-          }
-        },
-        {
-          "id": "claude-3-opus",
-          "name": "Claude 3 Opus",
-          "envKey": "ANTHROPIC_API_KEY",
-          "baseUrl": "https://api.anthropic.com/v1",
-          "generationConfig": {
-            "timeout": 180000,
-            "samplingParams": {
-              "temperature": 0.3,
-              "max_tokens": 4096
-            }
+    "anthropic": [
+      {
+        "id": "claude-3-5-sonnet",
+        "name": "Claude 3.5 Sonnet",
+        "envKey": "ANTHROPIC_API_KEY",
+        "baseUrl": "https://api.anthropic.com/v1",
+        "generationConfig": {
+          "timeout": 120000,
+          "maxRetries": 3,
+          "contextWindowSize": 200000,
+          "samplingParams": {
+            "temperature": 0.7,
+            "max_tokens": 8192,
+            "top_p": 0.9
           }
         }
-      ]
-    }
+      },
+      {
+        "id": "claude-3-opus",
+        "name": "Claude 3 Opus",
+        "envKey": "ANTHROPIC_API_KEY",
+        "baseUrl": "https://api.anthropic.com/v1",
+        "generationConfig": {
+          "timeout": 180000,
+          "samplingParams": {
+            "temperature": 0.3,
+            "max_tokens": 4096
+          }
+        }
+      }
+    ]
   }
 }
 ```
@@ -216,32 +212,29 @@ Qwen Code 使用以下官方 SDK 向各个提供商发送请求：
     "GEMINI_API_KEY": "AIza-your-actual-gemini-key-here"
   },
   "modelProviders": {
-    "gemini": {
-      "protocol": "gemini",
-      "models": [
-        {
-          "id": "gemini-2.0-flash",
-          "name": "Gemini 2.0 Flash",
-          "envKey": "GEMINI_API_KEY",
-          "baseUrl": "https://generativelanguage.googleapis.com",
-          "capabilities": {
-            "vision": true
-          },
-          "generationConfig": {
-            "timeout": 60000,
-            "maxRetries": 2,
-            "contextWindowSize": 1000000,
-            "schemaCompliance": "auto",
-            "samplingParams": {
-              "temperature": 0.4,
-              "top_p": 0.95,
-              "max_tokens": 8192,
-              "top_k": 40
-            }
+    "gemini": [
+      {
+        "id": "gemini-2.0-flash",
+        "name": "Gemini 2.0 Flash",
+        "envKey": "GEMINI_API_KEY",
+        "baseUrl": "https://generativelanguage.googleapis.com",
+        "capabilities": {
+          "vision": true
+        },
+        "generationConfig": {
+          "timeout": 60000,
+          "maxRetries": 2,
+          "contextWindowSize": 1000000,
+          "schemaCompliance": "auto",
+          "samplingParams": {
+            "temperature": 0.4,
+            "top_p": 0.95,
+            "max_tokens": 8192,
+            "top_k": 40
           }
         }
-      ]
-    }
+      }
+    ]
   }
 }
 ```
@@ -269,54 +262,51 @@ Qwen Code 使用以下官方 SDK 向各个提供商发送请求：
     "LMSTUDIO_API_KEY": "lm-studio"
   },
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "qwen2.5-7b",
-          "name": "Qwen2.5 7B (Ollama)",
-          "envKey": "OLLAMA_API_KEY",
-          "baseUrl": "http://localhost:11434/v1",
-          "generationConfig": {
-            "timeout": 300000,
-            "maxRetries": 1,
-            "contextWindowSize": 32768,
-            "samplingParams": {
-              "temperature": 0.7,
-              "top_p": 0.9,
-              "max_tokens": 4096
-            }
-          }
-        },
-        {
-          "id": "llama-3.1-8b",
-          "name": "Llama 3.1 8B (vLLM)",
-          "envKey": "VLLM_API_KEY",
-          "baseUrl": "http://localhost:8000/v1",
-          "generationConfig": {
-            "timeout": 120000,
-            "maxRetries": 2,
-            "contextWindowSize": 128000,
-            "samplingParams": {
-              "temperature": 0.6,
-              "max_tokens": 8192
-            }
-          }
-        },
-        {
-          "id": "local-model",
-          "name": "Local Model (LM Studio)",
-          "envKey": "LMSTUDIO_API_KEY",
-          "baseUrl": "http://localhost:1234/v1",
-          "generationConfig": {
-            "timeout": 60000,
-            "samplingParams": {
-              "temperature": 0.5
-            }
+    "openai": [
+      {
+        "id": "qwen2.5-7b",
+        "name": "Qwen2.5 7B (Ollama)",
+        "envKey": "OLLAMA_API_KEY",
+        "baseUrl": "http://localhost:11434/v1",
+        "generationConfig": {
+          "timeout": 300000,
+          "maxRetries": 1,
+          "contextWindowSize": 32768,
+          "samplingParams": {
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "max_tokens": 4096
           }
         }
-      ]
-    }
+      },
+      {
+        "id": "llama-3.1-8b",
+        "name": "Llama 3.1 8B (vLLM)",
+        "envKey": "VLLM_API_KEY",
+        "baseUrl": "http://localhost:8000/v1",
+        "generationConfig": {
+          "timeout": 120000,
+          "maxRetries": 2,
+          "contextWindowSize": 128000,
+          "samplingParams": {
+            "temperature": 0.6,
+            "max_tokens": 8192
+          }
+        }
+      },
+      {
+        "id": "local-model",
+        "name": "Local Model (LM Studio)",
+        "envKey": "LMSTUDIO_API_KEY",
+        "baseUrl": "http://localhost:1234/v1",
+        "generationConfig": {
+          "timeout": 60000,
+          "samplingParams": {
+            "temperature": 0.5
+          }
+        }
+      }
+    ]
   }
 }
 ```
@@ -431,18 +421,15 @@ Coding Plan 模型配置具有版本控制。当 Qwen Code 检测到模型模板
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "qwen3-coder-plus",
-          "name": "qwen3-coder-plus",
-          "description": "Qwen3-Coder via Alibaba Cloud Coding Plan",
-          "envKey": "YOUR_CUSTOM_ENV_KEY",
-          "baseUrl": "https://coding.dashscope.aliyuncs.com/v1"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "qwen3-coder-plus",
+        "name": "qwen3-coder-plus",
+        "description": "Qwen3-Coder via Alibaba Cloud Coding Plan",
+        "envKey": "YOUR_CUSTOM_ENV_KEY",
+        "baseUrl": "https://coding.dashscope.aliyuncs.com/v1"
+      }
+    ]
   }
 }
 ```
@@ -534,17 +521,14 @@ Coding Plan 模型配置具有版本控制。当 Qwen Code 检测到模型模板
 // modelProviders 配置
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [{
-        "id": "gpt-4o",
-        "envKey": "OPENAI_API_KEY",
-        "generationConfig": {
-          "timeout": 60000,
-          "samplingParams": { "temperature": 0.2 }
-        }
-      }]
-    }
+    "openai": [{
+      "id": "gpt-4o",
+      "envKey": "OPENAI_API_KEY",
+      "generationConfig": {
+        "timeout": 60000,
+        "samplingParams": { "temperature": 0.2 }
+      }
+    }]
   }
 }
 ```
@@ -570,25 +554,22 @@ Coding Plan 模型配置具有版本控制。当 Qwen Code 检测到模型模板
 ```jsonc
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "deepseek-v4-pro",
-          "name": "DeepSeek V4 Pro",
-          "baseUrl": "https://api.deepseek.com/v1",
-          "envKey": "DEEPSEEK_API_KEY",
-          "generationConfig": {
-            // 四级强度：
-            //   'low'    | 'medium' — 在 DeepSeek 服务端会映射为 'high'
-            //   'high'   — 默认推理强度
-            //   'max'    — DeepSeek 特有的超强级别
-            // 或者设置为 `false` 以完全禁用推理。
-            "reasoning": { "effort": "max" },
-          },
+    "openai": [
+      {
+        "id": "deepseek-v4-pro",
+        "name": "DeepSeek V4 Pro",
+        "baseUrl": "https://api.deepseek.com/v1",
+        "envKey": "DEEPSEEK_API_KEY",
+        "generationConfig": {
+          // 四级强度：
+          //   'low'    | 'medium' — 在 DeepSeek 服务端会映射为 'high'
+          //   'high'   — 默认推理强度
+          //   'max'    — DeepSeek 特有的超强级别
+          // 或者设置为 `false` 以完全禁用推理。
+          "reasoning": { "effort": "max" },
         },
-      ],
-    },
+      },
+    ],
   },
 }
 ```
@@ -597,7 +578,7 @@ Coding Plan 模型配置具有版本控制。当 Qwen Code 检测到模型模板
 
 | 协议 / provider | 网络请求结构 | 备注 |
 | --- | --- | --- |
-| **OpenAI / DashScope**（`qwen3.8-max` 系列） | 扁平的 `reasoning_effort: <effort>` body 参数 | 五个 `/effort` 级别（`low`、`medium`、`high`、`xhigh`、`max`）对于任何以 `qwen3.8-max` 开头的模型 id（包括带日期的快照和 `-latest` 别名）会原样传递；DashScope 会应用任何模型特定的映射。该系列的级别单独发送：冲突的 `enable_thinking` 或 `thinking_budget` 会被丢弃（warn 日志，每个 generator 一次）—— DashScope 会拒绝将 `reasoning_effort` 与 `thinking_budget` 组合的请求，两个思考控制参数不应同时发送。`extra_body` 中的显式 `enable_thinking: false` 会被遵从而非丢弃：它会以 `reasoning_effort: 'none'` 覆盖配置的级别，这是 `extra_body` 少数不按原样生效的地方之一。其他 Qwen 模型继续将所选级别映射为 `enable_thinking: true`；`reasoning_effort` 覆盖会在那里原样传递，除非它与 `thinking_budget` 冲突（DashScope 会拒绝该组合），此时无效的 `reasoning_effort` 会被丢弃，`enable_thinking` 和 `thinking_budget` 均保留。 |
+| **OpenAI / DashScope**（`qwen3.8-max` 系列） | 扁平的 `reasoning_effort: <effort>` body 参数 | 五个 `/effort` 级别（`low`、`medium`、`high`、`xhigh`、`max`）对于任何以 `qwen3.8-max` 开头的模型 id（包括带日期的快照和 `-latest` 别名）会原样传递；DashScope 会应用任何模型特定的映射。当 `reasoning_effort` 和 `thinking_budget` 冲突时，正常的 `extra_body` > `samplingParams` > `reasoning` 优先级仅保留更高优先级的字段；显式的同层对保留 `reasoning_effort`，与 provider 在跨层解析之前的行为一致。如果静态字段胜出，`/effort` 会报告该字段而非暗示请求的级别已生效。当 effort 级别胜出时，冲突的 `enable_thinking` 也会被丢弃。`extra_body` 中的显式 `enable_thinking: false` 会被遵从而非丢弃：它会以 `reasoning_effort: 'none'` 覆盖配置的级别，这是 `extra_body` 少数不按原样生效的地方之一。其他 Qwen 模型继续将所选级别映射为 `enable_thinking: true`；`reasoning_effort` 覆盖会在那里原样传递，除非它与 `thinking_budget` 冲突（DashScope 会拒绝该组合），此时无效的 `reasoning_effort` 会被丢弃，`enable_thinking` 和 `thinking_budget` 均保留。 |
 | **OpenAI / DeepSeek** (`api.deepseek.com`) | 扁平的 `reasoning_effort: <effort>` body 参数 | 当在嵌套配置中设置 `reasoning.effort` 时，它会被重写为扁平的 `reasoning_effort`，并且 `'low'`/`'medium'` 会被规范化为 `'high'`，`'xhigh'` 规范化为 `'max'` —— 这反映了 DeepSeek 的[服务端向后兼容](https://api-docs.deepseek.com/zh-cn/api/create-chat-completion)机制。顶层的 `samplingParams.reasoning_effort` 或 `extra_body.reasoning_effort` 覆盖会跳过此规范化并原样发送。 |
 | **OpenAI**（其他兼容服务器） | `reasoning: { effort, ... }` 原样传递 | 当 provider 期望不同的结构时，通过 `samplingParams` 设置（例如 GPT-5/o-series 的 `samplingParams.reasoning_effort`）。 |
 | **Anthropic**（真实的 `api.anthropic.com`） | `output_config: { effort }` 加上 `effort-2025-11-24` beta header | 真实的 Anthropic 仅接受 `'low'`/`'medium'`/`'high'`。`'max'` 会被**截断为 `'high'`** 并输出一行 `debugLogger.warn`（每个 generator 一次）；如果你需要最大强度，请将 baseURL 切换为支持该强度的 DeepSeek 兼容端点。 |
@@ -617,6 +598,8 @@ Coding Plan 模型配置具有版本控制。当 Qwen Code 检测到模型模板
 > 当在 OpenAI 兼容 provider 上设置了 `generationConfig.samplingParams` 时，管道会将这些键**原样**发送到网络，并完全跳过单独的 `reasoning` 注入。因此，像 `{ samplingParams: { temperature: 0.5 }, reasoning: { effort: 'max' } }` 这样的配置会在 OpenAI/DeepSeek 请求中静默丢弃 reasoning 字段。
 >
 > 如果你设置了 `samplingParams`，请直接将推理控制参数包含在其中 —— 对于 DeepSeek，它是 `samplingParams.reasoning_effort`；对于 GPT-5/o-series，它是 `samplingParams.reasoning_effort`（其扁平字段）或 `samplingParams.reasoning`（嵌套对象）。对于 OpenRouter 和其他 provider，字段名称会有所不同；请查阅 provider 文档。
+>
+> DashScope Qwen 模型是一个例外：其 provider 直接读取 `reasoning` 并将其映射为 `reasoning_effort` 或 `enable_thinking`。在 qwen3.8-max 系列上，当网络参数冲突时，provider 特定的 `samplingParams` 字段仍然优先；在旧版 qwen 混合模型上，配置的 effort 级别会折叠为 `enable_thinking: true`，这会覆盖 `samplingParams.enable_thinking` 的值。
 >
 > Anthropic 和 Gemini 转换器不受影响 —— 无论是否设置 `samplingParams`，它们始终直接读取 `reasoning.effort`。
 

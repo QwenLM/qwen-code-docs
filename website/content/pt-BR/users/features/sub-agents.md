@@ -65,11 +65,11 @@ agent(description="Research", prompt="Inspect the retry path", subagent_type="fo
 - `fork_profile` é válido apenas para um fork e não pode ser combinado com `fork_tools` ou um colega de equipe nomeado.
 - Perfis são atualmente apenas de projeto. O nome solicitado, o nome do arquivo e o `name` do frontmatter devem corresponder exatamente. O perfil deve resolver para um arquivo regular dentro de `.qwen/fork-profiles/` e não pode exceder 64 KiB.
 - `tools` é obrigatório e segue as regras de `fork_tools`, incluindo o comportamento deny-all de array vazio.
-- `promptHint` é opcional e limitado a 200 caracteres. É escapado e enquadrado como orientação fornecida pelo projeto após a diretiva do fork e antes da restrição de ferramenta autoritativa.
+- `promptHint` é opcional e limitado a 200 caracteres. É escapado e enquadrado como orientação fornecida pelo projeto após a diretiva do fork e antes da restrição de ferramenta autoritativa; não altera a instrução de sistema herdada nem as declarações de ferramentas visíveis pelo modelo. Arquivos de perfil são apenas frontmatter, então Markdown não vazio após o `---` de fechamento é rejeitado em vez de ignorado silenciosamente.
 - O perfil é resolvido uma vez no lançamento. Um fork retido continua com o snapshot de ferramentas resolvido mesmo que o arquivo do projeto mude depois.
 - Perfis de fork de projeto não estão disponíveis em modo seguro e modo bare, que desabilitam personalizações locais.
 
-Como `fork_tools`, um perfil de fork é uma restrição selecionada pelo chamador em vez de um sandbox de administrador.
+Como `fork_tools`, um perfil de fork é uma restrição selecionada pelo chamador em vez de um sandbox de administrador. Sua orientação de prompt opcional é conteúdo controlado pelo projeto.
 
 ### Como o Fork Difere dos Subagentes Nomeados
 
@@ -133,9 +133,9 @@ Use continuação para trabalho de acompanhamento relacionado. Lance um novo age
 
 ## Diretório de Trabalho do Agente
 
-Para um subagente regular nomeado, `working_dir` fixa o agente em um git worktree existente no repositório atual. Caminhos relativos resolvem a partir do diretório atual, e o worktree já deve estar registrado no git e viver dentro do repositório.
+Para um subagente regular nomeado, `working_dir` fixa o agente em um git worktree existente no repositório atual. Caminhos relativos resolvem a partir do diretório atual, e o worktree já deve estar registrado no git como um linked worktree deste repositório.
 
-Um lançamento com `working_dir` executa em primeiro plano porque o Qwen Code não possui o ciclo de vida desse worktree. Não pode ser combinado com `subagent_type: "fork"` ou execução em segundo plano. Se tanto `working_dir` quanto `isolation: "worktree"` forem fornecidos, o Qwen Code reutiliza o worktree do chamador em vez de criar outro.
+`working_dir` não pode ser combinado com `subagent_type: "fork"`. Um lançamento não nomeado com `working_dir` de propriedade do chamador executa em primeiro plano porque o Qwen Code não possui o ciclo de vida desse worktree: uma solicitação explícita de `run_in_background: true` é rejeitada, enquanto um padrão de segundo plano configurado (`background: true` em uma definição de subagente) é rejeitado no nível superior e rebaixado para primeiro plano quando aninhado. Se tanto `working_dir` quanto `isolation: "worktree"` forem fornecidos, o Qwen Code reutiliza o worktree do chamador em vez de criar outro. Scripts de workflow são deliberadamente mais rigorosos: uma chamada `agent()` de workflow que recebe ambos `workingDir` e `isolation` é rejeitada em vez de executar com `isolation` ignorado.
 
 ## Primeiros Passos
 
@@ -355,7 +355,7 @@ tools:
   - read_file
   - grep_search
   - glob
-  - list_directory
+  - web_fetch
 ---
 ```
 

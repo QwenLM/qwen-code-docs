@@ -1,5 +1,3 @@
----
-
 # MCP를 통해 Qwen Code를 도구에 연결하기
 
 Qwen Code는 [모델 컨텍스트 프로토콜(Model Context Protocol, MCP)](https://modelcontextprotocol.io/introduction)을 통해 외부 도구 및 데이터 소스에 연결할 수 있습니다. MCP 서버는 Qwen Code에 도구, 데이터베이스, API에 대한 접근 권한을 제공합니다.
@@ -221,6 +219,24 @@ Qwen Code는 UI가 이미 상호작용 가능한 상태가 된 후 백그라운�
 
 기존 `timeout` 필드는 **도구 호출** 타임아웃입니다 (각 `tools/call` 요청에 사용되며, 기본값 10분). `discoveryTimeoutMs`의 영향을 받지 않습니다. 오래 실행되는 도구 호출은 시작 경로 문제가 아닙니다.
 
+### 자동 stdio 협상
+
+Stdio 서버는 기본적으로 단일 프로세스 레거시 initialize 흐름을 사용합니다. 최신 전용 stdio 서버에 연결하려면 자동 프로토콜 협상을 옵트인하세요:
+
+```jsonc
+{
+  "mcpServers": {
+    "modern-server": {
+      "command": "node",
+      "args": ["./server.js"],
+      "versionNegotiation": "auto",
+    },
+  },
+}
+```
+
+자동 협상은 세션 프로세스를 시작하기 전에 구성된 서버의 단기 복사본을 실행하며 발견 예산의 최대 5초를 사용할 수 있습니다. 비멱등적 시작 부작용, 단일 소유자 잠금 또는 PID 파일, 느린 initialize 핸드셰이크가 있는 서버의 경우 기본 레거시 정책을 유지하세요.
+
 ### 점진적 MCP 롤백
 
 레거시 동기 동작(CLI가 모든 MCP 서버가 완료될 때까지 대기한 후 UI를 표시)이 필요하면 환경 변수에 `QWEN_CODE_LEGACY_MCP_BLOCKING=1`을 설정하세요. 최소 한 릴리스 동안 이스케이프 해치로 유지됩니다.
@@ -418,6 +434,7 @@ Qwen Code 내의 `/mcp` 대화상자를 사용하여 MCP 서버를 확인하고 
 | `env`                  | 객체                       | 서버 프로세스의 환경 변수. 값은 `$VAR_NAME` 또는 `${VAR_NAME}` 구문을 사용하여 환경 변수를 참조할 수 있습니다                                                                                                                                |
 | `cwd`                  | 문자열                       | Stdio 트랜스포트의 작업 디렉토리                                                                                                                                                                                                                             |
 | `timeout`              | 숫자<br>(기본값: 600,000) | 밀리초 단위의 요청 타임아웃 (기본값: 600,000ms = 10분)                                                                                                                                                                                                 |
+| `versionNegotiation`   | `"auto" \| "legacy"`<br>(기본값: `"legacy"`) | Stdio 서버의 경우, `"auto"`는 일회용 형제 프로세스에서 프로토콜 협상을 활성화합니다. 기본값 `"legacy"`는 세션 프로세스만 시작합니다.                                                                                                                  |
 | `trust`                | 부울<br>(기본값: false)  | `true`일 때 신뢰하는 워크스페이스에서 이 서버에 대한 도구 호출 확인을 우회합니다 (기본값: `false`)                                                                                                                                                           |
 | `includeTools`         | 배열                        | 이 MCP 서버에서 포함할 도구 이름 목록. 지정하면 여기에 나열된 도구만 이 서버에서 사용 가능합니다 (허용 목록 동작). 지정하지 않으면 서버의 모든 도구가 기본적으로 활성화됩니다.                                       |
 | `excludeTools`         | 배열                        | 이 MCP 서버에서 제외할 도구 이름 목록. 여기에 나열된 도구는 서버에서 노출되더라도 모델이 사용할 수 없습니다.<br>참고: `excludeTools`는 `includeTools`보다 우선합니다. 도구가 두 목록 모두에 있으면 제외됩니다. |

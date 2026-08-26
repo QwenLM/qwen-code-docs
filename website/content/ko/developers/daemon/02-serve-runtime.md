@@ -10,7 +10,7 @@
 - 기본 워크스페이스를 정확히 한 번 **정규화**하고, 세션 런타임을 등록하기 전에 반복되는 모든 `--workspace`를 정규화합니다. 기본 정규 형태는 `/capabilities.workspaceCwd`, `POST /session` 폴백, 기본 브리지가 공유합니다.
 - 안전하지 않거나 잘못된 시작 구성을 거부합니다: 토큰 없는 루프백이 아닌 바인드, 토큰 없는 `--require-auth`, 토큰 없는 `--allow-origin '*'`, 양의 `mcpClientBudget` 없는 `mcpBudgetMode='enforce'`, 존재하지 않거나 디렉토리가 아닌 `--workspace`, 잘못된 타임아웃 또는 속도 제한 값.
 - `WorkspaceFileSystem` 팩토리, 권한 감사 발행자, `DaemonStatusProvider`, `acp-bridge`를 생성합니다.
-- Express 앱을 빌드하고, 미들웨어를 연결하고(`denyBrowserOriginCors` / `allowOriginCors` -> `hostAllowlist` -> 접근 로그 -> `bearerAuth` -> 속도 제한 -> JSON 파서 -> 텔레메트리 -> 라우트별 `mutationGate`), 세션, 워크스페이스 CRUD, 파일, 디바이스 플로우 인증, 권한 투표, ACP HTTP 라우트를 마운트합니다.
+- Express 앱을 빌드하고, 미들웨어를 연결하고(`allowOriginCors`를 가변 origin 허용 목록 위에 -> `hostAllowlist` -> 접근 로그 -> `bearerAuth` -> 속도 제한 -> JSON 파서 -> 텔레메트리 -> 라우트별 `mutationGate`), 세션, 워크스페이스 CRUD, 파일, 디바이스 플로우 인증, 권한 투표, ACP HTTP 라우트를 마운트합니다. (무조건적인 `denyBrowserOriginCors` 방어벽은 부트스트랩 앱 `run-qwen-serve.ts`에만 남아 있습니다.)
 - 리슨 포트를 바인딩하고 시그널 핸들러를 등록합니다.
 - SIGINT/SIGTERM에서 2단계 종료를 실행합니다. 두 번째 시그널에서 강제 종료합니다.
 
@@ -24,10 +24,10 @@
 
 **미들웨어** (`packages/cli/src/serve/auth.ts` 및 `server.ts`):
 
-| 미들웨어 (등록 순서)                          | 목적                                                                                                                   | 참고                                                                                                                                                                                  |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `denyBrowserOriginCors` / `allowOriginCors`   | 기본적으로 모든 `Origin` 헤더를 거부합니다. `--allow-origin <pattern>`이 설정되면 허용 목록 모드로 전환합니다.         | [`12-auth-security.md`](./12-auth-security.md) 참조.                                                                                                                                  |
-| `hostAllowlist(bind, getPort)`                | 루프백에서 `Host`가 `localhost`, `127.0.0.1`, `[::1]`, `host.docker.internal` 및 실제 포트에 속하는지 검증합니다.       | DNS 리바인딩에 대한 방어입니다. 비교는 대소문자를 구분하지 않으며 포트당 캐시됩니다.                                                                                                   |
+| 미들웨어 (등록 순서)                          | 목적                                                                                                                                                           | 참고                                                                                                                                                                                  |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `allowOriginCors`                             | 항상 `MutableOriginAllowlist` 위에서 런타임 앱에 설치됩니다: `--allow-origin <pattern>` 엔트리가 시드하고, Local Control이 활성화된 동안 LAN origin을 추가합니다; 일치하지 않는 origin은 403 거부 엔벨로프를 받습니다. | [`12-auth-security.md`](./12-auth-security.md) 참조.                                                                                                                                  |
+| `hostAllowlist(bind, getPort)`                | 루프백에서 `Host`가 `localhost`, `127.0.0.1`, `[::1]`, `host.docker.internal` 및 실제 포트에 속하는지 검증합니다.                                               | DNS 리바인딩에 대한 방어입니다. 비교는 대소문자를 구분하지 않으며 포트당 캐시됩니다. Local Control LAN 리스너는 기본 바인드와 관계없이 항상 광고된 권한의 Host 검사를 적용합니다.      |
 | 접근 로그 미들웨어                            | 요청이 완료되면 메서드, 경로, 상태, durationMs, sessionId, clientId를 `DaemonLogger`에 기록합니다.                      | `bearerAuth` **이전에** 등록되므로 401 거부도 기록됩니다. `/health`와 하트비트는 건너뜁니다.                                                                                          |
 | `bearerAuth(token)`                           | SHA-256 + `timingSafeEqual` 상수 시간 베어러 비교.                                                                     | 토큰이 구성되지 않으면 개방형 통과(루프백 개발 기본값). `Bearer` 스킴은 대소문자를 구분하지 않습니다.                                                                                 |
 | 속도 제한 미들웨어                            | 프롬프트, 뮤테이션, 읽기 라우트를 위한 선택적 티어별 토큰 버킷.                                                        | `bearerAuth` 이후, JSON 파싱 이전에 등록됩니다. 버킷이 소진되면 파싱 전에 429를 반환합니다.                                                                                           |
@@ -61,6 +61,8 @@
 
 ### 부트 시퀀스
 
+`runQwenServe()`가 이 시퀀스를 시작하기 전에, CLI 전용 `--open-with-auth` 모드가 루프백/Web Shell 적격성을 검증하고 `ServeOptions.token`을 선택된 구성 토큰으로 채우거나, 해당 선택이 비어 있으면 base64url로 인코딩된 32바이트 무작위 값으로 채웁니다. 직접 임베더와 해당 기본값 해제 플래그 없는 호출은 토큰을 생성하지 않습니다.
+
 1. `opts.token` 또는 `QWEN_SERVER_TOKEN`에서 토큰을 **해석하고 트림**합니다. `cat token.txt`의 후행 개행이 베어러 비교를 조용히 깨뜨리는 것을 방지합니다.
 2. **호스트네임 오타 가드**: `--hostname localhost:4170`은 오류를 발생시키고 `--port`를 제안합니다.
 3. **인증 프리플라이트**: 토큰 없는 루프백이 아닌 바인드는 거부합니다. 토큰 없는 `--require-auth`는 거부합니다.
@@ -75,19 +77,20 @@
 12. **`fsFactory` 빌드**: `runQwenServe`는 `trusted: true`를 기본값으로 사용합니다. 직접 `createServeApp` 호출자는 `trusted: false`를 기본값으로 사용하며 한 번 경고합니다.
 13. **`createHttpAcpBridge`**, [`03-acp-bridge.md`](./03-acp-bridge.md) 참조.
 14. **`createServeApp`**가 Express를 조합합니다.
-15. **`server.listen(port, hostname)`**, 그 후 호스트 허용 목록을 위한 실제 `getPort()`를 해석합니다.
-16. **우아한 종료를 위한 SIGINT / SIGTERM 핸들러 등록**.
+15. **리스닝 전에 HTTP(S) 서버를 생성하고 수명주기를 바인딩**한 다음, `server.listen(port, hostname)`을 호출하고 호스트 허용 목록을 위한 실제 `getPort()`를 해석합니다. Conversations 소유권은 이 리스너와 나머지 호스트 시작 게이트가 준비될 때까지 시작할 수 없습니다.
+16. **공유 앱 수명주기를 통한 우아한 종료를 위한 SIGINT / SIGTERM 핸들러를 등록**합니다.
 
 ### 우아한 종료
 
-1. **1단계 - 브리지 분해** 첫 번째 시그널에서:
+1. **첫 번째 시그널에서 수용을 차단하고 모든 드레인 시작**:
    - 디바이스 플로우 레지스트리를 해제하고 대기 중인 플로우를 취소합니다.
    - `bridge.shutdown()`은 각 채널을 `isDying = true`로 표시하고, 각 ACP 자식 stdin에 우아한 종료를 전송하고, 채널당 `KILL_HARD_DEADLINE_MS`(10초)를 기다린 다음 필요시 `channel.kill()`을 호출합니다.
-2. **2단계 - HTTP 분해**:
+2. **앱 및 호스트 드레인 실행 중 리스너 종료**:
    - `server.close()`는 새 연결 수락을 중지하고 인플라이트 요청이 완료되도록 합니다.
    - `SHUTDOWN_FORCE_CLOSE_MS`(5초)가 `server.closeAllConnections()`를 트리거합니다.
-   - 두 번째 2초 데드라인이 필요시 다시 에스컬레이션합니다.
-3. **종료 중 두 번째 시그널**:
+   - 필요시 두 번째 2초 데드라인이 다시 에스컬레이션합니다.
+3. **Conversations 소유권 해제**는 리스너, 앱 로컬 작업, 호스트 소유 작업, Live 검색 정리 및 런타임 드레인으로부터 확인된 종료 증거를 받은 후에만 가능합니다. 완료되지 않은 증거는 안전하지 않은 핸드오프를 허용하는 대신 종료를 거부합니다.
+4. **종료 중 두 번째 시그널**:
    - `bridge.killAllSync()` + `process.exit(1)`로 고아 자식이 데몬 종료를 차단하는 것을 방지합니다.
 
 ## 상태 및 수명주기
@@ -96,9 +99,9 @@
 
 - `url`: 임시 포트 해석 후 해석된 리슨 URL.
 - `port`: `0` 해석을 포함한 실제 포트.
-- `close({ timeoutMs? })`: 임베더 및 테스트용 프로그램적 종료.
+- `close()`: 임베더 및 테스트용 프로그램적 종료.
 
-`createServeApp`을 직접 호출하면 `Application`만 반환됩니다. 임베더가 `listen`과 종료를 소유합니다.
+`createServeApp`을 직접 호출해도 `Application`만 반환됩니다. Live/Conversations가 필요한 임베더는 실제 Node 서버를 생성하고, 첫 `listen()` 전에 `getServeAppLifecycle(app).bindServer(server)`를 호출하고, 종료 시 `lifecycle.close()`를 대기해야 합니다. 바인딩 없으면 일반 라우트는 사용 가능하지만 Live/Conversations는 닫힙니다. 원시 `server.close()`를 호출하면 이벤트 기반 정리가 트리거되지만, 임베더는 여전히 `lifecycle.close()`를 대기하여 드레인 또는 소유권 해제 실패를 관찰해야 합니다.
 
 ## 의존성
 
@@ -121,6 +124,7 @@
 | 환경 변수       | `QWEN_SERVE_DEBUG=1`                                                                                       | 상세 stderr 로그. [`19-observability.md`](./19-observability.md) 참조.                                 |
 | 플래그          | `--hostname`, `--port`                                                                                     | 리슨 바인딩.                                                                                          |
 | 플래그          | `--token`, `--require-auth`, `--enable-session-shell`                                                      | 베어러 토큰, 루프백 인증 강화, 명시적 셸 실행 스위치.                                                |
+| CLI 플래그      | `--open-with-auth`                                                                                         | 런타임 전 프로세스 수명 베어러를 재사용하거나 생성하는 기본값 해제 루프백 Web Shell 시작.              |
 | 플래그          | `--workspace`                                                                                              | `process.cwd()`를 재정의합니다. 추가 격리 워크스페이스 런타임을 등록하려면 반복합니다.                  |
 | 플래그          | `--max-sessions`, `--max-pending-prompts-per-session`, `--max-connections`, `--event-ring-size`            | 브리지 / Express 캡.                                                                                  |
 | 플래그          | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}`                                            | ACP 자식에게 전달됩니다.                                                                              |
@@ -137,7 +141,7 @@
 ## 주의사항 및 알려진 제한
 
 - `deps.fsFactory` 또는 `deps.bridge` 없는 직접 `createServeApp`은 `trusted: false`를 기본값으로 사용합니다. 에이전트 측 ACP `writeTextFile`은 `untrusted_workspace`로 거부합니다. 경고는 한 번만 출력됩니다.
-- `denyBrowserOriginCors`는 `Origin`을 포함하는 **모든** 요청을 거부합니다. **루프백** Web Shell은 다른 미들웨어가 먼저 일치하는 루프백 동일 출처 값을 제거하기 때문에 작동합니다. 루프백이 아닌 바인드는 Web Shell의 XHR에 `--allow-origin`이 필요합니다.
+- 런타임 앱은 가변 허용 목록 위에서 `allowOriginCors`를 실행합니다. 일치하지 않는 `Origin` 값은 403 거부 엔벨로프를 받습니다(무조건적인 `denyBrowserOriginCors` 방어벽은 부트스트랩 앱에만 남아 있습니다). **루프백** Web Shell은 다른 미들웨어가 먼저 일치하는 루프백 동일 출처 값을 제거하기 때문에 작동합니다 — 루프백이 아닌 바인드는 Web Shell의 XHR에 `--allow-origin`이 필요합니다.
 - 본문 파서 순서: `mutate({ strict: true })`를 사용하는 라우트는 `express.json()` 이후에만 401을 반환합니다. 최악의 경우는 `--max-connections × express.json({limit: '10mb'})`로, 포화된 루프백 리스너에서 최대 약 2.5GB의 일시적 메모리입니다. 이 트레이드오프는 의도적입니다.
 - 하나의 프로세스에서 여러 데몬은 핸들별 `childEnvOverrides`를 사용해야 합니다. `defaultSpawnChannelFactory`가 생성 시 환경의 스냅샷을 찍기 때문에 `process.env`를 변경하면 경합이 발생합니다.
 

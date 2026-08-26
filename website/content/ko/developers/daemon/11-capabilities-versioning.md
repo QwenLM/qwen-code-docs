@@ -108,7 +108,7 @@ export const CONDITIONAL_SERVE_FEATURES: ReadonlyMap<
 
 기반: `health`, `daemon_status`, `capabilities`.
 
-세션: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (조건부), `session_language`, `session_rewind`, `session_hooks`, `session_branch`.
+세션: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_storage_conflict_repair`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (조건부), `session_language`, `session_rewind`, `session_hooks`, `session_branch`.
 
 스트리밍: `slow_client_warning`, `typed_event_schema`.
 
@@ -120,9 +120,11 @@ Identity 및 heartbeat: `client_identity`, `client_heartbeat`.
 
 확장 프로그램 관리: `extension_management_v2`는 글로벌 `/extensions/*` 카탈로그/변경/운영 계약과 워크스페이스 활성화 프로젝션을 추가합니다. 이것은 게시된 `workspace_extensions` 호환 표면 및 `workspace_qualified_rest_core`와 별개입니다.
 
-워크스페이스 한정 세션 읽기: `workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`. 활성 및 보관된 내보내기 태그는 서로 독립적이며 `session_export` 및 `workspace_qualified_rest_core`와도 독립적이므로, 클라이언트는 내보내려는 정확한 저장 상태를 프리플라이트해야 합니다. 지속된 전사 페이징은 제한된 읽기 정책 하에서 신뢰할 수 없는 보조를 허용합니다. 두 전체 내보내기 경로는 모두 신뢰 전용입니다.
+V2 Extension 배치 활성화: `extension_batch_activation_v2`는 `extension_management_v2`에 전역 기본 활성화 대기열과 선택된 워크스페이스 오버배치 대기열을 추가합니다. 이전 V2 데몬은 단일 활성화 라우트만 노출하므로 클라이언트는 독립적으로 프리플라이트해야 합니다.
 
-워크스페이스 변경 (Wave 4+): `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, **`workspace_settings`** (조건부), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, **`workspace_reload`** (조건부).
+워크스페이스 한정 세션 읽기: `workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`, `workspace_session_live_state`. 활성 및 보관된 내보내기 태그는 서로 독립적이며 `session_export` 및 `workspace_qualified_rest_core`와도 독립적이므로, 클라이언트는 내보내려는 정확한 저장 상태를 프리플라이트해야 합니다. 지속된 전사 페이징은 제한된 읽기 정책 하에서 신뢰할 수 없는 보조를 허용합니다. 두 전체 내보내기 경로는 모두 신뢰 전용입니다. `workspace_session_live_state` 역시 `workspace_qualified_rest_core`와 독립적이며 신뢰 전용입니다. 선택된 런타임의 메모리 전용 라이브 세션 스냅샷과 카탈로그 버전을 제공하며, 신뢰할 수 없는 보조 지속 읽기 정책을 라이브 브리지 상태로 확장하지 않습니다.
+
+워크스페이스 변경 (Wave 4+): `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, **`workspace_settings`** (조건부), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, `workspace_file_upload`, **`workspace_reload`** (조건부).
 
 MCP 가드레일: **`mcp_guardrails`** (`modes: ['warn', 'enforce']`), `mcp_guardrail_events`, `mcp_server_runtime_mutation`, **`mcp_workspace_pool`** (조건부), **`mcp_pool_restart`** (조건부).
 

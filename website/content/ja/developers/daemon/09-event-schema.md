@@ -1,5 +1,3 @@
----
-
 # Typed Daemon Event Schema v1
 
 ## 概要
@@ -79,7 +77,7 @@ SDK は `asKnownDaemonEvent(evt)` を公開しています。これは既知の�
 | `agent_changed`          | S->C      | `change: 'created' \| 'updated' \| 'deleted', name, level: 'project' \| 'user'`                                                                |
 | `approval_mode_changed`  | S->C      | `sessionId, previous, next, persisted: boolean`                                                                                                |
 | `tool_toggled`           | S->C      | `toolName, enabled`; 次回の ACP 子プロセスの生成に影響し、すでに実行中のセッションは変更しません。                                            |
-| `settings_changed`       | S->C      | ワークスペース設定の書き込みが完了しました。ペイロードはオープンです。コンシューマーは read-after-write でリフレッシュする必要があります。                                           |
+| `settings_changed`       | S->C      | ワークスペース設定の書き込みが完了しました。ペイロードは `key` を含みます。`value`、`scope`、および Skill トグルの `mutation` はオプションです。                        |
 | `settings_reloaded`      | S->C      | デーモンのワークスペースサービスが設定を再読み込みしました。ペイロードはオープンです。                                                                                     |
 | `trust_change_requested` | S->C      | `workspaceCwd, desiredState: 'trusted' \| 'untrusted', reason?`                                                                                |
 | `workspace_initialized`  | S->C      | `path, action: 'created' \| 'overwrote' \| 'noop', originatorClientId?`                                                                        |
@@ -123,10 +121,10 @@ SDK は `asKnownDaemonEvent(evt)` を公開しています。これは既知の�
 | Type                  | Direction | Trigger                                                                                                             | Key payload fields                                                                                                                                                                               |
 | --------------------- | --------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `prompt_cancelled`    | S->C      | 明示的な `cancelSession` ルート**または**発信元の SSE 切断によってプロンプトがキャンセルされました | エンベロープには、キャンセルを実行したクライアントの `originatorClientId` がスタンプされます。これは「キャンセルが要求された」ことを意味し、「キャンセルが確定した」わけではありません。ピアサブスクライバーはプロンプトが終了したことを認識します。              |
-| `turn_complete`       | S->C      | ターンが正常に完了しました                                                                                       | `sessionId, stopReason, promptId?`。`promptId` は非ブロッキングプロンプトレスポンス（`202`）にリンクします。SDK はこれを通じて SSE イベントを発信元のプロンプトにマッチングします。                                  |
+| `turn_complete`       | S->C      | ターンが正常に完了しました                                                                                       | `sessionId, stopReason, promptId?, branchPoint?`。`promptId` は非ブロッキングプロンプトレスポンス（`202`）にリンクします。対象となる完了ターンには `branchPoint: { assistantRecordUuid, checkpointUuid }` が含まれます。 |
 | `turn_error`          | S->C      | ターンが失敗しました                                                                                                       | `sessionId, message, code?, promptId?`; 上記と同じ `promptId` の相関メカニズム。                                                                                                                   |
 | `session_rewound`     | S->C      | `POST /session/:id/rewind` が成功しました                                                                                | `sessionId, promptId, targetTurnIndex, filesChanged[], filesFailed[], originatorClientId?`                                                                                                       |
-| `session_branched`    | S->C      | `POST /session/:id/branch` によって既存のセッションからブランチが作成されました                                                | `sourceSessionId, newSessionId, displayName, originatorClientId?`                                                                                                                                |
+| `session_branched`    | S->C      | レガシー互換性イベント。現在のブランチエンドポイントは結果を直接返しており、このイベントを公開しません | `sourceSessionId, newSessionId, displayName, originatorClientId?`。リーダーは古いプロデューサーへのサポートを保持します。                                                                                        |
 | `followup_suggestion` | S->C      | ACP 子が `end_turn` 後にゴーストテキストのフォローアップ提案を生成し、セッションごとの SSE 経由で転送されました               | `sessionId, suggestion, promptId`; ワイヤー上では `getFilterReason()===null` である提案のみが伝送されます。クライアントはこれらを入力プレースホルダーのゴーストテキストとしてレンダリングし、次の `sendPrompt` で無効化します。 |
 | `user_shell_command`  | S->C      | ユーザーが `POST /session/:id/shell` 経由でシェルコマンドを開始しました。同じセッション内の他のサブスクライバーにファンアウトされます | `sessionId, command, shellId, originatorClientId?`。型付きの `DaemonXxxData` インターフェースはまだ存在しないため、`asKnownDaemonEvent` は `undefined` を返し、UI ノーマライザーはそれをアドホックに解析します。            |
 | `user_shell_result`   | S->C      | 上記のシェルコマンドの結果                                                                                   | `sessionId, shellId, exitCode, output, aborted`。`user_shell_command` と同じく、アドホックな解析に関する注意事項が適用されます。                                                                                               |
@@ -170,7 +168,7 @@ SDK は `asKnownDaemonEvent(evt)` を公開しています。これは既知の�
 - `workspaceInitCount`, `lastWorkspaceInit?` - `workspace_initialized` から。
 - `mcpRestartCount`, `lastMcpRestart?` - `mcp_server_restarted` から。
 - `mcpRestartRefusedCount`, `lastMcpRestartRefused?` - `mcp_server_restart_refused` から。
-- `settings_changed` / `settings_reloaded` - `asKnownDaemonEvent` によって認識されます。セッションリデューサーは専用のビューステートフィールドを保持せず、UI は通常これらをリフレッシュシグナルとして扱います。
+- `settings_changed` / `settings_reloaded` - `asKnownDaemonEvent` によって認識されます。セッションリデューサーは専用のビューステートフィールドを保持しません。Skill トグルの `settings_changed` イベントにはオプションの `mutation` メタデータが付随し、ホストはタスクをリロードせずに Skill 専用の変更を段階的に適用できます。他の UI では引き続きこれをリフレッシュシグナルとして扱う場合があります。
 - `permissionVoteProgress: Record<string, DaemonPermissionPartialVoteData>` - コンセンサス投票の進捗。
 - `forbiddenVotes: DaemonPermissionForbiddenData[]`, `forbiddenVoteCount` - ポリシーによって拒否された投票レコード。最大 32 件まで。
 - `awaitingResync: boolean` - `state_resync_required` によってセットされます。コンシューマーがビューステートをリセットするとクリアされます。

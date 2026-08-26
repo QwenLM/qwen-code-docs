@@ -2,17 +2,15 @@
 # non-CJK target languages (ko, de, fr, pt-BR, ru): product names and
 # Chinese-product UI labels that the English source itself quotes.
 #
-# Consumed by orchestrator.mjs verifyFile (source-language contamination
-# gate). Exact-match entries, one per line; # starts a comment. When a
-# legitimate new Chinese UI label trips the gate, append it here instead
-# of weakening the gate.
+# Consumed by the orchestrator structural gate. Entries apply only when the
+# English source contains the same text; # starts a comment. When a legitimate
+# new Chinese UI label trips the gate, append it here instead of weakening it.
 
 # product names
 阿里云百炼
 百炼
 智谱AI
 QQ机器人
-机器人
 钉钉
 飞书
 企业微信
@@ -20,7 +18,6 @@ QQ机器人
 
 # channel-setup UI labels quoted from the Chinese product interface
 机器人协议
-模式
 添加应用能力
 权限管理
 事件与回调

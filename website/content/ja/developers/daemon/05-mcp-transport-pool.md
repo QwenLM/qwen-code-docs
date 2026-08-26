@@ -2,7 +2,7 @@
 
 ## 概要
 
-`McpTransportPool`（`packages/core/src/tools/mcp-transport-pool.ts`）は、F2（#4175 commit 5）のワークスペーススコープのプールです。1 つのデーモン上の複数の ACP セッションは、それぞれが独自の MCP 子プロセスを生成する代わりに、一意の `(serverName + configFingerprint)` タプルあたり 1 つのトランスポートを共有します。このプールは **ACP 子プロセス内**（`QwenAgent.mcpPool`）に存在し、デーモンのブートストラップ `Config` を使用してエージェント起動時に 1 回構築され、セッションのライフサイクルを超えて存続します。エントリはセッションのアタッチを参照カウントし、参照カウントがゼロになると設定可能な猶予期間後にクローズします。
+`McpTransportPool`（`packages/core/src/tools/mcp-transport-pool.ts`）は、F2（#4175 commit 5）のワークスペーススコープのプールです。1 つのランタイム内の複数の ACP セッションは、それぞれが独自の MCP 子プロセスを生成する代わりに、一意の `(serverName + configFingerprint)` タプルあたり 1 つのトランスポートを共有します。プールモードが有効な場合、起動した ACP 子プロセスはそれぞれ独立したプール（`QwenAgent.mcpPool`）を所有します。本番環境ではプライマリ子プロセスのプリヒートを試み、失敗した場合は初回使用時に再試行します。信頼されたセカンダリはオンデマンドで子プロセスを起動し、信頼されていないセカンダリは何も起動しません。プールはランタイムのブートストラップ `Config` を使用してエージェント起動時に 1 回構築され、セッションのライフサイクルを超えて存続します。エントリはセッションのアタッチを参照カウントし、参照カウントがゼロになると設定可能な猶予期間後にクローズします。
 
 これは、マルチセッションデーモンがセッションごとにすべての MCP サーバーのコピーをフォークするのを防ぐ主要なメカニズムです。
 
@@ -290,9 +290,9 @@ W77 レース（`cb206da36`）: `createUnpooledConnection` は、`client.connect
 
 プールキーは `mcp-pool-key.ts` の `fingerprint(cfg)` から取得されます。ハッシュはすべてのトランスポート定義フィールドをカバーします:
 
-> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, oauth`
+> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, versionNegotiation, oauth`
 
-セッションごとのフィルタリングとメタデータフィールド（`includeTools`、`excludeTools`、`trust`、`description`、`extensionName`、`discoveryTimeoutMs`）は除外されるため、異なるフィルタを持つセッションでも1つのエントリを共有できます。
+セッションごとのフィルタリングとメタデータフィールド（`includeTools`、`excludeTools`、`trust`、`description`、`extensionName`、`discoveryTimeoutMs`）は除外されるため、異なるフィルタを持つセッションでも1つのエントリを共有できます。自動ネゴシエーションのオプトインは、基盤となるプロセスの接続方法を変更するため含まれます。
 
 OAuthセルについては、`canonicalOAuth(o)` はすべての `MCPOAuthConfig` フィールドをハッシュします: `clientId`、`clientSecret`、ソート済みの `scopes`、ソート済みの `audiences`、`authorizationUrl`、`tokenUrl`、`redirectUri`、`tokenParamName`、`registrationUrl`。これは認証情報分離の契約です: `clientSecret`、`audiences`、または `redirectUri` のみが異なる2つのセッション設定は異なるフィンガープリントを持ち、1つのエントリを共有できません。機密クライアントおよびマルチオーディエンストークンデプロイメントはこれに依存しています。
 

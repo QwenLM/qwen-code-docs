@@ -365,3 +365,4 @@ daemon UI SDK의 모든 계층은 **forward-compat 원칙**을 따릅니다: 알
 - [PR #4353](https://github.com/QwenLM/qwen-code/pull/4353) — 이 PR (통합 완전성 후속)
 - [Issue #3803](https://github.com/QwenLM/qwen-code/issues/3803) — daemon 모드 제안
 - [Issue #4175](https://github.com/QwenLM/qwen-code/issues/4175) — Mode B v0.16 구현 트래커
+

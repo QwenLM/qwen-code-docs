@@ -1,10 +1,12 @@
 ---
 
+---
+
 # Channels
 
 Mit Channels kannst du über Messaging-Plattformen wie Telegram, WeChat, QQ, DingTalk, WeCom oder Feishu mit einem Qwen Code Agenten interagieren, anstatt über das Terminal. Du sendest Nachrichten von deinem Smartphone oder einer Desktop-Chat-App, und der Agent antwortet genauso wie in der CLI.
 
-Code-Hosting-Plattformen (beginnend mit [GitHub](./github)) werden ebenfalls über Polling-Adapter unterstützt – der Agent überwacht Benachrichtigungen und reagiert auf @Erwähnungen bei Issues und Pull Requests.
+Code-Hosting-Plattformen (beginnend mit [GitHub](./github)) und authentifizierte Workspace-Accounts (beginnend mit [DingTalk Workspace](./dws)) werden ebenfalls über Channels unterstützt.
 
 ## Funktionsweise
 
@@ -19,7 +21,7 @@ Alle Channels teilen sich einen Agenten-Prozess mit isolierten Sessions pro Benu
 
 ## Schnellstart
 
-1. Richte einen Bot auf deiner Messaging-Plattform ein (siehe channel-spezifische Anleitungen: [Telegram](./telegram), [WeChat](./weixin), [QQ Bot](./qqbot), [DingTalk](./dingtalk), [WeCom](./wecom), [Feishu](./feishu), [GitHub](./github))
+1. Richte einen Bot oder authentifizierten Workspace-Account ein (siehe channel-spezifische Anleitungen: [Telegram](./telegram), [WeChat](./weixin), [QQ Bot](./qqbot), [DingTalk](./dingtalk), [DingTalk Workspace](./dws), [WeCom](./wecom), [Feishu](./feishu), [GitHub](./github))
 2. Füge die Channel-Konfiguration zu `~/.qwen/settings.json` hinzu
 3. Führe `qwen channel start` aus, um alle Channels zu starten, oder `qwen channel start <name>` für einen einzelnen Channel
 
@@ -54,7 +56,7 @@ Channels werden unter dem Schlüssel `channels` in der `settings.json` konfiguri
 
 | Option                   | Erforderlich     | Beschreibung                                                                                                                                                            |
 | ------------------------ | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `type`                   | Ja               | Channel-Typ: `telegram`, `weixin`, `qq`, `dingtalk`, `wecom`, `feishu`, `github` oder ein benutzerdefinierter Typ aus einer Erweiterung (siehe [Plugins](./plugins))                       |
+| `type`                   | Ja               | Channel-Typ: `telegram`, `weixin`, `qq`, `dingtalk`, `dws`, `wecom`, `feishu`, `github`, `gitlab` oder ein benutzerdefinierter Typ aus einer Erweiterung (siehe [Plugins](./plugins))                       |
 | `token`                  | Telegram         | Bot-Token. Unterstützt die `$ENV_VAR`-Syntax zum Lesen aus Umgebungsvariablen. Nicht erforderlich für WeChat, DingTalk, WeCom oder Feishu                                            |
 | `clientId`               | DingTalk, Feishu | DingTalk AppKey oder Feishu App ID. Unterstützt die `$ENV_VAR`-Syntax                                                                                                           |
 | `clientSecret`           | DingTalk, Feishu | DingTalk AppSecret oder Feishu App Secret. Unterstützt die `$ENV_VAR`-Syntax                                                                                                    |
@@ -63,7 +65,7 @@ Channels werden unter dem Schlüssel `channels` in der `settings.json` konfiguri
 | `model`                  | Nein             | Modell, das für diesen Channel verwendet werden soll (z. B. `qwen3.5-plus`). Überschreibt das Standardmodell. Nützlich für multimodale Modelle, die Bildeingaben unterstützen                               |
 | `senderPolicy`           | Nein             | Wer mit dem Bot kommunizieren kann: `allowlist` (Standard), `open` oder `pairing`                                                                                                   |
 | `allowedUsers`           | Nein             | Liste der Benutzer-IDs, die den Bot verwenden dürfen (wird von den Richtlinien `allowlist` und `pairing` verwendet)                                                                                   |
-| `sessionScope`           | Nein             | Wie Sessions abgegrenzt werden: `user` (Standard), `thread` oder `single`                                                                                                       |
+| `sessionScope`           | Nein             | Wie Sessions abgegrenzt werden: `user` (Standard), `chat_thread` oder `single`. Legacy `thread` bleibt kompatibel, wenn bereits konfiguriert, wird aber für neue WebShell-Konfigurationen nicht mehr angeboten |
 | `cwd`                    | Nein             | Arbeitsverzeichnis für den Agenten. Standardmäßig das aktuelle Verzeichnis                                                                                                     |
 | `approvalMode`           | Nein             | Tool-Genehmigungsmodus für Channel-Sessions. Unbeaufsichtigte Webhook-Tasks erfordern `yolo`; die Einstellung gilt für jede Session auf dem Channel                                  |
 | `instructions`           | Nein             | Benutzerdefinierte Anweisungen, die der ersten Nachricht jeder Session vorangestellt werden                                                                                                     |
@@ -392,7 +394,8 @@ Du kannst den Dispatch-Modus auch pro Gruppe festlegen und damit den Channel-Sta
 
 ## Block-Streaming
 
-Standardmäßig arbeitet der Agent eine Weile und sendet dann eine einzige große Response. Wenn Block-Streaming aktiviert ist, trifft die Response in mehreren kürzeren Nachrichten ein, während der Agent noch arbeitet – ähnlich wie ChatGPT oder Claude progressive Ausgaben anzeigen.
+Standardmäßig arbeitet der Agent eine Weile und sendet dann eine einzige große Response. Wenn Block-Streaming aktiviert ist...
+
 
 ```json
 {

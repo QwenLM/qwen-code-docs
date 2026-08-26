@@ -1,77 +1,65 @@
 # Computer Use
 
-O Qwen Code inclui ferramentas de **Computer Use** integradas que permitem ao agente controlar seu desktop — clicar, digitar, rolar, abrir aplicativos, ler o conteúdo das janelas e capturar screenshots. Isso transforma o Qwen Code em um agente de automação de desktop geral, não apenas um assistente de código confinado ao terminal.
+O Qwen Code inclui uma skill `computer-use` que ensina o modelo a operar aplicativos de desktop através de dois pacotes instalados separadamente:
 
-O Computer Use é alimentado pelo driver nativo [`cua-driver`](https://github.com/trycua/cua). As ferramentas são registradas como ferramentas diferidas (carregadas sob demanda) sob o prefixo `computer_use__`, ocupando espaço no prompt apenas quando o modelo realmente as utiliza.
+```text
+skill computer-use integrada
+  -> @qwen-code/node-repl-mcp
+  -> @qwen-code/cua-sdk/computer-use
+  -> backend nativo de acessibilidade cua-driver
+```
+
+O Qwen Code não empacota o servidor MCP, o SDK ou o driver nativo. A skill instala os pacotes externos automaticamente quando estão ausentes.
 
 > [!warning]
 >
-> O Computer Use dá ao agente controle do mouse, teclado e janelas, e permite que ele leia o conteúdo da tela. Use apenas com prompts confiáveis e, quando possível, em um ambiente isolado ou descartável. As ferramentas de ação (click, type, drag, etc.) passam pelo [fluxo de aprovação](./approval-mode.md) normal; ferramentas somente leitura, como listar janelas, podem ser executadas sem prompt.
+> O Computer Use pode ler a UI de aplicativos e controlar a entrada de mouse e teclado. Use-o apenas em ambientes confiáveis e revise as aprovações do MCP com cuidado.
 
-## Ativando e desativando
+## Configuração automática
 
-O Computer Use vem **ativado por padrão**. As ferramentas `computer_use__*` são registradas automaticamente na inicialização.
+Node.js 22 ou posterior e npm são necessários.
 
-Para desativá-lo completamente — o que também impede o download ou a inicialização do driver nativo — defina `tools.computerUse.enabled` como `false` no `settings.json`:
+No primeiro uso, a skill executa estes comandos por conta própria:
 
-```jsonc
-{
-  "tools": {
-    "computerUse": {
-      "enabled": false,
-    },
-  },
-}
+```bash
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.0
+npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.0
 ```
 
-Essa configuração requer reinicialização para entrar em vigor.
+Reinicie o Qwen Code após o servidor MCP ser adicionado pela primeira vez. A skill então retoma a tarefa de desktop através do `node_repl`.
 
-## Primeira execução e o driver nativo
+A instalação do SDK deixa o `package.json` e o lockfile inalterados, mas escreve no `node_modules` do workspace. Seu postinstall baixa e verifica o payload nativo para a plataforma atual.
 
-Na primeira vez que o agente invoca uma ferramenta de Computer Use, o Qwen Code baixa um binário `cua-driver` fixado e assinado (~20 MB) para `~/.qwen/computer-use/` e o inicia como um processo local. Binários pré-compilados estão disponíveis para macOS (Apple Silicon e Intel), Linux (x86_64) e Windows (x86_64).
+Remover a configuração do MCP ou a instalação do SDK do workspace desativa o caminho de execução; não há fallback legado.
 
-### Permissões no macOS
+## Uso
 
-No macOS, a automação de desktop requer duas permissões do sistema:
+Peça ao Qwen Code para usar `$computer-use` para a tarefa de desktop. Após o bootstrap, ele segue o fluxo de trabalho padrão do Computer Use:
 
-- **Accessibility** — para ler o estado de janelas/UI e sintetizar entrada
-- **Screen Recording** — para capturar screenshots
+1. descobre o aplicativo e a janela exatos;
+2. observa o estado completo de acessibilidade;
+3. age através dos tokens semânticos de elemento atuais quando possível;
+4. busca estado fresco após cada mutação;
+5. verifica o resultado solicitado; e
+6. fecha o cliente SDK e reseta o REPL.
 
-No primeiro uso, o driver orienta você a conceder essas permissões por meio das caixas de diálogo padrão do sistema macOS. O agente também pode verificar o status das permissões sob demanda (ferramenta `check_permissions`). Como o macOS atribui as permissões ao processo _responsável_, pode ser necessário concedê-las ao terminal ou IDE que iniciou o Qwen Code.
+O driver é o único componente que computa diffs de observação. O código do modelo usa os métodos tipados do SDK e não despacha nomes arbitrários de ferramentas do driver.
 
-## O que o agente pode fazer
+## Permissões
 
-Toda a superfície de ferramentas do `cua-driver` é exposta. Destaques:
+O Node REPL é um servidor MCP que executa JavaScript escrito pelo modelo com autoridade Node.js ordinária. Suas chamadas seguem o [fluxo de aprovação MCP](./approval-mode.md) normal do Qwen Code. O SDK também impõe autorização nativa.
 
-| Categoria       | Ferramentas (seleção)                                                                |
-| --------------- | ------------------------------------------------------------------------------------ |
-| Mouse           | `click`, `double_click`, `right_click`, `drag`, `move_cursor`, `scroll`              |
-| Teclado         | `type_text`, `press_key`, `hotkey`                                                   |
-| Janelas / UI    | `list_windows`, `get_window_state`, `get_accessibility_tree`, `set_value`, `zoom`    |
-| Aplicativos     | `launch_app`, `list_apps`, `bring_to_front`, `kill_app`                              |
-| Páginas do navegador | `page` (executar JavaScript, ler texto, consultar o DOM, clicar em elementos)   |
-| Screenshots     | `get_window_state` (captura um PNG), `page`                                          |
-| Gravação        | `start_recording`, `stop_recording`, `replay_trajectory` (gravar/replay de uma sessão) |
-| Sessões         | `start_session`, `end_session`, controles do overlay do cursor do agente             |
+No macOS, a observação de acessibilidade e a entrada requerem permissão de Accessibility. Screenshots também requerem permissão de Screen Recording. O macOS pode atribuir a concessão ao terminal ou IDE que iniciou o Qwen Code. Windows e Linux usam suas facilidades de acessibilidade e entrada de plataforma.
 
-Ações endereçadas por elemento são preferíveis a coordenadas de pixel brutas: `get_window_state` retorna uma renderização em Markdown da árvore de acessibilidade da janela, com um `element_index` estável para cada elemento acionável, que as ferramentas de entrada podem atingir diretamente.
+## Solução de problemas
 
-O suporte é mais completo no macOS; algumas ferramentas são específicas de plataforma (por exemplo, `bring_to_front` é exclusivo do Windows, e `launch_app` destina-se a aplicativos do macOS).
-
-## Configuração
-
-Todas as configurações do Computer Use ficam em `tools.computerUse` no `settings.json`. Consulte a [referência de configurações](../configuration/settings.md) para a lista completa.
-
-| Configuração                            | Tipo    | Padrão   | Descrição                                                                                                                                                                                                                                                |
-| --------------------------------------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tools.computerUse.enabled`             | boolean | `true`   | Registra as ferramentas `computer_use__*`. Quando `false`, o driver nunca é baixado nem iniciado.                                                                                                                                                         |
-| `tools.computerUse.maxImageDimension`   | number  | `-1`     | Limite de pixels no maior lado para screenshots. `-1` mantém o padrão do driver (1568); `0` desativa o redimensionamento (resolução total); um valor positivo limita o maior lado. Limites menores reduzem o custo de tokens de visão. Override via env: `QWEN_COMPUTER_USE_MAX_IMAGE_DIMENSION`. |
-| `tools.computerUse.idleTimeoutMs`       | number  | `300000` | Milissegundos para manter o processo do driver ativo após a última chamada `computer_use__*` (padrão: 5 minutos). `0` mantém o driver ativo até o Qwen Code ser encerrado.                                                                                |
-
-Todas as três configurações requerem reinicialização para entrar em vigor.
+- Se o `node_repl` ainda estiver indisponível após a configuração automática, reinicie o Qwen Code e verifique o servidor com `qwen mcp list`.
+- Se a importação do SDK ainda falhar após a configuração automática, confirme que o Qwen Code está sendo executado no workspace onde o pacote foi instalado.
+- Após um timeout, cancelamento, reset ou crash do kernel, faça o bootstrap do cliente SDK novamente e solicite estado fresco.
 
 ## Veja também
 
-- [Modo de aprovação](./approval-mode.md) — como as execuções de ferramentas são controladas
-- [Sandbox](./sandbox.md) — isolando o que as ferramentas podem acessar
-- [Referência de configurações](../configuration/settings.md) — o esquema completo `tools.computerUse.*`
+- [Skills](./skills.md)
+- [Servidores MCP](./mcp.md)
+- [Modo de aprovação](./approval-mode.md)
+- [Sandboxing](./sandbox.md)

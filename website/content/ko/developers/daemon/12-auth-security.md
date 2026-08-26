@@ -7,7 +7,7 @@
 1. **바인드** — 루프백이 아닌 바인드에서 베어러 토큰 없이 시작하려고 하면 **시작이 거부됩니다**.
 2. **베어러 인증** — `bearerAuth` 미들웨어가 상수 시간 SHA-256 비교를 통해 `/health`를 제외한 모든 라우트를 보호합니다(`require_auth`는 루프백과 `/health`까지 확장합니다).
 3. **Host 헤더 허용 목록** — 루프백에서는 `localhost`, `127.0.0.1`, `[::1]`, `host.docker.internal`(포트 포함)만 허용됩니다. DNS 리바인딩에 대한 방어입니다.
-4. **Origin 제어** — 기본적으로 `Origin` 헤더가 포함된 요청은 403으로 거부됩니다. `--allow-origin <pattern>`이 설정되면 데몬은 CORS 허용 목록 모드(`allowOriginCors`)로 전환되어 일치하는 Origin만 허용합니다.
+4. **Origin 제어** — 런타임 앱은 항상 가변 허용 목록(`MutableOriginAllowlist`) 위에 `allowOriginCors`를 설치합니다: `--allow-origin <pattern>` 항목이 시딩하고, Local Control이 활성화된 동안 LAN origin을 추가합니다. 일치하지 않는 origin은 403 거부 엔벨로프를 받습니다. 무조건적 거부 방어벽(`denyBrowserOriginCors`)은 런타임 시작 전에 응답하는 부트스트랩 앱에만 남아 있습니다.
 5. **라우트별 뮤테이션 게이트** — Wave 4의 변경 라우트는 토큰이 설정되지 않은 경우에도 루프백에서 `401` 응답을 선택적으로 사용할 수 있으며, 고유한 `code: 'token_required'` 오류를 반환합니다.
 6. **디바이스 플로우 인증** — 제공자용 OAuth 별도 표면(`POST /workspace/auth/device-flow` + `/:id`에 대한 GET/DELETE).
 
@@ -56,11 +56,8 @@ if (parsed.allowAny && !token) {
 ```mermaid
 flowchart LR
     REQ[Request] --> SO["strip same-origin Origin<br/>(Web Shell support)"]
-    SO --> CORS{"--allow-origin?"}
-    CORS -->|yes| AO["allowOriginCors<br/>(allowlist match)"]
-    CORS -->|no| DC["denyBrowserOriginCors<br/>(reject all Origin)"]
+    SO --> AO["allowOriginCors<br/>(mutable allowlist: --allow-origin<br/>patterns + Local Control LAN origin)"]
     AO --> HA["hostAllowlist"]
-    DC --> HA
     HA --> LOG["access-log middleware<br/>(DaemonLogger)"]
     LOG --> BA["bearerAuth"]
     BA --> RL["rate-limit middleware<br/>(when enabled)"]
@@ -74,7 +71,7 @@ flowchart LR
 
 ### `bearerAuth`
 
-- **토큰 미설정** → 미들웨어가 no-op입니다(루프백 개발자 기본값).
+- **토큰 미설정** → 미들웨어가 no-op입니다(루프백 개발자 기본값). 예외: Local Control **LAN 리스너**는 리스너 범위이며 항상 페어링 자격 증명을 요구합니다(`CredentialStore.isOpen`은 `local-control`에 대해 절대 true가 아님). 따라서 토큰 없는 데몬에서도 개방되지 않습니다.
 - **토큰 설정** → 생성 시 설정된 토큰을 한 번 SHA-256 해시합니다. 모든 요청에서 후보를 해시하고 `timingSafeEqual`로 비교합니다. 문자열 동일성 단축 없음. 시간 누출 없음.
 - **스키마 파싱**: RFC 7235 §2.1에 따라 대소문자 구분 없는 `Bearer`. RFC 7230 §3.2.6 BWS에 따라 스키마와 자격 증명 사이의 `SP\tHTAB`를 허용합니다. 순수 HTAB 구분자는 거부합니다.
 - **CodeQL 강화**: `\s+` / `.+` 중복이 있는 정규식 대신 수작업 `indexOf` 파싱을 사용합니다(다항 정규식 위험 없음).
@@ -88,17 +85,17 @@ flowchart LR
 
 Host 비교는 **대소문자를 구분하지 않습니다**. Express는 헤더 이름을 정규화하지만 값은 정규화하지 않으므로, Host를 대문자로 표기하는 Docker 프록시(`Localhost:4170`, `HOST.docker.internal`)는 정확한 문자열 비교 시 403이 발생합니다.
 
-루프백이 아닌 바인드는 이 미들웨어를 우회합니다(운영자가 노출 영역을 선택한 것이며, 베어러 토큰이 Host 스푸핑을 차단합니다).
+루프백이 아닌 바인드는 이 미들웨어를 우회합니다(운영자가 노출 영역을 선택한 것이며, 베어러 토큰이 Host 스푸핑을 차단합니다). Local Control LAN 리스너는 예외입니다: 기본 바인드와 관계없이 항상 광고된 authority의 Host 검사를 강제합니다.
 
-### `denyBrowserOriginCors`
+### `denyBrowserOriginCors` (부트스트랩 앱 전용)
 
-`Origin` 헤더가 포함된 모든 요청을 거부합니다. CLI/SDK는 Origin을 설정하지 않습니다. 브라우저만 설정합니다. `cors` 패키지의 오류 콜백이 생성할 500 HTML 대신 결정론적인 `403 { error: 'Request denied by CORS policy' }`를 반환합니다.
+`Origin` 헤더가 포함된 모든 요청을 거부합니다. CLI/SDK는 Origin을 설정하지 않습니다. 브라우저만 설정합니다. `cors` 패키지의 오류 콜백이 생성할 500 HTML 대신 결정론적인 `403 { error: 'Request denied by CORS policy' }`를 반환합니다. 런타임 앱은 더 이상 이 방어벽을 설치하지 않습니다 — 가변 허용 목록 위에서 `allowOriginCors`를 실행합니다(아래 참조); 거부 동작은 일치하지 않는 origin 분기로서 거기서 생존합니다. 이 방어벽은 런타임 시작 전에 요청을 처리하는 부트스트랩 앱(run-qwen-serve.ts)에만 남아 있습니다.
 
 예외: **루프백** 바인드에서 Web Shell의 동일 출처 XHR은 별도 미들웨어(`server/self-origin.ts`)에서 처리되며, Origin이 루프백 자체 Origin(`127.0.0.1`, `localhost`, `[::1]`, `host.docker.internal`) 중 하나와 일치할 때 `Origin`을 제거합니다. 루프백이 아닌 바인드에서 셸의 XHR은 일치하지 않는 `Origin`을 가지며 데몬에 대해 `--allow-origin`이 필요합니다.
 
-### `allowOriginCors` (`--allow-origin` 모드)
+### `allowOriginCors` (런타임 앱, 항상 설치)
 
-`--allow-origin <pattern>`이 설정되면 `denyBrowserOriginCors`가 `allowOriginCors(parsedPatterns)`로 대체됩니다:
+런타임 앱은 `allowOriginCors(originAllowlist)`를 무조건 설치합니다. 허용 목록은 `--allow-origin <pattern>` 항목(없을 수 있음)에서 시딩되고 Local Control이 활성화된 동안 런타임에 확장되는 `MutableOriginAllowlist`입니다(LAN origin이 리스너와 함께 추가/제거됨):
 
 - 일치하는 `Origin` 값은 `Access-Control-Allow-Origin`, `Access-Control-Allow-Headers`, `Access-Control-Allow-Methods`를 받습니다. `OPTIONS` 프리플라이트는 `204`를 반환합니다.
 - 일치하지 않는 `Origin` 값은 거부 모드와 동일한 결정론적 `403 { error: 'Request denied by CORS policy' }`를 받습니다.
@@ -115,10 +112,12 @@ Host 비교는 **대소문자를 구분하지 않습니다**. Express는 헤더 
 | `requireAuth=true`      | 아무 값         | 통과¹                            |
 | `token` 설정됨          | 아무 값         | 통과²                            |
 | 토큰 없음 (루프백 개발) | `strict: false` | 통과                             |
-| 토큰 없음 (루프백 개발) | `strict: true`  | `401 { code: 'token_required' }` |
+| 토큰 없음 (루프백 개발) | `strict: true`, 미인증³ | `401 { code: 'token_required' }` |
+| 토큰 없음 (루프백 개발) | `strict: true`, 인증³    | 통과                               |
 
 ¹ `--require-auth`는 토큰이 있어야 부팅되므로 전역 `bearerAuth`가 이미 인증되지 않은 호출자를 401로 차단합니다.
 ² 토큰 설정이 있으면 전역 `bearerAuth`가 모든 곳에서 베어러를 요구합니다. 게이트는 중복이지만 무해합니다.
+³ 리스너 범위 자격 증명을 통한 인증: Local Control LAN 리스너는 토큰 없는 데몬에서도 페어링 자격 증명을 검증하고 요청을 인증된 것으로 스탬프하므로, strict 라우트도 페어링된 LAN 클라이언트에 대해 통과합니다.
 
 `code: 'token_required'` 형태는 `bearerAuth`의 단순 `Unauthorized`와 구별되므로, SDK 클라이언트가 일반적인 401 대신 "configure --token / --require-auth" 힌트를 표시할 수 있습니다.
 
@@ -235,6 +234,7 @@ sequenceDiagram
 ## 상태 및 라이프사이클
 
 - 베어러 토큰은 부트 시 읽어들여지며 트리밍됩니다(`cat token.txt`의 개행이 비교를 조용히 깨뜨리지 않도록).
+- CLI 전용 `--open-with-auth` 모드는 부팅 전에 실행됩니다. 결정론적 루프백/Web Shell 검사 후, 동일한 option-over-environment 선택을 적용하고 비어 있지 않은 선택된 토큰이 없을 때만 `ServeOptions.token`을 base64url로 인코딩된 32 랜덤 바이트로 채웁니다. 생성된 자격 증명은 프로세스 수명을 가지며, `process.env`에 기록되거나 데몬에 의해 영속화되지 않고, 기존 URL 프래그먼트를 통해 브라우저에 전달됩니다. Web Shell은 브라우저 복사본을 탭별 `sessionStorage`에 보관합니다. 순수 `--open`과 직접 `runQwenServe()` 호출자는 이를 생성하지 않습니다.
 - 허용된 Host Set은 포트별로 캐시됩니다. 포트 변경 시 재구축됩니다(임시 `0` → `listen` 후 실제 포트).
 - 뮤테이션 게이트는 앱 빌드당 `passthrough`와 `strictDenier`를 한 번씩만 생성합니다. 라우트별 호출은 캐시된 클로저를 반환합니다(요청별 할당 없음).
 - 디바이스 플로우 레지스트리는 `shutdown()` Phase 1에서 해제되므로 대기 중인 플로우가 HTTP 해체 전에 `cancelled`로 해결됩니다.
@@ -252,6 +252,7 @@ sequenceDiagram
 | --------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | 환경 변수       | `QWEN_SERVER_TOKEN`                                                                     | 베어러 토큰(트리밍됨).                                                  |
 | 플래그          | `--token`                                                                               | 베어러 토큰(환경 변수를 재정의).                                        |
+| CLI 플래그      | `--open-with-auth`                                                                      | 데몬 부팅 전 루프백 Web Shell 베어러를 재사용 또는 생성.                 |
 | 플래그          | `--require-auth`                                                                        | 베어러를 루프백 + `/health`로 확장. 토큰이 있어야 부팅 가능.             |
 | 플래그          | `--hostname`                                                                            | 루프백이 아닌 바인드는 `--token`(또는 환경 변수)이 필요합니다.           |
 | 플래그          | `--allow-origin <pattern>`                                                              | CORS 허용 목록 모드로 전환. `'*'`는 토큰이 필요합니다.                   |
@@ -261,7 +262,7 @@ sequenceDiagram
 
 - **`--require-auth`는 기능 프리플라이트를 가립니다.** 인증되지 않은 클라이언트는 `require_auth` 태그를 검색할 수 없습니다. 검색 표면은 401 본문 자체입니다.
 - **뮤테이션 게이트 body-parser 순서**: `mutationGate({strict: true})` 401 응답은 `express.json()`이 본문을 파싱한 **후에** 발생합니다. 포화된 루프백 리스너의 최악의 경우: `--max-connections × express.json({limit: '10mb'})` ≈ 2.5GB 일시적 메모리. 루프백 전용 공격 표면이며 의도적으로 허용됩니다.
-- **동일 출처 Origin 제거**는 `server.ts`에서 `denyBrowserOriginCors` _이전에_ 발생합니다. 향후 변경으로 제거 위치가 이동하면 Web Shell이 깨집니다.
+- **동일 출처 Origin 제거**는 `server.ts`에서 `allowOriginCors` _이전에_ 발생합니다. 향후 변경으로 제거 위치가 이동하면 Web Shell이 깨집니다.
 - **토큰 비교는 SHA-256 다이제스트**로 수행되며 원시 토큰이 아닙니다. 가변 길이 토큰 비교를 고정 크기 다이제스트 비교로 축소하여 시간 누출을 줄입니다.
 - 데몬은 현재 mTLS, 요청 서명, 페어 토큰 소유 증명을 지원하지 않습니다. `--rate-limit`은 클라이언트 ID / IP 키별로 HTTP 속도 제한을 제공합니다. 클라이언트 ID 인증이 아닙니다.
 

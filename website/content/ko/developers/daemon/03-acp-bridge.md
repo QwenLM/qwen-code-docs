@@ -45,7 +45,7 @@
 | `defaultEntry`  | `SessionEntry \| null`        | `sessionScope: 'single'`일 때 사용되는 "single" 세션.                                                                                                                                                                                                                                                                                                                               |
 | `defaultPolicy` | `PermissionPolicy`            | `BridgeOptions.permissionPolicy`를 통해 구성됩니다.                                                                                                                                                                                                                                                                                                                                  |
 | `mediator`      | `MultiClientPermissionMediator` | 브리지 인스턴스당 하나.                                                                                                                                                                                                                                                                                                                                                             |
-| 상수            | —                             | `DEFAULT_INIT_TIMEOUT_MS = 10_000`, `MCP_RESTART_TIMEOUT_MS = 300_000`, `DEFAULT_MAX_SESSIONS = 32`, `MAX_EVENT_RING_SIZE = 1_000_000`, `DEFAULT_PERMISSION_TIMEOUT_MS = 5분`, `DEFAULT_MAX_PENDING_PER_SESSION = 64`.                                                                                                                                                                |
+| 상수            | —                             | `DEFAULT_INIT_TIMEOUT_MS = 10_000`, `MCP_RESTART_TIMEOUT_MS = 300_000`, `DEFAULT_MAX_SESSIONS = 32`, `MAX_EVENT_RING_SIZE = 1_000_000`, `DEFAULT_PERMISSION_TIMEOUT_MS = 0`, `DEFAULT_MAX_PENDING_PER_SESSION = 64`.                                                                                                                                                                |
 
 **`isDying` 불변식**: 모든 종료 경로는 `channel.kill()`을 await하기 **전에** `ChannelInfo.isDying = true`를 동기적으로 설정해야 합니다. `ensureChannel`은 dying 채널을 부재로 취급하고 새 채널을 생성합니다. 이 플래그 없이는 SIGTERM 유예 창(최대 10초) 동안 도착하는 동시 `spawnOrAttach`가 곧 종료될 트랜스포트에 연결되고 호출자의 sessionId가 후속 작업에서 모두 404를 받을 수 있습니다. **설정 사이트**(동기화 유지 필요): `ensureChannel`(초기화 실패 + 지연 종료 재검사), `doSpawn`(빈 채널의 newSession 실패), `killSession`(마지막 세션 퇴장), `shutdown`(일괄).
 
@@ -172,7 +172,7 @@ sequenceDiagram
 - 브리지 생성은 동기적입니다. 호출자는 첫 세션 전에 채널을 예열할 수 있습니다. 그렇지 않으면 첫 `spawnOrAttach`이 ACP 자식을 콜드 스타트합니다. 실패한 예열은 첫 사용 시 재시도할 수 있습니다.
 - `defaultEntry`는 `sessionScope: 'single'`에서 브리지의 수명주기 동안 존재합니다. 채널은 `sessionIds.size === 0`(`killSession` 후) AND `isDying`이 true로 전환될 때 정리됩니다.
 - `MAX_EVENT_RING_SIZE = 1_000_000`은 운영자 오타로 인한 세션당 ~500MB OOM을 방지하는 `BridgeOptions.eventRingSize`의 소프트 상한입니다.
-- `DEFAULT_PERMISSION_TIMEOUT_MS = 5 * 60 * 1000`은 고정된 권한 요청이 세션별 `promptQueue`를 무기한 차단하는 것을 방지합니다.
+- `DEFAULT_PERMISSION_TIMEOUT_MS = 0`은 인간 권한과 질문이 기본적으로 무기한 대기하도록 합니다. `permissionResponseTimeoutMs`는 운영자가 필요할 때 벽시계 상한을 활성화합니다. 투표자 취소, 세션 취소, 종료은 이것 없이도 사용 가능합니다.
 - `DEFAULT_MAX_PENDING_PER_SESSION = 64`는 `DEFAULT_MAX_SUBSCRIBERS`를 미러링합니다. 초과 `requestPermission` 호출은 stderr 경고와 함께 cancelled로 해결됩니다.
 
 ## 의존성
@@ -196,7 +196,7 @@ sequenceDiagram
 | `sessionRestoreTimeoutMs`                     | `60_000`                                           | ACP `loadSession` / `unstable_resumeSession` 타임아웃. 기본값 60초이며, 명시적으로 구성된 initialize 타임아웃이 이를 높일 수 있지만 낮출 수는 없습니다.      |
 | `maxSessions`                                 | `DEFAULT_MAX_SESSIONS = 32`                        | `byId.size`의 캡. `0` / `Infinity` = 무제한. NaN/음수는 throw.                                                                                           |
 | `eventRingSize`                               | `DEFAULT_RING_SIZE` (`eventBus.ts`에서)             | 세션별 이벤트 링. `MAX_EVENT_RING_SIZE`로 소프트 캡.                                                                                                     |
-| `permissionResponseTimeoutMs`                 | `DEFAULT_PERMISSION_TIMEOUT_MS = 5분`               | 중재자의 요청별 월클럭.                                                                                                                                  |
+| `permissionResponseTimeoutMs`                 | `DEFAULT_PERMISSION_TIMEOUT_MS = 0`                | 중재자의 요청별 벽시계. `0`이면 비활성화.                                                                                                                 |
 | `maxPendingPermissionsPerSession`             | `DEFAULT_MAX_PENDING_PER_SESSION = 64`             | 대량 에이전트에 대한 백프레셔.                                                                                                                         |
 | `childEnvOverrides`                           | `{}`                                               | ACP 자식에 대한 핸들별 환경 추가/제거.                                                                                                                   |
 | `externalToolGuard`                           | (없음)                                             | 비공개 자식→부모 사전 실행 결정을 위한 선택적 핸들러. 브리지는 현재 활성 프롬프트의 소유 채널에서만 수락합니다.                                             |
@@ -209,6 +209,8 @@ sequenceDiagram
 | `permissionConsensusQuorum`                   | `settings.json`에서                                 | consensus 정책의 N.                                                                                                                                      |
 | `permissionAudit`                             | `createNoOpPermissionAuditPublisher()`              | 감사 추적을 위해 `PermissionAuditRing`에 연결합니다.                                                                                                     |
 | `channelIdleTimeoutMs`                        | `0`                                                | 마지막 세션이 닫힌 후 ACP 자식을 이 밀리초 동안 유지합니다.                                                                                               |
+
+타임아웃된 복원은 현재 ACP SDK에서 취소할 수 없습니다. 따라서 브리지는 실제 요청이 해결되거나 트랜스포트가 닫힐 때까지 정산 펜스와 용량 승인을 유지합니다. 늦은 결과는 정확히 한 번 닫히고 등록되지 않습니다. 정리 불확실성은 해당 워크스페이스의 새 세션 작업만 격리합니다; 기존 세션 및 워크스페이스 제어 트래픽은 채널이 드레인되고 재순환될 때까지 계속됩니다.
 
 ## 추가 브리지 메서드
 

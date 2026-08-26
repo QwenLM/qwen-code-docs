@@ -78,7 +78,7 @@ Multi-line status + non-default mode (3 rows max):
 | `type`                 | `"preset"` | はい      | `"preset"` である必要があります                                                                                         |
 | `items`                | string[]   | はい      | 表示するプリセット項目IDの順序付きリスト（下の表を参照）。項目は `\|` をセパレータとして結合されます。 |
 | `useThemeColors`       | boolean    | いいえ       | アクティブな `/theme` の色をステータスラインのテキストに適用します。デフォルトは `true` です。                               |
-| `hideContextIndicator` | boolean    | いいえ       | フッター右側の組み込みコンテキスト使用量インジケーターを非表示にします。デフォルトは `false` です。                |
+| `hideContextIndicator` | boolean    | いいえ       | フッター右側の組み込みコンテキスト使用量インジケーターを非表示にします。未設定の場合、`items` に `context-used` または `context-remaining` が含まれていると自動的に非表示になり、コンテキスト使用量が 2 回表示されません。常に表示する場合は `false` を設定します。 |
 
 ### 利用可能なプリセット項目
 
@@ -175,7 +175,7 @@ qwen-3-235b high | main | Context 65.7% left | /home/user/project | Context 34.3
 | `command`              | string      | はい      | 実行するシェルコマンド。stdin経由でJSONを受け取り、stdoutが表示されます（最大2行）。                                           |
 | `refreshInterval`      | number      | いいえ       | N秒ごとにコマンドを再実行します（最小1）。Agentの状態イベントなしに変更されるデータ（時計、クォータ、稼働時間）に便利です。 |
 | `respectUserColors`    | boolean     | いいえ       | コマンド出力のANSIカラーコードを保持し、薄暗いフッタースタイリングを適用しません。デフォルトは `false` です。                       |
-| `hideContextIndicator` | boolean     | いいえ       | フッター右側の組み込みコンテキスト使用量インジケーターを非表示にします。デフォルトは `false` です。                                       |
+| `hideContextIndicator` | boolean     | いいえ       | フッター右側の組み込みコンテキスト使用量インジケーターを非表示にします。デフォルトは `false` です。コマンド出力はコンテキスト情報について検査されないため、コマンドがすでにコンテキスト使用量を出力する場合は明示的に設定してください。 |
 
 ### JSON入力
 

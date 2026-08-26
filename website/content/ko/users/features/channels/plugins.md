@@ -54,7 +54,7 @@ qwen extensions link /path/to/my-channel-extension
 | -------------- | -------------------------------------- |
 | `senderPolicy` | `allowlist`, `pairing` 또는 `open`     |
 | `allowedUsers` | 발신자 ID의 정적 허용 목록             |
-| `sessionScope` | `user`, `thread` 또는 `single`         |
+| `sessionScope` | `user`, `chat_thread` 또는 `single`; 레거시 `thread`는 기존 구성에 대해 호환됨 |
 | `cwd`          | 에이전트의 작업 디렉토리               |
 | `instructions` | 각 세션의 첫 번째 메시지에 앞에 추가   |
 | `model`        | 채널의 모델 재정의                     |

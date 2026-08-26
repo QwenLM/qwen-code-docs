@@ -116,6 +116,7 @@ Cada configuração de servidor suporta as seguintes propriedades:
 - **`env`** (object): Variáveis de ambiente para o processo do servidor. Valores podem referenciar variáveis de ambiente usando a sintaxe `$VAR_NAME` ou `${VAR_NAME}`
 - **`cwd`** (string): Diretório de trabalho para transporte Stdio
 - **`timeout`** (number): Tempo limite da requisição em milissegundos (padrão: 600.000ms = 10 minutos)
+- **`versionNegotiation`** (`"auto" | "legacy"`, padrão: `"legacy"`): Para servidores Stdio, `"auto"` ativa o probe `server/discover` em um processo irmão descartável.
 - **`trust`** (boolean): Quando `true`, ignora as confirmações de chamada de ferramenta para este servidor em um workspace confiável (padrão: `false`)
 - **`includeTools`** (string[]): Lista de nomes de ferramentas a serem incluídas deste servidor MCP. Quando especificado, apenas as ferramentas listadas aqui estarão disponíveis a partir deste servidor (comportamento de lista de permissões). Se não especificado, todas as ferramentas do servidor são habilitadas por padrão.
 - **`excludeTools`** (string[]): Lista de nomes de ferramentas a serem excluídas deste servidor MCP. Ferramentas listadas aqui não estarão disponíveis para o modelo, mesmo que sejam expostas pelo servidor. **Nota:** `excludeTools` tem precedência sobre `includeTools` - se uma ferramenta estiver em ambas as listas, ela será excluída.
@@ -163,13 +164,13 @@ Ao conectar-se a um servidor com OAuth habilitado:
 **Importante:** A autenticação OAuth exige que a URI de redirecionamento seja acessível:
 
 - **Comportamento padrão**: Redireciona para `http://localhost:7777/oauth/callback` (funciona para configurações locais)
-- **URI de redirecionamento personalizada**: Use `--oauth-redirect-uri` ou configure `redirectUri` no settings.json para especificar uma URL diferente
+- **URI de redirecionamento personalizada**: Use `--oauth-redirect-uri` ou configure `redirectUri` no settings.json para especificar uma URL pública terminando em `/oauth/callback`. Faça reverse-proxy desse caminho para `http://127.0.0.1:7777/oauth/callback` na máquina que executa o Qwen Code.
 
 Para **implantações de servidor remoto/nuvem** (ex.: terminais web, sessões SSH, IDEs na nuvem):
 
 - O redirecionamento padrão `localhost` NÃO funcionará
-- Você DEVE configurar um `redirectUri` personalizado apontando para uma URL publicamente acessível
-- O navegador do usuário deve conseguir alcançar esta URL e redirecionar de volta para o servidor
+- Você DEVE configurar um `redirectUri` personalizado apontando para uma URL publicamente acessível terminando em `/oauth/callback`
+- Encerre o TLS em um reverse proxy e encaminhe apenas esse caminho para `http://127.0.0.1:7777/oauth/callback`
 
 Exemplo para servidores remotos:
 
@@ -195,7 +196,7 @@ Use o diálogo `/mcp` dentro de uma sessão interativa do Qwen Code para inspeci
 - **`authorizationUrl`** (string): Endpoint de autorização OAuth (descoberto automaticamente se omitido)
 - **`tokenUrl`** (string): Endpoint de token OAuth (descoberto automaticamente se omitido)
 - **`scopes`** (string[]): Escopos OAuth necessários
-- **`redirectUri`** (string): URI de redirecionamento personalizada. **Crítico para implantações remotas**: O padrão é `http://localhost:7777/oauth/callback`. Ao executar o Qwen Code em servidores remotos/nuvem, defina como uma URL publicamente acessível (ex.: `https://your-server.com/oauth/callback`). Pode ser configurado via `qwen mcp add --oauth-redirect-uri` ou diretamente no settings.json.
+- **`redirectUri`** (string): URI de redirecionamento personalizada. **Crítico para implantações remotas**: O padrão é `http://localhost:7777/oauth/callback`. Para uso remoto, defina uma URL pública terminando em `/oauth/callback` e faça reverse-proxy para o listener de callback local. Pode ser configurado via `qwen mcp add --oauth-redirect-uri` ou diretamente no settings.json.
 - **`tokenParamName`** (string): Nome do parâmetro de consulta para tokens em URLs SSE
 - **`audiences`** (string[]): Públicos-alvo para os quais o token é válido
 
@@ -447,9 +448,10 @@ Cada `DiscoveredMCPTool` implementa uma lógica de confirmação sofisticada:
 #### Bypass baseado em Confiança
 
 ```typescript
-if (this.trust) {
-  return false; // Nenhuma confirmação necessária
+if (this.trust === true && this.cliConfig?.isTrustedFolder()) {
+  return 'allow';
 }
+return 'ask';
 ```
 
 #### Lista de Permissões Dinâmica
@@ -618,7 +620,7 @@ A integração MCP rastreia vários estados:
 
 ### Considerações de Segurança
 
-- **Configurações de confiança:** A opção `trust` ignora todos os diálogos de confirmação. Use com cautela e apenas para servidores que você controla completamente
+- **Configurações de confiança:** A opção `trust` ignora os diálogos de confirmação de ferramentas apenas em um workspace confiável. Use com cautela e apenas para servidores que você controla completamente
 - **Tokens de acesso:** Tenha consciência de segurança ao configurar variáveis de ambiente contendo chaves de API ou tokens
 - **Compatibilidade com sandbox:** Ao usar sandbox, certifique-se de que os servidores MCP estejam disponíveis dentro do ambiente sandbox
 - **Dados privados:** Usar tokens de acesso pessoal com escopo amplo pode levar a vazamento de informações entre repositórios
@@ -789,13 +791,13 @@ qwen mcp add [options] <name> <commandOrUrl> [args...]
 - `-e, --env`: Definir variáveis de ambiente (ex.: -e KEY=value).
 - `-H, --header`: Definir cabeçalhos HTTP para transportes SSE e HTTP (ex.: -H "X-Api-Key: abc123" -H "Authorization: Bearer abc123").
 - `--timeout`: Definir timeout de conexão em milissegundos.
-- `--trust`: Confiar no servidor (ignorar todos os prompts de confirmação de chamada de ferramenta).
+- `--trust`: Confiar no servidor (ignora as confirmações de chamada de ferramenta em um workspace confiável).
 - `--description`: Definir a descrição para o servidor.
 - `--include-tools`: Uma lista separada por vírgulas de ferramentas a incluir.
 - `--exclude-tools`: Uma lista separada por vírgulas de ferramentas a excluir.
 - `--oauth-client-id`: ID do cliente OAuth para autenticação do servidor MCP.
 - `--oauth-client-secret`: Segredo do cliente OAuth para autenticação do servidor MCP.
-- `--oauth-redirect-uri`: URI de redirecionamento OAuth (ex.: `https://your-server.com/oauth/callback`). O padrão é `http://localhost:7777/oauth/callback` para configurações locais. **Importante para implantações remotas**: Ao executar o Qwen Code em servidores remotos/nuvem, defina para uma URL publicamente acessível.
+- `--oauth-redirect-uri`: URI de redirecionamento OAuth (ex.: `https://your-server.com/oauth/callback`). O padrão é `http://localhost:7777/oauth/callback` para configurações locais. **Importante para implantações remotas**: Use uma URL pública terminando em `/oauth/callback` e faça reverse-proxy para `http://127.0.0.1:7777/oauth/callback`.
 - `--oauth-authorization-url`: URL de autorização OAuth.
 - `--oauth-token-url`: URL do token OAuth.
 - `--oauth-scopes`: Escopos OAuth (separados por vírgula).

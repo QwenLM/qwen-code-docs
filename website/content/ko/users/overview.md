@@ -34,7 +34,7 @@ cd your-project
 qwen
 ```
 
-처음 실행하면 모델 제공자를 연결하라는 메시지가 표시됩니다. 메뉴에는 **Alibaba ModelStudio**(Coding Plan, Token Plan 또는 표준 API 키), **Third-party Providers**(DeepSeek, MiniMax, Z.AI, OpenRouter 등 내장 제공자, API 키로 연결), **Custom Provider**(로컬 서버, 프록시 또는 지원되지 않는 제공자)가 있습니다. [Alibaba Cloud Coding Plan](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index)([intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index))의 경우 **Alibaba ModelStudio → Coding Plan**을 선택하고, ModelStudio API 키를 사용하려면 **Alibaba ModelStudio → Standard API Key**를 선택한 후 API 설정 가이드([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721))를 따르세요. 그런 다음 코드베이스를 이해하는 것부터 시작해 봅시다. 다음 명령어 중 하나를 시도해 보세요:
+처음 실행하면 모델 제공자를 연결하라는 메시지가 표시됩니다. 메뉴에는 **Alibaba ModelStudio**(Coding Plan, Token Plan 또는 표준 API 키), **Third-party Providers**(DeepSeek, MiniMax, Z.AI, Kimi, OpenRouter 등 내장 제공자, API 키로 연결), **Custom Provider**(로컬 서버, 프록시 또는 지원되지 않는 제공자)가 있습니다. [Alibaba Cloud Coding Plan](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index)([intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index))의 경우 **Alibaba ModelStudio → Coding Plan**을 선택하고, ModelStudio API 키를 사용하려면 **Alibaba ModelStudio → Standard API Key**를 선택한 후 API 설정 가이드([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721))를 따르세요. 그런 다음 코드베이스를 이해하는 것부터 시작해 봅시다. 다음 명령어 중 하나를 시도해 보세요:
 
 ```
 what does this project do?

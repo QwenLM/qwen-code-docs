@@ -260,6 +260,29 @@ Le champ `timeout` existant est le timeout d'**appel d'outil** (utilisé pour ch
 requête `tools/call`, par défaut 10 minutes) et n'est pas affecté par
 `discoveryTimeoutMs` — une invocation d'outil de longue durée n'est pas une pathologie de démarrage.
 
+### Négociation stdio automatique
+
+Les serveurs stdio utilisent par défaut le flux d'initialisation hérité à processus unique. Pour
+vous connecter à un serveur stdio moderne uniquement, activez la négociation automatique de protocole :
+
+```jsonc
+{
+  "mcpServers": {
+    "modern-server": {
+      "command": "node",
+      "args": ["./server.js"],
+      "versionNegotiation": "auto",
+    },
+  },
+}
+```
+
+La négociation automatique lance une copie éphémère du serveur configuré avant
+de démarrer le processus de session et peut utiliser jusqu'à cinq secondes du budget
+de découverte. Conservez la politique héritée par défaut pour les serveurs dont le démarrage a des
+effets de bord non idempotents, des verrous à propriétaire unique ou des fichiers PID, ou des
+handshakes d'initialisation lents.
+
 ### Désactiver le MCP progressif
 
 Si vous avez besoin de l'ancien comportement synchrone (le CLI attend chaque serveur MCP
@@ -460,6 +483,7 @@ Optionnel :
 | `env`                  | object                       | Variables d'environnement pour le processus serveur. Les valeurs peuvent référencer des variables d'environnement en utilisant la syntaxe `$VAR_NAME` ou `${VAR_NAME}`                                                                                                                                |
 | `cwd`                  | string                       | Répertoire de travail pour le transport Stdio                                                                                                                                                                                                                             |
 | `timeout`              | number<br>(par défaut : 600 000) | Timeout de requête en millisecondes (par défaut : 600 000 ms = 10 minutes)                                                                                                                                                                                                 |
+| `versionNegotiation`   | `"auto" \| "legacy"`<br>(par défaut : `"legacy"`) | Pour les serveurs stdio, `"auto"` active la négociation de protocole sur un processus frère éphémère. La valeur par défaut `"legacy"` ne démarre que le processus de session.                                                                                                               |
 | `trust`                | boolean<br>(par défaut : false)  | Lorsque `true`, ignore les invites de confirmation d'appel d'outil pour ce serveur dans un workspace fiable (par défaut : `false`)                                                                                                                                                  |
 | `includeTools`         | array                        | Liste des noms d'outils à inclure depuis ce serveur MCP. Lorsqu'elle est spécifiée, seuls les outils listés ici seront disponibles depuis ce serveur (comportement de liste d'autorisation). Si elle n'est pas spécifiée, tous les outils du serveur sont activés par défaut.                                       |
 | `excludeTools`         | array                        | Liste des noms d'outils à exclure de ce serveur MCP. Les outils listés ici ne seront pas disponibles pour le modèle, même s'ils sont exposés par le serveur.<br>Remarque : `excludeTools` est prioritaire sur `includeTools` - si un outil est dans les deux listes, il sera exclu. |

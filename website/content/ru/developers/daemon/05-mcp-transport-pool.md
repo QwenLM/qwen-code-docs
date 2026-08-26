@@ -308,16 +308,19 @@ sequenceDiagram
 `MCPCallInterruptedError`, так что застрявшее `await client.callTool(...)` корректно
 отклоняется, а не зависает. `forceShutdown` использует тот же порядок
 «испустить-затем-отсоединить».
+
 ## Нормализация `fingerprint` и `canonicalOAuth`
 
 Ключ пула формируется из `fingerprint(cfg)` в `mcp-pool-key.ts`. Хеш покрывает
 все поля, определяющие транспорт:
 
-> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, oauth`
+> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, versionNegotiation, oauth`
 
 Поля посидионной фильтрации и метаданные (`includeTools`, `excludeTools`,
 `trust`, `description`, `extensionName`, `discoveryTimeoutMs`) исключены,
 поэтому сессии с разными фильтрами могут использовать одну запись.
+Автоматическое согласование включено явно, потому что оно меняет способ
+подключения базового процесса.
 
 Для OAuth-ячейки `canonicalOAuth(o)` хеширует каждое поле `MCPOAuthConfig`:
 `clientId`, `clientSecret`, отсортированные `scopes`, отсортированные `audiences`,

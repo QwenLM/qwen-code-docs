@@ -168,7 +168,10 @@ jobs:
           while read -r lang; do
             { node orchestrator.mjs translate --lang "$lang" --limit "${TRANSLATE_DAILY_LIMIT:-20}" --model "$QWEN_MODEL" || true
               node orchestrator.mjs verify --lang "$lang" || true
-            } 2>&1 | sed -u "s/^/${lang} | /" &
+            # tee to a per-language file as well as the step log: the
+            # batch-loss check below tallies verify's counts, and scraping
+            # them back out of the live step log is not possible from here.
+            } 2>&1 | sed -u "s/^/${lang} | /" | tee "/tmp/orch-out-${lang}.log" &
             pids="$pids $!"
           done < /tmp/orch-langs.txt
           for pid in $pids; do wait "$pid"; done
@@ -184,23 +187,27 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
           OPENAI_BASE_URL: ${{ vars.TRANSLATE_BASE_URL || 'https://coding.dashscope.aliyuncs.com/v1' }}
 
+      # A run can stay green while some agent sessions lose their whole batch;
+      # compare dispatch logs with verify totals so those losses are visible.
+      - name: Warn if an unusual share of the batch was lost
+        if: always() && steps.detect.outputs.changed == 'true'
+        run: node translator/orchestrator/orchestrator.mjs report-batch --log-dir /tmp
+
       # advance wrote per-language .failed.txt quarantine lists. Broken files
-      # are restored from HEAD so the commit below stages only verified
+      # are resolved against HEAD so the commit below stages only sound
       # translations; they stay in the backlog for the next run. (The old
       # single-job layout quarantined "before build"; after the #184 split
       # there is no build in this job — the restore exists so broken output
       # never reaches main, which is what kept the build green before.)
+      #
+      # This used to be an inline `git checkout HEAD -- <path> || rm -f`,
+      # which trusts HEAD unconditionally. When HEAD's own copy is corrupt
+      # that reinstates the corruption and throws away this run's work, so a
+      # file committed broken could never be repaired (#216). The orchestrator
+      # command decides per file on structure; see cmdQuarantine.
       - name: Quarantine failed translations
         if: steps.detect.outputs.changed == 'true'
-        run: |
-          shopt -s nullglob
-          for fl in website/orchestrator-manifest-*.failed.txt; do
-            while IFS= read -r p; do
-              [ -n "$p" ] || continue
-              git checkout HEAD -- "website/content/$p" 2>/dev/null \
-                || rm -f "website/content/$p"
-            done < "$fl"
-          done
+        run: node translator/orchestrator/orchestrator.mjs quarantine
 
       # Runs after the sync/translate cycle, so the age reported here
       # reflects this run's outcome. Catches the failure mode a
@@ -230,18 +237,14 @@ jobs:
         run: |
           git config user.name "qwen-docs-bot"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Quarantine safety net: the dedicated step above already restored
-          # verify-failed files; repeat the restore so staging
-          # `website/content` wholesale can never pick one up.
+          # Quarantine safety net: the dedicated step above already resolved
+          # verify-failed files; repeat it so staging `website/content`
+          # wholesale can never pick one up. Every branch of the command is
+          # idempotent, so this second pass is a no-op unless the first was
+          # somehow skipped.
+          node translator/orchestrator/orchestrator.mjs quarantine
           shopt -s nullglob
-          for fl in website/orchestrator-manifest-*.failed.txt; do
-            while IFS= read -r p; do
-              [ -n "$p" ] || continue
-              git checkout HEAD -- "website/content/$p" 2>/dev/null \
-                || rm -f "website/content/$p"
-            done < "$fl"
-            rm -f "$fl"
-          done
+          rm -f website/orchestrator-manifest-*.failed.txt
           # Glossaries are appended to by the agent (see prompts/translate.md
           # rules 3 and 6); without them staged, every run's coined terms are
           # discarded and term choices drift from day to day.
@@ -265,6 +268,24 @@ jobs:
               git push origin HEAD:main
             fi
           fi
+
+      # Reporting runs only after the durable commit attempt. It also runs on
+      # quiet days, producing a comparable zero-work record.
+      - name: Publish translation metrics
+        if: always()
+        run: node translator/orchestrator/orchestrator.mjs report || true
+
+      - name: Upload translation metrics
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: translation-metrics
+          path: |
+            website/translation-metrics.json
+            website/orchestrator-manifest-*.metrics.json
+          retention-days: 90
+          if-no-files-found: ignore
 
       # Runs that cannot commit would otherwise lose their translation when the
       # runner is torn down. Keep it downloadable so a dispatch used for

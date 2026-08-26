@@ -105,7 +105,7 @@ Diese werden über das `errorKind` der Preflight-Zelle an die Oberfläche gebrac
 | ------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `401`  | `{ error: 'Unauthorized' }`                  | Fehlender/falscher/kein-Schema Bearer-Token. Einheitlich bei `fehlendem Header` / `falschem Schema` / `falschem Token`, sodass Sondierung keine Unterscheidung ermöglicht. |
 | `401`  | `{ error: '...', code: 'token_required' }`   | Mutations-Sperre auf strenger Route bei einem Daemon ohne Token auf Loopback. SDKs geben Hinweis "konfiguriere --token / --require-auth".    |
-| `403`  | `{ error: 'Request denied by CORS policy' }` | `denyBrowserOriginCors` hat eine Anfrage mit `Origin`-Header abgelehnt.                                                                       |
+| `403`  | `{ error: 'Request denied by CORS policy' }` | `allowOriginCors` (Runtime) / `denyBrowserOriginCors` (Bootstrap) hat eine Anfrage mit `Origin`-Header abgelehnt.                             |
 | `403`  | `{ error: 'Invalid Host header' }`           | `hostAllowlist` hat den `Host`-Header abgelehnt (DNS-Rebinding-Abwehr).                                                                      |
 
 Siehe [`12-auth-security.md`](./12-auth-security.md) für das vollständige Auth-Modell.

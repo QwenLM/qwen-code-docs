@@ -23,6 +23,9 @@ description: "Review code changes for correctness, security, performance, and co
 # 审查本地更改并将发现应用到工作树
 /review --fix
 
+# 继续同一 PR 被中断的审查，而不是重新开始
+/review 123 --resume
+
 # 审查特定文件
 /review src/utils/auth.ts
 
@@ -40,10 +43,10 @@ description: "Review code changes for correctness, security, performance, and co
 | 级别     | 运行内容                                                                                                                                                   | 发现上限            | 结论                                     | 是否发布到 PR    |
 | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | ----------------------------------- | ---------------- |
 | `low`    | 3-6 个针对 diff 的定向行内角度（按 diff 大小缩放）加上 gap sweep——无 subagent，无构建/测试，无项目规则                             | 10（未验证）     | 无                                | 从不            |
-| `medium` | 完整流水线减去最昂贵的 pass：在缩减的维度集上进行并行 finder fan-out，加上构建/测试和单次验证 pass | 无上限（已验证） | Approve 上限为 Comment           | 从不            |
-| `high`   | 完整流水线：14 个并行 agent → 分片验证 → 迭代反向审计                                                                          | 无上限（已验证） | Approve / Request changes / Comment | 使用 `--comment` 时 |
+| `medium` | high 流水线减去最昂贵的 pass：在缩减的维度集上进行并行 finder fan-out，加上构建/测试和单次验证 pass | 无上限（已验证） | Approve 上限为 Comment           | 从不            |
+| `high`   | 完整流水线：最多 16 个并行 agent → 分片验证 → 迭代反向审计                                                                    | 无上限（已验证） | Approve / Request changes / Comment | 使用 `--comment` 时 |
 
-默认值：PR 审查为 **high**，本地和文件审查为 **medium**。有效的 `--comment` 会强制使用 high（发布的评论必须通过验证）——在非 PR 目标上 `--comment` 会被忽略并发出警告，**不会**更改 effort。Medium 保留了安全性和测试覆盖率 agent 以及构建/测试，但去掉了对手角色、diff 专家 finder 和反向审计——因此只有第二次审查才能发现的微妙 Critical 可能会漏掉；对安全性敏感或发布前的审查请使用 `--effort high`。只有 `low` 是未验证的。Worktree 隔离适用于同仓库 PR 审查；跨仓库 PR 以轻量模式运行（仅 diff，无 worktree 或构建/测试）。Low pass 标记为未验证，不发出结论，也不写入增量审查缓存，因此后续的 `--effort high` 运行不会被跳过为"已审查"；medium 是已验证的，但其 Approve 上限为 Comment，因为没有对第一次 pass 遗漏的内容进行二次审查。获取 diff 的机制在每个级别都相同——PR 审查始终使用隔离的 worktree 和相同的 base 解析，因此审查永远不会针对错误的 base。一个范围差异仍然存在：增量缓存仅用于 high，因此 high 重新审查可能只覆盖新的 commit（`lastCommitSha..HEAD`），而 low/medium 始终审查完整的 PR diff。
+默认值：PR 审查为 **high**，本地和文件审查为 **medium**。有效的 `--comment` 会强制使用 high（发布的评论必须通过验证）——在非 PR 目标上 `--comment` 会被忽略并发出警告，**不会**更改 effort。Medium 保留了安全性和测试覆盖率 agent 以及构建/测试，但去掉了对手角色、语言陷阱和 wrapper/proxy 专家（Agent 1d/1e）、diff 专家 finder 和反向审计——因此只有第二次审查才能发现的微妙 Critical 可能会漏掉；对安全性敏感或发布前的审查请使用 `--effort high`。只有 `low` 是未验证的。Worktree 隔离适用于同仓库 PR 审查；跨仓库 PR 以轻量模式运行（仅 diff，无 worktree 或构建/测试）。Low pass 标记为未验证，不发出结论，也不写入增量审查缓存，因此后续的 `--effort high` 运行不会被跳过为"已审查"；medium 是已验证的，但其 Approve 上限为 Comment，因为没有对第一次 pass 遗漏的内容进行二次审查。获取 diff 的机制在每个级别都相同——PR 审查始终使用隔离的 worktree 和相同的 base 解析，因此审查永远不会针对错误的 base。一个范围差异仍然存在：增量缓存仅用于 high，因此 high 重新审查可能只覆盖新的 commit（`lastCommitSha..HEAD`），而 low/medium 始终审查完整的 PR diff。
 
 ## 工作原理
 
@@ -54,12 +57,14 @@ description: "Review code changes for correctness, security, performance, and co
           将 diff 捕获到文件 + 将其分割为 chunk
 步骤 2：  加载项目审查规则（medium/high）
 步骤 3C：low effort：3-6 个行内角度 + gap sweep     [0 次 subagent 调用]
-步骤 3A：high，<=500 行源码且 <=3200 行总计：14 个 agent       [14+ 次 LLM 调用]
+步骤 3A：high，<=500 行源码且 <=3200 行总计：最多 16 个 agent  [16+ 次 LLM 调用]
            |-- Agent 0：Issue 保真度与根因归属
            |-- Agent 1a：正确性——逐行扫描
-           |     （含语言陷阱 + wrapper 路由检查）
            |-- Agent 1b：正确性——已移除行为审计
            |-- Agent 1c：正确性——跨文件追踪器
+           |-- Agent 1d：正确性——语言陷阱扫描
+           |-- Agent 1e：正确性——wrapper/proxy 路由
+           |     （仅在 diff 信号为 wrapping 类型时启用）
            |-- Agent 2：安全性
            |-- Agent 3a：复用与重复
            |-- Agent 3b：层次与抽象适配
@@ -88,7 +93,7 @@ description: "Review code changes for correctness, security, performance, and co
 步骤 4：  去重 --> 分片验证（每个 <=8 个发现）
            --> 聚合                    [ceil(F/8) 次调用，F=发现数]
 步骤 5：  迭代反向审计，按 chunk fan-out；
-          连续 2 轮无新发现后停止（上限 5 轮）
+          连续 2 轮无新发现后停止（上限 10/5/3 按拓扑）
 步骤 6：  展示发现 + 结论（high；low pass：仅发现）
           规范化发现 -> .qwen/tmp/...-findings.json
 步骤 6B：应用发现 + 记录每个发现的结果（仅 --fix）
@@ -104,9 +109,11 @@ description: "Review code changes for correctness, security, performance, and co
 | Agent                             | 关注点                                                                                                                                                                                                                                                                                           |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Agent 0：Issue 保真度           | 关联 issue 证据、根因归属，以及 PR 是否解决了报告的问题                                                                                                                                                                                                     |
-| Agent 1a：逐行扫描       | 遍历每个 hunk 及其所在函数：错误条件、边界差一、缺失 `await`、语言特定陷阱、wrapper/proxy 路由                                                                                                                                                  |
+| Agent 1a：逐行扫描       | 遍历每个 hunk 及其所在函数：错误条件、边界差一、缺失 `await`、边界情况、竞态条件                                                                                                                                                  |
 | Agent 1b：已移除行为审计  | 遍历每行被删除/替换的代码：指出其强制的不变量，并寻找新代码在哪里重新建立了它——包括被移除的 **export**，其替代通常位于另一个文件且悄悄更改了默认值。在 3B 中以整个 diff 运行（chunk agent 保留本地一半） |
 | Agent 1c：跨文件追踪器       | 遍历每个已更改符号的调用方（consumer 方向）和每个新增字段的读取位置（producer 方向），以及同一 PR 内的被调用方变更                                                                                                                                                  |
+| Agent 1d：语言陷阱扫描   | 携带该 diff 所用语言的经典陷阱检查清单（`==` 强制转换、falsy 值陷阱、循环变量捕获、可变默认参数、nil-map 写入、SQL 拼接、DST 算术运算），并对每个 hunk 进行模式匹配                                                          |
+| Agent 1e：Wrapper/proxy 路由   | 对于 diff 中新增或修改的每个包装其他类型的类型（cache、proxy、decorator、adapter）：每个方法都通过被包装的实例路由，且 wrapper 转发了调用者使用的每个方法。仅在 diff 信号为 wrapping 类型时启用                                        |
 | Agent 2：安全性                 | 注入、XSS、SSRF、认证绕过、敏感数据泄露                                                                                                                                                                                                                                      |
 | Agent 3a：复用与重复     | 代码库中是否已有此功能？搜索该行为，指出应调用的现有 helper，并标记 diff 遗留的死代码                                                                                                                                              |
 | Agent 3b：层次与抽象  | 修复是否在正确的深度——还是在共享基础设施上贴创可贴、为上游 bug 做下游补偿，或创建只服务一个调用点的抽象？                                                                                                                                  |
@@ -117,19 +124,19 @@ description: "Review code changes for correctness, security, performance, and co
 | Agent 7：构建与测试             | 运行构建和测试命令，报告失败                                                                                                                                                                                                                                                  |
 | Agent 8：Diff 专家 finder | 每次审查根据 diff 集中在具有已知失败模式的领域（重连逻辑、模块加载器、调度器、编解码器）时编写 0-2 个额外 finder                                                                                                                                                                                                      |
 
-三个正确性 agent 是**程序化的**：每个由其遍历 diff 的方式定义（逐行 / 已删除行 / 跨文件边），而非由 bug 分类法定义——因此它们的覆盖是互补的而非重叠的。同样的推理将**代码质量拆分为三个**（3a/3b/3c）：一个持有六项检查清单的 agent 完成了一项——在大幅重写的文件上衡量，一个持有八项检查清单的 agent 发现了 5 个缺陷中的 1 个，而同一模型分三路后找到了全部 5 个——因此质量清单在问题真正不同的地方被切割。所有 agent 并行运行（Agent 1 启动 3 个程序化变体，Agent 3 启动 3 个清单切片，Agent 6 启动 3 个角色变体并发执行，同仓库 PR 审查共计 14 个并行任务，加上 diff 领域需要时的 0-2 个 Agent 8 finder——因此实际为 14-16 个；Agent 0 在本地 diff 和文件路径审查中跳过，运行 13-15 个；跨仓库轻量模式还跳过 Agent 1c 和 7，运行 12-14 个）。
+三个正确性 agent 是**程序化的**：每个由其遍历 diff 的方式定义（逐行 / 已删除行 / 跨文件边），而非由 bug 分类法定义——因此它们的覆盖是互补的而非重叠的。另外两个专用角度（1d/1e）将语言陷阱检查清单和 wrapper/proxy 路由从逐行遍历中分离出来：清单模式匹配和结构性路由预期是不同的注意力模式，折叠到逐行遍历中会被其节奏稀释。同样的推理将**代码质量拆分为三个**（3a/3b/3c）：一个持有六项检查清单的 agent 完成了一项——在大幅重写的文件上衡量，一个持有八项检查清单的 agent 发现了 5 个缺陷中的 1 个，而同一模型分三路后找到了全部 5 个——因此质量清单在问题真正不同的地方被切割。所有 agent 并行运行（Agent 1 启动 3 个程序化变体和 2 个专用角度，Agent 3 启动 3 个清单切片，Agent 6 启动 3 个角色变体并发执行，同仓库 PR 审查共计最多 16 个并行任务——Agent 1e 仅在 diff 信号为 wrapping 类型时启用——加上 diff 领域需要时的 0-2 个 Agent 8 finder——因此实际为 15-18 个；Agent 0 在本地 diff 和文件路径审查中跳过，运行 14-17 个；跨仓库轻量模式还跳过 Agent 1c 和 7，运行 13-16 个）。
 
 每个发现必须说明一个**失败场景**——触发它的具体输入、状态或时序，以及导致的错误结果（对于质量发现，则是具体的代价）。无法说明其场景的发现会在源头被丢弃，验证会通过真实代码重新追踪所声称的场景，而非判断发现的文字描述。
 
-一旦 PR 的**源码**变更超过 500 行——或总 diff 行数超过 3,200 行，超过此限度后十一个全 diff 阅读器各自过于稀释而无法仔细阅读（这是一个注意力边界，而非更少调用的承诺——重写较多的文件和专家 finder 可能使 3B 花费更多）——这种维度 fan-out 会被**territory × 维度** fan-out 替代：diff 被分割为约 400 行的 chunk——边界落在 hunk 边界上，太大的 hunk 仅在顶层声明处分割，永远不会在函数内部——每个 chunk 获得自己的 agent，将每个审查维度仅应用于该 chunk。
+一旦 PR 的**源码**变更超过 500 行——或总 diff 行数超过 3,200 行，超过此限度后十五个全 diff 阅读器各自过于稀释而无法仔细阅读（这是一个注意力边界，而非更少调用的承诺——重写较多的文件和专家 finder 可能使 3B 花费更多）——这种维度 fan-out 会被**territory × 维度** fan-out 替代：diff 被分割为约 400 行的 chunk——边界落在 hunk 边界上，太大的 hunk 仅在顶层声明处分割，永远不会在函数内部——每个 chunk 获得自己的 agent，将每个审查维度仅应用于该 chunk。
 
-该门控故意计算源码行数而非 diff 行数。测试代码、文档和 lockfile 占据了 diff 的大部分——在此仓库最近 40 个合并的 PR 中，中位数 diff 有 41% 是测试——因此基于原始大小的门控会将 173 行的生产代码变更分割为 territory，仅仅因为它附带了 489 行新测试，使该生产代码只有一个审查者而非十个视角（读取 diff 的维度 agent——十二个减去 Issue 保真度和构建与测试）。无论如何分 chunk 都覆盖每一行，包括测试；门控决定的是有多少审查者以及每个审查者的任务。十个读取 diff 的视角都走一个大 diff 会将相同的前几个 hunk 读十遍；每个 chunk 一个 agent 意味着 diff 的每一行恰好有一个负责的审查者。每个 chunk agent 返回一个 `Covered:` 收据，没有收据的 chunk 会在运行继续前被重新审查——因此"无阻塞问题"永远不可能对无人阅读的代码报告。
+该门控故意计算源码行数而非 diff 行数。测试代码、文档和 lockfile 占据了 diff 的大部分——在此仓库最近 40 个合并的 PR 中，中位数 diff 有 41% 是测试——因此基于原始大小的门控会将 173 行的生产代码变更分割为 territory，仅仅因为它附带了 489 行新测试，使该生产代码只有一个审查者而非十四个视角（读取 diff 的维度 agent——十六个减去 Issue 保真度和构建与测试）。无论如何分 chunk 都覆盖每一行，包括测试；门控决定的是有多少审查者以及每个审查者的任务。十四个读取 diff 的视角都走一个大 diff 会将相同的前几个 hunk 读十四遍；每个 chunk 一个 agent 意味着 diff 的每一行恰好有一个负责的审查者。每个 chunk agent 返回一个 `Covered:` 收据，没有收据的 chunk 会在运行继续前被重新审查——因此"无阻塞问题"永远不可能对无人阅读的代码报告。
 
 一个被大幅重写的**源码**文件（300+ 行的现有文件中 40%+ 是新内容，或有 800+ 行变更）还会获得**三个全文件不变量 agent**。测试和生成的文件永远不符合条件——检查清单询问的是字段、timer 和错误分类，而重写后的测试文件没有这些。其 bug 通常不在任何单个 hunk 内部，而在_新行之间_——文件顶部附近设置的 timer 和两千行以下的 teardown 路径。每个 agent 阅读整个变更后的文件并遍历固定检查清单的两到三项：每个退出路径都清除的可变字段、每个关闭都取消的 timer（且取消不会丢弃已捕获的数据）、map 插入与删除匹配、每次入口都递增的重试计数器、实际被检查的状态返回值、穷举分类为永久性与暂时性的错误代码、每条路径都遵循的 config 字段，以及跳过必需副作用的 early return。
 
 检查清单故意分三路。让一个 agent 对 2,400 行的文件执行全部八项检查只能做好其中一项；三个 agent 各执行两到三项检查则全部完成。Chunk agent 不能替代这一点——在 PR #6457 上，它们将这些缺陷中的每一个都包含在分配的 territory 内但没有报告任何一个。它们缺少的不是行数，而是问题。
 
-发现以**分片批次**进行验证（每个验证 agent 最多 8 个发现，全部同时启动）。验证器只有通过引用与之矛盾的代码（或当 diff 自身的注释将被标记的行为记录为有意为之）时才能拒绝 Critical；任何不够确定的内容会被降级为低置信度而非删除——一个被静默拒绝的 Critical 对后续每个阶段都不可见，而降级后的仍然会到达人类手中。验证后，**迭代反向审计**按 chunk 每轮一个审计员进行 fan-out 来查找遗漏，每个审计员拥有累计发现列表。循环在**连续两轮无新发现**后停止（或 5 轮硬性上限——如实报告而非报告为收敛）。一轮无新发现不是收敛的证据，反向审计的发现与其他发现一样经过验证。
+发现以**分片批次**进行验证（每个验证 agent 最多 8 个发现，全部同时启动）。验证器只有通过引用与之矛盾的代码（或当 diff 自身的注释将被标记的行为记录为有意为之）时才能拒绝 Critical；任何不够确定的内容会被降级为低置信度而非删除——一个被静默拒绝的 Critical 对后续每个阶段都不可见，而降级后的仍然会到达人类手中。验证后，**迭代反向审计**按 chunk 每轮一个审计员进行 fan-out 来查找遗漏，每个审计员拥有累计发现列表。循环在**连续两轮无新发现**后停止（或达到计划的轮次上限——如实报告而非报告为收敛）。该上限遵循 diff 的拓扑：小型 diff 为 **10** 轮（每轮一个审计员）；分 chunk 的 diff 为 **5** 轮（每轮每个 chunk 一个审计员）；大型 diff（≥ 3000 有效行）_当运行有截止时间_时为 **3** 轮，因为五轮约 90 分钟的轮次无法放入六小时的 CI 上限，且中途被终止的审查什么都发布不了——没有截止时间时，大型 diff 保持分 chunk 的 5 轮上限。操作员可以通过 `review.reverseAuditRounds` 设置降低每次审查适用的任一上限；它永远不能提高上限。一轮无新发现不是收敛的证据，反向审计的发现与其他发现一样经过验证。
 
 ## 严重级别
 
@@ -150,8 +157,10 @@ description: "Review code changes for correctness, security, performance, and co
 - 构建和测试命令在隔离环境中运行，不会污染本地构建缓存
 - 如果出现任何问题，你的环境不受影响——只需删除 worktree
 - 审查完成后，worktree 会自动清理
-- 如果审查被中断（Ctrl+C、崩溃），下次对同一 PR 执行 `/review` 时，会在重新开始前自动清理过期的 worktree
+- 如果审查被中断（Ctrl+C、崩溃），下次对同一 PR 执行 `/review` 时，会在重新开始前自动清理过期的 worktree。如果被中断的会话仍留下了其租约——跳过此步骤的强制终止，或在后续 prompt 期间被中断的多 prompt 审查——`/review` 会拒绝并指出要删除的租约文件。正常停止会释放租约：已完成的审查和提前停止（空 diff、自上次审查以来无新变更）都会运行 `cleanup`，释放租约
+- worktree 租约绑定到其会话：对已在审查中的 PR 执行第二次 `/review` 会拒绝启动（指出持有者），而不是拆除正在运行的审查的 worktree
 - 审查报告和缓存保存在主项目目录中（而非 worktree）
+- **修改**代码以进行测量的步骤——测试效力探测的变异体，以及验证器对特定发现的探测——各自在旁边的临时 worktree 中运行（`…-probe`、`…-scratch-<agent>`），因此一个 agent 的实验对其他读取共享树的 agent 不可见。作为保底，每波中的每个 agent 都会被告知哪些路径（如果有）在启动时与正在审查的 commit 不同，以及仅限于这些路径的失败不是一个发现。所有这些树在审查结束时与 worktree 一起被清理。
 
 ## 跨仓库 PR 审查
 
@@ -165,7 +174,7 @@ description: "Review code changes for correctness, security, performance, and co
 
 | 能力                                                            | 同仓库 | 跨仓库                    |
 | --------------------------------------------------------------------- | --------- | ----------------------------- |
-| LLM 审查（Agent 0、1a、1b、2-6 + 验证 + 迭代反向审计） | ✅        | ✅                            |
+| LLM 审查（Agent 0、1a、1b、1d、1e、2-6 + 验证 + 迭代反向审计） | ✅        | ✅                            |
 | Agent 1c：跨文件追踪器                                           | ✅        | ❌（无本地代码库可供搜索） |
 | Agent 7：构建与测试                                                 | ✅        | ❌（无本地代码库）         |
 | Agent 8：Diff 专家 finder（0-2 个，领域需要时启用） | ✅        | ✅（仅需 diff）       |
@@ -188,7 +197,7 @@ description: "Review code changes for correctness, security, performance, and co
 - 修复为单个局部编辑时，附带一个可一键应用的 ` ```suggestion ` 代码块
 - 对于 Approve/Request changes 结论：包含结论的审查摘要
 - 对于 Comment 结论且所有行内评论已发布：无单独摘要（行内评论已足够）
-- 每条评论底部的模型和 CLI 版本归属说明（例如，_— qwen3-coder via Qwen Code /review (v0.21.2)_）
+- 每条评论底部的模型和 CLI 版本归属说明（例如，_— qwen3-coder via Qwen Code /review (v0.21.2)_）；在用户或系统 `settings.json` 中将 `review.attribution` 设为 `false` 可取消归属（工作区 `.qwen/settings.json` 中的 `review.*` 设置会被忽略）——评论和正文列表同时会失去 `**[Critical]**`/`**[Suggestion]**` 严重级别标记，并且模型会从审查的 machine-ledger 标记中被隐去，因此在全新环境中（无审查缓存）恢复的增量锚点无法通过同模型检查，重新审查会回退到全量范围
 
 **仅在终端显示的内容：**
 
@@ -225,6 +234,18 @@ description: "Review code changes for correctness, security, performance, and co
 当发现的修复会改变预期行为、需要在审查 diff 之外进行更改，或在二次检查时被确认为误报时，该发现会被跳过。
 
 **每个发现都会有一个结果，这是强制执行而非请求的。** 账本通过 `qwen review findings --outcomes` 进行，它拒绝不覆盖所有发现的结果集——一个修复了九个发现中的六个并报告六个的修复器并没有对任何一个撒谎，它只是静默缩短了列表，你将无法看到消失的三个。
+
+## 恢复被中断的审查（`--resume`）
+
+一个中途终止的长时间审查——连接断开、超时、终端被终止——会将其所有工作留在磁盘上：worktree、捕获的 diff，以及调度器对每个运行过的 agent 的记录。`--resume` 从那里继续，而不是重新开始：
+
+```bash
+/review 123 --resume
+```
+
+它仅适用于 **PR 目标**（本地审查的 diff 来自活跃的工作树，没有稳定的中断状态可以继续），在不确定时可以安全地传递：审查会判断磁盘上的状态本身——worktree 仍在获取的 commit 处且干净、捕获的 diff 逐字节未变、PR head 未移动、resume 限额未使用——并在任何内容不再匹配时静默重新开始，并告诉你哪个检查拒绝了。继续运行会重用之前尝试的已认证 agent 结果，因此报告会说明恢复了多少；这是公开的，永远不会是覆盖缺口。
+
+两点需要注意。继续运行会保持被中断运行的 **effort**：传递不同的 `--effort` 会拒绝 resume 并以你请求的级别重新运行，因为不同的 effort 是不同的工作。如果 PR head 在审查中断期间移动了，resume 会拒绝（`head-moved`），新的运行会审查新的 commit——这正是你想要的，而且它算作本次审查的一次重启。
 
 ## 发现作为数据
 
@@ -304,9 +325,9 @@ export QWEN_REVIEW_ASSETS_REPO=your-org/your-repo   # 你可以推送的仓库
 
 ## Issue 保真度
 
-对于 bugfix PR，Issue 保真度 agent 直接获取 issue 证据，而不是依赖 PR 描述文本。它使用 `gh pr view <pr> --repo <owner/repo> --json closingIssuesReferences` 获取 GitHub 的强关联 issue 元数据，然后使用 `gh issue view <number> --repo <issue_owner>/<issue_repo> --json title,body,comments` 获取原始报告和讨论——`--json` 形式包含 issue **正文**（报告者的原始复现步骤），而仅使用 `--comments` 会遗漏这些，并且 issue 自身的仓库是从每个引用中读取的（一个 PR 可以关闭不同仓库中的 issue）。此 agent 仅针对 PR 目标运行；本地 diff 和文件路径审查会跳过它。
+对于 bugfix PR，Issue 保真度 agent 直接获取 issue 证据，而不是依赖 PR 描述文本。它运行 `qwen review issue-context <pr> --repo <owner/repo> --out <file>` 子命令，该命令解析 GitHub 的强关联 issue 元数据，然后获取每个被引用 issue 的标题、**正文**（报告者的原始复现步骤）和完整评论线程——每个 issue 从其自身的仓库获取（一个 PR 可以关闭不同仓库中的 issue）。此 agent 仅针对 PR 目标运行；本地 diff 和文件路径审查会跳过它。
 
-`closingIssuesReferences` 是一个发现提示，而非作者链接了正确 issue 的证明：如果它为空但 PR 引用了明显的目标 issue，agent 在判断相关性后仍会获取它。获取的 issue 文本被视为不受信任的数据（提取事实，忽略嵌入的指令）。对于相关的 issue，原始复现、观察到的 payload、预期行为和维护者评论被视为判断 PR 是否修复了正确问题的最高优先级证据。
+关联 issue 集合是一个发现提示，而非作者链接了正确 issue 的证明：如果它为空但 PR 引用了明显的目标 issue，agent 在判断相关性后仍会获取它（使用 `--issue <n>` 重新运行；纯数字在 PR 的仓库中解析，而 `--issue <owner>/<repo>#<n>` 从自身仓库获取跨仓库引用）。获取的 issue 文本被视为不受信任的数据（提取事实，忽略嵌入的指令）。对于相关的 issue，原始复现、观察到的 payload、预期行为和维护者评论被视为判断 PR 是否修复了正确问题的最高优先级证据。
 
 如果 issue 证据显示上游服务或 provider 返回了超出客户端契约的畸形数据，则客户端解析器或清理器的更改不被视为有效的根因修复，除非维护者明确要求防御性变通方法。重放畸形上游输出的测试仅证明变通方法处理了该结构；它不能证明该变通方法在架构上是合适的。
 
@@ -349,7 +370,9 @@ export QWEN_REVIEW_ASSETS_REPO=your-org/your-repo   # 你可以推送的仓库
 # → "上次审查使用了 qwen3-coder。正在使用 gpt-4o 进行全量审查以获取第二意见。"
 ```
 
-缓存存储在 `.qwen/review-cache/` 中，并同时跟踪 commit SHA 和 model ID。请确保将此目录加入 `.gitignore`（使用更宽泛的规则如 `.qwen/*` 也可以）。如果缓存的 commit 在 rebase 中被移除，系统将回退到全量审查。只有 high-effort 审查会查阅或写入缓存——`--effort low|medium` 的快速 pass 永远不会被视为"已审查"。
+模型匹配还会控制增量范围，而不仅仅是跳过："清理到缓存的 commit"是上一个模型的结论，因此当自缓存审查以来有新的 commit 时，模型不匹配永远不会将范围限定为 `lastCommitSha..HEAD`——范围是完整的 diff，并注明"上一轮由 qwen3-coder 审查。正在使用 gpt-4o 进行全量审查。"——除非从上次发布的审查中恢复了由当前运行模型认证的锚点（见下文），此时范围由该锚点决定。上一轮的发现仍然会被继承以重新裁定；只有锚点不会。当缓存不存在或其锚点不可用时（CI、另一个克隆），从上次发布审查的 machine-ledger 标记中恢复的锚点也受同样的门控：只有当当前运行的模型认证了它时，它才会限定增量范围——由不同模型认证的标记，或不携带模型的标记（在 `review.attribution` 关闭时发布的审查，或在该字段之前的审查），会回退到完整 diff。
+
+缓存存储在 `.qwen/review-cache/` 中，并同时跟踪 commit SHA 和 model ID。请确保将此目录加入 `.gitignore`（使用更宽泛的规则如 `.qwen/*` 也可以）。在 GitHub 上，如果缓存的 commit 被 rebase 或 force-push 移除，系统将回退到全量审查；Aone 对缓存锚点的规则不同——见其下方段落。只有 high-effort 审查会查阅或写入缓存——`--effort low|medium` 的快速 pass 永远不会被视为"已审查"。
 
 ## 审查报告
 
@@ -366,7 +389,9 @@ Medium 和 high-effort 审查还会保存一个具有相同文件名但扩展名
 
 流水线的确定性部分——参数解析（`qwen review parse-args`）和事件/正文决策（`qwen review compose-review`）——是经过测试的子命令而非提示文本，因此 `--effort` 语法、`--comment` 强制、结论上限和降级行为由单元测试固定，不会随模型漂移。
 
-**GitHub Enterprise：** 在非 `github.com` 主机上审查 PR URL 时，该主机的每个 GitHub 调用都会被路由——审查子命令（`fetch-pr`、`pr-context`、`comment-status`、`presubmit`）接受 `--host` 并在代码中设置，因此遗忘的 host 不会静默将审查重定向到 `github.com`。
+**GitHub Enterprise：** 在非 `github.com` 主机上审查 PR URL 时，该主机的每个 GitHub 调用都会被路由——审查子命令（`match-remote`、`meta`、`fetch-pr`、`pr-context`、`comment-status`、`issue-context`、`fetch-diff`、`comment-body`、`plan-diff`、`test-plan`、`presubmit`、`compose-review`、`submit`、`publish-assets`）接受 `--host` 并在代码中设置，因此遗忘的 host 不会静默将审查重定向到 `github.com`。
+
+**Aone Code：** 对于 origin 在 `gitlab.alibaba-inc.com` 上的克隆，从该克隆内部运行 `/review`——平台从 remote 检测，子命令正常工作，由 `a1` CLI 支持（至少 0.1.90——较旧的安装在认证时会被拒绝并提示升级）——目标编号是全局 MR id。`fetch-pr` 获取 `refs/merge-requests/<id>/head` 并构建 worktree + diff，因此 agent 对 worktree 的审查不变，`test-plan` 也可以工作——它通过同一个 reader 读取 MR 描述。`pr-context` 也有支持：它读取 MR 的元数据、讨论线程和之前发布的 qwen 摘要（machine ledger 从中恢复），因此 Aone 运行看到 MR 的现有讨论，正如 GitHub 运行看到 PR 的一样。`comment-status` 和 `presubmit` 也由 a1 支持（presubmit 完全支持：自我 PR 检测、head 漂移、merge-gate CI，以及现有评论去重），因此重复的 `--comment` 轮次会对 MR 的现有评论进行去重，而不是重新发布它们（平台标记为过时的线程——其行在修改后不再映射——仍可重新发布），自我 PR 检测也可以工作。`publish-assets` 的写入被跳过。`--comment` 通过 `a1` CLI **发布**审查：每个行内发现一条评论，然后是摘要评论。Aone 没有原生的 request-changes 状态——在该结论下，摘要评论携带一个阻塞头，实际发布的行内 Critical 通过讨论门阻塞合并，同时其讨论保持未解决状态（当没有发布行内 Critical 时，该头是建议性的，不会在机械上阻塞合并）。发布的评论不携带 AI 评论标记——`a1` 无法设置——因此仓库专用的 `ai_comment` 合并门不会追踪它们。原生的 `a1 repo mr approve` 在 Approve 结论且运行读取了 MR 的上下文时触发（与 GitHub 相同的门控；context-unavailable 的运行上限为 Comment）。增量重新审查遵循 AGit-Flow 更新模型：更新会就地 AMEND 单个 CR commit，使上一轮审查的 head 成为孤儿——因此缓存锚点在判断时**不考虑**祖先关系（anchor-behind-head 测试会在每次更新时失败），重新审查将 PR 自身的 diff 限定为更新所涉及的文件，而不是回退到全量审查；如果更新同时 rebase 到了更新的 master，则仅当 rebase 的漂移保持在 CR 文件内时保留该范围——触及任何其他文件的漂移会回退到全量审查，且无论如何没有漂移字节进入发布的范围。参见 `docs/design/2026-08-15-review-aone-provider.md`。
 
 每次运行以一行机器可读的行结束（`Review complete: <target> — <disposition>`），因此脚本和 CI 包装器可以通过单个 `^Review complete: ` 匹配来检测完成和结果。
 
@@ -375,7 +400,7 @@ Medium 和 high-effort 审查还会保存一个具有相同文件名但扩展名
 `/review` 是交互式的。当脚本或 CI 作业需要运行审查并根据其结果采取行动时，请使用无头包装器：
 
 ```bash
-qwen review run [target] [--json] [--fail-on request-changes] [--comment] [--quiet]
+qwen review run [target] [--json] [--fail-on request-changes] [--comment] [--resume] [--quiet]
 ```
 
 `target` 是 PR 编号、PR URL 或文件路径；省略则审查本地工作树。该命令以非交互方式运行当前构建的 CLI（stdin 关闭，因此斜杠命令检测仍然有效），将子进程的进度流式输出到 **stderr**，并将结论打印到 **stdout**——或使用 `--json` 输出完整的结果对象。结论从 `compose-review` 写入的产物中读取（与 skill 视为结论权威的 JSON 相同），而非从模型的文本中解析。
@@ -389,6 +414,8 @@ qwen review run [target] [--json] [--fail-on request-changes] [--comment] [--qui
 | `3`  | 已完成且结论为 `REQUEST_CHANGES`，**并且**设置了 `--fail-on request-changes`（可选阻塞） |
 
 `3`（而非 `2`）让门控区分"审查在阻塞"和"工具出错"——yargs 已将 `1` 用于使用错误——无需解析任何输出。`--timeout-minutes`（默认 120，下限为 1）终止挂起的审查并退出 `1`，取消命令（Ctrl+C / SIGTERM）会终止审查的进程组而非使其成为孤儿。
+
+`--resume` 继续同一 PR 被中断的审查，而不是重新开始——当长时间的本地运行中途终止时（连接断开、超时、终端被终止），重试否则会重新获取、重新分 chunk 并重新启动那些工作已在磁盘上的 agent。在重试时无条件传递是安全的：`fetch-pr` 会判断磁盘上的状态本身（worktree 仍在获取的 SHA 处且干净、diff 字节未变、PR head 未移动、resume 限额未使用），并在任何内容不再匹配时静默回退到全新审查，因此该标志永远不会失败一个可以重新开始的运行。继续运行被固定在被中断运行记录的 effort——显式指定不同的 `--effort` 会拒绝 resume 并以请求的级别重新运行。仅适用于 PR 目标（本地审查的 diff 从活跃工作树捕获，没有稳定的中断状态可以继续）。Resume 是一个**本地便利功能**：仓库自身的 CI 审查工作流**不会** resume——每次重试都会全新运行，因为 CI 尝试运行 no-sandbox，其 worktree 在退出时被删除，没有中断状态可以继续。
 
 有时间预算的运行还可以导出**软**截止时间，以便审查在仍有时间进行验证、组合和发布时停止其开放式反向审计循环：`QWEN_REVIEW_DEADLINE_EPOCH` 是运行将被终止的 Unix 秒时刻，`QWEN_REVIEW_DEADLINE_RESERVE_SECONDS`（默认 3600；`0` 仅保留轮次估计）是为最后一轮的验证、`compose-review` 和提交保留的尾部时间。当剩余预算不足以容纳另一轮加上该尾部时，轮次构建器将拒绝构建，组合结论会披露截断的审计（否则为 Approve 的结论被上限为 Comment）。缺失或格式错误的截止时间会使审查不受门控——外部超时仍然限制运行。
 
@@ -428,10 +455,10 @@ High-effort 流水线限制每个阶段（分片大小、审计轮次），但�
 
 | 阶段                            | LLM 调用次数                      | 说明                                                                                                          |
 | -------------------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| 审查 agent（步骤 3）           | 14 (+0-2)                      | 并行运行；跨仓库跳过 Agent 1c 和 7（12），本地/文件跳过 Agent 0（13）                          |
+| 审查 agent（步骤 3）           | 16 (+0-2)                       | 并行运行；Agent 1e 仅在 diff 信号为 wrapping 类型时启用（无 1e 时为 15）；跨仓库跳过 Agent 1c 和 7（14），本地/文件跳过 Agent 0（15）                                          |
 | 分片验证（步骤 4）    | ceil(F/8)                      | F = 发现数；每个验证 agent 最多 8 个，同时启动                                              |
-| 迭代反向审计（步骤 5） | 2-5 (3A)；轮次 × chunk (3B) | 连续 2 轮无新发现后停止（上限 5）；3B 按 chunk 按轮次 fan-out 一个审计员                        |
-| **总计**                        | **~17-23 (~15-22)**            | 3A 同仓库：~17-23（典型 ~17-19）；跨仓库或本地/文件：~15-22；3B 随 chunk 缩放（参见 DESIGN.md） |
+| 迭代反向审计（步骤 5） | 2-10 (3A)；轮次 × chunk (3B) | 连续 2 轮无新发现后停止；上限按拓扑——小 diff 为 10，分 chunk 的 diff 为 5，大型 diff 在运行有截止时间时为 3。3B 按 chunk 按轮次 fan-out 一个审计员                        |
+| **总计**                        | **~19-30 (~17-29)**             | 3A 同仓库：~19-30（典型 ~19-21）；跨仓库或本地/文件：~17-29；Agent 1e 未启用时少一个；3B 随 chunk 缩放（参见 DESIGN.md）                                             |
 
 大多数 PR 收敛到范围的下限；上限防止在极端情况下成本失控。在 `--effort low` 下，审查完全在行内运行——**0 次 subagent 调用**——每个角度遍历 diff 一次而非总共一次。
 

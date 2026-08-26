@@ -154,7 +154,7 @@ sequenceDiagram
     participant CH as ACP 子进程
 
     C->>MW: POST /session/:id/prompt<br/>Authorization: Bearer …<br/>X-Qwen-Client-Id: …
-    MW->>MW: denyBrowserOriginCors
+    MW->>MW: allowOriginCors (可变允许列表；未匹配的 Origin -> 403)
     MW->>MW: hostAllowlist (DNS 重新绑定防护)
     MW->>MW: access-log hook
     MW->>MW: bearerAuth (恒定时间比较)

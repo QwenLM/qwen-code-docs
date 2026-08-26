@@ -219,6 +219,24 @@ Bei Bedarf pro Server überschreiben:
 
 Das vorhandene `timeout`-Feld ist das **Tool-Call**-Timeout (wird für jede `tools/call`-Anfrage verwendet, Standard 10 Minuten) und wird von `discoveryTimeoutMs` nicht beeinflusst – ein lang laufender Tool-Aufruf ist kein Startproblem.
 
+### Automatische Stdio-Verhandlung
+
+Stdio-Server verwenden standardmäßig den einprozessigen Legacy-Initialisierungsfluss. Um eine Verbindung zu einem rein modernen Stdio-Server herzustellen, aktiviere die automatische Protokollverhandlung:
+
+```jsonc
+{
+  "mcpServers": {
+    "modern-server": {
+      "command": "node",
+      "args": ["./server.js"],
+      "versionNegotiation": "auto",
+    },
+  },
+}
+```
+
+Die automatische Verhandlung führt eine kurzlebige Kopie des konfigurierten Servers aus, bevor der Session-Prozess gestartet wird, und kann bis zu fünf Sekunden des Discovery-Budgets verbrauchen. Behalte die Standard-Legacy-Richtlinie für Server mit nicht-idempotenten Startup-Nebeneffekten, Single-Owner-Locks oder PID-Dateien oder langsamen Initialisierungs-Handshakes.
+
 ### Rollback von progressivem MCP
 
 Wenn du das alte synchrone Verhalten benötigst (die CLI wartet auf jeden MCP-Server, bevor sie eine UI anzeigt), setze `QWEN_CODE_LEGACY_MCP_BLOCKING=1` in deiner Umgebung. Dies bleibt mindestens für ein Release als Notausgang erhalten.
@@ -416,6 +434,7 @@ Optional:
 | `env`                  | object                       | Umgebungsvariablen für den Serverprozess. Werte können über die Syntax `$VAR_NAME` oder `${VAR_NAME}` auf Umgebungsvariablen verweisen                                                                                                                                |
 | `cwd`                  | string                       | Arbeitsverzeichnis für den Stdio-Transport                                                                                                                                                                                                                             |
 | `timeout`              | number<br>(Standard: 600.000) | Anfrage-Timeout in Millisekunden (Standard: 600.000 ms = 10 Minuten)                                                                                                                                                                                                 |
+| `versionNegotiation`   | `"auto" \| "legacy"`<br>(Standard: `"legacy"`) | Für Stdio-Server aktiviert `"auto"` die Protokollverhandlung über einen kurzlebigen Geschwisterprozess. Der Standard `"legacy"` startet nur den Session-Prozess.                                                                                                               |
 | `trust`                | boolean<br>(Standard: false)  | Wenn `true`, werden Tool-Call-Bestätigungen für diesen Server in einem vertrauenswürdigen Workspace umgangen (Standard: `false`)                                                                                                                                              |
 | `includeTools`         | array                        | Liste der Tool-Namen, die von diesem MCP-Server eingeschlossen werden sollen. Wenn angegeben, sind nur die hier aufgeführten Tools von diesem Server verfügbar (Allowlist-Verhalten). Wenn nicht angegeben, sind standardmäßig alle Tools des Servers aktiviert.                                       |
 | `excludeTools`         | array                        | Liste der Tool-Namen, die von diesem MCP-Server ausgeschlossen werden sollen. Die hier aufgeführten Tools stehen dem Modell nicht zur Verfügung, auch wenn sie vom Server bereitgestellt werden.<br>Hinweis: `excludeTools` hat Vorrang vor `includeTools` – wenn ein Tool in beiden Listen enthalten ist, wird es ausgeschlossen. |

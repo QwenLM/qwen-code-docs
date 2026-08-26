@@ -1,6 +1,6 @@
 ---
 title: "`qwen serve` HTTP 协议参考"
-description: "qwen-code 守护进程的 HTTP 协议参考"
+description: "qwen-code 守护进程的 HTTP 协议参考文档"
 ---
 
 # `qwen serve` HTTP 协议参考
@@ -198,7 +198,10 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
  'workspace_mcp_manage', 'mcp_guardrail_events',
  'mcp_server_runtime_mutation',
  'workspace_file_read', 'workspace_file_bytes', 'workspace_file_write',
+ 'workspace_file_upload',
  'session_approval_mode_control', 'workspace_tool_toggle', 'workspace_skill_toggle',
+ 'workspace_skill_batch_toggle',
+ 'extension_batch_activation_v2',
  'workspace_settings', 'workspace_init', 'workspace_mcp_restart',
  'session_recap', 'session_generation', 'session_btw', 'session_shell_command',
  'mcp_workspace_pool', 'mcp_pool_restart',
@@ -211,9 +214,10 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
  'multi_workspace_session_shell', 'persistent_workspace_registration',
  'workspace_display_name',
  'workspace_qualified_rest_core', 'workspace_qualified_voice',
- 'workspace_qualified_memory', 'extension_management_v2',
+ 'workspace_qualified_memory', 'extension_management_v2', 'extension_git_credentials',
  'workspace_persisted_transcript',
  'workspace_session_export', 'workspace_archived_session_export',
+ 'workspace_session_live_state',
  'client_mcp_over_ws', 'cdp_tunnel_over_ws', 'browser_automation_mcp']
 ```
 
@@ -241,6 +245,8 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 
 `workspace_archived_session_export` 通告 `GET /workspaces/:workspace/session/:id/archive/export`，一个仅限受信任的选定 workspace 归档持久化存储的完整导出。它独立于 `workspace_session_export` 和 `workspace_qualified_rest_core`；客户端必须直接预检此标签。独立的路由防止旧版 daemon 忽略归档意图并返回具有相同 id 的活跃转录。
 
+`workspace_session_live_state` 通告 `GET /workspaces/:workspace/sessions/live-state`，一个仅限受信任的、仅内存的选定 workspace runtime 活跃 session 快照，以及一个内存中的目录版本，告知客户端何时需要进行完整的持久化目录重新加载。它独立于 `workspace_qualified_rest_core`：已发布的 daemon 可以通告更广泛的 workspace REST 能力而不实现此路由，因此客户端必须直接预检此标签。该标签是无条件的，因为受信任的单 workspace 主实例可以通过 id 或 cwd 使用该路由；每个 workspace 的信任检查仍然在每个请求上适用，且该路由不会将宽松的不受信任次要持久化目录读取策略扩展到活跃 bridge 状态。该标签表示端点存在；并不保证每个活跃项都携带可选的 `updatedAt` 活动水位标记，该标记取决于生命周期。
+
 `slow_client_warning` 涵盖 SSE 背压行为：(a) 当订阅者的实时帧积压或实时序列化字节积压超过 75% 时，daemon 会发出一个 `slow_client_warning` 合成事件流帧，每次溢出事件仅发出一次（当两项指标均降至 37.5% 以下时重新触发）；(b) `GET /session/:id/events` 接受 `?maxQueued=N` 查询参数（范围 `[16, 2048]`），用于在针对大型重放环进行冷重连时，预设每个订阅者的帧积压大小。序列化字节上限由 daemon 控制（默认每个订阅者 **2 MiB**），仅限实时数据，且故意不提供查询参数。全局 ring 大小由 `--event-ring-size` 控制（默认 **8000**，参见 #3803 §02）。旧版 daemon 会静默缺失该警告/查询行为——在启用前请预先检查此 tag。
 
 `typed_event_schema` 宣告 daemon 事件负载符合 SDK 的 `KnownDaemonEvent` schema。旧版 daemon 可能仍会流式传输兼容的帧，但 SDK 客户端在假定具备类型化事件覆盖之前，应预先检查此 tag。
@@ -261,23 +267,27 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 
 `session_lsp` 宣告了 `GET /session/:id/lsp`，即为 daemon 客户端提供的只读结构化 LSP 状态快照。旧版 daemon 返回 `404`；在暴露远程 LSP 状态前，请预先检查此 tag。
 
-`session_status` 宣告了 `GET /session/:id/status`，即按 id 查询单个会话的实时桥接摘要。除了 `clientCount` 和 `hasActivePrompt` 外，活跃 session 还暴露 `isWaitingForPermission`、`isWaitingForUserQuestion`、`pendingInteractionCount`，以及失败 turn 后保留的 `turnError`。该错误在下一次 prompt 实际开始时清除。单 session 状态响应和 workspace session 列表都包含 `turnError` 和 `pendingInteractions`：可渲染的权限操作或 `ask_user_question` 问题，加上现有权限投票路由所需的 `requestId` 和可选选项。每个用户问题都有一个 `answerKey`；使用 `answers` 投票，例如 `{ "0": "Polling" }`，以该值为键。仅持久化的 session 省略 runtime 状态，因为不存在 runtime。旧版 daemon 返回 `404`；在轮询单个 session 状态而非扫描完整 session 列表前，请预先检查此 tag。
+`session_status` 宣告了 `GET /session/:id/status`，即按 id 查询单个会话的实时桥接摘要。除了 `clientCount` 和 `hasActivePrompt` 外，活跃 session 还暴露 `isWaitingForPermission`、`isWaitingForUserQuestion`、`pendingInteractionCount`，以及失败 turn 后保留的 `turnError`。该错误在下一次 prompt 实际开始时清除。在当前 bridge 中已稳定运行 turn 的活跃 session 还携带 `updatedAt`，与 live-state 路由下记录的活动水位标记相同；由于此路由直接返回 bridge 摘要，该值不会与持久化转录 mtime 合并，可能早于 session 列表报告的值。单 session 状态响应和 workspace session 列表都包含 `turnError` 和 `pendingInteractions`：可渲染的权限操作或 `ask_user_question` 问题，加上现有权限投票路由所需的 `requestId` 和可选选项。每个用户问题都有一个 `answerKey`；使用 `answers` 投票，例如 `{ "0": "Polling" }`，以该值为键。仅持久化的 session 省略 runtime 状态，因为不存在 runtime。旧版 daemon 返回 `404`；在轮询单个 session 状态而非扫描完整 session 列表前，请预先检查此 tag。
 
 `session_info` 宣告 `GET /workspace/:id/session-info` 及其 `/workspaces/:workspace/session-info` 对应路由。响应聚合持久化的活跃和归档 session 计数，而不加载列表元数据。这是一个显式的 O(n) 磁盘扫描，不得被轮询；客户端应将 `truncated: true` 视为下界结果。
 
-`session_approval_mode_control`、`workspace_tool_toggle`、`workspace_skill_toggle`、`workspace_skill_batch_toggle`、`workspace_init` 和 `workspace_mcp_restart` 宣告了下文记录的变更控制路由。它们受变更门控的严格限制（未配置 bearer token 的 daemon 会以 401 `token_required` 拒绝它们）。旧版 daemon 返回 `404`；在暴露相应功能前，请预先检查每个 tag。
+`session_approval_mode_control`、`workspace_tool_toggle`、`workspace_skill_toggle`、`workspace_skill_batch_toggle`、`extension_batch_activation_v2`、`workspace_init` 和 `workspace_mcp_restart` 宣告了下文记录的变更控制路由。它们受变更门控的严格限制（未配置 bearer token 的 daemon 会以 401 `token_required` 拒绝它们）。旧版 daemon 返回 `404`；在暴露相应功能前，请预先检查每个 tag。
 
 `mcp_guardrails`（issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 14）涵盖 MCP 预算层面：`GET /workspace/mcp` 上的 `clientCount` / `clientBudget` / `budgetMode` / `budgets[]` 字段、每个服务器单元上的 `disabledReason` 字段，以及 `--mcp-client-budget` / `--mcp-budget-mode` CLI 标志。旧版 daemon 会完全省略这些新字段；SDK 客户端在依赖 `budgets[]` 语义前应预先检查此 tag。注册表描述符还包含 `modes: ['warn', 'enforce']`，以便未来暴露功能模式——目前，客户端从快照的 `budgetMode` 字段推断模式。在 `enforce` 模式下，服务器拒绝行为由 `Object.entries(mcpServers)` 的声明顺序决定；未来的作用域优先级层（如果 qwen-code 采用）会将其转变为"最低优先级优先"，以镜像 claude-code 的 `plugin < user < project < local` 约定。
 
 > **作用域是能力驱动的。** 使用 `mcp_workspace_pool` 时，一个 workspace runtime 内的 session 共享传输池和 `WorkspaceMcpBudget`，快照发出 `budgets[0].scope: 'workspace'`。不同的 workspace runtime 拥有独立的池。没有该标签时，每个 ACP session 使用其旧版 `McpClientManager`，快照发出 `scope: 'session'`，N 个 session 可能各自消耗配置的上限。
 
-`workspace_file_read` 涵盖文本/列表/状态/glob 工作区文件路由（`GET /file`、`GET /list`、`GET /glob`、`GET /stat`）。`workspace_file_bytes` 涵盖 `GET /file/bytes`，该路由是后续添加的，以便客户端可以针对 PR19 时代的 daemon 预先检查原始字节窗口支持。`workspace_file_write` 涵盖感知哈希的文本变更路由（`POST /file/write`、`POST /file/edit`）。write tag 表示路由契约存在；并不意味着当前部署对匿名变更开放。write/edit 是严格的变更路由，即使在环回地址上也需要配置 bearer token。
+`workspace_file_read` 涵盖文本/列表/状态/glob 工作区文件路由（`GET /file`、`GET /list`、`GET /glob`、`GET /stat`）。`workspace_file_bytes` 涵盖 `GET /file/bytes`，该路由是后续添加的，以便客户端可以针对 PR19 时代的 daemon 预先检查原始字节窗口支持。`workspace_file_write` 涵盖感知哈希的文本变更路由（`POST /file/write`、`POST /file/edit`）。write tag 表示路由契约存在；并不意味着当前部署对匿名变更开放。write/edit 是严格的变更路由，即使在环回地址上也需要配置 bearer token。`workspace_file_upload` 涵盖 `POST /file/upload`，即二进制导入路由：`application/octet-stream` body 上限为 `MAX_UPLOAD_BYTES`（50 MiB），写入 workspace 时不会覆盖——已占用的名称会自动编号（`name (1).ext`、`name (2).ext`、...）。它也是严格的变更路由。
 
-当 `workspace_qualified_rest_core` 被通告时，相同的文件暴露面也可在 `/workspaces/:workspace/file`、`/workspaces/:workspace/file/bytes`、`/workspaces/:workspace/stat`、`/workspaces/:workspace/list`、`/workspaces/:workspace/glob`、`/workspaces/:workspace/file/write` 和 `/workspaces/:workspace/file/edit` 使用。
+当 `workspace_qualified_rest_core` 被通告时，相同的文件暴露面也可在 `/workspaces/:workspace/file`、`/workspaces/:workspace/file/bytes`、`/workspaces/:workspace/stat`、`/workspaces/:workspace/list`、`/workspaces/:workspace/glob`、`/workspaces/:workspace/file/write`、`/workspaces/:workspace/file/edit` 和 `/workspaces/:workspace/file/upload` 使用。
 
 同一标签还暴露了 workspace 限定的项目 agent CRUD，位于 `/workspaces/:workspace/agents` 和 `/workspaces/:workspace/agents/:agentType`。这些复数路由仅读取或变更选定 workspace 的项目级 agent；`global` 和 `user` 作用域请求返回 `400 { code: "global_scope_not_supported_for_workspace_route" }`。无 workspace 的 `/workspace/agents` 路由保留其现有的主 workspace 行为，并且仍然是 user 级 agent 作用域的唯一 REST 暴露面。
 
 `extension_management_v2` 通告用户级 extension 目录和 `/extensions/*` 的变更暴露面，以及 `/workspaces/:workspace/extensions/*` 的 workspace 激活投影。制品是全局的；workspace 路由仅暴露投影读取、精确的激活覆盖和 runtime 刷新。读取可以针对不受信任的已注册 workspace，而激活、刷新和 workspace 作用域的安装需要受信任的目标。慢速变更使用 `/extensions/operations/:operationId` 的 daemon 本地操作；存储代（store generation），而非操作历史，在重启和跨 daemon 间具有权威性。已发布的 `workspace_extensions` 能力和 `/workspace/extensions/*` 路由保留为主 workspace 兼容适配器。客户端必须预检 `extension_management_v2`，不得从 daemon 模式或 `workspace_qualified_rest_core` 推断它。
+
+`extension_git_credentials` 在 `POST /workspace/extensions/install` 和 `POST /extensions/install` 上通告经过认证的 HTTPS Git 安装。客户端在发送 URL userinfo 或 `credentialPersistence` 前必须预检此标签；旧版 daemon 会拒绝 URL 凭证。该标签描述的是后端协议支持，而非密钥链的可用性：stored 模式在终端操作结果中报告所选后端。
+
+`extension_batch_activation_v2` 新增 `PUT /extensions/activation` 和 `PUT /workspaces/:workspace/extensions/activation`。两者接受 `extensionNames` 中的 1–100 个名称，以不区分大小写的方式去重同时保留首次出现的顺序，在一代中持久化变更的目标，并返回一个 `202` 操作句柄。设置 `enabled` 或 `disabled` 时目标无需已安装：其名称会创建一个期望状态声明，当安装同名 Extension 时该声明会被保留。全局路由接受 `state: "enabled" | "disabled"`，写入 V2 `defaultActivation`，并调和每个已注册的 runtime。workspace 路由还接受 `"inherit"`，为选定的受信任 runtime 应用或清除精确覆盖，并仅调和该 runtime。`inherit` 不会为未知名称创建声明；全未知清除报告 `updated: false` 并跳过调和。单数激活路由保持为仅已安装且按 id 寻址。
 
 ### Extension Management V2 线路契约
 
@@ -286,6 +296,7 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 | Method and path                                                    | Success                                                                     |
 | ------------------------------------------------------------------ | --------------------------------------------------------------------------- |
 | `GET /extensions`                                                  | `200` 全局制品目录                                                            |
+| `PUT /extensions/activation`                                       | `202` 全局默认激活批量操作                                                    |
 | `PUT /extensions/:extensionId/activation`                          | `202` 全局默认激活操作                                                        |
 | `POST /extensions/install`                                         | `202` 安装操作                                                                |
 | `POST /extensions/check-updates`                                   | `202` 更新检查操作                                                            |
@@ -293,6 +304,7 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 | `DELETE /extensions/:extensionId`                                  | `202` 卸载操作，或 extension 不存在时的幂等 `204`                              |
 | `GET /extensions/operations/:operationId`                          | `200` 操作快照                                                                |
 | `GET /workspaces/:workspace/extensions`                            | `200` workspace 激活投影                                                      |
+| `PUT /workspaces/:workspace/extensions/activation`                 | `202` 精确 workspace 激活批量操作                                             |
 | `PUT /workspaces/:workspace/extensions/:extensionId/activation`    | `202` 精确 workspace 激活操作                                                 |
 | `DELETE /workspaces/:workspace/extensions/:extensionId/activation` | `202` 清除覆盖操作                                                            |
 | `POST /workspaces/:workspace/extensions/refresh`                   | `202` runtime 刷新操作                                                        |
@@ -360,6 +372,10 @@ workspace 投影响应为：
 
 对于仅 workspace 的初始激活，使用 `{ "scope": "workspace", "workspaceId": "target-workspace-id" }`；目标必须存在且受信任。Daemon 安装接受 GitHub、Git 和 npm 源。`ref` 不适用于 npm，`registry` 仅适用于 npm。`ref`、`autoUpdate`、`allowPreRelease` 和 `registry` 是可选的。
 
+当 `extension_git_credentials` 被通告时，HTTPS Git 源可以包含 userinfo，例如 `https://username:token@git.example.com/org/repository.git`。`credentialPersistence` 仅对此类源有效。它为 `stored` 或 `one_time`，省略时默认为 `one_time`。Stored 模式通过 daemon 的混合密钥存储保存凭证，并仅在安装元数据中保留干净的仓库 URL，因此 extension 保持可更新。One-time 模式既不保存仓库 URL 也不保存凭证，并创建一个不可更新的 `snapshot`；此模式下 `autoUpdate: true` 会被拒绝。在没有 URL 凭证的情况下提供该字段、提供无效凭证，或对 npm、归档、本地、SSH 或非 Git 源使用凭证，都会返回 `400`。
+
+带凭证的安装响应和操作会暴露 `credentialPersistence`，并可能暴露 `credentialStorage` 为 `keychain` 或 `encrypted_file`。One-time 操作省略 `source`；stored 操作可能返回干净的 source。Snapshot 目录/状态条目省略 source，将 `credentialPersistence` 设为 `one_time`，并报告 `not updatable`。更新会因 `extension_not_updatable` 失败；不可用的 stored 密钥会在网络访问前因 `extension_credential_unavailable` 失败。
+
 全局和 workspace 激活 `PUT` 请求使用相同的 body：
 
 ```json
@@ -367,6 +383,17 @@ workspace 投影响应为：
 ```
 
 `state` 为 `enabled` 或 `disabled`。更新、卸载、检查更新、清除激活和刷新请求没有必需的 body。
+
+批量激活请求使用 Extension 名称：
+
+```json
+{
+  "extensionNames": ["formatter", "review-tools"],
+  "state": "disabled"
+}
+```
+
+Workspace 批量还接受 `"state": "inherit"`。终态全局结果包含 `name` 和 `defaultActivation`；workspace 结果包含 `name`、`workspaceActivation`（inherit 时为 `null`）和 `effectiveActivation`。格式错误的名称会拒绝请求；与现有 Store 标识的冲突会原子性地失败，不会部分提交。未知的 `inherit` 目标不会被持久化，因为清除覆盖不得制造 default-activation 声明或替换后续的安装同意。
 
 每个接受的异步变更返回：
 
@@ -989,6 +1016,7 @@ Workspace 功能标签和 `workspaces[]` 是动态的。添加 workspace 的客�
 - `workspace_persisted_transcript` → `GET /workspaces/:workspace/session/:id/transcript`
 - `workspace_session_export` → `GET /workspaces/:workspace/session/:id/export`
 - `workspace_archived_session_export` → `GET /workspaces/:workspace/session/:id/archive/export`
+- `workspace_session_live_state` → `GET /workspaces/:workspace/sessions/live-state`
 - `workspace_qualified_memory` → `POST /workspaces/:workspace/memory/{remember,forget,dream}` 和 `GET /workspaces/:workspace/memory/{remember,forget,dream}/:taskId`
 
 `workspace_acp_status` 报告主 workspace ACP channel 的时间点活跃状态，为 `{ channelLive: boolean }`。handler 不创建 channel，但到达 runtime 路由可能首先启动延迟的 daemon runtime，其配置的启动策略可能独立地预热 ACP。快照不是租约：客户端必须让 Session 创建重新验证或启动 channel。
@@ -1962,6 +1990,44 @@ Response:
 ```
 
 受信任的活跃列表包含实时的 daemon 覆盖字段，如 `clientCount` 和 `hasActivePrompt`。不受信任的次要和归档列表仅来自存储：活跃覆盖字段保持缺失或为 false，归档条目将 `isArchived` 设置为 `true`。当没有 sessions 存在时返回空数组（而不是 404）—— session-picker UI 不应仅仅因为 workspace 处于空闲状态就报错。
+
+### `GET /workspaces/:workspace/sessions/live-state`
+
+返回选定 workspace runtime 的仅内存活跃 session 快照以及内存中的目录版本，使客户端无需在 `GET /workspaces/:workspace/sessions` 的持久化目录上轮询 `hasActivePrompt`、等待标志和 `clientCount` 等易变状态。预检 `workspace_session_live_state`；该标签独立于 `workspace_qualified_rest_core`，因此通告更广泛 workspace REST 能力的旧版 daemon 不会实现此路由。选择器首先解析为精确的 workspace id，然后解析为规范化后的 URL 编码绝对 cwd，与其他复数 session 路由一致。该路由对主 runtime 和次要 runtime 均为仅限受信任：它从不回退到主 runtime，也不使用授予不受信任次要 workspace 有限目录读取权限的宽松持久化目录策略。该端点没有查询参数，也不执行 session 存储、设置、外部命令或 ACP 往返，因此其成本与持久化 session 数量和 JSONL 大小无关；默认的活跃 session 上限保持响应有界，禁用上限后成本仍仅与活跃 session 数量成正比。
+
+Response:
+
+```json
+{
+  "v": 1,
+  "catalogVersion": {
+    "generation": "7eca3164-bce1-4f50-94d8-c842c480f213",
+    "revision": 17
+  },
+  "sessions": [
+    {
+      "sessionId": "session-123",
+      "clientCount": 1,
+      "hasActivePrompt": true,
+      "isWaitingForPermission": false,
+      "isWaitingForUserQuestion": false
+    }
+  ]
+}
+```
+
+`v` 是响应 schema 版本。每个成功响应都包含 `Cache-Control: no-store`。`sessions` 是选定 runtime 中当前活跃的完整、未分页、无序的 session 集合；空的活跃 runtime 返回 `200` 和 `sessions: []`。`clientCount`、`hasActivePrompt`、`isWaitingForPermission` 和 `isWaitingForUserQuestion` 是必需的线格式字段，缺失的可选 bridge 值投影为 `0` 或 `false`。显示名称、时间戳、组织和来源元数据等静态目录字段被故意排除，仍由完整目录拥有。缺失的活跃状态行仅清除已知目录行的易变字段；它从不删除持久化目录行。
+
+`catalogVersion` 是 daemon 观测的目录变更的相等性令牌。`generation` 是每个 bridge 实例创建的随机 UUID，在 daemon 重启或 workspace runtime 替换时变更；`revision` 从零开始，在一个 generation 内单调递增。唯一支持的操作是整个配对上的相等性判断：相同的 generation 和 revision 表示没有 daemon 观测的目录变更，任何差异表示重新加载完整目录。客户端不得对 revision 进行算术运算或跨 generation 比较 revision，允许保守的额外递增。该版本涵盖 daemon 观测的目录成员资格和静态元数据变更；普通的轮次活动、prompt 生命周期、附加/分离和等待状态转换不会推进它，因为活跃快照已经携带了相应的易变字段。两个易变覆盖值被故意排除在两个信号之外：turn-error 状态（`hasTurnError`/`turnError`）和待处理交互计数/内容（`pendingInteractionCount`/`pendingInteractions`）既不推进版本也不出现在快照中，因此需要它们的客户端必须继续读取每个 session 的事件流或完整目录，而不是依赖此路由；当有具体消费者需要时，这两个字段可以以线格式附加方式添加。由另一个 daemon、TUI 或外部进程直接写入的变更不会被观测，因此一旦客户端停止周期性完整目录轮询，这些写入就没有有界的发现时间，仅在显式完整重新加载、另一个观测到的目录变更、重连或 daemon/runtime 替换后才出现。
+
+客户端通过两次读取握手来调和目录包：读取活跃状态 A，加载完整 session 列表（当客户端消费 `session_organization` 时加上 `GET /workspaces/:workspace/session-groups`），然后读取活跃状态 B。A 和 B 版本相等则接受该包；不同版本将目录标记为过期，并合并最多一次尾随重新加载，而不是进入紧密重试循环。每个接受的目录请求必须在 A 之后发起——在 A 之前开始的请求或去重承诺不能满足调和要求。版本驱动的重新加载在每个 workspace 上是单飞的，并遵循非零的最小后台间隔，因此持续的目录变动不会驱动每个活跃状态轮询进行一次完整目录扫描；显式的本地变更仍然可以通过同一个单飞操作请求立即刷新。
+
+**错误：**
+
+- `400` —— 未知、格式错误、嵌套或未注册的选择器的现有选择器验证或 `workspace_mismatch` 行为；该路由从不将未知选择器解析到主 runtime。
+- `403` —— 任何不受信任的 runtime（包括不受信任的主 workspace）返回 `untrusted_workspace`。
+- `503` —— 引导中、转换中、排空中、被阻止或已移除的 runtime，或请求中途关闭的 runtime generation，返回 `workspace_runtime_unavailable` 和 `Retry-After`。
+- `500` —— 意外的本地错误使用现有的 bridge 错误映射。
 
 ### `GET /workspace/:id/session-groups`
 
