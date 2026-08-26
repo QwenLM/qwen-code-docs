@@ -549,7 +549,7 @@ async function cmdTranslate(lang) {
         // simple, and at TRANSLATE_CHUNK=5 it is cheap; verify's "touched
         // this session" check is satisfied by the rewrite either way.
         console.log(
-          `[orch] ${lang}: part ${part}/${chunks.length} halted; retrying once...`
+          `[orch] ${lang}: part ${part}/${chunks.length} failed; retrying once...`
         );
       }
     }
