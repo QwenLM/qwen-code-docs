@@ -168,7 +168,10 @@ jobs:
           while read -r lang; do
             { node orchestrator.mjs translate --lang "$lang" --limit "${TRANSLATE_DAILY_LIMIT:-20}" --model "$QWEN_MODEL" || true
               node orchestrator.mjs verify --lang "$lang" || true
-            } 2>&1 | sed -u "s/^/${lang} | /" &
+            # tee to a per-language file as well as the step log: the
+            # batch-loss check below tallies verify's counts, and scraping
+            # them back out of the live step log is not possible from here.
+            } 2>&1 | sed -u "s/^/${lang} | /" | tee "/tmp/orch-out-${lang}.log" &
             pids="$pids $!"
           done < /tmp/orch-langs.txt
           for pid in $pids; do wait "$pid"; done
@@ -183,6 +186,12 @@ jobs:
           # Scoped to this step: only the agent talks to the model.
           OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
           OPENAI_BASE_URL: ${{ vars.TRANSLATE_BASE_URL || 'https://coding.dashscope.aliyuncs.com/v1' }}
+
+      # A run can stay green while some agent sessions lose their whole batch;
+      # compare dispatch logs with verify totals so those losses are visible.
+      - name: Warn if an unusual share of the batch was lost
+        if: always() && steps.detect.outputs.changed == 'true'
+        run: node translator/orchestrator/orchestrator.mjs report-batch --log-dir /tmp
 
       # advance wrote per-language .failed.txt quarantine lists. Broken files
       # are resolved against HEAD so the commit below stages only sound

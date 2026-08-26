@@ -22,6 +22,7 @@
  *   verify    --lang L     structural gate over the dispatched manifest
  *   advance   --lang L     verify + record hashes of passing files
  *   quarantine             resolve failed translations against HEAD
+ *   report-batch           report dispatched/verified totals from run logs
  *
  * Flags (all optional): --repo --branch --docs-path --content-dir
  *   --baseline --temp-dir --langs csv --limit N --manifest --model
@@ -454,11 +455,11 @@ function renderPrompt(lang, batch) {
     .replaceAll("{{FILES}}", files);
 }
 
-// One agent session per chunk, not one session per language: the CLI's
-// loop detection kills an entire session on one blocked/retried tool call
-// (runs 31115350719/31119970640 lost de almost entirely that way). Chunks
-// bound the blast radius of a halted session.
-const TRANSLATE_CHUNK = 15;
+// Bound one failed agent session to five files instead of a whole language.
+const TRANSLATE_CHUNK = 5;
+
+// Retry once; repeated failures stay in the next run's backlog.
+const TRANSLATE_ATTEMPTS = 2;
 
 // --safe-mode is read-only (no write/edit tools), so the agent could never
 // write translations. auto-edit approves read/write/edit (shell stays
@@ -524,18 +525,40 @@ async function cmdTranslate(lang) {
       `[orch] ${lang}: dispatching agent for ${chunk.length} file(s)` +
         (chunks.length > 1 ? ` (part ${part}/${chunks.length})...` : "...")
     );
-    const { status, log } = await runAgent(
-      lang,
-      renderPrompt(lang, chunk),
-      suffix
-    );
-    console.log(`[orch] ${lang}: agent exit=${status} (log: ${log})`);
+    let status;
+    let log;
+    for (let attempt = 1; attempt <= TRANSLATE_ATTEMPTS; attempt++) {
+      // Distinct log suffix per attempt: runAgent opens the log with "w",
+      // so a retry would otherwise overwrite the halted attempt's log —
+      // exactly the log needed to tell a loop-detection halt from a real
+      // failure.
+      ({ status, log } = await runAgent(
+        lang,
+        renderPrompt(lang, chunk),
+        attempt === 1 ? suffix : `${suffix}-retry${attempt - 1}`
+      ));
+      console.log(
+        `[orch] ${lang}: agent exit=${status}` +
+          (attempt > 1 ? ` on retry ${attempt - 1}` : "") +
+          ` (log: ${log})`
+      );
+      if (status === 0) break;
+      if (attempt < TRANSLATE_ATTEMPTS) {
+        // Re-dispatches the whole chunk, including any file the halted
+        // attempt already translated. That redundancy is what keeps this
+        // simple, and at TRANSLATE_CHUNK=5 it is cheap; verify's "touched
+        // this session" check is satisfied by the rewrite either way.
+        console.log(
+          `[orch] ${lang}: part ${part}/${chunks.length} failed; retrying once...`
+        );
+      }
+    }
     if (status !== 0) {
       // The workflow's `|| true` keeps the step alive; surface the failure
       // in the run summary anyway, and leave the chunk's files in the
       // backlog (verify fails them; they are retried next run).
       console.log(
-        `::warning::${lang}: agent exited ${status} on part ${part}/${chunks.length}; its files stay in the backlog`
+        `::warning::${lang}: agent exited ${status} on part ${part}/${chunks.length} after ${TRANSLATE_ATTEMPTS} attempts; its files stay in the backlog`
       );
       process.exitCode = 1;
     }
@@ -842,6 +865,42 @@ function cmdQuarantine() {
   }
 }
 
+function cmdReportBatch() {
+  const logDir = path.resolve(flags["log-dir"] || "/tmp");
+  const logs = fs.existsSync(logDir)
+    ? fs.readdirSync(logDir).filter((f) => /^orch-out-.*\.log$/.test(f))
+    : [];
+  let dispatched = 0;
+  let reported = 0;
+  let passed = 0;
+  for (const log of logs) {
+    const text = fs.readFileSync(path.join(logDir, log), "utf8");
+    for (const match of text.matchAll(/dispatching agent for (\d+) file/g))
+      dispatched += Number(match[1]);
+    for (const match of text.matchAll(/verify (\d+)\/(\d+) passed/g)) {
+      passed += Number(match[1]);
+      reported += Number(match[2]);
+    }
+  }
+  if (dispatched === 0) {
+    console.log("::warning::no translation dispatch results found");
+    return;
+  }
+  const pct = (100 * passed) / dispatched;
+  const line = `Verified ${passed}/${dispatched} dispatched file-translations (${pct.toFixed(0)}%)`;
+  console.log(line);
+  if (process.env.GITHUB_STEP_SUMMARY)
+    fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `- ${line}\n`);
+  if (reported < dispatched)
+    console.log(
+      `::warning::${dispatched - reported} dispatched file-translations had no verify result`
+    );
+  if (pct < 80)
+    console.log(
+      `::warning::only ${passed} of ${dispatched} dispatched file-translations verified (${pct.toFixed(0)}%) — check the per-language logs above for halted agent sessions`
+    );
+}
+
 // ---------- preflight ----------
 
 /**
@@ -913,12 +972,15 @@ switch (cmd) {
   case "quarantine":
     cmdQuarantine();
     break;
+  case "report-batch":
+    cmdReportBatch();
+    break;
   case "seed":
     cmdSeed();
     break;
   default:
     console.log(
-      "usage: orchestrator.mjs <detect|preflight|sync-en|seed|translate|verify|advance|quarantine> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv]"
+      "usage: orchestrator.mjs <detect|preflight|sync-en|seed|translate|verify|advance|quarantine|report-batch> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv]"
     );
     process.exitCode = cmd ? 1 : 0;
 }
