@@ -213,3 +213,62 @@ test("report only counts a zero-exit retry as recovered", () => {
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("contamination parsing is source-aware and respects Markdown code", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "qwen-cjk-test-"));
+  const contentDir = path.join(root, "content");
+  const manifest = path.join(root, "manifest.json");
+
+  try {
+    fs.mkdirSync(path.join(contentDir, "en"), { recursive: true });
+    fs.mkdirSync(path.join(contentDir, "ko"), { recursive: true });
+    const files = {
+      "generic.md": ["# Bot\n", "# 봇\n机器人模式\n"],
+      "allowlist.md": ["# File\n", "# 파일\n文件\n"],
+      "quoted.md": ["The UI says 文件.\n", "UI: 文件.\n"],
+      "fenced.md": [
+        "````md\n```\nexample\n```\n````\n",
+        "````md\n```\n操作步骤\n```\n````\n",
+      ],
+      "inline.md": [
+        "Use ``command `mode` `` here.\n",
+        "Use ``机器人 `mode` `` here.\n",
+      ],
+    };
+    for (const [name, [en, ko]] of Object.entries(files)) {
+      fs.writeFileSync(path.join(contentDir, "en", name), en);
+      fs.writeFileSync(path.join(contentDir, "ko", name), ko);
+    }
+    fs.writeFileSync(
+      manifest,
+      JSON.stringify({
+        createdAt: 0,
+        files: Object.keys(files).map((name) => `docs/${name}`),
+      })
+    );
+
+    const result = spawnSync(
+      process.execPath,
+      [
+        orchestrator,
+        "verify",
+        "--lang",
+        "ko",
+        "--content-dir",
+        contentDir,
+        "--manifest",
+        manifest,
+      ],
+      { encoding: "utf8" }
+    );
+
+    assert.equal(result.status, 1, result.stdout || result.stderr);
+    assert.match(result.stdout, /FAIL ko generic\.md.*source-language contamination/);
+    assert.match(result.stdout, /FAIL ko allowlist\.md.*source-language contamination/);
+    assert.match(result.stdout, /PASS ko quoted\.md/);
+    assert.match(result.stdout, /PASS ko fenced\.md/);
+    assert.match(result.stdout, /PASS ko inline\.md/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});

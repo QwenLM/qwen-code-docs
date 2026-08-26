@@ -20,6 +20,7 @@
  *                          delete targets of removed upstream files
  *   translate --lang L     dispatch a qwen -p agent for a backlog batch
  *   verify    --lang L     structural gate over the dispatched manifest
+ *   scan      --lang L     corpus-wide source-language contamination audit
  *   advance   --lang L     verify + record hashes of passing files
  *   quarantine             resolve failed translations against HEAD
  *   report-batch           report dispatched/verified totals from run logs
@@ -613,6 +614,69 @@ function frontmatterYamlish(text) {
   return false; // no closing delimiter
 }
 
+/**
+ * Source-language contamination gate. Machine translation occasionally
+ * leaks source-language tokens into the target prose — #215 found Korean
+ * sentences with embedded Chinese fragments (操作步骤, 注解, 携带) and even
+ * Japanese (離れた). The glossary pins terminology, but this failure class
+ * is not terminology, so the verify gate screens it out structurally:
+ * quarantine the file (restored from HEAD, retried next run) instead of
+ * letting the regression reach main.
+ *
+ * The scan is fence-aware (code blocks are skipped) and strips inline code
+ * spans, since Chinese user-command examples and product config snippets
+ * live there verbatim. Remaining legitimate prose occurrences (Chinese
+ * product names, Chinese-product UI labels quoted by the English source,
+ * the character-variant tables in language.md) are allowlisted only when the
+ * English source contains the same text.
+ */
+const HAN_NATIVE_LANGS = new Set(["zh", "ja"]); // gate does not apply
+const CJK_LEAK_RE =
+  /[\u3400-\u4dbf\u4e00-\u9fff\u3040-\u30ff\u3001\u3002\u3008-\u300b\u300a\u300b\uff01\uff08\uff09\uff0c\uff1a\uff1f]/g;
+
+function loadCjkAllowlist() {
+  try {
+    return fs
+      .readFileSync(path.join(HERE, "cjk-allowlist.txt"), "utf8")
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l && !l.startsWith("#"))
+      .sort((a, b) => b.length - a.length); // longest first for removal
+  } catch {
+    return [];
+  }
+}
+const CJK_ALLOWLIST = loadCjkAllowlist();
+
+/** Returns [{ line, sample }] for prose lines leaking source-language chars. */
+function cjkContamination(text, source) {
+  const hits = [];
+  const allowed = CJK_ALLOWLIST.filter((a) => source.includes(a));
+  let fence = null;
+  text.split("\n").forEach((raw, i) => {
+    const marker = raw.match(/^ {0,3}(`{3,}|~{3,})/);
+    if (marker) {
+      if (!fence) {
+        fence = { char: marker[1][0], length: marker[1].length };
+      } else if (
+        marker[1][0] === fence.char &&
+        marker[1].length >= fence.length &&
+        /^[ \t]*$/.test(raw.slice(marker[0].length))
+      ) {
+        fence = null;
+      }
+      return;
+    }
+    if (fence) return;
+    let prose = raw.replace(/(?<!`)(`+)(?!`)(.*?)(?<!`)\1(?!`)/g, "");
+    for (const a of allowed) prose = prose.split(a).join("");
+    if (CJK_LEAK_RE.test(prose))
+      hits.push({ line: i + 1, sample: raw.trim().slice(0, 60) });
+    CJK_LEAK_RE.lastIndex = 0;
+  });
+  return hits;
+}
+
 function structuralProblems(en, target, lang) {
   const problems = [];
   if (target.trim().length === 0) problems.push("empty target");
@@ -628,6 +692,13 @@ function structuralProblems(en, target, lang) {
     if (!frontmatterClosed(target)) problems.push("frontmatter unclosed");
     else if (!frontmatterYamlish(target))
       problems.push("frontmatter not parseable YAML");
+  }
+  if (!HAN_NATIVE_LANGS.has(lang)) {
+    const leaks = cjkContamination(target, en);
+    if (leaks.length)
+      problems.push(
+        `source-language contamination: ${leaks.length} line(s), first at L${leaks[0].line} "${leaks[0].sample}"`
+      );
   }
   return problems;
 }
@@ -729,6 +800,42 @@ function cmdVerify(lang) {
   if (fail > 0) process.exitCode = 1;
 }
 
+/**
+ * Corpus-wide contamination audit (verify gates only files translated in
+ * the current run). Reports every prose line in content/<lang>/ leaking
+ * source-language characters; exit 1 on any hit so it can gate CI later.
+ */
+function cmdScan(lang) {
+  if (HAN_NATIVE_LANGS.has(lang)) {
+    console.log(`[orch] ${lang}: native Han script — scan not applicable`);
+    return;
+  }
+  const root = path.join(OPTS.contentDir, lang);
+  const files = [];
+  (function walk(d) {
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (e.name.endsWith(".md") || e.name.endsWith(".mdx")) files.push(p);
+    }
+  })(root);
+  let total = 0;
+  for (const f of files) {
+    const rel = path.relative(root, f);
+    const enPath = path.join(OPTS.contentDir, "en", rel);
+    const source = fs.existsSync(enPath) ? fs.readFileSync(enPath, "utf8") : "";
+    const hits = cjkContamination(fs.readFileSync(f, "utf8"), source);
+    if (!hits.length) continue;
+    total += hits.length;
+    console.log(`FAIL ${lang} ${rel}`);
+    for (const h of hits) console.log(`  L${h.line} ${h.sample}`);
+  }
+  console.log(
+    `[orch] ${lang}: scan ${files.length} files, ${total} contaminated line(s)`
+  );
+  if (total > 0) process.exitCode = 1;
+}
+
 function cmdAdvance(lang) {
   const manifest = readManifest(lang);
   if (!manifest) {
@@ -826,6 +933,7 @@ function isStructural(problem) {
   return (
     problem.startsWith("code fence mismatch") ||
     problem.startsWith("frontmatter ") ||
+    problem.startsWith("source-language contamination") ||
     problem === "empty target"
   );
 }
@@ -1179,6 +1287,9 @@ switch (cmd) {
   case "verify":
     cmdVerify(flags.lang);
     break;
+  case "scan":
+    cmdScan(flags.lang);
+    break;
   case "advance":
     cmdAdvance(flags.lang);
     break;
@@ -1196,7 +1307,7 @@ switch (cmd) {
     break;
   default:
     console.log(
-      "usage: orchestrator.mjs <detect|preflight|sync-en|seed|translate|verify|advance|quarantine|report-batch|report> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv]"
+      "usage: orchestrator.mjs <detect|preflight|sync-en|seed|translate|verify|scan|advance|quarantine|report-batch|report> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv]"
     );
     process.exitCode = cmd ? 1 : 0;
 }

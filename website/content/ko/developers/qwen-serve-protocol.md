@@ -2283,7 +2283,7 @@ curl http://127.0.0.1:4170/workspaces/<workspace-id>/sessions
 
 ### `GET /workspace/:id/session-groups`
 
-워크스페이스에 대한 사용자 정의 세션 그룹을 나열합니다. 단수 GET 선택자는 등록된 모든 워크스페이스 id 또는 URL 인코딩된 정규 cwd를 허용합니다. 다중 GET 별칭은 신뢰되지 않는 보조도 사용 가능하며 조직 사이드카만 읽습니다. 다중 그룹 변경은 신뢰 게이트된まま이며, 단수 그룹 변경은 기본 전용 호환성 동작을 유지합니다. `caps.features.includes('session_organization')`를 프리플라이트합니다.
+워크스페이스에 대한 사용자 정의 세션 그룹을 나열합니다. 단수 GET 선택자는 등록된 모든 워크스페이스 id 또는 URL 인코딩된 정규 cwd를 허용합니다. 다중 GET 별칭은 신뢰되지 않는 보조도 사용 가능하며 조직 사이드카만 읽습니다. 다중 그룹 변경은 계속 신뢰 게이트를 거치며, 단수 그룹 변경은 기본 전용 호환성 동작을 유지합니다. `caps.features.includes('session_organization')`를 프리플라이트합니다.
 
 응답:
 

@@ -9,8 +9,9 @@ Rules:
 2. If the target already exists, edit it surgically: update the sections that changed so the target matches the English source; do NOT rewrite unchanged sections and do not retranslate from scratch.
 3. Terminology: read {{GLOSSARY}} first and follow it. For a term not in it, grep {{CONTENT_DIR}}/{{LANG}}/ for how existing docs render it and follow the majority. When you coin a new term, append a `- term → rendering` line to {{GLOSSARY}}.
 4. Style: follow {{STYLE}}.
-5. Always write the target file, even when the edit is small, so its modification time advances.
-6. NEVER call run_shell_command or any other shell/exec/terminal tool — such calls are rejected in this session, and retrying them terminates the whole session. Do not run builds. Do not touch any file outside the list, except the glossary.
+5. No source-language residue: prose in the target must never contain untranslated words from the source or any other language. If {{LANG}} does not write in Chinese characters (ko, de, fr, pt-BR, ru), the output must contain no Chinese/Japanese characters or fullwidth CJK punctuation outside code spans — the only exception are Chinese product names and Chinese-product UI labels that the English source itself quotes verbatim. Output with leaked characters fails the verify gate and is quarantined.
+6. Always write the target file, even when the edit is small, so its modification time advances.
+7. NEVER call run_shell_command or any other shell/exec/terminal tool — such calls are rejected in this session, and retrying them terminates the whole session. Do not run builds. Do not touch any file outside the list, except the glossary.
 
 Files to translate (relative to the content dir):
 {{FILES}}

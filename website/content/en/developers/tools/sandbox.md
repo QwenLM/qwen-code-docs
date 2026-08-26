@@ -8,9 +8,9 @@
 
 If you need extra tools inside the container (e.g., `git`, `python`, `rg`), create a custom Dockerfile, The specific operation is as follows
 
-#### 1、Clone qwen code project first, https://github.com/QwenLM/qwen-code.git
+#### 1. Clone qwen code project first, https://github.com/QwenLM/qwen-code.git
 
-#### 2、Make sure you perform the following operation in the source code repository directory
+#### 2. Make sure you perform the following operation in the source code repository directory
 
 ```bash
 # 1. First, install the dependencies of the project
@@ -41,7 +41,7 @@ qwen -v
 
 ```
 
-#### 3、Create your sandbox Dockerfile under the root directory of your own project
+#### 3. Create your sandbox Dockerfile under the root directory of your own project
 
 - Path: `.qwen/sandbox.Dockerfile`
 
@@ -57,7 +57,7 @@ RUN apt-get update && apt-get install -y \
     ripgrep
 ```
 
-#### 4、Create the first sandbox image under the root directory of your project
+#### 4. Create the first sandbox image under the root directory of your project
 
 ```bash
 QWEN_SANDBOX=docker BUILD_SANDBOX=1 qwen -s
