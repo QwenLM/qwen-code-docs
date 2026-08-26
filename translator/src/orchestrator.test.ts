@@ -147,3 +147,69 @@ test("report-batch counts dispatches that never reach verify", () => {
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("report writes a zero-work artifact on quiet runs", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "qwen-metrics-test-"));
+  const summary = path.join(root, "summary.md");
+
+  try {
+    const result = spawnSync(
+      process.execPath,
+      [orchestrator, "report", "--baseline", path.join(root, "last-sync.json")],
+      {
+        encoding: "utf8",
+        env: { ...process.env, GITHUB_STEP_SUMMARY: summary },
+      }
+    );
+
+    assert.equal(result.status, 0, result.stdout || result.stderr);
+    const metrics = JSON.parse(
+      fs.readFileSync(path.join(root, "translation-metrics.json"), "utf8")
+    );
+    assert.equal(metrics.totals.dispatched, 0);
+    assert.match(fs.readFileSync(summary, "utf8"), /\*\*0\*\*.*\*\*0\*\*/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("report only counts a zero-exit retry as recovered", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "qwen-retry-test-"));
+
+  try {
+    fs.writeFileSync(
+      path.join(root, "orchestrator-manifest-zh.metrics.json"),
+      JSON.stringify({
+        lang: "zh",
+        dispatchedAt: 1,
+        completedAt: 2,
+        dispatched: 5,
+        verified: 0,
+        failures: [],
+      })
+    );
+    fs.writeFileSync(
+      path.join(root, "orchestrator-agent-zh.log"),
+      "Loop detection halted\n[orch] agent exit=1\n"
+    );
+    fs.writeFileSync(
+      path.join(root, "orchestrator-agent-zh-retry1.log"),
+      "another failure\n[orch] agent exit=1\n"
+    );
+
+    const result = spawnSync(
+      process.execPath,
+      [orchestrator, "report", "--baseline", path.join(root, "last-sync.json")],
+      { encoding: "utf8" }
+    );
+
+    assert.equal(result.status, 0, result.stdout || result.stderr);
+    const metrics = JSON.parse(
+      fs.readFileSync(path.join(root, "translation-metrics.json"), "utf8")
+    );
+    assert.equal(metrics.totals.retriesAttempted, 1);
+    assert.equal(metrics.totals.retriesRecovered, 0);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});

@@ -23,6 +23,7 @@
  *   advance   --lang L     verify + record hashes of passing files
  *   quarantine             resolve failed translations against HEAD
  *   report-batch           report dispatched/verified totals from run logs
+ *   report                 publish per-language translation metrics
  *
  * Flags (all optional): --repo --branch --docs-path --content-dir
  *   --baseline --temp-dir --langs csv --limit N --manifest --model
@@ -487,6 +488,7 @@ async function runAgent(lang, prompt, logSuffix) {
     fs.writeSync(fd, c);
   });
   const status = await new Promise((resolve) => child.on("close", resolve));
+  fs.writeSync(fd, `\n[orch] agent exit=${status}\n`);
   fs.closeSync(fd);
   return { status, log };
 }
@@ -688,6 +690,11 @@ function failedListPath(lang) {
   return manifestPath(lang).replace(/\.json$/, ".failed.txt");
 }
 
+/** Per-language run metrics, aggregated by `report`. */
+function metricsPath(lang) {
+  return manifestPath(lang).replace(/\.json$/, ".metrics.json");
+}
+
 /**
  * Manifest entries normalized to { file, hash }. Manifests written before
  * dispatch-time hashes were recorded stored bare path strings; treat those
@@ -740,11 +747,13 @@ function cmdAdvance(lang) {
   let advanced = 0;
   let requeued = 0;
   const failed = [];
+  const failures = [];
   for (const { file: f, hash } of entries) {
     const { ok, problems } = verifyFile(lang, f, manifest);
     if (!ok) {
       console.log(`SKIP ${lang} ${relInContent(f)}  [${problems.join("; ")}]`);
       failed.push(`${lang}/${relInContent(f)}`);
+      failures.push({ file: relInContent(f), problems });
       continue;
     }
     const current = upstream.get(f);
@@ -773,11 +782,215 @@ function cmdAdvance(lang) {
   // Quarantine list for the workflow's commit step: verify-failed files must
   // be restored/removed before staging, or broken output gets deployed.
   fs.writeFileSync(failedListPath(lang), failed.length ? failed.join("\n") + "\n" : "");
+  // Machine-readable counterpart to the log lines above. `report` aggregates
+  // these; without them the only record of a run's outcome is the step log,
+  // which cannot be compared across runs without scraping it.
+  fs.writeFileSync(
+    metricsPath(lang),
+    JSON.stringify(
+      {
+        lang,
+        dispatchedAt: manifest.createdAt,
+        completedAt: Date.now(),
+        dispatched: entries.length,
+        verified: entries.length - failed.length,
+        failed: failed.length,
+        advanced,
+        requeued,
+        failures,
+      },
+      null,
+      2
+    ) + "\n"
+  );
   console.log(
     `[orch] ${lang}: advanced ${advanced}/${entries.length}` +
       (requeued ? ` (${requeued} re-queued: upstream moved mid-run)` : "") +
       (failed.length ? ` (${failed.length} quarantined)` : "")
   );
+}
+
+// ---------- report ----------
+
+/**
+ * A verify problem that means the document that exists on disk is itself
+ * unsound — as opposed to never having been produced.
+ *
+ * "missing target" and "target not touched this session" are deliberately
+ * NOT structural: they say the agent did not write the file, which is a
+ * session-death symptom (#217's territory), not a stuck document. Counting
+ * them here would conflate the two failure modes the metrics exist to tell
+ * apart.
+ */
+function isStructural(problem) {
+  return (
+    problem.startsWith("code fence mismatch") ||
+    problem.startsWith("frontmatter ") ||
+    problem === "empty target"
+  );
+}
+
+/**
+ * Halt/retry counts for one language, read from the agent logs the run just
+ * wrote (`orchestrator-agent-<lang>[-partN][-retryN].log`).
+ *
+ * Retry logs only exist once the halted-chunk retry from #217 is in place;
+ * until then `attempted` is simply 0 and the retry columns read as "-".
+ * `runAgent` records the exit status in each log, so a non-halt failure is
+ * not misreported as a recovered retry.
+ */
+function agentLogStats(lang, dir) {
+  const prefix = `orchestrator-agent-${lang}`;
+  const logs = fs
+    .readdirSync(dir)
+    .filter((f) => f.startsWith(prefix) && f.endsWith(".log"));
+  let halted = 0;
+  let attempted = 0;
+  let recovered = 0;
+  for (const name of logs) {
+    let text = "";
+    try {
+      text = fs.readFileSync(path.join(dir, name), "utf8");
+    } catch {
+      continue;
+    }
+    const thisHalted = text.includes("Loop detection halted");
+    if (thisHalted) halted++;
+    if (/-retry\d+\.log$/.test(name)) {
+      attempted++;
+      if (text.includes("[orch] agent exit=0")) recovered++;
+    }
+  }
+  return { halted, retriesAttempted: attempted, retriesRecovered: recovered };
+}
+
+function pct(ok, total) {
+  return total === 0 ? "-" : `${Math.round((100 * ok) / total)}%`;
+}
+
+/**
+ * Aggregate this run's per-language metrics into a step summary table and a
+ * machine-readable artifact.
+ *
+ * Every loss this pipeline has had so far happened inside a GREEN run, and
+ * the only record was the step log — which cannot be compared across runs
+ * without scraping it after the fact. This makes dispatched/verified/ratio,
+ * halts, retry recovery, runtime and stuck-file counts first-class output.
+ */
+function cmdReport() {
+  const dir = path.dirname(OPTS.baseline);
+  const files = fs
+    .readdirSync(dir)
+    .filter((f) => /^orchestrator-manifest-.*\.metrics\.json$/.test(f));
+  const langs = [];
+  for (const name of files) {
+    try {
+      langs.push(JSON.parse(fs.readFileSync(path.join(dir, name), "utf8")));
+    } catch {
+      console.log(`::warning::unreadable metrics file ${name}; skipping`);
+    }
+  }
+  if (langs.length === 0) {
+    console.log("[orch] report: no per-language metrics this run");
+  }
+  langs.sort((a, b) => a.lang.localeCompare(b.lang));
+  const stuck = [];
+  let tDispatched = 0;
+  let tVerified = 0;
+  let tHalted = 0;
+  let tAtt = 0;
+  let tRec = 0;
+  const rows = [];
+  for (const m of langs) {
+    const s = agentLogStats(m.lang, dir);
+    const structural = (m.failures || []).filter((f) =>
+      (f.problems || []).some(isStructural)
+    );
+    for (const f of structural)
+      stuck.push({
+        lang: m.lang,
+        file: f.file,
+        problems: f.problems.filter(isStructural),
+      });
+    tDispatched += m.dispatched;
+    tVerified += m.verified;
+    tHalted += s.halted;
+    tAtt += s.retriesAttempted;
+    tRec += s.retriesRecovered;
+    const mins = Math.round((m.completedAt - m.dispatchedAt) / 60000);
+    rows.push(
+      `| ${m.lang} | ${m.dispatched} | ${m.verified} | ${pct(
+        m.verified,
+        m.dispatched
+      )} | ${s.halted} | ${
+        s.retriesAttempted ? `${s.retriesRecovered}/${s.retriesAttempted}` : "-"
+      } | ${structural.length} | ${mins}m |`
+    );
+  }
+  const now = Date.now();
+  const started = langs.length
+    ? Math.min(...langs.map((m) => m.dispatchedAt))
+    : now;
+  const finished = langs.length
+    ? Math.max(...langs.map((m) => m.completedAt))
+    : now;
+  const wallMins = Math.round((finished - started) / 60000);
+  const lines = [
+    "### Translation run metrics",
+    "",
+    "| Lang | Dispatched | Verified | Ratio | Halts | Retry rec./att. | Stuck | Duration |",
+    "| --- | --- | --- | --- | --- | --- | --- | --- |",
+    ...rows,
+    `| **total** | **${tDispatched}** | **${tVerified}** | **${pct(
+      tVerified,
+      tDispatched
+    )}** | **${tHalted}** | **${tAtt ? `${tRec}/${tAtt}` : "-"}** | **${
+      stuck.length
+    }** | **${wallMins}m** |`,
+  ];
+  if (stuck.length) {
+    lines.push(
+      "",
+      `<details><summary>${stuck.length} file(s) failed the structural gate</summary>`,
+      ""
+    );
+    for (const s of stuck)
+      lines.push(`- \`${s.lang}/${s.file}\` — ${s.problems.join("; ")}`);
+    lines.push("", "</details>");
+  }
+  const md = lines.join("\n") + "\n";
+  console.log(md);
+  const summary = process.env.GITHUB_STEP_SUMMARY;
+  if (summary) fs.appendFileSync(summary, md);
+  const out = path.join(dir, "translation-metrics.json");
+  fs.writeFileSync(
+    out,
+    JSON.stringify(
+      {
+        generatedAt: new Date().toISOString(),
+        startedAt: new Date(started).toISOString(),
+        finishedAt: new Date(finished).toISOString(),
+        wallMinutes: wallMins,
+        totals: {
+          dispatched: tDispatched,
+          verified: tVerified,
+          failed: tDispatched - tVerified,
+          halts: tHalted,
+          retriesAttempted: tAtt,
+          retriesRecovered: tRec,
+          stuck: stuck.length,
+        },
+        langs: langs.map((m) => ({
+          ...m,
+          ...agentLogStats(m.lang, dir),
+        })),
+        stuck,
+      },
+      null,
+      2
+    ) + "\n"
+  );
+  console.log(`[orch] report: wrote ${out}`);
 }
 
 function readFromHead(repoRel) {
@@ -969,6 +1182,9 @@ switch (cmd) {
   case "advance":
     cmdAdvance(flags.lang);
     break;
+  case "report":
+    cmdReport();
+    break;
   case "quarantine":
     cmdQuarantine();
     break;
@@ -980,7 +1196,7 @@ switch (cmd) {
     break;
   default:
     console.log(
-      "usage: orchestrator.mjs <detect|preflight|sync-en|seed|translate|verify|advance|quarantine|report-batch> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv]"
+      "usage: orchestrator.mjs <detect|preflight|sync-en|seed|translate|verify|advance|quarantine|report-batch|report> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv]"
     );
     process.exitCode = cmd ? 1 : 0;
 }

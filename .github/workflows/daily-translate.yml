@@ -269,6 +269,24 @@ jobs:
             fi
           fi
 
+      # Reporting runs only after the durable commit attempt. It also runs on
+      # quiet days, producing a comparable zero-work record.
+      - name: Publish translation metrics
+        if: always()
+        run: node translator/orchestrator/orchestrator.mjs report || true
+
+      - name: Upload translation metrics
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: translation-metrics
+          path: |
+            website/translation-metrics.json
+            website/orchestrator-manifest-*.metrics.json
+          retention-days: 90
+          if-no-files-found: ignore
+
       # Runs that cannot commit would otherwise lose their translation when the
       # runner is torn down. Keep it downloadable so a dispatch used for
       # testing is recoverable rather than a total loss (#196). `always()`
