@@ -1,0 +1,144 @@
+---
+title: "Qwen Code 주간 업데이트: /advisor의 독립적인 세컨드 오피니언, 명령어 하나로 실행 중인 세션 한눈에 보기, 중단된 Review 이어받기"
+date: "2026-08-20"
+description: "이번 주에는 v0.21.12부터 v0.21.14까지 세 개의 정식 버전을 출시했습니다. /advisor가 현재 대화에 독립적인 세컨드 오피니언을 제시하고, qwen sessions ps로 실행 중인 세션을 한눈에 확인할 수 있으며, /review는 중단돼도 끊긴 지점부터 이어갈 수 있습니다."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i2/O1CN01aC8NjamgAjF2jBZY_!!6000000003218-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 주간 업데이트: /advisor의 독립적인 세컨드 오피니언, 명령어 하나로 실행 중인 세션 한눈에 보기, 중단된 Review 이어받기"
+  date="2026-08-20"
+  author="Qwen Team"
+/>
+
+Qwen Code는 이번 주에 v0.21.12부터 v0.21.14까지 세 개의 정식 버전을 출시하고 PR 140개 이상을 병합했습니다.
+
+**독립적인 세컨드 오피니언.** `/advisor`가 현재 대화를 독립적으로 검토해 결론, 리스크, 부족한 근거, 제안 네 가지를 알려줍니다. 전 과정 읽기 전용이라 메인 대화는 건드리지 않습니다.
+
+**명령어 하나로 실행 중인 세션 확인.** 새로 추가된 `qwen sessions ps` 명령어가 이 PC에서 어떤 세션이 실행 중인지 보여줍니다. 어느 디렉터리에서, 얼마나 실행됐는지, 프로세스 번호까지.
+
+**중단된 Review, 처음부터 다시 하지 않아도 됩니다.** 중단된 PR 검토는 `--resume`으로 이어받을 수 있습니다. 상태가 그대로인지 확인한 뒤, 일치하면 중단된 지점부터 계속합니다.
+
+## ✨ 새로운 기능
+
+### /advisor: 독립적인 모델이 현재 대화를 검토합니다
+
+대화가 길어지면 한 가지 흐름에 갇히기 쉽고, 내 컨텍스트 안의 사각지대는 알아채기 어렵습니다. `/advisor`가 현재 대화에 독립적인 세컨드 오피니언을 붙여줍니다. 읽기 전용 보조 세션 하나가 전체 컨텍스트를 처음부터 끝까지 읽고, 결론, 리스크, 부족한 근거, 제안 네 가지를 내놓습니다. 세컨드 오피니언은 철저히 읽기 전용입니다. 메인 대화를 바꾸지도, 어떤 작업도 실행하지 않으며, 검토가 끝난 뒤에도 이어지는 대화에 영향을 주지 않습니다.
+
+관심 있는 부분을 함께 물어볼 수도 있습니다. 예를 들어 `/advisor 이 방안 안전한가요`처럼요. `advisorModel` 설정으로 검토 전용 모델을 지정할 수 있고, 지정하지 않으면 현재 모델을 사용합니다.
+
+관련 PR: [#7567](https://github.com/QwenLM/qwen-code/pull/7567)
+
+![/advisor의 네 가지 검토 결과](https://img.alicdn.com/imgextra/i4/O1CN01x6UkJeTG4kD7nOLI_!!6000000004249-2-tps-3840-2160.png)
+
+### qwen sessions ps: 명령어 하나로 실행 중인 세션 확인
+
+Qwen Code 세션을 여러 개 동시에 열어 두면 어떤 게 어떤 것인지 헷갈리기 쉽습니다. 새로 추가된 `qwen sessions ps` 명령어는 이 PC에서 지금 실행 중인 모든 대화형 세션을 한 줄에 하나씩 보여줍니다. 세션 이름, 프로세스 번호, 실행 시간, 위치한 디렉터리. 스크립트와 연결하려면 `--json`을 붙여 JSON으로 출력하면 됩니다.
+
+목록에 보이는 세션은 전부 실제로 실행 중인 것들입니다. 세션을 하나 닫으면 목록에서도 바로 사라집니다.
+
+관련 PR: [#8969](https://github.com/QwenLM/qwen-code/pull/8969)
+
+![qwen sessions ps가 실행 중인 세션을 보여줍니다](https://img.alicdn.com/imgextra/i1/O1CN01edM2ef0oKxI7nOLI_!!6000000005536-2-tps-3840-2160.png)
+
+### Review: 중단된 PR 검토 이어받기, 댓글은 알기 쉽게
+
+이번 주 `/review`에 실용적인 개선이 몇 가지 추가됐습니다.
+
+**중단된 검토를 이어서.** 큰 PR을 검토하다 중단되면 이전에는 처음부터 다시 해야 했습니다. 이제 `qwen review fetch-pr`에 `--resume`이 추가됐습니다. 먼저 디스크의 상태를 대조합니다. 지난번 검토 보고서, worktree, diff 내용이 모두 그대로이고 PR도 갱신되지 않았다면 이어서 실행하고, 하나라도 맞지 않으면 자동으로 처음부터 다시 시작합니다.
+
+**검토 댓글이 알기 쉬워졌습니다.** `/review`로 PR을 검토하고 댓글을 달 때, 이전 댓글은 템플릿 특유의 딱딱한 말투가 강했습니다. 이제는 문제가 어디인지, 언제 문제가 생기는지, 어떻게 고치는지를 자연스러운 검토 문장으로 정리합니다. PR에 남기는 댓글은 심각도 표시와 서명을 넣을지, 얼마나 깊이 검토할지, 실제로 게시할지까지 설정에서 조정할 수 있습니다.
+
+**스크립트 검토는 실행 환경을 봅니다.** shell 스크립트나 CI 설정 같은 파일은 '이 기계에서는 멀쩡한데 환경이 바뀌면 죽는' 문제를 찾아내기 어렵습니다. 이제는 검토할 때 이 파일들이 실제로 어떤 환경에서 실행되는지 먼저 파악하고, 그 환경의 특성에 맞춰 검토합니다.
+
+관련 PR: [#9092](https://github.com/QwenLM/qwen-code/pull/9092), [#9027](https://github.com/QwenLM/qwen-code/pull/9027), [#8994](https://github.com/QwenLM/qwen-code/pull/8994), [#9263](https://github.com/QwenLM/qwen-code/pull/9263)
+
+### Web Shell 파일 전송: 로컬 파일을 대화에 바로 드래그
+
+원격 연결 토큰(`QWEN_SERVER_TOKEN` 또는 `--token`)을 설정해 두면, 파일을 Web Shell 대화 입력창에 끌어다 놓거나 복사해서 붙여넣는 것만으로 Qwen Code에 전달됩니다. 어떤 파일이든 워크스페이스에 저장되고 대화에는 자동으로 참조가 붙어 AI가 바로 사용할 수 있습니다. 텍스트 파일은 내용을 대화에 그대로 첨부할 수도 있어, AI가 파일을 열지 않고 그 자리에서 읽습니다.
+
+파일이 저장될 폴더를 지정할 수도 있고, 폴더가 없으면 자동으로 만들어집니다. 토큰을 설정하지 않은 상태에서는 파일 드래그나 붙여넣기를 아직 지원하지 않습니다.
+
+관련 PR: [#8874](https://github.com/QwenLM/qwen-code/pull/8874), [#9180](https://github.com/QwenLM/qwen-code/pull/9180), [#9382](https://github.com/QwenLM/qwen-code/pull/9382)
+
+![Web Shell에서 파일 드래그로 전송](https://img.alicdn.com/imgextra/i3/O1CN01S1rjVR6KBVL7nOLI_!!6000000007767-2-tps-3840-2160.png)
+
+## 📊 그 외 새로운 기능
+
+**워크플로 agent를 특정 디렉터리에 고정할 수 있습니다.** 워크플로에서 `agent({workingDir})`로 agent를 특정 디렉터리에 고정해 작업시킬 수 있습니다. 기본 디렉터리 범위에 얽매이지 않습니다. 관련 PR: [#8972](https://github.com/QwenLM/qwen-code/pull/8972)
+
+**릴리스 노트에 이중 언어 요약이 생겼습니다.** 릴리스 노트가 더 이상 PR 목록을 그대로 나열하지 않습니다. 기능 주제별로 묶고 각 그룹마다 알기 쉬운 요약을 한 단락씩 붙이며, 중국어 버전도 함께 제공합니다. PR에 포함된 변경 전후 비교 스크린샷도 함께 가져옵니다. 관련 PR: [#9216](https://github.com/QwenLM/qwen-code/pull/9216)
+
+**외부 지식 베이스 연동에 통합 규격이 생겼습니다.** 검색 서비스를 만드는 업체는 이 규격에 맞춰 Qwen Code 플러그인을 개발할 수 있고, 플러그인을 설치하면 AI가 해당 업체의 코퍼스를 검색할 수 있습니다. 무엇을 검색할 수 있는지는 설치한 플러그인이 결정하며, AI는 그 범위 안에서만 검색합니다. 관련 PR: [#9068](https://github.com/QwenLM/qwen-code/pull/9068)
+
+## 👏 사용성 개선
+
+**Channel 관리가 완전한 관리 페이지로 새로워졌습니다.** Web Shell의 Channel 관리가 예약 작업과 같은 전체 페이지 레이아웃으로 바뀌었습니다. 채널별로 누구에게 허용할지, 승인제인지 화이트리스트인지, 세션을 어떻게 나눌지, 어느 워크스페이스에 연결할지 한 페이지에서 모두 설정합니다. 관련 PR: [#8848](https://github.com/QwenLM/qwen-code/pull/8848)
+
+**WeChat '입력 중' 표시가 긴 작업 도중에도 끊기지 않습니다.** WeChat의 '상대방이 입력 중입니다' 상태는 만료 시간이 있어, 이전에는 긴 작업을 실행하면 도중에 표시가 사라져 연결이 끊긴 것처럼 보였습니다. 이제는 작업 실행 중 4초마다 갱신되고, 작업이 끝나야 사라집니다. 관련 PR: [#9358](https://github.com/QwenLM/qwen-code/pull/9358)
+
+**컴팩트 모드에서도 AI의 사고를 볼 수 있습니다.** Web Shell 컴팩트 모드(Ctrl+O)는 이전에는 thinking 내용을 통째로 숨겼습니다. 이제는 모델이 사고하는 동안 요약에 'thinking 중'으로 표시되고, 사고가 끝나면 도구 요약 안으로 접혀 들어가며, 클릭해서 볼 수 있습니다. 관련 PR: [#9148](https://github.com/QwenLM/qwen-code/pull/9148)
+
+**사이드바를 접어도 세션을 전환할 수 있습니다.** Web Shell 사이드바를 접은 상태에서 프로젝트 아이콘에 마우스를 올리면 전체 세션 브라우저가 열립니다. 승인 대기, 질문, 완료 대기 같은 상태는 아이콘에 색상으로 표시됩니다. 관련 PR: [#9311](https://github.com/QwenLM/qwen-code/pull/9311)
+
+**이미지 미리보기가 새로고침 후에도 사라지지 않습니다.** Web Shell에서 보낸 이미지는 대기열에 있든 이미 작업에 주입됐든, 페이지를 새로고침해도 미리보기가 그대로 유지됩니다. 여러 장의 이미지도 합쳐지거나 사라지지 않습니다. 관련 PR: [#9310](https://github.com/QwenLM/qwen-code/pull/9310)
+
+**연결이 끊겨도 질문을 보낼 수 있습니다.** Web Shell 입력창이 연결 상태와 분리됐습니다. 스트림이 끊겨도 질문을 정상적으로 보낼 수 있고, 입력창이 잠기지 않습니다. 관련 PR: [#9323](https://github.com/QwenLM/qwen-code/pull/9323)
+
+**내보낸 HTML을 한 번에 펼치고 접습니다.** `/export`로 내보낸 대화 HTML 페이지 상단에 '모두 펼치기 / 모두 접기' 버튼이 생겼습니다. thinking 블록과 도구 출력을 한 번에 전환합니다. 관련 PR: [#9367](https://github.com/QwenLM/qwen-code/pull/9367)
+
+**큰 세션의 복원이 빨라졌습니다.** daemon의 세션 복원이 필요할 때만 읽는 방식으로 바뀌어, 상태 재구성에 필요한 기록만 읽습니다. 큰 세션일수록 효과가 뚜렷합니다. 관련 PR: [#9055](https://github.com/QwenLM/qwen-code/pull/9055)
+
+**백그라운드 shell이 실수로 정리되지 않습니다.** 백그라운드에서 실행 중인 shell이 활성 작업으로 집계되어, 활동 중에는 자동으로 정리되지 않습니다. 관련 PR: [#9042](https://github.com/QwenLM/qwen-code/pull/9042)
+
+## 🔧 주요 수정 사항
+
+| 수정 사항 | 사용자에게 미치는 영향 | PR |
+|------|-----------|-----|
+| **모델 명령어가 다른 worktree의 Git에 닿지 않습니다** | 모델이 실행한 git 명령어가 현재 세션 밖 디렉터리의 저장소를 수정하려 하면 바로 차단합니다 | [#8687](https://github.com/QwenLM/qwen-code/pull/8687) |
+| **shell 줄 바꿈 문법으로 감지를 우회할 수 없습니다** | 명령어를 줄 이음 문자로 여러 줄로 나누거나 대체 문법을 써도 명령어 감지가 그대로 인식합니다 | [#8590](https://github.com/QwenLM/qwen-code/pull/8590) |
+| **인라인 참조가 승인을 우회할 수 없습니다** | 파일 안의 인라인 참조가 승인 단계 검사를 더 이상 우회할 수 없습니다 | [#9020](https://github.com/QwenLM/qwen-code/pull/9020) |
+| **데스크톱 앱 사이드바 떨림 수정** | 데스크톱 앱 사이드바의 프로젝트 목록이 스크롤바 등장 때문에 떨리지 않습니다 | [#9073](https://github.com/QwenLM/qwen-code/pull/9073) |
+| **데스크톱 앱 외부 링크** | Markdown과 산출물의 외부 링크는 OAuth 링크를 포함해 모두 시스템 브라우저로 열립니다. 더 이상 소리 없이 사라지지 않습니다 | [#9069](https://github.com/QwenLM/qwen-code/pull/9069), [#9111](https://github.com/QwenLM/qwen-code/pull/9111) |
+| **Windows 실행 시 터미널 창 팝업 제거** | Windows에서 실행할 때 뜨던 런타임 터미널 창을 숨겼습니다 | [#9064](https://github.com/QwenLM/qwen-code/pull/9064) |
+| **데스크톱 앱 업그레이드 마이그레이션, Windows/Linux까지 확대** | 이전 Electron 데스크톱 버전에서 새 버전으로 한 번에 마이그레이션하는 범위가 Windows와 Linux로 확대됐고, 사용자 데이터는 유지됩니다 | [#9079](https://github.com/QwenLM/qwen-code/pull/9079) |
+| **지원하지 않는 이미지가 세션을 죽이지 않습니다** | HEIC, TIFF처럼 지원하지 않는 이미지 형식은 건너뛰고 텍스트로 안내하며, 세션이 죽지 않습니다 | [#9295](https://github.com/QwenLM/qwen-code/pull/9295) |
+| **서브 Agent 패널 오류가 세션 전체로 번지지 않습니다** | 개별 agent 탭의 렌더링 오류를 잡아내 세션 전체가 종료되지 않습니다 | [#9292](https://github.com/QwenLM/qwen-code/pull/9292) |
+| **긴 세션의 메모리 증가에 상한** | 문자열 너비 등의 캐시에 상한을 두고 가득 차면 오래된 항목부터 정리해, 긴 세션에서 메모리가 무한히 늘지 않습니다 | [#9185](https://github.com/QwenLM/qwen-code/pull/9185) |
+| **압축 출력은 남은 컨텍스트 기준** | 압축 출력의 상한을 남은 컨텍스트 창 크기로 계산하며, 더 이상 고정값이 아닙니다 | [#9109](https://github.com/QwenLM/qwen-code/pull/9109) |
+| **종료가 막혀도 세션 유지** | 활성 작업 때문에 세션 종료가 막힐 때 대기열의 작업에 8초의 마무리 시간을 주고, 바로 끊어버리지 않습니다 | [#9134](https://github.com/QwenLM/qwen-code/pull/9134) |
+| **메모리 회상 안정화** | 메모리 회상이 타임아웃돼 응답이 없으면 확정적 후보로 보완해 회상이 빈손으로 끝나지 않습니다 | [#8716](https://github.com/QwenLM/qwen-code/pull/8716) |
+| **팀 작업 배정 정확화** | 수동으로 배정한 Agent Team 작업이 담당자에게 정확히 전달됩니다 | [#9289](https://github.com/QwenLM/qwen-code/pull/9289) |
+| **캐시 공유 기본값 수정** | `enableCacheSharing` 기본값이 잘못 꺼져 있던 문제를 수정해 기본 켜짐으로 바꿨습니다 | [#9233](https://github.com/QwenLM/qwen-code/pull/9233) |
+| **Shell 출력 잘림 임계값 적용** | `tools.truncateToolOutputThreshold`가 더 이상 무시되지 않으며, 고정된 문자 수로 잘리지 않습니다 | [#9014](https://github.com/QwenLM/qwen-code/pull/9014) |
+
+## 👥 기여자
+
+| 기여자 | 기여 내용 | 참고 PR 링크 |
+|--------|---------|-------------|
+| **[@wenshao](https://github.com/wenshao)** | Review와 autofix 전반 강화: 중단된 검토 이어받기, 알기 쉬운 댓글, 스크립트 실행 환경 검토, 이중 언어 릴리스 노트 | [#9092](https://github.com/QwenLM/qwen-code/pull/9092), [#9027](https://github.com/QwenLM/qwen-code/pull/9027), [#9263](https://github.com/QwenLM/qwen-code/pull/9263), [#9216](https://github.com/QwenLM/qwen-code/pull/9216) |
+| **[@yiliang114](https://github.com/yiliang114)** | /advisor 세컨드 오피니언, 노이즈 댓글 정리, 데스크톱 앱과 세션 안정성 관련 일련의 수정 | [#7567](https://github.com/QwenLM/qwen-code/pull/7567), [#9266](https://github.com/QwenLM/qwen-code/pull/9266), [#9295](https://github.com/QwenLM/qwen-code/pull/9295), [#9185](https://github.com/QwenLM/qwen-code/pull/9185), [#9289](https://github.com/QwenLM/qwen-code/pull/9289) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | Web Shell 텍스트 첨부, 외부 코퍼스 연동 규격, 세션 런타임 경계, daemon 리소스 상한과 선택적 복원 | [#9180](https://github.com/QwenLM/qwen-code/pull/9180), [#9068](https://github.com/QwenLM/qwen-code/pull/9068), [#9181](https://github.com/QwenLM/qwen-code/pull/9181), [#9055](https://github.com/QwenLM/qwen-code/pull/9055) |
+| **[@ytahdn](https://github.com/ytahdn)** | Web Shell 워크스페이스 파일 직접 전송, 사이드바 세션 관리, 세션 이미지 참조 유지, 입력과 대기열 안정성 | [#8874](https://github.com/QwenLM/qwen-code/pull/8874), [#9311](https://github.com/QwenLM/qwen-code/pull/9311), [#9310](https://github.com/QwenLM/qwen-code/pull/9310), [#9407](https://github.com/QwenLM/qwen-code/pull/9407) |
+| **[@qqqys](https://github.com/qqqys)** | qwen sessions ps, 워크플로 agent 디렉터리 고정, Channel 관리 페이지 개편, 검토 스레드 페이지네이션 수정 | [#8969](https://github.com/QwenLM/qwen-code/pull/8969), [#8972](https://github.com/QwenLM/qwen-code/pull/8972), [#8848](https://github.com/QwenLM/qwen-code/pull/8848), [#9390](https://github.com/QwenLM/qwen-code/pull/9390) |
+| **[@qwen-code-dev-bot](https://github.com/qwen-code-dev-bot)** | 릴리스 파이프라인 재시도, 통합 테스트 fixture 수정 | [#9082](https://github.com/QwenLM/qwen-code/pull/9082), [#9161](https://github.com/QwenLM/qwen-code/pull/9161), [#9162](https://github.com/QwenLM/qwen-code/pull/9162) |
+| **[@callmeYe](https://github.com/callmeYe)** | 워크스페이스 스킬 일괄 활성화/비활성화, 컨텍스트 사용량에서 비활성 스킬 제외 | [#9139](https://github.com/QwenLM/qwen-code/pull/9139), [#9346](https://github.com/QwenLM/qwen-code/pull/9346) |
+| **[@samuelhsin](https://github.com/samuelhsin)** | 분할 화면 @ 멘션 설정 동기화, 스킬 전환 이벤트 메타데이터 | [#9052](https://github.com/QwenLM/qwen-code/pull/9052), [#9051](https://github.com/QwenLM/qwen-code/pull/9051) |
+| **[@BenGuanRan](https://github.com/BenGuanRan)** | daemon 라운드 상태 폴링 API | [#9080](https://github.com/QwenLM/qwen-code/pull/9080) |
+| **[@carffuca](https://github.com/carffuca)** | Web Shell 푸터 작업 타이밍 | [#8787](https://github.com/QwenLM/qwen-code/pull/8787) |
+| **[@cxruan](https://github.com/cxruan)** | Shell 출력 잘림 임계값 설정 적용 | [#9014](https://github.com/QwenLM/qwen-code/pull/9014) |
+| **[@DennisYu07](https://github.com/DennisYu07)** | 릴리스 평가 작업 연계 | [#9120](https://github.com/QwenLM/qwen-code/pull/9120) |
+| **[@ZijianZhang989](https://github.com/ZijianZhang989)** | 압축 출력을 남은 컨텍스트 기준으로 제한 | [#9109](https://github.com/QwenLM/qwen-code/pull/9109) |
+| **[@zjgzx1988](https://github.com/zjgzx1988)** | 산출물 경로 검증과 정규화 | [#9142](https://github.com/QwenLM/qwen-code/pull/9142) |
+| 🆕 **[@MichaelYochpaz](https://github.com/MichaelYochpaz)** | 🎉 첫 기여: Windows 설치 프로그램 체크섬 검증 수정 | [#9112](https://github.com/QwenLM/qwen-code/pull/9112) |
+
+<Callout type="info">
+  **업데이트 방법**: `npm i @qwen-code/qwen-code@latest -g`를 실행하면 최신 버전으로 업데이트할 수 있습니다.
+</Callout>
+
+문제나 제안이 있다면 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)로 알려 주세요!

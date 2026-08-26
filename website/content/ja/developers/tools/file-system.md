@@ -8,6 +8,8 @@ Qwen Code は、ローカルファイルシステムとやり取りするため�
 
 `list_directory` は、指定されたディレクトリパス内のファイルとサブディレクトリの名前を一覧表示します。提供された glob パターンに一致するエントリをオプションで無視できます。
 
+**注:** このツールはオプトインであり、デフォルトでは無効になっています。ほとんどの場合、`glob` でディレクトリの一覧表示がカバーされるためです。有効にするには、設定で `tools.listDirectory.enabled` を `true` に設定するか、`coreTools` 許可リスト（`--core-tools` / `tools.core`）に `list_directory` を明示的にリストしてください。
+
 - **ツール名:** `list_directory`
 - **表示名:** ListFiles
 - **ファイル:** `ls.ts`

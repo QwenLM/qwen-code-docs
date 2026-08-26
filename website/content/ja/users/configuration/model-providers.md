@@ -18,6 +18,43 @@ Qwen Code では、`settings.json` の `modelProviders` 設定を通じて複数
 >
 > **モデルの一意性:** 同じ `authType` 内のモデルは、`id` と `baseUrl` の組み合わせによって一意に識別されます。つまり、各エントリが異なる `baseUrl` を持っている限り（例えば、1つは OpenAI に直接、もう1つはプロキシエンドポイントを指すなど）、同じモデル ID（例: `"gpt-4o"`）を単一の `authType` 内で複数回定義できます。2つのエントリが同じ `id` と同じ `baseUrl` を共有する場合（または両方とも `baseUrl` を省略している場合）、最初に出現したものが優先され、その後の重複は警告とともにスキップされます。
 
+### 画像生成ルート
+
+組み込みの `image_gen` ツールでルートを使用できる場合、`supportsImageGeneration: true` を設定します。この機能は、`capabilities.vision` や `generationConfig.modalities.image` などの画像入力サポートとは独立しています。
+
+ルートが画像生成専用で、通常のモデルセレクターに表示しない場合は、`imageOnly: true` を使用します。後方互換性のため、`imageOnly: true` は画像生成機能も暗黙に持つため、既存の設定を移行する必要はありません。
+
+二重の役割を持つルートは、メインモデルとして、また `/model --image` 経由の両方で選択できます。
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "omni-model",
+        "envKey": "MODEL_API_KEY",
+        "baseUrl": "https://gateway.example.com/model-api",
+        "supportsImageGeneration": true
+      }
+    ]
+  }
+}
+```
+
+専用画像ルートは両方のフィールドを設定します。`imageOnly: true` のみのレガシー形式も引き続き有効です。
+
+```json
+{
+  "id": "image-model",
+  "envKey": "MODEL_API_KEY",
+  "baseUrl": "https://images.example.com/api/v1",
+  "supportsImageGeneration": true,
+  "imageOnly": true
+}
+```
+
+選択されたルートは、明示的な HTTPS `baseUrl` と空でない `envKey` を宣言する必要があります。画像生成はルートと同じエンドポイントと認証情報を使用します。チャットと画像生成で異なるエンドポイントや認証情報が必要な場合は、代わりに2つのルートを構成してください。
+
 ## 認証タイプ別の設定例
 
 以下は、利用可能なパラメータとその組み合わせを示す、さまざまな認証タイプの包括的な設定例です。
@@ -33,6 +70,9 @@ Qwen Code では、`settings.json` の `modelProviders` 設定を通じて複数
 | `gemini`     | Google Gemini API                                                                                                                               |
 | `qwen-oauth` | Qwen OAuth（ハードコードされており、`modelProviders` で上書きできません）                                                                       |
 | `vertex-ai`  | Google Vertex AI（Vertex AI モードで `gemini` プロトコルと `@google/genai` SDK を使用します。選択すると `GOOGLE_GENAI_USE_VERTEXAI=true` が設定されます） |
+
+> [!note]
+> Vertex AI エントリは**Application Default Credentials** で認証できます。`GOOGLE_CLOUD_PROJECT`（およびオプションで `GOOGLE_CLOUD_LOCATION`、デフォルトは `global`）を設定し、`envKey` を未設定のままにします。リゾルバーが読み取る他のすべてのキーソース（`GOOGLE_API_KEY`、`settings.security.auth.apiKey`、CLI のキーフラグ）も未設定にしてください。Vertex エントリに到達した API キー値は、Google SDK を Vertex Express モードに切り替えます。このモードでは、プロジェクト、ロケーション、ADC 認証情報は無視されます。`envKey` を宣言するエントリは ADC にルーティングされないため、注入に失敗したキーは、別のプリンシパルとしてサイレントに認証される代わりに、その変数で失敗し続けます。
 
 > [!warning]
 > 組み込みプロトコルでも `providerProtocol` 経由でマッピングされていないプロバイダー ID（例: `"openai-custom"` のようなタイプミス）はルーティングできないため、エントリ全体が警告とともに**スキップ**されます。モデルは `/model` ピッカーに表示されません。組み込みプロバイダーには上記のサポートされている認証タイプ値のいずれかを使用するか、カスタム ID には [`providerProtocol`](#カスタムプロバイダー-idproviderprotocol) マッピングを追加してください。
@@ -270,6 +310,7 @@ Qwen Code は、各プロバイダーへのリクエスト送信に以下の公�
         "baseUrl": "http://localhost:11434/v1",
         "generationConfig": {
           "timeout": 300000,
+          "streamIdleTimeoutMs": 600000,
           "maxRetries": 1,
           "contextWindowSize": 32768,
           "samplingParams": {
@@ -310,6 +351,8 @@ Qwen Code は、各プロバイダーへのリクエスト送信に以下の公�
   }
 }
 ```
+
+キューイングまたは遅いローカルの OpenAI 互換サーバーの場合、`streamIdleTimeoutMs` はこのモデルがストリーミングされたチャンク間で沈黙を保てる時間を制御します。選択されたプロバイダーエントリについて、グローバルの `QWEN_STREAM_IDLE_TIMEOUT_MS` 値をオーバーライドします。アイドルガードを無効にするには `0` に設定します。別の 15 分間のストリーム lifetime キャップは、`QWEN_STREAM_MAX_LIFETIME_MS` が引き上げられるか無効にされない限り引き続き適用されます。
 
 認証を必要としないローカルサーバーの場合、API キーには任意のプレースホルダー値を使用できます。
 
@@ -578,6 +621,7 @@ Coding Plan モデルを手動で構成したい場合は、他の OpenAI 互換
 
 | プロトコル / プロバイダー | 通信時の形状 | 備考 |
 | --- | --- | --- |
+| **OpenAI / DashScope**（`qwen3.8-max` ファミリー） | フラットな `reasoning_effort: <effort>` ボディパラメータ | 5 つの `/effort` ティア（`low`、`medium`、`high`、`xhigh`、`max`）は、`qwen3.8-max` で始まるモデル ID（日付付きスナップショットや `-latest` エイリアスを含む）に対してそのまま透過的に渡されます。DashScope がモデル固有のマッピングを適用します。`reasoning_effort` と `thinking_budget` が競合する場合、通常の `extra_body` > `samplingParams` > `reasoning` の優先順位により、より高優先度のフィールドのみが保持されます。明示的な同一レイヤーのペアは `reasoning_effort` を保持し、クロスレイヤー解決前のプロバイダーの動作と一致します。静的フィールドが優先された場合、`/effort` はリクエストされたティアが有効であることを示唆する代わりにそのフィールドを報告します。effort ティアが優先された場合、競合する `enable_thinking` も削除されます。`extra_body` 内の明示的な `enable_thinking: false` は、削除されるのではなく尊重されます。設定されたティアを `reasoning_effort: 'none'` としてオーバーライドし、`extra_body` がそのまま勝つ数少ない場所の 1 つです。他の Qwen モデルは、選択された effort を `enable_thinking: true` にマッピングし続けます。`reasoning_effort` のオーバーライドは、`thinking_budget` と競合しない限りそのまま渡されます（DashScope が拒否するペアであり、その場合、不活性な `reasoning_effort` が削除され、`enable_thinking` と `thinking_budget` の両方が保持されます）。 |
 | **OpenAI / DeepSeek** (`api.deepseek.com`) | フラットな `reasoning_effort: <effort>` ボディパラメータ | ネストされた設定形状で `reasoning.effort` が設定されている場合、フラットな `reasoning_effort` に書き換えられ、`'low'`/`'medium'` は `'high'` に、`'xhigh'` は `'max'` に正規化されます。これは DeepSeek の[サーバー側の後方互換性](https://api-docs.deepseek.com/zh-cn/api/create-chat-completion)を反映しています。トップレベルの `samplingParams.reasoning_effort` または `extra_body.reasoning_effort` のオーバーライドは、この正規化をスキップしてそのまま送信されます。 |
 | **OpenAI**（その他の互換サーバー） | `reasoning: { effort, ... }` がそのまま渡される | プロバイダーが異なる形状を期待している場合、`samplingParams` 経由で設定します（例: GPT-5/o シリーズの場合は `samplingParams.reasoning_effort`）。 |
 | **Anthropic**（実際の `api.anthropic.com`） | `output_config: { effort }` と `effort-2025-11-24` ベータヘッダー | 実際の Anthropic は `'low'`/`'medium'`/`'high'` のみを受け付けます。`'max'` は `debugLogger.warn` のログ（ジェネレーターごとに1回）と共に **`'high'` にクランプ**されます。最大限の effort を得たい場合は、baseURL をそれをサポートする DeepSeek 互換エンドポイントに切り替えてください。 |
@@ -590,11 +634,15 @@ Coding Plan モデルを手動で構成したい場合は、他の OpenAI 互換
 
 `api.deepseek.com` の baseURL では、OpenAI パイプラインは DeepSeek V4+ が要求する明示的な `thinking: { type: 'disabled' }` フィールドを出力します。サーバー側のデフォルトは `'enabled'` であるため、単に `reasoning_effort` を省略するだけでは思考のレイテンシ/コストが発生してしまいます。セルフホストの DeepSeek バックエンド（sglang/vllm）やその他の OpenAI 互換サーバーは、このフィールドを受け取り**ません**。それらで思考を無効にする必要がある場合は、`samplingParams`/`extra_body` 経由で `thinking: { type: 'disabled' }`（または推論フレームワークが公開している任意の設定値）を注入してください。
 
+`openrouter.ai` の baseURL では、OpenAI パイプラインは reasoning が無効な場合に OpenRouter のプロバイダーレベルの `reasoning: { enabled: false }` フィールドを出力します。他の OpenAI 互換サーバーはこの OpenRouter 固有のフィールドを受け取りません。それらのネイティブな無効化ノブには `samplingParams`/`extra_body` を使用してください。
+
 ### `samplingParams` との相互作用（OpenAI 互換のみ）
 
 > [!warning]
 >
 > OpenAI 互換プロバイダーで `generationConfig.samplingParams` が設定されている場合、パイプラインはそれらのキーを**そのまま**通信時に送信し、個別の `reasoning` の注入を完全にスキップします。したがって、`{ samplingParams: { temperature: 0.5 }, reasoning: { effort: 'max' } }` のような設定では、OpenAI/DeepSeek リクエストにおいて reasoning フィールドが暗黙に破棄されます。
+>
+> DashScope Qwen モデルは例外です。プロバイダーは `reasoning` を直接読み取り、`reasoning_effort` または `enable_thinking` にマッピングします。qwen3.8-max ファミリーでは、ワイヤーパラメータが競合する場合、プロバイダー固有の `samplingParams` フィールドが引き続き優先されます。古い qwen ハイブリッドでは、設定された effort ティアは `enable_thinking: true` に折りたたまれ、`samplingParams.enable_thinking` の値をオーバーライドします。
 >
 > `samplingParams` を設定する場合は、その中に直接 reasoning の設定を含めてください。DeepSeek の場合は `samplingParams.reasoning_effort`、GPT-5/o シリーズの場合は `samplingParams.reasoning_effort`（フラットなフィールド）または `samplingParams.reasoning`（ネストされたオブジェクト）です。OpenRouter やその他のプロバイダーではフィールド名が異なる場合があります。プロバイダーのドキュメントを参照してください。
 >

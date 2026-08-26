@@ -85,8 +85,8 @@ Daemon 的故障模式故意设计为封闭联合类型（closed unions），以
 | `blocked_egress`                | 出站网络探测失败。                           |
 | `auth_env_error`                | 与认证相关的环境变量、提供者或信任门配置无效。 |
 | `init_timeout`                  | Daemon 端初始化步骤超过墙钟时间。            |
-| `protocol_error`                | ACP / HTTP 协议不匹配。                      |
 | `restore_timeout`               | ACP 会话 load/resume 超过了其专用的 restore 预算。 |
+| `protocol_error`                | ACP / HTTP 协议不匹配。                      |
 | `missing_file`                  | 所需的本地文件缺失。                         |
 | `parse_error`                   | 本地文件或请求解析错误。                     |
 | `stat_failed`                   | 本地文件系统状态查询失败。                    |
@@ -105,7 +105,7 @@ Daemon 的故障模式故意设计为封闭联合类型（closed unions），以
 | ---- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `401` | `{ error: 'Unauthorized' }`                     | 缺少/错误/无 scheme 的 bearer token。在 `缺少头部` / `错误 scheme` / `错误 token` 情况下统一返回，使探测无法区分。                    |
 | `401` | `{ error: '...', code: 'token_required' }`      | 在无 token 的 loopback daemon 上，突变门控严格路由。SDK 渲染 "configure --token / --require-auth" 提示。                  |
-| `403` | `{ error: 'Request denied by CORS policy' }`    | `denyBrowserOriginCors` 拒绝了包含 `Origin` 的请求。                                                                                     |
+| `403` | `{ error: 'Request denied by CORS policy' }`    | `allowOriginCors`（运行时）/ `denyBrowserOriginCors`（引导）拒绝了包含 `Origin` 的请求。                                                                             |
 | `403` | `{ error: 'Invalid Host header' }`              | `hostAllowlist` 拒绝了 `Host` 头部（DNS 重绑定防御）。                                                                                   |
 
 详见 [`12-auth-security.md`](./12-auth-security.md) 了解完整认证模型。

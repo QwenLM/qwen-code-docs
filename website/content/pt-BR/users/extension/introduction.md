@@ -155,6 +155,10 @@ Apenas pacotes com escopo (`@escopo/nome-pacote`) são suportados para evitar am
 
 #### De um repositório Git
 
+Git 2.37 ou mais recente é necessário para fontes com credenciais, não-GitHub, marketplace aninhado, submódulos e Git LFS, pois o Qwen Code usa `http.curloptResolve` para fixar conexões Git em resultados de DNS validados. Em versões mais antigas do Git, o Qwen Code suporta apenas repositórios raiz públicos e anônimos `https://github.com/{owner}/{repo}[.git]`, resolvendo o ref solicitado para um commit e baixando o arquivo fonte do GitHub com as mesmas verificações de rede pública e segurança de arquivo.
+
+Como o fallback para Git antigo instala a partir de um arquivo fonte em vez de um clone, ele não pode instalar repositórios que dependem de symlinks, submódulos ou Git LFS, e limita downloads a 100 MiB comprimidos e arquivos a 100.000 entradas / 1 GiB expandidos. Instalações baseadas em release ainda são preferíveis quando um repositório publica releases.
+
 ```bash
 qwen extensions install https://github.com/github/github-mcp-server
 ```

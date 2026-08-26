@@ -171,6 +171,18 @@ Vous pouvez envoyer des photos et des documents au bot, pas seulement du texte.
 
 **Fichiers :** Envoyez un PDF, un fichier de code ou tout autre document. Le bot le télécharge depuis les serveurs DingTalk et le sauvegarde localement afin que l'agent puisse le lire avec ses outils de fichiers. Les fichiers audio et vidéo sont également pris en charge. Cela fonctionne avec n'importe quel modèle.
 
+## Messages transférés (historiques de conversation)
+
+Vous pouvez transférer en fusionné une série de messages depuis une autre conversation vers le bot (transfert groupé de DingTalk), soit comme message à part entière, soit comme message auquel vous répondez. Le bot développe l'historique en texte pour l'agent : le titre et le résumé de l'historique deviennent une ligne d'en-tête, et chaque message transféré est listé sous `[Chat record messages]` au format `Sender: message`. Un message transféré dont le corps n'est pas du texte est affiché sous forme de placeholder — `[image]`, `[file: <name>]`, `[audio]`, `[video]`.
+
+Les historiques longs sont **plafonnés, et le plafond est annoncé** : au maximum 50 messages, au maximum 4000 caractères au total, et au maximum 500 caractères par message. Tout ce qui est coupé est signalé à l'agent dans le même texte — une ligne finale `[N more message(s) not shown]` pour les messages supprimés, et un marqueur ` [truncated]` sur chaque message qui a été raccourci. L'agent sait donc qu'il répond sur la base d'un historique partiel ; si vous avez besoin de l'intégralité, transférez-le en plus petits lots.
+
+Un historique auquel vous **répondez** est cité plutôt qu'envoyé, et le texte cité est plafonné à 500 caractères sur tous les canaux — l'historique est donc rendu dans ce budget de 500 caractères au lieu de celui de 4000 caractères, et les mêmes annonces s'appliquent. Attendez-vous à ce qu'un historique cité contienne son en-tête et le premier message ou les deux premiers ; transférez-le comme message à part entière pour donner l'intégralité à l'agent.
+
+Comme un historique transféré est rédigé par d'autres personnes que vous, tout ce qui en est extrait — titres, noms d'expéditeurs, corps des messages — est neutralisé avant d'atteindre l'agent, donc un message transféré ne peut pas se faire passer pour une instruction adressée au bot.
+
+La mise en page multi-lignes ci-dessus est ce que l'agent voit dans un chat 1:1. Dans un groupe, l'ensemble du message est neutralisé une deuxième fois avant d'atteindre l'agent, qui le replie sur une seule ligne et supprime les crochets autour des marqueurs ; le contenu et les annonces de plafond sont identiques dans les deux cas.
+
 ## Principales différences avec Telegram
 
 - **Authentification :** AppKey + AppSecret au lieu d'un jeton de bot statique. Le SDK gère automatiquement le rafraîchissement du jeton d'accès.
@@ -184,7 +196,7 @@ Vous pouvez envoyer des photos et des documents au bot, pas seulement du texte.
 
 - **Utilisez des instructions adaptées au markdown DingTalk** — DingTalk prend en charge les en-têtes, le texte en gras, les liens, les blocs de code et les tableaux. Gardez les tableaux compacts car les écrans étroits peuvent défiler horizontalement.
 - **Restreignez l'accès** — Dans un contexte organisationnel, `senderPolicy: "open"` peut être acceptable. Pour un contrôle plus strict, utilisez `"allowlist"` ou `"pairing"`. Consultez [Appairage DM](./overview#dm-pairing) pour plus de détails.
-- **Messages cités** — Citer (répondre à) un message utilisateur inclut le texte cité comme contexte pour l'agent. Citer les réponses du bot n'est pas encore pris en charge.
+- **Messages cités** — Citer (répondre à) un message utilisateur inclut le texte cité comme contexte pour l'agent. Si le message cité est une image, un fichier, un audio ou une vidéo, le bot le télécharge et le joint de la même manière que lorsqu'il est envoyé directement. Citer les réponses du bot n'est pas encore pris en charge.
 
 ## Dépannage
 

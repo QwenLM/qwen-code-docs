@@ -133,9 +133,9 @@ Verwende die Fortsetzung für verwandte Folgeaufgaben. Starte einen neuen Agente
 
 ## Arbeitsverzeichnis von Agenten
 
-Für einen benannten regulären Subagenten pinnt `working_dir` den Agenten an einen vorhandenen Git-Worktree im aktuellen Repository. Relative Pfade werden vom aktuellen Verzeichnis aufgelöst, und der Worktree muss bereits bei git registriert sein und sich innerhalb des Repositorys befinden.
+Für einen benannten regulären Subagenten pinnt `working_dir` den Agenten an einen vorhandenen Git-Worktree des aktuellen Repositorys. Relative Pfade werden vom aktuellen Verzeichnis aufgelöst, und der Worktree muss bereits bei git als verlinkter Worktree dieses Repositorys registriert sein.
 
-Ein `working_dir`-Start läuft im Vordergrund, da Qwen Code den Lebenszyklus dieses Worktrees nicht besitzt. Er kann nicht mit `subagent_type: "fork"` oder Hintergrundausführung kombiniert werden. Wenn sowohl `working_dir` als auch `isolation: "worktree"` angegeben werden, verwendet Qwen Code den vom Aufrufer possessierten Worktree wieder, anstatt einen weiteren zu erstellen.
+`working_dir` kann nicht mit `subagent_type: "fork"` kombiniert werden. Ein unbenannter Caller-eigener `working_dir`-Start läuft im Vordergrund, weil Qwen Code den Lebenszyklus dieses Worktrees nicht besitzt: ein explizites `run_in_background: true` wird abgelehnt, während ein konfigurierter Hintergrund-Standard (`background: true` in einer Subagent-Definition) auf Top-Level abgelehnt und bei Verschachtelung in den Vordergrund herabgestuft wird. Wenn sowohl `working_dir` als auch `isolation: "worktree"` angegeben werden, verwendet Qwen Code den vom Aufrufer besessenen Worktree wieder, anstatt einen weiteren zu erstellen. Workflow-Skripte sind absichtlich strenger: Ein Workflow-`agent()`-Aufruf, der sowohl `workingDir` als auch `isolation` erhält, wird abgelehnt, anstatt mit ignoriertem `isolation` ausgeführt zu werden.
 
 ## Erste Schritte
 
@@ -337,7 +337,7 @@ tools:
   - read_file
   - grep_search
   - glob
-  - list_directory
+  - web_fetch
 ---
 ```
 

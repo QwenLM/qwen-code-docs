@@ -155,6 +155,10 @@ Seuls les packages scoped (`@scope/package-name`) sont pris en charge pour évit
 
 #### Depuis un dépôt Git
 
+Git 2.37 ou plus récent est requis pour les sources avec identifiants, non-GitHub, les marketplaces imbriqués, les sous-modules et les sources Git LFS, car Qwen Code utilise `http.curloptResolve` pour épingler les connexions Git sur des résultats DNS validés. Avec les versions antérieures de Git, Qwen Code prend uniquement en charge les dépôts racine publics et anonymes `https://github.com/{owner}/{repo}[.git]` en résolvant la référence demandée en commit et en téléchargeant l'archive source de GitHub avec les mêmes vérifications de sécurité réseau et d'archive.
+
+Comme le fallback pour les versions anciennes de Git installe depuis une archive source plutôt que depuis un clone, il ne peut pas installer les dépôts qui reposent sur des liens symboliques, des sous-modules ou Git LFS, et il limite les téléchargements à 100 Mio compressés et les archives à 100 000 entrées / 1 Gio décompressées. Les installations basées sur les releases restent préférables lorsqu'un dépôt publie des releases.
+
 ```bash
 qwen extensions install https://github.com/github/github-mcp-server
 ```

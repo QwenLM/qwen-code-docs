@@ -135,7 +135,7 @@ Fork 자식은 추가 서브에이전트를 생성할 수 없습니다. 런타�
 
 이름 지정 일반 서브에이전트의 경우, `working_dir`는 에이전트를 현재 저장소의 기존 git worktree에 고정합니다. 상대 경로는 현재 디렉토리에서 해석되며, worktree는 이미 git에 등록되어 있어야 하고 저장소 내부에 있어야 합니다.
 
-`working_dir` 실행은 포그라운드에서 실행됩니다. Qwen Code가 해당 worktree의 라이프사이클을 소유하지 않기 때문입니다. `subagent_type: "fork"` 또는 백그라운드 실행과 함께 사용할 수 없습니다. `working_dir`와 `isolation: "worktree"`가 모두 제공되면, Qwen Code는 새 worktree를 생성하는 대신 호출자 소유 worktree를 재사용합니다.
+`working_dir`는 `subagent_type: "fork"`와 함께 사용할 수 없습니다. 이름 없는 호출자 소유 `working_dir` 실행은 포그라운드에서 실행됩니다. Qwen Code가 해당 worktree의 라이프사이클을 소유하지 않기 때문입니다. 명시적 `run_in_background: true` 요청은 거부되며, 구성된 백그라운드 기본값(서브에이전트 정의의 `background: true`)은 최상위 수준에서 거부되고 중첩되면 포그라운드로 다운그레이드됩니다. `working_dir`와 `isolation: "worktree"`가 모두 제공되면, Qwen Code는 새 worktree를 생성하는 대신 호출자 소유 worktree를 재사용합니다. 워크플로우 스크립트는 의도적으로 더 엄격합니다: `workingDir`와 `isolation`을 모두 받는 워크플로우 `agent()` 호출은 `isolation`이 무시된 채 실행되는 대신 거부됩니다.
 
 ## 시작하기
 
@@ -337,7 +337,7 @@ tools:
   - read_file
   - grep_search
   - glob
-  - list_directory
+  - web_fetch
 ---
 ```
 
@@ -477,7 +477,7 @@ You are a testing specialist focused on creating high-quality, maintainable test
 
 Your expertise includes:
 
-- Unit testing with appropriate mocking
+- Unit testing with appropriate mocking and isolation
 - Integration testing for component interactions
 - Test-driven development practices
 - Edge case identification and comprehensive coverage

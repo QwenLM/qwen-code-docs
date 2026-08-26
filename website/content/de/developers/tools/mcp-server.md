@@ -116,17 +116,18 @@ Jede Serverkonfiguration unterstützt die folgenden Eigenschaften:
 - **`env`** (object): Umgebungsvariablen für den Serverprozess. Werte können Umgebungsvariablen mit der Syntax `$VAR_NAME` oder `${VAR_NAME}` referenzieren
 - **`cwd`** (string): Arbeitsverzeichnis für den Stdio-Transport
 - **`timeout`** (number): Request-Timeout in Millisekunden (Standard: 600.000 ms = 10 Minuten)
+- **`versionNegotiation`** (`"auto" | "legacy"`, Standard: `"legacy"`): Für Stdio-Server aktiviert `"auto"` den `server/discover`-Probe auf einem kurzlebigen Geschwisterprozess.
 - **`trust`** (boolean): Wenn `true`, werden Tool-Aufruf-Bestätigungen für diesen Server in einem vertrauenswürdigen Workspace umgangen (Standard: `false`)
 - **`includeTools`** (string[]): Liste von Toolnamen, die von diesem MCP-Server eingeschlossen werden sollen. Wenn angegeben, sind nur die hier aufgeführten Tools von diesem Server verfügbar (Allowlist-Verhalten). Wenn nicht angegeben, sind standardmäßig alle Tools vom Server aktiviert.
 - **`excludeTools`** (string[]): Liste von Toolnamen, die von diesem MCP-Server ausgeschlossen werden sollen. Die hier aufgeführten Tools sind für das Modell nicht verfügbar, selbst wenn sie vom Server bereitgestellt werden. **Hinweis:** `excludeTools` hat Vorrang vor `includeTools` – wenn ein Tool in beiden Listen steht, wird es ausgeschlossen.
 - **`targetAudience`** (string): Die OAuth-Client-ID, die in der Whitelist der IAP-geschützten Anwendung steht, auf die Sie zugreifen möchten. Wird mit `authProviderType: 'service_account_impersonation'` verwendet.
 - **`targetServiceAccount`** (string): Die E-Mail-Adresse des Google Cloud-Dienstkontos, das Sie impersonieren möchten. Wird mit `authProviderType: 'service_account_impersonation'` verwendet.
 
-## OAuth-Unterstützung für entfernte MCP-Server
+### OAuth-Unterstützung für entfernte MCP-Server
 
 Qwen Code unterstützt OAuth 2.0-Authentifizierung für entfernte MCP-Server unter Verwendung von SSE- oder HTTP-Transports. Dies ermöglicht den sicheren Zugriff auf MCP-Server, die eine Authentifizierung erfordern.
 
-### Automatische OAuth-Erkennung
+#### Automatische OAuth-Erkennung
 
 Für Server, die die OAuth-Erkennung unterstützen, können Sie die OAuth-Konfiguration weglassen und die CLI die automatische Erkennung durchführen lassen:
 
@@ -147,7 +148,7 @@ Die CLI wird automatisch:
 - Dynamische Client-Registrierung durchführen, falls unterstützt
 - Den OAuth-Ablauf und die Token-Verwaltung übernehmen
 
-### Authentifizierungsablauf
+#### Authentifizierungsablauf
 
 Bei der Verbindung zu einem OAuth-fähigen Server:
 
@@ -158,7 +159,7 @@ Bei der Verbindung zu einem OAuth-fähigen Server:
 5. **Tokens werden sicher** für die zukünftige Verwendung gespeichert
 6. **Wiederholung der Verbindung** gelingt mit gültigen Tokens
 
-### Browser-Weiterleitungsanforderungen
+#### Browser-Weiterleitungsanforderungen
 
 **Wichtig:** Die OAuth-Authentifizierung erfordert, dass die Redirect-URI erreichbar ist:
 
@@ -183,7 +184,7 @@ OAuth funktioniert nicht in:
 - Headless-Umgebungen ohne Browserzugriff
 - Umgebungen, in denen die konfigurierte `redirectUri` vom Browser des Benutzers nicht erreichbar ist
 
-### Verwalten der OAuth-Authentifizierung
+#### Verwalten der OAuth-Authentifizierung
 
 Verwenden Sie den `/mcp`-Dialog innerhalb einer interaktiven Qwen Code-Sitzung, um MCP-Server zu überprüfen und die OAuth-Authentifizierung zu verwalten.
 

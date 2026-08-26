@@ -72,7 +72,7 @@ qwen
   - **Coding Plan**: 個人開発者向けで、週ごとの利用枠と多様なモデルオプションが含まれています。設定手順については [Coding Plan ガイド](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index)（[intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)）を参照してください。
   - **Token Plan**: 専用エンドポイントを使用した従量課金制で、チームや企業向けです。
   - **Standard API Key**: 既存の Alibaba Cloud ModelStudio（[Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)）の API キーを接続します。詳細は API 設定ガイド（[Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)）を参照してください。
-- **Third-party Providers** — 内蔵プロバイダー（DeepSeek、MiniMax、Z.AI、ModelScope、OpenRouter、Requesty など）を選択し、API キーで接続します。
+- **Third-party Providers** — 内蔵プロバイダー（DeepSeek、Grok、MiniMax、Z.AI、Kimi、Idealab、ModelScope、OpenRouter、Requesty など）を選択し、API キーで接続します。
 - **Custom Provider** — ローカルサーバー、プロキシ、またはサポートされていないプロバイダーを手動で接続します。
 
 > ⚠️ **注意**: Qwen OAuth は2026年4月15日に廃止されました。以前 Qwen OAuth を使用していた場合は、上記のいずれかの方法に切り替えてください。

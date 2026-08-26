@@ -182,7 +182,7 @@ Das `agent`-Werkzeug akzeptiert einen optionalen Parameter `isolation: "worktree
 Zwei Einschränkungen:
 
 - `isolation: "worktree"` erfordert einen Nicht-Fork-`subagent_type` – geforkte Sub-Agenten (`subagent_type: "fork"`) übernehmen den vollständigen Gesprächskontext des Elternteils, daher würde ihre Isolation Absicht und Arbeitsbaum trennen.
-- Agenten mit `isolation: "worktree"` folgen dem Standard-Hintergrundverhalten; die Bereinigung läuft, wenn der Agent seinen Abschluss meldet. Setzen Sie `run_in_background: false` für ein Inline-Ergebnis. Caller-eigene `working_dir`-Starts bleiben standardmäßig im Vordergrund, da ihr Lebenszyklus extern verwaltet wird.
+- Agenten mit `isolation: "worktree"` folgen dem Standard-Hintergrundverhalten; die Bereinigung läuft, wenn der Agent seinen Abschluss meldet. Setzen Sie `run_in_background: false` für ein Inline-Ergebnis. Unbenannte Caller-eigene `working_dir`-Starts laufen im Vordergrund; explizite Hintergrundausführung wird abgelehnt, während konfigurierte Hintergrundausführung (`background: true` in einer Subagent-Definition) auf Top-Level abgelehnt und bei Verschachtelung in einen Vordergrundlauf herabgestuft wird, da ihr Lebenszyklus extern verwaltet wird.
 
 ### Automatische Bereinigung veralteter Einträge
 

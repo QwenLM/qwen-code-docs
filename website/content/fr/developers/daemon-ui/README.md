@@ -325,7 +325,7 @@ Le SDK a une heuristique de repli de nommage `mcp__<server>__<tool>` — même l
 
 ## Catégorisation des raisons de débogage
 
-`DaemonUiStatusEvent.debugReason` est une énumération fermée que le normalisateur appose lorsqu'il projette un bloc `debug` au lieu d'un événement typé (reflétée sur `DaemonStatusTranscriptBlock` pour les consommateurs de transcription) :
+`DaemonUiStatusEvent.debugReason` est une énumération fermée que le normalisateur appose lorsqu'il projette un événement `debug` au lieu d'un événement typé :
 
 ```ts
 import type { DaemonUiDebugReason } from '@qwen-code/sdk/daemon';
@@ -334,7 +334,9 @@ import type { DaemonUiDebugReason } from '@qwen-code/sdk/daemon';
 
 La liste canonique est exportée sous `DAEMON_UI_DEBUG_REASONS`. Les noms de raisons sont des catégories avec wildcard : `unrecognized_*` signifie que le démon a envoyé une frame pour laquelle cette version du SDK n'a pas de cas — du bruit de compatibilité future, des diagnostics développeur plutôt que du contenu de conversation. `malformed_*` signifie qu'une frame que le SDK _connaît_ est arrivée avec une charge utile inutilisable — un vrai signal de défaut.
 
-Les moteurs de rendu doivent bifurquer sur `debugReason`, pas sur le texte de débogage — le préfixe de texte est une formulation diagnostique qui change sans préavis :
+**Le routage diffère par catégorie.** Les diagnostics `unrecognized_*` sont routés vers le sidechannel borné `unrecognizedDiagnostics` et n'entrent jamais dans `blocks[]` (ils ne peuvent donc pas finaliser un bloc assistant/réflexion en flux ni consommer le budget `maxBlocks`). Lisez-les avec `selectUnrecognizedDiagnostics` ; la limite est `UNRECOGNIZED_DIAGNOSTICS_LIMIT` et le sous-ensemble routé est `DAEMON_UI_UNRECOGNIZED_DIAGNOSTIC_REASONS`. Les diagnostics `malformed_*` — et les blocs legacy persistés avant cette séparation — restent dans la transcription en tant que `DaemonStatusTranscriptBlock`s, donc la gestion de `debugReason` au niveau bloc ne s'applique désormais qu'à ceux-ci.
+
+Les moteurs de rendu filtrant les blocs doivent bifurquer sur `debugReason`, pas sur le texte de débogage — le préfixe de texte est une formulation diagnostique qui change sans préavis :
 
 ```ts
 function hideDebugBlock(reason?: DaemonUiDebugReason): boolean {
@@ -353,7 +355,7 @@ Les événements `status` ne portent jamais de `debugReason`, pas plus que les �
 
 Chaque couche du SDK UI démon suit le **principe de compatibilité future** : les valeurs inconnues NE lèvent PAS d'exception ; elles dégradent gracieusement.
 
-- Types d'événements démon inconnus → événement `debug` avec le nom du type brut, estampillé d'un `debugReason` `unrecognized_*` (voir ci-dessus)
+- Types d'événements démon inconnus → événement `debug` avec le nom du type brut, estampillé d'un `debugReason` `unrecognized_*` et routé vers le sidechannel borné `unrecognizedDiagnostics` (voir ci-dessus)
 - Statut d'outil inconnu → `currentToolCallId` laissé inchangé (pas d'effacement)
 - Type d'erreur inconnu → `errorKind` undefined (le moteur de rendu se replie sur le texte)
 - serverTimestamp manquant → repli sur `clientReceivedAt`

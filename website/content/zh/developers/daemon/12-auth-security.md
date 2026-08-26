@@ -6,8 +6,8 @@
 
 1. **绑定（Bind）** — 非回环绑定且没有 bearer 令牌时 **拒绝启动**。
 2. **Bearer 认证** — `bearerAuth` 中间件使用常量时间 SHA-256 比较保护除回环上 `/health` 之外的所有路由（`require_auth` 会将其扩展到回环和 `/health`）。
-3. **主机头允许列表** — 在回环上，只接受 `localhost`、`127.0.0.1`、`[::1]`、`host.docker.internal`（加端口号）；防止 DNS 重绑定攻击。
-4. **来源控制** — 默认情况下，任何携带 `Origin` 头的请求都会被拒绝并返回 403。当配置了 `--allow-origin <pattern>` 时，守护进程会切换到 CORS 允许列表模式（`allowOriginCors`），只允许匹配的来源。
+3. **主机头允许列表** — 在回环上，只接受 `localhost`、`127.0.0.1`、`[::1]`、`host.docker.internal`（加端口号）；防止 DNS 重绑定攻击。Local Control LAN 监听器是例外，它始终强制执行其通告权限的 Host 检查，无论主绑定是什么。
+4. **来源控制** — 运行时应用始终安装 `allowOriginCors`，基于可变允许列表（`MutableOriginAllowlist`）：`--allow-origin <pattern>` 条目作为种子，Local Control 在启用时添加 LAN 来源。不匹配的来源收到 403 拒绝信封。无条件拒绝墙（`denyBrowserOriginCors`）仅保留在运行时启动之前回答请求的引导应用中。
 5. **逐路由变更门控** — Wave 4 的变更路由可以选择即使在回环上也返回 `401` 响应（当未配置令牌时），使用独特的 `code: 'token_required'` 错误。
 6. **设备流认证** — 为提供商提供独立的 OAuth 表面（`POST /workspace/auth/device-flow` + GET/DELETE 于 `/:id`）。
 
@@ -55,11 +55,8 @@ if (parsed.allowAny && !token) {
 ```mermaid
 flowchart LR
     REQ[请求] --> SO["剥离同源 Origin<br/>(Web Shell 支持)"]
-    SO --> CORS{"--allow-origin?"}
-    CORS -->|yes| AO["allowOriginCors<br/>(允许列表匹配)"]
-    CORS -->|no| DC["denyBrowserOriginCors<br/>(拒绝所有 Origin)"]
+    SO --> AO["allowOriginCors<br/>(可变允许列表: --allow-origin<br/>patterns + Local Control LAN 来源)"]
     AO --> HA["hostAllowlist"]
-    DC --> HA
     HA --> LOG["访问日志中间件<br/>(DaemonLogger)"]
     LOG --> BA["bearerAuth"]
     BA --> RL["限流中间件<br/>(启用时)"]
@@ -73,7 +70,7 @@ flowchart LR
 
 ### `bearerAuth`
 
-- **未配置令牌** → 中间件是无操作（回环开发者默认配置）。
+- **未配置令牌** → 中间件是无操作（回环开发者默认配置）。例外：Local Control **LAN 监听器**是监听器作用域的，始终需要其配对凭证（`CredentialStore.isOpen` 对 `local-control` 永远不为 true），因此即使在无令牌的守护进程上也不会开放。
 - **配置了令牌** → 在构造时对配置的令牌进行一次 SHA-256 哈希；在每个请求上对候选令牌进行哈希并与 `timingSafeEqual` 比较。没有字符串相等短路；没有时间泄露。
 - **方案解析**：根据 RFC 7235 §2.1，不区分大小写地解析 `Bearer`；根据 RFC 7230 §3.2.6 BWS，容忍方案与凭证之间的 `SP\tHTAB`；拒绝纯 `HTAB` 作为分隔符。
 - **CodeQL 加固**：手工编写的 `indexOf` 解析，而不是使用带有 `\s+` / `.+` 重叠的正则表达式（无多项式正则风险）。
@@ -87,17 +84,17 @@ flowchart LR
 
 主机比较是**不区分大小写**的——Express 会标准化头名称但不会标准化值，因此 Docker 代理将 Host 大写（如 `Localhost:4170`、`HOST.docker.internal`）时，如果使用精确字符串比较会返回 403。
 
-非回环绑定会绕过此中间件（操作员选择了暴露面；bearer 令牌会阻止主机伪造）。
+非回环绑定会绕过主闸门（操作员选择了暴露面；bearer 令牌会阻止主机伪造）。Local Control LAN 监听器是例外：它始终强制执行其通告权限的 Host 检查，无论主绑定是什么。
 
-### `denyBrowserOriginCors`
+### `denyBrowserOriginCors`（仅引导应用）
 
-拒绝任何带有 `Origin` 头的请求。CLI/SDK 从不设置 Origin；只有浏览器会设置。返回确定性的 `403 { error: 'Request denied by CORS policy' }`，而不是 `cors` 包的 error-callback 会产生的 500 HTML。
+拒绝任何带有 `Origin` 头的请求。CLI/SDK 从不设置 Origin；只有浏览器会设置。返回确定性的 `403 { error: 'Request denied by CORS policy' }`，而不是 `cors` 包的 error-callback 会产生的 500 HTML。运行时应用不再安装此墙 — 它运行 `allowOriginCors`，基于可变允许列表（见下文）；拒绝行为作为未匹配来源分支保留在那里。此墙保留在引导应用（run-qwen-serve.ts）中，在运行时启动之前服务请求。
 
 例外：Web Shell 在**回环**绑定上的同源 XHR 由单独的中间件（在 `server/self-origin.ts` 中）处理，该中间件在 `Origin` 与回环自身来源（`127.0.0.1`、`localhost`、`[::1]`、`host.docker.internal`）之一匹配时将其剥离。在非回环绑定上，Shell 的 XHR 携带不匹配的 `Origin`，需要为守护进程来源配置 `--allow-origin`。
 
-### `allowOriginCors`（`--allow-origin` 模式）
+### `allowOriginCors`（运行时应用，始终安装）
 
-当配置了 `--allow-origin <pattern>` 时，`denyBrowserOriginCors` 被替换为 `allowOriginCors(parsedPatterns)`：
+运行时应用无条件安装 `allowOriginCors(originAllowlist)`；允许列表是一个 `MutableOriginAllowlist`，由 `--allow-origin <pattern>` 条目（可能为空）作为种子，并在 Local Control 启用时在运行时扩展（LAN 来源随监听器添加/移除）：
 
 - 匹配的 `Origin` 值会收到 `Access-Control-Allow-Origin`、`Access-Control-Allow-Headers` 和 `Access-Control-Allow-Methods`；`OPTIONS` 预检返回 `204`。
 - 不匹配的 `Origin` 值会收到与拒绝模式相同的确定性 `403 { error: 'Request denied by CORS policy' }`。
@@ -114,10 +111,12 @@ flowchart LR
 | `requireAuth=true`     | 任意             | 透传¹                          |
 | 配置了 `token`         | 任意             | 透传²                          |
 | 无令牌（回环开发）     | `strict: false`  | 透传                           |
-| 无令牌（回环开发）     | `strict: true`   | `401 { code: 'token_required' }` |
+| 无令牌（回环开发）     | `strict: true`，未认证 | `401 { code: 'token_required' }` |
+| 无令牌（回环开发）     | `strict: true`，已认证³ | 透传                          |
 
 ¹ `--require-auth` 仅在配置令牌时启动，因此全局的 `bearerAuth` 已经对未认证的调用方返回了 401。
 ² 任何令牌配置都会使全局的 `bearerAuth` 强制要求所有地方都携带 bearer；该门控是多余的但无害。
+³ 通过监听器作用域的凭证认证：Local Control LAN 监听器即使在无令牌的守护进程上也会验证其配对凭证，并将请求标记为已认证，因此严格路由对配对的 LAN 客户端通过。
 
 `code: 'token_required'` 的形式与 `bearerAuth` 的纯 `Unauthorized` 不同，因此 SDK 客户端可以渲染"配置 --token / --require-auth"提示，而不是通用的 401。
 
@@ -254,7 +253,7 @@ sequenceDiagram
 
 - **`--require-auth` 遮蔽了特性预检。** 未认证的客户端无法发现 `require_auth` 标签；它们的发现面就是 401 响应体本身。
 - **变更门控的 body 解析顺序**：`mutationGate({strict: true})` 的 401 响应在 `express.json()` 解析 body **之后** 触发。在饱和的回环监听器上的最坏情况：`--max-connections × express.json({limit: '10mb'})` ≈ 2.5 GB 瞬时内存。这是故意接受的仅回环攻击面。
-- **同源 Origin 剥离** 在 `server.ts` 中发生在 `denyBrowserOriginCors` _之前_。如果未来的改动将剥离移到其他地方，Web Shell 将失效。
+- **同源 Origin 剥离** 在 `server.ts` 中发生在 `allowOriginCors` _之前_。如果未来的改动将剥离移到其他地方，Web Shell 将失效。
 - **令牌比较是基于 SHA-256 摘要**，而不是原始令牌。通过将可变长度的令牌比较缩减为固定大小的摘要比较，减少了时间泄露。
 - 守护进程目前**不**支持 mTLS、请求签名或配对令牌持有证明。`--rate-limit` 提供基于 client-id / IP 键的 HTTP 限流；它不是客户端身份认证。
 

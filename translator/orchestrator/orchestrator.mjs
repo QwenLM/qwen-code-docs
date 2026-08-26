@@ -21,6 +21,7 @@
  *   translate --lang L     dispatch a qwen -p agent for a backlog batch
  *   verify    --lang L     structural gate over the dispatched manifest
  *   advance   --lang L     verify + record hashes of passing files
+ *   quarantine             resolve failed translations against HEAD
  *
  * Flags (all optional): --repo --branch --docs-path --content-dir
  *   --baseline --temp-dir --langs csv --limit N --manifest --model
@@ -587,27 +588,20 @@ function frontmatterYamlish(text) {
   return false; // no closing delimiter
 }
 
-/**
- * The hard structural problems with a translated document, judged purely on
- * its own bytes against the EN source: emptiness, code-fence parity, and
- * frontmatter shape. Deliberately excludes the mtime gate ("touched this
- * session") and the link-count WARN — those describe how a file was
- * produced, not whether the document itself is structurally sound.
- *
- * Split out of verifyFile so `quarantine` can ask the same question about a
- * candidate it did not just translate — specifically about the copy in HEAD.
- */
-function structuralProblems(en, tg, lang) {
+function structuralProblems(en, target, lang) {
   const problems = [];
-  if (tg.trim().length === 0) problems.push("empty target");
-  if (fenceCount(en) !== fenceCount(tg))
+  if (target.trim().length === 0) problems.push("empty target");
+  if (fenceCount(en) !== fenceCount(target))
     problems.push(
-      `code fence mismatch (en=${fenceCount(en)} ${lang}=${fenceCount(tg)})`
+      `code fence mismatch (en=${fenceCount(en)} ${lang}=${fenceCount(target)})`
     );
-  if (hasFrontmatter(en)) {
-    if (!hasFrontmatter(tg) || !frontmatterClosed(tg))
-      problems.push("frontmatter missing/unclosed");
-    else if (!frontmatterYamlish(tg))
+  const enHasFrontmatter = hasFrontmatter(en);
+  const targetHasFrontmatter = hasFrontmatter(target);
+  if (enHasFrontmatter !== targetHasFrontmatter) {
+    problems.push("frontmatter mismatch");
+  } else if (enHasFrontmatter) {
+    if (!frontmatterClosed(target)) problems.push("frontmatter unclosed");
+    else if (!frontmatterYamlish(target))
       problems.push("frontmatter not parseable YAML");
   }
   return problems;
@@ -763,9 +757,6 @@ function cmdAdvance(lang) {
   );
 }
 
-// ---------- quarantine ----------
-
-/** The bytes a path has in HEAD, or null when HEAD has no such file. */
 function readFromHead(repoRel) {
   try {
     return execSync(`git show HEAD:${q(repoRel)}`, {
@@ -779,35 +770,6 @@ function readFromHead(repoRel) {
   }
 }
 
-/**
- * Resolve the verify gate's quarantine lists before the commit step stages
- * anything.
- *
- * This used to be inline shell: `git checkout HEAD -- <path> || rm -f <path>`.
- * That treats HEAD as an unconditionally trustworthy recovery source, which
- * it is not. When HEAD's own copy is structurally corrupt, restoring it
- * reinstates the corruption and discards whatever this run produced — so a
- * file that was once committed broken can never be repaired by the pipeline.
- * `website/content/de/developers/daemon/12-auth-security.md` sat in exactly
- * that loop, failing `code fence mismatch (en=12 de=14)` on five consecutive
- * runs while the broken copy stayed live (#216).
- *
- * The decision is now made per file, on structure alone:
- *
- *   HEAD sound                  -> restore HEAD (unchanged behaviour)
- *   HEAD corrupt, new sound     -> KEEP the new file; HEAD was not a valid
- *                                  recovery source and this run has a
- *                                  structurally sound replacement
- *   HEAD corrupt, new corrupt   -> restore HEAD, but say so loudly: neither
- *                                  candidate is publishable and the file
- *                                  needs manual repair
- *   HEAD absent                 -> remove the new file (unchanged behaviour)
- *
- * Deliberately NOT deleting a page whose only copies are corrupt: the static
- * export still fails on a locale that is missing a page an EN doc exists for
- * (#185), so deleting here would trade a badly rendered page for a broken
- * build. Choosing between those is a policy call and belongs to #216.
- */
 function cmdQuarantine() {
   const dir = path.dirname(OPTS.baseline);
   const lists = fs
@@ -818,9 +780,8 @@ function cmdQuarantine() {
   let removed = 0;
   const unrepairable = [];
   for (const listName of lists) {
-    const listPath = path.join(dir, listName);
     const entries = fs
-      .readFileSync(listPath, "utf8")
+      .readFileSync(path.join(dir, listName), "utf8")
       .split("\n")
       .map((s) => s.trim())
       .filter(Boolean);
@@ -833,14 +794,12 @@ function cmdQuarantine() {
       const repoRel = path.relative(ROOT, target).split(path.sep).join("/");
       const head = readFromHead(repoRel);
       if (head === null) {
-        // Nothing to fall back to: this run created the file and it failed.
         fs.rmSync(target, { force: true });
         removed++;
         continue;
       }
       const enPath = path.join(OPTS.contentDir, "en", rel);
       if (!fs.existsSync(enPath)) {
-        // No EN source to judge structure against; keep the old behaviour.
         fs.writeFileSync(target, head);
         restored++;
         continue;
@@ -855,32 +814,22 @@ function cmdQuarantine() {
       if (headBad.length === 0) {
         fs.writeFileSync(target, head);
         restored++;
-        continue;
-      }
-      if (newBad.length === 0) {
+      } else if (newBad.length === 0) {
         console.log(
           `::warning::${entry}: HEAD is structurally corrupt [${headBad.join(
             "; "
-          )}]; keeping this run's structurally sound translation instead of restoring it`
+          )}]; keeping this run's structurally sound translation`
         );
         kept++;
-        continue;
+      } else {
+        fs.writeFileSync(target, head);
+        restored++;
+        unrepairable.push({ entry, headBad, newBad });
+        console.log(
+          `::warning::${entry}: HEAD and this run's output are structurally corrupt; restoring HEAD`
+        );
       }
-      fs.writeFileSync(target, head);
-      restored++;
-      unrepairable.push({ entry, headBad, newBad });
-      console.log(
-        `::warning::${entry}: HEAD is structurally corrupt [${headBad.join(
-          "; "
-        )}] and this run's output is too [${newBad.join(
-          "; "
-        )}]; restoring HEAD, file needs manual repair (see #216)`
-      );
     }
-    // The lists are deliberately left in place: the workflow's commit step
-    // runs this command a second time as a safety net before staging
-    // `website/content` wholesale, and deletes them itself. Every branch
-    // above is idempotent, so the second pass is a no-op.
   }
   console.log(
     `[orch] quarantine: ${restored} restored from HEAD, ${kept} kept over a corrupt HEAD, ` +

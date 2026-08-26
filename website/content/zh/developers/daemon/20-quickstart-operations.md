@@ -80,8 +80,10 @@ CLI 定义在 **`packages/cli/src/commands/serve.ts`** 中：
 | `--token <s>`                           | string                         | env / none                                   | 非 loopback 和 `--require-auth`        | Bearer token；会进行一次 trim 处理。**它会出现在 `/proc/<pid>/cmdline` 中，因此建议优先使用 `QWEN_SERVER_TOKEN`**。启动时的 stderr 也会对此发出警告。                                                                                |
 | `--max-sessions <n>`                    | number                         | `32`                                         | -                                        | 每个工作区的活跃会话上限。超出限制的 spawn 请求将返回 503。`0` 表示无限制。`NaN` 或负值会抛出异常。                                                                                                                     |
 | `--max-total-sessions <n>`              | number                         | 多个启动/恢复工作区时推导   | -                                        | Daemon 级别的活跃会话上限。省略时，从每个工作区的上限和启动/恢复的工作区数量一次性推导出有限默认值；动态注册不会重新计算。`0` 表示无限制。                                                                                   |
-| `--memory-budget-mb <n>`                | integer in `[1024, 1048576]`   | 50% of cgroup/host memory                    | Observation only                         | Daemon 进程树的总内存预算，上限为解析后的可用内存。在 `limits.memory` 下报告；不影响任何子进程的大小。                                                                                                               |
-| `--memory-pressure-mode <mode>`         | `off` \| `observe`             | `observe`                                    | Observation only                         | 两种模式下均报告 `runtime.memory.pressure`；仅 `observe` 会触发 `daemon_memory_pressure` issue。仅限根进程。                                                                                                                                              |
+| `--memory-budget-mb <n>`                | integer in `[1024, 1048576]`   | 50% of cgroup/host memory                        | -                                        | Daemon 进程树的总内存预算，上限为解析后的可用内存。没有子进程从中分配大小；当前唯一的消费者是自适应 live-journal 增长池（参见 `--max-journal-bytes`）。在 `limits.memory` 下报告，包括建模的每子进程分区。                                                                                                                                            |
+| `--max-journal-events <n>`              | positive safe integer          | `10000`                                          | -                                        | 每个会话的 `liveJournal` 重放条目的基线上限。自适应增长可以提高它（参见 `--max-journal-bytes`）；固定任一 journal 标志会禁用增长。                                                                                                                                                                                                                                                        |
+| `--max-journal-bytes <n>`               | positive safe integer          | `8388608`                                        | -                                        | 每个会话的 `liveJournal` 的基线字节上限。超限的轮次会按需增长上限（向双倍增长，受剩余池余量限制），在一个 daemon 全局池中（有效 `--memory-budget-mb` 的 5%，上限为 `1024` MB；当有效预算低于 1024 MB 下限时为 0——增长禁用），永远不会超过每会话 256 MiB 的硬上限；固定任一 journal 标志会禁用增长。 |
+| `--memory-pressure-mode <mode>`         | `off` \| `observe`             | `observe`                                        | Observation only                         | 两种模式下均报告 `runtime.memory.pressure`；仅 `observe` 会触发 `daemon_memory_pressure` issue。仅限根进程。                                                                                                                                              |
 | `--child-heap-mode <mode>`              | `off` \| `observe`             | `observe`                                    | Observation only                         | 在 `observe` 下，报告 `limits.memory.childHeap` 下的建模分区；不应用任何限制也不拒绝任何请求。在 `off` 下，该块的两个数据为 `null`。                                                                                                                                          |
 | `--max-pending-prompts-per-session <n>` | number                         | `5`                                          | -                                        | 每个会话已接受但处于 pending/running 状态的 prompt 上限。超出的 prompt 将返回 503。`0` / `Infinity` 表示无限制。负值或非整数值会抛出异常。                                                               |
 | `--workspace <dir>`                     | string / repeatable            | `process.cwd()`                              | -                                        | 启动工作区运行时；重复以注册额外的隔离运行时。第一个为主运行时。每个值**必须是绝对路径、必须存在且必须是目录**。启动时通过 `canonicalizeWorkspace` 对每个值进行规范化。`POST /session` 的 `cwd` 不匹配时返回 `400 workspace_mismatch`。 |
@@ -160,6 +162,7 @@ CLI 定义在 **`packages/cli/src/commands/serve.ts`** 中：
 | `--event-ring-size > 1_000_000`                                               | 在构建 bridge 时抛出异常                                                                   |
 | 设置 `--allow-origin '*'` 但未配置 token                                            | `Refusing to start with --allow-origin '*' but no bearer token configured`                          |
 | `--prompt-deadline-ms` / `--writer-idle-timeout-ms` 不是正整数 | `Must be a positive integer`                                                                        |
+| `--initialize-timeout-ms` 不是正整数或超过 `2^31-1`       | `Must be a positive integer` / `Exceeds maximum JS timer delay`                                     |
 | 未知的 `policy.permissionStrategy` 或非正数的 `policy.consensusQuorum`  | `InvalidPolicyConfigError`                                                                          |
 ## 7. Curl 验证清单
 
@@ -255,7 +258,9 @@ serve/server.ts                    createServeApp() - builds Express app (**does
    |  `- return app
    |
    v
-serve/run-qwen-serve.ts              server = app.listen(port, hostname, cb)
+serve/run-qwen-serve.ts              server = createServer(app) / https.createServer(..., app)
+   |  |- lifecycle.bindServer(server, { startupReady, drainHost })
+   |  |- server.listen(port, hostname)
    |  |- server.maxConnections = cap
    |  |- actualPort = server.address().port
    |  |- write "qwen serve listening on ..."
@@ -268,8 +273,8 @@ commands/serve.ts                  await blockForever()    // block forever unti
 
 关键事实：
 
-- **`createServeApp` 仅负责构建，不负责监听。** 它返回一个挂载了中间件和路由的 `express()` 实例。调用方负责 `app.listen()`。`server.test.ts` 在大约 25 个用例中以这种方式使用该工厂函数，因此该工厂函数有意不管理生命周期。
-- **`() => actualPort` 是一个惰性闭包。** `actualPort` 在 `app.listen` 的回调中赋值。`hostAllowlist` 中间件按需读取它，因此临时端口（`--port 0`）仍能正确校验 `Host` 请求头。
+- **`createServeApp` 仅负责构建，不负责监听。** 它返回一个挂载了中间件和路由的 `express()` 实例。仅需普通路由的嵌入者可以继续自行管理 `app.listen()`。使用 Live/Conversations 的嵌入者必须在监听之前将实际的 Node 服务器绑定到导出的应用生命周期，并在关闭期间 await 该生命周期。
+- **`() => actualPort` 是一个惰性闭包。** `actualPort` 在 `server.listen` 的回调中赋值。`hostAllowlist` 中间件按需读取它，因此临时端口（`--port 0`）仍能正确校验 `Host` 请求头。
 - **`await blockForever()` 是有意为之。** 如果 `yargs.parse()` 解析完成，CLI 顶层会进入交互式 TUI 入口（`gemini.tsx`）。SIGINT / SIGTERM 通过 `runQwenServe` 的 `onSignal` 路径退出。
 
 ## 10. HTTP 路由文件拆分
@@ -321,11 +326,17 @@ console.log(`Daemon at ${handle.url}`);
 await handle.close(); // programmatic shutdown
 ```
 
-或者直接获取 Express app 并自行监听：
+或者直接获取 Express app 并自行绑定监听器生命周期。当嵌入方使用 Live/Conversations 时必须使用此形式：
 
 ```ts
-import { createServeApp } from '@qwen-code/qwen-code/serve';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import {
+  createServeApp,
+  getServeAppLifecycle,
+} from '@qwen-code/qwen-code/serve';
 
+let actualPort = 0;
 const app = createServeApp(
   {
     port: 0,
@@ -333,16 +344,27 @@ const app = createServeApp(
     mode: 'http-bridge',
     maxSessions: 20,
   },
-  () => 0,
+  () => actualPort,
   {
     /* deps: bridge, fsFactory, ... */
   },
 );
 
-const server = app.listen(0, '127.0.0.1', () => {
-  console.log('listening on', server.address());
+const lifecycle = getServeAppLifecycle(app);
+const server = createServer(app);
+lifecycle.bindServer(server);
+await new Promise<void>((resolve, reject) => {
+  server.once('error', reject);
+  server.listen(0, '127.0.0.1', () => resolve());
 });
+actualPort = (server.address() as AddressInfo).port;
+console.log('listening on', server.address());
+
+// 停止准入，排空应用工作，关闭监听器，并释放所有权。
+await lifecycle.close();
 ```
+
+调用原始的 `server.close()` 也会启动相同的事件驱动清理，但只有当进程保持存活时才是尽力而为的；始终 await `lifecycle.close()` 以接收关闭错误。如果未绑定服务器，Live/Conversations 请求会 fail closed，而普通应用行为不受影响。
 
 注意：直接调用 `createServeApp` 时，默认的 `fsFactory.trusted = false`。Agent 端的 ACP `writeTextFile` 会被作为 `untrusted_workspace` 拒绝，并在 stderr 打印一次警告。你可以注入带有显式信任配置的 `deps.fsFactory`，注入 `deps.bridge`，或者接受默认的信任门控行为。
 

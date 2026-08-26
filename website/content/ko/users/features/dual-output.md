@@ -181,6 +181,8 @@ cat /tmp/qwen-events.jsonl
 
 이벤트는 JSON Lines로 내보내집니다(한 줄에 하나의 객체). 스키마는 비대화형 `--output-format=stream-json` 모드에서 사용되는 것과 동일하며, `includePartialMessages`가 항상 활성화되어 있습니다.
 
+프로토콜 버전 2는 JSON 문자열 직렬화 후 텍스트 `tool_result.content` 값을 65,536 UTF-8 바이트로 제한합니다. 초과하는 값은 결정적 헤드/테일 미리보기가 되며, 이벤트 타입과 필드 스키마는 변경되지 않습니다. 이것은 필드 제한이며 범용 JSONL 프레임 크기 제한이 아닙니다.
+
 채널의 첫 이벤트는 항상 `system` / `session_start`이며, 브리지가 구성될 때 내보내집니다. 다른 이벤트가 도착하기 전에 채널을 세션 id와 상관시키는 데 사용하세요.
 
 ```jsonc

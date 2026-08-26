@@ -114,7 +114,7 @@ SSE 传输发送 `Accept-Encoding: identity` 和 `Last-Event-ID`，验证帧和�
 
 `PromptRequest.Builder.deadline(Duration)` 请求 daemon 强制执行的 prompt 截止时间，仅在 daemon 通告 `prompt_absolute_deadline` 时被接受；否则 SDK 在发送 prompt 之前就会失败。该值必须在 1 到 2,147,483,647 毫秒之间，匹配 daemon 的 Node 计时器范围。这与 `observationTimeout(Duration)` 不同，后者仅限制本地 SSE 观察，永远不会发送取消变更。
 
-在创建会话之前，SDK 要求 daemon 通告 REST 传输和 `session_scope_override`；这可以防止旧版 daemon 静默忽略请求的 `thread` 作用域并将客户端附加到共享会话。当 `client_heartbeat` 被通告时，打开的会话每分钟发送一次新心跳，以防止 daemon 回收空闲客户端。在 `DaemonClient` builder 上设置 `heartbeatInterval(Duration.ZERO)` 可禁用此行为，或选择不同的正间隔。心跳永远不会重试；下一个计划的心跳是独立的 keepalive。Prompt 观察默认限制为每个客户端 32 个并发 prompt，可以通过 `maximumConcurrentPrompts` 调整。准入和终端 future 回调在传输 worker 之外运行；保持阻塞的回调会消耗有界的发布容量。SSE 流清理也是有界的，保持阻塞的关闭会保留其清理预留。任一条件都可能导致后续的 `startPrompt` 以 `DaemonClientCapacityException` 失败，而不是丢弃超时关闭或无限制地增长线程和排队工作。
+在创建会话之前，SDK 要求 daemon 通告 REST 传输和 `session_scope_override`；这可以防止旧版 daemon 静默忽略请求的 `thread` 作用域并将客户端附加到共享会话。当调用者提供会话 ID 时，SDK 还会在发送变更之前要求 `session_id_override`。当 `client_heartbeat` 被通告时，打开的会话每分钟发送一次新心跳，以防止 daemon 回收空闲客户端。在 `DaemonClient` builder 上设置 `heartbeatInterval(Duration.ZERO)` 可禁用此行为，或选择不同的正间隔。心跳永远不会重试；下一个计划的心跳是独立的 keepalive。Prompt 观察默认限制为每个客户端 32 个并发 prompt，可以通过 `maximumConcurrentPrompts` 调整。准入和终端 future 回调在传输 worker 之外运行；保持阻塞的回调会消耗有界的发布容量。SSE 流清理也是有界的，保持阻塞的关闭会保留其清理预留。任一条件都可能导致后续的 `startPrompt` 以 `DaemonClientCapacityException` 失败，而不是丢弃超时关闭或无限制地增长线程和排队工作。
 
 不确定的完成是结果边界，而不是会话重用边界。在 `PromptAdmissionUnknownException` 或 `PromptOutcomeIndeterminateException` 之后，该 `DaemonSessionClient` 会永久拒绝进一步的 prompt，即使本地流清理后来成功；请关闭或销毁会话。观察超时的发布不会无限等待阻塞的流关闭，同时清理异步继续并保留有界的客户端容量直到完成。
 
@@ -141,7 +141,7 @@ public static void runTransportOptionsExample() {
             .setIncludePartialMessages(true)
             .setTurnTimeout(new Timeout(120L, TimeUnit.SECONDS))
             .setMessageTimeout(new Timeout(90L, TimeUnit.SECONDS))
-            .setAllowedTools(Arrays.asList("read_file", "write_file", "list_directory"));
+            .setAllowedTools(Arrays.asList("read_file", "write_file", "glob"));
 
     List<String> result = QwenCodeCli.simpleQuery("who are you, what are your capabilities?", options);
     result.forEach(logger::info);
