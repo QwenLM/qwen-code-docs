@@ -13,6 +13,8 @@ Authorization: Bearer <token>
 
 如果未配置 token（环回开发的默认情况），则该 header 是可选的。Token 比较采用恒定时间算法。对于 `missing header` / `wrong scheme` / `wrong token`，401 响应格式是统一的。
 
+**`--open-with-auth`。** 这个默认关闭的 CLI 模式要求使用环回绑定且 Web Shell 可用。它复用正常的 `--token` 优先于 `QWEN_SERVER_TOKEN` 的选择；如果两者都为空，则会在 daemon 启动前生成 32 个随机字节并编码为 base64url。浏览器通过 `#token=` 接收所选 bearer 并按标签页保存；协议和中间件看到的只是一个普通的已配置 token。单独使用 `--open`、直接嵌入的调用者、非环回绑定和其他客户端都不会获得自动凭据。浏览器不可用的环境会输出带有密钥片段的 URL，供手动打开。环回 `/health` 和 Web Shell 静态资源保留下文所述的豁免；`--require-auth` 仍会保护 `/health`。
+
 **`/health` 豁免**（Bctum）：在环回绑定（`127.0.0.1` / `localhost` / `::1` / `[::1]`）上，`/health` 在 bearer 中间件之前注册，因此即使守护进程使用 `--token` 启动，pod 内的存活探针（liveness probes）也无需携带 token。非环回绑定（如 `--hostname 0.0.0.0`）会像其他所有路由一样将 `/health` 置于 bearer 验证之后——有关基本原理，请参阅 [`GET /health`](#get-health) 部分。
 
 **`--require-auth`（#4175 PR 15）。** 在启动时传递此标志，可将"必须具有 token"的规则扩展到环回绑定。如果没有 token，启动将失败；同时取消 `/health` 豁免（因此 `/health` 也需要 `Authorization: Bearer …`）。
@@ -211,6 +213,7 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
  'workspace_display_name',
  'workspace_qualified_rest_core', 'workspace_qualified_voice',
  'workspace_qualified_memory', 'extension_management_v2', 'extension_git_credentials',
+ 'extension_local_path_install',
  'workspace_persisted_transcript',
  'workspace_session_export', 'workspace_archived_session_export',
  'workspace_session_live_state',
@@ -253,7 +256,7 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 
 `session_organization` 宣告了自定义会话分组和置顶功能。它新增了 `GET/POST/PATCH/DELETE /workspace/:id/session-groups`、`PATCH /session/:id/organization`，以及可选的有序列表视图 `GET /workspace/:id/sessions?view=organized`。当同时通告了 `session_organization` 和 `workspace_qualified_rest_core` 时，workspace 限定的组织变更 `PATCH /workspaces/:workspace/session/:id/organization` 也可用。旧版变更路由仍然仅限主 workspace。旧版 daemon 对变更/分组路由返回 `404`，并忽略有序视图契约，因此 WebShell/SDK 客户端在显示分组或置顶 UI 前，必须预先检查这些 tag。
 
-`session_archive` 宣告了 v1 目录状态归档 API：`POST /sessions/archive`、`POST /sessions/unarchive` 和 `GET /workspace/:id/sessions?archiveState=active|archived`。归档的会话在取消归档前无法被加载或恢复。
+`session_archive` 宣告了 v1 目录状态归档 API：`POST /sessions/archive`、`POST /sessions/unarchive` 和 `GET /workspace/:id/sessions?archiveState=active|archived`。归档的会话在取消归档前无法被加载或恢复。`session_storage_conflict_repair` 宣告下文所述的增量 `resolveConflicts` 请求选项和 `resolvedConflicts` 响应分组。
 
 `workspace_qualified_rest_core` 通告 `/workspaces/:workspace/...` 下的复数核心 REST 路由。选择器首先解析为精确的 workspace id，然后解析为规范化后的 URL 编码绝对 cwd。较新的单 workspace daemon 即使在 `multi_workspace_sessions` 缺失时也会在 `workspaces[]` 中包含主 runtime，以便客户端可以发现 workspace 限定路由所需的 id；客户端应对省略该数组的旧版 daemon 回退到 `capabilities.workspaceCwd`。信任状态和信任请求路由可用于已注册的不受信任的 workspace；文件读取路由遵循现有的文件系统读取策略。已注册的不受信任的次要 workspace 还暴露仅持久化的 session 和 session-group 目录：这些读取不会附加到 session、启动 ACP 或合并活跃 bridge 状态。文件写入、目录变更和其他复数核心路由需要受信任的 workspace，除非单独的能力明确定义了更窄的只读策略，例如 `workspace_persisted_transcript`。不受信任的主 workspace 仍然会从复数目录和转录路由收到 `403 { code: "untrusted_workspace" }`；旧版单数主路由保持其现有的兼容行为。此标签涵盖核心文件、状态、设置、权限、信任、生命周期、MCP 控制、工具和 skill 切换、memory、workspace agent CRUD 和 session 存储暴露面。它不涵盖 auth、voice、extensions、ACP/WebSocket 传输、channel-worker 路由或 workspace 限定的 session 导出；请单独预检 `workspace_session_export` 或 `workspace_archived_session_export`。Workspace 信任不是 ACL：持有 daemon token 的客户端可以读取此策略允许的每个已注册 workspace 暴露面。
 
@@ -282,6 +285,8 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 `extension_management_v2` 通告用户级 extension 目录和 `/extensions/*` 的变更暴露面，以及 `/workspaces/:workspace/extensions/*` 的 workspace 激活投影。制品是全局的；workspace 路由仅暴露投影读取、精确的激活覆盖和 runtime 刷新。读取可以针对不受信任的已注册 workspace，而激活、刷新和 workspace 作用域的安装需要受信任的目标。慢速变更使用 `/extensions/operations/:operationId` 的 daemon 本地操作；存储代（store generation），而非操作历史，在重启和跨 daemon 间具有权威性。已发布的 `workspace_extensions` 能力和 `/workspace/extensions/*` 路由保留为主 workspace 兼容适配器。客户端必须预检 `extension_management_v2`，不得从 daemon 模式或 `workspace_qualified_rest_core` 推断它。
 
 `extension_git_credentials` 在 `POST /workspace/extensions/install` 和 `POST /extensions/install` 上通告经过认证的 HTTPS Git 安装。客户端在发送 URL userinfo 或 `credentialPersistence` 前必须预检此标签；旧版 daemon 会拒绝 URL 凭证。该标签描述的是后端协议支持，而非密钥链的可用性：stored 模式在终端操作结果中报告所选后端。
+
+`extension_local_path_install` 在 `POST /workspace/extensions/install` 和 `POST /extensions/install` 上通告 daemon 本地的 Extension 源。`source` 必须是 daemon 主机上实际存在的绝对路径。相对路径仍不受支持，以免 daemon 进程 cwd 改变源的身份，或遮蔽 GitHub `owner/repo` 简写。现有安装操作会将 Extension 复制到托管存储，而不是链接源目录。客户端必须预检此标签，因为旧版 daemon 会拒绝本地源。
 
 `extension_batch_activation_v2` 新增 `PUT /extensions/activation` 和 `PUT /workspaces/:workspace/extensions/activation`。两者接受 `extensionNames` 中的 1–100 个名称，以不区分大小写的方式去重同时保留首次出现的顺序，在一代中持久化变更的目标，并返回一个 `202` 操作句柄。设置 `enabled` 或 `disabled` 时目标无需已安装：其名称会创建一个期望状态声明，当安装同名 Extension 时该声明会被保留。全局路由接受 `state: "enabled" | "disabled"`，写入 V2 `defaultActivation`，并调和每个已注册的 runtime。workspace 路由还接受 `"inherit"`，为选定的受信任 runtime 应用或清除精确覆盖，并仅调和该 runtime。`inherit` 不会为未知名称创建声明；全未知清除报告 `updated: false` 并跳过调和。单数激活路由保持为仅已安装且按 id 寻址。
 
@@ -366,7 +371,7 @@ workspace 投影响应为：
 }
 ```
 
-对于仅 workspace 的初始激活，使用 `{ "scope": "workspace", "workspaceId": "target-workspace-id" }`；目标必须存在且受信任。Daemon 安装接受 GitHub、Git 和 npm 源。`ref` 不适用于 npm，`registry` 仅适用于 npm。`ref`、`autoUpdate`、`allowPreRelease` 和 `registry` 是可选的。
+对于仅 workspace 的初始激活，使用 `{ "scope": "workspace", "workspaceId": "target-workspace-id" }`；目标必须存在且受信任。Daemon 安装接受 GitHub、Git 和 npm 源。当通告 `extension_local_path_install` 时，也接受 daemon 主机上实际存在的绝对路径。`ref` 不适用于 npm，`ref` 和 `autoUpdate` 不适用于本地源，`registry` 仅适用于 npm。`ref`、`autoUpdate`、`allowPreRelease` 和 `registry` 是可选的。
 
 当 `extension_git_credentials` 被通告时，HTTPS Git 源可以包含 userinfo，例如 `https://username:token@git.example.com/org/repository.git`。`credentialPersistence` 仅对此类源有效。它为 `stored` 或 `one_time`，省略时默认为 `one_time`。Stored 模式通过 daemon 的混合密钥存储保存凭证，并仅在安装元数据中保留干净的仓库 URL，因此 extension 保持可更新。One-time 模式既不保存仓库 URL 也不保存凭证，并创建一个不可更新的 `snapshot`；此模式下 `autoUpdate: true` 会被拒绝。在没有 URL 凭证的情况下提供该字段、提供无效凭证，或对 npm、归档、本地、SSH 或非 Git 源使用凭证，都会返回 `400`。
 
@@ -474,6 +479,7 @@ Workspace 限定的变更使用相同的全局 `/extensions/operations/:operatio
 | `session_shell_command`             | 明确启用了会话 shell 执行。                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `session_artifacts_persistence`     | session 制品持久化已为 runtime 连接。                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `session_generation`                | session 生成助手可用。                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `scheduled_task_session_reuse`      | 持久化 scheduled task session 管理处于活动状态，且每个托管 daemon runtime 都已安装回调，使任务可以显式绑定到其当前已有的 session。                                                                                                                                                                                                                                                                                                                                                              |
 | `workspace_generation`              | workspace 作用域的生成助手可用。                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `rate_limit`                        | 启用了 `--rate-limit` / `QWEN_SERVE_RATE_LIMIT=1` / `ServeOptions.rateLimit`。                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `workspace_reload`                  | 嵌入式路由配置中提供了工作区重载支持。                                                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -2091,7 +2097,7 @@ Response:
 请求：
 
 ```json
-{ "sessionIds": ["<uuid>"] }
+{ "sessionIds": ["<uuid>"], "resolveConflicts": true }
 ```
 
 响应：
@@ -2122,12 +2128,15 @@ Response:
 {
   "archived": ["<uuid>"],
   "alreadyArchived": [],
+  "resolvedConflicts": ["<uuid>"],
   "notFound": [],
   "errors": []
 }
 ```
 
-`errors` 条目格式为 `{ "sessionId": "<uuid>", "error": "message" }`。具有相同 id 的 active 和 archived 文件会被视为冲突并报告在 `errors` 中；不会覆盖任何文件。
+`resolveConflicts` 是可选项，默认为 `false`。默认情况下，如果 active 和 archived 文件具有相同 id，冲突会报告在 `errors` 中，两个副本都不会被移动、删除或覆盖。归档活跃 session 时，仍会在判定冲突前执行上文所述的严格关闭，因此关闭操作可能会将排队记录刷新到 active 转录中。设置 `resolveConflicts: true` 后，归档会保留 archived 副本、移除 active 副本，并在 `archived` 和 `resolvedConflicts` 中同时报告该 id。`errors` 条目格式为 `{ "sessionId": "<uuid>", "error": "message" }`。
+
+生命周期冲突是批处理中单个条目的结果：无 workspace 和 workspace 限定路由都会返回 HTTP `200`，并将冲突放在 `errors` 中。这取代了早先 workspace 限定路由的 HTTP `409 session_conflict` 信封；调用该路由的客户端必须检查批处理响应。内部 runtime 的 REST 批处理继续隐藏其他逐 session 失败的详细信息，同时保留安全的冲突消息。
 
 ### `POST /sessions/unarchive`
 
@@ -2136,7 +2145,7 @@ Response:
 请求：
 
 ```json
-{ "sessionIds": ["<uuid>"] }
+{ "sessionIds": ["<uuid>"], "resolveConflicts": true }
 ```
 
 响应：
@@ -2145,12 +2154,13 @@ Response:
 {
   "unarchived": ["<uuid>"],
   "alreadyActive": [],
+  "resolvedConflicts": ["<uuid>"],
   "notFound": [],
   "errors": []
 }
 ```
 
-如果该 id 已存在 active 的 JSONL 文件，取消归档会在 `errors` 中报告冲突且不会覆盖它。如果同一个 id 正在进行归档或取消归档操作，会在开始批处理前返回 `409 session_archiving`。
+`resolveConflicts` 是可选项，默认为 `false`。默认情况下，同时存在 active 和 archived JSONL 文件会在 `errors` 中产生冲突，两个副本都不会被移动、删除或覆盖；仅有 active 副本的 session 会返回在 `alreadyActive` 中。设置 `resolveConflicts: true` 后，取消归档会保留 active 副本、移除 archived 副本，并在 `unarchived` 和 `resolvedConflicts` 中同时报告该 id。如果同一个 id 正在进行归档或取消归档操作，会在开始批处理前返回 `409 session_archiving`。
 
 ACP-over-HTTP 通过 vendor 方法 `_qwen/sessions/archive` 和 `_qwen/sessions/unarchive` 使用相同的请求和响应体。REST 路由表将 `POST /sessions/archive` 和 `POST /sessions/unarchive` 映射到 ACP 传输的这些方法。
 
@@ -2707,19 +2717,20 @@ SSE 级别的 `id:` / `event:` 行复制了 `envelope.id` / `envelope.type`，�
 
 > **F3 (#4175)：多客户端权限协调。** F3 添加了上述四种策略。F3 之前的 daemon 硬编码了 first-responder；当配置的策略为 `first-responder` 时，线路格式保持逐位不变。新事件（`permission_partial_vote`、`permission_forbidden`）是增量添加的 — 旧 SDK 会将它们视为 `unrecognized_known_event` 并优雅地忽略。
 
-> **权限超时（默认 5 分钟）。** `permission_request`
+> **权限超时（默认禁用）。** `permission_request`
 > 保持挂起状态，直到：(a) 某个客户端在此处投票，(b) 触发 `POST /session/:id/cancel`
 > 触发，(c) 驱动提示词的 HTTP 客户端断开连接
 > （中途取消会将未决的权限解析为 `cancelled`），
 > (d) session 被终止，(e) daemon 关闭，**或
-> (f) 触发每个 session 的权限超时**（`DEFAULT_PERMISSION_TIMEOUT_MS`，
-> 5 分钟）。超时触发时，agent 的 `requestPermission` 解析
+> (f) 触发已配置的超时**。超时触发时，agent 的 `requestPermission` 解析
 > 为 `{outcome: 'cancelled'}`，审计 ring 记录一条
 > `permission.timeout` 条目，daemon stderr 输出一行
 > 提示信息，并且 SSE 总线扇出标准的
 > `permission_resolved` cancelled 帧，以便订阅者进行清理。
-> 超时时间可通过 `BridgeOptions.permissionResponseTimeoutMs` 配置；
-> 运行长提示词的无头调用者可能需要延长此时间。
+> 共享超时时间可通过 `BridgeOptions.permissionResponseTimeoutMs` 或
+> `qwen serve --permission-response-timeout-ms` 配置。默认值为 `0`，因此普通权限和
+> `ask_user_question` 都会无限期等待人工决定。投票者取消、session 取消、
+> 断开连接清理和 daemon 关闭仍会将挂起的交互解析为 cancelled。
 
 请求：
 
