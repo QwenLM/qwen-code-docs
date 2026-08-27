@@ -23,6 +23,7 @@ test("translation agent has no general tools and cannot write undeclared paths",
   const fakeBin = path.join(root, "bin");
   const fakeQwen = path.join(fakeBin, "qwen");
   const target = path.join(contentDir, "zh", "guide.md");
+  const baseline = path.join(project, "website", "last-sync.json");
 
   try {
     fs.mkdirSync(path.join(upstream, "docs"), { recursive: true });
@@ -59,11 +60,12 @@ test("translation agent has no general tools and cannot write undeclared paths",
       `#!/usr/bin/env node
 const fs = require("node:fs");
 const args = process.argv.slice(2);
-for (const flag of ["--safe-mode", "--auth-type", "--json-schema", "--max-tool-calls", "--system-prompt"])
+for (const flag of ["--auth-type", "--core-tools", "--json-schema", "--max-tool-calls", "--system-prompt"])
   if (!args.includes(flag)) process.exit(20);
-if (args.includes("--approval-mode") || args[args.indexOf("--auth-type") + 1] !== "openai" || args[args.indexOf("--max-tool-calls") + 1] !== "0") process.exit(21);
+if (args.includes("--approval-mode") || args[args.indexOf("--auth-type") + 1] !== "openai" || args[args.indexOf("--core-tools") + 1] !== "structured_output" || args[args.indexOf("--max-tool-calls") + 1] !== "0") process.exit(21);
 const prompt = fs.readFileSync(0, "utf8");
 if (!prompt.includes("# Guide") || prompt.includes("sentinel-secret")) process.exit(22);
+if (process.cwd().includes(${JSON.stringify(project)}) || process.env.HOME === ${JSON.stringify(process.env.HOME)}) process.exit(23);
 const path = process.env.FAKE_ESCAPE === "1" ? "../../outside.md" : "guide.md";
 const payload = { translations: [{ path, replacements: [{ old: "旧内容。", new: "新内容。" }] }] };
 process.stdout.write(JSON.stringify([{ type: "result", is_error: false, structured_result: payload }]));
@@ -85,7 +87,7 @@ process.stdout.write(JSON.stringify([{ type: "result", is_error: false, structur
       "--content-dir",
       contentDir,
       "--baseline",
-      path.join(project, "website", "last-sync.json"),
+      baseline,
       "--temp-dir",
       path.join(root, "source-clone"),
       "--manifest",
@@ -108,6 +110,15 @@ process.stdout.write(JSON.stringify([{ type: "result", is_error: false, structur
     assert.match(rejected.stderr, /unexpected or duplicate translation path/);
     assert.equal(fs.readFileSync(target, "utf8"), "# 指南\n新内容。\n");
     assert.equal(fs.existsSync(path.join(root, "outside.md")), false);
+
+    const advance = spawnSync(
+      process.execPath,
+      [copiedOrchestrator, "advance", ...args.slice(2)],
+      { encoding: "utf8", env }
+    );
+    assert.equal(advance.status, 0, advance.stdout || advance.stderr);
+    assert.match(advance.stdout, /advanced 0\/1/);
+    assert.equal(fs.existsSync(baseline), false);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

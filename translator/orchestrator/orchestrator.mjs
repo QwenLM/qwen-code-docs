@@ -33,6 +33,7 @@
 import { execSync, spawn } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -469,8 +470,9 @@ function renderPrompt(lang, batch) {
   return { documents, prompt };
 }
 
-// Bound one failed agent session to five files instead of a whole language.
-const TRANSLATE_CHUNK = 5;
+// Keep prompt size bounded: source + existing target for one large doc can
+// already approach the model context limit.
+const TRANSLATE_CHUNK = 1;
 
 // Retry once; repeated failures stay in the next run's backlog.
 const TRANSLATE_ATTEMPTS = 2;
@@ -527,6 +529,18 @@ function parseStructuredResult(stdout) {
     return message.structured_result;
   }
   throw new Error("qwen JSON output omitted a result message");
+}
+
+function qwenErrorMessage(stdout) {
+  try {
+    const messages = JSON.parse(stdout);
+    if (!Array.isArray(messages)) return null;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i]?.type === "result" && messages[i].is_error)
+        return messages[i].error?.message || null;
+    }
+  } catch {}
+  return null;
 }
 
 function applyTranslationPatches(lang, documents, result) {
@@ -613,9 +627,10 @@ function applyTranslationPatches(lang, documents, result) {
 // The trusted parent validates and applies exact patches under one locale.
 async function runAgent(lang, request, logSuffix) {
   const args = [
-    "--safe-mode",
     "--auth-type",
     "openai",
+    "--core-tools",
+    "structured_output",
     "--max-tool-calls",
     "0",
     "--system-prompt",
@@ -631,8 +646,10 @@ async function runAgent(lang, request, logSuffix) {
     `orchestrator-agent-${lang}${logSuffix}.log`
   );
   const fd = fs.openSync(log, "w");
+  const agentHome = fs.mkdtempSync(path.join(os.tmpdir(), "qwen-translate-"));
   const child = spawn("qwen", args, {
-    cwd: ROOT,
+    cwd: agentHome,
+    env: { ...process.env, HOME: agentHome, XDG_CONFIG_HOME: agentHome },
     stdio: ["pipe", "pipe", "pipe"]
   });
   let stdout = "";
@@ -647,6 +664,7 @@ async function runAgent(lang, request, logSuffix) {
   child.stdin.on("error", () => {}); // child exit is reported by its status below
   child.stdin.end(request.prompt);
   let status = await new Promise((resolve) => child.on("close", resolve));
+  fs.rmSync(agentHome, { recursive: true, force: true });
   if (status === 0) {
     try {
       applyTranslationPatches(
@@ -657,6 +675,13 @@ async function runAgent(lang, request, logSuffix) {
     } catch (err) {
       status = 1;
       const message = `[orch] rejected structured output: ${err.message}\n`;
+      process.stderr.write(message);
+      fs.writeSync(fd, message);
+    }
+  } else {
+    const error = qwenErrorMessage(stdout);
+    if (error) {
+      const message = `[orch] qwen error: ${error}\n`;
       process.stderr.write(message);
       fs.writeSync(fd, message);
     }
@@ -721,7 +746,7 @@ async function cmdTranslate(lang) {
       if (attempt < TRANSLATE_ATTEMPTS) {
         // Re-dispatches the whole chunk, including any file the halted
         // attempt already translated. That redundancy is what keeps this
-        // simple, and at TRANSLATE_CHUNK=5 it is cheap; verify's "touched
+        // simple, and with one file per session it is cheap; verify's "touched
         // this session" check is satisfied by the rewrite either way.
         console.log(
           `[orch] ${lang}: part ${part}/${chunks.length} failed; retrying once...`
@@ -1082,7 +1107,7 @@ function cmdAdvance(lang) {
     (rec.langs ??= {})[lang] = hash ?? current;
     advanced++;
   }
-  saveBaseline(base, commit);
+  if (advanced > 0) saveBaseline(base, commit);
   // Quarantine list for the workflow's commit step: verify-failed files must
   // be restored/removed before staging, or broken output gets deployed.
   fs.writeFileSync(failedListPath(lang), failed.length ? failed.join("\n") + "\n" : "");
