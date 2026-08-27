@@ -1575,7 +1575,7 @@
     },
     "docs/developers/tools/task.md": {
       "langs": {
-        "zh": "2d6b9e85a364719a4b65bacffe5f11dfebf18d8de5250593f7751bd966dc289b",
+        "zh": "c3520a001afc4a8d99413f55302fac46b29b56d1fff9349a078513034bf79396",
         "fr": "c3520a001afc4a8d99413f55302fac46b29b56d1fff9349a078513034bf79396",
         "ja": "c3520a001afc4a8d99413f55302fac46b29b56d1fff9349a078513034bf79396",
         "ru": "c3520a001afc4a8d99413f55302fac46b29b56d1fff9349a078513034bf79396",
@@ -1608,7 +1608,7 @@
     },
     "docs/users/configuration/model-providers.md": {
       "langs": {
-        "zh": "2dea9e61b8ffa38bdaf7f310d5e3bbc48ef3f73922038056a9b440280282bb94",
+        "zh": "42785122f997ad7f140e8eba390fe77bccb1052b02fd2dfe22022a676aaa9e13",
         "fr": "42785122f997ad7f140e8eba390fe77bccb1052b02fd2dfe22022a676aaa9e13",
         "ja": "42785122f997ad7f140e8eba390fe77bccb1052b02fd2dfe22022a676aaa9e13",
         "ru": "42785122f997ad7f140e8eba390fe77bccb1052b02fd2dfe22022a676aaa9e13",
@@ -2029,7 +2029,7 @@
         "ru": "36f57afee0ad5e2d17cb096fddfb62d60a90cd7cb68358923fdea93dd36554ea",
         "pt-BR": "36f57afee0ad5e2d17cb096fddfb62d60a90cd7cb68358923fdea93dd36554ea",
         "de": "36f57afee0ad5e2d17cb096fddfb62d60a90cd7cb68358923fdea93dd36554ea",
-        "zh": "8684fe88a4edf420ff93495e4fd57ec13748e77794f0a0f46f33727d0300d39b",
+        "zh": "36f57afee0ad5e2d17cb096fddfb62d60a90cd7cb68358923fdea93dd36554ea",
         "fr": "36f57afee0ad5e2d17cb096fddfb62d60a90cd7cb68358923fdea93dd36554ea",
         "ja": "36f57afee0ad5e2d17cb096fddfb62d60a90cd7cb68358923fdea93dd36554ea",
         "ko": "36f57afee0ad5e2d17cb096fddfb62d60a90cd7cb68358923fdea93dd36554ea"

@@ -16,9 +16,9 @@
 - `fork_turns`（字符串，可选）：仅在 `subagent_type="fork"` 时有效。省略或使用 `all` 继承完整的父会话上下文，或使用正整数字符串（如 `"3"`）继承最近三个真实用户轮次。工具响应和纯系统提醒不计入轮次。
 - `fork_tools`（字符串数组，可选）：仅在 `subagent_type="fork"` 时有效。将执行限制为精确的规范工具名称或 MCP 服务器模式，同时保持 fork 当前对模型可见的工具声明不变以共享 prompt 缓存。条目不能包含前后空白；通配符仅限于 `mcp__*` 或尾部 MCP 工具前缀模式（如 `mcp__github__read_*`）。Fork 永远不会执行 `ask_user_question`；省略 `fork_tools` 以允许所有其他继承的工具，或使用空数组拒绝所有工具调用。
 - `fork_profile`（字符串，可选）：仅在 `subagent_type="fork"` 时有效。从活动项目根目录加载一个仅含 frontmatter 的普通 `.qwen/fork-profiles/<name>.md` 文件（最大 64 KiB），并应用其必需的 `tools` 数组以及可选的最多 200 个字符的 `promptHint`。该文件不能解析到项目 profile 目录之外。`fork_profile` 不能与 `fork_tools` 或命名的 teammate 组合使用，且在安全模式或裸模式下不可用。
-- `run_in_background`（布尔值，可选）：默认为 `true`（针对顶层常规代理）。设置为 `false` 以同步等待常规代理的结果。无头 fork 始终在后台运行。嵌套代理在前台运行，除非 `run_in_background` 显式为 `true`（这会被拒绝，因为嵌套代理无法接收后台完成通知）。调用者拥有的 `working_dir` 启动在前台运行，并拒绝显式或配置的后台执行。
+- `run_in_background`（布尔值，可选）：默认为 `true`（针对顶层常规代理）。设置为 `false` 以同步等待常规代理的结果。无头 fork 始终在后台运行。嵌套代理在前台运行，除非 `run_in_background` 显式为 `true`（这会被拒绝，因为嵌套代理无法接收后台完成通知）。未命名且由调用者拥有 `working_dir` 的启动会在前台运行：显式的 `run_in_background: true` 请求会被拒绝；配置的后台默认值（subagent 定义中的 `background: true`）在顶层会被拒绝，在嵌套时则降级为前台运行。
 - `isolation`（字符串，可选）：设置为 `"worktree"` 可在 Qwen Code 创建和管理的隔离 Git worktree 中运行显式命名的非 fork 代理。
-- `working_dir`（字符串，可选）：将显式命名的非 fork 代理固定到当前仓库中已有的已注册 Git worktree。调用者拥有 worktree 的生命周期，因此此模式在前台运行。如果同时提供 `working_dir` 和 `isolation`，则 `working_dir` 优先。
+- `working_dir`（字符串，可选）：将显式命名的非 fork 代理固定到当前仓库中已有的已注册 Git worktree。未命名启动会在前台运行，因为调用者拥有 worktree 的生命周期（参见 `run_in_background`）；固定到该 worktree 的命名队友会并发运行，移除 worktree 前必须先将其关闭。如果同时提供 `working_dir` 和 `isolation`，则 `working_dir` 优先。
 
 ## 如何使用 `agent` 与 Qwen Code
 
