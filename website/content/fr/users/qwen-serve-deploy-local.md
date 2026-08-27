@@ -20,6 +20,39 @@ Le démon lit le jeton d'authentification soit depuis `--token <valeur>` en lign
 
 Un seul `export` au niveau du shell couvre à la fois le démarrage du serveur et la construction du client SDK (gardez-le simplement limité à la session, comme indiqué ci-dessus).
 
+## Cycle de vie des espaces de travail et limites de processus
+
+Un seul démon peut héberger plusieurs environnements d'exécution isolés sous le même listener.
+Répétez `--workspace` avec des répertoires absolus pour créer des environnements
+d'exécution explicites au démarrage ; le premier est primaire. Les environnements
+primaires et autres environnements statiques/explicites au démarrage ne peuvent pas
+être retirés sans redémarrer le processus.
+
+Des espaces de travail supplémentaires peuvent également être enregistrés pendant
+que le démon fonctionne via `POST /workspaces`. Passez `persist: true` pour
+conserver un secondaire dynamique dans le magasin d'enregistrements au niveau
+utilisateur afin qu'il soit restauré au prochain démarrage. Les enregistrements
+non fiables restent visibles pour le diagnostic, les lectures de fichiers limitées
+et les lectures persistantes déclarées, mais ne peuvent pas démarrer ACP. Les
+secondaires dynamiques et restaurés depuis la persistance sont supprimables : une
+suppression normale refuse tant que l'environnement d'exécution est occupé, tandis
+qu'une suppression forcée demande la terminaison des ressources actives et acte la
+suppression logique avant que le même cwd puisse être réajouté. Le nettoyage est
+limité et best-effort après le point de validation de la persistance ; les échecs
+sont journalisés plutôt que de restaurer l'environnement d'exécution supprimé.
+
+L'isolation des environnements d'exécution couvre le cwd, la surcouche
+d'environnement, la limite de système de fichiers/confiance, les services
+d'espace de travail, le bridge, l'état de lease Voice, le worker de canal, et la
+frontière de ressources ACP/MCP. La production tente de préchauffer l'enfant ACP
+primaire et réessaie à la première utilisation après un échec ; les secondaires
+de confiance démarrent le leur à la demande, et les secondaires non fiables ne
+démarrent pas ACP. L'authentification, les limites de débit HTTP, les plafonds
+d'admission du listener et de Voice, l'admission totale de sessions, les métriques,
+l'arrêt et le rayon de défaut du processus restent au niveau global du démon.
+Lancez des démons séparés lorsque ces limites au niveau du processus doivent
+être indépendantes.
+
 ## Linux : unité utilisateur systemd
 
 > **Trouvez d'abord votre binaire `qwen`.** Le `ExecStart=` du fichier d'unité doit contenir un **chemin absolu** — les gestionnaires de services ne lisent pas le `PATH` de votre shell. Exécutez `which qwen` pour le trouver. Emplacements courants : `/usr/local/bin/qwen` (Linuxbrew, installations manuelles), `~/.nvm/versions/node/vX.Y.Z/bin/qwen` (nvm), `~/.fnm/aliases/default/bin/qwen` (fnm), `~/.volta/bin/qwen` (Volta). Remplacez par le chemin réel partout où les modèles ci-dessous indiquent `/PATH/TO/qwen`.
@@ -34,9 +67,9 @@ After=network.target
 [Service]
 Type=simple
 # Remplacez par votre projet ; %h est développé en $HOME sous les unités utilisateur.
-WorkingDirectory=%h/your-project
+WorkingDirectory=%h/project-a
 # Exécutez `which qwen` pour trouver le chemin absolu. systemd ne lit PAS $PATH.
-ExecStart=/PATH/TO/qwen serve --hostname 127.0.0.1 --port 4170
+ExecStart=/PATH/TO/qwen serve --hostname 127.0.0.1 --port 4170 --workspace %h/project-a --workspace %h/project-b
 # Lisez le jeton d'authentification depuis un fichier chmod 600 plutôt que de l'inclure
 # dans l'unité. `Environment=` exposerait le jeton dans le fichier d'unité
 # (généralement 644 = lisible par tout le monde). EnvironmentFile conserve le jeton dans
@@ -95,10 +128,14 @@ Sans `loginctl enable-linger`, l'instance systemd au niveau utilisateur s'arrêt
     <string>127.0.0.1</string>
     <string>--port</string>
     <string>4170</string>
+    <string>--workspace</string>
+    <string>/Users/VOTRE-NOM-UTILISATEUR/project-a</string>
+    <string>--workspace</string>
+    <string>/Users/VOTRE-NOM-UTILISATEUR/project-b</string>
   </array>
   <!-- launchd ne développe PAS `~` ni `$HOME` — utilisez des chemins absolus. -->
   <key>WorkingDirectory</key>
-  <string>/Users/VOTRE-NOM-UTILISATEUR/your-project</string>
+  <string>/Users/VOTRE-NOM-UTILISATEUR/project-a</string>
   <key>EnvironmentVariables</key>
   <dict>
     <!-- NE COMMITEZ PAS ce fichier avec un vrai jeton. Aussi, chmod 600 le
@@ -153,7 +190,7 @@ Après avoir modifié le plist (par exemple, rotation du jeton), vous devez fair
 Suppose que `QWEN_SERVER_TOKEN` est déjà exporté dans votre shell (voir la section de configuration ci-dessus) :
 
 ```bash
-tmux new -d -s qwen-serve "cd ~/your-project && qwen serve --hostname 127.0.0.1"
+tmux new -d -s qwen-serve "qwen serve --hostname 127.0.0.1 --workspace /absolute/path/project-a --workspace /absolute/path/project-b"
 tmux attach -t qwen-serve   # voir les journaux en direct ; Ctrl-b d pour détacher
 tmux kill-session -t qwen-serve
 ```
@@ -165,11 +202,14 @@ tmux kill-session -t qwen-serve
 Suppose que `QWEN_SERVER_TOKEN` est déjà exporté dans votre shell :
 
 ```bash
-nohup bash -c 'cd ~/your-project && qwen serve --hostname 127.0.0.1' > qwen-serve.log 2>&1 &
+nohup qwen serve --hostname 127.0.0.1 \
+  --workspace /absolute/path/project-a \
+  --workspace /absolute/path/project-b \
+  > qwen-serve.log 2>&1 &
 echo $!  # PID du démon ; capturez-le si vous voulez faire un `kill` propre plus tard
 ```
 
-L'encapsulation `bash -c '...'` garantit que le démon se lie à `~/your-project` plutôt qu'à l'endroit où vous avez exécuté la commande. Sans ce `cd`, `qwen serve` utilise par défaut `process.cwd()` et un `POST /session` depuis un client s'attendant à votre espace de travail de projet renverra `400 workspace_mismatch` — un piège silencieux.
+Des valeurs `--workspace` absolues explicites gardent le démon indépendant du répertoire courant du shell. Un client devrait sélectionner l'une des entrées `capabilities.workspaces[]` annoncées et passer son cwd lors de la création d'une session.
 
 OK pour des flux de travail ponctuels du type "laissez-moi exécuter ceci en arrière-plan pendant que je teste l'API". **Non recommandé** pour quoi que ce soit au-delà d'une session unique — pas de redémarrage en cas de plantage, le fichier journal croît sans limite, pas de moyen propre de retrouver le démon si vous oubliez le PID. Préférez tmux pour une supervision interactive, ou systemd / launchd pour tout ce que vous voulez faire survivre à un redémarrage.
 
@@ -214,8 +254,8 @@ Un **redémarrage** du démon supprime toutes les sessions en mémoire ; les cli
 ## Hors du périmètre (reporté à la v0.16.x ou ultérieure)
 
 - **Déploiement conteneurisé** — Dockerfile, docker-compose, manifests Kubernetes, nginx + proxy inverse TLS, isolation des jetons multi-instances. Reporté à la v0.16.x dès qu'un pilote entreprise est engagé ; la documentation pourrirait faute de validation.
-- **Fédération inter-hôtes / coordination multi-démon sur un seul hôte** — `1 démon = 1 espace de travail × N sessions` est appliqué. Le keying des jetons par instance et le nettoyage des jetons obsolètes sont reportés à la v0.16.x.
-- **Jetons de démon générés automatiquement** — l'alpha est BYO (apportez votre propre jeton). L'infrastructure d'auto-génération et de stockage des jetons est reportée à la v0.16.x.
+- **Fédération inter-hôtes / coordination multi-démon sur un seul hôte** — un démon peut héberger plusieurs environnements d'exécution d'espaces de travail enregistrés, mais les démons ne se coordonnent pas. Le keying des jetons par chemin d'instance et le nettoyage des jetons obsolètes sont reportés à la v0.16.x.
+- **Stockage général des jetons du démon** — Local Control utilise des jetons d'appairage révocables appartenant au démon, mais le stockage de jetons d'exécution de longue durée reste BYO-token. L'infrastructure persistante de stockage de jetons est reportée à la v0.16.x.
 - **Service natif Windows** (`nssm`, wrapper Service Control Manager) — pour l'instant, utilisez [WSL2](https://learn.microsoft.com/fr-fr/windows/wsl/) et suivez la section systemd ci-dessus.
 
 Consultez l'encadré [Limites connues de la v0.16-alpha](./qwen-serve.md#v016-alpha-known-limits) dans le guide utilisateur principal pour la liste complète des fonctionnalités reportées, et [#4175](https://github.com/QwenLM/qwen-code/issues/4175) pour le suivi du déploiement de la v0.16-alpha.

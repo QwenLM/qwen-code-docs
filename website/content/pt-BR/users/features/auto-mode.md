@@ -219,16 +219,24 @@ deseja motivos em outro idioma, adicione uma dica como
 
 O Modo Auto protege você de ficar travado:
 
+- Se a API do classificador estiver inacessível, expirar o tempo limite, exceder sua janela de contexto
+  ou retornar uma resposta inválida, a ação atual retorna imediatamente para
+  aprovação manual. A confirmação recomenda o Modo Padrão e oferece
+  **Mudar para o Modo Padrão e permitir uma vez** junto com Permitir uma vez e Rejeitar.
+  A mudança afeta apenas a sessão de execução atual; não altera suas
+  configurações salvas.
+
 - Após **3 bloqueios consecutivos por política**, a próxima chamada de ferramenta retorna ao
   prompt padrão de aprovação manual. Isso captura o caso em que o
   agente continua tentando variantes menores de um comando proibido.
-- Após **2 resultados consecutivos de indisponibilidade** (falhas na API do classificador)
-  a próxima chamada de ferramenta também retorna. Isso evita a espera por um
-  classificador quebrado.
+- Após **2 resultados consecutivos de indisponibilidade** (falhas na API do classificador),
+  as chamadas seguintes ignoram o classificador quebrado e vão direto para a aprovação
+  manual. O primeiro resultado de indisponibilidade já pede confirmação; o limite evita
+  esperar repetidamente por tentativas da API do classificador.
 
-A sessão em si permanece no Modo Auto — apenas a única chamada de fallback
-passa pela aprovação manual. Os contadores são resetados quando você aprova a
-chamada de fallback ou muda de modo.
+A sessão permanece no Modo Auto, a menos que você selecione explicitamente a opção de mudança.
+Apenas a chamada de fallback passa pela aprovação manual. Os contadores são resetados quando
+você aprova a chamada de fallback ou muda de modo.
 
 Se você perceber que está constantemente atingindo o fallback, as causas mais prováveis
 são uma interrupção na API do classificador ou dicas que precisam de ajuste. Mude para

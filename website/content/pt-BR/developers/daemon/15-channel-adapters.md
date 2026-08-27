@@ -7,9 +7,15 @@
 Existem dois modos de host atuais:
 
 - `qwen channel start [name]` é o serviço de canal independente com suporte a ACP. Ele passa aos adaptadores uma implementação `AcpBridge` de `ChannelAgentBridge`.
-- `qwen serve --channel <name>` e `qwen serve --channel all` são modos experimentais gerenciados por daemon. `qwen serve` inicia um worker de canal fora do processo, o worker se conecta ao daemon através do SDK e os adaptadores recebem uma fachada `ChannelAgentBridge` com suporte de `DaemonChannelBridge`.
+- `qwen serve --channel <name>` e `qwen serve --channel all` são modos experimentais gerenciados por daemon. As seleções nomeadas são agrupadas por workspace proprietário e o `qwen serve` inicia um worker fora do processo por runtime proprietário; cada worker se conecta ao daemon através do SDK e os adaptadores recebem uma fachada `ChannelAgentBridge` com suporte de `DaemonChannelBridge`. `--channel all` continua sendo uma seleção apenas do primário.
 
-No modo gerenciado por daemon, cada canal mapeia o tráfego de chat recebido para sessões do daemon sob um `SessionScope` configurável (`user`, `thread` ou `single`). O adaptador delega para o `DaemonChannelBridge`, que por sua vez delega para o `DaemonSessionClient` do SDK (consulte [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)). Um daemon está vinculado a um workspace, portanto, o `cwd` de cada canal selecionado deve resolver para o workspace do daemon.
+No modo gerenciado por daemon, cada canal mapeia o tráfego de chat recebido para sessões do daemon sob um `SessionScope` configurável (`user`, `chat_thread` ou `single`). O valor legado `thread` do Channel permanece legível e editável para configurações existentes, mas novas configurações do Web Shell não o oferecem; isso é separado do próprio controle de criação de sessão `single`/`thread` da bridge do daemon. O adaptador delega para o `DaemonChannelBridge`, que por sua vez delega para o `DaemonSessionClient` do SDK (consulte [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)). Cada canal nomeado deve resolver para um workspace registrado e confiável. O worker usa o cwd canônico desse runtime, `QWEN_DAEMON_WORKSPACE` e a sobreposição de ambiente; a resolução de propriedade nunca faz fallback para o primário.
+
+### Tarefas de canal disparadas por webhook
+
+Tarefas disparadas por webhook são hospedadas pelo `qwen serve` e executadas dentro do worker de canal gerenciado pelo daemon. A rota HTTP valida a origem e encaminha um `ChannelWebhookTask` para o worker via IPC. O worker chama `ChannelBase.runWebhookTask()`, então os adaptadores não implementam parsing de webhook.
+
+Os adaptadores ainda participam através do suporte a envio proativo: `supportsProactiveSend()` informa ao host se um canal pode enviar sem uma mensagem recebida, `supportsProactiveTarget()` trata limites de entrega para formatos de alvo específicos, e `pushProactive()` carrega o conteúdo de saída.
 
 ## Responsabilidades
 
@@ -61,6 +67,8 @@ abstract class ChannelBase {
 }
 ```
 
+Toda entrega interna de mensagens passa por `sendThreadMessage(chatId, threadId, text)`. A implementação padrão delega para `sendMessage(chatId, text)`, ignorando `threadId` — adaptadores de IM não são afetados. Adaptadores de polling (ex.: GitHub) sobrescrevem `sendThreadMessage` para postar comentários em uma issue/PR específica usando o `threadId`.
+
 Lida com preocupações transversais comuns: filtragem de remetente (allowlist / denylist), filtragem de grupo, streaming de blocos de mensagens (tamanho do chunk, limitação de taxa), debounce de entrada.
 
 ### Adaptadores por canal
@@ -71,6 +79,8 @@ Lida com preocupações transversais comuns: filtragem de remetente (allowlist /
 | WeChat (Weixin) | `packages/channels/weixin/src/WeixinAdapter.ts`     | iLink Bot HTTP long-poll                             | Envia via API proprietária `sendText` / `sendImage`; indicadores de digitação.                                 |
 | Telegram        | `packages/channels/telegram/src/TelegramAdapter.ts` | Telegram Bot API long-poll (grammy)                  | Envia chunks HTML via `sendMessage`.                                                                           |
 | Feishu          | `packages/channels/feishu/src/FeishuAdapter.ts`     | Feishu/Lark Stream WebSocket (padrão) ou HTTP webhook| Envia via Lark SDK como cartões interativos; o modo webhook requer `encryptKey` para verificação de assinatura HMAC. |
+| GitHub          | `packages/channels/github/src/GithubAdapter.ts`     | GitHub Notifications API polling (`@octokit/rest`)   | Estende `PollingChannelBase`; dedup de janela de comentários baseada em cursor; posta comentários via Issues API. |
+| GitLab          | `packages/channels/gitlab/src/GitlabAdapter.ts`     | GitLab Todos API polling (`@gitbeaker/rest`)         | Estende `PollingChannelBase`; despacha `todo.body` diretamente; a config `action_prompt_template` controla filtragem de eventos e renderização de metadados. |
 
 Cada adaptador implementa:
 
@@ -88,6 +98,8 @@ Cada adaptador implementa:
 | **WeChat**   | HTTP long-poll                  | `senderWxid` (+ `groupWxid` opcional)                  | Prompts apenas de texto com tokens de resposta | Mesma                                           |
 | **Telegram** | Bot API long-poll               | `from.id` (+ `chat.id` opcional para grupos)           | Botões de teclado inline          | Mesma                                           |
 | **Feishu**   | WebSocket stream / HTTP webhook | `sender.open_id` (+ `chat_id` opcional para grupos)    | Botões de cartão interativo       | Mesma                                           |
+| **GitHub**   | Notifications API polling       | `user.id` numérico (imutável; login resolvido na conexão) | Comentário de erro + re-mention | `senderPolicy: 'allowlist' \| 'open'`            |
+| **GitLab**   | Todos API polling               | `author.username` (minúsculas)                         | Log + re-mention                  | `senderPolicy: 'allowlist' \| 'open'`            |
 
 > **Nota:** A coluna "UX de Permissão" descreve o recurso nativo de cada plataforma, mas nenhuma está conectada ainda — `AcpBridge.requestPermission` atualmente aprova automaticamente todas as solicitações (`packages/channels/base/src/AcpBridge.ts`), e `ChannelConfig.approvalMode` está declarado, mas ainda não é lido. A aprovação interativa está planejada (Fase 5).
 
@@ -162,11 +174,21 @@ sequenceDiagram
 - `shutdown()` fecha todas as sessões ativas e o transporte subjacente (WebSocket / long-poll do canal).
 - O stream WebSocket do DingTalk suporta server-push; o long-poll do WeChat requer uma estratégia de backoff em respostas ociosas; o long-poll do Telegram tem um parâmetro `timeout` embutido.
 
+### Seleção de runtime e recarga de configurações
+
+O `ChannelWorkerManager` de longa duração possui a seleção consolidada do daemon e os supervisores agrupados por workspace. Um daemon pode iniciar sem `--channel`; o primeiro `PUT /workspace/channel` com gate estrito carrega dinamicamente o runtime de canal, reserva o pidfile do serviço, resolve a propriedade do workspace e inicia os workers selecionados. `GET /workspace/channel` lê o snapshot do manager e `DELETE /workspace/channel` o interrompe de forma idempotente. Os helpers do SDK são `getChannelWorkerControl()`, `setChannelWorkerSelection()` e `stopChannelWorker()`; a entrada CLI é `qwen channel set` mais as variantes remotas `status` e `stop`.
+
+O daemon lê as configurações de canal do `settings.json` quando cada worker inicia (`packages/cli/src/commands/channel/daemon-worker.ts` → `loadSettings` → `loadChannelsConfig`). `POST /workspace/channel/reload` relê essas configurações e força a reconciliação da seleção consolidada. Todas as mutações de ciclo de vida compartilham uma única fila FIFO. Grupos de workspace inalterados sobrevivem à substituição ordinária de seleção; grupos alterados param e iniciam sequencialmente enquanto o lease de PID do serve permanece mantido.
+
+Se uma substituição falhar, os workers recém-iniciados são interrompidos e os workers antigos são restaurados antes que a requisição retorne. Um supervisor que não consegue observar a saída após SIGTERM e SIGKILL retém sua referência filha e falha na parada; o manager mantém o lease de PID e nunca inicia um segundo worker. A configuração e o roteamento de webhook mudam apenas quando o commit da seleção é bem-sucedido. As seleções de runtime são locais ao processo e desaparecem na reinicialização do daemon.
+
+Falhas no `connect()` do adaptador são reportadas separamente dos erros de ciclo de vida do worker. O worker envia cada falha delimitada e com credenciais redigidas pelo IPC de startup e aguarda o reconhecimento do supervisor antes de tentar o próximo adaptador. Um worker parcialmente conectado permanece em execução e expõe `startupFailures` em seu snapshot. Se todo adaptador em uma tentativa dinâmica falhar, a resposta `502 channel_worker_start_failed` carrega falhas tentadas anotadas com workspace enquanto `state` reflete o resultado do rollback; respostas GET subsequentes não retêm a tentativa. A inicialização do daemon sem nenhum adaptador conectado continua sendo fail-fast. O `code` opcional do adaptador é apenas diagnóstico, e a `phase` atual é `connect`.
+
 ## Dependências
 
-- `packages/channels/base/` — `ChannelBase`, `DaemonChannelBridge`, `types.ts` (`ChannelConfig`, `Envelope`, `SessionScope`, `ChannelPlugin`).
+- `packages/channels/base/` — `ChannelBase`, `PollingChannelBase`, `DaemonChannelBridge`, `types.ts` (`ChannelConfig`, `Envelope`, `SessionScope`, `ChannelPlugin`).
 - `packages/sdk-typescript/src/daemon/` — `DaemonSessionClient` e relacionados.
-- SDKs por canal: `@dingtalk/stream` (DingTalk), HTTP iLink Bot proprietário (Weixin), `grammy` (Telegram).
+- SDKs por canal: `@dingtalk/stream` (DingTalk), HTTP iLink Bot proprietário (Weixin), `grammy` (Telegram), `@octokit/rest` (polling do GitHub), `@gitbeaker/rest` (polling do GitLab).
 
 ## Configuração
 
@@ -174,7 +196,7 @@ sequenceDiagram
 
 | Parâmetro                                | Efeito                                                                                                      |
 | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `sessionScope`                           | `'user'` (remetente + chat), `'thread'` (id da thread ou chat) ou `'single'` (uma sessão compartilhada por canal). |
+| `sessionScope`                           | `'user'` (remetente + chat), `'chat_thread'` (canal + chatId + threadId) ou `'single'` (uma sessão compartilhada por canal). O `'thread'` legado é preservado quando já configurado, mas não é oferecido para novas configurações do Web Shell. |
 | `approvalMode`                           | `'auto'` (resposta automática) / `'prompt'` (renderiza UI).                                                 |
 | `allowlist?: string[]`                   | IDs de remetente permitidos; ausente = aberto.                                                              |
 | `denylist?: string[]`                    | IDs de remetente negados.                                                                                   |
@@ -196,6 +218,10 @@ Chaves específicas do canal são adicionadas por cima (DingTalk: `streamCredent
 - `packages/channels/base/src/DaemonChannelBridge.ts`
 - `packages/channels/base/src/ChannelBase.ts`
 - `packages/channels/base/src/types.ts`
+- `packages/cli/src/serve/channel-worker-manager.ts` (ciclo de vida de seleção + serialização)
+- `packages/cli/src/serve/channel-worker-group.ts` (reconciliação diferencial por workspace)
+- `packages/cli/src/serve/channel-worker-supervisor.ts` (supervisão de processos filhos)
+- `packages/cli/src/serve/routes/workspace-channel-control.ts` (recurso GET/PUT/DELETE/reload)
 - `packages/channels/dingtalk/src/DingtalkAdapter.ts`
 - `packages/channels/weixin/src/WeixinAdapter.ts`
 - `packages/channels/telegram/src/TelegramAdapter.ts`

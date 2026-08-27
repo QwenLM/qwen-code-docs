@@ -2,7 +2,7 @@
 
 ## Vue d'ensemble
 
-Un processus `qwen serve` correspond à **un démon = un espace de travail**. Il héberge un seul serveur HTTP Express, possède une instance de `@qwen-code/acp-bridge` et lance un processus enfant ACP (`qwen --acp`) qui exécute le runtime agent. Plusieurs clients (CLI TUI, companion IDE, bots de canal de messagerie, BFF web, scripts personnalisés) se connectent via HTTP + SSE et partagent soit une seule session ACP (`sessionScope: 'single'`, par défaut), soit répartissent les sessions par fil de conversation (`sessionScope: 'thread'`).
+Un processus `qwen serve` héberge un serveur HTTP Express et un workspace principal par défaut. Avec `multi_workspace_sessions` activé, il peut également héberger des runtimes de workspace supplémentaires pour la boucle fermée de session live ; chaque workspace enregistré possède sa propre paire `@qwen-code/acp-bridge` / enfant `qwen --acp`. Plusieurs clients (CLI TUI, companion IDE, bots de canal de messagerie, BFF web, scripts personnalisés) se connectent via HTTP + SSE et partagent soit une seule session ACP (`sessionScope: 'single'`, par défaut), soit répartissent les sessions par fil de conversation (`sessionScope: 'thread'`).
 
 À l'intérieur du processus enfant ACP, les serveurs MCP sont partagés à l'échelle de l'espace de travail via `McpTransportPool` (F2) : un tuple (nom du serveur + empreinte de configuration) unique correspond à un seul transport MCP, quel que soit le nombre de sessions qui le découvrent. Le `MultiClientPermissionMediator` (F3) du pont coordonne les votes de permissions entre tous les clients connectés selon l'une des quatre politiques.
 
@@ -20,7 +20,7 @@ flowchart LR
         SDK["Any SDK consumer<br/>(packages/sdk-typescript/src/daemon)"]
     end
 
-    subgraph daemon["qwen serve process (one workspace)"]
+    subgraph daemon["qwen serve process (primary workspace plus optional session runtimes)"]
         EXP["Express app<br/>(packages/cli/src/serve/server.ts)"]
         BR["AcpBridge<br/>(packages/acp-bridge/src/bridge.ts)"]
         MED["MultiClientPermissionMediator<br/>(F3)"]
@@ -154,7 +154,7 @@ sequenceDiagram
     participant CH as ACP child
 
     C->>MW: POST /session/:id/prompt<br/>Authorization: Bearer …<br/>X-Qwen-Client-Id: …
-    MW->>MW: denyBrowserOriginCors
+    MW->>MW: allowOriginCors (mutable allowlist; unmatched Origin -> 403)
     MW->>MW: hostAllowlist (DNS rebinding guard)
     MW->>MW: access-log hook
     MW->>MW: bearerAuth (constant-time compare)

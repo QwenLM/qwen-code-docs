@@ -56,6 +56,37 @@ qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "Apply the follow-up refac
 > - セッションデータは、`~/.qwen/projects/<sanitized-cwd>/chats` 以下にプロジェクトスコープの JSONL として保存されます。
 > - 新しいプロンプトを送信する前に、会話履歴、ツール出力、およびチャット圧縮のチェックポイントを復元します。
 
+## 永続ゴールの実行
+
+ヘッドレスモードは、プロンプト全体として `/goal` を受け付けます。ゴールの状態はセッションと共に保存されるため、`--continue` または `--resume <sessionId>` を使用して、後のプロセスから同じゴールを検査または制御できます。これには `general.chatRecording` が有効のままになっている必要があります（デフォルト）。
+
+```bash
+# ゴールを作成してそのワーカーを起動する
+qwen -p "/goal Finish the release checklist"
+
+# 同じセッションで保存された状態を検査する
+qwen --continue -p "/goal"
+```
+
+他の操作にも同じ `qwen --continue -p "<control>"` パターンを使用します。
+
+| 制御                                 | 動作                                                                                   |
+| ------------------------------------ | ---------------------------------------------------------------------------------------- |
+| `/goal`                              | モデルを呼び出せずに保存された状態を報告します。                                       |
+| `/goal <objective>` または `/goal set …` | ゴールを作成または置換し、ヘッドレスゴールの作業を開始します。                                 |
+| `/goal edit <objective>`             | 未完了のゴールを修正します。結果の状態がアクティブな場合、作業が即座に開始されます。 |
+| `/goal pause`                        | アクティブなゴールをモデルを呼び出せずに一時停止します。                                  |
+| `/goal resume`                       | 対象となるゴールを再開し、ヘッドレスゴールの作業を開始します。                            |
+| `/goal clear`                        | 確認やモデル呼び出しなしにゴールをクリアします。                                        |
+
+ランタイムでスケジュールされたゴールの継続セグメントは `--max-session-turns` にカウントされませんが、実際のユーザープロンプトはカウントされます。明示的な `--max-wall-time` と `--max-tool-calls` の予算は引き続き適用されます。いずれかを超えると、アクティブなゴールの作業は予算固有のエラーで実行が終了する前に一時停止されます。
+
+`--output-format stream-json` では、ゴールの状態が変化するたびに `event.type` が `goal_state` の `stream_event` が出力されます。この正規の状態イベントは `--include-partial-messages` なしでも出力されます。部分メッセージが有効な場合、古い `active_goal` イベントが互換性プロジェクションとして追従しますが、自動化では `goal_state` を権威あるものとして扱うべきです。
+
+> [!note]
+>
+> この動作は標準的なヘッドレス CLI 実行に適用されます。ACP は引き続きレガシーゴールコマンドパスを使用します。
+
 ## メインセッションプロンプトのカスタマイズ
 
 共有メモリファイルを編集せずに、1 回の CLI 実行のメインセッションシステムプロンプトを変更できます。
@@ -182,6 +213,8 @@ qwen -p "Explain TypeScript" --output-format stream-json
 
 `--include-partial-messages` と組み合わせると、リアルタイムの UI 更新のために、追加のストリームイベント（message_start、content_block_delta など）がリアルタイムで出力されます。
 
+JSONおよびstream-json出力では、テキストの `tool_result.content` 値はJSON文字列シリアライゼーション後に65,536バイトのUTF-8に制限されます。サイズ超過の値は決定論的な先頭/末尾のプレビューとして出力されます。同じ制限は、永続的なstream-jsonセッション、SDKトランスポート、サブエージェントのツール結果、およびデュアル出力にも適用されます。テキストモードは最終応答のみを出力し、内部には制限されたプレビューのみを保持します。この制限は、JSONセッション全体、JSONLイベント、ツール入力、または部分メッセージのサイズを制限するものではありません。
+
 ```bash
 qwen -p "Write a Python script" --output-format stream-json --include-partial-messages
 ```
@@ -208,7 +241,7 @@ qwen -p "Explain Docker" --output-format json > docker-explanation.json
 qwen -p "Add more details" >> docker-explanation.txt
 
 # 他のツールにパイプ
-qwen -p "What is Kubernetes?" --output-format json | jq '.response'
+qwen -p "What is Kubernetes?" --output-format json | jq -r '.[-1].result'
 qwen -p "Explain microservices" | wc -w
 qwen -p "List programming languages" | grep -i "python"
 
@@ -283,14 +316,14 @@ cat src/auth.py | qwen -p "Review this authentication code for security issues" 
 
 ```bash
 result=$(git diff --cached | qwen -p "Write a concise commit message for these changes" --output-format json)
-echo "$result" | jq -r '.response'
+echo "$result" | jq -r '.[-1].result'
 ```
 
 ### API ドキュメント
 
 ```bash
 result=$(cat api/routes.js | qwen -p "Generate OpenAPI spec for these routes" --output-format json)
-echo "$result" | jq -r '.response' > openapi.json
+echo "$result" | jq -r '.[-1].result' > openapi.json
 ```
 
 ### バッチコード分析
@@ -299,7 +332,7 @@ echo "$result" | jq -r '.response' > openapi.json
 for file in src/*.py; do
     echo "Analyzing $file..."
     result=$(cat "$file" | qwen -p "Find potential bugs and suggest improvements" --output-format json)
-    echo "$result" | jq -r '.response' > "reports/$(basename "$file").analysis"
+    echo "$result" | jq -r '.[-1].result' > "reports/$(basename "$file").analysis"
     echo "Completed analysis for $(basename "$file")" >> reports/progress.log
 done
 ```
@@ -308,7 +341,7 @@ done
 
 ```bash
 result=$(git diff origin/main...HEAD | qwen -p "Review these changes for bugs, security issues, and code quality" --output-format json)
-echo "$result" | jq -r '.response' > pr-review.json
+echo "$result" | jq -r '.[-1].result' > pr-review.json
 ```
 
 ### ログ分析
@@ -321,7 +354,7 @@ grep "ERROR" /var/log/app.log | tail -20 | qwen -p "Analyze these errors and sug
 
 ```bash
 result=$(git log --oneline v1.0.0..HEAD | qwen -p "Generate release notes from these commits" --output-format json)
-response=$(echo "$result" | jq -r '.response')
+response=$(echo "$result" | jq -r '.[-1].result')
 echo "$response"
 echo "$response" >> CHANGELOG.md
 ```
@@ -330,12 +363,12 @@ echo "$response" >> CHANGELOG.md
 
 ```bash
 result=$(qwen -p "Explain this database schema" --include-directories db --output-format json)
-total_tokens=$(echo "$result" | jq -r '.stats.models // {} | to_entries | map(.value.tokens.total) | add // 0')
-models_used=$(echo "$result" | jq -r '.stats.models // {} | keys | join(", ") | if . == "" then "none" else . end')
-tool_calls=$(echo "$result" | jq -r '.stats.tools.totalCalls // 0')
-tools_used=$(echo "$result" | jq -r '.stats.tools.byName // {} | keys | join(", ") | if . == "" then "none" else . end')
+total_tokens=$(echo "$result" | jq -r '.[-1].stats.models // {} | to_entries | map(.value.tokens.total) | add // 0')
+models_used=$(echo "$result" | jq -r '.[-1].stats.models // {} | keys | join(", ") | if . == "" then "none" else . end')
+tool_calls=$(echo "$result" | jq -r '.[-1].stats.tools.totalCalls // 0')
+tools_used=$(echo "$result" | jq -r '.[-1].stats.tools.byName // {} | keys | join(", ") | if . == "" then "none" else . end')
 echo "$(date): $total_tokens tokens, $tool_calls tool calls ($tools_used) used with models: $models_used" >> usage.log
-echo "$result" | jq -r '.response' > schema-docs.md
+echo "$result" | jq -r '.[-1].result' > schema-docs.md
 echo "Recent usage trends:"
 tail -5 usage.log
 ```

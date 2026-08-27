@@ -94,7 +94,7 @@ gha-creds-*.json
 
 ### イシューのトリアージ
 
-この Action は、GitHub Issues を自動またはスケジュールに従ってトリアージするために使用できます。動作するイシューのトリアージ設定については、[自動イシューのトリアージワークフロー](https://github.com/QwenLM/qwen-code/blob/main/.github/workflows/qwen-automated-issue-triage.yml)を参照してください。
+この Action は、GitHub Issues を自動またはオンデマンドでトリアージするために使用できます。動作するイシューのトリアージ設定については、[Qwen トリアージワークフロー](https://github.com/QwenLM/qwen-code/blob/main/.github/workflows/qwen-triage.yml)を参照してください。
 
 ### プルリクエストのレビュー
 

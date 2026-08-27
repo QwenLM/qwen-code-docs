@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Callout } from "nextra/components";
 import { useMDXComponents as getMDXComponents } from "../../../mdx-components";
 import {
   importContentPage,
@@ -23,7 +24,7 @@ export const generateStaticParams = async () => {
   });
 };
 
-const LOCALES = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR"];
+const LOCALES = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR", "ko"];
 
 // OG 图片映射
 const OG_IMAGE_MAP = {
@@ -258,6 +259,8 @@ const Page = async (props) => {
   const { default: MDXContent, toc, metadata, sourceCode } = result;
   const mdxPath = Array.isArray(params.mdxPath) ? params.mdxPath : [];
   const isLanguageIndex = mdxPath.length === 0;
+  const isFallback =
+    params.lang !== "en" && !getContentFile(params.lang, params.mdxPath);
   const siteUrl = getSiteUrl();
   const description =
     metadata.description || getExcerptFromContent(params.lang, params.mdxPath);
@@ -298,8 +301,13 @@ const Page = async (props) => {
     : null;
 
   return (
-    <div className={isBlogIndex ? "blog-index-page" : undefined}>
+    <div className={isBlogIndex ? "blog-index-page" : isBlogPost ? "blog-post-page" : undefined}>
       <Wrapper toc={toc} metadata={metadata} sourceCode={sourceCode}>
+        {isFallback ? (
+          <Callout type="warning">
+            This page has not been translated yet. Showing the English version.
+          </Callout>
+        ) : null}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

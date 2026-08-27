@@ -70,10 +70,11 @@ Em seguida, abra seu bot no Telegram e envie uma mensagem. Você verá "Working.
 
 Para usar o bot em grupos do Telegram:
 
-1. Defina `groupPolicy` como `"allowlist"` ou `"open"` na configuração do seu canal
+1. Defina `groupPolicy` como `"allowlist"`, `"pairing"` ou `"open"` na configuração do seu canal
 2. **Desative o modo de privacidade** no BotFather: `/mybots` → selecione seu bot → Bot Settings → Group Privacy → Turn Off
 3. Adicione o bot a um grupo. Se ele já estiver no grupo, **remova e adicione-o novamente** (o Telegram armazena em cache as configurações de privacidade do momento em que o bot entrou)
 4. Se estiver usando `groupPolicy: "allowlist"`, adicione o chat ID do grupo a `groups` na sua configuração
+5. Se estiver usando `groupPolicy: "pairing"`, aprove a solicitação de pareamento do grupo uma vez antes que as respostas comecem. Note que uma vez que um grupo é aprovado, **qualquer membro daquele grupo** pode usar o bot; `senderPolicy` e `allowedUsers` não controlam os membros de um grupo aprovado.
 
 Por padrão, o bot exige uma @menção ou uma resposta para responder em grupos. Defina `"requireMention": false` para um grupo específico para que ele responda a todas as mensagens (útil para grupos de tarefas dedicados). Veja [Conversas em Grupo](./overview#group-chats) para detalhes completos.
 
@@ -105,8 +106,9 @@ As respostas em markdown do agente são automaticamente convertidas para HTML co
 
 ### O bot não responde em grupos
 
-- Verifique se `groupPolicy` está definido como `"allowlist"` ou `"open"` (o padrão é `"disabled"`)
+- Verifique se `groupPolicy` está definido como `"allowlist"`, `"pairing"` ou `"open"` (o padrão é `"disabled"`)
 - Se estiver usando `"allowlist"`, verifique se o chat ID do grupo está na configuração `groups`
+- Se estiver usando `"pairing"`, verifique se a solicitação de pareamento do grupo foi aprovada
 - Certifique-se de que **Group Privacy está desligado** no BotFather — sem isso, o bot não consegue ver mensagens que não sejam comandos em grupos
 - Se você alterou o modo de privacidade depois de adicionar o bot a um grupo, **remova e adicione o bot novamente** ao grupo
 - Por padrão, o bot exige uma @menção ou uma resposta. Envie `@seubot oi` para testar

@@ -18,7 +18,7 @@ export default withNextra({
   basePath: assetPrefix,
   assetPrefix: assetPrefix,
   i18n: {
-    locales: ["en", "zh", "de", "fr", "ru", "ja", "pt-BR"],
+    locales: ["en", "zh", "de", "fr", "ru", "ja", "pt-BR", "ko"],
     defaultLocale: "en",
   },
   eslint: {

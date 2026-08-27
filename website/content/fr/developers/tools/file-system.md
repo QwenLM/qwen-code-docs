@@ -8,6 +8,8 @@ Qwen Code fournit une suite complète d'outils pour interagir avec le système d
 
 `list_directory` liste les noms des fichiers et sous-répertoires directement dans un chemin de répertoire spécifié. Il peut éventuellement ignorer les entrées correspondant aux motifs glob fournis.
 
+**Remarque :** Cet outil est opt-in et désactivé par défaut car `glob` couvre le listage de répertoires dans la plupart des cas. Activez-le en définissant `tools.listDirectory.enabled` sur `true` dans vos paramètres, ou en listant explicitement `list_directory` dans la liste blanche `coreTools` (`--core-tools` / `tools.core`).
+
 - **Tool name :** `list_directory`
 - **Display name :** ListFiles
 - **File :** `ls.ts`
@@ -24,18 +26,21 @@ Qwen Code fournit une suite complète d'outils pour interagir avec le système d
 
 ## 2. `read_file` (ReadFile)
 
-`read_file` lit et retourne le contenu d'un fichier spécifié. Cet outil gère les fichiers texte et les fichiers multimédia (images, PDF, audio, vidéo) dont la modalité est prise en charge par le modèle actuel. Pour les fichiers texte, il peut lire des plages de lignes spécifiques. Les fichiers multimédia dont la modalité n'est pas prise en charge par le modèle actuel sont rejetés avec un message d'erreur utile. Les autres types de fichiers binaires sont généralement ignorés.
+`read_file` lit et retourne le contenu d'un fichier spécifié. Cet outil gère les fichiers texte et les fichiers multimédia (images, PDF, audio, vidéo) dont la modalité est prise en charge par le modèle actuel. Pour les fichiers texte, il peut lire des plages de lignes spécifiques. Les PDF non pris en charge tentent l'extraction de texte et le fallback de vision borné décrit ci-dessous ; les autres fichiers multimédia non pris en charge retournent un message d'erreur utile. Les autres types de fichiers binaires sont généralement ignorés.
 
 - **Tool name :** `read_file`
 - **Display name :** ReadFile
 - **File :** `read-file.ts`
 - **Paramètres :**
-  - `path` (string, obligatoire) : Le chemin absolu du fichier à lire.
+  - `file_path` (string, obligatoire) : Le chemin absolu du fichier à lire.
   - `offset` (number, optionnel) : Pour les fichiers texte, le numéro de ligne (base 0) à partir duquel commencer la lecture. Nécessite que `limit` soit défini.
   - `limit` (number, optionnel) : Pour les fichiers texte, le nombre maximal de lignes à lire. S'il est omis, lit un maximum par défaut (par ex., 2000 lignes) ou le fichier entier si possible.
+  - `pages` (string, optionnel) : Pour les PDF, une page indexée à 1 ou une plage de pages fermée comme `"3"` ou `"20-25"`. Une requête peut contenir au plus 20 pages.
 - **Comportement :**
   - Pour les fichiers texte : Retourne le contenu. Si `offset` et `limit` sont utilisés, retourne uniquement cette tranche de lignes. Indique si le contenu a été tronqué en raison des limites de lignes ou de longueur de ligne.
   - Pour les fichiers multimédia (images, PDF, audio, vidéo) : Si le modèle actuel prend en charge la modalité du fichier, retourne le contenu du fichier sous forme d'objet `inlineData` encodé en base64. Si le modèle ne prend pas en charge la modalité, retourne un message d'erreur avec des conseils (par exemple, suggérant des skills ou des outils externes).
+  - Pour les PDF avec un modèle principal texte uniquement : L'extraction de texte est tentée en premier. Si l'extraction échoue, ou si une page unique demandée explicitement (ou réelle) dépasse encore le budget de texte de 12K tokens, un Vision Bridge configuré rend et transcrit automatiquement au plus quatre pages en commençant à la première page demandée. La plage demandée est clipsée à la fin réelle du document lorsque connue. Le résultat identifie la plage transcrite et soit les pages restant connues, soit, lorsque le nombre de pages n'est pas disponible, que des pages supplémentaires peuvent exister. Le débordement multi-pages texte ordinaire demande toujours une plage `pages` plus étroite au lieu de passer en vision.
+  - La transcription PDF par le Vision Bridge est lossy et marquée comme contenu généré par machine non fiable. Le résultat de l'outil contient du texte plutôt que des images rendues, et son interface utilisateur TUI, ACP, sortie structurée non interactive et affichages d'export identifient le modèle et le point de terminaison de vision lorsque connus. Si le bridge échoue, l'erreur exacte d'extraction PDF originale est retournée au modèle tandis que l'affichage utilisateur divulgue toujours la tentative de bridge.
   - Pour les autres fichiers binaires : Tente de les identifier et de les ignorer, retournant un message indiquant qu'il s'agit d'un fichier binaire générique.
 - **Output :** (`llmContent`) :
   - Pour les fichiers texte : Le contenu du fichier, éventuellement précédé d'un message de troncature (par ex., `[File content truncated: showing lines 1-100 of 500 total lines...]\nActual file content...`).

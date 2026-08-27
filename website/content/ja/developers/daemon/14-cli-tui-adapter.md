@@ -6,7 +6,7 @@
 
 `packages/sdk-typescript/src/daemon/ui/` は、SDK に `ui/*` サブパッケージを追加します。これは、デーモンの SSE イベントストリームを、再利用可能なプリミティブを通じて UI でレンダリング可能なトランスクリプトブロックに変換します。
 
-- **正規化** (`normalizer.ts`): デーモンのワイヤースキーマの47種類の既知のイベントタイプ（[`09-event-schema.md`](./09-event-schema.md) を参照）を、`assistant.text.delta`、`tool.update`、`session.metadata.changed` などの37種類の UIフレンドリな `DaemonUiEventType` セマンティックイベントにマッピングします。
+- **正規化** (`normalizer.ts`): デーモンのワイヤースキーマの53種類の既知のイベントタイプ（[`09-event-schema.md`](./09-event-schema.md) を参照）を、`assistant.text.delta`、`tool.update`、`session.metadata.changed` などの43種類の UIフレンドリな `DaemonUiEventType` セマンティックイベントにマッピングします。
 - **ステートマシン** (`transcript.ts`, `store.ts`): UI イベントを順序付けされた `DaemonTranscriptBlock[]` に射影する、純粋なリデューサーとサブスクライブ可能なストアです。
 - **レンダラー** (`render.ts`, `terminal.ts`, `toolPreview.ts`): トランスクリプトブロックを HTML、ターミナルテキスト、およびツールプレビュー文字列に変換します。ホストはこれらを使用することも、置き換えることもできます。
 - **適合性** (`conformance.ts`): チャネル、TUI、および IDE サーフェスがこれらのプリミティブに移行する際に使用される、クロスホスト一貫性テストです。
@@ -15,7 +15,7 @@
 
 ## 責務
 
-- 47種類のデーモンワイヤーイベントを安定した UI 語彙（`DaemonUiEventType`）に正規化し、レンダラーが `rawEvent.data` を検査しないようにします。
+- 53種類のデーモンワイヤーイベントを安定した UI 語彙（`DaemonUiEventType`）に正規化し、レンダラーが `rawEvent.data` を検査しないようにします。
 - デーモンで単調増加する SSE `eventId` を**プライマリ順序キー**として保持し、異なるクライアントが同じ順序でトランスクリプトをレンダリングできるようにします。
 - 純粋なリデューサーを使用してトランスクリプトブロックを生成し、保留中の権限、現在のツール、承認モード、ツールの進行状況、およびサブエージェントの子に対するセレクターを提供します。
 - ベースラインの HTML およびターミナルレンダラーを提供しつつ、ホスト固有のレンダリングを許可します。
@@ -41,7 +41,7 @@
 
 ### `DaemonUiEventType` 語彙
 
-`ui/types.ts` は、ドメインごとにグループ化された37種類の UI イベントタイプを定義します。
+`ui/types.ts` は、ドメインごとにグループ化された43種類の UI イベントタイプを定義します。
 
 **チャットストリーム (Stage 1)**
 
@@ -71,7 +71,7 @@
 - `auth.device_flow.started`、`auth.device_flow.throttled`、`auth.device_flow.authorized`
 - `auth.device_flow.failed`、`auth.device_flow.cancelled`
 
-`normalizeDaemonEvent` は、47種類の既知のデーモンワイヤーイベントをこの語彙にマッピングします。未知、未モデル化、または不正な形式のイベントタイプは `debug` に正規化され、ホスト診断用に `rawEvent` が保持されます。
+`normalizeDaemonEvent` は、53種類の既知のデーモンワイヤーイベントをこの語彙にマッピングします。未知、未モデル化、または不正な形式のイベントタイプは `debug` に正規化され、ホスト診断用に `rawEvent` が保持されます。
 
 ### リデューサーとセレクター
 
@@ -117,7 +117,7 @@ flowchart LR
     A --> B["DaemonClient.subscribeEvents<br/>parseSseStream"]
     B --> C["asKnownDaemonEvent<br/>(09-event-schema.md)"]
     C --> D["normalizeDaemonEvent<br/>ui/normalizer.ts"]
-    D --> E["DaemonUiEvent<br/>(37種類のUIフレンドリなタイプ)"]
+    D --> E["DaemonUiEvent<br/>(43種類のUIフレンドリなタイプ)"]
     E --> F["reduceDaemonTranscriptEvents<br/>ui/transcript.ts"]
     F --> G["DaemonTranscriptState +<br/>DaemonTranscriptBlock[]"]
     G --> H["レンダラー<br/>(render.ts HTML / terminal.ts / ホストカスタム)"]
@@ -128,7 +128,7 @@ flowchart LR
 
 ### `state_resync_required`
 
-`session.state_resync_required` は、トランスクリプトの「見逃した範囲」マーカーにマッピングされます。UI コードは `formatMissedRange(state)` を呼び出して、「イベント X-Y を見逃しました」などのテキストをレンダリングできます。リデューサーは**後続のイベントの適用を継続**しますが、影響を受けるブロックに `resyncRecovery: true` をマークし、レンダラーが視覚的なコンテキストを追加できるようにします。リングエビクションと `state_resync_required` のセマンティクスについては、[`10-event-bus.md`](./10-event-bus.md) を参照してください。
+`session.state_resync_required` は、トランスクリプトの「見逃した範囲」マーカーにマッピングされます。UI コードは `formatMissedRange(state)` を呼び出して、「イベント X-Y を見逃しました」などのテキストをレンダリングできます。リデューサーは `awaitingResync` を設定し、コンシューマーコードがセッションの有界リプレイスナップショットウィンドウをリロードしてラッチをクリアするまで、通常のデルタイベントをスキップします。ロードされたスナップショットは `history_truncated` で始まる場合があります。そのマーカーはステータスとしてのみレンダリングされ、別の resync ループを開始してはなりません。リングエビクションと `state_resync_required` のセマンティクスについては、[`10-event-bus.md`](./10-event-bus.md) を参照してください。
 
 ## コンシューマー
 

@@ -1,0 +1,78 @@
+# Glossary (ja)
+
+English term → Japanese rendering. Follow existing entries; append new ones as `- term → rendering` when you coin a term.
+
+- hook → フック
+- skill → スキル
+- subagent → サブエージェント
+- sandbox → サンドボックス
+- checkpoint → チェックポイント
+- slash command → スラッシュコマンド
+- headless → ヘッドレス
+- approval mode → 承認モード
+- daemon → デーモン
+- workspace → ワークスペース
+- transcript → トランスクリプト
+- turn → ターン
+- snapshot → スナップショット
+- replay → リプレイ
+- replay window → リプレイウィンドウ
+- live turn → ライブターン
+- fail closed → fail closed（失敗時は拒否）
+- secondary → セカンダリ
+- hot removal → ホット取り外し
+- memory lane → メモリレーン
+- embedding host → 埋め込みホスト
+- unattached session → 未アタッチセッション
+- session picker → セッションピッカー
+- sub-session launcher → サブセッションランチャー
+- compaction → コンパクション
+- microcompaction → マイクロコンパクション
+- chip → chip（翻訳しない）
+- composer → composer（翻訳しない）
+- annotation → アノテーション
+- optimistic echo → 楽観 echo
+- vision bridge → vision bridge（翻訳しない）
+- managed memory → managed memory（英語のまま）
+- heartbeat → heartbeat（翻訳しない）
+- log rotation → ローテーション
+- degradation → degradation（英語のまま）
+- direct message (DingTalk 单聊) → 1対1チャット
+- liveness → liveness（英語のまま）
+- first-responder-wins → first-responder-wins（英語のまま）
+- trust → 信頼
+- runtime generation → ランタイム世代
+- generation guard → 世代ガード
+- drain → drain（英語のまま）
+- admission → 受け入れ
+- reconciliation → reconciliation（英語のまま）
+- display name → 表示名
+- observed contact → observed contact（識別子は英語のまま）／観測されたコンタクト
+- delivery target → 配信ターゲット
+- freshness → 鮮度
+- hot continuation → ホットコンティニュエーション
+- resident runtime → 常駐ランタイム
+- roster → roster（英語のまま）
+- single-flight → シングルフライト
+- cold start → コールドスタート
+- preheat → プリヒート
+- fire-and-forget → fire-and-forget（英語のまま）
+- worktree → ワークツリー（識別子・コード中は worktree のまま）
+- speculation → speculation／投機的実行
+- fail open → fail open（失敗時は許可）
+- output segment → 出力セグメント
+- presenter → プレゼンター
+- curator → curator（英語のまま）
+- plan mode → プランモード
+- steering → steering（英語のまま）
+- compile cache → コンパイルキャッシュ
+- route (model route) → ルート
+- selector → セレクター
+- classifier → クラシファイア
+- cursor → カーソル
+- watermark → watermark（英語のまま）
+- rewind → rewind（英語のまま）
+- leaf → leaf（英語のまま）
+- partition → パーティション
+- forensics/source forensics → フォレンジック
+- verifier (goal) → 検証ツール

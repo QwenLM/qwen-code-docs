@@ -30,11 +30,13 @@ Adicione o canal ao arquivo `~/.qwen/settings.json`:
       "type": "dingtalk",
       "clientId": "$DINGTALK_CLIENT_ID",
       "clientSecret": "$DINGTALK_CLIENT_SECRET",
+      "useConnectionManager": true,
       "senderPolicy": "open",
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "instructions": "You are a concise coding assistant responding via DingTalk.",
       "groupPolicy": "open",
+      "atSender": true,
       "groups": {
         "*": { "requireMention": true }
       }
@@ -61,6 +63,49 @@ Ou defina-as na seção `env` do `settings.json`:
 }
 ```
 
+### Cartões Interativos
+
+Adicione um objeto `interactiveCards` para ativar os cartões de status e
+pergunta do DingTalk. Omitir o objeto desativa os cartões interativos. Quando o
+objeto está presente, o switch geral e ambos os tipos de cartão ficam habilitados
+por padrão, e os cartões de pergunta expiram após 270.000 milissegundos (270
+segundos).
+
+```json
+{
+  "channels": {
+    "my-dingtalk": {
+      "type": "dingtalk",
+      "clientId": "$DINGTALK_CLIENT_ID",
+      "clientSecret": "$DINGTALK_CLIENT_SECRET",
+      "interactiveCards": {
+        "enabled": true,
+        "statusCard": { "enabled": true },
+        "questionCard": {
+          "enabled": true,
+          "timeoutMs": 270000
+        }
+      }
+    }
+  }
+}
+```
+
+Defina `interactiveCards.enabled` como `false` para desativar todos os cartões
+interativos. Use `statusCard.enabled` ou `questionCard.enabled` para desativar
+um tipo de cartão e defina `questionCard.timeoutMs` como um número positivo
+finito para alterar o tempo de espera do Qwen Code por uma resposta do cartão
+de pergunta. Valores acima de 2.147.483.647 milissegundos (cerca de 24,8 dias)
+são limitados a esse máximo. Cartões interativos são configurados via
+`settings.json` ou pela API de gerenciamento; o editor de canal Web Shell não
+os renderiza e preserva o objeto armazenado ao editar outros campos.
+
+### Recuperação de Conexão
+
+`useConnectionManager` é `true` por padrão. O gerenciador de conexão monitora o WebSocket do Stream e substitui o cliente do SDK do DingTalk quando a conexão para de responder. Normalmente você deve deixá-lo habilitado.
+
+Defina `"useConnectionManager": false` para desativar o gerenciador de conexão do Qwen Code e usar o comportamento de keepalive e reconexão automática do SDK.
+
 ## Executando
 
 ```bash
@@ -73,15 +118,48 @@ qwen channel start
 
 Abra o DingTalk e envie uma mensagem para o bot. Você deve ver uma reação com emoji 👀 aparecer enquanto o agente processa, seguida pela resposta.
 
+## Entrega via Webhook do Daemon
+
+Quando o canal é executado sob `qwen serve`, eventos de Webhook externos autenticados podem acionar tarefas do agente sem supervisão e entregar a resposta final em Markdown para um usuário ou grupo do DingTalk. Use os campos de destino do Webhook existentes; nenhum tipo de canal separado é necessário:
+
+```json
+{
+  "webhooks": {
+    "sources": {
+      "manual-test": {
+        "secretEnv": "QWEN_CHANNEL_DINGTALK_TEST_SECRET",
+        "targets": {
+          "operator": {
+            "chatId": "DINGTALK_USER_ID",
+            "senderId": "webhook:manual-test",
+            "isGroup": false
+          },
+          "team": {
+            "chatId": "OPEN_CONVERSATION_ID",
+            "senderId": "webhook:manual-test",
+            "isGroup": true
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Cada destino deve definir `isGroup` explicitamente. Para mensagens diretas, `chatId` é o ID de usuário do DingTalk do destinatário. Para mensagens em grupo, `chatId` é o `openConversationId` do grupo. Alvos de thread e URLs de Webhook de robô recebido não são suportados para entrega proativa. Consulte [Tarefas acionadas por Webhook](./overview#webhook-triggered-tasks) para a configuração completa do canal e o formato da requisição.
+
 ## Conversas em Grupo
 
 Os bots do DingTalk funcionam tanto em conversas DM quanto em grupos. Para habilitar o suporte a grupos:
 
-1. Defina `groupPolicy` como `"allowlist"` ou `"open"` na configuração do seu canal
+1. Defina `groupPolicy` como `"allowlist"`, `"pairing"` ou `"open"` na configuração do seu canal
 2. Adicione o bot a um grupo do DingTalk
 3. Mencione o bot com @ no grupo para acionar uma resposta
+4. Se estiver usando `groupPolicy: "pairing"`, aprove a solicitação de pairing do grupo uma vez antes que as respostas comecem
 
 Por padrão, o bot exige menção com @ em conversas de grupo (`requireMention: true`). Defina `"requireMention": false` para um grupo específico para fazê-lo responder a todas as mensagens. Consulte [Conversas em Grupo](./overview#group-chats) para detalhes completos.
+
+Defina `"atSender": true` para que o bot @mencione o membro cuja mensagem no grupo acionou sua resposta. Está desativado por padrão e só se aplica a respostas do agente com um ID de funcionário do DingTalk. As respostas são enviadas como markdown do DingTalk independentemente de conterem uma menção; o prefixo de menção é incluído no primeiro bloco da mensagem.
 
 ### Encontrando o ID de Conversa de um Grupo
 
@@ -95,20 +173,32 @@ Você pode enviar fotos e documentos para o bot, não apenas texto.
 
 **Arquivos:** Envie um PDF, arquivo de código ou qualquer documento. O bot baixa o arquivo dos servidores do DingTalk e o salva localmente para que o agente possa lê-lo com suas ferramentas de arquivo. Arquivos de áudio e vídeo também são suportados. Isso funciona com qualquer modelo.
 
+## Mensagens Encaminhadas
+
+Você pode encaminhar uma sequência de mensagens de outra conversa para o bot (o "encaminhamento combinado" do DingTalk), seja como uma mensagem própria ou como a mensagem à qual você está respondendo. O bot expande o registro em texto para o agente: o título e o resumo do registro viram uma linha de cabeçalho, e cada mensagem encaminhada é listada sob `[Chat record messages]` como `Remetente: mensagem`. Uma mensagem encaminhada cujo conteúdo não seja texto é exibida como um placeholder — `[image]`, `[file: <name>]`, `[audio]`, `[video]`.
+
+Registros longos são **limitados, e o limite é informado**: no máximo 50 mensagens, no máximo 4000 caracteres no total e no máximo 500 caracteres por mensagem. O que for cortado é reportado ao agente no mesmo texto — uma linha final `[N more message(s) not shown]` para mensagens descartadas e um marcador ` [truncated]` em qualquer mensagem que tenha sido encurtada. Assim, o agente sabe que está respondendo sobre um registro parcial; se você precisa do conteúdo completo, encaminhe em lotes menores.
+
+Um registro ao qual você está **respondendo** é citado em vez de enviado, e o texto citado é limitado a 500 caracteres em qualquer channel — então o registro é renderizado dentro desse orçamento de 500 caracteres em vez do limite de 4000 caracteres, e os mesmos avisos se aplicam. Espere que um registro citado traga seu cabeçalho e a primeira mensagem ou duas; encaminhe-o como mensagem própria para fornecer o conteúdo completo ao agente.
+
+Como um registro encaminhado é escrito por outras pessoas, todo conteúdo extraído dele — títulos, nomes de remetentes, corpos de mensagens — é neutralizado antes de chegar ao agente, para que uma mensagem encaminhada não possa se passar por uma instrução ao bot.
+
+O layout multilinhas acima é o que o agente vê em um chat 1:1. Em um grupo, a mensagem inteira é neutralizada uma segunda vez antes de chegar ao agente, que a compacta em uma linha e remove os colchetes ao redor dos marcadores; o conteúdo e os avisos de limite são os mesmos de qualquer forma.
+
 ## Principais Diferenças do Telegram
 
 - **Autenticação:** AppKey + AppSecret em vez de um token de bot estático. O SDK gerencia a renovação do token de acesso automaticamente.
 - **Conexão:** WebSocket stream em vez de polling — nenhum IP público ou URL de webhook é necessária.
-- **Formatação:** As respostas usam o dialeto markdown do DingTalk (um subconjunto limitado). Tabelas são convertidas automaticamente para texto simples, pois o DingTalk não as renderiza. Mensagens longas são divididas em blocos de aproximadamente 3800 caracteres.
+- **Formatação:** As respostas usam o dialeto markdown do DingTalk. Tabelas markdown são enviadas diretamente ao cliente do DingTalk; mensagens longas são divididas em blocos de aproximadamente 3800 caracteres.
 - **Indicador de trabalho:** Uma reação com emoji 👀 é adicionada à mensagem do usuário durante o processamento e removida quando a resposta é enviada.
 - **Download de mídia:** Processo de duas etapas — um `downloadCode` da mensagem é trocado por uma URL de download temporária através da API do DingTalk.
 - **Grupos:** O DingTalk usa `isInAtList` para detecção de menção com @ em vez de analisar entidades de mensagem.
 
 ## Dicas
 
-- **Use instruções que considerem o markdown do DingTalk** — O DingTalk suporta um subconjunto limitado de markdown (cabeçalhos, negrito, links, blocos de código, mas não tabelas). Adicionar instruções como "Use markdown do DingTalk. Evite tabelas." ajuda o agente a formatar as respostas corretamente.
+- **Use instruções que considerem o markdown do DingTalk** — O DingTalk suporta cabeçalhos, negrito, links, blocos de código e tabelas. Mantenha as tabelas compactas porque telas estreitas podem rolar horizontalmente.
 - **Restrinja o acesso** — Em um contexto organizacional, `senderPolicy: "open"` pode ser aceitável. Para um controle mais rigoroso, use `"allowlist"` ou `"pairing"`. Consulte [Emparelhamento DM](./overview#dm-pairing) para detalhes.
-- **Mensagens referenciadas** — Citar (responder a) uma mensagem de usuário inclui o texto citado como contexto para o agente. Citar respostas do bot ainda não é suportado.
+- **Mensagens referenciadas** — Citar (responder a) uma mensagem de usuário inclui o texto citado como contexto para o agente. Se a mensagem citada for uma imagem, arquivo, áudio ou vídeo, o bot a baixa e anexa da mesma forma que quando enviada diretamente. Citar respostas do bot ainda não é suportado.
 
 ## Solução de Problemas
 
@@ -121,7 +211,8 @@ Você pode enviar fotos e documentos para o bot, não apenas texto.
 
 ### O bot não responde em grupos
 
-- Verifique se `groupPolicy` está definido como `"allowlist"` ou `"open"` (o padrão é `"disabled"`)
+- Verifique se `groupPolicy` está definido como `"allowlist"`, `"pairing"` ou `"open"` (o padrão é `"disabled"`)
+- Se estiver usando `"pairing"`, verifique se a solicitação de pairing do grupo foi aprovada
 - Certifique-se de mencionar o bot com @ na mensagem do grupo
 - Verifique se o bot foi adicionado ao grupo
 

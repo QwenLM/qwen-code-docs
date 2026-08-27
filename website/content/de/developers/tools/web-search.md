@@ -1,21 +1,78 @@
 # Web-Suche
 
-Qwen Code unterstützt Websuche-Funktionen über **MCP (Model Context Protocol)**-Integrationen. Statt eines integrierten Suchtools wird die Websuche durch die Verbindung zu externen MCP-Servern bereitgestellt, was Ihnen die volle Flexibilität gibt, den Suchdienst auszuwählen, der am besten zu Ihren Anforderungen passt.
+Qwen Code bietet Websuche auf zwei Arten:
 
-## ⚠️ Breaking Change: Integriertes `web_search`-Tool entfernt
+1. **Integriertes `web_search`-Tool** (opt-in) — unterstützt von der DashScope Responses API Server-seitigen Suche. Funktioniert mit einem standardmäßigen Bailian (DashScope) API-Schlüssel; kein zusätzlicher Anbieter oder MCP-Setup erforderlich.
+2. **MCP-Integrationen (Model Context Protocol)** — verbinden Sie einen beliebigen externen Suchdienst (Tavily, GLM und andere). Verwenden Sie dies, wenn Sie keinen DashScope-Schlüssel haben.
 
-> **Betroffene Versionen:** `V0.0.7+` bis zur letzten Version mit integrierter Websuche-Unterstützung.
+## Integriertes `web_search` (opt-in)
 
-Das integrierte `web_search`-Tool und alle zugehörigen Konfigurationen wurden **entfernt**. Wenn Sie eines der folgenden Elemente verwendet haben, migrieren Sie zu dem in diesem Dokument beschriebenen MCP-basierten Ansatz:
+Das integrierte Tool sendet eine eigenständige Suchanfrage an ein kleines Hilfsmodell mit den Server-seitigen `web_search`- (und `web_extractor`-) Tools von DashScope und gibt die erzählten Ergebnisse sowie Quell-URLs zurück. Es wird nie implizit aktiviert — zwei Einstellungen sind erforderlich:
 
-| Entfernt                                                                  | Was zu tun ist                                                                               |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `webSearch`-Block in `settings.json`                                      | Stattdessen einen MCP-Server in `mcpServers` konfigurieren (siehe unten)                      |
-| `advanced.tavilyApiKey` in `settings.json`                                | Den [Tavily MCP-Server](#tavily-websearch) verwenden                                          |
-| `TAVILY_API_KEY`-Umgebungsvariable                                        | Den [Tavily MCP-Server](#tavily-websearch) verwenden                                          |
-| `DASHSCOPE_API_KEY` für die Websuche                                      | Den [Alibaba Cloud Bailian WebSearch MCP](#alibaba-cloud-bailian-websearch-recommended) verwenden |
-| `GLM_API_KEY` für die Websuche                                            | Den [GLM WebSearch Prime MCP](#glm-websearch-prime-zhipuai) verwenden                          |
-| `--tavily-api-key` / `--glm-api-key` / `--dashscope-api-key` CLI-Flags | Über `mcpServers` in `settings.json` konfigurieren                                             |
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "qwen3.6-plus",
+        "envKey": "DASHSCOPE_API_KEY",
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1"
+      }
+    ]
+  },
+  "tools": {
+    "webSearch": {
+      "enabled": true,
+      "model": "qwen3.6-plus"
+    }
+  }
+}
+```
+
+| Einstellung                    | Umgebungs-Override     | Bedeutung                                                                                                                                                         |
+| ------------------------------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tools.webSearch.enabled`      | `ENABLE_WEB_SEARCH`    | Opt-in-Flag. Erforderlich.                                                                                                                                        |
+| `tools.webSearch.model`        | `WEB_SEARCH_MODEL`     | Suchmodell-Selektor, aufgelöst gegen `modelProviders` wie `fastModel` (`modelId` oder `authType:modelId`). Erforderlich — kein Standard. Empfohlen: `qwen3.6-plus`. |
+| `tools.webSearch.webExtractor` | `WEB_SEARCH_EXTRACTOR` | Dem Such-Agenten erlauben, Ergebnisseiten für besser fundierte Antworten zu öffnen (Standard `true`; wird von DashScope separat berechnet).                        |
+
+### Nur-Umgebungsvariablen-Konfiguration (ohne settings.json)
+
+Für Umgebungen, in denen Sie keine Einstellungsdatei schreiben können (abgeschottete Container, CI nur mit Umgebungsvariablen-Injektion), kann das Tool vollständig über Umgebungsvariablen konfiguriert werden — kein `modelProviders`-Eintrag erforderlich:
+
+```bash
+export ENABLE_WEB_SEARCH=true
+export WEB_SEARCH_MODEL=qwen3.6-plus
+export WEB_SEARCH_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+export DASHSCOPE_API_KEY=sk-...        # oder stattdessen WEB_SEARCH_API_KEY setzen
+```
+
+`WEB_SEARCH_BASE_URL` spiegelt den `baseUrl` eines `modelProviders`-Eintrags wider und muss ein DashScope-kompatibler Endpunkt sein; wenn es gesetzt ist, hat es Vorrang vor der `modelProviders`-Auflösung und `WEB_SEARCH_MODEL` wird als reine DashScope-Modell-ID verwendet. Der API-Schlüssel wird aus `WEB_SEARCH_API_KEY` gelesen, wenn gesetzt, andernfalls aus `DASHSCOPE_API_KEY`. Eine Fehlkonfiguration wird weiterhin als Startmeldung angezeigt.
+
+Hinweise:
+
+- Der Selektor muss sich auf einen DashScope-kompatiblen `modelProviders`-Eintrag auflösen, der einen direkten API-Schlüssel über `envKey` trägt. Ihr Hauptmodell kann ein beliebiger Anbieter sein — nur die Such-Anfrage benötigt einen DashScope-Eintrag. Qwen OAuth kann das Tool nicht bereitstellen.
+- Wenn aktiviert, aber fehlerhaft konfiguriert, bleibt das Tool ausgeschaltet und eine Startmeldung erklärt, welche Bedingung fehlgeschlagen ist.
+- Suchen werden über Ihren DashScope-Schlüssel abgerechnet (`usage.x_tools` zählt). Das Tool fordert standardmäßig eine Bestätigung an; Genehmigung mit „immer zulassen" persistiert eine standardmäßige `WebSearch`-Berechtigungsregel, wie bei anderen Tools.
+- Es gibt keine clientseitige Modell-Allowlist; ein Modell, das der Responses-Endpunkt nicht bereitstellt, schlägt bei der ersten Verwendung lautstark fehl.
+
+## MCP-Alternativen
+
+Wenn Sie keinen DashScope-Schlüssel haben, steht die Websuche durch die Verbindung eines externen MCP-Servers zur Verfügung — siehe die folgenden Dienste.
+
+## ⚠️ Historischer Breaking Change: Ursprüngliches integriertes `web_search` entfernt
+
+> **Betroffene Versionen:** `V0.0.7+` bis zur letzten Version mit dem ursprünglichen integrierten Multi-Anbieter-Websuchtool.
+
+Das ursprüngliche integrierte `web_search`-Tool (Tavily/Google/GLM/DashScope Multi-Anbieter) und seine Konfiguration wurden **entfernt**. Das neue Opt-in-Tool oben ist eine andere Implementierung mit einer anderen Konfiguration. Wenn Sie einen der folgenden Punkte verwendet haben, migrieren Sie entweder zum neuen integrierten Tool (DashScope) oder zu MCP:
+
+| Entfernt                                                                  | Was zu tun ist                                                        |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `webSearch`-Block in `settings.json`                                      | Stattdessen einen MCP-Server in `mcpServers` konfigurieren (siehe unten) |
+| `advanced.tavilyApiKey` in `settings.json`                                | Den [Tavily MCP-Server](#tavily-websearch) verwenden                  |
+| `TAVILY_API_KEY`-Umgebungsvariable                                        | Den [Tavily MCP-Server](#tavily-websearch) verwenden                  |
+| `DASHSCOPE_API_KEY` für die Websuche                                      | Das [integrierte `web_search`-Tool](#integriertes-web_search-opt-in) verwenden |
+| `GLM_API_KEY` für die Websuche                                            | Den [GLM WebSearch Prime MCP](#glm-websearch-prime-zhipuai) verwenden |
+| `--tavily-api-key` / `--glm-api-key` / `--dashscope-api-key` CLI-Flags | Über `mcpServers` in `settings.json` konfigurieren                    |
 
 ### Migrationsbeispiele
 
@@ -74,9 +131,9 @@ Das integrierte `web_search`-Tool und alle zugehörigen Konfigurationen wurden *
 
 ## Unterstützte MCP-Websuchdienste
 
-### Alibaba Cloud Bailian WebSearch (Empfohlen)
+### Alibaba Cloud Bailian WebSearch
 
-Der offizielle Websuche-MCP-Dienst, bereitgestellt von der Alibaba Cloud Bailian-Plattform, unterstützt von DashScope.
+Der offizielle Websuche-MCP-Dienst, bereitgestellt von der Alibaba Cloud Bailian-Plattform, unterstützt von DashScope. Wenn Sie einen DashScope-Schlüssel haben, bevorzugen Sie das oben genannte integrierte `web_search`-Tool — es verwendet einen stärkeren Suchpfad als dieser MCP-Dienst.
 
 - **MCP Marketplace:** https://bailian.console.aliyun.com/cn-beijing?tab=mcp#/mcp-market/detail/WebSearch
 - **Kosten:** Kostenpflichtig (Abrechnung über Alibaba Cloud DashScope)

@@ -72,7 +72,7 @@ qwen
   - **编码计划**：面向个人开发者，包含每周配额和多种模型选择。请参阅[编码计划指南](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index)（[国际站](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)）了解设置说明。
   - **Token 计划**：按用量计费，使用专有端点，适用于团队和企业。
   - **标准 API Key**：使用阿里云模型即服务（[国内站](https://bailian.console.aliyun.com/) / [国际站](https://modelstudio.console.alibabacloud.com/)）的现有 API key 进行连接。详情请参阅 API 设置指南（[国内站](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [国际站](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)）。
-- **第三方提供商** — 选择内置提供商（DeepSeek、MiniMax、Z.AI、ModelScope、OpenRouter、Requesty 等），并通过 API key 连接。
+- **第三方提供商** — 选择内置提供商（DeepSeek、Grok、MiniMax、Z.AI、Kimi、Idealab、ModelScope、OpenRouter、Requesty 等），并通过 API key 连接。
 - **自定义提供商** — 手动连接本地服务器、代理或不受支持的提供商。
 
 > ⚠️ **注意**：Qwen OAuth 已于 2026 年 4 月 15 日停用。如果你之前使用的是 Qwen OAuth，请切换到上述方法之一。

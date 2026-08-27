@@ -180,7 +180,7 @@ sequenceDiagram
 | ---------------------------------------------------- | ------------------------------- | ----------------------------------------------------------------- |
 | `baseUrl`                                            | `connect(options)`              | URL du démon ; doit être une boucle locale.                       |
 | `token`                                              | `connect(options)`              | Jeton Bearer (estampillé via SDK).                                |
-| `workspaceCwd`                                       | `connect(options)`              | Utilisé sur `POST /session` ; doit correspondre à l'espace de travail lié au démon. |
+| `workspaceCwd`                                       | `connect(options)`              | Utilisé sur `POST /session` ; doit correspondre au workspace principal du démon ou à un runtime de session multi-workspace enregistré. |
 | `modelServiceId`                                     | `connect(options)` / `setModel()`| Modèle initial.                                                   |
 | `lastEventId`                                        | `connect(options)`              | Curseur de reprise (généralement restauré depuis l'état de l'hôte).|
 | Paramètre VS Code `qwen.ide.daemonUrl` (ou équivalent) | Paramètres de l'espace de travail | URL du démon configurée par l'opérateur.                          |
@@ -191,7 +191,7 @@ sequenceDiagram
 - **L'ancien chemin `AcpConnectionState` reste principal** dans le compagnon IDE (processus fils stdio). Cet adaptateur est le transport frère pour la migration Mode-B ; voir [`../daemon-client-adapters/ide.md`](../daemon-client-adapters/ide.md) pour les bloqueurs de migration et le travail prévu de parité `BridgeFileSystem`.
 - **Pas encore de RPC inverse ou de surface d'éditeur via HTTP.** Les fonctionnalités nécessitant que l'agent rappelle l'IDE (par exemple, accès buffer en lecture seule, intégration du diff preview) ne vivent actuellement que sur le chemin stdio.
 - **Le couplage webview ↔ connexion est propriétaire de l'hôte**, pas de cet adaptateur. Ne pas pousser de logique spécifique à la webview dans `DaemonIdeConnection`.
-- **Le décalage de `workspaceCwd`** avec l'espace de travail lié au démon renvoie `400 workspace_mismatch` — présentez-le comme une erreur de configuration claire plutôt que de réessayer.
+- **Le décalage de `workspaceCwd`** avec les workspaces enregistrés du démon renvoie `400 workspace_mismatch` — présentez-le comme une erreur de configuration claire plutôt que de réessayer.
 
 ## Références
 

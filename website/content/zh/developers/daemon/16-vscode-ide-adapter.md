@@ -177,7 +177,7 @@ sequenceDiagram
 | ------------------------------------------------------ | --------------------------------- | -------------------------------------------------------------------------- |
 | `baseUrl`                                              | `connect(options)`                | 守护进程 URL；必须为回环地址。                                             |
 | `token`                                                | `connect(options)`                | Bearer token（通过 SDK 戳印）。                                            |
-| `workspaceCwd`                                         | `connect(options)`                | 用于 `POST /session`；必须与守护进程绑定的工作区一致。                     |
+| `workspaceCwd`                                         | `connect(options)`                | 用于 `POST /session`；必须与守护进程的主工作区或已注册的多工作区会话运行时匹配。 |
 | `modelServiceId`                                       | `connect(options)` / `setModel()` | 初始模型。                                                                 |
 | `lastEventId`                                          | `connect(options)`                | 恢复游标（通常从宿主状态恢复）。                                           |
 | VS Code 设置 `qwen.ide.daemonUrl`（或等效项）         | 工作区设置                        | 运维人员配置的守护进程 URL。                                               |

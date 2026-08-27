@@ -12,12 +12,12 @@ Antes de mais nada, quase todo Pull Request (PR) deve estar vinculado a uma Issu
 
 Aqui está uma descrição dos fluxos de automação específicos que são executados em nosso repositório.
 
-### 1. Ao abrir uma Issue: `Triagem Automatizada de Issues`
+### 1. Ao abrir uma Issue: `Qwen Triage`
 
 Este é o primeiro bot com o qual você interagirá ao criar uma issue. Sua função é realizar uma análise inicial e aplicar os rótulos (labels) corretos.
 
-- **Arquivo do Workflow**: `.github/workflows/qwen-automated-issue-triage.yml`
-- **Quando é executado**: Imediatamente após uma issue ser criada ou reaberta.
+- **Arquivo do Workflow**: `.github/workflows/qwen-triage.yml`
+- **Quando é executado**: Imediatamente após uma issue ser criada, editada ou reaberta, ou quando um mantenedor solicita a triagem manualmente.
 - **O que faz**:
   - Usa um modelo Qwen para analisar o título e o corpo da issue com base em um conjunto detalhado de diretrizes.
   - **Aplica um rótulo `area/*`**: Categoriza a issue em uma área funcional do projeto (ex.: `area/ux`, `area/models`, `area/platform`).
@@ -28,6 +28,7 @@ Este é o primeiro bot com o qual você interagirá ao criar uma issue. Sua fun�
 - **O que você deve fazer**:
   - Preencha o template da issue da forma mais completa possível. Quanto mais detalhes você fornecer, mais precisa será a triagem.
   - Se o rótulo `status/need-information` for adicionado, forneça as informações solicitadas em um comentário.
+  - Mantenedores podem comentar `@qwen-code /triage` para executar a triagem novamente.
 
 ### 2. Ao abrir um Pull Request: `Integração Contínua (CI)`
 
@@ -43,33 +44,7 @@ Este workflow garante que todas as alterações atendam aos nossos padrões de q
   - Garanta que todas as verificações de CI passem. Um visto verde ✅ aparecerá ao lado do seu commit quando tudo estiver bem-sucedido.
   - Se uma verificação falhar (um "X" vermelho ❌), clique no link "Detalhes" ao lado da verificação com falha para visualizar os logs, identificar o problema e enviar uma correção.
 
-### 3. Triagem Contínua para Pull Requests: `Auditoria de PR e Sincronização de Rótulos`
-
-Este workflow é executado periodicamente para garantir que todos os PRs abertos estejam corretamente vinculados a issues e tenham rótulos consistentes.
-
-- **Arquivo do Workflow**: `.github/workflows/qwen-scheduled-pr-triage.yml`
-- **Quando é executado**: A cada 15 minutos em todos os pull requests abertos.
-- **O que faz**:
-  - **Verifica se há uma issue vinculada**: O bot examina a descrição do seu PR em busca de uma palavra-chave que o vincule a uma issue (ex.: `Fixes #123`, `Closes #456`).
-  - **Adiciona `status/need-issue`**: Se nenhuma issue vinculada for encontrada, o bot adicionará o rótulo `status/need-issue` ao seu PR. Este é um sinal claro de que uma issue precisa ser criada e vinculada.
-  - **Sincroniza rótulos**: Se uma issue _estiver_ vinculada, o bot garante que os rótulos do PR correspondam exatamente aos rótulos da issue. Ele adicionará quaisquer rótulos ausentes e removerá aqueles que não pertencem, e também removerá o rótulo `status/need-issue` se ele estiver presente.
-- **O que você deve fazer**:
-  - **Sempre vincule seu PR a uma issue.** Este é o passo mais importante. Adicione uma linha como `Resolves #<número-da-issue>` à descrição do seu PR.
-  - Isso garantirá que seu PR seja categorizado corretamente e progrida no processo de revisão de forma suave.
-
-### 4. Triagem Contínua para Issues: `Triagem Programada de Issues`
-
-Este é um workflow de fallback para garantir que nenhuma issue passe despercebida pelo processo de triagem.
-
-- **Arquivo do Workflow**: `.github/workflows/qwen-scheduled-issue-triage.yml`
-- **Quando é executado**: A cada hora em todas as issues abertas.
-- **O que faz**:
-  - Ele procura ativamente por issues que não tenham nenhum rótulo ou que ainda tenham o rótulo `status/need-triage`.
-  - Em seguida, aciona a mesma análise poderosa baseada no QwenCode do bot de triagem inicial para aplicar os rótulos corretos.
-- **O que você deve fazer**:
-  - Você normalmente não precisa fazer nada. Este workflow é uma rede de segurança para garantir que toda issue seja eventualmente categorizada, mesmo se a triagem inicial falhar.
-
-### 5. Automação de Lançamento (Release)
+### 3. Automação de Release
 
 Este workflow lida com o processo de empacotamento e publicação de novas versões do Qwen Code.
 

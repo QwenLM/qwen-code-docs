@@ -302,8 +302,8 @@ fi
 
 ## See also
 
-- [Headless Mode](headless.md) — the `-p`-based flow `--json-schema`
+- [Headless Mode](./headless.md) — the `-p`-based flow `--json-schema`
   builds on.
-- [Dual Output](dual-output.md) — records a JSON-event sidecar
+- [Dual Output](./dual-output.md) — records a JSON-event sidecar
   alongside the TUI (a different approach to machine-readable output;
   does not require `--json-schema`).

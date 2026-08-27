@@ -2,7 +2,7 @@
 
 ## Обзор
 
-Процесс `qwen serve` — это **один демон = одно рабочее пространство**. Он запускает один HTTP-сервер Express, владеет экземпляром `@qwen-code/acp-bridge` и порождает один дочерний процесс ACP (`qwen --acp`), который выполняет фактическую среду выполнения агента. Несколько клиентов (CLI TUI, IDE companion, IM channel bots, web BFFs, пользовательские скрипты) подключаются через HTTP + SSE и либо используют одну сессию ACP (`sessionScope: 'single'`, по умолчанию), либо разделяют сессии по тредам обсуждения (`sessionScope: 'thread'`).
+Процесс `qwen serve` размещает один HTTP-сервер Express и одно основное рабочее пространство по умолчанию. При включённом `multi_workspace_sessions` он также может размещать дополнительные среды выполнения рабочих пространств для замкнутого цикла live-сессий; каждое зарегистрированное рабочее пространство владеет своей парой дочерних процессов `@qwen-code/acp-bridge` / `qwen --acp`. Несколько клиентов (CLI TUI, IDE companion, IM channel bots, web BFFs, пользовательские скрипты) подключаются через HTTP + SSE и либо используют одну сессию ACP (`sessionScope: 'single'`, по умолчанию), либо разделяют сессии по тредам обсуждения (`sessionScope: 'thread'`).
 
 Внутри дочернего процесса ACP MCP-серверы используются всем рабочим пространством через `McpTransportPool` (F2): один кортеж (имя_сервера + отпечаток_конфигурации) отображается на один транспорт MCP, независимо от того, сколько сессий его обнаруживают. `MultiClientPermissionMediator` (F3) моста координирует голосование за разрешения среди всех подключенных клиентов в рамках одной из четырёх политик.
 
@@ -20,7 +20,7 @@ flowchart LR
         SDK["Any SDK consumer<br/>(packages/sdk-typescript/src/daemon)"]
     end
 
-    subgraph daemon["qwen serve process (one workspace)"]
+    subgraph daemon["qwen serve process (primary workspace plus optional session runtimes)"]
         EXP["Express app<br/>(packages/cli/src/serve/server.ts)"]
         BR["AcpBridge<br/>(packages/acp-bridge/src/bridge.ts)"]
         MED["MultiClientPermissionMediator<br/>(F3)"]
@@ -154,7 +154,7 @@ sequenceDiagram
     participant CH as ACP child
 
     C->>MW: POST /session/:id/prompt<br/>Authorization: Bearer …<br/>X-Qwen-Client-Id: …
-    MW->>MW: denyBrowserOriginCors
+    MW->>MW: allowOriginCors (mutable allowlist; unmatched Origin -> 403)
     MW->>MW: hostAllowlist (DNS rebinding guard)
     MW->>MW: access-log hook
     MW->>MW: bearerAuth (constant-time compare)
@@ -196,7 +196,7 @@ sequenceDiagram
     Note over EB,SR: If subscriber queue >= maxQueued,<br/>EventBus emits client_evicted terminal frame<br/>and closes subscriber.
 ```
 
-Кольцевой буфер ограничен (`eventRingSize`, по умолчанию 8000). Если переподключающийся клиент отправляет `Last-Event-ID`, который старше начала буфера, он получает синтетический сигнал догоняния и должен вызвать `loadSession` / `resumeSession`, чтобы восстановить более глубокое состояние. Медленные клиенты вызывают `slow_client_warning` при заполнении очереди на 75% и `client_evicted` при достижении предела.
+Кольцевой буфер ограничен (`eventRingSize`, по умолчанию 8000). Переподключающийся клиент, чей `Last-Event-ID` старше начала кольца, получает `state_resync_required` и должен восстановить данные из ограниченного окна повторного воспроизведения `loadSession` или использовать `resumeSession`, если у него уже есть локальная история. Медленные клиенты получают `slow_client_warning` при заполнении очереди на 75% и `client_evicted` при достижении лимита.
 
 ## Workflow 3: много клиентское согласование разрешений
 

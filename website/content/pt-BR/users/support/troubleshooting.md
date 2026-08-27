@@ -59,6 +59,7 @@ Este guia fornece soluções para problemas comuns e dicas de depuração, inclu
   - R: Inicie o Qwen Code com a flag `--safe-mode` para desativar todas as personalizações — arquivos de contexto, hooks, extensões, skills, servidores MCP, subagentes personalizados (apenas subagentes integrados são carregados), regras de permissão, substituições de modo de aprovação originadas de configurações, recursos de memória e configurações de sandbox — para a sessão. Observação: as flags de CLI `--yolo` e `--approval-mode` ainda têm efeito no modo seguro. Se o problema desaparecer no modo seguro, reative suas personalizações uma de cada vez para encontrar o culpado.
     - Exemplo: `qwen --safe-mode`
     - Alternativa: defina a variável de ambiente `QWEN_CODE_SAFE_MODE=true` se a CLI não puder aceitar flags.
+    - Observação: "servidores MCP" aqui significa servidores configurados em `settings.json` / `.mcp.json` do projeto — estado local e ambiente contra o qual o modo seguro foi projetado para isolar. Servidores MCP que você fornece explicitamente para a invocação atual (o `mcpServers` do `session/new` de um cliente ACP embedding, ou `--mcp-config`) não são estado local/ambiente e ainda são respeitados no modo seguro.
 
 ## Mensagens de erro comuns e soluções
 
@@ -99,7 +100,12 @@ Este guia fornece soluções para problemas comuns e dicas de depuração, inclu
 - **A rolagem do trackpad no tmux altera o histórico de prompts em vez de rolar a conversa**
   - **Problema:** Em uma sessão do tmux, a rolagem do trackpad ou da roda do mouse pode percorrer os prompts anteriores, de forma semelhante a pressionar `Up Arrow` ou `Down Arrow`.
   - **Causa:** O tmux pode traduzir gestos da roda do mouse em sequências simples de teclas de seta. Essas sequências são indistinguíveis de pressionamentos reais de teclas de seta no momento em que o qwen-code as recebe.
-  - **Solução:** Ative `ui.useTerminalBuffer`; em seguida, use `Shift+Up` / `Shift+Down` ou a roda do mouse quando o tmux encaminhar eventos da roda para o aplicativo. Se preferir o scrollback do host, ajuste as associações de mouse do seu tmux para eventos da roda.
+  - **Solução:** Se o modo de leitor de tela estiver desativado, certifique-se de que `ui.useTerminalBuffer` esteja habilitado; em seguida, use `Shift+Up` / `Shift+Down` ou a roda do mouse quando o tmux encaminhar eventos da roda para o aplicativo (requer `ui.mouseTracking`). Se preferir o scrollback do host, ajuste as associações de mouse do seu tmux para eventos da roda.
+
+- **O clique direito não faz nada, links não abrem ou o texto não pode ser selecionado no terminal**
+  - **Problema:** Menus de contexto nativos do botão direito, cliques em hyperlinks OSC 8 (Ctrl+Click ou clique simples em URLs) e a seleção de texto nativa do terminal param de funcionar enquanto o Qwen Code está em execução.
+  - **Causa:** Quando `ui.mouseTracking` está habilitado (o padrão), o Qwen Code captura todos os eventos do mouse via rastreamento de mouse SGR para alimentar a seleção de texto no aplicativo, o clique para posicionar o cursor, o hover em linhas e a rolagem da viewport. O terminal encaminha cada evento do mouse para o aplicativo em vez de tratá-lo nativamente.
+  - **Solução:** Defina `"ui.mouseTracking": false` no seu `settings.json` para restaurar os menus nativos do botão direito e os links URL clicáveis. Isso desativa toda a interação com mouse no aplicativo. No Histórico Virtualizado (`ui.useTerminalBuffer: true`, o padrão), a roda do mouse não irá mais rolar a transcrição — use `Shift+↑/↓`, `PgUp/PgDn` ou `Ctrl+Home/End` em vez disso. Para também restaurar o scrollback nativo do terminal, defina `"ui.useTerminalBuffer": false`. Requer reinicialização.
 
 ## IDE Companion não está conectando
 

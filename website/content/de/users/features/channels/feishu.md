@@ -38,6 +38,15 @@ Aktivieren Sie die folgenden Berechtigungen unter **Permissions & Scopes** (权�
 - `im:message:send_as_bot` – Nachrichten als Bot senden
 - `im:resource` – Auf Nachrichtenressourcen zugreifen (Bilder, Dateien)
 
+Um Benutzer- und Gruppennamen anstelle von IDs in den vom Daemon entdeckten Kontakten anzuzeigen,
+kannst du optional aktivieren:
+
+- `contact:user.basic_profile:readonly` – Benutzer-Anzeigenamen lesen
+- `im:chat:readonly` – Gruppennamen lesen
+
+Ohne diese optionalen Berechtigungen funktionieren Nachrichten weiterhin und entdeckte Kontakte
+behalten ihre Feishu-Benutzer- und Chat-IDs als Labels.
+
 ### Veröffentlichen der Anwendung
 
 Nachdem Sie Berechtigungen und Ereignisse konfiguriert haben, erstellen Sie eine Version und veröffentlichen Sie die Anwendung. Der Bot funktioniert erst, wenn die Anwendung veröffentlicht und genehmigt wurde.
@@ -121,9 +130,10 @@ Setzen Sie dann die Request-URL in der Feishu Open Platform auf `http://<your-se
 
 Feishu-Bots funktionieren sowohl in Direktnachrichten als auch in Gruppenkonversationen. Um Gruppenunterstützung zu aktivieren:
 
-1. Setzen Sie `groupPolicy` auf `"allowlist"` oder `"open"` in Ihrer Kanalkonfiguration
+1. Setzen Sie `groupPolicy` auf `"allowlist"`, `"pairing"` oder `"open"` in Ihrer Kanalkonfiguration
 2. Fügen Sie den Bot zu einer Feishu-Gruppe hinzu
 3. Erwähnen Sie den Bot in der Gruppe mit @, um eine Antwort auszulösen
+4. Wenn Sie `groupPolicy: "pairing"` verwenden, genehmigen Sie die Pairing-Anfrage der Gruppe einmal, bevor Antworten starten
 
 Standardmäßig erfordert der Bot eine @-Erwähnung in Gruppenchats (`requireMention: true`). Setzen Sie `"requireMention": false` für eine bestimmte Gruppe, damit der Bot auf alle Nachrichten antwortet.
 
@@ -170,7 +180,8 @@ Mehrere Benutzer können gleichzeitig Nachrichten in derselben Gruppe senden. Je
 
 ### Bot antwortet nicht in Gruppen
 
-- Stellen Sie sicher, dass `groupPolicy` auf `"allowlist"` oder `"open"` gesetzt ist (Standard ist `"disabled"`)
+- Stellen Sie sicher, dass `groupPolicy` auf `"allowlist"`, `"pairing"` oder `"open"` gesetzt ist (Standard ist `"disabled"`)
+- Wenn Sie `"pairing"` verwenden, vergewissern Sie sich, dass die Pairing-Anfrage der Gruppe genehmigt wurde
 - Achten Sie darauf, den Bot in der Gruppennachricht mit @ zu erwähnen
 - Vergewissern Sie sich, dass der Bot zur Gruppe hinzugefügt wurde
 

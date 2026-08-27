@@ -36,7 +36,7 @@
 interface BridgeEvent {
   id?: number; // monotonic per session; absent on synthetic terminal frames
   v: 1; // EVENT_SCHEMA_VERSION
-  type: string; // one of the 47 known types or future-extensible
+  type: string; // one of the 53 known types or future-extensible
   data: unknown; // payload (typed per-type by the SDK; see 09-event-schema.md)
   _meta?: { serverTimestamp?: number; [key: string]: unknown }; // stamped by EventBus.publish
   originatorClientId?: string; // set when the event derives from a clientId-stamped request
@@ -241,7 +241,7 @@ Der `EventBus` des Daemons spielt alle Events aus dem Ring-Buffer mit `id > Last
 | `Last-Event-ID` fehlt                       | Live-only-Stream; kein Replay. Abwärtskompatibel mit Pre-Resume-Clients.                                                                                       |
 | `Last-Event-ID: 0`                           | Replay des gesamten Ring-Buffers von Anfang an (begrenzt durch `--event-ring-size`, Standard 8000).                                                                    |
 | `Last-Event-ID: N` wobei `ring[0].id <= N+1` | Lückenloses Replay der Events `id > N`, dann live.                                                                                                                |
-| `Last-Event-ID: N` wobei `ring[0].id > N+1`  | Lücke erkannt – `state_resync_required` (`reason: 'ring_evicted'`) wird vor dem Replay des verbleibenden Suffix ausgegeben. Das SDK muss `loadSession` aufrufen, um den vollständigen State wiederherzustellen. |
+| `Last-Event-ID: N` wobei `ring[0].id > N+1`  | Lücke erkannt – `state_resync_required` (`reason: 'ring_evicted'`) wird vor dem Replay des verbleibenden Suffix ausgegeben. Das SDK muss `loadSession` aufrufen, um ein begrenztes Replay-Snapshot-Fenster wiederherzustellen; das zurückgegebene `compactedReplay` kann mit `history_truncated` beginnen, wenn ältere In-Memory-Replay-Einträge verworfen wurden. |
 | `Last-Event-ID: N` wobei `N >= nextId`       | Epoch-Reset (Daemon-Neustart) – `state_resync_required` (`reason: 'epoch_reset'`) wird ausgegeben, dann vollständiges Ring-Replay.                                                |
 
 ### Validierungsregeln

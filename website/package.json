@@ -8,8 +8,9 @@
     "generate-pages": "node scripts/generate-page-registry.js",
     "generate-blog-dates": "node scripts/generate-blog-dates.js",
     "generate": "npm run generate-showcase && npm run generate-pages && npm run generate-blog-dates",
+    "test": "node --test scripts/*.test.js",
     "dev": "npm run generate && npm run clean && next dev",
-    "build": "npm run generate && npm run clean && next build",
+    "build": "npm run generate && node scripts/clean-next.mjs && next build",
     "postbuild": "node scripts/set-html-lang.js && pagefind --site out --output-path out/_pagefind --exclude-selectors 'noscript,script,style,pre,code,.nextra-code-block,.nextra-toc,.nextra-sidebar,.nextra-breadcrumb,.nextra-banner'",
     "preview": "node scripts/preview.js"
   },

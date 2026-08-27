@@ -15,9 +15,7 @@ npm install @qwen-code/sdk
 ## Voraussetzungen
 
 - Node.js >= 22.0.0
-- [Qwen Code](https://github.com/QwenLM/qwen-code) >= 0.4.0 (stabil) ist installiert und im PATH verfügbar
-
-> **Hinweis für nvm-Benutzer**: Falls du nvm zur Verwaltung von Node.js-Versionen verwendest, kann das SDK die ausführbare Qwen Code-Datei möglicherweise nicht automatisch erkennen. Du solltest dann die Option `pathToQwenExecutable` explizit auf den vollständigen Pfad der `qwen`-Binärdatei setzen.
+- [Qwen Code](https://github.com/QwenLM/qwen-code) >= 0.4.0 (stabil). Das SDK verwendet standardmäßig seine mitgelieferte CLI; setze `pathToQwenExecutable` nur, wenn du eine eigene `qwen`-Binärdatei oder ein CLI-Bundle ausführen möchtest.
 
 ## Schnellstart
 
@@ -59,8 +57,8 @@ Erstellt eine neue Query-Sitzung mit Qwen Code.
 | ------------------------ | ---------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `cwd`                    | `string`                                       | `process.cwd()`  | Das Arbeitsverzeichnis für die Query-Sitzung. Bestimmt den Kontext, in dem Dateioperationen und Befehle ausgeführt werden.                                                                                                                                                                                                                                                                                                                                                               |
 | `model`                  | `string`                                       | -                | Das zu verwendende KI-Modell (z. B. `'qwen-max'`, `'qwen-plus'`, `'qwen-turbo'`). Überschreibt die Umgebungsvariablen `OPENAI_MODEL` und `QWEN_MODEL`.                                                                                                                                                                                                                                                                                                                                 |
-| `pathToQwenExecutable`   | `string`                                       | Automatisch erkannt | Pfad zur ausführbaren Qwen Code-Datei. Unterstützt mehrere Formate: `'qwen'` (native Binärdatei aus PATH), `'/pfad/zu/qwen'` (expliziter Pfad), `'/pfad/zu/cli.js'` (Node.js-Bundle), `'node:/pfad/zu/cli.js'` (Node.js-Laufzeitumgebung erzwingen), `'bun:/pfad/zu/cli.js'` (Bun-Laufzeitumgebung erzwingen). Wenn nicht angegeben, wird automatisch erkannt aus: `QWEN_CODE_CLI_PATH`-Umgebungsvariable, `~/.volta/bin/qwen`, `~/.npm-global/bin/qwen`, `/usr/local/bin/qwen`, `~/.local/bin/qwen`, `~/node_modules/.bin/qwen`, `~/.yarn/bin/qwen`. |
-| `permissionMode`         | `'default' \| 'plan' \| 'auto-edit' \| 'yolo'` | `'default'`      | Berechtigungsmodus zur Steuerung der Ausführungsgenehmigung von Tools. Siehe [Berechtigungsmodi](#berechtigungsmodi) für Details.                                                                                                                                                                                                                                                                                                                                                                           |
+| `pathToQwenExecutable`   | `string`                                       | Mitgelieferte CLI | Pfad zur ausführbaren Qwen Code-Datei. Unterstützt mehrere Formate: `'qwen'` (native Binärdatei aus PATH), `'/pfad/zu/qwen'` (expliziter Pfad), `'/pfad/zu/cli.js'` (Node.js-Bundle), `'node:/pfad/zu/cli.js'` (Node.js-Laufzeitumgebung erzwingen), `'bun:/pfad/zu/cli.js'` (Bun-Laufzeitumgebung erzwingen). Wenn nicht angegeben, verwendet das SDK die mit dem Paket mitgelieferte CLI. |
+| `permissionMode`         | `'default' \| 'plan' \| 'auto-edit' \| 'auto' \| 'yolo'` | `'default'`      | Berechtigungsmodus zur Steuerung der Ausführungsgenehmigung von Tools. Siehe [Berechtigungsmodi](#berechtigungsmodi) für Details.                                                                                                                                                                                                                                                                                                                                                                           |
 | `canUseTool`             | `CanUseTool`                                   | -                | Benutzerdefinierter Berechtigungs-Handler für die Genehmigung der Tool-Ausführung. Wird aufgerufen, wenn ein Tool eine Bestätigung benötigt. Muss innerhalb von 60 Sekunden antworten, andernfalls wird die Anfrage automatisch abgelehnt. Siehe [Benutzerdefinierter Berechtigungs-Handler](#benutzerdefinierter-berechtigungs-handler).                                                                                                                                                                                                                                                     |
 | `env`                    | `Record<string, string>`                       | -                | Umgebungsvariablen, die an den Qwen Code-Prozess übergeben werden. Werden mit der aktuellen Prozessumgebung zusammengeführt.                                                                                                                                                                                                                                                                                                                                                                                  |
 | `systemPrompt`           | `string \| QuerySystemPromptPreset`            | -                | System-Prompt-Konfiguration für die Hauptsitzung. Verwende einen String, um den eingebauten Qwen Code-System-Prompt vollständig zu überschreiben, oder ein Preset-Objekt, um den eingebauten Prompt zu behalten und zusätzliche Anweisungen anzuhängen.                                                                                                                                                                                                                                                                                  |
@@ -68,10 +66,10 @@ Erstellt eine neue Query-Sitzung mit Qwen Code.
 | `abortController`        | `AbortController`                              | -                | Controller zum Abbrechen der Query-Sitzung. Rufe `abortController.abort()` auf, um die Sitzung zu beenden und Ressourcen freizugeben.                                                                                                                                                                                                                                                                                                                                                                |
 | `debug`                  | `boolean`                                      | `false`          | Aktiviert den Debug-Modus für ausführliche Protokollierung durch den CLI-Prozess.                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `maxSessionTurns`        | `number`                                       | `-1` (unbegrenzt) | Maximale Anzahl von Konversationsdurchläufen, bevor die Sitzung automatisch beendet wird. Ein Durchlauf besteht aus einer Benutzernachricht und einer Assistant-Antwort.                                                                                                                                                                                                                                                                                                                                        |
-| `coreTools`              | `string[]`                                     | -                | Verwendet die alte `coreTools`-/CLI `--core-tools`-Allowlist-Semantik. Wenn angegeben, werden nur passende Core-Tools für die Sitzung registriert. Dies ist getrennt von `permissions.allow`, das passende Tool-Aufrufe automatisch genehmigt, aber die Tool-Registrierung nicht einschränkt. Beispiel: `['read_file', 'edit', 'run_shell_command']`.                                                                                                                                                       |
+| `coreTools`              | `string[]`                                     | -                | Verwendet die alte `coreTools`-/CLI `--core-tools`-Allowlist-Semantik. Wenn angegeben, werden nur passende Core-Tools für die Sitzung registriert. Dies ist getrennt von `permissions.allow` in settings.json, das ebenfalls beim Start eine Allowlist auf Registry-Ebene aktiviert: wenn dort mindestens eine gültige Allow-Regel konfiguriert ist (fehlerhafte Einträge zählen nicht), werden eingebaute Tools, die von keiner Allow- oder Ask-Regel abgedeckt sind, nicht registriert (MCP-Tools, der `--json-schema` `structured_output`-Vertrag, die Plan-Mode-Lifecycle-Tools, `task_stop`, `tool_search` und die `computer_use__*`-Familie sind ausgenommen; erfordert Neustart, #9827, #10075). Der SDK-Parameter `allowedTools` kann die Allowlist nicht eigenständig aktivieren, aber während die Allowlist aktiv ist, werden seine Regeln in das effektive Allow-Set zusammengeführt und zählen zur Abdeckung, sodass abgedeckte eingebaute Tools registriert bleiben. Beispiel: `['read_file', 'edit', 'run_shell_command']`. |
 | `excludeTools`           | `string[]`                                     | -                | Entspricht `permissions.deny` in settings.json. Ausgeschlossene Tools geben sofort einen Berechtigungsfehler zurück. Hat höchste Priorität gegenüber allen anderen Berechtigungseinstellungen. Unterstützt Toolnamen-Alias und Mustervergleich: Toolname (`'write_file'`), Shell-Befehlspräfix (`'Bash(rm *)'`) oder Pfadmuster (`'Read(.env)'`, `'Edit(/src/**)'`).                                                                                                                                         |
-| `allowedTools`           | `string[]`                                     | -                | Entspricht `permissions.allow` in settings.json. Passende Tools umgehen den `canUseTool`-Callback und werden automatisch ausgeführt. Gilt nur, wenn das Tool eine Bestätigung erfordert. Unterstützt denselben Mustervergleich wie `excludeTools`. Beispiel: `['Bash(git status)', 'Bash(npm test)']`.                                                                                                                                                                                                         |
-| `authType`               | `'openai' \| 'qwen-oauth'`                     | `'openai'`       | Authentifizierungstyp für den KI-Dienst. Der kostenlose Qwen OAuth-Tarif wurde am 2026-04-15 eingestellt; neue SDK-Setups sollten eine OpenAI-kompatible Authentifizierung oder einen anderen unterstützten Anbieter verwenden.                                                                                                                                                                                                                                                                                                |
+| `allowedTools`           | `string[]`                                     | -                | Entspricht `permissions.allow` in settings.json für die automatische Genehmigung. Passende Tools umgehen den `canUseTool`-Callback und werden automatisch ausgeführt. Gilt nur, wenn das Tool eine Bestätigung erfordert. Im Gegensatz zu `permissions.allow` in settings.json aktiviert dieser Parameter allein die Registry-Allowlist nicht; während jedoch eine aus den Einstellungen bereitgestellte Allowlist aktiv ist, werden `allowedTools`-Regeln in das effektive Allow-Set zusammengeführt und zählen zur Abdeckung, sodass abgedeckte eingebaute Tools registriert bleiben (nicht abgedeckte werden zu deferred herabgestuft, nicht entfernt, #10075). Unterstützt denselben Mustervergleich wie `excludeTools`. Beispiel: `['Bash(git status)', 'Bash(npm test)']`. |
+| `authType`               | `'openai' \| 'anthropic' \| 'qwen-oauth' \| 'gemini' \| 'vertex-ai'` | -                | Authentifizierungstyp für den KI-Dienst. Wenn angegeben, leitet das SDK ihn als `--auth-type` an die CLI weiter.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `agents`                 | `SubagentConfig[]`                             | -                | Konfiguration für Sub-Agenten, die während der Sitzung aufgerufen werden können. Sub-Agenten sind spezialisierte KI-Agenten für bestimmte Aufgaben oder Bereiche.                                                                                                                                                                                                                                                                                                                                                |
 | `includePartialMessages` | `boolean`                                      | `false`          | Wenn `true`, sendet das SDK unvollständige Nachrichten während der Generierung, was Echtzeit-Streaming der KI-Antwort ermöglicht.                                                                                                                                                                                                                                                                                                                                                        |
 | `resume`                 | `string`                                       | -                | Setze eine vorherige Sitzung durch Angabe ihrer Sitzungs-ID fort. Entspricht dem `--resume`-Flag der CLI.                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -94,12 +92,17 @@ Das SDK erzwingt die folgenden Standard-Timeout-Werte:
 Du kannst diese Timeouts über die Option `timeout` anpassen:
 
 ```typescript
-const query = qwen.query('Dein Prompt', {
-  timeout: {
-    canUseTool: 60000, // 60 Sekunden für Berechtigungs-Callback
-    mcpRequest: 600000, // 10 Minuten für MCP-Toolaufrufe
-    controlRequest: 60000, // 60 Sekunden für Steuerungsanfragen
-    streamClose: 15000, // 15 Sekunden für Wartezeit beim Stream-Schließen
+import { query } from '@qwen-code/sdk';
+
+const q = query({
+  prompt: 'Your prompt',
+  options: {
+    timeout: {
+      canUseTool: 60000, // 60 seconds for permission callback
+      mcpRequest: 600000, // 10 minutes for MCP tool calls
+      controlRequest: 60000, // 60 seconds for control requests
+      streamClose: 15000, // 15 seconds for stream close wait
+    },
   },
 });
 ```
@@ -157,6 +160,28 @@ const detail = await q.getContextUsage(true);
 await q.close();
 ```
 
+`interrupt()` bricht nur den aktiven Turn ab. Bei einer Multi-Turn-Query, die mit einem asynchronen iterierbaren Prompt erstellt wurde, bleiben die Query und ihr Input-Stream offen, sodass spätere Nachrichten aus dem Iterable normal verarbeitet werden. Verwende `close()` oder breche den konfigurierten `AbortController` ab, wenn du die gesamte Session beenden möchtest.
+
+## Vom Caller bereitgestellte Session-IDs im Daemon
+
+`DaemonClient.createOrAttachSession` akzeptiert eine optionale `sessionId` für Caller, die eine Identität vor der Session-Erstellung persistieren müssen:
+
+```typescript
+import { DaemonClient } from '@qwen-code/sdk';
+
+const daemon = new DaemonClient({ baseUrl: 'http://127.0.0.1:4170' });
+const session = await daemon.createOrAttachSession({
+  workspaceCwd: '/path/to/project',
+  sessionId: '550E8400-E29B-41D4-A716-446655440000',
+});
+
+console.log(session.sessionId); // 550e8400-e29b-41d4-a716-446655440000
+```
+
+Das SDK benötigt die `session_id_override`-Capability des Daemons vor dem Senden der Mutation. Der REST-Modus serialisiert `sessionId` direkt; ein aktiver ACP-Adapter mappt es auf `session/new._meta["qwen-code/sessionId"]`. Das SDK überprüft die Erfolgsantwort und wirft `DaemonSessionIdProtocolError`, wenn der Daemon eine andere ID zurückgibt.
+
+Diese Option erzeugt immer eine neue Thread-Session und ist kein idempotentes Attach. Wenn das Ergebnis der Erstellung mehrdeutig ist, verwende die bekannte ID mit Load oder Resume. Das Weglassen der Option behält das bestehende Create-or-Attach-Verhalten bei.
+
 ## Berechtigungsmodi
 
 Das SDK unterstützt verschiedene Berechtigungsmodi zur Steuerung der Tool-Ausführung:
@@ -164,6 +189,7 @@ Das SDK unterstützt verschiedene Berechtigungsmodi zur Steuerung der Tool-Ausf�
 - **`default`**: Schreib-Tools werden abgelehnt, sofern sie nicht über den `canUseTool`-Callback oder in `allowedTools` genehmigt werden. Schreibgeschützte Tools werden ohne Bestätigung ausgeführt.
 - **`plan`**: Blockiert alle Schreib-Tools und weist die KI an, zuerst einen Plan vorzulegen.
 - **`auto-edit`**: Bearbeitungstools (`edit`, `write_file`, `notebook_edit`) werden automatisch genehmigt, während andere Tools eine Bestätigung erfordern.
+- **`auto`**: Verwendet den eingebauten Klassifikator, um sichere Tool-Aufrufe automatisch zu genehmigen und riskante zu blockieren, mit Fallback auf manuelle Genehmigung nach wiederholten Policy-Blockaden oder Klassifikator-Ausfällen.
 - **`yolo`**: Alle Tools werden automatisch ohne Bestätigung ausgeführt.
 
 ### Berechtigungsprioritätskette
@@ -177,8 +203,9 @@ Die erste passende Regel gewinnt.
 3. `permissionMode: 'plan'` – Blockiert alle nicht schreibgeschützten Tools
 4. `permissionMode: 'yolo'` – Genehmigt alle Tools automatisch
 5. `allowedTools` / `permissions.allow` – Genehmigt passende Tools automatisch
-6. `canUseTool`-Callback – Benutzerdefinierte Genehmigungslogik (wenn angegeben, wird er nicht für genehmigte Tools aufgerufen)
-7. Standardverhalten – Automatische Ablehnung im SDK-Modus (Schreib-Tools erfordern explizite Genehmigung)
+6. `permissionMode: 'auto'` – Klassifikator-vermittelte Genehmigung für verbleibende Tools
+7. `canUseTool`-Callback – Benutzerdefinierte Genehmigungslogik (wenn angegeben, wird er nicht für genehmigte Tools aufgerufen)
+8. Standardverhalten – Automatische Ablehnung im SDK-Modus (Schreib-Tools erfordern explizite Genehmigung)
 
 ## Beispiele
 

@@ -6,11 +6,13 @@
 
 タスクはセッションスコープです。つまり、現在の Qwen Code プロセス内に存在し、終了すると消滅します。ディスクには何も書き込まれません。
 
+メッセージングチャンネルは、別の永続スケジューラを使用するため、現在のターンの後に結果を元のチャットにプッシュバックできます。チャンネルコマンド、永続化の動作、および配信の制約については、[Scheduled Channel Loops](./channels/overview#scheduled-channel-loops) を参照してください。
+
 > **ヒント:** スケジュールタスクはデフォルトで有効になっています。無効にするには、[settings](../configuration/settings.md) で `experimental.cron: false` を設定するか、環境変数に `QWEN_CODE_DISABLE_CRON=1` を設定します。
 
 ## /loop を使用してプロンプトを定期実行する
 
-`/loop` [バンドルスキル](skills.md) は、プロンプトを定期実行するための最も迅速な方法です。オプションの間隔とプロンプトを渡すと、Qwen Code はセッションが開いている間バックグラウンドで実行される cron ジョブを設定します。
+`/loop` [バンドルスキル](./skills.md) は、プロンプトを定期実行するための最も迅速な方法です。オプションの間隔とプロンプトを渡すと、Qwen Code はセッションが開いている間バックグラウンドで実行される cron ジョブを設定します。
 
 ```text
 /loop 5m check if the deployment finished and tell me what happened

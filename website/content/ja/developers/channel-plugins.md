@@ -21,9 +21,9 @@ ChannelBase  →  calls your sendMessage() with the agent's response
 同じプラグインアダプターは、どちらのチャネルランタイムでもホストできます。
 
 - `qwen channel start [name]` は、スタンドアロンの ACP バックドサービスです。引き続き `AcpBridge` を使用し、デーモン外でチャネルを実行するための安定したコマンドであり続けます。
-- `qwen serve --channel <name>` および繰り返可能な `--channel` フラグは、実験的なデーモン管理チャネルワーカーを起動します。`--channel all` は設定されたすべてのチャネルを起動します。ワーカーは `qwen serve` によって所有され、SDK を介してそのデーモンに接続し、アダプターに `DaemonChannelBridge` に基づく `ChannelAgentBridge` ファサードを渡します。
+- `qwen serve --channel <name>` および繰り返可能な `--channel` フラグは、実験的なデーモン管理チャネルワーカーを起動します。名前付きチャネルは所有ワークスペースごとにグループ化され、所有ランタイムごとに 1 つのワーカーが配置されます。`--channel all` は意図的にプライマリワークスペースの設定されたチャネルのみを起動します。ワーカーは `qwen serve` によって所有され、SDK を介してそのデーモンに接続し、アダプターに `DaemonChannelBridge` に基づく `ChannelAgentBridge` ファサードを渡します。
 
-デーモン管理チャネルはデーモンのライフサイクルとステータスレポートを継承します。アダプターやプラットフォーム SDK の障害によってデーモンがクラッシュしないように、意図的にプロセス外で実行されます。デーモンは引き続き 1 つのワークスペースにバインドされるため、選択した各チャネル設定は、デーモンワークスペースに解決される `cwd` を使用する必要があります。
+デーモン管理チャネルはデーモンのライフサイクルとステータスレポートを継承します。アダプターやプラットフォーム SDK の障害によってデーモンがクラッシュしないように、意図的にプロセス外で実行されます。各名前付きチャネルは、正確に 1 つの登録済みの信頼されたワークスペースに解決される必要があります。そのワーカーはそのランタイムの正規 cwd と環境オーバーレイを受け取ります。cwd を持たないユーザー/システムチャネルは複数のワークスペースが登録されている場合は曖昧ですが、ワークスペースローカルの設定ファイル内のチャネルはデフォルトでそのワークスペースに属します。`--channel all` はプライマリのみに留まり、名前付き選択と組み合わせることはできません。
 
 ## プラグインオブジェクト
 
@@ -53,6 +53,7 @@ import type {
   ChannelAgentBridge,
   ChannelConfig,
   Envelope,
+  SessionTarget,
 } from '@qwen-code/channel-base';
 
 export class MyChannel extends ChannelBase {
@@ -105,6 +106,7 @@ export class MyChannel extends ChannelBase {
 | `senderId`       | string       | Yes      | メッセージ間で安定している必要がある（セッションルーティング + アクセス制御に使用） |
 | `senderName`     | string       | Yes      | 表示名                                                                     |
 | `chatId`         | string       | Yes      | DM とグループを区別する必要がある                                          |
+| `chatName`       | string       | No       | プラットフォームから提供されるグループ/会話名                              |
 | `text`           | string       | Yes      | ボットの @メンションを除去                                                 |
 | `threadId`       | string       | No       | `sessionScope: "thread"` の場合                                            |
 | `messageId`      | string       | No       | プラットフォームのメッセージ ID — レスポンスの相関付けに有用               |
@@ -200,6 +202,27 @@ protected override onPromptEnd(chatId: string, sessionId: string, messageId?: st
 **ストリーミングフック** — チャンクごとの段階的な表示（例: メッセージをその場で編集）のために `onResponseChunk(chatId, chunk, sessionId)` をオーバーライドします。最終的な配信をカスタマイズするには `onResponseComplete(chatId, fullText, sessionId)` をオーバーライドします。
 
 **ブロックストリーミング** — チャネル設定で `blockStreaming: "on"` を設定します。ベースクラスは、段落の境界でレスポンスを複数のメッセージに自動的に分割します。プラグインコードは不要で、`onResponseChunk` と併用して機能します。
+
+**プロアクティブ配信** — アダプターがアクティブなインバウンドリクエストなしに送信できる場合は、`supportsProactiveSend()` をオーバーライドして `true` を返します。`ChannelBase` はこのケイパビリティを永続チャネルループ、Webhook タスク、バックグラウンドエージェントの結果、およびデーモン配信に使用します。デフォルトのターゲットポリシーはスレッドターゲットを拒否します。プラットフォームが安全に配信できるターゲット形状に対してのみ、保護されたターゲットチェックをオーバーライドしてください。
+
+```typescript
+override supportsProactiveSend(): boolean {
+  return true;
+}
+
+protected override supportsProactiveTarget(target: SessionTarget): boolean {
+  return target.threadId === undefined;
+}
+
+protected override async pushProactive(
+  target: SessionTarget,
+  text: string,
+): Promise<void> {
+  await this.platformClient.send(target.chatId, text);
+}
+```
+
+汎用デーモン配信が異なるターゲット形状を受け入れる場合は `supportsProactiveDeliveryTarget()` を使用し、Webhook 配信がループやバックグラウンドの結果と異なる場合は `supportsProactiveWebhookTarget()` を使用します。サポートされていないターゲットは、別の会話にフォールバックするのではなく、拒否されたままにしてください。
 
 **メディア** — `envelope.attachments` に画像/ファイルを入力します。上記の[添付ファイル](#attachments)を参照してください。
 

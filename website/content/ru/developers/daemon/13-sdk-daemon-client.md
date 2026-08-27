@@ -52,7 +52,7 @@ new DaemonClient({
 | События                   | `subscribeEvents` (SSE-генератор), `subscribeEventsStream` (сырой ответ)                                                                                                                                                                                                                                                                                                                                        |
 | Разрешения                | `respondToPermission`, `respondToSessionPermission`                                                                                                                                                                                                                                                                                                                                                             |
 | Снимки рабочего пространства | `getWorkspaceMcp`, `getWorkspaceSkills`, `getWorkspaceProviders`, `getWorkspaceEnv`, `getWorkspacePreflight`                                                                                                                                                                                                                                                                                                 |
-| Изменения рабочего пространства | `writeWorkspaceMemory`, `readWorkspaceMemory`, `rememberWorkspaceMemory`, `getWorkspaceMemoryRememberTask`, `forgetWorkspaceMemory`, `getWorkspaceMemoryForgetTask`, `dreamWorkspaceMemory`, `getWorkspaceMemoryDreamTask`, `listWorkspaceAgents`, `getWorkspaceAgent`, `createWorkspaceAgent`, `updateWorkspaceAgent`, `deleteWorkspaceAgent`, `toggleWorkspaceTool`, `restartMcpServer`, `initializeWorkspace` |
+| Изменения рабочего пространства | `addWorkspace`, `updateWorkspace`, `writeWorkspaceMemory`, `readWorkspaceMemory`, `rememberWorkspaceMemory`, `getWorkspaceMemoryRememberTask`, `forgetWorkspaceMemory`, `getWorkspaceMemoryForgetTask`, `dreamWorkspaceMemory`, `getWorkspaceMemoryDreamTask`, `listWorkspaceAgents`, `getWorkspaceAgent`, `createWorkspaceAgent`, `updateWorkspaceAgent`, `deleteWorkspaceAgent`, `setWorkspaceToolEnabled`, `setWorkspaceSkillEnabled`, `restartMcpServer`, `initWorkspace` |
 | Файлы                     | `readFile`, `readFileBytes`, `writeFile`, `editFile`, `listDirectory`, `globPaths`, `statPath`                                                                                                                                                                                                                                                                                                                  |
 | Аутентификация            | `startDeviceFlow`, `pollDeviceFlow`, `cancelDeviceFlow`, `getAuthStatus`                                                                                                                                                                                                                                                                                                                                        |
 
@@ -140,6 +140,69 @@ await client.getWorkspaceMemoryForgetTask('forget-...');
 await client.dreamWorkspaceMemory();
 await client.getWorkspaceMemoryDreamTask('dream-...');
 ```
+
+Переключатели навыков рабочего пространства доступны в обоих вариантах клиента:
+
+```ts
+await client.setWorkspaceSkillEnabled('review', false, {
+  clientId: 'dashboard-1',
+});
+await client
+  .workspaceByCwd('/work/secondary')
+  .setWorkspaceSkillEnabled('review', true, { clientId: 'dashboard-1' });
+```
+
+Pre-flight `capabilities.features.includes('workspace_skill_toggle')`. Типизированный `DaemonSkillToggleResult` сообщает канонический `skillName`, изменилось ли состояние на диске (`changed`), состояние активации (`applied`, `deferred` или `partial`) и количество обновлённых/ошибочных сессий. `DaemonWorkspaceSkillStatus.userInvocable` — опциональное поле только для `false`; отсутствие означает, что навык доступен для вызова пользователем.
+
+Для пакетных изменений выполните pre-flight `workspace_skill_batch_toggle` и вызовите любой из вариантов клиента с тем же контрактом:
+
+```ts
+await client.setWorkspaceSkillsEnabled(['review', 'deploy'], false, {
+  clientId: 'dashboard-1',
+});
+await client
+  .workspaceByCwd('/work/secondary')
+  .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
+```
+
+`DaemonSkillBatchToggleResult` содержит упорядоченные успешные `results`, `errors` для каждой цели и batch-level счётчики активации/обновления сессий. Демон сохраняет валидные цели вместе и обновляет активные сессии один раз; одна ожидаемая ошибка цели не блокирует остальные валидные цели. Метод выбрасывает исключение только при ответе с кодом, отличным от 200; ответ 200 не означает, что каждая цель была применена, поэтому всегда проверяйте `errors` перед тем, как считать пакет успешным.
+
+Пакетная активация расширений V2 сохраняет асинхронную модель операций расширений. Выполните pre-flight `extension_batch_activation_v2`, отправьте глобальный пакет по умолчанию или пакет-переопределение для выбранного рабочего пространства, затем опрашивайте его с помощью существующего хелпера операций:
+
+```ts
+const globalHandle = await client.setExtensionDefaultActivations(
+  ['formatter', 'review-tools'],
+  'disabled',
+  'dashboard-1',
+);
+const workspaceHandle = await client
+  .workspaceByCwd('/work/secondary')
+  .setExtensionActivations(
+    ['formatter', 'review-tools'],
+    'inherit',
+    'dashboard-1',
+  );
+const operation = await client.waitForExtensionOperation(workspaceHandle);
+```
+
+Результат завершающей операции содержит упорядоченные `results`. Цели не обязаны быть установлены при задании `enabled` или `disabled`: демон сохраняет объявление имени и сохраняет эту политику активации, когда расширение с таким именем устанавливается позже. Все изменённые цели разделяют одну генерацию Extension Store и один проход согласования. Глобальные пакеты по умолчанию согласуют каждый зарегистрированный runtime; пакеты рабочего пространства разрешают и согласуют только выбранный доверенный runtime. `inherit` для рабочего пространства очищает конкретное переопределение, но не создаёт объявление для неизвестного имени; очистка всех неизвестных целей успешно выполняется как no-op без согласования. Единичные методы активации остаются только для установленных расширений.
+
+Отображаемые имена рабочего пространства — это опциональные метаданные для представления. Pre-flight `capabilities.features.includes('workspace_display_name')`; id рабочего пространства и канонические пути остаются единственными селекторами, дублирующиеся отображаемые имена допустимы.
+
+```ts
+const workspace = await client.addWorkspace('/srv/repos/payments', {
+  persist: true,
+  displayName: 'Payments Production',
+});
+
+await client.updateWorkspace(workspace.id, {
+  displayName: 'Payments',
+});
+await client.updateWorkspace(workspace.id, { displayName: null });
+```
+
+`addWorkspace` принимает `displayName?: string` и возвращает его, если он задан. `updateWorkspace` принимает селектор по id или cwd и `{ displayName: string | null }`; `null` очищает имя. Имена ограничены 256 символами после обрезки и отклоняют внутренние управляющие символы C0/DEL. Локальное для процесса рабочее пространство сохраняет своё имя только для текущего процесса демона; совпадающие постоянные регистрации обновляются через существующее хранилище. `DaemonWorkspaceCapability.displayName` остаётся опциональным, чтобы SDK продолжал взаимодействовать со старыми демонами.
+
 ## Рабочий процесс
 
 ### Create-or-attach + первый запрос
@@ -234,7 +297,7 @@ sequenceDiagram
 
 SDK также экспортирует `packages/sdk-typescript/src/daemon/ui/` — независимый от хоста набор примитивов, которые преобразуют события демона в блоки транскрипта:
 
-- `normalizeDaemonEvent(evt)` сопоставляет 47 известных сетевых событий демона с 42 удобными для UI значениями `DaemonUiEventType`; немоделированные или некорректные события нормализуются в `debug`.
+- `normalizeDaemonEvent(evt)` сопоставляет 53 известных сетевых события демона с 43 удобными для UI значениями `DaemonUiEventType`; немоделированные или некорректные события нормализуются в `debug`.
 - `createDaemonTranscriptState()` вместе с `reduceDaemonTranscriptEvents(state, events)` проецируют UI-события в `DaemonTranscriptBlock[]`.
 - `createDaemonTranscriptStore()` оборачивает subscribe / dispatch.
 - `render.ts` / `terminal.ts` предоставляют базовые рендереры для HTML и терминала, а `toolPreview.ts` формирует сводки вызовов инструментов.
@@ -294,9 +357,13 @@ async function* subscribe(sessionId: string, signal: AbortSignal) {
     }
     // Handle ring-eviction gap.
     if (event.type === 'state_resync_required') {
-      // State is stale — reload full session state.
+      // State is stale — reload the daemon's bounded replay snapshot window.
       await client.loadSession(sessionId);
       continue;
+    }
+    if (event.type === 'history_truncated') {
+      // Informational only. Render a status notice, then continue applying
+      // the retained replay events; do not trigger another reload.
     }
     yield event;
   }
@@ -328,7 +395,17 @@ async function resilientSubscribe(session: DaemonSessionClient) {
 }
 ```
 
-При переподключении демон повторяет события с `id > lastSeenEventId` из своего ограниченного кольцевого буфера (по умолчанию 8000 событий). Если разрыв превышает размер буфера, фрейм `state_resync_required` сигнализирует клиенту о необходимости вызвать `loadSession` для полного восстановления состояния.
+При переподключении демон повторяет события с `id > lastSeenEventId` из своего ограниченного кольцевого буфера (по умолчанию 8000 событий). Если разрыв превышает размер буфера, фрейм `state_resync_required` сигнализирует клиенту о необходимости вызвать `loadSession` и восстановиться из текущего ограниченного окна снимка повтора. Этот снимок может начинаться с `history_truncated`; рассматривайте его как видимый оператору маркер статуса, а не как запрос на повторную синхронизацию.
+
+`history_truncated.fullTranscriptAvailable` — это булев флаг возможности. Когда он равен `true`, вызывающий код может листать полный активный сохранённый повтор с помощью `DaemonClient.getSessionTranscriptPage(sessionId, { cursor, limit })`; когда он равен `false`, клиенты должны продолжать обычный рендеринг ограниченного повтора.
+
+Когда анонсируется `workspace_persisted_transcript`, `client.workspaceById(workspaceId).getSessionTranscriptPage(sessionId, { cursor, limit })` читает выбранное зарегистрированное рабочее пространство без подключения к ACP. Метод с квалификацией рабочего пространства всегда использует нативный REST, даже если клиент имеет заменяемый транспорт; его курсор истекает при перезапуске демона.
+
+Когда анонсируется `workspace_session_export`, `client.workspaceById(workspaceId).exportSession(sessionId, { format })` или `client.workspaceByCwd(workspaceCwd).exportSession(...)` экспортирует активный сохранённый транскрипт выбранного доверенного рабочего пространства. Метод возвращает существующий `DaemonSessionExportResult`, сохраняет опциональную идентификацию клиента и поведение таймаута fetch для всего клиента, и всегда использует нативный REST, даже если клиент имеет заменяемый транспорт. Не выводите поддержку этого метода на сервере из `session_export` или `workspace_qualified_rest_core`; старые демоны сохраняют только основной экспорт.
+
+Когда анонсируется `workspace_archived_session_export`, используйте `client.workspaceById(workspaceId).exportArchivedSession(sessionId, { format })` или соответствующий метод `workspaceByCwd` для экспорта только архивированного сохранённого транскрипта выбранного рабочего пространства. Метод использует тот же тип результата и поведение нативного REST, что и активный экспорт, но никогда не откатывается к активной сессии; поддержку нельзя вывести ни из одной возможности активного экспорта.
+
+Когда анонсируется `workspace_session_live_state`, `client.getWorkspaceSessionLiveState(workspaceCwd)` или скоупированные методы `client.workspaceById(workspaceId).getSessionLiveState()` / `client.workspaceByCwd(workspaceCwd).getSessionLiveState()` читают снимок живых сессий только из памяти выбранного доверенного рабочего пространства вместе с версией каталога, возвращая `DaemonWorkspaceSessionLiveState` (`{ v: 1, catalogVersion: DaemonSessionCatalogVersion, sessions: DaemonSessionLiveState[] }`). Эти методы всегда используют нативный REST с аутентификацией bearer и закодированным селектором рабочего пространства, сохраняют опциональную идентификацию клиента и используют существующий таймаут для коротких запросов. Они не вызывают `requireCapability()` — проверка возможностей при каждом опросе удвоила бы объём запросов, — поэтому потребители выполняют pre-flight `workspace_session_live_state` один раз из уже загруженных возможностей и откатываются к существующему опросу каталога, если тег отсутствует. Не выводите поддержку из `workspace_qualified_rest_core`. Каждый `DaemonSessionLiveState` несёт опциональный watermark активности `updatedAt`, который позволяет потребителю обновить актуальность уже имеющейся строки каталога вместо перезагрузки каталога после завершённого хода; он отсутствует до первого терминала выполняющегося хода в текущем бридже и после замены демона или runtime, поэтому потребитель должен сохранять существующий фолбэк на каталог при отсутствующем значении, а не считать отсутствие как неподдерживаемую возможность.
 
 ### Инициализация `lastEventId` при создании
 

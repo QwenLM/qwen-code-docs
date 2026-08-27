@@ -3,7 +3,7 @@
 Меню `/auth` при первом запуске Qwen Code содержит три основных варианта. Выберите тот, который соответствует вашему способу использования CLI:
 
 - **Alibaba ModelStudio**: официальный рекомендуемый вариант. Открывает подменю с **Coding Plan** (для индивидуальных разработчиков · включена недельная квота), **Token Plan** (для команд и компаний · оплата по мере использования с выделенным эндпоинтом) или **Standard API Key** (подключение с существующим API-ключом ModelStudio).
-- **Third-party Providers**: выберите встроенного провайдера и подключитесь с помощью API-ключа (DeepSeek, MiniMax, Z.AI, Idealab, ModelScope, OpenRouter, Requesty).
+- **Third-party Providers**: выберите встроенного провайдера и подключитесь с помощью API-ключа (DeepSeek, Grok, MiniMax, Z.AI, Kimi, Idealab, ModelScope, OpenRouter, Requesty).
 - **Custom Provider**: вручную подключите локальный сервер, прокси или неподдерживаемого провайдера — поддерживаются OpenAI, Anthropic, Gemini и другие совместимые эндпоинты.
 
 > [!note]
@@ -75,18 +75,15 @@ export OPENAI_MODEL="qwen3-coder-plus"
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "qwen3-coder-plus",
-          "name": "qwen3-coder-plus (Coding Plan)",
-          "baseUrl": "https://coding.dashscope.aliyuncs.com/v1",
-          "description": "qwen3-coder-plus from Alibaba Cloud Coding Plan",
-          "envKey": "BAILIAN_CODING_PLAN_API_KEY"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "qwen3-coder-plus",
+        "name": "qwen3-coder-plus (Coding Plan)",
+        "baseUrl": "https://coding.dashscope.aliyuncs.com/v1",
+        "description": "qwen3-coder-plus from Alibaba Cloud Coding Plan",
+        "envKey": "BAILIAN_CODING_PLAN_API_KEY"
+      }
+    ]
   },
   "env": {
     "BAILIAN_CODING_PLAN_API_KEY": "sk-sp-xxxxxxxxx"
@@ -117,18 +114,15 @@ export OPENAI_MODEL="qwen3-coder-plus"
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "qwen3-coder-plus",
-          "name": "qwen3-coder-plus",
-          "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-          "description": "Qwen3-Coder via Dashscope",
-          "envKey": "DASHSCOPE_API_KEY"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "qwen3-coder-plus",
+        "name": "qwen3-coder-plus",
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "description": "Qwen3-Coder via Dashscope",
+        "envKey": "DASHSCOPE_API_KEY"
+      }
+    ]
   },
   "env": {
     "DASHSCOPE_API_KEY": "sk-xxxxxxxxxxxxx"
@@ -168,7 +162,7 @@ export OPENAI_MODEL="qwen3-coder-plus"
 | OpenAI-совместимый | `openai`             | `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL` (алиас: `QWEN_MODEL`)                            | OpenAI, Azure OpenAI, OpenRouter, Requesty, ModelScope, Alibaba Cloud, любой OpenAI-совместимый эндпоинт |
 | Anthropic         | `anthropic`          | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`                                         | Anthropic Claude                                                                                      |
 | Google GenAI      | `gemini`             | `GEMINI_API_KEY`, `GEMINI_MODEL`                                                                     | Google Gemini                                                                                         |
-| Vertex AI         | `vertex-ai`          | `GOOGLE_API_KEY`, `GOOGLE_MODEL` (устанавливает `GOOGLE_GENAI_USE_VERTEXAI=true`; использует протокол `gemini`) | Google Vertex AI                                                                                      |
+| Vertex AI         | `vertex-ai`          | `GOOGLE_API_KEY` или `GOOGLE_CLOUD_PROJECT` (+ опционально `GOOGLE_CLOUD_LOCATION`), `GOOGLE_MODEL` (использует протокол `gemini`; беспарольная настройка только с проектом не определяется автоматически из окружения, поэтому выберите тип аутентификации явно через `--auth-type vertex-ai` или `security.auth.selectedType`) | Google Vertex AI                                                                                      |
 
 #### Шаг 1: Настройка моделей и провайдеров в `~/.qwen/settings.json`
 
@@ -183,37 +177,28 @@ export OPENAI_MODEL="qwen3-coder-plus"
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "gpt-4o",
-          "name": "GPT-4o",
-          "envKey": "OPENAI_API_KEY",
-          "baseUrl": "https://api.openai.com/v1"
-        }
-      ]
-    },
-    "anthropic": {
-      "protocol": "anthropic",
-      "models": [
-        {
-          "id": "claude-sonnet-4-20250514",
-          "name": "Claude Sonnet 4",
-          "envKey": "ANTHROPIC_API_KEY"
-        }
-      ]
-    },
-    "gemini": {
-      "protocol": "gemini",
-      "models": [
-        {
-          "id": "gemini-2.5-pro",
-          "name": "Gemini 2.5 Pro",
-          "envKey": "GEMINI_API_KEY"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "gpt-4o",
+        "name": "GPT-4o",
+        "envKey": "OPENAI_API_KEY",
+        "baseUrl": "https://api.openai.com/v1"
+      }
+    ],
+    "anthropic": [
+      {
+        "id": "claude-sonnet-4-20250514",
+        "name": "Claude Sonnet 4",
+        "envKey": "ANTHROPIC_API_KEY"
+      }
+    ],
+    "gemini": [
+      {
+        "id": "gemini-2.5-pro",
+        "name": "Gemini 2.5 Pro",
+        "envKey": "GEMINI_API_KEY"
+      }
+    ]
   }
 }
 ```
@@ -236,7 +221,7 @@ export OPENAI_MODEL="qwen3-coder-plus"
 >
 > При использовании поля `env` в `settings.json` учетные данные хранятся в открытом виде. Для большей безопасности предпочитайте файлы `.env` или `export` в shell — см. [Шаг 2](#step-2-set-environment-variables).
 
-Полную схему `modelProviders` и расширенные параметры, такие как `generationConfig`, `customHeaders` и `extra_body`, см. в [Model Providers Reference](model-providers.md).
+Полную схему `modelProviders` и расширенные параметры, такие как `generationConfig`, `customHeaders` и `extra_body`, см. в [Model Providers Reference](./model-providers.md).
 
 #### Шаг 2: Установка переменных окружения
 

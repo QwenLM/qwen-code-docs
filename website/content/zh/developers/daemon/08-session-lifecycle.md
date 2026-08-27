@@ -57,6 +57,8 @@ stateDiagram-v2
 
 `X-Qwen-Client-Id` 是**可选的**，但**强烈建议使用**。守护进程不会代为生成——client 需要自己选择并在请求中复用，以便守护进程进行投票归因、事件审计和重连检测。
 
+每个独立的控制器应使用不同的、稳定的 ID。WebUI 默认生成带 `webui_` 前缀的 ID。宿主和嵌入式 WebShell 仅在有意识地作为单个逻辑控制器行动时才应共享 ID；一旦共享，daemon 日志将无法区分是哪个发起了请求。
+
 验证规则：
 
 - 字符集：`[A-Za-z0-9._:-]`。
@@ -100,7 +102,7 @@ sequenceDiagram
 
 ### Load / resume
 
-`POST /session/:id/load` — 重放完整的 ACP 历史（`session/load` 通知会在响应返回前触发）。
+`POST /session/:id/load` — 恢复持久化的会话并返回当前有界重放快照窗口（`session/load` 通知或响应模式重放在响应返回前播种）。
 `POST /session/:id/resume` — 恢复但不重放（`connection.unstable_resumeSession`，在稳定的 `session_resume` 守护进程能力下暴露；`unstable_session_resume` 仍作为已弃用的别名保留）。
 
 两者均：
@@ -176,7 +178,11 @@ sequenceDiagram
 
 ### Shell 命令执行
 
-`POST /session/:id/shell` 直接在 daemon host 上执行 shell 命令，不经过 LLM 路由。它通过 `user_shell_command` / `user_shell_result` 事件在会话 SSE 总线上流式输出结果，并将命令及其结果注入 LLM 对话历史。响应格式为 `{ exitCode, output, aborted }`。
+`POST /session/:id/shell` 直接在 daemon host 上执行 shell 命令，不经过 LLM 路由。它通过 `user_shell_command` / `user_shell_result` 事件在会话 SSE 总线上流式输出结果，并将命令及其结果注入 LLM 对话历史。响应格式为 `{ exitCode, output, aborted }`。对于活跃的次级工作区会话，单一 REST 路由会解析会话所有者并在该 runtime 的 bridge 上执行，因此命令在所属工作区的 cwd 中启动。该路由不提供路径沙箱。具有工作区资格的 ACP 客户端可以继续在所属工作区连接上使用 `_qwen/session/shell`。
+
+### 会话回退
+
+`GET /session/:id/rewind/snapshots` 和 `POST /session/:id/rewind` 解析所属的活跃工作区 runtime。持久化的会话必须先 load 或 resume 才能回退。回退会截断对话历史并可选地恢复由 `edit` 和 `write_file` 跟踪的文件；它不会撤消 shell 命令、Git、脚本或手动更改。文件恢复是尽力而为的，因此响应可能在对话历史已经移动后报告 `rewound: false` 和 `filesFailed[]`。SDK 回退调用始终使用所有者感知的 REST，即使客户端在其他情况下使用 ACP 传输也是如此，因为变更必须保留严格的 REST 身份验证。
 
 ### 会话分离
 
@@ -192,6 +198,8 @@ sequenceDiagram
 
 `POST /sessions/unarchive` 将已归档的 JSONL 文件移回 `chats/`。这仅仅是存储状态的转换；客户端之后必须调用 `session/load` 或 `session/resume`。对于已归档的会话，load/resume 会返回 `409 session_archived`，而在归档转换期间发生竞争的变更操作会返回 `409 session_archiving`。
 
+空的、损坏的和孤立的常规转录文件即使无法作为对话加载，仍然符合这些生命周期操作的条件。所有权安全检查可以有意地 fail closed 并要求操作员干预。在 writer 密封其认证的交接证明后，如果文件被更改，则会以 `SessionTranscriptChangedError` 失败，直到操作员解决密封锁和已更改的字节。超过有界所有权读取窗口的 JSON 格式首条物理记录会以 `SessionTranscriptIdentityUnavailableError` 失败，直到该记录被修复或缩减；带有非对象前缀的超大损坏记录仍然符合条件。可解析的恢复记录必须包含字符串类型的 `sessionId` 和 `cwd` 所有权字段，混合的本地/外部归档状态也会 fail closed。当宣传了 `session_storage_conflict_repair` 时，archive 和 unarchive 接受 `resolveConflicts: true`：archive 保留已归档的副本，而 unarchive 保留活跃的副本。不使用该选项时，活跃/归档冲突不会移动、删除或覆盖任何持久化副本，并会在批处理的 `errors` 数组中返回。Archive 仍然在分类冲突之前严格关闭活跃会话，这可能会将排队的记录 flush 到活跃转录中。具有工作区资格的生命周期路由现在使用 HTTP `200` 批处理信封，而不是早期的 HTTP `409 session_conflict` 响应。
+
 ### 上下文使用情况（`session_context_usage` capability tag）
 
 `GET /session/:id/context-usage` 返回结构化的上下文窗口使用情况。`?detail=true` 包含按 tool、memory 和 skill 分组的更细粒度的使用情况。
@@ -204,13 +212,15 @@ sequenceDiagram
 
 `GET /session/:id/tasks` 返回 agent 任务、shell 任务、monitor 任务及其生命周期状态的后台任务快照。由另一个子代理生成的 agent 条目包含可选的 lineage 字段（`parentAgentId`、`parentName`、`depth`），以便客户端将嵌套的子代理渲染为树状结构；请参阅 `qwen-serve-protocol.md` 中的 payload 示例。
 
+`session_monitor_tool_correlation` 能力额外保证 monitor 条目携带 `toolUseId`，允许客户端将转录中的工具调用与其任务详情进行关联。
+
 ### 会话 LSP 状态（`session_lsp` capability tag）
 
 `GET /session/:id/lsp` 为 daemon 客户端返回经过清理的每个会话的 LSP 状态：启用状态、聚合服务器数量、不可用/初始化状态，以及每个服务器的 `name`、`status`、`languages`、`transport`、`command` 和 `error`。禁用或不可用的 LSP 会表示为 HTTP 200 状态数据，而不是传输错误。
 
 ### 压缩重放
 
-`POST /session/:id/load` 现在返回一个 `BridgeRestoredSession`，其中可以包含 `compactedReplay?: BridgeEvent[]`、`liveJournal?: BridgeEvent[]` 和 `lastEventId?: number`。`compactedReplay` 由 `TurnBoundaryCompactionEngine` 生成：在 turn 边界处，它会折叠连续的 text / thought 块，将 tool-call 序列折叠为其最终状态，丢弃瞬态信号，并生成 O(turns) 级别的重放日志，而不是 O(tokens) 级别的日志（通常可减少 25-30 倍）。
+`POST /session/:id/load` 现在返回一个 `BridgeRestoredSession`，其中可以包含 `compactedReplay?: BridgeEvent[]`、`liveJournal?: BridgeEvent[]` 和 `lastEventId?: number`。这些字段是守护进程为活跃会话提供的有界内存重放窗口，而非完整的转录 API。默认窗口上限为每个活跃会话 4 MiB（`--compacted-replay-max-bytes`），启动时拒绝无效上限；硬上限为 256 MiB。`compactedReplay` 由 `TurnBoundaryCompactionEngine` 生成：在 turn 边界处，它会折叠连续的 text / thought 块，将 tool-call 序列折叠为其最终状态，丢弃瞬态信号，并生成 O(turns) 级别的重放日志，而不是 O(tokens) 级别的日志（通常可减少 25-30 倍）。当较旧的保留重放从该字节窗口中被丢弃时，`compactedReplay[0]` 是一个合成的无 id `history_truncated` 标记，包含 `{reason: 'replay_window_exceeded', truncatedEvents, retainedEvents, maxBytes, truncatedTurns?, fullTranscriptAvailable: boolean}`。`fullTranscriptAvailable` 是一个能力标志：`true` 表示客户端可以使用 `GET /session/:id/transcript` 翻页获取完整的持久化转录，而 `false` 表示仅有界重放可用。客户端应将其作为状态渲染并正常应用保留的重放；它不得触发重同步循环。
 
 ### ACP 子进程预热
 
@@ -218,11 +228,16 @@ sequenceDiagram
 
 ## 配置
 
-- `BridgeOptions.maxSessions`（默认 20）— 上限。
+- `BridgeOptions.maxSessions`（默认 32）— 上限。
 - `BridgeOptions.sessionScope`（默认 `'single'`；可选 `'thread'`）。
 - `BridgeOptions.initializeTimeoutMs`（默认 10s）— ACP `initialize` 握手。
+- `BridgeOptions.sessionRestoreTimeoutMs`（默认 60s）— ACP `loadSession` / `unstable_resumeSession` 截止时间。默认 60 秒；显式配置的 initialize 超时可以提高此值，但不能降低。
 - `BridgeOptions.channelIdleTimeoutMs`（默认 0；立即回收 ACP 子进程）。
-- Capability tags：`session_create`、`session_scope_override`、`session_load`、`session_resume`、`unstable_session_resume`（已弃用的别名）、`session_list`、`session_close`、`session_metadata`、`session_set_model`、`client_identity`、`client_heartbeat`、`session_recap`、`session_btw`、`session_context_usage`、`session_tasks`、`session_stats`、`session_lsp`、`session_status`、`non_blocking_prompt`。
+- Capability tags：`session_create`、`session_id_override`、`session_scope_override`、`session_load`、`session_resume`、`unstable_session_resume`（已弃用的别名）、`session_list`、`session_info`、`session_close`、`session_metadata`、`session_set_model`、`client_identity`、`client_heartbeat`、`session_recap`、`session_generation`、`session_btw`、`session_context_usage`、`session_tasks`、`session_monitor_tool_correlation`、`session_stats`、`session_lsp`、`session_status`、`non_blocking_prompt`。
+
+### 无状态 generation（`session_generation` 能力标签）
+
+`POST /session/:id/generate` 接受 `{ "prompt": string }` 并返回一个请求作用域的 SSE 流，包含 `started`、可选的 `thinking`、`delta`、`done` 或 `error` 事件。该请求不读取对话历史、不记录轮次，也不暴露任何工具。ACP 子进程在可用时使用已配置的有效快速模型，否则使用会话的主模型。
 
 ## 注意事项与已知限制
 

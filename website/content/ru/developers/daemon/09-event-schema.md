@@ -2,7 +2,7 @@
 
 ## Обзор
 
-Каждый SSE-фрейм, генерируемый демоном на эндпоинте `GET /session/:id/events`, имеет структуру `{ id, v, type, data, originatorClientId?, _meta? }`. `v: 1` — это текущая версия `EVENT_SCHEMA_VERSION`. Поле `type` берется из закрытого, зафиксированного по версии набора `DAEMON_KNOWN_EVENT_TYPE_VALUES` в `packages/sdk-typescript/src/daemon/events.ts`; текущий набор содержит 47 известных типов событий. Поле `_meta` в обертке проставляется на границе записи SSE функцией `formatSseFrame()` в `packages/cli/src/serve/routes/sse-events.ts`; см. [Метаданные уровня обертки](#envelope-level-metadata).
+Каждый SSE-фрейм, генерируемый демоном на эндпоинте `GET /session/:id/events`, имеет структуру `{ id, v, type, data, originatorClientId?, _meta? }`. `v: 1` — это текущая версия `EVENT_SCHEMA_VERSION`. Поле `type` берется из закрытого, зафиксированного по версии набора `DAEMON_KNOWN_EVENT_TYPE_VALUES` в `packages/sdk-typescript/src/daemon/events.ts`. Поле `_meta` в обертке проставляется на границе записи SSE функцией `formatSseFrame()` в `packages/cli/src/serve/routes/sse-events.ts`; см. [Метаданные уровня обертки](#envelope-level-metadata).
 
 SDK предоставляет метод `asKnownDaemonEvent(evt)`. Он возвращает дискриминированный объект `KnownDaemonEvent` для известных типов событий и `undefined` для остальных. Таким образом, потребители SDK могут обеспечивать прямую совместимость без необходимости синхронного обновления SDK, когда более новая версия демона добавляет новый тип события; редьюсер сессии записывает такие события как `unrecognizedKnownEventCount`.
 
@@ -15,7 +15,7 @@ SDK предоставляет метод `asKnownDaemonEvent(evt)`. Он воз
 - Предоставляет чистые редьюсеры (`reduceDaemonSessionEvent`, `reduceDaemonAuthEvent`), которые проецируют поток событий в состояние представления SDK.
 - Транслирует тег возможности `typed_event_schema` в качестве информационного сигнала. Если тег отсутствует, `asKnownDaemonEvent` все равно возвращает `unknown`.
 
-## Словарь событий (47 известных типов)
+## Словарь событий
 
 Сгруппированы по доменам.
 
@@ -27,7 +27,8 @@ SDK предоставляет метод `asKnownDaemonEvent(evt)`. Он воз
 | `session_metadata_updated` | S->C | `PATCH /session/:id/metadata` | `sessionId, displayName?` |
 | `session_died` | S->C terminal | `channel.exited` | `sessionId, reason, exitCode? \| null, signalCode? \| null` |
 | `session_closed` | S->C terminal | `DELETE /session/:id` или программное закрытие | `sessionId, reason: 'client_close' \| string, closedBy?` |
-| `session_snapshot` | S->C synthetic | Снимочный фрейм после подключения / воспроизведения SSE | `sessionId, currentModelId: string \| null, currentApprovalMode: string \| null` |
+| `session_snapshot` | S->C synthetic | Снимочный фрейм после подключения / воспроизведения SSE | `sessionId, currentModelId: string \| null, currentApprovalMode: string \| null, recordingDegraded: boolean` |
+| `session_recording_degraded` | S->C | Транскрипт сессии был безвозвратно остановлен после асинхронной ошибки записи | `sessionId, reason: 'write_failed'` |
 
 ### Синтетические фреймы уровня подписчика
 
@@ -37,7 +38,10 @@ SDK предоставляет метод `asKnownDaemonEvent(evt)`. Он воз
 | `slow_client_warning` | Отставание по живым фреймам или живым сериализованным байтам >= 75%; принудительно отправляется и **не имеет `id`** | `queueSize, maxQueued, lastEventId, queuedBytes?, maxQueuedBytes?, threshold?: 'frames' \| 'bytes' \| 'frames_and_bytes'`; повторно активируется после того, как показатели по фреймам и байтам падают ниже 37.5%. |
 | `stream_error` | `SubscriberLimitExceededError` или другая ошибка потока маршрута | `error: string`; завершающее событие для подписки. |
 | `state_resync_required` | `subscribe({lastEventId})` обнаруживает, что кольцевой буфер демона больше не содержит `[lastEventId+1, earliestInRing-1]`, или курсор клиента относится к предыдущей эпохе шины. Принудительно отправляется **до** оставшихся фреймов воспроизведения и **не имеет `id`**. | `reason: 'ring_evicted' \| 'epoch_reset' \| string`, `lastDeliveredId: number`, `earliestAvailableId: number`. Это сигнал восстановления, а не завершающее событие: поток SSE остается открытым, и воспроизведение + живые фреймы продолжаются. Редьюсер SDK устанавливает `awaitingResync = true` и пропускает дельты, пока вызывающий код не выполнит сброс с помощью `loadSession`. |
+| `history_truncated`     | `POST /session/:id/load` возвращает ограниченный снимок воспроизведения после удаления старых записей воспроизведения из памяти. Добавляется в начало `compactedReplay` и **не имеет `id`**. | `reason: 'replay_window_exceeded'`, `truncatedEvents: number`, `retainedEvents: number`, `maxBytes: number`, `truncatedTurns?: number`, `fullTranscriptAvailable: boolean`. Это маркер состояния, а не запрос ресинхронизации; клиенты отображают его и продолжают применять сохранённое воспроизведение. |
 | `replay_complete` | Сигнальное событие без id, генерируемое после завершения цикла воспроизведения `Last-Event-ID`, как для чистого воспроизведения, так и для путей с выселением из кольца, даже если `data.replayedCount === 0`. **Нет `id`** | `replayedCount: number`; позволяет потребителям детерминированно скрывать UI синхронизации без использования таймаута. |
+
+`fullTranscriptAvailable` — это булев флаг возможности (capability), а не литеральный тип `true`. Текущие демоны выдают `true`, когда `/session/:id/transcript` может использоваться для постраничного просмотра сохранённого транскрипта; старые или ограниченные демоны могут выдавать `false`, и клиенты должны продолжать нормально отображать ограниченное воспроизведение.
 
 ### Разрешения (F3 + base)
 
@@ -64,6 +68,7 @@ SDK предоставляет метод `asKnownDaemonEvent(evt)`. Он воз
 | `mcp_child_refused_batch` | S->C | `refusedServers: [{ name, transport, reason: 'budget_exhausted' }], budget, liveCount, reservedCount, mode: 'enforce', scope?: 'workspace' \| 'session'` |
 | `mcp_server_restarted` | S->C | `serverName, durationMs, entryIndex?` для перезапусков пула с несколькими записями F2 |
 | `mcp_server_restart_refused` | S->C | `serverName, reason: 'budget_would_exceed' \| 'in_flight' \| 'disabled' \| 'restart_failed', entryIndex?, details?`. Четвертое значение, `restart_failed`, содержит информацию о базовой жесткой ошибке при перезапуске пула с несколькими записями. `MCP_RESTART_REFUSED_REASONS` отклоняет неизвестные причины; старый редьюсер SDK молча отбрасывает новые добавленные значения причин, поскольку `parseDaemonEvent` возвращает `undefined`. Отправляйте новую причину вместе с SDK, который её поддерживает. |
+
 ### Управление мутациями (Wave 4 PR 16+17)
 
 | Тип                      | Направление | Полезная нагрузка                                                                                                                              |
@@ -72,7 +77,7 @@ SDK предоставляет метод `asKnownDaemonEvent(evt)`. Он воз
 | `agent_changed`          | S->C        | `change: 'created' \| 'updated' \| 'deleted', name, level: 'project' \| 'user'`                                                                |
 | `approval_mode_changed`  | S->C        | `sessionId, previous, next, persisted: boolean`                                                                                                |
 | `tool_toggled`           | S->C        | `toolName, enabled`; влияет на следующий запуск дочернего процесса ACP и не изменяет уже запущенные сессии.                                            |
-| `settings_changed`       | S->C        | Запись настроек рабочего пространства завершена. Полезная нагрузка открыта; потребителям следует обновить данные с помощью чтения после записи.                                           |
+| `settings_changed`       | S->C        | Запись настроек рабочего пространства завершена. Полезная нагрузка включает `key`; `value`, `scope` и `mutation` (Skill-toggle) опциональны.                        |
 | `settings_reloaded`      | S->C        | Сервис рабочего пространства демона перечитал настройки. Полезная нагрузка открыта.                                                                                     |
 | `trust_change_requested` | S->C        | `workspaceCwd, desiredState: 'trusted' \| 'untrusted', reason?`                                                                                |
 | `workspace_initialized`  | S->C        | `path, action: 'created' \| 'overwrote' \| 'noop', originatorClientId?`                                                                        |
@@ -116,10 +121,10 @@ SDK предоставляет метод `asKnownDaemonEvent(evt)`. Он воз
 | Тип                 | Направление | Триггер                                                                                                             | Ключевые поля полезной нагрузки                                                                                                                                                                  |
 | ------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `prompt_cancelled`  | S->C        | Промпт был отменен через явный маршрут `cancelSession` или из-за отключения SSE инициатора                        | Оболочка добавляет `originatorClientId` для отменяющего клиента. Это означает "запрошена отмена", а не "отмена подтверждена". Равноправные подписчики узнают, что промпт завершен.              |
-| `turn_complete`     | S->C        | Ход успешно завершен                                                                                                | `sessionId, stopReason, promptId?`. `promptId` связывает с неблокирующими ответами на промпт (`202`). SDK сопоставляет события SSE с исходным промптом с его помощью.                                  |
+| `turn_complete`     | S->C        | Ход успешно завершен                                                                                                | `sessionId, stopReason, promptId?, branchPoint?`. `promptId` связывает с неблокирующими ответами на промпт (`202`). Завершенные ходы с правом на ветвление включают `branchPoint: { assistantRecordUuid, checkpointUuid }`. |
 | `turn_error`        | S->C        | Сбой хода                                                                                                           | `sessionId, message, code?, promptId?`; тот же механизм корреляции `promptId`.                                                                                                                   |
 | `session_rewound`   | S->C        | `POST /session/:id/rewind` выполнен успешно                                                                         | `sessionId, promptId, targetTurnIndex, filesChanged[], filesFailed[], originatorClientId?`                                                                                                       |
-| `session_branched`  | S->C        | `POST /session/:id/branch` создал ветку из существующей сессии                                                      | `sourceSessionId, newSessionId, displayName, originatorClientId?`                                                                                                                                |
+| `session_branched`  | S->C        | Устаревшее событие совместимости; текущий эндпоинт ветвления возвращает результат напрямую и не публикует это событие | `sourceSessionId, newSessionId, displayName, originatorClientId?`. Читатели сохраняют поддержку старых продюсеров.                                                                                |
 | `followup_suggestion` | S->C      | Дочерний процесс ACP сгенерировал follow-up предложения в виде ghost-текста после `end_turn`, которые были пересланы через SSE для каждой сессии | `sessionId, suggestion, promptId`; по каналу передаются только предложения, у которых `getFilterReason()===null`. Клиенты отображают их как ghost-текст в плейсхолдере ввода и инвалидируют их при следующем `sendPrompt`. |
 | `user_shell_command` | S->C       | Пользователь запустил shell-команду через `POST /session/:id/shell`; событие рассылается другим подписчикам в той же сессии | `sessionId, command, shellId, originatorClientId?`. Типизированного интерфейса `DaemonXxxData` пока нет; `asKnownDaemonEvent` возвращает `undefined`, и нормализатор UI разбирает его ad hoc.            |
 | `user_shell_result` | S->C        | Результат выполнения вышеуказанной shell-команды                                                                    | `sessionId, shellId, exitCode, output, aborted`. То же замечание о разборе ad hoc, что и для `user_shell_command`.                                                                                               |
@@ -129,7 +134,7 @@ SDK предоставляет метод `asKnownDaemonEvent(evt)`. Он воз
 | Аспект                                 | Источник                                       | Примечания                                                                                                         |
 | -------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `EVENT_SCHEMA_VERSION = 1`             | `packages/acp-bridge/src/eventBus.ts`          | Отправляется в каждом фрейме.                                                                                      |
-| `DAEMON_KNOWN_EVENT_TYPE_VALUES`       | `packages/sdk-typescript/src/daemon/events.ts` | Закрытый список из 47 типов.                                                                                       |
+| `DAEMON_KNOWN_EVENT_TYPE_VALUES`       | `packages/sdk-typescript/src/daemon/events.ts` | Закрытый список из 53 типов.                                                                                       |
 | `DaemonEventEnvelope<TType, TData>`    | `events.ts`                                    | Общая оболочка.                                                                                                    |
 | `DaemonKnownEventType`                 | `events.ts`                                    | `typeof DAEMON_KNOWN_EVENT_TYPE_VALUES[number]`.                                                                   |
 | Типы полезных нагрузок для каждого события | `events.ts`                                | Большинство типов событий имеют интерфейс `DaemonXxxData`; `user_shell_*` в настоящее время разбирается нормализатором UI ad hoc. |
@@ -145,6 +150,7 @@ SDK предоставляет метод `asKnownDaemonEvent(evt)`. Он воз
 - `alive: boolean` — становится `false` после терминального фрейма (`session_died`, `session_closed`, `client_evicted`, `stream_error`).
 - `currentModelId?: string` — из `model_switched`.
 - `displayName?: string` — из `session_metadata_updated`.
+- `recordingDegraded: boolean` — липкое состояние записи транскрипта сессии из `session_recording_degraded`; явное значение `session_snapshot.recordingDegraded` является авторитетным.
 - `pendingPermissions: Record<string, DaemonPermissionRequestData>` — открытые запросы, сгруппированные по `requestId`; очищается с помощью `permission_resolved` / `permission_already_resolved`.
 - `lastSessionUpdate?: DaemonSessionUpdateData` — последний `session_update`.
 - `lastModelSwitchFailure?: DaemonModelSwitchFailedData` — из `model_switch_failed`.
@@ -233,7 +239,7 @@ flowchart LR
 
 ## `_meta` вызова инструмента (provenance / serverId)
 
-Это отдельно от `_meta` оболочки: полезные нагрузки ACP `session/update` могут содержать собственный `_meta` в `event.data._meta`. `ToolCallEmitter` (`packages/cli/src/acp-integration/session/emitters/ToolCallEmitter.ts`) добавляет два поля при `emitStart`, `emitResult` и `emitError`:
+Это отдельно от `_meta` оболочки: полезные нагрузки ACP `session/update` могут содержать собственный `_meta` в `event.data._meta`. `ToolCallEmitter` (`packages/cli/src/acp-integration/session/emitters/tool-call-emitter.ts`) добавляет два поля при `emitStart`, `emitResult` и `emitError`:
 
 | Поле        | Тип                                      | Правило определения                                                                                                                                                            |
 | ------------ | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -260,6 +266,7 @@ flowchart LR
 | `client_evicted`        | Аналогично.                                                                 |
 | `stream_error`          | Аналогично.                                                                 |
 | `session_snapshot`      | Авторитативный фрейм с полным состоянием; безопасно применять во время ресинка.                   |
+| `session_recording_degraded` | Липкий сигнал безопасности, независимый от состояния дельт транскрипта.                    |
 
 `lastEventId` по-прежнему монотонно увеличивается через `advanceLastEventId(base)` во время ресинка. После того как вызывающая сторона сбрасывает и очищает `awaitingResync`, последующие дельты выравниваются по правильному курсору.
 

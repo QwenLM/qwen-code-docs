@@ -91,9 +91,19 @@ O Qwen não salva tudo — apenas coisas que seriam realmente úteis na próxima
 
 ### Onde é armazenado
 
-Os arquivos da Auto-memory ficam em `~/.qwen/projects/<project>/memory/`. Todos os branches e worktrees do mesmo repositório compartilham a mesma pasta de memória, então o que o Qwen aprende em um branch fica disponível nos outros.
+Os arquivos da Auto-memory ficam em `~/.qwen/projects/<project>/memory/`. Todos os branches do mesmo checkout compartilham a mesma pasta de memória, então o que o Qwen aprende em um branch fica disponível nos outros. Cada git worktree vinculado obtém sua própria pasta de memória, correspondendo ao isolamento por worktree de chats e outros estados de sessão — convenções de todo o repositório que você deseja em cada worktree pertencem à [memória da equipe](#memória-da-equipe-compartilhada-com-colaboradores).
 
 Tudo o que é salvo é markdown simples — você pode abrir, editar ou excluir qualquer arquivo a qualquer momento.
+
+#### Memória fixada (Pinned)
+
+Coloque documentos curados manualmente que a manutenção automática de memória deve preservar em `pinned/` em um diretório de memória gerenciada, por exemplo `~/.qwen/projects/<project>/memory/pinned/architecture.md` ou `~/.qwen/memories/pinned/preferences.md`. Use o mesmo frontmatter que outros documentos de memória. Arquivos fixados válidos são legíveis pelo Qwen e incluídos na próxima vez que o `MEMORY.md` for reconstruído, sob os mesmos limites de tamanho e contagem de arquivos que outros documentos de memória.
+
+Apenas o diretório `pinned/` de nível superior diretamente dentro de uma raiz de memória gerenciada é protegido; diretórios aninhados como `memory/project/pinned/` são memória gravável comum. A extração automática e os workers do Dream correspondem ao nome de diretório reservado sem diferenciar maiúsculas de minúsculas.
+
+A extração automática é instruída a deixar os registros fixados e suas entradas de índice válidas inalterados, enquanto o Dream é instruído a pular `pinned/` durante a consolidação. Tanto a extração automática quanto os workers bifurcados do Dream, incluindo a limpeza em segundo plano, aplicam o limite de arquivos fixados em suas ferramentas de escrita e edição, incluindo caminhos que resolvem através de um symlink para `pinned/`; sua política existente de shell somente leitura bloqueia a exclusão por linha de comando. Você ainda controla esses arquivos diretamente e pode removê-los com uma solicitação explícita de `/forget`.
+
+> **Nota:** O comando slash `/dream` visível é executado no Agent principal. Ele recebe a mesma instrução de skip, mas ainda não recebe o gate determinístico por turno do worker bifurcado.
 
 ### Limpeza periódica
 

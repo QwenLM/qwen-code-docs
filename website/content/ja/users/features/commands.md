@@ -21,7 +21,7 @@ Qwen Code のコマンドは特定のプレフィックスでトリガーされ�
 | コマンド | 説明 | 使用例 |
 | ---------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------- |
 | `/init` | 現在のディレクトリを分析し、初期コンテキストファイルを作成する | `/init` |
-| `/summary` | 会話履歴に基づいてプロジェクトの要約を生成する | `/summary` |
+| `/summary` | 会話履歴に基づいてプロジェクトの要約を生成する | `/summary` または `/summary docs/my-summary.md` |
 | `/compress` | トークンを節約するためにチャット履歴を要約で置き換える | `/compress` または `/summarize` |
 | `/compress-fast` | AI を使用しない高速圧縮 — 古いツール出力と考え部分を削除する | `/compress-fast` |
 | `/resume` | 以前の会話セッションを再開する | `/resume` または `/continue` |
@@ -38,6 +38,10 @@ Qwen Code のコマンドは特定のプレフィックスでトリガーされ�
 >
 > `/summarize` は `/compress` のエイリアスです（チャット履歴を圧縮する破壊的な操作です）。代わりに非破壊的なプロジェクトの要約を生成するには、`/summary` を使用してください。
 
+> [!note]
+>
+> `/summary` はオプションの `[path]` 引数を受け取り、プロジェクトルート内の任意の場所に要約を保存できます。引数がない場合は `.qwen/PROJECT_SUMMARY.md` に保存されます。カスタムパスの要約は、welcome-back フロー（`ui.enableWelcomeBack`）では検出されません。welcome-back フローはデフォルトの `.qwen/PROJECT_SUMMARY.md` の位置のみを読み取ります。
+
 ### 1.2 インターフェースとワークスペースの制御
 
 インターフェースの外観と作業環境を調整するためのコマンド。
@@ -49,6 +53,7 @@ Qwen Code のコマンドは特定のプレフィックスでトリガーされ�
 | → `detail` | 項目ごとのコンテキスト使用内訳を表示する | `/context detail` |
 | `/history` | 履歴の表示設定と可視性を制御する | `/history collapse-on-resume`、`/history expand-on-resume`、`/history expand-now` |
 | `/diff` | コミットされていない変更とターンごとの差分を表示するインタラクティブな diff ビューアを開きます。←/→ で現在の git diff と個々の会話ターンを切り替え、↑/↓ でファイルを閲覧します | `/diff` |
+| `/log` | ワークスペースのコミット履歴ビューアを開く（Web Shell のみ） | `/log` |
 | `/theme` | Qwen Code のビジュアルテーマを変更する | `/theme` |
 | `/vim` | 入力エリアの Vim 編集モードのオン/オフを切り替える | `/vim` |
 | `/voice` | 音声入力（ディクテーション）を切り替える | `/voice`、`/voice hold`、`/voice tap`、`/voice off`、`/voice status` |
@@ -82,6 +87,8 @@ AI ツールとモデルを管理するためのコマンド。
 | `/import-config` | Claude の設定から MCP サーバーをインポートする | `/import-config all`、`/import-config claude-code`、`/import-config claude-desktop --scope user\|project` |
 | `/tools` | 現在利用可能なツールリストを表示する | `/tools`、`/tools desc` |
 | `/skills` | Skills パネルを開いて、スキルを閲覧、検索、切り替え、起動する | `/skills`、`/<skill-name>` |
+| `/learn` | ファイル、ディレクトリ、URL、動画、またはテキストから再利用可能なプロジェクトスキルを作成する | `/learn https://docs.example.com/api`、`/learn ./tutorial.mp4 focus on deployment` |
+| `/curator` | 非アクティブなプロジェクト自動スキルの検査、ピン留め、アーカイブ、復元を行う | `/curator`、`/curator run --dry-run`、`/curator pin <directory>`、`/curator restore <directory>` |
 | `/plan` | プランモードに切り替える、またはプランモードを終了する | `/plan`、`/plan <task>`、`/plan exit` |
 | `/approval-mode` | ツール承認モードを変更する（現在のセッションのみ） | `/approval-mode`、`/approval-mode auto-edit` |
 | → `plan` | 分析のみ、実行なし（安全なレビュー） | `/approval-mode plan` |
@@ -93,6 +100,8 @@ AI ツールとモデルを管理するためのコマンド。
 | `/model --fast` | プロンプト提案用に軽量モデルを設定する | `/model --fast qwen3-coder-flash` |
 | `/model --voice` | 音声文字起こしに使用されるモデルを設定する | `/model --voice <model-id>` |
 | `/model --vision` | テキスト専用メインモデル用に画像を文字起こしするための vision-bridge モデルを設定する | `/model --vision <model-id>` |
+| `/model --compaction` | チャット圧縮に使用されるモデルを設定する | `/model --compaction <model-id>`、`/model --compaction clear` |
+| `/model --image` | 組み込み画像生成ツール用の画像生成対応モデルを設定する | `/model --image <model-id>` |
 | `/effort` | 思考可能モデルの推論努力（effort）を設定する | `/effort`（ピッカーを開く）、`/effort high`（low/medium/high/xhigh/max；プロバイダーごとにマッピング・クランプされる） |
 | `/extensions` | 拡張機能を管理する | `/extensions list`、`/extensions manage` |
 | → `list` | インストール済みの拡張機能を一覧表示する | `/extensions list` |
@@ -104,12 +113,13 @@ AI ツールとモデルを管理するためのコマンド。
 | `/forget` | 一致するエントリを自動メモリから削除する | `/forget <query>` |
 | `/dream` | 自動メモリの統合を手動で実行する | `/dream` |
 | `/hooks` | Qwen Code のフックを管理する | `/hooks`、`/hooks list` |
+| `/reload-plugins` | ディスクから拡張機能の変更（コマンド、スキル、エージェント、フック、MCP/LSP サーバー）をリロードする | `/reload-plugins` |
 | `/permissions` | 権限ルールを管理する | `/permissions` |
 | `/agents` | サブエージェントを管理する | `/agents manage`、`/agents create` |
 | `/arena` | Arena セッションを管理する | `/arena start`、`/arena stop`、`/arena status`、`/arena select`（エイリアス `choose`） |
 | `/goal` | ゴールを設定する — 条件が満たされるまで作業を継続する | `/goal <condition>`、`/goal clear` |
 | `/tasks` | バックグラウンドタスクを一覧表示する | `/tasks` |
-| `/workflows` | ワークフローの実行を検査する | `/workflows`、`/workflows <runId>` |
+| `/workflows` | ワークフローの実行を検査する。バックグラウンドの実行を協調的に一時停止/再開する | `/workflows`、`/workflows <runId>`、`/workflows p <runId>` |
 | `/lsp` | LSP サーバーのステータスを表示する | `/lsp` |
 | `/trust` | フォルダの信頼設定を管理する | `/trust` |
 > [!warning]
@@ -122,18 +132,20 @@ AI ツールとモデルを管理するためのコマンド。
 
 > [!note]
 >
-> `/workflows`、`/lsp`、`/trust` は、それぞれの機能が有効な場合にのみ登録されます。具体的には、`QWEN_CODE_ENABLE_WORKFLOWS=1` 環境変数、`--experimental-lsp` CLI フラグ、および `security.folderTrust.enabled` 設定で有効化されます。無効な場合、これらは表示されず、不明なコマンドとして報告されます。
+> `/workflows`、`/lsp`、`/trust` は、それぞれの機能が有効な場合にのみ登録されます。具体的には、ユーザー/システムスコープの `tools.workflowsEnabled` 設定または `QWEN_CODE_ENABLE_WORKFLOWS=1` 環境変数、`--experimental-lsp` CLI フラグ、および `security.folderTrust.enabled` 設定でそれぞれ有効化されます。`tools.workflowsEnabled` のワークスペース値は無視されます。無効な場合、これらのコマンドは表示されず、不明なコマンドとして報告されます。同様に、`/dream` と `/forget` は管理された自動メモリが利用可能な場合にのみ登録されます。利用できない場合、これらは表示されません。
 
-### 1.5 組み込み Skill
+### 1.5 組み込みスキル
 
-これらのコマンドは、特殊なワークフローを提供するバンドルされた skill を呼び出します。
+これらのコマンドは、特殊なワークフローを提供するバンドルされたスキルを呼び出します。
 
-| Command      | Description                                                 | Usage Examples                                    |
-| ------------ | ----------------------------------------------------------- | ------------------------------------------------- |
-| `/review`    | 9つの並列レビューエージェントでコード変更をレビューする       | `/review`, `/review 123`, `/review 123 --comment` |
-| `/loop`      | 定期的なスケジュールでプロンプトを実行する                  | `/loop 5m check the build`                        |
-| `/simplify`  | 最近の変更をレビューし、安全なクリーンアップ編集を直接適用する | `/simplify`, `/simplify focus on duplication`     |
-| `/qc-helper` | Qwen Code の使用方法と設定に関する質問に答える              | `/qc-helper how do I configure MCP?`              |
+| コマンド       | 説明                                                   | 使用例                                                            |
+| -------------- | ------------------------------------------------------ | ----------------------------------------------------------------- |
+| `/review`      | マルチエージェントによるコードレビュー（高努力で12の並列エージェント） | `/review`、`/review 123`、`/review 123 --comment`、`/review --effort low` |
+| `/coordinate`  | 読み取り専用ワーカーと1つのオプションなワークツリーライターを調整する | `/coordinate investigate and fix the authentication regression`   |
+| `/loop`        | 定期的なスケジュールでプロンプトを実行する             | `/loop 5m check the build`                                        |
+| `/goal-draft` | 曖昧な意図を検証可能な `/goal` 目標に変換する          | `/goal-draft make the auth tests pass`                            |
+| `/simplify`    | 最近の変更をレビューし、安全なクリーンアップ編集を直接適用する | `/simplify`、`/simplify focus on duplication`                     |
+| `/qc-helper`   | Qwen Code の使用方法と設定に関する質問に答える         | `/qc-helper how do I configure MCP?`                              |
 
 `/review` の完全なドキュメントについては、[Code Review](./code-review.md) を参照してください。
 
@@ -141,7 +153,7 @@ AI ツールとモデルを管理するためのコマンド。
 
 `/btw` コマンドを使用すると、メインの会話フローを中断したり影響を与えたりすることなく、簡単なサイドクエスチョン（脇道に逸れた質問）を行うことができます。
 
-| Command                | Description                           |
+| コマンド               | 説明                                  |
 | ---------------------- | ------------------------------------- |
 | `/btw <your question>` | 簡単なサイドクエスチョンを行う        |
 | `?btw <your question>` | サイドクエスチョンの代替構文          |
@@ -197,7 +209,7 @@ AI ツールとモデルを管理するためのコマンド。
 
 **サポートされる実行モード:**
 
-| Mode                 | Behavior                                     |
+| モード               | 動作                                       |
 | -------------------- | -------------------------------------------- |
 | Interactive          | Markdown レンダリング付きで Composer の上に表示 |
 | Non-interactive      | テキスト結果を返す: `btw> question\nanswer`  |
@@ -207,11 +219,74 @@ AI ツールとモデルを管理するためのコマンド。
 >
 > メインのタスクから逸れることなく簡単な回答が必要な場合は `/btw` を使用してください。概念の明確化、事実の確認、または主要なワークフローに集中したまま簡単な説明を得る場合に特に便利です。
 
-### 1.7 セッションリキャップ (`/recap`)
+### 1.7 セカンドオピニオン (`/advisor`)
+
+`/advisor` コマンドは、これまでの会話の独立した読み取り専用のレビューを実行し、構造化されたセカンドオピニオンを返します。タスクを実行したり、メインの会話を中断したりすることはありません。
+
+| コマンド | 説明 |
+| ------------------ | -------------------------------------- |
+| `/advisor` | 上記の会話をレビューする |
+| `/advisor <focus>` | レビューを特定の懸念事項に集中させる |
+
+**動作の仕組み:**
+
+- レビューは、最近の会話コンテキスト（最大40メッセージ）を含む、独立した単一ターンのAPIコールとして送信されます
+- レビュアーモデルは**ツールを実行できません** — ツールはリクレベルで削除されます（`/btw` と同じメカニズム）。そのため、レビューがコードを書いたりコマンドを実行したりすることはありません。すべての主張は表示されているトランスクリプトに根ざしている必要があります
+- メインの会話は**中断されません**。レビューはあなたにのみ表示されます
+- レビューは、`/advisor · <model>` ヘッダーの下に4つの固定セクション — **Verdict**、**Risks**、**Missing evidence**、**Recommendation** — を持つ枠付きMarkdownブロックとしてレンダリングされます。ヘッダーには解決されたレビュアーモデル名が表示されます
+- `/btw` と異なり、fire-and-forgetでセッションを使用可能な状態に保つのではなく、`/advisor` はレビューが返るまで入力をブロックします。フルコンテキストウィンドウで強力なレビュアーを使用する場合、数十秒かかることがあります
+- デフォルトではメインモデルが使用されます。[`advisorModel`](../configuration/settings.md#advisormodel) を設定すると、レビューを別の（通常はより強力な）モデルにルーティングできます。最近のトランスクリプトは、別のプロバイダーを使用する場合でもそのモデルに送信されます
+
+**例:**
+
+```
+> /advisor nullチェックの修正は実際に正しいですか？
+
+  Consulting advisor...
+
+  ╭──────────────────────────────────────────────────────╮
+  │ /advisor · qwen3-max                                 │
+  │                                                      │
+  │ Verdict                                              │
+  │ The approach is sound, but the edge case at line 42  │
+  │ is unverified.                                       │
+  │                                                      │
+  │ Risks                                                │
+  │  - The fix assumes the config is always loaded; a    │
+  │    startup race could leave it null.                 │
+  │                                                      │
+  │ Missing evidence                                     │
+  │  - No test exercises the null-config path in the     │
+  │    visible transcript.                               │
+  │                                                      │
+  │ Recommendation                                       │
+  │ Add a focused unit test for the null-config branch   │
+  │ before merging.                                      │
+  ╰──────────────────────────────────────────────────────╯
+```
+
+レビューは、解決されたレビュアーモデル名をヘッダーに持つ枠付きボックスでレンダリングされます。不明な `advisorModel` は事前には検証されません。プロバイダーが拒否した場合、`/advisor` は失敗を報告するため、モデル名を確認してください。解決できないエイリアスセレクター（例: fast モデルが設定されていない場合の `fast`）のみ、メインモデルにフォールバックします。アドバイザーリクエストは設定されたモデルフォールバックを使用しません。
+
+**サポートされる実行モード:**
+
+| モード | 動作 |
+| -------------------- | --------------------------------------------------- |
+| Interactive | 会話内に4セクションのレビューをレンダリング |
+| ACP (Agent Protocol) | レビューをメッセージ結果として返す |
+
+> [!tip]
+>
+> 方向を決定する前にセカンドオピニオンを得るには `/advisor` を使用してください。誤った仮定、未検証の主張、またはリスクのある次のステップを捕捉するのに特に便利です。`advisorModel` を設定すると、メインの会話を駆動するモデルとは異なるモデルからレビューを取得できます。
+
+> [!note]
+>
+> `advisorModel` は設定でのみ設定されます。`fastModel` や `visionModel` と異なり、まだ `/model` フラグの対応物はありません。
+
+### 1.8 セッションリキャップ (`/recap`)
 
 `/recap` コマンドは、現在のセッションの短い「中断していた場所」の要約を生成するため、履歴のページをスクロールして遡ることなく、古い会話を再開できます。
 
-| Command  | Description                                |
+| コマンド | 説明                                       |
 | -------- | ------------------------------------------ |
 | `/recap` | 1行のセッションリキャップを生成して表示する |
 
@@ -241,7 +316,7 @@ AI ツールとモデルを管理するためのコマンド。
 >
 > `/model --fast <model>`（例: `qwen3-coder-flash`）経由で高速モデルを設定すると、`/recap` を高速かつ低コストにできます。自動トリガーを有効にするには `general.showSessionRecap` を `true` に設定します。手動の `/recap` コマンドは、この設定に関係なく常に機能します。
 
-### 1.8 Diff ビューア (`/diff`)
+### 1.9 Diff ビューア (`/diff`)
 
 `/diff` コマンドは、未コミットの変更とターンごとの diff を表示するインタラクティブな diff ビューアを開きます。←/→ で現在の git diff と個々の会話ターンの間を切り替え、↑/↓ でファイルを閲覧し、Enter でインライン diff を表示します。
 
@@ -258,7 +333,7 @@ AI ツールとモデルを管理するためのコマンド。
 
 **キーボードショートカット:**
 
-| Key       | Action                                      |
+| キー      | 動作                                        |
 | --------- | ------------------------------------------- |
 | `←` / `→` | ソース間を切り替える（Current / T1 / T2…）  |
 | `↑` / `↓` | ファイルリストをナビゲートする              |
@@ -293,11 +368,64 @@ AI ツールとモデルを管理するためのコマンド。
    +3  -2  README.md
 ```
 
-### 1.9 情報、設定、およびヘルプ
+**Web Shell:** Web Shell UI（`qwen serve`）では、`/diff` はグラフィカルな diff ダイアログを開きます。上部のタブバーで**Changes** ビューと**History** ビュー（`/log`）を切り替えることができます。
+
+#### History Viewer (`/log`) — Web Shell のみ
+
+`/log` コマンドは、現在のワークスペースのコミット履歴ブラウザを開きます。Web Shell UI でのみ利用可能で、CLI/TUI にはこのコマンドはありません。
+
+**動作の仕組み:**
+
+`/log` はコミットを時系列の逆順（新しい順）で一覧表示するダイアログを開きます。各行には以下が表示されます。
+
+- 短い SHA（モノスペース、フル SHA のコピーボタン付き）
+- コミット件名（1行）
+- 作成者名と相対時間（例: 「2h ago」）
+- ブランチ/タグの参照ラベル（存在する場合）
+- マージコミットのマージアイコン（⎇）
+
+コミット行をクリックすると、詳細がオンデマンドで展開されます。
+
+- 完全なコミットメッセージ本文
+- ファイル変更統計（変更ファイル数、追加/削除行数、ファイルごとの内訳）
+
+下部の**Load more**を使用して、次のページ（50件/ページ）のコミットを取得します。
+
+**例:**
+
+```
+┌─ History ──────────────────────────── 50 commits ─ ✕ ┐
+│                                                       │
+│  a1b2c3d  feat(cli): add --json flag        2h ago   │
+│           wenshao                                    │
+│                                                       │
+│  e4f5g6h  fix(core): handle null config     5h ago   │
+│           dev · main  v1.2.0                         │
+│                                                       │
+│ ▼ 789abcd  refactor: simplify parser        1d ago   │
+│   ┌─────────────────────────────────────────────┐    │
+│   │  Broke the monolithic parse() into smaller  │    │
+│   │  functions for readability.                 │    │
+│   │                                             │    │
+│   │  3 files · +45 −12                          │    │
+│   │   +30 −8   src/parser.ts                    │    │
+│   │   +10 −2   src/utils.ts                     │    │
+│   │   +5  −2   test/parser.test.ts              │    │
+│   └─────────────────────────────────────────────┘    │
+│                                                       │
+│              [ Load more ]                            │
+└───────────────────────────────────────────────────────┘
+```
+
+> [!note]
+>
+> `/log` には git リポジトリのワークスペースが必要です。ワークスペースが git リポジトリでない場合、またはコミットが存在しない場合、ダイアログにはプレースホルダーメッセージが表示されます。
+
+### 1.10 情報、設定、およびヘルプ
 
 情報の取得およびシステム設定の実行を行うコマンドです。
 
-| Command          | Description                                                                                                                    | Usage Examples                                                                      |
+| コマンド         | 説明                                                                                                                           | 使用例                                                                              |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
 | `/help`          | 利用可能なコマンドのヘルプ情報を表示する                                                                                       | `/help` または `/?`                                                                 |
 | `/status`        | バージョン情報を表示する                                                                                                       | `/status` または `/about`                                                           |
@@ -331,7 +459,7 @@ AI ツールとモデルを管理するためのコマンド。
 >
 > `/config` はドット区切りのキー（例: `general.vimMode`）で個別の設定を読み書きし、インタラクティブな `/settings` エディタを補完します。引数なし（または `--help`）で `/config` を実行すると、設定可能なすべてのキーがその型と現在の値とともに一覧表示されます。`/config <key>` は現在の値を出力します（ただし、boolean 型のキーの場合は値がトグルされます）。`/config <key>=<value>` は値を設定します。変更はユーザー設定（`~/.qwen/settings.json`）に書き込まれます。この方法で変更できるのは `boolean`、`string`、`number`、`enum` の設定のみです。`array` と `object` の設定は `settings.json` を直接編集する必要があります。機密性の高い値（API キー、トークン、ベース URL）は出力時にマスクされ、`tools.approvalMode` を `yolo` に設定することはブロックされます。
 
-### 1.10 一般的なショートカット
+### 1.11 一般的なショートカット
 
 | ショートカット       | 機能                    | 備考                                                                      |
 | ------------------ | ----------------------- | ------------------------------------------------------------------------- |
@@ -341,7 +469,7 @@ AI ツールとモデルを管理するためのコマンド。
 | `Ctrl/cmd+Z`       | 入力の取り消し          | テキスト編集                                                              |
 | `Ctrl/cmd+Shift+Z` | 入力のやり直し          | テキスト編集                                                              |
 
-### 1.11 認証コマンド
+### 1.12 認証コマンド
 
 Qwen Code セッション内で `/auth` を使用して認証を設定します。現在の認証と環境のステータスを確認するには `/doctor` を使用します。
 
@@ -560,8 +688,9 @@ description: コードを純粋関数にリファクタリングします
 ### セッション管理
 
 | コマンド | 説明 | 使用例 |
-| -------------------- | --------------------------------- | ------------------------------------------------------------ |
+| -------------------- | ------------------------------------------- | ------------------------------------------------------------ |
 | `qwen sessions list` | 最近の会話セッションの一覧表示 | `qwen sessions list`, `qwen sessions list --json --limit 50` |
+| `qwen sessions ps` | 現在実行中のインタラクティブセッションの一覧表示 | `qwen sessions ps`, `qwen sessions ps --json` |
 
 #### `qwen sessions list`
 
@@ -599,4 +728,44 @@ qwen sessions list --limit 50
 
 # スクリプト用に JSON として出力
 qwen sessions list --json | jq .
+```
+
+#### `qwen sessions ps`
+
+現在このマシンで実行中のインタラクティブな Qwen Code セッションを一覧表示します。`sessions list` は保存されたトランスクリプトを辿ります（「これまで何を作業してきたか」）が、こちらはライブプロセスレジストリを辿ります（「現在何が実行されているか」）。キルされたセッションが残したレコードは、見つかり次第掃除されます。ヘッドレスセッション（`qwen -p`）はライブプロセスレジストリに登録されないため、表示されません。
+
+**フラグ:**
+
+| フラグ | 型 | デフォルト | 説明 |
+| -------- | ------- | ------- | ----------------------------------------------- |
+| `--json` | boolean | `false` | JSON Lines として出力（1行に1つのJSONオブジェクト） |
+
+**人間が読みやすい出力（デフォルト）:**
+
+以下の列を持つテーブル: NAME, PID, AGE, DIRECTORY.
+
+**JSON 出力 (`--json`):**
+
+stdout に JSON Lines を出力します。新しいセッション順で表示されます。各行は以下のフィールドを持つ JSON オブジェクトです。
+
+```
+schemaVersion, pid, procStart, pidNs, sessionId, cwd, name, startedAt,
+qwenVersion
+```
+
+これ以外は何も stdout に出力されません — 空のリストは何も出力しません — ので、`qwen sessions ps --json | jq .` はスクリプトで安全に使用できます。
+
+JSON 出力は生データです。フィールド値は記録された通りに出力され、ターミナルのサニタイゼーションは行われません。データとして扱い、ターミナルでレンダリングする前にサニタイズしてください。
+
+**例:**
+
+```bash
+# 他のライブセッションを表示
+qwen sessions ps
+
+# 現在どのディレクトリが使用中か？
+# 注: `jq -r` は記録された生の値をターミナルに表示します（上記の
+# 生データノートを参照）。パスが信頼できない場合はサニタイザーを
+# 通してください。
+qwen sessions ps --json | jq -r .cwd
 ```

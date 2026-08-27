@@ -73,7 +73,7 @@ Para garantir que o Qwen Code possa encontrar automaticamente o asset de lançam
 
 #### Estrutura do arquivo
 
-Os arquivos devem ser extensões totalmente contidas e ter todos os requisitos padrão – especificamente, o arquivo `qwen-extension.json` deve estar na raiz do arquivo.
+Os arquivos devem ser extensões totalmente contidas e ter um manifesto raiz suportado: `qwen-extension.json` para uma extensão nativa Qwen, ou `plugin.json` para um pacote [Agent Plugins v1](./agent-plugins.md).
 
 O restante da estrutura deve ser exatamente igual a uma extensão típica; consulte [introduction.md](./introduction.md).
 
@@ -131,7 +131,7 @@ Você pode publicar extensões Qwen Code como pacotes npm com escopo (por exempl
 
 ### Requisitos do pacote
 
-Seu pacote npm deve incluir um arquivo `qwen-extension.json` na raiz do pacote. Este é o mesmo arquivo de configuração usado por todas as extensões Qwen Code – o tarball npm é simplesmente outro mecanismo de entrega.
+Seu pacote npm deve incluir um manifesto suportado na raiz do pacote: `qwen-extension.json` para uma extensão nativa Qwen, ou `plugin.json` para um pacote [Agent Plugins v1](./agent-plugins.md). O tarball npm é simplesmente outro mecanismo de entrega.
 
 Uma estrutura mínima de pacote se parece com:
 
@@ -145,7 +145,7 @@ minha-extensao/
 └── agents/               # subagentes personalizados opcionais
 ```
 
-Certifique-se de que `qwen-extension.json` esteja incluído no seu pacote publicado (ou seja, não excluído por `.npmignore` ou pelo campo `files` no `package.json`).
+Certifique-se de que o manifesto raiz selecionado e todos os arquivos de pacote referenciados estejam incluídos no seu pacote publicado (ou seja, não excluídos por `.npmignore` ou pelo campo `files` no `package.json`).
 
 ### Publicação
 

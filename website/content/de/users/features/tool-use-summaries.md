@@ -1,16 +1,28 @@
 # Zusammenfassungen der Tool-Nutzung
 
-Qwen Code kann nach dem Abschluss jedes Tool-Batches eine kurze Bezeichnung im Stil einer Git-Commit-Betreffzeile generieren, die zusammenfasst, was der Batch erreicht hat. Die Bezeichnung erscheint inline im Transkript und ersetzt im kompakten Modus den generischen Header `Tool × N`.
+Qwen Code kann nach dem Abschluss jedes Tool-Batches eine kurze Bezeichnung im Stil einer Git-Commit-Betreffzeile generieren, die zusammenfasst, was der Batch erreicht hat. Die Bezeichnung erscheint inline: für eine abgeschlossene Tool-Gruppe in der Hauptansicht ersetzt sie den generischen `Tool × N`-Header; wenn die Gruppe aufgeklappt ist (im `Ctrl+O`-Detailmodus oder für Fehler-/benutzerinitiierte Batches) erscheint sie als abgedunkelte `● <label>`-Zeile unter der Gruppe.
 
-Dies ist eine UX-Hilfe für parallele Tool-Aufrufe: Wenn das Modell sich auf mehrere `Read` + `Grep` + `Bash`-Aufrufe gleichzeitig aufteilt, zeigt die Zusammenfassung auf einen Blick die Absicht, anstatt dass Sie die Tool-Liste durchsuchen müssen.
+Dies ist eine UX-Hilfe für parallele Tool-Aufrufe: Wenn das Modell sich auf mehrere `Read` + `Grep` + `Bash`-Aufrufe gleichzeitig aufteilt, zeigt die Zusammenfassung auf einen Blick die Absicht, anstatt dass du die Tool-Liste durchsuchen musst.
 
 Die Funktion ist standardmäßig aktiviert und läuft leise im Hintergrund. Sie erfordert ein konfiguriertes [fast model](./followup-suggestions#fast-model).
 
-## Was Sie sehen
+## Was du siehst
 
-### Vollmodus (Standard)
+### Hauptansicht (abgeschlossene Gruppe)
 
-Die Zusammenfassung erscheint als abgedunkelte Badge-Zeile direkt unter der Tool-Gruppe:
+Im Haupttranskript faltet sich eine abgeschlossene aufklappbare Gruppe in eine einzelne beschriftete Zeile – die Zusammenfassung ersetzt den generischen `Tool × N`-Header:
+
+```
+╭──────────────────────────────────────────────╮
+│✓  Read 4 text files                          │
+╰──────────────────────────────────────────────╯
+```
+
+Die vollständige Tool-Ausgabe ist nur einen Tastendruck entfernt: Drücke `Ctrl+O`, um den Detailmodus umzuschalten.
+
+### Detailmodus (`Ctrl+O`) und aufgeklappte Gruppen
+
+Wenn eine Gruppe aufgeklappt ist – im `Ctrl+O`-Detailmodus oder für Fehler-/benutzerinitiierte Batches in der Hauptansicht – wird jedes Tool einzeln dargestellt und die Zusammenfassung erscheint als abgedunkelte Badge-Zeile unter der Gruppe:
 
 ```
 ╭──────────────────────────────────────────────╮
@@ -22,19 +34,6 @@ Die Zusammenfassung erscheint als abgedunkelte Badge-Zeile direkt unter der Tool
 
  ● Read 4 text files
 ```
-
-### Kompaktmodus (`Ctrl+O` oder `ui.compactMode: true`)
-
-Die Bezeichnung ersetzt den generischen `Tool × N`-Header in der kompakten Einzeiler-Darstellung:
-
-```
-╭──────────────────────────────────────────────╮
-│✓  Read txt files  · 4 tools                  │
-│Press Ctrl+O to show full tool output         │
-╰──────────────────────────────────────────────╯
-```
-
-Die einzelnen Tool-Aufrufe sind weiterhin nur einen Tastendruck entfernt (`Ctrl+O` zum Umschalten in den Vollmodus).
 
 ## Wie es funktioniert
 
@@ -123,7 +122,7 @@ Diese Einstellungen können in `settings.json` konfiguriert werden:
 
 Drei Punkte, die beim ersten Lesen dieser Funktion typischerweise übersehen werden:
 
-1. **Eine Generierung pro Batch, von beiden Darstellungsmodi gemeinsam genutzt.** Der Fast-Model-Aufruf erfolgt genau einmal in `handleCompletedTools`, wenn ein Tool-Batch abgeschlossen ist. Ein nachträgliches Umschalten mit `Ctrl+O` löst **keinen** neuen Aufruf aus – beide Modi lesen aus demselben `tool_use_summary`-Verlaufseintrag, der beim ersten Mal erfasst wurde. Sie können den kompakten Modus frei ein- und ausschalten, ohne zusätzliche Kosten zu verursachen.
+1. **Eine Generierung pro Batch, von beiden Darstellungsmodi gemeinsam genutzt.** Der Fast-Model-Aufruf erfolgt genau einmal in `handleCompletedTools`, wenn ein Tool-Batch abgeschlossen ist. Ein nachträgliches Umschalten mit `Ctrl+O` löst **keinen** neuen Aufruf aus – beide Darstellungen lesen aus demselben `tool_use_summary`-Verlaufseintrag, der beim ersten Mal erfasst wurde.
 2. **Keine Nachberechnung beim Umschalten oder beim Wiederaufnehmen einer Sitzung.** Eine `tool_group`, die vor der Aktivierung der Funktion (oder bevor Sie die Einstellung umgeschaltet haben, oder in einer wiederaufgenommenen Sitzung – `ChatRecordingService` speichert Zusammenfassungseinträge nicht) abgeschlossen wurde, erhält niemals eine Bezeichnung. Es gibt keinen "Durchlauf über vorhandenen Verlauf". Wenn Sie diese Einstellung mitten in einer Sitzung aktivieren, wird nur für _zukünftige_ Batches eine Bezeichnung angezeigt; ältere Gruppen behalten die Standarddarstellung ohne Hinweis auf eine fehlende Bezeichnung.
 3. **Nur Batches des Haupt-Agenten.** Der Auslöser befindet sich in der Durchlaufschleife der Hauptsitzung (`useGeminiStream`), daher:
    - ✅ Shell-, MCP-, Dateioperationen und der `Task` / Subagent-Tool-_Aufruf selbst_ (wie er im Haupt-Batch erscheint) werden zusammengefasst.
@@ -131,23 +130,20 @@ Drei Punkte, die beim ersten Lesen dieser Funktion typischerweise übersehen wer
 
    Ein äußerer Batch, der ein `Task`-Tool _enthält_, erhält dennoch eine Bezeichnung, aber das Fast Model sieht nur den Subagent-Tool-Aufruf und dessen aggregierte Ausgabe – nicht die einzelnen Tool-Aufrufe innerhalb des Subagenten. Erwarten Sie Bezeichnungen wie `Ran research-agent` oder `Delegated file search` statt `Searched 14 files`. Dies ist beabsichtigt – die Zusammenfassung von Subagent-Interna würde die Fast-Model-Kosten vervielfachen und Rauschen erzeugen, das in der primären Benutzeroberfläche nie auftaucht.
 
-## Empfohlene Kombination: Kompaktmodus aktivieren
+## Anzeigeverhalten
 
-Für Batches mit 3+ parallelen Tool-Aufrufen ergibt die Kombination dieser Funktion mit `ui.compactMode: true` das sauberste Transkript. Die kompakte Ansicht klappt den gesamten Batch zu einer einzigen beschrifteten Zeile (`✓  Read txt files  · 4 tools`) zusammen, anstatt jede Tool-Zeile plus die abschließende Zusammenfassung anzuzeigen. Details bleiben über `Ctrl+O` nur einen Tastendruck entfernt.
+Die Hauptansicht faltet bereits eine abgeschlossene aufklappbare Gruppe in eine einzelne beschriftete Zeile (`✓  Read 4 text files`) – die Zusammenfassung übernimmt die Arbeit der alten pro-Tool-Liste. Für die vollständige Tool-Ausgabe drücke `Ctrl+O`, um den Detailmodus umzuschalten, wo jedes Tool einzeln dargestellt wird und die Zusammenfassung als abschließende `● <label>`-Zeile unter der Gruppe erscheint.
 
 ```json
 {
   "fastModel": "qwen3-coder-flash",
-  "ui": {
-    "compactMode": true
-  },
   "experimental": {
     "emitToolUseSummaries": true
   }
 }
 ```
 
-Im Vollmodus (Standard) wird die Zusammenfassung als eine abschließende Zeile `● <label>` unter der Tool-Gruppe dargestellt – nützlich für große oder heterogene Batches, aber für kleine Batches desselben Typs (z.B. `Read × 3`) kann die Bezeichnung wie eine Wiederholung der sichtbaren Tool-Zeilen wirken. Wenn das Ihrem üblichen Arbeitsablauf entspricht, aktivieren Sie entweder den kompakten Modus wie oben oder schalten Sie die Zusammenfassung vollständig aus mit `experimental.emitToolUseSummaries: false`.
+Für kleine gleichartige Batches (z.B. `Read × 3`) kann die aufgeklappte `● <label>`-Zeile wie eine Wiederholung der sichtbaren Tool-Zeilen wirken; wenn das deinem üblichen Arbeitsablauf entspricht, kannst du die Zusammenfassung vollständig über `experimental.emitToolUseSummaries: false` ausschalten.
 
 ## Überwachung
 
@@ -174,5 +170,5 @@ Wenn Sie die zusätzlichen Kosten nicht möchten, deaktivieren Sie die Funktion 
 
 ## Verwandte Themen
 
-- [Compact Mode (Kompaktmodus)](../configuration/settings#ui) – Umschalten mit `Ctrl+O`; die Zusammenfassung ersetzt den generischen Tool-Gruppen-Header, wenn der kompakte Modus aktiviert ist.
+- [Detailmodus](../configuration/settings#ui) – drücke `Ctrl+O`, um alle Tool-Ausgaben inline aufzuklappen; die Zusammenfassung ersetzt den generischen Tool-Gruppen-Header für abgeschlossene Gruppen in der Hauptansicht.
 - [Followup Suggestions (Folgevorschläge)](./followup-suggestions) – eine weitere Fast-Model-gesteuerte UX-Verbesserung, die dieselbe `fastModel`-Einstellung nutzt.

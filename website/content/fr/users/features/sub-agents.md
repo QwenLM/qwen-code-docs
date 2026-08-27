@@ -1,6 +1,6 @@
 # Sous-agents
 
-Les sous-agents sont des assistants IA spécialisés qui gèrent des types de tâches spécifiques au sein de Qwen Code. Ils vous permettent de déléguer un travail ciblé à des agents IA configurés avec des prompts, des outils et des comportements spécifiques à la tâche.
+Les sous-agents sont des assistants IA spécialisés qui gèrent des types de tâches spécifiques au sein de Qwen Code. Ils vous permettent de déléguer du travail ciblé à des agents IA configurés avec des prompts, des outils et des comportements spécifiques à la tâche.
 
 ## Que sont les sous-agents ?
 
@@ -10,20 +10,76 @@ Les sous-agents sont des assistants IA indépendants qui :
 - **Ont un contexte séparé** – Ils maintiennent leur propre historique de conversation, distinct de votre chat principal
 - **Utilisent des outils contrôlés** – Vous pouvez configurer les outils auxquels chaque sous-agent a accès
 - **Travaillent de manière autonome** – Une fois une tâche confiée, ils travaillent indépendamment jusqu'à son achèvement ou son échec
-- **Fournissent un retour détaillé** – Vous pouvez voir leur progression, leur utilisation des outils et leurs statistiques d'exécution en temps réel
+- **Fournissent un retour détaillé** – Vous pouvez voir leur progression, leur utilisation d'outils et leurs statistiques d'exécution en temps réel
 
 ## Sous-agent Fork
 
-En plus des sous-agents nommés, Qwen Code prend en charge le **forking** — sélectionné explicitement avec `subagent_type: "fork"` (disponible dans les sessions interactives). Un fork hérite du contexte complet de conversation du parent et s'exécute en arrière-plan de manière détachée. Omettre `subagent_type` ne **fork** pas ; cela lance le sous-agent à usage général, qui s'exécute jusqu'à la fin et retourne son résultat en ligne.
+En plus des sous-agents nommés, Qwen Code prend en charge le **forking** — sélectionné explicitement avec `subagent_type: "fork"`. Un fork hérite du contexte complet de conversation du parent et s'exécute normalement de manière détachée en arrière-plan. Les forks fonctionnent dans les sessions interactives et headless ; les forks headless utilisent toujours le chemin en arrière-plan. Omettre `subagent_type` ne **fork** pas ; cela lance le sous-agent à usage général. Les sous-agents nommés de premier niveau s'exécutent en arrière-plan par défaut et livrent leurs résultats via des notifications de complétion. Définissez `run_in_background: false` lorsque le tour en cours doit attendre en ligne le résultat d'un sous-agent ordinaire.
+
+## Contexte de fork avec `fork_turns`
+
+Seul `subagent_type: "fork"` accepte `fork_turns` :
+
+- L'omettre ou utiliser `all` hérite de la conversation complète du parent.
+- Une chaîne d'entier positif telle que `"3"` hérite des trois derniers tours utilisateur réels.
+
+Les réponses d'outils et les rappels système purs ne comptent pas comme des tours utilisateur. Les sous-agents nommés ordinaires et les coéquipiers d'équipes d'agents n'acceptent pas `fork_turns` ; ils conservent leur propre contexte de conversation séparé.
+
+## Restriction de l'exécution des outils de fork avec `fork_tools`
+
+Seul `subagent_type: "fork"` accepte `fork_tools`. Le tableau peut contenir des noms d'outils canoniques exacts, tels que `read_file` et `grep_search`, ou des motifs de serveur MCP tels que `mcp__github`. Le fork reçoit toujours les mêmes déclarations d'outils visibles par le modèle qu'un fork non restreint, préservant ainsi son préfixe de cache de prompt, mais son prompt de tâche identifie la restriction et un appel non correspondant à `fork_tools` est rejeté avant la planification ou l'approbation.
+
+- Les forks n'exécutent jamais `ask_user_question` ; lorsqu'une entrée utilisateur est nécessaire, ils signalent le bloqueur à leur agent parent.
+- Omettre `fork_tools` autorise tous les autres outils hérités.
+- Un tableau vide rejette chaque appel d'outil.
+- `*` n'est pas accepté ; omettez `fork_tools` pour autoriser chaque outil hérité autrement exécutable.
+- Les noms d'outils ne peuvent pas avoir d'espaces autour. Les wildcards sont acceptées uniquement sous la forme `mcp__*` ou comme motif de préfixe d'outil MCP tel que `mcp__github__read_*`.
+- `mcp__*` autorise intentionnellement tous les outils MCP tout en refusant les outils intégrés non listés.
+- Les motifs d'arguments de commandes shell ne sont pas pris en charge. Lister `run_shell_command` permet à cet outil de passer par ses vérifications de permission normales mais n'approuve aucune commande à l'avance.
+
+Il s'agit d'une restriction par invocation fournie par l'appelant. Elle réduit les capacités d'un fork enfant mais n'est pas un sandbox de sécurité imposé par un administrateur car l'appelant peut omettre ou élargir la liste.
+
+## Réutilisation des restrictions de fork avec `fork_profile`
+
+Un projet peut sauvegarder une restriction de fork nommée dans `.qwen/fork-profiles/<name>.md` et la sélectionner avec `fork_profile`. Ceci est utile lorsque plusieurs appels nécessitent la même limite d'outils et les mêmes directives de tâche :
+
+```markdown
+---
+name: ro-research
+tools:
+  - read_file
+  - grep_search
+  - glob
+  - mcp__search__*
+promptHint: |
+  Work read-only. Prefer targeted searches and cite file evidence.
+---
+```
+
+Puis lancez le fork avec :
+
+```text
+agent(description="Research", prompt="Inspect the retry path", subagent_type="fork", fork_profile="ro-research")
+```
+
+- `fork_profile` n'est valide que pour un fork et ne peut pas être combiné avec `fork_tools` ou un coéquipier nommé.
+- Les profils sont actuellement limités au projet. Le nom demandé, le nom de fichier et le champ `name` du frontmatter doivent correspondre exactement. Le profil doit résoudre vers un fichier régulier dans `.qwen/fork-profiles/` et ne peut pas dépasser 64 Kio.
+- `tools` est obligatoire et suit les règles de `fork_tools`, y compris le comportement de refus total avec un tableau vide.
+- `promptHint` est optionnel et limité à 200 caractères. Il est échappé et encadré comme une directive fournie par le projet après la directive de fork et avant la restriction d'outils autoritaire ; il ne modifie pas l'instruction système héritée ni les déclarations d'outils visibles par le modèle. Les fichiers de profil sont en frontmatter uniquement, donc le Markdown non vide après le `---` de fermeture est rejeté au lieu d'être ignoré silencieusement.
+- Le profil est résolu une seule fois au lancement. Un fork conservé continue avec le snapshot d'outils résolu même si le fichier du projet change ultérieurement.
+- Les profils de fork de projet ne sont pas disponibles en mode sans échec (safe mode) et en mode nu (bare mode), qui désactivent les personnalisations locales.
+
+Comme `fork_tools`, un profil de fork est une restriction sélectionnée par l'appelant plutôt qu'un sandbox d'administrateur. Ses directives de prompt optionnelles sont du contenu contrôlé par le projet.
 
 ### Différence entre Fork et les sous-agents nommés
 
-|               | Sous-agent nommé                    | Sous-agent Fork                                         |
-| ------------- | ----------------------------------- | ------------------------------------------------------- |
-| Contexte      | Démarre à zéro, sans historique parent | Hérite de tout l'historique de conversation du parent |
-| Prompt système| Utilise son propre prompt configuré | Utilise exactement le prompt système du parent (pour le partage de cache) |
-| Exécution     | Bloque le parent jusqu'à la fin     | S'exécute en arrière-plan, le parent continue immédiatement |
-| Cas d'usage   | Tâches spécialisées (tests, doc)    | Tâches parallèles nécessitant le contexte actuel        |
+|               | Sous-agent nommé                                                 | Sous-agent Fork                                                                                                                                                                                        |
+| ------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Contexte       | Démarre à zéro, sans historique de conversation parent               | Hérite de tout l'historique parent par défaut ; `fork_turns` peut sélectionner une fenêtre récente bornée                                                                                                              |
+| Prompt système | Utilise son propre prompt configuré                                 | Utilise exactement le prompt système du parent (pour le partage de cache)                                                                                                                                                |
+| Outils         | Ensemble de déclarations configurées sans outils de question interactive  | Conserve l'ensemble de déclarations dérivé du parent pour le cache ; l'exécution rejette toujours `ask_user_question`, et `fork_tools` ou `fork_profile` peuvent le restreindre indépendamment sans changer cette déclaration |
+| Exécution     | Arrière-plan par défaut ; prend en charge un opt-out explicite au premier plan | Toujours détaché ; le parent continue immédiatement                                                                                                                                                        |
+| Cas d'usage      | Tâches spécialisées (tests, docs)                              | Tâches parallèles nécessitant le contexte actuel                                                                                                                                                         |
 
 ### Quand le Fork est utilisé
 
@@ -37,20 +93,19 @@ L'IA utilise automatiquement le fork lorsqu'elle a besoin de :
 
 Tous les forks partagent exactement le même préfixe de requête API que le parent (prompt système, outils, historique de conversation), permettant des hits de cache de prompt DashScope. Lorsque 3 forks s'exécutent en parallèle, le préfixe partagé est mis en cache une fois et réutilisé — économisant plus de 80% de coûts de tokens par rapport à des sous-agents indépendants.
 
-### Prévention du Fork récursif
+### Prévention de la délégation récursive
 
-Les enfants fork ne peuvent pas créer d'autres forks. Ceci est appliqué à l'exécution — si un fork tente de générer un autre fork, il reçoit une erreur lui demandant d'exécuter les tâches directement.
+Les enfants fork ne peuvent pas créer d'autres sous-agents. Ceci est appliqué à l'exécution — si un fork appelle l'outil Agent, il reçoit une erreur lui demandant d'exécuter les tâches directement.
 
-### Limitations actuelles
+### Limitation actuelle
 
-- **Aucun retour de résultat** : Les résultats des forks sont reflétés dans l'affichage de progression de l'interface utilisateur mais ne sont pas automatiquement réinjectés dans la conversation principale. L'IA parent voit un message placeholder et ne peut pas agir sur la sortie du fork.
-- **Pas d'isolation du worktree** : Les forks partagent le répertoire de travail du parent. Des modifications de fichiers concurrentes provenant de plusieurs forks peuvent entrer en conflit.
+- **Pas d'isolation worktree** : Les forks partagent le répertoire de travail du parent. Des modifications de fichiers concurrentes provenant de plusieurs forks peuvent entrer en conflit.
 
 ## Avantages clés
 
 - **Spécialisation des tâches** : Créez des agents optimisés pour des workflows spécifiques (tests, documentation, refactoring, etc.)
 - **Isolation du contexte** : Gardez le travail spécialisé séparé de votre conversation principale
-- **Héritage du contexte** : Les sous-agents fork héritent de la conversation complète pour les tâches parallèles qui nécessitent beaucoup de contexte
+- **Héritage du contexte** : Les sous-agents fork héritent de la conversation complète par défaut et peuvent sélectionner un nombre borné de tours récents du parent
 - **Partage du cache de prompt** : Les sous-agents fork partagent le préfixe de cache du parent, réduisant les coûts de tokens
 - **Réutilisabilité** : Sauvegardez et réutilisez les configurations d'agents entre projets et sessions
 - **Accès contrôlé** : Limitez les outils que chaque agent peut utiliser pour la sécurité et la concentration
@@ -59,9 +114,28 @@ Les enfants fork ne peuvent pas créer d'autres forks. Ceci est appliqué à l'e
 ## Comment fonctionnent les sous-agents
 
 1. **Configuration** : Vous créez des configurations de sous-agents qui définissent leur comportement, leurs outils et leurs prompts système
-2. **Délégation** : L'IA principale peut automatiquement déléguer des tâches aux sous-agents appropriés — ou se forker elle-même (`subagent_type: "fork"`) lorsqu'elle souhaite hériter du contexte complet de la conversation et ignorer la sortie intermédiaire
+2. **Délégation** : L'IA principale peut automatiquement déléguer des tâches aux sous-agents appropriés — ou se forker elle-même (`subagent_type: "fork"`) lorsqu'elle a besoin du contexte de conversation parent
 3. **Exécution** : Les sous-agents travaillent indépendamment, en utilisant leurs outils configurés pour accomplir les tâches
-4. **Résultats** : Ils renvoient les résultats et les résumés d'exécution à la conversation principale
+4. **Résultats** : Les exécutions en arrière-plan envoient une notification de complétion contenant le résultat à la conversation principale ; les sous-agents ordinaires au premier plan retournent les résultats en ligne
+5. **Continuation** : L'IA principale peut utiliser `list_agents` pour trouver des agents en arrière-plan et `send_message` pour continuer un agent en cours d'exécution, en pause ou terminé
+
+## Continuation d'agent en arrière-plan
+
+Les sous-agents ordinaires de premier niveau s'exécutent en arrière-plan par défaut. Après qu'un agent en arrière-plan se termine, Qwen Code conserve suffisamment d'état pour continuer le travail connexe sans lancer un agent dupliqué :
+
+- `list_agents` retourne les agents en arrière-plan adressables dans la session en cours, y compris les agents compatibles restaurés avec une session reprise. Chaque entrée inclut un `task_id`, un statut et la possibilité de recevoir un message.
+- `send_message` avec ce `task_id` met en file d'attente un message pour un agent en cours d'exécution, reprend un agent en pause ou continue un agent terminé. Les agents continués réutilisent leur runtime résident lorsque disponible et sinon reprennent à partir de leur transcription conservée.
+- Un agent continué rapporte son résultat suivant via une autre notification de complétion.
+
+Lorsqu'une session est restaurée, les agents en arrière-plan compatibles sont rajoutés au registre de la session. Une tâche peut être visible mais non continuable lorsque son état conservé est manquant ou incompatible ; `list_agents` en rapporte la raison dans ce cas.
+
+Utilisez la continuation pour un travail de suivi connexe. Lancez un nouvel agent lorsque la tâche n'est pas liée ou que l'agent précédent ne peut pas être repris.
+
+## Répertoire de travail de l'agent
+
+Pour un sous-agent ordinaire nommé, `working_dir` épingle l'agent à un worktree git existant du dépôt en cours. Les chemins relatifs sont résolus depuis le répertoire courant, et le worktree doit déjà être enregistré auprès git en tant que worktree lié de ce dépôt.
+
+`working_dir` ne peut pas être combiné avec `subagent_type: "fork"`. Un lancement anonyme avec `working_dir` appartenant à l'appelant s'exécute au premier plan car Qwen Code ne possède pas le cycle de vie de ce worktree : une demande explicite `run_in_background: true` est rejetée, tandis qu'un défaut d'arrière-plan configuré (`background: true` dans une définition de sous-agent) est rejeté au niveau supérieur et rétrogradé au premier plan lorsqu'il est imbriqué. Si `working_dir` et `isolation: "worktree"` sont tous deux fournis, Qwen Code réutilise le worktree appartenant à l'appelant au lieu d'en créer un autre. Les scripts de workflow sont délibérément plus stricts : un appel `agent()` de workflow qui reçoit à la fois `workingDir` et `isolation` est rejeté plutôt qu'exécuté avec `isolation` ignoré.
 
 ## Pour commencer
 
@@ -88,14 +162,14 @@ Utilisateur : « Veuillez écrire des tests complets pour le module d'authentifi
 IA : Je vais déléguer cette tâche à votre sous-agent spécialiste des tests.
 [Délègue au sous-agent "testing-expert"]
 [Affiche la progression en temps réel de la création des tests]
-[Retourne avec les fichiers de test terminés et un résumé d'exécution]
+[Retourne avec les fichiers de test terminés et un résumé d'exécution]`
 ```
 
 ## Gestion
 
 ### Commandes CLI
 
-Les sous-agents sont gérés via la commande slash `/agents` et ses sous-commandes :
+Les sous-agents sont gérés via la slash command `/agents` et ses sous-commandes :
 
 **Utilisation :** `/agents create`. Crée un nouveau sous-agent via un assistant pas à pas.
 
@@ -106,7 +180,7 @@ Les sous-agents sont gérés via la commande slash `/agents` et ses sous-command
 Les sous-agents sont stockés sous forme de fichiers Markdown à plusieurs emplacements :
 
 - **Au niveau du projet** : `.qwen/agents/` (priorité la plus élevée)
-- **Au niveau de l'utilisateur** : `~/.qwen/agents/` (solution de repli)
+- **Au niveau de l'utilisateur** : `~/.qwen/agents/` (fallback)
 - **Au niveau de l'extension** : Fournis par les extensions installées
 
 Cela vous permet d'avoir des agents spécifiques au projet, des agents personnels qui fonctionnent sur tous les projets, et des agents fournis par des extensions qui ajoutent des capacités spécialisées.
@@ -153,7 +227,7 @@ Utilisez le champ optionnel `model` du frontmatter pour contrôler quel modèle 
 
 - `inherit` : Utilise le même modèle que la conversation principale.
 - Omettre le champ : Identique à `inherit`.
-- `fast` : Utilise le `fastModel` configuré. Si aucun fastModel valide n'est configuré,
+- `fast` : Utilise le `fastModel` configuré. Si aucun fast model valide n'est configuré,
   le sous-agent revient à `inherit`.
 - `glm-5` : Utilise cet ID de modèle. Qwen Code vérifie d'abord le type d'authentification
   de la conversation principale ; si le modèle n'y est pas disponible, il peut résoudre le modèle
@@ -194,7 +268,48 @@ Lorsque le sélecteur résout un autre type d'authentification, Qwen Code crée 
 fournisseur d'exécution dédié pour cette requête de sous-agent et envoie au fournisseur uniquement l'ID
 de modèle brut.
 
-#### Mode d'autorisation
+L'agent Explore intégré hérite du modèle de la session principale par défaut. Pour
+sélectionner un modèle différent uniquement pour cet agent intégré, configurez
+`agents.builtin.exploreModel` dans `settings.json` et redémarrez Qwen Code :
+
+Les versions antérieures utilisaient `fastModel` pour Explore par défaut. Pour préserver ce
+comportement, définissez `agents.builtin.exploreModel` à `fast`.
+
+```json
+{
+  "agents": {
+    "builtin": {
+      "exploreModel": "fast"
+    }
+  }
+}
+```
+
+Ce paramètre accepte les mêmes sélecteurs décrits ci-dessus. Il est appliqué uniquement
+lorsque Qwen Code résout la définition intégrée Explore ; un agent de session, de projet,
+d'utilisateur ou d'extension nommé Explore conserve son propre paramètre `model`.
+
+Pour permettre au modèle de sélectionner parmi des grades définis par l'utilisateur sans exposer les IDs
+de modèle concrets, configurez `agents.modelGrades` et optionnellement restreignez-les avec
+`agents.allowedGrades` :
+
+```json
+{
+  "agents": {
+    "modelGrades": {
+      "small": "fast",
+      "high": "qwen-max"
+    },
+    "allowedGrades": ["small", "high"]
+  }
+}
+```
+
+L'outil Agent accepte alors `model: "small"` ou `model: "high"` pour les sous-agents
+ordinaires. Les sélections de grade inconnues, non autorisées, fork et coéquipier nommé sont
+rejetées. Le modèle explicite d'un agent personnalisé prend toujours le pas sur un grade.
+
+#### Mode d'approbation
 
 Utilisez le champ optionnel `approvalMode` du frontmatter pour contrôler la façon dont les appels d'outils d'un sous-agent sont approuvés. Valeurs valides :
 
@@ -204,11 +319,11 @@ Utilisez le champ optionnel `approvalMode` du frontmatter pour contrôler la fa�
 - `yolo` : Tous les outils sont automatiquement approuvés, y compris ceux potentiellement destructeurs
 - `bubble` : Les approbations d'outils des agents en arrière-plan sont remontées dans la session parent
 
-Si vous omettez ce champ, le mode d'autorisation du sous-agent est déterminé automatiquement :
+Si vous omettez ce champ, le mode d'approbation du sous-agent est déterminé automatiquement :
 
 - Si la session parent est en mode **yolo** ou **auto-edit**, le sous-agent hérite de ce mode. Un parent permissif reste permissif.
 - Si la session parent est en mode **plan**, le sous-agent reste en mode plan. Une session en mode analyse uniquement ne peut pas modifier les fichiers via un agent délégué.
-- Si la session parent est en mode **default** (dans un dossier de confiance), le sous-agent obtient **auto-edit** afin de pouvoir travailler de manière autonome.
+- Si la session parent est en mode **default** (dans un dossier fiable), le sous-agent obtient **auto-edit** afin de pouvoir travailler de manière autonome.
 
 Lorsque vous définissez `approvalMode`, les modes permissifs du parent ont toujours la priorité. Par exemple, si le parent est en mode yolo, un sous-agent avec `approvalMode: plan` s'exécutera toujours en mode yolo.
 
@@ -241,7 +356,7 @@ tools:
   - read_file
   - grep_search
   - glob
-  - list_directory
+  - web_fetch
 ---
 ```
 
@@ -287,7 +402,7 @@ silencieusement abandonnés lors de l'analyse plutôt que rejetés — la même 
 | ---------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `permissionMode` | chaîne enum      | `acceptEdits`, `auto`, `bypassPermissions`, `default`, `dontAsk`, `plan`. Mappé sur `approvalMode` lors de l'analyse ; lorsque les deux sont définis, le `approvalMode` explicite l'emporte.                                                                                        |
 | `maxTurns`       | entier positif   | Limite le budget de tours de l'agent. Connecté à `runConfig.max_turns` à l'exécution ; lorsque les deux sont définis, le champ de premier niveau l'emporte. La valeur imbriquée héritée est supprimée du fichier sur disque lors de la sauvegarde pour éviter deux sources de vérité. |
-| `color`          | chaîne enum      | Couleur d'affichage. Liste d'autorisation : `red`, `blue`, `green`, `yellow`, `purple`, `orange`, `pink`, `cyan` (reflète le `_Y` de CC). La sentinelle héritée `auto` de Qwen est préservée pour la rétrocompatibilité. Les autres valeurs sont silencieusement abandonnées lors de l'analyse. |
+| `color`          | chaîne enum      | Couleur d'affichage. Liste d'autorisation : `red`, `blue`, `green`, `yellow`, `purple`, `orange`, `pink`, `cyan` (reflète le `_Y` de CC). La sentinelle héritée `auto` de Qwen est préservée pour la rétrocompatibilité. Les autres valeurs sont ignorées.                           |
 | `mcpServers`     | enregistrement de specs | Remplacements de serveur MCP par agent. Fusionnés avec l'ensemble de serveurs MCP de la session lorsque l'agent est créé ; en cas de collision de clé, la spec de l'agent l'emporte (correspondant à la sémantique `scope: 'agent'` de CC). Les entrées malformées sont abandonnées par clé avec un avertissement plutôt que de faire échouer tout l'agent. |
 | `hooks`          | enregistrement de tableaux | Hooks par agent. Les clés sont les noms d'événements de hook CC (`PreToolUse`, `PostToolUse`, `UserPromptSubmit`, …) ; les valeurs sont des tableaux de définitions `{ matcher?, hooks: [...] }` dans la même forme que le champ `hooks` de `settings.json`. Enregistrés pendant l'exécution de l'agent, supprimés lorsqu'il s'arrête. |
 
@@ -325,7 +440,7 @@ Les champs de frontmatter CC restants — `effort`, `skills`, `initialPrompt`,
 `memory`, `isolation` — sont documentés dans le document de conception de l'agent déclaratif
 et seront intégrés dans des PRs ultérieures une fois l'infrastructure prérequise existante
 (`effort` nécessite un paramètre au niveau du modèle ; `memory` nécessite un sous-système de mémoire
-délimité ; le drapeau CLI `--agent` active `initialPrompt` ; etc.).
+délimité ; le flag CLI `--agent` active `initialPrompt` ; etc.).
 
 > **Limitation de la v1 des `hooks`.** Pendant qu'un sous-agent déclarant des `hooks` est en cours d'exécution,
 > ses entrées de hook se déclenchent pour chaque événement correspondant dans la session, et pas uniquement
@@ -437,7 +552,7 @@ tools:
 Vous êtes un spécialiste de la documentation technique.
 
 Votre rôle est de créer une documentation claire et complète qui sert à la fois
-les développeurs et les utilisateurs finaux. Concentrez-vous sur :
+aux développeurs et aux utilisateurs finaux. Concentrez-vous sur :
 
 **Pour la documentation API :**
 
@@ -507,6 +622,7 @@ Fournissez des retours constructifs avec :
 Concentrez-vous sur des retours actionnables avec des exemples spécifiques et des solutions suggérées.
 Priorisez les problèmes par impact et fournissez une justification pour les recommandations.
 ```
+
 **Cas d'utilisation :**
 
 - « Vérifier cette implémentation d'authentification pour des problèmes de sécurité »
@@ -558,7 +674,7 @@ Focus on accessibility and user experience considerations.
 
 - « Créer un composant de tableau de données réutilisable avec tri et filtrage »
 - « Implémenter un hook personnalisé pour la récupération de données API avec mise en cache »
-- « Refactoriser ce composant de classe pour utiliser les patterns React modernes »
+- « Refactorer ce composant de classe pour utiliser les patterns React modernes »
 
 #### Expert Python
 
@@ -717,12 +833,12 @@ Always follow these standards:
 ## Considérations de sécurité
 
 - **Restrictions d'outils** : Utilisez `tools` pour limiter les outils auxquels un sous-agent peut accéder, ou `disallowedTools` pour bloquer des outils spécifiques tout en héritant de tout le reste
-- **Mode de permission** : Les sous-agents héritent du mode de permission de leur parent par défaut. Les sessions en mode planification ne peuvent pas passer en mode édition automatique via des agents délégués. Les modes privilégiés (édition auto, yolo) sont bloqués dans les dossiers non fiables.
+- **Mode d'approbation** : Les sous-agents héritent du mode d'approbation de leur parent par défaut. Les sessions en mode plan ne peuvent pas passer en mode auto-edit via des agents délégués. Les modes privilégiés (auto-edit, yolo) sont bloqués dans les dossiers non fiables.
 - **Sélection du fournisseur** : Un sous-agent avec `model: authType:modelId`, ou
   `model: fast` où `fastModel` se résout en un autre type d'authentification, envoie
   les demandes de modèle de ce sous-agent au fournisseur sélectionné. Assurez-vous que ce fournisseur est
   approprié pour la tâche et les données du sous-agent.
-- **Sandboxing** : Toute exécution d'outil suit le même modèle de sécurité que l'utilisation directe d'outils
+- **Sandbox** : Toute exécution d'outil suit le même modèle de sécurité que l'utilisation directe d'outils
 - **Piste d'audit** : Toutes les actions des sous-agents sont enregistrées et visibles en temps réel
 - **Contrôle d'accès** : La séparation au niveau du projet et de l'utilisateur fournit des limites appropriées
 - **Informations sensibles** : Évitez d'inclure des secrets ou des identifiants dans les configurations d'agent

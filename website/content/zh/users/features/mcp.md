@@ -219,6 +219,24 @@ summarize @myserver:file:///docs/spec.md and list the open questions
 
 现有的 `timeout` 字段是 **tool-call** 超时（用于每个 `tools/call` 请求，默认 10 分钟），不受 `discoveryTimeoutMs` 影响——长时间运行的工具调用不是启动问题。
 
+### 自动 stdio 协商
+
+Stdio 服务器默认使用单进程旧版初始化流程。要连接到仅支持现代协议的 stdio 服务器，请启用自动协议协商：
+
+```jsonc
+{
+  "mcpServers": {
+    "modern-server": {
+      "command": "node",
+      "args": ["./server.js"],
+      "versionNegotiation": "auto",
+    },
+  },
+}
+```
+
+自动协商会在启动会话进程之前运行一个短期存在的已配置服务器副本，最多可占用五秒的发现预算。对于具有非幂等启动副作用、单所有者锁或 PID 文件、或初始化握手缓慢的服务器，请保留默认的旧版策略。
+
 ### 回退渐进式 MCP
 
 如果你需要旧的同步行为（CLI 在显示任何 UI 之前等待每个 MCP 服务器），请在你的环境中设置 `QWEN_CODE_LEGACY_MCP_BLOCKING=1`。这至少会作为一个逃生舱保留一个版本。
@@ -227,7 +245,15 @@ summarize @myserver:file:///docs/spec.md and list the open questions
 
 ### 信任（跳过确认）
 
-- **服务器信任**（`trust: true`）：绕过该服务器的确认提示（请谨慎使用）。
+- **服务器信任**（`trust: true`）：在受信任的工作区中仅绕过该服务器的确认提示（请谨慎使用）。
+
+### 连接断开重放
+
+仅当服务器设置了 `trust: true`、工作区受信任，且工具显式声明了 `idempotentHint: true` 或一致的只读注解时，Qwen Code 才会重新连接并重放当前的 MCP 工具调用。只读注解与 `destructiveHint: true` 或 `idempotentHint: false` 冲突，不会被重放。
+
+缺少注解、注解冲突、服务器不受信任或工作区不受信任的调用在连接失败后不会被重放。Qwen Code 会报告结果可能未知，因为服务器可能在响应丢失之前已完成操作。请在重试前验证结果。这种保守行为可能与早期版本不同，早期版本会透明地重试未注解的工具。
+
+注解是服务器提供的行为提示，而非权限或授权边界。仅为你控制且已验证其注解的服务器配置 `trust: true`。
 
 ### OAuth 身份验证
 
@@ -251,13 +277,21 @@ OAuth 流程需要一个 redirect URI，授权提供者会将身份验证代码�
 
 - **本地开发**：默认情况下，Qwen Code 使用 `http://localhost:7777/oauth/callback`。这在本地机器上使用本地浏览器运行 Qwen Code 时有效。
 
-- **远程/云端部署**：在远程服务器、云端 IDE 或 Web 终端上运行 Qwen Code 时，默认的 `localhost` 重定向**不起作用**。你**必须**将 `--oauth-redirect-uri` 配置为指向可以接收 OAuth 回调的公开可访问 URL。
+- **远程/云端部署**：在远程服务器、云端 IDE 或 Web 终端上运行 Qwen Code 时，默认的 `localhost` 重定向**不起作用**。配置 `--oauth-redirect-uri` 为以 `/oauth/callback` 结尾的公开 URL，然后将该路径反向代理到运行 Qwen Code 的机器上的 `http://127.0.0.1:7777/oauth/callback`。Qwen Code 不终止 TLS；代理必须完成此操作。
 
 远程服务器示例：
 
 ```bash
 qwen mcp add --transport sse remote-server https://api.example.com/sse/ \
   --oauth-redirect-uri https://your-remote-server.example.com/oauth/callback
+```
+
+例如，反向代理可以仅将此回调路径转发到本地监听器：
+
+```nginx
+location = /oauth/callback {
+  proxy_pass http://127.0.0.1:7777;
+}
 ```
 
 #### 通过 settings.json 手动配置
@@ -400,6 +434,7 @@ OAuth 令牌会自动：
 | `env`                  | object                       | 服务器进程的环境变量。值可以使用 `$VAR_NAME` 或 `${VAR_NAME}` 语法引用环境变量                                                                                                                                |
 | `cwd`                  | string                       | Stdio 传输的工作目录                                                                                                                                                                                                                             |
 | `timeout`              | number<br>(default: 600,000) | 请求超时时间（毫秒）（默认值：600,000 毫秒 = 10 分钟）                                                                                                                                                                                                 |
+| `versionNegotiation`   | `"auto" \| "legacy"`<br>(default: `"legacy"`) | 对于 Stdio 服务器，`"auto"` 会在一次性的兄弟进程上进行协议协商。默认值 `"legacy"` 仅启动会话进程。                                                                                                               |
 | `trust`                | boolean<br>(default: false)  | 当为 `true` 时，绕过该服务器的所有工具调用确认（默认值：`false`）                                                                                                                                                                              |
 | `includeTools`         | array                        | 从此 MCP 服务器包含的工具名称列表。指定后，仅此处的工具将从该服务器可用（白名单行为）。如果未指定，默认启用服务器的所有工具。                                       |
 | `excludeTools`         | array                        | 从此 MCP 服务器排除的工具名称列表。此处列出的工具将对模型不可用，即使它们由服务器暴露。<br>注意：`excludeTools` 优先于 `includeTools` - 如果工具同时存在于两个列表中，它将被排除。 |

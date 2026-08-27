@@ -2,7 +2,7 @@
 
 ## Visão geral
 
-Cada frame SSE emitido pelo daemon em `GET /session/:id/events` tem a forma `{ id, v, type, data, originatorClientId?, _meta? }`. `v: 1` é o `EVENT_SCHEMA_VERSION` atual. `type` vem do conjunto fechado e fixado por versão `DAEMON_KNOWN_EVENT_TYPE_VALUES` em `packages/sdk-typescript/src/daemon/events.ts`; o conjunto atual possui 47 tipos de eventos conhecidos. O campo `_meta` do envelope é carimbado no limite de escrita do SSE por `formatSseFrame()` em `packages/cli/src/serve/routes/sse-events.ts`; consulte [Metadados no nível do envelope](#envelope-level-metadata).
+Cada frame SSE emitido pelo daemon em `GET /session/:id/events` tem a forma `{ id, v, type, data, originatorClientId?, _meta? }`. `v: 1` é o `EVENT_SCHEMA_VERSION` atual. `type` vem do conjunto fechado e fixado por versão `DAEMON_KNOWN_EVENT_TYPE_VALUES` em `packages/sdk-typescript/src/daemon/events.ts`. O campo `_meta` do envelope é carimbado no limite de escrita do SSE por `formatSseFrame()` em `packages/cli/src/serve/routes/sse-events.ts`; consulte [Metadados no nível do envelope](#envelope-level-metadata).
 
 O SDK expõe `asKnownDaemonEvent(evt)`. Ele retorna um `KnownDaemonEvent` discriminado para tipos de eventos conhecidos e `undefined` para outros tipos. Os consumidores do SDK podem, portanto, lidar com a compatibilidade futura sem exigir uma atualização sincronizada do SDK quando um daemon mais recente adiciona um novo tipo de evento; o reducer da sessão os registra como `unrecognizedKnownEventCount`.
 
@@ -15,7 +15,7 @@ O wire format está em [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md).
 - Fornecer reducers puros (`reduceDaemonSessionEvent`, `reduceDaemonAuthEvent`) que projetam um fluxo de eventos no estado de visualização do SDK.
 - Transmitir a tag de capacidade `typed_event_schema` como um sinal informativo. Se a tag estiver ausente, `asKnownDaemonEvent` ainda faz fallback para `unknown`.
 
-## Vocabulário de eventos (47 tipos conhecidos)
+## Vocabulário de eventos
 
 Agrupados por domínio.
 
@@ -27,7 +27,8 @@ Agrupados por domínio.
 | `session_metadata_updated` | S->C           | `PATCH /session/:id/metadata`                                                 | `sessionId, displayName?`                                                        |
 | `session_died`             | S->C terminal  | `channel.exited`                                                              | `sessionId, reason, exitCode? \| null, signalCode? \| null`                      |
 | `session_closed`           | S->C terminal  | `DELETE /session/:id` ou fechamento programático                                   | `sessionId, reason: 'client_close' \| string, closedBy?`                         |
-| `session_snapshot`         | S->C sintético | Frame de snapshot após anexação / replay do SSE                                      | `sessionId, currentModelId: string \| null, currentApprovalMode: string \| null` |
+| `session_snapshot`         | S->C sintético | Frame de snapshot após anexação / replay do SSE                                      | `sessionId, currentModelId: string \| null, currentApprovalMode: string \| null, recordingDegraded: boolean` |
+| `session_recording_degraded` | S->C         | O escritor de transcrição da sessão parou permanentemente após uma falha de escrita assíncrona | `sessionId, reason: 'write_failed'`                                                                          |
 
 ### Frames sintéticos no nível do assinante
 
@@ -37,7 +38,10 @@ Agrupados por domínio.
 | `slow_client_warning`   | Backlog de frames ao vivo ou backlog de bytes serializados ao vivo >= 75%; forçado e **não possui `id`**                                                                                                                                          | `queueSize, maxQueued, lastEventId, queuedBytes?, maxQueuedBytes?, threshold?: 'frames' \| 'bytes' \| 'frames_and_bytes'`; rearmado após ambas as medições de frame e byte caírem abaixo de 37,5%.                                                                                                                                   |
 | `stream_error`          | `SubscriberLimitExceededError` ou outro erro de stream de rota                                                                                                                                                                         | `error: string`; terminal para a assinatura.                                                                                                                                                                                                                                                                                |
 | `state_resync_required` | `subscribe({lastEventId})` detecta que o ring do daemon não contém mais `[lastEventId+1, earliestInRing-1]`, ou o cursor do cliente é de uma epoch anterior do bus. Forçado **antes** dos frames de replay restantes e **não possui `id`**. | `reason: 'ring_evicted' \| 'epoch_reset' \| string`, `lastDeliveredId: number`, `earliestAvailableId: number`. Este é um sinal de recuperação, não terminal: o stream SSE permanece aberto e os frames de replay + ao vivo continuam. O reducer do SDK define `awaitingResync = true` e ignora os deltas até que o chamador resete com `loadSession`. |
+| `history_truncated`     | `POST /session/:id/load` retorna um snapshot de replay limitado após entradas de replay em memória mais antigas serem descartadas. Prefixado ao `compactedReplay` e **não possui `id`**.                                                                    | `reason: 'replay_window_exceeded'`, `truncatedEvents: number`, `retainedEvents: number`, `maxBytes: number`, `truncatedTurns?: number`, `fullTranscriptAvailable: boolean`. Este é um marcador de status, não uma solicitação de ressincronização; clientes o renderizam e continuam aplicando o replay retido.                                 |
 | `replay_complete`       | Sentinel sem ID emitido após o término do loop de replay `Last-Event-ID`, para replay limpo e caminhos de ring-evicted, mesmo quando `data.replayedCount === 0`. **Sem `id`**                                                             | `replayedCount: number`; permite que os consumidores removam a UI de catch-up de forma determinística sem timeout.                                                                                                                                                                                                                                |
+
+`fullTranscriptAvailable` é uma flag booleana de capability, não um tipo literal `true`. Daemons atuais emitem `true` quando `/session/:id/transcript` pode ser usado para paginar a transcrição persistida; daemons mais antigos ou restritos podem emitir `false`, e clientes devem continuar renderizando o replay limitado normalmente.
 
 ### Permissões (F3 + base)
 
@@ -72,11 +76,13 @@ Agrupados por domínio.
 | `agent_changed`          | S->C    | `change: 'created' \| 'updated' \| 'deleted', name, level: 'project' \| 'user'`                                                                |
 | `approval_mode_changed`  | S->C    | `sessionId, previous, next, persisted: boolean`                                                                                                |
 | `tool_toggled`           | S->C    | `toolName, enabled`; afeta o próximo spawn do filho ACP e não muta sessões já em execução.                                            |
-| `settings_changed`       | S->C    | Gravação das configurações do workspace concluída. O payload é aberto; os consumidores devem atualizar com read-after-write.                                           |
+| `settings_changed`       | S->C      | Gravação das configurações do workspace concluída. O payload inclui `key`; `value`, `scope` e `mutation` do Skill-toggle são opcionais.                        |
 | `settings_reloaded`      | S->C    | O serviço de workspace do daemon releu as configurações. O payload é aberto.                                                                                     |
 | `trust_change_requested` | S->C    | `workspaceCwd, desiredState: 'trusted' \| 'untrusted', reason?`                                                                                |
 | `workspace_initialized`  | S->C    | `path, action: 'created' \| 'overwrote' \| 'noop', originatorClientId?`                                                                        |
 | `github_setup_completed` | S->C    | `releaseTag, readmeUrl, secretsUrl?, workflows: [{path, status, sizeBytes?, error?}], gitignore: {path, status, added?, error?}`               |
+
+As APIs de Skill toggle anexam `mutation: { id, kind: 'skill_toggle', skills: [{ name, enabled }], activation, sessionsRefreshed, sessionsFailed }` opcional. Cada evento `skills.disabled` / `skills.enabled` da mesma requisição compartilha um mutation id. Outras gravações de configurações omitem `mutation`. Gravações do serviço de workspace incluem `scope`; alguns outros emissores (por exemplo, trocas de modelo da sessão) o omitem. O normalizador do SDK padroniza `scope` ausente para `'workspace'`.
 
 `memory_changed` também cobre tarefas de memória gerenciada sem sessão. Para esses
 payloads, `scope` é `"managed"`, `source` é um de
@@ -122,10 +128,10 @@ Esses eventos têm o workspace como chave, não a sessão. O reducer da sessão 
 | Tipo                  | Direção | Trigger                                                                                                             | Principais campos do payload                                                                                                                                                                               |
 | --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `prompt_cancelled`    | S->C    | O prompt foi cancelado através da rota explícita `cancelSession` **ou** desconexão SSE do originador                        | O envelope carimba `originatorClientId` para o cliente que cancelou. Isso significa "cancelamento solicitado", não "cancelamento confirmado". Assinantes pares aprendem que o prompt terminou.              |
-| `turn_complete`       | S->C    | Um turno foi concluído com sucesso                                                                                       | `sessionId, stopReason, promptId?`. `promptId` vincula às respostas de prompt não bloqueantes (`202`). O SDK corresponde os eventos SSE ao prompt de origem através dele.                                  |
+| `turn_complete`       | S->C    | Um turno foi concluído com sucesso                                                                                       | `sessionId, stopReason, promptId?, branchPoint?`. `promptId` vincula às respostas de prompt não bloqueantes (`202`). Turnos elegíveis incluem `branchPoint: { assistantRecordUuid, checkpointUuid }`. |
 | `turn_error`          | S->C    | Um turno falhou                                                                                                       | `sessionId, message, code?, promptId?`; mesmo mecanismo de correlação de `promptId`.                                                                                                                   |
 | `session_rewound`     | S->C    | `POST /session/:id/rewind` teve sucesso                                                                                | `sessionId, promptId, targetTurnIndex, filesChanged[], filesFailed[], originatorClientId?`                                                                                                       |
-| `session_branched`    | S->C    | `POST /session/:id/branch` criou um branch a partir de uma sessão existente                                                | `sourceSessionId, newSessionId, displayName, originatorClientId?`                                                                                                                                |
+| `session_branched`    | S->C    | Evento de compatibilidade legado: o endpoint de branch agora retorna resultados diretamente e não publica mais este evento | `sourceSessionId, newSessionId, displayName, originatorClientId?`. Leitores mantêm suporte para produtores mais antigos. |
 | `followup_suggestion` | S->C    | O filho ACP gerou sugestões de follow-up em ghost-text após `end_turn`, encaminhadas via SSE por sessão               | `sessionId, suggestion, promptId`; o wire carrega apenas sugestões cujo `getFilterReason()===null`. Os clientes as renderizam como ghost-text de placeholder de input e as invalidam no próximo `sendPrompt`. |
 | `user_shell_command`  | S->C    | O usuário iniciou um comando shell através de `POST /session/:id/shell`; distribuído para outros assinantes na mesma sessão | `sessionId, command, shellId, originatorClientId?`. Ainda não há interface `DaemonXxxData` tipada; `asKnownDaemonEvent` retorna `undefined` e o normalizador de UI o analisa ad hoc.            |
 | `user_shell_result`   | S->C    | Resultado do comando shell acima                                                                                   | `sessionId, shellId, exitCode, output, aborted`. Mesma observação de análise ad hoc que `user_shell_command`.                                                                                               |
@@ -135,7 +141,7 @@ Esses eventos têm o workspace como chave, não a sessão. O reducer da sessão 
 | Aspecto                                | Origem                                         | Notas                                                                                                              |
 | -------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `EVENT_SCHEMA_VERSION = 1`             | `packages/acp-bridge/src/eventBus.ts`          | Enviado em cada frame.                                                                                               |
-| `DAEMON_KNOWN_EVENT_TYPE_VALUES`       | `packages/sdk-typescript/src/daemon/events.ts` | Lista fechada com 47 tipos.                                                                                         |
+| `DAEMON_KNOWN_EVENT_TYPE_VALUES`       | `packages/sdk-typescript/src/daemon/events.ts` | Lista fechada com 53 tipos.                                                                                         |
 | `DaemonEventEnvelope<TType, TData>`    | `events.ts`                                    | Envelope genérico.                                                                                                  |
 | `DaemonKnownEventType`                 | `events.ts`                                    | `typeof DAEMON_KNOWN_EVENT_TYPE_VALUES[number]`.                                                                   |
 | Tipos de payload por evento                | `events.ts`                                    | A maioria dos tipos de evento tem uma interface `DaemonXxxData`; `user_shell_*` é atualmente analisado ad hoc pelo normalizador de UI. |
@@ -151,6 +157,7 @@ Esses eventos têm o workspace como chave, não a sessão. O reducer da sessão 
 - `alive: boolean` - torna-se `false` após um frame terminal (`session_died`, `session_closed`, `client_evicted`, `stream_error`).
 - `currentModelId?: string` - de `model_switched`.
 - `displayName?: string` - de `session_metadata_updated`.
+- `recordingDegraded: boolean` - estado aderente de gravação de sessão de `session_recording_degraded`; um valor explícito de `session_snapshot.recordingDegraded` é autoritativo.
 - `pendingPermissions: Record<string, DaemonPermissionRequestData>` - solicitações abertas com chave `requestId`; limpo por `permission_resolved` / `permission_already_resolved`.
 - `lastSessionUpdate?: DaemonSessionUpdateData` - `session_update` mais recente.
 - `lastModelSwitchFailure?: DaemonModelSwitchFailedData` - de `model_switch_failed`.
@@ -168,7 +175,7 @@ Esses eventos têm o workspace como chave, não a sessão. O reducer da sessão 
 - `workspaceInitCount`, `lastWorkspaceInit?` - de `workspace_initialized`.
 - `mcpRestartCount`, `lastMcpRestart?` - de `mcp_server_restarted`.
 - `mcpRestartRefusedCount`, `lastMcpRestartRefused?` - de `mcp_server_restart_refused`.
-- `settings_changed` / `settings_reloaded` - reconhecido por `asKnownDaemonEvent`; o reducer da sessão não mantém campos de estado de visualização dedicados, e as UIs geralmente os tratam como sinais de atualização.
+- `settings_changed` / `settings_reloaded` - reconhecido por `asKnownDaemonEvent`; o reducer da sessão não mantém campos de estado de visualização dedicados. Eventos `settings_changed` de Skill-toggle carregam metadados `mutation` opcionais para que hosts possam aplicar alterações apenas de Skill de forma incremental em vez de recarregar a tarefa. Outras UIs ainda podem tratar o evento como um sinal de atualização.
 - `permissionVoteProgress: Record<string, DaemonPermissionPartialVoteData>` - progresso da votação de consenso.
 - `forbiddenVotes: DaemonPermissionForbiddenData[]`, `forbiddenVoteCount` - registros de votos rejeitados por política, limitados a 32.
 - `awaitingResync: boolean` - definido por `state_resync_required`; limpo quando o consumidor redefine o estado de visualização.
@@ -239,7 +246,7 @@ Eventos acionados por uma requisição que carregava um `X-Qwen-Client-Id` regis
 
 ## _meta de Tool-call (provenance / serverId)
 
-Isso é separado do `_meta` do envelope: os payloads ACP `session/update` podem carregar seu próprio `_meta` em `event.data._meta`. O `ToolCallEmitter` (`packages/cli/src/acp-integration/session/emitters/ToolCallEmitter.ts`) adiciona dois campos em `emitStart`, `emitResult` e `emitError`:
+Isso é separado do `_meta` do envelope: os payloads ACP `session/update` podem carregar seu próprio `_meta` em `event.data._meta`. O `ToolCallEmitter` (`packages/cli/src/acp-integration/session/emitters/tool-call-emitter.ts`) adiciona dois campos em `emitStart`, `emitResult` e `emitError`:
 
 | Campo        | Tipo                                      | Regra de resolução                                                                                                                                                            |
 | ------------ | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -266,6 +273,7 @@ Enquanto `awaitingResync = true`, o reducer **ignora a aplicação de deltas** e
 | `client_evicted`        | Mesmo que acima.                                                                 |
 | `stream_error`          | Mesmo que acima.                                                                 |
 | `session_snapshot`      | Frame autoritativo de estado completo; seguro para aplicar durante o resync.                   |
+| `session_recording_degraded` | Sinal de segurança aderente independente do estado de delta de transcrição.                |
 
 O `lastEventId` ainda avança monotonicamente através de `advanceLastEventId(base)` durante o resync. Após o chamador redefinir e limpar o `awaitingResync`, os deltas subsequentes se alinham ao cursor correto.
 

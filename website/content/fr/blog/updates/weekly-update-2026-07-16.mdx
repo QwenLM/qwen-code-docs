@@ -1,0 +1,244 @@
+---
+title: "Qwen Code Hebdo : /learn transforme vos connaissances en Skill, Code Review monte en gamme, Web Shell fait peau neuve"
+date: "2026-07-16"
+description: "Trois versions stables cette semaine (v0.19.9 à v0.19.11), 160+ PR fusionnés. Commande /learn pour créer des Skills réutilisables, Code Review avec verifier et reverse-audit, Web Shell repensé avec shadcn et panneau Artifact, Voice Bridge pour l'entrée vocale, conversion PDF en image, mise à jour en un clic via /update."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: https://gw.alicdn.com/imgextra/i1/O1CN01rCacTOSznNB2jBZY_!!6000000002069-0-tps-1344-576.jpg
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Hebdo : /learn transforme vos connaissances en Skill, Code Review monte en gamme, Web Shell fait peau neuve"
+  date="2026-07-16"
+  author="Qwen Team"
+/>
+
+Cette semaine, Qwen Code sort trois versions stables — v0.19.9, v0.19.10 et v0.19.11 — avec plus de 160 PR fusionnés.
+
+**La commande `/learn` fait son entrée.** Vous créez des Skills à partir de n'importe quelle source de connaissances — répertoire, URL, historique de conversation, texte libre — et Qwen Code les organise automatiquement en SKILL.md, prêts à être réutilisés.
+
+**Code Review passe de « fonctionnel » à « fiable ».** Les suggestions sont publiées directement en commentaires inline sur la PR. Le review intègre désormais des vérifications de correction procédurale, une validation pré-publication, un verifier à l'étape 4 et un reverse-audit à l'étape 5.
+
+**Web Shell fait peau neuve.** Refonte complète avec shadcn comme bibliothèque de composants, panneau de revue Artifact, page de gestion des extensions, diagrammes Mermaid zoomables et déplaçables. Le multi-workspace est désormais intégré de bout en bout, avec des split panes colorés par workspace.
+
+**Voice Bridge connecte la voix à l'ACP.** Même un modèle principal texte seul peut traiter des prompts vocaux — l'audio est d'abord transcrit en texte avant d'être transmis au modèle. Les modèles compatibles audio reçoivent le flux brut sans intermédiaire.
+
+**Les PDF scannés ne bloquent plus l'Agent.** Quand l'extraction de texte dépasse la limite, les pages sont automatiquement rendues en images et confiées au modèle visuel.
+
+**Les workflows CLI se complètent.** `/update` pour la mise à jour en un clic, Ctrl+O pour figer la conversation, Ctrl+S pour mettre en brouillon un prompt, Explore hérite du modèle principal, Alt+T pour le raisonnement complet en streaming.
+
+## ✨ Nouvelles fonctionnalités
+
+### `/learn` : transformer vos connaissances en Skills réutilisables
+
+`/learn` est une nouvelle commande slash qui vous permet de créer des Skills réutilisables à partir de sources de connaissances. Ces sources peuvent être un répertoire local, une URL, un historique de conversation ou un texte que vous rédigez directement. Le modèle principal collecte les connaissances et les organise automatiquement en un SKILL.md, enregistré sous `.qwen/skills/learned-skill-<name>/`, avec le marqueur `source: learned` — sans interférence avec vos Skills manuels ou auto-générés.
+
+Quelques cas d'usage :
+
+- `/learn Deploy process: ...` transforme votre processus de déploiement en Skill, invocable en un clin d'œil la prochaine fois
+- Pointer vers un répertoire de documentation pour que Qwen Code apprenne les conventions de développement du projet et les applique automatiquement
+- Extraire les connaissances d'une conversation pour les capitaliser en templates d'instructions réutilisables
+
+Voir le PR [#6440](https://github.com/QwenLM/qwen-code/pull/6440)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000003713/O1CN01CNOwiR1dIbkJ51Ux0_!!6000000003713-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/L10eFO90zfXOWEU7dkbDdvSfGHhxqU5eYo7acVmPf_I.mp4" controls></video>
+
+### Code Review : un bond qualitatif
+
+Code Review a été renforcé cette semaine sur plusieurs fronts, des commentaires inline à la validation de la qualité du review lui-même.
+
+`/review` publie désormais **les suggestions directement sous forme de commentaires inline sur la PR** — plus besoin de copier-coller manuellement les recommandations du review vers la PR. Le review lui-même intègre des vérificateurs de correction procédurale et un niveau d'effort ajustable, avec une validation par garde-fou avant publication pour s'assurer que chaque finding est fondé.
+
+**Les review de gros diff ne sont plus répartis de manière approximative — chaque ligne de diff a un reviewer clairement assigné, garantissant une couverture complète**. L'agent de découpage du review reçoit un prompt complet, éliminant les exécutions à contexte vide. Les commentaires de triage PR ajoutent un score de confiance, des diagrammes de séquence, un aperçu des fichiers et un pied de page de review, offrant aux reviewers un contexte enrichi. Le délai d'expiration par défaut des reviews automatisés passe à 180 minutes, avec un override possible jusqu'à 240 minutes — les grosses PR ne sont plus interrompues par un timeout.
+
+Ce que cela vous permet de faire :
+
+- `/review` publie automatiquement des suggestions inline sur la PR, sans étape manuelle
+- Le niveau d'effort ajustable s'adapte à l'ampleur du review
+- Le score de confiance du triage PR vous aide à identifier celles qui méritent une attention particulière
+
+La v0.19.11 introduit en outre le **verifier à l'étape 4 et le reverse-audit à l'étape 5** — le processus de review passe de « trouver un problème → publier un commentaire » à « trouver un problème → vérifier qu'il est fondé → auditer en sens inverse pour confirmer l'absence d'omission ». La liste des findings est repliée dans le prompt de vérification et de reverse-audit, réduisant la taille du prompt. La portée du build/test de l'Agent 7 est également restreinte aux workspaces concernés par le diff, évitant les builds intégrals sur les gros dépôts.
+
+Voir les PR [#6593](https://github.com/QwenLM/qwen-code/pull/6593), [#6711](https://github.com/QwenLM/qwen-code/pull/6711), [#6612](https://github.com/QwenLM/qwen-code/pull/6612), [#6789](https://github.com/QwenLM/qwen-code/pull/6789), [#6771](https://github.com/QwenLM/qwen-code/pull/6771), [#6840](https://github.com/QwenLM/qwen-code/pull/6840), [#6942](https://github.com/QwenLM/qwen-code/pull/6942), [#6965](https://github.com/QwenLM/qwen-code/pull/6965), [#6892](https://github.com/QwenLM/qwen-code/pull/6892), [#6955](https://github.com/QwenLM/qwen-code/pull/6955)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/O1CN0125Uqjz1jIVLevSaJR_!!6000000004525-0-videocover-1920-1080.jpg" src="https://cloud.video.taobao.com/vod/q8e6oXagz7e6S3nXqzdz9uX9Jc2vU1M5cTQc5KYxnLQ.mp4" controls></video>
+
+### Web Shell : refonte majeure de l'interface
+
+Le Web Shell reçoit cette semaine plus de 15 PR, couvrant tout, de la bibliothèque de composants de base à la barre latérale, en passant par la page de paramètres et le sélecteur de modèles.
+
+shadcn est introduit comme bibliothèque de composants UI de base, unifiant les tokens de design et les normes de composants. **La barre latérale multi-workspace est repensée avec une disposition plus claire**. La page de paramètres adopte une bibliothèque de composants moderne — les paramètres utilisateur sont éditables directement dans le panneau, et la gestion des modèles y est intégrée. Le sélecteur de modèles est repensé avec des métadonnées plus claires et une commutation plus rapide. Voir les PR [#6760](https://github.com/QwenLM/qwen-code/pull/6760), [#6804](https://github.com/QwenLM/qwen-code/pull/6804), [#6817](https://github.com/QwenLM/qwen-code/pull/6817), [#6758](https://github.com/QwenLM/qwen-code/pull/6758)
+
+**Le multi-workspace est désormais intégré de bout en bout**. Les endpoints ACP du daemon supportent le scoping par workspace, les workers de canal sont regroupés et liés par workspace, le split view gère les sessions cross-workspace et les onglets workspace. Les workspaces ajoutés dynamiquement sont persistés — pas besoin de reconfiguration après redémarrage du daemon. Les workspaces peuvent être retirés à la volée sans redémarrer le serveur. Voir les PR [#6621](https://github.com/QwenLM/qwen-code/pull/6621), [#6635](https://github.com/QwenLM/qwen-code/pull/6635), [#6746](https://github.com/QwenLM/qwen-code/pull/6746), [#6716](https://github.com/QwenLM/qwen-code/pull/6716), [#6745](https://github.com/QwenLM/qwen-code/pull/6745)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000002530/O1CN01Ly4J571UYnCU2tMMh_!!6000000002530-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/b1Eo9DCpyMz40O7eDow4C_SfGHhxqU5eYo7acVmPf_I.mp4" controls></video>
+
+**Nouveau panneau Artifact à droite** — les fichiers modifiés s'affichent sous forme de cartes par tour, avec compteur de lignes et diff individuel dépliable par fichier. Le panneau droit propose une navigation en liste ou en arborescence et une largeur ajustable par glissement. Les Artifacts et les tâches planifiées disposent également de cartes de sortie par tour dédiées, et les artifacts HTML sont rendus dans une iframe sandbox. Voir le PR [#6591](https://github.com/QwenLM/qwen-code/pull/6591)
+
+La v0.19.11 introduit la **page de gestion des extensions**, permettant de consulter et gérer les extensions installées directement depuis le Web Shell. **Les diagrammes Mermaid supportent le zoom, le panoramique et le glissement** — les diagrammes de flux et de séquence ne sont plus de simples images statiques. Le split pane permet de maximiser un panneau individuel, chaque pane étant coloré par workspace. Les contrôles du Composer adoptent un format popover, et la liste des sessions affiche celles en attente d'action utilisateur. Voir les PR [#6815](https://github.com/QwenLM/qwen-code/pull/6815), [#6881](https://github.com/QwenLM/qwen-code/pull/6881), [#6951](https://github.com/QwenLM/qwen-code/pull/6951), [#6971](https://github.com/QwenLM/qwen-code/pull/6971), [#6877](https://github.com/QwenLM/qwen-code/pull/6877), [#6956](https://github.com/QwenLM/qwen-code/pull/6956)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000006984/O1CN0193dBiH21SjHFM9WSn_!!6000000006984-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/x92aOU2HCnuLwJr9eWIxZ7qx4BWF5wUv1MU2L-Y8HRc.mp4" controls></video>
+
+Autres améliorations : double-clic sur une cellule de tableau Markdown pour afficher le contenu complet dans une popup et faciliter la copie ; la barre d'outils de saisie affiche un chip avec la branche Git courante ; les groupes de sessions supportent les codes couleur Hex personnalisés ; les tâches planifiées de tous les workspaces sont rassemblées dans une vue unifiée ; le Composer accepte un texte de placeholder personnalisé ; les chemins de workspace sont verrouillés. Voir les PR [#6530](https://github.com/QwenLM/qwen-code/pull/6530), [#6725](https://github.com/QwenLM/qwen-code/pull/6725), [#6752](https://github.com/QwenLM/qwen-code/pull/6752), [#6759](https://github.com/QwenLM/qwen-code/pull/6759), [#6765](https://github.com/QwenLM/qwen-code/pull/6765), [#6853](https://github.com/QwenLM/qwen-code/pull/6853)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000005732/O1CN01x77uEd1sDJP1IUuXG_!!6000000005732-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/IyzjuL8SwFsAwEFFhjGhEpSG4U75__Lb6MHHCokvsE4.mp4" controls></video>
+
+### Voice Bridge : l'entrée vocale connectée à l'ACP
+
+Jusqu'ici, l'envoi d'un prompt vocal via l'ACP (Agent Communication Protocol) échouait si le modèle principal était un modèle texte seul — l'audio ne pouvait pas être traité. Un voice bridge a été ajouté : l'audio est d'abord transcrit en texte par le voice model configuré, puis transmis au modèle principal. Si le modèle principal prend lui-même en charge l'entrée audio, le flux brut est transmis directement, sans transcription. En cas d'indisponibilité ou d'échec de la transcription, le modèle principal reçoit un message sûr indiquant « audio non disponible », sans jamais transmettre d'audio brut.
+
+Ce que cela vous permet de faire :
+
+- Envoyer des commandes vocales via un client ACP, même avec un modèle texte seul
+- Les modèles principaux compatibles audio (modèles multimodaux) conservent le flux audio brut, sans perte d'information
+- Dégradation sûre en cas d'échec de transcription — la conversation n'est jamais interrompue par un problème audio
+
+Voir le PR [#6576](https://github.com/QwenLM/qwen-code/pull/6576)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000005705/O1CN013eOo4w1s0wi1RqIMk_!!6000000005705-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/VEGmw6hmP0H6pXMupavMLaBMqXJ7RzNFjnuDAH8okQ8.mp4" controls></video>
+
+### Conversion PDF en image : les scans ne bloquent plus l'Agent
+
+Auparavant, face à un PDF scanné ou dense en texte, l'extraction dépassait le budget de 12 000 tokens et déclenchait une boucle `FILE_TOO_LARGE` — l'Agent réessayait avec des plages de pages plus petites, échouait à chaque fois, et le contexte gonflait jusqu'au crash de la session. Un repli page-vers-image a été ajouté : quand l'extraction de texte dépasse la limite ou échoue, `pdftoppm` rend automatiquement les pages en JPEG et les confie au modèle visuel. Le coût en tokens par page est fixe, indépendant de la densité textuelle. L'extraction de texte reste le chemin par défaut (recherchable, extraction précise) ; le rendu n'est déclenché qu'en cas de dépassement ou d'échec. Pour les modèles texte seuls couplés à un modèle visuel, les scans attachés via `@` sont rendus en quelques pages et transmis au vision bridge pour transcription.
+
+Ce que cela vous permet de faire :
+
+- Les PDF scannés ne provoquent plus de `FILE_TOO_LARGE` — le modèle visuel lit directement les images
+- Les PDF denses (dépassant le budget de tokens) basculent automatiquement en mode image, sans saturer le contexte
+- Les PDF texte conservent l'extraction textuelle, sans perte de précision
+
+Voir le PR [#6585](https://github.com/QwenLM/qwen-code/pull/6585)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000006276/O1CN01qI9MfL1wESrZCZZ9g_!!6000000006276-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/rranbkNN8_vhUrf2KZZXec7F9nJYK_eKGorqE5DOWaI.mp4" controls></video>
+
+### Workflows CLI : mise à jour en un clic, conversations préservées
+
+Jusqu'ici, la mise à jour de Qwen Code dépendait de la méthode d'installation — `npm install` pour npm, téléchargement manuel pour standalone. Les commandes `qwen update` (CLI) et `/update` (slash) ont été ajoutées, détectant automatiquement le type d'installation. L'installation standalone récupère la dernière version depuis le registre npm, avec vérification SHA256 + signature Ed25519 (optionnelle) + smoke test (le nouveau binaire doit passer `--version`) + remplacement atomique et rollback automatique en cas d'échec. L'installation npm affiche la commande `npm install -g` correspondante. Prise en charge i18n en 9 langues. Voir le PR [#5780](https://github.com/QwenLM/qwen-code/pull/5780)
+
+**Ctrl+O fige la vue du transcript** — un écran alternatif s'ouvre avec l'intégralité de la conversation, tous les résultats d'outils dépliés, navigable au scroll. Esc/q/Ctrl+C/Ctrl+O pour revenir à l'interface principale. Le rendu des résultats d'outils a également été repensé : les outils de lecture/recherche/liste sont repliés en un résumé d'une ligne, les outils de mutation restent dépliés. L'ancien paramètre compactMode est ignoré silencieusement. Voir le PR [#5666](https://github.com/QwenLM/qwen-code/pull/5666)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01b2Flxy1UBR05kJjrS_!!6000000002479-2-tps-3837-2160.png)
+
+**Ctrl+S met le prompt en brouillon** — quand le champ de saisie contient du texte, Ctrl+S enregistre le prompt dans un fichier de brouillon au niveau du projet, restauré automatiquement au prochain lancement depuis le même projet. Le brouillon est supprimé automatiquement après soumission. Les placeholders de collage volumineux sont développés avant sauvegarde — la restauration renvoie le contenu original. Chaque projet gère son propre brouillon indépendamment. Voir le PR [#6709](https://github.com/QwenLM/qwen-code/pull/6709)
+
+**Le timeout des commandes Shell est configurable**. Le nouveau paramètre `tools.shell.defaultTimeoutMs` ajuste le délai d'expiration par défaut des commandes foreground au niveau du projet ou de la session, sans avoir à le spécifier à chaque commande. La valeur par défaut reste 120 secondes, 0 pour désactiver le timeout. Voir le PR [#6628](https://github.com/QwenLM/qwen-code/pull/6628)
+
+**Le sous-agent Explore hérite du modèle principal par défaut**. Le sous-agent intégré Explore ne sélectionne plus automatiquement le fastModel — il hérite du modèle de la session principale. Si vous utilisez Claude Opus comme modèle principal, Explore utilise aussi Claude Opus, sans compromis sur le raisonnement. Pour conserver le modèle rapide, réglez `agents.builtin.exploreModel` sur `fast` ou sur un ID de modèle spécifique. Voir le PR [#6807](https://github.com/QwenLM/qwen-code/pull/6807)
+
+**Alt+T déplie le raisonnement complet en streaming**. Pendant la sortie streaming, Alt+T déplie le bloc de thinking — vous voyez désormais le contenu de raisonnement complet en temps réel, au lieu de l'aperçu codé en dur des 4 dernières lignes. Suivre la chaîne de pensée du modèle devient enfin possible. Les raisonnements très longs sont limités par la hauteur du viewport, sans expansion infinie. Voir le PR [#6678](https://github.com/QwenLM/qwen-code/pull/6678)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01xOR0hN1b8PhMzl5mz_!!6000000003420-2-tps-3854-2160.png)
+
+## 📊 Autres nouvelles fonctionnalités
+
+| Fonctionnalité | PR | Impact pour vous |
+|------|-----|-----------|
+| **Reprise automatique du daemon Channel** : reconnexion auto des workers DingTalk/Feishu | [#6680](https://github.com/QwenLM/qwen-code/pull/6680) | Les canaux ne se déconnectent plus après un redémarrage du daemon |
+| **Tableaux Markdown DingTalk préservés** : la structure des tableaux n'est plus éclatée | [#6673](https://github.com/QwenLM/qwen-code/pull/6673) | Le canal DingTalk ne reçoit plus du texte brut ligne par ligne |
+| **Mention de l'expéditeur DingTalk** : option pour mentionner l'expéditeur dans les groupes | [#6679](https://github.com/QwenLM/qwen-code/pull/6679) | Les réponses du canal DingTalk peuvent @ le demandeur |
+| **Webhook DingTalk en message privé** : le webhook peut envoyer en DM | [#6891](https://github.com/QwenLM/qwen-code/pull/6891) | Les notifications DingTalk peuvent cibler une personne plutôt qu'un groupe |
+| **Gestion structurée de la mémoire des canaux** | [#6860](https://github.com/QwenLM/qwen-code/pull/6860) | La mémoire des conversations de canal est mieux structurée |
+| **Questions-réponses interactives SDK** : ask_user_question renvoie la réponse au modèle | [#6655](https://github.com/QwenLM/qwen-code/pull/6655) | Les intégrations SDK permettent des flux de questions-réponses interactifs |
+| **Méthodes de contrôle SDK** : effort, modèles, utilisation, requêtes de contexte | [#6492](https://github.com/QwenLM/qwen-code/pull/6492) | Les intégrations SDK offrent un contrôle plus fin des modèles et de l'utilisation |
+| **Cycle de vie des appels d'outils ACP exposé** | [#6819](https://github.com/QwenLM/qwen-code/pull/6819) | Le SDK peut suivre les phases de préparation des appels d'outils |
+| **Observabilité des sous-agents renforcée** : commandes complètes, chemins de transcript, contexte d'approbation | [#6580](https://github.com/QwenLM/qwen-code/pull/6580) | Meilleure visibilité sur ce que font les sous-agents |
+| **Timeline des sous-agents** : affichage chronologique + timeline des agents parallèles | [#6772](https://github.com/QwenLM/qwen-code/pull/6772) | Suivi plus facile des tâches en parallèle |
+| **Métadonnées d'origine des sessions daemon** : marqueurs d'origine immuables | [#6932](https://github.com/QwenLM/qwen-code/pull/6932) | Traçabilité de la source de création des sessions daemon |
+| **Agrégation de santé daemon en profondeur** : vérification de santé cross-workspace | [#6961](https://github.com/QwenLM/qwen-code/pull/6961) | La supervision du daemon couvre tous les workspaces |
+| **Gestion MCP par workspace** : gestion MCP en mode serve | [#6954](https://github.com/QwenLM/qwen-code/pull/6954) | Les serveurs MCP sont gérables par workspace en multi-workspace |
+| **Export de sessions archivées** : `/export` exporte les sessions archivées | [#6911](https://github.com/QwenLM/qwen-code/pull/6911) | L'historique des sessions peut être exporté et sauvegardé |
+| **Heartbeat des commandes foreground Shell** | [#6876](https://github.com/QwenLM/qwen-code/pull/6876) | Les commandes longues silencieuses ne sont plus considérées à tort comme timeout |
+| **Condition `/goal` allongée** : descriptions de conditions plus longues autorisées | [#6665](https://github.com/QwenLM/qwen-code/pull/6665) | Les objectifs complexes n'ont plus besoin d'être raccourcis |
+| **Provider intégré xAI Grok** : configuration des modèles xAI via `/auth` | [#6805](https://github.com/QwenLM/qwen-code/pull/6805) | Utiliser Grok sans configuration de provider personnalisée |
+| **Tags de référence pour tâches planifiées** : insertion de références extension/skill/MCP dans le prompt | [#6589](https://github.com/QwenLM/qwen-code/pull/6589) | Les prompts de tâches planifiées peuvent référencer directement des Skills et MCP |
+| **Hook MessageDisplay** : callback déclenché en cours de streaming | [#6489](https://github.com/QwenLM/qwen-code/pull/6489) | Les plugins peuvent suivre le contenu textuel en cours de réponse |
+| **Messages de groupe QQ Bot** | [#6457](https://github.com/QwenLM/qwen-code/pull/6457) | Prise en charge des messages de groupe pour le canal QQ |
+
+## 🔧 Corrections importantes
+
+| Correction | PR | Impact pour vous |
+|------|-----|-----------|
+| **Les canaux ne diffusent plus les sorties intermédiaires des sous-agents** | [#6696](https://github.com/QwenLM/qwen-code/pull/6696) | DingTalk/Feishu ne reçoivent plus de réponses incomplètes |
+| **Rafraîchissement des tokens média DingTalk en entrée** | [#6903](https://github.com/QwenLM/qwen-code/pull/6903) | Les messages image/fichier du canal DingTalk n'échouent plus à cause de tokens expirés |
+| **WeCom requireMention ne désactive plus les groupes** | [#6948](https://github.com/QwenLM/qwen-code/pull/6948) | Les groupes WeCom fonctionnent à nouveau normalement |
+| **Validation des identifiants Feishu** | [#6780](https://github.com/QwenLM/qwen-code/pull/6780) | Les identifiants invalides n'échouent plus en silence |
+| **Bouton Approve dans /mcp** | [#6518](https://github.com/QwenLM/qwen-code/pull/6518) | Les serveurs MCP pending/rejected peuvent être approuvés directement |
+| **Préservation du query MCP URL** | [#6587](https://github.com/QwenLM/qwen-code/pull/6587) | Les connexions MCP distantes n'échouent plus à cause de la troncature d'URL |
+| **Récupération automatique MCP OAuth 401** | [#6732](https://github.com/QwenLM/qwen-code/pull/6732) | Réessai automatique après expiration OAuth, sans reconnexion manuelle |
+| **Préservation du challenge MCP OAuth HTTP** | [#7022](https://github.com/QwenLM/qwen-code/pull/7022) | Les connexions MCP OAuth n'échouent plus à cause d'un challenge perdu |
+| **L'auto-approbation MCP en lecture seule nécessite trust** | [#6924](https://github.com/QwenLM/qwen-code/pull/6924) | Les serveurs MCP non fiables ne sont plus approuvés silencieusement |
+| **Position du curseur VS Code =0 n'est plus écrasée** | [#2971](https://github.com/QwenLM/qwen-code/pull/2971) | Le curseur en début de ligne ne saute plus en fin de ligne |
+| **Processus ACP VS Code en mode Electron Node** | [#6866](https://github.com/QwenLM/qwen-code/pull/6866) | Le processus ACP de l'extension VS Code n'échoue plus à cause de la version de Node |
+| **Hauteur adaptive du composer Web Shell** | [#6872](https://github.com/QwenLM/qwen-code/pull/6872) | Les prompts longs ne sont plus tronqués par une hauteur fixe |
+| **Persistance de l'état replié des groupes de sessions Web Shell** | [#6878](https://github.com/QwenLM/qwen-code/pull/6878) | Les groupes de sessions ne se déploient plus tous après un rafraîchissement |
+| **Le mode YOLO n'est plus désactivé silencieusement par le plan mode** | [#6630](https://github.com/QwenLM/qwen-code/pull/6630) | Entrer en plan mode ne désactive plus subrepticement le YOLO |
+| **Localisation des labels du mode d'approbation** | [#6592](https://github.com/QwenLM/qwen-code/pull/6592) | Les labels en anglais n'apparaissent plus lors du basculement avec Shift+Tab |
+| **Les timeouts Shell classés comme erreurs d'outil** | [#6864](https://github.com/QwenLM/qwen-code/pull/6864) | Les timeouts shell ne sont plus traités comme des erreurs de modèle |
+| **Priorité aux instructions utilisateur ACP** | [#6607](https://github.com/QwenLM/qwen-code/pull/6607) | En mode Agent, vos instructions ne sont plus reléguées après le contenu des pièces jointes |
+| **Correction des placeholders de templates de sous-agents** | [#6672](https://github.com/QwenLM/qwen-code/pull/6672) | Les motifs numériques comme `${0}` ne sont plus mal interprétés |
+| **Limite de tokens Claude Opus 4.6-4.8** | [#6718](https://github.com/QwenLM/qwen-code/pull/6718) | La compaction ne se déclenche plus prématurément |
+| **Gestion des signatures thinking Claude via proxy** | [#6893](https://github.com/QwenLM/qwen-code/pull/6893) | L'utilisation de Claude via un proxy ne produit plus d'erreurs de thinking non signé |
+| **Préservation de la managed memory lors de la compression** | [#6714](https://github.com/QwenLM/qwen-code/pull/6714) | La microcompaction ne perd plus d'entrées de mémoire |
+| **Les résultats de Skill participent à la microcompaction** | [#6788](https://github.com/QwenLM/qwen-code/pull/6788) | Les résultats d'exécution de Skill ne se perdent plus lors de la compression |
+| **Récupération des flux de modèle invalides** | [#6712](https://github.com/QwenLM/qwen-code/pull/6712) | Un flux invalide du modèle ne provoque plus de crash |
+| **Rollback automatique en cas d'échec de continuation max-token** | [#6921](https://github.com/QwenLM/qwen-code/pull/6921) | Un échec de continuation ne laisse plus l'état à mi-chemin |
+| **Le cache trusted-folders n'est plus pollué** | [#6900](https://github.com/QwenLM/qwen-code/pull/6900) | Les vérifications de confiance en aperçu n'affectent plus les jugements ultérieurs |
+| **Optimisation des performances de démarrage** : chargement paresseux de tree-sitter | [#6747](https://github.com/QwenLM/qwen-code/pull/6747) | Démarrage plus rapide |
+| **Réduction des processus de snapshot Git** | [#6784](https://github.com/QwenLM/qwen-code/pull/6784) | Meilleures performances en cours de session |
+| **Protection OOM des sessions longues** | [#6682](https://github.com/QwenLM/qwen-code/pull/6682) | Les sessions à interactions prolongées ne crashent plus en OOM à la sortie |
+| **Schéma unifié de reprise de session** | [#6731](https://github.com/QwenLM/qwen-code/pull/6731) | Reprise plus fiable après interruption/blocage/dégradation |
+
+## 👥 Contributeurs
+
+| Contributeur | Contributions | PR de référence |
+|--------|---------|-------------|
+| **[@wenshao](https://github.com/wenshao)** | Améliorations majeures de Code Review (commentaires inline, verifier/reverse-audit, scoring de triage), améliorations du Web Shell (split view, zoom Mermaid, coloration par workspace, aperçu visuel) | [#6593](https://github.com/QwenLM/qwen-code/pull/6593), [#6942](https://github.com/QwenLM/qwen-code/pull/6942), [#6965](https://github.com/QwenLM/qwen-code/pull/6965), [#6971](https://github.com/QwenLM/qwen-code/pull/6971), [#6881](https://github.com/QwenLM/qwen-code/pull/6881) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | Intégration multi-workspace de bout en bout (endpoints ACP, regroupement des workers de canal, persistance des workspaces), conversion PDF en image, liste des sessions, transcript reader | [#6621](https://github.com/QwenLM/qwen-code/pull/6621), [#6635](https://github.com/QwenLM/qwen-code/pull/6635), [#6585](https://github.com/QwenLM/qwen-code/pull/6585), [#6716](https://github.com/QwenLM/qwen-code/pull/6716), [#6741](https://github.com/QwenLM/qwen-code/pull/6741) |
+| **[@yiliang114](https://github.com/yiliang114)** | Corrections des boucles de sous-agents, corrections shell auto-kill, améliorations CI multiples, limite de tokens Claude, préservation de la managed memory, tolérance aux pannes de flux | [#6543](https://github.com/QwenLM/qwen-code/pull/6543), [#6544](https://github.com/QwenLM/qwen-code/pull/6544), [#6682](https://github.com/QwenLM/qwen-code/pull/6682), [#6714](https://github.com/QwenLM/qwen-code/pull/6714), [#6718](https://github.com/QwenLM/qwen-code/pull/6718) |
+| **[@qqqys](https://github.com/qqqys)** | Améliorations globales des canaux (reprise du daemon, correction du Stream DingTalk, préservation des tableaux markdown, diagnostic des payloads de canal), corrections du cycle de vie des goals | [#6680](https://github.com/QwenLM/qwen-code/pull/6680), [#6715](https://github.com/QwenLM/qwen-code/pull/6715), [#6673](https://github.com/QwenLM/qwen-code/pull/6673), [#6617](https://github.com/QwenLM/qwen-code/pull/6617), [#6620](https://github.com/QwenLM/qwen-code/pull/6620) |
+| **[@chinesepowered](https://github.com/chinesepowered)** | Correction du curseur VS Code, optimisation mobile-mcp, normalisation des coordonnées cua-driver, correction du cache LRU, détection de langue des dotfiles | [#2971](https://github.com/QwenLM/qwen-code/pull/2971), [#6624](https://github.com/QwenLM/qwen-code/pull/6624), [#6785](https://github.com/QwenLM/qwen-code/pull/6785), [#6787](https://github.com/QwenLM/qwen-code/pull/6787) |
+| **[@ytahdn](https://github.com/ytahdn)** | Améliorations Web Shell multiples (shadcn, barre latérale, page de paramètres, page de gestion des extensions, verrouillage des chemins de workspace, split view) | [#6760](https://github.com/QwenLM/qwen-code/pull/6760), [#6804](https://github.com/QwenLM/qwen-code/pull/6804), [#6815](https://github.com/QwenLM/qwen-code/pull/6815), [#6853](https://github.com/QwenLM/qwen-code/pull/6853), [#6956](https://github.com/QwenLM/qwen-code/pull/6956) |
+| **[@dreamWB](https://github.com/dreamWB)** | Web Shell (barre d'état inférieure, pied de page du tour assistant, mentions de contexte, barre latérale configurable, sélecteur de modèles, couleurs de groupes de sessions) | [#6613](https://github.com/QwenLM/qwen-code/pull/6613), [#6611](https://github.com/QwenLM/qwen-code/pull/6611), [#6578](https://github.com/QwenLM/qwen-code/pull/6578), [#6750](https://github.com/QwenLM/qwen-code/pull/6750), [#6758](https://github.com/QwenLM/qwen-code/pull/6758) |
+| **[@callmeYe](https://github.com/callmeYe)** | Alignement des conversations mémoire, détails des erreurs de tâches mémoire du daemon, rafraîchissement remember de la mémoire, chemin d'installation des Skills, API Skill par workspace | [#6434](https://github.com/QwenLM/qwen-code/pull/6434), [#6431](https://github.com/QwenLM/qwen-code/pull/6431), [#6497](https://github.com/QwenLM/qwen-code/pull/6497), [#6811](https://github.com/QwenLM/qwen-code/pull/6811), [#6816](https://github.com/QwenLM/qwen-code/pull/6816) |
+| **[@chiga0](https://github.com/chiga0)** | Vue transcript figée par Ctrl+O, expansion inline des pensées en mode VP, persistance des artifacts de session | [#5666](https://github.com/QwenLM/qwen-code/pull/5666), [#6079](https://github.com/QwenLM/qwen-code/pull/6079), [#6557](https://github.com/QwenLM/qwen-code/pull/6557) |
+| **[@jifeng](https://github.com/jifeng)** | Amélioration de la lisibilité des tableaux Markdown, double-clic pour afficher le contenu complet d'une cellule | [#6626](https://github.com/QwenLM/qwen-code/pull/6626), [#6530](https://github.com/QwenLM/qwen-code/pull/6530), [#6838](https://github.com/QwenLM/qwen-code/pull/6838) |
+| **[@TianYuan1024](https://github.com/TianYuan1024)** | Questions-réponses interactives SDK, observabilité renforcée des sous-agents, provider xAI Grok | [#6655](https://github.com/QwenLM/qwen-code/pull/6655), [#6580](https://github.com/QwenLM/qwen-code/pull/6580), [#6805](https://github.com/QwenLM/qwen-code/pull/6805) |
+| **[@tanzhenxin](https://github.com/tanzhenxin)** | Support des requêtes modèle NO_PROXY, clamp de la fenêtre de contexte max_tokens, héritage du modèle principal par le sous-agent Explore | [#6640](https://github.com/QwenLM/qwen-code/pull/6640), [#6556](https://github.com/QwenLM/qwen-code/pull/6556), [#6807](https://github.com/QwenLM/qwen-code/pull/6807) |
+| **[@LaZzyMan](https://github.com/LaZzyMan)** | Commande `/learn`, correction de la normalisation des coordonnées mobile-mcp, bouton Approve de /mcp | [#6440](https://github.com/QwenLM/qwen-code/pull/6440), [#6610](https://github.com/QwenLM/qwen-code/pull/6610), [#6518](https://github.com/QwenLM/qwen-code/pull/6518) |
+| **[@Nas01010101](https://github.com/Nas01010101)** | Timeout par défaut configurable des commandes Shell, correction du step cron, documentation tools.disabled, correction YOLO plan mode | [#6628](https://github.com/QwenLM/qwen-code/pull/6628), [#6627](https://github.com/QwenLM/qwen-code/pull/6627), [#6641](https://github.com/QwenLM/qwen-code/pull/6641), [#6630](https://github.com/QwenLM/qwen-code/pull/6630) |
+| **[@zjunothing](https://github.com/zjunothing)** | Timeout configurable de l'agent mémoire, retry du timeout vision bridge, correction des images du presse-papiers en version bureau | [#6459](https://github.com/QwenLM/qwen-code/pull/6459), [#6541](https://github.com/QwenLM/qwen-code/pull/6541), [#6708](https://github.com/QwenLM/qwen-code/pull/6708) |
+| **[@huww98](https://github.com/huww98)** | Déploiement streaming du raisonnement complet par Alt+T | [#6678](https://github.com/QwenLM/qwen-code/pull/6678) |
+| **[@yuanyuanAli](https://github.com/yuanyuanAli)** | Pliage/dépliage AskUserQuestion du Web Shell, slots du composer de bienvenue mobile | [#6588](https://github.com/QwenLM/qwen-code/pull/6588), [#6584](https://github.com/QwenLM/qwen-code/pull/6584) |
+| **[@Alex-ai-future](https://github.com/Alex-ai-future)** | Priorité à la correspondance des noms de commandes CLI, amélioration des réponses d'erreur en plan mode | [#6504](https://github.com/QwenLM/qwen-code/pull/6504), [#6667](https://github.com/QwenLM/qwen-code/pull/6667), [#6764](https://github.com/QwenLM/qwen-code/pull/6764) |
+| **[@Eric-GoodBoy-Tech](https://github.com/Eric-GoodBoy-Tech)** | Gestion des messages de groupe QQ Bot | [#6457](https://github.com/QwenLM/qwen-code/pull/6457) |
+| **[@DragonnZhang](https://github.com/DragonnZhang)** | Documentation de configuration model-provider, condition /goal allongée, troncature des release notes CI desktop | [#6552](https://github.com/QwenLM/qwen-code/pull/6552), [#6665](https://github.com/QwenLM/qwen-code/pull/6665), [#6792](https://github.com/QwenLM/qwen-code/pull/6792) |
+| **[@dexhunter](https://github.com/dexhunter)** | Chemin rapide pour tokens ASCII purs, optimisation du démarrage par chargement paresseux de tree-sitter | [#6551](https://github.com/QwenLM/qwen-code/pull/6551), [#6747](https://github.com/QwenLM/qwen-code/pull/6747) |
+| **[@han-dreamer](https://github.com/han-dreamer)** | Localisation de l'UI du mode d'approbation, chip de branche Git, rafraîchissement remember de la mémoire | [#6592](https://github.com/QwenLM/qwen-code/pull/6592), [#6725](https://github.com/QwenLM/qwen-code/pull/6725), [#6497](https://github.com/QwenLM/qwen-code/pull/6497) |
+| **[@samuelhsin](https://github.com/samuelhsin)** | Couleurs Hex personnalisées pour les groupes de sessions | [#6752](https://github.com/QwenLM/qwen-code/pull/6752) |
+| **[@water-in-stone](https://github.com/water-in-stone)** | Schéma unifié de reprise de session | [#6731](https://github.com/QwenLM/qwen-code/pull/6731) |
+| **[@BZ-D](https://github.com/BZ-D)** | Tags de référence pour les prompts de tâches planifiées | [#6589](https://github.com/QwenLM/qwen-code/pull/6589) |
+| **[@VectorPeak](https://github.com/VectorPeak)** | Préservation du query MCP URL, correction ACP readTextFile | [#6587](https://github.com/QwenLM/qwen-code/pull/6587), [#6704](https://github.com/QwenLM/qwen-code/pull/6704) |
+| **[@BenGuanRan](https://github.com/BenGuanRan)** | Validation des identifiants Feishu, webhook DingTalk en message privé, correction requireMention WeCom | [#6780](https://github.com/QwenLM/qwen-code/pull/6780), [#6891](https://github.com/QwenLM/qwen-code/pull/6891), [#6948](https://github.com/QwenLM/qwen-code/pull/6948) |
+| 🆕 **[@liziwl](https://github.com/liziwl)** | 🎉 Première contribution : commande `qwen update` et `/update` pour la mise à jour en un clic | [#5780](https://github.com/QwenLM/qwen-code/pull/5780) |
+| 🆕 **[@C0d3N1nja97342](https://github.com/C0d3N1nja97342)** | 🎉 Première contribution : correction du nettoyage tempDir des extensions Windows | [#6545](https://github.com/QwenLM/qwen-code/pull/6545) |
+| 🆕 **[@cxruan](https://github.com/cxruan)** | 🎉 Première contribution : z-index configurable du backdrop des dialogues Web Shell | [#6572](https://github.com/QwenLM/qwen-code/pull/6572) |
+| 🆕 **[@harbin1053020115](https://github.com/harbin1053020115)** | 🎉 Première contribution : infrastructure de harnais Web Shell | [#6517](https://github.com/QwenLM/qwen-code/pull/6517) |
+| 🆕 **[@juhuan](https://github.com/juhuan)** | 🎉 Première contribution : méthodes de contrôle SDK et options de transport | [#6492](https://github.com/QwenLM/qwen-code/pull/6492), [#6491](https://github.com/QwenLM/qwen-code/pull/6491) |
+| 🆕 **[@ksws00684315](https://github.com/ksws00684315)** | 🎉 Première contribution : correction des placeholders de templates de sous-agents | [#6672](https://github.com/QwenLM/qwen-code/pull/6672) |
+| 🆕 **[@kaymeer](https://github.com/kaymeer)** | 🎉 Première contribution : correction de la priorité des instructions utilisateur ACP | [#6607](https://github.com/QwenLM/qwen-code/pull/6607) |
+| 🆕 **[@destire-mio](https://github.com/destire-mio)** | 🎉 Première contribution : mise en brouillon du prompt au niveau du projet par Ctrl+S | [#6709](https://github.com/QwenLM/qwen-code/pull/6709) |
+| 🆕 **[@yanchenko](https://github.com/yanchenko)** | 🎉 Première contribution : hook MessageDisplay en streaming | [#6489](https://github.com/QwenLM/qwen-code/pull/6489) |
+| 🆕 **[@ever-o](https://github.com/ever-o)** | 🎉 Première contribution : rendu des tags de citation dans les messages utilisateur du Web Shell | [#6537](https://github.com/QwenLM/qwen-code/pull/6537) |
+| 🆕 **[@ran411285752](https://github.com/ran411285752)** | 🎉 Première contribution : exposition du cycle de vie des appels d'outils ACP | [#6819](https://github.com/QwenLM/qwen-code/pull/6819) |
+| 🆕 **[@morluto](https://github.com/morluto)** | 🎉 Première contribution : préservation de l'affichage des résultats d'outils malformés, validation de la configuration de session, rollback de continuation | [#6925](https://github.com/QwenLM/qwen-code/pull/6925), [#6920](https://github.com/QwenLM/qwen-code/pull/6920), [#6921](https://github.com/QwenLM/qwen-code/pull/6921) |
+| 🆕 **[@AriaZhao-coder](https://github.com/AriaZhao-coder)** | 🎉 Première contribution : le cache trusted-folders n'est plus pollué par les vérifications d'aperçu | [#6900](https://github.com/QwenLM/qwen-code/pull/6900) |
+| 🆕 **[@xurik](https://github.com/xurik)** | 🎉 Première contribution : marqueurs d'origine des sessions daemon de canal | [#6991](https://github.com/QwenLM/qwen-code/pull/6991) |
+
+<Callout type="info">
+  **Mise à jour** : exécutez `npm i @qwen-code/qwen-code@latest -g` pour passer à la dernière version. Vous pouvez aussi utiliser directement la commande `/update` dans Qwen Code pour une mise à jour en un clic.
+</Callout>
+
+Si vous avez des questions ou des suggestions, n'hésitez pas à nous les faire part sur [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) !

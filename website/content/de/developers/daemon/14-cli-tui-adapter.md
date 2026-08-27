@@ -6,7 +6,7 @@
 
 `packages/sdk-typescript/src/daemon/ui/` fügt dem SDK ein `ui/*`-Subpackage hinzu. Es wandelt den Daemon-SSE-Event-Stream durch wiederverwendbare Primitiven in UI-renderbare Transcript-Blöcke um:
 
-- **Normalisierung** (`normalizer.ts`): mappt die 47 bekannten Event-Typen des Daemon-Wire-Schemas (siehe [`09-event-schema.md`](./09-event-schema.md)) auf 37 UI-freundliche `DaemonUiEventType`-Semantik-Events wie `assistant.text.delta`, `tool.update` und `session.metadata.changed`.
+- **Normalisierung** (`normalizer.ts`): mappt die 53 bekannten Event-Typen des Daemon-Wire-Schemas (siehe [`09-event-schema.md`](./09-event-schema.md)) auf 43 UI-freundliche `DaemonUiEventType`-Semantik-Events wie `assistant.text.delta`, `tool.update` und `session.metadata.changed`.
 - **State Machine** (`transcript.ts`, `store.ts`): Pure Reducer und abonnierbarer Store, der UI-Events auf ein geordnetes `DaemonTranscriptBlock[]` projiziert.
 - **Renderer** (`render.ts`, `terminal.ts`, `toolPreview.ts`): Transcript-Blöcke zu HTML, Terminal-Text und Tool-Preview-Strings. Hosts können diese verwenden oder ersetzen.
 - **Konformität** (`conformance.ts`): Host-übergreifende Konsistenztests, die verwendet werden, wenn Kanal-, TUI- und IDE-Oberflächen auf diese Primitiven migrieren.
@@ -15,7 +15,7 @@ Der erste Produktions-Consumer ist **`packages/webui/src/daemon/`** ([#4328](htt
 
 ## Verantwortlichkeiten
 
-- Normalisierung der 47 Daemon-Wire-Events in ein stabiles UI-Vokabular (`DaemonUiEventType`), damit Renderer nicht `rawEvent.data` inspizieren müssen.
+- Normalisierung der 53 Daemon-Wire-Events in ein stabiles UI-Vokabular (`DaemonUiEventType`), damit Renderer nicht `rawEvent.data` inspizieren müssen.
 - Beibehaltung der daemon-monotonen SSE-`eventId` als **primärer Ordnungsschlüssel**, damit verschiedene Clients Transcripts in derselben Reihenfolge rendern.
 - Verwendung eines Pure Reducers zur Erzeugung von Transcript-Blöcken, mit Selektoren für ausstehende Permissions, aktuelles Tool, Approval-Mode, Tool-Fortschritt und Subagent-Children.
 - Bereitstellung von Basis-HTML- und Terminal-Renderern bei gleichzeitiger Ermöglichung host-spezifischen Renderings.
@@ -41,7 +41,7 @@ Der erste Produktions-Consumer ist **`packages/webui/src/daemon/`** ([#4328](htt
 
 ### `DaemonUiEventType`-Vokabular
 
-`ui/types.ts` definiert 37 UI-Event-Typen, gruppiert nach Domäne.
+`ui/types.ts` definiert 43 UI-Event-Typen, gruppiert nach Domäne.
 
 **Chat-Stream (Stage 1)**
 
@@ -71,7 +71,7 @@ Der erste Produktions-Consumer ist **`packages/webui/src/daemon/`** ([#4328](htt
 - `auth.device_flow.started`, `auth.device_flow.throttled`, `auth.device_flow.authorized`
 - `auth.device_flow.failed`, `auth.device_flow.cancelled`
 
-`normalizeDaemonEvent` mappt die 47 bekannten Daemon-Wire-Events auf dieses Vokabular. Unbekannte, nicht modellierte oder fehlerhafte Event-Typen werden auf `debug` normalisiert und behalten `rawEvent` für Host-Diagnosen bei.
+`normalizeDaemonEvent` mappt die 53 bekannten Daemon-Wire-Events auf dieses Vokabular. Unbekannte, nicht modellierte oder fehlerhafte Event-Typen werden auf `debug` normalisiert und behalten `rawEvent` für Host-Diagnosen bei.
 
 ### Reducer und Selektoren
 
@@ -117,7 +117,7 @@ flowchart LR
     A --> B["DaemonClient.subscribeEvents<br/>parseSseStream"]
     B --> C["asKnownDaemonEvent<br/>(09-event-schema.md)"]
     C --> D["normalizeDaemonEvent<br/>ui/normalizer.ts"]
-    D --> E["DaemonUiEvent<br/>(37 UI-freundliche Typen)"]
+    D --> E["DaemonUiEvent<br/>(43 UI-freundliche Typen)"]
     E --> F["reduceDaemonTranscriptEvents<br/>ui/transcript.ts"]
     F --> G["DaemonTranscriptState +<br/>DaemonTranscriptBlock[]"]
     G --> H["Renderer<br/>(render.ts HTML / terminal.ts / host-spezifisch)"]
@@ -128,7 +128,7 @@ Hosts können bei `(E)` stoppen und ihren eigenen Reducer implementieren oder `(
 
 ### `state_resync_required`
 
-`session.state_resync_required` wird auf einen Transcript-"missed range"-Marker abgebildet. UI-Code kann `formatMissedRange(state)` aufrufen, um Text wie "missed events X-Y" zu rendern. Der Reducer **wendet weiterhin spätere Events an**, markiert betroffene Blöcke jedoch mit `resyncRecovery: true`, damit Renderer visuellen Kontext hinzufügen können. Siehe [`10-event-bus.md`](./10-event-bus.md) für Ring-Eviction- und `state_resync_required`-Semantik.
+`session.state_resync_required` wird auf einen Transcript-"missed range"-Marker abgebildet. UI-Code kann `formatMissedRange(state)` aufrufen, um Text wie "missed events X-Y" zu rendern. Der Reducer setzt `awaitingResync` und überspringt gewöhnliche Delta-Events, bis der Consumer-Code das begrenzte Replay-Snapshot-Fenster der Session neu lädt und die Sperre aufhebt. Ein geladener Snapshot kann mit `history_truncated` beginnen; dieser Marker wird nur als Status gerendert und darf keine weitere Resync-Schleife auslösen. Siehe [`10-event-bus.md`](./10-event-bus.md) für Ring-Eviction- und `state_resync_required`-Semantik.
 
 ## Consumer
 

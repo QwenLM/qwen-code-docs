@@ -20,8 +20,8 @@
 | `symlink_escape`           | 400  | ターゲットがシンボリックリンクである。                                           | 解決されたパスを直接指定する。シンボリックリンクは設計上拒否される。                                                     |
 | `path_not_found`           | 404  | `ENOENT`。                                                                       | ファイルが存在することを確認する。Linux では大文字小文字を区別するパスをチェックする。                                   |
 | `binary_file`              | 422  | テキストルートでバイナリと判定されたコンテンツ。                                 | 生のバイトには `GET /file/bytes` を使用する。テキストルートはバイナリを拒否する。                                       |
-| `file_too_large`           | 413  | `MAX_READ_BYTES`（256 KiB）または `MAX_WRITE_BYTES`（5 MiB）を超過した。         | バイト範囲読み取りを使用する。書き込みを分割する。                                                                       |
-| `hash_mismatch`            | 409  | 楽観的同時実行制御の `expectedSha256` が失敗した。                               | ファイルを再読み取りし、新しいハッシュで再試行する。                                                                     |
+| `file_too_large`           | 413  | 大きなテキストに有限の行制限がない、大きなテキストが UTF-8 でない、または書き込みが `MAX_WRITE_BYTES`（5 MiB）を超過した。 | 大きな UTF-8 テキストには有限の行制限を使用する、バイトウィンドウを使用する、または書き込みを分割する。                    |
+| `hash_mismatch`            | 409  | 楽観的同時実行制御の `expectedSha256` が失敗した、または安定読み取り中にファイルが変更された。 | ファイルを再読み取りし、新しいバージョン/ハッシュで再試行する。                                                          |
 | `file_already_exists`      | 409  | 既存のファイルに対して `mode: 'create'` を使用した。                             | `mode: 'overwrite'` を使用するか、新しいパスを選択する。                                                                 |
 | `text_not_found`           | 422  | `POST /file/edit` の検索文字列がファイル内に存在しない。                         | 検索文字列を再確認する。空白文字やエンコーディングの不一致が一般的な原因。                                               |
 | `ambiguous_text_match`     | 422  | 1 つ必要なところで複数マッチした。                                               | 検索文字列に周囲のコンテキストを追加して一意にする。                                                                     |
@@ -39,13 +39,13 @@
 
 | クラス                               | HTTP | 原因                                                                                    | 修復策                                                                                                                                                                           |
 | ------------------------------------ | ---- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SessionNotFoundError`               | 404  | sessionId が `byId` にない。                                                            | 再作成またはアタッチする。セッションが再利用された可能性がある。                                                                                                                 |
+| `SessionNotFoundError`               | 404  | sessionId が `byId` にない（`code: "session_not_found"`）、またはセッションがクローズ中（`code: "session_closing"`）。 | `session_not_found` の場合: 再作成またはアタッチする。セッションが回収された可能性がある。`session_closing` の場合: 待機して再試行する。同時のクローズが進行中。DELETE ルートは `session_closing` を冪等な成功として扱う。 |
 | `WorkspaceMismatchError`             | 400  | `POST /session` の `cwd` がデーモンの `boundWorkspace` と異なる。                        | `cwd` を省略する（バインドされた workspace を使用）か、`cwd` にバインドされたデーモンにルーティングする。                                                                         |
 | `SessionLimitExceededError`          | 503  | `byId.size >= maxSessions`。                                                             | 古いセッションを閉じる。`--max-sessions` を増やす。                                                                                                                              |
 | `InvalidClientIdError`               | 400  | `X-Qwen-Client-Id` が `[A-Za-z0-9._:-]{1,128}` の範囲外。                              | クライアント ID をサニタイズする。                                                                                                                                               |
 | `InvalidSessionMetadataError`        | 400  | `displayName` が 256 文字を超える、または制御文字を含む。                                | トリム / サニタイズする。                                                                                                                                                        |
 | `InvalidSessionScopeError`           | 400  | 未知の `sessionScope` 値。                                                               | `'single'` または `'thread'` を使用する。                                                                                                                                        |
-| `RestoreInProgressError`             | 409  | 同時の `loadSession` / `resumeSession`。                                                 | 待機 + 再試行。                                                                                                                                                                  |
+| `RestoreInProgressError`             | 409  | `loadSession`、`resumeSession`、または `POST /session` の呼び出し元指定 ID が、同じ ID をすでに所有する別の登録と競合する。                                                                                                                                                                    | アナウンスされた遅延を待ってから、要求された restore または spawn を再試行します。放棄されたクリーンアップは予算から導出されたバックオフを伴います。                                                      |
 | `WorkspaceInitConflictError`         | 409  | 既存のファイルに対して `POST /workspace/init` を `force` なしで実行。                      | `force: true` を渡すか、別のパスを選択する。                                                                                                                                    |
 | `WorkspaceInitPathEscapeError`       | 400  | init パスがワークスペース外に出る。                                                       | `workspaceCwd` 内のパスを使用する。                                                                                                                                              |
 | `WorkspaceInitSymlinkError`          | 400  | init パスがシンボリックリンク。                                                           | 解決されたパスを指定する。                                                                                                                                                        |
@@ -57,8 +57,10 @@
 | `CancelSentinelCollisionError`       | 500  | エージェントが `'__cancelled__'` を正当なオプションラベルとして公開した。                 | エージェントのバグ — オプションラベルをセンチネル以外のものに変更する。                                                                                                          |
 | `PermissionPolicyNotImplementedError` | 500  | 要求されたポリシーがこのデーモンに組み込まれていない。                                   | デーモンを更新するか、`policy.permissionStrategy` を変更する。                                                                                                                   |
 | `BridgeChannelClosedError`           | 503  | 呼び出し中に ACP 子プロセスのチャネルが閉じた。                                           | 再接続 / 再試行。原因は `session_died` を確認する。                                                                                                                               |
-| `BridgeTimeoutError`                 | 504  | ブリッジレベルのウォールクロックを超過。                                                   | 再試行。根本的な遅延を調査する。                                                                                                                                                  |
-| `MissingCliEntryError`               | 500  | `qwen` CLI エントリファイルが見つからない（`status.ts` で定義、`bridgeErrors.ts` ではない）。 | CLI インストールが完全であることを確認する。`packages/cli/index.ts` が存在するかチェックする。                                                                                   |
+| `BridgeTimeoutError`                  | 504  | ブリッジレベルのウォールクロックを超過。                                                   | 再試行。根本的な遅延を調査する。                                                                                                                                                  |
+| `SessionRestoreTimeoutError`          | 504  | ACP セッションのロード/再開が専用の restore 予算を超過した。                                                                                                                                                           | アナウンスされた遅延の後に再試行。予算を引き上げる前に restore ステージのトレースを調査する。                                                                                        |
+| `BridgeChannelQuarantinedError`       | 503  | 放棄された restore のクリーンアップが結論が出なかった（`restore_cleanup_failed`）、または放棄された restore がデッドライン後に完全な予算 settling を完了していない（`restore_settlement_overdue`）。どちらの場合もワークスペースチャネルは drain するまで新しいセッションを拒否します。503 ボディは `reason` と `retryAfterSeconds` を保持します。 | 既存のセッションを引き続き使用し、チャネルがリサイクルされるのを待ってから、新しいセッションの作業を再試行します。                                                                    |
+| `MissingCliEntryError`                | 500  | `qwen` CLI エントリファイルが見つからない（`status.ts` で定義、`bridgeErrors.ts` ではない）。 | CLI インストールが完全であることを確認する。`packages/cli/index.ts` が存在するかチェックする。                                                                                   |
 
 ## 起動時設定エラー (`packages/cli/src/serve/run-qwen-serve.ts`)
 
@@ -83,6 +85,7 @@
 | `blocked_egress`           | 送信ネットワークプローブが失敗した。                                        |
 | `auth_env_error`           | 認証関連の環境変数、プロバイダ、または信頼ゲート設定が無効である。             |
 | `init_timeout`             | デーモン側の初期化ステップがウォールクロックを超過した。                      |
+| `restore_timeout`          | ACP セッションのロード/再開が専用の restore 予算を超過した。                  |
 | `protocol_error`           | ACP / HTTP プロトコルの不一致。                                              |
 | `missing_file`             | 必要なローカルファイルが見つからない。                                       |
 | `parse_error`              | ローカルファイルまたはリクエストのパースエラー。                               |
@@ -102,7 +105,7 @@
 | ---------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `401`      | `{ error: 'Unauthorized' }`                   | Bearer トークンがない / 間違っている / スキームがない。`missing header` / `wrong scheme` / `wrong token` で統一されており、プローブで区別できない。            |
 | `401`      | `{ error: '...', code: 'token_required' }`    | トークンなしのループバックデーモンで、変更ゲートの厳格なルートにアクセス。SDK は「--token / --require-auth を設定」というヒントを表示する。                       |
-| `403`      | `{ error: 'Request denied by CORS policy' }`  | `denyBrowserOriginCors` が `Origin` ヘッダーを含むリクエストを拒否した。                                                                                        |
+| `403`      | `{ error: 'Request denied by CORS policy' }`  | `allowOriginCors`（ランタイム）/ `denyBrowserOriginCors`（ブートストラップ）が `Origin` ヘッダーを含むリクエストを拒否した。                                      |
 | `403`      | `{ error: 'Invalid Host header' }`            | `hostAllowlist` が `Host` ヘッダーを拒否した（DNS リバインディング防御）。                                                                                      |
 
 完全な認証モデルは [`12-auth-security.md`](./12-auth-security.md) を参照。
@@ -149,7 +152,7 @@ flowchart TD
 - **`PermissionForbiddenError` の理由 (`designated_mismatch` / `remote_not_allowed`) はオーバーロードされています**。`designated` ポリシーと `consensus` ポリシーの両方にまたがって使用されます。監査ログはこれらを正確に区別しますが、ワイヤー形式では区別されません。
 - **`CancelSentinelCollisionError` はエージェント側のバグを示します**。セキュリティイベントではありません。ブリッジは、センチネルが実際のオプションと一致することを黙って許可するのではなく、リクエストを拒否します。
 - **SDK 側の型付きエラーはまだ進化中です。** 呼び出し側は、JS クラスの同一性をワイヤー越しに信頼するのではなく、ボディフィールドでルーティングする必要があります。
-- **`internal_error` は常に調査すべきです。** これは、errno 以外のパス用に予約された種類を使用して `FsError` コンストラクタが呼び出された（プログラマのエラー）ことを示します。レスポンスボディの `cause` フィールドに元の例外が含まれている可能性があります。
+- **`internal_error` は常に調査すべきです。** これは、`FsError` コンストラクタが errno 以外のパス用に予約された種類で呼び出されたことを示します（プログラマのエラー）。レスポンスボディの `cause` フィールドに元のスローが含まれている場合があります。
 
 ## 参照
 
@@ -158,3 +161,4 @@ flowchart TD
 - `packages/acp-bridge/src/status.ts` (`SERVE_ERROR_KINDS`, `ServeErrorKind`)
 - `packages/cli/src/serve/auth.ts` (認証ボディ)
 - ワイヤーリファレンス: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md).
+

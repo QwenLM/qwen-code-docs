@@ -38,6 +38,26 @@ Comece a digitar `/` para autocompletar e navegar pelas Skills disponíveis junt
 
 As Skills são armazenadas como diretórios contendo um arquivo `SKILL.md`.
 
+### Gerar uma Skill de projeto com `/learn`
+
+Use `/learn` para destilar uma fonte de conhecimento existente em uma Skill reutilizável de projeto:
+
+```text
+/learn https://docs.example.com/api
+/learn ~/projects/acme-sdk
+/learn Our deploy process: run migrate, deploy the service, then check health
+```
+
+O comando é executado como um turno normal do agente e cria o resultado em `.qwen/skills/learned-skill-<name>/SKILL.md` com `source: learned` no seu frontmatter. Revise as instruções geradas antes de usá-las ou compartilhá-las.
+
+O `/learn` também aceita vídeos `.mp4`, `.webm`, `.mov` e `.m4v` locais ou de link direto. Adicione texto após o caminho ou URL para focar a Skill gerada em uma parte do tutorial:
+
+```text
+/learn ./tutorial.mp4 focus on the deployment workflow
+```
+
+O aprendizado de vídeo requer um modelo compatível com vídeo em um provedor compatível com OpenAI. URLs de página do YouTube não são entrada de vídeo direta; baixe o vídeo para o workspace e passe seu caminho local.
+
 ### Skills Pessoais
 
 As Skills pessoais estão disponíveis em todos os seus projetos. Armazene-as em `~/.qwen/skills/`:
@@ -67,6 +87,20 @@ Use Skills de projeto para:
 - Utilitários e scripts compartilhados
 
 As Skills de projeto podem ser adicionadas ao git e ficam automaticamente disponíveis para os colegas de equipe.
+
+### Manter Skills de projeto geradas automaticamente
+
+O Qwen Code rastreia localmente o uso bem-sucedido de Skills de projeto geradas, inclusive enquanto a geração de Auto Skill está desabilitada, para que a reativação da manutenção não confunda uma skill usada recentemente com uma inativa. Quando o **Auto Skill** está habilitado, ele move periodicamente Skills geradas inativas para fora da biblioteca ativa. Apenas diretórios chamados `.qwen/skills/auto-skill-*` cujo frontmatter do `SKILL.md` contém `source: auto-skill` são gerenciados; Skills pessoais, de extensão, integradas e escritas manualmente nunca são selecionadas.
+
+- Após 30 dias sem uso bem-sucedido ou edição do `SKILL.md`, uma auto-skill é marcada como obsoleta.
+- Após 90 dias, seu diretório completo é movido para `.qwen/archived-skills/`. Nada é excluído permanentemente.
+- A manutenção automática é executada no máximo uma vez a cada 7 dias em workspaces confiáveis. Cada auto-skill recém-observada recebe um período de carência completo antes da manutenção começar.
+- Uma auto-skill fixada é excluída das transições automáticas de obsolescência e arquivamento até ser desafixada.
+- Nomes de diretório arquivados permanecem reservados, e um destino de arquivo existente ignora apenas essa colisão em vez de parar a manutenção para outras skills.
+
+Use `/curator` para ver auto-skills ativas, obsoletas, arquivadas e fixadas. Execute `/curator run --dry-run` para visualizar uma passagem de manutenção, `/curator run` para aplicá-la imediatamente, `/curator pin <directory>` ou `/curator unpin <directory>` para controlar a manutenção por skill, ou `/curator restore <directory>` para mover uma auto-skill arquivada de volta à biblioteca ativa.
+
+O status e as pré-visualizações dry-run estão disponíveis em modo seguro e workspaces não confiáveis. Aplicar manutenção, alterar fixações e restaurar auto-skills arquivadas requerem um workspace confiável fora do modo seguro.
 
 ## Escrever o SKILL.md
 
@@ -183,6 +217,7 @@ O Qwen Code descobre Skills a partir de:
 - Skills pessoais: `~/.qwen/skills/`
 - Skills de projeto: `.qwen/skills/`
 - Skills de extensão: Skills fornecidas por extensões instaladas
+- Skills integradas: Skills distribuídas com o Qwen Code
 
 ### Skills de Extensão
 
@@ -310,7 +345,7 @@ code ~/.qwen/skills/my-skill/SKILL.md
 code .qwen/skills/my-skill/SKILL.md
 ```
 
-As alterações entram em vigor na próxima vez que você iniciar o Qwen Code. Se o Qwen Code já estiver em execução, reinicie-o para carregar as atualizações.
+Durante uma sessão normal, o Qwen Code monitora os diretórios de Skills pessoais e de projeto. Adicionar, editar ou remover uma Skill atualiza a lista de Skills e o estado de invocação automaticamente após um curto atraso. O modo bare não inicia esses watchers, então reinicie o Qwen Code para carregar alterações de Skills nesse modo.
 
 ## Remover uma Skill
 

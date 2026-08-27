@@ -6,7 +6,7 @@ import { ChevronDownIcon, GlobeIcon } from "lucide-react";
 import cn from "clsx";
 
 // 语言配置
-const languages = [
+export const languages = [
   { locale: "en", name: "English", flag: "🇺🇸" },
   { locale: "zh", name: "中文", flag: "🇨🇳" },
   { locale: "de", name: "Deutsch", flag: "🇩🇪" },
@@ -14,6 +14,7 @@ const languages = [
   { locale: "ru", name: "Русский", flag: "🇷🇺" },
   { locale: "ja", name: "日本語", flag: "🇯🇵" },
   { locale: "pt-BR", name: "Português (BR)", flag: "🇧🇷" },
+  { locale: "ko", name: "한국어", flag: "🇰🇷" },
 ];
 
 const languageLocales = languages.map((language) => language.locale);

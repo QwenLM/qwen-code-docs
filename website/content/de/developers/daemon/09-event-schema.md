@@ -2,7 +2,7 @@
 
 ## Übersicht
 
-Jeder vom Daemon auf `GET /session/:id/events` ausgegebene SSE-Frame hat die Form `{ id, v, type, data, originatorClientId?, _meta? }`. `v: 1` ist die aktuelle `EVENT_SCHEMA_VERSION`. `type` stammt aus dem abgeschlossenen, versionsgebundenen `DAEMON_KNOWN_EVENT_TYPE_VALUES`-Set in `packages/sdk-typescript/src/daemon/events.ts`; das aktuelle Set umfasst 47 bekannte Event-Typen. Das `_meta`-Feld des Envelopes wird an der SSE-Schreibgrenze von `formatSseFrame()` in `packages/cli/src/serve/routes/sse-events.ts` gestempelt; siehe [Metadaten auf Envelope-Ebene](#envelope-level-metadata).
+Jeder vom Daemon auf `GET /session/:id/events` ausgegebene SSE-Frame hat die Form `{ id, v, type, data, originatorClientId?, _meta? }`. `v: 1` ist die aktuelle `EVENT_SCHEMA_VERSION`. `type` stammt aus dem abgeschlossenen, versionsgebundenen `DAEMON_KNOWN_EVENT_TYPE_VALUES`-Set in `packages/sdk-typescript/src/daemon/events.ts`. Das `_meta`-Feld des Envelopes wird an der SSE-Schreibgrenze von `formatSseFrame()` in `packages/cli/src/serve/routes/sse-events.ts` gestempelt; siehe [Metadaten auf Envelope-Ebene](#envelope-level-metadata).
 
 Das SDK stellt `asKnownDaemonEvent(evt)` bereit. Es gibt ein diskriminiertes `KnownDaemonEvent` für bekannte Event-Typen und `undefined` für andere Typen zurück. SDK-Consumer können dadurch Forward Compatibility handhaben, ohne ein gleichzeitiges SDK-Upgrade zu benötigen, wenn ein neuerer Daemon einen Event-Typ hinzufügt; der Session-Reducer erfasst diese als `unrecognizedKnownEventCount`.
 
@@ -15,7 +15,7 @@ Das Wire-Format befindet sich in [`../qwen-serve-protocol.md`](../qwen-serve-pro
 - Bereitstellung reiner Reducer (`reduceDaemonSessionEvent`, `reduceDaemonAuthEvent`), die einen Event-Stream in den SDK-View-State projizieren.
 - Broadcast des `typed_event_schema` Capability-Tags als Informationssignal. Wenn das Tag fehlt, fällt `asKnownDaemonEvent` dennoch auf `unknown` zurück.
 
-## Event-Vokabular (47 bekannte Typen)
+## Event-Vokabular
 
 Gruppiert nach Domäne.
 
@@ -27,7 +27,8 @@ Gruppiert nach Domäne.
 | `session_metadata_updated` | S->C           | `PATCH /session/:id/metadata`                                                 | `sessionId, displayName?`                                                          |
 | `session_died`             | S->C terminal  | `channel.exited`                                                              | `sessionId, reason, exitCode? \| null, signalCode? \| null`                        |
 | `session_closed`           | S->C terminal  | `DELETE /session/:id` oder programmatisches Schließen                         | `sessionId, reason: 'client_close' \| string, closedBy?`                           |
-| `session_snapshot`         | S->C synthetic | Snapshot-Frame nach SSE-Attach / Replay                                       | `sessionId, currentModelId: string \| null, currentApprovalMode: string \| null`   |
+| `session_snapshot`         | S->C synthetic | Snapshot-Frame nach SSE-Attach / Replay                                       | `sessionId, currentModelId: string \| null, currentApprovalMode: string \| null, recordingDegraded: boolean` |
+| `session_recording_degraded` | S->C           | Der Session-Transcript-Writer hat nach einem asynchronen Schreibfehler permanent gestoppt | `sessionId, reason: 'write_failed'`                                                                          |
 
 ### Synthetic Frames auf Subscriber-Ebene
 
@@ -37,7 +38,10 @@ Gruppiert nach Domäne.
 | `slow_client_warning`   | Live-Frame-Backlog oder Live-Serialisierte-Bytes-Backlog >= 75%; force-pushed und **hat keine `id`**                                                                                                                                 | `queueSize, maxQueued, lastEventId, queuedBytes?, maxQueuedBytes?, threshold?: 'frames' \| 'bytes' \| 'frames_and_bytes'`; wird erneut aktiviert, nachdem sowohl Frame- als auch Byte-Messungen unter 37,5 % fallen.                                                                                                      |
 | `stream_error`          | `SubscriberLimitExceededError` oder ein anderer Route-Stream-Fehler                                                                                                                                                                  | `error: string`; terminal für die Subscription.                                                                                                                                                                                                                                                                            |
 | `state_resync_required` | `subscribe({lastEventId})` erkennt, dass der Daemon-Ring nicht mehr `[lastEventId+1, earliestInRing-1]` enthält oder der Client-Cursor aus einer vorherigen Bus-Epoche stammt. Force-pushed **vor** den verbleibenden Replay-Frames und **hat keine `id`**. | `reason: 'ring_evicted' \| 'epoch_reset' \| string`, `lastDeliveredId: number`, `earliestAvailableId: number`. Dies ist ein Recovery-Signal, nicht terminal: der SSE-Stream bleibt offen und Replay- sowie Live-Frames werden fortgesetzt. Der SDK-Reducer setzt `awaitingResync = true` und überspringt Deltas, bis der Caller mit `loadSession` zurücksetzt. |
+| `history_truncated`     | `POST /session/:id/load` gibt einen begrenzten Replay-Snapshot zurück, nachdem ältere In-Memory-Replay-Einträge verworfen wurden. Vorangestellt vor `compactedReplay` und **hat keine `id`**.                                                                                                      | `reason: 'replay_window_exceeded'`, `truncatedEvents: number`, `retainedEvents: number`, `maxBytes: number`, `truncatedTurns?: number`, `fullTranscriptAvailable: boolean`. Dies ist ein Statusmarker, keine Resync-Aufforderung; Clients rendern ihn und setzen die Anwendung des behaltenen Replays fort.              |
 | `replay_complete`       | ID-loses Sentinel, das ausgegeben wird, nachdem die `Last-Event-ID`-Replay-Schleife abgeschlossen ist, für sowohl sauberes Replay als auch Ring-Evicted-Pfade, selbst wenn `data.replayedCount === 0`. **Keine `id`**                | `replayedCount: number`; ermöglicht es Consumern, die Catch-up-UI deterministisch ohne Timeout zu entfernen.                                                                                                                                                                                                               |
+
+`fullTranscriptAvailable` ist ein boolesches Capability-Flag, kein literaler `true`-Typ. Aktuelle Daemons emittieren `true`, wenn `/session/:id/transcript` verwendet werden kann, um das persistierte Transkript seitenweise abzurufen; ältere oder eingeschränkte Daemons können `false` emittieren, und Clients sollten das begrenzte Replay normal weiter rendern.
 
 ### Permissions (F3 + base)
 
@@ -72,7 +76,7 @@ Gruppiert nach Domäne.
 | `agent_changed`          | S->C     | `change: 'created' \| 'updated' \| 'deleted', name, level: 'project' \| 'user'`                                                                |
 | `approval_mode_changed`  | S->C     | `sessionId, previous, next, persisted: boolean`                                                                                                |
 | `tool_toggled`           | S->C     | `toolName, enabled`; betrifft den nächsten ACP-Child-Spawn und mutiert nicht bereits laufende Sessions.                                            |
-| `settings_changed`       | S->C     | Workspace-Einstellungen erfolgreich geschrieben. Payload ist offen; Consumer sollten mit Read-after-write aktualisieren.                                           |
+| `settings_changed`       | S->C      | Workspace-Einstellungen erfolgreich geschrieben. Payload enthält `key`; `value`, `scope` und Skill-Toggle-`mutation` sind optional.                        |
 | `settings_reloaded`      | S->C     | Daemon-Workspace-Service hat Einstellungen neu eingelesen. Payload ist offen.                                                                                     |
 | `trust_change_requested` | S->C     | `workspaceCwd, desiredState: 'trusted' \| 'untrusted', reason?`                                                                                |
 | `workspace_initialized`  | S->C     | `path, action: 'created' \| 'overwrote' \| 'noop', originatorClientId?`                                                                        |
@@ -116,10 +120,10 @@ Diese Events sind auf den Workspace bezogen (workspace-keyed), nicht auf die Ses
 | Typ                   | Richtung | Trigger                                                                                                             | Wichtige Payload-Felder                                                                                                                                                                               |
 | --------------------- | -------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `prompt_cancelled`    | S->C     | Prompt wurde über die explizite `cancelSession`-Route **oder** durch SSE-Disconnect des Originators abgebrochen                        | Envelope versieht den abbrechenden Client mit dem `originatorClientId`-Stempel. Dies bedeutet "Abbruch angefordert", nicht "Abbruch bestätigt". Peer-Subscriber erfahren dadurch, dass der Prompt beendet wurde.              |
-| `turn_complete`       | S->C     | Ein Turn wurde erfolgreich abgeschlossen                                                                                       | `sessionId, stopReason, promptId?`. `promptId` verknüpft mit nicht-blockierenden Prompt-Antworten (`202`). Das SDK ordnet SSE-Events darüber dem ursprünglichen Prompt zu.                                  |
+| `turn_complete`       | S->C     | Ein Turn wurde erfolgreich abgeschlossen                                                                                       | `sessionId, stopReason, promptId?, branchPoint?`. `promptId` verknüpft mit nicht-blockierenden Prompt-Antworten (`202`). Eligible completed turns include `branchPoint: { assistantRecordUuid, checkpointUuid }`. |
 | `turn_error`          | S->C     | Ein Turn ist fehlgeschlagen                                                                                                       | `sessionId, message, code?, promptId?`; derselbe `promptId`-Korrelationsmechanismus.                                                                                                                   |
 | `session_rewound`     | S->C     | `POST /session/:id/rewind` war erfolgreich                                                                                | `sessionId, promptId, targetTurnIndex, filesChanged[], filesFailed[], originatorClientId?`                                                                                                       |
-| `session_branched`    | S->C     | `POST /session/:id/branch` hat einen Branch aus einer bestehenden Session erstellt                                                | `sourceSessionId, newSessionId, displayName, originatorClientId?`                                                                                                                                |
+| `session_branched`    | S->C     | Legacy-Kompatibilitäts-Event; der aktuelle Branch-Endpunkt gibt sein Ergebnis direkt zurück und veröffentlicht dieses Event nicht | `sourceSessionId, newSessionId, displayName, originatorClientId?`. Reader behalten Support für ältere Producer bei.                                                                                 |
 | `followup_suggestion` | S->C     | ACP-Child hat Ghost-Text-Follow-up-Vorschläge nach `end_turn` generiert, weitergeleitet über session-spezifisches SSE               | `sessionId, suggestion, promptId`; der Wire überträgt nur Vorschläge, bei denen `getFilterReason()===null` ist. Clients rendern sie als Ghost-Text für Input-Platzhalter und invalidieren sie beim nächsten `sendPrompt`. |
 | `user_shell_command`  | S->C     | Benutzer hat einen Shell-Befehl über `POST /session/:id/shell` gestartet; an andere Subscriber in derselben Session verteilt | `sessionId, command, shellId, originatorClientId?`. Es gibt noch keine typisierte `DaemonXxxData`-Schnittstelle; `asKnownDaemonEvent` gibt `undefined` zurück und der UI-Normalizer parst es ad hoc.            |
 | `user_shell_result`   | S->C     | Ergebnis des obigen Shell-Befehls                                                                                   | `sessionId, shellId, exitCode, output, aborted`. Gleicher Hinweis zum ad-hoc-Parsing wie bei `user_shell_command`.                                                                                               |
@@ -129,7 +133,7 @@ Diese Events sind auf den Workspace bezogen (workspace-keyed), nicht auf die Ses
 | Aspekt                                 | Quelle                                         | Hinweise                                                                                                              |
 | -------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `EVENT_SCHEMA_VERSION = 1`             | `packages/acp-bridge/src/eventBus.ts`          | Wird in jedem Frame gesendet.                                                                                               |
-| `DAEMON_KNOWN_EVENT_TYPE_VALUES`       | `packages/sdk-typescript/src/daemon/events.ts` | Abgeschlossene Liste mit 47 Typen.                                                                                         |
+| `DAEMON_KNOWN_EVENT_TYPE_VALUES`       | `packages/sdk-typescript/src/daemon/events.ts` | Abgeschlossene Liste mit 53 Typen.                                                                                         |
 | `DaemonEventEnvelope<TType, TData>`    | `events.ts`                                    | Generische Envelope.                                                                                                  |
 | `DaemonKnownEventType`                 | `events.ts`                                    | `typeof DAEMON_KNOWN_EVENT_TYPE_VALUES[number]`.                                                                   |
 | Payload-Typen pro Event                | `events.ts`                                    | Die meisten Event-Typen haben eine `DaemonXxxData`-Schnittstelle; `user_shell_*` wird derzeit ad hoc vom UI-Normalizer geparst. |
@@ -145,6 +149,7 @@ Diese Events sind auf den Workspace bezogen (workspace-keyed), nicht auf die Ses
 - `alive: boolean` - wird nach einem Terminal-Frame (`session_died`, `session_closed`, `client_evicted`, `stream_error`) auf `false` gesetzt.
 - `currentModelId?: string` - aus `model_switched`.
 - `displayName?: string` - aus `session_metadata_updated`.
+- `recordingDegraded: boolean` - sticky Session-Recording-State von `session_recording_degraded`; ein expliziter `session_snapshot.recordingDegraded`-Wert ist maßgebend.
 - `pendingPermissions: Record<string, DaemonPermissionRequestData>` - offene Requests, gekeyed nach `requestId`; bereinigt durch `permission_resolved` / `permission_already_resolved`.
 - `lastSessionUpdate?: DaemonSessionUpdateData` - neuestes `session_update`.
 - `lastModelSwitchFailure?: DaemonModelSwitchFailedData` - aus `model_switch_failed`.
@@ -233,7 +238,7 @@ Events, die durch einen Request mit einer registrierten `X-Qwen-Client-Id` ausge
 
 ## Tool-Call `_meta` (Provenance / serverId)
 
-Dies ist getrennt vom Envelope-`_meta`: ACP-`session/update`-Payloads können ihr eigenes `_meta` in `event.data._meta` tragen. `ToolCallEmitter` (`packages/cli/src/acp-integration/session/emitters/ToolCallEmitter.ts`) versieht bei `emitStart`, `emitResult` und `emitError` zwei Felder mit Werten:
+Dies ist getrennt vom Envelope-`_meta`: ACP-`session/update`-Payloads können ihr eigenes `_meta` in `event.data._meta` tragen. `ToolCallEmitter` (`packages/cli/src/acp-integration/session/emitters/tool-call-emitter.ts`) versieht bei `emitStart`, `emitResult` und `emitError` zwei Felder mit Werten:
 
 | Feld | Typ | Auflösungsregel |
 | ------------ | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -260,6 +265,7 @@ Während `awaitingResync = true` ist, **überspringt der Reducer die Delta-Anwen
 | `client_evicted` | Wie oben. |
 | `stream_error` | Wie oben. |
 | `session_snapshot` | Full-State-Authoritative-Frame; sicher während des Resyncs anzuwenden. |
+| `session_recording_degraded` | Sticky-Safety-Signal, unabhängig vom Transkript-Delta-State. |
 
 `lastEventId` schreitet auch während des Resyncs monoton durch `advanceLastEventId(base)` fort. Nachdem der Caller zurückgesetzt und `awaitingResync` gelöscht hat, richten sich nachfolgende Deltas am korrekten Cursor aus.
 

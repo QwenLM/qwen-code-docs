@@ -7,10 +7,10 @@
 ## 职责
 
 - 解析并验证 `ServeOptions`：监听地址、认证、工作区、会话/连接上限、MCP 预算/池、CORS、prompt/SSE/会话空闲超时、速率限制及相关开关。
-- 对绑定的工作区进行**规范化**处理，且仅执行一次。相同的规范化形式由 `/capabilities`、`POST /session` 回退机制和 bridge 共享。
+- 对主工作区进行**规范化**处理，且仅执行一次；在注册会话运行时之前，对每个重复的 `--workspace` 也进行规范化。主规范化形式由 `/capabilities.workspaceCwd`、`POST /session` 回退机制和主 bridge 共享。
 - 拒绝不安全或无效的启动配置：无 token 的非环回绑定、无 token 的 `--require-auth`、无 token 的 `--allow-origin '*'`、无正数 `mcpClientBudget` 的 `mcpBudgetMode='enforce'`、不存在或非目录的 `--workspace`，以及无效的超时或速率限制值。
 - 构建 `WorkspaceFileSystem` 工厂、权限审计发布者、`DaemonStatusProvider` 和 `acp-bridge`。
-- 构建 Express 应用，连接中间件（`denyBrowserOriginCors` / `allowOriginCors` -> `hostAllowlist` -> 访问日志 -> `bearerAuth` -> 速率限制 -> JSON 解析器 -> 遥测 -> 每路由 `mutationGate`），并挂载会话、工作区 CRUD、文件、设备流认证、权限投票和 ACP HTTP 路由。
+- 构建 Express 应用，连接中间件（`allowOriginCors`（基于可变来源允许列表） -> `hostAllowlist` -> 访问日志 -> `bearerAuth` -> 速率限制 -> JSON 解析器 -> 遥测 -> 每路由 `mutationGate`），并挂载会话、工作区 CRUD、文件、设备流认证、权限投票和 ACP HTTP 路由。（无条件拒绝的 `denyBrowserOriginCors` 墙仅保留在引导应用 `run-qwen-serve.ts` 中。）
 - 绑定监听端口并注册信号处理器。
 - 在 SIGINT/SIGTERM 上运行两阶段关闭；在收到第二个信号时强制退出。
 
@@ -20,19 +20,19 @@
 
 **应用工厂**：`packages/cli/src/serve/server.ts` 中的 `createServeApp(opts, getPort, deps)`。构建 Express `Application`。直接嵌入者和测试无需引导包装即可调用它。
 
-**能力注册表**：`packages/cli/src/serve/capabilities.ts` 中的 `SERVE_CAPABILITY_REGISTRY`。每个 tag 都有一个 `since` 版本和可选的 `modes`。当对应的开关关闭时，会省略十个条件 tag（`require_auth`、`mcp_workspace_pool`、`mcp_pool_restart`、`allow_origin`、`prompt_absolute_deadline`、`writer_idle_timeout`、`workspace_settings`、`session_shell_command`、`rate_limit`、`workspace_reload`）。参见 [`11-capabilities-versioning.md`](./11-capabilities-versioning.md)。
+**能力注册表**：`packages/cli/src/serve/capabilities.ts` 中的 `SERVE_CAPABILITY_REGISTRY`。每个 tag 都有一个 `since` 版本和可选的 `modes`。当对应的部署或运行时谓词为 false 时，条件 tag 会被省略；注册表和谓词映射是唯一真实来源。参见 [`11-capabilities-versioning.md`](./11-capabilities-versioning.md)。
 
 **中间件**（`packages/cli/src/serve/auth.ts` 和 `server.ts`）：
 
 | 中间件（按注册顺序）                      | 用途                                                                                                                     | 备注                                                                                                              |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| `denyBrowserOriginCors` / `allowOriginCors` | 默认拒绝所有 `Origin` 请求头；当配置了 `--allow-origin <pattern>` 时切换为允许列表。                                     | 参见 [`12-auth-security.md`](./12-auth-security.md)。                                                             |
-| `hostAllowlist(bind, getPort)`              | 在环回地址上，验证 `Host` 是否属于 `localhost`、`127.0.0.1`、`[::1]` 或 `host.docker.internal` 加上实际端口。              | 防御 DNS 重绑定攻击。比较时不区分大小写，并按端口缓存。                                                           |
+| `allowOriginCors`                          | 始终安装在运行时应用上，基于 `MutableOriginAllowlist`：`--allow-origin <pattern>` 条目作为种子，Local Control 在启用时添加 LAN 来源；未匹配的来源收到 403 拒绝信封。 | 参见 [`12-auth-security.md`](./12-auth-security.md)。 |
+| `hostAllowlist(bind, getPort)`              | 在环回地址上，验证 `Host` 是否属于 `localhost`、`127.0.0.1`、`[::1]` 或 `host.docker.internal` 加上实际端口。              | 防御 DNS 重绑定攻击。比较时不区分大小写，并按端口缓存。Local Control LAN 监听器始终强制执行其通告权限的 Host 检查，无论主绑定是什么。 |
 | 访问日志中间件                            | 请求完成时，将 method、path、status、durationMs、sessionId 和 clientId 记录到 `DaemonLogger`。                             | 在 `bearerAuth` **之前**注册，因此 401 拒绝也会被记录。跳过 `/health` 和心跳。                                    |
 | `bearerAuth(token)`                         | SHA-256 加上 `timingSafeEqual` 恒定时间 bearer 比较。                                                                    | 未配置 token 时开放直通（环回开发默认值）。`Bearer` scheme 不区分大小写。                                         |
 | 速率限制中间件                            | 为 prompt、mutation 和 read 路由提供可选的每层令牌桶。                                                                   | 在 `bearerAuth` 之后、JSON 解析之前注册；当令牌桶耗尽时，在解析前返回 429。                                       |
 | `express.json({ limit: '10mb' })`           | JSON body 解析。                                                                                                         | 解析错误返回 400。                                                                                                |
-| `daemonTelemetryMiddleware`                 | 通过 `withDaemonRequestSpan` 将每个 HTTP 请求包装在 OpenTelemetry span 中。                                              | 属性包括 route、sessionId、clientId 和 status code。                                                              |
+| `daemonTelemetryMiddleware`                 | 通过 `withDaemonRequestSpan` 将到达此处的已分类 daemon API 请求包装在 OpenTelemetry span 中。                                              | 属性包括 canonical route、已解析的工作区哈希、sessionId、clientId 和 status code。更早的认证、速率限制和 body-parser 拒绝在此 span 边界之外。 |
 | `createMutationGate` (per-route)            | 针对即使在环回地址上也需要 token 的 mutation 路由的每路由级别 opt-in 门控。                                              | 返回 `401 { code: 'token_required' }`。不是全局的 `app.use`；路由根据需要调用 `mutate({ strict: true })`。        |
 
 **子系统**：
@@ -49,7 +49,7 @@
 | `serve/daemon-logger.ts`                                         | `DaemonLogger` 结构化文件日志。参见 [`19-observability.md`](./19-observability.md)。                                                                                                                                                                                                                                                                                                                                                                         |
 | `serve/debug-mode.ts`                                            | 共享的 `isServeDebugMode()` 谓词，用于控制 HTTP 响应中的详细错误上下文。                                                                                                                                                                                                                                                                                                                                                                                       |
 | `serve/acp-http/`                                                | ACP Streamable HTTP 传输（RFD #721），挂载在 `/acp`。七个文件实现了 JSON-RPC POST、SSE GET、DELETE 拆卸，以及与 REST 表面并行的共享 bridge 使用。                                                                                                                                                                                                                                                                                                              |
-| `serve/demo.ts`                                                  | `GET /demo` 的独立内联 HTML：带有聊天 UI、事件日志和工作区检查器的浏览器调试控制台。在无 `--require-auth` 的环回地址上，它在 `bearerAuth` **之前**注册；在非环回地址或带有 `--require-auth` 时，它在 `bearerAuth` **之后**注册。使用 CSP `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'` 以及 `X-Frame-Options: DENY` 提供服务。 |
+| `serve/web-shell-static.ts`, `serve/web-shell-resolver.ts`       | 定位并挂载已构建的 Web Shell 资源（daemon 的浏览器 UI）到 `/`、`/assets` 和 `/session/:id`，以及在所有 API 路由之后注册的 SPA 深度链接回退。在每种启动模式下均挂载在 `bearerAuth` **之前** — 浏览器无法在导航或子资源请求中附加 `Authorization` — 而其调用的每个 API 路由仍受 token 保护。资源缺失时降级为纯 API 模式；`--no-web` 可显式关闭。 |
 
 **ACP bridge 包导入**：
 
@@ -60,6 +60,8 @@
 ## 流程
 
 ### 启动序列
+
+在 `runQwenServe()` 启动此序列之前，仅 CLI 使用的 `--open-with-auth` 模式会验证环回/Web Shell 资格，并使用选定的已配置 token 填充 `ServeOptions.token`，当该选择为空时则使用 32 个随机字节以 base64url 编码。直接嵌入者和未使用该默认关闭标志的调用不会生成 token。
 
 1. 从 `opts.token` 或 `QWEN_SERVER_TOKEN` **解析并修剪 token**；这可以避免 `cat token.txt` 产生的尾部换行符悄悄破坏 bearer 比较。
 2. **主机名拼写错误防护**：`--hostname localhost:4170` 会报错并建议改用 `--port`。
@@ -75,19 +77,20 @@
 12. **构建 `fsFactory`**：`runQwenServe` 默认为 `trusted: true`；直接调用 `createServeApp` 的调用者默认为 `trusted: false` 并警告一次。
 13. **`createHttpAcpBridge`**，参见 [`03-acp-bridge.md`](./03-acp-bridge.md)。
 14. **`createServeApp`** 组装 Express。
-15. **`server.listen(port, hostname)`**，然后解析实际的 `getPort()` 用于主机允许列表。
-16. **注册 SIGINT / SIGTERM 处理器**以实现优雅关闭。
+15. **在监听之前创建并绑定 HTTP(S) 服务器的生命周期**，然后调用 `server.listen(port, hostname)` 并解析实际的 `getPort()` 用于主机允许列表。在此监听器和其余主机启动闸门就绪之前，Conversations 所有权无法启动。
+16. **注册 SIGINT / SIGTERM 处理器**，通过共享的应用生命周期实现优雅关闭。
 
 ### 优雅关闭
 
-1. 收到第一个信号时的**第一阶段 - bridge 拆卸**：
+1. 收到第一个信号时**封闭准入并开始所有 drain**：
    - 处置设备流注册表并取消待处理的流。
    - `bridge.shutdown()` 将每个 channel 标记为 `isDying = true`，向每个 ACP 子进程的 stdin 发送优雅关闭信号，每个 channel 等待 `KILL_HARD_DEADLINE_MS`（10 秒），然后在需要时调用 `channel.kill()`。
-2. **第二阶段 - HTTP 拆卸**：
+2. **在应用和主机 drain 运行时关闭监听器**：
    - `server.close()` 停止接受新连接并让进行中的请求完成。
    - `SHUTDOWN_FORCE_CLOSE_MS`（5 秒）触发 `server.closeAllConnections()`。
    - 如果需要，第二个 2 秒的截止时间会再次升级。
-3. **退出时收到第二个信号**：
+3. **仅在收到监听器、应用本地工作、主机所有工作、Live 发现清理和运行时 drain 的正向关闭证明后，才释放 Conversations 所有权**。任何未完成的证明都会拒绝关闭，而不是允许不安全的交接。
+4. **退出过程中收到第二个信号**：
    - `bridge.killAllSync()` + `process.exit(1)` 以避免孤儿子进程阻塞守护进程退出。
 
 ## 状态与生命周期
@@ -96,9 +99,9 @@
 
 - `url`：解析后的监听 URL，在临时端口解析之后。
 - `port`：实际端口，包括 `0` 的解析。
-- `close({ timeoutMs? })`：供嵌入者和测试使用的编程式关闭。
+- `close()`：供嵌入者和测试使用的编程式关闭。
 
-直接调用 `createServeApp` 仅返回一个 `Application`；由嵌入者负责 `listen` 和关闭。
+直接调用 `createServeApp` 仅返回一个 `Application`。需要 Live/Conversations 的嵌入者必须创建实际的 Node 服务器，在首次 `listen()` 之前调用 `getServeAppLifecycle(app).bindServer(server)`，并在关闭期间 await `lifecycle.close()`。未绑定时，普通路由仍可用，但 Live/Conversations 会 fail closed。调用原始的 `server.close()` 会触发事件驱动的清理，但嵌入者仍必须 await `lifecycle.close()` 以观察 drain 或所有权释放失败。
 
 ## 依赖
 
@@ -121,11 +124,13 @@
 | Env             | `QWEN_SERVE_DEBUG=1`                                                                            | 详细的 stderr 日志。参见 [`19-observability.md`](./19-observability.md)。                             |
 | Flags           | `--hostname`, `--port`                                                                          | 监听绑定。                                                                                            |
 | Flags           | `--token`, `--require-auth`, `--enable-session-shell`                                           | Bearer token、环回认证加固和显式 shell 执行开关。                                                     |
-| Flag            | `--workspace`                                                                                   | 覆盖 `process.cwd()`。                                                                                |
+| CLI flags       | `--open-with-auth`                                                                              | 默认关闭的环回 Web Shell 启动，在运行时之前复用或生成进程生命周期的 bearer。                            |
+| Flag            | `--workspace`                                                                                   | 覆盖 `process.cwd()`；重复可注册额外的隔离工作区运行时。                                               |
 | Flags           | `--max-sessions`, `--max-pending-prompts-per-session`, `--max-connections`, `--event-ring-size` | Bridge / Express 上限。                                                                               |
 | Flags           | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}`                                 | 转发给 ACP 子进程。                                                                                   |
 | Flags           | `--allow-origin`, `--allow-private-auth-base-url`                                               | 浏览器 CORS 允许列表及 localhost/私有认证提供者安装开关。                                             |
-| Flags           | `--prompt-deadline-ms`, `--writer-idle-timeout-ms`, `--channel-idle-timeout-ms`                 | Prompt、SSE writer 和 ACP 子进程空闲生命周期控制。                                                    |
+| Flag            | `--web` / `--no-web`                                                                            | 在 daemon 根路径提供或跳过 Web Shell UI（默认提供）。`--no-web` 使 daemon 仅保留 API。                 |
+| Flags           | `--prompt-deadline-ms`, `--writer-idle-timeout-ms`, `--channel-idle-timeout-ms`, `--initialize-timeout-ms` | Prompt、SSE writer、ACP 子进程空闲生命周期及 ACP 子进程请求超时控制。         |
 | Flags           | `--session-reap-interval-ms`, `--session-idle-timeout-ms`                                       | 断开连接的会话回收控制。                                                                              |
 | Flags           | `--rate-limit*`                                                                                 | 每层 HTTP 速率限制。                                                                                  |
 | `settings.json` | `policy.permissionStrategy`, `policy.consensusQuorum`                                           | `MultiClientPermissionMediator` 策略和 quorum。                                                       |
@@ -135,7 +140,7 @@
 ## 注意事项与已知限制
 
 - 直接调用 `createServeApp` 时，若未提供 `deps.fsFactory` 或 `deps.bridge`，则默认 `trusted: false`；agent 端的 ACP `writeTextFile` 会因 `untrusted_workspace` 而拒绝执行。该警告仅打印一次。
-- `denyBrowserOriginCors` 会拒绝**所有**携带 `Origin` 的请求；demo 页面能正常工作是因为另一个中间件会先剥离匹配的同源值。
+- 运行时应用运行 `allowOriginCors`，基于可变允许列表；未匹配的 `Origin` 值收到 403 拒绝信封（无条件拒绝的 `denyBrowserOriginCors` 墙仅保留在引导应用中）。**环回地址**上的 Web Shell 能正常工作是因为另一个中间件会先剥离匹配的环回同源值 — 非环回绑定需要 `--allow-origin` 才能支持 Shell 的 XHR 请求。
 - Body-parser 顺序：使用 `mutate({ strict: true })` 的路由只有在 `express.json()` 之后才会返回 401。最坏情况下的内存占用为 `--max-connections × express.json({limit: '10mb'})`，在饱和的 loopback 监听器上可能产生高达约 2.5 GB 的瞬态内存；这种权衡是有意为之的。
 - 同一进程中的多个 daemon 必须使用针对每个 handle 的 `childEnvOverrides`；修改 `process.env` 会产生竞态条件，因为 `defaultSpawnChannelFactory` 会在 spawn 时对 env 进行快照。
 

@@ -1,0 +1,73 @@
+# Glossary (zh)
+
+English term → Chinese rendering. Follow existing entries; append new ones as `- term → rendering` when you coin a term.
+
+- hook → hook（不翻译）
+- skill → skill（不翻译）
+- subagent → 子代理
+- sandbox → 沙箱
+- checkpoint → 检查点
+- slash command → 斜杠命令
+- headless → 无头模式
+- approval mode → 审批模式
+- embedding host → 嵌入宿主
+- unattached session → 未附加会话
+- session picker → 会话选择器
+- replay → 重放
+- turn → 轮次
+- snapshot → 快照
+- live turn → 实时轮次
+- replay window → 重放窗口
+- fail closed → fail closed（失败即拒绝）
+- secondary runtime → 次级运行时
+- secondary path → 次级路径
+- hot removal → 热移除
+- memory lane → 内存 lane
+- sub-session launcher → 子会话启动器
+- managed memory → 托管内存
+- microcompaction → microcompaction（不翻译）
+- full compaction → 完整压缩
+- vision bridge → vision bridge（不翻译）
+- fork → fork（不翻译）
+- generation → generation（不翻译）
+- drain → drain（不翻译）
+- reconciliation → 调和
+- topology gate → 拓扑闸门
+- channel worker → channel worker（不翻译）
+- trusted folder → trusted folder（不翻译）
+- teammate → teammate（不翻译）
+- speculation → speculation（不翻译）
+- dual-output → dual-output（不翻译）
+- lazy loading → 惰性加载
+- eager loading → 急切加载
+- fire-and-forget → fire-and-forget（不翻译）
+- fast path → 快路径
+- facade → 门面
+- single-flight → 单飞
+- hot continuation → 热续接
+- resident runtime → 常驻运行时
+- roster → 名册
+- revival → 复活
+- worktree → worktree（不翻译）
+- fail-open → fail-open（失败即放行）
+- admission → 准入
+- lease → 租约
+- presenter → presenter（不翻译）
+- projection → 投影
+- output segment → 输出段
+- tombstone → 墓碑
+- ledger → 账本
+- overcommit → 超卖
+- curator → curator（不翻译）
+- work chain → work chain（不翻译）
+- work-chain owner → work chain owner（不翻译）
+- dwell → dwell（不翻译）
+- immediate prompt → immediate prompt（不翻译）
+- non-inferiority → 非劣性
+- sidecar → sidecar（不翻译）
+- stateless generation → 无状态 generation
+- reasoning effort → 推理力度
+- retired → 已退役（用于设置/功能描述，区别于 deprecated/已弃用）
+- activity watermark → 活动水位标记
+- inbound correlation → 入站关联
+- forced sampling → 强制采样

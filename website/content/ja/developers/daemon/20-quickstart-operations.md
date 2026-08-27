@@ -16,7 +16,7 @@ qwen serve: bound to workspace "/your/cwd"
 qwen serve: bearer auth disabled (loopback default). Set QWEN_SERVER_TOKEN to enable.
 ```
 
-ブラウザで `http://127.0.0.1:4170/demo` を開くと、デバッグコンソール（チャット UI、イベントストリーム、ワークスペース検査）を確認できます。デフォルトのループバック開発モードでは、`createServeApp()` が `bearerAuth` の **前** に `packages/cli/src/serve/routes/health-demo.ts` から `/demo` ルートをマウントするため、トークンは不要です。
+ブラウザで `http://127.0.0.1:4170/` を開くと、Web Shell UI（チャット、セッションリスト、ワークスペース検査）を確認できます。`createServeApp()` はバンドルされた Web Shell アセット（`packages/cli/src/serve/web-shell-static.ts`）を `bearerAuth` の **前** にマウントするため、シェル自体はトークンなしでロードされます。シェル自身の API 呼び出しは、トークンが設定されている場合はベアラートークンを付与します。認証が有効な場合は、デーモンを `--open`（URL フラグメントにトークンを配置し、サーバーには送信されない）で起動するか、`#token=…` を手動で追加してください。`--no-web` でオプトアウトし、デーモンを API のみにします。
 
 ## 2. 起動レシピ
 
@@ -67,7 +67,7 @@ qwen serve --channel-idle-timeout-ms 60000
 QWEN_SERVE_RATE_LIMIT=1 qwen serve
 ```
 
-強化されたループバックのレシピ (3) では、`/demo` は `bearerAuth` の後に登録されます。通常のブラウザナビゲーションには認証ヘッダーが必要なため、代わりに curl や SDK スクリプトを使用してください。
+強化されたループバックのレシピ (3) では、`/health` は `bearerAuth` の後に登録されるため、プローブは他の API ルートと同様にトークンを運ぶ必要があります（Web Shell の静的サーフェスは設計上プレ認証のままです。API のみのデーモンにするには `--no-web` を渡してください）。
 
 ## 3. 完全な起動フラグ
 
@@ -78,14 +78,20 @@ CLI は **`packages/cli/src/commands/serve.ts`** で定義されています:
 | `--port <n>`                            | number                         | `4170`                                       | -                                        | TCP ポート。`0` は OS によって割り当てられるエフェメラルポートを意味します。                                                                                                                                                                       |
 | `--hostname <host>`                     | string                         | `127.0.0.1`                                  | 非ループバックにはトークンが必要              | バインドアドレス。ループバックの値: `127.0.0.1`、`localhost`、`::1`、`[::1]`。`[::1]` のブラケットは自動的に削除されます。`host:port` 形式の入力は拒否され、`--port` を使用するようガイダンスが表示されます。                                    |
 | `--token <s>`                           | string                         | env / none                                   | 非ループバックおよび `--require-auth`        | ベアラートークン。1回だけトリミングされます。**`/proc/<pid>/cmdline` に表示されるため、`QWEN_SERVER_TOKEN` の使用を推奨します**。起動時の stderr でもこれについて警告されます。                                                                                |
-| `--max-sessions <n>`                    | number                         | `20`                                         | -                                        | アクティブセッションの上限。超過した spawn は 503 を返します。`0` は無制限を意味します。`NaN` / 負の値は例外をスローします。                                                                                                                     |
+| `--max-sessions <n>`                    | number                         | `32`                                         | -                                        | ワークスペースごとのアクティブセッション上限。超過した spawn は 503 を返します。`0` は無制限を意味します。`NaN` / 負の値は例外をスローします。                                                                                                                     |
+| `--max-total-sessions <n>`              | number                         | 複数のワークスペース起動用に導出される値 | -                                        | デーモン全体のアクティブセッション上限。省略時は、ワークスペースごとの上限と起動/復元ワークスペース数から有限のデフォルト値が 1 回だけ導出されます。動的な登録では再計算されません。`0` は無制限を意味します。                                                                                                      |
+| `--memory-budget-mb <n>`                | `[1024, 1048576]` の整数   | cgroup/ホストメモリの 50%                  | -                                        | デーモンプロセスツリーの合計メモリバジェット。解決された利用可能メモリで上限が設定されます。子プロセスのサイズはこれから決定されません。現在の唯一のコンシューマーはアダプティブな live-journal 成長プールです（`--max-journal-bytes` を参照）。`limits.memory` の下に報告され、モデル化された子プロセスごとのパーティションが含まれます。                                                                                                      |
+| `--max-journal-events <n>`              | 正の安全な整数                 | `10000`                                      | -                                        | セッションごとの飛行中の `liveJournal` リプレイエントリのベースライン上限。アダプティブ成長によって引き上げられることがあります（`--max-journal-bytes` を参照）。どちらかのジャーナルフラグを固定すると成長が無効になります。                                                                                                                                                                                          |
+| `--max-journal-bytes <n>`               | 正の安全な整数                 | `8388608`                                    | -                                        | 飛行中の `liveJournal` のセッションごとのベースラインバイト上限。閾値を超えると、ターンごとにキャップがオンデマンドで成長します（Effective `--memory-budget-mb` の 5% のデーモン全体プール内で、残りプールのヘッドルームに応じて倍増方向。Effective バジェットが 1024 MB 最小値を下回る場合は 0 — 成長無効）。256 MiB のセッションごとのハードキャップを超えることはありません。どちらかのジャーナルフラグを固定すると成長が無効になります。                                                         |
+| `--memory-pressure-mode <mode>`         | `off` \| `observe`             | `observe`                                    | 観察のみ                             | 両モードで `runtime.memory.pressure` を報告します。`observe` のみ `daemon_memory_pressure` issue を発生させます。ルートプロセスのみ。                                                                                                                                                                                         |
+| `--child-heap-mode <mode>`              | `off` \| `observe`             | `observe`                                    | 観察のみ                             | `observe` の下では、モデル化されたパーティションを `limits.memory.childHeap` の下に報告します。何も適用せず、何も拒否しません。`off` の下では、そのブロックの 2 つの数値は `null` になります。                                                                                                                                                |
 | `--max-pending-prompts-per-session <n>` | number                         | `5`                                          | -                                        | セッションごとに受け入れられたが pending/running 状態のプロンプトの上限。超過したプロンプトは 503 を返します。`0` / `Infinity` は無制限を意味します。負の値または非整数値は例外をスローします。                                                               |
-| `--workspace <dir>`                     | string                         | `process.cwd()`                              | -                                        | バインドされるワークスペース。**絶対パスであり、存在し、かつディレクトリでなければなりません**。起動時に `canonicalizeWorkspace` を介して一度正規化されます。`cwd` が一致しない `POST /session` は `400 workspace_mismatch` を返します。 |
+| `--workspace <dir>`                     | string / 繰り返し可能           | `process.cwd()`                              | -                                        | 起動ワークスペースランタイム。繰り返して追加の分離されたランタイムを登録できます。最初がプライマリです。各値は**絶対パスであり、存在し、かつディレクトリでなければなりません**。起動時に `canonicalizeWorkspace` を介してすべての値を正規化します。`cwd` が一致しない `POST /session` は `400 workspace_mismatch` を返します。 |
 | `--max-connections <n>`                 | number                         | `256`                                        | -                                        | リスナーレベルの `server.maxConnections`。`0` / `Infinity` は無制限を意味します。`NaN` / 負の値は、fail-open 動作を避けるために起動を失敗させます。                                                                              |
 | `--require-auth`                        | boolean                        | `false`                                      | トークンが必要                           | ベアラ認証をループバック **および** `/health` に拡張します。トークンがない場合、起動は拒否されます。                                                                                                                             |
 | `--enable-session-shell`                | boolean                        | `false`                                      | トークンが必要                           | 直接の `POST /session/:id/shell` 実行を有効にします。呼び出し元はセッションにバインドされた `X-Qwen-Client-Id` も送信する必要があります。                                                                                                        |
 | `--event-ring-size <n>`                 | number                         | `8000`                                       | -                                        | セッションごとの SSE リプレイリングの深さ。ソフトキャップは `MAX_EVENT_RING_SIZE = 1_000_000` です。範囲外の値はブリッジ構築中に例外をスローします。                                                                               |
-| `--http-bridge`                         | boolean                        | `true`                                       | -                                        | ステージ 1 ブリッジモード: デーモンによって多重化される 1 つの `qwen --acp` 子プロセス。ステージ 2 の in-process モードはまだ実装されていません。`--no-http-bridge` はフォールバックし、stderr に出力します。                                            |
+| `--http-bridge`                         | boolean                        | `true`                                       | -                                        | ブリッジモード: 本番環境ではプライマリの `qwen --acp` 子のプリヒートを試行し、失敗時は初回使用時にリトライします。信頼されたセカンダリはオンデマンドで 1 つを開始しますが、信頼されていないセカンダリは ACP を開始できません。ステージ 2 の in-process モードはまだ実装されていません。`--no-http-bridge` はフォールバックし、stderr に出力します。 |
 | `--mcp-client-budget <n>`               | number                         | none                                         | `mcp-budget-mode=enforce` に必要   | ワークスペース MCP クライアントの上限。正の整数である必要があります。                                                                                                                                                                 |
 | `--mcp-budget-mode <m>`                 | `'enforce' \| 'warn' \| 'off'` | バジェットが設定されている場合は `warn`、それ以外の場合は `off` | `enforce` には `--mcp-client-budget` が必要 | `enforce` は拒否し、`warn` は 75% で警告のみを出し、`off` は監視のみを行います。                                                                                                                                               |
 | `--allow-origin <pattern>`              | repeatable string              | none                                         | -                                        | デフォルトの Origin 拒否を置き換える CORS 許可リスト。`*` にはトークンが必要です。                                                                                                                                         |
@@ -93,6 +99,7 @@ CLI は **`packages/cli/src/commands/serve.ts`** で定義されています:
 | `--prompt-deadline-ms <n>`              | number                         | none                                         | -                                        | サーバー側のプロンプトの壁時計制限（ミリ秒）。タイムアウトするとプロンプトが中止されます。                                                                                                                                                  |
 | `--writer-idle-timeout-ms <n>`          | number                         | none                                         | -                                        | SSE 接続ごとのアイドルタイムアウト（ミリ秒）。                                                                                                                                                                                |
 | `--channel-idle-timeout-ms <n>`         | number                         | `0`                                          | -                                        | 最後のセッションが閉じた後も ACP 子プロセスを存続させます。`0` は即座に回収することを意味します。                                                                                                                               |
+| `--initialize-timeout-ms <n>`           | number                         | `10000`                                      | -                                        | ACP 子プロセスのリクエストタイムアウト。initialize ハンドシェイクを含む（ミリ秒）。                                                                                                                                                                                                                   |
 | `--session-reap-interval-ms <n>`        | number                         | `60000`                                      | -                                        | セッションリーパーのスキャン間隔。`0` は無効にします。                                                                                                                                                                        |
 | `--session-idle-timeout-ms <n>`         | number                         | `1800000`                                    | -                                        | 切断されたセッションのアイドルタイムアウト。`0` は無効にします。                                                                                                                                                                   |
 | `--rate-limit` / `--no-rate-limit`      | boolean                        | env / off                                    | -                                        | 階層ごとの HTTP レート制限を有効または無効にします。                                                                                                                                                                      |
@@ -155,7 +162,9 @@ CLI は **`packages/cli/src/commands/serve.ts`** で定義されています:
 | `--event-ring-size > 1_000_000`                                               | Thrown during bridge construction                                                                   |
 | トークンなしの `--allow-origin '*'`                                            | `Refusing to start with --allow-origin '*' but no bearer token configured`                          |
 | `--prompt-deadline-ms` / `--writer-idle-timeout-ms` が正の整数ではない | `Must be a positive integer`                                                                        |
+| `--initialize-timeout-ms` が正の整数ではないか `2^31-1` を超える       | `Must be a positive integer` / `Exceeds maximum JS timer delay`                                     |
 | 不明な `policy.permissionStrategy` または正でない `policy.consensusQuorum`  | `InvalidPolicyConfigError`                                                                          |
+
 ## 7. Curl 検証チェックリスト
 
 ```bash
@@ -191,23 +200,21 @@ curl -N \
   -H 'Last-Event-ID: 0' \
   'http://127.0.0.1:4170/session/<sid>/events'
 
-# 8. デモページ
-open http://127.0.0.1:4170/demo
+# 8. Web Shell UI
+open http://127.0.0.1:4170/
 ```
 
 Bearer 認証が有効な場合、すべてのリクエストに `-H "Authorization: Bearer $QWEN_SERVER_TOKEN"` を追加します。
 
-## 8. デモページは使用可能か？
+## 8. ブラウザ UI はあるか？
 
-**はい。** これは `packages/cli/src/serve/demo.ts` 内の `getDemoHtml(port)` によって実装されており、外部依存を持たない自己完結型の HTML です。
+**はい — Web Shell です。** `resolveWebShellDir()` がビルド済みアセットを見つけ（リリースでは CLI バンドルの隣、チェックアウトでは `packages/web-shell/dist`）、`mountWebShellAssets()` が `/`、`/assets`、および `/session/:id` のドキュメントナビゲーション（ブラウザのディープリンク — 通常の `curl /session/<id>` ではシェルの代わりに API の 401/404 が返されます）にそれらを提供します。アセットが存在しない場合、デーモンはクラッシュせずに API のみにフォールバックします。`--no-web` で明示的にオプトアウトできます。
 
-| 起動モード | `/demo` が登録される場所 | ブラウザからの直接ナビゲーション |
-| --- | --- | --- |
-| `--require-auth` なしのループバック | `routes/health-demo.ts`、`createServeApp()` によって `bearerAuth` の **前** にマウント | トークンなしで動作 |
-| `--require-auth` ありのループバック | `routes/health-demo.ts`、`createServeApp()` によって `bearerAuth` の **後** にマウント | 通常のブラウザからの使用は困難。curl または SDK を使用 |
-| ループバック以外のバインド | `routes/health-demo.ts`、`createServeApp()` によって `bearerAuth` の **後** にマウント | 上記と同じ |
+静的シェルはすべての起動モードで `bearerAuth` の **前** にマウントされます。ブラウザはアドレスバーのナビゲーションや `<script src>` サブリソースに `Authorization` ヘッダーを付与できないため、ゲートすると UI が壊れるだけです。シェルが呼び出すすべての API ルートはトークン保護されたままであり、フロントエンド自身がベアラートークンを付与します。非ループバックのバインドでは、`--allow-origin <origin>` が渡されない限りシェルは読み取り専用です。同一オリジンの POST は `Origin` ヘッダーを運び、CORS ウォールが拒否（403）します。ループバック以外のバインドには `--allow-origin` を渡してください。
 
-CSP は `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'` であり、さらに `X-Frame-Options: DENY` が設定されています。このページは `'self'`（デーモン）のみをフェッチでき、外部スクリプトやスタイルを読み込むことはできません。
+CSP は `buildWebShellCsp()` によって構築され、静的ページのそれよりも意図的に緩くなっています（インラインの `performance.measure` パッチ用の `'unsafe-inline'`、shiki と mermaid 用の `eval`/wasm/blob ワーカー、katex フォント用の `data:`、SSE 用の `connect-src 'self'`）。`frame-ancestors 'none'` と `X-Frame-Options: DENY` でクリックジャッキングをブロックしますが、`--allow-origin` で拡張オリジンが明示的に許可されている場合は例外です（UI を Chrome サイドパネルにホストできるようにするため、#5626）。
+
+生のプロトコル検査には、SSE ストリームを直接購読してください（`routes/sse-events.ts`）— セクション 7 の curl レシピを参照してください。
 
 ## 9. `qwen serve` からリスニングサーバーまでのコールチェーン
 
@@ -248,11 +255,13 @@ serve/run-qwen-serve.ts              const app = createServeApp(opts, () => actu
    v
 serve/server.ts                    createServeApp() - builds Express app (**does not listen**)
    |  |- middleware chain (Host allowlist / CORS / bearerAuth / mutation gate / rate limit)
-   |  |- route mounting (health / demo / capabilities / workspace / session / SSE / ACP HTTP)
+   |  |- route mounting (health / web-shell static / capabilities / workspace / session / SSE / ACP HTTP)
    |  `- return app
    |
    v
-serve/run-qwen-serve.ts              server = app.listen(port, hostname, cb)
+serve/run-qwen-serve.ts              server = createServer(app) / https.createServer(..., app)
+   |  |- lifecycle.bindServer(server, { startupReady, drainHost })
+   |  |- server.listen(port, hostname)
    |  |- server.maxConnections = cap
    |  |- actualPort = server.address().port
    |  |- write "qwen serve listening on ..."
@@ -260,13 +269,13 @@ serve/run-qwen-serve.ts              server = app.listen(port, hostname, cb)
    |  `- resolve(handle: RunHandle)
    |
    v
-commands/serve.ts                  await blockForever()    // シグナルがあるまで永久にブロック
+commands/serve.ts                  await blockForever()    // block forever until signal
 ```
 
 重要な事実:
 
-- **`createServeApp` はビルドのみを行い、リスニングは行いません。** ミドルウェアとルートがマウントされた `express()` インスタンスを返します。`app.listen()` の所有権は呼び出し側にあります。`server.test.ts` は約 25 のケースでこのファクトリを使用しているため、ファクトリは意図的にライフサイクルの所有を回避しています。
-- **`() => actualPort` は遅延クロージャです。** `actualPort` は `app.listen` のコールバック内で代入されます。`hostAllowlist` ミドルウェアはオンデマンドでそれを読み取るため、エフェメラルポート（`--port 0`）でも `Host` ヘッダーを正しくゲートします。
+- **`createServeApp` はビルドのみを行い、リスニングは行いません。** ミドルウェアとルートがマウントされた `express()` インスタンスを返します。Ordinary-only の組み込み側は `app.listen()` を所有し続けることができます。Live/Conversations を使用する組み込み側は、リスニング前に実際の Node サーバーをエクスポートされたアプリライフサイクルにバインドし、シャットダウン時にそのライフサイクルを待機する必要があります。
+- **`() => actualPort` は遅延クロージャです。** `actualPort` は `server.listen` のコールバック内で代入されます。`hostAllowlist` ミドルウェアはオンデマンドでそれを読み取るため、エフェメラルポート（`--port 0`）でも `Host` ヘッダーを正しくゲートします。
 - **`await blockForever()` は意図的なものです。** `yargs.parse()` が解決すると、CLI のトップレベルは対話型 TUI のエントリポイント（`gemini.tsx`）にフォールスルーします。SIGINT / SIGTERM は `runQwenServe` の `onSignal` パスを通じて終了します。
 
 ## 10. HTTP ルートファイルの分割
@@ -275,7 +284,7 @@ commands/serve.ts                  await blockForever()    // シグナルがあ
 
 | ルート | ファイル | マウントエントリ |
 | --- | --- | --- |
-| `/health`, `/demo` | `packages/cli/src/serve/routes/health-demo.ts` | `healthDemoRoutes.register()` |
+| `/health` | `packages/cli/src/serve/routes/health.ts` | `healthRoutes.register()` |
 | `/daemon/status` | `packages/cli/src/serve/routes/daemon-status.ts` | `registerDaemonStatusRoutes()` |
 | `/capabilities`、ワークスペースの初期化/ツール/MCP 変更ルート、ACP HTTP ブリッジ | `packages/cli/src/serve/server.ts` | `createServeApp()` 内で直接登録 |
 | ワークスペースのステータス、環境、プリフライト、MCP/ツール/プロバイダー/スキルのサマリー | `packages/cli/src/serve/routes/workspace-status.ts` | `registerWorkspaceStatusRoutes()`, `registerWorkspaceDiagnosticStatusRoutes()` |
@@ -318,11 +327,17 @@ console.log(`Daemon at ${handle.url}`);
 await handle.close(); // programmatic shutdown
 ```
 
-または、Express アプリを直接取得して自分でリスニングします。
+または、Express アプリを直接取得し、リスナーのライフサイクルを自分でバインドします。この形式は Live/Conversations を使用する組み込みに必要です。
 
 ```ts
-import { createServeApp } from '@qwen-code/qwen-code/serve';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import {
+  createServeApp,
+  getServeAppLifecycle,
+} from '@qwen-code/qwen-code/serve';
 
+let actualPort = 0;
 const app = createServeApp(
   {
     port: 0,
@@ -330,16 +345,27 @@ const app = createServeApp(
     mode: 'http-bridge',
     maxSessions: 20,
   },
-  () => 0,
+  () => actualPort,
   {
     /* deps: bridge, fsFactory, ... */
   },
 );
 
-const server = app.listen(0, '127.0.0.1', () => {
-  console.log('listening on', server.address());
+const lifecycle = getServeAppLifecycle(app);
+const server = createServer(app);
+lifecycle.bindServer(server);
+await new Promise<void>((resolve, reject) => {
+  server.once('error', reject);
+  server.listen(0, '127.0.0.1', () => resolve());
 });
+actualPort = (server.address() as AddressInfo).port;
+console.log('listening on', server.address());
+
+// 受け入れを停止し、アプリの作業を drain し、リスナーをクローズし、所有権を解放します。
+await lifecycle.close();
 ```
+
+生の `server.close()` を呼び出すと、同じイベント駆動のクリーンアップが開始されますが、プロセスが存続しない限りベストエフォートに過ぎません。シャットダウンエラーを受け取るには常に `lifecycle.close()` を待機してください。サーバーがバインドされていない場合、Live/Conversations のリクエストは fail closed になりますが、Ordinary-only のアプリの動作は変わりません。
 
 注: `createServeApp` を直接呼び出す場合、デフォルトでは `fsFactory.trusted = false` となります。エージェント側の ACP `writeTextFile` は `untrusted_workspace` として拒否され、stderr に警告が一度出力されます。明示的な信頼を持つ `deps.fsFactory` を注入するか、`deps.bridge` を注入するか、信頼ゲートされたデフォルトの動作を受け入れてください。
 
@@ -373,6 +399,6 @@ QWEN_SERVE_DEBUG=1 qwen serve
 - Express ファクトリ: `packages/cli/src/serve/server.ts`
 - ミドルウェア: `packages/cli/src/serve/auth.ts`
 - ブリッジファクトリ: `packages/acp-bridge/src/bridge.ts`
-- デモページ HTML: `packages/cli/src/serve/demo.ts`
+- Web Shell 静的マウント: `packages/cli/src/serve/web-shell-static.ts`
 - ユーザードキュメント: [`../../users/qwen-serve.md`](../../users/qwen-serve.md)
 - ワイヤープロトコル: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md)

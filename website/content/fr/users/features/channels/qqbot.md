@@ -100,9 +100,10 @@ Ouvrez QQ et envoyez un message à votre bot. La réponse devrait arriver dans v
 
 Pour utiliser le bot dans des groupes QQ :
 
-1. Définissez `groupPolicy` sur `"allowlist"` ou `"open"` dans la configuration de votre canal
+1. Définissez `groupPolicy` sur `"allowlist"`, `"pairing"` ou `"open"` dans la configuration de votre canal
 2. Ajoutez le bot à un groupe QQ via le tableau de bord de la plateforme ouverte QQ Bot, ou demandez à un administrateur du groupe de l'inviter
 3. Les membres du groupe doivent **mentionner** le bot avec @ pour déclencher une réponse
+4. Si vous utilisez `groupPolicy: "pairing"`, approuvez la demande d'appairage du groupe une fois avant que les réponses ne commencent. Notez qu'une fois qu'un groupe est approuvé, **tout membre de ce groupe** peut utiliser le bot ; `senderPolicy` et `allowedUsers` ne filtrent pas les membres d'un groupe approuvé.
 
 L'API QQ Bot V2 ne délivre que les messages de groupe qui mentionnent le bot — le bot ne voit pas tous les messages du groupe. Par défaut, `requireMention` est `true` et doit rester ainsi pour QQ.
 
@@ -159,7 +160,8 @@ Le rafraîchissement des jetons se poursuit même après une reconnexion WebSock
 
 ### Le bot ne répond pas dans les groupes
 
-- Vérifiez que `groupPolicy` est défini sur `"allowlist"` ou `"open"` (la valeur par défaut est `"disabled"`)
+- Vérifiez que `groupPolicy` est défini sur `"allowlist"`, `"pairing"` ou `"open"` (la valeur par défaut est `"disabled"`)
+- Si vous utilisez `"pairing"`, vérifiez que la demande d'appairage du groupe a été approuvée
 - **Vous devez mentionner le bot avec @** — QQ ne délivre que les messages qui taguent le bot
 - Vérifiez que le bot a été ajouté au groupe
 

@@ -44,17 +44,17 @@ new DaemonClient({
 
 Method groups (every method takes an optional `clientId` to stamp `X-Qwen-Client-Id`):
 
-| Group               | Methods                                                                                                                                                                                                                                                                                                                                                                                                          |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Plumbing            | `health()`, `capabilities()`, `auth` (lazy `DaemonAuthFlow` accessor)                                                                                                                                                                                                                                                                                                                                            |
-| Sessions            | `createOrAttachSession`, `loadSession`, `resumeSession`, `listSessions`, `closeSession`, `setSessionMetadata`, `getSessionContext`, `getSessionSupportedCommands`, `setSessionApprovalMode`, `setSessionModel`                                                                                                                                                                                                   |
-| Prompting           | `prompt`, `cancel`, `heartbeat`                                                                                                                                                                                                                                                                                                                                                                                  |
-| Events              | `subscribeEvents` (SSE generator), `subscribeEventsStream` (raw response)                                                                                                                                                                                                                                                                                                                                        |
-| Permissions         | `respondToPermission`, `respondToSessionPermission`                                                                                                                                                                                                                                                                                                                                                              |
-| Workspace snapshots | `getWorkspaceMcp`, `getWorkspaceSkills`, `getWorkspaceProviders`, `getWorkspaceEnv`, `getWorkspacePreflight`                                                                                                                                                                                                                                                                                                     |
-| Workspace mutations | `writeWorkspaceMemory`, `readWorkspaceMemory`, `rememberWorkspaceMemory`, `getWorkspaceMemoryRememberTask`, `forgetWorkspaceMemory`, `getWorkspaceMemoryForgetTask`, `dreamWorkspaceMemory`, `getWorkspaceMemoryDreamTask`, `listWorkspaceAgents`, `getWorkspaceAgent`, `createWorkspaceAgent`, `updateWorkspaceAgent`, `deleteWorkspaceAgent`, `toggleWorkspaceTool`, `restartMcpServer`, `initializeWorkspace` |
-| Files               | `readFile`, `readFileBytes`, `writeFile`, `editFile`, `listDirectory`, `globPaths`, `statPath`                                                                                                                                                                                                                                                                                                                   |
-| Auth                | `startDeviceFlow`, `pollDeviceFlow`, `cancelDeviceFlow`, `getAuthStatus`                                                                                                                                                                                                                                                                                                                                         |
+| Group               | Methods                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Plumbing            | `health()`, `capabilities()`, `auth` (lazy `DaemonAuthFlow` accessor)                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Sessions            | `createOrAttachSession`, `loadSession`, `resumeSession`, `listSessions`, `closeSession`, `setSessionMetadata`, `getSessionContext`, `getSessionSupportedCommands`, `setSessionApprovalMode`, `setSessionModel`                                                                                                                                                                                                                                                                |
+| Prompting           | `prompt`, `cancel`, `heartbeat`                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Events              | `subscribeEvents` (SSE generator), `subscribeEventsStream` (raw response)                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Permissions         | `respondToPermission`, `respondToSessionPermission`                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Workspace snapshots | `getWorkspaceMcp`, `getWorkspaceSkills`, `getWorkspaceProviders`, `getWorkspaceEnv`, `getWorkspacePreflight`                                                                                                                                                                                                                                                                                                                                                                  |
+| Workspace mutations | `addWorkspace`, `updateWorkspace`, `writeWorkspaceMemory`, `readWorkspaceMemory`, `rememberWorkspaceMemory`, `getWorkspaceMemoryRememberTask`, `forgetWorkspaceMemory`, `getWorkspaceMemoryForgetTask`, `dreamWorkspaceMemory`, `getWorkspaceMemoryDreamTask`, `listWorkspaceAgents`, `getWorkspaceAgent`, `createWorkspaceAgent`, `updateWorkspaceAgent`, `deleteWorkspaceAgent`, `setWorkspaceToolEnabled`, `setWorkspaceSkillEnabled`, `restartMcpServer`, `initWorkspace` |
+| Files               | `readFile`, `readFileBytes`, `writeFile`, `editFile`, `listDirectory`, `globPaths`, `statPath`                                                                                                                                                                                                                                                                                                                                                                                |
+| Auth                | `startDeviceFlow`, `pollDeviceFlow`, `cancelDeviceFlow`, `getAuthStatus`                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ### `fetchWithTimeout`
 
@@ -140,6 +140,68 @@ await client.getWorkspaceMemoryForgetTask('forget-...');
 await client.dreamWorkspaceMemory();
 await client.getWorkspaceMemoryDreamTask('dream-...');
 ```
+
+Workspace skill toggles are available on both client shapes:
+
+```ts
+await client.setWorkspaceSkillEnabled('review', false, {
+  clientId: 'dashboard-1',
+});
+await client
+  .workspaceByCwd('/work/secondary')
+  .setWorkspaceSkillEnabled('review', true, { clientId: 'dashboard-1' });
+```
+
+Pre-flight `capabilities.features.includes('workspace_skill_toggle')`. The typed `DaemonSkillToggleResult` reports the canonical `skillName`, whether disk state `changed`, activation state (`applied`, `deferred`, or `partial`), and refreshed/failed session counts. `DaemonWorkspaceSkillStatus.userInvocable` is an optional false-only field; absence means the skill is user-invocable.
+
+For batch changes, pre-flight `workspace_skill_batch_toggle` and call either client shape with the same contract:
+
+```ts
+await client.setWorkspaceSkillsEnabled(['review', 'deploy'], false, {
+  clientId: 'dashboard-1',
+});
+await client
+  .workspaceByCwd('/work/secondary')
+  .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
+```
+
+`DaemonSkillBatchToggleResult` contains ordered successful `results`, per-target `errors`, and batch-level activation/session-refresh counts. The daemon persists valid targets together and refreshes active sessions once; one expected target error does not block other valid targets. The method throws only on a non-200 response; a 200 does not mean every target was applied, so always inspect `errors` before treating the batch as successful.
+
+V2 Extension batch activation retains the asynchronous Extension operation model. Pre-flight `extension_batch_activation_v2`, submit a global default batch or a selected-workspace override batch, then poll it with the existing operation helper:
+
+```ts
+const globalHandle = await client.setExtensionDefaultActivations(
+  ['formatter', 'review-tools'],
+  'disabled',
+  'dashboard-1',
+);
+const workspaceHandle = await client
+  .workspaceByCwd('/work/secondary')
+  .setExtensionActivations(
+    ['formatter', 'review-tools'],
+    'inherit',
+    'dashboard-1',
+  );
+const operation = await client.waitForExtensionOperation(workspaceHandle);
+```
+
+The terminal operation result contains ordered `results`. Targets do not need to be installed when setting `enabled` or `disabled`: the daemon stores a name declaration and preserves that activation policy when an Extension with that name is installed later. All changed targets share one Extension Store generation and one reconciliation pass. Global default batches reconcile every registered runtime; workspace batches resolve and reconcile only the selected trusted runtime. Workspace `inherit` clears the exact override but does not create a declaration for an unknown name; an all-unknown clear succeeds as a no-op without reconciliation. Singular activation methods remain installed-only.
+
+Workspace display names are optional presentation metadata. Pre-flight `capabilities.features.includes('workspace_display_name')`; workspace ids and canonical paths remain the only selectors, and duplicate display names are valid.
+
+```ts
+const workspace = await client.addWorkspace('/srv/repos/payments', {
+  persist: true,
+  displayName: 'Payments Production',
+});
+
+await client.updateWorkspace(workspace.id, {
+  displayName: 'Payments',
+});
+await client.updateWorkspace(workspace.id, { displayName: null });
+```
+
+`addWorkspace` accepts `displayName?: string` and returns it when set. `updateWorkspace` accepts an ID or cwd selector and `{ displayName: string | null }`; `null` clears the name. Names are limited to 256 characters after trimming and reject internal C0/DEL control characters. A process-local workspace keeps its name only for the current daemon process; matching persistent registrations are updated through the existing store. `DaemonWorkspaceCapability.displayName` remains optional so the SDK continues to interoperate with older daemons.
 
 ## Workflow
 
@@ -238,7 +300,7 @@ auth provider when one is available.
 The SDK also exports `packages/sdk-typescript/src/daemon/ui/`, a host-neutral
 set of primitives that turn daemon events into transcript blocks:
 
-- `normalizeDaemonEvent(evt)` maps the 47 known daemon wire events into 42 UI-friendly `DaemonUiEventType` values; unmodeled or malformed events normalize to `debug`.
+- `normalizeDaemonEvent(evt)` maps the 53 known daemon wire events into 43 UI-friendly `DaemonUiEventType` values; unmodeled or malformed events normalize to `debug`.
 - `createDaemonTranscriptState()` plus `reduceDaemonTranscriptEvents(state, events)` projects UI events into `DaemonTranscriptBlock[]`.
 - `createDaemonTranscriptStore()` wraps subscribe / dispatch.
 - `render.ts` / `terminal.ts` provide HTML and terminal baseline renderers, while `toolPreview.ts` produces tool-call summaries.
@@ -302,9 +364,13 @@ async function* subscribe(sessionId: string, signal: AbortSignal) {
     }
     // Handle ring-eviction gap.
     if (event.type === 'state_resync_required') {
-      // State is stale — reload full session state.
+      // State is stale — reload the daemon's bounded replay snapshot window.
       await client.loadSession(sessionId);
       continue;
+    }
+    if (event.type === 'history_truncated') {
+      // Informational only. Render a status notice, then continue applying
+      // the retained replay events; do not trigger another reload.
     }
     yield event;
   }
@@ -336,7 +402,17 @@ async function resilientSubscribe(session: DaemonSessionClient) {
 }
 ```
 
-On reconnect the daemon replays events with `id > lastSeenEventId` from its bounded ring (default 8000 events). If the gap exceeds the ring, a `state_resync_required` frame signals the client to call `loadSession` for a full state rebuild.
+On reconnect the daemon replays events with `id > lastSeenEventId` from its bounded ring (default 8000 events). If the gap exceeds the ring, a `state_resync_required` frame signals the client to call `loadSession` and rebuild from the current bounded replay snapshot window. That snapshot may begin with `history_truncated`; treat it as an operator-visible status marker, not as another resync request.
+
+`history_truncated.fullTranscriptAvailable` is a boolean capability flag. When it is `true`, callers can page the full active persisted replay with `DaemonClient.getSessionTranscriptPage(sessionId, { cursor, limit })`; when it is `false`, clients should keep rendering the bounded replay normally.
+
+When `workspace_persisted_transcript` is advertised, `client.workspaceById(workspaceId).getSessionTranscriptPage(sessionId, { cursor, limit })` reads the selected registered workspace without attaching to ACP. The workspace-qualified method always uses native REST even if the client has a replaceable transport; its cursor expires when the daemon restarts.
+
+When `workspace_session_export` is advertised, `client.workspaceById(workspaceId).exportSession(sessionId, { format })` or `client.workspaceByCwd(workspaceCwd).exportSession(...)` exports the selected trusted workspace's active persisted transcript. It returns the existing `DaemonSessionExportResult`, preserves optional client identity and client-wide fetch timeout behavior, and always uses native REST even if the client has a replaceable transport. Do not infer this method's server support from `session_export` or `workspace_qualified_rest_core`; older daemons keep primary-only export.
+
+When `workspace_archived_session_export` is advertised, use `client.workspaceById(workspaceId).exportArchivedSession(sessionId, { format })` or the corresponding `workspaceByCwd` method to export only the selected workspace's archived persisted transcript. The method uses the same result type and native REST behavior as active export, but it never falls back to an active session; support cannot be inferred from any active export capability.
+
+When `workspace_session_live_state` is advertised, `client.getWorkspaceSessionLiveState(workspaceCwd)` or the scoped `client.workspaceById(workspaceId).getSessionLiveState()` / `client.workspaceByCwd(workspaceCwd).getSessionLiveState()` reads the selected trusted workspace's memory-only live-session snapshot plus its catalog version, returning `DaemonWorkspaceSessionLiveState` (`{ v: 1, catalogVersion: DaemonSessionCatalogVersion, sessions: DaemonSessionLiveState[] }`). These methods always use native REST with bearer authentication and an encoded workspace selector, preserve optional client identity, and use the existing short-request timeout. They do not call `requireCapability()` — a capability probe on every poll would double request volume — so consumers pre-flight `workspace_session_live_state` once from their already-loaded capabilities and fall back to existing catalog polling when the tag is absent. Do not infer support from `workspace_qualified_rest_core`. Each `DaemonSessionLiveState` carries an optional `updatedAt` activity watermark that lets a consumer refresh the recency of a catalog row it already holds instead of reloading the catalog after a completed turn; it is absent before the first running-turn terminal in the current bridge and after a daemon or runtime replacement, so a consumer must keep its existing catalog fallback for a missing value rather than treating absence as unsupported.
 
 ### Seeding `lastEventId` at Construction
 

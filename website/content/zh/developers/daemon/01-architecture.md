@@ -2,7 +2,7 @@
 
 ## 概述
 
-一个 `qwen serve` 进程 **= 一个守护进程 = 一个工作空间**。它托管一个 Express HTTP 服务器，拥有一个 `@qwen-code/acp-bridge` 实例，并派生一个运行实际代理运行时的 ACP 子进程 (`qwen --acp`)。多个客户端（CLI TUI、IDE 伴侣、IM 频道机器人、Web BFF、自定义脚本）通过 HTTP + SSE 连接，并且要么共享同一个 ACP 会话（`sessionScope: 'single'`，默认），要么按对话线程拆分会话（`sessionScope: 'thread'`）。
+一个 `qwen serve` 进程默认托管一个 Express HTTP 服务器和一个主工作区。启用 `multi_workspace_sessions` 后，它还可以为实时会话闭环托管额外的工作区运行时；每个注册的工作区拥有自己的 `@qwen-code/acp-bridge` / `qwen --acp` 子进程对。多个客户端（CLI TUI、IDE 伴侣、IM 频道机器人、Web BFF、自定义脚本）通过 HTTP + SSE 连接，并且要么共享同一个 ACP 会话（`sessionScope: 'single'`，默认），要么按对话线程拆分会话（`sessionScope: 'thread'`）。
 
 在 ACP 子进程中，MCP 服务器通过 `McpTransportPool` (F2) 在工作空间范围内共享：一个（服务器名称 + 配置指纹）元组映射到一个 MCP 传输，无论有多少会话发现它。桥接器的 `MultiClientPermissionMediator` (F3) 在四种策略之一下协调所有已连接客户端的权限投票。
 
@@ -20,7 +20,7 @@ flowchart LR
         SDK["任意 SDK 消费者<br/>(packages/sdk-typescript/src/daemon)"]
     end
 
-    subgraph daemon["qwen serve 进程（一个工作空间）"]
+    subgraph daemon["qwen serve 进程（主工作区加可选的会话运行时）"]
         EXP["Express 应用<br/>(packages/cli/src/serve/server.ts)"]
         BR["AcpBridge<br/>(packages/acp-bridge/src/bridge.ts)"]
         MED["MultiClientPermissionMediator<br/>(F3)"]
@@ -154,7 +154,7 @@ sequenceDiagram
     participant CH as ACP 子进程
 
     C->>MW: POST /session/:id/prompt<br/>Authorization: Bearer …<br/>X-Qwen-Client-Id: …
-    MW->>MW: denyBrowserOriginCors
+    MW->>MW: allowOriginCors (可变允许列表；未匹配的 Origin -> 403)
     MW->>MW: hostAllowlist (DNS 重新绑定防护)
     MW->>MW: access-log hook
     MW->>MW: bearerAuth (恒定时间比较)
@@ -196,7 +196,7 @@ sequenceDiagram
     Note over EB,SR: 如果订阅者队列 >= maxQueued，<br/>EventBus 发出 client_evicted 终端帧<br/>并关闭订阅者。
 ```
 
-环形缓冲区有界 (`eventRingSize`, 默认 8000)。重新连接的客户端如果 `Last-Event-ID` 早于环形缓冲区头部，将收到合成的 catch-up 信号，并必须调用 `loadSession` / `resumeSession` 来重建更深的状态。慢速客户端在队列填充 75% 时触发 `slow_client_warning`，在达到上限时触发 `client_evicted`。
+环形缓冲区有界 (`eventRingSize`, 默认 8000)。重新连接的客户端如果 `Last-Event-ID` 早于环形缓冲区头部，将收到 `state_resync_required`，并必须从 `loadSession` 的有界重放快照窗口重建，或在已有本地历史时使用 `resumeSession`。慢速客户端在队列填充 75% 时触发 `slow_client_warning`，在达到上限时触发 `client_evicted`。
 
 ## 工作流 3：多客户端权限协调
 

@@ -52,7 +52,7 @@ new DaemonClient({
 | 事件 | `subscribeEvents`（SSE 生成器）、`subscribeEventsStream`（原始响应） |
 | 权限 | `respondToPermission`、`respondToSessionPermission` |
 | 工作区快照 | `getWorkspaceMcp`、`getWorkspaceSkills`、`getWorkspaceProviders`、`getWorkspaceEnv`、`getWorkspacePreflight` |
-| 工作区变更 | `writeWorkspaceMemory`、`readWorkspaceMemory`、`rememberWorkspaceMemory`、`getWorkspaceMemoryRememberTask`、`forgetWorkspaceMemory`、`getWorkspaceMemoryForgetTask`、`dreamWorkspaceMemory`、`getWorkspaceMemoryDreamTask`、`listWorkspaceAgents`、`getWorkspaceAgent`、`createWorkspaceAgent`、`updateWorkspaceAgent`、`deleteWorkspaceAgent`、`toggleWorkspaceTool`、`restartMcpServer`、`initializeWorkspace` |
+| 工作区变更 | `addWorkspace`、`updateWorkspace`、`writeWorkspaceMemory`、`readWorkspaceMemory`、`rememberWorkspaceMemory`、`getWorkspaceMemoryRememberTask`、`forgetWorkspaceMemory`、`getWorkspaceMemoryForgetTask`、`dreamWorkspaceMemory`、`getWorkspaceMemoryDreamTask`、`listWorkspaceAgents`、`getWorkspaceAgent`、`createWorkspaceAgent`、`updateWorkspaceAgent`、`deleteWorkspaceAgent`、`setWorkspaceToolEnabled`、`setWorkspaceSkillEnabled`、`restartMcpServer`、`initWorkspace` |
 | 文件 | `readFile`、`readFileBytes`、`writeFile`、`editFile`、`listDirectory`、`globPaths`、`statPath` |
 | 认证 | `startDeviceFlow`、`pollDeviceFlow`、`cancelDeviceFlow`、`getAuthStatus` |
 
@@ -140,6 +140,69 @@ await client.getWorkspaceMemoryForgetTask('forget-...');
 await client.dreamWorkspaceMemory();
 await client.getWorkspaceMemoryDreamTask('dream-...');
 ```
+
+工作区 skill 开关在两种客户端形态中均可用：
+
+```ts
+await client.setWorkspaceSkillEnabled('review', false, {
+  clientId: 'dashboard-1',
+});
+await client
+  .workspaceByCwd('/work/secondary')
+  .setWorkspaceSkillEnabled('review', true, { clientId: 'dashboard-1' });
+```
+
+预检 `capabilities.features.includes('workspace_skill_toggle')`。类型化的 `DaemonSkillToggleResult` 报告规范的 `skillName`、磁盘状态是否 `changed`、激活状态（`applied`、`deferred` 或 `partial`），以及刷新/失败的会话计数。`DaemonWorkspaceSkillStatus.userInvocable` 是一个可选的仅 false 字段；缺失表示该 skill 可被用户调用。
+
+批量变更时，先预检 `workspace_skill_batch_toggle`，然后以相同的契约调用任一客户端形态：
+
+```ts
+await client.setWorkspaceSkillsEnabled(['review', 'deploy'], false, {
+  clientId: 'dashboard-1',
+});
+await client
+  .workspaceByCwd('/work/secondary')
+  .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
+```
+
+`DaemonSkillBatchToggleResult` 包含有序的 `results` 成功列表、每个目标的 `errors`，以及批次级别的激活/会话刷新计数。daemon 会将有效目标一起持久化并一次性刷新活跃会话；一个预期的目标错误不会阻止其他有效目标。该方法仅在非 200 响应时抛出；200 并不意味着每个目标都已应用，因此在将批次视为成功之前务必检查 `errors`。
+
+V2 Extension 批量激活保留了异步 Extension 操作模型。预检 `extension_batch_activation_v2`，提交全局默认批次或选定工作区覆盖批次，然后使用现有的操作辅助方法进行轮询：
+
+```ts
+const globalHandle = await client.setExtensionDefaultActivations(
+  ['formatter', 'review-tools'],
+  'disabled',
+  'dashboard-1',
+);
+const workspaceHandle = await client
+  .workspaceByCwd('/work/secondary')
+  .setExtensionActivations(
+    ['formatter', 'review-tools'],
+    'inherit',
+    'dashboard-1',
+  );
+const operation = await client.waitForExtensionOperation(workspaceHandle);
+```
+
+终端操作结果包含有序的 `results`。设置 `enabled` 或 `disabled` 时目标不需要已安装：daemon 会存储一个名称声明，并在之后安装同名 Extension 时保留该激活策略。所有变更的目标共享一个 Extension Store generation 和一次调和。全局默认批次会调和每个已注册的运行时；工作区批次仅解析和调和选定的可信运行时。工作区的 `inherit` 会清除确切的覆盖但不会为未知名称创建声明；全部未知的清除会作为无操作成功而不进行调和。单一激活方法仍然仅限已安装的目标。
+
+工作区显示名称是可选的展示元数据。预检 `capabilities.features.includes('workspace_display_name')`；工作区 ID 和规范路径仍然是唯一的选择器，重复的显示名称是合法的。
+
+```ts
+const workspace = await client.addWorkspace('/srv/repos/payments', {
+  persist: true,
+  displayName: 'Payments Production',
+});
+
+await client.updateWorkspace(workspace.id, {
+  displayName: 'Payments',
+});
+await client.updateWorkspace(workspace.id, { displayName: null });
+```
+
+`addWorkspace` 接受 `displayName?: string` 并在设置时返回它。`updateWorkspace` 接受 ID 或 cwd 选择器以及 `{ displayName: string | null }`；`null` 清除名称。名称在修剪后限制为 256 个字符，并拒绝内部 C0/DEL 控制字符。进程本地工作区仅在当前 daemon 进程中保留其名称；匹配的持久化注册通过现有存储进行更新。`DaemonWorkspaceCapability.displayName` 保持可选，因此 SDK 继续与旧版 daemon 互操作。
+
 ## 工作流
 
 ### 创建或附加 + 首次 prompt
@@ -234,7 +297,7 @@ sequenceDiagram
 
 SDK 还导出了 `packages/sdk-typescript/src/daemon/ui/`，这是一组与宿主无关的基础组件，用于将 daemon 事件转换为 transcript blocks：
 
-- `normalizeDaemonEvent(evt)` 将 47 种已知的 daemon 网络事件映射为 42 种对 UI 友好的 `DaemonUiEventType` 值；未建模或格式错误的事件会被规范化为 `debug`。
+- `normalizeDaemonEvent(evt)` 将 53 种已知的 daemon 网络事件映射为 43 种对 UI 友好的 `DaemonUiEventType` 值；未建模或格式错误的事件会被规范化为 `debug`。
 - `createDaemonTranscriptState()` 结合 `reduceDaemonTranscriptEvents(state, events)` 将 UI 事件投影为 `DaemonTranscriptBlock[]`。
 - `createDaemonTranscriptStore()` 封装了 subscribe / dispatch。
 - `render.ts` / `terminal.ts` 提供 HTML 和终端基线渲染器，而 `toolPreview.ts` 生成工具调用摘要。
@@ -294,9 +357,13 @@ async function* subscribe(sessionId: string, signal: AbortSignal) {
     }
     // 处理 ring 驱逐间隙。
     if (event.type === 'state_resync_required') {
-      // 状态已过期 —— 重新加载完整的会话状态。
+      // 状态已过期 —— 重新加载 daemon 的有界重放快照窗口。
       await client.loadSession(sessionId);
       continue;
+    }
+    if (event.type === 'history_truncated') {
+      // 仅提供信息。渲染状态通知，然后继续应用
+      // 保留的重放事件；不要触发另一次重新加载。
     }
     yield event;
   }
@@ -328,7 +395,17 @@ async function resilientSubscribe(session: DaemonSessionClient) {
 }
 ```
 
-重连时，daemon 会从其有界 ring（默认 8000 个事件）中回放 `id > lastSeenEventId` 的事件。如果间隙超过 ring 的容量，`state_resync_required` 帧会通知客户端调用 `loadSession` 以进行完整的状态重建。
+重连时，daemon 会从其有界 ring（默认 8000 个事件）中回放 `id > lastSeenEventId` 的事件。如果间隙超过 ring 的容量，`state_resync_required` 帧会通知客户端调用 `loadSession` 并从当前的有界重放快照窗口重建。该快照可能以 `history_truncated` 开头；将其视为操作员可见的状态标记，而不是另一个重同步请求。
+
+`history_truncated.fullTranscriptAvailable` 是一个布尔能力标志。当它为 `true` 时，调用方可以使用 `DaemonClient.getSessionTranscriptPage(sessionId, { cursor, limit })` 分页获取完整的活动持久化重放；当它为 `false` 时，客户端应继续正常渲染有界重放。
+
+当 `workspace_persisted_transcript` 被广播时，`client.workspaceById(workspaceId).getSessionTranscriptPage(sessionId, { cursor, limit })` 读取选定的已注册工作区而不附加到 ACP。工作区限定方法始终使用原生 REST，即使客户端具有可替换的传输；其游标在 daemon 重启时过期。
+
+当 `workspace_session_export` 被广播时，`client.workspaceById(workspaceId).exportSession(sessionId, { format })` 或 `client.workspaceByCwd(workspaceCwd).exportSession(...)` 导出选定的可信工作区的活动持久化转录。它返回现有的 `DaemonSessionExportResult`，保留可选的客户端标识和客户端范围的 fetch 超时行为，并且始终使用原生 REST，即使客户端具有可替换的传输。不要从 `session_export` 或 `workspace_qualified_rest_core` 推断此方法的服务端支持；旧版 daemon 保留仅主工作区的导出。
+
+当 `workspace_archived_session_export` 被广播时，使用 `client.workspaceById(workspaceId).exportArchivedSession(sessionId, { format })` 或相应的 `workspaceByCwd` 方法仅导出选定工作区的已归档持久化转录。该方法使用与活动导出相同的结果类型和原生 REST 行为，但它永远不会回退到活动会话；不能从任何活动导出能力推断其支持。
+
+当 `workspace_session_live_state` 被广播时，`client.getWorkspaceSessionLiveState(workspaceCwd)` 或作用域方法 `client.workspaceById(workspaceId).getSessionLiveState()` / `client.workspaceByCwd(workspaceCwd).getSessionLiveState()` 读取选定可信工作区的纯内存活跃会话快照及其目录版本，返回 `DaemonWorkspaceSessionLiveState`（`{ v: 1, catalogVersion: DaemonSessionCatalogVersion, sessions: DaemonSessionLiveState[] }`）。这些方法始终使用原生 REST 配合 bearer 认证和编码的工作区选择器，保留可选的客户端标识，并使用现有的短请求超时。它们不调用 `requireCapability()` — 每次轮询都进行能力探测会使请求量翻倍 — 因此消费者应从已加载的 capabilities 中预检一次 `workspace_session_live_state`，并在缺少该标签时回退到现有的目录轮询。不要从 `workspace_qualified_rest_core` 推断其支持。每个 `DaemonSessionLiveState` 携带一个可选的 `updatedAt` 活动水位标记，使消费者能够刷新其已持有的目录行的时效性，而不是在完成一个轮次后重新加载目录；它在当前 bridge 中第一个运行中轮次的终端事件之前以及 daemon 或运行时替换之后缺失，因此消费者必须对缺失值保留其现有的目录回退，而不是将缺失视为不支持。
 
 ### 在构造时设置 `lastEventId` 初始值
 

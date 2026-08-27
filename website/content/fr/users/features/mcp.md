@@ -260,6 +260,29 @@ Le champ `timeout` existant est le timeout d'**appel d'outil** (utilisé pour ch
 requête `tools/call`, par défaut 10 minutes) et n'est pas affecté par
 `discoveryTimeoutMs` — une invocation d'outil de longue durée n'est pas une pathologie de démarrage.
 
+### Négociation stdio automatique
+
+Les serveurs stdio utilisent par défaut le flux d'initialisation hérité à processus unique. Pour
+vous connecter à un serveur stdio moderne uniquement, activez la négociation automatique de protocole :
+
+```jsonc
+{
+  "mcpServers": {
+    "modern-server": {
+      "command": "node",
+      "args": ["./server.js"],
+      "versionNegotiation": "auto",
+    },
+  },
+}
+```
+
+La négociation automatique lance une copie éphémère du serveur configuré avant
+de démarrer le processus de session et peut utiliser jusqu'à cinq secondes du budget
+de découverte. Conservez la politique héritée par défaut pour les serveurs dont le démarrage a des
+effets de bord non idempotents, des verrous à propriétaire unique ou des fichiers PID, ou des
+handshakes d'initialisation lents.
+
 ### Désactiver le MCP progressif
 
 Si vous avez besoin de l'ancien comportement synchrone (le CLI attend chaque serveur MCP
@@ -270,7 +293,15 @@ environnement. Cela est conservé comme solution de secours pour au moins une ve
 
 ### Confiance (ignorer les confirmations)
 
-- **Confiance serveur** (`trust: true`) : ignore les invites de confirmation pour ce serveur (à utiliser avec parcimonie).
+- **Confiance serveur** (`trust: true`) : ignore les invites de confirmation pour ce serveur uniquement dans un workspace fiable (à utiliser avec parcimonie).
+
+### Reconnexion et replay en cas de perte de connexion
+
+Qwen Code ne se reconnecte et ne rejoue l'appel d'outil MCP en cours que lorsque le serveur a `trust: true`, que le workspace est fiable, et que l'outil déclare explicitement soit `idempotentHint: true` soit une annotation read-only cohérente. Les annotations read-only sont en conflit avec `destructiveHint: true` ou `idempotentHint: false` et ne sont pas rejouées.
+
+Les appels avec des annotations manquantes, des annotations en conflit, un serveur non fiable ou un workspace non fiable ne sont pas rejoués après une erreur de connexion. Qwen Code signale que le résultat peut être inconnu car le serveur aurait pu terminer l'opération avant que la réponse ne soit perdue. Vérifiez le résultat avant de réessayer. Ce comportement conservateur peut différer des versions précédentes qui retryaient de manière transparente les outils non annotés.
+
+Les annotations sont des indices comportementaux fournis par le serveur, pas des permissions ou une limite d'autorisation. Ne configurez `trust: true` que pour les serveurs que vous contrôlez et dont vous avez vérifié les annotations.
 
 ### Authentification OAuth
 
@@ -294,13 +325,21 @@ Le flux OAuth nécessite une URI de redirection vers laquelle le fournisseur d'a
 
 - **Développement local** : Par défaut, Qwen Code utilise `http://localhost:7777/oauth/callback`. Cela fonctionne lorsque vous exécutez Qwen Code sur votre machine locale avec un navigateur local.
 
-- **Déploiements distants/cloud** : Lors de l'exécution de Qwen Code sur des serveurs distants, des IDE cloud ou des terminaux web, la redirection `localhost` par défaut ne fonctionnera PAS. Vous DEVEZ configurer `--oauth-redirect-uri` pour qu'il pointe vers une URL accessible publiquement capable de recevoir le callback OAuth.
+- **Déploiements distants/cloud** : Lors de l'exécution de Qwen Code sur des serveurs distants, des IDE cloud ou des terminaux web, la redirection `localhost` par défaut ne fonctionnera PAS. Configurez `--oauth-redirect-uri` avec une URL publique se terminant par `/oauth/callback`, puis faites un reverse-proxy de ce chemin vers `http://127.0.0.1:7777/oauth/callback` sur la machine exécutant Qwen Code. Qwen Code ne termine pas TLS ; le proxy doit le faire.
 
 Exemple pour les serveurs distants :
 
 ```bash
 qwen mcp add --transport sse remote-server https://api.example.com/sse/ \
   --oauth-redirect-uri https://your-remote-server.example.com/oauth/callback
+```
+
+Par exemple, un reverse proxy peut forward uniquement ce chemin de callback vers le listener local :
+
+```nginx
+location = /oauth/callback {
+  proxy_pass http://127.0.0.1:7777;
+}
 ```
 
 #### Configuration manuelle via settings.json
@@ -444,7 +483,8 @@ Optionnel :
 | `env`                  | object                       | Variables d'environnement pour le processus serveur. Les valeurs peuvent référencer des variables d'environnement en utilisant la syntaxe `$VAR_NAME` ou `${VAR_NAME}`                                                                                                                                |
 | `cwd`                  | string                       | Répertoire de travail pour le transport Stdio                                                                                                                                                                                                                             |
 | `timeout`              | number<br>(par défaut : 600 000) | Timeout de requête en millisecondes (par défaut : 600 000 ms = 10 minutes)                                                                                                                                                                                                 |
-| `trust`                | boolean<br>(par défaut : false)  | Lorsque `true`, ignore toutes les confirmations d'appel d'outil pour ce serveur (par défaut : `false`)                                                                                                                                                                              |
+| `versionNegotiation`   | `"auto" \| "legacy"`<br>(par défaut : `"legacy"`) | Pour les serveurs stdio, `"auto"` active la négociation de protocole sur un processus frère éphémère. La valeur par défaut `"legacy"` ne démarre que le processus de session.                                                                                                               |
+| `trust`                | boolean<br>(par défaut : false)  | Lorsque `true`, ignore les invites de confirmation d'appel d'outil pour ce serveur dans un workspace fiable (par défaut : `false`)                                                                                                                                                  |
 | `includeTools`         | array                        | Liste des noms d'outils à inclure depuis ce serveur MCP. Lorsqu'elle est spécifiée, seuls les outils listés ici seront disponibles depuis ce serveur (comportement de liste d'autorisation). Si elle n'est pas spécifiée, tous les outils du serveur sont activés par défaut.                                       |
 | `excludeTools`         | array                        | Liste des noms d'outils à exclure de ce serveur MCP. Les outils listés ici ne seront pas disponibles pour le modèle, même s'ils sont exposés par le serveur.<br>Remarque : `excludeTools` est prioritaire sur `includeTools` - si un outil est dans les deux listes, il sera exclu. |
 | `targetAudience`       | string                       | L'ID client OAuth autorisé sur l'application protégée par IAP à laquelle vous essayez d'accéder. Utilisé avec `authProviderType: 'service_account_impersonation'`.                                                                                                         |
@@ -472,7 +512,7 @@ qwen mcp add [options] <name> <commandOrUrl> [args...]
 | `-e`, `--env`               | Définir les variables d'environnement.                                          | —                                      | `-e KEY=value`                                                     |
 | `-H`, `--header`            | Définir les en-têtes HTTP pour les transports SSE et HTTP.                       | —                                      | `-H "X-Api-Key: abc123"`                                           |
 | `--timeout`                 | Définir le timeout de connexion en millisecondes.                             | —                                      | `--timeout 30000`                                                  |
-| `--trust`                   | Faire confiance au serveur (ignorer toutes les invites de confirmation d'appel d'outil).       | — (`false`)                            | `--trust`                                                          |
+| `--trust`                   | Faire confiance au serveur ; ignorer les confirmations dans les workspaces fiables.         | — (`false`)                            | `--trust`                                                          |
 | `--description`             | Définir la description du serveur.                                 | —                                      | `--description "Local tools"`                                      |
 | `--include-tools`           | Une liste d'outils à inclure, séparés par des virgules.                         | tous les outils inclus                     | `--include-tools mytool,othertool`                                 |
 | `--exclude-tools`           | Une liste d'outils à exclure, séparés par des virgules.                         | aucun                                   | `--exclude-tools mytool`                                           |

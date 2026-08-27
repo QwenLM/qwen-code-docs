@@ -38,6 +38,15 @@ Ative as seguintes permissões em **Permissions & Scopes** (权限管理):
 - `im:message:send_as_bot` — Enviar mensagens como bot
 - `im:resource` — Acessar recursos de mensagens (imagens, arquivos)
 
+Para exibir nomes de usuários e grupos em vez de IDs nos contatos descobertos
+pelo daemon, opcionalmente ative:
+
+- `contact:user.basic_profile:readonly` — Ler nomes de exibição de usuários
+- `im:chat:readonly` — Ler nomes de grupos
+
+Sem essas permissões opcionais, as mensagens ainda funcionam e os contatos
+descobertos mantêm seus IDs de usuário e chat do Feishu como rótulos.
+
 ### Publique o aplicativo
 
 Após configurar as permissões e eventos, crie uma versão e publique-a. O bot não funcionará até que o aplicativo seja publicado e aprovado.
@@ -121,9 +130,10 @@ Em seguida, defina a URL de requisição na Plataforma Aberta do Feishu como `ht
 
 Os bots do Feishu funcionam tanto em conversas individuais quanto em grupo. Para ativar o suporte a grupos:
 
-1. Defina `groupPolicy` como `"allowlist"` ou `"open"` na configuração do canal
+1. Defina `groupPolicy` como `"allowlist"`, `"pairing"` ou `"open"` na configuração do canal
 2. Adicione o bot a um grupo do Feishu
 3. Mencione o bot com @ no grupo para acionar uma resposta
+4. Se estiver usando `groupPolicy: "pairing"`, aprove a solicitação de pairing do grupo uma vez antes que as respostas comecem
 
 Por padrão, o bot exige uma menção @ em conversas de grupo (`requireMention: true`). Defina `"requireMention": false` para um grupo específico para que ele responda a todas as mensagens.
 
@@ -170,7 +180,8 @@ Vários usuários podem enviar mensagens simultaneamente no mesmo grupo. Cada me
 
 ### O bot não responde em grupos
 
-- Verifique se `groupPolicy` está definido como `"allowlist"` ou `"open"` (o padrão é `"disabled"`)
+- Verifique se `groupPolicy` está definido como `"allowlist"`, `"pairing"` ou `"open"` (o padrão é `"disabled"`)
+- Se estiver usando `"pairing"`, verifique se a solicitação de pairing do grupo foi aprovada
 - Certifique-se de mencionar o bot com @ na mensagem do grupo
 - Verifique se o bot foi adicionado ao grupo
 

@@ -64,7 +64,7 @@ Os hooks de comando executam comandos via processos filhos. O JSON de entrada é
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "WriteFile",
+        "matcher": "write_file",
         "hooks": [
           {
             "type": "command",
@@ -103,6 +103,24 @@ Os hooks HTTP enviam a entrada do hook como requisições POST para URLs especif
 - **Validação de DNS**: Valida a resolução de domínio antes das requisições para evitar ataques de DNS rebinding
 - **Interpolação de Variáveis de Ambiente**: Sintaxe `${VAR}`, permite apenas variáveis na lista de permissão `allowedEnvVars`
 
+#### Allowing private-network hooks (managed environments only)
+
+Por padrão, hooks HTTP não podem targetear faixas de IP privadas ou link-local. Em ambientes gerenciados por plataformas onde o receptor do hook é um endpoint interno de primeira parte na VPC (por exemplo, um gateway de API interno resolvendo para `172.16.0.0/12`), você pode relaxar as verificações de faixa de IP com:
+
+```json
+{
+  "security": {
+    "allowPrivateNetworkHooks": true
+  }
+}
+```
+
+- Esta configuração é **honrada apenas nos escopos de configurações User, System e SystemDefaults**. Um valor definido nas configurações de Workspace (projeto) é ignorado e registrado como aviso, então um repositório clonado nunca pode conceder essa bypass por conta própria.
+- O flag relaxa apenas as verificações de **faixa** privadas/CGNAT/link-local gerais. Endpoints de metadados de nuvem permanecem bloqueados em todas as configurações: a lista `BLOCKED_HOSTS` é correspondida literalmente (`metadata.google.internal`, `metadata.azure.internal`, ...), e os IPs de metadados `169.254.169.254` e `100.100.100.200` são bloqueados em todas as formas serializadas (incluindo IPv4-mapped IPv6 como `::ffff:a9fe:a9fe`) e após resolução DNS.
+- A lista de permissão `security.allowedHttpHookUrls` ainda se aplica independentemente. Em ambientes gerenciados, combine este flag com uma lista de permissão para que apenas os endpoints internos desejados sejam acessíveis.
+
+> **Warning:** Habilitar este flag permite que hooks acessem infraestrutura interna na sua rede. Habilite-o apenas em configurações gerenciadas e confiáveis — nunca em um repositório que você não controla.
+
 **Example:**
 
 ```json
@@ -129,6 +147,70 @@ Os hooks HTTP enviam a entrada do hook como requisições POST para URLs especif
 }
 ```
 
+**Example: External Judgment Service Adapter**
+
+A configuração `remote-security-check` acima espera que `http://127.0.0.1:8080/hooks/pre-tool-use` já esteja executando um serviço que fala este contrato (POST `{tool_name, tool_input, ...}` entrada, `hookSpecificOutput.permissionDecision` saída). Aqui está um adaptador mínimo, apenas com stdlib, que preenche essa parte faltante, conectado a um backend de julgamento concreto para que tudo seja executável e testável de ponta a ponta, em vez de um stub. Apenas a função `review()` é específica do backend — troque seu corpo e formato de request/response por qualquer que seja o serviço que você usar; todo o resto (o servidor, o tratamento fail-open, o formato de resposta do hook) permanece o mesmo independente do backend.
+
+_Divulgação: o backend usado abaixo, [invinoveritas](https://api.babyblueviper.com), é um serviço com o qual o autor é afiliado — usado aqui porque foi o que pôde ser verificado de ponta a ponta para este exemplo, não um endosso. Qualquer serviço HTTP que retorne um veredito JSON funciona igualmente bem; apenas `review()` precisa mudar._
+
+_Tratamento de dados: com `matcher: "*"`, o `tool_input` completo de **todas** as chamadas de ferramenta é enviado ao backend de julgamento — trate essa entrada como sensível (pode conter conteúdos de arquivos, caminhos ou segredos). Estreite o matcher (ex.: para `run_shell_command`) se você precisa julgar apenas comandos shell._
+
+```python
+#!/usr/bin/env python3
+# judgment_hook.py -- run: JUDGMENT_API_KEY=... python3 judgment_hook.py
+import json, os, sys, urllib.request
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
+JUDGMENT_API_KEY = os.environ["JUDGMENT_API_KEY"]
+JUDGMENT_URL = os.environ.get("JUDGMENT_URL", "https://api.babyblueviper.com/review")
+
+def review(tool_name, tool_input):
+    """POST the call to the judgment backend and return its verdict. This is the
+    one function to change for a different backend -- request/response shape
+    below matches invinoveritas's /review; adapt both to your own backend's
+    contract if you swap it out."""
+    body = json.dumps({
+        "artifact": json.dumps({"tool_name": tool_name, "tool_input": tool_input}),
+        "artifact_type": "shell_command" if tool_name in ("run_shell_command", "shell") else "general",
+        "context": f"qwen-code PreToolUse: {tool_name}",
+    }).encode()
+    req = urllib.request.Request(
+        JUDGMENT_URL, data=body,
+        headers={"Authorization": f"Bearer {JUDGMENT_API_KEY}", "Content-Type": "application/json"},
+    )
+    # Keep this below the HTTP hook's own timeout (10s in the config above), so a "deny"
+    # verdict is always returned before the hook gives up and fails open on its own.
+    with urllib.request.urlopen(req, timeout=8) as resp:
+        return json.loads(resp.read())  # response includes a "verdict" field: "reject" denies, anything else allows
+
+class Handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        payload = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+        tool_name, tool_input = payload.get("tool_name", "unknown"), payload.get("tool_input", {})
+        try:
+            verdict = review(tool_name, tool_input)
+            decision = "deny" if verdict.get("verdict") == "reject" else "allow"
+            reason = verdict.get("summary", f"judgment verdict: {verdict.get('verdict')}")
+        except Exception as e:
+            decision, reason = "allow", "judgment backend unavailable, failing open"  # never block on a review-side outage
+            print(f"judgment backend unavailable for {tool_name}, failing open: {e}", file=sys.stderr)
+        out = {"continue": True, "decision": decision, "hookSpecificOutput": {
+            "hookEventName": "PreToolUse", "permissionDecision": decision, "permissionDecisionReason": reason,
+        }}
+        body = json.dumps(out).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+    def log_message(self, *a): pass
+
+if __name__ == "__main__":
+    HTTPServer(("127.0.0.1", 8080), Handler).serve_forever()
+```
+
+Testado de ponta a ponta contra a API real de produção acima: uma entrada genuinamente destrutiva (`{"tool_name": "run_shell_command", "tool_input": {"command": "rm -rf /important_data"}}`) retornou `permissionDecision: "deny"` com uma explicação real; uma benigna (`ls -la`) retornou `"allow"`. Falha aberta em qualquer problema de rede/timeout/resposta malformada do backend de julgamento, então uma interrupção nunca bloqueia chamadas de ferramenta legítimas — mesma disciplina que os exemplos de hook `command` acima aplicam com seus próprios códigos de saída.
+
 ### Function Hooks
 
 Os hooks de função chamam diretamente funções JavaScript/TypeScript registradas. Eles são usados internamente pelo sistema de Skills e atualmente não são expostos como uma API pública para usuários finais.
@@ -138,6 +220,8 @@ Os hooks de função chamam diretamente funções JavaScript/TypeScript registra
 ### Prompt Hooks
 
 Os hooks de prompt usam um LLM para avaliar a entrada do hook e retornar uma decisão. Isso é útil para tomar decisões inteligentes com base no contexto, como determinar se uma operação deve ser permitida ou bloqueada.
+
+> **Data handling:** Um hook de prompt envia sua entrada de evento para o provedor de modelo configurado. Quando o logging de debug baseado em arquivos está habilitado, a requisição do hook de prompt totalmente expandida também é escrita no log de debug da sessão. Trate a entrada do hook e os logs de debug como potencialmente sensíveis.
 
 **How it works:**
 
@@ -184,7 +268,7 @@ Os hooks de prompt podem ser usados com a maioria dos eventos de hook, incluindo
 - `PostToolUse` - Avalia os resultados da ferramenta e potencialmente injeta contexto
 - `Stop` - Determina se deve continuar ou parar
 - `SubagentStop` - Avalia os resultados do subagente
-- `UserPromptSubmit` - Avalia ou enriquece os prompts do usuário
+- `UserPromptSubmit` - Avalia ou enriquece os prompts elegíveis vinculados ao modelo
 
 **Example: Stop Hook**
 
@@ -215,7 +299,7 @@ Quando `ok` é `false`, o Qwen Code continuará trabalhando e usará o `reason` 
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "run_shell_command",
         "hooks": [
           {
             "type": "prompt",
@@ -235,42 +319,48 @@ Quando `ok` é `false`, o Qwen Code continuará trabalhando e usará o `reason` 
 
 Os hooks são disparados em pontos específicos durante uma sessão do Qwen Code. Diferentes eventos suportam diferentes matchers para filtrar as condições de disparo.
 
-| Event                | Triggered When                            | Matcher Target                                            |
-| :------------------- | :---------------------------------------- | :-------------------------------------------------------- |
-| `PreToolUse`         | Antes da execução da ferramenta           | Nome da ferramenta (`WriteFile`, `ReadFile`, `Bash`, etc.) |
-| `PostToolUse`        | Após a execução bem-sucedida da ferramenta | Nome da ferramenta                                        |
-| `PostToolUseFailure` | Após a falha na execução da ferramenta    | Nome da ferramenta                                        |
-| `UserPromptSubmit`   | Após o usuário enviar o prompt            | Nenhum (sempre dispara)                                   |
-| `SessionStart`       | Quando a sessão inicia ou é retomada      | Origem (`startup`, `resume`, `clear`, `compact`)          |
-| `SessionEnd`         | Quando a sessão termina                   | Motivo (`clear`, `logout`, `prompt_input_exit`, etc.)     |
+| Event                | Triggered When                                  | Matcher Target                                                 |
+| :------------------- | :---------------------------------------------- | :------------------------------------------------------------- |
+| `PreToolUse`         | Antes da execução da ferramenta                 | Tool id (`write_file`, `read_file`, `run_shell_command`, etc.) |
+| `PostToolUse`        | Após a execução bem-sucedida da ferramenta      | Tool id                                                        |
+| `PostToolUseFailure` | Após a falha na execução da ferramenta          | Tool id                                                        |
+| `UserPromptSubmit`   | Antes de invocações de modelo suportadas        | Nenhum                                                         |
+| `SessionStart`       | Quando a sessão inicia ou é retomada            | Origem (`startup`, `resume`, `clear`, `compact`)               |
+| `SessionEnd`         | Quando a sessão termina                         | Motivo (`clear`, `logout`, `prompt_input_exit`, etc.)          |
+| `SessionDelete`      | Após uma sessão explicitamente selecionada ser excluída | Nenhum                                                   |
+| `MessageDisplay`     | Repetidamente, enquanto a resposta é transmitida | Nenhum (sempre dispara)                                       |
 | `Stop`               | Quando o Claude se prepara para concluir a resposta | Nenhum (sempre dispara)                                   |
-| `SubagentStart`      | Quando o subagente inicia                 | Tipo de agente (`Bash`, `Explorer`, `Plan`, etc.)         |
-| `SubagentStop`       | Quando o subagente para                   | Tipo de agente                                            |
-| `PreCompact`         | Antes da compactação da conversa          | Gatilho (`manual`, `auto`)                                |
-| `Notification`       | Quando as notificações são enviadas       | Tipo (`permission_prompt`, `idle_prompt`, `auth_success`) |
-| `PermissionRequest`  | Quando o diálogo de permissão é exibido   | Nome da ferramenta                                        |
-| `TodoCreated`        | Quando um novo item de todo é criado      | Nenhum (sempre dispara)                                   |
-| `TodoCompleted`      | Quando um item de todo é marcado como concluído | Nenhum (sempre dispara)                                   |
+| `SubagentStart`      | Quando o subagente inicia                       | Tipo de agente (`Bash`, `Explorer`, `Plan`, etc.)              |
+| `SubagentStop`       | Quando o subagente para                         | Tipo de agente                                                 |
+| `PreCompact`         | Antes da compactação da conversa                | Gatilho (`manual`, `auto`)                                     |
+| `Notification`       | Quando as notificações são enviadas             | Tipo (`permission_prompt`, `idle_prompt`, `auth_success`)      |
+| `PermissionRequest`  | Quando o diálogo de permissão é exibido         | Tool id                                                        |
+| `PermissionDenied`   | Quando a permissão da ferramenta é negada       | Tool id                                                        |
+| `TodoCreated`        | Quando um novo item de todo é criado            | Nenhum (sempre dispara)                                        |
+| `TodoCompleted`      | Quando um item de todo é marcado como concluído | Nenhum (sempre dispara)                                        |
 ### Padrões de Matcher
 
 `matcher` é uma expressão regular usada para filtrar condições de gatilho.
 
-| Tipo de Evento          | Eventos                                                                 | Suporte a Matcher | Alvo do Matcher                                           |
-| :------------------ | :--------------------------------------------------------------------- | :-------------- | :------------------------------------------------------- |
-| Eventos de Ferramenta         | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest` | ✅ Regex        | Nome da ferramenta: `WriteFile`, `ReadFile`, `Bash`, etc.         |
-| Eventos de Subagente     | `SubagentStart`, `SubagentStop`                                        | ✅ Regex        | Tipo de agente: `Bash`, `Explorer`, etc.                     |
-| Eventos de Sessão      | `SessionStart`                                                         | ✅ Regex        | Origem: `startup`, `resume`, `clear`, `compact`          |
-| Eventos de Sessão      | `SessionEnd`                                                           | ✅ Regex        | Motivo: `clear`, `logout`, `prompt_input_exit`, etc.     |
-| Eventos de Notificação | `Notification`                                                         | ✅ Correspondência exata  | Tipo: `permission_prompt`, `idle_prompt`, `auth_success` |
-| Eventos de Compactação      | `PreCompact`                                                           | ✅ Correspondência exata  | Gatilho: `manual`, `auto`                                |
-| Eventos de Todo         | `TodoCreated`, `TodoCompleted`                                         | ❌ Não           | N/A                                                      |
-| Eventos de Prompt       | `UserPromptSubmit`                                                     | ❌ Não           | N/A                                                      |
-| Eventos de Stop         | `Stop`                                                                 | ❌ Não           | N/A                                                      |
+| Tipo de Evento          | Eventos                                                                                  | Suporte a Matcher | Alvo do Matcher                                              |
+| :------------------ | :----------------------------------------------------------------------------------------- | :-------------- | :----------------------------------------------------------- |
+| Eventos de Ferramenta         | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `PermissionDenied` | ✅ Regex        | Tool id: `write_file`, `read_file`, `run_shell_command`, etc. |
+| Eventos de Subagente     | `SubagentStart`, `SubagentStop`                                                            | ✅ Regex        | Tipo de agente: `Bash`, `Explorer`, etc.                       |
+| Eventos de Sessão      | `SessionStart`                                                                             | ✅ Regex        | Origem: `startup`, `resume`, `clear`, `compact`                |
+| Eventos de Sessão      | `SessionEnd`                                                                               | ✅ Regex        | Motivo: `clear`, `logout`, `prompt_input_exit`, etc.           |
+| Eventos de Sessão      | `SessionDelete`                                                                            | ❌ Não           | N/A                                                            |
+| Eventos de Notificação | `Notification`                                                                             | ✅ Correspondência exata  | Tipo: `permission_prompt`, `idle_prompt`, `auth_success`       |
+| Eventos de Compactação      | `PreCompact`                                                                               | ✅ Correspondência exata  | Gatilho: `manual`, `auto`                                      |
+| Eventos de Todo         | `TodoCreated`, `TodoCompleted`                                                             | ❌ Não           | N/A                                                            |
+| Eventos de Prompt       | `UserPromptSubmit`                                                                         | ❌ Não           | N/A                                                            |
+| Eventos de Stop         | `Stop`                                                                                     | ❌ Não           | N/A                                                            |
+| Message Display     | `MessageDisplay`                                                                           | ❌ Não           | N/A                                                            |
 
 **Sintaxe do Matcher:**
 
 - String vazia `""` ou `"*"` corresponde a todos os eventos desse tipo
-- Sintaxe padrão de regex suportada (por exemplo, `^Bash$`, `Read.*`, `(WriteFile|Edit)`)
+- Sintaxe padrão de regex suportada (por exemplo, `^run_shell_command$`, `read_.*`, `(write_file|edit)`)
+- Hooks de ferramenta recebem o tool id de runtime em `tool_name` (por exemplo, `write_file`). Nomes de exibição built-in como `WriteFile` e `ReadFile` também são aceitos como aliases de matcher para compatibilidade, mas novas configurações devem preferir os tool ids de runtime.
 
 **Exemplos:**
 
@@ -279,7 +369,7 @@ Os hooks são disparados em pontos específicos durante uma sessão do Qwen Code
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "^Bash$",
+        "matcher": "^run_shell_command$",
         "hooks": [
           {
             "type": "command",
@@ -288,7 +378,7 @@ Os hooks são disparados em pontos específicos durante uma sessão do Qwen Code
         ]
       },
       {
-        "matcher": "Write.*",
+        "matcher": "write_.*",
         "hooks": [
           {
             "type": "command",
@@ -322,7 +412,18 @@ Os hooks são disparados em pontos específicos durante uma sessão do Qwen Code
 
 ### Estrutura de Entrada do Hook
 
-Todos os hooks recebem entrada padronizada no formato JSON através do stdin (command) ou do corpo do POST (http).
+Todos os executores de hook recebem a entrada padronizada do evento. O limite de entrega depende do executor:
+
+| Tipo de hook | Destinatário da entrada                                         |
+| :--------- | :-------------------------------------------------------------- |
+| `command`  | Processo filho através de JSON no `stdin`                       |
+| `http`     | Endpoint configurado através de um corpo `POST` JSON            |
+| `function` | Callback confiável in-process                                   |
+| `prompt`   | Provedor de modelo configurado após a entrada substituir `$ARGUMENTS` |
+
+Hooks de função são código confiável executando no processo do Qwen. Eles recebem um objeto in-process, então campos não devem ser tratados como imutáveis contra um hook de função.
+
+O Qwen não controla se um processo de hook, endpoint, callback ou provedor de modelo retém ou encaminha sua entrada. Revise a política de tratamento de dados de cada executor configurado.
 
 **Campos Comuns:**
 
@@ -337,6 +438,8 @@ Todos os hooks recebem entrada padronizada no formato JSON através do stdin (co
 ```
 
 Campos específicos do evento são adicionados com base no tipo de hook. Ao executar em um subagente, `agent_id` e `agent_type` são incluídos adicionalmente.
+
+A entrada do hook é um contrato JSON extensível para frente: novos campos opcionais podem ser adicionados a eventos existentes. Consumidores devem ignorar campos desconhecidos. Um decodificador estrito que rejeita propriedades desconhecidas deve ser atualizado para permitir explicitamente cada novo campo opcional antes de atualizar o Qwen Code. Para hooks sensíveis à segurança, uma falha do decodificador pode alterar o comportamento fail-open ou fail-closed, então administradores devem validar o payload atualizado contra o hook implantado antes do rollout.
 
 ### Estrutura de Saída do Hook
 
@@ -400,6 +503,8 @@ O valor de `permissionDecision` controla se a ferramenta é executada:
 - `"allow"` — executa a ferramenta sem o prompt de aprovação usual.
 - `"deny"` — bloqueia a ferramenta; ela não é executada e um erro é retornado ao modelo.
 - `"ask"` — pausa e pede ao usuário para confirmar a chamada da ferramenta na TUI antes que ela seja executada. Confirmar executa a ferramenta uma vez; recusar a cancela. Em contextos que não podem pedir confirmação — execuções headless (`--prompt`) e subagentes em segundo plano — `"ask"` reverte para `"deny"`.
+
+Para `"ask"`, a TUI exibe `permissionDecisionReason` como texto literal em vez de interpretar Markdown inline. Isso mantém marcadores de formatação e targets de links visíveis para o usuário.
 
 **Nota**: Embora campos padrão de saída de hook como `decision` e `reason` sejam tecnicamente suportados pela classe subjacente, a interface oficial espera o `hookSpecificOutput` com `permissionDecision` e `permissionDecisionReason`.
 
@@ -486,21 +591,66 @@ O valor de `permissionDecision` controla se a ferramenta é executada:
 
 #### UserPromptSubmit
 
-**Propósito**: Executado quando o usuário envia um prompt para modificar, validar ou enriquecer a entrada.
+**Propósito**: Executado antes de invocações de modelo suportadas para validar, bloquear ou enriquecer o prompt vinculado ao modelo atual. O evento atualmente cobre envios `UserQuery`, `ToolResult` e `Hook`, enquanto envios `Retry`, `Steer`, `Cron`, `Notification` e `Teammate` são ignorados. Ele pode, portanto, ocorrer em caminhos de continuação, e `prompt` não deve ser considerado como entrada bruta do usuário.
 
 **Campos específicos do evento**:
 
 ```json
 {
-  "prompt": "the user's submitted prompt text"
+  "prompt": "prompt vinculado ao modelo atual para esta invocação do hook",
+  "submitted_prompt": "texto opcional do usuário capturado em uma borda de submissão interativa suportada pela TUI"
 }
 ```
+
+`submitted_prompt` é opcional. Está presente apenas quando o Qwen pode carregar proveniência de uma submissão interativa suportada pela TUI para um `UserQuery` fresco. É omitido para produtores não suportados e caminhos automáticos como steering no mesmo turno, continuações de resultado de ferramenta, retentativas, cron, notificações e tráfego de teammate. Caminhos ACP, headless, `serve`, SDK e entrada remota não o produzem nesta versão.
+
+Entrada diferida pode reter o campo quando sua proveniência permanece completa. Um batch combinado retém proveniência apenas quando cada item constituinte a possui; entrada editada, parcialmente conhecida ou de outra forma ambígua omite o campo. Navegação de prompt, comando e histórico do shell ou matches de busca selecionados, restaurações de stash entre reinícios e restaurações de rewind de conversa também o omitem porque esses caminhos podem surface texto vinculado ao modelo sem sua proveniência original. Consumidores que requerem texto submetido pelo usuário devem tratar ausência como indisponível em vez de fazer fallback para `prompt`.
+
+Após entrada vinculada ao modelo restaurada ou sem proveniência disponível ser limpa ou submetida, o compositor também limpa seu histórico de undo e redo. Isso impede que o undo restaure texto expandido após seu marcador ou sidecar ter sido consumido.
+
+Placeholders de colagem grande permanecem compactos em `submitted_prompt`; o conteúdo colado expandido aparece apenas em `prompt`. Consumidores devem tratar o campo como uma projeção de texto da TUI em vez de um registro byte-a-byte da entrada da área de transferência.
+
+Qualquer entrada não vazia presente enquanto o modo Vim está habilitado omite `submitted_prompt`, inclusive após o Vim ser desabilitado, porque registradores do Vim não carregam proveniência nesta versão. Esta regra conservadora também cobre rascunhos inseridos antes de habilitar o Vim. Limpar o compositor inicia uma nova entrada elegível.
+
+Este campo é proveniência, não autenticação, identidade de tenant, autorização ou DLP. São dados fornecidos pelo chamador. Cada executor configurado para este evento os recebe; em particular, hooks HTTP os enviam para seu endpoint e hooks de prompt os enviam para seu provedor de modelo.
+
+Quando ambos os campos estão presentes, payloads de hook de prompt contêm texto sobreposto e podem consumir tokens de entrada do modelo adicionais. Não há supressão de campo por hook nesta versão.
+
+Hooks UserPromptSubmit sequenciais podem anexar `additionalContext` ao `prompt`; `submitted_prompt` continua representando a submissão capturada. Hooks de função são código confiável no mesmo processo e não são restritos por uma garantia de imutabilidade.
+
+Quando a saída final do hook contém `additionalContext` não vazio, o Qwen primeiro sanitiza o valor e então o envia ao modelo como uma parte de texto separada:
+
+```xml
+<qwen:user-prompt-submit-context>
+contexto do hook sanitizado
+</qwen:user-prompt-submit-context>
+```
+
+A tag indica ao modelo e aos consumidores da transcrição que a parte veio de um hook configurado em vez de vir do prompt do usuário. É um marcador de proveniência, não autenticação, autorização ou um limite geral de confiança.
+
+Para um `UserQuery` com esse contexto adicionado, o registro JSONL da sessão preserva as partes vinculadas ao modelo, incluindo a parte com tag, e adiciona o seguinte `systemPayload`:
+
+```json
+{
+  "displayText": "projeção de exibição pré-hook",
+  "hookContext": "contexto do hook sanitizado"
+}
+```
+
+Esse payload de dois campos é escrito apenas para este tipo de registro de prompt do usuário. `hookContext` duplica intencionalmente a parte com tag para que consumidores offline e de terceiros possam identificar sua proveniência sem analisar o texto do modelo. `displayText` é a projeção de exibição pré-hook e nunca inclui o contexto do hook. Para uma submissão interativa suportada pela TUI, é a projeção bruta do compositor carregada por `submitted_prompt`; caminhos ACP, headless, `serve`, SDK, entrada remota e outros sem essa proveniência registram o prompt expandido pré-hook em vez disso.
+
+Consumidores de exibição de transcrição tratam `displayText` como essa projeção de prompt do usuário quando `systemPayload.hookContext` é uma string. Para compatibilidade com registros de prompt do usuário lançados apenas com `displayText`, um contexto com tag completo na parte final após pelo menos uma outra parte é evidência de pareamento equivalente. Registros de notificação, cron e meio de turno também podem ter `displayText`, mas esses valores são rótulos de exibição compactos e não devem ser substituídos pelo texto vinculado ao modelo sem essa evidência.
+Registros legados com contexto bruto mantêm seu comportamento de exibição vinculado ao modelo porque o contexto não pode ser separado de forma confiável. Para registros sem metadados que usam a forma com tag atual, consumidores de compatibilidade podem remover a mesma parte final com tag completa; não devem inferir que texto arbitrário semelhante a tag do usuário é proveniência de hook.
+
+Atributos sensíveis de telemetria de prompt, quando habilitados, e a recordação de auto-memória gerenciada ambos usam o prompt pré-hook. Eles não incluem o contexto adicionado por `UserPromptSubmit`.
 
 **Opções de Saída**:
 
 - `decision`: "allow", "deny", "block" ou "ask"
 - `reason`: explicação legível por humanos para a decisão
 - `hookSpecificOutput.additionalContext`: contexto adicional para anexar ao prompt (opcional)
+
+Quando enviado ao modelo, o `additionalContext` injetado é anexado como sua própria parte de mensagem envolvida em uma tag reservada `<qwen:user-prompt-submit-context>...</qwen:user-prompt-submit-context>`, para que permaneça distinguível do texto de autoria do usuário no histórico do modelo e nas transcrições da sessão. Colchetes angulares na saída do hook são escapados antes do envolvimento, então o conteúdo do hook não pode fechar ou forjar a tag. A transcrição da sessão também registra o texto original do prompt do usuário separadamente; a TUI interativa e o caminho de replay de transcrição ACP/export exibem esse texto original em vez do contexto injetado.
 
 **Nota**: Como UserPromptSubmitOutput estende HookOutput, todos os campos padrão estão disponíveis, mas apenas additionalContext em hookSpecificOutput é especificamente definido para este evento.
 
@@ -562,6 +712,47 @@ O valor de `permissionDecision` controla se a ferramenta é executada:
 
 - Campos padrão de saída do hook (tipicamente não usados para bloqueio)
 
+#### SessionDelete
+
+**Propósito**: Executado após uma sessão explicitamente selecionada ter sido permanentemente excluída. Este evento é fire-and-forget: saída e falhas não podem desfazer a exclusão.
+
+**Campos específicos do evento**:
+
+```json
+{
+  "deleted_session_id": "a sessão que foi excluída"
+}
+```
+
+O hook usa os campos de sessão normais do runtime de exclusão (`session_id`, `transcript_path` e `cwd`); via ACP, `transcript_path` está vazio porque o runtime de exclusão não tem transcrição própria. `SessionDelete` atualmente dispara para o fluxo interativo `/delete` e o método `deleteSession` explícito do ACP; exclusão em batch via daemon REST e limpeza interna não o emitem.
+
+#### MessageDisplay
+
+**Propósito**: Dispara repetidamente enquanto a resposta do assistente é transmitida — antes do `Stop`, que dispara uma vez no final do turno. Útil para narração ao vivo, logging incremental ou qualquer consumidor que queira reagir à resposta enquanto ela é escrita em vez de depois. Este é um evento **fire-and-forget** - a saída do hook e os códigos de saída são ignorados.
+
+**Campos específicos do evento**:
+
+```json
+{
+  "message_id": "id estável para toda a mensagem transmitida",
+  "displayed_text": "o texto CUMULATIVO transmitido até agora para esta mensagem (não um delta)",
+  "is_final": "true no último disparo para esta mensagem, false caso contrário"
+}
+```
+
+`displayed_text` é cumulativo em vez de um delta para que scripts de hook nunca precisem remontar chunks themselves — cada disparo carrega o texto completo até agora. O disparo é debounced (no máximo a cada ~200ms), exceto pelo disparo final (`is_final: true`), que sempre dispara uma vez que a mensagem termina, então a cauda da resposta nunca é perdida esperando a janela de debounce.
+
+**Semântica de entrega** — o que um script de hook pode confiar:
+
+- **Hooks lentos veem payloads menos e mais novos.** No máximo uma execução de hook mid-stream por mensagem está em voo por vez; enquanto uma executa, payloads debounced mais novos _substituem_ o enfileirado em vez de se acumularem atrás dele. Um hook mais lento que a janela de debounce portanto pula snapshots intermediários — sem perdas, já que cada payload carrega o texto cumulativo completo.
+- **`is_final` nunca é enfileirado atrás de uma entrega obsoleta.** O payload final é despachado no momento em que a mensagem termina — ao lado de uma execução mid-stream ainda em execução, se houver (a única exceção à regra de um por vez, justificada da mesma forma: o texto cumulativo final estritamente suplanta o que aquela execução está processando). Seu hook sempre recebe o payload `is_final`, e o recebe antes do hook `Stop` disparar. Uma consequência para hooks com estado: quando a execução final se sobrepõe a uma mid-stream superseded, sua ordem de _conclusão_ é não especificada — a execução obsoleta pode terminar depois da final (mesmo após o `Stop`). Trate `is_final` como terminal por `message_id` e deixe o texto cumulativo vencer, em vez de assumir que a última execução a terminar carrega o estado mais novo.
+- **O turno espera a entrega de `is_final` completar — mas não para sempre.** O fim do turno (e o hook `Stop`, quando dispara) espera até 5 segundos para a entrega final terminar. Um hook que completar dentro desse orçamento mantém a garantia mais forte: uma execução headless (`qwen -p ...`) sai apenas após o hook terminar, e a execução `is_final` completa antes do `Stop` iniciar. Um hook mais lento ainda recebe `is_final` primeiro — apenas a espera por sua conclusão é limitada: na TUI ou em uma sessão ACP a execução simplesmente termina em segundo plano, enquanto uma execução headless sai sem esperar. O processo do hook não é morto na saída; é deixado para terminar por conta própria, então um script encadeando `qwen -p … && next-step` pode observar `next-step` iniciando enquanto um hook lento ainda está executando. Atingir esse timeout imprime um aviso no stderr.
+- **Comportamento de cancelamento depende do timing.** Um turno cancelado _antes dos disparos de `is_final`_ não dispara `is_final` — a mensagem é tratada como abandonada, e um consumidor que faz buffer até `is_final` deve tratar o silêncio do cancelamento como seu sinal de flush/descarte (ex.: um fallback de timeout). O critério é o estado do sinal de abort no momento em que o turno termina, não se cada chunk já tinha sido transmitido — um abort chegando na breve lacuna antes dessa verificação ainda pode suprimir `is_final` para uma mensagem cujo texto já tinha, na prática, terminado de chegar. Cancelar _após `is_final` ter disparado_ (durante a espera de drain) é diferente: a execução do hook ainda em execução pode ser terminada mid-flight (SIGTERM), mas o payload em si já foi entregue.
+- **`displayed_text` é provisório até `is_final`.** Reflete o que foi transmitido até agora; trate payloads intermediários como estado de exibição, não como conteúdo final autorizativo.
+- **Um turno que usa ferramentas produz múltiplas mensagens.** Cada chamada de modelo recebe seu próprio `message_id` com seu próprio disparo `is_final: true`: o texto antes de uma chamada de ferramenta é uma mensagem, a continuação após o resultado da ferramenta é outra. Chamadas de modelo que não produzem texto exibido (apenas chamada de ferramenta) não disparam nada.
+
+**Nota**: Dispara na TUI, headless (`-p`) e sessões ACP (IDE/editor/`qwen serve`), com o mesmo contrato de payload em cada superfície.
+
 #### Stop
 
 **Propósito**: Executado antes que o Qwen conclua sua resposta para fornecer feedback final ou resumos.
@@ -601,13 +792,13 @@ Os campos `context_usage`, `context_limit` e `input_tokens` permitem que scripts
 
 #### StopFailure
 
-**Propósito**: Executado quando o turno termina devido a um erro de API (em vez de Stop). Este é um evento **fire-and-forget** - a saída do hook e os códigos de saída são ignorados.
+**Propósito**: Executado quando o turno termina devido a um erro de API ou detecção de loop (em vez de Stop). Este é um evento **fire-and-forget** - a saída do hook e os códigos de saída são ignorados.
 
 **Campos específicos do evento**:
 
 ```json
 {
-  "error": "rate_limit | authentication_failed | billing_error | invalid_request | server_error | max_output_tokens | unknown",
+  "error": "rate_limit | authentication_failed | billing_error | invalid_request | server_error | max_output_tokens | loop_detected | unknown",
   "error_details": "detailed error message (optional)",
   "last_assistant_message": "the last message from the assistant before the error (optional)"
 }
@@ -1073,7 +1264,7 @@ Os hooks são configurados nas configurações do Qwen Code, geralmente em `.qwe
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "^Bash$",
+        "matcher": "^run_shell_command$",
         "sequential": false,
         "hooks": [
           {
@@ -1125,7 +1316,7 @@ Apenas o tipo `command` suporta execução assíncrona. Definir `"async": true` 
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "WriteFile|Edit",
+        "matcher": "write_file|edit",
         "hooks": [
           {
             "type": "command",
@@ -1255,9 +1446,11 @@ Um hook HTTP PostToolUse que envia todos os registros de execução de ferrament
 }
 ```
 
-### Exemplo 3: Hook de Validação de Prompt do Usuário
+### Exemplo 3: Hook de Validação de Prompt Submetido pela TUI Interativa
 
-Um hook UserPromptSubmit que valida prompts do usuário em busca de informações sensíveis e fornece contexto para prompts longos:
+Para inspecionar o conteúdo vinculado ao modelo atual, leia `prompt`. Esse campo pode incluir conteúdo gerado ou expandido, não é a entrada original do usuário e não implica que `UserPromptSubmit` cubra todo envio do modelo. Não faça fallback silencioso de `submitted_prompt` para `prompt` quando a proveniência da fonte for necessária.
+
+Um hook UserPromptSubmit que valida submissões interativas suportadas pela TUI em busca de informações sensíveis e fornece contexto para prompts longos. Ele ignora invocações onde a proveniência da fonte não está disponível. A verificação de palavras-chave é ilustrativa e não é uma política DLP completa:
 
 **prompt_validator.py**
 
@@ -1271,9 +1464,12 @@ try:
     input_data = json.load(sys.stdin)
 except json.JSONDecodeError as e:
     print(f"Error: Invalid JSON input: {e}", file=sys.stderr)
-    exit(1)
+    sys.exit(1)
 
-user_prompt = input_data.get("prompt", "")
+user_prompt = input_data.get("submitted_prompt")
+if user_prompt is None:
+    # Do not mistake model-bound or machine-generated content for raw input.
+    sys.exit(0)
 
 # Sensitive words list
 sensitive_words = ["password", "secret", "token", "api_key"]
@@ -1290,7 +1486,7 @@ for word in sensitive_words:
             }
         }
         print(json.dumps(output))
-        exit(0)
+        sys.exit(0)
 
 # Check prompt length and add warning context if too long
 if len(user_prompt) > 1000:
@@ -1301,10 +1497,10 @@ if len(user_prompt) > 1000:
         }
     }
     print(json.dumps(output))
-    exit(0)
+    sys.exit(0)
 
 # No processing needed for normal cases
-exit(0)
+sys.exit(0)
 ```
 
 ## Solução de Problemas
@@ -1313,5 +1509,5 @@ exit(0)
 - Verifique as permissões e a capacidade de execução do script do hook
 - Certifique-se de que a formatação JSON nas saídas do hook esteja correta
 - Use padrões de matcher específicos para evitar a execução não intencional de hooks
-- Use o modo `--debug` para ver informações detalhadas de correspondência e execução de hooks
+- Use o modo `--debug` para ver informações detalhadas de correspondência e execução de hooks. Entradas de hook de prompt podem ser escritas no log de debug da sessão, então aplique controles apropriados de acesso e retenção.
 - Desative temporariamente todos os hooks: adicione `"disableAllHooks": true` nas configurações

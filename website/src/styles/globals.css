@@ -22,6 +22,28 @@
   animation: cursor-blink 1s infinite;
 }
 
+/* Blog feed item entrance */
+@keyframes feed-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.feed-item {
+  animation: feed-in 0.4s cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-item {
+    animation: none;
+  }
+}
+
 /* Shared monospace font stack — used by .terminal-text and .code-font */
 .terminal-text,
 .code-font {

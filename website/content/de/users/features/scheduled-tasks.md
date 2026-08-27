@@ -10,7 +10,7 @@ Tasks sind sitzungsgebunden: Sie existieren nur im aktuellen Qwen Code-Prozess u
 
 ## Einen wiederkehrenden Prompt mit /loop planen
 
-Die `/loop` [integrierte Skill](skills.md) ist der schnellste Weg, um einen wiederkehrenden Prompt zu planen. Übergib ein optionales Intervall und einen Prompt, und Qwen Code richtet einen Cron-Job ein, der im Hintergrund ausgeführt wird, während die Sitzung geöffnet bleibt.
+Die `/loop` [integrierte Skill](./skills.md) ist der schnellste Weg, um einen wiederkehrenden Prompt zu planen. Übergib ein optionales Intervall und einen Prompt, und Qwen Code richtet einen Cron-Job ein, der im Hintergrund ausgeführt wird, während die Sitzung geöffnet bleibt.
 
 ```text
 /loop 5m prüfe, ob das Deployment abgeschlossen ist, und sag mir, was passiert ist

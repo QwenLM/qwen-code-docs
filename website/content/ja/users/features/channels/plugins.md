@@ -46,16 +46,17 @@ qwen extensions link /path/to/my-channel-extension
 
 すべての標準チャネルオプションはカスタムチャネルでも機能します。
 
-| Option         | Description                                    |
-| -------------- | ---------------------------------------------- |
-| `senderPolicy` | `allowlist`、`pairing`、または `open`              |
-| `allowedUsers` | 送信者IDの静的な許可リスト                 |
-| `sessionScope` | `user`、`thread`、または `single`                  |
-| `cwd`          | エージェントの作業ディレクトリ                |
+| オプション     | 説明                                         |
+| -------------- | -------------------------------------------- |
+| `senderPolicy` | `allowlist`、`pairing`、または `open`         |
+| `allowedUsers` | 送信者 ID の静的な許可リスト                 |
+| `sessionScope` | `user`、`chat_thread`、または `single`。レガシーの `thread` は既存の設定では互換性が保たれます |
+| `cwd`          | エージェントの作業ディレクトリ               |
 | `instructions` | 各セッションの最初のメッセージに付加される指示 |
-| `model`        | チャネルのモデルオーバーライド                 |
-| `groupPolicy`  | `disabled`、`allowlist`、または `open`             |
-| `groups`       | グループごとの設定                             |
+| `model`        | チャネルのモデルオーバーライド               |
+| `groupPolicy`  | `disabled`、`allowlist`、または `open`        |
+| `dmPolicy`     | `open` または `disabled`                      |
+| `groups`       | グループごとの設定                           |
 
 各オプションの詳細については、[Overview](./overview) を参照してください。
 
@@ -76,7 +77,7 @@ qwen channel start my-bot
 - **送信者ポリシー** — `allowlist`、`pairing`、`open` のアクセス制御
 - **グループポリシー** — オプションの @メンションゲーティングを伴うグループごとの設定
 - **セッションルーティング** — ユーザーごと、スレッドごと、または単一の共有セッション
-- **DMペアリング** — 不明なユーザー向けの完全なペアリングコードフロー
+- **DMおよびグループペアリング** — 不明なユーザーとグループ向けの完全なペアリングコードフロー
 - **スラッシュコマンド** — `/help`、`/clear`、`/status` がすぐに使用可能
 - **カスタム指示** — 各セッションの最初のメッセージに付加
 - **クラッシュリカバリー** — セッションを保持したまま自動再起動

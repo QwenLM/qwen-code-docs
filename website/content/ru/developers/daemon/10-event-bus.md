@@ -36,7 +36,7 @@
 interface BridgeEvent {
   id?: number; // монотонный для сессии; отсутствует в синтетических терминальных фреймах
   v: 1; // EVENT_SCHEMA_VERSION
-  type: string; // один из 47 известных типов или расширяемый в будущем
+  type: string; // один из 53 известных типов или расширяемый в будущем
   data: unknown; // полезные данные (типизируются по типам в SDK; см. 09-event-schema.md)
   _meta?: { serverTimestamp?: number; [key: string]: unknown }; // проставляется EventBus.publish
   originatorClientId?: string; // устанавливается, если событие происходит от запроса с clientId

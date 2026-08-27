@@ -2,11 +2,11 @@
 
 ## Übersicht
 
-`GET /capabilities` ist der Preflight-Endpunkt des Daemons. Jeder SDK-Client sollte ihn vor dem Aufruf einer anderen Route lesen, um zu erfahren, welche Protokollversion der Daemon spricht, welche Feature-Tags aktiviert sind und an welchen Workspace der Daemon gebunden ist. Die Vereinbarung:
+`GET /capabilities` ist der Preflight-Endpunkt des Daemons. Jeder SDK-Client sollte ihn vor dem Aufruf einer anderen Route lesen, um zu erfahren, welche Protokollversion der Daemon spricht, welche Feature-Tags aktiviert sind und an welchen Workspace-Runtimes der Daemon akzeptiert. Die Vereinbarung:
 
 - **Es gibt nur eine Protokollversion: `v1`.** `SERVE_PROTOCOL_VERSION = 'v1'` und `SUPPORTED_SERVE_PROTOCOL_VERSIONS = ['v1']`. v1 ist intern additiv; brechende Änderungen an der Frame-Form sind für v2 vorbehalten.
 - **Jedes Tag hat eine `since`-Version.** Zukünftige v2-Daemons können sowohl v1- als auch v2-Tags bewerben.
-- **Einige Tags sind konditional.** Dreizehn Tags (`require_auth`, `mcp_workspace_pool`, `mcp_pool_restart`, `allow_origin`, `prompt_absolute_deadline`, `writer_idle_timeout`, `workspace_settings`, `workspace_voice`, `workspace_voice_transcription`, `session_shell_command`, `rate_limit`, `workspace_reload`, `voice_transcribe`) werden nur beworben, wenn der entsprechende Deployment-Toggle aktiviert ist. Das Vorhandensein eines Tags bedeutet, dass das Verhalten existiert.
+- **Einige Tags sind konditional.** Tags in `CONDITIONAL_SERVE_FEATURES` werden nur beworben, wenn der entsprechende Deployment-Toggle aktiviert ist. Das Vorhandensein eines Tags bedeutet, dass das Verhalten existiert.
 - **Capability-Tag = Verhaltensvertrag.** Das Hinzufügen von neuem Verhalten unter einem bestehenden Tag kann bei Clients, die das alte Tag im Preflight geprüft haben, zu stillschweigenden Brüchen führen. Neues Verhalten benötigt ein neues Tag.
 
 Die vollständige Registry befindet sich in `packages/cli/src/serve/capabilities.ts`.
@@ -30,12 +30,13 @@ Die vollständige Registry befindet sich in `packages/cli/src/serve/capabilities
   mode: 'http-bridge',
   features: ServeFeature[],
   workspaceCwd: string,
+  workspaces?: Array<{ id: string, cwd: string, primary: boolean, trusted: boolean }>,
   protocol?: { current: 'v1', supported: ['v1'] },
   policy?: { permission: PermissionPolicy },
 }
 ```
 
-`workspaceCwd` ist der kanonische Workspace, der beim Daemon-Start gebunden wird (siehe [`02-serve-runtime.md`](./02-serve-runtime.md)). `policy.permission` ist die aktive Mediator-Richtlinie.
+`workspaceCwd` ist der kanonische primäre Workspace-Pfad (siehe [`02-serve-runtime.md`](./02-serve-runtime.md)). Aktuelle Daemons verwenden `workspaces[]` als registrierten Runtime-Katalog; `multi_workspace_sessions` zeigt an, dass mehr als eine Runtime aktiv ist. `policy.permission` ist die aktive Mediator-Richtlinie.
 
 ### `ServeCapabilityDescriptor`
 
@@ -80,6 +81,16 @@ export const CONDITIONAL_SERVE_FEATURES: ReadonlyMap<
     (t) => t.voiceTranscriptionAvailable === true,
   ],
   ['session_shell_command', (t) => t.sessionShellCommandEnabled === true],
+  [
+    'multi_workspace_session_rewind',
+    (t) => t.multiWorkspaceSessionsEnabled === true,
+  ],
+  [
+    'multi_workspace_session_shell',
+    (t) =>
+      t.multiWorkspaceSessionsEnabled === true &&
+      t.sessionShellCommandEnabled === true,
+  ],
   ['rate_limit', (t) => t.rateLimit === true],
   ['workspace_reload', (t) => t.reloadAvailable === true],
   ['voice_transcribe', (t) => t.voiceWsAvailable !== false],
@@ -93,11 +104,11 @@ Die `Map` speichert Mitgliedschaft und Prädikat zusammen. Das Hinzufügen eines
 
 Baseline-Tags sind nicht in der `Map` vorhanden und werden bedingungslos beworben. Dies wird absichtlich durch Abwesenheit dargestellt und nicht durch ein separates Set.
 
-### 75 Tags (v1, nach Domänen gruppiert)
+### v1-Tags nach Domänen gruppiert
 
 Grundlagen: `health`, `daemon_status`, `capabilities`.
 
-Sessions: `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_prompt`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (konditional), `session_language`, `session_rewind`, `session_hooks`, `session_branch`.
+Sessions: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_storage_conflict_repair`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (konditional), `session_language`, `session_rewind`, `session_hooks`, `session_branch`.
 
 Streaming: `slow_client_warning`, `typed_event_schema`.
 
@@ -105,9 +116,17 @@ Identität und Heartbeat: `client_identity`, `client_heartbeat`.
 
 Berechtigungen: `session_permission_vote`, `permission_vote`, **`permission_mediation`** (`modes: ['first-responder', 'designated', 'consensus', 'local-only']`).
 
-Workspace-Read-Only-Snapshots: `workspace_mcp`, `workspace_skills`, `workspace_providers`, `workspace_env`, `workspace_preflight`, `workspace_hooks`, `workspace_extensions`.
+Workspace-Read-Only-Snapshots: `workspace_mcp`, `workspace_skills`, `workspace_providers`, `workspace_acp_status`, `workspace_env`, `workspace_preflight`, `workspace_hooks`, `workspace_extensions`.
 
-Workspace-Mutation (Wave 4+): `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_tool_toggle`, **`workspace_settings`** (konditional), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_write`, **`workspace_reload`** (konditional).
+Extension-Management: `extension_management_v2` fügt den globalen `/extensions/*` Katalog-/Mutations-/Operations-Vertrag und die Workspace-Aktivierungsprojektion hinzu. Es ist getrennt von der veröffentlichten `workspace_extensions`-Kompatibilitätsoberfläche und von `workspace_qualified_rest_core`.
+
+Lokale Extension-Installation: `extension_local_path_install` erlaubt einen absoluten Pfad auf dem Daemon-Host im bestehenden `source`-Feld beider Extension-Install-Routen. Es ist getrennt von `extension_management_v2`, da die Primary-Workspace-Kompatibilitätsroute es ebenfalls unterstützt, und Clients dürfen keine lokalen Pfade an ältere Daemons senden.
+
+V2-Extension-Batch-Aktivierung: `extension_batch_activation_v2` fügt `extension_management_v2` queuete globale Standardaktivierungs- und ausgewählte-Workspace-Override-Batches hinzu. Clients müssen dafür unabhängig einen Preflight durchführen, da ältere V2-Daemons nur einzelne Aktivierungsrouten bereitstellen.
+
+Workspace-qualifizierte Session-Lesezugriffe: `workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`, `workspace_session_live_state`. Die aktiven und archivierten Export-Tags sind unabhängig voneinander und von `session_export` sowie `workspace_qualified_rest_core`, daher müssen Clients den exakten Speicherzustand, den sie exportieren möchten, vorab per Preflight prüfen. Das Paging für persistierte Transkripte erlaubt einen nicht vertrauenswürdigen sekundären Client im Rahmen seiner begrenzten Lese-Richtlinie; beide vollständigen Export-Pfade bleiben nur für vertrauenswürdige Clients zugänglich. `workspace_session_live_state` ist ebenfalls unabhängig von `workspace_qualified_rest_core` und nur für vertrauenswürdige Clients: Es liefert den speicherbasierten Live-Session-Snapshot und die Katalogversion der ausgewählten Runtime und erweitert nicht die Lese-Richtlinie für nicht vertrauenswürdige Secondaries auf den Live-Bridge-State.
+
+Workspace-Mutation (Wave 4+): `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, **`workspace_settings`** (konditional), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, `workspace_file_upload`, **`workspace_reload`** (konditional).
 
 MCP-Guardrails: **`mcp_guardrails`** (`modes: ['warn', 'enforce']`), `mcp_guardrail_events`, `mcp_server_runtime_mutation`, **`mcp_workspace_pool`** (konditional), **`mcp_pool_restart`** (konditional).
 
@@ -118,6 +137,16 @@ Auth: `auth_provider_install`, `auth_device_flow`, **`require_auth`** (kondition
 Voice: **`workspace_voice`** (konditional), **`workspace_voice_transcription`** (konditional, `modes: ['batch']`), **`voice_transcribe`** (konditional, `modes: ['streaming', 'batch']`).
 
 Rate-Limiting: **`rate_limit`** (konditional).
+
+Multi-Workspace-Session-Routing: **`multi_workspace_sessions`** (konditional),
+**`multi_workspace_session_rewind`** (konditional) und
+**`multi_workspace_session_shell`** (konditional). Ein Client kann Rewind für
+eine primäre Session mit `session_rewind` verwenden; eine sekundäre Live-Session
+erfordert zusätzlich `multi_workspace_session_rewind`. Shell verwendet das
+äquivalente `session_shell_command` plus `multi_workspace_session_shell`-Paarung
+für eine sekundäre Session. ACP-native Clients verwenden weiterhin die von
+initialize zurückgegebenen `_qwen.methods`; es wird keine ACP-Rewind-Vendor-Methode
+beworben.
 
 Fettgedruckte Tags haben `modes` oder sind konditional.
 
@@ -166,7 +195,9 @@ sequenceDiagram
 ## Abhängigkeiten
 
 - Wird von `packages/cli/src/serve/server.ts` beim Erstellen von `/capabilities`-Antworten gelesen.
-- Die Toggle-Eingabe stammt von `runQwenServe` / `createServeApp`: `{ requireAuth, mcpPoolActive, allowOriginActive, promptDeadlineMs, writerIdleTimeoutMs, persistSettingAvailable, sessionShellCommandEnabled, rateLimit, reloadAvailable }`.
+- Die Toggle-Eingabe stammt von `runQwenServe` / `createServeApp`, einschließlich
+  Authentifizierung, MCP, Origin, Prompt, Einstellungen, Shell, Rate-Limit, Reload und
+  Live-Workspace-Runtime-Count-Status.
 - Die aktive `permission`-Richtlinie im Envelope stammt von `BridgeOptions.permissionPolicy`, welches seinerseits `settings.json` `policy.permissionStrategy` liest.
 
 ## Konfiguration
@@ -180,6 +211,7 @@ sequenceDiagram
 | Eingebettete Option        | `persistSettingAvailable`                                       | Bewirbt `workspace_settings` und `workspace_voice`.                                                                         |
 | Eingebettete Option        | `voiceTranscriptionAvailable`                                   | Bewirbt `workspace_voice_transcription`.                                                                                    |
 | CLI-Flag / Eingebettete Option | `--enable-session-shell` / `sessionShellCommandEnabled`     | Bewirbt `session_shell_command`.                                                                                            |
+| Runtime-Status              | Mehr als eine registrierte Workspace-Runtime                   | Bewirbt `multi_workspace_sessions` und `multi_workspace_session_rewind`; bewirbt auch `multi_workspace_session_shell`, wenn Session-Shell effektiv aktiviert ist. |
 | Eingebettete Option        | `reloadAvailable`                                               | Bewirbt `workspace_reload`.                                                                                                 |
 | Eingebettete Option        | `voiceWsAvailable`                                              | Bewirbt `voice_transcribe`.                                                                                                 |
 | `settings.json`            | `policy.permissionStrategy`                                     | Setzt Envelope-`policy.permission`.                                                                                         |

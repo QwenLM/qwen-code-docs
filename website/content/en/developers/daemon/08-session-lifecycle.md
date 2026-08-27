@@ -57,6 +57,8 @@ Under `sessionScope: 'thread'`, each thread can mint a distinct session. The cal
 
 `X-Qwen-Client-Id` is **optional** but **strongly recommended**. The daemon does not generate one on the caller's behalf — clients pick their own and reuse it across requests so the daemon can attribute votes, audit events, and detect reconnects.
 
+Each independent controller should use a distinct, stable ID. The WebUI generates IDs with a `webui_` prefix by default. A host and an embedded WebShell should share an ID only when they intentionally act as one logical controller; once shared, daemon logs cannot distinguish which one originated a request.
+
 Validation rules:
 
 - Charset: `[A-Za-z0-9._:-]`.
@@ -100,7 +102,7 @@ sequenceDiagram
 
 ### Load / resume
 
-`POST /session/:id/load` — replays full ACP history (`session/load` notifications fire before the response returns).
+`POST /session/:id/load` — restores a persisted session and returns the current bounded replay snapshot window (`session/load` notifications or response-mode replay are seeded before the response returns).
 `POST /session/:id/resume` — restores without replay (`connection.unstable_resumeSession`, exposed under the stable `session_resume` daemon capability; `unstable_session_resume` remains a deprecated alias).
 
 Both:
@@ -194,7 +196,23 @@ cache path for a single-turn, no-tool LLM call and returns
 without routing through the LLM. It streams output on the session SSE bus via
 `user_shell_command` / `user_shell_result` events and injects the command plus
 result into the LLM conversation history. The response is
-`{ exitCode, output, aborted }`.
+`{ exitCode, output, aborted }`. For a live secondary-workspace session, the
+singular REST route resolves the session owner and executes on that runtime's
+bridge, so the command starts in the owning workspace cwd. The route does not
+provide a path sandbox. Workspace-qualified ACP clients may continue to use
+`_qwen/session/shell` on the owning workspace connection.
+
+### Session Rewind
+
+`GET /session/:id/rewind/snapshots` and `POST /session/:id/rewind` resolve the
+owning live workspace runtime. Persisted sessions must be loaded or resumed
+before rewind. Rewind truncates conversation history and optionally restores
+files tracked by `edit` and `write_file`; it does not undo shell commands, Git,
+scripts, or manual changes. File restoration is best-effort, so a response may
+report `rewound: false` and `filesFailed[]` after the conversation history has
+already moved. SDK rewind calls always use owner-aware REST, including when the
+client otherwise uses ACP transport, because the mutation must retain strict
+REST authentication.
 
 ### Session Detach
 
@@ -226,6 +244,26 @@ only a storage-state transition; clients must call `session/load` or
 load/resume, and mutations racing an archive transition return
 `409 session_archiving`.
 
+Empty, damaged, and orphaned regular transcript files remain eligible for these
+lifecycle operations even when they cannot be loaded as conversations.
+Ownership-safety checks can intentionally fail closed and require operator
+intervention. A file changed after a writer sealed its certified handoff proof
+fails with `SessionTranscriptChangedError` until the operator resolves the
+sealed lock and changed bytes. A JSON-shaped first physical record that exceeds
+the bounded ownership-read window fails with
+`SessionTranscriptIdentityUnavailableError` until the record is repaired or
+reduced; oversized damaged records with a non-object prefix remain eligible. A
+parseable recovered record must contain string `sessionId` and `cwd` ownership
+fields, and mixed local/foreign archive states also fail closed. When
+`session_storage_conflict_repair` is advertised, archive and unarchive accept
+`resolveConflicts: true`: archive keeps the archived copy, while unarchive keeps
+the active copy. Without that option, active/archive conflicts do not move,
+remove, or overwrite either persisted copy and are returned in the batch
+`errors` array. Archive still strictly closes a live session before classifying
+the conflict, which may flush queued records to the active transcript.
+Workspace-qualified lifecycle routes now use that HTTP `200` batch envelope
+instead of their earlier HTTP `409 session_conflict` response.
+
 ### Context Usage (`session_context_usage` capability tag)
 
 `GET /session/:id/context-usage` returns structured context-window usage.
@@ -247,6 +285,10 @@ by another sub-agent carry optional lineage fields (`parentAgentId`,
 `parentName`, `depth`) so clients can render nested sub-agents as a tree; see
 the payload example in `qwen-serve-protocol.md`.
 
+The `session_monitor_tool_correlation` capability additionally guarantees that
+monitor entries carry `toolUseId`, allowing clients to correlate a transcript
+tool call with its task details.
+
 ### Session LSP Status (`session_lsp` capability tag)
 
 `GET /session/:id/lsp` returns sanitized per-session LSP status for daemon
@@ -259,11 +301,22 @@ not as a transport error.
 
 `POST /session/:id/load` now returns a `BridgeRestoredSession` that can include
 `compactedReplay?: BridgeEvent[]`, `liveJournal?: BridgeEvent[]`, and
-`lastEventId?: number`. `compactedReplay` is produced by
+`lastEventId?: number`. These fields are the daemon's bounded in-memory replay
+window for a live session, not a full transcript API. The default window cap is
+4 MiB per live session (`--compacted-replay-max-bytes`), and boot rejects
+invalid caps; the hard ceiling is 256 MiB. `compactedReplay` is produced by
 `TurnBoundaryCompactionEngine`: at turn boundaries it folds consecutive text /
 thought blocks, collapses tool-call sequences to their final state, discards
 transient signals, and produces O(turns) replay logs instead of O(tokens) logs
-(typically a 25-30x reduction).
+(typically a 25-30x reduction). When older replay entries have been dropped
+from that byte window, `compactedReplay[0]` is a synthetic id-less
+`history_truncated` marker with `{reason: 'replay_window_exceeded',
+truncatedEvents, retainedEvents, maxBytes, truncatedTurns?,
+fullTranscriptAvailable: boolean}`. `fullTranscriptAvailable` is a capability
+flag: `true` means the client can page the full persisted transcript with
+`GET /session/:id/transcript`, while `false` means only the bounded replay is
+available. Clients should render it as status and apply the retained replay
+normally; it must not trigger a resync loop.
 
 ### ACP Child Preheat
 
@@ -275,11 +328,20 @@ new session arrives.
 
 ## Configuration
 
-- `BridgeOptions.maxSessions` (default 20) — cap.
+- `BridgeOptions.maxSessions` (default 32) — cap.
 - `BridgeOptions.sessionScope` (default `'single'`; optional `'thread'`).
 - `BridgeOptions.initializeTimeoutMs` (default 10s) — ACP `initialize` handshake.
+- `BridgeOptions.sessionRestoreTimeoutMs` (default 60s) — ACP `loadSession` / `unstable_resumeSession` deadline. Defaults to 60s; an explicitly configured initialize timeout can raise it, but never lower it.
 - `BridgeOptions.channelIdleTimeoutMs` (default 0; reap the ACP child immediately).
-- Capability tags: `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (deprecated alias), `session_list`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_btw`, `session_context_usage`, `session_tasks`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
+- Capability tags: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (deprecated alias), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
+
+### Stateless generation (`session_generation` capability tag)
+
+`POST /session/:id/generate` accepts `{ "prompt": string }` and returns a
+request-scoped SSE stream with `started`, optional `thinking`, `delta`, `done`,
+or `error` events. The request reads no conversation history, records no turn,
+and exposes no tools. The ACP child uses a valid configured fast model when
+available and otherwise uses the session's main model.
 
 ## Caveats & Known Limits
 

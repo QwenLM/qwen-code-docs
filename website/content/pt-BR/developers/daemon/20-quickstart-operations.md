@@ -16,7 +16,7 @@ qwen serve: bound to workspace "/your/cwd"
 qwen serve: bearer auth disabled (loopback default). Set QWEN_SERVER_TOKEN to enable.
 ```
 
-Abra `http://127.0.0.1:4170/demo` em um navegador para ver o console de depuração: UI de chat, stream de eventos e inspeção de workspace. No modo de desenvolvimento loopback padrão, `createServeApp()` monta a rota `/demo` de `packages/cli/src/serve/routes/health-demo.ts` **antes** de `bearerAuth`, portanto nenhum token é necessário.
+Abra `http://127.0.0.1:4170/` em um navegador para obter a UI do Web Shell: chat, lista de sessões e inspeção de workspace. `createServeApp()` monta os assets do Web Shell empacotados (`packages/cli/src/serve/web-shell-static.ts`) **antes** de `bearerAuth`, então o shell carrega sem token; suas próprias chamadas de API carregam o bearer quando um está configurado — inicie o daemon com `--open` (que coloca o token no fragmento da URL, nunca enviado ao servidor) ou adicione `#token=…` manualmente quando a autenticação estiver habilitada. `--no-web` desativa e deixa o daemon apenas com API.
 
 ## 2. Receitas de inicialização
 
@@ -67,39 +67,46 @@ qwen serve --channel-idle-timeout-ms 60000
 QWEN_SERVE_RATE_LIMIT=1 qwen serve
 ```
 
-Com a receita de loopback reforçado (3), `/demo` é registrado após `bearerAuth`. Uma navegação normal no navegador precisa de um header de autenticação, então use curl ou um script de SDK em vez disso.
+Com a receita de loopback reforçado (3), `/health` é registrado após `bearerAuth`, então as sondas devem carregar o token como qualquer outra rota de API (a superfície estática do Web Shell permanece pré-auth por design; use `--no-web` para um daemon apenas com API).
 
 ## 3. Flags de inicialização completas
 
 A CLI é definida em **`packages/cli/src/commands/serve.ts`**:
 
-| Flag                                    | Type                           | Default                                      | Required when                            | Effect                                                                                                                                                                                                                |
-| --------------------------------------- | ------------------------------ | -------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--port <n>`                            | number                         | `4170`                                       | -                                        | Porta TCP; `0` significa porta efêmera atribuída pelo SO.                                                                                                                                                             |
-| `--hostname <host>`                     | string                         | `127.0.0.1`                                  | Non-loopback requires token              | Endereço de bind. Valores de loopback: `127.0.0.1`, `localhost`, `::1`, `[::1]`. Os colchetes de `[::1]` são removidos automaticamente; a entrada `host:port` é rejeitada com orientação para usar `--port`.           |
-| `--token <s>`                           | string                         | env / none                                   | Non-loopback and `--require-auth`        | Token Bearer; aparado uma vez. **Ele aparece em `/proc/<pid>/cmdline`, então prefira `QWEN_SERVER_TOKEN`**. O stderr de inicialização também avisa sobre isso.                                                        |
-| `--max-sessions <n>`                    | number                         | `20`                                         | -                                        | Limite de sessões ativas. Spawn em excesso retorna 503. `0` significa ilimitado. Valores `NaN` / negativos lançam erro.                                                                                               |
-| `--max-pending-prompts-per-session <n>` | number                         | `5`                                          | -                                        | Limite de prompts aceitos, mas pendentes/em execução por sessão. Prompt em excesso retorna 503. `0` / `Infinity` significa ilimitado. Valores negativos ou não inteiros lançam erro.                                  |
-| `--workspace <dir>`                     | string                         | `process.cwd()`                              | -                                        | Workspace vinculado. **Deve ser um caminho absoluto, deve existir e deve ser um diretório**. A inicialização o canoniza uma vez via `canonicalizeWorkspace`. `POST /session` com um `cwd` incompatível retorna `400 workspace_mismatch`. |
-| `--max-connections <n>`                 | number                         | `256`                                        | -                                        | `server.maxConnections` no nível do listener. `0` / `Infinity` significa ilimitado. Valores `NaN` / negativos falham na inicialização para evitar comportamento fail-open.                                            |
-| `--require-auth`                        | boolean                        | `false`                                      | Token required                           | Estende a autenticação bearer para loopback **e** `/health`. A inicialização recusa iniciar sem um token.                                                                                                             |
-| `--enable-session-shell`                | boolean                        | `false`                                      | Token required                           | Habilita a execução direta de `POST /session/:id/shell`. Os chamadores também devem enviar um `X-Qwen-Client-Id` vinculado à sessão.                                                                                  |
-| `--event-ring-size <n>`                 | number                         | `8000`                                       | -                                        | Profundidade do anel de replay SSE por sessão. O limite flexível é `MAX_EVENT_RING_SIZE = 1_000_000`; valores fora do intervalo lançam erro durante a construção da bridge.                                           |
-| `--http-bridge`                         | boolean                        | `true`                                       | -                                        | Modo bridge da etapa 1: um filho `qwen --acp` multiplexado pelo daemon. O modo in-process da etapa 2 ainda não está implementado; `--no-http-bridge` faz fallback e imprime no stderr.                                |
-| `--mcp-client-budget <n>`               | number                         | none                                         | Required for `mcp-budget-mode=enforce`   | Limite de clientes MCP do workspace. Deve ser um inteiro positivo.                                                                                                                                                    |
-| `--mcp-budget-mode <m>`                 | `'enforce' \| 'warn' \| 'off'` | `warn` when a budget is set, otherwise `off` | `enforce` requires `--mcp-client-budget` | `enforce` recusa, `warn` apenas avisa em 75%, `off` é apenas observação.                                                                                                                                              |
-| `--allow-origin <pattern>`              | repeatable string              | none                                         | -                                        | Allowlist CORS que substitui a negação padrão de Origin. `*` requer um token.                                                                                                                                         |
-| `--allow-private-auth-base-url`         | boolean                        | `false`                                      | -                                        | Permite a instalação de `baseUrl` de provedor de autenticação localhost / rede privada. Use apenas para desenvolvimento local confiável.                                                                              |
-| `--prompt-deadline-ms <n>`              | number                         | none                                         | -                                        | Limite de wallclock do prompt no lado do servidor em ms; o timeout aborta o prompt.                                                                                                                                   |
-| `--writer-idle-timeout-ms <n>`          | number                         | none                                         | -                                        | Timeout de ociosidade por conexão SSE em ms.                                                                                                                                                                          |
-| `--channel-idle-timeout-ms <n>`         | number                         | `0`                                          | -                                        | Mantém o filho ACP ativo após o fechamento da última sessão. `0` significa recuperar imediatamente.                                                                                                                   |
-| `--session-reap-interval-ms <n>`        | number                         | `60000`                                      | -                                        | Intervalo de varredura do reaper de sessões. `0` o desativa.                                                                                                                                                          |
-| `--session-idle-timeout-ms <n>`         | number                         | `1800000`                                    | -                                        | Timeout de ociosidade de sessão desconectada. `0` o desativa.                                                                                                                                                         |
-| `--rate-limit` / `--no-rate-limit`      | boolean                        | env / off                                    | -                                        | Habilita ou desabilita o rate limiting HTTP por tier.                                                                                                                                                                 |
-| `--rate-limit-prompt <n>`               | number                         | `10`                                         | `--rate-limit`                           | Requisições de prompt por janela.                                                                                                                                                                                     |
-| `--rate-limit-mutation <n>`             | number                         | `30`                                         | `--rate-limit`                           | Requisições de mutação por janela.                                                                                                                                                                                    |
-| `--rate-limit-read <n>`                 | number                         | `120`                                        | `--rate-limit`                           | Requisições de leitura por janela.                                                                                                                                                                                    |
-| `--rate-limit-window-ms <n>`            | number                         | `60000`                                      | `--rate-limit`                           | Comprimento da janela de rate limit; deve ser `>= 1000`.                                                                                                                                                              |
+| Flag                                    | Type                           | Default                                          | Required when                            | Effect                                                                                                                                                                                                                                                                                                                |
+| --------------------------------------- | ------------------------------ | ------------------------------------------------ | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--port <n>`                            | number                         | `4170`                                           | -                                        | Porta TCP; `0` significa porta efêmera atribuída pelo SO.                                                                                                                                                                                                                                                             |
+| `--hostname <host>`                     | string                         | `127.0.0.1`                                      | Non-loopback requires token              | Endereço de bind. Valores de loopback: `127.0.0.1`, `localhost`, `::1`, `[::1]`. Os colchetes de `[::1]` são removidos automaticamente; a entrada `host:port` é rejeitada com orientação para usar `--port`.                                                                                                          |
+| `--token <s>`                           | string                         | env / none                                       | Non-loopback and `--require-auth`        | Token Bearer; aparado uma vez. **Ele aparece em `/proc/<pid>/cmdline`, então prefira `QWEN_SERVER_TOKEN`**. O stderr de inicialização também avisa sobre isso.                                                                                                                                                         |
+| `--max-sessions <n>`                    | number                         | `32`                                             | -                                        | Limite de sessões ativas por workspace. Spawn em excesso retorna 503. `0` significa ilimitado. Valores `NaN` / negativos lançam erro.                                                                                                                                                                                  |
+| `--max-total-sessions <n>`              | number                         | derivado para múltiplos workspaces na inicialização/restaurados | -                       | Limite de sessões ativas em todo o daemon. Quando omitido, um padrão finito é derivado uma vez do limite por workspace e da contagem de workspaces na inicialização/restaurados; o registro dinâmico não o recalcula. `0` significa ilimitado.                                                                          |
+| `--memory-budget-mb <n>`                | integer em `[1024, 1048576]`   | 50% da memória do cgroup/host                    | -                                        | Orçamento total de memória para a árvore de processos do daemon, limitado à memória disponível resolvida. Nenhum filho é dimensionado a partir dele; o único consumidor hoje é o pool adaptativo de crescimento de live journal (veja `--max-journal-bytes`). Reportado em `limits.memory`, incluindo uma partição modelada por filho. |
+| `--max-journal-events <n>`              | inteiro positivo seguro          | `10000`                                          | -                                        | Limite base por sessão de entradas de replay `liveJournal` em andamento. O crescimento adaptativo pode elevá-lo (veja `--max-journal-bytes`); fixar qualquer flag de journal desativa o crescimento.                                                                                                                                                                    |
+| `--max-journal-bytes <n>`               | inteiro positivo seguro          | `8388608`                                        | -                                        | Limite base por sessão em bytes do `liveJournal` em andamento. Brechas aumentam os limites sob demanda (até o dobro, limitado pela folga restante do pool) dentro de um pool único do daemon de 5% do `--memory-budget-mb` efetivo (limitado a `1024` MB; 0 — crescimento desativado — quando o orçamento efetivo cai abaixo do mínimo de 1024 MB), nunca além de um limite rígido de 256 MiB por sessão; fixar qualquer flag de journal desativa o crescimento. |
+| `--memory-pressure-mode <mode>`         | `off` \| `observe`             | `observe`                                        | Somente observação                       | Reporta `runtime.memory.pressure` em ambos os modos; apenas `observe` levanta o issue `daemon_memory_pressure`. Apenas o processo raiz.                                                                                                                                                                                         |
+| `--child-heap-mode <mode>`              | `off` \| `observe`             | `observe`                                        | Somente observação                       | Sob `observe`, reporta a partição modelada em `limits.memory.childHeap`; não aplica nada e não recusa nada. Sob `off`, os dois valores desse bloco são `null`.                                                                                                                                                |
+| `--max-pending-prompts-per-session <n>` | number                         | `5`                                              | -                                        | Limite de prompts aceitos, mas pendentes/em execução por sessão. Prompt em excesso retorna 503. `0` / `Infinity` significa ilimitado. Valores negativos ou não inteiros lançam erro.                                                                                                                                   |
+| `--workspace <dir>`                     | string / repetível             | `process.cwd()`                                  | -                                        | Runtime de workspace na inicialização; repita para registrar runtimes isolados adicionais. O primeiro é o primário. Cada valor **deve ser um caminho absoluto, deve existir e deve ser um diretório**. A inicialização canoniza cada valor via `canonicalizeWorkspace`. `POST /session` com um `cwd` incompatível retorna `400 workspace_mismatch`.                                   |
+| `--max-connections <n>`                 | number                         | `256`                                            | -                                        | `server.maxConnections` no nível do listener. `0` / `Infinity` significa ilimitado. Valores `NaN` / negativos falham na inicialização para evitar comportamento fail-open.                                                                                                                                            |
+| `--require-auth`                        | boolean                        | `false`                                          | Token required                           | Estende a autenticação bearer para loopback **e** `/health`. A inicialização recusa iniciar sem um token.                                                                                                                                                                                                              |
+| `--enable-session-shell`                | boolean                        | `false`                                          | Token required                           | Habilita a execução direta de `POST /session/:id/shell`. Os chamadores também devem enviar um `X-Qwen-Client-Id` vinculado à sessão.                                                                                                                                                                                   |
+| `--event-ring-size <n>`                 | number                         | `8000`                                           | -                                        | Profundidade do anel de replay SSE por sessão. O limite flexível é `MAX_EVENT_RING_SIZE = 1_000_000`; valores fora do intervalo lançam erro durante a construção da bridge.                                                                                                                                            |
+| `--http-bridge`                         | boolean                        | `true`                                           | -                                        | Modo bridge: a produção tenta pré-aquecer um filho primário `qwen --acp` e tenta novamente no primeiro uso após falha; secundários confiáveis iniciam um sob demanda, enquanto secundários não confiáveis não podem iniciar ACP. O modo in-process da etapa 2 ainda não está implementado; `--no-http-bridge` faz fallback e imprime no stderr.                                     |
+| `--mcp-client-budget <n>`               | number                         | none                                             | Required for `mcp-budget-mode=enforce`   | Limite de clientes MCP do workspace. Deve ser um inteiro positivo.                                                                                                                                                                                                                                                     |
+| `--mcp-budget-mode <m>`                 | `'enforce' \| 'warn' \| 'off'` | `warn` when a budget is set, otherwise `off`     | `enforce` requires `--mcp-client-budget` | `enforce` recusa, `warn` apenas avisa em 75%, `off` é apenas observação.                                                                                                                                                                                                                                               |
+| `--allow-origin <pattern>`              | repeatable string              | none                                             | -                                        | Allowlist CORS que substitui a negação padrão de Origin. `*` requer um token.                                                                                                                                                                                                                                          |
+| `--allow-private-auth-base-url`         | boolean                        | `false`                                          | -                                        | Permite a instalação de `baseUrl` de provedor de autenticação localhost / rede privada. Use apenas para desenvolvimento local confiável.                                                                                                                                                                               |
+| `--prompt-deadline-ms <n>`              | number                         | none                                             | -                                        | Limite de wallclock do prompt no lado do servidor em ms; o timeout aborta o prompt.                                                                                                                                                                                                                                    |
+| `--writer-idle-timeout-ms <n>`          | number                         | none                                             | -                                        | Timeout de ociosidade por conexão SSE em ms.                                                                                                                                                                                                                                                                           |
+| `--channel-idle-timeout-ms <n>`         | number                         | `0`                                              | -                                        | Mantém o filho ACP ativo após o fechamento da última sessão. `0` significa recuperar imediatamente.                                                                                                                                                                                                                    |
+| `--initialize-timeout-ms <n>`           | number                         | `10000`                                          | -                                        | Timeout de requisição do filho ACP, incluindo o handshake de inicialização (ms).                                                                                                                                                                                                                                       |
+| `--session-reap-interval-ms <n>`        | number                         | `60000`                                          | -                                        | Intervalo de varredura do reaper de sessões. `0` o desativa.                                                                                                                                                                                                                                                           |
+| `--session-idle-timeout-ms <n>`         | number                         | `1800000`                                        | -                                        | Timeout de ociosidade de sessão desconectada. `0` o desativa.                                                                                                                                                                                                                                                          |
+| `--rate-limit` / `--no-rate-limit`      | boolean                        | env / off                                        | -                                        | Habilita ou desabilita o rate limiting HTTP por tier.                                                                                                                                                                                                                                                                  |
+| `--rate-limit-prompt <n>`               | number                         | `10`                                             | `--rate-limit`                           | Requisições de prompt por janela.                                                                                                                                                                                                                                                                                     |
+| `--rate-limit-mutation <n>`             | number                         | `30`                                             | `--rate-limit`                           | Requisições de mutação por janela.                                                                                                                                                                                                                                                                                    |
+| `--rate-limit-read <n>`                 | number                         | `120`                                            | `--rate-limit`                           | Requisições de leitura por janela.                                                                                                                                                                                                                                                                                    |
+| `--rate-limit-window-ms <n>`            | number                         | `60000`                                          | `--rate-limit`                           | Comprimento da janela de rate limit; deve ser `>= 1000`.                                                                                                                                                                                                                                                               |
 
 ## 4. Variáveis de ambiente
 
@@ -155,6 +162,7 @@ Falhas de I/O de configurações, como JSON malformado, fazem fallback para os p
 | `--event-ring-size > 1_000_000`                                               | Lançado durante a construção da bridge                                                              |
 | `--allow-origin '*'` sem token                                                | `Refusing to start with --allow-origin '*' but no bearer token configured`                          |
 | `--prompt-deadline-ms` / `--writer-idle-timeout-ms` não é um inteiro positivo | `Must be a positive integer`                                                                        |
+| `--initialize-timeout-ms` não é um inteiro positivo ou excede `2^31-1`         | `Must be a positive integer` / `Exceeds maximum JS timer delay`                                     |
 | `policy.permissionStrategy` desconhecido ou `policy.consensusQuorum` não positivo | `InvalidPolicyConfigError`                                                                          |
 ## 7. Checklist de verificação com Curl
 
@@ -191,23 +199,21 @@ curl -N \
   -H 'Last-Event-ID: 0' \
   'http://127.0.0.1:4170/session/<sid>/events'
 
-# 8. Demo page
-open http://127.0.0.1:4170/demo
+# 8. Web Shell UI
+open http://127.0.0.1:4170/
 ```
 
 Quando a autenticação bearer está habilitada, adicione `-H "Authorization: Bearer $QWEN_SERVER_TOKEN"` a cada requisição.
 
-## 8. A página de demonstração pode ser usada?
+## 8. Existe uma UI no navegador?
 
-**Sim.** Ela é implementada por `getDemoHtml(port)` em `packages/cli/src/serve/demo.ts` como um HTML autossuficiente, sem dependências externas.
+**Sim — o Web Shell.** `resolveWebShellDir()` localiza os assets compilados (empacotados ao lado do bundle da CLI em um release, `packages/web-shell/dist` em um checkout) e `mountWebShellAssets()` os serve em `/`, `/assets` e nas navegações de documento `/session/:id` (deep links do navegador — um `curl /session/<id>` simples recebe o 401/404 da API, não o shell). Quando os assets estão ausentes, o daemon degrada para apenas API em vez de quebrar; `--no-web` desativa explicitamente.
 
-| Modo de inicialização               | Onde `/demo` é registrado                                                    | Navegação direta no navegador                        |
-| ----------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------- |
-| Loopback sem `--require-auth`       | `routes/health-demo.ts`, montado por `createServeApp()` **antes** de `bearerAuth` | Funciona sem token                                   |
-| Loopback com `--require-auth`       | `routes/health-demo.ts`, montado por `createServeApp()` **depois** de `bearerAuth`  | Difícil de usar em um navegador comum; use curl ou SDK |
-| Bind não-loopback                   | `routes/health-demo.ts`, montado por `createServeApp()` **depois** de `bearerAuth`  | Mesmo caso acima                                     |
+O shell estático é montado **antes** de `bearerAuth` em qualquer modo de inicialização — um navegador não pode anexar um header `Authorization` a uma navegação na barra de endereços ou a um sub-recurso `<script src>`, então protegê-lo simplesmente quebraria a UI. Toda rota de API que ele chama permanece protegida por token, e o front-end anexa o bearer por conta própria. Em um bind não-loopback, o shell é somente leitura, a menos que `--allow-origin <origin>` seja passado — POSTs same-origin carregam um header `Origin` que a barreira CORS rejeita (403) — então use `--allow-origin` para qualquer bind além do loopback.
 
-A CSP é `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'`, além de `X-Frame-Options: DENY`. A página só pode fazer requisições para `'self'` (o daemon) e não pode carregar scripts ou estilos externos.
+A CSP é construída por `buildWebShellCsp()` e é deliberadamente mais permissiva que a de uma página estática (`'unsafe-inline'` para o patch inline `performance.measure`, workers `eval`/wasm/blob para shiki e mermaid, `data:` para fontes katex, `connect-src 'self'` para SSE). `frame-ancestors 'none'` mais `X-Frame-Options: DENY` bloqueiam clickjacking, exceto quando um origin de extensão é explicitamente permitido via `--allow-origin` para que a UI possa ser hospedada em um painel lateral do Chrome (#5626).
+
+Para inspeção direta do protocolo, assine o stream SSE diretamente (`routes/sse-events.ts`) — veja as receitas com curl na seção 7.
 
 ## 9. Cadeia de chamadas do `qwen serve` até o servidor em escuta
 
@@ -248,11 +254,13 @@ serve/run-qwen-serve.ts              const app = createServeApp(opts, () => actu
    v
 serve/server.ts                    createServeApp() - builds Express app (**does not listen**)
    |  |- middleware chain (Host allowlist / CORS / bearerAuth / mutation gate / rate limit)
-   |  |- route mounting (health / demo / capabilities / workspace / session / SSE / ACP HTTP)
+   |  |- route mounting (health / web-shell static / capabilities / workspace / session / SSE / ACP HTTP)
    |  `- return app
    |
    v
-serve/run-qwen-serve.ts              server = app.listen(port, hostname, cb)
+serve/run-qwen-serve.ts              server = createServer(app) / https.createServer(..., app)
+   |  |- lifecycle.bindServer(server, { startupReady, drainHost })
+   |  |- server.listen(port, hostname)
    |  |- server.maxConnections = cap
    |  |- actualPort = server.address().port
    |  |- write "qwen serve listening on ..."
@@ -265,8 +273,8 @@ commands/serve.ts                  await blockForever()    // block forever unti
 
 Pontos-chave:
 
-- **`createServeApp` apenas constrói; ele não inicia a escuta.** Ele retorna uma instância `express()` com middlewares e rotas montadas. O chamador é responsável pelo `app.listen()`. O `server.test.ts` usa a factory dessa forma em cerca de 25 casos, então a factory intencionalmente evita gerenciar o ciclo de vida.
-- **`() => actualPort` é uma closure preguiçosa (lazy).** `actualPort` é atribuído no callback do `app.listen`. O middleware `hostAllowlist` o lê sob demanda, então portas efêmeras (`--port 0`) ainda controlam o cabeçalho `Host` corretamente.
+- **`createServeApp` apenas constrói; ele não inicia a escuta.** Ele retorna uma instância `express()` com middlewares e rotas montadas. Embedders apenas ordinários podem continuar sendo donos do `app.listen()`. Embedders que usam Live/Conversations devem vincular o servidor Node real ao ciclo de vida do app exportado antes de ouvir (listen) e aguardar esse ciclo de vida durante o desligamento.
+- **`() => actualPort` é uma closure preguiçosa (lazy).** `actualPort` é atribuído no callback do `server.listen`. O middleware `hostAllowlist` o lê sob demanda, então portas efêmeras (`--port 0`) ainda controlam o cabeçalho `Host` corretamente.
 - **`await blockForever()` é intencional.** Se `yargs.parse()` for resolvido, o nível superior da CLI cai no ponto de entrada da TUI interativa (`gemini.tsx`). SIGINT / SIGTERM saem através do caminho `onSignal` do `runQwenServe`.
 
 ## 10. Divisão de arquivos de rotas HTTP
@@ -275,7 +283,7 @@ A montagem principal acontece em `createServeApp()` no `server.ts`, que conecta 
 
 | Rotas                                                                                          | Arquivo                                                 | Ponto de montagem                                                              |
 | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `/health`, `/demo`                                                                             | `packages/cli/src/serve/routes/health-demo.ts`          | `healthDemoRoutes.register()`                                                  |
+| `/health`                                                                                      | `packages/cli/src/serve/routes/health.ts`               | `healthRoutes.register()`                                                      |
 | `/daemon/status`                                                                               | `packages/cli/src/serve/routes/daemon-status.ts`        | `registerDaemonStatusRoutes()`                                                 |
 | `/capabilities`, rotas de mutação de init/ferramenta/MCP do workspace, bridge HTTP ACP         | `packages/cli/src/serve/server.ts`                      | Registrado diretamente dentro de `createServeApp()`                            |
 | Status do workspace, env, preflight, resumos de MCP/ferramenta/provedor/skill                  | `packages/cli/src/serve/routes/workspace-status.ts`     | `registerWorkspaceStatusRoutes()`, `registerWorkspaceDiagnosticStatusRoutes()` |
@@ -318,11 +326,17 @@ console.log(`Daemon at ${handle.url}`);
 await handle.close(); // programmatic shutdown
 ```
 
-Ou obtenha o app Express diretamente e inicie a escuta por conta própria:
+Ou obtenha o app Express diretamente e vincule o ciclo de vida do listener você mesmo. Essa forma é necessária quando o embed usa Live/Conversations:
 
 ```ts
-import { createServeApp } from '@qwen-code/qwen-code/serve';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import {
+  createServeApp,
+  getServeAppLifecycle,
+} from '@qwen-code/qwen-code/serve';
 
+let actualPort = 0;
 const app = createServeApp(
   {
     port: 0,
@@ -330,16 +344,27 @@ const app = createServeApp(
     mode: 'http-bridge',
     maxSessions: 20,
   },
-  () => 0,
+  () => actualPort,
   {
     /* deps: bridge, fsFactory, ... */
   },
 );
 
-const server = app.listen(0, '127.0.0.1', () => {
-  console.log('listening on', server.address());
+const lifecycle = getServeAppLifecycle(app);
+const server = createServer(app);
+lifecycle.bindServer(server);
+await new Promise<void>((resolve, reject) => {
+  server.once('error', reject);
+  server.listen(0, '127.0.0.1', () => resolve());
 });
+actualPort = (server.address() as AddressInfo).port;
+console.log('listening on', server.address());
+
+// Stop admission, drain app work, close the listener, and release ownership.
+await lifecycle.close();
 ```
+
+Chamar `server.close()` diretamente também inicia a mesma limpeza orientada por eventos, mas é apenas melhor esforço a menos que o processo permaneça vivo; sempre aguarde `lifecycle.close()` para receber erros de desligamento. Se nenhum servidor estiver vinculado, as requisições de Live/Conversations falham com fail closed, enquanto o comportamento do app apenas ordinário permanece inalterado.
 
 Nota: ao chamar `createServeApp` diretamente, o padrão é `fsFactory.trusted = false`. O `writeTextFile` do ACP no lado do agente é rejeitado como `untrusted_workspace`, e um aviso é impresso no stderr uma única vez. Injete `deps.fsFactory` com confiança explícita, injete `deps.bridge` ou aceite o comportamento padrão restrito por confiança.
 
@@ -373,6 +398,6 @@ QWEN_SERVE_DEBUG=1 qwen serve
 - Factory do Express: `packages/cli/src/serve/server.ts`
 - Middleware: `packages/cli/src/serve/auth.ts`
 - Factory da bridge: `packages/acp-bridge/src/bridge.ts`
-- HTML da página de demonstração: `packages/cli/src/serve/demo.ts`
+- Montagem estática do Web Shell: `packages/cli/src/serve/web-shell-static.ts`
 - Docs do usuário: [`../../users/qwen-serve.md`](../../users/qwen-serve.md)
 - Protocolo de comunicação: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md)

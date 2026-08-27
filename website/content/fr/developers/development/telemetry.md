@@ -77,8 +77,9 @@ Ces paramètres peuvent être remplacés par des variables d'environnement ou de
 | `otlpMetricsEndpoint`             | `QWEN_TELEMETRY_OTLP_METRICS_ENDPOINT`               | -                                                        | Remplacement de point de terminaison par signal pour les métriques (HTTP uniquement)                                                                                           | URL string        | -                       |
 | `outfile`                         | `QWEN_TELEMETRY_OUTFILE`                             | `--telemetry-outfile <path>`                             | Enregistrer la télémétrie dans un fichier (remplace l'exportation OTLP)                                                                                                 | file path         | -                       |
 | `logPrompts`                      | `QWEN_TELEMETRY_LOG_PROMPTS`                         | `--telemetry-log-prompts` / `--no-telemetry-log-prompts` | Inclure les prompts dans les logs de télémétrie                                                                                                              | `true`/`false`    | `true`                  |
-| `includeSensitiveSpanAttributes`  | `QWEN_TELEMETRY_INCLUDE_SENSITIVE_SPAN_ATTRIBUTES`   | -                                                        | Inclure les prompts utilisateur, les prompts système, les E/S des outils et la sortie du modèle en tant qu'attributs de span natifs (en plus des spans du pont log-to-span)           | `true`/`false`    | `false`                 |
-| `sensitiveSpanAttributeMaxLength` | `QWEN_TELEMETRY_SENSITIVE_SPAN_ATTRIBUTE_MAX_LENGTH` | -                                                        | Longueur maximale de chaîne JavaScript pour chaque charge utile de contenu d'attribut de span natif sensible. Définissez une valeur plus faible si votre backend rejette les attributs volumineux. | `1..104857600`    | `1048576`               |
+| `userId`                          | `QWEN_TELEMETRY_USER_ID`                             | -                                                        | Identifiant utilisateur stable écrit sur les spans GenAI en tant qu'extension ARMS `gen_ai.user.id` ; préférez une valeur pseudonyme                  | string            | -                       |
+| `includeSensitiveSpanAttributes`  | `QWEN_TELEMETRY_INCLUDE_SENSITIVE_SPAN_ATTRIBUTES`   | -                                                        | Inclure les messages GenAI standard, les instructions, les définitions d'outils, les arguments d'outils et les résultats d'outils réussis en tant qu'attributs de span natifs | `true`/`false`    | `false`                 |
+| `sensitiveSpanAttributeMaxLength` | `QWEN_TELEMETRY_SENSITIVE_SPAN_ATTRIBUTE_MAX_LENGTH` | -                                                        | Longueur maximale de chaîne JSON compact pour chaque attribut de span natif sensible. Définissez une valeur plus faible si votre backend rejette les attributs volumineux.       | `1..104857600`    | `1048576`               |
 | `resourceAttributes`              | `OTEL_RESOURCE_ATTRIBUTES` (+ `OTEL_SERVICE_NAME`)   | -                                                        | Attributs de ressources statiques attachés à chaque span / log / métrique exporté(e). Voir [Attributs de ressources](#resource-attributes) ci-dessous.              | `key=value,…`     | `{}`                    |
 | `metrics.includeSessionId`        | `QWEN_TELEMETRY_METRICS_INCLUDE_SESSION_ID`          | -                                                        | Inclure `session.id` sur les points de données métriques. **Désactivé par défaut** pour protéger les backends de métriques contre la prolifération des séries temporelles.                       | `true`/`false`    | `false`                 |
 
@@ -91,31 +92,42 @@ autre valeur la désactivera.
 doit être un entier positif lorsqu'il est défini. Les valeurs invalides font échouer la résolution de la configuration de télémétrie
 au lieu de revenir silencieusement à une valeur par défaut.
 
+`gen_ai.tool.description` est des métadonnées de registre statiques non sensibles et
+est émis indépendamment de `includeSensitiveSpanAttributes`. Cela inclut
+les descriptions fournies par les serveurs MCP et d'autres fournisseurs d'outils du workspace. La
+valeur est limitée à 4096 unités UTF-16 et n'inclut jamais les détails
+d'invocation dynamiques.
+
 **Attributs de span sensibles :** Lorsque `includeSensitiveSpanAttributes` est activé,
 deux choses se produisent :
 
-1. **Attributs de span natifs (`qwen-code.interaction`, `api.generateContent*`,
-   `tool.<name>`)** portent le contenu de la conversation textuellement :
-   - Prompts utilisateur (`new_context`)
-   - Prompts système (`system_prompt` — texte complet une fois par session, dédupliqué par
-     hachage SHA-256 ; les spans suivants ne portent que `system_prompt_hash` +
-     `system_prompt_preview` + `system_prompt_length`)
-   - Schémas d'outils (émis en tant qu'événements `tool_schema`, également dédupliqués par hachage)
-   - Entrées d'outils (`tool_input`) et résultats d'outils (`tool_result`)
-   - Sortie du modèle (`response.model_output`)
+1. **Les attributs de span natifs** portent le JSON GenAI OpenTelemetry standard :
+   - Messages d'entrée du main-agent et LLM (`gen_ai.input.messages`)
+   - Instructions système (`gen_ai.system_instructions`)
+   - Définitions d'outils (`gen_ai.tool.definitions`)
+   - Messages de sortie du main-agent et LLM (`gen_ai.output.messages`)
+   - Arguments d'outils finaux exécutés (`gen_ai.tool.call.arguments`)
+   - Résultats d'outils réussis (`gen_ai.tool.call.result`)
+   - Les spans d'interaction conservent l'attribut de compatibilité `new_context`.
 
-   Chaque charge utile de contenu est tronquée à `sensitiveSpanAttributeMaxLength`
-   unités de chaîne JavaScript. La valeur par défaut est de 1 Mio (`1048576`), augmentée par rapport à
-   l'ancienne valeur par défaut de 60 Kio ; définissez `61440` pour conserver l'ancienne limite. La limite
-   doit être comprise entre `1` et `104857600` (100 Mio). Pour les attributs étiquetés, les étiquettes fixes
-   telles que `[USER PROMPT]`, `[TOOL INPUT: ...]` et
-   `[TOOL RESULT: ...]` comptent dans la limite ; le marqueur de troncature compte également
-   dans celle-ci. La limite est mesurée en longueur de chaîne JavaScript plutôt qu'en
-   octets UTF-8. Le contenu non ASCII peut donc occuper plus d'octets après l'exportation OTLP.
-   Pour la plupart des types de charge utile, la troncature ajoute à la fois `*_truncated` et
-   `*_original_length`. Les prompts système définissent également `system_prompt_truncated` lorsqu'ils sont
-   tronqués, mais utilisent `system_prompt_length`, toujours présent, pour la longueur
-   d'origine.
+   L'entrée du main-agent est une projection originale du texte utilisateur avant
+   l'expansion du contexte, et la sortie du main-agent est une réponse finale
+   visible par l'utilisateur après que tout le travail d'outils et de continuation
+   est terminé. Les valeurs LLM proviennent encore des objets de requête SDK finaux
+   du fournisseur et des réponses brutes du fournisseur, donc leur entrée peut
+   inclure l'historique, des fichiers étendus, des instructions système et des
+   résultats d'outils, et leur sortie peut inclure chaque candidat du fournisseur.
+   Les valeurs d'outils proviennent des paramètres d'invocation finaux et du
+   résultat réussi face au modèle. Chaque valeur GenAI standard est du JSON
+   compact et doit être complète et valide selon le schéma. Une valeur invalide,
+   cyclique ou plus longue que `sensitiveSpanAttributeMaxLength` est omise en
+   entier ; le JSON n'est jamais tronqué et aucun aperçu, hachage ou métadonnée
+   de troncature n'est émis. L'attribut spécifique aux interactions `new_context`
+   conserve son comportement de troncature existant. La valeur maximale par
+   défaut est de 1 Mio (`1048576`) par attribut et la plage acceptée est
+   `1..104857600` (100 Mio). La limite est mesurée en longueur de chaîne
+   JavaScript plutôt qu'en octets UTF-8. Le contenu non ASCII peut donc occuper
+   plus d'octets après l'exportation OTLP.
 
 2. **Les spans du pont log-to-span** (utilisés lorsque les traces HTTP sont exportées sans
    point de terminaison de logs) conservent leurs champs existants `prompt`, `function_args` et
@@ -127,14 +139,7 @@ les secrets dans les variables d'environnement ou les arguments), ainsi que les 
 configuré. Traitez le backend comme un récepteur de données privilégié. Le flag est défini sur
 `false` par défaut.
 
-**Coût / taille de la charge utile :** Un tour intensif avec la limite par défaut (prompt système de 1 Mio
-plus 10 appels d'outils, chacun avec jusqu'à 1 Mio d'entrée + 1 Mio de résultat, plus 1 Mio de sortie du modèle)
-peut produire jusqu'à ~22 Mio de charge utile d'attributs avant la compression OTLP,
-plus jusqu'à 1 Mio par schéma d'outil émis dans les espaces de travail avec de grandes définitions d'outils.
-Il s'agit de la limite côté application de Qwen Code, et non d'une garantie que
-chaque collecteur ou backend accepte un attribut aussi volumineux. Si les spans sont
-rejetés ou supprimés, réduisez `sensitiveSpanAttributeMaxLength` (par exemple, à
-`61440`) et surveillez le débit de l'exportateur.
+**Coût / taille de la charge utile :** À la limite par défaut, un span LLM peut transporter au maximum environ 4 Mio répartis entre l'entrée, la sortie, les instructions système et les définitions d'outils ; un span Tool peut transporter environ 2 Mio répartis entre les arguments et le résultat ; et une interaction peut transporter environ 3 Mio répartis entre l'entrée Agent, la sortie Agent et la compatibilité `new_context`. Il s'agit de la limite côté application de Qwen Code, et non d'une garantie que chaque collecteur ou backend accepte un attribut aussi volumineux. Si les spans sont rejetés ou supprimés, réduisez `sensitiveSpanAttributeMaxLength` (par exemple, à `61440`) et surveillez le débit de l'exportateur.
 
 Ce paramètre ne désactive pas les données sensibles dans les logs OTel ou les autres récepteurs de télémétrie
 ; la télémétrie de réponse API non interne peut remplir `response_text`, de sorte que
@@ -153,6 +158,17 @@ Les variables d'environnement de point de terminaison par signal acceptent égal
 OpenTelemetry standard : `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`,
 `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`, `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`.
 Les variantes `QWEN_TELEMETRY_OTLP_*` sont prioritaires sur les variantes `OTEL_*`.
+
+**Identité de l'utilisateur final :** `telemetry.userId` et
+`QWEN_TELEMETRY_USER_ID` sont des opt-ins explicites pour l'attribut de span ARMS
+`gen_ai.user.id`. La variable d'environnement est prioritaire après que les deux valeurs
+aient été tronquées ; une valeur d'environnement vide revient aux paramètres. L'identifiant
+est écrit uniquement sur les spans d'interaction, LLM, Tool et Agent. Ce n'est pas un attribut
+de ressource, un attribut de log ou de métrique, une valeur Baggage sortante, ni un champ
+standard GenAI OpenTelemetry actuel. Préférez un identifiant pseudonyme stable.
+La valeur est résolue au démarrage, donc les modifications de configuration nécessitent un redémarrage.
+Ne configurez pas une valeur à l'échelle du processus sur une instance de démon ou de canal desservant
+plusieurs utilisateurs finaux.
 
 Pour des informations détaillées sur toutes les options de configuration, consultez le
 [Guide de configuration](../../users/configuration/settings.md).
@@ -367,6 +383,21 @@ N'activez cette option que si le fournisseur LLM envoie également des données 
 
 `X-Qwen-Code-Session-Id` et `X-Qwen-Code-Request-Id` ne font **pas partie de cette PR**. Ils seront conçus et proposés dans leur(s) propre(s) PR de suivi sous le même namespace `outboundCorrelation.*`, chacun avec son propre modèle de menace et son flux de consentement de l'opérateur. La revue de la PR #4390 (LaZzyMan) a établi le principe suivant : "le périmètre de la télémétrie n'inclut pas l'envoi d'identifiants aux fournisseurs LLM" ; le travail sur les en-têtes de corrélation fait l'objet de sa propre discussion de conception plutôt que d'être intégré à la télémétrie.
 
+## Corrélation entrante (API HTTP du daemon)
+
+L'API HTTP du daemon accepte l'en-tête W3C standard `traceparent` sur chaque requête. Deux consommateurs le lisent indépendamment :
+
+- **Re-parenting du span de requête (télémétrie activée).** Lorsque le SDK de télémétrie est initialisé, un en-tête valide est extrait comme parent distant du span de requête, de sorte que les spans du daemon se rattachent sous la trace de l'appelant au lieu d'en démarrer une nouvelle. Le chemin de forwarding `_meta` lit la même chaîne de parents, de sorte que les spans de sous-processus de session transférés via une requête daemon en héritent également.
+- **Champ `traceId` du log d'accès (les deux modes).** Un middleware de capture pré-auth dédié analyse l'en-tête sur chaque requête — y compris celles court-circuitées à l'authentification (401), au rate limiter (429), à l'analyseur de corps JSON (400), ou jamais correspondant à aucune route (404) — et le log d'accès émet l'id de trace de l'appelant sous forme d'un champ camelCase `traceId`. Avec la télémétrie désactivée, ce champ est le seul lien entre une ligne de log du daemon et les logs de l'appelant (ou le backend de traces), donc une requête sauvegardée fonctionne pour les deux modes sans configuration de télémétrie.
+
+Un en-tête invalide mais présent est rejeté (le span reste sans parent) et laisse un fil d'Ariane DEBUG à taux limité (`qwen-code.daemon.traceparent.invalid`) enregistrant la valeur rejetée, de sorte qu'un joint cross-service cassé est diagnostiquable à partir des logs du daemon seuls.
+
+### Échantillonnage forcé sous les parents entrants
+
+Sous le sampler par défaut `parentbased_always_on` (et d'autres valeurs par défaut parentbased), le flag `sampled=0` d'un parent distant est une décision côté appelant, pas une demande d'abandonner la télémétrie du daemon, donc l'extraction force le flag SAMPLED sur les parents entrants. Le seul opt-out est `OTEL_TRACES_SAMPLER=parentbased_always_off`, qui honore les flags de l'appelant — notez qu'il désactive également l'échantillonnage de span racine pour l'ensemble du daemon, pas seulement pour les requêtes liées en entrée.
+
+**Avertissement :** un `traceparent` constant (par exemple, codé en dur dans un client de test de charge) re-parente chaque requête du daemon dans une seule et même trace ; générez un en-tête frais par requête.
+
 ## Télémétrie Aliyun
 
 ### Export OTLP manuel
@@ -405,6 +436,25 @@ Définir uniquement `"target": "gcp"` ne configure pas la destination d'exportat
    ```
 
    > **Note :** Lors de l'utilisation du protocole HTTP avec uniquement `otlpEndpoint` (sans remplacement par signal), Qwen Code ajoute les chemins OTLP standard (`/v1/traces`, `/v1/logs`, `/v1/metrics`) à l'URL de base. Si votre backend utilise des chemins différents, utilisez les remplacements de points de terminaison par signal comme indiqué dans l'Option B.
+
+   Pour remplir le `User ID` de l'analyse de session ARMS, ajoutez une identité pseudonyme stable en tant que paramètre au niveau du span :
+
+   ```json
+   {
+     "telemetry": {
+       "userId": "user-079458",
+       "resourceAttributes": {
+         "acs.arms.service.feature": "genai_app"
+       }
+     }
+   }
+   ```
+
+   Pour les déploiements en conteneur, définissez
+   `QWEN_TELEMETRY_USER_ID=user-079458` à la place. Un
+   `telemetry.resourceAttributes.user.id` personnalisé reste une dimension Resource
+   sans rapport et ne remplit pas l'analyse de session ARMS ; supprimez-le lors
+   de la migration vers le paramètre au niveau du span.
 
 2. Si votre point de terminaison Alibaba Cloud nécessite une authentification, fournissez les en-têtes OTLP via les variables d'environnement OpenTelemetry standard telles que `OTEL_EXPORTER_OTLP_HEADERS` (ou les variantes spécifiques au signal). Qwen Code n'expose actuellement pas les en-têtes d'authentification OTLP directement dans `.qwen/settings.json`.
 3. Lancez Qwen Code et envoyez des prompts.
@@ -482,6 +532,12 @@ Les événements suivants sont enregistrés :
 - `qwen-code.config` : Émis une fois au démarrage avec la configuration de la CLI.
   - **Attributs** : `model`, `sandbox_enabled`, `core_tools_enabled`, `approval_mode`, `file_filtering_respect_git_ignore`, `debug_mode`, `truncate_tool_output_threshold`, `truncate_tool_output_lines`, `hooks` (séparés par des virgules, omis si désactivés), `ide_enabled`, `interactive_shell_enabled`, `mcp_servers`, `mcp_servers_count`, `mcp_tools`, `mcp_tools_count`, `output_format`, `skills`, `subagents`
 
+- `session.start` : Une session commence. Émis après l'initialisation de la télémétrie au démarrage et à chaque changement de session ; les sémantiques de cycle de vie sont décrites dans la section Spans.
+  - **Attributs** : `session.id` (string), `session.previous_id` (string, présent uniquement lorsque ce démarrage poursuit une conversation persistée sous un nouvel identifiant de session)
+
+- `session.end` : Une session se termine. Émis avant qu'un changement de session ne remplace la session actuelle, et à l'arrêt de la télémétrie.
+  - **Attributs** : `session.id` (string)
+
 - `qwen-code.user_prompt` : L'utilisateur soumet un prompt.
   - **Attributs** : `prompt_length` (int), `prompt_id` (string), `prompt` (string, exclu si `log_prompts_enabled` est false), `auth_type` (string)
 
@@ -496,8 +552,8 @@ Les événements suivants sont enregistrés :
 
 #### Événements d'outils
 
-- `qwen-code.tool_call` : Chaque appel de fonction/outil.
-  - **Attributs** : `function_name` (string), `function_args` (object), `duration_ms` (int), `status` (string : "success", "error", ou "cancelled"), `success` (boolean), `decision` (string : "accept", "reject", "auto_accept", ou "modify", optionnel), `error` (string, optionnel), `error_type` (string, optionnel), `prompt_id` (string), `response_id` (string, optionnel), `content_length` (int, optionnel), `tool_type` (string : "native" ou "mcp"), `mcp_server_name` (string, optionnel), `metadata` (object, optionnel — pour les outils d'écriture de fichiers, contient `model_added_lines`, `model_removed_lines`, `user_added_lines`, `user_removed_lines`, `model_added_chars`, `model_removed_chars`, `user_added_chars`, `user_removed_chars`)
+- `qwen-code.tool_call` : Chaque appel de fonction/outil. Les événements terminaux sont normalisés de sorte que `status` fait autorité : les événements success et cancelled omettent les champs d'erreur, tandis que les événements error ont toujours un `error_type` non vide (`unknown` lorsque le producteur n'a pas classifié l'erreur). Les noms d'outils vides sont émis en tant que `unknown_tool`. Un `execution_status` manquant est normalisé à `unknown` et n'est jamais déduit du `status` terminal.
+  - **Attributs** : `function_name` (string), `function_args` (object), `call_id` (string, optionnel), `duration_ms` (int), `status` (string : "success", "error", ou "cancelled"), `execution_status` (string : "not_started", "success", "error", "cancelled", ou "unknown"), `success` (boolean), `decision` (string : "accept", "reject", "auto_accept", ou "modify", optionnel), `error` (string, optionnel), `error_type` (string, présent pour les événements error), `prompt_id` (string), `response_id` (string, optionnel), `content_length` (int, optionnel), `tool_type` (string : "native" ou "mcp"), `mcp_server_name` (string, optionnel), `metadata` (object, optionnel — pour les outils d'écriture de fichiers, contient `model_added_lines`, `model_removed_lines`, `user_added_lines`, `user_removed_lines`, `model_added_chars`, `model_removed_chars`, `user_added_chars`, `user_removed_chars`)
 
 - `qwen-code.file_operation` : Chaque opération sur un fichier.
   - **Attributs** : `tool_name` (string), `operation` (string : "create", "read", "update"), `lines` (int, optionnel), `mimetype` (string, optionnel), `extension` (string, optionnel), `programming_language` (string, optionnel)
@@ -641,7 +697,10 @@ Les métriques sont des mesures numériques du comportement dans le temps. Les n
 - `qwen-code.session.count` (Counter, Int) : Incrémenté une fois à chaque démarrage de la CLI.
 
 - `qwen-code.tool.call.count` (Counter, Int) : Compte les appels d'outils.
-  - **Attributs** : `function_name`, `success` (boolean), `decision` ("accept"/"reject"/"auto_accept"/"modify", optionnel), `tool_type` ("mcp"/"native", optionnel)
+  - **Attributs** : `function_name`, `status` ("success"/"error"/"cancelled"), `success` (boolean, conservé pour compatibilité), `decision` ("accept"/"reject"/"auto_accept"/"modify", optionnel), `tool_type` ("mcp"/"native", optionnel)
+
+- `qwen-code.tool.execution.count` (Counter, Int) : Compte les résultats d'exécution d'outils. Ne porte volontairement aucune dimension `function_name` pour rester à faible cardinalité, donc un taux de défaillance d'exécution ne peut pas être attribué à un outil spécifique sans descendre dans les logs `qwen-code.tool_call` ; excluez `unknown`, `not_started` et `cancelled` lors du calcul des ratios de défaillance d'exécution (le dénominateur est `success` + `error`).
+  - **Attributs** : `execution_status` ("not_started"/"success"/"error"/"cancelled"/"unknown"), `tool_type` ("mcp"/"native"), plus les attributs métriques communs globalement configurés tels que le `session.id` opt-in
 
 - `qwen-code.tool.call.latency` (Histogram, ms) : Mesure la latence des appels d'outils.
   - **Attributs** : `function_name` (string)
@@ -772,19 +831,40 @@ Le processus daemon (mode serveur HTTP à exécution longue) expose ses propres 
 
 ### Spans
 
-Les spans de traçage distribué forment un arbre enraciné à `qwen-code.interaction`. Chaque interaction est une racine de trace avec son propre `traceId` ; la corrélation inter-prompts utilise l'attribut `session.id`.
+Les spans de traçage distribué forment un arbre enraciné à `qwen-code.interaction`. Dans la CLI, chaque interaction est une racine de trace avec son propre `traceId` ; les chemins ACP et daemon peuvent hériter d'un contexte parent entrant. La corrélation inter-prompts utilise l'attribut `session.id`.
 
-- `qwen-code.interaction` : Span racine pour chaque tour de prompt utilisateur.
-  - **Attributs** : `session.id`, `qwen-code.prompt_id`, `qwen-code.message_type`, `qwen-code.model`, `qwen-code.approval_mode`, `interaction.sequence`, `interaction.duration_ms`, `qwen-code.turn_status` ("ok"/"error"/"cancelled")
+Le cycle de vie des sessions est également exporté via les conventions sémantiques
+OpenTelemetry General Session. Lorsque le pipeline de logs OTel est activé, Qwen Code émet
+des événements de log `session.start` et `session.end` avec l'attribut requis `session.id`
+(catalogués sous Événements de session principaux ci-dessus). Une conversation persistée
+reprise inclut `session.previous_id` sur son événement `session.start` uniquement
+lorsque l'identifiant de session repris diffère de l'identifiant courant ; les reprises
+à froid (`--resume`, `--continue`, `--fork-session`) ne le portent pas.
+`/clear` et les autres flux de remplacement ne revendiquent intentionnellement pas
+la continuation car ils suppriment la conversation précédente.
+
+Les enregistrements spécifiques à Qwen `qwen-code.config`/`cli_config` et RUM
+`session_start` restent disponibles pour compatibilité. Les spans de requêtes GenAI
+continuent d'utiliser `gen_ai.conversation.id` pour le même identifiant de session propriétaire.
+
+- `qwen-code.interaction` : Span d'invocation du main-agent. Il couvre toutes les requêtes LLM, l'approbation/exécution des outils et les continuations pour un prompt logique. Les requêtes utilisateur, les nouvelles tentatives, les prompts cron, les notifications, les messages de coéquipiers et les tours Goal créent des invocations ; les résultats d'outils, les hooks et le steering réutilisent exactement l'ID de prompt actif.
+  - **Attributs GenAI** : `gen_ai.operation.name` (`invoke_agent`), `gen_ai.agent.name` (`qwen-code`), `gen_ai.conversation.id`, `gen_ai.output.type` optionnel (`json` uniquement avec un JSON Schema configuré), `gen_ai.input.messages` sensible, `gen_ai.output.messages` sensible, et extension ARMS optionnelle `gen_ai.user.id`
+  - **Attributs de compatibilité** : `session.id`, `qwen-code.prompt_id`, `qwen-code.message_type`, `qwen-code.model`, `qwen-code.approval_mode`, `interaction.sequence`, `interaction.duration_ms`, `qwen-code.turn_status` ("ok"/"error"/"cancelled")
+  - `gen_ai.request.model` est intentionnellement omis car l'agent prend en charge les remplacements, le fallback et la sélection dynamique de modèle. `gen_ai.provider.name` et l'ID/version/description de l'agent sont également omis.
+  - L'entrée de l'agent est un prompt utilisateur original, pas la requête modèle étendue. La sortie de l'agent est une projection textuelle finale visible par l'utilisateur ; le JSON structuré utilise du texte JSON compact avec `finish_reason=tool_call`. Les deux sont omis sauf si les attributs de span sensibles sont activés et que le JSON complet tient dans la limite par attribut.
 
 - `qwen-code.llm_request` : Encapsule un seul appel API LLM.
-  - **Attributs** : `session.id`, `qwen-code.model`, `qwen-code.prompt_id`, `llm_request.context` ("subagent"/"interaction"/"standalone"), `gen_ai.request.model`, `duration_ms`, `input_tokens`, `output_tokens`, `cached_input_tokens`, `ttft_ms`, `request_setup_ms`, `attempt`, `retry_total_delay_ms`, `sampling_ms`, `output_tokens_per_second`, `success`, `error`, `response_id`, `finish_reason`, `thoughts_token_count`, `subagent_name`, `error_type`, `error_status_code`
+  - **Attributs GenAI** : `gen_ai.operation.name`, `gen_ai.provider.name`, `gen_ai.conversation.id`, extension ARMS optionnelle `gen_ai.user.id`, `gen_ai.request.model`, `gen_ai.request.stream`, `gen_ai.request.choice.count`, `gen_ai.request.max_tokens`, `gen_ai.request.temperature`, `gen_ai.request.top_p`, `gen_ai.request.frequency_penalty`, `gen_ai.request.presence_penalty`, `gen_ai.request.stop_sequences`, `gen_ai.output.type` optionnel, `gen_ai.response.id`, `gen_ai.response.model`, `gen_ai.response.finish_reasons`, `gen_ai.response.time_to_first_chunk`, `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`, `gen_ai.usage.cache_read.input_tokens`, `gen_ai.usage.cache_creation.input_tokens`
+  - **Attributs de compatibilité** : `session.id`, `qwen-code.prompt_id`, `llm_request.context` ("subagent"/"interaction"/"standalone"), `duration_ms`, `ttft_ms`, `request_setup_ms`, `attempt`, `retry_total_delay_ms`, `sampling_ms`, `output_tokens_per_second`, `success`, `error`, `finish_reason`, `thoughts_token_count`, `subagent_name`, `error_type`, `error_status_code`
+  - Les champs de réponse standard proviennent de la réponse du fournisseur. Les champs de tokens standard sont émis uniquement pour les entiers sûrs non négatifs rapportés par le fournisseur. Si le fournisseur ne rapporte qu'un compte total de tokens, l'utilisation entrée/sortie est omise plutôt qu'estimée.
+  - Les champs de paramètres de requête standard proviennent du premier objet de requête SDK final du fournisseur après les valeurs par défaut de l'adaptateur, les remplacements, la suppression des champs non supportés et les contraintes de fenêtre de sortie. Qwen Code n'infère pas les valeurs par défaut du SDK ou du serveur.
+  - Les requêtes en streaming émettent `gen_ai.request.stream=true`. `gen_ai.response.time_to_first_chunk` mesure les secondes entre l'appel au fournisseur et la première réponse normalisée produite par l'adaptateur du fournisseur, ce qui peut différer de la première trame réseau brute. Les requêtes non-streaming omettent les deux attributs de streaming standard car un `gen_ai.request.stream` absent signifie non-streaming dans la convention sémantique.
 
 - `qwen-code.tool` : Encapsule le cycle de vie complet de l'outil (attente d'approbation + exécution).
-  - **Attributs** : `session.id`, `tool.name`, `duration_ms`, `success`, `error`
+  - **Attributs** : `session.id`, extension ARMS optionnelle `gen_ai.user.id`, `gen_ai.operation.name` (`execute_tool`), `gen_ai.agent.name` optionnel hérité, `gen_ai.tool.name`, `gen_ai.tool.type` (`function`), `gen_ai.tool.call.id`, `tool.call_id`, `duration_ms`, `success`, `error`, `error.type` en cas d'échec, `tool.failure_kind` (string, optionnel — la raison spécifique de l'échec, par exemple "cancelled", "tool_error", "tool_exception", "timeout", "permission_denied", "pre_hook_blocked")
 
-- `qwen-code.tool.execution` : Encapsule la phase d'exécution de l'outil (après approbation).
-  - **Attributs** : `session.id`, `duration_ms`, `success`, `error`
+- `qwen-code.tool.execution` : Encapsule la phase d'exécution de l'outil (après approbation). Émis uniquement pour les exécutions tentées.
+  - **Attributs** : `session.id`, `gen_ai.tool.name` (optionnel), `tool.call_id` (optionnel), `duration_ms`, `success`, `error`, `execution_status` ("success"/"error"/"cancelled"), `error_type`, `error.type`
 
 - `qwen-code.tool.blocked_on_user` : Temps qu'un outil passe à attendre l'approbation de l'utilisateur.
   - **Attributs** : `session.id`, `tool.name`, `tool.call_id`, `duration_ms`, `decision` ("proceed_once"/"proceed_always"/"cancel"/"aborted"/"auto_approved"/"error"), `source` ("cli"/"ide"/"hook"/"auto"/"system")
@@ -793,7 +873,27 @@ Les spans de traçage distribué forment un arbre enraciné à `qwen-code.intera
   - **Attributs** : `session.id`, `hook_event` ("PreToolUse"/"PostToolUse"/"PostToolUseFailure"/"PostToolBatch"), `tool.name`, `tool.use_id` (optionnel), `is_interrupt` (booléen, optionnel), `duration_ms`, `success`, `should_proceed` (optionnel), `should_stop` (optionnel), `block_type` (optionnel), `error` (optionnel)
 
 - `qwen-code.subagent` : Encapsule une seule invocation de sous-agent.
-  - **Attributs** : `gen_ai.operation.name`, `gen_ai.provider.name`, `gen_ai.agent.id`, `gen_ai.agent.name`, `gen_ai.conversation.id`, `qwen-code.subagent.id`, `qwen-code.subagent.name`, `qwen-code.subagent.invocation_kind` ("foreground"/"fork"/"background"), `qwen-code.subagent.is_built_in`, `qwen-code.subagent.depth`, `qwen-code.subagent.status`, `qwen-code.subagent.terminate_reason`, `qwen-code.subagent.duration_ms`
+  - **Attributs** : `gen_ai.operation.name` (`invoke_agent`), `gen_ai.agent.name`, `gen_ai.agent.description`, `gen_ai.conversation.id`, extension ARMS optionnelle `gen_ai.user.id`, `gen_ai.request.model` optionnel, `qwen-code.subagent.id`, `qwen-code.subagent.name`, `qwen-code.subagent.invocation_kind` ("foreground"/"fork"/"background"), `qwen-code.subagent.is_built_in`, `qwen-code.subagent.depth`, `qwen-code.subagent.status`, `qwen-code.subagent.terminate_reason`, `qwen-code.subagent.duration_ms`
+
+Les spans GenAI réussis et annulés laissent `SpanStatus` à `UNSET`. Les échecs définissent `ERROR`, une description de statut bornée et `error.type` à faible cardinalité.
+
+#### Migration des champs GenAI et reconnaissance ARMS
+
+Les spans LLM utilisent désormais les champs standard `gen_ai.request.*`, `gen_ai.response.*` et `gen_ai.usage.*` sans alias privés équivalents exacts. Les attributs d'échantillonnage de requête sont écrits uniquement sous leurs noms standard ; aucun alias nu `temperature`, `top_p`, `max_tokens`, penalty, choice-count ou stop-sequence n'est émis. Les spans Tool utilisent de même `gen_ai.tool.name` sans `tool.name` ; les spans blocked-on-user et hook conservent `tool.name` car ce ne sont pas des spans GenAI Tool. Les alias invalides `gen_ai.usage.cached_tokens`, `gen_ai.server.time_to_first_token` et `gen_ai.usage.reasoning_tokens` ne sont plus émis. Utilisez `gen_ai.usage.cache_read.input_tokens` pour les lectures de cache rapportées par le fournisseur et `gen_ai.response.time_to_first_chunk` pour la latence de streaming standard. L'attribut de span privé `ttft_ms` reste disponible pour la latence de première sortie visible par l'utilisateur et continue d'alimenter `/stats`, `sampling_ms` et le débit de tokens de sortie ; `gen_ai.response.time_to_first_chunk` est un attribut standard indépendant mesurant la latence du premier chunk normalisé. Le contrat complet versionné et les champs différés sont documentés dans [Alignement des champs GenAI et ARMS](../../design/gen-ai-arms-field-alignment.md).
+
+Pour qu'ARMS reconnaisse les spans exportés comme une application GenAI, configurez explicitement sa fonctionnalité de ressource :
+
+```json
+{
+  "telemetry": {
+    "resourceAttributes": {
+      "acs.arms.service.feature": "genai_app"
+    }
+  }
+}
+```
+
+Qwen Code n'injecte pas cet attribut de ressource spécifique à ARMS ni `gen_ai.span.kind`. ARMS peut déduire les rôles LLM, Tool et Agent à partir de `gen_ai.operation.name`.
 
 - `qwen-code.daemon.request` : Encapsule une requête HTTP du daemon.
   - **Attributs** : `http.request.method`, `http.route`, `qwen-code.daemon.operation`, `session.id`, `http.response.status_code`

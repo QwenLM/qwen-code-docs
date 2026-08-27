@@ -73,7 +73,7 @@ Pour garantir que Qwen Code puisse trouver automatiquement le bon actif de mise 
 
 #### Structure d'archive
 
-Les archives doivent contenir des extensions complètes et répondre à toutes les exigences standard – en particulier, le fichier `qwen-extension.json` doit se trouver à la racine de l'archive.
+Les archives doivent être complètement autonomes et avoir un manifeste racine pris en charge : `qwen-extension.json` pour une extension native Qwen, ou `plugin.json` pour un package [Agent Plugins v1](./agent-plugins.md).
 
 Le reste de la disposition doit ressembler exactement à une extension typique, voir [introduction.md](./introduction.md).
 
@@ -131,7 +131,7 @@ Vous pouvez publier des extensions Qwen Code en tant que paquets npm scopés (pa
 
 ### Exigences du paquet
 
-Votre paquet npm doit inclure un fichier `qwen-extension.json` à la racine du paquet. Il s'agit du même fichier de configuration utilisé par toutes les extensions Qwen Code – l'archive npm n'est qu'un autre mécanisme de livraison.
+Votre paquet npm doit inclure un manifeste pris en charge à la racine du paquet : `qwen-extension.json` pour une extension native Qwen, ou `plugin.json` pour un package [Agent Plugins v1](./agent-plugins.md). L'archive npm n'est qu'un autre mécanisme de livraison.
 
 Une structure de paquet minimale ressemble à ceci :
 
@@ -145,7 +145,7 @@ mon-extension/
 └── agents/               # sous-agents personnalisés optionnels
 ```
 
-Assurez-vous que `qwen-extension.json` est inclus dans votre paquet publié (c'est-à-dire qu'il n'est pas exclu par `.npmignore` ou le champ `files` dans `package.json`).
+Assurez-vous que le manifeste racine sélectionné et tous les fichiers de package référencés sont inclus dans votre paquet publié (c'est-à-dire qu'ils ne sont pas exclus par `.npmignore` ou le champ `files` dans `package.json`).
 
 ### Publication
 

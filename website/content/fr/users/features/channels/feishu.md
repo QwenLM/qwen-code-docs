@@ -38,6 +38,15 @@ Activez les permissions suivantes sous **Permissions & Scopes** (权限管理) :
 - `im:message:send_as_bot` — Envoyer des messages en tant que bot
 - `im:resource` — Accéder aux ressources des messages (images, fichiers)
 
+Pour afficher les noms des utilisateurs et des groupes au lieu des ID dans les contacts
+découverts par le démon, activez optionnellement :
+
+- `contact:user.basic_profile:readonly` — Lire les noms d'affichage des utilisateurs
+- `im:chat:readonly` — Lire les noms des groupes
+
+Sans ces permissions optionnelles, les messages fonctionnent toujours et les contacts
+découverts conservent leurs ID d'utilisateur et de chat Feishu comme labels.
+
 ### Publier l'application
 
 Après avoir configuré les permissions et les événements, créez une version et publiez-la. Le bot ne fonctionnera pas tant que l'application n'est pas publiée et approuvée.
@@ -121,9 +130,10 @@ Définissez ensuite l'URL de requête dans la Plateforme Ouverte Feishu sur `htt
 
 Les bots Feishu fonctionnent à la fois en conversation privée et en groupe. Pour activer le support des groupes :
 
-1. Définissez `groupPolicy` sur `"allowlist"` ou `"open"` dans la configuration de votre canal
+1. Définissez `groupPolicy` sur `"allowlist"`, `"pairing"` ou `"open"` dans la configuration de votre canal
 2. Ajoutez le bot à un groupe Feishu
 3. Mentionnez le bot dans le groupe (@mention) pour déclencher une réponse
+4. Si vous utilisez `groupPolicy: "pairing"`, approuvez la demande d'appairage du groupe une fois avant que les réponses ne commencent
 
 Par défaut, le bot nécessite une mention @ dans les discussions de groupe (`requireMention: true`). Définissez `"requireMention": false` pour un groupe spécifique afin qu'il réponde à tous les messages.
 
@@ -170,7 +180,8 @@ Plusieurs utilisateurs peuvent envoyer des messages simultanément dans la même
 
 ### Le bot ne répond pas dans les groupes
 
-- Vérifiez que `groupPolicy` est défini sur `"allowlist"` ou `"open"` (la valeur par défaut est `"disabled"`)
+- Vérifiez que `groupPolicy` est défini sur `"allowlist"`, `"pairing"` ou `"open"` (la valeur par défaut est `"disabled"`)
+- Si vous utilisez `"pairing"`, vérifiez que la demande d'appairage du groupe a été approuvée
 - Assurez-vous de mentionner le bot (@) dans le message du groupe
 - Vérifiez que le bot a été ajouté au groupe
 

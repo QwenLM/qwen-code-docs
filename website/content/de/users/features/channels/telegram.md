@@ -70,10 +70,11 @@ qwen channel start
 
 Um den Bot in Telegram-Gruppen zu verwenden:
 
-1. Setze `groupPolicy` in deiner Kanalkonfiguration auf `"allowlist"` oder `"open"`
+1. Setze `groupPolicy` in deiner Kanalkonfiguration auf `"allowlist"`, `"pairing"` oder `"open"`
 2. **Deaktiviere den Privatsphäre-Modus** in BotFather: `/mybots` → wähle deinen Bot aus → Bot Settings → Group Privacy → Turn Off
 3. Füge den Bot zu einer Gruppe hinzu. Wenn er bereits in der Gruppe war, **entferne ihn und füge ihn erneut hinzu** (Telegram speichert die Datenschutzeinstellungen aus der Zeit, als der Bot der Gruppe beigetreten ist)
 4. Wenn du `groupPolicy: "allowlist"` verwendest, füge die Chat-ID der Gruppe zu `groups` in deiner Konfiguration hinzu
+5. Wenn du `groupPolicy: "pairing"` verwendest, genehmige die Pairing-Anfrage der Gruppe einmal, bevor Antworten gestartet werden. Beachte, dass nach der Genehmigung einer Gruppe **jedes Mitglied dieser Gruppe** den Bot verwenden kann; `senderPolicy` und `allowedUsers` beschränken nicht die Mitglieder einer genehmigten Gruppe.
 
 Standardmäßig erwartet der Bot eine @Erwähnung oder eine Antwort, um in Gruppen zu antworten. Setze `"requireMention": false` für eine bestimmte Gruppe, damit er auf alle Nachrichten antwortet (nützlich für dedizierte Aufgabengruppen). Siehe [Gruppenchats](./overview#group-chats) für alle Details.
 
@@ -105,8 +106,9 @@ Die Markdown-Antworten des Agents werden automatisch in Telegram-kompatibles HTM
 
 ### Bot antwortet nicht in Gruppen
 
-- Überprüfe, ob `groupPolicy` auf `"allowlist"` oder `"open"` gesetzt ist (Standard ist `"disabled"`)
+- Überprüfe, ob `groupPolicy` auf `"allowlist"`, `"pairing"` oder `"open"` gesetzt ist (Standard ist `"disabled"`)
 - Wenn du `"allowlist"` verwendest, verifiziere, dass die Chat-ID der Gruppe in der `groups`-Konfiguration enthalten ist
+- Wenn du `"pairing"` verwendest, verifiziere, dass die Pairing-Anfrage der Gruppe genehmigt wurde
 - Stelle sicher, dass **Group Privacy in BotFather ausgeschaltet** ist — ohne dies kann der Bot Nicht-Befehlsnachrichten in Gruppen nicht sehen
 - Wenn du den Privatsphäre-Modus nach dem Hinzufügen des Bots zu einer Gruppe geändert hast, **entferne den Bot aus der Gruppe und füge ihn erneut hinzu**
 - Standardmäßig erwartet der Bot eine @Erwähnung oder eine Antwort. Sende `@deinbotname hallo` zum Testen

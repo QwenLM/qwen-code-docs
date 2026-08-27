@@ -1,0 +1,89 @@
+# Glossary (ru)
+
+English term → Russian rendering. Follow existing entries; append new ones as `- term → rendering` when you coin a term.
+
+- hook → хук
+- skill → навык
+- subagent → субагент
+- sandbox → песочница
+- checkpoint → контрольная точка
+- slash command → слеш-команда
+- headless → headless-режим
+- approval mode → режим одобрения
+- daemon → демон
+- workspace → рабочее пространство
+- snapshot → снимок
+- turn → ход
+- replay → воспроизведение
+- bridge → бридж
+- compaction → сжатие
+- microcompaction → микросжатие
+- transcript → транскрипт
+- heartbeat → heartbeat (не переводится)
+- best-effort → по мере возможности (best-effort)
+- fail closed → fail closed
+- hot removal → горячее удаление
+- memory lane → дорожка памяти
+- sub-session launcher → средство запуска суб-сессий
+- opt-in → включаемый явно
+- fallback → фолбэк
+- capability → возможность (capability)
+- fixture → фикстура
+- span → спан
+- trace → трассировка
+- gate → гейт
+- seam → стык
+- reducer → редьюсер
+- normalizer → нормализатор
+- projection → проекция
+- emitter → эмиттер
+- tombstone → tombstone
+- lease → аренда
+- claim → захват
+- settlement → урегулирование
+- drain → дренирование
+- admission → допуск
+- run → запуск
+- attended prompt → запрос от реального пользователя
+- loop detection → обнаружение циклов
+- soft cap / hard cap → мягкий / жесткий лимит
+- backstop → страховочный предел
+- stuck → застревание
+- alias → алиас
+- canonical → канонический
+- worktree → worktree
+- fork → форк
+- roster → ростер
+- sidecar → sidecar (не переводится)
+- fire-and-forget → fire-and-forget (не переводится)
+- single-flight → single-flight (не переводится)
+- lazy loading → ленивая загрузка
+- cold start → холодный старт
+- preheat → прогрев
+- prompt → промпт
+- envelope → Envelope (не переводится)
+- resident → резидентный
+- speculation → спекуляция (спекулятивное выполнение)
+- presenter → презентер
+- coalescing → коалесцинг
+- promise → промис
+- waiter → ожидатель
+- compile cache → compile-кэш
+- work chain → рабочая цепочка
+- reverse control → reverse-управление
+- watermark → watermark (не переводится)
+- writer fence → writer fence (не переводится)
+- disposition → disposition (не переводится)
+- branch (code) → ветка
+- sentinel → sentinel (не переводится)
+- dwell → пауза (dwell)
+- non-inferiority → не-ухудшение
+- benchmark → бенчмарк
+- bootstrap (statistics) → бутстрэп
+- warmup → warmup (не переводится)
+- baseline → baseline (не переводится)
+- security principal → принципал безопасности
+- pairing → сопряжение
+- compose floor → compose floor (минимальный резерв времени для композиции вердикта)
+- shell registry → реестр оболочек
+- aggregate hold → агрегированный удержатель

@@ -91,9 +91,39 @@ Qwen n'enregistre pas tout — seulement les choses qui seront réellement utile
 
 ### Où ces données sont stockées
 
-Les fichiers de l'Auto-memory se trouvent dans `~/.qwen/projects/<project>/memory/`. Toutes les branches et worktrees d'un même dépôt partagent le même dossier de mémoire, ainsi ce que Qwen apprend dans une branche est disponible dans les autres.
+Les fichiers de l'Auto-memory se trouvent dans `~/.qwen/projects/<project>/memory/`. Toutes les branches d'un même checkout partagent le même dossier de mémoire, ainsi ce que Qwen apprend dans une branche est disponible dans les autres. Chaque worktree git lié obtient son propre dossier de mémoire, ce qui correspond à l'isolation par worktree des chats et des autres états de session — les conventions à l'échelle du dépôt que vous voulez dans chaque worktree appartiennent dans la [mémoire d'équipe](#mémoire-déquipe-partagée-avec-les-collaborateurs).
 
 Tout ce qui est enregistré l'est en markdown brut — vous pouvez ouvrir, modifier ou supprimer n'importe quel fichier à tout moment.
+
+#### Mémoire épinglée
+
+Placez les documents rédigés manuellement que la maintenance automatique de la mémoire
+doit préserver dans `pinned/` sous un répertoire de mémoire gérée, par exemple
+`~/.qwen/projects/<project>/memory/pinned/architecture.md` ou
+`~/.qwen/memories/pinned/preferences.md`. Utilisez le même frontmatter que les
+autres documents de mémoire. Les fichiers épinglés valides sont lisibles par Qwen
+et sont inclus lors de la prochaine reconstruction de `MEMORY.md`, dans les mêmes
+limites de taille et de nombre de fichiers que les autres documents de mémoire.
+
+Seul le répertoire `pinned/` de premier niveau directement à l'intérieur d'une
+racine de mémoire gérée est protégé ; les répertoires imbriqués tels que
+`memory/project/pinned/` sont de la mémoire writable ordinaire. L'extraction
+automatique et les workers Dream correspondent au nom de répertoire réservé de
+manière insensible à la casse.
+
+L'extraction automatique est instruite de laisser les enregistrements épinglés
+et leurs entrées d'index valides inchangés, tandis que Dream est instruit de
+passer `pinned/` lors de la consolidation. L'extraction automatique et les
+workers Dream forkés, y compris le nettoyage en arrière-plan, appliquent la
+limite des fichiers épinglés sur leurs outils d'écriture et de modification,
+y compris les chemins qui se résolvent via un lien symbolique vers `pinned/` ;
+leur politique shell existante en lecture seule bloque la suppression en ligne
+de commande. Vous contrôlez toujours ces fichiers directement et pouvez les
+supprimer avec une requête `/forget` explicite.
+
+> **Note :** La slash command visible `/dream` s'exécute sur l'Agent principal.
+> Elle reçoit la même instruction de skip, mais ne reçoit pas encore la porte
+> déterministe par tour du worker forké.
 
 ### Nettoyage périodique
 

@@ -37,6 +37,8 @@ Qwen Code は、コアパッケージ (`packages/core/src/tools/`) に組み込�
 - LLM コンテキストとユーザー表示の両方に対する**応答の処理**
 - **接続状態の維持**とタイムアウトの処理
 
+接続損失後、現在の呼び出しは、信頼されたワークスペース内の信頼されたサーバーにおいて、ツールが `idempotentHint: true` を明示的に宣言している場合、または `destructiveHint: true` や `idempotentHint: false` と競合しない `readOnlyHint: true` を宣言している場合にのみリプレイされます。アノテーションがない場合や競合する場合、および信頼されていないサーバーやワークスペースからのアノテーションは、サーバーが応答が失われる前にサイドエフェクトを完了している可能性があるため、安全でないとみなされます。ツール作成者は正確な MCP アノテーションを公開する必要があります。管理者はサーバーの信頼を有効にする前にそれらを検証する必要があります。
+
 ### トランスポートメカニズム
 
 CLI は 3 つの MCP トランスポートタイプをサポートしています:
@@ -114,7 +116,8 @@ Qwen Code は `settings.json` ファイルの `mcpServers` 設定を使用して
 - **`env`** (オブジェクト): サーバープロセスの環境変数。値は `$VAR_NAME` または `${VAR_NAME}` 構文を使用して環境変数を参照できます
 - **`cwd`** (文字列): Stdio トランスポートの作業ディレクトリ
 - **`timeout`** (数値): リクエストのタイムアウト (ミリ秒、デフォルト: 600,000ms = 10 分)
-- **`trust`** (ブール値): `true` の場合、このサーバーのすべてのツール呼び出し確認をバイパスします (デフォルト: `false`)
+- **`versionNegotiation`** (`"auto" | "legacy"`、デフォルト: `"legacy"`): Stdio サーバーの場合、`"auto"` は使い捨ての兄弟プロセスでの `server/discover` プローブを有効にします。
+- **`trust`** (ブール値): `true` の場合、信頼されたワークスペース内でこのサーバーのツール呼び出し確認をバイパスします (デフォルト: `false`)
 - **`includeTools`** (文字列の配列): この MCP サーバーから含めるツール名のリスト。指定すると、ここにリストされたツールのみがこのサーバーから利用可能になります (許可リスト動作)。指定しない場合、サーバーからのすべてのツールがデフォルトで有効になります。
 - **`excludeTools`** (文字列の配列): この MCP サーバーから除外するツール名のリスト。ここにリストされたツールは、サーバーによって公開されていてもモデルから利用できなくなります。**注:** `excludeTools` は `includeTools` よりも優先されます。ツールが両方のリストにある場合、除外されます。
 - **`targetAudience`** (文字列): アクセスしようとしている IAP で保護されたアプリケーションで許可リストに登録されている OAuth クライアント ID。`authProviderType: 'service_account_impersonation'` と共に使用します。
@@ -161,13 +164,13 @@ OAuth 対応サーバーに接続する場合:
 **重要:** OAuth 認証では、リダイレクト URI がアクセス可能である必要があります:
 
 - **デフォルトの動作:** `http://localhost:7777/oauth/callback` にリダイレクト (ローカル設定で動作)
-- **カスタムリダイレクト URI:** `--oauth-redirect-uri` を使用するか、settings.json で `redirectUri` を設定して別の URL を指定します
+- **カスタムリダイレクト URI:** `--oauth-redirect-uri` を使用するか、settings.json で `redirectUri` を設定して、`/oauth/callback` で終わる公開 URL を指定します。そのパスを Qwen Code を実行しているマシンの `http://127.0.0.1:7777/oauth/callback` にリバースプロキシしてください。
 
 **リモート/クラウドサーバーデプロイメント** (例: Web ターミナル、SSH セッション、クラウド IDE) の場合:
 
 - デフォルトの `localhost` リダイレクトは**機能しません**
-- 公的にアクセス可能な URL を指すカスタム `redirectUri` を**設定する必要があります**
-- ユーザーのブラウザがこの URL に到達し、サーバーにリダイレクトできる必要があります
+- `/oauth/callback` で終わる公開アクセス可能な URL を指すカスタム `redirectUri` を**設定する必要があります**
+- TLS をリバースプロキシで終端し、そのパスのみを `http://127.0.0.1:7777/oauth/callback` にフォワードしてください
 
 リモートサーバーの例:
 
@@ -193,7 +196,7 @@ OAuth は以下では機能しません:
 - **`authorizationUrl`** (文字列): OAuth 認可エンドポイント (省略した場合は自動検出)
 - **`tokenUrl`** (文字列): OAuth トークンエンドポイント (省略した場合は自動検出)
 - **`scopes`** (文字列の配列): 必要な OAuth スコープ
-- **`redirectUri`** (文字列): カスタムリダイレクト URI。**リモートデプロイメントでは重要**: デフォルトは `http://localhost:7777/oauth/callback` です。リモート/クラウドサーバーで Qwen Code を実行する場合、公的にアクセス可能な URL (例: `https://your-server.com/oauth/callback`) に設定します。`qwen mcp add --oauth-redirect-uri` を使用するか、直接 settings.json で設定できます。
+- **`redirectUri`** (文字列): カスタムリダイレクト URI。**リモートデプロイメントでは重要**: デフォルトは `http://localhost:7777/oauth/callback` です。リモート使用の場合は、`/oauth/callback` で終わる公開 URL を設定し、ローカルのコールバックリスナーにリバースプロキシしてください。`qwen mcp add --oauth-redirect-uri` を使用するか、直接 settings.json で設定できます。
 - **`tokenParamName`** (文字列): SSE URL 内のトークンのクエリパラメータ名
 - **`audiences`** (文字列の配列): トークンが有効な対象者
 
@@ -445,9 +448,10 @@ Qwen Code が起動すると、以下の詳細なプロセスを通じて MCP �
 #### 信頼ベースのバイパス
 
 ```typescript
-if (this.trust) {
-  return false; // 確認不要
+if (this.trust === true && this.cliConfig?.isTrustedFolder()) {
+  return 'allow';
 }
+return 'ask';
 ```
 
 #### 動的許可リスト
@@ -616,7 +620,7 @@ MCP 統合はいくつかの状態を追跡します：
 
 ### セキュリティに関する考慮事項
 
-- **信頼設定：** `trust` オプションは、すべての確認ダイアログをバイパスします。注意して使用し、完全に制御できるサーバーにのみ使用してください。
+- **信頼設定：** `trust` オプションは、信頼されたワークスペース内でのみツール確認ダイアログをバイパスします。注意して使用し、完全に制御できるサーバーにのみ使用してください。
 - **アクセストークン：** API キーやトークンを含む環境変数を設定する際は、セキュリティに注意してください。
 - **サンドボックス互換性：** サンドボックスを使用する場合、MCP サーバーがサンドボックス環境内で利用可能であることを確認してください。
 - **プライベートデータ：** 広いスコープの個人アクセストークンを使用すると、リポジトリ間で情報漏洩が発生する可能性があります。
@@ -787,13 +791,13 @@ qwen mcp add [options] <name> <commandOrUrl> [args...]
 - `-e, --env`：環境変数を設定します（例：`-e KEY=value`）。
 - `-H, --header`：SSE および HTTP トランスポートの HTTP ヘッダーを設定します（例：`-H "X-Api-Key: abc123" -H "Authorization: Bearer abc123"`）。
 - `--timeout`：接続タイムアウトをミリ秒単位で設定します。
-- `--trust`：サーバーを信頼します（すべてのツール呼び出し確認プロンプトをバイパスします）。
+- `--trust`：サーバーを信頼します（信頼されたワークスペース内でツール呼び出し確認をバイパスします）。
 - `--description`：サーバーの説明を設定します。
 - `--include-tools`：含めるツールのカンマ区切りリスト。
 - `--exclude-tools`：除外するツールのカンマ区切りリスト。
 - `--oauth-client-id`：MCP サーバー認証用の OAuth クライアント ID。
 - `--oauth-client-secret`：MCP サーバー認証用の OAuth クライアントシークレット。
-- `--oauth-redirect-uri`：OAuth リダイレクト URI（例：`https://your-server.com/oauth/callback`）。ローカル設定のデフォルトは `http://localhost:7777/oauth/callback` です。**リモートデプロイメントでは重要**：Qwen Code をリモート/クラウドサーバーで実行する場合、公開アクセス可能な URL を設定してください。
+- `--oauth-redirect-uri`：OAuth リダイレクト URI（例：`https://your-server.com/oauth/callback`）。ローカル設定のデフォルトは `http://localhost:7777/oauth/callback` です。**リモートデプロイメントでは重要**：`/oauth/callback` で終わる公開 URL を使用し、`http://127.0.0.1:7777/oauth/callback` にリバースプロキシしてください。
 - `--oauth-authorization-url`：OAuth 認可 URL。
 - `--oauth-token-url`：OAuth トークン URL。
 - `--oauth-scopes`：OAuth スコープ（カンマ区切り）。
@@ -852,7 +856,8 @@ qwen mcp add --transport sse oauth-server https://api.example.com/sse/ \
 
 ### サーバーの管理（`/mcp`）
 
-現在設定されているすべての MCP サーバーを表示および管理するには、インタラクティブな Qwen Code セッション内で `/mcp` ダイアログを開きます。このダイアログでは以下を実行できます：
+現在設定されているすべての MCP サーバーを表示および管理するには、インタラクティブな Qwen Code セッション内で `/mcp`
+ダイアログを開きます。このダイアログでは以下を実行できます：
 
 - すべての MCP サーバーを接続状態とともに表示
 - サーバーの有効化/無効化
