@@ -7,7 +7,7 @@ import { test } from "node:test";
 
 const orchestrator = path.resolve(__dirname, "../orchestrator/orchestrator.mjs");
 
-test("rejects target-only frontmatter", () => {
+test("self-heals a stray target-only frontmatter opener", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "qwen-orchestrator-test-"));
   const contentDir = path.join(root, "content");
   const manifest = path.join(root, "manifest.json");
@@ -40,8 +40,12 @@ test("rejects target-only frontmatter", () => {
       { encoding: "utf8" }
     );
 
-    assert.equal(result.status, 1, result.stdout || result.stderr);
-    assert.match(result.stdout, /FAIL zh commands\.md.*frontmatter mismatch/);
+    assert.equal(result.status, 0, result.stdout || result.stderr);
+    assert.match(result.stdout, /PASS zh commands\.md/);
+    assert.equal(
+      fs.readFileSync(path.join(contentDir, "zh", "commands.md"), "utf8"),
+      "# 命令\n"
+    );
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

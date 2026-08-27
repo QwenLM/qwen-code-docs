@@ -1,5 +1,3 @@
----
-
 # Typescript SDK
 
 ## @qwen-code/sdk

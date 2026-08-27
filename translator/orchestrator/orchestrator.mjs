@@ -768,7 +768,13 @@ function frontmatterClosed(text) {
 function normalizeFrontmatter(source, target) {
   const sourceFrontmatter = frontmatterBlock(source);
   const targetFrontmatter = frontmatterBlock(target);
-  if (hasFrontmatter(target) && !targetFrontmatter) return target;
+  if (hasFrontmatter(target) && !targetFrontmatter) {
+    // The bot has emitted this exact source-absent stray opener in otherwise
+    // valid Markdown. General malformed YAML stays untouched for quarantine.
+    if (!hasFrontmatter(source) && target.startsWith("---\n\n"))
+      return target.slice(5);
+    return target;
+  }
   if (!hasFrontmatter(source))
     return targetFrontmatter ? target.slice(targetFrontmatter.length) : target;
   if (!sourceFrontmatter) return target;
