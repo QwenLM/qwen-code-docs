@@ -11,11 +11,6 @@ permissions:
 # Only the newest deploy matters: a push that arrives while an older
 # build is still running makes that older build pure waste (~8min of
 # runner time). Cancel the stale one and let the new one finish.
-# Shared with daily-translate.yml's build-deploy JOB (same group name):
-# both publish to gh-pages, and without a shared group an older daily
-# build could finish after a newer push-triggered deploy and overwrite
-# it. The daily TRANSLATE job stays in its own non-canceling group —
-# cancelling translation loses hours of agent work.
 concurrency:
   group: deploy-pages
   cancel-in-progress: true
