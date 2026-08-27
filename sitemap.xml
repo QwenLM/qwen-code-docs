@@ -73,6 +73,12 @@
 <priority>0.6</priority>
 </url>
 <url>
+<loc>https://QwenLM.github.io/qwen-code-docs/en/blog/feat-qwen-serve-mobile/</loc>
+<lastmod>2026-07-14T15:45:04.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/blog/</loc>
 <lastmod>2026-07-29T03:19:09.000Z</lastmod>
 <changefreq>weekly</changefreq>
@@ -1095,6 +1101,12 @@
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/blog/cases/qwencode-for-university-students/</loc>
 <lastmod>2026-07-29T02:38:19.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
+<loc>https://QwenLM.github.io/qwen-code-docs/zh/blog/feat-qwen-serve-mobile/</loc>
+<lastmod>2026-07-14T15:45:04.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
