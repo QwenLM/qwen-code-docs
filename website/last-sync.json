@@ -1,6 +1,6 @@
 {
-  "commit": "2bd0ff923e583d275daeffe467c71728b80a18a2",
-  "timestamp": "2026-08-27T04:02:45.775Z",
+  "commit": "8beaa8d9e382deb44b7ebd202dac4c02b02f719c",
+  "timestamp": "2026-08-27T05:11:59.409Z",
   "files": {
     "docs/design/2026-05-15-async-memory-recall-design.md": {
       "langs": {
@@ -926,7 +926,7 @@
     },
     "docs/developers/sdk-python.md": {
       "langs": {
-        "zh": "2e2593ddbf53aab9a072c595bc6862e209764c83feb7dc5dc96924cfa035c67c",
+        "zh": "b30a2bf962b49fc3ef49fc755a731f80ae2bb84d1fc63dad557ddc11347b222f",
         "de": "b30a2bf962b49fc3ef49fc755a731f80ae2bb84d1fc63dad557ddc11347b222f",
         "fr": "b30a2bf962b49fc3ef49fc755a731f80ae2bb84d1fc63dad557ddc11347b222f",
         "ja": "b30a2bf962b49fc3ef49fc755a731f80ae2bb84d1fc63dad557ddc11347b222f",
@@ -1542,13 +1542,13 @@
     },
     "docs/developers/sdk-typescript.md": {
       "langs": {
-        "zh": "4af38c3ad084fff1211d0d7a0a19b2ebfbf36231c06ec158da203f2b86bcabe7",
+        "zh": "aea80bcc0c1740c841eb2c8aac4cc5ed6d54f595d89ee17a36f5c3eef13d0814",
         "fr": "aea80bcc0c1740c841eb2c8aac4cc5ed6d54f595d89ee17a36f5c3eef13d0814",
         "ja": "aea80bcc0c1740c841eb2c8aac4cc5ed6d54f595d89ee17a36f5c3eef13d0814",
         "ru": "aea80bcc0c1740c841eb2c8aac4cc5ed6d54f595d89ee17a36f5c3eef13d0814",
         "pt-BR": "aea80bcc0c1740c841eb2c8aac4cc5ed6d54f595d89ee17a36f5c3eef13d0814",
         "de": "aea80bcc0c1740c841eb2c8aac4cc5ed6d54f595d89ee17a36f5c3eef13d0814",
-        "ko": "d4dbc0aa4a8648ce164f4829c9ec494912d1086c8c6d1aa1d767896725d2f118"
+        "ko": "aea80bcc0c1740c841eb2c8aac4cc5ed6d54f595d89ee17a36f5c3eef13d0814"
       }
     },
     "docs/developers/tools/exit-plan-mode.md": {
@@ -1856,7 +1856,7 @@
         "pt-BR": "6ef26f301f4945b21b218f38d9ac1795affcf48c7500bd4ed6926409b230487d",
         "zh": "6ef26f301f4945b21b218f38d9ac1795affcf48c7500bd4ed6926409b230487d",
         "de": "6ef26f301f4945b21b218f38d9ac1795affcf48c7500bd4ed6926409b230487d",
-        "ko": "a9f9aeedf5078dc6697037fee1be85439b3a6608a968bcab4b449a27b0ff99e2"
+        "ko": "6ef26f301f4945b21b218f38d9ac1795affcf48c7500bd4ed6926409b230487d"
       }
     },
     "docs/users/features/commands.md": {

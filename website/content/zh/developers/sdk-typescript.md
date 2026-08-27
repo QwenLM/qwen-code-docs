@@ -15,10 +15,7 @@ npm install @qwen-code/sdk
 ## 要求
 
 - Node.js >= 22.0.0
-- 已安装 [Qwen Code](https://github.com/QwenLM/qwen-code) >= 0.4.0（稳定版）并可在 PATH 中访问
-
-> [!note]
-> **针对 nvm 用户的说明**：如果你使用 nvm 管理 Node.js 版本，SDK 可能无法自动检测 Qwen Code 可执行文件。你应当显式设置 `pathToQwenExecutable` 选项为 `qwen` 二进制文件的完整路径。
+- [Qwen Code](https://github.com/QwenLM/qwen-code) >= 0.4.0（稳定版）。SDK 默认使用其捆绑的 CLI；仅当你需要运行自定义 `qwen` 二进制文件或 CLI 打包时，才设置 `pathToQwenExecutable`。
 
 ## 快速开始
 
@@ -60,7 +57,7 @@ for await (const message of result) {
 | ------------------------ | ---------------------------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `cwd`                    | `string`                                       | `process.cwd()`  | 查询会话的工作目录。决定文件操作和命令执行的上下文。                                                                                                                                                                                                                                                                                                                                                                      |
 | `model`                  | `string`                                       | -                | 要使用的 AI 模型（例如 `'qwen-max'`、`'qwen-plus'`、`'qwen-turbo'`）。优先级高于 `OPENAI_MODEL` 和 `QWEN_MODEL` 环境变量。                                                                                                                                                                                                                                                                                               |
-| `pathToQwenExecutable`   | `string`                                       | 自动检测          | Qwen Code 可执行文件的路径。支持多种格式：`'qwen'`（从 PATH 获取的原生二进制文件）、`'/path/to/qwen'`（显式路径）、`'/path/to/cli.js'`（Node.js 打包文件）、`'node:/path/to/cli.js'`（强制使用 Node.js 运行时）、`'bun:/path/to/cli.js'`（强制使用 Bun 运行时）。如果未提供，会自动检测以下位置的 `qwen`：`QWEN_CODE_CLI_PATH` 环境变量、`~/.volta/bin/qwen`、`~/.npm-global/bin/qwen`、`/usr/local/bin/qwen`、`~/.local/bin/qwen`、`~/node_modules/.bin/qwen`、`~/.yarn/bin/qwen`。 |
+| `pathToQwenExecutable`   | `string`                                       | 捆绑 CLI         | Qwen Code 可执行文件的路径。支持多种格式：`'qwen'`（从 PATH 获取的原生二进制文件）、`'/path/to/qwen'`（显式路径）、`'/path/to/cli.js'`（Node.js 打包文件）、`'node:/path/to/cli.js'`（强制使用 Node.js 运行时）、`'bun:/path/to/cli.js'`（强制使用 Bun 运行时）。如果未提供，SDK 使用随包附带的捆绑 CLI。 |
 | `permissionMode`         | `'default' \| 'plan' \| 'auto-edit' \| 'auto' \| 'yolo'` | `'default'`      | 控制工具执行审批的权限模式。详见[权限模式](#权限模式)。                                                                                                                                                                                                                                                                                                                                                                      |
 | `canUseTool`             | `CanUseTool`                                   | -                | 自定义工具执行审批处理函数。当某个工具需要确认时被调用。必须在 60 秒内响应，否则请求将被自动拒绝。详见[自定义权限处理函数](#自定义权限处理函数)。                                                                                                                                                                                                                                                                              |
 | `env`                    | `Record<string, string>`                       | -                | 传递给 Qwen Code 进程的环境变量。会与当前进程的环境变量合并。                                                                                                                                                                                                                                                                                                                                                         |
@@ -69,10 +66,10 @@ for await (const message of result) {
 | `abortController`        | `AbortController`                              | -                | 用于取消查询会话的控制器。调用 `abortController.abort()` 可终止会话并清理资源。                                                                                                                                                                                                                                                                                                                                          |
 | `debug`                  | `boolean`                                      | `false`          | 开启调试模式，打印 CLI 进程的详细日志。                                                                                                                                                                                                                                                                                                                                                                                   |
 | `maxSessionTurns`        | `number`                                       | `-1`（无限制）   | 会话在自动终止前最大对话轮数。一轮包括一条用户消息和一条助手响应。                                                                                                                                                                                                                                                                                                                                                      |
-| `coreTools`              | `string[]`                                     | -                | 使用旧版 `coreTools` / CLI `--core-tools` 许可列表语义。如果指定，只有匹配的核心工具会被注册到会话中。这与 `permissions.allow` 不同（`permissions.allow` 自动批准匹配的工具调用，但不限制工具注册）。示例：`['read_file', 'edit', 'run_shell_command']`。                                                                                                                                                                     |
+| `coreTools`              | `string[]`                                     | -                | 使用旧版 `coreTools` / CLI `--core-tools` 允许列表语义。如果指定，只有匹配的核心工具会被注册到会话中。这与 settings.json 中的 `permissions.allow` 不同，后者也会在启动时激活注册表级别的允许列表：当至少配置了一条有效的允许规则时（格式错误的条目不计入），未被任何 allow 或 ask 规则覆盖的内置工具会被降级为延迟加载——已注册并可通过 `tool_search` 加载，但其 schema 不会出现在急切模型请求中（MCP 工具、`--json-schema` `structured_output` 契约、计划模式生命周期工具、`task_stop`、`tool_search` 和 `computer_use__*` 系列除外；需要重启，#9827、#10075）。SDK 的 `allowedTools` 参数本身无法激活允许列表，但当允许列表处于活动状态时，其规则会合并到有效允许集中并计入覆盖范围，使被覆盖的内置工具保持急切注册。示例：`['read_file', 'edit', 'run_shell_command']`。 |
 | `excludeTools`           | `string[]`                                     | -                | 等同于 settings.json 中的 `permissions.deny`。被排除的工具会立即返回权限错误。优先级高于所有其他权限设置。支持工具名称别名和模式匹配：工具名称（`'write_file'`）、shell 命令前缀（`'Bash(rm *)'`）或路径模式（`'Read(.env)'`、`'Edit(/src/**)'`）。                                                                                                                                                                    |
-| `allowedTools`           | `string[]`                                     | -                | 等同于 settings.json 中的 `permissions.allow`。匹配的工具绕过 `canUseTool` 回调自动执行。仅在工具需要确认时生效。支持与 `excludeTools` 相同的模式匹配。示例：`['Bash(git status)', 'Bash(npm test)']`。                                                                                                                                                                                                                   |
-| `authType`               | `'openai' \| 'qwen-oauth'`                     | `'openai'`       | AI 服务的认证类型。Qwen OAuth 免费层已于 2026-04-15 停用；新的 SDK 应使用 OpenAI 兼容认证或其他受支持的提供商。                                                                                                                                                                                                                                                                                                         |
+| `allowedTools`           | `string[]`                                     | -                | 等同于 settings.json 中的 `permissions.allow`，用于自动审批。匹配的工具绕过 `canUseTool` 回调自动执行。仅在工具需要确认时生效。与 settings.json 中的 `permissions.allow` 不同，此参数本身不会激活注册表允许列表；但当设置中提供的允许列表处于活动状态时，`allowedTools` 的规则会合并到有效允许集中并计入覆盖范围，使被覆盖的内置工具保持急切注册（未覆盖的工具被降级为延迟加载而非移除，#10075）。支持与 `excludeTools` 相同的模式匹配。示例：`['Bash(git status)', 'Bash(npm test)']`。 |
+| `authType`               | `'openai' \| 'anthropic' \| 'qwen-oauth' \| 'gemini' \| 'vertex-ai'` | -                | AI 服务的认证类型。提供时，SDK 会将其作为 `--auth-type` 转发给 CLI。                                                                                                                                                                                                                                                                                                                                                      |
 | `agents`                 | `SubagentConfig[]`                             | -                | 可在会话期间调用的子代理配置。子代理是用于特定任务或领域的专门 AI 代理。                                                                                                                                                                                                                                                                                                                                                 |
 | `includePartialMessages` | `boolean`                                      | `false`          | 当设置为 `true` 时，SDK 会在生成过程中发出未完成的消息，从而实现 AI 响应的实时流式传输。                                                                                                                                                                                                                                                                                                                                   |
 | `resume`                 | `string`                                       | -                | 通过会话 ID 恢复之前的会话。相当于 CLI 的 `--resume` 标志。                                                                                                                                                                                                                                                                                                                                                             |
@@ -95,12 +92,17 @@ SDK 强制执行以下默认超时：
 你可以通过 `timeout` 选项自定义这些超时：
 
 ```typescript
-const query = qwen.query('Your prompt', {
-  timeout: {
-    canUseTool: 60000, // 权限回调 60 秒
-    mcpRequest: 600000, // MCP 工具调用 10 分钟
-    controlRequest: 60000, // 控制请求 60 秒
-    streamClose: 15000, // 流关闭等待 15 秒
+import { query } from '@qwen-code/sdk';
+
+const q = query({
+  prompt: 'Your prompt',
+  options: {
+    timeout: {
+      canUseTool: 60000, // 权限回调 60 秒
+      mcpRequest: 600000, // MCP 工具调用 10 分钟
+      controlRequest: 60000, // 控制请求 60 秒
+      streamClose: 15000, // 流关闭等待 15 秒
+    },
   },
 });
 ```
