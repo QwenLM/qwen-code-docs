@@ -87,14 +87,14 @@ Multi-line status + non-default mode (3 rows max):
 | `model-with-reasoning` | はい     | 推論レベルを含む現在のモデル名（例: `qwen-3-235b high`）  |
 | `model`                |         | 推論レベルを含まない現在のモデル名                         |
 | `git-branch`           | はい     | 現在のGitブランチ名（Gitリポジトリ内にない場合は非表示）            |
-| `context-remaining`    | はい     | 残りのコンテキストウィンドウの割合（例: `Context 65.7% left`） |
+| `context-remaining`    |         | 残りのコンテキストウィンドウの割合（例: `Context 65.7% left`） |
 | `total-input-tokens`   |         | セッション中に使用された累積入力トークン（例: `30.0k total in`）    |
 | `total-output-tokens`  |         | セッション中に使用された累積出力トークン（例: `5.0k total out`）   |
-| `current-dir`          | はい     | 現在の作業ディレクトリ                                          |
-| `project-name`         |         | プロジェクト名（作業ディレクトリのベース名）                       |
+| `current-dir`          |         | 現在の作業ディレクトリ                                          |
+| `project-name`         | はい     | プロジェクト名（作業ディレクトリのベース名）                       |
 | `pull-request-number`  |         | 現在のブランチのオープンなPR番号（`gh` CLIが必要）          |
 | `branch-changes`       |         | セッションのファイル変更統計（例: `+120 -30`）                        |
-| `context-used`         | はい     | 使用されたコンテキストウィンドウの割合（例: `Context 34.3% used`）      |
+| `context-used`         |         | 使用されたコンテキストウィンドウの割合（例: `Context 34.3% used`）      |
 | `run-state`            |         | 圧縮されたセッション状態（`Ready`、`Working`、または `Confirm`）           |
 | `qwen-version`         |         | Qwen Code のバージョン（例: `v0.14.1`）                                 |
 | `context-window-size`  |         | 合計コンテキストウィンドウサイズ（例: `131.1k window`）                   |

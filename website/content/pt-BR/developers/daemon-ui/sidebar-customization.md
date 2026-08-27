@@ -133,11 +133,11 @@ interface WebShellSidebarFooterOptions {
 }
 ```
 
-| Valor                                          | Efeito                           |
-| ---------------------------------------------- | -------------------------------- |
-| `undefined` (padrão)                           | Todos os itens exibidos          |
-| `false`                                        | Rodapé oculto completamente      |
-| `{ items: ['settings', 'theme', 'collapse'] }` | Apenas os itens listados         |
+| Valor                                          | Efeito                                                                      |
+| ---------------------------------------------- | --------------------------------------------------------------------------- |
+| `undefined` (padrão)                           | Todos os itens exibidos                                                     |
+| `false`                                        | Rodapé oculto; o drawer mobile mantém apenas seu controle de fechamento     |
+| `{ items: ['settings', 'theme', 'collapse'] }` | Apenas os itens listados; o drawer mobile sempre mantém seu controle de fechamento |
 
 O rodapé se adapta automaticamente a larguras reduzidas: os rótulos são
 ocultos e a versão é removida abaixo de certos limites.
@@ -294,10 +294,14 @@ Estas `WebShellProps` afetam o comportamento da sidebar indiretamente:
 | ----------- | ---------------------------------------------------------- |
 | Expandido   | Sidebar completa com rótulos de texto                      |
 | Recolhido   | Modo icon-rail (logo, ícone de caneta, ícones de ação)    |
-| Mobile      | Drawer desliza da esquerda com overlay de backdrop         |
+| Mobile      | Drawer usa 70% do seu contêiner, dentro dos limites de largura, com controles de backdrop e fechamento no rodapé |
 
 O estado de recolhimento é persistido no `localStorage` sob a chave
 `qwen-code-web-shell-sidebar-collapsed`.
+
+A largura redimensionada do desktop é restaurada apenas em layouts expandidos.
+Abrir ou fechar o drawer mobile não sobrescreve essa largura nem a preferência
+persistida de recolhimento do desktop.
 
 ## Localizações do código-fonte
 

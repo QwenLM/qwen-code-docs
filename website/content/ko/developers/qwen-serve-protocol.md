@@ -212,6 +212,7 @@ OPTIONS 프리플라이트 요청(`Access-Control-Request-Method` 또는 `Access
  'workspace_display_name',
  'workspace_qualified_rest_core', 'workspace_qualified_voice',
  'workspace_qualified_memory', 'extension_management_v2', 'extension_git_credentials',
+ 'extension_local_path_install',
  'workspace_persisted_transcript',
  'workspace_session_export', 'workspace_archived_session_export',
  'workspace_session_live_state',
@@ -282,9 +283,11 @@ OPTIONS 프리플라이트 요청(`Access-Control-Request-Method` 또는 `Access
 
 동일한 태그는 `/workspaces/:workspace/agents` 및 `/workspaces/:workspace/agents/:agentType`에서 워크스페이스 한정 프로젝트 에이전트 CRUD도 노출합니다. 이 복수 라우트는 선택된 워크스페이스의 프로젝트 레벨 에이전트만 읽거나 변성합니다; `global` 및 `user` 범위 요청은 `400 { code: "global_scope_not_supported_for_workspace_route" }`를 반환합니다. 워크스페이스 없는 `/workspace/agents` 라우트는 기존 기본 워크스페이스 동작을 유지하며 사용자 레벨 에이전트 범위에 대한 유일한 REST 표면으로 남습니다.
 
-`extension_management_v2`는 `/extensions/*`에서 사용자 레벨 확장 카탈로그 및 변성 표면과, `/workspaces/:workspace/extensions/*`에서 워크스페이스 활성화 프로젝션을 광고합니다. 아티팩트는 전역적입니다; 워크스페이스 라우트는 프로젝션 읽기, 정확한 활성화 재정의, 런타임 새로고침만 노출합니다. 읽기는 신뢰되지 않은 등록된 워크스페이스를 대상으로 할 수 있지만, 활성화, 새로고침, 워크스페이스 범위 설치는 신뢰되는 대상이 필요합니다. 느린 변성은 `/extensions/operations/:operationId`에서 데몬 로컬 작업을 사용합니다; 재시작과 데몬 간에 저장소 생성이 아닌 작업 역사가 권위적입니다. 게시된 `workspace_extensions` 기능과 `/workspace/extensions/*` 라우트는 기본 워크스페이스 호환성 어댑터로 남아 있습니다. 클라이언트는 `extension_management_v2`를 프리플라이트해야 하며 데몬 모드나 `workspace_qualified_rest_core`에서 이를 추론해서는 안 됩니다.
+`extension_management_v2`는 `/extensions/*`에서 사용자 레벨 확장 카탈로그 및 변성 표면과, `/workspaces/:workspace/extensions/*`에서 워크스페이스 활성화 프로젝션을 광고합니다. 아티팩트는 전역적입니다; 워크스페이스 라우트는 프로젝션 읽기, 정확한 활성화 재정의, 런타임 새로고침만 노출합니다. 읽기는 신뢰되지 않은 등록된 워크스페이스를 대상으로 할 수 있지만, 활성화, 새로고침, 워크스페이스 범위 설치는 신뢰되는 대상이 필요합니다. 느린 변성은 `/extensions/operations/:operationId`에서 데몬 로컬 작업을 사용합니다; 재시작과 데몬 간에 작업 역사가 아닌 저장소 생성이 권위 있습니다. 게시된 `workspace_extensions` 기능과 `/workspace/extensions/*` 라우트는 기본 워크스페이스 호환성 어댑터로 남아 있습니다. 클라이언트는 `extension_management_v2`를 프리플라이트해야 하며 데몬 모드나 `workspace_qualified_rest_core`에서 이를 추론해서는 안 됩니다.
 
 `extension_git_credentials`는 `POST /workspace/extensions/install`과 `POST /extensions/install` 모두에서 인증된 HTTPS Git 설치를 광고합니다. 클라이언트는 URL userinfo 또는 `credentialPersistence`를 보내기 전에 이 태그를 프리플라이트해야 합니다; 이전 데몬은 URL 자격 증명을 거부합니다. 이 태그는 키 체인 가용성이 아닌 백엔드 프로토콜 지원을 설명합니다: 저장 모드는 터미널 작업 결과에서 선택된 백엔드를 보고합니다.
+
+`extension_local_path_install`는 `POST /workspace/extensions/install`과 `POST /extensions/install` 모두에서 데몬 로컬 Extension 소스를 광고합니다. `source`는 데몬 호스트에 존재하는 절대 경로여야 합니다. 상대 경로는 지원되지 않으므로 데몬 프로세스 cwd가 소스 정체성을 변경하거나 GitHub `owner/repo` 단축을 그림자 처리할 수 없습니다. 기존 설치 작업은 Extension을 관리 저장소로 복사합니다; 소스를 링크하지 않습니다. 이전 데몬은 로컬 소스를 거부하므로 클라이언트는 이 태그를 프리플라이트해야 합니다.
 
 `extension_batch_activation_v2`는 `PUT /extensions/activation`과 `PUT /workspaces/:workspace/extensions/activation`을 추가합니다. 둘 다 `extensionNames`에서 1–100개의 이름을 받아들이고, 대소문자를 구분하지 않고 중복을 제거하면서 처음 본 순서를 유지하며, 변경된 대상을 하나의 생성으로 지속하고, 하나의 `202` 작업 핸들을 반환합니다. 대상은 `enabled` 또는 `disabled`를 설정할 때 설치되어 있을 필요가 없습니다: 해당 이름은 해당 이름의 Extension이 설치될 때 보존되는 desired-state 선언을 생성합니다. 전역 라우트는 `state: "enabled" | "disabled"`를 받아들이고, V2 `defaultActivation`을 작성하며, 등록된 모든 런타임을 조정합니다. 워크스페이스 라우트도 `"inherit"`을 받아들이고, 선택된 신뢰되는 런타임에 대한 정확한 재정의를 적용 또는 제거하며, 해당 런타임만 조정합니다. `inherit`은 알 수 없는 이름을 선언하지 않습니다; 전체 알 수 없는 제거는 `updated: false`를 보고하고 조정을 건너뜁니다. 단일 활성화 라우트는 설치 전용 및 ID 주소 지정으로 남아 있습니다.
 
@@ -369,7 +372,7 @@ OPTIONS 프리플라이트 요청(`Access-Control-Request-Method` 또는 `Access
 }
 ```
 
-워크스페이스 전용 초기 활성화의 경우 `{ "scope": "workspace", "workspaceId": "target-workspace-id" }`를 사용합니다; 대상은 존재하고 신뢰되어야 합니다. 데몬 설치는 GitHub, Git, npm 소스를 허용합니다. `ref`는 npm에 적용되지 않으며, `registry`는 npm에만 적용됩니다. `ref`, `autoUpdate`, `allowPreRelease`, `registry`는 선택 사항입니다.
+워크스페이스 전용 초기 활성화의 경우 `{ "scope": "workspace", "workspaceId": "target-workspace-id" }`를 사용합니다; 대상은 존재하고 신뢰되어야 합니다. 데몬 설치는 GitHub, Git, npm 소스를 허용합니다. `extension_local_path_install`이 광고될 때, 데몬 호스트에 존재하는 절대 경로도 허용합니다. `ref`는 npm에 적용되지 않으며, `ref`와 `autoUpdate`는 로컬 소스에 적용되지 않고, `registry`는 npm에만 적용됩니다. `ref`, `autoUpdate`, `allowPreRelease`, `registry`는 선택 사항입니다.
 
 `extension_git_credentials`가 광고될 때, HTTPS Git 소스에 userinfo가 포함될 수 있습니다(예: `https://username:token@git.example.com/org/repository.git`). `credentialPersistence`는 이러한 소스와 함께할 때만 유효합니다. `stored` 또는 `one_time`이며, 생략 시 `one_time`이 기본값입니다. 저장 모드는 데몬의 하이브리드 시크릿 저장소를 통해 자격 증명을 저장하고 설치 메타데이터에 정리된 저장소 URL만 유지하므로 확장이 업데이트 가능합니다. 일회성 모드는 저장소 URL이나 자격 증명 모두 저장하지 않고 업데이트 불가능한 `snapshot`을 생성합니다; `autoUpdate: true`는 이 모드에서 거부됩니다. URL 자격 증명 없이 필드를 제공하거나, 잘못된 자격 증명을 제공하거나, npm, 아카이브, 로컬, SSH, 비 Git 소스와 함께 자격 증명을 사용하면 `400`이 반환됩니다.
 
@@ -477,6 +480,7 @@ Content-Type: application/json
 | `session_shell_command`             | 세션 셸 실행이 명시적으로 활성화되어 있습니다. |
 | `session_artifacts_persistence`     | 세션 아티팩트 지속성이 런타임에 와이어링되어 있습니다. |
 | `session_generation`                | 세션 생성 도우미를 사용할 수 있습니다. |
+| `scheduled_task_session_reuse`      | 내구성 예약 작업 세션 관리가 활성 상태이며 모든 관리 데몬 런타임이 작업이 현재 기존 세션에 명시적으로 바인딩할 수 있는 콜백을 설치했습니다. |
 | `workspace_generation`              | 워크스페이스 범위 생성 도우미를 사용할 수 있습니다. |
 | `rate_limit`                        | `--rate-limit` / `QWEN_SERVE_RATE_LIMIT=1` / `ServeOptions.rateLimit`이 활성화되어 있습니다. |
 | `workspace_reload`                  | 임베디드 라우트 구성에서 워크스페이스 새로고침 지원을 사용할 수 있습니다. |

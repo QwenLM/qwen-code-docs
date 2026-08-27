@@ -117,7 +117,7 @@ Befehle zur Verwaltung von KI-Tools und -Modellen.
 | `/permissions` | Berechtigungsregeln verwalten | `/permissions` |
 | `/agents` | Subagenten verwalten | `/agents manage`, `/agents create` |
 | `/arena` | Arena-Sitzungen verwalten | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (Alias `choose`) |
-| `/goal` | Ein Ziel festlegen – weiterarbeiten, bis die Bedingung erfüllt ist | `/goal <condition>`, `/goal clear` |
+| `/goal` | Ein Ziel festlegen – weiterarbeiten, bis die Bedingung erfüllt ist (siehe [Goals](./goals.md)) | `/goal <condition>`, `/goal clear` |
 | `/tasks` | Hintergrundtasks auflisten | `/tasks` |
 | `/workflows` | Workflow-Ausführungen inspizieren; einen Hintergrundlauf kooperativ pausieren/fortsetzen | `/workflows`, `/workflows <runId>`, `/workflows p <runId>` |
 | `/lsp` | LSP-Server-Status anzeigen | `/lsp` |
@@ -143,6 +143,7 @@ Diese Befehle rufen gebündelte Skills auf, die spezialisierte Workflows bereits
 | `/review`    | Multi-Agent-Code-Review (12 parallele Agenten bei hohem Aufwand) | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
 | `/coordinate` | Read-only-Worker und einen optionalen Worktree-Writer koordinieren | `/coordinate investigate and fix the authentication regression`           |
 | `/loop`      | Einen Prompt nach einem wiederkehrenden Zeitplan ausführen  | `/loop 5m check the build`                        |
+| `/goal-draft` | Eine vage Intention in ein überprüfbares `/goal`-Ziel verwandeln | `/goal-draft make the auth tests pass`            |
 | `/simplify`  | Kürzliche Änderungen prüfen und sichere Bereinigungs-Edits direkt anwenden | `/simplify`, `/simplify focus on duplication`     |
 | `/qc-helper` | Beantwortet Fragen zur Nutzung und Konfiguration von Qwen Code | `/qc-helper how do I configure MCP?`              |
 

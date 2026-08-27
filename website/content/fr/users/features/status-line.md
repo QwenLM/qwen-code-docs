@@ -84,24 +84,24 @@ Ajoutez un objet `statusLine` sous la clé `ui` dans `~/.qwen/settings.json` :
 
 | Item ID                | Default | Description                                                        |
 | ---------------------- | ------- | ------------------------------------------------------------------ |
-| `model-with-reasoning` | Oui     | Nom du modèle actuel avec le niveau de raisonnement (ex. `qwen-3-235b high`)  |
+| `model-with-reasoning` | Yes     | Nom du modèle actuel avec le niveau de raisonnement (ex. `qwen-3-235b high`)  |
 | `model`                |         | Nom du modèle actuel sans le niveau de raisonnement                |
-| `git-branch`           | Oui     | Nom de la branche Git actuelle (masqué si hors d'un dépôt git)     |
-| `context-remaining`    | Oui     | Pourcentage de la fenêtre de contexte restant (ex. `Context 65.7% left`) |
+| `git-branch`           | Yes     | Nom de la branche Git actuelle (masqué si hors d'un dépôt git)     |
+| `context-remaining`    |         | Pourcentage de la fenêtre de contexte restant (ex. `Context 65.7% left`) |
 | `total-input-tokens`   |         | Total cumulé des tokens d'entrée utilisés dans la session (ex. `30.0k total in`) |
 | `total-output-tokens`  |         | Total cumulé des tokens de sortie utilisés dans la session (ex. `5.0k total out`) |
-| `current-dir`          | Oui     | Répertoire de travail actuel                                       |
-| `project-name`         |         | Nom du projet (basename du répertoire de travail)                  |
+| `current-dir`          |         | Répertoire de travail actuel                                       |
+| `project-name`         | Yes     | Nom du projet (basename du répertoire de travail)                  |
 | `pull-request-number`  |         | Numéro de la PR ouverte pour la branche actuelle (nécessite le CLI `gh`) |
 | `branch-changes`       |         | Statistiques des modifications de fichiers de la session (ex. `+120 -30`) |
-| `context-used`         | Oui     | Pourcentage de la fenêtre de contexte utilisé (ex. `Context 34.3% used`) |
+| `context-used`         | Yes     | Pourcentage de la fenêtre de contexte utilisé (ex. `Context 34.3% used`) |
 | `run-state`            |         | État compact de la session (`Ready`, `Working`, ou `Confirm`)      |
 | `qwen-version`         |         | Version de Qwen Code (ex. `v0.14.1`)                               |
 | `context-window-size`  |         | Taille totale de la fenêtre de contexte (ex. `131.1k window`)      |
 | `used-tokens`          |         | Nombre de tokens du prompt actuel (ex. `45.0k used`)               |
 | `session-id`           |         | Identifiant de la session actuelle                                 |
 
-Les éléments marqués **Oui** dans la colonne Default sont présélectionnés lorsque vous ouvrez la boîte de dialogue `/statusline` pour la première fois.
+Les éléments marqués **Yes** dans la colonne Default sont présélectionnés lorsque vous ouvrez la boîte de dialogue `/statusline` pour la première fois.
 
 `total-input-tokens` et `total-output-tokens` sont les totaux de la session. Ils additionnent l'utilisation des tokens au fil des tours, donc les tokens d'entrée peuvent augmenter rapidement car chaque nouvelle requête au modèle inclut à nouveau le contexte de la conversation actuelle. Utilisez `used-tokens` si vous souhaitez connaître la taille du prompt actuel plutôt que la consommation cumulative de la session.
 

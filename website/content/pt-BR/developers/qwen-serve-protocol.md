@@ -212,6 +212,7 @@ O daemon anuncia suas tags de feature suportadas do registry de capability do se
  'workspace_display_name',
  'workspace_qualified_rest_core', 'workspace_qualified_voice',
  'workspace_qualified_memory', 'extension_management_v2', 'extension_git_credentials',
+ 'extension_local_path_install',
  'workspace_persisted_transcript',
  'workspace_session_export', 'workspace_archived_session_export',
  'workspace_session_live_state',
@@ -374,13 +375,15 @@ Instalação requer consentimento explícito e uma ativação inicial:
 }
 ```
 
-Para ativação inicial somente por workspace use `{ "scope": "workspace", "workspaceId": "target-workspace-id" }`; o alvo deve existir e ser confiável. Instalações do daemon aceitam fontes GitHub, Git e npm. `ref` não se aplica a npm, e `registry` aplica-se apenas a npm. `ref`, `autoUpdate`, `allowPreRelease`, e `registry` são opcionais.
+Para ativação inicial somente por workspace use `{ "scope": "workspace", "workspaceId": "target-workspace-id" }`; o alvo deve existir e ser confiável. Instalações do daemon aceitam fontes GitHub, Git e npm. Quando `extension_local_path_install` é anunciado, também aceitam um caminho absoluto que exista no host do daemon. `ref` não se aplica a npm, `ref` e `autoUpdate` não se aplicam a fontes locais, e `registry` aplica-se apenas a npm. `ref`, `autoUpdate`, `allowPreRelease`, e `registry` são opcionais.
 
 Quando `extension_git_credentials` é anunciado, uma fonte HTTPS Git pode incluir userinfo, por exemplo `https://username:token@git.example.com/org/repository.git`. `credentialPersistence` é válido apenas com tal fonte. É `stored` ou `one_time` e o padrão é `one_time` quando omitido. O modo stored salva a credencial através do armazenamento de segredos híbrido do daemon e mantém apenas a URL limpa do repositório nos metadados de instalação, então a extensão permanece atualizável. O modo one-time não salva nem a URL do repositório nem a credencial e cria um `snapshot` não atualizável; `autoUpdate: true` é rejeitado para este modo. Fornecer o campo sem credenciais URL, fornecer credenciais inválidas, ou usar credenciais com fontes npm, archive, local, SSH ou não-Git retorna `400`.
 
 Respostas e operações de instalação com credenciais expõem `credentialPersistence` e podem expor `credentialStorage` como `keychain` ou `encrypted_file`. Operações one-time omitem `source`; operações stored podem retornar a source limpa. Entradas de catálogo/status de snapshot omitem source, definem `credentialPersistence` como `one_time`, e reportam `not updatable`. Atualização falha com `extension_not_updatable`; um segredo stored indisponível falha antes do acesso à rede com `extension_credential_unavailable`.
 
 `extension_git_credentials` anuncia instalações Git HTTPS autenticadas tanto em `POST /workspace/extensions/install` quanto em `POST /extensions/install`. Clientes devem fazer preflight desta tag antes de enviar userinfo de URL ou `credentialPersistence`; daemons mais antigos rejeitam credenciais de URL. A tag descreve suporte de protocolo backend, não a disponibilidade de um keychain: o modo stored reporta o backend selecionado no resultado da operação terminal.
+
+`extension_local_path_install` anuncia fontes de Extension locais ao daemon tanto em `POST /workspace/extensions/install` quanto em `POST /extensions/install`. O `source` deve ser um caminho absoluto que exista no host do daemon. Caminhos relativos permanecem não suportados para que o cwd do processo do daemon não possa alterar a identidade da fonte ou sombrear uma abreviação GitHub `owner/repo`. A operação de instalação existente copia a Extension para o armazenamento gerenciado; não vincula a fonte. Clientes devem fazer preflight desta tag porque daemons mais antigos rejeitam fontes locais.
 
 `extension_batch_activation_v2` adiciona `PUT /extensions/activation` e `PUT /workspaces/:workspace/extensions/activation`. Ambos aceitam 1–100 nomes em `extensionNames`, deduplicam case-insensitively preservando a ordem de primeira ocorrência, persistem alvos alterados em uma geração, e retornam um handle de operação `202`. Um alvo não precisa estar instalado ao definir `enabled` ou `disabled`: seu nome cria uma declaração de desired-state que é preservada quando uma Extension com aquele nome é instalada. A rota global aceita `state: "enabled" | "disabled"`, escreve `defaultActivation` V2, e reconcilia todo runtime registrado. A rota de workspace também aceita `"inherit"`, aplica ou limpa overrides exatos para o runtime confiável selecionado, e reconcilia apenas aquele runtime. `inherit` não declara um nome desconhecido; uma limpeza all-unknown reporta `updated: false` e pula a reconciliação. Rotas de ativação singulares permanecem installed-only e endereçadas por id.
 

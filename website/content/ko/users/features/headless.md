@@ -79,6 +79,8 @@ qwen --continue -p "/goal"
 | `/goal resume`                       | 재개 가능한 Goal을 재개하고 헤드리스 Goal 작업을 시작한다.                                    |
 | `/goal clear`                        | 확인이나 모델 호출 없이 Goal을 초기화한다.                                     |
 
+Goal의 품질은 완료 조건에 달려 있습니다. 검증자가 판단할 수 있는 것과 없는 것에 대해서는 [Goals](./goals.md)를 참조하고, 설정 전에 목표를 초안 작성하려면 `qwen -p "/goal-draft <intent>"`를 사용하세요.
+
 런타임에 예약된 Goal 계속 세그먼트는 `--max-session-turns`에 포함되지 않지만, 실제 사용자 프롬프트는 포함된다. 명시적인 `--max-wall-time` 및 `--max-tool-calls` 예산은 계속 적용되며, 어느 쪽을 초과하면 활성 Goal 작업이 일시 중지된 후 해당 예산 관련 오류로 런이 종료된다.
 
 `--output-format stream-json`과 함께 사용하면, 각 Goal 상태 변경 시 `event.type`이 `goal_state`인 `stream_event`가 발행된다. 이 표준 상태 이벤트는 `--include-partial-messages` 없이도 발행된다. partial 메시지가 활성화되면, 이전 `active_goal` 이벤트가 호환성 프로젝션으로 뒤따라 발행되며, 자동화에서는 `goal_state`를 권위 있는 이벤트로 취급해야 한다.

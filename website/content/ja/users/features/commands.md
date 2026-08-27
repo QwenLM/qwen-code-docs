@@ -143,6 +143,7 @@ AI ツールとモデルを管理するためのコマンド。
 | `/review`      | マルチエージェントによるコードレビュー（高努力で12の並列エージェント） | `/review`、`/review 123`、`/review 123 --comment`、`/review --effort low` |
 | `/coordinate`  | 読み取り専用ワーカーと1つのオプションなワークツリーライターを調整する | `/coordinate investigate and fix the authentication regression`   |
 | `/loop`        | 定期的なスケジュールでプロンプトを実行する             | `/loop 5m check the build`                                        |
+| `/goal-draft` | 曖昧な意図を検証可能な `/goal` 目標に変換する          | `/goal-draft make the auth tests pass`                            |
 | `/simplify`    | 最近の変更をレビューし、安全なクリーンアップ編集を直接適用する | `/simplify`、`/simplify focus on duplication`                     |
 | `/qc-helper`   | Qwen Code の使用方法と設定に関する質問に答える         | `/qc-helper how do I configure MCP?`                              |
 

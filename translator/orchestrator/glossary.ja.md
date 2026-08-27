@@ -75,3 +75,4 @@ English term → Japanese rendering. Follow existing entries; append new ones as
 - leaf → leaf（英語のまま）
 - partition → パーティション
 - forensics/source forensics → フォレンジック
+- verifier (goal) → 検証ツール

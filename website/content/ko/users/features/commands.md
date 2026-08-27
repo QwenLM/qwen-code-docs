@@ -117,7 +117,7 @@ AI 도구와 모델을 관리하는 명령어입니다.
 | `/permissions`        | 권한 규칙을 관리                                                                      | `/permissions`                                                                                            |
 | `/agents`             | 서브에이전트를 관리                                                                   | `/agents manage`, `/agents create`                                                                        |
 | `/arena`              | Arena 세션을 관리                                                                     | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (`choose` 별칭)                           |
-| `/goal`               | 목표를 설정 — 조건이 충족될 때까지 작업을 계속                                        | `/goal <condition>`, `/goal clear`                                                                        |
+| `/goal`               | 목표를 설정 — 조건이 충족될 때까지 작업을 계속 ([Goals](./goals.md) 참조)              | `/goal <condition>`, `/goal clear`                                                                        |
 | `/tasks`              | 백그라운드 작업을 나열                                                                | `/tasks`                                                                                                  |
 | `/workflows`          | 워크플로우 실행을 검사; 백그라운드 실행을 협력적으로 일시정지/재개                    | `/workflows`, `/workflows <runId>`, `/workflows p <runId>`                                                |
 | `/lsp`                | LSP 서버 상태를 표시                                                                  | `/lsp`                                                                                                    |
@@ -144,6 +144,7 @@ AI 도구와 모델을 관리하는 명령어입니다.
 | `/review`     | 다중 에이전트 코드 리뷰 (높은 강도에서 12개 병렬 에이전트) | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
 | `/coordinate` | 읽기 전용 워커와 선택적 worktree 작성자를 조율         | `/coordinate investigate and fix the authentication regression`           |
 | `/loop`       | 반복 일정에 따라 프롬프트를 실행                     | `/loop 5m check the build`                                                |
+| `/goal-draft` | 모호한 의도를 검증 가능한 `/goal` 목표로 변환         | `/goal-draft make the auth tests pass`                                    |
 | `/simplify`  | 최근 변경 사항을 검토하고 안전한 정리 편집을 직접 적용 | `/simplify`, `/simplify focus on duplication`                                   |
 | `/qc-helper` | Qwen Code 사용 및 구성에 대한 질문에 답변            | `/qc-helper how do I configure MCP?`                                            |
 

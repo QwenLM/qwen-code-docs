@@ -117,7 +117,7 @@ Slash-команды используются для управления сес
 | `/permissions`    | Управление правилами разрешений                                                          | `/permissions`                                                                                            |
 | `/agents`         | Управление субагентами                                                                 | `/agents manage`, `/agents create`                                                                        |
 | `/arena`          | Управление сессиями Arena                                                            | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (алиас `choose`)                          |
-| `/goal`           | Установка цели — продолжение работы до выполнения условия                                    | `/goal <condition>`, `/goal clear`                                                                        |
+| `/goal`           | Установка цели — продолжение работы до выполнения условия (см. [Goals](./goals.md))          | `/goal <condition>`, `/goal clear`                                                                        |
 | `/tasks`          | Список фоновых задач                                                            | `/tasks`                                                                                                  |
 | `/workflows`      | Проверка запусков workflow; кооперативная пауза/возобновление фонового запуска         | `/workflows`, `/workflows <runId>`, `/workflows p <runId>`                                                |
 | `/lsp`            | Отображение статуса LSP-сервера                                                           | `/lsp`                                                                                                    |
@@ -143,6 +143,7 @@ Slash-команды используются для управления сес
 | `/review`     | Code review с несколькими агентами (12 параллельных агентов при высоком усилии) | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
 | `/coordinate` | Координация read-only воркеров и одного опционального worktree-писателя | `/coordinate investigate and fix the authentication regression`           |
 | `/loop`       | Запуск промпта по расписанию                                | `/loop 5m check the build`                                                |
+| `/goal-draft` | Превращение нечёткого намерения в проверяемую цель `/goal`  | `/goal-draft make the auth tests pass`                                    |
 | `/simplify`   | Проверка недавних изменений и прямое применение безопасных правок для очистки кода | `/simplify`, `/simplify focus on duplication`     |
 | `/qc-helper`  | Ответы на вопросы по использованию и настройке Qwen Code    | `/qc-helper how do I configure MCP?`                                      |
 

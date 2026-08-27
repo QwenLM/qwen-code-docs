@@ -142,8 +142,9 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | ------------ | ----------------------------------------------------------- | ------------------------------------------------- |
 | `/review`    | 多代理代码审查（high effort 下 12 个并行代理）         | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
 | `/coordinate`| 协调只读 worker 和一个可选的 worktree writer            | `/coordinate investigate and fix the authentication regression`           |
-| `/loop`      | 按定期计划运行 prompt                                       | `/loop 5m check the build`                        |
-| `/simplify`  | 审查最近的更改并直接应用安全的清理编辑                      | `/simplify`, `/simplify focus on duplication`     |
+| `/loop`       | 按定期计划运行 prompt                                       | `/loop 5m check the build`                                                |
+| `/goal-draft` | 将模糊意图转化为可验证的 `/goal` 目标                       | `/goal-draft make the auth tests pass`                                    |
+| `/simplify`   | 审查最近的更改并直接应用安全的清理编辑                      | `/simplify`, `/simplify focus on duplication`                             |
 | `/qc-helper` | 回答有关 Qwen Code 使用和配置的问题                         | `/qc-helper how do I configure MCP?`              |
 
 有关 `/review` 的完整文档，请参阅 [Code Review](./code-review.md)。
@@ -431,7 +432,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `/stats tools`   | 显示每个工具的调用次数                                                                                                       | `/stats tools`                                                                      |
 | `/stats skills`  | 显示当前实时会话中每个 skill 的调用次数（仅限实时；不包括跨会话的每日/每月活动）                                             | `/stats skills`                                                                     |
 | `/stats daily`   | 显示每日 token 使用统计                                                                                                      | `/stats daily`（别名 `day`），`/stats day [YYYY-MM-DD]`                             |
-| `/stats monthly` | 显示每月 token 使用统计                                                                                                      | `/stats monthly`（别名 `month`），`/stats month [YYYY-MM-DD]`                          |
+| `/stats monthly` | 显示每月 token 使用统计                                                                                                      | `/stats monthly`（别名 `month`），`/stats month [YYYY-MM]`                          |
 | `/stats export`  | 将使用统计导出为 CSV 或 JSON                                                                                                 | `/stats export <daily\|monthly> [date\|month] [--format csv\|json] [--output path]` |
 | `/settings`      | 打开设置编辑器                                                                                                               | `/settings`                                                                         |
 | `/config`        | 通过点路径键获取或设置任何配置（写入用户设置）                                                                               | `/config`（列出所有），`/config <key>`，`/config <key>=<value>`                     |

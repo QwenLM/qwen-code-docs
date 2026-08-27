@@ -87,11 +87,11 @@ Adicione um objeto `statusLine` sob a chave `ui` em `~/.qwen/settings.json`:
 | `model-with-reasoning` | Sim    | Nome do modelo atual com nível de raciocínio (ex.: `qwen-3-235b high`) |
 | `model`                |        | Nome do modelo atual sem nível de raciocínio                     |
 | `git-branch`           | Sim    | Nome da branch atual do Git (oculto quando não estiver em um repositório git) |
-| `context-remaining`    | Sim    | Porcentagem da janela de contexto restante (ex.: `Context 65.7% left`) |
+| `context-remaining`    |        | Porcentagem da janela de contexto restante (ex.: `Context 65.7% left`) |
 | `total-input-tokens`   |        | Tokens de entrada cumulativos usados na sessão (ex.: `30.0k total in`) |
 | `total-output-tokens`  |        | Tokens de saída cumulativos usados na sessão (ex.: `5.0k total out`) |
-| `current-dir`          | Sim    | Diretório de trabalho atual                                      |
-| `project-name`         |        | Nome do projeto (basename do diretório de trabalho)              |
+| `current-dir`          |        | Diretório de trabalho atual                                      |
+| `project-name`         | Sim    | Nome do projeto (basename do diretório de trabalho)              |
 | `pull-request-number`  |        | Número do PR aberto para a branch atual (requer a CLI `gh`)      |
 | `branch-changes`       |        | Estatísticas de alteração de arquivos da sessão (ex.: `+120 -30`) |
 | `context-used`         | Sim    | Porcentagem da janela de contexto usada (ex.: `Context 34.3% used`) |

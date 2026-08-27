@@ -61,6 +61,8 @@
 
 ### 启动序列
 
+在 `runQwenServe()` 启动此序列之前，仅 CLI 使用的 `--open-with-auth` 模式会验证环回/Web Shell 资格，并使用选定的已配置 token 填充 `ServeOptions.token`，当该选择为空时则使用 32 个随机字节以 base64url 编码。直接嵌入者和未使用该默认关闭标志的调用不会生成 token。
+
 1. 从 `opts.token` 或 `QWEN_SERVER_TOKEN` **解析并修剪 token**；这可以避免 `cat token.txt` 产生的尾部换行符悄悄破坏 bearer 比较。
 2. **主机名拼写错误防护**：`--hostname localhost:4170` 会报错并建议改用 `--port`。
 3. **认证预检**：无 token 的非环回地址会被拒绝；无 token 的 `--require-auth` 会被拒绝。
@@ -122,6 +124,7 @@
 | Env             | `QWEN_SERVE_DEBUG=1`                                                                            | 详细的 stderr 日志。参见 [`19-observability.md`](./19-observability.md)。                             |
 | Flags           | `--hostname`, `--port`                                                                          | 监听绑定。                                                                                            |
 | Flags           | `--token`, `--require-auth`, `--enable-session-shell`                                           | Bearer token、环回认证加固和显式 shell 执行开关。                                                     |
+| CLI flags       | `--open-with-auth`                                                                              | 默认关闭的环回 Web Shell 启动，在运行时之前复用或生成进程生命周期的 bearer。                            |
 | Flag            | `--workspace`                                                                                   | 覆盖 `process.cwd()`；重复可注册额外的隔离工作区运行时。                                               |
 | Flags           | `--max-sessions`, `--max-pending-prompts-per-session`, `--max-connections`, `--event-ring-size` | Bridge / Express 上限。                                                                               |
 | Flags           | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}`                                 | 转发给 ACP 子进程。                                                                                   |

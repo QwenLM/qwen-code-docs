@@ -135,9 +135,9 @@ interface WebShellSidebarFooterOptions {
 
 | Wert                                         | Effekt                         |
 | -------------------------------------------- | ------------------------------ |
-| `undefined` (Standard)                       | Alle Elemente angezeigt        |
-| `false`                                      | Footer vollständig ausgeblendet|
-| `{ items: ['settings', 'theme', 'collapse'] }` | Nur aufgeführte Elemente angezeigt |
+| `undefined` (Standard)                       | Alle Elemente angezeigt                                                                      |
+| `false`                                      | Footer ausgeblendet; der Mobile-Drawer behält nur seine Schließen-Steuerung                  |
+| `{ items: ['settings', 'theme', 'collapse'] }` | Nur aufgeführte Elemente angezeigt; der Mobile-Drawer behält immer seine Schließen-Steuerung |
 
 Der Footer passt sich automatisch an schmale Breiten an: Labels werden ausgeblendet und die Version
 wird unter bestimmten Schwellenwerten weggelassen.
@@ -290,12 +290,16 @@ Diese `WebShellProps` beeinflussen das Sidebar-Verhalten indirekt:
 
 | Status    | Verhalten                                          |
 | --------- | -------------------------------------------------- |
-| Expanded  | Vollständige Sidebar mit Text-Labels               |
-| Collapsed | Icon-Rail-Modus (nur Logo, Stift-Symbol, Aktionssymbole) |
-| Mobile    | Drawer gleitet von links mit Backdrop-Overlay      |
+| Expanded  | Vollständige Sidebar mit Text-Labels                                                                  |
+| Collapsed | Icon-Rail-Modus (nur Logo, Stift-Symbol, Aktionssymbole)                                              |
+| Mobile    | Drawer verwendet 70% seines Containers, innerhalb der Breitenlimits, mit Backdrop- und Footer-Schließen-Steuerung |
 
 Der Einklapp-Status wird in `localStorage` unter dem Schlüssel
 `qwen-code-web-shell-sidebar-collapsed` persistiert.
+
+Die angepasste Desktop-Breite wird nur in ausgeklappten Layouts wiederhergestellt. Das Öffnen oder
+Schließen des Mobile-Drawers überschreibt weder diese Breite noch die persistierte
+Desktop-Einklapp-Einstellung.
 
 ## Quellcode-Speicherorte
 
@@ -304,6 +308,6 @@ Der Einklapp-Status wird in `localStorage` unter dem Schlüssel
 | WebShellSidebar   | `packages/web-shell/client/components/sidebar/WebShellSidebar.tsx`        |
 | SessionGroupSection | `packages/web-shell/client/components/sidebar/SessionGroupSection.tsx`  |
 | WorkspaceSection  | `packages/web-shell/client/components/sidebar/WorkspaceSection.tsx`       |
-| Sidebar-Stiles    | `packages/web-shell/client/components/sidebar/WebShellSidebar.module.css` |
+| Sidebar-Styles    | `packages/web-shell/client/components/sidebar/WebShellSidebar.module.css` |
 | App-Integration   | `packages/web-shell/client/App.tsx` (nach `WebShellSidebar` suchen)         |
 | Einstiegspunkt (Dev) | `packages/web-shell/client/main.tsx` (`sidebar: true`)                 |

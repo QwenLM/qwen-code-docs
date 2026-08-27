@@ -202,8 +202,7 @@ Math.max(1, Math.floor(m / 2) + 1);
 | 5                        | 3      | 多数。                      |
 | 6                        | 4      | 超过半数。                  |
 
-对于 **M = 2**，分裂的投票（A 选择 X，B 选择 Y）只能通过每个权限的超时来解决：没有选项达到一致，因此请求将等待直到 `permissionResponseTimeoutMs`（默认 5 分钟）并解决为
-`{cancelled, timeout}`。投票推进路径会将这种“一致意味着分裂投票超时”的行为记录到 stderr 供操作员查看。
+对于 **M = 2**，分裂的投票（A 选择 X，B 选择 Y）只能通过投票者取消、会话取消或可选的交互超时来解决：没有选项达到一致。`permissionResponseTimeoutMs` 默认禁用；配置后，未解决的分裂投票将在该截止时间解决为 `{cancelled, timeout}`。投票推进路径会将适用行为记录到 stderr 供操作员查看。
 
 希望 M = 2 时具有“首个投票获胜”行为的操作员可以显式设置
 `policy.consensusQuorum: 1`。更严格的配置（例如要求 M = 4 时一致同意）使用相同的字段。

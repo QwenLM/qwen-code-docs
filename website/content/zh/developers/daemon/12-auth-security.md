@@ -227,6 +227,7 @@ sequenceDiagram
 ## 状态与生命周期
 
 - Bearer 令牌在启动时读取并去除首尾空格（否则 `cat token.txt` 中的换行符会静默破坏比较）。
+- 仅限 CLI 的 `--open-with-auth` 模式在启动前运行：在经过确定性的环回/Web Shell 检查后，它应用相同的选项优先于环境变量选择，并且仅当没有非空的所选令牌存在时，才会用 32 个随机字节（编码为 base64url）填充 `ServeOptions.token`。生成的凭证具有进程生命周期，不会被写入 `process.env` 或由守护进程持久化，并通过现有的 URL fragment 传递给浏览器。Web Shell 将其浏览器副本保留在每标签的 `sessionStorage` 中。裸 `--open` 和直接 `runQwenServe()` 调用者永远不会生成它。
 - 允许主机集合按端口缓存；在端口更改时重建（临时端口 `0` → `listen` 后的实际端口）。
 - 变更门控在每次应用构建时构造 `passthrough` 和 `strictDenier`；每个路由调用返回缓存的闭包（无每次请求分配）。
 - 设备流注册表在 `shutdown()` 的第 1 阶段释放，因此待处理的流在 HTTP 拆除前解析为 `cancelled`。
@@ -244,6 +245,7 @@ sequenceDiagram
 | ------------ | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
 | 环境变量     | `QWEN_SERVER_TOKEN`                                                                  | Bearer 令牌（去除首尾空格）。                                            |
 | 标志         | `--token`                                                                            | Bearer 令牌（覆盖环境变量）。                                            |
+| CLI 标志     | `--open-with-auth`                                                                   | 在 daemon 启动前复用或生成环回 Web Shell bearer。                       |
 | 标志         | `--require-auth`                                                                     | 将 bearer 扩展到回环 + `/health`。仅在有令牌时启动。                     |
 | 标志         | `--hostname`                                                                         | 非回环绑定需要 `--token`（或环境变量）。                                  |
 | 标志         | `--allow-origin <pattern>`                                                           | 切换到 CORS 允许列表模式。`'*'` 需要令牌。                                |

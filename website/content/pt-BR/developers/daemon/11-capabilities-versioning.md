@@ -227,4 +227,4 @@ sequenceDiagram
 - `packages/cli/src/serve/server.ts` (montagem do envelope)
 - `packages/acp-bridge/src/eventBus.ts` (`EVENT_SCHEMA_VERSION`)
 - Referência de wire: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md)
-- Guardrails de autenticação e deployment: [`12-auth-security.md`](./12-auth-security.md)
+- Guardrails de autenticação e de deployment: [`12-auth-security.md`](./12-auth-security.md)

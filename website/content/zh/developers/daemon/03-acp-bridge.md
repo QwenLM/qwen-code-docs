@@ -45,7 +45,7 @@
 | `defaultEntry`  | `SessionEntry \| null`          | 当 `sessionScope: 'single'` 时使用的“单一” session。                                                                                                                                                                                                                                                                                                                                                 |
 | `defaultPolicy` | `PermissionPolicy`              | 通过 `BridgeOptions.permissionPolicy` 配置。                                                                                                                                                                                                                                                                                                                                                         |
 | `mediator`      | `MultiClientPermissionMediator` | 每个 bridge 实例一个。                                                                                                                                                                                                                                                                                                                                                                                 |
-| Constants       | —                               | `DEFAULT_INIT_TIMEOUT_MS = 10_000`、`MCP_RESTART_TIMEOUT_MS = 300_000`、`DEFAULT_MAX_SESSIONS = 32`、`MAX_EVENT_RING_SIZE = 1_000_000`、`DEFAULT_PERMISSION_TIMEOUT_MS = 5min`、`DEFAULT_MAX_PENDING_PER_SESSION = 64`。                                                                                                                                                                                  |
+| Constants       | —                               | `DEFAULT_INIT_TIMEOUT_MS = 10_000`、`MCP_RESTART_TIMEOUT_MS = 300_000`、`DEFAULT_MAX_SESSIONS = 32`、`MAX_EVENT_RING_SIZE = 1_000_000`、`DEFAULT_PERMISSION_TIMEOUT_MS = 0`、`DEFAULT_MAX_PENDING_PER_SESSION = 64`。                                                                                                                                                                                  |
 
 **`isDying` 不变量**：任何 teardown 路径都必须在 await `channel.kill()` **之前**同步设置 `ChannelInfo.isDying = true`。`ensureChannel` 将 dying channel 视为不存在并生成一个新的。如果没有这个标志，在 SIGTERM 宽限期（最长 10 秒）内到达的并发 `spawnOrAttach` 将会附加到一个即将关闭的 transport 上，并且调用者的 sessionId 在后续每次操作中都会返回 404。**设置点**（必须保持同步）：`ensureChannel`（初始化失败 + 延迟 shutdown 重新检查）、`doSpawn`（空 channel 上的 newSession 失败）、`killSession`（最后一个 session 离开）、`shutdown`（批量）。
 
@@ -172,7 +172,7 @@ sequenceDiagram
 - Bridge 构造是同步的。调用者可以在第一个 session 之前预热 channel；否则第一次 `spawnOrAttach` 会冷启动 ACP 子进程。预热失败后，首次使用时可以自由重试。
 - 在 `sessionScope: 'single'` 下，`defaultEntry` 的生命周期与 bridge 相同；当 `sessionIds.size === 0`（在 `killSession` 之后）且 `isDying` 变为 true 时，channel 会被清理。
 - `MAX_EVENT_RING_SIZE = 1_000_000` 是 `BridgeOptions.eventRingSize` 的软上限，用于在导致每个 session 约 500 MB 的 OOM 之前捕获操作员的拼写错误。
-- `DEFAULT_PERMISSION_TIMEOUT_MS = 5 * 60 * 1000` 防止卡住的权限请求永久阻塞每个 session 的 `promptQueue`。
+- `DEFAULT_PERMISSION_TIMEOUT_MS = 0` 默认允许人工权限处理和提问无限期等待。`permissionResponseTimeoutMs` 在运维人员需要时启用挂钟上限；投票者取消、会话取消和关闭在不使用它时仍然可用。
 - `DEFAULT_MAX_PENDING_PER_SESSION = 64` 镜像了 `DEFAULT_MAX_SUBSCRIBERS`；超出的 `requestPermission` 调用会被解析为 cancelled，并附带 stderr 警告。
 
 ## 依赖
@@ -196,7 +196,7 @@ sequenceDiagram
 | `sessionRestoreTimeoutMs`                     | `60_000`                                           | ACP `loadSession` / `unstable_resumeSession` 超时时间；默认 60 秒，显式配置的 initialize 超时可以提高但不能降低此值。 |
 | `maxSessions`                                 | `DEFAULT_MAX_SESSIONS = 32`                        | `byId.size` 的上限。`0` / `Infinity` = 无限制；NaN/负数会抛出异常。                                                |
 | `eventRingSize`                               | `DEFAULT_RING_SIZE`（来自 `eventBus.ts`）           | 每个 session 的事件环；软上限为 `MAX_EVENT_RING_SIZE`。                                                         |
-| `permissionResponseTimeoutMs`                 | `DEFAULT_PERMISSION_TIMEOUT_MS = 5 min`            | mediator 的每个请求挂钟时间。                                                                               |
+| `permissionResponseTimeoutMs`                 | `DEFAULT_PERMISSION_TIMEOUT_MS = 0`                | mediator 的每个请求挂钟上限；`0` 禁用。                                                                     |
 | `maxPendingPermissionsPerSession`             | `DEFAULT_MAX_PENDING_PER_SESSION = 64`             | 针对高并发 agent 的背压控制。                                                                                   |
 | `childEnvOverrides`                           | `{}`                                               | 每个句柄为 ACP 子进程添加/清理的环境变量。                                                                  |
 | `externalToolGuard`                           | （无）                                             | 可选的私有子进程到父进程的预执行决策处理器。Bridge 仅接受来自当前活跃 Prompt 所属 channel 的该处理器。 |
@@ -209,6 +209,9 @@ sequenceDiagram
 | `permissionConsensusQuorum`                   | 来自 `settings.json`                               | consensus 策略的 N 值。                                                                                               |
 | `permissionAudit`                             | `createNoOpPermissionAuditPublisher()`             | 连接到 `PermissionAuditRing` 以获取审计跟踪。                                                                    |
 | `channelIdleTimeoutMs`                        | `0`                                                | 在最后一个 session 关闭后，保持 ACP 子进程存活的毫秒数。                                    |
+
+超时的 restore 在当前 ACP SDK 中不可取消。因此 bridge 会保持结算围栏和容量准入，直到真实请求结算或其 transport 关闭。迟到的结果仅会被精确关闭一次且不会被注册。清理不确定性仅隔离该 workspace 上的新 session 工作；现有的 session 和 workspace 控制流量继续运行，直到 channel drain 并被回收。
+
 ## 额外的 bridge 方法
 
 除了核心的 `spawnOrAttach`、`sendPrompt`、`cancelSession`、`respondToPermission`、`loadSession` 和 `resumeSession` 调用外，`HttpAcpBridge` 接口现在还包括以下面向 daemon 的辅助方法：

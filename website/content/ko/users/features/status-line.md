@@ -87,11 +87,11 @@ Status line을 설정하는 가장 쉬운 방법은 `/statusline` 명령어입�
 | `model-with-reasoning` | 예   | 추론 수준 포함 현재 모델 이름 (예: `qwen-3-235b high`)        |
 | `model`                |      | 추론 수준 제외 현재 모델 이름                                  |
 | `git-branch`           | 예   | 현재 Git 브랜치 이름 (git 리포 외부에서 숨김)                  |
-| `context-remaining`    | 예   | 남은 컨텍스트 창 백분율 (예: `Context 65.7% left`)             |
+| `context-remaining`    |      | 남은 컨텍스트 창 백분율 (예: `Context 65.7% left`)             |
 | `total-input-tokens`   |      | 세션 중 누적 입력 토큰 (예: `30.0k total in`)                 |
 | `total-output-tokens`  |      | 세션 중 누적 출력 토큰 (예: `5.0k total out`)                 |
-| `current-dir`          | 예   | 현재 작업 디렉토리                                             |
-| `project-name`         |      | 프로젝트 이름 (작업 디렉토리의 basename)                       |
+| `current-dir`          |      | 현재 작업 디렉토리                                             |
+| `project-name`         | 예   | 프로젝트 이름 (작업 디렉토리의 basename)                       |
 | `pull-request-number`  |      | 현재 브랜치의 열린 PR 번호 (`gh` CLI 필요)                     |
 | `branch-changes`       |      | 세션 파일 변경 통계 (예: `+120 -30`)                           |
 | `context-used`         | 예   | 사용된 컨텍스트 창 백분율 (예: `Context 34.3% used`)           |
@@ -175,7 +175,7 @@ qwen-3-235b high | main | Context 65.7% left | /home/user/project | Context 34.3
 | `command`              | string      | 예   | 실행할 셸 명령어. stdin을 통해 JSON을 받으며, stdout이 표시됩니다(최대 2줄).                                                   |
 | `refreshInterval`      | number      | 아니오 | N초마다 명령어를 재실행합니다(최소 1). 에이전트 상태 이벤트 없이 변경되는 데이터(시계, 할당량, 업타임)에 유용합니다.             |
 | `respectUserColors`    | boolean     | 아니오 | 명령어 출력의 ANSI 색상 코드를 보존하여 흐리게 처리된 푸터 스타일링 대신 적용합니다. 기본값 `false`.                           |
-| `hideContextIndicator` | boolean     | 아니오 | 푸터 오른쪽 섹션의 내장 컨텍스트 사용량 표시기를 숨깁니다. 기본값 `false`.                                                      |
+| `hideContextIndicator` | boolean     | 아니오 | 푸터 오른쪽 섹션의 내장 컨텍스트 사용량 표시기를 숨깁니다. 기본값 `false` — 명령어 출력에서 컨텍스트 정보를 검사하지 않으므로, 명령어가 이미 컨텍스트 사용량을 출력하면 명시적으로 설정하세요. |
 
 ### JSON 입력
 

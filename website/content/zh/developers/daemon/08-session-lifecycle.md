@@ -57,6 +57,8 @@ stateDiagram-v2
 
 `X-Qwen-Client-Id` 是**可选的**，但**强烈建议使用**。守护进程不会代为生成——client 需要自己选择并在请求中复用，以便守护进程进行投票归因、事件审计和重连检测。
 
+每个独立的控制器应使用不同的、稳定的 ID。WebUI 默认生成带 `webui_` 前缀的 ID。宿主和嵌入式 WebShell 仅在有意识地作为单个逻辑控制器行动时才应共享 ID；一旦共享，daemon 日志将无法区分是哪个发起了请求。
+
 验证规则：
 
 - 字符集：`[A-Za-z0-9._:-]`。
@@ -180,7 +182,7 @@ sequenceDiagram
 
 ### 会话回退
 
-`GET /session/:id/rewind/snapshots` 和 `POST /session/:id/rewind` 解析所属的活跃工作区 runtime。持久化的会话必须先 load 或 resume 才能回退。回退会截断对话历史并可选地恢复由 `edit` 和 `write_file` 跟踪的文件；它不会撤消 shell 命令、Git、脚本或手动更改。文件恢复是尽力而为的，因此响应可能在对话历史已经移动后报告 `rewound: false` 和 `filesFailed[]`。SDK 回退调用始终使用所有者感知的 REST，即使客户端 otherwise 使用 ACP 传输，因为变更必须保留严格的 REST 身份验证。
+`GET /session/:id/rewind/snapshots` 和 `POST /session/:id/rewind` 解析所属的活跃工作区 runtime。持久化的会话必须先 load 或 resume 才能回退。回退会截断对话历史并可选地恢复由 `edit` 和 `write_file` 跟踪的文件；它不会撤消 shell 命令、Git、脚本或手动更改。文件恢复是尽力而为的，因此响应可能在对话历史已经移动后报告 `rewound: false` 和 `filesFailed[]`。SDK 回退调用始终使用所有者感知的 REST，即使客户端在其他情况下使用 ACP 传输也是如此，因为变更必须保留严格的 REST 身份验证。
 
 ### 会话分离
 
@@ -195,6 +197,8 @@ sequenceDiagram
 `POST /sessions/archive` 将非活跃会话的 JSONL 文件从 `chats/` 移动到 `chats/archive/`。如果目标会话处于活跃状态，daemon 会先进入每个会话的归档门控（archive gate），并执行严格关闭，要求 ACP 子进程 flush `ChatRecordingService`；如果关闭或 flush 失败，归档操作会将 JSONL 保留在原位。
 
 `POST /sessions/unarchive` 将已归档的 JSONL 文件移回 `chats/`。这仅仅是存储状态的转换；客户端之后必须调用 `session/load` 或 `session/resume`。对于已归档的会话，load/resume 会返回 `409 session_archived`，而在归档转换期间发生竞争的变更操作会返回 `409 session_archiving`。
+
+空的、损坏的和孤立的常规转录文件即使无法作为对话加载，仍然符合这些生命周期操作的条件。所有权安全检查可以有意地 fail closed 并要求操作员干预。在 writer 密封其认证的交接证明后，如果文件被更改，则会以 `SessionTranscriptChangedError` 失败，直到操作员解决密封锁和已更改的字节。超过有界所有权读取窗口的 JSON 格式首条物理记录会以 `SessionTranscriptIdentityUnavailableError` 失败，直到该记录被修复或缩减；带有非对象前缀的超大损坏记录仍然符合条件。可解析的恢复记录必须包含字符串类型的 `sessionId` 和 `cwd` 所有权字段，混合的本地/外部归档状态也会 fail closed。当宣传了 `session_storage_conflict_repair` 时，archive 和 unarchive 接受 `resolveConflicts: true`：archive 保留已归档的副本，而 unarchive 保留活跃的副本。不使用该选项时，活跃/归档冲突不会移动、删除或覆盖任何持久化副本，并会在批处理的 `errors` 数组中返回。Archive 仍然在分类冲突之前严格关闭活跃会话，这可能会将排队的记录 flush 到活跃转录中。具有工作区资格的生命周期路由现在使用 HTTP `200` 批处理信封，而不是早期的 HTTP `409 session_conflict` 响应。
 
 ### 上下文使用情况（`session_context_usage` capability tag）
 

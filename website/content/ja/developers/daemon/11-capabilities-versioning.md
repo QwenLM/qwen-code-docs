@@ -120,6 +120,8 @@ ID と heartbeat: `client_identity`, `client_heartbeat`.
 
 拡張機能管理: `extension_management_v2` は、グローバルな `/extensions/*` カタログ/ミューテーション/オペレーションの契約と、ワークスペースアクティベーションの投影を追加します。これは公開されている `workspace_extensions` 互換性サーフェスおよび `workspace_qualified_rest_core` とは別物です。
 
+ローカル拡張機能のインストール: `extension_local_path_install` は、両方の拡張機能インストールルートの既存の `source` フィールドにおいて、デーモンホスト上の絶対パスを許可します。プライマリワークスペースの互換性ルートもこれをサポートするため、`extension_management_v2` とは分離されています。また、クライアントは古いデーモンにローカルパスを送信してはなりません。
+
 V2 拡張機能のバッチアクティベーション: `extension_batch_activation_v2` は、`extension_management_v2` にキューイングされたグローバルデフォルトアクティベーションおよび選択ワークスペースオーバーライドのバッチを追加します。古い V2 デーモンは単一のアクティベーションルートのみを公開するため、クライアントはこれを独立してプリフライトする必要があります。
 
 ワークスペース修飾セッション読み取り: `workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`, `workspace_session_live_state`。アクティブおよびアーカイブのエクスポートタグは互いに、また `session_export` や `workspace_qualified_rest_core` とも独立しています。そのため、クライアントはエクスポートする正確なストレージ状態をプリフライトする必要があります。永続化トランスクリプトのページングは、バウンドされた読み取りポリシーの下で信頼されないセカンダリを許可します。両方のフルエクスポートパスは信頼されたのみです。`workspace_session_live_state` も同様に `workspace_qualified_rest_core` から独立しており、信頼されたのみです。選択されたランタイムのメモリ内のライブセッションスナップショットとカタログバージョンを提供し、信頼されないセカンダリの永続化読み取りポリシーをライブブリッジ状態には拡張しません。

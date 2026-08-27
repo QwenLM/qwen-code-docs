@@ -101,10 +101,10 @@ Qwen Code は、レガシーな設定を新しい形式に自動的に移行し�
 | `general.chatRecording` | boolean | チャット履歴をディスクに保存します。これを無効にすると、`--continue` と `--resume` も機能しなくなります。再起動が必要です。 | `true` |
 #### output
 
-| 設定                    | 型      | 説明                                                         | デフォルト | 指定可能な値       |
-| ----------------------- | ------- | ------------------------------------------------------------ | ---------- | ------------------ |
-| `output.format`         | string  | CLI 出力のフォーマット。                                     | `"text"`   | `"text"`, `"json"` |
-| `output.showTimestamps` | boolean | 各アシスタントの応答の前に `[HH:MM:SS]` のタイムスタンプを表示します。 | `false`    |                    |
+| 設定                    | 型      | 説明                                                                                                                                                                                                                                                                                 | デフォルト | 指定可能な値                      |
+| ----------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- | --------------------------------- |
+| `output.format`         | string  | CLI 出力のフォーマット。`stream-json` を指定すると、プロンプト付きで開始された実行は非対話型（ヘッドレス）として動作し、`--output-format stream-json` と同じになります。argv 解析時に検証されるフラグ（`--include-partial-messages`、`--input-format stream-json`）には、引き続き明示的な `--output-format stream-json` フラグが必要です。 | `"text"`   | `"text"`, `"json"`, `"stream-json"` |
+| `output.showTimestamps` | boolean | 各アシスタントの応答の前に `[HH:MM:SS]` のタイムスタンプを表示します。                                                                                                                                                                                                                 | `false`    |                                   |
 
 #### review
 
@@ -136,7 +136,7 @@ Qwen Code は、レガシーな設定を新しい形式に自動的に移行し�
 | `ui.showCitations`                        | boolean          | チャット内の生成テキストの引用を表示します。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `false`       |
 | `ui.history.collapseOnResume`             | boolean          | セッションを再開するときにデフォルトで履歴を折りたたむかどうか。`/history collapse-on-resume` および `/history expand-on-resume` で切り替えることができます。                                                                                                                                                                                                                                                                                                                                                                                      | `false`       |
 | `ui.history.collapsePreviewCount`         | number           | `ui.history.collapseOnResume` が有効な場合に、表示されたままにする最新のユーザーターンの数。`0` はデフォルトですべての復元された履歴を折りたたみます。`-1` はすべての復元された履歴を表示します。                                                                                                                                                                                                                                                                                                                                                 | `0`           |
-| `ui.compactMode`                          | boolean          | ターミナル UI では廃止されました。CLI は常にメインのトランスクリプトにコンパクトなタイプベースのツールビューを表示します。`Ctrl+O` で展開詳細モード（すべての思考ブロックとツール出力をインラインで展開または折りたたむ）に切り替えます。Web シェルでは引き続き尊重されます。                                                                                                                                                                                                                                               | `false`       |
+| `ui.compactMode`                          | boolean          | **全域で廃止されました。** CLI は常にメインのトランスクリプトにコンパクトなタイプベースのツールビューを表示します。`Ctrl+O` で展開詳細モード（すべての思考ブロックとツール出力をインラインで展開または折りたたむ）に切り替えます。Web シェルもコンパクトビューに固定されました。このキーは既存の設定ファイルが警告を出さないためにのみ保持されています。書き込みは受け付けられますが、値を読み取るものはありません。                                                                                                                                                                                                                                               | `false`       |
 | `ui.shellOutputMaxLines`                  | number           | インラインで表示されるシェル出力の最大行数。`0` に設定すると上限が無効になり、完全な出力が表示されます。非表示の行は `+N lines` インジケーターで表示されます。エラー、`!` プレフィックスのユーザー開始コマンド、ツールの確認、およびフォーカスされた埋め込みシェルは常に完全な出力を表示します。                                                                                                                                                                                                                                                   | `5`           |
 | `ui.enableWelcomeBack`                    | boolean          | 会話履歴のあるプロジェクトに戻ったときに、ウェルカムバックダイアログを表示します。有効にすると、Qwen Code は以前に生成されたプロジェクトサマリー（`.qwen/PROJECT_SUMMARY.md`）を持つプロジェクトに戻っているかどうかを自動的に検出し、以前の会話を続行するか、新規に開始するかを選択できるダイアログを表示します。**Start new chat session** を選択した場合、その選択はプロジェクトサマリーが変更されるまで、現在のプロジェクトに対して記憶されます。この機能は `/summary` コマンドと終了確認ダイアログと統合されています。 | `true`        |
 | `ui.accessibility.enableLoadingPhrases`   | boolean          | 読み込み中のフレーズを有効にします（アクセシビリティのために無効にします）。                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `true`        |
@@ -149,7 +149,7 @@ Qwen Code は、レガシーな設定を新しい形式に自動的に移行し�
 | `ui.showStatusInTitle`                    | boolean          | ターミナルウィンドウのタイトルに Qwen Code のセッション名とステータスを表示します。                                                                                                                                                                                                                                                                                                                                                                                                                                                             | `true`        |
 | `ui.disableWorkflowKeywordTrigger`        | boolean          | `true` の場合、プロンプトで `workflow` という単語に言及しても、ターンが Workflow ツールへ暗黙的に誘導されなくなります（また、フッターの `workflow active` インジケーターも抑制されます）。ワークフローが有効な場合にのみ適用されます。                                                                                                                                                                                                                                                                                                             | `false`       |
 | `ui.enableUserFeedback`                   | boolean          | 会話後にオプションのフィードバックダイアログを表示し、Qwen のパフォーマンス向上に役立てます。                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `true`        |
-| `ui.compactInline`                        | boolean          | グループ間をマージするのではなく、各グループ内でツールの表示をコンパクトにします。`ui.compactMode` が有効である必要があります。再起動が必要です。                                                                                                                                                                                                                                                                                                                                                                                               | `false`       |
+| `ui.compactInline`                        | boolean          | **削除されました。** `ui.compactMode` とともに廃止 — コンパクトビューは TUI と Web シェルの両方で常にオンになりました。古い設定はサイレントに無視されます（起動時の警告はありません）。                                                                                                                                                                                                                                                                                                                                                                                               | `N/A`         |
 | `ui.useTerminalBuffer`                    | boolean          | ターミナルのスクロールバックバッファーではなく、アプリ内のスクロール可能なビューポートで会話履歴をレンダリングします。互換性のあるインタラクティブターミナルでは、長いセッションでのちらつき、スクロールストーム、インターフェースのフリーズを回避するためにデフォルトで有効です。`Shift+↑/↓`（行）、`PgUp`/`PgDn`（ページ）、`Ctrl+Home/End`（最上部/最下部）、またはマウスホイールでスクロールします。有効な間はホストターミナルのスクロールバックを使用しません。テキストを選択するにはドラッグします（ダブル/トリプルクリックで単語/行を選択）。ドラッグ中に `Shift`（macOS の場合は `Option`）を押し続けるとターミナル独自の選択が可能です。マウス操作（ホイール、ドラッグ選択、クリック、ホバー）には `ui.mouseTracking`（デフォルトでオン）が必要です。         | `true`        |
 | `ui.showScrollbar`                      | boolean          | アプリ内のスクロール可能なビューポート（Virtualized History）で自動非表示スクロールバーを表示します。スクロール中に表示され、アイドル時にフェードアウトします。完全に非表示にするには無効にします。インタラクティブターミナル UI にのみ適用されます。                                                                                                                                                                                                                                                                                                                                                                                                                                              | `true`        |
 | `ui.mouseTracking`                      | boolean          | テキスト選択、テキスト入力内のクリック位置指定、行ホバー、履歴アイテムの切り替え、ビューポートスクロールのためのアプリ内 SGR マウストラッキングを有効にします。有効にすると、ターミナルはすべてのマウスイベントをアプリに転送するため、ネイティブの右クリックコンテキストメニューと OSC 8 ハイパーリンククリックは使用できなくなります。ネイティブの右クリックとクリック可能な URL リンクを復元するには無効にします。これにより、アプリ内のすべてのマウス操作が無効になり、Virtualized History ではホイールがトランスクリプトをスクロールしなくなります。代わりに Shift+↑/↓、PgUp/PgDn、または Ctrl+Home/End を使用してください（`ui.useTerminalBuffer: false` と組み合わせてネイティブターミナルスクロールバックを復元）。インタラクティブターミナル UI にのみ適用されます。 | `true`        |
@@ -200,6 +200,7 @@ Qwen Code は、レガシーな設定を新しい形式に自動的に移行し�
   "model": {
     "generationConfig": {
       "timeout": 60000,
+      "streamIdleTimeoutMs": 300000,
       "contextWindowSize": 128000,
       "modalities": {
         "image": true
@@ -230,10 +231,10 @@ Qwen Code は、レガシーな設定を新しい形式に自動的に移行し�
 
 2 つのガードがストリーミングレスポンスを境界付け、それぞれ `0` で無効にできます。いずれも Anthropic/Gemini ジェネレーターでは実装されておらず、それらは以下のドリップフィード形状を無制限のままにします。
 
-- `QWEN_STREAM_IDLE_TIMEOUT_MS`（デフォルト `240000`）はストリーミングチャンク間の非アクティブ時間を制限します。この時間静かなストリームは、リトライ可能な `ETIMEDOUT` として中止されます。
+- `streamIdleTimeoutMs`（デフォルト `240000`）はストリーミングチャンク間の非アクティブ時間を制限します。この時間静かなストリームは、リトライ可能な `ETIMEDOUT` として中止されます。プロバイダー対応モデルの場合は、対応する `modelProviders[providerId][].generationConfig` 配下に設定します。ランタイムモデルの場合は `model.generationConfig` を使用します。明示的なモデル値は `QWEN_STREAM_IDLE_TIMEOUT_MS` より優先され、`0` でアイドルガードが無効になります。
 - `QWEN_STREAM_MAX_LIFETIME_MS`（デフォルト `900000`）は、チャンクのフローに関係なく、1 つのストリーミングレスポンスのアップストリーム待機時間の合計上限を設定します — 完了しないドリップフィードストリームがリセットできないための境界です。
 
-これらは**環境変数（または、埋め込みの場合は `ContentGeneratorConfig.streamIdleTimeoutMs` / `streamMaxLifetimeMs`）のみです — settings.json キーはありません**。settings.json に `"streamMaxLifetimeMs"` を記述しても効果はありません。アップグレードノート: 以前 `QWEN_STREAM_IDLE_TIMEOUT_MS=0`（または `ContentGeneratorConfig` で `streamIdleTimeoutMs: 0`）を設定してストリームの中止をオプトアウトしていたデプロイメントは、それを維持するために `QWEN_STREAM_MAX_LIFETIME_MS=0`（または `streamMaxLifetimeMs: 0`）も必要です。また、15 分のライフタイムキャップは、アイドルタイムアウトをそれ以上に上げたストリーム（例: `QWEN_STREAM_IDLE_TIMEOUT_MS=1800000`）にも適用されます — より長いウィンドウに依存する場合は、同様にキャップを上げるか `0` に設定してください。
+`streamMaxLifetimeMs` は `QWEN_STREAM_MAX_LIFETIME_MS` または埋め込みの場合は `ContentGeneratorConfig.streamMaxLifetimeMs` でのみ利用可能で、settings.json に記述しても効果はありません。15 分のライフタイムキャップは、アイドルタイムアウトをそれ以上に上げたストリームにも適用されます。より長いウィンドウに依存する場合は、同様にライフタイム環境変数を上げるか `0` に設定してください。`streamIdleTimeoutMs` を無効にしても、このライフタイムキャップは無効になりません。
 
 **max_tokens (出力トークン制限):**
 
@@ -297,7 +298,7 @@ OpenAI 互換リクエストにおいて、テキストのみのツール結果�
 
 | 設定 | 型 | 説明 | デフォルト |
 | --- | --- | --- | --- |
-| `imageModel` | string | 組み込みの `image_gen` ツールで使用されるモデル。選択されたモデルは `imageOnly: true`、HTTPS の `baseUrl`、および `modelProviders` 内の `envKey` を持つ必要があります。空欄にすると、ツールは利用不可のままです。`/model --image` で設定することもできます。 | `""` |
+| `imageModel` | string | 組み込みの `image_gen` ツールで使用されるモデル。選択されたルートは `supportsImageGeneration: true`（またはレガシーの `imageOnly: true`）を設定し、`modelProviders` 内で HTTPS の `baseUrl` と `envKey` を宣言する必要があります。空欄にすると、ツールは利用不可のままです。`/model --image` で設定することもできます。 | `""` |
 
 #### visionBridgeTimeoutMs
 
@@ -413,9 +414,9 @@ OpenAI 互換リクエストにおいて、テキストのみのツール結果�
 
 | Setting             | Type             | Description                                                                                                      | Default     |
 | ------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------- | ----------- |
-| `permissions.allow` | array of strings | 自動承認されるツール呼び出しのルール（確認不要）。すべてのスコープ（ユーザー + プロジェクト + システム）にまたがってマージされます。 | `undefined` |
-| `permissions.ask`   | array of strings | 常にユーザーの確認を必要とするツール呼び出しのルール。`allow` より優先されます。                         | `undefined` |
-| `permissions.deny`  | array of strings | ブロックされるツール呼び出しのルール。最も高い優先度を持ち、`allow` と `ask` の両方をオーバーライドします。                               | `undefined` |
+| `permissions.allow` | array of strings | 自動承認されるツール呼び出しのルール（確認不要）。すべてのスコープ（ユーザー + プロジェクト + システム）にまたがってマージされます。レジストリレベルの許可リストとしても機能します。少なくとも 1 つの有効な許可ルールが設定されている場合（不正なエントリはカウントされず、`--allowed-tools` CLI フラグなどの自動承認のみのソースはアクティブ化しません）、どの許可ルールまたは確認ルールにもカバーされていない組み込みツールは deferred に降格されます — 登録されたまま（`/tools` に一覧表示され、`tool_search` ツール経由でオンデマンドでロード可能）ですが、スキーマは即時のモデルリクエストには送信されず、呼び出しは通常の承認フローを通過します。これにより、ツールをサイレントに削除することなく、カバーされていないスキーマをモデルリクエストから除外します。MCP ツール、`--json-schema` の `structured_output` 契約、プランモードのライフサイクルツール `exit_plan_mode` / `enter_plan_mode` / `ask_user_question`、`task_stop`、`tool_search`、および deferred の `computer_use__*` ファミリーは免除され、即時に利用可能なままです。セッション途中でルールを削除すると、その自動承認は即座に取り消されますが、レジストリの構成変更は再起動後に有効になります。例外: AUTO 承認モードでは、危険な許可ルールはアクティブではなくスタッシュされるため、セッション中の削除はスタッシュに影響しません。AUTO モードを終了すると、スタッシュされたルールが復元され、セッションが再起動するまで自動的に承認されます。再起動が必要です。 | `undefined` |
+| `permissions.ask`   | array of strings | 常にユーザーの確認を必要とするツール呼び出しのルール。`allow` より優先されます。確認ルールもレジストリ許可リストにカウントされます。確認ルールでカバーされたツールは、許可リストがアクティブな場合でも登録されたままなので、「常に確認を要求」がサイレントに「ツールが利用不可」になることはありません。                         | `undefined` |
+| `permissions.deny`  | array of strings | ブロックされるツール呼び出しのルール。最も高い優先度を持ち、`allow` と `ask` の両方をオーバーライドします。ツール全体の deny ルール（指定子なし）は、組み込みツールと `tools.discoveryCommand` 経由で見つかったツールの両方をレジストリからも削除します。MCP ツールは免除されます（登録パスは `disabledTools` のみを尊重します）。MCP ツールを非表示にするには、サーバーごとの `excludeTools` / `tools.disabled` フィルタを使用してください。deny ルールは引き続き MCP ツール呼び出しをランタイムでブロックします。                               | `undefined` |
 
 **ツール名のエイリアス（ルール内でこれらいずれも使用可能です）:**
 
@@ -481,7 +482,7 @@ OpenAI 互換リクエストにおいて、テキストのみのツール結果�
 | --------------- | ------------------------------- | ------------------------------------------------------------ |
 | `tools.allowed` | `permissions.allow`             | 初回ロード時に自動移行                                  |
 | `tools.exclude` | `permissions.deny`              | 初回ロード時に自動移行                                  |
-| `tools.core`    | `permissions.allow` (allowlist) | 自動移行されます。リストにないツールはレジストリレベルで無効化されます |
+| `tools.core`    | `permissions.allow` (allowlist) | 自動移行されます。リストにないツールは deferred に降格されます — 登録されたまま `tool_search` 経由でロード可能ですが、スキーマは即時のモデルリクエストからは除外されます |
 
 **設定例:**
 
@@ -749,7 +750,7 @@ Qwen Code は `.env` ファイルから環境変数を自動的に読み込む�
 | `QWEN_TELEMETRY_OUTFILE` | テレメトリを書き込むファイルパスを設定します。設定すると、OTLP エクスポートがオーバーライドされます。 | `telemetry.outfile` 設定をオーバーライドします。 |
 | `QWEN_SANDBOX` | `settings.json` の `sandbox` 設定の代替手段です。 | `true`、`false`、`docker`、`podman`、またはカスタムコマンド文字列を受け付けます。 |
 | `QWEN_SANDBOX_IMAGE` | Docker/Podman のサンドボックスイメージ選択をオーバーライドします。 | `tools.sandboxImage` よりも優先されます。 |
-| `SEATBELT_PROFILE` | （macOS 固有）macOS 上の Seatbelt（`sandbox-exec`）プロファイルを切り替えます。 | `permissive-open`: （デフォルト）プロジェクトフォルダ（およびその他のいくつかのフォルダ。`packages/cli/src/utils/sandbox-macos-permissive-open.sb` を参照）への書き込みを制限しますが、他の操作は許可します。`strict`: デフォルトで操作を拒否する厳格なプロファイルを使用します。`<profile_name>`: カスタムプロファイルを使用します。カスタムプロファイルを定義するには、プロジェクトの `.qwen/` ディレクトリに `sandbox-macos-<profile_name>.sb` という名前のファイルを作成します（例: `my-project/.qwen/sandbox-macos-custom.sb`）。 |
+| `SEATBELT_PROFILE` | （macOS 固有）macOS 上の Seatbelt（`sandbox-exec`）プロファイルを切り替えます。 | `permissive-open`: （デフォルト）プロジェクトフォルダ（およびその他のいくつかのフォルダ。`packages/cli/src/serve/sandbox-macos-permissive-open.sb` を参照）への書き込みを制限しますが、他の操作は許可します。`strict`: デフォルトで操作を拒否する厳格なプロファイルを使用します。`<profile_name>`: カスタムプロファイルを使用します。カスタムプロファイルを定義するには、プロジェクトの `.qwen/` ディレクトリに `sandbox-macos-<profile_name>.sb` という名前のファイルを作成します（例: `my-project/.qwen/sandbox-macos-custom.sb`）。 |
 | `DEBUG` または `DEBUG_MODE` | （基盤となるライブラリや CLI 自体でよく使用されます）`true` または `1` に設定すると、詳細なデバッグログが有効になり、トラブルシューティングに役立ちます。 | **注:** CLI の動作への干渉を防ぐため、これらの変数はデフォルトでプロジェクトの `.env` ファイルから自動的に除外されます。Qwen Code 用にこれらを設定する必要がある場合は、`.qwen/.env` ファイルを使用してください。 |
 | `NO_COLOR` | 任意の値に設定すると、CLI でのすべてのカラー出力が無効になります。 | |
 | `FORCE_HYPERLINK` | Markdown レンダラーでの OSC 8 クリック可能リンクの検出をオーバーライドします。`1`（または 0 以外の整数、あるいは空の文字列）に設定すると強制的に有効化します。`0` または `false` / `off` などの非数値に設定すると強制的に無効化します。上位の `NO_COLOR` / `QWEN_DISABLE_HYPERLINKS` によるオプトアウトを尊重します。 | `tmux` / GNU `screen` 内で OSC 8 をオプトインするために使用します（ホストターミナルの機能がマルチプレクサーの背後に隠れているため、自動検出はデフォルトで拒否されます）。tmux 3.3+ では `set -g allow-passthrough on` が必要です。また、自動検出されない Hyper も有効にします。 |

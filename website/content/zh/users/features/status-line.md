@@ -87,7 +87,7 @@
 | `model-with-reasoning` | 是 | 当前模型名称及推理级别（例如 `qwen-3-235b high`） |
 | `model` | | 当前模型名称，不含推理级别 |
 | `git-branch` | 是 | 当前 Git 分支名称（不在 git 仓库中时隐藏） |
-| `context-remaining` | 是 | 剩余上下文窗口百分比（例如 `Context 65.7% left`） |
+| `context-remaining` | | 剩余上下文窗口百分比（例如 `Context 65.7% left`） |
 | `total-input-tokens` | | 会话中累计使用的输入 token（例如 `30.0k total in`） |
 | `total-output-tokens` | | 会话中累计使用的输出 token（例如 `5.0k total out`） |
 | `current-dir` | 是 | 当前工作目录 |

@@ -88,6 +88,7 @@ English term → German rendering. Follow existing entries; append new ones as `
 - freeze snapshot → Freeze-Snapshot
 - fullDetail (TUI flag) → fullDetail (not translated)
 - rewind selector → Rewind-Selector
+- deferred (tool state) → deferred (nicht übersetzt)
 - ghost text → Ghost-Text
 - foreground shell → Foreground Shell
 - mouse tracking → Maus-Tracking

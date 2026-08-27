@@ -117,7 +117,8 @@ Commandes pour gérer les outils et les modèles d'IA.
 | `/permissions`        | Gérer les règles de permissions                                                             | `/permissions`                                                                                            |
 | `/agents`         | Gérer les sous-agents                                                                 | `/agents manage`, `/agents create`                                                                        |
 | `/arena`          | Gérer les sessions Arena                                                            | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (alias `choose`)                          |
-| `/goal`           | Définir un objectif — continuer à travailler jusqu'à ce que la condition soit remplie                                    | `/goal <condition>`, `/goal clear`                                                                        |
+| `/goal`           | Définir un objectif — continuer à travailler jusqu'à ce que la condition soit remplie (voir [Goals](./goals.md))         | `/goal <condition>`, `/goal clear`                                                                        |
+| `/goal-draft`     | Transformer une intention floue en objectif `/goal` vérifiable                                     | `/goal-draft make the auth tests pass`                                                                    |
 | `/tasks`          | Lister les tâches en arrière-plan                                                            | `/tasks`                                                                                                  |
 | `/workflows`      | Inspecter les exécutions de workflow ; mettre en pause/reprendre coopérativement une exécution en arrière-plan | `/workflows`, `/workflows <runId>`, `/workflows p <runId>`                                                |
 | `/lsp`            | Afficher le statut du serveur LSP                                                           | `/lsp`                                                                                                    |
@@ -143,8 +144,9 @@ Ces commandes invoquent des skills intégrées qui fournissent des workflows sp�
 | ------------ | ----------------------------------------------------------- | ------------------------------------------------- |
 | `/review`    | Revue de code multi-agents (12 agents parallèles à effort élevé) | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
 | `/coordinate` | Coordonner des workers en lecture seule et un writer worktree optionnel | `/coordinate investigate and fix the authentication regression`           |
-| `/loop`      | Exécute un prompt de manière récurrente                     | `/loop 5m check the build`                        |
-| `/simplify`  | Révise les modifications récentes et applique directement des edits de nettoyage sûrs | `/simplify`, `/simplify focus on duplication`     |
+| `/loop`       | Exécute un prompt de manière récurrente                          | `/loop 5m check the build`                                                |
+| `/goal-draft` | Transformer une intention floue en objectif `/goal` vérifiable   | `/goal-draft make the auth tests pass`                                    |
+| `/simplify`   | Révise les modifications récentes et applique directement des edits de nettoyage sûrs | `/simplify`, `/simplify focus on duplication`                 |
 | `/qc-helper` | Répond aux questions sur l'utilisation et la configuration de Qwen Code | `/qc-helper how do I configure MCP?`              |
 
 Consultez [Code Review](./code-review.md) pour la documentation complète de `/review`.
