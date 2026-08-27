@@ -28,6 +28,10 @@ test("translation agent has no general tools and cannot write undeclared paths",
   try {
     fs.mkdirSync(path.join(upstream, "docs"), { recursive: true });
     fs.writeFileSync(path.join(upstream, "docs", "guide.md"), "# Guide\nNew text.\n");
+    fs.writeFileSync(
+      path.join(upstream, "docs", "big.md"),
+      `# Big\n${"x".repeat(2_000)}\n`
+    );
     execFileSync("git", ["init", "-q", "-b", "main"], { cwd: upstream });
     execFileSync("git", ["config", "user.email", "test@example.com"], {
       cwd: upstream,
@@ -52,6 +56,10 @@ test("translation agent has no general tools and cannot write undeclared paths",
         path.join(path.dirname(copiedOrchestrator), name)
       );
     fs.writeFileSync(path.join(contentDir, "en", "guide.md"), "# Guide\nNew text.\n");
+    fs.writeFileSync(
+      path.join(contentDir, "en", "big.md"),
+      `# Big\n${"x".repeat(2_000)}\n`
+    );
     fs.writeFileSync(target, "# 指南\n旧内容。\n");
 
     fs.mkdirSync(fakeBin, { recursive: true });
@@ -62,7 +70,7 @@ const fs = require("node:fs");
 const args = process.argv.slice(2);
 for (const flag of ["--auth-type", "--core-tools", "--json-schema", "--max-tool-calls", "--system-prompt"])
   if (!args.includes(flag)) process.exit(20);
-if (args.includes("--approval-mode") || args[args.indexOf("--auth-type") + 1] !== "openai" || args[args.indexOf("--core-tools") + 1] !== "structured_output" || args[args.indexOf("--max-tool-calls") + 1] !== "0") process.exit(21);
+if (args.includes("--approval-mode") || args[args.indexOf("--auth-type") + 1] !== "openai" || args[args.indexOf("--core-tools") + 1] !== "structured_output" || args[args.indexOf("--max-tool-calls") + 1] !== "1") process.exit(21);
 const prompt = fs.readFileSync(0, "utf8");
 if (!prompt.includes("# Guide") || prompt.includes("sentinel-secret")) process.exit(22);
 if (process.cwd().includes(${JSON.stringify(project)}) || process.env.HOME === ${JSON.stringify(process.env.HOME)}) process.exit(23);
