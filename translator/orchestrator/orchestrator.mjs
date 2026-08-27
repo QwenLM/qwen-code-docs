@@ -1438,31 +1438,43 @@ async function cmdPreflight() {
     process.exit(1);
   }
   const model = OPTS.model || process.env.QWEN_MODEL || "qwen3.7-plus";
-  try {
-    const res = await fetch(`${base}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${key}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: "user", content: "ping" }],
-        max_tokens: 1,
-      }),
-      signal: AbortSignal.timeout(30000),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res = await fetch(`${base}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${key}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: "ping" }],
+          max_tokens: 1,
+        }),
+        signal: AbortSignal.timeout(30000),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        const message = `HTTP ${res.status} from ${base}: ${text.slice(0, 300)}`;
+        if (res.status !== 429 && res.status < 500) {
+          console.log(`::error::preflight: ${message}`);
+          process.exit(1);
+        }
+        throw new Error(message);
+      }
+      console.log(`[orch] preflight: credentials OK (${model} @ ${base})`);
+      return;
+    } catch (err) {
+      const cause = err.cause?.code ? ` (${err.cause.code})` : "";
+      if (attempt === 3) {
+        console.log(`::error::preflight: ${err.message}${cause}`);
+        process.exit(1);
+      }
       console.log(
-        `::error::preflight: HTTP ${res.status} from ${base}: ${text.slice(0, 300)}`
+        `::warning::preflight attempt ${attempt}/3 failed: ${err.message}${cause}; retrying...`
       );
-      process.exit(1);
+      await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
     }
-    console.log(`[orch] preflight: credentials OK (${model} @ ${base})`);
-  } catch (err) {
-    console.log(`::error::preflight: ${err.message}`);
-    process.exit(1);
   }
 }
 
