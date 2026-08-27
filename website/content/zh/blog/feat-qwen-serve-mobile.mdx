@@ -1,0 +1,77 @@
+---
+title: "把 Qwen Code 揣进兜里：用 Local Control 在手机上接着用"
+date: "2026-08-27"
+description: "使用 qwen serve --local-control，通过可撤销的配对 token 和二维码，在可信局域网内用手机打开 Qwen Code Web Shell。"
+author: "pomelo-nwu"
+tags: ["Tutorials", "feature"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader
+  title="把 Qwen Code 揣进兜里：用 Local Control 在手机上接着用"
+  date="2026-08-27"
+  author="pomelo-nwu"
+/>
+
+你在电脑前启动了一个任务，随后需要暂时离开。Agent 还在继续工作，但权限确认或追问仍留在刚才那台电脑上。
+
+Local Control 提供了一个更简单的选择：在同一个可信网络中，用手机打开同一个 Qwen Code Web Shell。
+
+## Local Control 做了什么
+
+`qwen serve` 会把 Qwen Code 作为本地 daemon 运行，并提供内置 Web Shell。连接到这个 daemon 的客户端可以进入同一个 agent 会话，看到同一份对话、文件 diff、工具调用和权限请求。
+
+这里有一个重要边界：启动 `qwen serve` 不会接管已经运行的普通 CLI TUI 或 IDE 会话。请在 Web Shell 中开始任务，或者使用明确连接到同一个 daemon 的其他客户端。
+
+## 一条命令启动
+
+在需要 Qwen Code 操作的项目目录中运行：
+
+```bash
+qwen serve --local-control
+```
+
+Local Control 会自动：
+
+- 选择一个私有 IPv4 网络接口；
+- 创建由 daemon 管理、可撤销的配对 token；
+- 只允许这个接口对应的精确浏览器 origin；
+- 在终端输出配对链接和二维码；
+- 在共享期间尽力避免电脑自动休眠。
+
+如果电脑上有多个可用网络接口，可以按提示明确指定一个地址：
+
+```bash
+qwen serve --local-control --local-control-address 192.168.0.105
+```
+
+让手机连接同一个可信网络，然后扫描二维码。凭据放在 URL fragment 中，而不是 `?token=` 查询参数里，因此不会出现在 HTTP 请求 URL 中。Web Shell 会把它保存在当前浏览器标签页的会话存储里。
+
+## 在手机上继续
+
+打开同一个 Web Shell 会话后，你可以：
+
+- 继续查看对话和流式输出；
+- 检查文件 diff 和展开后的工具调用详情；
+- 在当前权限策略要求确认时处理权限请求。
+
+SSE 重连可以回放仍在 daemon 有界 replay window 中的事件。断开时间过长可能超出这个窗口，因此它能应对一般断线，但不是无限回放；如果客户端提示需要重新同步状态，请重新打开或加载会话。
+
+## 了解安全边界
+
+Local Control 面向可信网络中的本地单用户场景，不应该用来把 daemon 直接暴露到公网。
+
+浏览器会直接连接你电脑上的 daemon，也不需要创建云端开发环境。不过，Qwen Code 仍可能把 prompt、工具结果和相关代码上下文发送给你配置的模型服务商。如果要求模型输入也完全不能离开本机，请使用本地部署的模型。
+
+任何持有配对凭据的人都拥有这个 Web Shell 获得的权限。使用结束后，请在 Web Shell 设置中关闭 Local Control，或者按 `Ctrl+C` 停止 daemon。
+
+## HTTPS 与语音输入
+
+在可信局域网中，普通 HTTP 足以使用 Web Shell 的基础功能，但移动浏览器要求安全上下文才能启用语音输入等受保护的浏览器 API。
+
+启用 HTTPS 时需要同时提供 `--tls-cert` 和 `--tls-key`。证书的 Subject Alternative Name 必须包含局域网 IP，手机也必须信任签发该证书的 CA。完整配置请参阅 [qwen serve 指南](https://qwenlm.github.io/qwen-code-docs/zh/users/qwen-serve)。
+
+## 最后
+
+Local Control 让开发环境继续留在电脑上，同时给同一个 daemon 会话增加一块可以随身携带的屏幕。启动服务、扫描二维码，就可以离开桌面继续关注任务。

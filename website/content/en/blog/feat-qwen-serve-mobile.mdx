@@ -1,0 +1,77 @@
+---
+title: "Qwen Code in Your Pocket: Continue from Your Phone with Local Control"
+date: "2026-08-27"
+description: "Use qwen serve --local-control to open the Qwen Code Web Shell on your phone over a trusted LAN, with a revocable pairing token and QR code."
+author: "pomelo-nwu"
+tags: ["Tutorials", "feature"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader
+  title="Qwen Code in Your Pocket: Continue from Your Phone with Local Control"
+  date="2026-08-27"
+  author="pomelo-nwu"
+/>
+
+You start a task at your desk, then need to step away. The agent is still working, but the permission prompt or follow-up question is on the computer you just left.
+
+Local Control gives you a simpler option: open the same Qwen Code Web Shell from your phone on the same trusted network.
+
+## What Local Control does
+
+`qwen serve` runs Qwen Code as a local daemon and serves its built-in Web Shell. Clients connected to that daemon can attach to the same agent session, including its conversation, file diffs, tool calls, and permission requests.
+
+One boundary matters: starting `qwen serve` does not take over a regular CLI TUI or IDE session that was already running. Start the task in the served Web Shell, or use another client that explicitly connects to the same daemon.
+
+## Start it with one command
+
+From the project you want Qwen Code to work in, run:
+
+```bash
+qwen serve --local-control
+```
+
+Local Control then:
+
+- selects a private IPv4 interface;
+- creates a daemon-owned, revocable pairing token;
+- allows the exact browser origin for that interface;
+- prints a pairing URL and QR code in the terminal; and
+- tries to keep the computer awake while sharing is active.
+
+If the computer has several eligible network interfaces, choose one explicitly when prompted:
+
+```bash
+qwen serve --local-control --local-control-address 192.168.0.105
+```
+
+Connect the phone to the same trusted network and scan the QR code. The credential is delivered in the URL fragment rather than a `?token=` query, keeping it out of the HTTP request URL. The Web Shell stores it in that browser tab for the session.
+
+## Continue from the phone
+
+Open the same Web Shell session and you can:
+
+- follow the conversation and streaming output;
+- inspect file diffs and expanded tool-call details; and
+- answer permission requests when the active approval policy requires confirmation.
+
+SSE reconnection can replay events that are still inside the daemon's bounded replay window. A long disconnect can outgrow that window, so reconnecting is resilient rather than unlimited; reopen or reload the session if the client reports that a state resync is required.
+
+## Know the security boundary
+
+Local Control is intended for a local, single-user workflow on a network you trust. It is not a shortcut for exposing the daemon to the public internet.
+
+The browser connects directly to the daemon on your computer, and no cloud development environment is created. Qwen Code may still send prompts, tool results, and relevant code context to whichever model provider you configured. Use a locally hosted model if the requirement is that model input never leaves the machine.
+
+Anyone holding the pairing credential has the authority granted to that Web Shell. Turn Local Control off from Web Shell settings, or stop the daemon with `Ctrl+C`, when you are done.
+
+## HTTPS and voice input
+
+Plain HTTP works for basic Web Shell use on a trusted LAN, but mobile browsers require a secure context for voice input and other protected browser APIs.
+
+For HTTPS, provide both `--tls-cert` and `--tls-key`. The certificate must include the LAN IP address in its Subject Alternative Name, and the phone must trust the certificate authority that signed it. See the [qwen serve guide](https://qwenlm.github.io/qwen-code-docs/en/users/qwen-serve) for the complete setup.
+
+## Closing
+
+Local Control keeps the development environment on your computer while giving you another screen for the same served agent session. Start it, scan the QR code, and step away from the desk without losing sight of the task.
