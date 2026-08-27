@@ -11,7 +11,7 @@
 - 导入路径：`qwen_code_sdk`
 - 运行时要求：Python `>=3.10`
 - CLI 依赖：v1 需要外部的 `qwen` 可执行文件
-- 传输范围：仅支持进程内传输
+- 传输范围：仅支持进程传输
 - v1 不支持：ACP 传输、SDK 内嵌的 MCP 服务器
 
 ## 安装
@@ -141,7 +141,7 @@ with query_sync(
 | `cwd`                         | `str`                                                       | CLI 进程的工作目录。                                                                         |
 | `model`                       | `str`                                                       | 本次 SDK 会话使用的模型覆盖。                                                                |
 | `path_to_qwen_executable`     | `str`                                                       | `qwen`、显式的二进制路径，或 `.js` CLI 包。                                                  |
-| `permission_mode`             | `default`, `plan`, `auto-edit`, `yolo`                      | 工具执行审批模式。`yolo` 自动批准所有工具；仅在受信任或沙盒环境中使用。                      |
+| `permission_mode`             | `default`, `plan`, `auto-edit`, `auto`, `yolo`             | 工具执行审批模式。`auto` 让 LLM 分类器审批工具调用；`yolo` 自动批准所有工具；仅在受信任或沙箱环境中使用。 |
 | `can_use_tool`                | async 回调                                                  | 工具请求的自定义权限回调。                                                                   |
 | `env`                         | `dict[str, str]`                                            | 传递给 CLI 进程的额外环境变量。                                                              |
 | `system_prompt`               | `str`                                                       | 覆盖系统提示词。                                                                             |
