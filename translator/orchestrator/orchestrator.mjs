@@ -578,15 +578,32 @@ function hasFrontmatter(text) {
   return text.startsWith("---\n");
 }
 
-function frontmatterClosed(text) {
-  const lines = text.split("\n");
-  if (lines[0].trim() !== "---") return false;
+function frontmatterBlock(text) {
+  if (!hasFrontmatter(text)) return null;
   // No line cap: a doc with long frontmatter must not fail the gate
   // forever (retried daily, never advancing). Scanning the whole file
   // is cheap next to the translation that produced it.
-  return lines
-    .slice(1)
-    .some((l) => l.trim() === "---" || l.trim() === "...");
+  return (
+    text.match(/^---\n[\s\S]*?^[ \t]*(?:---|\.\.\.)[ \t]*(?:\n|$)/m)?.[0] ??
+    null
+  );
+}
+
+function frontmatterClosed(text) {
+  return frontmatterBlock(text) !== null;
+}
+
+function normalizeFrontmatter(source, target) {
+  const sourceFrontmatter = frontmatterBlock(source);
+  const targetFrontmatter = frontmatterBlock(target);
+  if (hasFrontmatter(target) && !targetFrontmatter) return target;
+  if (!hasFrontmatter(source))
+    return targetFrontmatter ? target.slice(targetFrontmatter.length) : target;
+  if (!sourceFrontmatter) return target;
+  return (
+    sourceFrontmatter +
+    (targetFrontmatter ? target.slice(targetFrontmatter.length) : target)
+  );
 }
 
 /**
@@ -715,14 +732,16 @@ function verifyFile(lang, f, manifest) {
   // The mtime gate must see the file as the agent left it: stat BEFORE the
   // self-heal below, whose write would otherwise refresh mtime and let a
   // stale (pre-session) translation pass as "touched this session".
-  const touchedThisSession =
-    fs.statSync(target).mtimeMs >= manifest.createdAt;
+  const targetStat = fs.statSync(target);
+  const touchedThisSession = targetStat.mtimeMs >= manifest.createdAt;
   // Self-heal: translation agents sometimes drop the "./" on relative links
   // (GitHub renders bare paths; webpack resolves them as modules and fails).
   // Repair at the gate so stale on-disk files never break the build.
-  const healed = normalizeRelativeLinks(tg);
+  const healed = normalizeFrontmatter(en, normalizeRelativeLinks(tg));
   if (healed !== tg) {
     fs.writeFileSync(target, healed);
+    if (!touchedThisSession)
+      fs.utimesSync(target, targetStat.atime, targetStat.mtime);
     tg = healed;
   }
   if (!touchedThisSession) problems.push("target not touched this session");
