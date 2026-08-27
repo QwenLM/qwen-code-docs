@@ -2,7 +2,7 @@
 
 ## Aperçu
 
-`McpTransportPool` (`packages/core/src/tools/mcp-transport-pool.ts`) est le pool à l’échelle de l’espace de travail F2 (commit 5 de #4175) : plusieurs sessions ACP sur un même démon partagent un seul transport par tuple unique `(serverName + configFingerprint)`, au lieu que chacune génère son propre processus enfant MCP. Le pool réside **à l’intérieur de l’enfant ACP** (`QwenAgent.mcpPool`), est construit une fois au démarrage de l’agent avec le `Config` d’amorçage du démon, et survit aux cycles de vie des sessions. Les entrées comptent les références des sessions attachées et se ferment après une période de grâce configurable lorsque le compteur de références atteint zéro.
+`McpTransportPool` (`packages/core/src/tools/mcp-transport-pool.ts`) est le pool à l'échelle de l'espace de travail F2 (commit 5 de #4175) : plusieurs sessions ACP dans un même runtime partagent un seul transport par tuple unique `(serverName + configFingerprint)`, au lieu que chacune génère son propre processus enfant MCP. Lorsque le mode pool est activé, chaque enfant ACP démarré possède un pool indépendant (`QwenAgent.mcpPool`). Les tentatives de production préchauffent l'enfant principal et réessayent à la première utilisation après échec ; un secondaire fiable démarre son enfant à la demande, tandis qu'un secondaire non fiable ne démarre ni l'un ni l'autre. Le pool est construit une fois au démarrage de l'agent avec le `Config` de bootstrap du runtime et survit aux cycles de vie des sessions. Les entrées comptent les références des sessions attachées et se ferment après une période de grâce configurable lorsque le compteur de références atteint zéro.
 
 C’est le mécanisme principal qui empêche un démon multi-sessions de forker une copie de chaque serveur MCP par session.
 
@@ -315,9 +315,9 @@ reçoivent l’événement `failed` suffisamment tôt pour orienter les promesse
 
 La clé du pool provient de `fingerprint(cfg)` dans `mcp-pool-key.ts`. Le hachage couvre tous les champs définissant le transport :
 
-> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, oauth`
+> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, versionNegotiation, oauth`
 
-Les champs de filtrage par session et de métadonnées (`includeTools`, `excludeTools`, `trust`, `description`, `extensionName`, `discoveryTimeoutMs`) sont exclus, afin que des sessions avec des filtres différents puissent partager une même entrée.
+Les champs de filtrage par session et de métadonnées (`includeTools`, `excludeTools`, `trust`, `description`, `extensionName`, `discoveryTimeoutMs`) sont exclus, afin que des sessions avec des filtres différents puissent partager une même entrée. L'opt-in de négociation automatique est inclus car il modifie la façon dont le processus sous-jacent se connecte.
 
 Pour la cellule OAuth, `canonicalOAuth(o)` hache tous les champs de `MCPOAuthConfig` : `clientId`, `clientSecret`, `scopes` triés, `audiences` triés, `authorizationUrl`, `tokenUrl`, `redirectUri`, `tokenParamName`, et `registrationUrl`. C'est le contrat d'isolation des credentials : deux configurations de session qui ne diffèrent que par `clientSecret`, `audiences` ou `redirectUri` obtiennent des empreintes différentes et ne peuvent pas partager une même entrée. Les clients confidentiels et les déploiements multi-audience en dépendent.
 

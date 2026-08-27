@@ -38,6 +38,13 @@
 - `im:message:send_as_bot` — 以机器人身份发送消息
 - `im:resource` — 访问消息资源（图片、文件）
 
+要在 daemon 发现的联系人中显示用户和群组名称而非 ID，可选择性启用：
+
+- `contact:user.basic_profile:readonly` — 读取用户显示名称
+- `im:chat:readonly` — 读取群组名称
+
+未启用这些可选权限时，消息功能仍然正常，发现的联系人将保留飞书用户和聊天 ID 作为标签。
+
 ### 发布应用
 
 配置权限和事件后，创建版本并发布。应用发布并审核通过后，机器人才能正常工作。
@@ -121,9 +128,10 @@ WebSocket 模式使用出站长连接，不需要公网 URL 或服务器。这�
 
 飞书机器人在私聊和群聊中均可使用。要启用群聊支持：
 
-1. 将频道配置中的 `groupPolicy` 设置为 `"allowlist"` 或 `"open"`
+1. 将频道配置中的 `groupPolicy` 设置为 `"allowlist"`、`"pairing"` 或 `"open"`
 2. 将机器人添加到飞书群组
 3. 在群组中 @提及 机器人以触发响应
+4. 如果使用 `groupPolicy: "pairing"`，在响应开始前批准一次群组配对请求
 
 默认情况下，机器人在群聊中需要 @提及（`requireMention: true`）。对特定群组设置 `"requireMention": false` 可使其响应所有消息。
 
@@ -170,7 +178,8 @@ WebSocket 模式使用出站长连接，不需要公网 URL 或服务器。这�
 
 ### 机器人在群聊中不响应
 
-- 检查 `groupPolicy` 是否设置为 `"allowlist"` 或 `"open"`（默认为 `"disabled"`）
+- 检查 `groupPolicy` 是否设置为 `"allowlist"`、`"pairing"` 或 `"open"`（默认为 `"disabled"`）
+- 如果使用 `"pairing"`，验证群组的配对请求已被批准
 - 确保在群消息中 @提及 了机器人
 - 验证机器人已添加到群组
 

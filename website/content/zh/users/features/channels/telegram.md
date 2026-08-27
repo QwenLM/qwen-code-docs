@@ -70,10 +70,11 @@ qwen channel start
 
 要在 Telegram 群组中使用机器人：
 
-1. 在频道配置中将 `groupPolicy` 设置为 `"allowlist"` 或 `"open"`
+1. 在频道配置中将 `groupPolicy` 设置为 `"allowlist"`、`"pairing"` 或 `"open"`
 2. **在 BotFather 中关闭隐私模式**：`/mybots` → 选择你的机器人 → Bot Settings → Group Privacy → 关闭
 3. 将机器人添加到群组。如果它已经在群组中，请**移除并重新添加**（Telegram 会缓存机器人加入时的隐私设置）
 4. 如果使用 `groupPolicy: "allowlist"`，请将群组的聊天 ID 添加到配置的 `groups` 中
+5. 如果使用 `groupPolicy: "pairing"`，请在回复开始前批准该群组的配对请求。注意，一旦群组被批准，**该群组的任何成员**都可以使用机器人；`senderPolicy` 和 `allowedUsers` 不会限制已批准群组的成员。
 
 默认情况下，机器人在群组中需要通过 @提及或回复来响应。如果希望特定群组对所有消息都响应（适用于专用任务群组），可设置 `"requireMention": false`。详见[群聊](./overview#group-chats)。
 
@@ -105,8 +106,9 @@ agent 的 Markdown 响应会自动转换为 Telegram 兼容的 HTML。代码块�
 
 ### 机器人在群组中无响应
 
-- 确保 `groupPolicy` 设置为 `"allowlist"` 或 `"open"`（默认是 `"disabled"`）
+- 确保 `groupPolicy` 设置为 `"allowlist"`、`"pairing"` 或 `"open"`（默认是 `"disabled"`）
 - 如果使用 `"allowlist"`，确认群组的聊天 ID 已添加到 `groups` 配置中
+- 如果使用 `"pairing"`，请确认该群组的配对请求已被批准
 - 确保在 BotFather 中**关闭了 Group Privacy**——如果没有关闭，机器人无法看到群组中的非命令消息
 - 如果在将机器人加入群组后更改了隐私模式，请**移除并重新添加机器人**到群组
 - 默认情况下，机器人需要 @提及或回复。发送 `@yourbotname hello` 进行测试

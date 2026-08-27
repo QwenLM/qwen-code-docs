@@ -70,6 +70,22 @@
     display: block;
   }
 
+  /* Custom mobile drawer trigger (blog/showcase): takes the hamburger slot */
+  .qwen-docs-navbar > .qwen-mobile-menu {
+    order: 4;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 2.25rem !important;
+    height: 2.25rem !important;
+    flex: 0 0 2.25rem !important;
+  }
+
+  /* On custom pages the native hamburger is replaced by the drawer trigger */
+  html.qwen-custom-nav .qwen-docs-navbar > .nextra-hamburger {
+    display: none !important;
+  }
+
   /* Search input: collapsed state */
   .qwen-docs-navbar .nextra-search input[type="search"] {
     padding-left: 0 !important;

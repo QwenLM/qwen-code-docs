@@ -78,30 +78,30 @@ Ajoutez un objet `statusLine` sous la clé `ui` dans `~/.qwen/settings.json` :
 | `type`                 | `"preset"` | Oui      | Doit être `"preset"`                                                                                       |
 | `items`                | string[]   | Oui      | Liste ordonnée des ID d'éléments prédéfinis à afficher (voir tableau ci-dessous). Les éléments sont joints avec `\|` comme séparateur. |
 | `useThemeColors`       | boolean    | Non      | Applique la couleur du `/theme` actif au texte de la ligne d'état. La valeur par défaut est `true`.        |
-| `hideContextIndicator` | boolean    | Non      | Masque l'indicateur d'utilisation du contexte intégré dans la section droite du pied de page. La valeur par défaut est `false`. |
+| `hideContextIndicator` | boolean    | Non      | Masque l'indicateur d'utilisation du contexte intégré dans la section droite du pied de page. Lorsqu'il n'est pas défini, il est masqué automatiquement si `items` contient `context-used` ou `context-remaining`, afin que l'utilisation du contexte ne soit pas affichée deux fois. Définissez `false` pour toujours l'afficher. |
 
 ### Éléments prédéfinis disponibles
 
 | Item ID                | Default | Description                                                        |
 | ---------------------- | ------- | ------------------------------------------------------------------ |
-| `model-with-reasoning` | Oui     | Nom du modèle actuel avec le niveau de raisonnement (ex. `qwen-3-235b high`)  |
+| `model-with-reasoning` | Yes     | Nom du modèle actuel avec le niveau de raisonnement (ex. `qwen-3-235b high`)  |
 | `model`                |         | Nom du modèle actuel sans le niveau de raisonnement                |
-| `git-branch`           | Oui     | Nom de la branche Git actuelle (masqué si hors d'un dépôt git)     |
-| `context-remaining`    | Oui     | Pourcentage de la fenêtre de contexte restant (ex. `Context 65.7% left`) |
+| `git-branch`           | Yes     | Nom de la branche Git actuelle (masqué si hors d'un dépôt git)     |
+| `context-remaining`    |         | Pourcentage de la fenêtre de contexte restant (ex. `Context 65.7% left`) |
 | `total-input-tokens`   |         | Total cumulé des tokens d'entrée utilisés dans la session (ex. `30.0k total in`) |
 | `total-output-tokens`  |         | Total cumulé des tokens de sortie utilisés dans la session (ex. `5.0k total out`) |
-| `current-dir`          | Oui     | Répertoire de travail actuel                                       |
-| `project-name`         |         | Nom du projet (basename du répertoire de travail)                  |
+| `current-dir`          |         | Répertoire de travail actuel                                       |
+| `project-name`         | Yes     | Nom du projet (basename du répertoire de travail)                  |
 | `pull-request-number`  |         | Numéro de la PR ouverte pour la branche actuelle (nécessite le CLI `gh`) |
 | `branch-changes`       |         | Statistiques des modifications de fichiers de la session (ex. `+120 -30`) |
-| `context-used`         | Oui     | Pourcentage de la fenêtre de contexte utilisé (ex. `Context 34.3% used`) |
+| `context-used`         | Yes     | Pourcentage de la fenêtre de contexte utilisé (ex. `Context 34.3% used`) |
 | `run-state`            |         | État compact de la session (`Ready`, `Working`, ou `Confirm`)      |
 | `qwen-version`         |         | Version de Qwen Code (ex. `v0.14.1`)                               |
 | `context-window-size`  |         | Taille totale de la fenêtre de contexte (ex. `131.1k window`)      |
 | `used-tokens`          |         | Nombre de tokens du prompt actuel (ex. `45.0k used`)               |
 | `session-id`           |         | Identifiant de la session actuelle                                 |
 
-Les éléments marqués **Oui** dans la colonne Default sont présélectionnés lorsque vous ouvrez la boîte de dialogue `/statusline` pour la première fois.
+Les éléments marqués **Yes** dans la colonne Default sont présélectionnés lorsque vous ouvrez la boîte de dialogue `/statusline` pour la première fois.
 
 `total-input-tokens` et `total-output-tokens` sont les totaux de la session. Ils additionnent l'utilisation des tokens au fil des tours, donc les tokens d'entrée peuvent augmenter rapidement car chaque nouvelle requête au modèle inclut à nouveau le contexte de la conversation actuelle. Utilisez `used-tokens` si vous souhaitez connaître la taille du prompt actuel plutôt que la consommation cumulative de la session.
 
@@ -175,7 +175,7 @@ Ajoutez un objet `statusLine` sous la clé `ui` dans `~/.qwen/settings.json` :
 | `command`              | string      | Oui      | Commande shell à exécuter. Reçoit le JSON via stdin, la sortie standard est affichée (jusqu'à 2 lignes).                          |
 | `refreshInterval`      | number      | Non      | Réexécute la commande toutes les N secondes (minimum 1). Utile pour les données qui changent sans événement d'état de l'Agent (horloge, quota, uptime). |
 | `respectUserColors`    | boolean     | Non      | Préserve les codes couleur ANSI dans la sortie de la commande au lieu d'appliquer le style estompé du pied de page. La valeur par défaut est `false`. |
-| `hideContextIndicator` | boolean     | Non      | Masque l'indicateur d'utilisation du contexte intégré dans la section droite du pied de page. La valeur par défaut est `false`.   |
+| `hideContextIndicator` | boolean     | Non      | Masque l'indicateur d'utilisation du contexte intégré dans la section droite du pied de page. La valeur par défaut est `false` — la sortie de la commande n'est pas inspectée pour détecter les informations de contexte, donc définissez-le explicitement si votre commande affiche déjà l'utilisation du contexte. |
 
 ### Entrée JSON
 
@@ -389,7 +389,7 @@ Référencez-le ensuite dans les paramètres :
 
 ## Dépannage
 
-| Problem                     | Cause                          | Fix                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Problème                | Cause                          | Solution                                                                                                                                                                                                                                                                                                                                                                                             |
 | --------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | La ligne d'état ne s'affiche pas | Configuration au mauvais chemin | Doit être sous `ui.statusLine`, et non `statusLine` à la racine                                                                                                                                                                                                                                                                                                                                        |
 | Sortie vide (mode commande) | La commande échoue silencieusement | Testez manuellement : `echo '{"session_id":"test","version":"0.14.1","model":{"display_name":"test"},"context_window":{"context_window_size":0,"used_percentage":0,"remaining_percentage":100,"current_usage":0,"total_input_tokens":0,"total_output_tokens":0},"workspace":{"current_dir":"/tmp"},"metrics":{"models":{},"files":{"total_lines_added":0,"total_lines_removed":0}}}' \| sh -c 'your_command'` |

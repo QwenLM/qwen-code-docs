@@ -1,8 +1,10 @@
+---
+
 # Pool de Transporte MCP do Workspace
 
 ## Visão Geral
 
-`McpTransportPool` (`packages/core/src/tools/mcp-transport-pool.ts`) é o pool de escopo do workspace F2 (#4175 commit 5): múltiplas sessões ACP em um mesmo daemon compartilham um único transporte por tupla única `(serverName + configFingerprint)`, em vez de cada uma instanciar seu próprio processo filho MCP. O pool reside **dentro do filho ACP** (`QwenAgent.mcpPool`), é construído uma vez na inicialização do agente com o `Config` de bootstrap do daemon e sobrevive ao ciclo de vida das sessões. As entradas contam referências de anexos de sessão e são fechadas após um período de carência configurável quando a contagem de referências chega a zero.
+`McpTransportPool` (`packages/core/src/tools/mcp-transport-pool.ts`) é o pool de escopo do workspace F2 (#4175 commit 5): múltiplas sessões ACP em um mesmo runtime compartilham um único transporte por tupla única `(serverName + configFingerprint)`, em vez de cada uma instanciar seu próprio processo filho MCP. Quando o modo pool está habilitado, cada filho ACP iniciado possui um pool independente (`QwenAgent.mcpPool`). A produção tenta pré-aquecer o filho primário e tenta novamente no primeiro uso após falha; um secundário confiável inicia seu filho sob demanda, enquanto um secundário não confiável não inicia nenhum. O pool é construído uma vez na inicialização do agente com o `Config` de bootstrap do runtime e sobrevive ao ciclo de vida das sessões. As entradas contam referências de anexos de sessão e são fechadas após um período de carência configurável quando a contagem de referências chega a zero.
 
 É o mecanismo principal que impede que um daemon com várias sessões bifurque uma cópia de cada servidor MCP por sessão.
 
@@ -310,16 +312,18 @@ promessas `callTool` pendentes para `MCPCallInterruptedError`, de modo que um
 `await client.callTool(...)` travado seja rejeitado de forma limpa em vez de
 ficar pendurado. `forceShutdown` usa a mesma ordem de emitir e depois
 desanexar.
+
 ## Normalização da fingerprint e do `canonicalOAuth`
 
 A chave do pool vem de `fingerprint(cfg)` em `mcp-pool-key.ts`. O hash cobre
 todos os campos que definem o transporte:
 
-> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, oauth`
+> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, versionNegotiation, oauth`
 
 Campos de filtragem por sessão e metadados (`includeTools`, `excludeTools`,
 `trust`, `description`, `extensionName`, `discoveryTimeoutMs`) são excluídos, para que
-sessões com filtros diferentes possam compartilhar uma única entrada.
+sessões com filtros diferentes possam compartilhar uma única entrada. A opt-in
+de negociação automática está incluída porque altera como o processo subjacente se conecta.
 
 Para a célula OAuth, `canonicalOAuth(o)` faz o hash de cada campo de `MCPOAuthConfig`:
 `clientId`, `clientSecret`, `scopes` ordenados, `audiences` ordenados,

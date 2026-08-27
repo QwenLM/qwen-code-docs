@@ -15,10 +15,7 @@ npm install @qwen-code/sdk
 ## 必要条件
 
 - Node.js >= 22.0.0
-- [Qwen Code](https://github.com/QwenLM/qwen-code) >= 0.4.0（安定版）がインストールされ、PATH が通っていること
-
-> [!note]
-> **nvm ユーザーへの注意**: nvm を使用して Node.js のバージョンを管理している場合、SDK が Qwen Code の実行ファイルを自動検出できない可能性があります。`pathToQwenExecutable` オプションに `qwen` バイナリのフルパスを明示的に設定してください。
+- [Qwen Code](https://github.com/QwenLM/qwen-code) >= 0.4.0（安定版）。SDK はデフォルトでバンドル CLI を使用します。カスタムの `qwen` バイナリまたは CLI バンドルを実行する必要がある場合にのみ `pathToQwenExecutable` を設定してください。
 
 ## クイックスタート
 
@@ -60,8 +57,8 @@ Qwen Code との新しいクエリセッションを作成します。
 | -------------------------- | ---------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `cwd`                      | `string`                                       | `process.cwd()`    | クエリセッションの作業ディレクトリ。ファイル操作やコマンドが実行されるコンテキストを決定します。                                                                                                                                                                                                                                                                                                                                                                                    |
 | `model`                    | `string`                                       | -                  | 使用する AI モデル（例: `'qwen-max'`, `'qwen-plus'`, `'qwen-turbo'`）。`OPENAI_MODEL` および `QWEN_MODEL` 環境変数より優先されます。                                                                                                                                                                                                                                                                                                                                                       |
-| `pathToQwenExecutable`     | `string`                                       | 自動検出           | Qwen Code 実行ファイルへのパス。複数の形式に対応: `'qwen'`（PATH からのネイティブバイナリ）、`'/path/to/qwen'`（明示的なパス）、`'/path/to/cli.js'`（Node.js バンドル）、`'node:/path/to/cli.js'`（Node.js ランタイムを強制）、`'bun:/path/to/cli.js'`（Bun ランタイムを強制）。未指定の場合、以下から自動検出: `QWEN_CODE_CLI_PATH` 環境変数、`~/.volta/bin/qwen`、`~/.npm-global/bin/qwen`、`/usr/local/bin/qwen`、`~/.local/bin/qwen`、`~/node_modules/.bin/qwen`、`~/.yarn/bin/qwen`。 |
-| `permissionMode`           | `'default' \| 'plan' \| 'auto-edit' \| 'yolo'` | `'default'`        | ツール実行の承認を制御するパーミッションモード。詳細は [パーミッションモード](#permission-modes) を参照。                                                                                                                                                                                                                                                                                                                                                                               |
+| `pathToQwenExecutable`     | `string`                                       | バンドル CLI       | Qwen Code 実行ファイルへのパス。複数の形式に対応: `'qwen'`（PATH からのネイティブバイナリ）、`'/path/to/qwen'`（明示的なパス）、`'/path/to/cli.js'`（Node.js バンドル）、`'node:/path/to/cli.js'`（Node.js ランタイムを強制）、`'bun:/path/to/cli.js'`（Bun ランタイムを強制）。未指定の場合、SDK はパッケージに同梱されたバンドル CLI を使用します。 |
+| `permissionMode`           | `'default' \| 'plan' \| 'auto-edit' \| 'auto' \| 'yolo'` | `'default'`        | ツール実行の承認を制御するパーミッションモード。詳細は [パーミッションモード](#permission-modes) を参照。                                                                                                                                                                                                                                                                                                                                                                               |
 | `canUseTool`               | `CanUseTool`                                   | -                  | ツール実行承認のためのカスタムパーミッションハンドラ。ツールが確認を必要とするときに呼び出されます。60 秒以内に応答しないと自動拒否されます。[カスタムパーミッションハンドラ](#custom-permission-handler) を参照。                                                                                                                                                                                                                                                                |
 | `env`                      | `Record<string, string>`                       | -                  | Qwen Code プロセスに渡す環境変数。現在のプロセス環境とマージされます。                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `systemPrompt`             | `string \| QuerySystemPromptPreset`            | -                  | メインセッションのシステムプロンプト設定。文字列を使用すると組み込みの Qwen Code システムプロンプトを完全に上書きし、プリセットオブジェクトを使用すると組み込みプロンプトを維持しつつ追加の指示を付け加えます。                                                                                                                                                                                                                                   |
@@ -69,10 +66,10 @@ Qwen Code との新しいクエリセッションを作成します。
 | `abortController`          | `AbortController`                              | -                  | クエリセッションをキャンセルするコントローラ。`abortController.abort()` を呼び出すとセッションを終了しリソースをクリーンアップします。                                                                                                                                                                                                                                                                                                                                                    |
 | `debug`                    | `boolean`                                      | `false`            | デバッグモードを有効にし、CLI プロセスからの詳細ログを出力します。                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `maxSessionTurns`          | `number`                                       | `-1`（無制限）     | セッションが自動終了するまでの最大会話ターン数。1 ターンはユーザーメッセージとアシスタント応答で構成されます。                                                                                                                                                                                                                                                                                                                                                           |
-| `coreTools`                | `string[]`                                     | -                  | レガシーな `coreTools` / CLI `--core-tools` 許可リストのセマンティクスを使用します。指定された場合、一致するコアツールのみがセッションに登録されます。これは `permissions.allow`（ツール呼び出しを自動承認するが、ツール登録は制限しない）とは別です。例: `['read_file', 'edit', 'run_shell_command']`。                                                                                                                            |
+| `coreTools`                | `string[]`                                     | -                  | レガシーな `coreTools` / CLI `--core-tools` 許可リストのセマンティクスを使用します。指定された場合、一致するコアツールのみがセッションに登録されます。これは settings.json の `permissions.allow` とは別物で、後者は起動時にレジストリレベルの許可リストもアクティブにします。少なくとも 1 つの有効な許可ルールがそこに設定されている場合（不正なエントリはカウントされない）、どの許可ルールまたは確認ルールにもカバーされていない組み込みツールは deferred に降格されます — 登録され `tool_search` 経由でロード可能ですが、スキーマは即時のモデルリクエストからは除外されます（MCP ツール、`--json-schema` の `structured_output` 契約、プランモードのライフサイクルツール、`task_stop`、`tool_search`、および `computer_use__*` ファミリーは免除対象。再起動が必要、#9827、#10075）。SDK の `allowedTools` パラメータ単体では許可リストをアクティブにできませんが、許可リストがアクティブな間はそのルールが有効な許可セットにマージされ、カバー範囲にカウントされるため、カバーされた組み込みツールは即時に登録されたままになります。例: `['read_file', 'edit', 'run_shell_command']`。 |
 | `excludeTools`             | `string[]`                                     | -                  | settings.json の `permissions.deny` に相当します。除外されたツールは即座にパーミッションエラーを返します。他のすべてのパーミッション設定より優先されます。ツール名のエイリアスやパターンマッチングをサポート: ツール名（`'write_file'`）、シェルコマンドのプレフィックス（`'Bash(rm *)'`）、パスパターン（`'Read(.env)'`, `'Edit(/src/**)'`）。                                                                                                                        |
-| `allowedTools`             | `string[]`                                     | -                  | settings.json の `permissions.allow` に相当します。一致するツールは `canUseTool` コールバックをバイパスし自動実行されます。ツールが確認を必要とする場合にのみ適用されます。`excludeTools` と同じパターンマッチングをサポート。例: `['Bash(git status)', 'Bash(npm test)']`。                                                                                                                                                                                                             |
-| `authType`                 | `'openai' \| 'qwen-oauth'`                     | `'openai'`         | AI サービスの認証タイプ。Qwen OAuth の無料枠は 2026-04-15 に廃止されました。新しい SDK セットアップでは OpenAI 互換の認証または他のサポートされているプロバイダを使用してください。                                                                                                                                                                                                                                                    |
+| `allowedTools`             | `string[]`                                     | -                  | 自動承認のための settings.json の `permissions.allow` に相当します。一致するツールは `canUseTool` コールバックをバイパスし自動実行されます。ツールが確認を必要とする場合にのみ適用されます。settings.json の `permissions.allow` と異なり、このパラメータ単体ではレジストリの許可リストをアクティブにしません。ただし、settings 提供の許可リストがアクティブな間、`allowedTools` のルールは有効な許可セットにマージされ、カバー範囲にカウントされるため、カバーされた組み込みツールは即時に登録されたままになります（カバーされていないものは deferred に降格されますが、削除はされません。#10075）。`excludeTools` と同じパターンマッチングをサポートします。例: `['Bash(git status)', 'Bash(npm test)']`。                                                                                                                                                                                                             |
+| `authType`                 | `'openai' \| 'anthropic' \| 'qwen-oauth' \| 'gemini' \| 'vertex-ai'` | -              | AI サービスの認証タイプ。指定すると、SDK は CLI に `--auth-type` として転送します。                                                                                                                                                                                                                                                    |
 | `agents`                   | `SubagentConfig[]`                             | -                  | セッション中に呼び出し可能なサブエージェントの設定。サブエージェントは特定のタスクやドメインに特化した AI エージェントです。                                                                                                                                                                                                                                                                                                                                             |
 | `includePartialMessages`   | `boolean`                                      | `false`            | `true` に設定すると、SDK は生成中の不完全なメッセージを出力し、AI の応答をリアルタイムでストリーミングできるようにします。                                                                                                                                                                                                                                                                                                                                                             |
 | `resume`                   | `string`                                       | -                  | セッション ID を指定して以前のセッションを再開します。CLI の `--resume` フラグと同等です。                                                                                                                                                                                                                                                                                                                                                                                         |
@@ -158,6 +155,28 @@ const detail = await q.getContextUsage(true);
 await q.close();
 ```
 
+`interrupt()` はアクティブなターンのみをキャンセルします。非同期イテラブルプロンプトで作成されたマルチターンのクエリでは、クエリとその入力ストリームはオープンなままとなり、イテラブルからの後続のメッセージが通常通り処理されます。セッション全体を終了したい場合は、`close()` を使用するか、設定した `AbortController` をアボートしてください。
+
+## デーモンでの呼び出し元指定セッション ID
+
+`DaemonClient.createOrAttachSession` は、セッション作成前に ID を永続化する必要がある呼び出し元のために、オプションの `sessionId` を受け付けます。
+
+```typescript
+import { DaemonClient } from '@qwen-code/sdk';
+
+const daemon = new DaemonClient({ baseUrl: 'http://127.0.0.1:4170' });
+const session = await daemon.createOrAttachSession({
+  workspaceCwd: '/path/to/project',
+  sessionId: '550E8400-E29B-41D4-A716-446655440000',
+});
+
+console.log(session.sessionId); // 550e8400-e29b-41d4-a716-446655440000
+```
+
+SDK は変更を送信する前にデーモンの `session_id_override` ケーパビリティを要求します。REST モードでは `sessionId` が直接シリアライズされ、アクティブな ACP アダプタはそれを `session/new._meta["qwen-code/sessionId"]` にマッピングします。SDK は成功レスポンスを検証し、デーモンが異なる ID を返した場合に `DaemonSessionIdProtocolError` をスローします。
+
+このオプションは常に新しいスレッドセッションを作成し、冪等なアタッチではありません。作成の結果が曖昧な場合は、既知の ID を使用して load または resume してください。オプションを省略すると、既存の create-or-attach 動作が維持されます。
+
 ## パーミッションモード
 
 SDK はツール実行を制御するための異なるパーミッションモードをサポートしています。
@@ -165,6 +184,7 @@ SDK はツール実行を制御するための異なるパーミッションモ�
 - **`default`**: 書き込みツールは `canUseTool` コールバックまたは `allowedTools` で承認されない限り拒否されます。読み取り専用ツールは確認なしで実行されます。
 - **`plan`**: すべての書き込みツールをブロックし、AI にまず計画を提示するよう指示します。
 - **`auto-edit`**: 編集ツール（`edit`、`write_file`、`notebook_edit`）を自動承認し、その他のツールは確認が必要です。
+- **`auto`**: 組み込みのクラシファイアを使用して安全なツール呼び出しを自動承認し、リスクのあるものをブロックします。ポリシーによる繰り返しブロックまたはクラシファイアの障害後には手動承認フォールバックに切り替わります。
 - **`yolo`**: すべてのツールが確認なしで自動実行されます。
 
 ### パーミッションの優先順位チェーン
@@ -178,8 +198,9 @@ SDK はツール実行を制御するための異なるパーミッションモ�
 3. `permissionMode: 'plan'` - 読み取り専用以外のすべてのツールをブロック
 4. `permissionMode: 'yolo'` - すべてのツールを自動承認
 5. `allowedTools` / `permissions.allow` - 一致するツールを自動承認
-6. `canUseTool` コールバック - カスタム承認ロジック（指定された場合、許可されたツールでは呼び出されない）
-7. デフォルト動作 - SDK モードでは自動拒否（書き込みツールは明示的な承認が必要）
+6. `permissionMode: 'auto'` - 残りのツールのクラシファイア仲介の承認
+7. `canUseTool` コールバック - カスタム承認ロジック（指定された場合、許可されたツールでは呼び出されない）
+8. デフォルト動作 - SDK モードでは自動拒否（書き込みツールは明示的な承認が必要）
 
 ## 使用例
 

@@ -2,7 +2,7 @@
 
 ## 概述
 
-`McpTransportPool`（`packages/core/src/tools/mcp-transport-pool.ts`）是 F2（#4175 commit 5）工作区范围的池：同一守护进程上的多个 ACP 会话共享一个唯一的 `(serverName + configFingerprint)` 元组对应的传输通道，而不是每个会话都创建自己的 MCP 子进程。该池**位于 ACP 子进程内部**（`QwenAgent.mcpPool`），在代理启动时使用守护进程的引导 `Config` 构造一次，并在会话生命周期内持续存在。`PoolEntry` 会对会话的附加进行引用计数，当引用计数降为零后，经过可配置的宽限期间隔，该条目会被关闭。
+`McpTransportPool`（`packages/core/src/tools/mcp-transport-pool.ts`）是 F2（#4175 commit 5）工作区范围的池：一个 runtime 内的多个 ACP 会话共享每个唯一 `(serverName + configFingerprint)` 元组对应的一个传输通道，而不是每个会话都创建自己的 MCP 子进程。当池模式启用时，每个启动的 ACP 子进程拥有一个独立的池（`QwenAgent.mcpPool`）。生产环境会尝试预热主子进程，并在失败后于首次使用时重试；受信任的次级运行时会按需启动其子进程，而不受信任的次级运行时则两者都不启动。该池在代理启动时使用 runtime 的引导 `Config` 构造一次，并在会话生命周期内持续存在。`PoolEntry` 会对会话的附加进行引用计数，当引用计数降为零后，经过可配置的宽限期间隔，该条目会被关闭。
 
 它是防止多会话守护进程为每个会话都 fork 一份 MCP 服务器的主要机制。
 
@@ -291,9 +291,9 @@ W77 竞态条件（`cb206da36`）：`createUnpooledConnection` 在等待 `client
 
 池键源自 `mcp-pool-key.ts` 中的 `fingerprint(cfg)`。哈希覆盖所有传输定义字段：
 
-> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, oauth`
+> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, versionNegotiation, oauth`
 
-会话级过滤和元数据字段（`includeTools`、`excludeTools`、`trust`、`description`、`extensionName`、`discoveryTimeoutMs`）不参与哈希，因此不同过滤条件的会话可以共享同一个条目。
+会话级过滤和元数据字段（`includeTools`、`excludeTools`、`trust`、`description`、`extensionName`、`discoveryTimeoutMs`）不参与哈希，因此不同过滤条件的会话可以共享同一个条目。自动协商的 opt-in 被包含在内，因为它改变了底层进程的连接方式。
 
 对于 OAuth 单元，`canonicalOAuth(o)` 对每个 `MCPOAuthConfig` 字段进行哈希：`clientId`、`clientSecret`、排序后的 `scopes`、排序后的 `audiences`、`authorizationUrl`、`tokenUrl`、`redirectUri`、`tokenParamName` 和 `registrationUrl`。这是凭证隔离的契约：两个会话配置如果仅在 `clientSecret`、`audiences` 或 `redirectUri` 上不同，将产生不同的指纹，且无法共享同一个条目。机密客户端和多受众令牌部署依赖于此。
 
@@ -376,7 +376,7 @@ new McpClientManager(config, toolRegistry, {
 - `McpTransportPool.acquire()` 使用 `attachPooledSession` 和 `rollbackReservationOnSpawnFailure` 来共享快速路径附加、生成后附加和池化生成中捕获行为。运行时行为不变；竞态窗口不变量仍然存在于调用点。
 - `SessionMcpView.applyTools` / `applyPrompts` 通过 `compileNameFilter(cfg)` 编译 `includeTools` / `excludeTools` 一次，并使用 `compiledFilterAccepts(compiled, name)` 检查每个工具。导出的 `passesSessionFilter` / `passesSessionPromptFilter` 使用相同的编译路径。`excludeTools` 是精确匹配；`includeTools` 去除第一个 `(...)` 后缀，以便 `toolName(args)` 匹配 `toolName`。
 
-设计文档：[`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md) §6 介绍了传输池状态机、重连、排空和后代清理路径。
+设计文档：[`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md) §6 介绍了传输池状态机、重连、排空和后代清理路径。
 
 ## 注意事项与已知限制
 
@@ -393,5 +393,5 @@ new McpClientManager(config, toolRegistry, {
 - `packages/core/src/tools/mcp-pool-key.ts`（`connectionIdOf`、`parseConnectionId`）
 - `packages/core/src/tools/mcp-pool-events.ts`（事件类型）
 - `packages/core/src/tools/session-mcp-view.ts`（按会话过滤视图）
-- F2 设计文档（v2.2，包含 32 项审查折叠变更日志）：[`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md)。设计契约是权威的；此页面是开发者深度讲解。
+- F2 设计文档（v2.2，包含 32 项审查折叠变更日志）：[`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md)。设计契约是权威的；此页面是开发者深度讲解。
 - F2 设计说明：issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175)（F2 系列的提交 4-6）。

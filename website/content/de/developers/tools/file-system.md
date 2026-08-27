@@ -8,6 +8,8 @@ Qwen Code bietet eine umfassende Sammlung von Werkzeugen für die Interaktion mi
 
 `list_directory` listet die Namen von Dateien und Unterverzeichnissen direkt innerhalb eines angegebenen Verzeichnispfads auf. Es kann optional Einträge ignorieren, die auf angegebene Glob-Muster passen.
 
+**Hinweis:** Dieses Tool ist opt-in und standardmäßig deaktiviert, da `glob` in den meisten Fällen die Verzeichnisauflistung abdeckt. Aktiviere es, indem du `tools.listDirectory.enabled` in deinen Einstellungen auf `true` setzt oder `list_directory` explizit in der `coreTools`-Allowlist (`--core-tools` / `tools.core`) auflistest.
+
 - **Werkzeugname:** `list_directory`
 - **Anzeigename:** ListFiles
 - **Datei:** `ls.ts`
@@ -24,18 +26,21 @@ Qwen Code bietet eine umfassende Sammlung von Werkzeugen für die Interaktion mi
 
 ## 2. `read_file` (ReadFile)
 
-`read_file` liest und gibt den Inhalt einer angegebenen Datei zurück. Dieses Werkzeug verarbeitet Textdateien und Mediendateien (Bilder, PDFs, Audio, Video), deren Modalität vom aktuellen Modell unterstützt wird. Bei Textdateien können bestimmte Zeilenbereiche gelesen werden. Mediendateien, deren Modalität vom aktuellen Modell nicht unterstützt wird, werden mit einer hilfreichen Fehlermeldung abgelehnt. Andere binäre Dateitypen werden in der Regel übersprungen.
+`read_file` liest und gibt den Inhalt einer angegebenen Datei zurück. Dieses Werkzeug verarbeitet Textdateien und Mediendateien (Bilder, PDFs, Audio, Video), deren Modalität vom aktuellen Modell unterstützt wird. Bei Textdateien können bestimmte Zeilenbereiche gelesen werden. Nicht unterstützte PDFs versuchen eine Textextraktion und den unten beschriebenen begrenzten Vision-Bridge-Fallback; andere nicht unterstützte Mediendateien geben eine hilfreiche Fehlermeldung zurück. Andere binäre Dateitypen werden in der Regel übersprungen.
 
 - **Werkzeugname:** `read_file`
 - **Anzeigename:** ReadFile
 - **Datei:** `read-file.ts`
 - **Parameter:**
-  - `path` (string, erforderlich): Der absolute Pfad zur zu lesenden Datei.
+  - `file_path` (string, erforderlich): Der absolute Pfad zur zu lesenden Datei.
   - `offset` (number, optional): Bei Textdateien die 0-basierte Zeilennummer, ab der gelesen werden soll. Erfordert, dass `limit` gesetzt ist.
   - `limit` (number, optional): Bei Textdateien die maximale Anzahl zu lesender Zeilen. Wenn nicht angegeben, wird ein Standardmaximum (z. B. 2000 Zeilen) oder die gesamte Datei gelesen, falls möglich.
+  - `pages` (string, optional): Bei PDFs eine 1-indizierte Seite oder geschlossener Seitenbereich wie `"3"` oder `"20-25"`. Eine Anfrage darf höchstens 20 Seiten umfassen.
 - **Verhalten:**
   - Bei Textdateien: Gibt den Inhalt zurück. Wenn `offset` und `limit` verwendet werden, wird nur dieser Zeilenabschnitt zurückgegeben. Gibt an, ob der Inhalt aufgrund von Zeilen- oder Zeilenlängenbeschränkungen abgeschnitten wurde.
   - Bei Mediendateien (Bilder, PDFs, Audio, Video): Wenn das aktuelle Modell die Modalität der Datei unterstützt, wird der Dateiinhalt als base64-codiertes `inlineData`-Objekt zurückgegeben. Wenn das Modell die Modalität nicht unterstützt, wird eine Fehlermeldung mit Hinweisen zurückgegeben (z. B. Vorschlag von Skills oder externen Werkzeugen).
+  - Bei PDFs mit einem reinen Textmodell: Zuerst wird eine Textextraktion versucht. Wenn die Extraktion fehlschlägt oder eine explizit angeforderte (oder tatsächliche) Einzelseite immer noch das 12K-Token-Textbudget überschreitet, rendert und transkribiert eine konfigurierte Vision Bridge automatisch höchstens vier Seiten, beginnend bei der angeforderten ersten Seite. Der angeforderte Bereich wird auf das bekannte Dokumentende gekürzt. Das Ergebnis identifiziert den transkribierten Bereich und entweder die bekanntermaßen verbleibenden Seiten oder, wenn die Seitenanzahl nicht verfügbar ist, den Hinweis, dass weitere Seiten existieren können. Bei normalem mehrseitigem Textüberlauf wird weiterhin um einen engeren `pages`-Bereich gebeten, anstatt auf Vision umzuschalten.
+  - Die PDF-Transkription der Vision Bridge ist verlustbehaftet und als nicht vertrauenswürdiger, maschinell generierter Inhalt gekennzeichnet. Das Tool-Ergebnis enthält Text anstatt gerenderte Bilder, und die benutzerseitige TUI-, ACP-, nicht-interaktive Strukturausgabe und Exportdarstellung identifizieren das Vision-Modell und den Endpunkt, wenn bekannt. Wenn die Bridge fehlschlägt, wird der genaue ursprüngliche PDF-Extraktionsfehler an das Modell zurückgegeben, während die Benutzeranzeige weiterhin den Bridge-Versuch offenlegt.
   - Bei anderen binären Dateien: Versucht, diese zu identifizieren und zu überspringen, und gibt eine Meldung zurück, dass es sich um eine generische Binärdatei handelt.
 - **Ausgabe (`llmContent`):**
   - Bei Textdateien: Der Dateiinhalt, ggf. mit einer Kürzungsmeldung vorangestellt (z. B. `[File content truncated: showing lines 1-100 of 500 total lines...]\nActual file content...`).

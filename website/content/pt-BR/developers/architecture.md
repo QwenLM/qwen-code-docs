@@ -1,95 +1,242 @@
+---
+title: Visão Geral da Arquitetura
+description: Arquitetura do Qwen Code — pacotes, limites de runtime e fluxos de execução.
+---
+
 # Visão Geral da Arquitetura do Qwen Code
 
-Este documento fornece uma visão geral de alto nível da arquitetura do Qwen Code.
+O Qwen Code é um monorepo que suporta um terminal interativo, execução headless
+e programática, o Agent Client Protocol (ACP), um daemon HTTP de longa duração,
+clientes web e de IDE, e adaptadores de canais de mensagens. Este documento mapeia
+essas superfícies para os pacotes que as implementam e explica os principais
+limites de runtime.
 
-## Componentes Principais
+Para detalhes internos do daemon, comece pela
+[documentação do daemon](./daemon/00-index.md). Para formatos de requisições e
+eventos HTTP, consulte a [referência do protocolo `qwen serve`](./qwen-serve-protocol.md).
 
-O Qwen Code é composto principalmente por dois pacotes principais, juntamente com um conjunto de ferramentas que podem ser utilizadas pelo sistema durante o processamento de entrada da linha de comando:
+## Sistema em linhas gerais
 
-### 1. Pacote CLI (`packages/cli`)
+O Qwen Code tem dois modelos de execução de agente:
 
-**Objetivo:** Contém a parte do Qwen Code voltada para o usuário, como o tratamento da entrada inicial do usuário, a apresentação da saída final e o gerenciamento da experiência geral do usuário.
+- **Execução direta:** o TUI interativo e a CLI headless constroem e executam
+  o runtime do agente diretamente.
+- **Execução ACP:** `qwen --acp` hospeda o agente atrás de um transporte ACP. Pode
+  ser controlado por um cliente ACP diretamente ou pelo `qwen serve` através da
+  bridge ACP compartilhada.
 
-**Funções Principais:**
+O `qwen serve` adiciona um plano de controle HTTP + Server-Sent Events (SSE) em
+torno da execução ACP para que múltiplos clientes possam usar runtimes de longa
+duração com escopo de workspace.
 
-- **Processamento de Entrada:** Lida com a entrada do usuário através de vários métodos, incluindo entrada de texto direta, comandos de barra (ex.: `/help`, `/clear`, `/model`), comandos arroba (`@file` para incluir conteúdo de arquivo) e comandos de exclamação (`!command` para execução no shell).
-- **Gerenciamento de Histórico:** Mantém o histórico da conversa e permite recursos como retomada de sessão.
-- **Renderização de Exibição:** Formata e apresenta as respostas ao usuário no terminal com destaque de sintaxe e formatação adequada.
-- **Personalização de Tema e Interface:** Suporta temas personalizáveis e elementos de interface para uma experiência personalizada.
-- **Configurações:** Gerencia várias opções de configuração através de arquivos de configuração JSON, variáveis de ambiente e argumentos de linha de comando.
+```mermaid
+flowchart TB
+    subgraph surfaces["Superfícies de usuário e integração"]
+        TUI["TUI interativo / CLI headless"]
+        PQ["Cliente de processo do SDK TypeScript"]
+        WEB["Web Shell / Web UI compartilhada"]
+        IDE["Integrações de IDE"]
+        CHANNEL["Canais de mensagens"]
+        CUSTOM["Clientes de daemon personalizados"]
+    end
 
-### 2. Pacote Core (`packages/core`)
+    subgraph hosts["Hosts de processo e transporte"]
+        CLI["Host CLI<br/>packages/cli"]
+        SDK["Cliente do daemon<br/>packages/sdk-typescript"]
+        SERVE["qwen serve<br/>packages/cli/src/serve"]
+        BRIDGE["Bridge ACP<br/>packages/acp-bridge"]
+        ACP["qwen --acp child"]
+    end
 
-**Objetivo:** Atua como o backend do Qwen Code. Ele recebe requisições enviadas pelo `packages/cli`, orquestra interações com a API do modelo configurado e gerencia a execução das ferramentas disponíveis.
+    subgraph runtime["Runtime do agente"]
+        CORE["Orquestração de agente e ferramentas<br/>packages/core"]
+    end
 
-**Funções Principais:**
+    subgraph external["Sistemas externos"]
+        MODEL["Provedores de modelo"]
+        MCP["Servidores MCP"]
+        HOST["Filesystem e processos do workspace"]
+    end
 
-- **Cliente API:** Comunica-se com a API do modelo Qwen para enviar prompts e receber respostas.
-- **Construção de Prompt:** Constrói prompts adequados para o modelo, incorporando histórico da conversa e definições de ferramentas disponíveis.
-- **Registro e Execução de Ferramentas:** Gerencia o registro das ferramentas disponíveis e as executa com base nas solicitações do modelo.
-- **Gerenciamento de Estado:** Mantém informações de estado da conversa e da sessão.
-- **Configuração do Lado do Servidor:** Lida com a configuração e ajustes do lado do servidor.
+    TUI --> CLI
+    PQ --> CLI
+    CLI --> CORE
 
-### 3. Ferramentas (`packages/core/src/tools/`)
+    WEB --> SDK
+    IDE --> SDK
+    CHANNEL --> SDK
+    CUSTOM --> SDK
+    SDK --> SERVE
+    SERVE --> BRIDGE
+    BRIDGE --> ACP
+    ACP --> CORE
 
-**Objetivo:** São módulos individuais que estendem as capacidades do modelo Qwen, permitindo que ele interaja com o ambiente local (ex.: sistema de arquivos, comandos shell, busca na web).
+    CORE --> MODEL
+    CORE --> MCP
+    CORE --> HOST
+```
 
-**Interação:** O `packages/core` invoca essas ferramentas com base em solicitações do modelo Qwen.
+O diagrama mostra os principais caminhos de produção. Alguns adaptadores também
+têm modos standalone: por exemplo, `qwen channel start` usa a bridge ACP sem
+exigir um daemon HTTP. Consulte o
+[guia de plugin de canal](./channel-plugins.md#runtime-modes) para essas variantes.
 
-**Ferramentas Comuns Incluem:**
+## Layout do repositório
 
-- **Operações de Arquivo:** Leitura, escrita e edição de arquivos
-- **Comandos Shell:** Execução de comandos do sistema com aprovação do usuário para operações potencialmente perigosas
-- **Ferramentas de Busca:** Localização de arquivos e pesquisa de conteúdo dentro do projeto
-- **Ferramentas Web:** Obtenção de conteúdo da web
-- **Integração MCP:** Conexão a servidores Model Context Protocol para capacidades estendidas
+| Caminho                                                                                                      | Responsabilidade                                                                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/cli`                                                                                               | O executável `qwen`, parsing de argumentos, montagem de configuração, TUI Ink, saída headless, ponto de entrada ACP, `qwen serve` e adaptadores específicos de comandos.                     |
+| `packages/core`                                                                                              | Orquestração de agente independente de UI, integração com provedores de modelo, construção de prompt e contexto, registro e execução de ferramentas, permissões, sessões, memória, telemetria e serviços compartilhados. |
+| `packages/acp-bridge`                                                                                        | Ciclo de vida do canal ACP, multiplexação de sessões, entrega de eventos, mediação de permissões, spawn de processos e a interface de filesystem compartilhada por daemon e hosts adaptadores. |
+| `packages/sdk-typescript`                                                                                    | Execução programática de processos via `query()` mais clientes HTTP/SSE e projeção de transcrição para `qwen serve`.                                                                         |
+| `packages/webui`                                                                                             | Componentes React compartilhados e o adaptador React do daemon construído sobre o SDK TypeScript.                                                                                             |
+| `packages/web-shell`                                                                                         | A UI de terminal no navegador construída sobre `packages/webui` e o SDK do daemon.                                                                                                           |
+| `packages/web-templates`                                                                                     | Templates web empacotados como strings de JavaScript e CSS incorporáveis.                                                                                                                     |
+| `packages/audio-capture`                                                                                     | Captura nativa de microfone para entrada por voz.                                                                                                                                            |
+| `packages/channels`                                                                                          | O runtime de canal compartilhado e adaptadores de plataforma para serviços de mensagens.                                                                                                     |
+| `packages/desktop-shell`, `packages/vscode-ide-companion`, `packages/chrome-extension`, `packages/zed-extension` | Superfícies de produto e editor que adaptam o Qwen Code aos seus ambientes host.                                                                                                             |
+| `packages/sdk-java`, `packages/sdk-python`                                                                   | Clientes programáticos específicos de linguagem.                                                                                                                                              |
+| `packages/cua-driver`, `packages/mobile-mcp`                                                                 | Integrações de uso do computador e dispositivos móveis expostas através de boundaries compatíveis com MCP.                                                                                    |
+| `integration-tests`                                                                                          | Cobertura end-to-end para CLI, interativo, SDK, sandbox, hook e comportamento de terminal.                                                                                                   |
+| `docs` e `docs-site`                                                                                         | Documentação de usuário, desenvolvedor, protocolo e design, mais o site de documentação.                                                                                                     |
+| `scripts`                                                                                                    | Automação de build, empacotamento, release, validação e manutenção do repositório.                                                                                                           |
 
-## Fluxo de Interação
+A maior parte do código vive em workspaces npm sob `packages/`. Um pacote deve
+depender de outro pacote através de suas exportações públicas declaradas, e não
+por um caminho relativo na árvore de código-fonte desse pacote.
 
-Uma interação típica com o Qwen Code segue este fluxo:
+## Limites dos pacotes
 
-1.  **Entrada do Usuário:** O usuário digita um prompt ou comando no terminal, que é gerenciado pelo `packages/cli`.
-2.  **Requisição ao Core:** O `packages/cli` envia a entrada do usuário para o `packages/core`.
-3.  **Processamento da Requisição:** O pacote core:
-    - Constrói um prompt apropriado para a API do modelo configurado, possivelmente incluindo histórico da conversa e definições de ferramentas disponíveis.
-    - Envia o prompt para a API do modelo.
-4.  **Resposta da API do Modelo:** A API do modelo processa o prompt e retorna uma resposta. Essa resposta pode ser uma resposta direta ou uma solicitação para usar uma das ferramentas disponíveis.
-5.  **Execução da Ferramenta (se aplicável):**
-    - Quando a API do modelo solicita uma ferramenta, o pacote core se prepara para executá-la.
-    - Se a ferramenta solicitada puder modificar o sistema de arquivos ou executar comandos shell, o usuário recebe primeiro os detalhes da ferramenta e seus argumentos, e deve aprovar a execução.
-    - Operações somente leitura, como leitura de arquivos, podem não exigir confirmação explícita do usuário para prosseguir.
-    - Uma vez confirmado, ou se a confirmação não for necessária, o pacote core executa a ação relevante dentro da ferramenta relevante, e o resultado é enviado de volta para a API do modelo pelo pacote core.
-    - A API do modelo processa o resultado da ferramenta e gera uma resposta final.
-6.  **Resposta para o CLI:** O pacote core envia a resposta final de volta para o pacote CLI.
-7.  **Exibição para o Usuário:** O pacote CLI formata e exibe a resposta para o usuário no terminal.
+### CLI e superfícies de apresentação
 
-## Opções de Configuração
+O `packages/cli` é dono do executável e escolhe o modo de runtime a partir dos
+argumentos de linha de comando. Carrega configurações de usuário e workspace,
+constrói a configuração do core, entra no sandbox solicitado quando necessário e
+então inicia um dos fluxos interativo, headless, ACP, daemon, canal ou manutenção.
 
-O Qwen Code oferece várias maneiras de configurar seu comportamento:
+A apresentação permanece fora do runtime do core:
 
-### Camadas de Configuração (em ordem de precedência)
+- o TUI Ink renderiza sessões interativas locais;
+- o `packages/webui` adapta o estado do daemon a providers e hooks React;
+- o `packages/web-shell` fornece a experiência de terminal no navegador;
+- pacotes de IDE e canal traduzem eventos específicos do host em contratos
+  compartilhados de cliente ou bridge.
 
-1. Argumentos de linha de comando
-2. Variáveis de ambiente
-3. Arquivo de configuração do projeto (`.qwen/settings.json`)
-4. Arquivo de configuração do usuário (`~/.qwen/settings.json`)
-5. Arquivos de configuração do sistema
-6. Valores padrão
+### Runtime do core
 
-### Principais Categorias de Configuração
+O `packages/core` é dono do loop do agente. Constrói requisições de modelo,
+mantém o contexto da conversa, despacha chamadas de ferramenta, aplica política
+de permissões e retorna eventos e resultados estruturados ao host ativo.
+Ferramentas integradas cobrem operações de arquivo, execução de shell, busca,
+planejamento, acesso web, memória, skills e subagentes. O MCP estende a
+superfície de ferramentas e recursos sem acoplar o runtime a uma integração
+específica.
 
-- **Configurações Gerais:** modo vim, editor preferido, preferências de atualização automática
-- **Configurações de Interface:** Personalização de tema, visibilidade do banner, exibição do rodapé
-- **Configurações de Modelo:** Seleção de modelo, limites de turnos de sessão, configurações de compactação
-- **Configurações de Contexto:** Nomes de arquivos de contexto, inclusão de diretórios, filtragem de arquivos
-- **Configurações de Ferramentas:** Modos de aprovação, sandboxing, restrições de ferramentas
-- **Configurações de Privacidade:** Coleta de estatísticas de uso
-- **Configurações Avançadas:** Opções de depuração, comandos personalizados de relatório de bugs
+O pacote core não decide como os resultados são exibidos nem como um cliente
+remoto os transporta. Essas decisões pertencem às camadas CLI, bridge, SDK e UI.
 
-## Principais Princípios de Design
+### Bridge ACP
 
-- **Modularidade:** Separar o CLI (frontend) do Core (backend) permite o desenvolvimento independente e possíveis extensões futuras (ex.: diferentes frontends para o mesmo backend).
-- **Extensibilidade:** O sistema de ferramentas foi projetado para ser extensível, permitindo que novas capacidades sejam adicionadas através de ferramentas personalizadas ou integração com servidores MCP.
-- **Experiência do Usuário:** O CLI foca em fornecer uma experiência de terminal rica e interativa com recursos como destaque de sintaxe, temas personalizáveis e estruturas de comando intuitivas.
-- **Segurança:** Implementa mecanismos de aprovação para operações potencialmente perigosas e opções de sandboxing para proteger o sistema do usuário.
-- **Flexibilidade:** Suporta múltiplos métodos de configuração e pode se adaptar a diferentes fluxos de trabalho e ambientes.
+O `packages/acp-bridge` conecta um processo host a um runtime de agente ACP.
+Suas principais responsabilidades são:
+
+- spawn ou anexação a um canal ACP;
+- multiplexação de sessões e clientes;
+- encaminhamento de prompts, cancelamentos e notificações ACP;
+- mediação de requisições de permissão;
+- publicação de streams de eventos de sessão limitados;
+- fornecimento de uma interface de filesystem de workspace ao host.
+
+A bridge pode usar um processo filho real `qwen --acp` em produção ou um canal
+em memória em testes. Consulte o
+[README do `@qwen-code/acp-bridge`](../../packages/acp-bridge/README.md) para
+seus pontos de entrada públicos.
+
+### Adaptadores SDK e UI
+
+O SDK TypeScript expõe dois estilos de cliente:
+
+- `query()` inicia e controla um processo do Qwen Code para uso local programático;
+- clientes do daemon se comunicam com o `qwen serve` via HTTP e SSE.
+
+O `packages/webui` constrói uma camada de estado React sobre o cliente do daemon,
+e o `packages/web-shell` constrói a UI do navegador sobre essa camada de estado.
+Outros clientes, incluindo integrações de IDE e canais gerenciados pelo daemon,
+reutilizam o mesmo SDK e contratos de eventos em vez de importar código de
+implementação do servidor.
+
+## Fluxos de runtime
+
+### Fluxo direto da CLI
+
+1. A CLI faz parse dos argumentos e resolve as configurações de usuário,
+   workspace, ambiente e linha de comando.
+2. Prepara o sandbox e constrói a configuração do runtime do core.
+3. O runtime do core constrói a requisição de modelo e entra no loop de
+   agente/ferramentas.
+4. As chamadas de ferramenta são verificadas contra a política de permissões e
+   executadas no ambiente de workspace ativo.
+5. A CLI renderiza eventos incrementais no TUI ou os serializa para saída
+   headless.
+
+### Fluxo do daemon
+
+1. Um cliente usa o SDK TypeScript ou a API HTTP documentada para se conectar ao
+   `qwen serve`.
+2. O daemon autentica a requisição e resolve o workspace que possui a operação
+   solicitada.
+3. O runtime do workspace encaminha operações do agente através de sua bridge ACP
+   para um filho `qwen --acp`.
+4. O filho executa a mesma lógica de agente e ferramentas usada pela execução
+   direta.
+5. Respostas e notificações retornam através da bridge; eventos de sessão são
+   entregues aos clientes via SSE.
+
+Com sessões multi-workspace habilitadas, cada runtime de workspace ativo possui
+sua própria bridge e filho ACP. Acesso ao filesystem, overlays de ambiente,
+transportes MCP, sessões e tratamento de falhas permanecem escopados ao runtime
+resolvido. A [arquitetura do daemon](./daemon/01-architecture.md) documenta a
+topologia do processo, boundaries de confiança, replay de eventos e ciclo de
+vida em detalhe.
+
+## Pontos de extensão
+
+O Qwen Code pode ser estendido em várias camadas:
+
+- **Servidores MCP** adicionam ferramentas, prompts e recursos ao runtime do core.
+- **Extensões e skills** empacotam comandos reutilizáveis, configuração e
+  comportamento de agente.
+- **Plugins de canal** adaptam plataformas de mensagens ao runtime de canal
+  compartilhado.
+- **Clientes SDK** constroem aplicações personalizadas locais ou com suporte de
+  daemon.
+- **Adaptadores de UI** projetam eventos compartilhados do daemon em estado e
+  apresentação específicos do host.
+
+Mantenha preocupações específicas de plataforma nos adaptadores. Comportamento
+de agente compartilhado pertence ao runtime do core, enquanto comportamento de
+transporte e wire pertence à bridge ACP, SDK ou host do daemon.
+
+## Configuração e estado
+
+A CLI monta a configuração efetiva a partir de argumentos de linha de comando,
+variáveis de ambiente, configurações de usuário, configurações de workspace e
+valores padrão antes de construir o runtime. O core recebe a configuração
+resolvida em vez de ler entradas específicas de apresentação. Consulte
+[Settings](../users/configuration/settings.md) para as configurações suportadas
+e seus escopos.
+
+Sessões diretas persistem seu histórico e metadados através de serviços core
+compartilhados. No modo daemon, o daemon resolve o workspace proprietário e
+expõe operações escopadas por workspace e sessão aos clientes; o filho ACP
+permanece o dono da execução ativa do agente.
+
+## Para onde ir a seguir
+
+- [Documentação de desenvolvedor do daemon](./daemon/00-index.md)
+- [Protocolo HTTP do `qwen serve`](./qwen-serve-protocol.md)
+- [SDK TypeScript](../../packages/sdk-typescript/README.md)
+- [Bridge ACP](../../packages/acp-bridge/README.md)
+- [Guia do desenvolvedor de plugin de canal](./channel-plugins.md)
+- [Desenvolvimento de ferramentas](./tools/introduction.md)
+- [Testes de integração](./development/integration-tests.md)

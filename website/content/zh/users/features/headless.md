@@ -56,6 +56,37 @@ qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "Apply the follow-up refac
 > - 会话数据是限定在项目范围内的 JSONL 文件，存储在 `~/.qwen/projects/<sanitized-cwd>/chats` 目录下。
 > - 在发送新 prompt 之前，恢复对话历史、工具输出和聊天压缩检查点。
 
+## 运行持久目标
+
+无头模式接受 `/goal` 作为完整的 prompt。Goal 状态与会话一起存储，因此请使用 `--continue` 或 `--resume <sessionId>` 从后续进程中检查或控制同一个 Goal。这需要 `general.chatRecording` 保持启用状态（默认值）。
+
+```bash
+# 创建一个 Goal 并启动其 worker
+qwen -p "/goal Finish the release checklist"
+
+# 在同一会话中检查其保存的状态
+qwen --continue -p "/goal"
+```
+
+对其余操作使用相同的 `qwen --continue -p "<control>"` 模式：
+
+| 控制                                 | 行为                                                                                       |
+| ------------------------------------ | ------------------------------------------------------------------------------------------ |
+| `/goal`                              | 报告存储的状态，不调用模型。                                                               |
+| `/goal <objective>` 或 `/goal set …` | 创建或替换 Goal 并启动无头 Goal 工作。                                                     |
+| `/goal edit <objective>`             | 修改未完成的 Goal；当结果状态为 active 时，工作立即开始。                                  |
+| `/goal pause`                        | 暂停一个 active 的 Goal，不调用模型。                                                      |
+| `/goal resume`                       | 恢复符合条件的 Goal 并启动无头 Goal 工作。                                                 |
+| `/goal clear`                        | 清除 Goal，无需确认也不调用模型。                                                          |
+
+运行时调度的 Goal 续接段不计入 `--max-session-turns`，但真实用户 prompt 仍然计入。显式的 `--max-wall-time` 和 `--max-tool-calls` 预算继续生效；超过任一限制会在运行以预算特定的错误退出之前暂停 active 的 Goal 工作。
+
+使用 `--output-format stream-json` 时，每次 Goal 状态变更都会发出一个 `stream_event`，其 `event.type` 为 `goal_state`。即使没有 `--include-partial-messages` 也会发出此规范状态事件。当启用部分消息时，较旧的 `active_goal` 事件会作为兼容性投影跟随其后；自动化应将 `goal_state` 视为权威来源。
+
+> [!note]
+>
+> 此行为适用于标准无头 CLI 运行。ACP 仍使用旧版 Goal 命令路径。
+
 ## 自定义主会话 Prompt
 
 你可以在单次 CLI 运行中更改主会话的系统 prompt，而无需编辑共享内存文件。
@@ -182,6 +213,8 @@ qwen -p "Explain TypeScript" --output-format stream-json
 
 与 `--include-partial-messages` 结合使用时，会实时发出额外的流事件（如 `message_start`、`content_block_delta` 等），用于实时更新 UI。
 
+对于 JSON 和 stream-JSON 输出，文本 `tool_result.content` 值在 JSON 字符串序列化后被限制为最多 65,536 个 UTF-8 字节。超大的值会作为确定性的 head/tail 预览发出。相同的限制适用于持久化 stream-JSON 会话、SDK 传输、子代理工具结果和 Dual Output。文本模式仍然只打印最终响应，内部仅保留有界的预览。此限制不会限制整个 JSON 会话、JSONL 事件、工具输入或部分消息。
+
 ```bash
 qwen -p "Write a Python script" --output-format stream-json --include-partial-messages
 ```
@@ -208,7 +241,7 @@ qwen -p "Explain Docker" --output-format json > docker-explanation.json
 qwen -p "Add more details" >> docker-explanation.txt
 
 # 通过管道传递给其他工具
-qwen -p "What is Kubernetes?" --output-format json | jq '.response'
+qwen -p "What is Kubernetes?" --output-format json | jq -r '.[-1].result'
 qwen -p "Explain microservices" | wc -w
 qwen -p "List programming languages" | grep -i "python"
 
@@ -283,14 +316,14 @@ cat src/auth.py | qwen -p "Review this authentication code for security issues" 
 
 ```bash
 result=$(git diff --cached | qwen -p "Write a concise commit message for these changes" --output-format json)
-echo "$result" | jq -r '.response'
+echo "$result" | jq -r '.[-1].result'
 ```
 
 ### API 文档
 
 ```bash
 result=$(cat api/routes.js | qwen -p "Generate OpenAPI spec for these routes" --output-format json)
-echo "$result" | jq -r '.response' > openapi.json
+echo "$result" | jq -r '.[-1].result' > openapi.json
 ```
 
 ### 批量代码分析
@@ -299,7 +332,7 @@ echo "$result" | jq -r '.response' > openapi.json
 for file in src/*.py; do
     echo "Analyzing $file..."
     result=$(cat "$file" | qwen -p "Find potential bugs and suggest improvements" --output-format json)
-    echo "$result" | jq -r '.response' > "reports/$(basename "$file").analysis"
+    echo "$result" | jq -r '.[-1].result' > "reports/$(basename "$file").analysis"
     echo "Completed analysis for $(basename "$file")" >> reports/progress.log
 done
 ```
@@ -308,7 +341,7 @@ done
 
 ```bash
 result=$(git diff origin/main...HEAD | qwen -p "Review these changes for bugs, security issues, and code quality" --output-format json)
-echo "$result" | jq -r '.response' > pr-review.json
+echo "$result" | jq -r '.[-1].result' > pr-review.json
 ```
 
 ### 日志分析
@@ -321,7 +354,7 @@ grep "ERROR" /var/log/app.log | tail -20 | qwen -p "Analyze these errors and sug
 
 ```bash
 result=$(git log --oneline v1.0.0..HEAD | qwen -p "Generate release notes from these commits" --output-format json)
-response=$(echo "$result" | jq -r '.response')
+response=$(echo "$result" | jq -r '.[-1].result')
 echo "$response"
 echo "$response" >> CHANGELOG.md
 ```
@@ -330,12 +363,12 @@ echo "$response" >> CHANGELOG.md
 
 ```bash
 result=$(qwen -p "Explain this database schema" --include-directories db --output-format json)
-total_tokens=$(echo "$result" | jq -r '.stats.models // {} | to_entries | map(.value.tokens.total) | add // 0')
-models_used=$(echo "$result" | jq -r '.stats.models // {} | keys | join(", ") | if . == "" then "none" else . end')
-tool_calls=$(echo "$result" | jq -r '.stats.tools.totalCalls // 0')
-tools_used=$(echo "$result" | jq -r '.stats.tools.byName // {} | keys | join(", ") | if . == "" then "none" else . end')
+total_tokens=$(echo "$result" | jq -r '.[-1].stats.models // {} | to_entries | map(.value.tokens.total) | add // 0')
+models_used=$(echo "$result" | jq -r '.[-1].stats.models // {} | keys | join(", ") | if . == "" then "none" else . end')
+tool_calls=$(echo "$result" | jq -r '.[-1].stats.tools.totalCalls // 0')
+tools_used=$(echo "$result" | jq -r '.[-1].stats.tools.byName // {} | keys | join(", ") | if . == "" then "none" else . end')
 echo "$(date): $total_tokens tokens, $tool_calls tool calls ($tools_used) used with models: $models_used" >> usage.log
-echo "$result" | jq -r '.response' > schema-docs.md
+echo "$result" | jq -r '.[-1].result' > schema-docs.md
 echo "Recent usage trends:"
 tail -5 usage.log
 ```

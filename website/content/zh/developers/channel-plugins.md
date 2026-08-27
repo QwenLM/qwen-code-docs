@@ -18,12 +18,12 @@ ChannelBase  →  calls your sendMessage() with the agent's response
 
 ## 运行时模式
 
-同一个插件 adapter 可以由以下任一 Channel 运行时托管：
+同一个插件 adapter 可以由以下任一 channel 运行时托管：
 
-- `qwen channel start [name]` 是独立的 ACP 支持的服务。它仍然使用 `AcpBridge`，并且是在守护进程外运行 Channel 的稳定命令。
-- `qwen serve --channel <name>` 和可重复的 `--channel` 标志会启动一个实验性的由守护进程管理的 Channel worker。`--channel all` 会启动所有已配置的 Channel。该 worker 由 `qwen serve` 拥有，通过 SDK 连接到该守护进程，并向 adapter 传递一个由 `DaemonChannelBridge` 支持的 `ChannelAgentBridge` 门面。
+- `qwen channel start [name]` 是独立的 ACP 支持的服务。它仍然使用 `AcpBridge`，并且是在守护进程外运行 channel 的稳定命令。
+- `qwen serve --channel <name>` 和可重复的 `--channel` 标志会启动实验性的由守护进程管理的 channel worker。命名的 channels 按拥有工作区分组，每个拥有运行时一个 worker。`--channel all` 有意仅启动主工作区配置的 channels。Worker 由 `qwen serve` 拥有，通过 SDK 连接到该守护进程，并向 adapter 传递一个由 `DaemonChannelBridge` 支持的 `ChannelAgentBridge` 门面。
 
-由守护进程管理的 Channel 继承守护进程的生命周期和状态报告。它们被刻意设计为进程外运行，这样 adapter 或平台 SDK 的故障就不会导致守护进程崩溃。守护进程仍然绑定到一个工作区，因此每个选定的 Channel 配置都必须使用一个能解析到守护进程工作区的 `cwd`。
+由守护进程管理的 channels 继承守护进程的生命周期和状态报告。它们被刻意设计为进程外运行，这样 adapter 或平台 SDK 的故障就不会导致守护进程崩溃。每个命名的 channel 必须恰好解析到一个已注册的、受信任的工作区；其 worker 接收该运行时的规范 cwd 和环境覆盖。当注册了多个工作区时，没有 cwd 的用户/系统 channel 会产生歧义，而工作区本地设置文件中的 channel 默认属于该工作区。`--channel all` 仍然仅限主工作区，不能与命名选择组合使用。
 
 ## 插件对象
 
@@ -53,6 +53,7 @@ import type {
   ChannelAgentBridge,
   ChannelConfig,
   Envelope,
+  SessionTarget,
 } from '@qwen-code/channel-base';
 
 export class MyChannel extends ChannelBase {
@@ -91,7 +92,7 @@ export class MyChannel extends ChannelBase {
 }
 ```
 
-大多数 adapter 应原样传递 `options`。如果 adapter 创建了自己的 `SessionRouter` 并将该 router 传递给 `super()`，请在 `ChannelBaseOptions` 中设置 `registerBridgeEvents: true`，以便 `ChannelBase` 仍然能直接接收 `toolCall` 和 `sessionDied` 事件。对于由 Channel gateway 提供的 router，请保持未设置状态。
+大多数 adapter 应原样传递 `options`。如果 adapter 创建了自己 `SessionRouter` 并将该 router 传递给 `super()`，请在 `ChannelBaseOptions` 中设置 `registerBridgeEvents: true`，以便 `ChannelBase` 仍然能直接接收 `toolCall` 和 `sessionDied` 事件。对于由 channel gateway 提供的 router，请保持未设置状态。
 
 如果你的 adapter 暴露了 shell 命令行为，请在启用前检查 `bridge.shellCommand` 是否存在。除非守护进程通告了 `session_shell_command` 能力，否则由守护进程管理的 worker 会省略该可选方法。
 
@@ -105,6 +106,7 @@ export class MyChannel extends ChannelBase {
 | `senderId`       | string       | Yes      | 在多条消息中必须保持稳定（用于会话路由 + 访问控制）                        |
 | `senderName`     | string       | Yes      | 显示名称                                                                   |
 | `chatId`         | string       | Yes      | 必须区分私聊和群聊                                                         |
+| `chatName`       | string       | No       | 平台提供时的群组/会话名称                                                  |
 | `text`           | string       | Yes      | 去除 bot 的 @提及                                                          |
 | `threadId`       | string       | No       | 用于 `sessionScope: "thread"`                                              |
 | `messageId`      | string       | No       | 平台消息 ID — 有助于响应关联                                               |
@@ -157,7 +159,7 @@ envelope.attachments = [
 
 ## 扩展清单
 
-你的 `qwen-extension.json` 声明了 Channel 类型。该 key 必须与你的 plugin 对象中的 `channelType` 匹配：
+你的 `qwen-extension.json` 声明了 channel 类型。该 key 必须与你的 plugin 对象中的 `channelType` 匹配：
 
 ```json
 {
@@ -195,11 +197,32 @@ protected override onPromptEnd(chatId: string, sessionId: string, messageId?: st
 }
 ```
 
-**工具调用钩子** — 重写 `onToolCall()` 以显示 agent 活动（例如，“正在运行 shell 命令...”）。
+**工具调用钩子** — 重写 `onToolCall()` 以显示 agent 活动（例如，"正在运行 shell 命令..."）。
 
 **流式传输钩子** — 重写 `onResponseChunk(chatId, chunk, sessionId)` 以实现逐块渐进式显示（例如，就地编辑消息）。重写 `onResponseComplete(chatId, fullText, sessionId)` 以自定义最终交付。
 
-**块级流式传输** — 在 Channel 配置中设置 `blockStreaming: "on"`。基类会自动在段落边界处将响应拆分为多条消息。无需插件代码 — 它与 `onResponseChunk` 协同工作。
+**块级流式传输** — 在 channel 配置中设置 `blockStreaming: "on"`。基类会自动在段落边界处将响应拆分为多条消息。无需插件代码 — 它与 `onResponseChunk` 协同工作。
+
+**主动投递** — 当 adapter 可以在没有活动入站请求的情况下发送时，重写 `supportsProactiveSend()` 返回 `true`。`ChannelBase` 将此能力用于持久 channel 循环、webhook 任务、后台 agent 结果和 daemon 投递。默认目标策略拒绝线程目标；仅针对你的平台能安全投递的目标形状重写受保护的目标检查：
+
+```typescript
+override supportsProactiveSend(): boolean {
+  return true;
+}
+
+protected override supportsProactiveTarget(target: SessionTarget): boolean {
+  return target.threadId === undefined;
+}
+
+protected override async pushProactive(
+  target: SessionTarget,
+  text: string,
+): Promise<void> {
+  await this.platformClient.send(target.chatId, text);
+}
+```
+
+当通用 daemon 投递接受不同的目标形状时使用 `supportsProactiveDeliveryTarget()`，当 webhook 投递与循环和后台结果不同时使用 `supportsProactiveWebhookTarget()`。保持不支持的目标被拒绝，而不是回退到另一个对话。
 
 **媒体** — 使用图片/文件填充 `envelope.attachments`。请参阅上文的 [附件](#附件)。
 

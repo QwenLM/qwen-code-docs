@@ -181,8 +181,8 @@ L'outil `agent` accepte un paramètre optionnel `isolation: "worktree"`. Lorsqu'
 
 Deux contraintes :
 
-- `isolation: "worktree"` nécessite un `subagent_type` — les sous-agents forkés (sans `subagent_type`) réutilisent tout le contexte de conversation du parent, donc les isoler diviserait l'intention de l'arbre de travail.
-- Les agents en arrière-plan (`run_in_background: true`) fonctionnent correctement avec l'isolement ; le nettoyage a lieu lorsque l'agent signale la fin.
+- `isolation: "worktree"` nécessite un `subagent_type` non-fork — les sous-agents forkés (`subagent_type: "fork"`) réutilisent tout le contexte de conversation du parent, donc les isoler diviserait l'intention de l'arbre de travail.
+- Les agents utilisant `isolation: "worktree"` suivent le comportement par défaut en arrière-plan ; le nettoyage s'exécute lorsque l'agent signale la fin. Définissez `run_in_background: false` pour un résultat en ligne. Les lancements anonymes avec `working_dir` appartenant à l'appelant s'exécutent au premier plan ; l'exécution explicite en arrière-plan est rejetée, tandis que l'exécution en arrière-plan configurée (`background: true` dans une définition de sous-agent) est rejetée au niveau supérieur et rétrogradée à une exécution au premier plan lorsqu'elle est imbriquée car leur cycle de vie est géré externement.
 
 ### Nettoyage automatique des données périmées
 

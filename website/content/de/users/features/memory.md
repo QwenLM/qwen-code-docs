@@ -91,9 +91,19 @@ Qwen speichert nicht alles – nur Dinge, die beim nächsten Mal tatsächlich n�
 
 ### Wo es gespeichert wird
 
-Auto-memory-Dateien befinden sich unter `~/.qwen/projects/<project>/memory/`. Alle Branches und Worktrees desselben Repositorys teilen sich denselben Memory-Ordner, sodass das, was Qwen in einem Branch lernt, auch in anderen verfügbar ist.
+Auto-memory-Dateien befinden sich unter `~/.qwen/projects/<project>/memory/`. Alle Branches desselben Checkouts teilen sich denselben Memory-Ordner, sodass das, was Qwen in einem Branch lernt, auch in anderen verfügbar ist. Jeder verlinkte Git-Worktree erhält seinen eigenen Memory-Ordner, entsprechend der Worktree-isolierten Trennung von Chats und anderem Sitzungszustand – Repository-weite Konventionen, die du in jedem Worktree haben möchtest, gehören in den [Team memory](#team-memory-mit-collaborators-geteilt).
 
 Alles Gespeicherte ist reines Markdown – du kannst jede Datei jederzeit öffnen, bearbeiten oder löschen.
+
+#### Pinned memory
+
+Platziere handgepflegte Dokumente, die die automatische Memory-Pflege bewahren soll, unter `pinned/` in einem verwalteten Memory-Verzeichnis, zum Beispiel `~/.qwen/projects/<project>/memory/pinned/architecture.md` oder `~/.qwen/memories/pinned/preferences.md`. Verwende dasselbe Frontmatter wie bei anderen Memory-Dokumenten. Gültige angepinnte Dateien sind für Qwen lesbar und werden beim nächsten Neubau von `MEMORY.md` berücksichtigt, unter denselben Größen- und Dateianzahl-Grenzen wie andere Memory-Dokumente.
+
+Nur das `pinned/`-Verzeichnis auf oberster Ebene direkt innerhalb eines verwalteten Memory-Roots wird geschützt; verschachtelte Verzeichnisse wie `memory/project/pinned/` sind gewöhnlicher beschreibbarer Memory. Die automatische Extraktion und Dream-Worker gleichen den reservierten Verzeichnisnamen case-insensitiv ab.
+
+Die automatische Extraktion wird angewiesen, angepinnte Datensätze und ihre gültigen Indexeinträge unverändert zu lassen, während Dream angewiesen wird, `pinned/` während der Konsolidierung zu überspringen. Sowohl die automatische Extraktion als auch geforkte Dream-Worker, einschließlich der Hintergrundbereinigung, erzwingen die pinned-Datei-Grenze bei ihren Schreib- und Bearbeitungstools, einschließlich Pfaden, die durch einen Symlink nach `pinned/` führen; ihre bestehende Read-only-Shell-Richtlinie blockiert die Befehlszeilenlöschung. Du kontrollierst diese Dateien weiterhin direkt und kannst sie mit einer expliziten `/forget`-Anfrage entfernen.
+
+> **Hinweis:** Der sichtbare `/dream`-Slash-Befehl läuft auf dem Haupt-Agenten. Er erhält dieselbe Überspring-Anweisung, erhält aber noch nicht das deterministische pro-Turn-Tool-Gate des geforkten Workers.
 
 ### Periodische Bereinigung
 

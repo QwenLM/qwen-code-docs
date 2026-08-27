@@ -2,12 +2,12 @@
 
 ## Présentation
 
-`qwen serve` est un démon local par défaut et une surface exposée dans une mauvaise configuration. Son modèle de sécurité est **en couches** afin qu'une mauvaise configuration échoue de manière sécurisée :
+`qwen serve` est un démon local par défaut et une surface exposée dans une mauvaise configuration. Son modèle de sécurité est **en couches** afin qu'une mauvaise configuration échoue de manière sécurisée (fail closed) :
 
 1. **Bind** — une liaison non-loopback sans jeton bearer **refuse de démarrer**.
 2. **Authentification Bearer** — middleware `bearerAuth` avec comparaison SHA-256 à temps constant protège chaque route sauf `/health` sur loopback (`require_auth` étend cela à loopback et `/health` aussi).
-3. **Liste blanche d'en-têtes Host** — sur loopback, seuls `localhost`, `127.0.0.1`, `[::1]`, `host.docker.internal` (plus le port) sont acceptés ; défense contre le DNS rebinding.
-4. **Contrôle d'origine** — par défaut, toute requête avec un en-tête `Origin` est rejetée avec 403. Quand `--allow-origin <pattern>` est configuré, le démon passe en mode liste blanche CORS (`allowOriginCors`) et n'autorise que les origines correspondantes.
+3. **Liste blanche d'en-têtes Host** — sur loopback, seuls `localhost`, `127.0.0.1`, `[::1]`, `host.docker.internal` (plus le port) sont acceptés ; défense contre le DNS rebinding. L'écouteur LAN Local Control est l'exception qui applique toujours sa vérification Host d'autorité annoncée, quelle que soit la liaison principale.
+4. **Contrôle d'origine** — l'application runtime installe toujours `allowOriginCors` sur une liste blanche mutable (`MutableOriginAllowlist`) : les entrées `--allow-origin <pattern>` l'initialisent, et Local Control ajoute l'origine LAN lorsqu'il est activé. Les origines non correspondantes reçoivent l'enveloppe de refus 403. Le mur de refus inconditionnel (`denyBrowserOriginCors`) ne survit que dans l'application bootstrap qui répond avant le démarrage du runtime.
 5. **Porte de mutation par route** — les routes mutantes de Wave 4 peuvent opter pour des réponses `401` même sur loopback quand aucun jeton n'est configuré, en utilisant une erreur distincte `code: 'token_required'`.
 6. **Authentification par flux d'appareil** — surface OAuth séparée pour les fournisseurs (`POST /workspace/auth/device-flow` + GET/DELETE sur `/:id`).
 
@@ -54,12 +54,9 @@ Ces trois refus sont des échecs de démarrage explicites (visibles dans stderr 
 
 ```mermaid
 flowchart LR
-    REQ[Requête] --> SO["supprimer Origin même origine<br/>(support page de démonstration)"]
-    SO --> CORS{"--allow-origin?"}
-    CORS -->|oui| AO["allowOriginCors<br/>(correspondance liste blanche)"]
-    CORS -->|non| DC["denyBrowserOriginCors<br/>(rejeter tout Origin)"]
+    REQ[Requête] --> SO["supprimer Origin même origine<br/>(support Web Shell)"]
+    SO --> AO["allowOriginCors<br/>(liste blanche mutable : motifs<br/>--allow-origin<br/>+ origine LAN Local Control)"]
     AO --> HA["hostAllowlist"]
-    DC --> HA
     HA --> LOG["middleware de journalisation d'accès<br/>(DaemonLogger)"]
     LOG --> BA["bearerAuth"]
     BA --> RL["middleware de limite de débit<br/>(quand activé)"]
@@ -73,7 +70,7 @@ flowchart LR
 
 ### `bearerAuth`
 
-- **Aucun jeton configuré** → le middleware est un no-op (loopback, développement par défaut).
+- **Aucun jeton configuré** → le middleware est un no-op (loopback, développement par défaut). Exception : l'**écouteur LAN** Local Control est limité à l'écouteur et exige toujours son identifiant de paire (`CredentialStore.isOpen` n'est jamais vrai pour `local-control`), donc il n'est jamais ouvert même sur un démon sans jeton.
 - **Jeton configuré** → SHA-256 du jeton configuré une fois à la construction ; sur chaque requête, hacher le candidat et comparer avec `timingSafeEqual`. Pas de court-circuit par égalité de chaîne ; pas de fuite temporelle.
 - **Analyse du schéma** : `Bearer` insensible à la casse selon RFC 7235 §2.1 ; tolérant `SP\tHTAB` entre schéma et identifiants selon RFC 7230 §3.2.6 BWS ; rejette le pure-HTAB comme séparateur.
 - **Renforcement CodeQL** : analyse manuelle avec `indexOf` plutôt qu'une regex avec `\s+` / `.+` en concurrence (pas de risque polynomial de regex).
@@ -87,18 +84,21 @@ Uniquement loopback. Maintient un `Set<string>` indexé par port. Hôtes autoris
 
 La comparaison d'hôte est **insensible à la casse** — Express normalise les noms d'en-tête mais pas les valeurs, donc les proxys Docker qui mettent en majuscule les Hosts (`Localhost:4170`, `HOST.docker.internal`) obtiendraient un 403 avec une comparaison de chaîne exacte.
 
-Les liaisons non-loopback contournent ce middleware (l'opérateur a choisi la surface d'attaque ; le jeton bearer protège plutôt contre l'usurpation Host).
+Les liaisons non-loopback contournent la porte principale (l'opérateur a choisi la surface d'attaque ; le jeton bearer protège plutôt contre l'usurpation Host). L'écouteur LAN Local Control est l'exception : il applique toujours sa vérification Host d'autorité annoncée, quelle que soit la liaison principale.
 
-### `denyBrowserOriginCors`
+### `denyBrowserOriginCors` (application bootstrap uniquement)
 
-Rejette toute requête avec un en-tête `Origin`. Les CLI/SDK ne définissent jamais Origin ; seuls les navigateurs le font. Retourne un `403 { error: 'Request denied by CORS policy' }` déterministe plutôt que le 500 HTML que produirait le callback d'erreur du paquet `cors`.
+Rejette toute requête avec un en-tête `Origin`. Les CLI/SDK ne définissent jamais Origin ; seuls les navigateurs le font. Retourne un `403 { error: 'Request denied by CORS policy' }` déterministe plutôt que le 500 HTML que produirait le callback d'erreur du paquet `cors`. L'application runtime n'installe plus ce mur — elle exécute `allowOriginCors` sur la liste blanche mutable (ci-dessous) ; le comportement de refus y survit comme la branche des origines sans correspondance. Le mur reste dans l'application bootstrap (run-qwen-serve.ts) qui sert les requêtes avant le démarrage du runtime.
 
-Exception : les XHR de même origine de la page de démonstration sont gérées par un middleware séparé (dans `server.ts`) qui supprime `Origin` quand il correspond à l'adresse du démon lui-même.
+Exception : les XHR de même origine du Web Shell sur une liaison **loopback** sont gérées par un middleware séparé (dans `server/self-origin.ts`) qui supprime `Origin` lorsqu'il correspond à l'une des auto-origines loopback (`127.0.0.1`, `localhost`, `[::1]`, `host.docker.internal`). Sur les liaisons non-loopback, les XHR du shell portent un `Origin` sans correspondance et nécessitent `--allow-origin` pour l'origine du démon.
 
-### `allowOriginCors` (mode `--allow-origin`)
+### `allowOriginCors` (application runtime, toujours installé)
 
-Quand `--allow-origin <pattern>` est configuré, `denyBrowserOriginCors` est
-remplacé par `allowOriginCors(parsedPatterns)` :
+L'application runtime installe `allowOriginCors(originAllowlist)` de manière
+inconditionnelle ; la liste blanche est une `MutableOriginAllowlist` initialisée
+à partir des entrées `--allow-origin <pattern>` (possiblement aucune) et étendue
+au runtime lorsque Local Control est activé (l'origine LAN est
+ajoutée/supprimée avec l'écouteur) :
 
 - Les valeurs `Origin` correspondantes reçoivent `Access-Control-Allow-Origin`,
   `Access-Control-Allow-Headers`, et `Access-Control-Allow-Methods` ; le pré-vol `OPTIONS`
@@ -114,15 +114,17 @@ remplacé par `allowOriginCors(parsedPatterns)` :
 
 Porte opt-in par route. Matrice de comportement :
 
-| configuration du démon    | options de route | résultat                         |
-| ------------------------- | ---------------- | -------------------------------- |
-| `requireAuth=true`        | quelconque       | transmission¹                     |
-| `token` configuré         | quelconque       | transmission²                     |
-| pas de jeton (loopback dev) | `strict: false` | transmission                      |
-| pas de jeton (loopback dev) | `strict: true`  | `401 { code: 'token_required' }` |
+| configuration du démon           | options de route                      | résultat                           |
+| -------------------------------- | ------------------------------------- | ---------------------------------- |
+| `requireAuth=true`               | quelconque                            | transmission¹                      |
+| `token` configuré                | quelconque                            | transmission²                      |
+| pas de jeton (loopback dev)      | `strict: false`                       | transmission                       |
+| pas de jeton (loopback dev)      | `strict: true`, non authentifié       | `401 { code: 'token_required' }`   |
+| pas de jeton (loopback dev)      | `strict: true`, authentifié³          | transmission                       |
 
 ¹ `--require-auth` démarre uniquement avec un jeton, donc le `bearerAuth` global a déjà renvoyé 401 aux appelants non authentifiés.
 ² Toute configuration de jeton fait que le `bearerAuth` global impose bearer-required-partout ; la porte est redondante mais inoffensive.
+³ Authentifié via un identifiant limité à l'écouteur : l'écouteur LAN Local Control vérifie son identifiant de paire même sur un démon sans jeton et marque la requête comme authentifiée, donc les routes strictes passent pour le client LAN apparié.
 
 La forme `code: 'token_required'` est distincte du simple `Unauthorized` de `bearerAuth` pour que les clients SDK puissent afficher une astuce "configurer --token / --require-auth" plutôt qu'un 401 générique.
 
@@ -131,7 +133,15 @@ La forme `code: 'token_required'` est distincte du simple `Unauthorized` de `bea
 `/workspace/tools/:name/enable`, `/workspace/mcp/:server/restart`,
 `/workspace/mcp/:server/{enable,disable,authenticate,clear-auth}`,
 `/workspace/mcp/servers` (POST/DELETE), `/workspace/auth/device-flow`,
-`/workspace/init`, `/session/:id/approval-mode`.
+`/workspace/init`, `/session/:id/approval-mode`, `/session/:id/rewind`, et
+`/session/:id/shell`.
+
+Le rewind reste REST-only dans le SDK TypeScript même lorsqu'un transport ACP est
+configuré. Cela préserve la porte de mutation stricte et les en-têtes bearer/identité client ;
+la table de routes ACP n'a intentionnellement pas de mapping de rewind. Le routage propriétaire
+revérifie aussi la confiance du workspace avant que le rewind ou le shell n'atteigne un bridge
+de runtime secondaire. Les IDs de session live dupliqués échouent en fail closed avec
+`ambiguous_session_owner` au lieu de revenir au runtime primaire.
 
 ### Exemption `/health`
 
@@ -233,7 +243,7 @@ sequenceDiagram
     C->>CAPS: GET /capabilities (pas d'Authorization)
     CAPS->>BA: passer à travers le middleware
     BA-->>C: 401 Unauthorized
-    Note over C,BA: le client ne peut pas pré-vérifier la balise require_auth<br/>avant de s'authentifier. La surface de découverte est le corps 401.
+    Note over C,BA : le client ne peut pas pré-vérifier la balise require_auth<br/>avant de s'authentifier. La surface de découverte est le corps 401.
 ```
 
 Après authentification, `caps.features.includes('require_auth')` confirme que le déploiement est renforcé.
@@ -256,6 +266,7 @@ sequenceDiagram
 ## État & Cycle de vie
 
 - Le jeton Bearer est lu au démarrage et tronqué (les nouvelles lignes de `cat token.txt` casseraient autrement la comparaison silencieusement).
+- Le mode CLI `--open-with-auth` s'exécute avant le démarrage : après les vérifications déterministes loopback/Web Shell, il applique la même sélection option-sur-environnement et remplit `ServeOptions.token` avec 32 octets aléatoires encodés en base64url uniquement lorsqu'aucun jeton sélectionné non vide n'existe. L'identifiant généré a une durée de vie processus, n'est pas écrit dans `process.env` ni persisté par le démon, et atteint le navigateur via le fragment URL existant. Le Web Shell conserve sa copie navigateur dans le `sessionStorage` par onglet. Le `--open` nu et les appelants directs de `runQwenServe()` ne le génèrent jamais.
 - L'ensemble des hôtes autorisés est mis en cache par port ; reconstruit en cas de changement de port (`0` éphémère → port réel après `listen`).
 - La porte de mutation construit `passthrough` et `strictDenier` une fois par construction d'application ; l'appel par route retourne la fermeture mise en cache (pas d'allocation par requête).
 - Le registre de flux d'appareil est supprimé lors de `shutdown()` Phase 1 afin que les flux en attente se résolvent en `cancelled` avant le démontage HTTP.
@@ -273,6 +284,7 @@ sequenceDiagram
 | --------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | Env             | `QWEN_SERVER_TOKEN`                                                                    | Jeton Bearer (tronqué).                                                 |
 | Drapeau         | `--token`                                                                              | Jeton Bearer (remplace l'environnement).                                |
+| Flags CLI       | `--open-with-auth`                                                                     | Réutiliser ou générer un bearer Web Shell loopback avant le démarrage du démon. |
 | Drapeau         | `--require-auth`                                                                       | Étend bearer à loopback + `/health`. Démarre uniquement avec un jeton.  |
 | Drapeau         | `--hostname`                                                                           | Liaison non-loopback nécessite `--token` (ou env).                      |
 | Drapeau         | `--allow-origin <pattern>`                                                             | Passer en mode liste blanche CORS. `'*'` nécessite un jeton.            |
@@ -282,7 +294,7 @@ sequenceDiagram
 
 - **L'ombrage `--require-auth` empêche la pré-découverte des fonctionnalités.** Les clients non authentifiés ne peuvent pas découvrir la balise `require_auth` ; leur surface de découverte est le corps 401 lui-même.
 - **Ordre analyseur de corps / porte de mutation** : les réponses 401 de `mutationGate({strict: true})` sont déclenchées **après** que `express.json()` a analysé le corps. Dans le pire cas sur un écouteur loopback saturé : `--max-connections × express.json({limit: '10mb'})` ≈ 2,5 Go transitoires. Surface d'attaque loopback uniquement, intentionnellement acceptée.
-- **Suppression de l'en-tête Origin de même origine** dans `server.ts` a lieu _avant_ `denyBrowserOriginCors`. Si un changement futur déplace la suppression ailleurs, la page de démonstration se casse.
+- **Suppression de l'en-tête Origin de même origine** dans `server.ts` a lieu _avant_ `allowOriginCors`. Si un changement futur déplace la suppression ailleurs, le Web Shell se casse.
 - **La comparaison du jeton se fait sur le digest SHA-256**, pas le jeton brut. Réduit les fuites temporelles en réduisant la comparaison de jetons de longueur variable à une comparaison de digest de taille fixe.
 - Le démon **ne porte pas** mTLS, signature de requête, ou preuve de possession par paire de jetons aujourd'hui. `--rate-limit` fournit une limitation de débit HTTP par clé client-id / IP ; ce n'est pas une authentification d'identité client.
 

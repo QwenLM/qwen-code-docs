@@ -7,10 +7,10 @@
 ## Responsabilidades
 
 - Analisar e validar `ServeOptions`: endereço de escuta, autenticação, workspace, limites de sessão/conexão, orçamento/pool de MCP, CORS, timeouts de inatividade de prompt/SSE/sessão, limite de taxa (rate limit) e toggles relacionados.
-- **Canonicalizar** o workspace vinculado exatamente uma vez. A mesma forma canônica é compartilhada por `/capabilities`, o fallback de `POST /session` e a bridge.
+- **Canonicalizar** o workspace primário exatamente uma vez e canonicalizar cada `--workspace` repetido antes de registrar os runtimes de sessão. A forma canônica primária é compartilhada por `/capabilities.workspaceCwd`, o fallback de `POST /session` e a bridge primária.
 - Rejeitar configurações de inicialização inseguras ou inválidas: bind fora do loopback sem token, `--require-auth` sem token, `--allow-origin '*'` sem token, `mcpBudgetMode='enforce'` sem um `mcpClientBudget` positivo, um `--workspace` inexistente ou que não seja um diretório, e valores inválidos de timeout ou rate limit.
 - Construir a factory `WorkspaceFileSystem`, o publisher de auditoria de permissões, o `DaemonStatusProvider` e a `acp-bridge`.
-- Construir o app Express, conectar os middlewares (`denyBrowserOriginCors` / `allowOriginCors` -> `hostAllowlist` -> access log -> `bearerAuth` -> rate limit -> JSON parser -> telemetry -> `mutationGate` por rota) e montar as rotas HTTP de sessão, CRUD de workspace, arquivo, autenticação de device-flow, votação de permissão e ACP.
+- Construir o app Express, conectar os middlewares (`allowOriginCors` sobre a allowlist mutável de origem -> `hostAllowlist` -> access log -> `bearerAuth` -> rate limit -> JSON parser -> telemetry -> `mutationGate` por rota) e montar as rotas HTTP de sessão, CRUD de workspace, arquivo, autenticação de device-flow, votação de permissão e ACP. (A barreira incondicional `denyBrowserOriginCors` permanece apenas no app de bootstrap, `run-qwen-serve.ts`.)
 - Vincular a porta de escuta e registrar os manipuladores de sinais (signal handlers).
 - Executar o desligamento em duas fases no SIGINT/SIGTERM; forçar a saída (force-exit) em um segundo sinal.
 
@@ -20,19 +20,19 @@
 
 **Factory do app**: `createServeApp(opts, getPort, deps)` em `packages/cli/src/serve/server.ts`. Constrói o `Application` do Express. Embedders diretos e testes o chamam sem o wrapper de bootstrap.
 
-**Registro de capacidades**: `SERVE_CAPABILITY_REGISTRY` em `packages/cli/src/serve/capabilities.ts`. Cada tag tem uma versão `since` e `modes` opcionais. Dez tags condicionais (`require_auth`, `mcp_workspace_pool`, `mcp_pool_restart`, `allow_origin`, `prompt_absolute_deadline`, `writer_idle_timeout`, `workspace_settings`, `session_shell_command`, `rate_limit`, `workspace_reload`) são omitidas quando seu respectivo toggle está desativado. Consulte [`11-capabilities-versioning.md`](./11-capabilities-versioning.md).
+**Registro de capacidades**: `SERVE_CAPABILITY_REGISTRY` em `packages/cli/src/serve/capabilities.ts`. Cada tag tem uma versão `since` e `modes` opcionais. Tags condicionais são omitidas quando seu predicado de deployment ou runtime é falso; o registro e o mapa de predicados são a fonte da verdade. Consulte [`11-capabilities-versioning.md`](./11-capabilities-versioning.md).
 
 **Middleware** (`packages/cli/src/serve/auth.ts` e `server.ts`):
 
 | Middleware, em ordem de registro             | Propósito                                                                                                                  | Notas                                                                                                             |
 | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `denyBrowserOriginCors` / `allowOriginCors`  | Negar todos os headers `Origin` por padrão; alternar para uma allowlist quando `--allow-origin <pattern>` estiver configurado. | Consulte [`12-auth-security.md`](./12-auth-security.md).                                                          |
-| `hostAllowlist(bind, getPort)`               | No loopback, validar se o `Host` pertence a `localhost`, `127.0.0.1`, `[::1]` ou `host.docker.internal` mais a porta real. | Defesa contra DNS rebinding. A comparação não diferencia maiúsculas de minúsculas e é armazenada em cache por porta. |
+| `allowOriginCors`                          | Sempre instalado no app de runtime sobre uma `MutableOriginAllowlist`: entradas `--allow-origin <pattern>` a inicializam; o Local Control adiciona a origem LAN enquanto habilitado; origens sem match recebem o envelope de negação 403. | Consulte [`12-auth-security.md`](./12-auth-security.md). |
+| `hostAllowlist(bind, getPort)`              | No loopback, validar se o `Host` pertence a `localhost`, `127.0.0.1`, `[::1]` ou `host.docker.internal` mais a porta real. | Defesa contra DNS rebinding. A comparação não diferencia maiúsculas de minúsculas e é armazenada em cache por porta. O listener LAN do Local Control sempre aplica sua verificação de Host de autoridade anunciada, independentemente do bind primário. |
 | Access-log middleware                        | Registra método, caminho (path), status, durationMs, sessionId e clientId no `DaemonLogger` quando uma requisição termina. | Registrado **antes** do `bearerAuth`, para que as negações 401 também sejam registradas. Ignora `/health` e heartbeat. |
 | `bearerAuth(token)`                          | Comparação de bearer em tempo constante usando SHA-256 mais `timingSafeEqual`.                                             | Passthrough aberto quando nenhum token está configurado (padrão de dev no loopback). O esquema `Bearer` não diferencia maiúsculas de minúsculas. |
 | Rate-limit middleware                        | Token bucket opcional por tier para rotas de prompt, mutação e leitura.                                                    | Registrado após o `bearerAuth` e antes da análise do JSON; retorna 429 antes da análise quando um bucket é esgotado. |
 | `express.json({ limit: '10mb' })`            | Análise do corpo (body) JSON.                                                                                              | Erros de análise retornam 400.                                                                                    |
-| `daemonTelemetryMiddleware`                  | Envolve cada requisição HTTP em um span do OpenTelemetry através do `withDaemonRequestSpan`.                               | Os atributos incluem rota, sessionId, clientId e código de status.                                                |
+| `daemonTelemetryMiddleware`                  | Envolve as requisições classificadas da API do daemon que chegam até aqui em um span do OpenTelemetry através do `withDaemonRequestSpan`. | Os atributos incluem rota canônica, hash do workspace resolvido, sessionId, clientId e código de status. Rejeições anteriores de autenticação, rate limit e body-parser estão fora desse limite de span. |
 | `createMutationGate` (por rota)              | Gate de opt-in no nível da rota para rotas de mutação que exigem token mesmo no loopback.                                  | Retorna `401 { code: 'token_required' }`. Não é um `app.use` global; as rotas chamam `mutate({ strict: true })` conforme necessário. |
 
 **Subsistemas**:
@@ -49,7 +49,7 @@
 | `serve/daemon-logger.ts`                                         | Logs de arquivo estruturados do `DaemonLogger`. Consulte [`19-observability.md`](./19-observability.md).                                                                                                                                                                                                                                                                                                                                                             |
 | `serve/debug-mode.ts`                                            | Predicado compartilhado `isServeDebugMode()` que controla o contexto de erro detalhado nas respostas HTTP.                                                                                                                                                                                                                                                                                                                                                           |
 | `serve/acp-http/`                                                | Transporte ACP Streamable HTTP (RFD #721), montado em `/acp`. Sete arquivos implementam JSON-RPC POST, SSE GET, teardown DELETE e uso compartilhado da bridge em paralelo com a superfície REST.                                                                                                                                                                                                                                                                     |
-| `serve/demo.ts`                                                  | HTML inline autossuficiente para `GET /demo`: console de debug do navegador com UI de chat, log de eventos e inspetor de workspace. No loopback sem `--require-auth`, é registrado **antes** do `bearerAuth`; fora do loopback ou com `--require-auth`, é registrado **depois** do `bearerAuth`. Servido com CSP `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'` mais `X-Frame-Options: DENY`. |
+| `serve/web-shell-static.ts`, `serve/web-shell-resolver.ts`       | Localiza e monta os assets compilados do Web Shell (a UI do navegador do daemon) em `/`, `/assets` e `/session/:id`, além do fallback de deep-link SPA registrado após todas as rotas de API. Montado **antes** de `bearerAuth` em qualquer modo de inicialização — um navegador não pode anexar `Authorization` a uma navegação ou sub-recurso — enquanto toda rota de API que ele chama permanece protegida por token. Degrada para apenas API quando os assets estão ausentes; `--no-web` desativa. |
 
 **Imports do pacote ACP bridge**:
 
@@ -61,7 +61,11 @@
 
 ### Sequência de inicialização
 
-1. **Resolver e remover espaços do token** em `opts.token` ou `QWEN_SERVER_TOKEN`; isso evita que uma nova linha final de `cat token.txt` quebre silenciosamente a comparação do bearer.
+Antes de `runQwenServe()` iniciar esta sequência, o modo `--open-with-auth` (exclusivo da CLI) valida a elegibilidade de loopback/Web Shell e preenche `ServeOptions.token` com o token configurado selecionado, ou com 32 bytes aleatórios codificados em base64url quando essa seleção estiver vazia. Embedders diretos e invocações sem essa flag (desativada por padrão) não geram um token.
+
+1. **Resolver e remover espaços do token** em `opts.token` ou
+   `QWEN_SERVER_TOKEN`; isso evita que uma nova linha final de
+   `cat token.txt` quebre silenciosamente a comparação do bearer.
 2. **Proteção contra erro de digitação no hostname**: `--hostname localhost:4170` gera um erro e sugere `--port`.
 3. **Preflight de autenticação**: fora do loopback sem token é recusado; `--require-auth` sem token é recusado.
 4. **Validação do workspace**: caminho absoluto, existe, é diretório. `EACCES` / `EPERM` são encapsulados para apontar para a flag.
@@ -75,19 +79,20 @@
 12. **Construir `fsFactory`**: `runQwenServe` usa como padrão `trusted: true`; chamadores diretos de `createServeApp` usam como padrão `trusted: false` e avisam uma vez.
 13. **`createHttpAcpBridge`**, consulte [`03-acp-bridge.md`](./03-acp-bridge.md).
 14. **`createServeApp`** monta o Express.
-15. **`server.listen(port, hostname)`**, depois resolve o `getPort()` real para a allowlist de hosts.
-16. **Registrar manipuladores SIGINT / SIGTERM** para desligamento gracioso.
+15. **Criar e vincular o ciclo de vida do servidor HTTP(S) antes de ouvir (listen)**, depois chamar `server.listen(port, hostname)` e resolver o `getPort()` real para a allowlist de hosts. A propriedade (ownership) do Conversations não pode iniciar até que esse listener e os demais gates de inicialização do host estejam prontos.
+16. **Registrar manipuladores SIGINT / SIGTERM** para desligamento gracioso através do ciclo de vida compartilhado do app.
 
 ### Desligamento gracioso
 
-1. **Fase 1 - teardown da bridge** no primeiro sinal:
+1. **Selar a admissão e iniciar todas as drenagens** no primeiro sinal:
    - Descartar o registro de device-flow e cancelar fluxos pendentes.
    - `bridge.shutdown()` marca cada canal como `isDying = true`, envia um fechamento gracioso para o stdin de cada filho ACP, aguarda `KILL_HARD_DEADLINE_MS` (10s) por canal e então chama `channel.kill()` se necessário.
-2. **Fase 2 - teardown HTTP**:
+2. **Fechar o listener enquanto o app e o host drenam**:
    - `server.close()` para de aceitar novas conexões e deixa as requisições em andamento terminarem.
    - `SHUTDOWN_FORCE_CLOSE_MS` (5s) aciona `server.closeAllConnections()`.
    - Um segundo prazo de 2s escala novamente se necessário.
-3. **Segundo sinal durante a saída**:
+3. **Liberar a propriedade (ownership) do Conversations somente após prova positiva de desligamento** do listener, trabalho local do app, trabalho de propriedade do host, limpeza do Live discovery e drenagens do runtime. Qualquer prova incompleita rejeita o desligamento em vez de permitir uma transferência insegura.
+4. **Segundo sinal durante a saída**:
    - `bridge.killAllSync()` + `process.exit(1)` para evitar que filhos órfãos bloqueiem a saída do daemon.
 
 ## Estado e ciclo de vida
@@ -96,9 +101,9 @@
 
 - `url`: URL de escuta resolvida, após a resolução da porta efêmera.
 - `port`: porta real, incluindo a resolução de `0`.
-- `close({ timeoutMs? })`: desligamento programático para embedders e testes.
+- `close()`: desligamento programático para embedders e testes.
 
-Chamar `createServeApp` diretamente retorna apenas um `Application`; o embedder é responsável pelo `listen` e pelo desligamento.
+Chamar `createServeApp` diretamente ainda retorna apenas um `Application`. Um embedder que precisa de Live/Conversations deve criar o servidor Node real, chamar `getServeAppLifecycle(app).bindServer(server)` antes do seu primeiro `listen()` e aguardar `lifecycle.close()` durante o desligamento. Sem a vinculação, as rotas comuns permanecem disponíveis, mas Live/Conversations falham com fail closed. Chamar `server.close()` diretamente aciona a limpeza orientada por eventos, mas o embedder ainda deve aguardar `lifecycle.close()` para observar falhas de drenagem ou liberação de propriedade.
 
 ## Dependências
 
@@ -121,21 +126,24 @@ Chamar `createServeApp` diretamente retorna apenas um `Application`; o embedder 
 | Env             | `QWEN_SERVE_DEBUG=1`                                                                            | Logs detalhados no stderr. Consulte [`19-observability.md`](./19-observability.md).                   |
 | Flags           | `--hostname`, `--port`                                                                          | Vinculação de escuta.                                                                                 |
 | Flags           | `--token`, `--require-auth`, `--enable-session-shell`                                           | Token bearer, reforço de autenticação no loopback e switch explícito de execução de shell.            |
-| Flag            | `--workspace`                                                                                   | Substitui `process.cwd()`.                                                                            |
+| CLI flags       | `--open-with-auth`                                                                              | Launch do Web Shell no loopback (desativado por padrão) que reutiliza ou gera um bearer com vida útil do processo antes do runtime. |
+| Flag            | `--workspace`                                                                                   | Substitui `process.cwd()`; repita para registrar runtimes de workspace isolados adicionais.            |
 | Flags           | `--max-sessions`, `--max-pending-prompts-per-session`, `--max-connections`, `--event-ring-size` | Limites da Bridge / Express.                                                                          |
 | Flags           | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}`                                 | Encaminhado para o filho ACP.                                                                         |
 | Flags           | `--allow-origin`, `--allow-private-auth-base-url`                                               | Allowlist de CORS do navegador e switch de instalação do provedor de autenticação localhost/privado.  |
-| Flags           | `--prompt-deadline-ms`, `--writer-idle-timeout-ms`, `--channel-idle-timeout-ms`                 | Controle do ciclo de vida de inatividade de prompt, writer SSE e filho ACP.                           |
+| Flag            | `--web` / `--no-web`                                                                            | Serve ou pula a UI do Web Shell na raiz do daemon (o padrão é servir). `--no-web` deixa o daemon apenas API. |
+| Flags           | `--prompt-deadline-ms`, `--writer-idle-timeout-ms`, `--channel-idle-timeout-ms`, `--initialize-timeout-ms` | Controle do ciclo de vida de inatividade de prompt, writer SSE e filho ACP, e timeout de requisição do filho ACP. |
 | Flags           | `--session-reap-interval-ms`, `--session-idle-timeout-ms`                                       | Controle de reaping de sessões desconectadas.                                                         |
 | Flags           | `--rate-limit*`                                                                                 | Limite de taxa HTTP por tier.                                                                         |
 | `settings.json` | `policy.permissionStrategy`, `policy.consensusQuorum`                                           | Política e quórum do `MultiClientPermissionMediator`.                                                 |
 | `settings.json` | `context.fileName`                                                                              | Substituição de `getCurrentGeminiMdFilename` para a bridge.                                           |
+
 Consulte [`17-configuration.md`](./17-configuration.md) para a referência consolidada.
 
 ## Ressalvas e limites conhecidos
 
 - O uso direto de `createServeApp` sem `deps.fsFactory` ou `deps.bridge` tem como padrão `trusted: false`; o `writeTextFile` do ACP no lado do agente rejeita como `untrusted_workspace`. O aviso é impresso apenas uma vez.
-- O `denyBrowserOriginCors` rejeita **todas** as requisições que carregam `Origin`; a página de demonstração funciona porque outro middleware remove primeiro os valores correspondentes de mesma origem.
+- O app de runtime executa `allowOriginCors` sobre a allowlist mutável; valores de `Origin` sem match recebem o envelope de negação 403 (a barreira incondicional `denyBrowserOriginCors` sobrevive apenas no app de bootstrap). O Web Shell de **loopback** funciona porque outro middleware remove primeiro os valores correspondentes de mesma origem do loopback — binds fora do loopback exigem `--allow-origin` para os XHRs do shell.
 - Ordem do body-parser: rotas que usam `mutate({ strict: true })` retornam 401 apenas após o `express.json()`. O pior caso é `--max-connections × express.json({limit: '10mb'})`, chegando a cerca de 2,5 GB de memória transitória em um listener de loopback saturado; esse tradeoff é intencional.
 - Múltiplos daemons em um único processo devem usar `childEnvOverrides` por handle; a mutação de `process.env` causa race conditions porque o `defaultSpawnChannelFactory` faz um snapshot do env no momento do spawn.
 

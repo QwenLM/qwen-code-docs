@@ -11,7 +11,13 @@ Ce guide explique comment configurer Qwen Code avec un robot intelligent WeCom (
 ## Création du robot
 
 1. Ouvrez la console d'administration WeCom et créez un robot intelligent.
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN017w1jWj1TTvNBcfya8_!!6000000002384-2-tps-2212-887.png)
+
 2. Choisissez le mode API.
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01buuik0207paQUuLQW_!!6000000006803-1-tps-1276-720.gif)
+
 3. Copiez le Bot ID et le Secret.
 4. Ajoutez le robot aux discussions directes ou aux groupes où il doit être disponible.
 
@@ -33,10 +39,7 @@ Ajoutez le canal à `~/.qwen/settings.json` :
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "instructions": "You are a concise coding assistant responding via WeCom.",
-      "groupPolicy": "open",
-      "groups": {
-        "*": { "requireMention": true }
-      }
+      "groupPolicy": "open"
     }
   }
 }
@@ -70,15 +73,19 @@ Ouvrez WeCom et envoyez un message au robot intelligent.
 
 ## Contrôle d'accès
 
-senderPolicy fonctionne de la même manière que pour les autres canaux de messagerie instantanée :
+`senderPolicy` fonctionne de la même manière que pour les autres canaux de messagerie instantanée :
 
-- allowlist : seuls les utilisateurs présents dans allowedUsers peuvent utiliser le bot. C'est le paramètre par défaut recommandé pour les entreprises.
-- pairing : les utilisateurs doivent s'appairer avant d'utiliser le bot.
-- open : toute personne pouvant envoyer un message au robot peut l'utiliser.
+- `allowlist` : seuls les utilisateurs présents dans `allowedUsers` peuvent utiliser le bot. C'est le paramètre par défaut recommandé pour les entreprises.
+- `pairing` : les utilisateurs doivent s'appairer avant d'utiliser le bot.
+- `open` : toute personne pouvant envoyer un message au robot peut l'utiliser.
 
-Pour les groupes, définissez groupPolicy sur `"allowlist"` ou `"open"`. Par défaut, les messages de groupe nécessitent une mention via `"requireMention": true`.
+Pour les groupes, définissez `groupPolicy` sur `"allowlist"`, `"pairing"` ou `"open"`. Avec `"pairing"`, la première mention du groupe crée une demande d'appairage qui doit être approuvée une fois avant que les réponses ne commencent. Notez qu'avec `groupPolicy: "pairing"`, l'accès est accordé par groupe : une fois qu'un groupe est approuvé, **tout membre de ce groupe** peut utiliser le bot ; `senderPolicy` et `allowedUsers` ne filtrent pas les membres d'un groupe approuvé. WeCom ne délivre que les messages de groupe qui mentionnent le robot intelligent, donc chaque callback de groupe délivré est traité comme mentionné. Le paramètre `requireMention` ne peut pas activer les réponses aux messages de groupe non mentionnés car ces messages ne sont pas délivrés au bot.
 
-Lorsque le SDK WeCom inclut des métadonnées de mention explicites, Qwen Code les utilise pour ce filtre. Si aucune métadonnée de mention n'est présente, le canal traite les messages de groupe délivrés comme non mentionnés. Définissez `"requireMention": false` uniquement si vous préférez vous fier au filtrage de livraison côté WeCom.
+### Compatibilité des mentions de groupe
+
+Les versions précédentes de Qwen Code appliquaient également le filtre générique `requireMention` après que WeCom ait délivré un callback de groupe. Comme le callback n'inclut pas de métadonnées de mention séparées, `requireMention: true` — y compris la valeur par défaut — pouvait rejeter chaque message de groupe délivré et faire paraître le chat de groupe non fonctionnel.
+
+Qwen Code s'appuie désormais sur la livraison limitée aux mentions de WeCom et n'applique pas de seconde décision de mention. Les configurations WeCom existantes contenant soit `requireMention: true` soit `requireMention: false` restent valides et ne produisent pas d'erreurs de configuration. Les deux valeurs ont le même comportement pour WeCom, donc le champ peut être supprimé. Les autres paramètres dans la même entrée de groupe, comme `dispatchMode`, continuent de s'appliquer. `groupHistoryLimit` reste accepté mais ne peut pas collecter de nouvel historique WeCom car les messages de groupe non mentionnés ne sont pas délivrés.
 
 ## Images et fichiers
 
@@ -102,8 +109,8 @@ Par mesure de sécurité, les chemins des images locales doivent se trouver dans
 
 ### Le bot ne répond pas dans les groupes
 
-- Vérifiez groupPolicy.
-- Mentionnez le bot sauf si la configuration du groupe définit `"requireMention": false`.
+- Vérifiez `groupPolicy`.
+- Mentionnez le bot dans le groupe.
 - Confirmez que le robot a été ajouté au groupe.
 
 ### Les identifiants de l'application auto-créée ne fonctionnent pas

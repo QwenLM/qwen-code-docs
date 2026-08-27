@@ -59,6 +59,7 @@
   - 答：使用 `--safe-mode` 标志启动 Qwen Code，以在本次会话中禁用所有自定义项——上下文文件、hooks、extensions、skills、MCP servers、自定义 subagents（仅加载内置 subagents）、权限规则、来自设置的审批模式覆盖、内存功能和沙盒设置。注意：CLI 标志 `--yolo` 和 `--approval-mode` 在安全模式下仍然生效。如果在安全模式下问题消失，请逐个重新启用你的自定义项以找出罪魁祸首。
     - 示例：`qwen --safe-mode`
     - 替代方案：如果 CLI 无法接受标志，请设置环境变量 `QWEN_CODE_SAFE_MODE=true`。
+    - 注意：此处的"MCP servers"指在 `settings.json` / 项目 `.mcp.json` 中配置的服务器 —— 即本地、环境状态，正是安全模式旨在隔离的对象。你为当前调用显式提供的 MCP 服务器（嵌入 ACP 客户端的 `session/new` `mcpServers`，或 `--mcp-config`）不属于本地/环境状态，在安全模式下仍然有效。
 
 ## 常见错误信息及解决方案
 
@@ -99,7 +100,12 @@
 - **问题：tmux 中的触控板滚动会更改提示历史记录，而不是滚动对话**
   - **现象：** 在 tmux 会话中，触控板或滚轮滚动可能会循环浏览之前的提示，类似于按 `Up Arrow` 或 `Down Arrow`。
   - **原因：** tmux 可以将滚轮手势转换为普通的箭头键序列。当 qwen-code 接收到这些序列时，无法将它们与真实的箭头键按下区分开来。
-  - **解决方案：** 启用 `ui.useTerminalBuffer`；然后使用 `Shift+Up` / `Shift+Down`，或者在 tmux 将滚轮事件转发给应用时使用鼠标滚轮。如果你倾向于使用宿主机回滚，请调整 tmux 中针对滚轮事件的鼠标绑定。
+  - **解决方案：** 如果屏幕阅读器模式已关闭，请确保 `ui.useTerminalBuffer` 已启用；然后使用 `Shift+Up` / `Shift+Down`，或者在 tmux 将滚轮事件转发给应用时使用鼠标滚轮（需要 `ui.mouseTracking`）。如果你倾向于使用宿主机回滚，请调整 tmux 中针对滚轮事件的鼠标绑定。
+
+- **问题：右键无反应、链接无法打开、或终端中无法选择文本**
+  - **现象：** 当 Qwen Code 运行时，原生右键上下文菜单、OSC 8 超链接点击（Ctrl+Click 或直接点击 URL）以及终端原生的文本选择停止工作。
+  - **原因：** 当 `ui.mouseTracking` 启用（默认）时，Qwen Code 通过 SGR 鼠标跟踪捕获所有鼠标事件，以支持应用内文本选择、点击定位、行悬停和视口滚动。终端将每个鼠标事件转发给应用，而不是原生处理。
+  - **解决方案：** 在 `settings.json` 中设置 `"ui.mouseTracking": false` 以恢复原生右键菜单和可点击的 URL 链接。这将关闭所有应用内鼠标交互。在虚拟化历史记录（`ui.useTerminalBuffer: true`，默认）中，滚轮将不再滚动对话记录 —— 请使用 `Shift+↑/↓`、`PgUp/PgDn` 或 `Ctrl+Home/End` 代替。要同时恢复终端原生回滚，请设置 `"ui.useTerminalBuffer": false`。需要重启。
 
 ## IDE Companion 无法连接
 

@@ -2,7 +2,7 @@
 
 ## Überblick
 
-`McpTransportPool` (`packages/core/src/tools/mcp-transport-pool.ts`) ist der F2 (#4175 Commit 5) Workspace-weite Pool: Mehrere ACP-Sitzungen auf einem Daemon teilen sich einen Transport pro eindeutigem `(serverName + configFingerprint)`-Tupel, anstatt dass jede ihren eigenen MCP-Kindprozess startet. Der Pool lebt **innerhalb des ACP-Kindprozesses** (`QwenAgent.mcpPool`), wird einmalig beim Start des Agenten mit der Bootstrap-`Config` des Daemons erstellt und überlebt Sitzungslebenszyklen. Einträge zählen die Referenzen der Sitzungszuordnungen und schließen nach einer konfigurierbaren Nachlaufzeit, wenn der Referenzzähler null erreicht.
+`McpTransportPool` (`packages/core/src/tools/mcp-transport-pool.ts`) ist der F2 (#4175 Commit 5) Workspace-weite Pool: Mehrere ACP-Sessions innerhalb einer Runtime teilen sich einen Transport pro eindeutigem `(serverName + configFingerprint)`-Tupel, anstatt dass jede ihren eigenen MCP-Kindprozess startet. Wenn der Pool-Modus aktiviert ist, besitzt jeder gestartete ACP-Kindprozess einen unabhängigen Pool (`QwenAgent.mcpPool`). Die Produktion versucht, den primären Kindprozess vorzuwärmen und wiederholt den ersten Versuch nach einem Fehlschlag; ein vertrauenswürdiger Secondary startet seinen Kindprozess on demand, während ein nicht vertrauenswürdiger Secondary weder den Pool noch den Kindprozess startet. Der Pool wird einmalig beim Agentenstart mit der Bootstrap-`Config` der Runtime erstellt und überlebt Session-Lebenszyklen. Einträge zählen die Referenzen der Session-Zuordnungen und schließen nach einer konfigurierbaren Nachlaufzeit, wenn der Referenzzähler null erreicht.
 
 Es ist der Hauptmechanismus, der verhindert, dass ein Multi-Sitzungs-Daemon für jede Sitzung eine Kopie jedes MCP-Servers fork-t.
 
@@ -314,9 +314,9 @@ zu hängen. `forceShutdown` verwendet dieselbe Reihenfolge (Emit-dann-Detach).
 
 Der Pool-Key stammt von `fingerprint(cfg)` in `mcp-pool-key.ts`. Der Hash umfasst alle transportdefinierenden Felder:
 
-> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, oauth`
+> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, versionNegotiation, oauth`
 
-Filter- und Metadatenfelder pro Sitzung (`includeTools`, `excludeTools`, `trust`, `description`, `extensionName`, `discoveryTimeoutMs`) werden ausgeschlossen, sodass Sitzungen mit unterschiedlichen Filtern einen gemeinsamen Eintrag nutzen können.
+Filter- und Metadatenfelder pro Sitzung (`includeTools`, `excludeTools`, `trust`, `description`, `extensionName`, `discoveryTimeoutMs`) werden ausgeschlossen, sodass Sitzungen mit unterschiedlichen Filtern einen gemeinsamen Eintrag nutzen können. Die automatische Negotiation-Opt-In ist enthalten, da sie ändert, wie der zugrunde liegende Prozess sich verbindet.
 
 Für die OAuth-Zelle hasht `canonicalOAuth(o)` jedes `MCPOAuthConfig`-Feld: `clientId`, `clientSecret`, sortierte `scopes`, sortierte `audiences`, `authorizationUrl`, `tokenUrl`, `redirectUri`, `tokenParamName` und `registrationUrl`. Dies ist der Credential-Isolationsvertrag: Zwei Sitzungskonfigurationen, die sich nur durch `clientSecret`, `audiences` oder `redirectUri` unterscheiden, erhalten unterschiedliche Fingerprints und können keinen gemeinsamen Eintrag nutzen. Vertrauliche Clients und Multi-Audience-Token-Bereitstellungen hängen davon ab.
 

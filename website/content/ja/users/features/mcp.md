@@ -1,3 +1,5 @@
+---
+
 # MCP経由でQwen Codeをツールに接続する
 
 Qwen Codeは、[Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction)を通じて外部ツールやデータソースに接続できます。MCPサーバーにより、Qwen Codeはあなたのツール、データベース、APIにアクセスできるようになります。
@@ -219,6 +221,24 @@ Qwen Codeは、UIがすでにインタラクティブになった後、バック
 
 既存の`timeout`フィールドは**ツール呼び出し**のタイムアウト（各`tools/call`リクエストに使用され、デフォルトは10分）であり、`discoveryTimeoutMs`の影響は受けません。長時間実行されるツール呼び出しはスタートアップの問題ではありません。
 
+### 自動Stdioネゴシエーション
+
+Stdioサーバーはデフォルトでシングルプロセスのレガシー初期化フローを使用します。モダン専用のStdioサーバーに接続するには、自動プロトコルネゴシエーションを有効にします:
+
+```jsonc
+{
+  "mcpServers": {
+    "modern-server": {
+      "command": "node",
+      "args": ["./server.js"],
+      "versionNegotiation": "auto",
+    },
+  },
+}
+```
+
+自動ネゴシエーションは、セッションプロセスを起動する前に設定されたサーバーの短命なコピーを実行し、検出バジェットのうち最大5秒を使用します。非冪等なスタートアップ副作用を持つサーバー、単一オーナーのロックやPIDファイルを持つサーバー、または遅い初期化ハンドシェイクを持つサーバーには、デフォルトのレガシーポリシーを維持してください。
+
 ### 段階的MCPのロールバック
 
 古い同期動作（CLIがUIを表示する前にすべてのMCPサーバーを待つ）が必要な場合は、環境変数に`QWEN_CODE_LEGACY_MCP_BLOCKING=1`を設定してください。これは少なくとも1リリースの間、エスケープハッチとして保持されます。
@@ -227,7 +247,15 @@ Qwen Codeは、UIがすでにインタラクティブになった後、バック
 
 ### 信頼（確認のスキップ）
 
-- **サーバー信頼**（`trust: true`）: そのサーバーの確認プロンプトをバイパスします（使用は慎重に）。
+- **サーバー信頼**（`trust: true`）: 信頼されたワークスペース内でのみ、そのサーバーの確認プロンプトをバイパスします（使用は慎重に）。
+
+### 接続損失時のリプレイ
+
+Qwen Code は、サーバーに `trust: true` が設定され、ワークスペースが信頼されており、ツールが `idempotentHint: true` または一貫した読み取り専用の注釈を明示的に宣言している場合にのみ、現在の MCP ツール呼び出しを再接続してリプレイします。読み取り専用の注釈は `destructiveHint: true` または `idempotentHint: false` と競合し、リプレイされません。
+
+注釈が欠落している場合、注釈が競合している場合、信頼されていないサーバーの場合、または信頼されていないワークスペースの場合は、接続障害後にリプレイされません。Qwen Code は、サーバーが応答が失われる前に操作を完了していた可能性があるため、結果が不明である可能性があることを報告します。再試行する前に結果を確認してください。この保守的な動作は、注釈のないツールを透過的にリトライしていた以前のリリースとは異なる場合があります。
+
+注釈はサーバーが提供する動作のヒントであり、権限や認可の境界ではありません。自身が制御し、注釈を検証したサーバーに対してのみ `trust: true` を設定してください。
 
 ### OAuth認証
 
@@ -251,13 +279,21 @@ OAuthフローには、認証プロバイダーが認証コードを送信する
 
 - **ローカル開発**: デフォルトでは、Qwen Codeは`http://localhost:7777/oauth/callback`を使用します。これは、ローカルマシンでローカルブラウザを使用してQwen Codeを実行している場合に機能します。
 
-- **リモート/クラウドデプロイ**: リモートサーバー、クラウドIDE、またはWebターミナルでQwen Codeを実行する場合、デフォルトの`localhost`リダイレクトは機能**しません**。OAuthコールバックを受信できる公開アクセス可能なURLを指すように`--oauth-redirect-uri`を必ず設定する必要があります。
+- **リモート/クラウドデプロイ**: リモートサーバー、クラウドIDE、またはWebターミナルでQwen Codeを実行する場合、デフォルトの`localhost`リダイレクトは機能**しません**。`--oauth-redirect-uri` に `/oauth/callback` で終わる公開 URL を設定し、そのパスを Qwen Code が動作しているマシンの `http://127.0.0.1:7777/oauth/callback` にリバースプロキシしてください。Qwen Code は TLS を終端しません。プロキシが TLS を終端する必要があります。
 
 リモートサーバーの例:
 
 ```bash
 qwen mcp add --transport sse remote-server https://api.example.com/sse/ \
   --oauth-redirect-uri https://your-remote-server.example.com/oauth/callback
+```
+
+例えば、リバースプロキシでこのコールバックパスのみをローカルリスナーに転送できます。
+
+```nginx
+location = /oauth/callback {
+  proxy_pass http://127.0.0.1:7777;
+}
 ```
 
 #### settings.jsonによる手動設定
@@ -400,7 +436,8 @@ Qwen Code内の`/mcp`ダイアログを使用して、MCPサーバーを検査�
 | `env`                  | object                       | サーバープロセスの環境変数。値は`$VAR_NAME`または`${VAR_NAME}`構文を使用して環境変数を参照できます                                                                                                                                |
 | `cwd`                  | string                       | Stdioトランスポートの作業ディレクトリ                                                                                                                                                                                                                             |
 | `timeout`              | number<br>(default: 600,000) | ミリ秒単位の要求タイムアウト（デフォルト: 600,000ミリ秒 = 10分）                                                                                                                                                                                                 |
-| `trust`                | boolean<br>(default: false)  | `true`の場合、このサーバーのすべてのツール呼び出し確認をバイパスします（デフォルト: `false`）                                                                                                                                                                              |
+| `versionNegotiation`   | `"auto" \| "legacy"`<br>(default: `"legacy"`) | Stdioサーバーの場合、`"auto"`は使い捨ての兄弟プロセスでのプロトコルネゴシエーションを有効にします。デフォルトの`"legacy"`はセッションプロセスのみを起動します。                                                                                                               |
+| `trust`                | boolean<br>(default: false)  | `true`の場合、信頼されたワークスペース内でこのサーバーのツール呼び出し確認をバイパスします（デフォルト: `false`）                                                                                                                                                                              |
 | `includeTools`         | array                        | このMCPサーバーから含めるツール名のリスト。指定した場合、ここにリストされているツールのみがこのサーバーから利用可能になります（許可リスト動作）。指定しない場合、デフォルトですべてのツールが有効になります。                                       |
 | `excludeTools`         | array                        | このMCPサーバーから除外するツール名のリスト。ここにリストされているツールは、サーバーによって公開されていてもモデルが利用できません。<br>注: `excludeTools`は`includeTools`よりも優先されます。ツールが両方のリストにある場合、除外されます。 |
 | `targetAudience`       | string                       | アクセスしようとしているIAP保護アプリケーションで許可リストに登録されているOAuthクライアントID。`authProviderType: 'service_account_impersonation'`と併用します。                                                                                                         |
@@ -428,7 +465,7 @@ qwen mcp add [options] <name> <commandOrUrl> [args...]
 | `-e`, `--env`               | 環境変数を設定します。                                          | —                                      | `-e KEY=value`                                                     |
 | `-H`, `--header`            | SSEおよびHTTPトランスポートのHTTPヘッダーを設定します。                       | —                                      | `-H "X-Api-Key: abc123"`                                           |
 | `--timeout`                 | 接続タイムアウトをミリ秒で設定します。                             | —                                      | `--timeout 30000`                                                  |
-| `--trust`                   | サーバーを信頼します（すべてのツール呼び出し確認プロンプトをバイパス）。       | — (`false`)                            | `--trust`                                                          |
+| `--trust`                   | サーバーを信頼します。信頼されたワークスペースでの確認をスキップします。         | — (`false`)                            | `--trust`                                                          |
 | `--description`             | サーバーの説明を設定します。                                 | —                                      | `--description "Local tools"`                                      |
 | `--include-tools`           | 含めるツールのカンマ区切りリスト。                         | すべてのツールが含まれる                     | `--include-tools mytool,othertool`                                 |
 | `--exclude-tools`           | 除外するツールのカンマ区切りリスト。                         | なし                                   | `--exclude-tools mytool`                                           |

@@ -2,7 +2,7 @@
 
 ## Übersicht
 
-Ein `qwen serve`-Prozess ist **ein Daemon = ein Workspace**. Er beherbergt einen einzelnen Express-HTTP-Server, besitzt eine `@qwen-code/acp-bridge`-Instanz und erzeugt einen ACP-Kindprozess (`qwen --acp`), der die eigentliche Agent-Laufzeitumgebung ausführt. Mehrere Clients (CLI TUI, IDE-Begleiter, IM-Channel-Bots, Web-BFFs, benutzerdefinierte Skripte) verbinden sich über HTTP + SSE und teilen sich entweder eine ACP-Sitzung (`sessionScope: 'single'`, Standard) oder teilen Sitzungen nach Gesprächsfaden auf (`sessionScope: 'thread'`).
+Ein `qwen serve`-Prozess beherbergt standardmäßig einen Express-HTTP-Server und einen primären Workspace. Mit aktiviertem `multi_workspace_sessions` kann er zusätzlich weitere Workspace-Runtimes für den Live-Session-Closed-Loop beherbergen; jeder registrierte Workspace besitzt sein eigenes `@qwen-code/acp-bridge`- / `qwen --acp`-Kindprozess-Paar. Mehrere Clients (CLI TUI, IDE-Begleiter, IM-Channel-Bots, Web-BFFs, benutzerdefinierte Skripte) verbinden sich über HTTP + SSE und teilen sich entweder eine ACP-Session (`sessionScope: 'single'`, Standard) oder teilen Sessions nach Gesprächsfaden auf (`sessionScope: 'thread'`).
 
 Innerhalb des ACP-Kindprozesses werden MCP-Server Workspace-weit über `McpTransportPool` (F2) gemeinsam genutzt: Ein einzelnes Tupel aus (Servername + Konfigurationsfingerabdruck) wird auf einen MCP-Transport abgebildet, unabhängig davon, wie viele Sitzungen ihn entdecken. Der `MultiClientPermissionMediator` (F3) der Bridge koordiniert Berechtigungsvoten aller verbundenen Clients unter einer von vier Richtlinien.
 
@@ -20,7 +20,7 @@ flowchart LR
         SDK["Any SDK consumer<br/>(packages/sdk-typescript/src/daemon)"]
     end
 
-    subgraph daemon["qwen serve process (one workspace)"]
+    subgraph daemon["qwen serve process (primary workspace plus optional session runtimes)"]
         EXP["Express app<br/>(packages/cli/src/serve/server.ts)"]
         BR["AcpBridge<br/>(packages/acp-bridge/src/bridge.ts)"]
         MED["MultiClientPermissionMediator<br/>(F3)"]
@@ -154,7 +154,7 @@ sequenceDiagram
     participant CH as ACP child
 
     C->>MW: POST /session/:id/prompt<br/>Authorization: Bearer …<br/>X-Qwen-Client-Id: …
-    MW->>MW: denyBrowserOriginCors
+    MW->>MW: allowOriginCors (mutable allowlist; unmatched Origin -> 403)
     MW->>MW: hostAllowlist (DNS rebinding guard)
     MW->>MW: access-log hook
     MW->>MW: bearerAuth (constant-time compare)
@@ -196,7 +196,7 @@ sequenceDiagram
     Note over EB,SR: If subscriber queue >= maxQueued,<br/>EventBus emits client_evicted terminal frame<br/>and closes subscriber.
 ```
 
-Der Ringpuffer ist begrenzt (`eventRingSize`, Standard 8000). Ein sich wieder verbindender Client, dessen `Last-Event-ID` älter als der Kopf des Rings ist, erhält ein synthetisches Catch-up-Signal und muss `loadSession` / `resumeSession` aufrufen, um den tieferen Zustand wiederherzustellen. Langsame Clients lösen bei 75 % Queue-Füllung `slow_client_warning` und am Cap `client_evicted` aus.
+Der Ringpuffer ist begrenzt (`eventRingSize`, Standard 8000). Ein sich wieder verbindender Client, dessen `Last-Event-ID` älter als der Kopf des Rings ist, erhält `state_resync_required` und muss aus dem begrenzten Replay-Snapshot-Fenster von `loadSession` neu aufbauen oder `resumeSession` verwenden, wenn bereits lokale Historie vorhanden ist. Langsame Clients lösen bei 75 % Queue-Füllung `slow_client_warning` und am Cap `client_evicted` aus.
 
 ## Workflow 3: Multi-Client-Berechtigungsvermittlung
 

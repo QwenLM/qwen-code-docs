@@ -56,6 +56,39 @@ qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "Apply the follow-up refac
 > - Sitzungsdaten sind projektbezogene JSONL-Dateien unter `~/.qwen/projects/<sanitized-cwd>/chats`.
 > - Stellt den Konversationsverlauf, Tool-Ausgaben und Chat-Komprimierungs-Checkpoints wieder her, bevor der neue Prompt gesendet wird.
 
+## Ein persistentes Ziel ausführen
+
+Der Headless-Modus akzeptiert `/goal` als vollständigen Prompt. Der Goal-Zustand wird in der Sitzung gespeichert, verwende also `--continue` oder `--resume <sessionId>`, um dasselbe Goal von einem späteren Prozess aus zu inspizieren oder zu steuern. Dies erfordert, dass `general.chatRecording` aktiviert bleibt (Standard).
+
+```bash
+# Ein Goal erstellen und seinen Worker starten
+qwen -p "/goal Finish the release checklist"
+
+# Seinen gespeicherten Zustand in derselben Sitzung inspizieren
+qwen --continue -p "/goal"
+```
+
+Verwende das gleiche `qwen --continue -p "<control>"`-Muster für die anderen Operationen:
+
+| Control                              | Verhalten                                                                              |
+| ------------------------------------ | -------------------------------------------------------------------------------------- |
+| `/goal`                              | Den gespeicherten Zustand ohne Modellaufruf melden.                                    |
+| `/goal <objective>` oder `/goal set …` | Das Goal erstellen oder ersetzen und die Headless-Goal-Arbeit starten.                 |
+| `/goal edit <objective>`             | Ein nicht abgeschlossenes Goal überarbeiten; die Arbeit startet sofort, wenn der resultierende Zustand aktiv ist. |
+| `/goal pause`                        | Ein aktives Goal pausieren, ohne das Modell aufzurufen.                                |
+| `/goal resume`                       | Ein berechtigtes Goal fortsetzen und die Headless-Goal-Arbeit starten.                 |
+| `/goal clear`                        | Das Goal ohne Bestätigung oder Modellaufruf löschen.                                   |
+
+Ein Goal ist nur so gut wie seine Abschlussbedingung. Siehe [Goals](./goals.md), was der Verifier beurteilen kann und was nicht, und verwende `qwen -p "/goal-draft <intent>"`, um das Ziel formulieren zu lassen, bevor du es setzt.
+
+Laufzeitgeplante Goal-Fortsetzungssegmente zählen nicht gegen `--max-session-turns`, aber echte Benutzer-Prompts schon. Explizite `--max-wall-time`- und `--max-tool-calls`-Budgets gelten weiterhin; das Überschreiten eines davon pausiert aktive Goal-Arbeit, bevor der Lauf mit dem budget-spezifischen Fehler beendet wird.
+
+Mit `--output-format stream-json` gibt jede Goal-Zustandsänderung ein `stream_event` aus, dessen `event.type` `goal_state` ist. Dieses kanonische Zustands-Event wird auch ohne `--include-partial-messages` ausgegeben. Wenn Partial Messages aktiviert sind, folgt das ältere `active_goal`-Event als Kompatibilitätsprojektion; Automatisierungen sollten `goal_state` als maßgeblich betrachten.
+
+> [!note]
+>
+> Dieses Verhalten gilt für standardmäßige Headless-CLI-Läufe. ACP verwendet weiterhin den Legacy-Goal-Befehlspfad.
+
 ## Haupt-Sitzungsprompt anpassen
 
 Du kannst den System-Prompt der Hauptsitzung für einen einzelnen CLI-Lauf ändern, ohne gemeinsam genutzte Speicherdateien zu bearbeiten.
@@ -182,6 +215,8 @@ Ausgabe (Streaming beim Auftreten von Events):
 
 In Kombination mit `--include-partial-messages` werden zusätzliche Stream-Events in Echtzeit (message_start, content_block_delta, etc.) für Echtzeit-UI-Updates ausgegeben.
 
+Für JSON- und Stream-JSON-Ausgabe sind textuelle `tool_result.content`-Werte nach der JSON-String-Serialisierung auf 65.536 UTF-8 Bytes begrenzt. Übergroße Werte werden als deterministische Kopf-/Ende-Vorschauen ausgegeben. Dieselbe Grenze gilt für persistente Stream-JSON-Sessions, SDK-Transports, Subagent-Tool-Ergebnisse und Dual Output. Der Textmodus gibt weiterhin nur die finale Antwort aus, behält aber intern nur die begrenzte Vorschau. Dieses Limit begrenzt nicht eine gesamte JSON-Session, ein JSONL-Event, eine Tool-Eingabe oder eine Partial-Message.
+
 ```bash
 qwen -p "Write a Python script" --output-format stream-json --include-partial-messages
 ```
@@ -208,7 +243,7 @@ qwen -p "Explain Docker" --output-format json > docker-explanation.json
 qwen -p "Add more details" >> docker-explanation.txt
 
 # An andere Tools weiterleiten
-qwen -p "What is Kubernetes?" --output-format json | jq '.response'
+qwen -p "What is Kubernetes?" --output-format json | jq -r '.[-1].result'
 qwen -p "Explain microservices" | wc -w
 qwen -p "List programming languages" | grep -i "python"
 
@@ -283,14 +318,14 @@ cat src/auth.py | qwen -p "Review this authentication code for security issues" 
 
 ```bash
 result=$(git diff --cached | qwen -p "Write a concise commit message for these changes" --output-format json)
-echo "$result" | jq -r '.response'
+echo "$result" | jq -r '.[-1].result'
 ```
 
 ### API-Dokumentation
 
 ```bash
 result=$(cat api/routes.js | qwen -p "Generate OpenAPI spec for these routes" --output-format json)
-echo "$result" | jq -r '.response' > openapi.json
+echo "$result" | jq -r '.[-1].result' > openapi.json
 ```
 
 ### Batch-Codeanalyse
@@ -299,7 +334,7 @@ echo "$result" | jq -r '.response' > openapi.json
 for file in src/*.py; do
     echo "Analyzing $file..."
     result=$(cat "$file" | qwen -p "Find potential bugs and suggest improvements" --output-format json)
-    echo "$result" | jq -r '.response' > "reports/$(basename "$file").analysis"
+    echo "$result" | jq -r '.[-1].result' > "reports/$(basename "$file").analysis"
     echo "Completed analysis for $(basename "$file")" >> reports/progress.log
 done
 ```
@@ -308,7 +343,7 @@ done
 
 ```bash
 result=$(git diff origin/main...HEAD | qwen -p "Review these changes for bugs, security issues, and code quality" --output-format json)
-echo "$result" | jq -r '.response' > pr-review.json
+echo "$result" | jq -r '.[-1].result' > pr-review.json
 ```
 
 ### Log-Analyse
@@ -321,7 +356,7 @@ grep "ERROR" /var/log/app.log | tail -20 | qwen -p "Analyze these errors and sug
 
 ```bash
 result=$(git log --oneline v1.0.0..HEAD | qwen -p "Generate release notes from these commits" --output-format json)
-response=$(echo "$result" | jq -r '.response')
+response=$(echo "$result" | jq -r '.[-1].result')
 echo "$response"
 echo "$response" >> CHANGELOG.md
 ```
@@ -330,12 +365,12 @@ echo "$response" >> CHANGELOG.md
 
 ```bash
 result=$(qwen -p "Explain this database schema" --include-directories db --output-format json)
-total_tokens=$(echo "$result" | jq -r '.stats.models // {} | to_entries | map(.value.tokens.total) | add // 0')
-models_used=$(echo "$result" | jq -r '.stats.models // {} | keys | join(", ") | if . == "" then "none" else . end')
-tool_calls=$(echo "$result" | jq -r '.stats.tools.totalCalls // 0')
-tools_used=$(echo "$result" | jq -r '.stats.tools.byName // {} | keys | join(", ") | if . == "" then "none" else . end')
+total_tokens=$(echo "$result" | jq -r '.[-1].stats.models // {} | to_entries | map(.value.tokens.total) | add // 0')
+models_used=$(echo "$result" | jq -r '.[-1].stats.models // {} | keys | join(", ") | if . == "" then "none" else . end')
+tool_calls=$(echo "$result" | jq -r '.[-1].stats.tools.totalCalls // 0')
+tools_used=$(echo "$result" | jq -r '.[-1].stats.tools.byName // {} | keys | join(", ") | if . == "" then "none" else . end')
 echo "$(date): $total_tokens tokens, $tool_calls tool calls ($tools_used) used with models: $models_used" >> usage.log
-echo "$result" | jq -r '.response' > schema-docs.md
+echo "$result" | jq -r '.[-1].result' > schema-docs.md
 echo "Recent usage trends:"
 tail -5 usage.log
 ```

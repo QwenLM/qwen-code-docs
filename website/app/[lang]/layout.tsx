@@ -8,7 +8,9 @@ import { LanguageDropdown } from "../../src/components/language-dropdown";
 import { ThemeToggle } from "../../src/components/theme-toggle";
 import { GitHubStarLink } from "../../src/components/github-star-link";
 import { Search } from "../../src/components/search";
+import { MobileMenu } from "../../src/components/mobile-menu";
 import { withBasePath } from "../../src/lib/utils";
+import { modifyUpdatesSidebar } from "../../src/lib/blog-utils";
 import NextLink from "next/link";
 import { notFound } from "next/navigation";
 import type { FC, ReactNode } from "react";
@@ -20,7 +22,7 @@ type LayoutProps = Readonly<{
   }>;
 }>;
 
-const LOCALES = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR"];
+const LOCALES = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR", "ko"];
 
 const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
   const { lang } = await params;
@@ -30,6 +32,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
   }
 
   let sourcePageMap = await getPageMap(`/${lang}`);
+  sourcePageMap = modifyUpdatesSidebar(sourcePageMap as any, lang) as any;
   //@ts-ignore
   // 用 fs 模块将 sourcePageMap 保存到本地
 
@@ -74,11 +77,13 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
     lang === "fr" ? "Rechercher dans la documentation..." :
     lang === "ru" ? "Поиск в документации..." :
     lang === "pt-BR" ? "Pesquisar documentação..." :
+    lang === "ko" ? "문서 검색..." :
     "Search documentation..."
   } lang={lang} className='shrink-0' />
       <GitHubStarLink projectLink='https://github.com/QwenLM/qwen-code' className='shrink-0' />
       <LanguageDropdown currentLang={lang} compactOnTablet className='max-md:hidden shrink-0' />
       <ThemeToggle />
+      <MobileMenu lang={lang} />
     </Navbar>
   );
 
@@ -96,6 +101,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
         { locale: "ru", name: "Русский" },
         { locale: "ja", name: "日本語" },
         { locale: "pt-BR", name: "Português (BR)" },
+        { locale: "ko", name: "한국어" },
       ]}
       search={false}
       sidebar={{ defaultMenuCollapseLevel: 2 }}

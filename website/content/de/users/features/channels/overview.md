@@ -1,6 +1,12 @@
+---
+
+---
+
 # Channels
 
-Mit Channels kannst du über Messaging-Plattformen wie Telegram, WeChat, QQ, DingTalk oder Feishu mit einem Qwen Code Agenten interagieren, anstatt über das Terminal. Du sendest Nachrichten von deinem Smartphone oder einer Desktop-Chat-App, und der Agent antwortet genauso wie in der CLI.
+Mit Channels kannst du über Messaging-Plattformen wie Telegram, WeChat, QQ, DingTalk, WeCom oder Feishu mit einem Qwen Code Agenten interagieren, anstatt über das Terminal. Du sendest Nachrichten von deinem Smartphone oder einer Desktop-Chat-App, und der Agent antwortet genauso wie in der CLI.
+
+Code-Hosting-Plattformen (beginnend mit [GitHub](./github)) und authentifizierte Workspace-Accounts (beginnend mit [DingTalk Workspace](./dws)) werden ebenfalls über Channels unterstützt.
 
 ## Funktionsweise
 
@@ -15,7 +21,7 @@ Alle Channels teilen sich einen Agenten-Prozess mit isolierten Sessions pro Benu
 
 ## Schnellstart
 
-1. Richte einen Bot auf deiner Messaging-Plattform ein (siehe channel-spezifische Anleitungen: [Telegram](./telegram), [WeChat](./weixin), [QQ Bot](./qqbot), [DingTalk](./dingtalk), [Feishu](./feishu))
+1. Richte einen Bot oder authentifizierten Workspace-Account ein (siehe channel-spezifische Anleitungen: [Telegram](./telegram), [WeChat](./weixin), [QQ Bot](./qqbot), [DingTalk](./dingtalk), [DingTalk Workspace](./dws), [WeCom](./wecom), [Feishu](./feishu), [GitHub](./github))
 2. Füge die Channel-Konfiguration zu `~/.qwen/settings.json` hinzu
 3. Führe `qwen channel start` aus, um alle Channels zu starten, oder `qwen channel start <name>` für einen einzelnen Channel
 
@@ -37,6 +43,7 @@ Channels werden unter dem Schlüssel `channels` in der `settings.json` konfiguri
       "cwd": "/path/to/working/directory",
       "instructions": "Optional system instructions for the agent.",
       "groupPolicy": "disabled",
+      "dmPolicy": "open",
       "groups": {
         "*": { "requireMention": true }
       }
@@ -49,18 +56,23 @@ Channels werden unter dem Schlüssel `channels` in der `settings.json` konfiguri
 
 | Option                   | Erforderlich     | Beschreibung                                                                                                                                                            |
 | ------------------------ | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `type`                   | Ja               | Channel-Typ: `telegram`, `weixin`, `qq`, `dingtalk`, `feishu` oder ein benutzerdefinierter Typ aus einer Erweiterung (siehe [Plugins](./plugins))                                          |
-| `token`                  | Telegram         | Bot-Token. Unterstützt die `$ENV_VAR`-Syntax zum Lesen aus Umgebungsvariablen. Nicht erforderlich für WeChat, DingTalk oder Feishu                                                   |
+| `type`                   | Ja               | Channel-Typ: `telegram`, `weixin`, `qq`, `dingtalk`, `dws`, `wecom`, `feishu`, `github`, `gitlab` oder ein benutzerdefinierter Typ aus einer Erweiterung (siehe [Plugins](./plugins))                       |
+| `token`                  | Telegram         | Bot-Token. Unterstützt die `$ENV_VAR`-Syntax zum Lesen aus Umgebungsvariablen. Nicht erforderlich für WeChat, DingTalk, WeCom oder Feishu                                            |
 | `clientId`               | DingTalk, Feishu | DingTalk AppKey oder Feishu App ID. Unterstützt die `$ENV_VAR`-Syntax                                                                                                           |
 | `clientSecret`           | DingTalk, Feishu | DingTalk AppSecret oder Feishu App Secret. Unterstützt die `$ENV_VAR`-Syntax                                                                                                    |
+| `botId`                  | WeCom            | WeCom intelligent robot Bot ID. Unterstützt die `$ENV_VAR`-Syntax. Siehe [WeCom](./wecom)                                                                                       |
+| `secret`                 | WeCom            | WeCom intelligent robot Secret. Unterstützt die `$ENV_VAR`-Syntax. Siehe [WeCom](./wecom)                                                                                       |
 | `model`                  | Nein             | Modell, das für diesen Channel verwendet werden soll (z. B. `qwen3.5-plus`). Überschreibt das Standardmodell. Nützlich für multimodale Modelle, die Bildeingaben unterstützen                               |
 | `senderPolicy`           | Nein             | Wer mit dem Bot kommunizieren kann: `allowlist` (Standard), `open` oder `pairing`                                                                                                   |
 | `allowedUsers`           | Nein             | Liste der Benutzer-IDs, die den Bot verwenden dürfen (wird von den Richtlinien `allowlist` und `pairing` verwendet)                                                                                   |
-| `sessionScope`           | Nein             | Wie Sessions abgegrenzt werden: `user` (Standard), `thread` oder `single`                                                                                                       |
+| `sessionScope`           | Nein             | Wie Sessions abgegrenzt werden: `user` (Standard), `chat_thread` oder `single`. Legacy `thread` bleibt kompatibel, wenn bereits konfiguriert, wird aber für neue WebShell-Konfigurationen nicht mehr angeboten |
 | `cwd`                    | Nein             | Arbeitsverzeichnis für den Agenten. Standardmäßig das aktuelle Verzeichnis                                                                                                     |
+| `approvalMode`           | Nein             | Tool-Genehmigungsmodus für Channel-Sessions. Unbeaufsichtigte Webhook-Tasks erfordern `yolo`; die Einstellung gilt für jede Session auf dem Channel                                  |
 | `instructions`           | Nein             | Benutzerdefinierte Anweisungen, die der ersten Nachricht jeder Session vorangestellt werden                                                                                                     |
-| `groupPolicy`            | Nein             | Gruppenchat-Zugriff: `disabled` (Standard), `allowlist` oder `open`. Siehe [Group Chats](#group-chats)                                                                       |
-| `groupHistoryLimit`      | Nein             | Optionales Nachladen der Gruppenhistorie. `0` oder weggelassen deaktiviert es. Eine positive Zahl speichert so viele autorisierte, nicht erwähnte Gruppennachrichten für die nächste Bot-Erwähnung/Antwort. |
+| `webhooks`               | Nein             | Webhook-Quellen und Zustellziele für daemon-verwaltete Channels. Siehe [Webhook-triggered tasks](#webhook-triggered-tasks)                                              |
+| `groupPolicy`            | Nein             | Gruppenchat-Zugriff: `disabled` (Standard), `allowlist`, `pairing` oder `open`. Siehe [Group Chats](#group-chats)                                                                       |
+| `dmPolicy`               | Nein             | Private/DM-Zugriff: `open` (Standard) oder `disabled` (alle DMs still verwerfen). Nützlich für Bots nur für Gruppen                                                                  |
+| `groupHistoryLimit`      | Nein             | Optionales Nachladen der Gruppenhistorie. `0` oder weggelassen deaktiviert es. Eine positive Zahl speichert so viele nicht erwähnte Gruppennachrichten von autorisierten Absendern oder Mitgliedern genehmigter gepaarter Gruppen für die nächste Bot-Erwähnung/Antwort. |
 | `groups`                 | Nein             | Einstellungen pro Gruppe. Schlüssel sind Gruppenchat-IDs oder `"*"` für Standardwerte. Siehe [Group Chats](#group-chats)                                                                     |
 | `dispatchMode`           | Nein             | Was passiert, wenn du eine Nachricht sendest, während der Bot beschäftigt ist: `steer` (Standard), `collect` oder `followup`. Siehe [Dispatch Modes](#dispatch-modes)                         |
 | `blockStreaming`         | Nein             | Progressive Antwortauslieferung: `on` oder `off` (Standard). Siehe [Block Streaming](#block-streaming)                                                                        |
@@ -85,18 +97,74 @@ Steuert, wie Konversations-Sessions verwaltet werden:
 
 ### Channel Memory
 
-Channel Memory ermöglicht es einem autorisierten Channel-Mitglied, stabilen Kontext für einen Chat oder Thread zu speichern. Qwen Code injiziert diesen Kontext, wenn eine neue Channel-Session startet, auch nach `/clear`.
+Channel Memory speichert dauerhaften Kontext für einen Chat oder Thread. Einträge haben stabile
+IDs, sodass eine Listen-Antwort für deterministische Folgeoperationen verwendet werden kann.
 
-Beispiele in natürlicher Sprache:
+- `记住：默认使用 staging 环境` ist die deterministische Form und speichert genau einen
+  Skalareintrag für den aktuellen Chat oder Thread.
+- Um mehrere separate Fakten in einer Anfrage zu speichern, verwende eine natürliche Phrase, die
+  über den Classifier geleitet wird. Zum Beispiel:
+  `请记住这三条约定：使用 staging；发布前测试；优先中文回复` erstellt Einträge,
+  die du unabhängig verwalten kannst. Exakte Duplikate werden übersprungen und
+  gemeldet, ohne einen weiteren Eintrag zu erstellen. Anfragen, die nach
+  Anmeldedaten aussehen, werden abgelehnt; entferne Geheimnisse und speichere die
+  nicht sensiblen Fakten separat.
+- `查看记忆` listet Einträge und ihre stabilen IDs auf. Verwende `查看第 2 页记忆`, um
+  eine spätere Seite anzuzeigen, `查看记忆 <id>`, um einen Eintrag anzuzeigen, oder eine
+  natürliche gefilterte Anfrage wie `只看中文偏好`, um die passenden Einträge aufzulisten.
+- `查看刚才那条记忆`, `把关于 staging 的记忆改成默认使用 production` und
+  `忘掉刚才那条` funktionieren, wenn sich die natürliche Referenz auf genau einen
+  Eintrag auflösen lässt. Natürliche Updates und Löschungen zeigen zuerst die
+  vorgeschlagene Änderung. Bestätige ein Update mit `确认更新记忆` oder
+  `confirm memory update`, oder eine Löschung mit `确认删除记忆` oder
+  `confirm memory removal`, innerhalb von 60 Sekunden. Exakte-ID-Updates und
+  -Löschungen bleiben sofort und benötigen keine Bestätigung.
+- `清空记忆` startet den Alles-löschen-Bestätigungsflow; `确认清空记忆` schließt
+  ihn ab.
 
-- `记住：默认使用 staging 环境` speichert den Kontext für den aktuellen Chat oder Thread.
-- `你记一下以后回复前要说 1122` speichert den extrahierten persistenten Kontext.
-- `你现在都记住了什么` zeigt den gespeicherten Kontext für den aktuellen Chat oder Thread an.
-- `把这个聊天的记忆清空` startet den Löschvorgang; `确认清空记忆` bestätigt ihn.
+Wenn eine natürliche Inspektions-, Update- oder Löschanfrage mehrere Einträge trifft,
+gibt der Bot die Kandidaten-IDs und Vorschauen zurück, ohne den Memory zu ändern. Es
+gibt keine ausstehende Auswahl für ein mehrdeutiges Ergebnis: wiederhole die Anfrage
+mit einer exakten ID, wie `忘掉 m-a31f0d82c7e4`. Exakte-ID-Operationen bleiben der
+deterministische Schnellpfad. Eine natürliche Anfrage ohne Treffer meldet, dass kein
+Eintrag gefunden wurde.
 
-Gruppenchats können den gespeicherten Kontext anzeigen, aber Schreib- und Löschvorgänge sind blockiert, um zu verhindern, dass der gemeinsame Kontext zu einem Prompt-Injection-Pfad für andere Teilnehmer wird.
+Ausstehende Update-, Lösch- und Alles-löschen-Bestätigungen gelten nur für den Absender und
+den Chat oder Thread, der sie erstellt hat. Eine neuere Alles-löschen-, natürliche Update-
+oder natürliche Löschvorschlage ersetzt eine ältere ausstehende für denselben Absender und
+das selbe Ziel. Ausstehende Bestätigungen werden verworfen, wenn der Channel-Prozess
+neu startet.
 
-Nur Benutzer, die in `allowedUsers` aufgeführt sind, können den Channel-Speicher lesen, schreiben oder löschen. Wenn `allowedUsers` leer ist, sind die Channel-Memory-Befehle für alle deaktiviert.
+Die Legacy-Slash-Aliase `/remember-channel`, `/channel-memory` und
+`/forget-channel` wurden entfernt. Sie sind keine Channel-Memory-
+Befehle mehr.
+
+Channel Memory folgt den Channel-Zugangs-Gates. Jede von `senderPolicy`,
+`dmPolicy`, `groupPolicy`, Gruppeneinstellungen, Pairing und Erwähnungs-
+Anforderungen akzeptierte Nachricht kann Memory für diesen Chat oder Thread lesen,
+schreiben, aktualisieren oder löschen. Akzeptierte Mitglieder derselben Gruppe teilen
+sich den Ziel-Speicher der Gruppe. Verwende `allowlist`- oder `pairing`-Richtlinien,
+wenn der Gruppen-Memory auf vertrauenswürdige Absender beschränkt sein soll.
+
+Bestehender Legacy-`CHANNEL.md`-Memory wird bei der ersten Mutation automatisch in
+strukturierten `CHANNEL.json`-Speicher migriert. Strukturierter Memory bleibt über
+Neustarts von eigenständigen Channels und daemon-verwalteten Channels erhalten und
+wird injiziert, wenn eine neue zielbereichsbezogene Session startet, auch nach `/clear`.
+
+Nach dieser ersten Injektion ruft jede akzeptierte Nachricht auch bis zu drei
+relevante Einträge für diese Nachricht ab. Dies hält dauerhafte Fakten während einer
+lang laufenden Session verfügbar, ohne jeden gespeicherten Eintrag zu jedem Turn
+hinzuzufügen. Der Abruf basiert auf der aktuellen Nachricht und verändert den
+gespeicherten Memory nicht.
+
+Memory bleibt auf den aktuellen Chat oder Thread bezogen. Er wird nicht in einer
+`sessionScope: single`-Session injiziert oder abgerufen, da diese Session über den
+gesamten Channel geteilt wird und nicht auf ein Ziel bezogen ist.
+
+Channel Memory lernt nicht automatisch Fakten aus normalen Gesprächen und
+akzeptiert `第一个` nicht als Bestätigung für eine mehrdeutige natürliche Referenz.
+Verwende eine klare Remember-Anfrage und eine exakte Eintrags-ID, wenn eine
+natürliche Referenz mehrdeutig ist.
 
 ### Token-Sicherheit
 
@@ -123,7 +191,7 @@ Wenn `senderPolicy` auf `"pairing"` gesetzt ist, durchlaufen unbekannte Absender
 qwen channel pairing approve my-channel VEQDDWXJ
 ```
 
-Nach der Genehmigung wird die Benutzer-ID in `~/.qwen/channels/<name>-allowlist.json` gespeichert und alle zukünftigen Nachrichten werden normal durchgelassen.
+Nach der Genehmigung wird die Benutzer-ID in der workspace-bezogenen Allowlist des Channels gespeichert (`~/.qwen/channels/<workspace-scope>/<name>-allowlist.json`) und alle zukünftigen Nachrichten werden normal durchgelassen. Der Pairing-Status ist pro Workspace bereichsbezogen, sodass zwei Workspaces, die denselben Channel-Namen verwenden, separate Genehmigungen behalten.
 
 ### Pairing-CLI-Befehle
 
@@ -135,17 +203,19 @@ qwen channel pairing list my-channel
 qwen channel pairing approve my-channel <CODE>
 ```
 
+Führe diese im Workspace-Verzeichnis des Channels aus (oder übergib `--cwd <dir>`) — der Pairing-Status wird pro Workspace gespeichert.
+
 ### Pairing-Regeln
 
 - Codes sind 8 Zeichen lang, großgeschrieben und verwenden ein eindeutiges Alphabet (keine `0`/`O`/`1`/`I`)
 - Codes laufen nach 1 Stunde ab
-- Maximal 3 ausstehende Anfragen pro Channel gleichzeitig — zusätzliche Anfragen werden ignoriert, bis eine abläuft oder genehmigt wird
-- Benutzer, die in `allowedUsers` in der `settings.json` aufgeführt sind, überspringen das Pairing immer
-- Genehmigte Benutzer werden in `~/.qwen/channels/<name>-allowlist.json` gespeichert — behandle diese Datei als vertraulich
+- Maximal 3 ausstehende Anfragen pro Channel gleichzeitig und höchstens eine pro Absender — zusätzliche Anfragen werden abgelehnt, bis eine abläuft oder genehmigt wird
+- Benutzer, die in `allowedUsers` in der `settings.json` aufgeführt sind, überspringen das Benutzer-Pairing; unter `groupPolicy: "pairing"` muss die Gruppe selbst weiterhin genehmigt werden
+- Genehmigte Benutzer werden pro Workspace in `~/.qwen/channels/<workspace-scope>/<name>-allowlist.json` gespeichert — behandle diese Datei als vertraulich
 
 ## Gruppenchats
 
-Standardmäßig funktioniert der Bot nur in Direktnachrichten. Um die Gruppenchat-Unterstützung zu aktivieren, setze `groupPolicy` auf `"allowlist"` oder `"open"`.
+Standardmäßig funktioniert der Bot nur in Direktnachrichten. Um die Gruppenchat-Unterstützung zu aktivieren, setze `groupPolicy` auf `"allowlist"`, `"pairing"` oder `"open"`.
 
 ### Gruppenrichtlinie
 
@@ -153,7 +223,22 @@ Steuert, ob der Bot überhaupt an Gruppenchats teilnimmt:
 
 - **`disabled`** (Standard) — Der Bot ignoriert alle Gruppennachrichten. Sicherste Option.
 - **`allowlist`** — Der Bot antwortet nur in Gruppen, die explizit in `groups` nach Chat-ID aufgeführt sind. Der Schlüssel `"*"` liefert Standardeinstellungen, fungiert aber **nicht** als Wildcard-Erlaubnis.
+- **`pairing`** — Eine bewusste Erwähnung oder Antwort aus einer unbekannten Gruppe erstellt eine Pairing-Anfrage für die Gruppe. Nach der Genehmigung kann jedes Mitglied den Bot in dieser Gruppe verwenden; `senderPolicy` steuert weiterhin Direktnachrichten.
 - **`open`** — Der Bot antwortet in allen Gruppen, zu denen er hinzugefügt wird. Mit Vorsicht zu verwenden.
+
+Genehmige eine Gruppe mit demselben CLI-Befehl, der für das Benutzer-Pairing verwendet wird. Die ausstehende Anfrage identifiziert die Gruppe und das Mitglied, das sie initiiert hat:
+
+```bash
+qwen channel pairing approve my-channel <CODE>
+```
+
+Gruppen-Genehmigungen werden nach der Chat-ID der Gruppe im Workspace-Bereich des Channels gespeichert. Auf GitHub und GitLab ist die Chat-ID der Repository-/Projektpfad, sodass eine Umbenennung oder ein Transfer die gespeicherte Genehmigung ablöst — genehmige die Gruppe nach einer Umbenennung erneut. Ein Repo oder Projekt, das unter demselben Pfad neu erstellt wird, erbt jede veraltete Genehmigung — widerrufe Gruppen-Genehmigungen nach jeder Umbenennung, jedem Transfer oder jeder Löschung.
+Eine nicht erwähnte Nachricht erstellt niemals eine Gruppen-Pairing-Anfrage, auch wenn eine Gruppe `requireMention` auf `false` setzt; nach der Genehmigung gilt die konfigurierte Erwähnungsrichtlinie normal.
+
+Gruppen-Pairing-Anfragen teilen sich dieselbe Warteschlange wie DM-Pairing-Anfragen:
+ein Channel hat insgesamt höchstens 3 ausstehende Anfragen, und ein Absender hat
+höchstens eine ausstehende Anfrage über Benutzer- und Gruppen-Anfragen hinweg (siehe
+[Pairing-Regeln](#pairing-regeln)).
 
 ### Mention Gating
 
@@ -201,7 +286,7 @@ Standardmäßig ignoriert Qwen nicht erwähnte Gruppennachrichten und speichert 
 
 - Weggelassen oder `0` deaktiviert das Nachladen.
 - `groupHistoryLimit` auf Gruppenebene überschreibt den Wert auf Channel-Ebene.
-- Nur Nachrichten von autorisierten Absendern werden persistent gespeichert.
+- Nur Nachrichten von autorisierten Absendern oder Mitgliedern einer genehmigten gepaarten Gruppe werden persistent gespeichert.
 - Nachrichten, die von `groupPolicy` oder der Gruppen-Allowlist abgelehnt werden, werden nicht persistent gespeichert.
 - Ausstehende Gruppenhistorie wird als lokales JSONL unter `~/.qwen/channels/<channel-name>-group-history.jsonl` oder `$QWEN_HOME/channels/<channel-name>-group-history.jsonl` gespeichert.
 - Zwischengespeicherte Nachrichten werden beim nächsten echten Trigger als nicht vertrauenswürdiger Kontext injiziert und nicht als eigenständige Session-Turns geschrieben.
@@ -209,10 +294,11 @@ Standardmäßig ignoriert Qwen nicht erwähnte Gruppennachrichten und speichert 
 ### Wie Gruppennachrichten ausgewertet werden
 
 ```
-1. groupPolicy — ist diese Gruppe erlaubt?           (nein → ignorieren)
-2. requireMention — wurde der Bot erwähnt/auf ihn geantwortet? (nein → ignorieren)
-3. senderPolicy — ist dieser Absender genehmigt?     (nein → Pairing-Prozess)
-4. An Session weiterleiten
+1. groupPolicy — ist diese Gruppe deaktiviert, aufgelistet, gepaart oder offen? (nein → ignorieren/Pairing-Flow)
+2. dmPolicy — ist diese DM erlaubt?                      (disabled → ignorieren)
+3. requireMention — wurde der Bot erwähnt/auf ihn geantwortet? (nein → ignorieren)
+4. senderPolicy — ist dieser Absender genehmigt?             (übersprungen für eine gepaarte Gruppe; sonst nein → Benutzer-Pairing-Flow)
+5. An Session weiterleiten
 ```
 
 ### Telegram-Einrichtung für Gruppen
@@ -220,6 +306,7 @@ Standardmäßig ignoriert Qwen nicht erwähnte Gruppennachrichten und speichert 
 1. Füge den Bot zu einer Gruppe hinzu
 2. **Deaktiviere den Privacy-Modus** im BotFather (`/mybots` → Bot Settings → Group Privacy → Turn Off) — andernfalls sieht der Bot keine Nicht-Befehls-Nachrichten
 3. **Entferne den Bot und füge ihn wieder hinzu**, nachdem du den Privacy-Modus geändert hast (Telegram cached diese Einstellung)
+
 ### Eine Gruppen-Chat-ID finden
 
 Um die Chat-ID einer Gruppe für die `groups`-Allowlist zu finden:
@@ -270,7 +357,9 @@ Dateien funktionieren mit jedem Modell – keine multimodale Unterstützung erfo
 | Dateien  | Direkter Download über Bot API (20-MB-Limit) | CDN-Download mit AES-Entschlüsselung | downloadCode API (zweistufig)                 | Open-API-Resources-Endpoint (50-MB-Limit)                   |
 | Captions | Foto-/Datei-Captions als Nachrichtentext enthalten | Nicht zutreffend               | Rich Text: gemischter Text + Bilder in einer Nachricht | Rich Text (`post`): Text extrahiert; eingebettete Bilder ignoriert |
 
-> Der QQ Bot verarbeitet keine eingehenden Medien – Bild- und Sticker-Nachrichten werden ignoriert, daher gibt es oben keine Zeile für die Medienverarbeitung.
+> QQ Bot verarbeitet keine eingehenden Medien – Bild- und Sticker-Nachrichten werden ignoriert, daher gibt es oben keine Zeile für die Medienverarbeitung.
+>
+> WeCom akzeptiert Text, Bilder, gemischten Text mit Bildern, Dateien, Videos und Sprachnachrichten (transkribiert). Bilder werden als Anhänge an den Agenten übergeben; Dateien und Videos werden in temporäre lokale Pfade heruntergeladen. Siehe [WeCom](./wecom#images-and-files) für Details.
 
 ## Dispatch-Modi
 
@@ -305,7 +394,8 @@ Du kannst den Dispatch-Modus auch pro Gruppe festlegen und damit den Channel-Sta
 
 ## Block-Streaming
 
-Standardmäßig arbeitet der Agent eine Weile und sendet dann eine einzige große Response. Wenn Block-Streaming aktiviert ist, trifft die Response in mehreren kürzeren Nachrichten ein, während der Agent noch arbeitet – ähnlich wie ChatGPT oder Claude progressive Ausgaben anzeigen.
+Standardmäßig arbeitet der Agent eine Weile und sendet dann eine einzige große Response. Wenn Block-Streaming aktiviert ist...
+
 
 ```json
 {
@@ -331,6 +421,49 @@ Standardmäßig arbeitet der Agent eine Weile und sendet dann eine einzige groß
 
 Nur `blockStreaming` ist erforderlich. Die Chunk- und Coalesce-Einstellungen sind optional und haben sinnvolle Standardwerte.
 
+## Scheduled Channel Loops
+
+Channels haben einen persistenten Scheduler für Prompts, die später ausgeführt werden sollen und
+ihr Ergebnis zurück in denselben Chat pushen. Du kannst den Agenten natürlich fragen, zum
+Beispiel `Every 15 minutes, check the deployment and report any change`, oder die lokalen
+Befehle direkt verwenden:
+
+```text
+/loop add "*/15 * * * *" check the deployment and report any change
+/loop list
+/loop inspect <id>
+/loop cancel <id>
+```
+
+Der Agent verwendet die Tools `channel_loop_create`, `channel_loop_list` und
+`channel_loop_cancel`, wenn er diese Jobs für dich verwaltet. Zeitpläne verwenden
+Standard-Cron-Ausdrücke mit fünf Feldern in der lokalen Zeit des Rechners. Der Job läuft
+unbeaufsichtigt und seine finale Antwort wird automatisch an den Chat zugestellt, der
+ihn erstellt hat.
+
+Channel Loops unterscheiden sich von den sessionbezogenen Tasks in
+[Run Prompts on a Schedule](../scheduled-tasks):
+
+- Sie werden unter `$QWEN_HOME/channels/` gespeichert – eigenständige Channels verwenden
+  `cron.json` direkt, während daemon-verwaltete Channels eine pro-Workspace-Datei
+  unter `daemon/` verwenden. Beide überstehen Channel-Neustarts.
+- Sie sind auf den aktuellen Channel-Chat oder -Thread bezogen. Jedes Ziel kann bis zu
+  10 aktivierte Loops haben, und jeder Prompt ist auf 4.000 Zeichen begrenzt.
+- Sie erfordern einen Adapter und ein Ziel, die proaktive Zustellung unterstützen. Telegram,
+  DingTalk, Feishu und WeCom sind aktiviert, vorbehaltlich plattformspezifischer
+  Zielbeschränkungen.
+- Sie sind nicht verfügbar mit `sessionScope: "single"`, da dieser Scope nicht an
+  ein Chat-Ziel gebunden ist.
+- Ein gespeicherter Loop ist deaktiviert, wenn sein Ziel zum fälligen Zeitpunkt nicht mehr
+  autorisiert ist.
+
+## Background Agent Results
+
+Wenn der Agent Arbeit an einen Hintergrund-Subagenten oder Fork delegiert, wird das
+Ergebnis zurück an den Channel-Chat zugestellt, dem die Session gehört. Die Zustellung
+kann nach dem ursprünglichen Turn erfolgen, also halte den Channel-Service oder
+Daemon am Laufen, während Hintergrundarbeit aktiv ist.
+
 ## Slash Commands
 
 Channels unterstützen Slash Commands. Diese werden lokal verarbeitet (kein Agent-Roundtrip):
@@ -338,10 +471,14 @@ Channels unterstützen Slash Commands. Diese werden lokal verarbeitet (kein Agen
 - `/help` – Verfügbare Befehle auflisten
 - `/clear` – Deine Session löschen und neu starten (Aliase: `/reset`, `/new`)
 - `/status` – Session-Infos und Access-Policy anzeigen
+- `/loop add "<cron>" <prompt>` – Einen persistenten geplanten Channel-Loop erstellen
+- `/loop list` – Loops für den aktuellen Chat auflisten
+- `/loop inspect <id>` – Loop-Status und Run-Details anzeigen
+- `/loop cancel <id>` – Einen Loop deaktivieren
 
 Alle anderen Slash Commands (z. B. `/compress`, `/summary`) werden an den Agenten weitergeleitet.
 
-Diese Befehle funktionieren bei allen Channel-Typen (Telegram, WeChat, QQ, DingTalk, Feishu).
+Diese Befehle funktionieren bei allen Channel-Typen (Telegram, WeChat, QQ, DingTalk, WeCom, Feishu, GitHub), wobei die Loop-Erstellung auch die proaktive Zustellungsunterstützung für den aktuellen Adapter und das aktuelle Ziel erfordert.
 
 ## Ausführen
 
@@ -361,7 +498,7 @@ qwen channel stop
 
 Der Bot läuft im Vordergrund. Drücke `Strg+C` zum Stoppen oder verwende `qwen channel stop` in einem anderen Terminal.
 
-### Experimenteller Daemon-verwalteter Modus
+### Experimenteller daemon-verwalteter Modus
 
 Du kannst konfigurierte Channels auch unter `qwen serve` ausführen:
 
@@ -371,13 +508,134 @@ qwen serve --channel my-channel
 
 # Alle konfigurierten Channels starten
 qwen serve --channel all
+
+# Oder Channels später auf einem Token-geschützten Daemon aktivieren
+QWEN_SERVER_TOKEN=secret qwen serve
+qwen channel set my-channel --token secret
+
+# Die daemon-verwaltete Auswahl abfragen oder stoppen
+qwen channel status --daemon-url http://127.0.0.1:4170 --token secret
+qwen channel stop --daemon-url http://127.0.0.1:4170 --token secret
 ```
 
-Dieser Modus startet einen Channel-Worker-Prozess, der von `qwen serve` verwaltet wird. Der Worker verbindet sich über das SDK zurück mit dem Daemon und verwendet dieselben Channel-Adapter. Er ist vom Daemon-Prozess getrennt, sodass ein Absturz eines Channel-Adapters nicht den Daemon zum Absturz bringt.
+Dieser Modus startet workspace-gruppierte Channel-Worker-Prozesse, die `qwen serve` gehören. Worker verbinden sich über das SDK zurück mit dem Daemon und verwenden dieselben Channel-Adapter. Sie sind vom Daemon-Prozess getrennt, sodass ein Absturz eines Channel-Adapters nicht den Daemon zum Absturz bringt. Ein Daemon, der ohne `--channel` gestartet wurde, lädt keine Channel-Adapter und reserviert nicht die Channel-Service-PID-Lease bis zum ersten `qwen channel set`.
 
-`qwen serve --channel` ist nicht derselbe Service wie `qwen channel start`. Das eigenständige `qwen channel start` verwendet weiterhin den ACP-gestützten Channel-Service und kann Channel-Konfigurationen mit unterschiedlichen `cwd`-Werten ausführen. Daemon-verwaltete Channels erfordern, dass das `cwd` jedes ausgewählten Channels zum Daemon-Workspace aufgelöst wird.
+`qwen serve --channel` ist nicht derselbe Service wie `qwen channel start`. Das eigenständige `qwen channel start` verwendet weiterhin den ACP-gestützten Channel-Service und kann Channel-Konfigurationen mit unterschiedlichen `cwd`-Werten ausführen. Daemon-verwaltete Channels erfordern, dass das `cwd` jedes ausgewählten Channels zu einem vom Daemon registrierten Workspace aufgelöst wird. Im Multi-Workspace-Modus behält eine Auswahl-Ersetzung Worker für Workspaces, deren geordnete Channel-Liste sich nicht geändert hat; `all` bleibt auf den primären Workspace beschränkt.
 
-Wenn Channels über `serve` verwaltet werden, zeigt `qwen channel status` als Owner `qwen serve` an, und `qwen channel stop` weist dich an, den Daemon zu stoppen, anstatt den Worker direkt zu signalisieren. Wenn ein bereiter Worker unerwartet beendet wird, läuft der Daemon weiter und meldet eine Channel-Worker-Warnung in `/daemon/status`.
+Ohne `--daemon-url` behalten `qwen channel status` und `qwen channel stop` das eigenständige Pidfile-Verhalten. Deren `--daemon-url`-Varianten fragen den Daemon-Manager ab oder stoppen ihn. Laufzeitauswahlen werden nicht in Settings geschrieben und überleben Daemon-Neustarts nicht. Wenn ein bereiter Worker unerwartet beendet wird, läuft der Daemon weiter und meldet eine Channel-Worker-Warnung in `/daemon/status`.
+
+## Webhook-triggered tasks
+
+Daemon-verwaltete Channels können auch authentifizierte Webhook-Ereignisse akzeptieren. Qwen empfängt das Ereignis als Kontext, fasst zusammen und entscheidet, was relevant ist, und stellt dann die finale Antwort dem konfigurierten Chat-Ziel zu. Dies ist kein roher Benachrichtigungs-Relay.
+Webhook-Tasks erfordern `approvalMode: "yolo"`, da sie ohne interaktive Genehmigung laufen. Diese Einstellung gilt für den gesamten Channel, nicht nur für Webhook-Turns, also verwende einen dedizierten Webhook-Channel oder schränke normale Chat-Absender für diesen Channel stark ein.
+
+Beispiel-Channel-Konfiguration:
+
+```json
+{
+  "channels": {
+    "dingtalk-main": {
+      "type": "dingtalk",
+      "clientId": "$DINGTALK_CLIENT_ID",
+      "clientSecret": "$DINGTALK_CLIENT_SECRET",
+      "cwd": "/repo",
+      "senderPolicy": "allowlist",
+      "allowedUsers": ["12345"],
+      "approvalMode": "yolo",
+      "sessionScope": "user",
+      "webhooks": {
+        "sources": {
+          "github-ci": {
+            "secretEnv": "QWEN_CHANNEL_GITHUB_CI_SECRET",
+            "targets": {
+              "operator": {
+                "chatId": "DINGTALK_USER_ID",
+                "senderId": "webhook:github-ci",
+                "isGroup": false
+              },
+              "team": {
+                "chatId": "OPEN_CONVERSATION_ID",
+                "senderId": "webhook:github-ci",
+                "isGroup": true
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Für DingTalk setze `isGroup` explizit bei jedem Ziel. Ein Direktnachrichten-Ziel verwendet die DingTalk-Benutzer-ID als `chatId` mit `isGroup: false`; ein Gruppen-Ziel verwendet die Gruppen-`openConversationId` mit `isGroup: true`. Andere Adapter benötigen möglicherweise ihre eigene proaktive Ziel-Form.
+
+Daemon-verwaltete DingTalk-, Feishu-, Telegram- und WeCom-Channels beobachten dynamisch Kontakte aus autorisierten eingehenden Nachrichten. Liste im primären Workspace beobachtete Kontakte innerhalb des Standard-Frischefensters von sieben Tagen auf:
+
+```bash
+curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
+  http://127.0.0.1:4170/workspace/channel/observed-contacts
+```
+
+Verwende `GET /workspaces/:workspace/channel/observed-contacts`, um einen anderen registrierten, vertrauenswürdigen Workspace auszuwählen. Füge `?freshWithinSeconds=N` hinzu, um ein Fenster von einer Sekunde bis 365 Tage zu wählen. Der Daemon bewirbt diese API mit der `workspace_channel_observed_contacts`-Capability.
+
+Die Response gibt vollständige Plattform-IDs und Labels zurück. Gruppen-Labels verwenden Namen, die bereits in akzeptierten eingehenden Nachrichten vorhanden sind, wenn verfügbar: DingTalk liefert `conversationTitle`, und Telegram liefert `chat.title`. Feishu- und WeCom-Gruppen-Labels fallen derzeit auf ihre vollständigen IDs zurück; keine Plattform-Verzeichnis- oder Gruppendetail-API wird abgefragt. Topic-Labels fallen ebenfalls auf vollständige IDs zurück. Jedes `lastObservedAt` ist ein kanonischer ISO 8601 UTC-Timestamp mit Millisekunden-Genauigkeit; Clients können ihn in die lokale Zeitzone des Benutzers umrechnen. Top-Level `users` enthält in Direktnachrichten beobachtete Benutzer. `groups` enthält beobachtete Gruppenunterhaltungen, `groups[].users` enthält in jeder Gruppe beobachtete Benutzer, und `groups[].topics[].users` enthält in Feishu- oder Telegram-Topics beobachtete Benutzer:
+
+```json
+{
+  "users": [
+    {
+      "channelName": "feishu-main",
+      "label": "Example User",
+      "id": "ou_complete_user_id",
+      "lastObservedAt": "2026-07-17T08:00:00.000Z"
+    }
+  ],
+  "groups": [
+    {
+      "channelName": "feishu-main",
+      "label": "oc_complete_chat_id",
+      "id": "oc_complete_chat_id",
+      "lastObservedAt": "2026-07-17T08:05:00.000Z",
+      "users": [
+        {
+          "label": "Example User",
+          "id": "ou_complete_user_id",
+          "lastObservedAt": "2026-07-17T08:05:00.000Z"
+        }
+      ],
+      "topics": []
+    }
+  ]
+}
+```
+
+Diese verschachtelten Benutzer sind beobachtete Teilnehmer, keine autoritative Gruppenmitgliedschaft. Nur Nachrichten, die Direct/Group-, Erwähnungs-, Sender- und Pairing-Gates passieren, werden aufgezeichnet. Wiederholte Beobachtungen aktualisieren Labels und Zeitstempel; passive Beobachtung kann ein Verlassen oder eine Löschung nicht erkennen, bis die Beziehung veraltet ist. Nachrichteninhalt wird niemals gespeichert. Die begrenzte Registry liegt unter `$QWEN_HOME/channels/daemon/<workspaceHash>/observed-contacts.json`, außerhalb des Workspace-Checkouts und pro Workspace partitioniert. Ihr 500-Beobachtungs-Limit wird von allen Channels und Unterhaltungen in diesem Workspace geteilt, und Beobachtungen, die älter als 365 Tage sind, werden beim nächsten akzeptierten Schreibvorgang entfernt. Wenn die Registry fehlerhaft ist oder eine nicht unterstützte Version verwendet, lösche diese Datei, um sie zurückzusetzen; akzeptierter Traffic erstellt sie neu. Webhook-Konfiguration und -Zustellung bleiben unverändert.
+
+Starte `qwen serve` mit dem Channel-Worker aktiviert:
+
+```bash
+QWEN_SERVER_TOKEN="$QWEN_SERVER_TOKEN" qwen serve --require-auth --channel dingtalk-main
+```
+
+Beispielanfrage:
+
+```bash
+curl -X POST "http://127.0.0.1:4170/channels/dingtalk-main/webhooks/github-ci" \
+  -H "x-qwen-webhook-secret: $QWEN_CHANNEL_GITHUB_CI_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "eventType": "push",
+    "targetRef": "operator",
+    "title": "CI pipeline finished",
+    "payload": {
+      "targetRef": "refs/heads/main",
+      "repository": "qwen-code",
+      "status": "success"
+    }
+  }'
+```
+
+Webhook-Routen authentifizieren sich mit dem Webhook-Secret-Header, auch wenn `qwen serve` mit Bearer-Auth läuft. Teile das Daemon-Bearer-Token nicht mit Webhook-Anbietern. Webhook-Konfiguration und `secretEnv`-Werte werden geladen, wenn der Daemon startet; starte `qwen serve` neu, nachdem du Webhook-Quellen geändert oder Secrets rotiert hast. Eine `202 {"accepted": true}`-Response bedeutet, dass der Channel-Worker die Eigentümerschaft des Tasks akzeptiert hat, nicht dass die finale Antwort bereits im Chat zugestellt wurde. Prüfe Daemon- und Channel-Worker-Logs sowie `/daemon/status` bei der Fehlersuche nach Zustellungsfehlern.
 
 ### Multi-Channel-Modus
 

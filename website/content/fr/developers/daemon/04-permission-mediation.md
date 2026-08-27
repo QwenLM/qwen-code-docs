@@ -198,7 +198,7 @@ Math.max(1, Math.floor(m / 2) + 1);
 | 5                        | 3         | Majorité.                       |
 | 6                        | 4         | Plus de la moitié.                 |
 
-Pour **M = 2**, les votes partagés (A sélectionne X, B sélectionne Y) ne peuvent être résolus que par le délai d'expiration par permission : aucune option n'atteint l'unanimité, la requête attend donc jusqu'à `permissionResponseTimeoutMs` (5 min par défaut) et se résout en `{cancelled, timeout}`. Le chemin d'avancement des votes enregistre ce comportement « l'unanimité signifie que les votes partagés expirent » dans stderr pour les opérateurs.
+Pour **M = 2**, les votes partagés (A sélectionne X, B sélectionne Y) ne peuvent être résolus que par l'annulation du votant, l'annulation de la session, ou le délai d'expiration optionnel : aucune option n'atteint l'unanimité. `permissionResponseTimeoutMs` est désactivé par défaut ; lorsqu'il est configuré, un vote partagé non résolu se résout en `{cancelled, timeout}` à cette échéance. Le chemin d'avancement des votes enregistre le comportement applicable dans stderr pour les opérateurs.
 
 Les opérateurs qui souhaitent un comportement « le premier vote l'emporte » pour M = 2 peuvent définir explicitement `policy.consensusQuorum: 1`. Les configurations plus strictes, comme exiger l'unanimité pour M = 4, utilisent le même champ.
 

@@ -37,6 +37,8 @@ Qwen Code 通过一个复杂的发现和执行系统与 MCP 服务器集成，�
 - **处理响应**，兼顾 LLM 上下文和用户展示
 - **维护连接状态**，并处理超时
 
+连接丢失后，仅当服务器在 trusted workspace 中受信任，且工具显式声明了 `idempotentHint: true`，或声明了 `readOnlyHint: true` 且没有冲突的 `destructiveHint: true` 或 `idempotentHint: false` 时，才会重放当前调用。缺失或冲突的注解，以及来自不受信任的服务器或工作区的注解，均被视为不安全，因为服务器可能在响应丢失之前已完成了副作用。工具作者应发布准确的 MCP 注解；管理员在启用服务器信任之前仍应验证它们。
+
 ### 传输机制
 
 CLI 支持三种 MCP 传输类型：
@@ -114,7 +116,8 @@ Qwen Code 使用 `settings.json` 文件中的 `mcpServers` 配置来定位并连
 - **`env`** (对象)：服务器进程的环境变量。值可以使用 `$VAR_NAME` 或 `${VAR_NAME}` 语法引用环境变量
 - **`cwd`** (字符串)：Stdio 传输的工作目录
 - **`timeout`** (数字)：请求超时时间（毫秒，默认 600,000 毫秒 = 10 分钟）
-- **`trust`** (布尔值)：为 `true` 时，绕过此服务器的所有工具调用确认（默认 `false`）
+- **`versionNegotiation`** (`"auto" | "legacy"`，默认 `"legacy"`)：对于 Stdio 服务器，`"auto"` 会在一次性的兄弟进程上启用 `server/discover` 探测。
+- **`trust`** (布尔值)：为 `true` 时，在 trusted workspace 中绕过此服务器的工具调用确认（默认 `false`）
 - **`includeTools`** (字符串数组)：从此 MCP 服务器中包含的工具名称列表。指定后，只有此处列出的工具才可从此服务器使用（白名单行为）。如果未指定，则默认启用该服务器的所有工具。
 - **`excludeTools`** (字符串数组)：从此 MCP 服务器中排除的工具名称列表。即使服务器暴露了这些工具，它们也不会对模型可用。**注意：** `excludeTools` 优先于 `includeTools`——如果一个工具同时出现在两个列表中，它将被排除。
 - **`targetAudience`** (字符串)：在受 IAP 保护的应用程序上白名单的 OAuth 客户端 ID。与 `authProviderType: 'service_account_impersonation'` 一起使用。
@@ -161,13 +164,13 @@ CLI 将自动：
 **重要：** OAuth 身份验证要求重定向 URI 是可访问的：
 
 - **默认行为**：重定向到 `http://localhost:7777/oauth/callback`（适用于本地设置）
-- **自定义重定向 URI**：使用 `--oauth-redirect-uri` 或在 settings.json 中配置 `redirectUri` 以指定不同的 URL
+- **自定义重定向 URI**：使用 `--oauth-redirect-uri` 或在 settings.json 中配置 `redirectUri` 以指定一个以 `/oauth/callback` 结尾的公开 URL。将该路径反向代理到运行 Qwen Code 的机器上的 `http://127.0.0.1:7777/oauth/callback`。
 
 对于**远程/云服务器部署**（例如 Web 终端、SSH 会话、云 IDE）：
 
 - 默认的 `localhost` 重定向**不起作用**
-- 你**必须**配置一个指向可公开访问 URL 的自定义 `redirectUri`
-- 用户的浏览器必须能够访问此 URL 并重定向回服务器
+- 你**必须**配置一个指向可公开访问 URL 的自定义 `redirectUri`，且以 `/oauth/callback` 结尾
+- 在反向代理处终止 TLS，并仅将该路径转发到 `http://127.0.0.1:7777/oauth/callback`
 
 远程服务器示例：
 
@@ -194,7 +197,7 @@ qwen mcp add --transport sse remote-server https://api.example.com/sse/ \
 - **`authorizationUrl`** (字符串)：OAuth 授权端点（如果省略则自动发现）
 - **`tokenUrl`** (字符串)：OAuth 令牌端点（如果省略则自动发现）
 - **`scopes`** (字符串数组)：所需的 OAuth 范围
-- **`redirectUri`** (字符串)：自定义重定向 URI。**对于远程部署至关重要**：默认为 `http://localhost:7777/oauth/callback`。当在远程/云服务器上运行 Qwen Code 时，请设置为可公开访问的 URL（例如 `https://your-server.com/oauth/callback`）。可以通过 `qwen mcp add --oauth-redirect-uri` 或在 settings.json 中直接配置。
+- **`redirectUri`** (字符串)：自定义重定向 URI。**对于远程部署至关重要**：默认为 `http://localhost:7777/oauth/callback`。对于远程使用，请设置一个以 `/oauth/callback` 结尾的公开 URL，并将该路径反向代理到运行 Qwen Code 的机器上的 `http://127.0.0.1:7777/oauth/callback`。可以通过 `qwen mcp add --oauth-redirect-uri` 或在 settings.json 中直接配置。
 - **`tokenParamName`** (字符串)：SSE URL 中令牌的查询参数名称
 - **`audiences`** (字符串数组)：令牌有效的受众
 
@@ -446,9 +449,10 @@ CLI 将使用你的本地应用默认凭据 (ADC) 为指定的服务账户和受
 #### 基于信任的跳过
 
 ```typescript
-if (this.trust) {
-  return false; // 无需确认
+if (this.trust === true && this.cliConfig?.isTrustedFolder()) {
+  return 'allow';
 }
+return 'ask';
 ```
 
 #### 动态白名单
@@ -617,7 +621,7 @@ MCP 集成会跟踪以下几种状态：
 
 ### 安全考虑
 
-- **信任设置：** `trust` 选项会绕过所有确认对话框。谨慎使用，仅用于你完全控制的服务器
+- **信任设置：** `trust` 选项仅在 trusted workspace 中绕过工具调用确认对话框。谨慎使用，仅用于你完全控制的服务器
 - **访问令牌：** 配置包含 API 密钥或令牌的环境变量时要注意安全
 - **沙盒兼容性：** 使用沙盒时，确保 MCP 服务器在沙盒环境中可用
 - **私有数据：** 使用范围过大的个人访问令牌可能导致仓库之间的信息泄露
@@ -788,13 +792,13 @@ qwen mcp add [options] <name> <commandOrUrl> [args...]
 - `-e, --env`：设置环境变量（例如 -e KEY=value）。
 - `-H, --header`：为 SSE 和 HTTP 传输设置 HTTP 头部（例如 -H "X-Api-Key: abc123" -H "Authorization: Bearer abc123"）。
 - `--timeout`：设置连接超时时间（毫秒）。
-- `--trust`：信任服务器（跳过所有工具调用确认提示）。
+- `--trust`：信任服务器（在 trusted workspace 中绕过其工具调用确认）。
 - `--description`：设置服务器的描述。
 - `--include-tools`：一个逗号分隔的列表，包含要包含的工具。
 - `--exclude-tools`：一个逗号分隔的列表，包含要排除的工具。
 - `--oauth-client-id`：MCP 服务器认证的 OAuth 客户端 ID。
 - `--oauth-client-secret`：MCP 服务器认证的 OAuth 客户端密钥。
-- `--oauth-redirect-uri`：OAuth 重定向 URI（例如 `https://your-server.com/oauth/callback`）。对于本地设置，默认为 `http://localhost:7777/oauth/callback`。**对于远程部署很重要**：当在远程/云服务器上运行 Qwen Code 时，请设置一个可公开访问的 URL。
+- `--oauth-redirect-uri`：OAuth 重定向 URI（例如 `https://your-server.com/oauth/callback`）。对于本地设置，默认为 `http://localhost:7777/oauth/callback`。**对于远程部署很重要**：使用以 `/oauth/callback` 结尾的公开 URL，并将其反向代理到 `http://127.0.0.1:7777/oauth/callback`。
 - `--oauth-authorization-url`：OAuth 授权 URL。
 - `--oauth-token-url`：OAuth 令牌 URL。
 - `--oauth-scopes`：OAuth 作用域（逗号分隔）。

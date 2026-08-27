@@ -7,12 +7,13 @@
 В одном терминале:
 
 ```bash
-cd your-project/
-qwen serve --port 4170
-# → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/your-project)
+qwen serve --port 4170 \
+  --workspace /path/to/project-a \
+  --workspace /path/to/project-b
+# → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/project-a)
 ```
 
-Согласно [#3803](https://github.com/QwenLM/qwen-code/issues/3803) §02, каждый демон привязывается к одной рабочей области при запуске (текущая `cwd`, или переопределить с помощью `--workspace /path/to/dir`). Привязанный путь демона сообщается в `/capabilities.workspaceCwd`, чтобы клиенты могли выполнить предварительную проверку и опустить `cwd` в `POST /session`.
+Каждое значение `--workspace` должно быть абсолютным путём к каталогу. Первая рабочая область является основной и остаётся совместимым значением по умолчанию для запросов без `cwd`; `/capabilities.workspaces[]` — это каталог, который клиенты должны использовать при явном выборе среды выполнения.
 
 В другом:
 
@@ -38,20 +39,22 @@ const client = new DaemonClient({
 });
 
 // 1. Убедимся, что можем связаться с демоном, узнаем его возможности и
-//    прочитаем привязанную рабочую область (#3803 §02).
+//    выберем доверенное рабочее пространство из анонсированного каталога.
 const caps = await client.capabilities();
 console.log('Daemon features:', caps.features);
-console.log('Daemon workspace:', caps.workspaceCwd); // канонический привязанный путь
+const selectedWorkspace =
+  caps.workspaces?.find(
+    (workspace) => workspace.trusted && !workspace.primary,
+  ) ?? caps.workspaces?.find((workspace) => workspace.trusted);
+if (!selectedWorkspace) throw new Error('No trusted workspace is available');
+console.log('Selected workspace:', selectedWorkspace.id, selectedWorkspace.cwd);
 
-// 2. Создать или подключиться к сессии. Две равнозначные формы:
-//    (a) передать `workspaceCwd: caps.workspaceCwd` явно, или
-//    (b) полностью опустить `workspaceCwd` — тогда SDK не отправляет поле `cwd`
-//        и маршрут демона использует свою привязанную рабочую область.
-//        Форма (b) лаконична, но предполагает доверие к `caps.workspaceCwd`.
-//    Непустое `workspaceCwd`, не совпадающее с привязанным путём демона,
-//    приводит к ошибке `400 workspace_mismatch` (см. "Несоответствие рабочей области" ниже).
+// 2. Создать или подключиться к сессии в этой среде выполнения.
+//    SDK сопоставляет `workspaceCwd` с полем `cwd` в POST /session.
+//    Пропуск допустим только когда вызывающий код намеренно
+//    хочет устаревшее основное значение по умолчанию.
 const session = await client.createOrAttachSession({
-  workspaceCwd: caps.workspaceCwd,
+  workspaceCwd: selectedWorkspace.cwd,
 });
 console.log(`session=${session.sessionId} attached=${session.attached}`);
 
@@ -116,12 +119,13 @@ function handleEvent(event: DaemonEvent): void {
 
 ## Вспомогательные функции для файлов рабочей области
 
-Файловые маршруты привязаны к рабочей области, а не к сессии, поэтому они находятся непосредственно на `DaemonClient`:
+Файловые маршруты привязаны к рабочей области, а не к сессии. Привяжите квалифицированный помощник к выбранному идентификатору рабочей области, чтобы каждый запрос оставался в пределах этой среды выполнения:
 
 ```ts
-const file = await client.readWorkspaceFile('src/main.ts');
+const selected = client.workspaceById(selectedWorkspace.id);
+const file = await selected.readWorkspaceFile('src/main.ts');
 
-const updated = await client.editWorkspaceFile({
+const updated = await selected.editWorkspaceFile({
   path: 'src/main.ts',
   oldText: 'timeout: 30000',
   newText: 'timeout: 60000',
@@ -175,7 +179,7 @@ case 'permission_request': {
 
 ## Совместная работа в общей сессии
 
-Два клиента, указывающие на **один и тот же демон**, оказываются в одной сессии. Согласно §02 из #3803, каждый демон при запуске привязан к ОДНОЙ рабочей области, поэтому демон, запущенный как `qwen serve --workspace /work/repo` (или `cd /work/repo && qwen serve`), — это то, к чему подключаются оба клиента:
+Два клиента, указывающие на **одно и то же рабочее пространство демона**, оказываются в одной сессии при использовании `sessionScope: 'single'` по умолчанию. Для демона с одним рабочим пространством, запущенного как `qwen serve --workspace /work/repo` (или `cd /work/repo && qwen serve`), оба клиента подключаются к этому основному рабочему пространству:
 
 ```ts
 // Демон запущен как `qwen serve --workspace /work/repo`, поэтому
@@ -195,7 +199,7 @@ console.log(a.sessionId === b.sessionId); // true
 
 ## Несоответствие рабочей области
 
-Если `workspaceCwd` не совпадает с привязанной рабочей областью демона, `createOrAttachSession` отклоняется с `DaemonHttpError` со статусом `400` и структурированным телом:
+Если `workspaceCwd` не совпадает ни с одним зарегистрированным анонсированным рабочим пространством, `createOrAttachSession` отклоняется с `DaemonHttpError` со статусом `400` и структурированным телом. Запрос к зарегистрированному, но недоверенному вторичному рабочему пространству вместо этого возвращает `403 untrusted_workspace` и не должен повторяться против основного:
 
 ```ts
 import { DaemonHttpError } from '@qwen-code/sdk';
@@ -211,16 +215,16 @@ try {
     };
     if (body.code === 'workspace_mismatch') {
       console.error(
-        `Этот демон привязан к ${body.boundWorkspace}, ` +
-          `а не к ${body.requestedWorkspace}. Запустите отдельный демон ` +
-          `для этой рабочей области или направьте запрос к правильному.`,
+        `Рабочее пространство ${body.requestedWorkspace} не зарегистрировано. ` +
+          `Обновите возможности и выберите зарегистрированное рабочее пространство ` +
+          `или зарегистрируйте его перед повторной попыткой.`,
       );
     }
   }
 }
 ```
 
-В развёртываниях с несколькими рабочими областями запускается один демон на рабочую область на разных портах — внутридемонной маршрутизации в §02 нет. Оркестратор (или программа запуска пользователя) выбирает нужного демона на основе проекта, к которому клиент хочет обратиться.
+Не повторяйте попытку против основного рабочего пространства после несоответствия. Обновите `/capabilities`, выберите нужную запись из `workspaces[]` или зарегистрируйте подходящее динамическое рабочее пространство через `POST /workspaces`. Используйте отдельные демоны только тогда, когда границы аутентификации, ограничения скорости или изоляции процессов также должны быть независимыми.
 
 ## Аутентификация
 

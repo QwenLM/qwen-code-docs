@@ -114,6 +114,8 @@ qwen -p "运行测试套件"
 
 `settings.env.QWEN_SANDBOX_IMAGE` 也可作为通用的环境变量注入机制，但 `tools.sandboxImage` 是推荐的首选持久化设置。
 
+自定义镜像由用户管理。请使用最新的 Qwen Code 安装重建它们以接收安全更新交接；较旧的镜像可能仍使用其原始进程内更新器。
+
 ### macOS Seatbelt 配置文件
 
 内建配置文件（通过 `SEATBELT_PROFILE` 环境变量设置）：

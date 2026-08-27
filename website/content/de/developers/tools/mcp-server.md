@@ -37,6 +37,8 @@ Jedes erkannte MCP-Tool wird in einer `DiscoveredMCPTool`-Instanz gekapselt, die
 - **Antworten verarbeitet** sowohl für den LLM-Kontext als auch für die Benutzeranzeige
 - **Verbindungsstatus verwaltet** und Timeouts behandelt
 
+Nach einem Verbindungsabbruch wird der aktuelle Aufruf nur bei einem vertrauenswürdigen Server in einem vertrauenswürdigen Workspace wiederholt, wenn das Tool explizit `idempotentHint: true` deklariert oder `readOnlyHint: true` ohne ein widersprüchliches `destructiveHint: true` oder `idempotentHint: false` deklariert. Fehlende oder widersprüchliche Annotationen sowie Annotationen von einem nicht vertrauenswürdigen Server oder Workspace werden als unsicher behandelt, da der Server möglicherweise eine Nebenwirkung abgeschlossen hat, bevor die Antwort verloren ging. Tool-Autoren sollten genaue MCP-Annotationen veröffentlichen; Administratoren sollten diese dennoch überprüfen, bevor sie Server-Vertrauen aktivieren.
+
 ### Transportmechanismen
 
 Die CLI unterstützt drei MCP-Transportarten:
@@ -114,17 +116,18 @@ Jede Serverkonfiguration unterstützt die folgenden Eigenschaften:
 - **`env`** (object): Umgebungsvariablen für den Serverprozess. Werte können Umgebungsvariablen mit der Syntax `$VAR_NAME` oder `${VAR_NAME}` referenzieren
 - **`cwd`** (string): Arbeitsverzeichnis für den Stdio-Transport
 - **`timeout`** (number): Request-Timeout in Millisekunden (Standard: 600.000 ms = 10 Minuten)
-- **`trust`** (boolean): Wenn `true`, werden alle Tool-Aufruf-Bestätigungen für diesen Server umgangen (Standard: `false`)
+- **`versionNegotiation`** (`"auto" | "legacy"`, Standard: `"legacy"`): Für Stdio-Server aktiviert `"auto"` den `server/discover`-Probe auf einem kurzlebigen Geschwisterprozess.
+- **`trust`** (boolean): Wenn `true`, werden Tool-Aufruf-Bestätigungen für diesen Server in einem vertrauenswürdigen Workspace umgangen (Standard: `false`)
 - **`includeTools`** (string[]): Liste von Toolnamen, die von diesem MCP-Server eingeschlossen werden sollen. Wenn angegeben, sind nur die hier aufgeführten Tools von diesem Server verfügbar (Allowlist-Verhalten). Wenn nicht angegeben, sind standardmäßig alle Tools vom Server aktiviert.
 - **`excludeTools`** (string[]): Liste von Toolnamen, die von diesem MCP-Server ausgeschlossen werden sollen. Die hier aufgeführten Tools sind für das Modell nicht verfügbar, selbst wenn sie vom Server bereitgestellt werden. **Hinweis:** `excludeTools` hat Vorrang vor `includeTools` – wenn ein Tool in beiden Listen steht, wird es ausgeschlossen.
 - **`targetAudience`** (string): Die OAuth-Client-ID, die in der Whitelist der IAP-geschützten Anwendung steht, auf die Sie zugreifen möchten. Wird mit `authProviderType: 'service_account_impersonation'` verwendet.
 - **`targetServiceAccount`** (string): Die E-Mail-Adresse des Google Cloud-Dienstkontos, das Sie impersonieren möchten. Wird mit `authProviderType: 'service_account_impersonation'` verwendet.
 
-## OAuth-Unterstützung für entfernte MCP-Server
+### OAuth-Unterstützung für entfernte MCP-Server
 
 Qwen Code unterstützt OAuth 2.0-Authentifizierung für entfernte MCP-Server unter Verwendung von SSE- oder HTTP-Transports. Dies ermöglicht den sicheren Zugriff auf MCP-Server, die eine Authentifizierung erfordern.
 
-### Automatische OAuth-Erkennung
+#### Automatische OAuth-Erkennung
 
 Für Server, die die OAuth-Erkennung unterstützen, können Sie die OAuth-Konfiguration weglassen und die CLI die automatische Erkennung durchführen lassen:
 
@@ -145,7 +148,7 @@ Die CLI wird automatisch:
 - Dynamische Client-Registrierung durchführen, falls unterstützt
 - Den OAuth-Ablauf und die Token-Verwaltung übernehmen
 
-### Authentifizierungsablauf
+#### Authentifizierungsablauf
 
 Bei der Verbindung zu einem OAuth-fähigen Server:
 
@@ -156,18 +159,18 @@ Bei der Verbindung zu einem OAuth-fähigen Server:
 5. **Tokens werden sicher** für die zukünftige Verwendung gespeichert
 6. **Wiederholung der Verbindung** gelingt mit gültigen Tokens
 
-### Browser-Weiterleitungsanforderungen
+#### Browser-Weiterleitungsanforderungen
 
 **Wichtig:** Die OAuth-Authentifizierung erfordert, dass die Redirect-URI erreichbar ist:
 
 - **Standardverhalten**: Weiterleitung an `http://localhost:7777/oauth/callback` (funktioniert für lokale Einrichtungen)
-- **Benutzerdefinierte Redirect-URI**: Verwenden Sie `--oauth-redirect-uri` oder konfigurieren Sie `redirectUri` in der settings.json, um eine andere URL anzugeben
+- **Benutzerdefinierte Redirect-URI**: Verwenden Sie `--oauth-redirect-uri` oder konfigurieren Sie `redirectUri` in der settings.json, um eine öffentliche URL anzugeben, die auf `/oauth/callback` endet. Leiten Sie diesen Pfad per Reverse-Proxy an `http://127.0.0.1:7777/oauth/callback` auf der Maschine weiter, auf der Qwen Code läuft.
 
 Für **entfernte/Cloud-Server-Bereitstellungen** (z. B. Web-Terminals, SSH-Sitzungen, Cloud-IDEs):
 
 - Die standardmäßige `localhost`-Weiterleitung wird NICHT funktionieren
-- Sie MÜSSEN eine benutzerdefinierte `redirectUri` konfigurieren, die auf eine öffentlich erreichbare URL verweist
-- Der Browser des Benutzers muss diese URL erreichen und zurück zum Server umleiten können
+- Sie MÜSSEN eine benutzerdefinierte `redirectUri` konfigurieren, die auf eine öffentlich erreichbare URL verweist, die auf `/oauth/callback` endet
+- Beenden Sie TLS an einem Reverse-Proxy und leiten Sie nur diesen Pfad an `http://127.0.0.1:7777/oauth/callback` weiter
 
 Beispiel für entfernte Server:
 
@@ -181,7 +184,7 @@ OAuth funktioniert nicht in:
 - Headless-Umgebungen ohne Browserzugriff
 - Umgebungen, in denen die konfigurierte `redirectUri` vom Browser des Benutzers nicht erreichbar ist
 
-### Verwalten der OAuth-Authentifizierung
+#### Verwalten der OAuth-Authentifizierung
 
 Verwenden Sie den `/mcp`-Dialog innerhalb einer interaktiven Qwen Code-Sitzung, um MCP-Server zu überprüfen und die OAuth-Authentifizierung zu verwalten.
 
@@ -193,7 +196,7 @@ Verwenden Sie den `/mcp`-Dialog innerhalb einer interaktiven Qwen Code-Sitzung, 
 - **`authorizationUrl`** (string): OAuth-Autorisierungsendpunkt (wird automatisch erkannt, wenn weggelassen)
 - **`tokenUrl`** (string): OAuth-Token-Endpunkt (wird automatisch erkannt, wenn weggelassen)
 - **`scopes`** (string[]): Erforderliche OAuth-Bereiche
-- **`redirectUri`** (string): Benutzerdefinierte Redirect-URI. **Kritisch für entfernte Bereitstellungen**: Standardmäßig `http://localhost:7777/oauth/callback`. Wenn Sie Qwen Code auf entfernten/Cloud-Servern ausführen, setzen Sie dies auf eine öffentlich erreichbare URL (z. B. `https://your-server.com/oauth/callback`). Kann über `qwen mcp add --oauth-redirect-uri` oder direkt in der settings.json konfiguriert werden.
+- **`redirectUri`** (string): Benutzerdefinierte Redirect-URI. **Kritisch für entfernte Bereitstellungen**: Standardmäßig `http://localhost:7777/oauth/callback`. Für entfernte Nutzung setzen Sie eine öffentliche URL, die auf `/oauth/callback` endet, und leiten Sie diese per Reverse-Proxy an den lokalen Callback-Listener weiter. Kann über `qwen mcp add --oauth-redirect-uri` oder direkt in der settings.json konfiguriert werden.
 - **`tokenParamName`** (string): Name des Query-Parameters für Tokens in SSE-URLs
 - **`audiences`** (string[]): Zielgruppen, für die das Token gültig ist
 
@@ -445,9 +448,10 @@ Jede `DiscoveredMCPTool` implementiert eine ausgefeilte Bestätigungslogik:
 #### Vertrauensbasierte Umgehung
 
 ```typescript
-if (this.trust) {
-  return false; // Keine Bestätigung erforderlich
+if (this.trust === true && this.cliConfig?.isTrustedFolder()) {
+  return 'allow';
 }
+return 'ask';
 ```
 
 #### Dynamische Allow-Liste
@@ -616,7 +620,7 @@ Die MCP-Integration verfolgt mehrere Zustände:
 
 ### Sicherheitsaspekte
 
-- **Vertrauenseinstellungen:** Die Option `trust` umgeht alle Bestätigungsdialoge. Verwenden Sie diese mit Vorsicht und nur für Server, die Sie vollständig kontrollieren.
+- **Vertrauenseinstellungen:** Die Option `trust` umgeht Tool-Bestätigungsdialoge nur in einem vertrauenswürdigen Workspace. Verwenden Sie diese mit Vorsicht und nur für Server, die Sie vollständig kontrollieren.
 - **Zugriffstoken:** Seien Sie sicherheitsbewusst bei der Konfiguration von Umgebungsvariablen, die API-Schlüssel oder Token enthalten.
 - **Sandbox-Kompatibilität:** Wenn Sie Sandboxing verwenden, stellen Sie sicher, dass MCP-Server innerhalb der Sandbox-Umgebung verfügbar sind.
 - **Private Daten:** Die Verwendung von weitgefassten persönlichen Zugriffstoken kann zu Informationslecks zwischen Repositorys führen.
@@ -787,13 +791,13 @@ qwen mcp add [options] <name> <commandOrUrl> [args...]
 - `-e, --env`: Umgebungsvariablen setzen (z.B. -e KEY=value).
 - `-H, --header`: HTTP-Header für SSE- und HTTP-Transporte setzen (z.B. -H "X-Api-Key: abc123" -H "Authorization: Bearer abc123").
 - `--timeout`: Verbindungs-Timeout in Millisekunden festlegen.
-- `--trust`: Server als vertrauenswürdig einstufen (alle Bestätigungsaufforderungen bei Tool-Aufrufen umgehen).
+- `--trust`: Server als vertrauenswürdig einstufen (Tool-Aufruf-Bestätigungen in einem vertrauenswürdigen Workspace umgehen).
 - `--description`: Beschreibung für den Server festlegen.
 - `--include-tools`: Kommagetrennte Liste der einzuschließenden Tools.
 - `--exclude-tools`: Kommagetrennte Liste der auszuschließenden Tools.
 - `--oauth-client-id`: OAuth-Client-ID für die MCP-Server-Authentifizierung.
 - `--oauth-client-secret`: OAuth-Client-Secret für die MCP-Server-Authentifizierung.
-- `--oauth-redirect-uri`: OAuth-Weiterleitungs-URI (z.B. `https://your-server.com/oauth/callback`). Standardmäßig `http://localhost:7777/oauth/callback` für lokale Einrichtungen. **Wichtig für entfernte Bereitstellungen**: Wenn Sie Qwen Code auf entfernten/Cloud-Servern ausführen, setzen Sie dies auf eine öffentlich zugängliche URL.
+- `--oauth-redirect-uri`: OAuth-Weiterleitungs-URI (z.B. `https://your-server.com/oauth/callback`). Standardmäßig `http://localhost:7777/oauth/callback` für lokale Einrichtungen. **Wichtig für entfernte Bereitstellungen**: Verwenden Sie eine öffentliche URL, die auf `/oauth/callback` endet, und leiten Sie diese per Reverse-Proxy an `http://127.0.0.1:7777/oauth/callback` weiter.
 - `--oauth-authorization-url`: OAuth-Autorisierungs-URL.
 - `--oauth-token-url`: OAuth-Token-URL.
 - `--oauth-scopes`: OAuth-Bereiche (kommagetrennt).

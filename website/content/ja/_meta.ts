@@ -11,10 +11,6 @@ export default {
     type: 'page',
     title: 'デベロッパーガイド',
   },
-  design: {
-    type: 'page',
-    title: 'デザイン',
-  },
   showcase: {
     type: 'page',
     title: 'ショーケース',
@@ -26,9 +22,5 @@ export default {
   blog: {
     type: 'page',
     title: 'ブログ',
-    theme: {
-      sidebar: false,
-      layout: 'full'
-    }
   },
 };

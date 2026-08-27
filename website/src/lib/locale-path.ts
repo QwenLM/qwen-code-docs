@@ -6,6 +6,7 @@ const SUPPORTED_LOCALES = [
   "ru",
   "ja",
   "pt-BR",
+  "ko",
 ] as const;
 
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];

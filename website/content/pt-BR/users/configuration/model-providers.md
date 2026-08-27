@@ -4,7 +4,11 @@ O Qwen Code permite configurar vários provedores de modelos por meio da configu
 
 ## Visão Geral
 
-Use `modelProviders` para declarar modelos por tipo de autenticação que podem ser alternados no seletor `/model`. As chaves devem ser tipos de autenticação válidos (`openai`, `anthropic`, `gemini`, etc.). Cada tipo de autenticação mapeia para um objeto `ProviderConfig` com um campo `protocol` e um campo `models` (o array de definições de modelos). Cada entrada em `models` requer um `id`; `envKey` é **opcional e recomendado** (quando omitido, usa a chave de ambiente padrão do tipo de autenticação, por exemplo, `OPENAI_API_KEY` para `openai`), com `name`, `description`, `baseUrl` e `generationConfig` opcionais. As credenciais nunca são persistidas nas configurações; o runtime as lê de `process.env[envKey]`. Os modelos Qwen OAuth permanecem hard-coded e não podem ser sobrescritos.
+Use `modelProviders` para declarar modelos por id de provedor que podem ser alternados no seletor `/model`. Cada chave é um id de provedor e seu valor é **um array de definições de modelo** (`ModelConfig[]`). Para provedores integrados, a chave deve ser um tipo de auth válido (`openai`, `anthropic`, `gemini`, `vertex-ai`); um id de provedor personalizado (ex.: `idealab`) é permitido desde que você o mapeie para um protocolo via a configuração de nível superior [`providerProtocol`](#ids-de-provedor-personalizados-providerprotocol). Cada entrada de modelo requer um `id`; `envKey` é **opcional e recomendado** (quando omitido, usa a chave de ambiente padrão do tipo de auth, por exemplo, `OPENAI_API_KEY` para `openai`), com `name`, `description`, `baseUrl` e `generationConfig` opcionais. As credenciais nunca são persistidas nas configurações; o runtime as lê de `process.env[envKey]`. Os modelos Qwen OAuth permanecem hard-coded e não podem ser sobrescritos.
+
+> [!note]
+>
+> Previews anteriores envolviam os modelos de cada provedor em um objeto `{ "protocol": ..., "models": [...] }`. Esse formato foi revertido — o valor atual é o array `ModelConfig[]` puro mostrado ao longo desta página. Uma entrada envolvida em um arquivo de configurações já migrado (`$version: 4`) é ignorada silenciosamente, então atualize quaisquer configurações antigas para o formato de array.
 
 > [!note]
 >
@@ -13,6 +17,54 @@ Use `modelProviders` para declarar modelos por tipo de autenticação que podem 
 > [!note]
 >
 > **Unicidade do modelo:** Modelos dentro do mesmo `authType` são identificados exclusivamente pela combinação de `id` + `baseUrl`. Isso significa que você pode definir o mesmo ID de modelo (por exemplo, `"gpt-4o"`) várias vezes sob um único `authType`, desde que cada entrada tenha um `baseUrl` diferente — por exemplo, um apontando diretamente para a OpenAI e outro para um endpoint de proxy. Se duas entradas compartilharem o mesmo `id` e o mesmo `baseUrl` (ou ambas omitirem o `baseUrl`), a primeira ocorrência prevalece e as duplicatas subsequentes são ignoradas com um aviso.
+
+### Rotas de geração de imagens
+
+Defina `supportsImageGeneration: true` quando uma rota puder ser usada pela
+ferramenta integrada `image_gen`. Essa capacidade é independente do suporte a
+entrada de imagens como `capabilities.vision` ou
+`generationConfig.modalities.image`.
+
+Use `imageOnly: true` quando a rota for dedicada à geração de imagens e não
+dever aparecer nos seletores de modelo comuns. Para compatibilidade retroativa,
+`imageOnly: true` também implica capacidade de geração de imagens, então
+configurações existentes não precisam ser migradas.
+
+Uma rota de papel duplo pode ser selecionada tanto como modelo principal quanto
+via `/model --image`:
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "omni-model",
+        "envKey": "MODEL_API_KEY",
+        "baseUrl": "https://gateway.example.com/model-api",
+        "supportsImageGeneration": true
+      }
+    ]
+  }
+}
+```
+
+Uma rota dedicada de imagens define ambos os campos. A forma legada com apenas
+`imageOnly: true` permanece válida:
+
+```json
+{
+  "id": "image-model",
+  "envKey": "MODEL_API_KEY",
+  "baseUrl": "https://images.example.com/api/v1",
+  "supportsImageGeneration": true,
+  "imageOnly": true
+}
+```
+
+A rota selecionada deve declarar um `baseUrl` HTTPS explícito e um `envKey`
+não vazio. A geração de imagens usa o mesmo endpoint e a mesma credencial da
+rota; se chat e geração de imagens requerem endpoints ou credenciais
+diferentes, configure duas rotas.
 
 ## Exemplos de Configuração por Tipo de Autenticação
 
@@ -30,8 +82,34 @@ As chaves do objeto `modelProviders` devem ser valores válidos de `authType`. O
 | `qwen-oauth` | Qwen OAuth (hard-coded, não pode ser sobrescrito em `modelProviders`)                                                                           |
 | `vertex-ai`  | Google Vertex AI (usa o protocolo `gemini` e o SDK `@google/genai` no modo Vertex AI; selecioná-lo define `GOOGLE_GENAI_USE_VERTEXAI=true`)     |
 
+> [!note]
+> Entradas do Vertex AI podem autenticar com **Application Default Credentials**. Defina `GOOGLE_CLOUD_PROJECT` (e opcionalmente `GOOGLE_CLOUD_LOCATION`, cujo padrão é `global`) e deixe `envKey` não definido, junto com todas as outras fontes de chave que o resolvedor lê: `GOOGLE_API_KEY`, `settings.security.auth.apiKey` e as flags de CLI de chave. Qualquer valor de chave de API que chegue a uma entrada do Vertex ativa o modo Vertex Express do SDK Google, que ignora o projeto, a localização e suas credenciais ADC. Uma entrada que declara um `envKey` nunca é roteada para ADC, então uma chave que falhe ao ser injetada continuará falhando nessa variável em vez de autenticar silenciosamente como um principal diferente.
+
 > [!warning]
-> Se uma chave de tipo de autenticação desconhecida for usada (por exemplo, um erro de digitação como `"openai-custom"`), uma chave não vazia é aceita como está em seu próprio grupo de tipo de autenticação, mas não mapeará para um protocolo conhecido — portanto, seus modelos não funcionarão como pretendido e não se comportarão corretamente no seletor `/model`. Apenas chaves em branco (vazias ou apenas com espaços em branco) são ignoradas. Sempre use um dos valores de tipo de autenticação suportados listados acima.
+> Um id de provedor que não é um protocolo integrado nem mapeado via `providerProtocol` (por exemplo, um erro de digitação como `"openai-custom"`) não pode ser roteado, então toda a sua entrada é **ignorada** com um aviso — seus modelos simplesmente não aparecerão no seletor `/model`. Use um dos valores de tipo de auth suportados acima para provedores integrados, ou adicione um mapeamento [`providerProtocol`](#ids-de-provedor-personalizados-providerprotocol) para um id personalizado.
+
+### IDs de provedor personalizados (`providerProtocol`)
+
+Os ids de provedor integrados (`openai`, `gemini`, `anthropic`, `vertex-ai`, `qwen-oauth`) são roteados para seu protocolo de SDK automaticamente. Para usar um id de provedor **personalizado** — por exemplo, para agrupar vários endpoints compatíveis com OpenAI sob um nome mais amigável — declare-o em `modelProviders` e mapeie-o para um protocolo integrado com a configuração de nível superior `providerProtocol`:
+
+```json
+{
+  "modelProviders": {
+    "idealab": [
+      {
+        "id": "my-model",
+        "envKey": "IDEALAB_API_KEY",
+        "baseUrl": "https://idealab.example.com/v1"
+      }
+    ]
+  },
+  "providerProtocol": {
+    "idealab": "openai"
+  }
+}
+```
+
+Sem uma entrada `providerProtocol` correspondente, um id de provedor personalizado é ignorado (veja o aviso acima).
 
 ### SDKs Usados para Requisições de API
 
@@ -58,79 +136,78 @@ Este tipo de autenticação suporta não apenas a API oficial da OpenAI, mas tam
     "REQUESTY_API_KEY": "sk-your-actual-requesty-key-here"
   },
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "gpt-4o",
-          "name": "GPT-4o",
-          "envKey": "OPENAI_API_KEY",
-          "baseUrl": "https://api.openai.com/v1",
-          "generationConfig": {
-            "timeout": 60000,
-            "maxRetries": 3,
-            "enableCacheControl": true,
-            "contextWindowSize": 128000,
-            "modalities": {
-              "image": true
-            },
-            "customHeaders": {
-              "X-Client-Request-ID": "req-123"
-            },
-            "extra_body": {
-              "enable_thinking": true,
-              "service_tier": "priority"
-            },
-            "samplingParams": {
-              "temperature": 0.2,
-              "top_p": 0.8,
-              "max_tokens": 4096,
-              "presence_penalty": 0.1,
-              "frequency_penalty": 0.1
-            }
-          }
-        },
-        {
-          "id": "gpt-4o-mini",
-          "name": "GPT-4o Mini",
-          "envKey": "OPENAI_API_KEY",
-          "baseUrl": "https://api.openai.com/v1",
-          "generationConfig": {
-            "timeout": 30000,
-            "samplingParams": {
-              "temperature": 0.5,
-              "max_tokens": 2048
-            }
-          }
-        },
-        {
-          "id": "openai/gpt-4o",
-          "name": "GPT-4o (via OpenRouter)",
-          "envKey": "OPENROUTER_API_KEY",
-          "baseUrl": "https://openrouter.ai/api/v1",
-          "generationConfig": {
-            "timeout": 120000,
-            "maxRetries": 3,
-            "samplingParams": {
-              "temperature": 0.7
-            }
-          }
-        },
-        {
-          "id": "openai/gpt-4o-mini",
-          "name": "GPT-4o Mini (via Requesty)",
-          "envKey": "REQUESTY_API_KEY",
-          "baseUrl": "https://router.requesty.ai/v1",
-          "generationConfig": {
-            "timeout": 120000,
-            "maxRetries": 3,
-            "samplingParams": {
-              "temperature": 0.7
-            }
+    "openai": [
+      {
+        "id": "gpt-4o",
+        "name": "GPT-4o",
+        "envKey": "OPENAI_API_KEY",
+        "baseUrl": "https://api.openai.com/v1",
+        "generationConfig": {
+          "timeout": 60000,
+          "maxRetries": 3,
+          "retryInitialDelayMs": 3000,
+          "retryMaxDelayMs": 30000,
+          "enableCacheControl": true,
+          "contextWindowSize": 128000,
+          "modalities": {
+            "image": true
+          },
+          "customHeaders": {
+            "X-Client-Request-ID": "req-123"
+          },
+          "extra_body": {
+            "enable_thinking": true,
+            "service_tier": "priority"
+          },
+          "samplingParams": {
+            "temperature": 0.2,
+            "top_p": 0.8,
+            "max_tokens": 4096,
+            "presence_penalty": 0.1,
+            "frequency_penalty": 0.1
           }
         }
-      ]
-    }
+      },
+      {
+        "id": "gpt-4o-mini",
+        "name": "GPT-4o Mini",
+        "envKey": "OPENAI_API_KEY",
+        "baseUrl": "https://api.openai.com/v1",
+        "generationConfig": {
+          "timeout": 30000,
+          "samplingParams": {
+            "temperature": 0.5,
+            "max_tokens": 2048
+          }
+        }
+      },
+      {
+        "id": "openai/gpt-4o",
+        "name": "GPT-4o (via OpenRouter)",
+        "envKey": "OPENROUTER_API_KEY",
+        "baseUrl": "https://openrouter.ai/api/v1",
+        "generationConfig": {
+          "timeout": 120000,
+          "maxRetries": 3,
+          "samplingParams": {
+            "temperature": 0.7
+          }
+        }
+      },
+      {
+        "id": "openai/gpt-4o-mini",
+        "name": "GPT-4o Mini (via Requesty)",
+        "envKey": "REQUESTY_API_KEY",
+        "baseUrl": "https://router.requesty.ai/v1",
+        "generationConfig": {
+          "timeout": 120000,
+          "maxRetries": 3,
+          "samplingParams": {
+            "temperature": 0.7
+          }
+        }
+      }
+    ]
   }
 }
 ```
@@ -143,40 +220,37 @@ Este tipo de autenticação suporta não apenas a API oficial da OpenAI, mas tam
     "ANTHROPIC_API_KEY": "sk-ant-your-actual-anthropic-key-here"
   },
   "modelProviders": {
-    "anthropic": {
-      "protocol": "anthropic",
-      "models": [
-        {
-          "id": "claude-3-5-sonnet",
-          "name": "Claude 3.5 Sonnet",
-          "envKey": "ANTHROPIC_API_KEY",
-          "baseUrl": "https://api.anthropic.com/v1",
-          "generationConfig": {
-            "timeout": 120000,
-            "maxRetries": 3,
-            "contextWindowSize": 200000,
-            "samplingParams": {
-              "temperature": 0.7,
-              "max_tokens": 8192,
-              "top_p": 0.9
-            }
-          }
-        },
-        {
-          "id": "claude-3-opus",
-          "name": "Claude 3 Opus",
-          "envKey": "ANTHROPIC_API_KEY",
-          "baseUrl": "https://api.anthropic.com/v1",
-          "generationConfig": {
-            "timeout": 180000,
-            "samplingParams": {
-              "temperature": 0.3,
-              "max_tokens": 4096
-            }
+    "anthropic": [
+      {
+        "id": "claude-3-5-sonnet",
+        "name": "Claude 3.5 Sonnet",
+        "envKey": "ANTHROPIC_API_KEY",
+        "baseUrl": "https://api.anthropic.com/v1",
+        "generationConfig": {
+          "timeout": 120000,
+          "maxRetries": 3,
+          "contextWindowSize": 200000,
+          "samplingParams": {
+            "temperature": 0.7,
+            "max_tokens": 8192,
+            "top_p": 0.9
           }
         }
-      ]
-    }
+      },
+      {
+        "id": "claude-3-opus",
+        "name": "Claude 3 Opus",
+        "envKey": "ANTHROPIC_API_KEY",
+        "baseUrl": "https://api.anthropic.com/v1",
+        "generationConfig": {
+          "timeout": 180000,
+          "samplingParams": {
+            "temperature": 0.3,
+            "max_tokens": 4096
+          }
+        }
+      }
+    ]
   }
 }
 ```
@@ -189,35 +263,43 @@ Este tipo de autenticação suporta não apenas a API oficial da OpenAI, mas tam
     "GEMINI_API_KEY": "AIza-your-actual-gemini-key-here"
   },
   "modelProviders": {
-    "gemini": {
-      "protocol": "gemini",
-      "models": [
-        {
-          "id": "gemini-2.0-flash",
-          "name": "Gemini 2.0 Flash",
-          "envKey": "GEMINI_API_KEY",
-          "baseUrl": "https://generativelanguage.googleapis.com",
-          "capabilities": {
-            "vision": true
-          },
-          "generationConfig": {
-            "timeout": 60000,
-            "maxRetries": 2,
-            "contextWindowSize": 1000000,
-            "schemaCompliance": "auto",
-            "samplingParams": {
-              "temperature": 0.4,
-              "top_p": 0.95,
-              "max_tokens": 8192,
-              "top_k": 40
-            }
+    "gemini": [
+      {
+        "id": "gemini-2.0-flash",
+        "name": "Gemini 2.0 Flash",
+        "envKey": "GEMINI_API_KEY",
+        "baseUrl": "https://generativelanguage.googleapis.com",
+        "capabilities": {
+          "vision": true
+        },
+        "generationConfig": {
+          "timeout": 60000,
+          "maxRetries": 2,
+          "contextWindowSize": 1000000,
+          "schemaCompliance": "auto",
+          "samplingParams": {
+            "temperature": 0.4,
+            "top_p": 0.95,
+            "max_tokens": 8192,
+            "top_k": 40
           }
         }
-      ]
-    }
+      }
+    ]
   }
 }
 ```
+
+Para um modelo de visão que também pode seguir a política normal do agent do Qwen Code e usar ferramentas, ative o roteamento de imagens de turno completo com ambas as capacidades:
+
+```json
+"capabilities": {
+  "vision": true,
+  "agent": true
+}
+```
+
+Quando um modelo principal apenas de texto usa esse modelo como fallback de visão configurado, o turno completo com imagens permanece nesse provedor, modelo e endpoint exatos durante chamadas de ferramentas e retentativas. O próximo turno independente retorna ao modelo principal, e cada requisição de modelo recebe apenas modalidades de mídia suportadas pelo seu alvo. Omita `agent` (ou defina como `false`) para manter o fluxo mais seguro de transcrição Vision Bridge.
 
 ### Modelos Auto-hospedados Locais (via API compatível com OpenAI)
 
@@ -231,57 +313,57 @@ A maioria dos servidores de inferência locais (vLLM, Ollama, LM Studio, etc.) f
     "LMSTUDIO_API_KEY": "lm-studio"
   },
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "qwen2.5-7b",
-          "name": "Qwen2.5 7B (Ollama)",
-          "envKey": "OLLAMA_API_KEY",
-          "baseUrl": "http://localhost:11434/v1",
-          "generationConfig": {
-            "timeout": 300000,
-            "maxRetries": 1,
-            "contextWindowSize": 32768,
-            "samplingParams": {
-              "temperature": 0.7,
-              "top_p": 0.9,
-              "max_tokens": 4096
-            }
-          }
-        },
-        {
-          "id": "llama-3.1-8b",
-          "name": "Llama 3.1 8B (vLLM)",
-          "envKey": "VLLM_API_KEY",
-          "baseUrl": "http://localhost:8000/v1",
-          "generationConfig": {
-            "timeout": 120000,
-            "maxRetries": 2,
-            "contextWindowSize": 128000,
-            "samplingParams": {
-              "temperature": 0.6,
-              "max_tokens": 8192
-            }
-          }
-        },
-        {
-          "id": "local-model",
-          "name": "Local Model (LM Studio)",
-          "envKey": "LMSTUDIO_API_KEY",
-          "baseUrl": "http://localhost:1234/v1",
-          "generationConfig": {
-            "timeout": 60000,
-            "samplingParams": {
-              "temperature": 0.5
-            }
+    "openai": [
+      {
+        "id": "qwen2.5-7b",
+        "name": "Qwen2.5 7B (Ollama)",
+        "envKey": "OLLAMA_API_KEY",
+        "baseUrl": "http://localhost:11434/v1",
+        "generationConfig": {
+          "timeout": 300000,
+          "streamIdleTimeoutMs": 600000,
+          "maxRetries": 1,
+          "contextWindowSize": 32768,
+          "samplingParams": {
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "max_tokens": 4096
           }
         }
-      ]
-    }
+      },
+      {
+        "id": "llama-3.1-8b",
+        "name": "Llama 3.1 8B (vLLM)",
+        "envKey": "VLLM_API_KEY",
+        "baseUrl": "http://localhost:8000/v1",
+        "generationConfig": {
+          "timeout": 120000,
+          "maxRetries": 2,
+          "contextWindowSize": 128000,
+          "samplingParams": {
+            "temperature": 0.6,
+            "max_tokens": 8192
+          }
+        }
+      },
+      {
+        "id": "local-model",
+        "name": "Local Model (LM Studio)",
+        "envKey": "LMSTUDIO_API_KEY",
+        "baseUrl": "http://localhost:1234/v1",
+        "generationConfig": {
+          "timeout": 60000,
+          "samplingParams": {
+            "temperature": 0.5
+          }
+        }
+      }
+    ]
   }
 }
 ```
+
+Para servidores OpenAI compatíveis locais ou em fila, `streamIdleTimeoutMs` controla por quanto tempo este modelo pode ficar silencioso entre chunks transmitidos. Ele sobrescreve o valor global de `QWEN_STREAM_IDLE_TIMEOUT_MS` para a entrada de provedor selecionada; defina como `0` para desativar o guarda de ociosidade. O limite separado de 15 minutos de tempo de vida do stream ainda se aplica a menos que `QWEN_STREAM_MAX_LIFETIME_MS` seja aumentado ou desativado.
 
 Para servidores locais que não requerem autenticação, você pode usar qualquer valor de espaço reservado (placeholder) para a chave de API:
 
@@ -393,18 +475,15 @@ Se preferir configurar manualmente os modelos do Coding Plan, você pode adicion
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "qwen3-coder-plus",
-          "name": "qwen3-coder-plus",
-          "description": "Qwen3-Coder via Alibaba Cloud Coding Plan",
-          "envKey": "YOUR_CUSTOM_ENV_KEY",
-          "baseUrl": "https://coding.dashscope.aliyuncs.com/v1"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "qwen3-coder-plus",
+        "name": "qwen3-coder-plus",
+        "description": "Qwen3-Coder via Alibaba Cloud Coding Plan",
+        "envKey": "YOUR_CUSTOM_ENV_KEY",
+        "baseUrl": "https://coding.dashscope.aliyuncs.com/v1"
+      }
+    ]
   }
 }
 ```
@@ -501,17 +580,14 @@ Os seguintes campos são tratados como objetos atômicos - os valores do provedo
 // Configuração de modelProviders
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [{
-        "id": "gpt-4o",
-        "envKey": "OPENAI_API_KEY",
-        "generationConfig": {
-          "timeout": 60000,
-          "samplingParams": { "temperature": 0.2 }
-        }
-      }]
-    }
+    "openai": [{
+      "id": "gpt-4o",
+      "envKey": "OPENAI_API_KEY",
+      "generationConfig": {
+        "timeout": 60000,
+        "samplingParams": { "temperature": 0.2 }
+      }
+    }]
   }
 }
 ```
@@ -537,25 +613,22 @@ O campo opcional `reasoning` em `generationConfig` controla o quão agressivamen
 ```jsonc
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "deepseek-v4-pro",
-          "name": "DeepSeek V4 Pro",
-          "baseUrl": "https://api.deepseek.com/v1",
-          "envKey": "DEEPSEEK_API_KEY",
-          "generationConfig": {
-            // A escala de quatro níveis:
-            //   'low'    | 'medium' — mapeado pelo servidor para 'high' no DeepSeek
-            //   'high'   — intensidade de raciocínio padrão
-            //   'max'    — nível extra-forte específico do DeepSeek
-            // Ou defina como `false` para desativar o raciocínio completamente.
-            "reasoning": { "effort": "max" },
-          },
+    "openai": [
+      {
+        "id": "deepseek-v4-pro",
+        "name": "DeepSeek V4 Pro",
+        "baseUrl": "https://api.deepseek.com/v1",
+        "envKey": "DEEPSEEK_API_KEY",
+        "generationConfig": {
+          // A escala de quatro níveis:
+          //   'low'    | 'medium' — mapeado pelo servidor para 'high' no DeepSeek
+          //   'high'   — intensidade de raciocínio padrão
+          //   'max'    — nível extra-forte específico do DeepSeek
+          // Ou defina como `false` para desativar o raciocínio completamente.
+          "reasoning": { "effort": "max" },
         },
-      ],
-    },
+      },
+    ],
   },
 }
 ```
@@ -564,8 +637,10 @@ O campo opcional `reasoning` em `generationConfig` controla o quão agressivamen
 
 | Protocolo / provedor                          | Formato na rede                                                           | Notas                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | -------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **OpenAI / DeepSeek** (`api.deepseek.com`)   | Parâmetro de corpo plano `reasoning_effort: <effort>`                     | Quando `reasoning.effort` é definido na estrutura de configuração aninhada, ele é reescrito para o `reasoning_effort` plano e `'low'`/`'medium'` são normalizados para `'high'`, `'xhigh'` para `'max'` — espelhando a [compatibilidade retroativa do lado do servidor](https://api-docs.deepseek.com/zh-cn/api/create-chat-completion) do DeepSeek. Substituições de `samplingParams.reasoning_effort` ou `extra_body.reasoning_effort` de nível superior ignoram essa normalização e são enviadas literalmente. |
-| **OpenAI** (outros servidores compatíveis)        | `reasoning: { effort, ... }` passado literalmente                 | Definido via `samplingParams` (por exemplo, `samplingParams.reasoning_effort` para GPT-5/série o) quando o provedor espera uma estrutura diferente.                                                                                                                                                                                                                                                                                                |
+| **OpenAI / DashScope** (família `qwen3.8-max`) | Parâmetro de corpo plano `reasoning_effort: <effort>`                     | Os níveis de `/effort` são passados literalmente para qualquer id de modelo que comece com `qwen3.8-max` (incluindo snapshots datados e aliases `-latest`); o DashScope aplica qualquer mapeamento específico do modelo. A escada desta família para em `xhigh`, então um `max` configurado é limitado a `xhigh` (registrado uma vez) em vez de enviado e rejeitado. Um `reasoning_effort` explícito em `samplingParams` ou `extra_body` é uma substituição literal e não é limitado. Quando `reasoning_effort` e `thinking_budget` conflitam, a precedência normal `extra_body` > `samplingParams` > `reasoning` mantém apenas o campo de maior prioridade; um par explícito da mesma camada mantém `reasoning_effort`, correspondendo ao comportamento do provedor antes da resolução entre camadas. Se um campo estático vencer, `/effort` reporta esse campo em vez de implicar que o nível solicitado está efetivo. Quando um nível de esforço vence, um `enable_thinking` conflitante também é descartado. Um `enable_thinking: false` explícito em `extra_body` é respeitado em vez de descartado: ele sobrescreve o nível configurado como `reasoning_effort: 'none'`, um dos poucos lugares onde `extra_body` não vence literalmente. Outros modelos Qwen continuam mapeando o esforço selecionado para `enable_thinking: true`; um override de `reasoning_effort` é passado literalmente, a menos que conflite com um `thinking_budget` (par que o DashScope rejeita), caso em que o `reasoning_effort` inerte é descartado e ambos `enable_thinking` e `thinking_budget` sobrevivem. |
+| **OpenAI / DeepSeek** (`api.deepseek.com`)   | Parâmetro de corpo plano `reasoning_effort: <effort>`                     | Quando `reasoning.effort` é definido na estrutura de configuração aninhada, ele é reescrito para o `reasoning_effort` plano e `'low'`/`'medium'` são normalizados para `'high'`, `'xhigh'` para `'max'` — espelhando a [compatibilidade retroativa do lado do servidor](https://api-docs.deepseek.com/zh-cn/api/create-chat-completion) do DeepSeek. Substituições de `samplingParams.reasoning_effort` ou `extra_body.reasoning_effort` de nível superior ignoram essa normalização e são enviadas literalmente. `max` é aceito apenas em um hostname real do DeepSeek; um modelo com nome `deepseek` em outro host mantém o teto genérico `xhigh`, correspondendo ao gate de hostname na própria reestruturação. |
+| **OpenAI / Z.ai** (`z.ai`, `bigmodel.cn`)    | Parâmetro de corpo plano `reasoning_effort: <effort>`                     | GLM-5.2+ em um host Z.ai aceita a escada completa, incluindo `max`, e o `reasoning.effort` aninhado é reescrito para o campo plano. IDs GLM mais antigos e um modelo `glm-*` alcançado em qualquer outro host mantêm o teto genérico `xhigh`: o nome do modelo sozinho não diz o que aquele endpoint aceita. |
+| **OpenAI** (outros servidores compatíveis)        | `reasoning: { effort, ... }` passado literalmente                 | Um `max` configurado é limitado a `xhigh` (registrado uma vez), pois `max` é uma extensão do fornecedor em vez de parte da escada genérica do OpenAI. Defina via `samplingParams` (por exemplo, `samplingParams.reasoning_effort` para GPT-5/série o) quando o provedor espera uma estrutura diferente; um valor explícito de `samplingParams` / `extra_body` não é limitado. |
 | **Anthropic** (`api.anthropic.com` real)     | `output_config: { effort }` mais o header beta `effort-2025-11-24` | A Anthropic real aceita apenas `'low'`/`'medium'`/`'high'`. `'max'` é **limitado a `'high'`** com uma linha de `debugLogger.warn` (uma vez por gerador); se você quiser o esforço máximo, mude o baseURL para um endpoint compatível com DeepSeek que o suporte.                                                                                                                                                                                  |
 | **Anthropic** (`api.deepseek.com/anthropic`) | Mesmo `output_config: { effort }` + header beta                       | `'max'` é passado sem alterações.                                                                                                                                                                                                                                                                                                                                                                                             |
 | **Gemini** (`@google/genai`)                 | `thinkingConfig: { includeThoughts: true, thinkingLevel }`           | `'low'` → `LOW`, `'high'`/`'max'` → `HIGH`, outros → `THINKING_LEVEL_UNSPECIFIED` (o Gemini não tem nível `MAX`).                                                                                                                                                                                                                                                                                                                    |
@@ -576,11 +651,15 @@ Definir `reasoning: false` (o booleano literal) desativa explicitamente o thinki
 
 Em um baseURL `api.deepseek.com`, o pipeline OpenAI emite o campo explícito `thinking: { type: 'disabled' }` que o DeepSeek V4+ exige — o padrão do lado do servidor é `'enabled'`, então simplesmente omitir `reasoning_effort` ainda incorreria em latência/custo de thinking. Backends DeepSeek auto-hospedados (sglang/vllm) e outros servidores compatíveis com OpenAI **não** recebem este campo; se você precisar desativar o thinking neles, injete `thinking: { type: 'disabled' }` (ou qualquer outro controle que seu framework de inferência exponha) via `samplingParams`/`extra_body`.
 
+Em um baseURL `openrouter.ai`, o pipeline OpenAI emite o campo `reasoning: { enabled: false }` no nível do provedor do OpenRouter quando o raciocínio está desativado. Outros servidores compatíveis com OpenAI não recebem este campo específico do OpenRouter; use `samplingParams`/`extra_body` para o controle nativo de desativação deles.
+
 ### Interação com `samplingParams` (apenas compatível com OpenAI)
 
 > [!warning]
 >
-> Quando `generationConfig.samplingParams` é definido em um provedor compatível com OpenAI, o pipeline envia essas chaves para a rede **literalmente** e ignora completamente a injeção separada de `reasoning`. Portanto, uma configuração como `{ samplingParams: { temperature: 0.5 }, reasoning: { effort: 'max' } }` descartará silenciosamente o campo de raciocínio nas requisições OpenAI/DeepSeek.
+> Quando `generationConfig.samplingParams` é definido em um provedor compatível com OpenAI, o pipeline envia essas chaves para a rede **literalmente** e ignora completamente a injeção separada de `reasoning`. Portanto, uma configuração como `{ samplingParams: { temperature: 0.5 }, reasoning: { effort: 'max' } }` descartará silenciosamente o campo de raciocínio nas requisições OpenAI/DeepSeek. Um objeto `reasoning` colocado dentro de `samplingParams` é um valor próprio e é enviado inalterado: o teto de esforço acima se aplica apenas ao nível injetado pelo pipeline a partir de `/effort`.
+>
+> Os modelos Qwen do DashScope são uma exceção: seu provedor lê `reasoning` diretamente e o mapeia para `reasoning_effort` ou `enable_thinking`. Na família qwen3.8-max, os campos específicos de `samplingParams` do provedor ainda têm precedência quando os parâmetros de rede conflitam; em qwen híbridos mais antigos, um nível de esforço configurado colapsa para `enable_thinking: true`, que sobrescreve um valor de `samplingParams.enable_thinking`.
 >
 > Se você definir `samplingParams`, inclua o controle de raciocínio diretamente dentro dele — para o DeepSeek é `samplingParams.reasoning_effort`, para GPT-5/série o é `samplingParams.reasoning_effort` (seu campo plano) ou `samplingParams.reasoning` (o objeto aninhado). Para OpenRouter e outros provedores, o nome do campo varia; consulte a documentação do provedor.
 >

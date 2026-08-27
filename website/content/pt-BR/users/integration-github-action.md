@@ -94,7 +94,7 @@ Este workflow atua como um dispatcher central para o Qwen Code CLI, roteando sol
 
 ### Triagem de Issues
 
-Esta action pode ser usada para fazer a triagem de Issues do GitHub automaticamente ou em um agendamento. Para uma configuração funcional de triagem de issues, consulte o [workflow de triagem automatizada de issues](https://github.com/QwenLM/qwen-code/blob/main/.github/workflows/qwen-automated-issue-triage.yml).
+Esta action pode ser usada para fazer a triagem de Issues do GitHub automaticamente ou em um agendamento. Para uma configuração funcional de triagem de issues, consulte o [workflow de triagem do Qwen](https://github.com/QwenLM/qwen-code/blob/main/.github/workflows/qwen-triage.yml).
 
 ### Revisão de Pull Request
 

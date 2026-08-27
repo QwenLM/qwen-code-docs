@@ -289,7 +289,7 @@ Le corpus de fixtures (`DAEMON_UI_CONFORMANCE_FIXTURES`) couvre le chat, le cycl
 
 ```ts
 import type { DaemonErrorKind } from '@qwen-code/sdk/daemon';
-// 'missing_binary' | 'blocked_egress' | 'auth_env_error' | 'init_timeout'
+// 'missing_binary' | 'blocked_egress' | 'auth_env_error' | 'init_timeout' | 'restore_timeout'
 // | 'protocol_error' | 'missing_file' | 'parse_error' | 'budget_exhausted'
 ```
 
@@ -323,11 +323,39 @@ function toolIcon(event: DaemonUiToolUpdateEvent): React.ReactNode {
 
 Le SDK a une heuristique de repli de nommage `mcp__<server>__<tool>` — même lorsque le démon n'appose pas explicitement la provenance, les outils MCP sont détectables.
 
+## Catégorisation des raisons de débogage
+
+`DaemonUiStatusEvent.debugReason` est une énumération fermée que le normalisateur appose lorsqu'il projette un événement `debug` au lieu d'un événement typé :
+
+```ts
+import type { DaemonUiDebugReason } from '@qwen-code/sdk/daemon';
+// 'unrecognized_event' | 'unrecognized_session_update' | 'malformed_payload'
+```
+
+La liste canonique est exportée sous `DAEMON_UI_DEBUG_REASONS`. Les noms de raisons sont des catégories avec wildcard : `unrecognized_*` signifie que le démon a envoyé une frame pour laquelle cette version du SDK n'a pas de cas — du bruit de compatibilité future, des diagnostics développeur plutôt que du contenu de conversation. `malformed_*` signifie qu'une frame que le SDK _connaît_ est arrivée avec une charge utile inutilisable — un vrai signal de défaut.
+
+**Le routage diffère par catégorie.** Les diagnostics `unrecognized_*` sont routés vers le sidechannel borné `unrecognizedDiagnostics` et n'entrent jamais dans `blocks[]` (ils ne peuvent donc pas finaliser un bloc assistant/réflexion en flux ni consommer le budget `maxBlocks`). Lisez-les avec `selectUnrecognizedDiagnostics` ; la limite est `UNRECOGNIZED_DIAGNOSTICS_LIMIT` et le sous-ensemble routé est `DAEMON_UI_UNRECOGNIZED_DIAGNOSTIC_REASONS`. Les diagnostics `malformed_*` — et les blocs legacy persistés avant cette séparation — restent dans la transcription en tant que `DaemonStatusTranscriptBlock`s, donc la gestion de `debugReason` au niveau bloc ne s'applique désormais qu'à ceux-ci.
+
+Les moteurs de rendu filtrant les blocs doivent bifurquer sur `debugReason`, pas sur le texte de débogage — le préfixe de texte est une formulation diagnostique qui change sans préavis :
+
+```ts
+function hideDebugBlock(reason?: DaemonUiDebugReason): boolean {
+  // Masquer le bruit de compatibilité future par catégorie pour que
+  // les raisons ajoutées par un SDK plus récent soient couvertes
+  // automatiquement. Les signaux de défaut et les événements de débogage
+  // dispatchés par les clients eux-mêmes (qui ne portent pas de raison)
+  // continuent de s'afficher.
+  return reason?.startsWith('unrecognized_') ?? false;
+}
+```
+
+Les événements `status` ne portent jamais de `debugReason`, pas plus que les événements de débogage dispatchés par les clients eux-mêmes (par exemple le résumé de changement de modèle du Web Shell) — les deux doivent continuer à s'afficher.
+
 ## Principes de compatibilité future
 
 Chaque couche du SDK UI démon suit le **principe de compatibilité future** : les valeurs inconnues NE lèvent PAS d'exception ; elles dégradent gracieusement.
 
-- Types d'événements démon inconnus → événement `debug` avec le nom du type brut
+- Types d'événements démon inconnus → événement `debug` avec le nom du type brut, estampillé d'un `debugReason` `unrecognized_*` et routé vers le sidechannel borné `unrecognizedDiagnostics` (voir ci-dessus)
 - Statut d'outil inconnu → `currentToolCallId` laissé inchangé (pas d'effacement)
 - Type d'erreur inconnu → `errorKind` undefined (le moteur de rendu se replie sur le texte)
 - serverTimestamp manquant → repli sur `clientReceivedAt`

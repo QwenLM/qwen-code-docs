@@ -21,9 +21,9 @@ Note de migration pour les plugins TypeScript existants : si le constructeur ou 
 Le même adaptateur de plugin peut être hébergé par l'un ou l'autre des runtimes de canal :
 
 - `qwen channel start [name]` est le service autonome basé sur ACP. Il utilise toujours `AcpBridge` et reste la commande stable pour exécuter des canaux en dehors d'un daemon.
-- Les drapeaux `qwen serve --channel <name>` et `--channel` répétables démarrent un worker de canal expérimental géré par un daemon. `--channel all` démarre tous les canaux configurés. Le worker est possédé par `qwen serve`, se connecte à ce daemon via le SDK, et transmet aux adaptateurs une façade `ChannelAgentBridge` supportée par `DaemonChannelBridge`.
+- `qwen serve --channel <name>` et les drapeaux `--channel` répétables démarrent des workers de canal expérimentaux gérés par le démon. Les canaux nommés sont regroupés par workspace propriétaire, avec un worker par runtime propriétaire. `--channel all` démarre intentionnellement uniquement les canaux configurés du workspace primaire. Les workers appartiennent à `qwen serve`, se connectent à ce démon via le SDK, et transmettent aux adaptateurs une façade `ChannelAgentBridge` supportée par `DaemonChannelBridge`.
 
-Les canaux gérés par un daemon héritent du cycle de vie et du rapport de statut du daemon. Ils sont intentionnellement exécutés dans un processus séparé (out-of-process) afin que les défaillances de l'adaptateur ou du SDK de la plateforme ne fassent pas planter le daemon. Le daemon reste lié à un seul workspace, donc chaque configuration de canal sélectionnée doit utiliser un `cwd` qui résout vers le workspace du daemon.
+Les canaux gérés par le démon héritent du cycle de vie et du rapport de statut du démon. Ils sont intentionnellement exécutés dans un processus séparé (out-of-process) afin que les défaillances de l'adaptateur ou du SDK de la plateforme ne fassent pas planter le démon. Chaque canal nommé doit résoudre vers exactement un workspace enregistré et fiable ; son worker reçoit le cwd canonique et la surcouche d'environnement de ce runtime. Un canal utilisateur/système sans cwd est ambigu lorsque plusieurs workspaces sont enregistrés, tandis qu'un canal dans un fichier de paramètres local au workspace appartient à ce workspace par défaut. `--channel all` reste limité au primaire et ne peut pas être combiné avec des sélections nommées.
 
 ## L'objet Plugin
 
@@ -53,6 +53,7 @@ import type {
   ChannelAgentBridge,
   ChannelConfig,
   Envelope,
+  SessionTarget,
 } from '@qwen-code/channel-base';
 
 export class MyChannel extends ChannelBase {
@@ -105,6 +106,7 @@ L'objet de message normalisé que vous construisez à partir des données de la 
 | `senderId`       | string       | Yes      | Doit être stable d'un message à l'autre (utilisé pour le routage des sessions + le contrôle d'accès) |
 | `senderName`     | string       | Yes      | Nom d'affichage                                                            |
 | `chatId`         | string       | Yes      | Doit distinguer les MP des groupes                                         |
+| `chatName`       | string       | No       | Nom du groupe/de la conversation lorsque fourni par la plateforme          |
 | `text`           | string       | Yes      | Supprimer les @mentions du bot                                             |
 | `threadId`       | string       | No       | Pour `sessionScope: "thread"`                                              |
 | `messageId`      | string       | No       | ID de message de la plateforme — utile pour la corrélation des réponses    |
@@ -200,6 +202,27 @@ protected override onPromptEnd(chatId: string, sessionId: string, messageId?: st
 **Hooks de streaming** — surchargez `onResponseChunk(chatId, chunk, sessionId)` pour un affichage progressif par chunk (par ex., modification d'un message sur place). Surchargez `onResponseComplete(chatId, fullText, sessionId)` pour personnaliser la livraison finale.
 
 **Streaming par blocs** — définissez `blockStreaming: "on"` dans la configuration du canal. La classe de base divise automatiquement les réponses en plusieurs messages aux limites des paragraphes. Aucun code de plugin n'est nécessaire — cela fonctionne en parallèle de `onResponseChunk`.
+
+**Livraison proactive** — surchargez `supportsProactiveSend()` pour retourner `true` lorsque l'adaptateur peut envoyer sans requête entrante active. `ChannelBase` utilise cette capacité pour les boucles de canal persistantes, les tâches webhook, les résultats d'agents en arrière-plan et la livraison du démon. La politique de cible par défaut rejette les cibles threadées ; ne surchargez les vérifications de cible protégées que pour les formes de cible que votre plateforme peut délivrer en toute sécurité :
+
+```typescript
+override supportsProactiveSend(): boolean {
+  return true;
+}
+
+protected override supportsProactiveTarget(target: SessionTarget): boolean {
+  return target.threadId === undefined;
+}
+
+protected override async pushProactive(
+  target: SessionTarget,
+  text: string,
+): Promise<void> {
+  await this.platformClient.send(target.chatId, text);
+}
+```
+
+Utilisez `supportsProactiveDeliveryTarget()` lorsque la livraison générique du démon accepte une forme de cible différente, et `supportsProactiveWebhookTarget()` lorsque la livraison webhook diffère des boucles et des résultats en arrière-plan. Continuez à rejeter les cibles non prises en charge plutôt que de revenir à une autre conversation.
 
 **Médias** — remplissez `envelope.attachments` avec des images/fichiers. Voir [Pièces jointes](#attachments) ci-dessus.
 

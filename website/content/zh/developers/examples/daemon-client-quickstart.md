@@ -7,12 +7,13 @@
 在一个终端中：
 
 ```bash
-cd your-project/
-qwen serve --port 4170
-# → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/your-project)
+qwen serve --port 4170 \
+  --workspace /path/to/project-a \
+  --workspace /path/to/project-b
+# → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/project-a)
 ```
 
-根据 [#3803](https://github.com/QwenLM/qwen-code/issues/3803) §02，每个守护进程在启动时绑定到一个工作区（当前 `cwd`，或通过 `--workspace /path/to/dir` 覆盖）。守护进程的绑定路径会通过 `/capabilities.workspaceCwd` 广播，因此客户端可以预先检查，并在 `POST /session` 中省略 `cwd`。
+每个 `--workspace` 值必须是绝对目录路径。第一个启动工作区是主工作区，对于省略 `cwd` 的请求，它仍然是兼容性默认值；`/capabilities.workspaces[]` 是客户端在显式选择任何运行时应使用的目录。
 
 在另一个终端中：
 
@@ -38,20 +39,21 @@ const client = new DaemonClient({
 });
 
 // 1. 确认可以连接到守护进程，根据其功能控制 UI，并
-//    读取守护进程绑定的工作区 (#3803 §02)。
+//    从广播的目录中选择一个受信任的工作区。
 const caps = await client.capabilities();
 console.log('Daemon features:', caps.features);
-console.log('Daemon workspace:', caps.workspaceCwd); // 规范绑定路径
+const selectedWorkspace =
+  caps.workspaces?.find(
+    (workspace) => workspace.trusted && !workspace.primary,
+  ) ?? caps.workspaces?.find((workspace) => workspace.trusted);
+if (!selectedWorkspace) throw new Error('No trusted workspace is available');
+console.log('Selected workspace:', selectedWorkspace.id, selectedWorkspace.cwd);
 
-// 2. 生成或附加到会话。两种同样有效的写法：
-//    (a) 显式传入 `workspaceCwd: caps.workspaceCwd`，或
-//    (b) 完全省略 `workspaceCwd` —— 此时 SDK 不会发送 `cwd` 字段，
-//        守护进程路由会回退到其绑定的工作区。写法 (b) 更简洁，
-//        但前提是你信任 `caps.workspaceCwd` 就是你想要的路径。
-//    如果提供的 `workspaceCwd` 不为空且未能规范化为守护进程的绑定路径，
-//    则会返回 `400 workspace_mismatch`（见下方"工作区不匹配"）。
+// 2. 在该运行时中生成或附加。SDK 将 `workspaceCwd`
+//    映射到 POST /session 的 `cwd` 字段。仅当调用者
+//    有意使用旧版主工作区默认值时才允许省略。
 const session = await client.createOrAttachSession({
-  workspaceCwd: caps.workspaceCwd,
+  workspaceCwd: selectedWorkspace.cwd,
 });
 console.log(`session=${session.sessionId} attached=${session.attached}`);
 
@@ -111,12 +113,13 @@ function handleEvent(event: DaemonEvent): void {
 
 ## 工作区文件辅助方法
 
-文件路由是基于工作区而非会话的，因此它们直接位于 `DaemonClient` 上：
+文件路由是基于工作区而非会话的。绑定一个限定到所选工作区 ID 的辅助方法，以确保每个请求都在该运行时内：
 
 ```ts
-const file = await client.readWorkspaceFile('src/main.ts');
+const selected = client.workspaceById(selectedWorkspace.id);
+const file = await selected.readWorkspaceFile('src/main.ts');
 
-const updated = await client.editWorkspaceFile({
+const updated = await selected.editWorkspaceFile({
   path: 'src/main.ts',
   oldText: 'timeout: 30000',
   newText: 'timeout: 60000',
@@ -170,7 +173,7 @@ case 'permission_request': {
 
 ## 共享会话协作
 
-指向**同一个守护进程**的两个客户端最终会位于同一个会话上。根据 #3803 §02，每个守护进程在启动时绑定到一个工作区，因此以 `qwen serve --workspace /work/repo`（或 `cd /work/repo && qwen serve`）启动的守护进程是两个客户端都连接的那个：
+指向**同一个守护进程工作区**的两个客户端在使用默认 `sessionScope: 'single'` 时会位于同一个会话上。对于以 `qwen serve --workspace /work/repo`（或 `cd /work/repo && qwen serve`）启动的单工作区守护进程，两个客户端都连接到该主工作区：
 
 ```ts
 // 守护进程以 `qwen serve --workspace /work/repo` 启动，因此
@@ -190,7 +193,7 @@ console.log(a.sessionId === b.sessionId); // true
 
 ## 工作区不匹配
 
-如果 `workspaceCwd` 与守护进程绑定的工作区不匹配，`createOrAttachSession` 会拒绝，抛出 `DaemonHttpError`，状态码为 `400`，并带有结构化响应体：
+如果 `workspaceCwd` 与任何已注册的广播工作区不匹配，`createOrAttachSession` 会拒绝，抛出 `DaemonHttpError`，状态码为 `400`，并带有结构化响应体。已注册但不受信任的次级工作区会返回 `403 untrusted_workspace`，且不得对主工作区重试：
 
 ```ts
 import { DaemonHttpError } from '@qwen-code/sdk';
@@ -206,16 +209,16 @@ try {
     };
     if (body.code === 'workspace_mismatch') {
       console.error(
-        `该守护进程绑定到 ${body.boundWorkspace}，` +
-          `而不是 ${body.requestedWorkspace}。请为该工作区启动一个单独的守护进程，` +
-          `或将请求路由到正确的守护进程。`,
+        `工作区 ${body.requestedWorkspace} 未注册。` +
+          `请刷新 capabilities 并从广播的工作区中选择，` +
+          `或在重试前注册该工作区。`,
       );
     }
   }
 }
 ```
 
-多工作区部署在每个工作区运行一个守护进程，监听不同端口 —— 在 §02 下没有守护进程内部路由。编排器（或用户的启动器）根据客户端想要连接的项目选择正确的守护进程。
+不匹配后不要对主工作区重试。请刷新 `/capabilities`，从 `workspaces[]` 中选择目标条目，或通过 `POST /workspaces` 注册符合条件的动态工作区。仅当身份验证、速率限制或进程故障边界也必须独立时，才使用单独的守护进程。
 
 ## 身份认证
 

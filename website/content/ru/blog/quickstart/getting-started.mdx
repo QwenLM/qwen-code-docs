@@ -1,0 +1,175 @@
+---
+title: "Быстрый старт Qwen Code: от установки до первой задачи AI-программирования"
+date: "2026-07-13"
+description: "Начните с нуля с Qwen Code: установка CLI, настройка модели, первый диалог, установка расширений Skills — выполните свою первую задачу AI-программирования за 10 минут."
+author: "Qwen Team"
+tags: ["Tutorial", "Quickstart"]
+image: https://gw.alicdn.com/imgextra/i3/O1CN01sqP9AK1Zvl8tWso5b_!!6000000003257-2-tps-1344-572.png
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader
+  title="Быстрый старт Qwen Code: от установки до первой задачи AI-программирования"
+  date="13 июля 2026 г."
+  author="Qwen Team"
+/>
+
+Если вы впервые сталкиваетесь с Qwen Code, эта статья проведёт вас с нуля: установка, настройка, диалог, расширение — четыре шага, чтобы пройти весь процесс. Для каждого этапа есть видео-демонстрация, просто повторяйте.
+
+## Установка Qwen Code
+
+Qwen Code поддерживает установку одним скриптом — Windows, macOS и Linux.
+
+**macOS / Linux:**
+
+```bash
+bash -c "$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)" -s --source website
+```
+
+**Windows (PowerShell):**
+
+```powershell
+curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat --source website
+```
+
+После установки выполните `qwen --version`, чтобы убедиться, что установка прошла успешно. Если предпочитаете установить через npm:
+
+```bash
+npm i @qwen-code/qwen-code@latest -g
+```
+
+Подробные шаги установки можно посмотреть в этом видео — от загрузки до проверки:
+
+<video
+  src="https://cloud.video.taobao.com/vod/WwpTKWA47iLT4DPh-Rk8763V-ihd50bAbD5_-op5Js4.mp4"
+  poster="https://img.alicdn.com/imgextra/i3/O1CN01wNWdtR1iVxMQbXtqa_!!6000000004419-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## Настройка провайдера моделей
+
+После установки Qwen Code поможет вам подключить провайдера моделей. Рекомендуется использовать платформу Alibaba Cloud Bailian.
+
+1. Перейдите в [Alibaba Cloud Bailian](https://bailian.console.aliyun.com/cn-beijing/?tab=model#/api-key) для получения API Key
+2. Запустите `qwen` в терминале, выберите Alibaba ModelStudio
+3. Вставьте ваш API Key, выберите модель
+
+Если предпочитаете ручную настройку, отредактируйте `~/.qwen/settings.json`:
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "qwen3.5-plus",
+        "name": "[Bailian] qwen3.5-plus",
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "envKey": "BAILIAN_API_KEY"
+      }
+    ]
+  },
+  "env": {
+    "BAILIAN_API_KEY": "ваш-API-KEY"
+  }
+}
+```
+
+После настройки используйте команду `/model` для просмотра и переключения моделей:
+
+<video
+  src="https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4"
+  poster="https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## Начало первого диалога
+
+Перейдите в директорию вашего проекта и запустите Qwen Code:
+
+```bash
+cd your-project && qwen
+```
+
+Просто опишите на естественном языке, что вы хотите сделать. Например:
+
+```
+Напиши функцию на Python для вычисления последовательности Фибоначчи
+```
+
+Или попросите AI организовать файлы:
+
+```
+Разложи файлы в этой папке по типам в разные директории
+```
+
+Qwen Code автоматически разобьёт задачу, выполнит операции и вернёт результат. Не нужно обучать его шаг за шагом — просто опишите цель.
+
+<video
+  src="https://cloud.video.taobao.com/vod/RBM4WS95LE5RkGA82JbBjTG1oVokxC-SJlMi8Jv4_fA.mp4"
+  poster="https://img.alicdn.com/imgextra/i1/6000000002613/O1CN019Vn4y71VAo2xDVswb_!!6000000002613-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## Установка расширений Skills
+
+Skills — это система расширения возможностей Qwen Code. Вы можете устанавливать Skills, разработанные сообществом, чтобы дать AI больше профессиональных навыков.
+
+Установить Skill просто — одной командой:
+
+```
+Установи find-skills
+```
+
+Или напрямую командой:
+
+```bash
+/skills find-skills install web-component-design -y -a qwen-code
+```
+
+После установки используйте `/skills` для просмотра установленных Skills.
+
+<video
+  src="https://cloud.video.taobao.com/vod/_3BD_A4_-nQRKqdyyHw9e8Nm1qtusA7gHKtoJlaJP28.mp4"
+  poster="https://img.alicdn.com/imgextra/i1/6000000005414/O1CN01WFKT3D1prfQWynZFH_!!6000000005414-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## Интеграция с VS Code
+
+Если вам удобнее работать в редакторе, Qwen Code предлагает расширение для VS Code. Найдите "Qwen Code" в marketplace расширений и установите. После установки вы можете общаться с AI прямо в боковой панели, наслаждаясь seamless-опытом программирования.
+
+<video
+  src="https://cloud.video.taobao.com/vod/IQbMf47caWPNeRPe2Z0DcCUJgip2IY5IzKRIG77yI5I.mp4"
+  poster="https://img.alicdn.com/imgextra/i4/6000000003274/O1CN014Km30B1a3XqInHBJC_!!6000000003274-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## Что дальше
+
+После освоения основ вы можете продолжить изучение:
+
+- [Помощник, который думает как программист](/ru/blog/quickstart/thinks-like-a-programmer) — узнайте о дизайне Qwen Code
+- [Примеры использования](/ru/blog/cases) — реальные сценарии и руководства
+- [Продвинутый](/ru/blog/advanced) — Skills, Bailian CLI и другие продвинутые функции
+- [Showcase видео-демонстрации](/ru/showcase) — больше видео-обзоров сценариев

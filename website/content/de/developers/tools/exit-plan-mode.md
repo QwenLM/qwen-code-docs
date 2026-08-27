@@ -10,9 +10,11 @@ Das Tool ist speziell für Aufgaben konzipiert, die eine Planung der Implementie
 
 ### Argumente
 
-`exit_plan_mode` erwartet ein Argument:
+`exit_plan_mode` erwartet diese Argumente:
 
 - `plan` (String, erforderlich): Der Implementierungsplan, den du dem Benutzer zur Genehmigung vorlegen möchtest. Dies sollte ein prägnanter, in Markdown formatierter Plan sein, der die Implementierungsschritte beschreibt.
+- `originalRequest` (String, optional): Die ursprüngliche Anfrage, verwendet wenn ein Plan-pflichtiger Teammate seinen Leader um Genehmigung bittet.
+- `researchSummary` (String, optional): Untersuchungskontext für die Leader-Prüfung eines Plan-pflichtigen Teammates.
 
 ## So wird `exit_plan_mode` mit Qwen Code verwendet
 
@@ -24,6 +26,7 @@ Das Exit-Plan-Mode-Tool ist Teil des Planungs-Workflows von Qwen Code. Wenn du d
 
 Das Tool wird dem Benutzer deinen Plan anzeigen und Optionen bereitstellen:
 
+- **Restore Previous**: Den Plan genehmigen und den vor dem Plan-Modus aktiven Modus wiederherstellen
 - **Proceed Once**: Den Plan nur für diese Sitzung genehmigen
 - **Proceed Always**: Den Plan genehmigen und die automatische Genehmigung für zukünftige Bearbeitungsvorgänge aktivieren
 - **Cancel**: Den Plan ablehnen und im Plan-Modus bleiben
@@ -125,7 +128,7 @@ Nach dem Aufruf von `exit_plan_mode` kann der Benutzer auf verschiedene Weise an
 - **Proceed Always**: Der Plan wird genehmigt und die automatische Genehmigung für nachfolgende Bearbeitungsvorgänge aktiviert
 - **Cancel**: Der Plan wird abgelehnt, und das System bleibt im Plan-Modus für die weitere Planung
 
-Das Tool passt den Genehmigungsmodus automatisch an die Wahl des Benutzers an und optimiert so den Implementierungsprozess entsprechend den Benutzerpräferenzen.
+Das Tool ändert den Genehmigungsmodus erst, nachdem die explizite Entscheidung akzeptiert wurde und die Ausführung beginnt. Berechtigungsregeln, automatische Genehmigungsmodi und Permission-Allow-Hooks können keinen Plan-Exit der Haupt-Session im Namen des Benutzers genehmigen.
 
 ## Wichtige Hinweise
 
@@ -135,6 +138,7 @@ Das Tool passt den Genehmigungsmodus automatisch an die Wahl des Benutzers an un
 - **Markdown-Unterstützung**: Pläne unterstützen Markdown-Formatierung für bessere Lesbarkeit
 - **Einmalige Verwendung**: Das Tool sollte pro Planungssitzung einmal verwendet werden, wenn du bereit bist fortzufahren
 - **Benutzerkontrolle**: Die endgültige Entscheidung über das Fortfahren liegt immer beim Benutzer
+- **Fail closed**: Abbruch, veraltete Genehmigungen, Host-Fehler und Übergangsfehler verbleiben im Plan-Modus
 
 ## Integration in den Planungs-Workflow
 

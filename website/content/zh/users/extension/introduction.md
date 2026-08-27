@@ -2,7 +2,7 @@
 
 Qwen Code 扩展将提示词、MCP 服务器、子代理、技能和自定义指令打包成熟悉且用户友好的格式。通过扩展，你可以扩展 Qwen Code 的能力，并与他人共享这些能力。它们被设计为易于安装和共享。
 
-来自 [Gemini CLI Extensions Gallery](https://geminicli.com/extensions/) 和 [Claude Code Marketplace](https://claudemarketplaces.com/) 的扩展和插件可以直接安装到 Qwen Code 中。这种跨平台兼容性让你能够访问丰富的扩展和插件生态，极大地扩展 Qwen Code 的功能，而无需扩展作者维护单独的版本。
+来自 [Gemini CLI Extensions Gallery](https://geminicli.com/extensions/)、[Claude Code Marketplace](https://claudemarketplaces.com/)、Qoder 以及可移植的 [Agent Plugins v1](./agent-plugins.md) 格式的扩展和插件可以直接安装到 Qwen Code 中。这种跨平台兼容性让你能够访问丰富的扩展和插件生态，极大地扩展 Qwen Code 的功能，而无需扩展作者维护单独的版本。
 
 ## 扩展管理
 
@@ -99,6 +99,32 @@ Gemini 扩展在安装过程中会自动转换为 Qwen Code 格式：
 - TOML 命令文件自动迁移为 Markdown 格式
 - MCP 服务器、上下文文件和设置保持不变
 
+#### 从 Qoder 插件
+
+Qwen Code 支持包含 `.qoder-plugin/plugin.json` 清单的 [Qoder 插件](https://docs.qoder.com/en/cli/sdk/plugins)。使用现有的 `qwen extensions install` 命令安装本地目录、归档、Git 仓库、归档 URL 或 scoped npm 包：
+
+```bash
+qwen extensions install ./sample-qoder-plugin
+qwen extensions install ./sample-qoder-plugin.zip
+qwen extensions install owner/sample-qoder-plugin
+```
+
+安装器会将 Qoder 清单转换为 `qwen-extension.json`，并保留标准的 `commands/`、`agents/` 和 `skills/` 目录。在根 `.mcp.json` 文件中声明的 MCP 服务器会作为扩展 MCP 服务器包含在内。
+
+当 Qoder 插件在其根目录包含 `system-prompt.md` 时，Qwen Code 会将其作为扩展上下文加载。如果插件还包含 `QWEN.md` 或声明了其他上下文文件，所有上下文文件都会被保留并去重。
+
+#### 从 Agent Plugins v1
+
+Qwen Code 原生加载可移植的 Agent Plugins v1 包，不会转换或重写 `plugin.json`、`mcp.json` 或 `SKILL.md` 文件：
+
+```bash
+qwen extensions install ./my-agent-plugin
+qwen extensions link ./my-agent-plugin
+qwen extensions install owner/my-agent-plugin
+```
+
+该可移植运行时支持 Agent Skills 以及 stdio 和 Streamable HTTP MCP 服务器。Commands、agents、hooks、client namespaces 和旧版 SSE MCP 不会被激活。完整的支持矩阵请参阅 [Agent Plugins v1](./agent-plugins.md)。
+
 #### 从 npm 注册表
 
 Qwen Code 支持使用 scoped 包名从 npm 注册表安装扩展。这对于拥有私有注册表、且已有认证、版本管理和发布基础设施的团队来说非常理想。
@@ -125,9 +151,13 @@ qwen extensions install @scope/my-extension --registry https://your-registry.com
 
 **身份认证**会自动通过 `NPM_TOKEN` 环境变量或 `.npmrc` 中的注册表特定 `_authToken` 条目处理。
 
-> **注意：** npm 扩展必须在包根目录包含一个 `qwen-extension.json` 文件，其格式与任何其他 Qwen Code 扩展相同。有关打包细节，请参阅 [扩展发布](./extension-releasing.md#releasing-through-npm-registry)。
+> **注意：** npm 扩展必须在包根目录包含原生 `qwen-extension.json` 或 Agent Plugins v1 `plugin.json`。有关打包细节，请参阅 [扩展发布](./extension-releasing.md#releasing-through-npm-registry)。
 
 #### 从 Git 仓库
+
+对于需要认证的、非 GitHub 的、嵌套市场、子模块和 Git LFS 来源，Git 2.37 或更新版本是必需的，因为 Qwen Code 使用 `http.curloptResolve` 将 Git 连接固定到已验证的 DNS 结果。在较旧的 Git 版本上，Qwen Code 仅支持匿名的公共 `https://github.com/{owner}/{repo}[.git]` 根仓库，方法是将请求的 ref 解析为 commit 并使用相同的公共网络和归档安全检查下载 GitHub 的源代码归档。
+
+由于旧版 Git 回退从源代码归档而非克隆安装，因此无法安装依赖符号链接、子模块或 Git LFS 的仓库，并且下载上限为压缩后 100 MiB，归档上限为 100,000 个条目 / 展开后 1 GiB。当仓库发布 release 时，仍然优先使用基于 release 的安装。
 
 ```bash
 qwen extensions install https://github.com/github/github-mcp-server
@@ -223,7 +253,9 @@ qwen extensions update --all
 
 在启动时，Qwen Code 会在 `<home>/.qwen/extensions` 中查找扩展。
 
-扩展作为一个包含 `qwen-extension.json` 文件的目录存在。例如：
+原生 Qwen 扩展以包含 `qwen-extension.json` 文件的目录形式存在。Agent Plugins v1 包则保留其根 `plugin.json`；请参阅 [Agent Plugins v1](./agent-plugins.md)。
+
+例如，原生 Qwen Code 扩展存储在：
 
 `<home>/.qwen/extensions/my-extension/qwen-extension.json`
 

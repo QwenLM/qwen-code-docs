@@ -1,6 +1,6 @@
 # Resumos de Uso de Ferramentas
 
-O Qwen Code pode gerar um rótulo curto, no estilo de assunto de commit git, após cada lote de ferramentas ser concluído, resumindo o que foi realizado. O rótulo aparece inline no transcript e substitui o cabeçalho genérico `Tool × N` no modo compacto.
+O Qwen Code pode gerar um rótulo curto, no estilo de assunto de commit git, após cada lote de ferramentas ser concluído, resumindo o que foi realizado. O rótulo aparece inline: para um grupo de ferramentas concluído na visualização principal, ele substitui o cabeçalho genérico `Tool × N`; quando o grupo é forçado a expandir (no modo de detalhes expandidos com `Ctrl+O`, ou para lotes de erro / iniciados pelo usuário), ele aparece como uma linha escurecida `● <rótulo>` abaixo do grupo.
 
 Isso é um auxílio de UX para chamadas paralelas de ferramentas: quando o modelo se ramifica em várias chamadas `Read` + `Grep` + `Bash` de uma só vez, o resumo mostra a intenção de relance, em vez de forçá-lo a escanear a lista de ferramentas.
 
@@ -8,9 +8,21 @@ O recurso está habilitado por padrão e é executado silenciosamente em segundo
 
 ## O que Você Vê
 
-### Modo completo (padrão)
+### Visualização principal (grupo concluído)
 
-O resumo aparece como uma linha de selo escurecida diretamente abaixo do grupo de ferramentas:
+Na transcrição principal, um lote completado e recolhível se dobra em uma única linha rotulada — o resumo substitui o cabeçalho genérico `Tool × N`:
+
+```
+╭──────────────────────────────────────────────╮
+│✓  Read 4 text files                          │
+╰──────────────────────────────────────────────╯
+```
+
+A saída completa por ferramenta está a uma tecla de distância: pressione `Ctrl+O` para alternar o modo de detalhes expandidos.
+
+### Modo de detalhes expandidos (`Ctrl+O`) e grupos forçados a expandir
+
+Quando um grupo é forçado a expandir — no modo de detalhes expandidos com `Ctrl+O`, ou para lotes de erro / iniciados pelo usuário na visualização principal — cada ferramenta é renderizada individualmente e o resumo aparece como uma linha de selo escurecida abaixo do grupo:
 
 ```
 ╭──────────────────────────────────────────────╮
@@ -22,19 +34,6 @@ O resumo aparece como uma linha de selo escurecida diretamente abaixo do grupo d
 
  ● Read 4 text files
 ```
-
-### Modo compacto (`Ctrl+O` ou `ui.compactMode: true`)
-
-O rótulo substitui o cabeçalho genérico `Tool × N` no one-liner compacto:
-
-```
-╭──────────────────────────────────────────────╮
-│✓  Read txt files  · 4 tools                  │
-│Press Ctrl+O to show full tool output         │
-╰──────────────────────────────────────────────╯
-```
-
-As chamadas individuais das ferramentas ainda estão a uma tecla de distância (`Ctrl+O` para alternar para o modo completo).
 
 ## Como Funciona
 
@@ -123,7 +122,7 @@ Estas configurações podem ser definidas em `settings.json`:
 
 Três pontos que costumam confundir em uma primeira leitura deste recurso:
 
-1. **Uma geração por lote, compartilhada por ambos os modos de exibição.** A chamada ao modelo rápido ocorre exatamente uma vez em `handleCompletedTools` quando um lote de ferramentas é finalizado. Alternar com `Ctrl+O` depois disso **não** dispara uma nova chamada — ambos os modos leem da mesma entrada de histórico `tool_use_summary` capturada na primeira vez. Você pode alternar o modo compacto livremente sem custo adicional.
+1. **Uma geração por lote, compartilhada por ambos os modos de exibição.** A chamada ao modelo rápido ocorre exatamente uma vez em `handleCompletedTools` quando um lote de ferramentas é finalizado. Alternar com `Ctrl+O` depois disso **não** dispara uma nova chamada — ambos os modos, o recolhido e o expandido, leem da mesma entrada de histórico `tool_use_summary` capturada na primeira vez.
 2. **Sem preenchimento retroativo ao alternar ou ao retomar sessão.** Um `tool_group` que foi concluído antes de o recurso ser ativado (ou antes de você ativar a configuração, ou em uma sessão retomada — o `ChatRecordingService` não persiste entradas de resumo) nunca receberá um rótulo. Não há uma varredura de histórico existente. Se você ativar esta configuração no meio de uma sessão, apenas lotes **futuros** mostrarão um rótulo; grupos mais antigos mantêm a renderização padrão sem indicador de que um rótulo está faltando.
 3. **Apenas lotes do agente principal.** O gatilho reside no loop de rodadas da sessão principal (`useGeminiStream`), então:
    - ✅ Shell, MCP, operações de arquivo e a própria _chamada_ da ferramenta `Task` / subagente (conforme aparece no lote principal) são resumidos.
@@ -131,23 +130,20 @@ Três pontos que costumam confundir em uma primeira leitura deste recurso:
 
    Um lote externo que _contém_ uma ferramenta `Task` ainda será rotulado, mas o modelo rápido vê apenas a chamada da ferramenta subagente e sua saída agregada — não as chamadas individuais dentro do subagente. Espere rótulos como `Ran research-agent` ou `Delegated file search` em vez de `Searched 14 files`. Isso é intencional — resumir os internos do subagente multiplicaria o custo do modelo rápido e traria ruído que nunca aparece na interface primária.
 
-## Emparelhamento recomendado: ativar modo compacto
+## Comportamento de exibição
 
-Para lotes de 3 ou mais chamadas paralelas de ferramentas, emparelhar este recurso com `ui.compactMode: true` produz o transcript mais limpo. A visualização compacta dobra todo o lote em uma única linha rotulada (`✓  Read txt files  · 4 tools`) em vez de mostrar cada linha de ferramenta mais o resumo final. Os detalhes permanecem a uma tecla de distância via `Ctrl+O`.
+A visualização principal já dobra um lote completado e recolhível em uma única linha rotulada (`✓  Read 4 text files`) — o resumo faz o trabalho da antiga lista por ferramenta. Para detalhes completos por ferramenta, pressione `Ctrl+O` para alternar o modo de detalhes expandidos, onde cada ferramenta é renderizada individualmente com o resumo como uma linha final `● <rótulo>` abaixo do grupo.
 
 ```json
 {
   "fastModel": "qwen3-coder-flash",
-  "ui": {
-    "compactMode": true
-  },
   "experimental": {
     "emitToolUseSummaries": true
   }
 }
 ```
 
-No modo completo (padrão), o resumo é renderizado como uma linha `● <rótulo>` abaixo do grupo de ferramentas — útil para lotes grandes ou heterogêneos, mas para lotes pequenos do mesmo tipo (ex.: `Read × 3`) o rótulo pode parecer uma repetição das linhas visíveis. Se isso corresponde ao seu fluxo de trabalho usual, ative o modo compacto como acima ou desative o resumo completamente via `experimental.emitToolUseSummaries: false`.
+Para lotes pequenos do mesmo tipo (ex.: `Read × 3`), a linha `● <rótulo>` expandida pode parecer uma repetição das linhas de ferramentas visíveis; se isso corresponde ao seu fluxo de trabalho usual, você pode desativar o resumo completamente via `experimental.emitToolUseSummaries: false`.
 
 ## Monitoramento
 
@@ -174,5 +170,5 @@ Se você não quiser o custo extra, desative o recurso via `experimental.emitToo
 
 ## Relacionados
 
-- [Modo Compacto](../configuration/settings#ui) — alterne com `Ctrl+O`; o resumo substitui o cabeçalho genérico do grupo de ferramentas quando o modo compacto está ativo.
+- [Modo de detalhes expandidos](../configuration/settings#ui) — pressione `Ctrl+O` para expandir todas as saídas de ferramentas inline; o resumo substitui o cabeçalho genérico do grupo de ferramentas para grupos concluídos na visualização principal.
 - [Sugestões de Acompanhamento](./followup-suggestions) — outro aprimoramento de UX acionado pelo modelo rápido que compartilha a mesma configuração `fastModel`.

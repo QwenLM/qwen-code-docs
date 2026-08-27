@@ -6,11 +6,13 @@ As tarefas agendadas permitem que o Qwen Code reexecute um prompt automaticament
 
 As tarefas têm escopo de sessão: elas existem no processo atual do Qwen Code e desaparecem quando você sai. Nada é gravado no disco.
 
+Os canais de mensagens usam um agendador persistente separado para que os resultados possam ser enviados de volta ao chat de origem após o turno atual. Consulte [Scheduled Channel Loops](./channels/overview#scheduled-channel-loops) para os comandos de canal, comportamento de persistência e restrições de entrega.
+
 > **Dica:** As tarefas agendadas são habilitadas por padrão. Para desabilitá-las, defina `experimental.cron: false` nas suas [configurações](../configuration/settings.md) ou defina `QWEN_CODE_DISABLE_CRON=1` no seu ambiente.
 
 ## Agendar um prompt recorrente com /loop
 
-A [skill integrada](skills.md) `/loop` é a maneira mais rápida de agendar um prompt recorrente. Passe um intervalo opcional e um prompt, e o Qwen Code configurará um cron job que é executado em segundo plano enquanto a sessão permanecer aberta.
+A [skill integrada](./skills.md) `/loop` é a maneira mais rápida de agendar um prompt recorrente. Passe um intervalo opcional e um prompt, e o Qwen Code configurará um cron job que é executado em segundo plano enquanto a sessão permanecer aberta.
 
 ```text
 /loop 5m verifique se o deploy terminou e me diga o que aconteceu

@@ -21,9 +21,9 @@ Migrationshinweis für bestehende TypeScript-Plugins: Wenn dein Adapter-Konstruk
 Derselbe Plugin-Adapter kann von beiden Channel-Laufzeiten gehostet werden:
 
 - `qwen channel start [name]` ist der eigenständige, ACP-gestützte Dienst. Er verwendet weiterhin `AcpBridge` und bleibt der stabile Befehl zum Ausführen von Channels außerhalb eines Daemons.
-- `qwen serve --channel <name>` und wiederholbare `--channel`-Flags starten einen experimentellen, vom Daemon verwalteten Channel-Worker. `--channel all` startet alle konfigurierten Channels. Der Worker wird von `qwen serve` verwaltet, verbindet sich über das SDK mit diesem Daemon und übergibt den Adaptern eine `ChannelAgentBridge`-Fassade, die von `DaemonChannelBridge` unterstützt wird.
+- `qwen serve --channel <name>` und wiederholbare `--channel`-Flags starten einen experimentellen, vom Daemon verwalteten Channel-Worker. Benannte Channels werden nach besitzendem Workspace gruppiert, mit einem Worker pro besitzender Runtime. `--channel all` startet absichtlich nur die konfigurierten Channels des primären Workspaces. Worker werden von `qwen serve` verwaltet, verbinden sich über das SDK mit diesem Daemon und übergeben den Adaptern eine `ChannelAgentBridge`-Fassade, die von `DaemonChannelBridge` unterstützt wird.
 
-Vom Daemon verwaltete Channels erben den Lebenszyklus und die Statusberichterstattung des Daemons. Sie sind absichtlich als Out-of-Process ausgelegt, damit Adapter- oder Plattform-SDK-Fehler den Daemon nicht zum Absturz bringen. Der Daemon ist weiterhin an einen Workspace gebunden, daher muss jede ausgewählte Channel-Konfiguration ein `cwd` verwenden, das in den Daemon-Workspace aufgelöst wird.
+Vom Daemon verwaltete Channels erben den Lebenszyklus und die Statusberichterstattung des Daemons. Sie sind absichtlich als Out-of-Process ausgelegt, damit Adapter- oder Plattform-SDK-Fehler den Daemon nicht zum Absturz bringen. Jeder benannte Channel muss in genau einen registrierten, vertrauenswürdigen Workspace aufgelöst werden; sein Worker erhält das kanonische cwd und das Umgebungs-Overlay dieser Runtime. Ein User/System-Channel ohne cwd ist mehrdeutig, wenn mehrere Workspaces registriert sind, während ein Channel in einer Workspace-lokalen Einstellungsdatei standardmäßig zu diesem Workspace gehört. `--channel all` bleibt auf den primären Workspace beschränkt und kann nicht mit benannten Auswahlen kombiniert werden.
 
 ## Das Plugin-Objekt
 
@@ -53,6 +53,7 @@ import type {
   ChannelAgentBridge,
   ChannelConfig,
   Envelope,
+  SessionTarget,
 } from '@qwen-code/channel-base';
 
 export class MyChannel extends ChannelBase {
@@ -105,6 +106,7 @@ Das normalisierte Nachrichtenobjekt, das du aus Plattformdaten erstellst. Die bo
 | `senderId`       | string       | Ja           | Muss über Nachrichten hinweg stabil sein (wird für Session-Routing + Zugriffskontrolle verwendet) |
 | `senderName`     | string       | Ja           | Anzeigename                                                              |
 | `chatId`         | string       | Ja           | Muss zwischen DMs und Gruppen unterscheiden                              |
+| `chatName`       | string       | Nein         | Gruppen-/Konversationsname, wenn von der Plattform bereitgestellt        |
 | `text`           | string       | Ja           | Bot-@mentions entfernen                                                  |
 | `threadId`       | string       | Nein         | Für `sessionScope: "thread"`                                             |
 | `messageId`      | string       | Nein         | Plattform-Nachrichten-ID – nützlich für die Antwortkorrelation           |
@@ -200,6 +202,27 @@ protected override onPromptEnd(chatId: string, sessionId: string, messageId?: st
 **Streaming-Hooks** – überschreibe `onResponseChunk(chatId, chunk, sessionId)` für die progressive Anzeige pro Chunk (z. B. direktes Bearbeiten einer Nachricht). Überschreibe `onResponseComplete(chatId, fullText, sessionId)`, um die endgültige Zustellung anzupassen.
 
 **Block-Streaming** – setze `blockStreaming: "on"` in der Channel-Konfiguration. Die Basisklasse teilt Antworten automatisch an Absatzgrenzen in mehrere Nachrichten auf. Kein Plugin-Code erforderlich – es funktioniert parallel zu `onResponseChunk`.
+
+**Proaktive Zustellung** – überschreibe `supportsProactiveSend()`, um `true` zurückzugeben, wenn der Adapter ohne eine aktive eingehende Anfrage senden kann. `ChannelBase` nutzt diese Fähigkeit für persistente Channel-Loops, Webhook-Tasks, Hintergrund-Agent-Ergebnisse und Daemon-Zustellung. Die Standard-Target-Policy lehnt Thread-Targets ab; überschreibe die geschützten Target-Prüfungen nur für Target-Formen, die deine Plattform sicher zustellen kann:
+
+```typescript
+override supportsProactiveSend(): boolean {
+  return true;
+}
+
+protected override supportsProactiveTarget(target: SessionTarget): boolean {
+  return target.threadId === undefined;
+}
+
+protected override async pushProactive(
+  target: SessionTarget,
+  text: string,
+): Promise<void> {
+  await this.platformClient.send(target.chatId, text);
+}
+```
+
+Verwende `supportsProactiveDeliveryTarget()`, wenn die generische Daemon-Zustellung eine andere Target-Form akzeptiert, und `supportsProactiveWebhookTarget()`, wenn die Webhook-Zustellung von Loops und Hintergrund-Ergebnissen abweicht. Halte nicht unterstützte Targets abgelehnt, statt auf eine andere Konversation auszuweichen.
 
 **Medien** – fülle `envelope.attachments` mit Bildern/Dateien. Siehe [Attachments](#attachments) weiter oben.
 

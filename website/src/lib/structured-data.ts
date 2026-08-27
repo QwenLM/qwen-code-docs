@@ -28,7 +28,7 @@ export function getSiteStructuredData(siteUrl: string) {
       publisher: {
         "@id": organizationId,
       },
-      inLanguage: ["en", "zh", "de", "fr", "ru", "ja", "pt-BR"],
+      inLanguage: ["en", "zh", "de", "fr", "ru", "ja", "pt-BR", "ko"],
     },
   ];
 

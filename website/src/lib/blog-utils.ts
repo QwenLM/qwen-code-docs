@@ -8,6 +8,7 @@ const LOCALE_MAP: Record<string, string> = {
   ru: "ru-RU",
   ja: "ja-JP",
   "pt-BR": "pt-BR",
+  ko: "ko-KR",
 };
 
 export function getLocale(lang: string): string {
@@ -30,6 +31,12 @@ export function getBasePath(): string {
   return BASE_PATH;
 }
 
+export function resolveImageUrl(image: string): string {
+  if (!image) return "";
+  if (/^https?:\/\//.test(image) || image.startsWith("data:")) return image;
+  return `${BASE_PATH}${image}`;
+}
+
 interface CategoryInfo {
   title: string;
   description: string;
@@ -44,6 +51,7 @@ const CATEGORY_I18N: Record<string, Record<string, CategoryInfo>> = {
     ja: { title: "はじめに", description: "Qwen Code のコアコンセプトを学び、AI プログラミングを素早く始めましょう。" },
     ru: { title: "Начало работы", description: "Изучите основные концепции Qwen Code и быстро начните программировать с ИИ." },
     "pt-BR": { title: "Introdução", description: "Aprenda os conceitos fundamentais do Qwen Code e comece a programar com IA rapidamente." },
+    ko: { title: "시작하기", description: "Qwen Code의 핵심 개념을 익히고 AI 코딩을 빠르게 시작해 보세요." },
   },
   cases: {
     zh: { title: "实战案例", description: "真实使用场景和教程，从办公自动化到代码开发。" },
@@ -53,6 +61,7 @@ const CATEGORY_I18N: Record<string, Record<string, CategoryInfo>> = {
     ja: { title: "活用事例", description: "オフィス自動化からコード開発まで、実際の使用シナリオとチュートリアル。" },
     ru: { title: "Примеры использования", description: "Реальные сценарии и руководства: от автоматизации офиса до разработки кода." },
     "pt-BR": { title: "Casos de Uso", description: "Cenários reais e tutoriais, desde automação de escritório até desenvolvimento de código." },
+    ko: { title: "활용 사례", description: "업무 자동화부터 코드 개발까지, 실제 사용 시나리오와 튜토리얼." },
   },
   advanced: {
     zh: { title: "进阶应用", description: "Skills、百炼 CLI、公众号封面等高级功能指南。" },
@@ -62,15 +71,17 @@ const CATEGORY_I18N: Record<string, Record<string, CategoryInfo>> = {
     ja: { title: "上級ガイド", description: "Skills、Bailian CLI、WeChat カバー生成などの高度な機能ガイド。" },
     ru: { title: "Продвинутый", description: "Расширенные руководства по Skills, Bailian CLI, генерации обложек WeChat и другому." },
     "pt-BR": { title: "Avançado", description: "Guias avançados para Skills, Bailian CLI, geração de capas WeChat e mais." },
+    ko: { title: "고급 활용", description: "Skills, Bailian CLI, WeChat 커버 생성 등 고급 기능 가이드." },
   },
   updates: {
-    zh: { title: "周报更新", description: "每周产品版本发布记录、新功能与社区动态。" },
-    en: { title: "Weekly Updates", description: "Weekly product releases, new features, and community highlights." },
-    de: { title: "Wöchentliche Updates", description: "Wöchentliche Produktveröffentlichungen, neue Funktionen und Community-Highlights." },
-    fr: { title: "Mises à jour hebdomadaires", description: "Versions hebdomadaires, nouvelles fonctionnalités et actualités communautaires." },
-    ja: { title: "週次アップデート", description: "毎週の製品リリース、新機能、コミュニティのハイライト。" },
-    ru: { title: "Еженедельные обновления", description: "Еженедельные релизы, новые функции и новости сообщества." },
-    "pt-BR": { title: "Atualizações Semanais", description: "Lançamentos semanais, novos recursos e destaques da comunidade." },
+    zh: { title: "功能更新", description: "每周产品版本发布记录、新功能与社区动态。" },
+    en: { title: "Feature Updates", description: "Weekly product releases, new features, and community highlights." },
+    de: { title: "Funktionsupdates", description: "Wöchentliche Produktveröffentlichungen, neue Funktionen und Community-Highlights." },
+    fr: { title: "Mises à jour des fonctionnalités", description: "Versions hebdomadaires, nouvelles fonctionnalités et actualités communautaires." },
+    ja: { title: "機能アップデート", description: "毎週の製品リリース、新機能、コミュニティのハイライト。" },
+    ru: { title: "Обновления функций", description: "Еженедельные релизы, новые функции и новости сообщества." },
+    "pt-BR": { title: "Atualizações de Recursos", description: "Lançamentos semanais, novos recursos e destaques da comunidade." },
+    ko: { title: "기능 업데이트", description: "주간 제품 릴리스, 새로운 기능, 커뮤니티 소식." },
   },
 };
 
@@ -83,6 +94,7 @@ const BLOG_I18N: Record<string, Record<string, string>> = {
     ja: "Qwen Code ブログ",
     ru: "Блог Qwen Code",
     "pt-BR": "Blog Qwen Code",
+    ko: "Qwen Code 블로그",
   },
   blogDescription: {
     zh: "获取产品更新、AI 编程实践、功能发布和真实案例。",
@@ -92,6 +104,7 @@ const BLOG_I18N: Record<string, Record<string, string>> = {
     ja: "製品アップデート、AI プログラミング実践、機能リリース、実際の活用事例。",
     ru: "Обновления продукта, практики AI-программирования, выпуски функций и реальные кейсы.",
     "pt-BR": "Atualizações de produto, práticas de codificação IA, lançamentos e casos reais.",
+    ko: "제품 업데이트, AI 코딩 실전 노하우, 기능 릴리스, 실제 활용 사례.",
   },
   recentUpdates: {
     zh: "最近更新",
@@ -101,24 +114,7 @@ const BLOG_I18N: Record<string, Record<string, string>> = {
     ja: "最近の更新",
     ru: "Последние обновления",
     "pt-BR": "Atualizações Recentes",
-  },
-  withinDays: {
-    zh: "天内",
-    en: "days",
-    de: "Tagen",
-    fr: "jours",
-    ja: "日以内",
-    ru: "дней",
-    "pt-BR": "dias",
-  },
-  articles: {
-    zh: "篇文章",
-    en: "articles",
-    de: "Artikel",
-    fr: "articles",
-    ja: "件の記事",
-    ru: "статей",
-    "pt-BR": "artigos",
+    ko: "최근 업데이트",
   },
   noArticles: {
     zh: "暂无文章",
@@ -128,6 +124,37 @@ const BLOG_I18N: Record<string, Record<string, string>> = {
     ja: "記事はまだありません",
     ru: "Статей пока нет",
     "pt-BR": "Nenhum artigo ainda",
+    ko: "아직 게시글이 없습니다",
+  },
+  pastUpdates: {
+    zh: "往期更新",
+    en: "Past Updates",
+    de: "Frühere Updates",
+    fr: "Anciennes mises à jour",
+    ja: "過去の更新",
+    ru: "Предыдущие обновления",
+    "pt-BR": "Atualizações Anteriores",
+    ko: "지난 업데이트",
+  },
+  allArticles: {
+    zh: "全部",
+    en: "All",
+    de: "Alle",
+    fr: "Tous",
+    ja: "すべて",
+    ru: "Все",
+    "pt-BR": "Todos",
+    ko: "전체",
+  },
+  loadMore: {
+    zh: "显示更多",
+    en: "Show more",
+    de: "Mehr anzeigen",
+    fr: "Voir plus",
+    ja: "もっと見る",
+    ru: "Показать ещё",
+    "pt-BR": "Mostrar mais",
+    ko: "더 보기",
   },
 };
 
@@ -147,6 +174,7 @@ export interface BlogPost {
   author: string;
   route: string;
   category: string;
+  image: string;
 }
 
 export function extractPosts(pageMap: any[]): BlogPost[] {
@@ -163,6 +191,7 @@ export function extractPosts(pageMap: any[]): BlogPost[] {
             author: child.frontMatter.author || "",
             route: child.route,
             category: item.name,
+            image: child.frontMatter.image || "",
           });
         }
       }
@@ -179,6 +208,7 @@ export function extractPosts(pageMap: any[]): BlogPost[] {
         author: item.frontMatter.author || "",
         route: item.route,
         category: "root",
+        image: item.frontMatter.image || "",
       });
     }
   }
@@ -190,4 +220,103 @@ export function sortPostsByDate(posts: BlogPost[]): BlogPost[] {
   return [...posts].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
+}
+
+export const RECENT_SIDEBAR_COUNT = 3;
+
+interface PageMapItem {
+  name?: string;
+  route?: string;
+  title?: string;
+  children?: PageMapItem[];
+  data?: Record<string, any>;
+  frontMatter?: Record<string, any>;
+}
+
+export function modifyUpdatesSidebar(pageMap: PageMapItem[], lang: string): PageMapItem[] {
+  const label = getBlogText("pastUpdates", lang);
+  const cloned = JSON.parse(JSON.stringify(pageMap)) as PageMapItem[];
+
+  const blogFolder = cloned.find((item) => item.name === "blog" && item.children);
+  if (!blogFolder) return cloned;
+
+  const updatesFolder = blogFolder.children!.find(
+    (item) => item.name === "updates" && item.children
+  );
+  if (!updatesFolder) return cloned;
+
+  let metaFile: PageMapItem | null = null;
+  const posts: PageMapItem[] = [];
+  let indexItem: PageMapItem | null = null;
+
+  for (const child of updatesFolder.children!) {
+    if (child.data && !child.name) {
+      metaFile = child;
+    } else if (child.name === "index") {
+      indexItem = child;
+    } else if (child.name && child.route) {
+      posts.push(child);
+    }
+  }
+
+  if (metaFile && metaFile.data) {
+    const metaOrder = Object.keys(metaFile.data).filter(
+      (k) => k !== "index" && !k.startsWith("--")
+    );
+    posts.sort((a, b) => {
+      const aIdx = metaOrder.indexOf(a.name!);
+      const bIdx = metaOrder.indexOf(b.name!);
+      return (aIdx === -1 ? Infinity : aIdx) - (bIdx === -1 ? Infinity : bIdx);
+    });
+  }
+
+  if (posts.length <= RECENT_SIDEBAR_COUNT) return cloned;
+
+  const recentPosts = posts.slice(0, RECENT_SIDEBAR_COUNT);
+  const archivePosts = posts.slice(RECENT_SIDEBAR_COUNT);
+
+  const archiveMetaFile: PageMapItem = { data: {} };
+  if (metaFile && metaFile.data) {
+    for (const post of archivePosts) {
+      if (metaFile.data[post.name!]) {
+        archiveMetaFile.data![post.name!] = metaFile.data[post.name!];
+      }
+    }
+  }
+
+  if (metaFile && metaFile.data) {
+    const newData: Record<string, any> = {};
+    let postCount = 0;
+    for (const [key, value] of Object.entries(metaFile.data)) {
+      if (key === "index" || key.startsWith("--")) {
+        newData[key] = value;
+        continue;
+      }
+      postCount++;
+      if (postCount <= RECENT_SIDEBAR_COUNT) {
+        newData[key] = value;
+      }
+      if (postCount === RECENT_SIDEBAR_COUNT) {
+        newData["past-updates"] = label;
+      }
+    }
+    metaFile.data = newData;
+  }
+
+  const pastUpdatesFolder: PageMapItem = {
+    name: "past-updates",
+    route: `${updatesFolder.route}/past-updates`,
+    title: label,
+    children: [archiveMetaFile, ...archivePosts],
+  };
+
+  const newChildren: PageMapItem[] = [];
+  if (metaFile) newChildren.push(metaFile);
+  if (indexItem) newChildren.push(indexItem);
+  newChildren.push(...recentPosts);
+  newChildren.push(pastUpdatesFolder);
+
+  updatesFolder.children = newChildren;
+
+  return cloned;
 }

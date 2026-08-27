@@ -20,6 +20,39 @@ Der Daemon liest den Bearer-Token entweder aus `--token <wert>` auf der CLI oder
 
 Ein `export` auf Shell-Ebene deckt sowohl den Server-Start als auch die SDK-Client-Konstruktion ab (halten Sie es nur auf die Sitzung beschränkt, gemäß dem obigen Hinweis).
 
+## Workspace-Lifecycle und Prozessgrenzen
+
+Ein Daemon kann mehrere isolierte Workspace-Runtimes unter demselben Listener hosten.
+Wiederhole `--workspace` mit absoluten Verzeichnissen, um explizite
+Startup-Runtimes zu erstellen; das erste ist primär. Primäre und andere
+explizite Startup-/statische Runtimes können ohne Neustart des Prozesses
+nicht entfernt werden.
+
+Zusätzliche Workspaces können auch während der Laufzeit des Daemons über
+`POST /workspaces` registriert werden. Übergib `persist: true`, um eine
+dynamische sekundäre in der Benutzer-Registrierungsdatenbank zu behalten,
+sodass sie beim nächsten Start wiederhergestellt wird. Nicht vertrauenswürdige
+Registrierungen bleiben für Diagnostik, begrenzte Dateilesungen und
+deklarierte persistierte Lesungen sichtbar, können aber keinen ACP starten.
+Dynamische und persistiert-wiederhergestellte Sekundärworkspaces sind
+entfernbar: Eine normale Entfernung wird abgelehnt, während die Runtime
+beschäftigt ist, während eine erzwungene Entfernung die Beendigung aktiver
+Ressourcen anfordert und die logische Entfernung vor dem erneuten Hinzufügen
+desselben cwd zusagt. Die Bereinigung ist begrenzt und best-effort nach dem
+Persistierungs-Commit-Punkt; Fehler werden protokolliert, anstatt die
+entfernte Runtime wiederherzustellen.
+
+Die Runtime-Isolation umfasst cwd, Umgebung-Overlay, Dateisystem-/Trust-Grenze,
+Workspace-Services, Bridge, Voice-Lease-State, Channel-Worker und die
+ACP/MCP-Ressource-Grenze. Production versucht, das primäre ACP-Child
+vorzuwärmen und wiederholt den ersten Versuch nach einem Fehlschlag;
+vertrauenswürdige Sekundärworkspaces starten ihres bei Bedarf, und nicht
+vertrauenswürdige Sekundärworkspaces starten keinen ACP.
+Authentifizierung, HTTP-Rate-Limits, Listener- und Voice-Admission-Caps,
+Gesamt-Session-Admission, Metriken, Shutdown und der Prozess-Fehlerradius
+bleiben daemon-global. Verwende separate Daemons, wenn diese Prozessgrenzen
+unabhängig sein müssen.
+
 ## Linux: systemd-Benutzer-Unit
 
 > **Finden Sie zuerst Ihr `qwen`-Binary.** Der `ExecStart=` in der Unit-Datei muss einen **absoluten Pfad** enthalten – Dienstmanager lesen nicht das `PATH` Ihrer Shell. Führen Sie `which qwen` aus, um ihn zu finden. Häufige Orte: `/usr/local/bin/qwen` (Linuxbrew, manuelle Installationen), `~/.nvm/versions/node/vX.Y.Z/bin/qwen` (nvm), `~/.fnm/aliases/default/bin/qwen` (fnm), `~/.volta/bin/qwen` (Volta). Ersetzen Sie den tatsächlichen Pfad überall dort, wo die Vorlagen `/PFAD/ZU/qwen` zeigen.
@@ -34,9 +67,9 @@ After=network.target
 [Service]
 Type=simple
 # Ersetzen Sie durch Ihr Projekt; %h wird unter Benutzer-Units zu $HOME expandiert.
-WorkingDirectory=%h/ihr-projekt
+WorkingDirectory=%h/project-a
 # Führen Sie `which qwen` aus, um den absoluten Pfad zu finden. systemd liest $PATH nicht.
-ExecStart=/PFAD/ZU/qwen serve --hostname 127.0.0.1 --port 4170
+ExecStart=/PFAD/ZU/qwen serve --hostname 127.0.0.1 --port 4170 --workspace %h/project-a --workspace %h/project-b
 # Lesen Sie den Bearer-Token aus einer chmod 600-Datei, anstatt ihn in der Unit
 # inline zu setzen. `Environment=` würde den Token in der Unit-Datei offenlegen
 # (normalerweise 644 = weltlesbar). EnvironmentFile hält den Token in der
@@ -95,10 +128,14 @@ Ohne `loginctl enable-linger` wird die systemd-Instanz auf Benutzerebene herunte
     <string>127.0.0.1</string>
     <string>--port</string>
     <string>4170</string>
+    <string>--workspace</string>
+    <string>/Users/IHR-BENUTZERNAME/project-a</string>
+    <string>--workspace</string>
+    <string>/Users/IHR-BENUTZERNAME/project-b</string>
   </array>
   <!-- launchd expandiert `~` oder `$HOME` NICHT – absolute Pfade verwenden. -->
   <key>WorkingDirectory</key>
-  <string>/Users/IHR-BENUTZERNAME/ihr-projekt</string>
+  <string>/Users/IHR-BENUTZERNAME/project-a</string>
   <key>EnvironmentVariables</key>
   <dict>
     <!-- COMMITEN Sie diese Datei NICHT mit einem echten Token. Setzen Sie außerdem chmod 600
@@ -152,7 +189,7 @@ Nach einer Bearbeitung der plist (z. B. Token-Rotation) müssen Sie `unload` u
 Setzt voraus, dass `QWEN_SERVER_TOKEN` bereits in Ihrer Shell exportiert ist (siehe Setup-Abschnitt oben):
 
 ```bash
-tmux new -d -s qwen-serve "cd ~/ihr-projekt && qwen serve --hostname 127.0.0.1"
+tmux new -d -s qwen-serve "qwen serve --hostname 127.0.0.1 --workspace /absolute/path/project-a --workspace /absolute/path/project-b"
 tmux attach -t qwen-serve   # Live-Logs anzeigen; Strg-b d zum Trennen
 tmux kill-session -t qwen-serve
 ```
@@ -164,13 +201,16 @@ tmux kill-session -t qwen-serve
 Setzt voraus, dass `QWEN_SERVER_TOKEN` bereits in Ihrer Shell exportiert ist:
 
 ```bash
-nohup bash -c 'cd ~/ihr-projekt && qwen serve --hostname 127.0.0.1' > qwen-serve.log 2>&1 &
+nohup qwen serve --hostname 127.0.0.1 \
+  --workspace /absolute/path/project-a \
+  --workspace /absolute/path/project-b \
+  > qwen-serve.log 2>&1 &
 echo $!  # Daemon-PID; merken, wenn Sie später sauber `kill` möchten
 ```
 
-Das umschließende `bash -c '...'` stellt sicher, dass der Daemon an `~/ihr-projekt` gebunden wird und nicht dort, wo Sie den Befehl gerade ausgeführt haben. Ohne dieses `cd` verwendet `qwen serve` standardmäßig `process.cwd()` und ein `POST /session` von einem Client, der Ihren Projekt-Workspace erwartet, gibt `400 workspace_mismatch` zurück – eine stille Falle.
+Explizite absolute `--workspace`-Werte halten den Daemon unabhängig vom aktuellen Verzeichnis der Shell. Ein Client sollte einen der angezeigten `capabilities.workspaces[]`-Einträge auswählen und dessen cwd beim Erstellen einer Sitzung übergeben.
 
-In Ordnung für einmalige „Lass mich das im Hintergrund laufen lassen, während ich an der API herumprobiere“-Workflows. **Nicht empfohlen** für alles, was über eine einzelne Sitzung hinausgeht – kein Neustart bei Absturz, Logdatei wächst unbegrenzt, keine saubere Möglichkeit, den Daemon zu finden, wenn Sie die PID vergessen haben. Bevorzugen Sie tmux für interaktive Überwachung oder systemd/launchd für alles, was einen Neustart überdauern soll.
+In Ordnung für einmalige „Lass mich das im Hintergrund laufen lassen, während ich an der API herumprobiere"-Workflows. **Nicht empfohlen** für alles, was über eine einzelne Sitzung hinausgeht – kein Neustart bei Absturz, Logdatei wächst unbegrenzt, keine saubere Möglichkeit, den Daemon zu finden, wenn Sie die PID vergessen haben. Bevorzugen Sie tmux für interaktive Überwachung oder systemd/launchd für alles, was einen Neustart überdauern soll.
 
 ## Überprüfen, ob der Daemon läuft
 
@@ -180,7 +220,7 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
   http://127.0.0.1:4170/capabilities | jq .protocolVersions         # Feature-Set des Daemons
 ```
 
-Wenn Auth konfiguriert ist (d. h. der Daemon wurde mit `--token` / gesetztem `QWEN_SERVER_TOKEN` gestartet, ODER `--require-auth=true`), benötigt jede Route außer `/health` auf Loopback `Authorization: Bearer <token>`. Wenn Sie den Daemon ohne Token auf dem Loopback-Standard gestartet haben (der `qwen serve`-Nullkonfigurationspfad), benötigt keiner der Aufrufe einen Header. Die obigen Vorlagen konfigurieren alle einen Token, daher wird der `Authorization`-Header in der Praxis benötigt. Wenn `/capabilities` `401` zurückgibt, stimmt der Token in der Unit/plist nicht mit dem in der Umgebung exportierten Token überein, den Ihr `curl` verwendet.
+Wenn Auth konfiguriert ist (d. h. der Daemon wurde mit `--token` / gesetztem `QWEN_SERVER_TOKEN` gestartet, ODER `--require-auth=true`), benötigt jede Route außer `/health` auf Loopback-Binds `Authorization: Bearer <token>`. Wenn du den Daemon ohne Token auf dem Loopback-Standard gestartet hast (der `qwen serve`-Nullkonfigurationspfad), benötigt keiner der Aufrufe einen Header. Die obigen Vorlagen konfigurieren alle einen Token, daher wird der `Authorization`-Header in der Praxis benötigt. Wenn `/capabilities` `401` zurückgibt, stimmt der Token in der Unit/plist nicht mit dem per `export` gesetzten Token überein, den dein `curl` verwendet.
 
 ## Token-Rotation
 
@@ -213,8 +253,8 @@ Ein **Neustart** des Daemons verwirft alle In-Memory-Sitzungen; Clients verbinde
 ## Außerhalb des Rahmens (verschoben auf v0.16.x oder später)
 
 - **Containerisierte Bereitstellung** – Dockerfile, docker-compose, Kubernetes-Manifeste, nginx + TLS-Reverse-Proxy, Multi-Instanz-Token-Isolation. Verschiebt sich auf v0.16.x, sobald ein Enterprise-Pilot festgelegt ist; das Dokument würde sonst veralten, da es niemand validiert.
-- **Hostübergreifende Föderation / Multi-Daemon-Koordination auf einem Host** – `1 Daemon = 1 Workspace × N Sitzungen` wird erzwungen. Token-Verknüpfung auf Instanzebene + Bereinigung alter Token verschiebt sich auf v0.16.x.
-- **Automatisch generierte Daemon-Token** – Alpha ist BYO-Token. Auto-Gen + Token-Speicher-Infrastruktur verschiebt sich auf v0.16.x.
+- **Hostübergreifende Föderation / Multi-Daemon-Koordination auf einem Host** – ein Daemon kann mehrere registrierte Workspace-Runtimes hosten, aber Daemons koordinieren sich nicht untereinander. Token-Verknüpfung auf Instanzebene + Bereinigung alter Token verschiebt sich auf v0.16.x.
+- **Allgemeine Daemon-Token-Speicherung** – Local Control verwendet revokierbare, Daemon-besessene Pairing-Tokens, aber die langlebige Runtime-Token-Speicherung bleibt BYO-Token. Persistente Token-Store-Infrastruktur wird auf v0.16.x verschoben.
 - **Windows-nativer Dienst** (`nssm`, Service Control Manager-Wrapper) – verwenden Sie vorerst [WSL2](https://learn.microsoft.com/en-us/windows/wsl/) und folgen Sie dem obigen systemd-Abschnitt.
 
 Siehe den Hinweis zu den [v0.16-alpha bekannten Einschränkungen](./qwen-serve.md#v016-alpha-known-limits) im Hauptbenutzerhandbuch für die vollständige Liste der verschobenen Funktionen und [#4175](https://github.com/QwenLM/qwen-code/issues/4175) für das v0.16-alpha-Rollout-Tracking-Issue.

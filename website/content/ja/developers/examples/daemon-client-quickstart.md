@@ -7,12 +7,13 @@
 1 つ目のターミナルで:
 
 ```bash
-cd your-project/
-qwen serve --port 4170
-# → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/your-project)
+qwen serve --port 4170 \
+  --workspace /path/to/project-a \
+  --workspace /path/to/project-b
+# → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/project-a)
 ```
 
-[#3803](https://github.com/QwenLM/qwen-code/issues/3803) §02 により、各デーモンは起動時に 1 つのワークスペースにバインドされます (現在の `cwd`、または `--workspace /path/to/dir` で上書き可能)。デーモンのバインドされたパスは `/capabilities.workspaceCwd` で公開されるため、クライアントは事前にチェックし、`POST /session` から `cwd` を省略できます。
+各 `--workspace` の値は絶対ディレクトリである必要があります。最初の起動ワークスペースがプライマリとなり、`cwd` を省略したリクエストの互換性デフォルトとして残ります。`/capabilities.workspaces[]` は、ランタイムを明示的に選択する際にクライアントが使用すべきカタログです。
 
 もう 1 つのターミナルで:
 
@@ -39,21 +40,21 @@ const client = new DaemonClient({
 });
 
 // 1. デーモンに到達可能であることを確認し、機能に基づいて UI をゲートし、
-//    デーモンのバインドされたワークスペースを読み取ります (#3803 §02)。
+//    公開されたカタログから信頼されたワークスペースを選択します。
 const caps = await client.capabilities();
 console.log('Daemon features:', caps.features);
-console.log('Daemon workspace:', caps.workspaceCwd); // 正規化されたバインドパス
+const selectedWorkspace =
+  caps.workspaces?.find(
+    (workspace) => workspace.trusted && !workspace.primary,
+  ) ?? caps.workspaces?.find((workspace) => workspace.trusted);
+if (!selectedWorkspace) throw new Error('No trusted workspace is available');
+console.log('Selected workspace:', selectedWorkspace.id, selectedWorkspace.cwd);
 
-// 2. セッションを生成またはアタッチします。2 つの等しく有効な形式:
-//    (a) `workspaceCwd: caps.workspaceCwd` を渡して明示的にする
-//    (b) `workspaceCwd` を完全に省略する — SDK は `cwd` フィールドを送信せず、
-//        デーモンルートはバインドされたワークスペースにフォールバックします。
-//        (b) の形式は簡潔ですが、`caps.workspaceCwd` が意図したものであると
-//        信頼していることが前提です。
-//    デーモンのバインドされたパスに正規化されない空でない `workspaceCwd` は
-//    `400 workspace_mismatch` を返します (下記「ワークスペースの不一致」参照)。
+// 2. そのランタイム内でセッションを生成またはアタッチします。
+//    SDK は `workspaceCwd` をワイヤーレベルの POST /session `cwd` フィールドにマップします。
+//    呼び出し元が意図的にレガシーのプライマリデフォルトを希望する場合のみ省略が許可されます。
 const session = await client.createOrAttachSession({
-  workspaceCwd: caps.workspaceCwd,
+  workspaceCwd: selectedWorkspace.cwd,
 });
 console.log(`session=${session.sessionId} attached=${session.attached}`);
 
@@ -101,7 +102,7 @@ function handleEvent(event: DaemonEvent): void {
       break;
     }
     case 'permission_request':
-      // 「権限の投票」のファーストレスポンダーセマンティクスを参照。
+      // first-responder セマンティクスについては下記の「権限の投票」を参照。
       console.log('\n[needs permission]', event.data);
       break;
     case 'permission_resolved':
@@ -118,12 +119,13 @@ function handleEvent(event: DaemonEvent): void {
 
 ## ワークスペースファイルヘルパー
 
-ファイルルートはセッションスコープではなくワークスペーススコープのため、`DaemonClient` に直接存在します:
+ファイルルートはセッションスコープではなくワークスペーススコープです。選択したワークスペース ID にバインドされた qualified ヘルパーを使用し、すべてのリクエストがそのランタイム内に留まるようにします:
 
 ```ts
-const file = await client.readWorkspaceFile('src/main.ts');
+const selected = client.workspaceById(selectedWorkspace.id);
+const file = await selected.readWorkspaceFile('src/main.ts');
 
-const updated = await client.editWorkspaceFile({
+const updated = await selected.editWorkspaceFile({
   path: 'src/main.ts',
   oldText: 'timeout: 30000',
   newText: 'timeout: 60000',
@@ -177,7 +179,7 @@ case 'permission_request': {
 
 ## 共有セッションコラボレーション
 
-**同じデーモン**を指す 2 つのクライアントは、同じセッションになります。#3803 §02 により、各デーモンは起動時に 1 つのワークスペースにバインドされるため、`qwen serve --workspace /work/repo` (または `cd /work/repo && qwen serve`) として起動されたデーモンが、両方のクライアントの接続先になります:
+**同じデーモンワークスペース**を指す 2 つのクライアントは、デフォルトの `sessionScope: 'single'` を使用すると同じセッションになります。`qwen serve --workspace /work/repo`（または `cd /work/repo && qwen serve`）として起動されたシングルワークスペースデーモンでは、両方のクライアントがそのプライマリワークスペースに接続します:
 
 ```ts
 // デーモンは `qwen serve --workspace /work/repo` として起動されたため、
@@ -197,7 +199,7 @@ console.log(a.sessionId === b.sessionId); // true
 
 ## ワークスペースの不一致
 
-`workspaceCwd` がデーモンのバインドされたワークスペースと一致しない場合、`createOrAttachSession` は `DaemonHttpError` で拒否され、ステータス `400` と構造化ボディが返ります:
+`workspaceCwd` が登録された公開ワークスペースのいずれとも一致しない場合、`createOrAttachSession` は `DaemonHttpError` で拒否され、ステータス `400` と構造化ボディが返ります。登録済みだが信頼されていないセカンダリの場合は `403 untrusted_workspace` が返され、プライマリに対してリトライしてはいけません:
 
 ```ts
 import { DaemonHttpError } from '@qwen-code/sdk';
@@ -213,16 +215,16 @@ try {
     };
     if (body.code === 'workspace_mismatch') {
       console.error(
-        `このデーモンは ${body.boundWorkspace} にバインドされています。` +
-          `${body.requestedWorkspace} ではありません。そのワークスペース用に個別のデーモンを` +
-          `起動するか、正しい方にルーティングしてください。`,
+        `ワークスペース ${body.requestedWorkspace} は登録されていません。` +
+          `capabilities を更新して公開ワークスペースを選択するか、` +
+          `リトライ前に登録してください。`,
       );
     }
   }
 }
 ```
 
-マルチワークスペースデプロイメントでは、ワークスペースごとに 1 つのデーモンを別々のポートで実行します。§02 ではデーモン内ルーティングはありません。オーケストレータ (またはユーザーのランチャー) が、クライアントが通信したいプロジェクトに基づいて適切なデーモンを選択します。
+ミスマッチ後にプライマリワークスペースに対してリトライしないでください。`/capabilities` を更新し、`workspaces[]` から意図したエントリを選択するか、`POST /workspaces` を通じて対象の動的ワークスペースを登録してください。認証、レート制限、またはプロセスのフォルト境界も独立である必要がある場合にのみ、個別のデーモンを使用します。
 
 ## 認証
 

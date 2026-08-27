@@ -15,9 +15,7 @@ npm install @qwen-code/sdk
 ## Prérequis
 
 - Node.js >= 22.0.0
-- [Qwen Code](https://github.com/QwenLM/qwen-code) >= 0.4.0 (stable) installé et accessible dans le PATH
-
-> **Note pour les utilisateurs de nvm** : Si vous utilisez nvm pour gérer les versions de Node.js, le SDK peut ne pas être en mesure de détecter automatiquement l'exécutable Qwen Code. Vous devez explicitement définir l'option `pathToQwenExecutable` avec le chemin complet du binaire `qwen`.
+- [Qwen Code](https://github.com/QwenLM/qwen-code) >= 0.4.0 (stable). Le SDK utilise sa CLI intégrée par défaut ; définissez `pathToQwenExecutable` uniquement lorsque vous avez besoin d'exécuter un binaire `qwen` personnalisé ou un bundle CLI.
 
 ## Démarrage rapide
 
@@ -59,8 +57,8 @@ Crée une nouvelle session de requête avec Qwen Code.
 | ------------------------ | ---------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `cwd`                    | `string`                                       | `process.cwd()`   | Le répertoire de travail pour la session de requête. Détermine le contexte dans lequel les opérations sur les fichiers et les commandes sont exécutées.                                                                                                                                                                                                                                                                                                                                                       |
 | `model`                  | `string`                                       | -                 | Le modèle IA à utiliser (ex. `'qwen-max'`, `'qwen-plus'`, `'qwen-turbo'`). Prédomine sur les variables d'environnement `OPENAI_MODEL` et `QWEN_MODEL`.                                                                                                                                                                                                                                                                                                                                                         |
-| `pathToQwenExecutable`   | `string`                                       | Détection auto    | Chemin vers l'exécutable Qwen Code. Prend en charge plusieurs formats : `'qwen'` (binaire natif depuis le PATH), `'/chemin/vers/qwen'` (chemin explicite), `'/chemin/vers/cli.js'` (bundle Node.js), `'node:/chemin/vers/cli.js'` (forcer l'exécution Node.js), `'bun:/chemin/vers/cli.js'` (forcer l'exécution Bun). S'il n'est pas fourni, détection automatique depuis : la variable d'environnement `QWEN_CODE_CLI_PATH`, `~/.volta/bin/qwen`, `~/.npm-global/bin/qwen`, `/usr/local/bin/qwen`, `~/.local/bin/qwen`, `~/node_modules/.bin/qwen`, `~/.yarn/bin/qwen`. |
-| `permissionMode`         | `'default' \| 'plan' \| 'auto-edit' \| 'yolo'` | `'default'`       | Mode de permission contrôlant l'approbation d'exécution des outils. Voir [Modes de permission](#modes-de-permission) pour plus de détails.                                                                                                                                                                                                                                                                                                                                                                   |
+| `pathToQwenExecutable`   | `string`                                       | CLI intégrée      | Chemin vers l'exécutable Qwen Code. Prend en charge plusieurs formats : `'qwen'` (binaire natif depuis le PATH), `'/chemin/vers/qwen'` (chemin explicite), `'/chemin/vers/cli.js'` (bundle Node.js), `'node:/chemin/vers/cli.js'` (forcer l'exécution Node.js), `'bun:/chemin/vers/cli.js'` (forcer l'exécution Bun). S'il n'est pas fourni, le SDK utilise la CLI intégrée incluse dans le package. |
+| `permissionMode`         | `'default' \| 'plan' \| 'auto-edit' \| 'auto' \| 'yolo'` | `'default'`       | Mode de permission contrôlant l'approbation d'exécution des outils. Voir [Modes de permission](#modes-de-permission) pour plus de détails.                                                                                                                                                                                                                                                                                                                                                                   |
 | `canUseTool`             | `CanUseTool`                                   | -                 | Gestionnaire de permission personnalisé pour l'approbation d'exécution des outils. Invoqué lorsqu'un outil nécessite une confirmation. Doit répondre dans les 60 secondes, sinon la demande est automatiquement refusée. Voir [Gestionnaire de permission personnalisé](#gestionnaire-de-permission-personnalisé).                                                                                                                                                                                             |
 | `env`                    | `Record<string, string>`                       | -                 | Variables d'environnement à transmettre au processus Qwen Code. Fusionnées avec l'environnement du processus actuel.                                                                                                                                                                                                                                                                                                                                                                                          |
 | `systemPrompt`           | `string \| QuerySystemPromptPreset`            | -                 | Configuration du prompt système pour la session principale. Utilisez une chaîne pour remplacer complètement le prompt système intégré de Qwen Code, ou un objet preset pour conserver le prompt intégré et ajouter des instructions supplémentaires.                                                                                                                                                                                                                                                          |
@@ -68,10 +66,10 @@ Crée une nouvelle session de requête avec Qwen Code.
 | `abortController`        | `AbortController`                              | -                 | Contrôleur pour annuler la session de requête. Appelez `abortController.abort()` pour terminer la session et libérer les ressources.                                                                                                                                                                                                                                                                                                                                                                          |
 | `debug`                  | `boolean`                                      | `false`           | Active le mode débogage pour une journalisation détaillée du processus CLI.                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `maxSessionTurns`        | `number`                                       | `-1` (illimité)   | Nombre maximum de tours de conversation avant que la session ne se termine automatiquement. Un tour consiste en un message utilisateur et une réponse de l'assistant.                                                                                                                                                                                                                                                                                                                                          |
-| `coreTools`              | `string[]`                                     | -                 | Utilise l'ancienne sémantique `coreTools` / liste d'autorisation CLI `--core-tools`. Si spécifié, seuls les outils de base correspondants sont enregistrés pour la session. Ceci est distinct de `permissions.allow`, qui approuve automatiquement les appels d'outils correspondants mais ne restreint pas l'enregistrement des outils. Exemple : `['read_file', 'edit', 'run_shell_command']`.                                                                                                               |
+| `coreTools`              | `string[]`                                               | -                | Utilise l'ancienne sémantique `coreTools` / liste d'autorisation CLI `--core-tools`. Si spécifié, seuls les outils de base correspondants sont enregistrés pour la session. Ceci est distinct de `permissions.allow` dans settings.json, qui active également une liste d'autorisation au niveau du registre au démarrage : lorsqu'au moins une règle d'autorisation valide y est configurée (les entrées malformées ne comptent pas), les outils intégrés non couverts par une règle d'autorisation ou de demande ne sont pas enregistrés (les outils MCP, le contrat `--json-schema` `structured_output`, les outils de cycle de vie du mode plan, `task_stop`, `tool_search` et la famille `computer_use__*` sont exemptés ; nécessite un redémarrage, #9827, #10075). Le paramètre SDK `allowedTools` ne peut pas activer seul la liste d'autorisation, mais lorsque celle-ci est active, ses règles sont fusionnées dans l'ensemble d'autorisation effectif et comptent dans la couverture, maintenant les outils intégrés couverts enregistrés. Exemple : `['read_file', 'edit', 'run_shell_command']`. |
 | `excludeTools`           | `string[]`                                     | -                 | Équivalent à `permissions.deny` dans settings.json. Les outils exclus retournent immédiatement une erreur de permission. Priorité la plus élevée sur tous les autres paramètres de permission. Prend en charge les alias de noms d'outils et la correspondance de motifs : nom d'outil (`'write_file'`), préfixe de commande shell (`'Bash(rm *)'`), ou motifs de chemin (`'Read(.env)'`, `'Edit(/src/**)'`).                                                                                                 |
-| `allowedTools`           | `string[]`                                     | -                 | Équivalent à `permissions.allow` dans settings.json. Les outils correspondants contournent le callback `canUseTool` et s'exécutent automatiquement. S'applique uniquement lorsque l'outil nécessite une confirmation. Prend en charge la même correspondance de motifs que `excludeTools`. Exemple : `['Bash(git status)', 'Bash(npm test)']`.                                                                                                                                                                 |
-| `authType`               | `'openai' \| 'qwen-oauth'`                     | `'openai'`        | Type d'authentification pour le service IA. Le niveau gratuit Qwen OAuth a été interrompu le 15/04/2026 ; les nouvelles configurations SDK doivent utiliser une authentification compatible OpenAI ou un autre fournisseur pris en charge.                                                                                                                                                                                                                                                                    |
+| `allowedTools`           | `string[]`                                               | -                | Équivalent à `permissions.allow` dans settings.json pour l'auto-approbation. Les outils correspondants contournent le callback `canUseTool` et s'exécutent automatiquement. S'applique uniquement lorsque l'outil nécessite une confirmation. Contrairement à `permissions.allow` dans settings.json, ce paramètre seul n'active pas la liste d'autorisation du registre ; cependant, lorsque la liste d'autorisation des paramètres est active, les règles `allowedTools` sont fusionnées dans l'ensemble d'autorisation effectif et comptent dans la couverture, donc les outils intégrés couverts restent enregistrés. Prend en charge la même correspondance de motifs que `excludeTools`. Exemple : `['Bash(git status)', 'Bash(npm test)']`. |
+| `authType`               | `'openai' \| 'anthropic' \| 'qwen-oauth' \| 'gemini' \| 'vertex-ai'` | `-`        | Type d'authentification pour le service IA. Lorsqu'il est fourni, le SDK le transmet à la CLI en tant que `--auth-type`.                                                                                                                                                                                                                                                                                                                                                                                     |
 | `agents`                 | `SubagentConfig[]`                             | -                 | Configuration des sous-agents pouvant être invoqués pendant la session. Les sous-agents sont des IA spécialisées pour des tâches ou domaines spécifiques.                                                                                                                                                                                                                                                                                                                                                      |
 | `includePartialMessages` | `boolean`                                      | `false`           | Lorsque `true`, le SDK émet les messages incomplets au fur et à mesure qu'ils sont générés, permettant un streaming en temps réel de la réponse de l'IA.                                                                                                                                                                                                                                                                                                                                                       |
 | `resume`                 | `string`                                       | -                 | Reprendre une session précédente en fournissant son ID de session. Équivalent au drapeau `--resume` du CLI.                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -94,12 +92,17 @@ Le SDK applique les timeouts par défaut suivants :
 Vous pouvez personnaliser ces timeouts via l'option `timeout` :
 
 ```typescript
-const query = qwen.query('Votre prompt', {
-  timeout: {
-    canUseTool: 60000, // 60 secondes pour le callback de permission
-    mcpRequest: 600000, // 10 minutes pour les appels d'outils MCP
-    controlRequest: 60000, // 60 secondes pour les requêtes de contrôle
-    streamClose: 15000, // 15 secondes pour l'attente de fermeture du flux
+import { query } from '@qwen-code/sdk';
+
+const q = query({
+  prompt: 'Your prompt',
+  options: {
+    timeout: {
+      canUseTool: 60000, // 60 secondes pour le callback de permission
+      mcpRequest: 600000, // 10 minutes pour les appels d'outils MCP
+      controlRequest: 60000, // 60 secondes pour les requêtes de contrôle
+      streamClose: 15000, // 15 secondes pour l'attente de fermeture du flux
+    },
   },
 });
 ```
@@ -157,6 +160,28 @@ const detail = await q.getContextUsage(true);
 await q.close();
 ```
 
+`interrupt()` annule uniquement le tour actif. Pour une requête multi-tours créée avec un prompt itérable asynchrone, la requête et son flux d'entrée restent ouverts, donc les messages ultérieurs de l'itérable sont traités normalement. Utilisez `close()` ou abortez le `AbortController` configuré lorsque vous souhaitez terminer la session entière.
+
+## IDs de session fournis par l'appelant du démon
+
+`DaemonClient.createOrAttachSession` accepte un `sessionId` optionnel pour les appelants qui doivent persister une identité avant la création de session :
+
+```typescript
+import { DaemonClient } from '@qwen-code/sdk';
+
+const daemon = new DaemonClient({ baseUrl: 'http://127.0.0.1:4170' });
+const session = await daemon.createOrAttachSession({
+  workspaceCwd: '/path/to/project',
+  sessionId: '550E8400-E29B-41D4-A716-446655440000',
+});
+
+console.log(session.sessionId); // 550e8400-e29b-41d4-a716-446655440000
+```
+
+Le SDK exige la capacité `session_id_override` du démon avant d'envoyer la mutation. En mode REST, `sessionId` est sérialisé directement ; un adaptateur ACP actif le mappe vers `session/new._meta["qwen-code/sessionId"]`. Le SDK vérifie la réponse de succès et lève `DaemonSessionIdProtocolError` si le démon retourne un ID différent.
+
+Cette option crée toujours une nouvelle session thread et n'est pas un attach idempotent. Si le résultat de création est ambigu, utilisez l'ID connu avec load ou resume. Omettre l'option préserve le comportement existant de create-or-attach.
+
 ## Modes de permission
 
 Le SDK prend en charge différents modes de permission pour contrôler l'exécution des outils :
@@ -164,6 +189,7 @@ Le SDK prend en charge différents modes de permission pour contrôler l'exécut
 - **`default`** : Les outils d'écriture sont refusés sauf approbation via le callback `canUseTool` ou s'ils sont dans `allowedTools`. Les outils en lecture seule s'exécutent sans confirmation.
 - **`plan`** : Bloque tous les outils d'écriture, en demandant à l'IA de présenter d'abord un plan.
 - **`auto-edit`** : Approuve automatiquement les outils d'édition (`edit`, `write_file`, `notebook_edit`) tandis que les autres outils nécessitent une confirmation.
+- **`auto`** : Utilise le classificateur intégré pour approuver automatiquement les appels d'outils sûrs et bloquer les risqués, avec un fallback vers l'approbation manuelle après des blocages répétés par la politique ou des pannes du classificateur.
 - **`yolo`** : Tous les outils s'exécutent automatiquement sans confirmation.
 
 ### Chaîne de priorité des permissions
@@ -177,8 +203,9 @@ La première règle correspondante l'emporte.
 3. `permissionMode: 'plan'` - Bloque tous les outils non en lecture seule
 4. `permissionMode: 'yolo'` - Approuve automatiquement tous les outils
 5. `allowedTools` / `permissions.allow` - Approuve automatiquement les outils correspondants
-6. Callback `canUseTool` - Logique d'approbation personnalisée (si fourni, non appelé pour les outils autorisés)
-7. Comportement par défaut - Refus automatique en mode SDK (les outils d'écriture nécessitent une approbation explicite)
+6. `permissionMode: 'auto'` - Approbation via classificateur pour les outils restants
+7. Callback `canUseTool` - Logique d'approbation personnalisée (si fourni, non appelé pour les outils autorisés)
+8. Comportement par défaut - Refus automatique en mode SDK (les outils d'écriture nécessitent une approbation explicite)
 
 ## Exemples
 

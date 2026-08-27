@@ -92,6 +92,7 @@ const getUserLanguage = (): string => {
   if (browserLang.startsWith("ru")) return "ru";
   if (browserLang.startsWith("ja")) return "ja";
   if (browserLang.startsWith("pt")) return "pt-BR";
+  if (browserLang.startsWith("ko")) return "ko";
 
   return "en"; // 默认英文
 };

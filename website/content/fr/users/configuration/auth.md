@@ -3,7 +3,7 @@
 Le menu `/auth` de Qwen Code lors du premier lancement propose trois options de premier niveau. Choisissez celle qui correspond à la façon dont vous souhaitez exécuter la CLI :
 
 - **Alibaba ModelStudio** : configuration officielle recommandée. Ouvre un sous-menu avec **Coding Plan** (pour les développeurs individuels · quota hebdomadaire inclus), **Token Plan** (pour les équipes et les entreprises · facturation à l'usage avec un endpoint dédié) ou **Standard API Key** (connexion avec une clé API ModelStudio existante).
-- **Third-party Providers** : choisissez un fournisseur intégré et connectez-vous avec une clé API (DeepSeek, MiniMax, Z.AI, Idealab, ModelScope, OpenRouter, Requesty).
+- **Third-party Providers** : choisissez un fournisseur intégré et connectez-vous avec une clé API (DeepSeek, Grok, MiniMax, Z.AI, Kimi, Idealab, ModelScope, OpenRouter, Requesty).
 - **Custom Provider** : connectez manuellement un serveur local, un proxy ou un fournisseur non pris en charge — prend en charge OpenAI, Anthropic, Gemini et d'autres endpoints compatibles.
 
 > [!note]
@@ -75,18 +75,15 @@ Si vous préférez ignorer le flux interactif `/auth`, ajoutez ce qui suit à `~
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "qwen3-coder-plus",
-          "name": "qwen3-coder-plus (Coding Plan)",
-          "baseUrl": "https://coding.dashscope.aliyuncs.com/v1",
-          "description": "qwen3-coder-plus from Alibaba Cloud Coding Plan",
-          "envKey": "BAILIAN_CODING_PLAN_API_KEY"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "qwen3-coder-plus",
+        "name": "qwen3-coder-plus (Coding Plan)",
+        "baseUrl": "https://coding.dashscope.aliyuncs.com/v1",
+        "description": "qwen3-coder-plus from Alibaba Cloud Coding Plan",
+        "envKey": "BAILIAN_CODING_PLAN_API_KEY"
+      }
+    ]
   },
   "env": {
     "BAILIAN_CODING_PLAN_API_KEY": "sk-sp-xxxxxxxxx"
@@ -117,18 +114,15 @@ Le moyen le plus simple de commencer avec l'authentification par clé API est de
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "qwen3-coder-plus",
-          "name": "qwen3-coder-plus",
-          "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-          "description": "Qwen3-Coder via Dashscope",
-          "envKey": "DASHSCOPE_API_KEY"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "qwen3-coder-plus",
+        "name": "qwen3-coder-plus",
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "description": "Qwen3-Coder via Dashscope",
+        "envKey": "DASHSCOPE_API_KEY"
+      }
+    ]
   },
   "env": {
     "DASHSCOPE_API_KEY": "sk-xxxxxxxxxxxxx"
@@ -168,7 +162,7 @@ Le concept clé est **Model Providers** (`modelProviders`) : Qwen Code prend en 
 | Compatible OpenAI | `openai`             | `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL` (alias : `QWEN_MODEL`)                            | OpenAI, Azure OpenAI, OpenRouter, Requesty, ModelScope, Alibaba Cloud, tout endpoint compatible OpenAI |
 | Anthropic         | `anthropic`          | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`                                         | Anthropic Claude                                                                                      |
 | Google GenAI      | `gemini`             | `GEMINI_API_KEY`, `GEMINI_MODEL`                                                                     | Google Gemini                                                                                         |
-| Vertex AI         | `vertex-ai`          | `GOOGLE_API_KEY`, `GOOGLE_MODEL` (définit `GOOGLE_GENAI_USE_VERTEXAI=true` ; utilise le protocole `gemini`) | Google Vertex AI                                                                                      |
+| Vertex AI         | `vertex-ai`          | `GOOGLE_API_KEY` ou `GOOGLE_CLOUD_PROJECT` (+ `GOOGLE_CLOUD_LOCATION` optionnel), `GOOGLE_MODEL` (utilise le protocole `gemini` ; un projet sans clé n'est pas détecté automatiquement depuis l'environnement, donc sélectionnez le type d'authentification explicitement avec `--auth-type vertex-ai` ou `security.auth.selectedType`) | Google Vertex AI                                                                                      |
 
 #### Étape 1 : Configurer les modèles et les fournisseurs dans `~/.qwen/settings.json`
 
@@ -183,37 +177,28 @@ Modifiez `~/.qwen/settings.json` (créez-le s'il n'existe pas). Vous pouvez mél
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "gpt-4o",
-          "name": "GPT-4o",
-          "envKey": "OPENAI_API_KEY",
-          "baseUrl": "https://api.openai.com/v1"
-        }
-      ]
-    },
-    "anthropic": {
-      "protocol": "anthropic",
-      "models": [
-        {
-          "id": "claude-sonnet-4-20250514",
-          "name": "Claude Sonnet 4",
-          "envKey": "ANTHROPIC_API_KEY"
-        }
-      ]
-    },
-    "gemini": {
-      "protocol": "gemini",
-      "models": [
-        {
-          "id": "gemini-2.5-pro",
-          "name": "Gemini 2.5 Pro",
-          "envKey": "GEMINI_API_KEY"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "gpt-4o",
+        "name": "GPT-4o",
+        "envKey": "OPENAI_API_KEY",
+        "baseUrl": "https://api.openai.com/v1"
+      }
+    ],
+    "anthropic": [
+      {
+        "id": "claude-sonnet-4-20250514",
+        "name": "Claude Sonnet 4",
+        "envKey": "ANTHROPIC_API_KEY"
+      }
+    ],
+    "gemini": [
+      {
+        "id": "gemini-2.5-pro",
+        "name": "Gemini 2.5 Pro",
+        "envKey": "GEMINI_API_KEY"
+      }
+    ]
   }
 }
 ```
@@ -236,7 +221,7 @@ Modifiez `~/.qwen/settings.json` (créez-le s'il n'existe pas). Vous pouvez mél
 >
 > Lors de l'utilisation du champ `env` dans `settings.json`, les identifiants sont stockés en texte clair. Pour une meilleure sécurité, préférez les fichiers `.env` ou les `export` du shell — consultez l'[Étape 2](#step-2-set-environment-variables).
 
-Pour le schéma complet de `modelProviders` et les options avancées comme `generationConfig`, `customHeaders` et `extra_body`, consultez la [Référence des Model Providers](model-providers.md).
+Pour le schéma complet de `modelProviders` et les options avancées comme `generationConfig`, `customHeaders` et `extra_body`, consultez la [Référence des Model Providers](./model-providers.md).
 
 #### Étape 2 : Définir les variables d'environnement
 

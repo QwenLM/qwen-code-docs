@@ -4,7 +4,7 @@
 
 `packages/acp-bridge/` は、デーモンの HTTP レイヤーと ACP 子プロセス間の境界を担います。これは `packages/cli/src/serve/`（`qwen serve` デーモン）によって利用され、将来のコンシューマー（`channels/base/AcpBridge.ts`、VS Code IDE コンパニオン）が CLI パッケージに直接依存せずに同じブリッジコアを利用できるようにするため、#4175 F1 step 3 で抽出されました。
 
-このブリッジは、1つの `HttpAcpBridge` インスタンス、ACP 子プロセスへの1つの `AcpChannel`、そのチャネル上で多重化されたセッション、セッションごとの `EventBus`、`MultiClientPermissionMediator`、`BridgeFileSystem` アダプター、および ACP 指向のヘルパー（`spawnOrAttach`、`loadSession`、`resumeSession`、`sendPrompt`、`cancelSession`、`respondToPermission`、さらにワークスペースステータスと MCP 再起動用の extMethod RPC）を提供します。
+各アクティブな `WorkspaceRuntime` は1つの `HttpAcpBridge` インスタンスを所有します。本番環境ではプライマリブリッジのプリヒートを試み、失敗時は初回使用時にリトライします。信頼されたセカンダリは `AcpChannel` をオープンし、オンデマンドで子プロセスを起動します。信頼されていないセカンダリは ACP を起動できません。ランタイム内で、ブリッジはチャネル上の多重化セッション、セッションごとの `EventBus`、`MultiClientPermissionMediator`、`BridgeFileSystem` アダプター、および ACP 指向のヘルパー（`spawnOrAttach`、`loadSession`、`resumeSession`、`sendPrompt`、`cancelSession`、`respondToPermission`、さらにワークスペースステータスと MCP 再起動用の extMethod RPC）を提供します。ブリッジと子プロセスはワークスペースランタイム間で共有されることはありません。
 
 ## 責務
 
@@ -15,8 +15,8 @@
 - 異なるモデルでの同時アタッチがエージェントと競合しないように、`setSessionModel` 呼び出しに対してセッションごとの FIFO を提供します。
 - `GET /session/:id/events` を駆動するセッションごとの `EventBus`（[`10-event-bus.md`](./10-event-bus.md) を参照）。
 - 権限フロー: `BridgeClient.requestPermission` → `MultiClientPermissionMediator.request` → ファンアウト → 投票収集 → ACP レスポンス（[`04-permission-mediation.md`](./04-permission-mediation.md) を参照）。
-- ファイル I/O: ACP の `readTextFile` / `writeTextFile` 呼び出し用の `BridgeFileSystem` アダプター（[`07-workspace-filesystem.md`](./07-workspace-filesystem.md) を参照）。
-- ワークスペースレベルのステータス（`/workspace/mcp`、`/workspace/skills`、`/workspace/providers`）と MCP 再起動用の extMethod RPC。
+- ファイル I/O: ACP の読み取りと書き込み用の `BridgeFileSystem` アダプター。同一ホストのデーモンランタイムは `readTextFile: false` を通知するため、通常のテキスト読み取りは子プロセス内に留まり、最終的なテキスト書き込みは委譲されたままです（[`07-workspace-filesystem.md`](./07-workspace-filesystem.md) を参照）。
+- ワークスペースレベルのステータス（`/workspace/mcp`、`/workspace/skills`、`/workspace/providers`）、MCP 再起動、およびオプションのプライベート管理 Tool Guard コールバック用の extMethod RPC。
 - ライフサイクル: チャネルごとに `KILL_HARD_DEADLINE_MS`（10秒）の猶予を持つグレースフルな `shutdown()`。2番目のシグナルによる強制終了用の同期的な `killAllSync()`。
 
 ## アーキテクチャ
@@ -45,7 +45,7 @@
 | `defaultEntry`  | `SessionEntry \| null`          | `sessionScope: 'single'` の場合に使用される「単一」セッション。                                                                                                                                                                                                                                                                                                                                                 |
 | `defaultPolicy` | `PermissionPolicy`              | `BridgeOptions.permissionPolicy` を介して設定されます。                                                                                                                                                                                                                                                                                                                                                         |
 | `mediator`      | `MultiClientPermissionMediator` | ブリッジインスタンスごとに1つ。                                                                                                                                                                                                                                                                                                                                                                                 |
-| Constants       | —                               | `DEFAULT_INIT_TIMEOUT_MS = 10_000`, `MCP_RESTART_TIMEOUT_MS = 300_000`, `DEFAULT_MAX_SESSIONS = 20`, `MAX_EVENT_RING_SIZE = 1_000_000`, `DEFAULT_PERMISSION_TIMEOUT_MS = 5min`, `DEFAULT_MAX_PENDING_PER_SESSION = 64`。                                                                                                                                                                                  |
+| Constants       | —                               | `DEFAULT_INIT_TIMEOUT_MS = 10_000`, `MCP_RESTART_TIMEOUT_MS = 300_000`, `DEFAULT_MAX_SESSIONS = 32`, `MAX_EVENT_RING_SIZE = 1_000_000`, `DEFAULT_PERMISSION_TIMEOUT_MS = 0`, `DEFAULT_MAX_PENDING_PER_SESSION = 64`。                                                                                                                                                                                  |
 
 **`isDying` 不変条件**: 任意のティアダウンパスは、`channel.kill()` を await する**前**に同期的に `ChannelInfo.isDying = true` を設定しなければなりません。`ensureChannel` は dying チャネルを不在として扱い、新しいものをスポーンします。このフラグがないと、SIGTERM の猶予ウィンドウ（最大10秒）中に到着する並行する `spawnOrAttach` は、閉じようとしているトランスポートにアタッチしてしまい、呼び出し元の sessionId はその後のフォローアップでことごとく 404 になります。**設定サイト**（同期を維持する必要があります）: `ensureChannel`（初期化失敗 + 遅延シャットダウンの再チェック）、`doSpawn`（空のチャネルでの newSession 失敗）、`killSession`（最後のセッションが離脱）、`shutdown`（バルク）。
 
@@ -169,10 +169,10 @@ sequenceDiagram
 
 ## 状態とライフサイクル
 
-- ブリッジの構築は同期的であり、最初の `spawnOrAttach` で ACP 子プロセスがコールドスタートします。
+- ブリッジの構築は同期的です。呼び出し元は最初のセッションの前にチャネルをプリヒートできます。そうでない場合、最初の `spawnOrAttach` が ACP 子プロセスをコールドスタートします。失敗したプリヒートは、初回使用時のリトライを自由にできます。
 - `defaultEntry` は `sessionScope: 'single'` の下でブリッジの存続期間中存続します。チャネルは `sessionIds.size === 0`（`killSession` の後）になり、かつ `isDying` が true に反転したときに破棄されます。
 - `MAX_EVENT_RING_SIZE = 1_000_000` は `BridgeOptions.eventRingSize` のソフト上限であり、セッションあたり約 500 MB の OOM を引き起こす前にオペレーターのタイプミスを捕捉します。
-- `DEFAULT_PERMISSION_TIMEOUT_MS = 5 * 60 * 1000` は、スタックした権限リクエストがセッションごとの `promptQueue` を永久にブロックしないようにします。
+- `DEFAULT_PERMISSION_TIMEOUT_MS = 0` は、デフォルトで人間の権限と質問が無期限に待機できるようにします。`permissionResponseTimeoutMs` は、オペレーターが必要な場合に経過時間上限を有効にします。これがない場合でも、投票者のキャンセル、セッションのキャンセル、およびシャットダウンが利用可能です。
 - `DEFAULT_MAX_PENDING_PER_SESSION = 64` は `DEFAULT_MAX_SUBSCRIBERS` を反映しており、超過した `requestPermission` 呼び出しは stderr の警告とともに cancelled として解決されます。
 
 ## 依存関係
@@ -193,19 +193,25 @@ sequenceDiagram
 | `sessionScope`                                | `'single'`                                         | `'single'` はすべてのクライアント間で1つのセッションを共有します。`'thread'` は会話スレッドごとに個別のセッションを作成します。 |
 | `channelFactory`                              | `defaultSpawnChannelFactory`                       | プラグイン可能な ACP 子プロセスファクトリ。                                                                                          |
 | `initializeTimeoutMs`                         | `DEFAULT_INIT_TIMEOUT_MS = 10_000`                 | ACP `initialize` ハンドシェイクのタイムアウト。                                                                                   |
-| `maxSessions`                                 | `DEFAULT_MAX_SESSIONS = 20`                        | `byId.size` の上限。`0` / `Infinity` = 無制限。NaN/負の値はスロー。                                                |
+| `sessionRestoreTimeoutMs`                     | `60_000`                                           | ACP `loadSession` / `unstable_resumeSession` のタイムアウト。デフォルトは 60 秒で、明示的に設定された initialize タイムアウトはこれを上げることができますが、下げることはできません。      |
+| `maxSessions`                                 | `DEFAULT_MAX_SESSIONS = 32`                        | `byId.size` の上限。`0` / `Infinity` = 無制限。NaN/負の値はスロー。                                                |
 | `eventRingSize`                               | `DEFAULT_RING_SIZE`（`eventBus.ts` から）           | セッションごとのイベントリング。`MAX_EVENT_RING_SIZE` でソフトキャップ。                                                         |
-| `permissionResponseTimeoutMs`                 | `DEFAULT_PERMISSION_TIMEOUT_MS = 5 min`            | メディエーターの1リクエストあたりの経過時間（wallclock）。                                                                               |
+| `permissionResponseTimeoutMs`                 | `DEFAULT_PERMISSION_TIMEOUT_MS = 0`                | メディエーターの1リクエストあたりの経過時間（wallclock）。`0` で無効化。                                                                                                     |
 | `maxPendingPermissionsPerSession`             | `DEFAULT_MAX_PENDING_PER_SESSION = 64`             | 大量のリクエストを送信するエージェントへのバックプレッシャー。                                                                                   |
 | `childEnvOverrides`                           | `{}`                                               | ACP 子プロセス用のハンドルごとの環境変数の追加 / 削除。                                                                  |
+| `externalToolGuard`                           | （なし）                                             | オプションのプライベート子→親の事前実行判定用ハンドラ。ブリッジは、現在アクティブなプロンプトを所有するチャネルからのみこれを受け付けます。 |
 | `persistApprovalMode`, `persistDisabledTools` | —                                                  | Wave 4 変更ルート用の設定書き込みフック。                                                                  |
 | `contextFilename`                             | `settings.json` の `context.fileName` から          | `getCurrentGeminiMdFilename` をオーバーライド。                                                                               |
 | `statusProvider`                              | （なし）                                             | デーモンホストのプレフライトセル（`DaemonStatusProvider`）。                                                                 |
+| `delegateReadTextFileToClient`                | `true`                                             | 同一ホストのランタイムでのみ `false` に設定し、子プロセスの `FileSystemService.readTextFile` の全コンシューマーが通常の CLI ファイルシステムサービスを使用するようにします。                    |
 | `fileSystem`                                  | （なし）                                             | ACP `readTextFile` / `writeTextFile` 用の `BridgeFileSystem` アダプター。                                                  |
 | `permissionPolicy`                            | `settings.json` の `policy.permissionStrategy` から | `first-responder` / `designated` / `consensus` / `local-only` のいずれか。                                                 |
 | `permissionConsensusQuorum`                   | `settings.json` から                               | コンセンサスポリシーの N。                                                                                               |
 | `permissionAudit`                             | `createNoOpPermissionAuditPublisher()`             | 監査証跡用の `PermissionAuditRing` への接続。                                                                    |
 | `channelIdleTimeoutMs`                        | `0`                                                | 最後のセッションが閉じた後、このミリ秒間 ACP 子プロセスを生存させます。                                    |
+
+現在の ACP SDK では、タイムアウトしたリストアはキャンセルできません。そのため、ブリッジは実際のリクエストが確定するかトランスポートが閉じるまで、確定フェンスと容量受け入れを保持します。遅れた結果は正確に 1 回だけクローズされ、登録されることはありません。クリーンアップの不確実性は、そのワークスペースの新しいセッション作業のみを隔離します。既存のセッションおよびワークスペース制御のトラフィックは、チャネルが drain されてリサイクルされるまで継続します。
+
 ## 追加のブリッジメソッド
 
 コアとなる `spawnOrAttach`、`sendPrompt`、`cancelSession`、`respondToPermission`、`loadSession`、`resumeSession` の呼び出しに加えて、`HttpAcpBridge` インターフェースにはデーモン向けの以下のヘルパーが含まれるようになりました。
@@ -230,7 +236,8 @@ sequenceDiagram
 | `getWorkspaceToolsStatus()`                                  | 組み込みツールレジストリのスナップショットを返します。|
 | `getWorkspaceMcpToolsStatus(serverName)`                     | 特定の MCP サーバーのツールを返します。        |
 
-`BridgeSpawnRequest.sessionScope` は `'per-client'` から `'thread'` にリネームされました。`BridgeRestoredSession` には `compactedReplay`、`liveJournal`、`lastEventId` が含まれるようになりました。`BridgeClientRequestContext` はブリッジ呼び出しを通じて渡されるリクエストコンテキストであり、`clientId`、`fromLoopback: boolean`、`promptId` を保持します。
+`BridgeSpawnRequest.sessionScope` は `'per-client'` から `'thread'` にリネームされました。`BridgeRestoredSession` には `compactedReplay`、`liveJournal`、`lastEventId` が含まれるようになりました。これらのリプレイフィールドは、ライブセッション向けのバウンドされたインメモリウィンドウであり、`BridgeOptions.compactedReplayMaxBytes`（デフォルト 4 MiB、ハード上限 256 MiB）で制限されます。インフライトの `liveJournal` は `BridgeOptions.maxJournalEvents`（デフォルト 10,000 リプレイエントリ）と `BridgeOptions.maxJournalBytes`（デフォルト 8 MiB のシリアライズされたソースイベント）で別途制限されます。連続する互換性のあるテキストまたは思考のチャンクはリプレイエントリを共有し、エントリあたり最大 256 のソースイベントを持ちます。他のイベントおよび帰属の境界は保持されます。古い保持されたリプレイが削除された場合、`compactedReplay[0]` は ID なしの `history_truncated` マーカーになります。ジャーナルエントリが削除された場合、`liveJournal[0]` は `scope: 'live_journal'` の `history_truncated` マーカーを持ちます。その retained と truncated のカウントはソースイベントを記述しており、リプレイエントリではありません。完全な永続化されたトランスクリプトはディスク上に残っており、このブリッジレスポンスでは公開されません。
+`BridgeClientRequestContext` はブリッジ呼び出しを通じて渡されるリクエストコンテキストであり、`clientId`、`fromLoopback: boolean`、`promptId` を保持します。
 
 ## 注意事項と既知の制限
 

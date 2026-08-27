@@ -3,7 +3,7 @@
 Qwen Code 首次运行时的 `/auth` 菜单包含三个顶级选项。请根据你运行 CLI 的方式选择对应的选项：
 
 - **Alibaba ModelStudio**：官方推荐的配置方式。打开子菜单后可选择 **Coding Plan**（面向个人开发者 · 包含每周配额）、**Token Plan**（面向团队和企业 · 按量计费并提供专属 endpoint）或 **Standard API Key**（使用现有的 ModelStudio API key 进行连接）。
-- **Third-party Providers**：选择内置的 provider 并使用 API key 进行连接（DeepSeek、MiniMax、Z.AI、Idealab、ModelScope、OpenRouter、Requesty）。
+- **Third-party Providers**：选择内置的 provider 并使用 API key 进行连接（DeepSeek、Grok、MiniMax、Z.AI、Kimi、Idealab、ModelScope、OpenRouter、Requesty）。
 - **Custom Provider**：手动连接本地服务器、代理或不支持的 provider —— 支持 OpenAI、Anthropic、Gemini 及其他兼容的 endpoint。
 
 > [!note]
@@ -75,18 +75,15 @@ export OPENAI_MODEL="qwen3-coder-plus"
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "qwen3-coder-plus",
-          "name": "qwen3-coder-plus (Coding Plan)",
-          "baseUrl": "https://coding.dashscope.aliyuncs.com/v1",
-          "description": "qwen3-coder-plus from Alibaba Cloud Coding Plan",
-          "envKey": "BAILIAN_CODING_PLAN_API_KEY"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "qwen3-coder-plus",
+        "name": "qwen3-coder-plus (Coding Plan)",
+        "baseUrl": "https://coding.dashscope.aliyuncs.com/v1",
+        "description": "qwen3-coder-plus from Alibaba Cloud Coding Plan",
+        "envKey": "BAILIAN_CODING_PLAN_API_KEY"
+      }
+    ]
   },
   "env": {
     "BAILIAN_CODING_PLAN_API_KEY": "sk-sp-xxxxxxxxx"
@@ -117,18 +114,15 @@ export OPENAI_MODEL="qwen3-coder-plus"
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "qwen3-coder-plus",
-          "name": "qwen3-coder-plus",
-          "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-          "description": "Qwen3-Coder via Dashscope",
-          "envKey": "DASHSCOPE_API_KEY"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "qwen3-coder-plus",
+        "name": "qwen3-coder-plus",
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "description": "Qwen3-Coder via Dashscope",
+        "envKey": "DASHSCOPE_API_KEY"
+      }
+    ]
   },
   "env": {
     "DASHSCOPE_API_KEY": "sk-xxxxxxxxxxxxx"
@@ -168,7 +162,7 @@ export OPENAI_MODEL="qwen3-coder-plus"
 | OpenAI 兼容 | `openai` | `OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_MODEL`（别名：`QWEN_MODEL`） | OpenAI、Azure OpenAI、OpenRouter、Requesty、ModelScope、Alibaba Cloud、任何兼容 OpenAI 的 endpoint |
 | Anthropic | `anthropic` | `ANTHROPIC_API_KEY`、`ANTHROPIC_BASE_URL`、`ANTHROPIC_MODEL` | Anthropic Claude |
 | Google GenAI | `gemini` | `GEMINI_API_KEY`、`GEMINI_MODEL` | Google Gemini |
-| Vertex AI | `vertex-ai` | `GOOGLE_API_KEY`、`GOOGLE_MODEL`（设置 `GOOGLE_GENAI_USE_VERTEXAI=true`；使用 `gemini` 协议） | Google Vertex AI |
+| Vertex AI | `vertex-ai` | `GOOGLE_API_KEY` 或 `GOOGLE_CLOUD_PROJECT`（+ 可选 `GOOGLE_CLOUD_LOCATION`），`GOOGLE_MODEL`（使用 `gemini` 协议；无 key 的纯项目设置不会从环境中自动检测，因此需要使用 `--auth-type vertex-ai` 或 `security.auth.selectedType` 显式选择 auth type） | Google Vertex AI |
 
 #### 步骤 1：在 `~/.qwen/settings.json` 中配置模型和 provider
 
@@ -183,37 +177,28 @@ export OPENAI_MODEL="qwen3-coder-plus"
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "gpt-4o",
-          "name": "GPT-4o",
-          "envKey": "OPENAI_API_KEY",
-          "baseUrl": "https://api.openai.com/v1"
-        }
-      ]
-    },
-    "anthropic": {
-      "protocol": "anthropic",
-      "models": [
-        {
-          "id": "claude-sonnet-4-20250514",
-          "name": "Claude Sonnet 4",
-          "envKey": "ANTHROPIC_API_KEY"
-        }
-      ]
-    },
-    "gemini": {
-      "protocol": "gemini",
-      "models": [
-        {
-          "id": "gemini-2.5-pro",
-          "name": "Gemini 2.5 Pro",
-          "envKey": "GEMINI_API_KEY"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "gpt-4o",
+        "name": "GPT-4o",
+        "envKey": "OPENAI_API_KEY",
+        "baseUrl": "https://api.openai.com/v1"
+      }
+    ],
+    "anthropic": [
+      {
+        "id": "claude-sonnet-4-20250514",
+        "name": "Claude Sonnet 4",
+        "envKey": "ANTHROPIC_API_KEY"
+      }
+    ],
+    "gemini": [
+      {
+        "id": "gemini-2.5-pro",
+        "name": "Gemini 2.5 Pro",
+        "envKey": "GEMINI_API_KEY"
+      }
+    ]
   }
 }
 ```
@@ -236,7 +221,7 @@ export OPENAI_MODEL="qwen3-coder-plus"
 >
 > 在 `settings.json` 中使用 `env` 字段时，凭据将以明文形式存储。为了更高的安全性，建议使用 `.env` 文件或 shell `export` —— 请参阅[步骤 2](#step-2-set-environment-variables)。
 
-有关完整的 `modelProviders` schema 以及 `generationConfig`、`customHeaders` 和 `extra_body` 等高级选项，请参阅 [Model Providers Reference](model-providers.md)。
+有关完整的 `modelProviders` schema 以及 `generationConfig`、`customHeaders` 和 `extra_body` 等高级选项，请参阅 [Model Providers Reference](./model-providers.md)。
 
 #### 步骤 2：设置环境变量
 

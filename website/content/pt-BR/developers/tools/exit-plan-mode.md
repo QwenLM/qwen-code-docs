@@ -10,9 +10,11 @@ A ferramenta é projetada especificamente para tarefas que exigem planejamento d
 
 ### Argumentos
 
-`exit_plan_mode` recebe um argumento:
+`exit_plan_mode` recebe estes argumentos:
 
 - `plan` (string, obrigatório): O plano de implementação que você deseja apresentar ao usuário para aprovação. Deve ser um plano conciso, formatado em Markdown, descrevendo as etapas de implementação.
+- `originalRequest` (string, opcional): A requisição original, usada quando um teammate que exige plano solicita aprovação ao seu líder.
+- `researchSummary` (string, opcional): Contexto de investigação para revisão do líder de um teammate que exige plano.
 
 ## Como usar `exit_plan_mode` com o Qwen Code
 
@@ -24,6 +26,7 @@ A ferramenta Modo de Saída do Plano faz parte do fluxo de trabalho de planejame
 
 A ferramenta exibirá seu plano ao usuário e fornecerá opções para:
 
+- **Restaurar Anterior**: Aprova o plano e restaura o modo ativo antes do modo Plano
 - **Prosseguir Uma Vez**: Aprova o plano apenas para esta sessão
 - **Prosseguir Sempre**: Aprova o plano e ativa a aprovação automática para futuras operações de edição
 - **Cancelar**: Rejeita o plano e permanece no modo de planejamento
@@ -125,7 +128,7 @@ Após chamar `exit_plan_mode`, o usuário pode responder de várias formas:
 - **Prosseguir Sempre**: O plano é aprovado e a aprovação automática é ativada para operações de edição subsequentes
 - **Cancelar**: O plano é rejeitado e o sistema permanece no modo de plano para continuar o planejamento
 
-A ferramenta ajusta automaticamente o modo de aprovação com base na escolha do usuário, simplificando o processo de implementação de acordo com as preferências do usuário.
+A ferramenta altera o modo de aprovação apenas após a decisão explícita ter sido aceita e a execução começar. Regras de permissão, modos de aprovação automática e hooks de permission-allow não podem aprovar uma saída de plano da sessão principal em nome do usuário.
 
 ## Notas Importantes
 
@@ -135,6 +138,7 @@ A ferramenta ajusta automaticamente o modo de aprovação com base na escolha do
 - **Suporte a Markdown**: Os planos suportam formatação Markdown para melhor legibilidade
 - **Uso único**: A ferramenta deve ser usada uma vez por sessão de planejamento quando estiver pronto para prosseguir
 - **Controle do usuário**: A decisão final de prosseguir sempre cabe ao usuário
+- **Fail closed**: Cancelamentos, aprovações obsoletas, falhas do host e falhas de transição permanecem no modo Plano
 
 ## Integração com o Fluxo de Trabalho de Planejamento
 

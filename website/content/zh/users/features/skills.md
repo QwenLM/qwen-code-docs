@@ -38,6 +38,26 @@ Skills 是**由模型调用**的 —— 模型会根据你的请求和 Skill 的
 
 Skills 以包含 `SKILL.md` 文件的目录形式存储。
 
+### 使用 `/learn` 生成项目 Skill
+
+使用 `/learn` 将现有知识源提炼为可复用的项目 Skill：
+
+```text
+/learn https://docs.example.com/api
+/learn ~/projects/acme-sdk
+/learn Our deploy process: run migrate, deploy the service, then check health
+```
+
+该命令作为普通 agent 轮次运行，并在 `.qwen/skills/learned-skill-<name>/SKILL.md` 下创建结果，frontmatter 中包含 `source: learned`。在使用或分享生成的指令之前，请先审查它们。
+
+`/learn` 还接受本地或直链的 `.mp4`、`.webm`、`.mov` 和 `.m4v` 视频。在路径或 URL 后添加文本，可将生成的 Skill 聚焦于教程的某一部分：
+
+```text
+/learn ./tutorial.mp4 focus on the deployment workflow
+```
+
+视频学习需要兼容 OpenAI 的提供商提供的支持视频的模型。YouTube 页面 URL 不是直接视频输入；请将视频下载到工作区并传递其本地路径。
+
 ### 个人 Skills
 
 个人 Skills 在所有项目中均可用。将它们存储在 `~/.qwen/skills/` 中：
@@ -67,6 +87,20 @@ mkdir -p .qwen/skills/my-skill-name
 - 共享的实用工具和脚本
 
 项目 Skills 可以提交到 git，并自动对团队成员可用。
+
+### 维护自动生成的项目 Skills
+
+Qwen Code 在本地跟踪生成的项目 Skills 的成功使用情况，包括在 Auto Skill 生成被禁用期间也是如此，因此重新启用维护不会将最近使用的 skill 误判为不活跃的。当 **Auto Skill** 启用时，它会周期性地将不活跃的生成 Skills 移出活跃库。仅管理名为 `.qwen/skills/auto-skill-*` 且 `SKILL.md` frontmatter 包含 `source: auto-skill` 的目录；个人、扩展、内置和手工编写的 Skills 永远不会被选中。
+
+- 在 30 天内没有成功使用或 `SKILL.md` 编辑的 auto-skill 会被标记为 stale。
+- 在 90 天后，其完整目录会被移动到 `.qwen/archived-skills/`。不会永久删除任何内容。
+- 自动维护在可信工作区中最多每 7 天运行一次。每个新观察到的 auto-skill 在维护开始前会获得完整的宽限期。
+- 被 pin 的 auto-skill 会被排除在自动 stale 和归档转换之外，直到它被 unpin。
+- 归档的目录名称保持保留，已存在的归档目标仅跳过该冲突，而不会停止其他 skills 的维护。
+
+使用 `/curator` 查看 active、stale、archived 和 pinned 的 auto-skills。运行 `/curator run --dry-run` 预览维护过程，`/curator run` 立即应用，`/curator pin <directory>` 或 `/curator unpin <directory>` 控制每个 skill 的维护，或 `/curator restore <directory>` 将归档的 auto-skill 移回活跃库。
+
+状态和 dry-run 预览在安全模式和不可信工作区中可用。应用维护、更改 pin 和恢复归档的 auto-skills 需要可信工作区且不在安全模式下。
 
 ## 编写 SKILL.md
 
@@ -310,7 +344,7 @@ code ~/.qwen/skills/my-skill/SKILL.md
 code .qwen/skills/my-skill/SKILL.md
 ```
 
-更改将在你下次启动 Qwen Code 时生效。如果 Qwen Code 已经在运行，请重启它以加载更新。
+在正常会话期间，Qwen Code 会监视个人和项目 Skill 目录。添加、编辑或删除 Skill 会在短暂延迟后自动刷新 Skill 列表和调用状态。Bare 模式不会启动这些监视器，因此在该模式下需要重启 Qwen Code 以加载 Skill 更改。
 
 ## 移除 Skill
 

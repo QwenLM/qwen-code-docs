@@ -171,8 +171,8 @@ C'est utile pour les environnements de production ou à haute sécurité où vou
 voulez une défense en profondeur : même les commandes apparemment inoffensives sont examinées par
 le classificateur avant exécution. Le compromis est une latence ajoutée (~300 ms
 par appel shell en lecture seule) et une dépendance à la disponibilité du classificateur — si
-l'API du classificateur est inaccessible, les commandes shell en lecture seule seront également
-bloquées (échec fermé / fail-closed).
+l'API du classificateur est inaccessible, les commandes shell en lecture seule nécessiteront également
+une approbation manuelle.
 
 > [!note]
 >
@@ -183,18 +183,13 @@ bloquées (échec fermé / fail-closed).
 
 ## Lecture de la décision
 
-Lorsque le classificateur bloque une action, l'appel d'outil échoue avec l'un des
-textes d'erreur suivants :
+Lorsque le classificateur bloque une action, l'appel d'outil échoue avec :
 
 - **`Blocked by auto mode policy: <reason>`** —
   le classificateur a jugé l'action non sûre. La raison provient de l'Étape
   2 du classificateur.
-- **`Auto mode classifier unavailable; action blocked for safety`** —
-  l'API du classificateur était inaccessible, a expiré (timeout) ou a renvoyé une
-  réponse non analysable. Il s'agit d'un comportement à échec fermé (fail-closed) : en cas de doute,
-  on bloque.
 
-Les deux messages sont suivis d'une ligne d'indication finale indiquant à l'agent
+Ce message est suivi d'une ligne d'indication finale indiquant à l'agent
 que **l'action refusée spécifiquement** ne doit pas être complétée via
 un autre outil, une indirection shell, un script généré, un alias, un lien symbolique,
 un changement de configuration, un hook, un fichier de commande, une configuration MCP, une charge utile encodée
@@ -215,20 +210,29 @@ souhaitez des raisons dans une autre langue, ajoutez un hint comme
 
 Le Mode Auto vous protège contre les blocages :
 
+- Si l'API du classificateur est inaccessible, expire (timeout), dépasse sa fenêtre de contexte
+  ou renvoie une réponse invalide, l'action en cours bascule immédiatement vers
+  l'approbation manuelle. La confirmation recommande le mode par défaut (Default Mode) et propose
+  **Passer en mode par défaut et autoriser une fois** (`Switch to Default Mode and allow once`)
+  en plus de Autoriser une fois (`Allow once`) et Rejeter (`Reject`).
+  Le changement affecte uniquement la session d'exécution en cours ; il ne modifie pas
+  vos paramètres sauvegardés.
+
 - Après **3 blocages consécutifs par la politique**, le prochain appel d'outil bascule vers
   l'invite d'approbation manuelle standard. Cela couvre le cas où l'agent
   continue d'essayer des variantes mineures d'une commande interdite.
 - Après **2 résultats consécutifs indisponibles** (échecs de l'API du classificateur),
-  le prochain appel d'outil bascule également. Cela évite d'attendre sur un classificateur
-  cassé.
+  les appels suivants ignorent le classificateur connu comme défaillant et passent directement
+  à l'approbation manuelle. Le premier résultat indisponible demande déjà une approbation ;
+  ce seuil évite d'attendre répétitivement les retries du classificateur.
 
-La session elle-même reste en Mode Auto — seul l'appel de repli unique
-passe par l'approbation manuelle. Les compteurs se réinitialisent lorsque vous approuvez l'appel de
-repli ou changez de mode.
+La session reste en Mode Auto sauf si vous sélectionnez explicitement l'option de changement.
+Seul l'appel de repli passe par l'approbation manuelle. Les compteurs se réinitialisent lorsque
+vous approuvez l'appel de repli ou changez de mode.
 
 Si vous vous retrouvez constamment à atteindre le repli, les causes les plus probables
 sont une panne de l'API du classificateur ou des hints qui nécessitent un ajustement. Passez en
-Mode par défaut (Default Mode) pendant que vous investigatez.
+mode par défaut (Default Mode) pendant que vous investigatez.
 
 ## Dépannage
 
@@ -242,16 +246,6 @@ langage naturel. Exemples :
 - `"Construction des images Docker pour ce projet (docker build ...)"`
 - `"Exécution des migrations de base de données sur la base de données de test locale"`
 
-**"Classificateur du Mode Auto indisponible"**
-
-L'API du classificateur n'a pas répondu. Causes possibles :
-
-- Problème de réseau entre vous et le point de terminaison du modèle.
-- Le modèle rapide configuré n'est plus disponible — vérifiez `/model --fast`.
-- La transcription (transcript) est trop longue et dépasse la fenêtre de contexte du modèle rapide.
-
-Pendant le diagnostic, repassez en Mode par défaut : `/approval-mode default`.
-
 **"Repli vers l'approbation manuelle"**
 
 Vous avez atteint la garde de 3 blocages consécutifs ou 2 indisponibilités consécutives.
@@ -262,9 +256,9 @@ repli approuvé, le compteur consécutif se réinitialise.
 
 Les entrées des outils sont projetées via la méthode `toAutoClassifierInput`
 de chaque outil avant d'atteindre le classificateur. Le contenu long des modifications, les prompts
-de récupération web et les prompts de sous-agents sont tronqués. Les résultats des outils (contenus
-de fichiers, pages web) ne sont jamais envoyés au classificateur — seul le texte de l'utilisateur
-et les appels d'utilisation d'outils de l'assistant passent.
+de récupération web et les prompts de sous-agents sont tronqués. Les résultats des outils
+ne sont jamais envoyés au classificateur — seul le texte de l'utilisateur
+et les appels d'outils de l'assistant passent.
 
 Si un outil spécifique expose des champs que vous préféreriez expurger, ouvrez une issue
 avec le nom de l'outil ; la projection est par outil et est destinée à être
@@ -285,7 +279,7 @@ renforcée au fil du temps.
   override `toAutoClassifierInput`. Les outils qui n'ont pas opté pour cela n'exposent
   que leur nom au classificateur — la plupart de ces appels sont
   bloqués de manière conservatrice sauf si vous avez écrit une règle `allow`
-  explicite. C'est un échec fermé (fail-closed) par conception (les identifiants et le contenu
+  explicite. C'est fail-closed par conception (les identifiants et le contenu
   volumineux ne fuient pas dans le LLM du classificateur). Si vous faites confiance à un
   outil MCP spécifique, ajoutez `permissions.allow: ["mcp__server__tool"]` pour
   qu'il contourne entièrement le classificateur.
@@ -323,8 +317,8 @@ Les outils MCP (`mcp__*`) suivent une valeur par défaut plus stricte : leurs pa
 pas transférés sauf si l'auteur de l'outil MCP a explicitement opté pour cela via le
 override `toAutoClassifierInput`. Le classificateur voit le nom de l'outil
 mais aucun argument, donc la plupart des appels MCP seront bloqués de manière conservatrice
-sauf si l'utilisateur a écrit une règle d'autorisation explicite. C'est un échec
-fermé (fail-closed) par conception — les outils tiers ne doivent pas faire fuiter des identifiants ou
+sauf si l'utilisateur a écrit une règle d'autorisation explicite. C'est fail-closed
+par conception — les outils tiers ne doivent pas faire fuiter des identifiants ou
 du contenu de fichiers volumineux dans le LLM du classificateur sans intention.
 
 **Puis-je désactiver le message d'information de la première fois ?**

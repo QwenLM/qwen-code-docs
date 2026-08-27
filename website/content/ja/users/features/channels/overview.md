@@ -1,6 +1,8 @@
 # チャンネル
 
-チャンネルを使用すると、ターミナルではなく、Telegram、WeChat、QQ、DingTalk、Feishu などのメッセージングプラットフォームから Qwen Code エージェントと対話できます。スマートフォンやデスクトップのチャットアプリからメッセージを送信すると、エージェントは CLI の場合と同じように応答します。
+チャンネルを使用すると、ターミナルではなく、Telegram、WeChat、QQ、DingTalk、WeCom、Feishu などのメッセージングプラットフォームから Qwen Code エージェントと対話できます。スマートフォンやデスクトップのチャットアプリからメッセージを送信すると、エージェントは CLI の場合と同じように応答します。
+
+コードホスティングプラットフォーム（[GitHub](./github) から開始）および認証済みワークスペースアカウント（[DingTalk Workspace](./dws) から開始）もチャンネル経由でサポートされています。
 
 ## 仕組み
 
@@ -15,7 +17,7 @@
 
 ## クイックスタート
 
-1. メッセージングプラットフォームでボットをセットアップします（チャンネル固有のガイドを参照してください：[Telegram](./telegram)、[WeChat](./weixin)、[QQ Bot](./qqbot)、[DingTalk](./dingtalk)、[Feishu](./feishu)）
+1. ボットまたは認証済みワークスペースアカウントをセットアップします（チャンネル固有のガイドを参照してください：[Telegram](./telegram)、[WeChat](./weixin)、[QQ Bot](./qqbot)、[DingTalk](./dingtalk)、[DingTalk Workspace](./dws)、[WeCom](./wecom)、[Feishu](./feishu)、[GitHub](./github)）
 2. チャンネル設定を `~/.qwen/settings.json` に追加します
 3. `qwen channel start` を実行してすべてのチャンネルを開始するか、`qwen channel start <name>` で単一のチャンネルを開始します
 
@@ -37,6 +39,7 @@
       "cwd": "/path/to/working/directory",
       "instructions": "Optional system instructions for the agent.",
       "groupPolicy": "disabled",
+      "dmPolicy": "open",
       "groups": {
         "*": { "requireMention": true }
       }
@@ -49,18 +52,23 @@
 
 | オプション               | 必須             | 説明                                                                                                                                                             |
 | ------------------------ | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `type`                   | はい             | チャンネルタイプ：`telegram`、`weixin`、`qq`、`dingtalk`、`feishu`、または拡張機能のカスタムタイプ（[Plugins](./plugins) を参照）                                |
-| `token`                  | Telegram         | ボットトークン。環境変数から読み取るための `$ENV_VAR` 構文をサポートします。WeChat、DingTalk、Feishu では不要です                                                |
+| `type`                   | はい             | チャンネルタイプ：`telegram`、`weixin`、`qq`、`dingtalk`、`dws`、`wecom`、`feishu`、`github`、`gitlab`、または拡張機能のカスタムタイプ（[Plugins](./plugins) を参照）              |
+| `token`                  | Telegram         | ボットトークン。環境変数から読み取るための `$ENV_VAR` 構文をサポートします。WeChat、DingTalk、WeCom、Feishu では不要です                                          |
 | `clientId`               | DingTalk, Feishu | DingTalk AppKey または Feishu App ID。`$ENV_VAR` 構文をサポートします                                                                                             |
 | `clientSecret`           | DingTalk, Feishu | DingTalk AppSecret または Feishu App Secret。`$ENV_VAR` 構文をサポートします                                                                                      |
+| `botId`                  | WeCom            | WeCom インテリジェントロボットの Bot ID。`$ENV_VAR` 構文をサポートします。[WeCom](./wecom) を参照                                                                 |
+| `secret`                 | WeCom            | WeCom インテリジェントロボットの Secret。`$ENV_VAR` 構文をサポートします。[WeCom](./wecom) を参照                                                                 |
 | `model`                  | いいえ           | このチャンネルで使用するモデル（例：`qwen3.5-plus`）。デフォルトモデルを上書きします。画像入力をサポートするマルチモーダルモデルに便利です                         |
 | `senderPolicy`           | いいえ           | ボットと対話できるユーザー：`allowlist`（デフォルト）、`open`、または `pairing`                                                                                    |
 | `allowedUsers`           | いいえ           | ボットの使用を許可するユーザー ID のリスト（`allowlist` および `pairing` ポリシーで使用）                                                                          |
-| `sessionScope`           | いいえ           | セッションのスコープ方法：`user`（デフォルト）、`thread`、または `single`                                                                                          |
+| `sessionScope`           | いいえ           | セッションのスコープ方法：`user`（デフォルト）、`chat_thread`、または `single`。レガシーの `thread` はすでに設定されている場合は互換性が保たれますが、新しい Web Shell の設定では提供されません                                   |
 | `cwd`                    | いいえ           | エージェントの作業ディレクトリ。デフォルトは現在のディレクトリです                                                                                                 |
+| `approvalMode`           | いいえ           | チャンネルセッションのツール承認モード。無人の Webhook タスクには `yolo` が必要です。この設定はチャンネル上のすべてのセッションに適用されます                       |
 | `instructions`           | いいえ           | 各セッションの最初のメッセージの前に追加されるカスタム指示                                                                                                         |
-| `groupPolicy`            | いいえ           | グループチャットへのアクセス：`disabled`（デフォルト）、`allowlist`、または `open`。[Group Chats](#group-chats) を参照                                             |
-| `groupHistoryLimit`      | いいえ           | グループ履歴のバックフィルをオプトインします。`0` または省略すると無効になります。正の数を指定すると、次のボットのメンションや返信に対して、許可されたメンションなしのグループメッセージがその数だけ永続化されます。 |
+| `webhooks`               | いいえ           | デーモン管理チャンネルの Webhook ソースと配信ターゲット。[Webhook トリガータスク](#webhook-triggered-tasks) を参照                                                 |
+| `groupPolicy`            | いいえ           | グループチャットへのアクセス：`disabled`（デフォルト）、`allowlist`、`pairing`、または `open`。[Group Chats](#group-chats) を参照                                  |
+| `dmPolicy`               | いいえ           | プライベート/DM へのアクセス：`open`（デフォルト）または `disabled`（すべての DM を暗黙に破棄）。グループ専用ボットに便利です                                     |
+| `groupHistoryLimit`      | いいえ           | グループ履歴のバックフィルをオプトインします。`0` または省略すると無効になります。正の数を指定すると、許可された送信者または承認済みペアリンググループのメンバーからのメンションなしグループメッセージが、次のボットのメンション/返信用にその数だけ永続化されます。 |
 | `groups`                 | いいえ           | グループごとの設定。キーはグループチャット ID またはデフォルト値の `"*"` です。[Group Chats](#group-chats) を参照                                                  |
 | `dispatchMode`           | いいえ           | ボットがビジーのときにメッセージを送信したときの動作：`steer`（デフォルト）、`collect`、または `followup`。[Dispatch Modes](#dispatch-modes) を参照                |
 | `blockStreaming`         | いいえ           | プログレッシブなレスポンス配信：`on` または `off`（デフォルト）。[Block Streaming](#block-streaming) を参照                                                        |
@@ -85,18 +93,30 @@
 
 ### チャンネルメモリ
 
-チャンネルメモリを使用すると、許可されたチャンネルメンバーが 1 つのチャットまたはスレッドの安定したコンテキストを保存できます。Qwen Code は、`/clear` の後など、新しいチャンネルセッションが開始されるときにそのメモリを注入します。
+チャンネルメモリは、1 つのチャットまたはスレッドの永続的なコンテキストを保存します。エントリは安定した ID を持つため、リスト応答を決定論的なフォローアップ操作に使用できます。
 
-自然言語の例：
+- `记住：默认使用 staging 环境` は決定論的な形式であり、現在のチャットまたはスレッドに exactly 1 つのスカラーエントリを保存します。
+- 1 つのリクエストで複数の個別の事実を保存するには、クラシファイア経由でルーティングされる自然なフレーズを使用します。例：
+  `请记住这三条约定：使用 staging；发布前测试；优先中文回复` は独立して管理できるエントリを作成します。正確な重複ファクトはスキップされ、別のエントリを作成せずに報告されます。認証情報に似たテキストを含むリクエストは拒否されます。秘密情報を削除し、機密でない事実を別途保存してください。
+- `查看记忆` はエントリとその安定した ID を一覧表示します。`查看第 2 页记忆` で次のページを表示、`查看记忆 <id>` で 1 つのエントリを表示、または `只看中文偏好` のような自然なフィルタリクエストで一致するエントリを一覧表示します。
+- `查看刚才那条记忆`、`把关于 staging 的记忆改成默认使用 production`、`忘掉刚才那条` は、自然な参照が exactly 1 つのエントリに解決される場合に機能します。自然な更新と削除は、まず提案された変更を表示します。更新は `确认更新记忆` または `confirm memory update` で、削除は `确认删除记忆` または `confirm memory removal` で 60 秒以内に確認してください。正確な ID による更新と削除は引き続き即座に実行され、確認は不要です。
+- `清空记忆` は全クリア確認フローを開始し、`确认清空记忆` で完了します。
 
-- `记住：默认使用 staging 环境` は現在のチャットまたはスレッドのメモリを保存します。
-- `你记一下以后回复前要说 1122` は抽出された永続メモリを保存します。
-- `你现在都记住了什么` は現在のチャットまたはスレッドの保存済みメモリを表示します。
-- `把这个聊天的记忆清空` はクリアフローを開始し、`确认清空记忆` で確定します。
+自然な検査、更新、または削除のリクエストが複数のエントリに一致する場合、ボットは候補 ID とプレビューを返し、メモリは変更しません。曖昧な結果に対する保留中の選択はありません。`忘掉 m-a31f0d82c7e4` のように、正確な ID 1 つでリクエストを再試行してください。正確な ID の操作が決定論的な高速パスです。一致がない自然なリクエストは、一致するエントリがなかったことを報告します。
 
-グループチャットでは保存済みメモリを表示できますが、共有メモリが他の参加者へのプロンプトインジェクションの経路になるのを防ぐため、書き込みとクリアはブロックされます。
+保留中の更新、削除、およびクリアの確認は、それらを作成した送信者とチャットまたはスレッドにのみ適用されます。新しいクリア、自然な更新、または自然な削除の提案は、同じ送信者とターゲットの古い保留中のものを置き換えます。保留中の確認は、チャンネルプロセスが再起動したときに破棄されます。
 
-`allowedUsers` にリストされているユーザーのみがチャンネルメモリの読み取り、書き込み、クリアを行えます。`allowedUsers` が空の場合、チャンネルメモリコマンドは全員に対して無効になります。
+レガシーなスラッシュエイリアス `/remember-channel`、`/channel-memory`、および `/forget-channel` は削除されました。これらはチャンネルメモリコマンドではなくなりました。
+
+チャンネルメモリはチャンネルのアクセスゲートに従います。`senderPolicy`、`dmPolicy`、`groupPolicy`、グループ設定、ペアリング、およびメンション要件によって受け入れられた任意のメッセージは、そのチャットまたはスレッドのメモリを読み取り、書き込み、更新、またはクリアできます。同じグループの許可されたメンバーは、そのグループのターゲットストアを共有します。グループメモリを信頼された送信者に制限するには、`allowlist` または `pairing` ポリシーを使用してください。
+
+既存のレガシー `CHANNEL.md` メモリは、最初の変更時に構造化された `CHANNEL.json` ストレージに自動的に移行されます。構造化メモリは、スタンドアロンチャンネルおよびデーモン管理チャンネルの再起動をまたいで永続化され、`/clear` の後を含む、新しいターゲットスコープのセッションが開始されるときに注入されます。
+
+初期注入後、許可された各メッセージは最大 3 つの関連エントリをそのメッセージに対してリコールします。これにより、保存されたすべてのエントリをすべてのターンに追加することなく、長時間実行されるセッション中に永続的な事実を利用可能な状態に保ちます。リコールは現在のメッセージに基づいており、保存されたメモリを変更しません。
+
+メモリは現在のチャットまたはスレッドにキー付けされたままです。`sessionScope: single` セッションでは注入もリコールもされません。そのセッションは 1 つのターゲットにスコープされるのではなく、チャンネル全体で共有されるためです。
+
+チャンネルメモリは、通常の会話から自動的にファクトを学習したり、曖昧な自然な参照の確認として `第一个` を受け入れたりしません。自然な参照が曖昧な場合は、明確な remember リクエストと正確なエントリ ID を使用してください。
 
 ### トークンのセキュリティ
 
@@ -123,7 +143,7 @@
 qwen channel pairing approve my-channel VEQDDWXJ
 ```
 
-承認されると、ユーザーの ID が `~/.qwen/channels/<name>-allowlist.json` に保存され、以降のすべてのメッセージは通常通り処理されます。
+承認されると、ユーザーの ID がチャンネルのワークスペーススコープの許可リスト（`~/.qwen/channels/<workspace-scope>/<name>-allowlist.json`）に保存され、以降のすべてのメッセージは通常通り処理されます。ペアリング状態はワークスペースごとにスコープされるため、同じチャンネル名を使用する 2 つのワークスペースは別々の承認を保持します。
 
 ### ペアリング CLI コマンド
 
@@ -135,17 +155,19 @@ qwen channel pairing list my-channel
 qwen channel pairing approve my-channel <CODE>
 ```
 
+これらはチャンネルのワークスペースディレクトリから実行します（または `--cwd <dir>` を渡します）。ペアリング状態はワークスペースごとに保存されます。
+
 ### ペアリングルール
 
 - コードは 8 文字の大文字で、曖昧さのないアルファベットを使用します（`0`/`O`/`1`/`I` は除く）。
 - コードは 1 時間後に期限切れになります。
-- チャンネルごとに同時に保留中のリクエストは最大 3 つまでです。追加のリクエストは、いずれかが期限切れになるか承認されるまで無視されます。
-- `settings.json` の `allowedUsers` にリストされているユーザーは、常にペアリングをスキップします。
-- 承認されたユーザーは `~/.qwen/channels/<name>-allowlist.json` に保存されます。このファイルは機密として扱ってください。
+- チャンネルごとに同時に保留中のリクエストは最大 3 つまで、送信者ごとに最大 1 つまでです。追加のリクエストは、いずれかが期限切れになるか承認されるまで拒否されます。
+- `settings.json` の `allowedUsers` にリストされているユーザーはユーザーペアリングをスキップします。`groupPolicy: "pairing"` では、グループ自体の承認が必要です。
+- 承認されたユーザーはワークスペースごとに `~/.qwen/channels/<workspace-scope>/<name>-allowlist.json` に保存されます。このファイルは機密として扱ってください。
 
 ## グループチャット
 
-デフォルトでは、ボットはダイレクトメッセージでのみ動作します。グループチャットのサポートを有効にするには、`groupPolicy` を `"allowlist"` または `"open"` に設定します。
+デフォルトでは、ボットはダイレクトメッセージでのみ動作します。グループチャットのサポートを有効にするには、`groupPolicy` を `"allowlist"`、`"pairing"`、または `"open"` に設定します。
 
 ### グループポリシー
 
@@ -153,7 +175,20 @@ qwen channel pairing approve my-channel <CODE>
 
 - **`disabled`**（デフォルト）— ボットはすべてのグループメッセージを無視します。最も安全なオプションです。
 - **`allowlist`** — ボットは `groups` にチャット ID で明示的にリストされているグループでのみ応答します。`"*"` キーはデフォルト設定を提供しますが、ワイルドカード許可としては機能**しません**。
+- **`pairing`** — 不明なグループからの意図的なメンションまたは返信により、グループ用のペアリングリクエストが 1 つ作成されます。承認されると、すべてのメンバーがそのグループでボットを使用できます。`senderPolicy` はダイレクトメッセージを引き続き制御します。
 - **`open`** — ボットは追加されたすべてのグループで応答します。使用には注意が必要です。
+
+ユーザーペアリングと同じ CLI コマンドでグループを承認します。保留中の
+リクエストにはグループとそれを開始したメンバーが識別されます。
+
+```bash
+qwen channel pairing approve my-channel <CODE>
+```
+
+グループ承認は、グループのチャット ID をキーとしてチャンネルのワークスペーススコープに保存されます。GitHub と GitLab ではチャット ID はリポジトリ/プロジェクトパスであるため、リネームまたは移転時に保存された承認が切り離されます。リネーム後にグループを再承認してください。同じパスで再作成されたリポジトリやプロジェクトは古い承認を継承します。リネーム、移転、削除後はグループ承認を取り消してください。
+メンションのないメッセージは、グループが `requireMention` を `false` に設定している場合でも、グループペアリングリクエストを作成することはありません。承認後は、設定されたメンションポリシーが通常通り適用されます。
+
+グループペアリングリクエストは DM ペアリングリクエストと同じ保留キューを共有します。チャンネルは最大 3 つの保留中リクエストを保持し、送信者はユーザーとグループのリクエストを合わせて最大 1 つの保留中リクエストを持ちます（[ペアリングルール](#ペアリングルール)を参照）。
 
 ### メンションゲーティング
 
@@ -201,7 +236,7 @@ qwen channel pairing approve my-channel <CODE>
 
 - 省略または `0` はバックフィルを無効にします。
 - グループレベルの `groupHistoryLimit` はチャンネルレベルの値を上書きします。
-- 許可された送信者からのメッセージのみが永続化されます。
+- 許可された送信者、または承認済みペアリンググループのメンバーからのメッセージのみが永続化されます。
 - `groupPolicy` またはグループ許可リストによって拒否されたメッセージは永続化されません。
 - 保留中のグループ履歴は、`~/.qwen/channels/<channel-name>-group-history.jsonl` または `$QWEN_HOME/channels/<channel-name>-group-history.jsonl` 配下のローカル JSONL として保存されます。
 - キャッシュされたメッセージは、次の実際のトリガーで信頼できないコンテキストとして注入され、独立したセッションのターンとして書き込まれません。
@@ -209,10 +244,11 @@ qwen channel pairing approve my-channel <CODE>
 ### グループメッセージの評価方法
 
 ```
-1. groupPolicy — is this group allowed?           (no → ignore)
-2. requireMention — was the bot mentioned/replied to? (no → ignore)
-3. senderPolicy — is this sender approved?         (no → pairing flow)
-4. Route to session
+1. groupPolicy — is this group disabled, listed, paired, or open? (no → ignore/pairing flow)
+2. dmPolicy — is this DM allowed?                      (disabled → ignore)
+3. requireMention — was the bot mentioned/replied to? (no → ignore)
+4. senderPolicy — is this sender approved?             (skipped for a paired group; otherwise no → user pairing flow)
+5. Route to session
 ```
 
 ### グループ向け Telegram のセットアップ
@@ -220,6 +256,7 @@ qwen channel pairing approve my-channel <CODE>
 1. ボットをグループに追加します
 2. BotFather で **プライバシーモードを無効にします**（`/mybots` → Bot Settings → Group Privacy → Turn Off）。無効にしないと、ボットはコマンド以外のメッセージを見ることができません。
 3. プライバシーモードを変更した後、グループからボットを**削除して再度追加します**（Telegram はこの設定をキャッシュするため）。
+
 ### グループチャット ID の確認
 
 `groups` 許可リスト用のグループチャット ID を確認するには:
@@ -271,6 +308,8 @@ curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates" | python3
 | キャプション | 写真/ファイルのキャプションがメッセージテキストとして含まれる | 対象外 | リッチテキスト: 1つのメッセージにテキストと画像が混在 | リッチテキスト（`post`）: テキストが抽出され、埋め込み画像は無視される |
 
 > QQ Bot は受信メディアを処理しません。画像やスタンプのメッセージは無視されるため、上記のメディア処理に関する行はありません。
+>
+> WeCom はテキスト、画像、テキストと画像の混合、ファイル、動画、および音声メッセージ（文字起こり済み）を受け付けます。画像は添付ファイルとしてエージェントに渡されます。ファイルと動画は一時的なローカルパスにダウンロードされます。詳細は [WeCom](./wecom#images-and-files) を参照してください。
 
 ## ディスパッチモード
 
@@ -331,6 +370,31 @@ curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates" | python3
 
 必須なのは `blockStreaming` だけです。chunk と coalesce の設定はオプションであり、適切なデフォルト値が設定されています。
 
+## スケジュールチャンネルループ
+
+チャンネルには、後で実行して結果を同じチャットにプッシュバックするプロンプトのための永続スケジューラがあります。エージェントに自然に依頼できます。たとえば `Every 15 minutes, check the deployment and report any change` のように、またはローカルコマンドを直接使用できます。
+
+```text
+/loop add "*/15 * * * *" check the deployment and report any change
+/loop list
+/loop inspect <id>
+/loop cancel <id>
+```
+
+エージェントがこれらのジョブを管理する際に `channel_loop_create`、`channel_loop_list`、`channel_loop_cancel` ツールを使用します。スケジュールはマシンのローカル時間で標準的な 5 フィールドの cron 式を使用します。ジョブは無人で実行され、最終応答は自動的に作成元のチャットに配信されます。
+
+チャンネルループは [Run Prompts on a Schedule](../scheduled-tasks) で説明されているセッションスコープのタスクとは異なります。
+
+- `$QWEN_HOME/channels/` 配下に保存されます。スタンドアロンチャンネルは `cron.json` を直接使用し、デーモン管理チャンネルは `daemon/` 配下のワークスペースごとのファイルを使用します。どちらもチャンネルの再起動をまたいで生存します。
+- 現在のチャンネルチャットまたはスレッドにスコープされます。各ターゲットは最大 10 個の有効なループを持つことができ、各プロンプトは 4,000 文字に制限されます。
+- プロアクティブ配信をサポートするアダプタとターゲットが必要です。Telegram、DingTalk、Feishu、WeCom がオプトインし、プラットフォーム固有のターゲット制限に従います。
+- `sessionScope: "single"` では利用できません。そのスコープは 1 つのチャットターゲットに紐づかないためです。
+- 保存されたループは、実行時刻になった時点でターゲットがもはや認可されていない場合、無効になります。
+
+## バックグラウンドエージェントの結果
+
+エージェントがバックグラウンドのサブエージェントまたはフォークに作業を委任すると、完了結果はセッションを所有するチャンネルチャットに配信されます。配信は元のターンが終了した後に発生する可能性があるため、バックグラウンドの作業がアクティブな間はチャンネルサービスまたはデーモンを実行し続けてください。
+
 ## スラッシュコマンド
 
 チャネルはスラッシュコマンドをサポートしています。これらはローカルで処理されます（エージェントとの往復は発生しません）:
@@ -338,10 +402,14 @@ curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates" | python3
 - `/help` — 利用可能なコマンドの一覧を表示
 - `/clear` — セッションをクリアして新規開始（エイリアス: `/reset`, `/new`）
 - `/status` — セッション情報とアクセスポリシーを表示
+- `/loop add "<cron>" <prompt>` — 永続的なスケジュールチャンネルループを作成
+- `/loop list` — 現在のチャットのループを一覧表示
+- `/loop inspect <id>` — ループのステータスと実行の詳細を表示
+- `/loop cancel <id>` — ループを無効化
 
 その他のすべてのスラッシュコマンド（例: `/compress`, `/summary`）はエージェントに転送されます。
 
-これらのコマンドは、すべてのチャネルタイプ（Telegram, WeChat, QQ, DingTalk, Feishu）で機能します。
+これらのコマンドは、すべてのチャネルタイプ（Telegram, WeChat, QQ, DingTalk, WeCom, Feishu, GitHub）で機能します。ただし、ループの作成には現在のアダプタとターゲットのプロアクティブ配信サポートも必要です。
 
 ## 実行
 
@@ -371,13 +439,134 @@ qwen serve --channel my-channel
 
 # 設定されたすべてのチャネルを起動
 qwen serve --channel all
+
+# または、トークン保護されたデーモンでチャンネルを後から有効にする
+QWEN_SERVER_TOKEN=secret qwen serve
+qwen channel set my-channel --token secret
+
+# デーモン管理の選択をクエリまたは停止
+qwen channel status --daemon-url http://127.0.0.1:4170 --token secret
+qwen channel stop --daemon-url http://127.0.0.1:4170 --token secret
 ```
 
-このモードでは、`qwen serve` が所有する1つのチャネルワーカープロセスが起動します。ワーカーは SDK を介してデーモンに接続し、同じチャネルアダプタを使用します。デーモンプロセスとは分離されているため、チャネルアダプタがクラッシュしてもデーモンはクラッシュしません。
+このモードでは、`qwen serve` が所有するワークスペースグループ化されたチャネルワーカープロセスが起動します。ワーカーは SDK を介してデーモンに接続し、同じチャネルアダプタを使用します。デーモンプロセスとは分離されているため、チャネルアダプタがクラッシュしてもデーモンはクラッシュしません。`--channel` なしで起動したデーモンは、最初の `qwen channel set` までチャネルアダプタをロードせず、チャネルサービスの PID リースを予約しません。
 
-`qwen serve --channel` は `qwen channel start` とは異なるサービスです。単独の `qwen channel start` は引き続き ACP ベースのチャネルサービスを使用し、異なる `cwd` 値を持つチャネル設定を実行できます。デーモン管理チャネルでは、選択した各チャネルの `cwd` がデーモンワークスペースに解決される必要があります。
+`qwen serve --channel` は `qwen channel start` とは異なるサービスです。単独の `qwen channel start` は引き続き ACP ベースのチャネルサービスを使用し、異なる `cwd` 値を持つチャネル設定を実行できます。デーモン管理チャネルでは、選択した各チャネルの `cwd` がデーモンに登録されたワークスペースに解決される必要があります。マルチワークスペースモードでは、選択の置換時に順序付きチャネルリストが変更されていないワークスペースのワーカーは保持されます。`all` は引き続きプライマリワークスペース専用です。
 
-チャネルが serve 管理されている場合、`qwen channel status` はオーナーを `qwen serve` として表示し、`qwen channel stop` はワーカーに直接シグナルを送る代わりにデーモンを停止するように指示します。準備ができたワーカーが予期せず終了した場合、デーモンは実行を継続し、`/daemon/status` にチャネルワーカーの警告を報告します。
+`--daemon-url` なしでは、`qwen channel status` と `qwen channel stop` はスタンドアロンの pidfile 動作を維持します。`--daemon-url`  variants はデーモンマネージャーをクエリまたは停止します。ランタイムの選択は設定に書き込まれず、デーモンの再起動をまたいで生存しません。準備ができたワーカーが予期せず終了した場合、デーモンは実行を継続し、`/daemon/status` にチャネルワーカーの警告を報告します。
+
+## Webhook トリガータスク
+
+デーモン管理チャンネルは認証済み Webhook イベントを受け付けることもできます。Qwen はイベントをコンテキストとして受け取り、重要な内容を要約して判断し、最終応答を設定されたチャットターゲットに配信します。これは生のお知らせの中継ではありません。
+Webhook タスクは `approvalMode: "yolo"` を必要とします。対話型の承認なしに実行されるためです。この設定は Webhook ターンだけでなくチャンネル全体に適用されるため、専用の Webhook チャンネルを使用するか、そのチャンネルの通常のチャット送信者を厳しく制限してください。
+
+チャンネル設定例:
+
+```json
+{
+  "channels": {
+    "dingtalk-main": {
+      "type": "dingtalk",
+      "clientId": "$DINGTALK_CLIENT_ID",
+      "clientSecret": "$DINGTALK_CLIENT_SECRET",
+      "cwd": "/repo",
+      "senderPolicy": "allowlist",
+      "allowedUsers": ["12345"],
+      "approvalMode": "yolo",
+      "sessionScope": "user",
+      "webhooks": {
+        "sources": {
+          "github-ci": {
+            "secretEnv": "QWEN_CHANNEL_GITHUB_CI_SECRET",
+            "targets": {
+              "operator": {
+                "chatId": "DINGTALK_USER_ID",
+                "senderId": "webhook:github-ci",
+                "isGroup": false
+              },
+              "team": {
+                "chatId": "OPEN_CONVERSATION_ID",
+                "senderId": "webhook:github-ci",
+                "isGroup": true
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+DingTalk の場合、各ターゲットに `isGroup` を明示的に設定します。ダイレクトメッセージのターゲットは `chatId` に DingTalk ユーザー ID を、`isGroup: false` を使用します。グループターゲットはグループの `openConversationId` に `isGroup: true` を使用します。他のアダプタは独自のプロアクティブターゲット形状を要求する場合があります。
+
+デーモン管理の DingTalk、Feishu、Telegram、WeCom チャンネルは、許可された受信メッセージからコンタクトを動的に監視します。デフォルトの 7 日間の鮮度ウィンドウ内にプライマリワークスペースで観測されたコンタクトを一覧表示します。
+
+```bash
+curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
+  http://127.0.0.1:4170/workspace/channel/observed-contacts
+```
+
+別の登録済みの信頼されたワークスペースを選択するには `GET /workspaces/:workspace/channel/observed-contacts` を使用します。1 秒から 365 日までのウィンドウを選択するには `?freshWithinSeconds=N` を追加します。デーモンはこの API を `workspace_channel_observed_contacts` ケイパビリティで公開します。
+
+レスポンスは完全なプラットフォーム ID とラベルを返します。グループラベルは、利用可能な場合、受け入れられた受信メッセージにすでに存在する名前を使用します。DingTalk は `conversationTitle` を提供し、Telegram は `chat.title` を提供します。Feishu と WeCom のグループラベルは現在完全な ID にフォールバックします。プラットフォームディレクトリやグループ詳細 API はクエリされません。トピクラベルも完全な ID にフォールバックします。各 `lastObservedAt` はミリ秒精度の正規化された ISO 8601 UTC タイムスタンプです。クライアントはこれをユーザーのローカルタイムゾーンに変換して表示できます。トップレベルの `users` にはダイレクトメッセージで観測されたユーザーが含まれます。`groups` には観測されたグループ会話が含まれ、`groups[].users` には各グループで観測されたユーザーが含まれ、`groups[].topics[].users` には Feishu または Telegram のトピックで観測されたユーザーが含まれます。
+
+```json
+{
+  "users": [
+    {
+      "channelName": "feishu-main",
+      "label": "Example User",
+      "id": "ou_complete_user_id",
+      "lastObservedAt": "2026-07-17T08:00:00.000Z"
+    }
+  ],
+  "groups": [
+    {
+      "channelName": "feishu-main",
+      "label": "oc_complete_chat_id",
+      "id": "oc_complete_chat_id",
+      "lastObservedAt": "2026-07-17T08:05:00.000Z",
+      "users": [
+        {
+          "label": "Example User",
+          "id": "ou_complete_user_id",
+          "lastObservedAt": "2026-07-17T08:05:00.000Z"
+        }
+      ],
+      "topics": []
+    }
+  ]
+}
+```
+
+これらのネストされたユーザーは観測された参加者であり、権威あるグループメンバーシップではありません。ダイレクト/グループ、メンション、送信者、およびペアリングのゲートを通過したメッセージのみが記録されます。繰り返し観測されるとラベルとタイムスタンプが更新されます。受動的な観測では、関係が古くなるまで退出や削除を検出できません。メッセージ内容は保存されません。バウンドされたレジストリは `$QWEN_HOME/channels/daemon/<workspaceHash>/observed-contacts.json` 配下に存在し、ワークスペースのチェックアウトの外にあり、ワークスペースごとに分割されます。500 観測の上限は、そのワークスペースのすべてのチャンネルと会話で共有され、365 日より古い観測は次の受け入れられた書き込み時に削除されます。レジストリが不正な形式またはサポートされていないバージョンになった場合、そのファイルを削除してリセットしてください。受け入れられたトラフィックが再作成します。Webhook の設定と配信は変更されません。
+
+チャンネルワーカーを有効にして `qwen serve` を起動します。
+
+```bash
+QWEN_SERVER_TOKEN="$QWEN_SERVER_TOKEN" qwen serve --require-auth --channel dingtalk-main
+```
+
+リクエスト例:
+
+```bash
+curl -X POST "http://127.0.0.1:4170/channels/dingtalk-main/webhooks/github-ci" \
+  -H "x-qwen-webhook-secret: $QWEN_CHANNEL_GITHUB_CI_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "eventType": "push",
+    "targetRef": "operator",
+    "title": "CI pipeline finished",
+    "payload": {
+      "targetRef": "refs/heads/main",
+      "repository": "qwen-code",
+      "status": "success"
+    }
+  }'
+```
+
+Webhook ルートは、`qwen serve` が Bearer 認証を有効にして実行されている場合でも、Webhook シークレットヘッダーで認証されます。デーモンの Bearer トークンを Webhook プロバイダーと共有しないでください。Webhook 設定と `secretEnv` の値はデーモンが起動するときにロードされます。Webhook ソースを変更した後やシークレットをローテーションした後は `qwen serve` を再起動してください。`202 {"accepted": true}` レスポンスは、チャンネルワーカーがタスクの所有権を受け入れたことを意味し、最終応答がすでにチャットに配信されたことではありません。配信の失敗をトラブルシューティングする際は、デーモンとチャンネルワーカーのログと `/daemon/status` を確認してください。
 
 ### マルチチャネルモード
 

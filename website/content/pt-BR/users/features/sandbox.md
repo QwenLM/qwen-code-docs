@@ -114,6 +114,8 @@ Ordem de prioridade (da maior para a menor):
 
 `settings.env.QWEN_SANDBOX_IMAGE` também funciona como um mecanismo genérico de injeção de env, mas `tools.sandboxImage` é a configuração persistente preferida.
 
+Imagens personalizadas são gerenciadas pelo usuário. Reconstrua-as com uma instalação atualizada do Qwen Code para receber a handoff segura de atualização; imagens mais antigas podem ainda usar seu atualizador em processo original.
+
 ### Perfis do macOS Seatbelt
 
 Perfis integrados (definidos via variável de ambiente `SEATBELT_PROFILE`):

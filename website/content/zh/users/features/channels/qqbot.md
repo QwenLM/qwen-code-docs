@@ -100,9 +100,10 @@ qwen channel start
 
 要在 QQ 群中使用机器人：
 
-1. 在频道配置中将 `groupPolicy` 设置为 `"allowlist"` 或 `"open"`
+1. 在频道配置中将 `groupPolicy` 设置为 `"allowlist"`、`"pairing"` 或 `"open"`
 2. 通过 QQ Bot 开放平台后台或让群管理员邀请，将机器人添加到 QQ 群
 3. 群成员必须 **@提及** 机器人才能触发回复
+4. 如果使用 `groupPolicy: "pairing"`，请在回复开始前批准该群组的配对请求。注意，一旦群组被批准，**该群组的任何成员**都可以使用机器人；`senderPolicy` 和 `allowedUsers` 不会限制已批准群组的成员。
 
 QQ Bot API V2 仅投递 @提及 了机器人的群消息——机器人看不到所有群消息。默认情况下 `requireMention` 为 `true`，在 QQ 上应保持此设置。
 
@@ -159,7 +160,8 @@ Token 刷新会跨越 WebSocket 重连持续进行——只要 AppID 和 AppSecr
 
 ### 机器人在群中不响应
 
-- 检查 `groupPolicy` 是否设为 `"allowlist"` 或 `"open"`（默认为 `"disabled"`）
+- 检查 `groupPolicy` 是否设为 `"allowlist"`、`"pairing"` 或 `"open"`（默认为 `"disabled"`）
+- 如果使用 `"pairing"`，请确认该群组的配对请求已被批准
 - **你必须 @提及 机器人** —— QQ 只投递标记了机器人的消息
 - 确认机器人已添加到群组
 

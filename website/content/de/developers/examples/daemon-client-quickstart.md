@@ -1,18 +1,19 @@
 # DaemonClient-Kurzanleitung (TypeScript)
 
-Ein minimales End-to-End-Beispiel: Starten Sie einen `qwen serve`-Daemon in einem anderen Terminal und steuern Sie ihn dann über ein Node-Skript mit dem `DaemonClient` des SDK. Siehe auch: [Daemon-Modus-Benutzerhandbuch](../../users/qwen-serve.md) und [HTTP-Protokollreferenz](../qwen-serve-protocol.md).
+Ein minimales End-to-End-Beispiel: Starte einen `qwen serve`-Daemon in einem anderen Terminal und steuere ihn dann über ein Node-Skript mit dem `DaemonClient` des SDK. Siehe auch: [Daemon-Modus-Benutzerhandbuch](../../users/qwen-serve.md) und [HTTP-Protokollreferenz](../qwen-serve-protocol.md).
 
 ## Einrichtung
 
 In einem Terminal:
 
 ```bash
-cd your-project/
-qwen serve --port 4170
-# → qwen serve hört auf http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/your-project)
+qwen serve --port 4170 \
+  --workspace /path/to/project-a \
+  --workspace /path/to/project-b
+# → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/project-a)
 ```
 
-Gemäß [#3803](https://github.com/QwenLM/qwen-code/issues/3803) §02 bindet sich jeder Daemon beim Start an einen Workspace (das aktuelle `cwd` oder überschreibbar mit `--workspace /path/to/dir`). Der gebundene Pfad des Daemons wird unter `/capabilities.workspaceCwd` bekannt gegeben, sodass Clients einen Pre-Flight-Check durchführen und `cwd` bei `POST /session` weglassen können.
+Jeder `--workspace`-Wert muss ein absolutes Verzeichnis sein. Der erste Start-Workspace ist primär und bleibt die Kompatibilitäts-Standardvorgabe für Requests, die `cwd` weglassen; `/capabilities.workspaces[]` ist der Katalog, den Clients verwenden sollten, wenn sie eine Runtime explizit auswählen.
 
 In einem anderen:
 
@@ -33,26 +34,26 @@ const client = new DaemonClient({
   //   export QWEN_SERVER_TOKEN="$(openssl rand -hex 32)"   # einmalig
   //   export QWEN_SERVER_TOKEN="$(cat ./my-token-file)"    # benutzerverwaltete Datei
   //   const client = new DaemonClient({ baseUrl: '...' });
-  // ODER explizit übergeben, wenn Sie einen anderen Umgebungsvariablen-Namen haben:
+  // ODER explizit übergeben, wenn du einen anderen Umgebungsvariablen-Namen hast:
   //   token: process.env.MY_TOKEN,
 });
 
 // 1. Bestätigen, dass wir den Daemon erreichen können, UI auf seine Funktionen prüfen
-//    und den gebundenen Workspace des Daemons auslesen (#3803 §02).
+//    und einen vertrauenswürdigen Workspace aus dem beworbenen Katalog auswählen.
 const caps = await client.capabilities();
 console.log('Daemon-Funktionen:', caps.features);
-console.log('Daemon-Workspace:', caps.workspaceCwd); // kanonischer gebundener Pfad
+const selectedWorkspace =
+  caps.workspaces?.find(
+    (workspace) => workspace.trusted && !workspace.primary,
+  ) ?? caps.workspaces?.find((workspace) => workspace.trusted);
+if (!selectedWorkspace) throw new Error('Kein vertrauenswürdiger Workspace verfügbar');
+console.log('Ausgewählter Workspace:', selectedWorkspace.id, selectedWorkspace.cwd);
 
-// 2. Session erzeugen oder anhängen. Zwei gleichwertige Formen:
-//    (a) `workspaceCwd: caps.workspaceCwd` explizit übergeben, oder
-//    (b) `workspaceCwd` ganz weglassen – das SDK sendet dann kein `cwd`-Feld
-//        und die Daemon-Route fällt auf ihren gebundenen Workspace zurück.
-//        Form (b) ist prägnant, setzt aber voraus, dass Sie `caps.workspaceCwd`
-//        als das vertrauen, was Sie beabsichtigt haben.
-//    Ein nicht-leeres `workspaceCwd`, das nicht zum gebundenen Pfad des Daemons
-//    kanonisiert, ergibt `400 workspace_mismatch` (siehe „Workspace-Konflikt" unten).
+// 2. Innerhalb dieser Runtime erzeugen oder anhängen. Das SDK mappt `workspaceCwd`
+//    auf das Wire-level POST /session `cwd`-Feld. Es wegzulassen ist nur erlaubt,
+//    wenn der Caller absichtlich den Legacy-Primär-Standard will.
 const session = await client.createOrAttachSession({
-  workspaceCwd: caps.workspaceCwd,
+  workspaceCwd: selectedWorkspace.cwd,
 });
 console.log(`session=${session.sessionId} attached=${session.attached}`);
 
@@ -114,14 +115,16 @@ function handleEvent(event: DaemonEvent): void {
 }
 ```
 
-## Workspace-Datei-Hilfsfunktionen
+## Workspace-Datei-Helpers
 
-Datei-Routen sind workspace-bezogen, nicht session-bezogen, daher befinden sie sich direkt auf `DaemonClient`:
+Datei-Routen sind workspace-bezogen, nicht session-bezogen. Binde einen qualifizierten Helper
+an die ausgewählte Workspace-ID, damit jeder Request innerhalb dieser Runtime bleibt:
 
 ```ts
-const file = await client.readWorkspaceFile('src/main.ts');
+const selected = client.workspaceById(selectedWorkspace.id);
+const file = await selected.readWorkspaceFile('src/main.ts');
 
-const updated = await client.editWorkspaceFile({
+const updated = await selected.editWorkspaceFile({
   path: 'src/main.ts',
   oldText: 'timeout: 30000',
   newText: 'timeout: 60000',
@@ -131,11 +134,12 @@ const updated = await client.editWorkspaceFile({
 console.log(updated.hash);
 ```
 
-`expectedHash` ist SHA-256 über die rohen Bytes auf der Festplatte. `mode: "replace"` und `editWorkspaceFile()` erfordern es, damit veraltete Clients keine Datei überschreiben, die sie nicht gerade gelesen haben. Schreiben/Bearbeiten erfordert auch bei Loopback die Konfiguration eines Bearer-Tokens; starten Sie den Daemon mit `--token` oder `QWEN_SERVER_TOKEN`, bevor Sie diese verwenden.
+`expectedHash` ist SHA-256 über die rohen Bytes auf der Festplatte. `mode: "replace"` und
+`editWorkspaceFile()` erfordern es, damit veraltete Clients keine Datei überschreiben, die sie nicht gerade gelesen haben. Schreiben/Bearbeiten erfordert auch bei Loopback die Konfiguration eines Bearer-Tokens; starte den Daemon mit `--token` oder `QWEN_SERVER_TOKEN`, bevor du diese verwendest.
 
 ## Wiederverbindung mit `Last-Event-ID`
 
-Wenn Ihr Client-Prozess mitten in einer Session neu startet, können Sie verpasste Ereignisse wiederholen:
+Wenn dein Client-Prozess mitten in einer Session neu startet, wiederhole verpasste Ereignisse:
 
 ```ts
 let cursor: number | undefined;
@@ -161,7 +165,7 @@ case 'permission_request': {
     requestId: string;
     options: Array<{ optionId: string; name: string; kind: string }>;
   };
-  // Wählen Sie die gewünschte Option – `proceed_once`, `allow` usw.
+  // Wähle die gewünschte Option – `proceed_once`, `allow` usw.
   const choice = req.options.find((o) => o.kind === 'allow_once') ?? req.options[0];
   const accepted = await client.respondToPermission(req.requestId, {
     outcome: { outcome: 'selected', optionId: choice.optionId },
@@ -175,7 +179,7 @@ case 'permission_request': {
 
 ## Gemeinsame Session-Zusammenarbeit
 
-Zwei Clients, die auf **denselben Daemon** zeigen, landen in derselben Session. Gemäß #3803 §02 ist jeder Daemon beim Start an EINEN Workspace gebunden, sodass der Daemon, der als `qwen serve --workspace /work/repo` (oder `cd /work/repo && qwen serve`) gestartet wurde, der ist, mit dem beide Clients verbinden:
+Zwei Clients, die auf **denselben Daemon-Workspace** zeigen, landen in derselben Session, wenn sie den Standard-`sessionScope: 'single'` verwenden. Für einen Single-Workspace-Daemon, der als `qwen serve --workspace /work/repo` (oder `cd /work/repo && qwen serve`) gestartet wurde, verbinden sich beide Clients mit diesem primären Workspace:
 
 ```ts
 // Daemon wurde als `qwen serve --workspace /work/repo` gestartet, daher
@@ -195,7 +199,7 @@ Beide Clients sehen denselben `session_update`-/`permission_request`-Stream. Bei
 
 ## Workspace-Konflikt
 
-Wenn `workspaceCwd` nicht mit dem gebundenen Workspace des Daemons übereinstimmt, lehnt `createOrAttachSession` mit `DaemonHttpError` ab, der Status `400` und einen strukturierten Body trägt:
+Wenn `workspaceCwd` nicht mit einem registrierten beworbenen Workspace übereinstimmt, lehnt `createOrAttachSession` mit `DaemonHttpError` ab, der Status `400` und einen strukturierten Body trägt. Ein registrierter, aber nicht vertrauenswürdiger Secondary gibt stattdessen `403 untrusted_workspace` zurück und darf nicht gegen primär retried werden:
 
 ```ts
 import { DaemonHttpError } from '@qwen-code/sdk';
@@ -211,16 +215,16 @@ try {
     };
     if (body.code === 'workspace_mismatch') {
       console.error(
-        `Dieser Daemon ist an ${body.boundWorkspace} gebunden, ` +
-          `nicht an ${body.requestedWorkspace}. Starten Sie einen separaten Daemon ` +
-          `für diesen Workspace oder routen Sie zum richtigen.`,
+        `Workspace ${body.requestedWorkspace} ist nicht registriert. ` +
+          `Aktualisiere Capabilities und wähle einen beworbenen Workspace, ` +
+          `oder registriere ihn vor dem erneuten Versuch.`,
       );
     }
   }
 }
 ```
 
-Multi-Workspace-Bereitstellungen führen einen Daemon pro Workspace auf separaten Ports aus – es gibt kein Intra-Daemon-Routing gemäß §02. Ein Orchestrator (oder der Launcher des Benutzers) wählt den richtigen Daemon basierend auf dem Projekt aus, mit dem der Client kommunizieren möchte.
+Retry nach einem Konflikt nicht gegen den primären Workspace. Aktualisiere `/capabilities`, wähle den beabsichtigten Eintrag aus `workspaces[]`, oder registriere einen geeigneten dynamischen Workspace über `POST /workspaces`. Verwende separate Daemons nur, wenn Authentifizierung, Rate-Limit- oder Prozess-Fehlerschranken ebenfalls unabhängig sein müssen.
 
 ## Authentifizierung
 
@@ -233,7 +237,7 @@ const client = new DaemonClient({
 });
 ```
 
-**SDK-Umgebungsfallback (PR 27, v0.16-alpha)** – `DaemonClient` liest `QWEN_SERVER_TOKEN` automatisch aus der Umgebung, wenn `token` weggelassen wird, und spiegelt damit das eigene `--token`-CLI-Fallback des Daemons wider. Wenn Ihre Shell also `export QWEN_SERVER_TOKEN=...` gesetzt hat, ist dies äquivalent zu obigem:
+**SDK-Umgebungsfallback (PR 27, v0.16-alpha)** – `DaemonClient` liest `QWEN_SERVER_TOKEN` automatisch aus der Umgebung, wenn `token` weggelassen wird, und spiegelt damit das eigene `--token`-CLI-Fallback des Daemons wider. Wenn deine Shell also `export QWEN_SERVER_TOKEN=...` gesetzt hat, ist dies äquivalent zu obigem:
 
 ```ts
 // Gleicher Effekt wie token: process.env.QWEN_SERVER_TOKEN, aber ohne Boilerplate.
@@ -260,14 +264,14 @@ try {
 
 ## Einen laufenden Prompt abbrechen
 
-Wenn Ihr Benutzer Esc drückt:
+Wenn dein Benutzer Esc drückt:
 
 ```ts
 await client.cancel(session.sessionId);
-// Im Ereignisstrom sehen Sie den Prompt mit stopReason: "cancelled" aufgelöst.
+// Im Ereignisstrom siehst du den Prompt mit stopReason: "cancelled" aufgelöst.
 ```
 
-Cancel beendet nur den **aktiven** Prompt – alles, was Sie bereits per POST gesendet haben und das noch dahinter in der Warteschlange steht, wird weiter ausgeführt. (Siehe Protokollreferenz für die Begründung.)
+Cancel beendet nur den **aktiven** Prompt – alles, was du bereits per POST gesendet hast und das noch dahinter in der Warteschlange steht, wird weiter ausgeführt. (Siehe Protokollreferenz für die Begründung.)
 
 ## Nächste Schritte
 

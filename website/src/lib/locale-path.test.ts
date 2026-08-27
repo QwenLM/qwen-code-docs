@@ -13,6 +13,16 @@ describe("getLocaleFromPathname", () => {
     );
   });
 
+  it("finds the Korean locale after the production base path", () => {
+    assert.equal(
+      getLocaleFromPathname(
+        "/qwen-code-docs/ko/users/overview/",
+        "/qwen-code-docs"
+      ),
+      "ko"
+    );
+  });
+
   it("finds a locale when the site runs without a base path", () => {
     assert.equal(getLocaleFromPathname("/pt-BR/blog/"), "pt-BR");
   });

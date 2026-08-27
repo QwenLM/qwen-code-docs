@@ -59,7 +59,7 @@ Clientes do navegador não devem receber tokens bearer do daemon.
 O comportamento atual do Estágio 1 do daemon é efetivamente `sessionScope: single` no nível de configuração do daemon. Até que `sessionScope` por requisição seja implementado, implantações de canal multi-usuário ou web devem escolher uma destas formas seguras:
 
 - um daemon por thread de canal / sala web
-- um daemon por workspace de usuário
+- um daemon por usuário ou principal de segurança
 - apenas demonstração mono-usuário
 
 Não multiplexar silenciosamente threads de canal não relacionadas em uma única sessão do daemon.

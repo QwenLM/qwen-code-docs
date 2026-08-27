@@ -4,13 +4,15 @@
 
 Les tâches planifiées permettent à Qwen Code de réexécuter automatiquement un prompt à intervalle régulier. Utilisez-les pour surveiller un déploiement, suivre une PR, vérifier l'avancement d'un build long, ou vous rappeler de faire quelque chose plus tard dans la session.
 
-Les tâches sont limitées à la session : elles vivent dans le processus Qwen Code actuel et disparaissent lorsque vous quittez. Rien n'est écrit sur le disque.
+Les tâches créées depuis le terminal sont limitées à la session : elles vivent dans le processus Qwen Code actuel et disparaissent lorsque vous quittez. Rien n'est écrit sur le disque.
+
+Les canaux de messagerie utilisent un planificateur persistant séparé afin que les résultats puissent être renvoyés vers le chat d'origine après le tour en cours. Voir [Scheduled Channel Loops](./channels/overview#scheduled-channel-loops) pour les commandes de canal, le comportement de persistance et les contraintes de livraison.
 
 > **Astuce :** Les tâches planifiées sont activées par défaut. Pour les désactiver, définissez `experimental.cron: false` dans vos [paramètres](../configuration/settings.md), ou définissez `QWEN_CODE_DISABLE_CRON=1` dans votre environnement.
 
 ## Planifier un prompt récurrent avec /loop
 
-Le [skill intégré](skills.md) `/loop` est le moyen le plus rapide de planifier un prompt récurrent. Passez un intervalle optionnel et un prompt, et Qwen Code configure une tâche cron qui s'exécute en arrière-plan tant que la session reste ouverte.
+Le [skill intégré](./skills.md) `/loop` est le moyen le plus rapide de planifier un prompt récurrent. Passez un intervalle optionnel et un prompt, et Qwen Code configure une tâche cron qui s'exécute en arrière-plan tant que la session reste ouverte.
 
 ```text
 /loop 5m check if the deployment finished and tell me what happened

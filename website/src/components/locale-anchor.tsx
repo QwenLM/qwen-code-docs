@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
 
-const LOCALES = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR"] as const;
+const LOCALES = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR", "ko"] as const;
 type Locale = (typeof LOCALES)[number];
 
 function LinkArrowIcon(props: React.SVGProps<SVGSVGElement>) {
