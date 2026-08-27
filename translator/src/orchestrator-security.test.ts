@@ -72,7 +72,8 @@ for (const flag of ["--auth-type", "--core-tools", "--json-schema", "--max-tool-
   if (!args.includes(flag)) process.exit(20);
 if (args.includes("--approval-mode") || args[args.indexOf("--auth-type") + 1] !== "openai" || args[args.indexOf("--core-tools") + 1] !== "structured_output" || args[args.indexOf("--max-tool-calls") + 1] !== "1") process.exit(21);
 const prompt = fs.readFileSync(0, "utf8");
-if (!prompt.includes("# Guide") || prompt.includes("sentinel-secret")) process.exit(22);
+const systemPrompt = args[args.indexOf("--system-prompt") + 1];
+if (!prompt.includes("# Guide") || !prompt.includes("pairwise non-overlapping") || !systemPrompt.includes("exactly one structured_output") || prompt.includes("sentinel-secret")) process.exit(22);
 if (process.cwd().includes(${JSON.stringify(project)}) || process.env.HOME === ${JSON.stringify(process.env.HOME)}) process.exit(23);
 const path = process.env.FAKE_ESCAPE === "1" ? "../../outside.md" : "guide.md";
 const payload = { translations: [{ path, replacements: [{ old: "旧内容。", new: "新内容。" }] }] };
