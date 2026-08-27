@@ -1,8 +1,9 @@
 name: Daily Incremental Translation
 
 # Once a day, runs the orchestrator's incremental pipeline against the
-# upstream qwen-code docs, then (if anything changed) opens a pull request
-# with the verified translations. Merging that PR triggers deploy-docs.yml.
+# upstream qwen-code docs, then (if anything changed) publishes a review
+# branch and an issue with a one-click PR link. Merging that PR triggers
+# deploy-docs.yml.
 #
 # Pipeline (translator/orchestrator/orchestrator.mjs):
 #   sync-en    mirror upstream English docs into website/content/en
@@ -26,7 +27,7 @@ name: Daily Incremental Translation
 # (OPENAI_API_KEY / OPENAI_BASE_URL); the orchestrator selects the OpenAI
 # auth type explicitly for its safe, non-interactive child process.
 #
-# Only one generated translation PR may be open at a time. Until it is
+# Only one generated translation branch may be pending at a time. Until it is
 # reviewed and merged, later scheduled runs skip model work instead of
 # spending API quota to recreate the same backlog.
 
@@ -38,7 +39,7 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
+  pull-requests: read
   # Needed by the failure-reporting job, which files/updates a tracking
   # issue when a scheduled run fails.
   issues: write
@@ -49,7 +50,7 @@ permissions:
 
 # A manual dispatch overlapping the 20:00 UTC cron would duplicate the same
 # translation at double API spend. Serialize instead of cancelling: a
-# cancelled run loses hours of work without producing its reviewable branch.
+# cancelled run loses hours of work without producing its review branch.
 concurrency:
   group: daily-translate
   cancel-in-progress: false
@@ -59,23 +60,23 @@ env:
 
 jobs:
   translate:
-    name: Sync, translate & open review
+    name: Sync, translate & publish review branch
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
-      # The PR step below is gated on `main`, so a dispatch on any other
+      # The review-branch step below is gated on `main`, so any other
       # ref translates for hours at real API cost but cannot publish the
       # result automatically. The artifact below preserves it, but warn
       # before the spend rather than after it (see #196). Before the artifact
       # existed, run 31074093979 lost a complete 1h53m catch-up this way.
-      - name: Warn that this run cannot open a PR
+      - name: Warn that this run cannot publish a review branch
         if: github.ref_name != 'main'
         run: |
-          echo "::warning title=Translations will not be proposed::This run is on '${GITHUB_REF_NAME}', not main, so the PR step is skipped. If changes are detected, any translation produced is kept only as the 'translation-output' artifact on this run."
+          echo "::warning title=Translations will not be proposed::This run is on '${GITHUB_REF_NAME}', not main, so the review-branch step is skipped. If changes are detected, any translation produced is kept only as the 'translation-output' artifact on this run."
           {
-            echo "### ⚠️ This run cannot open a PR"
+            echo "### ⚠️ This run cannot publish a review branch"
             echo
-            echo "Ref \`${GITHUB_REF_NAME}\` is not \`main\`, so **Open translation pull request** will be skipped."
+            echo "Ref \`${GITHUB_REF_NAME}\` is not \`main\`, so **Publish translation review branch** will be skipped."
             echo
             echo "If changes are detected, translated content is uploaded as the \`translation-output\` artifact — download it from this run if you need the work."
           } >> "$GITHUB_STEP_SUMMARY"
@@ -91,22 +92,29 @@ jobs:
           fetch-depth: 0
           filter: blob:none
 
-      - name: Check for a pending translation review
+      - name: Check for a pending translation review branch
         id: pending
         if: github.ref_name == 'main'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          count="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open \
-            --limit 100 \
-            --json headRefName \
-            --jq '[.[] | select(.headRefName | startswith("automation/daily-translation-"))] | length')"
-          if [ "$count" -gt 0 ]; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "A generated translation PR is already awaiting review; skipping this run." >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
+          pending=false
+          while read -r branch; do
+            [ -n "$branch" ] || continue
+            merged="$(gh pr list --repo "$GITHUB_REPOSITORY" --state merged \
+              --head "$branch" --limit 1 --json number --jq 'length')"
+            if [ "$merged" -gt 0 ]; then
+              git push origin --delete "$branch"
+              issue="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
+                --search "${branch} in:title" --limit 1 --json number --jq '.[0].number // empty')"
+              [ -z "$issue" ] || gh issue close "$issue" --repo "$GITHUB_REPOSITORY" --comment "The translation PR was merged; closing this review notice."
+            else
+              pending=true
+              echo "A translation branch is awaiting review: https://github.com/${GITHUB_REPOSITORY}/compare/main...${branch}?expand=1" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done < <(git ls-remote --heads origin 'refs/heads/automation/daily-translation-*' \
+            | awk '{sub("refs/heads/", "", $2); print $2}')
+          echo "exists=${pending}" >> "$GITHUB_OUTPUT"
 
       - name: Install Node.js
         uses: actions/setup-node@v6
@@ -230,8 +238,10 @@ jobs:
 
       # Generated content is never pushed to main directly (#201). A unique
       # branch avoids history rewrites; the next run waits for this PR to be
-      # reviewed and merged before spending model quota again.
-      - name: Open translation pull request
+      # reviewed and merged before spending model quota again. Organization
+      # policy forbids Actions from creating PRs, so an issue carries the
+      # one-click compare link instead.
+      - name: Publish translation review branch
         if: steps.detect.outputs.changed == 'true' && github.ref_name == 'main'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -253,12 +263,13 @@ jobs:
             git commit -m "docs(i18n): daily incremental translation sync [skip ci]"
             branch="automation/daily-translation-${GITHUB_RUN_ID}"
             git push origin "HEAD:${branch}"
-            gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" \
-              --title "docs(i18n): daily incremental translation sync" \
-              --body $'## Summary\n\n- sync the English mirror from upstream\n- add structurally verified incremental translations\n- keep failed translations quarantined for a later retry\n\n## Review\n\nPlease review the generated prose before merging. The normal `main` push workflow will build and deploy the site after merge.'
+            compare="https://github.com/${GITHUB_REPOSITORY}/compare/main...${branch}?expand=1"
+            gh issue create --repo "$GITHUB_REPOSITORY" \
+              --title "Translation batch awaits review: ${branch}" \
+              --body "A verified daily translation batch is ready on \`${branch}\`. Open ${compare}, create and review the pull request, then merge it; the normal \`main\` push workflow will build and deploy the site. Later scheduled runs pause until this branch has a merged PR."
           fi
 
-      # Reporting runs only after the durable PR attempt. It also runs on
+      # Reporting runs only after the durable review-branch attempt. It also runs on
       # quiet days, producing a comparable zero-work record.
       - name: Publish translation metrics
         if: always()
