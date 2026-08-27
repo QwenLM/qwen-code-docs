@@ -1,81 +1,81 @@
-# Dual Output
+# デュアル出力
 
-Dual Output は、インタラクティブな TUI 用のサイドカーモードです。Qwen Code が通常通り `stdout` にレンダリングを継続する一方で、構造化された JSON イベントストリームを別のチャネルに並行して出力します。これにより、IDE 拡張機能、Web フロントエンド、CI パイプライン、自動化スクリプトなどの外部プログラムがセッションを監視・制御できるようになります。
+デュアル出力は、インタラクティブTUIのサイドカーモードです。Qwen Codeが`stdout`で通常通りレンダリングを行いながら、同時に構造化されたJSONイベントストリームを別のチャネルに出力します。これにより、IDE拡張、Webフロントエンド、CIパイプライン、自動化スクリプトなどの外部プログラムがセッションを監視・制御できるようになります。
 
-また、逆方向のチャネルも提供します。外部プログラムは TUI が監視するファイルに JSONL コマンドを書き込むことができ、これにより、キーボードを操作する人間と同様にプロンプトの送信やツール権限リクエストへの応答が可能になります。
+また、リバースチャネルも提供します。外部プログラムがJSONLコマンドをファイルに書き込むと、TUIがそれを監視し、人間がキーボードを操作しているかのようにプロンプトの送信やツール許可要求への応答を行うことができます。
 
-Dual Output は完全にオプションです。以下のフラグが指定されていない場合、TUI は追加の I/O や動作変更なしで、これまでと同様に動作します。
+デュアル出力は完全にオプションです。以下のフラグがない場合、TUIは以前とまったく同じ動作をし、追加のI/Oや動作変更は発生しません。
 
-## Use cases
+## ユースケース
 
-Dual Output は低レベルな基盤プリミティブです。これにより実現される具体的な統合例を以下に示します。
+デュアル出力は低レベルの配管プリミティブです。以下は、それによって可能になる具体的な統合例です。
 
-### Terminal + Chat dual-mode real-time sync
+### ターミナル + チャット デュアルモードのリアルタイム同期
 
-代表的なユースケースです。Web またはデスクトップの ChatUI が PTY 内で TUI をホストし、構造化イベントストリームによって駆動される並列の会話ビューをレンダリングします。
+主要なユースケースです。WebまたはデスクトップのChatUIがPTY内でTUIをホストし、構造化イベントストリームに基づいたパラレルな会話ビューをレンダリングします。
 
-- ユーザーは TUI（ターミナルネイティブな上級者向け）または Web UI（リッチな UX、共有可能なリンク、モバイル対応）のどちらの画面でも入力できます。すべてのメッセージが同じ JSON イベントを経由するため、両方のビューは常に同期されます。
-- ツール承認プロンプトは両方の場所に表示され、最初に承認した側の操作が有効になります。
-- セッション履歴は `--json-file` からそのままキャプチャされるため、サーバー側は ANSI をパースすることなく、正規の機械可読なトランスクリプトを取得できます。
+- ユーザーはどちらの画面でも入力できます。TUI（ターミナルネイティブのパワーユーザー向け）またはWeb UI（リッチなUX、共有可能なリンク、モバイル対応）です。すべてのメッセージが同じJSONイベントを通じて流れるため、両方のビューは同期を保ちます。
+- ツール承認プロンプトが両方の場所に表示されます。先に承認した方が勝ちです。
+- セッション履歴は`--json-file`からそのままキャプチャされるため、サーバー側ではANSIをパースすることなく機械可読な完全なトランスクリプトを取得できます。
 
-### IDE extensions (VS Code / JetBrains / Cursor / Neovim)
+### IDE拡張（VS Code / JetBrains / Cursor / Neovim）
 
-IDE 内に Qwen Code を組み込みます。TUI は必要に応じてエディタの統合ターミナルパネルで実行され、拡張機能は `--json-fd` / `--json-file` イベントを消費して以下を駆動します。
+IDE内にQwen Codeを埋め込みます。TUIはエディタの統合ターミナルパネルで実行され（ユーザーが希望する場合）、拡張機能は`--json-fd` / `--json-file`のイベントを消費して以下を駆動します。
 
-- エージェントがファイルに触れた際のインライン差分オーバーレイ。
-- フォーマット済み Markdown、シンタックスハイライト付きツール呼び出し、クリック可能な引用を含む Webview サイドパネル。
+- エージェントがファイルに触れたときのインラインディフオーバーレイ。
+- 整形されたMarkdown、シンタックスハイライトされたツール呼び出し、クリック可能な引用を含むWebビューサイドパネル。
 - ステータスバーインジケーター（思考中 / 応答中 / 承認待ち）。
-- ユーザーがネイティブ IDE の承認ボタンをクリックした際のプログラムによる `confirmation_response` の書き込み。
+- ユーザーがネイティブIDEの承認ボタンをクリックしたときのプログラムによる`confirmation_response`の書き込み。
 
-### Browser-based Chat frontends
+### ブラウザベースのチャットフロントエンド
 
-Node/Bun サーバーがレンダリングセマンティクス用に PTY 内で TUI を起動しますが、ブラウザに対して WebSocket チャネルを公開します。`--json-file` 上のイベントはクライアントに転送され、ブラウザで入力されたユーザーメッセージは `--input-file` 経由で注入されます。両側で ANSI パースは不要です。
+Node/BunサーバーがレンダリングセマンティクスのためにPTY内でTUIを起動しますが、ブラウザにはWebSocketチャネルを公開します。`--json-file`上のイベントはクライアントに転送され、ブラウザで入力されたユーザーメッセージは`--input-file`を介して注入されます。どちらの側でもANSIパースは必要ありません。
 
-### CI / automation observers
+### CI / 自動化オブザーバー
 
-CI ジョブがタスクプロンプト付きで Qwen Code を実行します。人間はジョブログで TUI を確認し、CI システムは `--json-file` を tail して以下を行います。
+CIジョブがタスクプロンプト付きでQwen Codeを実行します。人間はジョブログでTUIを確認できます。CIシステムは`--json-file`を監視して以下を行います。
 
-- `result` イベントがエラーを報告した場合にジョブを失敗させる。
-- `token usage` / `duration_ms` / `tool_use` カウントをメトリクスにプッシュする。
+- `result`イベントがエラーを報告した場合、ジョブを失敗させる。
+- `token usage` / `duration_ms` / `tool_use` のカウントをメトリクスにプッシュする。
 - 完全なトランスクリプトをビルドアーティファクトとしてアーカイブする。
 
-### Multi-agent orchestration
+### マルチエージェントオーケストレーション
 
-スーパーバイザーエージェントが複数の TUI ワーカーを起動し、それぞれに独自のイベント/入力ファイルのペアを割り当てます。進捗を監視し、フォローアッププロンプトを注入し、すべてのワーカー間でツール呼び出しを承認または拒否することで、グローバルな予算/セキュリティポリシーを強制します。
+スーパーバイザーエージェントが複数のTUIワーカーを起動し、それぞれに独自のイベント/入力ファイルペアを割り当てます。進行状況を監視し、フォローアッププロンプトを注入し、すべてのワーカーにわたってツール呼び出しを承認または拒否することでグローバルな予算/セーフティポリシーを適用します。
 
-### Session recording, audit, and replay
+### セッション記録、監査、リプレイ
 
-`--json-file` を使用してすべての TUI セッションを通常のファイルに tee します。後で以下が可能になります。
+すべてのTUIセッションを`--json-file`で通常のファイルに保存します。後で以下が可能です。
 
-- コンプライアンス監査で実行内容を正確に再現できる。
-- モデルバージョン間で実行結果を比較する自動回帰テスト。
-- リプレイツールが同じプロトコル経由でイベントを再送信し、可視化ダッシュボードに供給できる。
+- コンプライアンス監査で、何が実行されたかを正確に再構築できます。
+- 自動回帰テストで、モデルバージョン間の実行を比較できます。
+- リプレイツールで、同じプロトコルを通じてイベントを再送し、可視化ダッシュボードにフィードできます。
 
-### Observability dashboards
+### 可観測性ダッシュボード
 
-`--json-file` を Loki / OTEL / JSONL を受け入れる任意のパイプラインにストリーミングします。`usage.input_tokens`、`tool_use.name`、`result.duration_api_ms` を Grafana のファーストクラスメトリクスとして抽出します。ログパース用の正規表現は不要です。
+`--json-file`をLoki / OTEL / JSONLを受け入れる任意のパイプラインにストリーミングします。`usage.input_tokens`、`tool_use.name`、`result.duration_api_ms`をGrafanaのファーストクラスメトリクスとして抽出します。ログパース用の正規表現は不要です。
 
-### Testing and QA
+### テストとQA
 
-統合テストは Qwen Code をヘッドレスで起動し、`--input-file` スクリプトで駆動し、`--json-file` イベントに対してアサートを行います。stdout の ANSI をパースする場合と異なり、UI リファクタリングに関係なくアサーションは安定します。
+統合テストではQwen Codeをヘッドレスで起動し、`--input-file`スクリプトで駆動し、`--json-file`イベントに対してアサーションを行います。stdoutのANSIをパースするのと異なり、アサーションはUIのリファクタリングに対して安定しています。
 
-## Flags
+## フラグ
 
-| Flag                  | Type             | Purpose                                                                                                                                    |
-| --------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--json-fd <n>`       | number, `n >= 3` | 構造化 JSON イベントをファイルディスクリプタ `n` に書き込みます。呼び出し側は spawn の `stdio` 設定またはシェルのリダイレクト経由でこの fd を提供する必要があります。 |
-| `--json-file <path>`  | path             | 構造化 JSON イベントをファイルに書き込みます。パスは通常のファイル、FIFO（名前付きパイプ）、または `/dev/fd/N` にできます。                               |
-| `--input-file <path>` | path             | 外部プログラムによって書き込まれた JSONL コマンドを監視します。                                                                         |
+| フラグ                  | 型               | 目的                                                                                                                                    |
+| ----------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `--json-fd <n>`       | 数値、`n >= 3` | 構造化JSONイベントをファイルディスクリプタ `n` に書き込みます。呼び出し元は、spawnの`stdio`設定またはシェルリダイレクトでこのfdを提供する必要があります。 |
+| `--json-file <path>`  | パス             | 構造化JSONイベントをファイルに書き込みます。パスは通常のファイル、FIFO（名前付きパイプ）、または `/dev/fd/N` にできます。                    |
+| `--input-file <path>` | パス             | このファイルを監視して、外部プログラムによって書き込まれたJSONLコマンドを読み取ります。                                                         |
 
-`--json-fd` と `--json-file` は相互に排他です。TUI 自体の出力が破損するのを防ぐため、fd 0、1、2 は拒否されます。
+`--json-fd` と `--json-file` は相互排他的です。fd 0、1、2は拒否され、TUI自身の出力を破損するのを防ぎます。
 
-## Why two output flags? (`--json-fd` vs `--json-file`)
+## なぜ2つの出力フラグがあるのか？（`--json-fd` と `--json-file`）
 
-一見すると `--json-fd` で十分に見えます。呼び出し側が追加のファイルディスクリプタ付きで Qwen Code を spawn し、TUI がそこにイベントを書き込むだけで完了します。しかし実際には、最も重要な埋め込みシナリオである疑似ターミナル（PTY）内での TUI 実行において、fd 受け渡しは機能しません。そのため、この機能ではパスベースの代替手段も公開しています。
+一見すると `--json-fd` で十分に思えます。呼び出し元が追加のファイルディスクリプタ付きでQwen Codeを起動し、TUIがイベントをそこに書き込めば完了です。しかし実際には、fdの受け渡しは最も重要な埋め込みシナリオ、つまり疑似端末（PTY）内でTUIを実行する場合に機能しません。そのため、この機能はパスベースの代替手段も提供します。
 
-### When `--json-fd` works
+### `--json-fd` が機能する場合
 
-純粋な `child_process.spawn` と `stdio` 配列を使用する場合：
+純粋な `child_process.spawn` と `stdio` 配列：
 
 ```ts
 const child = spawn('qwen', ['--json-fd', '3'], {
@@ -83,21 +83,21 @@ const child = spawn('qwen', ['--json-fd', '3'], {
 });
 ```
 
-Node の spawn は任意の `stdio` エントリをサポートしており、fd 3 は子プロセスに継承され、直接書き込みが可能です。ゼロコピー、ゼロバッファ、ファイルシステム不要の最速パスです。
+Nodeのspawnは任意の `stdio` エントリをサポートします。fd 3は子プロセスに継承され、直接書き込むことができます。ゼロコピー、ゼロバッファ、ゼロファイルシステム——最速のパスです。
 
-### Why `--json-fd` does **not** work under PTY
+### なぜ `--json-fd` はPTY下では**機能しない**のか
 
-PTY ラッパーである [`node-pty`](https://github.com/microsoft/node-pty) や [`bun-pty`](https://github.com/oven-sh/bun) は、IDE 拡張機能、Web ターミナル、tmux ライクなマルチプレクサーなど、本格的な埋め込み環境がインタラクティブな TUI をホストする方法です。これらは以下の3つの理由により、追加の fd を子プロセスに転送できません。
+PTYラッパー（[`node-pty`](https://github.com/microsoft/node-pty) や [`bun-pty`](https://github.com/oven-sh/bun)）は、本格的な埋め込み（IDE拡張、Webターミナル、tmuxのようなマルチプレクサ）がインタラクティブTUIをホストする方法です。これらは追加のfdを子プロセスに転送できません。理由は3つあります。
 
-1. **API surface.** `node-pty.spawn(file, args, options)` は `cwd`、`env`、`cols`、`rows`、`encoding` などを受け付けますが、**`stdio` 配列はありません**。API 上に「子プロセスの fd 3 としてこの fd もアタッチする」と指定する場所が単純に存在しません。`bun-pty` も同じ形状を公開しています。
-2. **`forkpty(3)` semantics.** 内部では、PTY ラッパーが `forkpty(3)`（または同等の `posix_openpt` + `login_tty` の処理）を呼び出します。このシステムコールはマスター/スレーブの疑似ターミナルペアを割り当て、子プロセスの fd 0/1/2 をスレーブ側にリダイレクトし、子プロセスが実際のターミナルに接続されていると認識させます。親プロセスの 2 以上の fd は、`exec` 前に `fd >= 3` に対して `close(fd)` を呼び出す `login_tty` によって閉じられます。追加の fd は継承されず、積極的に消去されます。
-3. **Controlling-terminal side effect.** ハッキングで追加の fd を通したとしても、それはターミナルではないため、子プロセスの TUI レンダラー（fd 1 が TTY であると仮定してエスケープシーケンスを書き込む）は依然として出力にスレーブを必要とします。結局、2 つの独立したトランスポートを持つことになります。
+1. **APIサーフェス。** `node-pty.spawn(file, args, options)` は `cwd`、`env`、`cols`、`rows`、`encoding` などを受け入れますが、**`stdio`配列はありません**。APIに「このfdを子プロセスのfd 3としてもアタッチする」という指定方法が単純に存在しません。`bun-pty` も同じ形状を公開しています。
+2. **`forkpty(3)` のセマンティクス。** 内部で、PTYラッパーは `forkpty(3)`（または同等の `posix_openpt` + `login_tty` の処理）を呼び出します。このシステムコールはマスター/スレーブ疑似端末ペアを割り当て、子プロセスのfd 0/1/2をスレーブ側にリダイレクトし、子プロセスが実際の端末に接続されていると思い込ませます。親プロセスで2より大きいfdは、`login_tty` によって閉じられます。`login_tty` は `exec` の前に `close(fd)`（`fd >= 3` に対して）を呼び出します。追加のfdは継承されるどころか、積極的に消去されます。
+3. **制御端末の副作用。** 仮に追加のfdを通すことができたとしても、それは端末ではないため、子プロセスのTUIレンダラー（fd 1がTTYであることを前提にエスケープシーケンスを書き込む）は、出力のために依然としてスレーブを必要とします。結局、2つの独立したトランスポートになってしまいます。
 
-要するに、埋め込み側が TUI レンダリングに実際の TTY を必要とする瞬間（すべての IDE 拡張機能、すべての Web ターミナル、すべてのデスクトップチャットアプリ）において、fd の継承は選択肢から外れます。
+つまり、TUIレンダリングに実際のTTYが必要な埋め込み（すべてのIDE拡張、Webターミナル、デスクトップチャットアプリ）では、fdの継承は不可能です。
 
-### `--json-file` fills the gap
+### `--json-file` がそのギャップを埋める
 
-ファイルパスは通常の CLI 引数として渡されるため、すべての spawn モデルで機能します。
+ファイルパスは通常のCLI引数として渡されるため、すべてのspawnモデルで機能します。
 
 ```ts
 import { spawn } from 'node-pty';
@@ -114,57 +114,79 @@ const pty = spawn(
 );
 ```
 
-子プロセスは自身でファイルを開き、そこにイベントを書き込みます。埋め込み側は `fs.watch` + 増分読み取りで同じパスを tail します。注意すべき点が3つあります。
+子プロセスが自分でファイルを開き、イベントを書き込みます。埋め込み側は `fs.watch` とインクリメンタルリードで同じパスを監視します。注意点が3つあります。
 
-- **通常のファイル**、FIFO（名前付きパイプ）、または `/dev/fd/N` のすべてが機能します。両側が同じホスト上にある場合、FIFO が最も低レイテンシなオプションです。
-- ブリッジは `O_NONBLOCK` で FIFO を開き、`ENXIO`（まだリーダーがいない）の場合はブロッキングモードにフォールバックするため、PTY の起動がコンシューマー待ちでデッドロックすることはありません。
-- マルチセッションの分離には、`$XDG_RUNTIME_DIR` 下のセッションごとのパス、またはモード `0700` の `mkdtemp` ディレクトリを使用します。
+- **通常のファイル**、FIFO（名前付きパイプ）、または `/dev/fd/N` のいずれでも動作します。FIFOは、両側が同じホスト上にある場合に最もレイテンシの低いオプションです。
+- ブリッジはFIFOを `O_NONBLOCK` で開き、`ENXIO`（リーダー未接続）の場合はブロッキングモードにフォールバックするため、PTY起動がコンシューマー待ちでデッドロックすることはありません。
+- マルチセッションの分離には、`$XDG_RUNTIME_DIR` または `mkdtemp` で作成したディレクトリ（モード `0700`）内のセッションごとのパスを使用します。
 
-### Which flag should I use?
+### どのフラグを使うべきか？
 
-| Embedding style                                   | Use                  |
+| 埋め込みスタイル                                   | 使用するフラグ       |
 | ------------------------------------------------- | -------------------- |
-| `child_process.spawn` with plain stdio            | `--json-fd`          |
-| `node-pty` / `bun-pty` / any PTY host             | `--json-file`        |
-| Shell redirection / manual pipeline testing       | either               |
-| CI log collection (regular file, read after exit) | `--json-file`        |
-| Lowest possible latency on same host              | `--json-file` + FIFO |
+| `child_process.spawn` と通常のstdio           | `--json-fd`          |
+| `node-pty` / `bun-pty` / 任意のPTYホスト      | `--json-file`        |
+| シェルリダイレクション / 手動パイプライン試験 | どちらでも           |
+| CIログ収集（通常ファイル、終了後に読み取り） | `--json-file`        |
+| 同一ホスト上の最低レイテンシ                | `--json-file` + FIFO |
 
-一般的なルール：**TUI を正しくレンダリングする必要がある場合は PTY が必要であり、つまり `--json-file` が必要になります。** `--json-fd` は、TUI の忠実度を気にしない、通常は stdout を破棄するプログラム的なラッパーなどの、より単純な埋め込み用です。
+一般的なルール：**TUIを正しくレンダリングする必要があるなら、PTYが必要であり、つまり `--json-file` が必要です。** `--json-fd` はTUIの忠実性を気にしない、より単純な埋め込み（通常はstdoutを破棄するプログラムラッパー）向けです。
 
-## Quick start
+## クイックスタート
 
-3つのチャネルをすべて有効にして Qwen Code を実行します。
+両方のチャネルを有効にしてQwen Codeを通常のファイルで実行します。
 
 ```bash
-mkfifo /tmp/qwen-events.jsonl /tmp/qwen-input.jsonl
+touch /tmp/qwen-events.jsonl /tmp/qwen-input.jsonl
 qwen \
   --json-file /tmp/qwen-events.jsonl \
   --input-file /tmp/qwen-input.jsonl
 ```
 
-2つ目のターミナルで、イベントストリームを tail します。
+2番目のターミナルでイベントストリームを監視します。
 
 ```bash
-cat /tmp/qwen-events.jsonl
+tail -f /tmp/qwen-events.jsonl
 ```
 
-3つ目のターミナルで、実行中の TUI にプロンプトをプッシュします。
+3番目のターミナルで、実行中のTUIにプロンプトを送信します。
 
 ```bash
 echo '{"type":"submit","text":"Explain this repo"}' >> /tmp/qwen-input.jsonl
 ```
 
-プロンプトはユーザーが入力したかのように TUI に表示され、ストリーミング応答は `/tmp/qwen-events.jsonl` にミラーリングされます。
+プロンプトはユーザーが入力したかのようにTUIに表示され、ストリーミング応答が `/tmp/qwen-events.jsonl` にミラーリングされます。
 
-## Output event schema
+### イベント出力にFIFO（名前付きパイプ）を使用する
 
-イベントは JSON Lines（1行に1オブジェクト）として出力されます。スキーマは非インタラクティブな `--output-format=stream-json` モードで使用されるものと同じで、`includePartialMessages` が常に有効になっています。
+FIFOは通常のファイルよりも低レイテンシ（ディスクI/Oなし）で、両側が同じホスト上にある場合に適しています。ブリッジは `O_RDWR | O_NONBLOCK` でFIFOを開くため、リーダーがまだ接続されていなくても**ブロックしません**。イベントはリーダーが接続するまでカーネルのパイプバッファにバッファリングされます。
 
-チャネル上の最初のイベントは常に `system` / `session_start` であり、ブリッジが構築された時点で出力されます。他のイベントが到着する前に、チャネルをセッション ID と関連付けるために使用してください。
+> **注:** `--input-file` は通常のファイル（FIFOではない）が必要です。なぜなら、ウォッチャーは新しいデータを検出するために `stat.size` に依存しており、FIFOでは常に0になるからです。
+
+```bash
+mkfifo /tmp/qwen-events.jsonl
+touch /tmp/qwen-input.jsonl
+qwen \
+  --json-file /tmp/qwen-events.jsonl \
+  --input-file /tmp/qwen-input.jsonl
+# TUIはすぐに起動します——最初にリーダーを起動する必要はありません。
+
+# 2番目のターミナルで、準備ができたら接続：
+cat /tmp/qwen-events.jsonl
+```
+
+リーダーがまったく接続されなかった場合、内部バッファが1MBを超えるとブリッジは自動的に無効になります。TUIは通常通り動作を続けます。
+
+## 出力イベントスキーマ
+
+イベントはJSON Lines（1行に1オブジェクト）として出力されます。スキーマは非インタラクティブモード `--output-format=stream-json` で使用されるものと同じで、`includePartialMessages` は常に有効です。
+
+プロトコルバージョン2では、テキストの `tool_result.content` 値をJSON文字列シリアライゼーション後に65,536バイトのUTF-8に制限します。サイズ超過の値は決定論的な先頭/末尾のプレビューになります。イベントタイプとフィールドスキーマは変わりません。これはフィールド制限であり、JSONLフレーム全体のサイズ制限ではありません。
+
+チャネル上の最初のイベントは常に `system` / `session_start` で、ブリッジが構築されたときに出力されます。これを使用して、他のイベントが到着する前にチャネルをセッションIDに関連付けてください。
 
 ```jsonc
-// Session lifecycle
+// セッションライフサイクル
 {
   "type": "system",
   "subtype": "session_start",
@@ -173,19 +195,19 @@ echo '{"type":"submit","text":"Explain this repo"}' >> /tmp/qwen-input.jsonl
   "data": { "session_id": "...", "cwd": "/path/to/cwd" }
 }
 
-// Streaming events for an in-progress assistant turn
+// アシスタントターン中のストリーミングイベント
 { "type": "stream_event", "event": { "type": "message_start", "message": { ... } }, ... }
 { "type": "stream_event", "event": { "type": "content_block_start", "index": 0, "content_block": { "type": "text" } }, ... }
 { "type": "stream_event", "event": { "type": "content_block_delta", "index": 0, "delta": { "type": "text_delta", "text": "Hello" } }, ... }
 { "type": "stream_event", "event": { "type": "content_block_stop", "index": 0 }, ... }
 { "type": "stream_event", "event": { "type": "message_stop" }, ... }
 
-// Completed messages
+// 完了したメッセージ
 { "type": "user", "message": { "role": "user", "content": [...] }, ... }
 { "type": "assistant", "message": { "role": "assistant", "content": [...], "usage": { ... } }, ... }
 { "type": "user", "message": { "role": "user", "content": [{ "type": "tool_result", ... }] } }
 
-// Permission control plane (only when a tool needs approval)
+// パーミッションコントロールプレーン（ツールの承認が必要な場合のみ）
 {
   "type": "control_request",
   "request_id": "...",
@@ -208,41 +230,42 @@ echo '{"type":"submit","text":"Explain this repo"}' >> /tmp/qwen-input.jsonl
 }
 ```
 
-`control_response` は、TUI 内（ネイティブ承認 UI）で決定が行われた場合でも、外部の `confirmation_response`（下記参照）によって決定が行われた場合でも出力されます。いずれにせよ、すべてのオブザーバーは最終結果を確認できます。
+`control_response` は、決定がTUI（ネイティブ承認UI）で行われたか、外部の `confirmation_response`（下記参照）によって行われたかに関係なく出力されます。いずれにせよ、すべてのオブザーバーは最終結果を見ることができます。
 
-## Input command schema
+## 入力コマンドスキーマ
 
-`--input-file` では以下の2つのコマンド形状が受け入れられます。
+`--input-file` では2つのコマンド形式を受け入れます。
 
 ```jsonc
-// Submit a user message into the prompt queue
+// ユーザーメッセージをプロンプトキューに送信
 { "type": "submit", "text": "What does this function do?" }
 
-// Reply to a pending control_request
+// 保留中のcontrol_requestに応答
 { "type": "confirmation_response", "request_id": "...", "allowed": true }
 ```
 
 動作：
 
-- `submit` コマンドはキューに入れられます。TUI が応答でビジー状態の場合、TUI が次にアイドル状態に戻ったときに自動的に再試行されます。
-- `confirmation_response` コマンドは即座にディスパッチされ、キューに入れられることはありません。ツール呼び出しはブロッキングであり、応答は以前の `submit` を待たずに基盤の `onConfirm` ハンドラーに到達する必要があるためです。
-- 最初にツールを承認した側が有効になり、もう一方の側の遅延した応答は無害に破棄されます。
-- JSON としてパースに失敗した行はログに記録され、スキップされます。ウォッチャーが停止することはありません。
+- `submit` コマンドはキューに入れられます。TUIが応答中の場合、次にTUIがアイドル状態に戻ったときに自動的に再試行されます。
+- `confirmation_response` コマンドは即座にディスパッチされ、キューに入れられることはありません。ツール呼び出しはブロッキング中であり、応答は以前の `submit` を待たずに基盤の `onConfirm` ハンドラに到達する必要があるためです。
+- どちらかの側がツールを最初に承認した方が勝ちです。遅れて到着したもう一方の側の応答は無害に破棄されます。
+- JSONとしてパースできない行はログに記録されてスキップされます。ウォッチャーは停止しません。
 
-## Latency notes
+## レイテンシに関する注意
 
-入力ファイルは `fs.watchFile` によって 500ms のポーリング間隔で監視されるため、リモート `submit` の最悪の往復レイテンシは約 0.5 秒です。これは意図的な設計です。ポーリングはプラットフォームやファイルシステム（macOS / ネットワークマウントを含む）間で移植性が高く、この機能が対象とする典型的なヒューマンインザループのペースに一致します。出力チャネルにはポーリングがありません。イベントは TUI が出力する際に同期的に書き込まれます。
+入力ファイルは `fs.watchFile` によって500msのポーリング間隔で監視されるため、リモートからの `submit` の最悪のラウンドトリップレイテンシは約0.5秒です。これは意図的です。ポーリングはプラットフォームやファイルシステム（macOS / ネットワークマウントを含む）間で移植可能であり、この機能が対象とする典型的な人間参加型のペースに適合します。出力チャネルにはポーリングがありません。イベントはTUIが出力すると同期的に書き込まれます。
 
-## Failure modes
+## 障害モード
 
-- **Bad fd.** `--json-fd` に渡された fd が開いていないか、0/1/2 のいずれかである場合、TUI は `stderr` に警告を出力し、デュアル出力を無効にして続行します。
-- **Bad path.** `--json-file` に渡されたファイルを開けない場合、TUI は警告を出力し、デュアル出力を無効にして続行します。
-- **Consumer disconnect.** チャネルの反対側のリーダーが切断された場合（`EPIPE`）、ブリッジは自身をサイレントに無効化し、TUI は実行を継続します。再試行は行われません。
-- **Adapter exception.** イベントの出力中にスローされた例外はすべてキャッチされ、ログに記録され、ブリッジが無効になります。デュアル出力の障害によって TUI がクラッシュすることはありません。
+- **不正なfd。** `--json-fd` に渡されたfdが開いていないか、0/1/2の場合、TUIは `stderr` に警告を表示し、デュアル出力なしで続行します。
+- **不正なパス。** `--json-file` に渡されたファイルを開けない場合、TUIは警告を表示し、デュアル出力なしで続行します。
+- **コンシューマーの切断。** チャネルの反対側のリーダーが切断された場合（`EPIPE`）、ブリッジは静かに無効化され、TUIは動作を続けます。再試行はありません。
+- **FIFOバッファオーバーフロー。** リーダーが接続されていないFIFOに書き込むと、イベントはカーネルパイプ（Linuxでは約64KB）とNode.js WriteStreamにバッファリングされます。パイプがいっぱいになるか、内部バッファが1MBを超えると、ブリッジは自身を無効にしてfdを閉じます。この場合、`session_end` は出力されません。コンシューマーは、`session_end` なしでストリームが閉じられた場合、異常終了として扱う必要があります。TUIは通常通り動作を続けます。
+- **アダプター例外。** イベント出力中にスローされた例外はキャッチされ、ログに記録され、ブリッジを無効にします。デュアル出力の障害によってTUIがクラッシュすることはありません。
 
-## Spawn example
+## 起動例
 
-典型的な埋め込み親プロセスは、両方のチャネルを有効にして Qwen Code を spawn します。
+典型的な埋め込み親プロセスは、両方のチャネルを使用してQwen Codeを起動します。
 
 ```ts
 import { spawn } from 'node:child_process';
@@ -256,15 +279,15 @@ const child = spawn(
 );
 ```
 
-TUI は依然として stdio 0/1/2 でユーザーのターミナルを所有していますが、埋め込み側は fd 3 を支えるファイルで構造化イベントを読み取り、`/tmp/qwen-input.jsonl` に JSONL 行を追加することでコマンドをプッシュします。
+TUIは引き続きstdio 0/1/2でユーザーのターミナルを所有し、埋め込み側はfd 3をバックアップするファイル上の構造化イベントを読み取り、`/tmp/qwen-input.jsonl` にJSONL行を追記することでコマンドを送信します。
 
-## Settings-based configuration
+## 設定ベースの構成
 
-長期間実行される埋め込みプロセスにとって、起動ごとに CLI フラグをスレッドで渡すのは不便な場合があります。同じチャネルは、トップレベルの `dualOutput` キーの下にある `settings.json` で構成できます。
+長期間動作する埋め込みでは、起動のたびにCLIフラグを渡すのは不便なことがよくあります。同じチャネルを `settings.json` のトップレベルキー `dualOutput` で設定できます。
 
 ```jsonc
-// ~/.qwen/settings.json  (user-level)
-// or <workspace>/.qwen/settings.json  (workspace-level)
+// ~/.qwen/settings.json  (ユーザーレベル)
+// または <workspace>/.qwen/settings.json  (ワークスペースレベル)
 {
   "dualOutput": {
     "jsonFile": "/tmp/qwen-events.jsonl",
@@ -273,75 +296,75 @@ TUI は依然として stdio 0/1/2 でユーザーのターミナルを所有し
 }
 ```
 
-優先度ルール：
+優先順位ルール：
 
-- CLI フラグが**設定より優先されます**。コマンドラインで `--json-file /foo` を渡すと、設定の `dualOutput.jsonFile` が上書きされます。
-- `--json-fd` に対応する設定はありません。fd 受け渡しは静的に宣言できない spawn 時の問題です。
-- フラグも設定も存在しない場合、デュアル出力は無効のままです（現在のデフォルトと同一）。
+- CLIフラグが設定よりも**優先されます**。コマンドラインで `--json-file /foo` を渡すと、設定の `dualOutput.jsonFile` を上書きします。
+- `--json-fd` には設定に相当するものはありません。fdの受け渡しは起動時の問題であり、静的に宣言できません。
+- フラグも設定も存在しない場合、デュアル出力は無効のままです（現在のデフォルトと同じ）。
 
-`requiresRestart: true` フラグは、ブリッジが起動時に一度だけ構築されるため、変更は次回 Qwen Code の起動時にのみ有効になることを意味します。
+`requiresRestart: true` フラグは、変更が次回のQwen Code起動時にのみ有効になることを意味します。ブリッジは起動時に一度だけ構築されるためです。
 
-## Runnable demos
+## 実行可能なデモ
 
-以下のスクリプトはすべてコピー＆ペーストで実行可能です。ビルドにデュアル出力が含まれていることを確認するには POC 1 から始めてください。POC 4 は実際の IDE 拡張機能統合に最も近いアナログです。
+以下のスクリプトはすべてコピペでそのまま使用できます。まずPOC 1でビルドにデュアル出力があることを確認し、POC 4は実際のIDE拡張統合に最も近いものです。
 
-### POC 1 — observe the event stream
+### POC 1 — イベントストリームの観察
 
-人間が通常通り使用している間に TUI が出力するすべての構造化イベントを監視します。
+人間が通常通りTUIを使用している間に、TUIが出力するすべての構造化イベントを監視します。
 
 ```bash
-# Terminal A
+# ターミナル A
 mkfifo /tmp/qwen-events.jsonl
 cat /tmp/qwen-events.jsonl | jq -c 'select(.type != "stream_event") | {type, subtype}'
 
-# Terminal B
+# ターミナル B
 qwen --json-file /tmp/qwen-events.jsonl
-# ...then chat normally; terminal A shows session_start,
-# user/assistant/result/control_request lifecycle in real time.
+# ...あとは通常どおりチャットしてください。ターミナルAには session_start、
+# user/assistant/result/control_request のライフサイクルがリアルタイムで表示されます。
 ```
 
-ターミナル A で期待される最初の行：
+ターミナルAで期待される最初の行：
 
 ```json
 { "type": "system", "subtype": "session_start" }
 ```
 
-### POC 2 — inject prompts from outside
+### POC 2 — 外部からのプロンプト注入
 
-1つ目のターミナルのキーボードに触れることなく、2つ目のターミナルから TUI を駆動します。
+1つ目のターミナルのキーボードに触れずに、2つ目のターミナルからTUIを操作します。
 
 ```bash
-# Terminal A
+# ターミナル A
 touch /tmp/qwen-in.jsonl
 qwen --input-file /tmp/qwen-in.jsonl
 
-# Terminal B — the TUI responds as if you typed it
+# ターミナル B — まるで自分で入力したかのようにTUIが応答します
 echo '{"type":"submit","text":"list files in the current directory"}' \
   >> /tmp/qwen-in.jsonl
 ```
 
-### POC 3 — remote tool-permission bridge
+### POC 3 — リモートツール権限ブリッジ
 
 別のプロセスからツール呼び出しを承認または拒否します。
 
 ```bash
-# Terminal A — observe control_requests
+# ターミナル A — control_request を監視
 mkfifo /tmp/qwen-out.jsonl
 touch /tmp/qwen-in.jsonl
 (cat /tmp/qwen-out.jsonl \
   | jq -c 'select(.type == "control_request")') &
 
-# Terminal B
+# ターミナル B
 qwen --json-file /tmp/qwen-out.jsonl --input-file /tmp/qwen-in.jsonl
-# Ask Qwen to do something that needs approval, e.g.
-# "run `ls -la /tmp`". A control_request will appear in terminal A.
-# Copy the request_id, then in a third terminal:
-echo '{"type":"confirmation_response","request_id":"<paste-id>","allowed":true}' \
+# Qwenに承認が必要なことを依頼します。例：
+# "run `ls -la /tmp`"。ターミナルAに control_request が表示されます。
+# request_id をコピーし、3つ目のターミナルで：
+echo '{"type":"confirmation_response","request_id":"<貼り付けたid>","allowed":true}' \
   >> /tmp/qwen-in.jsonl
-# The TUI confirmation prompt dismisses and the tool executes.
+# TUIの承認プロンプトが消え、ツールが実行されます。
 ```
 
-不明な `request_id` で応答した場合、ブリッジは出力チャネルに `subtype: "error"` の `control_response` を出力するため、コンシューマーはそれをログに記録したり再試行したりできます。
+未知の `request_id` で応答した場合、ブリッジは出力チャネルに `subtype: "error"` の `control_response` を出力するため、コンシューマーはそれをログに記録するか再試行できます。
 
 ```json
 {
@@ -354,9 +377,9 @@ echo '{"type":"confirmation_response","request_id":"<paste-id>","allowed":true}'
 }
 ```
 
-### POC 4 — Node embedder (IDE-like)
+### POC 4 — Node埋め込み（IDE風）
 
-最も現実的な形状です。親プロセスが Qwen Code を spawn し、イベントを tail し、独自のスケジュールでプロンプトを注入します。
+最も現実的な形状です。親プロセスがQwen Codeを起動し、イベントを監視し、独自のスケジュールでプロンプトを注入します。
 
 ```ts
 // demo-embedder.ts
@@ -375,8 +398,8 @@ const child = spawn('qwen', ['--json-file', events, '--input-file', input], {
   stdio: 'inherit',
 });
 
-// Tail the output channel. In production you'd use a proper
-// byte-offset tail; this one re-streams from 0 for brevity.
+// 出力チャネルを監視します。本番ではバイトオフセットtailを使用すべきですが、
+// ここでは簡潔さのために0から再ストリームします。
 const rl = createInterface({
   input: createReadStream(events, { encoding: 'utf8' }),
 });
@@ -389,7 +412,7 @@ rl.on('line', (line) => {
       version: ev.data.version,
       supported_events: ev.data.supported_events,
     });
-    // Feature-detect before using a capability
+    // 機能を使用する前に機能検出
     if (ev.data.supported_events.includes('control_request')) {
       console.log('[embedder] permission control-plane available');
     }
@@ -405,7 +428,7 @@ rl.on('line', (line) => {
   }
 });
 
-// After 2s, inject a prompt as if the user typed it
+// 2秒後、ユーザーが入力したかのようにプロンプトを注入
 setTimeout(() => {
   appendFileSync(
     input,
@@ -415,18 +438,17 @@ setTimeout(() => {
 
 child.on('exit', () => process.exit(0));
 ```
-
-実行方法：
+実行方法:
 
 ```bash
 npx tsx demo-embedder.ts
-# Qwen Code TUI opens in the current terminal; the embedder logs
-# handshake + turn-end + session_end events to the parent's stdout.
+# Qwen Code TUI が現在のターミナルで開きます。エンベッダーは
+# handshake、turn-end、session_end イベントを親プロセスの stdout にログ出力します。
 ```
 
-### POC 5 — capability handshake feature detection
+### POC 5 — 機能ハンドシェイクによる機能検出
 
-古い Qwen Code のバージョンは `protocol_version` を出力しません。フィールドをオプションとして扱い、機能検出を行います。
+古いバージョンの Qwen Code は `protocol_version` を出力しません。このフィールドはオプションとして扱い、機能検出してください:
 
 ```ts
 rl.on('line', (line) => {
@@ -445,7 +467,7 @@ rl.on('line', (line) => {
 });
 ```
 
-### POC 6 — session_end as a clean termination signal
+### POC 6 — session_end をクリーンな終了シグナルとして使用
 
 ```ts
 rl.on('line', (line) => {
@@ -457,9 +479,9 @@ rl.on('line', (line) => {
 });
 ```
 
-`session_end` の前に TUI がクラッシュした場合、出力ストリームは閉じます（次の書き込みで `EPIPE`）。埋め込み側は両方のパスを処理する必要があります。
+TUI が `session_end` の前にクラッシュした場合、出力ストリームが閉じられます（次回の書き込みで `EPIPE`）。エンベッダーは両方のパスを処理する必要があります。
 
-### POC 7 — failure drills (prove the flags never break the TUI)
+### POC 7 — 障害テスト（フラグが TUI を壊さないことの証明）
 
 ```bash
 qwen --json-fd 1
@@ -478,6 +500,6 @@ qwen --json-file /nonexistent/dir/x.jsonl
 # stderr warning; TUI still launches.
 ```
 
-## Relation to Claude Code
+## Claude Code との関係
 
-Claude Code は `--print --output-format stream-json` の下で同様の stream-json イベント形式を公開していますが、非インタラクティブモードでのみ利用可能です。TUI と構造化サイドカーチャネルを同時に実行する同等の機能はありません。Dual Output はそのギャップを埋めます。
+Claude Code も `--print --output-format stream-json` で同様のストリーム JSON イベント形式を公開していますが、非インタラクティブモードでのみ利用可能です。TUI を実行しながら構造化されたサイドカーチャンネルを同時に持つ同等の機能はありません。Dual Output がそのギャップを埋めます。

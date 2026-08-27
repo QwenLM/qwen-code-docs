@@ -2,7 +2,91 @@ import fs from "fs-extra";
 import path from "path";
 import { execSync } from "child_process";
 import chalk from "chalk";
-import { DocumentTranslator } from "./translator";
+import { DocumentTranslator, TranslationBatchError } from "./translator";
+
+/**
+ * 并发池：以最多 concurrency 个并行任务处理 items 数组。
+ * 保持结果顺序与 items 一致，单线程事件循环下对共享计数器的
+ * 同步自增操作是安全的。
+ */
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let nextIndex = 0;
+
+  async function worker(): Promise<void> {
+    while (nextIndex < items.length) {
+      const index = nextIndex++;
+      results[index] = await fn(items[index]);
+    }
+  }
+
+  const workerCount = Math.min(concurrency, items.length);
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+  return results;
+}
+
+/**
+ * 判断是否为 Nextra 导航文件（_meta.ts/js/json 等）。
+ * 这类文件属于本库各语言包自行维护的导航定制，不应被上游同步覆盖或翻译。
+ */
+function isMetaFile(filePath: string): boolean {
+  return /^_meta\.(ts|tsx|js|jsx|mjs|cjs|json)$/.test(path.basename(filePath));
+}
+
+/**
+ * 上游文档可能包含未带 ./ 前缀的相对链接/图片引用(如 `](assets/foo.png)`),
+ * 在 GitHub 上能正常渲染,但本站 Nextra/webpack 构建会将其当作模块请求
+ * 直接报错(Module not found: Can't resolve 'assets/...')。
+ * 复制源文档到 content/ 时,统一把 .md/.mdx 中这类相对链接改写为 ./ 形式。
+ * 按行跟踪代码栅栏:围栏内是示例代码,改写会悄悄偏离上游,必须跳过。
+ */
+const RELATIVE_LINK =
+  /\]\((?!\.|\/|#|[a-zA-Z][a-zA-Z0-9+.-]*:)([^)\s]+)(\s+"[^"]*")?\)/g;
+
+function normalizeMarkdownRelativeLinks(text: string): string {
+  let inFence = false;
+  let fenceMark = "";
+  return text
+    .split("\n")
+    .map((line) => {
+      const fence = line.match(/^\s*(```|~~~)/);
+      if (fence) {
+        if (!inFence) {
+          inFence = true;
+          fenceMark = fence[1];
+        } else if (fence[1] === fenceMark) {
+          inFence = false;
+        }
+        return line;
+      }
+      if (inFence) return line;
+      return line.replace(
+        RELATIVE_LINK,
+        (_m, target: string, title?: string) => `](./${target}${title ?? ""})`
+      );
+    })
+    .join("\n");
+}
+
+/**
+ * Asset extensions mirrored into every target-language directory by
+ * updateBaseDocs() stage 3. Language-agnostic by nature; any other file
+ * class upstream ships (.json/.ts/extensionless) stays EN-only.
+ */
+const ASSET_EXTENSIONS = new Set([
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".svg",
+  ".webp",
+  ".avif",
+  ".ico",
+]);
 
 /**
  * 版本同步管理器
@@ -19,6 +103,10 @@ interface SyncOptions {
   projectRoot?: string; // 项目根目录
   outputDir?: string; // 输出目录
   branch?: string; // 新增：源仓库分支
+  // 新增：从站点发布中排除的路径（目录前缀或精确文件名，相对 docsPath）。
+  // 这些是内部文档：既不会翻译到目标语言，也不会作为源语言页面拷进
+  // content/<sourceLanguage>，因此完全不出现在站点上。
+  excludeFromTranslation?: string[];
 }
 
 interface SyncRecord {
@@ -37,6 +125,7 @@ interface TranslationResult {
   success: number;
   failed: number;
   files: string[];
+  failedFiles: string[];
 }
 
 interface TranslationChangelogEntry {
@@ -74,9 +163,10 @@ export class SyncManager {
   private branch: string; // 新增：源仓库分支
   private lastSyncFile: string;
   private changelogFile: string;
-  private translator: DocumentTranslator;
+  private translator: DocumentTranslator | null = null; // 懒加载：仅在需要翻译时构造
   private projectRoot: string; // 新增：项目根目录
   private outputDir: string; // 新增：输出目录
+  private excludeFromTranslation: string[]; // 新增：跳过翻译的路径
 
   constructor(options: SyncOptions = {}) {
     // 确定项目根目录
@@ -102,8 +192,11 @@ export class SyncManager {
       "fr",
       "ru",
       "pt-BR",
+      "es",
+      "ko",
     ];
     this.branch = options.branch || "main"; // 默认使用 main 分支
+    this.excludeFromTranslation = options.excludeFromTranslation || [];
 
     // 设置输出目录
     this.outputDir = options.outputDir || "content";
@@ -114,9 +207,9 @@ export class SyncManager {
       this.projectRoot,
       "translation-changelog.json"
     );
-    this.translator = new DocumentTranslator({
-      projectRoot: this.projectRoot,
-    });
+    // 翻译器改为懒加载（见 getTranslator）：构造期不再创建 DocumentTranslator，
+    // 因此不会在此触发 OPENAI_API_KEY 校验。detect-only / 零变更等无需翻译的
+    // 场景下，全程都不会构造翻译器，也就不需要配置 key。
 
     console.log(chalk.blue("🔄 同步管理器已初始化"));
     console.log(chalk.gray(`  项目根目录: ${this.projectRoot}`));
@@ -130,13 +223,67 @@ export class SyncManager {
   }
 
   /**
+   * 懒加载翻译器
+   * 仅在真正需要翻译时才构造 DocumentTranslator（构造时会校验 OPENAI_API_KEY）。
+   */
+  private getTranslator(): DocumentTranslator {
+    if (!this.translator) {
+      this.translator = new DocumentTranslator({
+        projectRoot: this.projectRoot,
+      });
+    }
+    return this.translator;
+  }
+
+  /**
    * 检测并同步文档变更
    */
-  async syncDocuments(forceSync: boolean = false): Promise<SyncResult> {
+  async syncDocuments(
+    forceSync: boolean = false,
+    options: { detectOnly?: boolean; sourceOnly?: boolean } = {}
+  ): Promise<SyncResult> {
     try {
       console.log(chalk.yellow("🔍 检测文档变更..."));
 
       const changes = await this.detectChanges();
+
+      // detect-only：只检测并返回变更文件清单。不复制源文档、不翻译、不更新
+      // last-sync.json / changelog，也不构造翻译器，因此无需配置 OPENAI_API_KEY。
+      // 注意：检测本身仍需克隆/更新源仓库（.temp-source-repo）用于比对。
+      if (options.detectOnly) {
+        if (forceSync) {
+          console.log(
+            chalk.yellow("⚠️  detect-only 模式下 --force 无效，已忽略")
+          );
+        }
+        if (options.sourceOnly) {
+          console.log(
+            chalk.yellow(
+              "⚠️  已同时指定 --source-only，被 --detect-only 覆盖（不写入任何文件）"
+            )
+          );
+        }
+        if (changes.isFirstSync && changes.files.length > 0) {
+          console.log(
+            chalk.blue(
+              `📝 首次检测（缺少同步基线 last-sync.json）：列出全部 ${changes.files.length} 个文档`
+            )
+          );
+        } else if (changes.files.length === 0) {
+          console.log(chalk.green("✅ 没有检测到文档变更"));
+        } else {
+          console.log(
+            chalk.blue(
+              `📝 检测到 ${changes.files.length} 个文件变更（detect-only：不翻译、不更新 content/ 与同步记录）`
+            )
+          );
+        }
+        return {
+          success: true,
+          changes: changes.files.length,
+          files: changes.files,
+        };
+      }
 
       if (!forceSync && changes.files.length === 0) {
         console.log(chalk.green("✅ 没有检测到文档变更"));
@@ -144,6 +291,33 @@ export class SyncManager {
       }
 
       console.log(chalk.blue(`📝 检测到 ${changes.files.length} 个文件变更`));
+
+      // source-only：把上游源文档写入 content/<sourceLanguage> 与 .source-docs，
+      // 但不翻译、不更新 last-sync.json / changelog，也不构造翻译器（无需 key）。
+      // 刻意不推进同步基线：目标语言译文此时会落后于源文档，待配置 key 后再次运行
+      // sync 即可补齐翻译（届时仍会检测到这些文件，可自愈）。
+      if (options.sourceOnly) {
+        await this.updateBaseDocs();
+        console.log(
+          chalk.green(
+            "✅ 已更新源文档（source-only：未翻译；未推进 last-sync.json，配置 key 后再次 sync 可补齐翻译）"
+          )
+        );
+        return {
+          success: true,
+          changes: changes.files.length,
+          files: changes.files,
+        };
+      }
+
+      // 正常 sync：在写入任何文件之前先构造翻译器以校验 OPENAI_API_KEY，
+      // 恢复“缺 key 立即失败、不产生半写状态”的行为（懒加载后默认会等到翻译阶段
+      // 才校验，导致 content/ 已被覆写后才报错）。
+      // 作用域说明：detect-only 已在上方返回；未指定 --force 的零变更也已在上方
+      // 返回——这两类无需 key。但 --force 会绕过零变更早返回，届时即使没有变更也会
+      // 走到这里并要求 key（属 --force 的既有语义，不在本次改动范围）。
+      // 此处丢弃返回值仅为提前校验；实例已被缓存，翻译阶段会复用同一实例。
+      this.getTranslator();
 
       // 更新基础文档
       await this.updateBaseDocs();
@@ -159,6 +333,14 @@ export class SyncManager {
         changes.files,
         translationResults
       );
+
+      const failedFiles = Object.entries(translationResults).flatMap(
+        ([language, result]) =>
+          result.failedFiles.map((file) => `${language}:${file}`)
+      );
+      if (failedFiles.length > 0) {
+        throw new TranslationBatchError(failedFiles);
+      }
 
       // 更新同步记录
       await this.updateSyncRecord(changes.latestCommit);
@@ -220,6 +402,8 @@ export class SyncManager {
         };
       }
 
+      this.ensureCommitAvailable(tempDir, lastSync.commit);
+
       // 获取变更文件
       const changedFiles = execSync(
         `cd ${tempDir} && git diff --name-only ${lastSync.commit} HEAD -- ${this.docsPath}/`,
@@ -242,6 +426,46 @@ export class SyncManager {
     } finally {
       // 清理临时目录在需要时取消注释
       // await fs.remove(tempDir);
+    }
+  }
+
+  private ensureCommitAvailable(repoPath: string, commit: string): void {
+    try {
+      execSync(`cd ${repoPath} && git cat-file -e ${commit}^{commit}`, {
+        stdio: "ignore",
+      });
+      return;
+    } catch {
+      console.log(
+        chalk.yellow(
+          `⚠️  同步基线 ${commit.slice(0, 8)} 不在浅克隆历史中，正在补全源仓库历史...`
+        )
+      );
+    }
+
+    const isShallow = execSync(
+      `cd ${repoPath} && git rev-parse --is-shallow-repository`,
+      { encoding: "utf8" }
+    ).trim();
+
+    if (isShallow === "true") {
+      execSync(`cd ${repoPath} && git fetch --unshallow origin ${this.branch}`, {
+        stdio: "inherit",
+      });
+    } else {
+      execSync(`cd ${repoPath} && git fetch origin ${this.branch}`, {
+        stdio: "inherit",
+      });
+    }
+
+    try {
+      execSync(`cd ${repoPath} && git cat-file -e ${commit}^{commit}`, {
+        stdio: "ignore",
+      });
+    } catch {
+      throw new Error(
+        `同步基线 ${commit} 不存在于源仓库历史中，无法计算增量变更`
+      );
     }
   }
 
@@ -322,36 +546,163 @@ export class SyncManager {
     }
 
     // 2. 复制到 content/{sourceLanguage} 目录
+    //    注意：
+    //    - 排除上游的 _meta.* 导航文件，避免覆盖本库定制的导航
+    //      （本库各语言包的 _meta 由站点自行维护，不应被上游同步覆盖）。
+    //    - 排除 excludeFromTranslation 中的路径：这些是内部文档，既不翻译到
+    //      目标语言，也不作为源语言页面发布，因此不拷进 content/<sourceLanguage>。
     await fs.ensureDir(contentSourceDir);
-    await fs.copy(sourceDocsTargetDir, contentSourceDir, {
-      overwrite: true,
-    });
+    // 箭头函数：递归拷贝需要访问 isExcludedFromTranslation（普通函数声明会丢 this）。
+    const copyNormalized = async (dir: string): Promise<void> => {
+      for (const item of await fs.readdir(dir)) {
+        const src = path.join(dir, item);
+        const relativePath = path
+          .relative(sourceDocsTargetDir, src)
+          .replace(/\\/g, "/");
+        // 排除 excludeFromTranslation 中的内部文档：整棵子树跳过，
+        // 与排除规则一致（这些路径不进 content/<sourceLanguage>）。
+        if (this.isExcludedFromTranslation(relativePath)) continue;
+        if ((await fs.stat(src)).isDirectory()) {
+          await copyNormalized(src);
+          continue;
+        }
+        if (isMetaFile(src)) continue;
+        const dest = path.join(contentSourceDir, relativePath);
+        await fs.ensureDir(path.dirname(dest));
+        if (/\.(md|mdx)$/.test(item)) {
+          await fs.writeFile(
+            dest,
+            normalizeMarkdownRelativeLinks(await fs.readFile(src, "utf8")),
+            "utf8"
+          );
+        } else {
+          await fs.copyFile(src, dest);
+        }
+      }
+    };
+    await copyNormalized(sourceDocsTargetDir);
     console.log(chalk.green(`✅ 源文档已复制到: ${contentSourceDir}`));
+
+    // 3. Mirror language-agnostic assets (images etc.) into every
+    //    target-language directory. Translation only produces .md; when a
+    //    translated page references a relative asset (e.g. ./assets/*.png)
+    //    that only exists under content/<sourceLanguage>, webpack fails
+    //    with Module not found and the whole run's work is discarded
+    //    (see #183). Assets are language-agnostic, so unconditional
+    //    overwrite is safe. Mirror the stage-2 exclusions: skip _meta
+    //    files and excludeFromTranslation paths.
+    let mirroredAssets = 0;
+    for (const lang of this.targetLanguages) {
+      const targetDir = path.join(this.outputBasePath, "content", lang);
+      await fs.ensureDir(targetDir);
+      await fs.copy(sourceDocsTargetDir, targetDir, {
+        overwrite: true,
+        filter: (src) => {
+          const relativePath = path
+            .relative(sourceDocsTargetDir, src)
+            .replace(/\\/g, "/");
+          // Allow the root; never descend into excluded subtrees.
+          if (!relativePath) return true;
+          if (this.isExcludedFromTranslation(relativePath)) return false;
+          if (isMetaFile(src)) return false;
+          // fs-extra's copy only recurses into directories that pass the
+          // filter. Use lstat, not stat: stat follows symlinks and throws
+          // on broken ones, which would abort the whole run; fs-extra
+          // copies symlinks as links regardless.
+          const st = fs.lstatSync(src, { throwIfNoEntry: false });
+          if (st?.isDirectory()) return true;
+          // Mirror assets only. Never copy markdown (that would overwrite
+          // translations with English) and no other file class either:
+          // .json/.ts/extensionless files are not assets and could surface
+          // as pages inside the site build.
+          const ext = path.extname(src).toLowerCase();
+          if (!ASSET_EXTENSIONS.has(ext)) return false;
+          // Count once (first target language only) for the log line.
+          if (lang === this.targetLanguages[0]) mirroredAssets++;
+          return true;
+        },
+      });
+    }
+    if (mirroredAssets > 0) {
+      console.log(
+        chalk.green(
+          `✅ 已镜像 ${mirroredAssets} 个资源文件到 ${this.targetLanguages.length} 个目标语言目录`
+        )
+      );
+    }
   }
 
   /**
    * 翻译变更的文件
    */
+  /**
+   * 判断某文档（相对 docsPath 的路径）是否被配置排除翻译。
+   * 规则：精确匹配文件名，或匹配某个目录前缀（pattern 或 pattern/...）。
+   */
+  private isExcludedFromTranslation(relativePath: string): boolean {
+    return this.excludeFromTranslation.some((pattern) => {
+      const p = pattern.replace(/\/+$/, ""); // 去掉末尾斜杠
+      return relativePath === p || relativePath.startsWith(p + "/");
+    });
+  }
+
   async translateChangedFiles(
     changedFiles: string[]
   ): Promise<Record<string, TranslationResult>> {
+    const languageConcurrency = Math.max(
+      1,
+      Math.min(
+        this.targetLanguages.length,
+        parseInt(process.env.QWEN_TRANSLATION_CONCURRENCY || "", 10) || 2
+      )
+    );
+    // 文件级并发：每种语言内部同时翻译多少个文件。默认 6；设为 1 即
+    // 退化为原来的串行行为。总并发 = languageConcurrency × fileConcurrency。
+    const fileConcurrency = Math.max(
+      1,
+      parseInt(process.env.QWEN_FILE_CONCURRENCY || "", 10) || 6
+    );
     console.log(
-      chalk.yellow(`🌍 开始并行翻译 ${this.targetLanguages.length} 种语言...`)
+      chalk.yellow(
+        `🌍 开始翻译 ${this.targetLanguages.length} 种语言（语言并发: ${languageConcurrency}, 文件并发: ${fileConcurrency}）...`
+      )
     );
 
-    // 并行翻译所有语言
-    const languagePromises = this.targetLanguages.map(async (language) => {
+    // 在并行翻译前构造翻译器（此处会校验 OPENAI_API_KEY，缺失则尽早抛错）
+    const translator = this.getTranslator();
+
+    const translateLanguage = async (language: string) => {
       const result: TranslationResult = {
         success: 0,
         failed: 0,
         files: [],
+        failedFiles: [],
       };
 
       console.log(chalk.blue(`🚀 启动 ${language} 翻译任务`));
 
-      for (const file of changedFiles) {
+      await mapWithConcurrency(changedFiles, fileConcurrency, async (file) => {
         try {
           const relativePath = file.replace(`${this.docsPath}/`, "");
+
+          // 跳过上游导航文件：本库各语言包的 _meta 由站点自行维护，
+          // 不应被上游同步翻译并覆盖。
+          if (isMetaFile(relativePath)) {
+            console.log(
+              chalk.gray(`  ↪ 跳过导航文件（不覆盖本地 _meta）: ${relativePath}`)
+            );
+            return;
+          }
+
+          // 跳过配置中排除的内部文档：不翻译到目标语言。
+          // 这些文档也已在 updateBaseDocs 中被排除，不会拷进
+          // content/<sourceLanguage>，因此完全不在站点发布。
+          if (this.isExcludedFromTranslation(relativePath)) {
+            console.log(
+              chalk.gray(`  ↪ 跳过翻译（excludeFromTranslation）: ${relativePath}`)
+            );
+            return;
+          }
           const sourcePath = path.join(
             this.outputBasePath,
             "content",
@@ -372,11 +723,11 @@ export class SyncManager {
           // 检查源文件是否存在
           if (!(await fs.pathExists(sourcePath))) {
             console.log(chalk.yellow(`⚠️  源文件不存在: ${sourcePath}`));
-            continue;
+            return;
           }
 
           // 翻译文件
-          const translatedContent = await this.translator.translateDocument(
+          const translatedContent = await translator.translateDocument(
             sourcePath,
             language
           );
@@ -386,13 +737,13 @@ export class SyncManager {
 
           result.success++;
           result.files.push(relativePath);
-        } catch (error: any) {
-          console.error(
-            chalk.red(`❌ ${language}: ${file} - ${error.message}`)
-          );
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.error(chalk.red(`❌ ${language}: ${file} - ${message}`));
           result.failed++;
+          result.failedFiles.push(file.replace(`${this.docsPath}/`, ""));
         }
-      }
+      });
 
       console.log(
         chalk.blue(
@@ -401,10 +752,18 @@ export class SyncManager {
       );
 
       return { language, result };
-    });
+    };
 
-    // 等待所有语言翻译完成
-    const languageResults = await Promise.all(languagePromises);
+    // 限制语言级并发，避免云端兼容接口在多路长输出请求下提前断流。
+    const languageResults: {
+      language: string;
+      result: TranslationResult;
+    }[] = [];
+    for (let i = 0; i < this.targetLanguages.length; i += languageConcurrency) {
+      const batch = this.targetLanguages.slice(i, i + languageConcurrency);
+      const batchResults = await Promise.all(batch.map(translateLanguage));
+      languageResults.push(...batchResults);
+    }
 
     // 整理结果
     const results: Record<string, TranslationResult> = {};
@@ -459,7 +818,7 @@ export class SyncManager {
     for (const [language, result] of Object.entries(translationResults)) {
       entry.translatedFiles[language] = {
         success: result.files,
-        failed: [], // 可以从 result 中提取失败的文件
+        failed: result.failedFiles,
       };
       entry.stats.successCount += result.success;
       entry.stats.failedCount += result.failed;

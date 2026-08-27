@@ -8,32 +8,64 @@ on:
 permissions:
   contents: write
 
+# Only the newest deploy matters: a push that arrives while an older
+# build is still running makes that older build pure waste (~8min of
+# runner time). Cancel the stale one and let the new one finish.
+concurrency:
+  group: deploy-pages
+  cancel-in-progress: true
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
+          # Full history is required: website/app/sitemap.ts derives every
+          # entry's lastModified from `git log`, so a shallow checkout would
+          # collapse those dates. blob:none keeps all commit/tree metadata
+          # (which is all `git log --name-only` needs) while skipping file
+          # contents, so history stays correct and the fetch stays cheap.
           fetch-depth: 0
+          filter: blob:none
 
       - name: Install Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
-          node-version: 18
-          run_install: false
+          node-version: 22
+          # Restores ~/.npm keyed on the lockfile, so `npm ci` below resolves
+          # from cache instead of re-downloading the whole tree every run.
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      # Persistent webpack cache (see scripts/clean-next.mjs): warm cache
+      # cuts the compile phase from ~4-5min to ~1min.
+      - name: Cache Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: website/.next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('website/package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            next-${{ runner.os }}-${{ hashFiles('website/package-lock.json') }}-
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci --no-audit --no-fund
         working-directory: ./website
 
       - name: Build website
         run: npm run build
         working-directory: ./website
+        env:
+          # Full multi-locale docs set is memory-heavy to statically export.
+          # Node 22 (above) is far more memory-efficient than the previous
+          # Node 18 (local full build peaks ~5.8GB); 12GB heap on the 16GB
+          # runner leaves comfortable headroom for future growth.
+          NODE_OPTIONS: --max-old-space-size=12288
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./website/out

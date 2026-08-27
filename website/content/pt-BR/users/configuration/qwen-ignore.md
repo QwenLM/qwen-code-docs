@@ -1,55 +1,71 @@
-# Ignorando arquivos
+# Ignorando Arquivos
 
-Este documento fornece uma visão geral do recurso Qwen Ignore (`.qwenignore`) do Qwen Code.
+Este documento fornece uma visão geral da funcionalidade Qwen Ignore (`.qwenignore`) do Qwen Code. O Qwen Code também reconhece arquivos de ignorar personalizados configurados por `context.fileFiltering.customIgnoreFiles`, que por padrão usam os arquivos de compatibilidade `.agentignore` e `.aiignore`.
 
-O Qwen Code inclui a capacidade de ignorar arquivos automaticamente, de forma semelhante ao `.gitignore` (usado pelo Git). Adicionar caminhos ao seu arquivo `.qwenignore` os excluirá das ferramentas que suportam esse recurso, embora eles ainda permaneçam visíveis para outros serviços (como o Git).
+O Qwen Code inclui a capacidade de ignorar arquivos automaticamente, de forma similar ao `.gitignore` (usado pelo Git). Adicionar caminhos ao `.qwenignore` ou a um arquivo de ignorar personalizado configurado fará com que eles sejam excluídos das ferramentas que suportam esse recurso, embora ainda permaneçam visíveis para outros serviços (como o Git).
 
 ## Como funciona
 
-Quando você adiciona um caminho ao seu arquivo `.qwenignore`, as ferramentas que respeitam esse arquivo excluirão os arquivos e diretórios correspondentes de suas operações. Por exemplo, ao usar o comando [`read_many_files`](../../developers/tools/multi-file), todos os caminhos presentes no seu arquivo `.qwenignore` serão automaticamente excluídos.
+Quando você adiciona um caminho a um desses arquivos de ignorar, as ferramentas que respeitam as regras de ignorar do Qwen excluirão os arquivos e diretórios correspondentes de suas operações. Por exemplo, ao usar o comando [`read_many_files`](../../developers/tools/multi-file), quaisquer caminhos listados no `.qwenignore` ou nos arquivos de ignorar personalizados configurados serão automaticamente excluídos.
 
-Na maior parte, o `.qwenignore` segue as convenções dos arquivos `.gitignore`:
+Na maior parte, esses arquivos de ignorar seguem as convenções dos arquivos `.gitignore`:
 
-- Linhas em branco e linhas que começam com `#` são ignoradas.
+- Linhas em branco e linhas começando com `#` são ignoradas.
 - Padrões glob padrão são suportados (como `*`, `?` e `[]`).
-- Colocar um `/` no final faz com que apenas diretórios sejam correspondidos.
-- Colocar um `/` no início ancora o caminho em relação ao arquivo `.qwenignore`.
-- O `!` nega um padrão.
+- Colocar uma `/` no final faz com que apenas diretórios sejam correspondidos.
+- Colocar uma `/` no início ancora o caminho relativo ao arquivo de ignorar.
+- `!` nega um padrão.
 
-Você pode atualizar seu arquivo `.qwenignore` a qualquer momento. Para aplicar as alterações, é necessário reiniciar sua sessão do Qwen Code.
+Você pode atualizar esses arquivos de ignorar a qualquer momento. Para aplicar as alterações, é necessário reiniciar sua sessão do Qwen Code.
 
-## Como usar o `.qwenignore`
+## Como usar arquivos de ignorar
 
-| Etapa                  | Descrição                                                                              |
-| ---------------------- | -------------------------------------------------------------------------------------- |
-| **Ativar .qwenignore** | Crie um arquivo chamado `.qwenignore` no diretório raiz do seu projeto                 |
-| **Adicionar regras**   | Abra o arquivo `.qwenignore` e adicione os caminhos a serem ignorados, exemplo: `/archive/` ou `apikeys.txt` |
+| Etapa                     | Descrição                                                                                                                                           |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Ativar regras de ignorar** | Crie o `.qwenignore`, um arquivo personalizado padrão (`.agentignore` / `.aiignore`) ou um arquivo de ignorar personalizado configurado na raiz do seu projeto |
+| **Adicionar regras de ignorar** | Abra o arquivo de ignorar e adicione os caminhos a serem ignorados, exemplo: `/archive/` ou `apikeys.txt`                                           |
 
-### Exemplos de `.qwenignore`
+Por padrão, o Qwen Code lê `.qwenignore`, `.agentignore` e `.aiignore`.
+Para usar um arquivo de ignorar personalizado diferente, configure:
 
-Você pode usar o `.qwenignore` para ignorar diretórios e arquivos:
+```json
+{
+  "context": {
+    "fileFiltering": {
+      "customIgnoreFiles": [".cursorignore"]
+    }
+  }
+}
+```
+
+O `.qwenignore` é sempre incluído quando `context.fileFiltering.respectQwenIgnore`
+está habilitado. Os caminhos dos arquivos de ignorar personalizados são relativos à raiz do projeto.
+
+### Exemplos de arquivos de ignorar
+
+Você pode usar qualquer arquivo de ignorar suportado para ignorar diretórios e arquivos:
 
 ```
-# Exclude your /packages/ directory and all subdirectories
+# Exclui o diretório /packages/ e todos os seus subdiretórios
 /packages/
 
-# Exclude your apikeys.txt file
+# Exclui o arquivo apikeys.txt
 apikeys.txt
 ```
 
-Você pode usar curingas no seu arquivo `.qwenignore` com `*`:
+Você pode usar caracteres curinga no seu arquivo de ignorar com `*`:
 
 ```
-# Exclude all .md files
+# Exclui todos os arquivos .md
 *.md
 ```
 
-Por fim, você pode reverter a exclusão de arquivos e diretórios com `!`:
+Por fim, você pode excluir arquivos e diretórios da exclusão usando `!`:
 
 ```
-# Exclude all .md files except README.md
+# Exclui todos os arquivos .md, exceto README.md
 *.md
 !README.md
 ```
 
-Para remover caminhos do seu arquivo `.qwenignore`, exclua as linhas correspondentes.
+Para remover caminhos de um arquivo de ignorar, exclua as linhas correspondentes.

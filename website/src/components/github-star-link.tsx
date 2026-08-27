@@ -55,13 +55,14 @@ export const GitHubStarLink: React.FC<GitHubStarLinkProps> = ({
         "text-sm contrast-more:text-foreground whitespace-nowrap",
         "text-muted-foreground hover:text-foreground",
         "ring-inset transition-colors flex items-center gap-1.5",
+        "github-star-link",
         className
       )}
       aria-label='Project repository'
     >
       <GitHubIcon height='24' />
       {stars !== null && (
-        <div className='flex items-center gap-1 text-xs font-medium'>
+        <div className='hidden items-center gap-1 text-xs font-medium xl:flex'>
           <span>{stars.toLocaleString()}</span>
         </div>
       )}

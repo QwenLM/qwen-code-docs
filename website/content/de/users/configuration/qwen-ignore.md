@@ -1,55 +1,71 @@
-# Dateien ignorieren
+# Ignorieren von Dateien
 
-Dieses Dokument bietet einen Überblick über die Qwen Ignore-Funktion (`.qwenignore`) von Qwen Code.
+Dieses Dokument gibt einen Überblick über die Qwen Ignore (`.qwenignore`)-Funktion von Qwen Code. Qwen Code erkennt auch benutzerdefinierte Ignore-Dateien, die über `context.fileFiltering.customIgnoreFiles` konfiguriert werden; standardmäßig werden die Kompatibilitätsdateien `.agentignore` und `.aiignore` verwendet.
 
-Qwen Code bietet die Möglichkeit, Dateien automatisch zu ignorieren, ähnlich wie `.gitignore` (von Git verwendet). Wenn du Pfade zu deiner `.qwenignore`-Datei hinzufügst, werden sie von Tools, die diese Funktion unterstützen, ausgeschlossen. Für andere Dienste (wie Git) bleiben sie jedoch weiterhin sichtbar.
+Qwen Code bietet die Möglichkeit, Dateien automatisch zu ignorieren, ähnlich wie `.gitignore` (das von Git verwendet wird). Wenn Sie Pfade zu `.qwenignore` oder einer konfigurierten benutzerdefinierten Ignore-Datei hinzufügen, werden diese von Tools ausgeschlossen, die diese Funktion unterstützen. Sie bleiben jedoch für andere Dienste (wie Git) sichtbar.
 
 ## Funktionsweise
 
-Wenn du einen Pfad zu deiner `.qwenignore`-Datei hinzufügst, schließen Tools, die diese Datei beachten, passende Dateien und Verzeichnisse von ihren Operationen aus. Wenn du beispielsweise den Befehl [`read_many_files`](../../developers/tools/multi-file) verwendest, werden alle Pfade in deiner `.qwenignore`-Datei automatisch ausgeschlossen.
+Wenn Sie einen Pfad zu einer dieser Ignore-Dateien hinzufügen, schließen Tools, die die Qwen-Ignore-Regeln beachten, übereinstimmende Dateien und Verzeichnisse von ihren Vorgängen aus. Wenn Sie beispielsweise den Befehl [`read_many_files`](../../developers/tools/multi-file) verwenden, werden alle in `.qwenignore` oder in konfigurierten benutzerdefinierten Ignore-Dateien aufgeführten Pfade automatisch ausgeschlossen.
 
-Grundsätzlich folgt `.qwenignore` den Konventionen von `.gitignore`-Dateien:
+Im Großen und Ganzen folgen diese Ignore-Dateien den Konventionen von `.gitignore`-Dateien:
 
-- Leerzeilen und Zeilen, die mit `#` beginnen, werden ignoriert.
-- Standard-Glob-Patterns werden unterstützt (z. B. `*`, `?` und `[]`).
-- Ein `/` am Ende passt nur auf Verzeichnisse.
-- Ein `/` am Anfang verankert den Pfad relativ zur `.qwenignore`-Datei.
-- `!` negiert ein Pattern.
+- Leere Zeilen und Zeilen, die mit `#` beginnen, werden ignoriert.
+- Standard-Glob-Muster werden unterstützt (wie `*`, `?` und `[]`).
+- Ein `/` am Ende stimmt nur mit Verzeichnissen überein.
+- Ein `/` am Anfang verankert den Pfad relativ zur Ignore-Datei.
+- `!` negiert ein Muster.
 
-Du kannst deine `.qwenignore`-Datei jederzeit aktualisieren. Um die Änderungen anzuwenden, musst du deine Qwen Code-Sitzung neu starten.
+Sie können diese Ignore-Dateien jederzeit aktualisieren. Um die Änderungen anzuwenden, müssen Sie Ihre Qwen Code-Sitzung neu starten.
 
-## Verwendung von `.qwenignore`
+## Verwenden von Ignore-Dateien
 
-| Schritt                | Beschreibung                                                                           |
-| ---------------------- | -------------------------------------------------------------------------------------- |
-| **`.qwenignore` aktivieren** | Erstelle eine Datei namens `.qwenignore` im Stammverzeichnis deines Projekts       |
-| **Ignorierregeln hinzufügen** | Öffne die `.qwenignore`-Datei und füge die zu ignorierenden Pfade hinzu, z. B. `/archive/` oder `apikeys.txt` |
+| Schritt                    | Beschreibung                                                                                                                                   |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Ignore-Regeln aktivieren** | Erstellen Sie `.qwenignore`, eine standardmäßige benutzerdefinierte Datei (`.agentignore` / `.aiignore`) oder eine konfigurierte benutzerdefinierte Ignore-Datei im Stammverzeichnis Ihres Projekts. |
+| **Ignore-Regeln hinzufügen** | Öffnen Sie die Ignore-Datei und fügen Sie Pfade hinzu, die ignoriert werden sollen, z. B. `/archive/` oder `apikeys.txt`.                           |
 
-### Beispiele für `.qwenignore`
+Standardmäßig liest Qwen Code `.qwenignore`, `.agentignore` und `.aiignore`.
+Um eine andere benutzerdefinierte Ignore-Datei zu verwenden, konfigurieren Sie:
 
-Du kannst `.qwenignore` verwenden, um Verzeichnisse und Dateien zu ignorieren:
+```json
+{
+  "context": {
+    "fileFiltering": {
+      "customIgnoreFiles": [".cursorignore"]
+    }
+  }
+}
+```
+
+`.qwenignore` wird immer einbezogen, wenn `context.fileFiltering.respectQwenIgnore`
+aktiviert ist. Pfade zu benutzerdefinierten Ignore-Dateien sind relativ zum Projektstammverzeichnis.
+
+### Beispiele für Ignore-Dateien
+
+Sie können jede unterstützte Ignore-Datei verwenden, um Verzeichnisse und Dateien zu ignorieren:
 
 ```
-# Exclude your /packages/ directory and all subdirectories
+# Schließt Ihr /packages/-Verzeichnis und alle Unterverzeichnisse aus
 /packages/
 
-# Exclude your apikeys.txt file
+# Schließt Ihre apikeys.txt-Datei aus
 apikeys.txt
 ```
 
-Du kannst in deiner `.qwenignore`-Datei Platzhalter mit `*` verwenden:
+Sie können Platzhalter in Ihrer Ignore-Datei mit `*` verwenden:
 
 ```
-# Exclude all .md files
+# Schließt alle .md-Dateien aus
 *.md
 ```
 
-Schließlich kannst du Dateien und Verzeichnisse mit `!` von der Ignorierung ausnehmen:
+Schließlich können Sie Dateien und Verzeichnisse mit `!` von der Ausschließung ausnehmen:
 
 ```
-# Exclude all .md files except README.md
+# Schließt alle .md-Dateien außer README.md aus
 *.md
 !README.md
 ```
 
-Um Pfade aus deiner `.qwenignore`-Datei zu entfernen, lösche die entsprechenden Zeilen.
+Um Pfade aus einer Ignore-Datei zu entfernen, löschen Sie die entsprechenden Zeilen.

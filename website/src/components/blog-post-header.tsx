@@ -1,11 +1,6 @@
-"use client";
-
 import React from "react";
-import { Calendar, User, ArrowLeft } from "lucide-react";
-import NextLink from "next/link";
+import { Calendar, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
-import { usePathname } from "next/navigation";
 
 interface BlogPostHeaderProps {
   title: string;
@@ -22,34 +17,8 @@ export const BlogPostHeader: React.FC<BlogPostHeaderProps> = ({
   image,
   tags
 }) => {
-  const pathname = usePathname();
-
-  // Extract language prefix from pathname (e.g., /zh/blog -> zh, /en/blog -> en)
-  const langPrefix = pathname?.split('/')[1] || 'en';
-
-  // Map of back-to-blog text for each language
-  const backTextMap: Record<string, string> = {
-    zh: "返回博客",
-    de: "Zurück zum Blog",
-    fr: "Retour au blog",
-    ja: "ブログに戻る",
-    ru: "Назад в блог",
-    'pt-BR': "Voltar ao Blog",
-  };
-
-  const blogPath = `/${langPrefix}/blog`;
-  const backText = backTextMap[langPrefix] || "Back to Blog";
-
   return (
     <div className="mb-12 pt-10">
-      <NextLink 
-        href={blogPath} 
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-violet-400 transition-colors mb-12 group"
-      >
-        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-        {backText}
-      </NextLink>
-
       <div className="max-w-4xl">
         <div className="flex flex-wrap gap-2 mb-6">
           {tags?.map(tag => (

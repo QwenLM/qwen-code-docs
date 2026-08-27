@@ -1,0 +1,144 @@
+---
+title: "Qwen Code 周报：/advisor 给出独立第二意见、一条命令看清本机在跑哪些会话、Review 中断不用从头再来"
+date: "2026-08-20"
+description: "本周发布 v0.21.12 至 v0.21.14 三个正式版本。/advisor 给当前对话出独立第二意见；qwen sessions ps 一眼看清本机在跑哪些会话；/review 中断后能从断点续上。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i2/O1CN01aC8NjamgAjF2jBZY_!!6000000003218-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 周报：/advisor 给出独立第二意见、一条命令看清本机在跑哪些会话、Review 中断不用从头再来"
+  date="2026-08-20"
+  author="Qwen Team"
+/>
+
+Qwen Code 本周发布 v0.21.12 到 v0.21.14 三个正式版本，140+ 个 PR 合入。
+
+**独立第二意见。** `/advisor` 给当前对话做一次独立评审，返回结论、风险、缺的证据、建议四项。全程只读，不动主对话。
+
+**一条命令看清在跑的会话。** 新增 `qwen sessions ps` 命令，列出本机正在跑哪些会话：在哪个目录、跑了多久、进程号。
+
+**Review 中断不用从头再来。** 中断的 PR 审查用 `--resume` 续跑，状态核对得上就从断点继续。
+
+## ✨ 新增特性
+
+### /advisor：让独立模型评审当前对话
+
+对话跑长了容易困在一条思路里，自己上下文里的盲区很难察觉。`/advisor` 给当前对话请一个独立的第二意见：一个只读的旁路会话通读全部上下文，给出结论、风险、缺的证据、建议四项。第二意见严格只读：不改主对话、不执行任何动作，评审完后续对话不受影响。
+
+可以带着关注点问，比如 `/advisor 这个方案安全吗`；`advisorModel` 设置可以指定专门的评审模型，不设就用当前模型。
+
+详见 PR [#7567](https://github.com/QwenLM/qwen-code/pull/7567)
+
+![/advisor 返回的四项评审](https://img.alicdn.com/imgextra/i4/O1CN01x6UkJeTG4kD7nOLI_!!6000000004249-2-tps-3840-2160.png)
+
+### qwen sessions ps：一条命令看清本机在跑的会话
+
+同时开着好几个 Qwen Code 会话，很容易搞不清哪个是哪个。新增 `qwen sessions ps` 命令，列出本机当前正在运行的所有交互式会话，一行一个：会话名、进程号、运行时长、所在目录。要接脚本的话，加 `--json` 输出 JSON。
+
+列出来的都是真正在跑的：关掉一个会话，它就立刻从列表里消失。
+
+详见 PR [#8969](https://github.com/QwenLM/qwen-code/pull/8969)
+
+![qwen sessions ps 列出在跑的会话](https://img.alicdn.com/imgextra/i1/O1CN01edM2ef0oKxI7nOLI_!!6000000005536-2-tps-3840-2160.png)
+
+### Review 系列：中断的 PR 审查能续上，评论改成大白话
+
+`/review` 这周有几项实用改进。
+
+**中断的审查能从断点继续。** 审查一个大 PR，中途断了之前只能从头再来。现在 `qwen review fetch-pr` 加了 `--resume`：先核对磁盘上的状态——上次的审查报告、工作树、diff 内容都没变，PR 也没更新——核对通过就接着跑，任何一项对不上就自动重新开始。
+
+**审查评论改成大白话。** 用 `/review` 审 PR 并贴评论时，评论之前模板腔很重，现在改写成自然的评审语言：问题在哪、什么时候会出问题、怎么改。至于贴到 PR 上的评论，带不带严重程度标记和落款、查多深、贴不贴，都能在设置里改。
+
+**脚本审查看执行环境。** shell 脚本和 CI 配置这类文件，"在这台机器上没问题、换个环境就挂"的问题很难发现。审查时会先弄清这些文件实际跑在哪些环境里，按那些环境的特点查。
+
+详见 PR [#9092](https://github.com/QwenLM/qwen-code/pull/9092)、[#9027](https://github.com/QwenLM/qwen-code/pull/9027)、[#8994](https://github.com/QwenLM/qwen-code/pull/8994)、[#9263](https://github.com/QwenLM/qwen-code/pull/9263)
+
+### Web Shell 文件传递：本地文件直接拖进对话
+
+配置远程连接令牌（`QWEN_SERVER_TOKEN` 或 `--token`）后，把文件拖进 Web Shell 的对话输入框或复制粘贴进去，文件就发给 Qwen Code 了：任意文件会落进它的工作区，对话里自动带上引用，AI 拿起来就能用；文本文件还能把内容直接附进对话，AI 不用打开文件当场就能读。
+
+上传落到哪个文件夹也能指定，文件夹不存在会自动创建。没有配置令牌时，暂不支持文件拖拽或粘贴到对话框。
+
+详见 PR [#8874](https://github.com/QwenLM/qwen-code/pull/8874)、[#9180](https://github.com/QwenLM/qwen-code/pull/9180)、[#9382](https://github.com/QwenLM/qwen-code/pull/9382)
+
+![Web Shell 拖入文件传递](https://img.alicdn.com/imgextra/i3/O1CN01S1rjVR6KBVL7nOLI_!!6000000007767-2-tps-3840-2160.png)
+
+## 📊 更多新功能
+
+**工作流 agent 能钉在指定目录。** 工作流里可以用 `agent({workingDir})` 把 agent 固定在指定目录干活，不受默认目录范围约束。详见 PR [#8972](https://github.com/QwenLM/qwen-code/pull/8972)
+
+**Release notes 有双语摘要了。** 发布说明不再是 PR 清单的直接堆砌：按功能主题分组，每组一段大白话摘要，附中文版，PR 里带的前后对比截图也会跟过来。详见 PR [#9216](https://github.com/QwenLM/qwen-code/pull/9216)
+
+**外部知识库接入有了统一规范。** 做检索服务的厂商可以按规范开发 Qwen Code 插件，插上之后 AI 就能查他家的语料；能查什么由你装的插件决定，AI 只在这个范围内查。详见 PR [#9068](https://github.com/QwenLM/qwen-code/pull/9068)
+
+## 👏 体验优化
+
+**Channel 管理重做成完整管理页。** Web Shell 的 Channel 管理改成和定时任务一样的整页布局：每个渠道给谁能用、要审批还是白名单、会话怎么切分、绑到哪个工作区，都在一个页面里配完。详见 PR [#8848](https://github.com/QwenLM/qwen-code/pull/8848)
+
+**微信"正在输入"长任务不断。** 微信的"对方正在输入"状态会过期，之前长任务跑着跑着提示就没了，像断了线。现在任务运行期间每 4 秒刷新一次，跑完才撤。详见 PR [#9358](https://github.com/QwenLM/qwen-code/pull/9358)
+
+**紧凑模式能看到 AI 思考了。** Web Shell 紧凑模式（Ctrl+O）之前把思考内容整个藏起来。现在模型思考时摘要显示"正在思考"，思考完折叠进工具摘要里，点开能看。详见 PR [#9148](https://github.com/QwenLM/qwen-code/pull/9148)
+
+**侧边栏收起来也能切会话。** Web Shell 侧边栏收起后，悬停项目图标能打开完整的会话浏览器；有待审批、提问、完成等待处理的状态，图标上按颜色标出来。详见 PR [#9311](https://github.com/QwenLM/qwen-code/pull/9311)
+
+**图片预览刷新后不丢。** Web Shell 里发出去的图片，不管在排队还是已经注入任务中途，刷新页面后预览还在，多张图不合并、不丢失。详见 PR [#9310](https://github.com/QwenLM/qwen-code/pull/9310)
+
+**断连也能提交提问。** Web Shell 输入框和连接状态解耦：流断开了也能正常提交提问，输入框不再被锁住。详见 PR [#9323](https://github.com/QwenLM/qwen-code/pull/9323)
+
+**导出的 HTML 一键展开收起。** `/export` 导出的会话 HTML 页面顶部多了"全部展开 / 全部收起"两个按钮，思考块和工具输出一键全切。详见 PR [#9367](https://github.com/QwenLM/qwen-code/pull/9367)
+
+**大会话恢复更快。** daemon 恢复会话改成按需读取，只读重建状态需要的记录，大会话提升明显。详见 PR [#9055](https://github.com/QwenLM/qwen-code/pull/9055)
+
+**后台 shell 不被误清理。** 后台运行的 shell 现在计入活跃任务，活动期间的 shell 不会被自动清理掉。详见 PR [#9042](https://github.com/QwenLM/qwen-code/pull/9042)
+
+## 🔧 重要修复
+
+| 修复 | 对你的影响 | PR |
+|------|-----------|-----|
+| **模型命令碰不到其他 worktree 的 Git 了** | 模型发出的 git 命令想改当前会话之外目录的仓库时，直接拦下 | [#8687](https://github.com/QwenLM/qwen-code/pull/8687) |
+| **shell 换行写法绕不过检测了** | 命令用续行符拆成多行、用替换写法，命令检测一样认得出来 | [#8590](https://github.com/QwenLM/qwen-code/pull/8590) |
+| **行内引用绕不过审批了** | 文件里的行内引用不能再绕过审批层级检查 | [#9020](https://github.com/QwenLM/qwen-code/pull/9020) |
+| **桌面端侧边栏抖动** | 桌面端侧边栏的项目列表不再因为滚动条出现而抖动 | [#9073](https://github.com/QwenLM/qwen-code/pull/9073) |
+| **桌面端外部链接** | Markdown 和产物里的外部链接、包括 OAuth 链接，都用系统浏览器打开，不再静默吞掉 | [#9069](https://github.com/QwenLM/qwen-code/pull/9069)、[#9111](https://github.com/QwenLM/qwen-code/pull/9111) |
+| **Windows 启动不再弹终端窗口** | Windows 启动时的运行时终端窗口隐藏了 | [#9064](https://github.com/QwenLM/qwen-code/pull/9064) |
+| **桌面端升级迁移覆盖 Windows/Linux** | 老 Electron 桌面版一次性迁移到新版，扩展到 Windows 和 Linux，用户数据保留 | [#9079](https://github.com/QwenLM/qwen-code/pull/9079) |
+| **不支持的图片不再弄崩会话** | HEIC、TIFF 这类不支持的图片格式跳过并给文字提示，不再让会话崩溃 | [#9295](https://github.com/QwenLM/qwen-code/pull/9295) |
+| **子 Agent 面板出错不拖累整个会话** | 单个 agent 标签页的渲染错误被兜住，不再让整个会话退出 | [#9292](https://github.com/QwenLM/qwen-code/pull/9292) |
+| **长会话内存增长有上限了** | 字符串宽度等缓存加上限、满了淘汰旧条目，长会话内存不再无限增长 | [#9185](https://github.com/QwenLM/qwen-code/pull/9185) |
+| **压缩输出按剩余上下文算** | 压缩输出的上限按剩余上下文窗口计算，不再是固定值 | [#9109](https://github.com/QwenLM/qwen-code/pull/9109) |
+| **关闭被拒时会话保住** | 关闭会话被活跃工作挡住时，排队的任务有 8 秒收尾，不再直接掐断 | [#9134](https://github.com/QwenLM/qwen-code/pull/9134) |
+| **记忆召回更稳** | 记忆召回超时没返回时，用确定性候选兜底，召回不落空 | [#8716](https://github.com/QwenLM/qwen-code/pull/8716) |
+| **团队任务派发到位** | 手动指派的 Agent Team 任务正确派给负责人 | [#9289](https://github.com/QwenLM/qwen-code/pull/9289) |
+| **缓存共享开关默认值修正** | `enableCacheSharing` 默认值之前错成关闭，现在修正为默认开启 | [#9233](https://github.com/QwenLM/qwen-code/pull/9233) |
+| **Shell 输出截断阈值生效** | `tools.truncateToolOutputThreshold` 不再被忽略，不再固定用一个字符数 | [#9014](https://github.com/QwenLM/qwen-code/pull/9014) |
+
+## 👥 贡献者
+
+| 贡献者 | 贡献内容 | 参考 PR 链接 |
+|--------|---------|-------------|
+| **[@wenshao](https://github.com/wenshao)** | Review 与 autofix 全线加固：中断审查续跑、大白话评论、脚本执行环境审查、双语发布说明 | [#9092](https://github.com/QwenLM/qwen-code/pull/9092), [#9027](https://github.com/QwenLM/qwen-code/pull/9027), [#9263](https://github.com/QwenLM/qwen-code/pull/9263), [#9216](https://github.com/QwenLM/qwen-code/pull/9216) |
+| **[@yiliang114](https://github.com/yiliang114)** | /advisor 第二意见、垃圾评论治理、桌面端与会话稳定性一系列修复 | [#7567](https://github.com/QwenLM/qwen-code/pull/7567), [#9266](https://github.com/QwenLM/qwen-code/pull/9266), [#9295](https://github.com/QwenLM/qwen-code/pull/9295), [#9185](https://github.com/QwenLM/qwen-code/pull/9185), [#9289](https://github.com/QwenLM/qwen-code/pull/9289) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | Web Shell 文本附件、外部语料接入规范、会话运行时边界、daemon 资源上限与选择性恢复 | [#9180](https://github.com/QwenLM/qwen-code/pull/9180), [#9068](https://github.com/QwenLM/qwen-code/pull/9068), [#9181](https://github.com/QwenLM/qwen-code/pull/9181), [#9055](https://github.com/QwenLM/qwen-code/pull/9055) |
+| **[@ytahdn](https://github.com/ytahdn)** | Web Shell 工作区文件直传、侧边栏会话管理、会话图片引用持久、输入与队列稳定性 | [#8874](https://github.com/QwenLM/qwen-code/pull/8874), [#9311](https://github.com/QwenLM/qwen-code/pull/9311), [#9310](https://github.com/QwenLM/qwen-code/pull/9310), [#9407](https://github.com/QwenLM/qwen-code/pull/9407) |
+| **[@qqqys](https://github.com/qqqys)** | qwen sessions ps、工作流 agent 目录固定、Channel 管理页重做、审查线程分页修复 | [#8969](https://github.com/QwenLM/qwen-code/pull/8969), [#8972](https://github.com/QwenLM/qwen-code/pull/8972), [#8848](https://github.com/QwenLM/qwen-code/pull/8848), [#9390](https://github.com/QwenLM/qwen-code/pull/9390) |
+| **[@qwen-code-dev-bot](https://github.com/qwen-code-dev-bot)** | 发布管线重试、集成测试夹具修复 | [#9082](https://github.com/QwenLM/qwen-code/pull/9082), [#9161](https://github.com/QwenLM/qwen-code/pull/9161), [#9162](https://github.com/QwenLM/qwen-code/pull/9162) |
+| **[@callmeYe](https://github.com/callmeYe)** | 工作区批量技能开关、上下文用量排除禁用技能 | [#9139](https://github.com/QwenLM/qwen-code/pull/9139), [#9346](https://github.com/QwenLM/qwen-code/pull/9346) |
+| **[@samuelhsin](https://github.com/samuelhsin)** | 分屏 @ 提及配置同步、技能开关事件元数据 | [#9052](https://github.com/QwenLM/qwen-code/pull/9052), [#9051](https://github.com/QwenLM/qwen-code/pull/9051) |
+| **[@BenGuanRan](https://github.com/BenGuanRan)** | daemon 轮次状态轮询接口 | [#9080](https://github.com/QwenLM/qwen-code/pull/9080) |
+| **[@carffuca](https://github.com/carffuca)** | Web Shell 页脚操作时机 | [#8787](https://github.com/QwenLM/qwen-code/pull/8787) |
+| **[@cxruan](https://github.com/cxruan)** | Shell 输出截断阈值设置生效 | [#9014](https://github.com/QwenLM/qwen-code/pull/9014) |
+| **[@DennisYu07](https://github.com/DennisYu07)** | 发布评估任务串联 | [#9120](https://github.com/QwenLM/qwen-code/pull/9120) |
+| **[@ZijianZhang989](https://github.com/ZijianZhang989)** | 压缩输出按剩余上下文收口 | [#9109](https://github.com/QwenLM/qwen-code/pull/9109) |
+| **[@zjgzx1988](https://github.com/zjgzx1988)** | 产物路径校验与规范化 | [#9142](https://github.com/QwenLM/qwen-code/pull/9142) |
+| 🆕 **[@MichaelYochpaz](https://github.com/MichaelYochpaz)** | 🎉 首次贡献：Windows 安装器校验和验证修复 | [#9112](https://github.com/QwenLM/qwen-code/pull/9112) |
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！

@@ -1,12 +1,14 @@
 # Ferramentas de sistema de arquivos do Qwen Code
 
-O Qwen Code oferece um conjunto abrangente de ferramentas para interagir com o sistema de arquivos local. Essas ferramentas permitem que o modelo leia, escreva, liste, pesquise e modifique arquivos e diretórios, tudo sob seu controle e, geralmente, com confirmação para operações sensíveis.
+O Qwen Code fornece um conjunto abrangente de ferramentas para interagir com o sistema de arquivos local. Essas ferramentas permitem que o modelo leia, escreva, liste, pesquise e modifique arquivos e diretórios, tudo sob seu controle e normalmente com confirmação para operações sensíveis.
 
-**Nota:** Todas as ferramentas de sistema de arquivos operam dentro de um `rootDirectory` (geralmente o diretório de trabalho atual onde você iniciou a CLI) por questões de segurança. Os caminhos fornecidos a essas ferramentas geralmente devem ser absolutos ou são resolvidos em relação a esse diretório raiz.
+**Nota:** Todas as ferramentas do sistema de arquivos operam dentro de um `rootDirectory` (geralmente o diretório de trabalho atual onde você iniciou a CLI) por segurança. Os caminhos que você fornece a essas ferramentas são geralmente esperados como absolutos ou são resolvidos relativamente a esse diretório raiz.
 
 ## 1. `list_directory` (ListFiles)
 
-`list_directory` lista os nomes de arquivos e subdiretórios diretamente dentro de um caminho de diretório especificado. Opcionalmente, ele pode ignorar entradas que correspondam aos padrões glob fornecidos.
+`list_directory` lista os nomes de arquivos e subdiretórios diretamente dentro de um caminho de diretório especificado. Opcionalmente, pode ignorar entradas que correspondam aos padrões glob fornecidos.
+
+**Nota:** Esta ferramenta é opt-in e desabilitada por padrão porque o `glob` cobre a listagem de diretórios na maioria dos casos. Habilite-a definindo `tools.listDirectory.enabled` como `true` nas suas configurações, ou listando explicitamente `list_directory` na allowlist `coreTools` (`--core-tools` / `tools.core`).
 
 - **Nome da ferramenta:** `list_directory`
 - **Nome de exibição:** ListFiles
@@ -14,89 +16,158 @@ O Qwen Code oferece um conjunto abrangente de ferramentas para interagir com o s
 - **Parâmetros:**
   - `path` (string, obrigatório): O caminho absoluto para o diretório a ser listado.
   - `ignore` (array de strings, opcional): Uma lista de padrões glob para excluir da listagem (ex.: `["*.log", ".git"]`).
-  - `respect_git_ignore` (boolean, opcional): Indica se os padrões `.gitignore` devem ser respeitados ao listar arquivos. O padrão é `true`.
+  - `respect_git_ignore` (booleano, opcional): Se deve respeitar os padrões `.gitignore` ao listar arquivos. Padrão: `true`.
 - **Comportamento:**
   - Retorna uma lista de nomes de arquivos e diretórios.
   - Indica se cada entrada é um diretório.
-  - Ordena as entradas com diretórios primeiro e, em seguida, em ordem alfabética.
+  - Ordena as entradas com diretórios primeiro, depois alfabeticamente.
 - **Saída (`llmContent`):** Uma string como: `Directory listing for /path/to/your/folder:\n[DIR] subfolder1\nfile1.txt\nfile2.png`
 - **Confirmação:** Não.
 
 ## 2. `read_file` (ReadFile)
 
-`read_file` lê e retorna o conteúdo de um arquivo especificado. Esta ferramenta lida com arquivos de texto e arquivos de mídia (imagens, PDFs, áudio, vídeo) cuja modalidade é suportada pelo modelo atual. Para arquivos de texto, é possível ler intervalos específicos de linhas. Arquivos de mídia cuja modalidade não é suportada pelo modelo atual são rejeitados com uma mensagem de erro útil. Outros tipos de arquivos binários geralmente são ignorados.
+`read_file` lê e retorna o conteúdo de um arquivo especificado. Esta ferramenta lida com arquivos de texto e arquivos de mídia (imagens, PDFs, áudio, vídeo) cuja modalidade é suportada pelo modelo atual. Para arquivos de texto, pode ler intervalos de linhas específicos. PDFs não suportados tentam extração de texto e o fallback de visão limitado descrito abaixo; outros arquivos de mídia não suportados retornam uma mensagem de erro útil. Outros tipos de arquivos binários são geralmente ignorados.
 
 - **Nome da ferramenta:** `read_file`
 - **Nome de exibição:** ReadFile
 - **Arquivo:** `read-file.ts`
 - **Parâmetros:**
-  - `path` (string, obrigatório): O caminho absoluto para o arquivo a ser lido.
-  - `offset` (number, opcional): Para arquivos de texto, o número da linha (base 0) para iniciar a leitura. Requer que `limit` seja definido.
-  - `limit` (number, opcional): Para arquivos de texto, o número máximo de linhas a ler. Se omitido, lê um máximo padrão (ex.: 2000 linhas) ou o arquivo inteiro, se viável.
+  - `file_path` (string, obrigatório): O caminho absoluto para o arquivo a ser lido.
+  - `offset` (número, opcional): Para arquivos de texto, o número da linha baseado em 0 para começar a ler. Requer que `limit` seja definido.
+  - `limit` (número, opcional): Para arquivos de texto, o número máximo de linhas a serem lidas. Se omitido, lê um máximo padrão (ex.: 2000 linhas) ou o arquivo inteiro se viável.
+  - `pages` (string, opcional): Para PDFs, uma página 1-indexada ou intervalo fechado de páginas como `"3"` ou `"20-25"`. Uma requisição pode conter no máximo 20 páginas.
 - **Comportamento:**
-  - Para arquivos de texto: Retorna o conteúdo. Se `offset` e `limit` forem usados, retorna apenas esse intervalo de linhas. Indica se o conteúdo foi truncado devido a limites de linhas ou de comprimento de linha.
-  - Para arquivos de mídia (imagens, PDFs, áudio, vídeo): Se o modelo atual suportar a modalidade do arquivo, retorna o conteúdo do arquivo como um objeto `inlineData` codificado em base64. Se o modelo não suportar a modalidade, retorna uma mensagem de erro com orientações (ex.: sugerindo skills ou ferramentas externas).
-  - Para outros arquivos binários: Tenta identificá-los e ignorá-los, retornando uma mensagem indicando que se trata de um arquivo binário genérico.
+  - Para arquivos de texto: Retorna o conteúdo. Se `offset` e `limit` forem usados, retorna apenas aquele intervalo de linhas. Indica se o conteúdo foi truncado devido a limites de linha ou limites de comprimento de linha.
+  - Para arquivos de mídia (imagens, PDFs, áudio, vídeo): Se o modelo atual suportar a modalidade do arquivo, retorna o conteúdo do arquivo como um objeto `inlineData` codificado em base64. Se o modelo não suportar a modalidade, retorna uma mensagem de erro com orientação (ex.: sugerindo skills ou ferramentas externas).
+  - Para PDFs com um modelo principal somente-texto: A extração de texto é tentada primeiro. Se a extração falhar, ou uma página única solicitada explicitamente (ou real) ainda exceder o orçamento de 12K tokens de texto, uma bridge de visão configurada renderiza e transcreve automaticamente no máximo quatro páginas começando na primeira página solicitada. O intervalo solicitado é recortado ao final real do documento quando conhecido. O resultado identifica o intervalo transcrito e seja as páginas conhecidas como restantes ou, quando a contagem de páginas não está disponível, que páginas adicionais podem existir. Estouro de texto multi-página ordinário ainda pede um intervalo `pages` mais restrito em vez de mudar para visão.
+  - A transcrição de PDF pela bridge de visão é lossy e marcada como conteúdo gerado por máquina não confiável. O resultado da ferramenta contém texto em vez de imagens renderizadas, e sua TUI voltada ao usuário, ACP, saída estruturada não-interativa e exibições de exportação identificam o modelo e endpoint de visão quando conhecidos. Se a bridge falhar, o erro exato de extração de PDF original é retornado ao modelo enquanto a exibição do usuário ainda divulga a tentativa da bridge.
+  - Para outros arquivos binários: Tenta identificá-los e ignorá-los, retornando uma mensagem indicando que é um arquivo binário genérico.
 - **Saída:** (`llmContent`):
-  - Para arquivos de texto: O conteúdo do arquivo, possivelmente prefixado com uma mensagem de truncamento (ex.: `[File content truncated: showing lines 1-100 of 500 total lines...]\nActual file content...`).
-  - Para arquivos de mídia suportados: Um objeto contendo `inlineData` com `mimeType` e `data` em base64 (ex.: `{ inlineData: { mimeType: 'image/png', data: 'base64encodedstring' } }`).
-  - Para arquivos de mídia não suportados: Uma string de mensagem de erro explicando que o modelo atual não suporta essa modalidade, com sugestões de alternativas.
+  - Para arquivos de texto: O conteúdo do arquivo, potencialmente prefixado com uma mensagem de truncamento (ex.: `[File content truncated: showing lines 1-100 of 500 total lines...]\nActual file content...`).
+  - Para arquivos de mídia suportados: Um objeto contendo `inlineData` com `mimeType` e `data` base64 (ex.: `{ inlineData: { mimeType: 'image/png', data: 'base64encodedstring' } }`).
+  - Para arquivos de mídia não suportados: Uma string de mensagem de erro explicando que o modelo atual não suporta esta modalidade, com sugestões de alternativas.
   - Para outros arquivos binários: Uma mensagem como `Cannot display content of binary file: /path/to/data.bin`.
 - **Confirmação:** Não.
 
-## 3. `write_file` (WriteFile)
+### Leitura de notebooks Jupyter
 
-`write_file` grava conteúdo em um arquivo especificado. Se o arquivo existir, ele será sobrescrito. Se o arquivo não existir, ele (e quaisquer diretórios pai necessários) será criado.
+Para notebooks Jupyter (`.ipynb`), `read_file` analisa o JSON do notebook e retorna uma visualização estruturada e legível pelo modelo do notebook, em vez do JSON bruto. A saída renderizada inclui a linguagem do notebook, células ordenadas, IDs das células, fonte e saídas resumidas.
+
+As células do notebook podem então ser editadas com `notebook_edit`. O modelo deve usar os IDs de célula mostrados por `read_file` ao direcionar uma célula.
+
+`offset` e `limit` não são suportados para arquivos `.ipynb`. As leituras de notebook são tratadas como leituras estruturadas de arquivo completo; se a saída renderizada do notebook for truncada internamente por ser muito grande, `notebook_edit` rejeitará edições no nível da célula e pedirá que você reduza as saídas ou divida o notebook antes de editar.
+
+## 3. `notebook_edit` (NotebookEdit)
+
+`notebook_edit` edita arquivos de notebook Jupyter (`.ipynb`) com segurança no nível da célula. Use-o em vez de `edit` ou `write_file` ao alterar células do notebook.
+
+- **Nome da ferramenta:** `notebook_edit`
+- **Nome de exibição:** NotebookEdit
+- **Arquivo:** `notebook-edit.ts`
+- **Parâmetros:**
+  - `notebook_path` (string, obrigatório): O caminho absoluto para o arquivo `.ipynb`.
+  - `cell_id` (string, opcional): O ID da célula alvo mostrado por `read_file`. Necessário para `replace` e `delete`. Para `insert`, a nova célula é inserida após esta célula; se omitido, a nova célula é inserida no início.
+  - `new_source` (string, opcional): A nova fonte da célula para `replace` e `insert`. Não é necessário para `delete`.
+  - `cell_type` (`code` ou `markdown`, opcional): O tipo da célula para células inseridas, ou o tipo alvo ao substituir uma célula.
+  - `edit_mode` (`replace`, `insert` ou `delete`, opcional): A operação de edição. Padrão: `replace`.
+- **Comportamento:**
+  - Requer que o notebook tenha sido lido primeiro com `read_file` na sessão atual.
+  - Direciona células usando os IDs renderizados por `read_file`, incluindo IDs reais de células do notebook e IDs fallback `cell-N` exibidos.
+  - Rejeita IDs de células renderizados ambíguos em vez de adivinhar.
+  - Para células de código, limpa saídas obsoletas e redefine `execution_count` quando a fonte muda.
+  - Preserva a formatação JSON do notebook, finais de linha, codificação e BOM quando possível.
+  - Invalida o estado de leitura anterior após edições estruturais quando os IDs fallback exibidos podem mudar, então a próxima edição do notebook requer um novo `read_file`.
+- **Saída (`llmContent`):** Uma mensagem de sucesso descrevendo a célula do notebook editada e, para operações que não sejam de exclusão, a fonte atualizada.
+- **Confirmação:** Sim. Mostra um diff JSON do notebook e solicita aprovação do usuário antes de escrever, a menos que o modo de permissão atual ou as regras aprovem automaticamente ferramentas de edição.
+
+### Exemplos de `notebook_edit`
+
+Substituir uma célula de código:
+
+```
+notebook_edit(
+  notebook_path="/caminho/para/analysis.ipynb",
+  cell_id="load-data",
+  new_source="result = 41 + 1\nprint(result)"
+)
+```
+
+Inserir uma célula markdown após uma célula existente:
+
+```
+notebook_edit(
+  notebook_path="/caminho/para/analysis.ipynb",
+  edit_mode="insert",
+  cell_id="summary",
+  cell_type="markdown",
+  new_source="## Descobertas\n\nOs dados limpos estão prontos para modelagem."
+)
+```
+
+Excluir uma célula:
+
+```
+notebook_edit(
+  notebook_path="/caminho/para/analysis.ipynb",
+  edit_mode="delete",
+  cell_id="old-experiment"
+)
+```
+
+## 4. `write_file` (WriteFile)
+
+`write_file` escreve conteúdo em um arquivo especificado. Se o arquivo existir, ele será sobrescrito. Se o arquivo não existir, ele (e quaisquer diretórios pai necessários) serão criados.
 
 - **Nome da ferramenta:** `write_file`
 - **Nome de exibição:** WriteFile
 - **Arquivo:** `write-file.ts`
 - **Parâmetros:**
-  - `file_path` (string, obrigatório): O caminho absoluto para o arquivo a ser gravado.
-  - `content` (string, obrigatório): O conteúdo a ser gravado no arquivo.
+  - `file_path` (string, obrigatório): O caminho absoluto para o arquivo a ser escrito.
+  - `content` (string, obrigatório): O conteúdo a ser escrito no arquivo.
 - **Comportamento:**
-  - Grava o `content` fornecido no `file_path`.
-  - Cria diretórios pai se eles não existirem.
+  - Escreve o `content` fornecido no `file_path`.
+  - Não escreve JSON bruto de notebook Jupyter. Use `notebook_edit` para edições de células `.ipynb`.
+  - Cria diretórios pai se não existirem.
 - **Saída (`llmContent`):** Uma mensagem de sucesso, ex.: `Successfully overwrote file: /path/to/your/file.txt` ou `Successfully created and wrote to new file: /path/to/new/file.txt`.
-- **Confirmação:** Sim. Exibe um diff das alterações e solicita a aprovação do usuário antes da gravação.
+- **Confirmação:** Sim. Mostra um diff das alterações e solicita aprovação do usuário antes de escrever.
 
-## 4. `glob` (Glob)
+## 5. `glob` (Glob)
 
-`glob` encontra arquivos que correspondem a padrões glob específicos (ex.: `src/**/*.ts`, `*.md`), retornando caminhos absolutos ordenados por tempo de modificação (mais recente primeiro).
+`glob` encontra arquivos que correspondem a padrões glob específicos (ex.: `src/**/*.ts`, `*.md`), retornando caminhos absolutos ordenados por hora de modificação (mais recente primeiro).
 
 - **Nome da ferramenta:** `glob`
 - **Nome de exibição:** Glob
 - **Arquivo:** `glob.ts`
 - **Parâmetros:**
-  - `pattern` (string, obrigatório): O padrão glob para correspondência (ex.: `"*.py"`, `"src/**/*.js"`).
-  - `path` (string, opcional): O diretório onde a busca será realizada. Se não especificado, o diretório de trabalho atual será usado.
+  - `pattern` (string, obrigatório): O padrão glob para corresponder (ex.: `"*.py"`, `"src/**/*.js"`).
+  - `path` (string, opcional): O diretório para pesquisar. Se não especificado, o diretório de trabalho atual será usado.
 - **Comportamento:**
-  - Busca arquivos que correspondam ao padrão glob dentro do diretório especificado.
-  - Retorna uma lista de caminhos absolutos, ordenados com os arquivos modificados mais recentemente primeiro.
-  - Respeita os padrões .gitignore e .qwenignore por padrão.
+  - Pesquisa por arquivos que correspondem ao padrão glob dentro do diretório especificado.
+  - Retorna uma lista de caminhos absolutos, ordenados com os arquivos mais recentemente modificados primeiro.
+  - Respeita .gitignore, .qwenignore e arquivos de ignorar Qwen personalizados configurados por padrão.
   - Limita os resultados a 100 arquivos para evitar estouro de contexto.
 - **Saída (`llmContent`):** Uma mensagem como: `Found 5 file(s) matching "*.ts" within /path/to/search/dir, sorted by modification time (newest first):\n---\n/path/to/file1.ts\n/path/to/subdir/file2.ts\n---\n[95 files truncated] ...`
 - **Confirmação:** Não.
 
-## 5. `grep_search` (Grep)
+## 6. `grep_search` (Grep)
 
-`grep_search` busca um padrão de expressão regular dentro do conteúdo de arquivos em um diretório especificado. Pode filtrar arquivos por um padrão glob. Retorna as linhas que contêm correspondências, juntamente com seus caminhos de arquivo e números de linha.
+`grep_search` pesquisa por um padrão de expressão regular dentro do conteúdo de arquivos em um diretório especificado. Pode filtrar arquivos por um padrão glob. Retorna as linhas contendo correspondências, junto com seus caminhos de arquivo e números de linha.
 
 - **Nome da ferramenta:** `grep_search`
 - **Nome de exibição:** Grep
 - **Arquivo:** `grep.ts` (com `ripGrep.ts` como fallback)
 - **Parâmetros:**
-  - `pattern` (string, obrigatório): O padrão de expressão regular a ser buscado no conteúdo dos arquivos (ex.: `"function\\s+myFunction"`, `"log.*Error"`).
-  - `path` (string, opcional): Arquivo ou diretório onde a busca será realizada. O padrão é o diretório de trabalho atual.
+  - `pattern` (string, obrigatório): O padrão de expressão regular para pesquisar no conteúdo dos arquivos (ex.: `"function\\s+myFunction"`, `"log.*Error"`).
+  - `path` (string, opcional): Arquivo ou diretório para pesquisar. Padrão: diretório de trabalho atual.
   - `glob` (string, opcional): Padrão glob para filtrar arquivos (ex.: `"*.js"`, `"src/**/*.{ts,tsx}"`).
-  - `limit` (number, opcional): Limita a saída às primeiras N linhas correspondentes. Opcional - mostra todas as correspondências se não for especificado.
+  - `limit` (inteiro, opcional): Limitar a saída às primeiras N linhas correspondentes. Deve ser um número inteiro positivo. Opcional - mostra todas as correspondências se não especificado.
 - **Comportamento:**
-  - Usa ripgrep para buscas rápidas quando disponível; caso contrário, faz fallback para uma implementação de busca baseada em JavaScript.
-  - Retorna as linhas correspondentes com caminhos de arquivo e números de linha.
-  - Não diferencia maiúsculas de minúsculas por padrão.
-  - Respeita os padrões .gitignore e .qwenignore.
+  - Usa ripgrep para pesquisa rápida quando disponível; caso contrário, usa uma implementação de pesquisa baseada em JavaScript.
+  - Retorna linhas correspondentes com caminhos de arquivo e números de linha.
+  - Insensível a maiúsculas/minúsculas por padrão.
+  - Respeita .gitignore, .qwenignore e arquivos de ignorar Qwen personalizados.
   - Limita a saída para evitar estouro de contexto.
-- **Saída (`llmContent`):** Uma string formatada com as correspondências, ex.:
+- **Saída (`llmContent`):** Uma string formatada de correspondências, ex.:
 
   ```
   Found 3 matches for pattern "myFunction" in path "." (filter: "*.ts"):
@@ -113,27 +184,27 @@ O Qwen Code oferece um conjunto abrangente de ferramentas para interagir com o s
 
 ### Exemplos de `grep_search`
 
-Buscar um padrão com limitação padrão de resultados:
+Pesquisar por um padrão com limitação de resultados padrão:
 
 ```
 grep_search(pattern="function\\s+myFunction", path="src")
 ```
 
-Buscar um padrão com limitação personalizada de resultados:
+Pesquisar por um padrão com limitação de resultados personalizada:
 
 ```
 grep_search(pattern="function", path="src", limit=50)
 ```
 
-Buscar um padrão com filtragem de arquivos e limitação personalizada de resultados:
+Pesquisar por um padrão com filtragem de arquivos e limitação de resultados personalizada:
 
 ```
 grep_search(pattern="function", glob="*.js", limit=10)
 ```
 
-## 6. `edit` (Edit)
+## 7. `edit` (Edit)
 
-`edit` substitui texto dentro de um arquivo. Por padrão, exige que `old_string` corresponda a um único local exclusivo; defina `replace_all` como `true` quando quiser intencionalmente alterar todas as ocorrências. Esta ferramenta foi projetada para alterações precisas e direcionadas e requer contexto significativo ao redor do `old_string` para garantir que modifique o local correto.
+`edit` substitui texto dentro de um arquivo. Por padrão, requer que `old_string` corresponda a um único local único; defina `replace_all` como `true` quando você intencionalmente quiser alterar todas as ocorrências. Esta ferramenta foi projetada para alterações precisas e direcionadas e requer contexto significativo em torno de `old_string` para garantir que modifica o local correto.
 
 - **Nome da ferramenta:** `edit`
 - **Nome de exibição:** Edit
@@ -142,52 +213,53 @@ grep_search(pattern="function", glob="*.js", limit=10)
   - `file_path` (string, obrigatório): O caminho absoluto para o arquivo a ser modificado.
   - `old_string` (string, obrigatório): O texto literal exato a ser substituído.
 
-    **CRÍTICO:** Esta string deve identificar exclusivamente a única instância a ser alterada. Ela deve incluir contexto suficiente ao redor do texto alvo, correspondendo precisamente a espaços em branco e indentação. Se `old_string` estiver vazio, a ferramenta tentará criar um novo arquivo em `file_path` com `new_string` como conteúdo.
+    **CRÍTICO:** Esta string deve identificar exclusivamente a única instância a ser alterada. Ela deve incluir contexto suficiente ao redor do texto alvo, correspondendo precisamente a espaços em branco e indentação. Se `old_string` estiver vazio, a ferramenta tenta criar um novo arquivo em `file_path` com `new_string` como conteúdo.
 
   - `new_string` (string, obrigatório): O texto literal exato para substituir `old_string`.
-  - `replace_all` (boolean, opcional): Substitui todas as ocorrências de `old_string`. O padrão é `false`.
+  - `replace_all` (booleano, opcional): Substituir todas as ocorrências de `old_string`. Padrão: `false`.
 
 - **Comportamento:**
+  - Não edita JSON bruto de notebook Jupyter. Use `notebook_edit` para edições de células `.ipynb`.
   - Se `old_string` estiver vazio e `file_path` não existir, cria um novo arquivo com `new_string` como conteúdo.
-  - Se `old_string` for fornecido, lê o `file_path` e tenta encontrar exatamente uma ocorrência, a menos que `replace_all` seja true.
-  - Se a correspondência for única (ou `replace_all` for true), substitui o texto por `new_string`.
-  - **Confiabilidade Aprimorada (Correção de Edição em Múltiplos Estágios):** Para melhorar significativamente a taxa de sucesso das edições, especialmente quando o `old_string` fornecido pelo modelo pode não ser perfeitamente preciso, a ferramenta incorpora um mecanismo de correção de edição em múltiplos estágios.
-    - Se o `old_string` inicial não for encontrado ou corresponder a múltiplos locais, a ferramenta pode utilizar o modelo Qwen para refinar iterativamente o `old_string` (e potencialmente o `new_string`).
-    - Esse processo de autocorreção tenta identificar o segmento único que o modelo pretendia modificar, tornando a operação `edit` mais robusta mesmo com um contexto inicial ligeiramente imperfeito.
+  - Se `old_string` for fornecido, lê o `file_path` e tenta encontrar exatamente uma ocorrência, a menos que `replace_all` seja verdadeiro.
+  - Se a correspondência for única (ou `replace_all` for verdadeiro), substitui o texto por `new_string`.
+  - **Confiabilidade Aprimorada (Correção de Edição em Múltiplos Estágios):** Para aumentar significativamente a taxa de sucesso das edições, especialmente quando o `old_string` fornecido pelo modelo pode não ser perfeitamente preciso, a ferramenta incorpora um mecanismo de correção de edição em múltiplos estágios.
+    - Se o `old_string` inicial não for encontrado ou corresponder a vários locais, a ferramenta pode aproveitar o modelo Qwen para refinar iterativamente `old_string` (e potencialmente `new_string`).
+    - Este processo de autocorreção tenta identificar o segmento único que o modelo pretendia modificar, tornando a operação `edit` mais robusta mesmo com contexto inicial ligeiramente imperfeito.
 - **Condições de falha:** Apesar do mecanismo de correção, a ferramenta falhará se:
   - `file_path` não for absoluto ou estiver fora do diretório raiz.
-  - `old_string` não estiver vazio, mas o `file_path` não existir.
-  - `old_string` estiver vazio, mas o `file_path` já existir.
-  - `old_string` não for encontrado no arquivo após as tentativas de correção.
-  - `old_string` for encontrado múltiplas vezes, `replace_all` for false e o mecanismo de autocorreção não conseguir resolvê-lo para uma única correspondência inequívoca.
+  - `old_string` não estiver vazio, mas `file_path` não existir.
+  - `old_string` estiver vazio, mas `file_path` já existir.
+  - `old_string` não for encontrado no arquivo após tentativas de corrigi-lo.
+  - `old_string` for encontrado várias vezes, `replace_all` for falso e o mecanismo de autocorreção não puder resolvê-lo para uma correspondência única e inequívoca.
 - **Saída (`llmContent`):**
   - Em caso de sucesso: `Successfully modified file: /path/to/file.txt (1 replacements).` ou `Created new file: /path/to/new_file.txt with provided content.`
   - Em caso de falha: Uma mensagem de erro explicando o motivo (ex.: `Failed to edit, 0 occurrences found...`, `Failed to edit because the text matches multiple locations...`).
-- **Confirmação:** Sim. Exibe um diff das alterações propostas e solicita a aprovação do usuário antes de gravar no arquivo.
+- **Confirmação:** Sim. Mostra um diff das alterações propostas e solicita aprovação do usuário antes de escrever no arquivo.
 
-## Codificação de arquivos e comportamento específico da plataforma
+## Codificação de arquivos e comportamento específico de plataforma
 
 ### Detecção e preservação de codificação
 
-Ao ler arquivos, o Qwen Code detecta a codificação do arquivo usando uma estratégia em múltiplas etapas:
+Ao ler arquivos, o Qwen Code detecta a codificação do arquivo usando uma estratégia de várias etapas:
 
-1. **UTF-8** — testado primeiro (a maioria das ferramentas modernas gera UTF-8)
+1. **UTF-8** — tentado primeiro (a maioria das ferramentas modernas gera UTF-8)
 2. **chardet** — detecção estatística para conteúdo não UTF-8
-3. **Codificação do sistema** — faz fallback para a code page do SO (Windows `chcp` / Unix `LANG`)
+3. **Codificação do sistema** — fallback para a página de código do SO (Windows `chcp` / Unix `LANG`)
 
-Tanto `write_file` quanto `edit` preservam a codificação original e o BOM (byte order mark) de arquivos existentes. Se um arquivo foi lido como GBK com um BOM UTF-8, ele será gravado da mesma forma.
+Tanto `write_file` quanto `edit` preservam a codificação original e o BOM (byte order mark) de arquivos existentes. Se um arquivo foi lido como GBK com um BOM UTF-8, ele será escrito da mesma forma.
 
-### Configurando a codificação padrão para novos arquivos
+### Configurando codificação padrão para novos arquivos
 
-A configuração `defaultFileEncoding` controla a codificação para arquivos **recém-criados** (não para edições em arquivos existentes):
+A configuração `defaultFileEncoding` controla a codificação para arquivos **recém-criados** (não edições em arquivos existentes):
 
-| Valor       | Comportamento                                                               |
-| ----------- | --------------------------------------------------------------------------- |
-| _(não definido)_ | UTF-8 sem BOM, com ajustes automáticos específicos da plataforma (veja abaixo) |
-| `utf-8`     | UTF-8 sem BOM, sem ajustes automáticos                                    |
-| `utf-8-bom` | UTF-8 com BOM para todos os novos arquivos                                |
+| Valor      | Comportamento                                                                 |
+| ---------- | ----------------------------------------------------------------------------- |
+| _(não definido)_ | UTF-8 sem BOM, com ajustes automáticos específicos de plataforma (veja abaixo) |
+| `utf-8`    | UTF-8 sem BOM, sem ajustes automáticos                                        |
+| `utf-8-bom` | UTF-8 com BOM para todos os novos arquivos                                   |
 
-Defina-o em `.qwen/settings.json` ou `~/.qwen/settings.json`:
+Defina em `.qwen/settings.json` ou `~/.qwen/settings.json`:
 
 ```json
 {
@@ -199,29 +271,29 @@ Defina-o em `.qwen/settings.json` ou `~/.qwen/settings.json`:
 
 ### Windows: CRLF para arquivos batch
 
-No Windows, arquivos `.bat` e `.cmd` são gravados automaticamente com finais de linha CRLF (`\r\n`). Isso é necessário porque o `cmd.exe` usa CRLF como delimitador de linha — finais apenas com LF podem quebrar blocos `if`/`else` de múltiplas linhas, rótulos `goto` e loops `for`. Isso se aplica independentemente das configurações de codificação e apenas no Windows.
+No Windows, arquivos `.bat` e `.cmd` são automaticamente escritos com finais de linha CRLF (`\r\n`). Isso é necessário porque o `cmd.exe` usa CRLF como seu delimitador de linha — finais de linha apenas LF podem quebrar `if`/`else` multilinha, rótulos `goto` e loops `for`. Isso se aplica independentemente das configurações de codificação e apenas no Windows.
 
-### Windows: UTF-8 BOM para scripts PowerShell
+### Windows: BOM UTF-8 para scripts PowerShell
 
-No Windows com uma **code page de sistema não UTF-8** (ex.: GBK/cp936, Big5/cp950, Shift_JIS/cp932), arquivos `.ps1` recém-criados são gravados automaticamente com um BOM UTF-8. Isso é necessário porque o Windows PowerShell 5.1 (a versão integrada ao Windows 10/11) lê scripts sem BOM usando a code page ANSI do sistema. Sem um BOM, quaisquer caracteres não ASCII no script serão interpretados incorretamente.
+No Windows com uma **página de código do sistema não UTF-8** (ex.: GBK/cp936, Big5/cp950, Shift_JIS/cp932), arquivos `.ps1` recém-criados são automaticamente escritos com um BOM UTF-8. Isso é necessário porque o Windows PowerShell 5.1 (a versão integrada no Windows 10/11) lê scripts sem BOM usando a página de código ANSI do sistema. Sem um BOM, quaisquer caracteres não ASCII no script serão interpretados incorretamente.
 
-Esse BOM automático só se aplica quando:
+Este BOM automático só se aplica quando:
 
 - A plataforma é Windows
-- A code page do sistema não é UTF-8 (não é a code page 65001)
+- A página de código do sistema não é UTF-8 (não é a página de código 65001)
 - O arquivo é um novo arquivo `.ps1` (arquivos existentes mantêm sua codificação original)
 - O usuário **não** definiu explicitamente `defaultFileEncoding` nas configurações
 
-O PowerShell 7+ (pwsh) usa UTF-8 por padrão e lida com o BOM de forma transparente, portanto, o BOM é inofensivo nele.
+O PowerShell 7+ (pwsh) padrão é UTF-8 e lida com BOM de forma transparente, então o BOM é inofensivo lá.
 
-Se você definir explicitamente `defaultFileEncoding` como `"utf-8"`, o BOM automático será desativado — essa é uma válvula de escape intencional para repositórios ou ferramentas que rejeitam BOMs.
+Se você definir explicitamente `defaultFileEncoding` como `"utf-8"`, o BOM automático é desabilitado — esta é uma escotilha de escape intencional para repositórios ou ferramentas que rejeitam BOMs.
 
 ### Resumo
 
-| Tipo de arquivo | Plataforma                    | Comportamento automático      |
-| -------------- | ----------------------------- | --------------------------- |
-| `.bat`, `.cmd` | Windows                       | Finais de linha CRLF          |
-| `.ps1`         | Windows (code page não UTF-8) | BOM UTF-8 em novos arquivos   |
-| Todos os outros| Todas                         | UTF-8 sem BOM (padrão)        |
+| Tipo de arquivo | Plataforma                       | Comportamento automático       |
+| --------------- | -------------------------------- | ------------------------------ |
+| `.bat`, `.cmd`  | Windows                          | Finais de linha CRLF           |
+| `.ps1`          | Windows (página de código não UTF-8) | BOM UTF-8 em novos arquivos |
+| Todos os outros | Todas                            | UTF-8 sem BOM (padrão)         |
 
-Essas ferramentas de sistema de arquivos fornecem a base para que o Qwen Code compreenda e interaja com o contexto do seu projeto local.
+Essas ferramentas de sistema de arquivos fornecem uma base para o Qwen Code entender e interagir com o contexto do seu projeto local.

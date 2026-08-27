@@ -1,21 +1,21 @@
 # 卸载
 
-卸载方式取决于你运行 CLI 的方式。请根据使用的是 npx 还是全局 npm 安装，参考对应的说明。
+卸载方法取决于您安装 CLI 的方式。
 
 ## 方法 1：使用 npx
 
-npx 会从临时缓存中运行包，不会进行永久安装。要“卸载”该 CLI，你需要清除此缓存，这将移除 qwen-code 以及之前通过 npx 运行过的其他所有包。
+npx 从临时缓存中运行包，无需永久安装。要“卸载”CLI，您需要清除此缓存，这将移除之前使用 npx 执行过的 `qwen-code` 以及任何其他包。
 
-npx 缓存是位于主 npm 缓存文件夹内名为 `_npx` 的目录。运行 `npm config get cache` 即可查看 npm 缓存路径。
+npx 缓存是一个名为 `_npx` 的目录，位于您的主 npm 缓存文件夹内。您可以通过运行 `npm config get cache` 来找到 npm 缓存路径。
 
-**macOS / Linux**
+**对于 macOS / Linux**
 
 ```bash
 # The path is typically ~/.npm/_npx
 rm -rf "$(npm config get cache)/_npx"
 ```
 
-**Windows**
+**对于 Windows**
 
 _命令提示符_
 
@@ -33,10 +33,28 @@ Remove-Item -Path (Join-Path $env:LocalAppData "npm-cache\_npx") -Recurse -Force
 
 ## 方法 2：使用 npm（全局安装）
 
-如果你全局安装了该 CLI（例如 `npm install -g @qwen-code/qwen-code`），请使用带 `-g` 参数的 `npm uninstall` 命令将其卸载。
+如果您通过全局方式安装了 CLI（例如 `npm install -g @qwen-code/qwen-code`），请使用带 `-g` 标志的 `npm uninstall` 命令将其移除。
 
 ```bash
 npm uninstall -g @qwen-code/qwen-code
 ```
 
-该命令将从系统中彻底移除此包。
+该命令会从您的系统中完全删除此包。
+
+## 方法 3：独立安装
+
+如果您是通过独立安装程序（`curl ... | bash` 或 `irm ... | iex`）安装的，请使用专用的卸载脚本。
+
+**Linux / macOS**
+
+```bash
+curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/uninstall-qwen-standalone.sh | bash
+```
+
+**Windows**
+
+```powershell
+irm https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/uninstall-qwen-standalone.ps1 | iex
+```
+
+卸载程序会移除独立运行时、生成的 `qwen` 包装器以及安装程序管理的 PATH 更改。您的 Qwen Code 配置（`~/.qwen`）默认会被保留。

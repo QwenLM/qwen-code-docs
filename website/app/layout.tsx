@@ -2,14 +2,22 @@
 
 import type { Metadata } from "next";
 import Script from "next/script";
+import localFont from "next/font/local";
 import { Head } from "nextra/components";
 import type { FC, ReactNode } from "react";
 import "nextra-theme-docs/style.css";
 import "../src/styles/globals.css";
 import { FontLoader } from "../src/components/font-loader";
+import SidebarNewTag from "../src/components/sidebar-new-tag";
 import { ThemeProvider } from "../src/components/theme-provider";
 import { getSiteStructuredData, stringifyJsonLd } from "../src/lib/structured-data";
 import { withBasePath } from "../src/lib/utils";
+
+const jetbrainsMono = localFont({
+  src: "../public/fonts/JetBrainsMono/JetBrainsMono-Variable.ttf",
+  variable: "--font-jetbrains",
+  display: "swap",
+});
 
 const SITE_NAME = "Qwen Code Docs";
 const DEFAULT_TITLE = "Qwen Code: AI Coding Agent Documentation";
@@ -102,7 +110,7 @@ const RootLayout: FC<LayoutProps> = ({ children }) => {
           saturation: { dark: 74, light: 74 },
         }}
       />
-      <body>
+      <body className={jetbrainsMono.variable}>
         {/* Google Analytics */}
         <Script
           src='https://www.googletagmanager.com/gtag/js?id=G-RVBGJ3Q97S'
@@ -126,6 +134,7 @@ const RootLayout: FC<LayoutProps> = ({ children }) => {
           }}
         />
         <FontLoader />
+        <SidebarNewTag />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

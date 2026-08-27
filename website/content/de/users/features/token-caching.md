@@ -1,29 +1,29 @@
 # Token-Caching und Kostenoptimierung
 
-Qwen Code optimiert API-Kosten automatisch durch Token-Caching, wenn die Authentifizierung über einen API-Key erfolgt. Diese Funktion speichert häufig genutzte Inhalte wie Systemanweisungen und den Gesprächsverlauf, um die Anzahl der bei nachfolgenden Anfragen verarbeiteten Tokens zu reduzieren.
+Qwen Code optimiert automatisch die API-Kosten durch Token-Caching bei Verwendung der API-Key-Authentifizierung. Diese Funktion speichert häufig verwendete Inhalte wie Systemanweisungen und Gesprächsverläufe zwischen, um die Anzahl der in nachfolgenden Anfragen verarbeiteten Tokens zu reduzieren.
 
-## Deine Vorteile
+## Ihre Vorteile
 
-- **Kostenreduzierung**: Weniger Tokens bedeuten niedrigere API-Kosten
-- **Schnellere Antworten**: Gecachte Inhalte werden schneller abgerufen
-- **Automatische Optimierung**: Keine Konfiguration erforderlich – die Funktion läuft im Hintergrund
+- **Kostensenkung**: Weniger Tokens bedeuten niedrigere API-Kosten
+- **Schnellere Antworten**: Zwischengespeicherte Inhalte werden schneller abgerufen
+- **Automatische Optimierung**: Keine Konfiguration erforderlich – sie arbeitet im Hintergrund
 
 ## Token-Caching ist verfügbar für
 
-- API-Key-Nutzer (Qwen API-Key, OpenAI-kompatible Anbieter)
+- API-Key-Benutzer (Qwen API-Key, OpenAI-kompatible Anbieter)
 
-## Überwachung der Einsparungen
+## Überwachung Ihrer Einsparungen
 
-Verwende den `/stats`-Befehl, um deine Einsparungen durch gecachte Tokens einzusehen:
+Verwenden Sie den Befehl `/stats`, um Ihre eingesparten gecachten Tokens zu sehen:
 
 - Wenn aktiv, zeigt die Statistik an, wie viele Tokens aus dem Cache bereitgestellt wurden
-- Du siehst sowohl die absolute Anzahl als auch den Prozentsatz der gecachten Tokens
-- Beispiel: „10.500 (90,4 %) der Input-Tokens wurden aus dem Cache bereitgestellt, wodurch die Kosten gesenkt werden.“
+- Sie sehen sowohl die absolute Anzahl als auch den Prozentsatz der gecachten Tokens
+- Beispiel: „10.500 (90,4 %) der Eingabe-Tokens wurden aus dem Cache bereitgestellt, was die Kosten senkt."
 
-Diese Informationen werden nur angezeigt, wenn gecachte Tokens verwendet werden. Dies ist bei der Authentifizierung per API-Key der Fall, nicht jedoch bei der OAuth-Authentifizierung.
+Diese Informationen werden nur angezeigt, wenn gecachte Tokens verwendet werden, was bei API-Key-Authentifizierung der Fall ist, nicht jedoch bei OAuth-Authentifizierung.
 
-## Beispiel für die Statistik-Anzeige
+## Beispiel einer Statistik-Anzeige
 
-![Qwen Code Stats Display](https://img.alicdn.com/imgextra/i3/O1CN01F1yzRs1juyZu63jdS_!!6000000004609-2-tps-1038-738.png)
+![Statistikanzeige von Qwen Code](https://img.alicdn.com/imgextra/i3/O1CN01F1yzRs1juyZu63jdS_!!6000000004609-2-tps-1038-738.png)
 
-Das obige Bild zeigt ein Beispiel für die Ausgabe des `/stats`-Befehls und hebt die Informationen zu den Einsparungen durch gecachte Tokens hervor.
+Das obige Bild zeigt ein Beispiel der Ausgabe des Befehls `/stats` und hebt die Informationen zu den eingesparten gecachten Tokens hervor.

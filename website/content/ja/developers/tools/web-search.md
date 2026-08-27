@@ -1,25 +1,82 @@
-# Web検索
+# ウェブ検索
 
-Qwen Code は **MCP (Model Context Protocol)** 統合を通じて Web 検索機能を提供します。組み込みの検索ツールではなく、外部 MCP サーバーに接続することで Web 検索が実現されるため、ニーズに最適な検索サービスを自由に選択できます。
+Qwen Code は2つの方法でウェブ検索を提供します。
 
-## ⚠️ 破壊的変更: 組み込み `web_search` ツールの削除
+1. **ビルトインの `web_search` ツール**（オプトイン）— DashScope Responses API のサーバーサイド検索を使用します。標準的な Bailian (DashScope) API キーで動作し、追加のプロバイダーや MCP の設定は不要です。
+2. **MCP (Model Context Protocol) 統合** — 外部の検索サービス（Tavily、GLM など）を接続します。DashScope キーを持っていない場合はこちらを使用してください。
 
-> **影響を受けるバージョン:** `V0.0.7+` から組み込み Web 検索サポートを含む最終リリースまで。
+## ビルトインの `web_search`（オプトイン）
 
-組み込みの `web_search` ツールおよび関連するすべての設定は**削除されました**。以下を使用していた場合は、このドキュメントで説明する MCP ベースのアプローチに移行してください。
+ビルトインツールは、DashScope のサーバーサイド `web_search`（および `web_extractor`）ツールを使用して、小さな補助モデルに自己完結型の検索リクエストを発行し、ナレーションされた結果とソース URL を返します。暗黙的に有効になることはありません。以下の2つの設定が必要です。
 
-| 削除された項目 | 対応方法 |
-| --- | --- |
-| `settings.json` 内の `webSearch` ブロック | 代わりに `mcpServers` で MCP サーバーを設定する（下記参照） |
-| `settings.json` 内の `advanced.tavilyApiKey` | [Tavily MCP サーバー](#tavily-websearch) を使用する |
-| `TAVILY_API_KEY` 環境変数 | [Tavily MCP サーバー](#tavily-websearch) を使用する |
-| Web 検索用の `DASHSCOPE_API_KEY` | [Alibaba Cloud Bailian WebSearch MCP](#alibaba-cloud-bailian-websearch-recommended) を使用する |
-| Web 検索用の `GLM_API_KEY` | [GLM WebSearch Prime MCP](#glm-websearch-prime-zhipuai) を使用する |
-| `--tavily-api-key` / `--glm-api-key` / `--dashscope-api-key` CLI フラグ | `settings.json` の `mcpServers` で設定する |
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "qwen3.6-plus",
+        "envKey": "DASHSCOPE_API_KEY",
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1"
+      }
+    ]
+  },
+  "tools": {
+    "webSearch": {
+      "enabled": true,
+      "model": "qwen3.6-plus"
+    }
+  }
+}
+```
+
+| 設定                           | 環境変数オーバーライド    | 意味                                                                                                                                                                     |
+| ------------------------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `tools.webSearch.enabled`      | `ENABLE_WEB_SEARCH`       | オプトインフラグ。必須。                                                                                                                                                 |
+| `tools.webSearch.model`        | `WEB_SEARCH_MODEL`        | 検索モデルセレクター。`fastModel` と同様に `modelProviders` に対して解決されます（`modelId` または `authType:modelId`）。必須 — デフォルトなし。推奨: `qwen3.6-plus`。      |
+| `tools.webSearch.webExtractor` | `WEB_SEARCH_EXTRACTOR`    | 検索エージェントが結果ページを開いてより的確な回答を得られるようにします（デフォルト `true`。DashScope により別途課金されます）。                                         |
+
+### 環境変数のみの設定（settings.json なし）
+
+設定ファイルを書き込めない環境（ロックダウンされたコンテナ、環境変数注入のみの CI）では、このツールは環境変数のみで完全に設定できます — `modelProviders` のエントリは不要です。
+
+```bash
+export ENABLE_WEB_SEARCH=true
+export WEB_SEARCH_MODEL=qwen3.6-plus
+export WEB_SEARCH_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+export DASHSCOPE_API_KEY=sk-...        # または WEB_SEARCH_API_KEY を設定
+```
+
+`WEB_SEARCH_BASE_URL` は `modelProviders` エントリの `baseUrl` をミラーし、DashScope 互換のエンドポイントである必要があります。これが設定されている場合、`modelProviders` の解決よりも優先され、`WEB_SEARCH_MODEL` はプレーンな DashScope モデル ID として使用されます。API キーは `WEB_SEARCH_API_KEY` が設定されていればそこから、そうでなければ `DASHSCOPE_API_KEY` から読み取られます。設定ミスは起動時の通知として表示されます。
+
+注意:
+
+- セレクターは `envKey` 経由で直接 API キーを持つ DashScope 互換の `modelProviders` エントリに解決される必要があります。メインモデルはどのプロバイダーでも構いません — 検索サイドのリクエストのみが DashScope エントリを必要とします。Qwen OAuth はこのツールをサポートできません。
+- 有効になっているが設定が誤っている場合、ツールはオフのままで、起動時の通知にどの条件が失敗したかが説明されます。
+- 検索は DashScope キーで課金されます（`usage.x_tools` カウント）。このツールはデフォルトで確認を要求します。「常に許可」で承認すると、他のツールと同様に標準の `WebSearch` 権限ルールが永続化されます。
+- クライアントサイドのモデル許可リストはありません。Responses エンドポイントが提供しないモデルは、初回使用時に明示的に失敗します。
+
+## MCP 代替手段
+
+DashScope キーを持っていない場合、外部 MCP サーバーを接続することでウェブ検索が利用可能です — 以下のサービスを参照してください。
+
+## ⚠️ 過去の破壊的変更: 元のビルトイン `web_search` の削除
+
+> **影響を受けるバージョン:** 元のマルチプロバイダービルトインウェブ検索を含む最後のリリースまでの `V0.0.7+`。
+
+元のビルトイン `web_search` ツール（Tavily/Google/GLM/DashScope マルチプロバイダー）とその設定は**削除**されました。上記の新しいオプトインビルトインツールは異なる実装であり、異なる設定を持ちます。以下のいずれかを使用していた場合は、新しいビルトインツール（DashScope）または MCP に移行してください。
+
+| 削除された項目                                                           | 対応方法                                                        |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `settings.json` の `webSearch` ブロック                                  | 代わりに `mcpServers` で MCP サーバーを設定してください（下記参照）|
+| `settings.json` の `advanced.tavilyApiKey`                               | [Tavily MCP サーバー](#tavily-websearch) を使用してください      |
+| 環境変数 `TAVILY_API_KEY`                                                | [Tavily MCP サーバー](#tavily-websearch) を使用してください      |
+| ウェブ検索用の `DASHSCOPE_API_KEY`                                       | [ビルトイン `web_search` ツール](#built-in-web_search-opt-in) を使用してください |
+| ウェブ検索用の `GLM_API_KEY`                                             | [GLM WebSearch Prime MCP](#glm-websearch-prime-zhipuai) を使用してください |
+| CLI フラグ `--tavily-api-key` / `--glm-api-key` / `--dashscope-api-key`  | `settings.json` の `mcpServers` を使用して設定してください       |
 
 ### 移行例
 
-**Before（組み込みツール経由の Tavily）:**
+**Before（ビルトインツール経由の Tavily）:**
 
 ```json
 {
@@ -44,7 +101,7 @@ Qwen Code は **MCP (Model Context Protocol)** 統合を通じて Web 検索機�
 
 ---
 
-**Before（組み込みツール経由の DashScope）:**
+**Before（ビルトインツール経由の DashScope）:**
 
 ```json
 {
@@ -72,18 +129,18 @@ Qwen Code は **MCP (Model Context Protocol)** 統合を通じて Web 検索機�
 
 ---
 
-## サポートされている MCP Web 検索サービス
+## サポートされている MCP ウェブ検索サービス
 
-### Alibaba Cloud Bailian WebSearch（推奨）
+### Alibaba Cloud Bailian WebSearch
 
-DashScope を基盤とする、Alibaba Cloud Bailian プラットフォームが提供する公式 Web 検索 MCP サービスです。
+Alibaba Cloud Bailian プラットフォームが提供する公式ウェブ検索 MCP サービスで、DashScope を搭載しています。DashScope キーをお持ちの場合は、上記のビルトイン `web_search` ツールを優先してください — この MCP サービスよりも強力な検索パスを使用します。
 
-- **MCP マーケットプレイス:** https://bailian.console.aliyun.com/cn-beijing?tab=mcp#/mcp-market/detail/WebSearch
-- **料金:** 有料（Alibaba Cloud DashScope 経由で課金）
+- **MCP Marketplace:** https://bailian.console.aliyun.com/cn-beijing?tab=mcp#/mcp-market/detail/WebSearch
+- **料金:** 有料（Alibaba Cloud DashScope 経由で請求）
 - **API キーの取得:** https://help.aliyun.com/zh/model-studio/get-api-key
-- **推奨用途:** 中国語クエリ、中国の Web コンテンツへのアクセス、Alibaba Cloud エコシステムとの統合
+- **最適な用途:** 中国語のクエリ、中国のウェブコンテンツへのアクセス、Alibaba Cloud エコシステムとの統合
 
-#### 設定方法
+#### セットアップ
 
 **方法 1: CLI コマンド**
 
@@ -109,27 +166,27 @@ qwen mcp add WebSearch \
 }
 ```
 
-`${DASHSCOPE_API_KEY}` を実際の API キーに置き換えるか、環境変数として設定して Qwen Code が自動的に読み込むようにしてください。
+`${DASHSCOPE_API_KEY}` を実際の API キーに置き換えるか、環境変数として設定すると、Qwen Code が自動的に認識します。
 
 ---
 
 ### Tavily WebSearch
 
-リアルタイムの Web 検索、抽出、マップ作成、クロール機能を提供する、本番環境対応の MCP サーバーです。
+本番環境対応の MCP サーバーで、リアルタイムウェブ検索、抽出、マップ、クロール機能を提供します。
 
 - **リポジトリ:** https://github.com/tavily-ai/tavily-mcp
 - **料金:** 有料（無料枠あり）
 - **API キーの取得:** https://app.tavily.com/home
-- **推奨用途:** 高品質な AI 生成回答を伴う汎用 Web 検索
+- **最適な用途:** 高品質な AI 生成回答を伴う汎用ウェブ検索
 
 #### 利用可能なツール
 
-- `tavily_search` — リアルタイム Web 検索
-- `tavily_extract` — Web ページからのインテリジェントなデータ抽出
-- `tavily_map` — Web サイトの構造化マップの作成
-- `tavily_crawl` — Web サイトの体系的な探索
+- `tavily_search` — リアルタイムウェブ検索
+- `tavily_extract` — ウェブページからのインテリジェントなデータ抽出
+- `tavily_map` — ウェブサイトの構造化マップを作成
+- `tavily_crawl` — ウェブサイトを体系的に探索
 
-#### 設定方法
+#### セットアップ
 
 **方法 1: CLI コマンド（リモート MCP）**
 
@@ -171,20 +228,20 @@ qwen mcp add tavily \
 
 ---
 
-### GLM WebSearch Prime (ZhipuAI)
+### GLM WebSearch Prime（ZhipuAI）
 
-ZhipuAI（智谱AI）が提供する公式 Web 検索リモート MCP サービスで、GLM Coding Plan ユーザー向けに設計されています。ニュース、株価、天気などを含むリアルタイム Web 検索を提供します。
+ZhipuAI（智谱AI）が提供する公式ウェブ検索リモート MCP サービスで、GLM Coding Plan ユーザー向けに設計されています。ニュース、株価、天気などを含むリアルタイムウェブ検索を提供します。
 
 - **ドキュメント:** https://docs.bigmodel.cn/cn/coding-plan/mcp/search-mcp-server
-- **料金:** GLM Coding Plan サブスクリプションに含まれる（Lite: 月 100 回、Pro: 月 1,000 回、Max: 月 4,000 回）
+- **料金:** GLM Coding Plan サブスクリプションに含まれています（Lite: 100 回/月、Pro: 1,000 回/月、Max: 4,000 回/月）
 - **API キーの取得:** https://open.bigmodel.cn/apikey/platform
-- **推奨用途:** 中国語クエリ、リアルタイム情報取得
+- **最適な用途:** 中国語のクエリ、リアルタイム情報検索
 
 #### 利用可能なツール
 
-- `webSearchPrime` — ページタイトル、URL、要約、サイト名、ファビコンを返す Web 検索
+- `webSearchPrime` — ページタイトル、URL、サマリー、サイト名、ファビコンを返すウェブ検索
 
-#### 設定方法
+#### セットアップ
 
 **方法 1: CLI コマンド**
 

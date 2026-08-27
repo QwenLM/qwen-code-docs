@@ -1,39 +1,39 @@
 # Qwen Code Java SDK
 
-Das Qwen Code Java SDK ist ein minimales, experimentelles SDK für den programmatischen Zugriff auf Qwen Code-Funktionen. Es bietet eine Java-Schnittstelle zur Interaktion mit der Qwen Code CLI und ermöglicht es Entwicklern, Qwen Code-Funktionen in ihre Java-Anwendungen zu integrieren.
+Das Qwen Code Java SDK bietet einen empfohlenen Daemon-Transport für `qwen serve` und behält die experimentelle Legacy-stdio-API für die Kompatibilität bei. Beide APIs werden im selben `com.alibaba:qwencode-sdk`-Artifact ausgeliefert.
 
-## Anforderungen
+## Voraussetzungen
 
-- Java >= 1.8
-- Maven >= 3.6.0 (zum Erstellen aus dem Quellcode)
-- qwen-code >= 0.5.0
+- Java >= 11 für `0.1.0-alpha`
+- Maven >= 3.9.2 beim Bauen oder Veröffentlichen dieses SDK aus dem Quellcode
+- Ein kompatibler `qwen serve` für die Daemon-API oder qwen-code >= 0.5.0 für die Legacy-stdio-API
 
 ### Abhängigkeiten
 
-- **Logging**: ch.qos.logback:logback-classic
-- **Hilfsklassen**: org.apache.commons:commons-lang3
-- **JSON-Verarbeitung**: com.alibaba.fastjson2:fastjson2
+- **Logging-API**: org.slf4j:slf4j-api (wähle einen SLF4J-Provider in deiner Anwendung)
+- **Hilfsbibliotheken**: org.apache.commons:commons-lang3
+- **JSON-Verarbeitung**: Fastjson2 für die Kodierung und Jackson Core für striktes Decoding
 - **Tests**: JUnit 5 (org.junit.jupiter:junit-jupiter)
 
 ## Installation
 
-Füge die folgende Abhängigkeit zu deiner Maven `pom.xml` hinzu:
+Füge die folgende Abhängigkeit zu deiner Maven-`pom.xml` hinzu:
 
 ```xml
 <dependency>
     <groupId>com.alibaba</groupId>
     <artifactId>qwencode-sdk</artifactId>
-    <version>{$version}</version>
+    <version>0.1.0-alpha</version>
 </dependency>
 ```
 
-Oder füge bei Verwendung von Gradle Folgendes zu deiner `build.gradle` hinzu:
+Oder bei Verwendung von Gradle, füge es zu deiner `build.gradle` hinzu:
 
 ```gradle
-implementation 'com.alibaba:qwencode-sdk:{$version}'
+implementation 'com.alibaba:qwencode-sdk:0.1.0-alpha'
 ```
 
-## Erstellen und Ausführen
+## Bauen und Ausführen
 
 ### Build-Befehle
 
@@ -47,13 +47,81 @@ mvn test
 # JAR paketieren
 mvn package
 
-# Im lokalen Repository installieren
+# In lokales Repository installieren
 mvn install
 ```
 
-## Schnellstart
+### Real-Daemon-E2E aus dem Quellcode
 
-Der einfachste Weg, das SDK zu verwenden, ist die `QwenCodeCli.simpleQuery()`-Methode:
+Führe die Real-Daemon-Java-Integrationstests vom Repository-Root aus, nachdem du sowohl die Workspaces als auch das Root-CLI-Bundle gebaut hast:
+
+```bash
+npm run build
+npm run bundle
+npx tsx scripts/run-java-daemon-sdk-e2e.ts
+```
+
+`npm run build` allein aktualisiert `dist/cli.js` nicht; das E2E-Harness startet dieses Bundle und schlägt mit einem eindeutigen Voraussetzungsfehler fehl, wenn es fehlt.
+
+## Empfohlene Daemon-API
+
+Starte `qwen serve` und erstelle dann eine unabhängige, Thread-gebundene Session. `promptText` kehrt erst zurück, wenn ein passendes `turn_complete` empfangen wurde; unvollständige Streams schlagen mit `PromptOutcomeIndeterminateException` fehl, anstatt Teiltext als Erfolg zurückzugeben.
+
+Verwende für die von `0.1.0-alpha` vorausgesetzten Lifecycle-Garantien den qwen-code-Build, der aus derselben Quell-Revision wie das SDK veröffentlicht wurde. Der Daemon muss das idempotente, pro-Client-Detach-Ledger aus [#7386](https://github.com/QwenLM/qwen-code/pull/7386), die pro-Epoch-Terminal-Garantie aus [#7400](https://github.com/QwenLM/qwen-code/pull/7400) sowie die in diesem Release enthaltene Admission-Cancellation und FIFO-Cancel-Drain-Fence enthalten. Der #7400-Commit allein reicht nicht aus: Ein Daemon mit derselben Wire kann Cancel quittieren, bevor der Agent dispatched wird, ohne den admitted-Prompt zu stoppen, oder ein nicht quittiertes, sessionweites Cancel an einen nachfolgenden Prompt in der Warteschlange weiterleiten. Der mitgelieferte ACP-Child verwendet eine quittierte, Admission-bewusste Cancellation-Handshake; ein benutzerdefinierter, standardkonformer ACP-Child ohne diese Erweiterung erhält eine Standard-`session/cancel`-Benachrichtigung. Die Feature-Verhandlung kann ältere Daemon-Builds mit derselben Wire nicht unterscheiden, daher schlägt das SDK fail-closed zu, anstatt Teilausgaben als Erfolg zu melden.
+
+Die mitgelieferte Cancellation-Handshake wartet bewusst darauf, dass der betroffene Prompt-Call abgeschlossen wird, bevor der Daemon seinen nachfolgenden Prompt dispatched. Es gibt keinen Timeout, der lediglich die Cancellation quittiert: Dies könnte dazu führen, dass ein verspätetes, sessionweites Cancel den nächsten Prompt erreicht. Wenn ein Provider, ein Tool oder eine benutzerdefinierte Integration sein `AbortSignal` unbegrenzt ignoriert, kann die Cancel-Mutation daher ergebnisoffen bleiben und diese Session darf nicht wiederverwendet werden. Betrachte ein formales Prompt-Terminal, das innerhalb der Beobachtungsgrenzen des Aufrufers empfangen wurde, als maßgeblich; andernfalls schließe oder zerstöre die Session, wenn die Beobachtung fehlschlägt. Die Wiederherstellung eines blockierten, gemeinsam genutzten ACP-Childs ohne Beeinträchtigung seiner Geschwister-Sessions erfordert eine stärkere Runtime-Isolation und liegt außerhalb dieses Alpha-Vertrags.
+
+```java
+import com.alibaba.qwen.code.daemon.DaemonClient;
+import com.alibaba.qwen.code.daemon.DaemonSessionClient;
+import com.alibaba.qwen.code.daemon.PromptTextResult;
+import java.net.URI;
+
+try (DaemonClient daemon = DaemonClient.builder()
+        .baseUri(URI.create("http://127.0.0.1:4170"))
+        .build();
+     DaemonSessionClient session = daemon.createSession()) {
+    PromptTextResult result = session.promptText("Explain this repository");
+    System.out.println(result.getText());
+}
+```
+
+Aufrufer, die die Session-Identität vor der Erstellung zuweisen müssen, können eine RFC-UUID v1–v5 übergeben. Das SDK prüft `session_id_override` vor der Mutation und meldet eine abweichende zurückgegebene ID als `SessionCreationOutcomeUnknownException`:
+
+```java
+CreateSessionRequest request = CreateSessionRequest.builder()
+        .sessionId("550E8400-E29B-41D4-A716-446655440000")
+        .build();
+
+try (DaemonSessionClient session = daemon.createSession(request)) {
+    System.out.println(session.getSession().getSessionId());
+}
+```
+
+Der Daemon normalisiert die ID auf Kleinbuchstaben und erstellt eine neue Thread-Session. Dies ist kein idempotentes Attach; stelle nach einem mehrdeutigen Create-Ergebnis die Wiederherstellung mit der bekannten ID sicher, anstatt die Erstellung zu wiederholen.
+
+Wenn `qwen serve` Authentifizierung erfordert, füge
+`.bearerToken(System.getenv("QWEN_SERVER_TOKEN"))` zum `DaemonClient`-Builder
+hinzu. Das SDK sendet das Bearer-Token bei REST- und SSE-Anfragen und setzt es
+niemals in die URL.
+
+Verwende `startPrompt` mit einem `PromptObserver`, wenn du geordnete Text-, Thought-, Tool-, Usage-, Permission- und Raw-Event-Callbacks benötigst. Seine `acceptanceFuture()`- und `completionFuture()`-Sichten legen Daemon-Admission und das zuverlässige Turn-Terminal separat offen. `respondToPermission()` gibt `false` zurück, wenn die Anfrage bereits aufgelöst wurde oder nicht mehr ausstehend ist. Das Abbrechen der Future-Sichten bricht nicht den Daemon-Prompt ab; verwende `cancelActivePrompt()` für die Daemon-Cancel-Operation auf Session-Ebene und warte weiterhin auf das passende Terminal. Eine kooperative Cancellation wird mit `turn_complete` und `stopReason=cancelled` abgeschlossen; `promptText()` gibt sein `PromptTextResult` zurück, daher müssen Aufrufer, die Cancellation unterscheiden, `result.getTerminal().getStopReason()` prüfen. Wenn der Agent oder Provider während der Cancellation fehlschlägt, kann der Daemon stattdessen `turn_error` veröffentlichen, wodurch `promptText()` eine `PromptTurnException` wirft.
+
+Wenn Cancellation, Deadline, Teardown oder Agent-Settlement konkurrieren, veröffentlicht das Exactly-once-Latch des Daemons das erste formale Terminal und unterdrückt spätere Kandidaten. Verzweige immer anhand des empfangenen Terminals selbst; die letzte vom Client gesendete Control-Mutation bestimmt nicht den Terminal-Typ oder Fehlercode.
+
+Der SSE-Transport sendet `Accept-Encoding: identity` und `Last-Event-ID`, validiert Framing und Event-IDs, dedupliziert Replays und verbindet nur das SSE-GET erneut. Prompt- und andere Mutations-Anfragen werden niemals automatisch wiederholt. HTTP-408- und 5xx-Antworten auf Prompt-Admission, Session-Erstellung, Permission, Cancel, Heartbeat, Detach oder Delete werden als ergebnisoffen gemeldet, da sie nicht beweisen, dass der Daemon die Mutation abgelehnt hat. Endliche Antwort-Bodys und SSE-Beobachtung haben unabhängige Deadlines.
+
+Die Modellauswahl zum Erstellungszeitpunkt wird von der Java-Daemon-SDK-API in dieser Alpha absichtlich nicht bereitgestellt. Der Daemon meldet eine abgelehnte `modelServiceId` nur als SSE-Event, das vor der Create-Antwort emittiert wird, während dieses SDK seinen Stream ab dem späteren Prompt-Admission-Wasserzeichen öffnet. Bis der Daemon ein eindeutiges Create-Ergebnis zurückgibt oder das SDK eine eigene Session-Event-Subscription ab `Last-Event-ID: 0` besitzt, verwende das konfigurierte Standardmodell des Daemons.
+
+`PromptRequest.Builder.deadline(Duration)` fordert eine vom Daemon durchgesetzte Prompt-Deadline und wird nur akzeptiert, wenn der Daemon `prompt_absolute_deadline` bewirbt; andernfalls schlägt das SDK vor dem Senden des Prompts fehl. Der Wert muss zwischen 1 und 2.147.483.647 Millisekunden liegen, entsprechend dem Node-Timer-Bereich des Daemons. Dies ist getrennt von `observationTimeout(Duration)`, das nur die lokale SSE-Beobachtung begrenzt und niemals eine Cancel-Mutation sendet.
+
+Vor dem Erstellen einer Session verlangt das SDK, dass der Daemon den REST-Transport und `session_scope_override` bewirbt; dies verhindert, dass ein älterer Daemon den angeforderten `thread`-Scope stillschweigend ignoriert und den Client mit einer gemeinsamen Session verbindet. Wenn `client_heartbeat` beworben wird, sendet eine offene Session jede Minute einen neuen Heartbeat, damit der Daemon einen ansonsten inaktiven Client nicht aufräumt. Setze `heartbeatInterval(Duration.ZERO)` im `DaemonClient`-Builder, um dieses Verhalten zu deaktivieren, oder wähle ein anderes positives Intervall. Ein Heartbeat wird niemals wiederholt; der nächste geplante Heartbeat ist ein separater Keepalive. Die Prompt-Beobachtung ist standardmäßig auf 32 gleichzeitige Prompts pro Client begrenzt und kann mit `maximumConcurrentPrompts` angepasst werden. Admission- und Terminal-Future-Callbacks laufen abseits der Transport-Worker; blockierte Callbacks verbrauchen begrenzte Publikationskapazität. Die SSE-Stream-Bereinigung ist ebenfalls begrenzt, und ein blockiertes Schließen behält seine Bereinigungs-Reservierung. Beide Bedingungen können dazu führen, dass ein späteres `startPrompt` mit `DaemonClientCapacityException` fehlschlägt, anstatt einen Timeout-Close zu verwerfen oder Threads und Warteschlangenarbeit unbegrenzt zu vergrößern.
+
+Ein unbestimmter Abschluss ist eine Ergebnisgrenze, keine Session-Wiederverwendungsgrenze. Nach `PromptAdmissionUnknownException` oder `PromptOutcomeIndeterminateException` lehnt dieser `DaemonSessionClient` weitere Prompts dauerhaft ab, selbst wenn die lokale Stream-Bereinigung später erfolgreich ist; schließe oder zerstöre stattdessen die Session. Ein Beobachtungs-Timeout wird veröffentlicht, ohne endlos auf einen blockierten Stream-Close zu warten, während die Bereinigung asynchron fortgesetzt wird und bis zum Abschluss begrenzte Client-Kapazität beansprucht.
+
+## Legacy-stdio-API
+
+Die bestehende `com.alibaba.qwen.code.cli`-API bleibt verfügbar:
 
 ```java
 public static void runSimpleExample() {
@@ -74,14 +142,14 @@ public static void runTransportOptionsExample() {
             .setIncludePartialMessages(true)
             .setTurnTimeout(new Timeout(120L, TimeUnit.SECONDS))
             .setMessageTimeout(new Timeout(90L, TimeUnit.SECONDS))
-            .setAllowedTools(Arrays.asList("read_file", "write_file", "list_directory"));
+            .setAllowedTools(Arrays.asList("read_file", "write_file", "glob"));
 
     List<String> result = QwenCodeCli.simpleQuery("who are you, what are your capabilities?", options);
     result.forEach(logger::info);
 }
 ```
 
-Für die Verarbeitung von Streaming-Inhalten mit benutzerdefinierten Content-Consumern:
+Für die Behandlung von Streaming-Inhalten mit benutzerdefinierten Content-Consumern:
 
 ```java
 public static void runStreamingExample() {
@@ -124,72 +192,79 @@ public static void runStreamingExample() {
 }
 ```
 
-Weitere Beispiele findest du unter `src/test/java/com/alibaba/qwen/code/cli/example`.
+Weitere Beispiele siehe src/test/java/com/alibaba/qwen/code/cli/example
+
+## Java-11-Migration und Alpha-Einschränkungen
+
+`0.1.0-alpha` erhöht die Mindest-Java-Version für das gesamte Artifact von 8 auf 11. Java-8-Anwendungen müssen bei `0.0.3-alpha` bleiben. Logback ist keine Runtime-Abhängigkeit mehr; füge den SLF4J-Provider hinzu, den deine Anwendung verwendet.
+
+Diese Alpha schlägt absichtlich fail-closed zu, wenn sie kein Prompt-Terminal nachweisen kann. Sie garantiert keine Exactly-once-Ausführung über Daemon-Neustarts hinweg, keine automatische Epoch-Wiederherstellung, kein Snapshot/Resync, keine persistenten Cursor und keine echte, auf Prompt-IDs gezielte Cancellation. `prompt_cancelled` und Queue-Events sind informativ; nur passende `turn_complete` und `turn_error` sind terminal.
+
+Wenn die Session-Erstellung ein mehrdeutiges Transportergebnis hat, kann der Daemon eine Session behalten, deren ID den Aufrufer nie erreicht hat. Das SDK wiederholt die Erstellung nicht und kann diese unbekannte Session nicht abtrennen; das Daemon-seitige Lifecycle-Reaping ist die Wiederherstellungsgrenze.
 
 ## Architektur
 
-Das SDK folgt einer schichtbasierten Architektur:
+Das Artifact enthält zwei isolierte Implementierungen:
 
-- **API-Schicht**: Bietet die Haupteinstiegspunkte über die `QwenCodeCli`-Klasse mit einfachen statischen Methoden für die grundlegende Nutzung
-- **Session-Schicht**: Verwaltet Kommunikationssitzungen mit der Qwen Code CLI über die `Session`-Klasse
-- **Transport-Schicht**: Handhabt den Kommunikationsmechanismus zwischen dem SDK und dem CLI-Prozess (derzeit über Prozess-Transport via `ProcessTransport`)
-- **Protokoll-Schicht**: Definiert Datenstrukturen für die Kommunikation basierend auf dem CLI-Protokoll
-- **Utils**: Allgemeine Hilfsklassen für parallele Ausführung, Timeout-Verwaltung und Fehlerbehandlung
+- **Daemon-API**: `DaemonClient` und `DaemonSessionClient` verwenden REST-Mutationen sowie resumierbares SSE und besitzen begrenzte HTTP-, Prompt-, Wartungs- und Timer-Ressourcen.
+- **Legacy-stdio-API**: `QwenCodeCli`, `Session` und `ProcessTransport` verwalten einen Kind-CLI-Prozess mit den bestehenden CLI-Protokoll-DTOs und Hilfsprogrammen.
 
-## Hauptfunktionen
+Die Daemon-Implementierung verwendet nicht den Legacy-Prozesstransport, das Legacy-Session-Modell, Legacy-DTOs oder den globalen Executor erneut.
+
+## Legacy-stdio-Features
 
 ### Berechtigungsmodi
 
 Das SDK unterstützt verschiedene Berechtigungsmodi zur Steuerung der Tool-Ausführung:
 
-- **`default`**: Schreib-Tools werden abgelehnt, es sei denn, sie werden über den `canUseTool`-Callback oder in `allowedTools` genehmigt. Nur-Lese-Tools werden ohne Bestätigung ausgeführt.
-- **`plan`**: Blockiert alle Schreib-Tools und weist die KI an, zunächst einen Plan vorzulegen.
-- **`auto-edit`**: Bearbeitungs-Tools (`edit`, `write_file`) werden automatisch genehmigt, während andere Tools eine Bestätigung erfordern.
+- **`default`**: Schreib-Tools werden verweigert, es sei denn, sie werden über den `canUseTool`-Callback oder in `allowedTools` genehmigt. Nur-Lese-Tools werden ohne Bestätigung ausgeführt.
+- **`plan`**: Blockiert alle Schreib-Tools und weist die KI an, zuerst einen Plan vorzulegen.
+- **`auto-edit`**: Genehmigt Edit-Tools (`edit`, `write_file`, `notebook_edit`) automatisch, während andere Tools eine Bestätigung erfordern.
 - **`yolo`**: Alle Tools werden automatisch ohne Bestätigung ausgeführt.
 
 ### Session-Event-Consumer und Assistant-Content-Consumer
 
-Das SDK bietet zwei zentrale Schnittstellen zur Verarbeitung von Events und Inhalten der CLI:
+Das SDK bietet zwei Schlüsselschnittstellen zur Behandlung von Events und Inhalten aus dem CLI:
 
-#### SessionEventConsumers-Schnittstelle
+#### SessionEventConsumers-Interface
 
-Die `SessionEventConsumers`-Schnittstelle bietet Callbacks für verschiedene Nachrichtentypen während einer Session:
+Das `SessionEventConsumers`-Interface bietet Callbacks für verschiedene Nachrichtentypen während einer Session:
 
-- `onSystemMessage`: Verarbeitet Systemnachrichten der CLI (erhält Session und SDKSystemMessage)
-- `onResultMessage`: Verarbeitet Ergebnisnachrichten der CLI (erhält Session und SDKResultMessage)
-- `onAssistantMessage`: Verarbeitet Assistant-Nachrichten (KI-Antworten) (erhält Session und SDKAssistantMessage)
-- `onPartialAssistantMessage`: Verarbeitet partielle Assistant-Nachrichten während des Streamings (erhält Session und SDKPartialAssistantMessage)
-- `onUserMessage`: Verarbeitet Benutzernachrichten (erhält Session und SDKUserMessage)
-- `onOtherMessage`: Verarbeitet andere Nachrichtentypen (erhält Session und String-Nachricht)
-- `onControlResponse`: Verarbeitet Steuerungsantworten (erhält Session und CLIControlResponse)
-- `onControlRequest`: Verarbeitet Steuerungsanfragen (erhält Session und CLIControlRequest, gibt CLIControlResponse zurück)
-- `onPermissionRequest`: Verarbeitet Berechtigungsanfragen (erhält Session und CLIControlRequest<CLIControlPermissionRequest>, gibt Behavior zurück)
+- `onSystemMessage`: Behandelt Systemnachrichten aus dem CLI (empfängt Session und SDKSystemMessage)
+- `onResultMessage`: Behandelt Ergebnisnachrichten aus dem CLI (empfängt Session und SDKResultMessage)
+- `onAssistantMessage`: Behandelt Assistant-Nachrichten (KI-Antworten) (empfängt Session und SDKAssistantMessage)
+- `onPartialAssistantMessage`: Behandelt partielle Assistant-Nachrichten beim Streaming (empfängt Session und SDKPartialAssistantMessage)
+- `onUserMessage`: Behandelt Benutzernachrichten (empfängt Session und SDKUserMessage)
+- `onOtherMessage`: Behandelt andere Nachrichtentypen (empfängt Session und String-Nachricht)
+- `onControlResponse`: Behandelt Control-Antworten (empfängt Session und CLIControlResponse)
+- `onControlRequest`: Behandelt Control-Anfragen (empfängt Session und CLIControlRequest, gibt CLIControlResponse zurück)
+- `onPermissionRequest`: Behandelt Berechtigungsanfragen (empfängt Session und CLIControlRequest<CLIControlPermissionRequest>, gibt Behavior zurück)
 
-#### AssistantContentConsumers-Schnittstelle
+#### AssistantContentConsumers-Interface
 
-Die `AssistantContentConsumers`-Schnittstelle verarbeitet verschiedene Inhaltstypen innerhalb von Assistant-Nachrichten:
+Das `AssistantContentConsumers`-Interface behandelt verschiedene Inhaltstypen innerhalb von Assistant-Nachrichten:
 
-- `onText`: Verarbeitet Textinhalte (erhält Session und TextAssistantContent)
-- `onThinking`: Verarbeitet Denk-Inhalte (erhält Session und ThinkingAssistantContent)
-- `onToolUse`: Verarbeitet Tool-Nutzungsinhalte (erhält Session und ToolUseAssistantContent)
-- `onToolResult`: Verarbeitet Tool-Ergebnisinhalte (erhält Session und ToolResultAssistantContent)
-- `onOtherContent`: Verarbeitet andere Inhaltstypen (erhält Session und AssistantContent)
-- `onUsage`: Verarbeitet Nutzungsinformationen (erhält Session und AssistantUsage)
-- `onPermissionRequest`: Verarbeitet Berechtigungsanfragen (erhält Session und CLIControlPermissionRequest, gibt Behavior zurück)
-- `onOtherControlRequest`: Verarbeitet andere Steuerungsanfragen (erhält Session und ControlRequestPayload, gibt ControlResponsePayload zurück)
+- `onText`: Behandelt Textinhalte (empfängt Session und TextAssistantContent)
+- `onThinking`: Behandelt Thinking-Inhalte (empfängt Session und ThinkingAssistantContent)
+- `onToolUse`: Behandelt Tool-Use-Inhalte (empfängt Session und ToolUseAssistantContent)
+- `onToolResult`: Behandelt Tool-Result-Inhalte (empfängt Session und ToolResultAssistantContent)
+- `onOtherContent`: Behandelt andere Inhaltstypen (empfängt Session und AssistantContent)
+- `onUsage`: Behandelt Nutzungsinformationen (empfängt Session und AssistantUsage)
+- `onPermissionRequest`: Behandelt Berechtigungsanfragen (empfängt Session und CLIControlPermissionRequest, gibt Behavior zurück)
+- `onOtherControlRequest`: Behandelt andere Control-Anfragen (empfängt Session und ControlRequestPayload, gibt ControlResponsePayload zurück)
 
-#### Beziehung zwischen den Schnittstellen
+#### Beziehung zwischen den Interfaces
 
 **Wichtiger Hinweis zur Event-Hierarchie:**
 
-- `SessionEventConsumers` ist der **High-Level**-Event-Prozessor, der verschiedene Nachrichtentypen (System, Assistant, Benutzer usw.) verarbeitet
-- `AssistantContentConsumers` ist der **Low-Level**-Inhaltsprozessor, der verschiedene Inhaltstypen innerhalb von Assistant-Nachrichten (Text, Tools, Denken usw.) verarbeitet
+- `SessionEventConsumers` ist der **High-Level**-Event-Prozessor, der verschiedene Nachrichtentypen verarbeitet (System, Assistant, Benutzer usw.)
+- `AssistantContentConsumers` ist der **Low-Level**-Content-Prozessor, der verschiedene Inhaltstypen innerhalb von Assistant-Nachrichten verarbeitet (Text, Tools, Thinking usw.)
 
-**Verarbeiter-Beziehung:**
+**Prozessor-Beziehung:**
 
 - `SessionEventConsumers` → `AssistantContentConsumers` (SessionEventConsumers verwendet AssistantContentConsumers zur Verarbeitung von Inhalten innerhalb von Assistant-Nachrichten)
 
-**Event-Ableitungsbeziehungen:**
+**Event-Ableitungs-Beziehungen:**
 
 - `onAssistantMessage` → `onText`, `onThinking`, `onToolUse`, `onToolResult`, `onOtherContent`, `onUsage`
 - `onPartialAssistantMessage` → `onText`, `onThinking`, `onToolUse`, `onToolResult`, `onOtherContent`
@@ -197,7 +272,7 @@ Die `AssistantContentConsumers`-Schnittstelle verarbeitet verschiedene Inhaltsty
 
 **Event-Timeout-Beziehungen:**
 
-Jede Event-Handler-Methode verfügt über eine entsprechende Timeout-Methode, die das Timeout-Verhalten für dieses spezifische Event anpassbar macht:
+Jede Event-Handler-Methode hat eine entsprechende Timeout-Methode, die es ermöglicht, das Timeout-Verhalten für dieses spezifische Event anzupassen:
 
 - `onSystemMessage` ↔ `onSystemMessageTimeout`
 - `onResultMessage` ↔ `onResultMessageTimeout`
@@ -220,83 +295,84 @@ Für AssistantContentConsumers-Timeout-Methoden:
 
 **Standard-Timeout-Werte:**
 
-- `SessionEventSimpleConsumers` Standard-Timeout: 180 Sekunden (Timeout.TIMEOUT_180_SECONDS)
-- `AssistantContentSimpleConsumers` Standard-Timeout: 60 Sekunden (Timeout.TIMEOUT_60_SECONDS)
+- `SessionEventSimpleConsumers`-Standard-Timeout: 180 Sekunden (Timeout.TIMEOUT_180_SECONDS)
+- `AssistantContentSimpleConsumers`-Standard-Timeout: 60 Sekunden (Timeout.TIMEOUT_60_SECONDS)
 
-**Anforderungen an die Timeout-Hierarchie:**
+**Timeout-Hierarchie-Anforderungen:**
 
-Für einen ordnungsgemäßen Betrieb sollten die folgenden Timeout-Beziehungen eingehalten werden:
+Für den ordnungsgemäßen Betrieb sollten die folgenden Timeout-Beziehungen eingehalten werden:
 
 - Der Rückgabewert von `onAssistantMessageTimeout` sollte größer sein als die Rückgabewerte von `onTextTimeout`, `onThinkingTimeout`, `onToolUseTimeout`, `onToolResultTimeout` und `onOtherContentTimeout`
 - Der Rückgabewert von `onControlRequestTimeout` sollte größer sein als die Rückgabewerte von `onPermissionRequestTimeout` und `onOtherControlRequestTimeout`
 
 ### Transportoptionen
 
-Die `TransportOptions`-Klasse ermöglicht die Konfiguration der Kommunikation zwischen dem SDK und der Qwen Code CLI:
+Die `TransportOptions`-Klasse ermöglicht die Konfiguration, wie das SDK mit dem Qwen Code CLI kommuniziert:
 
-- `pathToQwenExecutable`: Pfad zur ausführbaren Datei der Qwen Code CLI
+- `pathToQwenExecutable`: Pfad zur ausführbaren Qwen Code CLI-Datei
 - `cwd`: Arbeitsverzeichnis für den CLI-Prozess
-- `model`: Für die Session zu verwendendes KI-Modell
+- `model`: KI-Modell, das für die Session verwendet werden soll
 - `permissionMode`: Berechtigungsmodus, der die Tool-Ausführung steuert
 - `env`: Umgebungsvariablen, die an den CLI-Prozess übergeben werden
-- `maxSessionTurns`: Begrenzt die Anzahl der Konversationsrunden in einer Session
-- `coreTools`: Liste der Kern-Tools, die der KI zur Verfügung stehen sollen
+- `maxSessionTurns`: Begrenzt die Anzahl der Konversations-Turns in einer Session
+- `coreTools`: Liste der Core-Tools, die der KI zur Verfügung stehen sollen
 - `excludeTools`: Liste der Tools, die der KI nicht zur Verfügung stehen sollen
 - `allowedTools`: Liste der Tools, die ohne zusätzliche Bestätigung vorab genehmigt sind
-- `authType`: Für die Session zu verwendender Authentifizierungstyp
-- `includePartialMessages`: Aktiviert den Empfang partieller Nachrichten während Streaming-Antworten
-- `turnTimeout`: Timeout für eine vollständige Konversationsrunde
-- `messageTimeout`: Timeout für einzelne Nachrichten innerhalb einer Runde
+- `authType`: Authentifizierungstyp, der für die Session verwendet werden soll
+- `includePartialMessages`: Aktiviert den Empfang partieller Nachrichten bei Streaming-Antworten
+- `turnTimeout`: Timeout für einen vollständigen Konversations-Turn
+- `messageTimeout`: Timeout für einzelne Nachrichten innerhalb eines Turns
 - `resumeSessionId`: ID einer vorherigen Session, die fortgesetzt werden soll
-- `otherOptions`: Zusätzliche Befehlszeilenoptionen, die an die CLI übergeben werden
+- `otherOptions`: Zusätzliche Befehlszeilenoptionen, die an das CLI übergeben werden
 
-### Session-Steuerungsfunktionen
+### Session-Control-Features
 
 - **Session-Erstellung**: Verwende `QwenCodeCli.newSession()`, um eine neue Session mit benutzerdefinierten Optionen zu erstellen
-- **Session-Verwaltung**: Die `Session`-Klasse bietet Methoden zum Senden von Prompts, Verarbeiten von Antworten und Verwalten des Session-Status
+- **Session-Verwaltung**: Die `Session`-Klasse bietet Methoden zum Senden von Prompts, zur Behandlung von Antworten und zur Verwaltung des Session-Zustands
 - **Session-Bereinigung**: Schließe Sessions immer mit `session.close()`, um den CLI-Prozess ordnungsgemäß zu beenden
 - **Session-Fortsetzung**: Verwende `setResumeSessionId()` in `TransportOptions`, um eine vorherige Session fortzusetzen
 - **Session-Unterbrechung**: Verwende `session.interrupt()`, um einen aktuell laufenden Prompt zu unterbrechen
-- **Dynamisches Modellwechseln**: Verwende `session.setModel()`, um das Modell während einer Session zu ändern
-- **Dynamisches Wechseln des Berechtigungsmodus**: Verwende `session.setPermissionMode()`, um den Berechtigungsmodus während einer Session zu ändern
+- **Dynamischer Modellwechsel**: Verwende `session.setModel()`, um das Modell während einer Session zu wechseln
+- **Dynamischer Berechtigungsmodus-Wechsel**: Verwende `session.setPermissionMode()`, um den Berechtigungsmodus während einer Session zu ändern
 
 ### Thread-Pool-Konfiguration
 
-Das SDK verwendet einen Thread-Pool zur Verwaltung paralleler Operationen mit folgender Standardkonfiguration:
+Das SDK verwendet einen Thread-Pool zur Verwaltung gleichzeitiger Operationen mit folgender Standardkonfiguration:
 
 - **Core Pool Size**: 30 Threads
 - **Maximum Pool Size**: 100 Threads
 - **Keep-Alive Time**: 60 Sekunden
-- **Queue Capacity**: 300 Tasks (unter Verwendung von LinkedBlockingQueue)
-- **Thread Naming**: "qwen_code_cli-pool-{number}"
-- **Daemon Threads**: false
+- **Queue-Kapazität**: 300 Tasks (mit LinkedBlockingQueue)
+- **Thread-Benennung**: "qwen_code_cli-pool-{number}"
+- **Daemon-Threads**: false
 - **Rejected Execution Handler**: CallerRunsPolicy
 
 ## Fehlerbehandlung
 
 Das SDK bietet spezifische Exception-Typen für verschiedene Fehlerszenarien:
 
-- `SessionControlException`: Wird ausgelöst, wenn ein Problem mit der Session-Steuerung (Erstellung, Initialisierung usw.) vorliegt
-- `SessionSendPromptException`: Wird ausgelöst, wenn ein Problem beim Senden eines Prompts oder Empfangen einer Antwort vorliegt
-- `SessionClosedException`: Wird ausgelöst, wenn versucht wird, eine geschlossene Session zu verwenden
+- `SessionControlException`: Wird geworfen, wenn ein Problem mit der Session-Steuerung auftritt (Erstellung, Initialisierung usw.)
+- `SessionSendPromptException`: Wird geworfen, wenn ein Problem beim Senden eines Prompts oder Empfangen einer Antwort auftritt
+- `SessionClosedException`: Wird geworfen, wenn versucht wird, eine geschlossene Session zu verwenden
 
 ## FAQ / Fehlerbehebung
 
-### F: Muss die Qwen CLI separat installiert werden?
+### F: Muss ich das Qwen-CLI separat installieren?
 
-A: Ja, es ist Qwen CLI 0.5.5 oder höher erforderlich.
+A: Ja. Die Daemon-API erfordert einen kompatiblen `qwen serve`; die Legacy-stdio-API
+erfordert qwen-code 0.5.0 oder höher.
 
 ### F: Welche Java-Versionen werden unterstützt?
 
-A: Das SDK erfordert Java 1.8 oder höher.
+A: `0.1.0-alpha` erfordert Java 11 oder höher. Java-8-Benutzer müssen bei `0.0.3-alpha` bleiben.
 
-### F: Wie gehe ich mit lang laufenden Anfragen um?
+### F: Wie gehe ich mit langlaufenden Anfragen um?
 
-A: Das SDK enthält Timeout-Hilfsklassen. Du kannst Timeouts über die `Timeout`-Klasse in `TransportOptions` konfigurieren.
+A: Das SDK enthält Timeout-Hilfsprogramme. Du kannst Timeouts mit der `Timeout`-Klasse in `TransportOptions` konfigurieren.
 
-### F: Warum werden einige Tools nicht ausgeführt?
+### F: Warum werden manche Tools nicht ausgeführt?
 
-A: Dies liegt wahrscheinlich an den Berechtigungsmodi. Überprüfe deine Einstellungen für den Berechtigungsmodus und erwäge die Verwendung von `allowedTools`, um bestimmte Tools vorab zu genehmigen.
+A: Dies liegt wahrscheinlich an den Berechtigungsmodi. Überprüfe deine Berechtigungsmodus-Einstellungen und erwäge die Verwendung von `allowedTools`, um bestimmte Tools vorab zu genehmigen.
 
 ### F: Wie setze ich eine vorherige Session fort?
 
@@ -308,4 +384,4 @@ A: Ja, verwende die `setEnv()`-Methode in `TransportOptions`, um Umgebungsvariab
 
 ## Lizenz
 
-Apache-2.0 – Details findest du in der [LICENSE](./LICENSE).
+Apache-2.0 - siehe [LICENSE](../../LICENSE) für Details.

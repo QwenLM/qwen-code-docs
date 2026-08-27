@@ -4,67 +4,67 @@ Nous serions ravis d'accepter vos correctifs et contributions à ce projet.
 
 ## Processus de contribution
 
-### Revues de code
+### Relecture de code
 
-Toutes les soumissions, y compris celles des membres du projet, nécessitent une revue. Nous utilisons les [pull requests GitHub](https://docs.github.com/articles/about-pull-requests) à cet effet.
+Toutes les soumissions, y compris celles des membres du projet, nécessitent une relecture. Nous utilisons les [pull requests GitHub](https://docs.github.com/articles/about-pull-requests) à cette fin.
 
-### Directives pour les Pull Requests
+### Directives pour les pull requests
 
-Pour nous aider à examiner et fusionner vos PR rapidement, veuillez suivre ces directives. Les PR qui ne respectent pas ces standards pourront être fermées.
+Pour nous aider à examiner et fusionner vos PR rapidement, veuillez suivre ces directives. Les PR qui ne respectent pas ces normes peuvent être fermées.
 
-#### 1. Lier à une issue existante
+#### 1. Lier à un ticket existant
 
-Toutes les PR doivent être liées à une issue existante dans notre tracker. Cela garantit que chaque modification a été discutée et est alignée avec les objectifs du projet avant l'écriture de tout code.
+Toutes les PR doivent être liées à un ticket existant dans notre système de suivi. Cela garantit que chaque modification a été discutée et est alignée avec les objectifs du projet avant que du code ne soit écrit.
 
-- **Pour les correctifs de bugs :** La PR doit être liée à l'issue de rapport de bug.
-- **Pour les fonctionnalités :** La PR doit être liée à l'issue de demande de fonctionnalité ou de proposition qui a été approuvée par un mainteneur.
+- **Pour les corrections de bugs :** La PR doit être liée au ticket de signalement du bug.
+- **Pour les fonctionnalités :** La PR doit être liée au ticket de demande ou de proposition de fonctionnalité approuvé par un mainteneur.
 
-Si aucune issue n'existe pour votre modification, veuillez **en ouvrir une d'abord** et attendre un retour avant de commencer à coder.
+Si un ticket pour votre modification n'existe pas, veuillez **en ouvrir un d'abord** et attendre les retours avant de commencer à coder.
 
-#### 2. Restez concis et ciblé
+#### 2. Garder petit et ciblé
 
 Nous privilégions les PR petites et atomiques qui traitent d'un seul problème ou ajoutent une seule fonctionnalité autonome.
 
 - **À faire :** Créez une PR qui corrige un bug spécifique ou ajoute une fonctionnalité spécifique.
-- **À éviter :** Regroupez plusieurs modifications sans rapport (par ex., un correctif de bug, une nouvelle fonctionnalité et un refactoring) dans une seule PR.
+- **À ne pas faire :** Regroupez plusieurs modifications non liées (par exemple, une correction de bug, une nouvelle fonctionnalité et un refactoring) dans une seule PR.
 
-Les modifications importantes doivent être découpées en une série de PR plus petites et logiques, pouvant être examinées et fusionnées indépendamment.
+En règle générale, commencez à diviser une PR lorsqu'elle dépasse environ 1 200 lignes modifiées. Les PR de plus de 2 000 lignes modifiées doivent soit être divisées en une série de PR plus petites et logiques pouvant être examinées et fusionnées indépendamment, soit expliquer dans la description de la PR pourquoi le changement doit être livré ensemble.
 
-#### 3. Utilisez les Draft PR pour les travaux en cours
+#### 3. Utiliser les PR en brouillon pour les travaux en cours
 
-Si vous souhaitez obtenir un retour rapide sur votre travail, veuillez utiliser la fonctionnalité **Draft Pull Request** de GitHub. Cela indique aux mainteneurs que la PR n'est pas encore prête pour une revue formelle, mais qu'elle est ouverte à la discussion et aux premiers retours.
+Si vous souhaitez obtenir des retours précoces sur votre travail, veuillez utiliser la fonctionnalité **Draft Pull Request** de GitHub. Cela signale aux mainteneurs que la PR n'est pas encore prête pour une relecture formelle mais est ouverte à la discussion et aux retours initiaux.
 
-#### 4. Assurez-vous que toutes les vérifications passent
+#### 4. S'assurer que toutes les vérifications passent
 
-Avant de soumettre votre PR, assurez-vous que toutes les vérifications automatisées passent en exécutant `npm run preflight`. Cette commande lance tous les tests, le linting et d'autres vérifications de style.
+Avant de soumettre votre PR, assurez-vous que toutes les vérifications automatisées passent en exécutant `npm run preflight`. Cette commande exécute tous les tests, le linting et les autres vérifications de style.
 
-#### 5. Mettez à jour la documentation
+#### 5. Mettre à jour la documentation
 
-Si votre PR introduit un changement visible par l'utilisateur (par ex., une nouvelle commande, un flag modifié ou un changement de comportement), vous devez également mettre à jour la documentation correspondante dans le répertoire `/docs`.
+Si votre PR introduit un changement visible par l'utilisateur (par exemple, une nouvelle commande, un drapeau modifié ou un changement de comportement), vous devez également mettre à jour la documentation pertinente dans le répertoire `/docs`.
 
-#### 6. Rédigez des messages de commit clairs et une bonne description de PR
+#### 6. Rédiger des messages de commit clairs et une bonne description de PR
 
-Votre PR doit avoir un titre clair et descriptif, ainsi qu'une description détaillée des modifications. Respectez le standard [Conventional Commits](https://www.conventionalcommits.org/) pour vos messages de commit.
+Votre PR doit avoir un titre clair et descriptif ainsi qu'une description détaillée des modifications. Suivez la norme [Conventional Commits](https://www.conventionalcommits.org/) pour vos messages de commit.
 
-- **Bon titre de PR :** `feat(cli): Add --json flag to 'config get' command`
-- **Mauvais titre de PR :** `Made some changes`
+- **Bon titre de PR :** `feat(cli): Ajouter le drapeau --json à la commande 'config get'`
+- **Mauvais titre de PR :** `Fait quelques modifications`
 
-Dans la description de la PR, expliquez le "pourquoi" de vos modifications et liez l'issue correspondante (par ex., `Fixes #123`).
+Dans la description de la PR, expliquez le « pourquoi » de vos modifications et liez au ticket pertinent (par exemple, `Fixes #123`).
 
-## Configuration et flux de travail de développement
+## Configuration et workflow de développement
 
 Cette section guide les contributeurs sur la façon de construire, modifier et comprendre la configuration de développement de ce projet.
 
-### Configuration de l'environnement de développement
+### Configurer l'environnement de développement
 
 **Prérequis :**
 
-1.  **Node.js** :
-    - **Développement :** Veuillez utiliser Node.js `~20.19.0`. Cette version spécifique est requise en raison d'un problème de dépendance de développement en amont. Vous pouvez utiliser un outil comme [nvm](https://github.com/nvm-sh/nvm) pour gérer les versions de Node.js.
-    - **Production :** Pour exécuter la CLI dans un environnement de production, toute version de Node.js `>=20` est acceptable.
+1.  **Node.js :**
+    - **Développement :** Veuillez utiliser Node.js `>=22`. Ink 7 (utilisé par la TUI) nécessite Node 22, et `react@^19.2.0` est le pair correspondant. Vous pouvez utiliser un outil comme [nvm](https://github.com/nvm-sh/nvm) pour gérer les versions de Node.js.
+    - **Production :** Pour exécuter la CLI dans un environnement de production, toute version de Node.js `>=22` est acceptable.
 2.  **Git**
 
-### Processus de build
+### Processus de construction
 
 Pour cloner le dépôt :
 
@@ -85,29 +85,29 @@ Pour construire l'ensemble du projet (tous les packages) :
 npm run build
 ```
 
-Cette commande compile généralement le TypeScript en JavaScript, bundle les assets et prépare les packages pour l'exécution. Consultez `scripts/build.js` et les scripts de `package.json` pour plus de détails sur le déroulement du build.
+Cette commande compile généralement TypeScript en JavaScript, regroupe les ressources et prépare les packages pour l'exécution. Référez-vous aux scripts `scripts/build.js` et `package.json` pour plus de détails sur ce qui se passe pendant la construction.
 
-### Activation du sandboxing
+### Activer le sandboxing
 
-Le [sandboxing](#sandboxing) est fortement recommandé et nécessite, au minimum, de définir `QWEN_SANDBOX=true` dans votre `~/.env` et de vous assurer qu'un fournisseur de sandboxing (par ex. `macOS Seatbelt`, `docker` ou `podman`) est disponible. Consultez [Sandboxing](#sandboxing) pour plus de détails.
+[Le sandboxing](#sandboxing) est fortement recommandé et nécessite, au minimum, de définir `QWEN_SANDBOX=true` dans votre `~/.env` et de s'assurer qu'un fournisseur de sandboxing (par exemple `macOS Seatbelt`, `docker`, ou `podman`) est disponible. Voir [Sandboxing](#sandboxing) pour plus de détails.
 
-Pour construire à la fois l'utilitaire CLI `qwen-code` et le conteneur sandbox, exécutez `build:all` depuis le répertoire racine :
+Pour construire à la fois l'utilitaire CLI `qwen` et le conteneur sandbox, exécutez `build:all` depuis le répertoire racine :
 
 ```bash
 npm run build:all
 ```
 
-Pour ignorer la construction du conteneur sandbox, vous pouvez utiliser `npm run build` à la place.
+Pour éviter de construire le conteneur sandbox, vous pouvez utiliser `npm run build` à la place.
 
 ### Exécution
 
-Pour démarrer l'application Qwen Code à partir du code source (après le build), exécutez la commande suivante depuis le répertoire racine :
+Pour démarrer l'application Qwen Code à partir du code source (après construction), exécutez la commande suivante depuis le répertoire racine :
 
 ```bash
 npm start
 ```
 
-Si vous souhaitez exécuter le build source en dehors du dossier qwen-code, vous pouvez utiliser `npm link path/to/qwen-code/packages/cli` (voir : [docs](https://docs.npmjs.com/cli/v9/commands/npm-link)) pour l'exécuter avec `qwen-code`.
+Si vous souhaitez exécuter la construction source en dehors du dossier qwen-code, vous pouvez utiliser `npm link path/to/qwen-code/packages/cli` (voir : [docs](https://docs.npmjs.com/cli/v9/commands/npm-link)) pour exécuter avec `qwen`
 
 ### Exécution des tests
 
@@ -125,7 +125,7 @@ Cela exécutera les tests situés dans les répertoires `packages/core` et `pack
 
 #### Tests d'intégration
 
-Les tests d'intégration sont conçus pour valider le fonctionnement de bout en bout de Qwen Code. Ils ne sont pas exécutés dans le cadre de la commande par défaut `npm run test`.
+Les tests d'intégration sont conçus pour valider la fonctionnalité de bout en bout de Qwen Code. Ils ne sont pas exécutés dans le cadre de la commande par défaut `npm run test`.
 
 Pour exécuter les tests d'intégration, utilisez la commande suivante :
 
@@ -133,7 +133,7 @@ Pour exécuter les tests d'intégration, utilisez la commande suivante :
 npm run test:e2e
 ```
 
-Pour plus d'informations détaillées sur le framework de tests d'intégration, veuillez consulter la [documentation des tests d'intégration](./docs/integration-tests.md).
+Pour plus d'informations détaillées sur le framework de tests d'intégration, veuillez consulter la [documentation sur les tests d'intégration](./development/integration-tests.md).
 
 ### Linting et vérifications preflight
 
@@ -143,11 +143,11 @@ Pour garantir la qualité du code et la cohérence du formatage, exécutez la v�
 npm run preflight
 ```
 
-Cette commande exécutera ESLint, Prettier, tous les tests et d'autres vérifications telles que définies dans le `package.json` du projet.
+Cette commande exécutera ESLint, Prettier, tous les tests et d'autres vérifications définies dans le `package.json` du projet.
 
-_Astuce_
+_ProTip_
 
-après le clonage, créez un fichier de hook git precommit pour vous assurer que vos commits sont toujours propres.
+après le clonage, créez un fichier de hook precommit git pour garantir que vos commits sont toujours propres.
 
 ```bash
 echo "
@@ -171,7 +171,7 @@ Cette commande utilise Prettier pour formater le code selon les directives de st
 
 #### Linting
 
-Pour exécuter le linting séparément sur le code de ce projet, exécutez la commande suivante depuis le répertoire racine :
+Pour linter séparément le code de ce projet, exécutez la commande suivante depuis le répertoire racine :
 
 ```bash
 npm run lint
@@ -179,18 +179,18 @@ npm run lint
 
 ### Conventions de codage
 
-- Veuillez respecter le style de codage, les patterns et les conventions utilisés dans l'ensemble du codebase existant.
-- **Imports :** Portez une attention particulière aux chemins d'import. Le projet utilise ESLint pour appliquer des restrictions sur les imports relatifs entre les packages.
+- Veuillez respecter le style, les modèles et les conventions de codage utilisés dans l'ensemble de la base de code existante.
+- **Imports :** Portez une attention particulière aux chemins d'importation. Le projet utilise ESLint pour imposer des restrictions sur les importations relatives entre les packages.
 
 ### Structure du projet
 
 - `packages/` : Contient les sous-packages individuels du projet.
-  - `cli/` : L'interface en ligne de commande.
+  - `cli/` : L'interface en ligne de commandes.
   - `core/` : La logique backend principale pour Qwen Code.
 - `docs/` : Contient toute la documentation du projet.
-- `scripts/` : Scripts utilitaires pour les tâches de build, de test et de développement.
+- `scripts/` : Scripts utilitaires pour les tâches de construction, de test et de développement.
 
-Pour une architecture plus détaillée, consultez `docs/architecture.md`.
+Pour une architecture plus détaillée, voir `docs/architecture.md`.
 
 ## Développement de la documentation
 
@@ -198,14 +198,14 @@ Cette section décrit comment développer et prévisualiser la documentation loc
 
 ### Prérequis
 
-1. Assurez-vous d'avoir Node.js (version 18+) installé
+1. Assurez-vous d'avoir Node.js (version 22+) installé
 2. Avoir npm ou yarn disponible
 
-### Configuration locale du site de documentation
+### Configurer le site de documentation localement
 
 Pour travailler sur la documentation et prévisualiser les modifications localement :
 
-1. Accédez au répertoire `docs-site` :
+1. Naviguez vers le répertoire `docs-site` :
 
    ```bash
    cd docs-site
@@ -223,7 +223,7 @@ Pour travailler sur la documentation et prévisualiser les modifications localem
    npm run link
    ```
 
-   Cela crée un lien symbolique de `../docs` vers `content` dans le projet docs-site, permettant au contenu de la documentation d'être servi par le site Next.js.
+   Ceci crée un lien symbolique de `../docs` vers `content` dans le projet docs-site, permettant au contenu de la documentation d'être servi par le site Next.js.
 
 4. Démarrez le serveur de développement :
 
@@ -240,22 +240,22 @@ Toute modification apportée aux fichiers de documentation dans le répertoire p
 ### VS Code :
 
 0.  Exécutez la CLI pour déboguer de manière interactive dans VS Code avec `F5`
-1.  Démarrez la CLI en mode debug depuis le répertoire racine :
+1.  Démarrez la CLI en mode débogage depuis le répertoire racine :
     ```bash
     npm run debug
     ```
-    Cette commande exécute `node --inspect-brk dist/index.js` dans le répertoire `packages/cli`, mettant l'exécution en pause jusqu'à ce qu'un débogueur s'y attache. Vous pouvez ensuite ouvrir `chrome://inspect` dans votre navigateur Chrome pour vous connecter au débogueur.
+    Cette commande exécute `node --inspect-brk dist/index.js` dans le répertoire `packages/cli`, interrompant l'exécution jusqu'à ce qu'un débogueur s'attache. Vous pouvez ensuite ouvrir `chrome://inspect` dans votre navigateur Chrome pour vous connecter au débogueur.
 2.  Dans VS Code, utilisez la configuration de lancement "Attach" (trouvée dans `.vscode/launch.json`).
 
-Vous pouvez également utiliser la configuration "Launch Program" dans VS Code si vous préférez lancer directement le fichier actuellement ouvert, mais 'F5' est généralement recommandé.
+Alternativement, vous pouvez utiliser la configuration "Launch Program" dans VS Code si vous préférez lancer directement le fichier actuellement ouvert, mais 'F5' est généralement recommandé.
 
 Pour atteindre un point d'arrêt à l'intérieur du conteneur sandbox, exécutez :
 
 ```bash
-DEBUG=1 qwen-code
+DEBUG=1 qwen
 ```
 
-**Remarque :** Si vous avez `DEBUG=true` dans le fichier `.env` d'un projet, cela n'affectera pas qwen-code en raison de l'exclusion automatique. Utilisez les fichiers `.qwen-code/.env` pour les paramètres de debug spécifiques à qwen-code.
+**Remarque :** Si vous avez `DEBUG=true` dans un fichier `.env` d'un projet, cela n'affectera pas `qwen` en raison de l'exclusion automatique. Utilisez les fichiers `.qwen/.env` pour les paramètres de débogage spécifiques à `qwen`.
 
 ### React DevTools
 
@@ -267,7 +267,7 @@ Pour déboguer l'interface utilisateur basée sur React de la CLI, vous pouvez u
     DEV=true npm start
     ```
 
-2.  **Installez et exécutez React DevTools version 4.28.5 (ou la dernière version 4.x compatible) :**
+2.  **Installez et exécutez React DevTools version 4.28.5 (ou la dernière version compatible 4.x) :**
 
     Vous pouvez soit l'installer globalement :
 
@@ -286,11 +286,11 @@ Pour déboguer l'interface utilisateur basée sur React de la CLI, vous pouvez u
 
 ## Sandboxing
 
-> À venir
+> À définir
 
 ## Publication manuelle
 
-Nous publions un artifact pour chaque commit dans notre registre interne. Mais si vous devez créer manuellement un build local, exécutez les commandes suivantes :
+Nous publions un artefact pour chaque commit dans notre registre interne. Mais si vous avez besoin de produire manuellement une build locale, exécutez les commandes suivantes :
 
 ```
 npm run clean

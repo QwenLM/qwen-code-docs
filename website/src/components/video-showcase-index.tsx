@@ -1,11 +1,16 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { Search, ArrowRight, BookOpen, Zap, GraduationCap, LayoutGrid, List } from "lucide-react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { Search, ArrowRight, ArrowLeft, BookOpen, Zap, GraduationCap, LayoutGrid, List, Copy, Check } from "lucide-react";
 import Link from "next/link";
-import showcaseItems from "../generated/showcase-data.json";
 
-interface ShowcaseItem {
+export interface Step {
+  title: string;
+  description: string;
+  command?: string;
+}
+
+export interface ShowcaseItem {
   id: string;
   title: string;
   description: string;
@@ -14,49 +19,184 @@ interface ShowcaseItem {
   thumbnail: string;
   videoUrl: string | null;
   model: string;
+  author?: string;
+  date?: string;
+  overview?: string;
+  steps?: Step[];
 }
 
-const LEARNING_PATHS = [
-  {
-    level: "入门",
-    description: "快速上手 Qwen Code 核心功能，10 分钟完成你的第一个 AI 编程任务",
-    icon: <BookOpen className="w-5 h-5" />,
-    cases: [
-      { id: "guide-script-install", label: "脚本一键安装" },
-      { id: "guide-first-conversation", label: "开始第一次对话" },
-      { id: "guide-api-setup", label: "API 配置指南" },
-      { id: "guide-skill-install", label: "安装 Skills" },
-    ],
-  },
-  {
-    level: "进阶",
-    description: "深入学习高级功能和编程场景，掌握智能搜索和开源协作技巧",
-    icon: <Zap className="w-5 h-5" />,
-    cases: [
-      { id: "guide-bailian-coding-plan", label: "百炼 Coding Plan 模式" },
-      { id: "guide-web-search", label: "Web Search 网络搜索" },
-      { id: "guide-plan-with-search", label: "Plan 模式 + Web Search" },
-      { id: "code-lsp-intelligence", label: "LSP 智能感知" },
-    ],
-  },
-  {
-    level: "高级实战",
-    description: "复杂项目开发和真实业务场景应用，参与开源贡献和代码审查",
-    icon: <GraduationCap className="w-5 h-5" />,
-    cases: [
-      { id: "study-learning", label: "代码学习" },
-      { id: "code-solve-issue", label: "解决 issue" },
-      { id: "code-pr-review", label: "PR Review" },
-      { id: "study-read-paper", label: "读论文" },
-    ],
-  },
-];
+export interface LearningPathCase {
+  id: string;
+  label: string;
+}
 
-function ShowcaseCard({ item }: { item: ShowcaseItem }) {
+export interface LearningPath {
+  level: string;
+  description: string;
+  iconType: "beginner" | "intermediate" | "advanced";
+  cases: LearningPathCase[];
+}
+
+interface VideoShowcaseIndexProps {
+  items: ShowcaseItem[];
+  learningPaths: LearningPath[];
+  viewLabel?: string;
+  backLabel?: string;
+  stepsLabel?: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+  heroTitle?: string;
+  heroDescription?: string;
+  learningPathsTitle?: string;
+  learningPathsDescription?: string;
+  searchPlaceholder?: string;
+  gridViewLabel?: string;
+  listViewLabel?: string;
+  categoryLabel?: string;
+  featureLabel?: string;
+  resultsLabel?: string;
+  clearFiltersLabel?: string;
+  titleColumnLabel?: string;
+  showMoreLabel?: string;
+  noResultsLabel?: string;
+  copyLabel?: string;
+}
+
+function getShowcaseItemIdFromSearch(search: string, itemIds: Set<string>) {
+  const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
+  const namedCaseId = params.get("case");
+  if (namedCaseId && itemIds.has(namedCaseId)) return namedCaseId;
+
+  let legacyCaseId: string | null = null;
+  params.forEach((_, key) => {
+    if (!legacyCaseId && itemIds.has(key)) {
+      legacyCaseId = key;
+    }
+  });
+
+  return legacyCaseId;
+}
+
+function getCurrentPathWithoutTrailingSlash() {
+  if (typeof window === "undefined") return "";
+  const pathname = window.location.pathname;
+  return pathname !== "/" && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
+}
+
+function compareTextStable(a: string, b: string) {
+  if (a < b) return -1;
+  if (a > b) return 1;
+  return 0;
+}
+
+function CommandBlock({ command, copyLabel = "复制" }: { command: string; copyLabel?: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(command).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [command]);
+
   return (
-    <Link href={`/zh/showcase/${item.id}`} target="_blank" rel="noopener noreferrer" className="group block">
-      <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all duration-300 hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.4)] active:scale-[0.98]">
-        <div className="relative aspect-video overflow-hidden bg-zinc-100 dark:bg-zinc-900">
+    <div className="relative mt-3 group">
+      <pre className="px-4 py-3 pr-12 rounded-lg bg-zinc-100 [html.dark_&]:bg-zinc-900 text-[13px] font-mono text-zinc-800 [html.dark_&]:text-zinc-300 overflow-x-auto whitespace-pre-wrap break-all border border-zinc-200 [html.dark_&]:border-zinc-800">
+        <code>{command}</code>
+      </pre>
+      <button
+        onClick={handleCopy}
+        className="absolute top-2.5 right-2.5 p-1.5 rounded-md text-zinc-400 hover:text-zinc-700 [html.dark_&]:hover:text-zinc-200 hover:bg-zinc-200/60 [html.dark_&]:hover:bg-zinc-700/60 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+        title={copyLabel}
+      >
+        {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+      </button>
+    </div>
+  );
+}
+
+const ICON_MAP = {
+  beginner: <BookOpen className="w-5 h-5" />,
+  intermediate: <Zap className="w-5 h-5" />,
+  advanced: <GraduationCap className="w-5 h-5" />,
+};
+
+function renderMarkdownText(text: string): React.ReactNode {
+  let preprocessed = text;
+  preprocessed = preprocessed.replace(/(?<!\n)\s+\*\*(\d+)\.\s/g, "\n**$1. ");
+  preprocessed = preprocessed.replace(/(?<!\n)\s+- /g, "\n- ");
+  preprocessed = preprocessed.replace(/(?<!\n)\s+(\d+)\.\s+/g, "\n$1. ");
+
+  const lines = preprocessed.split(/\n/);
+  const result: React.ReactNode[] = [];
+  let currentList: { type: "ul" | "ol"; items: React.ReactNode[] } | null = null;
+
+  const flushList = () => {
+    if (!currentList) return;
+    if (currentList.type === "ul") {
+      result.push(<ul key={`list-${result.length}`} className="ml-4 list-disc space-y-1 my-1">{currentList.items}</ul>);
+    } else {
+      result.push(<ol key={`list-${result.length}`} className="ml-4 list-decimal space-y-1 my-1">{currentList.items}</ol>);
+    }
+    currentList = null;
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    const unorderedMatch = trimmed.match(/^- (.+)/);
+    const orderedMatch = trimmed.match(/^(\d+)\.\s+(.+)/);
+
+    if (unorderedMatch) {
+      if (currentList?.type !== "ul") { flushList(); currentList = { type: "ul", items: [] }; }
+      currentList.items.push(<li key={i}>{renderInlineMarkdown(unorderedMatch[1])}</li>);
+    } else if (orderedMatch) {
+      if (currentList?.type !== "ol") { flushList(); currentList = { type: "ol", items: [] }; }
+      currentList.items.push(<li key={i}>{renderInlineMarkdown(orderedMatch[2])}</li>);
+    } else {
+      flushList();
+      if (trimmed === "") {
+        result.push(<br key={i} />);
+      } else {
+        if (result.length > 0) result.push(<br key={`br-${i}`} />);
+        result.push(<React.Fragment key={i}>{renderInlineMarkdown(trimmed)}</React.Fragment>);
+      }
+    }
+  }
+  flushList();
+  return <>{result}</>;
+}
+
+function renderInlineMarkdown(text: string): React.ReactNode {
+  const parts: React.ReactNode[] = [];
+  const regex = /(\*\*(.+?)\*\*|`(.+?)`|\[(.+?)\]\((.+?)\))/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    if (match[2]) {
+      parts.push(<strong key={match.index} className="font-semibold text-zinc-800 [html.dark_&]:text-zinc-200">{match[2]}</strong>);
+    } else if (match[3]) {
+      parts.push(<code key={match.index} className="px-1 py-0.5 rounded bg-[#EBEBEB] [html.dark_&]:bg-zinc-700 text-[#D46461] text-xs font-mono">{match[3]}</code>);
+    } else if (match[4] && match[5]) {
+      parts.push(<a key={match.index} href={match[5]} target="_blank" rel="noopener noreferrer" className="text-blue-600 [html.dark_&]:text-blue-400 underline underline-offset-2">{match[4]}</a>);
+    }
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+  return <>{parts}</>;
+}
+
+function ShowcaseCard({ item, onSelect, viewLabel }: { item: ShowcaseItem; onSelect: (id: string) => void; viewLabel: string }) {
+  return (
+    <button onClick={() => onSelect(item.id)} className="group block text-left w-full cursor-pointer">
+      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-transparent [html.dark_&]:border-zinc-800 hover:border-zinc-400 [html.dark_&]:hover:border-zinc-600 transition-all duration-300 hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.12)] [html.dark_&]:hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.4)] active:scale-[0.98]">
+        <div className="relative aspect-video overflow-hidden bg-zinc-100 [html.dark_&]:bg-zinc-900">
           <img
             src={item.thumbnail}
             alt={item.title}
@@ -68,58 +208,56 @@ function ShowcaseCard({ item }: { item: ShowcaseItem }) {
         <div className="p-5">
           <div className="flex flex-wrap items-center gap-1.5 mb-3">
             {item.category && (
-              <span className="px-2 py-0.5 text-[11px] font-medium rounded border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300">
+              <span className="px-2 py-0.5 text-[11px] font-medium rounded border border-zinc-300 [html.dark_&]:border-zinc-700 text-zinc-700 [html.dark_&]:text-zinc-300">
                 {item.category}
               </span>
             )}
             {item.features.slice(0, 2).map((feature) => (
               <span
                 key={feature}
-                className="px-2 py-0.5 text-[11px] font-medium rounded text-zinc-500 dark:text-zinc-400"
+                className="px-2 py-0.5 text-[11px] font-medium rounded text-zinc-500 [html.dark_&]:text-zinc-400"
               >
                 {feature}
               </span>
             ))}
           </div>
 
-          <h3 className="text-[15px] font-semibold text-zinc-900 dark:text-zinc-100 mb-1.5 line-clamp-1 tracking-tight">
+          <h3 className="text-[15px] font-semibold text-zinc-900 [html.dark_&]:text-zinc-100 mb-1.5 line-clamp-1 tracking-tight">
             {item.title}
           </h3>
 
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed mb-4">
+          <p className="text-sm text-zinc-500 [html.dark_&]:text-zinc-400 line-clamp-2 leading-relaxed mb-4">
             {item.description}
           </p>
 
-          <span className="inline-flex items-center gap-1 text-sm font-medium text-zinc-900 dark:text-zinc-100 group-hover:gap-2 transition-all">
-            查看教程
+          <span className="inline-flex items-center gap-1 text-sm font-medium text-zinc-900 [html.dark_&]:text-zinc-100 group-hover:gap-2 transition-all">
+            {viewLabel}
             <ArrowRight className="w-3.5 h-3.5" />
           </span>
         </div>
       </div>
-    </Link>
+    </button>
   );
 }
 
-function ShowcaseListItem({ item }: { item: ShowcaseItem }) {
+function ShowcaseListItem({ item, onSelect }: { item: ShowcaseItem; onSelect: (id: string) => void }) {
   return (
-    <Link
-      href={`/zh/showcase/${item.id}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group flex items-center gap-6 py-4 px-4 -mx-4 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
+    <button
+      onClick={() => onSelect(item.id)}
+      className="group flex items-center gap-6 py-4 px-4 -mx-4 rounded-lg hover:bg-zinc-50 [html.dark_&]:hover:bg-zinc-900/50 transition-colors w-full text-left cursor-pointer"
     >
       <div className="flex-1 min-w-0">
-        <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+        <h3 className="text-sm font-medium text-zinc-900 [html.dark_&]:text-zinc-100 truncate group-hover:text-blue-600 [html.dark_&]:group-hover:text-blue-400 transition-colors">
           {item.title}
         </h3>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-1">
+        <p className="text-xs text-zinc-500 [html.dark_&]:text-zinc-400 mt-1 line-clamp-1">
           {item.description}
         </p>
       </div>
 
       <div className="flex items-center gap-4 flex-shrink-0">
         {item.category && (
-          <span className="px-2.5 py-1 text-xs font-medium rounded border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300">
+          <span className="px-2.5 py-1 text-xs font-medium rounded border border-zinc-200 [html.dark_&]:border-zinc-700 text-zinc-600 [html.dark_&]:text-zinc-300">
             {item.category}
           </span>
         )}
@@ -128,35 +266,76 @@ function ShowcaseListItem({ item }: { item: ShowcaseItem }) {
           {item.features.slice(0, 2).map((feature) => (
             <span
               key={feature}
-              className="px-2 py-0.5 text-xs rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
+              className="px-2 py-0.5 text-xs rounded bg-zinc-100 [html.dark_&]:bg-zinc-800 text-zinc-500 [html.dark_&]:text-zinc-400"
             >
               {feature}
             </span>
           ))}
         </div>
 
-        <ArrowRight className="w-4 h-4 text-zinc-300 dark:text-zinc-600 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
+        <ArrowRight className="w-4 h-4 text-zinc-300 [html.dark_&]:text-zinc-600 group-hover:text-blue-500 [html.dark_&]:group-hover:text-blue-400 transition-colors" />
       </div>
-    </Link>
+    </button>
   );
 }
 
-export function VideoShowcaseIndex() {
+export function VideoShowcaseIndex({ items, learningPaths, viewLabel = "查看教程", backLabel = "返回全部案例", stepsLabel = "操作步骤", ctaLabel = "立即开始使用 Qwen Code", ctaHref = "/zh/users/overview", heroTitle = "Qwen Code Showcases", heroDescription = "从真实项目案例中学习 Qwen Code，掌握 AI 编程最佳实践", learningPathsTitle = "学习路径", learningPathsDescription = "根据你的经验水平选择合适的学习路径", searchPlaceholder = "搜索案例...", gridViewLabel = "网格视图", listViewLabel = "列表视图", categoryLabel = "分类", featureLabel = "功能", resultsLabel = "个结果", clearFiltersLabel = "清除筛选", titleColumnLabel = "标题", showMoreLabel = "显示更多", noResultsLabel = "未找到匹配的案例，尝试其他搜索词或筛选条件", copyLabel = "复制" }: VideoShowcaseIndexProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [visibleCount, setVisibleCount] = useState(9);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
-  const allItems = useMemo(() => showcaseItems as ShowcaseItem[], []);
+  const allItems = useMemo(() => [...items].reverse(), [items]);
   const allItemIds = useMemo(() => new Set(allItems.map((item) => item.id)), [allItems]);
 
+  // Read selected item from URL query parameter on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setSelectedItemId(getShowcaseItemIdFromSearch(window.location.search, allItemIds));
+  }, [allItemIds]);
+
+  const handleSelectItem = useCallback((itemId: string) => {
+    setSelectedItemId(itemId);
+    const currentPath = getCurrentPathWithoutTrailingSlash();
+    window.history.pushState(null, "", `${currentPath}?case=${encodeURIComponent(itemId)}`);
+    window.scrollTo({ top: 0 });
+  }, []);
+
+  const handleCloseDetail = useCallback(() => {
+    setSelectedItemId(null);
+    window.history.pushState(null, "", getCurrentPathWithoutTrailingSlash());
+  }, []);
+
+  // Handle browser back button
+  useEffect(() => {
+    const handlePopState = () => {
+      setSelectedItemId(getShowcaseItemIdFromSearch(window.location.search, allItemIds));
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [allItemIds]);
+
+  const selectedItem = useMemo(
+    () => (selectedItemId ? allItems.find((item) => item.id === selectedItemId) ?? null : null),
+    [selectedItemId, allItems]
+  );
+
+  const categoryOrder = ["功能更新", "快速入门", "办公提效", "创作设计", "编程开发"];
   const categoryTags = useMemo(() => {
     const categories = new Set<string>();
     for (const item of allItems) {
       if (item.category) categories.add(item.category);
     }
-    return Array.from(categories).sort();
+    return Array.from(categories).sort((a, b) => {
+      const ia = categoryOrder.indexOf(a);
+      const ib = categoryOrder.indexOf(b);
+      if (ia === -1 && ib === -1) return compareTextStable(a, b);
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
   }, [allItems]);
 
   const featureTags = useMemo(() => {
@@ -166,7 +345,7 @@ export function VideoShowcaseIndex() {
         features.add(feature);
       }
     }
-    return Array.from(features).sort();
+    return Array.from(features).sort(compareTextStable);
   }, [allItems]);
 
   const filteredItems = useMemo(() => {
@@ -228,46 +407,178 @@ export function VideoShowcaseIndex() {
     setVisibleCount((prev) => prev + 9);
   };
 
+  if (selectedItem) {
+    return (
+      <div data-showcase-index className="w-full min-h-[80vh] bg-transparent text-zinc-900 [html.dark_&]:text-zinc-100">
+        {/* Back Navigation */}
+        <div className="w-full px-4 md:px-8 pt-8">
+          <div className="max-w-4xl mx-auto">
+            <button
+              onClick={handleCloseDetail}
+              className="inline-flex items-center gap-2 text-sm text-zinc-500 [html.dark_&]:text-zinc-400 hover:text-zinc-900 [html.dark_&]:hover:text-zinc-200 transition-colors cursor-pointer group"
+            >
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+              {backLabel}
+            </button>
+          </div>
+        </div>
+
+        <div className="max-w-4xl mx-auto px-4 md:px-8">
+          {/* Title + Meta Header */}
+          <div className="pt-10 pb-6">
+            <h1 className="text-3xl md:text-4xl font-bold text-zinc-900 [html.dark_&]:text-zinc-100 tracking-tight mb-5 leading-tight">
+              {selectedItem.title}
+            </h1>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              {selectedItem.category && (
+                <span className="px-3 py-1 rounded-full bg-violet-50 text-violet-700 [html.dark_&]:bg-violet-900/30 [html.dark_&]:text-violet-300 text-xs font-medium border border-violet-200/60 [html.dark_&]:border-violet-800/40">
+                  {selectedItem.category}
+                </span>
+              )}
+              {selectedItem.model && (
+                <span className="px-3 py-1 rounded-full bg-purple-50 text-purple-700 [html.dark_&]:bg-purple-900/30 [html.dark_&]:text-purple-300 text-xs font-medium font-mono border border-purple-200/60 [html.dark_&]:border-purple-800/40">
+                  {selectedItem.model}
+                </span>
+              )}
+              {selectedItem.features?.map((feature) => (
+                <span
+                  key={feature}
+                  className="px-2.5 py-1 rounded-full bg-zinc-50 [html.dark_&]:bg-zinc-800/60 text-zinc-500 [html.dark_&]:text-zinc-400 text-xs font-medium border border-zinc-200/60 [html.dark_&]:border-zinc-700/40"
+                >
+                  {feature}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Video / Thumbnail */}
+          <div className="pb-8">
+            <div className="relative bg-zinc-950 w-full aspect-video rounded-xl overflow-hidden ring-1 ring-zinc-200 [html.dark_&]:ring-zinc-800">
+              {selectedItem.videoUrl ? (
+                <video
+                  src={selectedItem.videoUrl}
+                  poster={selectedItem.thumbnail}
+                  controls
+                  autoPlay
+                  className="w-full h-full object-contain"
+                />
+              ) : selectedItem.thumbnail ? (
+                <img
+                  src={selectedItem.thumbnail}
+                  alt={selectedItem.title}
+                  className="w-full h-full object-contain"
+                />
+              ) : null}
+            </div>
+          </div>
+
+          {/* Overview */}
+          {selectedItem.overview && (
+            <div className="pb-8">
+              <div className="text-[15px] text-zinc-700 [html.dark_&]:text-zinc-300 leading-[1.8]">
+                {renderMarkdownText(selectedItem.overview)}
+              </div>
+            </div>
+          )}
+
+          {/* Steps */}
+          {selectedItem.steps && selectedItem.steps.length > 0 && (
+            <div className="pb-10">
+              <div className="border-t border-zinc-200 [html.dark_&]:border-zinc-800 pt-8 mb-6">
+                <h2 className="text-xl font-semibold text-zinc-900 [html.dark_&]:text-zinc-100 tracking-tight">
+                  {stepsLabel}
+                </h2>
+              </div>
+              <div className="space-y-8">
+                {selectedItem.steps.map((step, index) => (
+                  <div key={index} className="flex gap-5">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-zinc-900 [html.dark_&]:bg-zinc-100 flex items-center justify-center text-xs font-bold text-white [html.dark_&]:text-zinc-900 mt-0.5">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1 min-w-0 pt-1">
+                      <h3 className="text-base font-semibold text-zinc-900 [html.dark_&]:text-zinc-100 mb-2">
+                        {step.title}
+                      </h3>
+                      {step.description && (
+                        <div className="text-sm text-zinc-600 [html.dark_&]:text-zinc-400 leading-[1.8]">
+                          {renderMarkdownText(step.description)}
+                        </div>
+                      )}
+                      {step.command && (
+                        <CommandBlock command={step.command} copyLabel={copyLabel} />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* CTA */}
+          <div className="border-t border-zinc-200 [html.dark_&]:border-zinc-800 py-12">
+            <div className="flex flex-col items-center gap-4">
+              <Link
+                href={ctaHref}
+                className="inline-flex items-center justify-center px-8 py-3 bg-zinc-900 [html.dark_&]:bg-zinc-100 text-white [html.dark_&]:text-zinc-900 rounded-lg font-semibold no-underline text-sm hover:bg-zinc-800 [html.dark_&]:hover:bg-zinc-200 transition-colors active:scale-[0.98]"
+              >
+                {ctaLabel}
+              </Link>
+              <button
+                onClick={handleCloseDetail}
+                className="inline-flex items-center gap-1.5 text-sm text-zinc-400 [html.dark_&]:text-zinc-500 hover:text-zinc-900 [html.dark_&]:hover:text-zinc-200 transition-colors cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                {backLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full">
+    <div data-showcase-index className="w-full bg-transparent text-zinc-900 [html.dark_&]:text-zinc-100">
       {/* Hero — left-aligned */}
-      <section className="w-full px-4 md:px-8 pt-16 pb-12 md:pt-24 md:pb-16">
+      <section className="w-full px-4 md:px-8 pt-12 pb-6 md:pt-16 md:pb-8">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-3">
-            Qwen Code Showcases
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 [html.dark_&]:text-zinc-100 mb-3">
+            {heroTitle}
           </h1>
-          <p className="text-base md:text-lg text-zinc-500 dark:text-zinc-400 max-w-[55ch] leading-relaxed">
-            从真实项目案例中学习 Qwen Code，掌握 AI 编程最佳实践
+          <p className="text-base md:text-lg text-zinc-500 [html.dark_&]:text-zinc-400 max-w-[55ch] leading-relaxed">
+            {heroDescription}
           </p>
         </div>
       </section>
 
       {/* Learning Paths */}
-      <section className="w-full px-4 md:px-8 py-16">
+      {learningPaths.length > 0 && (
+      <section className="w-full px-4 md:px-8 pt-4 pb-10">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">
-            学习路径
+          <h2 className="text-2xl font-bold tracking-tight text-zinc-900 [html.dark_&]:text-zinc-100 mb-2">
+            {learningPathsTitle}
           </h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8">
-            根据你的经验水平选择合适的学习路径
+          <p className="text-sm text-zinc-500 [html.dark_&]:text-zinc-400 mb-8">
+            {learningPathsDescription}
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-zinc-200 dark:bg-zinc-800 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
-            {LEARNING_PATHS.map((path) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-zinc-200/70 [html.dark_&]:bg-zinc-800 rounded-xl overflow-hidden border border-zinc-200/70 [html.dark_&]:border-zinc-800">
+            {learningPaths.map((path) => (
               <div
                 key={path.level}
-                className="bg-background p-6 md:p-8"
+                className="bg-zinc-100/50 p-6 md:p-8 [html.dark_&]:bg-transparent"
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-9 h-9 rounded-lg bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-zinc-600 dark:text-zinc-400">
-                    {path.icon}
+                  <div className="w-9 h-9 rounded-lg bg-zinc-100 [html.dark_&]:bg-zinc-900 flex items-center justify-center text-zinc-600 [html.dark_&]:text-zinc-400">
+                    {ICON_MAP[path.iconType]}
                   </div>
-                  <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
+                  <h3 className="text-base font-semibold text-zinc-900 [html.dark_&]:text-zinc-100 tracking-tight">
                     {path.level}
                   </h3>
                 </div>
 
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mb-6">
+                <p className="text-sm text-zinc-500 [html.dark_&]:text-zinc-400 leading-relaxed mb-6">
                   {path.description}
                 </p>
 
@@ -275,18 +586,18 @@ export function VideoShowcaseIndex() {
                   {path.cases
                     .filter((caseItem) => allItemIds.has(caseItem.id))
                     .map((caseItem, index) => (
-                    <Link
+                    <button
                       key={caseItem.id}
-                      href={`/zh/showcase/${caseItem.id}`}
-                      className="flex items-center gap-3 py-2.5 px-3 -mx-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors group"
+                      onClick={() => handleSelectItem(caseItem.id)}
+                      className="flex items-center gap-3 py-2.5 px-3 -mx-3 rounded-lg hover:bg-zinc-50 [html.dark_&]:hover:bg-zinc-900 transition-colors group w-full text-left cursor-pointer"
                     >
-                      <span className="flex-shrink-0 text-xs font-mono text-zinc-400 dark:text-zinc-600 tabular-nums w-5">
+                      <span className="flex-shrink-0 text-xs font-mono text-zinc-400 [html.dark_&]:text-zinc-600 tabular-nums w-5">
                         {String(index + 1).padStart(2, "0")}
                       </span>
-                      <span className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
+                      <span className="text-sm text-zinc-700 [html.dark_&]:text-zinc-300 group-hover:text-zinc-900 [html.dark_&]:group-hover:text-zinc-100 transition-colors">
                         {caseItem.label}
                       </span>
-                    </Link>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -294,14 +605,15 @@ export function VideoShowcaseIndex() {
           </div>
         </div>
       </section>
+      )}
 
       {/* Divider */}
       <div className="w-full px-4 md:px-8">
-        <div className="max-w-7xl mx-auto border-t border-zinc-200 dark:border-zinc-800" />
+        <div className="max-w-7xl mx-auto border-t border-zinc-200 [html.dark_&]:border-zinc-800" />
       </div>
 
       {/* Search + Filters */}
-      <section className="w-full px-4 md:px-8 py-10">
+      <section className="w-full px-4 md:px-8 py-6">
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Search and View Toggle */}
           <div className="flex items-center gap-4">
@@ -309,23 +621,23 @@ export function VideoShowcaseIndex() {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
               <input
                 type="text"
-                placeholder="搜索案例..."
+                placeholder={searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-zinc-100/10 focus:border-zinc-400 dark:focus:border-zinc-600 transition-all placeholder:text-zinc-400"
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-zinc-300 [html.dark_&]:border-zinc-800 bg-transparent text-sm text-zinc-900 [html.dark_&]:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 [html.dark_&]:focus:ring-zinc-100/10 focus:border-zinc-500 [html.dark_&]:focus:border-zinc-600 transition-all placeholder:text-zinc-400"
               />
             </div>
 
             {/* View Toggle */}
-            <div className="flex items-center border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
+            <div className="flex items-center border border-zinc-300 [html.dark_&]:border-zinc-800 rounded-lg overflow-hidden bg-transparent">
               <button
                 onClick={() => setViewMode("grid")}
                 className={`p-2 transition-colors ${
                   viewMode === "grid"
-                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+                    ? "bg-zinc-900 text-white [html.dark_&]:bg-zinc-100 [html.dark_&]:text-zinc-900"
+                    : "text-zinc-500 hover:text-zinc-900 [html.dark_&]:hover:text-zinc-200"
                 }`}
-                title="网格视图"
+                title={gridViewLabel}
               >
                 <LayoutGrid className="w-4 h-4" />
               </button>
@@ -333,10 +645,10 @@ export function VideoShowcaseIndex() {
                 onClick={() => setViewMode("list")}
                 className={`p-2 transition-colors ${
                   viewMode === "list"
-                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+                    ? "bg-zinc-900 text-white [html.dark_&]:bg-zinc-100 [html.dark_&]:text-zinc-900"
+                    : "text-zinc-500 hover:text-zinc-900 [html.dark_&]:hover:text-zinc-200"
                 }`}
-                title="列表视图"
+                title={listViewLabel}
               >
                 <List className="w-4 h-4" />
               </button>
@@ -345,8 +657,8 @@ export function VideoShowcaseIndex() {
 
           {/* Category */}
           <div>
-            <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
-              分类
+            <span className="text-xs font-medium text-zinc-400 [html.dark_&]:text-zinc-500 uppercase tracking-wider">
+              {categoryLabel}
             </span>
             <div className="flex flex-wrap gap-2 mt-2">
               {categoryTags.map((category) => (
@@ -355,8 +667,8 @@ export function VideoShowcaseIndex() {
                   onClick={() => toggleCategory(category)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all active:scale-[0.96] ${
                     selectedCategories.includes(category)
-                      ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                      : "border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-200"
+                      ? "bg-zinc-900 text-white [html.dark_&]:bg-zinc-100 [html.dark_&]:text-zinc-900"
+                      : "border border-zinc-300 [html.dark_&]:border-zinc-800 bg-transparent text-zinc-700 [html.dark_&]:text-zinc-400 hover:border-zinc-500 [html.dark_&]:hover:border-zinc-600 hover:text-zinc-950 [html.dark_&]:hover:text-zinc-200"
                   }`}
                 >
                   {category}
@@ -367,8 +679,8 @@ export function VideoShowcaseIndex() {
 
           {/* Feature */}
           <div>
-            <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
-              功能
+            <span className="text-xs font-medium text-zinc-400 [html.dark_&]:text-zinc-500 uppercase tracking-wider">
+              {featureLabel}
             </span>
             <div className="flex flex-wrap gap-2 mt-2">
               {featureTags.map((feature) => (
@@ -377,8 +689,8 @@ export function VideoShowcaseIndex() {
                   onClick={() => toggleFeature(feature)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all active:scale-[0.96] ${
                     selectedFeatures.includes(feature)
-                      ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                      : "border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-200"
+                      ? "bg-zinc-900 text-white [html.dark_&]:bg-zinc-100 [html.dark_&]:text-zinc-900"
+                      : "border border-zinc-300 [html.dark_&]:border-zinc-800 bg-transparent text-zinc-700 [html.dark_&]:text-zinc-400 hover:border-zinc-500 [html.dark_&]:hover:border-zinc-600 hover:text-zinc-950 [html.dark_&]:hover:text-zinc-200"
                   }`}
                 >
                   {feature}
@@ -389,15 +701,15 @@ export function VideoShowcaseIndex() {
 
           {/* Active filter info */}
           {hasActiveFilters && (
-            <div className="flex items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
+            <div className="flex items-center gap-3 text-sm text-zinc-500 [html.dark_&]:text-zinc-400">
               <span>
-                {filteredItems.length} 个结果
+                {filteredItems.length} {resultsLabel}
               </span>
               <button
                 onClick={clearFilters}
-                className="underline underline-offset-2 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors"
+                className="underline underline-offset-2 hover:text-zinc-900 [html.dark_&]:hover:text-zinc-200 transition-colors"
               >
-                清除筛选
+                {clearFiltersLabel}
               </button>
             </div>
           )}
@@ -405,30 +717,30 @@ export function VideoShowcaseIndex() {
       </section>
 
       {/* Card Grid / List */}
-      <section className="w-full px-4 md:px-8 py-12 md:py-16">
+      <section className="w-full px-4 md:px-8 pt-2 pb-12 md:pb-16">
         <div className="max-w-7xl mx-auto">
           {displayedItems.length > 0 ? (
             <>
               {viewMode === "grid" ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
                   {displayedItems.map((item) => (
-                    <ShowcaseCard key={item.id} item={item} />
+                    <ShowcaseCard key={item.id} item={item} onSelect={handleSelectItem} viewLabel={viewLabel} />
                   ))}
                 </div>
               ) : (
-                <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                <div className="divide-y divide-zinc-200 [html.dark_&]:divide-zinc-800">
                   {/* List Header */}
-                  <div className="flex items-center gap-6 py-3 px-4 text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800">
-                    <div className="flex-1">标题</div>
+                  <div className="flex items-center gap-6 py-3 px-4 text-xs font-medium text-zinc-400 [html.dark_&]:text-zinc-500 uppercase tracking-wider border-b border-zinc-200 [html.dark_&]:border-zinc-800">
+                    <div className="flex-1">{titleColumnLabel}</div>
                     <div className="flex items-center gap-4 flex-shrink-0">
-                      <span className="text-center">分类</span>
-                      <span>功能</span>
+                      <span className="text-center">{categoryLabel}</span>
+                      <span>{featureLabel}</span>
                       <span className="w-4" />
                     </div>
                   </div>
                   {/* List Items */}
                   {displayedItems.map((item) => (
-                    <ShowcaseListItem key={item.id} item={item} />
+                    <ShowcaseListItem key={item.id} item={item} onSelect={handleSelectItem} />
                   ))}
                 </div>
               )}
@@ -437,22 +749,23 @@ export function VideoShowcaseIndex() {
                 <div className="flex justify-center mt-12">
                   <button
                     onClick={handleShowMore}
-                    className="px-8 py-3 text-sm font-medium rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all active:scale-[0.98]"
+                    className="px-8 py-3 text-sm font-medium rounded-lg border border-zinc-300 [html.dark_&]:border-zinc-700 text-zinc-700 [html.dark_&]:text-zinc-300 hover:bg-zinc-50 [html.dark_&]:hover:bg-zinc-900 transition-all active:scale-[0.98]"
                   >
-                    显示更多 ({itemsToShow.length - visibleCount} 个)
+                    {showMoreLabel} ({itemsToShow.length - visibleCount})
                   </button>
                 </div>
               )}
             </>
           ) : (
             <div className="py-24 text-center">
-              <p className="text-sm text-zinc-400 dark:text-zinc-500">
-                未找到匹配的案例，尝试其他搜索词或筛选条件
+              <p className="text-sm text-zinc-400 [html.dark_&]:text-zinc-500">
+                {noResultsLabel}
               </p>
             </div>
           )}
         </div>
       </section>
+
     </div>
   );
 }

@@ -1,0 +1,180 @@
+# Rendu Markdown
+
+Qwen Code rend les structures Markdown courantes directement dans la TUI afin que les réponses du modèle soient plus faciles à parcourir sans quitter le terminal. Le rendu est conçu pour garder la source originale accessible, en particulier pour les blocs visuels tels que les diagrammes Mermaid et les formules mathématiques LaTeX.
+
+## Modes Render et Raw
+
+Par défaut, le Markdown est affiché en mode `render`. Les blocs pris en charge s'affichent sous forme d'aperçus visuels lorsque c'est possible :
+
+- Blocs de code Mermaid (avec délimiteurs)
+- Tableaux Markdown
+- listes de tâches
+- citations
+- formules mathématiques LaTeX en ligne et en bloc
+- blocs de code avec coloration syntaxique
+
+Appuyez sur `Alt/Option+M` pour basculer la session en cours entre les modes. Sur macOS, le terminal doit envoyer Option comme Meta pour ce raccourci ; sinon Option+M est traité comme une saisie de texte normale.
+
+- `render` : affiche des aperçus riches dans le terminal pour le Markdown pris en charge.
+- `raw` : affiche le Markdown orienté source pour les blocs visuels tels que Mermaid, les tableaux et LaTeX.
+
+Pour démarrer Qwen Code en mode raw par défaut, définissez `ui.renderMode` :
+
+```json
+{
+  "ui": {
+    "renderMode": "raw"
+  }
+}
+```
+
+Les valeurs acceptées sont `"render"` et `"raw"`. Le raccourci ne modifie que la vue de la session en cours ; il ne réécrit pas votre fichier de configuration.
+
+## Images des assistants et des outils
+
+Les parties d'image utilisent un chemin d'affichage TUI séparé et se comportent de la même manière en mode Markdown `render` et `raw`. Consultez [Images terminal](./terminal-images.md) pour le support terminal, les fallbacks, les limites, la distribution via les canaux et le comportement dans l'historique de session.
+
+## Mermaid
+
+Les blocs de code `mermaid` s'affichent visuellement en mode `render`. La TUI utilise une stratégie en couches :
+
+1. Si activé et pris en charge, Qwen Code demande au CLI Mermaid (`mmdc`) de rendre le diagramme au format PNG et l'envoie au protocole d'image du terminal.
+2. Si les images terminal ne sont pas disponibles mais que `chafa` est installé, le même PNG peut être converti en graphiques ANSI par blocs.
+3. Sinon, Qwen Code utilise un fil de fer terminal ou un aperçu texte compact.
+4. Si un type de diagramme Mermaid ne peut pas être prévisualisé, Qwen Code affiche la source originale avec délimiteurs au lieu de la cacher derrière un espace réservé.
+
+Le rendu d'image Mermaid est désactivé par défaut car il nécessite des rendus externes et le support des images terminal. Activez-le avec :
+
+```bash
+QWEN_CODE_MERMAID_IMAGE_RENDERING=1 qwen
+```
+
+Variables d'environnement optionnelles :
+
+| Variable                                    | Description                                                                         |
+| ------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `QWEN_CODE_MERMAID_IMAGE_RENDERING=1`       | Active le rendu d'image Mermaid externe.                                           |
+| `QWEN_CODE_DISABLE_MERMAID_IMAGES=1`        | Désactive le rendu d'image Mermaid même s'il est activé ailleurs.                       |
+| `QWEN_CODE_MERMAID_IMAGE_PROTOCOL=kitty`    | Force la sortie du protocole Kitty. Utile pour les terminaux tels que Kitty et Ghostty.       |
+| `QWEN_CODE_MERMAID_IMAGE_PROTOCOL=iterm2`   | Demande les images en ligne iTerm2. Le rendu TUI interactif revient au texte/ANSI.   |
+| `QWEN_CODE_MERMAID_IMAGE_PROTOCOL=off`      | Désactive les protocoles d'image terminal et permet le texte ou le repli `chafa`.              |
+| `QWEN_CODE_MERMAID_MMD_CLI=/path/to/mmdc`   | Utilise un exécutable Mermaid CLI spécifique.                                             |
+| `QWEN_CODE_MERMAID_ALLOW_NPX=1`             | Permet à Qwen Code d'exécuter `npx @mermaid-js/mermaid-cli` lorsque `mmdc` n'est pas installé. |
+| `QWEN_CODE_MERMAID_ALLOW_LOCAL_RENDERERS=1` | Permet les binaires de rendu locaux au projet sous `node_modules/.bin`.                   |
+| `QWEN_CODE_MERMAID_RENDER_WIDTH=1200`       | Remplace la largeur de rendu PNG.                                                     |
+| `QWEN_CODE_MERMAID_RENDER_TIMEOUT_MS=10000` | Remplace le délai d'attente du rendu externe, plafonné à 60000 ms.                          |
+| `QWEN_CODE_MERMAID_CELL_ASPECT_RATIO=0.5`   | Ajuste l'ajustement des lignes d'image pour la géométrie des cellules de police du terminal. |
+
+Le premier rendu d'image peut être lent, surtout lorsque `npx` doit résoudre ou télécharger Mermaid CLI. Pendant le streaming, Qwen Code affiche un aperçu texte limité et tente le rendu d'image seulement après que la réponse du modèle est terminée.
+
+### Copie de la source Mermaid
+
+Chaque bloc Mermaid rendu inclut une indication de source telle que :
+
+```text
+Mermaid flowchart (TD) · source: /copy mermaid 1
+```
+
+Utilisez ces commandes pour copier la source Mermaid de la dernière réponse de l'IA :
+
+| Commande                | Comportement                                      |
+| ----------------------- | ------------------------------------------------- |
+| `/copy mermaid`        | Copie le dernier bloc Mermaid.                    |
+| `/copy mermaid 1`      | Copie le premier bloc Mermaid.                    |
+| `/copy code mermaid`   | Copie le dernier bloc de code `mermaid`.          |
+| `/copy code mermaid 1` | Copie le premier bloc de code `mermaid`.          |
+
+`/copy code 1` compte tous les blocs de code, pas seulement les blocs Mermaid. Utilisez `/copy mermaid N` lorsque vous voulez la séquence spécifique à Mermaid affichée dans le titre rendu.
+
+## Mathématiques LaTeX
+
+Qwen Code prend en charge le rendu LaTeX de base en ligne et en bloc dans le terminal :
+
+```markdown
+Inline math: $x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$
+
+$$
+\sum_{n=1}^{\infty} 1/n^2 = \pi^2/6
+$$
+```
+
+Le rendu se concentre sur les symboles courants et une sortie terminal lisible. Ce n'est pas un moteur TeX complet ; les mises en page complexes telles que les matrices, les équations alignées et les grandes expressions imbriquées peuvent être simplifiées.
+
+Les expressions en ligne `$...$` sont volontairement limitées à 1024 caractères par ligne afin que le Markdown généré malformé ou très volumineux ne puisse pas bloquer le rendu terminal. Les formules plus longues restent visibles en tant que texte source et peuvent toujours être copiées depuis le mode raw ou la réponse d'origine.
+
+### Copie de la source LaTeX
+
+Utilisez ces commandes pour copier la source LaTeX de la dernière réponse de l'IA :
+
+| Commande                | Comportement                                |
+| ----------------------- | ------------------------------------------- |
+| `/copy latex`          | Copie la dernière expression LaTeX en bloc. |
+| `/copy latex 2`        | Copie la deuxième expression en bloc.       |
+| `/copy latex inline`   | Copie la dernière expression en ligne.      |
+| `/copy latex inline 2` | Copie la deuxième expression en ligne.      |
+| `/copy inline-latex 2` | Alias pour `/copy latex inline 2`.          |
+
+Le LaTeX en ligne n'affiche pas d'indication de copie par expression dans le texte rendu pour éviter de rendre le texte bavard. Passez en mode raw avec `Alt/Option+M` lorsque vous voulez inspecter la source en ligne sur place ; sur macOS, cela nécessite une entrée terminal Option-as-Meta.
+
+## Copie de code générale
+
+La commande `/copy code` lit les blocs de code de la dernière réponse Markdown de l'IA :
+
+| Commande                 | Comportement                                 |
+| ----------------------- | -------------------------------------------- |
+| `/copy code`            | Copie le dernier bloc de code.               |
+| `/copy code 2`          | Copie le deuxième bloc de code.              |
+| `/copy code typescript` | Copie le dernier bloc de code `typescript`.  |
+| `/copy code mermaid 1`  | Copie le premier bloc de code `mermaid`.     |
+
+## Sélectionner un message IA antérieur
+
+Par défaut, `/copy` cible le message IA le plus récent. Préfixez la commande avec un entier positif pour copier à partir du Nième dernier message IA à la place — pratique lorsque la dernière réponse est un signal faible (par ex., une mise à jour TODO) et que la sortie substantielle est à un ou deux tours en arrière.
+
+| Commande               | Comportement                                               |
+| ---------------------- | ---------------------------------------------------------- |
+| `/copy 2`             | Copie l'avant-dernier message IA en entier.                |
+| `/copy 3`             | Copie le troisième dernier message IA en entier.           |
+| `/copy 2 code python` | Copie le dernier bloc de code `python` du 2e dernier.      |
+| `/copy 3 latex`       | Copie le dernier bloc LaTeX du 3e dernier message.         |
+
+`/copy 1` est équivalent à `/copy`. Si `N` dépasse le nombre de messages IA dans la session, `/copy` rapporte le nombre réel au lieu de copier quoi que ce soit. Sans entier initial, les sous-sélecteurs tels que `/copy code python 2` conservent leur signification existante (le deuxième bloc `python` dans le dernier message).
+
+## Limites actuelles
+
+- Le rendu d'image Mermaid dépend de Mermaid CLI ainsi que du support des images terminal.
+- Le placement asynchrone des images en ligne iTerm2 est désactivé dans la TUI car le protocole est lié à la position du curseur ; utilisez Kitty/Ghostty ou le repli ANSI pour les aperçus d'image interactifs.
+- Le rendu fil de fer Mermaid est un aperçu terminal lisible, pas un moteur de mise en page Mermaid complet.
+- Le mode raw est global pour les blocs Markdown rendus ; ce n'est pas un basculement par bloc.
+- Le rendu LaTeX couvre les symboles et expressions courants, pas la mise en page TeX complète.
+- Les commandes de copie de source ciblent la dernière réponse IA par défaut, ou la Nième dernière lorsqu'elles sont invoquées avec `/copy N ...`.
+
+# Images terminal
+
+Qwen Code peut afficher les parties d'image des réponses de l'assistant et des résultats d'outils terminés directement dans l'interface terminal interactive. Ce chemin d'affichage est séparé du rendu Markdown et se comporte de la même manière en mode Markdown `render` et `raw`.
+
+## Où les images apparaissent
+
+Dans les réponses de l'assistant, le texte et les images conservent leur ordre d'origine. Les lignes d'outils affichent le texte du résultat suivi des images pour les résultats réussis, échoués et annulés.
+
+Les autres surfaces de sortie, y compris headless, ACP, démon/Web Shell et les intégrations IDE, n'affichent pas les parties d'image. Les canaux WeChat (weixin), WeCom et DingTalk peuvent toujours distribuer les fichiers image générés par l'agent via leur flux de marqueurs `[IMAGE: ...]` ; les autres canaux IM ne distribuent actuellement pas les images sortantes.
+
+## Support terminal
+
+| Environnement                                                      | Affichage des images                                                                    |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| TTY Kitty ou Ghostty direct, sans tmux ni SSH                      | Placement natif d'images terminal                                                       |
+| Autres terminaux avec `chafa` installé                             | Aperçu ANSI 256 couleurs, y compris dans les sessions iTerm2, Warp, tmux et SSH         |
+| Rendu compatible absent, ou mode lecteur d'écran (parties d'image en ligne) | Texte déterministe tel que `[image: 1024x768 png]` au lieu d'une séquence d'images terminal |
+
+## Limites et fallbacks
+
+Les aperçus pixel en ligne nécessitent actuellement des données PNG valides dans les limites d'affichage : 64 mégapixels au total et au plus 1 000 000 pixels par côté. Les autres formats d'image, les PNG invalides et les PNG en ligne dépassant ces limites restent visibles sous forme de marqueurs de texte.
+
+Les payloads d'image en ligne supérieurs à 8 MiB ne sont pas rendus en pixels. La plupart des payloads trop volumineux sont supprimés avant d'entrer dans l'historique TUI, tandis que les payloads légèrement au-dessus de la limite peuvent rester sous forme de marqueurs de texte car l'admission est basée sur la taille encodée. Chaque réponse de l'assistant ou ligne d'outil affiche au plus quatre images et signale le reste avec un marqueur tel que `[+2 more images]`.
+
+## Historique de session et mémoire
+
+Les parties d'image des outils sont sauvegardées avec leurs résultats et peuvent être reconstruites après la reprise de session. Les images de l'assistant s'affichent en direct mais ne sont pas actuellement persistées, donc `--continue` et `--resume` restaurent le texte de l'assistant sans ces images.
+
+Pour limiter la mémoire dans les sessions longues ou chargées d'images, la TUI peut remplacer les images affichées plus anciennes par des marqueurs tels que `[Old assistant image content cleared]` ou `[Old tool result content cleared]`. Cela n'affecte que la vue en direct. Les parties d'image des outils restent dans l'enregistrement de session et réapparaissent après la reprise.

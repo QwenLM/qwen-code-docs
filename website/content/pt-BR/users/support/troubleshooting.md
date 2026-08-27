@@ -1,11 +1,11 @@
 # Solução de problemas
 
-Este guia fornece soluções para problemas comuns e dicas de depuração, abordando os seguintes tópicos:
+Este guia fornece soluções para problemas comuns e dicas de depuração, incluindo tópicos sobre:
 
 - Erros de autenticação ou login
 - Perguntas frequentes (FAQs)
 - Dicas de depuração
-- Issues existentes no GitHub semelhantes à sua ou criação de novas Issues
+- Issues existentes no GitHub semelhantes ao seu problema ou como criar novas Issues
 
 ## Erros de autenticação ou login
 
@@ -16,38 +16,50 @@ Este guia fornece soluções para problemas comuns e dicas de depuração, abord
     - **Alibaba Cloud Coding Plan**: Assine por uma taxa mensal fixa com cotas maiores. Consulte o guia do Coding Plan ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) / [intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)).
 
 - **Erro: `UNABLE_TO_GET_ISSUER_CERT_LOCALLY`, `UNABLE_TO_VERIFY_LEAF_SIGNATURE` ou `unable to get local issuer certificate`**
-  - **Causa:** Você pode estar em uma rede corporativa com um firewall que intercepta e inspeciona o tráfego SSL/TLS. Isso geralmente exige que um certificado CA raiz personalizado seja confiável para o Node.js.
-  - **Solução:** Defina a variável de ambiente `NODE_EXTRA_CA_CERTS` com o caminho absoluto do arquivo do certificado CA raiz corporativo.
+  - **Causa:** Você pode estar em uma rede corporativa com um firewall que intercepta e inspeciona o tráfego SSL/TLS. Isso geralmente exige que um certificado CA raiz personalizado seja reconhecido como confiável pelo Node.js.
+  - **Solução:** Defina a variável de ambiente `NODE_EXTRA_CA_CERTS` com o caminho absoluto do arquivo do certificado CA raiz da sua empresa.
     - Exemplo: `export NODE_EXTRA_CA_CERTS=/path/to/your/corporate-ca.crt`
 
+- **Erro: `Connection error. (cause: fetch failed)` contra um endpoint autoassinado**
+  - **Causa:** Você está apontando o Qwen Code para um servidor auto-hospedado (por exemplo, um modelo local atrás de `https://`) cujo certificado TLS é autoassinado, fazendo com que o Node.js o rejeite.
+  - **Solução:** Prefira confiar no certificado via `NODE_EXTRA_CA_CERTS` (acima). Se isso não for viável em um laboratório confiável ou rede privada, pule a verificação com a flag `--insecure` (ou `QWEN_TLS_INSECURE=1`):
+    - Exemplo: `qwen --insecure --openaiBaseUrl https://192.168.1.10:8080 ...`
+    - **Aviso:** Desativar a verificação remove a proteção contra ataques man-in-the-middle. Use apenas para endpoints em que você confia totalmente.
+
 - **Erro: `Device authorization flow failed: fetch failed`**
-  - **Causa:** O Node.js não conseguiu acessar os endpoints do Qwen OAuth (geralmente um problema de proxy ou confiança SSL/TLS). Quando disponível, o Qwen Code também imprimirá a causa subjacente do erro (por exemplo: `UNABLE_TO_VERIFY_LEAF_SIGNATURE`). Observação: esse erro é específico do fluxo legado do Qwen OAuth.
+  - **Causa:** O Node.js não conseguiu alcançar os endpoints do Qwen OAuth (geralmente um problema de proxy ou confiança SSL/TLS). Quando disponível, o Qwen Code também imprimirá a causa subjacente do erro (por exemplo: `UNABLE_TO_VERIFY_LEAF_SIGNATURE`). Observação: este erro é específico do fluxo legado do Qwen OAuth.
   - **Solução:**
     - Se você ainda estiver usando o Qwen OAuth, mude para API Key ou Coding Plan via `/auth`.
-    - Se estiver atrás de um proxy, configure-o via `qwen --proxy <url>` (ou a configuração `proxy` no `settings.json`).
-    - Se sua rede usar um CA corporativo de inspeção TLS, defina `NODE_EXTRA_CA_CERTS` conforme descrito acima.
+    - Se você estiver atrás de um proxy, configure-o via `qwen --proxy <url>` (ou a configuração `proxy` no `settings.json`).
+    - Se a sua rede usar um CA de inspeção TLS corporativo, defina `NODE_EXTRA_CA_CERTS` conforme descrito acima.
 
 - **Problema: Não é possível exibir a UI após falha na autenticação**
-  - **Causa:** Se a autenticação falhar após selecionar um tipo, a configuração `security.auth.selectedType` pode ser persistida no `settings.json`. Na reinicialização, a CLI pode travar tentando autenticar com o tipo falho e não exibir a UI.
+  - **Causa:** Se a autenticação falhar após selecionar um tipo de autenticação, a configuração `security.auth.selectedType` pode ser persistida no `settings.json`. Na reinicialização, a CLI pode travar ao tentar autenticar com o tipo de autenticação que falhou e não conseguir exibir a UI.
   - **Solução:** Limpe o item de configuração `security.auth.selectedType` no seu arquivo `settings.json`:
     - Abra `~/.qwen/settings.json` (ou `./.qwen/settings.json` para configurações específicas do projeto)
     - Remova o campo `security.auth.selectedType`
-    - Reinicie a CLI para que ela solicite a autenticação novamente
+    - Reinicie a CLI para permitir que ela solicite a autenticação novamente
 
 ## Perguntas frequentes (FAQs)
 
 - **P: Como atualizo o Qwen Code para a versão mais recente?**
-  - R: Se você o instalou globalmente via `npm`, atualize-o usando o comando `npm install -g @qwen-code/qwen-code@latest`. Se compilou a partir do código-fonte, faça pull das alterações mais recentes do repositório e recompile usando o comando `npm run build`.
+  - R: Se você instalou o Qwen Code com o instalador independente, execute novamente o comando de instalação independente. Se o instalou globalmente via `npm`, atualize-o usando o comando `npm install -g @qwen-code/qwen-code@latest`. Se o compilou a partir do código-fonte, faça o pull das alterações mais recentes do repositório e, em seguida, recompile usando o comando `npm run build`.
 
-- **P: Onde os arquivos de configuração ou settings do Qwen Code são armazenados?**
+- **P: Onde os arquivos de configuração ou definições do Qwen Code são armazenados?**
   - R: A configuração do Qwen Code é armazenada em dois arquivos `settings.json`:
     1. No seu diretório home: `~/.qwen/settings.json`.
     2. No diretório raiz do seu projeto: `./.qwen/settings.json`.
 
     Consulte [Configuração do Qwen Code](../configuration/settings) para mais detalhes.
 
-- **P: Por que não vejo contagens de tokens em cache na minha saída de stats?**
-  - R: As informações de tokens em cache só são exibidas quando tokens em cache estão sendo usados. Esse recurso está disponível para usuários de API key (por exemplo, API key do Alibaba Cloud Model Studio ou Google Cloud Vertex AI). Você ainda pode visualizar seu uso total de tokens usando o comando `/stats`.
+- **P: Por que não vejo as contagens de tokens em cache na minha saída de estatísticas?**
+  - R: As informações de tokens em cache só são exibidas quando os tokens em cache estão sendo usados. Este recurso está disponível para usuários de API key (por exemplo, API key do Alibaba Cloud Model Studio ou Google Cloud Vertex AI). Você ainda pode visualizar seu uso total de tokens usando o comando `/stats`.
+
+- **P: Uma personalização (extensão, hook, skill, servidor MCP ou subagente) parece estar quebrando o Qwen Code. Como isolar o problema?**
+  - R: Inicie o Qwen Code com a flag `--safe-mode` para desativar todas as personalizações — arquivos de contexto, hooks, extensões, skills, servidores MCP, subagentes personalizados (apenas subagentes integrados são carregados), regras de permissão, substituições de modo de aprovação originadas de configurações, recursos de memória e configurações de sandbox — para a sessão. Observação: as flags de CLI `--yolo` e `--approval-mode` ainda têm efeito no modo seguro. Se o problema desaparecer no modo seguro, reative suas personalizações uma de cada vez para encontrar o culpado.
+    - Exemplo: `qwen --safe-mode`
+    - Alternativa: defina a variável de ambiente `QWEN_CODE_SAFE_MODE=true` se a CLI não puder aceitar flags.
+    - Observação: "servidores MCP" aqui significa servidores configurados em `settings.json` / `.mcp.json` do projeto — estado local e ambiente contra o qual o modo seguro foi projetado para isolar. Servidores MCP que você fornece explicitamente para a invocação atual (o `mcpServers` do `session/new` de um cliente ACP embedding, ou `--mcp-config`) não são estado local/ambiente e ainda são respeitados no modo seguro.
 
 ## Mensagens de erro comuns e soluções
 
@@ -60,70 +72,81 @@ Este guia fornece soluções para problemas comuns e dicas de depuração, abord
   - **Causa:** A CLI não está instalada corretamente ou não está no `PATH` do seu sistema.
   - **Solução:**
     A atualização depende de como você instalou o Qwen Code:
-    - Se instalou o `qwen` globalmente, verifique se o diretório de binários globais do `npm` está no seu `PATH`. Você pode atualizar usando o comando `npm install -g @qwen-code/qwen-code@latest`.
-    - Se estiver executando o `qwen` a partir do código-fonte, certifique-se de usar o comando correto para invocá-lo (por exemplo, `node packages/cli/dist/index.js ...`). Para atualizar, faça pull das alterações mais recentes do repositório e recompile usando o comando `npm run build`.
+    - Se você instalou o `qwen` com o instalador independente, execute novamente o comando de instalação independente e abra um novo terminal.
+    - Se você instalou o `qwen` globalmente, verifique se o diretório binário global do seu `npm` está no seu `PATH`. Você pode atualizar usando o comando `npm install -g @qwen-code/qwen-code@latest`.
+    - Se você estiver executando o `qwen` a partir do código-fonte, certifique-se de usar o comando correto para invocá-lo (por exemplo, `node packages/cli/dist/index.js ...`). Para atualizar, faça o pull das alterações mais recentes do repositório e, em seguida, recompile usando o comando `npm run build`.
 
-- **Erro: `MODULE_NOT_FOUND` ou erros de import.**
+- **Erro: `MODULE_NOT_FOUND` ou erros de importação.**
   - **Causa:** As dependências não estão instaladas corretamente ou o projeto não foi compilado.
   - **Solução:**
-    1. Execute `npm install` para garantir que todas as dependências estejam presentes.
-    2. Execute `npm run build` para compilar o projeto.
-    3. Verifique se a compilação foi concluída com sucesso com `npm run start`.
+    1.  Execute `npm install` para garantir que todas as dependências estejam presentes.
+    2.  Execute `npm run build` para compilar o projeto.
+    3.  Verifique se a compilação foi concluída com sucesso usando `npm run start`.
 
 - **Erro: "Operation not permitted", "Permission denied" ou similar.**
-  - **Causa:** Quando o sandboxing está ativado, o Qwen Code pode tentar operações restritas pela sua configuração de sandbox, como gravar fora do diretório do projeto ou do diretório temporário do sistema.
+  - **Causa:** Quando o sandbox está ativado, o Qwen Code pode tentar operações restritas pela sua configuração de sandbox, como escrever fora do diretório do projeto ou do diretório temporário do sistema.
   - **Solução:** Consulte a documentação [Configuração: Sandboxing](../features/sandbox) para mais informações, incluindo como personalizar sua configuração de sandbox.
 
-- **O Qwen Code não está executando no modo interativo em ambientes "CI"**
-  - **Problema:** O Qwen Code não entra no modo interativo (nenhum prompt aparece) se uma variável de ambiente que começa com `CI_` (por exemplo, `CI_TOKEN`) estiver definida. Isso ocorre porque o pacote `is-in-ci`, usado pela estrutura de UI subjacente, detecta essas variáveis e assume um ambiente CI não interativo.
-  - **Causa:** O pacote `is-in-ci` verifica a presença de `CI`, `CONTINUOUS_INTEGRATION` ou qualquer variável de ambiente com o prefixo `CI_`. Quando qualquer uma delas é encontrada, sinaliza que o ambiente é não interativo, o que impede a CLI de iniciar no modo interativo.
+- **O Qwen Code não está sendo executado no modo interativo em ambientes de "CI"**
+  - **Problema:** O Qwen Code não entra no modo interativo (nenhum prompt aparece) se uma variável de ambiente que começa com `CI_` (por exemplo, `CI_TOKEN`) estiver definida. Isso ocorre porque o pacote `is-in-ci`, usado pela estrutura de UI subjacente, detecta essas variáveis e assume um ambiente de CI não interativo.
+  - **Causa:** O pacote `is-in-ci` verifica a presença de `CI`, `CONTINUOUS_INTEGRATION` ou qualquer variável de ambiente com o prefixo `CI_`. Quando qualquer uma delas é encontrada, ele sinaliza que o ambiente é não interativo, o que impede que a CLI inicie em seu modo interativo.
   - **Solução:** Se a variável com prefixo `CI_` não for necessária para o funcionamento da CLI, você pode removê-la temporariamente para o comando. Ex.: `env -u CI_TOKEN qwen`
 
 - **O modo DEBUG não funciona a partir do arquivo .env do projeto**
-  - **Problema:** Definir `DEBUG=true` no arquivo `.env` de um projeto não ativa o modo debug para a CLI.
-  - **Causa:** As variáveis `DEBUG` e `DEBUG_MODE` são automaticamente excluídas dos arquivos `.env` do projeto para evitar interferência no comportamento da CLI.
-  - **Solução:** Use um arquivo `.qwen/.env` em vez disso, ou configure a opção `advanced.excludedEnvVars` no seu `settings.json` para excluir menos variáveis.
+  - **Problema:** Definir `DEBUG=true` no arquivo `.env` de um projeto não ativa o modo de depuração para a CLI.
+  - **Causa:** As variáveis `DEBUG` e `DEBUG_MODE` são automaticamente excluídas dos arquivos `.env` do projeto para evitar interferências no comportamento da CLI.
+  - **Solução:** Use um arquivo `.qwen/.env` em vez disso, ou configure a definição `advanced.excludedEnvVars` no seu `settings.json` para excluir menos variáveis.
 
-## IDE Companion não conecta
+- **A rolagem do trackpad no tmux altera o histórico de prompts em vez de rolar a conversa**
+  - **Problema:** Em uma sessão do tmux, a rolagem do trackpad ou da roda do mouse pode percorrer os prompts anteriores, de forma semelhante a pressionar `Up Arrow` ou `Down Arrow`.
+  - **Causa:** O tmux pode traduzir gestos da roda do mouse em sequências simples de teclas de seta. Essas sequências são indistinguíveis de pressionamentos reais de teclas de seta no momento em que o qwen-code as recebe.
+  - **Solução:** Se o modo de leitor de tela estiver desativado, certifique-se de que `ui.useTerminalBuffer` esteja habilitado; em seguida, use `Shift+Up` / `Shift+Down` ou a roda do mouse quando o tmux encaminhar eventos da roda para o aplicativo (requer `ui.mouseTracking`). Se preferir o scrollback do host, ajuste as associações de mouse do seu tmux para eventos da roda.
+
+- **O clique direito não faz nada, links não abrem ou o texto não pode ser selecionado no terminal**
+  - **Problema:** Menus de contexto nativos do botão direito, cliques em hyperlinks OSC 8 (Ctrl+Click ou clique simples em URLs) e a seleção de texto nativa do terminal param de funcionar enquanto o Qwen Code está em execução.
+  - **Causa:** Quando `ui.mouseTracking` está habilitado (o padrão), o Qwen Code captura todos os eventos do mouse via rastreamento de mouse SGR para alimentar a seleção de texto no aplicativo, o clique para posicionar o cursor, o hover em linhas e a rolagem da viewport. O terminal encaminha cada evento do mouse para o aplicativo em vez de tratá-lo nativamente.
+  - **Solução:** Defina `"ui.mouseTracking": false` no seu `settings.json` para restaurar os menus nativos do botão direito e os links URL clicáveis. Isso desativa toda a interação com mouse no aplicativo. No Histórico Virtualizado (`ui.useTerminalBuffer: true`, o padrão), a roda do mouse não irá mais rolar a transcrição — use `Shift+↑/↓`, `PgUp/PgDn` ou `Ctrl+Home/End` em vez disso. Para também restaurar o scrollback nativo do terminal, defina `"ui.useTerminalBuffer": false`. Requer reinicialização.
+
+## IDE Companion não está conectando
 
 - Certifique-se de que o VS Code tenha uma única pasta de workspace aberta.
 - Reinicie o terminal integrado após instalar a extensão para que ele herde:
   - `QWEN_CODE_IDE_WORKSPACE_PATH`
   - `QWEN_CODE_IDE_SERVER_PORT`
-- Se estiver executando em um container, verifique se `host.docker.internal` é resolvido. Caso contrário, mapeie o host adequadamente.
-- Reinstale o companion com `/ide install` e use “Qwen Code: Run” na Command Palette para verificar se ele inicia.
+- Se estiver executando em um contêiner, verifique se `host.docker.internal` é resolvido. Caso contrário, mapeie o host adequadamente.
+- Reinstale o companion com `/ide install` e use “Qwen Code: Run” na Paleta de Comandos para verificar se ele é iniciado.
 
 ## Códigos de saída
 
-O Qwen Code usa códigos de saída específicos para indicar o motivo do encerramento. Isso é especialmente útil para scripting e automação.
+O Qwen Code usa códigos de saída específicos para indicar o motivo do encerramento. Isso é especialmente útil para scripts e automação.
 
 | Código de saída | Tipo de erro                 | Descrição                                                                                         |
 | --------- | -------------------------- | --------------------------------------------------------------------------------------------------- |
 | 41        | `FatalAuthenticationError` | Ocorreu um erro durante o processo de autenticação.                                                |
-| 42        | `FatalInputError`          | Entrada inválida ou ausente foi fornecida à CLI. (somente modo não interativo)                       |
-| 44        | `FatalSandboxError`        | Ocorreu um erro no ambiente de sandboxing (por exemplo, Docker, Podman ou Seatbelt).               |
+| 42        | `FatalInputError`          | Uma entrada inválida ou ausente foi fornecida à CLI. (somente no modo não interativo)                       |
+| 44        | `FatalSandboxError`        | Ocorreu um erro no ambiente de sandbox (por exemplo, Docker, Podman ou Seatbelt).               |
 | 52        | `FatalConfigError`         | Um arquivo de configuração (`settings.json`) é inválido ou contém erros.                               |
-| 53        | `FatalTurnLimitedError`    | O número máximo de turnos de conversa para a sessão foi atingido. (somente modo não interativo) |
+| 53        | `FatalTurnLimitedError`    | O número máximo de turnos de conversa para a sessão foi atingido. (somente no modo não interativo) |
 
 ## Dicas de depuração
 
 - **Depuração da CLI:**
-  - Use a flag `--verbose` (se disponível) com comandos da CLI para uma saída mais detalhada.
+  - Use a flag `--verbose` (se disponível) com os comandos da CLI para uma saída mais detalhada.
   - Verifique os logs da CLI, geralmente encontrados em um diretório de configuração ou cache específico do usuário.
 
 - **Depuração do core:**
   - Verifique a saída do console do servidor em busca de mensagens de erro ou stack traces.
-  - Aumente a verbosidade dos logs, se configurável.
-  - Use ferramentas de depuração do Node.js (por exemplo, `node --inspect`) se precisar percorrer o código do lado do servidor.
+  - Aumente a verbosidade do log se for configurável.
+  - Use as ferramentas de depuração do Node.js (por exemplo, `node --inspect`) se precisar percorrer o código do lado do servidor.
 
 - **Problemas com ferramentas:**
-  - Se uma ferramenta específica estiver falhando, tente isolar o problema executando a versão mais simples possível do comando ou operação que a ferramenta realiza.
+  - Se uma ferramenta específica estiver falhando, tente isolar o problema executando a versão mais simples possível do comando ou da operação que a ferramenta realiza.
   - Para `run_shell_command`, verifique primeiro se o comando funciona diretamente no seu shell.
-  - Para _ferramentas de sistema de arquivos_, verifique se os caminhos estão corretos e confira as permissões.
+  - Para _ferramentas de sistema de arquivos_, verifique se os caminhos estão corretos e cheque as permissões.
 
-- **Verificações pré-execução:**
-  - Execute sempre `npm run preflight` antes de fazer commit do código. Isso pode detectar muitos problemas comuns relacionados a formatação, linting e erros de tipo.
+- **Verificações preliminares:**
+  - Sempre execute `npm run preflight` antes de fazer commit do código. Isso pode detectar muitos problemas comuns relacionados à formatação, linting e erros de tipo.
 
-## Issues existentes no GitHub semelhantes à sua ou criação de novas Issues
+## Issues existentes no GitHub semelhantes ao seu problema ou como criar novas Issues
 
-Se você encontrar um problema que não foi abordado neste _guia de solução de problemas_, considere pesquisar no [rastreador de Issues do Qwen Code no GitHub](https://github.com/QwenLM/qwen-code/issues). Se não encontrar uma Issue semelhante à sua, considere criar uma nova Issue no GitHub com uma descrição detalhada. Pull requests também são bem-vindos!
+Se você encontrar um problema que não foi abordado aqui neste _guia de solução de problemas_, considere pesquisar no [rastreador de Issues do Qwen Code no GitHub](https://github.com/QwenLM/qwen-code/issues). Se não conseguir encontrar uma Issue semelhante à sua, considere criar uma nova Issue no GitHub com uma descrição detalhada. Pull requests também são bem-vindos!

@@ -1,59 +1,128 @@
 # モデルプロバイダー
 
-Qwen Code では、`settings.json` の `modelProviders` 設定を使用して複数のモデルプロバイダーを構成できます。これにより、`/model` コマンドを使用して異なる AI モデルやプロバイダーを切り替えることができます。
+Qwen Code では、`settings.json` の `modelProviders` 設定を通じて複数のモデルプロバイダーを構成できます。これにより、`/model` コマンドを使用して異なる AI モデルやプロバイダーを切り替えることができます。
 
 ## 概要
 
-`modelProviders` を使用して、`/model` ピッカーが切り替え可能な認証タイプごとのキュレーション済みモデルリストを宣言します。キーは有効な認証タイプ（`openai`、`anthropic`、`gemini` など）である必要があります。各エントリには `id` が必要で、**`envKey` を必ず含める**必要があります。`name`、`description`、`baseUrl`、`generationConfig` はオプションです。認証情報は設定ファイルに永続化されません。ランタイムは `process.env[envKey]` から読み取ります。Qwen OAuth モデルはハードコードされており、上書きできません。
+`modelProviders` を使用して、`/model` ピッカーで切り替え可能なモデルをプロバイダー ID ごとに宣言します。各キーはプロバイダー ID で、その値は**モデル定義の配列**（`ModelConfig[]`）です。組み込みプロバイダーの場合、キーは有効な認証タイプ（`openai`、`anthropic`、`gemini`、`vertex-ai`）である必要があります。カスタムプロバイダー ID（例: `idealab`）も、トップレベルの [`providerProtocol`](#カスタムプロバイダー-idproviderprotocol) 設定でプロトコルにマッピングされていれば使用できます。各モデルエントリには `id` が必要です。`envKey` は**任意ですが推奨されます**（省略した場合、認証タイプのデフォルトの環境変数キー、例えば `openai` の場合は `OPENAI_API_KEY` にフォールバックします）。その他、`name`、`description`、`baseUrl`、`generationConfig` は任意です。認証情報は設定に永続化されることはなく、ランタイムは `process.env[envKey]` から読み取ります。Qwen OAuth モデルはハードコードされたままとなり、上書きすることはできません。
 
 > [!note]
 >
-> `/model` コマンドのみがデフォルト以外の認証タイプを公開します。Anthropic、Gemini などは `modelProviders` を介して定義する必要があります。`/auth` コマンドには、組み込みの認証オプションとして Qwen OAuth、Alibaba Cloud Coding Plan、および API Key がリストされます。
+> 以前のプレビューでは、各プロバイダーのモデルを `{ "protocol": ..., "models": [...] }` オブジェクトでラップしていましたが、この形式は廃止されました。現在の値は、このページ全体で示されている裸の `ModelConfig[]` 配列です。すでに移行済みの（`$version: 4`）設定ファイル内のラップされたエントリはサイレントにスキップされるため、古い設定は配列形式に更新してください。
 
-> [!warning]
+> [!note]
 >
-> **同じ authType 内のモデル ID の重複:** 単一の `authType` 内で同じ `id` を持つ複数のモデルを定義すること（例：`openai` 内に `"id": "gpt-4o"` が 2 つある場合）は、現在サポートされていません。重複が存在する場合、**最初に出現したものが優先**され、後続の重複は警告とともにスキップされます。`id` フィールドは構成識別子として使用されるだけでなく、API に送信される実際のモデル名としても使用されるため、一意の ID（例：`gpt-4o-creative`、`gpt-4o-balanced`）を使用しても回避策にはなりません。これは既知の制限事項であり、将来のリリースで対応する予定です。
+> デフォルト以外の認証タイプを公開するのは `/model` コマンドのみです。Anthropic や Gemini などは `modelProviders` 経由で定義する必要があります。`/auth` コマンドには、**Alibaba ModelStudio**（サブメニューに Coding Plan、Token Plan、Standard API Key を含む）、**Third-party Providers**、**Custom Provider** の3つのトップレベルオプションが表示されます。（Qwen OAuth は選択可能なダイアログエントリではなくなりました。無料枠は 2026-04-15 に廃止されました。）
 
-## 認証タイプ別の構成例
+> [!note]
+>
+> **モデルの一意性:** 同じ `authType` 内のモデルは、`id` と `baseUrl` の組み合わせによって一意に識別されます。つまり、各エントリが異なる `baseUrl` を持っている限り（例えば、1つは OpenAI に直接、もう1つはプロキシエンドポイントを指すなど）、同じモデル ID（例: `"gpt-4o"`）を単一の `authType` 内で複数回定義できます。2つのエントリが同じ `id` と同じ `baseUrl` を共有する場合（または両方とも `baseUrl` を省略している場合）、最初に出現したものが優先され、その後の重複は警告とともにスキップされます。
 
-以下に、使用可能なパラメーターとその組み合わせを示す、異なる認証タイプ向けの包括的な構成例を示します。
+### 画像生成ルート
+
+組み込みの `image_gen` ツールでルートを使用できる場合、`supportsImageGeneration: true` を設定します。この機能は、`capabilities.vision` や `generationConfig.modalities.image` などの画像入力サポートとは独立しています。
+
+ルートが画像生成専用で、通常のモデルセレクターに表示しない場合は、`imageOnly: true` を使用します。後方互換性のため、`imageOnly: true` は画像生成機能も暗黙に持つため、既存の設定を移行する必要はありません。
+
+二重の役割を持つルートは、メインモデルとして、また `/model --image` 経由の両方で選択できます。
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "omni-model",
+        "envKey": "MODEL_API_KEY",
+        "baseUrl": "https://gateway.example.com/model-api",
+        "supportsImageGeneration": true
+      }
+    ]
+  }
+}
+```
+
+専用画像ルートは両方のフィールドを設定します。`imageOnly: true` のみのレガシー形式も引き続き有効です。
+
+```json
+{
+  "id": "image-model",
+  "envKey": "MODEL_API_KEY",
+  "baseUrl": "https://images.example.com/api/v1",
+  "supportsImageGeneration": true,
+  "imageOnly": true
+}
+```
+
+選択されたルートは、明示的な HTTPS `baseUrl` と空でない `envKey` を宣言する必要があります。画像生成はルートと同じエンドポイントと認証情報を使用します。チャットと画像生成で異なるエンドポイントや認証情報が必要な場合は、代わりに2つのルートを構成してください。
+
+## 認証タイプ別の設定例
+
+以下は、利用可能なパラメータとその組み合わせを示す、さまざまな認証タイプの包括的な設定例です。
 
 ### サポートされている認証タイプ
 
-`modelProviders` オブジェクトのキーは有効な `authType` 値である必要があります。現在サポートされている認証タイプは次のとおりです。
+`modelProviders` オブジェクトのキーは、有効な `authType` 値である必要があります。現在サポートされている認証タイプは次のとおりです。
 
-| Auth Type    | 説明                                                                                     |
-| ------------ | --------------------------------------------------------------------------------------- |
-| `openai`     | OpenAI 互換 API（OpenAI、Azure OpenAI、vLLM/Ollama などのローカル推論サーバー） |
-| `anthropic`  | Anthropic Claude API                                                                    |
-| `gemini`     | Google Gemini API                                                                       |
-| `qwen-oauth` | Qwen OAuth（ハードコード済み。`modelProviders` で上書き不可）                       |
+| Auth Type    | Description                                                                                                                                     |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `openai`     | OpenAI 互換 API（OpenAI、Azure OpenAI、vLLM/Ollama などのローカル推論サーバー）                                                                 |
+| `anthropic`  | Anthropic Claude API                                                                                                                            |
+| `gemini`     | Google Gemini API                                                                                                                               |
+| `qwen-oauth` | Qwen OAuth（ハードコードされており、`modelProviders` で上書きできません）                                                                       |
+| `vertex-ai`  | Google Vertex AI（Vertex AI モードで `gemini` プロトコルと `@google/genai` SDK を使用します。選択すると `GOOGLE_GENAI_USE_VERTEXAI=true` が設定されます） |
+
+> [!note]
+> Vertex AI エントリは**Application Default Credentials** で認証できます。`GOOGLE_CLOUD_PROJECT`（およびオプションで `GOOGLE_CLOUD_LOCATION`、デフォルトは `global`）を設定し、`envKey` を未設定のままにします。リゾルバーが読み取る他のすべてのキーソース（`GOOGLE_API_KEY`、`settings.security.auth.apiKey`、CLI のキーフラグ）も未設定にしてください。Vertex エントリに到達した API キー値は、Google SDK を Vertex Express モードに切り替えます。このモードでは、プロジェクト、ロケーション、ADC 認証情報は無視されます。`envKey` を宣言するエントリは ADC にルーティングされないため、注入に失敗したキーは、別のプリンシパルとしてサイレントに認証される代わりに、その変数で失敗し続けます。
 
 > [!warning]
-> 無効な認証タイプキー（例：`"openai-custom"` のようなタイプミス）を使用した場合、構成は**サイレントにスキップ**され、モデルは `/model` ピッカーに表示されません。必ず上記のサポートされている認証タイプ値のいずれかを使用してください。
+> 組み込みプロトコルでも `providerProtocol` 経由でマッピングされていないプロバイダー ID（例: `"openai-custom"` のようなタイプミス）はルーティングできないため、エントリ全体が警告とともに**スキップ**されます。モデルは `/model` ピッカーに表示されません。組み込みプロバイダーには上記のサポートされている認証タイプ値のいずれかを使用するか、カスタム ID には [`providerProtocol`](#カスタムプロバイダー-idproviderprotocol) マッピングを追加してください。
+
+### カスタムプロバイダー ID（`providerProtocol`）
+
+組み込みのプロバイダー ID（`openai`、`gemini`、`anthropic`、`vertex-ai`、`qwen-oauth`）は自動的に SDK プロトコルにルーティングされます。より分かりやすい名前で複数の OpenAI 互換エンドポイントをグループ化するなど、**カスタム**プロバイダー ID を使用するには、`modelProviders` 配下に宣言し、トップレベルの `providerProtocol` 設定で組み込みプロトコルにマッピングします。
+
+```json
+{
+  "modelProviders": {
+    "idealab": [
+      {
+        "id": "my-model",
+        "envKey": "IDEALAB_API_KEY",
+        "baseUrl": "https://idealab.example.com/v1"
+      }
+    ]
+  },
+  "providerProtocol": {
+    "idealab": "openai"
+  }
+}
+```
+
+一致する `providerProtocol` エントリがない場合、カスタムプロバイダー ID はスキップされます（上記の警告を参照）。
 
 ### API リクエストに使用される SDK
 
 Qwen Code は、各プロバイダーへのリクエスト送信に以下の公式 SDK を使用します。
 
-| Auth Type    | SDK パッケージ                                                                                     |
+| Auth Type    | SDK Package                                                                                     |
 | ------------ | ----------------------------------------------------------------------------------------------- |
-| `openai`     | [`openai`](https://www.npmjs.com/package/openai) - 公式 OpenAI Node.js SDK                  |
-| `anthropic`  | [`@anthropic-ai/sdk`](https://www.npmjs.com/package/@anthropic-ai/sdk) - 公式 Anthropic SDK |
-| `gemini`     | [`@google/genai`](https://www.npmjs.com/package/@google/genai) - 公式 Google GenAI SDK      |
-| `qwen-oauth` | [`openai`](https://www.npmjs.com/package/openai) with custom provider (DashScope-compatible)    |
+| `openai`     | [`openai`](https://www.npmjs.com/package/openai) - 公式 OpenAI Node.js SDK                      |
+| `anthropic`  | [`@anthropic-ai/sdk`](https://www.npmjs.com/package/@anthropic-ai/sdk) - 公式 Anthropic SDK     |
+| `gemini`     | [`@google/genai`](https://www.npmjs.com/package/@google/genai) - 公式 Google GenAI SDK          |
+| `qwen-oauth` | カスタムプロバイダー（DashScope 互換）を伴う [`openai`](https://www.npmjs.com/package/openai)   |
 
-つまり、構成する `baseUrl` は、対応する SDK が期待する API 形式と互換性がある必要があります。例えば、`openai` 認証タイプを使用する場合、エンドポイントは OpenAI API 形式のリクエストを受け入れる必要があります。
+これは、設定する `baseUrl` が対応する SDK が期待する API 形式と互換性を持っている必要があることを意味します。例えば、`openai` 認証タイプを使用する場合、エンドポイントは OpenAI API 形式のリクエストを受け付ける必要があります。
 
 ### OpenAI 互換プロバイダー（`openai`）
 
-この認証タイプは、OpenAI の公式 API だけでなく、OpenRouter などの集約型モデルプロバイダーを含む、OpenAI 互換のエンドポイントもサポートしています。
+この認証タイプは、OpenAI の公式 API だけでなく、OpenRouter や Requesty などの集約モデルプロバイダーを含む、OpenAI 互換のエンドポイントであればサポートします。
 
 ```json
 {
   "env": {
     "OPENAI_API_KEY": "sk-your-actual-openai-key-here",
-    "OPENROUTER_API_KEY": "sk-or-your-actual-openrouter-key-here"
+    "OPENROUTER_API_KEY": "sk-or-your-actual-openrouter-key-here",
+    "REQUESTY_API_KEY": "sk-your-actual-requesty-key-here"
   },
   "modelProviders": {
     "openai": [
@@ -65,6 +134,8 @@ Qwen Code は、各プロバイダーへのリクエスト送信に以下の公�
         "generationConfig": {
           "timeout": 60000,
           "maxRetries": 3,
+          "retryInitialDelayMs": 3000,
+          "retryMaxDelayMs": 30000,
           "enableCacheControl": true,
           "contextWindowSize": 128000,
           "modalities": {
@@ -104,6 +175,19 @@ Qwen Code は、各プロバイダーへのリクエスト送信に以下の公�
         "name": "GPT-4o (via OpenRouter)",
         "envKey": "OPENROUTER_API_KEY",
         "baseUrl": "https://openrouter.ai/api/v1",
+        "generationConfig": {
+          "timeout": 120000,
+          "maxRetries": 3,
+          "samplingParams": {
+            "temperature": 0.7
+          }
+        }
+      },
+      {
+        "id": "openai/gpt-4o-mini",
+        "name": "GPT-4o Mini (via Requesty)",
+        "envKey": "REQUESTY_API_KEY",
+        "baseUrl": "https://router.requesty.ai/v1",
         "generationConfig": {
           "timeout": 120000,
           "maxRetries": 3,
@@ -195,9 +279,20 @@ Qwen Code は、各プロバイダーへのリクエスト送信に以下の公�
 }
 ```
 
+通常の Qwen Code エージェントポリシーに従い、ツールも使用できるビジョンモデルの場合、両方の機能を指定してフルターンの画像ルーティングにオプトインします。
+
+```json
+"capabilities": {
+  "vision": true,
+  "agent": true
+}
+```
+
+テキストのみのプライマリモデルがそのモデルをビジョンフォールバックとして使用している場合、画像付きの完全なターンは、ツール呼び出しとリトライを通じて、その正確なプロバイダー、モデル、エンドポイント上に保持されます。次の独立したターンはプライマリに戻り、各モデルリクエストはそのターゲットでサポートされるメディアモダリティのみを受け取ります。`agent` を省略する（または `false` に設定する）と、より安全な Vision Bridge トランスクリプションフローが維持されます。
+
 ### ローカルセルフホストモデル（OpenAI 互換 API 経由）
 
-ほとんどのローカル推論サーバー（vLLM、Ollama、LM Studio など）は OpenAI 互換の API エンドポイントを提供しています。ローカルの `baseUrl` を指定して `openai` 認証タイプを使用して構成します。
+ほとんどのローカル推論サーバー（vLLM、Ollama、LM Studio など）は、OpenAI 互換の API エンドポイントを提供しています。ローカルの `baseUrl` を使用して `openai` 認証タイプでそれらを構成します。
 
 ```json
 {
@@ -215,6 +310,7 @@ Qwen Code は、各プロバイダーへのリクエスト送信に以下の公�
         "baseUrl": "http://localhost:11434/v1",
         "generationConfig": {
           "timeout": 300000,
+          "streamIdleTimeoutMs": 600000,
           "maxRetries": 1,
           "contextWindowSize": 32768,
           "samplingParams": {
@@ -256,7 +352,9 @@ Qwen Code は、各プロバイダーへのリクエスト送信に以下の公�
 }
 ```
 
-認証を必要としないローカルサーバーの場合、API キーに任意のプレースホルダー値を使用できます。
+キューイングまたは遅いローカルの OpenAI 互換サーバーの場合、`streamIdleTimeoutMs` はこのモデルがストリーミングされたチャンク間で沈黙を保てる時間を制御します。選択されたプロバイダーエントリについて、グローバルの `QWEN_STREAM_IDLE_TIMEOUT_MS` 値をオーバーライドします。アイドルガードを無効にするには `0` に設定します。別の 15 分間のストリーム lifetime キャップは、`QWEN_STREAM_MAX_LIFETIME_MS` が引き上げられるか無効にされない限り引き続き適用されます。
+
+認証を必要としないローカルサーバーの場合、API キーには任意のプレースホルダー値を使用できます。
 
 ```bash
 # For Ollama (no auth required)
@@ -268,19 +366,19 @@ export VLLM_API_KEY="not-needed"
 
 > [!note]
 >
-> `extra_body` パラメーターは **OpenAI 互換プロバイダー（`openai`、`qwen-oauth`）のみでサポート**されています。Anthropic および Gemini プロバイダーでは無視されます。
+> `extra_body` パラメータは **OpenAI 互換プロバイダー（`openai`、`qwen-oauth`）でのみサポート**されます。Anthropic および Gemini プロバイダーでは無視されます。
 
 > [!note]
 >
-> **`envKey` について**: `envKey` フィールドは実際の API キーの値ではなく、**環境変数の名前**を指定します。構成を機能させるには、対応する環境変数に実際の API キーが設定されていることを確認する必要があります。これを行うには 2 つの方法があります。
+> **`envKey` について**: `envKey` フィールドは、実際の API キーの値ではなく、**環境変数の名前**を指定します。設定を機能させるには、対応する環境変数に実際の API キーが設定されていることを確認する必要があります。これには 2 つの方法があります。
 >
-> - **オプション 1: `.env` ファイルの使用**（セキュリティ推奨）:
+> - **オプション 1: `.env` ファイルを使用する**（セキュリティ上の理由から推奨）:
 >   ```bash
->   # ~/.qwen/.env (or project root)
+>   # ~/.qwen/.env (またはプロジェクトルート)
 >   OPENAI_API_KEY=sk-your-actual-key-here
 >   ```
->   秘密情報が誤ってコミットされないよう、`.env` を `.gitignore` に追加してください。
-> - **オプション 2: `settings.json` の `env` フィールドの使用**（上記の例で示した通り）:
+>   シークレットが誤ってコミットされないように、必ず `.env` を `.gitignore` に追加してください。
+> - **オプション 2: `settings.json` の `env` フィールドを使用する**（上記の例で示されている通り）:
 >   ```json
 >   {
 >     "env": {
@@ -289,29 +387,35 @@ export VLLM_API_KEY="not-needed"
 >   }
 >   ```
 >
-> 各プロバイダーの例には、API キーの構成方法を示すために `env` フィールドが含まれています。
-
+> 各プロバイダーの例には、API キーをどのように構成すべきかを示すために `env` フィールドが含まれています。
 ## Alibaba Cloud Coding Plan
 
-Alibaba Cloud Coding Plan は、コーディングタスクに最適化された Qwen モデルの事前構成セットを提供します。この機能は Alibaba Cloud Coding Plan API アクセス権を持つユーザーが利用でき、モデル構成の自動更新による簡素化されたセットアップ体験を提供します。
+Alibaba Cloud Coding Plan は、コーディングタスクに最適化された Qwen モデルの事前構成セットを提供します。この機能は Alibaba Cloud Coding Plan API アクセス権を持つユーザーが利用でき、モデル構成の自動更新により簡略化されたセットアップ体験を提供します。
 
 ### 概要
 
 `/auth` コマンドを使用して Alibaba Cloud Coding Plan API キーで認証すると、Qwen Code は以下のモデルを自動的に構成します。
 
-| Model ID               | Name                 | 説明                            |
-| ---------------------- | -------------------- | -------------------------------------- |
-| `qwen3.5-plus`         | qwen3.5-plus         | 推論（thinking）が有効な高度なモデル   |
-| `qwen3-coder-plus`     | qwen3-coder-plus     | コーディングタスクに最適化             |
-| `qwen3-max-2026-01-23` | qwen3-max-2026-01-23 | 推論が有効な最新の max モデル |
+| Model ID               | Name                 | Description                                               |
+| ---------------------- | -------------------- | --------------------------------------------------------- |
+| `qwen3.5-plus`         | qwen3.5-plus         | 思考機能が有効なアドバンスドモデル                        |
+| `qwen3.6-plus`         | qwen3.6-plus         | 思考機能が有効な最新モデル（Pro サブスクライバー限定）    |
+| `qwen3.7-plus`         | qwen3.7-plus         | 思考機能が有効なアドバンスドモデル                        |
+| `qwen3-coder-plus`     | qwen3-coder-plus     | コーディングタスクに最適化されたモデル                    |
+| `qwen3-coder-next`     | qwen3-coder-next     | 実験的なコーディングモデル                                |
+| `qwen3-max-2026-01-23` | qwen3-max-2026-01-23 | 思考機能が有効な最新の max モデル                         |
+| `glm-5`                | glm-5                | 思考機能が有効な GLM モデル                               |
+| `glm-4.7`              | glm-4.7              | 思考機能が有効な GLM モデル                               |
+| `kimi-k2.5`            | kimi-k2.5            | 思考機能およびビジョン/ビデオサポート付き Kimi モデル     |
+| `MiniMax-M2.5`         | MiniMax-M2.5         | 思考機能が有効な MiniMax モデル                           |
 
 ### セットアップ
 
-1. Alibaba Cloud Coding Plan API キーを取得します:
+1. Alibaba Cloud Coding Plan API キーを取得します。
    - **中国**: <https://bailian.console.aliyun.com/?tab=model#/efm/coding_plan>
-   - **国際版**: <https://modelstudio.console.alibabacloud.com/?tab=dashboard#/efm/coding_plan>
+   - **インターナショナル**: <https://modelstudio.console.alibabacloud.com/?tab=dashboard#/efm/coding_plan>
 2. Qwen Code で `/auth` コマンドを実行します
-3. **Alibaba Cloud Coding Plan** を選択します
+3. **Alibaba ModelStudio** を選択し、サブメニューから **Coding Plan** を選択します
 4. リージョンを選択します
 5. プロンプトに従って API キーを入力します
 
@@ -321,20 +425,20 @@ Alibaba Cloud Coding Plan は、コーディングタスクに最適化された
 
 Alibaba Cloud Coding Plan は 2 つのリージョンをサポートしています。
 
-| Region               | Endpoint                                        | 説明             |
+| Region               | Endpoint                                        | Description             |
 | -------------------- | ----------------------------------------------- | ----------------------- |
-| China                | `https://coding.dashscope.aliyuncs.com/v1`      | 中国本土エンドポイント |
-| Global/International | `https://coding-intl.dashscope.aliyuncs.com/v1` | 国際版エンドポイント  |
+| China                | `https://coding.dashscope.aliyuncs.com/v1`      | 中国本土エンドポイント  |
+| Global/International | `https://coding-intl.dashscope.aliyuncs.com/v1` | 国際エンドポイント      |
 
-リージョンは認証時に選択され、`settings.json` の `codingPlan.region` に保存されます。リージョンを切り替えるには、`/auth` コマンドを再実行して別のリージョンを選択してください。
+リージョンは認証時に選択され、`settings.json` 内の `modelProviders` 構成に保存されます。リージョンを切り替えるには、`/auth` コマンドを再実行して別のリージョンを選択してください。
 
 ### API キーの保存
 
-`/auth` コマンドを介して Coding Plan を構成すると、API キーは予約済みの環境変数名 `BAILIAN_CODING_PLAN_API_KEY` を使用して保存されます。デフォルトでは、`settings.json` ファイルの `env` フィールドに保存されます。
+`/auth` コマンドを通じて Coding Plan を構成すると、API キーは予約済みの環境変数名 `BAILIAN_CODING_PLAN_API_KEY` を使用して保存されます。デフォルトでは、`settings.json` ファイルの `env` フィールドに保存されます。
 
 > [!warning]
 >
-> **セキュリティ推奨事項**: セキュリティを強化するため、API キーを `settings.json` から個別の `.env` ファイルに移動し、環境変数として読み込むことを推奨します。例:
+> **セキュリティに関する推奨事項**: セキュリティを強化するため、API キーを `settings.json` から別の `.env` ファイルに移動し、環境変数として読み込むことを推奨します。例:
 >
 > ```bash
 > # ~/.qwen/.env
@@ -345,17 +449,17 @@ Alibaba Cloud Coding Plan は 2 つのリージョンをサポートしていま
 
 ### 自動更新
 
-Coding Plan のモデル構成はバージョン管理されています。Qwen Code がモデルテンプレートの新しいバージョンを検出すると、更新を促すプロンプトが表示されます。更新を受け入れると:
+Coding Plan のモデル構成はバージョン管理されています。Qwen Code がモデルテンプレートの新しいバージョンを検出すると、更新を促すプロンプトが表示されます。更新を受け入れると、以下の処理が行われます。
 
-- 既存の Coding Plan モデル構成が最新バージョンに置き換えられます
+- 既存の Coding Plan モデル構成を最新バージョンに置き換えます
 - 手動で追加したカスタムモデル構成は保持されます
 - 更新された構成の最初のモデルに自動的に切り替わります
 
-この更新プロセスにより、手動での介入なしに常に最新のモデル構成と機能にアクセスできます。
+この更新プロセスにより、手動で操作することなく、常に最新のモデル構成と機能にアクセスできるようになります。
 
 ### 手動構成（上級者向け）
 
-Coding Plan モデルを手動で構成する場合は、他の OpenAI 互換プロバイダーと同様に `settings.json` に追加できます。
+Coding Plan モデルを手動で構成したい場合は、他の OpenAI 互換プロバイダーと同様に `settings.json` に追加できます。
 
 ```json
 {
@@ -379,70 +483,75 @@ Coding Plan モデルを手動で構成する場合は、他の OpenAI 互換プ
 >
 > - `envKey` には任意の環境変数名を使用できます
 > - `codingPlan.*` を構成する必要はありません
-> - **自動更新は手動構成された Coding Plan モデルには適用されません**
+> - 手動で構成された Coding Plan モデルには**自動更新は適用されません**
 
 > [!warning]
 >
-> 自動 Coding Plan 構成も使用している場合、手動構成が自動構成と同じ `envKey` と `baseUrl` を使用していると、自動更新によって手動構成が上書きされる可能性があります。これを回避するには、可能であれば手動構成で異なる `envKey` を使用してください。
+> 自動 Coding Plan 構成も使用している場合、手動構成が自動構成と同じ `envKey` と `baseUrl` を使用していると、自動更新によって手動構成が上書きされる可能性があります。これを避けるため、可能であれば手動構成で異なる `envKey` を使用するようにしてください。
 
 ## 解決レイヤーとアトミック性
 
-有効な auth/model/credential の値は、以下の優先順位に従ってフィールドごとに選択されます（最初に存在するものが優先されます）。`--auth-type` と `--model` を組み合わせて特定のプロバイダーエントリを直接指定できます。これらの CLI フラグは他のレイヤーより前に実行されます。
+有効な auth/model/credential の値は、以下の優先順位に従ってフィールドごとに選択されます（最初に存在するものが優先されます）。`--auth-type` と `--model` を組み合わせて、プロバイダーエントリを直接指定できます。これらの CLI フラグは他のレイヤーよりも先に実行されます。
 
-| レイヤー（高 → 低）   | authType                            | model                                           | apiKey                                              | baseUrl                                              | apiKeyEnvKey           | proxy                             |
-| -------------------------- | ----------------------------------- | ----------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------- | ---------------------- | --------------------------------- |
-| プログラムによる上書き     | `/auth`                             | `/auth` 入力                                   | `/auth` 入力                                       | `/auth` 入力                                        | —                      | —                                 |
-| モデルプロバイダーの選択   | —                                   | `modelProvider.id`                              | `env[modelProvider.envKey]`                         | `modelProvider.baseUrl`                              | `modelProvider.envKey` | —                                 |
-| CLI 引数              | `--auth-type`                       | `--model`                                       | `--openaiApiKey`（またはプロバイダー固有の同等物） | `--openaiBaseUrl`（またはプロバイダー固有の同等物） | —                      | —                                 |
-| 環境変数      | —                                   | プロバイダー固有のマッピング（例: `OPENAI_MODEL`） | プロバイダー固有のマッピング（例: `OPENAI_API_KEY`）   | プロバイダー固有のマッピング（例: `OPENAI_BASE_URL`）   | —                      | —                                 |
-| 設定（`settings.json`） | `security.auth.selectedType`        | `model.name`                                    | `security.auth.apiKey`                              | `security.auth.baseUrl`                              | —                      | —                                 |
-| デフォルト / 計算値         | `AuthType.QWEN_OAUTH` にフォールバック | 組み込みデフォルト（OpenAI ⇒ `qwen3-coder-plus`）  | —                                                   | —                                                    | —                      | 構成されている場合は `Config.getProxy()` |
+| Layer (highest → lowest)   | authType                            | model                                           | apiKey                                                | baseUrl                                                | apiKeyEnvKey           | proxy                             |
+| -------------------------- | ----------------------------------- | ----------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------ | ---------------------- | --------------------------------- |
+| プログラムによるオーバーライド | `/auth`                             | `/auth` 入力                                    | `/auth` 入力                                          | `/auth` 入力                                           | —                      | —                                 |
+| モデルプロバイダーの選択   | —                                   | `modelProvider.id`                              | `env[modelProvider.envKey]`                           | `modelProvider.baseUrl`                                | `modelProvider.envKey` | —                                 |
+| CLI 引数                   | `--auth-type`                       | `--model`                                       | `--openai-api-key`                                    | `--openai-base-url`                                    | —                      | —                                 |
+| 環境変数                   | —                                   | プロバイダー固有のマッピング（例: `OPENAI_MODEL`） | プロバイダー固有のマッピング（例: `OPENAI_API_KEY`）  | プロバイダー固有のマッピング（例: `OPENAI_BASE_URL`）  | —                      | —                                 |
+| 設定（`settings.json`）    | `security.auth.selectedType`        | `model.name`                                    | `security.auth.apiKey`                                | `security.auth.baseUrl`                                | —                      | —                                 |
+| デフォルト / 計算値        | `AuthType.QWEN_OAUTH` にフォールバック | 組み込みのデフォルト（OpenAI ⇒ `qwen3.5-plus`） | —                                                     | —                                                      | —                      | 設定されている場合 `Config.getProxy()` |
 
-\*存在する場合、CLI 認証フラグは設定を上書きします。それ以外の場合、`security.auth.selectedType` または暗黙のデフォルトが認証タイプを決定します。追加の構成なしで公開される認証タイプは、Qwen OAuth と OpenAI のみです。
+\*CLI の認証フラグが存在する場合、設定をオーバーライドします。それ以外の場合、`security.auth.selectedType` または暗黙のデフォルトによって認証タイプが決定されます。追加の構成なしに公開される認証タイプは、Qwen OAuth と OpenAI のみです。
+
+> [!note]
+>
+> `--openai-api-key` と `--openai-base-url` が唯一の認証情報 CLI フラグです。これらは、名前に関係なくアクティブな OpenAI 互換プロバイダーに適用されます。`--anthropic-*` や `--gemini-*` の認証情報フラグは存在しません。CLI で渡されないプロバイダー固有の認証情報は、環境変数から解決されます（下の行を参照）。
 
 > [!warning]
 >
-> **`security.auth.apiKey` および `security.auth.baseUrl` の非推奨化:** `settings.json` 内の `security.auth.apiKey` および `security.auth.baseUrl` を介して API 認証情報を直接構成することは非推奨です。これらの設定は、UI を介して入力された認証情報に歴史的なバージョンで使用されていましたが、認証情報入力フローはバージョン 0.10.1 で削除されました。これらのフィールドは将来のリリースで完全に削除されます。**すべてのモデルおよび認証情報構成に `modelProviders` への移行を強く推奨します**。設定ファイルに認証情報をハードコーディングする代わりに、`modelProviders` の `envKey` を使用して環境変数を参照し、安全な認証情報管理を行ってください。
+> **`security.auth.apiKey` と `security.auth.baseUrl` の非推奨化:** `settings.json` 内の `security.auth.apiKey` と `security.auth.baseUrl` を介して API 認証情報を直接構成することは非推奨となりました。これらの設定は過去のバージョンで UI から入力された認証情報に使用されていましたが、認証情報の入力フローはバージョン 0.10.1 で削除されました。これらのフィールドは将来のリリースで完全に削除される予定です。**すべてのモデルおよび認証情報の構成については、`modelProviders` への移行を強く推奨します**。設定ファイルに認証情報をハードコーディングするのではなく、`modelProviders` 内の `envKey` を使用して環境変数を参照し、安全な認証情報管理を行ってください。
 
-## 生成構成のレイヤリング: 透過しないプロバイダーレイヤー
+## 生成構成のレイヤリング: 不透過なプロバイダーレイヤー
 
-構成の解決は厳密なレイヤリングモデルに従いますが、重要なルールが 1 つあります。**modelProvider レイヤーは透過しません（impermeable）**。
+構成の解決は厳密なレイヤリングモデルに従いますが、1 つの重要なルールがあります。**modelProvider レイヤーは不透過である**ということです。
 
-### 動作原理
+### 仕組み
 
-1. **modelProvider モデルが選択された場合**（例: `/model` コマンドでプロバイダー構成モデルを選択）:
+1. **modelProvider のモデルが選択されている場合**（例: `/model` コマンドでプロバイダー構成済みのモデルを選択した場合）:
    - プロバイダーからの `generationConfig` 全体が**アトミックに**適用されます
-   - **プロバイダーレイヤーは完全に透過しません** — 下位レイヤー（CLI、env、設定）は generationConfig の解決に一切関与しません
-   - `modelProviders[].generationConfig` で定義されたすべてのフィールドはプロバイダーの値を使用します
-   - プロバイダーによって**定義されていない**すべてのフィールドは `undefined` に設定されます（設定から継承されません）
-   - これにより、プロバイダー構成が完全で自己完結型の「シールドされたパッケージ」として機能することが保証されます
+   - **プロバイダーレイヤーは完全に不透過です** — 下位のレイヤー（CLI、env、settings）は generationConfig の解決に一切関与しません
+   - `modelProviders[].generationConfig` で定義されているすべてのフィールドは、プロバイダーの値を使用します
+   - プロバイダーによって定義されて**いない**すべてのフィールドは `undefined` に設定されます（設定から継承されません）
+   - これにより、プロバイダー構成は完全で自己完結した「密封されたパッケージ」として機能します
 
-2. **modelProvider モデルが選択されていない場合**（例: 生のモデル ID で `--model` を使用、または CLI/env/設定を直接使用）:
-   - 解決は下位レイヤーにフォールスルーします
-   - フィールドは CLI → env → 設定 → デフォルトの順に設定されます
-   - これにより、**ランタイムモデル**が作成されます（次のセクションを参照）
+   モデルが `modelProviders` にリストされている場合、そのモデル固有の生成設定はすべて、一致するプロバイダーエントリに記述してください。`contextWindowSize`、`modalities`、`customHeaders`、`extra_body` を含むトップレベルの `model.generationConfig` の値は、プロバイダーモデルでは無視されます。これらのフィールドを適用するには、`modelProviders[authType][].generationConfig` 配下で構成してください。
 
-### `generationConfig` のフィールドごとの優先順位
+2. **modelProvider のモデルが選択されていない場合**（例: 生のモデル ID で `--model` を使用する場合、または CLI/env/settings を直接使用する場合）:
+   - 解決は下位のレイヤーにフォールスルーします
+   - フィールドは CLI → env → settings → デフォルトの順で設定されます
+   - これにより**ランタイムモデル**が作成されます（次のセクションを参照）
 
-| 優先度 | ソース                                        | 動作                                                                                                 |
+### generationConfig のフィールドごとの優先順位
+
+| Priority | Source                                        | Behavior                                                                                                 |
 | -------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| 1        | プログラムによる上書き                        | ランタイムの `/model`、`/auth` による変更                                                                        |
-| 2        | `modelProviders[authType][].generationConfig` | **透過しないレイヤー** - すべての generationConfig フィールドを完全に置き換えます。下位レイヤーは関与しません |
-| 3        | `settings.model.generationConfig`             | **ランタイムモデル**（プロバイダーモデルが選択されていない場合）にのみ使用されます                                    |
-| 4        | コンテンツジェネレーターのデフォルト                    | プロバイダー固有のデフォルト（例: OpenAI vs Gemini）- ランタイムモデルにのみ適用されます                            |
+| 1        | プログラムによるオーバーライド                | ランタイムの `/model`、`/auth` の変更                                                                    |
+| 2        | `modelProviders[authType][].generationConfig` | **不透過レイヤー** - すべての generationConfig フィールドを完全に置き換えます。下位レイヤーは関与しません |
+| 3        | `settings.model.generationConfig`             | **ランタイムモデル**（プロバイダーモデルが選択されていない場合）にのみ使用されます                       |
+| 4        | コンテンツジェネレーターのデフォルト          | プロバイダー固有のデフォルト（例: OpenAI と Gemini）- ランタイムモデルにのみ適用                         |
 
 ### アトミックなフィールドの扱い
 
 以下のフィールドはアトミックなオブジェクトとして扱われます。プロバイダーの値がオブジェクト全体を完全に置き換え、マージは行われません。
 
-- `samplingParams` - 温度（temperature）、top_p、max_tokens など
+- `samplingParams` - Temperature、top_p、max_tokens など
 - `customHeaders` - カスタム HTTP ヘッダー
-- `extra_body` - 追加のリクエストボディパラメーター
+- `extra_body` - 追加のリクエストボディパラメータ
 
 ### 例
-
-```json
-// User settings (~/.qwen/settings.json)
+```jsonc
+// ユーザー設定 (~/.qwen/settings.json)
 {
   "model": {
     "generationConfig": {
@@ -452,7 +561,7 @@ Coding Plan モデルを手動で構成する場合は、他の OpenAI 互換プ
   }
 }
 
-// modelProviders configuration
+// modelProviders の設定
 {
   "modelProviders": {
     "openai": [{
@@ -467,23 +576,23 @@ Coding Plan モデルを手動で構成する場合は、他の OpenAI 互換プ
 }
 ```
 
-`modelProviders` から `gpt-4o` が選択された場合:
+`modelProviders` から `gpt-4o` を選択した場合:
 
-- `timeout` = 60000（プロバイダーから。設定を上書き）
-- `samplingParams.temperature` = 0.2（プロバイダーから。設定オブジェクトを完全に置き換え）
-- `samplingParams.max_tokens` = **undefined**（プロバイダーで定義されておらず、プロバイダーレイヤーは設定から継承しないため、提供されていないフィールドは明示的に undefined に設定されます）
+- `timeout` = 60000（プロバイダーから、設定を上書き）
+- `samplingParams.temperature` = 0.2（プロバイダーから、設定オブジェクトを完全に置換）
+- `samplingParams.max_tokens` = **undefined**（プロバイダーで定義されておらず、プロバイダー層は設定から継承しないため、指定されていないフィールドは明示的に undefined に設定される）
 
-`--model gpt-4` を使用して生のモデルを使用する場合（modelProviders からではなく、ランタイムモデルを作成）:
+`--model gpt-4` を使用してローモデルを使用する場合（`modelProviders` からのものではなく、Runtime Model が作成される）:
 
 - `timeout` = 30000（設定から）
 - `samplingParams.temperature` = 0.5（設定から）
 - `samplingParams.max_tokens` = 1000（設定から）
 
-`modelProviders` 自体のマージ戦略は REPLACE です。プロジェクト設定の `modelProviders` 全体がユーザー設定の対応するセクションを上書きし、2 つをマージすることはありません。
+`modelProviders` 自体のマージ戦略は REPLACE（置換）です。プロジェクト設定の `modelProviders` 全体が、ユーザー設定の対応するセクションをマージするのではなく上書きします。
 
-## 推論（Reasoning）/ 思考（Thinking）構成
+## Reasoning / thinking の設定
 
-`generationConfig` 下のオプションの `reasoning` フィールドは、モデルが応答前に推論を行う積極度を制御します。Anthropic および Gemini コンバーターは常にこれを尊重します。OpenAI 互換パイプラインは、`generationConfig.samplingParams` が設定されていない限りこれを尊重します。詳細は以下の「`samplingParams` との相互作用」の注意事項を参照してください。
+`generationConfig` 下のオプションの `reasoning` フィールドは、モデルが応答前にどの程度積極的に推論を行うかを制御します。Anthropic と Gemini のコンバータは常にこれを尊重します。OpenAI 互換パイプラインは、`generationConfig.samplingParams` が設定されて**いない限り**これを尊重します。以下の「`samplingParams` との相互作用」に関する注意事項を参照してください。
 
 ```jsonc
 {
@@ -495,11 +604,11 @@ Coding Plan モデルを手動で構成する場合は、他の OpenAI 互換プ
         "baseUrl": "https://api.deepseek.com/v1",
         "envKey": "DEEPSEEK_API_KEY",
         "generationConfig": {
-          // The four-tier scale:
-          //   'low'    | 'medium' — server-mapped to 'high' on DeepSeek
-          //   'high'   — default reasoning intensity
-          //   'max'    — DeepSeek-specific extra-strong tier
-          // Or set `false` to disable reasoning entirely.
+          // 4段階のスケール:
+          //   'low'    | 'medium' — DeepSeek ではサーバー側で 'high' にマッピングされる
+          //   'high'   — デフォルトの推論強度
+          //   'max'    — DeepSeek 固有の超強力なティア
+          // または、推論を完全に無効にするには `false` を設定する。
           "reasoning": { "effort": "max" },
         },
       },
@@ -510,96 +619,101 @@ Coding Plan モデルを手動で構成する場合は、他の OpenAI 互換プ
 
 ### プロバイダーごとの動作
 
-| プロトコル / プロバイダー                          | 送信形式（Wire shape）                                                           | 備考                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| -------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **OpenAI / DeepSeek** (`api.deepseek.com`)   | フラットな `reasoning_effort: <effort>` ボディパラメーター                     | ネストされた構成形状で `reasoning.effort` が設定されている場合、フラットな `reasoning_effort` に書き換えられ、`'low'`/`'medium'` は `'high'` に、`'xhigh'` は `'max'` に正規化されます。これは DeepSeek の[サーバー側後方互換性](https://api-docs.deepseek.com/zh-cn/api/create-chat-completion)を反映しています。トップレベルの `samplingParams.reasoning_effort` または `extra_body.reasoning_effort` の上書きはこの正規化をスキップし、そのまま送信されます。 |
-| **OpenAI** (other compatible servers)        | `reasoning: { effort, ... }` がそのまま渡されます                 | プロバイダーが異なる形状を期待する場合、`samplingParams`（例: GPT-5/o シリーズ用の `samplingParams.reasoning_effort`）を介して設定します。                                                                                                                                                                                                                                                                                                |
-| **Anthropic** (real `api.anthropic.com`)     | `output_config: { effort }` および `effort-2025-11-24` ベータヘッダー | 実際の Anthropic は `'low'`/`'medium'`/`'high'` のみを受け入れます。`'max'` は `debugLogger.warn` 行（ジェネレーターごとに 1 回）とともに **`'high'` にクランプ**されます。最大限の推論強度が必要な場合は、baseURL をこれをサポートする DeepSeek 互換エンドポイントに切り替えてください。                                                                                                                                                                                  |
-| **Anthropic** (`api.deepseek.com/anthropic`) | 同じ `output_config: { effort }` + ベータヘッダー                       | `'max'` は変更なしでそのまま渡されます。                                                                                                                                                                                                                                                                                                                                                                                             |
-| **Gemini** (`@google/genai`)                 | `thinkingConfig: { includeThoughts: true, thinkingLevel }`           | `'low'` → `LOW`、`'high'`/`'max'` → `HIGH`、その他 → `THINKING_LEVEL_UNSPECIFIED`（Gemini には `MAX` ティアがありません）。                                                                                                                                                                                                                                                                                                                    |
+| プロトコル / プロバイダー | 通信時の形状 | 備考 |
+| --- | --- | --- |
+| **OpenAI / DashScope**（`qwen3.8-max` ファミリー） | フラットな `reasoning_effort: <effort>` ボディパラメータ | 5 つの `/effort` ティア（`low`、`medium`、`high`、`xhigh`、`max`）は、`qwen3.8-max` で始まるモデル ID（日付付きスナップショットや `-latest` エイリアスを含む）に対してそのまま透過的に渡されます。DashScope がモデル固有のマッピングを適用します。`reasoning_effort` と `thinking_budget` が競合する場合、通常の `extra_body` > `samplingParams` > `reasoning` の優先順位により、より高優先度のフィールドのみが保持されます。明示的な同一レイヤーのペアは `reasoning_effort` を保持し、クロスレイヤー解決前のプロバイダーの動作と一致します。静的フィールドが優先された場合、`/effort` はリクエストされたティアが有効であることを示唆する代わりにそのフィールドを報告します。effort ティアが優先された場合、競合する `enable_thinking` も削除されます。`extra_body` 内の明示的な `enable_thinking: false` は、削除されるのではなく尊重されます。設定されたティアを `reasoning_effort: 'none'` としてオーバーライドし、`extra_body` がそのまま勝つ数少ない場所の 1 つです。他の Qwen モデルは、選択された effort を `enable_thinking: true` にマッピングし続けます。`reasoning_effort` のオーバーライドは、`thinking_budget` と競合しない限りそのまま渡されます（DashScope が拒否するペアであり、その場合、不活性な `reasoning_effort` が削除され、`enable_thinking` と `thinking_budget` の両方が保持されます）。 |
+| **OpenAI / DeepSeek** (`api.deepseek.com`) | フラットな `reasoning_effort: <effort>` ボディパラメータ | ネストされた設定形状で `reasoning.effort` が設定されている場合、フラットな `reasoning_effort` に書き換えられ、`'low'`/`'medium'` は `'high'` に、`'xhigh'` は `'max'` に正規化されます。これは DeepSeek の[サーバー側の後方互換性](https://api-docs.deepseek.com/zh-cn/api/create-chat-completion)を反映しています。トップレベルの `samplingParams.reasoning_effort` または `extra_body.reasoning_effort` のオーバーライドは、この正規化をスキップしてそのまま送信されます。 |
+| **OpenAI**（その他の互換サーバー） | `reasoning: { effort, ... }` がそのまま渡される | プロバイダーが異なる形状を期待している場合、`samplingParams` 経由で設定します（例: GPT-5/o シリーズの場合は `samplingParams.reasoning_effort`）。 |
+| **Anthropic**（実際の `api.anthropic.com`） | `output_config: { effort }` と `effort-2025-11-24` ベータヘッダー | 実際の Anthropic は `'low'`/`'medium'`/`'high'` のみを受け付けます。`'max'` は `debugLogger.warn` のログ（ジェネレーターごとに1回）と共に **`'high'` にクランプ**されます。最大限の effort を得たい場合は、baseURL をそれをサポートする DeepSeek 互換エンドポイントに切り替えてください。 |
+| **Anthropic** (`api.deepseek.com/anthropic`) | 同じく `output_config: { effort }` + ベータヘッダー | `'max'` は変更せずにそのまま渡されます。 |
+| **Gemini** (`@google/genai`) | `thinkingConfig: { includeThoughts: true, thinkingLevel }` | `'low'` → `LOW`、`'high'`/`'max'` → `HIGH`、その他 → `THINKING_LEVEL_UNSPECIFIED`（Gemini には `MAX` ティアがありません）。 |
 
 ### `reasoning: false`
 
-`reasoning: false`（リテラルのブール値）を設定すると、すべてのプロバイダーで思考（thinking）が明示的に無効になります。推論の恩恵を受けない安価なサイドクエリに役立ちます。これはリクエストレベルでも `request.config.thinkingConfig.includeThoughts: false` を介して 1 回限りの呼び出し（例: 提案の生成）で尊重されます。
+`reasoning: false`（リテラルのブール値）を設定すると、すべてのプロバイダーで明示的に思考が無効になります。これは、推論の恩恵を受けない安価なサイドクエリに便利です。これはリクエストレベルでも尊重され、ワンオフの呼び出し（例: 提案の生成）では `request.config.thinkingConfig.includeThoughts: false` 経由で有効になります。
 
-`api.deepseek.com` baseURL では、OpenAI パイプラインは DeepSeek V4+ が要求する明示的な `thinking: { type: 'disabled' }` フィールドを出力します。サーバー側のデフォルトは `'enabled'` であるため、単に `reasoning_effort` を省略しても思考のレイテンシ/コストが発生します。セルフホストされた DeepSeek バックエンド（sglang/vllm）およびその他の OpenAI 互換サーバーにはこのフィールドは**送信されません**。それらで思考を無効にする必要がある場合は、`samplingParams`/`extra_body` を介して `thinking: { type: 'disabled' }`（または推論フレームワークが公開する任意のノブ）を注入してください。
+`api.deepseek.com` の baseURL では、OpenAI パイプラインは DeepSeek V4+ が要求する明示的な `thinking: { type: 'disabled' }` フィールドを出力します。サーバー側のデフォルトは `'enabled'` であるため、単に `reasoning_effort` を省略するだけでは思考のレイテンシ/コストが発生してしまいます。セルフホストの DeepSeek バックエンド（sglang/vllm）やその他の OpenAI 互換サーバーは、このフィールドを受け取り**ません**。それらで思考を無効にする必要がある場合は、`samplingParams`/`extra_body` 経由で `thinking: { type: 'disabled' }`（または推論フレームワークが公開している任意の設定値）を注入してください。
+
+`openrouter.ai` の baseURL では、OpenAI パイプラインは reasoning が無効な場合に OpenRouter のプロバイダーレベルの `reasoning: { enabled: false }` フィールドを出力します。他の OpenAI 互換サーバーはこの OpenRouter 固有のフィールドを受け取りません。それらのネイティブな無効化ノブには `samplingParams`/`extra_body` を使用してください。
 
 ### `samplingParams` との相互作用（OpenAI 互換のみ）
 
 > [!warning]
 >
-> OpenAI 互換プロバイダーで `generationConfig.samplingParams` が設定されている場合、パイプラインはそれらのキーを**そのまま**ワイヤーに送信し、個別の `reasoning` 注入を完全にスキップします。したがって、`{ samplingParams: { temperature: 0.5 }, reasoning: { effort: 'max' } }` のような構成は、OpenAI/DeepSeek リクエストで reasoning フィールドをサイレントにドロップします。
+> OpenAI 互換プロバイダーで `generationConfig.samplingParams` が設定されている場合、パイプラインはそれらのキーを**そのまま**通信時に送信し、個別の `reasoning` の注入を完全にスキップします。したがって、`{ samplingParams: { temperature: 0.5 }, reasoning: { effort: 'max' } }` のような設定では、OpenAI/DeepSeek リクエストにおいて reasoning フィールドが暗黙に破棄されます。
 >
-> `samplingParams` を設定する場合は、reasoning ノブをその中に直接含めてください。DeepSeek の場合は `samplingParams.reasoning_effort`、GPT-5/o シリーズの場合は `samplingParams.reasoning_effort`（フラットフィールド）または `samplingParams.reasoning`（ネストオブジェクト）です。OpenRouter やその他のプロバイダーではフィールド名が異なります。プロバイダーのドキュメントを参照してください。
+> DashScope Qwen モデルは例外です。プロバイダーは `reasoning` を直接読み取り、`reasoning_effort` または `enable_thinking` にマッピングします。qwen3.8-max ファミリーでは、ワイヤーパラメータが競合する場合、プロバイダー固有の `samplingParams` フィールドが引き続き優先されます。古い qwen ハイブリッドでは、設定された effort ティアは `enable_thinking: true` に折りたたまれ、`samplingParams.enable_thinking` の値をオーバーライドします。
 >
-> Anthropic および Gemini コンバーターは影響を受けません。`samplingParams` の有無にかかわらず、常に `reasoning.effort` を直接読み取ります。
+> `samplingParams` を設定する場合は、その中に直接 reasoning の設定を含めてください。DeepSeek の場合は `samplingParams.reasoning_effort`、GPT-5/o シリーズの場合は `samplingParams.reasoning_effort`（フラットなフィールド）または `samplingParams.reasoning`（ネストされたオブジェクト）です。OpenRouter やその他のプロバイダーではフィールド名が異なる場合があります。プロバイダーのドキュメントを参照してください。
+>
+> Anthropic と Gemini のコンバータは影響を受けません。`samplingParams` に関わらず、常に `reasoning.effort` を直接読み取ります。
 
 ### `budget_tokens`
 
-`effort` とともに `budget_tokens` を含めることで、正確な思考トークンバジェットを固定できます。
+`effort` と併せて `budget_tokens` を含めることで、正確な思考トークン予算を固定できます。
 
 ```jsonc
 "reasoning": { "effort": "high", "budget_tokens": 50000 }
 ```
 
-Anthropic では `thinking.budget_tokens` になります。OpenAI/DeepSeek ではフィールドは保持されますが、現在サーバーによって無視されます。`reasoning_effort` が実際に機能するノブです。
+Anthropic の場合、これは `thinking.budget_tokens` になります。OpenAI/DeepSeek の場合、フィールドは保持されますが、現在はサーバー側で無視されます。`reasoning_effort` が実際に機能する設定となります。
 
-## プロバイダーモデル vs ランタイムモデル
+## Provider Models と Runtime Models
 
-Qwen Code は、2 種類のモデル構成を区別します。
+Qwen Code は、2種類のモデル設定を区別しています。
 
-### プロバイダーモデル
+### Provider Model
 
-- `modelProviders` 構成で定義されます
-- 完全でアトミックな構成パッケージを持ちます
-- 選択されると、その構成は透過しないレイヤーとして適用されます
-- 完全なメタデータ（名前、説明、機能）付きで `/model` コマンドリストに表示されます
-- マルチモデルワークフローとチームの一貫性に推奨されます
+- `modelProviders` 設定で定義される
+- 完全でアトミックな設定パッケージを持つ
+- 選択されると、その設定は透過性のないレイヤーとして適用される
+- 完全なメタデータ（名前、説明、機能）と共に `/model` コマンドリストに表示される
+- 複数モデルのワークフローやチーム間の一貫性維持に推奨
 
-### ランタイムモデル
+### Runtime Model
 
-- CLI（`--model`）、環境変数、または設定を介して生のモデル ID を使用したときに動的に作成されます
-- `modelProviders` では定義されません
-- 構成は解決レイヤー（CLI → env → 設定 → デフォルト）を「投影」して構築されます
-- 完全な構成が検出されると、**RuntimeModelSnapshot** として自動的にキャプチャされます
-- 認証情報を再入力せずに再利用できます
+- CLI（`--model`）、環境変数、または設定経由でローモデル ID を使用する場合に動的に作成される
+- `modelProviders` では定義されない
+- 解決レイヤー（CLI → env → settings → defaults）を「投影」することで設定が構築される
+- 完全な設定が検出されると、自動的に **RuntimeModelSnapshot** としてキャプチャされる
+- 資格情報を再入力せずに再利用できる
 
 ### RuntimeModelSnapshot のライフサイクル
 
-`modelProviders` を使用せずにモデルを構成すると、Qwen Code は構成を保持するために RuntimeModelSnapshot を自動的に作成します。
+`modelProviders` を使用せずにモデルを設定すると、Qwen Code は自動的に RuntimeModelSnapshot を作成して設定を保持します。
 
 ```bash
-# This creates a RuntimeModelSnapshot with ID: $runtime|openai|my-custom-model
-qwen --auth-type openai --model my-custom-model --openaiApiKey $KEY --openaiBaseUrl https://api.example.com/v1
+# これにより、ID: $runtime|openai|my-custom-model の RuntimeModelSnapshot が作成される
+qwen --auth-type openai --model my-custom-model --openai-api-key $KEY --openai-base-url https://api.example.com/v1
 ```
 
-スナップショット:
+スナップショットは以下の情報を保持します:
 
-- モデル ID、API キー、ベース URL、生成構成をキャプチャします
-- セッション間で保持されます（ランタイム中はメモリに保存）
-- ランタイムオプションとして `/model` コマンドリストに表示されます
-- `/model $runtime|openai|my-custom-model` を使用して切り替えることができます
+- モデル ID、API キー、base URL、および生成設定をキャプチャする
+- セッションをまたいで保持される（実行中はメモリに保存）
+- `/model` コマンドリストにランタイムオプションとして表示される
+- `/model $runtime|openai|my-custom-model` を使用して切り替えることができる
 
 ### 主な違い
 
-| 側面                  | プロバイダーモデル                    | ランタイムモデル                              |
-| ----------------------- | --------------------------------- | ------------------------------------------ |
-| 構成ソース    | `settings` 内の `modelProviders`      | CLI、env、設定レイヤー                  |
-| 構成のアトミック性 | 完全で透過しないパッケージ     | レイヤー化され、各フィールドが独立して解決 |
-| 再利用性             | `/model` リストで常に利用可能 | スナップショットとしてキャプチャされ、完全な場合に表示  |
-| チーム共有            | はい（コミットされた設定経由）      | いいえ（ユーザーローカル）                            |
-| 認証情報の保存      | `envKey` のみで参照       | スナップショットに実際のキーがキャプチャされる場合あり         |
+| 項目 | Provider Model | Runtime Model |
+| --- | --- | --- |
+| 設定のソース | 設定内の `modelProviders` | CLI、env、settings の各レイヤー |
+| 設定のアトミック性 | 完全で透過性のないパッケージ | レイヤー化され、各フィールドは独立して解決される |
+| 再利用性 | `/model` リストで常に利用可能 | スナップショットとしてキャプチャされ、完全な場合にのみ表示される |
+| チームでの共有 | あり（コミットされた設定経由） | なし（ユーザーローカル） |
+| 資格情報の保存 | `envKey` 経由での参照のみ | スナップショットに実際のキーがキャプチャされる場合がある |
 
 ### 使い分け
 
-- **プロバイダーモデルを使用する場合**: チーム間で標準モデルを共有する場合、一貫した構成が必要な場合、または誤った上書きを防ぎたい場合
-- **ランタイムモデルを使用する場合**: 新しいモデルをすばやくテストする場合、一時的な認証情報を使用する場合、またはアドホックなエンドポイントで作業する場合
+- **Provider Models を使用する場合**: チームで共有する標準モデルがあり、一貫した設定が必要、または意図しない上書きを防ぎたい場合
+- **Runtime Models を使用する場合**: 新しいモデルを素早くテストする場合、一時的な資格情報を使用する場合、またはアドホックなエンドポイントで作業する場合
 
 ## 選択の永続化と推奨事項
 
 > [!important]
 >
-> 可能な限り、ユーザー範囲の `~/.qwen/settings.json` で `modelProviders` を定義し、認証情報の上書きをどの範囲でも永続化しないようにしてください。プロバイダーカタログをユーザー設定に保持することで、プロジェクト範囲とユーザー範囲間のマージ/上書きの競合を防ぎ、`/auth` および `/model` の更新が常に一貫した範囲に書き戻されるようにします。
+> 可能な限りユーザー範囲の `~/.qwen/settings.json` で `modelProviders` を定義し、どの範囲でも資格情報のオーバーライドを永続化しないようにしてください。プロバイダーカタログをユーザー設定に保持することで、プロジェクト範囲とユーザー範囲間のマージ/オーバーライドの競合を防ぎ、`/auth` と `/model` の更新が常に一貫した範囲に書き戻されるようにします。
 
-- `/model` および `/auth` は、該当する場合 `model.name` および `security.auth.selectedType` を、`modelProviders` をすでに定義している最も近い書き込み可能な範囲に永続化します。それ以外の場合はユーザー範囲にフォールバックします。これにより、ワークスペース/ユーザーファイルがアクティブなプロバイダーカタログと同期されます。
-- `modelProviders` がない場合、リゾルバーは CLI/env/設定レイヤーを混合し、ランタイムモデルを作成します。これは単一プロバイダーのセットアップでは問題ありませんが、頻繁に切り替える場合は煩雑です。マルチモデルワークフローが一般的である場合は、切り替えがアトミックで、ソースが帰属可能かつデバッグ可能になるように、プロバイダーカタログを定義してください。
+- `/model` と `/auth` は、`modelProviders` をすでに定義している最も近い書き込み可能な範囲に `model.name`（該当する場合）と `security.auth.selectedType` を永続化します。それ以外の場合はユーザー範囲にフォールバックします。これにより、ワークスペース/ユーザーファイルがアクティブなプロバイダーカタログと同期されます。
+- `modelProviders` がない場合、リゾルバーは CLI/env/settings の各レイヤーを混在させて Runtime Models を作成します。これは単一プロバイダーのセットアップでは問題ありませんが、頻繁に切り替える場合は煩雑です。複数モデルのワークフローが一般的である場合は、常にプロバイダーカタログを定義し、切り替えがアトミックで、ソースが追跡可能かつデバッグ可能になるようにしてください。

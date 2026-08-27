@@ -1,60 +1,62 @@
-# Follow-up-Vorschläge
+# Nachfolgevorschläge
 
-Qwen Code kann vorhersagen, was du als Nächstes eingeben möchtest, und zeigt dies als Ghost-Text im Eingabebereich an. Diese Funktion nutzt einen LLM-Aufruf, um den Konversationskontext zu analysieren und einen natürlichen Vorschlag für den nächsten Schritt zu generieren.
+Qwen Code kann vorhersagen, was Sie als Nächstes eingeben möchten, und zeigt dies als Platzhaltertext im Eingabebereich an. Diese Funktion verwendet einen LLM-Aufruf, um den Gesprächskontext zu analysieren und einen natürlichen nächsten Schritt vorzuschlagen.
 
-Diese Funktion funktioniert im CLI end-to-end. In der WebUI sind der Hook und die UI-Infrastruktur vorhanden, Host-Anwendungen müssen jedoch die Vorschlagsgenerierung auslösen und den Follow-up-Status verknüpfen, damit Vorschläge angezeigt werden.
+Diese Funktion funktioniert im CLI vollständig durchgängig. In der WebUI sind der Hook und die UI-Infrastruktur vorhanden, aber Host-Anwendungen müssen die Generierung von Vorschlägen auslösen und den Nachfolgezustand verbinden, damit Vorschläge erscheinen.
 
 ## Funktionsweise
 
-Nachdem Qwen Code die Antwort abgeschlossen hat, erscheint nach einer kurzen Verzögerung (~300 ms) ein Vorschlag als abgedunkelter Text im Eingabebereich. Nach dem Beheben eines Bugs könntest du beispielsweise Folgendes sehen:
+Nachdem Qwen Code seine Antwort beendet hat, erscheint nach einer kurzen Verzögerung (~300 ms) ein Vorschlag als abgedunkelter Platzhaltertext im Eingabebereich. Nach der Behebung eines Fehlers könnte beispielsweise Folgendes erscheinen:
 
 ```
-> run the tests
+> die Tests ausführen
 ```
 
-Der Vorschlag wird generiert, indem der Konversationsverlauf an das Modell gesendet wird, das vorhersagt, was du als Nächstes natürlich eingeben würdest. Enthält die Antwort einen expliziten Hinweis (z. B. `Tip: type post comments to publish findings`), wird die vorgeschlagene Aktion automatisch extrahiert.
+Der Vorschlag wird generiert, indem der Gesprächsverlauf an das Modell gesendet wird, das vorhersagt, was Sie als Nächstes natürlich eingeben würden. Enthält die Antwort einen expliziten Hinweis (z. B. `Tipp: Geben Sie „Kommentare posten“ ein, um Ergebnisse zu veröffentlichen`), wird die vorgeschlagene Aktion automatisch extrahiert.
 
 ## Vorschläge annehmen
 
-| Taste           | Aktion                                           |
-| ------------- | ------------------------------------------------ |
-| `Tab`         | Vorschlag annehmen und in die Eingabe übernehmen |
-| `Enter`       | Vorschlag annehmen und sofort absenden           |
-| `Right Arrow` | Vorschlag annehmen und in die Eingabe übernehmen |
-| Beliebige Eingabe | Vorschlag verwerfen und normal tippen        |
+| Taste          | Aktion                                          |
+| -------------- | ----------------------------------------------- |
+| `Tab`          | Vorschlag annehmen und in die Eingabe einfügen  |
+| `Enter`        | Vorschlag annehmen und in die Eingabe einfügen  |
+| `Rechtspfeil`  | Vorschlag annehmen und in die Eingabe einfügen  |
+| Beliebiges Tippen | Vorschlag verwerfen und normal tippen         |
 
-## Wann Vorschläge angezeigt werden
+`Enter` füllt die Eingabe, anstatt sie abzuschicken. Wenn Sie also einen vorgeschlagenen Slash-Befehl (z. B. `/clear`) annehmen, wird er nie automatisch ausgeführt – Sie müssen ihn mit einem zweiten `Enter` selbst abschicken.
+
+## Wann Vorschläge erscheinen
 
 Vorschläge werden generiert, wenn alle folgenden Bedingungen erfüllt sind:
 
 - Das Modell hat seine Antwort abgeschlossen (nicht während des Streamings)
-- Es fanden mindestens 2 Modell-Turns in der Konversation statt
+- Es haben mindestens 2 Modell-Durchläufe im Gespräch stattgefunden
 - Die letzte Antwort enthält keine Fehler
-- Es stehen keine Bestätigungsdialoge aus (z. B. Shell-Bestätigung, Berechtigungen)
+- Es sind keine Bestätigungsdialoge anhängig (z. B. Shell-Bestätigung, Berechtigungen)
 - Der Genehmigungsmodus ist nicht auf `plan` gesetzt
-- Die Funktion ist in den Einstellungen aktiviert (standardmäßig aktiviert)
+- Die Funktion ist aktiviert (standardmäßig aktiviert – setzen Sie `ui.enableFollowupSuggestions` auf `false`, um sie zu deaktivieren)
 
-Vorschläge werden im nicht-interaktiven Modus (z. B. Headless-/SDK-Modus) nicht angezeigt.
+Vorschläge erscheinen nicht im nicht-interaktiven Modus (z. B. headless/SDK-Modus).
 
 Vorschläge werden automatisch verworfen, wenn:
 
-- du mit dem Tippen beginnst
-- ein neuer Modell-Turn startet
-- der Vorschlag angenommen wird
+- Sie mit der Eingabe beginnen
+- Ein neuer Modell-Durchlauf beginnt
+- Der Vorschlag angenommen wird
 
 ## Schnelles Modell
 
-Standardmäßig verwenden Vorschläge dasselbe Modell wie deine Hauptkonversation. Für schnellere und kostengünstigere Vorschläge kannst du ein dediziertes schnelles Modell konfigurieren:
+Standardmäßig verwenden Vorschläge dasselbe Modell wie Ihr Hauptgespräch. Für Vorschläge mit geringerer Latenz konfigurieren Sie ein dediziertes schnelles Modell:
 
-### Über Befehl
+### Per Befehl
 
 ```
 /model --fast qwen3-coder-flash
 ```
 
-Oder verwende `/model --fast` (ohne Modellnamen), um ein Auswahldialogfeld zu öffnen.
+Oder verwenden Sie `/model --fast` (ohne Modellnamen), um einen Auswahldialog zu öffnen.
 
-### Über settings.json
+### Via settings.json
 
 ```json
 {
@@ -62,20 +64,22 @@ Oder verwende `/model --fast` (ohne Modellnamen), um ein Auswahldialogfeld zu ö
 }
 ```
 
-Das schnelle Modell wird für Prompt-Vorschläge und spekulative Ausführung verwendet. Wenn es nicht konfiguriert ist, wird das Modell der Hauptkonversation als Fallback genutzt.
+Das schnelle Modell wird für Eingabevorschläge und spekulative Ausführung verwendet. Wenn nicht konfiguriert, wird das Hauptgesprächsmodell als Fallback verwendet.
 
-Der Thinking-/Reasoning-Modus wird für alle Hintergrundaufgaben (Vorschlagsgenerierung und Spekulation) automatisch deaktiviert, unabhängig von der Thinking-Konfiguration deines Hauptmodells. So wird vermieden, Tokens für internes Reasoning zu verbrauchen, das für diese Aufgaben nicht benötigt wird.
+> **Kostenhinweis:** Ein schnelles Modell senkt die Latenz, aber nicht unbedingt die Kosten. Die Vorschlagsgenerierung verwendet den Präfix-Cache Ihres Gesprächs erneut (über `ui.enableCacheSharing`, standardmäßig aktiviert) – aber ein Präfix-Cache ist pro Modell. Wenn Sie `fastModel` auf ein anderes Modell setzen, wird ein separater Cache erstellt, sodass der gesamte Gesprächsverlauf auf dem schnellen Modell erneut als ungecachte Eingabe abgerechnet wird. Bei langen Gesprächen kann die Standardeinstellung (Hauptmodell + gemeinsamer Cache) **günstiger** sein als ein schnelles Modell, da der Großteil des Verlaufs zum reduzierten Cache-Tarif abgerechnet wird. Setzen Sie `fastModel` nur, wenn die Latenz wichtiger ist als die Kosten pro Durchlauf.
+
+Der Denk-/Überlegungsmodus wird automatisch für alle Hintergrundaufgaben (Vorschlagsgenerierung und Spekulation) deaktiviert, unabhängig von der Denkkonfiguration Ihres Hauptmodells. So wird vermieden, dass Token für interne Überlegungen verschwendet werden, die für diese Aufgaben nicht benötigt werden.
 
 ## Konfiguration
 
 Diese Einstellungen können in `settings.json` konfiguriert werden:
 
-| Einstellung                    | Typ     | Standardwert | Beschreibung                                                        |
-| ------------------------------ | ------- | ------------ | ------------------------------------------------------------------ |
-| `ui.enableFollowupSuggestions` | boolean | `true`       | Follow-up-Vorschläge aktivieren oder deaktivieren                  |
-| `ui.enableCacheSharing`        | boolean | `true`       | Cache-aware forked Queries zur Kostenreduzierung verwenden (experimentell) |
-| `ui.enableSpeculation`         | boolean | `false`      | Vorschläge vor dem Absenden spekulativ ausführen (experimentell)   |
-| `fastModel`                    | string  | `""`         | Modell für Prompt-Vorschläge und spekulative Ausführung            |
+| Einstellung                     | Typ     | Standard | Beschreibung                                                                 |
+| ------------------------------- | ------- | -------- | ---------------------------------------------------------------------------- |
+| `ui.enableFollowupSuggestions`  | boolean | `true`   | Aktiviert oder deaktiviert Nachfolgevorschläge                               |
+| `ui.enableCacheSharing`         | boolean | `true`   | Verwendet cache-bewusste verzweigte Abfragen zur Kostensenkung (experimentell) |
+| `ui.enableSpeculation`          | boolean | `false`  | Führt Vorschläge spekulativ vor dem Absenden aus (experimentell)             |
+| `fastModel`                     | string  | `""`     | Modell für Eingabevorschläge und spekulative Ausführung                      |
 
 ### Beispiel
 
@@ -89,21 +93,21 @@ Diese Einstellungen können in `settings.json` konfiguriert werden:
 }
 ```
 
-## Monitoring
+## Überwachung
 
-Die Nutzung des Vorschlagsmodells wird in der Ausgabe von `/stats` angezeigt und zeigt die vom schnellen Modell für die Vorschlagsgenerierung verbrauchten Tokens.
+Die Nutzung des Vorschlagsmodells wird in der `/stats`-Ausgabe angezeigt und zeigt die vom schnellen Modell für die Vorschlagsgenerierung verbrauchten Token an.
 
-Das schnelle Modell wird außerdem in der Ausgabe von `/about` unter „Fast Model" angezeigt.
+Das schnelle Modell wird auch in der `/about`-Ausgabe unter „Fast Model“ angezeigt.
 
-## Vorschlagsqualität
+## Qualität der Vorschläge
 
 Vorschläge durchlaufen Qualitätsfilter, um sicherzustellen, dass sie nützlich sind:
 
-- Muss 2–12 Wörter (CJK: 2–30 Zeichen) umfassen, insgesamt unter 100 Zeichen
-- Darf keine Bewertungen enthalten („looks good", „thanks")
-- Darf keine KI-Stimme verwenden („Let me...", „I'll...")
-- Darf keine mehreren Sätze oder Formatierungen enthalten (Markdown, Zeilenumbrüche)
-- Darf keine Meta-Kommentare sein („nothing to suggest", „silence")
-- Darf keine Fehlermeldungen oder Präfix-Labels sein („Suggestion: ...")
+- Müssen 2–12 Wörter (CJK: 2–30 Zeichen) und insgesamt unter 100 Zeichen lang sein
+- Dürfen nicht bewertend sein („sieht gut aus“, „danke“)
+- Dürfen keine KI-Stimme verwenden („Lassen Sie mich…“, „Ich werde…“)
+- Dürfen keine mehreren Sätze sein oder Formatierungen enthalten (Markdown, Zeilenumbrüche)
+- Dürfen keine Metakommentare sein („nichts vorzuschlagen“, „Stille“)
+- Dürfen keine Fehlermeldungen oder vorangestellten Bezeichnungen sein („Vorschlag: …“)
 - Ein-Wort-Vorschläge sind nur für gängige Befehle erlaubt (yes, commit, push usw.)
-- Slash-Befehle (z. B. `/commit`) sind immer als Ein-Wort-Vorschläge erlaubt
+- Slash-Befehle (z. B. `/commit`) sind als Ein-Wort-Vorschläge immer erlaubt

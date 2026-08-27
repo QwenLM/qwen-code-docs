@@ -1,72 +1,72 @@
 # So kannst du beitragen
 
-Wir freuen uns über deine Patches und Beiträge zu diesem Projekt.
+Wir freuen uns über Ihre Patches und Beiträge zu diesem Projekt.
 
 ## Beitragsprozess
 
-### Code Reviews
+### Code-Reviews
 
-Alle Einreichungen, einschließlich solcher von Projektmitgliedern, erfordern ein Review. Wir verwenden dafür [GitHub Pull Requests](https://docs.github.com/articles/about-pull-requests).
+Alle Einreichungen, einschließlich der von Projektmitgliedern, erfordern eine Überprüfung. Wir verwenden dafür [GitHub Pull Requests](https://docs.github.com/articles/about-pull-requests).
 
 ### Richtlinien für Pull Requests
 
-Damit wir deine PRs schnell reviewen und mergen können, halte dich bitte an diese Richtlinien. PRs, die diese Standards nicht erfüllen, können geschlossen werden.
+Um uns zu helfen, Ihre PRs schnell zu überprüfen und zusammenzuführen, befolgen Sie bitte diese Richtlinien. PRs, die diese Standards nicht erfüllen, können geschlossen werden.
 
 #### 1. Verknüpfung mit einem bestehenden Issue
 
-Alle PRs sollten mit einem bestehenden Issue in unserem Tracker verknüpft sein. So wird sichergestellt, dass jede Änderung diskutiert und mit den Projektzielen abgestimmt ist, bevor Code geschrieben wird.
+Alle PRs sollten mit einem bestehenden Issue in unserem Tracker verknüpft sein. Dies stellt sicher, dass jede Änderung besprochen wurde und mit den Zielen des Projekts übereinstimmt, bevor Code geschrieben wird.
 
-- **Für Bugfixes:** Der PR sollte mit dem Issue zum Bugreport verknüpft sein.
-- **Für Features:** Der PR sollte mit dem Feature-Request oder Vorschlag verknüpft sein, der von einem Maintainer genehmigt wurde.
+- **Für Fehlerbehebungen:** Der PR sollte mit dem Issue des Fehlerberichts verknüpft sein.
+- **Für Funktionen:** Der PR sollte mit dem Feature-Request oder Proposal-Issue verknüpft sein, das von einem Maintainer genehmigt wurde.
 
-Falls noch kein Issue für deine Änderung existiert, **erstelle bitte zuerst eines** und warte auf Feedback, bevor du mit dem Coding beginnst.
+Falls für Ihre Änderung noch kein Issue existiert, **eröffnen Sie bitte zuerst eines** und warten Sie auf Rückmeldung, bevor Sie mit dem Codieren beginnen.
 
-#### 2. Klein und fokussiert halten
+#### 2. Halten Sie es klein und fokussiert
 
-Wir bevorzugen kleine, atomare PRs, die ein einzelnes Issue beheben oder ein einzelnes, in sich geschlossenes Feature hinzufügen.
+Wir bevorzugen kleine, atomare PRs, die ein einzelnes Problem behandeln oder eine einzelne, in sich geschlossene Funktion hinzufügen.
 
-- **Empfohlen:** Erstelle einen PR, der einen bestimmten Bug behebt oder ein bestimmtes Feature hinzufügt.
-- **Vermeiden:** Bündele mehrere unabhängige Änderungen (z. B. einen Bugfix, ein neues Feature und ein Refactoring) in einem einzigen PR.
+- **Tun:** Erstellen Sie einen PR, der einen bestimmten Fehler behebt oder eine bestimmte Funktion hinzufügt.
+- **Nicht:** Bündeln Sie mehrere unabhängige Änderungen (z.B. eine Fehlerbehebung, eine neue Funktion und eine Refaktorisierung) in einem einzigen PR.
 
-Große Änderungen sollten in eine Reihe kleinerer, logischer PRs aufgeteilt werden, die unabhängig voneinander reviewt und gemerged werden können.
+Als Faustregel gilt: Teilen Sie einen PR auf, sobald er etwa 1.200 geänderte Zeilen überschreitet. PRs mit mehr als etwa 2.000 geänderten Zeilen sollten entweder in eine Reihe von kleineren, logischen PRs aufgeteilt werden, die unabhängig voneinander überprüft und zusammengeführt werden können, oder in der PR-Beschreibung erklären, warum die Änderung zusammen eingebracht werden muss.
 
-#### 3. Draft PRs für Work in Progress verwenden
+#### 3. Verwenden Sie Draft-PRs für laufende Arbeiten
 
-Wenn du frühzeitig Feedback zu deiner Arbeit erhalten möchtest, verwende bitte die **Draft Pull Request**-Funktion von GitHub. Dies signalisiert den Maintainern, dass der PR noch nicht für ein formelles Review bereit ist, aber für Diskussionen und erstes Feedback offensteht.
+Wenn Sie frühzeitiges Feedback zu Ihrer Arbeit erhalten möchten, nutzen Sie bitte die **Draft Pull Request**-Funktion von GitHub. Dies signalisiert den Maintainern, dass der PR noch nicht für eine formelle Überprüfung bereit ist, aber für Diskussionen und erstes Feedback offen steht.
 
-#### 4. Sicherstellen, dass alle Checks durchlaufen
+#### 4. Stellen Sie sicher, dass alle Prüfungen bestanden werden
 
-Bevor du deinen PR einreichst, stelle sicher, dass alle automatisierten Checks durchlaufen, indem du `npm run preflight` ausführst. Dieser Befehl führt alle Tests, Linting und weitere Style-Checks aus.
+Bevor Sie Ihren PR einreichen, stellen Sie sicher, dass alle automatisierten Prüfungen bestanden werden, indem Sie `npm run preflight` ausführen. Dieser Befehl führt alle Tests, Linting und andere Stilprüfungen aus.
 
-#### 5. Dokumentation aktualisieren
+#### 5. Aktualisieren Sie die Dokumentation
 
-Wenn dein PR eine nutzerseitige Änderung einführt (z. B. einen neuen Befehl, ein geändertes Flag oder eine Verhaltensänderung), musst du auch die entsprechende Dokumentation im `/docs`-Verzeichnis aktualisieren.
+Wenn Ihr PR eine benutzersichtbare Änderung einführt (z.B. einen neuen Befehl, ein geändertes Flag oder eine Verhaltensänderung), müssen Sie auch die entsprechende Dokumentation im `/docs`-Verzeichnis aktualisieren.
 
-#### 6. Klare Commit Messages und eine gute PR-Beschreibung verfassen
+#### 6. Schreiben Sie klare Commit-Nachrichten und eine gute PR-Beschreibung
 
-Dein PR sollte einen klaren, beschreibenden Titel und eine detaillierte Beschreibung der Änderungen enthalten. Halte dich für deine Commit Messages an den [Conventional Commits](https://www.conventionalcommits.org/)-Standard.
+Ihr PR sollte einen klaren, beschreibenden Titel und eine detaillierte Beschreibung der Änderungen haben. Folgen Sie dem [Conventional Commits](https://www.conventionalcommits.org/)-Standard für Ihre Commit-Nachrichten.
 
 - **Guter PR-Titel:** `feat(cli): Add --json flag to 'config get' command`
 - **Schlechter PR-Titel:** `Made some changes`
 
-Erkläre in der PR-Beschreibung das „Warum“ hinter deinen Änderungen und verlinke das relevante Issue (z. B. `Fixes #123`).
+Erklären Sie in der PR-Beschreibung das „Warum“ hinter Ihren Änderungen und verlinken Sie auf das entsprechende Issue (z.B. `Fixes #123`).
 
-## Entwicklungsumgebung und Workflow
+## Entwicklungseinrichtung und Arbeitsablauf
 
-Dieser Abschnitt erklärt Contributoren, wie sie das Projekt bauen, ändern und die Entwicklungsumgebung verstehen.
+Dieser Abschnitt führt Mitwirkende durch den Aufbau, die Änderung und das Verständnis der Entwicklungsumgebung dieses Projekts.
 
-### Entwicklungsumgebung einrichten
+### Einrichten der Entwicklungsumgebung
 
 **Voraussetzungen:**
 
 1.  **Node.js**:
-    - **Entwicklung:** Bitte verwende Node.js `~20.19.0`. Diese spezifische Version ist aufgrund eines Problems mit einer Upstream-Development-Dependency erforderlich. Du kannst ein Tool wie [nvm](https://github.com/nvm-sh/nvm) verwenden, um Node.js-Versionen zu verwalten.
-    - **Produktion:** Zum Ausführen der CLI in einer Produktionsumgebung ist jede Node.js-Version `>=20` geeignet.
+    - **Entwicklung:** Bitte verwenden Sie Node.js `>=22`. Ink 7 (vom TUI verwendet) erfordert Node 22, und `react@^19.2.0` ist der passende Peer. Sie können ein Tool wie [nvm](https://github.com/nvm-sh/nvm) zur Verwaltung von Node.js-Versionen nutzen.
+    - **Produktion:** Für den Betrieb der CLI in einer Produktionsumgebung ist jede Node.js-Version `>=22` akzeptabel.
 2.  **Git**
 
-### Build-Prozess
+### Bauprozess
 
-So klont du das Repository:
+Um das Repository zu klonen:
 
 ```bash
 git clone https://github.com/QwenLM/qwen-code.git # Or your fork's URL
@@ -79,75 +79,75 @@ Um die in `package.json` definierten Abhängigkeiten sowie die Root-Abhängigkei
 npm install
 ```
 
-Um das gesamte Projekt (alle Packages) zu bauen:
+Um das gesamte Projekt (alle Pakete) zu bauen:
 
 ```bash
 npm run build
 ```
 
-Dieser Befehl kompiliert in der Regel TypeScript zu JavaScript, bündelt Assets und bereitet die Packages zur Ausführung vor. Weitere Details zum Build-Vorgang findest du in `scripts/build.js` und den Scripts in `package.json`.
+Dieser Befehl kompiliert in der Regel TypeScript zu JavaScript, bündelt Assets und bereitet die Pakete zur Ausführung vor. Weitere Details zum Build-Vorgang finden Sie in `scripts/build.js` und den Skripten in `package.json`.
 
-### Sandboxing aktivieren
+### Aktivieren der Sandbox
 
-[Sandboxing](#sandboxing) wird dringend empfohlen und erfordert mindestens das Setzen von `QWEN_SANDBOX=true` in deiner `~/.env` sowie die Verfügbarkeit eines Sandboxing-Providers (z. B. `macOS Seatbelt`, `docker` oder `podman`). Details findest du unter [Sandboxing](#sandboxing).
+[Sandboxing](#sandboxing) wird dringend empfohlen und erfordert mindestens das Setzen von `QWEN_SANDBOX=true` in Ihrer `~/.env` und die Sicherstellung, dass ein Sandboxing-Anbieter (z.B. `macOS Seatbelt`, `docker` oder `podman`) verfügbar ist. Details finden Sie unter [Sandboxing](#sandboxing).
 
-Um sowohl das `qwen-code` CLI-Tool als auch den Sandbox-Container zu bauen, führe `build:all` im Root-Verzeichnis aus:
+Um sowohl das `qwen` CLI-Dienstprogramm als auch den Sandbox-Container zu bauen, führen Sie `build:all` aus dem Wurzelverzeichnis aus:
 
 ```bash
 npm run build:all
 ```
 
-Um das Bauen des Sandbox-Containers zu überspringen, kannst du stattdessen `npm run build` verwenden.
+Um den Bau des Sandbox-Containers zu überspringen, können Sie stattdessen `npm run build` verwenden.
 
-### Ausführen
+### Ausführung
 
-Um die Qwen Code-Anwendung aus dem Quellcode zu starten (nach dem Build), führe folgenden Befehl im Root-Verzeichnis aus:
+Um die Qwen Code-Anwendung aus dem Quellcode zu starten (nach dem Bau), führen Sie den folgenden Befehl aus dem Wurzelverzeichnis aus:
 
 ```bash
 npm start
 ```
 
-Wenn du den Source-Build außerhalb des `qwen-code`-Ordners ausführen möchtest, kannst du `npm link path/to/qwen-code/packages/cli` verwenden (siehe: [Dokumentation](https://docs.npmjs.com/cli/v9/commands/npm-link)), um es mit `qwen-code` auszuführen.
+Wenn Sie den Quellbau außerhalb des qwen-code-Ordners ausführen möchten, können Sie `npm link path/to/qwen-code/packages/cli` (siehe: [Dokumentation](https://docs.npmjs.com/cli/v9/commands/npm-link)) verwenden, um es mit `qwen` auszuführen.
 
-### Tests ausführen
+### Ausführen von Tests
 
 Dieses Projekt enthält zwei Arten von Tests: Unit-Tests und Integrationstests.
 
 #### Unit-Tests
 
-Um die Unit-Test-Suite des Projekts auszuführen:
+Um die Unit-Test-Suite für das Projekt auszuführen:
 
 ```bash
 npm run test
 ```
 
-Dies führt Tests in den Verzeichnissen `packages/core` und `packages/cli` aus. Stelle sicher, dass alle Tests durchlaufen, bevor du Änderungen einreichst. Für eine umfassendere Prüfung wird empfohlen, `npm run preflight` auszuführen.
+Dies führt Tests in den Verzeichnissen `packages/core` und `packages/cli` aus. Stellen Sie sicher, dass die Tests bestanden werden, bevor Sie Änderungen einreichen. Für eine umfassendere Überprüfung wird empfohlen, `npm run preflight` auszuführen.
 
 #### Integrationstests
 
-Die Integrationstests dienen der Validierung der End-to-End-Funktionalität von Qwen Code. Sie werden nicht standardmäßig mit `npm run test` ausgeführt.
+Die Integrationstests sind darauf ausgelegt, die End-to-End-Funktionalität von Qwen Code zu validieren. Sie werden nicht als Teil des standardmäßigen `npm run test`-Befehls ausgeführt.
 
-Um die Integrationstests auszuführen, verwende folgenden Befehl:
+Um die Integrationstests auszuführen, verwenden Sie den folgenden Befehl:
 
 ```bash
 npm run test:e2e
 ```
 
-Detaillierte Informationen zum Integrationstest-Framework findest du in der [Dokumentation zu Integrationstests](./docs/integration-tests.md).
+Weitere detaillierte Informationen zum Framework für Integrationstests finden Sie in der [Dokumentation zu Integrationstests](./development/integration-tests.md).
 
-### Linting und Preflight-Checks
+### Linting und Preflight-Prüfungen
 
-Um Codequalität und Formatierungskonsistenz sicherzustellen, führe den Preflight-Check aus:
+Um Codequalität und Formatierungskonsistenz sicherzustellen, führen Sie die Preflight-Prüfung aus:
 
 ```bash
 npm run preflight
 ```
 
-Dieser Befehl führt ESLint, Prettier, alle Tests und weitere Checks aus, wie in der `package.json` des Projekts definiert.
+Dieser Befehl führt ESLint, Prettier, alle Tests und andere in der `package.json` des Projekts definierte Prüfungen aus.
 
-_Pro-Tipp_
+_ProTip_
 
-Erstelle nach dem Klonen eine Git-Precommit-Hook-Datei, um sicherzustellen, dass deine Commits immer sauber sind.
+Erstellen Sie nach dem Klonen eine Git-Precommit-Hook-Datei, um sicherzustellen, dass Ihre Commits immer sauber sind.
 
 ```bash
 echo "
@@ -161,136 +161,136 @@ fi
 
 #### Formatierung
 
-Um den Code in diesem Projekt separat zu formatieren, führe folgenden Befehl im Root-Verzeichnis aus:
+Um den Code in diesem Projekt separat zu formatieren, führen Sie den folgenden Befehl aus dem Wurzelverzeichnis aus:
 
 ```bash
 npm run format
 ```
 
-Dieser Befehl verwendet Prettier, um den Code gemäß den Style-Richtlinien des Projekts zu formatieren.
+Dieser Befehl verwendet Prettier, um den Code gemäß den Stilrichtlinien des Projekts zu formatieren.
 
 #### Linting
 
-Um den Code in diesem Projekt separat zu linten, führe folgenden Befehl im Root-Verzeichnis aus:
+Um den Code in diesem Projekt separat zu linten, führen Sie den folgenden Befehl aus dem Wurzelverzeichnis aus:
 
 ```bash
 npm run lint
 ```
 
-### Coding-Konventionen
+### Kodierkonventionen
 
-- Bitte halte dich an den Coding-Style, die Patterns und Konventionen, die in der bestehenden Codebase verwendet werden.
-- **Imports:** Achte besonders auf Import-Pfade. Das Projekt verwendet ESLint, um Einschränkungen für relative Imports zwischen Packages durchzusetzen.
+- Bitte halten Sie sich an den Codestil, die Muster und Konventionen, die in der gesamten bestehenden Codebasis verwendet werden.
+- **Imports:** Achten Sie besonders auf Importpfade. Das Projekt verwendet ESLint, um Einschränkungen für relative Imports zwischen Paketen durchzusetzen.
 
 ### Projektstruktur
 
-- `packages/`: Enthält die einzelnen Sub-Packages des Projekts.
-  - `cli/`: Die Command-Line-Interface (CLI).
-  - `core/`: Die zentrale Backend-Logik für Qwen Code.
+- `packages/`: Enthält die einzelnen Unterpakete des Projekts.
+  - `cli/`: Die Kommandozeilenschnittstelle.
+  - `core/`: Die Kern-Backend-Logik für Qwen Code.
 - `docs/`: Enthält die gesamte Projektdokumentation.
-- `scripts/`: Utility-Scripts für Build-, Test- und Entwicklungsaufgaben.
+- `scripts/`: Dienstprogramme für Bau-, Test- und Entwicklungsaufgaben.
 
-Für eine detailliertere Architekturübersicht siehe `docs/architecture.md`.
+Weitere Details zur Architektur finden Sie in `docs/architecture.md`.
 
 ## Dokumentationsentwicklung
 
-Dieser Abschnitt beschreibt, wie du die Dokumentation lokal entwickelst und eine Vorschau anzeigst.
+Dieser Abschnitt beschreibt, wie Sie die Dokumentation lokal entwickeln und in der Vorschau anzeigen können.
 
 ### Voraussetzungen
 
-1. Stelle sicher, dass Node.js (Version 18+) installiert ist
-2. npm oder yarn muss verfügbar sein
+1. Stellen Sie sicher, dass Node.js (Version 22+) installiert ist.
+2. Halten Sie npm oder yarn bereit.
 
-### Dokumentation lokal einrichten
+### Dokumentationsseite lokal einrichten
 
 Um an der Dokumentation zu arbeiten und Änderungen lokal in der Vorschau anzuzeigen:
 
-1. Wechsle in das `docs-site`-Verzeichnis:
+1. Navigieren Sie in das Verzeichnis `docs-site`:
 
    ```bash
    cd docs-site
    ```
 
-2. Installiere die Abhängigkeiten:
+2. Installieren Sie die Abhängigkeiten:
 
    ```bash
    npm install
    ```
 
-3. Verlinke den Dokumentationsinhalt aus dem Haupt-`docs`-Verzeichnis:
+3. Verknüpfen Sie den Dokumentationsinhalt aus dem Hauptverzeichnis `docs`:
 
    ```bash
    npm run link
    ```
 
-   Dies erstellt einen symbolischen Link von `../docs` zu `content` im docs-site-Projekt, sodass der Dokumentationsinhalt von der Next.js-Site bereitgestellt werden kann.
+   Dies erstellt einen symbolischen Link von `../docs` nach `content` im docs-site-Projekt, sodass der Dokumentationsinhalt von der Next.js-Seite bereitgestellt werden kann.
 
-4. Starte den Development-Server:
+4. Starten Sie den Entwicklungsserver:
 
    ```bash
    npm run dev
    ```
 
-5. Öffne [http://localhost:3000](http://localhost:3000) in deinem Browser, um die Dokumentationsseite mit Live-Updates während der Bearbeitung zu sehen.
+5. Öffnen Sie [http://localhost:3000](http://localhost:3000) in Ihrem Browser, um die Dokumentationsseite mit Live-Updates zu sehen, während Sie Änderungen vornehmen.
 
-Alle Änderungen an den Dokumentationsdateien im Haupt-`docs`-Verzeichnis werden sofort auf der Dokumentationsseite übernommen.
+Alle Änderungen an den Dokumentationsdateien im Hauptverzeichnis `docs` werden sofort auf der Dokumentationsseite angezeigt.
 
 ## Debugging
 
 ### VS Code:
 
-0.  Starte die CLI, um interaktiv in VS Code mit `F5` zu debuggen
-1.  Starte die CLI im Debug-Modus aus dem Root-Verzeichnis:
+0.  Führen Sie die CLI aus, um interaktiv in VS Code mit `F5` zu debuggen.
+1.  Starten Sie die CLI im Debug-Modus aus dem Wurzelverzeichnis:
     ```bash
     npm run debug
     ```
-    Dieser Befehl führt `node --inspect-brk dist/index.js` im `packages/cli`-Verzeichnis aus und pausiert die Ausführung, bis ein Debugger verbunden ist. Du kannst dann `chrome://inspect` in deinem Chrome-Browser öffnen, um dich mit dem Debugger zu verbinden.
-2.  Verwende in VS Code die "Attach"-Launch-Konfiguration (zu finden in `.vscode/launch.json`).
+    Dieser Befehl führt `node --inspect-brk dist/index.js` im Verzeichnis `packages/cli` aus und pausiert die Ausführung, bis ein Debugger angehängt wird. Sie können dann `chrome://inspect` in Ihrem Chrome-Browser öffnen, um eine Verbindung zum Debugger herzustellen.
+2.  Verwenden Sie in VS Code die Startkonfiguration "Attach" (zu finden in `.vscode/launch.json`).
 
-Alternativ kannst du die "Launch Program"-Konfiguration in VS Code verwenden, wenn du die aktuell geöffnete Datei direkt starten möchtest. `F5` wird jedoch generell empfohlen.
+Alternativ können Sie die Konfiguration "Launch Program" in VS Code verwenden, wenn Sie die aktuell geöffnete Datei direkt starten möchten, aber 'F5' wird generell empfohlen.
 
-Um einen Breakpoint im Sandbox-Container zu erreichen, führe aus:
+Um einen Haltepunkt im Sandbox-Container zu setzen, führen Sie aus:
 
 ```bash
-DEBUG=1 qwen-code
+DEBUG=1 qwen
 ```
 
-**Hinweis:** Wenn `DEBUG=true` in einer `.env`-Datei eines Projekts steht, wirkt sich dies aufgrund des automatischen Ausschlusses nicht auf qwen-code aus. Verwende `.qwen-code/.env`-Dateien für qwen-code-spezifische Debug-Einstellungen.
+**Hinweis:** Wenn Sie `DEBUG=true` in einer `.env`-Datei des Projekts haben, wirkt sich dies aufgrund des automatischen Ausschlusses nicht auf `qwen` aus. Verwenden Sie `.qwen/.env`-Dateien für `qwen`-spezifische Debug-Einstellungen.
 
 ### React DevTools
 
-Um die React-basierte UI der CLI zu debuggen, kannst du React DevTools verwenden. Ink, die für das CLI-Interface verwendete Bibliothek, ist mit React DevTools Version 4.x kompatibel.
+Um die React-basierte Benutzeroberfläche der CLI zu debuggen, können Sie React DevTools verwenden. Ink, die für die CLI-Oberfläche verwendete Bibliothek, ist mit React DevTools Version 4.x kompatibel.
 
-1.  **Starte die Qwen Code-Anwendung im Development-Modus:**
+1.  **Starten Sie die Qwen Code-Anwendung im Entwicklungsmodus:**
 
     ```bash
     DEV=true npm start
     ```
 
-2.  **Installiere und starte React DevTools Version 4.28.5 (oder die neueste kompatible 4.x-Version):**
+2.  **Installieren und führen Sie React DevTools Version 4.28.5 (oder die neueste kompatible 4.x-Version) aus:**
 
-    Du kannst es entweder global installieren:
+    Sie können es entweder global installieren:
 
     ```bash
     npm install -g react-devtools@4.28.5
     react-devtools
     ```
 
-    Oder direkt mit npx ausführen:
+    Oder führen Sie es direkt mit npx aus:
 
     ```bash
     npx react-devtools@4.28.5
     ```
 
-    Deine laufende CLI-Anwendung sollte sich dann mit React DevTools verbinden.
+    Ihre laufende CLI-Anwendung sollte sich dann mit React DevTools verbinden.
 
 ## Sandboxing
 
 > TBD
 
-## Manuelles Publishen
+## Manuelle Veröffentlichung
 
-Wir veröffentlichen für jeden Commit ein Artifact in unserer internen Registry. Wenn du jedoch manuell einen lokalen Build erstellen musst, führe folgende Befehle aus:
+Wir veröffentlichen für jeden Commit ein Artefakt in unserem internen Registry. Wenn Sie jedoch manuell einen lokalen Build erstellen müssen, führen Sie die folgenden Befehle aus:
 
 ```
 npm run clean

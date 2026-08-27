@@ -1,0 +1,347 @@
+name: Daily Incremental Translation
+
+# Once a day, runs the orchestrator's incremental pipeline against the
+# upstream qwen-code docs, then (if anything changed) publishes a review
+# branch and an issue with a one-click PR link. Merging that PR triggers
+# deploy-docs.yml.
+#
+# Pipeline (translator/orchestrator/orchestrator.mjs):
+#   sync-en    mirror upstream English docs into website/content/en
+#   detect     per-language backlog vs website/last-sync.json (the baseline)
+#   preflight  validate the model credential in seconds (#189)
+#   translate  dispatch the qwen CLI agent for up to N backlog files per lang
+#   verify     structural gate (fence parity, frontmatter, non-empty, mtime)
+#   advance    promote only verified translations into the baseline
+# Translations that fail the gate never advance; they stay in the backlog
+# and are retried on the next run.
+#
+# Prerequisites (repo Settings -> Secrets and variables -> Actions):
+# - Secret   TRANSLATE_CODING_PLAN_API_KEY : a cloud-reachable model API key
+# - Variable TRANSLATE_BASE_URL (optional): OpenAI-compatible endpoint,
+#   defaults to https://coding.dashscope.aliyuncs.com/v1
+# - Variable QWEN_MODEL (optional): model id, defaults to qwen3.7-plus
+# - Variable TRANSLATE_DAILY_LIMIT (optional): max files translated per
+#   language per run, defaults to 20
+#
+# The qwen CLI authenticates via OpenAI-compatible env vars
+# (OPENAI_API_KEY / OPENAI_BASE_URL); the orchestrator selects the OpenAI
+# auth type explicitly for its safe, non-interactive child process.
+#
+# Only one generated translation branch may be pending at a time. Until it is
+# reviewed and merged, later scheduled runs skip model work instead of
+# spending API quota to recreate the same backlog.
+
+on:
+  schedule:
+    # 20:00 UTC == 04:00 Asia/Shanghai (next day). Adjust as you like.
+    - cron: "0 20 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: read
+  # Needed by the failure-reporting job, which files/updates a tracking
+  # issue when a scheduled run fails.
+  issues: write
+  # Needed by the translation-output artifact upload on non-main dispatches;
+  # with an explicit permissions block, unlisted scopes are denied, so
+  # upload-artifact would 403 without this.
+  actions: write
+
+# A manual dispatch overlapping the 20:00 UTC cron would duplicate the same
+# translation at double API spend. Serialize instead of cancelling: a
+# cancelled run loses hours of work without producing its review branch.
+concurrency:
+  group: daily-translate
+  cancel-in-progress: false
+
+env:
+  QWEN_MODEL: ${{ vars.QWEN_MODEL || 'qwen3.7-plus' }}
+
+jobs:
+  translate:
+    name: Sync, translate & publish review branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      # The review-branch step below is gated on `main`, so any other
+      # ref translates for hours at real API cost but cannot publish the
+      # result automatically. The artifact below preserves it, but warn
+      # before the spend rather than after it (see #196). Before the artifact
+      # existed, run 31074093979 lost a complete 1h53m catch-up this way.
+      - name: Warn that this run cannot publish a review branch
+        if: github.ref_name != 'main'
+        run: |
+          echo "::warning title=Translations will not be proposed::This run is on '${GITHUB_REF_NAME}', not main, so the review-branch step is skipped. If changes are detected, any translation produced is kept only as the 'translation-output' artifact on this run."
+          {
+            echo "### ⚠️ This run cannot publish a review branch"
+            echo
+            echo "Ref \`${GITHUB_REF_NAME}\` is not \`main\`, so **Publish translation review branch** will be skipped."
+            echo
+            echo "If changes are detected, translated content is uploaded as the \`translation-output\` artifact — download it from this run if you need the work."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # Full history is required: website/app/sitemap.ts derives every
+          # entry's lastModified from `git log`, so a shallow checkout would
+          # collapse those dates. blob:none keeps all commit/tree metadata
+          # (which is all `git log --name-only` needs) while skipping file
+          # contents, so history stays correct and the fetch stays cheap.
+          fetch-depth: 0
+          filter: blob:none
+
+      - name: Check for a pending translation review branch
+        id: pending
+        if: github.ref_name == 'main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pending=false
+          while read -r branch; do
+            [ -n "$branch" ] || continue
+            merged="$(gh pr list --repo "$GITHUB_REPOSITORY" --state merged \
+              --head "$branch" --limit 1 --json number --jq 'length')"
+            if [ "$merged" -gt 0 ]; then
+              git push origin --delete "$branch"
+              issue="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
+                --search "${branch} in:title" --limit 1 --json number --jq '.[0].number // empty')"
+              [ -z "$issue" ] || gh issue close "$issue" --repo "$GITHUB_REPOSITORY" --comment "The translation PR was merged; closing this review notice."
+            else
+              pending=true
+              echo "A translation branch is awaiting review: https://github.com/${GITHUB_REPOSITORY}/compare/main...${branch}?expand=1" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done < <(git ls-remote --heads origin 'refs/heads/automation/daily-translation-*' \
+            | awk '{sub("refs/heads/", "", $2); print $2}')
+          echo "exists=${pending}" >> "$GITHUB_OUTPUT"
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          # Restores ~/.npm keyed on the lockfile. Benefits the global qwen
+          # CLI install below; website dependencies are installed by
+          # deploy-docs.yml after the generated PR is merged.
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install qwen CLI
+        if: steps.pending.outputs.exists != 'true'
+        run: npm i -g @qwen-code/qwen-code@0.21.1
+
+      - name: Sync EN mirror and detect backlog
+        id: detect
+        if: steps.pending.outputs.exists != 'true'
+        run: |
+          set -o pipefail
+          cd translator/orchestrator
+          node orchestrator.mjs sync-en | tee /tmp/orch-sync-en.log
+          node orchestrator.mjs detect | tee /tmp/orch-detect.log
+          if grep -qE 'copied=[1-9][0-9]*|deleted=[1-9][0-9]*' /tmp/orch-sync-en.log \
+            || grep -qE 'backlog [A-Za-z-]+: [1-9][0-9]*' /tmp/orch-detect.log; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            if [ "$GITHUB_REF_NAME" != "main" ]; then
+              echo "::warning::Changes detected, but this run is on $GITHUB_REF_NAME (not main) — no PR will be opened. Download the 'translation-output' artifact from this run to keep them."
+            fi
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+          # Only languages with a non-zero backlog. `detect` prints a line
+          # for every language including `backlog xx: 0`; dispatching those
+          # produces no manifest, and advance would then have nothing to do.
+          # `|| true`: grep exits 1 on zero matches, which is the NORMAL case
+          # at steady state (~14 file-translations/day) — without it, every
+          # quiet day dies here under `bash -e` before translate even runs.
+          grep -oE 'backlog [A-Za-z-]+: [1-9][0-9]*' /tmp/orch-detect.log \
+            | awk '{print $2}' | tr -d ':' > /tmp/orch-langs.txt || true
+
+      # Fail fast on a dead credential (#189): one minimal completion request
+      # before any real work. A dead key used to cost a full multi-hour run
+      # that ended in thousands of per-file errors instead of a 5-second stop.
+      - name: Preflight translation credentials
+        if: steps.detect.outputs.changed == 'true'
+        working-directory: ./translator/orchestrator
+        env:
+          OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
+          OPENAI_BASE_URL: ${{ vars.TRANSLATE_BASE_URL || 'https://coding.dashscope.aliyuncs.com/v1' }}
+        run: node orchestrator.mjs preflight
+
+      - name: Translate languages in parallel, then advance baseline
+        if: steps.detect.outputs.changed == 'true'
+        run: |
+          cd translator/orchestrator
+          pids=""
+          while read -r lang; do
+            { node orchestrator.mjs translate --lang "$lang" --limit "${TRANSLATE_DAILY_LIMIT:-20}" --model "$QWEN_MODEL" || true
+              node orchestrator.mjs verify --lang "$lang" || true
+            # tee to a per-language file as well as the step log: the
+            # batch-loss check below tallies verify's counts, and scraping
+            # them back out of the live step log is not possible from here.
+            } 2>&1 | sed -u "s/^/${lang} | /" | tee "/tmp/orch-out-${lang}.log" &
+            pids="$pids $!"
+          done < /tmp/orch-langs.txt
+          for pid in $pids; do wait "$pid"; done
+          # advance is a cheap read-modify-write on the shared baseline
+          # (last-sync.json); keep it serial so parallel languages cannot
+          # clobber each other's records.
+          while read -r lang; do
+            node orchestrator.mjs advance --lang "$lang"
+          done < /tmp/orch-langs.txt
+        env:
+          TRANSLATE_DAILY_LIMIT: ${{ vars.TRANSLATE_DAILY_LIMIT }}
+          # Scoped to this step: only the agent talks to the model.
+          OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
+          OPENAI_BASE_URL: ${{ vars.TRANSLATE_BASE_URL || 'https://coding.dashscope.aliyuncs.com/v1' }}
+
+      # A run can stay green while some agent sessions lose their whole batch;
+      # compare dispatch logs with verify totals so those losses are visible.
+      - name: Warn if an unusual share of the batch was lost
+        if: always() && steps.detect.outputs.changed == 'true'
+        run: node translator/orchestrator/orchestrator.mjs report-batch --log-dir /tmp
+
+      # advance wrote per-language .failed.txt quarantine lists. Broken files
+      # are resolved against HEAD so the commit below stages only sound
+      # translations; they stay in the backlog for the next run. (The old
+      # single-job layout quarantined "before build"; after the #184 split
+      # there is no build in this job — the restore exists so broken output
+      # never reaches main, which is what kept the build green before.)
+      #
+      # This used to be an inline `git checkout HEAD -- <path> || rm -f`,
+      # which trusts HEAD unconditionally. When HEAD's own copy is corrupt
+      # that reinstates the corruption and throws away this run's work, so a
+      # file committed broken could never be repaired (#216). The orchestrator
+      # command decides per file on structure; see cmdQuarantine.
+      - name: Quarantine failed translations
+        if: steps.detect.outputs.changed == 'true'
+        run: node translator/orchestrator/orchestrator.mjs quarantine
+
+      # Runs after the sync/translate cycle, so the age reported here
+      # reflects this run's outcome. Catches the failure mode a
+      # failure()-gated alert cannot: the job goes green but the baseline
+      # never actually advanced, so the backlog keeps growing silently.
+      # Not gated on `changed`: quiet days are exactly when a frozen
+      # baseline must be noticed.
+      - name: Warn if baseline is stale
+        run: |
+          set -euo pipefail
+          TS="$(jq -r '.timestamp // empty' website/last-sync.json)"
+          if [ -z "$TS" ]; then
+            echo "::warning::last-sync.json has no timestamp field; cannot check baseline age."
+            exit 0
+          fi
+          AGE=$(( ( $(date -u +%s) - $(date -u -d "$TS" +%s) ) / 86400 ))
+          echo "Baseline age: ${AGE}d (last sync: $TS)"
+          if [ "$AGE" -gt 3 ]; then
+            echo "::warning::last-sync.json has not advanced in ${AGE} days — the translation backlog is growing."
+          fi
+
+      # Generated content is never pushed to main directly (#201). A unique
+      # branch avoids history rewrites; the next run waits for this PR to be
+      # reviewed and merged before spending model quota again. Organization
+      # policy forbids Actions from creating PRs, so an issue carries the
+      # one-click compare link instead.
+      - name: Publish translation review branch
+        if: steps.detect.outputs.changed == 'true' && github.ref_name == 'main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "qwen-docs-bot"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Quarantine safety net: the dedicated step above already resolved
+          # verify-failed files; repeat it so staging `website/content`
+          # wholesale can never pick one up. Every branch of the command is
+          # idempotent, so this second pass is a no-op unless the first was
+          # somehow skipped.
+          node translator/orchestrator/orchestrator.mjs quarantine
+          shopt -s nullglob
+          rm -f website/orchestrator-manifest-*.failed.txt
+          git add website/content website/last-sync.json
+          if git diff --cached --quiet; then
+            echo "::warning::nothing verified to commit this run — check the agent logs above"
+          else
+            git commit -m "docs(i18n): daily incremental translation sync [skip ci]"
+            branch="automation/daily-translation-${GITHUB_RUN_ID}"
+            git push origin "HEAD:${branch}"
+            compare="https://github.com/${GITHUB_REPOSITORY}/compare/main...${branch}?expand=1"
+            gh issue create --repo "$GITHUB_REPOSITORY" \
+              --title "Translation batch awaits review: ${branch}" \
+              --body "A verified daily translation batch is ready on \`${branch}\`. Open ${compare}, create and review the pull request, then merge it; the normal \`main\` push workflow will build and deploy the site. Later scheduled runs pause until this branch has a merged PR."
+          fi
+
+      # Reporting runs only after the durable review-branch attempt. It also runs on
+      # quiet days, producing a comparable zero-work record.
+      - name: Publish translation metrics
+        if: always()
+        run: node translator/orchestrator/orchestrator.mjs report || true
+
+      - name: Upload translation metrics
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: translation-metrics
+          path: |
+            website/translation-metrics.json
+            website/orchestrator-manifest-*.metrics.json
+          retention-days: 90
+          if-no-files-found: ignore
+
+      # Runs that cannot commit would otherwise lose their translation when the
+      # runner is torn down. Keep it downloadable so a dispatch used for
+      # testing is recoverable rather than a total loss (#196). `always()`
+      # so a failed translate step still preserves whatever was written.
+      #
+      # This also covers `main`, but only on failure: a green run on main
+      # pushed a review branch, so there is nothing to preserve locally.
+      - name: Upload translations that cannot be committed
+        if: always() && steps.detect.outputs.changed == 'true' && (github.ref_name != 'main' || failure())
+        uses: actions/upload-artifact@v4
+        with:
+          name: translation-output
+          # translation-changelog.json is deliberately not listed: the
+          # orchestrator pipeline does not produce it (legacy-pipeline
+          # residue from #197), so every non-main run warned about it.
+          path: |
+            website/content
+            website/last-sync.json
+          retention-days: 14
+          if-no-files-found: warn
+
+  report-failure:
+    name: Report scheduled failure
+    runs-on: ubuntu-latest
+    needs: translate
+    # Scheduled failures are otherwise invisible:
+    # GitHub only emails the workflow author on cron-triggered failures, and
+    # that mail is easy to filter. An expired API key took down six
+    # consecutive nightly runs (07-29..08-03) before anyone noticed,
+    # freezing the sync baseline at 2026-07-08 while the backlog grew to
+    # ~1800 file-translations. Gated to `schedule` so manual
+    # workflow_dispatch debugging runs — which are expected to fail while
+    # iterating — never file issues.
+    if: always() && github.event_name == 'schedule' && needs.translate.result == 'failure'
+    timeout-minutes: 10
+    steps:
+      - name: File or update tracking issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          TITLE="Daily translation sync is failing"
+          BODY="Scheduled run failed: ${RUN_URL} (commit \`${GITHUB_SHA}\`)"
+          # Collapse a run of consecutive failures onto one open issue: a week
+          # of breakage becomes one issue with seven comments, not seven
+          # issues. Closing the issue after a fix re-arms the alert.
+          NUM="$(gh issue list --repo "$GITHUB_REPOSITORY" \
+                   --state open --label ci-failure --search "$TITLE in:title" \
+                   --json number --jq '.[0].number // empty')"
+          if [ -n "$NUM" ]; then
+            echo "Commenting on existing tracking issue #${NUM}"
+            gh issue comment "$NUM" --repo "$GITHUB_REPOSITORY" --body "$BODY"
+          else
+            echo "Filing new tracking issue"
+            gh issue create --repo "$GITHUB_REPOSITORY" \
+              --title "$TITLE" --label ci-failure --body "$BODY"
+          fi

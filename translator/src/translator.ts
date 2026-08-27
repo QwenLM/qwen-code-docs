@@ -5,13 +5,19 @@ import chalk from "chalk";
 import { createEnvLoader } from "./utils/env";
 import {
   parseMarkdown,
+  parseMarkdownFence,
   type ParsedContent,
+  validateMarkdown,
 } from "./utils/markdown-parser";
 
 interface TranslatorConfig {
   model: string;
   maxTokens: number;
   temperature: number;
+  // Max source characters per request when a document must be split to stay
+  // under the model's output-token limit. Documents longer than this are
+  // translated in code-fence-safe slices and reassembled.
+  chunkChars: number;
 }
 
 interface TranslationOptions {
@@ -20,11 +26,34 @@ interface TranslationOptions {
   projectRoot?: string;
 }
 
+/** Indicates that translated output is not structurally valid Markdown. */
+export class InvalidTranslationError extends Error {
+  readonly validationErrors: readonly string[];
+
+  constructor(validationErrors: readonly string[]) {
+    super(`Invalid translated Markdown: ${validationErrors.join("; ")}`);
+    this.name = "InvalidTranslationError";
+    this.validationErrors = validationErrors;
+  }
+}
+
+/** Reports every document that failed during a directory translation. */
+export class TranslationBatchError extends Error {
+  readonly failedFiles: readonly string[];
+
+  constructor(failedFiles: readonly string[]) {
+    super(`Failed to translate: ${failedFiles.join(", ")}`);
+    this.name = "TranslationBatchError";
+    this.failedFiles = failedFiles;
+  }
+}
+
 export class DocumentTranslator {
   private openai: OpenAI;
   private apiConfig: TranslatorConfig;
   private translationCache: Map<string, string>;
   private projectRoot: string;
+  private maxRetries: number;
 
   constructor(options: TranslationOptions = {}) {
     this.projectRoot = options.projectRoot || process.cwd();
@@ -43,11 +72,21 @@ export class DocumentTranslator {
     });
 
     // API configuration
+    // Chunk size derives from the output-token cap: keep each slice's source
+    // small enough that its translation comfortably fits under maxTokens
+    // (≈0.6 chars/token worst case for CJK/Cyrillic). Override via QWEN_CHUNK_CHARS.
+    const chunkChars =
+      parseInt(process.env.QWEN_CHUNK_CHARS || "", 10) ||
+      Math.max(3000, Math.floor(apiConfig.maxTokens * 0.6));
+
     this.apiConfig = {
       model: apiConfig.model,
       maxTokens: apiConfig.maxTokens,
       temperature: 0.1, // Low temperature for consistent translations
+      chunkChars,
     };
+    this.maxRetries =
+      parseInt(process.env.QWEN_API_MAX_RETRIES || "", 10) || 4;
 
     // Translation cache
     this.translationCache = new Map<string, string>();
@@ -56,20 +95,25 @@ export class DocumentTranslator {
   }
 
   /**
-   * Translate entire document
+   * Translate entire document.
+   * Logs are buffered and flushed atomically so concurrent tasks never
+   * interleave their output.
    */
   async translateDocument(
     filePath: string,
     targetLang: string
   ): Promise<string> {
+    const logLines: string[] = [];
+    const log = (msg: string) => { logLines.push(msg); };
+
     try {
-      console.log(chalk.gray(`→ ${path.basename(filePath)} (${targetLang})`));
+      log(chalk.gray(`→ ${path.basename(filePath)} (${targetLang})`));
 
       const content = await fs.readFile(filePath, "utf-8");
       const parsedContent = parseMarkdown(content);
 
-      // Full document translation (leverage large context models like qwen3.6-plus)
-      console.log(
+      // Full document translation (leverage large context models like deepseek-v4-flash)
+      log(
         chalk.blue(
           `  ✓ Translating full document (${content.length} characters)`
         )
@@ -77,47 +121,199 @@ export class DocumentTranslator {
 
       const translatedContent = await this.translateContent(
         parsedContent.originalContent,
-        targetLang
+        targetLang,
+        path.basename(filePath),
+        log
       );
 
-      console.log(chalk.green(`✓ Completed ${path.basename(filePath)}`));
+      log(chalk.green(`✓ Completed ${path.basename(filePath)} (${targetLang})`));
       return translatedContent;
     } catch (error: any) {
-      console.error(chalk.red(`✗ Translation failed: ${error.message}`));
+      log(chalk.red(`✗ Translation failed: ${path.basename(filePath)} (${targetLang}): ${error.message}`));
       throw error;
+    } finally {
+      // Flush all collected logs in one atomic write so concurrent
+      // translations never interleave their progress lines.
+      if (logLines.length) {
+        process.stdout.write(logLines.join('\n') + '\n');
+      }
     }
   }
 
   /**
    * Translate text content
+   * @param label Optional label (e.g. filename) included in progress logs to
+   *              disambiguate output when multiple translations run concurrently.
+   * @param log   Logger function; defaults to console.log. Pass a buffered
+   *              logger to group output atomically.
    */
   async translateContent(
     content: string,
-    targetLang: string
+    targetLang: string,
+    label?: string,
+    log: (msg: string) => void = console.log
   ): Promise<string> {
     const cacheKey = `${content}-${targetLang}`;
     if (this.translationCache.has(cacheKey)) {
-      console.log(chalk.gray(`    ✓ Cached translation`));
+      log(chalk.gray(`    ✓ Cached translation`));
       return this.translationCache.get(cacheKey)!;
     }
 
     try {
-      console.log(chalk.cyan(`    → Translating content (${targetLang})`));
+      let translatedContent: string;
 
-      const prompt = this.buildTranslationPrompt(content, targetLang);
-      const translatedContent = await this.callTranslationAPI(
-        prompt,
-        targetLang
-      );
+      const logPrefix = label ? `${label} (${targetLang})` : `(${targetLang})`;
+
+      if (content.length <= this.apiConfig.chunkChars) {
+        // Small enough: translate in a single request (original behavior).
+        log(chalk.cyan(`    → Translating content ${logPrefix}`));
+        translatedContent = await this.callTranslationAPI(
+          this.buildTranslationPrompt(content, targetLang),
+          targetLang
+        );
+      } else {
+        // Large document: split into code-fence-safe slices, translate each,
+        // and reassemble. Avoids silent truncation when the translation would
+        // exceed the model's output-token limit.
+        const slices = this.chunkMarkdown(content, this.apiConfig.chunkChars);
+        log(
+          chalk.cyan(
+            `    → Translating content ${logPrefix} in ${slices.length} slices`
+          )
+        );
+        const translatedSlices: string[] = [];
+        for (let i = 0; i < slices.length; i++) {
+          const out = await this.callTranslationAPI(
+            this.buildTranslationPrompt(slices[i], targetLang),
+            targetLang,
+            0,
+            true // sliceMode: tell the model this is a contiguous slice
+          );
+          // Guard against a slice coming back empty (which would silently drop
+          // a section). callTranslationAPI already retries; if still empty for
+          // non-trivial input, fail loudly instead of producing a broken doc.
+          if (slices[i].trim().length > 200 && out.trim().length === 0) {
+            throw new Error(
+              `Empty translation for slice ${i + 1}/${slices.length}`
+            );
+          }
+          translatedSlices.push(out);
+          log(chalk.gray(`      ✓ slice ${i + 1}/${slices.length}`));
+        }
+        translatedContent = translatedSlices.join("\n");
+      }
+
+      const validation = validateMarkdown(translatedContent);
+      if (!validation.isValid) {
+        throw new InvalidTranslationError(validation.errors);
+      }
 
       // Cache translation result
       this.translationCache.set(cacheKey, translatedContent);
 
       return translatedContent;
     } catch (error: any) {
-      console.error(chalk.red(`    ✗ Translation failed: ${error.message}`));
+      log(chalk.red(`    ✗ Translation failed: ${error.message}`));
       throw error;
     }
+  }
+
+  /**
+   * Split Markdown into bounded chunks without breaking fenced code blocks.
+   * A fenced block or unbroken token larger than the limit remains intact
+   * because dividing either one can change the source Markdown.
+   */
+  private chunkMarkdown(content: string, maxChars: number): string[] {
+    const lines = content.split("\n");
+    const chunks: string[] = [];
+    let cur: string[] = [];
+    let curLen = 0;
+    let openFence: { marker: "`" | "~"; length: number } | undefined;
+
+    const flush = () => {
+      if (cur.length) {
+        chunks.push(cur.join("\n"));
+        cur = [];
+        curLen = 0;
+      }
+    };
+
+    for (const line of lines) {
+      const fence = parseMarkdownFence(line);
+      const closesFence = Boolean(
+        openFence &&
+          fence?.marker === openFence.marker &&
+          fence.length >= openFence.length &&
+          fence.rest.trim() === ""
+      );
+      const opensFence = Boolean(
+        !openFence &&
+          fence &&
+          !(fence.marker === "`" && fence.rest.includes("`"))
+      );
+
+      if (
+        !openFence &&
+        !opensFence &&
+        line.length > maxChars &&
+        this.isPlainParagraphLine(line)
+      ) {
+        flush();
+        chunks.push(...this.splitLongLine(line, maxChars));
+        continue;
+      }
+
+      if (!openFence && cur.length > 0 && curLen + line.length + 1 > maxChars) {
+        flush();
+      }
+
+      cur.push(line);
+      curLen += line.length + 1;
+
+      if (closesFence) {
+        openFence = undefined;
+        if (curLen >= maxChars) flush();
+      } else if (opensFence && fence) {
+        openFence = { marker: fence.marker, length: fence.length };
+      }
+    }
+    flush();
+
+    return chunks.length ? chunks : [content];
+  }
+
+  private splitLongLine(line: string, maxChars: number): string[] {
+    const slices: string[] = [];
+    let remaining = line;
+
+    while (remaining.length > maxChars) {
+      const prefix = remaining.slice(0, maxChars);
+      let splitAt = -1;
+      for (const match of prefix.matchAll(/[.!?。！？](?:\s+|$)/g)) {
+        splitAt = (match.index ?? 0) + 1;
+      }
+      if (splitAt < 1) splitAt = prefix.lastIndexOf(" ");
+      if (splitAt < 1) {
+        splitAt = remaining.indexOf(" ", maxChars);
+        if (splitAt < 1) {
+          slices.push(remaining);
+          return slices;
+        }
+      }
+
+      slices.push(remaining.slice(0, splitAt).trimEnd());
+      remaining = remaining.slice(splitAt).trimStart();
+    }
+
+    if (remaining) slices.push(remaining);
+    return slices;
+  }
+
+  private isPlainParagraphLine(line: string): boolean {
+    if (line.includes("|")) return false;
+    return !/^(?: {4}|\t| {0,3}(?:#{1,6}\s|>|[-+*]\s|\d+[.)]\s|<|\[[^\]]+\]:|\{))/.test(
+      line
+    );
   }
 
   /**
@@ -151,7 +347,7 @@ ${terminologyContent}
   /**
    * Build system prompt
    */
-  buildSystemPrompt(targetLang: string): string {
+  buildSystemPrompt(targetLang: string, sliceMode = false): string {
     const languageNames: Record<string, string> = {
       zh: "Chinese",
       de: "German",
@@ -159,10 +355,19 @@ ${terminologyContent}
       ru: "Russian",
       ja: "Japanese",
       "pt-BR": "Portuguese (Brazil)",
+      es: "Spanish",
+      ko: "Korean",
     };
 
     const targetLanguageName = languageNames[targetLang] || targetLang;
     const terminology = this.loadTerminology(targetLang);
+
+    // When the document is translated in slices, the model receives one
+    // contiguous fragment at a time. Tell it (here, in the system prompt, so it
+    // is never echoed into the output) to translate the fragment as-is.
+    const sliceNote = sliceMode
+      ? `\n\n**SLICE MODE:** The text you receive is ONE CONTIGUOUS SLICE of a larger document. It may begin or end mid-section or mid-code-block. Translate exactly what you are given, as-is. Do NOT add headings, do NOT complete cut-off code blocks, and do NOT mention that this is a slice. Output only the translated fragment.`
+      : "";
 
     return `You are an expert technical documentation translator writing for software developers.
 
@@ -197,7 +402,7 @@ Instead of: "配置你的应用程序编程接口密钥"
 Write: "配置你的 API key"
 Instead of: "使用通义千问代码模型"
 Write: "使用 Qwen Code 模型"
-${terminology}
+${terminology}${sliceNote}
 `;
   }
 
@@ -212,6 +417,8 @@ ${terminology}
       ru: "Russian",
       ja: "Japanese",
       "pt-BR": "Portuguese (Brazil)",
+      es: "Spanish",
+      ko: "Korean",
     };
 
     const targetLanguageName = languageNames[targetLang] || targetLang;
@@ -229,10 +436,10 @@ ${content}`;
   async callTranslationAPI(
     prompt: string,
     targetLang: string,
-    retryCount = 0
+    retryCount = 0,
+    sliceMode = false
   ): Promise<string> {
-    const maxRetries = 3;
-    const baseDelay = 1000; // 1 second base delay
+    const baseDelay = 2000; // 2 second base delay
 
     try {
       const completion = await this.openai.chat.completions.create({
@@ -240,7 +447,7 @@ ${content}`;
         messages: [
           {
             role: "system",
-            content: this.buildSystemPrompt(targetLang),
+            content: this.buildSystemPrompt(targetLang, sliceMode),
           },
           { role: "user", content: prompt },
         ],
@@ -248,18 +455,47 @@ ${content}`;
         temperature: this.apiConfig.temperature,
       });
 
-      return completion.choices[0].message.content?.trim() || "";
-    } catch (error: any) {
-      // Special handling for 429 errors
-      if (error.status === 429 && retryCount < maxRetries) {
-        const delay = baseDelay * Math.pow(2, retryCount); // Exponential backoff
+      const result = completion.choices[0].message.content?.trim() || "";
+
+      // An empty response on non-trivial input is almost always a transient
+      // model hiccup; retry rather than silently dropping the content.
+      if (
+        result.length === 0 &&
+        prompt.length > 200 &&
+        retryCount < this.maxRetries
+      ) {
+        const delay = this.getRetryDelay(baseDelay, retryCount);
         console.log(
           chalk.yellow(
-            `    ⏳ Rate limited, retrying in ${delay / 1000}s (${retryCount + 1}/${maxRetries})`
+            `    ⏳ Empty response, retrying in ${Math.round(delay / 1000)}s (${retryCount + 1}/${this.maxRetries})`
           )
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
-        return this.callTranslationAPI(prompt, targetLang, retryCount + 1);
+        return this.callTranslationAPI(
+          prompt,
+          targetLang,
+          retryCount + 1,
+          sliceMode
+        );
+      }
+
+      return result;
+    } catch (error: any) {
+      if (this.isRetriableApiError(error) && retryCount < this.maxRetries) {
+        const delay = this.getRetryDelay(baseDelay, retryCount);
+        const details = this.formatApiErrorDetails(error);
+        console.log(
+          chalk.yellow(
+            `    ⏳ Transient API error (${details}), retrying in ${Math.round(delay / 1000)}s (${retryCount + 1}/${this.maxRetries})`
+          )
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return this.callTranslationAPI(
+          prompt,
+          targetLang,
+          retryCount + 1,
+          sliceMode
+        );
       }
 
       // Other error handling
@@ -271,6 +507,62 @@ ${content}`;
         throw new Error(`Request configuration error: ${error.message}`);
       }
     }
+  }
+
+  private getRetryDelay(baseDelay: number, retryCount: number): number {
+    const jitter = Math.floor(Math.random() * 1000);
+    return baseDelay * Math.pow(2, retryCount) + jitter;
+  }
+
+  private isRetriableApiError(error: any): boolean {
+    const status = Number(error?.status || error?.cause?.status);
+    if (status === 408 || status === 429 || status >= 500) {
+      return true;
+    }
+
+    const code = String(error?.code || error?.cause?.code || "");
+    if (
+      [
+        "ECONNRESET",
+        "ECONNREFUSED",
+        "ETIMEDOUT",
+        "EAI_AGAIN",
+        "UND_ERR_SOCKET",
+        "UND_ERR_HEADERS_TIMEOUT",
+        "UND_ERR_BODY_TIMEOUT",
+      ].includes(code)
+    ) {
+      return true;
+    }
+
+    const message = this.formatApiErrorDetails(error).toLowerCase();
+    return [
+      "api timeout",
+      "connection error",
+      "premature close",
+      "fetch failed",
+      "socket hang up",
+      "timed out",
+      "terminated",
+      "connection closed",
+      "connection reset",
+      "timeout",
+    ].some((needle) => message.includes(needle));
+  }
+
+  private formatApiErrorDetails(error: any): string {
+    const parts = [
+      error?.name,
+      error?.code,
+      error?.message,
+      error?.cause?.name,
+      error?.cause?.code,
+      error?.cause?.message,
+    ]
+      .filter(Boolean)
+      .map(String);
+
+    return parts.length > 0 ? parts.join(": ") : "unknown error";
   }
 
   /**
@@ -287,6 +579,7 @@ ${content}`;
     );
 
     console.log(chalk.blue(`📁 Found ${markdownFiles.length} Markdown files`));
+    const failedFiles: string[] = [];
 
     for (const file of markdownFiles) {
       // Ensure file is string type
@@ -305,10 +598,15 @@ ${content}`;
         await fs.writeFile(targetPath, translatedContent, "utf-8");
         console.log(chalk.green(`✓ Saved: ${path.basename(targetPath)}`));
       } catch (error: any) {
+        failedFiles.push(fileName);
         console.error(
           chalk.red(`✗ Failed to translate ${file}: ${error.message}`)
         );
       }
+    }
+
+    if (failedFiles.length > 0) {
+      throw new TranslationBatchError(failedFiles);
     }
   }
 }

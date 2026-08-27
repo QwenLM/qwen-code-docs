@@ -1,91 +1,90 @@
-## Personalizando o ambiente de sandbox (Docker/Podman)
+## Personalizando o ambiente sandbox (Docker/Podman)
 
-### Atualmente, o projeto não oferece suporte ao uso de `BUILD_SANDBOX` após a instalação via pacote npm
+### Atualmente, o projeto não suporta o uso da função BUILD_SANDBOX após a instalação através do pacote npm
 
-1. Para criar uma sandbox personalizada, você precisa acessar os scripts de build (`scripts/build_sandbox.js`) no repositório do código-fonte.
-2. Esses scripts de build não estão incluídos nos pacotes distribuídos pelo npm.
-3. O código contém verificações de caminho hard-coded que rejeitam explicitamente solicitações de build de ambientes que não sejam o código-fonte.
+1. Para criar um sandbox personalizado, você precisa acessar os scripts de build (scripts/build_sandbox.js) no repositório do código-fonte.
+2. Esses scripts de build não estão incluídos nos pacotes publicados pelo npm.
+3. O código contém verificações de caminho hard-coded que rejeitam explicitamente requisições de build de ambientes que não sejam o código-fonte.
 
-Se você precisar de ferramentas adicionais dentro do container (por exemplo, `git`, `python`, `rg`), crie um Dockerfile personalizado. O procedimento específico é o seguinte:
+Se você precisar de ferramentas adicionais dentro do container (ex.: `git`, `python`, `rg`), crie um Dockerfile personalizado. A operação específica é a seguinte:
 
-#### 1. Clone o projeto Qwen Code primeiro: https://github.com/QwenLM/qwen-code.git
+#### 1. Primeiro, clone o projeto qwen-code: https://github.com/QwenLM/qwen-code.git
 
 #### 2. Certifique-se de executar as operações a seguir no diretório do repositório do código-fonte
 
 ```bash
-# 1. First, install the dependencies of the project
+# 1. Primeiro, instale as dependências do projeto
 npm install
 
-# 2. Build the Qwen Code project
+# 2. Compile o projeto Qwen Code
 npm run build
 
-# 3. Verify that the dist directory has been generated
+# 3. Verifique se o diretório dist foi gerado
 ls -la packages/cli/dist/
 
-# 4. Create a global link in the CLI package directory
+# 4. Crie um link global no diretório do pacote CLI
 cd packages/cli
 npm link
 
-# 5. Verification link (it should now point to the source code)
+# 5. Verifique o link (agora ele deve apontar para o código-fonte)
 which qwen
-# Expected output: /xxx/xxx/.nvm/versions/node/v24.11.1/bin/qwen
-# Or similar paths, but it should be a symbolic link
+# Saída esperada: /xxx/xxx/.nvm/versions/node/v24.11.1/bin/qwen
+# Ou caminho similar, mas deve ser um link simbólico
 
-# 6. For details of the symbolic link, you can see the specific source code path
+# 6. Para detalhes do link simbólico, você pode ver o caminho específico do código-fonte
 ls -la $(dirname $(which qwen))/../lib/node_modules/@qwen-code/qwen-code
-# It should show that this is a symbolic link pointing to your source code directory
+# Deve mostrar que este é um link simbólico apontando para seu diretório de código-fonte
 
-# 7.Test the version of qwen
+# 7. Teste a versão do qwen
 qwen -v
-# npm link will overwrite the global qwen. To avoid being unable to distinguish the same version number, you can uninstall the global CLI first
-
+# O npm link substituirá o qwen global. Para evitar não conseguir distinguir o mesmo número de versão, você pode desinstalar a CLI global primeiro
 ```
 
-#### 3. Crie o Dockerfile da sua sandbox no diretório raiz do seu projeto
+#### 3. Crie seu Dockerfile sandbox no diretório raiz do seu próprio projeto
 
 - Caminho: `.qwen/sandbox.Dockerfile`
 
 - Endereço da imagem oficial: https://github.com/QwenLM/qwen-code/pkgs/container/qwen-code
 
 ```bash
-# Based on the official Qwen sandbox image (It is recommended to explicitly specify the version)
+# Baseado na imagem oficial do sandbox Qwen (recomenda-se especificar explicitamente a versão)
 FROM ghcr.io/qwenlm/qwen-code:sha-570ec43
-# Add your extra tools here
+# Adicione suas ferramentas extras aqui
 RUN apt-get update && apt-get install -y \
     git \
     python3 \
     ripgrep
 ```
 
-#### 4. Crie a primeira imagem da sandbox no diretório raiz do seu projeto
+#### 4. Crie a primeira imagem sandbox no diretório raiz do seu projeto
 
 ```bash
 QWEN_SANDBOX=docker BUILD_SANDBOX=1 qwen -s
-# Observe whether the sandbox version of the tool you launched is consistent with the version of your custom image. If they are consistent, the startup will be successful
+# Observe se a versão sandbox da ferramenta que você iniciou é consistente com a versão da sua imagem personalizada. Se forem consistentes, a inicialização será bem-sucedida
 ```
 
-Isso cria uma imagem específica do projeto com base na imagem padrão da sandbox.
+Isso cria uma imagem específica para o projeto baseada na imagem sandbox padrão.
 
 #### Remover o npm link
 
-- Se quiser restaurar a CLI oficial do Qwen Code, remova o npm link
+- Se você quiser restaurar a CLI oficial do qwen, remova o npm link
 
 ```bash
-# Method 1: Unlink globally
+# Método 1: Desvincular globalmente
 npm unlink -g @qwen-code/qwen-code
 
-# Method 2: Remove it in the packages/cli directory
+# Método 2: Remover no diretório packages/cli
 cd packages/cli
 npm unlink
 
-# Verification has been lifted
+# Verificar se foi removido
 which qwen
-# It should display "qwen not found"
+# Deve exibir "qwen not found"
 
-# Reinstall the global version if necessary
+# Reinstalar a versão global, se necessário
 npm install -g @qwen-code/qwen-code
 
-# Verification Recovery
+# Verificar a restauração
 which qwen
 qwen --version
 ```

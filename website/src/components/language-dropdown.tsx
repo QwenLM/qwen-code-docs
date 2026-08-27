@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import React, { useState, useRef, useEffect, Suspense } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { ChevronDownIcon, GlobeIcon } from "lucide-react";
+import cn from "clsx";
 
 // 语言配置
-const languages = [
+export const languages = [
   { locale: "en", name: "English", flag: "🇺🇸" },
   { locale: "zh", name: "中文", flag: "🇨🇳" },
   { locale: "de", name: "Deutsch", flag: "🇩🇪" },
@@ -13,20 +14,61 @@ const languages = [
   { locale: "ru", name: "Русский", flag: "🇷🇺" },
   { locale: "ja", name: "日本語", flag: "🇯🇵" },
   { locale: "pt-BR", name: "Português (BR)", flag: "🇧🇷" },
+  { locale: "ko", name: "한국어", flag: "🇰🇷" },
 ];
+
+const languageLocales = languages.map((language) => language.locale);
 
 interface LanguageDropdownProps {
   currentLang: string;
+  className?: string;
+  compactOnTablet?: boolean;
 }
 
-export const LanguageDropdown: React.FC<LanguageDropdownProps> = ({
+function getShowcaseCaseId(searchParams: URLSearchParams) {
+  const namedCaseId = searchParams.get("case");
+  if (namedCaseId) return namedCaseId;
+
+  const firstEntry = Array.from(searchParams.entries())[0];
+  if (!firstEntry) return null;
+
+  const [key, value] = firstEntry;
+  return value === "" ? key : null;
+}
+
+function isShowcasePageMounted() {
+  if (typeof document === "undefined") return false;
+  return Boolean(document.querySelector("[data-showcase-index]"));
+}
+
+export const LanguageDropdown: React.FC<LanguageDropdownProps> = (props) => {
+  return (
+    <Suspense
+      fallback={
+        <div className={cn('inline-flex min-w-max flex-nowrap items-center gap-2 whitespace-nowrap px-3 py-1.5 text-sm text-muted-foreground bg-secondary/50 rounded-md border border-border', props.className)}>
+          <GlobeIcon className='w-4 h-4 shrink-0' />
+          <span className={props.compactOnTablet ? "max-xl:hidden" : undefined}>
+            {languages.find((l) => l.locale === props.currentLang)?.name || props.currentLang}
+          </span>
+        </div>
+      }
+    >
+      <LanguageDropdownInner {...props} />
+    </Suspense>
+  );
+};
+
+const LanguageDropdownInner: React.FC<LanguageDropdownProps> = ({
   currentLang,
+  className,
+  compactOnTablet = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   // 客户端渲染标记
   useEffect(() => {
@@ -62,11 +104,13 @@ export const LanguageDropdown: React.FC<LanguageDropdownProps> = ({
 
     // 构建新的路径
     const pathSegments = pathname.split("/").filter(Boolean);
+    const isCurrentShowcasePage = isShowcasePageMounted();
+    const showcaseCaseId = getShowcaseCaseId(searchParams);
 
     // 如果当前路径包含语言代码，替换它
     if (
       pathSegments[0] &&
-      languages.some((lang) => lang.locale === pathSegments[0])
+      languageLocales.includes(pathSegments[0])
     ) {
       pathSegments[0] = newLang;
     } else {
@@ -75,33 +119,45 @@ export const LanguageDropdown: React.FC<LanguageDropdownProps> = ({
     }
 
     const newPath = "/" + pathSegments.join("/");
-    router.push(newPath);
+    const queryString = isCurrentShowcasePage
+      ? showcaseCaseId
+        ? `case=${encodeURIComponent(showcaseCaseId)}`
+        : ""
+      : showcaseCaseId
+        ? ""
+        : searchParams.toString();
+    router.push(queryString ? `${newPath}?${queryString}` : newPath);
     setIsOpen(false);
   };
 
   // 服务端渲染时返回简单版本
   if (!isMounted) {
     return (
-      <div className='flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground bg-secondary/50 rounded-md border border-border'>
-        <GlobeIcon className='w-4 h-4' />
-        <span>{currentLanguage?.name || currentLang}</span>
+      <div className={cn('inline-flex min-w-max flex-nowrap items-center gap-2 whitespace-nowrap px-3 py-1.5 text-sm text-muted-foreground bg-secondary/50 rounded-md border border-border', className)}>
+        <GlobeIcon className='w-4 h-4 shrink-0' />
+        <span className={compactOnTablet ? "max-xl:hidden" : undefined}>
+          {currentLanguage?.name || currentLang}
+        </span>
       </div>
     );
   }
 
   return (
-    <div className='relative' ref={dropdownRef}>
+    <div className={cn('relative', className)} ref={dropdownRef}>
       {/* 触发按钮 */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className='flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent bg-secondary/50 rounded-md transition-colors duration-200 border border-border'
+        className='inline-flex min-w-max flex-nowrap items-center gap-2 whitespace-nowrap px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent bg-secondary/50 rounded-md transition-colors duration-200 border border-border'
         aria-label='选择语言'
       >
-        <span className='font-medium'>
-          {currentLanguage?.flag} {currentLanguage?.name || currentLang}
+        <span className='inline-flex items-center gap-1.5 whitespace-nowrap font-medium'>
+          <span className='shrink-0'>{currentLanguage?.flag}</span>
+          <span className={compactOnTablet ? "max-xl:hidden" : undefined}>
+            {currentLanguage?.name || currentLang}
+          </span>
         </span>
         <ChevronDownIcon
-          className={`w-4 h-4 transition-transform duration-200 ${
+          className={`w-4 h-4 shrink-0 transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""
           }`}
         />
@@ -115,7 +171,7 @@ export const LanguageDropdown: React.FC<LanguageDropdownProps> = ({
               <button
                 key={language.locale}
                 onClick={() => handleLanguageChange(language.locale)}
-                className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors duration-150 flex items-center gap-2 ${
+                className={`w-full whitespace-nowrap text-left px-3 py-2 text-sm hover:bg-accent transition-colors duration-150 flex items-center gap-2 ${
                   language.locale === currentLang
                     ? "bg-accent/50 text-primary font-semibold"
                     : "text-popover-foreground"

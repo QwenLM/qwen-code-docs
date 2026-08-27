@@ -1,0 +1,210 @@
+---
+title: "Qwen Code 週間レポート：/loop 自律モード、デスクトップ音声入力、Settings タブビュー"
+date: "2026-07-02"
+description: "今週 Qwen Code は v0.19.4 をリリース。/loop 自律モード、デスクトップ音声入力、Settings タブビューなどの新機能を追加しました。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: https://gw.alicdn.com/imgextra/i3/O1CN01AYqMKM1aRorovg0v7_!!6000000003327-0-tps-1344-576.jpg
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 週間レポート：/loop 自律モード、デスクトップ音声入力、Settings タブビュー"
+  date="2026-07-02"
+  author="Qwen Team"
+/>
+
+今週 Qwen Code は v0.19.4 をリリースし、80以上の PR がマージされ、3つの方向性をカバーしました：
+
+**`/loop` は離席中も実行可能。** 裸の `/loop` で自律モードを起動——agent は離席中に確立済みの作業を推進し、新しいタスクを勝手に作ったり不可逆な操作を行ったりしません。`.qwen/loop.md` タスクファイルを追加すると、ループは編集可能なチェックリストを再読み込みし、削除後は no-op tick を送信してループを維持します。Claude Code が先週[エージェントループ入門ガイド](https://claude.com/blog/getting-started-with-loops)を公開し、agent が既定の計画を繰り返し実行することを解説していましたが、`/loop` の自律モードも同様の動作をします。ただし追加のレイヤーがあります：タスクリストはいつでも編集可能で、ループは変更を自動的に検知します。
+
+**デスクトップ音声入力が登場。** CLI と Web Shell ではすでに音声入力がサポートされていましたが、デスクトップ版だけ不足していました。このバージョンで最後のインターフェースが補完され、3つのプラットフォームで統一された体験が実現しました。
+
+**ターミナルインタラクションのギャップが縮小。** `/settings` がフラットリストからタブビューに変更され、検索・ステータス・統計が一画面で完結。Virtualized History モードでメニュー、補完、入力ボックスがマウスのクリックとホバーに対応しました。
+
+## ✨ 新機能
+
+### `/loop` 自律モード + loop.md タスクファイル
+
+`/loop` が2つの新しいモードをサポートしました：
+
+**自律モード**：裸の `/loop`（prompt なし、interval なし）は使用法のヒントを表示する代わりに、自律ループを起動します。agent は離席中に確立済みの作業を推進——進行中の PR のメンテナンス、途中の作業の続行、約束の実行——ですが、transcript で確立されたものだけを実行し、新しいタスクを勝手に作らず、明示的な許可なしに不可逆な操作（push/delete/send）を行いません。静かになったら停止します。自律 preamble は最初に1回だけ送信され、以降は各 tick で短いリマインダーのみを送信し、トークンコストを低く抑えます。
+
+**loop.md タスクファイル**：プロジェクトルートまたは `~/.qwen/` に `.qwen/loop.md` を作成し、wakeup/cron の prompt を sentinel（`<<loop.md-dynamic>>` または `<<loop.md>>`）に設定すると、ループは毎回 fire 時にファイルを再読み込みします。初回は全文を送信し、以降は変更がなければ短いリマインダー、ファイルを編集すると全文を再送信します。ファイルがなくなるとループは no-op tick を送信（agent は何もせず、ループの維持のみ）し、自律モードの基本動作に戻ります。loop.md を再作成すると、次の tick で自動的に変更を検出し、全文を再送信します。
+
+**チャンネルループ**：`/loop` はターミナルに限定されず、DingTalk、Feishu チャンネルでも実行可能です。グループチャットで `/loop add "0 9 * * 1-5" CI ステータスを確認` で定期ループを作成、`/loop list` で現在のチャンネルのすべてのループを確認、`/loop inspect <id>` で実行回数と最新の結果を確認、`/loop cancel <id>` で停止できます。ループは channel session router を通じて実行され、現在アクティブな turn が終了してから開始し、結果はチャンネルを通じて書き戻されます。ワンショットループは成功または失敗後に自動的に無効化されます。
+
+**できること：**
+
+- 裸の `/loop` で離席中に agent に作業の推進を任せる
+- `.qwen/loop.md` で永続的かつ編集可能なタスクリストを管理、各 tick で再説明不要
+- loop.md を削除してもループは no-op tick で維持、再作成後にシームレスに復帰
+- DingTalk/Feishu グループで `/loop add` で定期ループを設定、agent が定期的に作業を推進
+
+PR [#5890](https://github.com/QwenLM/qwen-code/pull/5890)、[#5991](https://github.com/QwenLM/qwen-code/pull/5991)、[#6073](https://github.com/QwenLM/qwen-code/pull/6073) を参照
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000002454/O1CN01vw4qRY1Tzz61J45Mh_!!6000000002454-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/ytGdVb28ZDLZxgzI3BFhtGSTleBZemLHPiLqw_lI53E.mp4" controls></video>
+
+### デスクトップ音声入力：3プラットフォーム対応完了
+
+音声入力は CLI と Web Shell ですでにサポートされていましたが、デスクトップ版では未対応——ユーザーが音声を設定してもデスクトップに切り替えるとその機能が使えなくなりました。このバージョンで最後のインターフェースが補完されました。
+
+composer ツールバーにマイクボタンが追加され、録音中はツールバーが録音バーに変化します（点線ガイド → リアルタイム波形 → タイマー）。停止後にトランスクリプション結果が入力ボックスに挿入され、確認できます。トランスクリプションはサーバーサイドで実行され、CLI の音声パイプライン（バッチ `qwen3-asr-flash` とリアルタイム `*-realtime` モデル）を再利用します。provider の認証情報は renderer に入りません。音声は Settings → Input と composer のモデルドロップダウンで有効/無効を切り替え、モデルを選択できます。
+
+**できること：**
+
+- マイクをクリックして話すだけで、リアルタイムに波形とタイマーを確認
+- realtime モデル（`qwen3-asr-flash-realtime` など）を選択すると、話し中に interim テキストをリアルタイム表示
+- タブレットやマルチモニター環境でハンズフリー入力
+
+PR [#5856](https://github.com/QwenLM/qwen-code/pull/5856) を参照
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000007413/O1CN01JVZosB24dDBcBYKP7_!!6000000007413-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/J-6kYrUGwlI-KcGhRr1tuzipOySnNR78nq4SqeuEAG0.mp4" controls></video>
+
+> **使い方**
+> 1. リポジトリをクローン：
+> ```
+> git clone https://github.com/QwenLM/qwen-code.git
+> ```
+> 2. ディレクトリに移動
+> ```
+> cd qwen-code/packages/desktop
+> ```
+> 3. 依存関係をインストールして開発モードを起動
+> ```
+> bun install && bun run dev
+> ```
+
+### Mobile Sidebar Drawer + `qwen serve` の体験改善
+
+これまでスマホブラウザで `qwen serve` にアクセスすると、サイドバー（セッションリスト、検索、新規セッション）は 760px 以下で `display: none` で完全に隠され、セッションを切り替える方法がありませんでした。現在は overlay drawer モードに変更：チャットパネルのヘッダーにメニューボタンが表示され、クリックするとサイドバーが左側からスライドインし、半透明のオーバーレイが表示されます。セッションの選択、新規セッション作成、オーバーレイクリックのいずれかで drawer が閉じます。デスクトップのレイアウトには一切影響しません。
+
+これは `qwen serve` を「使える」から「使いやすい」にする一連の変更の一端です：
+
+- **セッション遅延作成**（[#6066](https://github.com/QwenLM/qwen-code/pull/6066)）：最初の prompt までセッションを作成せず、空セッションのオーバーヘッドを削減、Web Shell の起動が高速化
+- **workspace remember**（[#5884](https://github.com/QwenLM/qwen-code/pull/5884)）：serve モードがワークスペースを記憶し、再起動後に再指定不要
+- **session archive**（[#6058](https://github.com/QwenLM/qwen-code/pull/6058)）：daemon がセッションアーカイブをサポート、長期セッションの管理が可能に
+
+**できること：**
+
+- スマホブラウザで `qwen serve` にアクセスし、メニューボタンでセッションを切り替え
+- 複数プロジェクト間を切り替える際、serve が自動的にワークスペースを記憶
+- 長期セッションをアーカイブして、削除せずに保管
+
+PR [#6003](https://github.com/QwenLM/qwen-code/pull/6003) を参照
+
+| 説明   | サイドバー折りたたみ                                                                                            | サイドバー展開                                                                                            |
+| ---- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| テストスクリーンショット | ![](https://gw.alicdn.com/imgextra/i3/O1CN01f8YXr81lxqKPAKZed_!!6000000004886-2-tps-390-844.png) | ![](https://gw.alicdn.com/imgextra/i3/O1CN01ZQ5jCT1KMIEL5UmLi_!!6000000001149-2-tps-390-844.png) |
+
+### TUI マウスクリックとホバー
+
+CLI の Virtualized History モードではこれまでマウスホイールとスクロールバーのみサポートされ、ポインタインタラクションは対応していませんでした。Virtualized History（`ui.useTerminalBuffer`）を有効にすると、3種類のインタラクションが利用可能になります：
+
+- **選択メニューとダイアログ**（権限確認、`/model`、`/config`、テーマなど）：ホバーで行をハイライト、クリックで選択
+- **`/` コマンドと `@` ファイル補完リスト**：ホバーで候補をハイライト、クリックで受け入れ
+- **入力ボックス**：左クリックでテキストカーソルを移動（複数行の折り返し、スクロールオフセット、ワイドキャラクターに対応）
+
+**できること：**
+
+- `/model` ダイアログでマウスクリック直接モデルを選択、矢印キー不要
+- `/` 入力後にマウスクリックで補完候補を選択
+- 複数行入力でクリックしてカーソルを再配置
+
+PR [#6011](https://github.com/QwenLM/qwen-code/pull/6011) を参照
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01c0h5qw1vEdOGiDaqv_!!6000000006141-1-tps-1280-720.gif)
+
+### Settings タブダイアログ：検索・ステータス・統計が一画面
+
+`/settings` がフラットリストからタブビューに刷新されました。Claude Code の `/config` デザインを参考にしています。上部のタブバーで Settings / Status / Stats の3ページに分類され、Settings ページには検索ボックスが追加され、入力すると即座にフィルタリングされます。
+
+Status ページは `/status` と同じシステム情報を表示し、Stats ページは完全な `/stats` ダッシュボード（Session / Activity / Efficiency サブタブ）を埋め込んでいます。キーボードフォーカスはタブバー → 検索ボックス → 設定リストの順に縦方向に移動し、ハイライトは実際にフォーカスを保持している領域にのみ表示されます。
+
+**できること：**
+
+- `/settings` を開いて直接キーワードを入力して設定項目をフィルタリング
+- ←/→ で Status ページに切り替えてランタイム情報を確認、`/status` を個別に実行不要
+- Stats ページで Tab で Session / Activity / Efficiency を切り替え、Efficiency テーブルがダイアログの高さを超える場合は自動的に "+N more" に折りたたみ
+
+PR [#6044](https://github.com/QwenLM/qwen-code/pull/6044) を参照
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01X1ytLW1KtGkN6GEGW_!!6000000001221-1-tps-1280-720.gif)
+
+### Chrome 拡張機能：ブラウザ内で直接チャット + ページ操作
+
+Chrome 拡張機能が daemon-direct アーキテクチャで復活——拡張機能は Native Messaging ホストではなく、ローカルの `qwen serve` daemon のシンクライアントとなりました。
+
+サイドバーチャットは `DaemonSessionProvider` を通じて `qwen serve` に直接接続（HTTP+SSE、web shell と同じパス）し、daemon に接続できない場合は "`qwen serve` を実行してください" とプロンプトを表示します。ブラウザツール（ページ読み取り、スクリーンショット、コンソール、ナビゲーション、クリック、フォーム入力）はクライアントホストの MCP server として daemon WebSocket 経由で agent に公開され、チャットとツールの両方のパスから Native Messaging が不要になりました。
+
+> [!caution]
+>
+> 注意：リバースツールチャンネルは現在 `QWEN_SERVE_CLIENT_MCP_OVER_WS` 環境変数で有効化され、デフォルトではオフです。`qwen serve` 起動時にこのフラグを明示的に設定する必要があります。
+
+**できること：**
+
+- Chrome サイドバーで直接 Qwen Code とチャット、OS ネイティブホストのインストール不要
+- agent に現在のページの読み取り、スクリーンショット、ブラウザ要素の操作を指示
+- web shell の共有 UI を再利用、一貫した体験
+
+PR [#5777](https://github.com/QwenLM/qwen-code/pull/5777) を参照
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01lMYRsQ1k8G6Tq18M3_!!6000000004638-2-tps-3837-2160.png)
+
+## 📊 その他の新機能
+
+| 機能                                                                         | PR                                                     | 影響              |
+| -------------------------------------------------------------------------- | ------------------------------------------------------ | ------------------ |
+| **`/config key=value`**：プロンプトで直接任意の設定を変更、Tab 補完 + スペル修正                          | [#5773](https://github.com/QwenLM/qwen-code/pull/5773) | settings.json を開く必要なし |
+| **セッションタイムライン rail**：web shell の左側にコンパクトなタイムライン、ホバーで turn の詳細を表示                              | [#6078](https://github.com/QwenLM/qwen-code/pull/6078) | 長いセッションで turn を素早く特定       |
+| **/skills ACP 出力強化**：description と level を表示                                | [#6117](https://github.com/QwenLM/qwen-code/pull/6117) | skills リストの情報がより完全     |
+| **auto-mode 全 shell 分類**：`classifyAllShell` 設定を追加（デフォルトオフ）                   | [#6040](https://github.com/QwenLM/qwen-code/pull/6040) | 本番環境の縦深防御           |
+| **qwen tag グループチャット複数アイデンティティ**：DingTalk グループ共有セッションで `[sender]` 発言者マーカーをサポート                             | [#5888](https://github.com/QwenLM/qwen-code/pull/5888) | グループチャットで agent が発言者を区別  |
+| **group history backfill**：グループ履歴メッセージのバックフィル                                        | [#6074](https://github.com/QwenLM/qwen-code/pull/6074) | 新メンバーが履歴を閲覧可能          |
+| **browser tab favicon**：web shell のブラウザタブアイコン                                  | [#6091](https://github.com/QwenLM/qwen-code/pull/6091) | 複数タブの識別が容易            |
+| **chat UI とテーブル描画の最適化**：web shell チャットインターフェースの改善                                       | [#6099](https://github.com/QwenLM/qwen-code/pull/6099) | ビジュアル体験の向上             |
+| **queued-prompt UX**：web shell の Esc 割り込みを改善                                   | [#6025](https://github.com/QwenLM/qwen-code/pull/6025) | 中断操作がよりスムーズ            |
+| **resumable /acp session stream**：Last-Event-ID によるレジュームをサポート                    | [#5852](https://github.com/QwenLM/qwen-code/pull/5852) | SDK 接続の安定性向上          |
+| **glob patterns in mcp.allowed/excluded**：MCP ホワイトリストにワイルドカードをサポート                     | [#6012](https://github.com/QwenLM/qwen-code/pull/6012) | MCP 設定がより柔軟          |
+| **inline model override**：`/model` でワンタイムモデルオーバーライドをサポート                               | [#6022](https://github.com/QwenLM/qwen-code/pull/6022) | 一時的なモデル切り替えがより便利           |
+| **leader approval for plan-required teammates**：計画必須の teammate は leader の承認が必要 | [#6138](https://github.com/QwenLM/qwen-code/pull/6138) | マルチ agent 連携の安全性向上      |
+
+## 🔧 重要な修正
+
+| 修正 | PR | 影響 |
+|------|-----|-----------|
+| **MCP ツールアイドルタイムアウト**：サーバーが5分間無応答の場合に自動中止、セッションのハングを防止 | [#6061](https://github.com/QwenLM/qwen-code/pull/6061) | 長時間実行 MCP ツールの無限待機が解消 |
+| **diff 空白のみ編集の表示**：空白のみ変更の場合に "No changes detected" を表示しないように修正 | [#6141](https://github.com/QwenLM/qwen-code/pull/6141) | diff 出力の精度向上 |
+| **TUI 入力遅延の最適化**：addItem 後に React に yield、入力のもたつきを削減 | [#6059](https://github.com/QwenLM/qwen-code/pull/6059) | タイピングがよりスムーズ |
+| **非 VP モードマルチ agent スクロール**：マルチ agent 実行中に transcript をスクロール可能に | [#6015](https://github.com/QwenLM/qwen-code/pull/6015) | マルチ agent 場面で履歴を確認可能 |
+| **HTTPS/TLS サポート**：`qwen serve` に `--tls-cert` と `--tls-key` フラグを追加 | [#6032](https://github.com/QwenLM/qwen-code/pull/6032) | 自己署名証明書環境で利用可能 |
+| **Windows チルダパス**：Windows 形式の `~` パス展開をサポート | [#6029](https://github.com/QwenLM/qwen-code/pull/6029) | Windows ユーザーのパス互換性 |
+
+## 👥 貢献者
+
+| 貢献者                                                      | 貢献内容                                                                                    | 参考 PR リンク                                                                                                                                                                                                                                                                                                                                       |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **[@qqqys](https://github.com/qqqys)**                   | `/loop` 自律モード + loop.md タスクファイル、音声入力、qwen tag グループチャット複数アイデンティティ、group history backfill、channel loop サポート | [#5890](https://github.com/QwenLM/qwen-code/pull/5890), [#5991](https://github.com/QwenLM/qwen-code/pull/5991), [#5856](https://github.com/QwenLM/qwen-code/pull/5856), [#5888](https://github.com/QwenLM/qwen-code/pull/5888), [#6074](https://github.com/QwenLM/qwen-code/pull/6074), [#6073](https://github.com/QwenLM/qwen-code/pull/6073) |
+| **[@DragonnZhang](https://github.com/DragonnZhang)**     | `/effort` 推論強度統一、TUI マウスクリックとホバー、Settings タブダイアログ                                            | [#6072](https://github.com/QwenLM/qwen-code/pull/6072), [#6011](https://github.com/QwenLM/qwen-code/pull/6011), [#6044](https://github.com/QwenLM/qwen-code/pull/6044)                                                                                                                                                                         |
+| **[@doudouOUC](https://github.com/doudouOUC)**           | session archive、skills ACP 出力強化、leader approval for plan-required teammates、diff 空白のみ編集の表示 | [#6058](https://github.com/QwenLM/qwen-code/pull/6058), [#6117](https://github.com/QwenLM/qwen-code/pull/6117), [#6138](https://github.com/QwenLM/qwen-code/pull/6138), [#6141](https://github.com/QwenLM/qwen-code/pull/6141)                                                                                                                 |
+| **[@DennisYu07](https://github.com/DennisYu07)**         | `/config` コマンド、auto-mode 全 shell 分類、MCP ホワイトリストワイルドカード、MCP ツールアイドルタイムアウト                                | [#5773](https://github.com/QwenLM/qwen-code/pull/5773), [#6040](https://github.com/QwenLM/qwen-code/pull/6040), [#6012](https://github.com/QwenLM/qwen-code/pull/6012), [#6061](https://github.com/QwenLM/qwen-code/pull/6061)                                                                                                                 |
+| **[@pomelo-nwu](https://github.com/pomelo-nwu)**         | Mobile Sidebar Drawer、HTTPS/TLS サポート                                                      | [#6003](https://github.com/QwenLM/qwen-code/pull/6003), [#6032](https://github.com/QwenLM/qwen-code/pull/6032)                                                                                                                                                                                                                                 |
+| **[@callmeYe](https://github.com/callmeYe)**             | workspace remember、セッションタイムライン rail                                                           | [#5884](https://github.com/QwenLM/qwen-code/pull/5884), [#6078](https://github.com/QwenLM/qwen-code/pull/6078)                                                                                                                                                                                                                                 |
+| **[@ytahdn](https://github.com/ytahdn)**                 | セッション遅延作成、chat UI とテーブル描画の最適化                                                                  | [#6066](https://github.com/QwenLM/qwen-code/pull/6066), [#6099](https://github.com/QwenLM/qwen-code/pull/6099)                                                                                                                                                                                                                                 |
+| **[@chiga0](https://github.com/chiga0)**                 | resumable /acp session stream、非 VP モードマルチ agent スクロール                                         | [#5852](https://github.com/QwenLM/qwen-code/pull/5852), [#6015](https://github.com/QwenLM/qwen-code/pull/6015)                                                                                                                                                                                                                                 |
+| **[@yiliang114](https://github.com/yiliang114)**         | Chrome 拡張機能復活                                                                             | [#5777](https://github.com/QwenLM/qwen-code/pull/5777)                                                                                                                                                                                                                                                                                         |
+| **[@wenshao](https://github.com/wenshao)**               | browser tab favicon                                                                     | [#6091](https://github.com/QwenLM/qwen-code/pull/6091)                                                                                                                                                                                                                                                                                         |
+| **[@carffuca](https://github.com/carffuca)**             | queued-prompt UX 改善                                                                     | [#6025](https://github.com/QwenLM/qwen-code/pull/6025)                                                                                                                                                                                                                                                                                         |
+| **[@Alex-ai-future](https://github.com/Alex-ai-future)** | TUI 入力遅延の最適化                                                                              | [#6059](https://github.com/QwenLM/qwen-code/pull/6059)                                                                                                                                                                                                                                                                                         |
+| **[@VectorPeak](https://github.com/VectorPeak)**         | Windows チルダパス展開                                                                         | [#6029](https://github.com/QwenLM/qwen-code/pull/6029)                                                                                                                                                                                                                                                                                         |
+| 🆕 **[@Minerest](https://github.com/Minerest)**          | 🎉 初貢献：auto-memory 有効時のみ memory recall をトリガーするように修正                                                               | [#5963](https://github.com/QwenLM/qwen-code/pull/5963)                                                                                                                                                                                                                                                                                         |
+| 🆕 **[@TianYuan1024](https://github.com/TianYuan1024)**  | 🎉 初貢献：`--insecure` フラグで TLS 検証をスキップ、`/model` インラインモデルオーバーライドを追加                                             | [#5962](https://github.com/QwenLM/qwen-code/pull/5962), [#6022](https://github.com/QwenLM/qwen-code/pull/6022)                                                                                                                                                                                                                                 |
+| 🆕 **[@gauravyad86](https://github.com/gauravyad86)**    | 🎉 初貢献：critical レベルの npm セキュリティ脆弱性（`simple-git`、`shell-quote` などランタイム依存）を修正し、CI 監査チェックを追加                  | [#6065](https://github.com/QwenLM/qwen-code/pull/6065)                                                                                                                                                                                                                                                                                         |
+
+<Callout type="info">
+  **アップグレード方法**：`npm i @qwen-code/qwen-code@latest -g` を実行して最新バージョンにアップグレードしてください。
+</Callout>
+
+ご質問やご提案があれば、[GitHub Issues](https://github.com/QwenLM/qwen-code/issues) でお知らせください！

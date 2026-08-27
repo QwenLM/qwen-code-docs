@@ -1,34 +1,44 @@
-# Qwen Code Extensions
+# Qwen Code Erweiterungen
 
-Qwen Code Extensions bündeln Prompts, MCP-Server, Subagents, Skills und benutzerdefinierte Befehle in einem vertrauten und benutzerfreundlichen Format. Mit Extensions kannst du die Funktionen von Qwen Code erweitern und diese mit anderen teilen. Sie sind darauf ausgelegt, einfach installiert und geteilt zu werden.
+Qwen Code Erweiterungen bündeln Prompts, MCP-Server, Subagents, Skills und benutzerdefinierte Befehle in einem vertrauten und benutzerfreundlichen Format. Mit Erweiterungen können Sie die Fähigkeiten von Qwen Code erweitern und diese Fähigkeiten mit anderen teilen. Sie sind so konzipiert, dass sie einfach installiert und geteilt werden können.
 
-Extensions und Plugins aus der [Gemini CLI Extensions Gallery](https://geminicli.com/extensions/) und dem [Claude Code Marketplace](https://claudemarketplaces.com/) können direkt in Qwen Code installiert werden. Diese plattformübergreifende Kompatibilität gibt dir Zugriff auf ein reichhaltiges Ökosystem an Extensions und Plugins und erweitert die Möglichkeiten von Qwen Code erheblich, ohne dass Extension-Autoren separate Versionen pflegen müssen.
+Erweiterungen und Plugins aus der [Gemini CLI Extensions Gallery](https://geminicli.com/extensions/), dem [Claude Code Marketplace](https://claudemarketplaces.com/), Qoder und dem portablen [Agent Plugins v1](./agent-plugins.md)-Format können direkt in Qwen Code installiert werden. Diese plattformübergreifende Kompatibilität gibt Ihnen Zugriff auf ein reichhaltiges Ökosystem an Erweiterungen und Plugins und erweitert die Fähigkeiten von Qwen Code erheblich, ohne dass die Autoren der Erweiterungen separate Versionen pflegen müssen.
 
-## Extension-Verwaltung
+## Erweiterungsverwaltung
 
-Wir bieten eine Reihe von Tools zur Extension-Verwaltung, die sowohl über `qwen extensions` CLI-Befehle als auch über `/extensions` Slash-Befehle in der interaktiven CLI genutzt werden können.
+Wir bieten eine Reihe von Erweiterungsverwaltungswerkzeugen, sowohl über `qwen extensions` CLI-Befehle als auch über `/extensions` Slash-Befehle innerhalb der interaktiven CLI.
 
-### Laufzeit-Extension-Verwaltung (Slash-Befehle)
+### Laufzeit-Verwaltung von Erweiterungen (Slash-Befehle)
 
-Du kannst Extensions zur Laufzeit in der interaktiven CLI über `/extensions` Slash-Befehle verwalten. Diese Befehle unterstützen Hot-Reloading, sodass Änderungen sofort wirksam werden, ohne die Anwendung neu starten zu müssen.
+Sie können Erweiterungen zur Laufzeit innerhalb der interaktiven CLI mit `/extensions` Slash-Befehlen verwalten. Diese Befehle unterstützen Hot-Reloading, d. h. Änderungen werden sofort wirksam, ohne dass die Anwendung neu gestartet werden muss.
 
-| Command                               | Description                                                                  |
-| ------------------------------------- | ---------------------------------------------------------------------------- |
-| `/extensions` oder `/extensions manage` | Alle installierten Extensions verwalten                                              |
-| `/extensions install <source>`        | Eine Extension von einer Git-URL, einem lokalen Pfad, einem npm-Paket oder einem Marketplace installieren |
-| `/extensions explore [source]`        | Die Extensions-Quellseite (Gemini oder ClaudeCode) im Browser öffnen            |
+| Befehl                               | Beschreibung                                                                                          |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `/extensions` oder `/extensions manage` | Alle installierten Erweiterungen verwalten                                                          |
+| `/extensions install <source>`        | Eine Erweiterung von einer Git-URL, einem lokalen Pfad oder Archiv, einer Archiv-URL, einem npm-Paket oder einem Marktplatz installieren |
+| `/extensions explore [source]`        | Die Quellseite für Erweiterungen (Gemini oder ClaudeCode) im Browser öffnen                         |
 
-### CLI-Extension-Verwaltung
+#### Der interaktive Erweiterungsmanager
 
-Du kannst Extensions auch über `qwen extensions` CLI-Befehle verwalten. Beachte, dass Änderungen über CLI-Befehle erst nach einem Neustart in aktiven CLI-Sessions übernommen werden.
+Durch Ausführen von `/extensions` (oder `/extensions manage`) wird ein interaktiver Manager mit drei Registerkarten geöffnet. Drücken Sie `Tab` oder die Pfeile `←`/`→`, um zwischen ihnen zu wechseln.
 
-### Installation einer Extension
+- **Entdecken** — Durchsuchen Sie Plugins aus Ihren konfigurierten Marktplatzquellen. Geben Sie ein, um zu suchen, drücken Sie `Enter`, um die Details eines Plugins anzuzeigen, und installieren Sie es (Sie werden aufgefordert, einen Installationsbereich auszuwählen). Drücken Sie `Ctrl+R`, um die Listings neu zu laden, und `Esc`, um zurückzugehen.
+- **Installiert** — Ihre installierten Erweiterungen, gruppiert nach Bereich (**Benutzerebene**, **Projektebene** und Favoriten). Verwenden Sie `↑`/`↓` zum Navigieren, `Leertaste` zum Aktivieren/Deaktivieren einer Erweiterung, `f` zum Favorisieren und `Enter`, um die Details zu öffnen. MCP-Server, die von einer Erweiterung gebündelt werden, werden unter ihrer übergeordneten Erweiterung mit Live-Verbindungsstatus angezeigt; Sie können jeden Server von dort aus einzeln aktivieren oder deaktivieren.
+- **Quellen** — Verwalten Sie die Marktplatzquellen, die die Registerkarte „Entdecken“ speisen. Verwenden Sie `↑`/`↓` zum Navigieren, `Enter` zum Auswählen einer Quelle und `d` zum Entfernen einer Quelle. Dies sind dieselben Quellen, die auch von den unten beschriebenen `qwen extensions sources` CLI-Befehlen verwaltet werden.
 
-Du kannst eine Extension mit `qwen extensions install` aus verschiedenen Quellen installieren:
+Hier vorgenommene Änderungen werden sofort per Hot-Reload übernommen, ohne dass Qwen Code neu gestartet werden muss.
+
+### CLI-Erweiterungsverwaltung
+
+Sie können Erweiterungen auch mit `qwen extensions` CLI-Befehlen verwalten. Beachten Sie, dass Änderungen, die über CLI-Befehle vorgenommen werden, in aktiven CLI-Sitzungen erst nach einem Neustart wirksam werden.
+
+### Installieren einer Erweiterung
+
+Sie können eine Erweiterung mit `qwen extensions install` aus verschiedenen Quellen installieren:
 
 #### Vom Claude Code Marketplace
 
-Qwen Code unterstützt auch Plugins vom [Claude Code Marketplace](https://claudemarketplaces.com/). Installiere sie über einen Marketplace und wähle ein Plugin aus:
+Qwen Code unterstützt auch Plugins aus dem [Claude Code Marketplace](https://claudemarketplaces.com/). Installieren Sie von einem Marktplatz und wählen Sie ein Plugin aus:
 
 ```bash
 qwen extensions install <marketplace-name>
@@ -36,7 +46,7 @@ qwen extensions install <marketplace-name>
 qwen extensions install <marketplace-github-url>
 ```
 
-Wenn du ein bestimmtes Plugin installieren möchtest, kannst du das Format mit dem Plugin-Namen verwenden:
+Wenn Sie ein bestimmtes Plugin installieren möchten, können Sie das Format mit dem Plugin-Namen verwenden:
 
 ```bash
 qwen extensions install <marketplace-name>:<plugin-name>
@@ -44,7 +54,7 @@ qwen extensions install <marketplace-name>:<plugin-name>
 qwen extensions install <marketplace-github-url>:<plugin-name>
 ```
 
-Um beispielsweise das `prompts.chat` Plugin vom [f/awesome-chatgpt-prompts](https://claudemarketplaces.com/plugins/f-awesome-chatgpt-prompts) Marketplace zu installieren:
+Um zum Beispiel das Plugin `prompts.chat` aus dem Marktplatz [f/awesome-chatgpt-prompts](https://claudemarketplaces.com/plugins/f-awesome-chatgpt-prompts) zu installieren:
 
 ```bash
 qwen extensions install f/awesome-chatgpt-prompts:prompts.chat
@@ -52,14 +62,14 @@ qwen extensions install f/awesome-chatgpt-prompts:prompts.chat
 qwen extensions install https://github.com/f/awesome-chatgpt-prompts:prompts.chat
 ```
 
-Claude-Plugins werden während der Installation automatisch in das Qwen Code Format konvertiert:
+Claude-Plugins werden während der Installation automatisch in das Qwen Code-Format konvertiert:
 
-- `claude-plugin.json` wird zu `qwen-extension.json` konvertiert
-- Agent-Konfigurationen werden in das Qwen Subagent-Format konvertiert
-- Skill-Konfigurationen werden in das Qwen Skill-Format konvertiert
-- Tool-Mappings werden automatisch verarbeitet
+- `claude-plugin.json` wird in `qwen-extension.json` konvertiert
+- Agent-Konfigurationen werden in das Qwen-Subagent-Format konvertiert
+- Skill-Konfigurationen werden in das Qwen-Skill-Format konvertiert
+- Tool-Zuordnungen werden automatisch behandelt
 
-Du kannst verfügbare Extensions aus verschiedenen Marketplaces schnell mit dem `/extensions explore` Befehl durchsuchen:
+Sie können verfügbare Erweiterungen aus verschiedenen Marktplätzen schnell mit dem Befehl `/extensions explore` durchsuchen:
 
 ```bash
 # Open Gemini CLI Extensions marketplace
@@ -69,13 +79,13 @@ Du kannst verfügbare Extensions aus verschiedenen Marketplaces schnell mit dem 
 /extensions explore ClaudeCode
 ```
 
-Dieser Befehl öffnet den jeweiligen Marketplace in deinem Standardbrowser, sodass du neue Extensions entdecken kannst, um dein Qwen Code Erlebnis zu erweitern.
+Dieser Befehl öffnet den jeweiligen Marktplatz in Ihrem Standardbrowser, sodass Sie neue Erweiterungen entdecken können, um Ihr Qwen Code-Erlebnis zu verbessern.
 
-> **Plattformübergreifende Kompatibilität**: Dies ermöglicht dir die Nutzung der umfangreichen Extension-Ökosysteme von Gemini CLI und Claude Code und erweitert die verfügbaren Funktionen für Qwen Code Nutzer erheblich.
+> **Plattformübergreifende Kompatibilität**: Dies ermöglicht es Ihnen, die reichhaltigen Erweiterungsökosysteme sowohl von Gemini CLI als auch von Claude Code zu nutzen und die verfügbare Funktionalität für Qwen Code-Benutzer erheblich zu erweitern.
 
-#### Von Gemini CLI Extensions
+#### Von Gemini CLI-Erweiterungen
 
-Qwen Code unterstützt Extensions aus der [Gemini CLI Extensions Gallery](https://geminicli.com/extensions/) vollständig. Installiere sie einfach über die Git-URL:
+Qwen Code unterstützt vollständig Erweiterungen aus der [Gemini CLI Extensions Gallery](https://geminicli.com/extensions/). Installieren Sie sie einfach mit der Git-URL:
 
 ```bash
 qwen extensions install <gemini-cli-extension-github-url>
@@ -83,15 +93,41 @@ qwen extensions install <gemini-cli-extension-github-url>
 qwen extensions install <owner>/<repo>
 ```
 
-Gemini-Extensions werden während der Installation automatisch in das Qwen Code Format konvertiert:
+Gemini-Erweiterungen werden während der Installation automatisch in das Qwen Code-Format konvertiert:
 
-- `gemini-extension.json` wird zu `qwen-extension.json` konvertiert
+- `gemini-extension.json` wird in `qwen-extension.json` konvertiert
 - TOML-Befehlsdateien werden automatisch in das Markdown-Format migriert
 - MCP-Server, Kontextdateien und Einstellungen bleiben erhalten
 
-#### Von der npm Registry
+#### Aus Qoder-Plugins
 
-Qwen Code unterstützt die Installation von Extensions aus npm-Registries über scoped Package-Namen. Dies ist ideal für Teams mit privaten Registries, die bereits über Authentifizierungs-, Versionierungs- und Publishing-Infrastruktur verfügen.
+Qwen Code unterstützt [Qoder-Plugins](https://docs.qoder.com/en/cli/sdk/plugins), die ein `.qoder-plugin/plugin.json`-Manifest enthalten. Installieren Sie ein lokales Verzeichnis, ein Archiv, ein Git-Repository, eine Archiv-URL oder ein Scoped-npm-Paket mit dem vorhandenen Befehl `qwen extensions install`:
+
+```bash
+qwen extensions install ./sample-qoder-plugin
+qwen extensions install ./sample-qoder-plugin.zip
+qwen extensions install owner/sample-qoder-plugin
+```
+
+Der Installer konvertiert das Qoder-Manifest in `qwen-extension.json` und übernimmt die Standardverzeichnisse `commands/`, `agents/` und `skills/`. MCP-Server, die in einer `.mcp.json`-Datei im Stammverzeichnis deklariert sind, werden als Erweiterungs-MCP-Server übernommen.
+
+Wenn ein Qoder-Plugin eine `system-prompt.md` im Stammverzeichnis enthält, lädt Qwen Code diese als Erweiterungskontext. Wenn das Plugin außerdem eine `QWEN.md` enthält oder weitere Kontextdateien deklariert, werden alle Kontextdateien beibehalten und dedupliziert.
+
+#### Aus Agent Plugins v1
+
+Qwen Code lädt portable Agent Plugins v1-Pakete nativ, ohne `plugin.json`, `mcp.json` oder `SKILL.md`-Dateien zu konvertieren oder umzuschreiben:
+
+```bash
+qwen extensions install ./my-agent-plugin
+qwen extensions link ./my-agent-plugin
+qwen extensions install owner/my-agent-plugin
+```
+
+Die portable Runtime unterstützt Agent Skills sowie Stdio- und Streamable-HTTP-MCP-Server. Commands, Agents, Hooks, Client-Namespaces und Legacy-SSE-MCP werden nicht aktiviert. Siehe [Agent Plugins v1](./agent-plugins.md) für die vollständige Unterstützungsmatrix.
+
+#### Aus der npm-Registry
+
+Qwen Code unterstützt die Installation von Erweiterungen aus npm-Registries mit scoped Package-Namen. Dies ist ideal für Teams mit privaten Registries, die bereits über Authentifizierung, Versionierung und Veröffentlichungsinfrastruktur verfügen.
 
 ```bash
 # Install the latest version
@@ -104,26 +140,30 @@ qwen extensions install @scope/my-extension@1.2.0
 qwen extensions install @scope/my-extension --registry https://your-registry.com
 ```
 
-Es werden nur scoped Packages (`@scope/package-name`) unterstützt, um Mehrdeutigkeiten mit dem `owner/repo` GitHub-Kurzformat zu vermeiden.
+Es werden nur scoped Packages (`@scope/package-name`) unterstützt, um Verwechslungen mit der `owner/repo`-Kurzform von GitHub zu vermeiden.
 
-**Registry-Auflösung** folgt dieser Priorität:
+**Registry-Auflösung** erfolgt nach dieser Priorität:
 
-1. `--registry` CLI-Flag (explizites Überschreiben)
-2. Scoped Registry aus `.npmrc` (z. B. `@scope:registry=https://...`)
+1. `--registry` CLI-Flag (explizite Überschreibung)
+2. Scoped Registry aus `.npmrc` (z.B. `@scope:registry=https://...`)
 3. Standard-Registry aus `.npmrc`
 4. Fallback: `https://registry.npmjs.org/`
 
-**Authentifizierung** wird automatisch über die `NPM_TOKEN` Umgebungsvariable oder registry-spezifische `_authToken` Einträge in deiner `.npmrc` Datei abgewickelt.
+**Authentifizierung** wird automatisch über die Umgebungsvariable `NPM_TOKEN` oder registriespezifische `_authToken`-Einträge in Ihrer `.npmrc`-Datei gehandhabt.
 
-> **Hinweis:** npm-Extensions müssen eine `qwen-extension.json` Datei im Package-Root enthalten, die demselben Format wie jede andere Qwen Code Extension folgt. Details zum Packaging findest du unter [Extension Releasing](./extension-releasing.md#releasing-through-npm-registry).
+> **Hinweis:** npm-Erweiterungen müssen entweder eine native `qwen-extension.json` oder eine Agent Plugins v1 `plugin.json` im Paketstammverzeichnis enthalten. Siehe [Erweiterungen veröffentlichen](./extension-releasing.md#releasing-through-npm-registry) für Details zur Paketierung.
 
-#### Von einem Git Repository
+#### Aus einem Git-Repository
+
+Git 2.37 oder neuer ist für authentifizierte, nicht-GitHub-, verschachtelte Marktplatz-, Submodul- und Git-LFS-Quellen erforderlich, da Qwen Code `http.curloptResolve` verwendet, um Git-Verbindungen an validierte DNS-Ergebnisse zu binden. Bei älteren Git-Versionen unterstützt Qwen Code nur anonyme öffentliche `https://github.com/{owner}/{repo}[.git]`-Root-Repositories, indem es den angeforderten Ref auf einen Commit auflöst und das GitHub-Quellarchiv mit denselben öffentlichen Netzwerk- und Archiv-Sicherheitsprüfungen herunterlädt.
+
+Da das Fallback für ältere Git-Versionen von einem Quellarchiv statt von einem Clone installiert, kann es keine Repositories installieren, die auf Symlinks, Submodulen oder Git LFS angewiesen sind, und begrenzt Downloads auf 100 MiB komprimiert und Archive auf 100.000 Einträge / 1 GiB entpackt. Release-basierte Installationen werden weiterhin bevorzugt, wenn ein Repository Releases veröffentlicht.
 
 ```bash
 qwen extensions install https://github.com/github/github-mcp-server
 ```
 
-Dies installiert die GitHub MCP Server Extension.
+Dadurch wird die GitHub MCP Server-Erweiterung installiert.
 
 #### Von einem lokalen Pfad
 
@@ -131,33 +171,79 @@ Dies installiert die GitHub MCP Server Extension.
 qwen extensions install /path/to/your/extension
 ```
 
-Beachte, dass wir eine Kopie der installierten Extension erstellen. Du musst daher `qwen extensions update` ausführen, um Änderungen sowohl von lokal definierten Extensions als auch von denen auf GitHub zu übernehmen.
+Lokale `.zip`- und `.tar.gz`-Archive werden ebenfalls unterstützt:
 
-### Deinstallation einer Extension
+```bash
+qwen extensions install /path/to/your/extension.zip
+qwen extensions install /path/to/your/extension.tar.gz
+```
 
-Führe zur Deinstallation `qwen extensions uninstall extension-name` aus. Im Fall des Installationsbeispiels:
+Das Archiv muss eine vollständige Erweiterung im Stammverzeichnis enthalten, oder ein einzelnes übergeordnetes Verzeichnis, das die Erweiterung enthält.
+
+Beachten Sie, dass wir eine Kopie der installierten Erweiterung erstellen. Sie müssen daher `qwen extensions update` ausführen, um Änderungen sowohl von lokal definierten Erweiterungen als auch von solchen auf GitHub zu übernehmen.
+
+#### Von einer Archiv-URL
+
+```bash
+qwen extensions install https://example.com/your/extension.zip
+qwen extensions install https://example.com/your/extension.tar.gz
+```
+
+Archiv-URLs können später aktualisiert werden, solange die URL weiterhin auf ein neueres Archiv für dieselbe Erweiterung verweist.
+
+#### Installationsbereich auswählen
+
+Standardmäßig ist eine installierte Erweiterung global aktiviert (Benutzerbereich). Verwenden Sie `--scope project`, um sie nur für den aktuellen Arbeitsbereich zu aktivieren:
+
+```bash
+qwen extensions install <source> --scope project
+```
+
+`--scope workspace` wird als Alias von `--scope project` akzeptiert. Dies entspricht der Bereichsauswahl, die bei der Installation über die Registerkarte „Entdecken“ in `/extensions manage` angeboten wird.
+
+### Marktplatzquellen verwalten
+
+Marktplatzquellen (Claude-Plugin-Marktplätze) versorgen die Registerkarte „Entdecken“ in `/extensions manage`. Sie können sie auch über die CLI verwalten:
+
+```bash
+# Add a marketplace (owner/repo, git URL, https URL to marketplace.json, or local path)
+qwen extensions sources add <source>
+
+# List configured marketplaces
+qwen extensions sources list
+
+# Re-fetch a marketplace's plugin listing
+qwen extensions sources update <name>
+
+# Remove a marketplace
+qwen extensions sources remove <name>
+```
+
+### Deinstallieren einer Erweiterung
+
+Um zu deinstallieren, führen Sie `qwen extensions uninstall extension-name` aus, also im Fall des Installationsbeispiels:
 
 ```
 qwen extensions uninstall qwen-cli-security
 ```
 
-### Deaktivieren einer Extension
+### Deaktivieren einer Erweiterung
 
-Extensions sind standardmäßig in allen Workspaces aktiviert. Du kannst eine Extension vollständig oder nur für einen bestimmten Workspace deaktivieren.
+Erweiterungen sind standardmäßig in allen Arbeitsbereichen aktiviert. Sie können eine Erweiterung vollständig oder nur für einen bestimmten Arbeitsbereich deaktivieren.
 
-Beispielsweise deaktiviert `qwen extensions disable extension-name` die Extension auf Benutzerebene, sodass sie überall deaktiviert ist. `qwen extensions disable extension-name --scope=workspace` deaktiviert die Extension nur im aktuellen Workspace.
+Zum Beispiel deaktiviert `qwen extensions disable extension-name` die Erweiterung auf Benutzerebene, sodass sie überall deaktiviert ist. `qwen extensions disable extension-name --scope=workspace` deaktiviert die Erweiterung nur im aktuellen Arbeitsbereich.
 
-### Aktivieren einer Extension
+### Aktivieren einer Erweiterung
 
-Du kannst Extensions mit `qwen extensions enable extension-name` aktivieren. Du kannst eine Extension auch für einen bestimmten Workspace aktivieren, indem du `qwen extensions enable extension-name --scope=workspace` innerhalb dieses Workspaces ausführst.
+Sie können Erweiterungen mit `qwen extensions enable extension-name` aktivieren. Sie können eine Erweiterung auch für einen bestimmten Arbeitsbereich aktivieren, indem Sie `qwen extensions enable extension-name --scope=workspace` innerhalb dieses Arbeitsbereichs ausführen.
 
-Dies ist nützlich, wenn du eine Extension auf oberster Ebene deaktiviert hast und sie nur an bestimmten Stellen aktivieren möchtest.
+Dies ist nützlich, wenn Sie eine Erweiterung auf oberster Ebene deaktiviert haben und sie nur an bestimmten Stellen aktivieren möchten.
 
-### Aktualisieren einer Extension
+### Aktualisieren einer Erweiterung
 
-Für Extensions, die von einem lokalen Pfad, einem Git Repository oder einer npm Registry installiert wurden, kannst du mit `qwen extensions update extension-name` explizit auf die neueste Version aktualisieren. Bei npm-Extensions, die ohne Versions-Pin installiert wurden (z. B. `@scope/pkg`), prüfen Updates den `latest` Dist-Tag. Bei Installation mit einem bestimmten Dist-Tag (z. B. `@scope/pkg@beta`) verfolgen Updates diesen Tag. Extensions, die auf eine exakte Version gepinnt sind (z. B. `@scope/pkg@1.2.0`), gelten immer als aktuell.
+Für Erweiterungen, die von einem lokalen Pfad oder Archiv, einer Archiv-URL, einem Git-Repository oder einer npm-Registry installiert wurden, können Sie explizit auf die neueste Version aktualisieren mit `qwen extensions update extension-name`. Bei npm-Erweiterungen, die ohne Versionsfestlegung installiert wurden (z.B. `@scope/pkg`), wird bei Updates der `latest`-Dist-Tag verwendet. Bei Erweiterungen, die mit einem bestimmten Dist-Tag installiert wurden (z.B. `@scope/pkg@beta`), folgen Updates diesem Tag. Erweiterungen, die auf eine exakte Version festgelegt sind (z.B. `@scope/pkg@1.2.0`), werden immer als aktuell betrachtet.
 
-Du kannst alle Extensions mit folgendem Befehl aktualisieren:
+Sie können alle Erweiterungen aktualisieren mit:
 
 ```
 qwen extensions update --all
@@ -165,15 +251,17 @@ qwen extensions update --all
 
 ## Funktionsweise
 
-Beim Start sucht Qwen Code nach Extensions in `<home>/.qwen/extensions`
+Beim Start sucht Qwen Code im Verzeichnis `<home>/.qwen/extensions` nach Erweiterungen.
 
-Extensions liegen als Verzeichnis vor, das eine `qwen-extension.json` Datei enthält. Beispiel:
+Native Qwen Code-Erweiterungen liegen als Verzeichnis vor, das eine `qwen-extension.json`-Datei enthält. Agent Plugins v1-Pakete behalten stattdessen ihr Root-`plugin.json`; siehe [Agent Plugins v1](./agent-plugins.md).
+
+Zum Beispiel wird eine native Qwen Code-Erweiterung gespeichert unter:
 
 `<home>/.qwen/extensions/my-extension/qwen-extension.json`
 
 ### `qwen-extension.json`
 
-Die `qwen-extension.json` Datei enthält die Konfiguration der Extension. Die Datei hat folgende Struktur:
+Die Datei `qwen-extension.json` enthält die Konfiguration der Erweiterung. Die Datei hat die folgende Struktur:
 
 ```json
 {
@@ -205,68 +293,56 @@ Die `qwen-extension.json` Datei enthält die Konfiguration der Extension. Die Da
 }
 ```
 
-- `name`: Der Name der Extension. Dieser wird zur eindeutigen Identifizierung und zur Konfliktlösung verwendet, wenn Extension-Befehle denselben Namen wie Benutzer- oder Projektbefehle haben. Der Name sollte aus Kleinbuchstaben oder Zahlen bestehen und Bindestriche statt Unterstrichen oder Leerzeichen verwenden. So bezeichnen Nutzer deine Extension in der CLI. Beachte, dass dieser Name mit dem Verzeichnisnamen der Extension übereinstimmen muss.
-- `version`: Die Version der Extension.
-- `mcpServers`: Eine Map von MCP-Servern zur Konfiguration. Der Schlüssel ist der Name des Servers, der Wert ist die Serverkonfiguration. Diese Server werden beim Start geladen, genau wie MCP-Server, die in einer [`settings.json` Datei](./cli/configuration.md) konfiguriert sind. Wenn sowohl eine Extension als auch eine `settings.json` Datei einen MCP-Server mit demselben Namen konfigurieren, hat der in der `settings.json` Datei definierte Server Vorrang.
-  - Beachte, dass alle MCP-Server-Konfigurationsoptionen außer `trust` unterstützt werden.
-- `channels`: Eine Map von benutzerdefinierten Channel-Adaptern. Der Schlüssel ist der Channel-Typname, der Wert enthält einen `entry` (Pfad zum kompilierten JS-Einstiegspunkt) und optional einen `displayName`. Der Einstiegspunkt muss ein `plugin` Objekt exportieren, das der `ChannelPlugin` Schnittstelle entspricht. Eine vollständige Anleitung findest du unter [Channel Plugins](../features/channels/plugins).
-- `contextFileName`: Der Name der Datei, die den Kontext für die Extension enthält. Dieser wird verwendet, um den Kontext aus dem Extensions-Verzeichnis zu laden. Wenn diese Eigenschaft nicht verwendet wird, aber eine `QWEN.md` Datei im Extensions-Verzeichnis vorhanden ist, wird diese Datei geladen.
-- `commands`: Das Verzeichnis mit benutzerdefinierten Befehlen (Standard: `commands`). Befehle sind `.md` Dateien, die Prompts definieren.
-- `skills`: Das Verzeichnis mit benutzerdefinierten Skills (Standard: `skills`). Skills werden automatisch erkannt und sind über den `/skills` Befehl verfügbar.
-- `agents`: Das Verzeichnis mit benutzerdefinierten Subagents (Standard: `agents`). Subagents sind `.yaml` oder `.md` Dateien, die spezialisierte KI-Assistenten definieren.
-- `settings`: Ein Array von Einstellungen, die die Extension benötigt. Bei der Installation werden Nutzer aufgefordert, Werte für diese Einstellungen anzugeben. Die Werte werden sicher gespeichert und als Umgebungsvariablen an MCP-Server übergeben.
-  - Jede Einstellung hat folgende Eigenschaften:
-    - `name`: Anzeigename der Einstellung
-    - `description`: Beschreibung, wofür diese Einstellung verwendet wird
-    - `envVar`: Der Name der Umgebungsvariable, die gesetzt wird
-    - `sensitive`: Boolescher Wert, der angibt, ob der Wert verborgen werden soll (z. B. API-Keys, Passwörter)
+- `name`: Der Name der Erweiterung. Dieser wird verwendet, um die Erweiterung eindeutig zu identifizieren und für die Konfliktlösung, wenn Erweiterungsbefehle denselben Namen wie Benutzer- oder Projektbefehle haben. Der Name sollte aus Kleinbuchstaben oder Zahlen bestehen und Bindestriche anstelle von Unterstrichen oder Leerzeichen verwenden. So werden Benutzer auf Ihre Erweiterung in der CLI verweisen. Beachten Sie, dass dieser Name mit dem Erweiterungsverzeichnisnamen übereinstimmen muss.
+- `version`: Die Version der Erweiterung.
+- `mcpServers`: Eine Map von MCP-Servern, die konfiguriert werden sollen. Der Schlüssel ist der Name des Servers, der Wert ist die Serverkonfiguration. Diese Server werden beim Start geladen, genau wie MCP-Server, die in einer [`settings.json`-Datei](../configuration/settings.md) konfiguriert sind. Wenn sowohl eine Erweiterung als auch eine `settings.json`-Datei einen MCP-Server mit demselben Namen konfigurieren, hat der in der `settings.json`-Datei definierte Server Vorrang.
+  - Beachten Sie, dass alle MCP-Server-Konfigurationsoptionen außer `trust` unterstützt werden.
+- `channels`: Eine Map von benutzerdefinierten Channel-Adaptern. Der Schlüssel ist der Channel-Typ-Name, der Wert hat einen `entry` (Pfad zum kompilierten JS-Einstiegspunkt) und optionalen `displayName`. Der Einstiegspunkt muss ein `plugin`-Objekt exportieren, das dem `ChannelPlugin`-Interface entspricht. Siehe [Channel-Plugins](../features/channels/plugins) für eine vollständige Anleitung.
+- `contextFileName`: Der Name der Datei, die den Kontext für die Erweiterung enthält. Diese wird verwendet, um den Kontext aus dem Erweiterungsverzeichnis zu laden. Wenn diese Eigenschaft nicht verwendet wird, aber eine `QWEN.md`-Datei im Erweiterungsverzeichnis vorhanden ist, wird diese Datei geladen.
+- `commands`: Das Verzeichnis, das benutzerdefinierte Befehle enthält (Standard: `commands`). Befehle sind `.md`-Dateien, die Prompts definieren.
+- `skills`: Das Verzeichnis, das benutzerdefinierte Skills enthält (Standard: `skills`). Skills werden automatisch erkannt und sind über den Befehl `/skills` verfügbar.
+- `agents`: Das Verzeichnis, das benutzerdefinierte Subagents enthält (Standard: `agents`). Subagents sind `.yaml`- oder `.md`-Dateien, die spezialisierte KI-Assistenten definieren.
+- `settings`: Ein Array von Einstellungen, die die Erweiterung benötigt. Bei der Installation werden Benutzer aufgefordert, Werte für diese Einstellungen anzugeben. Die Werte werden sicher gespeichert und an MCP-Server als Umgebungsvariablen übergeben.
+  - Jede Einstellung hat die folgenden Eigenschaften:
+    - `name`: Anzeigename für die Einstellung
+    - `description`: Eine Beschreibung, wofür diese Einstellung verwendet wird
+    - `envVar`: Der Name der Umgebungsvariablen, die gesetzt wird
+    - `sensitive`: Boolean, der angibt, ob der Wert ausgeblendet werden soll (z.B. API-Schlüssel, Passwörter)
 
-### Verwaltung von Extension-Einstellungen
+### Erweiterungseinstellungen verwalten
 
-Extensions können Konfigurationen über Einstellungen (z. B. API-Keys oder Credentials) erfordern. Diese Einstellungen können über den `qwen extensions settings` CLI-Befehl verwaltet werden:
+Erweiterungen können über Einstellungen (wie API-Schlüssel oder Anmeldedaten) eine Konfiguration erfordern. Diese Einstellungen können mit dem CLI-Befehl `qwen extensions settings` verwaltet werden:
 
-**Einstellungswert festlegen:**
+**Einen Einstellungswert setzen:**
 
 ```bash
 qwen extensions settings set <extension-name> <setting-name> [--scope user|workspace]
 ```
 
-**Alle Einstellungen einer Extension auflisten:**
+**Alle Einstellungen und aktuellen Werte für eine Erweiterung auflisten:**
 
 ```bash
 qwen extensions settings list <extension-name>
 ```
 
-**Aktuelle Werte anzeigen (Benutzer und Workspace):**
-
-```bash
-qwen extensions settings show <extension-name> <setting-name>
-```
-
-**Einstellungswert entfernen:**
-
-```bash
-qwen extensions settings unset <extension-name> <setting-name> [--scope user|workspace]
-```
-
 Einstellungen können auf zwei Ebenen konfiguriert werden:
 
-- **Benutzerebene** (Standard): Einstellungen gelten projektübergreifend (`~/.qwen/.env`)
-- **Workspace-Ebene**: Einstellungen gelten nur für das aktuelle Projekt (`.qwen/.env`)
+- **Benutzerebene** (Standard): Einstellungen gelten für alle Projekte (`~/.qwen/.env`)
+- **Arbeitsbereichsebene**: Einstellungen gelten nur für das aktuelle Projekt (`.qwen/.env`)
 
-Workspace-Einstellungen haben Vorrang vor Benutzereinstellungen. Sensible Einstellungen werden sicher gespeichert und niemals im Klartext angezeigt.
+Arbeitsbereichseinstellungen haben Vorrang vor Benutzereinstellungen. Vertrauliche Einstellungen werden sicher gespeichert und niemals im Klartext angezeigt.
 
-Beim Start von Qwen Code werden alle Extensions geladen und ihre Konfigurationen zusammengeführt. Bei Konflikten hat die Workspace-Konfiguration Vorrang.
+Beim Start lädt Qwen Code alle Erweiterungen und führt ihre Konfigurationen zusammen. Bei Konflikten hat die Arbeitsbereichskonfiguration Vorrang.
 
 ### Benutzerdefinierte Befehle
 
-Extensions können [benutzerdefinierte Befehle](./cli/commands.md#custom-commands) bereitstellen, indem Markdown-Dateien in einem `commands/` Unterverzeichnis innerhalb des Extensions-Verzeichnisses abgelegt werden. Diese Befehle folgen demselben Format wie benutzer- und projektspezifische Befehle und verwenden Standard-Namenskonventionen.
+Erweiterungen können [benutzerdefinierte Befehle](../features/commands.md#4-custom-commands) bereitstellen, indem sie Markdown-Dateien in einem Unterverzeichnis `commands/` innerhalb des Erweiterungsverzeichnisses ablegen. Diese Befehle folgen dem gleichen Format wie benutzerdefinierte Benutzer- und Projektbefehle und verwenden Standard-Namenskonventionen.
 
-> **Hinweis:** Das Befehlsformat wurde von TOML auf Markdown aktualisiert. TOML-Dateien sind veraltet, werden aber weiterhin unterstützt. Du kannst bestehende TOML-Befehle über den automatischen Migrations-Prompt migrieren, der beim Erkennen von TOML-Dateien angezeigt wird.
+> **Hinweis:** Das Befehlsformat wurde von TOML auf Markdown aktualisiert. TOML-Dateien sind veraltet, aber weiterhin unterstützt. Sie können vorhandene TOML-Befehle mit der automatischen Migrationsaufforderung migrieren, die beim Erkennen von TOML-Dateien angezeigt wird.
 
 **Beispiel**
 
-Eine Extension namens `gcp` mit folgender Struktur:
+Eine Erweiterung mit dem Namen `gcp` mit der folgenden Struktur:
 
 ```
 .qwen/extensions/gcp/
@@ -277,14 +353,14 @@ Eine Extension namens `gcp` mit folgender Struktur:
         └── sync.md
 ```
 
-Stellt folgende Befehle bereit:
+Würde diese Befehle bereitstellen:
 
-- `/deploy` - Wird in der Hilfe als `[gcp] Custom command from deploy.md` angezeigt
-- `/gcs:sync` - Wird in der Hilfe als `[gcp] Custom command from sync.md` angezeigt
+- `/deploy` - Wird in der Hilfe als `[gcp] Benutzerdefinierter Befehl aus deploy.md` angezeigt
+- `/gcs:sync` - Wird in der Hilfe als `[gcp] Benutzerdefinierter Befehl aus sync.md` angezeigt
 
 ### Benutzerdefinierte Skills
 
-Extensions können benutzerdefinierte Skills bereitstellen, indem Skill-Dateien in einem `skills/` Unterverzeichnis innerhalb des Extensions-Verzeichnisses abgelegt werden. Jeder Skill sollte eine `SKILL.md` Datei mit YAML-Frontmatter enthalten, die den Namen und die Beschreibung des Skills definiert.
+Erweiterungen können benutzerdefinierte Skills bereitstellen, indem sie Skill-Dateien in einem Unterverzeichnis `skills/` innerhalb des Erweiterungsverzeichnisses ablegen. Jeder Skill sollte eine `SKILL.md`-Datei mit YAML-Frontmatter enthalten, die den Namen und die Beschreibung des Skills definiert.
 
 **Beispiel**
 
@@ -296,11 +372,11 @@ Extensions können benutzerdefinierte Skills bereitstellen, indem Skill-Dateien 
         └── SKILL.md
 ```
 
-Der Skill ist über den `/skills` Befehl verfügbar, wenn die Extension aktiv ist.
+Der Skill ist über den Befehl `/skills` verfügbar, wenn die Erweiterung aktiv ist.
 
 ### Benutzerdefinierte Subagents
 
-Extensions können benutzerdefinierte Subagents bereitstellen, indem Agent-Konfigurationsdateien in einem `agents/` Unterverzeichnis innerhalb des Extensions-Verzeichnisses abgelegt werden. Agents werden über YAML- oder Markdown-Dateien definiert.
+Erweiterungen können benutzerdefinierte Subagents bereitstellen, indem sie Agent-Konfigurationsdateien in einem Unterverzeichnis `agents/` innerhalb des Erweiterungsverzeichnisses ablegen. Agents werden mit YAML- oder Markdown-Dateien definiert.
 
 **Beispiel**
 
@@ -311,28 +387,28 @@ Extensions können benutzerdefinierte Subagents bereitstellen, indem Agent-Konfi
     └── testing-expert.yaml
 ```
 
-Extension-Subagents erscheinen im Subagent-Manager-Dialog im Bereich "Extension Agents".
+Erweiterungs-Subagents erscheinen im Subagent-Manager-Dialog unter dem Abschnitt „Erweiterungs-Agents“.
 
 ### Konfliktlösung
 
-Extension-Befehle haben die niedrigste Priorität. Wenn ein Konflikt mit Benutzer- oder Projektbefehlen auftritt:
+Erweiterungsbefehle haben die niedrigste Priorität. Wenn ein Konflikt mit Benutzer- oder Projektbefehlen auftritt:
 
-1. **Kein Konflikt**: Der Extension-Befehl verwendet seinen natürlichen Namen (z. B. `/deploy`)
-2. **Mit Konflikt**: Der Extension-Befehl wird mit dem Extension-Präfix umbenannt (z. B. `/gcp.deploy`)
+1. **Kein Konflikt**: Der Erweiterungsbefehl verwendet seinen natürlichen Namen (z.B. `/deploy`)
+2. **Mit Konflikt**: Der Erweiterungsbefehl wird mit dem Erweiterungspräfix umbenannt (z.B. `/gcp.deploy`)
 
-Wenn beispielsweise sowohl ein Benutzer als auch die `gcp` Extension einen `deploy` Befehl definieren:
+Wenn zum Beispiel sowohl ein Benutzer als auch die Erweiterung `gcp` einen `deploy`-Befehl definieren:
 
 - `/deploy` - Führt den deploy-Befehl des Benutzers aus
-- `/gcp.deploy` - Führt den deploy-Befehl der Extension aus (gekennzeichnet mit `[gcp]` Tag)
+- `/gcp.deploy` - Führt den deploy-Befehl der Erweiterung aus (gekennzeichnet mit dem Tag `[gcp]`)
 
 ## Variablen
 
-Qwen Code Extensions erlauben die Variablenersetzung in `qwen-extension.json`. Dies ist nützlich, wenn du z. B. das aktuelle Verzeichnis benötigst, um einen MCP-Server mit `"cwd": "${extensionPath}${/}run.ts"` auszuführen.
+Qwen Code-Erweiterungen erlauben die Substitution von Variablen in `qwen-extension.json`. Dies kann nützlich sein, wenn Sie z. B. das aktuelle Verzeichnis benötigen, um einen MCP-Server mit `"cwd": "${extensionPath}${/}run.ts"` auszuführen.
 
 **Unterstützte Variablen:**
 
-| variable                   | description                                                                                                                                                   |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `${extensionPath}`         | Der vollständige Pfad der Extension im Dateisystem des Benutzers, z. B. `/Users/username/.qwen/extensions/example-extension`. Symlinks werden nicht aufgelöst. |
-| `${workspacePath}`         | Der vollständige Pfad des aktuellen Workspaces.                                                                                                            |
-| `${/} or ${pathSeparator}` | Das Pfadtrennzeichen (unterschiedlich je nach Betriebssystem).                                                                                                                          |
+| Variable                      | Beschreibung                                                                                                      |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `${extensionPath}`            | Der vollständige Pfad der Erweiterung im Dateisystem des Benutzers, z.B. '/Users/username/.qwen/extensions/example-extension'. Symlinks werden nicht aufgelöst. |
+| `${workspacePath}`            | Der vollständige Pfad des aktuellen Arbeitsbereichs.                                                              |
+| `${/} oder ${pathSeparator}`   | Der Pfadtrenner (unterschiedlich je nach Betriebssystem).                                                         |

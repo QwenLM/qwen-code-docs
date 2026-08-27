@@ -1,91 +1,90 @@
-## 自定义沙箱环境（Docker/Podman）
+## 自定义沙盒环境 (Docker/Podman)
 
-### 当前通过 npm 包安装后，暂不支持使用 BUILD_SANDBOX 功能
+### 目前，通过 npm 包安装后，该项目不支持使用 BUILD_SANDBOX 功能
 
-1. 要构建自定义沙箱，你需要访问源代码仓库中的构建脚本（`scripts/build_sandbox.js`）。
-2. 这些构建脚本未包含在 npm 发布的包中。
-3. 代码中包含硬编码的路径检查，会明确拒绝来自非源代码环境的构建请求。
+1. 要构建自定义沙盒，你需要访问源码仓库中的构建脚本 (`scripts/build_sandbox.js`)。
+2. 这些构建脚本不包含在 npm 发布的包中。
+3. 代码中包含硬编码的路径检查，会明确拒绝来自非源码环境的构建请求。
 
-如果你需要在容器内使用额外的工具（例如 `git`、`python`、`rg`），请创建自定义 Dockerfile。具体操作如下：
+如果你需要在容器中添加额外的工具（例如 `git`、`python`、`rg`），可以创建自定义 Dockerfile，具体操作如下：
 
-#### 1、首先克隆 Qwen Code 项目：https://github.com/QwenLM/qwen-code.git
+#### 1、首先克隆 Qwen Code 项目，https://github.com/QwenLM/qwen-code.git
 
-#### 2、确保在源代码仓库目录下执行以下操作
+#### 2、确保在源码仓库目录中执行以下操作
 
 ```bash
-# 1. First, install the dependencies of the project
+# 1. 首先安装项目依赖
 npm install
 
-# 2. Build the Qwen Code project
+# 2. 构建 Qwen Code 项目
 npm run build
 
-# 3. Verify that the dist directory has been generated
+# 3. 确认已生成 dist 目录
 ls -la packages/cli/dist/
 
-# 4. Create a global link in the CLI package directory
+# 4. 在 CLI 包目录中创建全局链接
 cd packages/cli
 npm link
 
-# 5. Verification link (it should now point to the source code)
+# 5. 验证链接（现在应该指向源码）
 which qwen
-# Expected output: /xxx/xxx/.nvm/versions/node/v24.11.1/bin/qwen
-# Or similar paths, but it should be a symbolic link
+# 预期输出：/xxx/xxx/.nvm/versions/node/v24.11.1/bin/qwen
+# 或者类似的路径，但应该是一个符号链接
 
-# 6. For details of the symbolic link, you can see the specific source code path
+# 6. 查看符号链接的具体源码路径
 ls -la $(dirname $(which qwen))/../lib/node_modules/@qwen-code/qwen-code
-# It should show that this is a symbolic link pointing to your source code directory
+# 应该显示这是一个指向你源码目录的符号链接
 
-# 7.Test the version of qwen
+# 7. 测试 qwen 版本
 qwen -v
-# npm link will overwrite the global qwen. To avoid being unable to distinguish the same version number, you can uninstall the global CLI first
-
+# npm link 会覆盖全局的 qwen。为避免相同版本号无法区分，可以先卸载全局 CLI
 ```
 
-#### 3、在你自己项目的根目录下创建沙箱 Dockerfile
+#### 3、在你项目的根目录下创建沙盒 Dockerfile
 
 - 路径：`.qwen/sandbox.Dockerfile`
 
 - 官方镜像地址：https://github.com/QwenLM/qwen-code/pkgs/container/qwen-code
 
 ```bash
-# Based on the official Qwen sandbox image (It is recommended to explicitly specify the version)
+# 基于官方 Qwen 沙盒镜像（建议明确指定版本）
 FROM ghcr.io/qwenlm/qwen-code:sha-570ec43
-# Add your extra tools here
+# 在此处添加你的额外工具
 RUN apt-get update && apt-get install -y \
     git \
     python3 \
     ripgrep
 ```
 
-#### 4、在你项目的根目录下构建首个沙箱镜像
+#### 4、在你的项目根目录下创建第一个沙盒镜像
 
 ```bash
 QWEN_SANDBOX=docker BUILD_SANDBOX=1 qwen -s
-# Observe whether the sandbox version of the tool you launched is consistent with the version of your custom image. If they are consistent, the startup will be successful
+# 观察启动的沙盒中你添加的工具版本是否与自定义镜像版本一致。如果一致，则启动成功
 ```
 
-这将基于默认沙箱镜像构建一个项目专属的镜像。
+这将基于默认沙盒镜像构建一个项目特定的镜像。
 
 #### 移除 npm link
 
-- 如果你想恢复 Qwen 的官方 CLI，请移除 npm link
+- 如果你希望恢复 qwen 的官方 CLI，请移除 npm link
 
 ```bash
-# Method 1: Unlink globally
+# 方法一：全局取消链接
 npm unlink -g @qwen-code/qwen-code
 
-# Method 2: Remove it in the packages/cli directory
+# 方法二：在 packages/cli 目录中取消链接
 cd packages/cli
 npm unlink
 
-# Verification has been lifted
+# 验证是否已解除
 which qwen
-# It should display "qwen not found"
+# 应显示 "qwen not found"
 
-# Reinstall the global version if necessary
+# 如有需要，重新安装全局版本
 npm install -g @qwen-code/qwen-code
 
-# Verification Recovery
+# 验证恢复
 which qwen
 qwen --version
 ```

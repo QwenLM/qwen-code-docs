@@ -1,36 +1,36 @@
-# Todo Write 工具 (`todo_write`)
+# Todo Write 工具（`todo_write`）
 
-本文档介绍了适用于 Qwen Code 的 `todo_write` 工具。
+本文档描述了 Qwen Code 的 `todo_write` 工具。
 
-## 简介
+## 描述
 
-使用 `todo_write` 为当前编码会话创建和管理结构化的任务列表。该工具可帮助 AI 助手跟踪进度并组织复杂任务，让你清晰了解正在执行的工作。
+使用 `todo_write` 创建并管理当前编码会话的结构化任务列表。该工具帮助 AI 助手跟踪进度、组织复杂任务，同时让你清晰了解正在执行的工作。
 
 ### 参数
 
 `todo_write` 接受一个参数：
 
-- `todos`（数组，必填）：todo 项数组，每个项包含：
-  - `content`（字符串，必填）：任务描述。
-  - `status`（字符串，必填）：当前状态（`pending`、`in_progress` 或 `completed`）。
-  - `activeForm`（字符串，必填）：描述当前正在执行操作的现在进行时形式（例如 "Running tests"、"Building the project"）。
+- `todos`（数组，必需）：一个待办事项数组，每个事项包含：
+  - `content`（字符串，必需）：任务的描述。
+  - `status`（字符串，必需）：当前状态（`pending`、`in_progress` 或 `completed`）。
+  - `id`（字符串，必需）：待办事项的唯一标识符。
 
 ## 如何在 Qwen Code 中使用 `todo_write`
 
-在处理复杂的多步骤任务时，AI 助手会自动使用此工具。你无需显式请求，但如果想查看针对你请求的规划方案，可以要求助手创建 todo 列表。
+AI 助手在复杂、多步骤任务中会自动使用此工具。你无需显式请求，但如果想查看助手对你请求的规划方案，可以要求它创建一个待办事项列表。
 
-该工具将会话专属的 todo 列表文件存储在你的主目录（`~/.qwen/todos/`）中，因此每个编码会话都会维护独立的任务列表。
+该工具将待办事项列表存储在你的主目录（`~/.qwen/todos/`）中，使用会话特定文件，因此每个编码会话都维护自己的任务列表。
 
 ## AI 何时使用此工具
 
-助手会在以下场景使用 `todo_write`：
+助手使用 `todo_write` 的场景：
 
-- 需要多个步骤的复杂任务
+- 需要多步骤的复杂任务
 - 包含多个组件的功能实现
 - 跨多个文件的重构操作
-- 涉及 3 个或以上独立操作的任何工作
+- 涉及 3 个或更多独立操作的工作
 
-对于简单的单步任务或纯信息查询请求，助手不会使用此工具。
+助手不会将此工具用于简单的单步骤任务或纯粹的信息查询请求。
 
 ### `todo_write` 示例
 
@@ -39,25 +39,25 @@
 ```
 todo_write(todos=[
   {
+    "id": "1",
     "content": "Create user preferences model",
-    "status": "pending",
-    "activeForm": "Creating user preferences model"
+    "status": "pending"
   },
   {
+    "id": "2",
     "content": "Add API endpoints for preferences",
-    "status": "pending",
-    "activeForm": "Adding API endpoints for preferences"
+    "status": "pending"
   },
   {
+    "id": "3",
     "content": "Implement frontend components",
-    "status": "pending",
-    "activeForm": "Implementing frontend components"
+    "status": "pending"
   }
 ])
 ```
 
-## 重要说明
+## 注意事项
 
-- **自动使用：** 在处理复杂任务时，AI 助手会自动管理 todo 列表。
-- **进度可见：** 随着工作推进，你将实时看到 todo 列表的更新。
-- **会话隔离：** 每个编码会话都有独立的 todo 列表，互不干扰。
+- **自动使用：** AI 助手在复杂任务期间自动管理待办事项列表。
+- **进度可见性：** 你将看到待办事项列表随着工作进展实时更新。
+- **会话隔离：** 每个编码会话拥有独立的待办事项列表，互不干扰。

@@ -1,6 +1,6 @@
 # プロキシスクリプトの例
 
-以下は、`QWEN_SANDBOX_PROXY_COMMAND` 環境変数で使用できるプロキシスクリプトの例です。このスクリプトは `example.com:443` への `HTTPS` 接続のみを許可し、他のすべてのリクエストを拒否します。
+以下は、`QWEN_SANDBOX_PROXY_COMMAND` 環境変数で使用できるプロキシスクリプトの例です。このスクリプトは、`example.com:443` への `HTTPS` 接続のみを許可し、それ以外のリクエストはすべて拒否します。
 
 ```javascript
 #!/usr/bin/env node

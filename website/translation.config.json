@@ -3,7 +3,16 @@
   "sourceRepo": "https://github.com/QwenLM/qwen-code.git",
   "docsPath": "docs",
   "sourceLanguage": "en",
-  "targetLanguages": ["zh", "de", "fr", "ru", "ja", "pt-BR"],
+  "targetLanguages": ["zh", "de", "fr", "ru", "ja", "pt-BR", "ko"],
   "outputDir": "content",
-  "branch": "main"
+  "branch": "main",
+  "excludeFromTranslation": [
+    "design",
+    "e2e-tests",
+    "plans",
+    "superpowers",
+    "verification",
+    "declarative-agents-port.md",
+    "yaml-parser-replacement.md"
+  ]
 }

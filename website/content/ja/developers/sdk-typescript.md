@@ -1,38 +1,36 @@
-# Typescript SDK
+# TypeScript SDK
 
 ## @qwen-code/sdk
 
-Qwen Code にプログラムからアクセスするための最小限の実験的 TypeScript SDK です。
+Qwen Code にプログラムからアクセスするための、最小限の実験的な TypeScript SDK です。
 
-機能リクエスト、Issue、PR の投稿を歓迎します。
+機能リクエストや issue / PR はお気軽に送ってください。
 
-## Installation
+## インストール
 
 ```bash
 npm install @qwen-code/sdk
 ```
 
-## Requirements
+## 必要条件
 
-- Node.js >= 20.0.0
-- [Qwen Code](https://github.com/QwenLM/qwen-code) >= 0.4.0 (stable) がインストールされ、PATH からアクセス可能であること
+- Node.js >= 22.0.0
+- [Qwen Code](https://github.com/QwenLM/qwen-code) >= 0.4.0（安定版）。SDK はデフォルトでバンドル CLI を使用します。カスタムの `qwen` バイナリまたは CLI バンドルを実行する必要がある場合にのみ `pathToQwenExecutable` を設定してください。
 
-> **Note for nvm users**: nvm を使用して Node.js のバージョンを管理している場合、SDK が Qwen Code の実行ファイルを自動検出できないことがあります。`pathToQwenExecutable` オプションに `qwen` バイナリのフルパスを明示的に設定してください。
-
-## Quick Start
+## クイックスタート
 
 ```typescript
 import { query } from '@qwen-code/sdk';
 
-// Single-turn query
+// シングルターンのクエリ
 const result = query({
-  prompt: 'What files are in the current directory?',
+  prompt: '今いるディレクトリにはどんなファイルがありますか？',
   options: {
     cwd: '/path/to/project',
   },
 });
 
-// Iterate over messages
+// メッセージを反復処理
 for await (const message of result) {
   if (message.type === 'assistant') {
     console.log('Assistant:', message.message.content);
@@ -42,66 +40,71 @@ for await (const message of result) {
 }
 ```
 
-## API Reference
+## API リファレンス
 
 ### `query(config)`
 
 Qwen Code との新しいクエリセッションを作成します。
 
-#### Parameters
+#### パラメータ
 
-- `prompt`: `string | AsyncIterable<SDKUserMessage>` - 送信するプロンプト。単一ターンクエリには文字列を、複数ターン会話には非同期イテラブルを使用します。
+- `prompt`: `string | AsyncIterable<SDKUserMessage>` - 送信するプロンプト。シングルターンのクエリには文字列、マルチターンの会話には非同期イテラブルを使用します。
 - `options`: `QueryOptions` - クエリセッションの設定オプション。
 
 #### QueryOptions
 
-| Option                   | Type                                           | Default          | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| ------------------------ | ---------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cwd`                    | `string`                                       | `process.cwd()`  | クエリセッションの作業ディレクトリ。ファイル操作やコマンドが実行されるコンテキストを決定します。                                                                                                                                                                                                                                                                                                                                                               |
-| `model`                  | `string`                                       | -                | 使用する AI モデル（例: `'qwen-max'`, `'qwen-plus'`, `'qwen-turbo'`）。`OPENAI_MODEL` および `QWEN_MODEL` 環境変数より優先されます。                                                                                                                                                                                                                                                                                                                                 |
-| `pathToQwenExecutable`   | `string`                                       | Auto-detected    | Qwen Code 実行ファイルへのパス。複数の形式をサポート: `'qwen'` (PATH からのネイティブバイナリ)、`'/path/to/qwen'` (明示的なパス)、`'/path/to/cli.js'` (Node.js バンドル)、`'node:/path/to/cli.js'` (Node.js ランタイムを強制)、`'bun:/path/to/cli.js'` (Bun ランタイムを強制)。指定しない場合、以下から自動検出: `QWEN_CODE_CLI_PATH` 環境変数、`~/.volta/bin/qwen`、`~/.npm-global/bin/qwen`、`/usr/local/bin/qwen`、`~/.local/bin/qwen`、`~/node_modules/.bin/qwen`、`~/.yarn/bin/qwen`。 |
-| `permissionMode`         | `'default' \| 'plan' \| 'auto-edit' \| 'yolo'` | `'default'`      | ツール実行の承認を制御する権限モード。詳細は [Permission Modes](#permission-modes) を参照。                                                                                                                                                                                                                                                                                                                                                                           |
-| `canUseTool`             | `CanUseTool`                                   | -                | ツール実行承認用のカスタム権限ハンドラ。ツールの確認が必要な場合に呼び出されます。60 秒以内に応答する必要があります。応答がない場合、リクエストは自動的に拒否されます。詳細は [Custom Permission Handler](#custom-permission-handler) を参照。                                                                                                                                                                                                                                                     |
-| `env`                    | `Record<string, string>`                       | -                | Qwen Code プロセスに渡す環境変数。現在のプロセス環境とマージされます。                                                                                                                                                                                                                                                                                                                                                                                  |
-| `systemPrompt`           | `string \| QuerySystemPromptPreset`            | -                | メインセッションのシステムプロンプト設定。文字列を指定すると組み込みの Qwen Code システムプロンプトを完全に上書きし、プリセットオブジェクトを指定すると組み込みプロンプトを保持したまま追加の指示を付加します。                                                                                                                                                                                                                                                                                  |
-| `mcpServers`             | `Record<string, McpServerConfig>`              | -                | 接続する MCP (Model Context Protocol) サーバー。外部サーバー (stdio/SSE/HTTP) と SDK 組み込みサーバーをサポート。外部サーバーは `command`、`args`、`url`、`httpUrl` などのトランスポートオプションで設定します。SDK サーバーは `{ type: 'sdk', name: string, instance: Server }` を使用します。                                                                                                                                                                                        |
-| `abortController`        | `AbortController`                              | -                | クエリセッションをキャンセルするためのコントローラ。`abortController.abort()` を呼び出してセッションを終了し、リソースをクリーンアップします。                                                                                                                                                                                                                                                                                                                                                                |
-| `debug`                  | `boolean`                                      | `false`          | CLI プロセスからの詳細なログ出力を有効にするデバッグモード。                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `maxSessionTurns`        | `number`                                       | `-1` (unlimited) | セッションが自動的に終了するまでの会話ターンの最大数。1 ターンはユーザーメッセージとアシスタントの応答で構成されます。                                                                                                                                                                                                                                                                                                                                        |
-| `coreTools`              | `string[]`                                     | -                | settings.json の `tool.core` と同等。指定した場合、これらのツールのみが AI で利用可能になります。例: `['read_file', 'write_file', 'run_terminal_cmd']`。                                                                                                                                                                                                                                                                                                                   |
-| `excludeTools`           | `string[]`                                     | -                | settings.json の `tool.exclude` と同等。除外されたツールは即座に権限エラーを返します。他のすべての権限設定より最優先されます。パターンマッチングをサポート: ツール名 (`'write_file'`)、ツールクラス (`'ShellTool'`)、またはシェルコマンドプレフィックス (`'ShellTool(rm )'`)。                                                                                                                                                                                      |
-| `allowedTools`           | `string[]`                                     | -                | settings.json の `tool.allowed` と同等。一致するツールは `canUseTool` コールバックをバイパスし、自動的に実行されます。ツールの確認が必要な場合にのみ適用されます。`excludeTools` と同じパターンマッチングをサポート。                                                                                                                                                                                                                                                                 |
-| `authType`               | `'openai' \| 'qwen-oauth'`                     | `'openai'`       | AI サービスの認証タイプ。SDK で `'qwen-oauth'` を使用することは推奨されません。認証情報は `~/.qwen` に保存され、定期的な更新が必要になる場合があります。                                                                                                                                                                                                                                                                                                                          |
-| `agents`                 | `SubagentConfig[]`                             | -                | セッション中に呼び出せるサブエージェントの設定。サブエージェントは、特定のタスクやドメインに特化した AI エージェントです。                                                                                                                                                                                                                                                                                                                                                |
-| `includePartialMessages` | `boolean`                                      | `false`          | `true` の場合、SDK は AI の応答が生成されている途中で未完成のメッセージを出力し、リアルタイムストリーミングを可能にします。                                                                                                                                                                                                                                                                                                                                                        |
+| オプション                 | 型                                             | デフォルト         | 説明                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| -------------------------- | ---------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cwd`                      | `string`                                       | `process.cwd()`    | クエリセッションの作業ディレクトリ。ファイル操作やコマンドが実行されるコンテキストを決定します。                                                                                                                                                                                                                                                                                                                                                                                    |
+| `model`                    | `string`                                       | -                  | 使用する AI モデル（例: `'qwen-max'`, `'qwen-plus'`, `'qwen-turbo'`）。`OPENAI_MODEL` および `QWEN_MODEL` 環境変数より優先されます。                                                                                                                                                                                                                                                                                                                                                       |
+| `pathToQwenExecutable`     | `string`                                       | バンドル CLI       | Qwen Code 実行ファイルへのパス。複数の形式に対応: `'qwen'`（PATH からのネイティブバイナリ）、`'/path/to/qwen'`（明示的なパス）、`'/path/to/cli.js'`（Node.js バンドル）、`'node:/path/to/cli.js'`（Node.js ランタイムを強制）、`'bun:/path/to/cli.js'`（Bun ランタイムを強制）。未指定の場合、SDK はパッケージに同梱されたバンドル CLI を使用します。 |
+| `permissionMode`           | `'default' \| 'plan' \| 'auto-edit' \| 'auto' \| 'yolo'` | `'default'`        | ツール実行の承認を制御するパーミッションモード。詳細は [パーミッションモード](#permission-modes) を参照。                                                                                                                                                                                                                                                                                                                                                                               |
+| `canUseTool`               | `CanUseTool`                                   | -                  | ツール実行承認のためのカスタムパーミッションハンドラ。ツールが確認を必要とするときに呼び出されます。60 秒以内に応答しないと自動拒否されます。[カスタムパーミッションハンドラ](#custom-permission-handler) を参照。                                                                                                                                                                                                                                                                |
+| `env`                      | `Record<string, string>`                       | -                  | Qwen Code プロセスに渡す環境変数。現在のプロセス環境とマージされます。                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `systemPrompt`             | `string \| QuerySystemPromptPreset`            | -                  | メインセッションのシステムプロンプト設定。文字列を使用すると組み込みの Qwen Code システムプロンプトを完全に上書きし、プリセットオブジェクトを使用すると組み込みプロンプトを維持しつつ追加の指示を付け加えます。                                                                                                                                                                                                                                   |
+| `mcpServers`               | `Record<string, McpServerConfig>`              | -                  | 接続する MCP（Model Context Protocol）サーバー。外部サーバー（stdio/SSE/HTTP）と SDK 組み込みサーバーをサポート。外部サーバーは `command`、`args`、`url`、`httpUrl` などのトランスポートオプションで設定します。SDK サーバーは `{ type: 'sdk', name: string, instance: Server }` を使用します。                                                                                                                                                                    |
+| `abortController`          | `AbortController`                              | -                  | クエリセッションをキャンセルするコントローラ。`abortController.abort()` を呼び出すとセッションを終了しリソースをクリーンアップします。                                                                                                                                                                                                                                                                                                                                                    |
+| `debug`                    | `boolean`                                      | `false`            | デバッグモードを有効にし、CLI プロセスからの詳細ログを出力します。                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `maxSessionTurns`          | `number`                                       | `-1`（無制限）     | セッションが自動終了するまでの最大会話ターン数。1 ターンはユーザーメッセージとアシスタント応答で構成されます。                                                                                                                                                                                                                                                                                                                                                           |
+| `coreTools`                | `string[]`                                     | -                  | レガシーな `coreTools` / CLI `--core-tools` 許可リストのセマンティクスを使用します。指定された場合、一致するコアツールのみがセッションに登録されます。これは settings.json の `permissions.allow` とは別物で、後者は起動時にレジストリレベルの許可リストもアクティブにします。少なくとも 1 つの有効な許可ルールがそこに設定されている場合（不正なエントリはカウントされない）、どの許可ルールまたは確認ルールにもカバーされていない組み込みツールは deferred に降格されます — 登録され `tool_search` 経由でロード可能ですが、スキーマは即時のモデルリクエストからは除外されます（MCP ツール、`--json-schema` の `structured_output` 契約、プランモードのライフサイクルツール、`task_stop`、`tool_search`、および `computer_use__*` ファミリーは免除対象。再起動が必要、#9827、#10075）。SDK の `allowedTools` パラメータ単体では許可リストをアクティブにできませんが、許可リストがアクティブな間はそのルールが有効な許可セットにマージされ、カバー範囲にカウントされるため、カバーされた組み込みツールは即時に登録されたままになります。例: `['read_file', 'edit', 'run_shell_command']`。 |
+| `excludeTools`             | `string[]`                                     | -                  | settings.json の `permissions.deny` に相当します。除外されたツールは即座にパーミッションエラーを返します。他のすべてのパーミッション設定より優先されます。ツール名のエイリアスやパターンマッチングをサポート: ツール名（`'write_file'`）、シェルコマンドのプレフィックス（`'Bash(rm *)'`）、パスパターン（`'Read(.env)'`, `'Edit(/src/**)'`）。                                                                                                                        |
+| `allowedTools`             | `string[]`                                     | -                  | 自動承認のための settings.json の `permissions.allow` に相当します。一致するツールは `canUseTool` コールバックをバイパスし自動実行されます。ツールが確認を必要とする場合にのみ適用されます。settings.json の `permissions.allow` と異なり、このパラメータ単体ではレジストリの許可リストをアクティブにしません。ただし、settings 提供の許可リストがアクティブな間、`allowedTools` のルールは有効な許可セットにマージされ、カバー範囲にカウントされるため、カバーされた組み込みツールは即時に登録されたままになります（カバーされていないものは deferred に降格されますが、削除はされません。#10075）。`excludeTools` と同じパターンマッチングをサポートします。例: `['Bash(git status)', 'Bash(npm test)']`。                                                                                                                                                                                                             |
+| `authType`                 | `'openai' \| 'anthropic' \| 'qwen-oauth' \| 'gemini' \| 'vertex-ai'` | -              | AI サービスの認証タイプ。指定すると、SDK は CLI に `--auth-type` として転送します。                                                                                                                                                                                                                                                    |
+| `agents`                   | `SubagentConfig[]`                             | -                  | セッション中に呼び出し可能なサブエージェントの設定。サブエージェントは特定のタスクやドメインに特化した AI エージェントです。                                                                                                                                                                                                                                                                                                                                             |
+| `includePartialMessages`   | `boolean`                                      | `false`            | `true` に設定すると、SDK は生成中の不完全なメッセージを出力し、AI の応答をリアルタイムでストリーミングできるようにします。                                                                                                                                                                                                                                                                                                                                                             |
+| `resume`                   | `string`                                       | -                  | セッション ID を指定して以前のセッションを再開します。CLI の `--resume` フラグと同等です。                                                                                                                                                                                                                                                                                                                                                                                         |
+| `sessionId`               | `string`                                       | -                  | 新しいセッションにセッション ID を指定します。履歴を再開せずに SDK と CLI が同じ ID を使用することを保証します。CLI の `--session-id` フラグと同等です。                                                                                                                                                                                                                                                                                                                             |
 
-### Timeouts
+> [!note]
+> `coreTools` では `Read`、`Edit`、`Bash` のようなエイリアスも使用できますが、`Bash(git *)` のような呼び出し指定子は削除されます。`coreTools` はツールの登録を制限するものであり、呼び出しパターンを制限するものではありません。
 
-SDK では以下のデフォルトタイムアウトが適用されます:
+### タイムアウト
 
-| Timeout          | Default  | Description                                                                                                                                       |
-| ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `canUseTool`     | 1 minute | `canUseTool` コールバックが応答するまでの最大時間。超過した場合、ツールリクエストは自動的に拒否されます。                                                  |
-| `mcpRequest`     | 1 minute | SDK MCP ツール呼び出しが完了するまでの最大時間。                                                                                                  |
-| `controlRequest` | 1 minute | `initialize()`、`setModel()`、`setPermissionMode()`、`getContextUsage()`、`interrupt()` などの制御操作が完了するまでの最大時間。 |
-| `streamClose`    | 1 minute | SDK MCP サーバーを使用する複数ターンモードで、CLI の stdin を閉じる前に初期化が完了するのを待つ最大時間。                             |
+SDK は以下のデフォルトタイムアウトを適用します。
 
-`timeout` オプションを使用してこれらのタイムアウトをカスタマイズできます:
+| タイムアウト       | デフォルト | 説明                                                                                                                                          |
+| ----------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `canUseTool`      | 1 分       | `canUseTool` コールバックの最大応答時間。超過するとツールリクエストは自動拒否されます。                                                       |
+| `mcpRequest`      | 1 分       | SDK MCP ツール呼び出しの完了までの最大時間。                                                                                                  |
+| `controlRequest`  | 1 分       | `initialize()`、`setModel()`、`setPermissionMode()`、`getContextUsage()`、`interrupt()` などの制御操作の完了までの最大時間。                   |
+| `streamClose`     | 1 分       | マルチターンモードで SDK MCP サーバーを使用する際、CLI の stdin を閉じる前に初期化が完了するのを待つ最大時間。                                |
+
+これらのタイムアウトは `timeout` オプションでカスタマイズできます。
 
 ```typescript
-const query = qwen.query('Your prompt', {
+const query = qwen.query('プロンプト', {
   timeout: {
-    canUseTool: 60000, // 60 seconds for permission callback
-    mcpRequest: 600000, // 10 minutes for MCP tool calls
-    controlRequest: 60000, // 60 seconds for control requests
-    streamClose: 15000, // 15 seconds for stream close wait
+    canUseTool: 60000, // パーミッションコールバック 60 秒
+    mcpRequest: 600000, // MCP ツール呼び出し 10 分
+    controlRequest: 60000, // 制御リクエスト 60 秒
+    streamClose: 15000, // ストリームクローズ待機 15 秒
   },
 });
 ```
 
-### Message Types
+### メッセージタイプ
 
-SDK は異なるメッセージタイプを識別するための型ガードを提供します:
+SDK は異なるメッセージタイプを識別するための型ガードを提供します。
 
 ```typescript
 import {
@@ -114,65 +117,94 @@ import {
 
 for await (const message of result) {
   if (isSDKAssistantMessage(message)) {
-    // Handle assistant message
+    // アシスタントメッセージを処理
   } else if (isSDKResultMessage(message)) {
-    // Handle result message
+    // 結果メッセージを処理
   }
 }
 ```
 
-### Query Instance Methods
+### Query インスタンスのメソッド
 
-`query()` が返す `Query` インスタンスは、以下のメソッドを提供します:
+`query()` が返す `Query` インスタンスにはいくつかのメソッドがあります。
 
 ```typescript
-const q = query({ prompt: 'Hello', options: {} });
+const q = query({ prompt: 'こんにちは', options: {} });
 
-// Get session ID
+// セッション ID を取得
 const sessionId = q.getSessionId();
 
-// Check if closed
+// クローズ状態の確認
 const closed = q.isClosed();
 
-// Interrupt the current operation
+// 現在の操作を中断
 await q.interrupt();
 
-// Change permission mode mid-session
+// セッション中にパーミッションモードを変更
 await q.setPermissionMode('yolo');
 
-// Change model mid-session
+// セッション中にモデルを変更
 await q.setModel('qwen-max');
 
-// Get context window usage breakdown (token counts per category)
+// コンテキストウィンドウの使用状況内訳を取得（カテゴリ別トークン数）
 const usage = await q.getContextUsage();
-// Pass true to hint that per-item details should be displayed
+// true を渡すと、アイテムごとの詳細を表示するヒントを与える
 const detail = await q.getContextUsage(true);
 
-// Close the session
+// セッションを閉じる
 await q.close();
 ```
 
-## Permission Modes
+`interrupt()` はアクティブなターンのみをキャンセルします。非同期イテラブルプロンプトで作成されたマルチターンのクエリでは、クエリとその入力ストリームはオープンなままとなり、イテラブルからの後続のメッセージが通常通り処理されます。セッション全体を終了したい場合は、`close()` を使用するか、設定した `AbortController` をアボートしてください。
 
-SDK はツール実行を制御するために以下の権限モードをサポートしています:
+## デーモンでの呼び出し元指定セッション ID
 
-- **`default`**: `canUseTool` コールバックまたは `allowedTools` で承認されない限り、書き込みツールは拒否されます。読み取り専用ツールは確認なしで実行されます。
+`DaemonClient.createOrAttachSession` は、セッション作成前に ID を永続化する必要がある呼び出し元のために、オプションの `sessionId` を受け付けます。
+
+```typescript
+import { DaemonClient } from '@qwen-code/sdk';
+
+const daemon = new DaemonClient({ baseUrl: 'http://127.0.0.1:4170' });
+const session = await daemon.createOrAttachSession({
+  workspaceCwd: '/path/to/project',
+  sessionId: '550E8400-E29B-41D4-A716-446655440000',
+});
+
+console.log(session.sessionId); // 550e8400-e29b-41d4-a716-446655440000
+```
+
+SDK は変更を送信する前にデーモンの `session_id_override` ケーパビリティを要求します。REST モードでは `sessionId` が直接シリアライズされ、アクティブな ACP アダプタはそれを `session/new._meta["qwen-code/sessionId"]` にマッピングします。SDK は成功レスポンスを検証し、デーモンが異なる ID を返した場合に `DaemonSessionIdProtocolError` をスローします。
+
+このオプションは常に新しいスレッドセッションを作成し、冪等なアタッチではありません。作成の結果が曖昧な場合は、既知の ID を使用して load または resume してください。オプションを省略すると、既存の create-or-attach 動作が維持されます。
+
+## パーミッションモード
+
+SDK はツール実行を制御するための異なるパーミッションモードをサポートしています。
+
+- **`default`**: 書き込みツールは `canUseTool` コールバックまたは `allowedTools` で承認されない限り拒否されます。読み取り専用ツールは確認なしで実行されます。
 - **`plan`**: すべての書き込みツールをブロックし、AI にまず計画を提示するよう指示します。
-- **`auto-edit`**: 編集ツール（edit、write_file）を自動承認し、他のツールは確認を必要とします。
-- **`yolo`**: すべてのツールが確認なしで自動的に実行されます。
+- **`auto-edit`**: 編集ツール（`edit`、`write_file`、`notebook_edit`）を自動承認し、その他のツールは確認が必要です。
+- **`auto`**: 組み込みのクラシファイアを使用して安全なツール呼び出しを自動承認し、リスクのあるものをブロックします。ポリシーによる繰り返しブロックまたはクラシファイアの障害後には手動承認フォールバックに切り替わります。
+- **`yolo`**: すべてのツールが確認なしで自動実行されます。
 
-### Permission Priority Chain
+### パーミッションの優先順位チェーン
 
-1. `excludeTools` - ツールを完全にブロック
-2. `permissionMode: 'plan'` - 読み取り専用以外のツールをブロック
-3. `permissionMode: 'yolo'` - すべてのツールを自動承認
-4. `allowedTools` - 一致するツールを自動承認
-5. `canUseTool` callback - カスタム承認ロジック
-6. Default behavior - SDK モードでは自動拒否
+決定の優先順位（高い順）: `deny` > `ask` > `allow` > _（デフォルト/インタラクティブモード）_
 
-## Examples
+最初に一致したルールが適用されます。
 
-### Multi-turn Conversation
+1. `excludeTools` / `permissions.deny` - ツールを完全にブロック（パーミッションエラーを返す）
+2. `permissions.ask` - 常にユーザーの確認を要求
+3. `permissionMode: 'plan'` - 読み取り専用以外のすべてのツールをブロック
+4. `permissionMode: 'yolo'` - すべてのツールを自動承認
+5. `allowedTools` / `permissions.allow` - 一致するツールを自動承認
+6. `permissionMode: 'auto'` - 残りのツールのクラシファイア仲介の承認
+7. `canUseTool` コールバック - カスタム承認ロジック（指定された場合、許可されたツールでは呼び出されない）
+8. デフォルト動作 - SDK モードでは自動拒否（書き込みツールは明示的な承認が必要）
+
+## 使用例
+
+### マルチターン会話
 
 ```typescript
 import { query, type SDKUserMessage } from '@qwen-code/sdk';
@@ -181,15 +213,15 @@ async function* generateMessages(): AsyncIterable<SDKUserMessage> {
   yield {
     type: 'user',
     session_id: 'my-session',
-    message: { role: 'user', content: 'Create a hello.txt file' },
+    message: { role: 'user', content: 'hello.txt ファイルを作成してください' },
     parent_tool_use_id: null,
   };
 
-  // Wait for some condition or user input
+  // 何らかの条件やユーザー入力を待つ
   yield {
     type: 'user',
     session_id: 'my-session',
-    message: { role: 'user', content: 'Now read the file back' },
+    message: { role: 'user', content: '今度はそのファイルを読み込んでください' },
     parent_tool_use_id: null,
   };
 }
@@ -206,42 +238,42 @@ for await (const message of result) {
 }
 ```
 
-### Custom Permission Handler
+### カスタムパーミッションハンドラ
 
 ```typescript
 import { query, type CanUseTool } from '@qwen-code/sdk';
 
 const canUseTool: CanUseTool = async (toolName, input, { signal }) => {
-  // Allow all read operations
+  // 読み取り操作はすべて許可
   if (toolName.startsWith('read_')) {
     return { behavior: 'allow', updatedInput: input };
   }
 
-  // Prompt user for write operations (in a real app)
-  const userApproved = await promptUser(`Allow ${toolName}?`);
+  // 書き込み操作はユーザーに確認（実際のアプリでは）
+  const userApproved = await promptUser(`${toolName} を許可しますか？`);
 
   if (userApproved) {
     return { behavior: 'allow', updatedInput: input };
   }
 
-  return { behavior: 'deny', message: 'User denied the operation' };
+  return { behavior: 'deny', message: 'ユーザーが操作を拒否しました' };
 };
 
 const result = query({
-  prompt: 'Create a new file',
+  prompt: '新しいファイルを作成してください',
   options: {
     canUseTool,
   },
 });
 ```
 
-### With External MCP Servers
+### 外部 MCP サーバーとの連携
 
 ```typescript
 import { query } from '@qwen-code/sdk';
 
 const result = query({
-  prompt: 'Use the custom tool from my MCP server',
+  prompt: 'MCP サーバーのカスタムツールを使ってください',
   options: {
     mcpServers: {
       'my-server': {
@@ -254,52 +286,51 @@ const result = query({
 });
 ```
 
-### Override the System Prompt
+### システムプロンプトの上書き
 
 ```typescript
 import { query } from '@qwen-code/sdk';
 
 const result = query({
-  prompt: 'Say hello in one sentence.',
+  prompt: '1文で挨拶してください。',
   options: {
-    systemPrompt: 'You are a terse assistant. Answer in exactly one sentence.',
+    systemPrompt: 'あなたは簡潔なアシスタントです。ちょうど1文で答えてください。',
   },
 });
 ```
 
-### Append to the Built-in System Prompt
+### 組み込みシステムプロンプトへの追記
 
 ```typescript
 import { query } from '@qwen-code/sdk';
 
 const result = query({
-  prompt: 'Review the current directory.',
+  prompt: '現在のディレクトリをレビューしてください。',
   options: {
     systemPrompt: {
       type: 'preset',
       preset: 'qwen_code',
-      append: 'Be terse and focus on concrete findings.',
+      append: '簡潔にし、具体的な発見に焦点を当ててください。',
     },
   },
 });
 ```
+### SDK組み込みMCPサーバー
 
-### With SDK-Embedded MCP Servers
-
-SDK は `tool` と `createSdkMcpServer` を提供し、SDK アプリケーションと同じプロセスで実行される MCP サーバーを作成できます。これにより、別のサーバープロセスを起動せずにカスタムツールを AI に公開できます。
+SDKは、`tool`と`createSdkMcpServer`を提供し、SDKアプリケーションと同じプロセス内で動作するMCPサーバーを作成します。これは、別のサーバープロセスを実行せずに、AIにカスタムツールを公開したい場合に便利です。
 
 #### `tool(name, description, inputSchema, handler)`
 
-Zod スキーマの型推論を使用してツール定義を作成します。
+Zodスキーマの型推論を使用してツール定義を作成します。
 
-| Parameter     | Type                               | Description                                                              |
-| ------------- | ---------------------------------- | ------------------------------------------------------------------------ |
-| `name`        | `string`                           | ツール名（1〜64文字、英字で始まり、英数字とアンダースコアを使用可能） |
-| `description` | `string`                           | ツールの機能を説明する人間が読める形式の説明                         |
-| `inputSchema` | `ZodRawShape`                      | ツールの入力パラメータを定義する Zod スキーマオブジェクト                   |
-| `handler`     | `(args, extra) => Promise<Result>` | ツールを実行し、MCP コンテンツブロックを返す非同期関数     |
+| パラメータ      | 型                                 | 説明                                                               |
+| -------------- | ---------------------------------- | ------------------------------------------------------------------ |
+| `name`        | `string`                           | ツール名（1〜64文字、英字で始まり、英数字とアンダースコア）         |
+| `description` | `string`                           | ツールの動作を説明する人間が読める形式の説明                         |
+| `inputSchema` | `ZodRawShape`                      | ツールの入力パラメータを定義するZodスキーマオブジェクト              |
+| `handler`     | `(args, extra) => Promise<Result>` | ツールを実行し、MCPコンテンツブロックを返す非同期関数                |
 
-ハンドラは以下の構造を持つ `CallToolResult` オブジェクトを返す必要があります:
+ハンドラーは以下の構造を持つ`CallToolResult`オブジェクトを返す必要があります：
 
 ```typescript
 {
@@ -314,39 +345,39 @@ Zod スキーマの型推論を使用してツール定義を作成します。
 
 #### `createSdkMcpServer(options)`
 
-SDK 組み込みの MCP サーバーインスタンスを作成します。
+SDK組み込みのMCPサーバーインスタンスを作成します。
 
-| Option    | Type                     | Default   | Description                          |
-| --------- | ------------------------ | --------- | ------------------------------------ |
-| `name`    | `string`                 | Required  | MCP サーバーの一意の名前       |
-| `version` | `string`                 | `'1.0.0'` | サーバーのバージョン                       |
-| `tools`   | `SdkMcpToolDefinition[]` | -         | `tool()` で作成されたツールの配列 |
+| オプション | 型                       | デフォルト   | 説明                                |
+| ---------- | ------------------------ | ------------ | ----------------------------------- |
+| `name`    | `string`                 | 必須        | MCPサーバーの一意の名前              |
+| `version` | `string`                 | `'1.0.0'`   | サーバーバージョン                    |
+| `tools`   | `SdkMcpToolDefinition[]` | -            | `tool()`で作成されたツールの配列      |
 
-`mcpServers` オプションに直接渡すことができる `McpSdkServerConfigWithInstance` オブジェクトを返します。
+`mcpServers`オプションに直接渡すことができる`McpSdkServerConfigWithInstance`オブジェクトを返します。
 
-#### Example
+#### 例
 
 ```typescript
 import { z } from 'zod';
 import { query, tool, createSdkMcpServer } from '@qwen-code/sdk';
 
-// Define a tool with Zod schema
+// Zodスキーマでツールを定義
 const calculatorTool = tool(
   'calculate_sum',
-  'Add two numbers',
+  '2つの数値を加算',
   { a: z.number(), b: z.number() },
   async (args) => ({
     content: [{ type: 'text', text: String(args.a + args.b) }],
   }),
 );
 
-// Create the MCP server
+// MCPサーバーを作成
 const server = createSdkMcpServer({
   name: 'calculator',
   tools: [calculatorTool],
 });
 
-// Use the server in a query
+// クエリでサーバーを使用
 const result = query({
   prompt: 'What is 42 + 17?',
   options: {
@@ -362,7 +393,7 @@ for await (const message of result) {
 }
 ```
 
-### Abort a Query
+### クエリの中断
 
 ```typescript
 import { query, isAbortError } from '@qwen-code/sdk';
@@ -370,13 +401,13 @@ import { query, isAbortError } from '@qwen-code/sdk';
 const abortController = new AbortController();
 
 const result = query({
-  prompt: 'Long running task...',
+  prompt: '長時間実行タスク...',
   options: {
     abortController,
   },
 });
 
-// Abort after 5 seconds
+// 5秒後に中断
 setTimeout(() => abortController.abort(), 5000);
 
 try {
@@ -385,27 +416,27 @@ try {
   }
 } catch (error) {
   if (isAbortError(error)) {
-    console.log('Query was aborted');
+    console.log('クエリが中断されました');
   } else {
     throw error;
   }
 }
 ```
 
-## Error Handling
+## エラーハンドリング
 
-SDK は中止されたクエリを処理するための `AbortError` クラスを提供します:
+SDKは、中断されたクエリを処理するための`AbortError`クラスを提供します：
 
 ```typescript
 import { AbortError, isAbortError } from '@qwen-code/sdk';
 
 try {
-  // ... query operations
+  // ... クエリ操作
 } catch (error) {
   if (isAbortError(error)) {
-    // Handle abort
+    // 中断の処理
   } else {
-    // Handle other errors
+    // その他のエラーの処理
   }
 }
 ```

@@ -13,6 +13,9 @@ const languages_maps = [
   { locale: "fr", name: "Français", flag: "🇫🇷" },
   { locale: "ru", name: "Русский", flag: "🇷🇺" },
   { locale: "ja", name: "日本語", flag: "🇯🇵" },
+  { locale: "es", name: "Español", flag: "🇪🇸" },
+  { locale: "pt-BR", name: "Português (BR)", flag: "🇧🇷" },
+  { locale: "ko", name: "한국어", flag: "🇰🇷" },
 ];
 
 const languages = languages_maps.filter((lang) => {

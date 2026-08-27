@@ -1,65 +1,67 @@
 # Qwen Code での MCP サーバー
 
-このドキュメントでは、Qwen Code で Model Context Protocol (MCP) サーバーを構成および使用する方法について説明します。
+このドキュメントでは、Qwen Code で Model Context Protocol (MCP) サーバーを設定および使用するためのガイドを提供します。
 
-## MCP サーバーとは？
+## MCP サーバーとは
 
-MCP サーバーは、Model Context Protocol を介して CLI にツールとリソースを公開するアプリケーションであり、外部システムやデータソースとの対話を可能にします。MCP サーバーは、モデルとローカル環境、または API などの他のサービスとの間のブリッジとして機能します。
+MCP サーバーは、Model Context Protocol を通じてツールやリソースを CLI に公開し、外部システムやデータソースと対話できるようにするアプリケーションです。MCP サーバーは、モデルとローカル環境や API などの他のサービスとの間のブリッジとして機能します。
 
-MCP サーバーを使用すると、CLI は以下のことが可能になります：
+MCP サーバーにより、CLI は以下のことが可能になります:
 
 - **ツールの検出:** 標準化されたスキーマ定義を通じて、利用可能なツール、その説明、パラメータを一覧表示します。
-- **ツールの実行:** 定義された引数で特定のツールを呼び出し、構造化されたレスポンスを受け取ります。
-- **リソースへのアクセス:** 特定のリソースからデータを読み取ります（CLI は主にツールの実行に焦点を当てています）。
+- **ツールの実行:** 定義された引数で特定のツールを呼び出し、構造化された応答を受け取ります。
+- **リソースへのアクセス:** 特定のリソースからデータを読み取ります（ただし、CLI は主にツールの実行に焦点を当てています）。
 
-MCP サーバーを使用することで、データベース、API、カスタムスクリプト、または専門的なワークフローとの対話など、組み込み機能を超えたアクションを実行するように CLI の機能を拡張できます。
+MCP サーバーを使用すると、データベース、API、カスタムスクリプト、または特殊なワークフローとの対話など、CLI の組み込み機能を超えたアクションを実行できるようになります。
 
 ## コア統合アーキテクチャ
 
-Qwen Code は、コアパッケージ（`packages/core/src/tools/`）に組み込まれた高度な検出および実行システムを通じて MCP サーバーと統合されます：
+Qwen Code は、コアパッケージ (`packages/core/src/tools/`) に組み込まれた洗練された検出・実行システムを通じて MCP サーバーと統合します。
 
-### 検出レイヤー（`mcp-client.ts`）
+### 検出レイヤー (`mcp-client.ts`)
 
-検出プロセスは `discoverMcpTools()` によって調整され、以下の処理を行います：
+検出プロセスは `discoverMcpTools()` によって調整され、以下の処理を行います:
 
-1. `settings.json` の `mcpServers` 設定から**構成済みサーバーを反復処理**
-2. 適切なトランスポートメカニズム（Stdio、SSE、または Streamable HTTP）を使用して**接続を確立**
-3. MCP プロトコルを使用して各サーバーから**ツール定義を取得**
-4. Qwen API との互換性のためにツールスキーマを**サニタイズおよび検証**
-5. 競合解決を行いながら**ツールをグローバルツールレジストリに登録**
+1.  **設定されたサーバーを反復処理** `settings.json` の `mcpServers` 設定から
+2.  **適切なトランスポートメカニズム** (Stdio、SSE、または Streamable HTTP) を使用して接続を確立
+3.  各サーバーから MCP プロトコルを使用して**ツール定義を取得**
+4.  Qwen API との互換性のためにツールスキーマを**サニタイズおよび検証**
+5.  競合解決を行いながらグローバルツールレジストリに**ツールを登録**
 
-### 実行レイヤー（`mcp-tool.ts`）
+### 実行レイヤー (`mcp-tool.ts`)
 
-検出された各 MCP ツールは `DiscoveredMCPTool` インスタンスでラップされ、以下の処理を行います：
+検出された各 MCP ツールは `DiscoveredMCPTool` インスタンスにラップされ、以下の処理を行います:
 
-- サーバーの信頼設定とユーザーの設定に基づいて**確認ロジックを処理**
-- 適切なパラメータで MCP サーバーを呼び出して**ツールの実行を管理**
-- LLM コンテキストとユーザー表示の両方に対して**レスポンスを処理**
-- **接続状態を維持**し、タイムアウトを処理
+- サーバーの信頼設定とユーザー設定に基づいた**確認ロジックの処理**
+- 適切なパラメータで MCP サーバーを呼び出す**ツール実行の管理**
+- LLM コンテキストとユーザー表示の両方に対する**応答の処理**
+- **接続状態の維持**とタイムアウトの処理
+
+接続損失後、現在の呼び出しは、信頼されたワークスペース内の信頼されたサーバーにおいて、ツールが `idempotentHint: true` を明示的に宣言している場合、または `destructiveHint: true` や `idempotentHint: false` と競合しない `readOnlyHint: true` を宣言している場合にのみリプレイされます。アノテーションがない場合や競合する場合、および信頼されていないサーバーやワークスペースからのアノテーションは、サーバーが応答が失われる前にサイドエフェクトを完了している可能性があるため、安全でないとみなされます。ツール作成者は正確な MCP アノテーションを公開する必要があります。管理者はサーバーの信頼を有効にする前にそれらを検証する必要があります。
 
 ### トランスポートメカニズム
 
-CLI は以下の 3 つの MCP トランスポートタイプをサポートしています：
+CLI は 3 つの MCP トランスポートタイプをサポートしています:
 
-- **Stdio トランスポート:** サブプロセスを起動し、stdin/stdout を介して通信
-- **SSE トランスポート:** Server-Sent Events エンドポイントに接続
-- **Streamable HTTP トランスポート:** 通信に HTTP ストリーミングを使用
+- **Stdio トランスポート:** サブプロセスを起動し、stdin/stdout を介して通信します
+- **SSE トランスポート:** Server-Sent Events エンドポイントに接続します
+- **Streamable HTTP トランスポート:** HTTP ストリーミングを使用して通信します
 
-## MCP サーバーのセットアップ方法
+## MCP サーバーの設定方法
 
-Qwen Code は `settings.json` ファイル内の `mcpServers` 設定を使用して MCP サーバーを検出し、接続します。この設定は、異なるトランスポートメカニズムを持つ複数のサーバーをサポートしています。
+Qwen Code は `settings.json` ファイルの `mcpServers` 設定を使用して MCP サーバーを見つけ、接続します。この設定は、異なるトランスポートメカニズムを持つ複数のサーバーをサポートしています。
 
-### settings.json での MCP サーバーの構成
+### settings.json で MCP サーバーを設定する
 
-`settings.json` ファイルで MCP サーバーを構成するには、主に 2 つの方法があります。特定のサーバー定義にはトップレベルの `mcpServers` オブジェクトを、サーバーの検出と実行を制御するグローバル設定には `mcp` オブジェクトを使用します。
+`settings.json` ファイルで MCP サーバーを設定する方法は主に 2 つあります。特定のサーバー定義のためのトップレベルの `mcpServers` オブジェクトと、サーバーの検出と実行を制御するグローバル設定のための `mcp` オブジェクトです。
 
-#### グローバル MCP 設定（`mcp`）
+#### グローバル MCP 設定 (`mcp`)
 
-`settings.json` 内の `mcp` オブジェクトを使用すると、すべての MCP サーバーに対するグローバルルールを定義できます。
+`settings.json` の `mcp` オブジェクトを使用すると、すべての MCP サーバーに対するグローバルルールを定義できます。
 
-- **`mcp.serverCommand`** (string): MCP サーバーを起動するグローバルコマンド。
-- **`mcp.allowed`** (string の配列): 許可する MCP サーバー名のリスト。設定されている場合、このリスト内のサーバー（`mcpServers` オブジェクトのキーと一致するもの）のみが接続されます。
-- **`mcp.excluded`** (string の配列): 除外する MCP サーバー名のリスト。このリスト内のサーバーには接続されません。
+- **`mcp.serverCommand`** (文字列): MCP サーバーを起動するためのグローバルコマンド。
+- **`mcp.allowed`** (文字列の配列): 許可する MCP サーバー名のリスト。これが設定されている場合、このリストのサーバー（`mcpServers` オブジェクトのキーと一致するもの）のみが接続されます。
+- **`mcp.excluded`** (文字列の配列): 除外する MCP サーバー名のリスト。このリストにあるサーバーは接続されません。
 
 **例:**
 
@@ -72,16 +74,16 @@ Qwen Code は `settings.json` ファイル内の `mcpServers` 設定を使用し
 }
 ```
 
-#### サーバー固有の構成（`mcpServers`）
+#### サーバー固有の設定 (`mcpServers`)
 
-`mcpServers` オブジェクトは、CLI が接続する個々の MCP サーバーを定義する場所です。
+`mcpServers` オブジェクトでは、CLI が接続する個々の MCP サーバーを定義します。
 
-### 構成構造
+### 設定構造
 
-`settings.json` ファイルに `mcpServers` オブジェクトを追加します：
+`settings.json` ファイルに `mcpServers` オブジェクトを追加します:
 
 ```json
-{ ...file contains other config objects
+{ ...ファイルには他の設定オブジェクトが含まれています
   "mcpServers": {
     "serverName": {
       "command": "path/to/server",
@@ -97,36 +99,37 @@ Qwen Code は `settings.json` ファイル内の `mcpServers` 設定を使用し
 }
 ```
 
-### 構成プロパティ
+### 設定プロパティ
 
-各サーバー構成は以下のプロパティをサポートしています：
+各サーバー設定は以下のプロパティをサポートしています:
 
-#### 必須（以下のいずれか）
+#### 必須 (いずれか一つ)
 
-- **`command`** (string): Stdio トランスポート用の実行ファイルへのパス
-- **`url`** (string): SSE エンドポイント URL（例：`"http://localhost:8080/sse"`）
-- **`httpUrl`** (string): HTTP ストリーミングエンドポイント URL
+- **`command`** (文字列): Stdio トランスポートの実行可能ファイルへのパス
+- **`url`** (文字列): SSE エンドポイント URL (例: `"http://localhost:8080/sse"`)
+- **`httpUrl`** (文字列): HTTP ストリーミングエンドポイント URL
 
 #### オプション
 
-- **`args`** (string[]): Stdio トランスポート用のコマンドライン引数
-- **`headers`** (object): `url` または `httpUrl` を使用する場合のカスタム HTTP ヘッダー
-- **`env`** (object): サーバープロセスの環境変数。値は `$VAR_NAME` または `${VAR_NAME}` 構文を使用して環境変数を参照できます
-- **`cwd`** (string): Stdio トランスポートの作業ディレクトリ
-- **`timeout`** (number): リクエストのタイムアウト（ミリ秒単位）（デフォルト：600,000ms = 10 分）
-- **`trust`** (boolean): `true` の場合、このサーバーのすべてのツール呼び出し確認をバイパスします（デフォルト：`false`）
-- **`includeTools`** (string[]): この MCP サーバーから含めるツール名のリスト。指定した場合、ここにリストされたツールのみがこのサーバーから利用可能になります（許可リスト動作）。指定しない場合、サーバーのすべてのツールがデフォルトで有効になります。
-- **`excludeTools`** (string[]): この MCP サーバーから除外するツール名のリスト。ここにリストされたツールは、サーバーによって公開されている場合でもモデルでは利用できません。**注:** `excludeTools` は `includeTools` より優先されます。両方のリストにツールが含まれている場合、除外されます。
-- **`targetAudience`** (string): アクセスしようとしている IAP 保護アプリケーションで許可リストに登録されている OAuth クライアント ID。`authProviderType: 'service_account_impersonation'` と組み合わせて使用します。
-- **`targetServiceAccount`** (string): なりすます Google Cloud サービスアカウントのメールアドレス。`authProviderType: 'service_account_impersonation'` と組み合わせて使用します。
+- **`args`** (文字列の配列): Stdio トランスポートのコマンドライン引数
+- **`headers`** (オブジェクト): `url` または `httpUrl` を使用する場合のカスタム HTTP ヘッダー
+- **`env`** (オブジェクト): サーバープロセスの環境変数。値は `$VAR_NAME` または `${VAR_NAME}` 構文を使用して環境変数を参照できます
+- **`cwd`** (文字列): Stdio トランスポートの作業ディレクトリ
+- **`timeout`** (数値): リクエストのタイムアウト (ミリ秒、デフォルト: 600,000ms = 10 分)
+- **`versionNegotiation`** (`"auto" | "legacy"`、デフォルト: `"legacy"`): Stdio サーバーの場合、`"auto"` は使い捨ての兄弟プロセスでの `server/discover` プローブを有効にします。
+- **`trust`** (ブール値): `true` の場合、信頼されたワークスペース内でこのサーバーのツール呼び出し確認をバイパスします (デフォルト: `false`)
+- **`includeTools`** (文字列の配列): この MCP サーバーから含めるツール名のリスト。指定すると、ここにリストされたツールのみがこのサーバーから利用可能になります (許可リスト動作)。指定しない場合、サーバーからのすべてのツールがデフォルトで有効になります。
+- **`excludeTools`** (文字列の配列): この MCP サーバーから除外するツール名のリスト。ここにリストされたツールは、サーバーによって公開されていてもモデルから利用できなくなります。**注:** `excludeTools` は `includeTools` よりも優先されます。ツールが両方のリストにある場合、除外されます。
+- **`targetAudience`** (文字列): アクセスしようとしている IAP で保護されたアプリケーションで許可リストに登録されている OAuth クライアント ID。`authProviderType: 'service_account_impersonation'` と共に使用します。
+- **`targetServiceAccount`** (文字列): 偽装する Google Cloud サービスアカウントのメールアドレス。`authProviderType: 'service_account_impersonation'` と共に使用します。
 
-### リモート MCP サーバーの OAuth サポート
+### リモート MCP サーバー向け OAuth サポート
 
-Qwen Code は、SSE または HTTP トランスポートを使用するリモート MCP サーバーの OAuth 2.0 認証をサポートしています。これにより、認証が必要な MCP サーバーへの安全なアクセスが可能になります。
+Qwen Code は、SSE または HTTP トランスポートを使用するリモート MCP サーバー向けの OAuth 2.0 認証をサポートしています。これにより、認証が必要な MCP サーバーへの安全なアクセスが可能になります。
 
 #### 自動 OAuth 検出
 
-OAuth 検出をサポートするサーバーの場合、OAuth 構成を省略し、CLI に自動的に検出させることができます：
+OAuth 検出をサポートするサーバーの場合、OAuth 設定を省略して CLI に自動検出させることができます:
 
 ```json
 {
@@ -138,95 +141,87 @@ OAuth 検出をサポートするサーバーの場合、OAuth 構成を省略�
 }
 ```
 
-CLI は自動的に以下の処理を行います：
+CLI は自動的に以下を実行します:
 
-- サーバーが OAuth 認証を必要とするタイミング（401 レスポンス）を検出
-- サーバーメタデータから OAuth エンドポイントを検出
-- サポートされている場合は動的クライアント登録を実行
-- OAuth フローとトークン管理を処理
+- サーバーが OAuth 認証を必要とする場合の検出 (401 応答)
+- サーバーメタデータからの OAuth エンドポイントの検出
+- サポートされている場合の動的クライアント登録の実行
+- OAuth フローとトークン管理の処理
 
 #### 認証フロー
 
-OAuth 対応サーバーに接続する場合：
+OAuth 対応サーバーに接続する場合:
 
-1. **初期接続試行**が 401 Unauthorized で失敗
-2. **OAuth 検出**が認可エンドポイントとトークンエンドポイントを特定
-3. ユーザー認証のために**ブラウザが開く**（ローカルブラウザへのアクセスが必要）
-4. **認可コード**がアクセストークンと交換される
-5. **トークン**が将来の使用のために安全に保存される
-6. 有効なトークンを使用して**接続再試行**が成功
+1.  **初期接続試行** が 401 Unauthorized で失敗
+2.  **OAuth 検出** で認可エンドポイントとトークンエンドポイントを発見
+3.  ユーザー認証のために**ブラウザが開く** (ローカルブラウザへのアクセスが必要)
+4.  **認可コード** がアクセストークンと交換される
+5.  **トークンは保存**され、将来の使用のために安全に保管される
+6.  **接続の再試行** が有効なトークンで成功
 
-#### ブラウザリダイレクトの要件
+#### ブラウザリダイレクト要件
 
-**重要:** OAuth 認証では、リダイレクト URI にアクセスできる必要があります：
+**重要:** OAuth 認証では、リダイレクト URI がアクセス可能である必要があります:
 
-- **デフォルトの動作:** `http://localhost:7777/oauth/callback` にリダイレクト（ローカル環境で動作）
-- **カスタムリダイレクト URI:** `--oauth-redirect-uri` を使用するか、settings.json で `redirectUri` を構成して別の URL を指定
+- **デフォルトの動作:** `http://localhost:7777/oauth/callback` にリダイレクト (ローカル設定で動作)
+- **カスタムリダイレクト URI:** `--oauth-redirect-uri` を使用するか、settings.json で `redirectUri` を設定して、`/oauth/callback` で終わる公開 URL を指定します。そのパスを Qwen Code を実行しているマシンの `http://127.0.0.1:7777/oauth/callback` にリバースプロキシしてください。
 
-**リモート/クラウドサーバーデプロイメント**（例：Web ターミナル、SSH セッション、クラウド IDE）の場合：
+**リモート/クラウドサーバーデプロイメント** (例: Web ターミナル、SSH セッション、クラウド IDE) の場合:
 
-- デフォルトの `localhost` リダイレクトは機能**しません**
-- 公開アクセス可能な URL を指すカスタム `redirectUri` を構成**する必要があります**
-- ユーザーのブラウザがこの URL に到達し、サーバーにリダイレクトバックできる必要があります
+- デフォルトの `localhost` リダイレクトは**機能しません**
+- `/oauth/callback` で終わる公開アクセス可能な URL を指すカスタム `redirectUri` を**設定する必要があります**
+- TLS をリバースプロキシで終端し、そのパスのみを `http://127.0.0.1:7777/oauth/callback` にフォワードしてください
 
-リモートサーバーの例：
+リモートサーバーの例:
 
 ```bash
 qwen mcp add --transport sse remote-server https://api.example.com/sse/ \
   --oauth-redirect-uri https://your-remote-server.example.com/oauth/callback
 ```
 
-OAuth は以下の環境では機能しません：
+OAuth は以下では機能しません:
 
 - ブラウザアクセスのないヘッドレス環境
-- 構成された `redirectUri` にユーザーのブラウザから到達できない環境
+- 設定された `redirectUri` がユーザーのブラウザから到達できない環境
 
 #### OAuth 認証の管理
 
-`/mcp auth` コマンドを使用して OAuth 認証を管理します：
+インタラクティブな Qwen Code セッション内で `/mcp` ダイアログを使用して、MCP サーバーを検査し、OAuth 認証を管理します。
 
-```bash
-# List servers requiring authentication
-/mcp auth
+#### OAuth 設定プロパティ
 
-# Authenticate with a specific server
-/mcp auth serverName
-
-# Re-authenticate if tokens expire
-/mcp auth serverName
-```
-
-#### OAuth 構成プロパティ
-
-- **`enabled`** (boolean): このサーバーの OAuth を有効にする
-- **`clientId`** (string): OAuth クライアント識別子（動的登録の場合はオプション）
-- **`clientSecret`** (string): OAuth クライアントシークレット（パブリッククライアントの場合はオプション）
-- **`authorizationUrl`** (string): OAuth 認可エンドポイント（省略した場合は自動検出）
-- **`tokenUrl`** (string): OAuth トークンエンドポイント（省略した場合は自動検出）
-- **`scopes`** (string[]): 必要な OAuth スコープ
-- **`redirectUri`** (string): カスタムリダイレクト URI。**リモートデプロイメントで重要**: デフォルトは `http://localhost:7777/oauth/callback` です。Qwen Code をリモート/クラウドサーバーで実行する場合は、公開アクセス可能な URL（例：`https://your-server.com/oauth/callback`）に設定します。`qwen mcp add --oauth-redirect-uri` または settings.json で直接構成できます。
-- **`tokenParamName`** (string): SSE URL 内のトークンのクエリパラメータ名
-- **`audiences`** (string[]): トークンが有効なオーディエンス
+- **`enabled`** (ブール値): このサーバーの OAuth を有効にする
+- **`clientId`** (文字列): OAuth クライアント識別子 (動的登録の場合はオプション)
+- **`clientSecret`** (文字列): OAuth クライアントシークレット (パブリッククライアントの場合はオプション)
+- **`authorizationUrl`** (文字列): OAuth 認可エンドポイント (省略した場合は自動検出)
+- **`tokenUrl`** (文字列): OAuth トークンエンドポイント (省略した場合は自動検出)
+- **`scopes`** (文字列の配列): 必要な OAuth スコープ
+- **`redirectUri`** (文字列): カスタムリダイレクト URI。**リモートデプロイメントでは重要**: デフォルトは `http://localhost:7777/oauth/callback` です。リモート使用の場合は、`/oauth/callback` で終わる公開 URL を設定し、ローカルのコールバックリスナーにリバースプロキシしてください。`qwen mcp add --oauth-redirect-uri` を使用するか、直接 settings.json で設定できます。
+- **`tokenParamName`** (文字列): SSE URL 内のトークンのクエリパラメータ名
+- **`audiences`** (文字列の配列): トークンが有効な対象者
 
 #### トークン管理
 
-OAuth トークンは自動的に以下の処理が行われます：
+OAuth トークンは自動的に:
 
-- `~/.qwen/mcp-oauth-tokens.json` に**安全に保存**
-- 期限切れになると**更新**（リフレッシュトークンが利用可能な場合）
-- 各接続試行の前に**検証**
-- 無効または期限切れの場合は**クリーンアップ**
+- デフォルトで `~/.qwen/mcp-oauth-tokens.json` (プレーンテキスト、モード 0600) に**保存**されます。`QWEN_CODE_FORCE_ENCRYPTED_FILE_STORAGE=true` が設定されている場合、Qwen Code は利用可能な場合はキーチェーンバッキングストレージを使用し、それ以外の場合は AES-256-GCM 暗号化を使用して `~/.qwen/mcp-oauth-tokens-v2.json` に保存します。
+- 期限切れ時に (更新トークンが利用可能な場合)**更新**されます
+- 接続試行前に**検証**されます
+- 無効または期限切れの場合に**クリーンアップ**されます
+
+> [!WARNING]
+> デフォルトでは、OAuth トークンはディスク上に暗号化されずに保存されます。共有マシンまたはマルチユーザーマシンでは、`QWEN_CODE_FORCE_ENCRYPTED_FILE_STORAGE=true` を設定して資格情報を保護してください。
 
 #### 認証プロバイダータイプ
 
-`authProviderType` プロパティを使用して認証プロバイダータイプを指定できます：
+`authProviderType` プロパティを使用して認証プロバイダータイプを指定できます:
 
-- **`authProviderType`** (string): 認証プロバイダーを指定します。以下のいずれかになります：
-  - **`dynamic_discovery`**（デフォルト）: CLI がサーバーから OAuth 構成を自動的に検出します。
-  - **`google_credentials`**: CLI が Google Application Default Credentials (ADC) を使用してサーバーを認証します。このプロバイダーを使用する場合は、必要なスコープを指定する必要があります。
-  - **`service_account_impersonation`**: CLI が Google Cloud サービスアカウントになりすましてサーバーを認証します。IAP 保護サービスへのアクセスに便利です（Cloud Run サービス向けに特別に設計されています）。
+- **`authProviderType`** (文字列): 認証プロバイダーを指定します。以下のいずれかになります:
+  - **`dynamic_discovery`** (デフォルト): CLI がサーバーから OAuth 設定を自動的に検出します。
+  - **`google_credentials`**: CLI は Google アプリケーションデフォルト資格情報 (ADC) を使用してサーバーで認証します。このプロバイダーを使用する場合、必要なスコープを指定する必要があります。
+  - **`service_account_impersonation`**: CLI は Google Cloud サービスアカウントを偽装してサーバーで認証します。これは IAP で保護されたサービス (特に Cloud Run サービス向けに設計されています) にアクセスする場合に便利です。
 
-#### Google 認証情報
+#### Google 資格情報
 
 ```json
 {
@@ -242,27 +237,27 @@ OAuth トークンは自動的に以下の処理が行われます：
 }
 ```
 
-#### サービスアカウントのなりすまし
+#### サービスアカウントの偽装
 
-サービスアカウントのなりすましを使用してサーバーを認証するには、`authProviderType` を `service_account_impersonation` に設定し、以下のプロパティを提供する必要があります：
+サービスアカウントの偽装を使用してサーバーで認証するには、`authProviderType` を `service_account_impersonation` に設定し、次のプロパティを指定する必要があります:
 
-- **`targetAudience`** (string): アクセスしようとしている IAP 保護アプリケーションで許可リストに登録されている OAuth クライアント ID。
-- **`targetServiceAccount`** (string): なりすます Google Cloud サービスアカウントのメールアドレス。
+- **`targetAudience`** (文字列): アクセスしようとしている IAP で保護されたアプリケーションで許可リストに登録されている OAuth クライアント ID。
+- **`targetServiceAccount`** (文字列): 偽装する Google Cloud サービスアカウントのメールアドレス。
 
-CLI はローカルの Application Default Credentials (ADC) を使用して、指定されたサービスアカウントとオーディエンス用の OIDC ID トークンを生成します。このトークンはその後、MCP サーバーの認証に使用されます。
+CLI はローカルのアプリケーションデフォルト資格情報 (ADC) を使用して、指定されたサービスアカウントと対象者向けの OIDC ID トークンを生成します。このトークンは MCP サーバーでの認証に使用されます。
 
-#### セットアップ手順
+#### 設定手順
 
-1. OAuth 2.0 クライアント ID を**[作成](https://cloud.google.com/iap/docs/oauth-client-creation)**するか、既存のものを使用します。既存の OAuth 2.0 クライアント ID を使用するには、[OAuth クライアントの共有方法](https://cloud.google.com/iap/docs/sharing-oauth-clients)の手順に従ってください。
-2. アプリケーションの**[プログラムによるアクセス](https://cloud.google.com/iap/docs/sharing-oauth-clients#programmatic_access)の許可リストに OAuth ID を追加します**。Cloud Run はまだ gcloud iap でサポートされているリソースタイプではないため、プロジェクトでクライアント ID を許可リストに登録する必要があります。
-3. サービスアカウントを**作成します**。[ドキュメント](https://cloud.google.com/iam/docs/service-accounts-create#creating)、[Cloud Console リンク](https://console.cloud.google.com/iam-admin/serviceaccounts)
-4. Cloud Run サービス自体の「セキュリティ」タブ、または gcloud を介して、**サービスアカウントとユーザーの両方を IAP ポリシーに追加します**。
-5. MCP サーバーにアクセスする**すべてのユーザーとグループに**、[サービスアカウントのなりすまし](https://cloud.google.com/docs/authentication/use-service-account-impersonation)に必要な権限（例：`roles/iam.serviceAccountTokenCreator`）を**付与します**。
-6. プロジェクトの IAM Credentials API を**[有効化](https://console.cloud.google.com/apis/library/iamcredentials.googleapis.com)**します。
+1.  **[OAuth 2.0 クライアント ID を作成](https://cloud.google.com/iap/docs/oauth-client-creation) または既存のものを使用します。** 既存の OAuth 2.0 クライアント ID を使用するには、[OAuth クライアントの共有方法](https://cloud.google.com/iap/docs/sharing-oauth-clients) の手順に従います。
+2.  アプリケーションの[プログラムによるアクセス](https://cloud.google.com/iap/docs/sharing-oauth-clients#programmatic_access) の許可リストに OAuth ID を追加します。Cloud Run は gcloud iap でまだサポートされているリソースタイプではないため、プロジェクトでクライアント ID を許可リストに登録する必要があります。
+3.  **サービスアカウントを作成します。** [ドキュメント](https://cloud.google.com/iam/docs/service-accounts-create#creating)、[Cloud Console リンク](https://console.cloud.google.com/iam-admin/serviceaccounts)
+4.  Cloud Run サービス自体の [セキュリティ] タブまたは gcloud を介して、**サービスアカウントとユーザーの両方を IAP ポリシーに追加します。**
+5.  MCP サーバーにアクセスする**すべてのユーザーとグループ**に、[サービスアカウントを偽装する](https://cloud.google.com/docs/authentication/use-service-account-impersonation) ために必要な権限 (`roles/iam.serviceAccountTokenCreator` など) を付与します。
+6.  プロジェクトで **IAM Credentials API を[有効にします](https://console.cloud.google.com/apis/library/iamcredentials.googleapis.com)**。
 
-### 構成例
+### 設定例
 
-#### Python MCP Server (Stdio)
+#### Python MCP サーバー (Stdio)
 
 ```json
 {
@@ -281,7 +276,7 @@ CLI はローカルの Application Default Credentials (ADC) を使用して、�
 }
 ```
 
-#### Node.js MCP Server (Stdio)
+#### Node.js MCP サーバー (Stdio)
 
 ```json
 {
@@ -296,7 +291,7 @@ CLI はローカルの Application Default Credentials (ADC) を使用して、�
 }
 ```
 
-#### Docker-based MCP Server
+#### Docker ベースの MCP サーバー
 
 ```json
 {
@@ -321,7 +316,7 @@ CLI はローカルの Application Default Credentials (ADC) を使用して、�
 }
 ```
 
-#### HTTP-based MCP Server
+#### HTTP ベースの MCP サーバー
 
 ```json
 {
@@ -334,7 +329,7 @@ CLI はローカルの Application Default Credentials (ADC) を使用して、�
 }
 ```
 
-#### HTTP-based MCP Server with Custom Headers
+#### カスタムヘッダーを使用した HTTP ベースの MCP サーバー
 
 ```json
 {
@@ -352,7 +347,7 @@ CLI はローカルの Application Default Credentials (ADC) を使用して、�
 }
 ```
 
-#### MCP Server with Tool Filtering
+#### ツールフィルタリングを使用した MCP サーバー
 
 ```json
 {
@@ -368,7 +363,7 @@ CLI はローカルの Application Default Credentials (ADC) を使用して、�
 }
 ```
 
-### SSE MCP Server with SA Impersonation
+### SA 偽装を使用した SSE MCP サーバー
 
 ```json
 {
@@ -385,137 +380,138 @@ CLI はローカルの Application Default Credentials (ADC) を使用して、�
 
 ## 検出プロセスの詳細
 
-Qwen Code の起動時、以下の詳細なプロセスを通じて MCP サーバーの検出を実行します：
+Qwen Code が起動すると、以下の詳細なプロセスを通じて MCP サーバーの検出を実行します:
 
-### 1. サーバーの反復処理と接続
+### 1. サーバーの反復と接続
 
-`mcpServers` 内の構成済みサーバーごとに：
+`mcpServers` の各設定サーバーに対して:
 
-1. **ステータス追跡開始:** サーバーステータスが `CONNECTING` に設定されます
-2. **トランスポートの選択:** 構成プロパティに基づきます：
+1.  **ステータストラッキングが開始:** サーバーステータスが `CONNECTING` に設定されます
+2.  **トランスポートの選択:** 設定プロパティに基づく:
    - `httpUrl` → `StreamableHTTPClientTransport`
    - `url` → `SSEClientTransport`
    - `command` → `StdioClientTransport`
-3. **接続の確立:** MCP クライアントが構成されたタイムアウトで接続を試みます
-4. **エラー処理:** 接続失敗はログに記録され、サーバーステータスが `DISCONNECTED` に設定されます
+3.  **接続の確立:** MCP クライアントは設定されたタイムアウトで接続を試みます
+4.  **エラーハンドリング:** 接続失敗はログに記録され、サーバーステータスは `DISCONNECTED` に設定されます
 
 ### 2. ツールの検出
 
-接続が成功すると：
+接続成功時:
 
-1. **ツール一覧:** クライアントが MCP サーバーのツール一覧エンドポイントを呼び出します
-2. **スキーマ検証:** 各ツールの関数宣言が検証されます
-3. **ツールのフィルタリング:** `includeTools` および `excludeTools` 構成に基づいてツールがフィルタリングされます
-4. **名のサニタイズ:** ツール名が Qwen API の要件を満たすようにクリーンアップされます：
-   - 無効な文字（英数字、アンダースコア、ドット、ハイフン以外）はアンダースコアに置き換えられます
-   - 63 文字を超える名前は中央置換（`___`）で切り捨てられます
+1.  **ツール一覧:** クライアントは MCP サーバーのツール一覧エンドポイントを呼び出します
+2.  **スキーマ検証:** 各ツールの関数宣言が検証されます
+3.  **ツールフィルタリング:** ツールは `includeTools` および `excludeTools` 設定に基づいてフィルタリングされます
+4.  **名前のサニタイズ:** ツール名は Qwen API 要件を満たすためにクリーンアップされます:
+   - 無効な文字 (英数字、アンダースコア、ドット、ハイフン以外) はアンダースコアに置き換えられます
+   - 63 文字を超える名前は、中間置換 (`___`) で切り詰められます
 
 ### 3. 競合解決
 
-複数のサーバーが同じ名前のツールを公開している場合：
+複数のサーバーが同じ名前のツールを公開する場合:
 
-1. **先着優先:** ツール名を最初に登録したサーバーがプレフィックスなしの名前を取得します
-2. **自動プレフィックス付与:** 後続のサーバーにはプレフィックス付きの名前が付与されます：`serverName__toolName`
-3. **レジストリ追跡:** ツールレジストリはサーバー名とそのツールの間のマッピングを維持します
+1.  **最初の登録が優先:** 最初にツール名を登録したサーバーは、接頭辞なしの名前を取得します
+2.  **自動接頭辞:** 後続のサーバーは `serverName__toolName` のように接頭辞付きの名前を取得します
+3.  **レジストリ追跡:** ツールレジストリはサーバー名とそのツールの間のマッピングを維持します
 
 ### 4. スキーマ処理
 
-ツールパラメータスキーマは API 互換性のためにサニタイズされます：
+ツールパラメータスキーマは、API 互換性のためにサニタイズ処理を受けます:
 
-- **`$schema` プロパティ**が削除されます
-- **`additionalProperties`**が削除されます
-- **`default` を持つ `anyOf`** はデフォルト値が削除されます（Vertex AI 互換性）
-- **再帰処理**がネストされたスキーマに適用されます
+- **`$schema` プロパティ** が削除されます
+- **`additionalProperties`** が取り除かれます
+- **`default` を持つ `anyOf`** はデフォルト値が削除されます (Vertex AI 互換性)
+- **再帰的処理** はネストされたスキーマに適用されます
 
 ### 5. 接続管理
 
-検出後：
+検出後:
 
-- **永続接続:** ツールの登録に成功したサーバーは接続を維持します
-- **クリーンアップ:** 使用可能なツールを提供しないサーバーの接続は閉じられます
+- **永続的な接続:** ツールの登録に成功したサーバーは接続を維持します
+- **クリーンアップ:** 使用可能なツールを提供しないサーバーは接続が閉じられます
 - **ステータス更新:** 最終的なサーバーステータスは `CONNECTED` または `DISCONNECTED` に設定されます
 
 ## ツール実行フロー
 
-モデルが MCP ツールの使用を決定すると、以下の実行フローが発生します：
+モデルが MCP ツールを使用することを決定した場合、次の実行フローが発生します:
 
-### 1. ツールの呼び出し
+### 1. ツール呼び出し
 
-モデルは以下を含む `FunctionCall` を生成します：
+モデルは以下を含む `FunctionCall` を生成します:
 
-- **ツール名:** 登録された名前（プレフィックス付きの場合あり）
+- **ツール名:** 登録された名前 (接頭辞付きの可能性あり)
 - **引数:** ツールのパラメータスキーマに一致する JSON オブジェクト
 
 ### 2. 確認プロセス
 
-各 `DiscoveredMCPTool` は高度な確認ロジックを実装しています：
+各 `DiscoveredMCPTool` は洗練された確認ロジックを実装しています:
 
-#### 信頼に基づくバイパス
+#### 信頼ベースのバイパス
 
 ```typescript
-if (this.trust) {
-  return false; // No confirmation needed
+if (this.trust === true && this.cliConfig?.isTrustedFolder()) {
+  return 'allow';
 }
+return 'ask';
 ```
 
 #### 動的許可リスト
 
-システムは以下の内部許可リストを維持します：
+システムは内部で許可リストを維持します:
 
 - **サーバーレベル:** `serverName` → このサーバーのすべてのツールが信頼されます
 - **ツールレベル:** `serverName.toolName` → この特定のツールが信頼されます
 
-#### ユーザー選択の処理
+#### ユーザーの選択処理
 
-確認が必要な場合、ユーザーは以下を選択できます：
+確認が必要な場合、ユーザーは以下を選択できます:
 
-- **1 回だけ続行:** 今回のみ実行
+- **1 回だけ実行:** 今回のみ実行
 - **このツールを常に許可:** ツールレベルの許可リストに追加
 - **このサーバーを常に許可:** サーバーレベルの許可リストに追加
 - **キャンセル:** 実行を中止
 
 ### 3. 実行
 
-確認後（または信頼バイパス後）：
+確認 (または信頼バイパス) 後:
 
-1. **パラメータ準備:** 引数がツールのスキーマに対して検証されます
-2. **MCP 呼び出し:** 基盤となる `CallableTool` が以下でサーバーを呼び出します：
+1.  **パラメータの準備:** 引数がツールのスキーマに対して検証されます
+2.  **MCP 呼び出し:** 基盤となる `CallableTool` がサーバーを呼び出します:
 
    ```typescript
    const functionCalls = [
      {
-       name: this.serverToolName, // Original server tool name
+       name: this.serverToolName, // 元のサーバーツール名
        args: params,
      },
    ];
    ```
 
-3. **レスポンス処理:** 結果が LLM コンテキストとユーザー表示の両方用にフォーマットされます
+3.  **応答処理:** 結果は LLM コンテキストとユーザー表示の両方のためにフォーマットされます
 
-### 4. レスポンス処理
+### 4. 応答処理
 
-実行結果には以下が含まれます：
+実行結果には以下が含まれます:
 
-- **`llmContent`:** 言語モデルのコンテキスト用の生のレスポンスパーツ
-- **`returnDisplay`:** ユーザー表示用のフォーマット済み出力（多くの場合 Markdown コードブロック内の JSON）
+- **`llmContent`:** 言語モデルのコンテキスト用の生の応答部分
+- **`returnDisplay`:** ユーザー表示用にフォーマットされた出力 (多くの場合、Markdown コードブロック内の JSON)
 
 ## MCP サーバーとの対話方法
 
 ### `/mcp` コマンドの使用
 
-`/mcp` コマンドは、MCP サーバーのセットアップに関する包括的な情報を提供します：
+`/mcp` コマンドは、MCP サーバーのセットアップに関する包括的な情報を提供します:
 
 ```bash
 /mcp
 ```
 
-これにより以下が表示されます：
+これにより、以下が表示されます:
 
-- **サーバーリスト:** 構成済みのすべての MCP サーバー
-- **接続ステータス:** `CONNECTED`、`CONNECTING`、または `DISCONNECTED`
-- **サーバー詳細:** 構成の概要（機密データを除く）
-- **利用可能なツール:** 説明付きの各サーバーからのツールリスト
-- **検出状態:** 検出プロセス全体のステータス
+- **サーバーリスト:** 設定されているすべての MCP サーバー
+- **接続状態:** `CONNECTED`、`CONNECTING`、または `DISCONNECTED`
+- **サーバーの詳細:** 設定の概要 (機密データを除く)
+- **利用可能なツール:** 各サーバーのツールの説明付きリスト
+- **検出状態:** 検出プロセスの全体的な状態
 
 ### `/mcp` 出力例
 
@@ -538,146 +534,145 @@ MCP Servers Status:
 
 Discovery State: COMPLETED
 ```
-
 ### ツールの使用
 
-検出されると、MCP ツールは組み込みツールと同様に Qwen モデルで利用可能になります。モデルは自動的に以下の処理を行います：
+MCP ツールは、一度検出されると、組み込みツールと同様に Qwen モデルで利用可能になります。モデルは自動的に以下を実行します：
 
-1. リクエストに基づいて**適切なツールを選択**
-2. **確認ダイアログを表示**（サーバーが信頼されていない場合）
-3. 適切なパラメータで**ツールを実行**
-4. ユーザーフレンドリーな形式で**結果を表示**
+1. **適切なツールの選択**：リクエストに基づいて
+2. **確認ダイアログの表示**（サーバーが信頼されていない場合）
+3. **ツールの実行**：適切なパラメータで
+4. **結果の表示**：ユーザーフレンドリーな形式で
 
 ## ステータス監視とトラブルシューティング
 
 ### 接続状態
 
-MCP 統合は以下の複数の状態を追跡します：
+MCP 統合はいくつかの状態を追跡します：
 
 #### サーバーステータス（`MCPServerStatus`）
 
-- **`DISCONNECTED`:** サーバーが接続されていない、またはエラーが発生している
-- **`CONNECTING`:** 接続試行中
-- **`CONNECTED`:** サーバーが接続され、準備完了
+- **`DISCONNECTED`：** サーバーが接続されていないか、エラーが発生しています
+- **`CONNECTING`：** 接続試行中
+- **`CONNECTED`：** サーバーが接続され、準備完了です
 
 #### 検出状態（`MCPDiscoveryState`）
 
-- **`NOT_STARTED`:** 検出が開始されていない
-- **`IN_PROGRESS`:** 現在サーバーを検出中
-- **`COMPLETED`:** 検出が完了（エラーの有無にかかわらず）
+- **`NOT_STARTED`：** 検出が開始されていません
+- **`IN_PROGRESS`：** 現在サーバーを検出中
+- **`COMPLETED`：** 検出が完了しました（エラーの有無にかかわらず）
 
-### 一般的な問題と解決策
+### よくある問題と解決策
 
-#### サーバーが接続しない
+#### サーバーに接続できない
 
-**症状:** サーバーが `DISCONNECTED` ステータスを示す
+**症状：** サーバーが `DISCONNECTED` ステータスを表示する
 
-**トラブルシューティング:**
+**トラブルシューティング：**
 
-1. **構成の確認:** `command`、`args`、`cwd` が正しいことを確認
-2. **手動テスト:** サーバーコマンドを直接実行して動作することを確認
-3. **依存関係の確認:** 必要なすべてのパッケージがインストールされていることを確認
-4. **ログの確認:** CLI 出力にエラーメッセージがないか確認
-5. **権限の確認:** CLI がサーバーコマンドを実行できることを確認
+1. **設定を確認：** `command`、`args`、`cwd` が正しいことを確認します
+2. **手動でテスト：** サーバーコマンドを直接実行して、正常に動作することを確認します
+3. **依存関係を確認：** 必要なパッケージがすべてインストールされていることを確認します
+4. **ログを確認：** CLI 出力内のエラーメッセージを確認します
+5. **権限を確認：** CLI がサーバーコマンドを実行できることを確認します
 
 #### ツールが検出されない
 
-**症状:** サーバーは接続されるがツールが利用できない
+**症状：** サーバーは接続されるが、ツールが利用できない
 
-**トラブルシューティング:**
+**トラブルシューティング：**
 
-1. **ツール登録の確認:** サーバーが実際にツールを登録していることを確認
-2. **MCP プロトコルの確認:** サーバーが MCP ツール一覧を正しく実装していることを確認
-3. **サーバーログの確認:** サーバー側エラーの stderr 出力を確認
-4. **ツール一覧のテスト:** サーバーのツール検出エンドポイントを手動でテスト
+1. **ツール登録を確認：** サーバーが実際にツールを登録していることを確認します
+2. **MCP プロトコルを確認：** サーバーが MCP ツール一覧を正しく実装していることを確認します
+3. **サーバーログを確認：**  stderr 出力でサーバー側のエラーを確認します
+4. **ツール一覧をテスト：** サーバーのツール検出エンドポイントを手動でテストします
 
 #### ツールが実行されない
 
-**症状:** ツールは検出されるが実行中に失敗する
+**症状：** ツールは検出されるが、実行中に失敗する
 
-**トラブルシューティング:**
+**トラブルシューティング：**
 
-1. **パラメータ検証:** ツールが期待されるパラメータを受け入れることを確認
-2. **スキーマ互換性:** 入力スキーマが有効な JSON Schema であることを確認
-3. **エラー処理:** ツールが未処理の例外をスローしていないか確認
-4. **タイムアウトの問題:** `timeout` 設定の増加を検討
+1. **パラメータ検証：** ツールが期待するパラメータを受け入れていることを確認します
+2. **スキーマ互換性：** 入力スキーマが有効な JSON Schema であることを確認します
+3. **エラーハンドリング：** ツールが未処理の例外をスローしていないか確認します
+4. **タイムアウトの問題：** `timeout` 設定を増やすことを検討します
 
 #### サンドボックス互換性
 
-**症状:** サンドボックスが有効な場合に MCP サーバーが失敗する
+**症状：** サンドボックスが有効な場合、MCP サーバーが失敗する
 
-**解決策:**
+**解決策：**
 
-1. **Docker ベースのサーバー:** すべての依存関係を含む Docker コンテナを使用
-2. **パスのアクセシビリティ:** サーバー実行ファイルがサンドボックス内で利用可能であることを確認
-3. **ネットワークアクセス:** 必要なネットワーク接続を許可するようにサンドボックスを構成
-4. **環境変数:** 必要な環境変数が渡されていることを確認
+1. **Docker ベースのサーバー：** すべての依存関係を含む Docker コンテナを使用します
+2. **パスアクセス性：** サーバーの実行ファイルがサンドボックス内で利用可能であることを確認します
+3. **ネットワークアクセス：** 必要なネットワーク接続を許可するようにサンドボックスを設定します
+4. **環境変数：** 必要な環境変数が正しく渡されていることを確認します
 
 ### デバッグのヒント
 
-1. **デバッグモードの有効化:** 詳細出力のために `--debug` を付けて CLI を実行
-2. **stderr の確認:** MCP サーバーの stderr がキャプチャされログに記録されます（INFO メッセージはフィルタリング）
-3. **分離テスト:** 統合前に MCP サーバーを独立してテスト
-4. **段階的なセットアップ:** 複雑な機能を追加する前に単純なツールから開始
-5. **`/mcp` の頻繁な使用:** 開発中にサーバーステータスを監視
+1. **デバッグモードを有効にする：** CLI を `--debug` で実行すると、詳細な出力が得られます
+2. **stderr を確認：** MCP サーバーの stderr はキャプチャされてログに記録されます（INFO メッセージはフィルタリングされます）
+3. **テスト分離：** 統合する前に、MCP サーバーを単独でテストします
+4. **段階的セットアップ：** 複雑な機能を追加する前に、シンプルなツールから始めます
+5. **`/mcp` を頻繁に使用：** 開発中にサーバーのステータスを監視します
 
 ## 重要な注意事項
 
 ### セキュリティに関する考慮事項
 
-- **信頼設定:** `trust` オプションはすべての確認ダイアログをバイパスします。注意して使用し、完全に制御しているサーバーのみに使用してください
-- **アクセストークン:** API キーやトークンを含む環境変数を構成する際はセキュリティに注意してください
-- **サンドボックス互換性:** サンドボックスを使用する場合は、MCP サーバーがサンドボックス環境内で利用可能であることを確認してください
-- **プライベートデータ:** 広範なスコープのパーソナルアクセストークンを使用すると、リポジトリ間で情報が漏洩する可能性があります
+- **信頼設定：** `trust` オプションは、信頼されたワークスペース内でのみツール確認ダイアログをバイパスします。注意して使用し、完全に制御できるサーバーにのみ使用してください。
+- **アクセストークン：** API キーやトークンを含む環境変数を設定する際は、セキュリティに注意してください。
+- **サンドボックス互換性：** サンドボックスを使用する場合、MCP サーバーがサンドボックス環境内で利用可能であることを確認してください。
+- **プライベートデータ：** 広いスコープの個人アクセストークンを使用すると、リポジトリ間で情報漏洩が発生する可能性があります。
 
 ### パフォーマンスとリソース管理
 
-- **接続の永続化:** CLI はツールの登録に成功したサーバーへの永続接続を維持します
-- **自動クリーンアップ:** ツールを提供しないサーバーへの接続は自動的に閉じられます
-- **タイムアウト管理:** サーバーのレスポンス特性に基づいて適切なタイムアウトを構成してください
-- **リソース監視:** MCP サーバーは別プロセスとして実行され、システムリソースを消費します
+- **接続の永続性：** CLI は、ツールの登録に成功したサーバーへの永続的な接続を維持します。
+- **自動クリーンアップ：** ツールを提供しないサーバーへの接続は自動的に閉じられます。
+- **タイムアウト管理：** サーバーの応答特性に基づいて適切なタイムアウトを設定します。
+- **リソース監視：** MCP サーバーは個別のプロセスとして実行され、システムリソースを消費します。
 
 ### スキーマ互換性
 
-- **スキーマ準拠モード:** デフォルト（`schemaCompliance: "auto"`）では、ツールスキーマはそのまま渡されます。モデルを Strict OpenAPI 3.0 形式に変換するには、`settings.json` に `"model": { "generationConfig": { "schemaCompliance": "openapi_30" } }` を設定します。
-- **OpenAPI 3.0 変換:** `openapi_30` モードが有効な場合、システムは以下を処理します：
-  - Nullable 型: `["string", "null"]` -> `type: "string", nullable: true`
-  - Const 値: `const: "foo"` -> `enum: ["foo"]`
-  - 排他的制限: 数値 `exclusiveMinimum` -> `minimum` を持つ boolean 形式
-  - キーワード削除: `$schema`, `$id`, `dependencies`, `patternProperties`
-- **名のサニタイズ:** ツール名は API 要件を満たすように自動的にサニタイズされます
-- **競合解決:** サーバー間のツール名の競合は自動プレフィックス付与によって解決されます
+- **スキーマ準拠モード：** デフォルト（`schemaCompliance: "auto"`）では、ツールスキーマはそのまま渡されます。`settings.json` で `"model": { "generationConfig": { "schemaCompliance": "openapi_30" } }` を設定すると、モデルが Strict OpenAPI 3.0 形式に変換されます。
+- **OpenAPI 3.0 変換：** `openapi_30` モードが有効な場合、システムは以下を処理します：
+  - Nullable 型：`["string", "null"]` -> `type: "string", nullable: true`
+  - Const 値：`const: "foo"` -> `enum: ["foo"]`
+  - 排他的制限：数値の `exclusiveMinimum` -> `minimum` とのブール形式
+  - キーワード削除：`$schema`, `$id`, `dependencies`, `patternProperties`
+- **名前のサニタイズ：** ツール名は API 要件を満たすために自動的にサニタイズされます。
+- **競合解決：** サーバー間のツール名の競合は、自動プレフィックスによって解決されます。
 
-この包括的な統合により、MCP サーバーはセキュリティ、信頼性、使いやすさを維持しながら CLI の機能を拡張する強力な手段となります。
+この包括的な統合により、MCP サーバーは、セキュリティ、信頼性、および使いやすさを維持しながら、CLI の機能を拡張する強力な方法となります。
 
 ## ツールからのリッチコンテンツの返却
 
-MCP ツールは単純なテキストの返却に限定されません。1 つのツールレスポンスで、テキスト、画像、音声、その他のバイナリデータを含むリッチなマルチパートコンテンツを返すことができます。これにより、1 回のターンでモデルに多様な情報を提供できる強力なツールを構築できます。
+MCP ツールは単純なテキストの返却に限定されません。1 回のツール応答で、テキスト、画像、音声、その他のバイナリデータを含むリッチなマルチパートコンテンツを返すことができます。これにより、1 ターンで多様な情報をモデルに提供できる強力なツールを構築できます。
 
-ツールから返されたすべてのデータは処理され、次の生成のコンテキストとしてモデルに送信されるため、提供された情報について推論したり要約したりすることが可能になります。
+ツールから返されたすべてのデータは処理され、モデルへのコンテキストとして次の生成に送られるため、モデルは提供された情報を推論または要約できます。
 
-### 動作原理
+### 仕組み
 
-リッチコンテンツを返すには、ツールのレスポンスが [`CallToolResult`](https://modelcontextprotocol.io/specification/2025-06-18/server/tools#tool-result) の MCP 仕様に準拠している必要があります。結果の `content` フィールドは `ContentBlock` オブジェクトの配列である必要があります。CLI はこの配列を正しく処理し、テキストとバイナリデータを分離してモデル用にパッケージ化します。
+リッチコンテンツを返すには、ツールの応答が `CallToolResult` の MCP 仕様に準拠している必要があります。結果の `content` フィールドは、`ContentBlock` オブジェクトの配列である必要があります。CLI はこの配列を正しく処理し、テキストとバイナリデータを分離してモデル用にパッケージ化します。
 
-`content` 配列内で異なるコンテンツブロックタイプを自由に組み合わせることができます。サポートされているブロックタイプには以下が含まれます：
+`content` 配列内で異なるコンテンツブロックタイプを混在させることができます。サポートされているブロックタイプは次のとおりです：
 
 - `text`
 - `image`
 - `audio`
-- `resource` (embedded content)
+- `resource`（埋め込みコンテンツ）
 - `resource_link`
 
-### 例: テキストと画像の返却
+### 例：テキストと画像の返却
 
-テキストの説明と画像の両方を返す MCP ツールからの有効な JSON レスポンスの例を以下に示します：
+以下は、テキストの説明と画像の両方を返す MCP ツールからの有効な JSON 応答の例です：
 
 ```json
 {
   "content": [
     {
       "type": "text",
-      "text": "Here is the logo you requested."
+      "text": "こちらがリクエストされたロゴです。"
     },
     {
       "type": "image",
@@ -686,27 +681,27 @@ MCP ツールは単純なテキストの返却に限定されません。1 つ�
     },
     {
       "type": "text",
-      "text": "The logo was created in 2025."
+      "text": "ロゴは 2025 年に作成されました。"
     }
   ]
 }
 ```
 
-Qwen Code がこのレスポンスを受信すると、以下の処理を行います：
+Qwen Code はこの応答を受け取ると、次の処理を行います：
 
-1.  すべてのテキストを抽出し、モデル用の単一の `functionResponse` パーツに結合します。
-2.  画像データを個別の `inlineData` パーツとして提示します。
-3.  CLI に、テキストと画像の両方が受信されたことを示すクリーンでユーザーフレンドリーな要約を提供します。
+1.  すべてのテキストを抽出し、モデル用の単一の `functionResponse` パートに結合します。
+2.  画像データを別の `inlineData` パートとして提示します。
+3.  CLI に、テキストと画像の両方を受信したことを示す、クリーンでユーザーフレンドリーなサマリーを提供します。
 
 これにより、Qwen モデルにリッチなマルチモーダルコンテキストを提供できる高度なツールを構築できます。
 
-## スラッシュコマンドとしての MCP プロンプト
+## MCP プロンプトとスラッシュコマンド
 
-ツールに加えて、MCP サーバーは Qwen Code 内でスラッシュコマンドとして実行できる定義済みプロンプトを公開できます。これにより、名前で簡単に呼び出せる一般的なクエリや複雑なクエリのショートカットを作成できます。
+ツールに加えて、MCP サーバーは、Qwen Code 内でスラッシュコマンドとして実行できる定義済みのプロンプトを公開できます。これにより、名前で簡単に呼び出せる、一般的または複雑なクエリのショートカットを作成できます。
 
 ### サーバーでのプロンプトの定義
 
-プロンプトを定義する stdio MCP サーバーの小さな例を以下に示します：
+以下は、プロンプトを定義する stdio MCP サーバーの小さな例です：
 
 ```ts
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -742,7 +737,7 @@ const transport = new StdioServerTransport();
 await server.connect(transport);
 ```
 
-これは `settings.json` の `mcpServers` 以下に以下のように含めることができます：
+これは、`mcpServers` の下で `settings.json` に次のように含めることができます：
 
 ```json
 {
@@ -757,101 +752,101 @@ await server.connect(transport);
 
 ### プロンプトの呼び出し
 
-プロンプトが検出されると、その名前をスラッシュコマンドとして使用して呼び出すことができます。CLI は引数の解析を自動的に処理します。
+プロンプトが検出されると、スラッシュコマンドとしてその名前を使用して呼び出すことができます。CLI は自動的に引数を解析します。
 
 ```bash
 /poem-writer --title="Qwen Code" --mood="reverent"
 ```
 
-または、位置引数を使用します：
+または、位置引数を使用：
 
 ```bash
 /poem-writer "Qwen Code" reverent
 ```
 
-このコマンドを実行すると、CLI は提供された引数を使用して MCP サーバーの `prompts/get` メソッドを実行します。サーバーは引数をプロンプトテンプレートに置換し、最終的なプロンプトテキストを返す役割を担います。その後、CLI はこのプロンプトをモデルに送信して実行します。これにより、一般的なワークフローを自動化して共有する便利な方法が提供されます。
+このコマンドを実行すると、CLI は提供された引数を使用して MCP サーバーで `prompts/get` メソッドを実行します。サーバーは引数をプロンプトテンプレートに代入し、最終的なプロンプトテキストを返す役割を担います。CLI はこのプロンプトをモデルに送信して実行します。これにより、一般的なワークフローを自動化および共有する便利な方法が提供されます。
 
-## qwen mcp による MCP サーバーの管理
+## `qwen mcp` を使用した MCP サーバーの管理
 
-`settings.json` ファイルを手動で編集して MCP サーバーを構成することも常に可能ですが、CLI はサーバー構成をプログラムで管理するための便利なコマンドセットを提供します。これらのコマンドにより、JSON ファイルを直接編集することなく、MCP サーバーの追加、一覧表示、削除のプロセスを効率化できます。
+`settings.json` ファイルを手動で編集して MCP サーバーを設定することもできますが、CLI はサーバー設定をプログラムで管理するための便利なコマンドセットを提供します。これらのコマンドは、JSON ファイルを直接編集することなく、サーバーの追加、一覧表示、削除のプロセスを効率化します。
 
 ### サーバーの追加（`qwen mcp add`）
 
-`add` コマンドは `settings.json` に新しい MCP サーバーを構成します。スコープ（`-s, --scope`）に基づいて、ユーザー設定 `~/.qwen/settings.json` またはプロジェクト設定 `.qwen/settings.json` ファイルのいずれかに追加されます。
+`add` コマンドは、`settings.json` に新しい MCP サーバーを設定します。スコープ（`-s, --scope`）に基づいて、ユーザー設定 `~/.qwen/settings.json` またはプロジェクト設定 `.qwen/settings.json` ファイルのいずれかに追加されます。
 
-**コマンド:**
+**コマンド：**
 
 ```bash
 qwen mcp add [options] <name> <commandOrUrl> [args...]
 ```
 
-- `<name>`: サーバーの一意の名前。
-- `<commandOrUrl>`: 実行するコマンド（`stdio` の場合）または URL（`http`/`sse` の場合）。
-- `[args...]`: `stdio` コマンドのオプション引数。
+- `<name>`：サーバーの一意の名前。
+- `<commandOrUrl>`：実行するコマンド（`stdio` の場合）または URL（`http`/`sse` の場合）。
+- `[args...]`：`stdio` コマンドのオプションの引数。
 
-**オプション（フラグ）:**
+**オプション（フラグ）：**
 
-- `-s, --scope`: 構成スコープ（ユーザーまたはプロジェクト）。[デフォルト: "project"]
-- `-t, --transport`: トランスポートタイプ（stdio、sse、http）。[デフォルト: "stdio"]
-- `-e, --env`: 環境変数を設定（例: -e KEY=value）。
-- `-H, --header`: SSE および HTTP トランスポートの HTTP ヘッダーを設定（例: -H "X-Api-Key: abc123" -H "Authorization: Bearer abc123"）。
-- `--timeout`: 接続タイムアウトをミリ秒単位で設定。
-- `--trust`: サーバーを信頼（すべてのツール呼び出し確認プロンプトをバイパス）。
-- `--description`: サーバーの説明を設定。
-- `--include-tools`: 含めるツールのコンマ区切りリスト。
-- `--exclude-tools`: 除外するツールのコンマ区切りリスト。
-- `--oauth-client-id`: MCP サーバー認証用の OAuth クライアント ID。
-- `--oauth-client-secret`: MCP サーバー認証用の OAuth クライアントシークレット。
-- `--oauth-redirect-uri`: OAuth リダイレクト URI（例: `https://your-server.com/oauth/callback`）。ローカル環境のデフォルトは `http://localhost:7777/oauth/callback` です。**リモートデプロイメントで重要**: Qwen Code をリモート/クラウドサーバーで実行する場合は、公開アクセス可能な URL に設定します。
-- `--oauth-authorization-url`: OAuth 認可 URL。
-- `--oauth-token-url`: OAuth トークン URL。
-- `--oauth-scopes`: OAuth スコープ（コンマ区切り）。
+- `-s, --scope`：設定のスコープ（user または project）。 [デフォルト："project"]
+- `-t, --transport`：トランスポートタイプ（stdio、sse、http）。 [デフォルト："stdio"]
+- `-e, --env`：環境変数を設定します（例：`-e KEY=value`）。
+- `-H, --header`：SSE および HTTP トランスポートの HTTP ヘッダーを設定します（例：`-H "X-Api-Key: abc123" -H "Authorization: Bearer abc123"`）。
+- `--timeout`：接続タイムアウトをミリ秒単位で設定します。
+- `--trust`：サーバーを信頼します（信頼されたワークスペース内でツール呼び出し確認をバイパスします）。
+- `--description`：サーバーの説明を設定します。
+- `--include-tools`：含めるツールのカンマ区切りリスト。
+- `--exclude-tools`：除外するツールのカンマ区切りリスト。
+- `--oauth-client-id`：MCP サーバー認証用の OAuth クライアント ID。
+- `--oauth-client-secret`：MCP サーバー認証用の OAuth クライアントシークレット。
+- `--oauth-redirect-uri`：OAuth リダイレクト URI（例：`https://your-server.com/oauth/callback`）。ローカル設定のデフォルトは `http://localhost:7777/oauth/callback` です。**リモートデプロイメントでは重要**：`/oauth/callback` で終わる公開 URL を使用し、`http://127.0.0.1:7777/oauth/callback` にリバースプロキシしてください。
+- `--oauth-authorization-url`：OAuth 認可 URL。
+- `--oauth-token-url`：OAuth トークン URL。
+- `--oauth-scopes`：OAuth スコープ（カンマ区切り）。
 
 #### stdio サーバーの追加
 
 これはローカルサーバーを実行するためのデフォルトのトランスポートです。
 
 ```bash
-# Basic syntax
+# 基本構文
 qwen mcp add <name> <command> [args...]
 
-# Example: Adding a local server
+# 例：ローカルサーバーの追加
 qwen mcp add my-stdio-server -e API_KEY=123 /path/to/server arg1 arg2 arg3
 
-# Example: Adding a local python server
+# 例：ローカルの Python サーバーの追加
 qwen mcp add python-server python server.py --port 8080
 ```
 
 #### HTTP サーバーの追加
 
-このトランスポートは、ストリーミング可能な HTTP トランスポートを使用するサーバー用です。
+このトランスポートは、ストリーム可能な HTTP トランスポートを使用するサーバー向けです。
 
 ```bash
-# Basic syntax
+# 基本構文
 qwen mcp add --transport http <name> <url>
 
-# Example: Adding an HTTP server
+# 例：HTTP サーバーの追加
 qwen mcp add --transport http http-server https://api.example.com/mcp/
 
-# Example: Adding an HTTP server with an authentication header
+# 例：認証ヘッダー付き HTTP サーバーの追加
 qwen mcp add --transport http secure-http https://api.example.com/mcp/ --header "Authorization: Bearer abc123"
 ```
 
 #### SSE サーバーの追加
 
-このトランスポートは、Server-Sent Events (SSE) を使用するサーバー用です。
+このトランスポートは、Server-Sent Events（SSE）を使用するサーバー向けです。
 
 ```bash
-# Basic syntax
+# 基本構文
 qwen mcp add --transport sse <name> <url>
 
-# Example: Adding an SSE server
+# 例：SSE サーバーの追加
 qwen mcp add --transport sse sse-server https://api.example.com/sse/
 
-# Example: Adding an SSE server with an authentication header
+# 例：認証ヘッダー付き SSE サーバーの追加
 qwen mcp add --transport sse secure-sse https://api.example.com/sse/ --header "Authorization: Bearer abc123"
 
-# Example: Adding an OAuth-enabled SSE server
+# 例：OAuth 対応 SSE サーバーの追加
 qwen mcp add --transport sse oauth-server https://api.example.com/sse/ \
   --oauth-client-id your-client-id \
   --oauth-redirect-uri https://your-server.com/oauth/callback \
@@ -859,40 +854,45 @@ qwen mcp add --transport sse oauth-server https://api.example.com/sse/ \
   --oauth-token-url https://provider.example.com/token
 ```
 
-### サーバーの管理（`qwen mcp`）
+### サーバーの管理（`/mcp`）
 
-現在構成されているすべての MCP サーバーを表示および管理するには、`manage` コマンド、または単に `qwen mcp` を使用します。これにより、以下の操作が可能なインタラクティブな TUI ダイアログが開きます：
+現在設定されているすべての MCP サーバーを表示および管理するには、インタラクティブな Qwen Code セッション内で `/mcp`
+ダイアログを開きます。このダイアログでは以下を実行できます：
 
-- 接続ステータス付きですべての MCP サーバーを表示
+- すべての MCP サーバーを接続状態とともに表示
 - サーバーの有効化/無効化
 - 切断されたサーバーへの再接続
-- 各サーバーが提供するツールとプロンプトを表示
-- サーバーログを表示
+- 各サーバーが提供するツールとプロンプトの表示
+- サーバーログの表示
 
-**コマンド:**
+**コマンド：**
 
 ```bash
-qwen mcp
-# or
-qwen mcp manage
+qwen
 ```
 
-管理ダイアログは、各サーバーの名前、構成詳細、接続ステータス、利用可能なツール/プロンプトを表示するビジュアルインターフェースを提供します。
+次に次を入力：
+
+```text
+/mcp
+```
+
+管理ダイアログは、各サーバーの名前、設定の詳細、接続状態、利用可能なツール/プロンプトを表示するビジュアルインターフェースを提供します。
 
 ### サーバーの削除（`qwen mcp remove`）
 
-構成からサーバーを削除するには、サーバーの名前を指定して `remove` コマンドを使用します。
+設定からサーバーを削除するには、サーバー名を指定して `remove` コマンドを使用します。
 
-**コマンド:**
+**コマンド：**
 
 ```bash
 qwen mcp remove <name>
 ```
 
-**例:**
+**例：**
 
 ```bash
 qwen mcp remove my-server
 ```
 
-これにより、スコープ（`-s, --scope`）に基づいて、適切な `settings.json` ファイルの `mcpServers` オブジェクトから "my-server" エントリを検索して削除します。
+これにより、スコープ（`-s, --scope`）に基づいて、適切な `settings.json` ファイル内の `mcpServers` オブジェクトから "my-server" エントリが検索され、削除されます。

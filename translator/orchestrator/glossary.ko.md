@@ -1,0 +1,46 @@
+# Glossary (ko)
+
+English term → Korean rendering. Follow existing entries; append new ones as `- term → rendering` when you coin a term.
+
+- hook → hook (번역하지 않음)
+- skill → skill (번역하지 않음)
+- worktree → worktree (번역하지 않음)
+- subagent → 서브에이전트
+- sandbox → 샌드박스
+- checkpoint → 체크포인트
+- slash command → 슬래시 명령어
+- headless → 헤드리스 모드
+- approval mode → 승인 모드
+- embedding host → 임베딩 호스트
+- unattached session → 연결되지 않은 세션
+- session picker → 세션 선택기
+- model context protocol → 모델 컨텍스트 프로토콜
+- retrieval-augmented generation → 검색 증강 생성
+- tool call → 도구 호출
+- context window → 컨텍스트 창
+- daemon → 데몬
+- workspace → 워크스페이스
+- turn → 턴
+- approval → 승인
+- permission → 권한
+- provider → 제공자
+- repository → 저장소
+- directory → 디렉토리
+- override → 재정의
+- fallback → 폴백
+- timeout → 타임아웃
+- flag → 플래그
+- snapshot → 스냅샷
+- transcript → 트랜스크립트
+- replay → 리플레이
+- payload → 페이로드
+- compaction → 압축
+- backpressure → 백프레셔
+- in-memory → 인메모리
+- wrapper → 래퍼
+- opt-in → 옵트인
+- deprecated → 지원 중단
+- plan mode → 계획 모드
+- cold start → 콜드 스타트
+- lease → 리스
+- ledger → 레저

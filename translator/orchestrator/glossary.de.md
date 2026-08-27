@@ -1,0 +1,97 @@
+# Glossary (de)
+
+English term → German rendering. Follow existing entries; append new ones as `- term → rendering` when you coin a term.
+
+- hook → Hook (not translated)
+- skill → Skill (not translated)
+- subagent → Subagent
+- sandbox → Sandbox
+- checkpoint → Checkpoint
+- slash command → Slash-Befehl
+- headless → Headless (not translated)
+- approval mode → Genehmigungsmodus
+- embedding host → Embedding-Host
+- unattached session → nicht angehängte Session
+- session picker → Session-Picker
+- replay → Replay
+- turn → Turn
+- snapshot → Snapshot
+- live turn → Live-Turn
+- replay window → Replay-Fenster
+- fail closed → fail-closed
+- secondary runtime → sekundäre Runtime
+- secondary path → sekundärer Pfad
+- hot removal → Hot Removal (not translated)
+- memory lane → Memory-Lane
+- sub-session launcher → Sub-Session-Launcher
+- microcompaction → Microcompaction
+- session → Session
+- daemon → Daemon
+- workspace → Workspace
+- worktree → Worktree
+- transcript → Transkript
+- vision bridge → Vision Bridge (not translated)
+- channel → Channel
+- card → Karte
+- web shell → WebShell
+- run → Run
+- owner → Owner
+- settlement → Settlement
+- claim → Claim
+- tombstone → Tombstone
+- compaction → Compaction
+- telemetry → Telemetrie
+- background agent → Hintergrund-Agent
+- approval → Genehmigung
+- confirmation → Bestätigung
+- speculation → Spekulation
+- import closure → Import-Closure
+- empty state → Empty State
+- display name → Anzeigename
+- sidecar → Sidecar
+- roster → Roster
+- eager loading → eager (not translated)
+- lazy loading → lazy (not translated)
+- drain → Drain / drainen
+- presenter → Presenter
+- output segment → Ausgabesegment
+- status card → Statuskarte
+- question card → Frage-Karte
+- projection → Projektion
+- curator → Curator
+- gate → Gate
+- chip → Chip
+- composer → Composer
+- blast radius → Auswirkungsradius
+- revert → Revert
+- triage → Triage
+- flip-flop PR → Flip-Flop-PR
+- dry run → Dry-Run
+- fire-and-forget → Fire-and-forget
+- fail open → fail-open
+- admission → Admission
+- ledger → Ledger
+- lane → Lane
+- sentinel → Sentinel
+- pending delivery → Pending-Delivery
+- compile cache → Compile-Cache
+- control/candidate (benchmark) → Kontrolle/Kandidat
+- paired run → Paarlauf
+- confidence interval → Konfidenzintervall
+- work chain → Work-Chain
+- reminder → Reminder
+- waiter → Waiter
+- thinking block → Thinking-Block
+- transcript screen → Transkript-Screen
+- alternate screen → Alt-Screen
+- partition (tool rendering) → Partition
+- freeze snapshot → Freeze-Snapshot
+- fullDetail (TUI flag) → fullDetail (not translated)
+- rewind selector → Rewind-Selector
+- deferred (tool state) → deferred (nicht übersetzt)
+- ghost text → Ghost-Text
+- foreground shell → Foreground Shell
+- mouse tracking → Maus-Tracking
+- reasoning effort → Reasoning-Aufwand
+- reconciliation ring → Versöhnungs-Ring
+- dedupe signal → Dedup-Signal

@@ -2,43 +2,43 @@
 
 > 👏 Qwen Code へようこそ！
 
-このクイックスタートガイドでは、わずか数分で AI によるコーディング支援を使い始められます。最後まで読むと、一般的な開発タスクで Qwen Code を活用する方法が理解できます。
+このクイックスタートガイドでは、数分でAIを活用したコーディング支援を使い始めることができます。最後まで読めば、一般的な開発タスクで Qwen Code を使用する方法を理解できるでしょう。
 
 ## 始める前に
 
-以下の準備が整っていることを確認してください：
+以下が必要です：
 
-- **ターミナル**またはコマンドプロンプトが開いていること
-- 作業対象のコードプロジェクト
-- Alibaba Cloud Model Studio の API キー（[北京リージョン](https://bailian.console.aliyun.com/) / [国際版](https://modelstudio.console.alibabacloud.com/)）、または Alibaba Cloud Coding Plan のサブスクリプション（[北京リージョン](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) / [国際版](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)）
+- **ターミナル** またはコマンドプロンプトが開いていること
+- 作業するコードプロジェクト
+- Alibaba Cloud ModelStudio の API キー（[Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)）、または Alibaba Cloud Coding Plan（[Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) / [intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)）のサブスクリプション
 
-## ステップ 1: Qwen Code のインストール
+## ステップ1: Qwen Code のインストール
 
-Qwen Code をインストールするには、以下のいずれかの方法を使用してください：
+Qwen Code をインストールするには、以下のいずれかの方法を使用します：
 
 ### クイックインストール（推奨）
 
 **Linux / macOS**
 
 ```sh
-curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh | bash
+curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen-standalone.sh | bash
 ```
 
-**Windows（管理者として実行）**
+**Windows**
 
-```cmd
-powershell -Command "Invoke-WebRequest 'https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat' -OutFile (Join-Path $env:TEMP 'install-qwen.bat'); & (Join-Path $env:TEMP 'install-qwen.bat')"
+```powershell
+irm https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen-standalone.ps1 | iex
 ```
 
 > [!note]
 >
-> インストール後は環境変数を確実に反映させるため、ターミナルを再起動することを推奨します。
+> インストール後、環境変数を有効にするためにターミナルを再起動することをおすすめします。
 
 ### 手動インストール
 
 **前提条件**
 
-Node.js 20 以降がインストールされていることを確認してください。[nodejs.org](https://nodejs.org/en/download) からダウンロードできます。
+Node.js 22 以降がインストールされていることを確認してください。[nodejs.org](https://nodejs.org/en/download) からダウンロードできます。
 
 **NPM**
 
@@ -46,65 +46,69 @@ Node.js 20 以降がインストールされていることを確認してくだ
 npm install -g @qwen-code/qwen-code@latest
 ```
 
-**Homebrew（macOS, Linux）**
+**Homebrew（macOS、Linux）**
 
 ```bash
 brew install qwen-code
 ```
 
-## ステップ 2: 認証の設定
+## ステップ2: 認証の設定
 
-`` `qwen` `` コマンドでインタラクティブセッションを開始すると、認証の設定を促すプロンプトが表示されます：
+`qwen` コマンドでインタラクティブセッションを開始すると、認証の設定を求められます：
 
 ```bash
-# You'll be prompted to set up authentication on first use
+# 初回使用時に認証の設定を求められます
 qwen
 ```
 
 ```bash
-# Or run /auth anytime to change authentication method
+# または、いつでも /auth を実行して認証方法を変更できます
 /auth
 ```
 
-希望する認証方法を選択してください：
+初回起動時のメニューでは、モデルプロバイダーを選択できます。以下から選択してください：
 
-- **Alibaba Cloud Coding Plan**: `Alibaba Cloud Coding Plan` を選択すると、月額固定料金で多様なモデルオプションを利用できます。設定手順は [Coding Plan ガイド](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index)（[国際版](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)）を参照してください。
-- **API Key**: `API Key` を選択し、Alibaba Cloud Model Studio（[北京リージョン](https://bailian.console.aliyun.com/) / [国際版](https://modelstudio.console.alibabacloud.com/)）で発行した API キーを入力してください。詳細は API 設定ガイド（[北京リージョン](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [国際版](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)）を参照してください。
+- **Alibaba ModelStudio** — 推奨される設定です。サブメニューが開きます：
+  - **Coding Plan**: 個人開発者向けで、週ごとの利用枠と多様なモデルオプションが含まれています。設定手順については [Coding Plan ガイド](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index)（[intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)）を参照してください。
+  - **Token Plan**: 専用エンドポイントを使用した従量課金制で、チームや企業向けです。
+  - **Standard API Key**: 既存の Alibaba Cloud ModelStudio（[Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)）の API キーを接続します。詳細は API 設定ガイド（[Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)）を参照してください。
+- **Third-party Providers** — 内蔵プロバイダー（DeepSeek、Grok、MiniMax、Z.AI、Kimi、Idealab、ModelScope、OpenRouter、Requesty など）を選択し、API キーで接続します。
+- **Custom Provider** — ローカルサーバー、プロキシ、またはサポートされていないプロバイダーを手動で接続します。
 
-> ⚠️ **注意**: Qwen OAuth は 2026 年 4 月 15 日に廃止されました。以前 Qwen OAuth を使用していた場合は、上記のいずれかの方法に切り替えてください。
+> ⚠️ **注意**: Qwen OAuth は2026年4月15日に廃止されました。以前 Qwen OAuth を使用していた場合は、上記のいずれかの方法に切り替えてください。
 
 > [!note]
 >
-> Qwen アカウントで初めて Qwen Code を認証すると、自動的に `.qwen` というワークスペースが作成されます。このワークスペースは、組織内のすべての Qwen Code 利用状況に対するコスト追跡と管理を一元化します。
+> Qwen Code を Qwen アカウントで初めて認証すると、".qwen" というワークスペースが自動的に作成されます。このワークスペースは、組織内のすべての Qwen Code 使用に関する集中コスト追跡と管理を提供します。
 
 > [!tip]
 >
-> セッションを開始せずにターミナルから直接 `qwen auth` を実行して認証を設定することもできます。現在の設定はいつでも `qwen auth status` で確認できます。詳細は [認証](./configuration/auth) ページを参照してください。
+> 認証を設定するには、Qwen Code を起動して `/auth` を実行します。現在の設定はいつでも `/doctor` で確認できます。詳細は [認証](./configuration/auth) ページを参照してください。
 
-## ステップ 3: 最初のセッションを開始する
+## ステップ3: 最初のセッションを開始
 
 任意のプロジェクトディレクトリでターミナルを開き、Qwen Code を起動します：
 
 ```bash
-# optiona
+# オプション
 cd /path/to/your/project
-# start qwen
+# qwen を起動
 qwen
 ```
 
-セッション情報、最近の会話、最新アップデートを含む Qwen Code のウェルカム画面が表示されます。利用可能なコマンドを確認するには `/help` と入力してください。
+Qwen Code のウェルカム画面が表示され、セッション情報、最近の会話、最新の更新情報が表示されます。利用可能なコマンドは `/help` と入力してください。
 
-## Qwen Code とチャットする
+## Qwen Code とチャット
 
-### 最初の質問をしてみる
+### 最初の質問をする
 
-Qwen Code がファイルを分析し、要約を提供します。より具体的な質問をすることもできます：
+Qwen Code はファイルを分析し、サマリーを提供します。より具体的な質問もできます：
 
 ```
 explain the folder structure
 ```
 
-Qwen Code の機能について質問することもできます：
+Qwen Code 自身の機能について質問することもできます：
 
 ```
 what can Qwen Code do?
@@ -112,30 +116,30 @@ what can Qwen Code do?
 
 > [!note]
 >
-> Qwen Code は必要に応じてファイルを読み取るため、コンテキストを手動で追加する必要はありません。また、Qwen Code は自身のドキュメントにもアクセスできるため、機能や能力に関する質問にも回答できます。
+> Qwen Code は必要に応じてファイルを読み取ります。手動でコンテキストを追加する必要はありません。また、Qwen Code は自身のドキュメントにアクセスでき、その機能や能力についての質問に答えることができます。
 
-### 最初のコード変更を行う
+### 初めてのコード変更
 
-実際に Qwen Code にコーディングを行わせてみましょう。簡単なタスクを試してください：
+では、Qwen Code に実際のコーディングをさせてみましょう。簡単なタスクを試してください：
 
 ```
 add a hello world function to the main file
 ```
 
-Qwen Code は以下の手順で処理します：
+Qwen Code は以下の処理を行います：
 
-1. 適切なファイルを検索する
+1. 適切なファイルを見つける
 2. 提案された変更を表示する
 3. 承認を求める
-4. 編集を適用する
+4. 編集を実行する
 
 > [!note]
 >
-> Qwen Code はファイルを修正する前に必ず許可を求めます。変更を個別に承認するか、セッション中に「すべて承認」モードを有効にできます。
+> Qwen Code はファイルを変更する前に必ず許可を求めます。個々の変更を承認するか、セッションで「すべて接受」モードを有効にできます。
 
-### Qwen Code で Git を操作する
+### Qwen Code で Git を使用する
 
-Qwen Code を使えば、Git 操作を会話形式で実行できます：
+Qwen Code を使うと、Git 操作を会話形式で行えます：
 
 ```
 what files have I changed?
@@ -145,7 +149,7 @@ what files have I changed?
 commit my changes with a descriptive message
 ```
 
-より複雑な Git 操作を指示することもできます：
+より複雑な Git 操作も指示できます：
 
 ```
 create a new branch called feature/quickstart
@@ -159,17 +163,17 @@ show me the last 5 commits
 help me resolve merge conflicts
 ```
 
-### バグ修正や機能追加
+### バグの修正や機能の追加
 
-Qwen Code はデバッグや機能実装に優れています。
+Qwen Code はデバッグと機能実装に長けています。
 
-自然言語で実現したいことを記述してください：
+自然言語でやりたいことを説明してください：
 
 ```
 add input validation to the user registration form
 ```
 
-または既存の問題を修正します：
+既存の問題を修正する場合：
 
 ```
 there's a bug where users can submit empty forms - fix it
@@ -177,14 +181,14 @@ there's a bug where users can submit empty forms - fix it
 
 Qwen Code は以下の処理を行います：
 
-- 関連するコードを特定する
+- 該当するコードを見つける
 - コンテキストを理解する
 - 解決策を実装する
-- テストが利用可能な場合は実行する
+- 利用可能なテストを実行する
 
 ### その他の一般的なワークフローを試す
 
-Qwen Code を活用する方法は多岐にわたります：
+Qwen Code を使用するにはさまざまな方法があります：
 
 **コードのリファクタリング**
 
@@ -212,38 +216,36 @@ review my changes and suggest improvements
 
 > [!tip]
 >
-> **覚えておくべきこと**: Qwen Code はあなたの AI ペアプログラマーです。役立つ同僚に話すように、実現したい目標を説明すれば、達成までのサポートを行います。
+> **覚えておいてください**: Qwen Code はあなたの AI ペアプログラマーです。親切な同僚に話しかけるように、実現したいことを説明すれば、目標に到達する手助けをしてくれます。
 
 ## 必須コマンド
 
-日常開発で最も重要なコマンドは以下の通りです：
+日常的に使用する最も重要なコマンドは次のとおりです：
 
-| コマンド               | 説明                                     | 例                       |
-| --------------------- | ------------------------------------------------ | ----------------------------- |
-| `qwen`                | Qwen Code を起動する                                  | `qwen`                        |
-| `/auth`               | 認証方法を変更する（セッション内）        | `/auth`                       |
-| `qwen auth`           | ターミナルから認証を設定する       | `qwen auth`                   |
-| `qwen auth api-key`   | API キー認証を設定する                 | `qwen auth api-key`           |
-| `qwen auth status`    | 現在の認証ステータスを確認する              | `qwen auth status`            |
-| `/help`               | 利用可能なコマンドのヘルプ情報を表示する  | `/help` または `/?`               |
-| `/compress`           | チャット履歴を要約に置き換えて Token を節約する | `/compress`                   |
-| `/clear`              | ターミナル画面のコンテンツをクリアする                    | `/clear`（ショートカット: `Ctrl+L`） |
-| `/theme`              | Qwen Code のビジュアルテーマを変更する                    | `/theme`                      |
-| `/language`           | 言語設定の表示または変更                 | `/language`                   |
-| → `ui [language]`     | UI のインターフェース言語を設定する                        | `/language ui zh-CN`          |
-| → `output [language]` | LLM の出力言語を設定する                          | `/language output Chinese`    |
-| `/quit`               | Qwen Code をすぐに終了する                       | `/quit` または `/exit`            |
+| コマンド                | 機能                                                    | 例                             |
+| ----------------------- | ------------------------------------------------------- | ------------------------------ |
+| `qwen`                  | Qwen Code を起動                                        | `qwen`                         |
+| `/auth`                 | 認証方法を変更（セッション内）                          | `/auth`                        |
+| `/doctor`               | 現在の認証と環境を確認                                   | `/doctor`                      |
+| `/help`                 | 利用可能なコマンドのヘルプを表示                         | `/help` または `/?`            |
+| `/compress`             | チャット履歴を要約して Token を節約                     | `/compress`                    |
+| `/clear`                | ターミナル画面の内容をクリア                             | `/clear`（ショートカット: `Ctrl+L`） |
+| `/theme`                | Qwen Code のビジュアルテーマを変更                       | `/theme`                       |
+| `/language`             | 言語設定の表示または変更                                 | `/language`                    |
+| → `ui [language]`       | UIインターフェースの言語を設定                           | `/language ui zh-CN`           |
+| → `output [language]`   | LLMの出力言語を設定                                     | `/language output Chinese`     |
+| `/quit`                 | Qwen Code をすぐに終了                                   | `/quit` または `/exit`         |
 
 コマンドの完全なリストは [CLI リファレンス](./features/commands) を参照してください。
 
-## 初心者向けプロのヒント
+## 初心者向けのプロのヒント
 
 **リクエストは具体的に**
 
-- 例: 「バグを直して」
-- 改善例: 「認証情報を入力した後に画面が真っ白になるログインバグを修正して」
+- 例：「バグを修正して」の代わりに：
+- 試す：「ログイン時に誤った認証情報を入力すると空白画面が表示されるバグを修正して」
 
-**ステップバイステップで指示する**
+**ステップバイステップの指示を使用する**
 
 - 複雑なタスクはステップに分割します：
 
@@ -253,9 +255,9 @@ review my changes and suggest improvements
 3. build a webpage that allows users to see and edit their information
 ```
 
-**まずは Qwen Code にコードを探索させる**
+**まずは Qwen Code に探索させる**
 
-- 変更を加える前に、Qwen Code にコードを理解させます：
+- 変更を加える前に、Qwen Code にコードを理解させましょう：
 
 ```
 analyze the database schema
@@ -265,15 +267,15 @@ analyze the database schema
 build a dashboard showing products that are most frequently returned by our UK customers
 ```
 
-**ショートカットで時間を節約する**
+**ショートカットで時間を節約**
 
-- `?` キーを押して利用可能なキーボードショートカットを表示する
-- `Tab` キーでコマンド補完を行う
-- `↑` キーでコマンド履歴を表示する
-- `/` を入力してすべてのスラッシュコマンドを表示する
+- `?` を押すと利用可能なキーボードショートカットが表示されます
+- Tab キーでコマンドの補完が可能
+- ↑ キーでコマンド履歴を表示
+- `/` を入力するとすべてのスラッシュコマンドが表示されます
 
-## ヘルプの入手方法
+## ヘルプの入手
 
-- **Qwen Code 内**: `/help` と入力するか、「〜するにはどうすればいいですか？」と質問する
-- **ドキュメント**: 今いる場所です！他のガイドも参照してください
-- **コミュニティ**: ヒントやサポートについては [GitHub Discussion](https://github.com/QwenLM/qwen-code/discussions) に参加してください
+- **Qwen Code 内**: `/help` と入力するか、「how do I...」と質問してください
+- **ドキュメント**: 今ここです！他のガイドも参照してください
+- **コミュニティ**: [GitHub Discussion](https://github.com/QwenLM/qwen-code/discussions) に参加してヒントやサポートを得る

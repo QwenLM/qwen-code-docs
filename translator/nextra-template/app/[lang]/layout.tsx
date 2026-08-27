@@ -13,6 +13,9 @@ const i18n_maps = [
   { locale: "fr", name: "Français" },
   { locale: "ru", name: "Русский" },
   { locale: "ja", name: "日本語" },
+  { locale: "es", name: "Español" },
+  { locale: "pt-BR", name: "Português (BR)" },
+  { locale: "ko", name: "한국어" },
 ];
 
 const i18n = i18n_maps.filter((lang) => {

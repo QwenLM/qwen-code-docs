@@ -1,29 +1,42 @@
 # Руководство разработчика плагинов каналов
 
-Плагин канала подключает Qwen Code к платформе обмена сообщениями. Он упаковывается как [расширение](../users/extension/introduction) и загружается при запуске. Документацию для пользователей по установке и настройке плагинов см. в разделе [Плагины](../users/features/channels/plugins).
+Плагин канала подключает Qwen Code к платформе обмена сообщениями. Он упаковывается как [расширение](../users/extension/introduction) и загружается при запуске. Пользовательскую документацию по установке и настройке плагинов см. в разделе [Плагины](../users/features/channels/plugins).
 
-## Как это устроено
+## Как это работает
 
-Ваш плагин находится на уровне Platform Adapter. Вы отвечаете за специфичные для платформы задачи (подключение, получение сообщений, отправка ответов). `ChannelBase` берет на себя всё остальное (управление доступом, маршрутизацию сессий, очередь промптов, слэш-команды, восстановление после сбоев).
+Ваш плагин находится на уровне Platform Adapter (адаптера платформы). Вы обрабатываете специфичные для платформы задачи (подключение, получение сообщений, отправка ответов). `ChannelBase` берет на себя всё остальное (контроль доступа, маршрутизация сессий, постановка промптов в очередь, слэш-команды, восстановление после сбоев).
 
 ```
-Your Plugin  →  builds Envelope  →  handleInbound()
-ChannelBase  →  gates → commands → routing → AcpBridge.prompt()
-ChannelBase  →  calls your sendMessage() with the agent's response
+Ваш плагин  →  создает Envelope  →  handleInbound()
+ChannelBase  →  gates → commands → routing → ChannelAgentBridge.prompt()
+ChannelBase  →  вызывает ваш sendMessage() с ответом агента
 ```
+
+`ChannelAgentBridge` — это контракт моста, обращенный к адаптеру. Текущий автономный путь `qwen channel start` предоставляет `AcpBridge`, но в коде плагина параметры конструктора следует типизировать как `ChannelAgentBridge`, чтобы тот же адаптер мог работать с другими реализациями моста в будущем.
+
+Примечание по миграции для существующих плагинов на TypeScript: если в конструкторе или фабрике вашего адаптера `bridge` явно типизирован как `AcpBridge`, измените эту аннотацию на `ChannelAgentBridge` и используйте только методы, предоставляемые этим контрактом. Плагины на JavaScript не затрагиваются во время выполнения, а автономный `qwen channel start` по-прежнему передает текущую реализацию `AcpBridge`.
+
+## Режимы выполнения
+
+Один и тот же адаптер плагина может работать в любой из сред выполнения канала:
+
+- `qwen channel start [name]` — это автономный сервис на базе ACP. Он по-прежнему использует `AcpBridge` и остается стабильной командой для запуска каналов вне демона.
+- `qwen serve --channel <name>` и повторяемые флаги `--channel` запускают экспериментальные воркеры канала, управляемые демоном. Именованные каналы группируются по рабочему пространству-владельцу, по одному воркеру на среду выполнения владельца. `--channel all` намеренно запускает только настроенные каналы основного рабочего пространства. Воркеры принадлежат `qwen serve`, подключаются к этому демону через SDK и передают адаптерам фасад `ChannelAgentBridge`, работающий на базе `DaemonChannelBridge`.
+
+Каналы, управляемые демоном, наследуют жизненный цикл демона и отчеты о состоянии. Они намеренно вынесены в отдельный процесс, чтобы сбои адаптера или SDK платформы не приводили к падению демона. Каждый именованный канал должен резолвиться ровно в одно зарегистрированное доверенное рабочее пространство; его воркер получает канонический cwd и оверлей окружения этой среды выполнения. Канал пользователя/системы без cwd создаёт неоднозначность при наличии нескольких зарегистрированных рабочих пространств, тогда как канал в локальном файле настроек рабочего пространства по умолчанию принадлежит этому рабочему пространству. `--channel all` остаётся только для основного рабочего пространства и не может комбинироваться с именованными выборами.
 
 ## Объект плагина
 
-Точка входа вашего расширения экспортирует объект `plugin`, соответствующий интерфейсу `ChannelPlugin`:
+Точка входа вашего расширения экспортирует `plugin`, соответствующий `ChannelPlugin`:
 
 ```typescript
 import type { ChannelPlugin } from '@qwen-code/channel-base';
 import { MyChannel } from './MyChannel.js';
 
 export const plugin: ChannelPlugin = {
-  channelType: 'my-platform', // Unique ID, used in settings.json "type" field
-  displayName: 'My Platform', // Shown in CLI output
-  requiredConfigFields: ['apiKey'], // Validated at startup (beyond standard ChannelConfig)
+  channelType: 'my-platform', // Уникальный ID, используется в поле "type" в settings.json
+  displayName: 'My Platform', // Отображается в выводе CLI
+  requiredConfigFields: ['apiKey'], // Проверяется при запуске (помимо стандартного ChannelConfig)
   createChannel: (name, config, bridge, options) =>
     new MyChannel(name, config, bridge, options),
 };
@@ -35,67 +48,87 @@ export const plugin: ChannelPlugin = {
 
 ```typescript
 import { ChannelBase } from '@qwen-code/channel-base';
-import type { Envelope } from '@qwen-code/channel-base';
+import type {
+  ChannelBaseOptions,
+  ChannelAgentBridge,
+  ChannelConfig,
+  Envelope,
+  SessionTarget,
+} from '@qwen-code/channel-base';
 
 export class MyChannel extends ChannelBase {
+  constructor(
+    name: string,
+    config: ChannelConfig,
+    bridge: ChannelAgentBridge,
+    options?: ChannelBaseOptions,
+  ) {
+    super(name, config, bridge, options);
+  }
+
   async connect(): Promise<void> {
-    // Connect to your platform, register message handlers
-    // When a message arrives:
+    // Подключитесь к вашей платформе, зарегистрируйте обработчики сообщений
+    // При получении сообщения:
     const envelope: Envelope = {
       channelName: this.name,
-      senderId: '...', // Stable, unique platform user ID
-      senderName: '...', // Display name
-      chatId: '...', // Chat/conversation ID (distinct for DMs vs groups)
-      text: '...', // Message text (strip @mentions)
-      isGroup: false, // Accurate — used by GroupGate
-      isMentioned: false, // Accurate — used by GroupGate
-      isReplyToBot: false, // Accurate — used by GroupGate
+      senderId: '...', // Стабильный, уникальный ID пользователя платформы
+      senderName: '...', // Отображаемое имя
+      chatId: '...', // ID чата/беседы (различается для личных сообщений и групп)
+      text: '...', // Текст сообщения (удалите @упоминания)
+      isGroup: false, // Точное значение — используется GroupGate
+      isMentioned: false, // Точное значение — используется GroupGate
+      isReplyToBot: false, // Точное значение — используется GroupGate
     };
     this.handleInbound(envelope);
   }
 
   async sendMessage(chatId: string, text: string): Promise<void> {
-    // Format markdown → platform format, chunk if needed, deliver
+    // Форматирование markdown → формат платформы, разбивка на части при необходимости, доставка
   }
 
   disconnect(): void {
-    // Clean up connections
+    // Очистка подключений
   }
 }
 ```
 
+Большинство адаптеров должны передавать `options` без изменений. Если адаптер создает собственный `SessionRouter` и передает этот маршрутизатор в `super()`, установите `registerBridgeEvents: true` в `ChannelBaseOptions`, чтобы `ChannelBase` по-прежнему напрямую получал события `toolCall` и `sessionDied`. Оставьте это значение не установленным для маршрутизаторов, предоставляемых шлюзом канала.
+
+Если ваш адаптер предоставляет поведение shell-команды, перед её включением проверьте, что `bridge.shellCommand` существует. Воркеры, управляемые демоном, опускают этот опциональный метод, если только демон не анонсирует возможность `session_shell_command`.
+
 ## Объект Envelope
 
-Нормализованный объект сообщения, который вы формируете на основе данных платформы. Логические флаги управляют логикой шлюзов, поэтому они должны быть точными.
+Нормализованный объект сообщения, который вы создаете из данных платформы. Булевы флаги управляют логикой шлюзов (gate), поэтому они должны быть точными.
 
-| Поле            | Тип         | Обязательно | Примечания                                                                      |
+| Field            | Type         | Required | Notes                                                                      |
 | ---------------- | ------------ | -------- | -------------------------------------------------------------------------- |
-| `channelName`    | string       | Да      | Используйте `this.name`                                                            |
-| `senderId`       | string       | Да      | Должен оставаться неизменным между сообщениями (используется для маршрутизации сессий и управления доступом) |
-| `senderName`     | string       | Да      | Отображаемое имя                                                               |
-| `chatId`         | string       | Да      | Должен различать личные сообщения и группы                                           |
-| `text`           | string       | Да      | Удалите @упоминания бота                                                        |
-| `threadId`       | string       | Нет       | Для `sessionScope: "thread"`                                               |
-| `messageId`      | string       | Нет       | ID сообщения платформы — полезно для сопоставления ответов                      |
-| `isGroup`        | boolean      | Да      | От этого зависит работа GroupGate                                                   |
-| `isMentioned`    | boolean      | Да      | От этого зависит работа GroupGate                                                   |
-| `isReplyToBot`   | boolean      | Да      | От этого зависит работа GroupGate                                                   |
-| `referencedText` | string       | Нет       | Цитируемое сообщение — добавляется в начало как контекст                                      |
-| `imageBase64`    | string       | Нет       | Изображение в формате Base64 (устаревшее — предпочтительно `attachments`)                       |
-| `imageMimeType`  | string       | Нет       | Например, `image/jpeg` (устаревшее — предпочтительно `attachments`)                         |
-| `attachments`    | Attachment[] | Нет       | Структурированные медиа-вложения (см. ниже)                                   |
+| `channelName`    | string       | Да       | Используйте `this.name`                                                    |
+| `senderId`       | string       | Да       | Должен быть стабильным для всех сообщений (используется для маршрутизации сессий + контроля доступа) |
+| `senderName`     | string       | Да       | Отображаемое имя                                                           |
+| `chatId`         | string       | Да       | Должен различать личные сообщения и группы                                 |
+| `chatName`       | string       | Нет      | Название группы/беседы, если предоставляется платформой                    |
+| `text`           | string       | Да       | Удалите @упоминания бота                                                   |
+| `threadId`       | string       | Нет      | Для `sessionScope: "thread"`                                               |
+| `messageId`      | string       | Нет      | ID сообщения платформы — полезно для корреляции ответов                    |
+| `isGroup`        | boolean      | Да       | GroupGate полагается на это                                                |
+| `isMentioned`    | boolean      | Да       | GroupGate полагается на это                                                |
+| `isReplyToBot`   | boolean      | Да       | GroupGate полагается на это                                                |
+| `referencedText` | string       | Нет      | Цитируемое сообщение — добавляется в начало как контекст                   |
+| `imageBase64`    | string       | Нет      | Изображение в кодировке Base64 (устарело — используйте `attachments`)      |
+| `imageMimeType`  | string       | Нет      | например, `image/jpeg` (устарело — используйте `attachments`)              |
+| `attachments`    | Attachment[] | Нет      | Структурированные медиа-вложения (см. ниже)                                |
 
-### Attachments
+### Вложения
 
-Используйте массив `attachments` для изображений, файлов, аудио и видео. `handleInbound()` обрабатывает их автоматически: изображения с `data` в формате base64 отправляются модели как визуальный ввод, а для файлов с `filePath` их путь добавляется к промпту, чтобы агент мог их прочитать.
+Используйте массив `attachments` для изображений, файлов, аудио и видео. `handleInbound()` обрабатывает их автоматически: изображения с `data` в формате base64 отправляются в модель как визуальный ввод, а для файлов с `filePath` их путь добавляется в промпт, чтобы агент мог их прочитать.
 
 ```typescript
 interface Attachment {
   type: 'image' | 'file' | 'audio' | 'video';
-  data?: string; // base64-encoded data (images, small files)
-  filePath?: string; // absolute path to local file (large files saved to disk)
-  mimeType: string; // e.g. 'application/pdf', 'image/jpeg'
-  fileName?: string; // original file name from the platform
+  data?: string; // данные в кодировке base64 (изображения, небольшие файлы)
+  filePath?: string; // абсолютный путь к локальному файлу (большие файлы сохраняются на диск)
+  mimeType: string; // например, 'application/pdf', 'image/jpeg'
+  fileName?: string; // оригинальное имя файла с платформы
 }
 ```
 
@@ -122,11 +155,11 @@ envelope.attachments = [
 ];
 ```
 
-Устаревшие поля `imageBase64`/`imageMimeType` по-прежнему работают для обратной совместимости, но для нового кода рекомендуется использовать `attachments`.
+Устаревшие поля `imageBase64`/`imageMimeType` по-прежнему работают для обратной совместимости, но для нового кода предпочтительнее использовать `attachments`.
 
 ## Манифест расширения
 
-В файле `qwen-extension.json` объявляется тип канала. Ключ должен совпадать со значением `channelType` в объекте вашего плагина:
+Ваш `qwen-extension.json` объявляет тип канала. Ключ должен совпадать с `channelType` в объекте вашего плагина:
 
 ```json
 {
@@ -141,22 +174,22 @@ envelope.attachments = [
 }
 ```
 
-## Дополнительные точки расширения
+## Опциональные точки расширения
 
 **Пользовательские слэш-команды** — регистрируются в конструкторе:
 
 ```typescript
 this.registerCommand('mycommand', async (envelope, args) => {
-  await this.sendMessage(envelope.chatId, 'Response');
-  return true; // handled, don't forward to agent
+  await this.sendMessage(envelope.chatId, 'Ответ');
+  return true; // обработано, не передавать агенту
 });
 ```
 
-**Индикаторы работы** — переопределите `onPromptStart()` и `onPromptEnd()`, чтобы отображать специфичные для платформы индикаторы набора текста. Эти хуки срабатывают только когда промпт действительно начинает обрабатываться — не для буферизованных сообщений (режим collect) или сообщений, отфильтрованных/заблокированных шлюзами:
+**Индикаторы работы** — переопределите `onPromptStart()` и `onPromptEnd()`, чтобы отображать специфичные для платформы индикаторы набора текста. Эти хуки срабатывают только тогда, когда промпт действительно начинает обрабатываться — не для буферизованных сообщений (режим collect) или заблокированных/отфильтрованных сообщений:
 
 ```typescript
 protected override onPromptStart(chatId: string, sessionId: string, messageId?: string): void {
-  this.platformClient.sendTyping(chatId); // your platform API
+  this.platformClient.sendTyping(chatId); // API вашей платформы
 }
 
 protected override onPromptEnd(chatId: string, sessionId: string, messageId?: string): void {
@@ -164,16 +197,37 @@ protected override onPromptEnd(chatId: string, sessionId: string, messageId?: st
 }
 ```
 
-**Хуки вызова инструментов** — переопределите `onToolCall()`, чтобы отображать активность агента (например, "Running shell command...").
+**Хуки вызова инструментов** — переопределите `onToolCall()`, чтобы отображать активность агента (например, "Выполняется shell-команда...").
 
-**Хуки потоковой передачи** — переопределите `onResponseChunk(chatId, chunk, sessionId)` для пошагового отображения по частям (например, редактирование сообщения на месте). Переопределите `onResponseComplete(chatId, fullText, sessionId)`, чтобы настроить финальную доставку.
+**Хуки стриминга** — переопределите `onResponseChunk(chatId, chunk, sessionId)` для прогрессивного отображения по частям (например, редактирование сообщения на месте). Переопределите `onResponseComplete(chatId, fullText, sessionId)` для настройки финальной доставки.
 
-**Потоковая передача блоками** — установите `blockStreaming: "on"` в конфигурации канала. Базовый класс автоматически разбивает ответы на несколько сообщений по границам абзацев. Дополнительный код в плагине не требуется — это работает совместно с `onResponseChunk`.
+**Блокировка стриминга** — установите `blockStreaming: "on"` в конфигурации канала. Базовый класс автоматически разбивает ответы на несколько сообщений по границам абзацев. Код плагина не требуется — это работает вместе с `onResponseChunk`.
 
-**Медиа** — заполняйте `envelope.attachments` изображениями/файлами. См. раздел [Attachments](#attachments) выше.
+**Проактивная доставка** — переопределите `supportsProactiveSend()`, чтобы возвращать `true`, когда адаптер может отправлять сообщения без активного входящего запроса. `ChannelBase` использует эту возможность для постоянных циклов канала, webhook-задач, результатов фонового агента и доставки через демона. Политика целей по умолчанию отклоняет целевые объекты с threadId; переопределяйте защищённые проверки целей только для тех форматов целей, которые ваша платформа может безопасно доставлять:
 
-## Референсные реализации
+```typescript
+override supportsProactiveSend(): boolean {
+  return true;
+}
+
+protected override supportsProactiveTarget(target: SessionTarget): boolean {
+  return target.threadId === undefined;
+}
+
+protected override async pushProactive(
+  target: SessionTarget,
+  text: string,
+): Promise<void> {
+  await this.platformClient.send(target.chatId, text);
+}
+```
+
+Используйте `supportsProactiveDeliveryTarget()`, когда общая доставка демона принимает другую форму цели, и `supportsProactiveWebhookTarget()`, когда webhook-доставка отличается от циклов и результатов фонового агента. Неподдерживаемые цели должны оставаться отклонёнными, а не переключаться на другую беседу.
+
+**Медиа** — заполните `envelope.attachments` изображениями/файлами. См. раздел [Вложения](#attachments) выше.
+
+## Эталонные реализации
 
 - **Пример плагина** (`packages/channels/plugin-example/`) — минимальный адаптер на базе WebSocket, хорошая отправная точка
-- **Telegram** (`packages/channels/telegram/`) — полнофункциональный: поддержка изображений, файлов, форматирования, индикаторов набора текста
-- **DingTalk** (`packages/channels/dingtalk/`) — потоковая реализация с обработкой форматированного текста
+- **Telegram** (`packages/channels/telegram/`) — полнофункциональный: изображения, файлы, форматирование, индикаторы набора текста
+- **DingTalk** (`packages/channels/dingtalk/`) — стриминговый с поддержкой форматированного текста

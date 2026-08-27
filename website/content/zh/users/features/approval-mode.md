@@ -1,48 +1,58 @@
 # 审批模式
 
-Qwen Code 提供四种不同的权限模式，让你可以根据任务复杂度和风险级别，灵活控制 AI 与代码及系统的交互方式。
+Qwen Code 提供五种不同的权限模式，允许你根据任务复杂度和风险级别灵活控制 AI 与你的代码及系统的交互方式。
 
 ## 权限模式对比
 
-| 模式           | 文件编辑                | Shell 命令              | 适用场景                                                                                               | 风险等级 |
-| -------------- | --------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------ | ---------- |
-| **Plan**​      | ❌ 仅只读分析  | ❌ 不执行             | • 代码探索 <br>• 规划复杂变更 <br>• 安全代码审查                               | 最低     |
-| **Default**​   | ✅ 需手动审批 | ✅ 需手动审批 | • 新/不熟悉的代码库 <br>• 关键系统 <br>• 团队协作 <br>• 学习与教学 | 低        |
-| **Auto-Edit**​ | ✅ 自动批准            | ❌ 需手动审批 | • 日常开发任务 <br>• 重构与代码优化 <br>• 安全自动化                | 中     |
-| **YOLO**​      | ✅ 自动批准            | ✅ 自动批准            | • 可信的个人项目 <br>• 自动化脚本/CI/CD <br>• 批量处理任务                 | 最高    |
+| 模式 | 文件编辑 | Shell 命令 | 最适用于 | 风险级别 |
+| -------------------- | --------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------ | ---------- |
+| **Plan** | ❌ 仅限只读分析 | ❌ 不执行 | • 代码探索 <br>• 规划复杂更改 <br>• 安全的代码审查 | 最低 |
+| **Ask Permissions** | ✅ 需要手动审批 | ✅ 需要手动审批 | • 新的/不熟悉的代码库 <br>• 关键系统 <br>• 团队协作 <br>• 学习和教学 | 低 |
+| **Auto-Edit** | ✅ 自动审批 | ❌ 需要手动审批 | • 日常开发任务 <br>• 重构和代码改进 <br>• 安全的自动化 | 中 |
+| **Auto** | ✅ 分类器评估 | ✅ 分类器评估 | • 长时间自主会话 <br>• 当 Auto-Edit 过于保守而 YOLO 风险过高时 | 中 |
+| **YOLO** | ✅ 自动审批 | ✅ 自动审批 | • 受信任的个人项目 <br>• 自动化脚本/CI/CD <br>• 批处理任务 | 最高 |
+
+> [!NOTE]
+>
+> 以前名为 **Default** 的模式已重命名为 **Ask Permissions**，以更好地描述其行为。底层配置值（`tools.approvalMode: "default"`）和 `/approval-mode default` 命令保持不变，以确保向后兼容。
 
 ### 快速参考指南
 
-- **从 Plan 模式开始**：在做出更改前充分了解代码
-- **使用 Default 模式工作**：大多数开发工作的均衡之选
-- **切换到 Auto-Edit**：进行大量安全的代码修改时
-- **谨慎使用 YOLO**：仅用于受控环境中可信的自动化任务
+- **从 Plan 模式开始**：非常适合在做出更改前进行理解
+- **Auto 模式（默认）**：开箱即用的默认体验——LLM 分类器自动批准安全操作并阻止有风险的操作，在保持安全网的同时最大限度减少中断
+- **切换到 Ask Permissions**：当你希望对每次文件编辑和 Shell 命令进行手动审批时
+- **切换到 Auto-Edit**：当你需要进行大量安全的代码更改时
+- **谨慎使用 YOLO**：仅用于受控环境中受信任的自动化
 
 > [!tip]
 >
-> 你可以在会话期间使用 **Shift+Tab**（Windows 上为 **Tab**）快速切换模式。终端状态栏会显示当前模式，让你随时了解 Qwen Code 拥有的权限。
+> 你可以在会话期间使用 **Shift+Tab**（或 Windows 上的 **Tab**）快速循环切换模式。终端状态栏会显示你当前的模式，因此你始终清楚 Qwen Code 拥有的权限。
+
+> 循环顺序为：**plan → default → auto-edit → auto → yolo → plan → ...**
 
 ## 1. 使用 Plan 模式进行安全的代码分析
 
-Plan 模式指示 Qwen Code 通过 **只读** 操作分析代码库来制定计划，非常适合探索代码库、规划复杂变更或安全地审查代码。
+Plan 模式指示 Qwen Code 通过 **只读** 操作分析代码库来创建计划，非常适合探索代码库、规划复杂更改或安全地审查代码。
 
 ### 何时使用 Plan 模式
 
-- **多步骤实现**：当你的功能需要编辑多个文件时
-- **代码探索**：在修改任何内容之前，希望彻底研究代码库时
-- **交互式开发**：希望与 Qwen Code 就实现方向进行迭代时
+- **多步实现**：当你的功能需要编辑多个文件时
+- **代码探索**：当你想在更改任何内容之前彻底研究代码库时
+- **交互式开发**：当你想与 Qwen Code 迭代开发方向时
 
 ### 如何使用 Plan 模式
 
-**在会话中开启 Plan 模式**
+**在会话期间开启 Plan 模式**
 
-你可以在会话期间使用 **Shift+Tab**（Windows 上为 **Tab**）循环切换权限模式，从而进入 Plan 模式。
+你可以在会话期间使用 **Shift+Tab**（或 Windows 上的 **Tab**）循环切换权限模式来进入 Plan 模式。
 
-如果你处于 Normal 模式，按下 **Shift+Tab**（Windows 上为 **Tab**）会先切换到 `auto-edits` 模式，终端底部会显示 `⏵⏵ accept edits on`。再次按下 **Shift+Tab**（或 **Tab**）将切换到 Plan 模式，显示为 `⏸ plan mode`。
+如果你处于 Normal 模式，**Shift+Tab**（或 Windows 上的 **Tab**）会首先切换到 `auto-edits` 模式，终端底部会显示 `⏵⏵ accept edits on`。再次按下 **Shift+Tab**（或 Windows 上的 **Tab**）将切换到 Plan 模式，终端底部会显示 `⏸ plan mode`。
 
 **使用 `/plan` 命令**
 
 `/plan` 命令提供了进入和退出 Plan 模式的快捷方式：
+
+常规的规划请求本身不会切换模式。如果你想要只读的 Plan 模式工作流，请使用 `/plan`、键盘快捷键，或显式将审批模式设置为 `plan`。
 
 ```bash
 /plan                          # 进入 plan 模式
@@ -50,7 +60,7 @@ Plan 模式指示 Qwen Code 通过 **只读** 操作分析代码库来制定计�
 /plan exit                     # 退出 plan 模式，恢复之前的模式
 ```
 
-使用 `/plan exit` 退出 Plan 模式时，系统会自动恢复你之前的审批模式（例如，如果在进入 Plan 模式前处于 Auto-Edit 模式，退出后将返回 Auto-Edit 模式）。
+当你使用 `/plan exit` 退出 Plan 模式时，你之前的审批模式会自动恢复（例如，如果你在进入 Plan 模式前处于 Auto-Edit 模式，你将返回 Auto-Edit 模式）。
 
 **在 Plan 模式下启动新会话**
 
@@ -60,9 +70,9 @@ Plan 模式指示 Qwen Code 通过 **只读** 操作分析代码库来制定计�
 /approval-mode
 ```
 
-**在 Plan 模式下运行“无头 (headless)”查询**
+**在 Plan 模式下运行“无头”查询**
 
-你也可以直接使用 `-p` 或 `--prompt` 在 Plan 模式下运行查询：
+你也可以直接使用 `-p` 或 `prompt` 在 Plan 模式下运行查询：
 
 ```bash
 qwen --prompt "What is machine learning?"
@@ -74,53 +84,53 @@ qwen --prompt "What is machine learning?"
 /plan I need to refactor our authentication system to use OAuth2. Create a detailed migration plan.
 ```
 
-Qwen Code 将进入 Plan 模式并分析当前实现，以制定全面的计划。你可以通过后续提问进行细化：
+Qwen Code 进入 Plan 模式并分析当前实现以创建全面的计划。通过后续提问进行完善：
 
 ```
 What about backward compatibility?
 How should we handle database migration?
 ```
 
-### 将 Plan 模式配置为默认模式
+### 将 Plan 模式配置为默认
 
 ```json
 // .qwen/settings.json
 {
-  "permissions": {
-    "defaultMode": "plan"
+  "tools": {
+    "approvalMode": "plan"
   }
 }
 ```
 
-## 2. 使用 Default 模式进行受控交互
+## 2. 使用 Ask Permissions 模式进行受控交互
 
-Default 模式是使用 Qwen Code 的标准方式。在此模式下，你对所有潜在风险操作保持完全控制——Qwen Code 在进行任何文件更改或执行 Shell 命令前，都会请求你的批准。
+Ask Permissions 模式是使用 Qwen Code 的标准方式。在此模式下，你可以完全控制所有潜在的危险操作——Qwen Code 在进行任何文件更改或执行 Shell 命令之前都会征求你的同意。
 
-### 何时使用 Default 模式
+### 何时使用 Ask Permissions 模式
 
-- **刚接触代码库**：探索不熟悉的项目且希望格外谨慎时
-- **关键系统**：处理生产环境代码、基础设施或敏感数据时
-- **学习与教学**：希望了解 Qwen Code 执行的每一步时
-- **团队协作**：多人共同开发同一代码库时
-- **复杂操作**：更改涉及多个文件或复杂逻辑时
+- **刚接触代码库**：当你正在探索不熟悉的项目并希望格外谨慎时
+- **关键系统**：在处理生产代码、基础设施或敏感数据时
+- **学习和教学**：当你想了解 Qwen Code 正在采取的每个步骤时
+- **团队协作**：当多人共同处理同一个代码库时
+- **复杂操作**：当更改涉及多个文件或复杂逻辑时
 
-### 如何使用 Default 模式
+### 如何使用 Ask Permissions 模式
 
-**在会话中开启 Default 模式**
+**在会话期间开启 Ask Permissions 模式**
 
-你可以在会话期间使用 **Shift+Tab**（Windows 上为 **Tab**）循环切换权限模式。如果你处于其他任何模式，按下 **Shift+Tab**（或 **Tab**）最终会循环回 Default 模式，此时终端底部不会显示任何模式指示器。
+你可以在会话期间使用 **Shift+Tab**（或 Windows 上的 **Tab**）循环切换权限模式来进入 Ask Permissions 模式。如果你处于任何其他模式，按下 **Shift+Tab**（或 Windows 上的 **Tab**）最终会循环回到 Ask Permissions 模式，此时终端底部不会显示任何模式指示器。
 
-**在 Default 模式下启动新会话**
+**在 Ask Permissions 模式下启动新会话**
 
-Default 模式是启动 Qwen Code 时的初始模式。如果你更改过模式并希望返回 Default 模式，请使用：
+Ask Permissions 模式是你启动 Qwen Code 时的初始模式。如果你已更改模式并希望返回 Ask Permissions 模式，请使用：
 
 ```
 /approval-mode default
 ```
 
-**在 Default 模式下运行“无头 (headless)”查询**
+**在 Ask Permissions 模式下运行“无头”查询**
 
-运行无头命令时，Default 模式是默认行为。你可以显式指定它：
+运行无头命令时，Ask Permissions 模式是默认行为。你可以使用以下方式显式指定：
 
 ```
 qwen --prompt "Analyze this code for potential bugs"
@@ -136,34 +146,36 @@ qwen --prompt "Analyze this code for potential bugs"
 I need to add user profile pictures to our application. The pictures should be stored in an S3 bucket and the URLs saved in the database.
 ```
 
-Qwen Code 将分析你的代码库并提出计划。随后，它会在执行以下操作前请求批准：
+Qwen Code 将分析你的代码库并提出计划。然后，它会在以下操作之前请求审批：
 
-1. 创建新文件（控制器、模型、迁移脚本）
+1. 创建新文件（控制器、模型、迁移）
 2. 修改现有文件（添加新列、更新 API）
 3. 运行任何 Shell 命令（数据库迁移、依赖安装）
 
-你可以审查每项提议的更改，并单独批准或拒绝。
+你可以审查每个提议的更改，并单独批准或拒绝它。
 
-### 将 Default 模式配置为默认模式
+### 将 Ask Permissions 模式配置为默认
 
 ```bash
 // .qwen/settings.json
 {
-  "permissions": {
-"defaultMode": "default"
+  "tools": {
+    "approvalMode": "default"
   }
 }
 ```
 
-## 3. Auto Edits 模式
+## 3. Auto-Edit 模式
 
-Auto-Edit 模式指示 Qwen Code 自动批准文件编辑，同时要求对 Shell 命令进行手动审批，非常适合在保持系统安全的同时加速开发工作流。
+Auto-Edit 模式指示 Qwen Code 自动审批文件编辑，同时要求对 Shell 命令进行手动审批，是在保持系统安全的同时加速开发工作流的理想选择。
 
-### 何时使用 Auto-Accept Edits 模式
+自动审批的编辑工具包括 `edit`、`write_file` 和 `notebook_edit`。
 
-- **日常开发**：适用于大多数编码任务
-- **安全自动化**：允许 AI 修改代码，同时防止意外执行危险命令
-- **团队协作**：在共享项目中使用，避免对他人造成意外影响
+### 何时使用 Auto-Edit 模式
+
+- **日常开发**：非常适合大多数编码任务
+- **安全的自动化**：允许 AI 修改代码，同时防止意外执行危险命令
+- **团队协作**：在共享项目中使用，以避免对他人产生意外影响
 
 ### 如何切换到此模式
 
@@ -177,29 +189,130 @@ Shift+Tab (or Tab on Windows) # 从其他模式切换
 
 ### 工作流示例
 
-1. 你要求 Qwen Code 重构某个函数
+1. 你要求 Qwen Code 重构一个函数
 2. AI 分析代码并提出更改建议
 3. **自动**应用所有文件更改，无需确认
-4. 如果需要运行测试，它将**请求批准**以执行 `npm test`
+4. 如果需要运行测试，它将**请求审批**以执行 `npm test`
 
-## 4. YOLO 模式 - 全自动化
+## 4. Auto 模式 - 分类器驱动的审批
 
-YOLO 模式授予 Qwen Code 最高权限，自动批准所有工具调用，包括文件编辑和 Shell 命令。
+Auto 模式介于 Auto-Edit 和 YOLO 之间。LLM 分类器会评估每个
+Shell 命令、网络调用和工作区外的编辑，并自动批准
+它认为安全的操作，同时阻止有风险的操作。大多数只读操作
+和工作区内的编辑会跳过分类器以提高速度。
+
+完整参考（提示配置、故障排除、常见问题解答）请参见 [auto-mode.md](./auto-mode.md)。
+
+### 何时使用 Auto 模式
+
+- **长时间自主会话**：当 Ask Permissions 模式中断过于频繁，而
+  YOLO 风险过高时。
+- **受信任的项目**：内部代码库，代理应继续运行，
+  但你仍希望对破坏性 Shell 命令和
+  出站网络调用设置防护栏。
+- **无头/定时运行**：当 Auto-Edit 不够用（代理
+  也需要运行 Shell 命令），但你希望对 `rm -rf /`、
+  `curl ... | sh`、凭据泄露等操作进行安全防护时。
+
+### 如何使用 Auto 模式
+
+**在会话期间开启 Auto 模式**
+
+按下 **Shift+Tab**（或 Windows 上的 **Tab**）循环进入 Auto 模式。
+状态栏会显示当前活动的模式。
+
+**使用 `/approval-mode` 命令**
+
+```
+/approval-mode auto
+```
+
+首次进入 Auto 模式时，会显示一条信息说明其
+工作原理。该通知不会再次出现。
+
+**在 Auto 模式下启动新会话**
+
+```jsonc
+// .qwen/settings.json
+{
+  "tools": {
+    "approvalMode": "auto",
+  },
+}
+```
+
+### Auto 模式自动审批与阻止的内容
+
+分类器在不确定时倾向于阻止。默认情况：
+
+- **自动审批**：只读命令（ls、cat、git status、grep、find）、
+  当前工作目录下的包安装、构建/测试命令、工作区内的文件编辑、仅限本地的操作。
+- **阻止**：不可逆的破坏（rm -rf /、fdisk、mkfs）、
+  来自外部的代码执行（curl | sh、远程内容的 eval）、
+  凭据泄露、未经授权的持久化（.bashrc 编辑、
+  crontab）、削弱安全性、强制推送到 main/master。
+
+你可以通过 settings.json 中的自然语言提示自定义分类器的判断。请参见 [auto-mode.md](./auto-mode.md#configuring-hints)。
+
+### 安全防护栏
+
+- **硬规则仍然有效**：`permissions.deny` 规则会在分类器运行之前阻止操作。
+- **在 Auto 模式下会剥离过于宽泛的允许规则**：例如，
+  `permissions.allow: ["Bash"]`（允许所有 Shell 命令）会使分类器失效；进入 Auto 模式会暂时禁用此类规则，以便分类器发挥作用。当你离开 Auto 模式时，这些规则会恢复。磁盘上的设置永远不会被修改。
+- **故障关闭**：当分类器 API 无法访问时，操作会被阻止而不是允许。在连续两次不可用调用后，下一次工具调用将回退到手动审批。
+- **循环防护**：在连续三次策略阻止后，下一次调用也会回退到手动审批，从而避免代理陷入死胡同方法中循环。
+
+### 示例
+
+```
+/approval-mode auto
+Refactor the auth module to use OAuth2. Run the full test suite afterwards.
+```
+
+Qwen Code 进行文件编辑（工作区内的编辑跳过分类器），
+运行 `npm test`（分类器判断为安全），如果它尝试执行类似 `rm -rf /Users/me/.aws` 的危险操作，则会显示阻止信息。你可以内联查看原因，并决定是否针对该步骤切换到 Ask Permissions 模式。
+
+### 将 Auto 模式配置为默认
+
+```jsonc
+// .qwen/settings.json
+{
+  "tools": {
+    "approvalMode": "auto",
+  },
+  "permissions": {
+    "autoMode": {
+      "hints": {
+        "allow": ["Running pytest, mypy, and ruff on this Python repo"],
+        "deny": ["Any network call to intranet.example.com"],
+      },
+      "environment": ["Open-source monorepo; commits are signed"],
+      // 可选：将所有 Shell 命令（包括 ls、cat 等只读命令）
+      // 路由到分类器以实现纵深防御。
+      // "classifyAllShell": true,
+    },
+  },
+}
+```
+
+## 5. YOLO 模式 - 全自动化
+
+YOLO 模式授予 Qwen Code 最高权限，自动审批所有工具调用，包括文件编辑和 Shell 命令。
 
 ### 何时使用 YOLO 模式
 
 - **自动化脚本**：运行预定义的自动化任务
-- **CI/CD 流水线**：在受控环境中自动执行
-- **个人项目**：在完全可信的环境中快速迭代
-- **批量处理**：需要多步命令链的任务
+- **CI/CD 管道**：在受控环境中自动执行
+- **个人项目**：在完全受信任的环境中快速迭代
+- **批处理**：需要多步命令链的任务
 
 > [!warning]
 >
-> **谨慎使用 YOLO 模式**：AI 可以使用你终端的权限执行任何命令。请确保：
+> **谨慎使用 YOLO 模式**：AI 可以使用你的终端权限执行任何命令。请确保：
 >
 > 1. 你信任当前的代码库
 > 2. 你了解 AI 将执行的所有操作
-> 3. 重要文件已备份或已提交到版本控制
+> 3. 重要文件已备份或提交到版本控制
 
 ### 如何启用 YOLO 模式
 
@@ -207,10 +320,10 @@ YOLO 模式授予 Qwen Code 最高权限，自动批准所有工具调用，包�
 # 临时启用（仅限当前会话）
 /approval-mode yolo
 
-# 设置为项目默认值
+# 设置为项目默认
 /approval-mode yolo --project
 
-# 设置为用户全局默认值
+# 设置为用户全局默认
 /approval-mode yolo --user
 ```
 
@@ -219,10 +332,8 @@ YOLO 模式授予 Qwen Code 最高权限，自动批准所有工具调用，包�
 ```bash
 // .qwen/settings.json
 {
-  "permissions": {
-"defaultMode": "yolo",
-"confirmShellCommands": false,
-"confirmFileEdits": false
+  "tools": {
+    "approvalMode": "yolo"
   }
 }
 ```
@@ -230,42 +341,40 @@ YOLO 模式授予 Qwen Code 最高权限，自动批准所有工具调用，包�
 ### 自动化工作流示例
 
 ```bash
-# 全自动化重构任务
+# 全自动重构任务
 qwen --prompt "Run the test suite, fix all failing tests, then commit changes"
 
 # 无需人工干预，AI 将：
-# 1. 运行测试命令（自动批准）
+# 1. 运行测试命令（自动审批）
 # 2. 修复失败的测试用例（自动编辑文件）
-# 3. 执行 git commit（自动批准）
+# 3. 执行 git commit（自动审批）
 ```
 
 ## 模式切换与配置
 
 ### 键盘快捷键切换
 
-在 Qwen Code 会话期间，使用 **Shift+Tab**（Windows 上为 **Tab**）可快速循环切换四种模式：
+在 Qwen Code 会话期间，使用 **Shift+Tab**（或 Windows 上的 **Tab**）快速循环切换这五种模式：
 
 ```
-Default Mode → Auto-Edit Mode → YOLO Mode → Plan Mode → Default Mode
+Plan 模式 → Ask Permissions 模式 → Auto-Edit 模式 → Auto 模式 → YOLO 模式 → Plan 模式
 ```
 
 ### 持久化配置
 
 ```
-// 项目级：./.qwen/settings.json
-// 用户级：~/.qwen/settings.json
+// 项目级别: ./.qwen/settings.json
+// 用户级别: ~/.qwen/settings.json
 {
-  "permissions": {
-"defaultMode": "auto-edit",  // 或 "plan" 或 "yolo"
-"confirmShellCommands": true,
-"confirmFileEdits": true
+  "tools": {
+    "approvalMode": "auto-edit"  // 或 "plan", "default", "auto", "yolo"
   }
 }
 ```
 
 ### 模式使用建议
 
-1. **刚接触代码库**：从 **Plan 模式** 开始，安全探索
-2. **日常开发任务**：使用 **Auto-Accept Edits**（默认模式），高效且安全
-3. **自动化脚本**：在受控环境中使用 **YOLO 模式** 实现全自动化
-4. **复杂重构**：先使用 **Plan 模式** 进行详细规划，然后切换到合适的模式执行
+1. **刚接触代码库**：从 **Plan 模式**开始进行安全探索
+2. **日常开发任务**：使用 **Auto-Edit**（默认模式），高效且安全
+3. **自动化脚本**：在受控环境中使用 **YOLO 模式**实现全自动化
+4. **复杂重构**：首先使用 **Plan 模式**进行详细规划，然后切换到适当的模式进行执行

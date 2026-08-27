@@ -1,16 +1,28 @@
-# Résumés d'utilisation des outils
+# Résumés d'utilisation d'outils
 
-Qwen Code peut générer un court libellé, au format objet de commit Git, après chaque lot d'outils, résumant ce que le lot a accompli. Le libellé apparaît en ligne dans la transcription et remplace l'en-tête générique `Tool × N` en mode compact.
+Qwen Code peut générer une brève étiquette, dans le style d'un sujet de commit git, après chaque lot d'outils terminé, résumant ce que le lot a accompli. L'étiquette apparaît en ligne : pour un groupe d'outils terminé dans la vue principale, elle remplace l'en-tête générique `Tool × N` ; lorsque le groupe est déplié de force (en mode détail déplié `Ctrl+O`, ou pour les lots d'erreur / initiés par l'utilisateur), elle apparaît sous la forme d'une ligne atténuée `● <étiquette>` sous le groupe.
 
-Cette fonctionnalité améliore l'UX pour les appels d'outils parallèles : lorsque le modèle lance plusieurs appels `Read` + `Grep` + `Bash` simultanément, le résumé indique l'intention en un coup d'œil, sans vous obliger à parcourir la liste des outils.
+Il s'agit d'une aide UX pour les appels d'outils parallèles : lorsque le modèle se déploie en plusieurs appels `Read` + `Grep` + `Bash` à la fois, le résumé vous indique l'intention en un coup d'œil, sans vous obliger à parcourir la liste des outils.
 
-La fonctionnalité est activée par défaut et s'exécute silencieusement en arrière-plan. Elle nécessite un [modèle rapide](./followup-suggestions#fast-model) configuré.
+Cette fonctionnalité est activée par défaut et s'exécute silencieusement en arrière-plan. Elle nécessite un [fast model](./followup-suggestions#fast-model) configuré.
 
 ## Ce que vous voyez
 
-### Mode complet (par défaut)
+### Vue principale (groupe terminé)
 
-Le résumé apparaît sous forme de ligne de badge atténuée directement sous le groupe d'outils :
+Dans la transcription principale, un lot pliable terminé se replie en une seule ligne étiquetée — le résumé remplace l'en-tête générique `Tool × N` :
+
+```
+╭──────────────────────────────────────────────╮
+│✓  Read 4 text files                          │
+╰──────────────────────────────────────────────╯
+```
+
+La sortie complète par outil est accessible d'une simple touche : appuyez sur `Ctrl+O` pour basculer en mode détail déplié.
+
+### Mode détail déplié (`Ctrl+O`) et groupes dépliés de force
+
+Lorsqu'un groupe est déplié de force — en mode détail déplié `Ctrl+O`, ou pour les lots d'erreur / initiés par l'utilisateur dans la vue principale — chaque outil s'affiche individuellement et le résumé apparaît sous la forme d'une ligne de badge atténuée sous le groupe :
 
 ```
 ╭──────────────────────────────────────────────╮
@@ -20,60 +32,47 @@ Le résumé apparaît sous forme de ligne de badge atténuée directement sous l
 │ ✓  ReadFile d.txt                            │
 ╰──────────────────────────────────────────────╯
 
- ● Read 4 text files
+● Read 4 text files
 ```
-
-### Mode compact (`Ctrl+O` ou `ui.compactMode: true`)
-
-Le libellé remplace l'en-tête générique `Tool × N` dans la ligne unique du mode compact :
-
-```
-╭──────────────────────────────────────────────╮
-│✓  Read txt files  · 4 tools                  │
-│Press Ctrl+O to show full tool output         │
-╰──────────────────────────────────────────────╯
-```
-
-Les appels d'outils individuels restent accessibles en une touche (`Ctrl+O` pour basculer vers le mode complet).
 
 ## Fonctionnement
 
-Une fois qu'un lot d'outils est finalisé, Qwen Code lance une requête fire-and-forget vers le modèle rapide configuré avec :
+Une fois qu'un lot d'outils est finalisé, Qwen Code déclenche un appel fire-and-forget vers le fast model configuré avec :
 
-- Les noms des outils, les arguments tronqués et les résultats tronqués (chaque champ limité à 300 caractères).
-- La sortie textuelle la plus récente de l'assistant (200 premiers caractères) servant de préfixe d'intention.
-- Un prompt système demandant au modèle de renvoyer un libellé de 30 caractères au passé, au format objet de commit Git.
+- Les noms des outils, les arguments tronqués et les résultats tronqués (chacun limité à 300 caractères).
+- Le texte le plus récent de l'assistant (200 premiers caractères) comme préfixe d'intention.
+- Une invite système demandant au modèle de renvoyer une étiquette de 30 caractères au passé, dans le style d'un sujet de commit git.
 
-La requête s'exécute en parallèle du streaming API du tour suivant, masquant ainsi sa latence d'environ 1 s derrière la réponse du modèle principal. Une fois le libellé résolu, il est ajouté à la transcription sous forme d'entrée `tool_use_summary`.
+L'appel s'exécute en parallèle du streaming API du tour suivant, de sorte que sa latence d'environ 1 s est masquée par la réponse du modèle principal. Lorsque l'étiquette est résolue, elle est ajoutée à la transcription en tant qu'entrée `tool_use_summary`.
 
-Exemples de libellés : `Searched in auth/`, `Fixed NPE in UserService`, `Created signup endpoint`, `Read config.json`, `Ran failing tests`.
+Exemples d'étiquettes : `Recherche dans auth/`, `Correction NPE dans UserService`, `Création endpoint signup`, `Lecture config.json`, `Exécution tests en échec`.
 
-## Quand il apparaît
+## Quand cela apparaît
 
-Le résumé est généré lorsque **toutes** les conditions suivantes sont réunies :
+Le résumé est généré lorsque **toutes** les conditions suivantes sont remplies :
 
-- `experimental.emitToolUseSummaries` est défini sur `true` (par défaut).
+- `experimental.emitToolUseSummaries` est `true` (par défaut).
 - Un `fastModel` est configuré (via les paramètres ou `/model --fast`).
-- Au moins un outil du lot s'est terminé avec succès.
+- Au moins un outil a été exécuté dans le lot.
 - Le tour n'a pas été interrompu avant la fin des outils.
-- Le modèle rapide a renvoyé une réponse non vide et sans erreur.
+- Le fast model a renvoyé une réponse non vide et sans erreur.
 
-Les appels d'outils des sous-agents ne déclenchent pas la génération de résumé : seuls les lots d'outils de la session principale le font.
+Les appels d'outils des sous-agents ne déclenchent pas la génération de résumé — seuls les lots d'outils de la session principale le font.
 
-## Quand il n'apparaît pas
+## Quand cela n'apparaît pas
 
-Le résumé est ignoré silencieusement (aucune erreur, aucun changement d'interface) lorsque :
+Le résumé est silencieusement ignoré (pas d'erreur, pas de changement dans l'interface) lorsque :
 
-- Aucun modèle rapide n'est configuré.
-- La requête vers le modèle rapide échoue, expire ou renvoie une réponse vide.
-- Le modèle renvoie une chaîne ressemblant à un message d'erreur (ex. `Error: ...`, `I cannot ...`) — filtrée par le client pour éviter d'afficher des libellés trompeurs dans l'interface.
+- Aucun fast model n'est configuré.
+- L'appel au fast model échoue, expire ou renvoie une réponse vide.
+- Le modèle a renvoyé une chaîne de caractères ressemblant à un message d'erreur évident (par exemple, `Error: ...`, `Je ne peux pas ...`) — filtrée par le client pour que l'interface n'affiche pas d'étiquettes trompeuses.
 - Le tour a été interrompu (`Ctrl+C`) avant la fin du modèle.
 
 Dans tous ces cas, le groupe d'outils s'affiche comme d'habitude.
 
-## Modèle rapide
+## Fast Model
 
-Le libellé est généré à l'aide du [modèle rapide](./followup-suggestions#fast-model) — le même que celui configuré pour les suggestions de prompt et l'exécution spéculative. Configurez-le via :
+L'étiquette est générée à l'aide du [fast model](./followup-suggestions#fast-model) — le même modèle que vous configurez pour les suggestions d'invite et l'exécution spéculative. Configurez-le via :
 
 ### Via la commande
 
@@ -89,24 +88,24 @@ Le libellé est généré à l'aide du [modèle rapide](./followup-suggestions#f
 }
 ```
 
-Si aucun modèle rapide n'est configuré, la génération de résumé est entièrement ignorée : la fonctionnalité reste inactive tant que vous n'en avez pas défini un.
+Lorsqu'aucun fast model n'est configuré, la génération de résumé est complètement ignorée — la fonctionnalité reste inactive jusqu'à ce que vous en configuriez un.
 
 ## Configuration
 
 Ces paramètres peuvent être configurés dans `settings.json` :
 
-| Paramètre                           | Type    | Valeur par défaut | Description                                                                                        |
-| ----------------------------------- | ------- | ----------------- | -------------------------------------------------------------------------------------------------- |
-| `experimental.emitToolUseSummaries` | boolean | `true`            | Interrupteur principal pour la génération de résumé. Désactivez-le pour éviter la requête supplémentaire vers le modèle rapide. |
-| `fastModel`                         | string  | `""`              | Modèle rapide utilisé pour la génération de résumé (partagé avec les suggestions de prompt). Requis ; sans effet si vide. |
+| Paramètre                           | Type    | Défaut  | Description                                                                                          |
+| ----------------------------------- | ------- | ------- | ---------------------------------------------------------------------------------------------------- |
+| `experimental.emitToolUseSummaries` | boolean | `true`  | Interrupteur général pour la génération de résumé. Désactivez pour éviter l'appel supplémentaire au fast model. |
+| `fastModel`                         | string  | `""`    | Fast model utilisé pour la génération de résumé (partagé avec les suggestions d'invite). Obligatoire ; sans effet si vide. |
 
-### Remplacement par variable d'environnement
+### Surcharge via variable d'environnement
 
-La variable `QWEN_CODE_EMIT_TOOL_USE_SUMMARIES` remplace le paramètre `experimental.emitToolUseSummaries` pour la session en cours :
+`QWEN_CODE_EMIT_TOOL_USE_SUMMARIES` remplace le paramètre `experimental.emitToolUseSummaries` pour la session en cours :
 
-- `QWEN_CODE_EMIT_TOOL_USE_SUMMARIES=0` ou `=false` — force la désactivation.
-- `QWEN_CODE_EMIT_TOOL_USE_SUMMARIES=1` ou `=true` — force l'activation.
-- Non définie — utilise le paramètre `experimental.emitToolUseSummaries`.
+- `QWEN_CODE_EMIT_TOOL_USE_SUMMARIES=0` ou `=false` — désactive forcément.
+- `QWEN_CODE_EMIT_TOOL_USE_SUMMARIES=1` ou `=true` — active forcément.
+- Non défini — utilise le paramètre `experimental.emitToolUseSummaries`.
 
 ### Exemple
 
@@ -121,58 +120,55 @@ La variable `QWEN_CODE_EMIT_TOOL_USE_SUMMARIES` remplace le paramètre `experime
 
 ## Portée et cycle de vie
 
-Trois points qui prêtent souvent à confusion lors d'une première lecture de cette fonctionnalité :
+Trois points qui peuvent surprendre à la première lecture de cette fonctionnalité :
 
-1. **Une seule génération par lot, partagée par les deux modes d'affichage.** La requête vers le modèle rapide s'exécute exactement une fois dans `handleCompletedTools` lors de la finalisation d'un lot d'outils. Basculer avec `Ctrl+O` par la suite ne déclenche **pas** une nouvelle requête : les deux modes lisent la même entrée d'historique `tool_use_summary` capturée initialement. Vous pouvez activer ou désactiver le mode compact librement, sans coût supplémentaire.
-2. **Aucun remplissage rétroactif lors du basculement ou de la reprise de session.** Un `tool_group` terminé avant l'activation de la fonctionnalité (ou avant l'activation du paramètre, ou dans une session reprise — `ChatRecordingService` ne persiste pas les entrées de résumé) n'obtiendra jamais de libellé. Il n'y a pas de passe d'analyse de l'historique existant. Si vous activez ce paramètre en cours de session, seuls les lots _futurs_ afficheront un libellé ; les groupes plus anciens conservent le rendu par défaut, sans indication qu'un libellé manque.
-3. **Uniquement les lots de l'agent principal.** Le déclencheur réside dans la boucle de tour de la session principale (`useGeminiStream`), donc :
-   - ✅ Les appels Shell, MCP, les opérations sur les fichiers et l'appel à l'outil `Task` / sous-agent _lui-même_ (tel qu'il apparaît dans le lot principal) sont résumés.
+1. **Une seule génération par lot, partagée par les deux modes d'affichage.** L'appel au fast model a lieu exactement une fois dans `handleCompletedTools` lorsqu'un lot d'outils se finalise. Basculer en mode détail déplié `Ctrl+O` par la suite ne déclenche **pas** un nouvel appel — le rendu plié et le rendu déplié lisent tous deux la même entrée d'historique `tool_use_summary` qui a été capturée la première fois.
+2. **Pas de backfill lors du basculement ou de la reprise de session.** Un `tool_group` qui s'est terminé avant que la fonctionnalité ne soit activée (ou avant que vous n'ayez activé le paramètre, ou dans une session reprise — `ChatRecordingService` ne persiste pas les entrées de résumé) n'obtiendra jamais d'étiquette. Il n'y a pas de « parcours de l'historique existant ». Si vous activez ce paramètre en milieu de session, seuls les lots *futurs* afficheront une étiquette ; les groupes plus anciens conservent le rendu par défaut sans indication qu'une étiquette manque.
+3. **Uniquement les lots de l'agent principal.** Le déclencheur se trouve dans la boucle de tour de la session principale (`useGeminiStream`), donc :
+   - ✅ Les opérations Shell, MCP, les opérations sur fichiers et *l'appel lui-même* à l'outil `Task` / sous-agent (tel qu'il apparaît dans le lot principal) sont résumés.
    - ❌ Les lots d'outils **internes** d'un sous-agent (exécutés via `packages/core/src/agents/runtime/`) ne sont pas résumés.
 
-   Un lot externe _contenant_ un outil `Task` sera tout de même étiqueté, mais le modèle rapide ne voit que l'appel au sous-agent et sa sortie agrégée — pas les appels d'outils individuels à l'intérieur du sous-agent. Attendez-vous à des libellés comme `Ran research-agent` ou `Delegated file search` plutôt que `Searched 14 files`. C'est intentionnel : résumer les détails internes des sous-agents multiplierait le coût du modèle rapide et ferait remonter du bruit qui n'apparaît jamais dans l'interface principale.
+   Un lot externe qui *contient* un outil `Task` sera quand même étiqueté, mais le fast model ne voit que l'appel à l'outil sous-agent et son résultat agrégé — pas les appels d'outils individuels à l'intérieur du sous-agent. Attendez-vous à des étiquettes comme `Exécution de research-agent` ou `Délégation de recherche de fichiers` plutôt que `14 fichiers parcourus`. C'est intentionnel — résumer les internes des sous-agents multiplierait le coût du fast model et ferait apparaître du bruit qui n'apparaît jamais dans l'interface utilisateur principale.
 
-## Combinaison recommandée : activer le mode compact
+## Comportement d'affichage
 
-Pour les lots de 3 appels d'outils parallèles ou plus, combiner cette fonctionnalité avec `ui.compactMode: true` produit la transcription la plus lisible. La vue compacte regroupe l'ensemble du lot en une seule ligne étiquetée (`✓  Read txt files  · 4 tools`) au lieu d'afficher chaque ligne d'outil suivie du résumé. Les détails restent accessibles en une touche via `Ctrl+O`.
+La vue principale replie déjà un lot pliable terminé en une seule ligne étiquetée (`✓  Read 4 text files`) — le résumé fait le travail de l'ancienne liste par outil. Pour le détail complet par outil, appuyez sur `Ctrl+O` pour basculer en mode détail déplié, où chaque outil s'affiche individuellement avec le résumé sous la forme d'une ligne `● <étiquette>` finale sous le groupe.
 
 ```json
 {
   "fastModel": "qwen3-coder-flash",
-  "ui": {
-    "compactMode": true
-  },
   "experimental": {
     "emitToolUseSummaries": true
   }
 }
 ```
 
-En mode complet (par défaut), le résumé s'affiche sous forme de ligne `● <label>` en dessous du groupe d'outils — utile pour les lots volumineux ou hétérogènes, mais pour les petits lots de même type (ex. `Read × 3`), le libellé peut sembler répéter les lignes d'outils visibles. Si cela correspond à votre flux de travail habituel, activez le mode compact comme indiqué ci-dessus, ou désactivez complètement le résumé via `experimental.emitToolUseSummaries: false`.
+Pour les petits lots de même type (par exemple `Read × 3`), la ligne `● <étiquette>` dépliée peut sembler être une reformulation des lignes d'outils visibles ; si cela correspond à votre flux de travail habituel, vous pouvez désactiver complètement le résumé via `experimental.emitToolUseSummaries: false`.
 
-## Suivi
+## Surveillance
 
-L'utilisation du modèle pour les résumés apparaît dans la sortie de `/stats` sous les totaux de tokens du modèle rapide, avec le `prompt_id` `tool_use_summary_generation` afin de pouvoir la distinguer des suggestions de prompt et des autres tâches en arrière-plan.
+L'utilisation du modèle de résumé apparaît dans la sortie `/stats` sous les totaux de jetons du fast model, avec le `prompt_id` `tool_use_summary_generation` afin qu'il puisse être distingué des suggestions d'invite et autres tâches d'arrière-plan.
 
 ## Flux de données et confidentialité
 
-La requête de résumé envoie le nom de chaque outil réussi, ses `args` tronqués et son résultat tronqué (chaque champ limité à 300 caractères) au **modèle rapide**, ainsi que les 200 premiers caractères du texte le plus récent de l'assistant comme préfixe d'intention.
+L'appel de résumé envoie le nom, les `args` tronqués et le résultat tronqué de chaque outil réussi (chaque champ limité à 300 caractères) au **fast model**, ainsi que les 200 premiers caractères du texte le plus récent de l'assistant comme préfixe d'intention.
 
-Si votre modèle rapide est configuré avec le même fournisseur/authentification que le modèle de votre session principale, les données transitent par la même frontière que celle déjà utilisée par votre session principale — aucune modification du périmètre de confiance. Si vous avez configuré un modèle rapide provenant d'un **fournisseur différent**, les entrées et sorties des outils (pouvant inclure le contenu de fichiers lus par `read_file`, la sortie de commandes shell ou des valeurs exposées via des outils MCP) seront envoyées à cet autre fournisseur dans le cadre du prompt de résumé. Cela élargit strictement le périmètre de partage de données par rapport à la session principale seule.
+Si votre fast model est configuré pour le même fournisseur/auth que le modèle de votre session principale, les données transitent par la même limite que votre session principale utilise déjà — aucun changement dans le périmètre de confiance. Si vous avez configuré un fast model auprès d'un **fournisseur différent**, les entrées et sorties des outils (pouvant inclure le contenu des fichiers lus par `read_file`, les sorties de commandes des appels shell, ou les valeurs exposées via les outils MCP) seront envoyées à cet autre fournisseur dans le cadre de l'invite de résumé. Cela représente un périmètre de partage de données strictement plus large que la session principale seule.
 
-Si cela a de l'importance pour votre flux de travail, vous disposez de deux options claires :
+Si cela est important pour votre flux de travail, vous avez deux options propres :
 
-- Configurez `fastModel` sur un modèle du même fournisseur que votre session principale, afin que la requête de résumé ne traverse aucune nouvelle frontière d'authentification ou de données.
+- Configurez `fastModel` avec un modèle sous le même fournisseur que votre session principale, afin que l'appel de résumé ne franchisse aucune nouvelle limite d'auth/données.
 - Désactivez complètement la fonctionnalité avec `experimental.emitToolUseSummaries: false` (ou `QWEN_CODE_EMIT_TOOL_USE_SUMMARIES=0`).
 
-La limite de 300 caractères par champ réduit l'exposition mais ne l'élimine pas : des secrets découverts dans la sortie d'un outil pendant cette fenêtre peuvent toujours être envoyés. Traitez la frontière de données du modèle rapide avec la même rigueur que celle du modèle principal.
+La limite de 300 caractères par champ réduit l'exposition mais ne l'élimine pas — les secrets découverts dans la sortie des outils pendant la fenêtre de limite peuvent toujours être envoyés. Traitez la limite de données du fast model de la même manière que celle du modèle principal.
 
 ## Coût
 
-Une requête vers le modèle rapide par lot d'outils éligible. L'entrée se compose d'un petit prompt système fixe, plus les entrées/sorties tronquées des outils (limitées à 300 caractères par champ). La sortie est une seule ligne courte (limitée à 100 caractères, généralement 20 tokens ou moins). Sur un modèle rapide standard, cela représente environ 0,001 $ par lot.
+Un appel au fast model par lot d'outils éligible. L'entrée est un petit prompt système fixe plus les entrées/sorties d'outils tronquées (chaque champ limité à 300 caractères). La sortie est une seule ligne courte (limitée à 100 caractères, typiquement 20 jetons ou moins). Sur un fast model typique, cela coûte environ 0,001 $ par lot.
 
-Si vous souhaitez éviter ce coût supplémentaire, désactivez la fonctionnalité via `experimental.emitToolUseSummaries: false` ou `QWEN_CODE_EMIT_TOOL_USE_SUMMARIES=0`.
+Si vous ne voulez pas ce coût supplémentaire, désactivez la fonctionnalité via `experimental.emitToolUseSummaries: false` ou `QWEN_CODE_EMIT_TOOL_USE_SUMMARIES=0`.
 
-## Voir aussi
+## Rubriques connexes
 
-- [Mode compact](../configuration/settings#ui.compactMode) — bascule avec `Ctrl+O` ; le résumé remplace l'en-tête générique du groupe d'outils lorsque le mode compact est activé.
-- [Suggestions de suivi](./followup-suggestions) — une autre amélioration UX pilotée par le modèle rapide, qui partage le même paramètre `fastModel`.
+- [Mode détail déplié](../configuration/settings#ui) — appuyez sur `Ctrl+O` pour déplier toutes les sorties d'outils en ligne ; le résumé remplace l'en-tête générique du groupe d'outils pour les groupes terminés dans la vue principale.
+- [Suggestions de suites](./followup-suggestions) — une autre amélioration UX pilotée par le fast model qui partage le même paramètre `fastModel`.

@@ -21,6 +21,7 @@ interface ProjectConfig {
   targetLanguages: string[];
   outputDir: string;
   branch?: string; // 源仓库分支
+  excludeFromTranslation?: string[]; // 跳过翻译的路径（目录前缀或精确文件名）
 }
 
 /**
@@ -91,6 +92,8 @@ class TranslationCLI {
           { name: "French (fr)", value: "fr" },
           { name: "Russian (ru)", value: "ru" },
           { name: "Japanese (ja)", value: "ja" },
+          { name: "Spanish (es)", value: "es" },
+          { name: "Korean (ko)", value: "ko" },
         ],
         default: "en",
       },
@@ -107,6 +110,16 @@ class TranslationCLI {
           {
             name: "Portuguese (Brazil) (pt-BR)",
             value: "pt-BR",
+            checked: false,
+          },
+          {
+            name: "Spanish (es)",
+            value: "es",
+            checked: false,
+          },
+          {
+            name: "Korean (ko)",
+            value: "ko",
             checked: false,
           },
         ],
@@ -331,7 +344,11 @@ class TranslationCLI {
   /**
    * Sync source repository documents
    */
-  async syncDocuments(force: boolean = false): Promise<void> {
+  async syncDocuments(
+    force: boolean = false,
+    detectOnly: boolean = false,
+    sourceOnly: boolean = false
+  ): Promise<void> {
     const projectConfig = await this.loadProjectConfig();
     if (!projectConfig) {
       console.error(
@@ -352,14 +369,24 @@ class TranslationCLI {
       targetLanguages: projectConfig.targetLanguages, // 传递目标语言
       outputDir: projectConfig.outputDir, // 传递输出目录
       branch: projectConfig.branch, // 传递分支参数
+      excludeFromTranslation: projectConfig.excludeFromTranslation, // 传递排除翻译列表
     });
 
     try {
-      const result = await syncManager.syncDocuments(force);
+      const result = await syncManager.syncDocuments(force, {
+        detectOnly,
+        sourceOnly,
+      });
 
       if (result.success) {
         console.log(
-          chalk.green(`✅ Sync completed! Changed files: ${result.changes}`)
+          chalk.green(
+            detectOnly
+              ? `✅ Detection completed! Changed files: ${result.changes}`
+              : sourceOnly
+              ? `✅ Source docs updated (no translation)! Changed files: ${result.changes}`
+              : `✅ Sync completed! Changed files: ${result.changes}`
+          )
         );
 
         if (result.files.length > 0) {
@@ -525,6 +552,8 @@ class TranslationCLI {
           { name: "Russian (ru)", value: "ru" },
           { name: "Japanese (ja)", value: "ja" },
           { name: "Portuguese (Brazil) (pt-BR)", value: "pt-BR" },
+          { name: "Spanish (es)", value: "es" },
+          { name: "Korean (ko)", value: "ko" },
         ],
         default: currentConfig.targetLanguages,
       },
@@ -714,8 +743,20 @@ async function main() {
     .command("sync")
     .description("Sync source repository documents")
     .option("-f, --force", "Force sync all documents")
+    .option(
+      "-d, --detect-only",
+      "Only detect & list changed files; skip translation (no API key required)"
+    )
+    .option(
+      "-s, --source-only",
+      "Detect changes and write source-language docs, but skip translation; does not advance last-sync.json (no API key required)"
+    )
     .action(async (options) => {
-      await cli.syncDocuments(options.force);
+      await cli.syncDocuments(
+        options.force,
+        options.detectOnly,
+        options.sourceOnly
+      );
     });
 
   // markdown command

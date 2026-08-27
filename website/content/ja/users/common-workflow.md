@@ -1,14 +1,14 @@
 # 一般的なワークフロー
 
-> Qwen Code を使った一般的なワークフローについて学びます。
+> Qwen Code を使用した一般的なワークフローについて学びます。
 
-このドキュメントの各タスクには、明確な手順、コマンド例、ベストプラクティスが含まれており、Qwen Code を最大限に活用するのに役立ちます。
+このドキュメントの各タスクには、Qwen Code を最大限に活用するための明確な手順、コマンド例、ベストプラクティスが含まれています。
 
 ## 新しいコードベースを理解する
 
 ### コードベースの概要を素早く把握する
 
-新しいプロジェクトに参加し、その構造を素早く理解する必要があるとします。
+新しいプロジェクトに参加し、その構造をすぐに理解する必要があるとします。
 
 **1. プロジェクトのルートディレクトリに移動する**
 
@@ -28,7 +28,7 @@ qwen
 give me an overview of this codebase
 ```
 
-**4. 特定のコンポーネントについて詳しく調べる**
+**4. 特定のコンポーネントをさらに深く掘り下げる**
 
 ```
 explain the main architecture patterns used here
@@ -44,21 +44,21 @@ how is authentication handled?
 
 > [!tip]
 >
-> - 広い質問から始め、特定の領域に絞り込む
-> - プロジェクトで使用されているコーディング規約やパターンについて尋ねる
-> - プロジェクト固有の用語集をリクエストする
+> - まずは広い質問から始め、その後特定の領域に絞り込みます
+> - プロジェクトで使用されているコーディング規約やパターンについて質問します
+> - プロジェクト固有の用語集をリクエストします
 
-### 関連するコードを見つける
+### 関連コードを見つける
 
-特定の機能に関連するコードを探す必要があるとします。
+特定の機能や機能性に関連するコードを特定する必要があるとします。
 
-**1. Qwen Code に関連ファイルの検索を依頼する**
+**1. Qwen Code に関連ファイルを検索してもらう**
 
 ```
 find the files that handle user authentication
 ```
 
-**2. コンポーネント間の連携に関するコンテキストを取得する**
+**2. コンポーネント間の相互作用のコンテキストを得る**
 
 ```
 how do these authentication files work together?
@@ -72,20 +72,20 @@ trace the login process from front-end to database
 
 > [!tip]
 >
-> - 探しているものを具体的に指定する
-> - プロジェクトのドメイン言語を使用する
+> - 探しているものを具体的に指定します
+> - プロジェクトのドメイン用語を使用します
 
 ## バグを効率的に修正する
 
-エラーメッセージが発生し、その原因を特定して修正する必要があるとします。
+エラーメッセージに遭遇し、その原因を見つけて修正する必要があるとします。
 
-**1. Qwen Code にエラーを共有する**
+**1. エラーを Qwen Code に共有する**
 
 ```
 I'm seeing an error when I run npm test
 ```
 
-**2. 修正方法を提案してもらう**
+**2. 修正の提案を求める**
 
 ```
 suggest a few ways to fix the @ts-ignore in user.ts
@@ -99,13 +99,13 @@ update user.tsto add the null check you suggested
 
 > [!tip]
 >
-> - 問題を再現するコマンドとスタックトレースを Qwen Code に伝える
-> - エラーを再現する手順を記載する
-> - エラーが断続的に発生するのか、常に発生するのかを Qwen Code に伝える
+> - 問題を再現するコマンドとスタックトレースを Qwen Code に伝えます
+> - エラーを再現する手順があれば、それも伝えます
+> - エラーが断続的に発生するのか、常に発生するのかを Qwen Code に知らせます
 
 ## コードをリファクタリングする
 
-古いコードを最新のパターンやプラクティスに合わせて更新する必要があるとします。
+古いコードを最新のパターンやプラクティスに更新する必要があるとします。
 
 **1. リファクタリング対象のレガシーコードを特定する**
 
@@ -113,7 +113,7 @@ update user.tsto add the null check you suggested
 find deprecated API usage in our codebase
 ```
 
-**2. リファクタリングの提案を取得する**
+**2. リファクタリングの推奨事項を得る**
 
 ```
 suggest how to refactor utils.js to use modern JavaScript features
@@ -133,13 +133,13 @@ run tests for the refactored code
 
 > [!tip]
 >
-> - 最新のアプローチの利点を Qwen Code に説明してもらう
-> - 必要に応じて、変更が後方互換性を維持するようにリクエストする
-> - リファクタリングは小さくテスト可能な単位で実施する
+> - モダンなアプローチの利点を Qwen Code に説明してもらいます
+> - 必要に応じて、変更が後方互換性を維持するように依頼します
+> - リファクタリングは小さく、テスト可能な単位で行います
 
-## 専門的なサブエージェントを使用する
+## 専門サブエージェントを使用する
 
-特定のタスクをより効率的に処理するために、専門的な AI サブエージェントを使用したいとします。
+特定のタスクをより効果的に処理するために、専門の AI サブエージェントを使用したいとします。
 
 **1. 利用可能なサブエージェントを表示する**
 
@@ -147,11 +147,11 @@ run tests for the refactored code
 /agents
 ```
 
-これにより、利用可能なすべてのサブエージェントが表示され、新しいサブエージェントを作成できます。
+これにより、利用可能なすべてのサブエージェントが表示され、新しいものを作成できます。
 
 **2. サブエージェントを自動的に使用する**
 
-Qwen Code は、適切なタスクを専門的なサブエージェントに自動的に委任します。
+Qwen Code は適切なタスクを専門のサブエージェントに自動的に委譲します。
 
 ```
 review my recent code changes for security issues
@@ -171,38 +171,38 @@ use the code-reviewer subagent to check the auth module
 have the debugger subagent investigate why users can't log in
 ```
 
-**4. ワークフロー用にカスタムサブエージェントを作成する**
+**4. ワークフロー用のカスタムサブエージェントを作成する**
 
 ```
 /agents
 ```
 
-「create」を選択し、プロンプトに従って以下を定義します。
+次に、「作成」を選択し、プロンプトに従って以下を定義します。
 
-- サブエージェントの目的を説明する一意の識別子（例：`code-reviewer`、`api-designer`）。
-- Qwen Code がこのエージェントを使用すべきタイミング
-- アクセス可能なツール
+- サブエージェントの目的を説明する一意の識別子（例：`code-reviewer`、`api-designer`）
+- Qwen Code がこのエージェントを使用するタイミング
+- アクセスできるツール
 - エージェントの役割と動作を説明するシステムプロンプト
 
 > [!tip]
 >
-> - チームで共有するために、プロジェクト固有のサブエージェントを `.qwen/agents/` に作成する
-> - 自動委任を有効にするために、説明的な `description` フィールドを使用する
-> - 各サブエージェントが実際に必要とするツールへのアクセスに制限する
-> - [サブエージェント](./features/sub-agents) について詳しく知る
-> - [承認モード](./features/approval-mode) について詳しく知る
+> - チーム共有のために `.qwen/agents/` にプロジェクト固有のサブエージェントを作成します
+> - 自動委譲を有効にするために、説明的な `description` フィールドを使用します
+> - 各サブエージェントが実際に必要とするツールのみにアクセスを制限します
+> - サブエージェントの詳細については、[Sub Agents](./features/sub-agents) を参照してください
+> - 承認モードの詳細については、[Approval Mode](./features/approval-mode) を参照してください
 
 ## テストを活用する
 
-カバレッジが不足しているコードにテストを追加する必要があるとします。
+カバレッジがないコードにテストを追加する必要があるとします。
 
-**1. テストされていないコードを特定する**
+**1. テスト対象外のコードを特定する**
 
 ```
 find functions in NotificationsService.swift that are not covered by tests
 ```
 
-**2. テストのスケルトンを生成する**
+**2. テストのスキャフォールディングを生成する**
 
 ```
 add tests for the notification service
@@ -220,9 +220,9 @@ add test cases for edge conditions in the notification service
 run the new tests and fix any failures
 ```
 
-Qwen Code は、プロジェクトの既存のパターンや規約に従ったテストを生成できます。テストを依頼する際は、検証したい動作を具体的に指定してください。Qwen Code は既存のテストファイルを調査し、使用中のスタイル、フレームワーク、アサーションパターンに合わせます。
+Qwen Code は、プロジェクトの既存のパターンと規約に従ったテストを生成できます。テストを依頼する際は、検証したい動作を具体的に指定してください。Qwen Code は既存のテストファイルを調べ、使用されているスタイル、フレームワーク、アサーションパターンに合わせます。
 
-包括的なカバレッジを確保するには、見落としがちなエッジケースを Qwen Code に特定してもらいます。Qwen Code はコードパスを分析し、エラー条件、境界値、予期しない入力など、見落としがちなテストを提案できます。
+包括的なカバレッジを得るために、見逃しがちなエッジケースを Qwen Code に特定してもらいましょう。Qwen Code はコードパスを分析し、見落としがちなエラー条件、境界値、予期しない入力に対するテストを提案できます。
 
 ## プルリクエストを作成する
 
@@ -240,7 +240,7 @@ summarize the changes I've made to the authentication module
 create a pr
 ```
 
-**3. レビューして改善する**
+**3. レビューと改善を行う**
 
 ```
 enhance the PR description with more context about the security improvements
@@ -254,15 +254,15 @@ add information about how these changes were tested
 
 > [!tip]
 >
-> - Qwen Code に直接 PR の作成を依頼する
-> - 送信前に Qwen Code が生成した PR をレビューする
-> - 潜在的なリスクや考慮事項を Qwen Code に指摘してもらう
+> - Qwen Code に直接プルリクエストを作成するよう依頼します
+> - 送信前に Qwen Code が生成した PR をレビューします
+> - 潜在的なリスクや考慮事項を Qwen Code に強調してもらいます
 
-## ドキュメントを管理する
+## ドキュメントを扱う
 
 コードのドキュメントを追加または更新する必要があるとします。
 
-**1. ドキュメント未記載のコードを特定する**
+**1. ドキュメント化されていないコードを特定する**
 
 ```
 find functions without proper JSDoc comments in the auth module
@@ -274,7 +274,7 @@ find functions without proper JSDoc comments in the auth module
 add JSDoc comments to the undocumented functions in auth.js
 ```
 
-**3. レビューして改善する**
+**3. レビューと改善を行う**
 
 ```
 improve the generated documentation with more context and examples
@@ -288,15 +288,15 @@ check if the documentation follows our project standards
 
 > [!tip]
 >
-> - 希望するドキュメントスタイル（JSDoc、docstrings など）を指定する
-> - ドキュメントに例を含めるよう依頼する
-> - 公開 API、インターフェース、複雑なロジックのドキュメントをリクエストする
+> - 希望するドキュメントスタイル（JSDoc、docstrings など）を指定します
+> - ドキュメント内の例を要求します
+> - 公開 API、インターフェース、複雑なロジックのドキュメントをリクエストします
 
 ## ファイルとディレクトリを参照する
 
-Qwen Code がファイルを読み込むのを待たずに、`@` を使用してファイルやディレクトリを素早く含めることができます。
+`@` を使用して、Qwen Code がファイルを読み取るのを待たずに、素早くファイルやディレクトリを含めます。
 
-**1. 単一ファイルを参照する**
+**1. 単一のファイルを参照する**
 
 ```
 Explain the logic in @src/utils/auth.js
@@ -310,7 +310,7 @@ Explain the logic in @src/utils/auth.js
 What's the structure of @src/components?
 ```
 
-これにより、ファイル情報を含むディレクトリ一覧が提供されます。
+これにより、ファイル情報を含むディレクトリリストが提供されます。
 
 **3. MCP リソースを参照する**
 
@@ -318,142 +318,142 @@ What's the structure of @src/components?
 Show me the data from @github: repos/owner/repo/issues
 ```
 
-これにより、`@server: resource` 形式を使用して接続された MCP サーバーからデータを取得します。詳細は [MCP](./features/mcp) を参照してください。
+これにより、`@server: resource` 形式を使用して、接続された MCP サーバーからデータを取得します。詳細は [MCP](./features/mcp) を参照してください。
 
 > [!tip]
 >
-> - ファイルパスは相対パスでも絶対パスでも指定可能
-> - `@` ファイル参照を使用すると、ファイルのディレクトリおよび親ディレクトリにある `QWEN.md` がコンテキストに追加される
-> - ディレクトリ参照はファイル一覧を表示し、内容は表示しない
-> - 1 つのメッセージで複数のファイルを参照可能（例："`@file 1.js` と `@file 2.js`"）
+> - ファイルパスは相対パスでも絶対パスでも構いません
+> - @ファイル参照は、ファイルのディレクトリと親ディレクトリにある `QWEN.md` をコンテキストに追加します
+> - ディレクトリ参照はファイルリストを表示し、内容は表示しません
+> - 1 つのメッセージで複数のファイルを参照できます（例: 「`@file 1.js` と `@file 2.js`」）
 
 ## 以前の会話を再開する
 
-Qwen Code でタスクを進めており、後のセッションで中断した箇所から再開する必要があるとします。
+Qwen Code でタスクに取り組んでいて、後続のセッションで中断したところから続行する必要があるとします。
 
-Qwen Code には、以前の会話を再開するための 2 つのオプションがあります。
+Qwen Code は、以前の会話を再開するための 2 つのオプションを提供します。
 
-- `--continue`: 最新の会話を自動的に継続する
-- `--resume`: 会話選択ツールを表示する
+- `--continue` : 最新の会話を自動的に続行します
+- `--resume` : 会話選択画面を表示します
 
-**1. 最新の会話を継続する**
+**1. 最新の会話を続行する**
 
 ```bash
 qwen --continue
 ```
 
-これにより、プロンプトなしで最新の会話がすぐに再開されます。
+これにより、プロンプトなしで最新の会話が直ちに再開されます。
 
-**2. 非インタラクティブモードで継続する**
+**2. 非対話モードで続行する**
 
 ```bash
-qwen --continue --p "Continue with my task"
+qwen --continue -p "Continue with my task"
 ```
 
-`--print` と `--continue` を組み合わせて使用すると、スクリプトや自動化に最適な非インタラクティブモードで最新の会話が再開されます。
+`-p`（または `--prompt`）を `--continue` とともに使用すると、最新の会話を非対話モードで再開できます。スクリプトや自動化に最適です。
 
-**3. 会話選択ツールを表示する**
+**3. 会話選択画面を表示する**
 
 ```bash
 qwen --resume
 ```
 
-これにより、以下の情報を表示するクリーンなリストビュー形式のインタラクティブな会話選択ツールが表示されます。
+これにより、クリーンなリストビューを持つインタラクティブな会話セレクターが表示されます。
 
-- セッションの要約（または初期プロンプト）
-- メタデータ：経過時間、メッセージ数、git ブランチ
+- セッションの概要（または最初のプロンプト）
+- メタデータ: 経過時間、メッセージ数、Git ブランチ
 
 矢印キーで移動し、Enter キーで会話を選択します。Esc キーで終了します。
 
 > [!tip]
 >
-> - 会話履歴はローカルマシンに保存される
-> - 最新の会話に素早くアクセスするには `--continue` を使用する
-> - 特定の過去の会話を選択する必要がある場合は `--resume` を使用する
-> - 再開時、継続する前に会話履歴全体が表示される
-> - 再開された会話は、元の会話と同じモデルと設定で開始される
+> - 会話履歴はローカルマシンに保存されます
+> - 最新の会話にすばやくアクセスするには `--continue` を使用します
+> - 特定の過去の会話を選択する必要がある場合は `--resume` を使用します
+> - 再開すると、続行する前に会話履歴全体が表示されます
+> - 再開された会話は、元の会話と同じモデルと設定で開始されます
 >
-> **動作原理**:
+> **仕組み**:
 >
-> 1. **会話の保存**: すべての会話は完全なメッセージ履歴とともにローカルに自動的に保存される
-> 2. **メッセージのデシリアライズ**: 再開時、コンテキストを維持するためにメッセージ履歴全体が復元される
-> 3. **ツールの状態**: 以前の会話でのツールの使用状況と結果が保持される
-> 4. **コンテキストの復元**: 以前のコンテキストがすべて保持された状態で会話が再開される
+> 1. **会話の保存**: すべての会話は完全なメッセージ履歴とともに自動的にローカルに保存されます
+> 2. **メッセージのデシリアライズ**: 再開時にメッセージ履歴全体が復元され、コンテキストが維持されます
+> 3. **ツールの状態**: 以前の会話でのツールの使用と結果は保持されます
+> 4. **コンテキストの復元**: 以前のすべてのコンテキストがそのままの状態で会話が再開されます
 >
 > **例**:
 >
 > ```bash
-> # Continue most recent conversation
+> # 最新の会話を続行
 > qwen --continue
 >
-> # Continue most recent conversation with a specific prompt
-> qwen --continue --p "Show me our progress"
+> # 特定のプロンプトで最新の会話を続行
+> qwen --continue -p "Show me our progress"
 >
-> # Show conversation picker
+> # 会話選択画面を表示
 > qwen --resume
 >
-> # Continue most recent conversation in non-interactive mode
-> qwen --continue --p "Run the tests again"
+> # 非対話モードで最新の会話を続行
+> qwen --continue -p "Run the tests again"
 > ```
 
-## Git worktrees を使用して Qwen Code セッションを並列実行する
+## Git ワークツリーを使用して並列 Qwen Code セッションを実行する
 
-Qwen Code インスタンス間でコードを完全に分離し、複数のタスクを同時に処理する必要があるとします。
+Qwen Code インスタンス間で完全なコード分離を行いながら、複数のタスクを同時に処理する必要があるとします。
 
-**1. Git worktrees を理解する**
+**1. Git ワークツリーを理解する**
 
-Git worktrees を使用すると、同じリポジトリから複数のブランチを別々のディレクトリにチェックアウトできます。各 worktree は独立したファイルを持つ作業ディレクトリを持ちながら、同じ Git 履歴を共有します。詳細は [公式 Git worktree ドキュメント](https://git-scm.com/docs/git-worktree) を参照してください。
+Git ワークツリーを使用すると、同じリポジトリから複数のブランチを別々のディレクトリにチェックアウトできます。各ワークツリーは独立したファイルを持つ独自のワーキングディレクトリを持ちながら、同じ Git 履歴を共有します。詳細は [公式 Git ワークツリードキュメント](https://git-scm.com/docs/git-worktree) を参照してください。
 
-**2. 新しい worktree を作成する**
+**2. 新しいワークツリーを作成する**
 
 ```bash
-# Create a new worktree with a new branch
+# 新しいブランチで新しいワークツリーを作成
 git worktree add ../project-feature-a -b feature-a
 
-# Or create a worktree with an existing branch
+# 既存のブランチでワークツリーを作成
 git worktree add ../project-bugfix bugfix-123
 ```
 
-これにより、リポジトリの別の作業コピーを含む新しいディレクトリが作成されます。
+これにより、リポジトリの別のワーキングコピーを持つ新しいディレクトリが作成されます。
 
-**3. 各 worktree で Qwen Code を実行する**
+**3. 各ワークツリーで Qwen Code を実行する**
 
 ```bash
-# Navigate to your worktree
+# ワークツリーに移動
 cd ../project-feature-a
 
-# Run Qwen Code in this isolated environment
+# この分離された環境で Qwen Code を実行
 qwen
 ```
 
-**4. 別の worktree で Qwen Code を実行する**
+**4. 別のワークツリーで Qwen Code を実行する**
 
 ```bash
 cd ../project-bugfix
 qwen
 ```
 
-**5. worktree を管理する**
+**5. ワークツリーを管理する**
 
 ```bash
-# List all worktrees
+# すべてのワークツリーを一覧表示
 git worktree list
 
-# Remove a worktree when done
+# ワークツリーを削除
 git worktree remove ../project-feature-a
 ```
 
 > [!tip]
 >
-> - 各 worktree は独立したファイル状態を持つため、Qwen Code セッションの並列実行に最適
-> - 1 つの worktree で行った変更は他の worktree に影響しないため、Qwen Code インスタンス間の干渉を防げる
-> - すべての worktree は同じ Git 履歴とリモート接続を共有する
-> - 長時間実行するタスクの場合、別の worktree で開発を続けながら、1 つの worktree で Qwen Code を動作させておける
-> - 各 worktree がどのタスク用かを簡単に識別できるよう、説明的なディレクトリ名を使用する
-> - プロジェクトのセットアップに従って、新しい worktree ごとに開発環境を初期化することを忘れないでください。スタックに応じて以下が含まれる場合があります。
->   - JavaScript プロジェクト: 依存関係のインストールの実行（`npm install`、`yarn`）
->   - Python プロジェクト: 仮想環境のセットアップまたはパッケージマネージャーを使用したインストール
->   - その他の言語: プロジェクトの標準セットアッププロセスに従う
+> - 各ワークツリーは独立したファイル状態を持つため、並列 Qwen Code セッションに最適です
+> - 1 つのワークツリーで行われた変更は他のワークツリーに影響を与えず、Qwen Code インスタンスが相互に干渉するのを防ぎます
+> - すべてのワークツリーは同じ Git 履歴とリモート接続を共有します
+> - 長時間実行されるタスクの場合、あるワークツリーで Qwen Code を実行しながら、別のワークツリーで開発を続行できます
+> - 各ワークツリーがどのタスク用かを簡単に識別できるように、説明的なディレクトリ名を使用します
+> - プロジェクトのセットアップに従って、各新しいワークツリーで開発環境を初期化することを忘れないでください。スタックに応じて、以下が含まれる場合があります。
+>   - JavaScript プロジェクト: 依存関係のインストール（`npm install`、`yarn`）
+>   - Python プロジェクト: 仮想環境のセットアップ、またはパッケージマネージャーでのインストール
+>   - その他の言語: プロジェクトの標準的なセットアッププロセスに従う
 
 ## Qwen Code を Unix スタイルのユーティリティとして使用する
 
@@ -461,7 +461,7 @@ git worktree remove ../project-feature-a
 
 Qwen Code をリンターやコードレビュアーとして使用したいとします。
 
-**ビルドスクリプトに Qwen Code を追加する:**
+**ビルドスクリプトに Qwen Code を追加:**
 
 ```json
 // package.json
@@ -476,15 +476,15 @@ Qwen Code をリンターやコードレビュアーとして使用したいと�
 
 > [!tip]
 >
-> - CI/CD パイプラインでの自動コードレビューに Qwen Code を使用する
-> - プロジェクトに関連する特定の問題をチェックするようプロンプトをカスタマイズする
-> - 検証の種類に応じて複数のスクリプトを作成することを検討する
+> - CI/CD パイプラインでの自動コードレビューに Qwen Code を使用します
+> - プロジェクトに関連する特定の問題をチェックするようにプロンプトをカスタマイズします
+> - 異なるタイプの検証のために複数のスクリプトを作成することを検討します
 
-### パイプ入力とパイプ出力
+### パイプ入力、パイプ出力
 
-Qwen Code にデータをパイプで渡し、構造化された形式でデータを受け取りたいとします。
+Qwen Code にデータをパイプで渡し、構造化された形式でデータを戻してもらいたいとします。
 
-**Qwen Code を介してデータをパイプする:**
+**Qwen Code にデータをパイプで渡す:**
 
 ```bash
 cat build-error.txt | qwen -p 'concisely explain the root cause of this build error' > output.txt
@@ -492,13 +492,13 @@ cat build-error.txt | qwen -p 'concisely explain the root cause of this build er
 
 > [!tip]
 >
-> - パイプを使用して Qwen Code を既存のシェルスクリプトに統合する
-> - 他の Unix ツールと組み合わせて強力なワークフローを構築する
-> - 構造化された出力には `--output-format` の使用を検討する
+> - パイプを使用して、Qwen Code を既存のシェルスクリプトに統合します
+> - 強力なワークフローのために他の Unix ツールと組み合わせます
+> - 構造化された出力には `--output-format` の使用を検討します
 
 ### 出力形式を制御する
 
-特に Qwen Code をスクリプトや他のツールに統合する際に、出力を特定の形式で取得する必要があるとします。
+スクリプトや他のツールに Qwen Code を統合する場合など、特定の形式で出力が必要な場合があるとします。
 
 **1. テキスト形式を使用する（デフォルト）**
 
@@ -506,7 +506,7 @@ cat build-error.txt | qwen -p 'concisely explain the root cause of this build er
 cat data.txt | qwen -p 'summarize this data' --output-format text > summary.txt
 ```
 
-これにより、Qwen Code のプレーンテキストレスポンスのみが出力されます（デフォルトの動作）。
+これにより、Qwen Code のプレーンテキスト応答のみが出力されます（デフォルトの動作）。
 
 **2. JSON 形式を使用する**
 
@@ -514,7 +514,7 @@ cat data.txt | qwen -p 'summarize this data' --output-format text > summary.txt
 cat code.py | qwen -p 'analyze this code for bugs' --output-format json > analysis.json
 ```
 
-これにより、コストや期間などのメタデータを含むメッセージの JSON 配列が出力されます。
+これにより、コストや期間を含むメタデータを含むメッセージの JSON 配列が出力されます。
 
 **3. ストリーミング JSON 形式を使用する**
 
@@ -522,19 +522,19 @@ cat code.py | qwen -p 'analyze this code for bugs' --output-format json > analys
 cat log.txt | qwen -p 'parse this log file for errors' --output-format stream-json
 ```
 
-これにより、Qwen Code がリクエストを処理する際にリアルタイムで JSON オブジェクトのシリーズが出力されます。各メッセージは有効な JSON オブジェクトですが、連結した出力全体は有効な JSON ではありません。
+これにより、Qwen Code がリクエストを処理する際に、リアルタイムで一連の JSON オブジェクトが出力されます。各メッセージは有効な JSON オブジェクトですが、連結された場合、出力全体が有効な JSON になるとは限りません。
 
 > [!tip]
 >
-> - Qwen Code のレスポンスのみが必要な単純な統合には `--output-format text` を使用する
-> - 会話ログ全体が必要な場合は `--output-format json` を使用する
-> - 会話の各ターンをリアルタイムで出力するには `--output-format stream-json` を使用する
+> - Qwen Code の応答だけが必要な単純な統合には `--output-format text` を使用します
+> - 完全な会話ログが必要な場合は `--output-format json` を使用します
+> - 各会話ターンのリアルタイム出力が必要な場合は `--output-format stream-json` を使用します
 
-## Qwen Code の機能について質問する
+## Qwen Code に自身の機能について質問する
 
-Qwen Code はドキュメントへの組み込みアクセス権を持ち、自身の機能や制限に関する質問に回答できます。
+Qwen Code は組み込みでドキュメントにアクセスでき、自身の機能や制限についての質問に答えることができます。
 
-### 質問の例
+### 質問例
 
 ```
 can Qwen Code create pull requests?
@@ -562,10 +562,10 @@ what are the limitations of Qwen Code?
 
 > [!note]
 >
-> Qwen Code はこれらの質問に対してドキュメントに基づいた回答を提供します。実行可能な例や実践的なデモについては、上記の特定のワークフローセクションを参照してください。
+> Qwen Code はこれらの質問に対してドキュメントベースの回答を提供します。実行可能な例やハンズオンデモについては、上記の特定のワークフローセクションを参照してください。
 
 > [!tip]
 >
-> - 使用中のバージョンに関係なく、Qwen Code は常に最新の Qwen Code ドキュメントにアクセスできる
-> - 詳細な回答を得るには、具体的な質問をする
-> - Qwen Code は、MCP 統合、エンタープライズ構成、高度なワークフローなどの複雑な機能についても説明できる
+> - Qwen Code は、使用しているバージョンに関係なく、常に最新の Qwen Code ドキュメントにアクセスできます
+> - 詳細な回答を得るには、具体的な質問をします
+> - Qwen Code は、MCP 統合、エンタープライズ設定、高度なワークフローなどの複雑な機能について説明できます

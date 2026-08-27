@@ -18,7 +18,7 @@
     "build": "rm -rf dist && tsc",
     "clear": "rm -rf dist",
     "dev": "npm run clear && tsc --watch",
-    "test": "jest"
+    "test": "tsx --test src/**/*.test.ts"
   },
   "keywords": [
     "qwen",

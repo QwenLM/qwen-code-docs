@@ -1,0 +1,62 @@
+---
+title: "Qwen Code 쇼케이스: 비디오 데모와 AI 코딩 워크플로"
+description: "다양한 코딩 시나리오와 워크플로로 Qwen Code 데모를 살펴보세요. 빠른 설정부터 실전 개발까지, AI 코드 리뷰, 이슈 해결, 웹사이트 제작, 자동화를 직접 확인할 수 있습니다."
+toc: false
+---
+
+import { VideoShowcaseIndex } from '@/components/video-showcase-index'
+
+export const learningPaths = []
+
+export const showcaseItems = [
+  {
+    id: "advisor-independent-review",
+    title: "막힌 대화, 다른 AI에게 독립 검토 맡기기",
+    description: "`/advisor`는 현재 대화에 읽기 전용 보조 세션을 붙여 전체 컨텍스트를 검토하고, 결론, 리스크, 부족한 근거, 제안 네 가지를 돌려줍니다. 메인 대화는 그대로 유지됩니다.",
+    category: "프로그래밍 개발",
+    features: ["Agent 모드"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01x6UkJeTG4kD7nOLI_!!6000000004249-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "대화가 길어지면 한 가지 흐름에 갇히기 쉽고, 내 컨텍스트 안의 사각지대는 알아채기 어렵습니다. `/advisor`는 현재 대화에 독립적인 세컨드 오피니언을 붙여줍니다. 읽기 전용 보조 세션이 전체 컨텍스트를 처음부터 끝까지 읽고 결론, 리스크, 부족한 근거, 제안 네 가지를 내놓습니다. 메인 대화를 바꾸거나 어떤 작업도 실행하지 않으며, 검토가 끝난 뒤에도 대화는 그대로 이어집니다. 관심 있는 부분을 함께 물어볼 수도 있습니다. 예를 들어 `/advisor 이 방안 안전한가요`처럼요. 검토 전용 모델을 지정하는 것도 가능합니다.",
+    steps: [
+      { title: "/advisor 입력", description: "대화에서 `/advisor`를 입력하세요. 관심 있는 부분을 함께 적어도 됩니다.", command: "/advisor 이 방안 안전한가요" },
+      { title: "독립 검토가 네 가지 결과 반환", description: "읽기 전용 보조 세션이 전체 컨텍스트를 읽고 결론, 리스크, 부족한 근거, 제안을 돌려줍니다. 메인 대화에는 손을 대지 않습니다." },
+    ],
+  },
+  {
+    id: "sessions-ps-running-list",
+    title: "명령어 하나로 실행 중인 세션 한눈에 보기",
+    description: "`qwen sessions ps`는 지금 실행 중인 모든 세션을 보여줍니다. 세션 이름, 프로세스 번호, 실행 시간, 디렉터리까지 한 줄에 하나씩. `--json`을 붙이면 스크립트에도 바로 연결할 수 있습니다.",
+    category: "프로그래밍 개발",
+    features: ["터미널"],
+    thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01edM2ef0oKxI7nOLI_!!6000000005536-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "Qwen Code 세션을 여러 개 동시에 열어 두면 어떤 게 어떤 것인지 헷갈리기 쉽습니다. `qwen sessions ps` 명령어는 지금 이 PC에서 실행 중인 모든 대화형 세션을 한 줄에 하나씩 보여줍니다. 세션 이름, 프로세스 번호, 실행 시간, 위치한 디렉터리까지. 목록에 보이는 세션은 전부 실제로 실행 중입니다. 세션을 닫으면 목록에서도 바로 사라집니다. 스크립트에 연결하려면 `--json`을 붙이면 됩니다.",
+    steps: [
+      { title: "명령어 하나로 실행 중인 세션 목록", description: "터미널에서 `qwen sessions ps`를 실행하면 실행 중인 대화형 세션이 한 줄에 하나씩, 세션 이름, 프로세스 번호, 실행 시간, 디렉터리와 함께 표시됩니다.", command: "qwen sessions ps" },
+    ],
+  },
+]
+
+<VideoShowcaseIndex
+  items={showcaseItems}
+  learningPaths={learningPaths}
+  heroTitle="Qwen Code 비디오 데모"
+  heroDescription="실제 사례로 Qwen Code를 배우고 AI 프로그래밍 베스트 프랙티스를 익혀보세요"
+  searchPlaceholder="사례 검색..."
+  categoryLabel="카테고리"
+  featureLabel="기능"
+  resultsLabel="개의 결과"
+  clearFiltersLabel="필터 지우기"
+  titleColumnLabel="제목"
+  showMoreLabel="더 보기"
+  noResultsLabel="일치하는 사례가 없습니다. 다른 검색어나 필터를 시도해 보세요"
+  viewLabel="튜토리얼 보기"
+  backLabel="전체 사례로 돌아가기"
+  stepsLabel="사용 단계"
+  ctaLabel="지금 Qwen Code 시작하기"
+  ctaHref="/ko/users/overview"
+  copyLabel="복사"
+/>

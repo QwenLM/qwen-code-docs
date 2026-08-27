@@ -4,7 +4,7 @@ A documentation translation tool specifically designed for the github project. A
 
 ## Features
 
-- 🌍 **Multi-language Support**: Translate documentation to Chinese (zh), German (de), French (fr), Russian (ru), and Japanese (ja)
+- 🌍 **Multi-language Support**: Translate documentation to Chinese (zh), German (de), French (fr), Russian (ru), Japanese (ja), Portuguese (pt-BR), Spanish (es), and Korean (ko)
 - 🤖 **Qwen AI Translation**: Powered by Qwen API for high-quality technical document translation
 - 📚 **Nextra Integration**: Automatically generates a modern documentation site using Nextra
 - 🔄 **Git Synchronization**: Automatically syncs with source repositories to keep translations up-to-date
@@ -42,7 +42,7 @@ npm install -g @qwen-code/translator
 4. **Translate documents**:
 
    ```bash
-   qwen-translator translate
+   qwen-translator markdown
    ```
 
 5. **Start the documentation site**:
@@ -59,16 +59,27 @@ Initialize a new translation project with interactive configuration. Sets up pro
 
 ### `sync [options]`
 
-Sync source repository documents and automatically translate changes.
+Sync source repository documents and automatically translate changed files into the target languages.
 
 - `-f, --force`: Force sync all documents (ignores previous sync records)
+- `-d, --detect-only`: Only detect and list changed files; skip translation and write nothing (no `content/` updates, no `last-sync.json`/changelog changes). Useful for previewing what a sync would translate.
+- `-s, --source-only`: Detect changes and write the source-language docs (`content/<sourceLanguage>` and `.source-docs`), but skip translation. Does **not** advance `last-sync.json` or write the changelog, so a later `sync` (with a key) still re-detects and translates these files. Useful for refreshing the source docs now and translating later.
 
-### `translate [options]`
+> **No API key for detection / source-only.** The translator is lazy-loaded, so `--detect-only`, `--source-only`, and a normal sync that finds zero changes do **not** require `OPENAI_API_KEY`. A normal sync that has changes validates the key *before* writing any files, so a missing key fails fast without leaving partially-written output. Note that detection still clones/updates the source repo under `.temp-source-repo`.
 
-Translate documents to target languages.
+### `markdown [options]`
 
-- `-l, --language <lang>`: Specify target language (zh, de, fr, ru, ja)
+Translate the Markdown documents under `content/<sourceLanguage>/` into the target languages. Translates the whole directory by default, or a single file with `-f`.
+
+- `-l, --language <lang>`: Specify target language (zh, de, fr, ru, ja, pt-BR, es, ko)
 - `-f, --file <file>`: Specify single file to translate
+
+### `meta [options]`
+
+Translate Nextra navigation files (`_meta.ts`) into the target languages.
+
+- `-l, --language <lang>`: Specify target language
+- `-f, --file <file>`: Specify a single `_meta.ts` file to translate
 
 ### `config`
 
@@ -98,13 +109,13 @@ The tool creates a `translation.config.json` file during initialization:
 Create a `.env` file with the following variables:
 
 ```env
-# Required: Qwen API key
-OPENAI_API_KEY=your_qwen_api_key
+# Required: OpenAI-compatible API key
+OPENAI_API_KEY=your_api_key_here
 
 # Optional: API configuration (defaults shown)
-OPENAI_BASE_URL=https://api.qwen.ai/v1
-QWEN_MODEL=qwen3.5-plus
-QWEN_MAX_TOKENS=4000
+OPENAI_BASE_URL=https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1
+QWEN_MODEL=deepseek-v4-flash
+QWEN_MAX_TOKENS=32768
 ```
 
 ### Alternative API Endpoints
@@ -121,7 +132,7 @@ QWEN_MODEL=qwen-turbo
 
 - Node.js >= 18.0.0
 - npm >= 8.0.0
-- Qwen API key (or compatible OpenAI-format API)
+- OpenAI-compatible API key
 
 ## Project Structure
 

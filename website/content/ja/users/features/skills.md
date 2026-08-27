@@ -1,79 +1,116 @@
-# Agent Skills
+# エージェントスキル
 
-> Qwen Code の機能を拡張するために、スキルを作成、管理、共有します。
+> Qwen Code の機能を拡張するために、Skill を作成、管理、共有します。
 
-このガイドでは、**Qwen Code** で Agent Skills を作成、使用、管理する方法を説明します。スキルは、指示（およびオプションのスクリプト/リソース）を含む整理されたフォルダーで構成され、モデルの有効性を高めるモジュール型の機能です。
+本ガイドでは、**Qwen Code** で Agent Skill を作成、使用、管理する方法について説明します。Skill は、指示（およびオプションでスクリプトやリソース）を含む整理されたフォルダを通じて、モデルの効果を拡張するモジュール型の機能です。
 
-## Prerequisites
+## 前提条件
 
 - Qwen Code（最新バージョン）
-- Qwen Code の基本的な操作知識（[クイックスタート](../quickstart.md)）
+- Qwen Code の基本的な知識（[クイックスタート](../quickstart.md)）
 
-## What are Agent Skills?
+## Agent Skill とは？
 
-Agent Skills は、専門知識を検出可能な機能としてパッケージ化します。各スキルは、モデルが関連する際に読み込める指示を含む `SKILL.md` ファイルと、スクリプトやテンプレートなどのオプションのサポートファイルで構成されます。
+Agent Skill は専門知識を検出可能な機能としてパッケージ化します。各 Skill は、モデルが関連するときにロードできる指示を含む `SKILL.md` ファイルと、スクリプトやテンプレートなどのオプションのサポートファイルで構成されます。
 
-### How Skills are invoked
+### Skill の呼び出し方法
 
-スキルは**モデルによって呼び出されます**。モデルは、ユーザーのリクエストとスキルの説明に基づいて、いつ使用するかを自律的に判断します。これは、ユーザーが明示的に `/command` と入力して呼び出すスラッシュコマンド（**ユーザー呼び出し**）とは異なります。
+Skill は**モデルによって呼び出されます**。モデルは、あなたのリクエストと Skill の説明に基づいて、いつ使用するかを自律的に判断します。これは、スラッシュコマンド（ユーザーが明示的に `/command` と入力する**ユーザーによって呼び出される**もの）とは異なります。
 
-スキルを明示的に呼び出したい場合は、`/skills` スラッシュコマンドを使用します：
+Skill を明示的に呼び出したい場合は、Skill の名前を使用してスラッシュコマンドとして入力します。
 
 ```bash
-/skills <skill-name>
+/<skill-name>
 ```
 
-オートコンプリートを使用して、利用可能なスキルとその説明を参照できます。
+`/` の入力を開始すると、オートコンプリートで利用可能な Skill とその説明を閲覧できます。`/skills` コマンドは Skill パネルを開き、そこで Skill をインタラクティブに閲覧、検索、切り替え、起動できます。
 
-### Benefits
+> **Note:** 以前 `/skills <skill-name>` で Skill を実行していた場合、その構文は現在 Skill パネルを開くだけで、末尾の引数は無視されます。Skill を直接実行するには `/<skill-name>` を使用してください。
+
+### 利点
 
 - ワークフローに合わせて Qwen Code を拡張
-- git を介してチーム間で専門知識を共有
-- 繰り返しプロンプトの入力を削減
-- 複雑なタスクのために複数のスキルを組み合わせ
+- git を通じてチーム間で専門知識を共有
+- 繰り返しのプロンプト入力を削減
+- 複雑なタスクのために複数の Skill を組み合わせ
 
-## Create a Skill
+## Skill の作成
 
-スキルは `SKILL.md` ファイルを含むディレクトリとして保存されます。
+Skill は、`SKILL.md` ファイルを含むディレクトリとして保存されます。
 
-### Personal Skills
+### `/learn` でプロジェクト Skill を生成する
 
-パーソナルスキルは、すべてのプロジェクトで利用可能です。`~/.qwen/skills/` に保存します：
+`/learn` を使用して、既存の知識源を再利用可能なプロジェクト Skill に蒸留します。
+
+```text
+/learn https://docs.example.com/api
+/learn ~/projects/acme-sdk
+/learn Our deploy process: run migrate, deploy the service, then check health
+```
+
+このコマンドは通常のエージェントターンとして実行され、`.qwen/skills/learned-skill-<name>/SKILL.md` に結果を作成します。フロントマターには `source: learned` が含まれます。生成された指示を使用または共有する前にレビューしてください。
+
+`/learn` はローカルまたは直接リンクの `.mp4`、`.webm`、`.mov`、`.m4v` ビデオも受け付けます。パスや URL の後にテキストを追加して、生成される Skill をチュートリアルの特定の部分にフォーカスできます。
+
+```text
+/learn ./tutorial.mp4 focus on the deployment workflow
+```
+
+ビデオ学習には、OpenAI 互換プロバイダー上のビデオ対応モデルが必要です。YouTube ページ URL は直接ビデオ入力ではありません。ビデオをワークスペースにダウンロードし、そのローカルパスを渡してください。
+
+### パーソナル Skill
+
+パーソナル Skill はすべてのプロジェクトで利用可能です。`~/.qwen/skills/` に保存します。
 
 ```bash
 mkdir -p ~/.qwen/skills/my-skill-name
 ```
 
-パーソナルスキルは以下の用途に適しています：
+パーソナル Skill の用途:
 
 - 個人のワークフローと設定
-- 開発中のスキル
+- 開発中の Skill
 - 個人の生産性向上ツール
 
-### Project Skills
+### プロジェクト Skill
 
-プロジェクトスキルはチームで共有されます。プロジェクト内の `.qwen/skills/` に保存します：
+プロジェクト Skill はチームと共有されます。プロジェクト内の `.qwen/skills/` に保存します。
 
 ```bash
 mkdir -p .qwen/skills/my-skill-name
 ```
 
-プロジェクトスキルは以下の用途に適しています：
+プロジェクト Skill の用途:
 
 - チームのワークフローと規約
 - プロジェクト固有の専門知識
 - 共有ユーティリティとスクリプト
 
-プロジェクトスキルは git にコミットでき、チームメンバーが自動的に利用できるようになります。
+プロジェクト Skill は git にチェックインでき、チームメンバーが自動的に利用できるようになります。
 
-## Write `SKILL.md`
+### 自動生成されたプロジェクト Skill のメンテナンス
 
-YAML フロントマターと Markdown コンテンツを含む `SKILL.md` ファイルを作成します：
+Qwen Code は、新しい Auto Skill 生成が無効になっている間も、生成されたプロジェクト Skill の正常な使用をローカルで追跡します。これにより、メンテナンスを再度有効にしたときに、最近使用された Skill を非アクティブなものと誤認することはありません。**Auto Skill** が有効な場合、非アクティブな生成 Skill を定期的にアクティブライブラリから移動します。`SKILL.md` のフロントマターに `source: auto-skill` を含む `.qwen/skills/auto-skill-*` という名前のディレクトリのみが管理対象です。パーソナル、拡張機能、バンドル、および手動で作成した Skill は選択されません。
+
+- 正常な使用または `SKILL.md` の編集から 30 日経過すると、auto-skill は古いものとしてマークされます。
+- 90 日経過すると、完全なディレクトリが `.qwen/archived-skills/` に移動されます。完全に削除されることはありません。
+- 自動メンテナンスは、信頼されたワークスペースで最大 7 日に 1 回実行されます。新しく観測された auto-skill は、メンテナンスが開始される前に十分な猶予期間を受け取ります。
+- ピン留めされた auto-skill は、ピン留めが解除されるまで、自動的な古いものとしてのマークおよびアーカイブ遷移から除外されます。
+- アーカイブされたディレクトリ名は予約されたままです。既存のアーカイブ宛先は、その衝突のみをスキップし、他の Skill のメンテナンスを停止することはありません。
+
+`/curator` を使用して、アクティブ、古い、アーカイブ済み、およびピン留めされた auto-skill を確認できます。`/curator run --dry-run` でメンテナンスパスをプレビューし、`/curator run` で即座に適用し、`/curator pin <directory>` または `/curator unpin <directory>` で Skill ごとのメンテナンスを制御し、`/curator restore <directory>` でアーカイブされた auto-skill をアクティブライブラリに戻します。
+
+ステータスとドライランプレビューは、セーフモードおよび信頼されていないワークスペースで利用可能です。メンテナンスの適用、ピンの変更、およびアーカイブされた auto-skill の復元には、セーフモード外の信頼されたワークスペースが必要です。
+
+## SKILL.md の作成
+
+YAML フロントマターと Markdown コンテンツを含む `SKILL.md` ファイルを作成します。
 
 ```yaml
 ---
 name: your-skill-name
 description: Brief description of what this Skill does and when to use it
+priority: 10
 ---
 
 # Your Skill Name
@@ -85,21 +122,23 @@ Provide clear, step-by-step guidance for Qwen Code.
 Show concrete examples of using this Skill.
 ```
 
-### Field requirements
+### フィールドの要件
 
-Qwen Code は現在、以下を検証します：
+Qwen Code は現在、以下を検証します。
 
-- `name` は `/^[\p{L}\p{N}_:.-]+$/u` に一致する空でない文字列です（Unicode の文字と数字（CJK / キリル文字 / アクセント付きラテン文字など OK）、および `_`、`:`、`.`、`-` が使用可能。空白、スラッシュ、角括弧、その他の構造的に安全でない文字は解析時に拒否されます）。
-- `description` は空でない文字列です
+- `name` は `/^[\p{L}\p{N}_:.-]+$/u` に一致する空でない文字列です。Unicode の文字と数字（CJK / キリル文字 / アクセント付きラテン文字などすべて可）に加え、`_`、`:`、`.`、`-` が使用できます。空白、スラッシュ、括弧、その他の構造的に安全でない文字は解析時に拒否されます。
+- `description` は空でない文字列です。
+- `priority` は省略可能です。指定する場合、有限数である必要があります。高い値は `/skills` のリストでのみ先にソートされます。スラッシュコマンドの補完（`/` の入力）や `/help` のカスタムコマンドビューはアルファベット順のままなので、優先度の高い Skill が組み込みコマンドの順序を変更することはありません。省略された値や無効な値は未設定として扱われ、`0` と同じように動作します。
 
-推奨される命名規則：
+推奨される規約:
 
-- 共有可能な名前には、ハイフン区切りの小文字 ASCII を推奨します（例：`tsx-helper`）
-- `description` は具体的に記述します。スキルが**何を行うか**と、**いつ使用するか**（ユーザーが自然に言及するキーワード）の両方を含めます
+- 共有可能な名前には、ハイフン区切りの小文字 ASCII を推奨します（例: `tsx-helper`）。
+- `description` は具体的に記述します。Skill が行うことと、いつ使用するか（ユーザーが自然に言及するキーワード）の両方を含めます。
+- `/skills` でデフォルトのアルファベット順よりも前に確実に表示させたい Skill にのみ `priority` を使用します。負の優先度も許可されており、未設定の Skill より下にソートされます。
 
-### Optional: gate a Skill on file paths (`paths:`)
+### オプション: ファイルパスによる Skill のゲート（`paths:`）
 
-コードベースの特定の部分にのみ関連するスキルの場合、glob パターンのリストとして `paths:` を追加します。ツール呼び出しが一致するファイルにアクセスするまで、スキルはモデルの利用可能なスキル一覧に表示されません：
+コードベースの特定の部分にのみ関連する Skill の場合は、glob パターンの `paths:` リストを追加します。この Skill は、ツール呼び出しが一致するファイルに触れるまで、モデルの利用可能な Skill リストに表示されません。
 
 ```yaml
 ---
@@ -111,16 +150,42 @@ paths:
 ---
 ```
 
-注記：
+注意事項:
 
-- glob は [picomatch](https://github.com/micromatch/picomatch) を使用してプロジェクトルートからの相対パスでマッチングされます。プロジェクトルート外のファイルがアクティベーションをトリガーすることはありません。
-- パス制限付きのスキルは、一致するファイルに一度アクセスすると、**セッション終了までアクティブな状態を維持します**。新しいセッションを開始するか、スキルファイルの編集によって `refreshCache` がトリガーされると、アクティベーションはリセットされます。
-- `paths:` は**モデル**による検出のみを制限し、SkillTool の一覧表示レベルでのみ機能します。ユーザーは `/<skill-name>` または `/skills` ピッカーを通じて、パス制限付きスキルを常に明示的に呼び出せます。このユーザーパスは、アクティベーション状態に関係なくスキルの本体を実行します。ただし、モデル側は一致するファイルにアクセスするまで制限されたままです。スラッシュコマンドによる呼び出しは、モデル側のアクティベーションを解除**しません**。モデルに呼び出しを連鎖させたい場合（モデル自身が `Skill { skill: ... }` を呼び出す場合）は、まずスキルの `paths:` に一致するファイルにアクセスしてください。
-- `paths:` と `disable-model-invocation: true` の組み合わせは可能ですが、制限機能は無効になります。スキルはモデルから非表示になるため、パスによるアクティベーションがモデルに通知されることはありません。
+- glob は [picomatch](https://github.com/micromatch/picomatch) を使用してプロジェクトルートからの相対パスでマッチングされます。プロジェクトルート外のファイルはアクティベーションをトリガーしません。
+- パスでゲートされた Skill は、一度一致するファイルに触れると、セッションの残りの間アクティブ化されたままになります。新しいセッション、または任意の Skill ファイルの編集によってトリガーされる `refreshCache` は、アクティベーションをリセットします。
+- `paths:` はモデルの検出のみをゲートし、かつ SkillTool のリストレベルでのみ機能します。`user-invocable: false` が設定されていない限り、`/<skill-name>` または `/skills` ピッカーを通じてパスでゲートされた Skill を常に自分で呼び出すことができます。このユーザーパスは、アクティベーション状態に関係なく Skill の本体を実行します。しかし、モデル側は一致するファイルに触れるまでゲートされたままです。スラッシュでの呼び出しはモデル側のアクティベーションのロックを解除しないため、モデルにあなたの呼び出しからチェーンさせたい場合（モデル自身に `Skill { skill: ... }` を呼び出させたい場合）は、まずその Skill の `paths:` に一致するファイルにアクセスしてください。
+- `paths:` と `disable-model-invocation: true` を組み合わせることは可能ですが、ゲートは効果がありません。Skill はとにかくモデルから隠されているため、パスのアクティベーションがそれを通知することはないからです。
 
-## Add supporting files
+### オプション: ユーザーとモデルの呼び出しを制御する
 
-`SKILL.md` と同じディレクトリに追加ファイルを作成します：
+Skill はデフォルトでユーザーが呼び出し可能です。直接のスラッシュコマンドでの使用から Skill を隠しつつ、モデルからの呼び出しを可能にしておくには、`user-invocable: false` を設定します。
+
+```yaml
+---
+name: model-only-helper
+description: Helper the model can call when appropriate
+user-invocable: false
+---
+```
+
+これにより、`/<skill-name>` での呼び出しと `/skills` ピッカーの結果から Skill が削除されます。モデルから Skill が隠されるわけではありません。
+
+直接のユーザー呼び出しを可能にしたまま、モデルからの呼び出しから Skill を隠すには、`disable-model-invocation: true` を設定します。
+
+```yaml
+---
+name: manual-helper
+description: Helper you invoke manually
+disable-model-invocation: true
+---
+```
+
+両方のフィールドを組み合わせることもできますが、その場合 Skill は通常のユーザーまたはモデルの呼び出しパスからは到達できません。
+
+## サポートファイルの追加
+
+`SKILL.md` と同じディレクトリに追加のファイルを作成します。
 
 ```text
 my-skill/
@@ -133,7 +198,7 @@ my-skill/
     └── template.txt (optional template)
 ```
 
-`SKILL.md` からこれらのファイルを参照します：
+`SKILL.md` からこれらのファイルを参照します。
 
 ````markdown
 For advanced usage, see [reference.md](reference.md).
@@ -145,37 +210,38 @@ python scripts/helper.py input.txt
 ```
 ````
 
-## View available Skills
+## 利用可能な Skill の表示
 
-Qwen Code は以下の場所からスキルを検出します：
+Qwen Code は以下の場所から Skill を検出します。
 
-- パーソナルスキル：`~/.qwen/skills/`
-- プロジェクトスキル：`.qwen/skills/`
-- 拡張機能スキル：インストール済みの拡張機能が提供するスキル
+- パーソナル Skill: `~/.qwen/skills/`
+- プロジェクト Skill: `.qwen/skills/`
+- 拡張機能 Skill: インストールされた拡張機能によって提供される Skill
+- バンドル Skill: Qwen Code に同梱される Skill
 
-### Extension Skills
+### 拡張機能 Skill
 
-拡張機能は、有効化時に利用可能になるカスタムスキルを提供できます。これらのスキルは拡張機能の `skills/` ディレクトリに保存され、パーソナルスキルやプロジェクトスキルと同じ形式に従います。
+拡張機能は、拡張機能が有効になったときに利用可能になるカスタム Skill を提供できます。これらの Skill は拡張機能の `skills/` ディレクトリに保存され、パーソナル Skill やプロジェクト Skill と同じ形式に従います。
 
-拡張機能がインストールされ有効化されると、拡張機能スキルは自動的に検出および読み込まれます。
+拡張機能 Skill は、拡張機能がインストールされ有効化されると自動的に検出およびロードされます。
 
-どの拡張機能がスキルを提供しているかを確認するには、拡張機能の `qwen-extension.json` ファイル内の `skills` フィールドを確認してください。
+どの拡張機能が Skill を提供しているかを確認するには、拡張機能の `qwen-extension.json` ファイル内の `skills` フィールドを確認します。
 
-利用可能なスキルを確認するには、Qwen Code に直接質問します：
+利用可能な Skill を表示するには、Qwen Code に直接問いかけます。
 
 ```text
 What Skills are available?
 ```
 
-> **注意 — モデル表示とユーザー表示の違い。** モデルに質問すると、モデルが現在認識できるスキルのみが表示されます。スキルが `paths:` を使用している場合（上記の「オプション：ファイルパスでスキルを制限する」を参照）、一致するファイルにアクセスするまで一覧に表示されません。完全なセットは、`/skills` スラッシュコマンドまたはディスク上のファイルを通じて常に確認できます。
+> **Heads up — モデルとユーザーのビュー。** モデルに問いかけても、モデルが現在見ることができる Skill しか表示されません。Skill が `paths:` を使用している場合（上記の「オプション: ファイルパスによる Skill のゲート」を参照）、一致するファイルに触れるまでそのリストに表示されません。`/skills` スラッシュコマンドは、直接呼び出せる Skill を表示します。`user-invocable: false` を持つ Skill はディスク上に可視なままであり、モデルからも引き続き可視である可能性があります。
 
-または、スラッシュコマンドで完全な一覧を参照します（アクティベーションされていないパス制限付きスキルを含む、すべてのスキルが常に表示されます）：
+または、スラッシュコマンドでユーザーが呼び出し可能なリストを閲覧します（まだアクティブ化されていないパスでゲートされた Skill を含みます）。
 
 ```text
 /skills
 ```
 
-または、ファイルシステムを確認します：
+または、ファイルシステムを調査します。
 
 ```bash
 # List personal Skills
@@ -188,40 +254,40 @@ ls .qwen/skills/
 cat ~/.qwen/skills/my-skill/SKILL.md
 ```
 
-## Test a Skill
+## Skill のテスト
 
-スキルを作成したら、説明に一致する質問をしてテストします。
+Skill を作成したら、説明に一致する質問をしてテストします。
 
-例：説明に「PDF ファイル」が含まれている場合：
+例: 説明に「PDF ファイル」と記載されている場合:
 
 ```text
 Can you help me extract text from this PDF?
 ```
 
-リクエストに一致する場合、モデルは自律的にスキルを使用することを決定します。明示的に呼び出す必要はありません。
+モデルは、リクエストに一致する場合に自律的にあなたの Skill を使用することを決定します。明示的に呼び出す必要はありません。
 
-## Debug a Skill
+## Skill のデバッグ
 
-Qwen Code がスキルを使用しない場合は、以下の一般的な問題を確認してください：
+Qwen Code があなたの Skill を使用しない場合は、以下の一般的な問題を確認してください。
 
-### Make the description specific
+### 説明を具体的にする
 
-曖昧すぎる例：
+曖昧すぎる例:
 
 ```yaml
 description: Helps with documents
 ```
 
-具体的な例：
+具体的な例:
 
 ```yaml
 description: Extract text and tables from PDF files, fill forms, merge documents. Use when working with PDFs, forms, or document extraction.
 ```
 
-### Verify file path
+### ファイルパスの確認
 
-- パーソナルスキル：`~/.qwen/skills/<skill-name>/SKILL.md`
-- プロジェクトスキル：`.qwen/skills/<skill-name>/SKILL.md`
+- パーソナル Skill: `~/.qwen/skills/<skill-name>/SKILL.md`
+- プロジェクト Skill: `.qwen/skills/<skill-name>/SKILL.md`
 
 ```bash
 # Personal
@@ -231,35 +297,35 @@ ls ~/.qwen/skills/my-skill/SKILL.md
 ls .qwen/skills/my-skill/SKILL.md
 ```
 
-### Check YAML syntax
+### YAML 構文の確認
 
-無効な YAML は、スキルメタデータの正しい読み込みを妨げます。
+無効な YAML は、Skill のメタデータが正しくロードされるのを妨げます。
 
 ```bash
 cat SKILL.md | head -n 15
 ```
 
-以下を確認してください：
+以下を確認してください。
 
-- 1行目に開始の `---` を配置
-- Markdown コンテンツの前に終了の `---` を配置
-- 有効な YAML 構文（タブ不使用、正しいインデント）
+- 1行目に開始の `---` があること
+- Markdown コンテンツの前に終了の `---` があること
+- 有効な YAML 構文であること（タブなし、正しいインデント）
 
-### View errors
+### エラーの確認
 
-デバッグモードで Qwen Code を実行し、スキル読み込みエラーを確認します：
+Skill のロードエラーを確認するには、デバッグモードで Qwen Code を実行します。
 
 ```bash
 qwen --debug
 ```
 
-## Share Skills with your team
+## チームと Skill を共有する
 
-プロジェクトリポジトリを通じてスキルを共有できます：
+プロジェクトリポジトリを通じて Skill を共有できます。
 
-1. `.qwen/skills/` 配下にスキルを追加
-2. コミットしてプッシュ
-3. チームメンバーが変更をプル
+1. `.qwen/skills/` 配下に Skill を追加する
+2. コミットしてプッシュする
+3. チームメンバーが変更をプルする
 
 ```bash
 git add .qwen/skills/
@@ -267,9 +333,9 @@ git commit -m "Add team Skill for PDF processing"
 git push
 ```
 
-## Update a Skill
+## Skill の更新
 
-`SKILL.md` を直接編集します：
+`SKILL.md` を直接編集します。
 
 ```bash
 # Personal Skill
@@ -279,11 +345,11 @@ code ~/.qwen/skills/my-skill/SKILL.md
 code .qwen/skills/my-skill/SKILL.md
 ```
 
-変更は次回 Qwen Code 起動時に反映されます。Qwen Code がすでに実行中の場合は、更新を読み込むために再起動してください。
+通常のセッション中、Qwen Code はパーソナルおよびプロジェクトの Skill ディレクトリを監視しています。Skill の追加、編集、削除を行うと、短い遅延の後に Skill リストと呼出し状態が自動的に更新されます。ベアモードではこれらのウォッチャーが起動しないため、そのモードで Skill の変更をロードするには Qwen Code を再起動してください。
 
-## Remove a Skill
+## Skill の削除
 
-スキルのディレクトリを削除します：
+Skill のディレクトリを削除します。
 
 ```bash
 # Personal
@@ -294,343 +360,25 @@ rm -rf .qwen/skills/my-skill
 git commit -m "Remove unused Skill"
 ```
 
-## Best practices
+## ベストプラクティス
 
-### Keep Skills focused
+### Skill のスコープを絞る
 
-1つのスキルは1つの機能に対応させるべきです：
+1つの Skill は 1つの機能に対応すべきです。
 
-- 焦点化された例：「PDF フォーム入力」、「Excel 分析」、「Git コミットメッセージ」
-- 広すぎる例：「ドキュメント処理」（より小さなスキルに分割する）
+- 適切なスコープ: 「PDF フォームへの入力」、「Excel 分析」、「Git コミットメッセージ」
+- スコープが広すぎる: 「ドキュメント処理」（より小さな Skill に分割する）
 
-### Write clear descriptions
+### 明確な説明を記述する
 
-特定のトリガーを含めることで、モデルがスキルをいつ使用すべきかを検出しやすくします：
+特定のトリガーを含めることで、モデルが Skill をいつ使用すべきかを検出しやすくします。
 
 ```yaml
 description: Analyze Excel spreadsheets, create pivot tables, and generate charts. Use when working with Excel files, spreadsheets, or .xlsx data.
 ```
 
-### Test with your team
+### チームとテストする
 
-- 期待ど<think>
-</think>
-
-# Agent Skills
-
-> Qwen Code の機能を拡張するために、スキルを作成、管理、共有します。
-
-このガイドでは、**Qwen Code** で Agent Skills を作成、使用、管理する方法を説明します。スキルは、指示（およびオプションのスクリプト/リソース）を含む整理されたフォルダーで構成され、モデルの有効性を高めるモジュール型の機能です。
-
-## Prerequisites
-
-- Qwen Code（最新バージョン）
-- Qwen Code の基本的な操作知識（[クイックスタート](../quickstart.md)）
-
-## What are Agent Skills?
-
-Agent Skills は、専門知識を検出可能な機能としてパッケージ化します。各スキルは、モデルが関連する際に読み込める指示を含む `SKILL.md` ファイルと、スクリプトやテンプレートなどのオプションのサポートファイルで構成されます。
-
-### How Skills are invoked
-
-スキルは**モデルによって呼び出されます**。モデルは、ユーザーのリクエストとスキルの説明に基づいて、いつ使用するかを自律的に判断します。これは、ユーザーが明示的に `/command` と入力して呼び出すスラッシュコマンド（**ユーザー呼び出し**）とは異なります。
-
-スキルを明示的に呼び出したい場合は、`/skills` スラッシュコマンドを使用します：
-
-```bash
-/skills <skill-name>
-```
-
-オートコンプリートを使用して、利用可能なスキルとその説明を参照できます。
-
-### Benefits
-
-- ワークフローに合わせて Qwen Code を拡張
-- git を介してチーム間で専門知識を共有
-- 繰り返しプロンプトの入力を削減
-- 複雑なタスクのために複数のスキルを組み合わせ
-
-## Create a Skill
-
-スキルは `SKILL.md` ファイルを含むディレクトリとして保存されます。
-
-### Personal Skills
-
-パーソナルスキルは、すべてのプロジェクトで利用可能です。`~/.qwen/skills/` に保存します：
-
-```bash
-mkdir -p ~/.qwen/skills/my-skill-name
-```
-
-パーソナルスキルは以下の用途に適しています：
-
-- 個人のワークフローと設定
-- 開発中のスキル
-- 個人の生産性向上ツール
-
-### Project Skills
-
-プロジェクトスキルはチームで共有されます。プロジェクト内の `.qwen/skills/` に保存します：
-
-```bash
-mkdir -p .qwen/skills/my-skill-name
-```
-
-プロジェクトスキルは以下の用途に適しています：
-
-- チームのワークフローと規約
-- プロジェクト固有の専門知識
-- 共有ユーティリティとスクリプト
-
-プロジェクトスキルは git にコミットでき、チームメンバーが自動的に利用できるようになります。
-
-## Write `SKILL.md`
-
-YAML フロントマターと Markdown コンテンツを含む `SKILL.md` ファイルを作成します：
-
-```yaml
----
-name: your-skill-name
-description: Brief description of what this Skill does and when to use it
----
-
-# Your Skill Name
-
-## Instructions
-Provide clear, step-by-step guidance for Qwen Code.
-
-## Examples
-Show concrete examples of using this Skill.
-```
-
-### Field requirements
-
-Qwen Code は現在、以下を検証します：
-
-- `name` は `/^[\p{L}\p{N}_:.-]+$/u` に一致する空でない文字列です（Unicode の文字と数字（CJK / キリル文字 / アクセント付きラテン文字など OK）、および `_`、`:`、`.`、`-` が使用可能。空白、スラッシュ、角括弧、その他の構造的に安全でない文字は解析時に拒否されます）。
-- `description` は空でない文字列です
-
-推奨される命名規則：
-
-- 共有可能な名前には、ハイフン区切りの小文字 ASCII を推奨します（例：`tsx-helper`）
-- `description` は具体的に記述します。スキルが**何を行うか**と、**いつ使用するか**（ユーザーが自然に言及するキーワード）の両方を含めます
-
-### Optional: gate a Skill on file paths (`paths:`)
-
-コードベースの特定の部分にのみ関連するスキルの場合、glob パターンのリストとして `paths:` を追加します。ツール呼び出しが一致するファイルにアクセスするまで、スキルはモデルの利用可能なスキル一覧に表示されません：
-
-```yaml
----
-name: tsx-helper
-description: React TSX component helper
-paths:
-  - 'src/**/*.tsx'
-  - 'packages/*/src/**/*.tsx'
----
-```
-
-注記：
-
-- glob は [picomatch](https://github.com/micromatch/picomatch) を使用してプロジェクトルートからの相対パスでマッチングされます。プロジェクトルート外のファイルがアクティベーションをトリガーすることはありません。
-- パス制限付きのスキルは、一致するファイルに一度アクセスすると、**セッション終了までアクティブな状態を維持します**。新しいセッションを開始するか、スキルファイルの編集によって `refreshCache` がトリガーされると、アクティベーションはリセットされます。
-- `paths:` は**モデル**による検出のみを制限し、SkillTool の一覧表示レベルでのみ機能します。ユーザーは `/<skill-name>` または `/skills` ピッカーを通じて、パス制限付きスキルを常に明示的に呼び出せます。このユーザーパスは、アクティベーション状態に関係なくスキルの本体を実行します。ただし、モデル側は一致するファイルにアクセスするまで制限されたままです。スラッシュコマンドによる呼び出しは、モデル側のアクティベーションを解除**しません**。モデルに呼び出しを連鎖させたい場合（モデル自身が `Skill { skill: ... }` を呼び出す場合）は、まずスキルの `paths:` に一致するファイルにアクセスしてください。
-- `paths:` と `disable-model-invocation: true` の組み合わせは可能ですが、制限機能は無効になります。スキルはモデルから非表示になるため、パスによるアクティベーションがモデルに通知されることはありません。
-
-## Add supporting files
-
-`SKILL.md` と同じディレクトリに追加ファイルを作成します：
-
-```text
-my-skill/
-├── SKILL.md (required)
-├── reference.md (optional documentation)
-├── examples.md (optional examples)
-├── scripts/
-│   └── helper.py (optional utility)
-└── templates/
-    └── template.txt (optional template)
-```
-
-`SKILL.md` からこれらのファイルを参照します：
-
-````markdown
-For advanced usage, see [reference.md](reference.md).
-
-Run the helper script:
-
-```bash
-python scripts/helper.py input.txt
-```
-````
-
-## View available Skills
-
-Qwen Code は以下の場所からスキルを検出します：
-
-- パーソナルスキル：`~/.qwen/skills/`
-- プロジェクトスキル：`.qwen/skills/`
-- 拡張機能スキル：インストール済みの拡張機能が提供するスキル
-
-### Extension Skills
-
-拡張機能は、有効化時に利用可能になるカスタムスキルを提供できます。これらのスキルは拡張機能の `skills/` ディレクトリに保存され、パーソナルスキルやプロジェクトスキルと同じ形式に従います。
-
-拡張機能がインストールされ有効化されると、拡張機能スキルは自動的に検出および読み込まれます。
-
-どの拡張機能がスキルを提供しているかを確認するには、拡張機能の `qwen-extension.json` ファイル内の `skills` フィールドを確認してください。
-
-利用可能なスキルを確認するには、Qwen Code に直接質問します：
-
-```text
-What Skills are available?
-```
-
-> **注意 — モデル表示とユーザー表示の違い。** モデルに質問すると、モデルが現在認識できるスキルのみが表示されます。スキルが `paths:` を使用している場合（上記の「オプション：ファイルパスでスキルを制限する」を参照）、一致するファイルにアクセスするまで一覧に表示されません。完全なセットは、`/skills` スラッシュコマンドまたはディスク上のファイルを通じて常に確認できます。
-
-または、スラッシュコマンドで完全な一覧を参照します（アクティベーションされていないパス制限付きスキルを含む、すべてのスキルが常に表示されます）：
-
-```text
-/skills
-```
-
-または、ファイルシステムを確認します：
-
-```bash
-# List personal Skills
-ls ~/.qwen/skills/
-
-# List project Skills (if in a project directory)
-ls .qwen/skills/
-
-# View a specific Skill's content
-cat ~/.qwen/skills/my-skill/SKILL.md
-```
-
-## Test a Skill
-
-スキルを作成したら、説明に一致する質問をしてテストします。
-
-例：説明に「PDF ファイル」が含まれている場合：
-
-```text
-Can you help me extract text from this PDF?
-```
-
-リクエストに一致する場合、モデルは自律的にスキルを使用することを決定します。明示的に呼び出す必要はありません。
-
-## Debug a Skill
-
-Qwen Code がスキルを使用しない場合は、以下の一般的な問題を確認してください：
-
-### Make the description specific
-
-曖昧すぎる例：
-
-```yaml
-description: Helps with documents
-```
-
-具体的な例：
-
-```yaml
-description: Extract text and tables from PDF files, fill forms, merge documents. Use when working with PDFs, forms, or document extraction.
-```
-
-### Verify file path
-
-- パーソナルスキル：`~/.qwen/skills/<skill-name>/SKILL.md`
-- プロジェクトスキル：`.qwen/skills/<skill-name>/SKILL.md`
-
-```bash
-# Personal
-ls ~/.qwen/skills/my-skill/SKILL.md
-
-# Project
-ls .qwen/skills/my-skill/SKILL.md
-```
-
-### Check YAML syntax
-
-無効な YAML は、スキルメタデータの正しい読み込みを妨げます。
-
-```bash
-cat SKILL.md | head -n 15
-```
-
-以下を確認してください：
-
-- 1行目に開始の `---` を配置
-- Markdown コンテンツの前に終了の `---` を配置
-- 有効な YAML 構文（タブ不使用、正しいインデント）
-
-### View errors
-
-デバッグモードで Qwen Code を実行し、スキル読み込みエラーを確認します：
-
-```bash
-qwen --debug
-```
-
-## Share Skills with your team
-
-プロジェクトリポジトリを通じてスキルを共有できます：
-
-1. `.qwen/skills/` 配下にスキルを追加
-2. コミットしてプッシュ
-3. チームメンバーが変更をプル
-
-```bash
-git add .qwen/skills/
-git commit -m "Add team Skill for PDF processing"
-git push
-```
-
-## Update a Skill
-
-`SKILL.md` を直接編集します：
-
-```bash
-# Personal Skill
-code ~/.qwen/skills/my-skill/SKILL.md
-
-# Project Skill
-code .qwen/skills/my-skill/SKILL.md
-```
-
-変更は次回 Qwen Code 起動時に反映されます。Qwen Code がすでに実行中の場合は、更新を読み込むために再起動してください。
-
-## Remove a Skill
-
-スキルのディレクトリを削除します：
-
-```bash
-# Personal
-rm -rf ~/.qwen/skills/my-skill
-
-# Project
-rm -rf .qwen/skills/my-skill
-git commit -m "Remove unused Skill"
-```
-
-## Best practices
-
-### Keep Skills focused
-
-1つのスキルは1つの機能に対応させるべきです：
-
-- 焦点化された例：「PDF フォーム入力」、「Excel 分析」、「Git コミットメッセージ」
-- 広すぎる例：「ドキュメント処理」（より小さなスキルに分割する）
-
-### Write clear descriptions
-
-特定のトリガーを含めることで、モデルがスキルをいつ使用すべきかを検出しやすくします：
-
-```yaml
-description: Analyze Excel spreadsheets, create pivot tables, and generate charts. Use when working with Excel files, spreadsheets, or .xlsx data.
-```
-
-### Test with your team
-
-- 期待どおりにスキルがアクティベートされるか？
+- Skill は期待通りにアクティブ化されるか？
 - 指示は明確か？
-- 不足している例やエッジケースはないか？
+- 欠落している例やエッジケースはないか？

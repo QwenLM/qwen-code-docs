@@ -1,110 +1,115 @@
 # Agent Arena
 
-> Starte mehrere KI-Modelle gleichzeitig, um dieselbe Aufgabe auszuführen, vergleiche ihre Lösungen nebeneinander und wähle das beste Ergebnis aus, um es auf deinen Workspace anzuwenden.
+> Starte mehrere KI-Modelle gleichzeitig, um dieselbe Aufgabe auszuführen, vergleiche ihre Lösungen nebeneinander und wähle das beste Ergebnis aus, um es in deinem Arbeitsbereich zu übernehmen.
 
 > [!warning]
-> Agent Arena ist experimentell. Es gibt [bekannte Einschränkungen](#limitations) bezüglich der Anzeigemodi und der Sitzungsverwaltung.
+> Agent Arena ist experimentell. Es hat [bekannte Einschränkungen](#einschränkungen) in Bezug auf Anzeigemodi und Sitzungsverwaltung.
 
-Mit Agent Arena kannst du mehrere KI-Modelle bei derselben Aufgabe gegeneinander antreten lassen. Jedes Modell läuft als vollständig unabhängiger Agent in einem eigenen isolierten Git-Worktree, sodass Dateioperationen sich niemals gegenseitig beeinflussen. Wenn alle Agenten fertig sind, vergleichst du die Ergebnisse und wählst einen Gewinner aus, dessen Änderungen in deinen Haupt-Workspace gemergt werden.
+Agent Arena ermöglicht es dir, mehrere KI-Modelle gegeneinander antreten zu lassen, um dieselbe Aufgabe zu lösen. Jedes Modell läuft als vollständig unabhängiger Agent in einem eigenen isolierten Git-Worktree, sodass Dateioperationen sich niemals gegenseitig beeinflussen. Wenn alle Agenten fertig sind, vergleichst du die Ergebnisse und wählst einen Gewinner aus, der zurück in deinen Hauptarbeitsbereich übernommen wird.
 
-Im Gegensatz zu [Subagents](/users/features/sub-agents), die fokussierte Teilaufgaben innerhalb einer einzelnen Sitzung delegieren, sind Arena-Agenten vollständige, eigenständige Agenten-Instanzen – jeweils mit eigenem Modell, Kontextfenster und vollem Tool-Zugriff.
+Im Gegensatz zu [Unteragenten](./sub-agents.md), die fokussierte Teilaufgaben innerhalb einer einzelnen Sitzung delegieren, sind Arena-Agenten vollständige, übergeordnete Agenteninstanzen – jede mit eigenem Modell, eigenem Kontextfenster und vollem Tool-Zugriff.
 
 Diese Seite behandelt:
 
-- [Wann du Agent Arena verwenden solltest](#when-to-use-agent-arena)
-- [Eine Arena-Sitzung starten](#start-an-arena-session)
-- [Mit Agenten interagieren](#interacting-with-agents), einschließlich Anzeigemodi und Navigation
-- [Ergebnisse vergleichen und einen Gewinner auswählen](#compare-results-and-select-a-winner)
-- [Best Practices](#best-practices)
+- [Wann du Agent Arena verwenden solltest](#wann-du-agent-arena-verwenden-solltest)
+- [Eine Arena-Sitzung starten](#eine-arena-sitzung-starten)
+- [Interaktion mit Agenten](#interaktion-mit-agenten), einschließlich Anzeigemodi und Navigation
+- [Ergebnisse vergleichen und einen Gewinner auswählen](#ergebnisse-vergleichen-und-einen-gewinner-auswählen)
+- [Bewährte Vorgehensweisen](#bewährte-vorgehensweisen)
+- [Konfiguration](#konfiguration)
+- [Fehlerbehebung](#fehlerbehebung)
+- [Einschränkungen](#einschränkungen)
+- [Vergleich mit anderen Multi-Agent-Modi](#vergleich-mit-anderen-multi-agent-modi)
+- [Nächste Schritte](#nächste-schritte)
 
-## When to use Agent Arena
+## Wann du Agent Arena verwenden solltest
 
-Agent Arena ist am effektivsten, wenn du **bewerten oder vergleichen** möchtest, wie verschiedene Modelle dasselbe Problem lösen. Die stärksten Anwendungsfälle sind:
+Agent Arena ist am effektivsten, wenn du **bewerten oder vergleichen** möchtest, wie verschiedene Modelle dasselbe Problem angehen. Die stärksten Anwendungsfälle sind:
 
-- **Modell-Benchmarking**: Bewerte die Fähigkeiten verschiedener Modelle an realen Aufgaben in deinem tatsächlichen Codebase, nicht an synthetischen Benchmarks
-- **Best-of-N-Auswahl**: Erhalte mehrere unabhängige Lösungen und wähle die beste Implementierung aus
-- **Ansätze erkunden**: Sieh dir an, wie verschiedene Modelle über dasselbe Problem nachdenken und es lösen – nützlich zum Lernen und für neue Erkenntnisse
-- **Risikominimierung**: Bei kritischen Änderungen validiere, dass mehrere Modelle zu einem ähnlichen Ansatz konvergieren, bevor du sie committest
+- **Modell-Benchmarking**: Bewerte die Fähigkeiten verschiedener Modelle anhand realer Aufgaben in deiner tatsächlichen Codebasis, nicht mit synthetischen Benchmarks.
+- **Best-of-N-Auswahl**: Erhalte mehrere unabhängige Lösungen und wähle die beste Implementierung aus.
+- **Ansätze erkunden**: Sieh dir an, wie verschiedene Modelle über dasselbe Problem nachdenken und es lösen – nützlich für Lernen und Erkenntnisse.
+- **Risikominimierung**: Für kritische Änderungen validierst du, dass mehrere Modelle zu einem ähnlichen Ansatz gelangen, bevor du committest.
 
-Agent Arena verbraucht deutlich mehr Tokens als eine einzelne Sitzung (jeder Agent hat sein eigenes Kontextfenster und eigene Modellaufrufe). Es funktioniert am besten, wenn der Mehrwert des Vergleichs die Kosten rechtfertigt. Für Routineaufgaben, bei denen du deinem Standardmodell vertraust, ist eine einzelne Sitzung effizienter.
+Agent Arena verbraucht deutlich mehr Tokens als eine einzelne Sitzung (jeder Agent hat sein eigenes Kontextfenster und führt eigene Modellaufrufe durch). Es funktioniert am besten, wenn der Wert des Vergleichs die Kosten rechtfertigt. Für Routineaufgaben, bei denen du deinem Standardmodell vertraust, ist eine einzelne Sitzung effizienter.
 
-## Start an arena session
+## Eine Arena-Sitzung starten
 
 Verwende den Slash-Befehl `/arena`, um eine Sitzung zu starten. Gib die Modelle an, die gegeneinander antreten sollen, sowie die Aufgabe:
 
 ```
-/arena --models qwen3.5-plus,glm-5,kimi-k2.5 "Refactor the authentication module to use JWT tokens"
+/arena --models qwen3.5-plus,glm-5,kimi-k2.5 "Refactoriere das Authentifizierungsmodul zur Verwendung von JWT-Tokens"
 ```
 
-Wenn du `--models` weglässt, erscheint ein interaktiver Dialog zur Modellauswahl, in dem du aus deinen konfigurierten Providern auswählen kannst.
+Wenn du `--models` weglässt, erscheint ein interaktiver Modellauswahldialog, in dem du aus deinen konfigurierten Anbietern wählen kannst.
 
-### What happens when you start
+### Was passiert, wenn du startest
 
-1. **Worktree-Einrichtung**: Qwen Code erstellt für jeden Agenten isolierte Git-Worktrees unter `~/.qwen/arena/<session-id>/worktrees/<model-name>/`. Jeder Worktree spiegelt exakt den Zustand deines aktuellen Arbeitsverzeichnisses wider – einschließlich staged, unstaged und untracked Dateien.
-2. **Agenten-Start**: Jeder Agent wird in seinem eigenen Worktree mit vollem Tool-Zugriff und seinem konfigurierten Modell gestartet. Die Agenten werden sequenziell gestartet, arbeiten aber parallel.
-3. **Ausführung**: Alle Agenten arbeiten unabhängig an der Aufgabe, ohne gemeinsamen State oder Kommunikation. Du kannst ihren Fortschritt überwachen und mit jedem von ihnen interagieren.
-4. **Abschluss**: Wenn alle Agenten fertig sind (oder fehlschlagen), wechselst du in die Phase des Ergebnisvergleichs.
+1. **Worktree-Einrichtung**: Qwen Code erstellt isolierte Git-Worktrees für jeden Agenten unter `~/.qwen/arena/<sitzungs-id>/worktrees/<modellname>/`. Jeder Worktree spiegelt exakt den aktuellen Zustand deines Arbeitsverzeichnisses wider – einschließlich gestagter Änderungen, ungestagter Änderungen und unversionierter Dateien.
+2. **Agenten starten**: Jeder Agent startet in seinem eigenen Worktree mit vollem Tool-Zugriff und seinem konfigurierten Modell. Die Agenten werden nacheinander gestartet, führen aber parallel aus.
+3. **Ausführung**: Alle Agenten arbeiten unabhängig an der Aufgabe, ohne gemeinsamen Zustand oder Kommunikation. Du kannst ihren Fortschritt überwachen und mit jedem von ihnen interagieren.
+4. **Abschluss**: Wenn alle Agenten fertig sind (oder fehlschlagen), beginnst du mit der Ergebnisvergleichsphase.
 
-## Interact with agents
+## Interaktion mit Agenten
 
-### Display modes
+### Anzeigemodi
 
-Agent Arena unterstützt aktuell den **In-Process-Modus**, in dem alle Agenten asynchron innerhalb desselben Terminal-Prozesses laufen. Eine Tab-Leiste am unteren Rand des Terminals ermöglicht das Wechseln zwischen den Agenten.
+Agent Arena unterstützt derzeit den **In-Prozess-Modus**, bei dem alle Agenten asynchron innerhalb desselben Terminalprozesses laufen. Eine Registerkartenleiste am unteren Rand des Terminals ermöglicht es dir, zwischen den Agenten zu wechseln.
 
 > [!note]
-> **Split-Pane-Anzeigemodi sind für die Zukunft geplant.** Wir intendieren, tmux- und iTerm2-basierte Split-Pane-Layouts zu unterstützen, bei denen jeder Agent sein eigenes Terminal-Pane für eine echte nebeneinanderliegende Ansicht erhält. Aktuell ist nur das Tab-Wechseln im In-Process-Modus verfügbar.
+> **Split-Pane-Anzeigemodi sind für die Zukunft geplant.** Wir beabsichtigen, tmux-basierte und iTerm2-basierte Split-Pane-Layouts zu unterstützen, bei denen jeder Agent seinen eigenen Terminalbereich für eine echte nebeneinander Ansicht erhält. Derzeit ist nur das Wechseln zwischen Registerkarten im In-Prozess-Modus verfügbar.
 
-### Navigate between agents
+### Zwischen Agenten navigieren
 
-Im In-Process-Modus verwende Tastenkürzel, um zwischen den Agenten-Ansichten zu wechseln:
+Im In-Prozess-Modus kannst du mit Tastenkürzeln zwischen den Agentenansichten wechseln:
 
-| Shortcut | Aktion                            |
-| :------- | :-------------------------------- |
-| `Right`  | Zum nächsten Agenten-Tab wechseln |
-| `Left`   | Zum vorherigen Agenten-Tab wechseln |
-| `Up`     | Fokus auf die Eingabebox legen    |
-| `Down`   | Fokus auf die Agenten-Tab-Leiste legen |
+| Kürzel    | Aktion                                 |
+| :-------- | :------------------------------------- |
+| `Rechts`  | Zur nächsten Agenten-Registerkarte     |
+| `Links`   | Zur vorherigen Agenten-Registerkarte   |
+| `Oben`    | Fokus auf das Eingabefeld setzen       |
+| `Unten`   | Fokus auf die Agenten-Registerkartenleiste setzen |
 
-Die Tab-Leiste zeigt den aktuellen Status jedes Agenten:
+Die Registerkartenleiste zeigt den aktuellen Status jedes Agenten:
 
-| Indikator | Bedeutung                |
-| :-------- | :----------------------- |
-| `●`       | Läuft oder im Leerlauf   |
-| `✓`       | Erfolgreich abgeschlossen|
-| `✗`       | Fehlgeschlagen           |
-| `○`       | Abgebrochen              |
+| Indikator | Bedeutung                      |
+| :-------- | :----------------------------- |
+| `●`       | Wird ausgeführt oder inaktiv   |
+| `✓`       | Erfolgreich abgeschlossen      |
+| `✗`       | Fehlgeschlagen                 |
+| `○`       | Abgebrochen                    |
 
-### Interact with individual agents
+### Mit einzelnen Agenten interagieren
 
-Wenn du den Tab eines Agenten ansiehst, kannst du:
+Wenn du die Registerkarte eines Agenten betrachtest, kannst du:
 
-- **Nachrichten senden** – Gib im Eingabebereich zusätzliche Anweisungen für den Agenten ein
-- **Tool-Aufrufe genehmigen** – Wenn ein Agent eine Tool-Genehmigung anfordert, erscheint der Bestätigungsdialog in seinem Tab
-- **Vollständige Historie anzeigen** – Scrolle durch die komplette Konversation des Agenten, einschließlich Modellausgabe, Tool-Aufrufe und Ergebnisse
+- **Nachrichten senden** — gib im Eingabebereich zusätzliche Anweisungen für den Agenten ein
+- **Tool-Aufrufe genehmigen** — wenn ein Agent eine Tool-Genehmigung anfordert, erscheint der Bestätigungsdialog in seiner Registerkarte
+- **Vollständigen Verlauf anzeigen** — scrolle durch die gesamte Unterhaltung des Agenten, einschließlich Modellausgaben, Tool-Aufrufen und Ergebnissen
 
-Jeder Agent ist eine vollständige, unabhängige Sitzung. Alles, was du mit dem Hauptagenten machen kannst, kannst du auch mit einem Arena-Agenten tun.
+Jeder Agent ist eine vollwertige, unabhängige Sitzung. Alles, was du mit dem Hauptagenten tun kannst, kannst du auch mit einem Arena-Agenten tun.
 
-## Compare results and select a winner
+## Ergebnisse vergleichen und einen Gewinner auswählen
 
-Wenn alle Agenten abgeschlossen sind, wechselt die Arena in die Phase des Ergebnisvergleichs. Du siehst:
+Wenn alle Agenten abgeschlossen sind, beginnt die Ergebnisvergleichsphase der Arena. Du siehst:
 
 - **Statusübersicht**: Welche Agenten erfolgreich waren, fehlgeschlagen sind oder abgebrochen wurden
-- **Ausführungsmetriken**: Dauer, Reasoning-Runden, Token-Verbrauch und Anzahl der Tool-Aufrufe für jeden Agenten
-- **Arena-Vergleichsübersicht**: Gemeinsam geänderte Dateien vs. nur von einem Agenten geänderte Dateien, Anzahl der geänderten Zeilen, Token-Effizienz und eine hochrangige Zusammenfassung des Ansatzes, generiert aus dem Diff, den Metriken und der Konversationshistorie jedes Agenten
+- **Ausführungsmetriken**: Dauer, Anzahl der Reasoning-Runden, Token-Verbrauch und Anzahl der Tool-Aufrufe für jeden Agenten
+- **Arena-Vergleichszusammenfassung**: Gemeinsam geänderte Dateien vs. Dateien, die nur von einem Agenten geändert wurden, Anzahl der Zeilenänderungen, Token-Effizienz und eine Zusammenfassung des Ansatzes auf hoher Ebene, generiert aus den Diffs, Metriken und dem Unterhaltungsverlauf jedes Agenten
 
-Ein Auswahldialog präsentiert die erfolgreichen Agenten. Wähle einen aus, um seine Änderungen auf deinen Haupt-Workspace anzuwenden, oder verwirf alle Ergebnisse. Drücke `p`, um eine Schnellvorschau für den hervorgehobenen Agenten ein-/auszublenden, oder `d`, um den detaillierten Diff dieses Agenten vor der Auswahl eines Gewinners anzuzeigen.
+Ein Auswahldialog zeigt die erfolgreichen Agenten an. Wähle einen aus, um seine Änderungen auf deinen Hauptarbeitsbereich anzuwenden, oder verwerfe alle Ergebnisse. Drücke `p`, um eine schnelle Vorschau für den hervorgehobenen Agenten umzuschalten, oder `d`, um den detaillierten Diff dieses Agenten umzuschalten, bevor du einen Gewinner auswählst.
 
-### What happens when you select a winner
+### Was passiert, wenn du einen Gewinner auswählst
 
-1. Die Änderungen des Gewinner-Agenten werden als Diff gegen die Baseline extrahiert
+1. Die Änderungen des Gewinner-Agenten werden als Diff gegenüber der Basislinie extrahiert
 2. Der Diff wird auf dein Hauptarbeitsverzeichnis angewendet
 3. Alle Worktrees und temporären Branches werden automatisch bereinigt
 
-Wenn du den vollständigen Reasoning-Pfad vor der Entscheidung prüfen möchtest, ist die komplette Konversationshistorie jedes Agenten weiterhin über die Tab-Leiste verfügbar, solange der Auswahldialog aktiv ist.
+Wenn du den vollständigen Reasoning-Pfad vor der Entscheidung überprüfen möchtest, ist der vollständige Unterhaltungsverlauf jedes Agenten über die Registerkartenleiste verfügbar, solange der Auswahldialog aktiv ist.
 
-## Configuration
+## Konfiguration
 
-Das Verhalten der Arena kann in [settings.json](/users/configuration/settings) angepasst werden:
+Das Verhalten der Arena kann in der [settings.json](../configuration/settings.md) angepasst werden:
 
 ```json
 {
@@ -116,45 +121,45 @@ Das Verhalten der Arena kann in [settings.json](/users/configuration/settings) a
 }
 ```
 
-| Setting                   | Beschreibung                        | Standardwert    |
-| :------------------------ | :---------------------------------- | :-------------- |
-| `arena.worktreeBaseDir`   | Basisverzeichnis für Arena-Worktrees| `~/.qwen/arena` |
-| `arena.maxRoundsPerAgent` | Maximale Anzahl an Reasoning-Runden pro Agent | `50`      |
-| `arena.timeoutSeconds`    | Timeout für jeden Agenten in Sekunden | `600`         |
+| Einstellung                   | Beschreibung                        | Standard       |
+| :---------------------------- | :---------------------------------- | :------------- |
+| `arena.worktreeBaseDir`       | Basisverzeichnis für Arena-Worktrees | `~/.qwen/arena` |
+| `arena.maxRoundsPerAgent`     | Maximale Reasoning-Runden pro Agent | `50`           |
+| `arena.timeoutSeconds`        | Timeout für jeden Agenten in Sekunden| `600`          |
 
-## Best practices
+## Bewährte Vorgehensweisen
 
-### Choose models that complement each other
+### Wähle Modelle, die sich ergänzen
 
-Arena ist am wertvollsten, wenn du Modelle mit deutlich unterschiedlichen Stärken vergleichst. Zum Beispiel:
+Die Arena ist am wertvollsten, wenn du Modelle mit sinnvoll unterschiedlichen Stärken vergleichst. Beispiel:
 
 ```
-/arena --models qwen3.5-plus,glm-5,kimi-k2.5 "Optimize the database query layer"
+/arena --models qwen3.5-plus,glm-5,kimi-k2.5 "Optimiere die Datenbankabfrageschicht"
 ```
 
-Der Vergleich von drei Versionen derselben Modellfamilie liefert weniger Erkenntnisse als ein Vergleich über verschiedene Provider hinweg.
+Drei Versionen derselben Modellfamilie zu vergleichen, liefert weniger Erkenntnisse als ein Vergleich über Anbieter hinweg.
 
-### Keep tasks self-contained
+### Halte Aufgaben in sich geschlossen
 
-Arena-Agenten arbeiten unabhängig voneinander ohne Kommunikation. Aufgaben sollten vollständig im Prompt beschreibbar sein, ohne dass ein Hin und Her erforderlich ist:
+Arena-Agenten arbeiten unabhängig und ohne Kommunikation. Aufgaben sollten vollständig im Prompt beschreibbar sein, ohne dass ein Hin und Her erforderlich ist:
 
-**Gut**: „Refaktorisiere das Zahlungsmodul, um das Strategy-Pattern zu verwenden. Aktualisiere alle Tests.“
+**Gut**: „Refaktoriere das Zahlungsmodul zur Verwendung des Strategiemusters. Aktualisiere alle Tests."
 
-**Weniger effektiv**: „Lass uns diskutieren, wie wir das Zahlungsmodul verbessern können“ – dies profitiert von einer Konversation, die besser für eine einzelne Sitzung geeignet ist.
+**Weniger effektiv**: „Lass uns besprechen, wie wir das Zahlungsmodul verbessern können" – dies profitiert von einer Unterhaltung und eignet sich besser für eine einzelne Sitzung.
 
-### Limit the number of agents
+### Begrenze die Anzahl der Agenten
 
-Bis zu 5 Agenten können gleichzeitig laufen. In der Praxis bieten 2–3 Agenten die beste Balance zwischen Vergleichswert und Ressourcenverbrauch. Mehr Agenten bedeuten:
+Bis zu 5 Agenten können gleichzeitig ausgeführt werden. In der Praxis bieten 2-3 Agenten die beste Balance zwischen Vergleichswert und Ressourcenkosten. Mehr Agenten bedeuten:
 
 - Höhere Token-Kosten (jeder Agent hat sein eigenes Kontextfenster)
 - Längere Gesamtausführungszeit
 - Mehr Ergebnisse zum Vergleichen
 
-Beginne mit 2–3 und skaliere nur hoch, wenn der Vergleichswert dies rechtfertigt.
+Beginne mit 2-3 und skaliere nur dann hoch, wenn der Vergleichswert es rechtfertigt.
 
-### Use Arena for high-impact decisions
+### Verwende Arena für Entscheidungen mit großer Tragweite
 
-Arena glänzt, wenn die Bedeutung den Einsatz mehrerer Modelle rechtfertigt:
+Die Arena glänzt, wenn der Einsatz den Betrieb mehrerer Modelle rechtfertigt:
 
 - Auswahl einer Architektur für ein neues Modul
 - Auswahl eines Ansatzes für ein komplexes Refactoring
@@ -162,58 +167,59 @@ Arena glänzt, wenn die Bedeutung den Einsatz mehrerer Modelle rechtfertigt:
 
 Für Routineänderungen wie das Umbenennen einer Variable oder das Aktualisieren einer Konfigurationsdatei ist eine einzelne Sitzung schneller und günstiger.
 
-## Troubleshooting
+## Fehlerbehebung
 
-### Agents failing to start
+### Agenten starten nicht
 
-- Stelle sicher, dass jedes Modell in `--models` ordnungsgemäß mit gültigen API-Credentials konfiguriert ist
-- Prüfe, ob dein Arbeitsverzeichnis ein Git-Repository ist (Worktrees benötigen Git)
-- Stelle sicher, dass du Schreibzugriff auf das Worktree-Basisverzeichnis hast (standardmäßig `~/.qwen/arena/`)
+- Überprüfe, ob jedes Modell in `--models` ordnungsgemäß mit gültigen API-Anmeldeinformationen konfiguriert ist
+- Stelle sicher, dass dein Arbeitsverzeichnis ein Git-Repository ist (Worktrees benötigen Git)
+- Stelle sicher, dass du Schreibzugriff auf das Basisverzeichnis der Worktrees hast (standardmäßig `~/.qwen/arena/`)
 
-### Worktree creation fails
+### Worktree-Erstellung schlägt fehl
 
-- Führe `git worktree list` aus, um veraltete Worktrees aus vorherigen Sitzungen zu prüfen
+- Führe `git worktree list` aus, um nach veralteten Worktrees von vorherigen Sitzungen zu suchen
 - Bereinige veraltete Worktrees mit `git worktree prune`
 - Stelle sicher, dass deine Git-Version Worktrees unterstützt (`git --version`, erfordert Git 2.5+)
 
-### Agent takes too long
+### Agent braucht zu lange
 
-- Erhöhe das Timeout: Setze `arena.timeoutSeconds` in den Einstellungen
+- Erhöhe das Timeout: setze `arena.timeoutSeconds` in den Einstellungen
 - Reduziere die Aufgabenkomplexität – Arena-Aufgaben sollten fokussiert und klar definiert sein
-- Reduziere `arena.maxRoundsPerAgent`, wenn Agenten zu viele Runden benötigen
+- Senke `arena.maxRoundsPerAgent`, wenn Agenten zu viele Runden verbrauchen
 
-### Applying winner fails
+### Anwenden des Gewinners schlägt fehl
 
-- Prüfe auf nicht committete Änderungen in deinem Hauptarbeitsverzeichnis, die Konflikte verursachen könnten
+- Überprüfe auf nicht committete Änderungen in deinem Hauptarbeitsverzeichnis, die möglicherweise in Konflikt stehen
 - Der Diff wird als Patch angewendet – Merge-Konflikte sind möglich, wenn sich dein Arbeitsverzeichnis während der Sitzung geändert hat
 
-## Limitations
+## Einschränkungen
 
 Agent Arena ist experimentell. Aktuelle Einschränkungen:
 
-- **Nur In-Process-Modus**: Split-Pane-Anzeige über tmux oder iTerm2 ist noch nicht verfügbar. Alle Agenten laufen in einem einzigen Terminalfenster mit Tab-Wechsel.
-- **Keine Diff-Vorschau vor der Auswahl**: Du kannst die Konversationshistorie jedes Agenten einsehen, aber es gibt keinen einheitlichen Diff-Viewer, um Lösungen vor der Gewinnerauswahl nebeneinander zu vergleichen.
-- **Keine Worktree-Aufbewahrung**: Worktrees werden nach der Auswahl immer bereinigt. Es gibt keine Option, sie zur weiteren Inspektion zu behalten.
-- **Keine Sitzungswiederaufnahme**: Arena-Sitzungen können nach dem Beenden nicht fortgesetzt werden. Wenn du das Terminal mitten in der Sitzung schließt, verbleiben Worktrees auf der Festplatte und müssen manuell über `git worktree prune` bereinigt werden.
-- **Maximal 5 Agenten**: Das Hard-Limit von 5 gleichzeitigen Agenten kann nicht geändert werden.
-- **Git-Repository erforderlich**: Arena benötigt ein Git-Repository für die Worktree-Isolierung. Es kann nicht in Verzeichnissen ohne Git verwendet werden.
+- **Nur In-Prozess-Modus**: Split-Pane-Anzeige via tmux oder iTerm2 ist noch nicht verfügbar. Alle Agenten laufen innerhalb eines einzelnen Terminalfensters mit Registerkartenwechsel.
+- **Keine Diff-Vorschau vor der Auswahl**: Du kannst den Unterhaltungsverlauf jedes Agenten einsehen, aber es gibt keine einheitliche Diff-Ansicht, um Lösungen nebeneinander zu vergleichen, bevor du einen Gewinner auswählst.
+- **Keine Worktree-Aufbewahrung**: Worktrees werden nach der Auswahl immer bereinigt. Es gibt keine Option, sie zur weiteren Untersuchung zu behalten.
+- **Keine Sitzungswiederaufnahme**: Arena-Sitzungen können nach dem Beenden nicht wieder aufgenommen werden. Wenn du das Terminal während einer Sitzung schließt, bleiben die Worktrees auf der Festplatte und müssen manuell mit `git worktree prune` bereinigt werden.
+- **Maximal 5 Agenten**: Die harte Grenze von 5 gleichzeitigen Agenten kann nicht geändert werden.
+- **Git-Repository erforderlich**: Arena benötigt ein Git-Repository für die Worktree-Isolation. Es kann nicht in Verzeichnissen ohne Git verwendet werden.
 
-## Comparison with other multi-agent modes
+## Vergleich mit anderen Multi-Agent-Modi
 
-Agent Arena ist einer von mehreren geplanten Multi-Agent-Modi in Qwen Code. **Agent Team** und **Agent Swarm** sind noch nicht implementiert – die folgende Tabelle beschreibt ihr geplantes Design als Referenz.
+Agent Arena und die experimentelle Agent-Team-Runtime bedienen unterschiedliche Multi-Agent-Workflows. Agent Swarm bleibt ein geplanter Modus.
 
-|                   | **Agent Arena**                                        | **Agent Team** (geplant)                           | **Agent Swarm** (geplant)                                |
-| :---------------- | :----------------------------------------------------- | :------------------------------------------------- | :------------------------------------------------------- |
-| **Ziel**          | Wettbewerbsorientiert: Finde die beste Lösung für dieselbe Aufgabe | Kollaborativ: Bearbeite verschiedene Aspekte gemeinsam | Batch-Parallel: Dynamisches Spawnen von Workern für Bulk-Aufgaben |
-| **Agenten**       | Vorkonfigurierte Modelle konkurrieren unabhängig       | Teammitglieder kollaborieren mit zugewiesenen Rollen | Worker werden on-the-fly erzeugt und nach Abschluss zerstört |
-| **Kommunikation** | Keine Inter-Agent-Kommunikation                        | Direkte Peer-to-Peer-Nachrichten                   | Einseitig: Ergebnisse werden vom Parent aggregiert       |
-| **Isolierung**    | Vollständig: separate Git-Worktrees                    | Unabhängige Sitzungen mit gemeinsamer Aufgabenliste | Leichter ephemerer Kontext pro Worker                    |
-| **Ausgabe**       | Eine ausgewählte Lösung wird auf den Workspace angewendet | Synthetisierte Ergebnisse aus mehreren Perspektiven | Aggregierte Ergebnisse aus paralleler Verarbeitung       |
-| **Am besten geeignet für** | Benchmarking, Auswahl zwischen Modellansätzen | Recherche, komplexe Kollaboration, Cross-Layer-Arbeit | Batch-Operationen, Datenverarbeitung, Map-Reduce-Aufgaben |
+|                    | **Agent Arena**                                        | **Agent Team**                                      | **Agent Swarm** (geplant)                                |
+| :----------------- | :----------------------------------------------------- | :-------------------------------------------------- | :------------------------------------------------------- |
+| **Ziel**           | Wettbewerbsorientiert: Finde die beste Lösung für _dieselbe_ Aufgabe | Kollaborativ: Bearbeite _verschiedene_ Aspekte gemeinsam | Stapelparallel: Spawne dynamisch Worker für Massenaufgaben |
+| **Agenten**        | Vorkonfigurierte Modelle treten unabhängig gegeneinander an | Teammitglieder arbeiten mit zugewiesenen Rollen zusammen | Worker werden bei Bedarf erstellt und nach Abschluss zerstört |
+| **Kommunikation**  | Keine Kommunikation zwischen den Agenten               | Direkte Peer-to-Peer-Nachrichten                    | Einweg: Ergebnisse werden vom übergeordneten Agenten aggregiert |
+| **Isolation**      | Vollständig: separate Git-Worktrees                    | In-Prozess-Teammitglieder mit gemeinsamer Aufgabenliste | Leichter, flüchtiger Kontext pro Worker                  |
+| **Ausgabe**        | Eine ausgewählte Lösung wird auf den Arbeitsbereich angewendet | Synthetisierte Ergebnisse aus mehreren Perspektiven | Aggregierte Ergebnisse aus paralleler Verarbeitung       |
+| **Am besten für**  | Benchmarking, Auswahl zwischen Modellansätzen          | Recherche, komplexe Zusammenarbeit, schichtübergreifende Arbeit | Batch-Operationen, Datenverarbeitung, Map-Reduce-Aufgaben |
 
-## Next steps
+## Nächste Schritte
 
 Erkunde verwandte Ansätze für parallele und delegierte Arbeit:
 
-- **Leichte Delegierung**: [Subagents](/users/features/sub-agents) bearbeiten fokussierte Teilaufgaben innerhalb deiner Sitzung – besser, wenn du keinen Modellvergleich benötigst
-- **Manuelle parallele Sitzungen**: Starte mehrere Qwen Code-Sitzungen selbst in separaten Terminals mit [Git worktrees](https://git-scm.com/docs/git-worktree) für volle manuelle Kontrolle
+- **Leichte Delegation**: [Unteragenten](./sub-agents.md) bearbeiten fokussierte Teilaufgaben innerhalb deiner Sitzung – besser, wenn du keinen Modellvergleich benötigst.
+- **Kollaborative Ausführung**: [Multi-Agent-Koordination](./multi-agent-coordination.md) verwendet Agent Team für gemeinsame Aufgaben und Teammitglied-Nachrichten.
+- **Manuelle parallele Sitzungen**: Führe mehrere Qwen Code-Sitzungen selbst in separaten Terminals mit [Git-Worktrees](https://git-scm.com/docs/git-worktree) aus, für vollständige manuelle Kontrolle.

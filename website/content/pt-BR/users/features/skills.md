@@ -7,66 +7,102 @@ Este guia mostra como criar, usar e gerenciar Agent Skills no **Qwen Code**. Ski
 ## Pré-requisitos
 
 - Qwen Code (versão recente)
-- Familiaridade básica com o Qwen Code ([Início rápido](../quickstart.md))
+- Familiaridade básica com o Qwen Code ([Quickstart](../quickstart.md))
 
 ## O que são Agent Skills?
 
-Agent Skills empacotam expertise em capacidades descobríveis. Cada Skill consiste em um arquivo `SKILL.md` com instruções que o modelo pode carregar quando relevante, além de arquivos de suporte opcionais, como scripts e templates.
+Agent Skills empacotam conhecimento em capacidades descobríveis. Cada Skill consiste em um arquivo `SKILL.md` com instruções que o modelo pode carregar quando relevante, além de arquivos de suporte opcionais, como scripts e templates.
 
 ### Como as Skills são invocadas
 
-Skills são **invocadas pelo modelo** — o modelo decide autonomamente quando usá-las com base na sua solicitação e na descrição da Skill. Isso é diferente dos slash commands, que são **invocados pelo usuário** (você digita explicitamente `/comando`).
+As Skills são **invocadas pelo modelo** — o modelo decide autonomamente quando usá-las com base na sua solicitação e na descrição da Skill. Isso é diferente dos slash commands, que são **invocados pelo usuário** (você digita explicitamente `/command`).
 
-Se quiser invocar uma Skill explicitamente, use o slash command `/skills`:
+Se você quiser invocar uma Skill explicitamente, digite-a como um slash command usando o nome da Skill:
 
 ```bash
-/skills <skill-name>
+/<skill-name>
 ```
 
-Use o autocomplete para navegar pelas Skills disponíveis e suas descrições.
+Comece a digitar `/` para autocompletar e navegar pelas Skills disponíveis junto com suas descrições. O comando `/skills` abre o painel de Skills, onde você pode navegar, pesquisar, alternar e executar Skills de forma interativa.
+
+> **Nota:** Se você executou anteriormente uma Skill com `/skills <skill-name>`, essa sintaxe agora apenas abre o painel de Skills e ignora o argumento final. Use `/<skill-name>` para executar uma Skill diretamente.
 
 ### Benefícios
 
 - Estenda o Qwen Code para seus fluxos de trabalho
-- Compartilhe expertise com sua equipe via git
-- Reduza a repetição de prompts
-- Combine múltiplas Skills para tarefas complexas
+- Compartilhe conhecimento com sua equipe via git
+- Reduza prompts repetitivos
+- Componha múltiplas Skills para tarefas complexas
 
 ## Criar uma Skill
 
-Skills são armazenadas como diretórios contendo um arquivo `SKILL.md`.
+As Skills são armazenadas como diretórios contendo um arquivo `SKILL.md`.
+
+### Gerar uma Skill de projeto com `/learn`
+
+Use `/learn` para destilar uma fonte de conhecimento existente em uma Skill reutilizável de projeto:
+
+```text
+/learn https://docs.example.com/api
+/learn ~/projects/acme-sdk
+/learn Our deploy process: run migrate, deploy the service, then check health
+```
+
+O comando é executado como um turno normal do agente e cria o resultado em `.qwen/skills/learned-skill-<name>/SKILL.md` com `source: learned` no seu frontmatter. Revise as instruções geradas antes de usá-las ou compartilhá-las.
+
+O `/learn` também aceita vídeos `.mp4`, `.webm`, `.mov` e `.m4v` locais ou de link direto. Adicione texto após o caminho ou URL para focar a Skill gerada em uma parte do tutorial:
+
+```text
+/learn ./tutorial.mp4 focus on the deployment workflow
+```
+
+O aprendizado de vídeo requer um modelo compatível com vídeo em um provedor compatível com OpenAI. URLs de página do YouTube não são entrada de vídeo direta; baixe o vídeo para o workspace e passe seu caminho local.
 
 ### Skills Pessoais
 
-Skills Pessoais estão disponíveis em todos os seus projetos. Armazene-as em `~/.qwen/skills/`:
+As Skills pessoais estão disponíveis em todos os seus projetos. Armazene-as em `~/.qwen/skills/`:
 
 ```bash
 mkdir -p ~/.qwen/skills/my-skill-name
 ```
 
-Use Skills Pessoais para:
+Use Skills pessoais para:
 
 - Seus fluxos de trabalho e preferências individuais
 - Skills que você está desenvolvendo
-- Auxiliares de produtividade pessoal
+- Ajudantes de produtividade pessoal
 
 ### Skills de Projeto
 
-Skills de Projeto são compartilhadas com sua equipe. Armazene-as em `.qwen/skills/` dentro do seu projeto:
+As Skills de projeto são compartilhadas com sua equipe. Armazene-as em `.qwen/skills/` dentro do seu projeto:
 
 ```bash
 mkdir -p .qwen/skills/my-skill-name
 ```
 
-Use Skills de Projeto para:
+Use Skills de projeto para:
 
 - Fluxos de trabalho e convenções da equipe
-- Expertise específica do projeto
+- Conhecimento específico do projeto
 - Utilitários e scripts compartilhados
 
-Skills de Projeto podem ser commitadas no git e ficam automaticamente disponíveis para os colegas de equipe.
+As Skills de projeto podem ser adicionadas ao git e ficam automaticamente disponíveis para os colegas de equipe.
 
-## Escrever `SKILL.md`
+### Manter Skills de projeto geradas automaticamente
+
+O Qwen Code rastreia localmente o uso bem-sucedido de Skills de projeto geradas, inclusive enquanto a geração de Auto Skill está desabilitada, para que a reativação da manutenção não confunda uma skill usada recentemente com uma inativa. Quando o **Auto Skill** está habilitado, ele move periodicamente Skills geradas inativas para fora da biblioteca ativa. Apenas diretórios chamados `.qwen/skills/auto-skill-*` cujo frontmatter do `SKILL.md` contém `source: auto-skill` são gerenciados; Skills pessoais, de extensão, integradas e escritas manualmente nunca são selecionadas.
+
+- Após 30 dias sem uso bem-sucedido ou edição do `SKILL.md`, uma auto-skill é marcada como obsoleta.
+- Após 90 dias, seu diretório completo é movido para `.qwen/archived-skills/`. Nada é excluído permanentemente.
+- A manutenção automática é executada no máximo uma vez a cada 7 dias em workspaces confiáveis. Cada auto-skill recém-observada recebe um período de carência completo antes da manutenção começar.
+- Uma auto-skill fixada é excluída das transições automáticas de obsolescência e arquivamento até ser desafixada.
+- Nomes de diretório arquivados permanecem reservados, e um destino de arquivo existente ignora apenas essa colisão em vez de parar a manutenção para outras skills.
+
+Use `/curator` para ver auto-skills ativas, obsoletas, arquivadas e fixadas. Execute `/curator run --dry-run` para visualizar uma passagem de manutenção, `/curator run` para aplicá-la imediatamente, `/curator pin <directory>` ou `/curator unpin <directory>` para controlar a manutenção por skill, ou `/curator restore <directory>` para mover uma auto-skill arquivada de volta à biblioteca ativa.
+
+O status e as pré-visualizações dry-run estão disponíveis em modo seguro e workspaces não confiáveis. Aplicar manutenção, alterar fixações e restaurar auto-skills arquivadas requerem um workspace confiável fora do modo seguro.
+
+## Escrever o SKILL.md
 
 Crie um arquivo `SKILL.md` com frontmatter YAML e conteúdo Markdown:
 
@@ -74,6 +110,7 @@ Crie um arquivo `SKILL.md` com frontmatter YAML e conteúdo Markdown:
 ---
 name: your-skill-name
 description: Brief description of what this Skill does and when to use it
+priority: 10
 ---
 
 # Your Skill Name
@@ -89,17 +126,19 @@ Show concrete examples of using this Skill.
 
 O Qwen Code atualmente valida que:
 
-- `name` é uma string não vazia que corresponde a `/^[\p{L}\p{N}_:.-]+$/u` — letras e dígitos Unicode (CJK / cirílico / latim acentuado são aceitos), além de `_`, `:`, `.`, `-`. Espaços em branco, barras, colchetes e outros caracteres estruturalmente inseguros são rejeitados no momento do parse.
+- `name` é uma string não vazia que corresponde a `/^[\p{L}\p{N}_:.-]+$/u` — letras e dígitos Unicode (CJK / cirílico / latim acentuado, tudo OK), além de `_`, `:`, `.`, `-`. Espaços em branco, barras, colchetes e outros caracteres estruturalmente inseguros são rejeitados no momento do parse.
 - `description` é uma string não vazia
+- `priority` é opcional. Quando presente, deve ser um número finito. Valores mais altos são ordenados primeiro apenas na listagem de `/skills` — o autocompletar de slash commands (digitar `/`) e a visualização de comandos personalizados `/help` permanecem em ordem alfabética, então uma Skill de alta prioridade nunca reordena comandos integrados. Valores omitidos ou inválidos são tratados como não definidos, o que se comporta como `0`.
 
 Convenções recomendadas:
 
-- Prefira ASCII em minúsculas com hífens para nomes compartilháveis (ex.: `tsx-helper`)
-- Torne `description` específico: inclua tanto **o que** a Skill faz quanto **quando** usá-la (palavras-chave que os usuários mencionarão naturalmente)
+- Prefira ASCII minúsculo com hífens para nomes compartilháveis (por exemplo, `tsx-helper`)
+- Torne a `description` específica: inclua tanto **o que** a Skill faz quanto **quando** usá-la (palavras-chave que os usuários mencionarão naturalmente)
+- Use `priority` com moderação para Skills que devem aparecer de forma confiável antes da ordem alfabética padrão em `/skills`. Prioridades negativas são permitidas e são ordenadas abaixo de Skills não definidas.
 
 ### Opcional: restringir uma Skill a caminhos de arquivo (`paths:`)
 
-Para Skills que só são relevantes para partes específicas de uma base de código, adicione uma lista `paths:` com padrões glob. A Skill fica fora da lista de skills disponíveis do modelo até que uma chamada de ferramenta acesse um arquivo correspondente:
+Para Skills que são relevantes apenas para partes específicas de uma base de código, adicione uma lista `paths:` de padrões glob. A Skill permanece fora da listagem de Skills disponíveis do modelo até que uma chamada de ferramenta acesse um arquivo correspondente:
 
 ```yaml
 ---
@@ -111,16 +150,42 @@ paths:
 ---
 ```
 
-Notas:
+Observações:
 
-- Os globs são correspondidos em relação à raiz do projeto com [picomatch](https://github.com/micromatch/picomatch); arquivos fora da raiz do projeto nunca disparam a ativação.
-- Uma Skill restrita por caminho **permanece ativada pelo resto da sessão** assim que um arquivo correspondente é acessado. Uma nova sessão, ou um `refreshCache` acionado pela edição de qualquer arquivo de Skill, redefine as ativações.
-- `paths:` restringe apenas a descoberta pelo **modelo**, e apenas no nível de listagem do SkillTool. Você sempre pode invocar uma Skill restrita por caminho manualmente via `/<skill-name>` ou no seletor `/skills` — esse caminho do usuário executa o corpo da Skill independentemente do estado de ativação. No lado do modelo, porém, a restrição permanece até que um arquivo correspondente seja acessado: uma invocação por slash **não** desbloqueia a ativação no lado do modelo, então, se quiser que o modelo encadeie a partir da sua invocação (chame `Skill { skill: ... }` por conta própria), acesse primeiro um arquivo que corresponda ao `paths:` da skill.
-- Combinar `paths:` com `disable-model-invocation: true` é permitido, mas a restrição não tem efeito — a Skill fica oculta do modelo de qualquer forma, então a ativação por caminho nunca a anuncia.
+- Os globs são correspondidos em relação à raiz do projeto com [picomatch](https://github.com/micromatch/picomatch); arquivos fora da raiz do projeto nunca acionam a ativação.
+- Uma Skill restrita por caminho **permanece ativada pelo resto da sessão** assim que um arquivo correspondente é acessado. Uma nova sessão ou um `refreshCache` acionado pela edição de qualquer arquivo de Skill redefine as ativações.
+- `paths:` restringe apenas a descoberta pelo **modelo**, e apenas no nível de listagem do SkillTool. A menos que `user-invocable: false` esteja definido, você sempre pode invocar uma Skill restrita por caminho por conta própria via `/<skill-name>` ou o seletor `/skills` — esse caminho do usuário executa o corpo da Skill independentemente do estado de ativação. O lado do modelo, no entanto, permanece restrito até que um arquivo correspondente seja acessado: uma invocação por slash **não** desbloqueia a ativação do lado do modelo, então se você quiser que o modelo encadeie a partir da sua invocação (chamar `Skill { skill: ... }` por conta própria), acesse também um arquivo que corresponda ao `paths:` da Skill primeiro.
+- Combinar `paths:` com `disable-model-invocation: true` é permitido, mas a restrição não tem efeito — a Skill fica oculta do modelo de qualquer forma, então a ativação por caminho nunca a divulga.
+
+### Opcional: controlar a invocação pelo usuário e pelo modelo
+
+As Skills são invocáveis pelo usuário por padrão. Para ocultar uma Skill do uso direto por slash command, mantendo-a disponível para invocação pelo modelo, defina `user-invocable: false`:
+
+```yaml
+---
+name: model-only-helper
+description: Helper the model can call when appropriate
+user-invocable: false
+---
+```
+
+Isso remove a Skill da invocação `/<skill-name>` e dos resultados do seletor `/skills`. Não oculta a Skill do modelo.
+
+Para ocultar uma Skill da invocação pelo modelo, mantendo a invocação direta pelo usuário disponível, defina `disable-model-invocation: true`:
+
+```yaml
+---
+name: manual-helper
+description: Helper you invoke manually
+disable-model-invocation: true
+---
+```
+
+Você pode combinar ambos os campos, mas então a Skill não será acessível através dos caminhos normais de invocação pelo usuário ou pelo modelo.
 
 ## Adicionar arquivos de suporte
 
-Crie arquivos adicionais junto ao `SKILL.md`:
+Crie arquivos adicionais junto com o `SKILL.md`:
 
 ```text
 my-skill/
@@ -133,7 +198,7 @@ my-skill/
     └── template.txt (optional template)
 ```
 
-Referencie esses arquivos no `SKILL.md`:
+Referencie esses arquivos a partir do `SKILL.md`:
 
 ````markdown
 For advanced usage, see [reference.md](reference.md).
@@ -149,17 +214,18 @@ python scripts/helper.py input.txt
 
 O Qwen Code descobre Skills a partir de:
 
-- Skills Pessoais: `~/.qwen/skills/`
-- Skills de Projeto: `.qwen/skills/`
-- Skills de Extensão: Skills fornecidas por extensões instaladas
+- Skills pessoais: `~/.qwen/skills/`
+- Skills de projeto: `.qwen/skills/`
+- Skills de extensão: Skills fornecidas por extensões instaladas
+- Skills integradas: Skills distribuídas com o Qwen Code
 
 ### Skills de Extensão
 
-Extensões podem fornecer skills personalizadas que ficam disponíveis quando a extensão é ativada. Essas skills são armazenadas no diretório `skills/` da extensão e seguem o mesmo formato das skills pessoais e de projeto.
+As extensões podem fornecer Skills personalizadas que ficam disponíveis quando a extensão é habilitada. Essas Skills são armazenadas no diretório `skills/` da extensão e seguem o mesmo formato das Skills pessoais e de projeto.
 
-Skills de extensão são descobertas e carregadas automaticamente quando a extensão é instalada e ativada.
+As Skills de extensão são descobertas e carregadas automaticamente quando a extensão é instalada e habilitada.
 
-Para ver quais extensões fornecem skills, verifique o campo `skills` no arquivo `qwen-extension.json` da extensão.
+Para ver quais extensões fornecem Skills, verifique o arquivo `qwen-extension.json` da extensão para um campo `skills`.
 
 Para visualizar as Skills disponíveis, pergunte diretamente ao Qwen Code:
 
@@ -167,9 +233,9 @@ Para visualizar as Skills disponíveis, pergunte diretamente ao Qwen Code:
 What Skills are available?
 ```
 
-> **Atenção — visão do modelo vs. visão do usuário.** Perguntar ao modelo só exibe as Skills que ele consegue ver no momento. Se uma Skill usar `paths:` (veja "Opcional: restringir uma Skill a caminhos de arquivo" acima), ela fica fora dessa lista até que um arquivo correspondente seja acessado. O conjunto completo está sempre visível para você via slash command `/skills` e no disco.
+> **Atenção — visualização do modelo vs. usuário.** Perguntar ao modelo exibe apenas as Skills que o modelo pode ver atualmente. Se uma Skill usar `paths:` (consulte "Opcional: restringir uma Skill a caminhos de arquivo" acima), ela permanece fora dessa listagem até que um arquivo correspondente seja acessado. O slash command `/skills` mostra as Skills que você pode invocar diretamente; Skills com `user-invocable: false` permanecem visíveis no disco e ainda podem estar visíveis para o modelo.
 
-Ou navegue pela lista completa com o slash command (sempre mostra todas as Skills, incluindo as restritas por caminho que ainda não foram ativadas):
+Ou navegue pela lista invocável pelo usuário com o slash command (incluindo Skills restritas por caminho que ainda não foram ativadas):
 
 ```text
 /skills
@@ -178,13 +244,13 @@ Ou navegue pela lista completa com o slash command (sempre mostra todas as Skill
 Ou inspecione o sistema de arquivos:
 
 ```bash
-# List personal Skills
+# Listar Skills pessoais
 ls ~/.qwen/skills/
 
-# List project Skills (if in a project directory)
+# Listar Skills de projeto (se estiver em um diretório de projeto)
 ls .qwen/skills/
 
-# View a specific Skill's content
+# Visualizar o conteúdo de uma Skill específica
 cat ~/.qwen/skills/my-skill/SKILL.md
 ```
 
@@ -192,17 +258,17 @@ cat ~/.qwen/skills/my-skill/SKILL.md
 
 Após criar uma Skill, teste-a fazendo perguntas que correspondam à sua descrição.
 
-Exemplo: se sua descrição mencionar "PDF files":
+Exemplo: se a sua descrição mencionar "arquivos PDF":
 
 ```text
 Can you help me extract text from this PDF?
 ```
 
-O modelo decide autonomamente usar sua Skill se ela corresponder à solicitação — você não precisa invocá-la explicitamente.
+O modelo decide autonomamente usar a sua Skill se ela corresponder à solicitação — você não precisa invocá-la explicitamente.
 
 ## Depurar uma Skill
 
-Se o Qwen Code não usar sua Skill, verifique estes problemas comuns:
+Se o Qwen Code não usar a sua Skill, verifique estes problemas comuns:
 
 ### Torne a descrição específica
 
@@ -218,36 +284,36 @@ Específica:
 description: Extract text and tables from PDF files, fill forms, merge documents. Use when working with PDFs, forms, or document extraction.
 ```
 
-### Verifique o caminho do arquivo
+### Verificar o caminho do arquivo
 
-- Skills Pessoais: `~/.qwen/skills/<skill-name>/SKILL.md`
-- Skills de Projeto: `.qwen/skills/<skill-name>/SKILL.md`
+- Skills pessoais: `~/.qwen/skills/<skill-name>/SKILL.md`
+- Skills de projeto: `.qwen/skills/<skill-name>/SKILL.md`
 
 ```bash
-# Personal
+# Pessoal
 ls ~/.qwen/skills/my-skill/SKILL.md
 
-# Project
+# Projeto
 ls .qwen/skills/my-skill/SKILL.md
 ```
 
-### Verifique a sintaxe YAML
+### Verificar a sintaxe YAML
 
-YAML inválido impede que os metadados da Skill sejam carregados corretamente.
+Um YAML inválido impede que os metadados da Skill sejam carregados corretamente.
 
 ```bash
 cat SKILL.md | head -n 15
 ```
 
-Verifique se:
+Certifique-se de que:
 
-- `---` de abertura na linha 1
-- `---` de fechamento antes do conteúdo Markdown
-- Sintaxe YAML válida (sem tabs, indentação correta)
+- O `---` de abertura esteja na linha 1
+- O `---` de fechamento esteja antes do conteúdo Markdown
+- A sintaxe YAML seja válida (sem tabs, indentação correta)
 
 ### Visualizar erros
 
-Execute o Qwen Code com o modo de debug para ver erros de carregamento de Skills:
+Execute o Qwen Code com o modo de depuração para ver erros de carregamento de Skills:
 
 ```bash
 qwen --debug
@@ -259,7 +325,7 @@ Você pode compartilhar Skills por meio de repositórios de projeto:
 
 1. Adicione a Skill em `.qwen/skills/`
 2. Faça commit e push
-3. Colegas de equipe fazem pull das alterações
+3. Os colegas de equipe fazem pull das alterações
 
 ```bash
 git add .qwen/skills/
@@ -269,27 +335,27 @@ git push
 
 ## Atualizar uma Skill
 
-Edite `SKILL.md` diretamente:
+Edite o `SKILL.md` diretamente:
 
 ```bash
-# Personal Skill
+# Skill pessoal
 code ~/.qwen/skills/my-skill/SKILL.md
 
-# Project Skill
+# Skill de projeto
 code .qwen/skills/my-skill/SKILL.md
 ```
 
-As alterações entram em vigor na próxima vez que você iniciar o Qwen Code. Se o Qwen Code já estiver em execução, reinicie-o para carregar as atualizações.
+Durante uma sessão normal, o Qwen Code monitora os diretórios de Skills pessoais e de projeto. Adicionar, editar ou remover uma Skill atualiza a lista de Skills e o estado de invocação automaticamente após um curto atraso. O modo bare não inicia esses watchers, então reinicie o Qwen Code para carregar alterações de Skills nesse modo.
 
 ## Remover uma Skill
 
 Exclua o diretório da Skill:
 
 ```bash
-# Personal
+# Pessoal
 rm -rf ~/.qwen/skills/my-skill
 
-# Project
+# Projeto
 rm -rf .qwen/skills/my-skill
 git commit -m "Remove unused Skill"
 ```
@@ -298,10 +364,10 @@ git commit -m "Remove unused Skill"
 
 ### Mantenha as Skills focadas
 
-Uma Skill deve abordar uma única capacidade:
+Uma Skill deve abordar uma capacidade:
 
-- Focada: "PDF form filling", "Excel analysis", "Git commit messages"
-- Muito ampla: "Document processing" (divida em Skills menores)
+- Focado: "preenchimento de formulários PDF", "análise de Excel", "mensagens de commit do Git"
+- Amplo demais: "processamento de documentos" (divida em Skills menores)
 
 ### Escreva descrições claras
 
@@ -315,4 +381,4 @@ description: Analyze Excel spreadsheets, create pivot tables, and generate chart
 
 - A Skill é ativada quando esperado?
 - As instruções estão claras?
-- Há exemplos ou casos de borda faltando?
+- Faltam exemplos ou casos limite?

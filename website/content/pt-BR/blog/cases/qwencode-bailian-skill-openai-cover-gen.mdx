@@ -1,0 +1,122 @@
+---
+title: "Criando um Skill de Geração de Capas Estilo GPT com Qwen 3.8-max"
+date: "2026-07-21"
+description: "Do zero, crie um Skill com Qwen 3.8-max para gerar capas de artigo estilo GPT com um comando — com ajuste fino e exportação em um clique."
+author: "joeytoday"
+tags: ["Tutorials", "Skills", "Model Studio"]
+image: https://gw.alicdn.com/imgextra/i4/O1CN01QnbbbB1qBMUGPdyGN_!!6000000005457-2-tps-1344-572.png
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Criando um Skill de Geração de Capas Estilo GPT com Qwen 3.8-max"
+  date="21 de julho de 2026"
+  author="joeytoday"
+/>
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01leN1ID1hFBFJQT7sl_!!6000000004247-2-tps-900-383.png)
+
+Escrever blog técnico é tranquilo, mas a capa sempre foi meu pesadelo. Precisa combinar com o tom do artigo, e ainda por cima meu chefe quer que pareça "premium". Eu estava pensando em como resolver isso quando encontrei a página de [Customer Stories da OpenAI](https://openai.com/zh-Hans-CN/business/customer-stories/) — as capas são incríveis. Nada espalhafatosas, mas bonitas de verdade. Cada imagem é só uma textura de cor sólida ou um feixe de luz, com uma linha de título por cima. Contido e elegante, perfeito para blog técnico.
+
+![Visão geral das capas da OpenAI](https://gw.alicdn.com/imgextra/i4/O1CN01QVii5R1sL68XNdunU_!!6000000005749-2-tps-1545-895.png)
+
+👆 Essa é a prévia da página de blog da OpenAI.
+
+A capa de um artigo técnico sempre foi uma situação constrangedora. Screenshot? Muito cru. Ilustração? Não combina com o conteúdo. Vinte minutos fuçando no Unsplash e a imagem escolhida ainda parece desconectada do texto. A abordagem da OpenAI — "textura pura + título" — simplesmente contorna esse problema. A imagem não precisa ser "relacionada" ao conteúdo, basta acertar o tom.
+
+Já que escolher capa é uma tarefa repetitiva que a IA pode substituir, por que não fazer um Skill? Dito e feito.
+
+Primeiro o resultado, depois explico como implementei e como instalar:
+
+<video
+  src="https://cloud.video.taobao.com/vod/9uWNCXQZXaxYIH3Wajcg7iUBnOA1g_TSd0KrBgfD29o.mp4"
+  poster="https://img.alicdn.com/imgextra/i4/6000000007071/O1CN01t5eU1N226Zjg11zhE_!!6000000007071-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## Criando o Skill: Qwen Code + Bailian CLI
+
+O esquema inteiro usa só duas coisas.
+
+**Qwen Code faz a orquestração do fluxo.** Eu simplesmente mando screenshots do site para o Qwen Code e digo que quero criar um Skill para gerar esse tipo de capa. Embora o qwen3.8-max não tenha capacidade multimodal, **o Qwen Code chama automaticamente o modelo de visão que já configurei** — por exemplo, o qwen3.6-plus — para reconhecer o conteúdo e gerar uma descrição para o qwen 3.8-max. Aí o 3.8 analisa e implementa. Muito prático. O Qwen Code analisa o conteúdo do screenshot, classifica o tipo de conteúdo — claro, eu também fiz algum trabalho manual aqui — e o 3.8-max monta o prompt.
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01eeOy4R1jz6BcBI7mI_!!6000000004618-2-tps-2808-1486.png)
+
+**Bailian CLI usa o modelo qwen-image para gerar a imagem no estilo correspondente**, e no final junta a imagem de fundo com o título numa página HTML interativa. Você abre a página e faz ajustes finos — título, fonte, logo, nitidez — e exporta com um clique.
+
+No final, juntei os dois processos num Skill de produção estável.
+
+<Callout>
+    **Dica**: Quando digo qwen3.8-max aqui, estou me referindo à versão qwen 3.8-max-preview.
+</Callout>
+
+## Geração de Capas: Quatro Estilos
+
+O estilo é a parte em que mais investi nesse esquema. As capas da OpenAI parecem simples, mas de perto têm várias direções diferentes. Dividi em quatro categorias:
+
+**Objeto real.** Macro de texturas. Madeira, couro, nervuras de folha, metal escovado, dunas, olhos compostos. Preenchimento total, sem espaço em branco. Ideal para conteúdo sobre produtos, artesanato, qualidade material.
+
+**Difusão.** Aquarela monocromática em gradiente. Do claro ao escuro, transição dentro do mesmo matiz. Sensação de seda, de fosco, de ondulação na água. Ideal para conteúdo criativo, artístico, emocional.
+
+**Feixe de luz.** Um feixe de luz, ou um reflexo curvo. O fundo é um tom mais claro ou mais escuro da mesma família de cores. Contido, preciso. Conteúdo de tecnologia combina perfeitamente com esse.
+
+**Onda.** Ondulações suaves em aquarela. Feito para podcasts e conteúdo de conversa. A amplitude converge no centro da imagem, deixando uma faixa tranquila para o título.
+
+Quatro estilos, sete paletas de cores (azul, verde, vermelho, roxo, laranja, preto, dourado), mais quatro proporções de tela. As combinações são muitas. Mas todas seguem a mesma regra: poucas cores, visual limpo sem impacto agressivo. O design da OpenAI é bom justamente pela contenção. Não quero estragar isso.
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN014PJQL81dQqsN8QHFU_!!6000000003731-1-tps-1800-1080.gif)
+
+## Como Usar?
+
+No Qwen Code, basta dizer "gere uma capa com base em @artigo".
+
+Ele lê seu artigo e recomenda de 1 a 3 estilos. Você escolhe — pode selecionar vários. Cada estilo gera uma imagem de fundo, e no final você compara tudo na página. A paleta de cores vem dos presets. Sem improviso livre. Claro, você também pode especificar diretamente.
+
+O Bailian CLI gera duas opções. Não gostou? Ajuste o prompt e rode de novo. Imagem definida, um comando monta o HTML. Ao abrir, você tem um editor:
+
+- Clique no título na tela e edite o texto diretamente
+- Cinco fontes para escolher: PingFang, Song, Hei, Noto Serif, Zanku
+- Máscara, tamanho da fonte — arraste o slider
+- Cor do texto: branco, preto, creme
+- Envie um logo (opcional, se precisar de imagem em alta resolução)
+- Exporte em 1x, @2x, @3x, ou pressione ⌘Enter
+
+O que você vê é o que você tem. Renderização em Canvas, download direto em PNG.
+
+<video
+  src="https://cloud.video.taobao.com/vod/KW-shQqldtg6U23gaI6-zbWIOReFLBI_5SoKlRF6SRk.mp4"
+  poster="https://img.alicdn.com/imgextra/i3/6000000000509/O1CN01nlo6R31FdAkgsL7TD_!!6000000000509-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+Tomei algumas decisões de design importantes:
+
+**A imagem de fundo não tem texto.** IA gerando imagem com texto em chinês só produz caracteres corrompidos. Então a imagem é só imagem, e o texto vai por cima via HTML. Essa é a base de todo o esquema.
+
+**O tamanho da imagem é travado na proporção da tela.** Capa de artigo no WeChat: 900×383, proporção 2.35:1, então a imagem é gerada em 1344×572. Se a proporção estiver errada, o recorte na exportação destrói a composição.
+
+**Ondas podem ter várias cores, mas precisam ser suaves.** Os outros três estilos são estritamente monocromáticos. Ondas permitem 2-3 matizes adjacentes, baixa saturação, como aquarela se espalhando. Cores saturadas em contraste, não.
+
+**Prompts todos em inglês.** Prompts em chinês geram qualidade instável. Os templates são todos escritos em inglês.
+
+**Não é só para WeChat**: a tela padrão é a capa de artigo do WeChat. Mas há presets para quadrado 1080×1080, paisagem 16:9 e retrato 3:4. Personalizado também funciona. O mesmo artigo pode gerar capa para WeChat, Xiaohongshu e vídeo, tudo de uma vez.
+
+Como instalar o Skill? Basta dizer ao seu AI Agent:
+
+```
+Clone o repositório de https://github.com/joeytoday/open1v-skills, copie o diretório open1v-openai-cover para ~/.agents/skills/, verifique se o SKILL.md existe e depois delete o repositório clonado.
+```
+
+---
+
+A capa passou de vinte minutos fuçando em imagens para uma frase e dois minutos de espera, com vários estilos para escolher. Se você escreve blog técnico, vale testar.
