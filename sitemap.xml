@@ -1538,7 +1538,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/developers/qwen-serve-protocol/</loc>
-<lastmod>2026-08-22T22:30:54.000Z</lastmod>
+<lastmod>2026-08-27T04:02:46.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1688,7 +1688,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/configuration/settings/</loc>
-<lastmod>2026-08-23T20:54:22.000Z</lastmod>
+<lastmod>2026-08-27T04:02:46.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2564,7 +2564,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/developers/qwen-serve-protocol/</loc>
-<lastmod>2026-08-25T23:26:52.000Z</lastmod>
+<lastmod>2026-08-27T04:02:46.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3524,7 +3524,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/developers/daemon-ui/sidebar-customization/</loc>
-<lastmod>2026-08-06T21:54:36.000Z</lastmod>
+<lastmod>2026-08-27T04:02:46.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5690,7 +5690,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/developers/qwen-serve-protocol/</loc>
-<lastmod>2026-08-25T23:26:52.000Z</lastmod>
+<lastmod>2026-08-27T04:02:46.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5997,6 +5997,12 @@
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/followup-suggestions/</loc>
 <lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
+<loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/goals/</loc>
+<lastmod>2026-08-27T04:02:46.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7616,7 +7622,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ko/users/configuration/settings/</loc>
-<lastmod>2026-08-25T23:26:52.000Z</lastmod>
+<lastmod>2026-08-27T04:02:46.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
