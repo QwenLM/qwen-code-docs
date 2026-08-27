@@ -1,6 +1,6 @@
 {
-  "commit": "35d7ad1c56cb8eab8b2aff845af2d1eb00acb349",
-  "timestamp": "2026-08-27T03:12:02.575Z",
+  "commit": "2bd0ff923e583d275daeffe467c71728b80a18a2",
+  "timestamp": "2026-08-27T04:02:45.775Z",
   "files": {
     "docs/design/2026-05-15-async-memory-recall-design.md": {
       "langs": {
@@ -1619,13 +1619,13 @@
     },
     "docs/users/configuration/settings.md": {
       "langs": {
-        "zh": "d86704c8ed521d566a772350520a126795051f80a3d27f87f3d9a24b2cd87736",
+        "zh": "52cb6cf5ff2601955988f83b3e1e242c3353822536f51e5c74b299976515f241",
         "fr": "52cb6cf5ff2601955988f83b3e1e242c3353822536f51e5c74b299976515f241",
         "ja": "52cb6cf5ff2601955988f83b3e1e242c3353822536f51e5c74b299976515f241",
         "pt-BR": "52cb6cf5ff2601955988f83b3e1e242c3353822536f51e5c74b299976515f241",
         "de": "52cb6cf5ff2601955988f83b3e1e242c3353822536f51e5c74b299976515f241",
         "ru": "52cb6cf5ff2601955988f83b3e1e242c3353822536f51e5c74b299976515f241",
-        "ko": "3b37ecef76850f8743d3c9024c63e8f79b421b23cf66e1d1c120bd4356b82da5"
+        "ko": "52cb6cf5ff2601955988f83b3e1e242c3353822536f51e5c74b299976515f241"
       }
     },
     "docs/users/features/approval-mode.md": {
@@ -1795,7 +1795,7 @@
     },
     "docs/developers/daemon-ui/sidebar-customization.md": {
       "langs": {
-        "fr": "57221790c86012e214d96ca7c7785bafe0ebb0ba771ffbd01e8093c513397aae",
+        "fr": "2b5b21e5f2807a37ef7626be59a9965c04d7541f49cce2494fc291ff64ee3cfd",
         "de": "2b5b21e5f2807a37ef7626be59a9965c04d7541f49cce2494fc291ff64ee3cfd",
         "ja": "2b5b21e5f2807a37ef7626be59a9965c04d7541f49cce2494fc291ff64ee3cfd",
         "zh": "2b5b21e5f2807a37ef7626be59a9965c04d7541f49cce2494fc291ff64ee3cfd",
@@ -2028,10 +2028,10 @@
       "langs": {
         "ru": "36f57afee0ad5e2d17cb096fddfb62d60a90cd7cb68358923fdea93dd36554ea",
         "pt-BR": "36f57afee0ad5e2d17cb096fddfb62d60a90cd7cb68358923fdea93dd36554ea",
-        "de": "95f8b87b16eed578c84fd29c3d7bb740f5e5d6e1ccd893c8b06296a74267d4a2",
+        "de": "36f57afee0ad5e2d17cb096fddfb62d60a90cd7cb68358923fdea93dd36554ea",
         "zh": "8684fe88a4edf420ff93495e4fd57ec13748e77794f0a0f46f33727d0300d39b",
         "fr": "36f57afee0ad5e2d17cb096fddfb62d60a90cd7cb68358923fdea93dd36554ea",
-        "ja": "95f8b87b16eed578c84fd29c3d7bb740f5e5d6e1ccd893c8b06296a74267d4a2",
+        "ja": "36f57afee0ad5e2d17cb096fddfb62d60a90cd7cb68358923fdea93dd36554ea",
         "ko": "36f57afee0ad5e2d17cb096fddfb62d60a90cd7cb68358923fdea93dd36554ea"
       }
     },
@@ -2108,7 +2108,8 @@
         "fr": "a6edefda8958e6900de5e6cec66f775f6cc7d027c71776de611ee014e9a681bc",
         "ru": "a6edefda8958e6900de5e6cec66f775f6cc7d027c71776de611ee014e9a681bc",
         "pt-BR": "a6edefda8958e6900de5e6cec66f775f6cc7d027c71776de611ee014e9a681bc",
-        "ko": "a6edefda8958e6900de5e6cec66f775f6cc7d027c71776de611ee014e9a681bc"
+        "ko": "a6edefda8958e6900de5e6cec66f775f6cc7d027c71776de611ee014e9a681bc",
+        "ja": "a6edefda8958e6900de5e6cec66f775f6cc7d027c71776de611ee014e9a681bc"
       }
     }
   }

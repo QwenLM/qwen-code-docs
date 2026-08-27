@@ -1,7 +1,3 @@
----
-title: "qwen serve HTTP-Protokollreferenz"
-description: "Vollständige Referenz des qwen serve HTTP-Protokolls – Authentifizierung, Capabilities, Routen, SSE-Events und Fehlerbehandlung."
----
 
 # `qwen serve` HTTP-Protokollreferenz
 
@@ -217,6 +213,7 @@ Der Daemon bewirbt seine unterstützten Feature-Tags aus der Serve-Capability-Re
  'workspace_display_name',
  'workspace_qualified_rest_core', 'workspace_qualified_voice',
  'workspace_qualified_memory', 'extension_management_v2', 'extension_git_credentials',
+ 'extension_local_path_install',
  'workspace_persisted_transcript',
  'workspace_session_export', 'workspace_archived_session_export',
  'workspace_session_live_state',
@@ -301,6 +298,8 @@ Dasselbe Tag legt auch Workspace-qualifizierten Projekt-Agent-CRUD unter `/works
 
 `extension_git_credentials` bewirbt authentifizierte HTTPS-Git-Installationen auf sowohl `POST /workspace/extensions/install` als auch `POST /extensions/install`. Clients müssen dieses Tag vorab prüfen, bevor sie URL-Userinfo oder `credentialPersistence` senden; ältere Daemons weisen URL-Anmeldedaten zurück. Das Tag beschreibt die Backend-Protokollunterstützung, nicht die Verfügbarkeit eines Keychains: Der gespeicherte Modus meldet das ausgewählte Backend im terminalen Operationsergebnis.
 
+`extension_local_path_install` bewirbt Daemon-lokale Extension-Quellen auf sowohl `POST /workspace/extensions/install` als auch `POST /extensions/install`. Die `source` muss ein absoluter Pfad sein, der auf dem Daemon-Host existiert. Relative Pfade bleiben nicht unterstützt, sodass das Process-CWD des Daemons die Quellenidentität nicht ändern oder einen GitHub-`owner/repo`-Shorthand verdecken kann. Der bestehende Installationsvorgang kopiert die Extension in den verwalteten Speicher; er verlinkt die Quelle nicht. Clients müssen dieses Tag vorab prüfen, da ältere Daemons lokale Quellen ablehnen.
+
 `extension_batch_activation_v2` fügt `PUT /extensions/activation` und `PUT /workspaces/:workspace/extensions/activation` hinzu. Beide akzeptieren 1–100 Namen in `extensionNames`, deduplizieren sie case-insensitive unter Beibehaltung der Erstsehens-Reihenfolge, persistieren geänderte Ziele in einer Generation und geben einen einzigen `202`-Operations-Handle zurück. Ein Ziel muss nicht installiert sein, wenn `enabled` oder `disabled` gesetzt wird: Sein Name erzeugt eine Desired-State-Deklaration, die erhalten bleibt, wenn eine Extension mit diesem Namen installiert wird. Die globale Route akzeptiert `state: "enabled" | "disabled"`, schreibt V2-`defaultActivation` und reconciliert jede registrierte Runtime. Die Workspace-Route akzeptiert außerdem `"inherit"`, wendet exakte Overrides für die ausgewählte vertrauenswürdige Runtime an oder löscht sie und reconciliert nur diese Runtime. `inherit` deklariert keinen unbekannten Namen; ein Clear mit nur unbekannten Namen meldet `updated: false` und überspringt die reconciliation. Singuläre Aktivierungsrouten bleiben install-only und ID-adressiert.
 
 ### Extension Management V2 Wire-Contract
@@ -384,7 +383,7 @@ Die Installation erfordert explizite Zustimmung und eine initiale Aktivierung:
 }
 ```
 
-Für eine rein Workspace-initiale Aktivierung verwende `{ "scope": "workspace", "workspaceId": "target-workspace-id" }`; das Ziel muss existieren und vertrauenswürdig sein. Daemon-Installationen akzeptieren GitHub-, Git- und npm-Quellen. `ref` gilt nicht für npm, und `registry` gilt nur für npm. `ref`, `autoUpdate`, `allowPreRelease` und `registry` sind optional.
+Für eine rein Workspace-initiale Aktivierung verwende `{ "scope": "workspace", "workspaceId": "target-workspace-id" }`; das Ziel muss existieren und vertrauenswürdig sein. Daemon-Installationen akzeptieren GitHub-, Git- und npm-Quellen. Wenn `extension_local_path_install` beworben wird, akzeptieren sie auch einen absoluten Pfad, der auf dem Daemon-Host existiert. `ref` gilt nicht für npm, `ref` und `autoUpdate` gelten nicht für lokale Quellen, und `registry` gilt nur für npm. `ref`, `autoUpdate`, `allowPreRelease` und `registry` sind optional.
 
 Wenn `extension_git_credentials` beworben wird, darf eine HTTPS-Git-Quelle Userinfo enthalten, zum Beispiel `https://username:token@git.example.com/org/repository.git`. `credentialPersistence` ist nur mit einer solchen Quelle gültig. Es ist `stored` oder `one_time` und standardmäßig `one_time`, wenn weggelassen. Der gespeicherte Modus speichert die Anmeldedaten über den hybriden Secret-Speicher des Daemons und behält nur die saubere Repository-URL in den Installationsmetadaten, sodass die Extension aktualisierbar bleibt. Der Einmal-Modus speichert weder die Repository-URL noch die Anmeldedaten und erstellt einen nicht aktualisierbaren `snapshot`; `autoUpdate: true` wird für diesen Modus abgelehnt. Die Angabe des Felds ohne URL-Anmeldedaten, die Angabe ungültiger Anmeldedaten oder die Verwendung von Anmeldedaten mit npm-, Archiv-, lokalen-, SSH- oder Nicht-Git-Quellen gibt `400` zurück.
 
@@ -493,6 +492,7 @@ Operator-Diagnose-Snapshot, der unten dokumentiert ist.
 | `session_shell_command`             | die Session-Shell-Ausführung explizit aktiviert ist.                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `session_artifacts_persistence`     | die Session-Artefakt-Persistenz für die Runtime verdrahtet ist.                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `session_generation`                | Session-Generation-Helper verfügbar sind.                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `scheduled_task_session_reuse`      | das dauerhafte Scheduled-Task-Session-Management aktiv ist und jede verwaltete Daemon-Runtime den Callback installiert hat, der es einem Task ermöglicht, sich explizit an seine aktuelle bestehende Session zu binden.                                                                                                                                                                                                                                                                                          |
 | `workspace_generation`              | Workspace-scopige Generation-Helper verfügbar sind.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `rate_limit`                        | `--rate-limit` / `QWEN_SERVE_RATE_LIMIT=1` / `ServeOptions.rateLimit` aktiviert ist.                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `workspace_reload`                  | Workspace-Reload-Unterstützung in der eingebetteten Routenkonfiguration verfügbar ist.                                                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -2177,13 +2177,16 @@ Response:
       "clientCount": 1,
       "hasActivePrompt": true,
       "isWaitingForPermission": false,
-      "isWaitingForUserQuestion": false
+      "isWaitingForUserQuestion": false,
+      "updatedAt": "2026-08-18T08:12:30.123Z"
     }
   ]
 }
 ```
 
 `v` ist die Response-Schema-Version. Jede erfolgreiche Response enthält `Cache-Control: no-store`. `sessions` ist die vollständige, nicht-paginierte, unsortierte Menge der derzeit in der ausgewählten Runtime live vorhandenen Sessions; eine leere Live-Runtime gibt `200` mit `sessions: []` zurück. `clientCount`, `hasActivePrompt`, `isWaitingForPermission` und `isWaitingForUserQuestion` sind erforderliche Wire-Felder, und fehlende optionale Bridge-Werte projizieren auf `0` oder `false`. Statische Katalogfelder wie Anzeigename, Zeitstempel, Organisation und Quellmetadaten sind absichtlich ausgeschlossen und bleiben im Besitz des vollständigen Katalogs. Eine fehlende Live-State-Zeile löscht nur die flüchtigen Felder einer bekannten Katalogzeile; sie löscht niemals eine persistierte Katalogzeile.
+
+`updatedAt` ist ein optionaler, vom Daemon beobachteter Aktivitäts-Watermark, vorhanden, wenn ein Prompt, der den Running-Zustand erreicht hat, ein formales Terminal in der aktuellen Bridge veröffentlicht hat. Er rückt genau einmal pro solchem Terminal vor – Erfolg, Fehler, Abbruch und Deadline gleichermaßen – wird vor der Veröffentlichung des Terminal-Events geschrieben und ist streng zunehmend pro Live-Session, selbst wenn zwei Terminals in einer Wall-Clock-Millisekunde landen oder die Wall-Clock rückwärts läuft; ein Vorwärtssprung der Uhr bleibt daher bestehen, bis die Wall-Time aufholt. Er ist niemals früher als das `createdAt` der Session: Der erste Vorschub ist auf die Erstellungszeit geerdet, sodass ein Wall-Clock-Rollback zwischen Erstellung und erstem Terminal eine Zeile nicht hinter dem `createdAt` zurücklassen kann, bei dem sie bereits aufgelistet war. Prompt-Aufnahme, Queue-Wartezeiten, gestreamte Updates, Queue-only-Abbruch und Interaktionswarten rücken ihn niemals vor. Clients verwenden ihn, um die Aktualität einer Katalogzeile, die sie bereits halten, aufzufrischen, anstatt den vollständigen Katalog nach einem abgeschlossenen Turn neu zu laden. Er ist keine Persistierungs-Bestätigung: Der Recorder schreibt Turn-Ergebnisse asynchron, sodass der Wert nur beweist, dass der Daemon einen laufenden Versuch abschließen sah. Er fehlt vor dem ersten laufenden Terminal in einer Bridge-Generation – einschließlich für eine von der Festplatte wiederhergestellte Session – sodass die Abwesenheit kein Support-Probe ist, und er verschwindet, wenn ein Daemon-Neustart oder Workspace-Runtime-Ersatz eine neue Bridge installiert. Wenn sowohl eine Live- als auch eine persistierte Zusammenfassung für eine Session existiert, melden Vollkatalog-Antworten den späteren gültigen Zeitstempel, sodass `GET /session/:id/status`, das die Bridge-Zusammenfassung direkt ohne diese Zusammenführung zurückgibt, einen früheren Wert als eine Listenantwort melden kann.
 
 `catalogVersion` ist ein Gleichheitstoken für vom Daemon beobachtete Katalogänderungen. `generation` ist eine zufällige UUID, die mit jeder Bridge-Instanz erstellt wird und sich bei Daemon-Neustart oder Workspace-Runtime-Ersetzung ändert; `revision` beginnt bei null und steigt monoton innerhalb einer Generation. Die einzige unterstützte Operation ist Gleichheit über das gesamte Paar: Gleiche Generation und Revision bedeutet keine vom Daemon beobachtete Katalogänderung, und jeder Unterschied bedeutet, den vollständigen Katalog neu zu laden. Clients dürfen keine Revisionsarithmetik durchführen oder Revisionen über Generationen hinweg vergleichen, und konservative zusätzliche Inkremente sind erlaubt. Die Version deckt vom Daemon beobachtete Katalogmitgliedschaft und statische Metadatenänderungen ab; gewöhnliche Turn-Aktivität, Prompt-Lifecycle, Attach/Detach und Waiting-State-Übergänge rücken sie nicht vor, da der Live-Snapshot bereits die entsprechenden flüchtigen Felder trägt. Zwei flüchtige Overlay-Werte liegen absichtlich außerhalb beider Signale: Turn-Error-State (`hasTurnError`/`turnError`) und der Pending-Interaction-Count/Content (`pendingInteractionCount`/`pendingInteractions`) rücken die Version weder vor noch erscheinen sie im Snapshot, sodass ein Client, der sie benötigt, weiterhin den pro-Session-Event-Stream oder den vollständigen Katalog lesen muss, anstatt sich auf diese Route zu verlassen; jedes Feld kann wire-additiv hinzugefügt werden, wenn ein konkreter Consumer es benötigt. Mutationen, die direkt von einem anderen Daemon, einer TUI oder einem externen Prozess geschrieben werden, werden nicht beobachtet, sodass ein Client, der das periodische Vollkatalog-Polling einstellt, diese Schreibvorgänge ohne begrenzte Entdeckungszeit hat und sie nur nach einem expliziten vollständigen Reload, einer anderen beobachteten Katalogmutation, einem Reconnect oder einem Daemon-/Runtime-Ersatz erscheinen.
 
@@ -2611,7 +2614,7 @@ Response:
 { "modelId": "qwen-staging" }
 ```
 
-Bei Erfolg wird `model_switched` an den SSE-Stream veröffentlicht. Bei Fehlschlag wird `model_switch_failed` veröffentlicht (sodass auch passive Subscriber den Fehlschlag sehen, nicht nur der Caller). Wettlauf (Race) gegen den Agent-Channel-Exit, sodass ein blockierter Child-Prozess den HTTP-Handler nicht blockieren kann.
+Bei Erfolg wird `model_switched` an den SSE-Stream veröffentlicht. Bei Fehlschlag wird `model_switch_failed` veröffentlicht (sodass auch passive Subscriber den Fehlschlag sehen, nicht nur der Caller). Wettlauf (Race) gegen den Agent-Channel-Exit, sodass ein blockierter Child-Prozess den HTTP-Handler nicht blockieren kann. Ein erfolgreicher Wechsel zeichnet das Session-Modell auch nach bestem Wissen im Session-JSONL auf; wenn der Record geschrieben wird, versuchen Daemon-Load/Resume vor der Authentifizierung dieses Sessions-Modell wiederherzustellen. Wenn das aufgezeichnete Modell nicht mehr angewendet werden kann (Modell entfernt, Credentials nicht verfügbar), verwendet der Restore eine Registry-Route mit derselben ID, wenn eine existiert – für einen Runtime-Snapshot-Record kann das ein anderer Endpunkt als die aufgezeichnete Bindung sein – und fährt nur mit dem `settings.model.name`-Standard fort, wenn keine Route aufgelöst wird. `settings.model.name` wird weiterhin als Standard für **neue** Sessions aktualisiert.
 
 ### `POST /session/:id/recap`
 
@@ -2769,7 +2772,7 @@ Fehler:
 - `404 {code: 'skill_not_found'}` — kein geladener Skill passt zum Namen.
 - `409 {code: 'skill_not_toggleable', reason: 'not_user_invocable' | 'inactive_extension' | 'locked', lockedScope?: 'system' | 'user' | 'systemDefaults'}` — das CLI-Panel würde das Ziel nicht zum Umschalten zulassen. `lockedScope` ist nur vorhanden, wenn `reason` `locked` ist.
 
-Die Mutation verwendet das Workspace-scopige `settings_changed`-Event für jeden geänderten Key (`skills.disabled` und/oder `skills.enabled`); sie fügt keinen neuen Event-Typ hinzu. Workspace-Skill-Status-Zellen enthalten optionale `disabledReason: 'hard' | 'default' | 'inactive_extension'`- und `lockedScope: 'system' | 'user' | 'systemDefaults'`-Felder.
+Die Mutation verwendet das Workspace-scopige `settings_changed`-Event für jeden geänderten Key (`skills.disabled` und/oder `skills.enabled`); sie fügt keinen neuen Event-Typ hinzu. Jedes dieser Events enthält dasselbe `mutation`-Objekt: `{ id, kind: 'skill_toggle', skills: [{ name, enabled }], activation, sessionsRefreshed, sessionsFailed }`. `id` korreliert jedes Settings-Event, das von einer Toggle-Anfrage erzeugt wird. `skills` listet die kanonischen Namen und resultierenden aktivierten Zustände der Skills auf, die sich tatsächlich geändert haben. Workspace-Skill-Status-Zellen enthalten optionale `disabledReason: 'hard' | 'default' | 'inactive_extension'`- und `lockedScope: 'system' | 'user' | 'systemDefaults'`-Felder.
 
 #### `POST /workspace/skills/enable`
 
@@ -2997,19 +3000,23 @@ Die aktive Richtlinie wird in `settings.json` unter `policy.permissionStrategy` 
 
 > **F3 (#4175): Multi-Client-Berechtigungskoordination.** F3 hat die vier obigen Richtlinien hinzugefügt. Pre-F3-Daemons haben First-Responder hartcodiert; das Wire-Format bleibt Bit für Bit unverändert, wenn die konfigurierte Richtlinie `first-responder` ist. Neue Ereignisse (`permission_partial_vote`, `permission_forbidden`) sind additiv — alte SDKs sehen sie als `unrecognized_known_event` und ignorieren sie sicher.
 
-> **Permission-Timeout (Standard 5 Minuten).** Eine `permission_request`
+> **Permission-Timeout.** Eine `permission_request`
 > bleibt ausstehend, bis: (a) ein Client hier abstimmt, (b) `POST /session/:id/cancel`
 > ausgelöst wird, (c) der HTTP-Client, der den Prompt steuert, die Verbindung trennt
 > (Mid-Prompt-Cancel löst ausstehende Berechtigungen als `cancelled` auf),
 > (d) die Session beendet wird, (e) der Daemon herunterfährt **oder
-> (f) der Session-spezifische Permission-Timeout auslöst** (`DEFAULT_PERMISSION_TIMEOUT_MS`,
-> 5 Minuten). Beim Auslösen des Timeouts wird `requestPermission` des Agents
-> als `{outcome: 'cancelled'}` aufgelöst, der Audit-Ring zeichnet einen
-> `permission.timeout`-Eintrag auf, der Daemon-Stderr gibt einen einzeiligen
-> Breadcrumb aus und der SSE-Bus verteilt das Standard-
-> `permission_resolved`-Cancelled-Frame, damit Subscriber aufräumen können. Der
-> Timeout ist über `BridgeOptions.permissionResponseTimeoutMs` konfigurierbar;
-> Headless-Caller, die langlaufende Prompts ausführen, möchten ihn möglicherweise verlängern.
+> (f) sein konfigurierter Timeout auslöst**. Beim Auslösen des Timeouts wird
+> `requestPermission` des Agents als `{outcome: 'cancelled'}` aufgelöst,
+> der Audit-Ring zeichnet einen `permission.timeout`-Eintrag auf, der
+> Daemon-Stderr gibt einen einzeiligen Breadcrumb aus und der SSE-Bus
+> verteilt das Standard-`permission_resolved`-Cancelled-Frame, damit
+> Subscriber aufräumen können. Der gemeinsame Timeout ist konfigurierbar über
+> `BridgeOptions.permissionResponseTimeoutMs` oder
+> `qwen serve --permission-response-timeout-ms`. Sein Standardwert ist `0`, sodass
+> sowohl gewöhnliche Berechtigungen als auch `ask_user_question` unbegrenzt auf eine
+> menschliche Entscheidung warten. Voter-Cancellation, Session-Cancellation,
+> Disconnect-Bereinigung und Daemon-Shutdown lösen ausstehende Interaktionen
+> weiterhin als abgebrochen auf.
 
 Anfrage:
 

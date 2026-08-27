@@ -1,7 +1,3 @@
----
-title: "`qwen serve` HTTP プロトコルリファレンス"
-description: "qwen-code デーモンの HTTP API、認証、ケイパビリティ、および読み取り専用ステータスルート"
----
 
 # `qwen serve` HTTP プロトコルリファレンス
 
@@ -217,6 +213,7 @@ OPTIONS プリフライトリクエスト（`Access-Control-Request-Method` ま�
  'workspace_display_name',
  'workspace_qualified_rest_core', 'workspace_qualified_voice',
  'workspace_qualified_memory', 'extension_management_v2', 'extension_git_credentials',
+ 'extension_local_path_install',
  'workspace_persisted_transcript',
  'workspace_session_export', 'workspace_archived_session_export',
  'workspace_session_live_state',
@@ -301,6 +298,8 @@ OPTIONS プリフライトリクエスト（`Access-Control-Request-Method` ま�
 
 `extension_git_credentials` は `POST /workspace/extensions/install` と `POST /extensions/install` の両方で認証付き HTTPS Git インストールを公開します。クライアントは URL userinfo または `credentialPersistence` を送信する前にこのタグをプリフライトしなければなりません。古いデーモンは URL 認証情報を拒否します。このタグはバックエンドプロトコルのサポートを記述するものであり、キーチェーンの可用性ではありません。stored モードはターミナルの操作結果で選択されたバックエンドを報告します。
 
+`extension_local_path_install` は `POST /workspace/extensions/install` と `POST /extensions/install` の両方でデーモンローカルの Extension ソースを公開します。`source` はデーモンホスト上に存在する絶対パスでなければなりません。相対パスはサポートされないため、デーモンのプロセス cwd がソースのアイデンティティを変更したり、GitHub の `owner/repo` 短縮形をシャドウすることはありません。既存のインストール操作は Extension を管理ストレージにコピーします。ソースをリンクすることはありません。古いデーモンはローカルソースを拒否するため、クライアントはこのタグをプリフライトしなければなりません。
+
 `extension_batch_activation_v2` は `PUT /extensions/activation` と `PUT /workspaces/:workspace/extensions/activation` を追加します。両方とも `extensionNames` で 1〜100 個の名前を受け付け、最初に見た順序を保持しながら大文字と小文字を区別せずに重複排除し、変更されたターゲットを 1 世代で永続化し、1 つの `202` 操作ハンドルを返します。ターゲットは `enabled` または `disabled` を設定する際にインストールされている必要はありません。その名前は希望状態の宣言を作成し、その名前の Extension がインストールされたときに保持されます。グローバルルートは `state: "enabled" | "disabled"` を受け付け、V2 の `defaultActivation` を書き込み、登録されたすべてのランタイムを reconciliation します。ワークスペースルートは `"inherit"` も受け付け、選択された信頼されたランタイムに対して正確なオーバーライドを適用またはクリアし、そのランタイムのみを reconciliation します。`inherit` は不明な名前を宣言しません。すべて不明なクリアは `updated: false` を報告し、reconciliation をスキップします。単数形のアクティベーションルートはインストール済みのみで ID アドレス指定のままです。
 
 ### Extension Management V2 ワイア契約
@@ -384,7 +383,7 @@ OPTIONS プリフライトリクエスト（`Access-Control-Request-Method` ま�
 }
 ```
 
-ワークスペースのみの初期アクティベーションには `{ "scope": "workspace", "workspaceId": "target-workspace-id" }` を使用します。ターゲットは存在し、信頼されている必要があります。デーモンのインストールは GitHub、Git、および npm ソースを受け入れます。`ref` は npm には適用されず、`registry` は npm にのみ適用されます。`ref`、`autoUpdate`、`allowPreRelease`、および `registry` は任意です。
+ワークスペースのみの初期アクティベーションには `{ "scope": "workspace", "workspaceId": "target-workspace-id" }` を使用します。ターゲットは存在し、信頼されている必要があります。デーモンのインストールは GitHub、Git、および npm ソースを受け入れます。`extension_local_path_install` が公開されている場合、デーモンホスト上に存在する絶対パスも受け入れます。`ref` は npm には適用されず、`ref` と `autoUpdate` はローカルソースには適用されず、`registry` は npm にのみ適用されます。`ref`、`autoUpdate`、`allowPreRelease`、および `registry` は任意です。
 
 `extension_git_credentials` が公開されている場合、HTTPS Git ソースには userinfo を含めることができます。例: `https://username:token@git.example.com/org/repository.git`。`credentialPersistence` はこのようなソースでのみ有効です。`stored` または `one_time` であり、省略時は `one_time` がデフォルトです。stored モードはデーモンのハイブリッドシークレットストレージを通じて認証情報を保存し、インストールメタデータにはクリーンなリポジトリ URL のみを保持するため、拡張機能は更新可能です。one-time モードはリポジトリ URL も認証情報も保存せず、更新不可能な `snapshot` を作成します。このモードでは `autoUpdate: true` は拒否されます。URL 認証情報なしでフィールドを供給する場合、無効な認証情報を供給する場合、または npm、アーカイブ、ローカル、SSH、または非 Git ソースで認証情報を使用すると `400` が返されます。
 
@@ -492,6 +491,7 @@ Content-Type: application/json
 | `session_shell_command`             | セッションシェル実行が明示的に有効になっている場合。                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `session_artifacts_persistence`     | セッションアーティファクトの永続化がランタイムに配線されている場合。                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `session_generation`                | セッション生成ヘルパーが利用可能な場合。                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `scheduled_task_session_reuse`      | 永続的なスケジュールタスクセッション管理がアクティブであり、管理されるすべてのデーモンランタイムに、タスクが現在の既存セッションに明示的にバインドできるようにするコールバックがインストールされている。                                                                                                                                                                                                                                                                                                                                                                      |
 | `workspace_generation`              | ワークスペーススコープの生成ヘルパーが利用可能な場合。                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `rate_limit`                        | `--rate-limit` / `QWEN_SERVE_RATE_LIMIT=1` / `ServeOptions.rateLimit` が有効になっている場合。                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `workspace_reload`                  | 組み込みルート設定でワークスペースのリロードサポートが利用可能な場合。                                                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -2120,7 +2120,7 @@ curl http://127.0.0.1:4170/workspaces/<workspace-id>/sessions
 リクエスト:
 
 ```json
-{ "sessionIds": ["<uuid>"] }
+{ "sessionIds": ["<uuid>"], "resolveConflicts": true }
 ```
 
 `sessionIds` は最大 100 個の ID を持つ空でない文字列配列でなければならない。重複は折りたたまれる。
@@ -2131,12 +2131,15 @@ curl http://127.0.0.1:4170/workspaces/<workspace-id>/sessions
 {
   "archived": ["<uuid>"],
   "alreadyArchived": [],
+  "resolvedConflicts": ["<uuid>"],
   "notFound": [],
   "errors": []
 }
 ```
 
-`errors` エントリは `{ "sessionId": "<uuid>", "error": "message" }` を持つ。同じ ID のアクティブファイルとアーカイブファイルは競合として扱われ、`errors` で報告される。ファイルが上書きされることはない。
+`resolveConflicts` は任意で、デフォルトは `false`。デフォルトでは、同じ ID のアクティブファイルとアーカイブファイルは `errors` で報告され、どちらのコピーも移動、削除、上書きされない。ライブセッションのアーカイブは、競合を分類する前に上記の厳格なクローズを引き続き実行するため、そのクローズでキューに溜まったレコードがアクティブなトランスクリプトにフラッシュされる可能性がある。`resolveConflicts: true` を指定すると、アーカイブはアーカイブされたコピーを保持し、アクティブなコピーを削除し、ID を `archived` と `resolvedConflicts` の両方で報告する。`errors` エントリは `{ "sessionId": "<uuid>", "error": "message" }` を持つ。
+
+ライフサイクルの競合はバッチ項目の成果です。ワークスペースなしルートとワークスペース修飾ルートは、競合を `errors` に含めて HTTP `200` を返します。これは以前のワークスペース修飾の HTTP `409 session_conflict` エンベロープを置き換えるものです。そのルートを呼び出していたクライアントはバッチレスポンスをinspectしなければなりません。内部ランタイムの REST バッチは安全な競合メッセージを保持しつつ、他のセッションごとの失敗詳細は引き続き編集します。
 
 ### `POST /sessions/unarchive`
 
@@ -2145,7 +2148,7 @@ curl http://127.0.0.1:4170/workspaces/<workspace-id>/sessions
 リクエスト:
 
 ```json
-{ "sessionIds": ["<uuid>"] }
+{ "sessionIds": ["<uuid>"], "resolveConflicts": true }
 ```
 
 レスポンス:
@@ -2154,12 +2157,13 @@ curl http://127.0.0.1:4170/workspaces/<workspace-id>/sessions
 {
   "unarchived": ["<uuid>"],
   "alreadyActive": [],
+  "resolvedConflicts": ["<uuid>"],
   "notFound": [],
   "errors": []
 }
 ```
 
-同じ ID のアクティブな JSONL がすでに存在する場合、unarchive は `errors` で競合を報告し、上書きしない。同じ ID に対してアーカイブまたは unarchive が実行中の場合、バッチ開始前に `409 session_archiving` を返す。
+`resolveConflicts` は任意で、デフォルトは `false`。デフォルトでは、同時のアクティブおよびアーカイブされた JSONL ファイルは `errors` の競合を生成し、どちらのコピーも移動、削除、上書きされない。アクティブのみのセッションは `alreadyActive` で返される。`resolveConflicts: true` を指定すると、unarchive はアクティブなコピーを保持し、アーカイブされたコピーを削除し、ID を `unarchived` と `resolvedConflicts` の両方で報告する。同じ ID に対してアーカイブまたは unarchive が実行中の場合、バッチ開始前に `409 session_archiving` を返す。
 
 ACP-over-HTTP は、ベンダーメソッド `_qwen/sessions/archive` および `_qwen/sessions/unarchive` を通じて同じリクエストおよびレスポンスボディを使用する。REST ルートテーブルは、`POST /sessions/archive` および `POST /sessions/unarchive` を ACP トランスポート用のそれらのメソッドにマップする。
 
@@ -2548,7 +2552,7 @@ SSE イベント（ワークスペーススコープ）: `{toolName, enabled, or
 }
 ```
 
-対象エラーは `skill_not_found`、`skill_not_toggleable`、または `skill_inactive_extension` を使用する。不正なリクエストは HTTP 400 を返し、`invalid_skill_names`、`invalid_skill_name`、または `invalid_enabled_flag` を返す。認証、ワークスペースの信頼、クライアント識別子、予期しない永続化失敗、およびランタイム生成失敗は、標準のルートゲートを通じてリクエスト全体を失敗させる。バッチレベルの `activation`、`sessionsRefreshed`、および `sessionsFailed` は、変更されたすべての結果で共有される 1 つのライブセッション更新を記述する。`activation` は結果ではなく更新試行を報告する。対象が 1 つも変更されなかったバッチ（たとえば、すべての対象がエラーになった場合）でも、セッションがライブであれば `applied` を返す。これは単一スキルの no-op レスポンスと一致する。実際に変更されたものは、各結果の `changed` フラグと `errors` 配列から導出する。
+対象エラーは `skill_not_found`、`skill_not_toggleable`、または `skill_inactive_extension` を使用する。不正なリクエストは HTTP 400 を返し、`invalid_skill_names`、`invalid_skill_name`、または `invalid_enabled_flag` を返す。認証、ワークスペースの信頼、クライアント識別子、予期しない永続化失敗、およびランタイム生成失敗は、標準のルートゲートを通じてリクエスト全体を失敗させる。バッチレベルの `activation`、`sessionsRefreshed`、および `sessionsFailed` は、変更されたすべての結果で共有される 1 つのライブセッション更新を記述する。`activation` は結果ではなく更新試行を報告する。対象が 1 つも変更されなかったバッチ（たとえば、すべての対象がエラーになった場合）でも、セッションがライブであれば `applied` を返す。これは単一スキルの no-op レスポンスと一致する。実際に変更されたものは、各結果の `changed` フラグと `errors` 配列から導出する。少なくとも 1 つのターゲットが変更されると、デーモンは単一スキルルートと同じ `settings_changed` 変更メタデータを出力し、そのリクエストからのすべての `skills.disabled` / `skills.enabled` イベントは 1 つの `mutation.id` を共有する。
 
 #### `POST /workspace/init`
 
@@ -2720,7 +2724,7 @@ SSE レベルの `id:` / `event:` 行は、EventSource の互換性のために 
 
 > **F3 (#4175): マルチクライアントのパーミッション調整。** F3 は上記の 4 つのポリシーを追加した。F3 以前のデーモンは first-responder をハードコードしていた。設定されたポリシーが `first-responder` の場合、ワイヤー形状はビット単位で変更されない。新しいイベント（`permission_partial_vote`、`permission_forbidden`）は追加である。古い SDK はこれらを `unrecognized_known_event` として扱い、優雅に無視する。
 
-> **パーミッションのタイムアウト（デフォルトで無効）。** `permission_request` は以下のいずれかまで保留中のまま: (a) 何らかのクライアントがここで投票する、(b) `POST /session/:id/cancel` が発行される、(c) プロンプトを駆動する HTTP クライアントが切断される（プロンプト中のキャンセルは保留中のパーミッションを `cancelled` として解決する）、(d) セッションが強制終了される、(e) デーモンがシャットダウンする、**または (f) 設定されたタイムアウトが発火する**。タイムアウトの発火時、エージェントの `requestPermission` は `{outcome: 'cancelled'}` として解決され、監査リングに `permission.timeout` エントリが記録され、デーモンの stderr に一行のパンくずが出力され、SSE バスは標準の `permission_resolved` cancelled フレームをファンアウトし、サブスクライバーがクリーンアップする。共有タイムアウトは `BridgeOptions.permissionResponseTimeoutMs` または `qwen serve --permission-response-timeout-ms` 経由で設定可能です。デフォルトは `0` で、通常のパーミッションと `ask_user_question` の両方が人間の決定を無期限に待ちます。投票者のキャンセル、セッションのキャンセル、切断のクリーンアップ、およびデーモンのシャットダウンは、タイマーが無効な場合でも保留中のインタラクションを cancelled として解決します。
+> **パーミッションのタイムアウト（デフォルトで無効）。** `permission_request` は以下のいずれかまで保留中のまま: (a) 何らかのクライアントがここで投票する、(b) `POST /session/:id/cancel` が発行される、(c) プロンプトを駆動する HTTP クライアントが切断される（プロンプト中のキャンセルは保留中のパーミッションを `cancelled` として解決する）、(d) セッションが強制終了される、(e) デーモンがシャットダウンする、**または (f) 設定されたタイムアウトが発火する**。タイムアウトの発火時、エージェントの `requestPermission` は `{outcome: 'cancelled'}` として解決され、監査リングに `permission.timeout` エントリが記録され、デーモンの stderr に一行のパンくずが出力され、SSE バスは標準の `permission_resolved` cancelled フレームをファンアウトし、サブスクライバーがクリーンアップする。共有タイムアウトは `BridgeOptions.permissionResponseTimeoutMs` または `qwen serve --permission-response-timeout-ms` 経由で設定可能です。デフォルトは `0` で、通常のパーミッションと `ask_user_question` の両方が人間の決定を無期限に待ちます。投票者のキャンセル、セッションのキャンセル、切断のクリーンアップ、およびデーモンのシャットダウンは、保留中のインタラクションを cancelled として解決します。
 
 リクエスト:
 

@@ -1,7 +1,3 @@
----
-title: "`qwen serve` HTTP 协议参考"
-description: "qwen-code 守护进程的 HTTP 协议参考文档"
----
 
 # `qwen serve` HTTP 协议参考
 

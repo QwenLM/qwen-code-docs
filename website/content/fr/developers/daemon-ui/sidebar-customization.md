@@ -1,7 +1,3 @@
----
-title: "WebShell Sidebar — Guide de personnalisation"
-description: "Personnalisation de la sidebar WebShell dans le démon qwen-code."
----
 
 # WebShell Sidebar — Guide de personnalisation
 
@@ -140,8 +136,8 @@ interface WebShellSidebarFooterOptions {
 | Valeur                                         | Effet                         |
 | ---------------------------------------------- | ----------------------------- |
 | `undefined` (par défaut)                       | Tous les éléments affichés    |
-| `false`                                        | Footer entièrement masqué     |
-| `{ items: ['settings', 'theme', 'collapse'] }` | Seuls les éléments listés     |
+| `false`                                        | Footer masqué ; le tiroir mobile ne conserve que son bouton de fermeture |
+| `{ items: ['settings', 'theme', 'collapse'] }` | Seuls les éléments listés affichés ; le tiroir mobile conserve toujours son bouton de fermeture |
 
 Le footer s'adapte automatiquement aux largeurs réduites : les étiquettes sont masquées et la version
 est supprimée sous certains seuils.
@@ -296,10 +292,13 @@ Ces `WebShellProps` affectent indirectement le comportement de la sidebar :
 | --------- | -------------------------------------------------- |
 | Développé | Sidebar complète avec étiquettes textuelles         |
 | Réduit    | Mode rail d'icônes (logo, icône stylo, icônes d'action uniquement) |
-| Mobile    | tiroir glisse depuis la gauche avec overlay         |
+| Mobile    | Le tiroir utilise 70% de son conteneur, dans les limites de largeur, avec un overlay et des boutons de fermeture dans le footer |
 
 L'état réduit est persisté dans `localStorage` sous la clé
 `qwen-code-web-shell-sidebar-collapsed`.
+
+La largeur redimensionnée du bureau est restaurée uniquement dans les layouts développés. Ouvrir ou
+fermer le tiroir mobile n'écrase pas cette largeur ni la préférence de réduction persistée du bureau.
 
 ## Emplacements des sources
 

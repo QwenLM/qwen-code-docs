@@ -101,10 +101,10 @@ Qwen Code 会自动将旧版配置设置迁移到新格式。旧设置文件会�
 | `general.chatRecording` | boolean | 将聊天记录保存到磁盘。禁用此功能也会阻止 `--continue` 和 `--resume` 工作。需要重启。 | `true` |
 #### output
 
-| 设置                    | 类型    | 描述                                                         | 默认值   | 可选值             |
-| ----------------------- | ------- | ------------------------------------------------------------ | -------- | ------------------ |
-| `output.format`         | string  | CLI 输出的格式。                                             | `"text"` | `"text"`, `"json"` |
-| `output.showTimestamps` | boolean | 在每个助手响应前显示 `[HH:MM:SS]` 时间戳。                   | `false`  |                    |
+| 设置                    | 类型    | 描述                                                                                                                                                                                                                                                                                                               | 默认值   | 可选值                                |
+| ----------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------- |
+| `output.format`         | string  | CLI 输出的格式。使用 `stream-json` 时，以 prompt 启动的运行表现为非交互模式（headless），与 `--output-format stream-json` 一致。在 argv 解析时验证的标志（`--include-partial-messages`、`--input-format stream-json`）仍需要显式的 `--output-format stream-json` 标志。 | `"text"` | `"text"`, `"json"`, `"stream-json"` |
+| `output.showTimestamps` | boolean | 在每个助手响应前显示 `[HH:MM:SS]` 时间戳。                                                                                                                                                                                                                                                                                                 | `false`  |                                       |
 
 #### review
 
@@ -200,6 +200,7 @@ Qwen Code 会自动将旧版配置设置迁移到新格式。旧设置文件会�
   "model": {
     "generationConfig": {
       "timeout": 60000,
+      "streamIdleTimeoutMs": 300000,
       "contextWindowSize": 128000,
       "modalities": {
         "image": true
@@ -230,10 +231,10 @@ Qwen Code 会自动将旧版配置设置迁移到新格式。旧设置文件会�
 
 两个守卫约束流式响应，均可设置为 `0` 以禁用。Anthropic/Gemini 生成器未实现这两个守卫，因此下方的滴注式流式传输没有上限。
 
-- `QWEN_STREAM_IDLE_TIMEOUT_MS`（默认 `240000`）约束流式 chunk _之间_ 的不活动时间：如果流在此时间内静默，则会以可重试的 `ETIMEDOUT` 中止。
+- `streamIdleTimeoutMs`（默认 `240000`）约束流式 chunk _之间_ 的不活动时间：如果流在此时间内静默，则会以可重试的 `ETIMEDOUT` 中止。对于提供商支持的模型，请在匹配的 `modelProviders[providerId][].generationConfig` 下设置；对于运行时模型，请使用 `model.generationConfig`。显式的模型值优先于 `QWEN_STREAM_IDLE_TIMEOUT_MS`，`0` 禁用空闲守卫。
 - `QWEN_STREAM_MAX_LIFETIME_MS`（默认 `900000`）限制一个流式响应的_总_上游等待时间，无论 chunk 流量如何——这是滴注式流永远无法完成时无法重置的边界。
 
-这些**仅为环境变量（或对于嵌入方，`ContentGeneratorConfig.streamIdleTimeoutMs` / `streamMaxLifetimeMs`）——没有 settings.json 键**；在 settings.json 中写入 `"streamMaxLifetimeMs"` 无效。升级说明：之前设置 `QWEN_STREAM_IDLE_TIMEOUT_MS=0`（或在 `ContentGeneratorConfig` 中传入 `streamIdleTimeoutMs: 0`）以退出流中止的部署，现在还需要设置 `QWEN_STREAM_MAX_LIFETIME_MS=0`（或 `streamMaxLifetimeMs: 0`）才能保持该行为；并且 15 分钟的生命周期上限约束了即使你将空闲超时提高到其之上的流（例如 `QWEN_STREAM_IDLE_TIMEOUT_MS=1800000`）——如果你依赖更长的窗口，请同样提高上限或将其设置为 `0`。
+`streamMaxLifetimeMs` 仅通过 `QWEN_STREAM_MAX_LIFETIME_MS` 或对于嵌入方通过 `ContentGeneratorConfig.streamMaxLifetimeMs` 可用；将其写入 `settings.json` 无效。15 分钟的生命周期上限仍然约束你将空闲超时提高到此值之上的流。如果你依赖更长的窗口，请同样提高该生命周期环境变量，或将其设置为 `0`。仅禁用 `streamIdleTimeoutMs` 不会禁用此生命周期上限。
 
 **max_tokens（输出 token 限制）：**
 
@@ -297,7 +298,7 @@ Qwen Code 会自动将旧版配置设置迁移到新格式。旧设置文件会�
 
 | 设置 | 类型 | 描述 | 默认值 |
 | --- | --- | --- | --- |
-| `imageModel` | string | 内置 `image_gen` 工具使用的模型。所选模型必须具有 `imageOnly: true`、HTTPS `baseUrl` 和 `modelProviders` 中的 `envKey`。留空则保持该工具不可用。也可以通过 `/model --image` 进行设置。 | `""` |
+| `imageModel` | string | 内置 `image_gen` 工具使用的模型。所选路由必须设置 `supportsImageGeneration: true`（以及旧版的 `imageOnly: true`），并在 `modelProviders` 中声明 HTTPS `baseUrl` 和 `envKey`。留空则保持该工具不可用。也可以通过 `/model --image` 进行设置。 | `""` |
 
 #### visionBridgeTimeoutMs
 
@@ -363,7 +364,7 @@ Qwen Code 会自动将旧版配置设置迁移到新格式。旧设置文件会�
 | `tools.visible` | string 数组 | 在启动时无需 `tool_search` 即可见的延迟工具名称。列出的工具会在初始会话中与核心工具一起显示。在各作用域中作为并集合并。 | `undefined` | |
 | `tools.allowed` | string 数组 | **已弃用。** 请改用 `permissions.allow`。绕过确认对话框的工具名称。首次加载时会自动迁移到 `permissions` 格式。 | `undefined` | |
 | `tools.approvalMode` | string | 设置工具使用的默认审批模式。 | `auto` | 可选值：`plan`（仅分析，不修改文件或执行命令）、`default`（在编辑文件或运行 shell 命令前需要审批）、`auto-edit`（自动批准文件编辑）、`auto`（LLM 分类器自动批准安全操作，阻止高风险操作）、`yolo`（自动批准所有工具调用） |
-| `tools.discoveryCommand` | string | 用于工具发现的运行命令。 | `undefined` | |
+| `tools.discoveryCommand` | string | 用于工具发现的运行命令。当 `permissions.allow` 注册表白名单激活时，发现的工具仅在存在 allow 或 ask 规则覆盖时才会被注册；未被覆盖的已发现工具会对模型隐藏，而不是先被宣传然后在运行时被拒绝。 | `undefined` | |
 | `tools.callCommand` | string | 定义用于调用通过 `tools.discoveryCommand` 发现的特定工具的自定义 shell 命令。该 shell 命令必须满足以下条件：它必须将函数 `name`（与[函数声明](https://ai.google.dev/gemini-api/docs/function-calling#function-declarations)中完全一致）作为第一个命令行参数。它必须在 `stdin` 上以 JSON 格式读取函数参数，类似于 [`functionCall.args`](https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/inference#functioncall)。它必须在 `stdout` 上以 JSON 格式返回函数输出，类似于 [`functionResponse.response.content`](https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/inference#functionresponse)。 | `undefined` | |
 | `tools.useRipgrep` | boolean | 使用 ripgrep 进行文件内容搜索，而不是回退实现。提供更快的搜索性能。 | `true` | |
 | `tools.useBuiltinRipgrep` | boolean | 使用内置的 ripgrep 二进制文件。当设置为 `false` 时，将改用系统级的 `rg` 命令。此设置仅在 `tools.useRipgrep` 为 `true` 时生效。 | `true` | |
@@ -411,11 +412,11 @@ permissions 系统提供了细粒度的控制，用于决定哪些工具可以�
 
 第一个匹配的规则生效。规则使用 `"ToolName"` 或 `"ToolName(specifier)"` 格式。
 
-| 设置项             | 类型             | 描述                                                                                                      | 默认值     |
-| ------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------- | ----------- |
-| `permissions.allow` | array of strings | 自动批准的工具调用规则（无需确认）。在所有作用域（用户 + 项目 + 系统）中合并。 | `undefined` |
-| `permissions.ask`   | array of strings | 始终需要用户确认的工具调用规则。优先级高于 `allow`。                         | `undefined` |
-| `permissions.deny`  | array of strings | 被阻止的工具调用规则。优先级最高——覆盖 `allow` 和 `ask`。                               | `undefined` |
+| 设置项             | 类型             | 描述                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 默认值     |
+| ------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- |
+| `permissions.allow` | array of strings | 自动批准的工具调用规则（无需确认）。在所有作用域（用户 + 项目 + 系统）中合并。同时作为注册表级别的允许列表：当配置了至少一条有效的 allow 规则时（格式错误的条目不计入，且仅自动批准来源（如 `--allowed-tools` CLI 标志）不会激活它），未被任何 allow 或 ask 规则覆盖的内置工具会被降级为延迟工具——它们仍然保持注册（列在 `/tools` 中，可通过 `tool_search` 工具按需加载），但其 schema 不会在 eager 模型请求中发送，对其的调用仍会经过正常的审批流程。这可以在不静默移除工具的情况下将未覆盖的 schema 排除在模型请求之外。MCP 工具、`--json-schema` 的 `structured_output` 合约、plan 模式生命周期工具 `exit_plan_mode` / `enter_plan_mode` / `ask_user_question`、`task_stop`、`tool_search` 以及延迟的 `computer_use__*` 系列不受此限制，仍然保持 eager 可用。在会话中途移除规则会立即撤销其自动批准，但注册表组成变更在重启后生效。例外：在 AUTO 审批模式下，危险的 allow 规则会被暂存而非激活，因此会话中途的移除无法触及暂存——退出 AUTO 模式时暂存的规则会被恢复并继续自动批准，直到会话重启。需要重启。 | `undefined` |
+| `permissions.ask`   | array of strings | 始终需要用户确认的工具调用规则。优先级高于 `allow`。Ask 规则也计入注册表允许列表：被 ask 规则覆盖的工具在允许列表激活时仍然保持注册，因此"始终需要确认"永远不会静默变为"工具不可用"。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | `undefined` |
+| `permissions.deny`  | array of strings | 被阻止的工具调用规则。优先级最高——覆盖 `allow` 和 `ask`。整工具 deny 规则（无 specifier）还会从注册表中移除该工具——适用于内置工具和通过 `tools.discoveryCommand` 发现的工具。MCP 工具不受此影响（其注册路径仅遵循 `disabledTools`）：请使用每服务器的 `excludeTools` / `tools.disabled` 过滤器来隐藏它们。Deny 规则仍然在运行时阻止 MCP 工具调用。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `undefined` |
 
 **工具名称别名（在规则中使用以下任意一个均可）：**
 
@@ -763,6 +764,7 @@ Qwen Code 可以自动从 `.env` 文件加载环境变量。
 | `QWEN_CODE_PROFILE_STARTUP_OUTER`                    | 与 `QWEN_CODE_PROFILE_STARTUP=1` 一起设置为 `1`，以在外层（沙箱前）进程中也收集启动分析。外层进程报告会获得 `outer-` 文件名前缀，以使其与沙箱子进程的报告区分开来。                                                                                                                                                                        | 默认关闭——仅沙箱子进程收集，以避免重复报告。对于 CLI 不会重新启动到沙箱中的本地开发非常有用。                                                                                                                                                                                                                                                                                                                          |
 | `QWEN_CODE_PROFILE_STARTUP_NO_HEAP`                  | 与 `QWEN_CODE_PROFILE_STARTUP=1` 一起设置为 `1`，以跳过每个检查点的 `process.memoryUsage()` 快照。在测量分析器自身的海森堡开销时非常有用。                                                                                                                                                                                                                               | 默认关闭。堆快照每次耗时约 50 µs（远低于总启动时间的 1%），因此大多数用户应保持原样。                                                                                                                                                                                                                                                                                                                                                            |
 | `QWEN_CODE_LEGACY_MCP_BLOCKING`                      | 设置为 `1` 以恢复渐进式 MCP 之前的行为，即 `Config.initialize()` 在返回前同步等待每个配置的 MCP 服务器的 discover 握手。                                                                                                                                                                                                                                    | 默认关闭。现代 qwen-code 允许 MCP 服务器在后台上线，而 UI 已经可以交互；模型在服务器稳定后约 16 毫秒内看到每批新工具。此标志作为 ≥ 1 个版本的回滚逃生舱保留。示例：`export QWEN_CODE_LEGACY_MCP_BLOCKING=1`                                                                                                                                                                  |
+| `QWEN_CODE_LEGACY_ERASE_LINES`                       | `=1` 强制禁用终端重绘优化器（恢复逐行擦除序列）；`=0` 强制启用它，即使在 WSL 上也是如此（WSL 默认跳过，因为 ConPTY 错误处理优化器的批量光标移动（issue #7634））。未设置 = 平台默认值（当设置了 `WSL_DISTRO_NAME` 或 `WSL_INTEROP` 时跳过）。                                                                                           | 流式输出回归的逃生舱。由于它从环境中读取，会清理环境变量的启动器（如 `sudo`）也会丢弃它——改为在启动时传递：`sudo QWEN_CODE_LEGACY_ERASE_LINES=1 qwen`。示例：`export QWEN_CODE_LEGACY_ERASE_LINES=1`                                                                                                                                                                                                                |
 当两个用户级 `.env` 文件定义了相同的变量时，Qwen 专属文件优先：`<QWEN_HOME>/.env`（当 `QWEN_HOME` 未设置时为 `~/.qwen/.env`）会在 `~/.env` 之前加载，且不会覆盖现有的环境变量值。
 
 ## 命令行参数
