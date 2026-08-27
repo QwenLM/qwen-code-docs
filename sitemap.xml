@@ -452,7 +452,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/development/deployment/</loc>
-<lastmod>2025-12-15T15:14:46.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -470,7 +470,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/development/npm/</loc>
-<lastmod>2026-01-26T12:26:02.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -494,19 +494,19 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/extensions/extension-releasing/</loc>
-<lastmod>2025-12-15T15:14:46.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/extensions/extension/</loc>
-<lastmod>2025-12-15T15:14:46.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/extensions/getting-started-extensions/</loc>
-<lastmod>2025-12-15T15:14:46.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -566,7 +566,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/tools/memory/</loc>
-<lastmod>2025-12-15T15:14:46.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -620,7 +620,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/</loc>
-<lastmod>2025-12-26T16:28:27.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.8</priority>
 </url>
@@ -674,7 +674,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/configuration/trusted-folders/</loc>
-<lastmod>2025-12-17T13:59:31.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -782,13 +782,13 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/channels/weixin/</loc>
-<lastmod>2026-04-11T11:54:43.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/checkpointing/</loc>
-<lastmod>2025-12-15T15:14:46.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -920,13 +920,13 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/tips/</loc>
-<lastmod>2026-05-06T07:28:36.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/token-caching/</loc>
-<lastmod>2025-12-15T15:14:46.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -974,7 +974,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/integration-zed/</loc>
-<lastmod>2026-03-16T08:14:18.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1532,7 +1532,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/developers/extensions/getting-started-extensions/</loc>
-<lastmod>2025-12-15T15:14:46.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1814,7 +1814,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/checkpointing/</loc>
-<lastmod>2026-04-11T11:54:43.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2558,7 +2558,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/developers/extensions/getting-started-extensions/</loc>
-<lastmod>2025-12-15T15:14:46.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2840,7 +2840,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/features/checkpointing/</loc>
-<lastmod>2026-04-11T11:54:43.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3584,7 +3584,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/developers/extensions/getting-started-extensions/</loc>
-<lastmod>2025-12-15T15:14:46.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3866,7 +3866,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/features/checkpointing/</loc>
-<lastmod>2026-04-11T11:54:43.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4634,7 +4634,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/developers/extensions/getting-started-extensions/</loc>
-<lastmod>2025-12-15T15:14:46.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4916,7 +4916,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/features/checkpointing/</loc>
-<lastmod>2026-04-11T11:54:43.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5660,7 +5660,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/developers/extensions/getting-started-extensions/</loc>
-<lastmod>2025-12-15T15:14:46.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5966,7 +5966,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/checkpointing/</loc>
-<lastmod>2026-04-11T11:54:43.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6710,7 +6710,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/developers/extensions/getting-started-extensions/</loc>
-<lastmod>2025-12-15T15:14:46.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6992,7 +6992,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/features/checkpointing/</loc>
-<lastmod>2026-04-11T11:54:43.000Z</lastmod>
+<lastmod>2026-06-11T07:26:55.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
