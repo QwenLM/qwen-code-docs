@@ -47,6 +47,56 @@ test("rejects target-only frontmatter", () => {
   }
 });
 
+test("self-heals closed target-only frontmatter without refreshing a stale file", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "qwen-orchestrator-test-"));
+  const contentDir = path.join(root, "content");
+  const manifest = path.join(root, "manifest.json");
+  const target = path.join(contentDir, "zh", "commands.md");
+
+  try {
+    fs.mkdirSync(path.join(contentDir, "en"), { recursive: true });
+    fs.mkdirSync(path.join(contentDir, "zh"), { recursive: true });
+    fs.writeFileSync(path.join(contentDir, "en", "commands.md"), "# Commands\n");
+    fs.writeFileSync(target, "---\ntitle: Commands\n---\n# 命令\n");
+    const stale = new Date("2000-01-01T00:00:00Z");
+    fs.utimesSync(target, stale, stale);
+    fs.writeFileSync(
+      manifest,
+      JSON.stringify({ createdAt: Date.now(), files: ["docs/commands.md"] })
+    );
+
+    const verify = () =>
+      spawnSync(
+        process.execPath,
+        [
+          orchestrator,
+          "verify",
+          "--lang",
+          "zh",
+          "--content-dir",
+          contentDir,
+          "--manifest",
+          manifest,
+        ],
+        { encoding: "utf8" }
+      );
+
+    for (let i = 0; i < 2; i++) {
+      const result = verify();
+      assert.equal(result.status, 1, result.stdout || result.stderr);
+      assert.match(result.stdout, /target not touched this session/);
+    }
+    assert.equal(fs.readFileSync(target, "utf8"), "# 命令\n");
+    assert.equal(fs.statSync(target).mtimeMs, stale.getTime());
+
+    fs.utimesSync(target, new Date(), new Date());
+    const result = verify();
+    assert.equal(result.status, 0, result.stdout || result.stderr);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("quarantine keeps a sound replacement over corrupt HEAD", () => {
   const root = fs.realpathSync(
     fs.mkdtempSync(path.join(os.tmpdir(), "qwen-quarantine-test-"))
