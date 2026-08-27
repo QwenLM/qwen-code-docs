@@ -92,7 +92,7 @@ SDK 强制执行以下默认超时：
 你可以通过 `timeout` 选项自定义这些超时：
 
 ```typescript
-import { query } from ' @qwen-code/sdk';
+import { query } from '@qwen-code/sdk';
 
 const q = query({
   prompt: 'Your prompt',
