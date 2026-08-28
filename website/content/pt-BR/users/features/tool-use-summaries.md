@@ -43,7 +43,7 @@ Após um lote de ferramentas ser finalizado, o Qwen Code dispara uma chamada do 
 - A saída de texto mais recente do assistente (primeiros 200 caracteres) como um prefixo de intenção.
 - Um prompt de sistema instruindo o modelo a retornar um rótulo no passado, com 30 caracteres, no estilo de assunto de commit git.
 
-A chamada é executada em paralelo com o streaming da API da próxima rodada, então sua latência de ~1s fica oculta atrás da resposta do modelo principal. Quando o rótulo é resolvido, ele é anexado ao transcript como uma entrada `tool_use_summary`.
+A chamada é executada em paralelo com o streaming da API do próximo turno, então sua latência de ~1s fica oculta atrás da resposta do modelo principal. Quando o rótulo é resolvido, ele é anexado à transcrição como uma entrada `tool_use_summary`.
 
 Exemplos de rótulos: `Searched in auth/`, `Fixed NPE in UserService`, `Created signup endpoint`, `Read config.json`, `Ran failing tests`.
 
@@ -54,7 +54,7 @@ O resumo é gerado quando **todas** as condições a seguir são verdadeiras:
 - `experimental.emitToolUseSummaries` é `true` (padrão).
 - Um `fastModel` está configurado (via configurações ou `/model --fast`).
 - Pelo menos uma ferramenta foi concluída no lote.
-- A rodada não foi abortada antes da conclusão da ferramenta.
+- O turno não foi abortado antes da conclusão da ferramenta.
 - O modelo rápido retornou uma resposta não vazia e sem erros.
 
 Chamadas de ferramentas de subagentes não disparam a geração de resumo — apenas os lotes de ferramentas da sessão principal o fazem.
@@ -66,7 +66,7 @@ O resumo é silenciosamente ignorado (sem erro, sem alteração na interface) qu
 - Nenhum modelo rápido está configurado.
 - A chamada do modelo rápido falha, expira ou retorna vazia.
 - O modelo retornou uma string com aparência de mensagem de erro (ex.: `Error: ...`, `I cannot ...`) — filtrada pelo cliente para que a interface não mostre rótulos enganosos.
-- A rodada foi abortada (`Ctrl+C`) antes da conclusão do modelo.
+- O turno foi abortado (`Ctrl+C`) antes da conclusão do modelo.
 
 Em todos esses casos, o grupo de ferramentas é renderizado como sempre foi.
 
@@ -124,7 +124,7 @@ Três pontos que costumam confundir em uma primeira leitura deste recurso:
 
 1. **Uma geração por lote, compartilhada por ambos os modos de exibição.** A chamada ao modelo rápido ocorre exatamente uma vez em `handleCompletedTools` quando um lote de ferramentas é finalizado. Alternar com `Ctrl+O` depois disso **não** dispara uma nova chamada — ambos os modos, o recolhido e o expandido, leem da mesma entrada de histórico `tool_use_summary` capturada na primeira vez.
 2. **Sem preenchimento retroativo ao alternar ou ao retomar sessão.** Um `tool_group` que foi concluído antes de o recurso ser ativado (ou antes de você ativar a configuração, ou em uma sessão retomada — o `ChatRecordingService` não persiste entradas de resumo) nunca receberá um rótulo. Não há uma varredura de histórico existente. Se você ativar esta configuração no meio de uma sessão, apenas lotes **futuros** mostrarão um rótulo; grupos mais antigos mantêm a renderização padrão sem indicador de que um rótulo está faltando.
-3. **Apenas lotes do agente principal.** O gatilho reside no loop de rodadas da sessão principal (`useGeminiStream`), então:
+3. **Apenas lotes do agente principal.** O gatilho reside no loop de turnos da sessão principal (`useLlmStream`), então:
    - ✅ Shell, MCP, operações de arquivo e a própria _chamada_ da ferramenta `Task` / subagente (conforme aparece no lote principal) são resumidos.
    - ❌ Os lotes de ferramentas **internos** de um subagente (executados por meio de `packages/core/src/agents/runtime/`) **não** são resumidos.
 
@@ -153,7 +153,7 @@ O uso do modelo de resumo aparece na saída de `/stats` sob os totais de tokens 
 
 A chamada de resumo envia o nome, `args` truncado e resultado truncado de cada ferramenta bem-sucedida (cada campo limitado a 300 caracteres) para o **modelo rápido**, além dos primeiros 200 caracteres do texto mais recente do assistente como um prefixo de intenção.
 
-Se o seu modelo rápido estiver configurado para o mesmo provedor/auth que o modelo da sessão principal, os dados fluem pelos mesmos limites que sua sessão principal já usa — sem alteração no escopo de confiança. Se você configurou um modelo rápido de um **provedor diferente**, as entradas e saídas das ferramentas (potencialmente incluindo conteúdos de arquivos lidos por `read_file`, saídas de comandos de chamadas shell ou valores expostos por ferramentas MCP) serão enviadas a esse outro provedor como parte do prompt de sumarização. Isso é um escopo de compartilhamento de dados estritamente maior do que apenas a sessão principal.
+Se o seu modelo rápido estiver configurado para o mesmo provedor/auth que o modelo da sessão principal, os dados fluem pelos mesmos limites que sua sessão principal já usa — sem alteração no escopo de confiança. Se você configurou um modelo rápido de um **provedor diferente**, as entradas e saídas das ferramentas (potencialmente incluindo conteúdos de arquivos lidos por `read_file`, saídas de comandos de chamadas shell ou valores expostos por ferramentas MCP) serão enviadas a esse outro provedor como parte do prompt de resumo. Isso é um escopo de compartilhamento de dados estritamente maior do que apenas a sessão principal.
 
 Se isso for relevante para seu fluxo de trabalho, você tem duas opções claras:
 

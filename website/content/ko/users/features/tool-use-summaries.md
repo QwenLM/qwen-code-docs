@@ -10,7 +10,7 @@ Qwen Code는 각 도구 배치 완료 후 짧은 git-commit-subject 스타일의
 
 ### 메인 뷰 (완료된 그룹)
 
-메인 변환에서, 완료된 접을 수 있는 배치가 단일 레이블 행으로 접힙니다 — 요약이 일반적인 `Tool × N` 헤더를 대체합니다:
+메인 트랜스크립트에서, 완료된 접을 수 있는 배치가 단일 레이블 행으로 접힙니다 — 요약이 일반적인 `Tool × N` 헤더를 대체합니다:
 
 ```
 ╭──────────────────────────────────────────────╮
@@ -43,7 +43,7 @@ Qwen Code는 각 도구 배치 완료 후 짧은 git-commit-subject 스타일의
 - 어시스턴트의 가장 최근 텍스트 출력(첫 200자)이 의도 접두사로.
 - 모델에게 과거 시제의 30자 레이블을 git-commit-subject 스타일로 반환하도록 지시하는 시스템 프롬프트.
 
-호출은 다음 턴의 API 스트리밍과 병렬로 실행되므로 ~1초 지연이 메인 모델의 응답 뒤에 숨겨집니다. 레이블이 확인되면 `tool_use_summary` 항목으로 변환에 추가됩니다.
+호출은 다음 턴의 API 스트리밍과 병렬로 실행되므로 ~1초 지연이 메인 모델의 응답 뒤에 숨겨집니다. 레이블이 확인되면 `tool_use_summary` 항목으로 트랜스크립트에 추가됩니다.
 
 예시 레이블: `Searched in auth/`, `Fixed NPE in UserService`, `Created signup endpoint`, `Read config.json`, `Ran failing tests`.
 
@@ -124,7 +124,7 @@ Fast model이 설정되지 않으면 요약 생성이 완전히 건너뛰어집�
 
 1. **배치당 한 번 생성, 두 표시 모드 모두 공유.** Fast model 호출은 도구 배치가 완료될 때 `handleCompletedTools`에서 정확히 한 번 발생합니다. 그 후 `Ctrl+O` 확장 상세 모드를 토글해도 새 호출이 트리거되지 **않습니다** — 접힌 것과 확장된 렌더링 모두 처음에 캡처된 동일한 `tool_use_summary` 기록 항목에서 읽습니다.
 2. **토글 또는 세션 재개 시 백필 없음.** 기능이 활성화되기 전에 완료된 `tool_group`(설정을 켜기 전, 또는 재개된 세션에서 — `ChatRecordingService`는 요약 항목을 지속하지 않음)은 절대 레이블을 받지 못합니다. "기존 기록 스윕" 패스가 없습니다. 세션 중에 이 설정을 켜면 _미래_ 배치만 레이블을 표시합니다; 이전 그룹은 레이블이 누락되었다는 표시 없이 기본 렌더링을 유지합니다.
-3. **메인 에이전트 배치만.** 트리거는 메인 세션의 턴 루프(`useGeminiStream`)에 있으므로:
+3. **메인 에이전트 배치만.** 트리거는 메인 세션의 턴 루프(`useLlmStream`)에 있으므로:
    - ✅ 셸, MCP, 파일 작업, 그리고 `Task` / 서브에이전트 도구 _호출 자체_(메인 배치에 나타나는 대로)는 요약됩니다.
    - ❌ 서브에이전트의 **내부** 도구 배치(`packages/core/src/agents/runtime/`를 통해 실행)는 요약되지 않습니다.
 
@@ -170,5 +170,5 @@ Fast model이 메인 세션 모델과 동일한 공급자/인증으로 설정된
 
 ## 관련 자료
 
-- [Expanded detail mode](../configuration/settings#ui) — `Ctrl+O`를 눌러 모든 도구 출력을 인라인으로 확장; 완료된 그룹의 경우 요인이 일반적인 도구 그룹 헤더를 대체합니다.
+- [Expanded detail mode](../configuration/settings#ui) — `Ctrl+O`를 눌러 모든 도구 출력을 인라인으로 확장; 완료된 그룹의 경우 요약이 일반적인 도구 그룹 헤더를 대체합니다.
 - [Followup Suggestions](./followup-suggestions) — 동일한 `fastModel` 설정을 공유하는 또 다른 fast model 기반 UX 향상.

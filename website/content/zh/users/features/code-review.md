@@ -1,7 +1,3 @@
----
-title: "Code Review"
-description: "Review code changes for correctness, security, performance, and code quality"
----
 
 # 代码审查
 
@@ -46,7 +42,7 @@ description: "Review code changes for correctness, security, performance, and co
 | `medium` | high 流水线减去最昂贵的 pass：在缩减的维度集上进行并行 finder fan-out，加上构建/测试和单次验证 pass | 无上限（已验证） | Approve 上限为 Comment           | 从不            |
 | `high`   | 完整流水线：最多 16 个并行 agent → 分片验证 → 迭代反向审计                                                                    | 无上限（已验证） | Approve / Request changes / Comment | 使用 `--comment` 时 |
 
-默认值：PR 审查为 **high**，本地和文件审查为 **medium**。有效的 `--comment` 会强制使用 high（发布的评论必须通过验证）——在非 PR 目标上 `--comment` 会被忽略并发出警告，**不会**更改 effort。Medium 保留了安全性和测试覆盖率 agent 以及构建/测试，但去掉了对手角色、语言陷阱和 wrapper/proxy 专家（Agent 1d/1e）、diff 专家 finder 和反向审计——因此只有第二次审查才能发现的微妙 Critical 可能会漏掉；对安全性敏感或发布前的审查请使用 `--effort high`。只有 `low` 是未验证的。Worktree 隔离适用于同仓库 PR 审查；跨仓库 PR 以轻量模式运行（仅 diff，无 worktree 或构建/测试）。Low pass 标记为未验证，不发出结论，也不写入增量审查缓存，因此后续的 `--effort high` 运行不会被跳过为"已审查"；medium 是已验证的，但其 Approve 上限为 Comment，因为没有对第一次 pass 遗漏的内容进行二次审查。获取 diff 的机制在每个级别都相同——PR 审查始终使用隔离的 worktree 和相同的 base 解析，因此审查永远不会针对错误的 base。一个范围差异仍然存在：增量缓存仅用于 high，因此 high 重新审查可能只覆盖新的 commit（`lastCommitSha..HEAD`），而 low/medium 始终审查完整的 PR diff。
+`/review` 按以下顺序解析 effort：显式的 `--effort`、该项目上次明确输入的级别、操作员的 `review.effort` 设置，然后是内置的目标默认值（PR 审查为 **high**，本地和文件审查为 **medium**）。当记忆的级别生效时，`/review` 会在开始工作前宣布它；输入新的 `--effort` 可以替换它。有效的 `--comment` 会强制使用 high（发布的评论必须通过验证）——在非 PR 目标上 `--comment` 会被忽略并发出警告，**不会**更改 effort。Medium 保留了安全性和测试覆盖率 agent 以及构建/测试，但去掉了对手角色、语言陷阱和 wrapper/proxy 专家（Agent 1d/1e）、diff 专家 finder 和反向审计——因此只有第二次审查才能发现的微妙 Critical 可能会漏掉；对安全性敏感或发布前的审查请使用 `--effort high`。只有 `low` 是未验证的。Worktree 隔离适用于同仓库 PR 审查；跨仓库 PR 以轻量模式运行（仅 diff，无 worktree 或构建/测试）。Low pass 标记为未验证，不发出结论，也不写入增量审查缓存，因此后续的 `--effort high` 运行不会被跳过为"已审查"；medium 是已验证的，但其 Approve 上限为 Comment，因为没有对第一次 pass 遗漏的内容进行二次审查。获取 diff 的机制在每个级别都相同——PR 审查始终使用隔离的 worktree 和相同的 base 解析，因此审查永远不会针对错误的 base。一个范围差异仍然存在：增量缓存仅用于 high，因此 high 重新审查可能只覆盖新的 commit（`lastCommitSha..HEAD`），而 low/medium 始终审查完整的 PR diff。
 
 ## 工作原理
 
@@ -136,7 +132,7 @@ description: "Review code changes for correctness, security, performance, and co
 
 检查清单故意分三路。让一个 agent 对 2,400 行的文件执行全部八项检查只能做好其中一项；三个 agent 各执行两到三项检查则全部完成。Chunk agent 不能替代这一点——在 PR #6457 上，它们将这些缺陷中的每一个都包含在分配的 territory 内但没有报告任何一个。它们缺少的不是行数，而是问题。
 
-发现以**分片批次**进行验证（每个验证 agent 最多 8 个发现，全部同时启动）。验证器只有通过引用与之矛盾的代码（或当 diff 自身的注释将被标记的行为记录为有意为之）时才能拒绝 Critical；任何不够确定的内容会被降级为低置信度而非删除——一个被静默拒绝的 Critical 对后续每个阶段都不可见，而降级后的仍然会到达人类手中。验证后，**迭代反向审计**按 chunk 每轮一个审计员进行 fan-out 来查找遗漏，每个审计员拥有累计发现列表。循环在**连续两轮无新发现**后停止（或达到计划的轮次上限——如实报告而非报告为收敛）。该上限遵循 diff 的拓扑：小型 diff 为 **10** 轮（每轮一个审计员）；分 chunk 的 diff 为 **5** 轮（每轮每个 chunk 一个审计员）；大型 diff（≥ 3000 有效行）_当运行有截止时间_时为 **3** 轮，因为五轮约 90 分钟的轮次无法放入六小时的 CI 上限，且中途被终止的审查什么都发布不了——没有截止时间时，大型 diff 保持分 chunk 的 5 轮上限。操作员可以通过 `review.reverseAuditRounds` 设置降低每次审查适用的任一上限；它永远不能提高上限。一轮无新发现不是收敛的证据，反向审计的发现与其他发现一样经过验证。
+发现以**分片批次**进行验证（每个验证 agent 最多 8 个发现，全部同时启动）。验证器只有通过引用与之矛盾的代码（或当 diff 自身的注释将被标记的行为记录为有意为之）时才能拒绝 Critical；任何不够确定的内容会被降级为低置信度而非删除——一个被静默拒绝的 Critical 对后续每个阶段都不可见，而降级后的仍然会到达人类手中。这一标准适用于每次拒绝的形式：它必须能从代码中构建——引用发现误读的行、从类型/常量/不变量证明所声称的状态不可能、引用覆盖触发条件的 diff 内 guard，或匹配无可观察效果的纯样式更改——或者匹配其他排除标准——而"过于推测"永远不是其中之一。失败场景命名了代码未排除的状态的发现默认是合理的：并发竞态、罕见但可达路径上的 nil/undefined、被视为缺失的 falsy 零或空集合、未排除边界上的边界差一、重试风暴或部分失败、丢失锚点的正则或允许列表。未构建四个依据中任何一个的拒绝会降级而非丢弃。验证后，**迭代反向审计**按 chunk 每轮一个审计员进行 fan-out 来查找遗漏，每个审计员拥有累计发现列表。循环在**连续两轮无新发现**后停止（或达到计划的轮次上限——如实报告而非报告为收敛）。该上限遵循 diff 的拓扑：小型 diff 为 **10** 轮（每轮一个审计员）；分 chunk 的 diff 为 **5** 轮（每轮每个 chunk 一个审计员）；大型 diff（≥ 3000 有效行）_当运行有截止时间_时为 **3** 轮，因为五轮约 90 分钟的轮次无法放入六小时的 CI 上限，且中途被终止的审查什么都发布不了——没有截止时间时，大型 diff 保持分 chunk 的 5 轮上限。操作员可以通过 `review.reverseAuditRounds` 设置降低每次审查适用的任一上限；它永远不能提高上限。一轮无新发现不是收敛的证据，反向审计的发现与其他发现一样经过验证。
 
 ## 严重级别
 

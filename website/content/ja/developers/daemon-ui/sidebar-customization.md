@@ -168,6 +168,7 @@ interface WebShellSidebarOptions {
   enabled?: boolean; // show/hide sidebar (default: true when passed)
   defaultCollapsed?: boolean; // initial collapsed state (persisted in localStorage)
   showCompactToggle?: boolean; // show the collapse button in the chat area (default: true)
+  showSessionSourceSwitch?: boolean; // show the Tasks/Channels switch (default: true)
   branding?: false | WebShellSidebarBranding;
   primaryNav?: WebShellSidebarPrimaryNavOptions;
   hideProjectHeader?: boolean; // hide "Projects" header row (default: false = shown)
@@ -175,6 +176,18 @@ interface WebShellSidebarOptions {
   footer?: false | WebShellSidebarFooterOptions;
 }
 ```
+
+### セッションソーススイッチ — `showSessionSourceSwitch`
+
+埋め込みホストで通常のタスクセッションのみを表示する場合は、`showSessionSourceSwitch` を `false` に設定します。
+
+```tsx
+sidebar={{
+  showSessionSourceSwitch: false,
+}}
+```
+
+これにより Tasks/Channels スイッチが削除され、アクティブ、アーカイブ、プライマリ、セカンダリのすべてのセッションクエリが `sourceType: "default"` に固定されます。このオプションを省略すると、現在のスイッチとチャネルセッションへのアクセスは変更されません。
 
 ### ③ プロジェクトヘッダー — `hideProjectHeader`
 

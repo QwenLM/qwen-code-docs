@@ -62,6 +62,7 @@ Les canaux sont configurés sous la clé `channels` dans `settings.json`. Chaque
 | `senderPolicy`           | Non               | Qui peut parler au bot : `allowlist` (par défaut), `open` ou `pairing`                                                                                                   |
 | `allowedUsers`           | Non               | Liste des ID d'utilisateurs autorisés à utiliser le bot (utilisé par les politiques `allowlist` et `pairing`)                                                                                   |
 | `sessionScope`           | Non               | Comment les sessions sont délimitées : `user` (par défaut), `chat_thread` ou `single`. L'ancien `thread` reste compatible lorsqu'il est déjà configuré mais n'est pas proposé pour les nouvelles configurations Web Shell                                   |
+| `multiSession`           | Non               | Conserver jusqu'à huit tâches nommées par propriétaire dans un même chat. Nécessite le mode géré par le démon, `sessionScope: "user"`, pas de webhooks ni de remplissage d'historique de groupe, et aucune boucle de canal activée |
 | `cwd`                    | Non               | Répertoire de travail pour l'agent. Par défaut, le répertoire courant                                                                                                     |
 | `approvalMode`           | Non               | Mode d'approbation des outils pour les sessions de canal. Les tâches webhook non surveillées nécessitent `yolo` ; le paramètre s'applique à chaque session du canal                                  |
 | `instructions`           | Non               | Instructions personnalisées ajoutées au début du premier message de chaque session                                                                                                     |
@@ -88,8 +89,31 @@ Contrôle qui peut interagir avec le bot :
 Contrôle la gestion des sessions de conversation :
 
 - **`user`** (par défaut) — Une session par utilisateur. Tous les messages d'un même utilisateur partagent une conversation.
-- **`thread`** — Une session par fil de discussion/sujet. Utile pour les chats de groupe avec des fils de discussion.
+- **`chat_thread`** — Une session par fil de discussion/sujet, partagée par les participants de ce fil.
+- **`thread`** — Routage hérité par fil/sujet conservé pour les configurations existantes.
 - **`single`** — Une session partagée pour tous les utilisateurs. Tout le monde partage la même conversation.
+
+### Tâches nommées
+
+Les canaux gérés par le démon peuvent conserver plusieurs conversations nommées pour le même utilisateur dans un chat :
+
+```json
+{
+  "channels": {
+    "my-channel": {
+      "type": "telegram",
+      "sessionScope": "user",
+      "multiSession": true
+    }
+  }
+}
+```
+
+Le catalogue est privé au canal, au chat et à l'expéditeur exacts. Les noms de tâche utilisent 1 à 32 lettres ASCII, chiffres, tirets bas ou tirets, et sont uniques sans distinction de casse. Jusqu'à huit tâches peuvent être ouvertes ; fermer une tâche la détache sans supprimer sa transcription, donc la sélectionner plus tard rouvre exactement la même conversation. Les ID de session ne sont jamais acceptés ni affichés dans les commandes de chat.
+
+La partie 2 utilise une tâche sélectionnée à la fois et un répertoire de travail partagé. Créer une tâche ou changer de tâche sélectionnée est rejeté lorsque cette tâche est encore en cours d'exécution ou en attente d'autorisation, et une tâche occupée ne peut pas être fermée. Le changement simultané de tâches en cours d'exécution, l'annulation nommée et les labels de tâches sont prévus pour la partie 3 ; les worktrees par tâche sont prévus pour la partie 4. La mémoire du canal reste limitée au chat plutôt qu'à une tâche nommée.
+
+Ce mode n'est pas disponible avec `qwen channel start` autonome, avec des webhooks, avec un `groupHistoryLimit` de canal ou de groupe non nul, ou avec des boucles de canal. Si une boucle activée existe déjà pour ce canal, le worker du démon refuse de démarrer tant que la boucle n'est pas désactivée.
 
 ### Mémoire du canal
 
@@ -433,7 +457,7 @@ les commandes locales directement :
 L'agent utilise les outils `channel_loop_create`, `channel_loop_list` et
 `channel_loop_cancel` lorsqu'il gère ces tâches pour vous. Les plannings utilisent
 des expressions cron standard à cinq champs dans l'heure locale de la machine. La tâche
-s'exécute de manière non surveillée et sa réponse finale est deliverée automatiquement
+s'exécute de manière non surveillée et sa réponse finale est livrée automatiquement
 au chat qui l'a créée.
 
 Les boucles de canal diffèrent des tâches limitées à la session décrites dans
@@ -466,14 +490,21 @@ Les canaux prennent en charge les commandes slash. Celles-ci sont gérées local
 - `/help` — Liste les commandes disponibles
 - `/clear` — Efface votre session et repart de zéro (alias : `/reset`, `/new`)
 - `/status` — Affiche les informations de session et la politique d'accès
+- `/sessions [all]` — Lister les tâches nommées ouvertes, ou inclure les tâches fermées ; disponible uniquement avec `multiSession: true`
+- `/session current` — Afficher la tâche nommée sélectionnée
+- `/session new <name>` — Créer et sélectionner une tâche avec un workspace partagé
+- `/session new <name> --worktree` — Reconnu mais reporté à la partie 4
+- `/session use <name>` — Sélectionner une tâche ouverte ou rouvrir une tâche fermée
+- `/session cancel [<name>]` — Reconnu mais reporté à la partie 3. Attendez que la tâche sélectionnée se termine avant de changer ; les utilisateurs Telegram peuvent utiliser `/cancel` pour la tâche sélectionnée
+- `/session close <name>` — Fermer une tâche sans supprimer sa transcription
 - `/loop add "<cron>" <prompt>` — Créer une boucle de canal planifiée persistante
 - `/loop list` — Lister les boucles du chat en cours
 - `/loop inspect <id>` — Afficher le statut et les détails d'exécution d'une boucle
 - `/loop cancel <id>` — Désactiver une boucle
 
-Toutes les autres commandes slash (par exemple, `/compress`, `/summary`) sont transmises à l'agent.
+Toutes les autres commandes slash (par exemple, `/compress`, `/summary`) sont transmises à l'agent. Les commandes de tâches nommées ne sont enregistrées que lorsque le mode est activé, donc `/sessions` reste visible par l'agent pour les configurations existantes.
 
-Ces commandes fonctionnent sur tous les types de canaux (Telegram, WeChat, QQ, DingTalk, WeCom, Feishu, GitHub), bien que la création de boucles nécessite également le support de la livraison proactive pour l'adaptateur et la cible en cours.
+Les commandes de tâches nommées fonctionnent sur tous les types de canaux (Telegram, WeChat, QQ, DingTalk, WeCom, Feishu, GitHub). `/cancel` n'est actuellement enregistré que par Telegram, et la création de boucles nécessite le support de la livraison proactive pour l'adaptateur et la cible en cours.
 
 ## Exécution
 
@@ -521,7 +552,7 @@ Sans `--daemon-url`, `qwen channel status` et `qwen channel stop` conservent le 
 
 ## Tâches déclenchées par webhook
 
-Les canaux gérés par le démon peuvent également accepter des événements webhook authentifiés. Qwen reçoit l'événement comme contexte, le résume et décide de ce qui est pertinent, puis deliver la réponse finale à la cible de chat configurée. Ce n'est pas un relais de notifications brut.
+Les canaux gérés par le démon peuvent également accepter des événements webhook authentifiés. Qwen reçoit l'événement comme contexte, le résume et décide de ce qui est pertinent, puis livre la réponse finale à la cible de chat configurée. Ce n'est pas un relais de notifications brut.
 Les tâches webhook nécessitent `approvalMode: "yolo"` car elles s'exécutent sans approbation interactive. Ce paramètre s'applique à l'ensemble du canal, pas seulement aux tours webhook, donc utilisez un canal webhook dédié ou restreignez fortement les expéditeurs de chat normaux pour ce canal.
 
 Exemple de configuration de canal :
@@ -630,7 +661,7 @@ curl -X POST "http://127.0.0.1:4170/channels/dingtalk-main/webhooks/github-ci" \
   }'
 ```
 
-Les routes webhook s'authentifient avec l'en-tête secret webhook, même lorsque `qwen serve` fonctionne avec l'authentification bearer activée. Ne partagez pas le token bearer du démon avec les fournisseurs webhook. La configuration webhook et les valeurs `secretEnv` sont chargées au démarrage du démon ; redémarrez `qwen serve` après avoir modifié les sources webhook ou rotationné les secrets. Une réponse `202 {"accepted": true}` signifie que le worker de canal a accepté la propriété de la tâche, pas que la réponse finale a déjà été deliverée au chat. Consultez les logs du démon et du worker de canal, ainsi que `/daemon/status`, lors du dépannage des échecs de livraison.
+Les routes webhook s'authentifient avec l'en-tête secret webhook, même lorsque `qwen serve` fonctionne avec l'authentification bearer activée. Ne partagez pas le token bearer du démon avec les fournisseurs webhook. La configuration webhook et les valeurs `secretEnv` sont chargées au démarrage du démon ; redémarrez `qwen serve` après avoir modifié les sources webhook ou effectué une rotation des secrets. Une réponse `202 {"accepted": true}` signifie que le worker de canal a accepté la propriété de la tâche, pas que la réponse finale a déjà été livrée au chat. Consultez les logs du démon et du worker de canal, ainsi que `/daemon/status`, lors du dépannage des échecs de livraison.
 
 ### Mode multi-canal
 

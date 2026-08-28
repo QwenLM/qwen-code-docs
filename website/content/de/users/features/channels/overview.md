@@ -1,6 +1,3 @@
----
-
----
 
 # Channels
 
@@ -66,6 +63,7 @@ Channels werden unter dem Schlüssel `channels` in der `settings.json` konfiguri
 | `senderPolicy`           | Nein             | Wer mit dem Bot kommunizieren kann: `allowlist` (Standard), `open` oder `pairing`                                                                                                   |
 | `allowedUsers`           | Nein             | Liste der Benutzer-IDs, die den Bot verwenden dürfen (wird von den Richtlinien `allowlist` und `pairing` verwendet)                                                                                   |
 | `sessionScope`           | Nein             | Wie Sessions abgegrenzt werden: `user` (Standard), `chat_thread` oder `single`. Legacy `thread` bleibt kompatibel, wenn bereits konfiguriert, wird aber für neue WebShell-Konfigurationen nicht mehr angeboten |
+| `multiSession`           | Nein             | Bis zu acht Owner-bezogene benannte Tasks in einem Chat beibehalten. Erfordert Daemon-verwalteten Modus, `sessionScope: "user"`, keine Webhooks oder Group-History-Backfill und keine aktivierten Channel-Loops |
 | `cwd`                    | Nein             | Arbeitsverzeichnis für den Agenten. Standardmäßig das aktuelle Verzeichnis                                                                                                     |
 | `approvalMode`           | Nein             | Tool-Genehmigungsmodus für Channel-Sessions. Unbeaufsichtigte Webhook-Tasks erfordern `yolo`; die Einstellung gilt für jede Session auf dem Channel                                  |
 | `instructions`           | Nein             | Benutzerdefinierte Anweisungen, die der ersten Nachricht jeder Session vorangestellt werden                                                                                                     |
@@ -92,8 +90,31 @@ Steuert, wer mit dem Bot interagieren kann:
 Steuert, wie Konversations-Sessions verwaltet werden:
 
 - **`user`** (Standard) — Eine Session pro Benutzer. Alle Nachrichten desselben Benutzers teilen sich eine Konversation.
-- **`thread`** — Eine Session pro Thread/Thema. Nützlich für Gruppenchats mit Threads.
+- **`chat_thread`** — Eine Session pro Chat-Thread/Thema, geteilt von den Teilnehmern dieses Threads.
+- **`thread`** — Legacy Thread/Topic-Routing, das für bestehende Konfigurationen beibehalten wurde.
 - **`single`** — Eine gemeinsame Session für alle Benutzer. Alle teilen sich dieselbe Konversation.
+
+### Benannte Tasks
+
+Daemon-verwaltete Channels können mehrere benannte Konversationen für denselben Benutzer in einem Chat beibehalten:
+
+```json
+{
+  "channels": {
+    "my-channel": {
+      "type": "telegram",
+      "sessionScope": "user",
+      "multiSession": true
+    }
+  }
+}
+```
+
+Der Katalog ist privat für den genauen Channel, Chat und Absender. Task-Namen verwenden 1–32 ASCII-Buchstaben, Zahlen, Unterstriche oder Bindestriche und sind case-insensitiv eindeutig. Bis zu acht Tasks können offen sein; das Schließen eines Tasks trennt ihn, ohne sein Transkript zu löschen, sodass die spätere Auswahl genau dieselbe Konversation wieder öffnet. Session-IDs werden von Chat-Befehlen weder akzeptiert noch angezeigt.
+
+Teil 2 verwendet jeweils einen ausgewählten Task und ein gemeinsames Arbeitsverzeichnis. Das Erstellen eines Tasks oder das Wechseln weg vom ausgewählten Task wird abgelehnt, während dieser Task noch läuft oder auf Genehmigung wartet, und ein beschäftigter Task kann nicht geschlossen werden. Gleichzeitiges Wechseln zwischen laufenden Tasks, benannte Abbrüche und Task-Labels sind für Teil 3 geplant; pro-Task Worktrees sind für Teil 4 geplant. Channel Memory bleibt auf den Chat bezogen, nicht auf einen benannten Task.
+
+Dieser Modus ist nicht verfügbar im eigenständigen `qwen channel start`, mit Webhooks, mit einem `groupHistoryLimit` ungleich null auf Channel- oder Gruppenebene oder mit Channel-Loops. Wenn bereits ein aktivierter Loop für diesen Channel existiert, verweigert der Daemon-Worker den Start, bis der Loop deaktiviert ist.
 
 ### Channel Memory
 
@@ -394,7 +415,7 @@ Du kannst den Dispatch-Modus auch pro Gruppe festlegen und damit den Channel-Sta
 
 ## Block-Streaming
 
-Standardmäßig arbeitet der Agent eine Weile und sendet dann eine einzige große Response. Wenn Block-Streaming aktiviert ist...
+Standardmäßig arbeitet der Agent eine Weile und sendet dann eine einzige große Response. Wenn Block-Streaming aktiviert ist, trifft die Antwort als mehrere kürzere Nachrichten ein, während der Agent noch arbeitet – ähnlich wie ChatGPT oder Claude progressive Ausgaben anzeigen.
 
 
 ```json
@@ -471,14 +492,21 @@ Channels unterstützen Slash Commands. Diese werden lokal verarbeitet (kein Agen
 - `/help` – Verfügbare Befehle auflisten
 - `/clear` – Deine Session löschen und neu starten (Aliase: `/reset`, `/new`)
 - `/status` – Session-Infos und Access-Policy anzeigen
+- `/sessions [all]` – Offene benannte Tasks auflisten oder geschlossene Tasks einschließen; nur verfügbar mit `multiSession: true`
+- `/session current` – Den ausgewählten benannten Task anzeigen
+- `/session new <name>` – Einen Task mit gemeinsamem Workspace erstellen und auswählen
+- `/session new <name> --worktree` – Erkannt, aber auf Teil 4 verschoben
+- `/session use <name>` – Einen offenen Task auswählen oder einen geschlossenen Task wieder öffnen
+- `/session cancel [<name>]` – Erkannt, aber auf Teil 3 verschoben. Warte, bis der ausgewählte Task beendet ist, bevor du wechselst; Telegram-Nutzer können `/cancel` für den ausgewählten Task verwenden
+- `/session close <name>` – Einen Task schließen, ohne sein Transkript zu löschen
 - `/loop add "<cron>" <prompt>` – Einen persistenten geplanten Channel-Loop erstellen
 - `/loop list` – Loops für den aktuellen Chat auflisten
 - `/loop inspect <id>` – Loop-Status und Run-Details anzeigen
 - `/loop cancel <id>` – Einen Loop deaktivieren
 
-Alle anderen Slash Commands (z. B. `/compress`, `/summary`) werden an den Agenten weitergeleitet.
+Alle anderen Slash Commands (z. B. `/compress`, `/summary`) werden an den Agenten weitergeleitet. Befehle für benannte Tasks werden nur registriert, wenn der Modus aktiviert ist, sodass `/sessions` für bestehende Konfigurationen für den Agenten sichtbar bleibt.
 
-Diese Befehle funktionieren bei allen Channel-Typen (Telegram, WeChat, QQ, DingTalk, WeCom, Feishu, GitHub), wobei die Loop-Erstellung auch die proaktive Zustellungsunterstützung für den aktuellen Adapter und das aktuelle Ziel erfordert.
+Befehle für benannte Tasks funktionieren bei allen Channel-Typen (Telegram, WeChat, QQ, DingTalk, WeCom, Feishu, GitHub). `/cancel` wird derzeit nur von Telegram registriert, und die Loop-Erstellung erfordert proaktive Zustellungsunterstützung für den aktuellen Adapter und das aktuelle Ziel.
 
 ## Ausführen
 

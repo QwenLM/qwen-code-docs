@@ -201,6 +201,7 @@ OPTIONS 프리플라이트 요청(`Access-Control-Request-Method` 또는 `Access
  'extension_batch_activation_v2',
  'workspace_settings', 'workspace_init', 'workspace_mcp_restart',
  'session_recap', 'session_generation', 'session_btw', 'session_shell_command',
+ 'standalone_sessions_v1',
  'mcp_workspace_pool', 'mcp_pool_restart',
  'require_auth', 'allow_origin', 'auth_device_flow',
  'permission_mediation', 'prompt_absolute_deadline', 'writer_idle_timeout',
@@ -478,6 +479,7 @@ Content-Type: application/json
 | `workspace_voice`                   | 설정 지속성이 가능하므로 레거시 기본 워크스페이스 Voice 설정 라우트가 활성입니다. |
 | `workspace_voice_transcription`     | 기본 워크스페이스에 구성된 Voice 전사 모델이 있습니다. |
 | `session_shell_command`             | 세션 셸 실행이 명시적으로 활성화되어 있습니다. |
+| `standalone_sessions_v1`            | 데몬이 완전한 독립 세션 런타임, 라이프사이클 코디네이터, 내구성 삭제 저널, 관리 디렉토리 구현, 그리고 `/standalone/sessions` 라우트 패밀리를 설치했습니다. 완전한 의존성 그래프 없는 직접 임베드는 라우트와 이 태그를 모두 생략합니다. |
 | `session_artifacts_persistence`     | 세션 아티팩트 지속성이 런타임에 와이어링되어 있습니다. |
 | `session_generation`                | 세션 생성 도우미를 사용할 수 있습니다. |
 | `scheduled_task_session_reuse`      | 내구성 예약 작업 세션 관리가 활성 상태이며 모든 관리 데몬 런타임이 작업이 현재 기존 세션에 명시적으로 바인딩할 수 있는 콜백을 설치했습니다. |
@@ -1962,6 +1964,30 @@ GET /file?path=big.log&limit=500&cursor=… → next page
 
 이 라우트는 안정적 클라이언트 대면 필드만 노출합니다. 프로세스 ID, spawn 인자, stderr 테일, root URI, 워크스페이스 폴더 경로와 같은 디버그 내부를 의도적으로 생략합니다.
 
+### Standalone session lifecycle (`standalone_sessions_v1`)
+
+`/capabilities.features`에 `standalone_sessions_v1`이 포함되면, 데몬은 전용 Conversations 런타임이 소유하는 최상위 독립 세션을 위한 프로세스 전역 라우트 패밀리를 노출합니다. 이 라우트는 워크스페이스 선택자를 절대 수용하지 않으며 기본 워크스페이스로 폴백하지 않습니다. 완전한 Conversations 소유권, 런타임, 디렉토리, 라이프사이클, 그리고 삭제 저널 의존성 그래프를 구축할 수 없는 직접 임베드는 이 기능과 아래 모든 라우트를 생략합니다.
+
+| 라우트                                            | 요청                                                                                                                                                      | 성공                                                                                                                                        |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /standalone/sessions`                      | `{ "sessionId": "<UUID>", "modelServiceId"?: string, "approvalMode"?: ApprovalMode }`                                                                        | `200` 독립 세션, `context: { "kind": "standalone" }`, 그리고 관리되는 프로젝트 없는 출력 디렉토리. 생성은 프롬프트 없이 이루어집니다. |
+| `GET /standalone/sessions`                       | 쿼리: `cursor?`, `size?` (1-100), `archiveState?` (`active` 또는 `archived`)                                                                                  | `200 { sessions, nextCursor?, liveMergeFailed?, truncated? }`                                                                                  |
+| `GET /standalone/sessions/:id`                   | 없음                                                                                                                                                         | 로컬 생성이 진행 중이면 `202 { sessionId, state: "creating" }`, 그렇지 않으면 정확한 요약과 함께 `200`.                              |
+| `POST /standalone/sessions/:id/load`             | 기존 복원 옵션만: `historyPageSize?`, `liveReplayMode?`, `hideInheritedHistory?`, `approvalMode?`; 클라이언트 정체성은 `X-Qwen-Client-Id`에 유지. | `200` 복원된 독립 세션.                                                                                                             |
+| `POST /standalone/sessions/:id/resume`           | `load`와 동일한 복원 옵션.                                                                                                                              | `200` 로드 히스토리 리플레이 없는 복원된 독립 세션.                                                                                 |
+| `POST /standalone/sessions/:id/repair-directory` | 빈 본문 또는 `{}`                                                                                                                                           | `200` 검증되거나 재생성된 관리 디렉토리.                                                                                        |
+| `PATCH /standalone/sessions/:id/metadata`        | `{ "displayName": string }`                                                                                                                                  | `200 { sessionId, displayName }`                                                                                                               |
+| `GET /standalone/sessions/:id/export`            | 쿼리: `format=html`, `format=md`, `format=json`, 또는 `format=jsonl` (기본값 `html`).                                                                    | 기존 내보내기 콘텐츠 타입, 파일 이름, 그리고 본문.                                                                                              |
+| `POST /standalone/sessions/archive`              | `{ "sessionIds": ["<UUID>", ...] }`                                                                                                                          | `200 { archived, alreadyArchived, notFound, errors }`                                                                                          |
+| `POST /standalone/sessions/unarchive`            | `{ "sessionIds": ["<UUID>", ...] }`                                                                                                                          | `200 { unarchived, alreadyActive, notFound, errors }`                                                                                          |
+| `POST /standalone/sessions/delete`               | `{ "sessionIds": ["<UUID>", ...] }`                                                                                                                          | `200 { removed, notFound, errors, fileCleanupPending }`                                                                                        |
+
+본문은 알려지지 않은 필드가 없는 JSON 객체여야 합니다. ID는 RFC UUID v1-v5 값이며 데몬은 이를 소문자로 정규화합니다. 일괄 요청은 1-100개의 문자열을 포함하며 변이 전에 검증되고 중복 제거됩니다. 일괄 실패는 `{ sessionId, code, message }`로 보고되며 다른 ID의 성공적인 작업을 롤백하지 않습니다. `fileCleanupPending`은 트랜스크립트 삭제가 커밋되었지만 저널 인증된 사이드카 또는 관리 디렉토리 정리를 조정이 재시도해야 함을 의미합니다; 세션은 이미 논리적으로 제거되었습니다.
+
+명시적 독립 트랜스크립트와 문서화된 최상위 레거시 호환성 형태만 노출됩니다. 자식, 라이브, 프로젝트, worktree, 모호한, 읽을 수 없는, 또는 삭제 저널화된 레코드는 안전하게 실패합니다. 생성은 HTTP 응답이 연결 끊겨도 계속됩니다; 커밋된 세션은 삭제되지 않으며 응답 클라이언트는 분리됩니다. 정확한 GET 후 load/resume으로 복구하고 생성을 첨부로 재시도하지 마세요.
+
+아카이브, 아카이브 해제, 수리, 이름 변경, 그리고 삭제는 load/resume 및 프롬프트와 동일한 세션별 라이프사이클 승인을 공유합니다. 삭제는 트랜스크립트 unlink를 내구��� 커밋 지점으로 사용하며 충돌 복구를 위해 개인 저널과 원자적 관리 디렉토리 스테이징을 사용합니다. 복구는 트랜스크립트가 무결한 경우 디렉토리를 복원하고 트랜스크립트가 사라졌을 때 정리를 완료합니다; 일치하지 않는 정체성, 충돌하는 경로, 외부 소유자, 또는 모호한 트랜스크립트는 구조화된 안전 실패 오류를 반환합니다.
+
 ### `POST /session`
 
 새 에이전트를 생성하거나 기존 에이전트에 연결합니다(`sessionScope: 'single'`, 기본값).
@@ -2598,7 +2624,7 @@ curl -X DELETE http://127.0.0.1:4170/session/$SID
 { "modelId": "qwen-staging" }
 ```
 
-성공 시 SSE 스트림에 `model_switched`를 발행합니다. 실패 시 `model_switch_failed`를 발행합니다(수동적 구독자도 호출자뿐만 아니라 실패를 볼 수 있도록). 에이전트 채널 종료와 경쟁하여 끼인 자식이 HTTP 핸들러를 차단하지 못합니다.
+성공 시 SSE 스트림에 `model_switched`를 발행합니다. 실패 시 `model_switch_failed`를 발행합니다(수동적 구독자도 호출자뿐만 아니라 실패를 볼 수 있도록). 에이전트 채널 종료와 경쟁하여 끼인 자식이 HTTP 핸들러를 차단하지 못합니다. 성공적인 전환은 최선 노력으로 세션 JSONL에 세션 모델을 기록합니다; 레코드가 작성되면 데몬 load/resume은 인증 전에 이 세션의 모델을 복원하려고 시도합니다. 기록된 모델을 더 이상 적용할 수 없으면(모델 제거, 자격 증명 사용 불가), 복원은 존재하는 경우 동일 ID 레지스트리 라우트를 사용합니다 — 런타임 스냅샷 레코드의 경우 기록된 바인딩과 다른 엔드포인트일 수 있습니다 — 그리고 어떤 라우트도 해결되지 않을 때만 `settings.model.name` 기본값으로 계속합니다. `settings.model.name`은 여전히 **새** 세션의 기본값으로 업데이트됩니다.
 
 ### `POST /session/:id/recap`
 
@@ -2809,7 +2835,7 @@ SSE 이벤트(워크스페이스 범위): `{toolName, enabled, originatorClientI
 
 기능 태그: `workspace_init`. 순수 파일 IO — ACP 라운드트립 없음, **LLM 호출 없음**.
 
-데몬의 기본 워크스페이스 루트에 빈 `QWEN.md`(또는 `--memory-file-name` 재정의 아래에서 `getCurrentGeminiMdFilename()`이 반환하는 것)를 스캐폴딩합니다. 기계적 작업뿐입니다 — AI 기반 콘텐츠 채우려면 `POST /session/:id/prompt`를 후속 호출하십시오.
+데몬의 기본 워크스페이스 루트에 빈 `QWEN.md`(또는 워크스페이스 `context.fileName` 설정 재정의)를 스캐폴딩합니다. 기계적 작업뿐입니다 — AI 기반 콘텐츠 채우려면 `POST /session/:id/prompt`를 후속 호출하십시오.
 
 기본값은 대상 파일이 비공백 콘텐츠로 존재할 때 덮어쓰기를 거부합니다. 공백만의 파일은 없는 것으로 처리됩니다(로컬 `/init` 슬래시 명령어와 일치).
 
@@ -2975,7 +3001,7 @@ SSE 수준의 `id:` / `event:` 줄은 EventSource 호환성을 위해 `envelope.
 
 > **F3 (#4175): 다중 클라이언트 권한 조정.** F3는 위의 네 가지 정책을 추가했습니다. F3 이전 데몬은 first-responder를 하드코딩했습니다; 구성된 정책이 `first-responder`이면 와이어 형태는 비트 단위 동일하게 유지됩니다. 새 이벤트(`permission_partial_vote`, `permission_forbidden`)는 추가적입니다 — 이전 SDK는 이를 `unrecognized_known_event`로 보고 정상적으로 무시합니다.
 
-> **권한 타임아웃(기본 5분).** `permission_request`는 다음 중 하나가 발생할 때까지 펜딩 상태로 유지됩니다: (a) 일부 클라이언트가 여기서 투표, (b) `POST /session/:id/cancel` 발생, (c) 프롬프트를 구동하는 HTTP 클라이언트 연결 끊기(중간 프롬프트 취소는 미해결 권한을 `cancelled`로 해결), (d) 세션 종료, (e) 데몬 종료, **또는 (f) 세션별 권한 타임아웃 발생**(`DEFAULT_PERMISSION_TIMEOUT_MS`, 5분). 타임아웃 발생 시 에이전트의 `requestPermission`이 `{outcome: 'cancelled'}`로 해결되고, 감사 링이 `permission.timeout` 항목을 기록하며, 데몬 표준 오류에 한 줄의 브레드크럼이 출력되고, SSE 버스가 표준 `permission_resolved` 취소 프레임을 팬아웃하여 구독자가 정리합니다. 타임아웃은 `BridgeOptions.permissionResponseTimeoutMs`를 통해 구성 가능합니다; 장기간 프롬프트를 실행하는 헤드리스 호출자는 이를 연장할 수 있습니다.
+> **권한 타임아웃(기본적으로 비활성화).** `permission_request`는 다음 중 하나가 발생할 때까지 펜딩 상태로 유지됩니다: (a) 일부 클라이언트가 여기서 투표, (b) `POST /session/:id/cancel` 발생, (c) 프롬프트를 구동하는 HTTP 클라이언트 연결 끊기(중간 프롬프트 취소는 미해결 권한을 `cancelled`로 해결), (d) 세션 종료, (e) 데몬 종료, **또는 (f) 구성된 타임아웃 발생**. 타임아웃 발생 시 에이전트의 `requestPermission`이 `{outcome: 'cancelled'}`로 해결되고, 감사 링이 `permission.timeout` 항목을 기록하며, 데몬 표준 오류에 한 줄의 브레드크럼이 출력되고, SSE 버스가 표준 `permission_resolved` 취소 프레임을 팬아웃하여 구독자가 정리합니다. 공유 타임아웃은 `BridgeOptions.permissionResponseTimeoutMs` 또는 `qwen serve --permission-response-timeout-ms`를 통해 구성 가능합니다. 기본값은 `0`이므로 일반 권한과 `ask_user_question` 모두 인간 결정을 무기한 대기합니다. 투표자 취소, 세션 취소, 연결 끊기 정리, 그리고 데몬 종료는 여전히 펜딩 상호작용을 cancelled로 해결합니다.
 
 요청:
 

@@ -175,6 +175,7 @@ interface WebShellSidebarOptions {
   enabled?: boolean; // show/hide sidebar (default: true when passed)
   defaultCollapsed?: boolean; // initial collapsed state (persisted in localStorage)
   showCompactToggle?: boolean; // show the collapse button in the chat area (default: true)
+  showSessionSourceSwitch?: boolean; // show the Tasks/Channels switch (default: true)
   branding?: false | WebShellSidebarBranding;
   primaryNav?: WebShellSidebarPrimaryNavOptions;
   hideProjectHeader?: boolean; // hide "Projects" header row (default: false = shown)
@@ -182,6 +183,21 @@ interface WebShellSidebarOptions {
   footer?: false | WebShellSidebarFooterOptions;
 }
 ```
+
+### Session source switch — `showSessionSourceSwitch`
+
+Defina `showSessionSourceSwitch` como `false` quando um host incorporado deve exibir apenas
+sessões de tarefas comuns:
+
+```tsx
+sidebar={{
+  showSessionSourceSwitch: false,
+}}
+```
+
+Isso remove o switch Tasks/Channels e fixa toda consulta de sessão ativa, arquivada,
+primária e secundária em `sourceType: "default"`. Omitir a opção mantém
+o switch atual e o acesso a sessões de canal inalterado.
 
 ### ③ Cabeçalho do Projeto — `hideProjectHeader`
 

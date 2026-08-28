@@ -80,7 +80,7 @@ CLI определен в **`packages/cli/src/commands/serve.ts`**:
 | `--token <s>`                           | string                         | env / none                                   | Не-loopback и `--require-auth`           | Bearer-токен; обрезается один раз. **Он отображается в `/proc/<pid>/cmdline`, поэтому предпочтительнее использовать `QWEN_SERVER_TOKEN`**. При запуске в stderr также выводится предупреждение об этом.               |
 | `--max-sessions <n>`                    | number                         | `32`                                         | -                                        | Лимит активных сессий на рабочее пространство. Превышение лимита при создании возвращает 503. `0` означает без ограничений. Значения `NaN` / отрицательные значения вызывают ошибку.                                                          |
 | `--max-total-sessions <n>`              | number                         | вычисляется для нескольких рабочих пространств при запуске/восстановлении | -                                        | Лимит активных сессий для всего демона. Если не указан, конечное значение по умолчанию вычисляется один раз из лимита на рабочее пространство и количества рабочих пространств при запуске/восстановлении; динамическая регистрация не пересчитывает его. `0` означает без ограничений. |
-| `--memory-budget-mb <n>`                | integer в `[1024, 1048576]`    | 50% памяти cgroup/хоста                      | -                                        | Общий бюджет памяти для дерева процессов демона, ограниченный доступной памятью. Ни один дочерний процесс не sizing из него; единственный потребитель на сегодня — адаптивный пул роста live-journal (см. `--max-journal-bytes`). Сообщается в `limits.memory`, включая моделированное разделение на дочерние процессы.                                                                                                                                            |
+| `--memory-budget-mb <n>`                | integer в `[1024, 1048576]`    | 50% памяти cgroup/хоста                      | -                                        | Общий бюджет памяти для дерева процессов демона, ограниченный доступной памятью. Размер ни одного дочернего процесса не определяется из него; единственный потребитель на сегодня — адаптивный пул роста live-journal (см. `--max-journal-bytes`). Сообщается в `limits.memory`, включая моделированное разделение на дочерние процессы.                                                                                                                                            |
 | `--max-journal-events <n>`              | positive safe integer          | `10000`                                        | -                                        | Базовый лимит на сессию для записей повтора `liveJournal` в процессе выполнения. Адаптивный рост может увеличить его (см. `--max-journal-bytes`); фиксация любого из флагов journal отключает рост.                                                                                                                                                                                                                                                        |
 | `--max-journal-bytes <n>`               | positive safe integer          | `8388608`                                      | -                                        | Базовый байтовый лимит на сессию для `liveJournal` в процессе выполнения. Превышение увеличивает лимиты по требованию (вдвое, ограничено оставшимся запасом пула) в рамках общесистемного пула 5% от эффективного `--memory-budget-mb` (ограничено `1024` МБ; 0 — рост отключен — когда эффективный бюджет ниже минимума 1024 МБ), не более 256 МиБ на сессию; фиксация любого из флагов journal отключает рост. |
 | `--memory-pressure-mode <mode>`         | `off` \| `observe`             | `observe`                                        | Только наблюдение                        | Сообщает `runtime.memory.pressure` в обоих режимах; только `observe` вызывает проблему `daemon_memory_pressure`. Только корневой процесс.                                                                                                                                                                                |
@@ -119,7 +119,7 @@ CLI определен в **`packages/cli/src/commands/serve.ts`**:
 | `QWEN_SERVE_MCP_BUDGET_MODE`            | Внутренний режим бюджета ACP-потомка. CLI генерирует его из `--mcp-budget-mode` через `childEnvOverrides`; это не резервная переменная окружения родительского процесса.  |
 | `QWEN_SERVE_PROMPT_DEADLINE_MS`         | Резервная переменная окружения для `--prompt-deadline-ms`.                                                                                                                |
 | `QWEN_SERVE_WRITER_IDLE_TIMEOUT_MS`     | Резервная переменная окружения для `--writer-idle-timeout-ms`.                                                                                                            |
-| `QWEN_SERVE_MCP_POOL_TRANSPORTS`        | Читается ACP-потомком. Разделенный запятыми белый список пулированных транспортов; по умолчанию `stdio,websocket`.                                                        |
+| `QWEN_SERVE_MCP_POOL_TRANSPORTS`        | Читается ACP-потомком. Разделенный запятыми белый список пуловых транспортов; по умолчанию `stdio,websocket`.                                                        |
 | `QWEN_SERVE_MCP_POOL_DRAIN_MS`          | Читается ACP-потомком. Задержка простоя перед очисткой записи пула; по умолчанию `30000`, ограничивается диапазоном `1000..600000` мс.                                    |
 | `QWEN_SERVE_RATE_LIMIT`                 | `1` / `true` включает ограничение частоты; флаг CLI имеет приоритет.                                                                                                      |
 | `QWEN_SERVE_RATE_LIMIT_PROMPT`          | Резервная переменная окружения для `--rate-limit-prompt`.                                                                                                                 |
@@ -137,7 +137,7 @@ CLI определен в **`packages/cli/src/commands/serve.ts`**:
 | --------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `policy.permissionStrategy` | `'first-responder' \| 'designated' \| 'consensus' \| 'local-only'` | Устанавливает `BridgeOptions.permissionPolicy`. **При запуске проверяется с помощью `validatePolicyConfig`**; неизвестные значения вызывают `InvalidPolicyConfigError` вместо тихого отката. |
 | `policy.consensusQuorum`    | positive integer                                                   | N для политики `consensus`. По умолчанию `floor(M/2)+1`. Если установлено для политики, отличной от consensus, игнорируется, и при запуске в stderr выводится предупреждение. |
-| `context.fileName`          | string                                                             | Переопределяет `getCurrentGeminiMdFilename()` и контролирует, в какой файл пишет `POST /workspace/init`.                                                               |
+| `context.fileName`          | string                                                             | Управляет тем, в какой файл записывает `POST /workspace/init` через `contextFilename` в workspace-service.                                                               |
 | `tools.disabled`            | string[]                                                           | Нормализуется через `normalizeDisabledToolList()` (обрезка, удаление пустых записей, дедупликация) перед влиянием на следующее создание ACP-потомка.                   |
 | `tools.approvalMode`        | string                                                             | Режим одобрения сессии по умолчанию.                                                                                                                                   |
 | `telemetry`                 | object                                                             | Конфигурация OTel: `enabled`, `otlpEndpoint`, `otlpProtocol`, эндпоинты для каждого сигнала и другое. См. [`17-configuration.md`](./17-configuration.md).              |
@@ -224,7 +224,7 @@ qwen serve
 packages/cli/index.ts              main()
    |
    v
-gemini.tsx                         main() - parseArguments()
+llm.tsx                         main() - parseArguments()
    |
    v (yargs assembly)
 config/config.ts                   import { serveCommand } ...
@@ -233,7 +233,7 @@ config/config.ts                   await yargsInstance.parse()
    |
    v (handler)
 commands/serve.ts                  handler(argv) - boot pre-checks
-commands/serve.ts                  const { runQwenServe } = await import('../serve/index.js')   # ленивая загрузка
+commands/serve.ts                  const { runQwenServe } = await import('../serve/index.js')   # lazy load
 commands/serve.ts                  await runQwenServe({...})
    |
    v
@@ -268,14 +268,14 @@ serve/run-qwen-serve.ts              server = createServer(app) / https.createSe
    |  `- resolve(handle: RunHandle)
    |
    v
-commands/serve.ts                  await blockForever()    // блокировка навсегда до получения сигнала
+commands/serve.ts                  await blockForever()    // block forever until signal
 ```
 
 Ключевые факты:
 
 - **`createServeApp` только собирает приложение; он не начинает прослушивание.** Он возвращает экземпляр `express()` с подключенными middleware и маршрутами. Встраивающие модули только для обычных маршрутов могут продолжать управлять `app.listen()` самостоятельно. Встраивающие модули, использующие Live/Conversations, должны привязать actual Node-сервер к экспортируемому жизненному циклу приложения перед прослушиванием и ожидать этот жизненный цикл при завершении работы.
 - **`() => actualPort` — это ленивое замыкание.** `actualPort` присваивается в колбэке `server.listen`. Middleware `hostAllowlist` читает его по требованию, поэтому эфемерные порты (`--port 0`) по-прежнему корректно проверяют заголовок `Host`.
-- **`await blockForever()` используется намеренно.** Если `yargs.parse()` завершается, верхний уровень CLI переходит к точке входа интерактивного TUI (`gemini.tsx`). SIGINT / SIGTERM завершают работу через путь `onSignal` в `runQwenServe`.
+- **`await blockForever()` используется намеренно.** Если `yargs.parse()` завершается, верхний уровень CLI переходит к точке входа интерактивного TUI (`llm.tsx`). SIGINT / SIGTERM завершают работу через путь `onSignal` в `runQwenServe`.
 
 ## 10. Разделение файлов HTTP-маршрутов
 
@@ -360,7 +360,7 @@ await new Promise<void>((resolve, reject) => {
 actualPort = (server.address() as AddressInfo).port;
 console.log('listening on', server.address());
 
-// Остановка допуска, дренирование работы приложения, закрытие слушателя и освобождение владения.
+// Stop admission, drain app work, close the listener, and release ownership.
 await lifecycle.close();
 ```
 

@@ -20,9 +20,9 @@ Im Haupttranskript faltet sich eine abgeschlossene aufklappbare Gruppe in eine e
 
 Die vollständige Tool-Ausgabe ist nur einen Tastendruck entfernt: Drücke `Ctrl+O`, um den Detailmodus umzuschalten.
 
-### Detailmodus (`Ctrl+O`) und aufgeklappte Gruppen
+### Erweiterter Detailmodus (`Ctrl+O`) und aufgeklappte Gruppen
 
-Wenn eine Gruppe aufgeklappt ist – im `Ctrl+O`-Detailmodus oder für Fehler-/benutzerinitiierte Batches in der Hauptansicht – wird jedes Tool einzeln dargestellt und die Zusammenfassung erscheint als abgedunkelte Badge-Zeile unter der Gruppe:
+Wenn eine Gruppe aufgeklappt ist – im erweiterten `Ctrl+O`-Detailmodus oder für Fehler-/benutzerinitiierte Batches in der Hauptansicht – wird jedes Tool einzeln dargestellt und die Zusammenfassung erscheint als abgedunkelte Badge-Zeile unter der Gruppe:
 
 ```
 ╭──────────────────────────────────────────────╮
@@ -54,7 +54,7 @@ Die Zusammenfassung wird generiert, wenn **alle** der folgenden Bedingungen zutr
 - `experimental.emitToolUseSummaries` ist `true` (Standard).
 - Ein `fastModel` ist konfiguriert (über Einstellungen oder `/model --fast`).
 - Mindestens ein Tool wurde im Batch abgeschlossen.
-- Der Durchgang wurde nicht vor dem Abschluss des Tools abgebrochen.
+- Der Turn wurde nicht vor dem Abschluss des Tools abgebrochen.
 - Das Fast Model hat eine nicht-leere, nicht fehlerhafte Antwort zurückgegeben.
 
 Subagent-Tool-Aufrufe lösen keine Zusammenfassungserstellung aus – nur die Tool-Batches der Hauptsitzung.
@@ -66,13 +66,13 @@ Die Zusammenfassung wird stillschweigend übersprungen (kein Fehler, keine UI-Ä
 - Kein Fast Model konfiguriert ist.
 - Der Fast-Model-Aufruf fehlschlägt, eine Zeitüberschreitung auftritt oder eine leere Antwort zurückgegeben wird.
 - Das Modell eine offensichtliche Fehlermeldung ähnliche Zeichenkette zurückgegeben hat (z.B. `Error: ...`, `I cannot ...`) – vom Client herausgefiltert, damit die UI keine irreführenden Bezeichnungen anzeigt.
-- Der Durchgang wurde abgebrochen (`Ctrl+C`), bevor das Modell fertig war.
+- Der Turn wurde abgebrochen (`Ctrl+C`), bevor das Modell fertig war.
 
 In all diesen Fällen wird die Tool-Gruppe wie gewohnt dargestellt.
 
 ## Fast Model
 
-Die Bezeichnung wird mit dem [fast model](./followup-suggestions#fast-model) generiert – demselben Modell, das Sie für Prompt-Vorschläge und spekulative Ausführung konfigurieren. Konfigurieren Sie es:
+Die Bezeichnung wird mit dem [fast model](./followup-suggestions#fast-model) generiert – demselben Modell, das du für Prompt-Vorschläge und spekulative Ausführung konfigurierst. Konfiguriere es:
 
 ### Über die Befehlszeile
 
@@ -124,11 +124,11 @@ Drei Punkte, die beim ersten Lesen dieser Funktion typischerweise übersehen wer
 
 1. **Eine Generierung pro Batch, von beiden Darstellungsmodi gemeinsam genutzt.** Der Fast-Model-Aufruf erfolgt genau einmal in `handleCompletedTools`, wenn ein Tool-Batch abgeschlossen ist. Ein nachträgliches Umschalten mit `Ctrl+O` löst **keinen** neuen Aufruf aus – beide Darstellungen lesen aus demselben `tool_use_summary`-Verlaufseintrag, der beim ersten Mal erfasst wurde.
 2. **Keine Nachberechnung beim Umschalten oder beim Wiederaufnehmen einer Sitzung.** Eine `tool_group`, die vor der Aktivierung der Funktion (oder bevor Sie die Einstellung umgeschaltet haben, oder in einer wiederaufgenommenen Sitzung – `ChatRecordingService` speichert Zusammenfassungseinträge nicht) abgeschlossen wurde, erhält niemals eine Bezeichnung. Es gibt keinen "Durchlauf über vorhandenen Verlauf". Wenn Sie diese Einstellung mitten in einer Sitzung aktivieren, wird nur für _zukünftige_ Batches eine Bezeichnung angezeigt; ältere Gruppen behalten die Standarddarstellung ohne Hinweis auf eine fehlende Bezeichnung.
-3. **Nur Batches des Haupt-Agenten.** Der Auslöser befindet sich in der Durchlaufschleife der Hauptsitzung (`useGeminiStream`), daher:
+3. **Nur Batches des Haupt-Agenten.** Der Auslöser befindet sich in der Turn-Schleife der Haupt-Session (`useLlmStream`), daher:
    - ✅ Shell-, MCP-, Dateioperationen und der `Task` / Subagent-Tool-_Aufruf selbst_ (wie er im Haupt-Batch erscheint) werden zusammengefasst.
    - ❌ Die **internen** Tool-Batches eines Subagenten (ausgeführt über `packages/core/src/agents/runtime/`) werden nicht zusammengefasst.
 
-   Ein äußerer Batch, der ein `Task`-Tool _enthält_, erhält dennoch eine Bezeichnung, aber das Fast Model sieht nur den Subagent-Tool-Aufruf und dessen aggregierte Ausgabe – nicht die einzelnen Tool-Aufrufe innerhalb des Subagenten. Erwarten Sie Bezeichnungen wie `Ran research-agent` oder `Delegated file search` statt `Searched 14 files`. Dies ist beabsichtigt – die Zusammenfassung von Subagent-Interna würde die Fast-Model-Kosten vervielfachen und Rauschen erzeugen, das in der primären Benutzeroberfläche nie auftaucht.
+   Ein äußerer Batch, der ein `Task`-Tool _enthält_, erhält dennoch eine Bezeichnung, aber das Fast Model sieht nur den Subagent-Tool-Aufruf und dessen aggregierte Ausgabe – nicht die einzelnen Tool-Aufrufe innerhalb des Subagenten. Erwarte Bezeichnungen wie `Ran research-agent` oder `Delegated file search` statt `Searched 14 files`. Dies ist beabsichtigt – die Zusammenfassung von Subagent-Interna würde die Fast-Model-Kosten vervielfachen und Rauschen erzeugen, das in der primären Benutzeroberfläche nie auftaucht.
 
 ## Anzeigeverhalten
 
@@ -153,22 +153,22 @@ Die Nutzung des Zusammenfassungsmodells erscheint in der `/stats`-Ausgabe unter 
 
 Der Zusammenfassungsaufruf sendet den Namen jedes erfolgreichen Tools, gekürzte `args` und gekürztes Ergebnis (jeweils auf 300 Zeichen begrenzt) an das **Fast Model**, plus die ersten 200 Zeichen des letzten Textes des Assistenten als Absichts-Präfix.
 
-Wenn Ihr Fast Model für denselben Anbieter/dieselbe Authentifizierung wie Ihr Hauptsitzungsmodell konfiguriert ist, fließen die Daten entlang derselben Grenze, die Ihre Hauptsitzung bereits verwendet – keine Änderung des Vertrauensbereichs. Wenn Sie ein Fast Model von einem **anderen Anbieter** konfiguriert haben, werden Tool-Eingaben und -Ausgaben (einschließlich möglicherweise Dateiinhalte, die durch `read_file` gelesen wurden, Befehlsausgaben von Shell-Aufrufen oder Werte, die durch MCP-Tools bereitgestellt wurden) als Teil des Zusammenfassungs-Prompts an diesen anderen Anbieter gesendet. Dies ist ein strikt größerer Datenweitergabebereich als bei der Hauptsitzung allein.
+Wenn Ihr Fast Model für denselben Anbieter/dieselbe Authentifizierung wie Ihr Hauptsitzungsmodell konfiguriert ist, fließen die Daten entlang derselben Grenze, die deine Haupt-Session bereits verwendet – keine Änderung des Vertrauensbereichs. Wenn Sie ein Fast Model von einem **anderen Anbieter** konfiguriert haben, werden Tool-Eingaben und -Ausgaben (einschließlich möglicherweise Dateiinhalte, die durch `read_file` gelesen wurden, Befehlsausgaben von Shell-Aufrufen oder Werte, die durch MCP-Tools bereitgestellt wurden) als Teil des Zusammenfassungs-Prompts an diesen anderen Anbieter gesendet. Dies ist ein strikt größerer Datenweitergabebereich als bei der Hauptsitzung allein.
 
-Wenn dies für Ihren Arbeitsablauf relevant ist, haben Sie zwei saubere Optionen:
+Wenn dies für deinen Arbeitsablauf relevant ist, hast du zwei saubere Optionen:
 
-- Konfigurieren Sie `fastModel` so, dass es ein Modell unter demselben Anbieter wie Ihre Hauptsitzung verwendet, sodass der Zusammenfassungsaufruf keine neue Authentifizierungs-/Datengrenze überschreitet.
-- Deaktivieren Sie die Funktion vollständig mit `experimental.emitToolUseSummaries: false` (oder `QWEN_CODE_EMIT_TOOL_USE_SUMMARIES=0`).
+- Konfiguriere `fastModel` auf ein Modell unter demselben Anbieter wie deine Haupt-Session, sodass der Zusammenfassungsaufruf keine neue Authentifizierungs-/Datengrenze überschreitet.
+- Deaktiviere die Funktion vollständig mit `experimental.emitToolUseSummaries: false` (oder `QWEN_CODE_EMIT_TOOL_USE_SUMMARIES=0`).
 
-Die Begrenzung auf 300 Zeichen pro Feld reduziert die Exposition, beseitigt sie jedoch nicht – Geheimnisse, die während des Begrenzungsfensters in der Tool-Ausgabe gefunden werden, können dennoch gesendet werden. Behandeln Sie die Datengrenze des Fast Models genauso wie die des Hauptmodells.
+Die Begrenzung auf 300 Zeichen pro Feld reduziert die Exposition, beseitigt sie jedoch nicht – Geheimnisse, die während des Begrenzungsfensters in der Tool-Ausgabe gefunden werden, können dennoch gesendet werden. Behandle die Datengrenze des Fast Models genauso wie die des Hauptmodells.
 
 ## Kosten
 
 Ein Fast-Model-Aufruf pro qualifiziertem Tool-Batch. Die Eingabe besteht aus einem kleinen, festen System-Prompt plus den gekürzten Tool-Eingaben/-Ausgaben (jeweils auf 300 Zeichen pro Feld begrenzt). Die Ausgabe ist eine einzelne kurze Zeile (auf 100 Zeichen begrenzt, typischerweise 20 Token oder weniger). Bei einem typischen Fast Model entspricht das etwa $0.001 pro Batch.
 
-Wenn Sie die zusätzlichen Kosten nicht möchten, deaktivieren Sie die Funktion über `experimental.emitToolUseSummaries: false` oder `QWEN_CODE_EMIT_TOOL_USE_SUMMARIES=0`.
+Wenn du die zusätzlichen Kosten nicht möchtest, deaktiviere die Funktion über `experimental.emitToolUseSummaries: false` oder `QWEN_CODE_EMIT_TOOL_USE_SUMMARIES=0`.
 
 ## Verwandte Themen
 
 - [Detailmodus](../configuration/settings#ui) – drücke `Ctrl+O`, um alle Tool-Ausgaben inline aufzuklappen; die Zusammenfassung ersetzt den generischen Tool-Gruppen-Header für abgeschlossene Gruppen in der Hauptansicht.
-- [Followup Suggestions (Folgevorschläge)](./followup-suggestions) – eine weitere Fast-Model-gesteuerte UX-Verbesserung, die dieselbe `fastModel`-Einstellung nutzt.
+- [Followup Suggestions](./followup-suggestions) – eine weitere Fast-Model-gesteuerte UX-Verbesserung, die dieselbe `fastModel`-Einstellung nutzt.

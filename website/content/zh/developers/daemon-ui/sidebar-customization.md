@@ -130,11 +130,11 @@ interface WebShellSidebarFooterOptions {
 }
 ```
 
-| 值                                           | 效果                    |
-| -------------------------------------------- | ----------------------- |
-| `undefined`（默认）                          | 显示所有项              |
-| `false`                                        | 完全隐藏底部栏；移动端抽屉仅保留关闭控件                        |
-| `{ items: ['settings', 'theme', 'collapse'] }` | 仅显示列出的项；移动端抽屉始终保留关闭控件                    |
+| 值                                             | 效果                                                                     |
+| ---------------------------------------------- | ------------------------------------------------------------------------ |
+| `undefined`（默认）                            | 显示所有项                                                               |
+| `false`                                        | 完全隐藏底部栏；移动端抽屉仅保留关闭控件                                 |
+| `{ items: ['settings', 'theme', 'collapse'] }` | 仅显示列出的项；移动端抽屉始终保留关闭控件                               |
 
 底部栏会自动适应窄宽度：标签会被隐藏，版本信息在某些阈值以下会被移除。
 
@@ -168,6 +168,7 @@ interface WebShellSidebarOptions {
   enabled?: boolean; // 显示/隐藏侧边栏（传入时为 true）
   defaultCollapsed?: boolean; // 初始折叠状态（持久化到 localStorage）
   showCompactToggle?: boolean; // 在聊天区域显示折叠按钮（默认：true）
+  showSessionSourceSwitch?: boolean; // 显示 Tasks/Channels 切换（默认：true）
   branding?: false | WebShellSidebarBranding;
   primaryNav?: WebShellSidebarPrimaryNavOptions;
   hideProjectHeader?: boolean; // 隐藏"项目"头部行（默认：false = 显示）
@@ -175,6 +176,18 @@ interface WebShellSidebarOptions {
   footer?: false | WebShellSidebarFooterOptions;
 }
 ```
+
+### Session source switch — `showSessionSourceSwitch`
+
+当嵌入宿主只需显示普通任务会话时，将 `showSessionSourceSwitch` 设为 `false`：
+
+```tsx
+sidebar={{
+  showSessionSourceSwitch: false,
+}}
+```
+
+这会移除 Tasks/Channels 切换，并将所有活跃、已归档、主会话和次级会话查询固定为 `sourceType: "default"`。省略该选项则保持当前的切换和 channel-session 访问不变。
 
 ### ③ 项目头部 — `hideProjectHeader`
 

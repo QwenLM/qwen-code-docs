@@ -137,7 +137,7 @@ CLI は **`packages/cli/src/commands/serve.ts`** で定義されています:
 | --------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `policy.permissionStrategy` | `'first-responder' \| 'designated' \| 'consensus' \| 'local-only'` | `BridgeOptions.permissionPolicy` を設定します。**起動時に `validatePolicyConfig` で検証されます**。不明な値はサイレントにフォールバックするのではなく、`InvalidPolicyConfigError` をスローします。 |
 | `policy.consensusQuorum`    | positive integer                                                   | `consensus` ポリシーの N。デフォルトは `floor(M/2)+1` です。非コンセンサスポリシーの下で設定された場合、無視され、起動時に stderr に警告がログ出力されます。                              |
-| `context.fileName`          | string                                                             | `getCurrentGeminiMdFilename()` をオーバーライドし、`POST /workspace/init` がどのファイルを書き込むかを制御します。                                                                          |
+| `context.fileName`          | string                                                             | ワークスペースサービスの `contextFilename` を介して `POST /workspace/init` がどのファイルを書き込むかを制御します。                                                                       |
 | `tools.disabled`            | string[]                                                           | 次の ACP 子プロセスの spawn に影響を与える前に、`normalizeDisabledToolList()` を介して正規化されます（トリム、空のエントリ削除、重複排除）。                                           |
 | `tools.approvalMode`        | string                                                             | デフォルトのセッション承認モード。                                                                                                                                           |
 | `telemetry`                 | object                                                             | OTel 設定: `enabled`、`otlpEndpoint`、`otlpProtocol`、シグナルごとのエンドポイントなど。詳細は [`17-configuration.md`](./17-configuration.md) を参照してください。                       |
@@ -225,7 +225,7 @@ qwen serve
 packages/cli/index.ts              main()
    |
    v
-gemini.tsx                         main() - parseArguments()
+llm.tsx                         main() - parseArguments()
    |
    v (yargs assembly)
 config/config.ts                   import { serveCommand } ...
@@ -276,7 +276,7 @@ commands/serve.ts                  await blockForever()    // block forever unti
 
 - **`createServeApp` はビルドのみを行い、リスニングは行いません。** ミドルウェアとルートがマウントされた `express()` インスタンスを返します。Ordinary-only の組み込み側は `app.listen()` を所有し続けることができます。Live/Conversations を使用する組み込み側は、リスニング前に実際の Node サーバーをエクスポートされたアプリライフサイクルにバインドし、シャットダウン時にそのライフサイクルを待機する必要があります。
 - **`() => actualPort` は遅延クロージャです。** `actualPort` は `server.listen` のコールバック内で代入されます。`hostAllowlist` ミドルウェアはオンデマンドでそれを読み取るため、エフェメラルポート（`--port 0`）でも `Host` ヘッダーを正しくゲートします。
-- **`await blockForever()` は意図的なものです。** `yargs.parse()` が解決すると、CLI のトップレベルは対話型 TUI のエントリポイント（`gemini.tsx`）にフォールスルーします。SIGINT / SIGTERM は `runQwenServe` の `onSignal` パスを通じて終了します。
+- **`await blockForever()` は意図的なものです。** `yargs.parse()` が解決すると、CLI のトップレベルは対話型 TUI のエントリポイント（`llm.tsx`）にフォールスルーします。SIGINT / SIGTERM は `runQwenServe` の `onSignal` パスを通じて終了します。
 
 ## 10. HTTP ルートファイルの分割
 

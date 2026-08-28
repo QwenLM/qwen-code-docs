@@ -110,7 +110,7 @@ Chamar `createServeApp` diretamente ainda retorna apenas um `Application`. Um em
 | Upstream usado por `serve/`                                                                             | Downstream usando `serve/`                |
 | ------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | `@qwen-code/acp-bridge`: bridge, event bus, tipos de status                                             | O handler do subcomando `serve` da CLI `qwen` |
-| `packages/core`: `loadSettings`, `getCurrentGeminiMdFilename`, `Config`, `WorkspaceContext`             | Embedders diretos, testes                 |
+| `packages/core`: `getAllMemoryFilenames`, `Config`, `WorkspaceContext`                          | Embedders diretos, testes                 |
 | ACP SDK (`@agentclientprotocol/sdk`): `PROTOCOL_VERSION`, `ClientSideConnection` através da bridge      |                                           |
 | Express + body-parser, `node:crypto`, `node:fs`, `node:path`                                            |                                           |
 
@@ -136,7 +136,7 @@ Chamar `createServeApp` diretamente ainda retorna apenas um `Application`. Um em
 | Flags           | `--session-reap-interval-ms`, `--session-idle-timeout-ms`                                       | Controle de reaping de sessões desconectadas.                                                         |
 | Flags           | `--rate-limit*`                                                                                 | Limite de taxa HTTP por tier.                                                                         |
 | `settings.json` | `policy.permissionStrategy`, `policy.consensusQuorum`                                           | Política e quórum do `MultiClientPermissionMediator`.                                                 |
-| `settings.json` | `context.fileName`                                                                              | Substituição de `getCurrentGeminiMdFilename` para a bridge.                                           |
+| `settings.json` | `context.fileName`                                                                                         | Nome do arquivo de memória do workspace passado para `/workspace/init` através do `contextFilename` do workspace-service.     |
 
 Consulte [`17-configuration.md`](./17-configuration.md) para a referência consolidada.
 

@@ -137,7 +137,7 @@ A inicialização chama `loadSettings(boundWorkspace)` uma vez:
 | --------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `policy.permissionStrategy` | `'first-responder' \| 'designated' \| 'consensus' \| 'local-only'` | Define `BridgeOptions.permissionPolicy`. **A inicialização valida com `validatePolicyConfig`**; valores desconhecidos lançam `InvalidPolicyConfigError` em vez de fazer fallback silenciosamente. |
 | `policy.consensusQuorum`    | positive integer                                                   | N para a política `consensus`. O padrão é `floor(M/2)+1`. Se definido sob uma política não-consenso, é ignorado e a inicialização registra um aviso no stderr.            |
-| `context.fileName`          | string                                                             | Substitui `getCurrentGeminiMdFilename()` e controla qual arquivo `POST /workspace/init` escreve.                                                                         |
+| `context.fileName`          | string                                                             | Controla qual arquivo o `POST /workspace/init` escreve através do `contextFilename` do workspace-service.                                                                 |
 | `tools.disabled`            | string[]                                                           | Normalizado através de `normalizeDisabledToolList()` (aparar, remover entradas vazias, deduplicar) antes de afetar o próximo spawn do filho ACP.                         |
 | `tools.approvalMode`        | string                                                             | Modo de aprovação de sessão padrão.                                                                                                                                      |
 | `telemetry`                 | object                                                             | Configuração OTel: `enabled`, `otlpEndpoint`, `otlpProtocol`, endpoints por sinal, e mais. Veja [`17-configuration.md`](./17-configuration.md).                          |
@@ -224,7 +224,7 @@ qwen serve
 packages/cli/index.ts              main()
    |
    v
-gemini.tsx                         main() - parseArguments()
+llm.tsx                         main() - parseArguments()
    |
    v (yargs assembly)
 config/config.ts                   import { serveCommand } ...
@@ -275,7 +275,7 @@ Pontos-chave:
 
 - **`createServeApp` apenas constrói; ele não inicia a escuta.** Ele retorna uma instância `express()` com middlewares e rotas montadas. Embedders apenas ordinários podem continuar sendo donos do `app.listen()`. Embedders que usam Live/Conversations devem vincular o servidor Node real ao ciclo de vida do app exportado antes de ouvir (listen) e aguardar esse ciclo de vida durante o desligamento.
 - **`() => actualPort` é uma closure preguiçosa (lazy).** `actualPort` é atribuído no callback do `server.listen`. O middleware `hostAllowlist` o lê sob demanda, então portas efêmeras (`--port 0`) ainda controlam o cabeçalho `Host` corretamente.
-- **`await blockForever()` é intencional.** Se `yargs.parse()` for resolvido, o nível superior da CLI cai no ponto de entrada da TUI interativa (`gemini.tsx`). SIGINT / SIGTERM saem através do caminho `onSignal` do `runQwenServe`.
+- **`await blockForever()` é intencional.** Se `yargs.parse()` for resolvido, o nível superior da CLI cai no ponto de entrada da TUI interativa (`llm.tsx`). SIGINT / SIGTERM saem através do caminho `onSignal` do `runQwenServe`.
 
 ## 10. Divisão de arquivos de rotas HTTP
 

@@ -174,6 +174,7 @@ interface WebShellSidebarOptions {
   enabled?: boolean; // show/hide sidebar (default: true when passed)
   defaultCollapsed?: boolean; // initial collapsed state (persisted in localStorage)
   showCompactToggle?: boolean; // show the collapse button in the chat area (default: true)
+  showSessionSourceSwitch?: boolean; // show the Tasks/Channels switch (default: true)
   branding?: false | WebShellSidebarBranding;
   primaryNav?: WebShellSidebarPrimaryNavOptions;
   hideProjectHeader?: boolean; // hide "Projects" header row (default: false = shown)
@@ -181,6 +182,21 @@ interface WebShellSidebarOptions {
   footer?: false | WebShellSidebarFooterOptions;
 }
 ```
+
+### Переключатель источника сессий — `showSessionSourceSwitch`
+
+Установите `showSessionSourceSwitch` в `false`, если встроенный хост должен показывать только
+обычные сессии задач:
+
+```tsx
+sidebar={{
+  showSessionSourceSwitch: false,
+}}
+```
+
+Это удаляет переключатель Tasks/Channels и фиксирует все запросы активных, архивных, первичных
+и вторичных сессий на `sourceType: "default"`. Если опция не указана, текущий переключатель
+и доступ к сессиям каналов остаются без изменений.
 
 ### ③ Project Header — `hideProjectHeader`
 

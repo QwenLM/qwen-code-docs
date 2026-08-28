@@ -124,7 +124,7 @@ Trois points qui peuvent surprendre à la première lecture de cette fonctionnal
 
 1. **Une seule génération par lot, partagée par les deux modes d'affichage.** L'appel au fast model a lieu exactement une fois dans `handleCompletedTools` lorsqu'un lot d'outils se finalise. Basculer en mode détail déplié `Ctrl+O` par la suite ne déclenche **pas** un nouvel appel — le rendu plié et le rendu déplié lisent tous deux la même entrée d'historique `tool_use_summary` qui a été capturée la première fois.
 2. **Pas de backfill lors du basculement ou de la reprise de session.** Un `tool_group` qui s'est terminé avant que la fonctionnalité ne soit activée (ou avant que vous n'ayez activé le paramètre, ou dans une session reprise — `ChatRecordingService` ne persiste pas les entrées de résumé) n'obtiendra jamais d'étiquette. Il n'y a pas de « parcours de l'historique existant ». Si vous activez ce paramètre en milieu de session, seuls les lots *futurs* afficheront une étiquette ; les groupes plus anciens conservent le rendu par défaut sans indication qu'une étiquette manque.
-3. **Uniquement les lots de l'agent principal.** Le déclencheur se trouve dans la boucle de tour de la session principale (`useGeminiStream`), donc :
+3. **Uniquement les lots de l'agent principal.** Le déclencheur se trouve dans la boucle de tour de la session principale (`useLlmStream`), donc :
    - ✅ Les opérations Shell, MCP, les opérations sur fichiers et *l'appel lui-même* à l'outil `Task` / sous-agent (tel qu'il apparaît dans le lot principal) sont résumés.
    - ❌ Les lots d'outils **internes** d'un sous-agent (exécutés via `packages/core/src/agents/runtime/`) ne sont pas résumés.
 

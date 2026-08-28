@@ -108,7 +108,7 @@
 | `serve/`가 사용하는 업스트림                                                                       | `serve/`를 사용하는 다운스트림            |
 | -------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | `@qwen-code/acp-bridge`: 브리지, 이벤트 버스, 상태 타입                                            | `qwen` CLI `serve` 서브커맨드 핸들러      |
-| `packages/core`: `loadSettings`, `getCurrentGeminiMdFilename`, `Config`, `WorkspaceContext`         | 직접 임베더, 테스트                        |
+| `packages/core`: `getAllMemoryFilenames`, `Config`, `WorkspaceContext`         | 직접 임베더, 테스트                        |
 | ACP SDK (`@agentclientprotocol/sdk`): `PROTOCOL_VERSION`, 브리지를 통한 `ClientSideConnection`      |                                           |
 | Express + body-parser, `node:crypto`, `node:fs`, `node:path`                                       |                                           |
 
@@ -134,7 +134,7 @@
 | 플래그          | `--session-reap-interval-ms`, `--session-idle-timeout-ms`                                                  | 연결 끊긴 세션 정리 제어.                                                                             |
 | 플래그          | `--rate-limit*`                                                                                            | 티어별 HTTP 속도 제한.                                                                                |
 | `settings.json` | `policy.permissionStrategy`, `policy.consensusQuorum`                                                      | `MultiClientPermissionMediator` 정책 및 쿼럼.                                                         |
-| `settings.json` | `context.fileName`                                                                                         | 브리지용 `getCurrentGeminiMdFilename` 재정의.                                                          |
+| `settings.json` | `context.fileName`                                                                                         | 워크스페이스 서비스 `contextFilename`을 통해 `/workspace/init`에 전달되는 워크스페이스 메모리 파일 이름.                                                          |
 
 병합된 레퍼런스는 [`17-configuration.md`](./17-configuration.md)를 참조하세요.
 

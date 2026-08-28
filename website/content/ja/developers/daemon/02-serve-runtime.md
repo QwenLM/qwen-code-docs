@@ -108,7 +108,7 @@
 | `serve/` が使用するアップストリーム                                                                       | `serve/` を使用するダウンストリーム                 |
 | ----------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | `@qwen-code/acp-bridge`: ブリッジ、イベントバス、ステータスタイプ                                        | `qwen` CLI の `serve` サブコマンドハンドラ |
-| `packages/core`: `loadSettings`、`getCurrentGeminiMdFilename`、`Config`、`WorkspaceContext`     | 直接組み込む場合、テスト                   |
+| `packages/core`: `getAllMemoryFilenames`、`Config`、`WorkspaceContext`                             | 直接組み込む場合、テスト                   |
 | ACP SDK (`@agentclientprotocol/sdk`): ブリッジを介した `PROTOCOL_VERSION`、`ClientSideConnection` |                                           |
 | Express + body-parser、`node:crypto`、`node:fs`、`node:path`                                    |                                           |
 
@@ -134,7 +134,7 @@
 | フラグ           | `--session-reap-interval-ms`、`--session-idle-timeout-ms`                                       | 切断されたセッションの回収制御。                                                                 |
 | フラグ           | `--rate-limit*`                                                                                 | 階層ごとの HTTP レート制限。                                                                             |
 | `settings.json` | `policy.permissionStrategy`、`policy.consensusQuorum`                                           | `MultiClientPermissionMediator` のポリシーとクォーラム。                                                    |
-| `settings.json` | `context.fileName`                                                                              | ブリッジ用の `getCurrentGeminiMdFilename` オーバーライド。                                                 |
+| `settings.json` | `context.fileName`                                                                              | ワークスペースサービスの `contextFilename` を介して `/workspace/init` に渡されるワークスペースメモリファイル名。     |
 統合されたリファレンスについては、[`17-configuration.md`](./17-configuration.md) を参照してください。
 
 ## 注意事項と既知の制限

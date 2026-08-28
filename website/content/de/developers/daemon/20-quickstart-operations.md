@@ -137,7 +137,7 @@ Boot ruft `loadSettings(boundWorkspace)` einmal auf:
 | --------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `policy.permissionStrategy` | `'first-responder' \| 'designated' \| 'consensus' \| 'local-only'` | Setzt `BridgeOptions.permissionPolicy`. **Boot validiert mit `validatePolicyConfig`**; unbekannte Werte werfen `InvalidPolicyConfigError`, anstatt stillschweigend zurückzufallen. |
 | `policy.consensusQuorum`    | positive integer                                                   | N für die `consensus`-Policy. Standard ist `floor(M/2)+1`. Wenn es unter einer Non-Consensus-Policy gesetzt wird, wird es ignoriert und Boot gibt eine Stderr-Warnung aus. |
-| `context.fileName`          | string                                                             | Überschreibt `getCurrentGeminiMdFilename()` und steuert, welche Datei `POST /workspace/init` schreibt.                                                                   |
+| `context.fileName`          | string                                                             | Steuert, welche Datei `POST /workspace/init` über die Workspace-Service-`contextFilename` schreibt.                                                                   |
 | `tools.disabled`            | string[]                                                           | Wird durch `normalizeDisabledToolList()` normalisiert (trimmen, leere Einträge entfernen, Deduplizierung), bevor es den nächsten ACP-Child-Spawn beeinflusst.            |
 | `tools.approvalMode`        | string                                                             | Standard-Session-Approval-Modus.                                                                                                                                         |
 | `telemetry`                 | object                                                             | OTel-Konfiguration: `enabled`, `otlpEndpoint`, `otlpProtocol`, Endpunkte pro Signal und mehr. Siehe [`17-configuration.md`](./17-configuration.md).                      |
@@ -216,7 +216,7 @@ Die CSP wird von `buildWebShellCsp()` erstellt und ist absichtlich lockerer als 
 
 Für rohe Protokollinspektion abonniere den SSE-Stream direkt (`routes/sse-events.ts`) — siehe die Curl-Rezepte in Abschnitt 7.
 
-## 9. Aufrufkette von qwen serve bis zum Server, der auf Anfragen wartet
+## 9. Aufrufkette von `qwen serve` bis zum Server, der auf Anfragen wartet
 
 ```text
 qwen serve
@@ -225,7 +225,7 @@ qwen serve
 packages/cli/index.ts              main()
    |
    v
-gemini.tsx                         main() - parseArguments()
+llm.tsx                         main() - parseArguments()
    |
    v (yargs assembly)
 config/config.ts                   import { serveCommand } ...
@@ -275,8 +275,8 @@ commands/serve.ts                  await blockForever()    // block forever unti
 Wichtige Fakten:
 
 - **`createServeApp` baut nur auf; es lauscht nicht.** Es gibt eine `express()`-Instanz mit gemounteter Middleware und Routen zurück. Ordinary-only-Embedder können weiterhin `app.listen()` selbst besitzen. Embedder, die Live/Conversations verwenden, müssen den tatsächlichen Node-Server an den exportierten App-Lifecycle binden, bevor sie lauschen, und diesen Lifecycle während des Shutdowns awaiten.
-- **`() => actualPort` ist eine Lazy Closure.** `actualPort` wird im `app.listen`-Callback zugewiesen. Die `hostAllowlist`-Middleware liest ihn bei Bedarf aus, sodass ephemere Ports (`--port 0`) den `Host`-Header weiterhin korrekt prüfen.
-- **`await blockForever()` ist beabsichtigt.** Wenn `yargs.parse()` auflöst, fällt die CLI-Top-Level-Ebene in den interaktiven TUI-Entrypoint (`gemini.tsx`) durch. SIGINT / SIGTERM werden über den `onSignal`-Pfad von `runQwenServe` beendet.
+- **`() => actualPort` ist eine Lazy Closure.** `actualPort` wird im `server.listen`-Callback zugewiesen. Die `hostAllowlist`-Middleware liest ihn bei Bedarf aus, sodass ephemere Ports (`--port 0`) den `Host`-Header weiterhin korrekt prüfen.
+- **`await blockForever()` ist beabsichtigt.** Wenn `yargs.parse()` auflöst, fällt die CLI-Top-Level-Ebene in den interaktiven TUI-Entrypoint (`llm.tsx`) durch. SIGINT / SIGTERM werden über den `onSignal`-Pfad von `runQwenServe` beendet.
 
 ## 10. Aufteilung der HTTP-Routendateien
 
