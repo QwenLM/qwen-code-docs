@@ -137,7 +137,7 @@ CLI 定义在 **`packages/cli/src/commands/serve.ts`** 中：
 | --------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `policy.permissionStrategy` | `'first-responder' \| 'designated' \| 'consensus' \| 'local-only'` | 设置 `BridgeOptions.permissionPolicy`。**启动时会使用 `validatePolicyConfig` 进行验证**；未知值会抛出 `InvalidPolicyConfigError`，而不是静默回退。 |
 | `policy.consensusQuorum`    | positive integer                                                   | `consensus` 策略的 N 值。默认为 `floor(M/2)+1`。如果在非 consensus 策略下设置，它将被忽略，并且启动时会在 stderr 中记录警告。                              |
-| `context.fileName`          | string                                                             | 覆盖 `getCurrentGeminiMdFilename()` 并控制 `POST /workspace/init` 写入哪个文件。                                                                          |
+| `context.fileName`          | string                                                             | 控制 `POST /workspace/init` 通过 workspace-service 的 `contextFilename` 写入哪个文件。                                                                       |
 | `tools.disabled`            | string[]                                                           | 在影响下一次 ACP 子进程 spawn 之前，通过 `normalizeDisabledToolList()` 进行规范化（trim、丢弃空条目、去重）。                                           |
 | `tools.approvalMode`        | string                                                             | 默认会话审批模式。                                                                                                                                           |
 | `telemetry`                 | object                                                             | OTel 配置：`enabled`、`otlpEndpoint`、`otlpProtocol`、每个 signal 的 endpoint 等。请参阅 [`17-configuration.md`](./17-configuration.md)。                       |
@@ -164,6 +164,7 @@ CLI 定义在 **`packages/cli/src/commands/serve.ts`** 中：
 | `--prompt-deadline-ms` / `--writer-idle-timeout-ms` 不是正整数 | `Must be a positive integer`                                                                        |
 | `--initialize-timeout-ms` 不是正整数或超过 `2^31-1`       | `Must be a positive integer` / `Exceeds maximum JS timer delay`                                     |
 | 未知的 `policy.permissionStrategy` 或非正数的 `policy.consensusQuorum`  | `InvalidPolicyConfigError`                                                                          |
+
 ## 7. Curl 验证清单
 
 ```bash
@@ -224,7 +225,7 @@ qwen serve
 packages/cli/index.ts              main()
    |
    v
-gemini.tsx                         main() - parseArguments()
+llm.tsx                         main() - parseArguments()
    |
    v (yargs assembly)
 config/config.ts                   import { serveCommand } ...
@@ -275,7 +276,7 @@ commands/serve.ts                  await blockForever()    // block forever unti
 
 - **`createServeApp` 仅负责构建，不负责监听。** 它返回一个挂载了中间件和路由的 `express()` 实例。仅需普通路由的嵌入者可以继续自行管理 `app.listen()`。使用 Live/Conversations 的嵌入者必须在监听之前将实际的 Node 服务器绑定到导出的应用生命周期，并在关闭期间 await 该生命周期。
 - **`() => actualPort` 是一个惰性闭包。** `actualPort` 在 `server.listen` 的回调中赋值。`hostAllowlist` 中间件按需读取它，因此临时端口（`--port 0`）仍能正确校验 `Host` 请求头。
-- **`await blockForever()` 是有意为之。** 如果 `yargs.parse()` 解析完成，CLI 顶层会进入交互式 TUI 入口（`gemini.tsx`）。SIGINT / SIGTERM 通过 `runQwenServe` 的 `onSignal` 路径退出。
+- **`await blockForever()` 是有意为之。** 如果 `yargs.parse()` 解析完成，CLI 顶层会进入交互式 TUI 入口（`llm.tsx`）。SIGINT / SIGTERM 通过 `runQwenServe` 的 `onSignal` 路径退出。
 
 ## 10. HTTP 路由文件拆分
 

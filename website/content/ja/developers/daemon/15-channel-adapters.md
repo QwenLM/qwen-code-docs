@@ -9,7 +9,7 @@
 - `qwen channel start [name]` は、スタンドアロンの ACP バックチャネルサービスです。アダプターに `ChannelAgentBridge` の `AcpBridge` 実装を渡します。
 - `qwen serve --channel <name>` および `qwen serve --channel all` は、実験的なデーモン管理モードです。名前付きセレクションは所有ワークスペースごとにグループ化され、`qwen serve` は所有ランタイムごとにプロセス外のワーカーを 1 つ起動します。各ワーカーは SDK を介してデーモンに接続し、アダプターは `DaemonChannelBridge` ベースの `ChannelAgentBridge` ファサードを受け取ります。`--channel all` は引き続きプライマリのみのセレクションです。
 
-デーモン管理モードでは、各チャネルは受信チャットトラフィックを、設定可能な `SessionScope` (`user`、`chat_thread`、または `single`) の下のデーモンセッションにマッピングします。レガシーな Channel 値 `thread` は既存の設定では読み書き可能ですが、新しい Web Shell の設定では提供されません。これはデーモンブリッジ独自の `single`/`thread` セッション作成ノブとは別のものです。アダプターは `DaemonChannelBridge` に委任し、それは SDK の `DaemonSessionClient` に委任します ([`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md) を参照)。各名前付きチャネルは、登録された 1 つの信頼されたワークスペースに解決される必要があります。ワーカーはそのランタイムの標準 cwd、`QWEN_DAEMON_WORKSPACE`、および環境オーバーレイを使用します。所有権の解決はプライマリにフォールバックすることはありません。
+デーモン管理モードでは、各チャネルは受信チャットトラフィックを、設定可能な `SessionScope` (`user`、`chat_thread`、または `single`) の下のデーモンセッションにマッピングします。レガシーな Channel 値 `thread` は既存の設定では読み書き可能ですが、新しい Web Shell の設定では提供されません。これはデーモンブリッジ独自の `single`/`thread` セッション作成ノブとは別のものです。`sessionScope: "user"` かつ `multiSession: true` の場合、`ChannelBase` はチャネル、チャット、および送信者をキーとする永続化された名前付きセッションカタログを追加し、`SessionRouter` は選択されたセッションを互換性ルートとして保持します。正確な名前付きセッションのロードは、レガシーな load-or-replace パスを使用することはありません。アダプターは `DaemonChannelBridge` に委任し、それは SDK の `DaemonSessionClient` に委任します ([`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md) を参照)。各名前付きチャネルは、登録された 1 つの信頼されたワークスペースに解決される必要があります。ワーカーはそのランタイムの標準 cwd、`QWEN_DAEMON_WORKSPACE`、および環境オーバーレイを使用します。所有権の解決はプライマリにフォールバックすることはありません。
 
 ### Webhook トリガーのチャネルタスク
 
@@ -197,6 +197,7 @@ sequenceDiagram
 | 設定項目                                     | 効果                                                                                                                                                                         |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `sessionScope`                           | `'user'` (送信者 + チャット)、`'chat_thread'` (チャネル + chatId + threadId)、または `'single'` (チャネルごとに 1 つの共有セッション)。レガシーの `'thread'` はすでに設定されている場合は保持されますが、新しい Web Shell の設定では提供されません。 |
+| `multiSession`                           | `sessionScope: 'user'` 向けのデーモン専用の名前付きタスク。オーナーカタログはワークスペース/チャネルの状態ディレクトリの下に永続化されます。webhook、グループ履歴のバックフィル、ループ、実行中タスクの切り替え、およびタスクごとのワークツリーは Part 2 で除外されます。 |
 | `approvalMode`                           | `'auto'` (自動応答) / `'prompt'` (UI のレンダリング)。                                                                                                                              |
 | `allowlist?: string[]`                   | 許可される送信者 ID。未指定 = オープン。                                                                                                                                            |
 | `denylist?: string[]`                    | 拒否される送信者 ID。                                                                                                                                                             |

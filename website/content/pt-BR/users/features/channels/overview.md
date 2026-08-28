@@ -88,8 +88,31 @@ Controla quem pode interagir com o bot:
 Controla como as sessões de conversa são gerenciadas:
 
 - **`user`** (padrão) — Uma sessão por usuário. Todas as mensagens do mesmo usuário compartilham uma conversa.
-- **`thread`** — Uma sessão por thread/tópico. Útil para chats em grupo com threads.
+- **`chat_thread`** — Uma sessão por thread/tópico de chat, compartilhada pelos participantes dessa thread.
+- **`thread`** — Roteamento legado de thread/tópico mantido para configurações existentes.
 - **`single`** — Uma sessão compartilhada para todos os usuários. Todos compartilham a mesma conversa.
+
+### Tarefas Nomeadas
+
+Canais gerenciados pelo daemon podem reter várias conversas nomeadas para o mesmo usuário em um chat:
+
+```json
+{
+  "channels": {
+    "my-channel": {
+      "type": "telegram",
+      "sessionScope": "user",
+      "multiSession": true
+    }
+  }
+}
+```
+
+O catálogo é privado para o canal, chat e remetente exatos. Os nomes das tarefas usam 1–32 letras ASCII, números, underscores ou hifens, e são únicos sem distinção entre maiúsculas e minúsculas. Até oito tarefas podem estar abertas; fechar uma tarefa a desanexa sem excluir sua transcrição, então selecioná-la posteriormente reabre a conversa exata. IDs de sessão nunca são aceitos nem mostrados em comandos de chat.
+
+A Parte 2 usa uma tarefa selecionada por vez e um diretório de trabalho compartilhado. Criar uma tarefa ou mudar da tarefa selecionada é rejeitado enquanto essa tarefa ainda estiver em execução ou aguardando permissão, e uma tarefa ocupada não pode ser fechada. Troca concorrente de tarefas em execução, cancelamento nomeado e rótulos de tarefas estão planejados para a Parte 3; worktrees por tarefa estão planejados para a Parte 4. A memória do canal permanece com escopo do chat, não de uma tarefa nomeada.
+
+Este modo não está disponível no `qwen channel start` standalone, com webhooks, com `groupHistoryLimit` diferente de zero no canal ou no grupo, ou com loops de Canal. Se um loop ativo já existir para esse canal, o worker do daemon se recusa a iniciar até que o loop seja desativado.
 
 ### Memória do Canal
 
@@ -399,28 +422,35 @@ Os canais suportam comandos slash. Eles são tratados localmente (sem ida e volt
 - `/help` — Lista os comandos disponíveis
 - `/clear` — Limpa sua sessão e começa do zero (aliases: `/reset`, `/new`)
 - `/status` — Mostra informações da sessão e política de acesso
+- `/sessions [all]` — Lista tarefas nomeadas abertas, ou inclui tarefas fechadas; disponível apenas com `multiSession: true`
+- `/session current` — Mostra a tarefa nomeada selecionada
+- `/session new <name>` — Cria e seleciona uma tarefa com workspace compartilhado
+- `/session new <name> --worktree` — Reconhecido, mas adiado para a Parte 4
+- `/session use <name>` — Seleciona uma tarefa aberta ou reabre uma tarefa fechada
+- `/session cancel [<name>]` — Reconhecido, mas adiado para a Parte 3. Aguarde a tarefa selecionada terminar antes de trocar; usuários do Telegram podem usar `/cancel` para a tarefa selecionada
+- `/session close <name>` — Fecha uma tarefa sem excluir sua transcrição
 - `/loop add "<cron>" <prompt>` — Cria um loop de canal agendado persistente
 - `/loop list` — Lista os loops do chat atual
 - `/loop inspect <id>` — Mostra o status do loop e detalhes de execução
 - `/loop cancel <id>` — Desativa um loop
 
-Todos os outros comandos slash (por exemplo, `/compress`, `/summary`) são encaminhados para o agente.
+Todos os outros comandos slash (por exemplo, `/compress`, `/summary`) são encaminhados para o agente. Os comandos de tarefas nomeadas são registrados apenas quando o modo está ativado, então `/sessions` permanece visível ao agente para configurações existentes.
 
-Esses comandos funcionam em todos os tipos de canal (Telegram, WeChat, QQ, DingTalk, WeCom, Feishu, GitHub), embora a criação de loops também exija suporte a entrega proativa para o adaptador e destino atuais.
+Os comandos de tarefas nomeadas funcionam em todos os tipos de canal (Telegram, WeChat, QQ, DingTalk, WeCom, Feishu, GitHub). `/cancel` está registrado atualmente apenas pelo Telegram, e a criação de loops requer suporte a entrega proativa para o adaptador e destino atuais.
 
 ## Executando
 
 ```bash
-# Start all configured channels (shared agent process)
+# Inicia todos os canais configurados (processo de agente compartilhado)
 qwen channel start
 
-# Start a single channel
+# Inicia um único canal
 qwen channel start my-channel
 
-# Check if the service is running
+# Verifica se o serviço está em execução
 qwen channel status
 
-# Stop the running service
+# Para o serviço em execução
 qwen channel stop
 ```
 

@@ -62,6 +62,7 @@
 | `senderPolicy`           | 否               | 允许与机器人交互的用户：`allowlist`（默认）、`open` 或 `pairing`                                                                                                 |
 | `allowedUsers`           | 否               | 允许使用机器人的用户 ID 列表（由 `allowlist` 和 `pairing` 策略使用）                                                                                             |
 | `sessionScope`           | 否               | 会话作用域：`user`（默认）、`chat_thread` 或 `single`。旧版 `thread` 在已配置时仍兼容，但不再为新的 Web Shell 配置提供                                                  |
+| `multiSession`           | 否               | 在一个聊天中保留最多八个按所有者作用域的命名任务。需要守护进程管理模式、`sessionScope: "user"`，不使用 webhook 或群聊历史回填，且未启用频道循环                    |
 | `cwd`                    | 否               | agent 的工作目录。默认为当前目录                                                                                                                                 |
 | `approvalMode`           | 否               | 频道会话的工具审批模式。无人值守的 webhook 任务需要 `yolo`；该设置应用于频道上的每个会话                                                                          |
 | `instructions`           | 否               | 自定义指令，会追加到每个会话的第一条消息之前                                                                                                                     |
@@ -88,8 +89,31 @@
 控制会话的管理方式：
 
 - **`user`**（默认）— 每个用户一个会话。同一用户的所有消息共享一个对话。
-- **`thread`** — 每个话题/线程一个会话。适用于支持话题的群聊。
+- **`chat_thread`** — 每个聊天话题/线程一个会话，由该话题中的参与者共享。
+- **`thread`** — 为保留现有配置而保留的旧版话题/线程路由。
 - **`single`** — 所有用户共享一个会话。所有人共享同一个对话。
+
+### 命名任务
+
+守护进程管理的频道可以在同一个聊天中为同一用户保留多个命名对话：
+
+```json
+{
+  "channels": {
+    "my-channel": {
+      "type": "telegram",
+      "sessionScope": "user",
+      "multiSession": true
+    }
+  }
+}
+```
+
+目录严格私有于对应的频道、聊天和发送者。任务名使用 1–32 个 ASCII 字母、数字、下划线或连字符，不区分大小写且必须唯一。最多可同时打开八个任务；关闭任务会将其分离但不会删除其对话记录，因此后续选择该任务会重新打开完全相同的对话。会话 ID 不会被聊天命令接受，也不会在聊天命令中显示。
+
+Part 2 每次使用一个选定的任务，并共享工作目录。当所选任务仍在运行或等待权限时，创建任务或切换到其他任务会被拒绝，且繁忙的任务无法关闭。并发运行任务切换、命名取消和任务标签计划在 Part 3 中实现；按任务的 worktree 计划在 Part 4 中实现。频道记忆仍然作用于聊天而非命名任务。
+
+此模式在独立 `qwen channel start`、使用 webhook、频道或群组的 `groupHistoryLimit` 非零，或启用频道循环时不可用。如果该频道已存在启用的循环，守护进程 worker 将拒绝启动，直到循环被禁用。
 
 ### 频道记忆
 
@@ -404,10 +428,17 @@ curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates" | python3
 - `/loop list` —— 列出当前聊天的循环
 - `/loop inspect <id>` —— 显示循环状态和运行详情
 - `/loop cancel <id>` —— 禁用循环
+- `/sessions [all]` —— 列出打开的命名任务，或包含已关闭的任务；仅在 `multiSession: true` 时可用
+- `/session current` —— 显示选定的命名任务
+- `/session new <name>` —— 创建并选择共享工作区任务
+- `/session new <name> --worktree` —— 已识别但推迟到 Part 4
+- `/session use <name>` —— 选择打开的任务或重新打开已关闭的任务
+- `/session cancel [<name>]` —— 已识别但推迟到 Part 3。切换前请等待所选任务完成；Telegram 用户可以对所选任务使用 `/cancel`
+- `/session close <name>` —— 关闭任务但不删除其对话记录
 
-所有其他斜杠命令（例如 `/compress`、`/summary`）都会转发给 agent。
+所有其他斜杠命令（例如 `/compress`、`/summary`）都会转发给 agent。命名任务命令仅在启用该模式时注册，因此 `/sessions` 对现有配置仍保持 agent 可见。
 
-这些命令适用于所有频道类型（Telegram、微信、QQ、钉钉、企业微信、飞书、GitHub），但循环创建还需要当前适配器和目标支持主动投递。
+命名任务命令适用于所有频道类型（Telegram、微信、QQ、钉钉、企业微信、飞书、GitHub）。`/cancel` 目前仅由 Telegram 注册，循环创建需要当前适配器和目标支持主动投递。
 
 ## 运行
 

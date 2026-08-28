@@ -26,8 +26,8 @@
 
 | Middleware, in Registrierungsreihenfolge | Zweck | Hinweise |
 | --- | --- | --- |
-| `allowOriginCors` | `Origin`-Header gegen eine mutable Allowlist prüfen; die `--allow-origin <pattern>`-Einträge seeden sie, und Local Control fügt die LAN-Origin hinzu, während es aktiviert ist. Nicht übereinstimmende Origins erhalten den 403- deny-Envelope. | Siehe [`12-auth-security.md`](./12-auth-security.md). |
-| `hostAllowlist(bind, getPort)` | Auf Loopback validieren, dass `Host` zu `localhost`, `127.0.0.1`, `[::1]` oder `host.docker.internal` sowie dem tatsächlichen Port gehört. Der Local-Control-LAN-Listener ist die Ausnahme, die immer ihre beworbene-Autorität-Hostprüfung erzwingt, unabhängig vom primären Bind. | Schutz gegen DNS-Rebinding. Der Vergleich ist case-insensitive und wird pro Port gecacht. |
+| `allowOriginCors` | Immer auf der Runtime-App über eine `MutableOriginAllowlist` installiert: `--allow-origin <pattern>`-Einträge seeden sie, Local Control fügt die LAN-Origin hinzu, während es aktiviert ist; nicht übereinstimmende Origins erhalten den 403-Deny-Envelope. | Siehe [`12-auth-security.md`](./12-auth-security.md). |
+| `hostAllowlist(bind, getPort)` | Auf Loopback validieren, dass `Host` zu `localhost`, `127.0.0.1`, `[::1]` oder `host.docker.internal` plus dem tatsächlichen Port gehört. | Schutz gegen DNS-Rebinding. Der Vergleich ist case-insensitive und wird pro Port gecacht. Der Local-Control-LAN-Listener erzwingt immer seine Advertised-Authority-Hostprüfung, unabhängig vom primären Bind. |
 | Access-Log-Middleware | Protokolliert Methode, Pfad, Status, durationMs, sessionId und clientId im `DaemonLogger`, wenn ein Request abgeschlossen ist. | **Vor** `bearerAuth` registriert, sodass 401-Ablehnungen ebenfalls protokolliert werden. Überspringt `/health` und Heartbeat. |
 | `bearerAuth(token)` | SHA-256 plus `timingSafeEqual` Constant-Time-Bearer-Vergleich. | Offener Passthrough, wenn kein Token konfiguriert ist (Loopback-Dev-Standard). Das `Bearer`-Schema ist case-insensitive. |
 | Rate-Limit-Middleware | Optionaler Token-Bucket pro Stufe für Prompt-, Mutations- und Read-Routen. | Nach `bearerAuth` und vor dem JSON-Parsing registriert; gibt 429 vor dem Parsing zurück, wenn ein Bucket erschöpft ist. |
@@ -72,7 +72,7 @@ Bevor `runQwenServe()` diese Sequenz startet, validiert der CLI-exklusive `--ope
 7. **MCP-Pool-Toggle-Inferenz**: Parent-Env `QWEN_SERVE_NO_MCP_POOL=1` setzt `mcpPoolActive=false`, sodass die Capabilities `mcp_workspace_pool` und `mcp_pool_restart` korrekt weglassen.
 8. **CORS-/Timeout-/Rate-Limit-Validierung**: `--allow-origin '*'` erfordert ein Token; Prompt-, Writer-, Channel-Idle-, Session-Idle-, Reaper- und Rate-Limit-Window-Werte schlagen bei Ungültigkeit sofort fehl (fail fast).
 9. **Handle-spezifische `childEnvOverrides`**: `QWEN_SERVE_MCP_CLIENT_BUDGET` und `QWEN_SERVE_MCP_BUDGET_MODE` über `BridgeOptions.childEnvOverrides` an das ACP-Child übergeben, anstatt `process.env` zu mutieren.
-10. **`settings.json` einmalig laden**: `context.fileName`, `policy.permissionStrategy` und `policy.consensusQuorum` lesen. Beschädigte Dateien fallen auf Standardwerte zurück. `validatePolicyConfig()` prüft `policy.*` gegen `SERVE_CAPABILITY_REGISTRY.permission_medication.modes`; unbekannte Strategien oder ein nicht-positives `consensusQuorum` werfen `InvalidPolicyConfigError`. Ein unter einer Nicht-`consensus`-Strategie gesetztes Quorum protokolliert eine Stderr-Warnung.
+10. **`settings.json` einmalig laden**: `context.fileName`, `policy.permissionStrategy` und `policy.consensusQuorum` lesen. Beschädigte Dateien fallen auf Standardwerte zurück. `validatePolicyConfig()` prüft `policy.*` gegen `SERVE_CAPABILITY_REGISTRY.permission_mediation.modes`; unbekannte Strategien oder ein nicht-positives `consensusQuorum` werfen `InvalidPolicyConfigError`. Ein unter einer Nicht-`consensus`-Strategie gesetztes Quorum protokolliert eine Stderr-Warnung.
 11. **`PermissionAuditRing` allokieren** (512 Einträge).
 12. **`fsFactory` bauen**: `runQwenServe` ist standardmäßig `trusted: true`; direkte `createServeApp`-Aufrufer sind standardmäßig `trusted: false` und warnen einmalig.
 13. **`createHttpAcpBridge`**, siehe [`03-acp-bridge.md`](./03-acp-bridge.md).
@@ -108,7 +108,7 @@ Der direkte Aufruf von `createServeApp` gibt weiterhin nur eine `Application` zu
 | Upstream verwendet von `serve/` | Downstream verwendet `serve/` |
 | --- | --- |
 | `@qwen-code/acp-bridge`: Bridge, Event-Bus, Status-Typen | Der `serve`-Subcommand-Handler der `qwen`-CLI |
-| `packages/core`: `loadSettings`, `getCurrentGeminiMdFilename`, `Config`, `WorkspaceContext` | Direkte Embedder, Tests |
+| `packages/core`: `getAllMemoryFilenames`, `Config`, `WorkspaceContext` | Direkte Embedder, Tests |
 | ACP SDK (`@agentclientprotocol/sdk`): `PROTOCOL_VERSION`, `ClientSideConnection` über Bridge | |
 | Express + body-parser, `node:crypto`, `node:fs`, `node:path` | |
 
@@ -134,7 +134,7 @@ Der direkte Aufruf von `createServeApp` gibt weiterhin nur eine `Application` zu
 | Flags | `--session-reap-interval-ms`, `--session-idle-timeout-ms` | Steuerung des Reapings getrennter Sessions. |
 | Flags | `--rate-limit*` | HTTP-Rate-Limit pro Stufe. |
 | `settings.json` | `policy.permissionStrategy`, `policy.consensusQuorum` | `MultiClientPermissionMediator`-Policy und Quorum. |
-| `settings.json` | `context.fileName` | `getCurrentGeminiMdFilename`-Override für die Bridge. |
+| `settings.json` | `context.fileName` | Workspace-Memory-Dateiname, der über das `contextFilename` des Workspace-Service an `/workspace/init` übergeben wird. |
 Siehe [`17-configuration.md`](./17-configuration.md) für die zusammengeführte Referenz.
 
 ## Einschränkungen und bekannte Limits

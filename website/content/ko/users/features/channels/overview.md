@@ -1,6 +1,3 @@
----
-title: Channels
----
 
 # 채널
 
@@ -66,6 +63,7 @@ title: Channels
 | `senderPolicy`         | 아니오                | 봇과 대화할 수 있는 사용자: `allowlist`(기본값), `open` 또는 `pairing`                                                                                           |
 | `allowedUsers`         | 아니오                | 봇을 사용할 수 있는 사용자 ID 목록(`allowlist` 및 `pairing` 정책에서 사용)                                                                                       |
 | `sessionScope`         | 아니오                | 세션 범위 방식: `user`(기본값), `chat_thread` 또는 `single`. 레거시 `thread`는 이미 구성된 경우 호환되지만 새 Web Shell 구성에서는 제공되지 않음                   |
+| `multiSession`         | 아니오                | 하나의 채팅에서 최대 8개의 소유자 범위 명명된 작업을 보존합니다. 데몬 관리 모드, `sessionScope: "user"`, 웹훅이나 그룹 기록 백필 없음, 그리고 활성화된 Channel 루프 없음 필요 |
 | `cwd`                  | 아니오                | 에이전트의 작업 디렉토리. 기본값은 현재 디렉토리                                                                                                                 |
 | `approvalMode`         | 아니오                | 채널 세션의 도구 승인 모드. 무인 웹훅 작업은 `yolo`가 필요합니다. 설정은 채널의 모든 세션에 적용됩니다                                                            |
 | `instructions`         | 아니오                | 각 세션의 첫 번째 메시지에 앞에 추가되는 사용자 정의 지시                                                                                                         |
@@ -92,8 +90,31 @@ title: Channels
 대화 세션이 관리되는 방식을 제어합니다:
 
 - **`user`**(기본값) — 사용자당 하나의 세션. 같은 사용자의 모든 메시지가 대화를 공유합니다.
-- **`thread`** — 스레드/토픽당 하나의 세션. 스레드가 있는 그룹 채팅에 유용합니다.
+- **`chat_thread`** — 채팅 스레드/토픽당 하나의 세션. 해당 스레드의 참여자가 공유합니다.
+- **`thread`** — 기존 구성을 위해 유지된 레거시 스레드/토픽 라우팅.
 - **`single`** — 모든 사용자를 위한 하나의 공유 세션. 모두가 같은 대화를 공유합니다.
+
+### 명명된 작업
+
+데몬 관리 채널은 하나의 채팅에서 같은 사용자를 위한 여러 명명된 대화를 보존할 수 있습니다:
+
+```json
+{
+  "channels": {
+    "my-channel": {
+      "type": "telegram",
+      "sessionScope": "user",
+      "multiSession": true
+    }
+  }
+}
+```
+
+카탈로그는 정확한 채널, 채팅 및 발신자에게 비공개입니다. 작업 이름은 1–32자의 ASCII 문자, 숫자, 밑줄 또는 하이픈을 사용하며 대소문자를 구분하지 않고 고유합니다. 최대 8개의 작업을 열 수 있으며 작업을 닫으면 트랜스크립트가 삭제되지 않고 분리되므로 나중에 선택하면 정확한 대화를 다시 엽니다. 세션 ID는 채팅 명령어에서 수락되거나 표시되지 않습니다.
+
+Part 2는 한 번에 하나의 선택된 작업과 공유 작업 디렉토리를 사용합니다. 해당 작업이 아직 실행 중이거나 권한을 기다리는 동안 작업을 생성하거나 선택된 작업에서 전환하는 것은 거부되며, 바쁜 작업은 닫을 수 없습니다. 동시 실행 작업 전환, 명명된 취소 및 작업 레이블은 Part 3에서 계획되며 작업별 worktree는 Part 4에서 계획됩니다. 채널 메모리는 명명된 작업이 아닌 채팅에 범위가 지정됩니다.
+
+이 모드는 독립 실행형 `qwen channel start`, 웹훅, 0이 아닌 채널 또는 그룹 `groupHistoryLimit`, 또는 Channel 루프에서는 사용할 수 없습니다. 해당 채널에 활성화된 루프가 이미 있으면 데몬 워커는 루프가 비활성화될 때까지 시작을 거부합니다.
 
 ### 채널 메모리
 
@@ -404,14 +425,21 @@ curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates" | python3
 - `/help` — 사용 가능한 명령어 나열
 - `/clear` — 세션을 지우고 새로 시작(별칭: `/reset`, `/new`)
 - `/status` — 세션 정보 및 접근 정책 표시
+- `/sessions [all]` — 열려 있는 명명된 작업을 나열하거나 닫힌 작업을 포함합니다. `multiSession: true`일 때만 사용 가능
+- `/session current` — 선택된 명명된 작업 표시
+- `/session new <name>` — 공유 워크스페이스 작업을 생성하고 선택
+- `/session new <name> --worktree` — 인식되지만 Part 4로 연기됨
+- `/session use <name>` — 열려 있는 작업을 선택하거나 닫힌 작업을 다시 열기
+- `/session cancel [<name>]` — 인식되지만 Part 3로 연기됨. 전환하기 전에 선택된 작업이 완료될 때까지 기다리세요. Telegram 사용자는 선택된 작업에 대해 `/cancel`을 사용할 수 있습니다
+- `/session close <name>` — 트랜스크립트를 삭제하지 않고 작업을 닫습니다
 - `/loop add "<cron>" <prompt>` — 영구 예약 채널 루프 생성
 - `/loop list` — 현재 채팅의 루프 나열
 - `/loop inspect <id>` — 루프 상태 및 실행 세부 정보 표시
 - `/loop cancel <id>` — 루프 비활성화
 
-다른 모든 슬래시 명령어(예: `/compress`, `/summary`)는 에이전트로 전달됩니다.
+다른 모든 슬래시 명령어(예: `/compress`, `/summary`)는 에이전트로 전달됩니다. 명명된 작업 명령어는 모드가 활성화된 경우에만 등록되므로 기존 구성에서 `/sessions`는 에이전트에 계속 표시됩니다.
 
-이 명령어는 모든 채널 유형(Telegram, WeChat, QQ, DingTalk, WeCom, Feishu, GitHub)에서 작동합니다. 단, 루프 생성은 현재 어댑터 및 대상의 능동 전달 지원도 필요합니다.
+명명된 작업 명령어는 모든 채널 유형(Telegram, WeChat, QQ, DingTalk, WeCom, Feishu, GitHub)에서 작동합니다. `/cancel`은 현재 Telegram에서만 등록되며 루프 생성은 현재 어댑터 및 대상의 능동 전달 지원이 필요합니다.
 
 ## 실행
 

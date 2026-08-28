@@ -175,6 +175,7 @@ interface WebShellSidebarOptions {
   enabled?: boolean; // afficher/masquer la sidebar (par défaut : true quand passé)
   defaultCollapsed?: boolean; // état réduit initial (persisté dans localStorage)
   showCompactToggle?: boolean; // afficher le bouton de réduction dans la zone de chat (par défaut : true)
+  showSessionSourceSwitch?: boolean; // afficher le commutateur Tasks/Channels (par défaut : true)
   branding?: false | WebShellSidebarBranding;
   primaryNav?: WebShellSidebarPrimaryNavOptions;
   hideProjectHeader?: boolean; // masquer la ligne d'en-tête "Projects" (par défaut : false = affiché)
@@ -182,6 +183,21 @@ interface WebShellSidebarOptions {
   footer?: false | WebShellSidebarFooterOptions;
 }
 ```
+
+### Commutateur de source de session — `showSessionSourceSwitch`
+
+Définissez `showSessionSourceSwitch` à `false` lorsqu'un hôte d'intégration ne doit afficher que
+les sessions de tâches ordinaires :
+
+```tsx
+sidebar={{
+  showSessionSourceSwitch: false,
+}}
+```
+
+Cela supprime le commutateur Tasks/Channels et fixe chaque requête de session active, archivée,
+primaire et secondaire à `sourceType: "default"`. Omettre cette option conserve
+le commutateur actuel et l'accès aux sessions de canal inchangé.
 
 ### ③ En-tête de projet — `hideProjectHeader`
 

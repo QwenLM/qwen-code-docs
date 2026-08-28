@@ -108,7 +108,7 @@
 | `serve/` 使用的上游                                                                       | 使用 `serve/` 的下游                  |
 | ----------------------------------------------------------------------------------------- | ------------------------------------- |
 | `@qwen-code/acp-bridge`：bridge、事件总线、状态类型                                       | `qwen` CLI 的 `serve` 子命令处理器    |
-| `packages/core`：`loadSettings`、`getCurrentGeminiMdFilename`、`Config`、`WorkspaceContext` | 直接嵌入者、测试                      |
+| `packages/core`：`getAllMemoryFilenames`、`Config`、`WorkspaceContext`                          | 直接嵌入者、测试                      |
 | ACP SDK (`@agentclientprotocol/sdk`)：通过 bridge 的 `PROTOCOL_VERSION`、`ClientSideConnection` |                                       |
 | Express + body-parser、`node:crypto`、`node:fs`、`node:path`                              |                                       |
 
@@ -134,7 +134,7 @@
 | Flags           | `--session-reap-interval-ms`, `--session-idle-timeout-ms`                                       | 断开连接的会话回收控制。                                                                              |
 | Flags           | `--rate-limit*`                                                                                 | 每层 HTTP 速率限制。                                                                                  |
 | `settings.json` | `policy.permissionStrategy`, `policy.consensusQuorum`                                           | `MultiClientPermissionMediator` 策略和 quorum。                                                       |
-| `settings.json` | `context.fileName`                                                                              | bridge 的 `getCurrentGeminiMdFilename` 覆盖。                                                         |
+| `settings.json` | `context.fileName`                                                                                         | 通过 workspace-service 的 `contextFilename` 传递给 `/workspace/init` 的工作区内存文件名。             |
 合并后的参考文档请参见 [`17-configuration.md`](./17-configuration.md)。
 
 ## 注意事项与已知限制

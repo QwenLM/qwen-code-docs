@@ -175,6 +175,7 @@ interface WebShellSidebarOptions {
   enabled?: boolean; // Sidebar ein-/ausblenden (Standard: true wenn übergeben)
   defaultCollapsed?: boolean; // initialer eingeklappter Zustand (in localStorage persistiert)
   showCompactToggle?: boolean; // den Einklapp-Button im Chatbereich anzeigen (Standard: true)
+  showSessionSourceSwitch?: boolean; // den Tasks/Channels-Umschalter anzeigen (Standard: true)
   branding?: false | WebShellSidebarBranding;
   primaryNav?: WebShellSidebarPrimaryNavOptions;
   hideProjectHeader?: boolean; // "Projekte"-Header-Zeile ausblenden (Standard: false = angezeigt)
@@ -182,6 +183,21 @@ interface WebShellSidebarOptions {
   footer?: false | WebShellSidebarFooterOptions;
 }
 ```
+
+### Session-Source-Umschalter — `showSessionSourceSwitch`
+
+Setze `showSessionSourceSwitch` auf `false`, wenn ein Embedding-Host nur
+normale Task-Sessions anzeigen soll:
+
+```tsx
+sidebar={{
+  showSessionSourceSwitch: false,
+}}
+```
+
+Dies entfernt den Tasks/Channels-Umschalter und fixiert jede aktive, archivierte, primäre
+und sekundäre Session-Abfrage auf `sourceType: "default"`. Das Weglassen der Option
+belässt den aktuellen Umschalter und den Zugriff auf Channel-Sessions unverändert.
 
 ### ③ Projekt-Header — `hideProjectHeader`
 

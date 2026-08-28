@@ -1,7 +1,3 @@
----
-title: Среда выполнения Serve
-description: Точка входа CLI, сборка Express-приложения, middleware, маршруты и корректное завершение работы для `qwen serve`.
----
 
 # Среда выполнения Serve
 
@@ -9,7 +5,7 @@ description: Точка входа CLI, сборка Express-приложени�
 
 `packages/cli/src/serve/` — это загрузочный слой для `qwen serve`. Он преобразует флаги CLI в `ServeOptions`, проверяет конфигурацию запуска, собирает приложение Express, подключает middleware, регистрирует маршруты, предоставляет провайдеры preflight/статуса для хоста демона, поддерживает кольцо аудита разрешений и управляет двухфазным процессом корректного завершения работы (graceful shutdown). Работа с HTTP находится в этом слое; работа с ACP находится на уровень ниже в `@qwen-code/acp-bridge` (см. [`03-acp-bridge.md`](./03-acp-bridge.md)).
 
-## Функции
+## Обязанности
 
 - Парсинг и валидация `ServeOptions`: адрес прослушивания, аутентификация, рабочее пространство (workspace), лимиты сессий/подключений, бюджет/пул MCP, CORS, таймауты простоя для промптов/SSE/сессий, rate limit и связанные переключатели.
 - **Канонизация** основного рабочего пространства ровно один раз, а также канонизация каждого повторного `--workspace` перед регистрацией сессионных сред выполнения. Основная каноническая форма используется в `/capabilities.workspaceCwd`, fallback для `POST /session` и в основном bridge.
@@ -113,7 +109,7 @@ description: Точка входа CLI, сборка Express-приложени�
 | Используется `serve/` (upstream)                                                                      | Использует `serve/` (downstream)          |
 | ----------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | `@qwen-code/acp-bridge`: bridge, event bus, типы status                                               | Обработчик подкоманды `serve` CLI `qwen`  |
-| `packages/core`: `loadSettings`, `getCurrentGeminiMdFilename`, `Config`, `WorkspaceContext`           | Прямые встраивающие модули, тесты         |
+| `packages/core`: `getAllMemoryFilenames`, `Config`, `WorkspaceContext`                                  | Прямые встраивающие модули, тесты         |
 | ACP SDK (`@agentclientprotocol/sdk`): `PROTOCOL_VERSION`, `ClientSideConnection` через bridge         |                                           |
 | Express + body-parser, `node:crypto`, `node:fs`, `node:path`                                          |                                           |
 
@@ -139,7 +135,7 @@ description: Точка входа CLI, сборка Express-приложени�
 | Флаги                 | `--session-reap-interval-ms`, `--session-idle-timeout-ms`                                                   | Управление очисткой (reaping) отключённых сессий.                                                          |
 | Флаги                 | `--rate-limit*`                                                                                             | HTTP rate limit для каждого уровня.                                                                        |
 | `settings.json`       | `policy.permissionStrategy`, `policy.consensusQuorum`                                                       | Политика и кворум `MultiClientPermissionMediator`.                                                         |
-| `settings.json`       | `context.fileName`                                                                                          | Переопределение `getCurrentGeminiMdFilename` для bridge.                                                   |
+| `settings.json`       | `context.fileName`                                                                                          | Имя файла памяти рабочего пространства, передаваемое в `/workspace/init` через `contextFilename` сервиса рабочего пространства. |
 
 См. [`17-configuration.md`](./17-configuration.md) для сводной документации.
 
@@ -154,9 +150,9 @@ description: Точка входа CLI, сборка Express-приложени�
 
 - `packages/cli/src/serve/run-qwen-serve.ts` (бутстрап, валидация загрузки, корректное завершение работы)
 - `packages/cli/src/serve/server.ts` (`createServeApp()`, сборка middleware и маршрутов)
-- `packages/cli/src/serve/auth.ts` (CORS, Host allowlist, bearer auth, mutation gate)
-- `packages/cli/src/serve/rate-limit.ts` (per-tier HTTP rate limit)
-- `packages/cli/src/serve/capabilities.ts` (capability registry and conditional advertisement)
+- `packages/cli/src/serve/auth.ts` (CORS, allowlist Host, bearer-аутентификация, mutation gate)
+- `packages/cli/src/serve/rate-limit.ts` (HTTP rate limit для каждого уровня)
+- `packages/cli/src/serve/capabilities.ts` (реестр возможностей и условное объявление)
 - `packages/cli/src/serve/types.ts` (`ServeOptions`, `CapabilitiesEnvelope`)
 - `packages/cli/src/serve/daemon-status-provider.ts`
 - `packages/cli/src/serve/permission-audit.ts`

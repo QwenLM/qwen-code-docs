@@ -137,7 +137,7 @@ CLI는 **`packages/cli/src/commands/serve.ts`**에 정의됨:
 | --------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `policy.permissionStrategy` | `'first-responder' \| 'designated' \| 'consensus' \| 'local-only'` | `BridgeOptions.permissionPolicy`를 설정. **부트는 `validatePolicyConfig`로 검증**; 알 수 없는 값은 자동으로 폴백하지 않고 `InvalidPolicyConfigError`를 throw.               |
 | `policy.consensusQuorum`    | 양의 정수                                                          | `consensus` 정책의 N. 기본값은 `floor(M/2)+1`. 비consensus 정책 아래에서 설정되면 무시되며 부트가 stderr 경고를 출력.                                                       |
-| `context.fileName`          | string                                                             | `getCurrentGeminiMdFilename()`을 오버라이드하고 `POST /workspace/init`이 쓰는 파일을 제어.                                                                               |
+| `context.fileName`          | string                                                             | `POST /workspace/init`이 워크스페이스 서비스의 `contextFilename`을 통해 쓰는 파일을 제어.                                                                               |
 | `tools.disabled`            | string[]                                                           | 다음 ACP 자식 spawn에 영향을 주기 전 `normalizeDisabledToolList()`를 통해 정규화(trim, 빈 항목 제거, 중복 제거).                                                          |
 | `tools.approvalMode`        | string                                                             | 기본 세션 승인 모드.                                                                                                                                                     |
 | `telemetry`                 | object                                                             | OTel 설정: `enabled`, `otlpEndpoint`, `otlpProtocol`, 시그널별 엔드포인트 등. [`17-configuration.md`](./17-configuration.md) 참조.                                        |
@@ -225,7 +225,7 @@ qwen serve
 packages/cli/index.ts              main()
    |
    v
-gemini.tsx                         main() - parseArguments()
+llm.tsx                         main() - parseArguments()
    |
    v (yargs assembly)
 config/config.ts                   import { serveCommand } ...
@@ -276,7 +276,7 @@ commands/serve.ts                  await blockForever()    // 시그널까지 �
 
 - **`createServeApp`은 빌드만 수행; 리스닝하지 않음.** 미들웨어와 라우트가 마운트된 `express()` 인스턴스를 반환. 일반 전용 임베더는 계속 `app.listen()`을 소유할 수 있음. Live/Conversations를 사용하는 임베더는 리스닝 전에 실제 Node 서버를 내보낸 앱 수명주기에 바인딩하고 종료 시 해당 수명주기를 대기해야 함.
 - **`() => actualPort`는 지연 클로저.** `actualPort`는 `server.listen` 콜백에서 할당됨. `hostAllowlist` 미들웨어는 필요 시 이를 읽으므로 임시 포트(`--port 0`)도 `Host` 헤더를 올바르게 게이트.
-- **`await blockForever()`는 의도적.** `yargs.parse()`가 resolve되면 CLI 최상위 레벨이 대화형 TUI 진입점(`gemini.tsx`)으로 전달됨. SIGINT / SIGTERM은 `runQwenServe`의 `onSignal` 경로를 통해 종료.
+- **`await blockForever()`는 의도적.** `yargs.parse()`가 resolve되면 CLI 최상위 레벨이 대화형 TUI 진입점(`llm.tsx`)으로 전달됨. SIGINT / SIGTERM은 `runQwenServe`의 `onSignal` 경로를 통해 종료.
 
 ## 10. HTTP 라우트 파일 분할
 

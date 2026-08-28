@@ -168,6 +168,7 @@ interface WebShellSidebarOptions {
   enabled?: boolean; // 사이드바 표시/숨김 (기본값: 전달 시 true)
   defaultCollapsed?: boolean; // 초기 접힌 상태 (localStorage에 저장)
   showCompactToggle?: boolean; // 채팅 영역에 접기 버튼 표시 (기본값: true)
+  showSessionSourceSwitch?: boolean; // Tasks/Channels 전환 표시 (기본값: true)
   branding?: false | WebShellSidebarBranding;
   primaryNav?: WebShellSidebarPrimaryNavOptions;
   hideProjectHeader?: boolean; // "Projects" 헤더 행 숨김 (기본값: false = 표시)
@@ -175,6 +176,18 @@ interface WebShellSidebarOptions {
   footer?: false | WebShellSidebarFooterOptions;
 }
 ```
+
+### 세션 소스 전환 — `showSessionSourceSwitch`
+
+임베딩 호스트에서 일반 작업 세션만 표시하려면 `showSessionSourceSwitch`를 `false`로 설정합니다:
+
+```tsx
+sidebar={{
+  showSessionSourceSwitch: false,
+}}
+```
+
+이렇게 하면 Tasks/Channels 전환이 제거되고 모든 활성, 아카이브, 기본, 보조 세션 쿼리가 `sourceType: "default"`로 고정됩니다. 이 옵션을 생략하면 기존 전환과 채널 세션 접근이 변경되지 않은 상태로 유지됩니다.
 
 ### ③ 프로젝트 헤더 — `hideProjectHeader`
 

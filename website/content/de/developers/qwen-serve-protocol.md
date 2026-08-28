@@ -202,6 +202,7 @@ Der Daemon bewirbt seine unterstützten Feature-Tags aus der Serve-Capability-Re
  'extension_batch_activation_v2',
  'workspace_settings', 'workspace_init', 'workspace_mcp_restart',
  'session_recap', 'session_generation', 'session_btw', 'session_shell_command',
+ 'standalone_sessions_v1',
  'mcp_workspace_pool', 'mcp_pool_restart',
  'require_auth', 'allow_origin', 'auth_device_flow',
  'permission_mediation', 'prompt_absolute_deadline', 'writer_idle_timeout',
@@ -490,6 +491,7 @@ Operator-Diagnose-Snapshot, der unten dokumentiert ist.
 | `workspace_voice`                   | Settings-Persistenz verfügbar ist, sodass die Legacy-Primary-Workspace-Voice-Einstellungsrouten aktiv sind.                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `workspace_voice_transcription`     | der primäre Workspace ein konfiguriertes Voice-Transkriptionsmodell hat.                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `session_shell_command`             | die Session-Shell-Ausführung explizit aktiviert ist.                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `standalone_sessions_v1`            | der Daemon die vollständige Standalone-Session-Runtime, den Lifecycle-Koordinator, das dauerhafte Lösch-Journal, die Managed-Directory-Implementierung und die `/standalone/sessions`-Routenfamilie installiert hat. Direkte Embeds ohne den vollständigen Dependency-Graph lassen sowohl die Routen als auch dieses Tag weg.                                                                                                                                                                                                 |
 | `session_artifacts_persistence`     | die Session-Artefakt-Persistenz für die Runtime verdrahtet ist.                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `session_generation`                | Session-Generation-Helper verfügbar sind.                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `scheduled_task_session_reuse`      | das dauerhafte Scheduled-Task-Session-Management aktiv ist und jede verwaltete Daemon-Runtime den Callback installiert hat, der es einem Task ermöglicht, sich explizit an seine aktuelle bestehende Session zu binden.                                                                                                                                                                                                                                                                                          |
@@ -1371,6 +1373,17 @@ Empfohlenes Poll-Intervall: abgestimmt auf das, was ohnehin bereits `/workspace/
       "userInvocable": false,
       "installedPath": "/home/alice/project/.qwen/skills/review/SKILL.md",
       "argumentHint": "[path]"
+    },
+    {
+      "kind": "skill",
+      "status": "ok",
+      "name": "database-review",
+      "description": "Review database changes",
+      "level": "extension",
+      "modelInvocable": true,
+      "installedPath": "/home/alice/.qwen/extensions/alibabacloud-database-suite/skills/database-review/SKILL.md",
+      "extensionName": "alibabacloud-database-suite",
+      "extensionDisplayName": "Alibaba Cloud Database Suite"
     }
   ]
 }
@@ -1387,6 +1400,8 @@ oder ihn zu kanonisieren. Aktuelle Daemons emittieren ihn für jeden Skill, wäh
 sein Fehlen von älteren v1-Daemons tolerieren müssen. Skill-Bodies, Hooks, `skillRoot`
 und andere Skill-Konfiguration bleiben ausgeschlossen. `errors` wird weggelassen, wenn
 die Discovery erfolgreich ist.
+
+Für Extension-eigene Skills ist `extensionName` der kanonische Manifestname und kann sicher als Owner-Identität verwendet werden. `extensionDisplayName` ist ein optionaler, lokalisierter Präsentationswert und ist möglicherweise nicht eindeutig. Neue Clients sollten `extensionDisplayName ?? extensionName` anzeigen; ältere Daemons lassen das Anzeigefeld weg.
 
 Wiederholte Lesevorgänge werden aus dem letzten committeten Workspace-Snapshot bedient,
 periodisch gegen den In-Memory-Cache des Childs revalidiert. Ein Lesevorgang scannt niemals
@@ -1961,6 +1976,30 @@ Client existiert, kann die Antwort `initializationError` enthalten; wenn ein akt
 kein Snapshot bereitstellen kann, enthält die Antwort `statusUnavailable: true`.
 
 Diese Route legt nur stabile, clientseitige Felder offen. Sie lässt absichtlich Debug-Interna wie Prozess-IDs, Spawn-Args, Stderr-Tails, Root-URIs und Workspace-Ordnerpfade weg.
+
+### Standalone-Session-Lifecycle (`standalone_sessions_v1`)
+
+Wenn `/capabilities.features` `standalone_sessions_v1` enthält, legt der Daemon eine prozessglobale Routenfamilie für Top-Level-Standalone-Sessions offen, die seiner dedizierten Conversations-Runtime gehören. Diese Routen akzeptieren niemals einen Workspace-Selektor und fallen niemals auf den primären Workspace zurück. Direkte Embeds, die den vollständigen Conversations-Ownership-, Runtime-, Directory-, Lifecycle- und Deletion-Journal-Dependency-Graph nicht konstruieren können, lassen sowohl das Feature als auch alle folgenden Routen weg.
+
+| Route                                            | Request                                                                                                                                                      | Erfolg                                                                                                                                         |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /standalone/sessions`                      | `{ "sessionId": "<UUID>", "modelServiceId"?: string, "approvalMode"?: ApprovalMode }`                                                                        | `200` mit der Standalone-Session, `context: { "kind": "standalone" }` und ihrem verwalteten projektlosen Ausgabeverzeichnis. Erstellung ist prompt-frei. |
+| `GET /standalone/sessions`                       | Query: `cursor?`, `size?` (1-100), `archiveState?` (`active` oder `archived`)                                                                                  | `200 { sessions, nextCursor?, liveMergeFailed?, truncated? }`                                                                                  |
+| `GET /standalone/sessions/:id`                   | keine                                                                                                                                                         | `202 { sessionId, state: "creating" }` während die lokale Erstellung läuft, andernfalls `200` mit der exakten Zusammenfassung.                              |
+| `POST /standalone/sessions/:id/load`             | Nur bestehende Restore-Optionen: `historyPageSize?`, `liveReplayMode?`, `hideInheritedHistory?`, `approvalMode?`; Client-Identität bleibt in `X-Qwen-Client-Id`. | `200` wiederhergestellte Standalone-Session.                                                                                                             |
+| `POST /standalone/sessions/:id/resume`           | Dieselben Restore-Optionen wie `load`.                                                                                                                              | `200` wiederhergestellte Standalone-Session ohne Load-Historien-Replay.                                                                                 |
+| `POST /standalone/sessions/:id/repair-directory` | Leerer Body oder `{}`                                                                                                                                           | `200` mit dem verifizierten oder neu erstellten verwalteten Verzeichnis.                                                                                        |
+| `PATCH /standalone/sessions/:id/metadata`        | `{ "displayName": string }`                                                                                                                                  | `200 { sessionId, displayName }`                                                                                                               |
+| `GET /standalone/sessions/:id/export`            | Query: `format=html`, `format=md`, `format=json` oder `format=jsonl` (Standard `html`).                                                                    | Bestehender Export-Content-Type, Dateiname und Body.                                                                                              |
+| `POST /standalone/sessions/archive`              | `{ "sessionIds": ["<UUID>", ...] }`                                                                                                                          | `200 { archived, alreadyArchived, notFound, errors }`                                                                                          |
+| `POST /standalone/sessions/unarchive`            | `{ "sessionIds": ["<UUID>", ...] }`                                                                                                                          | `200 { unarchived, alreadyActive, notFound, errors }`                                                                                          |
+| `POST /standalone/sessions/delete`               | `{ "sessionIds": ["<UUID>", ...] }`                                                                                                                          | `200 { removed, notFound, errors, fileCleanupPending }`                                                                                        |
+
+Bodies müssen JSON-Objekte ohne unbekannte Felder sein. IDs sind RFC-UUID-v1–v5-Werte; der Daemon kanonisiert sie auf Kleinbuchstaben. Batch-Anfragen enthalten 1–100 Strings und werden vor der Mutation validiert und dedupliziert. Ein Batch-Fehler wird als `{ sessionId, code, message }` gemeldet und setzt erfolgreiche Operationen auf anderen IDs nicht zurück. `fileCleanupPending` bedeutet, dass die Transkript-Löschung committet wurde, aber journal-autorisierte Sidecar- oder Managed-Directory-Bereinigung durch Reconciliation wiederholt werden muss; die Session ist bereits logisch entfernt.
+
+Nur explizite Standalone-Transkripte und die dokumentierte Top-Level-Legacy-Kompatibilitätsform sind sichtbar. Child-, Live-, Projekt-, Worktree-, mehrdeutige, unlesbare oder Deletion-journalisierte Records schlagen fail-closed fehl. Die Erstellung läuft weiter, wenn ihre HTTP-Antwort getrennt wird; eine committete Session wird nicht gelöscht, und der Response-Client wird abgekoppelt. Stelle durch exaktes GET gefolgt von Load/Resume wieder her, anstatt Create als Attach erneut zu versuchen.
+
+Archive, Unarchive, Repair, Rename und Delete teilen sich dieselbe Pro-Session-Lifecycle-Admission wie Load/Resume und Prompts. Delete verwendet Transkript-Unlink als dauerhaften Commit-Punkt und ein privates Journal plus atomares Managed-Directory-Staging für die Crash-Wiederherstellung. Die Wiederherstellung stellt das Verzeichnis wieder her, wenn das Transkript intakt bleibt, und schließt die Bereinigung ab, wenn das Transkript verschwunden ist; jede nicht übereinstimmende Identität, jeder konfliktäre Pfad, jeder fremde Owner oder jedes mehrdeutige Transkript gibt einen strukturierten Fail-Closed-Fehler zurück.
 
 ### `POST /session`
 
@@ -2825,7 +2864,7 @@ Ziel-Fehler verwenden `skill_not_found`, `skill_not_toggleable` oder `skill_inac
 
 Capability-Tag: `workspace_init`. Reine Datei-IO – kein ACP-Roundtrip, **kein LLM-Aufruf**.
 
-Erstelle eine leere `QWEN.md` (oder was auch immer `getCurrentGeminiMdFilename()` unter `--memory-file-name`-Overrides zurückgibt) im gebundenen Workspace-Root des Daemons. Rein mechanisch – für KI-gestütztes Füllen von Inhalten folge mit `POST /session/:id/prompt`.
+Erstelle eine leere `QWEN.md` (oder den Workspace-`context.fileName`-Settings-Override) im primären Workspace-Root des Daemons. Rein mechanisch – für KI-gestütztes Füllen von Inhalten folge mit `POST /session/:id/prompt`.
 
 Standardmäßig wird das Überschreiben verweigert, wenn die Zieldatei Nicht-Whitespace-Inhalte enthält. Dateien nur mit Whitespace werden als nicht vorhanden behandelt (entspricht dem lokalen `/init`-Slash-Command).
 
