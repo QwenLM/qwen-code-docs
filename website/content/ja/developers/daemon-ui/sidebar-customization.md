@@ -211,7 +211,7 @@ type WebShellSidebarSessionActionItem =
   | 'export' // 📤 Export chat history (dropdown menu)
   | 'delete' // 🗑 Delete session (dropdown menu)
   | 'pin' // 📌 Pin/Unpin (inline button)
-  | 'archive'; // 📦 Archive (inline button)
+  | 'archive'; // 📦 Archive (dropdown menu)
 
 /** Subset with working inline (hover-button) handlers. */
 type WebShellSidebarSessionInlineActionItem =
@@ -223,25 +223,25 @@ type WebShellSidebarSessionInlineActionItem =
 
 interface WebShellSidebarSessionActionsOptions {
   items?: readonly WebShellSidebarSessionActionItem[]; // which actions to show (default: all)
-  inlineItems?: readonly WebShellSidebarSessionInlineActionItem[]; // which items appear as inline buttons (default: ['pin', 'archive'])
+  inlineItems?: readonly WebShellSidebarSessionInlineActionItem[]; // which items appear as inline buttons (default: ['pin'])
 }
 ```
 
 セッション行に表示されるアクションボタンを制御します。
 
 - **`items`**: すべてのアクション（インラインおよびドロップダウン）のマスター制御。`items` に含まれないアイテムは全域で非表示になります。
-- **`inlineItems`**: **インラインボタン**（ホバー時）として表示されるアイテムを制御します。デフォルトは `['pin', 'archive']` です。インラインハンドラーが動作するアイテムのみ使用可能です: `'pin'`、`'archive'`、`'rename'`、`'export'`、`'delete'`。`'details'` と `'group'` はドロップダウン専用です。
+- **`inlineItems`**: **インラインボタン**（ホバー時）として表示されるアイテムを制御します。デフォルトは `['pin']` です。アーカイブはデフォルトではドロップダウンに留まります。ホバースロットは行のクリックターゲット上にあり、誤って押しやすいからです。インラインハンドラーが動作するアイテムのみ使用可能です: `'pin'`、`'archive'`、`'rename'`、`'export'`、`'delete'`。`'details'` と `'group'` はドロップダウン専用です。
 
 **表示優先度**: インラインボタンを表示するには、`items` とアイテムの組み込み条件と `inlineItems` のすべてを満たす必要があります。たとえば、`delete` をインラインで表示するには、`items` に `'delete'` が含まれ、かつ `inlineItems` に `'delete'` が含まれている必要があります。
 
 | 値                                       | 効果                                         |
 | ---------------------------------------- | -------------------------------------------- |
-| `undefined`（デフォルト）                 | すべてのアクションを表示、pin + archive はインライン |
+| `undefined`（デフォルト）                 | すべてのアクションを表示、pin のみインライン |
 | `{ inlineItems: ['pin', 'delete'] }`     | Pin + delete をインラインボタンとして表示       |
 | `{ inlineItems: [] }`                    | インラインボタンをすべて非表示                  |
 | `{ inlineItems: ['archive', 'export'] }` | Archive + export をインラインボタンとして表示   |
 
-ドロップダウンアイテムが有効になっていない場合、ドロップダウントリガー（⋮）は自動的に非表示になります。インラインボタン（`pin`、`archive`）は、ケーパビリティ条件と `items` の両方を満たす場合にのみ表示されます。
+ドロップダウンアイテムが有効になっていない場合、ドロップダウントリガー（⋮）は自動的に非表示になります。インラインボタンは、ケーパビリティ条件と `items` の両方を満たす場合にのみ表示されます。アーカイブは、現在のセッションおよび実行中のターンを持つセッションでは無効になります。デーモンはアーカイブ時にライブセッションをクローズするためです。
 
 ```tsx
 sidebar={{

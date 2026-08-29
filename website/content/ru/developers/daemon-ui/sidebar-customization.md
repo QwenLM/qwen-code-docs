@@ -222,7 +222,7 @@ type WebShellSidebarSessionActionItem =
   | 'export' // 📤 Export chat history (dropdown menu)
   | 'delete' // 🗑 Delete session (dropdown menu)
   | 'pin' // 📌 Pin/Unpin (inline button)
-  | 'archive'; // 📦 Archive (inline button)
+  | 'archive'; // 📦 Archive (dropdown menu)
 
 /** Subset with working inline (hover-button) handlers. */
 type WebShellSidebarSessionInlineActionItem =
@@ -234,27 +234,29 @@ type WebShellSidebarSessionInlineActionItem =
 
 interface WebShellSidebarSessionActionsOptions {
   items?: readonly WebShellSidebarSessionActionItem[]; // which actions to show (default: all)
-  inlineItems?: readonly WebShellSidebarSessionInlineActionItem[]; // which items appear as inline buttons (default: ['pin', 'archive'])
+  inlineItems?: readonly WebShellSidebarSessionInlineActionItem[]; // which items appear as inline buttons (default: ['pin'])
 }
 ```
 
 Управляет тем, какие кнопки действий отображаются в строках сессий:
 
 - **`items`**: Главный переключатель всех действий (и inline, и dropdown). Если элемента нет в `items`, он скрыт везде.
-- **`inlineItems`**: Управляет тем, какие элементы отображаются как **inline-кнопки** (при наведении). По умолчанию `['pin', 'archive']`. Можно использовать только элементы с работающими inline-обработчиками: `'pin'`, `'archive'`, `'rename'`, `'export'`, `'delete'`. `'details'` и `'group'` доступны только через dropdown.
+- **`inlineItems`**: Управляет тем, какие элементы отображаются как **inline-кнопки** (при наведении). По умолчанию `['pin']` — archive остаётся в dropdown по умолчанию, потому что слот hover находится на цели клика строки и его легко нажать случайно. Можно использовать только элементы с работающими inline-обработчиками: `'pin'`, `'archive'`, `'rename'`, `'export'`, `'delete'`. `'details'` и `'group'` доступны только через dropdown.
 
 **Приоритет видимости**: И `items`, И встроенное условие элемента, И `inlineItems` должны все сработать, чтобы inline-кнопка отобразилась. Например, `delete` как inline требует, чтобы `'delete'` был и в `items`, и в `inlineItems`.
 
 | Значение                                 | Эффект                                      |
 | ---------------------------------------- | ------------------------------------------- |
-| `undefined` (по умолчанию)               | Все действия показаны, pin + archive как inline |
+| `undefined` (по умолчанию)               | Все действия показаны, только pin как inline |
 | `{ inlineItems: ['pin', 'delete'] }`     | Pin + delete как inline-кнопки              |
 | `{ inlineItems: [] }`                    | Никаких inline-кнопок                       |
 | `{ inlineItems: ['archive', 'export'] }` | Archive + export как inline-кнопки          |
 
 Триггер dropdown (⋮) автоматически скрывается, когда ни один dropdown-элемент
-не включён. Inline-кнопки (`pin`, `archive`) показываются только когда и их
-условие capability, и `items` их включают.
+не включён. Inline-кнопки показываются только когда и их условие capability,
+и `items` их включают. Archive отключён для текущей сессии и для
+любой сессии с запущенным ходом, потому что демон закрывает живую
+сессию при архивации.
 
 ```tsx
 sidebar={{

@@ -23,8 +23,8 @@ Node.js 22 이상이 필요하며 npm도 필요합니다.
 처음 사용 시 skill이 다음 명령을 직접 실행합니다:
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.0
-npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.0
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.1
+npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.2
 ```
 
 MCP 서버가 처음 추가된 후 Qwen Code를 재시작하세요. 그런 다음 skill이 `node_repl`을 통해 데스크톱 작업을 계속합니다.

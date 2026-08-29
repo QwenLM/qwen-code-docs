@@ -16,7 +16,7 @@
 | `events.ts`              | `asKnownDaemonEvent`, `reduceDaemonSessionEvent`, `reduceDaemonAuthEvent`([`09-event-schema.md`](./09-event-schema.md) 참조).  |
 | `types.ts`               | `DaemonCapabilities`, `DaemonSession`, `DaemonEvent`, `PermissionResponse`, `PromptResult`, MCP / 에이전트 / 메모리 / 인증 타입. |
 
-실습 예제는 [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md)에 있으며, 이 문서는 아키텍처 및 계약 참조입니다.
+워크스루 예제는 [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md)에 있으며, 이 문서는 아키텍처 및 계약 참조입니다.
 
 ## 책임
 
@@ -152,9 +152,9 @@ await client
   .setWorkspaceSkillEnabled('review', true, { clientId: 'dashboard-1' });
 ```
 
-프리플라이트 `capabilities.features.includes('workspace_skill_toggle')`. 타입화된 `DaemonSkillToggleResult`은 표준 `skillName`, 디스크 상태 `changed` 여부, 활성화 상태(`applied`, `deferred`, `partial`), 새로고침/실패한 세션 수를 보고합니다. `DaemonWorkspaceSkillStatus.userInvocable`은 선택적 false 전용 필드입니다. 부재는 skill이 사용자 호출 가능함을 의미합니다.
+프리플라이트 `capabilities.features.includes('workspace_skill_settings_toggle')`. 타입화된 `DaemonSkillToggleResult`은 trim된 요청 `skillName`, 디스크 상태 `changed` 여부, 활성화 상태(`applied`, `deferred`, `partial`), 새로고침/실패한 세션 수를 보고합니다. 이 쓰기는 설정 전용이며 이름이 `DaemonWorkspaceSkillStatus`에 나타날 것을 요구하지 않습니다. 해당 상태 타입의 선택적 false 전용 `userInvocable` 필드는 라이브 카탈로그 렌더링에 유용하지만 지속성을 제한하지는 않습니다. 지원 중단된 `workspace_skill_toggle` 태그는 이전의 카탈로그 검증 동작을 설명했으며 이 계약에서는 광고되지 않습니다.
 
-일괄 변경의 경우, `workspace_skill_batch_toggle`를 프리플라이트하고 동일한 계약으로 두 클라이언트 형태 중 하나를 호출합니다:
+일괄 변경의 경우, `workspace_skill_settings_batch_toggle`를 프리플라이트하고 동일한 계약으로 두 클라이언트 형태 중 하나를 호출합니다:
 
 ```ts
 await client.setWorkspaceSkillsEnabled(['review', 'deploy'], false, {
@@ -165,9 +165,9 @@ await client
   .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
 ```
 
-`DaemonSkillBatchToggleResult`은 정렬된 성공 `results`, 대상별 `errors`, 그리고 일괄 수준 활성화/세션 새로고침 카운트를 포함합니다. 데몬은 유효한 대상을 함께 지속하고 활성 세션을 한 번 새로고칩니다. 하나의 예상 대상 오류가 다른 유효한 대상을 차단하지 않습니다. 이 메서드는 200이 아닌 응답에서만 throw합니다. 200이 모든 대상이 적용되었음을 의미하지 않으므로 일괄을 성공으로 처리하기 전에 항상 `errors`를 확인하십시오.
+`DaemonSkillBatchToggleResult`은 정렬된 `results`, 호환성 `errors` 배열, 그리고 일괄 수준 활성화/세션 새로고침 카운트를 포함합니다. 현재 데몬은 요청 순서대로 구조적으로 유효한 모든 이름을 처리하고, 결과적으로 생성된 모든 선언 변경을 최대 한 번의 잠긴 설정 쓰기로 함께 지속하고, 변경 사항이 있으면 활성 세션을 한 번 새로고침하며, 로드된 Skill 카탈로그를 참조하지 않고 빈 `errors` 배열을 반환합니다. 기존 워크스페이스 선언이 없고 유효한 `skills.defaultDisabled` 항목도 없는 이름을 활성화하면 `changed: false`를 반환하고 쓰기를 수행하지 않습니다. 오류 항목 타입은 SDK가 이전 데몬의 응답을 계속 디코딩할 수 있도록 유지됩니다. 이 메서드는 200이 아닌 응답에서 throw합니다.
 
-V2 Extension 배치 활성화는 비동기 Extension 작업 모델을 유지합니다. `extension_batch_activation_v2`를 프리플라이트하고, 전역 기본 배치 또는 선택된 워크스페이스 오버배치 배치를 제출한 다음 기존 작업 헬퍼로 폴링합니다:
+V2 Extension 배치 활성화는 비동기 Extension 작업 모델을 유지합니다. `extension_batch_activation_v2`를 프리플라이트하고, 전역 기본 배치 또는 선택된 워크스페이스 오버라이드 배치를 제출한 다음 기존 작업 헬퍼로 폴링합니다:
 
 ```ts
 const globalHandle = await client.setExtensionDefaultActivations(
@@ -185,7 +185,7 @@ const workspaceHandle = await client
 const operation = await client.waitForExtensionOperation(workspaceHandle);
 ```
 
-최종 작업 결과는 정렬된 `results`를 포함합니다. `enabled` 또는 `disabled` 설정 시 대상이 설치되어 있을 필요는 없습니다. 데몬이 이름 선언을 저장하고 해당 이름의 Extension이 나중에 설치될 때 해당 활성화 정책을 보존합니다. 변경된 모든 대상은 하나의 Extension Store 세대와 한 번의 조정 패스를 공유합니다. 전역 기본 배치는 등록된 모든 런타임을 조정하고, 워크스페이스 배치는 선택된 신뢰 런타임만 해결하고 조정합니다. 워크스페이스 `inherit`은 정확한 오버배치를 제거하지만 알 수 없는 이름에 대한 선언을 생성하지 않습니다. 모두 알 수 없는 이름의 제거는 조정 없이 no-op로 성공합니다. 단일 활성화 메서드는 설치된 대상만 유지합니다.
+최종 작업 결과는 정렬된 `results`를 포함합니다. `enabled` 또는 `disabled` 설정 시 대상이 설치되어 있을 필요는 없습니다. 데몬이 이름 선언을 저장하고 해당 이름의 Extension이 나중에 설치될 때 해당 활성화 정책을 보존합니다. 변경된 모든 대상은 하나의 Extension Store 세대와 한 번의 조정 패스를 공유합니다. 전역 기본 배치는 등록된 모든 런타임을 조정하고, 워크스페이스 배치는 선택된 신뢰 런타임만 해결하고 조정합니다. 워크스페이스 `inherit`은 정확한 오버라이드를 제거하지만 알 수 없는 이름에 대한 선언을 생성하지 않습니다. 모두 알 수 없는 이름의 제거는 조정 없이 no-op로 성공합니다. 단일 활성화 메서드는 설치된 대상만 유지합니다.
 
 워크스페이스 표시 이름은 선택적 프레젠테이션 메타데이터입니다. 프리플라이트 `capabilities.features.includes('workspace_display_name')`. 워크스페이스 ID와 표준 경로는 유일한 선택자이며, 중복 표시 이름도 유효합니다.
 
@@ -439,7 +439,7 @@ const session = new DaemonSessionClient({
 - **`fetchTimeoutMs`는 호출별이며 연결 수준이 아닙니다.** 긴 본문 읽기가 타이머를 공유합니다. 응답을 스트리밍하는 데몬은 호출별 타임아웃을 재정의하거나 `0`으로 설정해야 합니다.
 - **SSE는 fetch 타임아웃을 우회합니다** — 장기 실행 SSE 연결은 `fetchTimeoutMs`로 종료되지 않습니다. 호출자 제어 중단을 위해 `AbortSignal`을 사용하세요.
 - **`parseSseStream` 버퍼 캡은 16 MiB**입니다(방어적 경계). 이보다 큰 단일 프레임은 이터레이터를 중단합니다(데몬은 정상적으로 이런 프레임을 방출하지 않음).
-- **`asKnownDaemonEvent`는 인식되지 않는 이벤트 타입에 대해 `undefined`를 반환합니다.** SDK 소비자는 유니언이 완전하다고 가정하지 않고 이 분기를 처리해야 합니다. 이것이 이전 호환성 계약입니다. 인식되지 않는 이벤트는 `DaemonSessionViewState.unrecognizedKnownEventCount`를 증가시킵니다.
+- **`asKnownDaemonEvent`는 인식되지 않는 이벤트 타입에 대해 `undefined`를 반환합니다.** SDK 소비자는 유니언이 완전하다고 가정하지 않고 이 분기를 처리해야 합니다. 이것이 정방향 호환성 계약입니다. 인식되지 않는 이벤트는 `DaemonSessionViewState.unrecognizedKnownEventCount`를 증가시킵니다.
 - **`client_evicted`, `slow_client_warning`, `stream_error`는 리플레이 링에 없습니다.** 제거 후 재연결하면 데몬의 링에서 이어받습니다. 제거 프레임을 다시 보지 않습니다.
 - **`DaemonClient`은 자동 재시도를 하지 않습니다.** 네트워크 실패는 거부로 표면화됩니다. 재연결 / 리플레이 전략은 호출자의 책임입니다(`DaemonSessionClient.events()`는 리플레이를 쉽게 만들지만 재연결은 여전히 호출별입니다).
 
@@ -451,4 +451,4 @@ const session = new DaemonSessionClient({
 - `packages/sdk-typescript/src/daemon/sse.ts`
 - `packages/sdk-typescript/src/daemon/events.ts`
 - `packages/sdk-typescript/src/daemon/types.ts`
-- 엔드투엔드 실습: [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md).
+- 엔드투엔드 워크스루: [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md).

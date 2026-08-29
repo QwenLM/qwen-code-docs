@@ -137,7 +137,7 @@ Le démarrage appelle `loadSettings(boundWorkspace)` une seule fois :
 | --------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `policy.permissionStrategy` | `'first-responder' \| 'designated' \| 'consensus' \| 'local-only'` | Définit `BridgeOptions.permissionPolicy`. **Le démarrage valide avec `validatePolicyConfig`** ; les valeurs inconnues lèvent `InvalidPolicyConfigError` au lieu de fallback silencieusement. |
 | `policy.consensusQuorum`    | positive integer                                                   | N pour la politique `consensus`. La valeur par défaut est `floor(M/2)+1`. Si défini sous une politique non-consensus, il est ignoré et le démarrage logue un avertissement sur stderr. |
-| `context.fileName`          | string                                                             | Remplace `getCurrentGeminiMdFilename()` et contrôle quel fichier `POST /workspace/init` écrit.                                                                           |
+| `context.fileName`          | string                                                             | Contrôle quel fichier `POST /workspace/init` écrit via le `contextFilename` du workspace-service.                                                                           |
 | `tools.disabled`            | string[]                                                           | Normalisé via `normalizeDisabledToolList()` (trim, suppression des entrées vides, déduplication) avant d'affecter le prochain spawn de child ACP.                         |
 | `tools.approvalMode`        | string                                                             | Mode d'approbation de session par défaut.                                                                                                                                |
 | `telemetry`                 | object                                                             | Configuration OTel : `enabled`, `otlpEndpoint`, `otlpProtocol`, endpoints par signal, et plus. Voir [`17-configuration.md`](./17-configuration.md).                      |
@@ -225,7 +225,7 @@ qwen serve
 packages/cli/index.ts              main()
    |
    v
-gemini.tsx                         main() - parseArguments()
+llm.tsx                         main() - parseArguments()
    |
    v (yargs assembly)
 config/config.ts                   import { serveCommand } ...
@@ -276,7 +276,7 @@ Points clés :
 
 - **`createServeApp` se contente de construire ; il ne met pas le serveur en écoute.** Il retourne une instance `express()` avec les middlewares et les routes montés. Les intégrateurs à usage ordinaire peuvent continuer à posséder `app.listen()`. Les intégrateurs qui utilisent Live/Conversations doivent lier le serveur Node réel au cycle de vie exporté de l'application avant l'écoute et attendre ce cycle de vie pendant l'arrêt.
 - **`() => actualPort` est une closure paresseuse (lazy closure).** `actualPort` est assigné dans le callback de `app.listen`. Le middleware `hostAllowlist` le lit à la demande, de sorte que les ports éphémères (`--port 0`) filtrent toujours correctement l'en-tête `Host`.
-- **`await blockForever()` est intentionnel.** Si `yargs.parse()` résout, le niveau supérieur du CLI passe au point d'entrée de l'interface TUI interactive (`gemini.tsx`). SIGINT / SIGTERM quittent via le chemin `onSignal` de `runQwenServe`.
+- **`await blockForever()` est intentionnel.** Si `yargs.parse()` résout, le niveau supérieur du CLI passe au point d'entrée de l'interface TUI interactive (`llm.tsx`). SIGINT / SIGTERM quittent via le chemin `onSignal` de `runQwenServe`.
 
 ## 10. Répartition des fichiers de routes HTTP
 
@@ -286,15 +286,15 @@ L'assemblage principal a lieu dans `createServeApp()` dans `server.ts`, qui conn
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | `/health`                                                                                    | `packages/cli/src/serve/routes/health.ts`               | `healthRoutes.register()`                                                      |
 | `/daemon/status`                                                                             | `packages/cli/src/serve/routes/daemon-status.ts`        | `registerDaemonStatusRoutes()`                                                 |
-| `/capabilities`, routes d'initialisation d'espace de travail/outils/mutations MCP, bridge HTTP ACP                    | `packages/cli/src/serve/server.ts`                      | Enregistré directement dans `createServeApp()`                                  |
-| Statut de l'espace de travail, env, preflight, résumés MCP/outils/provider/skill                          | `packages/cli/src/serve/routes/workspace-status.ts`     | `registerWorkspaceStatusRoutes()`, `registerWorkspaceDiagnosticStatusRoutes()` |
-| Extensions de l'espace de travail et opérations sur les extensions                                                | `packages/cli/src/serve/routes/workspace-extensions.ts` | `registerWorkspaceExtensionRoutes()`                                           |
+| `/capabilities`, routes d'initialisation workspace/outils/mutations MCP, bridge HTTP ACP                    | `packages/cli/src/serve/server.ts`                      | Enregistré directement dans `createServeApp()`                                  |
+| Statut workspace, env, preflight, résumés MCP/outils/provider/skill                          | `packages/cli/src/serve/routes/workspace-status.ts`     | `registerWorkspaceStatusRoutes()`, `registerWorkspaceDiagnosticStatusRoutes()` |
+| Extensions workspace et opérations sur les extensions                                                | `packages/cli/src/serve/routes/workspace-extensions.ts` | `registerWorkspaceExtensionRoutes()`                                           |
 | `/workspace/memory` (GET/POST)                                                               | `packages/cli/src/serve/workspace-memory.ts`            | `mountWorkspaceMemoryRoutes()`                                                 |
 | Toutes les routes CRUD `/workspace/agents`                                                          | `packages/cli/src/serve/workspace-agents.ts`            | `mountWorkspaceAgentsRoutes()`                                                 |
 | `GET /file`, `/file/bytes`, `/list`, `/glob`, `/stat`                                        | `packages/cli/src/serve/routes/workspace-file-read.ts`  | `registerWorkspaceFileReadRoutes()`                                            |
 | `POST /file/write`, `/file/edit`                                                             | `packages/cli/src/serve/routes/workspace-file-write.ts` | `registerWorkspaceFileWriteRoutes()`                                           |
-| Configuration de l'espace de travail, trust, paramètres, permissions et routes vocales                              | `packages/cli/src/serve/routes/workspace-*.ts`          | `registerWorkspaceSetupGithubRoutes()`, `registerWorkspaceTrustRoutes()`, etc. |
-| Routes du fournisseur d'authentification de l'espace de travail et du flux d'appareil (device-flow)                                               | `packages/cli/src/serve/routes/workspace-auth.ts`       | `registerWorkspaceAuthRoutes()`                                                |
+| Configuration workspace, trust, paramètres, permissions et routes vocales                              | `packages/cli/src/serve/routes/workspace-*.ts`          | `registerWorkspaceSetupGithubRoutes()`, `registerWorkspaceTrustRoutes()`, etc. |
+| Routes du fournisseur d'authentification workspace et du flux d'appareil (device-flow)                                               | `packages/cli/src/serve/routes/workspace-auth.ts`       | `registerWorkspaceAuthRoutes()`                                                |
 | Cycle de vie de la session, prompt, métadonnées, langue, shell, recap, rewind, branch et routes de liste | `packages/cli/src/serve/routes/session.ts`              | `registerSessionRoutes()`                                                      |
 | Flux SSE `GET /session/:id/events`                                                         | `packages/cli/src/serve/routes/sse-events.ts`           | `registerSseEventsRoutes()`                                                    |
 | Routes de réponse aux permissions                                                                   | `packages/cli/src/serve/routes/permission.ts`           | `registerPermissionRoutes()`                                                   |

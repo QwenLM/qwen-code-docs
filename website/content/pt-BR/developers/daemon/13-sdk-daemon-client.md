@@ -152,9 +152,9 @@ await client
   .setWorkspaceSkillEnabled('review', true, { clientId: 'dashboard-1' });
 ```
 
-Pre-flight `capabilities.features.includes('workspace_skill_toggle')`. O `DaemonSkillToggleResult` tipado reporta o `skillName` canônico, se o estado em disco foi alterado (`changed`), o estado de ativação (`applied`, `deferred` ou `partial`) e contagens de sessões atualizadas/com falha. `DaemonWorkspaceSkillStatus.userInvocable` é um campo opcional apenas false; ausência significa que a skill pode ser invocada pelo usuário.
+Pre-flight `capabilities.features.includes('workspace_skill_settings_toggle')`. O `DaemonSkillToggleResult` tipado reporta o `skillName` solicitado após trim, se o estado em disco foi alterado (`changed`), o estado de ativação (`applied`, `deferred` ou `partial`) e contagens de sessões atualizadas/com falha. A escrita é apenas nas configurações e não requer que o nome apareça em `DaemonWorkspaceSkillStatus`; o campo opcional apenas false `userInvocable` desse tipo de status continua útil para renderizar o catálogo ao vivo, mas não controla a persistência. A tag obsoleta `workspace_skill_toggle` descrevia o comportamento anterior validado pelo catálogo e não é anunciada para este contrato.
 
-Para alterações em lote, faça pre-flight de `workspace_skill_batch_toggle` e chame qualquer forma do cliente com o mesmo contrato:
+Para alterações em lote, faça pre-flight de `workspace_skill_settings_batch_toggle` e chame qualquer forma do cliente com o mesmo contrato:
 
 ```ts
 await client.setWorkspaceSkillsEnabled(['review', 'deploy'], false, {
@@ -165,7 +165,7 @@ await client
   .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
 ```
 
-`DaemonSkillBatchToggleResult` contém `results` bem-sucedidos ordenados, `errors` por alvo e contagens de ativação/refresh de sessão em nível de lote. O daemon persiste alvos válidos juntos e atualiza sessões ativas uma vez; um erro esperado de alvo não bloqueia outros alvos válidos. O método lança apenas em resposta não-200; um 200 não significa que todo alvo foi aplicado, então sempre inspecione `errors` antes de tratar o lote como bem-sucedido.
+`DaemonSkillBatchToggleResult` contém `results` ordenados, um array de compatibilidade `errors` e contagens de ativação/refresh de sessão em nível de lote. Os daemons atuais processam cada nome estruturalmente válido na ordem da requisição, persistem todas as alterações de declaração resultantes juntas em no máximo uma escrita bloqueada de configurações, atualizam sessões ativas uma vez quando algo mudou e retornam um array `errors` vazio sem consultar o catálogo de Skills carregado. Habilitar um nome sem declaração de workspace existente e sem entrada efetiva de `skills.defaultDisabled` retorna `changed: false` e não realiza escrita. Os tipos de item de erro permanecem disponíveis para que o SDK ainda possa decodificar respostas de daemons mais antigos. O método lança exceção em resposta não-200.
 
 A ativação em lote de Extensões V2 retém o modelo assíncrono de operações de Extensões. Faça pre-flight de `extension_batch_activation_v2`, submeta um lote padrão global ou um lote de substituição de workspace selecionado, e então faça poll com o helper de operação existente:
 

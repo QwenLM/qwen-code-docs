@@ -22,8 +22,8 @@ Node.js 22 以降と npm が必要です。
 初回使用時に、スキルが以下のコマンドを自分で実行します。
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.0
-npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.0
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.1
+npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.2
 ```
 
 MCP サーバーが最初に追加された後、Qwen Code を再起動します。その後、スキルは `node_repl` を通じてデスクトップタスクを再開します。

@@ -1,15 +1,15 @@
 # Computer Use
 
-В Qwen Code входит скилл `computer-use`, который обучает модель управлению настольными приложениями через два отдельно устанавливаемых пакета:
+В Qwen Code входит навык `computer-use`, который обучает модель управлению настольными приложениями через два отдельно устанавливаемых пакета:
 
 ```text
-bundled computer-use skill
+bundled computer-use навык
   -> @qwen-code/node-repl-mcp
   -> @qwen-code/cua-sdk/computer-use
   -> native cua-driver accessibility backend
 ```
 
-Qwen Code не включает MCP-сервер, SDK или нативный драйвер. Скилл устанавливает внешние пакеты автоматически, если они отсутствуют.
+Qwen Code не включает MCP-сервер, SDK или нативный драйвер. Навык устанавливает внешние пакеты автоматически, если они отсутствуют.
 
 > [!warning]
 >
@@ -19,14 +19,14 @@ Qwen Code не включает MCP-сервер, SDK или нативный д
 
 Требуется Node.js 22 или новее и npm.
 
-При первом использовании скилл самостоятельно выполняет следующие команды:
+При первом использовании навык самостоятельно выполняет следующие команды:
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.0
-npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.0
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.1
+npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.2
 ```
 
-Перезапустите Qwen Code после первого добавления MCP-сервера. Затем скилл продолжает задачу рабочего стола через `node_repl`.
+Перезапустите Qwen Code после первого добавления MCP-сервера. Затем навык продолжает задачу рабочего стола через `node_repl`.
 
 Установка SDK не изменяет `package.json` и lockfile, но записывает в `node_modules` рабочего пространства. Его postinstall загружает и проверяет нативный пакет для текущей платформы.
 
@@ -59,7 +59,7 @@ Node REPL — это MCP-сервер, который выполняет нап�
 
 ## См. также
 
-- [Скиллы](./skills.md)
+- [Навыки](./skills.md)
 - [MCP-серверы](./mcp.md)
 - [Режим одобрения](./approval-mode.md)
 - [Песочница](./sandbox.md)

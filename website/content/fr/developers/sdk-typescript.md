@@ -66,9 +66,9 @@ Crée une nouvelle session de requête avec Qwen Code.
 | `abortController`        | `AbortController`                              | -                 | Contrôleur pour annuler la session de requête. Appelez `abortController.abort()` pour terminer la session et libérer les ressources.                                                                                                                                                                                                                                                                                                                                                                          |
 | `debug`                  | `boolean`                                      | `false`           | Active le mode débogage pour une journalisation détaillée du processus CLI.                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `maxSessionTurns`        | `number`                                       | `-1` (illimité)   | Nombre maximum de tours de conversation avant que la session ne se termine automatiquement. Un tour consiste en un message utilisateur et une réponse de l'assistant.                                                                                                                                                                                                                                                                                                                                          |
-| `coreTools`              | `string[]`                                               | -                | Utilise l'ancienne sémantique `coreTools` / liste d'autorisation CLI `--core-tools`. Si spécifié, seuls les outils de base correspondants sont enregistrés pour la session. Ceci est distinct de `permissions.allow` dans settings.json, qui active également une liste d'autorisation au niveau du registre au démarrage : lorsqu'au moins une règle d'autorisation valide y est configurée (les entrées malformées ne comptent pas), les outils intégrés non couverts par une règle d'autorisation ou de demande ne sont pas enregistrés (les outils MCP, le contrat `--json-schema` `structured_output`, les outils de cycle de vie du mode plan, `task_stop`, `tool_search` et la famille `computer_use__*` sont exemptés ; nécessite un redémarrage, #9827, #10075). Le paramètre SDK `allowedTools` ne peut pas activer seul la liste d'autorisation, mais lorsque celle-ci est active, ses règles sont fusionnées dans l'ensemble d'autorisation effectif et comptent dans la couverture, maintenant les outils intégrés couverts enregistrés. Exemple : `['read_file', 'edit', 'run_shell_command']`. |
+| `coreTools`              | `string[]`                                               | -                | Utilise l'ancienne sémantique `coreTools` / liste d'autorisation CLI `--core-tools`. Si spécifié, seuls les outils de base correspondants sont enregistrés pour la session. Il s'agit de la seule option de type liste d'autorisation qui restreint l'enregistrement des outils intégrés ; une règle `permissions.deny` / `excludeTools` portant sur un outil entier (et `tools.disabled` dans settings.json) supprime également un outil du registre. `permissions.allow` dans settings.json est de l'auto-approbation pure et ne supprime, ne rétrograde ni ne masque jamais un outil (#10075). Pour exclure le schéma d'un outil de la requête initiale au modèle, utilisez `tools.eager` dans settings.json (nécessite un redémarrage, #9827) ; pour le supprimer entièrement, utilisez une règle `excludeTools` / `permissions.deny` portant sur un outil entier — une règle avec un spécificateur (comme `'Bash(rm *)'`) ne refuse que les invocations correspondantes au runtime. Les outils MCP sont exemptés de la suppression par refus : masquez-les plutôt avec les filtres `excludeTools` / `tools.disabled` par serveur (le refus bloque toujours leurs appels au runtime). Exemple : `['read_file', 'edit', 'run_shell_command']`. |
 | `excludeTools`           | `string[]`                                     | -                 | Équivalent à `permissions.deny` dans settings.json. Les outils exclus retournent immédiatement une erreur de permission. Priorité la plus élevée sur tous les autres paramètres de permission. Prend en charge les alias de noms d'outils et la correspondance de motifs : nom d'outil (`'write_file'`), préfixe de commande shell (`'Bash(rm *)'`), ou motifs de chemin (`'Read(.env)'`, `'Edit(/src/**)'`).                                                                                                 |
-| `allowedTools`           | `string[]`                                               | -                | Équivalent à `permissions.allow` dans settings.json pour l'auto-approbation. Les outils correspondants contournent le callback `canUseTool` et s'exécutent automatiquement. S'applique uniquement lorsque l'outil nécessite une confirmation. Contrairement à `permissions.allow` dans settings.json, ce paramètre seul n'active pas la liste d'autorisation du registre ; cependant, lorsque la liste d'autorisation des paramètres est active, les règles `allowedTools` sont fusionnées dans l'ensemble d'autorisation effectif et comptent dans la couverture, donc les outils intégrés couverts restent enregistrés. Prend en charge la même correspondance de motifs que `excludeTools`. Exemple : `['Bash(git status)', 'Bash(npm test)']`. |
+| `allowedTools`           | `string[]`                                               | -                | Équivalent à `permissions.allow` dans settings.json pour l'auto-approbation. Les outils correspondants contournent le callback `canUseTool` et s'exécutent automatiquement. S'applique uniquement lorsque l'outil nécessite une confirmation. Comme `permissions.allow`, il s'agit d'auto-approbation pure et cela n'affecte jamais les outils enregistrés ni les schémas envoyés (#10075). Prend en charge la même correspondance de motifs que `excludeTools`. Exemple : `['Bash(git status)', 'Bash(npm test)']`. |
 | `authType`               | `'openai' \| 'anthropic' \| 'qwen-oauth' \| 'gemini' \| 'vertex-ai'` | `-`        | Type d'authentification pour le service IA. Lorsqu'il est fourni, le SDK le transmet à la CLI en tant que `--auth-type`.                                                                                                                                                                                                                                                                                                                                                                                     |
 | `agents`                 | `SubagentConfig[]`                             | -                 | Configuration des sous-agents pouvant être invoqués pendant la session. Les sous-agents sont des IA spécialisées pour des tâches ou domaines spécifiques.                                                                                                                                                                                                                                                                                                                                                      |
 | `includePartialMessages` | `boolean`                                      | `false`           | Lorsque `true`, le SDK émet les messages incomplets au fur et à mesure qu'ils sont générés, permettant un streaming en temps réel de la réponse de l'IA.                                                                                                                                                                                                                                                                                                                                                       |
@@ -95,7 +95,7 @@ Vous pouvez personnaliser ces timeouts via l'option `timeout` :
 import { query } from '@qwen-code/sdk';
 
 const q = query({
-  prompt: 'Your prompt',
+  prompt: 'Votre prompt',
   options: {
     timeout: {
       canUseTool: 60000, // 60 secondes pour le callback de permission
@@ -366,7 +366,7 @@ Renvoie un objet `McpSdkServerConfigWithInstance` qui peut être passé directem
 import { z } from 'zod';
 import { query, tool, createSdkMcpServer } from '@qwen-code/sdk';
 
-// Define a tool with Zod schema
+// Définir un outil avec le schéma Zod
 const calculatorTool = tool(
   'calculate_sum',
   'Add two numbers',
@@ -376,15 +376,15 @@ const calculatorTool = tool(
   }),
 );
 
-// Create the MCP server
+// Créer le serveur MCP
 const server = createSdkMcpServer({
   name: 'calculator',
   tools: [calculatorTool],
 });
 
-// Use the server in a query
+// Utiliser le serveur dans une requête
 const result = query({
-  prompt: 'What is 42 + 17?',
+  prompt: 'Combien font 42 + 17 ?',
   options: {
     permissionMode: 'yolo',
     mcpServers: {
@@ -406,13 +406,13 @@ import { query, isAbortError } from '@qwen-code/sdk';
 const abortController = new AbortController();
 
 const result = query({
-  prompt: 'Long running task...',
+  prompt: 'Tâche de longue durée...',
   options: {
     abortController,
   },
 });
 
-// Abort after 5 seconds
+// Annuler après 5 secondes
 setTimeout(() => abortController.abort(), 5000);
 
 try {
@@ -421,7 +421,7 @@ try {
   }
 } catch (error) {
   if (isAbortError(error)) {
-    console.log('Query was aborted');
+    console.log('La requête a été annulée');
   } else {
     throw error;
   }
@@ -436,12 +436,12 @@ Le SDK fournit une classe `AbortError` pour gérer les requêtes annulées :
 import { AbortError, isAbortError } from '@qwen-code/sdk';
 
 try {
-  // ... query operations
+  // ... opérations de requête
 } catch (error) {
   if (isAbortError(error)) {
-    // Handle abort
+    // Gérer l'annulation
   } else {
-    // Handle other errors
+    // Gérer les autres erreurs
   }
 }
 ```

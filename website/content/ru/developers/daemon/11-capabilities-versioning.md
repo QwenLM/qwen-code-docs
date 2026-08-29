@@ -126,7 +126,7 @@ Read-only снимки рабочего пространства: `workspace_mcp
 
 Read-операции сессии с квалификацией рабочего пространства: `workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`, `workspace_session_live_state`. Теги активного и архивного экспорта независимы друг от друга, а также от `session_export` и `workspace_qualified_rest_core`, поэтому клиенты должны делать pre-flight точного состояния хранилища, которое они намерены экспортировать. Постраничный просмотр сохранённого транскрипта допускает недоверенный вторичный клиент в рамках его политики ограниченного чтения; оба пути полного экспорта остаются только для доверенных. `workspace_session_live_state` также независим от `workspace_qualified_rest_core` и является только для доверенных: он отдаёт снимок live-сессии только из памяти и версию каталога выбранного runtime и не расширяет политику сохранённого чтения недоверенного вторичного клиента на состояние live-bridge.
 
-Мутации рабочего пространства (Wave 4+): `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, **`workspace_settings`** (условный), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, `workspace_file_upload`, **`workspace_reload`** (условный).
+Мутации рабочего пространства (Wave 4+): `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, `workspace_skill_settings_toggle`, `workspace_skill_settings_batch_toggle`, **`workspace_settings`** (условный), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, `workspace_file_upload`, **`workspace_reload`** (условный). Два тега настроек Skill заменяют устаревшие теги `workspace_skill_toggle` и `workspace_skill_batch_toggle`, проверявшиеся по каталогу.
 
 MCP guardrails: **`mcp_guardrails`** (`modes: ['warn', 'enforce']`), `mcp_guardrail_events`, `mcp_server_runtime_mutation`, **`mcp_workspace_pool`** (условный), **`mcp_pool_restart`** (условный).
 
@@ -180,7 +180,7 @@ sequenceDiagram
 ## Состояние и жизненный цикл
 
 - `CAPABILITIES_SCHEMA_VERSION` — это версия формы обертки в сети, в настоящее время `1`. Увеличивайте её только при критическом изменении обертки.
-- `SERVE_PROTOCOL_VERSION = 'v1'` — это версия протокол-функций. Добавление функций внутри v1 аддитивно; старые клиенты не увидят нового поведения, если не сделают preflight нового тега. Удаление функции — это критическое изменение для v2.
+- `SERVE_PROTOCOL_VERSION = 'v1'` — это версия протокол-функций. Добавление функций внутри v1 аддитивно; старые клиенты не увидят нового поведения, если не сделают preflight нового тега. Исправленное поведение может заменить возможность внутри v1: заменяющий тег вытесняет старый тег, старый тег перестаёт анонсироваться, и клиенты должны делать preflight замены. Удаление возможности без замены — это критическое изменение для v2.
 - `EVENT_SCHEMA_VERSION = 1` — это поле `v` фрейма SSE (см. [`09-event-schema.md`](./09-event-schema.md)). Это независимая ось версий; увеличение версии схемы событий не подразумевает увеличения версии протокола, и наоборот.
 - `session_resume` — это стабильная возможность демона для `POST /session/:id/resume`. `unstable_session_resume` продолжает анонсироваться как устаревший псевдоним, поскольку базовый метод ACP по-прежнему называется `connection.unstable_resumeSession`; новые клиенты должны делать feature-detect для `session_resume`.
 
@@ -201,7 +201,7 @@ sequenceDiagram
 | Встроенная опция | `persistSettingAvailable` | Анонсирует `workspace_settings` и `workspace_voice`. |
 | Встроенная опция | `voiceTranscriptionAvailable` | Анонсирует `workspace_voice_transcription`. |
 | CLI флаг / встроенная опция | `--enable-session-shell` / `sessionShellCommandEnabled` | Анонсирует `session_shell_command`. |
-| Runtime state | Более одного зарегистрированного runtime рабочего пространства | Анонсирует `multi_workspace_sessions` и `multi_workspace_session_rewind`; также анонсирует `multi_workspace_session_shell`, если session shell фактически включён. |
+| Состояние среды выполнения | Более одного зарегистрированного runtime рабочего пространства | Анонсирует `multi_workspace_sessions` и `multi_workspace_session_rewind`; также анонсирует `multi_workspace_session_shell`, если session shell фактически включён. |
 | Встроенная опция | `reloadAvailable` | Анонсирует `workspace_reload`. |
 | Встроенная опция | `voiceWsAvailable` | Анонсирует `voice_transcribe`. |
 | `settings.json` | `policy.permissionStrategy` | Устанавливает `policy.permission` в обертке. |

@@ -152,9 +152,9 @@ await client
   .setWorkspaceSkillEnabled('review', true, { clientId: 'dashboard-1' });
 ```
 
-Pre-flight `capabilities.features.includes('workspace_skill_toggle')`. Der typisierte `DaemonSkillToggleResult` berichtet den kanonischen `skillName`, ob der Disk-State `changed` wurde, den Aktivierungszustand (`applied`, `deferred` oder `partial`) und die aktualisierten/fehlgeschlagenen Session-Zahlen. `DaemonWorkspaceSkillStatus.userInvocable` ist ein optionales False-only-Feld; Fehlen bedeutet, dass der Skill vom Benutzer aufrufbar ist.
+Pre-flight `capabilities.features.includes('workspace_skill_settings_toggle')`. Der typisierte `DaemonSkillToggleResult` meldet den getrimmten angefragten `skillName`, ob der Disk-State `changed` wurde, den Aktivierungszustand (`applied`, `deferred` oder `partial`) und die aktualisierten/fehlgeschlagenen Session-Zahlen. Der Write ist settings-only und erfordert nicht, dass der Name in `DaemonWorkspaceSkillStatus` erscheint; das optionale False-only-Feld `userInvocable` dieses Status-Typs bleibt nützlich für das Rendern des Live-Katalogs, steuert aber nicht die Persistierung. Das retired `workspace_skill_toggle`-Tag beschrieb das frühere katalogvalidierte Verhalten und wird für diesen Contract nicht beworben.
 
-Für Batch-Änderungen pre-flight `workspace_skill_batch_toggle` prüfen und dann beide Client-Formen mit demselben Contract aufrufen:
+Für Batch-Änderungen pre-flight `workspace_skill_settings_batch_toggle` und rufe beide Client-Formen mit demselben Contract auf. Die Routen und Request-Bodies bleiben unverändert:
 
 ```ts
 await client.setWorkspaceSkillsEnabled(['review', 'deploy'], false, {
@@ -165,7 +165,7 @@ await client
   .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
 ```
 
-`DaemonSkillBatchToggleResult` enthält sortierte erfolgreiche `results`, zielbezogene `errors` und batchweite Aktivierungs-/Session-Refresh-Zahlen. Der Daemon persistiert gültige Ziele zusammen und refreshed aktive Sessions einmalig; ein erwarteter Fehler bei einem Ziel blockiert andere gültige Ziele nicht. Die Methode throwt nur bei einer Non-200-Antwort; ein 200 bedeutet nicht, dass jedes Ziel angewendet wurde, daher immer `errors` prüfen, bevor der Batch als erfolgreich behandelt wird.
+`DaemonSkillBatchToggleResult` enthält sortierte `results`, ein Kompatibilitäts-`errors`-Array und batchweite Aktivierungs-/Session-Refresh-Zahlen. Aktuelle Daemons verarbeiten jeden strukturell gültigen Namen in Request-Reihenfolge, persistieren alle resultierenden Deklarationsänderungen zusammen in höchstens einem gelockten Settings-Write, refreshen aktive Sessions einmalig wenn sich etwas geändert hat, und geben ein leeres `errors`-Array zurück ohne den geladenen Skill-Katalog zu konsultieren. Das Aktivieren eines Namens ohne bestehende Workspace-Deklaration und ohne effektiven `skills.defaultDisabled`-Eintrag gibt `changed: false` zurück und führt keinen Write durch. Die Error-Item-Types bleiben verfügbar, sodass das SDK weiterhin Antworten älterer Daemons decodieren kann. Die Methode throwt bei einer Non-200-Antwort.
 
 Die V2-Extension-Batchaktivierung behält das asynchrone Extension-Operationsmodell bei. Pre-flight `extension_batch_activation_v2`, submitte einen globalen Standard-Batch oder einen Selected-Workspace-Override-Batch, und polle ihn dann mit dem bestehenden Operations-Helper:
 
@@ -185,7 +185,7 @@ const workspaceHandle = await client
 const operation = await client.waitForExtensionOperation(workspaceHandle);
 ```
 
-Das terminale Operationsergebnis enthält sortierte `results`. Targets müssen beim Setzen von `enabled` oder `disabled` nicht installiert sein: Der Daemon speichert eine Namensdeklaration und behält diese Aktivierungsrichtlinie bei, wenn später eine Extension mit diesem Namen installiert wird. Alle geänderten Targets teilen sich eine Extension-Store-Generation und einen Reconciliation-Durchlauf. Globale Standard-Batches reconcilen jede registrierte Runtime; Workspace-Batches lösen nur die ausgewählte vertrauenswürdige Runtime auf und reconcilen sie. Workspace `inherit` löscht das genaue Override, erstellt aber keine Deklaration für einen unbekannten Namen; ein All-Unknown-Clear succeeds als No-Op ohne Reconciliation. Einzelne Aktivierungsmethoden bleiben auf installierte beschränkt.
+Das terminale Operationsergebnis enthält sortierte `results`. Targets müssen beim Setzen von `enabled` oder `disabled` nicht installiert sein: Der Daemon speichert eine Namensdeklaration und behält diese Aktivierungsrichtlinie bei, wenn später eine Extension mit diesem Namen installiert wird. Alle geänderten Targets teilen sich eine Extension-Store-Generation und einen Reconciliation-Durchlauf. Globale Standard-Batches reconcilen jede registrierte Runtime; Workspace-Batches lösen nur die ausgewählte vertrauenswürdige Runtime auf und reconcilen sie. Workspace `inherit` löscht das genaue Override, erstellt aber keine Deklaration für einen unbekannten Namen; ein All-Unknown-Clear gelingt als No-Op ohne Reconciliation. Einzelne Aktivierungsmethoden bleiben auf installierte beschränkt.
 
 Workspace-Anzeigenamen sind optionale Präsentationsmetadaten. Pre-flight `capabilities.features.includes('workspace_display_name')`; Workspace-IDs und kanonische Pfade bleiben die einzigen Selektoren, und doppelte Anzeigenamen sind zulässig.
 

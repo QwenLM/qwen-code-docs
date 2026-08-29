@@ -206,7 +206,7 @@ Umschalter, Suchsymbol und dem Workspace-hinzufügen-Button). Standardmäßig `f
 
 ```tsx
 sidebar={{
-  hideProjectHeader: true,  // die "Projekte ▼ [🔍] [＋]"-Zeile ausblenden
+  hideProjectHeader: true,  // die "项目 ▼ [🔍] [＋]"-Zeile ausblenden
 }}
 ```
 
@@ -223,7 +223,7 @@ type WebShellSidebarSessionActionItem =
   | 'export' // 📤 Chat-Verlauf exportieren (Dropdown-Menü)
   | 'delete' // 🗑 Session löschen (Dropdown-Menü)
   | 'pin' // 📌 Anheften/Lösen (Inline-Button)
-  | 'archive'; // 📦 Archivieren (Inline-Button)
+  | 'archive'; // 📦 Archivieren (Dropdown-Menü)
 
 /** Teilmenge mit funktionierenden Inline-(Hover-Button-)Handlern. */
 type WebShellSidebarSessionInlineActionItem =
@@ -235,27 +235,29 @@ type WebShellSidebarSessionInlineActionItem =
 
 interface WebShellSidebarSessionActionsOptions {
   items?: readonly WebShellSidebarSessionActionItem[]; // welche Aktionen angezeigt werden (Standard: alle)
-  inlineItems?: readonly WebShellSidebarSessionInlineActionItem[]; // welche Elemente als Inline-Buttons erscheinen (Standard: ['pin', 'archive'])
+  inlineItems?: readonly WebShellSidebarSessionInlineActionItem[]; // welche Elemente als Inline-Buttons erscheinen (Standard: ['pin'])
 }
 ```
 
 Steuert, welche Aktionsbuttons auf Session-Zeilen erscheinen:
 
 - **`items`**: Hauptsteuerung für alle Aktionen (sowohl Inline als auch Dropdown). Wenn ein Element nicht in `items` ist, wird es überall ausgeblendet.
-- **`inlineItems`**: Steuert, welche Elemente als **Inline-Buttons** (beim Hovern) erscheinen. Standardmäßig `['pin', 'archive']`. Nur Elemente mit funktionierenden Inline-Handlern können verwendet werden: `'pin'`, `'archive'`, `'rename'`, `'export'`, `'delete'`. `'details'` und `'group'` sind nur im Dropdown verfügbar.
+- **`inlineItems`**: Steuert, welche Elemente als **Inline-Buttons** (beim Hovern) erscheinen. Standardmäßig `['pin']` — Archivieren bleibt standardmäßig im Dropdown, da der Hover-Slot auf dem Klick-Ziel der Zeile liegt und leicht versehentlich ausgelöst wird. Nur Elemente mit funktionierenden Inline-Handlern können verwendet werden: `'pin'`, `'archive'`, `'rename'`, `'export'`, `'delete'`. `'details'` und `'group'` sind nur im Dropdown verfügbar.
 
 **Sichtbarkeitspriorität**: Sowohl `items` ALS AUCH die eingebaute Bedingung des Elements ALS AUCH `inlineItems` müssen alle erfüllt sein, damit der Inline-Button angezeigt wird. Zum Beispiel erfordert `delete` als Inline, dass `items` `'delete'` enthält UND `inlineItems` `'delete'` enthält.
 
 | Wert                                   | Effekt                                       |
 | -------------------------------------- | -------------------------------------------- |
-| `undefined` (Standard)                 | Alle Aktionen angezeigt, Pin + Archive als Inline |
+| `undefined` (Standard)                 | Alle Aktionen angezeigt, nur Pin als Inline |
 | `{ inlineItems: ['pin', 'delete'] }`   | Pin + Delete als Inline-Buttons              |
 | `{ inlineItems: [] }`                  | Keine Inline-Buttons                         |
 | `{ inlineItems: ['archive', 'export'] }` | Archive + Export als Inline-Buttons        |
 
 Der Dropdown-Auslöser (⋮) wird automatisch ausgeblendet, wenn keine Dropdown-Elemente
-aktiviert sind. Inline-Buttons (`pin`, `archive`) werden nur angezeigt, wenn sowohl
-ihre Capability-Bedingung als auch `items` sie enthalten.
+aktiviert sind. Inline-Buttons werden nur angezeigt, wenn sowohl ihre Capability-
+Bedingung als auch `items` sie enthalten. Archivieren ist für die aktuelle Session
+und für jede Session mit einem laufenden Turn deaktiviert, da der Daemon die Live-
+Session beim Archivieren schließt.
 
 ```tsx
 sidebar={{

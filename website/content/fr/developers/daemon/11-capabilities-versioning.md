@@ -126,9 +126,11 @@ Activation par lot d'extensions V2 : `extension_batch_activation_v2` ajoute des 
 
 Lectures de session qualifiées par workspace : `workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`, `workspace_session_live_state`. Les tags d'export actif et archivé sont indépendants les uns des autres ainsi que de `session_export` et `workspace_qualified_rest_core`, donc les clients doivent pré-vérifier l'état de stockage exact qu'ils ont l'intention d'exporter. La pagination de transcription persistée permet un secondaire non fiable dans le cadre de sa politique de lecture bornée ; les deux chemins d'export complets restent réservés aux fiables. `workspace_session_live_state` est également indépendant de `workspace_qualified_rest_core` et réservé aux fiables uniquement : il sert le snapshot en mémoire de la session live du runtime sélectionné et la version du catalogue et n'étend pas la politique de lecture persistée non fiable à l'état live du bridge.
 
-Mutation de l'espace de travail (Wave 4+) : `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, **`workspace_settings`** (conditionnel), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, `workspace_file_upload`, **`workspace_reload`** (conditionnel).
+Mutation de l'espace de travail (Wave 4+) : `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, `workspace_skill_settings_toggle`, `workspace_skill_settings_batch_toggle`, **`workspace_settings`** (conditionnel), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, `workspace_file_upload`, **`workspace_reload`** (conditionnel).
 
 Garde-fous MCP : **`mcp_guardrails`** (`modes: ['warn', 'enforce']`), `mcp_guardrail_events`, `mcp_server_runtime_mutation`, **`mcp_workspace_pool`** (conditionnel), **`mcp_pool_restart`** (conditionnel).
+
+Les deux tags de paramètres de Skill remplacent les tags retirés validés par le catalogue `workspace_skill_toggle` et `workspace_skill_batch_toggle`.
 
 Contrôle de prompt : **`prompt_absolute_deadline`** (conditionnel), **`writer_idle_timeout`** (conditionnel), `non_blocking_prompt`.
 
@@ -187,7 +189,7 @@ sequenceDiagram
 ## État et cycle de vie
 
 - `CAPABILITIES_SCHEMA_VERSION` est la version de la forme de l'enveloppe wire, actuellement `1`. Ne l'incrémentez qu'en cas de cassure de l'enveloppe.
-- `SERVE_PROTOCOL_VERSION = 'v1'` est la version du protocole-fonctionnalité. L'ajout de fonctionnalités dans la v1 est additif ; les anciens clients ne voient pas le nouveau comportement à moins d'effectuer le preflight du nouveau tag. La suppression d'une fonctionnalité est une cassure pour la v2.
+- `SERVE_PROTOCOL_VERSION = 'v1'` est la version du protocole-fonctionnalité. L'ajout de fonctionnalités dans la v1 est additif ; les anciens clients ne voient pas le nouveau comportement à moins d'effectuer le preflight du nouveau tag. Un comportement corrigé peut remplacer une capacité dans la v1 : le tag de remplacement supplante l'ancien tag, l'ancien tag cesse d'être annoncé, et les clients doivent effectuer le preflight du remplacement. La suppression d'une fonctionnalité sans remplacement est une cassure pour la v2.
 - `EVENT_SCHEMA_VERSION = 1` est le champ `v` de la frame SSE (voir [`09-event-schema.md`](./09-event-schema.md)). C'est un axe de versioning indépendant ; l'incrémentation du schéma d'événement n'implique pas l'incrémentation de la version du protocole, et vice versa.
 - `session_resume` est la capacité stable du démon pour `POST /session/:id/resume`. `unstable_session_resume` reste annoncé comme un alias obsolète car la méthode ACP sous-jacente s'appelle toujours `connection.unstable_resumeSession` ; les nouveaux clients doivent détecter la fonctionnalité `session_resume`.
 

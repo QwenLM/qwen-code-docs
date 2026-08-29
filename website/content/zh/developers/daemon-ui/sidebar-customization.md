@@ -211,7 +211,7 @@ type WebShellSidebarSessionActionItem =
   | 'export' // 📤 导出聊天记录（下拉菜单）
   | 'delete' // 🗑 删除会话（下拉菜单）
   | 'pin' // 📌 置顶/取消置顶（内联按钮）
-  | 'archive'; // 📦 归档（内联按钮）
+  | 'archive'; // 📦 归档（下拉菜单）
 
 /** 具有可用内联（hover 按钮）处理程序的子集。 */
 type WebShellSidebarSessionInlineActionItem =
@@ -223,25 +223,25 @@ type WebShellSidebarSessionInlineActionItem =
 
 interface WebShellSidebarSessionActionsOptions {
   items?: readonly WebShellSidebarSessionActionItem[]; // 显示哪些操作（默认：全部）
-  inlineItems?: readonly WebShellSidebarSessionInlineActionItem[]; // 哪些项作为内联按钮显示（默认：['pin', 'archive']）
+  inlineItems?: readonly WebShellSidebarSessionInlineActionItem[]; // 哪些项作为内联按钮显示（默认：['pin']）
 }
 ```
 
 控制会话行上显示哪些操作按钮：
 
 - **`items`**：所有操作的主控（包括内联和下拉）。如果某项不在 `items` 中，则在各处隐藏。
-- **`inlineItems`**：控制哪些项作为**内联按钮**（hover 时）显示。默认为 `['pin', 'archive']`。只有具有可用内联处理程序的项才能使用：`'pin'`、`'archive'`、`'rename'`、`'export'`、`'delete'`。`'details'` 和 `'group'` 仅支持下拉。
+- **`inlineItems`**：控制哪些项作为**内联按钮**（hover 时）显示。默认为 `['pin']`——archive 默认保留在下拉菜单中，因为 hover 槽位位于行的点击目标上，容易被误触。只有具有可用内联处理程序的项才能使用：`'pin'`、`'archive'`、`'rename'`、`'export'`、`'delete'`。`'details'` 和 `'group'` 仅支持下拉。
 
 **可见性优先级**：`items` AND 该项的内置条件 AND `inlineItems` 三者都必须通过，内联按钮才会显示。例如，`delete` 作为内联按钮需要 `items` 包含 `'delete'` AND `inlineItems` 包含 `'delete'`。
 
 | 值                                       | 效果                                       |
 | ---------------------------------------- | ------------------------------------------ |
-| `undefined`（默认）                      | 显示所有操作，pin + archive 作为内联按钮   |
+| `undefined`（默认）                      | 显示所有操作，仅 pin 作为内联按钮           |
 | `{ inlineItems: ['pin', 'delete'] }`     | Pin + delete 作为内联按钮                  |
 | `{ inlineItems: [] }`                    | 完全没有内联按钮                           |
 | `{ inlineItems: ['archive', 'export'] }` | Archive + export 作为内联按钮              |
 
-当没有启用下拉项时，下拉触发器（⋮）会自动隐藏。内联按钮（`pin`、`archive`）仅在其能力条件和 `items` 都包含它们时才会显示。
+当没有启用下拉项时，下拉触发器（⋮）会自动隐藏。内联按钮仅在其能力条件和 `items` 都包含它们时才会显示。Archive 在当前会话以及任何正在运行轮次的会话上会被禁用，因为 daemon 在归档时会关闭实时会话。
 
 ```tsx
 sidebar={{

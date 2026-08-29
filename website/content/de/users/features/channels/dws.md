@@ -73,7 +73,7 @@ qwen channel pairing approve dws-work CODE
 
 `groups` steuert das Erwähnungsverhalten. Eine konkrete Gruppen-ID überschreibt `"*"`. Mit `requireMention: true` weckt nur eine @-Nachricht den Channel. Mit `requireMention: false` werden auch gewöhnliche Nachrichten empfangen, nachdem die Gruppen- und Absender-Richtlinien bestanden sind.
 
-Gruppen-Erwähnungen verwenden zuerst den persönlichen Echtzeit-Event-Stream. Der Channel prüft außerdem alle fünf Sekunden die jüngste `@`-Nachrichthistorie, sodass Erwähnungen aus externen Gruppen wiederhergestellt werden, wenn DingTalk sie aus dem persönlichen Event-Stream weglässt. Nachrichten werden über beide Pfade nach Konversation und Nachrichten-ID dedupliziert.
+Gruppen-Erwähnungen verwenden zuerst den persönlichen Echtzeit-Event-Stream. Der Channel prüft außerdem alle fünf Sekunden die jüngste `@`-Nachrichtenhistorie, sodass Erwähnungen aus externen Gruppen wiederhergestellt werden, wenn DingTalk sie aus dem persönlichen Event-Stream weglässt. Nachrichten werden über beide Pfade nach Konversation und Nachrichten-ID dedupliziert.
 
 Wenn eine Nachricht eine andere DingTalk-Nachricht zitiert, wird der zitierte Text als Antwortkontext für den Agenten auf beiden Pfaden – Echtzeit und Historien-Fallback – einbezogen.
 
@@ -85,7 +85,7 @@ Es gibt keine Dokument- oder Wissensbasis-Watchlist. Um eine Dokument-Aufgabe zu
 2. Aktiviere die Option, die eine DingTalk-Benachrichtigung an diesen Account sendet.
 3. DWS liefert die Benachrichtigungskarte über die Direktnachrichten-Historie des Accounts.
 
-Der Channel extrahiert die Dokument-ID, den Kommentar-Schlüssel und die Anfrage aus dieser Benachrichtigung. Er liest das referenzierte Dokument für den Kontext, fügt DingTaks `暗中观察`-Augen-Reaktion hinzu, während die Aufgabe läuft, und antwortet auf den ursprünglichen Dokumentkommentar. Der Echtzeit-DWS-Event-Stream wird verwendet, wenn er die Karte enthält; eine fünfsekündige inkrementelle Historienprüfung deckt Karten ab, die vom aktuellen Event-Stream weggelassen werden.
+Der Channel extrahiert die Dokument-ID, den Kommentar-Schlüssel und die Anfrage aus dieser Benachrichtigung. Er liest das referenzierte Dokument für den Kontext, fügt DingTalk `暗中观察`-Augen-Reaktion hinzu, während die Aufgabe läuft, und antwortet auf den ursprünglichen Dokumentkommentar. Der Echtzeit-DWS-Event-Stream wird verwendet, wenn er die Karte enthält; eine fünfsekündige inkrementelle Historienprüfung deckt Karten ab, die vom aktuellen Event-Stream weggelassen werden.
 
 Kommentare, die keine Benachrichtigung erzeugen, werden by Design ignoriert. Doppelte Benachrichtigungsnachrichten für denselben Dokumentkommentar werden nur einmal ausgeführt. Dokument-Aufgaben folgen der `senderPolicy` und unterstützen `approvalMode` `default`, `plan` oder `yolo`; `default` wird verwendet, wenn nichts angegeben ist.
 

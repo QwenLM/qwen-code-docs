@@ -180,7 +180,7 @@ sequenceDiagram
 | 上游                                                                                     | 下游                                     |
 | -------------------------------------------------------------------------------------------- | ---------------------------------------------- |
 | `@agentclientprotocol/sdk` — `ClientSideConnection`、`PROTOCOL_VERSION`、ACP 类型           | `packages/cli/src/serve/`（守护进程）         |
-| `@qwen-code/qwen-code-core` — `ApprovalMode`、`TrustGateError`、`getCurrentGeminiMdFilename` | `packages/channels/base/`（计划中，F4）        |
+| `@qwen-code/qwen-code-core` — `ApprovalMode`、`TrustGateError` | `packages/channels/base/`（计划中，F4）        |
 | `node:crypto`、`node:fs`、`node:path`                                                        | `packages/vscode-ide-companion/`（计划中，F4） |
 
 ## 配置
@@ -201,7 +201,6 @@ sequenceDiagram
 | `childEnvOverrides`                           | `{}`                                               | 每个句柄为 ACP 子进程添加/清理的环境变量。                                                                  |
 | `externalToolGuard`                           | （无）                                             | 可选的私有子进程到父进程的预执行决策处理器。Bridge 仅接受来自当前活跃 Prompt 所属 channel 的该处理器。 |
 | `persistApprovalMode`、`persistDisabledTools` | —                                                  | Wave 4 mutation 路由的设置写入钩子。                                                                  |
-| `contextFilename`                             | 来自 `settings.json` 的 `context.fileName`          | 覆盖 `getCurrentGeminiMdFilename`。                                                                               |
 | `statusProvider`                              | （无）                                             | 守护进程宿主预检单元（`DaemonStatusProvider`）。                                                                 |
 | `delegateReadTextFileToClient`                | `true`                                             | 仅对同主机 runtime 设为 `false`，使子进程的所有 `FileSystemService.readTextFile` 消费者使用常规 CLI 文件系统服务。                    |
 | `fileSystem`                                  | （无）                                             | 用于 ACP `readTextFile` / `writeTextFile` 的 `BridgeFileSystem` 适配器。                                                  |
@@ -230,7 +229,7 @@ sequenceDiagram
 | `addRuntimeMcpServer(name, config, originatorClientId)`      | 在运行时添加 MCP 服务器。                     |
 | `removeRuntimeMcpServer(name, originatorClientId)`           | 在运行时移除 MCP 服务器。                     |
 | `manageMcpServer(serverName, action, originatorClientId)`    | 启用 / 禁用 / 认证 / 清除认证。               |
-| `generateWorkspaceAgent(description, originatorClientId)`    | 使用 AI 生成子 agent 定义。                   |
+| `generateWorkspaceAgent(description, originatorClientId)`    | 使用 AI 生成子代理定义。                   |
 | `preheat()`                                                  | 在第一个会话之前预热 ACP 子进程。             |
 | `getSessionLastEventId(sessionId)`                           | 读取会话的单调递增事件 ID。                   |
 | `getWorkspaceToolsStatus()`                                  | 返回内置工具注册表快照。                      |
