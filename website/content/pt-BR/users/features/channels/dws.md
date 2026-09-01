@@ -1,6 +1,3 @@
----
-title: DingTalk Workspace
----
 
 # DingTalk Workspace (DWS)
 
@@ -80,6 +77,8 @@ qwen channel pairing approve dws-work CODE
 As menções de grupo usam o stream de eventos pessoais em tempo real primeiro. O canal também verifica o histórico recente de mensagens com `@` a cada cinco segundos, então menções de grupos externos são recuperadas quando o DingTalk as omite do stream de eventos pessoais. As mensagens são deduplicadas por conversa e ID de mensagem em ambos os caminhos.
 
 Quando uma mensagem cita outra mensagem do DingTalk, o texto citado é incluído como contexto de resposta para o agente tanto no caminho em tempo real quanto no fallback de histórico.
+
+Mensagens diretas ordinárias são recuperadas da mesma forma: uma verificação de histórico de cinco segundos re-processa qualquer mensagem direta omitida pelo stream em tempo real, deduplicada por conversa e ID de mensagem em ambos os caminhos.
 
 ## Menções a Documentos
 

@@ -197,11 +197,12 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
  'mcp_server_runtime_mutation',
  'workspace_file_read', 'workspace_file_bytes', 'workspace_file_write',
  'workspace_file_upload',
- 'session_approval_mode_control', 'workspace_tool_toggle', 'workspace_skill_toggle',
- 'workspace_skill_batch_toggle',
+ 'session_approval_mode_control', 'workspace_tool_toggle',
+ 'workspace_skill_settings_toggle', 'workspace_skill_settings_batch_toggle',
  'extension_batch_activation_v2',
  'workspace_settings', 'workspace_init', 'workspace_mcp_restart',
  'session_recap', 'session_generation', 'session_btw', 'session_shell_command',
+ 'standalone_sessions_v1',
  'mcp_workspace_pool', 'mcp_pool_restart',
  'require_auth', 'allow_origin', 'auth_device_flow',
  'permission_mediation', 'prompt_absolute_deadline', 'writer_idle_timeout',
@@ -494,6 +495,7 @@ Workspace 限定的变更使用相同的全局 `/extensions/operations/:operatio
 | `persistent_workspace_registration` | workspace 注册的持久化存储已配置。`runQwenServe` 会自动提供用户级存储；直接的 `createServeApp` 嵌入必须显式注入一个并自行管理启动时的 workspace 注册表恢复。                                                                                                                                                                                                                                                                                                                                   |
 | `scratch_workspace_registration`    | 托管的 scratch workspace 创建可用——runtime 工厂、经过验证的托管 scratch 根目录和 runtime 处置已连接，且每个托管 runtime 都遵守 scratch 根目录边界。                                                                                                                                                                                                                                                                                                                                          |
 | `workspace_runtime_removal`         | 可移除的动态或持久化恢复的次要 runtime 可以通过管理路由进行排空和移除。                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `native_directory_picker`           | daemon 主机可以打开原生 OS 目录选择器（macOS 上的 `osascript`、Windows 上的 PowerShell、有显示器的 Linux 主机上的 `zenity`）。无头主机省略该标签，以便客户端隐藏浏览功能，而不是显示保证会失败的选择器。                                                                                                                                                                                                                                                                                                                                                   |
 | `workspace_qualified_acp`           | ACP HTTP 和多 workspace runtime 均已启用，因此复数 ACP 端点可以选择次要 runtime。                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `workspace_qualified_voice`         | 多 workspace runtime 和共享 ACP/Voice WebSocket 监听器均已启用，因此每个 workspace 限定的 Voice 模态对次要 runtime 均可达。                                                                                                                                                                                                                                                                                                                                                                  |
 | `workspace_qualified_memory`        | ACP HTTP 和多 workspace runtime 均已启用，因此 workspace 限定的托管 memory 路由可以为 remember、forget 和 dream 操作选择按 workspace 的任务通道。                                                                                                                                                                                                                                                                                                                                              |
@@ -502,6 +504,7 @@ Workspace 限定的变更使用相同的全局 `/extensions/operations/:operatio
 | `browser_automation_mcp`            | ACP HTTP 已启用，`cdp_tunnel_over_ws` 处于活动状态，无 bearer token 阻止 `/cdp`，且 `QWEN_CDP_MCP_COMMAND` 命名了一个外部 stdio MCP adapter。主 CLI 包不捆绑浏览器自动化 adapter；没有此 tag 时，Chrome extension 侧面板聊天可能仍然有效，但 console/network/screenshot/click 工具默认不注册。                                                                                                                                                                                                    |
 | `voice_transcribe`                  | Voice WebSocket 端点已挂载；仍需配置 Voice 模型才能成功转录。                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `realtime_voice`                    | macOS WebShell daemon 已启用 Live Voice 且原生 Host 集成处于活动状态。`/live/status` 报告就绪状态，但该能力在功能启用前会被撤回。                                                                                                                                                                                                                                                                                                                                                             |
+| `web_terminal`                      | ACP HTTP 已启用，因此经过认证的 Web Terminal 端点可用。                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 
 <!-- conditional-serve-features:end -->
 
@@ -1718,6 +1721,30 @@ Daemon 会写入目标目录中的一个随机临时文件，在支持的地方�
 
 此路由仅暴露稳定的面向 client 的字段。它故意省略了调试内部信息，如进程 ID、spawn 参数、stderr 尾部、root URI 和 workspace-folder 路径。
 
+### Standalone session 生命周期（`standalone_sessions_v1`）
+
+当 `/capabilities.features` 包含 `standalone_sessions_v1` 时，daemon 为其专属 Conversations runtime 拥有的顶层独立 session 暴露一个进程全局的路由族。这些路由从不接受 workspace 选择器，也从不回退到主 workspace。无法构建完整的 Conversations 所有权、runtime、目录、生命周期和删除日志依赖图的直接嵌入会省略该功能和以下所有路由。
+
+| Route                                            | Request                                                                                                                                                      | Success                                                                                                                                        |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /standalone/sessions`                      | `{ "sessionId": "<UUID>", "modelServiceId"?: string, "approvalMode"?: ApprovalMode }`                                                                        | `200`，包含独立 session、`context: { "kind": "standalone" }` 及其托管的无项目输出目录。创建无需 prompt。 |
+| `GET /standalone/sessions`                       | Query：`cursor?`、`size?`（1-100）、`archiveState?`（`active` 或 `archived`）                                                                                  | `200 { sessions, nextCursor?, liveMergeFailed?, truncated? }`                                                                                  |
+| `GET /standalone/sessions/:id`                   | none                                                                                                                                                         | 本地创建进行中时为 `202 { sessionId, state: "creating" }`，否则为 `200` 及精确摘要。                              |
+| `POST /standalone/sessions/:id/load`             | 仅限现有恢复选项：`historyPageSize?`、`liveReplayMode?`、`hideInheritedHistory?`、`approvalMode?`；客户端身份保留在 `X-Qwen-Client-Id` 中。 | `200` 已恢复的独立 session。                                                                                                             |
+| `POST /standalone/sessions/:id/resume`           | 与 `load` 相同的恢复选项。                                                                                                                              | `200` 已恢复的独立 session，不重放 load 历史。                                                                                 |
+| `POST /standalone/sessions/:id/repair-directory` | 空 body 或 `{}`                                                                                                                                           | `200`，包含已验证或重新创建的托管目录。                                                                                        |
+| `PATCH /standalone/sessions/:id/metadata`        | `{ "displayName": string }`                                                                                                                                  | `200 { sessionId, displayName }`                                                                                                               |
+| `GET /standalone/sessions/:id/export`            | Query：`format=html`、`format=md`、`format=json` 或 `format=jsonl`（默认为 `html`）。                                                                    | 现有的导出内容类型、文件名和 body。                                                                                              |
+| `POST /standalone/sessions/archive`              | `{ "sessionIds": ["<UUID>", ...] }`                                                                                                                          | `200 { archived, alreadyArchived, notFound, errors }`                                                                                          |
+| `POST /standalone/sessions/unarchive`            | `{ "sessionIds": ["<UUID>", ...] }`                                                                                                                          | `200 { unarchived, alreadyActive, notFound, errors }`                                                                                          |
+| `POST /standalone/sessions/delete`               | `{ "sessionIds": ["<UUID>", ...] }`                                                                                                                          | `200 { removed, notFound, errors, fileCleanupPending }`                                                                                        |
+
+Body 必须是没有未知字段的 JSON 对象。ID 为 RFC UUID v1-v5 值；daemon 将其规范化为小写。批量请求包含 1-100 个字符串，在变更前进行验证和去重。批量失败报告为 `{ sessionId, code, message }`，不会回滚对其他 ID 的成功操作。`fileCleanupPending` 表示转录删除已提交，但日志授权的 sidecar 或托管目录清理必须由调和重试；该 session 在逻辑上已被移除。
+
+仅显式的独立转录和文档中记录的顶层旧版兼容结构可见。子级、Live、项目、worktree、模糊、不可读或删除日志记录的记录会 fail closed。创建在其 HTTP 响应断开后仍会继续；已提交的 session 不会被删除，响应客户端被分离。通过精确 GET 后跟 load/resume 恢复，而不是重试创建作为附加。
+
+归档、取消归档、修复、重命名和删除与 load/resume 及 prompt 共享相同的每 session 生命周期准入。删除使用转录 unlink 作为持久化提交点，并使用私有日志和原子托管目录暂存进行崩溃恢复。恢复在转录完好时恢复目录，在转录消失时完成清理；任何不匹配的身份、冲突的路径、外部所有者或模糊转录都会返回结构化的 fail closed 错误。
+
 ### `POST /session`
 
 生成一个新的 agent 或附加到一个现有的 agent（在 `sessionScope: 'single'`（默认值）下）。
@@ -2172,9 +2199,13 @@ ACP-over-HTTP 通过 vendor 方法 `_qwen/sessions/archive` 和 `_qwen/sessions/
 
 ### Turn 中间消息
 
-`POST /session/:id/mid-turn-message` 在 turn 活跃时接受 `{ "message": "..." }`。成功的准入返回 `{ "accepted": true, "messageId": "<uuid>" }`；空闲的 session 或已满的 turn 中间队列返回 `{ "accepted": false }`，客户端应保留该消息以便在下一个普通 turn 中提交。当消息被排入运行中的 turn 时，`mid_turn_message_injected` 包含对齐的 `messages` 和 `messageIds` 数组以及发起客户端 id。
+`POST /session/:id/mid-turn-message` 接受 `{ "message": "...", "messageId": "<optional-message-id>" }`。成功的准入返回 `{ "accepted": true, "messageId": "<id>" }`，并将所有权转移给 daemon：消息被排入活跃 turn，或在 session 空闲时提升到正常的 prompt FIFO 中。使用 `session_mid_turn_message_query` 的客户端发送稳定的 `messageId`；在其仍处于排队、待处理或有界调和环中时，重复发送是幂等的。队列已满时拒绝新请求且不获取所有权。连接到旧版 daemon 的新客户端检测到缺失的能力并保留其旧版本地回退。
 
-当 `session_mid_turn_message_mutation` 被通告时，发起客户端可以调用 `DELETE /session/:id/mid-turn-messages/:messageId`。它仅在该消息仍在 daemon 队列中等待时返回 `{ "removed": true }`。`{ "removed": false }` 表示未找到、属于另一个客户端或已被排入。
+`GET /session/:id/mid-turn-messages` 返回 session 范围的 daemon 拥有队列，以及有界的 `settledMessageIds` 和 `promotedMessageIds` 环。已结算的 id 是被注入或显式删除的；已提升的 id 进入了正常的 prompt FIFO。任一环中的 id 不得重新发送。
+
+当排队的消息被排入活跃 turn 时，daemon 发布 `mid_turn_message_injected`，携带对齐的 `messages` 和 `messageIds` 数组（以及已知时运行中 turn 的 `promptId`）。它是一个瞬态去重信号，而非转录项：客户端结算在这些消息 id 下注册的完成回调，并丢弃它们的任何本地待处理行。旧版 daemon 还在 payload 中携带 `originatorClientId`。错过的回显可通过上述查询从已结算环中恢复。
+
+当 `session_mid_turn_message_mutation` 被通告时，已附加的 session 客户端可以调用 `DELETE /session/:id/mid-turn-messages/:messageId`。它从 turn 中间队列或其已提升的待处理 prompt 状态中移除消息；移除已在运行的已提升消息会中止该 turn，与普通的待处理 prompt 移除一致。Daemon 拥有的队列添加和移除会发布现有的 `pending_prompt_added` 和 `pending_prompt_completed` session 事件，以便已附加的客户端刷新两个权威队列快照。`{ "removed": false }` 表示消息已被注入、完成或未找到。
 
 ### `POST /session/:id/prompt`
 

@@ -66,9 +66,9 @@ Qwen Code との新しいクエリセッションを作成します。
 | `abortController`          | `AbortController`                              | -                  | クエリセッションをキャンセルするコントローラ。`abortController.abort()` を呼び出すとセッションを終了しリソースをクリーンアップします。                                                                                                                                                                                                                                                                                                                                                    |
 | `debug`                    | `boolean`                                      | `false`            | デバッグモードを有効にし、CLI プロセスからの詳細ログを出力します。                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `maxSessionTurns`          | `number`                                       | `-1`（無制限）     | セッションが自動終了するまでの最大会話ターン数。1 ターンはユーザーメッセージとアシスタント応答で構成されます。                                                                                                                                                                                                                                                                                                                                                           |
-| `coreTools`                | `string[]`                                     | -                  | レガシーな `coreTools` / CLI `--core-tools` 許可リストのセマンティクスを使用します。指定された場合、一致するコアツールのみがセッションに登録されます。これは settings.json の `permissions.allow` とは別物で、後者は起動時にレジストリレベルの許可リストもアクティブにします。少なくとも 1 つの有効な許可ルールがそこに設定されている場合（不正なエントリはカウントされない）、どの許可ルールまたは確認ルールにもカバーされていない組み込みツールは deferred に降格されます — 登録され `tool_search` 経由でロード可能ですが、スキーマは即時のモデルリクエストからは除外されます（MCP ツール、`--json-schema` の `structured_output` 契約、プランモードのライフサイクルツール、`task_stop`、`tool_search`、および `computer_use__*` ファミリーは免除対象。再起動が必要、#9827、#10075）。SDK の `allowedTools` パラメータ単体では許可リストをアクティブにできませんが、許可リストがアクティブな間はそのルールが有効な許可セットにマージされ、カバー範囲にカウントされるため、カバーされた組み込みツールは即時に登録されたままになります。例: `['read_file', 'edit', 'run_shell_command']`。 |
+| `coreTools`                | `string[]`                                     | -                  | レガシーの `coreTools` / CLI `--core-tools` 許可リストセマンティクスを使用します。指定された場合、一致するコアツールのみがセッションに登録されます。これは組み込みツールの登録を制限する唯一の許可リスト形式のオプションです。ツール全体の `permissions.deny` / `excludeTools` ルール（および settings.json の `tools.disabled`）もツールをレジストリから削除します。settings.json の `permissions.allow` は純粋な自動承認であり、ツールを削除・降格・非表示にすることはありません（#10075）。ツールのスキーマを初期モデルリクエストから除外するには、settings.json の `tools.eager` を使用します（再起動が必要、#9827）。完全に削除するには、ツール全体の `excludeTools` / `permissions.deny` ルールを使用します。指定子付きのルール（`'Bash(rm *)'` など）は、実行時に一致する呼び出しのみを拒否します。MCP ツールは deny ベースの削除の対象外です。パーサーバーの `excludeTools` / `tools.disabled` フィルタで非表示にします（deny は実行時にその呼び出しをブロックします）。例: `['read_file', 'edit', 'run_shell_command']`。 |
 | `excludeTools`             | `string[]`                                     | -                  | settings.json の `permissions.deny` に相当します。除外されたツールは即座にパーミッションエラーを返します。他のすべてのパーミッション設定より優先されます。ツール名のエイリアスやパターンマッチングをサポート: ツール名（`'write_file'`）、シェルコマンドのプレフィックス（`'Bash(rm *)'`）、パスパターン（`'Read(.env)'`, `'Edit(/src/**)'`）。                                                                                                                        |
-| `allowedTools`             | `string[]`                                     | -                  | 自動承認のための settings.json の `permissions.allow` に相当します。一致するツールは `canUseTool` コールバックをバイパスし自動実行されます。ツールが確認を必要とする場合にのみ適用されます。settings.json の `permissions.allow` と異なり、このパラメータ単体ではレジストリの許可リストをアクティブにしません。ただし、settings 提供の許可リストがアクティブな間、`allowedTools` のルールは有効な許可セットにマージされ、カバー範囲にカウントされるため、カバーされた組み込みツールは即時に登録されたままになります（カバーされていないものは deferred に降格されますが、削除はされません。#10075）。`excludeTools` と同じパターンマッチングをサポートします。例: `['Bash(git status)', 'Bash(npm test)']`。                                                                                                                                                                                                             |
+| `allowedTools`             | `string[]`                                     | -                  | 自動承認のための settings.json の `permissions.allow` に相当します。一致するツールは `canUseTool` コールバックをバイパスし自動実行されます。ツールが確認を必要とする場合にのみ適用されます。`permissions.allow` と同様に、これは純粋な自動承認であり、どのツールが登録されるかやどのスキーマが送信されるかに影響することはありません（#10075）。`excludeTools` と同じパターンマッチングをサポートします。例: `['Bash(git status)', 'Bash(npm test)']`。                                                                                                                                                                                                             |
 | `authType`                 | `'openai' \| 'anthropic' \| 'qwen-oauth' \| 'gemini' \| 'vertex-ai'` | -              | AI サービスの認証タイプ。指定すると、SDK は CLI に `--auth-type` として転送します。                                                                                                                                                                                                                                                    |
 | `agents`                   | `SubagentConfig[]`                             | -                  | セッション中に呼び出し可能なサブエージェントの設定。サブエージェントは特定のタスクやドメインに特化した AI エージェントです。                                                                                                                                                                                                                                                                                                                                             |
 | `includePartialMessages`   | `boolean`                                      | `false`            | `true` に設定すると、SDK は生成中の不完全なメッセージを出力し、AI の応答をリアルタイムでストリーミングできるようにします。                                                                                                                                                                                                                                                                                                                                                             |
@@ -92,12 +92,15 @@ SDK は以下のデフォルトタイムアウトを適用します。
 これらのタイムアウトは `timeout` オプションでカスタマイズできます。
 
 ```typescript
-const query = qwen.query('プロンプト', {
-  timeout: {
-    canUseTool: 60000, // パーミッションコールバック 60 秒
-    mcpRequest: 600000, // MCP ツール呼び出し 10 分
-    controlRequest: 60000, // 制御リクエスト 60 秒
-    streamClose: 15000, // ストリームクローズ待機 15 秒
+const q = query({
+  prompt: 'Your prompt',
+  options: {
+    timeout: {
+      canUseTool: 60000, // 60 seconds for permission callback
+      mcpRequest: 600000, // 10 minutes for MCP tool calls
+      controlRequest: 60000, // 60 seconds for control requests
+      streamClose: 15000, // 15 seconds for stream close wait
+    },
   },
 });
 ```
@@ -315,6 +318,7 @@ const result = query({
   },
 });
 ```
+
 ### SDK組み込みMCPサーバー
 
 SDKは、`tool`と`createSdkMcpServer`を提供し、SDKアプリケーションと同じプロセス内で動作するMCPサーバーを作成します。これは、別のサーバープロセスを実行せずに、AIにカスタムツールを公開したい場合に便利です。

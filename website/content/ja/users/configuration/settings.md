@@ -227,9 +227,9 @@ Qwen Code は、レガシーな設定を新しい形式に自動的に移行し�
 
 `timeout` はリクエストごとのタイムアウト時間（ミリ秒単位、デフォルト `120000`）です。`0` に設定するとリクエストタイムアウトを無効にします（`QWEN_STREAM_IDLE_TIMEOUT_MS=0` の規約に準拠）— リクエストを中止するのではなく。`QWEN_CODE_API_TIMEOUT_MS` 環境変数を通じて設定することもできます。これは以下の 2 つのストリームガードとは異なります。
 
-**stream guards (OpenAI 互換プロバイダーのみ):**
+**stream guards (OpenAI 互換および Anthropic プロバイダー):**
 
-2 つのガードがストリーミングレスポンスを境界付け、それぞれ `0` で無効にできます。いずれも Anthropic/Gemini ジェネレーターでは実装されておらず、それらは以下のドリップフィード形状を無制限のままにします。
+2 つのガードがストリーミングレスポンスを境界付け、それぞれ `0` で無効にできます。Gemini ジェネレーターはこれらを実装していないため、以下のドリップフィード形状は Gemini モデルでは無制限のままになります。
 
 - `streamIdleTimeoutMs`（デフォルト `240000`）はストリーミングチャンク間の非アクティブ時間を制限します。この時間静かなストリームは、リトライ可能な `ETIMEDOUT` として中止されます。プロバイダー対応モデルの場合は、対応する `modelProviders[providerId][].generationConfig` 配下に設定します。ランタイムモデルの場合は `model.generationConfig` を使用します。明示的なモデル値は `QWEN_STREAM_IDLE_TIMEOUT_MS` より優先され、`0` でアイドルガードが無効になります。
 - `QWEN_STREAM_MAX_LIFETIME_MS`（デフォルト `900000`）は、チャンクのフローに関係なく、1 つのストリーミングレスポンスのアップストリーム待機時間の合計上限を設定します — 完了しないドリップフィードストリームがリセットできないための境界です。
@@ -358,11 +358,11 @@ OpenAI 互換リクエストにおいて、テキストのみのツール結果�
 | `tools.shell.enableInteractiveShell`  | boolean | インタラクティブなシェル体験のために `node-pty` を使用します。`child_process` へのフォールバックも引き続き適用されます。 | `true` | |
 | `tools.shell.defaultTimeoutMs`        | number | エージェントが開始したフォアグラウンドシェルコマンドのデフォルトタイムアウト（ミリ秒単位）。シェルツールの呼び出しごとのタイムアウトがこれをオーバーライドします。未設定の場合、フォアグラウンドコマンドは 120000 ms（2 分）後にタイムアウトします。`0` に設定するとタイムアウトを無効にします。 | `undefined` | |
 | `tools.shell.heartbeatIntervalMs`     | number | フォアグラウンドシェルコマンドが出力を生成していない間に出力される liveness ハートビートの間隔（ミリ秒単位）。ハートビートは ACP クライアントと stream-json コンシューマーに転送され、サイレントなコマンドとデッドセッションを区別できます。未設定の場合、ハートビートは 10000 ms（10 秒）ごとに出力されます。`0` に設定するとハートビートを無効にします。 | `undefined` | |
-| `tools.core`                          | 文字列の配列 | **非推奨。** 次のバージョンで削除されます。代わりに `permissions.allow` + `permissions.deny` を使用してください。組み込みツールを許可リストに制限します。リストにないすべてのツールは無効になります。 | `undefined` | |
-| `tools.exclude`                       | 文字列の配列 | **非推奨。** 代わりに `permissions.deny` を使用してください。検出から除外するツール名。初回読み込み時に `permissions` 形式に自動的に移行されます。 | `undefined` | |
+| `tools.core`                          | 文字列の配列 | **非推奨。** 次のバージョンで削除されます。空でないリストは、コアツールセット（ファイル、シェル、検索および関連する組み込み）を許可リストに制限します。リストにないコアツールは無効になります（fail-closed）。そのセット外のツール — 動的に検出されたツール（MCP、スキル）や `agent`、`list_agents`、プランモードのライフサイクルツール、goal ツール、`task_stop`、`send_message`、`tool_search` などの合成/システム組み込み — は設計上許可リストをバイパスします。ツールを明示的に削除するには `permissions.deny` を使用してください。空のリスト（`[]`）は未設定として扱われ、何も無効化しません。 | `undefined` | |
+| `tools.exclude`                       | 文字列の配列 | **非推奨。** 代わりに `permissions.deny` を使用してください。検出から除外するツール名。自動移行はされません。レガシー設定は起動時に引き続き尊重されます。 | `undefined` | |
 | `tools.disabled`                      | 文字列の配列 | レジストリから完全に非表示にするツール名。`permissions.deny`（実行時に呼び出しをブロックする）とは異なり、無効化されたツールは登録されないため、`/tools` に表示されず、モデルから検出または呼び出しできません。たとえば、`["enter_plan_mode"]` はモデルが勝手にプランモードに切り替えるのを防ぎます。スコープをまたいで和集合としてマージされます。 | `undefined` | |
 | `tools.visible`                       | 文字列の配列 | `tool_search` を必要とせずに起動時に表示される遅延ツール名。リストされたツールは初期セッションでコアツールと一緒に表示されます。スコープをまたいで和集合としてマージされます。 | `undefined` | |
-| `tools.allowed`                       | 文字列の配列 | **非推奨。** 代わりに `permissions.allow` を使用してください。確認ダイアログをバイパスするツール名。初回読み込み時に `permissions` 形式に自動的に移行されます。 | `undefined` | |
+| `tools.allowed`                       | 文字列の配列 | **非推奨。** 代わりに `permissions.allow` を使用してください。確認ダイアログをバイパスするツール名。自動移行はされません。レガシー設定は起動時に引き続き尊重されます。 | `undefined` | |
 | `tools.approvalMode`                  | string | ツール使用のデフォルトの承認モードを設定します。 | `auto` | 指定可能な値: `plan`（分析のみ、ファイルの修正やコマンドの実行は行わない）、`default`（ファイルの編集やシェルコマンドの実行前に承認を要求）、`auto-edit`（ファイルの編集を自動承認）、`auto`（LLM クラシファイアが安全なアクションを自動承認し、リスクのあるものをブロック）、`yolo`（すべてのツール呼び出しを自動承認） |
 | `tools.discoveryCommand` | string | ツール検出のために実行するコマンド。 | `undefined` | |
 | `tools.callCommand` | string | `tools.discoveryCommand` を使用して検出された特定のツールを呼び出すためのカスタムシェルコマンドを定義します。シェルコマンドは以下の条件を満たす必要があります。最初のコマンドライン引数として関数 `name`（[function declaration](https://ai.google.dev/gemini-api/docs/function-calling#function-declarations) と全く同じ）を受け取る必要があります。[`functionCall.args`](https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/inference#functioncall) と同様に、`stdin` で関数の引数を JSON として読み取る必要があります。[`functionResponse.response.content`](https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/inference#functionresponse) と同様に、`stdout` で関数の出力を JSON として返す必要があります。 | `undefined` | |
@@ -377,7 +377,7 @@ OpenAI 互換リクエストにおいて、テキストのみのツール結果�
 | `tools.listDirectory.enabled` | boolean | 組み込みの `list_directory` ツールを有効にします。ほとんどの場合、`glob` でディレクトリの一覧表示がカバーされるため、デフォルトでは無効になっています。`coreTools` 許可リスト（`--core-tools` / `tools.core`）に明示的にリストされた場合も自動的に再有効化されます。 | `false` | 再起動が必要: はい |
 > [!note]
 >
-> **`tools.core` / `tools.exclude` / `tools.allowed` からの移行:** これらのレガシー設定は**非推奨**となり、初回ロード時に新しい `permissions` 形式へ自動的に移行されます。`permissions.allow` / `permissions.deny` を直接設定することを推奨します。対話的にルールを管理するには `/permissions` を使用してください。
+> **`tools.core` / `tools.exclude` / `tools.allowed` からの移行:** これらのレガシー設定は**非推奨**ですが、自動移行はされません。起動時に引き続き動作します。`tools.allowed` と `tools.exclude` は手動で `permissions.allow` と `permissions.deny` に移行してください。`tools.core` に正確な置き換えはありません。以下の表を参照してください。
 
 #### memory
 
@@ -478,9 +478,9 @@ OpenAI 互換リクエストにおいて、テキストのみのツール結果�
 
 | レガシー設定 | 相当する `permissions` ルール | 備考 |
 | --------------- | ------------------------------- | ------------------------------------------------------------ |
-| `tools.allowed` | `permissions.allow`             | 初回ロード時に自動移行                                  |
-| `tools.exclude` | `permissions.deny`              | 初回ロード時に自動移行                                  |
-| `tools.core`    | `permissions.allow` (allowlist) | 自動移行されます。リストにないツールは deferred に降格されます — 登録されたまま `tool_search` 経由でロード可能ですが、スキーマは即時のモデルリクエストからは除外されます |
+| `tools.allowed` | `permissions.allow`             | 自動移行されません。起動時に引き続き尊重されます        |
+| `tools.exclude` | `permissions.deny`              | 自動移行されません。起動時に引き続き尊重されます        |
+| `tools.core`    | `tools.eager` (+ `permissions.deny`) | `permissions.allow` には自動移行されません。`permissions.allow` は純粋な自動承認であり、許可リストの制限を再現できないためです（#10075）。`tools.eager` はリストにないデフォルトで eager なツールを遅延させます（`tool_search` 経由でロード可能なまま）。`permissions.deny` はツールを完全に削除します。どちらも空でない `tools.core` 許可リストの fail-closed 保証をコアツールセットに対して維持しません。将来のリリースで追加された組み込みは明示的に拒否されるまで登録されます。空の `tools.core` リストは未設定として扱われ、何も無効化しません。 |
 
 **設定例:**
 

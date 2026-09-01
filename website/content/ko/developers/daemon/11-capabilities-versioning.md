@@ -126,7 +126,7 @@ V2 Extension 배치 활성화: `extension_batch_activation_v2`는 `extension_man
 
 워크스페이스 한정 세션 읽기: `workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`, `workspace_session_live_state`. 활성 및 보관된 내보내기 태그는 서로 독립적이며 `session_export` 및 `workspace_qualified_rest_core`와도 독립적이므로, 클라이언트는 내보내려는 정확한 저장 상태를 프리플라이트해야 합니다. 지속된 전사 페이징은 제한된 읽기 정책 하에서 신뢰할 수 없는 보조를 허용합니다. 두 전체 내보내기 경로는 모두 신뢰 전용입니다. `workspace_session_live_state` 역시 `workspace_qualified_rest_core`와 독립적이며 신뢰 전용입니다. 선택된 런타임의 메모리 전용 라이브 세션 스냅샷과 카탈로그 버전을 제공하며, 신뢰할 수 없는 보조 지속 읽기 정책을 라이브 브리지 상태로 확장하지 않습니다.
 
-워크스페이스 변경 (Wave 4+): `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, **`workspace_settings`** (조건부), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, `workspace_file_upload`, **`workspace_reload`** (조건부).
+워크스페이스 변경 (Wave 4+): `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, `workspace_skill_settings_toggle`, `workspace_skill_settings_batch_toggle`, **`workspace_settings`** (조건부), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, `workspace_file_upload`, **`workspace_reload`** (조건부). 두 Skill 설정 태그는 지원 중단된 카탈로그 검증 `workspace_skill_toggle` 및 `workspace_skill_batch_toggle` 태그를 대체합니다.
 
 MCP 가드레일: **`mcp_guardrails`** (`modes: ['warn', 'enforce']`), `mcp_guardrail_events`, `mcp_server_runtime_mutation`, **`mcp_workspace_pool`** (조건부), **`mcp_pool_restart`** (조건부).
 
@@ -182,7 +182,7 @@ sequenceDiagram
 ## 상태 및 라이프사이클
 
 - `CAPABILITIES_SCHEMA_VERSION`는 와이어 엔벨로프 구조 버전으로, 현재 `1`입니다. 엔벨로프가 깨지는 경우에만 올립니다.
-- `SERVE_PROTOCOL_VERSION = 'v1'`은 프로토콜 기능 버전입니다. v1 내에서 기능을 추가하는 것은 추가 방식이며, 이전 클라이언트는 새 태그를 프리플라이트하지 않으면 새 동작을 볼 수 없습니다. 기능 제거는 v2 깨짐입니다.
+- `SERVE_PROTOCOL_VERSION = 'v1'`은 프로토콜 기능 버전입니다. v1 내에서 기능을 추가하는 것은 추가 방식이며, 이전 클라이언트는 새 태그를 프리플라이트하지 않으면 새 동작을 볼 수 없습니다. 수정된 동작은 v1 내에서 기능을 대체할 수 있습니다. 대체 태그가 이전 태그를 우선하며, 이전 태그는 더 이상 광고되지 않고, 클라이언트는 대체 태그를 프리플라이트해야 합니다. 대체 없이 기능을 제거하는 것은 v2 깨짐입니다.
 - `EVENT_SCHEMA_VERSION = 1`은 SSE 프레임의 `v` 필드입니다([`09-event-schema.md`](./09-event-schema.md) 참조). 이것은 독립적인 버전 축입니다. 이벤트 스키마를 올려도 프로토콜 버전이 오르지 않으며, 그 반대도 마찬가지입니다.
 - `session_resume`는 `POST /session/:id/resume`의 안정적인 데몬 기능입니다. `unstable_session_resume`는 폐기된 별칭으로 계속 광고됩니다. 기초가 되는 ACP 메서드가 여전히 `connection.unstable_resumeSession`으로 명명되어 있기 때문입니다. 새 클라이언트는 `session_resume`을 기능 감지해야 합니다.
 

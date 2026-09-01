@@ -152,9 +152,9 @@ await client
   .setWorkspaceSkillEnabled('review', true, { clientId: 'dashboard-1' });
 ```
 
-Pré-vérifiez `capabilities.features.includes('workspace_skill_toggle')`. Le `DaemonSkillToggleResult` typé rapporte le `skillName` canonique, si l'état disque a changé (`changed`), l'état d'activation (`applied`, `deferred` ou `partial`), et les comptes de sessions rafraîchies/échouées. `DaemonWorkspaceSkillStatus.userInvocable` est un champ optionnel false-only ; l'absence signifie que le skill est invocable par l'utilisateur.
+Pré-vérifiez `capabilities.features.includes('workspace_skill_settings_toggle')`. Le `DaemonSkillToggleResult` typé rapporte le `skillName` demandé après tronquage, si l'état disque a `changed`, l'état d'activation (`applied`, `deferred` ou `partial`), et les comptes de sessions rafraîchies/échouées. L'écriture est limitée aux paramètres et ne nécessite pas que le nom apparaisse dans `DaemonWorkspaceSkillStatus` ; le champ optionnel false-only `userInvocable` de ce type de statut reste utile pour afficher le catalogue live mais ne conditionne pas la persistance. Le tag obsolète `workspace_skill_toggle` décrivait le comportement antérieur validé par le catalogue et n'est pas annoncé pour ce contrat.
 
-Pour les modifications par lot, pré-vérifiez `workspace_skill_batch_toggle` et appelez l'une ou l'autre forme du client avec le même contrat :
+Pour les modifications par lot, pré-vérifiez `workspace_skill_settings_batch_toggle` et appelez l'une ou l'autre forme du client avec le même contrat. Les routes et les corps de requête sont inchangés :
 
 ```ts
 await client.setWorkspaceSkillsEnabled(['review', 'deploy'], false, {
@@ -165,7 +165,7 @@ await client
   .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
 ```
 
-`DaemonSkillBatchToggleResult` contient les `results` ordonnés des succès, les `errors` par cible, et les comptes de niveau lot pour l'activation et le rafraîchissement de session. Le démon persiste les cibles valides ensemble et rafraîchit les sessions actives une seule fois ; une erreur attendue sur une cible ne bloque pas les autres cibles valides. La méthode lève une erreur uniquement en cas de réponse non-200 ; un 200 ne signifie pas que chaque cible a été appliquée, inspectez donc toujours `errors` avant de considérer le lot comme réussi.
+`DaemonSkillBatchToggleResult` contient les `results` ordonnés, un tableau `errors` de compatibilité, et les comptes d'activation/rafraîchissement de session au niveau du lot. Les démons actuels traitent chaque nom structurellement valide dans l'ordre de la requête, persistent ensemble toutes les modifications de déclaration résultantes en au plus une écriture de paramètres verrouillée, rafraîchissent les sessions actives une seule fois si quelque chose a changé, et renvoient un tableau `errors` vide sans consulter le catalogue de skills chargé. Activer un nom sans déclaration de workspace existante et sans entrée effective `skills.defaultDisabled` renvoie `changed: false` et n'effectue aucune écriture. Les types d'éléments d'erreur restent disponibles afin que le SDK puisse toujours décoder les réponses des anciens démons. La méthode lève une erreur en cas de réponse non-200.
 
 L'activation par lot d'extensions V2 conserve le modèle opérationnel asynchrone des extensions. Pré-vérifiez `extension_batch_activation_v2`, soumettez un lot global par défaut ou un lot de surcharge pour un workspace sélectionné, puis interrogez-le avec l'assistant d'opération existant :
 
@@ -423,7 +423,7 @@ La valeur doit être un entier fini et non négatif (validé à la construction)
 
 ## Configuration
 
-| Paramètre | Où | Effet |
+| Knob | Où | Effet |
 | ------------------ | ------------------------------------ | --------------------------------------------------------------------------------------- |
 | `baseUrl` | Constructeur `DaemonClient` | URL du daemon ; les slashes finaux sont supprimés. |
 | `token` | Constructeur `DaemonClient` | Injecté en tant que `Authorization: Bearer`. |

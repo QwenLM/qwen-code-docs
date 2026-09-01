@@ -152,9 +152,9 @@ await client
   .setWorkspaceSkillEnabled('review', true, { clientId: 'dashboard-1' });
 ```
 
-事前に `capabilities.features.includes('workspace_skill_toggle')` を確認してください。型付きの `DaemonSkillToggleResult` は、正規の `skillName`、ディスク状態の `changed`、アクティベーション状態（`applied`、`deferred`、または `partial`）、およびリフレッシュ/失敗したセッション数を報告します。`DaemonWorkspaceSkillStatus.userInvocable` はオプションの false のみのフィールドです。不在の場合、スキルはユーザーが呼び出し可能であることを意味します。
+事前に `capabilities.features.includes('workspace_skill_settings_toggle')` を確認してください。型付きの `DaemonSkillToggleResult` は、トリミング済みのリクエスト `skillName`、ディスク状態の `changed`、アクティベーション状態（`applied`、`deferred`、または `partial`）、およびリフレッシュ/失敗したセッション数を報告します。書き込みは設定のみで、名前が `DaemonWorkspaceSkillStatus` に存在する必要はありません。そのステータス型のオプションの false のみの `userInvocable` フィールドはライブカタログのレンダリングに引き続き有用ですが、永続化を制限しません。廃止された `workspace_skill_toggle` タグは以前のカタログ検証済み動作を記述しており、このコントラクトではアドバタイズされていません。
 
-バッチ変更の場合は、事前に `workspace_skill_batch_toggle` を確認し、同じコントラクトでどちらのクライアント形状でも呼び出せます。
+バッチ変更の場合は、事前に `workspace_skill_settings_batch_toggle` を確認し、同じコントラクトでどちらのクライアント形状でも呼び出します。
 
 ```ts
 await client.setWorkspaceSkillsEnabled(['review', 'deploy'], false, {
@@ -165,9 +165,9 @@ await client
   .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
 ```
 
-`DaemonSkillBatchToggleResult` には、順序付きの成功 `results`、ターゲットごとの `errors`、およびバッチレベルのアクティベーション/セッションリフレッシュのカウントが含まれます。デーモンは有効なターゲットを一緒に永続化し、アクティブなセッションを一度だけリフレッシュします。1つの期待されるターゲットエラーが他の有効なターゲットをブロックすることはありません。このメソッドは非 200 レスポンスの場合にのみスローします。200 はすべてのターゲットが適用されたことを意味しないため、バッチを成功として扱う前に常に `errors` を確認してください。
+`DaemonSkillBatchToggleResult` には、順序付きの `results`、互換性のための `errors` 配列、およびバッチレベルのアクティベーション/セッションリフレッシュのカウントが含まれます。現在のデーモンは、リクエスト順序で構造的に有効な名前をすべて処理し、すべての結果の宣言変更を最大 1 回のロックされた設定書き込みで一緒に永続化し、変更があった場合にアクティブなセッションを一度だけリフレッシュし、ロードされたスキルカタログを参照せずに空の `errors` 配列を返します。既存のワークスペース宣言がなく、有効な `skills.defaultDisabled` エントリもない名前を有効にしても `changed: false` が返され、書き込みは行われません。エラーアイテムの型は、SDK が古いデーモンからのレスポンスを引き続きデコードできるようにするために残されています。このメソッドは非 200 レスポンスの場合にスローします。
 
-V2 Extension バッチアクティベーションは非同期の Extension 操作モデルを保持します。事前に `extension_batch_activation_v2` を確認し、グローバルデフォルトバッチまたは選択されたワークスペースのオーバーライドバッチを提出し、既存の操作ヘルパーでポーリングします。
+V2 Extension バッチアクティベーションは非同期の Extension 操作モデルを保持します。事前に `extension_batch_activation_v2` を確認し、グローバルデフォルトバッチまたは選択されたワークスペースのオーバーライドバッチを提出し、既存の操作ヘルパーでポーリングします:
 
 ```ts
 const globalHandle = await client.setExtensionDefaultActivations(
@@ -395,7 +395,7 @@ async function resilientSubscribe(session: DaemonSessionClient) {
 }
 ```
 
-再接続時、デーモンはサイズ制限付きリング（デフォルト 8000 イベント）から `id > lastSeenEventId` のイベントをリプレイします。ギャップがリングの容量を超える場合、`state_resync_required` フレームがクライアントにシグナルを送信し、`loadSession` を呼び出してバウンドされたリプレイスナップショットウィンドウから再構築します。そのスナップショットは `history_truncated` で始まる可能性があります。これをオペレーターが確認できるステータスマーカーとして扱い、別の再同期リクエストとして扱わないでください。
+再接続時、デーモンはバウンドされたリング（デフォルト 8000 イベント）から `id > lastSeenEventId` のイベントをリプレイします。ギャップがリングの容量を超える場合、`state_resync_required` フレームがクライアントにシグナルを送信し、`loadSession` を呼び出して現在のバウンドされたリプレイスナップショットウィンドウから再構築します。そのスナップショットは `history_truncated` で始まる可能性があります。これをオペレーターが確認できるステータスマーカーとして扱い、別の再同期リクエストとして扱わないでください。
 
 `history_truncated.fullTranscriptAvailable` は真偽値のケイパビリティフラグです。`true` の場合、呼び出し元は `DaemonClient.getSessionTranscriptPage(sessionId, { cursor, limit })` でフルアクティブ永続化リプレイをページングできます。`false` の場合、クライアントはバウンドされたリプレイのレンダリングを通常通り続行する必要があります。
 

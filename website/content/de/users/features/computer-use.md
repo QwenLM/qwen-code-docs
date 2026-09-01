@@ -7,7 +7,7 @@ wie Desktop-Anwendungen bedient werden, über zwei separat installierte Pakete:
 bundled computer-use skill
   -> @qwen-code/node-repl-mcp
   -> @qwen-code/cua-sdk/computer-use
-  -> nativer cua-driver Accessibility-Backend
+  -> native cua-driver accessibility backend
 ```
 
 Qwen Code bündelt nicht den MCP-Server, das SDK oder den nativen Treiber. Der Skill
@@ -25,8 +25,8 @@ Node.js 22 oder später und npm werden benötigt.
 Bei der ersten Verwendung führt der Skill diese Befehle selbst aus:
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.0
-npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.0
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.1
+npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.2
 ```
 
 Starte Qwen Code neu, nachdem der MCP-Server erstmals hinzugefügt wurde. Der Skill setzt dann

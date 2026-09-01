@@ -232,7 +232,7 @@ Qwen Code는 레거시 설정을 새 형식으로 자동 마이그레이션합�
 
 **스트림 가드 (OpenAI 호환 제공자 전용):**
 
-두 가드가 스트리밍 응답을 제한하며, 각각 `0`을 받아 비활성화합니다. Anthropic/Gemini 생성기는 구현하지 않으며, 아래의 drip-fed 형태를 제한 없이 둡니다.
+두 가드가 스트리밍 응답을 제한하며, 각각 `0`을 받아 비활성화합니다. Gemini 생성기는 이를 구현하지 않으므로, 아래의 drip-fed 형태가 Gemini 모델에서는 제한 없이 유지됩니다.
 
 - `streamIdleTimeoutMs`(기본값 `240000`)는 스트리밍 청크 _사이_의 비활성 시간을 제한합니다: 이 시간 동안 침묵하는 스트림은 재시도 가능한 `ETIMEDOUT`으로 중단됩니다. 제공자 지원 모델의 경우 일치하는 `modelProviders[providerId][].generationConfig` 아래에 설정하고, 런타임 모델의 경우 `model.generationConfig`를 사용하세요. 명시적 모델 값은 `QWEN_STREAM_IDLE_TIMEOUT_MS`보다 우선하며, `0`은 유휴 가드를 비활성화합니다.
 - `QWEN_STREAM_MAX_LIFETIME_MS`(기본값 `900000`)는 청크 흐름과 무관하게 하나의 스트리밍 응답의 _전체_ 업스트림 대기 시간을 제한합니다 — 완료되지 않는 drip-fed 스트림이 리셋할 수 없는 바운드.

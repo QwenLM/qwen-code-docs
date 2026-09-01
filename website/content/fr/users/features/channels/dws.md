@@ -1,6 +1,6 @@
 # DingTalk Workspace (DWS)
 
-Le canal DWS utilise un compte déjà authentifié par le CLI DingTalk Workspace. Il reçoit les messages directs et de groupe, reconnaît les cartes de notification de mention de document DingTalk, et publie la réponse de l'agent en retour au message d'origine ou au commentaire de document.
+Le canal DWS utilise un compte déjà authentifié par le CLI DingTalk Workspace. Il reçoit les messages directs et de groupe, reconnaît les cartes de notification de mention de document DingTalk et publie la réponse de l'agent en retour au message d'origine ou au commentaire de document.
 
 Ceci est distinct du [canal bot DingTalk](./dingtalk). Continuez à utiliser `type: "dingtalk"` pour un bot d'application dédié ; utilisez `type: "dws"` lorsque Qwen Code doit agir via une connexion DWS existante.
 

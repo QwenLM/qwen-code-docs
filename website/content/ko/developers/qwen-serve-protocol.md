@@ -196,8 +196,8 @@ OPTIONS 프리플라이트 요청(`Access-Control-Request-Method` 또는 `Access
  'mcp_server_runtime_mutation',
  'workspace_file_read', 'workspace_file_bytes', 'workspace_file_write',
  'workspace_file_upload',
- 'session_approval_mode_control', 'workspace_tool_toggle', 'workspace_skill_toggle',
- 'workspace_skill_batch_toggle',
+ 'session_approval_mode_control', 'workspace_tool_toggle',
+ 'workspace_skill_settings_toggle', 'workspace_skill_settings_batch_toggle',
  'extension_batch_activation_v2',
  'workspace_settings', 'workspace_init', 'workspace_mcp_restart',
  'session_recap', 'session_generation', 'session_btw', 'session_shell_command',
@@ -272,7 +272,7 @@ OPTIONS 프리플라이트 요청(`Access-Control-Request-Method` 또는 `Access
 
 `session_info`는 `GET /workspace/:id/session-info`와 그 `/workspaces/:workspace/session-info` 쌍을 광고합니다. 응답은 목록 메타데이터를 수화하지 않고 지속된 활성 및 아카이브된 세션 수를 집계합니다. 명시적인 O(n) 디스크 스캔이며 폴링해서는 안 됩니다; 클라이언트는 `truncated: true`를 하한 결과로 취급해야 합니다.
 
-`session_approval_mode_control`, `workspace_tool_toggle`, `workspace_skill_toggle`, `workspace_skill_batch_toggle`, `extension_batch_activation_v2`, `workspace_init`, `workspace_mcp_restart`는 아래에 문서화된 변이 제어 라우트를 광고합니다. 이들은 변이 게이트에 의해 엄격하게 게이트됩니다(bearer 토큰 없이 구성된 데몬은 이들을 401 `token_required`로 거부). 이전 데몬은 `404`를 반환합니다; 해당 기능을 노출하기 전에 각 태그를 프리플라이트하세요.
+`session_approval_mode_control`, `workspace_tool_toggle`, `workspace_skill_settings_toggle`, `workspace_skill_settings_batch_toggle`, `extension_batch_activation_v2`, `workspace_init`, `workspace_mcp_restart`는 아래에 문서화된 변이 제어 라우트를 광고합니다. 이들은 변이 게이트에 의해 엄격하게 게이트됩니다(bearer 토큰 없이 구성된 데몬은 이들을 401 `token_required`로 거부). 이전 데몬은 `404`를 반환합니다; 해당 기능을 노출하기 전에 각 태그를 프리플라이트하세요.
 
 `mcp_guardrails`(이슈 [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 14)는 MCP 예산 표면을 다룹니다: `GET /workspace/mcp`의 `clientCount` / `clientBudget` / `budgetMode` / `budgets[]` 필드, 서버별 셀의 `disabledReason` 필드, 그리고 `--mcp-client-budget` / `--mcp-budget-mode` CLI 플래그. 이전 데몬은 새 필드를 완전히 생략합니다; SDK 클라이언트는 `budgets[]` 의미에 의존하기 전에 이 태그를 프리플라이트합니다. 레지스트리 설명자는 향후 기능 모드 노출을 위해 `modes: ['warn', 'enforce']`도 포함합니다 — 현재는 클라이언트가 스냅샷의 `budgetMode` 필드에서 모드를 추론합니다. `enforce` 모드에서의 서버 거부는 `Object.entries(mcpServers)` 선언 순서에 따라 결정적입니다; 향후 범위 우선순위 레이어(qwen-code가 채택할 경우)는 claude-code의 `plugin < user < project < local` 규칙을 반영하여 "최저 우선순위 먼저"로 변경할 수 있습니다.
 
@@ -505,6 +505,7 @@ Content-Type: application/json
 | `browser_automation_mcp`            | ACP HTTP가 활성화되고, `cdp_tunnel_over_ws`가 활성이며, bearer 토큰이 `/cdp`를 차단하지 않으며, `QWEN_CDP_MCP_COMMAND`가 외부 stdio MCP 어댑터를 지정합니다. 메인 CLI 패키지는 브라우저 자동화 어댑터를 번들하지 않습니다; 이 태그 없이는 Chrome 확장 사이드 패널 채팅이 여전히 작동할 수 있지만, 콘솔/네트워크/스크린샷/클릭 도구는 기본적으로 등록되지 않습니다. |
 | `voice_transcribe`                  | Voice WebSocket 엔드포인트가 마운트되어 있습니다; 성공적인 전사에는 구성된 Voice 모델이 여전히 필요합니다. |
 | `realtime_voice`                    | macOS WebShell 데몬에서 Live Voice가 활성화되고 네이티브 Host 통합이 활성입니다. `/live/status`가 준비 상태를 보고하지만, 기능이 활성화될 때까지 기능은 철회됩니다. |
+| `web_terminal`                      | ACP HTTP가 활성화되어 있으므로 인증된 Web Terminal 엔드포인트를 사용할 수 있습니다. |
 
 <!-- conditional-serve-features:end -->
 
@@ -2747,9 +2748,9 @@ SSE 이벤트(워크스페이스 범위): `{toolName, enabled, originatorClientI
 
 #### `POST /workspace/skills/:name/enable`
 
-기능 태그: `workspace_skill_toggle`. 워크스페이스 한정 형태는 `POST /workspaces/:workspace/skills/:name/enable`입니다.
+기능 태그: `workspace_skill_settings_toggle`. 워크스페이스 한정 형태는 `POST /workspaces/:workspace/skills/:name/enable`입니다.
 
-워크스페이스 skill 설정을 통해 로드된 사용자 호출 가능 skill을 토글하며, CLI `/skills` 패널의 Space 키 동작과 일치합니다. 조회는 대소문자를 무시하며, 영구화 및 응답은 skill의 정식 이름을 사용합니다. `skills.defaultDisabled` skill을 활성화하면 워크스페이스 `skills.enabled` 옵트인이 추가되고, 비활성화하면 해당 옵트인이 제거되고 워크스페이스 `skills.disabled` 항목이 추가됩니다. 더 이상 로드되지 않는 skill에 대한 기존 항목은 유지되며, 대상에 대한 중복/대소문자 변형 항목은 축약됩니다. 시스템 기본값, 사용자, 또는 시스템 범위에서 상속된 하드 비활성 항목은 skill을 잠급니다: 워크스페이스 범위는 이를 재정의할 수 없습니다.
+로드된 Skill 카탈로그를 참조하지 않고 이름에 대한 워크스페이스 Skill 설정을 업데이트합니다. 정리된 요청 이름은 영구화에 전달되고 응답에 반환됩니다. `skills.defaultDisabled` Skill을 활성화하면 워크스페이스 `skills.enabled` 옵트인이 추가됩니다; 비활성화하면 해당 옵트인이 제거되고 워크스페이스 `skills.disabled` 항목이 추가됩니다. 더 이상 로드되지 않는 Skill에 대한 기존 항목은 유지되며, 대상에 대한 중복/대소문자 변형 항목은 축약됩니다. 상위 범위에서 상속된 하드 `skills.disabled` 항목은 유효한 가용성에 대해 권위 있게 유지되지만, 워크스페이스 범위가 자체 선언을 기록하거나 제거하는 것을 방지하지는 않습니다. 그렇지 않으면 워크스페이스 선언은 일반적인 `skills.disabled > skills.enabled > skills.defaultDisabled` 해석에 참여하며 상위 범위의 `skills.defaultDisabled` 또는 `skills.enabled` 항목을 재정의할 수 있습니다.
 
 이것은 ACP `qwen/skills/setEnabled` 관리 skill 작업 및 `disable-model-invocation` 프론트matter 필드와 다릅니다. 유효한 skill 가용성은 `skills.disabled` > `skills.enabled` > `skills.defaultDisabled`를 따릅니다. 하드 및 기본 비활성화 모두 슬래시 명령어/모델 가용성에서 skill을 제거하고 이후 skill 실행을 거부합니다. `disable-model-invocation: true`는 직접 사용자 호출을 가능하게 유지하고 모델 호출에서만 skill을 숨깁니다.
 
@@ -2779,16 +2780,14 @@ SSE 이벤트(워크스페이스 범위): `{toolName, enabled, originatorClientI
 - `400 {code: 'invalid_skill_name'}` — 빈 경로 파라미터, 또는 256자 초과.
 - `400 {code: 'invalid_enabled_flag'}` — `enabled`가 없거나 비불리언.
 - `403 {code: 'untrusted_workspace'}` — 선택된 워크스페이스가 신뢰되지 않음.
-- `404 {code: 'skill_not_found'}` — 이름과 일치하는 로드된 skill이 없음.
-- `409 {code: 'skill_not_toggleable', reason: 'not_user_invocable' | 'inactive_extension' | 'locked', lockedScope?: 'system' | 'user' | 'systemDefaults'}` — CLI 패널에서 대상을 토글할 수 없음. `lockedScope`는 `reason`이 `locked`일 때만 존재합니다.
 
 이 변경은 변경된 키마다(`skills.disabled` 및/또는 `skills.enabled`) 워크스페이스 범위 `settings_changed` 이벤트를 재사용합니다; 새 이벤트 타입을 추가하지 않습니다. 각 이벤트는 동일한 `mutation` 객체를 포함합니다: `{ id, kind: 'skill_toggle', skills: [{ name, enabled }], activation, sessionsRefreshed, sessionsFailed }`. `id`는 하나의 토글 요청에서 생성된 모든 설정 이벤트를 상관시킵니다. `skills`는 실제로 변경된 Skill의 정식 이름과 결과 활성화 상태를 나열합니다. 워크스페이스 skill 상태 셀에는 선택적 `disabledReason: 'hard' | 'default' | 'inactive_extension'` 및 `lockedScope: 'system' | 'user' | 'systemDefaults'` 필드가 포함됩니다.
 
 #### `POST /workspace/skills/enable`
 
-기능 태그: `workspace_skill_batch_toggle`. 워크스페이스 한정 형태는 `POST /workspaces/:workspace/skills/enable`입니다.
+기능 태그: `workspace_skill_settings_batch_toggle`. 워크스페이스 한정 형태는 `POST /workspaces/:workspace/skills/enable`입니다.
 
-하나의 요청에서 최대 100개의 로드된 Skill을 토글합니다; 캡은 중복 제거 전 원시 `skillNames` 항목을 카운트합니다. 이름은 정리되고 첫 발견 순서를 유지하면서 대소문자 무시로 중복 제거됩니다. 데몬은 하나의 Skill 상태 스냅샷에 대해 검증하고, 모든 유효한 변경을 하나의 잠긴 설정 쓰기로 영구화하며, 활성 세션을 한 번 새로 고칩니다. 처리는 예상 대상 오류에 대해 최선 노력입니다: 알 수 없거나, 숨겨지거나, 비활성 확장이거나, 잠긴 대상은 `errors`에 기록되며 다른 유효한 대상이 적용되는 것을 방지하지 않습니다. 예기치 않은 영속성 또는 런타임 생성 실패는 여전히 전체 요청을 실패시킵니다.
+하나의 요청에서 최대 100개의 이름에 대한 워크스페이스 Skill 설정을 업데이트합니다; 캡은 중복 제거 전 원시 `skillNames` 항목을 카운트합니다. 이름은 정리되고 첫 발견 순서와 대소문자를 유지하면서 대소문자 무시로 중복 제거됩니다. 데몬은 로드된 Skill 카탈로그를 참조하지 않습니다. 최대 하나의 잠긴 설정 쓰기로 모든 결과 선언 변경을 적용하며, 변경된 사항이 있을 때 활성 세션을 한 번 새로 고칩니다. 기존 워크스페이스 선언이 없고 유효한 `skills.defaultDisabled` 항목도 없는 이름을 활성화하는 것은 no-op(`changed: false`)이며 쓰기를 수행하지 않습니다. 예기치 않은 영속성 또는 런타임 생성 실패는 전체 요청을 실패시킵니다.
 
 요청:
 
@@ -2829,7 +2828,7 @@ SSE 이벤트(워크스페이스 범위): `{toolName, enabled, originatorClientI
 }
 ```
 
-대상 오류는 `skill_not_found`, `skill_not_toggleable`, 또는 `skill_inactive_extension`을 사용합니다. 잘못된 요청은 `invalid_skill_names`, `invalid_skill_name`, 또는 `invalid_enabled_flag`와 함께 HTTP 400을 반환합니다. 인증, 워크스페이스 신뢰, 클라이언트 정체성, 예기치 않은 영속성 실패, 그리고 런타임 생성 실패는 표준 라우트 게이트를 통해 전체 요청을 실패시킵니다. 일괄 수준의 `activation`, `sessionsRefreshed`, 그리고 `sessionsFailed`는 모든 변경된 결과가 공유하는 단일 활성 세션 새로 고침을 설명합니다. `activation`은 결과가 아닌 새로 고침 시도를 보고합니다: 대상이 변경되지 않은 일괄(예: 모든 대상에 오류)도 세션이 활성이면 `applied`로 응답하며, 단일 Skill no-op 응답과 일치하므로 실제로 변경된 내용은 각 결과의 `changed` 플래그와 `errors` 배열에서 파생합니다. 하나 이상의 대상이 변경되면 데몬은 단일 Skill 라우트와 동일한 `settings_changed` 변경 메타데이터를 발행합니다; 해당 요청의 모든 `skills.disabled` / `skills.enabled` 이벤트는 하나의 `mutation.id`를 공유합니다.
+잘못된 형식의 요청은 `invalid_skill_names`, `invalid_skill_name`, 또는 `invalid_enabled_flag`와 함께 HTTP 400을 반환합니다. 인증, 워크스페이스 신뢰, 클라이언트 정체성, 예기치 않은 영속성 실패, 그리고 런타임 생성 실패는 표준 라우트 게이트를 통해 전체 요청을 실패시킵니다. `errors`는 와이어 호환성을 위해 응답에 남아 있으며 구조적으로 유효한 이름에 대해서는 비어 있습니다. 일괄 수준의 `activation`, `sessionsRefreshed`, 그리고 `sessionsFailed`는 모든 변경된 결과가 공유하는 단일 활성 세션 새로 고침을 설명합니다. 대상이 변경되지 않은 일괄은 자식이 활성일 때 `applied`로, 없으면 `deferred`로 응답할 수 있으며, 단일 Skill no-op 응답과 일치하므로 실제로 변경된 내용은 각 결과의 `changed` 플래그에서 파생합니다. 하나 이상의 대상이 변경되면 데몬은 단일 Skill 라우트와 동일한 `settings_changed` 변경 메타데이터를 발행합니다; 해당 요청의 모든 `skills.disabled` / `skills.enabled` 이벤트는 하나의 `mutation.id`를 공유합니다.
 
 #### `POST /workspace/init`
 

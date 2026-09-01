@@ -1,5 +1,3 @@
----
----
 
 # デーモンモード (`qwen serve`)
 
@@ -165,7 +163,7 @@ curl http://127.0.0.1:4170/session/$SESSION_ID/status
 
 `GET /workspace/mcp`、`GET /workspace/skills`、および `GET /workspace/providers` はライブ ACP ランタイムを報告し、アイドル時には ACP 子を起動しません。アイドル状態のデーモンは空のスナップショットで `initialized: false` を返します。セッションが存続すると、`initialized: true` に切り替わり、実際の状態を表面化します。
 
-CLI の `/skills` パネルをリモートでミラーするには、`workspace_skill_toggle` ケーパビリティを確認した後、`POST /workspace/skills/:name/enable` を `{ "enabled": true | false }` で呼び出します。複数のスキルを変更するには、`workspace_skill_batch_toggle` を確認し、`POST /workspace/skills/enable` を `{ "skillNames": ["review", "deploy"], "enabled": false }` で呼び出します。レスポンスは成功した `results` をターゲットごとの `errors` から分離し、有効なターゲットをまとめて永続化し、アクティブな ACP セッションを一度にリフレッシュします。これらのルートはワークスペースの `skills.disabled` と `skills.enabled` を必要に応じて更新し、不明、非表示、非アクティブな拡張、より高スコープでロック、および信頼されていないターゲットを拒否し、アクティブな ACP セッションを即座にリフレッシュします。`skills.defaultDisabled` のスキルを有効にすると、`skills.enabled` に正規のオプトインが書き込まれます。より高スコープから継承されたハードな `skills.disabled` エントリは引き続きオーバーライドできません。スキルのステータスセルは `disabledReason`（`hard`、`default`、または `inactive_extension`）とオプションの `lockedScope` を公開します。`deferred` レスポンスは、ACP 子が実行されていない間に設定が保存されたことを意味します。子の起動時に適用されます。`skills.disabled` は手動とモデルの両方の使用を無効にします。`disable-model-invocation: true` とは異なり、後者は直接の `/skill-name` 呼び出しを有効にしたままにします。V2 Extension バッチの場合は `extension_batch_activation_v2` を確認してください。`PUT /extensions/activation` はグローバルデフォルトを変更し、`PUT /workspaces/:workspace/extensions/activation` は選択したワークスペースのオーバーライドを変更し、`"inherit"` を受け付けてクリアします。どちらも `extensionNames` で名前を受け付けます。`enabled` と `disabled` はインストール前に宣言可能ですが、不明な名前の `inherit` は no-op です。各リクエストは 1 つのポーリング対象の操作を返します。
+ワークスペースの Skill 設定を名前で更新するには、`workspace_skill_settings_toggle` ケーパビリティを確認した後、`POST /workspace/skills/:name/enable` を `{ "enabled": true | false }` で呼び出します。複数の名前を変更するには、`workspace_skill_settings_batch_toggle` を確認し、`POST /workspace/skills/enable` を `{ "skillNames": ["review", "deploy"], "enabled": false }` で呼び出します。これは構造的に有効なすべての名前をまとめて処理し、結果の宣言変更を最大 1 回のロックされた設定書き込みで永続化し、何か変更があった場合にアクティブな ACP セッションを一度リフレッシュします。これらのルートは、ロードされた Skill カタログを参照せずにワークスペースの `skills.disabled` と `skills.enabled` を書き込むため、インストール前または Extension が非アクティブな間に名前を無効にできます。インストール前に名前を有効にすると、一致するワークスペースの disable を削除したり、既存のワークスペースの `skills.enabled` 宣言をリクエストされた大文字小文字に正規化したり、有効な `skills.defaultDisabled` エントリが適用される場合に明示的なオプトインを書き込んだりします。既存のワークスペース宣言がなく、そのようなエントリもない場合、enable は no-op です（`changed: false`）。それらのパスとリクエストボディは変更されていません。設定固有のケーパビリティは、廃止されたカタログ検証の Skill トグルタグを置き換えます。バッチの `errors` 配列はワイヤー互換性のために残されており、構造的に有効な名前に対しては空です。より高スコープから継承されたハードな `skills.disabled` エントリは有効な可用性に対して引き続き権限を持ちますが、ワークスペースが独自の宣言を記録または削除することをブロックしません。Skill のステータスセルは `disabledReason`（`hard`、`default`、または `inactive_extension`）とオプションの `lockedScope` を公開します。信頼されていないワークスペースの書き込みは引き続き拒否されます。`deferred` レスポンスは、liveness チェック時に子がライブでなかったか、変更されたリクエストが必要なリフレッシュ中にその子/セッションを失ったことを意味します。`changed` が true の場合、永続化された宣言は子の起動時に適用されます。宣言が実際に変更されたかどうかは `changed` によって報告されます（バッチリクエストの各結果で）。`skills.disabled` は手動とモデルの両方の使用を無効にします。`disable-model-invocation: true` とは異なり、後者は直接の `/skill-name` 呼び出しを有効にしたままにします。V2 Extension バッチの場合は `extension_batch_activation_v2` を確認してください。`PUT /extensions/activation` はグローバルデフォルトを変更し、`PUT /workspaces/:workspace/extensions/activation` は選択したワークスペースの正確なオーバーライドを変更し、`"inherit"` を受け付けてクリアします。どちらも `extensionNames` で名前を受け付けます。`enabled` と `disabled` はインストール前に宣言可能ですが、不明な名前の `inherit` は no-op です。各リクエストは 1 つのポーリング対象の操作を返します。
 
 `GET /workspace/env` と `GET /workspace/preflight` は、ACP の状態に関係なく常に `initialized: true` で応答します。`env` は ACP を参照しません（デーモンプロセス情報のみ）。`preflight` は `process.*` からデーモンレベルのセルに回答し、子がアイドル状態のときは ACP レベルのセルに対して `status: 'not_started'` プレースホルダーを出力します。
 
@@ -271,7 +269,7 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" http://your-host:4170/capabil
 
 トークンの比較は定数時間で行われます（SHA-256 + `crypto.timingSafeEqual`）。401 レスポンスは「ヘッダーなし」、「不正なスキーム」、「不正なトークン」で統一されているため、サイドチャネルで区別できません。
 
-`--open-with-auth` はデーモン固有のトークンソースではなく、CLI _owned_ の便宜機能です。`--token` が定義されている場合（空でも）それを優先し、次に `QWEN_SERVER_TOKEN` を選択し、選択された値をトリムし、結果が空の場合にのみ生成します。デーモンは生成された値を永続化せず、`QWEN_SERVER_TOKEN` としてエクスポートもしません。既存の内部認証済み子プロセスのハンドオフは変更されません。Web Shell はブラウザのコピーを受信タブの `sessionStorage` にのみ保存します。このモードはクロスタブや外部クライアントの資格情報発見メカニズムを追加しません。トークンは独立に取消可能ではなく、クライアント ID にも紐付きません。 possession は他の Bearer トークンと同じデーモン権限を付与します。
+`--open-with-auth` はデーモン固有のトークンソースではなく、CLI _owned_ の便宜機能です。`--token` が定義されている場合（空でも）それを優先し、次に `QWEN_SERVER_TOKEN` を選択し、選択された値をトリムし、結果が空の場合にのみ生成します。デーモンは生成された値を永続化せず、`QWEN_SERVER_TOKEN` としてエクスポートもしません。既存の内部認証済み子プロセスのハンドオフは変更されません。Web Shell はブラウザのコピーを受信タブの `sessionStorage` にのみ保存します。このモードはクロスタブや外部クライアントの資格情報発見メカニズムを追加しません。トークンは独立に取消可能ではなく、クライアント ID にも紐付きません。 possession は他の Bearer トークンと同じデーモン権限を付与します。[認証済み Web Shell 起動デザイン](../design/2026-08-22-serve-open-with-auth.md) および [#4514](https://github.com/QwenLM/qwen-code/issues/4514) の関連する将来の作業も参照してください。
 
 ## HTTPS / TLS（モバイル / クロスデバイスアクセス用）
 
@@ -304,6 +302,7 @@ qwen serve \
 - **TLS は認証と直交します** — HTTPS はトランスポートを暗号化しますが、Bearer トークンが引き続きすべての API ルートを保護します。ループバック以外のバインドでは、TLS の有無にかかわらずトークンが必要です。
 - **スコープは TLS ターミネーションのみ** — 自動生成や ACME / Let's Encrypt はサポートしていません。これは LAN / 開発環境向けの便利な機能です。インターネットに公開するデプロイメントでは、リバースプロキシで TLS をターミネートしてください（後述の脅威モデルを参照）。
 - **チャネルワーカーは `https://` でデーモンにダイアルバックします** — チャネルワーカーは提供されている証明書信頼する必要があります。デーモンは `NODE_EXTRA_CA_CERTS` に証明書を注入します。mkcert フローは CA 発行のため、リーフ単体ではチェーンのアンカーになりません。オペレーターは `--channel` で起動する前に `NODE_EXTRA_CA_CERTS="$(mkcert -CAROOT)/rootCA.pem"` をエクスポートする必要があります。
+- **IPv6 ワイルドカードバインドは、このホストが実際に割り当てるループバックにダイアルバックされます** — `--hostname ::`（または `[::]`）は IPv6 ソケットをバインドし、空の `--hostname` も IPv6 が利用可能な場合にバインドします（利用不可能な場合、Node は `0.0.0.0` のバインドにフォールバックします）。そのソケットはデュアルスタックです（Node は `IPV6_V6ONLY=0` をピン留めするため、`net.ipv6.bindv6only` sysctl はこれを変更しません）。両方のループバックから通常到達可能です。ただし、IPv4 を全く持たないホストは `::1` のみを持ち、`::` をバインドするがループバックに `::1` を持たないホスト（例: `net.ipv6.conf.lo.disable_ipv6=1`）は `127.0.0.1` のみを持ちます。ワーカーは、このホストが `::1` を割り当てる場合は `[::1]` に、それ以外の場合は `127.0.0.1` に送信されます。IPv6 ワイルドカードバインド用の提供証明書は、その SAN に両方のループバックを含む必要があります（`mkcert localhost 127.0.0.1 ::1` でカバーされます）。ブートの信頼診断は、ワーカーがダイアルする正確な URL を検査し、ギャップを指摘します。`--hostname 0.0.0.0` は変更なく、引き続き `127.0.0.1` が必要です。
 - **`--tls-cert` のインプレース回転にはデーモンの再起動が必要です** — デーモンは起動時に読み取ったバイトを提供します。再起動するまで、レスポーンされたワーカーはデーモンが提示するものより新しいコンテンツをロードでき、ハンドシェイク失敗を引き起こす可能性があります。
 
 ## CLI フラグ

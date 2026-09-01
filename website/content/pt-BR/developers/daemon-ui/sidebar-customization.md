@@ -225,7 +225,7 @@ type WebShellSidebarSessionActionItem =
   | 'export' // 📤 Export chat history (dropdown menu)
   | 'delete' // 🗑 Delete session (dropdown menu)
   | 'pin' // 📌 Pin/Unpin (inline button)
-  | 'archive'; // 📦 Archive (inline button)
+  | 'archive'; // 📦 Archive (dropdown menu)
 
 /** Subset with working inline (hover-button) handlers. */
 type WebShellSidebarSessionInlineActionItem =
@@ -237,27 +237,29 @@ type WebShellSidebarSessionInlineActionItem =
 
 interface WebShellSidebarSessionActionsOptions {
   items?: readonly WebShellSidebarSessionActionItem[]; // which actions to show (default: all)
-  inlineItems?: readonly WebShellSidebarSessionInlineActionItem[]; // which items appear as inline buttons (default: ['pin', 'archive'])
+  inlineItems?: readonly WebShellSidebarSessionInlineActionItem[]; // which items appear as inline buttons (default: ['pin'])
 }
 ```
 
 Controla quais botões de ação aparecem nas linhas de sessão:
 
 - **`items`**: Controle mestre para todas as ações (inline e dropdown). Se um item não está em `items`, ele é oculto em todos os lugares.
-- **`inlineItems`**: Controla quais itens aparecem como **botões inline** (ao passar o mouse). O padrão é `['pin', 'archive']`. Apenas itens com handlers inline funcionais podem ser usados: `'pin'`, `'archive'`, `'rename'`, `'export'`, `'delete'`. `'details'` e `'group'` são apenas dropdown.
+- **`inlineItems`**: Controla quais itens aparecem como **botões inline** (ao passar o mouse). O padrão é `['pin']` — archive permanece no dropdown por padrão porque o slot de hover fica sobre o alvo de clique da linha e é fácil de acionar acidentalmente. Apenas itens com handlers inline funcionais podem ser usados: `'pin'`, `'archive'`, `'rename'`, `'export'`, `'delete'`. `'details'` e `'group'` são apenas dropdown.
 
 **Prioridade de visibilidade**: Tanto `items` quanto a condição integrada do item quanto `inlineItems` devem ser atendidos para que o botão inline apareça. Por exemplo, `delete` como inline requer que `items` inclua `'delete'` E `inlineItems` inclua `'delete'`.
 
 | Valor                                      | Efeito                                                |
 | ------------------------------------------ | ----------------------------------------------------- |
-| `undefined` (padrão)                       | Todas as ações exibidas, pin + archive como inline    |
+| `undefined` (padrão)                       | Todas as ações exibidas, apenas pin como inline       |
 | `{ inlineItems: ['pin', 'delete'] }`       | Pin + delete como botões inline                       |
 | `{ inlineItems: [] }`                      | Nenhum botão inline                                   |
 | `{ inlineItems: ['archive', 'export'] }`   | Archive + export como botões inline                   |
 
 O trigger do dropdown (⋮) é automaticamente oculto quando nenhum item de
-dropdown está habilitado. Os botões inline (`pin`, `archive`) só são
-exibidos quando tanto sua condição de capability quanto `items` os incluem.
+dropdown está habilitado. Os botões inline só são exibidos quando tanto sua
+condição de capability quanto `items` os incluem. Archive fica desabilitado
+na sessão atual e em qualquer sessão com um turno em execução, porque o
+daemon encerra a sessão ao vivo ao arquivá-la.
 
 ```tsx
 sidebar={{

@@ -65,12 +65,12 @@ Erstellt eine neue Query-Sitzung mit Qwen Code.
 | `mcpServers`             | `Record<string, McpServerConfig>`              | -                | MCP-Server (Model Context Protocol), mit denen verbunden werden soll. Unterstützt externe Server (stdio/SSE/HTTP) und SDK-eingebettete Server. Externe Server werden mit Transport-Optionen wie `command`, `args`, `url`, `httpUrl` usw. konfiguriert. SDK-Server verwenden `{ type: 'sdk', name: string, instance: Server }`.                                                                                                                                                                                        |
 | `abortController`        | `AbortController`                              | -                | Controller zum Abbrechen der Query-Sitzung. Rufe `abortController.abort()` auf, um die Sitzung zu beenden und Ressourcen freizugeben.                                                                                                                                                                                                                                                                                                                                                                |
 | `debug`                  | `boolean`                                      | `false`          | Aktiviert den Debug-Modus für ausführliche Protokollierung durch den CLI-Prozess.                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `maxSessionTurns`        | `number`                                       | `-1` (unbegrenzt) | Maximale Anzahl von Konversationsdurchläufen, bevor die Sitzung automatisch beendet wird. Ein Durchlauf besteht aus einer Benutzernachricht und einer Assistant-Antwort.                                                                                                                                                                                                                                                                                                                                        |
-| `coreTools`              | `string[]`                                     | -                | Verwendet die alte `coreTools`-/CLI `--core-tools`-Allowlist-Semantik. Wenn angegeben, werden nur passende Core-Tools für die Sitzung registriert. Dies ist getrennt von `permissions.allow` in settings.json, das ebenfalls beim Start eine Allowlist auf Registry-Ebene aktiviert: wenn dort mindestens eine gültige Allow-Regel konfiguriert ist (fehlerhafte Einträge zählen nicht), werden eingebaute Tools, die von keiner Allow- oder Ask-Regel abgedeckt sind, nicht registriert (MCP-Tools, der `--json-schema` `structured_output`-Vertrag, die Plan-Mode-Lifecycle-Tools, `task_stop`, `tool_search` und die `computer_use__*`-Familie sind ausgenommen; erfordert Neustart, #9827, #10075). Der SDK-Parameter `allowedTools` kann die Allowlist nicht eigenständig aktivieren, aber während die Allowlist aktiv ist, werden seine Regeln in das effektive Allow-Set zusammengeführt und zählen zur Abdeckung, sodass abgedeckte eingebaute Tools registriert bleiben. Beispiel: `['read_file', 'edit', 'run_shell_command']`. |
+| `maxSessionTurns`        | `number`                                       | `-1` (unbegrenzt) | Maximale Anzahl von Konversationsdurchläufen, bevor die Sitzung automatisch beendet wird. Muss eine ganze Zahl sein. Ein Durchlauf besteht aus einer Benutzernachricht und einer Assistant-Antwort.                                                                                                                                                                                                                                                                                                                                        |
+| `coreTools`              | `string[]`                                     | -                | Verwendet die alte `coreTools`-/CLI `--core-tools`-Allowlist-Semantik. Wenn angegeben, werden nur passende Core-Tools für die Sitzung registriert. Dies ist die einzige Allowlist-Option, die die Registrierung eingebauter Tools einschränkt; eine Whole-Tool `permissions.deny`-/`excludeTools`-Regel (und `tools.disabled` in settings.json) entfernt ein Tool ebenfalls aus der Registry. `permissions.allow` in settings.json ist reine Auto-Genehmigung und entfernt, degradiert oder versteckt niemals ein Tool (#10075). Um das Schema eines Tools aus der anfänglichen Modell-Anfrage herauszuhalten, verwende `tools.eager` in settings.json (erfordert Neustart, #9827); um es vollständig zu entfernen, verwende eine Whole-Tool `excludeTools`-/`permissions.deny`-Regel – eine Regel mit einem Spezifizierer (wie `'Bash(rm *)'`) verweigert nur passende Aufrufe zur Laufzeit. MCP-Tools sind von der deny-basierten Entfernung ausgenommen: Verstecke sie stattdessen mit den serverbezogenen `excludeTools`-/`tools.disabled`-Filtern (deny blockiert weiterhin deren Aufrufe zur Laufzeit). Beispiel: `['read_file', 'edit', 'run_shell_command']`. |
 | `excludeTools`           | `string[]`                                     | -                | Entspricht `permissions.deny` in settings.json. Ausgeschlossene Tools geben sofort einen Berechtigungsfehler zurück. Hat höchste Priorität gegenüber allen anderen Berechtigungseinstellungen. Unterstützt Toolnamen-Alias und Mustervergleich: Toolname (`'write_file'`), Shell-Befehlspräfix (`'Bash(rm *)'`) oder Pfadmuster (`'Read(.env)'`, `'Edit(/src/**)'`).                                                                                                                                         |
-| `allowedTools`           | `string[]`                                     | -                | Entspricht `permissions.allow` in settings.json für die automatische Genehmigung. Passende Tools umgehen den `canUseTool`-Callback und werden automatisch ausgeführt. Gilt nur, wenn das Tool eine Bestätigung erfordert. Im Gegensatz zu `permissions.allow` in settings.json aktiviert dieser Parameter allein die Registry-Allowlist nicht; während jedoch eine aus den Einstellungen bereitgestellte Allowlist aktiv ist, werden `allowedTools`-Regeln in das effektive Allow-Set zusammengeführt und zählen zur Abdeckung, sodass abgedeckte eingebaute Tools registriert bleiben (nicht abgedeckte werden zu deferred herabgestuft, nicht entfernt, #10075). Unterstützt denselben Mustervergleich wie `excludeTools`. Beispiel: `['Bash(git status)', 'Bash(npm test)']`. |
+| `allowedTools`           | `string[]`                                     | -                | Entspricht `permissions.allow` in settings.json für die Auto-Genehmigung. Passende Tools umgehen den `canUseTool`-Callback und werden automatisch ausgeführt. Gilt nur, wenn das Tool eine Bestätigung erfordert. Wie `permissions.allow` ist dies reine Auto-Genehmigung und beeinflusst niemals, welche Tools registriert sind oder welche Schemas gesendet werden (#10075). Unterstützt denselben Mustervergleich wie `excludeTools`. Beispiel: `['Bash(git status)', 'Bash(npm test)']`. |
 | `authType`               | `'openai' \| 'anthropic' \| 'qwen-oauth' \| 'gemini' \| 'vertex-ai'` | -                | Authentifizierungstyp für den KI-Dienst. Wenn angegeben, leitet das SDK ihn als `--auth-type` an die CLI weiter.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `agents`                 | `SubagentConfig[]`                             | -                | Konfiguration für Sub-Agenten, die während der Sitzung aufgerufen werden können. Sub-Agenten sind spezialisierte KI-Agenten für bestimmte Aufgaben oder Bereiche.                                                                                                                                                                                                                                                                                                                                                |
+| `agents`                 | `SubagentConfig[]`                             | -                | Konfiguration für Subagenten, die während der Sitzung aufgerufen werden können. Subagenten sind spezialisierte KI-Agenten für bestimmte Aufgaben oder Bereiche.                                                                                                                                                                                                                                                                                                                                                |
 | `includePartialMessages` | `boolean`                                      | `false`          | Wenn `true`, sendet das SDK unvollständige Nachrichten während der Generierung, was Echtzeit-Streaming der KI-Antwort ermöglicht.                                                                                                                                                                                                                                                                                                                                                        |
 | `resume`                 | `string`                                       | -                | Setze eine vorherige Sitzung durch Angabe ihrer Sitzungs-ID fort. Entspricht dem `--resume`-Flag der CLI.                                                                                                                                                                                                                                                                                                                                                                                           |
 | `sessionId`              | `string`                                       | -                | Gib eine Sitzungs-ID für die neue Sitzung an. Stellt sicher, dass SDK und CLI dieselbe ID verwenden, ohne den Verlauf fortzusetzen. Entspricht dem `--session-id`-Flag der CLI.                                                                                                                                                                                                                                                                                                                                      |
@@ -322,7 +322,7 @@ const result = query({
 ```
 ### Mit SDK-eingebetteten MCP-Servern
 
-Das SDK bietet `tool` und `createSdkMcpServer`, um MCP-Server zu erstellen, die im selben Prozess wie Ihre SDK-Anwendung laufen. Dies ist nützlich, wenn Sie benutzerdefinierte Tools für die KI bereitstellen möchten, ohne einen separaten Serverprozess auszuführen.
+Das SDK bietet `tool` und `createSdkMcpServer`, um MCP-Server zu erstellen, die im selben Prozess wie Ihre SDK-Anwendung laufen. Dies ist nützlich, wenn du benutzerdefinierte Tools für die KI bereitstellen möchtest, ohne einen separaten Serverprozess auszuführen.
 
 #### `tool(name, description, inputSchema, handler)`
 
@@ -366,25 +366,25 @@ Gibt ein `McpSdkServerConfigWithInstance`-Objekt zurück, das direkt an die `mcp
 import { z } from 'zod';
 import { query, tool, createSdkMcpServer } from '@qwen-code/sdk';
 
-// Define a tool with Zod schema
+// Definiere ein Tool mit Zod-Schema
 const calculatorTool = tool(
   'calculate_sum',
-  'Add two numbers',
+  'Addiere zwei Zahlen',
   { a: z.number(), b: z.number() },
   async (args) => ({
     content: [{ type: 'text', text: String(args.a + args.b) }],
   }),
 );
 
-// Create the MCP server
+// Erstelle den MCP-Server
 const server = createSdkMcpServer({
   name: 'calculator',
   tools: [calculatorTool],
 });
 
-// Use the server in a query
+// Verwende den Server in einer Abfrage
 const result = query({
-  prompt: 'What is 42 + 17?',
+  prompt: 'Was ist 42 + 17?',
   options: {
     permissionMode: 'yolo',
     mcpServers: {
@@ -406,13 +406,13 @@ import { query, isAbortError } from '@qwen-code/sdk';
 const abortController = new AbortController();
 
 const result = query({
-  prompt: 'Long running task...',
+  prompt: 'Lang laufende Aufgabe...',
   options: {
     abortController,
   },
 });
 
-// Abort after 5 seconds
+// Abbruch nach 5 Sekunden
 setTimeout(() => abortController.abort(), 5000);
 
 try {
@@ -421,7 +421,7 @@ try {
   }
 } catch (error) {
   if (isAbortError(error)) {
-    console.log('Query was aborted');
+    console.log('Abfrage wurde abgebrochen');
   } else {
     throw error;
   }
@@ -436,12 +436,12 @@ Das SDK stellt eine `AbortError`-Klasse zur Behandlung abgebrochener Abfragen be
 import { AbortError, isAbortError } from '@qwen-code/sdk';
 
 try {
-  // ... query operations
+  // ... Abfrageoperationen
 } catch (error) {
   if (isAbortError(error)) {
-    // Handle abort
+    // Abort behandeln
   } else {
-    // Handle other errors
+    // Andere Fehler behandeln
   }
 }
 ```

@@ -152,9 +152,9 @@ await client
   .setWorkspaceSkillEnabled('review', true, { clientId: 'dashboard-1' });
 ```
 
-预检 `capabilities.features.includes('workspace_skill_toggle')`。类型化的 `DaemonSkillToggleResult` 报告规范的 `skillName`、磁盘状态是否 `changed`、激活状态（`applied`、`deferred` 或 `partial`），以及刷新/失败的会话计数。`DaemonWorkspaceSkillStatus.userInvocable` 是一个可选的仅 false 字段；缺失表示该 skill 可被用户调用。
+预检 `capabilities.features.includes('workspace_skill_settings_toggle')`。类型化的 `DaemonSkillToggleResult` 报告经过修剪的请求 `skillName`、磁盘状态是否 `changed`、激活状态（`applied`、`deferred` 或 `partial`），以及刷新/失败的会话计数。该写入仅涉及设置，不要求名称出现在 `DaemonWorkspaceSkillStatus` 中；该状态类型的可选仅 false 的 `userInvocable` 字段仍对渲染实时目录有用，但不会控制持久化。已退役的 `workspace_skill_toggle` 标签描述的是早期的目录验证行为，不再用于此契约。
 
-批量变更时，先预检 `workspace_skill_batch_toggle`，然后以相同的契约调用任一客户端形态：
+批量变更时，先预检 `workspace_skill_settings_batch_toggle`，然后以相同的契约调用任一客户端形态。路由和请求体保持不变：
 
 ```ts
 await client.setWorkspaceSkillsEnabled(['review', 'deploy'], false, {
@@ -165,7 +165,7 @@ await client
   .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
 ```
 
-`DaemonSkillBatchToggleResult` 包含有序的 `results` 成功列表、每个目标的 `errors`，以及批次级别的激活/会话刷新计数。daemon 会将有效目标一起持久化并一次性刷新活跃会话；一个预期的目标错误不会阻止其他有效目标。该方法仅在非 200 响应时抛出；200 并不意味着每个目标都已应用，因此在将批次视为成功之前务必检查 `errors`。
+`DaemonSkillBatchToggleResult` 包含有序的 `results`、兼容性 `errors` 数组，以及批次级别的激活/会话刷新计数。当前 daemon 按请求顺序处理每个结构有效的名称，在最多一次锁定的设置写入中一起持久化所有结果声明变更，有变更时刷新活跃会话一次，并在不查询已加载 Skill 目录的情况下返回空的 `errors` 数组。启用一个既没有现有工作区声明也没有有效 `skills.defaultDisabled` 条目的名称会返回 `changed: false` 且不执行写入。错误项类型仍然可用，因此 SDK 仍可解码旧版 daemon 的响应。该方法在非 200 响应时抛出。
 
 V2 Extension 批量激活保留了异步 Extension 操作模型。预检 `extension_batch_activation_v2`，提交全局默认批次或选定工作区覆盖批次，然后使用现有的操作辅助方法进行轮询：
 
