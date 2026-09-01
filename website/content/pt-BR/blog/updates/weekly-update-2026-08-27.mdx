@@ -1,0 +1,195 @@
+---
+title: "Qwen Code Semanal: Goal encerra sozinho quando o orçamento estoura, modelo Qwen ganha botão de Thinking, use mais comandos “/” enquanto a IA responde"
+date: "2026-08-27"
+description: "Três versões oficiais esta semana: v0.21.15, v0.22.0 e v0.22.2. O Goal ganhou orçamento de token e se encerra sozinho quando estoura, modelos Qwen agora têm botão de Thinking e dá para usar mais comandos de barra mesmo enquanto a IA está gerando resposta."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i4/O1CN01NiWeNdWP0EH2jBZY_!!6000000008129-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Semanal: Goal encerra sozinho quando o orçamento estoura, modelo Qwen ganha botão de Thinking, use mais comandos “/” enquanto a IA responde"
+  date="2026-08-27"
+  author="Qwen Team"
+/>
+
+O Qwen Code lançou três versões oficiais esta semana — v0.21.15, v0.22.0 e v0.22.2 — com mais de 300 PRs integrados.
+
+**Goal sabe a hora de parar.** O Goal autônomo agora vem com orçamento de token: quando estoura, escreve um relatório de entrega e para; quando percebe que o alvo é inalcançável, para por conta própria.
+
+**Modelo Qwen com botão de Thinking.** Modelos híbridos como o qwen3.5-plus ganharam um botão simples de Thinking: desligado, a sessão atual não pensa; ligado, volta ao comportamento padrão do modelo.
+
+**Mais comandos de barra durante a resposta.** Enquanto a IA está gerando, 10 comandos de barra como `/theme` e `/tools` funcionam na hora, sem esperar a rodada acabar.
+
+## ✨ Novidades
+
+### Goal: orçamento de token e relatório de entrega antes de parar
+
+O Goal autônomo esta semana ganhou "autoconsciência": sabe quanto gastou, quando parar e o que deixar dito antes de parar.
+
+**Controle de gasto por Goal.** Cada Goal agora registra individualmente quanto token gastou. Dá para ver no `get_goal`, lado a lado com o número de rodadas.
+
+**Orçamento definido.** Novos Goals vêm com um orçamento de token padrão. Quando o Goal autônomo gasta tudo, entra em espera. Para continuar, basta recuperar ou editar o Goal — o orçamento ganha uma nova janela automaticamente.
+
+**Rodada de entrega antes de parar.** Quando o orçamento acaba, o Goal ganha uma "rodada de entrega" extra: não abre novo trabalho, apenas explica o que fez, o que falta e qual é o próximo passo — e então para. Quem assumir depois lê esse relatório e retoma de onde parou.
+
+**Para sozinho quando trava.** Se três verificações seguidas derem problema, o Goal para automaticamente; se houver evidência de que o alvo é impossível, para já na rodada atual.
+
+**`/goal-draft` transforma uma ideia vaga em um Goal executável.** Ele primeiro faz algumas perguntas para esclarecer a ideia vaga, depois rascunha um Goal verificável e anexa um comando `/goal set` pronto para executar. Ele só rascunha, não executa o trabalho; usar ou não depende de você.
+
+Veja os PRs [#9583](https://github.com/QwenLM/qwen-code/pull/9583), [#9891](https://github.com/QwenLM/qwen-code/pull/9891), [#10132](https://github.com/QwenLM/qwen-code/pull/10132), [#9975](https://github.com/QwenLM/qwen-code/pull/9975), [#10125](https://github.com/QwenLM/qwen-code/pull/10125), [#10002](https://github.com/QwenLM/qwen-code/pull/10002)
+
+![Goal autônomo e relatório de entrega](https://img.alicdn.com/imgextra/i3/O1CN01jinr31ylhOI7nOLI_!!6000000000320-2-tps-3840-2160.png)
+
+### Modelos Qwen ganham botão de Thinking
+
+No web shell, os modelos qwen3.5-plus, qwen3.6-plus, qwen3.6-flash, qwen3.7-plus e qwen3.7-max agora têm um botão de Thinking: desligado, a resposta atual pula a etapa de raciocínio; ligado, pensa antes de responder.
+
+O qwen3.8-max mantém os três níveis de intensidade de raciocínio: low / medium / extra high.
+
+Veja o PR [#9574](https://github.com/QwenLM/qwen-code/pull/9574)
+
+![Botão de Thinking no popup do modelo](https://img.alicdn.com/imgextra/i4/O1CN01BtvdvUAuKfH7nOLI_!!6000000007210-2-tps-3840-2160.png)
+
+### Workflow com botão oficial e aprovação pré-execução
+
+O workflow divide uma tarefa grande e distribui entre vários assistentes de IA. Esta semana ganhou três camadas de controle:
+
+- **Botão oficial**: ative `tools.workflowsEnabled` nas configurações e pronto — só você pode ligar, a configuração do projeto não mexe nisso
+- **Aprovação antes de rodar**: antes de rodar, o popup de aprovação mostra por inteiro o script de workflow que a IA acabou de escrever — o que ela vai pesquisar, como divide o trabalho, como junta os resultados. Você lê, confirma, e só então ele roda
+- **Sob demanda**: só inicia quando você quer delegar de verdade — dizendo "use o workflow", nomeando um workflow específico ou mandando continuar de onde parou; se a IA acha que precisa mas você não mencionou, ela primeiro explica como pretende delegar e quantos assistentes vai usar, e espera seu aval
+
+Veja os PRs [#9098](https://github.com/QwenLM/qwen-code/pull/9098), [#9837](https://github.com/QwenLM/qwen-code/pull/9837), [#9806](https://github.com/QwenLM/qwen-code/pull/9806)
+
+![Popup de aprovação pré-execução do workflow](https://img.alicdn.com/imgextra/i4/O1CN01tJZDjxgv93J7nOLI_!!6000000003372-2-tps-3840-2160.png)
+
+### PR do GitHub vinculado à sessão que o criou
+
+Depois de abrir um PR pelo Web Shell, encontrar "qual sessão abriu aquele PR" exigia fuçar no histórico. Agora, PRs criados pelo painel Git do Web Shell ficam vinculados à sessão de origem: um badge de PR aparece ao lado do nome da sessão na barra lateral, e buscar pelo número do PR leva direto à sessão correspondente. Cada sessão registra até 10 PRs; quando o mesmo PR recebe um novo push, o registro atualiza para o mais recente.
+
+Veja o PR [#9543](https://github.com/QwenLM/qwen-code/pull/9543)
+
+![Badge de PR na barra lateral e busca](https://img.alicdn.com/imgextra/i3/O1CN01J2dzfeTpIxI2b88O_!!6000000004996-2-tps-1280-800.png)
+
+### Mais comandos de barra funcionam enquanto a IA responde
+
+Antes, a maioria dos comandos de barra precisava esperar a IA terminar de gerar. Esta semana, 10 comandos entraram na lista de "não precisa esperar": `/theme`, `/editor`, `/vim`, `/voice`, `/terminal-setup` (configuração de interface) e `/tools`, `/tasks`, `/hooks`, `/docs`, `/bug` (somente leitura) — use à vontade enquanto a IA fala, o resultado aparece na hora.
+
+Veja o PR [#9495](https://github.com/QwenLM/qwen-code/pull/9495)
+
+![Mais comandos de barra sem espera](https://img.alicdn.com/imgextra/i1/O1CN01wGzoSzEuAJK7nOLI_!!6000000003046-2-tps-3840-2160.png)
+
+## 📊 Mais funcionalidades
+
+**qwen3.8-max sai de preview e vira versão estável.** O qwen3.8-max agora é versão estável; usuários do Token Plan podem selecioná-lo diretamente no `/model`. Veja o PR [#9383](https://github.com/QwenLM/qwen-code/pull/9383)
+
+**Adicionar arquivos no meio da conversa.** Semana passada dava para arrastar arquivos para a caixa de entrada do Web Shell; agora, mesmo com a conversa em andamento, dá para adicionar anexos — tanto pelo anexo na caixa de entrada quanto por @ referenciando arquivos do workspace. A IA recebe na hora. A entrada de upload também foi unificada: ou referencia um arquivo do workspace ou faz upload direto, e os anexos enviados ficam salvos permanentemente. Veja os PRs [#9570](https://github.com/QwenLM/qwen-code/pull/9570), [#9477](https://github.com/QwenLM/qwen-code/pull/9477)
+
+**Modelo de conversa também gera imagem.** O mesmo modelo agora cuida de conversa e geração de imagem integrada, sem precisar de um modelo separado só para imagens; a geração de imagem também passou a suportar a API do MiniMax. Veja os PRs [#9650](https://github.com/QwenLM/qwen-code/pull/9650), [#8322](https://github.com/QwenLM/qwen-code/pull/8322)
+
+**Gerencie o Goal direto no Web Shell.** O Goal não depende mais de mensagens de chat para ser gerenciado — o Web Shell ganhou uma barra compacta e dedicada só para isso. Veja o PR [#9393](https://github.com/QwenLM/qwen-code/pull/9393)
+
+**Tarefas agendadas rodam dentro da sessão atual.** Na criação de uma tarefa agendada, dá para escolher executá-la dentro da sessão atual. Veja os PRs [#9838](https://github.com/QwenLM/qwen-code/pull/9838), [#9361](https://github.com/QwenLM/qwen-code/pull/9361)
+
+**Código desktop migrado para o OpenWork.** O código desktop Electron foi movido para o projeto open-source independente [OpenWork](https://github.com/modelstudioai/openwork), onde segue em desenvolvimento. O repositório do Qwen Code mantém apenas a ponte de migração para a nova versão desktop. Veja o PR [#9085](https://github.com/QwenLM/qwen-code/pull/9085)
+
+**Computer Use agora é orientado por habilidade.** A IA agora opera o computador usando habilidades próprias: no primeiro uso, instala as dependências automaticamente e pede um reinício — depois funciona normalmente. O Node REPL deixou de ser uma ferramenta embutida e virou o pacote MCP independente `@qwen-code/node-repl-mcp`, desativado por padrão e que só entra em vigor quando configurado no `mcpServers`. Veja os PRs [#9856](https://github.com/QwenLM/qwen-code/pull/9856), [#9587](https://github.com/QwenLM/qwen-code/pull/9587), [#9499](https://github.com/QwenLM/qwen-code/pull/9499)
+
+**Kimi como provedor embutido.** No `/auth`, escolha o provedor de terceiros Kimi, insira a API key e está conectado — endpoint internacional ou doméstico à escolha. A lista de modelos já vem com o flagship K3, K2.6 e dois modelos especializados em código, e você pode editar a lista. O K3 vem com raciocínio ligado por padrão; os outros três podem ligar e desligar livremente. Veja o PR [#9814](https://github.com/QwenLM/qwen-code/pull/9814)
+
+## 👏 Melhorias de experiência
+
+**Painel de uso no Web Shell.** O Web Shell agora tem um painel de consumo de token por sessão: total, divisão por modelo, chamadas de sub-agentes e estatísticas de uso de ferramentas — tudo numa página. Veja o PR [#9988](https://github.com/QwenLM/qwen-code/pull/9988)
+
+**Modo compacto vira o único no Web Shell.** Blocos de raciocínio e atividade de ferramentas agora vêm recolhidos em linhas de resumo por padrão; o atalho Ctrl+O foi removido. A conversa principal, o painel dividido e o painel de detalhes do sub-agente usam todos a mesma renderização compacta. Veja os PRs [#9993](https://github.com/QwenLM/qwen-code/pull/9993), [#9657](https://github.com/QwenLM/qwen-code/pull/9657)
+
+**Cartão de aprovação dentro do fluxo de mensagens.** Aprovações de ferramentas e perguntas não cobrem mais a lista inteira de mensagens — viraram um cartão fixado na parte inferior do fluxo de mensagens, com a mesma largura da área de chat. Veja o PR [#9351](https://github.com/QwenLM/qwen-code/pull/9351)
+
+**Shell em segundo plano mantém a rodada aberta.** Quando uma rodada dispara um shell em segundo plano, ela fica aberta até o processo terminar, para você acompanhar o progresso. Veja o PR [#9632](https://github.com/QwenLM/qwen-code/pull/9632)
+
+**Plugin VS Code com a mesma renderização.** A linha do tempo de sessões do plugin VS Code agora usa o mesmo renderizador do Web Shell, alinhando a experiência visual dos dois lados. Veja o PR [#9719](https://github.com/QwenLM/qwen-code/pull/9719)
+
+**Terminal grande rola mais suave.** A taxa de renderização da rolagem virtual do terminal subiu de 30 para 60 quadros por segundo — rolar o histórico em janelas grandes ficou visivelmente mais fluido. Veja o PR [#9681](https://github.com/QwenLM/qwen-code/pull/9681)
+
+**Agora dá para ver quais arquivos de contexto foram carregados.** Quando você adiciona arquivos de contexto personalizados nas configurações, a primeira mensagem da sessão agora lista quais arquivos foram carregados — antes, essa etapa era completamente invisível. Veja o PR [#8855](https://github.com/QwenLM/qwen-code/pull/8855)
+
+**Sessão lembra o modelo escolhido.** Depois de reiniciar ou reconectar uma sessão daemon, ela volta para o modelo que você selecionou por último naquela sessão; sessões novas ainda usam o padrão das configurações. Veja o PR [#9687](https://github.com/QwenLM/qwen-code/pull/9687)
+
+**Canal DingTalk agora entende citações.** Antes, ao citar uma imagem ou arquivo no DingTalk, a IA só via um placeholder; agora, imagens, arquivos, áudios e vídeos citados são baixados de verdade e entregues à IA, e mensagens encaminhadas de histórico têm título e resumo extraídos e incluídos no contexto. Veja os PRs [#9347](https://github.com/QwenLM/qwen-code/pull/9347), [#9339](https://github.com/QwenLM/qwen-code/pull/9339)
+
+**Instale extensões de repositórios privados.** A instalação de extensões via HTTPS Git agora suporta autenticação — dá para clonar de repositórios privados, com opção de salvar ou não as credenciais. Veja o PR [#9458](https://github.com/QwenLM/qwen-code/pull/9458)
+
+**Git antigo também instala extensões públicas.** Em sistemas com Git anterior à versão 2.37, a instalação de extensões públicas do GitHub usa o caminho de download de arquivo compactado. Veja os PRs [#9680](https://github.com/QwenLM/qwen-code/pull/9680), [#9690](https://github.com/QwenLM/qwen-code/pull/9690)
+
+**Um comando abre o Web Shell com autenticação.** `qwen serve --open-with-auth` abre um Web Shell local com autenticação por token; se nenhum token estiver configurado, gera um automaticamente e passa para o navegador. Veja o PR [#9738](https://github.com/QwenLM/qwen-code/pull/9738)
+
+**Homebrew para de alertar atualização fantasma.** Quando os metadados locais confirmam que não há versão nova, o aviso de atualização não aparece mais. Veja o PR [#9502](https://github.com/QwenLM/qwen-code/pull/9502)
+
+## 🔧 Correções importantes
+
+| Correção | Impacto para você | PR |
+|----------|-------------------|-----|
+| **Sessões longas no Web Shell não travam mais** | A retenção de transcrição ganhou um limite; reproduções grandes são cortadas e a página não estoura a memória | [#9303](https://github.com/QwenLM/qwen-code/pull/9303) |
+| **`/rewind` não perde mais histórico** | Depois de `/compress-fast`, ao voltar, o histórico da conversa não é mais descartado por engano | [#9331](https://github.com/QwenLM/qwen-code/pull/9331) |
+| **Chamadas de ferramentas com mesmo nome não confundem mais** | Quando IDs de chamada se repetem mas os parâmetros são diferentes, a execução segue normal, sem tratar como replay | [#9436](https://github.com/QwenLM/qwen-code/pull/9436) |
+| **Terminal WSL não repete mais texto** | Ao rodar no WSL, a saída não sai mais com caracteres duplicados | [#7897](https://github.com/QwenLM/qwen-code/pull/7897) |
+| **Links de sessão exportados no Windows agora abrem** | Os links de arquivo no export mantêm o caminho com letra de drive, abrindo direto no sistema local | [#8953](https://github.com/QwenLM/qwen-code/pull/8953) |
+| **Caixa de entrada não sai do lugar ao redimensionar o terminal** | A borda da caixa de entrada acompanha o tamanho da janela; títulos longos são truncados automaticamente | [#8991](https://github.com/QwenLM/qwen-code/pull/8991) |
+| **IA repetidora é barrada** | Quando a saída contém grandes blocos de repetição literal, a rodada é interrompida | [#9668](https://github.com/QwenLM/qwen-code/pull/9668) |
+| **Consumo recalcula ao trocar de modelo** | O limite de consumo e o aviso de compactação da sessão não usam mais o modelo antigo como referência | [#9506](https://github.com/QwenLM/qwen-code/pull/9506) |
+| **Serviço MCP se reconecta sozinho após reinício** | Quando um serviço HTTP MCP reinicia, a sessão se reconecta automaticamente | [#9962](https://github.com/QwenLM/qwen-code/pull/9962) |
+| **Solicitações de aprovação não expiram mais sozinhas** | O timeout padrão foi removido — a solicitação de aprovação fica aberta até você decidir | [#9933](https://github.com/QwenLM/qwen-code/pull/9933) |
+| **DeepSeek multimodal não perde mais imagens** | Ao usar modelos multimodais do DeepSeek, as imagens são enviadas corretamente | [#9854](https://github.com/QwenLM/qwen-code/pull/9854) |
+| **Lista de tarefas duplicadas com de-duplicação** | Quando vários painéis de tarefa idênticos aparecem na mesma rodada, só um é exibido | [#9692](https://github.com/QwenLM/qwen-code/pull/9692) |
+| **Nível de raciocínio ajusta ao teto suportado** | Quando o nível de raciocínio selecionado não é suportado pelo modelo, ele baixa automaticamente para o máximo compatível | [#9501](https://github.com/QwenLM/qwen-code/pull/9501) |
+
+## 👥 Contribuidores
+
+| Contribuidor | Contribuição | PRs de referência |
+|--------------|--------------|-------------------|
+| **[@wenshao](https://github.com/wenshao)** | Revisão e autofix reforçados em toda a linha: continuação de revisão, explicação de não convergência no ciclo de revisão, integração com Aone Code; correção de estouro de memória no Web Shell, vinculação de sessão a PR | [#9153](https://github.com/QwenLM/qwen-code/pull/9153), [#9461](https://github.com/QwenLM/qwen-code/pull/9461), [#9303](https://github.com/QwenLM/qwen-code/pull/9303), [#9543](https://github.com/QwenLM/qwen-code/pull/9543) |
+| **[@yiliang114](https://github.com/yiliang114)** | Lote grande de correções de sessão e estabilidade: histórico perdido no /rewind, detecção de repetição, migração do código desktop, limpeza de CVE em dependências, instalação de extensão em Git antigo | [#9331](https://github.com/QwenLM/qwen-code/pull/9331), [#9668](https://github.com/QwenLM/qwen-code/pull/9668), [#9085](https://github.com/QwenLM/qwen-code/pull/9085), [#9584](https://github.com/QwenLM/qwen-code/pull/9584) |
+| **[@qqqys](https://github.com/qqqys)** | Série Goal: orçamento de token, rodada de entrega, /goal-draft; botão de workflow e aprovação, lançamento do qwen3.8-max | [#9891](https://github.com/QwenLM/qwen-code/pull/9891), [#10132](https://github.com/QwenLM/qwen-code/pull/10132), [#9837](https://github.com/QwenLM/qwen-code/pull/9837), [#9098](https://github.com/QwenLM/qwen-code/pull/9098) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | Isolamento e recuperação de sessão daemon, --open-with-auth, vinculação de tarefa agendada à sessão, ajuste de timeout de aprovação | [#9738](https://github.com/QwenLM/qwen-code/pull/9738), [#9838](https://github.com/QwenLM/qwen-code/pull/9838), [#9933](https://github.com/QwenLM/qwen-code/pull/9933), [#9513](https://github.com/QwenLM/qwen-code/pull/9513) |
+| **[@ytahdn](https://github.com/ytahdn)** | Várias melhorias no Web Shell: anexo no meio da conversa, cartão de aprovação no fluxo, modo compacto exclusivo, painel de uso | [#9570](https://github.com/QwenLM/qwen-code/pull/9570), [#9351](https://github.com/QwenLM/qwen-code/pull/9351), [#9993](https://github.com/QwenLM/qwen-code/pull/9993), [#9988](https://github.com/QwenLM/qwen-code/pull/9988) |
+| **[@DragonnZhang](https://github.com/DragonnZhang)** | Extensão de comandos de barra sem espera, rolagem virtual do terminal a 60 FPS | [#9495](https://github.com/QwenLM/qwen-code/pull/9495), [#9681](https://github.com/QwenLM/qwen-code/pull/9681) |
+| 🆕 **[@AaronZ345](https://github.com/AaronZ345)** | 🎉 Primeira contribuição: grande lote de correções na documentação, sincronização do limite de token do plugin VS Code, correção de reaprovação de workflow | [#9547](https://github.com/QwenLM/qwen-code/pull/9547), [#9850](https://github.com/QwenLM/qwen-code/pull/9850), [#9855](https://github.com/QwenLM/qwen-code/pull/9855) |
+| **[@callmeYe](https://github.com/callmeYe)** | Botão de Thinking, instalação de extensão de repositório privado, modelo de conversa que também gera imagem | [#9574](https://github.com/QwenLM/qwen-code/pull/9574), [#9458](https://github.com/QwenLM/qwen-code/pull/9458), [#9650](https://github.com/QwenLM/qwen-code/pull/9650) |
+| **[@LaZzyMan](https://github.com/LaZzyMan)** | Computer Use orientado por habilidade, Node REPL como serviço MCP independente, upgrade do CUA SDK | [#9856](https://github.com/QwenLM/qwen-code/pull/9856), [#9499](https://github.com/QwenLM/qwen-code/pull/9499), [#9587](https://github.com/QwenLM/qwen-code/pull/9587) |
+| **[@qwen-code-dev-bot](https://github.com/qwen-code-dev-bot)** | Limpeza de renderização duplicada no painel de ferramentas e componentes pendentes, estabilidade do CI | [#9602](https://github.com/QwenLM/qwen-code/pull/9602), [#9421](https://github.com/QwenLM/qwen-code/pull/9421), [#10050](https://github.com/QwenLM/qwen-code/pull/10050) |
+| **[@ZijianZhang989](https://github.com/ZijianZhang989)** | Visibilidade de arquivo de contexto, PTY do agent view e ciclo de vida da sessão, sincronização de estado de carregamento de habilidade | [#8855](https://github.com/QwenLM/qwen-code/pull/8855), [#7800](https://github.com/QwenLM/qwen-code/pull/7800), [#9986](https://github.com/QwenLM/qwen-code/pull/9986) |
+| **[@harjothkhara](https://github.com/harjothkhara)** | Ajuste automático do teto de raciocínio, correção de recall de memória, correção de configuração de formato de saída | [#9501](https://github.com/QwenLM/qwen-code/pull/9501), [#9530](https://github.com/QwenLM/qwen-code/pull/9530), [#8966](https://github.com/QwenLM/qwen-code/pull/8966) |
+| **[@chiga0](https://github.com/chiga0)** | Rastreio distribuído do daemon, reconciliação de sessão na inicialização a frio | [#9391](https://github.com/QwenLM/qwen-code/pull/9391), [#9426](https://github.com/QwenLM/qwen-code/pull/9426) |
+| **[@dreamWB](https://github.com/dreamWB)** | Callback de submit do host Web Shell, adaptação do drawer na barra lateral | [#9802](https://github.com/QwenLM/qwen-code/pull/9802), [#10020](https://github.com/QwenLM/qwen-code/pull/10020) |
+| **[@samuelhsin](https://github.com/samuelhsin)** | Correção de atualização de habilidade no Web Shell | [#9131](https://github.com/QwenLM/qwen-code/pull/9131) |
+| **[@shenyankm](https://github.com/shenyankm)** | Modo de permissão auto nos SDKs Python/Java, correção de imagem multimodal do DeepSeek | [#9003](https://github.com/QwenLM/qwen-code/pull/9003), [#9854](https://github.com/QwenLM/qwen-code/pull/9854) |
+| 🆕 **[@tao943](https://github.com/tao943)** | 🎉 Primeira contribuição: notificação de agente em segundo plano com contagem restante, documentação de descrição de parâmetro | [#9018](https://github.com/QwenLM/qwen-code/pull/9018), [#9580](https://github.com/QwenLM/qwen-code/pull/9580) |
+| **[@tlysanhuo](https://github.com/tlysanhuo)** | Adaptação de zoom da caixa de entrada, validação de parâmetro de ferramenta Anthropic | [#8991](https://github.com/QwenLM/qwen-code/pull/8991), [#9013](https://github.com/QwenLM/qwen-code/pull/9013) |
+| **[@tomsen02](https://github.com/tomsen02)** | Cache de snapshot de fork com isolamento de sessão,separação de log do daemon por sessão | [#9471](https://github.com/QwenLM/qwen-code/pull/9471), [#9538](https://github.com/QwenLM/qwen-code/pull/9538) |
+| **[@water-in-stone](https://github.com/water-in-stone)** | Pré-validação de transcrição no Web Shell, herança de nome de sessão por branch | [#9388](https://github.com/QwenLM/qwen-code/pull/9388), [#9764](https://github.com/QwenLM/qwen-code/pull/9764) |
+| 🆕 **[@axiom-of-choice](https://github.com/axiom-of-choice)** | 🎉 Primeira contribuição: autenticação por credencial padrão do Vertex AI | [#9017](https://github.com/QwenLM/qwen-code/pull/9017) |
+| 🆕 **[@cactuser-Lu](https://github.com/cactuser-Lu)** | 🎉 Primeira contribuição: correção de renderização de negrito ao lado de pontuação chinesa | [#9457](https://github.com/QwenLM/qwen-code/pull/9457) |
+| **[@C0d3N1nja97342](https://github.com/C0d3N1nja97342)** | Correção de texto duplicado no terminal WSL | [#7897](https://github.com/QwenLM/qwen-code/pull/7897) |
+| **[@ComplexSimply](https://github.com/ComplexSimply)** | Correção na documentação do mecanismo de segurança de replay | [#8861](https://github.com/QwenLM/qwen-code/pull/8861) |
+| 🆕 **[@deggs7](https://github.com/deggs7)** | 🎉 Primeira contribuição: dica de hover no ícone de criar grupo no Web Shell | [#9400](https://github.com/QwenLM/qwen-code/pull/9400) |
+| 🆕 **[@dream-creator](https://github.com/dream-creator)** | 🎉 Primeira contribuição: correção de limpeza de teste de tarefa agendada | [#9815](https://github.com/QwenLM/qwen-code/pull/9815) |
+| **[@Nas01010101](https://github.com/Nas01010101)** | Correção do timing de aviso de permissão de microfone | [#8912](https://github.com/QwenLM/qwen-code/pull/8912) |
+| 🆕 **[@octo-patch](https://github.com/octo-patch)** | 🎉 Primeira contribuição: geração de imagem com suporte ao endpoint MiniMax | [#8322](https://github.com/QwenLM/qwen-code/pull/8322) |
+| **[@PratikWayase](https://github.com/PratikWayase)** | De-duplicação de painel de tarefa repetido | [#9692](https://github.com/QwenLM/qwen-code/pull/9692) |
+| **[@rbalachandar](https://github.com/rbalachandar)** | Validação de arquivo de imagem pelo conteúdo real, sem falso positivo por extensão enganosa | [#9113](https://github.com/QwenLM/qwen-code/pull/9113) |
+| **[@TianYuan1024](https://github.com/TianYuan1024)** | Integração do provedor embutido Kimi | [#9814](https://github.com/QwenLM/qwen-code/pull/9814) |
+| 🆕 **[@yefuyou](https://github.com/yefuyou)** | 🎉 Primeira contribuição: correção de link de export de sessão no Windows | [#8953](https://github.com/QwenLM/qwen-code/pull/8953) |
+| 🆕 **[@yu-xin-c](https://github.com/yu-xin-c)** | 🎉 Primeira contribuição: timeout de inatividade em streaming configurado por provedor | [#9795](https://github.com/QwenLM/qwen-code/pull/9795) |
+| 🆕 **[@zgxkbtl](https://github.com/zgxkbtl)** | 🎉 Primeira contribuição: gerenciamento de ciclo de vida de memória automática do ACP | [#9992](https://github.com/QwenLM/qwen-code/pull/9992) |
+| 🆕 **[@zhou2024NAU](https://github.com/zhou2024NAU)** | 🎉 Primeira contribuição: normalização de chave de aprovação MCP com letra de drive no Windows | [#9779](https://github.com/QwenLM/qwen-code/pull/9779) |
+| **[@zjgzx1988](https://github.com/zjgzx1988)** | Diretório de artefatos expandido para download arquivo a arquivo | [#9395](https://github.com/QwenLM/qwen-code/pull/9395) |
+| **[@zjunothing](https://github.com/zjunothing)** | Correção do schema de configuração do prompt hook | [#8779](https://github.com/QwenLM/qwen-code/pull/8779) |
+
+<Callout type="info">
+  **Como atualizar**: execute `npm i @qwen-code/qwen-code@latest -g` para atualizar para a versão mais recente.
+</Callout>
+
+Se tiver dúvidas ou sugestões, fique à vontade para enviar feedback pelos [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
