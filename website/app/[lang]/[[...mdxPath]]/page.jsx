@@ -71,8 +71,10 @@ function getContentFile(lang, mdxPath) {
   const contentRoot = path.join(process.cwd(), "content", lang);
 
   for (const extension of [".mdx", ".md"]) {
-    const filePath = path.join(contentRoot, `${relativePath}${extension}`);
-    if (fs.existsSync(filePath)) return filePath;
+    for (const candidate of [relativePath, path.join(relativePath, "index")]) {
+      const filePath = path.join(contentRoot, `${candidate}${extension}`);
+      if (fs.existsSync(filePath)) return filePath;
+    }
   }
 
   return null;
