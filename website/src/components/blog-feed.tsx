@@ -193,20 +193,24 @@ export function BlogFeed({
   const [filter, setFilter] = useState<FilterId>("all");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
+  // 顶部大图已经单独展示那一篇，网格和分类计数按同一口径排除它，
+  // 否则标签写 4、下面只画 3，用户会去找那篇"消失"的文章。
+  const gridPosts = posts.filter((p) => p.route !== heroRoute);
+
   const counts = CATEGORY_IDS.reduce(
     (acc, catId) => {
-      acc[catId] = posts.filter((p) => p.category === catId).length;
+      acc[catId] = gridPosts.filter((p) => p.category === catId).length;
       return acc;
     },
     {} as Record<string, number>
   );
-  const evergreenCount = posts.filter((p) => p.category !== "updates").length;
+  const evergreenCount = gridPosts.filter(
+    (p) => p.category !== "updates"
+  ).length;
 
-  const filtered = posts.filter((p) => {
-    if (p.route === heroRoute) return false;
-    if (filter === "all") return p.category !== "updates";
-    return p.category === filter;
-  });
+  const filtered = gridPosts.filter((p) =>
+    filter === "all" ? p.category !== "updates" : p.category === filter
+  );
   const visible = filtered.slice(0, visibleCount);
   const remaining = filtered.length - visible.length;
 
