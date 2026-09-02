@@ -1,0 +1,175 @@
+---
+title: "Qwen Code 빠른 시작: 설치부터 첫 AI 코딩까지"
+date: "2026-07-13"
+description: "Qwen Code를 처음부터 시작해 보세요. CLI 설치, 모델 연결, 첫 대화, Skill 설치까지 네 단계면 10분 안에 첫 AI 코딩 과제를 마칠 수 있습니다."
+author: "Qwen Team"
+tags: ["Tutorial", "Quickstart"]
+image: https://gw.alicdn.com/imgextra/i3/O1CN01sqP9AK1Zvl8tWso5b_!!6000000003257-2-tps-1344-572.png
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader
+  title="Qwen Code 빠른 시작: 설치부터 첫 AI 코딩까지"
+  date="2026년 7월 13일"
+  author="Qwen Team"
+/>
+
+Qwen Code가 처음이라면 이 글에서 설치, 설정, 대화, 확장 네 단계로 전체 흐름을 따라가 보세요. 각 단계마다 영상 시연이 있으니 그대로 따라하시면 됩니다.
+
+## Qwen Code 설치
+
+Qwen Code는 스크립트 하나로 설치할 수 있습니다. Windows, macOS, Linux 모두 지원합니다.
+
+**macOS / Linux:**
+
+```bash
+bash -c "$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)" -s --source website
+```
+
+**Windows (PowerShell):**
+
+```powershell
+curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat --source website
+```
+
+설치가 끝나면 `qwen --version`을 실행해 정상적으로 들어갔는지 확인합니다. npm으로 설치해도 됩니다:
+
+```bash
+npm i @qwen-code/qwen-code@latest -g
+```
+
+다운로드부터 확인까지 전 과정을 영상에 담았습니다. 옆에서 따라 해 보세요:
+
+<video
+  src="https://cloud.video.taobao.com/vod/WwpTKWA47iLT4DPh-Rk8763V-ihd50bAbD5_-op5Js4.mp4"
+  poster="https://img.alicdn.com/imgextra/i3/O1CN01wNWdtR1iVxMQbXtqa_!!6000000004419-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## 모델 서비스 제공자 연결
+
+설치를 마지면 Qwen Code가 모델 서비스 제공자 연결을 안내합니다. 알리바바클라우드 Model Studio를 추천합니다.
+
+1. [Alibaba Cloud Model Studio](https://modelstudio.console.alibabacloud.com/) 에서 API Key를 발급받습니다
+2. 터미널에 `qwen`을 입력해 시작하고 Alibaba ModelStudio를 선택합니다
+3. API Key를 붙여넣고 모델을 고릅니다
+
+직접 설정하고 싶다면 `~/.qwen/settings.json`을 고치면 됩니다:
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "qwen3.5-plus",
+        "name": "[Bailian] qwen3.5-plus",
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "envKey": "BAILIAN_API_KEY"
+      }
+    ]
+  },
+  "env": {
+    "BAILIAN_API_KEY": "여기에 API Key 붙여넣기"
+  }
+}
+```
+
+설정을 마쳤다면 `/model` 명령으로 모델을 확인하고 바꿀 수 있습니다:
+
+<video
+  src="https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4"
+  poster="https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## 첫 대화 시작
+
+프로젝트 디렉터리로 이동해 Qwen Code를 켭니다:
+
+```bash
+cd your-project && qwen
+```
+
+하고 싶은 일을 자연어로 그대로 말씀하세요. 예를 들어:
+
+```
+피보나치 수열을 계산하는 Python 함수를 작성해 줘
+```
+
+이런 부탁도 됩니다:
+
+```
+이 폴더의 파일들을 종류별로 다른 폴더에 나눠 담아 줘
+```
+
+Qwen Code는 과제를 스스로 짜르고, 작업을 실행하고, 결과까지 돌려줍니다. 하나씩 가르쳐 줄 필요가 없습니다. 목표만 말씀하시면 됩니다.
+
+<video
+  src="https://cloud.video.taobao.com/vod/RBM4WS95LE5RkGA82JbBjTG1oVokxC-SJlMi8Jv4_fA.mp4"
+  poster="https://img.alicdn.com/imgextra/i1/6000000002613/O1CN019Vn4y71VAo2xDVswb_!!6000000002613-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## Skill 확장 설치
+
+Skill은 Qwen Code의 기능 확장 시스템입니다. 커뮤니티가 만든 Skill을 필요한 만큼 설치하면 AI에게 전문 능력을 더할 수 있습니다.
+
+설치는 한마디면 끝납니다:
+
+```
+find-skills 설치해 줘
+```
+
+명령어로 직접 넣어도 됩니다:
+
+```bash
+/skills find-skills install web-component-design -y -a qwen-code
+```
+
+설치가 끝나면 `/skills`로 설치된 Skill 목록을 확인하세요.
+
+<video
+  src="https://cloud.video.taobao.com/vod/_3BD_A4_-nQRKqdyyHw9e8Nm1qtusA7gHKtoJlaJP28.mp4"
+  poster="https://img.alicdn.com/imgextra/i1/6000000005414/O1CN01WFKT3D1prfQWynZFH_!!6000000005414-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## VS Code 연동
+
+에디터에서 일하는 편하시다면 Qwen Code VS Code 확장 프로그램을 쓰면 됩니다. 확장 마켓에서 "Qwen Code"를 검색해 설치하세요. 설치 후 사이드바에서 바로 AI와 대화하며 끊김 없이 코딩할 수 있습니다.
+
+<video
+  src="https://cloud.video.taobao.com/vod/IQbMf47caWPNeRPe2Z0DcCUJgip2IY5IzKRIG77yI5I.mp4"
+  poster="https://img.alicdn.com/imgextra/i4/6000000003274/O1CN014Km30B1a3XqInHBJC_!!6000000003274-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## 다음 단계
+
+이제 시작할 준비가 됐습니다. 다음 글들을 이어서 보세요:
+
+- [프로그래머처럼 생각하는 어시스턴트](/ko/blog/quickstart/thinks-like-a-programmer) — Qwen Code의 설계 철학
+- [실전 사례](/ko/blog/cases) — 실제 사용 장면과 튜토리얼
+- [심화 활용](/ko/blog/advanced) — Skill, Bailian CLI 같은 고급 기능
+- [Showcase 영상](/ko/showcase) — 여러 장면을 담은 영상 walkthrough

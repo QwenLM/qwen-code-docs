@@ -1,0 +1,237 @@
+---
+title: "Qwen Code 주간 업데이트: AI의 세션 간 능동 기억, 세션 제목 자동 생성, /batch로 여러 파일 한꺼번에 처리"
+date: "2026-04-23"
+description: "이번 주 v0.15.0을 출시했습니다. AI 자동 기억 관리, 세션 관리 강화, /batch 일괄 명령어, Hook 확장, 여러 작업 병렬 처리 등을 추가했습니다."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: https://gw.alicdn.com/imgextra/i2/O1CN01XSc7zQ1XFxlajOo6d_!!6000000002895-0-tps-1344-576.jpg
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 주간 업데이트: AI의 세션 간 능동 기억, 세션 제목 자동 생성, /batch로 여러 파일 한꺼번에 처리"
+  date="2026-04-23"
+  author="Qwen Team"
+/>
+
+
+이번 주에 **v0.15.0**을 릴리스했습니다.
+
+이번 업데이트는 네 가지에 집중했습니다. AI가 세션을 넘어 스스로 기억하고 지난 기억은 정리합니다. 세션 목록이 제목을 자동 생성하고, 이름 바꾸기나 삭제도 지원합니다. `/batch` 명령어 하나로 여러 파일 수정을 동시에 끝낼 수 있습니다. Hook 시스템 확장과 subagent 백그라운드 실행으로 자동화와 사내 연동이 더 자유로워졌습니다.
+
+## ✨ 새로운 기능
+
+### AI의 세션 간 능동 기억
+
+이전에는 기억 기능을 손으로 계속 관리해야 했습니다. 이제 Qwen Code에 자동 기억(auto-memory)과 자동 정리(auto-dream) 시스템이 들어왔습니다. AI가 대화 중에 중요한 정보를 기억으로 뽑아 내고, 주기적으로 갈고닦아 세션을 넘어 이어지는 경험이 매끄러워집니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- 다시 말해 주지 않아도 됩니다 — 한번 말한 기술 스택, 코드 스타일, 프로젝트 구조를 새 세션에서 AI가 저절로 기억합니다
+- 자동 정리와 병합 — 백그라운드에서 기억을 훑어 중복 항목을 합치고 지난 기억을 갱신하며 인덱스를 정기 보수합니다. 책장을 정기적으로 정리하는 것과 같습니다
+- 손 관리 비용이 줄어듭니다 — 전에 QWEN.md나 규칙 파일에 직접 적어 넣던 내용을 이제 AI가 알아서 처리합니다
+
+관련 PR [#3087](https://github.com/QwenLM/qwen-code/pull/3087)
+
+<video width="100%" controls>
+  <source src="https://cloud.video.taobao.com/vod/NMVf6gqpAAlP97UP_5LW75qUqYW-IgeoxDcTNc_QMZ4.mp4" type="video/mp4" />
+</video>
+
+### 세션 제목 자동 생성, 이름 바꾸기와 삭제 지원
+
+이전에는 세션 제목이 사용자의 첫 질문 그대로였습니다. 길어서 찾기조차 어려웠죠. 이제 AI가 대화 내용을 보고 제목을 자동 지어 주고, 원하면 언제든 제목을 직접 고치거나 필요 없는 세션을 지울 수 있습니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- AI가 제목을 자동 생성 — 직접 짓지 않아도 대화 내용을 보고 세션 제목을 만듭니다
+- 프로젝트별로 세션 이름 변경 — AI가 지은 제목이 영 마땅치 않으면 언제든 손으로 고침
+- 무의미한 세션 정리 — 테스트하거나 내용 없는 대화를 지워 목록에 쓸모있는 것만 남김
+
+관련 PR [#3093](https://github.com/QwenLM/qwen-code/pull/3093)
+
+![세션 관리 데모](https://img.alicdn.com/imgextra/i3/O1CN01URX9kK1HE6HZbESsM_!!6000000000725-1-tps-2890-1950.gif)
+
+### /batch로 여러 파일 한꺼번에 처리
+
+이전에는 여러 파일을 고치려면 작업을 하나씩 돌려야 했습니다. 이제는 `/batch` 명령어 하나로 동시에 병렬 처리합니다. 같은 종류의 문제를 일괄 수정하거나, 여러 문서를 함께 갱신하거나, 코드를 리팩터링할 때 잘 맞습니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- 같은 종류 문제 일괄 수정 — 여러 파일에 퍼진 동일한 lint 오류를 하나씩 하지 않고 한 번에 처리
+- 여러 문서 동시 갱신 — 문서 여러 개에 같은 장을 추가하거나 버전 번호를 고칠 때 명령 한 번
+- 코드 리팩터링 일괄 실행 — 여러 파일의 변수 이름 변경·함수 추출을 한꺼번에 병렬로 완료
+
+관련 PR [#3079](https://github.com/QwenLM/qwen-code/pull/3079)
+
+![batch 일괄 처리 데모](https://img.alicdn.com/imgextra/i3/O1CN01Bw4sIy1kCq38yp3RE_!!6000000004648-2-tps-3670-1798.png)
+
+### Hook 확장: AI가 일하는 김에 추가 동작까지
+
+이전에는 Qwen Code가 시킨 작업 하나만 실행했습니다. 이제는 Hook으로 '자동 실행 동작'을 붙일 수 있습니다. Hook 사용법 세 가지가 새로 추가됐습니다. HTTP Hook으로 외부 서비스(Feishu, DingTalk 같은)에 알림을 자동 발송, Function Hook으로 코드 조각을 자동 실행, 시간이 오래 걸리는 작업은 Async Hook을 태워 백그라운드에서 돌리면 현재 대화가 막히지 않습니다. VSCode 플러그인에서도 이 Hook들을 설정할 수 있게 됐습니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- 팀 알림 — AI가 핵심 파일을 고치면 Feishu나 DingTalk에 자동으로 메시지가 나가니 동료를 일일이 @ 하지 않아도 됩니다
+- 사내 컴플라이언스 감사 — AI가 뭘 할 때마다 회사 감사 시스템에 자동 기록돼, 수기 등록 없이 규정 요구를 맞춥니다
+- 자체 도구 심층 연동 — SDK로 직접 등록한 코드를 대화 중 이벤트에 자동 실행할 수 있어, 새 창에서 손으로 돌릴 필요가 없습니다
+
+관련 PR [#2827](https://github.com/QwenLM/qwen-code/pull/2827) + [#3248](https://github.com/QwenLM/qwen-code/pull/3248)
+
+<video width="100%" controls>
+  <source src="https://cloud.video.taobao.com/vod/rwdx5Ep2Y0loGbPbNzhQRZIn0Sg2gew5eIOZZ7XroZY.mp4" type="video/mp4" />
+</video>
+
+### subagent 백그라운드 실행
+
+이전에는 subagent가 반드시 전면 화면에서 돌아갔습니다. 이제 백그라운드 headless 실행을 지원하고, SDK도 완전히 지원해 CI/CD 파이프라인과 자동화 스크립트에 넣기 좋습니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- 백그라운드 병렬 처리 — subagent 여러 개를 동시에 돌려 서로 다른 작업을 처리시키고, 메인 화면은 건드리지 않고 계속 일할 수 있음
+- SDK로 자체 도구 연동 — SDK API로 subagent 기능을 호출해 개발 도구 체인에 직접 삽입
+- CI/CD 자동 리뷰 — PR 파이프라인에서 subagent를 띄워 코드를 자동 검토. 터미널 화면을 열 필요가 없습니다
+
+관련 PR [#3076](https://github.com/QwenLM/qwen-code/pull/3076)
+
+<video width="100%" controls>
+  <source src="https://cloud.video.taobao.com/vod/HWrYG5WwyiT_QUV8eYwj7VoJqekCwasaXmlEG-hkoeI.mp4" type="video/mp4" />
+</video>
+
+### 디렉터리마다 다른 규칙 자동 적용
+
+이전에는 모든 디렉터리가 규칙 하나를 공유했습니다. 이제는 파일 경로에 맞춰 특정 컨텍스트 규칙을 자동 주입합니다. `.qwen/rules/` 디렉터리에서 읽어 오니, 디렉터리별로 AI 행동이 더 정밀해집니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- 모듈마다 다른 규범 — 프론트엔드 디렉터리는 React 규범, 백엔드 디렉터리는 Node.js 규범을 자동 인식
+- 프로젝트 맞춤 규칙 — 하위 디렉터리별 특수 코드 스타일 요구사항을 `.qwen/rules/`에 넣으면 자동 적용
+- 수동 설정 감소 — 대화마다 규칙을 지정하지 않아도 경로가 맞으면 저절로 적용
+
+관련 PR [#3339](https://github.com/QwenLM/qwen-code/pull/3339)
+
+<video width="100%" controls>
+  <source src="https://cloud.video.taobao.com/vod/MbM3-mryIk1692zUrOzuU_gM4SvPLAxjNe492_Rdv_c.mp4" type="video/mp4" />
+</video>
+
+### /doctor로 환경 문제 원터치 점검
+
+이전에는 문제가 생기면 설정과 환경을 하나씩 손으로 확인해야 했습니다. 이제는 `/doctor`만 돌리면 환경, 설정, 네트워크 등 흔한 문제를 자동 진단하고 수정 제안까지 알려 줍니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- 환경 문제 빠른 진단 — MCP 서버 연결 실패, 모델 로드 실패 같은 걸 원터치로 검사
+- 설정 정상 여부 확인 — 설정 파일 문법과 API Key 유효성을 자동 검증
+- 자동화에 친화적 — 비대화 JSON 출력을 지원해 스크립트나 CI/CD 흐름에 넣기 좋음
+
+관련 PR [#3404](https://github.com/QwenLM/qwen-code/pull/3404)
+
+![doctor 환경 진단 데모](https://img.alicdn.com/imgextra/i3/O1CN01YsDS5o1l9SkKCxqTC_!!6000000004776-2-tps-2272-1474.png)
+
+### PDF 바로 읽기와 Jupyter Notebook 분석
+
+이전에는 텍스트 모델이 PDF를 만나면 바로 에러를 냈습니다. 이제는 시스템 도구를 자동 호출해 순수 텍스트로 추출하고, 페이지 범위 지정 읽기까지 지원합니다. Jupyter Notebook 파일도 원본 JSON을 그대로 던져 주지 않고, 셀 단위로 코드와 출력 결과를 구조화해 보여 줍니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- PDF 문서 분석 — AI가 PDF 보고서, 논문, 기술 문서를 직접 읽으니 텍스트로 변환할 필요 없음
+- 페이지 지정 정독 — 불러올 페이지 범위를 정할 수 있어, 큰 파일 전체를 로드하지 않아도 됨
+- Notebook 검토 — `.ipynb` 파일을 AI가 분석해 코드와 출력이 질서 정연하게 보입니다. 중첩 JSON 더미가 아닙니다
+
+관련 PR [#3160](https://github.com/QwenLM/qwen-code/pull/3160)
+
+<video width="100%" controls>
+  <source src="https://cloud.video.taobao.com/vod/VTrAzU1s3IE90mDGyEqz-M7GMUNESqg6hSxQMsD9uS4.mp4" type="video/mp4" />
+</video>
+
+## 📊 최적화 및 개선
+
+- **Token 소비 실시간 표시**: 입력·출력 단계에서 현재 Token 소모량을 실시간으로 보여 줍니다. 대화 사용량을 항상 알 수 있습니다 ([#3329](https://github.com/QwenLM/qwen-code/pull/3329), [#2742](https://github.com/QwenLM/qwen-code/pull/2742))
+- **세션 되돌아보기 /recap**: 세션으로 돌아오면 이전 요약을 자동 표시하고, `/recap`을 직접 실행해 빠르게 복습할 수도 있습니다 ([#3434](https://github.com/QwenLM/qwen-code/pull/3434))
+- **도구 실행 진행 상황 표시**: 도구 실행 중에 진행 정보를 보이니 커서만 보고 기다리지 않아도 됩니다 ([#3155](https://github.com/QwenLM/qwen-code/pull/3155))
+- **반복 감지 강화**: 도구 검증 재시도 반복 감지와 정체 감지가 추가돼, AI가 헛도는 루프에 빠지는 걸 막습니다 ([#3178](https://github.com/QwenLM/qwen-code/pull/3178), [#3236](https://github.com/QwenLM/qwen-code/pull/3236))
+- **컨텍스트 100% 초과 시 ">100%" 표시**: 컨텍스트 창을 넘으면 ">100%"로 드러냅니다. 더 이상 숨기지 않습니다 ([#2766](https://github.com/QwenLM/qwen-code/pull/2766))
+- **/btw가 실시간 대화 컨텍스트 사용**: `/btw`가 현재 대화 컨텍스트를 기준으로 하니 배경을 다시 설명하지 않아도 됩니다 ([#3429](https://github.com/QwenLM/qwen-code/pull/3429))
+- **Compact Mode 경험 최적화**: 단축키 지원, 설정 동기화, 안전 보호가 추가돼 compact mode에서 조작이 더 편리합니다 ([#3100](https://github.com/QwenLM/qwen-code/pull/3100))
+- **shell 출력 너비 제한**: shell 출력 창의 너비에 상한을 둬, 긴 줄이 넘쳐 UI를 망치지 않습니다 ([#2857](https://github.com/QwenLM/qwen-code/pull/2857))
+- **인라인 shell 출력 제한**: shell 명령어 출력 줄 수 상한을 설정할 수 있어, 지나치게 긴 출력이 화면을 뒤덮지 않습니다 ([#3508](https://github.com/QwenLM/qwen-code/pull/3508))
+- **터미널 테마 자동 감지**: 터미널 테마에 맞춰 UI 색을 자동 적용합니다. 손으로 설정하지 않아도 됩니다 ([#3460](https://github.com/QwenLM/qwen-code/pull/3460))
+- **상태 바 다중 줄 출력**: status line이 여러 줄 표시를 지원해 정보를 더 많이 보여 줍니다 ([#3311](https://github.com/QwenLM/qwen-code/pull/3311))
+- **상태 바 주기 갱신**: status line에 refreshInterval 설정이 추가돼 자동 갱신됩니다 ([#3383](https://github.com/QwenLM/qwen-code/pull/3383))
+- **M-d 키 바인딩**: 입력창에 `M-d` 단축키(Emacs 스타일)가 바인딩돼 다음 단어를 삭제합니다 ([#3358](https://github.com/QwenLM/qwen-code/pull/3358))
+- **초기 입력 캡처**: 시작 시 키 입력을 먼저 잡아 두니, 로딩 중에 키가 사라지지 않습니다 ([#3319](https://github.com/QwenLM/qwen-code/pull/3319))
+- **MCP OAuth URL 클릭 가능**: OAuth 승인 URL을 클릭할 수 있게 돼 직접 복사할 필요가 없습니다 ([#3489](https://github.com/QwenLM/qwen-code/pull/3489))
+- **OSC 52 복사 단축키**: OAuth 승인 URL에 OSC 52 복사 단축키를 지원합니다 ([#3393](https://github.com/QwenLM/qwen-code/pull/3393))
+- **VSCode 긴 대화 입력 지연 수정**: 대화가 길어져도 입력이 버벅이지 않습니다 ([#2550](https://github.com/QwenLM/qwen-code/pull/2550))
+- **VSCode Plan Mode 토글과 승인 UI**: VSCode Companion이 Plan Mode 전환과 승인 UI를 지원합니다 ([#2551](https://github.com/QwenLM/qwen-code/pull/2551))
+- **VSCode /insight 명령어 지원**: VSCode에서 `/insight` 명령어를 쓸 수 있습니다 ([#2593](https://github.com/QwenLM/qwen-code/pull/2593))
+- **VSCode agent 실행 표시**: VSCode에 agent 실행 상태 표시가 추가됐습니다 ([#2590](https://github.com/QwenLM/qwen-code/pull/2590))
+- **WebUI의 markdown 렌더링**: WebUI에서 도구 출력과 WebFetch 결과를 markdown 형식으로 렌더링합니다 ([#3469](https://github.com/QwenLM/qwen-code/pull/3469))
+- **이중 출력 사이드바 모드**: TUI가 dual-output sidecar 모드를 지원해 두 출력 스트림을 나란히 볼 수 있습니다 ([#3352](https://github.com/QwenLM/qwen-code/pull/3352))
+- **/stats를 subagent별로 귀속**: `/stats`가 subagent별 소모 줄수를 제대로 표시합니다 ([#3229](https://github.com/QwenLM/qwen-code/pull/3229))
+- **WebFetch 도구의 Markdown for Agents 지원**: 웹 페이지를 가져올 때 Agent 상황에 더 잘 맞게 최적화됩니다 ([#2734](https://github.com/QwenLM/qwen-code/pull/2734))
+- **ACP 메시지 재작성 타임아웃 설정 가능**: ACP 메시지 재작성 시간을 커스터마이즈해 오래 기다리는 일을 피합니다 ([#3475](https://github.com/QwenLM/qwen-code/pull/3475))
+- **slashCommands.disabled 설정**: 설정으로 지정한 slash 명령어를 비활성화할 수 있습니다 ([#3445](https://github.com/QwenLM/qwen-code/pull/3445))
+- **Slash Command 다중 모드 확장 (Phase 2)**: slash command의 ACP 수정과 UX 개선 ([#3377](https://github.com/QwenLM/qwen-code/pull/3377))
+- **OAuth 설정 플래그의 mcp add 지원**: `mcp add` 명령어가 OAuth 설정 파라미터를 지원합니다 ([#3442](https://github.com/QwenLM/qwen-code/pull/3442))
+- **SDK API에서 /context 사용량 공개**: SDK로 /context 사용량 데이터를 가져올 수 있습니다 ([#2916](https://github.com/QwenLM/qwen-code/pull/2916))
+- **미니멀 시작 모드**: bare startup mode가 추가돼 시작할 때 기본 설정을 로드하지 않습니다. 가벼운 상황에 알맞습니다 ([#3448](https://github.com/QwenLM/qwen-code/pull/3448))
+- **CLI 시작 성능 프로파일러**: 시작 성능 분석이 추가돼 시작이 느린 원인을 찾습니다 ([#3232](https://github.com/QwenLM/qwen-code/pull/3232))
+
+## 🔧 주요 수정 사항
+
+| PR | 버전 | 수정 사항 | 사용자에게 미치는 영향 |
+|----|------|----------|-----------|
+| [#3310](https://github.com/QwenLM/qwen-code/pull/3310) | v0.15.0 | statusline spawn EBADF로 CLI가 크래시하던 문제 수정 | 상태 바 오류 때문에 CLI 전체가 죽는 일이 사라졌습니다 |
+| [#3295](https://github.com/QwenLM/qwen-code/pull/3295) | v0.15.0 | ProcessTransport의 process exit listener 누수 수정 | 오래 돌려도 리스너가 쌓여 성능이 떨어지지 않습니다 |
+| [#3321](https://github.com/QwenLM/qwen-code/pull/3321) | v0.15.0 | 업데이트 알림을 모델 응답이 끝난 뒤로 지연 | AI가 답하는 도중에 업데이트 안내가 떠서 생각을 끊지 않습니다 |
+| [#3320](https://github.com/QwenLM/qwen-code/pull/3320) | v0.15.0 | skill watcher에 깊이 제한으로 파일 디스크립터 고갈 방지 | 큰 프로젝트에서 skill 모니터링이 파일 폭주로 시스템 자원을 다 쓰지 않습니다 |
+| [#3315](https://github.com/QwenLM/qwen-code/pull/3315) | v0.15.0 | 모델 전환 시 이전 thinking blocks 제거 | 모델을 바꾼 뒤 기록에 이상한 사고 과정이 남지 않습니다 |
+| [#3327](https://github.com/QwenLM/qwen-code/pull/3327) | v0.15.0 | shell 파라미터 인용부호 가이드로 특수 문자 오류 방지 | shell 명령어에 특수 문자가 들어가도 실수가 줄어듭니다 |
+| [#3431](https://github.com/QwenLM/qwen-code/pull/3431) | v0.15.0 | `/clear`가 `/btw` 대화 상자를 해제 | `/clear`를 실행하면 미완료 `/btw` 상자가 정상 닫힙니다 |
+| [#3436](https://github.com/QwenLM/qwen-code/pull/3436) | v0.15.0 | 구버전 Git 초기화 지원 | Git이 오래된 환경에서 프로젝트 초기화가 실패하지 않습니다 |
+| [#3450](https://github.com/QwenLM/qwen-code/pull/3450) | v0.15.0 | VSCode IDE 분할 스트림 메시지 순서 수정 | VSCode에서 메시지 표시 순서가 뒤섞이지 않습니다 |
+| [#3313](https://github.com/QwenLM/qwen-code/pull/3313) | v0.15.0 | 잘린 tool calls 자동 복구 (멀티 라운드 재전송) | AI 출력이 잘려도 이어서 진행하니 처음부터 다시 하지 않습니다 |
+| [#3505](https://github.com/QwenLM/qwen-code/pull/3505) | v0.15.0 | 잘린 subagent의 write_file 호출 거부 | subagent가 불완전한 파일을 써서 데이터가 상하는 걸 막습니다 |
+
+### Windows 플랫폼 전용 수정
+
+| PR | 수정 사항 | 사용자에게 미치는 영향 |
+|----|----------|-----------|
+| [#3451](https://github.com/QwenLM/qwen-code/pull/3451) | MCP stdio 서버의 Windows PATH 정규화 | Windows에서 MCP 서버 연결이 경로 형식 문제로 실패하지 않습니다 |
+
+## 🎈 기타 개선
+
+- Windows 설치 명령어 수정 — CMD와 PowerShell 호환 ([#3252](https://github.com/QwenLM/qwen-code/pull/3252))
+- 인증 방법 문서 갱신 — OAuth 종료 사실을 반영 ([#3325](https://github.com/QwenLM/qwen-code/pull/3325))
+- CI에 stale 정책 추가 — PR 60일 무활동 시 stale 표시, 30일 뒤 종료 ([#3375](https://github.com/QwenLM/qwen-code/pull/3375))
+- 빌드 스크립트 최적화 — npx 경유 대신 tsx를 직접 호출 ([#3237](https://github.com/QwenLM/qwen-code/pull/3237))
+- 도구 등록 지연 팩토리 — inflight 중복 요청 제거 ([#3297](https://github.com/QwenLM/qwen-code/pull/3297))
+- DingTalk 채널 다수 수정 — 연속 메시지 접미사, @mention 빈 텍스트 보존, reaction 컨텍스트 누수 ([#2977](https://github.com/QwenLM/qwen-code/pull/2977), [#2978](https://github.com/QwenLM/qwen-code/pull/2978), [#2979](https://github.com/QwenLM/qwen-code/pull/2979))
+- 샌드박스 이미지 태그를 latest로 폴백 ([#2962](https://github.com/QwenLM/qwen-code/pull/2962))
+- 통합 테스트의 stdinDoesNotEnd 옵션 수정 ([#2966](https://github.com/QwenLM/qwen-code/pull/2966))
+- JSON schema 생성 수정 — 설명 없는 enum 설정에서 "undefined Options"가 나오던 문제 ([#2963](https://github.com/QwenLM/qwen-code/pull/2963))
+- AskUserQuestionDialog에서 숫자 키 자동 제출 ([#3407](https://github.com/QwenLM/qwen-code/pull/3407))
+- /recap을 입력창 위에 고정하고 fastModel 기본값과 정렬 ([#3478](https://github.com/QwenLM/qwen-code/pull/3478))
+- ACP에 plan/subagent/arena system reminder 주입 ([#3479](https://github.com/QwenLM/qwen-code/pull/3479))
+- xdg-open이 없어도 크래시하지 않고 부드럽게 처리 ([#1675](https://github.com/QwenLM/qwen-code/pull/1675))
+- reasoning 전용 assistant content를 null 대신 빈 문자열로 사용 ([#3499](https://github.com/QwenLM/qwen-code/pull/3499))
+
+## 👋 신규 기여자를 환영합니다
+
+- [**@Skyline-9**](https://github.com/Skyline-9) — Windows 설치 명령어 호환성 수정 ([#3252](https://github.com/QwenLM/qwen-code/pull/3252))
+- [**@pedrormjunior**](https://github.com/pedrormjunior) — M-d 단축키 바인딩 ([#3358](https://github.com/QwenLM/qwen-code/pull/3358))
+- [**@szepeviktor**](https://github.com/szepeviktor) — 클래스명 오타 수정 ([#2189](https://github.com/QwenLM/qwen-code/pull/2189))
+- [**@sharziki**](https://github.com/sharziki) — /clear가 /btw 대화 상자를 해제하던 문제 수정 ([#3431](https://github.com/QwenLM/qwen-code/pull/3431))
+- [**@gin-lsl**](https://github.com/gin-lsl) — WebFetch 도구에 Markdown for Agents 지원 ([#2734](https://github.com/QwenLM/qwen-code/pull/2734))
+- [**@ihubanov**](https://github.com/ihubanov) — slashCommands.disabled 설정 추가 ([#3445](https://github.com/QwenLM/qwen-code/pull/3445))
+- [**@gy1016**](https://github.com/gy1016) — macOS에서 Zed.app 감지 추가 ([#3303](https://github.com/QwenLM/qwen-code/pull/3303))
+- [**@yeelam-gordon**](https://github.com/yeelam-gordon) — OpenAI samplingParams 전달 수정 ([#3458](https://github.com/QwenLM/qwen-code/pull/3458))
+- [**@Ojhaharsh**](https://github.com/Ojhaharsh) — xdg-open 누락 시 부드럽게 처리 ([#1675](https://github.com/QwenLM/qwen-code/pull/1675))
+
+<Callout type="info">
+  **업데이트 방법**: `npm i @qwen-code/qwen-code@latest -g`를 실행하면 최신 버전으로 업데이트할 수 있습니다.
+</Callout>
+
+문제나 제안이 있다면 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)로 알려 주세요!

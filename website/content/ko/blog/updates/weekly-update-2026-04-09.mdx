@@ -1,0 +1,257 @@
+---
+title: "Qwen Code 주간 업데이트: Channels 멀티 플랫폼 연결, Cron 예약 작업, /plan 계획 모드, Qwen 3.6 Plus 출시"
+date: "2026-04-08"
+description: "이번 주 v0.13.2, v0.14.0, v0.14.1, v0.14.2 네 개 버전을 출시했습니다. Channels 플랫폼(Telegram/WeChat/DingTalk), Cron 예약 작업 스케줄링, /plan 계획 모드, 적응형 출력 Token(8K→64K), Qwen 3.6 Plus 모델 지원을 추가했습니다."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: https://gw.alicdn.com/imgextra/i1/O1CN01KCwGNp25tzJatl9Fq_!!6000000007585-0-tps-1344-576.jpg
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 주간 업데이트: Channels 멀티 플랫폼 연결, Cron 예약 작업, /plan 계획 모드, Qwen 3.6 Plus 출시"
+  date="2026-04-08"
+  author="Qwen Team"
+/>
+
+이번 주에 기능 버전 **v0.14.0**, **v0.14.2** 두 개와 버그 수정 버전 **v0.13.2**, **v0.14.1** 두 개를 릴리스했습니다.
+
+v0.14.0은 규모가 큰 업데이트입니다:
+
+- **Channels 시스템으로 Qwen Code가 터미널 밖으로 나갔습니다**. Telegram, WeChat, DingTalk 같은 플랫폼으로 원격 제어할 수 있습니다;
+- Cron 예약 작업으로 AI가 시간표에 따라 반복 업무를 자동으로 처리합니다;
+- Qwen 3.6 Plus 모델이 정식 출시됐습니다. v0.14.1에는 후속 제안, 상세/간결 모드 전환 같은 경험 개선이 들어왔습니다.
+- v0.14.2에는 `/plan` 계획 모드 명령어, thinking block 라운드 간 유지, 적응형 출력 Token 업그레이드(기본 8K + 자동으로 64K까지 상향), 내장 bugfix 워크플로와 디버깅 스킬이 추가됐습니다.
+
+<Callout type="info">
+	이번 주 신규 기여자 [**@chinesepowered**](https://github.com/chinesepowered), [**@pic4xiu**](https://github.com/pic4xiu), [**@YingchaoX**](https://github.com/YingchaoX), [**@euxaristia**](https://github.com/euxaristia), [**@kulikrch**](https://github.com/kulikrch), [**@nsalvacao**](https://github.com/nsalvacao), [**@mj4444ru**](https://github.com/mj4444ru), [**@chiga0**](https://github.com/chiga0) 님 환영합니다 🎉
+</Callout>
+
+## ✨ 새로운 기능
+
+### Channels: DingTalk, Telegram, WeChat으로 Qwen Code 원격 제어
+
+Qwen Code를 더 이상 터미널에서만 쓸 필요가 없습니다. Channels 시스템은 플러그인 방식으로 여러 플랫폼을 붙이며, 현재 Telegram, WeChat, DingTalk을 지원합니다. 모바일에서 Bot에게 메시지 한 통을 보내 서버에서 작업을 돌리게 할 수 있습니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- 외출 중에는 Telegram으로 Qwen Code에 메시지를 보내 스크립트를 돌리거나 로그를 확인
+- DingTalk 그룹에서 @봇을 호출해 팀의 코드 관련 작업을 처리
+- WeChat에서 편하게 한 줄 보내 개발 환경을 원격으로 조작
+
+관련 PR [#2628](https://github.com/QwenLM/qwen-code/pull/2628)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01fWI9Ow1NUwXa0kIJR_!!6000000001574-0-tps-4032-2565.jpg)
+
+### Cron 예약 작업: AI가 시간표대로 알아서 일합니다
+
+Cron 도구가 새로 추가돼, 현재 세션에서 예약 반복 작업을 설정할 수 있습니다. AI가 지정한 시간표에 따라 자동으로 실행하니 지켜보고 있을 필요가 없습니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- 30분마다 테스트 통과 여부를 자동으로 확인
+- 매일 아침 최신 코드를 가져와 빌드를 한 번 돌림
+- 로그 파일을 주기적으로 감시해 이상을 찾으면 알림
+
+관련 PR [#2731](https://github.com/QwenLM/qwen-code/pull/2731)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000002950/O1CN018Sepbk1Xf9Wjb2uR5_!!6000000002950-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/VN0xFz-zPV1vvFzIuT6S3HUTFUX36x_JtySMTzAJYpE.mp4" controls></video>
+
+**어떻게 켜나요**?
+
+`~/.qwen/settings.json`에 다음을 추가합니다:
+
+```json
+{
+	"experimental":{
+		"cron": true
+	}
+}
+```
+
+### Qwen 3.6 Plus 모델 출시
+
+Qwen 3.6 Plus가 Qwen Code에 정식 탑재됐고 무료로 쓸 수 있습니다. 코딩 작업에서 GPT-5, Claude 3.7 Sonnet에 맞먹는 성능을 내고, 특히 중문 이해와 긴 컨텍스트 처리에서 뚜렷하게 앞섭니다. 알리바바 클라우드 Bailian Coding Plan도 함께 출시됐습니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- Qwen Code에서 최신 Qwen 3.6 Plus 모델을 바로 사용
+- 하루 1000회 무료 호출, 100만 token 컨텍스트
+- 중문 코딩 환경에서의 사용 경험이 더 좋음
+
+관련 PR [#2820](https://github.com/QwenLM/qwen-code/pull/2820)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01uhK7oJ1tMlAV50yRo_!!6000000005888-2-tps-1694-950.png)
+
+### 후속 제안: AI가 일을 마치고 다음에 할 일을 알려 줍니다
+
+AI가 작업을 끝내면 후속 제안 2~3개가 자동으로 나옵니다. '다음에 뭘 하지' 직접 고민하지 않아도, 클릭하면 바로 이어집니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- 컴포넌트를 다 쓰면 AI가 '단위 테스트 추가할까요?'라고 제안 — 클릭하면 시작
+- 버그를 고치면 AI가 '비슷한 부분도 확인할까요?'라고 제안 — 직접 떠올릴 필요 없음
+- 다음 단계를 모르는 초보에게 제안이 곧 내비게이션
+
+관련 PR [#2525](https://github.com/QwenLM/qwen-code/pull/2525)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01bduOSo1HBoIgKUkbq_!!6000000000720-2-tps-2208-1202.png)
+
+**어떻게 켜나요**?
+
+`~/.qwen/settings.json`에 다음을 추가합니다:
+
+```json
+{
+	"ui":{
+		"enableFollowupSuggestions": true
+	}
+}
+```
+
+제안 응답을 더 빠르게 받으려면 `/model --fast`로 경량 모델을 지정해 백그라운드 제안에만 쓰면 됩니다.
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01RGAS8t22o5LA9v4OK_!!6000000007166-2-tps-1694-948.png)
+
+### 서브 Agent 모델 분리: 작업마다 다른 모델로
+
+이제 서브 Agent는 메인 Agent와 다른 모델을 쓸 수 있습니다. 메인 작업은 강력한 모델로 품질을 지키고, 하위 작업은 경량 모델로 속도를 내는 식입니다. 자유롭게 조합하면서 Token은 줄이고 품질은 떨어뜨리지 않습니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- 메인 작업은 Qwen 3.6 Plus, 하위 작업은 경량 모델 — Token 소비는 줄이고 중요한 작업 품질은 유지
+- 종류가 다른 하위 작업에 자동으로 가장 알맞은 모델을 배정
+
+관련 PR [#2698](https://github.com/QwenLM/qwen-code/pull/2698)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000000621/O1CN01uFmNW81GST5dMLGJA_!!6000000000621-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/gWur3ruz89gz8-LdUper69IQkHXcQNSgFs1HgKpllNs.mp4" controls></video>
+
+**어떻게 시작하나요**?
+
+서브 Agent Skill 파일을 만들고 서로 다른 모델을 지정합니다:
+
+```markdown
+---
+name: test-cross-provider
+description: 서로 다른 Provider의 Agent 테스트
+model: openai:gpt-4o
+---
+
+당신은 테스트 도우미입니다. 자신이 사용하는 모델 이름을 포함해 간단히 자기소개를 해 주세요.
+```
+
+이후 대화에서 Qwen Code에게 이 서브 Agent를 호출하라고 하면 됩니다.
+### Ctrl+O 상세/간결 모드 전환: 출력 수준을 원터치로
+
+Ctrl+O를 누르면 verbose(상세) 모드와 compact(간결) 모드가 번갈아 전환됩니다. 디버깅할 때는 상세 출력, 평소에는 간결판을 씁니다. 설정을 건드릴 필요도 없습니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- 문제 디버깅 때는 verbose 모드로 전환해 실행 과정을 전부 확인
+- 평소 사용에서는 compact 모드로 전환해 화면을 깔끔하게
+- 언제든 전환 가능 — 재시작이나 설정 파일 수정 불필요
+
+관련 PR [#2770](https://github.com/QwenLM/qwen-code/pull/2770)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000002951/O1CN01BRtItT1XfbvIq2YyI_!!6000000002951-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/7njhFZp_lcoGIThTivda3Q9rLXCdkf19MZo8GEZIm1I.mp4" controls></video>
+
+### /plan 명령어: 계획 먼저, 실행은 그 다음
+
+`/plan` 명령어가 새로 추가돼 계획 모드로 바로 들어갑니다. AI가 전체 실행 방안을 먼저 제시하고, 확인한 뒤에 실행을 시작합니다. 전체 그림을 보고 단계별로 밀고 나가야 하는 복잡한 작업에 알맞습니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- 대형 모듈 리팩터링 전에 AI에게 수정할 파일과 절차를 전부 목록으로 만들게 함
+- 여러 단계 작업은 방안부터 확인해서, AI가 딴길로 새고 전부 다시 하는 일을 방지
+- 팀 협업에서는 방안을 먼저 만들어 동료 확인을 받고 실행
+
+관련 PR [#2921](https://github.com/QwenLM/qwen-code/pull/2921)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01wm82SI1tw1fL4l7DE_!!6000000005965-2-tps-2840-1310.png)
+
+### 적응형 출력 Token: 답변이 더 이상 잘리지 않습니다
+
+출력 Token 기본값은 8K입니다. AI가 답변이 잘렸다고 판단하면 자동으로 64K까지 올려 다시 시도합니다. 파라미터를 손으로 조절하지 않아도 AI가 답변 길이를 스스로 판단합니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- 긴 파일 생성이 잘리지 않고 한 번에 전체 내용이 나옴
+- 복잡한 코드 생성을 나눠서 이어 붙이지 않아도 됨
+- max_tokens를 직접 설정할 필요 없이 AI가 알아서 맞춤
+
+관련 PR [#2898](https://github.com/QwenLM/qwen-code/pull/2898)
+
+### Thinking Block 라운드 간 유지
+
+AI의 사고 과정(thinking block)을 이제 대화 라운드를 넘어 유지하며, 유휴 상태일 때 자동으로 정리합니다. 여러 라운드 대화에서 AI가 앞선 추론 흐름을 이어가므로 답변이 훨씬 자연스럽습니다.
+
+관련 PR [#2897](https://github.com/QwenLM/qwen-code/pull/2897)
+
+## 📊 최적화 및 개선
+
+| PR | 버전 | 개선 사항 | 사용자에게 미치는 영향 |
+|----|------|----------|-----------|
+| [#2781](https://github.com/QwenLM/qwen-code/pull/2781) | v0.14.0 | Hooks 정식 릴리스: 실험 표시 제거, 비활성 상태 UI 추가 | 설정을 지우지 않고도 특정 Hook을 잠깐 끌 수 있고, 정식 기능인 만큼 더 안정적입니다 |
+| [#2687](https://github.com/QwenLM/qwen-code/pull/2687) | v0.14.0 | /review 강화: 검증 단계와 오탐 제어 추가, PR에 댓글 작성 지원 | Review 결과가 더 정확해지고 의미 없는 경고가 줄어듭니다 |
+| [#2776](https://github.com/QwenLM/qwen-code/pull/2776) | v0.14.1 | /btw 곁질문 강화: 프롬프트 품질 개선, Ctrl+C/D 취소 지원 | 곁질문 사용이 더 매끄러워지고, 취소하고 싶을 때 언제든 Ctrl+C를 누르면 됩니다 |
+| [#2719](https://github.com/QwenLM/qwen-code/pull/2719) | v0.14.0 | 확장 기능의 npm 설치 지원 | GitHub URL 외에도 npm 레지스트리에서 확장을 설치할 수 있습니다 |
+| [#2428](https://github.com/QwenLM/qwen-code/pull/2428) | v0.14.0 | MCP 자동 재연결, `/mcp reconnect` 명령어 추가 | MCP 연결이 끊겨도 자동 복구돼 매번 재시작하지 않아도 됩니다 |
+| [#2889](https://github.com/QwenLM/qwen-code/pull/2889) | v0.14.1 | 위험 작업 안내: 시스템 프롬프트에 위험 작업 행동 가이드 추가 | AI가 삭제·덮어쓰기 같은 작업 전에 더 신중하게 확인하니 오폭이 줄어듭니다 |
+| [#2659](https://github.com/QwenLM/qwen-code/pull/2659) | v0.14.0 | /compress 최적화: 도구 호출이 많은 대화를 제대로 처리 | 긴 대화를 압축한 뒤에도 핵심 컨텍스트가 사라지지 않습니다 |
+| [#2595](https://github.com/QwenLM/qwen-code/pull/2595) | v0.14.1 | WebUI 도구 이름 정규화 | WebUI에서 도구 이름이 더 일관되고 깔끔하게 표시됩니다 |
+| [#2954](https://github.com/QwenLM/qwen-code/pull/2954) | v0.14.2 | 후속 제안 기본 꺼짐 | 자동으로 튀어나오는 제안에 방해받지 않고, 필요할 때 설정에서 켜면 됩니다 |
+
+## 🔧 주요 수정 사항
+
+| PR | 버전 | 수정 사항 | 사용자에게 미치는 영향 |
+|----|------|----------|-----------|
+| [#2733](https://github.com/QwenLM/qwen-code/pull/2733) | v0.13.2 | Windows Git Bash에서 node-pty 경로 해석 수정 | Windows Git Bash 사용자의 시작 오류가 사라졌습니다 |
+| [#2656](https://github.com/QwenLM/qwen-code/pull/2656) | v0.13.2 | /clear와 ESC 키가 Hooks 시스템으로 버벅이던 문제 수정 | 화면 지우기와 취소 동작이 다시 매끄러워졌습니다 |
+| [#2707](https://github.com/QwenLM/qwen-code/pull/2707) | v0.13.2 | 파일 편집 시 원래 줄 바꿈 문자(CRLF/LF) 유지 | 플랫폼 간 협업에서 줄 바꿈이 임의로 바뀌지 않습니다 |
+| [#2718](https://github.com/QwenLM/qwen-code/pull/2718) | v0.13.2 | 고지연 SSH 환경에서 터미널 응답 누수 수정 | SSH 원격 개발 시 출력이 뒤섞이지 않습니다 |
+| [#2777](https://github.com/QwenLM/qwen-code/pull/2777) | v0.14.0 | node-pty 업그레이드로 macOS PTY 파일 디스크립터 누수 수정 | 오래 사용해도 FD 누수로 인한 버벅임이 없습니다 |
+| [#2662](https://github.com/QwenLM/qwen-code/pull/2662) | v0.14.0 | Tab 닫을 때 고아 프로세스 정리, 종료 시 MCP 하위 프로세스 정리 | 종료 뒤 백그라운드 프로세스가 자원을 차지하지 않습니다 |
+| [#2884](https://github.com/QwenLM/qwen-code/pull/2884) | v0.14.1 | vim normal 모드에서 ? 단축키 복구 | vim 사용자의 검색 단축키가 정상화됐습니다 |
+| [#2837](https://github.com/QwenLM/qwen-code/pull/2837) | v0.14.1 | 인용부호 드래그 감지 제거로 입력 지연 수정 | 타이핑할 때 입력 지연이 느껴지지 않습니다 |
+| [#2834](https://github.com/QwenLM/qwen-code/pull/2834) | v0.14.1 | /theme 취소 시 이전 테마로 복구 | 테마 전환을 취소해도 중간 상태에 갇히지 않습니다 |
+| [#2822](https://github.com/QwenLM/qwen-code/pull/2822) | v0.14.1 | ideCommand 실패가 모든 슬래시 명령으로 번지지 않도록 차단 | 명령어 하나가 오류나도 다른 명령까지 못 쓰게 되지 않습니다 |
+| [#2804](https://github.com/QwenLM/qwen-code/pull/2804) | v0.14.1 | ACP 연결에 재시도와 자동 재연결 추가 | VS Code 연동이 더 안정적이고, 끊기면 자동으로 복구됩니다 |
+| [#2802](https://github.com/QwenLM/qwen-code/pull/2802) | v0.14.1 | VS Code 새 Tab이 모델 선택을 상속 | Tab을 새로 열 때마다 모델을 다시 고르지 않아도 됩니다 |
+| [#2959](https://github.com/QwenLM/qwen-code/pull/2959) | v0.14.2 | VS Code 0.14.1 webview 백지화 수정 | v0.14.1로 업그레이드 후 VS Code 패널이 하얗게 변하지 않습니다 |
+| [#2995](https://github.com/QwenLM/qwen-code/pull/2995) | v0.14.2 | Linux/Wayland에서 csiUPrefix 오류 수정 | Linux Wayland 사용자의 입력 오류가 사라졌습니다 |
+| [#2976](https://github.com/QwenLM/qwen-code/pull/2976) | v0.14.2 | Hooks가 신호로 종료될 때 null 종료 코드 유지 | Hook이 신호로 죽었을 때 종료 코드를 0으로 잘못 보고하지 않습니다 |
+| [#2858](https://github.com/QwenLM/qwen-code/pull/2858) | v0.14.1 | MCP 도구 파라미터 호환성 수정(anyOf/oneOf schema) | 더 많은 MCP 도구의 파라미터가 정상 해석돼 호출 오류가 줄어듭니다 |
+| [#2943](https://github.com/QwenLM/qwen-code/pull/2943) | v0.14.1 | WeChat Channel의 iLink-App-Id header 누락 수정 | WeChat Channel 연결이 더 안정적이고 header 누락으로 요청이 실패하지 않습니다 |
+
+## 🎈 기타 개선
+
+| PR                                                                                              | 개선 사항                                     | 사용자에게 미치는 영향                       |
+| ----------------------------------------------------------------------------------------------- | ---------------------------------------- | --------------------------- |
+| [#2623](https://github.com/QwenLM/qwen-code/pull/2623)                                          | 내장 qc-helper Skill과 qwen-code-claw 참고 문서 | 새 사용자가 시작하면 내장 스킬 안내를 자동으로 받아 즉시 시작할 수 있습니다       |
+| [#2715](https://github.com/QwenLM/qwen-code/pull/2715)                                          | envKey 문서 최적화: 사용법 설명과 env 필드 예시 명확화            | 환경변수를 설정할 때 파라미터 형태를 추측하지 않아도 됩니다             |
+| [#2714](https://github.com/QwenLM/qwen-code/pull/2714)                                          | Bailian → ModelStudio 통일                 | 문서의 브랜드 명칭이 정리돼 새 사용자가 옛 이름에 혼동되지 않습니다       |
+| [#2696](https://github.com/QwenLM/qwen-code/pull/2696)                                          | Hooks 이벤트 UI 최적화: 전용 기록 항목으로 변경                  | 대화 기록에서 어느 동작이 Hook 때문에 발생했는지 확실히 보입니다    |
+| [#2463](https://github.com/QwenLM/qwen-code/pull/2463)                                          | Markdown 표 렌더링 수정                          | AI가 출력한 표의 형식이 깨지지 않습니다            |
+| [#2455](https://github.com/QwenLM/qwen-code/pull/2455)                                          | 모델 설정 영구 저장                                  | 모델을 바꿔도 재시작 후 커스텀 모델 설정이 사라지지 않습니다          |
+| [#2763](https://github.com/QwenLM/qwen-code/pull/2763)                                          | Plan Mode의 web fetch 승인 지원                | 계획 단계에서도 AI가 웹 페이지를 조회할 수 있습니다             |
+| [#2586](https://github.com/QwenLM/qwen-code/pull/2586)                                          | YOLO 모드 종료 수정                              | 계획 모드에 갇혀 나오지 못하는 일이 사라졌습니다                |
+| [sdk-typescript-v0.1.6](https://github.com/QwenLM/qwen-code/releases/tag/sdk-typescript-v0.1.6) | SDK TypeScript v0.1.6                    | 개발자가 Qwen Code 기능을 연동할 때 API가 더 완비됐습니다 |
+
+## 👋 신규 기여자를 환영합니다
+
+- [**@chinesepowered**](https://github.com/chinesepowered) — Hooks abort listener 정리, 서브 Agent 캐시 갱신, Telegram 메시지 폴백 등 여러 문제 수정
+- [**@pic4xiu**](https://github.com/pic4xiu) — Hook 시스템 메시지 전송 순서 수정, WebFetchTool의 중복 프록시 설정 제거
+- [**@YingchaoX**](https://github.com/YingchaoX) — vim normal 모드에서 ? 단축키 복구
+- [**@euxaristia**](https://github.com/euxaristia) — 인용부호 드래그 감지 제거로 입력 지연 수정
+- [**@kulikrch**](https://github.com/kulikrch) — /theme 취소 시 이전 테마로 복구
+- [**@nsalvacao**](https://github.com/nsalvacao) — YOLO 모드에서 exit_plan_mode 수정
+- [**@mj4444ru**](https://github.com/mj4444ru) — Markdown 표 셀 구분자 이스케이프 수정
+- [**@chiga0**](https://github.com/chiga0) — Ctrl+O 상세/간결 모드 전환 구현
+
+<Callout type="info">
+  **업데이트 방법**: `npm install -g @qwen-code/qwen-code@latest`를 실행하면 최신 버전으로 업데이트할 수 있습니다.
+</Callout>
+
+문제나 제안이 있다면 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)로 알려 주세요!

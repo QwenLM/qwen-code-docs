@@ -1,0 +1,116 @@
+---
+title: "Qwen Code 주간 업데이트: Agent Skills 정식 출시, 원클릭 설치 스크립트, 세션 내보내기"
+date: "2026-02-09"
+description: "이번 주에는 v0.9.0, v0.9.1 정식 버전과 v0.10.0 프리뷰 버전을 출시했습니다. Agent Skills는 실험 단계 표시를 떼고 정식 기능이 됐고, 원클릭 설치 스크립트와 세션 기록 내보내기 기능이 새로 추가됐습니다."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: https://gw.alicdn.com/imgextra/i2/O1CN01MbIMov258M7lXcnSz_!!6000000007481-0-tps-1344-576.jpg
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 주간 업데이트: Agent Skills 정식 출시, 원클릭 설치 스크립트, 세션 내보내기"
+  date="2026-02-09"
+  author="Qwen Team"
+/>
+
+이번 주에 v0.9.0, v0.9.1 정식 버전과 v0.10.0 프리뷰 버전을 출시했습니다.
+
+- Agent Skills에서 실험 단계 표시가 공식적으로 사라지고 정식 기능이 됐습니다
+- 원클릭 설치 스크립트가 추가돼 사용 문턱이 한층 낮아졌습니다
+- 세션 기록을 Markdown, JSONL, HTML 형식으로 내보낼 수 있습니다
+- 무료 사용량이 하루 2000회에서 1000회로 조정됐습니다
+
+## ✨ 새로운 기능
+
+### Agent Skills 정식 출시
+
+Agent Skills에서 `--experimental-skills` 플래그가 사라졌습니다. 0.6.0에서 처음 공개된 뒤 4개 릴리스 주기를 거치며 충분히 검증됐으니, 이제 실험 단계를 벗어나 프로덕션 환경에서도 안심하고 쓸 수 있는 정식 기능이 됐습니다.
+
+관련 PR: [#1738](https://github.com/QwenLM/qwen-code/pull/1738)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01xkzvoE1fomm8znzBG_!!6000000004054-2-tps-1694-952.png)
+
+### 세션 기록 내보내기 지원
+
+`/export` 명령어가 새로 추가돼 세션 기록을 Markdown, JSONL, HTML 형식으로 저장할 수 있습니다. 대화를 따로 남겨두거나 남에게 공유하고, 문서나 보고서를 만들 때도 쓸모있습니다. 관련 PR: [#1515](https://github.com/QwenLM/qwen-code/pull/1515)
+
+**사용 방법**
+- `/export <format> <session ID>`
+- `<session ID>`를 비우면 현재 대화가 내보내집니다.
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01vq4v6W1oJwe6lyVg2_!!6000000005205-1-tps-1280-720.gif)
+
+### 원클릭 설치 스크립트 추가
+
+한 줄 명령어로 설치할 수 있는 스크립트를 추가했습니다. 설치하는 일이 더 쉬워졌습니다.
+
+관련 PR: [#1653](https://github.com/QwenLM/qwen-code/pull/1653)
+
+**Linux / macOS**
+
+```bash
+curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh | bash
+```
+
+**Windows (관리자 권한 CMD)**
+
+```bash
+curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat
+```
+
+<Callout type="info">
+  설치가 끝나면 터미널을 재시작해 환경 변수가 제대로 적용되도록 해 주세요.
+</Callout>
+
+### 큰 파일 붙여넣기 개선
+
+큰 파일을 붙여넣는 상황을 개선했습니다. 자리 표시 안내가 뜨고, macOS에서 엔터로 제출되지 않던 문제도 고쳤습니다. 코드가 길거나 텍스트가 많은 작업을 할 때 체감이 좋습니다.
+
+관련 PR: [#1713](https://github.com/QwenLM/qwen-code/pull/1713)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01rFSm7o1hoRiIy0xrP_!!6000000004324-1-tps-1280-720.gif)
+
+### SDK 기능 개선
+
+- **세션 복구**: TypeScript SDK에 `resume` 옵션이 추가됐습니다. CLI의 `--resume`과 같고, 세션 상태를 저장해 두고 이어 쓸 수 있습니다. 관련 PR: [#1714](https://github.com/QwenLM/qwen-code/pull/1714)
+- **Electron IPC 통합**: ProcessTransport에 FORK_MODE를 지원해 Electron IPC와 깊게 붙였습니다. 데스크톱 앱을 만들기 한결 수월합니다. 관련 PR: [#1719](https://github.com/QwenLM/qwen-code/pull/1719)
+
+### Plan 모드에서 검색 도구 사용
+
+Plan 모드에서는 WebFetch와 WebSearch 도구가 자동으로 켜집니다. 별도로 조작할 필요가 없습니다.
+
+관련 PR: [#1686](https://github.com/QwenLM/qwen-code/pull/1686)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png)
+
+## 🔧 주요 수정 사항
+
+- **심볼릭 링크 지원**: Skills가 심볼릭 링크를 지원해서 스킬을 정리하고 관리하기 쉬워졌습니다 [#1690](https://github.com/QwenLM/qwen-code/pull/1690)
+- **SubAgents 도구 제한**: 승인되지 않은 도구 사용을 막아 보안을 강화했습니다 [#1691](https://github.com/QwenLM/qwen-code/pull/1691)
+- **파일 편집 시 끝 공백 처리**: 파일을 편집할 때 끝 공백이 그대로 남던 문제를 고쳐 형식이 유지됩니다 [#1688](https://github.com/QwenLM/qwen-code/pull/1688)
+- **Docker 빌드 수정**: Docker 빌드 오류를 고치고 수동 버전 빌드도 지원합니다 [#1722](https://github.com/QwenLM/qwen-code/pull/1722)
+- **CLI 인자 파싱**: CLI 진입점의 인자 파싱 문제를 고쳤습니다 [#1758](https://github.com/QwenLM/qwen-code/pull/1758)
+- **ACP 모델 선택**: 설정된 모든 인증 타입을 다루도록 ACP 모델 선택을 수정했습니다 [#1555](https://github.com/QwenLM/qwen-code/pull/1555)
+- **UTF-8 BOM 보존** [#1680](https://github.com/QwenLM/qwen-code/pull/1680) - 파일 편집 시 UTF-8 BOM을 유지해 인코딩 호환성을 확보합니다
+- **디버그 모드 개편** [#1610](https://github.com/QwenLM/qwen-code/pull/1610) - 디버그 모드 출력을 다시 만들고 console 호출을 로그 파일 우선의 debugLogger로 돌렸습니다
+- **빌드 효율 향상** [#1681](https://github.com/QwenLM/qwen-code/pull/1681) - 빌드 절차를 개선하고 개발 모드를 추가했습니다
+
+### Windows 호환성 개선
+
+- Windows PowerShell에서 Shift+Tab 단축키를 사용할 수 있게 됐습니다 [#1607](https://github.com/QwenLM/qwen-code/pull/1607)
+- Windows에서 자동완성이 켜진 상태일 때 Tab 키가 승인 모드를 돌던 문제를 막았습니다 [#1736](https://github.com/QwenLM/qwen-code/pull/1736)
+
+### MCP 기능 개선
+
+- MCP의 여러 부분으로 나뉜 도구 결과 처리 로직을 수정해 복잡한 도구 호출도 올바르게 동작합니다 [#1755](https://github.com/QwenLM/qwen-code/pull/1755)
+- MCP 서버 관리 절차와 인증 방식을 개선해 안정성과 보안을 높였습니다 [#1752](https://github.com/QwenLM/qwen-code/pull/1752)
+- 종료할 때 MCP 서버 하위 프로세스를 제대로 정리해 자원 누수를 막습니다 [#1285](https://github.com/QwenLM/qwen-code/pull/1285)
+
+<Callout type="info">
+  **업데이트 방법**: `npm i @qwen-code/qwen-code@latest -g`를 실행하면 최신 버전으로 업데이트할 수 있습니다.
+</Callout>
+
+문제나 제안이 있다면 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)로 알려 주세요!

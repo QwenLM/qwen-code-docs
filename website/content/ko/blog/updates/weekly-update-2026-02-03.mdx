@@ -1,0 +1,109 @@
+---
+title: "Qwen Code 주간 업데이트: LSP 지원, 배치 평가 도구, 새 언어 지원"
+date: "2026-02-03"
+description: "이번 주에는 v0.8.1, v0.8.2 정식 버전과 v0.9.0 프리뷰 버전을 출시했습니다. LSP 지원, batch-runner 배치 평가 도구, 통합 UI 아키텍처, 일본어와 포르투갈어 지원이 추가됐습니다."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: https://gw.alicdn.com/imgextra/i4/O1CN01KVv9hF1YZUGa64bnu_!!6000000003073-0-tps-1344-576.jpg
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 주간 업데이트: LSP 지원, 배치 평가 도구, 새 언어 지원"
+  date="2026-02-03"
+  author="Qwen Team"
+/>
+
+이번 주에 v0.8.1, v0.8.2 정식 버전과 v0.9.0 프리뷰 버전을 출시했습니다. LSP 지원, batch-runner 배치 평가 도구, 통합 UI 아키텍처, 일본어와 포르투갈어가 새로 추가됐습니다.
+
+- 정식 버전 2개(v0.8.1, v0.8.2)와 프리뷰 버전 1개(v0.9.0)를 출시했습니다. 핵심 이슈 5개 이상을 고치고 새 기능 여럿을 담았습니다
+- TypeScript SDK v0.1.4를 출시했습니다. SDK의 포지션은 CodeAgent as a Service입니다
+- 전체 Star 수가 17,984에 도달했고, 지난 금요일 GitHub Trending Ranking 10위에 올랐습니다
+
+## ✨ 새로운 기능
+
+### Extension 확장 시스템 도입
+
+Qwen Code에 새로운 Extension 확장 시스템이 들어왔습니다. prompts, MCP servers, subagents, skills, 커스텀 명령어를 한 덩어리로 묶어 관리할 수 있습니다. 특히 Gemini CLI Extensions Gallery와 Claude Code Marketplace의 플러그인을 Qwen Code에 바로 설치해 쓸 수 있습니다!
+
+Git 저장소, 로컬 경로, Claude Code Marketplace, Gemini CLI Extensions Gallery 등 여러 소스에서 설치할 수 있습니다.
+
+**사용 가능한 Extension 관리 명령어:**
+
+| 명령어 | 설명 |
+|------|------|
+| `/extensions` 또는 `/extensions list` | 설치된 확장 전체 목록 |
+| `/extensions install <source>` | 확장 설치 (git URL, 로컬 경로, 앱 마켓 지원) |
+| `/extensions uninstall <name>` | 지정한 확장 제거 |
+| `/extensions enable <name>` | 확장 활성화 |
+| `/extensions disable <name>` | 확장 비활성화 |
+| `/extensions update <name>` | 지정한 확장 업데이트 |
+| `/extensions update --all` | 모든 확장 업데이트 |
+| `/extensions detail <name>` | 확장 상세 정보 확인 |
+| `/extensions explore [source]` | 확장 마켓 페이지 열기 |
+
+👇 설치와 사용 시연
+
+<video
+  src="https://cloud.video.taobao.com/vod/Ybs168sWIogca6PT3fHThUI58kPw_kVSPS23AIM4PqQ.mp4"
+  controls
+  width="100%"
+  height="100%"
+  style={{ borderRadius: '10px', marginTop: '20px' }}
+/>
+
+### LSP 지원 추가
+
+Language Server Protocol(LSP)을 기본적으로 지원하게 되어, 한 단계 높은 코드 이해 능력을 갖추게 됐습니다. AI agent가 텍스트 검색에 머무르지 않고 코드의 의미를 읽고 작업합니다.
+
+`qwen --experimental-lsp`로 시작할 수 있습니다. 관련 PR: [#1401](https://github.com/QwenLM/qwen-code/pull/1401)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01kxCAnu1c0SPDCZsUt_!!6000000003538-2-tps-1694-948.png)
+
+### batch-runner 배치 평가 도구 추가
+
+Python 기반 동시 실행 도구를 추가했습니다. 격리된 git worktree를 써서 Qwen Code 작업을 여러 개 나란히 돌립니다. 여러 모델을 대상으로 여러 작업을 한 번에 시험하고 벤치마크를 돌릴 수 있어 효율적입니다. 함께 돌린 결과물과 trajectory를 모두 로컬에 저장하고 온라인으로 볼 수 있습니다.
+
+관련 PR: [#1640](https://github.com/QwenLM/qwen-code/pull/1640)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01u4j9r41kwde3UBP5X_!!6000000004748-2-tps-3372-1026.png)
+
+### 통합 UI 아키텍처, `@qwen-code/webui`
+
+VSCode IDE Companion의 UI를 공용 패키지 `@qwen-code/webui`로 뽑아내 통합 UI 아키텍처를 도입했습니다. 이제 VSCode, Chrome 플러그인, 웹 인터페이스, Share 기능 등 여러 플랫폼에서 같은 UI 컴포넌트를 재사용할 수 있습니다.
+
+관련 PR: [#1543](https://github.com/QwenLM/qwen-code/pull/1543)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01TCL20a1z4KvCdwzf4_!!6000000006660-2-tps-2002-1222.png)
+
+### 국제화 강화, 일본어 & 포르투갈어 지원
+
+커뮤니티의 힘으로 일본어와 포르투갈어가 추가됐습니다. 두 지역 사용자가 qwen을 처음 설치하면 그 언어가 UI 표시 언어와 LLM 출력 언어로 자동으로 설정됩니다.
+
+관련 PR: [#1616](https://github.com/QwenLM/qwen-code/pull/1616)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01Dgc5oS1Qp2lDyfC7S_!!6000000002024-2-tps-1468-406.png)
+
+### 커뮤니티 생태계: Zed, Skills가 Qwen Code를 공식 통합
+
+- [ACP Registry PR #15](https://github.com/agentclientprotocol/registry/pull/15)
+- [Vercel Skills PR #99](https://github.com/vercel-labs/skills/pull/99)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01w2ee3M1i2BaxOb2hr_!!6000000004354-2-tps-3082-1238.png)
+
+
+## 🔧 주요 수정 사항
+
+- **멀티모달 입력 지원** ([#1564](https://github.com/QwenLM/qwen-code/pull/1564)) - 이미지, PDF, 오디오 등 여러 입력 형식을 지원합니다
+- **보안 수정** ([#1638](https://github.com/QwenLM/qwen-code/pull/1638), [#1601](https://github.com/QwenLM/qwen-code/pull/1601)) - 명령어 삽입 취약점을 수정했습니다
+- **Anthropic SDK 수정** ([#1663](https://github.com/QwenLM/qwen-code/pull/1663)) - undici agent가 전달되는 일을 막았습니다
+- **React 버전 일관성** ([#1659](https://github.com/QwenLM/qwen-code/pull/1659)) - package.json과 lockfile의 버전 불일치를 수정했습니다
+- **ACP 서브 agent 스트리밍 수정** ([#1626](https://github.com/QwenLM/qwen-code/pull/1626)) - 텍스트 블록과 추론 블록의 스트리밍 오류를 고쳤습니다
+
+<Callout type="info">
+  **업데이트 방법**: `npm i @qwen-code/qwen-code@latest -g`를 실행하면 최신 버전으로 업데이트할 수 있습니다.
+</Callout>
+
+문제나 제안이 있다면 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)로 알려 주세요!

@@ -1,0 +1,219 @@
+---
+title: "Qwen Code 주간 업데이트: 도구 지능형 병렬 실행, Fork 서브 Agent의 컨텍스트 공유, CJK 형태소 이동 개선"
+date: "2026-04-16"
+description: "이번 주 v0.14.3, v0.14.4, v0.14.5 세 개 버전을 출시했습니다. 도구 지능형 병렬 실행, Fork 서브 Agent의 컨텍스트 공유, CJK 형태소 이동 최적화, LLM 메시지 재작성 미들웨어, Skill 모델 지정 등을 추가했습니다."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: https://gw.alicdn.com/imgextra/i2/O1CN01JtDq6n1aRorowgfV8_!!6000000003327-0-tps-1344-576.jpg
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 주간 업데이트: 도구 지능형 병렬 실행, Fork 서브 Agent의 컨텍스트 공유, CJK 형태소 이동 개선"
+  date="2026-04-16"
+  author="Qwen Team"
+/>
+
+이번 주에 기능 버전 **v0.14.3**, **v0.14.4**, **v0.14.5** 세 개를 릴리스했습니다.
+
+v0.14.3이 나온 뒤 커뮤니티 피드백이 꽤 들어와서, 이번 주에는 입력 경험과 서브 Agent 관련 문제를 집중적으로 다뤘습니다. 새 기능으로는 v0.14.4의 도구 지능형 병렬 실행이 눈에 띕니다 — 읽기 전용 도구는 자동으로 묶어서 병렬로 돌리고, 여러 도구가 얽힌 상황에서 응답 속도가 눈에 띄게 빨라졌습니다. CJK 형태소 인식 덕분에 중·일·한 사용자의 커서 이동이 드디어 정상 동작합니다. v0.14.5에는 Fork 서브 Agent가 추가돼 하위 작업이 부모 Agent의 컨텍스트를 그대로 물려받습니다. 참고로 Qwen OAuth 무료 쿼터는 4월 15일자로 제공이 종료됐으니 OpenRouter나 Fireworks로 옮겨 가시는 걸 권합니다.
+
+<Callout type="info">
+	이번 주 신규 기여자 [**@doudouOUC**](https://github.com/doudouOUC), [**@BZ-D**](https://github.com/BZ-D), [**@YuchenLiang00**](https://github.com/YuchenLiang00), [**@Apophis3158**](https://github.com/Apophis3158), [**@sibylassana95**](https://github.com/sibylassana95), [**@evan70**](https://github.com/evan70), [**@B-A-M-N**](https://github.com/B-A-M-N), [**@feyclaw**](https://github.com/feyclaw), [**@dreamWB**](https://github.com/dreamWB), [**@reidliu41**](https://github.com/reidliu41), [**@Shenean**](https://github.com/Shenean) 님 환영합니다 🎉
+</Callout>
+
+## ✨ 새로운 기능
+
+### 도구 지능형 병렬 실행
+
+Qwen Code가 이제 도구 종류를 보고 병렬 가능 여부를 자동으로 판단합니다. 검색이나 파일 읽기 같은 읽기 전용 작업은 자동으로 묶어 병렬 실행하고, shell 쓰기는 순차로 남겨 안전을 지킵니다. 여러 도구를 쓰는 상황에서 대기 시간이 뚜렷하게 줄어듭니다. 관련 PR [#2864](https://github.com/QwenLM/qwen-code/pull/2864)
+
+**이렇게 쓸 수 있습니다:**
+- 여러 파일을 동시에 검색하고 코드 여러 구간을 한꺼번에 읽습니다 — 하나씩 줄 서서 기다릴 필요가 없습니다
+- Agent가 어떤 도구 호출을 병렬로 돌릴 수 있는지 스스로 알아내니 설정은 아무것도 필요 없습니다
+- 쓰기 작업은 여전히 순차 실행이라 파일 충돌 걱정이 없습니다
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000003845/O1CN012ABPOm1eH40RohFDf_!!6000000003845-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/_f_P3QbHVgGG2jAXF-hQOrVpLMmWLldy-LoADiIhCmE.mp4" controls></video>
+
+### Fork 서브 Agent의 컨텍스트 공유
+
+Fork 서브 Agent 방식이 새로 추가됐습니다. 작업을 쪼개면 서브 Agent가 부모 Agent의 컨텍스트를 자동으로 물려받아, 배경 정보를 반복해서 넘길 필요가 없습니다. 큰 작업 여러 작은 작업으로 나눠 각각 돌리는 상황에 알맞습니다. 관련 PR [#2936](https://github.com/QwenLM/qwen-code/pull/2936)
+
+**이렇게 쓸 수 있습니다:**
+- '모듈 전체 리팩터링'을 여러 서브 Agent로 나눠 파일별로 처리시키되, 각 서브 Agent가 전체 맥락을 알고 있습니다
+- 컨텍스트를 반복 전달할 일이 줄어 Token을 아낍니다
+- 서브 Agent끼리 서로 간섭하지 않고 결과는 부모 Agent로 모읍니다
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000005639/O1CN01nyeVOz1rWiY8QH8AI_!!6000000005639-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/aXllYK3Qh7DwrtGuT-_1Z2dvH552w90PL-7yYvxgt50.mp4" controls></video>
+
+### Skill에서 모델 지정
+
+Skill 파일의 frontmatter에서 모델을 덮어쓰는 설정을 할 수 있습니다. Skill마다 다른 모델로 실행하는 식입니다. 코드 검토에는 추론이 강한 모델, 간단한 작업에는 빠른 모델 — 필요한 만큼씩만 씁니다. 관련 PR [#2949](https://github.com/QwenLM/qwen-code/pull/2949)
+
+**이렇게 쓸 수 있습니다:**
+- 코드 검토 Skill에는 추론이 더 강한 모델을 지정해 검토 품질을 올림
+- 간단한 작업 Skill에는 더 빠른 모델을 지정해 비용과 시간을 절약
+- Skill마다 독립 설정이라 서로 영향을 주지 않음
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000001020/O1CN01fYeEQ61JPD7bQcAae_!!6000000001020-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/FsFUEuTzbYcF5U-FTiCJLfDHqvBharvJ_MmLIACzAsE.mp4"  controls></video>
+
+### CJK 형태소 인식과 Ctrl+방향키 이동
+
+터미널 입력에서 중·일·한 문자의 형태소 경계를 인식합니다. Ctrl+좌우 방향키를 누르면 커서가 단어 단위로 뛰고, 한 글자씩 밀려 다니지 않습니다. 아시아 문자와 영문을 섞어 입력할 때 체감 개선이 큽니다. 관련 PR [#2942](https://github.com/QwenLM/qwen-code/pull/2942)
+
+**이렇게 쓸 수 있습니다:**
+- 한국어·중국어 prompt를 입력할 때 Ctrl+방향키로 단어 단위로 이동해 고칠 위치를 바로 찾음
+- 한글·영문 혼합 입력에서 커서 이동이 직관에 맞음
+- 일본어·한국어 사용자도 똑같이 혜택을 받습니다
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000003184/O1CN01FY2hf61ZOKCwyRZux_!!6000000003184-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/z6hnrYH8f-F0rxuKHlqXbba5rGnfvTBE-VHWqsg0ZT4.mp4" controls></video>
+
+### LLM 메시지 재작성 미들웨어
+
+ACP 프로토콜에 LLM 기반 메시지 재작성 미들웨어가 추가됐습니다. 커스텀 prompt로 사용자 메시지를 사전 처리할 수 있습니다. 예를 들어 컨텍스트 자동 보강, 형식 통일, 번역 같은 용도입니다. 관련 PR [#3191](https://github.com/QwenLM/qwen-code/pull/3191)
+
+**이렇게 쓸 수 있습니다:**
+- 짧은 사용자 메시지에 프로젝트 컨텍스트를 자동으로 채워 넣음
+- 팀 환경에서 메시지 형식과 규약을 통일
+- 재작성 규칙을 커스터마이즈해 각자 업무 요구에 맞춤
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000005378/O1CN01JAKr1H1pbBAzhUkyz_!!6000000005378-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/RzzDJlhSp8quYE89V55QJWZt0j5d3TLCPufu_QesqVw.mp4" controls></video>
+
+### 컨텍스트 인지형 힌트
+
+대화가 끝난 뒤 현재 컨텍스트를 보고 다음에 할 작업을 추천해 줍니다. 코드를 고치면 "테스트 돌려 볼까요" 하고 알려 주는 식으로, 아직 안 써 본 기능을 발견하는 데도 도움이 됩니다. 관련 PR [#2904](https://github.com/QwenLM/qwen-code/pull/2904)
+
+**이렇게 쓸 수 있습니다:**
+- 코드 수정을 끝내면 관련 후속 작업을 자동 안내
+- 새 사용자에게 기능을 발견하고 배우기 쉬운 입구
+- 대화 내용을 보고 관련 슬래시 명령어 추천
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000005710/O1CN01Idqagj1s3EfcOQ74v_!!6000000005710-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/95Tmeuj5ojBFs_JwHczIRvnPiX1rtRTzY8qy237gbzU.mp4" controls></video>
+
+### /review 강화: 결정적 분석과 자동 수정 제안
+
+`/review` 코드 검토에 결정적 분석(LLM에 의존하지 않는 정적 검사), 자동 수정 제안, 보안 강화 체크가 추가됐습니다. 검토 결과가 더 신뢰할 만해지고 수정 방안까지 바로 제시합니다. 관련 PR [#2932](https://github.com/QwenLM/qwen-code/pull/2932)
+
+**이렇게 쓸 수 있습니다:**
+- 검토 결과가 안정적입니다 — 같은 코드는 매번 같은 결론
+- 문제를 찾으면 수정 제안이 바로 나오니 어떻게 고칠지 직접 고민하지 않음
+- 흔한 보안 취약점을 자동으로 점검
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000008055/O1CN015vMexX29NFRbpMTA7_!!6000000008055-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/K3xtn5O3mNeSt9Sqb5UVBAQIrKT5iYFHHHQWAP3Rv60.mp4" controls></video>
+
+### 유휴 컨텍스트 미세 압축
+
+대화가 유휴 상태일 때 불필요한 컨텍스트를 자동 정리해 Token 소비를 줄입니다. 긴 대화에서 효과가 크고, 컨텍스트 창을 손으로 관리하지 않아도 됩니다. 관련 PR [#3006](https://github.com/QwenLM/qwen-code/pull/3006)
+
+**이렇게 쓸 수 있습니다:**
+- 긴 대화에서 컨텍스트 창 한도에 그리 빨리 부딪히지 않음
+- 필요 없어진 중간 결과를 자동 정리해 Token 절약
+- 손대지 않아도 백그라운드에서 알아서 처리
+
+### 그 외 새로운 기능
+
+- **커스텀 상태 바**: `/statusline` 명령어로 터미널 하단 상태 바 표시 내용을 자유롭게 설정 ([#2923](https://github.com/QwenLM/qwen-code/pull/2923))
+- **/context detail 하위 명령어**: 컨텍스트 사용량을 상세하게 확인 ([#3042](https://github.com/QwenLM/qwen-code/pull/3042))
+- **SDK에서 컨텍스트 사용량 공개**: 비대화 모드와 SDK API에서 `/context` 사용량 데이터를 조회할 수 있어 모니터링 연동이 쉬워짐 ([#2916](https://github.com/QwenLM/qwen-code/pull/2916))
+- **서브 Agent가 승인 모드 상속**: 서브 Agent가 부모 Agent의 승인 설정을 자동으로 물려받아 중복 설정이 필요 없음 ([#3066](https://github.com/QwenLM/qwen-code/pull/3066))
+- **서브 Agent 도구 차단 설정**: Agent 정의에 `disallowedTools` 필드가 추가돼 서브 Agent의 특정 도구 사용을 막을 수 있음 ([#3064](https://github.com/QwenLM/qwen-code/pull/3064))
+- **Agent 이름에 Unicode 지원**: Agent 이름에 한글 등 Unicode 문자를 쓸 수 있게 됨 ([#3194](https://github.com/QwenLM/qwen-code/pull/3194))
+- **Telegram 음성 메시지 지원**: TelegramAdapter에 음성 메시지 송수신 추가 ([#3150](https://github.com/QwenLM/qwen-code/pull/3150))
+- **프랑스어 현지화**: 프랑스어(fr-FR) 지원 추가 ([#3126](https://github.com/QwenLM/qwen-code/pull/3126))
+- **StopFailure·PostCompact Hook 이벤트**: Hook 이벤트 지점 두 개가 추가돼 자동화 범위가 넓어짐 ([#2825](https://github.com/QwenLM/qwen-code/pull/2825))
+- **시작 성능 프로파일러**: `--profile` 파라미터로 시작 시간 병목을 파악 ([#3232](https://github.com/QwenLM/qwen-code/pull/3232))
+- **sandbox 이미지 설정**: settings에서 `tools.sandboxImage`로 커스텀 샌드박스 이미지 지정 ([#3146](https://github.com/QwenLM/qwen-code/pull/3146))
+- **워크스페이스 설정 덮어쓰기 경고**: 워크스페이스 설정이 전역 modelProviders를 덮어쓸 때 경고 표시 ([#3148](https://github.com/QwenLM/qwen-code/pull/3148))
+- **VSCode /account 명령어**: VSCode 플러그인에서 계정 정보 확인 ([#2984](https://github.com/QwenLM/qwen-code/pull/2984))
+- **exit/quit 직접 입력으로 CLI 종료**: `/exit`를 치지 않아도 `exit`만 입력하면 끝 ([#3201](https://github.com/QwenLM/qwen-code/pull/3201))
+
+## 📊 최적화 및 개선
+
+| PR | 버전 | 개선 사항 | 사용자에게 미치는 영향 |
+|----|------|----------|-----------|
+| [#3120](https://github.com/QwenLM/qwen-code/pull/3120) | v0.14.4 | Fast Model 설정을 텍스트 입력에서 모델 선택기로 변경 | 모델 이름을 손으로 치지 않아도 됩니다. 목록에서 고르면 끝 |
+| [#3116](https://github.com/QwenLM/qwen-code/pull/3116) | v0.14.4 | /settings에서 항목을 선택하면 상세 설명 표시 | 각 설정이 무슨 뜻인지 추측할 필요가 없습니다 |
+| [#2871](https://github.com/QwenLM/qwen-code/pull/2871) | v0.14.4 | ↑/ESC 키로 대기열 메시지를 불러와 편집 | 메시지를 잘못 보냈을 때 바로 꺼내서 고칠 수 있습니다 |
+| [#3008](https://github.com/QwenLM/qwen-code/pull/3008) | v0.14.3 | Plan 모드 종료 시 '이전 모드로 복구' 선택지 추가 | Plan 모드를 빠져나온 뒤 이전 모드로 손으로 되돌릴 필요가 없습니다 |
+| [#3075](https://github.com/QwenLM/qwen-code/pull/3075) | v0.14.3 | verboseMode를 compactMode로 이름 변경 | 설정 이름이 직관적입니다. compact = 간결 표시 |
+| [#2728](https://github.com/QwenLM/qwen-code/pull/2728) | v0.14.3 | IDE diff 상호작용 로직을 CoreToolScheduler로 통합 | 코드 편집의 diff 표시가 더 안정적입니다 |
+| [#2914](https://github.com/QwenLM/qwen-code/pull/2914) | v0.14.4 | 터미널 Markdown 표 렌더링 최적화 | 터미널에서 표가 더 반듯하게 나옵니다 |
+| [#3193](https://github.com/QwenLM/qwen-code/pull/3193) | v0.14.4 | Coding Plan 기본 모델을 qwen3.5-plus로 설정 | Coding Plan을 설치하자마자 쓸 수 있고 기본 모델도 더 강력합니다 |
+
+## 🔧 주요 수정 사항
+
+| PR | 버전 | 수정 사항 | 사용자에게 미치는 영향 |
+|----|------|----------|-----------|
+| [#3138](https://github.com/QwenLM/qwen-code/pull/3138) | v0.14.4 | 재귀 파일 탐색에 상한이 없어 메모리 초과 | 대용량 프로젝트가 파일 많다고 죽지 않습니다 (상한 100k) |
+| [#3246](https://github.com/QwenLM/qwen-code/pull/3246) | v0.14.5 | SSE 스트림에서 속도 제한 오류를 잘못 감지 | 제한 발생 시 제대로 안내하고, 조용히 실패하지 않습니다 |
+| [#3251](https://github.com/QwenLM/qwen-code/pull/3251) | v0.14.5 | Gemini의 순수 thinking 응답이 스트림 검증에 거부됨 | Gemini 모델 사용 시 사고 과정이 정상 표시됩니다 |
+| [#3212](https://github.com/QwenLM/qwen-code/pull/3212) | v0.14.5 | 커스텀 Gemini baseUrl이 반영되지 않음 | 커스텀 Gemini 엔드포인트 설정이 제대로 동작합니다 |
+| [#2872](https://github.com/QwenLM/qwen-code/pull/2872) | v0.14.3 | Follow-up 도구 호출 UI 누수와 Enter 승인 버퍼 경합 | Follow-up 상호작용이 가끔 멈추거나 이상하게 표시되지 않습니다 |
+| [#3151](https://github.com/QwenLM/qwen-code/pull/3151) | v0.14.4 | OpenAI 호환 Provider에서 Follow-up 제안이 동작하지 않음 | 서드파티 Provider를 쓸 때도 Follow-up이 정상 회복됩니다 |
+| [#2985](https://github.com/QwenLM/qwen-code/pull/2985) | v0.14.3 | 패키지 설치 시 tree-sitter WASM이 인라인되지 않음 | 오프라인·패키지 설치 환경에서 코드 파싱이 정상 동작합니다 |
+| [#2930](https://github.com/QwenLM/qwen-code/pull/2930) | v0.14.3 | 서브 Agent 확인 포커스 경합 충돌 | 여러 서브 Agent가 동시에 확인을 요청해도 뒤섞이지 않습니다 |
+| [#2850](https://github.com/QwenLM/qwen-code/pull/2850) | v0.14.3 | 환경변수 접두가 붙은 shell 명령어가 저장된 권한 규칙과 매칭되지 않음 | `ENV=val command` 형식의 명령어 권한 저장이 정상 동작합니다 |
+| [#3069](https://github.com/QwenLM/qwen-code/pull/3069) | v0.14.3 | Compact 모드에서 ProceedAlways 권한이 영구 저장되지 않음 | '항상 허용'을 고르면 다시 묻지 않습니다 |
+| [#3109](https://github.com/QwenLM/qwen-code/pull/3109) | v0.14.4 | 대화 복구 시 만료된 압축 체크포인트의 Token 수 사용 | 대화를 복구한 뒤 Token 수가 정확합니다 |
+| [#3038](https://github.com/QwenLM/qwen-code/pull/3038) | v0.14.3 | VSCode 플러그인 채팅 입력창 스크롤바 드래그 불가 | 긴 텍스트 입력 시 스크롤바를 정상적으로 끌 수 있습니다 |
+| [#3249](https://github.com/QwenLM/qwen-code/pull/3249) | v0.14.5 | VSCode 세션 탭 제목이 길어 탭 바가 넘침 | 탭 제목이 자동 잘려 레이아웃이 정상 유지됩니다 |
+| [#3181](https://github.com/QwenLM/qwen-code/pull/3181) | v0.14.4 | 붙여넣기 모드가 먹통 되면 Ctrl+C가 함께 죽음 | 터미널 붙여넣기가 이상해져도 Ctrl+C로 복구할 수 있습니다 |
+| [#3136](https://github.com/QwenLM/qwen-code/pull/3136) | v0.14.4 | Channel 시작 명령어에 프록시 설정 미적용 | 프록시 환경에서도 Channel이 정상 시작합니다 |
+| [#3031](https://github.com/QwenLM/qwen-code/pull/3031) | v0.14.4 | IDE diff 열기 실패 시 대체 수단 없음 | IDE diff가 실패하면 자동으로 CLI 확인으로 폴백합니다 |
+| [#3123](https://github.com/QwenLM/qwen-code/pull/3123) | v0.14.4 | OAuth 갱신 응답 본문이 비면 크래시 | OAuth Token 갱신에 이상이 있어도 죽지 않습니다 |
+| [#3197](https://github.com/QwenLM/qwen-code/pull/3197) | v0.14.4 | @file 주입 경로가 respectGitIgnore 설정을 무시 | @file 참조 시 .gitignore에 있는 파일을 제대로 건너뜁니다 |
+| [#3192](https://github.com/QwenLM/qwen-code/pull/3192) | v0.14.4 | MCP Server의 cwd가 없을 때 명확한 오류 없음 | MCP 경로 설정이 틀렸을 때 또렷하게 안내합니다 |
+
+## 📢 중요 공지: Qwen OAuth 무료 쿼터 종료
+
+2026년 4월 15일부터 Qwen OAuth 무료 쿼터 제공이 종료됐습니다. 기존 사용자는 남은 쿼터를 다 쓸 때까지 계속 사용할 수 있습니다. 아래 경로로 이전하시는 걸 권합니다:
+
+- **[알리바바 클라우드 Bailian](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091)** (권장): qwen3-coder-plus, qwen3.6-plus 등 최신 모델을 지원하고 종량 과금이며, 설정 방법은 [Bailian 문서](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=2974721)를 참고하세요
+- **[OpenRouter](https://openrouter.ai/)**: 여러 모델 Provider를 모아 제공하고 결제 수단이 다양합니다
+- **[Fireworks](https://fireworks.ai/)**: 고성능 추론 플랫폼
+
+관련 PR [#3291](https://github.com/QwenLM/qwen-code/pull/3291), [#3299](https://github.com/QwenLM/qwen-code/pull/3299), [#3207](https://github.com/QwenLM/qwen-code/pull/3207)
+
+## 🎈 기타 개선
+
+| PR | 개선 사항 | 사용자에게 미치는 영향 |
+|----|----------|-----------|
+| [#3187](https://github.com/QwenLM/qwen-code/pull/3187) | 비대화 모드에서 `--openai-api-key` 파라미터 검증 수정 | CI/CD에서 API Key 인증이 더 이상 에러 나지 않습니다 |
+| [#3257](https://github.com/QwenLM/qwen-code/pull/3257) | `/bug` 명령어를 하이퍼링크 미지원 터미널에서 쓰기 쉽게 개선 | 어떤 터미널에서든 편하게 버그 제보를 남길 수 있습니다 |
+| [#3270](https://github.com/QwenLM/qwen-code/pull/3270) | 입력창에서 Tab 리터럴 입력 무시 | Tab 키가 입력창에 탭 문자를 삽입하지 않습니다 |
+| [#3060](https://github.com/QwenLM/qwen-code/pull/3060) | Shift+Tab이 placeholder 제안을 승인하지 않음 | 제안 승인은 Tab만, Shift+Tab은 정상 동작 |
+| [#3045](https://github.com/QwenLM/qwen-code/pull/3045) | 붙여넣기 내용의 Tab 문자를 제대로 보존 | 코드 붙여넣을 때 들여쓰기가 사라지지 않습니다 |
+| [#3104](https://github.com/QwenLM/qwen-code/pull/3104) | 슬래시 명령어 자동완성 우선순위 상향 | `/`를 치면 명령어 자동완성이 더 빨리 뜹니다 |
+| [#3077](https://github.com/QwenLM/qwen-code/pull/3077) | `/model --fast` 설명 문구 최적화 | `--fast` 파라미터가 뭘 하는지 바로 이해됩니다 |
+| [#3041](https://github.com/QwenLM/qwen-code/pull/3041) | 저장소가 아닌 디렉터리에서 checkpointing 초기화 수정 | Git 저장소 밖에서 사용해도 에러가 나지 않습니다 |
+| [#3091](https://github.com/QwenLM/qwen-code/pull/3091) | statusline 스크립트가 settings.json을 건드리지 않음 | 커스텀 상태 바가 설정 파일을 어지럽히지 않습니다 |
+| [#3208](https://github.com/QwenLM/qwen-code/pull/3208) | 입력 취소 시 이전 prompt가 자동 채워지지 않음 | Esc로 취소하면 입력창이 비어 있습니다 |
+| [#2865](https://github.com/QwenLM/qwen-code/pull/2865) | normalize-package-data 업그레이드로 DEP0169 경고 수정 | 시작할 때 deprecation 경고가 보이지 않습니다 |
+| [#3134](https://github.com/QwenLM/qwen-code/pull/3134) | Channel 플러그인 지연 로드로 DEP0040 시작 경고 제거 | 시작 로그가 깔끔해집니다 |
+| [#3294](https://github.com/QwenLM/qwen-code/pull/3294) | DingTalk Channel에서 senderStaffId 우선 매칭 | DingTalk Channel의 사용자 식별이 더 정확합니다 |
+| [#3044](https://github.com/QwenLM/qwen-code/pull/3044) | WeChat 로그인 QR 코드 흐름에 누락된 iLink 요청 header 보완 | WeChat QR 로그인가 더 안정적입니다 |
+| [#2948](https://github.com/QwenLM/qwen-code/pull/2948) | ripGrep 도구에 기본 권한과 외부 경로 지원 추가 | ripGrep 검색이 워크스페이스 밖 파일도 다룰 수 있습니다 |
+| [#3094](https://github.com/QwenLM/qwen-code/pull/3094) | 다중 줄 입력에서 줄 바꿈과 전송 판단 수정 | 여러 줄 입력 시 Enter와 Ctrl+Enter 동작이 바뀝니다 |
+| [#2891](https://github.com/QwenLM/qwen-code/pull/2891) | 입력 컴포넌트의 불필요한 상태와 파라미터 정리 | 입력 컴포넌트가 가벼워지고 응답이 빨라집니다 |
+
+## 👋 신규 기여자를 환영합니다
+
+- [**@doudouOUC**](https://github.com/doudouOUC) — 저장소 밖 디렉터리에서 checkpointing 초기화 수정, sandbox 이미지 설정과 워크스페이스 설정 덮어쓰기 경고 추가
+- [**@BZ-D**](https://github.com/BZ-D) — Shift+Tab이 placeholder 제안을 잘못 승인하던 문제 수정
+- [**@YuchenLiang00**](https://github.com/YuchenLiang00) — `/context detail` 하위 명령어 추가
+- [**@Apophis3158**](https://github.com/Apophis3158) — CJK 형태소 인식과 Ctrl+방향키 이동 최적화 구현
+- [**@sibylassana95**](https://github.com/sibylassana95) — 프랑스어 현지화 지원 추가
+- [**@evan70**](https://github.com/evan70) — normalize-package-data 업그레이드로 DEP0169 경고 수정
+- [**@B-A-M-N**](https://github.com/B-A-M-N) — OAuth 갱신 응답 본문이 비어 발생할 때 크래시 수정
+- [**@feyclaw**](https://github.com/feyclaw) — Telegram 음성 메시지 지원 추가
+- [**@dreamWB**](https://github.com/dreamWB) — VSCode 세션 탭 제목 넘침 수정
+- [**@reidliu41**](https://github.com/reidliu41) — 하이퍼링크 미지원 터미널에서 `/bug` 명령어 경험 개선
+- [**@Shenean**](https://github.com/Shenean) — 입력창의 Tab 리터럴 입력 문제 수정
+
+<Callout type="info">
+  **업데이트 방법**: `npm i @qwen-code/qwen-code@latest -g`를 실행하면 최신 버전으로 업데이트할 수 있습니다.
+</Callout>
+
+문제나 제안이 있다면 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)로 알려 주세요!

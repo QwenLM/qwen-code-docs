@@ -1,0 +1,118 @@
+---
+title: "Qwen Code 소개: 프로그래머처럼 생각하는 AI 코딩 어시스턴트"
+date: "2026-01-30"
+description: "강력한 Qwen3-Coder 모델로 움직이는 오픈소스 AI 코딩 도구 Qwen Code를 소개합니다. Agentic Workflow의 새로운 국면이 열립니다."
+author: "Qwen Team"
+tags: ["Announcement", "AI Code", "Open Source"]
+image: https://gw.alicdn.com/imgextra/i2/O1CN01yvBggd26BOMjWdp4R_!!6000000007623-0-tps-1344-572.jpg
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader
+  title="Qwen Code 소개: 프로그래머처럼 생각하는 AI 코딩 어시스턴트"
+  date="2026년 1월 30일"
+  author="Qwen Team"
+/>
+
+AI가 세상을 바꿀 수 있다면, 가장 먼저 바뀌는 곳은 디지털 세계입니다. Qwen Code는 평범한 명령줄 도구가 아닙니다. 터미널에서 언제든 불러내는 프로그래머 동료입니다.
+
+지난 1년 사이 AI 코딩의 흐름은 크게 바뀌었습니다. 초기 Chat 모드, Copilot의 자동 완성 모드를 거쳐 지금은 Agent 자율 모드입니다. 오늘 소개할 **Qwen Code**는 알리바바 퉁이(Tongyi) 연구소가 만든 AI 코딩 도구입니다.
+
+오픈소스에 무료이고, 강력한 **Qwen3-Coder** 모델이 뒷받침합니다. 터미널에서 대화하듯 코드를 써서 떠오른 아이디어를 바로 결과물로 만들고, 개발 흐름에 깊이 파고들어 버그를 고치고 코드를 다시 짜는 일도 여유롭게 해 냅니다. 글을 쓰고 도표를 그리는 만능 동료이기도 해서, 일상 업무에 아주 매끄럽게 녹아듭니다.
+
+## Qwen Code란?
+
+<video
+  src="https://cloud.video.taobao.com/vod/SYhqmsPqG3x8FLT5RM1QR9lB65SM3DCDLe7tuXZWtDk.mp4"
+  controls
+  width="100%"
+  height="100%"
+  style={{ borderRadius: '10px' }}
+/>
+
+저희는 대화만으로 Qwen Code 제품 소개 사이트를 만들었습니다. 만드는 내내 Qwen Code는 프로그래머처럼 생각하고 움직였습니다:
+
+- **과제를 쪼갭니다**: To-do List를 먼저 만듭니다.
+- **코드를 씁니다**: 파일을 읽고 쓰고, 스크립트를 실행합니다.
+- **스스로 고칩니다**: 오류가 나면 알아서 디버그합니다.
+- **결과를 넘깁니다**: 코드에 그치지 않고 완성된 Web 앱이나 문서까지 내놓습니다.
+
+"이 함수 써 줘", "저 변수 바꿔 줘" 하고 일일이 지시할 필요가 없습니다. 두꺼운 사용 설명서를 붙잡고 있어야 하는 도구가 아니라, 자율적이고 민첩한 진짜 코딩 동료입니다.
+
+## 왜 Qwen Code인가?
+
+### 1. 강력한 심장: Qwen3-Coder
+
+Qwen Code는 강력한 **Qwen3-Coder** 모델을 내장하고, 이 모델에 맞춰 깊게 최적화했습니다. 학습 단계에서부터 모델을 도구에 적응시키고 프레임워크를 모델에 맞췄습니다. 코드 생성, 추론, 긴 문맥 이해에서 확실한 실력을 보여 줍니다.
+
+![](https://img.alicdn.com/imgextra/i3/O1CN01ypIjmp1jcekDsqfLl_!!6000000004569-2-tps-3184-1817.png)
+
+### 2. 진짜 Agentic Workflow
+
+Qwen Code에는 **Skills**, **SubAgents**, **Plan Mode** 같은 고급 기능이 기본으로 들어 있어 Agent를 더 자율적이고 믿을 수 있게 만듭니다. 승인 모드로 작업도 안전해집니다. 하나씩 확인하면서 진행해도 되고, **YOLO 모드**를 켜서 AI에게 마음껏 맡겨도 됩니다.
+
+![](https://img.alicdn.com/imgextra/i1/O1CN01ZBzNFo1C9SAiM2mXk_!!6000000000038-2-tps-2020-1078.png)
+
+### 3. 모든 환경을 커버: 어디에나 있습니다
+
+Qwen Code는 터미널에서 태어났지만 터미널에 묶이지 않습니다. 충분히 작고 충분히 강해서 다음 다섯 곳에 있습니다:
+
+- **터미널**: 매니아의 선택입니다. 터미널 하나 실행하면 심플한 대화형 화면에서 코딩과 창작을 끝낼 수 있습니다.
+- **IDE**: 대부분의 개발자 선택지입니다. VS Code, Qoder, Zed, JetBrains 같은 주요 에디터를 지원해서, GUI의 편함과 CodeAgent의 능력을 함께 쓸 수 있습니다.
+- **CI/CD**: `qwen -p`로 **Headless Mode**를 켜면 GitHub Actions에서 @QwenCode를 호출해 issue 답장, 코드 리뷰, PR 제출을 자동으로 시킬 수 있습니다.
+- **브라우저**: 실험 중인 기능입니다. 브라우저 확장 프로그램에 Qwen Code를 넣어 웹페이지 상태를 읽고 인터페이스 파라미터를 분석합니다. 디버깅과 데이터 수집에 쓸 만합니다.
+- **직접 만드는 개발 환경**: Qwen Code SDK로 지능형 코딩 능력을 본인 환경에 가져옵니다. 현재 Node.js와 Java를 지원했습니다.
+
+![](https://img.alicdn.com/imgextra/i2/O1CN01MC7wCV1nQz7FKy6Sz_!!6000000005085-2-tps-2880-1536.png)
+
+### 4. 오픈소스와 무료, 그대로 갑니다
+
+저희는 오픈소스·무료 정책을 계속 지킵니다. AI Coding이 정말 빨리 돌아가는 지금, 오픈소스라서 안심하고 쓸 수 있고, 무료라서 마음껏 써 보며 가능성을 넓힐 수 있다고 생각합니다.
+
+- **무료 사용량**: Qwen OAuth로 로그인하면 하루 2,000회 무료 요청을 쓸 수 있습니다.
+- **프로토콜 호환**: 오픈소스 프로젝트로서 Anthropic, Google Gemini, OpenAI 같은 주요 프로토콜을 모두 호환합니다.
+
+![](https://img.alicdn.com/imgextra/i4/O1CN01B1hmvI1la1hfJkBVt_!!6000000004834-2-tps-2004-832.png)
+
+## 사례: 코딩에만 쓰이는 게 아닙니다
+
+Qwen Code의 상상력은 코드에만 머물지 않습니다. 만능 어시스턴트이기도 하죠. 최근 커뮤니티에서 인기 있는 **Skills**를 예로 들어, Qwen Code가 콘텐츠 제작자의 든든한 도구가 되는 모습을 보여 드리겠습니다:
+
+Skill을 직접 만들어 넣으면 Qwen Code가 YouTube 영상 자막을 내려받고, 요약을 뽑고, 삽화까지 생성해서, 완성된 블로그 글 하나로 마무리합니다.
+
+<video
+  src="https://cloud.video.taobao.com/vod/VjNePZ5PzC2UKc7pa5tnzLhN5bSLiR95LftYE_t5BpY.mp4"
+  controls
+  width="100%"
+  height="100%"
+  style={{ borderRadius: '10px' }}
+/>
+
+## 지금 시작하기
+
+Qwen Code는 GitHub에 완전 오픈소스로 올라가 있고 Star는 17.4k입니다. 세 단계면 시작됩니다:
+
+1. **설치** (Node.js 20+ 필요):
+   ```bash
+   npm install -g @qwen-code/qwen-code@latest
+   ```
+2. **실행**:
+   ```bash
+   qwen
+   ```
+3. **인증**:
+   세션에서 `/auth`를 입력하고 **Qwen OAuth**를 선택하면 AI 코딩 여정이 시작됩니다.
+
+## 🔗 링크와 자료
+
+- **GitHub**: [github.com/QwenLM/qwen-code](https://github.com/QwenLM/qwen-code)
+- **공식 문서**: [qwenlm.github.io/qwen-code-docs](https://qwenlm.github.io/qwen-code-docs)
+
+### 같이 만들어 갑니다!
+
+Qwen Code는 커뮤니티 개발자들의 기여와 사용자 피드백으로 자랍니다. Java SDK, VS Code 플러그인, Chrome 브라우저 플러그인 같은 주요 기능도 내부 동료들과 함께 만들었습니다. Qwen Code에 관심이 있으시면 같이 만들어 주세요!
+
+---
+
+AI Coding의 새 시대, 터미널 속 Qwen Code부터 시작하세요.
