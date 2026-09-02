@@ -1,0 +1,231 @@
+---
+title: "Qwen Code 주간 업데이트: Agent Team 병렬 협업, Durable /loop로 재시작을 견디고, /cd로 디렉터리 전환"
+date: "2026-06-18"
+description: "Qwen Code v0.18.0~v0.18.3은 이번 주 Agent Team 병렬 협업, Durable /loop 예약 작업의 재시작 생존, 세션 안에서 디렉터리를 바꾸는 /cd, Thinking 접기, MCP 승인 게이팅, 권한 버블링, /compress-fast 즉시 압축을 공개했습니다."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: https://gw.alicdn.com/imgextra/i1/O1CN01JEC1Vz245Jso2h3UV_!!6000000007339-0-tps-1344-576.jpg
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 주간 업데이트: Agent Team 병렬 협업, Durable /loop로 재시작을 견디고, /cd로 디렉터리 전환"
+  date="2026-06-18"
+  author="Qwen Team"
+/>
+
+Qwen Code는 이번 주 v0.18.0~v0.18.3 네 개의 정식 버전을 내놓고 PR 100개 이상을 병합했습니다. 네 가지 방향을 다뤘습니다:
+
+**여러 Agent가 병렬로 협업합니다.** 이전에는 `/fork`로 백그라운드 Agent를 돌리면 각 Agent가 서로 소통하지 않아서 결과를 당신이 직접 합쳐야 했습니다. Agent Team 모드는 모델이 이름을 가진 팀을 만들고 팀원을 여러 명 파견해 병렬로 일하면서 서로 메시지를 주고받고 공유 작업 목록을 쓰다, 그리고 마지막에 leader가 보고서 하나로 정리합니다. 팀원은 오래 남아 있습니다. 작업을 하나 끝내면 다음 작업을 받을 수 있고, 끝나면 사라지는 일회성 subagent가 아닙니다.
+
+**예약 작업이 재시작을 견딥니다.** 이전에는 `/loop`로 잡아 둔 예약 작업이 세션과 함께 사라졌습니다 — 재시작하면 소리 소문 없이 없어졌죠. Durable /loop은 영속화할 예약 작업 파일을 저장하고, 다음 시작할 때 자동으로 복원하며, 놓친 주기 작업은 한 번 보정으로 실행합니다.
+
+**세션 안에서 디렉터리를 바꾸고, 재시작하지 않습니다.** `/cd <path>`로 CLI를 종료하지 않고 현재 세션의 작업 디렉터리를 바꿉니다. session 파일은 새 워크스페이스로 자동 이동하고, system/directory context는 자동 갱신됩니다. 이전에는 프로젝트 디렉터리를 바꿔 돌리려면 재시작뿐이었습니다.
+
+## ✨ 새로운 기능
+
+### Agent Team: 여러 Agent가 병렬로 협업하고, 서로 메시지를 주고받고, 작업을 공유합니다
+
+이전까지 Qwen Code의 `/fork`는 백그라운드 Agent를 돌릴 수 있었지만, Agent마다 고립돼 있었습니다. Agent 셋에 코드 검토를 동시에 시켜도 서로 통신할 통로가 없어서, 마지막에는 당신이 그 결과 세 개를 합쳐야 했습니다.
+
+이번 주 Agent Team 모드가 추가됐습니다(실험적, opt-in). 켜면 모델이 이름을 가진 팀을 만들고 팀원을 여러 명 파견해 병렬로 작업시킵니다. 팀원끼리, 그리고 leader와 메시지를 주고받고 공유 작업 목록을 쓰며, 마지막에 leader가 보고서 하나로 통일해 정리합니다. 팀원은 오래 남아 있습니다. 일회성 subagent가 아니라, 작업을 하나 끝내면 다음 작업을 받을 때까지 기다립니다.
+
+기본은 꺼져 있습니다(`experimental.agentTeam` 설정 또는 `QWEN_CODE_ENABLE_AGENT_TEAM=1` 환경변수로 켬). 켜면 모델은 팀 협업 도구(팀 생성/삭제, 팀원에게 메시지 보내기, 공유 작업 생성/갱신/목록)를 얻고, Agent 도구에는 `name` 파라미터가 추가돼 일회성 서브 Agent가 아니라 오래 사는 이름 있는 팀원을 파생합니다.
+
+**이걸로 할 수 있는 일:**
+
+- reviewer 셋에 이 코드를 병렬로 보게 하세요 — 하나는 오류 처리, 하나는 경합 조건, 하나는 예외 케이스 — 그리고 정리된 보고서를 받습니다
+- 팀을 꾸려 작은 북마크 앱을 만들도록 조율합니다
+- 팀원은 작업이 끝나면 leader에게 자동 보고하고, leader는 당신에게 정리된 요약 하나를 줍니다
+
+관련 PR: [#4844](https://github.com/QwenLM/qwen-code/pull/4844)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/O1CN01BLEA6v1tGo2AyHluY_!!6000000005875-2-videocover-3839-2160.png" src="https://cloud.video.taobao.com/vod/eH6VlX-12-ccgaNludBfEUEQxCnGQvMWAWju2VsSUAA.mp4" controls></video>
+
+### Durable /loop: 예약 작업이 재시작을 견딥니다
+
+이전까지 모든 `/loop`는 세션과 함께 사라졌습니다. "30분마다 내 PR 확인해 줘"라고 해 놓고 Qwen Code를 재시작하면 루프는 흔적도 없이 사라졌죠. 이번 주 `/loop` 작업은 재시작을 견딥니다.
+
+요청이 영속화를 암시하면("1시간마다 내 PR 확인") 작업은 프로젝트별로 `~/.qwen/tmp/<project-hash>/scheduled_tasks.json`에 저장됩니다(워크스페이스 밖이라 `git status`에 잡히지 않음), 다음 시작할 때 자동으로 복원됩니다. 기본은 여전히 session-only이고, 임시 알림은 파일을 만들지 않습니다.
+
+종료 중에 만료된 일회성 알림은 재시작 시 모델이 확인을 먼저 받고 실행하며, 절대 몰래 실행하지 않습니다. 놓친 주기 작업은 시작 후 한 번 보정으로 돌고 나서 정상 리듬으로 돌아옵니다. 같은 프로젝트에 세션이 여러 개면 하나만 영속 작업을 트리거하고, 그걸 들고 있던 세션이 죽으면 다른 세션이 몇 초 안에 이어받습니다. 주기 작업은 7일 뒤 자동 만료됩니다(마지막 트리거 뒤에 삭제).
+
+**이걸로 할 수 있는 일:**
+
+- "1시간마다 내 PR 확인" → 재시작해도 계속 돌고, 다시 예약하지 않아도 됩니다
+- 놓친 주기 작업은 재시작 후 자동으로 한 번 보정 실행됩니다
+- 임시 알림 `/loop 5m remind me`는 여전히 세션과 함께 사라지고 파일을 만들지 않습니다
+
+관련 PR: [#5004](https://github.com/QwenLM/qwen-code/pull/5004)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000007295/O1CN01pHhIOx23lARnrlW2v_!!6000000007295-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/jw2swzG-Lv9LgLLci-ccebiJpxzCesQLJzI8zIdcOvw.mp4" controls></video>
+
+### /cd: CLI를 재시작하지 않고 디렉터리 전환
+
+이전까지 Agent를 다른 프로젝트 디렉터리에서 작업시키려면 종료하고 다시 시작해야 했습니다. 다중 저장소나 부모-자식 workspace 사이를 오갈 때 매우 불편했고, 세션 도중 active tool context를 옮길 진입점도 없었습니다.
+
+이번 주 `/cd <path>` slash 명령이 새로 생겼습니다. 대상 디렉터리를 검증하고, 신뢰 확인을 처리하고, workspace roots와 cwd 서비스를 갱신하고, 현재 세션의 transcript/runtime/worktree 파일을 새 workspace 세션 디렉터리로 이동하고, system/directory context를 갱신합니다. 경로 자동 완성은 그대로 쓸 수 있습니다.
+
+**이걸로 할 수 있는 일:**
+
+- `/cd ../another-project`로 인접 프로젝트로 전환 — 세션 파일은 자동 이동합니다
+- `/cd /path/to/parent-repo`로 세션 안에서 위아래로 이동 — 재시작이 필요 없습니다
+- 신뢰하지 않은 경로에서는 확인 창이 뜹니다 — 첫 시작할 때의 신뢰 절차와 같습니다
+
+관련 PR: [#4890](https://github.com/QwenLM/qwen-code/pull/4890)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01xM0SE01L08gWkvtsP_!!6000000001236-2-tps-3839-2160.png)
+
+### Thinking 접기: 추론 과정이 더 이상 화면을 차지하지 않습니다
+
+이전까지 모델의 thinking 블록은 항상 펼쳐진 채 전체 추론 텍스트를 보여줘 화면을 크게 잡아먹었습니다. 이번 주 삼태 표시로 바뀌었습니다:
+
+- **스트리밍 단계**: 4줄 고정 높이 롤링 창으로 추론 내용을 실시간 표시 + 타이머("∴ Thinking… 8s")
+- **완료 후 접힘**(기본): 한 줄에 총 소요 시간만 표시("∴ Thought for 15s")
+- **펼쳐 보기**: 앞으로 thinking 블록에 전용 단축키를 배정할 예정입니다. 지금은 Ctrl+O가 compactMode 전환이라 thinking 펼치기와 같은 키를 씁니다 — 전용 펼치기/접기 단축키는 이후 PR에서 분리됩니다
+
+`thinkingDisplayMode` 설정은 제거되고 단일 접기 모드로 통일됐습니다. thinking 블록은 UI history 전용이고 API로 전송되지 않으며, session resume 동작은 그대로입니다.
+
+**이걸로 할 수 있는 일:**
+
+- 복잡한 추론 중에도 thinking은 한 줄로 접혀 거슬리지 않습니다
+- Ctrl+O로 언제든 펼쳐 모델의 전체 추론 과정을 볼 수 있습니다
+- 스트리밍 단계에 타이머가 있어 모델이 얼마나 고민했는지 알 수 있습니다
+
+관련 PR: [#4598](https://github.com/QwenLM/qwen-code/pull/4598)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01C9tyat1QWiwTSlmt1_!!6000000001984-1-tps-1433-883.gif)
+
+### MCP 승인 게이팅: 프로젝트 레벨 MCP 설정이 자동으로 연결되지 않습니다
+
+이전까지 프로젝트 `.mcp.json`이나 워크스페이스 `.qwen/settings.json`에 선언된 MCP server는 자동으로 연결됐습니다. 악의적인 `.mcp.json`을 담은 저장소를 열면, 당신이 검토하기도 전에 server가 떠버릴 수 있었습니다.
+
+이번 주 승인 게이팅이 붙었습니다. project `.mcp.json`과 workspace scope의 MCP server는 승인을 거쳐야만 연결됩니다. 승인 결정은 `<QWEN_HOME>/mcpApprovals.json`에 영속화되고, 프로젝트 root + server name으로 색인되며, 설정 hash에 묶입니다. server의 command/args/URL/environment/headers를 바꾸면 hash가 달라져 다시 pending으로 돌아갑니다 — 이전 승인을 조용히 이어받지 않습니다.
+
+MCP server 우선순위 모델: user/default settings < project `.mcp.json` < workspace/system settings < session(ACP/IDE) < `--mcp-config`. 프로젝트 설정은 사용자 설정을 덮을 수 있지만, 기업의 system 설정은 덮을 수 없습니다.
+
+**이걸로 할 수 있는 일:**
+
+- 새 저장소를 열면 프로젝트 레벨 MCP server는 "Pending approval"로 표시되고 자동 연결되지 않습니다
+- `qwen mcp approve <name>` 또는 `qwen mcp approve --all`로 일괄 승인
+- server 설정을 바꾸면 자동으로 승인을 다시 요구합니다(hash 묶음)
+- `qwen mcp list`로 모든 server의 승인 상태 확인
+
+관련 PR: [#4713](https://github.com/QwenLM/qwen-code/pull/4713)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01RlFlWG1fl7d70PPz8_!!6000000004046-2-tps-1686-946.png)
+
+### 백그라운드 Agent 권한 버블링: 백그라운드 작업이 확인을 자동 거절하지 않습니다
+
+이전까지 백그라운드 Agent가 권한 확인이 필요한 도구 호출(`git push`, `rm` 등)을 하면 자동 거절됐습니다. "background agents cannot prompt for confirmation"이라는 오류와 함께 부모 세션이 foreground에서 다시 실행됐죠 — 백그라운드는 헛돌았고 결국 앞에서 다시 돌렸습니다.
+
+이번 주 `approvalMode: bubble`이 추가됐습니다. subagent 설정에 `approvalMode: bubble`을 넣으면, 백그라운드 Agent가 확인이 필요한 도구 호출을 만나도 요청이 부모 세션의 Background tasks UI로 올라갑니다. footer pill에서 세부 사항을 열어 승인하면 됩니다. 승인하면 Agent가 이어서 실행하고, 거절하면 정상 종료합니다. `bubble`은 subagent 전용 approvalMode 값이고 session 단위 옵션은 아닙니다. headless/ACP/SDK 환경에는 UI가 답할 수 없으므로 여전히 자동 거절됩니다.
+
+**이걸로 할 수 있는 일:**
+
+- 커스텀 subagent에 `approvalMode: bubble`을 선언하면 백그라운드 작업이 자동 거절되지 않습니다
+- footer pill에 "⚠ needs approval"로 표시되고, ↓를 눌러 세부 사항을 열어 승인합니다(단회 승인만 지원, '항상 허용' 옵션은 없음)
+- 승인 후 Agent가 이어서 실행하고 결과를 돌려주니, foreground로 돌아와 다시 돌릴 필요가 없습니다
+
+관련 PR: [#4955](https://github.com/QwenLM/qwen-code/pull/4955)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01uj6V8w27gp9dl6Lvi_!!6000000007827-2-tps-1686-946.png)
+
+### /compress-fast: LLM을 부르지 않고 즉시 컨텍스트 압축
+
+이전까지 `/compress`는 LLM 보조 질의로 요약을 만들었습니다(약 2~5초, 약 30K token 소모). 로컬 모델로 돌리거나 공간만 빠르게 되돌리고 싶은 사용자에게는 너무 느립니다.
+
+이번 주 `/compress-fast`가 새로 생겼고 순수 규칙 기반입니다. microcompaction을 강제해 오래된 도구 결과와 미디어 콘텐츠를 정리하고(최근 N개는 보존), 모든 모델 응답에서 thinking 부분을 제거합니다. API 호출 0, token 비용 0, 즉시 응답입니다. JSONL에 `chat_compression` checkpoint를 쓰므로 `--resume` 동작은 `/compress`와 완전히 같습니다.
+
+**이걸로 할 수 있는 일:**
+
+- `/compress-fast` 하나로 즉시 token 수천 개를 되돌립니다 — 지연도 비용도 없습니다
+- 긴 세션에서 도구 호출을 잔뜩 돌린 뒤 공간을 빠르게 회수하고 싶을 때 적합합니다
+- `/compress`는 그대로 쓸 수 있습니다 — 요약의 의미 품질이 필요하면 이쪽입니다
+- `/compress-fast`를 두 번 연속하면 두 번째는 "No compression needed"라고 안내합니다
+
+관련 PR: [#4893](https://github.com/QwenLM/qwen-code/pull/4893)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN013JV14o27sH3XdvRyK_!!6000000007852-2-tps-1686-946.png)
+
+### 그 외 새로운 기능
+
+| 기능 | PR | 사용자에게 미치는 영향 |
+|------|-----|-----------|
+| **Workflow P2: parallel() + pipeline()** 동시 팬아웃 | [#4947](https://github.com/QwenLM/qwen-code/pull/4947) | 워크플로에서 여러 subagent를 병렬로 돌릴 수 있어 이제 순서대로만 돌릴 필요가 없습니다. errors-as-data 계약으로 일부 실패가 전체를 끌어내리지 않습니다(opt-in, `QWEN_CODE_ENABLE_WORKFLOWS=1`) |
+| **Workflow P3: schema + agentType + model + isolation** | [#5034](https://github.com/QwenLM/qwen-code/pull/5034) | `agent({schema})`는 구조화 출력을 돌려주고, `agent({agentType:'Explore'})`는 subagent 종류를 고르며, `agent({isolation:'worktree'})`는 파일 수정을 격리합니다 |
+| **Declarative Agent frontmatter v1** | [#4842](https://github.com/QwenLM/qwen-code/pull/4842) | `.qwen/agents/*.md`가 `permissionMode`, `maxTurns`, `color` 세 개 CC 2.1.168 정렬 필드를 지원합니다 |
+| **Declarative Agent mcpServers + hooks** | [#4996](https://github.com/QwenLM/qwen-code/pull/4996) | agent별 MCP server와 hooks가 subagent 실행 중 적용되고, 동작은 CC와 같습니다 |
+| **Tool output 단계적 잘라내기** | [#4880](https://github.com/QwenLM/qwen-code/pull/4880) | shell 30k, grep 20k, agent 32k의 도구별 예산. 과도하게 큰 출력은 임시 파일로 내려 보내 컨텍스트를 넘치지 않게 합니다 |
+| **/rewind 크로스 session 복구** | [#4897](https://github.com/QwenLM/qwen-code/pull/4897) | session resume 뒤에 `/rewind`가 동작합니다 — 이전에는 스냅샷 체인이 메모리에 있어 재시작하면 사라졌습니다 |
+| **Plan 승인 게이트** | [#4853](https://github.com/QwenLM/qwen-code/pull/4853) | AUTO/YOLO가 plan mode를 끝낼 때 설계 검토 agent를 돌려 계획의 타당성을 확인합니다. 모델에 `enter_plan_mode`가 새로 생겨 스스로 권한을 낮출 수 있습니다 |
+| **MCP 경유 A2UI surfaces** | [#4961](https://github.com/QwenLM/qwen-code/pull/4961) | daemon의 web client가 MCP 도구가 돌려주는 인터랙티브 A2UI 화면을 렌더링하고, 사용자 조작도 되돌려 보냅니다 |
+| **Daemon 모드 병합** | [#4490](https://github.com/QwenLM/qwen-code/pull/4490) | 파일 386개, +115K LOC 규모 daemon 작업이 병합됐습니다. ACP Bridge, MCP Transport Pool, Permission Mediator, Web Shell 등을 덮습니다 |
+| **/sessions list로 과거 세션 조회** | [#5187](https://github.com/QwenLM/qwen-code/pull/5187) | CLI 새 명령어 `qwen sessions list`로 모든 과거 세션을 나열합니다. `--json`은 JSON Lines 출력이라 스크립트 파이프에 유리하고, `--limit`으로 수량을 조절합니다. Phase 1이며 이후 `show`와 `rm`이 추가될 예정입니다 |
+| **/import-config로 Claude MCP 이전** | [#5095](https://github.com/QwenLM/qwen-code/pull/5095) | Claude Code / Claude Desktop의 MCP 설정을 원클릭으로 Qwen Code에 가져옵니다 |
+| **Loop/Cron 기본 활성화** | [#4950](https://github.com/QwenLM/qwen-code/pull/4950) | `/loop`와 `cron` 도구가 기본 사용 가능. opt-in이 필요 없고, 끄려면 `QWEN_CODE_DISABLE_CRON=1` |
+| **Computer Use를 cua-driver로 이전** | [#5051](https://github.com/QwenLM/qwen-code/pull/5051) | ocu npm backend에서 cua-driver-rs Rust binary로 옮겼습니다. 처음 쓸 때 `~/.qwen/computer-use/`로 자동 다운로드되고, 35개 도구를 모두 노출합니다 |
+| **Web shell 줄 바꾸기 단축키** | [#5005](https://github.com/QwenLM/qwen-code/pull/5005) | web shell에서 Option+Enter / Cmd+Enter로 줄을 바꿉니다. CLI TUI에서 익힌 손 감각과 같습니다 |
+| **Desktop git branch 표시** | [#5082](https://github.com/QwenLM/qwen-code/pull/5082) | Desktop 앱 작업 디렉터리 배지에 현재 git branch가 표시됩니다 |
+| **FileSearch AsyncFzf worker thread** | [#4621](https://github.com/QwenLM/qwen-code/pull/4621) | 파일 검색 인덱스 빌드가 worker thread로 옮겨져 메인 스레드를 막지 않습니다 |
+| **Daemon status API** | [#5174](https://github.com/QwenLM/qwen-code/pull/5174) | `qwen serve`에 daemon 상태 조회 endpoint가 추가됐습니다 |
+| **Workflow P4: meta + /workflows + phase-tree** | [#5094](https://github.com/QwenLM/qwen-code/pull/5094) | 워크플로에 `/workflows` 명령과 phase-tree 진행 표시가 추가됐습니다 |
+| **auto-skill 접두어 규범** | [#4839](https://github.com/QwenLM/qwen-code/pull/4839) | 자동 생성 skill에 `auto-skill-` 접두어를 강제해 내장 skill과 이름이 겹치는 것을 방지합니다 |
+| **Skill frontmatter YAML parser 업그레이드** | [#4870](https://github.com/QwenLM/qwen-code/pull/4870) | skill frontmatter에 완전한 YAML 해석기를 써 block scalar와 중첩 구조를 지원합니다 |
+| **Skill user-invocable frontmatter** | [#5037](https://github.com/QwenLM/qwen-code/pull/5037) | skill이 사용자가 직접 호출하는 명령 진입점을 선언할 수 있습니다 |
+| **CHANGELOG.md 자동 동기화** | [#4881](https://github.com/QwenLM/qwen-code/pull/4881) | release 게시 시 CHANGELOG.md를 자동 생성해 동기화합니다 |
+
+## 🔧 주요 수정 사항
+
+| PR | 수정 내용 | 사용자에게 미치는 영향 |
+|----|----------|-----------|
+| [#4982](https://github.com/QwenLM/qwen-code/pull/4982) | `debugResponses` 축적으로 인한 OOM 제거 | debug 모드에서 메모리가 더 이상 넘치지 않습니다 |
+| [#4914](https://github.com/QwenLM/qwen-code/pull/4914) | idempotent compaction + 명시적 GC + debug log 기본값 | OOM 방어가 보강되고 압축이 더 안정적입니다 |
+| [#4929](https://github.com/QwenLM/qwen-code/pull/4929) | SSH 환경에서 OSC 52 클립보드 fallback | SSH 원격 세션에서 붙여넣기가 정상 동작합니다 |
+| [#4852](https://github.com/QwenLM/qwen-code/pull/4852) | hard-wrapped 줄 경계에서 커서 왼쪽 이동이 걸림 | 커서 이동이 줄 바뀌 경계에서 걸리지 않습니다 |
+| [#4963](https://github.com/QwenLM/qwen-code/pull/4963) | fork subagent 기본 활성화 | `/fork` 백그라운드 Agent를 손으로 켜지 않아도 됩니다 |
+| [#5012](https://github.com/QwenLM/qwen-code/pull/5012) | Windows 시작 시 printf 명령 없어 오류남 | Windows 사용자가 시작 오류를 만나지 않습니다 |
+| [#4967](https://github.com/QwenLM/qwen-code/pull/4967) | MCP 도구 SchemaValidator의 숫자 문자열 강제 변환 | 자체 호스팅 LLM의 MCP 도구 호출이 타입 불일치로 실패하지 않습니다 |
+| [#5111](https://github.com/QwenLM/qwen-code/pull/5111) | 활성 도구 결과 이력에 상한 | 도구 결과 이력이 무한히 늘지 않습니다 |
+| [#5036](https://github.com/QwenLM/qwen-code/pull/5036) | 동일한 도구 호출이 반복되면 강제 정지 | 모델이 같은 도구 호출을 무한히 반복하지 않습니다 |
+| [#4793](https://github.com/QwenLM/qwen-code/pull/4793) | 자체 호스팅 LLM의 비문자열 도구 파라미터 변환 | 자체 호스팅 모델에서도 도구 파라미터 타입이 맞습니다 |
+| [#4969](https://github.com/QwenLM/qwen-code/pull/4969) | 문서에서 만료된 settings keys, 잘못된 기본값, 빠진 명령 수정 | 문서가 정확해져 잘못된 길로 안내하지 않습니다 |
+| [#5073](https://github.com/QwenLM/qwen-code/pull/5073) | QWEN.md/AGENTS.md가 컨텍스트 창의 15%를 넘으면 시작 경고 | 과도하게 큰 context instructions가 조용히 모델 컨텍스트를 갉아먹지 않습니다 |
+| [#5165](https://github.com/QwenLM/qwen-code/pull/5165) | monitor 알림 일괄 처리 + 만료 이벤트 걸러내기 | monitor stdout의 줄마다 전체 LLM roundtrip이 일어나지 않아 token 소모가 크게 줄었습니다 |
+| [#5196](https://github.com/QwenLM/qwen-code/pull/5196) | /dev/tcp, /dev/udp 리디렉션을 파일 I/O로 잘못 판단함 | 권한 시스템이 네트워크 소켓 작업을 파일 읽기/쓰기로 잘못 분류하지 않습니다 |
+| [#5171](https://github.com/QwenLM/qwen-code/pull/5171) | 첫 chunk 이전의 전송 계층 오류 자동 재시도 | 스트리밍 호출이 네트워크 흔들림에서 바로 실패하지 않고 먼저 한 번 재시도합니다 |
+| [#5155](https://github.com/QwenLM/qwen-code/pull/5155) | fork 명시화: subagent_type을 빠뜨렸다고 fire-and-forget로 되지 않음 | 병렬 agent 호출 결과가 부모 turn에 정상적으로 되돌아오고 조용히 사라지지 않습니다 |
+
+## 🎉 기여자
+
+이번 주 기여자들입니다:
+
+| 기여자 | 기여 내용 |
+|--------|----------|
+| [@qqqys](https://github.com/qqqys) | Agent Team [#4844](https://github.com/QwenLM/qwen-code/pull/4844), 백그라운드 Agent 권한 버블링 [#4955](https://github.com/QwenLM/qwen-code/pull/4955), A2UI over MCP [#4961](https://github.com/QwenLM/qwen-code/pull/4961), Auto 모드 자기 변조 방지 [#4572](https://github.com/QwenLM/qwen-code/pull/4572), Prompt hooks [#4377](https://github.com/QwenLM/qwen-code/pull/4377), autofix 워크플로 [#4989](https://github.com/QwenLM/qwen-code/pull/4989) |
+| [@LaZzyMan](https://github.com/LaZzyMan) | Workflow P2 [#4947](https://github.com/QwenLM/qwen-code/pull/4947), Workflow P3 [#5034](https://github.com/QwenLM/qwen-code/pull/5034), Workflow P4 [#5094](https://github.com/QwenLM/qwen-code/pull/5094), Declarative Agent frontmatter [#4842](https://github.com/QwenLM/qwen-code/pull/4842), Declarative Agent mcpServers+hooks [#4996](https://github.com/QwenLM/qwen-code/pull/4996), 도구 출력 잘라내기 [#4880](https://github.com/QwenLM/qwen-code/pull/4880), Computer Use cua-driver [#5051](https://github.com/QwenLM/qwen-code/pull/5051), Mac code-signing [#5013](https://github.com/QwenLM/qwen-code/pull/5013) |
+| [@callmeYe](https://github.com/callmeYe) | Plan 승인 게이트 [#4853](https://github.com/QwenLM/qwen-code/pull/4853), Skill frontmatter YAML parser [#4870](https://github.com/QwenLM/qwen-code/pull/4870), Skill .toml 명령 [#5017](https://github.com/QwenLM/qwen-code/pull/5017), prompt-cache 접두어 [#4896](https://github.com/QwenLM/qwen-code/pull/4896) |
+| [@tanzhenxin](https://github.com/tanzhenxin) | Durable /loop [#5004](https://github.com/QwenLM/qwen-code/pull/5004), Loop/Cron 기본 활성화 [#4950](https://github.com/QwenLM/qwen-code/pull/4950), Skill allowedTools [#4704](https://github.com/QwenLM/qwen-code/pull/4704), Agent Team 메시지 보강 [#4988](https://github.com/QwenLM/qwen-code/pull/4988) |
+| [@doudouOUC](https://github.com/doudouOUC) | Daemon 모드 병합 [#4490](https://github.com/QwenLM/qwen-code/pull/4490), /rewind 크로스 session [#4897](https://github.com/QwenLM/qwen-code/pull/4897), 과도하게 큰 도구 결과 영속화 [#5042](https://github.com/QwenLM/qwen-code/pull/5042), Daemon status API [#5174](https://github.com/QwenLM/qwen-code/pull/5174), monitor 알림 일괄 처리 [#5165](https://github.com/QwenLM/qwen-code/pull/5165) |
+| [@DragonnZhang](https://github.com/DragonnZhang) | MCP 승인 게이팅 [#4713](https://github.com/QwenLM/qwen-code/pull/4713), Desktop git branch [#5082](https://github.com/QwenLM/qwen-code/pull/5082), Desktop 앱 [#3778](https://github.com/QwenLM/qwen-code/pull/3778), VSCode ACP 알림 [#4358](https://github.com/QwenLM/qwen-code/pull/4358), CLI 줄 바꾸기 단축키 [#5005](https://github.com/QwenLM/qwen-code/pull/5005) |
+| [@zzhenyao](https://github.com/zzhenyao) | OOM 제거 [#4982](https://github.com/QwenLM/qwen-code/pull/4982), OOM 보강 [#4914](https://github.com/QwenLM/qwen-code/pull/4914), SSH 클립보드 [#4929](https://github.com/QwenLM/qwen-code/pull/4929), Windows printf [#5012](https://github.com/QwenLM/qwen-code/pull/5012) |
+| [@he-yufeng](https://github.com/he-yufeng) | /cd 명령 [#4890](https://github.com/QwenLM/qwen-code/pull/4890), fork 기본 활성화 [#4963](https://github.com/QwenLM/qwen-code/pull/4963), 백그라운드 agent가 launch flags 보존 [#5061](https://github.com/QwenLM/qwen-code/pull/5061), 과도하게 큰 컨텍스트 경고 [#5073](https://github.com/QwenLM/qwen-code/pull/5073) |
+| [@chiga0](https://github.com/chiga0) | Thinking 접기 [#4598](https://github.com/QwenLM/qwen-code/pull/4598), DaemonTransport 추상화 [#5040](https://github.com/QwenLM/qwen-code/pull/5040), TUI 여백 [#4595](https://github.com/QwenLM/qwen-code/pull/4595) |
+| [@BenGuanRan](https://github.com/BenGuanRan) | /stats 중복 제거 [#4995](https://github.com/QwenLM/qwen-code/pull/4995) |
+| [@yiliang114](https://github.com/yiliang114) | 독립 설치 자동 업데이트 [#4629](https://github.com/QwenLM/qwen-code/pull/4629), PR 검토 CI [#4549](https://github.com/QwenLM/qwen-code/pull/4549), release 자산 검증 [#3855](https://github.com/QwenLM/qwen-code/pull/3855), telemetry memory/CPU [#4868](https://github.com/QwenLM/qwen-code/pull/4868), 전송 오류 자동 재시도 [#5171](https://github.com/QwenLM/qwen-code/pull/5171) |
+| [@wenshao](https://github.com/wenshao) | Web shell 다수 개선 [#5069](https://github.com/QwenLM/qwen-code/pull/5069), [#5109](https://github.com/QwenLM/qwen-code/pull/5109), [#5125](https://github.com/QwenLM/qwen-code/pull/5125), [#5088](https://github.com/QwenLM/qwen-code/pull/5088), [#5096](https://github.com/QwenLM/qwen-code/pull/5096) |
+| [@ytahdn](https://github.com/ytahdn) | Web shell token/settings [#5066](https://github.com/QwenLM/qwen-code/pull/5066), transcript 이벤트 [#5193](https://github.com/QwenLM/qwen-code/pull/5193), 커스텀 footer [#5166](https://github.com/QwenLM/qwen-code/pull/5166) |
+| [@ZijianZhang989](https://github.com/ZijianZhang989) | /compress-fast [#4893](https://github.com/QwenLM/qwen-code/pull/4893), /sessions list [#5187](https://github.com/QwenLM/qwen-code/pull/5187), qwen3.7-plus 모델 목록 [#4953](https://github.com/QwenLM/qwen-code/pull/4953) |
+| [@tt-a1i](https://github.com/tt-a1i) | /import-config Claude MCP [#5095](https://github.com/QwenLM/qwen-code/pull/5095), Desktop git branch [#5082](https://github.com/QwenLM/qwen-code/pull/5082) |
+| [@pomelo-nwu](https://github.com/pomelo-nwu) | qwen3.7-plus 멀티모달 [#4803](https://github.com/QwenLM/qwen-code/pull/4803), SchemaValidator 변환 [#4967](https://github.com/QwenLM/qwen-code/pull/4967) |
+| [@Jerry2003826](https://github.com/Jerry2003826) | hard rescue 재시도 상한 [#4526](https://github.com/QwenLM/qwen-code/pull/4526), foreground shell 출력 상한 [#4524](https://github.com/QwenLM/qwen-code/pull/4524) |
+| [@warmjademe](https://github.com/warmjademe) | /dev/tcp/udp 권한 수정 [#5196](https://github.com/QwenLM/qwen-code/pull/5196) |
+| [@huww98](https://github.com/huww98) | /copy 인자 안내 [#5110](https://github.com/QwenLM/qwen-code/pull/5110) |
+
+<Callout type="info">
+  **업데이트 방법**: `npm i @qwen-code/qwen-code@latest -g`를 실행하면 최신 버전으로 업데이트할 수 있습니다.
+</Callout>
+
+문제나 제안이 있다면 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)로 알려 주세요!

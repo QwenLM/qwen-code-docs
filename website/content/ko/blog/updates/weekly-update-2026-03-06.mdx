@@ -1,0 +1,108 @@
+---
+title: "Qwen Code 주간 업데이트: HTML 내보내기 강화, 터미널 GIF 녹화, GitHub 워크플로 명령어"
+date: 2026-03-06
+description: "이번 주에는 v0.11.1 정식 버전을 출시했고 v0.12.0 개발을 이어 가고 있습니다. HTML 내보내기에서 도구 호출 내용 보기, 터미널 스트리밍 GIF 녹화, GitHub 워크플로 내장 명령어가 새로 추가됐습니다."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: https://gw.alicdn.com/imgextra/i3/O1CN01kHMO231xggtErXnaK_!!6000000006473-0-tps-1344-576.jpg
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 주간 업데이트: HTML 내보내기 강화, 터미널 GIF 녹화, GitHub 워크플로 명령어"
+  date="2026-03-06"
+  author="Qwen Team"
+/>
+
+이번 주에 v0.11.1 정식 버전을 출시했습니다. 안정성 수정과 기능 개선이 여럿 담겼습니다. 한편 v0.12.0 개발 브랜치도 계속 진행되고 있는데, 눈여겨볼 만한 새 기능이 몇 개 있습니다.
+
+- 정식 버전 출시: v0.11.1
+- v0.12.0 개발 중, 새 기능 PR 여러 개가 이미 병합됐습니다
+
+## ✨ 새로운 기능
+
+### HTML 내보내기: 도구 호출 내용 뷰어
+
+세션을 HTML 파일로 내보낸 뒤 **Shell 도구 호출의 IN / OUT 태그를 클릭하면 이제 모달 창에 전체 내용이 뜹니다**. 이전에는 두 태그를 눌러도 반응이 없었습니다. 관련 PR: [#2085](https://github.com/QwenLM/qwen-code/pull/2085)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01jLoKVP29zihmemlWK_!!6000000008139-2-tps-1610-858.png)
+
+### 터미널 스트리밍 스크린샷과 GIF 생성
+
+terminal-capture 도구에 스트리밍 캡처 모드가 추가됐습니다. 명령어가 실행되는 동안 일정한 간격으로 화면을 찍는데, 진행률 표시줄이나 spinner 애니메이션처럼 계속 바뀌는 터미널 출력에 어울립니다. 찍기가 끝나면 ffmpeg을 불러 반복 재생되는 GIF로 합칩니다. 관련 PR: [#2116](https://github.com/QwenLM/qwen-code/pull/2116)
+
+스크린샷 간격, 시작 지연 시간, 출력이 안정되면 자동으로 멈추는 설정을 지원합니다. ffmpeg이 설치돼 있지 않으면 GIF 생성만 건너뛰고 그대로 진행하니 스크린샷에는 영향이 없습니다.
+
+이전에는 정지 화면만 찍을 수 있었지만, **이제는 명령어 실행 과정 전체를 녹화할 수 있습니다**. 기능 시연이나 튜토리얼 자료로 좋습니다.
+
+👇 아래 움직이는 이미지는 전부 Qwen Code가 테스트하며 만들어 냈습니다:
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01VFg7mt1YGFbKnhOII_!!6000000003031-1-tps-860-584.gif)
+
+### GitHub 워크플로 내장 명령어
+
+흔한 GitHub 작업을 다루는 내장 커스텀 명령어 4개가 추가됐습니다. `/qc:<명령어 이름>` 형태로 호출합니다. 관련 PR: [#2117](https://github.com/QwenLM/qwen-code/pull/2117)
+
+- **`/qc:code-review`**: PR 상세와 diff를 가져와 정확성, 스타일, 성능, 보안을 아우르는 코드 리뷰 보고서를 만듭니다
+- **`/qc:commit`**: 스테이징된 변경을 분석해 Conventional Commits 규격에 맞는 커밋 메시지를 만들고, 브랜치를 자동으로 처리합니다 (main에 바로 커밋하는 일을 막습니다)
+- **`/qc:create-issue`**: 코드베이스 맥락에 맞춰 GitHub Issue 초안을 쓰고, feature request와 bug report 템플릿 중 알맞은 것을 고릅니다
+- **`/qc:create-pr`**: Pull Request를 프로젝트 PR 템플릿을 따라 짜임새 있게 만듭니다
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01yjkkmf1PU94inB5NU_!!6000000001843-1-tps-860-584.gif)
+
+### AGENTS.md를 기본 컨텍스트 파일로
+
+프로젝트 루트의 `AGENTS.md`가 이제 컨텍스트 파일로 자동 로드됩니다. `GEMINI.md`, `CLAUDE.md`와 똑같이 동작합니다. 여러 Agent 프레임워크에서 작업할 때 별도 설정이 필요 없습니다. 관련 PR: [#2018](https://github.com/QwenLM/qwen-code/pull/2018)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN018tD4ZB1HuEiAze39i_!!6000000000817-2-tps-1902-1144.png)
+
+### Ctrl+Y로 실패한 요청 재시도
+
+요청이 실패한 뒤 `Ctrl+Y`만 누르면 바로 다시 시도합니다. 내용을 처음부터 다시 입력할 필요가 없습니다. 관련 PR: [#2011](https://github.com/QwenLM/qwen-code/pull/2011)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01YtZAzm1ShNMbf8YTt_!!6000000002278-2-tps-1694-956.png)
+
+### 인증 대화창 레이아웃 개선
+
+로그인 대화창을 선택지 3개 레이아웃으로 다시 만들어 항목별 구분이 명확해졌습니다. 관련 PR: [#2030](https://github.com/QwenLM/qwen-code/pull/2030)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN011eGoRs1Pf8a4hXQ0K_!!6000000001867-2-tps-1700-952.png)
+
+### 코드 하이라이팅의 Tab 폭 지원
+
+코드 하이라이팅 컴포넌트에 `tabWidth` 설정이 추가됐습니다. Tab 문자가 지정한 개수의 공백으로 바뀌어, 코드 블록에서 Tab 표시 폭이 제각각이던 문제가 해결됩니다. 관련 PR: [#2077](https://github.com/QwenLM/qwen-code/pull/2077)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN016C78pF1aCFN1nJhiI_!!6000000003293-2-tps-2868-1346.png)
+
+## 🔧 주요 수정 사항
+
+| PR | 버전 | 문제 | 영향 |
+| ------------------------------------------------------ | ------- | ----------------------------------------------------------- | ------------------------------ |
+| [#2060](https://github.com/QwenLM/qwen-code/pull/2060) | v0.11.1 | DashScope 서브도메인 URL을 DashScope provider로 바로 인식하지 못함 | 서브도메인으로 DashScope를 쓰는 사용자가 정상 동작하지 않음 |
+| [#2059](https://github.com/QwenLM/qwen-code/pull/2059) | v0.11.1 | ACP 프로토콜에 `session/set_config_option` 메서드가 없어 Zed 에디터가 UI에서 설정을 바꾸지 못함 | Zed 통합 사용자가 화면에서 설정 항목을 갱신하지 못함 |
+| [#2021](https://github.com/QwenLM/qwen-code/pull/2021) | v0.11.1 | 도구 호출 출력이 잘릴 때 감지와 보호가 없어 이후 파싱 오류로 이어질 수 있음 | 출력이 긴 상황의 안정성 문제 |
+| [#1982](https://github.com/QwenLM/qwen-code/pull/1982) | v0.11.1 | PDF 같은 미디어 파일을 읽을 때 modality 기본값이 없어 API 오류 발생 | 파일 읽기 기능 사용 중 가끔 API 오류 |
+| [#2041](https://github.com/QwenLM/qwen-code/pull/2041) | v0.11.1 | 스트리밍 출력이 세션 기록 로그에 과하게 남아 로그 파일이 이상할 만큼 커짐 | 오래 사용하면 로그가 디스크 공간을 크게 차지 |
+| [#1995](https://github.com/QwenLM/qwen-code/pull/1995) | v0.11.1 | 제한 오류 코드 1305를 인식하지 못해 자동 재시도하지 않음 | 많이 쓰는 상황에서 요청 실패율이 높음 |
+| [#1993](https://github.com/QwenLM/qwen-code/pull/1993) | v0.11.1 | 서브 Agent가 output-language.md 언어 설정을 이어받지 않아 주 Agent와 출력 언어가 다름 | 여러 Agent 환경에서 출력 언어가 통일되지 않음 |
+
+### Windows 플랫폼 전용 수정
+
+| PR | 문제 |
+|----|------|
+| [#2078](https://github.com/QwenLM/qwen-code/pull/2078) | Markdown 명령어 파일이 CRLF 개행이나 UTF-8 BOM을 쓰면 frontmatter 파싱에 실패해 명령어 설명이 표시되지 않음 |
+
+### Zed 에디터 통합 수정
+
+| PR | 문제 |
+|----|------|
+| [#2017](https://github.com/QwenLM/qwen-code/pull/2017) | ACP 프로토콜 호환성 문제, Zed 에디터 통합 이상 수정 |
+| [#2059](https://github.com/QwenLM/qwen-code/pull/2059) | `session/set_config_option` 지원 추가, Zed UI에서 설정을 바로 바꿀 수 있음 |
+
+<Callout type="info">
+  **업데이트 방법**: `npm i @qwen-code/qwen-code@latest -g`를 실행하면 최신 버전으로 업데이트할 수 있습니다.
+</Callout>
+
+문제나 제안이 있다면 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)로 알려 주세요!

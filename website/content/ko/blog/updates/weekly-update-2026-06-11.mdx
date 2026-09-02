@@ -1,0 +1,231 @@
+---
+title: "Qwen Code 주간 업데이트: /fork로 백그라운드 작업 위임, /skills 스킬 관리 패널, 프로젝트를 넘는 메모리 자동 축적"
+date: "2026-06-11"
+description: "Qwen Code v0.18.0-preview는 이번 주 /fork 백그라운드 Agent, /skills 시각화 스킬 관리, 사용자 레벨 크로스 프로젝트 메모리를 공개했습니다. Vim 모드 대수선과 독립 설치의 자동 업데이트도 함께 들어왔습니다."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: https://gw.alicdn.com/imgextra/i3/O1CN01zBFsOx1vNKvC7sflf_!!6000000006160-0-tps-1344-576.jpg
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 주간 업데이트: /fork로 백그라운드 작업 위임, /skills 스킬 관리 패널, 프로젝트를 넘는 메모리 자동 축적"
+  date="2026-06-11"
+  author="Qwen Team"
+/>
+
+Qwen Code는 이번 주 **v0.18.0-preview**(preview.0 / preview.1 / preview.2)를 내놓고 PR 50개 이상을 병합했습니다. 세 방향을 다뤘습니다:
+
+**Agent가 드디어 병렬로 일합니다.** `/fork` 명령으로 대화 도중에 백그라운드 Agent를 다른 일에 보내면 됩니다. 컨텍스트, 도구, 모델 설정을 그대로 상속받고, 당신은 메인 대화에서 계속 작업합니다. fork가 끝나면 백그라운드 작업 패널이 알려줍니다.
+
+**스킬 관리에 패널이 생겼습니다.** 이전까지 Qwen Code의 skill 시스템에는 공용 진입점이 없었습니다. 스킬 이름을 외워야만 쓸 수 있었죠. 이제 `/skills`를 입력하면 picker 대화상자가 열려 탐색, 검색, 활성화/비활성화, 원클릭 실행이 되고, 워크스페이스 단위로 어떤 스킬을 모델에게 보여줄지 관리할 수도 있습니다.
+
+**메모리가 프로젝트를 넘습니다.** 이전까지 auto-memory는 현재 프로젝트 디렉터리 안에서만 쌓여서, 저장소를 바꾸면 Agent는 기억을 잃었습니다. 이번 주 `~/.qwen/memories/` 사용자 레벨 메모리 디렉터리가 추가됐고, 취향·작업 스타일·프로젝트를 넘는 피드백은 자동으로 사용자 레벨로 라우팅됩니다. 프로젝트의 deadline과 이벤트는 프로젝트 디렉터리에 남습니다. 이미 있는 네 가지 메모리 분류를 라우팅에 썼으므로 새 설정은 없습니다.
+
+## ✨ 새로운 기능
+
+### /fork: 대화 도중 백그라운드 Agent를 파견하고, 메인 대화는 기다리지 않습니다
+
+`/fork`로 한 세션 안에서 여러 일을 동시에 돌립니다. 새 터미널을 열 필요도, 세션을 옮길 필요도 없습니다.
+
+`/fork <지시문>`을 입력하면 백그라운드 Agent가 즉시 시작됩니다. 현재 대화의 전체 컨텍스트(system prompt, 이력, 도구, 모델, prompt cache)를 상속받고 백그라운드에서 지시를 독립적으로 실행합니다. 메인 대화는 막히지 않으니 당신은 계속 작업하면 됩니다. fork가 끝나면 백그라운드 작업 패널로 알리고, 결과는 JSONL transcript에 기록됩니다.
+
+`/branch`와 역할이 다릅니다. `/branch`는 현재 대화를 새 세션으로 복사해 다른 방향을 탐색하는 것이고, `/fork`는 현재 세션 안에 백그라운드 일꾼을 하나 내보내는 것입니다.
+
+**이걸로 할 수 있는 일:**
+
+- 코딩 도중 `/fork 이 모듈 테스트를 채워 주세요` — 테스트는 백그라운드에서 돌고 당신은 다음 모듈을 씁니다
+- 백그라운드 작업 패널에서 fork 진행 상황(`main` / `○ fork: …`)을 실시간으로 보고, 끝나면 터미널 알림을 받습니다
+- 여러 fork를 병렬로 돌릴 수 있고, 동시성 상한 안에서 관리됩니다
+- 지시문이 비어 있거나, 설정이 없거나, 스트리밍 출력 중인 경우 명확한 오류 메시지를 보여줘 소리 소문 없이 실패하지 않습니다
+
+관련 PR: [#4780](https://github.com/QwenLM/qwen-code/pull/4780)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01yA16EU24E1OlX7QBZ_!!6000000007358-2-tps-3839-2160.png)
+
+### /skills: 스킬 관리에 드디어 패널이 생겼습니다
+
+이전까지 Qwen Code의 skill은 이름을 기억해 `/<스킬명>`을 직접 쳐야 했습니다. 탐색도, 검색도, 켜고 끄는 것도 없었습니다. 시끄러운 스킬 하나 끄고 싶으면 settings.json을 손으로 고쳐야 했죠.
+
+이제 `/skills`를 입력하면 picker 대화상자가 열립니다. 등록된 스킬이 한눈에 보입니다: 이름, 설명, 출처(프로젝트 레벨 / 사용자 레벨 / 내장). 키보드로 검색해 빠르게 찾고, Space로 활성화/비활성화를 전환하고, Enter로 고른 스킬의 명령을 입력창에 바로 채웁니다. 비활성화 상태는 워크스페이스 레벨 `skills.disabled` 설정에 기록돼 현재 세션에 즉시 반영됩니다 — 모델의 `<available_skills>` 목록과 slash 자동 완성이 함께 갱신되니 재시작이 필요 없습니다.
+
+scope를 넘어가는 설정도 처리했습니다. 어떤 스킬이 사용자 레벨 settings에서 꺼져 있으면, 워크스페이스 레벨 picker에는 `[locked: User]`로 표시되고 워크스페이스 레벨에서 덮어쓸 수 없습니다.
+
+**이걸로 할 수 있는 일:**
+
+- `/skills`로 패널을 열어 사용 가능한 스킬과 설명을 모두 탐색
+- 키보드로 키워드를 입력해 스킬 검색
+- Space로 스킬 활성화/비활성화, Esc로 저장하고 종료
+- Enter로 고른 스킬을 입력창에 채워 바로 실행
+- 끈 스킬은 모델 가용 스킬 목록과 slash 자동 완성에서 사라집니다
+
+관련 PR: [#4533](https://github.com/QwenLM/qwen-code/pull/4533)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01sG12rO1iCij5tMGbP_!!6000000004377-2-tps-1684-946.png)
+
+### 사용자 레벨 크로스 프로젝트 메모리: 저장소를 바꿔도 기억을 잃지 않습니다
+
+이전까지 auto-memory는 현재 프로젝트 디렉터리 안에서만 쌓여, 저장소를 바꾸면 Agent는 기억을 잃었습니다. 이번 주 `~/.qwen/memories/` 사용자 레벨 메모리 디렉터리가 프로젝트 레벨 `.qwen/memories/`와 나란히 추가됐습니다. 이미 있는 네 가지 분류(user / feedback / project / reference)를 라우팅에 쓰므로 새 설정 항목은 없습니다.
+
+라우팅 규칙은 하드코딩이 아니라 메모리 추출 Agent의 prompt에서 결정됩니다:
+
+- **user 유형**: 항상 사용자 레벨로 갑니다 (당신이라는 사람에 관한 정보이므로)
+- **feedback 유형**: 기본은 사용자 레벨입니다 (대부분 피드백은 개인 스타일). 다만 프로젝트 레벨 규약(테스트 전략, 빌드 규범)이 명확하면 프로젝트 레벨로 보냅니다
+- **project 유형**: 항상 프로젝트 레벨입니다 (deadline, 이벤트, 진행 중인 작업)
+- **reference 유형**: 기본은 프로젝트 레벨입니다 (이 프로젝트의 Linear, Grafana). 회사 전체 공통 리소스는 사용자 레벨로 보냅니다
+
+system prompt에는 두 scope의 인덱스가 모두 렌더링됩니다 — 사용자 레벨이 먼저(배경 정보), 프로젝트 레벨이 나중(더 구체적이니 자연스럽게 덮어씁니다). 사용자 레벨 `MEMORY.md`가 비어 있어도 자리표시자는 렌더링됩니다. Agent가 그 디렉터리의 존재를 알고 무엇을 써 넣을 수 있는지 알아야 하기 때문입니다.
+
+**이걸로 할 수 있는 일:**
+
+- Agent가 당신의 취향("pnpm을 선호한다", "테스트는 jest 말고 vitest를 쓴다")을 배우면, 어떤 새 프로젝트로 가도 기억합니다
+- 모든 저장소의 `.qwen/QWEN.md`에 개인 취향을 다시 옮겨 적지 않아도 됩니다
+- `memory.enableManagedAutoMemory` 스위치가 기존 설정을 그대로 재사용하니 추가 설정이 필요 없습니다
+
+관련 PR: [#4764](https://github.com/QwenLM/qwen-code/pull/4764)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01WZFaYK1vUCqvAfafI_!!6000000006175-2-tps-3839-2160.png)
+
+### /stats 인터랙티브 통계 패널: token 사용량 한눈에
+
+이전까지 `/stats`는 현재 세션의 token 수만 텍스트 한 덩어리로 보여 주고 말았습니다. 이제 세 탭이 있는 인터랙티브 패널로 바뀌었습니다: **Session**(현재 세션 실시간 지표), **Activity**(세션을 넘는 사용 추이), **Efficiency**(성능과 도구 분석).
+
+사용 데이터는 자동으로 `~/.qwen/usage_record.jsonl`에 영속화되며, 세션 종료와 `/clear` 때 기록합니다. Tab / Shift+Tab으로 탭을 바꾸고, `r`로 시간 범위를 전환하고(All → Month → Week → Today), 방향키로 월별 추이 그래프를 넘겨봅니다.
+
+Activity 탭은 GitHub 스타일 기여 히트맵, braille 꺾은선 그래프로 그린 token 추이, top-5 프로젝트 순위를 보여줍니다. Efficiency 탭은 캐시 적중률, 도구 성공률, 평균 지연, 모델 비교 표를 보여줍니다.
+
+**이걸로 할 수 있는 일:**
+
+- `/stats`를 열어 현재 세션의 token 사용량과 비용을 한눈에 확인
+- Activity 탭으로 세션을 넘는 사용 추이와 코딩 히트맵 확인
+- Efficiency 탭으로 성공률이 낮은 도구, 지연이 큰 모델 확인
+- 시간 범위로 걸러 단계별 사용 패턴을 비교
+
+관련 PR: [#4779](https://github.com/QwenLM/qwen-code/pull/4779)
+
+
+| before                                                                                            | after                                                                                              |
+| ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| ![](https://gw.alicdn.com/imgextra/i4/O1CN01Z4RJhS1FgNW6UG0zq_!!6000000000516-2-tps-1660-724.png) | ![](https://gw.alicdn.com/imgextra/i2/O1CN01yuxjPw26ClXncdIgN_!!6000000007626-1-tps-1000-1040.gif) |
+|                                                                                                   | ![](https://gw.alicdn.com/imgextra/i4/O1CN01Ud3bss1Dt5Gyc7NGh_!!6000000000273-2-tps-1702-1294.png) |
+
+
+### 시스템 잠자기 방지: 긴 작업 도중에 끊기지 않습니다
+
+오래 걸리는 prompt나 도구 실행 중에 시스템이 자동으로 잠들면 진행 중인 작업이 끊깁니다. 이번 주 실행 중 잠자기 억제기가 추가됐습니다. 모델이 스트리밍 응답하거나 도구가 실행되는 동안 시스템이 잠드는 것을 자동으로 막습니다. macOS는 `caffeinate`, Linux는 `systemd-inhibit`, Windows는 `SetThreadExecutionState`를 사용합니다.
+
+기본으로 켜져 있고(`general.preventSystemSleep: true`), 원치 않으면 설정 하나로 끕니다. 참조 개수로 관리돼 병렬 작업 여러 개가 억제 락을 하나 공유하고, 전부 끝나면 자동으로 해제됩니다. ACP 세션도 동일하게 적용됩니다.
+
+**이걸로 할 수 있는 일:**
+
+- 긴 Agent 작업(computer-use, 대규모 리팩터링)이 시스템 잠자리 때문에 중단되지 않습니다
+- 기본 활성화라 설정이 필요 없습니다
+- `general.preventSystemSleep: false`로 끄면 됩니다
+
+관련 PR: [#4434](https://github.com/QwenLM/qwen-code/pull/4434)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01D74c3A27TXfSnR6xs_!!6000000007798-2-tps-3855-2160.png)
+
+### Vim 모드 대수선: Esc는 얌전해지고, Enter는 보내지고, 명령어는 자동 완성
+
+Vim 사용자는 Qwen Code에서 세 가지 문제를 오래 참았습니다. INSERT 모드에서 Esc를 누르면 AppContainer의 핸들러까지 함께 발동해 'Press Esc again to clear' 안내가 뜨고 입력 버퍼까지 비워졌습니다. NORMAL 모드에서 Enter를 눌러도 아무 일이 일어나지 않았습니다. 모드 전환 시 하단 표시기가 눈에 띄게 느리게 갱신됐습니다.
+
+이번 주 한꺼번에 고쳤습니다. Esc는 INSERT 모드에서 모드 전환만 하고 다른 핸들러로 새지 않습니다. NORMAL 모드에서 Enter로 메시지를 정상 제출합니다. VimModeContext를 State와 Actions 두 context로 나누고 `useMemo`와 함께 써서, consumer 6개가 모드 전환 하나에 전부 다시 렌더링되지 않습니다. 하단에 `-- NORMAL --` 표시기가 새로 생기고 전환과 동시에 갱신됩니다.
+
+NORMAL 모드 명령도 대거 채웠습니다: undo, replace, 대소문자 전환, 줄 합치기, indent/unindent, WORD 이동, find/till 이동, yank/paste(시스템 클립보드), operator-pending 조합.
+
+**이걸로 할 수 있는 일:**
+
+- INSERT → NORMAL(Esc)에서 입력이 비워지지 않고, 모델의 스트리밍 출력도 끊기지 않습니다
+- NORMAL 모드 Enter로 메시지 제출 — Vim을 안 쓸 때와 동작이 같습니다
+- `-- NORMAL --` / `-- INSERT --` 표시기가 지연 없이 즉시 전환
+- `u`(undo), `r`(replace), `~`(대소문자 전환), `J`(join) 같은 표준 명령 사용 가능
+
+관련 PR: [#4677](https://github.com/QwenLM/qwen-code/pull/4677)
+
+<style>{`
+  .vim-compare-table { width: 100%; }
+  .vim-compare-table th:nth-child(1) { width: 50%; }
+  .vim-compare-table th:nth-child(2) { width: 50%; }
+`}</style>
+
+<div class="vim-compare-table">
+
+| before                                                                                            | after                                                                                             |
+| ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| ![](https://gw.alicdn.com/imgextra/i4/O1CN01SdSHQr1vejxjpiiDM_!!6000000006198-1-tps-1113-288.gif) | ![](https://gw.alicdn.com/imgextra/i2/O1CN01LVNFNE1yV4RnicL2X_!!6000000006583-1-tps-1119-285.gif) |
+| ![](https://gw.alicdn.com/imgextra/i2/O1CN01GINT6U1kjMBGps8H1_!!6000000004719-1-tps-1116-329.gif) | ![](https://gw.alicdn.com/imgextra/i3/O1CN01oroMvC21HjlRnsTBH_!!6000000006960-1-tps-1129-348.gif) |
+| ![](https://gw.alicdn.com/imgextra/i2/O1CN01vLQHxM1ena8kHNGW4_!!6000000003916-2-tps-2226-498.png) | ![](https://gw.alicdn.com/imgextra/i4/O1CN01bHNsWm1IvtmkoIDtE_!!6000000000956-1-tps-1114-307.gif) |
+
+</div>
+
+### 독립 설치 자동 업데이트: npm 없이도 원클릭 업그레이드
+
+이전까지 설치 스크립트(`curl ... | bash`)로 독립 설치한 Qwen Code는 업데이트할 때 npm global install fallback을 탔습니다. EACCES 오류가 나거나(npm prefix에 root 권한이 필요), 독립 binary와 다른 위치에 설치됐습니다.
+
+이번 주 독립 설치에 네이티브 자동 업데이트가 붙었습니다.전 과정에 sudo도, 패키지 관리자도 필요 없습니다.
+
+**이걸로 할 수 있는 일:**
+
+- 독립 설치 사용자는 업데이트 안내를 보면 자동 다운로드, 검증, 교체를 거치고 재시작하면 반영됩니다
+- 업데이트가 실패하면 이전 버전으로 자동 롤백됩니다
+- 터미널 여러 개가 동시에 시작해도 충돌하지 않습니다(lock 파일 보호)
+- `~/.local/bin`이 shell rc 파일에 자동 기록돼 PATH 우선순위가 지켜집니다
+
+관련 PR: [#4629](https://github.com/QwenLM/qwen-code/pull/4629)
+
+
+### 그 외 새로운 기능
+
+| 기능                                                                            | PR                                                     | 사용자에게 미치는 영향                                              |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------ | -------------------------------------------------- |
+| **/copy N**: `/copy 2`로 뒤에서 두 번째 AI 메시지를 복사, `/copy 3 code python`으로 뒤에서 세 번째의 Python 코드 블록 추출 | [#4761](https://github.com/QwenLM/qwen-code/pull/4761) | Agent의 마지막 응답이 "done!"일 때 스크롤 없이 그 앞 실제 출력을 복사할 수 있습니다 |
+| **Skill allowedTools 적용**: 스킬이 선언한 `allowedTools`가 자동 권한 부여, 스킬 실행 중 권한 확인 창 안 뜸 | [#4704](https://github.com/QwenLM/qwen-code/pull/4704) | 내장 스킬(예: `/review`)과 커스텀 스킬의 도구 호출이 자주 끊기지 않습니다 |
+| **Auto 모드 자기 변조 방지**: 설정, 지시, hooks, skills, MCP 설정 쓰기가 분류기를 우회하지 못함 | [#4572](https://github.com/QwenLM/qwen-code/pull/4572) | Auto 모드가 더 안전합니다 — Agent가 shell을 경유해 자기 설정을 고칠 수 없습니다 |
+| **PR 검토 CI 워크플로**: `@qwen-code /review`로 Agent 코드 검토를 시작하고 결과를 inline comment로 PR에 회신 | [#4549](https://github.com/QwenLM/qwen-code/pull/4549) | org 멤버의 PR이 자동 검토되고, Draft PR은 ready로 바뀌면 발동합니다 |
+| **Workflow tool P1**: 모델이 JS 스크립트를 작성해 node:vm 샌드박스에서 여러 subagent를 오케스트레이션(opt-in, 기본 오프) | [#4732](https://github.com/QwenLM/qwen-code/pull/4732) | `QWEN_CODE_ENABLE_WORKFLOWS=1`로 켜면 모델이 JS로 복잡한 워크플로를 짤 수 있습니다 |
+| **Prompt 확장 hooks**: slash 명령이 prompt로 전개될 때 별도 hook 이벤트 발동 | [#4377](https://github.com/QwenLM/qwen-code/pull/4377) | Hook 작성자가 특정 명령의 prompt 전개를 가로채 사전 처리하거나 제출을 막을 수 있습니다 |
+| **VSCode ACP 백그라운드 알림**: 백그라운드 Agent 완료 시 VSCode 채팅 패널에 알림과 모델 후속을 푸시 | [#4358](https://github.com/QwenLM/qwen-code/pull/4358) | VSCode 사용자가 백그라운드 작업 완료 알림을 놓치지 않습니다 |
+| **Desktop Qwen 연동**: ACP가 Desktop 버전 Qwen 연동을 지원 | [#4728](https://github.com/QwenLM/qwen-code/pull/4728) | Desktop 앱이 ACP로 Qwen Code에 붙을 수 있습니다 |
+| **InstructionsLoaded hook**: 지시 파일 로드 시 hook 발동 | [#4665](https://github.com/QwenLM/qwen-code/pull/4665) | Hook 작성자가 지시 로드 뒤에 자체 로직을 끼워 넣을 수 있습니다 |
+| **Release 자산 검증 + standalone docs 진입점** | [#3855](https://github.com/QwenLM/qwen-code/pull/3855) | 독립 설치 문서 진입점과 릴리스 자산 서명 검증이 생겼습니다 |
+
+## 🔧 주요 수정 사항
+
+| PR | 수정 내용 | 사용자에게 미치는 영향 |
+|----|----------|-----------|
+| [#4824](https://github.com/QwenLM/qwen-code/pull/4824) | 메모리 압력 시 API 이력과 UI 이력을 자동 압축, Hook 메시지도 microcompaction에 참여 | 긴 세션에서 더 이상 OOM이 나지 않습니다 — Goal 모드 루프와 Computer Use 장시간 작업의 도구 출력이 자동으로 정리됩니다 |
+| [#4756](https://github.com/QwenLM/qwen-code/pull/4756) | Computer Use 도구가 Auto 모드에서 올바르게 자동 권한 부여 | Auto 모드로 Computer Use를 돌릴 때 매번 확인 창이 뜨지 않습니다 |
+| [#4741](https://github.com/QwenLM/qwen-code/pull/4741) | 상태 표시줄에 내부 ID 대신 모델 이름 표시 | 상태 표시줄에서 이제 알아볼 수 있는 모델 이름을 봅니다 |
+| [#4753](https://github.com/QwenLM/qwen-code/pull/4753) | 승인 모드 표시 텍스트 개선 | 승인 모드 UI 문구가 더 명확합니다 |
+| [#4647](https://github.com/QwenLM/qwen-code/pull/4647) | Linux 이미지 붙여넣기에 플랫폼 네이티브 도구 사용 | Linux 사용자가 이미지를 붙여넣을 수 있게 됐습니다 |
+| [#4803](https://github.com/QwenLM/qwen-code/pull/4803) | qwen3.7-plus 멀티모달 지원 | qwen3.7-plus 모델이 이미지 입력을 처리합니다 |
+| [#4596](https://github.com/QwenLM/qwen-code/pull/4596) | git 저장소 순회 시 submodule 안까지 재귀 진입 | Agent가 submodule 안의 파일을 무시하지 않습니다 |
+| [#4795](https://github.com/QwenLM/qwen-code/pull/4795) | 그룹 간 도구 병합을 건너뛰어 화면 깜빡임 제거 | 도구 결과 렌더링에서 화면이 깜빡이지 않습니다 |
+| [#4755](https://github.com/QwenLM/qwen-code/pull/4755) | 선택 대화상자 깜빡임 수정 | 선택 대화상자가 더 이상 깜빡이지 않습니다 |
+
+## 🎉 신규 기여자
+
+이번 주 기여자들입니다:
+
+| 기여자 | 기여 내용 |
+|--------|----------|
+| [@qqqys](https://github.com/qqqys) | /fork 백그라운드 Agent 명령 [#4780](https://github.com/QwenLM/qwen-code/pull/4780), Auto 모드 자기 변조 방지 [#4572](https://github.com/QwenLM/qwen-code/pull/4572), Prompt 확장 hooks [#4377](https://github.com/QwenLM/qwen-code/pull/4377), InstructionsLoaded hook [#4665](https://github.com/QwenLM/qwen-code/pull/4665) |
+| [@callmeYe](https://github.com/callmeYe) | /skills picker 대화상자 [#4533](https://github.com/QwenLM/qwen-code/pull/4533) |
+| [@LaZzyMan](https://github.com/LaZzyMan) | 사용자 레벨 크로스 프로젝트 메모리 [#4764](https://github.com/QwenLM/qwen-code/pull/4764), /copy N [#4761](https://github.com/QwenLM/qwen-code/pull/4761), Workflow tool P1 [#4732](https://github.com/QwenLM/qwen-code/pull/4732) |
+| [@zzhenyao](https://github.com/zzhenyao) | Vim 모드 대수선 [#4677](https://github.com/QwenLM/qwen-code/pull/4677), 상태 표시줄 모델 이름 표시 [#4741](https://github.com/QwenLM/qwen-code/pull/4741), OOM 방지 압축 [#4824](https://github.com/QwenLM/qwen-code/pull/4824), 화면 깜빡임 수정 [#4795](https://github.com/QwenLM/qwen-code/pull/4795) |
+| [@yiliang114](https://github.com/yiliang114) | 독립 설치 자동 업데이트 [#4629](https://github.com/QwenLM/qwen-code/pull/4629), PR 검토 CI [#4549](https://github.com/QwenLM/qwen-code/pull/4549), Release 자산 검증 [#3855](https://github.com/QwenLM/qwen-code/pull/3855) |
+| [@DragonnZhang](https://github.com/DragonnZhang) | 시스템 잠자기 방지 [#4434](https://github.com/QwenLM/qwen-code/pull/4434), VSCode ACP 백그라운드 알림 [#4358](https://github.com/QwenLM/qwen-code/pull/4358), Desktop Qwen 연동 [#4728](https://github.com/QwenLM/qwen-code/pull/4728) |
+| [@tanzhenxin](https://github.com/tanzhenxin) | Skill allowedTools 자동 권한 부여 [#4704](https://github.com/QwenLM/qwen-code/pull/4704) |
+| [@BenGuanRan](https://github.com/BenGuanRan) | /stats 인터랙티브 통계 패널 [#4779](https://github.com/QwenLM/qwen-code/pull/4779) |
+| [@CNCSMonster](https://github.com/CNCSMonster) | Linux 이미지 붙여넣기 수정 [#4647](https://github.com/QwenLM/qwen-code/pull/4647) |
+| [@he-yufeng](https://github.com/he-yufeng) | submodule 파일 순회 [#4596](https://github.com/QwenLM/qwen-code/pull/4596) |
+| [@BZ-D](https://github.com/BZ-D) | 승인 모드 텍스트 개선 [#4753](https://github.com/QwenLM/qwen-code/pull/4753) |
+
+<Callout type="info">
+  **업데이트 방법**: `npm i @qwen-code/qwen-code@latest -g`를 실행하면 최신 버전으로 업데이트할 수 있습니다.
+</Callout>
+
+문제나 제안이 있다면 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)로 알려 주세요!

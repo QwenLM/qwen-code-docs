@@ -1,0 +1,243 @@
+---
+title: "Qwen Code 주간 업데이트: Qwen Code 데스크톱 앱 정식 출시, Session Workflow로 작업 실행 흐름을 한눈에, 서브 Agent는 작업에 맞는 권한만 발급"
+date: "2026-08-06"
+description: "이번 주에는 v0.21.2부터 v0.21.6까지 다섯 개의 정식 버전을 출시하고 PR 300개 이상이 병합됐습니다. Qwen Code 데스크톱 앱이 세 운영체제 모두에서 정식 출시됐고, Session Workflow는 계획과 작업 실행을 흐름도로 그려 내며, AI가 만든 이미지가 터미널에 바로 표시되고, 서브 Agent 권한 제어 기능이 한꺼번에 들어왔습니다."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i2/O1CN01w2Y6QU83J6K2jBZY_!!6000000004771-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 주간 업데이트: Qwen Code 데스크톱 앱 정식 출시, Session Workflow로 작업 실행 흐름을 한눈에, 서브 Agent는 작업에 맞는 권한만 발급"
+  date="2026-08-06"
+  author="Qwen Team"
+/>
+
+Qwen Code는 이번 주에 v0.21.2부터 v0.21.6까지 다섯 개의 정식 버전을 출시하고 PR 300개 이상을 병합했습니다. 여기에 큰 소식이 하나 더 있습니다. Qwen Code 데스크톱 앱 v0.1.0이 정식 출시됐습니다.
+
+**데스크톱 앱이 나왔습니다.** 지난주 Web Shell이 대규모 업데이트를 막 마쳤는데, 이번 주에는 그게 아예 독립 데스크톱 앱이 됐습니다. Qwen Code 데스크톱 앱 v0.1.0을 출시했고, macOS·Windows·Linux 세 운영체제 모두 네이티브 설치 파일을 제공하니 GitHub Releases에서 바로 내려받을 수 있습니다.
+
+**작업 실행을 '볼 수' 있게 됐습니다.** 새로운 Session Workflow 화면이 작업 계획과 실행 진행 상황을 하나의 흐름도로 그려 냅니다. 계획이 몇 단계인지, 어느 단계가 도는지, 어느 단계가 기다리는지, 어떤 하위 작업을 어느 AI가 맡았는지가 한눈에 들어옵니다. AI는 일을 시작하기 전에 이 그림을 먼저 보여 주고, 사용자가 고개 끄덕여야 움직입니다.
+
+**터미널 경험과 권한 제어에도 빈틈을 메웠습니다.** AI가 그린 차트를 터미널에서 바로 볼 수 있어서 파일을 따로 열 필요가 없습니다. 서브 Agent는 작업에 맞춰 권한을 받습니다. 읽기만 하는 일에는 읽기 권한만 주고, 자주 쓰는 권한 조합은 템플릿으로 저장해 다시 쓸 수 있습니다. 긴 세션 압축에는 더 저렴한 모델을 따로 지정할 수 있어 비용도 조절하기 쉬워졌습니다.
+
+## ✨ 새로운 기능
+
+### Qwen Code 데스크톱 앱 정식 출시: 세 운영체제 모두 네이티브 앱
+
+이전까지 Qwen Code의 데스크톱 경험은 두 곳에 나뉘어 있었습니다. Electron 데스크톱 앱과 브라우저 속 Web Shell이죠. 이번 주에 두 흐름이 만났습니다. Qwen Code 데스크톱 앱 v0.1.0이 정식 출시됐는데, 화면은 지난주 대규모 업데이트를 거친 Web Shell입니다. macOS·Windows·Linux 세 운영체제 설치 파일이 모두 올라와 있으니 [GitHub Releases](https://github.com/QwenLM/qwen-code/releases#release-desktop-v0.1.0)에서 바로 내려받을 수 있습니다.
+
+이미 Electron 버전을 쓰던 macOS 사용자는 직접 이사할 필요가 없습니다. 새 버전에 한 번만 진행하면 되는 이전 안내가 들어 있고, 전환하고 나면 이후 업데이트도 자동으로 따라옵니다.
+
+이렇게 쓸 수 있습니다:
+
+- 데스크톱 앱의 Qwen Code는 터미널판과 똑같은 능력을 갖추고 있습니다
+- 세 운영체제 어디서 써도 경험이 같습니다
+- 업데이트를 자동으로 확인하니 새 버전이라고 다시 설치할 필요가 없습니다
+
+관련 PR: [#8132](https://github.com/QwenLM/qwen-code/pull/8132), [#8392](https://github.com/QwenLM/qwen-code/pull/8392), [#8511](https://github.com/QwenLM/qwen-code/pull/8511), [#8518](https://github.com/QwenLM/qwen-code/pull/8518)
+
+![Qwen Code 데스크톱 앱](https://img.alicdn.com/imgextra/i2/O1CN01Hruduy5HZ1J7ntYq_!!6000000005324-2-tps-3844-2160.png)
+
+### Session Workflow: 계획과 하위 작업, 실행 진행 상황을 한 장의 그림으로
+
+복잡한 작업을 돌리기 시작하면 계획이 어디까지 진행됐고 하위 작업이 무엇을 하는지, 예전에는 대화 기록을 뒤져서 직접 맞춰 볼 수밖에 없었습니다.
+
+새 Session Workflow 화면이 이 모든 것을 흐름도로 그려 냅니다. 계획의 각 단계는 그림 속 상자 하나로, 단계의 선후 관계는 선으로 이어지고, 어느 단계가 실행 중이고 어느 단계가 막혔는지가 실시간으로 표시됩니다. AI가 내보낸 하위 작업도 그림에 걸리며, 펼치면 그 작업이 구체적으로 무엇을 했는지 볼 수 있습니다. AI는 시작 전에 이 그림을 먼저 보여 주고, 승인해야 움직이며, 승인하지 않으면 돌아가 계획을 다시 잡습니다. 작업이 끝난 뒤에도 그림을 다시 열어 돌아볼 수 있습니다. 각 단계를 누가 무엇을 했는지 기록으로 남아 있습니다.
+
+기능은 기본적으로 꺼져 있고, 설정에서 `experimental.sessionWorkflow`를 true로 두면 켜집니다. 켜면 따라오는 편리함이 두 가지 더 있습니다. 하위 작업이 명령 실행이나 파일 수정처럼 사용자 확인이 필요한 처리를 만나면, 요청이 메인 화면으로 바로 올라와 여기서 처리할 수 있습니다. 하위 작업 속으로 들어가 찾을 필요가 없습니다. 아주 긴 작업은 백그라운드로 넘기고 메인 대화에서는 다른 일을 계속하면 되고, 끝나면 알림이 옵니다.
+
+이렇게 쓸 수 있습니다:
+
+- 복잡한 작업이 돌아가는 중에 진행 상황을 한눈에 봅니다. 어느 단계가 막혔는지도 그림만 보면 나옵니다
+- 계획을 먼저 확인한 뒤 시작하니 마음이 놓입니다
+- 긴 작업은 백그라운드로 넘기고 메인 대화는 다른 일을 계속합니다
+
+관련 PR: [#7580](https://github.com/QwenLM/qwen-code/pull/7580), [#8391](https://github.com/QwenLM/qwen-code/pull/8391), [#8240](https://github.com/QwenLM/qwen-code/pull/8240), [#8303](https://github.com/QwenLM/qwen-code/pull/8303)
+
+![Session Workflow 흐름도](https://img.alicdn.com/imgextra/i3/O1CN01fCrSJtLENMC7ntYq_!!6000000007546-2-tps-3844-2160.png)
+
+### display_image: AI가 만든 이미지를 터미널에 바로 표시
+
+이전에는 AI가 이미지를 만들면 파일 경로만 던져 줘서 직접 열어 봐야 했습니다. 이제는 이미지를 터미널에 바로 띄웁니다. 생성이 끝나면 그 자리에서 보는 것이죠. 이번 주 업데이트 글 표지도 이렇게 골랐습니다. AI가 후보 이미지를 몇 장 만들어 터미널에 바로 띄우고, 끝나면 나란히 놓고 비교하며 고르면 됩니다. 이미지마다 파일을 열 필요는 없습니다. 터미널이 이미지 표시를 지원하지 않는 경우에는 그 사실도 분명히 알려 줍니다.
+
+이렇게 쓸 수 있습니다:
+
+- AI가 만든 이미지를 생성 직후 바로 봅니다. 파일을 직접 열지 않아도 됩니다
+- AI가 데이터로 그린 차트, 웹페이지를 만들고 찍은 미리보기 화면도 바로 표시됩니다
+- 저장소에 이미 있는 디자인 시안이나 스크린샷도 AI를 시켜 꺼내서 함께 볼 수 있습니다
+
+관련 PR: [#8217](https://github.com/QwenLM/qwen-code/pull/8217)
+
+![display_image 터미널 이미지 표시](https://img.alicdn.com/imgextra/i2/O1CN01HMtTrNyiFjB7ntYq_!!6000000007560-2-tps-3844-2160.png)
+
+### 서브 Agent 권한 제어: 작업에 맞는 권한만 발급, 병렬 작업은 서로 간섭하지 않음
+
+Qwen Code에 큰 작업을 맡기면 때로 '복제판'(서브 Agent)을 여럿 내보내 동시에 일을 시킵니다. 하나는 코드를 읽고, 하나는 테스트를 돌리는 식이죠. 이전에는 어느 복제판을 내보내든 원판과 똑같은 능력을 다 가졌습니다. 파일 읽기도, 수정도, 명령 실행도 가능했죠. '코드 보고 요약만 해 줘'라고 생각해도 실제로는 파일을 슬쩍 고칠 수 있었으니 마음이 놓이지 않습니다.
+
+이제는 작업에 맞춰 권한을 줄 수 있습니다:
+
+- **작업에 맞는 권한만 발급**: 복제판을 내보낼 때 쓸 수 있는 도구를 한정합니다. 한마디로 '이 일은 읽기만'이라고 부탁하면, 그 제한을 들고 나가기 때문에 뭔가를 고치려 하면 그 자리에서 거부됩니다
+- **권한 템플릿**: 자주 쓰는 권한 조합을 템플릿으로 저장해 프로젝트의 `.qwen/fork-profiles/` 디렉터리에 둡니다. 다음에는 파라미터 하나로 다시 쓸 수 있어 매번 새로 설정하지 않아도 됩니다
+- **작업 지시문 보안**: 구멍 하나를 막았습니다. 이전에는 복제판들이 동시에 일할 때 서로의 작업 지시문이 보였습니다. 이제는 각자 자기 것만 보면서 자기 일에 집중합니다
+
+이렇게 쓸 수 있습니다:
+
+- 읽기만 하는 일에는 읽기 권한만 주어서 슬쩍 파일을 고치는 일을 처음부터 막습니다
+- 자주 쓰는 권한 조합을 템플릿으로 저장해 한 줄로 다시 씁니다
+- 병렬로 도는 복제판은 서로 간섭하지 않습니다
+
+관련 PR: [#8066](https://github.com/QwenLM/qwen-code/pull/8066), [#8148](https://github.com/QwenLM/qwen-code/pull/8148), [#8344](https://github.com/QwenLM/qwen-code/pull/8344)
+
+<video src="https://cloud.video.taobao.com/vod/7eQGp5uaVBEPdSIb43lResSOHiSOSJGOmuHHpyai3AQ.mp4" controls playsInline className="w-full rounded-xl" />
+
+### 대화 압축 비용 최적화: 압축에만 더 저렴한 모델 지정
+
+긴 세션에서 자동 압축이 걸리면, 이전에는 메인 모델로 전체 컨텍스트를 한 번 다시 돌리는 방법뿐이었습니다. 비싸고 느렸죠.
+
+이번 주에 세 가지가 개선됐습니다. 첫째, `/model --compaction`으로 압축에만 쓸 모델을 따로 지정할 수 있습니다. '긴 대화 요약'이라는 공정은 더 저렴한 모델이 맡기고, 메인 대화는 계속 좋은 모델을 쓰니 품질은 떨어지지 않습니다. 둘째, 메인 모델로 압축할 때는 이전에 캐시된 내용을 재사용해 응답이 빨라지고, 이미지가 포함된 이력도 지원합니다. 셋째, Claude 계열 모델을 쓴다면 `generationConfig.cacheRetention`을 `"1h"`로 둘 수 있습니다. 캐시 유지 시간이 기본 5분에서 1시간으로 늘어나, 간격이 긴 세션에서 매번 캐시를 날리는 일이 없어집니다.
+
+이렇게 쓸 수 있습니다:
+
+- 압축을 더 저렴한 모델에 맡기면 긴 세션이 더 저렴해집니다
+- 메인 모델로 압축할 때도 캐시를 재사용해 응답이 빨라집니다
+- 드문드문 쓰는 세션도 매번 캐시 무효화 손해를 보지 않습니다
+
+관련 PR: [#7818](https://github.com/QwenLM/qwen-code/pull/7818), [#8339](https://github.com/QwenLM/qwen-code/pull/8339), [#8419](https://github.com/QwenLM/qwen-code/pull/8419), [#8048](https://github.com/QwenLM/qwen-code/pull/8048)
+
+![압축에는 더 저렴한 모델 지정](https://img.alicdn.com/imgextra/i4/O1CN01T6V9XQHKp5G3LCha_!!6000000004160-1-tps-1646-1080.gif)
+
+### Channel 생태계: GitLab 연동, DingTalk 인터랙티브 카드, Channel 페어링 관리
+
+지난주 GitHub Channel이 들어왔고, 이번 주에도 Channel 생태계가 계속 넓어집니다.
+
+**GitLab이 왔습니다.** GitLab의 todos와 봇 @멘션 댓글이 들어오는 메시지가 됩니다. 어떤 동작을 AI에게 맡길지 설정할 수 있고, 이미 처리한 항목을 두 번 처리하지는 않습니다. 관련 PR: [#7862](https://github.com/QwenLM/qwen-code/pull/7862)
+
+**DingTalk에 인터랙티브 카드가 생겼습니다.** DingTalk Channel이 인터랙티브 카드를 지원합니다. AI 실행 상태가 카드에 실시간으로 갱신되고, 사용자의 입력이 필요하면 구조화된 질문이 뜹니다. 길게 늘어진 텍스트를 붙잡고 읽을 필요가 없죠. 다른 플랫폼은 영향받지 않습니다. 관련 PR: [#6930](https://github.com/QwenLM/qwen-code/pull/6930)
+
+![DingTalk 인터랙티브 카드](https://img.alicdn.com/imgextra/i3/O1CN01rlQ42T6JklK3OTaQ_!!6000000002748-2-tps-1672-942.png)
+
+**'누가 AI를 부릴 수 있는지' 목록을 확인하고 되돌릴 수 있습니다.** 채팅 플랫폼을 연결할 때 안전을 위해 페어링 모드를 켤 수 있습니다. 낯선 사람이 처음으로 봇을 @하면 사용자의 승인을 받아야 쓸 수 있죠. 그런데 이전에는 승인한 뒤 목록을 볼 곳도, 취소할 방법도 없었습니다. 잘못 승인한 사람이거나 이미 떠난 사람이어도 계속 사용자의 AI를 쓸 수 있었습니다. 이제는 Channel 편집기에서 누가 승인받았는지 확인하고 개인별로 따로 취소할 수 있습니다. 워크스페이스마다 목록이 갈려 따로 관리됩니다. 관련 PR: [#8045](https://github.com/QwenLM/qwen-code/pull/8045), [#8081](https://github.com/QwenLM/qwen-code/pull/8081)
+
+**GitHub/GitLab Channel은 설정 파일을 직접 고치지 않아도 됩니다.** 이전에는 AI를 GitHub/GitLab에 붙이려면 설정 파일 `settings.json`을 열고 자격 증명, 어떤 범위를 연결할지, 누가 쓸 수 있을지를 전부 손으로 적어야 했습니다. 기호 하나만 틀려도 적용되지 않았죠. 이제는 Web Shell에 전용 관리 화면이 있어서 이런 항목을 양식에 채우고 화면에서 고르면 저장과 동시에 적용됩니다. 설정 파일을 건드릴 필요가 없습니다. 관련 PR: [#8310](https://github.com/QwenLM/qwen-code/pull/8310)
+
+**GitHub Channel 디테일 다듬기.** 이미 로컬에서 `gh`로 로그인돼 있다면 GitHub Channel이 그 로그인 상태를 그대로 재사용해서 토큰을 따로 만들 필요가 없습니다. 답변 동작도 정리됐습니다. 이벤트당 최종 댓글은 최대 한 번만 달리고, AI가 처리하는 동안 원본 댓글에 임시 👀 이모지를 붙였다가 끝나면 자동으로 뗍니다. 중단된 작업은 재시작 뒤 이어갈 수 있습니다. 관련 PR: [#8461](https://github.com/QwenLM/qwen-code/pull/8461), [#8033](https://github.com/QwenLM/qwen-code/pull/8033), [#8061](https://github.com/QwenLM/qwen-code/pull/8061), [#8306](https://github.com/QwenLM/qwen-code/pull/8306)
+
+![Channel 관리](https://img.alicdn.com/imgextra/i4/O1CN01HSdkdqhk9rD2PY7k_!!6000000006213-2-tps-1188-860.png)
+
+## 📊 그 외 새로운 기능
+
+**Auto Recall 컨텍스트 자동 검색.** 지난주의 외부 코퍼스 검색은 'AI가 필요할 때 찾아보는' 방식이었고, 이번 주 Auto Recall은 '질문할 때마다 자동으로 한 번 찾아보는' 방식입니다. 검색 결과를 AI에게 참고 자료로 붙여 주고, 흔한 민감 정보는 자동으로 걸러 냅니다. 필요할 때 검색하는 모드와 같이 켤 수는 없고, 관리자가 배포하는 방식입니다. 관련 PR: [#7877](https://github.com/QwenLM/qwen-code/pull/7877)
+
+**도구 미리 선언 기준값.** `tools.toolSearch.threshold` 설정이 추가됐습니다. 도구가 많지 않으면 세션을 시작할 때 전부 선언해 두므로, 도중에 필요할 때마다 검색하지 않아도 되어 응답이 빨라집니다. 0으로 두면 이전 동작으로 돌아갑니다. 관련 PR: [#7922](https://github.com/QwenLM/qwen-code/pull/7922)
+
+**/autofix가 로컬 워크스페이스를 지원합니다.** 이전에는 `/autofix`를 GitHub Actions에서만 돌릴 수 있었는데, 이제는 그냥 실행해도 로컬 변경 사항을 검토하고 고쳐 줍니다. 문제를 찾고, 최소한의 수정을 적용하고, 검사를 돌리고, 다시 점검해서 깨끗해지거나 더 못 고친다고 확인될 때까지 반복합니다. 실행 전에 검사가 샌드박스에서 진행된다고 안내하고, 해당 저장소를 신뢰하는지 확인을 받습니다. 관련 PR: [#8121](https://github.com/QwenLM/qwen-code/pull/8121)
+
+**Web Shell 검토 결과 구조화 화면.** `/review`가 끝나면 결과를 Web Shell 전용 화면에서 볼 수 있습니다. 문제가 몇 개인지, 어디에 있는지, 어떻게 고지는지, 근거가 무엇인지 한눈에 들어오고, 심각도별로 걸러 볼 수도, 전체 보고서를 열 수도 있습니다. 관련 PR: [#8402](https://github.com/QwenLM/qwen-code/pull/8402)
+
+**Qwen 3.8 사고 강도가 실제로 적용됩니다.** qwen3.8-max 계열 모델에서 `/effort`의 다섯 단계가 모델의 사고 깊이를 실제로 조절합니다. 예전에는 한 단계만 듣는 셈이었습니다. 관련 PR: [#8472](https://github.com/QwenLM/qwen-code/pull/8472)
+
+**Goal v3가 CLI에 들어왔습니다.** `/goal` 명령과 인터랙션 모드가 같은 런타임을 쓰게 됐습니다. 상태 카드와 생명주기 명령이 양쪽에 맞춰져 어느 쪽에서 써도 경험이 동일합니다. 관련 PR: [#8005](https://github.com/QwenLM/qwen-code/pull/8005), [#8324](https://github.com/QwenLM/qwen-code/pull/8324)
+
+**스킬 등급별 숨김.** `skills.disabledLevels` 설정이 추가됐습니다. 출처 단위로 스킬 층을 통째로 숨길 수 있어, 스킬이 너무 많아 어지러울 때 유용합니다. 관련 PR: [#8057](https://github.com/QwenLM/qwen-code/pull/8057)
+
+**자동 생성 스킬의 생명주기 관리.** `/learn` 등으로 자동 생성된 스킬에 이제 사용 추적이 붙습니다. 30일간 쓰지 않으면 만료 표시가 되고, 90일이 지나면 자동으로 보관되어 자꾸만 쌓이는 일이 없습니다. 관련 PR: [#7846](https://github.com/QwenLM/qwen-code/pull/7846)
+
+**memory.agentMaxTurns.** 메모리 Agent의 라운드 수 상한을 한군데에서 설정합니다. 0이면 제한이 없습니다. 관련 PR: [#8171](https://github.com/QwenLM/qwen-code/pull/8171)
+
+**/summary가 커스텀 경로를 지원합니다.** `/summary`에 경로 인자를 붙여 프로젝트 요약을 원하는 위치에 저장할 수 있습니다. 상위 디렉터리는 자동으로 만들어집니다. 관련 PR: [#8116](https://github.com/QwenLM/qwen-code/pull/8116)
+
+**daemon 용량과 상태.** 워크스페이스별 세션 상한이 20에서 32로 올라 병렬로 여러 개를 열어도 상한에 잘 걸리지 않습니다. `/daemon/status`에서 메모리 사용량을 볼 수 있어 상한까지 얼마나 남았는지 감이 옵니다. 하위 세션 동시 실행 상한도 설정할 수 있습니다. 관련 PR: [#8235](https://github.com/QwenLM/qwen-code/pull/8235), [#8245](https://github.com/QwenLM/qwen-code/pull/8245), [#8341](https://github.com/QwenLM/qwen-code/pull/8341)
+
+**Chrome 확장 alpha.** Chrome 확장 alpha 버전에서 온보딩 절차와 런타임 진단, 실제 Chrome 환경에서의 자동화 검수를 채웠습니다. 관련 PR: [#6739](https://github.com/QwenLM/qwen-code/pull/6739)
+
+## 👏 사용성 개선
+
+**출력 도중에도 상태를 확인할 수 있습니다.** 모델이 아직 출력 중이어도 `/status`, `/settings`, `/help` 같은 읽기 전용 명령이 즉시 실행됩니다. 라운드가 끝날 때까지 기다릴 필요가 없습니다. Web Shell에서도 `/stats`, `/about`, `/context`가 라운드 도중 바로 실행되는데, 이전에는 이 명령들이 소리 없이 삼켜졌습니다. 관련 PR: [#8130](https://github.com/QwenLM/qwen-code/pull/8130), [#8496](https://github.com/QwenLM/qwen-code/pull/8496)
+
+**도구 출력이 길어도 잘리지 않습니다.** 명령 출력과 긴 사고 내용은 500자를 넘으면 무조건 잘려 나왔는데, 이제는 기본적으로 접혀 있다가 펼칠 수 있는 전체 보기로 바뀌었습니다. 내보낸 세션에서도 전문을 볼 수 있습니다. 관련 PR: [#8251](https://github.com/QwenLM/qwen-code/pull/8251)
+
+**백그라운드 Agent가 실행 중이면 라운드가 펼쳐진 상태로 유지됩니다.** 이전에는 메인 AI가 잠시 쉬기만 해도 Web Shell이 라운드를 완료로 표시하고 접었습니다. 백그라운드의 서브 Agent가 아직 돌고 있어도 잠시 뒤 새 소식이 또 올라와 상태가 이리저리 뛰었죠. 이제는 활발한 서브 Agent가 하나라도 남아 있으면 라운드를 편 채로 유지합니다. 관련 PR: [#8413](https://github.com/QwenLM/qwen-code/pull/8413)
+
+**사고 블록은 더 이상 흔들리지 않고, 트랜스크립트는 인라인으로.** 스트리밍 사고 블록의 높이가 안정돼 이리저리 뛰지 않습니다. 전체화면 기록 오버레이는 Ctrl+O 인라인 토글로 바뀌었습니다. 관련 PR: [#8077](https://github.com/QwenLM/qwen-code/pull/8077)
+
+**단축키 추가.** macOS에서 클립보드 이미지 붙여넣기용 Option+V가 새로 생겼습니다. @ 자동완성의 카테고리 전환에는 Ctrl+Tab / Ctrl+Shift+Tab이 추가돼 터미널 자체 단축키와 겹치는 일을 피했습니다. 관련 PR: [#8120](https://github.com/QwenLM/qwen-code/pull/8120), [#8074](https://github.com/QwenLM/qwen-code/pull/8074)
+
+**검색이 더 빠르고 안정적입니다.** 파일 검색이 빨라졌고, 검색에 실패하면 자동으로 다시 시도합니다. '검색을 다 마치지 못한' 상태를 '일치하는 결과 없음'으로 잘못 알려 주지 않습니다. 관련 PR: [#8253](https://github.com/QwenLM/qwen-code/pull/8253), [#7888](https://github.com/QwenLM/qwen-code/pull/7888)
+
+**표와 대화상자 디테일.** 확장 Markdown 표에서 셀 대화상자를 닫을 때 페이지가 튕기지 않고, 대화상자가 열리는 순간의 휠 이벤트가 배경을 잘못 스크롤하지 않습니다. 관련 PR: [#8407](https://github.com/QwenLM/qwen-code/pull/8407), [#8089](https://github.com/QwenLM/qwen-code/pull/8089)
+
+**Ctrl+Shift+C가 복사로 돌아왔습니다.** 이전에는 Ctrl+Shift+C가 종료나 화면 지우기를 건드렸는데, 이제는 터미널 복사라는 본래 역할을 되찾았습니다. 관련 PR: [#8011](https://github.com/QwenLM/qwen-code/pull/8011)
+
+**세션 상세 메뉴.** 좁은 레이아웃에서 세션 상세 메뉴가 화면 밖으로 넘치지 않게 됐고, 키보드만으로 도달할 수 있는 '전체 세션 ID 복사' 작업도 추가됐습니다. 관련 PR: [#8127](https://github.com/QwenLM/qwen-code/pull/8127)
+
+## 🔧 주요 수정 사항
+
+| 수정 사항 | 사용자에게 미치는 영향 | PR |
+|------|-----------|-----|
+| **DashScope Qwen 3.8 파라미터 충돌** | qwen3.8-max가 파라미터 충돌로 오류를 내지 않고, '생각 안 함' 설정이 실제로 적용됩니다 | [#8488](https://github.com/QwenLM/qwen-code/pull/8488), [#8536](https://github.com/QwenLM/qwen-code/pull/8536) |
+| **Claude 4.6+/5.x 요청 문제 묶음** | Claude 신형 모델의 요청 오류, 사고 내용이 표시되지 않는 문제 등이 고쳐졌습니다 | [#8040](https://github.com/QwenLM/qwen-code/pull/8040), [#8164](https://github.com/QwenLM/qwen-code/pull/8164), [#8163](https://github.com/QwenLM/qwen-code/pull/8163), [#8165](https://github.com/QwenLM/qwen-code/pull/8165), [#8166](https://github.com/QwenLM/qwen-code/pull/8166) |
+| **Goal 모드 무한 재시도** | Goal 모드에서 더 이상의 근거를 찾지 못하면 멈춰 사용자의 처리를 기다립니다. 자동으로 무한히 이어가지 않습니다 | [#8430](https://github.com/QwenLM/qwen-code/pull/8430) |
+| **MCP 끊김 후 재전송 안전** | MCP 연결이 끊긴 뒤 다시 실행하면 안 되는 작업은 자동으로 재실행되지 않아 부작용을 피합니다 | [#8387](https://github.com/QwenLM/qwen-code/pull/8387) |
+| **Windows 민감 설정 붙여넣기** | Windows 터미널에서 API key 같은 민감 설정을 붙여넣어도 무시되지 않습니다 | [#8342](https://github.com/QwenLM/qwen-code/pull/8342) |
+| **개행 문자 탐지** | Windows 개행 형식의 파일이 소리 없이 변경되지 않습니다 | [#8383](https://github.com/QwenLM/qwen-code/pull/8383) |
+| **긴 답변 끊김 복구** | 긴 답변이 네트워크 중단으로 끊겨도 복구할 수 있어 처음부터 다시 하지 않습니다 | [#7896](https://github.com/QwenLM/qwen-code/pull/7896) |
+| **중·일·한 문자 출력 초과** | 중국어·일본어·한국어 출력이 예상 밖으로 한도를 넘어 API 오류를 내지 않습니다 | [#7963](https://github.com/QwenLM/qwen-code/pull/7963) |
+| **Firefox 텍스트 선택** | Web Shell 메시지 내용에서 Firefox의 선택 하이라이트가 다시 보입니다 | [#8417](https://github.com/QwenLM/qwen-code/pull/8417) |
+| **대화 속 링크로 브라우저 열기** | 이전에는 대화 속 링크를 클릭해도 반응이 없더니, 이제는 한 번 클릭으로 브라우저가 열립니다 | [#8198](https://github.com/QwenLM/qwen-code/pull/8198) |
+| **크래시 오류 표시** | 어떤 크래시는 오류 메시지가 전혀 남지 않았는데, 이제는 터미널에 오류가 떠서 제보하기 쉬워졌습니다 | [#8088](https://github.com/QwenLM/qwen-code/pull/8088) |
+| **send_message의 Anthropic 호환** | Agent끼리 메시지를 주고받는 도구가 Anthropic 모델에서 정상 동작으로 돌아왔습니다 | [#7989](https://github.com/QwenLM/qwen-code/pull/7989) |
+| **daemon 잠금 파일 이상** | 잠금 파일에 문제가 생겨도 daemon이 바로 크래시하지 않습니다 | [#8442](https://github.com/QwenLM/qwen-code/pull/8442) |
+
+## 👥 기여자
+
+| 기여자 | 기여 내용 | 참고 PR 링크 |
+|--------|---------|-------------|
+| **[@wenshao](https://github.com/wenshao)** | Review와 /verify 전반 강화, Web Shell 검토 화면, autofix 라운드 수 제어, 세션 상한 상향, GitHub Channel 로그인 상태 재사용, Qwen 3.8 파라미터 수정 | [#8215](https://github.com/QwenLM/qwen-code/pull/8215), [#8402](https://github.com/QwenLM/qwen-code/pull/8402), [#8461](https://github.com/QwenLM/qwen-code/pull/8461), [#8488](https://github.com/QwenLM/qwen-code/pull/8488) |
+| **[@yiliang114](https://github.com/yiliang114)** | 데스크톱 앱 패키징 출시와 구버전 이전, Session Workflow 화면과 스위치, /autofix 로컬 지원, GitHub Channel 답변 정리, Chrome 확장 alpha | [#8132](https://github.com/QwenLM/qwen-code/pull/8132), [#8392](https://github.com/QwenLM/qwen-code/pull/8392), [#7580](https://github.com/QwenLM/qwen-code/pull/7580), [#8121](https://github.com/QwenLM/qwen-code/pull/8121), [#8033](https://github.com/QwenLM/qwen-code/pull/8033) |
+| **[@qqqys](https://github.com/qqqys)** | Goal v3 전체(무한 재시도 수정 포함), Channel 페어링 승인 관리, 하위 작업 승인 상향 전달과 백그라운드 실행 | [#8005](https://github.com/QwenLM/qwen-code/pull/8005), [#8045](https://github.com/QwenLM/qwen-code/pull/8045), [#8240](https://github.com/QwenLM/qwen-code/pull/8240), [#8430](https://github.com/QwenLM/qwen-code/pull/8430) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | Auto Recall 자동 검색, 대용량 파일 페이지 단위 읽기, MCP 끊김 후 재전송 안전, 개행 문자 탐지 수정, 캐시 최적화 | [#7877](https://github.com/QwenLM/qwen-code/pull/7877), [#8002](https://github.com/QwenLM/qwen-code/pull/8002), [#8387](https://github.com/QwenLM/qwen-code/pull/8387), [#8464](https://github.com/QwenLM/qwen-code/pull/8464) |
+| **[@ytahdn](https://github.com/ytahdn)** | Web Shell 다수 개선(작업 패널, 테마 비주얼, 표 컨트롤, 이력 페이지네이션, 산출물 다운로드, 모바일 입력) | [#7929](https://github.com/QwenLM/qwen-code/pull/7929), [#8098](https://github.com/QwenLM/qwen-code/pull/8098), [#8234](https://github.com/QwenLM/qwen-code/pull/8234), [#8230](https://github.com/QwenLM/qwen-code/pull/8230) |
+| **[@qwen-code-dev-bot](https://github.com/qwen-code-dev-bot)** | 링크 클릭과 우클릭 메뉴 복구, Option+V 이미지 붙여넣기, Ctrl+Tab 자동완성 전환, 배포 스크립트 강화 | [#8198](https://github.com/QwenLM/qwen-code/pull/8198), [#8120](https://github.com/QwenLM/qwen-code/pull/8120), [#8074](https://github.com/QwenLM/qwen-code/pull/8074), [#8037](https://github.com/QwenLM/qwen-code/pull/8037) |
+| **[@DragonnZhang](https://github.com/DragonnZhang)** | display_image 터미널 이미지 표시, 압축 캐시 재사용, 출력 중 읽기 전용 명령 실행, Qwen 3.8 사고 강도, 도구 미리 선언 기준값 | [#8217](https://github.com/QwenLM/qwen-code/pull/8217), [#8339](https://github.com/QwenLM/qwen-code/pull/8339), [#8130](https://github.com/QwenLM/qwen-code/pull/8130), [#8472](https://github.com/QwenLM/qwen-code/pull/8472) |
+| **[@chiga0](https://github.com/chiga0)** | 터미널 경험 관련 수정 다수(커서, 단축키, 창 크기 변화, 사고 블록 높이), 크래시 오류 표시 | [#8077](https://github.com/QwenLM/qwen-code/pull/8077), [#8088](https://github.com/QwenLM/qwen-code/pull/8088), [#8032](https://github.com/QwenLM/qwen-code/pull/8032), [#8125](https://github.com/QwenLM/qwen-code/pull/8125) |
+| **[@chinesepowered](https://github.com/chinesepowered)** | 디렉터리 목록 표시 구분, Feishu 코드 블록 크기, 메모리 단위 표시 등 디테일 | [#7868](https://github.com/QwenLM/qwen-code/pull/7868), [#7850](https://github.com/QwenLM/qwen-code/pull/7850), [#7871](https://github.com/QwenLM/qwen-code/pull/7871), [#7864](https://github.com/QwenLM/qwen-code/pull/7864) |
+| **[@netbrah](https://github.com/netbrah)** | Anthropic 1시간 캐시 유지, Claude 요청 수정 묶음, send_message 호환 | [#8048](https://github.com/QwenLM/qwen-code/pull/8048), [#8040](https://github.com/QwenLM/qwen-code/pull/8040), [#8164](https://github.com/QwenLM/qwen-code/pull/8164), [#7989](https://github.com/QwenLM/qwen-code/pull/7989) |
+| **[@destire-mio](https://github.com/destire-mio)** | 서브 Agent 도구 화이트리스트와 권한 템플릿, 긴 출력 접기 화면 | [#8066](https://github.com/QwenLM/qwen-code/pull/8066), [#8148](https://github.com/QwenLM/qwen-code/pull/8148), [#7714](https://github.com/QwenLM/qwen-code/pull/7714), [#8251](https://github.com/QwenLM/qwen-code/pull/8251) |
+| **[@OrbitZore](https://github.com/OrbitZore)** | GitLab Channel 어댑터, GitHub/GitLab Channel 화면 기반 관리 | [#7862](https://github.com/QwenLM/qwen-code/pull/7862), [#8119](https://github.com/QwenLM/qwen-code/pull/8119), [#8310](https://github.com/QwenLM/qwen-code/pull/8310) |
+| **[@LaZzyMan](https://github.com/LaZzyMan)** | macOS 서명 배포 절차 수정 | [#8574](https://github.com/QwenLM/qwen-code/pull/8574), [#8564](https://github.com/QwenLM/qwen-code/pull/8564) |
+| **[@xurik](https://github.com/xurik)** | hooks 강화(프라이빗 네트워크 스위치, 세션 삭제 이벤트, 세션 출처 필드) | [#7968](https://github.com/QwenLM/qwen-code/pull/7968), [#8059](https://github.com/QwenLM/qwen-code/pull/8059), [#8155](https://github.com/QwenLM/qwen-code/pull/8155) |
+| **[@zhangxy-zju](https://github.com/zhangxy-zju)** | Web Shell 스트리밍 차트, 스킬 등급별 숨김 | [#7916](https://github.com/QwenLM/qwen-code/pull/7916), [#8057](https://github.com/QwenLM/qwen-code/pull/8057) |
+| **[@water-in-stone](https://github.com/water-in-stone)** | 검색 실패 시 재시도와 결과 구분 | [#7888](https://github.com/QwenLM/qwen-code/pull/7888), [#8304](https://github.com/QwenLM/qwen-code/pull/8304) |
+| **[@ZijianZhang989](https://github.com/ZijianZhang989)** | repo-hygiene 스킬과 주간 점검 절차, Agent View 런타임 기반 | [#7908](https://github.com/QwenLM/qwen-code/pull/7908), [#7799](https://github.com/QwenLM/qwen-code/pull/7799) |
+| **[@carffuca](https://github.com/carffuca)** | 백그라운드 Agent 실행 중 라운드 펼침 유지, 표 대화상자 스크롤 수정 | [#8413](https://github.com/QwenLM/qwen-code/pull/8413), [#8407](https://github.com/QwenLM/qwen-code/pull/8407) |
+| **[@Aleks-0](https://github.com/Aleks-0)** | /model --compaction 압축 전용 모델 | [#7818](https://github.com/QwenLM/qwen-code/pull/7818) |
+| **[@BenGuanRan](https://github.com/BenGuanRan)** | DingTalk 인터랙티브 카드 | [#6930](https://github.com/QwenLM/qwen-code/pull/6930) |
+| **[@harjothkhara](https://github.com/harjothkhara)** | 서브 Agent 지시문 격리 수정 | [#8344](https://github.com/QwenLM/qwen-code/pull/8344) |
+| **[@samuelhsin](https://github.com/samuelhsin)** | 분할 화면 헤더의 커스텀 가능한 액션 슬롯 | [#7808](https://github.com/QwenLM/qwen-code/pull/7808) |
+| **[@dreamWB](https://github.com/dreamWB)** | 세션 상세 메뉴 넘침 수정과 세션 ID 복사 | [#8127](https://github.com/QwenLM/qwen-code/pull/8127) |
+| **[@dexhunter](https://github.com/dexhunter)** | 파일 검색 속도 개선 | [#8253](https://github.com/QwenLM/qwen-code/pull/8253) |
+| **[@kagura-agent](https://github.com/kagura-agent)** | 대화상자 휠 오스크롤 수정 | [#8089](https://github.com/QwenLM/qwen-code/pull/8089) |
+| **[@han-dreamer](https://github.com/han-dreamer)** | 백그라운드 작업 폴링의 일시적 오류 침묵 처리 | [#7923](https://github.com/QwenLM/qwen-code/pull/7923) |
+| **[@ComplexSimply](https://github.com/ComplexSimply)** | 순수 사고 구간의 스트리밍 재시도 | [#7938](https://github.com/QwenLM/qwen-code/pull/7938) |
+| **[@zjunothing](https://github.com/zjunothing)** | GitHub Channel 화이트리스트 설정 오류 안내 | [#8055](https://github.com/QwenLM/qwen-code/pull/8055) |
+| **[@zjgzx1988](https://github.com/zjgzx1988)** | hook 컨텍스트 출처 표기 | [#7956](https://github.com/QwenLM/qwen-code/pull/7956) |
+| **[@C0d3N1nja97342](https://github.com/C0d3N1nja97342)** | Firefox 텍스트 선택 하이라이트 | [#8417](https://github.com/QwenLM/qwen-code/pull/8417) |
+| **[@Eric-GoodBoy-Tech](https://github.com/Eric-GoodBoy-Tech)** | QQ Bot 그룹 메시지 발신자 표시 | [#8233](https://github.com/QwenLM/qwen-code/pull/8233) |
+| **[@DennisYu07](https://github.com/DennisYu07)** | SWE-bench 독립 CI 파이프라인 | [#7656](https://github.com/QwenLM/qwen-code/pull/7656) |
+| **[@PratikWayase](https://github.com/PratikWayase)** | 세션 이력 페이지네이션 회귀 테스트 | [#7907](https://github.com/QwenLM/qwen-code/pull/7907) |
+| 🆕 **[@tomatotomata](https://github.com/tomatotomata)** | 🎉 첫 기여: 메모리 Agent 라운드 수 상한 설정 | [#8171](https://github.com/QwenLM/qwen-code/pull/8171) |
+| 🆕 **[@LHMQ878](https://github.com/LHMQ878)** | 🎉 첫 기여: 긴 답변 끊김 복구 | [#7896](https://github.com/QwenLM/qwen-code/pull/7896) |
+| 🆕 **[@xianjianlf2](https://github.com/xianjianlf2)** | 🎉 첫 기여: GitHub Channel 알림 필터 | [#8031](https://github.com/QwenLM/qwen-code/pull/8031) |
+| 🆕 **[@zambalee](https://github.com/zambalee)** | 🎉 첫 기여: 중·일·한 문자 출력 초과 수정 | [#7963](https://github.com/QwenLM/qwen-code/pull/7963) |
+| 🆕 **[@babyblueviper1](https://github.com/babyblueviper1)** | 🎉 첫 기여: PreToolUse hook 외부 판정 서비스 예시 | [#8202](https://github.com/QwenLM/qwen-code/pull/8202) |
+| 🆕 **[@Wchoi189](https://github.com/Wchoi189)** | 🎉 첫 기여: 심볼릭 링크 디렉터리 시작 수정 | [#8309](https://github.com/QwenLM/qwen-code/pull/8309) |
+
+<Callout type="info">
+  **업데이트 방법**: `npm i @qwen-code/qwen-code@latest -g`를 실행하면 최신 버전으로 업데이트할 수 있습니다.
+</Callout>
+
+문제나 제안이 있다면 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)로 알려 주세요!

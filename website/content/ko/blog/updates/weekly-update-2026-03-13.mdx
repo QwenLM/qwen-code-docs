@@ -1,0 +1,180 @@
+---
+title: "Qwen Code 주간 업데이트: 자동화 워크플로, 확장·MCP 관리 개선, VS Code 상주 사이드바"
+date: "2026-03-13"
+description: "이번 주 업데이트로 스크립트를 자동 실행하고, MCP와 확장을 더 편하게 관리하며, VS Code에 Qwen Code를 상주로 둘 수 있습니다. 녹화를 GIF로 바로 만드는 기능도 들어갔습니다."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: https://gw.alicdn.com/imgextra/i2/O1CN01W1W1fx20Mwf5nPdNQ_!!6000000006836-0-tps-1344-576.jpg
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 주간 업데이트: 자동화 워크플로, 확장·MCP 관리 개선, VS Code 상주 사이드바"
+  date="2026-03-13"
+  author="Qwen Team"
+/>
+
+이번 주에 **v0.12.0** 주요 기능 버전과 버그 수정 버전 2개를 출시했습니다. Hooks 자동화 시스템, MCP 관리 강화, VS Code 사이드바가 큰 변화입니다.
+
+## ✨ 새로운 기능
+
+### Hooks 시스템: Qwen Code가 내 스크립트를 자동 실행
+
+이제 Qwen Code가 특정 시점에 내 스크립트를 자동으로 실행하게 할 수 있습니다. 커밋하기 전에 테스트를 돌린다거나, 코드가 만들어진 뒤 자동으로 포맷을 맞추는 식으로요. 워크플로를 완전히 내 입맛대로 만들 수 있습니다.
+
+Hooks 시스템은 Qwen Code의 주요 라이프사이클 이벤트에서 커스텀 명령어를 트리거합니다. 예를 들어:
+
+- 프로젝트 컨텍스트 자동 추가: 사용자가 질문할 때마다 프로젝트 핵심 정보를 자동으로 집어넣습니다
+- AI가 끝나기 전 작업 요약 자동 기록: 대화가 끝날 때마다 이번 작업 요약을 로그 파일로 남깁니다
+
+**활용 사례:**
+
+- 커밋 전에 테스트를 자동 실행해 문제가 있는 코드를 올려두지 않습니다
+- 코드가 생성되면 자동으로 포맷 — prettier를 직접 돌릴 필요가 없습니다
+- 대화가 끝날 때마다 작업 요약을 자동 저장해 나중에 되짚기 쉽습니다
+
+관련 PR: [#1988](https://github.com/QwenLM/qwen-code/pull/1988)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000006240/O1CN01T5iv1Z1vxyZvXQGmi_!!6000000006240-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/2C7e0XiE1AtJSatVtoXTI3EVULxb9iPH1tOUV-4fSDw.mp4" controls></video>
+
+### AI가 먼저 묻습니다: 애매하면 물어봐요
+
+`ask_user_question` 도구가 새로 추가되어, 작업을 하는 도중에 AI agent가 사용자에게 직접 질문할 수 있게 됐습니다. 흐름이 한결 유연해집니다. AI가 그 자리에서 선호를 확인하고, 요구를 정리하고, 어떻게 할지 결정할 수 있습니다.
+
+**활용 사례:**
+
+- 위험한 작업을 하기 전에 확인을 받으니 파일을 잘못 지우는 일을 막을 수 있습니다
+- 요구가 애매하면 AI가 먼저 캐묻습니다. 한 번에 맞게 만듭니다
+- 대화하듯 조금씩 요구를 확정하면 되니 처음부터 세세한 부분까지 다 정리할 필요가 없습니다
+
+관련 PR: [#1828](https://github.com/QwenLM/qwen-code/pull/1828)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/O1CN014AyFhx1ohlFJ0qeax_!!6000000005257-2-videocover-1694-952.png" src="https://cloud.video.taobao.com/vod/dYSFbvjLpgEgRpVr905lv1PI7fA5JhopPbLKb-7V6Gc.mp4" controls></video>
+
+### 확장 관리 인터랙티브 TUI: 앱스토어 구경하듯 설치
+
+확장 설치가 앱 설치만큼 쉬워졌습니다. 화면을 열어 둘러보고, 설치하고, 설정하고, 제거하는 것까지 클릭 몇 번으로 끝납니다. 명령어를 외울 필요가 없습니다.
+
+목록, 업데이트, 비활성화, 활성화, 제거, 상세 정보가 하나의 여러 단계 화면으로 합쳐졌습니다. 키보드 탐색 (↑↓), 선택 (Enter), 뒤로/닫기 (Esc)를 지원합니다.
+
+**활용 사례:**
+
+- 앱스토어를 둘러보듯 새 확장을 찾고 설치합니다
+- 안 쓰는 확장은 바로 제거해 환경을 정리합니다
+- 확장 파라미터를 화면에서 설정하니 문서에서 설정 항목을 뒤지지 않아도 됩니다
+
+관련 PR: [#2008](https://github.com/QwenLM/qwen-code/pull/2008)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/O1CN01Nn0Htj1Y4LJ12cAHo_!!6000000003005-2-videocover-1694-952.png" src="https://cloud.video.taobao.com/vod/TU1Mn4k3ATaeCcdc4KHT-9UZMtEIRVD7QbsYn_uvzPU.mp4" controls></video>
+
+### MCP 관리 TUI 강화: 언제든 켜고 끄고, 재시작 불필요
+
+MCP 서버 관리가 편해졌습니다. Qwen Code를 다시 시작하지 않아도 화면에서 MCP 도구를 켜고 끄고 설정할 수 있고, 지금 어떤 도구를 쓸 수 있는지 바로 보입니다.
+
+MCP(모델 컨텍스트 프로토콜) 관리 TUI를 강화했습니다. 서버가 도는 중에 동적으로 켜고 끄고, 상태를 시각적으로 표시하고, 범위 선택 설정과 상태 모니터링, 자동 재연결까지 지원합니다.
+
+**활용 사례:**
+
+- MCP 도구를 언제든 켜고 끕니다. 프로그램을 다시 시작할 필요가 없습니다
+- 모든 MCP 서버 상태가 한눈에 들어와서 문제가 생기면 바로 알 수 있습니다
+- 새 MCP 서버를 빠르게 추가합니다. 사내 도구를 연동하는 것도 가능합니다
+
+관련 PR: [#1831](https://github.com/QwenLM/qwen-code/pull/1831)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/O1CN01TGCK1j29dHIfuG70n_!!6000000008090-2-videocover-1694-952.png" src="https://cloud.video.taobao.com/vod/JT49NUzNkRV4G1H7-ETa0BxBB66ttxb9vk67aWEgQG0.mp4" controls></video>
+
+### VS Code Companion 사이드바: 작업 공간에 상주
+
+이제 Qwen Code를 VS Code 사이드바에 고정해 둘 수 있습니다. 코드를 쓰면서 대화 기록을 같이 볼 수 있고, 두 화면으로 작업하기 편해지며 레이아웃도 유연해집니다.
+
+**활용 사례:**
+
+- 사이드바에서 이전 대화를 바로 봅니다. 창을 왔다 갔다 하지 않아도 됩니다
+- 두 화면으로 작업할 때 한쪽은 코드, 한쪽은 Qwen Code로 쓰면 효율이 올라갑니다
+- 레이아웃을 자유롭게 조절해 대화를 가장 손에 잘 닿는 자리에 둡니다
+
+관련 PR: [#2188](https://github.com/QwenLM/qwen-code/pull/2188)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01y53WOJ1RvkAu7WaBE_!!6000000002174-2-tps-1694-952.png)
+
+### GitHub 워크플로 커스텀 QC 명령어: CI/CD에서 바로 실행
+
+CI/CD에서 Qwen Code 명령어를 바로 실행합니다. 코드를 올릴 때 자동 검사하고 자동 고치니 코드 품질이 한결 든든합니다.
+
+**활용 사례:**
+
+- PR을 올릴 때 코드 검사를 자동 실행해 문제를 바로 표시합니다
+- 포맷이나 철자 같은 쉬운 문제는 자동으로 고칩니다
+- 코드 리뷰 전에 AI가 먼저 훑으면 사람이 보는 시간이 줄어듭니다
+
+관련 PR: [#2117](https://github.com/QwenLM/qwen-code/pull/2117)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01cySDRP1K6GLSnHpwd_!!6000000001114-1-tps-860-584.gif)
+
+### LS 도구 잘림 지원: 큰 디렉터리가 화면을 뒤덮지 않음
+
+큰 디렉터리를 볼 때 자동으로 접히니 파일 목록에 파이는 일이 없습니다. AI 응답은 빨라지고 컨텍스트는 핵심에 집중됩니다.
+
+**활용 사례:**
+
+- node_modules 같은 큰 디렉터리를 봐도 파일 수천 개로 화면이 채워지지 않습니다
+- Token을 아껴서 AI가 중요한 파일에 힘을 쓰게 합니다
+- 긴 파일 목록을 AI가 처리할 때까지 기다리지 않아도 됩니다
+
+관련 PR: [#2324](https://github.com/QwenLM/qwen-code/pull/2324)
+
+**Example truncated output**
+
+```
+Listed 150 item(s) in /path/to/dir:
+---
+[DIR] folder1
+file1.txt
+file2.txt
+...
+---
+[50 items truncated] ...
+```
+
+## 📊 사용성 개선
+
+- **OAuth 인증이 매끄러워졌습니다**: 인증에 성공하면 확실한 피드백이 있고, 여러 언어를 지원하며, 권한도 한 번에 지울 수 있습니다 ([#2327](https://github.com/QwenLM/qwen-code/pull/2327))
+- **컨텍스트 압축 설명이 명확해졌습니다**: 왜 압축하는지, 무엇을 압축했는지 알려줍니다 ([#2224](https://github.com/QwenLM/qwen-code/pull/2224))
+- **설치가 끝나면 바로 실행**: 명령어를 직접 치지 않아도 설치 직후 바로 쓸 수 있습니다 ([#2290](https://github.com/QwenLM/qwen-code/pull/2290))
+- **임시 파일을 알아보기 쉬워졌습니다**: 접두사가 `qwen-edit-`로 바뀌어 Qwen Code가 만든 파일인지 바로 알 수 있습니다 ([#2045](https://github.com/QwenLM/qwen-code/pull/2045))
+- **코드 하이라이팅에서 Tab 폭 지원**: 들여쓰기가 습관에 맞게 표시되어 코드가 편해 보입니다 ([#2077](https://github.com/QwenLM/qwen-code/pull/2077))
+
+## 🔧 주요 수정 사항
+
+| PR | 버전 | 수정 내용 | 사용자에게 미치는 영향 |
+|----|------|----------|-----------|
+| [#2268](https://github.com/QwenLM/qwen-code/pull/2268) | v0.12.2 | export 명령어가 현재 세션을 내보냅니다 | 기록을 내보낼 때 다른 세션이 섞이지 않습니다 |
+| [#2320](https://github.com/QwenLM/qwen-code/pull/2320) | v0.12.2 | DeepSeek API 형식에 맞춥니다 | DeepSeek 모델을 쓸 때 오류가 나지 않습니다 |
+| [#2298](https://github.com/QwenLM/qwen-code/pull/2298) | v0.12.2 | 파일 작업 오류 메시지를 개선했습니다 | 파일 작업이 실패하면 원인을 정확히 알 수 있습니다 |
+| [#2289](https://github.com/QwenLM/qwen-code/pull/2289) | v0.12.1 | Windows 터미널 크래시를 수정했습니다 | Windows에서 창 크기를 바꿔도 종료되지 않습니다 |
+| [#2221](https://github.com/QwenLM/qwen-code/pull/2221) | v0.12.0 | YOLO 모드에서 에디터가 열리던 문제 수정 | YOLO 모드 사용 중 끊기지 않습니다 |
+| [#2212](https://github.com/QwenLM/qwen-code/pull/2212) | v0.12.1 | MCP OAuth 인증 수정 | MCP 서버 권한 승인이 더 안정적입니다 |
+
+### Windows 플랫폼 전용 수정
+
+| PR | 수정 내용 | 사용자에게 미치는 영향 |
+|----|----------|-----------|
+| [#2289](https://github.com/QwenLM/qwen-code/pull/2289) | 터미널 크기 조절 크래시 수정 | 창을 끌어 크기를 바꿔도 종료되지 않습니다 |
+| [#2291](https://github.com/QwenLM/qwen-code/pull/2291) | 파일이 없을 때 올바른 안내 | 파일을 찾지 못하면 경로 문제임을 알 수 있습니다 |
+| [#2078](https://github.com/QwenLM/qwen-code/pull/2078) | Windows 개행 지원 | Windows에서 만든 markdown 파일이 정상 파싱됩니다 |
+| [#1890](https://github.com/QwenLM/qwen-code/pull/1890) | CRLF 때문에 조용히 실패하던 문제 수정 | 원인 모를 실패가 줄어듭니다 |
+
+## 🎈 기타 개선 사항
+
+- 기여자 8명 추가: [@zy6p](https://github.com/zy6p), [@lgzzzz](https://github.com/lgzzzz), [@huww98](https://github.com/huww98), [@Aayushyaash](https://github.com/Aayushyaash), [@kkhomej33-netizen](https://github.com/kkhomej33-netizen), [@Deng-Xian-Sheng](https://github.com/Deng-Xian-Sheng), [@xieyonn](https://github.com/xieyonn), [@qqqys](https://github.com/qqqys), [@ossaidqadri](https://github.com/ossaidqadri)
+- VS Code 설정에 JSON Schema 검증 추가
+- 설정 이전을 순차 프레임워크로 다시 만들고 원자적 파일 쓰기를 지원
+- ACP 통합을 @agentclientprotocol/sdk로 이전
+
+<Callout type="info">
+  **업데이트 방법**: `npm i @qwen-code/qwen-code@latest -g`를 실행하면 최신 버전으로 업데이트할 수 있습니다.
+</Callout>
+
+문제나 제안이 있다면 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)로 알려 주세요!

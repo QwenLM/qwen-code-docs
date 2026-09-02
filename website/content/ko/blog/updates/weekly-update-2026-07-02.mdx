@@ -1,0 +1,211 @@
+---
+title: "Qwen Code 주간 업데이트: /loop 자율 모드, 데스크톱 앱 음성 받아쓰기, Settings 탭형 뷰"
+date: "2026-07-02"
+description: "이번 주 v0.19.4를 출시했습니다. /loop 자율 모드, 데스크톱 앱 음성 받아쓰기, Settings 탭형 뷰 등이 새로 추가됐습니다."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: https://gw.alicdn.com/imgextra/i3/O1CN01AYqMKM1aRorovg0v7_!!6000000003327-0-tps-1344-576.jpg
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 주간 업데이트: /loop 자율 모드, 데스크톱 앱 음성 받아쓰기, Settings 탭형 뷰"
+  date="2026-07-02"
+  author="Qwen Team"
+/>
+
+
+Qwen Code는 이번 주 v0.19.4를 출시하고 PR 80개 이상을 병합했습니다. 세 가지 방향이 담겼습니다:
+
+**`/loop`, 자리를 비워도 계속 돌아갑니다.** 프롬프트나 간격 없이 `/loop`만 입력하면 자율 모드가 시작됩니다 — 자리를 비운 동안 Agent가 이미 정해진 작업을 밀어 나가되, 새 일은 만들지 않고 되돌릴 수 없는 동작도 하지 않습니다. `.qwen/loop.md` 작업 파일을 더하면 루프가 편집 가능한 목록을 매번 다시 읽고, 파일을 지우면 no-op tick을 보내 살아남습니다. Claude Code가 지난주 [Agent 루프 입문 가이드](https://claude.com/blog/getting-started-with-loops)를 냈는데, Agent가 정해진 계획을 반복 실행하는 내용입니다. `/loop`의 자율 모드도 비슷하지만 한 층 더 있습니다 — 작업 목록을 언제든 고칠 수 있고, 루프가 바뀐 것을 자동으로 알아챕니다.
+
+**데스크톱 앱에 음성 받아쓰기가 열렸습니다.** 음성 받아쓰기는 CLI와 Web Shell에 이미 있었고, 데스크톱 앱만 계속 없었습니다. 이번 버전으로 마지막 환경까지 채워져 세 경험이 통일됐습니다.
+
+**터미널 상호작용 격차를 줄였습니다.** `/settings`가 평면 목록에서 탭형 뷰로 바뀌어 검색·상태·통계를 한 화면에서 처리합니다. Virtualized History 모드에서는 메뉴, 자동 완성, 입력창이 마우스 클릭과 가리키기를 지원합니다.
+
+## ✨ 새로운 기능
+
+### `/loop` 자율 모드 + loop.md 작업 파일
+
+`/loop`에 두 가지 새 모드가 생겼습니다:
+
+**자율 모드**: 프롬프트나 간격 없이 `/loop`만 입력하면 더 이상 사용법 안내를 출력하지 않고, 스스로 속도를 정하는 자율 루프를 시작합니다. Agent가 자리를 비운 동안 이미 정해진 작업을 밀고 나갑니다 — 진행 중인 PR을 돌보고, 반쯤 해 놓은 일을 이어나가고, 약속한 것을 마무리합니다. 다만 트랜스크립트에 이미 정해진 범위에서만 동작합니다. 새 일은 만들지 않고, 명시적으로 승인받지 않은 되돌릴 수 없는 동작(push/delete/send)은 하지 않으며, 더 밀 일이 없으면 조용히 멈춥니다. 자율 preamble은 처음 한 번만 보내고, 이후 tick마다 짧은 알림만 보내 Token 비용을 낮게 유지합니다.
+
+**loop.md 작업 파일**: 프로젝트 루트나 `~/.qwen/` 아래에 `.qwen/loop.md`를 만들고, wakeup/cron의 prompt를 sentinel(`<<loop.md-dynamic>>` 또는 `<<loop.md>>`)로 설정하면, 루프가 실행될 때마다 파일을 다시 읽습니다. 처음에는 전체 내용을 전달하고, 이후에는 내용이 그대로면 짧은 알림만, 파일을 고치면 다시 전체를 전달합니다. 파일이 사라지면 루프는 no-op tick을 보냅니다(Agent는 아무것도 하지 않고 re-arm만 해서 루프를 살려 둠). 그러면 자율 모드 기본 동작으로 돌아갑니다. loop.md를 다시 만들면 다음 tick에서 변경을 자동으로 감지해 전체 내용을 다시 전달합니다.
+
+**채널 루프**: `/loop`는 터미널 전용이 아닙니다 — DingTalk, Feishu 채널에서도 돌아갑니다. 그룹 채팅에서 `/loop add "0 9 * * 1-5" CI 상태 확인`으로 예약 루프를 만들고, `/loop list`로 현재 채널의 모든 루프를 확인하고, `/loop inspect <id>`로 실행 횟수와 최근 결과를 보고, `/loop cancel <id>`로 멈춥니다. 루프는 channel session router를 통해 실행되며, 현재 진행 중인 turn이 끝난 뒤에 시작하고, 결과는 채널의 능동 전송으로 돌려보냅니다. 단발 루프는 성공하거나 실패하면 자동으로 비활성화됩니다.
+
+이렇게 쓸 수 있습니다:
+
+- 프롬프트나 간격 없이 `/loop`만 입력해 두면, 자리를 비운 동안 Agent가 작업을 지켜보며 밀어 나갑니다
+- `.qwen/loop.md`로 계속 남는 편집 가능한 작업 목록을 관리합니다. 매 tick마다 같은 일을 다시 설명할 필요가 없습니다
+- loop.md를 지워도 루프는 no-op tick으로 살아 있고, 다시 만들면 이음새 없이 이어갑니다
+- DingTalk/Feishu 그룹 채팅에서 `/loop add`로 예약 루프를 만들어, Agent가 정해진 시간에 작업을 진행하게 합니다
+
+관련 PR: [#5890](https://github.com/QwenLM/qwen-code/pull/5890), [#5991](https://github.com/QwenLM/qwen-code/pull/5991), [#6073](https://github.com/QwenLM/qwen-code/pull/6073)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000002454/O1CN01vw4qRY1Tzz61J45Mh_!!6000000002454-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/ytGdVb28ZDLZxgzI3BFhtGSTleBZemLHPiLqw_lI53E.mp4" controls></video>
+
+### 데스크톱 앱 음성 받아쓰기: 세 환경 기능 통일
+
+음성 받아쓰기는 CLI와 Web Shell에 이미 있었지만 데스크톱 앱에는 없었습니다 — 음성을 설정해 둔 사용자도 데스크톱 앱으로 넘어가면 기능을 잃었습니다. 이번 버전이 마지막 빈칸을 채웠습니다.
+
+composer 도구 모음에 마이크 단추가 생겼습니다. 녹음 중에는 도구 모음이 녹음 바(점선 안내 → 실시간 파형 → 타이머)로 바뀌고, 멈추면 전사 결과가 입력창에 삽입되어 검토할 수 있습니다. 전사는 서버에서 수행되며 CLI의 음성 파이프라인을 그대로 재사용합니다(일괄 `qwen3-asr-flash`와 실시간 `*-realtime` 모델). 서비스 제공자 자격 증명은 renderer로 들어가지 않습니다. 음성은 Settings → Input과 composer 모델 드롭다운에서 켜고 끄거나 모델을 고를 수 있습니다.
+
+이렇게 쓸 수 있습니다:
+
+- 마이크를 클릭하고 말하면 파형과 타이머가 실시간으로 보입니다
+- realtime 모델(예: `qwen3-asr-flash-realtime`)을 고르면 말하는 도중 interim 텍스트를 볼 수 있습니다
+- 태블릿이나 멀티 모니터 환경에서 손을 쓰지 않고 입력할 수 있습니다
+
+관련 PR: [#5856](https://github.com/QwenLM/qwen-code/pull/5856)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000007413/O1CN01JVZosB24dDBcBYKP7_!!6000000007413-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/J-6kYrUGwlI-KcGhRr1tuzipOySnNR78nq4SqeuEAG0.mp4" controls></video>
+
+> **어떻게 쓰나요?**
+> 1. 저장소 클론:
+> ```
+> git clone https://github.com/QwenLM/qwen-code.git
+> ```
+> 2. 디렉터리로 이동
+> ```
+> cd qwen-code/packages/desktop
+> ```
+> 3. 의존성 설치 후 개발 모드 시작
+> ```
+> bun install && bun run dev
+> ```
+
+### Mobile Sidebar Drawer + `qwen serve` 경험 개선
+
+그 전까지 스마트폰 브라우저로 `qwen serve`에 접속하면 사이드바(세션 목록, 검색, 새 세션)가 760px 이하에서 `display: none`으로 그냥 숨겨졌습니다 — 세션을 바꿀 방법이 아예 없었던 셈이죠. 이제는 숨기는 대신 overlay drawer를 씁니다. 채팅 패널 헤더에 메뉴 단추가 생기고, 누르면 사이드바가 반투명 오버레이와 함께 왼쪽에서 슬라이드로 들어옵니다. 세션을 선택하거나, 새 세션을 만들거나, 오버레이를 누르면 drawer가 닫힙니다. 데스크톱 레이아웃은 전혀 영향받지 않습니다.
+
+이 뒤에 `qwen serve`를 '쓸 만한' 수준에서 '잘 쓰는' 수준으로 올린 일련의 변화가 있습니다:
+
+- **세션 지연 생성**([#6066](https://github.com/QwenLM/qwen-code/pull/6066)): 첫 prompt를 보낼 때까지 세션 만들기를 미뤄, 빈 세션 비용을 줄이고 Web Shell 시작을 빠르게 했습니다
+- **workspace remember**([#5884](https://github.com/QwenLM/qwen-code/pull/5884)): serve 모드가 워크스페이스를 기억해서, 재시작 후 다시 지정할 필요가 없습니다
+- **session archive**([#6058](https://github.com/QwenLM/qwen-code/pull/6058)): daemon이 세션 아카이브를 지원해, 오래 쓰는 세션도 정리할 방법이 생겼습니다
+
+이렇게 쓸 수 있습니다:
+
+- 스마트폰 브라우저로 `qwen serve`에 접속해 메뉴를 클릭해 세션을 바꿉니다
+- 여러 프로젝트를 오갈 때 serve가 워크스페이스를 자동으로 기억합니다
+- 오래 쓰는 세션은 지우지 않고 아카이브할 수 있습니다
+
+관련 PR: [#6003](https://github.com/QwenLM/qwen-code/pull/6003)
+
+| 설명 | 사이드바 접힘 | 사이드바 펼침 |
+| ---- | ---- | ---- |
+| 테스트 스크린샷 | ![](https://gw.alicdn.com/imgextra/i3/O1CN01f8YXr81lxqKPAKZed_!!6000000004886-2-tps-390-844.png) | ![](https://gw.alicdn.com/imgextra/i3/O1CN01ZQ5jCT1KMIEL5UmLi_!!6000000001149-2-tps-390-844.png) |
+
+### TUI 마우스 클릭·가리키기
+
+그 전까지 CLI는 Virtualized History 모드에서 마우스 휠과 스크롤바만 지원했고 가리키기 상호작용은 안 됐습니다. 이제는 Virtualized History(`ui.useTerminalBuffer`)를 켜면 세 가지 상호작용이 가능합니다:
+
+- **선택 메뉴와 대화상자**(권한 확인, `/model`, `/config`, 테마 등): 가리키는 행이 강조되고, 클릭하면 선택됩니다
+- **`/` 명령과 `@` 파일 후보 목록**: 가리키면 후보가 강조되고, 클릭하면 반영됩니다
+- **입력창**: 왼쪽 클릭으로 텍스트 커서를 옮깁니다(여러 줄 줄바꿈, 스크롤 오프셋, 전각 문자 지원)
+
+이렇게 쓸 수 있습니다:
+
+- `/model` 대화상자에서 방향키 없이 마우스로 모델을 고릅니다
+- `/`를 입력한 뒤 자동 완성 항목을 클릭합니다
+- 여러 줄 입력에서 클릭으로 커서를 다시 옮깁니다
+
+관련 PR: [#6011](https://github.com/QwenLM/qwen-code/pull/6011)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01c0h5qw1vEdOGiDaqv_!!6000000006141-1-tps-1280-720.gif)
+
+### Settings 탭형 대화상자: 검색·상태·통계 한 화면에
+
+`/settings`가 평면 목록에서 탭형 뷰로 개편됐습니다. Claude Code의 `/config` 설계를 참고했습니다. 상단 탭바가 Settings / Status / Stats 세 페이지로 나뉘고, Settings 페이지에 검색창이 새로 생겨 입력 즉시 걸러집니다.
+
+Status 페이지는 `/status`와 같은 시스템 정보를 보여 주고, Stats 페이지는 `/stats` 대시보드를 통째로 넣었습니다(Session / Activity / Efficiency 하위 탭 포함). 키보드 포커스는 탭바 → 검색창 → 설정 목록 순으로 세로 이동하고, 강조 표시는 실제로 포커스를 가진 영역에만 나타납니다.
+
+이렇게 쓸 수 있습니다:
+
+- `/settings`를 열자마자 키워드를 입력해 설정 항목을 걸러냅니다
+- ←/→로 Status 페이지에 넘어가 런타임 정보를 확인합니다. `/status`를 따로 실행할 필요가 없습니다
+- Stats 페이지에서 Tab으로 Session / Activity / Efficiency를 전환합니다. Efficiency 표가 대화상자 높이를 넘으면 자동으로 '+N more'로 접힙니다
+
+관련 PR: [#6044](https://github.com/QwenLM/qwen-code/pull/6044)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01X1ytLW1KtGkN6GEGW_!!6000000001221-1-tps-1280-720.gif)
+
+### Chrome 확장 프로그램: 브라우저에서 바로 대화 + 페이지 조작
+
+Chrome 확장 프로그램이 daemon-direct 구조로 되살아났습니다 — 확장은 더 이상 Native Messaging 호스트가 아니라, 로컬 `qwen serve` daemon의 얇은 클라이언트입니다.
+
+사이드바 채팅은 `DaemonSessionProvider`로 `qwen serve`에 직접 연결됩니다(HTTP+SSE, Web Shell과 같은 경로). daemon에 연결할 수 없으면 `qwen serve` 실행을 안내합니다. 브라우저 도구(페이지 읽기, 스크린샷, 콘솔, 이동, 클릭, 양식 작성)는 클라이언트가 호스팅하는 MCP 서버 형태로 daemon WebSocket을 통해 Agent에 공개됩니다. 채팅과 도구 두 경로 모두 Native Messaging이 사라졌습니다.
+
+> [!caution]
+>
+> 주의: 역방향 도구 채널은 현재 `QWEN_SERVE_CLIENT_MCP_OVER_WS` 환경 변수로 켜며, 기본은 꺼져 있습니다 — `qwen serve`를 시작할 때 이 플래그를 명시적으로 설정해야 합니다.
+
+이렇게 쓸 수 있습니다:
+
+- Chrome 사이드바에서 Qwen Code와 바로 대화합니다. OS 수준의 네이티브 호스트를 설치할 필요가 없습니다
+- Agent가 현재 페이지를 읽고, 스크린샷을 찍고, 브라우저 요소를 조작하게 합니다
+- Web Shell의 공용 UI를 재사용해 경험이 일치합니다
+
+관련 PR: [#5777](https://github.com/QwenLM/qwen-code/pull/5777)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01lMYRsQ1k8G6Tq18M3_!!6000000004638-2-tps-3837-2160.png)
+
+## 📊 그 외 새로운 기능
+
+| 기능 | PR | 사용자에게 미치는 영향 |
+| ---- | ---- | ---- |
+| **`/config key=value`**: 프롬프트에서 어떤 설정이든 바로 변경, Tab 자동 완성 + 철자 정정 | [#5773](https://github.com/QwenLM/qwen-code/pull/5773) | settings.json을 뒤질 필요가 없습니다 |
+| **세션 타임라인 rail**: Web Shell 왼쪽의 콤팩트 타임라인, 가리키면 turn 상세 표시 | [#6078](https://github.com/QwenLM/qwen-code/pull/6078) | 긴 세션에서 turn을 바로 찾습니다 |
+| **/skills ACP 출력 강화**: description과 level 표시 | [#6117](https://github.com/QwenLM/qwen-code/pull/6117) | skills 목록 정보가 더 온전해집니다 |
+| **auto-mode 전체 shell 분류**: `classifyAllShell` 설정 추가(기본 꺼짐) | [#6040](https://github.com/QwenLM/qwen-code/pull/6040) | 운영 환경에 방어선이 한 겹 더 생깁니다 |
+| **qwen tag 그룹 채팅 화자 구분**: DingTalk 그룹 공유 세션에 `[sender]` 화자 표시 지원 | [#5888](https://github.com/QwenLM/qwen-code/pull/5888) | 그룹 채팅에서 Agent가 누가 말했는지 구분합니다 |
+| **group history backfill**: 그룹 과거 메시지 소급 채우기 | [#6074](https://github.com/QwenLM/qwen-code/pull/6074) | 새로 들어온 멤버도 이전 메시지를 봅니다 |
+| **browser tab favicon**: Web Shell 브라우저 탭 아이콘 | [#6091](https://github.com/QwenLM/qwen-code/pull/6091) | 여러 탭을 쉽게 구분합니다 |
+| **chat UI·표 렌더링 개선**: Web Shell 채팅 화면 다듬기 | [#6099](https://github.com/QwenLM/qwen-code/pull/6099) | 보는 느낌이 좋아집니다 |
+| **queued-prompt UX**: Web Shell Esc 중단 경험 개선 | [#6025](https://github.com/QwenLM/qwen-code/pull/6025) | 중단이 더 매끄럽습니다 |
+| **resumable /acp session stream**: Last-Event-ID 이어받기 지원 | [#5852](https://github.com/QwenLM/qwen-code/pull/5852) | SDK 연결이 더 안정적입니다 |
+| **glob patterns in mcp.allowed/excluded**: MCP 허용 목록에 와일드카드 지원 | [#6012](https://github.com/QwenLM/qwen-code/pull/6012) | MCP 설정이 더 유연해집니다 |
+| **inline model override**: `/model`에 1회용 모델 지정 추가 | [#6022](https://github.com/QwenLM/qwen-code/pull/6022) | 임시 모델 전환이 편해집니다 |
+| **leader approval for plan-required teammates**: 계획 필수 팀원은 리더 승인 필요 | [#6138](https://github.com/QwenLM/qwen-code/pull/6138) | 멀티 Agent 협업이 더 안전해집니다 |
+
+## 🔧 주요 수정 사항
+
+| 수정 사항 | PR | 사용자에게 미치는 영향 |
+| ---- | ---- | ---- |
+| **MCP 도구 유휴 타임아웃**: 서버가 5분간 응답 없으면 자동 중단, 걸려서 세션을 막는 것 방지 | [#6061](https://github.com/QwenLM/qwen-code/pull/6061) | 오래 도는 MCP 도구가 더 이상 끝없이 대기하지 않습니다 |
+| **diff 공백 변경 표시**: 공백만 바뀐 것이 'No changes detected'로 나오지 않음 | [#6141](https://github.com/QwenLM/qwen-code/pull/6141) | diff 출력이 더 정확합니다 |
+| **TUI 입력 지연 개선**: addItem 후 React에 yield해 입력 끊김 감소 | [#6059](https://github.com/QwenLM/qwen-code/pull/6059) | 타이핑이 더 부드러워집니다 |
+| **비 VP 모드 멀티 Agent 스크롤**: 멀티 Agent 실행 중 트랜스크립트 스크롤 가능 | [#6015](https://github.com/QwenLM/qwen-code/pull/6015) | 멀티 Agent 환경에서 기록을 확인할 수 있습니다 |
+| **HTTPS/TLS 지원**: `qwen serve`에 `--tls-cert`, `--tls-key` 플래그 추가 | [#6032](https://github.com/QwenLM/qwen-code/pull/6032) | 자체 서명 인증서 환경에서도 사용할 수 있습니다 |
+| **Windows 물결표 경로**: Windows식 `~` 경로 확장 지원 | [#6029](https://github.com/QwenLM/qwen-code/pull/6029) | Windows 사용자 경로 호환 |
+
+## 👥 기여자
+
+| 기여자 | 기여 내용 | 참고 PR 링크 |
+| ---- | ---- | ---- |
+| **[@qqqys](https://github.com/qqqys)** | `/loop` 자율 모드 + loop.md 작업 파일, 음성 받아쓰기, qwen tag 그룹 채팅 화자 구분, group history backfill, 채널 루프 지원 | [#5890](https://github.com/QwenLM/qwen-code/pull/5890), [#5991](https://github.com/QwenLM/qwen-code/pull/5991), [#5856](https://github.com/QwenLM/qwen-code/pull/5856), [#5888](https://github.com/QwenLM/qwen-code/pull/5888), [#6074](https://github.com/QwenLM/qwen-code/pull/6074), [#6073](https://github.com/QwenLM/qwen-code/pull/6073) |
+| **[@DragonnZhang](https://github.com/DragonnZhang)** | `/effort` 통합 추론 강도, TUI 마우스 클릭·가리키기, Settings 탭형 대화상자 | [#6072](https://github.com/QwenLM/qwen-code/pull/6072), [#6011](https://github.com/QwenLM/qwen-code/pull/6011), [#6044](https://github.com/QwenLM/qwen-code/pull/6044) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | session archive, skills ACP 출력 강화, 계획 필수 팀원 리더 승인, diff 공백 변경 표시 | [#6058](https://github.com/QwenLM/qwen-code/pull/6058), [#6117](https://github.com/QwenLM/qwen-code/pull/6117), [#6138](https://github.com/QwenLM/qwen-code/pull/6138), [#6141](https://github.com/QwenLM/qwen-code/pull/6141) |
+| **[@DennisYu07](https://github.com/DennisYu07)** | `/config` 명령, auto-mode 전체 shell 분류, MCP 허용 목록 와일드카드, MCP 도구 유휴 타임아웃 | [#5773](https://github.com/QwenLM/qwen-code/pull/5773), [#6040](https://github.com/QwenLM/qwen-code/pull/6040), [#6012](https://github.com/QwenLM/qwen-code/pull/6012), [#6061](https://github.com/QwenLM/qwen-code/pull/6061) |
+| **[@pomelo-nwu](https://github.com/pomelo-nwu)** | Mobile Sidebar Drawer, HTTPS/TLS 지원 | [#6003](https://github.com/QwenLM/qwen-code/pull/6003), [#6032](https://github.com/QwenLM/qwen-code/pull/6032) |
+| **[@callmeYe](https://github.com/callmeYe)** | workspace remember, 세션 타임라인 rail | [#5884](https://github.com/QwenLM/qwen-code/pull/5884), [#6078](https://github.com/QwenLM/qwen-code/pull/6078) |
+| **[@ytahdn](https://github.com/ytahdn)** | 세션 지연 생성, chat UI·표 렌더링 개선 | [#6066](https://github.com/QwenLM/qwen-code/pull/6066), [#6099](https://github.com/QwenLM/qwen-code/pull/6099) |
+| **[@chiga0](https://github.com/chiga0)** | resumable /acp session stream, 비 VP 모드 멀티 Agent 스크롤 | [#5852](https://github.com/QwenLM/qwen-code/pull/5852), [#6015](https://github.com/QwenLM/qwen-code/pull/6015) |
+| **[@yiliang114](https://github.com/yiliang114)** | Chrome 확장 프로그램 되살리기 | [#5777](https://github.com/QwenLM/qwen-code/pull/5777) |
+| **[@wenshao](https://github.com/wenshao)** | browser tab favicon | [#6091](https://github.com/QwenLM/qwen-code/pull/6091) |
+| **[@carffuca](https://github.com/carffuca)** | queued-prompt UX 개선 | [#6025](https://github.com/QwenLM/qwen-code/pull/6025) |
+| **[@Alex-ai-future](https://github.com/Alex-ai-future)** | TUI 입력 지연 개선 | [#6059](https://github.com/QwenLM/qwen-code/pull/6059) |
+| **[@VectorPeak](https://github.com/VectorPeak)** | Windows 물결표 경로 확장 | [#6029](https://github.com/QwenLM/qwen-code/pull/6029) |
+| 🆕 **[@Minerest](https://github.com/Minerest)** | 🎉 첫 기여: auto-memory를 켠 경우에만 메모리 리콜이 실행되도록 수정 | [#5963](https://github.com/QwenLM/qwen-code/pull/5963) |
+| 🆕 **[@TianYuan1024](https://github.com/TianYuan1024)** | 🎉 첫 기여: TLS 검증을 건너뛰는 `--insecure` 플래그, `/model` 인라인 모델 지정 추가 | [#5962](https://github.com/QwenLM/qwen-code/pull/5962), [#6022](https://github.com/QwenLM/qwen-code/pull/6022) |
+| 🆕 **[@gauravyad86](https://github.com/gauravyad86)** | 🎉 첫 기여: critical 등급 npm 보안 취약점(`simple-git`, `shell-quote` 등 런타임 의존성) 수정 및 CI 감사 점검 추가 | [#6065](https://github.com/QwenLM/qwen-code/pull/6065) |
+
+<Callout type="info">
+  **업데이트 방법**: `npm i @qwen-code/qwen-code@latest -g`를 실행하면 최신 버전으로 업데이트할 수 있습니다.
+</Callout>
+
+문제나 제안이 있다면 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)로 알려 주세요!

@@ -1,0 +1,215 @@
+---
+title: "Qwen Code 주간 업데이트: 병렬 Agent 패널, Auto-Memory 기본 활성화, Worktree Phase D"
+date: "2026-05-28"
+description: "Cognition 기업가치 260억 달러, Simon Willison은 코딩 Agent가 이미 PMF를 찾았다고 말했습니다. Qwen Code v0.16.2의 이번 주 답은 이렇습니다. 병렬 Agent에 시각화 패널과 키보드 탐색이 붙었고, 메모리 시스템이 기본 활성화로 수동 설정이 필요 없으며, Worktree 격리는 Phase D까지 진척돼 시작 파라미터 하나로 바로 진입할 수 있습니다."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: https://gw.alicdn.com/imgextra/i2/O1CN01htKUuA22ycTOZmZtm_!!6000000007189-0-tps-1344-576.jpg
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 주간 업데이트: 병렬 Agent 패널, Auto-Memory 기본 활성화, Worktree Phase D"
+  date="2026-05-28"
+  author="Qwen Team"
+/>
+
+코딩 Agent 분야는 이번 주 또 한 단계 달아올랐습니다. Cognition이 [10억 달러 이상을 유치해 기업가치 260억 달러를 기록](https://x.com/swyx/status/2059717021944926238)했고, Simon Willison은 [Anthropic과 OpenAI가 코딩 Agent로 PMF를 찾았다](https://simonwillison.net/2026/May/27/product-market-fit)고 단언했습니다 — 대가는 기업 고객 비용이 크게 올랐다는 점입니다.
+
+Qwen Code는 이번 주 **v0.16.2**를 내놓고 PR 30개 이상을 병합했습니다. 사용자가 체감하는 세 방향을 다뤘습니다:
+
+**병렬 Agent, 드디어 보입니다.** 전에는 여러 Agent가 동시에 돌면 로그만 멍하니 지켜봐야 했습니다. 이제 컴팩트 패널이 하나 있어 서브 Agent당 한 줄씩, 키보드로 탐색하면서 진행 상황을 실시간으로 봅니다. 'Agent가 단일 스레드 어시스턴트에서 멀티 스레드 팀으로' 바뀌는 과정에서 실제로 쓸 만한 첫 상호작용 화면입니다.
+
+**메모리, 설정하지 않아도 됩니다.** auto-dream과 auto-skill이 기본 켜져 나옵니다. Agent를 쓰다 보면 당신의 취향과 프로젝트 규약을 알아서 기억합니다. 세션을 넘어 유지되니 다음에 대화 시작할 때 다시 설명하지 않아도 됩니다. `/memory` 명령이 새로 생겨 언제든 들여다보고 켜고 끌 수 있습니다. Claude Code는 여전히 CLAUDE.md를 손으로 관리해야 한다는 점과 비교하면, 이 한 걸음의 경험 차이는 꽤 큽니다.
+
+**격리 환경, 파라미터 하나로 진입.** Worktree는 지난주 Phase C(세션 영속화)에서 이번 주 Phase D로 나아갔습니다 — `qwen-code --worktree`로 시작하면 바로 독립 작업 트리에 들어가고, `--worktree=#<N>`이면 원격 PR 코드를 바로 가져옵니다. 선택 설정인 `worktree.symlinkDirectories`로 node_modules 같은 무거운 디렉터리를 메인 저장소에 심볼릭 링크로 연결해 중복 설치를 피할 수 있습니다. `/goal` + Auto Approval과 함께 쓰면 Agent가 격리 환경에서 큰 작업을 자율적으로 끝까지 마치고, 메인 브랜치는 항상 깨끗합니다.
+
+긴 대화 오버플로 문제에도 이번 주 실질적인 진전이 있습니다. 자동 압축이 단일 임계값에서 warn / auto / hard 3단 계단으로 다시 설계됐고, 대형 컨텍스트 창 모델의 예약 낭비가 30%에서 고정 33K로 줄었습니다. headless 모드에는 `--max-wall-time`과 `--max-tool-calls` 실행 예산이 새로 생겼습니다 — CI에서 Agent를 돌릴 때 마침내 하드 상한이 잡혔습니다.
+
+## ✨ 새로운 기능
+
+### 병렬 Agent 패널: 여러 Agent를 한 화면에
+
+요즘 Coding Agent 흐름을 봤다면 '병렬'이 가장 많이 언급되는 키워드입니다. Cognition의 기업가치 260억 달러 뒤에는 여러 Agent가 동시에 일한다는 이야기가 있습니다. 그런데 Agent가 여러 개 돌아가면 누가 뭘 하고 어디까지 왔는지 어떻게 알 수 있을까요?
+
+Qwen Code의 답은 이겁니다. Agent가 2개 이상 병렬 실행되면 컴팩트 인라인 패널(`InlineParallelAgentsDisplay`)이 자동으로 렌더링됩니다. 서브 Agent당 한 줄이며 상태, 이름, 현재 작업, 소요 시간, token 소모가 실시간으로 갱신됩니다. 키보드 ↑↓로 포커스를 옮기고, Enter로 세부 사항을 펼쳐 전체 출력을 보고, Esc로 입력창에 돌아갑니다. 글자를 치면 포커스가 자동으로 풀리고 입력창으로 복귀 — 마우스를 한 번도 안 써도 됩니다.
+
+**이걸로 할 수 있는 일:**
+
+- `/review` 등 명령이 서브 Agent를 병렬로 띄울 때 진행 상황을 한 화면에 (상태/이름/작업/소요 시간/token)
+- 키보드 탐색: ↑↓ 선택, Enter 상세 펼치기, Esc 입력창 복귀 — 글자 치면 포커스 자동 해제
+- 패널은 live 단계에서 실시간 갱신되고, 끝나면 되돌아볼 수 있는 기록으로 고정됩니다
+
+관련 PR: [#4477](https://github.com/QwenLM/qwen-code/pull/4477)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01thMYS121ymzXkJHai_!!6000000007054-2-tps-1692-948.png)
+
+### Auto-Memory 기본 활성화 + /memory 전환
+
+Claude Code도 자동 기억을 밀고 있습니다 — 사용자가 CLAUDE.md를 직접 만들고, 그 안에 규칙을 적어 Agent에게 기억시킵니다. 문제는 많은 사람이 그 파일의 존재 자체를 모르고, 관리 방법도 모른다는 것입니다.
+
+Qwen Code는 이번 주 auto-dream과 auto-skill을 기본으로 켰습니다. Agent가 대화에서 배운 것 (당신의 취향, 프로젝트 규약, 자주 쓰는 패턴)을 자동으로 메모리에 쓰고, 다음 세션에서 자동으로 불러옵니다. 설정도, 파일 만들 필요도 없습니다. 그대로 쓰면 됩니다.
+
+손으로 조절하고 싶다면 `/memory` 대화상자에 `Auto-skill` 토글 줄이 새로 생겼고, 기존 `Auto-memory`, `Auto-dream`과 나란히 있습니다 — 세 개 스위치를 방향키로 이동하고 Enter로 켜고 끄며, 설정은 워크스페이스의 `.qwen/settings.json`에 저장됩니다.
+
+**이걸로 할 수 있는 일:**
+
+- 설정이 아무것도 없이 managed-memory 세 하위 시스템 (요약 기억, 단계 정리, 스킬 추출)이 전부 기본 활성화
+- 취향과 프로젝트 규약이 세션을 넘어 유지돼 매번 다시 설명하지 않습니다
+- `/memory` 대화상자의 토글 세 줄로 언제든 하위 시스템을 켜고 끄기
+- 이미 명시적으로 설정한 사용자는 영향 없습니다 — 새 기본값이 이전 선택을 덮어쓰지 않습니다
+
+관련 PR: [#4547](https://github.com/QwenLM/qwen-code/pull/4547)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01p6ctD51X5t2ZfHgnf_!!6000000002873-2-tps-1688-950.png)
+
+### Worktree Phase D: 시작과 동시에 격리 환경으로
+
+지난주 Worktree가 Phase C까지 왔습니다 — 세션 영속화 + 하단 표시줄. 이번 주엔 바로 Phase D입니다. 시작할 때 `--worktree`를 붙이면 Qwen Code가 독립 작업 트리를 알아서 만들고 진입합니다. PR 참조와 함께 쓰면 특정 PR의 코드를 격리 환경으로 가져와 review하거나 계속 개발할 수 있고, 메인 브랜치는 전혀 건드리지 않습니다.
+
+실용적인 설정이 하나 더 있습니다. `worktree.symlinkDirectories`로 node_modules, .venv 같은 무거운 디렉터리를 worktree 안에서 메인 저장소를 가리키는 심볼릭 링크로 만들 수 있어 의존성 중복 설치를 피할 수 있습니다. opt-in 방식입니다 — `.qwen/settings.json`에 경로 목록을 적어 두면 이후 모든 worktree(`--worktree`, `enter_worktree` 도구, Agent isolation)에 자동 적용됩니다. 경로 순회, 절대 경로, `.git`과 `.qwen` 디렉터리는 안전하게 거부됩니다.
+
+**이걸로 할 수 있는 일:**
+
+- `qwen --worktree` 파라미터 하나로 격리 환경 진입. `git worktree add`를 손으로 치지 않아도 됩니다
+- `--worktree=#<N>` 또는 GitHub PR URL: `git fetch origin pull/<N>/head`로 원격 PR을 worktree에 가져와 review하거나 계속 개발
+- `worktree.symlinkDirectories`를 설정하면 node_modules 같은 큰 디렉터리를 심볼릭 링크로 공유해 중복 설치하지 않습니다
+- 지난주의 세션 영속화 + `/resume`과 맞물려 하나의 완결된 흐름이 됩니다
+
+관련 PR: [#4381](https://github.com/QwenLM/qwen-code/pull/4381)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN018n4A7L1YeWbuNaPBb_!!6000000003084-1-tps-1276-720.gif)
+
+### Headless 보호: 비인터랙션 모드의 실행 예산
+
+Anthropic이 이번 주 [제로 트러스트 AI Agent 보안 프레임워크](https://claude.com/blog/zero-trust-for-ai-agents)를 내놨고, 자율 Agent의 큰 위험 하나로 '폭주해도 말릴 사람이 없다'는 점을 지목했습니다. Baoyu([@dotey](https://x.com/dotey/status/2059773942500298934))도 같은 이야기를 합니다. Coding Agent를 잘 쓰는 관건은 양 끝에 있습니다 — 시작할 때의 계획, 끝날 때의 검토.
+
+Qwen Code에 실행 예산 파라미터가 두 개 새로 생겼습니다: `--max-wall-time`(최대 실행 시간, `90`, `30s`, `5m`, `1h` 같은 형식 지원)과 `--max-tool-calls`(최대 도구 호출 횟수). 예산 상한에 닿으면 exit code 55로 종료합니다 — 사용자가 직접 취소한 경우(130)와 라운드 제한에 걸린 경우(53)와 구분됩니다. CI 스크립트가 종료 이유를 정확히 판단할 수 있습니다.
+
+또 headless 모드에서 `--yolo`(완전 자동 승인)를 쓰면서 샌드박스가 없으면, 시작할 때 stderr에 보안 경고를 출력합니다. `QWEN_CODE_SUPPRESS_YOLO_WARNING=1`으로 막을 수 있습니다.
+
+**이걸로 할 수 있는 일:**
+
+- `qwen -p "모듈 리팩터링" --max-wall-time 5m --max-tool-calls 50` — CI에서 Agent를 돌릴 때 하드 상한이 생깁니다
+- 예산에 닿으면 자동 정지, exit code 55. CI 스크립트가 '예산 소진'과 '정상 완료'를 구분할 수 있습니다
+- 모든 예산의 기본값은 `-1`(무제한)이라 기존 사용 방식은 그대로입니다
+- `--yolo`를 샌드박스 없이 쓸 때의 시작 경고가 안전하지 않은 설정을 찾아냅니다
+
+관련 PR: [#4502](https://github.com/QwenLM/qwen-code/pull/4502)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN018s7klB1n4XjMlU8P3_!!6000000005036-2-tps-1692-416.png)
+
+### 3단 자동 압축: 긴 대화가 더 이상 넘치지 않습니다
+
+Simon Willison은 코딩 Agent가 기업 고객 비용을 크게 올렸다고 했습니다. 핵심 원인 중 하나가 긴 대화입니다. 컨텍스트가 불어나 모델의 컨텍스트 창에 가까워지면 크래시하거나 중요한 정보를 잃습니다.
+
+**Qwen Code는 자동 압축을 단일 임계값(창의 70%에서 발동)에서 3단 계단으로 다시 설계했습니다.** 점유 비율과 절대 바이트 수를 함께 봅니다.
+
+- **warn 단계**(≈창의 60%, 또는 auto 단계까지 20K): 컨텍스트가 상한에 가까워짐을 사용자에게 미리 알려주는 UX 단계
+- **auto 단계**(≈창의 70%, 또는 창 끝까지 13K): 스스로 압축을 발동합니다. 비용이 낮고 대화 품질 손실은 거의 없습니다
+- **hard 단계**(창 끝까지 3K): 강제 압축입니다. API가 과도하게 큰 prompt를 거절하기 직전의 마지막 안전망
+
+소형 창 모델(32K/64K)은 비율 분기를 타고, 대형 창 모델은 절대 바이트 분기를 탑니다. 낭비되는 예약 공간이 기존 창의 30%에서 약 33K 고정 오버헤드로 줄었습니다.
+
+**이걸로 할 수 있는 일:**
+
+- 긴 대화가 컨텍스트 오버플로로 크래시하지 않습니다 — hard 단계가 API 거절 전에 강제 압축합니다
+- 직접 설정할 게 없습니다. 시스템이 모델 창 크기에 맞춰 3단 임계값을 계산합니다
+- 기존 `chatCompression.contextPercentageThreshold` 설정은 폐기됐고, 시작 시 deprecation 경고를 출력합니다
+
+관련 PR: [#4345](https://github.com/QwenLM/qwen-code/pull/4345)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01YlZeqn1Px02qY1qo3_!!6000000001906-2-tps-1688-950.png)
+
+### 명령어 치환, 바로 거절하지 않습니다: 확인 창 + ⚠️ 경고
+
+Anthropic의 [제로 트러스트 보안 프레임워크](https://claude.com/blog/zero-trust-for-ai-agents)는 Agent의 보안 경계가 '쓸 만함'과 '안전' 사이에서 균형을 찾아야 한다고 말합니다. Qwen Code는 이전까지 지나치게 엄격한 쪽이었습니다. Agent가 만든 shell 명령에 `$()`, 백틱, `<()` 같은 명령어 치환 문법이 있으면 바로 실행을 거절했습니다 — YOLO 모드라도 우회할 수 없었습니다.
+
+이제 확인 대화상자를 띄우고, 그 화면에 ⚠️ "Contains command substitution" 경고를 표시합니다. 경고를 보고 허용할지 거절할지 고르면 됩니다 — 판단을 당신에게 돌려주고, 한 칼로 자르지 않습니다. YOLO 모드에서는 정상 실행하되 DEBUG 로그에 감사 기록을 남기니 사후 점검이 가능합니다.
+
+**이걸로 할 수 있는 일:**
+
+- Agent가 `$(git rev-parse HEAD)`로 commit hash를 얻는 정당한 상황이 더 이상 막히지 않습니다
+- 확인 대화상자에 ⚠️ 경고가 떠서, 이 명령에 치환 문법이 들어 있는지 한눈에 압니다
+- YOLO 모드에서도 정상 실행되고, DEBUG 로그에 감사 기록이 남습니다
+- Monitor 도구의 동일한 과도한 거절 문제도 같이 고쳤습니다
+
+관련 PR: [#4386](https://github.com/QwenLM/qwen-code/pull/4386)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01xzaMe31MzLDrPDfXe_!!6000000001505-2-tps-1688-950.png)
+
+### 그 외 새로운 기능
+
+| 기능 | PR | 사용자에게 미치는 영향 |
+|------|-----|-----------|
+| **Token Plan Cache Control**: prompt cache로 중복 과금 절약 | [#4495](https://github.com/QwenLM/qwen-code/pull/4495) | Token Plan 사용자는 연속 대화에서 system prompt가 자동 캐시되며, 3단 압축과 함께 쓰면 더 절약됩니다 |
+| **memory-leak-debug skill**: 메모리 누수 진단 스킬 내장 | [#4468](https://github.com/QwenLM/qwen-code/pull/4468) | 메모리 누수를 만나면 Agent에게 체계적인 heap snapshot 분석 절차가 생깁니다 |
+| **디렉터리 자동 완성에 공백 추가 안 함**: 경로 입력 시 디렉터리 뒤 공백 제거 | [#4288](https://github.com/QwenLM/qwen-code/pull/4288) | Tab으로 디렉터리를 자동 완성받으면 하위 경로를 바로 이어서 입력할 수 있습니다 |
+| **MCP server 삭제 영속화** | [#4535](https://github.com/QwenLM/qwen-code/pull/4535) | 지운 MCP server가 재시작 후 다시 고개를 내밀지 않습니다 |
+| **@는 앞 공백이 있어야 발동** | [#4487](https://github.com/QwenLM/qwen-code/pull/4487) | 이메일 주소처럼 @가 들어간 텍스트가 파일 자동 완성을 잘못 깨우지 않습니다 |
+| **여러 파일 경로 붙여넣기 시 @ 자동 추가** | [#4544](https://github.com/QwenLM/qwen-code/pull/4544) | 터미널에서 경로 여러 개를 붙여넣으면 자동으로 @ 참조가 됩니다 |
+| **프로젝트 로컬 컨텍스트 .qwen/QWEN.local.md** | [#4394](https://github.com/QwenLM/qwen-code/pull/4394) | 프로젝트 루트에 `.qwen/QWEN.local.md`를 만들어 개인 로컬 규칙을 적어 두면 Agent가 자동으로 불러옵니다 |
+| **new app prompt를 skills로 이전** | [#4567](https://github.com/QwenLM/qwen-code/pull/4567) | 새 앱 생성 안내 프롬프트가 더 유연해지고 커스터마이즈할 수 있습니다 |
+| **ACP Streamable HTTP transport** | [#4472](https://github.com/QwenLM/qwen-code/pull/4472) | Daemon에 표준 ACP 프로토콜 endpoint가 생겨 서드파티 UI가 규격에 맞춰 붙을 수 있습니다 |
+| **Daemon followup_suggestion 푸시** | [#4507](https://github.com/QwenLM/qwen-code/pull/4507) | Web UI가 세션이 끝난 뒤 다음 단계를 자동 추천합니다 |
+| **Background agent 동시성 제한** | [#4324](https://github.com/QwenLM/qwen-code/pull/4324) | 백그라운드 Agent가 너무 많이 돌아 자원을 축내지 않습니다 |
+| **W3C traceparent 전파** | [#4390](https://github.com/QwenLM/qwen-code/pull/4390) | 기업이 Agent 요청의 전체 호출 경로를 추적할 수 있습니다 |
+| **Daemon CORS allowlist** | [#4527](https://github.com/QwenLM/qwen-code/pull/4527) | `--allow-origin`으로 어떤 프론트엔드가 Daemon에 접근할지 정확히 통제합니다 |
+| **Daemon 세션 안에서 모델 전환** | [#4546](https://github.com/QwenLM/qwen-code/pull/4546) | 대화 도중에 모델을 바꾸고, 빠져나왔다 다시 들어갈 필요가 없습니다 |
+| **Daemon 파일 로그** | [#4559](https://github.com/QwenLM/qwen-code/pull/4559) | Daemon 실행 로그를 파일로 남겨 문제 파악이 쉬워집니다 |
+| **Serve prompt deadline + SSE idle timeout** | [#4530](https://github.com/QwenLM/qwen-code/pull/4530) | 오래 응답 없는 요청은 자동으로 타임아웃돼 자원을 점유하지 않습니다 |
+| **Serve POST /session/:id/recap** | [#4504](https://github.com/QwenLM/qwen-code/pull/4504) | 세션 요약을 가져올 수 있어 Web UI에 과거 대화 개요를 표시할 수 있습니다 |
+
+## 🔧 주요 수정 사항
+
+| PR | 수정 내용 | 사용자에게 미치는 영향 |
+|----|----------|-----------|
+| [#4366](https://github.com/QwenLM/qwen-code/pull/4366) | 긴 세션의 AbortSignal 리스너 누수 수정 (MaxListenersExceededWarning) | 긴 대화에서 listener 초과 경고가 뜨지 않습니다 |
+| [#4489](https://github.com/QwenLM/qwen-code/pull/4489) | auto-skill이 기존 skill 파일을 덮어쓰지 않습니다 | 손으로 작성한 skill이 자동 생성본에 덮여 사라지지 않습니다 |
+| [#4407](https://github.com/QwenLM/qwen-code/pull/4407) | safeJsonStringify가 중복 객체 참조 보존 | 복잡한 데이터 구조를 직렬화할 때 정보가 사라지지 않습니다 |
+| [#4426](https://github.com/QwenLM/qwen-code/pull/4426) | 자격 증명이 들어간 진단 정보 마스킹 | 오류 메시지에 key/token이 새지 않습니다 |
+| [#4371](https://github.com/QwenLM/qwen-code/pull/4371) | 위험한 인터프리터 규칙을 더 많이 제거 | Agent 권한 경계가 더 엄격해집니다 |
+| [#4478](https://github.com/QwenLM/qwen-code/pull/4478) | Token Plan 모델 기본값을 ModelStudio와 정렬 | Token Plan 사용자가 보는 모델 목록과 설정이 플랫폼과 일치합니다 |
+| [#4512](https://github.com/QwenLM/qwen-code/pull/4512) | /context token 통계를 실제 API 요청과 정렬 | `/context`가 보여주는 token 수가 마침내 정확합니다 |
+| [#4465](https://github.com/QwenLM/qwen-code/pull/4465) | WeChat 연동에서 Windows 워크스페이스 이미지 경로 허용 | Windows 사용자가 WeChat 연동으로 이미지를 보내도 경로 오류가 나지 않습니다 |
+| [#4464](https://github.com/QwenLM/qwen-code/pull/4464) | WeChat 연동에서 복호화 가능한 이미지 payload 전송 | WeChat 연동으로 보낸 이미지를 상대가 정상적으로 봅니다 |
+| [#4517](https://github.com/QwenLM/qwen-code/pull/4517) | 원 모델 파생 기본값 갱신 | 모델을 바꾼 뒤 파라미터 설정이 올바르게 갱신됩니다 |
+| [#4461](https://github.com/QwenLM/qwen-code/pull/4461) | TUI 렌더링 전에 stderr에 시작 경고 표시 | 시작 문제가 더 이상 TUI 화면에 삼켜지지 않습니다 |
+| [#4470](https://github.com/QwenLM/qwen-code/pull/4470) | 텍스트 버퍼 커밋 핸들러의 stale closure 경합 수정 | 빠르게 입력해 커밋할 때 내용이 때때로 사라지지 않습니다 |
+| [#4510](https://github.com/QwenLM/qwen-code/pull/4510) | Daemon 클라이언트 간 동기화 후속 수정 (epoch-reset, approval-mode 직렬화) | 여러 클라이언트가 같은 Daemon에 붙었을 때 상태 동기화가 더 안정적입니다 |
+| [#4497](https://github.com/QwenLM/qwen-code/pull/4497) | Claude marketplace가 폴더 전체를 가리킬 때 resources 올바르게 채움 | Claude 마켓 플러그인 사용 시 resource 로드가 비어 있지 않습니다 |
+| [#4491](https://github.com/QwenLM/qwen-code/pull/4491) | SDK canUseTool timeout이 CLI 제어 요청에서 적용됨 | SDK 연동 시 도구 호출 타임아웃이 무시되지 않습니다 |
+| [#4453](https://github.com/QwenLM/qwen-code/pull/4453) | 빌드 전 만료된 출력 정리로 TS5055 방지 | 개발자가 소스에서 빌드할 때 TypeScript 증분 빌드 오류가 나지 않습니다 |
+
+## 🙏 기여자
+
+이번 주 모든 기여자에게 감사드립니다:
+
+| 기여자 | 주요 기여 |
+|--------|----------|
+| [@LaZzyMan](https://github.com/LaZzyMan) | Worktree Phase D, 3단 자동 압축, auto-memory 기본 활성화, auto-skill 덮어쓰기 수정, 명령어 치환 권한 수정 |
+| [@wenshao](https://github.com/wenshao) | 병렬 Agent 패널, @ 발동 조건 수정 |
+| [@DragonnZhang](https://github.com/DragonnZhang) | Token Plan cache control, SDK 수정, monitor 문서 |
+| [@doudouOUC](https://github.com/doudouOUC) | W3C traceparent 전파, Serve deadline/recap, AbortSignal 누수 수정, telemetry |
+| [@chiga0](https://github.com/chiga0) | Daemon 세션 내 모델 전환, 클라이언트 간 동기화 수정 |
+| [@huww98](https://github.com/huww98) | memory-leak-debug skill, stale closure 수정 |
+| [@yiliang114](https://github.com/yiliang114) | WeChat 연동 수정, OSS 동기화 CI |
+| [@BZ-D](https://github.com/BZ-D) | Headless 보호 |
+| [@dykebo](https://github.com/dykebo) | 디렉터리 자동 완성 개선 |
+| [@kkhomej33-netizen](https://github.com/kkhomej33-netizen) | Background agent 동시성 제한 |
+| [@pomelo-nwu](https://github.com/pomelo-nwu) | /context 정렬 수정, PR template 개편 |
+| [@qqqys](https://github.com/qqqys) | 자격 증명 마스킹, 인터프리터 규칙 보안 강화 |
+| [@Jerry2003826](https://github.com/Jerry2003826) | MCP 삭제 영속화, 모델 기본값 수정 |
+| [@MikeWang0316tw](https://github.com/MikeWang0316tw) | 여러 파일 붙여넣기 시 @ 자동 추가 |
+| [@DennisYu07](https://github.com/DennisYu07) | new app prompt 이전 |
+| [@YingchaoX](https://github.com/YingchaoX) | Token Plan 기본값 정렬 |
+| [@ihubanov](https://github.com/ihubanov) | safeJsonStringify 수정 |
+| [@kagura-agent](https://github.com/kagura-agent) | 시작 경고 표시 (첫 기여 🎉) |
+
+<Callout type="info">
+  **업데이트 방법**: `npm i @qwen-code/qwen-code@latest -g`를 실행하면 최신 버전으로 업데이트할 수 있습니다.
+</Callout>
+
+문제나 제안이 있다면 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)로 알려 주세요!

@@ -1,0 +1,168 @@
+---
+title: "Qwen Code 주간 업데이트: Token 제한 2배, 소비량 실시간 표시, JetBrains 에디터 지원"
+date: "2026-03-20"
+description: "이번 주에는 Token 제한을 8K에서 16K로 올리고 소비량을 실시간으로 표시했으며, JetBrains와 Zed 에디터 통합, Plan Mode의 방안 비교를 지원했습니다. Windows 인코딩 문제도 고쳤습니다."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: https://gw.alicdn.com/imgextra/i3/O1CN01lm0V1mqnS8D2jBZY_!!6000000002821-0-tps-1344-576.jpg
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 주간 업데이트: Token 제한 2배, 소비량 실시간 표시, JetBrains 에디터 지원"
+  date="2026-03-20"
+  author="Qwen Team"
+/>
+
+이번 주에 **v0.12.4** 기능 버전과 버그 수정 버전 2개를 출시하고, 동시에 **v0.13.0-preview** 프리뷰 버전을 공개했습니다.
+
+프리뷰 버전의 새 기능을 먼저 써 보고 싶다면 `npm i @qwen-code/qwen-code@v0.13.0-preview.1 -g`를 실행해 설치하세요.
+
+v0.12.0이 나온 뒤 사용자 피드백이 많이 들어왔고, 이번 주에는 경험을 해치는 문제부터 처리했습니다. Windows에서 영어가 아닌 출력이 깨지고, 인터랙티브 Shell 출력이 빠지고, API 재시도 시 오류가 났습니다. 새 기능 쪽은 Token을 전반적으로 손봤습니다. 제한을 2배인 16K로 올리고, 소비량을 실시간으로 표시하고, `/context` 명령어로 내역을 볼 수 있게 됐습니다. JetBrains와 Zed 에디터도 지원하기 시작했습니다.
+
+## ✨ 새로운 기능
+
+### Token 제한 2배: 더 많이 읽고, 더 많은 정보를 얻습니다
+
+출력 Token 제한이 8K에서 16K로 올라, AI가 더 많은 컨텍스트를 읽고 더 완성된 답변을 만듭니다. 모델의 max_tokens 설정도 자동으로 감지하니 직접 맞출 필요가 없습니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- AI가 파일 내용을 더 많이 읽고 큰 프로젝트 구조를 이해합니다
+- 코드와 문서를 완결된 형태로 생성하니 나눠서 붙일 필요가 없습니다
+- 모델마다 다른 Token 제한에 자동으로 맞춰, 제한을 넘겨 나는 오류를 걱정하지 않습니다
+
+관련 PR: [#2411](https://github.com/QwenLM/qwen-code/pull/2411), [#2356](https://github.com/QwenLM/qwen-code/pull/2356), [#2362](https://github.com/QwenLM/qwen-code/pull/2362)
+
+### Token 사용량 실시간 표시 (프리뷰)
+
+AI가 생각하고 답을 만드는 동안 화면에 Token 소비량이 실시간으로 뜹니다. 대화가 끝나기를 기다리지 않아도 언제 얼마나 썼는지 알 수 있습니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- 대화 도중에 소비량이 바로 보이니 감이 잡힙니다
+- 소비가 이상하면 즉시 조정해 낭비를 막습니다
+- 작업별 Token 비용을 비교해서 쓰는 방식을 다듬을 수 있습니다
+
+관련 PR: [#2445](https://github.com/QwenLM/qwen-code/pull/2445)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01J3OhN228vlftWyHmx_!!6000000007995-1-tps-1280-720.gif)
+
+### /context 명령어: 컨텍스트 Token 소비 내역 확인 (프리뷰)
+
+`/context` 명령어를 쓰면 컨텍스트 창의 Token 소비 내역이 나옵니다. 어떤 파일이 Token을 얼마 차지하는지, 남은 자리는 얼마인지 한눈에 보입니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- 지금 대화가 Token을 얼마 썼는지 봐서 내용을 더 넣을 수 있는지 판단합니다
+- 과하게 차지하는 파일을 발견해 정리할지 결정할 수 있습니다
+- 컨텍스트를 다듬어서 AI가 핵심에 집중하게 만듭니다
+
+관련 PR: [#1835](https://github.com/QwenLM/qwen-code/pull/1835)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01cekEKq1mRc3CM2AQd_!!6000000004951-1-tps-1280-720.gif)
+
+### Zed과 JetBrains 에디터 통합
+
+VS Code에 더해 이제 Qwen Code를 Zed와 JetBrains 계열 에디터(IntelliJ IDEA, PyCharm, WebStorm 등)에서도 쓸 수 있습니다. 관련 PR: [#2372](https://github.com/QwenLM/qwen-code/pull/2372)
+
+**이렇게 쓸 수 있습니다:**
+
+- JetBrains IDE 안에서 바로 쓰니 창을 옮기지 않아도 됩니다
+- Zed 에디터 사용자도 AI 코딩 보조 도구를 누릴 수 있습니다
+- 어떤 에디터든 경험이 같아서 도구를 바꿔도 다시 적응할 필요가 없습니다
+
+문서 보기:
+
+- [JetBrains IDE \| Qwen Code Docs](https://qwenlm.github.io/qwen-code-docs/ko/users/integration-jetbrains/)
+- [Zed 에디터 \| Qwen Code Docs](https://qwenlm.github.io/qwen-code-docs/ko/users/integration-zed/)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01rTE0X61tikAwLN7Zz_!!6000000005936-2-tps-2032-1386.png)
+
+### Plan Mode: 거부한 방안도 볼 수 있습니다
+
+Plan Mode에서 AI가 제시한 방안을 거부해도 내용이 사라지지 않습니다. 여러 방안을 비교해서 알맞은 것을 고를 수 있습니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- AI가 준 여러 방안을 비교해 최선의 선택을 합니다
+- 거부한 뒤에도 내용을 다시 보니 AI에게 다시 만들게 할 필요가 없습니다
+- 방안 비교가 직관적이라 결정이 한결 수월합니다
+
+관련 PR: [#2157](https://github.com/QwenLM/qwen-code/pull/2157)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01rGEuoD1XpgdIQ8X2V_!!6000000002973-1-tps-860-584.gif)
+
+### .agents 디렉터리 지원 (프리뷰)
+
+이제 스킬 파일을 프로젝트의 `.agents` 디렉터리에 두고 프로젝트 코드와 함께 관리할 수 있습니다. 팀원이 프로젝트를 clone하면 같은 스킬 설정을 그대로 쓰면 됩니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- 프로젝트 관련 스킬을 `.agents`에 두고 코드와 같이 버전 관리합니다
+- 팀 전체가 스킬 설정을 공유하니 개별로 맞출 필요가 없습니다
+- 프로젝트마다 스킬 설정을 따로 둘 수 있어서 서로 간섭하지 않습니다
+
+관련 PR: [#2202](https://github.com/QwenLM/qwen-code/pull/2202)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01S3mZO01RMw4i66XNH_!!6000000002098-1-tps-1280-720.gif)
+
+### 세션 내보내기에 메타데이터와 통계 추가 (프리뷰)
+
+세션을 내보낼 때 이제 메타데이터와 통계가 함께 들어갑니다. 대화 시간, Token 소비량, 메시지 수 등이 기록되니 보관이나 사용량 분석에 좋습니다.
+
+**이렇게 쓸 수 있습니다:**
+
+- 내보낼 때 대화 시간과 Token 소비량이 자동 기록되어 나중에 되짚기 쉽습니다
+- 사용 현황을 통계로 봐서 자기 사용 패턴을 이해할 수 있습니다
+- 중요한 대화를 온전한 정보와 함께 보관합니다
+
+관련 PR: [#2328](https://github.com/QwenLM/qwen-code/pull/2328)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN010xCLBN1txrFHqCjhG_!!6000000005969-2-tps-1264-589.png)
+
+## 📊 사용성 개선
+
+- **Shell 출력이 화면을 뒤덮지 않습니다**: 큰 출력은 자동으로 잘리고 도구 출력 처리도 간편해져, 출력이 길다고 응답이 느려지지 않습니다 ([#2388](https://github.com/QwenLM/qwen-code/pull/2388))
+- **슬래시 명령어 설명 현지화**: `/help` 등 명령어 설명이 여러 언어로 표시됩니다 ([#2333](https://github.com/QwenLM/qwen-code/pull/2333))
+
+## 🔧 주요 수정 사항
+
+| PR | 버전 | 수정 내용 | 사용자에게 미치는 영향 |
+|----|------|----------|-----------|
+| [#2423](https://github.com/QwenLM/qwen-code/pull/2423) | v0.12.5 | Windows의 비 ASCII 출력 인코딩 문제를 고쳤습니다 | 중국어, 일본어처럼 영어가 아닌 출력이 깨지지 않습니다 |
+| [#2438](https://github.com/QwenLM/qwen-code/pull/2438) | v0.12.6 | max_tokens 처리를 개선하고 보수적인 기본값을 씁니다 | max_tokens가 너무 커서 오류가 나던 일을 막습니다 |
+| [#2024](https://github.com/QwenLM/qwen-code/pull/2024) | v0.12.4 | 세션 손상을 막기 위해 PDF 파일을 거부합니다 | PDF를 열어도 세션이 이상해지지 않습니다 |
+| [#2389](https://github.com/QwenLM/qwen-code/pull/2389) | v0.12.4 | 인터랙티브 Shell에서 빠른 출력이 유실되던 문제를 고쳤습니다 | 명령어를 실행할 때 출력이 빠지지 않습니다 |
+| [#2367](https://github.com/QwenLM/qwen-code/pull/2367) | v0.12.4 | API 재시도 중 발생하던 오류를 고쳤습니다 | 원인 모를 API 오류를 만나지 않습니다 |
+| [#2280](https://github.com/QwenLM/qwen-code/pull/2280) | v0.12.4 | Hooks JSON Schema 타입 정의를 바로잡았습니다 | Hooks 설정 시 타입 오류가 나지 않습니다 |
+
+### Windows 플랫폼 전용 수정
+
+| PR | 수정 내용 | 사용자에게 미치는 영향 |
+|----|----------|-----------|
+| [#2423](https://github.com/QwenLM/qwen-code/pull/2423) | 비 ASCII 출력 인코딩 문제 수정 | 중국어, 일본어 등 영어가 아닌 출력이 정상 표시됩니다 |
+| [#2286](https://github.com/QwenLM/qwen-code/pull/2286) | 확장 설치 실패 문제 수정 | Windows에서 git clone으로 확장을 설치해도 오류가 나지 않습니다 |
+| [#1904](https://github.com/QwenLM/qwen-code/pull/1904) | Windows PATH 환경 변수 정규화 | Shell 실행 시 환경 변수 처리가 더 안정적입니다 |
+
+### macOS 플랫폼 전용 수정
+
+| PR | 수정 내용 | 사용자에게 미치는 영향 |
+|----|----------|-----------|
+| [#2391](https://github.com/QwenLM/qwen-code/pull/2391) | 샌드박스 권한 문제 수정 | macOS 샌드박스 환경에서 터미널 장치 접근이 정상 동작합니다 |
+
+## 🎈 기타 개선 사항
+
+- 기여자 7명 추가: [@netbrah](https://github.com/netbrah), [@chen893](https://github.com/chen893), [@hs-ye](https://github.com/hs-ye), [@drewd789](https://github.com/drewd789), [@Sakuranda](https://github.com/Sakuranda), [@kiri-chenchen](https://github.com/kiri-chenchen), [@ShihaoShenDev](https://github.com/ShihaoShenDev)
+- Docker 샌드박스 런타임과 Java 사용 설명 문서를 추가했습니다 ([#1642](https://github.com/QwenLM/qwen-code/pull/1642))
+- VS Code의 프롬프트 취소와 스트리밍 경합 조건 처리를 개선했습니다 ([#2374](https://github.com/QwenLM/qwen-code/pull/2374))
+
+<Callout type="info">
+  **업데이트 방법**:
+  - 안정 버전: `npm i @qwen-code/qwen-code@latest -g`
+  - 프리뷰 버전: `npm i @qwen-code/qwen-code@v0.13.0-preview.1 -g`
+</Callout>
+
+문제나 제안이 있다면 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)로 알려 주세요!

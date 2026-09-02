@@ -1,0 +1,112 @@
+---
+title: "Qwen Code 주간 업데이트: Insight 분석, 클립보드 이미지, Terminal Capture 자동 스크린샷"
+date: "2026-03-03"
+description: "이번 주에는 v0.10.0, v0.11.0 주요 기능 버전과 버그 수정 버전 5개를 출시했습니다. Insight 분석, 클립보드 이미지 지원, Terminal Capture가 새로 추가됐습니다."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: https://gw.alicdn.com/imgextra/i1/O1CN019q9gOh1SWNt8sYQQG_!!6000000002254-0-tps-1344-576.jpg
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 주간 업데이트: Insight 분석, 클립보드 이미지, Terminal Capture 자동 스크린샷"
+  date="2026-03-03"
+  author="Qwen Team"
+/>
+
+이번 주에 v0.10.0, v0.11.0 주요 기능 버전과 버그 수정 버전 5개를 출시했습니다.
+
+- 주요 기능 버전 v0.10.0과 v0.11.0, 여기에 버그 수정 버전 5개를 함께 출시했습니다
+- OAuth 인증을 지원하고 모델 호출을 qwen3.5-plus로 올려 하루 1000회 무료 호출을 제공합니다
+- Insight 분석이 새로 추가됐습니다
+- 클립보드 이미지를 지원하기 시작했습니다
+- Terminal Capture가 기능을 자동 검증하고 스크린샷까지 만들어 냅니다
+
+## ✨ 새로운 기능
+
+### Insight 분석
+
+기본 내장 명령어입니다. 로컬 세션 기록을 깊게 분석해서 개인별 코딩 패턴과 사용 현황 리포트를 만들어 줍니다.
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01fU1ONc1cQ6aODsN3J_!!6000000003594-2-tps-1698-954.png)
+
+사용 방법: `/insight`를 입력하면 LLM을 불러 병렬로 분석합니다
+
+총 7개 장으로 구성된 상세한 HTML 리포트가 만들어집니다:
+- **What You Work On** - 어떤 작업을 해 왔는지
+- **How You Use Qwen Code** - Qwen Code를 어떻게 쓰고 있는지
+- **Impressive Things** - 인상적으로 해 낸 일
+- **Where Things Go Wrong** - 문제가 자주 생기는 지점
+- **Features to Try** - 한번 써 볼 만한 기능
+- **New Usage Patterns** - 새로 생긴 사용 패턴
+- **On the Horizon** - 앞으로의 전망
+
+마지막으로 소셜미디어에 공유할 이미지를 하나 내보낼 수 있습니다.
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01xJKhpq1WNSbVJyveF_!!6000000002776-2-tps-2400-1332.png)
+
+👇 기능 시연
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/VoEah5fe1opBHjtaStcgGZ97mRNPrqroKO5cf4V71XM.mp4"  controls></video>
+
+### 클립보드 이미지 지원
+
+크로스 플랫폼 지원: macOS / Windows / Linux. 관련 PR: [#1612](https://github.com/QwenLM/qwen-code/pull/1612)
+
+기능:
+- **이미지 캡처**: 시스템 클립보드에서 이미지를 가져옵니다
+- **임시 저장**: 클립보드 전용 임시 디렉터리에 저장합니다
+- **LRU 정리**: 100장을 넘으면 가장 오래된 50장을 자동으로 지웁니다
+- **첨부 UI**: `↑`로 첨부 모드에 진입, `←/→`로 이동, `Delete`로 삭제
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01OsEDov1z4nJto1CfQ_!!6000000006661-2-tps-1694-956.png)
+
+### Terminal-Capture
+
+목적: CLI 화면 검증을 위한 터미널 자동 스크린샷 도구입니다. 기능이 제대로 동작하는지 스스로 확인하고 시연용 스크린샷까지 만들어 냅니다.
+
+구조: node-pty (의사 터미널) → xterm.js (렌더링) → Playwright (스크린샷), 관련 PR: [#1840](https://github.com/QwenLM/qwen-code/pull/1840)
+
+👇 기능 시연
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/RD5m8hRBv8Low4QmQ4Jns9WVfGMSxSsX7NqodXDFUkk.mp4"  controls></video>
+
+### MCP 도구 진행 상황 알림
+
+기능: MCP 도구가 실시간 진행 알림을 지원합니다
+
+- **TUI 모드**: `⏳ [50/100] Processing...` 형태로 표시됩니다
+- **SDK 모드**: `tool_progress` 스트림 이벤트 타입이 추가됐습니다
+
+관련 PR: [#1756](https://github.com/QwenLM/qwen-code/pull/1756)
+
+## 🔧 주요 수정 사항
+
+| PR | 버전 | 문제 | 영향 |
+|----|------|------|------|
+| [#1330](https://github.com/QwenLM/qwen-code/pull/1330) | v0.10.0 | 설정 이름이 헷갈림 | disable* → enable*로 이름을 바꾸고 자동 이전 |
+| [#1768](https://github.com/QwenLM/qwen-code/pull/1768) | v0.11.0 | Windows 경로 대소문자 | 세션이 맞지 않던 문제를 소문자 정규화로 해결 |
+| [#1811](https://github.com/QwenLM/qwen-code/pull/1811) | v0.10.2 | AbortSignal 메모리 누수 | MaxListenersExceededWarning |
+| [#1821](https://github.com/QwenLM/qwen-code/pull/1821) | v0.10.2 | JSON Schema 비호환 | draft-2020-12 지원 |
+| [#1791](https://github.com/QwenLM/qwen-code/pull/1791) | v0.10.2 | TPM 제한 | 감지 후 1분 기다린 뒤 재시도 |
+| [#1825](https://github.com/QwenLM/qwen-code/pull/1825) | v0.10.2 | Subagent abort 누적 | 리스너 누수 수정 |
+| [#1796](https://github.com/QwenLM/qwen-code/pull/1796) | v0.11.0 | ESC 취소가 막힘 | 입력이 블로킹되던 문제 수정 |
+| [#1877](https://github.com/QwenLM/qwen-code/pull/1877) | v0.11.0 | Arch OS 설치 | 권한 검사에 sudo 감지 추가 |
+| [#1929](https://github.com/QwenLM/qwen-code/pull/1929) | v0.11.0 | LSP 호환성 | workspaceFolders를 불리언 값으로 변경 |
+| [#1857](https://github.com/QwenLM/qwen-code/pull/1857) | v0.10.6 | BOM 감지 | 길이 검사와 codePointAt 개선 |
+
+### Windows 플랫폼 전용 수정
+
+| PR | 문제 |
+|----|------|
+| [#1604](https://github.com/QwenLM/qwen-code/pull/1604) | 샌드박스 검사에 PowerShell Get-Command 사용 |
+| [#1736](https://github.com/QwenLM/qwen-code/pull/1736) | 자동완성이 켜진 상태에서 Tab 키가 승인 모드를 돌지 않음 |
+| [#1768](https://github.com/QwenLM/qwen-code/pull/1768) | 경로 대소문자 때문에 세션이 맞지 않음 |
+
+<Callout type="info">
+  **업데이트 방법**: `npm i @qwen-code/qwen-code@latest -g`를 실행하면 최신 버전으로 업데이트할 수 있습니다.
+</Callout>
+
+문제나 제안이 있다면 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)로 알려 주세요!
