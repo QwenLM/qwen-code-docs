@@ -1,0 +1,78 @@
+---
+title: "Qwen Code를 주머니에: Local Control로 스마트폰에서 이어서 쓰기"
+date: "2026-08-27"
+description: "qwen serve --local-control을 쓰면 취소 가능한 페어링 token과 QR 코드로, 신뢰할 수 있는 로컬 네트워크에서 스마트폰에 Qwen Code Web Shell을 열 수 있습니다."
+author: "pomelo-nwu"
+tags: ["Tutorials", "feature"]
+image: "https://img.alicdn.com/imgextra/i4/O1CN01EhO6cWmSwDB2jBZY_!!6000000001175-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader
+  title="Qwen Code를 주머니에: Local Control로 스마트폰에서 이어서 쓰기"
+  date="2026-08-27"
+  author="pomelo-nwu"
+/>
+
+컴퓨터에서 작업을 시켜 놓고 잠깐 자리를 비워야 할 때가 있습니다. Agent는 계속 일하고 있지만, 권한 확인과 추가 질문은 아까 그 컴퓨터에 남아 있죠.
+
+Local Control은 더 간단한 선택지를 내놉니다. 같은 신뢰 네트워크에서 스마트폰으로 같은 Qwen Code Web Shell을 여는 겁니다.
+
+## Local Control이 하는 일
+
+`qwen serve`는 Qwen Code를 로컬 데몬으로 띄우고 내장 Web Shell을 제공합니다. 이 데몬에 연결된 클라이언트는 같은 agent 세션에 들어가서, 같은 대화·파일 diff·도구 호출·권한 요청을 보게 됩니다.
+
+경계 하나를 짚어 둡시다. `qwen serve`를 시작해도 이미 돌아가던 일반 CLI TUI 세션이나 IDE 세션은 이어받지 않습니다. Web Shell에서 작업을 시작하거나, 같은 데몬에 명시적으로 연결하는 다른 클라이언트를 쓰세요.
+
+## 명령 한 번으로 시작
+
+Qwen Code에게 작업시킬 프로젝트 디렉터리에서 실행합니다:
+
+```bash
+qwen serve --local-control
+```
+
+Local Control은 자동으로 다음을 합니다:
+
+- 사설 IPv4 네트워크 인터페이스를 하나 고릅니다;
+- 데몬이 관리하고 언제든 취소할 수 있는 페어링 token을 만듭니다;
+- 해당 인터페이스에 대응하는 정확한 브라우저 origin만 허용합니다;
+- 터미널에 페어링 링크와 QR 코드를 출력합니다;
+- 공유가 이어지는 동안 컴퓨터가 절전 모드에 빠지지 않도록 최대한 붙듭니다.
+
+쓸 수 있는 네트워크 인터페이스가 여러 개라면, 안내에 따라 주소를 직접 지정하세요:
+
+```bash
+qwen serve --local-control --local-control-address 192.168.0.105
+```
+
+스마트폰을 같은 신뢰 네트워크에 연결한 뒤 QR 코드를 스캔하면 됩니다. 자격 증명은 `?token=` 쿼리 파라미터가 아니라 URL fragment에 담기 때문에 HTTP 요청 URL에는 나타나지 않습니다. Web Shell은 이 값을 현재 브라우저 탭의 세션 스토리지에 저장합니다.
+
+## 스마트폰에서 이어서
+
+같은 Web Shell 세션을 열면 다음을 할 수 있습니다:
+
+- 대화와 스트리밍 출력을 계속 봅니다;
+- 파일 diff와 펼쳐 놓은 도구 호출 상세를 확인합니다;
+- 현재 권한 정책이 확인을 요구할 때 권한 요청을 처리합니다.
+
+SSE 재연결은 데몬의 유한한 replay window 안에 아직 남아 있는 이벤트를 다시 재생합니다. 연결이 오래 끊기면 이 창을 넘을 수 있어서, 일반적인 끊김에는 강하지만 무한 재생은 아닙니다. 클라이언트가 상태를 다시 동기화해야 한다고 알리면 세션을 닫았다 열거나 새로 고침하세요.
+
+## 보안 경계 알기
+
+Local Control은 신뢰하는 네트워크 안의 로컬 단일 사용자 환경을 위한 기능입니다. 데몬을 공개 인터넷에 그대로 노출하는 지름길로 쓰면 안 됩니다.
+
+브라우저는 여러분 컴퓨터의 데몬에 직접 연결하고, 클라우드 개발 환경은 만들어지지 않습니다. 다만 Qwen Code는 여전히 prompt, 도구 결과, 관련 코드 문맥을 설정해 둔 모델 서비스 제공자에게 보낼 수 있습니다. 모델 입력마저 기기 밖으로 나가선 안 된다면 로컬에 배포한 모델을 쓰세요.
+
+페어링 자격 증명을 손에 쥔 사람은 누구나 이 Web Shell에 주어진 권한을 그대로 갖습니다. 다 쓰신 후에는 Web Shell 설정에서 Local Control을 끄거나, `Ctrl+C`로 데몬을 멈춰 주세요.
+
+## HTTPS와 음성 입력
+
+신뢰하는 로컬 네트워크에서는 일반 HTTP만으로도 Web Shell 기본 기능을 쓰기에 충분합니다. 다만 모바일 브라우저는 음성 입력처럼 보호되는 브라우저 API를 쓰려면 secure context가 필요합니다.
+
+HTTPS를 켜려면 `--tls-cert`와 `--tls-key`를 함께 지정해야 합니다. 인증서의 Subject Alternative Name에 로컬 네트워크 IP가 들어가야 하고, 스마트폰이 그 인증서를 발급한 CA를 신뢰해야 합니다. 전체 설정은 [qwen serve 가이드](https://qwenlm.github.io/qwen-code-docs/ko/users/qwen-serve)를 보세요.
+
+## 마지막으로
+
+Local Control은 개발 환경을 컴퓨터에 둔 채로, 같은 데몬 세션에 들고 다닐 수 있는 화면 한 장을 더합니다. 서비스를 켜고 QR 코드를 스캔하면, 책상에서 벗어나도 작업을 계속 따라갈 수 있습니다.

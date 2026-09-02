@@ -1,0 +1,98 @@
+---
+title: "코딩 실무: 애매한 아이디어에서 코드 리뷰·단단한 테스트까지"
+date: "2026-07-13"
+description: "실제 코딩 상황 세 가지: 어정쩡한 요구사항을 움직이는 프로토타입으로, AI 리뷰어 9명이 동시에 코드 검토, 단위 테스트 자동 생성과 문제 수정까지. Qwen Code로 개발부터 인도까지 전 과정을 함께합니다."
+author: "Qwen Team"
+tags: ["Tutorial", "Coding"]
+image: https://gw.alicdn.com/imgextra/i3/O1CN01cd6BKs21zFOser3vI_!!6000000007055-2-tps-1344-572.png
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="코딩 실무: 애매한 아이디어에서 코드 리뷰·단단한 테스트까지"
+  date="2026-07-13"
+  author="Qwen Team"
+/>
+
+코딩은 코드만 쓰는 일이 아닙니다. 무엇을 만들지 정리하는 데서부터 코드 품질을 확인하는 데까지, 구석구석 시간이 새어 나갑니다. 아래 세 상황에서 Qwen Code가 처음부터 끝까지 함께합니다 — 요구사항 정리, 코드 리뷰, 테스트 사례 보완까지.
+
+## 애매한 요구사항에서 움직이는 프로토타입으로
+
+머릿속엔 아이디어가 있는데 세부는 아직 안 정해졌나요? 그때는 만들고 싶은 것을 그대로 말해 보세요. Qwen Code는 바로 코드를 쓰러 가지 않고, 먼저 제품 담당자처럼 대화를 시작합니다 — 핵심 기능이 뭔지, 상호작용은 어떻게 할지, 기술적으로는 어떻게 구현할지. 요구사항에 모두가 만족한 뒤에야 도구 전체를 만들어 냅니다. 한 문장에서 바로 실행되는 제품 프로토타입까지, 코드는 한 줄도 직접 쓰지 않습니다.
+
+<video
+  src="https://cloud.video.taobao.com/vod/cW5Zjsai4Lq-TBJIV4LQO0u8xaeNReyALue5L-HtwtQ.mp4"
+  poster="https://img.alicdn.com/imgextra/i4/O1CN01db5Tho1Xeh95OTYfP_!!6000000002949-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+### 사용 방법
+
+1. **요구사항 다듬기** — 아이디어를 Qwen Code에게 말해 주세요. 어설픈 한 문장이어도 괜찮습니다. AI가 먼저 핵심 기능, 상호작용 방식, 기술 구현 등 여러 가지를 질문해서 세부를 채우고, 마지막에 완결된 요구사항 문서로 정리해 줍니다.
+2. **요구사항안 확인** — AI가 초안을 만들어 오면 항목별로 훑어 보며 고칠 것과 추가할 것을 확인합니다. 괜찮으면 다음 단계로 넘어갑니다.
+3. **개발 진행** — 요구사항을 확정했으면 바로 개발을 시작합니다. Qwen Code가 요구사항 문서를 따라 단계별로 도구 전체를 세우고, 이 과정은 자동으로 끝까지 갑니다.
+
+<Callout>
+    **팁**: 요구사항 단계에서 구체적일수록 개발 단계에서 되돌릴 일이 줄어듭니다. AI에게 코드를 맡기기 전에 이야기를 충분히 나눠 주세요.
+</Callout>
+
+## AI 리뷰어 9명이 동시에 코드를 봐 줍니다
+
+코드 작성이 끝나고 커밋하기 전에 `/review`를 한 번 돌려 보세요. 9개 리뷰 Agent가 동시에 보안, 성능, 코드 품질 등 여러 관점을 병렬로 훑고, 문제를 찾으면 그 자리까지 고쳐 줍니다. 동료가 PR을 올렸다면? 명령 한 줄로 리뷰하고, 의견은 GitHub 코드 라인에 자동으로 달립니다. 사람이 남긴 리뷰처럼요.
+
+<video
+  src="https://cloud.video.taobao.com/vod/q8e6oXagz7e6S3nXqzdz9uX9Jc2vU1M5cTQc5KYxnLQ.mp4"
+  poster="https://img.alicdn.com/imgextra/i1/O1CN0125Uqjz1jIVLevSaJR_!!6000000004525-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+### 사용 방법
+
+1. **프로젝트 코드 리뷰** — `/review`를 실행해 프로젝트 코드를 점검합니다. 9개 Agent가 병렬로 스캔하며 하드코딩된 시크릿 키, SQL 인젝션 같은 보안·성능 이슈를 자동으로 잡아 냅니다.
+2. **문제 한 번에 수정** — 자동 수정을 고르면 Qwen Code가 코드를 직접 고치고 linter까지 돌려, 수정 때문에 새 문제가 생기지 않는지 확인합니다.
+3. **PR 리뷰에 댓글 남기기** — `/review <PR number> --comment`로 원격 PR을 리뷰한 뒤 GitHub에서 인라인 코멘트를 확인하세요. 리뷰 의견이 코드 라인에 바로 기록됩니다.
+
+```bash
+/review <PR number> --comment
+```
+
+## 프로젝트에 단위 테스트 더하기
+
+Qwen Code가 프로젝트 규칙을 읽게 한 뒤, 정상 상황·경계값·잘못된 입력을 모두 덮는 단위 테스트를 자동으로 만들고, 실행 검증과 문제 수정, 커버리지 보완까지 이어갑니다.
+
+<video
+  src="https://cloud.video.taobao.com/vod/9BIzzviw4yBmKnq3wxoEQl67NzWLqowLKxn3Q2tpDHo.mp4"
+  poster="https://img.alicdn.com/imgextra/i4/O1CN01wShvFg1X0OIGEkC7y_!!6000000002861-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+### 사용 방법
+
+1. **프로젝트와 테스트 목표 파악** — Qwen Code가 프로젝트 파일을 통독해서 업무 규칙, 핵심 함수, 테스트 목표를 이해하고 우선 덮어야 할 시나리오를 계획합니다.
+2. **테스트 작성 후 실행 검증** — 업무 규칙을 기준으로 핵심 함수의 단위 테스트를 만듭니다. 정상 시나리오, 경계값, 잘못된 입력 — 가령 쿠폰 사용 조건, 무료 배송 기준선, 빈 장바구니, 유효하지 않은 입력 — 을 함께 덮고 자동으로 테스트를 돌립니다.
+3. **문제 수정하며 테스트 통과** — 실패 결과를 보고 문제 원인을 판단합니다. 소스 코드가 업무 규칙과 다르면 Qwen Code가 코드를 고치고 테스트를 다시 돌려 통과할 때까지 갑니다.
+4. **커버리지 보완** — 테스트 커버리지 리포트를 보고 덮이지 않은 파일과 분기를 확인한 뒤, 값어치 있는 테스트 사례를 계속 더해 핵심 로직의 커버리지를 올립니다.
+
+<Callout type="error">
+    **주의**: AI가 만든 테스트 사례는 업무 로직이 맞는지를 본인이 직접 확인해야 합니다. AI는 테스트 작성은 도와줄 수 있어도, 무엇이 옳은지까지 대신 판단하지는 못합니다.
+</Callout>
+
+## 다음 단계
+
+- [과제, 포트폴리오, 오픈소스 기여를 10분 안에](/ko/blog/cases/qwencode-coding-plan-guide-build-website) — Plan 모드로 웹사이트 처음부터 만들기
+- [고급 활용](/ko/blog/advanced) — Model Studio CLI, Skills 등 심화 기능
+- [Showcase 영상 시연](/ko/showcase) — 더 많은 상황별 영상 데모

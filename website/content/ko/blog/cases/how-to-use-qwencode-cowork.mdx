@@ -1,0 +1,277 @@
+---
+title: "AI로 엉망진창인 데스크톱을 정리했습니다 — Qwen Code Cowork 활용 총정리"
+date: "2026-02-04"
+description: "무료 오픈소스 AI 업무 어시스턴트 Qwen Code Cowork로 파일 정리, 이름 일괄 바꾸기, 저장 공간 청소, 일상 작업 자동화를 해 보세요. 상황별 명령어 예시와 실제 시연을 함께 정리했습니다."
+author: "joeytoday"
+tags: ["Tutorials", "user examples", "cowork"]
+image: https://gw.alicdn.com/imgextra/i4/O1CN018jG5xI1bwnGhlqEhi_!!6000000003530-2-tps-1344-572.png
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="AI로 엉망진창인 데스크톱을 정리했습니다 — Qwen Code Cowork 활용 총정리"
+  date="2026-02-04"
+  author="joeytoday"
+/>
+
+<video
+  src="https://cloud.video.taobao.com/vod/yWnCuZwvlYmYhhq-NuQ9AwNpg5b_KUKZNV8AFJTBMzw.mp4"
+  poster="https://img.alicdn.com/imgextra/i4/6000000007569/O1CN01biAMzk25mewsNAHie_!!6000000007569-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+> 파일을 정리하고, 이름을 일괄 바꾸고, 저장 공간을 청소하고, 일상 작업을 돌려주는 무료 오픈소스 AI 업무 어시스턴트.
+
+
+당신 데스크톱도 이런 모습인가요? 👇
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN012IV1BI2AAFoGllSTB_!!6000000008162-0-tps-2878-1640.jpg)
+
+- 스크린샷_20231015, 스크린샷_20231016, 스크린샷_20231017…
+- 새 폴더, 새 폴더 (1), 새 폴더 (2)…
+- WeChat_이미지_20240101, WeChat_이미지_20240102…
+
+파일 하나 찾으려면 쓰레기 더미에서 보물찾기 하는 것 같습니다. 분명 저장하긴 했는데 도무지 안 보여요. 더 억울한 건 몇 달에 한 번씩 뜨는 시스템 알림입니다: **디스크 공간 부족**.
+
+정리해야 하는 건 아는데—
+
+> 파일 정리는 TODO 목록에만 누워 있는, 영원히 실행되지 않는 일입니다.
+
+그러다 **Qwen Code Cowork**를 만났습니다. 말 그대로 일을 해 주는 AI 어시스턴트입니다.
+
+## Qwen Code Cowork가 뭐냐면
+
+짧게 말하면 **무료 오픈소스** 데스크톱 AI 어시스턴트이고, Qwen Code SDK 위에 만들어졌습니다.
+
+그렇다고 채팅창만 붙은 도구는 아닙니다. 실제로 **손을 움직여 일을 해 주는** AI입니다:
+
+| 하는 일 | 설명 |
+|------|------|
+| 📝 코드 작성·수정 | 모든 프로그래밍 언어 지원 |
+| 📁 파일 관리 | 생성, 이동, 이름 바꾸기, 정리 |
+| ⚡ 명령 실행 | 빌드, 테스트, 배포 |
+| 💬 질문에 답하기 | 코드 관련이든 다른 것이든 |
+| 🔧 작업 자동화 | 자연어로 설명할 수 있으면 됩니다 |
+
+가장 중요한 부분은 이겁니다: **완전히 무료, 오픈소스라 통제 가능, 데이터는 로컬 저장**.
+
+비슷한 역할의 Claude Code는 Max 구독자만 쓸 수 있고 월 100~200달러입니다. Qwen Code Cowork는 같은 능력을 비용 없이 씁니다.
+
+## 활용 총정리
+
+아래는 직접 쓰면서 건진 아주 실용적인 상황들입니다. 하나씩 시연도 붙여 뒀습니다.
+
+### 상황 1: 엉망진창인 데스크톱 / 다운로드 폴더 정리
+
+데스크톱과 다운로드 폴더는 그야말로 디지털 쓰레기장입니다. 스크린샷, 문서, 설치 파일, 임시 파일이 한데 뒤섞여 있어서 뭘 찾으려면 한참을 헤매야 하죠. 보기만 해도 짜증나는데 손으로 정리하자니 시간이 아깝습니다.
+
+**Cowork가 해 주는 일**:
+
+그냥 이렇게 말해 보세요. "데스크톱을 파일 종류별로 정리해 줘. 스크린샷은 스크린샷 폴더, 문서는 문서 폴더, 설치 파일은 설치 파일 폴더로"
+
+그러면 이렇게 동작합니다:
+
+1. 먼저 데스크톱을 스캔해서 모든 파일을 목록으로 보여 줍니다
+2. 정리 방안 미리보기를 제시합니다
+3. 당신이 승인하면 분류와 이동을 자동으로 실행합니다
+
+
+<Callout>
+    **요령**:
+    Plan 모드로 AI에게 먼저 계획을 세우게 하고, 방안을 확인한 뒤 실행하게 하면 훨씬 안전하고 통제하기 쉽습니다.
+</Callout>
+
+[화면 녹화 시연 👇]
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/8BI8RK1BDWJecJ2iYgy72OdG_2SWtvvVuf9SQ-gHc_Q.mp4" controls></video>
+
+### 상황 2: 파일 이름 일괄 바꾸기 (사진을 촬영 날짜 기준으로)
+
+휴대폰에서 내보낸 사진 이름은 IMG_0001, IMG_0002… 언제 찍었는지 전혀 알 수 없습니다. "2024-01-15_바다 일몰" 같은 형식으로 바꾸고 싶은데, 몇 백 장을 손으로 고치다 보면 새벽이 됩니다.
+
+**Cowork가 해 주는 일**:
+
+이렇게 말해 보세요. "이 폴더의 사진을 촬영 날짜 기준으로 이름 바꿔 줘. 형식은 YYYY-MM-DD_일련번호"
+
+그러면 이렇게 동작합니다:
+
+1. 사진마다 EXIF 정보(촬영 날짜)를 읽습니다
+2. 지정한 형식으로 새 파일 이름을 만듭니다
+3. 이름 바꾸기 전체 작업을 미리보기로 보여 줍니다
+4. 확인 후 일괄 실행합니다
+
+[화면 녹화 시연 👇]
+
+여기 나오는 파일은 Qwen Code에게 시연용으로 만들어 달라고 한 것이라 확장자가 전부 `txt`입니다. 그래서 이번엔 `.txt` 확장자를 모두 지워 달라고 요청했습니다.
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/SJZg3DxO_ptxQ0K-flOa-vglA6Sc_7Kk1YM1oSDaYus.mp4" controls></video>
+
+파일 종류를 정리했으니 다음엔 요구대로 이름을 바꿔야 합니다. 물론 분류까지 한층 더 요구할 수도 있습니다:
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/P7uh9dSkCvWwVbelZoubF_p7_PnKmSUofZLeaSdT7Ts.mp4" controls></video>
+
+### 상황 3: 저장 공간 점검해서 큰 파일 찾기
+
+디스크 공간이 부족하다는 알림이 또 떴지만, 무엇을 위해 쓰이는지는 모릅니다. 정리하고 싶은데 중요한 파일을 지울까 무섭고, 청소 프로그램은 개인정보가 걱정되죠.
+
+**Cowork가 해 주는 일**:
+
+이렇게 말해 보세요. "저장 공간 사용량을 점검해서 공간을 가장 많이 먹는 폴더·파일 10개를 찾아 줘. 내용도 간단히 설명하고, 지워도 되는지, 지우면 어떤 일이 생기는지도 알려 줘"
+
+그러면 이렇게 동작합니다:
+
+1. 디스크 사용량을 스캔합니다
+2. 공간을 가장 많이 차지하는 파일과 폴더를 목록으로 보여 줍니다
+3. 안전하게 지워도 되는 것(캐시, 임시 파일 등)을 가려 냅니다
+4. 정리 방법을 제안합니다
+
+<Callout type="error">
+    **주의**:
+    파일을 지우기 전에 반드시 확인하세요. 먼저 휴지통으로 옮기고 괜찮은지 살펴본 뒤 완전히 삭제하는 것을 권장합니다.
+</Callout>
+
+[화면 녹화 시연 👇]
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/xoRHR2fuquTLSGfozu3sWyu1_fbB4nQ6163l65tmBtI.mp4" controls></video>
+
+### 상황 4: 메모 통합 및 서식 정리
+
+메모는 여기저기 흩어져 있습니다: WeChat 즐겨찾기, 메모 앱, Notion, Obsidian… 하나로 모으고 싶은데 서식은 제각각입니다. 손으로 복붙하면서 서식까지 맞추자니 일이 너무 커지죠.
+
+**Cowork가 해 주는 일**:
+
+이렇게 말해 보세요. "이 폴더의 docx 파일을 모두 합쳐 하나의 Markdown 파일로 만들어 줘. 생성 시간 순으로 정렬하고 서식은 통일하며, 파일 이름은 두 번째 제목으로 표시해 줘"
+
+그러면 이렇게 동작합니다:
+
+1. 모든 파일 내용을 읽습니다
+2. 서식을 인식해 통일합니다
+3. 지정한 규칙대로 정렬하고 합칩니다
+4. 서식 갖춰진 Markdown 파일을 만들어 줍니다
+
+[화면 녹화 시연 👇]
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/VpuvQ4OvK41SQxV5_aVcrcYnqPWDuuuMGBTqGwVK8bI.mp4" controls></video>
+
+파일을 합치는 것뿐 아니라 나누는 것도 됩니다. 시연은 생략할게요. 직접 한 번 해 보세요~👀
+
+### 상황 5: 문서 일괄 처리 (PDF 내용 추출)
+
+PDF 자료를 잔뜩 받아와서 메모로 정리하고 싶은데, 하나씩 열어 복붙하기엔 너무 느립니다. 스캔본은 복붙해도 글자가 깨져 나오죠.
+
+**Cowork가 해 주는 일**:
+
+이렇게 말해 보세요. "이 폴더의 모든 PDF 내용을 추출해서 파일마다 대응하는 markdown 파일로 저장해 줘"
+
+그러면 이렇게 동작합니다:
+
+1. 폴더 안의 PDF를 전부 훑습니다
+2. 텍스트 내용을 추출합니다
+3. PDF마다 대응하는 txt 파일을 만듭니다
+4. 처리 결과를 보고합니다
+
+[화면 녹화 시연 👇]
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/o9G1m2fuFiWvrv7-0gHU0Vd_ewPkf8yCV7U8Vz8mFK4.mp4" controls></video>`
+
+## 🚀 빠른 시작
+
+
+### Qwen Code로 바로 설치 (권장)
+
+Qwen Code에게 그대로 말하면 3분 안에 끝납니다.
+
+```
+cowork 프로젝트를 설치하고 시작해 줘. 저장소 주소는 https://github.com/QwenLM/qwen-code-examples
+```
+
+👇 설치 영상을 재생해 보세요:
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/tsV-hCkm9vMjGTWsmDr8qcB8LxY_mfwWb7R97SBR2Ps.mp4"  controls></video>
+
+### 소스로 설치 (고급)
+
+소스로 빌드하려면 Bun을 먼저 설치해야 합니다:
+
+```bash
+# Bun 설치
+curl -fsSL https://bun.sh/install | bash
+exec /bin/zsh
+
+# 저장소 클론
+git clone https://github.com/QwenLM/qwen-code-examples
+
+# 디렉터리로 이동해 설치
+cd qwen-code-examples/apps/qwen-cowork
+bun install
+
+# 시작
+bun run dev
+```
+
+## 사용 요령
+
+### 1. Plan 모드를 잘 쓰기
+
+파일 정리처럼 되돌리기 어려운 작업은 AI에게 먼저 계획을 세우게 하는 편이 좋습니다:
+
+```
+"먼저 이 폴더 상황을 분석해서 정리 방안만 보여 줘. 아직 직접 실행하지는 말고"
+```
+
+방안이 맞는다고 확인된 뒤에 실행하게 하세요.
+
+### 2. 작업 디렉터리 지정하기
+
+세션을 만들 때 작업 디렉터리를 지정할 수 있습니다. 그러면 AI는 그 아래에서만 동작하니 더 안전합니다.
+
+### 3. 민감한 작업은 확인 거치기
+
+Cowork는 삭제, 이동 같은 민감한 작업 전에 반드시 확인을 묻습니다. 실수로 지어버릴 걱정은 없어요.
+
+## 더 넓은 활용
+
+위 상황뿐 아니라 Qwen Code Cowork는 이런 일도 합니다:
+
+- 🔄 일상 작업 자동화 (정기 백업, 파일 동기화)
+- 💻 코드 프로젝트 관리 (프로젝트 초기화, 의존성 설치, 테스트 실행)
+- 📊 데이터 처리 (CSV 변환, 데이터 정제, 형식 변환)
+- 📝 문서 생성 (코드에서 문서 만들기, README 작성)
+- 🔍 코드 리뷰 (품질 분석, 잠재 문제 색출)
+
+자연어로 설명할 수 있는 일은 거의 다 시킬 수 있습니다.
+
+## 마치며
+
+솔직히 처음 Cowork로 데스크톱을 정리해 봤을 때는 "드디어 깔끔해졌다"는 쾌감까지 들었습니다.
+
+몇 달째 쌓여 있던 파일을 AI가 몇 분 만에 분류해 정리해 줬어요. "나중에 해야지" 했던 일이 정말 "지금 끝내는 일"이 됐습니다.
+
+같은 고민을 하고 있다면 Qwen Code Cowork를 한 번 써 보세요. 어차피 **AI가 할 수 있는 일을 내가 왜 하나요?**
+
+> 📌 프로젝트 주소: https://github.com/QwenLM/qwen-code-examples
+>
+> 도움이 되었다면 프로젝트에 ⭐️ Star 한 번 눌러 주세요!
+>
+> 질문이나 공유하고 싶은 활용 상황이 있다면 댓글로 남겨 주세요~
+
+
+## 🔗 링크 및 자료
+
+- **GitHub**: [github.com/QwenLM/qwen-code](https://github.com/QwenLM/qwen-code)
+- **공식 문서**: [qwenlm.github.io/qwen-code-docs](https://qwenlm.github.io/qwen-code-docs)
+
+### 함께 만들어 주세요!
+
+Qwen Code는 커뮤니티 개발자의 참여, 그리고 내부 사용자의 피드백 없이 지금 자리에 오지 못했습니다. 현재의 Java SDK, VS Code 확장, Chrome 브라우저 확장 같은 중요한 기능도 내부 동료들과 함께 만들었습니다. Qwen Code에 관심이 있다면 함께 만들어 주세요!
+
+
+---
+
+AI Coding의 새 시대, 터미널 속 Qwen Code부터 시작하세요.
