@@ -117,6 +117,20 @@ qwen -p "Summarize this repository" \
   --append-system-prompt "Return exactly three bullets."
 ```
 
+### Выберите стиль вывода
+
+Используйте `--output-style`, чтобы выбрать один из встроенных стилей вывода для данного запуска. Стиль — это именованный блок инструкций, накладываемый на встроенный промпт, который изменяет способ написания ответа — `Concise` начинается с результата и опускает вступление и повествование, `Proactive` начинает работу вместо предложения, `Explanatory` добавляет короткие заметки о кодовой базе по ходу дела. Он переопределяет настройку `general.outputStyle`; `default` не выбирает никакой стиль.
+
+```bash
+qwen -p "Why does the build fail on Windows?" --output-style Concise
+```
+
+> [!note]
+>
+> - `Learning` просит вас написать часть кода и ждёт ответа, поэтому он пропускается в headless-запусках.
+> - Неизвестное имя стиля выводит предупреждение, и запуск продолжается со стилем по умолчанию.
+> - `--output-style` не действует, когда `--system-prompt` или `QWEN_SYSTEM_MD` заменяет встроенный промпт — стиль накладывается только на встроенный промпт.
+
 > [!note]
 >
 > - `--system-prompt` применяется только к основной сессии текущего запуска.
@@ -243,7 +257,7 @@ qwen -p "Explain Docker" --output-format json > docker-explanation.json
 qwen -p "Add more details" >> docker-explanation.txt
 
 # Pipe to other tools
-qwen -p "What is Kubernetes?" --output-format json | jq '.response'
+qwen -p "What is Kubernetes?" --output-format json | jq -r '.[-1].result'
 qwen -p "Explain microservices" | wc -w
 qwen -p "List programming languages" | grep -i "python"
 
@@ -264,6 +278,7 @@ qwen -p "Write code" --output-format stream-json --include-partial-messages | jq
 | `--include-partial-messages` | Включение частичных сообщений в выводе stream-json                                                                                                                                                                                                                                                                                                                                                                             | `qwen -p "query" --output-format stream-json --include-partial-messages` |
 | `--system-prompt`            | Переопределение системного промпта основной сессии для данного запуска                                                                                                                                                                                                                                                                                                                                                         | `qwen -p "query" --system-prompt "You are a terse reviewer."`            |
 | `--append-system-prompt`     | Добавление дополнительных инструкций к системному промпту основной сессии для данного запуска                                                                                                                                                                                                                                                                                                                                  | `qwen -p "query" --append-system-prompt "Focus on concrete findings."`   |
+| `--output-style`             | Стиль вывода для данного запуска (`Concise`, `Proactive`, `Explanatory`, `Learning` или `default` — без стиля); переопределяет `general.outputStyle`                                                                                                                                                                                                                                                                          | `qwen -p "query" --output-style Concise`                                 |
 | `--debug`, `-d`              | Включение режима отладки                                                                                                                                                                                                                                                                                                                                                                                                       | `qwen -p "query" --debug`                                                |
 | `--safe-mode`                | Отключение всех кастомизаций — файлов контекста, хуков, расширений, навыков, MCP-серверов, пользовательских субагентов (загружаются только встроенные субагенты), правил разрешений, переопределений режима одобрения из настроек, функций памяти и настроек песочницы — для изоляции проблем; флаги CLI `--yolo` и `--approval-mode` по-прежнему действуют. См. [Troubleshooting](../support/troubleshooting). Также можно установить через `QWEN_CODE_SAFE_MODE=true`. | `qwen -p "query" --safe-mode`                                            |
 | `--model`, `-m`              | Модель, используемая для данного запуска                                                                                                                                                                                                                                                                                                                                                                                       | `qwen -p "query" --model qwen3-coder-plus`                               |
@@ -318,14 +333,14 @@ cat src/auth.py | qwen -p "Review this authentication code for security issues" 
 
 ```bash
 result=$(git diff --cached | qwen -p "Write a concise commit message for these changes" --output-format json)
-echo "$result" | jq -r '.response'
+echo "$result" | jq -r '.[-1].result'
 ```
 
 ### Документация API
 
 ```bash
 result=$(cat api/routes.js | qwen -p "Generate OpenAPI spec for these routes" --output-format json)
-echo "$result" | jq -r '.response' > openapi.json
+echo "$result" | jq -r '.[-1].result' > openapi.json
 ```
 
 ### Пакетный анализ кода
@@ -334,7 +349,7 @@ echo "$result" | jq -r '.response' > openapi.json
 for file in src/*.py; do
     echo "Analyzing $file..."
     result=$(cat "$file" | qwen -p "Find potential bugs and suggest improvements" --output-format json)
-    echo "$result" | jq -r '.response' > "reports/$(basename "$file").analysis"
+    echo "$result" | jq -r '.[-1].result' > "reports/$(basename "$file").analysis"
     echo "Completed analysis for $(basename "$file")" >> reports/progress.log
 done
 ```
@@ -343,7 +358,7 @@ done
 
 ```bash
 result=$(git diff origin/main...HEAD | qwen -p "Review these changes for bugs, security issues, and code quality" --output-format json)
-echo "$result" | jq -r '.response' > pr-review.json
+echo "$result" | jq -r '.[-1].result' > pr-review.json
 ```
 
 ### Анализ логов
@@ -356,7 +371,7 @@ grep "ERROR" /var/log/app.log | tail -20 | qwen -p "Analyze these errors and sug
 
 ```bash
 result=$(git log --oneline v1.0.0..HEAD | qwen -p "Generate release notes from these commits" --output-format json)
-response=$(echo "$result" | jq -r '.response')
+response=$(echo "$result" | jq -r '.[-1].result')
 echo "$response"
 echo "$response" >> CHANGELOG.md
 ```
@@ -365,12 +380,12 @@ echo "$response" >> CHANGELOG.md
 
 ```bash
 result=$(qwen -p "Explain this database schema" --include-directories db --output-format json)
-total_tokens=$(echo "$result" | jq -r '.stats.models // {} | to_entries | map(.value.tokens.total) | add // 0')
-models_used=$(echo "$result" | jq -r '.stats.models // {} | keys | join(", ") | if . == "" then "none" else . end')
-tool_calls=$(echo "$result" | jq -r '.stats.tools.totalCalls // 0')
-tools_used=$(echo "$result" | jq -r '.stats.tools.byName // {} | keys | join(", ") | if . == "" then "none" else . end')
+total_tokens=$(echo "$result" | jq -r '.[-1].stats.models // {} | to_entries | map(.value.tokens.total) | add // 0')
+models_used=$(echo "$result" | jq -r '.[-1].stats.models // {} | keys | join(", ") | if . == "" then "none" else . end')
+tool_calls=$(echo "$result" | jq -r '.[-1].stats.tools.totalCalls // 0')
+tools_used=$(echo "$result" | jq -r '.[-1].stats.tools.byName // {} | keys | join(", ") | if . == "" then "none" else . end')
 echo "$(date): $total_tokens tokens, $tool_calls tool calls ($tools_used) used with models: $models_used" >> usage.log
-echo "$result" | jq -r '.response' > schema-docs.md
+echo "$result" | jq -r '.[-1].result' > schema-docs.md
 echo "Recent usage trends:"
 tail -5 usage.log
 ```

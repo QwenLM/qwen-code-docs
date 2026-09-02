@@ -122,7 +122,7 @@ type WebShellSidebarFooterItem =
   | 'settings' // ⚙ Settings panel
   | 'version' // version label (e.g. "v0.19.10")
   | 'theme' // ☀/🌙 light/dark toggle
-  | 'sessionsOverview' // ▦ session overview panel (large screens only)
+  | 'sessionsOverview' // ▦ session overview panel
   | 'splitView' // ◧ split view (large screens only)
   | 'daemonStatus' // 📊 daemon status panel
   | 'collapse'; // ◁/▷ collapse/expand toggle
@@ -230,7 +230,6 @@ type WebShellSidebarSessionActionItem =
 /** Subset with working inline (hover-button) handlers. */
 type WebShellSidebarSessionInlineActionItem =
   | 'pin'
-  | 'archive'
   | 'rename'
   | 'export'
   | 'delete';
@@ -244,7 +243,7 @@ interface WebShellSidebarSessionActionsOptions {
 Controla quais botões de ação aparecem nas linhas de sessão:
 
 - **`items`**: Controle mestre para todas as ações (inline e dropdown). Se um item não está em `items`, ele é oculto em todos os lugares.
-- **`inlineItems`**: Controla quais itens aparecem como **botões inline** (ao passar o mouse). O padrão é `['pin']` — archive permanece no dropdown por padrão porque o slot de hover fica sobre o alvo de clique da linha e é fácil de acionar acidentalmente. Apenas itens com handlers inline funcionais podem ser usados: `'pin'`, `'archive'`, `'rename'`, `'export'`, `'delete'`. `'details'` e `'group'` são apenas dropdown.
+- **`inlineItems`**: Controla quais itens aparecem como **botões inline** (ao passar o mouse). O padrão é `['pin']`. Apenas itens com handlers inline funcionais podem ser usados: `'pin'`, `'rename'`, `'export'`, `'delete'`. `'details'`, `'group'` e `'archive'` são apenas dropdown.
 
 **Prioridade de visibilidade**: Tanto `items` quanto a condição integrada do item quanto `inlineItems` devem ser atendidos para que o botão inline apareça. Por exemplo, `delete` como inline requer que `items` inclua `'delete'` E `inlineItems` inclua `'delete'`.
 
@@ -253,7 +252,7 @@ Controla quais botões de ação aparecem nas linhas de sessão:
 | `undefined` (padrão)                       | Todas as ações exibidas, apenas pin como inline       |
 | `{ inlineItems: ['pin', 'delete'] }`       | Pin + delete como botões inline                       |
 | `{ inlineItems: [] }`                      | Nenhum botão inline                                   |
-| `{ inlineItems: ['archive', 'export'] }`   | Archive + export como botões inline                   |
+| `{ inlineItems: ['rename', 'export'] }`    | Rename + export como botões inline                    |
 
 O trigger do dropdown (⋮) é automaticamente oculto quando nenhum item de
 dropdown está habilitado. Os botões inline só são exibidos quando tanto sua

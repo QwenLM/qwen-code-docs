@@ -59,7 +59,7 @@ Daemon 的故障模式故意设计为封闭联合类型（closed unions），以
 | `BridgeChannelClosedError`               | 503  | ACP 子进程通道在调用过程中关闭。                                                               | 重新连接/重试；检查 `session_died` 了解原因。                                                                                                                           |
 | `BridgeTimeoutError`                     | 504  | 桥接级别的墙钟超时。                                                                           | 重试；调查底层缓慢原因。                                                                                                                                                  |
 | `SessionRestoreTimeoutError`             | 504  | ACP 会话 load/resume 超过了其专用的 restore 预算。                                                                                                                                                                                                                                                  | 在公布的延迟后重试；在提高预算之前检查 restore 阶段 trace。                                                                                         |
-| `BridgeChannelQuarantinedError`          | 503  | 废弃 restore 清理不确定（`restore_cleanup_failed`），或废弃 restore 在截止时间后仍未完成完整预算的结算（`restore_settlement_overdue`）；无论哪种情况，工作区通道都会拒绝新会话直到排空。503 响应体携带 `reason` 和 `retryAfterSeconds`。 | 继续使用现有会话，等待通道回收，然后重试新会话工作。                                                                                                  |
+| `BridgeChannelQuarantinedError`          | 503  | `reason` 为 `restore_cleanup_failed`、`restore_settlement_overdue`、`new_session_cleanup_failed` 或 `new_session_settlement_overdue`。结算超期状态会在延迟失败完成结算或延迟成功完成精确 ID 清理后清除；不确定的清理会转换到对应的清理失败状态。清理失败状态持续到工作区通道排空。503 响应体还携带 `retryAfterSeconds`。 | 继续使用现有会话并在公布的延迟后重试；清理失败状态需要通道回收，而结算超期状态可能在结算及所需清理完成后恢复。      |
 | `MissingCliEntryError`                   | 500  | `qwen` CLI 入口文件缺失（定义在 `status.ts` 中，而非 `bridgeErrors.ts` 中）。                     | 确认 CLI 安装完整；检查 `packages/cli/index.ts` 是否存在。                                                                                                                |
 
 ## 启动时配置错误 (`packages/cli/src/serve/run-qwen-serve.ts`)
@@ -104,7 +104,7 @@ Daemon 的故障模式故意设计为封闭联合类型（closed unions），以
 | 状态 | 主体                                            | 时间                                                                                                                                    |
 | ---- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `401` | `{ error: 'Unauthorized' }`                     | 缺少/错误/无 scheme 的 bearer token。在 `缺少头部` / `错误 scheme` / `错误 token` 情况下统一返回，使探测无法区分。                    |
-| `401` | `{ error: '...', code: 'token_required' }`      | 在无 token 的 loopback daemon 上，突变门控严格路由。SDK 渲染 "configure --token / --require-auth" 提示。                  |
+| `401` | `{ error: '...', code: 'token_required' }`   | 在非受信的无 token 嵌入上的严格路由。受信 loopback 主请求通过。SDK 渲染 token 配置提示。           |
 | `403` | `{ error: 'Request denied by CORS policy' }`    | `allowOriginCors`（运行时）/ `denyBrowserOriginCors`（引导）拒绝了包含 `Origin` 的请求。                                                                             |
 | `403` | `{ error: 'Invalid Host header' }`              | `hostAllowlist` 拒绝了 `Host` 头部（DNS 重绑定防御）。                                                                                   |
 
@@ -138,8 +138,8 @@ flowchart LR
 ```mermaid
 flowchart TD
     A["收到 401"] --> B{"body.code == 'token_required'?"}
-    B -->|是| C["mutation-gate 严格模式 — 引导用户使用 --token / --require-auth"]
-    B -->|否| D["普通未授权 — 显示通用 '检查 token' UI"]
+    B -->|是| C["严格闸门拒绝了此部署 — 引导用户配置 bearer 认证"]
+    B -->|否| D["普通未授权 — 通用的 '检查 token' UI"]
 ```
 
 ## 依赖项

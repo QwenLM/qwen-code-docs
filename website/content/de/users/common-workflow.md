@@ -376,7 +376,7 @@ Navigieren Sie mit den Pfeiltasten und drücken Sie die Eingabetaste, um eine Un
 > **So funktioniert es**:
 >
 > 1. **Speicherung der Unterhaltung**: Alle Unterhaltungen werden automatisch lokal mit ihrem vollständigen Nachrichtenverlauf gespeichert
-> 2. **Nachrichtendeserialisierung**: Beim Fortsetzen wird der gesamte Nachrichtenverlauf wiederhergestellt, um den Kontext zu erhalten
+> 2. **Nachrichten-Deserialisierung**: Beim Fortsetzen wird der gesamte Nachrichtenverlauf wiederhergestellt, um den Kontext zu erhalten
 > 3. **Tool-Zustand**: Die Tool-Nutzung und -Ergebnisse der vorherigen Unterhaltung bleiben erhalten
 > 4. **Kontextwiederherstellung**: Die Unterhaltung wird mit dem gesamten vorherigen Kontext fortgesetzt
 >
@@ -484,7 +484,7 @@ Angenommen, Sie möchten Qwen Code als Linter oder Code-Reviewer verwenden.
 
 Angenommen, Sie möchten Daten in Qwen Code einlesen und strukturierte Daten zurückerhalten.
 
-**Daten durch Qwen Code pingen:**
+**Daten durch Qwen Code leiten:**
 
 ```bash
 cat build-error.txt | qwen -p 'concisely explain the root cause of this build error' > output.txt
@@ -569,3 +569,35 @@ what are the limitations of Qwen Code?
 > - Qwen Code hat immer Zugriff auf die neueste Qwen Code-Dokumentation, unabhängig von der von Ihnen verwendeten Version
 > - Stellen Sie spezifische Fragen, um detaillierte Antworten zu erhalten
 > - Qwen Code kann komplexe Funktionen wie MCP-Integration, Enterprise-Konfigurationen und erweiterte Workflows erklären
+
+## Evidenzbasierte Schlussfolgerungen durchsetzen
+
+Wenn Qwen Code kritische Aufgaben erledigt – Code-Reviews, Incident-Troubleshooting, Audits oder Untersuchungen von Produktionsdaten – kostet eine selbstsichere, aber falsche Schlussfolgerung mehr als gar keine Schlussfolgerung. Sie können die Verifizierungsrichtlinie Ihres Teams in QWEN.md kodieren (siehe [Memory](./features/memory.md)), sodass sie für jede Session gilt, ohne die Standardwerte jemandes zu ändern.
+
+Die folgenden Regeln stammen aus einem Production-Retrospektive eines Multi-Agenten-Deployments, bei dem selbstsichere, aber falsche Schlussfolgerungen wiederholt auf dieselben Fehlermodi zurückführbar waren: Zustand aus Code ableiten statt ihn abzufragen, eine erfüllte Bedingung als Beweis behandeln und frühere Aussagen als Fakten wiederholen.
+
+**1. Fügen Sie eine Verifizierungsrichtlinie zur QWEN.md Ihres Projekts hinzu**
+
+Platzieren Sie diese Vorlage in `QWEN.md` im Repository-Stammverzeichnis und committen Sie sie, damit die Richtlinie für das gesamte Team gilt:
+
+```markdown
+# Verifizierungsrichtlinie
+
+Betrachte diese Regeln als obligatorisch bei Untersuchungen, Troubleshooting, Reviews und jeder Aufgabe, die Schlussfolgerungen zieht:
+
+1. Verifiziere vor dem Schlussfolgern. Untermauere Behauptungen über Daten oder Systemzustand mit Beweisen aus der autoritativen Quelle (Datenbank, API, Logs, Befehlsausgabe). Schlussfolgerungen, die nur aus dem Lesen von Code gezogen werden, müssen als „unverified inference" gekennzeichnet werden.
+2. Verifiziere die gesamte Kette. Zähle die Kausalkette auf und prüfe jedes Glied; eine erfüllte notwendige Bedingung beweist keine Schlussfolgerung.
+3. Behandle Unterhaltungsverlauf als Hinweise, nicht als Fakten. Aussagen in früheren Transkripten – einschließlich deiner eigenen früheren Behauptungen – sind Hinweise. Verifiziere sie erneut an der Quelle, bevor du sie als Fakten wiederholst.
+4. Troubleshooting in Reihenfolge: deine eigenen kürzlichen Änderungen zuerst, dann Docs und bekannte Issues, und erst dann externe Abhängigkeiten.
+5. 100%-Beweisregel in Reviews. Berichte in Review- und Audit-Aufgaben keine Schlussfolgerung ohne Beweis; füge jeder Behauptung überprüfbare Beweise bei (Datei:Zeile, Query-Ergebnis, Log-Auszug).
+```
+
+**2. Wählen Sie den richtigen Geltungsbereich**
+
+Siehe [Where to create QWEN.md](./features/memory.md#where-to-create-qwenmd), welche Datei für wen gilt – committen Sie die Kopie im Projekt-Stammverzeichnis `QWEN.md`, damit die Richtlinie das gesamte Team abdeckt.
+
+> [!tip]
+>
+> - Halten Sie die Regeln spezifisch und umsetzbar: „jede Behauptung mit einem Query-Ergebnis untermauern" funktioniert besser als „vorsichtig sein".
+> - Halten Sie die Richtlinie kurz – QWEN.md wird zuverlässiger befolgt, wenn sie kompakt ist (siehe [Memory](./features/memory.md)).
+> - Passen Sie die Regeln an Ihren Stack an: nennen Sie die tatsächlichen Query-Tools, Dashboards oder Log-Befehle, die Ihr Team als autoritative Quellen behandelt.

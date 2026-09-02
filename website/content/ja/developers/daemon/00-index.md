@@ -37,10 +37,10 @@
 - [`02-serve-runtime.md`](./02-serve-runtime.md) - `runQwenServe` ブートストラップ、Express アプリ、ミドルウェアチェーン、グレースフルシャットダウン。
 - [`03-acp-bridge.md`](./03-acp-bridge.md) - `@qwen-code/acp-bridge` パッケージの内部構造、セッション多重化、チャネルファクトリ、ACP チャイルドの生成。
 - [`04-permission-mediation.md`](./04-permission-mediation.md) - `MultiClientPermissionMediator`、4つのポリシー、N1 タイムアウト不変条件、キャンセルセンチネル。
-- [`05-mcp-transport-pool.md`](./05-mcp-transport-pool.md) - `McpTransportPool` (F2)、プールエントリ、リバースインデックス、再起動、ドレイン。
+- [`05-mcp-transport-pool.md`](./05-mcp-transport-pool.md) - `McpTransportPool` (F2)、プールエントリ、リバースインデックス、再起動、drain。
 - [`06-mcp-budget-guardrails.md`](./06-mcp-budget-guardrails.md) - `WorkspaceMcpBudget`、モード (`off`/`warn`/`enforce`)、ヒステリシス、拒否バッチの統合。
 - [`07-workspace-filesystem.md`](./07-workspace-filesystem.md) - `WorkspaceFileSystem` サンドボックス、パスポリシー、監査、`BridgeFileSystem` 契約。
-- [`08-session-lifecycle.md`](./08-session-lifecycle.md) - 作成 / アタッチ / ロード / 再開、`X-Qwen-Client-Id`、ハートビート、エビクション、メタデータ。
+- [`08-session-lifecycle.md`](./08-session-lifecycle.md) - 作成 / アタッチ / ロード / 再開、`X-Qwen-Client-Id`、heartbeat、エビクション、メタデータ。
 - [`09-event-schema.md`](./09-event-schema.md) - 型付き event schema v1: ペイロード、リデューサー、前方互換性を持つ既知の53種類のイベントタイプ。
 - [`10-event-bus.md`](./10-event-bus.md) - `EventBus`、単調増加 ID、リングリプレイ、`Last-Event-ID`、低速クライアントのバックプレッシャー、`client_evicted`。
 - [`11-capabilities-versioning.md`](./11-capabilities-versioning.md) - ケイパビリティレジストリ、プロトコルバージョン、スキーマバージョン、条件付きアドバタイズメント。
@@ -63,7 +63,7 @@
 ## 用語集
 
 - **ACP** - Agent Client Protocol。daemon ブリッジと ACP チャイルドプロセスの間で stdio 経由で通信する JSON-RPC。クライアントが daemon に対して使用する HTTP プロトコルではありません。
-- **ACP child** - 1 つのワークスペースのエージェントランタイムをホストする `qwen --acp` 子プロセス。本番環境ではプライマリブリッジのプリヒートと、障害発生時の初回使用時のリトライを試みます。信頼されたセカンダリはオンデマンドで子プロセスを開始しますが、信頼されていないセカンダリは開始しません。所有ブリッジはセッションとクライアントをその子プロセスに多重化します。
+- **ACP child** - 1 つのワークスペースのエージェントランタイムをホストする `qwen --acp` 子プロセス。本番環境では互換性のために信頼されたプライマリチャイルドのプリヒートを試みます。信頼されたセカンダリは最初のランタイムコマンドまたは Session で開始し、信頼されていないセカンダリは ACP を開始しません。レガシーのプライマリルートは既存の互換性動作を維持します。所有ブリッジはセッションとクライアントをそのチャイルドに多重化します。
 - **acp-bridge** - `@qwen-code/acp-bridge` パッケージ (`packages/acp-bridge/`)。セッション多重化、権限調停、イベントバス、チャネルファクトリを所有します。
 - **BridgeClient** - `packages/acp-bridge/src/bridgeClient.ts`。1つの ACP `ClientSideConnection` をラップし、`requestPermission`、`sendPrompt`、`cancelSession` を処理します。
 - **Channel factory** - ACP チャイルドの生成またはアタッチのためのプラグ可能な戦略。デフォルトの `spawnChannel` は `qwen --acp` をサブプロセスとして実行し、`inMemoryChannel` はテスト用にプロセス内で実行します。
@@ -75,7 +75,7 @@
 - **McpTransportPool** - `packages/core/src/tools/mcp-transport-pool.ts`。F2 ワークスペーススコープのプールで、サーバー名と設定フィンガープリントごとに1つの MCP transport を共有します。
 - **Mediator policy** - `first-responder`、`designated`、`consensus`、または `local-only` のいずれか。マルチクライアントの権限投票がどのように解決されるかを決定します。
 - **Originator client id** - 現在権限を要求しているプロンプトを開始したクライアントの `X-Qwen-Client-Id`。`designated` ポリシーは、この ID からの投票のみを受け入れます。
-- **PoolEntry** - `packages/core/src/tools/mcp-pool-entry.ts`。`McpTransportPool` 内の1つのエントリ: 1つの MCP transport、アタッチされたセッションの参照カウント、およびアイドルドレインタイマー。
+- **PoolEntry** - `packages/core/src/tools/mcp-pool-entry.ts`。`McpTransportPool` 内の1つのエントリ: 1つの MCP transport、アタッチされたセッションの参照カウント、およびアイドル drain タイマー。
 - **Session scope** - `single` (すべてのクライアントで共有される1つの ACP セッション) または `thread` (会話スレッドごとに1つのセッション)。デフォルトは `single` です。
 - **SSE** - Server-Sent Events。daemon の送信イベントチャネル (`GET /session/:id/events`)。
 - **Workspace** - デーモン起動時に登録されたディレクトリ、登録ストアから復元されたディレクトリ、または動的に追加されたディレクトリ。`workspaceCwd` はレガシーなプライマリのデフォルトです。`workspaces[]` は分離されたランタイムとその信頼/削除メタデータのカタログです。
@@ -114,8 +114,8 @@
 | 領域                      | 現在の状態                                                                                                                                                                    | 主要ドキュメント                                                              |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | ブートストラップ / リッスンパス   | `qwen serve` は `runQwenServe` を遅延ロードし、認証/ワークスペース/予算/設定を検証し、Express アプリを構築してから、`app.listen` を呼び出し、シグナルがあるまで永久にブロックします。                | [`02`](./02-serve-runtime.md), [`20`](./20-quickstart-operations.md)      |
-| 認証 / ネットワークガードレール | ループバックはデフォルトで Bearer なしです。ループバック以外では Bearer が必要です。`--require-auth` は Bearer をループバックと `/health` に拡張します。ホスト許可リストとデフォルトの CORS 拒否が有効です。        | [`12`](./12-auth-security.md), [`17`](./17-configuration.md)              |
-| セッションライフサイクル         | `POST /session`、`load`、`resume`、メタデータパッチ、ハートビート、エビクション、アイドルリーピング、プロンプトの保留制限、およびグレースフルクローズについてドキュメント化されています。                                  | [`08`](./08-session-lifecycle.md), [`10`](./10-event-bus.md)              |
+| 認証 / ネットワークガードレール | トークンなしのループバックはプライマリリスナーにローカルオペレーターの権限を付与します。ループバック以外では Bearer が必要です。`--require-auth` は Bearer をループバックと `/health` に拡張します。ホスト許可リストとデフォルトの CORS 拒否が有効です。        | [`12`](./12-auth-security.md), [`17`](./17-configuration.md)              |
+| セッションライフサイクル         | `POST /session`、`load`、`resume`、メタデータパッチ、heartbeat、エビクション、アイドルリーピング、プロンプトの保留制限、およびグレースフルクローズについてドキュメント化されています。                                  | [`08`](./08-session-lifecycle.md), [`10`](./10-event-bus.md)              |
 | ACP ブリッジ                | デフォルトで単一の ACP チャイルドが多重化されます。`sessionScope` は `single` と `thread` をサポートします。`BridgeFileSystem`、コンテキストファイル名、環境変数のオーバーライド、およびチャネルのアイドルタイムアウトが配線されています。 | [`03`](./03-acp-bridge.md), [`07`](./07-workspace-filesystem.md)          |
 | MCP pool / budget         | `QWEN_SERVE_NO_MCP_POOL=1` でない限り、ワークスペース MCP pool はデフォルトでオンです。ガードレールイベントと再起動セマンティクスについてドキュメント化されています。                                                    | [`05`](./05-mcp-transport-pool.md), [`06`](./06-mcp-budget-guardrails.md) |
 | 権限               | F3 調停者は `first-responder`、`designated`、`consensus`、および `local-only` をサポートします。無効な設定は明示的に失敗します。                                                           | [`04`](./04-permission-mediation.md), [`12`](./12-auth-security.md)       |
@@ -126,9 +126,10 @@
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | HTTP ルート   | ルートカタログは `qwen-serve-protocol.md` にあります。この daemon セットはそれを参照し、実装の所有権を説明するのみです。                                                                          | [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md), [`20`](./20-quickstart-operations.md)               |
 | イベントスキーマ  | `EVENT_SCHEMA_VERSION = 1`。既知の53種類のイベントタイプ。ID なしサブスクライバーの合成フレーム。`_meta.serverTimestamp` は `EventBus.publish()` によってタイムスタンプが押されます (合成フレームの場合は `formatSseFrame()` がフォールバックとして使用されます)。 | [`09`](./09-event-schema.md), [`10`](./10-event-bus.md)                                                       |
-| ケイパビリティ  | `SERVE_PROTOCOL_VERSION = 'v1'`。75個の登録済みタグ。13個の条件付きタグ。                                                                                                                               | [`11`](./11-capabilities-versioning.md)                                                                       |
-| セッションシェル | `POST /session/:id/shell` は `--enable-session-shell`、Bearer 認証、およびセッションにバインドされた `X-Qwen-Client-Id` の背後に存在します。ケイパビリティタグは条件付きです。                                                     | [`11`](./11-capabilities-versioning.md), [`17`](./17-configuration.md), [`20`](./20-quickstart-operations.md) |
+| ケイパビリティ  | `SERVE_PROTOCOL_VERSION = 'v1'`。149個の登録済みタグ。43個の条件付きタグ。                                                                                                                               | [`11`](./11-capabilities-versioning.md)                                                                       |
+| セッションシェル | `POST /session/:id/shell` は `--enable-session-shell`、Bearer または信頼されたループバックの権限、およびセッションにバインドされた `X-Qwen-Client-Id` の背後に存在します。ケイパビリティタグは条件付きです。                                                     | [`11`](./11-capabilities-versioning.md), [`17`](./17-configuration.md), [`20`](./20-quickstart-operations.md) |
 | レート制限 | オプションのティアごとの HTTP レート制限は、CLI フラグ/環境変数および条件付きケイパビリティタグによって公開されます。                                                                                                           | [`11`](./11-capabilities-versioning.md), [`17`](./17-configuration.md)                                        |
+
 ### クライアント / SDK
 
 | 領域                         | 現在の状態                                                                                                                                                | 主要ドキュメント                                                                                                                                  |

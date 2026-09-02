@@ -62,6 +62,7 @@ Os canais são configurados sob a chave `channels` no `settings.json`. Cada cana
 | `senderPolicy`           | Não              | Quem pode falar com o bot: `allowlist` (padrão), `open` ou `pairing`                                                                                                   |
 | `allowedUsers`           | Não              | Lista de IDs de usuários autorizados a usar o bot (usado pelas políticas `allowlist` e `pairing`)                                                                                   |
 | `sessionScope`           | Não              | Como as sessões são delimitadas: `user` (padrão), `chat_thread` ou `single`. O `thread` legado permanece compatível quando já configurado, mas não é oferecido para novas configurações do Web Shell |
+| `multiSession`           | Não              | Retém até oito tarefas nomeadas com escopo do proprietário em um chat. Requer modo gerenciado pelo daemon, `sessionScope: "user"`, sem webhooks ou preenchimento retroativo de histórico de grupo, e sem Channel loops ativos |
 | `cwd`                    | Não              | Diretório de trabalho para o agente. O padrão é o diretório atual                                                                                                     |
 | `approvalMode`           | Não              | Modo de aprovação de ferramentas para sessões de canal. Tarefas não supervisionadas via webhook exigem `yolo`; a configuração se aplica a todas as sessões do canal                                  |
 | `instructions`           | Não              | Instruções personalizadas adicionadas no início da primeira mensagem de cada sessão                                                                                                     |
@@ -110,7 +111,9 @@ Canais gerenciados pelo daemon podem reter várias conversas nomeadas para o mes
 
 O catálogo é privado para o canal, chat e remetente exatos. Os nomes das tarefas usam 1–32 letras ASCII, números, underscores ou hifens, e são únicos sem distinção entre maiúsculas e minúsculas. Até oito tarefas podem estar abertas; fechar uma tarefa a desanexa sem excluir sua transcrição, então selecioná-la posteriormente reabre a conversa exata. IDs de sessão nunca são aceitos nem mostrados em comandos de chat.
 
-A Parte 2 usa uma tarefa selecionada por vez e um diretório de trabalho compartilhado. Criar uma tarefa ou mudar da tarefa selecionada é rejeitado enquanto essa tarefa ainda estiver em execução ou aguardando permissão, e uma tarefa ocupada não pode ser fechada. Troca concorrente de tarefas em execução, cancelamento nomeado e rótulos de tarefas estão planejados para a Parte 3; worktrees por tarefa estão planejados para a Parte 4. A memória do canal permanece com escopo do chat, não de uma tarefa nomeada.
+Resultados nomeados identificam sua tarefa de origem: chats diretos usam `[task]`, enquanto chats em grupo usam `[sender · task]`. Prompts de permissão de texto nomeados também mostram o ID exato da requisição e os comandos correspondentes `/approve <id>`, `/approve-always <id>` e `/deny <id>`. O rótulo é apenas de apresentação e não é armazenado na transcrição do modelo.
+
+Uma tarefa permanece selecionada para receber a próxima mensagem normal, mas outras tarefas nomeadas podem continuar executando concorrentemente no diretório de trabalho compartilhado. Criar ou selecionar outra tarefa não cancela nem redireciona o trabalho anterior, e resultados tardios mantêm o rótulo da tarefa de origem. Uma tarefa ocupada não pode ser fechada, mas seu prompt ativo pode ser cancelado com `/session cancel [<name>]` por meio do comportamento existente de cancelamento do Canal. Turnos enfileirados de forma independente não são cancelados, mas no modo de despacho `collect`, quaisquer follow-ups em buffer atrás do prompt cancelado são descartados pelo comportamento existente. A preparação de mídia não é direcionada. Comandos de permissão simples aplicam-se apenas à tarefa selecionada, enquanto um ID de requisição explícito pode responder a uma tarefa inativa pertencente ao usuário. Worktrees por tarefa estão planejados para a Parte 4. A memória do canal permanece com escopo do chat, não de uma tarefa nomeada.
 
 Este modo não está disponível no `qwen channel start` standalone, com webhooks, com `groupHistoryLimit` diferente de zero no canal ou no grupo, ou com loops de Canal. Se um loop ativo já existir para esse canal, o worker do daemon se recusa a iniciar até que o loop seja desativado.
 
@@ -427,7 +430,7 @@ Os canais suportam comandos slash. Eles são tratados localmente (sem ida e volt
 - `/session new <name>` — Cria e seleciona uma tarefa com workspace compartilhado
 - `/session new <name> --worktree` — Reconhecido, mas adiado para a Parte 4
 - `/session use <name>` — Seleciona uma tarefa aberta ou reabre uma tarefa fechada
-- `/session cancel [<name>]` — Reconhecido, mas adiado para a Parte 3. Aguarde a tarefa selecionada terminar antes de trocar; usuários do Telegram podem usar `/cancel` para a tarefa selecionada
+- `/session cancel [<name>]` — Cancela o prompt ativo da tarefa selecionada, ou nomeia outra tarefa pertencente ao usuário; turnos enfileirados de forma independente não são cancelados, mas follow-ups em modo `collect` em buffer atrás do prompt cancelado são descartados pelo comportamento existente de cancelamento; a preparação de mídia não é direcionada
 - `/session close <name>` — Fecha uma tarefa sem excluir sua transcrição
 - `/loop add "<cron>" <prompt>` — Cria um loop de canal agendado persistente
 - `/loop list` — Lista os loops do chat atual
@@ -461,17 +464,17 @@ O bot é executado em primeiro plano. Pressione `Ctrl+C` para parar ou use `qwen
 Você também pode executar canais configurados sob o `qwen serve`:
 
 ```bash
-# Start one channel under the daemon lifecycle
+# Inicia um canal sob o ciclo de vida do daemon
 qwen serve --channel my-channel
 
-# Start all configured channels
+# Inicia todos os canais configurados
 qwen serve --channel all
 
-# Or enable channels later on a token-protected daemon
+# Ou habilite canais posteriormente em um daemon protegido por token
 QWEN_SERVER_TOKEN=secret qwen serve
 qwen channel set my-channel --token secret
 
-# Query or stop the daemon-managed selection
+# Consulta ou para a seleção gerenciada pelo daemon
 qwen channel status --daemon-url http://127.0.0.1:4170 --token secret
 qwen channel stop --daemon-url http://127.0.0.1:4170 --token secret
 ```

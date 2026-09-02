@@ -213,8 +213,7 @@ Le Mode Auto vous protège contre les blocages :
 - Si l'API du classificateur est inaccessible, expire (timeout), dépasse sa fenêtre de contexte
   ou renvoie une réponse invalide, l'action en cours bascule immédiatement vers
   l'approbation manuelle. La confirmation recommande le mode par défaut (Default Mode) et propose
-  **Passer en mode par défaut et autoriser une fois** (`Switch to Default Mode and allow once`)
-  en plus de Autoriser une fois (`Allow once`) et Rejeter (`Reject`).
+  **Passer en mode par défaut et autoriser une fois** à côté de Autoriser une fois et Rejeter.
   Le changement affecte uniquement la session d'exécution en cours ; il ne modifie pas
   vos paramètres sauvegardés.
 
@@ -274,15 +273,21 @@ renforcée au fil du temps.
 - **Pas un substitut aux règles `deny`.** Le classificateur fait au mieux.
   Pour les commandes dont vous êtes sûr qu'elles ne doivent jamais s'exécuter, mettez-les dans
   `permissions.deny`.
-- **Les outils MCP sont bloqués de manière conservatrice par défaut.** Les outils MCP tiers
-  (`mcp__*`) optent pour le transfert d'arguments via le
-  override `toAutoClassifierInput`. Les outils qui n'ont pas opté pour cela n'exposent
-  que leur nom au classificateur — la plupart de ces appels sont
-  bloqués de manière conservatrice sauf si vous avez écrit une règle `allow`
-  explicite. C'est fail-closed par conception (les identifiants et le contenu
-  volumineux ne fuient pas dans le LLM du classificateur). Si vous faites confiance à un
-  outil MCP spécifique, ajoutez `permissions.allow: ["mcp__server__tool"]` pour
-  qu'il contourne entièrement le classificateur.
+- **Les outils MCP sont jugés sur leurs arguments, pas sur le comportement vérifié.**
+  Les outils MCP tiers (`mcp__*`) ne sont jamais dans la liste blanche du chemin rapide ;
+  chaque appel provenant d'un serveur non marqué `trust: true` est envoyé au
+  classificateur avec le nom du serveur, le nom de l'outil, les
+  annotations auto-déclarées du serveur (`readOnlyHint` / `destructiveHint` /
+  `idempotentHint` / `openWorldHint`) et une copie bornée des
+  arguments. Le classificateur est informé que les annotations ne sont pas vérifiées. Il
+  ne peut pas voir ce que le serveur fait réellement de l'appel, donc un
+  nom d'outil trompeur associé à des arguments bénins peut quand même passer. Si vous
+  faites confiance à un outil MCP spécifique, ajoutez
+  `permissions.allow: ["mcp__server__tool"]` pour qu'il contourne entièrement le
+  classificateur ; si vous voulez que le classificateur ne voie que le nom de l'outil
+  (par exemple lorsqu'il s'exécute contre un fournisseur différent de celui du
+  modèle principal), définissez `permissions.autoMode.mcp.forwardArguments: false`
+  — la plupart des appels MCP seront alors bloqués de manière conservatrice.
 
 ## FAQ
 
@@ -299,27 +304,38 @@ expose :
 
 - `read_file` et autres outils en lecture seule : non invoqués (ils sont sur la
   liste blanche du chemin rapide).
-- `edit` / `write_file` : file_path plus les 80 premiers caractères de
-  l'ancien/nouveau contenu. Le contenu complet n'est pas transféré.
+- `edit` / `write_file` : file_path plus un aperçu de 300 caractères du
+  contenu ancien/nouveau. Le contenu complet n'est pas transféré.
 - `run_shell_command` : la commande complète (c'est nécessaire — c'est ce que le
   classificateur juge).
 - `web_fetch` : l'URL uniquement. Le champ prompt n'est pas transféré.
 - `agent` : type de sous-agent plus le prompt complet. Le prompt est
   l'instruction que le sous-agent suivra, donc le classificateur en a besoin
   en entier pour détecter les attaques qui orienteraient le sous-agent vers
-  des actions destructrices — même raison pour laquelle `run_shell_command` transfère la
+  des actions destructrices — même raison que pour `run_shell_command` qui transfère la
   commande complète.
 
 Les résultats des outils (le contenu réel renvoyé par les outils) sont retirés de
 la transcription du classificateur entièrement.
 
-Les outils MCP (`mcp__*`) suivent une valeur par défaut plus stricte : leurs paramètres ne sont
-pas transférés sauf si l'auteur de l'outil MCP a explicitement opté pour cela via le
-override `toAutoClassifierInput`. Le classificateur voit le nom de l'outil
-mais aucun argument, donc la plupart des appels MCP seront bloqués de manière conservatrice
-sauf si l'utilisateur a écrit une règle d'autorisation explicite. C'est fail-closed
-par conception — les outils tiers ne doivent pas faire fuiter des identifiants ou
-du contenu de fichiers volumineux dans le LLM du classificateur sans intention.
+Les outils MCP (`mcp__*`) : le nom du serveur, le nom de l'outil, les
+annotations du serveur et les arguments de l'appel sont transférés. Chaque chaîne (valeur
+ou clé) est coupée à 2 000 caractères, les noms à 200, l'ensemble du payload
+partage un budget de 16 000 caractères mesuré sur la forme formatée
+reçue par le classificateur, et les imbrications / nombres d'entrées sont plafonnés ; chaque
+coupure est marquée sur place (`…[truncated N chars]` ou `[omitted: …]`) et
+signalée par `arguments_truncated: true` / `name_truncated: true` afin que
+le classificateur ne confonde jamais une omission avec une absence. Les actions
+historiques dans la transcription sont limitées à 4 000 caractères chacune et
+40 000 au total (les plus récentes conservées en premier ; les plus anciennes ne gardent que leur nom
+d'outil). Les arguments sont ce que l'agent est sur le point
+d'envoyer à ce serveur — les règles d'exfiltration de données et
+d'écriture externe du classificateur ne peuvent leur être appliquées, et ils ont
+déjà été produits par le modèle principal, donc les transférer à un classificateur
+sur la même configuration de modèle ne divulgue rien de nouveau. Si votre
+classificateur s'exécute contre un fournisseur différent, définissez
+`permissions.autoMode.mcp.forwardArguments: false` pour restaurer la
+projection par nom uniquement (attendez-vous à ce que la plupart des appels MCP soient bloqués).
 
 **Puis-je désactiver le message d'information de la première fois ?**
 

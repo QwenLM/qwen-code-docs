@@ -13,7 +13,7 @@ qwen serve --port 4170 \
 # → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/project-a)
 ```
 
-每个 `--workspace` 值必须是绝对目录路径。第一个启动工作区是主工作区，对于省略 `cwd` 的请求，它仍然是兼容性默认值；`/capabilities.workspaces[]` 是客户端在显式选择任何运行时应使用的目录。
+每个 `--workspace` 值必须是绝对目录路径。第一个启动工作区是主工作区，对于省略 `cwd` 的请求，它仍然是兼容性默认值；`/capabilities.workspaces[]` 是客户端在显式选择任何运行时应使用的目录清单。
 
 在另一个终端中：
 
@@ -129,7 +129,7 @@ const updated = await selected.editWorkspaceFile({
 console.log(updated.hash);
 ```
 
-`expectedHash` 是原始磁盘字节的 SHA-256 哈希。`mode: "replace"` 和 `editWorkspaceFile()` 需要它，以防止过时的客户端覆盖它们刚刚未读取的文件。即使是在回环地址上，写/编辑操作也需要 Bearer token 配置；在使用它们之前，请使用 `--token` 或 `QWEN_SERVER_TOKEN` 启动守护进程。
+`expectedHash` 是原始磁盘字节的 SHA-256 哈希。`mode: "replace"` 和 `editWorkspaceFile()` 需要它，以防止过时的客户端覆盖它们未刚刚读取过的文件。写/编辑操作接受无令牌的可信本地回环主监听器；非可信部署需要 bearer 或配对凭证。
 
 ## 使用 `Last-Event-ID` 重连
 
@@ -220,7 +220,7 @@ try {
 
 不匹配后不要对主工作区重试。请刷新 `/capabilities`，从 `workspaces[]` 中选择目标条目，或通过 `POST /workspaces` 注册符合条件的动态工作区。仅当身份验证、速率限制或进程故障边界也必须独立时，才使用单独的守护进程。
 
-## 身份认证
+## 身份验证
 
 当守护进程启动时使用了 token（任何非回环绑定都需要一个 token）：
 

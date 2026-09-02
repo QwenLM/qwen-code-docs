@@ -1,4 +1,4 @@
-# エラータイポロジと修復策
+# エラー分類と修復策
 
 ## 概要
 
@@ -59,7 +59,7 @@
 | `BridgeChannelClosedError`           | 503  | 呼び出し中に ACP 子プロセスのチャネルが閉じた。                                           | 再接続 / 再試行。原因は `session_died` を確認する。                                                                                                                               |
 | `BridgeTimeoutError`                  | 504  | ブリッジレベルのウォールクロックを超過。                                                   | 再試行。根本的な遅延を調査する。                                                                                                                                                  |
 | `SessionRestoreTimeoutError`          | 504  | ACP セッションのロード/再開が専用の restore 予算を超過した。                                                                                                                                                           | アナウンスされた遅延の後に再試行。予算を引き上げる前に restore ステージのトレースを調査する。                                                                                        |
-| `BridgeChannelQuarantinedError`       | 503  | 放棄された restore のクリーンアップが結論が出なかった（`restore_cleanup_failed`）、または放棄された restore がデッドライン後に完全な予算 settling を完了していない（`restore_settlement_overdue`）。どちらの場合もワークスペースチャネルは drain するまで新しいセッションを拒否します。503 ボディは `reason` と `retryAfterSeconds` を保持します。 | 既存のセッションを引き続き使用し、チャネルがリサイクルされるのを待ってから、新しいセッションの作業を再試行します。                                                                    |
+| `BridgeChannelQuarantinedError`       | 503  | `reason` は `restore_cleanup_failed`、`restore_settlement_overdue`、`new_session_cleanup_failed`、または `new_session_settlement_overdue`。settlement-overdue 状態は、遅い失敗が確定するか、遅い成功が exact-ID クリーンアップを完了した後にクリアされる。結論の出ないクリーンアップは、対応する cleanup-failed 状態へ遷移する。cleanup-failed 状態はワークスペースチャネルが drain するまで続く。503 ボディは `retryAfterSeconds` も保持する。 | 既存のセッションを引き続き使用し、アナウンスされた遅延の後に再試行する。cleanup-failed 状態はチャネルのリサイクルが必要。settlement-overdue 状態は、settlement と必要なクリーンアップが完了した後に回復する可能性がある。                                                                    |
 | `MissingCliEntryError`                | 500  | `qwen` CLI エントリファイルが見つからない（`status.ts` で定義、`bridgeErrors.ts` ではない）。 | CLI インストールが完全であることを確認する。`packages/cli/index.ts` が存在するかチェックする。                                                                                   |
 
 ## 起動時設定エラー (`packages/cli/src/serve/run-qwen-serve.ts`)
@@ -104,7 +104,7 @@
 | ステータス | ボディ                                        | 条件                                                                                                                                                          |
 | ---------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `401`      | `{ error: 'Unauthorized' }`                   | Bearer トークンがない / 間違っている / スキームがない。`missing header` / `wrong scheme` / `wrong token` で統一されており、プローブで区別できない。            |
-| `401`      | `{ error: '...', code: 'token_required' }`    | トークンなしのループバックデーモンで、変更ゲートの厳格なルートにアクセス。SDK は「--token / --require-auth を設定」というヒントを表示する。                       |
+| `401`      | `{ error: '...', code: 'token_required' }`    | 信頼されていないトークンなしの埋め込みでの厳格なルート。信頼されたループバックのプライマリリクエストは通過する。SDK はトークン設定のヒントを表示する。                       |
 | `403`      | `{ error: 'Request denied by CORS policy' }`  | `allowOriginCors`（ランタイム）/ `denyBrowserOriginCors`（ブートストラップ）が `Origin` ヘッダーを含むリクエストを拒否した。                                      |
 | `403`      | `{ error: 'Invalid Host header' }`            | `hostAllowlist` が `Host` ヘッダーを拒否した（DNS リバインディング防御）。                                                                                      |
 
@@ -138,7 +138,7 @@ flowchart LR
 ```mermaid
 flowchart TD
     A["401 を受信"] --> B{"body.code == 'token_required'?"}
-    B -->|yes| C["mutation-gate strict — --token / --require-auth をユーザーに案内"]
+    B -->|yes| C["厳格なゲートがこのデプロイメントを拒否 — Bearer 認証を設定するようユーザーを案内"]
     B -->|no| D["通常の Unauthorized — 一般的な 'トークンを確認' という UI"]
 ```
 

@@ -290,6 +290,9 @@ Qwen Code 进行文件编辑（工作区内的编辑跳过分类器），
       // 可选：将所有 Shell 命令（包括 ls、cat 等只读命令）
       // 路由到分类器以实现纵深防御。
       // "classifyAllShell": true,
+      // 可选：仅按名称将 MCP 工具调用发送到分类器
+      // （默认情况下会转发参数）。
+      // "mcp": { "forwardArguments": false },
     },
   },
 }

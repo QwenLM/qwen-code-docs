@@ -9,7 +9,7 @@
 - `qwen channel start [name]` 是独立的 ACP 支持的渠道服务。它向适配器传递 `ChannelAgentBridge` 的 `AcpBridge` 实现。
 - `qwen serve --channel <name>` 和 `qwen serve --channel all` 是实验性的守护进程管理模式。命名选择按所属工作区分组，`qwen serve` 为每个所属运行时启动一个进程外 worker；每个 worker 通过 SDK 连接到守护进程，适配器接收由 `DaemonChannelBridge` 支持的 `ChannelAgentBridge` 门面。`--channel all` 仍然是仅主工作区的选择。
 
-在守护进程管理模式下，每个渠道将入站聊天流量映射到可配置 `SessionScope`（`user`、`chat_thread` 或 `single`）下的守护进程会话。旧版 Channel 值 `thread` 仍可用于已有配置的读取和编辑，但新的 Web Shell 配置不再提供该选项；这与 daemon bridge 自身的 `single`/`thread` 会话创建旋钮是分开的。当 `sessionScope: "user"` 且 `multiSession: true` 时，`ChannelBase` 会添加一个按渠道、聊天和发送者为键的持久化命名会话目录，同时 `SessionRouter` 将所选会话保留为其兼容路由。精确的命名会话加载从不使用旧版的加载或替换路径。适配器委托给 `DaemonChannelBridge`，后者再委托给 SDK 的 `DaemonSessionClient`（参见 [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)）。每个命名渠道必须解析到一个已注册的、可信的工作区。worker 使用该运行时的规范 cwd、`QWEN_DAEMON_WORKSPACE` 和环境覆盖；所属关系解析不会回退到主工作区。
+在守护进程管理模式下，每个渠道将入站聊天流量映射到可配置 `SessionScope`（`user`、`chat_thread` 或 `single`）下的守护进程会话。旧版 Channel 值 `thread` 仍可用于已有配置的读取和编辑，但新的 Web Shell 配置不再提供该选项；这与 daemon bridge 自身的 `single`/`thread` 会话创建旋钮是分开的。当 `sessionScope: "user"` 且 `multiSession: true` 时，`ChannelBase` 会添加一个按渠道、聊天和发送者为键的持久化命名会话目录，同时 `SessionRouter` 将所选会话保留为其兼容路由。精确的命名会话加载从不使用旧版的加载或替换路径。命名轮次在异步准备之前保留其精确会话，并在后续选择更改后保持绑定，而无需重新绑定兼容路由。命名任务可以并发运行，`/session cancel [<name>]` 仅针对已验证的活动提示，裸文本权限命令仅考虑所选任务。命名轮次还捕获仅传递的任务源标签：直接消息使用 `[task]`，群组使用 `[sender · task]`，精确文本权限提示包含请求 ID。该标签不添加到模型响应或转录中。适配器委托给 `DaemonChannelBridge`，后者再委托给 SDK 的 `DaemonSessionClient`（参见 [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)）。每个命名渠道必须解析到一个已注册的、可信的工作区。worker 使用该运行时的规范 cwd、`QWEN_DAEMON_WORKSPACE` 和环境覆盖；所属关系解析不会回退到主工作区。
 
 ### Webhook 触发的渠道任务
 
@@ -67,7 +67,7 @@ abstract class ChannelBase {
 }
 ```
 
-所有内部消息投递都通过 `sendThreadMessage(chatId, threadId, text)` 路由。默认实现会回退到 `sendMessage(chatId, text)`，忽略 `threadId`——IM 适配器不受影响。轮询适配器（例如 GitHub）覆盖 `sendThreadMessage` 以使用 `threadId` 在特定的 issue/PR 上发布评论。
+所有内部消息投递都通过 `sendThreadMessage(chatId, threadId, text, sourceLabel)` 路由。默认实现回退到 `sendMessage(chatId, attributedText)`，忽略 `threadId`。轮询、富卡片、媒体、流式和平台分割适配器覆盖边界，以便可选的纯文本源标签为平台转义，并在每个独立可见的对象上重复，而不改变原始响应状态。
 
 处理常见的横切关注点：发送者过滤（白名单/黑名单）、群组过滤、消息块流式传输（分块大小、节流）、入站防抖。
 
@@ -197,7 +197,7 @@ sequenceDiagram
 | 配置项 | 作用 |
 | --- | --- |
 | `sessionScope` | `'user'`（发送者 + 聊天）、`'chat_thread'`（渠道 + chatId + threadId）或 `'single'`（每个渠道一个共享会话）。旧版 `'thread'` 在已配置时保留，但不再为新的 Web Shell 配置提供。 |
-| `multiSession` | 仅用于 daemon 的 `sessionScope: 'user'` 命名任务。owner 目录持久化在工作区/渠道状态目录下方；webhook、群组历史回填、循环、运行中任务切换以及每任务 worktree 在 Part 2 中排除。 |
+| `multiSession` | 仅用于 daemon 的 `sessionScope: 'user'` 命名任务。owner 目录持久化在工作区/渠道状态目录下方；任务可以并发运行，取消和权限命令保持精确任务关联，结果和交互界面识别其源任务。Webhook、群组历史回填、循环和每任务 worktree 仍然排除。 |
 | `approvalMode` | `'auto'`（自动响应）/ `'prompt'`（渲染 UI）。 |
 | `allowlist?: string[]` | 允许的发送者 id；缺失则表示开放。 |
 | `denylist?: string[]` | 拒绝的发送者 id。 |

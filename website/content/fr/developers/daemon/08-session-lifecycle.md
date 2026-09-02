@@ -179,7 +179,7 @@ flux SSE.
 l'historique était trop court ou que le modèle a temporairement échoué. Ce point de terminaison fonctionne en
 best-effort.
 
-### Session BTW / Side Question (tag de capacité `session_btw`)
+### Session BTW / Side Question (balise de capacité `session_btw`)
 
 `POST /session/:id/btw` pose une question ponctuelle dans le contexte de la session
 sans interrompre le flux de conversation principal. Il utilise `runForkedAgent` sur le
@@ -241,12 +241,12 @@ load/resume, et les mutations entrant en concurrence avec une transition d'archi
 
 Les fichiers de transcription réguliers vides, endommagés et orphelins restent éligibles pour ces opérations de cycle de vie même lorsqu'ils ne peuvent pas être chargés en tant que conversations. Les vérifications de sécurité de propriété peuvent intentionnellement échouer en mode fermé et exiger l'intervention de l'opérateur. Un fichier modifié après qu'un writer a scellé sa preuve de transfert certifiée échoue avec `SessionTranscriptChangedError` jusqu'à ce que l'opérateur résolve le verrou scellé et les octets modifiés. Un premier enregistrement physique au format JSON qui dépasse la fenêtre bornée de lecture de propriété échoue avec `SessionTranscriptIdentityUnavailableError` jusqu'à ce que l'enregistrement soit réparé ou réduit ; les enregistrements endommagés surdimensionnés avec un préfixe non-objet restent éligibles. Un enregistrement récupéré analysable doit contenir des champs de propriété `sessionId` et `cwd` en chaîne de caractères, et les états d'archive locaux/étrangers mixtes échouent également en mode fermé. Lorsque `session_storage_conflict_repair` est annoncé, l'archivage et le désarchivage acceptent `resolveConflicts: true` : l'archivage conserve la copie archivée, tandis que le désarchivage conserve la copie active. Sans cette option, les conflits actif/archive ne déplacent pas, ne suppriment pas et n'écrasent aucune copie persistée et sont retournés dans le tableau `errors` du lot. L'archivage ferme toujours strictement une session live avant de classifier le conflit, ce qui peut flusher les enregistrements en attente vers la transcription active. Les routes de cycle de vie qualifiées par workspace utilisent désormais cette enveloppe de lot HTTP `200` au lieu de leur précédente réponse HTTP `409 session_conflict`.
 
-### Utilisation du contexte (tag de capacité `session_context_usage`)
+### Utilisation du contexte (balise de capacité `session_context_usage`)
 
 `GET /session/:id/context-usage` renvoie l'utilisation structurée de la fenêtre de contexte.
 `?detail=true` inclut une utilisation plus détaillée regroupée par outil, mémoire et skill.
 
-### Statistiques de session (tag de capacité `session_stats`)
+### Statistiques de session (balise de capacité `session_stats`)
 
 `GET /session/:id/stats` renvoie les statistiques d'utilisation : métriques du modèle
 (tokens d'entrée/sortie, lectures/écritures du cache, coût total), nombres d'appels et
@@ -254,7 +254,7 @@ latences par outil, nombres de modifications de fichiers, et nombres d'invocatio
 active. Le bloc `skills` reflète les chargements de corps de skill et les slash commands de skill
 uniquement dans cette session ; il ne s'agit pas d'un agrégat d'activité inter-sessions.
 
-### Tâches de session (tag de capacité `session_tasks`)
+### Tâches de session (balise de capacité `session_tasks`)
 
 `GET /session/:id/tasks` renvoie un instantané des tâches en arrière-plan pour les tâches d'agent,
 les tâches shell, les tâches de monitor, et leurs états de cycle de vie. Les entrées d'agent générées
@@ -266,7 +266,7 @@ La capacité `session_monitor_tool_correlation` garantit en outre que les entré
 portent `toolUseId`, permettant aux clients de corréler un appel d'outil de transcription
 avec les détails de sa tâche.
 
-### Statut LSP de la session (tag de capacité `session_lsp`)
+### Statut LSP de la session (balise de capacité `session_lsp`)
 
 `GET /session/:id/lsp` renvoie le statut LSP par session épuré pour les clients
 du démon : activation, nombre total de serveurs, état indisponible/en cours d'initialisation,
@@ -297,22 +297,28 @@ normalement ; il ne doit pas déclencher une boucle de resync.
 
 ### Préchauffage du processus enfant ACP
 
-`bridge.preheat()` préchauffe le processus enfant ACP avant la première session afin que
-la première session réelle évite la latence de démarrage à froid. Cela s'associe à
-`channelIdleTimeoutMs`, qui maintient l'enfant ACP en vie après la fermeture de la dernière session,
-et au comportement de non-relance, qui réutilise un enfant déjà inactif lorsqu'une
-nouvelle session arrive.
+`bridge.preheat()` reste disponible pour les intégrateurs explicites, mais `qwen serve`
+tente également de préchauffer l'enfant primaire fiable après le démarrage pour
+la compatibilité. Un préchauffage échoué n'est pas fatal et la prochaine commande d'exécution ou
+Session réessaie ; les secondaires fiables démarrent à la première utilisation. Le Workspace Runtime
+possède l'enfant pendant que le travail est actif. Après que tous les baux de Session et de gestion
+se sont vidés, un `channelIdleTimeoutMs` omis ou à zéro nettoie l'enfant immédiatement ;
+le préchauffage simple lui-même est préservé pour la première utilisation et n'arme pas ce nettoyeur.
+Un délai configuré positif ou un keepalive actif maintient l'enfant réutilisable pour
+la fenêtre restante plus longue. La commande publique `ensure` du Workspace Runtime
+ajoute un bail de workspace renouvelable de dix minutes ; chaque appel réussi
+réinitialise cette fenêtre, y compris lorsque le canal était déjà actif.
 
 ## Configuration
 
 - `BridgeOptions.maxSessions` (par défaut 32) — limite maximale.
 - `BridgeOptions.sessionScope` (par défaut `'single'` ; optionnel `'thread'`).
-- `BridgeOptions.initializeTimeoutMs` (par défaut 10s) — handshake ACP `initialize`.
+- `BridgeOptions.initializeTimeoutMs` (par défaut 10s) — délai de démarrage de l'enfant ACP (fabrique de canal + handshake `initialize`) et délai d'expiration par défaut des requêtes.
 - `BridgeOptions.sessionRestoreTimeoutMs` (par défaut 60s) — délai pour `loadSession` / `unstable_resumeSession` ACP. Par défaut 60s ; un timeout d'initialize configuré explicitement peut l'augmenter, mais jamais le diminuer.
-- `BridgeOptions.channelIdleTimeoutMs` (par défaut 0 ; nettoie l'enfant ACP immédiatement).
-- Tags de capacité : `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (alias obsolète), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_storage_conflict_repair`, `non_blocking_prompt`.
+- `BridgeOptions.channelIdleTimeoutMs` (non défini ou `0` nettoie après que le travail d'exécution s'est vidé, sauf que le préchauffage simple est préservé pour la première utilisation ; une valeur positive ou un keepalive actif retarde le nettoyage, et le délai le plus long l'emporte).
+- Tags de capacité : `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (alias obsolète), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
 
-### Génération sans état (tag de capacité `session_generation`)
+### Génération sans état (balise de capacité `session_generation`)
 
 `POST /session/:id/generate` accepte `{ "prompt": string }` et renvoie un
 flux SSE limité à la requête avec les événements `started`, `thinking` optionnel, `delta`, `done`,

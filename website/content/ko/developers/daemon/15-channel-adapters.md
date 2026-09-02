@@ -9,7 +9,7 @@
 - `qwen channel start [name]`은 독립 실행형 ACP 기반 channel 서비스입니다. adapter에 `ChannelAgentBridge`의 `AcpBridge` 구현체를 전달합니다.
 - `qwen serve --channel <name>` 및 `qwen serve --channel all`은 실험적인 daemon 관리 모드입니다. 이름으로 선택한 channel은 소유 워크스페이스별로 그룹화되며, `qwen serve`는 소유 런타임당 하나의 프로세스 외부 워커를 시작합니다. 각 워커는 SDK를 통해 daemon에 연결하고, adapter는 `DaemonChannelBridge` 기반의 `ChannelAgentBridge` 페이사드를 받습니다. `--channel all`은 primary 전용 선택으로 유지됩니다.
 
-daemon 관리 모드에서 각 channel는 설정 가능한 `SessionScope`(`user`, `chat_thread`, 또는 `single`)에 따라 수신 채팅 트래픽을 daemon 세션에 매핑합니다. 기존 설정을 위해 레거시 Channel 값 `thread`는 계속 읽고 쓸 수 있지만, 새 Web Shell 구성에서는 제공되지 않습니다. 이는 daemon 브릿지의 자체 `single`/`thread` 세션 생성 노브와는 별개입니다. `sessionScope: "user"`와 `multiSession: true`에서 `ChannelBase`는 channel, 채팅, 발신자 기준으로 키가 지정된 영속적 이름 세션 카탈로그를 추가하고, `SessionRouter`는 선택된 세션을 호환성 경로로 유지합니다. 정확한 이름 세션 로드는 레거시 로드-또는-교체 경로를 사용하지 않습니다. adapter는 `DaemonChannelBridge`에 위임하고, 이는 SDK의 `DaemonSessionClient`에 위임합니다([`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md) 참조). 이름이 지정된 모든 channel는 등록된 신뢰할 수 있는 워크스페이스 하나를 해석해야 합니다. 워커는 해당 런타임의 표준 cwd, `QWEN_DAEMON_WORKSPACE`, 환경 오버레이를 사용하며, 소유권 해석은 primary로 폴백하지 않습니다.
+daemon 관리 모드에서 각 channel는 설정 가능한 `SessionScope`(`user`, `chat_thread`, 또는 `single`)에 따라 수신 채팅 트래픽을 daemon 세션에 매핑합니다. 기존 설정을 위해 레거시 Channel 값 `thread`는 계속 읽고 쓸 수 있지만, 새 Web Shell 구성에서는 제공되지 않습니다. 이는 daemon 브릿지의 자체 `single`/`thread` 세션 생성 노브와는 별개입니다. `sessionScope: "user"`와 `multiSession: true`에서 `ChannelBase`는 channel, 채팅, 발신자 기준으로 키가 지정된 영속적 이름 세션 카탈로그를 추가하고, `SessionRouter`는 선택된 세션을 호환성 경로로 유지합니다. 정확한 이름 세션 로드는 레거시 로드-또는-교체 경로를 사용하지 않습니다. 이름 지정 턴은 비동기 준비 전에 정확한 세션을 예약하며, 이후 선택 변경 시에도 호환성 경로를 재바인딩하지 않고 바인딩된 상태를 유지합니다. 이름 지정 작업은 동시에 실행될 수 있으며, `/session cancel [<name>]`은 확인된 활성 프롬프트만 대상으로 하고, 일반 텍스트 권한 명령은 선택된 작업만 고려합니다. 이름 지정 턴은 전송 전용 작업 소스 레이블도 캡처합니다. 직접 메시지는 `[task]`를 사용하고, 그룹은 `[sender · task]`를 사용하며, 정확한 텍스트 권한 프롬프트는 요청 ID를 포함합니다. 이 레이블은 모델 응답이나 트랜스크립트에 추가되지 않습니다. adapter는 `DaemonChannelBridge`에 위임하고, 이는 SDK의 `DaemonSessionClient`에 위임합니다([`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md) 참조). 이름이 지정된 모든 channel는 등록된 신뢰할 수 있는 워크스페이스 하나를 해석해야 합니다. 워커는 해당 런타임의 표준 cwd, `QWEN_DAEMON_WORKSPACE`, 환경 오버레이를 사용하며, 소유권 해석은 primary로 폴백하지 않습니다.
 
 ### Webhook 트리거 channel 작업
 
@@ -67,7 +67,7 @@ abstract class ChannelBase {
 }
 ```
 
-모든 내부 메시지 전달은 `sendThreadMessage(chatId, threadId, text)`를 통해 라우팅됩니다. 기본 구현은 `threadId`를 무시하고 `sendMessage(chatId, text)`로 폴스루합니다. IM adapter는 영향을 받지 않습니다. 폴링 adapter(예: GitHub)는 `sendThreadMessage`를 오버라이드하여 `threadId`를 사용하여 특정 이슈/PR에 댓글을 게시합니다.
+모든 내부 메시지 전달은 `sendThreadMessage(chatId, threadId, text, sourceLabel)`을 통해 라우팅됩니다. 기본 구현은 `threadId`를 무시하고 `sendMessage(chatId, attributedText)`로 폴스루합니다. 폴링, 리치 카드, 미디어, 스트리밍, 플랫폼 분할 adapter는 경계를 오버라이드하여 선택적 일반 텍스트 소스 레이블이 플랫폼에 맞게 이스케이프되고, 원시 응답 상태를 변경하지 않고 독립적으로 보이는 모든 객체에서 반복되도록 합니다.
 
 일반적인 교차 관심사를 처리합니다: 발신 게이트(허용 목록 / 차단 목록), 그룹 게이트, 메시지 블록 스트리밍(청크 크기, 스로틀링), 수신 디바운스.
 
@@ -197,7 +197,7 @@ adapter `connect()` 실패는 워커 라이프사이클 에러와 별도로 보�
 | 설정                                     | 효과                                                                                                                                                                         |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `sessionScope`                           | `'user'` (발신자 + 채팅), `'chat_thread'` (channel + chatId + threadId), 또는 `'single'` (channel당 하나의 공유 세션). 레거시 `'thread'`는 이미 구성된 경우 유지되지만 새 Web Shell 구성에서는 제공되지 않습니다. |
-| `multiSession`                           | `sessionScope: 'user'`를 위한 daemon 전용 이름 지정 작업. 소유자 카탈로그는 워크스페이스/channel 상태 디렉토리 아래에 영속화됩니다. Part 2에서는 webhook, 그룹 히스토리 백필, 루프, 실행 중인 작업 전환, 작업별 worktree가 제외됩니다. |
+| `multiSession`                           | `sessionScope: 'user'`를 위한 daemon 전용 이름 지정 작업. 소유자 카탈로그는 워크스페이스/channel 상태 디렉토리 아래에 영속화됩니다. 작업은 동시에 실행될 수 있으며, 취소 및 권한 명령은 정확한 작업과 연관된 상태를 유지하고, 결과 및 인터랙티브 표면은 소스 작업을 식별합니다. Webhook, 그룹 히스토리 백필, 루프, 작업별 worktree는 계속 제외됩니다. |
 | `approvalMode`                           | `'auto'` (자동 응답) / `'prompt'` (UI 렌더링).                                                                                                                              |
 | `allowlist?: string[]`                   | 허용된 발신자 id; 없으면 개방.                                                                                                                                            |
 | `denylist?: string[]`                    | 차단된 발신자 id.                                                                                                                                                             |

@@ -22,8 +22,8 @@ Node.js 22 ou ultérieur et npm sont requis.
 Lors de sa première utilisation, le skill exécute lui-même ces commandes :
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.1
-npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.2
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.2
+npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.3
 ```
 
 Redémarrez Qwen Code après l'ajout initial du serveur MCP. Le skill reprend alors la tâche de bureau via `node_repl`.

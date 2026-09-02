@@ -117,6 +117,20 @@ qwen -p "Summarize this repository" \
   --append-system-prompt "Return exactly three bullets."
 ```
 
+### 출력 스타일 선택
+
+`--output-style`을 사용하여 이번 런에 내장 출력 스타일 중 하나를 선택한다. 스타일은 내장 프롬프트에 적용되는 이름 붙은 명령어 블록으로, 답변이 작성되는 방식을 변경한다 — `Concise`는 결과부터 시작하고 서두와 설명을 생략하며, `Proactive`는 제안 대신 바로 작업을 시작하고, `Explanatory`는 진행 과정에서 코드베이스에 대한 간단한 설명을 추가한다. `general.outputStyle` 설정을 재정의하며, `default`는 스타일을 선택하지 않는다.
+
+```bash
+qwen -p "Why does the build fail on Windows?" --output-style Concise
+```
+
+> [!note]
+>
+> - `Learning`은 사용자에게 코드 작성을 요구하고 응답을 기다리므로 헤드리스 런에서는 건너뛴다.
+> - 알 수 없는 스타일 이름은 경고를 출력하며 기본 스타일로 런을 계속한다.
+> - `--output-style`은 `--system-prompt` 또는 `QWEN_SYSTEM_MD`가 내장 프롬프트를 대체하면 효과가 없다 — 스타일은 내장 프롬프트에만 적용된다.
+
 > [!note]
 >
 > - `--system-prompt`는 현재 런의 메인 세션에만 적용된다.
@@ -264,6 +278,7 @@ qwen -p "Write code" --output-format stream-json --include-partial-messages | jq
 | `--include-partial-messages` | stream-json 출력에 partial 메시지 포함                                                                                                                                                                                                                                                                                                                                                                                 | `qwen -p "query" --output-format stream-json --include-partial-messages` |
 | `--system-prompt`            | 이번 런의 메인 세션 시스템 프롬프트 오버라이드                                                                                                                                                                                                                                                                                                                                                                           | `qwen -p "query" --system-prompt "You are a terse reviewer."`            |
 | `--append-system-prompt`     | 이번 런의 메인 세션 시스템 프롬프트에 추가 명령어 추가                                                                                                                                                                                                                                                                                                                                                       | `qwen -p "query" --append-system-prompt "Focus on concrete findings."`   |
+| `--output-style`             | 이번 런의 출력 스타일(`Concise`, `Proactive`, `Explanatory`, `Learning`, 또는 none인 `default`); `general.outputStyle`을 재정의                                                                                                                                                                                                                                                                                          | `qwen -p "query" --output-style Concise`                                 |
 | `--debug`, `-d`              | 디버그 모드 활성화                                                                                                                                                                                                                                                                                                                                                                                                              | `qwen -p "query" --debug`                                                |
 | `--safe-mode`                | 모든 커스터마이징 비활성화 — 컨텍스트 파일, hook, extension, skill, MCP 서버, 커스텀 서브에이전트(내장 서브에이전트만 로드), 권한 규칙, 설정 기반 승인 모드 오버라이드, 메모리 기능, 샌드박스 설정 — 하여 문제를 격리한다. CLI 플래그 `--yolo` 및 `--approval-mode`는 여전히 적용된다. [Troubleshooting](../support/troubleshooting) 참조. `QWEN_CODE_SAFE_MODE=true`로도 설정 가능. | `qwen -p "query" --safe-mode`                                            |
 | `--model`, `-m`              | 이번 런에 사용할 모델                                                                                                                                                                                                                                                                                                                                                                                                      | `qwen -p "query" --model qwen3-coder-plus`                               |

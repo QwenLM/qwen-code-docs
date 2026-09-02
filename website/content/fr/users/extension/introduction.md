@@ -147,7 +147,7 @@ Seuls les packages scoped (`@scope/package-name`) sont pris en charge pour évit
 1. Le drapeau CLI `--registry` (surcharge explicite)
 2. Le registre scoped depuis `.npmrc` (par ex. `@scope:registry=https://...`)
 3. Le registre par défaut depuis `.npmrc`
-4. Repli : `https://registry.npmjs.org/`
+4. Fallback : `https://registry.npmjs.org/`
 
 **L'authentification** est gérée automatiquement via la variable d'environnement `NPM_TOKEN` ou les entrées `_authToken` spécifiques au registre dans votre fichier `.npmrc`.
 
@@ -157,7 +157,7 @@ Seuls les packages scoped (`@scope/package-name`) sont pris en charge pour évit
 
 Git 2.37 ou plus récent est requis pour les sources avec identifiants, non-GitHub, les marketplaces imbriqués, les sous-modules et les sources Git LFS, car Qwen Code utilise `http.curloptResolve` pour épingler les connexions Git sur des résultats DNS validés. Avec les versions antérieures de Git, Qwen Code prend uniquement en charge les dépôts racine publics et anonymes `https://github.com/{owner}/{repo}[.git]` en résolvant la référence demandée en commit et en téléchargeant l'archive source de GitHub avec les mêmes vérifications de sécurité réseau et d'archive.
 
-Comme le fallback pour les versions anciennes de Git installe depuis une archive source plutôt que depuis un clone, il ne peut pas installer les dépôts qui reposent sur des liens symboliques, des sous-modules ou Git LFS, et il limite les téléchargements à 100 Mio compressés et les archives à 100 000 entrées / 1 Gio décompressées. Les installations basées sur les releases restent préférables lorsqu'un dépôt publie des releases.
+Comme le fallback pour les versions anciennes de Git installe depuis une archive source plutôt que depuis un clone, il ne peut pas installer les dépôts qui reposent sur des sous-modules ou Git LFS, et il limite les téléchargements à 100 Mio compressés et les archives à 100 000 entrées / 1 Gio décompressées / 8 Mio de métadonnées de chemin, y compris les fichiers matérialisés depuis au plus 100 liens symboliques. Les liens symboliques pointant directement vers des fichiers réguliers dans le dépôt sont pris en charge sur les systèmes qui permettent la création de liens symboliques ; Windows peut nécessiter le mode développeur ou des privilèges élevés. Le fallback rejette les liens de type répertoire, chaînés, cassés, absolus, sortant du dépôt, physiques et les liens POSIX avec cible en backslash littéral. Les autres chemins d'installation d'Agent Plugin continuent d'omettre les liens symboliques. Les installations basées sur les releases restent préférables lorsqu'un dépôt publie des releases.
 
 ```bash
 qwen extensions install https://github.com/github/github-mcp-server
@@ -409,6 +409,6 @@ Les extensions Qwen Code permettent la substitution de variables dans `qwen-exte
 
 | variable                   | description                                                                                                                                                   |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `${extensionPath}`         | Le chemin absolu de l'extension dans le système de fichiers de l'utilisateur, par exemple '/Users/username/.qwen/extensions/example-extension'. Cela ne déboucle pas les liens symboliques. |
+| `${extensionPath}`         | Le chemin absolu de l'extension dans le système de fichiers de l'utilisateur, par exemple '/Users/username/.qwen/extensions/example-extension'. Cela ne résout pas les liens symboliques. |
 | `${workspacePath}`         | Le chemin absolu de l'espace de travail actuel.                                                                                                               |
 | `${/}` ou `${pathSeparator}` | Le séparateur de chemin (varie selon le système d'exploitation).                                                                                                |

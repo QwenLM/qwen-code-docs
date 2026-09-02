@@ -176,6 +176,7 @@ eigentliche Ergebnis trifft auf SSE als `turn_complete` / `turn_error` ein, und 
 ### Session Recap (`session_recap` capability tag)
 
 `POST /session/:id/recap` fragt das schnelle Modell nach einer einzeiligen Zusammenfassung im Stil von „Wo habe ich aufgehört“. Es gibt `{ sessionId, recap: string | null }` zurück; `null` bedeutet, dass die Historie zu kurz war oder das Modell vorübergehend fehlgeschlagen ist. Dieser Endpoint ist Best-Effort.
+
 ### Session BTW / Side Question (`session_btw` Capability-Tag)
 
 `POST /session/:id/btw` stellt eine einmalige Frage im Session-Kontext, ohne den Hauptkonversationsfluss zu unterbrechen. Es verwendet `runForkedAgent` auf dem Cache-Pfad für einen Single-Turn-LLM-Aufruf ohne Tool-Nutzung und gibt `{ sessionId, answer: string | null }` zurück. Die Implementierung erzwingt `BTW_MAX_INPUT_LENGTH`, Cross-Session-Leakage-Guards und Timeout-Handling.
@@ -237,15 +238,15 @@ Die `session_monitor_tool_correlation`-Capability garantiert zusätzlich, dass M
 
 ### ACP Child Preheat
 
-`bridge.preheat()` wärmt den ACP-Child-Prozess vor der ersten Session auf, sodass die erste echte Session die Cold-Start-Latenz vermeidet. Es wird gepaart mit `channelIdleTimeoutMs`, das den ACP-Child nach dem Schließen der letzten Session am Leben hält, und dem Skip-Relaunch-Verhalten, das ein bereits idles Child wiederverwendet, wenn eine neue Session eintrifft.
+`bridge.preheat()` steht expliziten Embeddern weiterhin zur Verfügung, aber `qwen serve` versucht auch nach dem Startup, das vertrauenswürdige primäre Child aus Kompatibilitätsgründen vorzuwärmen. Ein fehlgeschlagenes Preheat ist nicht fatal; der nächste Runtime-Befehl oder die nächste Session löst einen Retry aus. Vertrauenswürdige sekundäre Children starten bei erster Benutzung. Die Workspace Runtime besitzt das Child, solange Arbeit aktiv ist. Nachdem alle Session- und Management-Leases gedrainet sind, bringt ein weggelassenes oder null `channelIdleTimeoutMs` das Child sofort zum Reap; ein bloßes Preheat selbst bleibt für die erste Benutzung erhalten und aktiviert diesen Reaper nicht. Ein positiv konfigurierter Delay oder ein aktiver Keepalive hält das Child für das längere verbleibende Fenster wiederverwendbar. Der öffentliche Workspace-Runtime-`ensure`-Befehl fügt eine erneuerbare zehnminütige Workspace-Lease hinzu; jeder erfolgreiche Aufruf setzt dieses Fenster zurück, auch wenn der Channel bereits live war.
 
 ## Konfiguration
 
 - `BridgeOptions.maxSessions` (Standard 32) — Obergrenze.
 - `BridgeOptions.sessionScope` (Standard `'single'`; optional `'thread'`).
-- `BridgeOptions.initializeTimeoutMs` (Standard 10s) — ACP-`initialize`-Handshake.
+- `BridgeOptions.initializeTimeoutMs` (Standard 10s) — Deadline für den ACP-Child-Startup (Channel-Factory + `initialize`-Handshake) und Standard-Request-Timeout.
 - `BridgeOptions.sessionRestoreTimeoutMs` (Standard 60s) — ACP-`loadSession` / `unstable_resumeSession`-Deadline. Standardmäßig 60s; eine explizit konfigurierte Initialize-Timeout kann sie erhöhen, aber niemals senken.
-- `BridgeOptions.channelIdleTimeoutMs` (Standard 0; ACP-Child sofort bereinigen).
+- `BridgeOptions.channelIdleTimeoutMs` (nicht gesetzt oder `0` reappt nach dem Drainen der Runtime-Arbeit, außer dass ein bloßes Preheat für die erste Benutzung erhalten bleibt; ein positiver Wert oder ein aktiver Keepalive verzögert das Reapen, und die längere Verzögerung gewinnt).
 - Capability-Tags: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (deprecated alias), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
 
 ### Zustandslose Generierung (`session_generation` Capability-Tag)

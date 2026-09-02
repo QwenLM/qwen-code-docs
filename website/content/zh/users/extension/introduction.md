@@ -157,7 +157,7 @@ qwen extensions install @scope/my-extension --registry https://your-registry.com
 
 对于需要认证的、非 GitHub 的、嵌套市场、子模块和 Git LFS 来源，Git 2.37 或更新版本是必需的，因为 Qwen Code 使用 `http.curloptResolve` 将 Git 连接固定到已验证的 DNS 结果。在较旧的 Git 版本上，Qwen Code 仅支持匿名的公共 `https://github.com/{owner}/{repo}[.git]` 根仓库，方法是将请求的 ref 解析为 commit 并使用相同的公共网络和归档安全检查下载 GitHub 的源代码归档。
 
-由于旧版 Git 回退从源代码归档而非克隆安装，因此无法安装依赖符号链接、子模块或 Git LFS 的仓库，并且下载上限为压缩后 100 MiB，归档上限为 100,000 个条目 / 展开后 1 GiB。当仓库发布 release 时，仍然优先使用基于 release 的安装。
+由于旧版 Git 回退从源代码归档而非克隆安装，因此无法安装依赖子模块或 Git LFS 的仓库，并且下载上限为压缩后 100 MiB，归档上限为 100,000 个条目 / 展开后 1 GiB / 8 MiB 路径元数据，包括从最多 100 个符号链接物化的文件。在允许创建符号链接的系统上，支持直接指向仓库中常规文件的符号链接；Windows 可能需要开发者模式或提升的权限。回退会拒绝目录链接、链式链接、悬空链接、绝对链接、逃逸链接、硬链接以及 POSIX 字面反斜杠目标链接。其他 Agent Plugin 安装路径继续省略符号链接。当仓库发布 release 时，仍然优先使用基于 release 的安装。
 
 ```bash
 qwen extensions install https://github.com/github/github-mcp-server

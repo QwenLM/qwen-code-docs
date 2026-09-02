@@ -274,6 +274,9 @@ Qwen Code nimmt die Dateiänderungen vor (Bearbeitungen im Workspace überspring
       // Optional: route ALL shell commands (including read-only ones like
       // ls, cat) through the classifier for defense-in-depth.
       // "classifyAllShell": true,
+      // Optional: send MCP tool calls to the classifier by name only
+      // (arguments are forwarded by default).
+      // "mcp": { "forwardArguments": false },
     },
   },
 }

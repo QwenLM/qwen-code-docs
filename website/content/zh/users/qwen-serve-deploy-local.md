@@ -1,6 +1,6 @@
 # `qwen serve` 的本地启动模板（v0.16-alpha）
 
-用于在开发者工作站上将 `qwen serve` 作为长期后台进程运行的参考模板。与 [v0.16-alpha 已知限制](./qwen-serve.md#v016-alpha-已知限制) 搭配使用——仅限本地、单用户、自带 bearer token。容器化/多主机/TLS 前端部署推迟至 v0.16.x。
+用于在开发者工作站上将 `qwen serve` 作为长期后台进程运行的参考模板。与 [v0.16-alpha 已知限制](./qwen-serve.md#v016-alpha-known-limits) 搭配使用——仅限本地、单用户、自带 bearer token。容器化/多主机/TLS 前端部署推迟至 v0.16.x。
 
 > **目标读者**：希望守护进程在重启后仍能运行、日志持久保存、并且有清晰的“失败自动重启”机制的内测开发者。如果你只需要守护进程存在于单个 shell 会话期间，直接用 `qwen serve`（前台运行，Ctrl-C 停止）即可。
 
@@ -12,7 +12,7 @@ chmod 600 ~/.qwen-serve-token
 export QWEN_SERVER_TOKEN="$(cat ~/.qwen-serve-token)"
 ```
 
-路径/文件名由你自行选择；v0.16-alpha 不会自动生成或定位 token 文件（推迟至 v0.16.x）。请参阅用户指南中的[身份验证](./qwen-serve.md#身份验证)章节了解标准 BYO 设置。
+路径/文件名由你自行选择；v0.16-alpha 不会自动生成或定位 token 文件（推迟至 v0.16.x）。请参阅用户指南中的[身份验证](./qwen-serve.md#authentication)章节了解标准 BYO 设置。
 
 > **将 `export` 限制在当前 shell 会话内。** 不要将其添加到 `~/.bashrc` / `~/.zshrc` —— 在 profile 级别导出会将 bearer token 暴露给从该 shell 启动的每个进程（IDE 子进程、浏览器调试器、来自不相关项目的 `npm` 脚本）。对于长期运行的环境，请使用下面的 systemd `EnvironmentFile=` / launchd `EnvironmentVariables` 机制 —— 两者都将 token 范围限定在守护进程本身。
 
@@ -29,11 +29,11 @@ export QWEN_SERVER_TOKEN="$(cat ~/.qwen-serve-token)"
 
 额外的工作区也可以在守护进程运行时通过 `POST /workspaces` 注册。传递 `persist: true` 可以将动态次要运行时保留在用户级注册存储中，以便在下次启动时恢复。不受信任的注册对诊断、有界文件读取和声明的持久读取仍然可见，但无法启动 ACP。动态和持久恢复的次要运行时是可移除的：正常移除在运行时繁忙时会拒绝，而强制移除会请求终止活跃资源并在相同 cwd 可以重新添加之前提交逻辑移除。清理是有界的且在持久化提交点之后尽力而为；失败会被记录而不是恢复已移除的运行时。
 
-运行时隔离涵盖 cwd、环境覆盖、文件系统/信任边界、工作区服务、bridge、Voice 租约状态、channel worker 和 ACP/MCP 资源边界。生产环境会尝试预热主要 ACP 子进程，并在失败后首次使用时重试；受信任的次要运行时按需启动其子进程，不受信任的次要运行时不启动 ACP。身份验证、HTTP 速率限制、监听器和 Voice 准入上限、总会话准入、指标、关闭和进程故障半径仍然为守护进程全局。当这些进程级边界必须独立时，请运行单独的守护进程。
+运行时隔离涵盖 cwd、环境覆盖、文件系统/信任边界、工作区服务、bridge、Voice 租约状态、channel worker 和 ACP/MCP 资源边界。生产环境会尝试预热受信任的主要 ACP 子进程以保证兼容性；受信任的次要运行时在其首个运行时支持的命令或 Session 时启动，不受信任的次要运行时不启动 ACP。旧版主要路由保留其现有的兼容性行为。身份验证、HTTP 速率限制、监听器和 Voice 准入上限、总会话准入、指标、关闭和进程故障半径仍然为守护进程全局。当这些进程级边界必须独立时，请运行单独的守护进程。
 
 ## Linux：systemd 用户单元
 
-> **首先找到你的 `qwen` 二进制文件。** 单元文件中的 `ExecStart=` 必须是**绝对路径** —— 服务管理器不会读取你的 shell 的 `PATH`。运行 `which qwen` 来找到它。常见位置：`/usr/local/bin/qwen`（Linuxbrew、手动安装）、`~/.nvm/versions/node/vX.Y.Z/bin/qwen`（nvm）、`~/.fnm/aliases/default/bin/qwen`（fnm）、`~/.volta/bin/qwen`（Volta）。在下方模板显示 `/PATH/TO/qwen` 的地方替换为实际路径。
+> **首先找到你的 `qwen` 二进制文件和受信任的工具目录。** 单元文件的 `ExecStart=` 必须包含**绝对路径**，其显式 `PATH` 必须包含守护进程会话所需工具的受信任目录，例如 `gh`、`git`、`npm` 以及基于脚本的 `qwen` 启动器所使用的 `node` 解释器。服务管理器不会读取你的 shell profile。在正常 shell 中运行 `which qwen gh git npm node`，然后在下方模板中显示 `/PATH/TO/qwen` 和 `/PATH/TO/USER/BIN` 的所有位置替换为实际的可执行文件和目录。
 
 `~/.config/systemd/user/qwen-serve.service`:
 
@@ -48,6 +48,8 @@ Type=simple
 WorkingDirectory=%h/project-a
 # 运行 `which qwen` 找到绝对路径。systemd 不会读取 $PATH。
 ExecStart=/PATH/TO/qwen serve --hostname 127.0.0.1 --port 4170 --workspace %h/project-a --workspace %h/project-b
+# 将第一个条目替换为包含 qwen 解释器和用户安装工具的受信任目录。systemd 不会读取 shell profile。
+Environment=PATH=/PATH/TO/USER/BIN:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 # 从 chmod 600 的文件中读取 bearer token，而不是将其内联到单元中。
 # `Environment=` 会将 token 暴露在单元文件中（通常权限为 644 = 世界可读）。
 # EnvironmentFile 将 token 保留在你已创建的 `chmod 600` 用户私有文件中。
@@ -81,11 +83,11 @@ systemctl --user disable --now qwen-serve.service
 
 如果不执行 `loginctl enable-linger`，用户级别的 systemd 实例会在用户注销时关闭，并仅在下次登录时重新启动 —— 在无头开发机上，守护进程将无法在 SSH 会话结束后存活。`enable-linger` 是实现“重启后仍运行”的关键。
 
-**系统级替代方案**（共享开发主机，较少见）：将单元文件放在 `/etc/systemd/system/qwen-serve@.service` 中，并设置 `User=%i`，通过 `sudo systemctl enable --now qwen-serve@<username>.service` 管理。其他 `[Service]` 内容相同 —— 但在此级别下，世界可读的 `Environment=` 暴露问题更为严重，因此始终使用 `EnvironmentFile=` 指向用户的 `chmod 600` 文件。对于单用户工作站，优先选择用户级 + linger。
+**系统级替代方案**（共享开发主机，较少见）：将单元文件放在 `/etc/systemd/system/qwen-serve@.service` 中，并设置 `User=%i`，通过 `sudo systemctl enable --now qwen-serve@<username>.service` 管理。其他 `[Service]` 内容相同。非敏感的 `PATH` 可以保留在 `Environment=` 中，但绝对不要将 bearer token 放在那里：使用 `EnvironmentFile=` 指向用户的 `chmod 600` 文件。对于单用户工作站，优先选择用户级 + linger。
 
 ## macOS：launchd 用户代理
 
-> **首先找到你的 `qwen` 二进制文件。** 与 systemd 相同 —— `ProgramArguments` 必须是**绝对路径**。运行 `which qwen` 找到它。macOS 上的常见位置：`/opt/homebrew/bin/qwen`（Apple Silicon 上的 Homebrew）、`/usr/local/bin/qwen`（Intel 上的 Homebrew、手动安装）、`~/.nvm/versions/node/vX.Y.Z/bin/qwen`（nvm）、`~/.volta/bin/qwen`（Volta）。在下方模板显示 `/PATH/TO/qwen` 的地方替换。
+> **首先找到你的 `qwen` 二进制文件和受信任的工具目录。** 与 systemd 相同的约束：`ProgramArguments` 必须包含**绝对路径**，而 `EnvironmentVariables.PATH` 必须包含守护进程会话所需工具的受信任目录。在正常 shell 中运行 `which qwen gh git npm node`。macOS 上的常见位置包括 `/opt/homebrew/bin`（Apple Silicon 上的 Homebrew）、`/usr/local/bin`（Intel 上的 Homebrew 和手动安装）、`~/.nvm/versions/node/vX.Y.Z/bin`（nvm）和 `~/.volta/bin`（Volta）。在下方替换为实际的绝对路径；launchd 不会展开 `~` 或 shell 变量。
 
 `~/Library/LaunchAgents/com.qwenlm.qwen-serve.plist`:
 
@@ -115,6 +117,9 @@ systemctl --user disable --now qwen-serve.service
   <string>/Users/YOUR-USERNAME/project-a</string>
   <key>EnvironmentVariables</key>
   <dict>
+    <!-- launchd 不会读取 shell profile。将第一个条目替换为包含 qwen 解释器和用户工具的受信任目录。 -->
+    <key>PATH</key>
+    <string>/PATH/TO/USER/BIN:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     <!-- 不要将包含真实 token 的此文件提交到版本控制。同时将 plist 设置为 chmod 600，
          以免内联的 token 被世界可读。 -->
     <key>QWEN_SERVER_TOKEN</key>
@@ -160,6 +165,8 @@ tail -f ~/Library/Logs/qwen-serve/out.log ~/Library/Logs/qwen-serve/err.log
 
 编辑 plist 后（例如轮换 token），你必须先 `unload` 再 `load` —— launchd 不会像 systemd 的 `daemon-reload` 那样自动重新加载 plist。注意：每次 `load` 会截断日志文件，因此如果你在轮换前正在调查某个事件，请先保存它们。
 
+启动或重启任一服务后，打开一个新的守护进程会话，并验证其所需的工具可以在不修改命令内 `PATH` 的情况下正确解析，例如 `command -v gh`。如果某个工具缺失，请将其受信任的绝对所在目录添加到服务级的 `PATH` 中并重新加载服务；不要依赖 `~/.zshrc`、`~/.bashrc` 或其他交互式 shell profile。
+
 ## tmux 会话（交互式监督）
 
 假设 `QWEN_SERVER_TOKEN` 已在你的 shell 中导出（见上面的设置章节）：
@@ -196,7 +203,7 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
   http://127.0.0.1:4170/capabilities | jq .protocolVersions         # 守护进程的功能集
 ```
 
-当配置了认证（即守护进程是通过 `--token` / `QWEN_SERVER_TOKEN` 启动的，或者使用了 `--require-auth=true`）时，回环绑定上的除 `/health` 之外的所有路由都需要 `Authorization: Bearer <token>`。如果你在没有 token 的情况下使用回环默认值启动守护进程（`qwen serve` 零配置路径），则两个调用都不需要请求头。上面的模板都配置了 token，因此实践中需要 `Authorization` 请求头。如果 `/capabilities` 返回 `401`，说明单元 / plist 中的 token 与你的 `curl` 使用的环境导出的 token 不匹配。
+当配置了认证（`--token` 或 `QWEN_SERVER_TOKEN`）时，普通回环绑定上的每个常规 API 路由（`/health` 除外）都需要 `Authorization: Bearer <token>`；channel webhook 入口始终使用其配置的 `x-qwen-webhook-secret`，而 Web Shell 的文档和资产路由仍为预认证。`--require-auth=true` 在启动时要求提供 token，并额外将回环 `/health` 移到 bearer 门控之后，但不更改 webhook 认证。如果你在没有 token 的情况下使用回环默认值启动守护进程（`qwen serve` 零配置路径），则两个调用都不需要请求头，并且任何能够到达主监听器的本地进程都会获得完整的操作员 API 权限，包括以守护进程用户身份执行代码。上面的模板都配置了 token，因此实践中需要 `Authorization` 请求头。如果 `/capabilities` 返回 `401`，说明单元 / plist 中的 token 与你的 `curl` 使用的环境导出的 token 不匹配。
 
 ## Token 轮换
 
@@ -222,7 +229,7 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
 - **launchd 的 `KeepAlive` 配合 `SuccessfulExit=false`**（上面的模板）—— 与 systemd 行为一致。裸的 `<true/>` 会在干净退出后也重新启动。`ThrottleInterval=10` 限制了持续失败时的重启风暴速率，与 systemd 的 `RestartSec=5` 对应。
 - **tmux / nohup** —— 无自动重启。守护进程崩溃后 PID 变为无效，直到你重新运行。
 
-在**单个守护进程生命周期内**，客户端断开连接可以通过 SSE `Last-Event-ID` 恢复，具体见用户指南中的[持久性模型](./qwen-serve.md#持久性模型)章节 —— 重放环位于内存中。
+在**单个守护进程生命周期内**，客户端断开连接可以通过 SSE `Last-Event-ID` 恢复，具体见用户指南中的[持久性模型](./qwen-serve.md#durability-model)章节 —— 重放环位于内存中。
 
 守护进程**重启**会丢弃所有内存中的会话；客户端重新连接并从头开始。会话内容（提示词、工具调用、对话历史）的跨重启持久性**不**在 v0.16-alpha 中。
 
@@ -233,4 +240,4 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
 - **通用守护进程 token 存储** —— Local Control 使用可撤销的守护进程所有的配对 token，但长期运行时 token 存储仍为自带 token。持久化 token 存储基础设施推迟至 v0.16.x。
 - **Windows 原生服务**（`nssm`、服务控制管理器包装器）—— 目前请使用 [WSL2](https://learn.microsoft.com/en-us/windows/wsl/) 并参考上面的 systemd 章节。
 
-请参阅主用户指南中的 [v0.16-alpha 已知限制](./qwen-serve.md#v016-alpha-已知限制) 提醒，了解完整的推迟功能列表，以及 [#4175](https://github.com/QwenLM/qwen-code/issues/4175) 了解 v0.16-alpha 发布跟踪问题。
+请参阅主用户指南中的 [v0.16-alpha 已知限制](./qwen-serve.md#v016-alpha-known-limits) 提醒，了解完整的推迟功能列表，以及 [#4175](https://github.com/QwenLM/qwen-code/issues/4175) 了解 v0.16-alpha 发布跟踪问题。

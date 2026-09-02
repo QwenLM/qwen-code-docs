@@ -75,6 +75,7 @@ export const CONDITIONAL_SERVE_FEATURES: ReadonlyMap<
       typeof t.writerIdleTimeoutMs === 'number' && t.writerIdleTimeoutMs > 0,
   ],
   ['workspace_settings', (t) => t.persistSettingAvailable === true],
+  ['user_language_sync', (t) => t.persistSettingAvailable === true],
   ['workspace_voice', (t) => t.persistSettingAvailable === true],
   [
     'workspace_voice_transcription',
@@ -108,7 +109,7 @@ export const CONDITIONAL_SERVE_FEATURES: ReadonlyMap<
 
 Базовые: `health`, `daemon_status`, `capabilities`.
 
-Сессии: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_storage_conflict_repair`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (условный), `session_language`, `session_rewind`, `session_hooks`, `session_branch`.
+Сессии: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_storage_conflict_repair`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (условный), `session_language`, **`user_language_sync`** (условный), `session_rewind`, `session_hooks`, `session_branch`.
 
 Стриминг: `slow_client_warning`, `typed_event_schema`.
 
@@ -198,7 +199,7 @@ sequenceDiagram
 | Переменная окружения | `QWEN_SERVE_NO_MCP_POOL=1` | Прекращает анонсирование `mcp_workspace_pool` и `mcp_pool_restart`; события MCP больше не добавляют `scope: 'workspace'`. |
 | CLI флаг | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}` | Не изменяет набор тегов (`mcp_guardrails` анонсируется всегда), но изменяет резервирование для каждого сервера и поведение отказа. |
 | CLI флаг / переменная окружения | `--rate-limit` / `QWEN_SERVE_RATE_LIMIT=1` | Анонсирует `rate_limit`. |
-| Встроенная опция | `persistSettingAvailable` | Анонсирует `workspace_settings` и `workspace_voice`. |
+| Встроенная опция | `persistSettingAvailable` | Анонсирует `workspace_settings`, `user_language_sync` и `workspace_voice`. |
 | Встроенная опция | `voiceTranscriptionAvailable` | Анонсирует `workspace_voice_transcription`. |
 | CLI флаг / встроенная опция | `--enable-session-shell` / `sessionShellCommandEnabled` | Анонсирует `session_shell_command`. |
 | Состояние среды выполнения | Более одного зарегистрированного runtime рабочего пространства | Анонсирует `multi_workspace_sessions` и `multi_workspace_session_rewind`; также анонсирует `multi_workspace_session_shell`, если session shell фактически включён. |

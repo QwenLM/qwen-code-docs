@@ -17,7 +17,7 @@ Qwen Code를 로컬 HTTP 데몬으로 실행하여 여러 클라이언트(IDE �
 - **첫 응답자 권한** — 에이전트가 도구 실행 권한을 요청하면 연결된 모든 클라이언트가 요청을 보며, 가장 먼저 응답하는 클라이언트가 승리합니다.
 - **하나의 데몬, 하나 이상의 워크스페이스** — `--workspace`를 반복하여 하나의 리스너 아래에 격리된 워크스페이스 런타임을 등록합니다. 첫 번째 워크스페이스가 기본이며 `cwd`를 생략한 요청의 기본값으로 유지됩니다.
 - **실험적 데몬 관리 채널** — `qwen serve --channel <name>`으로 시작하거나, 채널 없이 시작하고 나중에 `qwen channel set`으로 선택합니다. 워커는 데몬 수명주기가 소유한 별도 프로세스입니다. 선택 항목은 데몬 재시작 없이 조회, 교체, 리로드, 중지가 가능합니다.
-- **원격 런타임 제어** — 세션의 승인 모드 변경(`POST /session/:id/approval-mode`), 워크스페이스별 도구 토글(`POST /workspace/tools/:name/enable`) 또는 로드된 skill(`POST /workspace/skills/:name/enable`), 빈 `QWEN.md` 스캐폴딩(`POST /workspace/init`, 기계적만 — 모델 호출 안 함; AI 채우기의 경우 `POST /session/:id/prompt` 후속 처리), 예산 사전 점검을 통한 단일 MCP 서버 재시작(`POST /workspace/mcp/:server/restart`), 또는 데몬 재시작 없이 MCP 서버 추가/제거(`POST /workspace/mcp/servers`, `DELETE /workspace/mcp/servers/:name`). 모두 엄격 게이트 — 먼저 `--token`을 구성하세요.
+- **원격 런타임 제어** — 세션의 승인 모드 변경(`POST /session/:id/approval-mode`), 워크스페이스별 도구 토글(`POST /workspace/tools/:name/enable`) 또는 로드된 skill(`POST /workspace/skills/:name/enable`), 빈 `QWEN.md` 스캐폴딩(`POST /workspace/init`, 기계적만 — 모델 호출 안 함; AI 채우기의 경우 `POST /session/:id/prompt` 후속 처리), 예산 사전 점검을 통한 단일 MCP 서버 재시작(`POST /workspace/mcp/:server/restart`), 또는 데몬 재시작 없이 MCP 서버 추가/제거(`POST /workspace/mcp/servers`, `DELETE /workspace/mcp/servers/:name`). 기본 토큰 없는 루프백 리스너는 이들을 모두 사용할 수 있습니다; 엄격 워크스페이스 뮤테이션은 다른 배포 모드에서 추가로 운영자 자격 증명을 요구합니다.
 - **세션 요약**([#4175](https://github.com/QwenLM/qwen-code/issues/4175) 후속) — 활성 세션의 "어디서 멈췄는지" 한 문장 요약을 가져옵니다(`POST /session/:id/recap`). 코어의 `generateSessionRecap`을 빠른 모델에 대한 사이드 쿼리로 래핑; 메인 채팅 기록이나 SSE 스트림을 오염시키지 않습니다. 비엄격 게이트(`/prompt`와 동일한 자세); SDK 헬퍼 `client.recapSession(sessionId)`.
   - **알려진 한계 — 토큰 비용 증폭:** 이 라우트는 순수 비용 엔드포인트(각 호출은 LLM 사이드 쿼리이며 상태 이점 없음)이며 v1에서는 라우트별 속도 제한이 없습니다. 토큰 없는 루프백 기본값에서 버그가 있거나 악성인 로컬 클라이언트가 토큰을 소모하기 위해 스팸을 보낼 수 있습니다. 데몬을 노출하기 전에 공유 개발 호스트에서 `--token`(및 선택적으로 `--require-auth`)을 구성하세요.
   - **동시 재연결 안전성:** 동일한 세션에서 두 개의 동시 `/recap` 호출은 두 개의 독립적 사이드 쿼리를 실행합니다. `generateSessionRecap`은 `GeminiClient.getChat().getHistory()`를 통해 채팅 기록의 스냅샷을 읽고 별도의 `BaseLlmClient.generateText` 호출(`runSideQuery` 경유)에 전달합니다; 세션의 `GeminiChat`에 추가하거나 변경하지 않습니다. 조정 없이 여러 클라이언트에서 호출해도 안전합니다.
@@ -61,10 +61,10 @@ Stage 1에서 수정하지 않을 것에 대한 더 깊은 열거(각 워크스�
 cd your-project/
 qwen serve
 # → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/your-project)
-# → qwen serve: bearer auth disabled (loopback default). Set QWEN_SERVER_TOKEN to enable.
+# → qwen serve: trusted loopback mode; local callers have full API access without bearer authentication, including code execution as the daemon user. Use --require-auth with QWEN_SERVER_TOKEN on shared or untrusted hosts.
 ```
 
-기본 바인드는 `127.0.0.1:4170`입니다. 루프백에서는 베어러 인증이 **꺼져** 있어서 로컬 개발이 "그냥 작동"합니다. 데몬은 현재 작업 디렉토리를 기본 워크스페이스로 등록합니다; 절대 경로 `--workspace /path/to/dir`로 재정의하고, 플래그를 반복하여 추가 격리 런타임을 등록하세요.
+기본 바인드는 `127.0.0.1:4170`입니다. 베어러 인증이 **꺼져** 있고 기본 리스너가 신뢰되므로, 포트에 접근할 수 있는 모든 로컬 프로세스가 데몬 사용자로 코드 실행을 포함하여 전체 운영자 API를 사용할 수 있습니다. 라우트별 워크스페이스 신뢰, 세션 소유권, `X-Qwen-Client-Id`, 권한, 기능, 검증 및 리소스 검사는 여전히 적용됩니다. 데몬은 현재 작업 디렉토리를 기본 워크스페이스로 등록합니다; 절대 `--workspace /path/to/dir`로 재정의하고, 플래그를 반복하여 추가 격리 런타임을 등록하세요.
 
 **Web Shell UI 열기.** `http://127.0.0.1:4170/`로 이동하거나(또는 `qwen serve --open`으로 데몬을 시작하여 자동 실행), 전체 브라우저 터미널을 확인하세요 — 채팅, diff, 커밋 기록, 도구 호출, 권한 프롬프트. UI는 API와 동일한 오리진의 데몬 루트에서 제공됩니다. 이 가이드의 나머지 부분에서는 원시 HTTP를 사용하여 API를 직접 스크립트할 수 있습니다.
 
@@ -208,23 +208,7 @@ SSE/ACP 전송 카운트, 속도 제한 거부, 프로세스 메모리, 해석�
 유휴 데몬은 `initialized: false`를 빈 스냅샷과 함께 반환합니다. 세션이
 활성화되면 `initialized: true`로 전환되고 실제 상태를 표시합니다.
 
-원격으로 CLI `/skills` 패널을 미러링하려면 `workspace_skill_toggle` 기능을
-확인한 후 `POST /workspace/skills/:name/enable`을 `{ "enabled": true | false }`로
-호출하세요. 여러 Skill을 변경하려면 `workspace_skill_batch_toggle`를 확인하고
-`POST /workspace/skills/enable`을 `{ "skillNames": ["review", "deploy"], "enabled": false }`로
-호출하세요; 응답은 성공적인 `results`를 대상별 `errors`와 분리하고, 유효한 대상을
-함께 영속화하며, 활성 ACP 세션을 한 번에 새로 고칩니다. 라우트는 워크스페이스
-`skills.disabled` 및 `skills.enabled`를
-필요에 따라 업데이트하고, 알 수 없거나, 숨겨진, 비활성 확장, 상위 범위 잠금,
-신뢰할 수 없는 대상을 거부합니다.
-`skills.defaultDisabled` skill을 활성화하면 `skills.enabled`에 정식 옵트인이
-기록됩니다; 더 높은 범위에서 상속된 하드 `skills.disabled` 항목은 여전히
-재정의할 수 없습니다. Skill 상태 셀은 `disabledReason`(`hard`, `default`
-또는 `inactive_extension`)과 선택적 `lockedScope`를 노출합니다. `deferred`
-응답은 ACP 자식이 실행되지 않는 동안 설정이 저장되었음을 의미합니다;
-자식이 시작될 때 적용됩니다. `skills.disabled`는 수동 및 모델 사용을 모두
-비활성화합니다. `disable-model-invocation: true`와 달리 직접 `/skill-name`
-호출은 계속 사용할 수 있습니다. V2 Extension 배치의 경우 `extension_batch_activation_v2`를 확인하세요: `PUT /extensions/activation`은 전역 기본값을 변경하고, `PUT /workspaces/:workspace/extensions/activation`은 선택된 워크스페이스의 정확한 오버라이드를 변경하며 `"inherit"`를 받아 정리합니다. 둘 다 `extensionNames`로 이름을 받습니다; `enabled`와 `disabled`는 설치 전에 선언할 수 있으며, 알 수 없는 이름에 대한 `inherit`는 no-op입니다. 각 요청은 폴링할 작업 하나를 반환합니다.
+워크스페이스 Skill 설정을 이름으로 업데이트하려면 `workspace_skill_settings_toggle` 기능을 확인한 후 `POST /workspace/skills/:name/enable`을 `{ "enabled": true | false }`로 호출하세요. 여러 이름을 변경하려면 `workspace_skill_settings_batch_toggle`를 확인하고 `POST /workspace/skills/enable`을 `{ "skillNames": ["review", "deploy"], "enabled": false }`로 호출하세요; 구조적으로 유효한 모든 이름을 함께 처리하고, 최대 하나의 잠긴 설정 쓰기에 모든 결과 선언 변경을 영속화하며, 변경 사항이 있으면 활성 ACP 세션을 한 번 새로 고칩니다. 이 라우트는 로드된 Skill 카탈로그를 참조하지 않고 워크스페이스 `skills.disabled` 및 `skills.enabled`를 작성하므로, 설치 전이나 Extension이 비활성 상태인 동안에도 이름을 비활성화할 수 있습니다. 활성화하면 일치하는 워크스페이스 비활성화를 제거하고 설치 전에도 명시적인 `skills.enabled` 옵트인을 기록하므로, 이 항목이 Extension의 내부 Skill 비활성화를 재정의할 수 있습니다. 동일한 선언을 반복해도 no-op입니다(`changed: false`). 경로와 요청 본문은 변경되지 않습니다; 설정별 기능이 지원 중단된 카탈로그 검증 Skill 토글 태그를 대체합니다. 배치 `errors` 배열은 와이어 호환성을 위해 유지되며 구조적으로 유효한 이름에 대해서는 비어 있습니다. 더 높은 범위에서 상속된 하드 `skills.disabled` 항목은 유효 가용성에 대해 여전히 권위 있지만, 워크스페이스가 자체 선언을 기록하거나 제거하는 것을 차단하지는 않습니다. Skill 상태 셀은 `disabledReason`(`hard`, `default` 또는 `inactive_extension`)과 선택적 `lockedScope`를 노출합니다. 신뢰할 수 없는 워크스페이스 쓰기는 여전히 거부됩니다. `deferred` 응답은 활성 검사 시 자식이 라이브 상태가 아니었거나 변경된 요청이 필요한 새로 고침 중에 자식/세션을 잃었음을 의미합니다; `changed`가 true이면 영속된 선언은 자식이 시작될 때 적용됩니다. 선언이 실제로 변경되었는지는 `changed`로 보고됩니다(배치 요청의 경우 각 결과에서). `skills.disabled`는 수동 및 모델 사용을 모두 비활성화하며, 직접 `/skill-name` 호출을 사용 가능하게 유지하는 `disable-model-invocation: true`와 다릅니다. V2 Extension 배치의 경우 `extension_batch_activation_v2`를 확인하세요: `PUT /extensions/activation`은 전역 기본값을 변경하고, `PUT /workspaces/:workspace/extensions/activation`은 선택된 워크스페이스의 정확한 오버라이드를 변경하며 `"inherit"`를 받아 정리합니다. 둘 다 `extensionNames`로 이름을 받습니다; `enabled`와 `disabled`는 설치 전에 선언할 수 있으며, 알 수 없는 이름에 대한 `inherit`는 no-op입니다. 각 요청은 폴링할 작업 하나를 반환합니다.
 
 `GET /workspace/env`와 `GET /workspace/preflight`는 ACP 상태와 관계없이
 항상 `initialized: true`로 응답합니다. `env`는 ACP를 참조하지 않습니다(데몬
@@ -332,7 +316,7 @@ qwen serve --hostname 0.0.0.0 --port 4170
 # → boot refuses without QWEN_SERVER_TOKEN
 ```
 
-클라이언트는 모든 요청에 `Authorization: Bearer $QWEN_SERVER_TOKEN`을 전송합니다. `/health`는 **루프백 바인드에서만** 면제되므로 파드 내부의 k8s/Compose 활성 프로브(`127.0.0.1`에서 데몬이 수신)는 자격 증명이 필요하지 않습니다. 비루프백 바인드(`--hostname 0.0.0.0` 등)에서 `/health`는 다른 모든 라우트와 마찬가지로 토큰이 필요합니다 — 그렇지 않으면 공격자가 임의 주소를 탐색하여 데몬 존재를 확인할 수 있습니다. `/capabilities`를 사용하여 토큰이 종단에서 올바른지 확인하세요(항상 인증 필요):
+클라이언트는 일반 API 요청에서 `Authorization: Bearer $QWEN_SERVER_TOKEN`을 전송합니다. `/health`는 **일반 루프백 바인드에서만** 면제되므로 파드 내부의 k8s/Compose 활성 프로브는 자격 증명이 필요하지 않습니다. 비루프백 바인드(`--hostname 0.0.0.0` 등)에서 `/health`는 다른 일반 API 라우트와 마찬가지로 토큰이 필요합니다 — 그렇지 않으면 공격자가 임의 주소를 탐색하여 데몬 존재를 확인할 수 있습니다. 채널 웹훅 인그레스는 모든 모드에서 별도이며 데몬 베어러 대신 구성된 `x-qwen-webhook-secret`을 사용합니다. `/capabilities`를 사용하여 구성된 토큰이 종단에서 올바른지 확인하세요:
 
 > **강화된 루프백(`--require-auth`).** 기본 루프백 토큰 없음 동작은 단일 사용자 노트북에서는 괜찮지만, 모든 로컬 사용자가 `curl 127.0.0.1:4170`을 할 수 있는 공유 개발 호스트, CI 러너 또는 다중 테넌트 워크스테이션에서는 안전하지 않습니다. `--require-auth`를 전달하면 `/health` 및 `/capabilities`를 포함한 모든 라우트에서 베어러 토큰이 필수화됩니다 — `127.0.0.1`에 바인딩된 경우에도. 토큰 없이는 부팅이 실패합니다. 플래그가 켜지면 **인증되지 않은** 클라이언트는 `/capabilities`를 읽어서 인증이 필요함을 발견할 수 없습니다; 발견 표면은 401 응답 본문 자체입니다. 인증되면 `caps.features.require_auth` 태그는 배포가 강화되었음을 사후 인증 확인합니다(감사/컴플라이언스 UI에 유용):
 >
@@ -385,9 +369,10 @@ qwen serve \
 참고:
 
 - **두 플래그 모두 또는 모두 없음** — 하나만 주어지면 부팅이 실패합니다(키 없는 인증서는 HTTPS 리스너를 시작할 수 없음).
-- **TLS는 인증과 직교** — HTTPS는 전송을 암호화합니다; 베어러 토큰은 여전히 모든 API 라우트를 게이트합니다. 비루프백 바인드는 TLS 유무와 관계없이 토큰이 필요합니다.
+- **TLS는 인증과 직교** — HTTPS는 전송을 암호화합니다; 베어러 토큰이 구성되면 일반 루프백 바인드를 제외한 모든 API 라우트를 게이트합니다. 루프백 `/health`도 게이트하려면 `--require-auth`를 전달하세요. 채널 웹훅 인그레스는 항상 자체 공유 시크릿을 사용합니다. 비루프백 바인드는 TLS 유무와 관계없이 토큰이 필요합니다.
 - **범위는 TLS 종단만** — 자동 생성 없음, ACME / Let's Encrypt 없음. 이것은 LAN / 개발 편의입니다; 인터넷 노출 배포의 경우 리버스 프록시에서 TLS를 종단하세요(아래 위협 모델 참조).
 - **채널 워커는 `https://`를 통해 데몬에 다시 연결합니다** — 따라서 제공 인증서도 신뢰해야 합니다. 자체 서명 인증서(또는 자체 루트를 포함하는 전체 체인)는 추가 작업이 필요 없습니다: 데몬이 각 워커의 `NODE_EXTRA_CA_CERTS`에 주입합니다. 위의 mkcert 플로우가 **CA 발급**이므로 리프만으로는 체인을 앵커할 수 없습니다 — `--channel`로 시작하기 전에 데몬의 시작 환경에서 `NODE_EXTRA_CA_CERTS="$(mkcert -CAROOT)/rootCA.pem"`를 export하세요. 운영자가 설정한 값은 데몬 인증서와 _병합_되며 대체되지 않습니다. 이 값이 없으면 데몬은 정상적으로 부팅되지만 모든 채널 워커가 `UNABLE_TO_VERIFY_LEAF_SIGNATURE`로 재시작 루프에 빠집니다; 데몬 로그가 부팅 시 이 격차를 이름으로 표시합니다.
+- **IPv6 와일드카드 바인드는 이 호스트가 실제로 할당하는 루프백으로 다시 호출됩니다** — `--hostname ::`(또는 `[::]`)는 IPv6 소켓을 바인딩하고, 빈 `--hostname`은 IPv6를 사용할 수 있을 때도 하나를 바인딩합니다(사용할 수 없으면 Node가 `0.0.0.0`로 폴백). 해당 소켓은 듀얼 스택이며(Node가 `IPV6_V6ONLY=0`을 고정하므로 `net.ipv6.bindv6only` sysctl은 이를 변경하지 않음), 두 루프백 모두 일반적으로 도달할 수 있습니다 — 하지만 IPv4가 전혀 없는 호스트는 `::1`만 가지고, `::`를 바인딩하지만 루프백에 `::1`이 없는 호스트(예: `net.ipv6.conf.lo.disable_ipv6=1`)는 `127.0.0.1`만 가집니다. 워커는 이 호스트가 할당할 때 `[::1]`로, 그렇지 않으면 `127.0.0.1`로 전송됩니다. IPv6 와일드카드 바인드를 위한 제공 인증서는 두 루프백을 SAN에 포함해야 합니다(`mkcert localhost 127.0.0.1 ::1`로 커버됨); 부트 신뢰 진단은 워커가 호출할 정확한 URL을 검사하고 격차를 이름으로 표시합니다. `--hostname 0.0.0.0`은 변경되지 않으며 여전히 `127.0.0.1`이 필요합니다.
 - **`--tls-cert`를 제자리에서 회전하려면 데몬 재시작이 필요합니다** — 데몬은 부팅 시 읽은 바이트를 제공하므로, 재시작할 때까지 재생성된 워커는 데몬이 제공하는 것보다 최신 내용을 로드할 수 있어 핸드셰이크가 실패합니다.
 
 ## CLI 플래그
@@ -400,6 +385,7 @@ qwen serve \
 | `--local-control-address <ip>`          | —                  | 호스트에 여러 후보가 있을 때 공유할 LAN IPv4 주소를 지정합니다. `--local-control`이 모호한 선택을 보고할 때만 필요합니다.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `--token <str>`                         | —                  | 베어러 토큰. `QWEN_SERVER_TOKEN` 환경 변수로 폴백(선행/후행 공백 제거 — `$(cat token.txt)`에 편리).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `--require-auth`                        | `false`            | 루프백에서도 베어러 토큰 없이 시작 거부. 공유 개발 호스트 / CI 러너 / 모든 로컬 사용자가 리스너에 접근할 수 있는 다중 테넌트 워크스테이션을 위해 `127.0.0.1` 개발자 기본값을 강화합니다. `--token` 또는 `QWEN_SERVER_TOKEN`이 설정된 경우에만 부팅; `/health`도 베어러 뒤에 게이트.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `--enable-session-shell`                | `false`            | 직접 세션 셸 실행을 활성화합니다. 구성된 베어러 토큰 또는 신뢰 루프백 모드 중 하나와 함께 효과적; 호출은 여전히 유효한 세션 바인딩 `X-Qwen-Client-Id`가 필요합니다.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `--tls-cert <path>`                     | —                  | PEM 인증서 파일 경로. HTTP 대신 **HTTPS**로 제공합니다. `--tls-key`와 쌍을 이루어야 합니다(하나만 주어지면 부팅 실패). 보안 컨텍스트 브라우저 API — 음성 입력(`getUserMedia`), WebRTC — 를 LAN IP에서 잠금 해제하며, 그렇지 않으면 브라우저가 일반 `http://`에서 차단합니다. TLS 종단만; 자동 생성 / ACME 없음. 아래 [HTTPS / TLS](#https--tls모바일--크로스-디바이스-액세스용) 참조.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `--tls-key <path>`                      | —                  | PEM 개인 키 파일 경로. `--tls-cert`와 쌍을 이루어야 합니다.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `--max-sessions <n>`                    | `32`               | 동시 라이브 세션 상한. 상한에 도달하면 새 자식을 생성하는 `POST /session` 요청은 `503`(`Retry-After: 5` 포함)을 반환합니다; 기존 세션에 대한 연결은 카운트되지 않습니다. 비활성화하려면 `0`으로 설정. 단일 사용자 / 소규모 팀 사용에 맞춰져 있습니다; 배포에 RAM/FD 여유가 있으면(~30–50 MB/세션) 높이세요.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
@@ -577,10 +563,11 @@ remember/dream 제어는 필수 모드가 활성인 동안 거부됩니다. 최�
 
 ## 기본 배포 위협 모델
 
-- **127.0.0.1만** — 루프백 바인드, 인증 불필요.
+- **루프백만** — `127.0.0.0/8`, `localhost` 또는 `::1`; 인증 불필요.
+- **`localhost`는 한 번 해석되고 고정된 후 리스닝 후 검증됩니다** — 실제 리스너 주소가 `127.0.0.0/8` 또는 `::1` 밖이면 토큰 없는 시작이 리스너를 닫고 실패합니다.
 - **`--hostname 0.0.0.0`는 토큰 필요** — 토큰 없으면 부팅 거부.
 - **`LOOPBACK_BINDS`는 IPv6 포함** — `::1`과 `[::1]`은 토큰 없음 규칙에 대해 루프백으로 카운트.
-- **Host 헤더 허용 목록** — **루프백** 바인드에서 데몬은 `Host:`가 `localhost:port` / `127.0.0.1:port` / `[::1]:port` / `host.docker.internal:port`와 일치하는지 확인합니다(RFC 7230 §5.4에 따라 대소문자 구분 없음). DNS 리바인딩으로부터 방어하기 위함입니다. 일치하지 않는 `Host`는 `403`을 받습니다. **비루프백 바인드(`--hostname 0.0.0.0`)는 의도적으로 Host 허용 목록을 우회합니다** — 운영자가 표면을 선택했으므로 베어러 토큰 게이트가 유일한 인증 레이어입니다; 리버스 프록시 / SNI / 클라이언트 인증서 핀ning은 데몬이 아닌 운영자의 책임입니다. 비루프백 바인드에서 Host 기반 격리가 필요하면 TLS를 종료하고 프론트 프록시에서 Host를 확인하세요.
+- **Host 헤더 허용 목록** — **루프백** 바인드에서 데몬은 DNS 리바인딩으로부터 방어하기 위해 `Host:`가 `localhost:port` / `127.0.0.1:port` / `[::1]:port` / `host.docker.internal:port` 또는 정확히 바인딩된 루프백 주소와 포트와 일치하는지 확인합니다(RFC 7230 §5.4에 따라 대소문자 구분 없음). 포트 80 또는 443에서 리스닝할 때는 브라우저가 스킴 기본 포트를 생략하므로 포트 없는 형태도 허용됩니다. 이것은 관련 없는 Host를 수용하지 않으면서 완전한 IPv4 루프백 범위(`127.0.0.0/8`)를 지원합니다. **비루프백 바인드(`--hostname 0.0.0.0`)는 의도적으로 Host 허용 목록을 우회합니다** — 운영자가 표면적을 선택했으므로 베어러 토큰 게이트가 일반 API 라우트의 유일한 인증 레이어입니다; 리버스 프록시 / SNI / 클라이언트 인증서 핀ning은 데몬이 아닌 운영자의 책임입니다. 비루프백 바인드에서 Host 기반 격리가 필요하면 프론트 프록시에서 TLS를 종료하고 Host를 확인하세요.
 - **CORS는 기본적으로 모든 브라우저 Origin을 거부** — `403` JSON을 반환합니다. **`--allow-origin <pattern>`**(반복 가능, T2.4 #4514)을 전달하여 특정 브라우저 오리진을 통과시키세요. 각 값은 리터럴 `*`(모든 오리진 — 베어러 토큰이 구성되지 않으면 부팅 거부; `/health`가 루프백에서 기본적으로 사전 인증이므로 완전한 강화를 위해 `--require-auth` 권장 — Web Shell 정적 자산(`/`, `/assets/*`, `/session/:id` 문서 탐색)은 모든 모드에서 베어러 전에 마운트되며 `--require-auth`에서도 사전 인증 상태를 유지하므로 잔여 브라우저 표면이 문제되면 `--no-web`을 사용하세요) 또는 표준 URL 오리진(`<scheme>://<host>[:<port>]`, 후행 슬래시/경로/사용자 정보 없음). 매칭된 오리진은 적절한 CORS 응답 헤더를 받습니다(`Access-Control-Allow-Origin: <echoed>`, `Vary: Origin` 및 표준 메서드/헤더/max-age와 노출된 `Retry-After`); 매칭되지 않은 오리진은 여전히 기본 월과 동일한 인벨롭으로 403을 받습니다. `caps.features.allow_origin`은 조건부로 광고되어 SDK / webui 클라이언트가 크로스 오리진 히트를 치기 전에 데몬이 이를 존중하는지 사전 점검할 수 있습니다. 예시: `qwen serve --allow-origin http://localhost:3000 --allow-origin http://localhost:5173`. 루프백 자체 오리진 히트(예: Web Shell UI)는 영향을 받지 않습니다 — 별도의 Origin-스트립 심이 `--allow-origin`과 관계없이 처리합니다. **`--allow-origin`이 구성되지 않은 브라우저 webui**는 여전히 이전과 동일한 Stage 1 옵션으로 폴백합니다: 네이티브 셸(Electron/Tauri)로 패키징하여 `Origin` 헤더가 전송되지 않도록 하거나, 데몬을 동일 오리진 리버스 프록시로 프론트하세요.
 - **Chrome 확장 브라우저 자동화는 프레이밍과 분리됩니다.** `qwen serve --allow-origin chrome-extension://<id>`는 확장이 Web Shell을 프레이밍하고 데몬에 연결할 수 있도록 합니다. 콘솔/네트워크/스크린샷/클릭 도구는 외부 CDP MCP 어댑터 명령어가 필요합니다: `QWEN_CDP_MCP_COMMAND=/path/to/cdp-mcp-adapter qwen serve --allow-origin chrome-extension://<id>`. 메인 CLI 패키지는 브라우저 자동화 어댑터를 번들하지 않습니다; 클라이언트는 해당 도구를 사용 가능으로 표시하기 전에 `caps.features.includes('browser_automation_mcp')`를 확인할 수 있습니다.
 - **생성된 `qwen --acp` 자식은 소유 런타임의 유효 환경을 받습니다.** 데몬은 프로세스 env 베이스를 동결하고 해당 워크스페이스의 설정/env-파일 오버레이를 런타임 로컬 스냅샷에 적용하며 오버레이를 `process.env`에 다시 쓰지 않습니다; 다른 런타임의 동일한 이름 키는 교차되지 않습니다. `QWEN_SERVER_TOKEN`은 생성 전에 스크러빙됩니다 — 에이전트가 데몬 베어러를 필요로 하지 않기 때문입니다. `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `QWEN_*` 및 `DASHSCOPE_API_KEY`와 같은 기본 자격 증명은 런타임 오버레이가 변경하지 않는 한 통과됩니다. **이것은 의도적이며 샌드박스가 아닙니다.** 에이전트는 동일한 UID로 실행되며 셸 도구 액세스가 있으므로 `~/.bashrc`, `~/.aws/credentials` 또는 `~/.npmrc`의 모든 것이 프롬프트 주입을 통해 도달 가능합니다. 런타임 간 환경 격리는 운영 체제 보안 경계가 아닙니다; 에이전트에게 신뢰하지 않을 자격 증명을 가진 ID로 `qwen serve`를 실행하지 마세요.
@@ -644,6 +631,21 @@ remember/dream 제어는 필수 모드가 활성인 동안 거부됩니다. 최�
 - 텍스트 쓰기 라우트가 생성한 새 파일에 적용됩니다(워크스페이스 대상, 동일 호스트 외부 호스트 작성자 및 HTTP 텍스트 쓰기). 기존 파일은 항상 디스크의 모드를 유지합니다 — `0600` 시크릿을 편집하면 `0600`으로 유지되고, 실행 파일은 `+x`를 유지합니다.
 - 바이너리 업로드(`POST /file/upload`)는 이 설정과 관계없이 항상 `0600`으로 생성됩니다.
 - 데몬은 워크스페이스 파일시스템 생성 시 변수를 읽습니다; 변경 후 데몬을 재시작하세요.
+
+### 세션 첨부 저장
+
+세션 첨부(Web Shell이 `POST /session/:id/attachments`를 통해 업로드한 파일 및 이미지)는 기본적으로 워크스페이스의 런타임 임시 디렉토리 아래에 저장됩니다: `<runtimeBaseDir>/tmp/<projectHash>/attachments`, 세션별로 `session-<sessionId>` 키가 지정됩니다. 런타임 임시 디렉토리 외부(예: 전용 볼륨)에 첨부 파일을 영속하려는 운영자는 루트를 재정의할 수 있습니다:
+
+| 환경 변수                               | 값    | 기본값 | 수행 내용                                                                                                                                                                                                |
+| ------------------------------------- | ------ | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `QWEN_SERVE_SESSION_ATTACHMENTS_ROOT` | 경로   | 미설정   | 기본 런타임 임시 디렉토리 대신 이 디렉토리 아래에 세션 첨부 파일을 저장합니다. 절대 경로, 데몬의 cwd 상대 경로, 또는 홈 디렉토리에 대해 확장되는 `~` / `~/…`를 허용합니다. |
+
+범위 및 제한:
+
+- **단방향 마이그레이션.** 환경 변수가 설정되면 새 첨부 파일은 구성된 루트 아래에만 기록됩니다. 구성된 루트를 놓치는 읽기 및 제거는 기본 런타임 임시 디렉토리로 폴백하므로, 전환 **이전**에 업로드된 첨부 파일도 읽기 가능하며 기본 폴백 디렉토리가 쓰기 가능한 동안 제거할 수 있습니다 — 레거시 사본을 unlink할 수 없는 제거(예: 읽기 전용 폴백 볼륨)는 성공을 보고하지 않고 오류를 표시합니다. 반대 방향 — 구성된 루트에 첨부 파일이 기록된 후 환경 변수를 제거하면 해당 첨부 파일에 도달할 수 없게 됩니다; 주어진 워크스페이스에 대해 변수를 안정적으로 유지하세요.
+- **세션별 레이아웃.** 파일은 두 위치 모두에서 `<root>/<projectHash>/attachments/session-<sessionId>/` 아래에 위치하며, `<projectHash>`는 기본 런타임 임시 디렉토리에서 사용하는 동일한 워크스페이스 해시입니다; 폴백 조회는 기본 디렉토리에서 동일한 세션 레이아웃을 사용합니다. 동일한 구성된 루트를 가리키는 두 워크스페이스는 서로 격리된 상태로 유지됩니다.
+- **삭제 정리.** 세션이 삭제되면 첨부 디렉토리가 구성된 루트와 기본 폴백 디렉토리 모두에서 제거됩니다. 세션을 아카이브하면 첨부 파일이 유지되어 아카이브 해제 후에도 생존합니다.
+- 데몬은 시작 시 변수를 읽습니다; 변경 후 데몬을 재시작하세요. 디렉토리는 데몬 프로세스가 쓰기 가능해야 합니다.
 
 ## 다중 세션 및 다중 워크스페이스 배포
 
@@ -855,7 +857,7 @@ const result = await flow.awaitCompletion({ signal: abortCtrl.signal });
 
 **데몬은 사용자를 대신하여 브라우저를 열지 않습니다.** 로컬에서 실행될 때도 데몬은 수동으로 유지됩니다 — URL을 반환하고 SDK / 사용자가 어디에서 열지 선택하도록 합니다. 이것은 의도적입니다: `xdg-open`을 호출하는 헤드리스 파드의 데몬은 조용히 실패하여 실제 인증 표면을 마스킹합니다. 클라이언트에서 `gh auth login`의 "Press Enter to open browser" UX를 미러링하세요.
 
-**`--require-auth`와 개발 편의.** 디바이스 플로우 라우트는 엄격 뮤테이션 게이트(PR 15)를 사용하므로 토큰 없는 루프백 기본값은 `401 token_required`를 반환합니다. 로컬에서 개발 중 이를 우회하는 가장 간단한 방법은 `qwen serve --token=dev-token`입니다; 루프백 기본값을 강화하지 않는 한 `--require-auth`가 필요하지 않습니다.
+**`--require-auth`와 개발 편의.** 디바이스 플로우 라우트는 엄격 뮤테이션 게이트를 사용합니다. 토큰 없는 신뢰 루프백 기본값은 플로우를 직접 시작하고 관리할 수 있습니다; 자격 증명 없는 신뢰할 수 없는 임베드는 `401 token_required`를 반환합니다. 공유 호스트, CI 러너, 원격 개발 머신 또는 로컬 프로세스가 상호 신뢰되지 않는 모든 곳에서 관리되는 `QWEN_SERVER_TOKEN`을 설정하고 `--require-auth`를 전달하세요.
 
 **크로스 데몬 제한.** `oauth_creds.json`은 데몬 간 공유됩니다(`~/.qwen/oauth_creds.json`). 데몬 A에서의 성공적인 로그인은 데몬 B의 다음 토큰 새로 고침에서 자동으로 가져와집니다 — 하지만 데몬 B의 SDK 클라이언트는 `auth_device_flow_authorized` 이벤트를 받지 못합니다(이벤트는 데몬별).
 

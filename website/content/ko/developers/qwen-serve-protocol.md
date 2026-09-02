@@ -106,6 +106,24 @@ OPTIONS 프리플라이트 요청(`Access-Control-Request-Method` 또는 `Access
 
 기존 세션에 대한 attach는 상한에 포함되지 않으므로, 유휴 데몬의 재연결은 상한에 도달해도 계속 작동합니다.
 
+ACP 채널 초기화 예산이 `newSession`이 디스패치되기 전에 만료되면, `POST /session`은 `Retry-After: 5`와 함께 `504`를 반환합니다:
+
+```json
+{
+  "error": "AcpSessionBridge initialize timed out after 10000ms",
+  "code": "init_timeout",
+  "errorKind": "init_timeout",
+  "retryable": true,
+  "sideEffectPossible": false,
+  "phase": "channel.initialize",
+  "timeoutMs": 10000
+}
+```
+
+`timeoutMs` — 그리고 `error`의 숫자 접미사 — 는 데몬의 구성된 `--initialize-timeout-ms` 예산을 반영합니다(위의 값은 기본값입니다). 위의 완전한 안전 재시도 형태는 채널 초기화가 모든 내구성 변이 이전에 엄격히 선행되는 일반 세션 생성에만 발행됩니다: 해당 경로에서 `sideEffectPossible: false` 필드는 권위 있습니다 — 초기화가 ACP `newSession` 요청 이전에 선행되기 때문이며, 이 구조화된 계약을 이해하는 클라이언트는 중복 Session 위험 없이 광고된 지연 후 재시도할 수 있습니다.
+
+`branch` 또는 `worktree`를 carry하는 요청, 그리고 일반 생성 외의 변이 보유 라우트에서 표면화된 초기화 타임아웃(예: `POST /session/:id/branch` 및 `POST /session/:id/side-task`, 커밋된 포크가 실패한 핸드셰이크 이후에도 생존할 수 있는)은 `code: "init_timeout"`, `phase`, `timeoutMs`와 함께 동일한 `504`를 반환하지만 — `Retry-After`, `retryable`, `sideEffectPossible`는 **없이**. 해당 경우 변이 결과는 알 수 없습니다: branch와 worktree 준비는 채널 초기화 전에 git을 변이시키며, 실패 시 시도되는 롤백은 최선 노력입니다(실패한 체크아웃 롤백은 워크스페이스를 새 브랜치에 남기며, 재시도는 branch-already-exists 충돌을 표면화할 수 있습니다). 모든 5xx 변이 응답을 모호하게 분류하는 클라이언트는 보수적으로 fail-closed 상태를 유지하며, 축소된 형태에도 동일한 정책을 적용해야 합니다. `POST /session/:id/load` 및 `POST /session/:id/resume`은 채널 초기화가 복원 요청이 디스패치되기 전에 타임아웃될 때(`ensureChannel` 단계) 동일한 축소된 `init_timeout` `504`를 표면화합니다; 해당 Errors 목록에 문서화된 `session_restore_timeout` `504`와 달리, 이 형태는 `Retry-After`가 없고, `retryable`이 없으며, 복원이 절대 디스패치되지 않았으므로 펜스를 설치하지 않습니다. `POST /session`의 `newSession` 디스패치 타임아웃은 예외입니다: `code: "init_timeout"`, `retryable: true`, 예산 유도 `Retry-After`와 함께 `504`를 반환하지만, `phase`나 `sideEffectPossible`는 없이 — 생성 결과가 모호하기 때문입니다. 다른 모든 타임아웃 레이블은 일반 매핑을 유지합니다.
+
 `RestoreInProgressError` — 이미 다른 등록이 해당 ID를 소유하고 있을 때 `POST /session/:id/load`, `POST /session/:id/resume`, 또는 호출자 제공 ID의 `POST /session`에서 발생 — `409`와 다음을 반환합니다:
 
 ```json
@@ -307,10 +325,31 @@ OPTIONS 프리플라이트 요청(`Access-Control-Request-Method` 또는 `Access
 | `DELETE /extensions/:extensionId`                                  | `202` 제거 작업, 또는 확장이 없을 때 멱등 `204` |
 | `GET /extensions/operations/:operationId`                          | `200` 작업 스냅샷                                                    |
 | `GET /workspaces/:workspace/extensions`                            | `200` 워크스페이스 활성화 프로젝션                                       |
+| `GET /workspaces/:workspace/extensions/:extensionId/state`         | `200` 워크스페이스 리소스 상태 (`extension_state`)                          |
+| `PUT /workspaces/:workspace/extensions/:extensionId/state`         | `202` 워크스페이스 리소스 상태 작업 (`extension_state`)                |
 | `PUT /workspaces/:workspace/extensions/activation`                 | `202` 정확한 워크스페이스 활성화 배치 작업                            |
 | `PUT /workspaces/:workspace/extensions/:extensionId/activation`    | `202` 정확한 워크스페이스 활성화 작업                                  |
 | `DELETE /workspaces/:workspace/extensions/:extensionId/activation` | `202` 재정의 제거 작업                                              |
 | `POST /workspaces/:workspace/extensions/refresh`                   | `202` 런타임 새로고침 작업                                             |
+
+#### 워크스페이스 리소스 상태
+
+`extension_state`를 독립적으로 프리플라이트합니다. Skill만 지원하며, MCP 리소스 관리를 의미하지 않습니다. 두 라우트 모두 등록된 워크스페이스 런타임을 선택하며 기본값으로 폴백하지 않습니다. GET은 기존 읽기 전용 신뢰 규칙을 따르며, PUT은 신뢰되는 워크스페이스가 필요합니다.
+
+```json
+{
+  "skills": [
+    { "name": "review", "state": "enabled" },
+    { "name": "deploy", "state": "disabled" }
+  ]
+}
+```
+
+PUT은 단일 요소 배치를 포함하여 1–100개의 항목을 허용합니다. 큐잉 전에 잘못된 형식의 항목, 대소문자 무시 중복 이름, 지원되지 않는 그룹을 거부합니다. 모든 이름은 현재 비활성화된 Skill을 포함하여 설치된 대상 Extension에 속해야 하며, 잘못된 대상은 부분 쓰기 없이 작업을 실패시킵니다. 하나의 잠긴 저장소 커밋이 정확한 정규 워크스페이스에 대해 나열된 재정의을 병합합니다. 나열되지 않은 Skill과 다른 워크스페이스는 보존됩니다. 설정 쓰기, 향후 이름 선언, 또는 부모 Extension의 암시적 활성화는 없습니다.
+
+GET은 `v: 1`, `workspaceId`, `workspaceCwd`, `extensionId`, `name`, `skills`를 반환합니다. 각 Skill은 `name`, `defaultEnabled`, nullable `workspaceEnabled`, `effectiveEnabled`, 그리고 선택적 `disabledReason`/`lockedScope`를 가집니다. 매니페스트의 선택적 `skillStates`가 기본값을 제공하며, 누락된 값은 enabled로 기본값 설정됩니다. 활성 부모에 대해, 우선순위는 설정 하드 비활성화, 설정 명시적 활성화, 설정 기본 비활성화, 워크스페이스 내부 재정의, 매니페스트 기본값입니다. 내부 비활성화는 `disabledReason: "default"`를 사용하며 설정을 잠그지 않습니다. 비활성화되거나 제거된 부모는 Skill 재정의로 부활할 수 없습니다.
+
+`set_extension_state` 작업은 정렬된 `result.resourceStates.skills`와 함께 `status: "updated"`를 반환합니다; `result.states`는 업데이트 확인 의미를 유지합니다. 영구적 상태가 모든 세션이 새로 고침되었음을 증명하는 것은 아닙니다. 데몬은 부트스트랩 및 라이브 세션을 포함하여 대상 런타임에 대한 Skill과 해당 명령어/모델 컨텍스트만 새로 고치며, 관련 없는 MCP/LSP/hook을 재시작하지 않습니다. 커밋 후 새로 고침 실패는 상태를 롤백하지 않고 경고를 생성합니다. 재정의는 재시작과 Extension 업데이트에서 생존하며 제거 시 제거됩니다. 클라이언트는 더 높은 우선순위 설정을 작성하는 Skill 설정 API로 폴백하면 안 됩니다.
 
 전역 카탈로그 응답은 다음과 같습니다:
 
@@ -476,6 +515,7 @@ Content-Type: application/json
 | `prompt_absolute_deadline`          | `--prompt-deadline-ms` / `QWEN_SERVE_PROMPT_DEADLINE_MS` / `ServeOptions.promptDeadlineMs`가 양의 정수로 설정되어 있습니다. |
 | `writer_idle_timeout`               | `--writer-idle-timeout-ms` / `QWEN_SERVE_WRITER_IDLE_TIMEOUT_MS` / `ServeOptions.writerIdleTimeoutMs`가 양의 정수로 설정되어 있습니다. |
 | `workspace_settings`                | 데몬이 설정 지속성과 함께 생성되었습니다. |
+| `user_language_sync`                | 데몬이 설정 지속성과 함께 생성되었습니다(`workspace_settings`와 동일한 조건), 세션 없는 `POST /language` 라우트가 등록됩니다. |
 | `workspace_voice`                   | 설정 지속성이 가능하므로 레거시 기본 워크스페이스 Voice 설정 라우트가 활성입니다. |
 | `workspace_voice_transcription`     | 기본 워크스페이스에 구성된 Voice 전사 모델이 있습니다. |
 | `session_shell_command`             | 세션 셸 실행이 명시적으로 활성화되어 있습니다. |
@@ -497,6 +537,10 @@ Content-Type: application/json
 | `persistent_workspace_registration` | 워크스페이스 등록 저장소가 데몬에 와이어링되어 있습니다. 프로덕션 `runQwenServe`는 사용자 레벨 저장소를 자동으로 제공합니다; 직접 `createServeApp` 임베드는 명시적으로 주입하고 워크스페이스 레지스트리의 시작 복원을 관리해야 합니다. |
 | `scratch_workspace_registration`    | 관리되는 스크래치 워크스페이스 생성이 가능합니다 — 런타임 팩토리, 검증된 관리 스크래치 루트, 런타임 정리가 와이어링되어 있으며 모든 관리 런타임이 스크래치 루트 경계를 존중합니다. |
 | `workspace_runtime_removal`         | 제거 가능한 동적 또는 지속성 복원 보조 런타임을 관리 라우트를 통해 배수하고 제거할 수 있습니다. |
+| `native_directory_picker`           | 데몬 호스트가 네이티브 OS 디렉토리 피커를 열 수 있습니다(macOS의 `osascript`, Windows의 PowerShell, 디스플레이가 있는 Linux 호스트의 `zenity`). 헤드리스 호스트는 태그를 생략하여 클라이언트가 보장된 피커 실패를 표면화하는 대신 Browse 기능을 숨기도록 합니다. |
+| `workspace_runtime`                 | 모든 활성 워크스페이스 브리지가 권위 있는 런타임 라이프사이클 스냅샷을 제공합니다; 혼합 또는 레거시 주입 브리지는 태그를 생략합니다. |
+| `workspace_local_open`              | 데몬 호스트가 호스트의 OS 파일 관리자에게서 워크스페이스 디렉토리를 열 수 있습니다(macOS의 `open`, Windows의 `explorer.exe`, 디스플레이가 있는 Linux 호스트의 `xdg-open`). 헤드리스 호스트는 태그를 생략하여 클라이언트가 보장된 시작 실패를 표면화하는 대신 로컬에서 열기 기능을 숨기도록 합니다. 열린 경로는 항상 해석된 등록된 워크스페이스 cwd이며, `POST /workspaces/:workspace/open`을 통해; 라우트는 선택적 JSON 본문 `{ "target": "terminal" }`(부재/기타 = 폴더)를 수용하고 `target`이 `folder` 또는 `terminal`로 설정된 `{ kind: 'workspace-local-open', opened: true, target }`로 응답합니다. |
+| `workspace_local_terminal`          | 데몬 호스트가 워크스페이스 디렉토리에서 터미널 창을 열 수 있습니다(macOS의 `open -a Terminal`, Windows의 `wt.exe` with `cmd.exe` 폴백, 디스플레이가 있는 Linux 호스트의 `gnome-terminal`/`konsole`/`xterm`). 헤드리스 호스트는 태그를 생략하여 클라이언트가 보장된 시작 실패를 표면화하는 대신 터미널에서 열기 기능을 숨기도록 합니다. `POST /workspaces/:workspace/open`이 본문 `{ "target": "terminal" }`과 함께 제공합니다. |
 | `workspace_qualified_acp`           | ACP HTTP와 멀티 워크스페이스 런타임이 활성이므로 복수 ACP 엔드포인트가 보조 런타임을 선택할 수 있습니다. |
 | `workspace_qualified_voice`         | 멀티 워크스페이스 런타임과 공유 ACP/Voice WebSocket 리스너가 활성이므로 보조 런타임에 대한 모든 워크스페이스 한정 Voice 모달리티에 도달할 수 있습니다. |
 | `workspace_qualified_memory`        | ACP HTTP와 멀티 워크스페이스 런타임이 활성이므로 워크스페이스 한정 관리 메모리 라우트가 remember, forget, dream 작업에 대한 워크스페이스별 작업 레인을 선택할 수 있습니다. |
@@ -2911,6 +2955,48 @@ ACP 자식의 `McpClientManager.discoverMcpToolsForServer`(연결 끊기 + 재�
 - `500` — 내부 오류(예: `ToolRegistry`가 초기화되지 않음).
 
 SSE 이벤트(워크스페이스 범위): 성공 시 `{serverName, durationMs, originatorClientId?}`와 함께 `mcp_server_restarted`; 소프트 스킵 시 `{serverName, reason, originatorClientId?}`와 함께 `mcp_server_restart_refused`.
+
+#### `POST /language`
+
+기능 태그: `user_language_sync`(조건부 — 설정 지속성이 사용 가능할 때만 광고되며, `workspace_settings`와 동일한 조건). 브리지 → 라이브 채널을 가진 신뢰 런타임당 ACP extMethod `qwen/control/user/language`.
+
+세션 없는 **사용자 레벨** 언어 동기화(이슈 #10234), 세션이 존재하기 전에 언어를 전환해야 하는 호스트(예: 환영 페이지)용. 소유권 분류: 프로세스 전역 — 사용자 전역 상태(`~/.qwen/settings.json`, 전역 `~/.qwen/output-language.md`)와 최선 노력 런타임 새로고침만 변이시키므로, 워크스페이스 선택자나 세션 id를 취하지 않습니다. 비엄격 `mutate()` 게이트 뒤에 등록되며, 형제 `POST /session/:id/language`와 일치합니다.
+
+데몬 프로세스가 단일 작성자입니다: 팬아웃 전에 `general.language`(그리고 `syncOutputLanguage`가 true일 때 `general.outputLanguage` plus 전역 `output-language.md`)를 영구화합니다. 각 신뢰 런타임은 자체 프로세스 UI 언어를 전환하고 디스크에서 사용자 범위 설정을 다시 로드합니다; `syncOutputLanguage`가 true일 때, 로컬 세션의 시스템 명령어도 새로 고칩니다. 세션 범위 라우트와의 차이점:
+
+- 프로젝트 바인딩 output-language 파일은 다시 작성되지 **않습니다** — 자체 `.qwen/output-language.md`가 있는 워크스페이스의 세션은 해당 재정의을 유지합니다(새로 고침 시 프로젝트 범위가 승리).
+- 0개의 세션과 0개의 라이브 런타임 채널은 오류가 아닌 **성공**입니다; 라이브 채널이 없는 런타임은 실패가 아닌 건너뛰기이며, 채널이 다음에 생성될 때 영구적 파일을 읽습니다.
+- 신뢰되지 않는 워크스페이스 런타임은 건너뛰어지며, 세션 라우트의 `403 untrusted_workspace` 자세와 일치합니다.
+
+요청:
+
+```json
+{ "language": "zh", "syncOutputLanguage": true }
+```
+
+`language`는 `/capabilities` `supportedLanguages`에 나열된 코드 중 하나여야 합니다(`'auto'` 포함); `syncOutputLanguage`의 기본값은 `false`입니다.
+
+응답 (200):
+
+```json
+{
+  "language": "zh",
+  "outputLanguage": "Chinese",
+  "refresh": { "runtimes": 1, "sessions": 2, "failed": 0 }
+}
+```
+
+`language`는 데몬이 해석한 UI 로캘이므로 `'auto'` 요청도 구체적인 언어를 반환할 수 있습니다; 호스트는 선택기 상태에 대해 영구적 `general.language` 설정을 읽어야 합니다. `outputLanguage`는 `syncOutputLanguage`가 false일 때 `null`입니다. `refresh.runtimes`는 라이브 채널 위에서 전환을 적용한 런타임 수를 카운트합니다; `refresh.sessions`는 세션별 시스템 명령 새로 고침을 합산합니다; `refresh.failed`는 세션별 새로 고침 실패와 실패한 런타임을 집계합니다(팬아웃은 최선 노력이며 영구화 성공 후 요청을 실패시키지 않습니다).
+
+오류:
+
+- `400 {code: 'invalid_language', allowed: [...]}` — 알 수 없는 언어 코드.
+- `400 {code: 'invalid_sync_flag'}` — `syncOutputLanguage`가 비불리언.
+- `400 {code: 'invalid_client_id'}` — `X-Qwen-Client-Id`가 어떤 런타임에도 알려져 있지 않은 클라이언트(헤더는 선택 사항; 세션이 없을 때 생략).
+- `500 {code: 'persist_error'}` — 사용자 설정 또는 output-language 파일 쓰기 실패; 실패한 단계와 그 뒤의 모든 단계는 실행되지 않았습니다(이전에 적용된 단계는 롤백되지 않음).
+- `404` — 데몬이 라우트 이전 버전이거나, 설정 지속성 없이 빌드됨(기능 태그 확인).
+
+SSE 이벤트(워크스페이스 범위, 모든 런타임의 세션 버스에서): `{language, outputLanguage, userLevel: true, originatorClientId?}`와 함께 `language_changed`. `userLevel: true` 마커는 이 팬아웃을 `sessionId`를 carry하는 세션 라우트의 세션별 이벤트와 구별합니다.
 
 ### `GET /session/:id/events` (SSE)
 

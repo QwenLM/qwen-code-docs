@@ -2,7 +2,7 @@
 
 ## 概述
 
-`GET /capabilities` 是 daemon 的预检端点。每个 SDK 客户端在调用任何其他路由之前都应读取它，以便了解 daemon 使用的协议版本、启用了哪些 feature tag，以及 daemon 绑定到了哪个 workspace。契约如下：
+`GET /capabilities` 是 daemon 的预检端点。每个 SDK 客户端在调用任何其他路由之前都应读取它，以便了解 daemon 使用的协议版本、启用了哪些 feature tag，以及 daemon 接受哪些 workspace runtime。契约如下：
 
 - **只有一个协议版本：`v1`。** `SERVE_PROTOCOL_VERSION = 'v1'` 且 `SUPPORTED_SERVE_PROTOCOL_VERSIONS = ['v1']`。v1 在内部是增量添加的；破坏性的 frame-shape 更改保留给 v2。
 - **每个 tag 都有一个 `since` 版本。** 未来的 v2 daemon 可以同时广播 v1 和 v2 tag。
@@ -75,6 +75,7 @@ export const CONDITIONAL_SERVE_FEATURES: ReadonlyMap<
       typeof t.writerIdleTimeoutMs === 'number' && t.writerIdleTimeoutMs > 0,
   ],
   ['workspace_settings', (t) => t.persistSettingAvailable === true],
+  ['user_language_sync', (t) => t.persistSettingAvailable === true],
   ['workspace_voice', (t) => t.persistSettingAvailable === true],
   [
     'workspace_voice_transcription',
@@ -108,7 +109,7 @@ Baseline tags 不存在于 `Map` 中，并且是无条件广播的。这是故�
 
 基础（Foundation）：`health`, `daemon_status`, `capabilities`。
 
-会话（Sessions）：`session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (conditional), `session_language`, `session_rewind`, `session_hooks`, `session_branch`。
+会话（Sessions）：`session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (conditional), `session_language`, **`user_language_sync`** (conditional), `session_rewind`, `session_hooks`, `session_branch`。
 
 流式传输（Streaming）：`slow_client_warning`, `typed_event_schema`。
 
@@ -120,11 +121,13 @@ Workspace 只读快照（Workspace read-only snapshots）：`workspace_mcp`, `wo
 
 扩展管理（Extension management）：`extension_management_v2` 添加全局 `/extensions/*` 目录/变更/操作契约以及 workspace 激活投影。它与已发布的 `workspace_extensions` 兼容表面以及 `workspace_qualified_rest_core` 是独立的。
 
+本地 Extension 安装：`extension_local_path_install` 允许在两个 Extension 安装路由的现有 `source` 字段中使用 daemon 主机上的绝对路径。它独立于 `extension_management_v2`，因为主 workspace 兼容性路由也支持它，客户端不应向旧版 daemon 发送本地路径。
+
 V2 Extension 批量激活：`extension_batch_activation_v2` 在 `extension_management_v2` 之上添加全局默认激活队列和选定 workspace 覆盖批次。客户端必须独立预检它，因为旧版 V2 daemon 仅暴露单一激活路由。
 
 Workspace 限定会话读取（Workspace-qualified session reads）：`workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`, `workspace_session_live_state`。活跃和已归档的导出 tag 彼此独立，也与 `session_export` 和 `workspace_qualified_rest_core` 独立，因此客户端必须预检其打算导出的确切存储状态。持久化转录分页允许在受限读取策略下的不受信任次级运行时；两条完整导出路径仍然仅限受信任运行时。`workspace_session_live_state` 同样独立于 `workspace_qualified_rest_core` 且仅限受信任运行时：它提供所选运行时的纯内存活跃会话快照和目录版本，不会将不受信任次级运行时的持久化读取策略扩展到活跃 bridge 状态。
 
-Workspace 变更（Wave 4+）：`workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, **`workspace_settings`** (conditional), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, `workspace_file_upload`, **`workspace_reload`** (conditional)。
+Workspace 变更（Wave 4+）：`workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, `workspace_skill_settings_toggle`, `workspace_skill_settings_batch_toggle`, **`workspace_settings`** (conditional), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, `workspace_file_upload`, **`workspace_reload`** (conditional)。两个 Skill settings tag 取代了已退役的经目录验证的 `workspace_skill_toggle` 和 `workspace_skill_batch_toggle` tag。
 
 MCP 防护栏（MCP guardrails）：**`mcp_guardrails`** (`modes: ['warn', 'enforce']`), `mcp_guardrail_events`, `mcp_server_runtime_mutation`, **`mcp_workspace_pool`** (conditional), **`mcp_pool_restart`** (conditional)。
 
@@ -178,7 +181,7 @@ sequenceDiagram
 ## 状态与生命周期
 
 - `CAPABILITIES_SCHEMA_VERSION` 是 wire envelope shape 版本，当前为 `1`。仅在 envelope 发生破坏性更改时才增加它。
-- `SERVE_PROTOCOL_VERSION = 'v1'` 是 protocol-feature 版本。在 v1 内部添加 features 是增量添加的；旧客户端不会看到新行为，除非它们预检了新 tag。移除 feature 是 v2 的破坏性更改。
+- `SERVE_PROTOCOL_VERSION = 'v1'` 是 protocol-feature 版本。在 v1 内部添加 features 是增量添加的；旧客户端不会看到新行为，除非它们预检了新 tag。修正后的行为可以取代 v1 内的某个 capability：取代 tag 接替旧 tag，旧 tag 停止广播，客户端必须预检取代 tag。没有取代项地移除 feature 是 v2 的破坏性更改。
 - `EVENT_SCHEMA_VERSION = 1` 是 SSE frame 的 `v` 字段（参见 [`09-event-schema.md`](./09-event-schema.md)）。它是一个独立的版本轴；增加 event schema 并不意味着增加 protocol version，反之亦然。
 - `session_resume` 是 `POST /session/:id/resume` 的稳定 daemon capability。`unstable_session_resume` 仍然作为已弃用的别名被广播，因为底层的 ACP 方法仍然命名为 `connection.unstable_resumeSession`；新客户端应该进行 `session_resume` 的 feature-detect。
 
@@ -196,7 +199,7 @@ sequenceDiagram
 | Env                        | `QWEN_SERVE_NO_MCP_POOL=1`                                      | 停止广播 `mcp_workspace_pool` 和 `mcp_pool_restart`；MCP 事件不再标记 `scope: 'workspace'`。                                  |
 | CLI flag                   | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}` | 不改变 tag 集合（`mcp_guardrails` 始终被广播），但改变每个 server 的预留和拒绝行为。                                          |
 | CLI flag / env             | `--rate-limit` / `QWEN_SERVE_RATE_LIMIT=1`                      | 广播 `rate_limit`。                                                                                                           |
-| Embedded option            | `persistSettingAvailable`                                       | 广播 `workspace_settings` 和 `workspace_voice`。                                                                              |
+| Embedded option            | `persistSettingAvailable`                                       | 广播 `workspace_settings`、`user_language_sync` 和 `workspace_voice`。                                                                              |
 | Embedded option            | `voiceTranscriptionAvailable`                                   | 广播 `workspace_voice_transcription`。                                                                                        |
 | CLI flag / embedded option | `--enable-session-shell` / `sessionShellCommandEnabled`         | 广播 `session_shell_command`。                                                                                                |
 | Runtime state              | 多个已注册的 workspace runtime                                   | 广播 `multi_workspace_sessions` 和 `multi_workspace_session_rewind`；当 session shell 有效启用时还广播 `multi_workspace_session_shell`。 |

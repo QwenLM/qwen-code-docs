@@ -58,14 +58,15 @@ const session = await client.createOrAttachSession({
 });
 console.log(`session=${session.sessionId} attached=${session.attached}`);
 
-// 3. Subscribe to the event stream. Pass `lastEventId: 0` so the daemon
-//    replays everything from the session's start — without it, there's
-//    a TOCTOU window between `subscribeEvents()` returning the iterator
-//    and the underlying SSE connection actually opening (one fetch
-//    round-trip), during which a fast-starting agent can emit events
-//    that go into the per-session ring but won't be streamed to a fresh
-//    no-cursor subscriber. `lastEventId: 0` makes the replay buffer
-//    cover that gap (and any reconnect later — see below).
+// 3. Inscreva-se no fluxo de eventos. Passe `lastEventId: 0` para que o
+//    daemon faça replay de tudo desde o início da sessão — sem isso,
+//    há uma janela TOCTOU entre `subscribeEvents()` retornar o iterador
+//    e a conexão SSE subjacente realmente abrir (uma ida e volta de
+//    fetch), durante a qual um agente de início rápido pode emitir
+//    eventos que vão para o buffer circular por sessão, mas não serão
+//    transmitidos para um assinante novo sem cursor. `lastEventId: 0`
+//    faz o buffer de replay cobrir essa lacuna (e qualquer reconexão
+//    posterior — veja abaixo).
 const abort = new AbortController();
 const subscription = (async () => {
   for await (const event of client.subscribeEvents(session.sessionId, {
@@ -76,16 +77,16 @@ const subscription = (async () => {
   }
 })();
 
-// 4. Send a prompt and wait for it to settle. (Order-of-operations
-//    note: even if `prompt()` fires before the SSE handshake
-//    completes, step 3's `lastEventId: 0` guarantees every event
-//    lands in the iterator.)
+// 4. Envie um prompt e aguarde sua liquidação. (Nota de ordem de
+//    operações: mesmo que `prompt()` dispare antes do handshake SSE
+//    ser concluído, o `lastEventId: 0` do passo 3 garante que todo
+//    evento chegue ao iterador.)
 const result = await client.prompt(session.sessionId, {
   prompt: [{ type: 'text', text: 'Summarize src/main.ts in one sentence.' }],
 });
 console.log('stop reason:', result.stopReason);
 
-// 5. Tear down the subscription so the script can exit.
+// 5. Encerre a inscrição para que o script possa sair.
 abort.abort();
 await subscription;
 
@@ -102,7 +103,7 @@ function handleEvent(event: DaemonEvent): void {
       break;
     }
     case 'permission_request':
-      // See "Voting on permissions" below for first-responder semantics.
+      // Consulte "Votação em permissões" abaixo para a semântica de primeiro respondedor.
       console.log('\n[needs permission]', event.data);
       break;
     case 'permission_resolved':
@@ -135,7 +136,7 @@ const updated = await selected.editWorkspaceFile({
 console.log(updated.hash);
 ```
 
-O `expectedHash` é o SHA-256 sobre os bytes brutos do disco. Tanto o `mode: "replace"` quanto o `editWorkspaceFile()` exigem isso para que clientes desatualizados não sobrescrevam um arquivo que acabaram de ler. As operações de escrita/edição exigem configuração do token de portador mesmo em loopback; inicie o daemon com `--token` ou `QWEN_SERVER_TOKEN` antes de usá-las.
+O `expectedHash` é o SHA-256 sobre os bytes brutos do disco. Tanto o `mode: "replace"` quanto o `editWorkspaceFile()` exigem isso para que clientes desatualizados não sobrescrevam um arquivo que acabaram de ler. Escrita/edição aceitam o listener primário de loopback confiável sem token; implantações não confiáveis exigem credenciais bearer ou de pairing.
 
 ## Reconexão com `Last-Event-ID`
 
@@ -165,7 +166,7 @@ case 'permission_request': {
     requestId: string;
     options: Array<{ optionId: string; name: string; kind: string }>;
   };
-  // Pick whichever option you want — `proceed_once`, `allow`, etc.
+  // Escolha a opção que quiser — `proceed_once`, `allow`, etc.
   const choice = req.options.find((o) => o.kind === 'allow_once') ?? req.options[0];
   const accepted = await client.respondToPermission(req.requestId, {
     outcome: { outcome: 'selected', optionId: choice.optionId },
@@ -240,7 +241,7 @@ const client = new DaemonClient({
 **Fallback de env do SDK (PR 27, v0.16-alpha)** — `DaemonClient` lê `QWEN_SERVER_TOKEN` do ambiente automaticamente quando `token` é omitido, espelhando o fallback da própria flag `--token` da CLI do daemon. Então, se o seu shell possui `export QWEN_SERVER_TOKEN=...`, isso é equivalente ao acima:
 
 ```ts
-// Same effect as token: process.env.QWEN_SERVER_TOKEN, but without the boilerplate.
+// Mesmo efeito que token: process.env.QWEN_SERVER_TOKEN, mas sem o boilerplate.
 const client = new DaemonClient({ baseUrl: 'https://your-host:4170' });
 ```
 

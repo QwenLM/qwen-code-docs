@@ -185,7 +185,7 @@ this.registerCommand('mycommand', async (envelope, args) => {
 });
 ```
 
-**処理中インジケーター** — `onPromptStart()` と `onPromptEnd()` をオーバーライドして、プラットフォーム固有のタイピングインジケーターを表示します。これらのフックは、プロンプトが実際に処理を開始したときにのみ発生し、バッファリングされたメッセージ（コレクトモード）やゲート/ブロックされたメッセージでは発生しません。
+**処理中インジケーター** — `onPromptStart()` と `onPromptEnd()` をオーバーライドして、プラットフォーム固有のタイピングインジケーターを表示します。これらのフックは、プロンプトが実際に処理を開始したときにのみ発生し、バッファリングされたメッセージ（コレクトモード）やゲート/ブロックされたメッセージでは発生しません:
 
 ```typescript
 protected override onPromptStart(chatId: string, sessionId: string, messageId?: string): void {
@@ -199,7 +199,11 @@ protected override onPromptEnd(chatId: string, sessionId: string, messageId?: st
 
 **ツール呼び出しフック** — `onToolCall()` をオーバーライドして、エージェントのアクティビティ（例: 「シェルコマンドを実行中...」）を表示します。
 
-**ストリーミングフック** — チャンクごとの段階的な表示（例: メッセージをその場で編集）のために `onResponseChunk(chatId, chunk, sessionId)` をオーバーライドします。最終的な配信をカスタマイズするには `onResponseComplete(chatId, fullText, sessionId)` をオーバーライドします。
+**ストリーミングフック** — チャンクごとの段階的な表示（例: メッセージをその場で編集）のために `onResponseChunk(chatId, chunk, sessionId, segment)` をオーバーライドします。最終的な配信をカスタマイズするには `onResponseComplete(chatId, fullText, sessionId, segment)` をオーバーライドします。デーモン管理の名前付きタスクモードでは、`segment.sourceLabel` はそのセグメントの不変な配信メタデータです。独立して表示される各メッセージまたはカード（個別に表示される最終レスポンスを含む）に一度だけレンダリングしますが、生バッファやモデルテキストには追加しないでください。アダプター所有のセグメント状態は `onOutputSegmentEnd()` からクリアします。
+
+**名前付きタスクの属性** — `sendThreadMessage(chatId, threadId, text, sourceLabel)` は、ワンショットおよびプロアクティブ配信の境界に対して同じオプションのプレーンテキストラベルを受け取ります。デフォルト実装はプレーンメッセージを処理します。配信をオーバーライド、メッセージの分割、カードの出力、またはフォールバック送信を行うアダプターは、独立して表示されるすべての境界でラベルを繰り返し、ターゲットのマークアップ方言に対してラベルのみをエスケープし、そのレンダリングサイズをプラットフォームの制限に含める必要があります。プレゼンテーションの前に、生レスポンスに対して未返信チェック、メディアマーカーのプロジェクション、監査ハッシング、トランスクリプトの永続化、およびリトライボディのキャプチャを実行してください。配信が再起動安全なリトライのために永続化される場合は、キャプチャされたラベルを別途永続化してください。
+
+インタラクティブな `ChannelUserInputRequestContext` も `sourceLabel` を保持します。カード、ターミナルの置換、およびプレーンなフォールバックは、既存のリクエスト、セッション、実行、オーナー、およびターゲットのチェックを弱めることなく、それを保持する必要があります。
 
 **ブロックストリーミング** — チャネル設定で `blockStreaming: "on"` を設定します。ベースクラスは、段落の境界でレスポンスを複数のメッセージに自動的に分割します。プラグインコードは不要で、`onResponseChunk` と併用して機能します。
 
@@ -217,8 +221,14 @@ protected override supportsProactiveTarget(target: SessionTarget): boolean {
 protected override async pushProactive(
   target: SessionTarget,
   text: string,
+  sourceLabel?: string,
 ): Promise<void> {
-  await this.platformClient.send(target.chatId, text);
+  await this.sendThreadMessage(
+    target.chatId,
+    target.threadId,
+    text,
+    sourceLabel,
+  );
 }
 ```
 

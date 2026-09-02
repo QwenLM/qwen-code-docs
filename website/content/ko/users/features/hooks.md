@@ -1,6 +1,3 @@
----
-title: Hooks
----
 
 # Qwen Code Hooks
 
@@ -121,7 +118,8 @@ HTTP hooks는 hook 입력을 POST 요청으로 지정된 URL에 전송합니다.
 
 - 이 설정은 **User, System, SystemDefaults 설정 범위에서만 적용됩니다**. Workspace(프로젝트) 설정에서 설정한 값은 무시되며 경고로 기록되므로, 클론된 저장소에서 자체적으로 이 우회를 부여할 수 없습니다.
 - 이 플래그는 일반적인 프라이빗/CGNAT/링크 로컬 **범위** 검사만 완화합니다. 클라우드 메타데이터 엔드포인트는 모든 구성에서 차단된 상태로 유지됩니다: `BLOCKED_HOSTS` 목록은 리터럴로 매칭되고(`metadata.google.internal`, `metadata.azure.internal`, ...), 메타데이터 IP `169.254.169.254`와 `100.100.100.200`은 모든 직렬화된 형태(IPv4 매핑 IPv6인 `::ffff:a9fe:a9fe` 포함)에서 그리고 DNS 해석 후에 차단됩니다.
-- `security.allowedHttpHookUrls` 화이트리스트는 독립적으로 계속 적용됩니다. 관리 환경에서는 이 플래그를 화이트리스트와 함께 사용하여 의도한 내부 엔드포인트만 접근 가능하도록 합니다.
+- `security.allowedHttpHookUrls` 화이트리스트는 독립적으로 계속 적용됩니다. 관리 환경에서는 이 플래그를 화이트리스트와 함께 사용하여 의도한 내부 엔드포인트만 접근 가능하도록 합니다. Workspace(프로젝트) 설정의 화이트리스트는 User, System 또는 SystemDefaults 범위에서 화이트리스트를 설정하지 않은 경우에만 적용됩니다; 그렇지 않으면 무시되고 경고로 기록되므로, 저장소는 hook이 데이터를 전송하는 위치를 좁힐 수 있지만 사용자가 구성한 화이트리스트를 대체할 수는 없습니다(빈 화이트리스트는 "모두 허용"을 의미합니다).
+- HTTP hook은 리다이렉트를 절대 따르지 않습니다. 3xx 응답은 다른 2xx가 아닌 상태와 동일하게 처리됩니다: 비차단 hook 실패이며, 리다이렉트 대상은 절대 연결되지 않습니다.
 
 > **경고:** 이 플래그를 활성화하면 hook이 네트워크의 내부 인프라에 접근할 수 있습니다. 신뢰할 수 있는 관리 환경에서만 활성화하고, 사용자가 제어하지 않는 저장소에서는 절대 활성화하지 마십시오.
 
@@ -729,7 +727,7 @@ sanitized hook context
 }
 ```
 
-이 hook은 삭제하는 런타임의 일반 세션 필드(`session_id`, `transcript_path` 및 `cwd`)를 사용합니다; ACP를 통하면 `transcript_path`는 비어 있습니다. 삭제하는 런타임에 자체 트랜스크립트가 없기 때문입니다. `SessionDelete`는 현재 대화형 `/delete` 흐름과 ACP의 명시적 `deleteSession` 메서드에 대해 발생합니다; 데몬 REST 일괄 삭제 및 내부 정리는 이를 발생시키지 않습니다.
+이 hook은 삭제하는 런타임의 일반 세션 필드(`session_id`, `transcript_path` 및 `cwd`)를 사용합니다; ACP를 통하면 `transcript_path`는 비어 있습니다. 삭제하는 런타임에 자체 트랜스크립트가 없기 때문입니다. `SessionDelete`는 현재 대화형 `/delete` 흐름과 ACP의 명시적 `deleteSession` 메서드에 대해 발생합니다; 데몬 REST 일괄 삭제 및 내부 정리는 이를 발생시키지 않습니다. Command hook은 디스패치 후 Qwen이 종료하면 완료될 때까지 남겨집니다; stdout과 stderr는 무시되며 Qwen의 파이프와 독립적으로 유지됩니다.
 
 #### MessageDisplay
 
@@ -848,6 +846,8 @@ sanitized hook context
 - 인증 실패 로깅
 - 청구 오류 알림
 - 오류 통계 수집
+
+Command hook은 디스패치 후 Qwen이 종료하면 완료될 때까지 남겨집니다; stdout과 stderr는 무시되며 Qwen의 파이프와 독립적으로 유지됩니다.
 
 #### SubagentStart
 
@@ -1310,10 +1310,12 @@ Hooks는 Qwen Code 설정에서 구성되며, 일반적으로 `.qwen/settings.js
 
 `command` 유형만 비동기 실행을 지원합니다. `"async": true`를 설정하면 메인 흐름을 차단하지 않고 백그라운드에서 hook이 실행됩니다.
 
+Async hooks는 Qwen 프로세스로 범위가 지정됩니다. 캡처된 출력이 인메모리 async hook 레지스트리를 통해 전달되기 때문입니다. POSIX에서 Qwen은 종료 시 아직 실행 중인 async hook 프로세스 트리를 회수합니다. 단, 종료 후 fire-and-forget 완료를 명시적으로 보장하는 이벤트 유형은 제외됩니다. Windows는 루트가 종료된 후 하위 트리를 재구성할 수 없으므로, 전체 부모 종료 회수를 위해서는 Job Object 또는 하위 추적 필요합니다.
+
 **기능:**
 
 - 결정 제어를 반환할 수 없습니다(작업이 이미 발생함)
-- 결과는 다음 대화 턴에서 `systemMessage` 또는 `additionalContext`를 통해 주입됩니다
+- 결과는 다음 대화 턴에서 `systemMessage` 또는 `additionalContext`를 통해 주입됩니다. 단, 위에서 문서화된 출력이 무시되는 fire-and-forget 이벤트 유형은 제외됩니다.
 - 감사, 로깅, 백그라운드 테스트 등에 적합
 
 **예시:**

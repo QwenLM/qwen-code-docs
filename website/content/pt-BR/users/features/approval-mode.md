@@ -171,7 +171,7 @@ O modo Auto-Edit instrui o Qwen Code a aprovar automaticamente as edições de a
 
 As ferramentas de edição aprovadas automaticamente incluem `edit`, `write_file` e `notebook_edit`.
 
-### Quando usar o modo Auto-Edit
+### Quando usar o modo Auto-Accept Edits
 
 - **Desenvolvimento diário**: Ideal para a maioria das tarefas de codificação
 - **Automação segura**: Permite que a IA modifique o código enquanto previne a execução acidental de comandos perigosos
@@ -274,6 +274,9 @@ O Qwen Code faz as edições de arquivos (edições no workspace ignoram o class
       // Optional: route ALL shell commands (including read-only ones like
       // ls, cat) through the classifier for defense-in-depth.
       // "classifyAllShell": true,
+      // Optional: send MCP tool calls to the classifier by name only
+      // (arguments are forwarded by default).
+      // "mcp": { "forwardArguments": false },
     },
   },
 }

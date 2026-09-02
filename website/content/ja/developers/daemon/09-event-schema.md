@@ -15,11 +15,11 @@ SDK は `asKnownDaemonEvent(evt)` を公開しています。これは既知の�
 - イベントストリームを SDK のビュー状態に射影する純粋なリデューサー（`reduceDaemonSessionEvent`, `reduceDaemonAuthEvent`）を提供します。
 - 情報提供シグナルとして `typed_event_schema` ケイパビリティタグをブロードキャストします。タグが存在しない場合でも、`asKnownDaemonEvent` は `unknown` にフォールバックします。
 
-## Event vocabulary
+## イベント語彙
 
 ドメイン別にグループ化されています。
 
-### Core session
+### コアセッション
 
 | Type                         | Direction      | Trigger                                                                               | Key payload fields                                                                                           |
 | ---------------------------- | -------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
@@ -30,7 +30,7 @@ SDK は `asKnownDaemonEvent(evt)` を公開しています。これは既知の�
 | `session_snapshot`           | S->C 合成 | SSE アタッチ / リプレイ後のスナップショットフレーム                                      | `sessionId, currentModelId: string \| null, currentApprovalMode: string \| null, recordingDegraded: boolean` |
 | `session_recording_degraded` | S->C           | セッションのトランスクリプトライターが非同期書き込み失敗後に永続的に停止しました | `sessionId, reason: 'write_failed'`                                                                          |
 
-### Subscriber-level synthetic frames
+### サブスクライバーレベルの合成フレーム
 
 | Type                    | Trigger                                                                                                                                                                                                                              | Notes                                                                                                                                                                                                                                                                                                                          |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -43,7 +43,7 @@ SDK は `asKnownDaemonEvent(evt)` を公開しています。これは既知の�
 
 `fullTranscriptAvailable` は真偽値のケイパビリティフラグであり、リテラルの `true` 型ではありません。現在のデーモンは、`/session/:id/transcript` で永続化されたトランスクリプトをページングできる場合に `true` を出力します。古いまたは制約付きのデーモンは `false` を出力する可能性があり、クライアントはバウンドされたリプレイのレンダリングを通常通り続行する必要があります。
 
-### Permissions (F3 + base)
+### 権限 (F3 + base)
 
 | Type                          | Direction | Trigger                                            | Key payload fields                                                                                                                               |
 | ----------------------------- | --------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -53,14 +53,14 @@ SDK は `asKnownDaemonEvent(evt)` を公開しています。これは既知の�
 | `permission_partial_vote`     | S->C      | `consensus` ポリシーが最終的ではない投票を記録する        | `requestId, sessionId, votesReceived, votesNeeded (>= 1), quorum, optionTallies: Record<string, number>, originatorClientId?`                    |
 | `permission_forbidden`        | S->C      | ポリシーが投票を拒否する                              | `requestId, sessionId, clientId?, reason: 'designated_mismatch' \| 'remote_not_allowed', originatorClientId?`; 匿名の投票者は `clientId` を省略します。 |
 
-### Models
+### モデル
 
 | Type                  | Direction | Payload                                      |
 | --------------------- | --------- | -------------------------------------------- |
 | `model_switched`      | S->C      | `sessionId, modelId`                         |
 | `model_switch_failed` | S->C      | `sessionId, requestedModelId, error: string` |
 
-### MCP guardrails (PR 14b + F2)
+### MCP ガードレール (PR 14b + F2)
 
 | Type                         | Direction | Payload                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | ---------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -82,6 +82,8 @@ SDK は `asKnownDaemonEvent(evt)` を公開しています。これは既知の�
 | `trust_change_requested` | S->C      | `workspaceCwd, desiredState: 'trusted' \| 'untrusted', reason?`                                                                                |
 | `workspace_initialized`  | S->C      | `path, action: 'created' \| 'overwrote' \| 'noop', originatorClientId?`                                                                        |
 | `github_setup_completed` | S->C      | `releaseTag, readmeUrl, secretsUrl?, workflows: [{path, status, sizeBytes?, error?}], gitignore: {path, status, added?, error?}`               |
+
+Skill トグル API はオプションの `mutation: { id, kind: 'skill_toggle', skills: [{ name, enabled }], activation, sessionsRefreshed, sessionsFailed }` を付加します。同一リクエストからの `skills.disabled` / `skills.enabled` イベントはすべて 1 つの mutation id を共有します。他の設定書き込みには `mutation` が含まれません。ワークスペースサービスの書き込みには `scope` が含まれますが、一部のエミッター（たとえばセッションのモデル切り替え）では省略されます。SDK ノーマライザーは `scope` がない場合のデフォルトを `'workspace'` にします。
 
 `memory_changed` はセッションレスの管理メモリタスクもカバーします。これらのペイロードでは、`scope` は `"managed"`、`source` は `"workspace_memory_remember"`、`"workspace_memory_forget"`、または `"workspace_memory_dream"` のいずれか、`taskId` はキューイングされたタスク ID、`touchedScopes` は変更された管理メモリのスコープ（`"user"` や `"project"`）の一覧です。remember/forget/dream タスクが管理メモリを変更せずに完了した場合、イベントは発行されません。
 
@@ -122,7 +124,7 @@ SDK は `asKnownDaemonEvent(evt)` を公開しています。これは既知の�
 | --------------------- | --------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `prompt_cancelled`    | S->C      | 明示的な `cancelSession` ルート**または**発信元の SSE 切断によってプロンプトがキャンセルされました | エンベロープには、キャンセルを実行したクライアントの `originatorClientId` がスタンプされます。これは「キャンセルが要求された」ことを意味し、「キャンセルが確定した」わけではありません。ピアサブスクライバーはプロンプトが終了したことを認識します。              |
 | `turn_complete`       | S->C      | ターンが正常に完了しました                                                                                       | `sessionId, stopReason, promptId?, branchPoint?`。`promptId` は非ブロッキングプロンプトレスポンス（`202`）にリンクします。対象となる完了ターンには `branchPoint: { assistantRecordUuid, checkpointUuid }` が含まれます。 |
-| `turn_error`          | S->C      | ターンが失敗しました                                                                                                       | `sessionId, message, code?, promptId?`; 上記と同じ `promptId` の相関メカニズム。                                                                                                                   |
+| `turn_error`          | S->C      | ターンが失敗しました                                                                                                       | `sessionId, message, code?, promptId?`; 上記と同じ `promptId` の相関メカニズム。エージェント側の `-32603` 失敗では、エージェントが提供した場合に限り、`message` にプロバイダー固有の詳細（`data.details` / `data.message` / ネストされた `data.error.message`）が汎用的な JSON-RPC テキストではなく格納されます。                                                                                                                   |
 | `session_rewound`     | S->C      | `POST /session/:id/rewind` が成功しました                                                                                | `sessionId, promptId, targetTurnIndex, filesChanged[], filesFailed[], originatorClientId?`                                                                                                       |
 | `session_branched`    | S->C      | レガシー互換性イベント。現在のブランチエンドポイントは結果を直接返しており、このイベントを公開しません | `sourceSessionId, newSessionId, displayName, originatorClientId?`。リーダーは古いプロデューサーへのサポートを保持します。                                                                                        |
 | `followup_suggestion` | S->C      | ACP 子が `end_turn` 後にゴーストテキストのフォローアップ提案を生成し、セッションごとの SSE 経由で転送されました               | `sessionId, suggestion, promptId`; ワイヤー上では `getFilterReason()===null` である提案のみが伝送されます。クライアントはこれらを入力プレースホルダーのゴーストテキストとしてレンダリングし、次の `sendPrompt` で無効化します。 |
@@ -182,9 +184,9 @@ SDK は `asKnownDaemonEvent(evt)` を公開しています。これは既知の�
 
 `providerId` ごとに 1 エントリ。`auth_device_flow_*` によって駆動されます。各フローは `{ deviceFlowId, status, providerId, expiresAt?, lastThrottleIntervalMs?, lastError? }` を公開します。
 
-## Flow
+## フロー
 
-### Producer side
+### プロデューサー側
 
 ```mermaid
 flowchart LR
@@ -196,7 +198,7 @@ flowchart LR
     F --> G["すべてのサブスクライバーにファンアウト"]
 ```
 
-### Consumer side (SDK)
+### コンシューマー側 (SDK)
 
 ```mermaid
 flowchart LR
@@ -207,7 +209,7 @@ flowchart LR
     C -->|"undefined"| F["unrecognizedKnownEventCount++<br/>(前方互換性)"]
 ```
 
-## Envelope-level metadata
+## エンベロープレベルのメタデータ
 
 各イベントの `data` ペイロードに加えて、デーモンは 2 つのエンベロープレベルのフィールドを付与します。
 

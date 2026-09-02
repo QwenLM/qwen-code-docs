@@ -199,7 +199,11 @@ protected override onPromptEnd(chatId: string, sessionId: string, messageId?: st
 
 **Tool-Call-Hooks** – überschreibe `onToolCall()`, um Agentenaktivität anzuzeigen (z. B. "Shell-Befehl wird ausgeführt...").
 
-**Streaming-Hooks** – überschreibe `onResponseChunk(chatId, chunk, sessionId)` für die progressive Anzeige pro Chunk (z. B. direktes Bearbeiten einer Nachricht). Überschreibe `onResponseComplete(chatId, fullText, sessionId)`, um die endgültige Zustellung anzupassen.
+**Streaming-Hooks** – überschreibe `onResponseChunk(chatId, chunk, sessionId, segment)` für die progressive Anzeige pro Chunk (z. B. direktes Bearbeiten einer Nachricht). Überschreibe `onResponseComplete(chatId, fullText, sessionId, segment)`, um die endgültige Zustellung anzupassen. Im Daemon-verwalteten Named-Task-Modus ist `segment.sourceLabel` unveränderliche Zustellungs-Metadaten für dieses Segment. Rendere es einmal auf jeder unabhängig sichtbaren Nachricht oder Karte, einschließlich einer separat sichtbaren finalen Antwort, aber füge es nicht zu Rohpuffern oder Modelltext hinzu. Bereinige Adapter-eigenen Segment-Status in `onOutputSegmentEnd()`.
+
+**Named-Task-Zuordnung** – `sendThreadMessage(chatId, threadId, text, sourceLabel)` erhält dasselbe optionale Plain-Text-Label für One-Shot- und proaktive Zustellungsgrenzen. Die Standardimplementierung verarbeitet Plain-Nachrichten. Adapter, die die Zustellung überschreiben, Nachrichten aufteilen, Karten ausgeben oder Fallback-Sends bereitstellen, müssen das Label an jeder unabhängig sichtbaren Grenze wiederholen, nur das Label für den Ziel-Markup-Dialekt escapen und seine gerenderte Größe in die Plattform-Limits einrechnen. Führe No-Reply-Prüfungen, Media-Marker-Projektion, Audit-Hashing, Transkript-Persistenz und Retry-Body-Erfassung gegen die Rohantwort vor der Darstellung aus; wenn die Zustellung für Neustart-sicheres Retry persistent gemacht wird, persistiere das erfasste Label separat.
+
+Interaktiver `ChannelUserInputRequestContext` trägt ebenfalls `sourceLabel`. Karten, Terminal-Ersetzungen und Plain-Fallbacks müssen es beibehalten, ohne die bestehenden Request-, Session-, Run-, Owner- und Target-Prüfungen zu schwächen.
 
 **Block-Streaming** – setze `blockStreaming: "on"` in der Channel-Konfiguration. Die Basisklasse teilt Antworten automatisch an Absatzgrenzen in mehrere Nachrichten auf. Kein Plugin-Code erforderlich – es funktioniert parallel zu `onResponseChunk`.
 
@@ -217,8 +221,14 @@ protected override supportsProactiveTarget(target: SessionTarget): boolean {
 protected override async pushProactive(
   target: SessionTarget,
   text: string,
+  sourceLabel?: string,
 ): Promise<void> {
-  await this.platformClient.send(target.chatId, text);
+  await this.sendThreadMessage(
+    target.chatId,
+    target.threadId,
+    text,
+    sourceLabel,
+  );
 }
 ```
 

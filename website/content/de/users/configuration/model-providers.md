@@ -1,7 +1,3 @@
----
-title: Model-Provider
-description: Konfiguriere mehrere Model-Provider in Qwen Code, um zwischen verschiedenen KI-Modellen und -Anbietern zu wechseln.
----
 
 # Model-Provider
 
@@ -22,6 +18,10 @@ Verwende `modelProviders`, um Modelle pro Provider-ID zu deklarieren, zwischen d
 > [!note]
 >
 > **Modell-Eindeutigkeit:** Modelle innerhalb desselben `authType` werden eindeutig durch die Kombination von `id` + `baseUrl` identifiziert. Das bedeutet, du kannst dieselbe Modell-ID (z. B. `"gpt-4o"`) mehrfach unter einem einzigen `authType` definieren, solange jeder Eintrag eine unterschiedliche `baseUrl` hat – zum Beispiel eine, die direkt auf OpenAI zeigt, und eine andere auf einen Proxy-Endpunkt. Wenn zwei Einträge dieselbe `id` und dieselbe `baseUrl` haben (oder beide `baseUrl` weglassen), gewinnt das erste Vorkommen und nachfolgende Duplikate werden mit einer Warnung übersprungen.
+
+> [!note]
+>
+> **Hot Reload vs. Neustart:** Änderungen an `modelProviders` in der `settings.json` werden von einer laufenden interaktiven Session ohne Neustart übernommen (der File Watcher hat ~300ms Debounce; öffne `/model` erneut, um neue Einträge zu sehen – die aktuelle Auswahl bleibt erhalten). `providerProtocol` wird einmal beim Start gelesen und **erfordert einen Neustart**.
 
 ### Bildgenerierung-Routen
 
@@ -471,9 +471,11 @@ Die Modellkonfigurationen des Coding Plans sind versioniert. Wenn Qwen Code eine
 
 - Die bestehenden Coding-Plan-Modellkonfigurationen werden durch die neuesten Versionen ersetzt
 - Alle benutzerdefinierten Modellkonfigurationen, die du manuell hinzugefügt hast, bleiben erhalten
-- Es wird automatisch zum ersten Modell in der aktualisierten Konfiguration gewechselt
+- Dein ausgewähltes Modell bleibt unverändert; wenn es nicht mehr in der aktualisierten
+  Konfiguration vorhanden ist, verwende `/model`, um ein neues auszuwählen
 
-Der Update-Prozess stellt sicher, dass du immer Zugriff auf die neuesten Modellkonfigurationen und Features hast, ohne dass ein manueller Eingriff erforderlich ist.
+Der Update-Prozess aktualisiert die Modellkonfigurationen und Features, ohne
+das ausgewählte Modell zu ändern.
 
 ### Manuelle Konfiguration (Fortgeschritten)
 

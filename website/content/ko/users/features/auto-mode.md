@@ -174,7 +174,7 @@ classifier API가 응답하지 않았다. 가능한 원인:
 - **오프라인 미지원.** classifier는 LLM 호출이 필요하다.
 - **느린 경로에서 지연 추가.** 허용 목록 + acceptEdits는 대부분의 호출을 지연 없이 처리하지만, `run_shell_command`는 일반적으로 ~300ms(빠른 classifier 경로) 또는 ~3-5s(사고 리뷰가 있는 느린 경로)를 추가한다.
 - **`deny` 규칙의 대체가 아님.** classifier는 최선 노력이다. 절대 실행되면 안 되는 명령은 `permissions.deny`에 넣으라.
-- **MCP 도구는 기본적으로 보수적 차단.** 서드파티 MCP 도구(`mcp__*`)는 `toAutoClassifierInput` 오버라이드를 통해 인수 전달을 옵트인한다. 옵트인하지 않은 도구는 이름만 classifier에 노출한다 — 대부분의 경우 명시적 `allow` 규칙이 없으면 보수적으로 차단된다. 이것은 설계상 실패 시 차단이다(자격 증명과 대량 내용이 classifier LLM으로 유출되지 않는다). 특정 MCP 도구를 신뢰하면 `permissions.allow: ["mcp__server__tool"]`를 추가하여 classifier를 완전히 우회하라.
+- **MCP 도구는 인수로 판단되며, 검증된 동작이 아니다.** 서드파티 MCP 도구(`mcp__*`)는 빠른 경로 허용 목록에 절대 포함되지 않는다; `trust: true`로 표시되지 않은 서버의 모든 호출은 서버 이름, 도구 이름, 서버의 자체 보고된 어노테이션(`readOnlyHint` / `destructiveHint` / `idempotentHint` / `openWorldHint`) 및 인수의 제한된 사본과 함께 classifier로 전송된다. classifier는 어노테이션이 검증되지 않았다는 것을 알려준다. 서버가 호출로 실제로 무엇을 하는지 볼 수 없으므로, 오해의 소지가 있는 도구 이름과 무해한 인수가 여전히 통과할 수 있다. 특정 MCP 도구를 신뢰하면 `permissions.allow: ["mcp__server__tool"]`를 추가하여 classifier를 완전히 우회하라; classifier가 도구 이름만 보기를 원하면(예: 메인 모델과 다른 제공자에 대해 실행되는 경우) `permissions.autoMode.mcp.forwardArguments: false`를 설정하라 — 그러면 대부분의 MCP 호출이 보수적으로 차단된다.
 
 ## FAQ
 
@@ -187,14 +187,14 @@ Auto Mode는 기존 모델 설정을 재사용한다 — 메인 에이전트와 
 classifier는 각 도구의 `toAutoClassifierInput` 투영이 노출하는 것만 본다:
 
 - `read_file` 및 기타 읽기 전용 도구: 호출되지 않음(빠른 경로 허용 목록에 있음).
-- `edit` / `write_file`: file_path 및 old/new 내용의 처음 80자. 전체 내용은 전달되지 않는다.
+- `edit` / `write_file`: file_path 및 old/new 내용의 300자 미리보기. 전체 내용은 전달되지 않는다.
 - `run_shell_command`: 전체 명령(전달해야 한다 — classifier가 판단하는 대상).
 - `web_fetch`: URL만. 프롬프트 필드는 전달되지 않는다.
 - `agent`: 서브에이전트 타입 및 전체 프롬프트. 프롬프트는 서브에이전트가 따를 지시이므로 classifier가 파괴적 동작으로 서브에이전트를 유도하는 공격을 탐지하려면 전체가 필요하다 — `run_shell_command`이 전체 명령을 전달하는 것과 같은 이유.
 
 도구 결과(도구가 반환한 실제 내용)는 classifier 트랜스크립트에서 완전히 제거된다.
 
-MCP 도구(`mcp__*`)는 더 엄격한 기본값을 따른다: MCP 도구 작성자가 `toAutoClassifierInput` 오버라이드로 명시적 옵트인하지 않으면 매개변수가 전달되지 않는다. classifier는 도구 이름만 보고 인수는 보지 않으므로 사용자가 명시적 allow 규칙을 작성하지 않은 한 대부분의 MCP 호출은 보수적으로 차단된다. 이것은 설계상 실패 시 차단이다 — 서드파티 도구가 의도 없이 자격 증명이나 대량 파일 내용을 classifier LLM으로 유출해서는 안 된다.
+MCP 도구(`mcp__*`): 서버 이름, 도구 이름, 서버의 어노테이션 및 호출 인수가 전달된다. 각 문자열(값 또는 키)은 2,000자에서 잘리고, 이름은 200자에서 잘리며, 전체 페이로드는 classifier가 받는 pretty-printed 형태로 측정된 16,000자 예산을 공유하고, 중첩 / 항목 수가 제한된다; 모든 잘림은 위치에 표시(`…[truncated N chars]` 또는 `[omitted: …]`)되고 `arguments_truncated: true` / `name_truncated: true`로 플래그되어 classifier가 생략을 부재로 착각하지 않는다. 트랜스크립트의 과거 동작은 각각 4,000자, 총 40,000자로 제한된다(최신 것부터 유지; 오래된 것은 도구 이름만 유지). 인수는 에이전트가 해당 서버로 보내려는 것이다 — classifier의 데이터 유출 및 외부 쓰기 규칙은 이것에만 적용될 수 있으며, 이미 메인 모델에 의해 생성되었으므로 동일한 모델 설정의 classifier로 전달해도 새로운 것은 공개되지 않는다. classifier가 다른 제공자에 대해 실행되면 `permissions.autoMode.mcp.forwardArguments: false`를 설정하여 이름만 투영을 복원하라(대부분의 MCP 호출이 차단될 것으로 예상).
 
 **첫 번째 정보 메시지를 비활성화할 수 있나?**
 

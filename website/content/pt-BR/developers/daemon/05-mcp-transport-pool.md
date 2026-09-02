@@ -1,10 +1,8 @@
----
-
 # Pool de Transporte MCP do Workspace
 
 ## Visão Geral
 
-`McpTransportPool` (`packages/core/src/tools/mcp-transport-pool.ts`) é o pool de escopo do workspace F2 (#4175 commit 5): múltiplas sessões ACP em um mesmo runtime compartilham um único transporte por tupla única `(serverName + configFingerprint)`, em vez de cada uma instanciar seu próprio processo filho MCP. Quando o modo pool está habilitado, cada filho ACP iniciado possui um pool independente (`QwenAgent.mcpPool`). A produção tenta pré-aquecer o filho primário e tenta novamente no primeiro uso após falha; um secundário confiável inicia seu filho sob demanda, enquanto um secundário não confiável não inicia nenhum. O pool é construído uma vez na inicialização do agente com o `Config` de bootstrap do runtime e sobrevive ao ciclo de vida das sessões. As entradas contam referências de anexos de sessão e são fechadas após um período de carência configurável quando a contagem de referências chega a zero.
+`McpTransportPool` (`packages/core/src/tools/mcp-transport-pool.ts`) é o pool de escopo do workspace F2 (#4175 commit 5): múltiplas sessões ACP em um mesmo runtime compartilham um único transporte por tupla única `(serverName + configFingerprint)`, em vez de cada uma instanciar seu próprio processo filho MCP. Quando o modo pool está habilitado, cada filho ACP iniciado possui um pool independente (`QwenAgent.mcpPool`). A produção tenta pré-aquecer o filho primário confiável para compatibilidade; secundários confiáveis iniciam sob demanda, e um secundário não confiável não inicia nem o filho nem seu pool. Rotas primárias legadas mantêm seu comportamento de compatibilidade existente. O pool é construído uma vez na inicialização do agente com o `Config` de bootstrap do runtime e sobrevive ao ciclo de vida das sessões. As entradas contam referências de anexos de sessão e são fechadas após um período de carência configurável quando a contagem de referências chega a zero.
 
 É o mecanismo principal que impede que um daemon com várias sessões bifurque uma cópia de cada servidor MCP por sessão.
 
@@ -106,38 +104,38 @@ interface PoolEntryOptions {
 ```mermaid
 sequenceDiagram
     autonumber
-    participant S as Sessão
+    participant S as Session
     participant P as Pool
     participant SIF as spawnInFlight
     participant E as PoolEntry
     participant BDG as WorkspaceMcpBudget
-    participant SRV as Servidor MCP
+    participant SRV as MCP server
 
     S->>P: acquire(name, cfg, sessionId, sessionToolRegistry, sessionPromptRegistry)
-    P->>P: recusar se estiver drenando
+    P->>P: refuse if draining
     P->>P: connectionId = connectionIdOf(name, fingerprint)
-    P->>P: se !isPoolable(cfg) → marcar como não agrupado
-    alt entrada em entries (quente)
-        E-->>P: PoolEntry existente
-    else spawn frio em andamento
-        SIF-->>P: Promise<PoolEntry> existente
-    else início frio
-        P->>BDG: tryReserve(name) (se budget definido + agrupável)
+    P->>P: if !isPoolable(cfg) → mark unpooled
+    alt entry in entries (warm)
+        E-->>P: existing PoolEntry
+    else inflight cold spawn
+        SIF-->>P: existing Promise<PoolEntry>
+    else cold start
+        P->>BDG: tryReserve(name) (if budget set + poolable)
         BDG-->>P: 'reserved' | 'already_held' | 'refused'
         alt refused
             P->>BDG: recordRefusal(name, transport)
             P-->>S: BudgetExhaustedError
         else ok
             P->>E: spawnEntry(name, cfg)
-            E->>SRV: conectar transporte
-            SRV-->>E: pronto
+            E->>SRV: connect transport
+            SRV-->>E: ready
             P->>P: entries.set(id, E); nextIndexByName++
-            E-->>P: conectado
+            E-->>P: connected
         end
     end
     P->>E: addSubscriber(sessionId, sessionToolRegistry, sessionPromptRegistry)
     P->>P: sessionToEntries.add(sessionId, id)
-    P->>P: cancelar timer de dreno (refs>0)
+    P->>P: cancel drain timer (refs>0)
     P-->>S: PooledConnection { id, serverName, entryIndex, client, toolsSnapshot, promptsSnapshot, on, off, release }
 ```
 
@@ -146,7 +144,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
-    participant S as Sessão
+    participant S as Session
     participant P as Pool
     participant E as PoolEntry
     participant BDG as WorkspaceMcpBudget
@@ -157,15 +155,15 @@ sequenceDiagram
     alt refs > 0
         E-->>P: ok
     else refs == 0
-        E->>E: firstIdleAt = agora (se não definido)
-        E->>E: armar drainTimer(drainDelayMs)
-        E->>E: armar maxIdleTimer(maxIdleMs - elapsed)
+        E->>E: firstIdleAt = now (if unset)
+        E->>E: arm drainTimer(drainDelayMs)
+        E->>E: arm maxIdleTimer(maxIdleMs - elapsed)
     end
-    Note over E: drainTimer dispara →
-    E->>SRV: desconectar transporte
-    E->>P: emitir 'closed'
+    Note over E: drainTimer fires →
+    E->>SRV: disconnect transport
+    E->>P: emit 'closed'
     P->>P: entries.delete(id)
-    P->>P: se !hasNameSibling(name) → BDG.release(name)
+    P->>P: if !hasNameSibling(name) → BDG.release(name)
 ```
 
 `hasNameSibling(name)` (`mcp-transport-pool.ts`) itera tanto `entries.values()` quanto `spawnInFlight.keys()` analisando o último com `parseConnectionId` (nomes de servidor podem conter legitimamente `::`, então `startsWith` daria falso positivo em um nome irmão começando com `${name}::`).
@@ -180,23 +178,23 @@ sequenceDiagram
     participant Op as POST /workspace/mcp/:server/restart
     participant P as Pool
     participant E as PoolEntry
-    participant SRV as Servidor MCP
+    participant SRV as MCP server
 
     Op->>P: restartByName(name, opts?)
-    alt opts.entryIndex especificado
-        P->>E: encontrar entrada por (name, entryIndex)
+    alt opts.entryIndex specified
+        P->>E: find entry by (name, entryIndex)
     else
-        P->>P: reunir todas as entradas com nome correspondente
+        P->>P: gather all entries with matching name
     end
-    par por entrada
+    par per entry
         P->>E: restart() (mutex via restartInFlight)
-        E->>SRV: desconectar
-        E->>SRV: reconectar
-        E->>E: incrementar generation, reemitir snapshots
+        E->>SRV: disconnect
+        E->>SRV: reconnect
+        E->>E: bump generation, re-emit snapshots
     end
-    alt entrada única
+    alt single entry
         P-->>Op: {restarted: true, durationMs}
-    else múltiplas entradas
+    else multi-entry
         P-->>Op: {entries: [{restarted, durationMs, entryIndex}, ...]}
     end
 ```
@@ -208,17 +206,17 @@ A verificação de orçamento pré-voo na camada HTTP do daemon retorna `{restar
 ```mermaid
 sequenceDiagram
     autonumber
-    participant D as Desligamento do Daemon
+    participant D as Daemon shutdown
     participant P as Pool
     participant E as PoolEntries
 
     D->>P: drainAll({timeoutMs?})
-    P->>P: draining = true (recusar novas aquisições)
-    par para cada entrada
-        P->>E: acionar dreno (fechar transporte, limpar timers)
-        E-->>P: fechado
+    P->>P: draining = true (refuse new acquires)
+    par for each entry
+        P->>E: trigger drain (close transport, clear timers)
+        E-->>P: closed
     end
-    P-->>D: concluído (ou timeout atingido, forçar fechamento)
+    P-->>D: done (or timeout reached, force close)
 ```
 
 ## Estado & Ciclo de Vida
@@ -465,7 +463,7 @@ Esses auxiliares são internos, mas leitores do código-fonte podem vê-los:
 
 Documento de design: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md) §6 cobre a máquina de estados do pool de transporte, reconexão, dreno e caminhos de varredura de descendentes.
 
-## Riscos e Limitações Conhecidas
+## Ressalvas e Limitações Conhecidas
 
 - **Transportes HTTP / SSE não são agrupados por padrão** — a menos que operadores os incluam explicitamente em `QWEN_SERVE_MCP_POOL_TRANSPORTS`, cada `acquire` cria uma nova entrada que vive apenas enquanto sua sessão. Seus cabeçalhos podem carregar estado OAuth específico da sessão, então agrupá-los por padrão arriscaria vazar credenciais entre sessões.
 - **`maxIdleMs` é um limite rígido que sobrevive à rotatividade de attach/detach.** Um limite rígido de 5 minutos de inatividade significa que mesmo um cliente que attach/detach agressivamente não pode manter um transporte ocioso ativo por mais de 5 minutos. Operadores que desejam transportes fixos de longa duração devem aumentar `maxIdleMs` ou executar o servidor fora do pool.

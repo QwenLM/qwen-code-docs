@@ -19,6 +19,7 @@ Ajoutez les éléments que vous seriez autrement obligé de répéter à chaque 
 - Les conventions de code suivies par votre équipe (« tous les nouveaux fichiers doivent avoir des commentaires JSDoc »)
 - Les décisions architecturales (« nous utilisons le pattern repository, ne jamais appeler la base de données directement depuis les contrôleurs »)
 - Les préférences personnelles (« toujours utiliser pnpm, pas npm »)
+- Une politique de vérification pour les travaux à enjeux élevés — par exemple « vérifier dans la base de données avant de conclure » (voir [Enforce evidence-based conclusions](../common-workflow.md#enforce-evidence-based-conclusions) pour un modèle prêt à l'emploi)
 
 N'incluez pas les choses que Qwen peut déduire en lisant votre code. QWEN.md fonctionne mieux lorsqu'il est court et précis : plus il est long, moins Qwen le suit de manière fiable.
 

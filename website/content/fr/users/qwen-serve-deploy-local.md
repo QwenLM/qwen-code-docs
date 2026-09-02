@@ -45,9 +45,9 @@ L'isolation des environnements d'exécution couvre le cwd, la surcouche
 d'environnement, la limite de système de fichiers/confiance, les services
 d'espace de travail, le bridge, l'état de lease Voice, le worker de canal, et la
 frontière de ressources ACP/MCP. La production tente de préchauffer l'enfant ACP
-primaire et réessaie à la première utilisation après un échec ; les secondaires
-de confiance démarrent le leur à la demande, et les secondaires non fiables ne
-démarrent pas ACP. L'authentification, les limites de débit HTTP, les plafonds
+primaire fiable pour compatibilité ; les secondaires
+de confiance démarrent à leur première commande ou Session supportée par
+l'environnement d'exécution, et les secondaires non fiables ne démarrent pas ACP. L'authentification, les limites de débit HTTP, les plafonds
 d'admission du listener et de Voice, l'admission totale de sessions, les métriques,
 l'arrêt et le rayon de défaut du processus restent au niveau global du démon.
 Lancez des démons séparés lorsque ces limites au niveau du processus doivent
@@ -55,7 +55,7 @@ Lancez des démons séparés lorsque ces limites au niveau du processus doivent
 
 ## Linux : unité utilisateur systemd
 
-> **Trouvez d'abord votre binaire `qwen`.** Le `ExecStart=` du fichier d'unité doit contenir un **chemin absolu** — les gestionnaires de services ne lisent pas le `PATH` de votre shell. Exécutez `which qwen` pour le trouver. Emplacements courants : `/usr/local/bin/qwen` (Linuxbrew, installations manuelles), `~/.nvm/versions/node/vX.Y.Z/bin/qwen` (nvm), `~/.fnm/aliases/default/bin/qwen` (fnm), `~/.volta/bin/qwen` (Volta). Remplacez par le chemin réel partout où les modèles ci-dessous indiquent `/PATH/TO/qwen`.
+> **Trouvez d'abord votre binaire `qwen` et les répertoires d'outils fiables.** Le `ExecStart=` du fichier d'unité doit contenir un **chemin absolu**, et le `PATH` explicite doit inclure les répertoires fiables pour les outils dont les sessions du démon ont besoin, comme `gh`, `git`, `npm`, et l'interpréteur `node` utilisé par un lanceur `qwen` basé sur un script. Les gestionnaires de services ne lisent pas votre profil shell. Exécutez `which qwen gh git npm node` dans votre shell normal, puis remplacez les exécutables et répertoires réels partout où le modèle ci-dessous indique `/PATH/TO/qwen` et `/PATH/TO/USER/BIN`.
 
 `~/.config/systemd/user/qwen-serve.service` :
 
@@ -70,6 +70,9 @@ Type=simple
 WorkingDirectory=%h/project-a
 # Exécutez `which qwen` pour trouver le chemin absolu. systemd ne lit PAS $PATH.
 ExecStart=/PATH/TO/qwen serve --hostname 127.0.0.1 --port 4170 --workspace %h/project-a --workspace %h/project-b
+# Remplacez la première entrée par les répertoires fiables contenant l'interpréteur de qwen
+# et les outils installés par l'utilisateur. systemd ne lit pas les profils shell.
+Environment=PATH=/PATH/TO/USER/BIN:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 # Lisez le jeton d'authentification depuis un fichier chmod 600 plutôt que de l'inclure
 # dans l'unité. `Environment=` exposerait le jeton dans le fichier d'unité
 # (généralement 644 = lisible par tout le monde). EnvironmentFile conserve le jeton dans
@@ -108,7 +111,7 @@ Sans `loginctl enable-linger`, l'instance systemd au niveau utilisateur s'arrêt
 
 ## macOS : agent utilisateur launchd
 
-> **Trouvez d'abord votre binaire `qwen`.** Même contrainte que systemd — `ProgramArguments` doit contenir un **chemin absolu**. Exécutez `which qwen` pour le trouver. Emplacements courants sur macOS : `/opt/homebrew/bin/qwen` (Homebrew sur Apple Silicon), `/usr/local/bin/qwen` (Homebrew sur Intel, installations manuelles), `~/.nvm/versions/node/vX.Y.Z/bin/qwen` (nvm), `~/.volta/bin/qwen` (Volta). Remplacez ci-dessous là où le modèle indique `/PATH/TO/qwen`.
+> **Trouvez d'abord votre binaire `qwen` et les répertoires d'outils fiables.** Même contrainte que systemd : `ProgramArguments` doit contenir un **chemin absolu**, tandis que `EnvironmentVariables.PATH` doit inclure les répertoires fiables contenant les outils dont les sessions du démon ont besoin. Exécutez `which qwen gh git npm node` dans votre shell normal. Les emplacements courants sur macOS incluent `/opt/homebrew/bin` (Homebrew sur Apple Silicon), `/usr/local/bin` (Homebrew sur Intel et installations manuelles), `~/.nvm/versions/node/vX.Y.Z/bin` (nvm), et `~/.volta/bin` (Volta). Remplacez les chemins absolus réels ci-dessous ; launchd ne développe pas `~` ni les variables shell.
 
 `~/Library/LaunchAgents/com.qwenlm.qwen-serve.plist` :
 
@@ -138,6 +141,10 @@ Sans `loginctl enable-linger`, l'instance systemd au niveau utilisateur s'arrêt
   <string>/Users/VOTRE-NOM-UTILISATEUR/project-a</string>
   <key>EnvironmentVariables</key>
   <dict>
+    <!-- launchd ne lit pas les profils shell. Remplacez la première entrée par
+         des répertoires fiables contenant l'interpréteur de qwen et les outils utilisateur. -->
+    <key>PATH</key>
+    <string>/PATH/TO/USER/BIN:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     <!-- NE COMMITEZ PAS ce fichier avec un vrai jeton. Aussi, chmod 600 le
          plist lui-même pour que le jeton intégré ne soit pas lisible par tous. -->
     <key>QWEN_SERVER_TOKEN</key>
@@ -221,7 +228,7 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
   http://127.0.0.1:4170/capabilities | jq .protocolVersions         # fonctionnalités du démon
 ```
 
-Lorsque l'authentification est configurée (c'est-à-dire que le démon a été démarré avec `--token` / `QWEN_SERVER_TOKEN` défini, OU `--require-auth=true`), toutes les routes sauf `/health` sur la boucle locale nécessitent `Authorization: Bearer <jeton>`. Si vous avez démarré le démon sans jeton sur la boucle locale par défaut (le chemin sans configuration de `qwen serve`), aucun appel ne nécessite d'en-tête. Les modèles ci-dessus configurent tous un jeton, donc l'en-tête `Authorization` est nécessaire en pratique. Si `/capabilities` renvoie `401`, le jeton de l'unité / plist ne correspond pas au jeton exporté dans l'environnement utilisé par votre `curl`.
+Lorsque l'authentification est configurée (`--token` ou `QWEN_SERVER_TOKEN`), chaque route API normale sauf `/health` sur une liaison loopback ordinaire nécessite `Authorization: Bearer <jeton>` ; l'entrée webhook de canal utilise toujours son `x-qwen-webhook-secret` configuré, et les routes de documents et assets du Web Shell restent pré-authentification. `--require-auth=true` exige un jeton au démarrage et place également le `/health` loopback derrière la porte du jeton sans modifier l'authentification webhook. Si vous avez démarré le démon sans jeton sur le loopback par défaut (le chemin sans configuration de `qwen serve`), aucun appel ne nécessite d'en-tête et tout processus local pouvant atteindre le listener principal reçoit l'autorité complète de l'API opérateur, y compris l'exécution de code en tant qu'utilisateur du démon. Les modèles ci-dessus configurent tous un jeton, donc l'en-tête `Authorization` est nécessaire en pratique. Si `/capabilities` renvoie `401`, le jeton de l'unité / plist ne correspond pas au jeton exporté dans l'environnement utilisé par votre `curl`.
 
 ## Rotation du jeton
 
@@ -247,7 +254,7 @@ Les sémantiques de redémarrage du gestionnaire de services diffèrent selon le
 - **launchd `KeepAlive` avec `SuccessfulExit=false`** (le modèle ci-dessus) — correspond au comportement de systemd. Un simple `<true/>` aurait redémarré même après une sortie propre. `ThrottleInterval=10` limite les tempêtes de redémarrage sur les échecs persistants, reflétant le `RestartSec=5` de systemd.
 - **tmux / nohup** — pas de redémarrage automatique. Un plantage du démon vous laisse avec un PID mort jusqu'à ce que vous relanciez.
 
-Au cours de la **durée de vie d'un seul processus démon**, les déconnexions des clients sont récupérées via la reprise SSE `Last-Event-ID` conformément à la section [Modèle de durabilité](./qwen-serve.md#durability-model) du guide utilisateur — l'anneau de rejeu est en mémoire.
+Au cours de la **durée de vie d'un seul processus démon**, les déconnexions des clients sont récupérées via la reprise SSE `Last-Event-ID` conformément à la section [Modèle de durabilité](./qwen-serve.md#durability-model) du guide utilisateur — l'anneau de relecture est en mémoire.
 
 Un **redémarrage** du démon supprime toutes les sessions en mémoire ; les clients se reconnectent et repartent à zéro. La durabilité inter-redémarrage du contenu des sessions (prompts, appels d'outils, historique de conversation) n'est **PAS** dans la v0.16-alpha.
 

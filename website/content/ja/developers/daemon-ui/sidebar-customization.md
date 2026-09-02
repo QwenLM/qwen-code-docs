@@ -119,7 +119,7 @@ type WebShellSidebarFooterItem =
   | 'settings' // ⚙ Settings panel
   | 'version' // version label (e.g. "v0.19.10")
   | 'theme' // ☀/🌙 light/dark toggle
-  | 'sessionsOverview' // ▦ session overview panel (large screens only)
+  | 'sessionsOverview' // ▦ session overview panel
   | 'splitView' // ◧ split view (large screens only)
   | 'daemonStatus' // 📊 daemon status panel
   | 'collapse'; // ◁/▷ collapse/expand toggle
@@ -216,7 +216,6 @@ type WebShellSidebarSessionActionItem =
 /** Subset with working inline (hover-button) handlers. */
 type WebShellSidebarSessionInlineActionItem =
   | 'pin'
-  | 'archive'
   | 'rename'
   | 'export'
   | 'delete';
@@ -230,7 +229,7 @@ interface WebShellSidebarSessionActionsOptions {
 セッション行に表示されるアクションボタンを制御します。
 
 - **`items`**: すべてのアクション（インラインおよびドロップダウン）のマスター制御。`items` に含まれないアイテムは全域で非表示になります。
-- **`inlineItems`**: **インラインボタン**（ホバー時）として表示されるアイテムを制御します。デフォルトは `['pin']` です。アーカイブはデフォルトではドロップダウンに留まります。ホバースロットは行のクリックターゲット上にあり、誤って押しやすいからです。インラインハンドラーが動作するアイテムのみ使用可能です: `'pin'`、`'archive'`、`'rename'`、`'export'`、`'delete'`。`'details'` と `'group'` はドロップダウン専用です。
+- **`inlineItems`**: **インラインボタン**（ホバー時）として表示されるアイテムを制御します。デフォルトは `['pin']` です。インラインハンドラーが動作するアイテムのみ使用可能です: `'pin'`、`'rename'`、`'export'`、`'delete'`。`'details'`、`'group'`、`'archive'` はドロップダウン専用です。
 
 **表示優先度**: インラインボタンを表示するには、`items` とアイテムの組み込み条件と `inlineItems` のすべてを満たす必要があります。たとえば、`delete` をインラインで表示するには、`items` に `'delete'` が含まれ、かつ `inlineItems` に `'delete'` が含まれている必要があります。
 
@@ -239,7 +238,7 @@ interface WebShellSidebarSessionActionsOptions {
 | `undefined`（デフォルト）                 | すべてのアクションを表示、pin のみインライン |
 | `{ inlineItems: ['pin', 'delete'] }`     | Pin + delete をインラインボタンとして表示       |
 | `{ inlineItems: [] }`                    | インラインボタンをすべて非表示                  |
-| `{ inlineItems: ['archive', 'export'] }` | Archive + export をインラインボタンとして表示   |
+| `{ inlineItems: ['rename', 'export'] }` | Rename + export をインラインボタンとして表示    |
 
 ドロップダウンアイテムが有効になっていない場合、ドロップダウントリガー（⋮）は自動的に非表示になります。インラインボタンは、ケーパビリティ条件と `items` の両方を満たす場合にのみ表示されます。アーカイブは、現在のセッションおよび実行中のターンを持つセッションでは無効になります。デーモンはアーカイブ時にライブセッションをクローズするためです。
 
@@ -261,7 +260,7 @@ sidebar={{
 | 側面                   | 詳細                                                                     |
 | ---------------------- | ------------------------------------------------------------------------ |
 | データソース            | `useSessions()` フック → デーモン API（`/sessions` エンドポイント）        |
-| セッションリストの排序  | 作成時刻の降順                                                            |
+| セッションリストのソート  | 作成時刻の降順                                                            |
 | セッション行の描画      | 内部の `renderSessionRow` `useCallback` — 注入不可                         |
 | 検索 / フィルタ         | クライアントサイドのテキストマッチングによる組み込み検索バー                |
 | セッショングループ       | `SessionGroupSection` コンポーネント（6 色のプリセット + カスタム hex）    |

@@ -135,7 +135,7 @@ const updated = await selected.editWorkspaceFile({
 console.log(updated.hash);
 ```
 
-`expectedHash` はディスク上の raw バイトに対する SHA-256 です。`mode: "replace"` および `editWorkspaceFile()` はこれを必須とし、古いクライアントが読み取ったばかりのファイルを上書きしないようにします。書き込み/編集にはループバックでも Bearer トークンの設定が必要です。使用する前に `--token` または `QWEN_SERVER_TOKEN` を指定してデーモンを起動してください。
+`expectedHash` はディスク上の raw バイトに対する SHA-256 です。`mode: "replace"` および `editWorkspaceFile()` はこれを必須とし、古いクライアントが読み取ったばかりのファイルを上書きしないようにします。書き込み/編集はトークン不要な信頼されたループバックのプライマリリスナーを受け付けます。信頼されていないデプロイメントでは bearer またはペアリングの認証情報が必要です。
 
 ## `Last-Event-ID` による再接続
 

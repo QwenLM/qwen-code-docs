@@ -121,7 +121,7 @@ type WebShellSidebarFooterItem =
   | 'settings' // ⚙ Settings panel
   | 'version' // version label (e.g. "v0.19.10")
   | 'theme' // ☀/🌙 light/dark toggle
-  | 'sessionsOverview' // ▦ session overview panel (large screens only)
+  | 'sessionsOverview' // ▦ session overview panel
   | 'splitView' // ◧ split view (large screens only)
   | 'daemonStatus' // 📊 daemon status panel
   | 'collapse'; // ◁/▷ collapse/expand toggle
@@ -227,7 +227,6 @@ type WebShellSidebarSessionActionItem =
 /** Subset with working inline (hover-button) handlers. */
 type WebShellSidebarSessionInlineActionItem =
   | 'pin'
-  | 'archive'
   | 'rename'
   | 'export'
   | 'delete';
@@ -241,7 +240,7 @@ interface WebShellSidebarSessionActionsOptions {
 Управляет тем, какие кнопки действий отображаются в строках сессий:
 
 - **`items`**: Главный переключатель всех действий (и inline, и dropdown). Если элемента нет в `items`, он скрыт везде.
-- **`inlineItems`**: Управляет тем, какие элементы отображаются как **inline-кнопки** (при наведении). По умолчанию `['pin']` — archive остаётся в dropdown по умолчанию, потому что слот hover находится на цели клика строки и его легко нажать случайно. Можно использовать только элементы с работающими inline-обработчиками: `'pin'`, `'archive'`, `'rename'`, `'export'`, `'delete'`. `'details'` и `'group'` доступны только через dropdown.
+- **`inlineItems`**: Управляет тем, какие элементы отображаются как **inline-кнопки** (при наведении). По умолчанию `['pin']`. Можно использовать только элементы с работающими inline-обработчиками: `'pin'`, `'rename'`, `'export'`, `'delete'`. `'details'`, `'group'` и `'archive'` доступны только через dropdown.
 
 **Приоритет видимости**: И `items`, И встроенное условие элемента, И `inlineItems` должны все сработать, чтобы inline-кнопка отобразилась. Например, `delete` как inline требует, чтобы `'delete'` был и в `items`, и в `inlineItems`.
 
@@ -250,7 +249,7 @@ interface WebShellSidebarSessionActionsOptions {
 | `undefined` (по умолчанию)               | Все действия показаны, только pin как inline |
 | `{ inlineItems: ['pin', 'delete'] }`     | Pin + delete как inline-кнопки              |
 | `{ inlineItems: [] }`                    | Никаких inline-кнопок                       |
-| `{ inlineItems: ['archive', 'export'] }` | Archive + export как inline-кнопки          |
+| `{ inlineItems: ['rename', 'export'] }` | Rename + export как inline-кнопки          |
 
 Триггер dropdown (⋮) автоматически скрывается, когда ни один dropdown-элемент
 не включён. Inline-кнопки показываются только когда и их условие capability,

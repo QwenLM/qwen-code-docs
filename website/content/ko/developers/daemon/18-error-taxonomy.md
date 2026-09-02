@@ -2,7 +2,7 @@
 
 ## 개요
 
-데몬의 실패 모드는 의도적으로 닫힌 union으로 설계되어, SDK 소비자가 exhaustively switch로 처리하고 라우팅 핸들러가 일관된 HTTP 응답을 생성할 수 있습니다. 이 문서는 세 계층에 걸친 모든 타입화된 오류 클래스/kind를 정리합니다:
+데몬의 실패 모드는 의도적으로 닫힌 union으로 설계되어, SDK 소비자가 빠짐없이 switch로 처리하고 라우팅 핸들러가 일관된 HTTP 응답을 생성할 수 있습니다. 이 문서는 세 계층에 걸친 모든 타입화된 오류 클래스/kind를 정리합니다:
 
 1. **`packages/cli/src/serve/`** — HTTP 경계의 바운더리 오류(인증, 워크스페이스 파일시스템, 데몬-호스트 사전 검사).
 2. **`packages/acp-bridge/`** — 데몬-ACP 자식 경계의 브리지/중재자 오류.
@@ -59,7 +59,7 @@
 | `BridgeChannelClosedError`            | 503  | 호출 중 ACP 자식 채널이 닫힘.                                                          | 재연결 / 재시도; `session_died`에서 원인을 확인.                                                                                                                                  |
 | `BridgeTimeoutError`                  | 504  | 브리지 수준의 벽시계 초과.                                                              | 재시도; 근본적인 지연을 조사.                                                                                                                                                     |
 | `SessionRestoreTimeoutError`          | 504  | ACP 세션 로드/재개가 전용 복원 예산을 초과.                                              | 공지된 지연 후 재시도; 예산을 늘리기 전 복원 단계 트레이스를 확인.                                                                                                                 |
-| `BridgeChannelQuarantinedError`       | 503  | 포기된 복원 정리가 불확실(`restore_cleanup_failed`)하거나, 포기된 복원이 기한 후 전체 예산 동안 정착되지 않음(`restore_settlement_overdue`); 어느 쪽이든 워크스페이스 채널이 배출될 때까지 새 세션을 거부. 503 본문에 `reason`과 `retryAfterSeconds` 포함. | 기존 세션을 계속 사용하고, 채널이 순환될 때까지 기다린 후 새 세션 작업을 재시도.                                                          |
+| `BridgeChannelQuarantinedError`       | 503  | `reason`이 `restore_cleanup_failed`, `restore_settlement_overdue`, `new_session_cleanup_failed`, 또는 `new_session_settlement_overdue`임. settlement-overdue 상태는 지연된 실패가 정착되거나 지연된 성공이 정확-ID 정리를 완료하면 해소됨; 불확실한 정리는 해당 cleanup-failed 상태로 전환됨. Cleanup-failed 상태는 워크스페이스 채널이 비어질 때까지 지속됨. 503 본문에는 `retryAfterSeconds`도 포함됨. | 기존 세션을 계속 사용하고 공지된 지연 후 재시도; cleanup-failed 상태는 채널 재활용이 필요하며, settlement-overdue 상태는 정착 및 필요한 정리가 완료된 후 복구될 수 있음.                                                          |
 | `MissingCliEntryError`                | 500  | `qwen` CLI 진입 파일이 없음(`bridgeErrors.ts`가 아닌 `status.ts`에 정의).              | CLI 설치가 완료되었는지 확인; `packages/cli/index.ts`가 존재하는지 확인.                                                                                                          |
 
 ## 부트 시 설정 오류 (`packages/cli/src/serve/run-qwen-serve.ts`)
@@ -104,18 +104,18 @@
 | 상태   | 본문                                         | 발생 시점                                                                                                                                    |
 | ------ | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `401`  | `{ error: 'Unauthorized' }`                  | 누락 / 잘못된 / 스킴 없는 bearer 토큰. `missing header` / `wrong scheme` / `wrong token`에 대해 동일하게 응답하여 프로빙으로 구별할 수 없음.   |
-| `401`  | `{ error: '...', code: 'token_required' }`   | 토큰 없는 루프백 데몬의 mutation-gate strict 라우트. SDK가 "configure --token / --require-auth" 힌트를 렌더링.                                |
+| `401`  | `{ error: '...', code: 'token_required' }`   | 신뢰할 수 없는 토큰 없는 임베딩의 strict 라우트. 신뢰된 루프백 기본 요청은 통과됨. SDK가 토큰 설정 힌트를 렌더링.                                |
 | `403`  | `{ error: 'Request denied by CORS policy' }` | `allowOriginCors`(런타임) / `denyBrowserOriginCors`(부트스트랩)가 `Origin` 헤더가 포함된 요청을 거부.                                        |
 | `403`  | `{ error: 'Invalid Host header' }`           | `hostAllowlist`가 `Host` 헤더를 거부(DNS rebinding 방어).                                                                                     |
 
 전체 인증 모델은 [`12-auth-security.md`](./12-auth-security.md)를 참조.
 
-## 권한 결과(와이어 vs 감사 과부하)
+## 권한 결과(와이어 vs 감사 오버로드)
 
 `PermissionResolution`은 두 개의 종료 kind를 가집니다:
 
 - `{kind: 'option', optionId}` — 투표가 승리.
-- `{kind: 'cancelled', reason: 'timeout' \| 'session_closed' \| 'agent_cancelled'}` — 요청이 취소됨. 와이어 구조는 단일(`{outcome: 'cancelled'}`); 감사 로그는 `decisionReason.type`에서 timeout / session_closed / voter-cancelled / agent-cancelled를 구별. 이 과부하는 동결된 `permission.ts` 계약을 깨지 않기 위해 의도적으로 유지됨.
+- `{kind: 'cancelled', reason: 'timeout' \| 'session_closed' \| 'agent_cancelled'}` — 요청이 취소됨. 와이어 구조는 단일(`{outcome: 'cancelled'}`); 감사 로그는 `decisionReason.type`에서 timeout / session_closed / voter-cancelled / agent-cancelled를 구별. 이 오버로드는 동결된 `permission.ts` 계약을 깨지 않기 위해 의도적으로 유지됨.
 
 ## SDK 측 오류 래핑
 
@@ -139,7 +139,7 @@ flowchart LR
 ```mermaid
 flowchart TD
     A["401 수신"] --> B{"body.code == 'token_required'?"}
-    B -->|yes| C["mutation-gate strict — 사용자를 --token / --require-auth로 안내"]
+    B -->|yes| C["strict gate가 이 배포를 거부 — 사용자에게 bearer auth 설정을 안내"]
     B -->|no| D["일반 Unauthorized — 일반적인 '토큰 확인' UI"]
 ```
 
@@ -150,7 +150,7 @@ flowchart TD
 ## 주의사항 및 알려진 제한
 
 - **`io_error`와 `permission_denied`**는 의도적으로 구분됨. 혼동하지 말 것.
-- **`PermissionForbiddenError`의 이유(`designated_mismatch` / `remote_not_allowed`)는** `designated`와 `consensus` 정책에 걸쳐 과부하됨; 감사 로그는 정확하게 구별하지만 와이어 형태는 구별하지 않음.
+- **`PermissionForbiddenError`의 이유(`designated_mismatch` / `remote_not_allowed`)는** `designated`와 `consensus` 정책에 걸쳐 오버로드됨; 감사 로그는 정확하게 구별하지만 와이어 형태는 구별하지 않음.
 - **`CancelSentinelCollisionError`는 에이전트 측 버그를 나타냄**, 보안 이벤트가 아님 — 브리지 센티널이 실제 옵션과 일치하는 것을 조용히 허용하지 않고 요청을 거부.
 - **SDK 측 타입화된 오류는 아직 발전 중.** 호출자는 와이어를 통해 JS 클래스 ID에 의존하기보다 본문 필드로 라우팅해야 함.
 - **`internal_error`는 항상 조사해야 함.** `FsError` 생성자가 non-errno 경로용으로 예약된 kind로 호출되었음을 의미(프로그래머 오류); 응답 본문의 `cause` 필드에 원시 throw가 포함될 수 있음.

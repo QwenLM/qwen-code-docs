@@ -114,7 +114,7 @@ A seleção de modelo no momento da criação intencionalmente não é exposta p
 
 `PromptRequest.Builder.deadline(Duration)` solicita um deadline de prompt aplicado pelo daemon e é aceito apenas quando o daemon anuncia `prompt_absolute_deadline`; caso contrário, o SDK falha antes de enviar o prompt. O valor deve estar entre 1 e 2.147.483.647 milissegundos, correspondendo à faixa de timer Node do daemon. Isso é separado de `observationTimeout(Duration)`, que limita apenas a observação SSE local e nunca envia uma mutação de cancelamento.
 
-Antes de criar uma sessão, o SDK exige que o daemon anuncie o transporte REST e `session_scope_override`; isso impede que um daemon mais antigo ignore silenciosamente o escopo `thread` solicitado e anexe o cliente a uma sessão compartilhada. Quando `client_heartbeat` é anunciado, uma sessão aberta envia um heartbeat fresco a cada minuto para que o daemon não recolha um cliente ocioso. Defina `heartbeatInterval(Duration.ZERO)` no builder do `DaemonClient` para desabilitar esse comportamento, ou escolha um intervalo positivo diferente. Um heartbeat nunca é repetido; o próximo heartbeat agendado é um keepalive separado. A observação de prompt é limitada a 32 prompts concorrentes por cliente por padrão e pode ser ajustada com `maximumConcurrentPrompts`. Callbacks de admissão e terminal future executam fora dos workers de transporte; callbacks que permanecem bloqueados consomem capacidade de publicação limitada. A limpeza do stream SSE também é limitada, e um close que permanece bloqueado retém sua reserva de limpeza. Qualquer condição pode causar um `startPrompt` posterior a falhar com `DaemonClientCapacityException` em vez de descartar um timeout close ou crescer threads e trabalho na fila sem limite.
+Antes de criar uma sessão, o SDK exige que o daemon anuncie o transporte REST e `session_scope_override`; isso impede que um daemon mais antigo ignore silenciosamente o escopo `thread` solicitado e anexe o cliente a uma sessão compartilhada. Quando um chamador fornece um ID de sessão, o SDK adicionalmente exige `session_id_override` antes de enviar a mutação. Quando `client_heartbeat` é anunciado, uma sessão aberta envia um heartbeat fresco a cada minuto para que o daemon não recolha um cliente ocioso. Defina `heartbeatInterval(Duration.ZERO)` no builder do `DaemonClient` para desabilitar esse comportamento, ou escolha um intervalo positivo diferente. Um heartbeat nunca é repetido; o próximo heartbeat agendado é um keepalive separado. A observação de prompt é limitada a 32 prompts concorrentes por cliente por padrão e pode ser ajustada com `maximumConcurrentPrompts`. Callbacks de admissão e terminal future executam fora dos workers de transporte; callbacks que permanecem bloqueados consomem capacidade de publicação limitada. A limpeza do stream SSE também é limitada, e um close que permanece bloqueado retém sua reserva de limpeza. Qualquer condição pode causar um `startPrompt` posterior a falhar com `DaemonClientCapacityException` em vez de descartar um timeout close ou crescer threads e trabalho na fila sem limite.
 
 Uma conclusão indeterminada é um boundary de resultado, não um boundary de reutilização de sessão. Após `PromptAdmissionUnknownException` ou `PromptOutcomeIndeterminateException`, aquele `DaemonSessionClient` rejeita permanentemente prompts adicionais mesmo que a limpeza local do stream depois seja bem-sucedida; feche ou destrua a sessão em vez disso. Um timeout de observação é publicado sem aguardar indefinidamente por um close de stream bloqueado, enquanto a limpeza continua assincronamente e retém capacidade limitada do cliente até terminar.
 
@@ -343,16 +343,15 @@ O SDK usa um pool de threads para gerenciar operações concorrentes com a segui
 - **Tempo de Keep-Alive**: 60 segundos
 - **Capacidade da Fila**: 300 tarefas (usando LinkedBlockingQueue)
 - **Nomeação de Threads**: "qwen_code_cli-pool-{number}"
-- **Threads Daemon**: false
+- **Threads Daemon**: true
 - **Manipulador de Execução Rejeitada**: CallerRunsPolicy
 
 ## Tratamento de Erros
 
 O SDK fornece tipos de exceção específicos para diferentes cenários de erro:
 
-- `SessionControlException`: Lançada quando há um problema com o controle da sessão (criação, inicialização, etc.)
+- `SessionControlException`: Lançada quando há um problema com o controle da sessão, incluindo tentar usar uma sessão fechada ou indisponível. A construção da sessão e `start()` podem lançá-la diretamente; `QwenCodeCli.newSession()` encapsula falhas de criação e inicialização de nível inferior em uma `RuntimeException`.
 - `SessionSendPromptException`: Lançada quando há um problema ao enviar um prompt ou receber uma resposta
-- `SessionClosedException`: Lançada ao tentar usar uma sessão fechada
 
 ## FAQ / Solução de Problemas
 

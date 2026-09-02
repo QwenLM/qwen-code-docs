@@ -343,16 +343,15 @@ SDK는 다음 기본 구성으로 동시 작업을 관리하기 위해 스레드
 - **Keep-Alive Time**: 60초
 - **Queue Capacity**: 300 작업 (LinkedBlockingQueue 사용)
 - **Thread Naming**: "qwen_code_cli-pool-{number}"
-- **Daemon Threads**: false
+- **Daemon Threads**: true
 - **Rejected Execution Handler**: CallerRunsPolicy
 
 ## 오류 처리
 
 SDK는 다양한 오류 시나리오에 대한 특정 예외 유형을 제공합니다:
 
-- `SessionControlException`: 세션 제어(생성, 초기화 등)에 문제가 있을 때 throw됩니다
+- `SessionControlException`: 세션 제어에 문제가 있을 때 throw되며, 닫혔거나 사용할 수 없는 세션을 사용하려는 시도가 포함됩니다. 세션 생성 및 `start()`는 이를 직접 throw할 수 있고, `QwenCodeCli.newSession()`은 하위 수준의 생성 및 초기화 실패를 `RuntimeException`으로 래핑합니다.
 - `SessionSendPromptException`: 프롬프트를 전송하거나 응답을 받는 데 문제가 있을 때 throw됩니다
-- `SessionClosedException`: 닫힌 세션을 사용하려고 할 때 throw됩니다
 
 ## FAQ / 문제 해결
 

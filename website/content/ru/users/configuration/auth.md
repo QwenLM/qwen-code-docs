@@ -162,7 +162,7 @@ export OPENAI_MODEL="qwen3-coder-plus"
 | OpenAI-совместимый | `openai`             | `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL` (алиас: `QWEN_MODEL`)                            | OpenAI, Azure OpenAI, OpenRouter, Requesty, ModelScope, Alibaba Cloud, любой OpenAI-совместимый эндпоинт |
 | Anthropic         | `anthropic`          | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`                                         | Anthropic Claude                                                                                      |
 | Google GenAI      | `gemini`             | `GEMINI_API_KEY`, `GEMINI_MODEL`                                                                     | Google Gemini                                                                                         |
-| Vertex AI         | `vertex-ai`          | `GOOGLE_API_KEY` или `GOOGLE_CLOUD_PROJECT` (+ опционально `GOOGLE_CLOUD_LOCATION`), `GOOGLE_MODEL` (использует протокол `gemini`; беспарольная настройка только с проектом не определяется автоматически из окружения, поэтому выберите тип аутентификации явно через `--auth-type vertex-ai` или `security.auth.selectedType`) | Google Vertex AI                                                                                      |
+| Vertex AI         | `vertex-ai`          | `GOOGLE_API_KEY` + `GOOGLE_MODEL` (устанавливает `GOOGLE_GENAI_USE_VERTEXAI=true`) или `GOOGLE_CLOUD_PROJECT` + `GOOGLE_MODEL` (беспарольная ADC); использует протокол `gemini` | Google Vertex AI                                                                                      |
 
 #### Шаг 1: Настройка моделей и провайдеров в `~/.qwen/settings.json`
 

@@ -18,6 +18,10 @@ Qwen Code 允许你通过 `settings.json` 中的 `modelProviders` 设置来配�
 >
 > **模型唯一性：** 同一 `authType` 内的模型通过 `id` + `baseUrl` 的组合进行唯一标识。这意味着你可以在单个 `authType` 下多次定义相同的模型 ID（例如 `"gpt-4o"`），只要每个条目具有不同的 `baseUrl` —— 例如，一个直接指向 OpenAI，另一个指向代理端点。如果两个条目具有相同的 `id` 和相同的 `baseUrl`（或都省略了 `baseUrl`），则第一个出现的条目生效，后续的重复项将被跳过并附带警告。
 
+> [!note]
+>
+> **热重载 vs. 重启：** 在 `settings.json` 中编辑 `modelProviders` 会被正在运行的交互式会话自动获取，无需重启（文件监听器有约 300ms 的防抖；重新打开 `/model` 即可查看新条目，当前选择会保留）。`providerProtocol` 仅在启动时读取一次，**需要重启**。
+
 ### 图像生成路由
 
 当某个路由可供内置 `image_gen` 工具使用时，请设置 `supportsImageGeneration: true`。此能力独立于 `capabilities.vision` 或 `generationConfig.modalities.image` 等图像输入支持。
@@ -453,9 +457,9 @@ Coding Plan 模型配置具有版本控制。当 Qwen Code 检测到模型模板
 
 - 将现有的 Coding Plan 模型配置替换为最新版本
 - 保留你手动添加的任何自定义模型配置
-- 自动切换到更新后配置中的第一个模型
+- 保持你选中的模型不变；如果它不再存在于更新后的配置中，请使用 `/model` 选择新模型
 
-更新过程确保你始终能够访问最新的模型配置和功能，而无需手动干预。
+更新过程会刷新模型配置和功能，而不会改变你选中的模型。
 
 ### 手动配置（高级）
 

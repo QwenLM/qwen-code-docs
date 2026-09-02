@@ -21,7 +21,7 @@ dws profile list --format json
 dws auth status --format json
 ```
 
-Em um servidor sem interface gráfica, use `dws auth login --device`. Um canal fixa exatamente um perfil existente na inicialização. Defina `profile` como um nome de perfil ou corpId exato, ou omita para fixar a entrada marcada como `isCurrent`. O canal trata cada login DWS da mesma forma e não depende de metadados de `user_id`.
+Em um servidor headless, use `dws auth login --device`. Um canal fixa exatamente um perfil existente na inicialização. Defina `profile` como um nome de perfil ou corpId exato, ou omita para fixar a entrada marcada como `isCurrent`. O canal trata cada login DWS da mesma forma e não depende de metadados de `user_id`.
 
 ## Configuração
 
@@ -36,6 +36,8 @@ Adicione um canal ao `~/.qwen/settings.json`:
       "senderPolicy": "pairing",
       "groupPolicy": "pairing",
       "watchTodos": true,
+      "startReaction": "🤔",
+      "endReaction": "赞",
       "groups": {
         "*": { "requireMention": true }
       },
@@ -80,6 +82,8 @@ Quando uma mensagem cita outra mensagem do DingTalk, o texto citado é incluído
 
 Mensagens diretas ordinárias são recuperadas da mesma forma: uma verificação de histórico de cinco segundos re-processa qualquer mensagem direta omitida pelo stream em tempo real, deduplicada por conversa e ID de mensagem em ambos os caminhos.
 
+`startReaction` é o caractere de emoji ou o nome de reação do DingTalk adicionado enquanto uma tarefa aceita está em execução; um valor omitido ou vazio usa o padrão `🤔`. `endReaction` substitui a reação de início após a tarefa ser concluída, falhar ou ser cancelada; um valor omitido ou vazio desativa a reação de término.
+
 ## Menções a Documentos
 
 Não há lista de observação de documentos ou base de conhecimento. Para iniciar uma tarefa de documento:
@@ -88,7 +92,7 @@ Não há lista de observação de documentos ou base de conhecimento. Para inici
 2. Ative a opção que envia uma notificação do DingTalk para essa conta.
 3. O DWS entrega o cartão de notificação através do histórico de mensagens diretas da conta.
 
-O canal extrai o ID do documento, a chave do comentário e a solicitação dessa notificação. Ele lê o documento referenciado para contexto, adiciona a reação de olhos `暗中观察` do DingTalk enquanto a tarefa é executada, e responde ao comentário original do documento. O stream de eventos DWS em tempo real é usado quando contém o cartão; uma verificação incremental de histórico a cada cinco segundos cobre cartões omitidos pelo stream de eventos atual.
+O canal extrai o ID do documento, a chave do comentário e a solicitação dessa notificação. Ele lê o documento referenciado para contexto, adiciona a reação de início configurada enquanto a tarefa é executada, e responde ao comentário original do documento. O stream de eventos DWS em tempo real é usado quando contém o cartão; uma verificação incremental de histórico a cada cinco segundos cobre cartões omitidos pelo stream de eventos atual.
 
 Comentários que não geram uma notificação são ignorados por design. Mensagens de notificação duplicadas para o mesmo comentário de documento são executadas apenas uma vez. Tarefas de documento seguem o `senderPolicy` e suportam `approvalMode` `default`, `plan` ou `yolo`; `default` é usado quando omitido.
 
@@ -114,8 +118,8 @@ Ou deixe o daemon gerenciá-lo:
 qwen serve --workspace /path/to/your/project --channel dws-work
 ```
 
-Não execute ambas as formas ao mesmo tempo porque elas compartilham a concessão do serviço de canal.
+Não execute ambas as formas ao mesmo tempo porque elas compartilham o lease do serviço de canal.
 
-Para verificação local, envie uma mensagem direta de outra conta, aprove o pareamento se necessário, e verifique se a reação de olhos aparece enquanto a tarefa é executada. Depois, adicione um comentário de documento com notificação de @menção ativada. O canal deve reagir à mensagem de notificação, ler o documento e postar a resposta final sob o comentário original. Um comentário com notificação desativada não deve produzir nenhuma tarefa.
+Para verificação local, envie uma mensagem direta de outra conta, aprove o pareamento se necessário, e verifique se a reação de início configurada aparece enquanto a tarefa é executada. Se uma reação de término estiver configurada, verifique se ela substitui a reação de início depois. Em seguida, adicione um comentário de documento com notificação de @menção ativada. O canal deve reagir à mensagem de notificação, ler o documento e postar a resposta final sob o comentário original. Um comentário com notificação desativada não deve produzir nenhuma tarefa.
 
 O canal ignora eventos de IDs de remetente que o DWS identifica como a conta autenticada, prevenindo loops de resposta e pareamento sem inferir identidade a partir do texto da mensagem. Iniciar as fontes IM requer essa identidade própria autoritativa: se a conta autenticada não expõe um openDingTalkId e nenhuma sessão anterior sob o mesmo perfil registrou um, o canal se recusa a conectar. Uma reconexão que perde temporariamente o ID mantém o filtro nos IDs de remetente próprio registrados anteriormente.

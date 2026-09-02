@@ -172,7 +172,8 @@ sequenceDiagram
 ### Session 总结（`session_recap` 能力标签）
 
 `POST /session/:id/recap` 向快速模型请求一行“我上次进行到哪里了”的总结。它返回 `{ sessionId, recap: string | null }`；`null` 表示历史记录太短或模型暂时失败。此端点是尽力而为（best-effort）的。
-### Session BTW / 顺带提问（`session_btw` capability tag）
+
+### Session BTW / 顺带提问（`session_btw` 能力标签）
 
 `POST /session/:id/btw` 针对会话上下文提出一次性问题，且不会中断主对话流。它在缓存路径上使用 `runForkedAgent` 进行单轮、无工具的 LLM 调用，并返回 `{ sessionId, answer: string | null }`。该实现强制执行 `BTW_MAX_INPUT_LENGTH` 限制、跨会话泄漏防护以及超时处理。
 
@@ -200,21 +201,21 @@ sequenceDiagram
 
 空的、损坏的和孤立的常规转录文件即使无法作为对话加载，仍然符合这些生命周期操作的条件。所有权安全检查可以有意地 fail closed 并要求操作员干预。在 writer 密封其认证的交接证明后，如果文件被更改，则会以 `SessionTranscriptChangedError` 失败，直到操作员解决密封锁和已更改的字节。超过有界所有权读取窗口的 JSON 格式首条物理记录会以 `SessionTranscriptIdentityUnavailableError` 失败，直到该记录被修复或缩减；带有非对象前缀的超大损坏记录仍然符合条件。可解析的恢复记录必须包含字符串类型的 `sessionId` 和 `cwd` 所有权字段，混合的本地/外部归档状态也会 fail closed。当宣传了 `session_storage_conflict_repair` 时，archive 和 unarchive 接受 `resolveConflicts: true`：archive 保留已归档的副本，而 unarchive 保留活跃的副本。不使用该选项时，活跃/归档冲突不会移动、删除或覆盖任何持久化副本，并会在批处理的 `errors` 数组中返回。Archive 仍然在分类冲突之前严格关闭活跃会话，这可能会将排队的记录 flush 到活跃转录中。具有工作区资格的生命周期路由现在使用 HTTP `200` 批处理信封，而不是早期的 HTTP `409 session_conflict` 响应。
 
-### 上下文使用情况（`session_context_usage` capability tag）
+### 上下文使用情况（`session_context_usage` 能力标签）
 
 `GET /session/:id/context-usage` 返回结构化的上下文窗口使用情况。`?detail=true` 包含按 tool、memory 和 skill 分组的更细粒度的使用情况。
 
-### 会话统计（`session_stats` capability tag）
+### 会话统计（`session_stats` 能力标签）
 
 `GET /session/:id/stats` 返回使用统计信息：模型指标（输入/输出 tokens、缓存读/写、总成本）、每个 tool 的调用次数和延迟、文件编辑次数，以及当前活跃会话中每个 skill 的调用次数。`skills` 块仅反映该会话内的 skill body 加载和 skill 斜杠命令；它不是跨会话的活动聚合。
 
-### 会话任务（`session_tasks` capability tag）
+### 会话任务（`session_tasks` 能力标签）
 
 `GET /session/:id/tasks` 返回 agent 任务、shell 任务、monitor 任务及其生命周期状态的后台任务快照。由另一个子代理生成的 agent 条目包含可选的 lineage 字段（`parentAgentId`、`parentName`、`depth`），以便客户端将嵌套的子代理渲染为树状结构；请参阅 `qwen-serve-protocol.md` 中的 payload 示例。
 
 `session_monitor_tool_correlation` 能力额外保证 monitor 条目携带 `toolUseId`，允许客户端将转录中的工具调用与其任务详情进行关联。
 
-### 会话 LSP 状态（`session_lsp` capability tag）
+### 会话 LSP 状态（`session_lsp` 能力标签）
 
 `GET /session/:id/lsp` 为 daemon 客户端返回经过清理的每个会话的 LSP 状态：启用状态、聚合服务器数量、不可用/初始化状态，以及每个服务器的 `name`、`status`、`languages`、`transport`、`command` 和 `error`。禁用或不可用的 LSP 会表示为 HTTP 200 状态数据，而不是传输错误。
 
@@ -224,15 +225,15 @@ sequenceDiagram
 
 ### ACP 子进程预热
 
-`bridge.preheat()` 在第一个会话之前预热 ACP 子进程，从而使第一个真实会话避免冷启动延迟。它与 `channelIdleTimeoutMs` 配合使用，后者在最后一个会话关闭后保持 ACP 子进程存活；同时配合 skip-relaunch 行为，在新会话到达时复用已经空闲的子进程。
+`bridge.preheat()` 仍可供显式嵌入方使用，但 `qwen serve` 也会在启动后尝试预热 trusted primary child 以保持一致性。预热失败不会导致致命错误，下一个 runtime 命令或 Session 会重试；trusted secondary 在首次使用时启动。Workspace Runtime 在工作活跃期间拥有该子进程。在所有 Session 和管理租约 drain 之后，省略或为零的 `channelIdleTimeoutMs` 会立即回收该子进程；单纯的预热本身会为首次使用保留，且不会触发回收器。正值的配置延迟或活跃的 keepalive 会使子进程在更长的剩余窗口内保持可复用。公开的 Workspace Runtime `ensure` 命令会添加一个可续期的十分钟工作区租约；每次成功的调用都会重置该窗口，包括 channel 已经活跃的情况。
 
 ## 配置
 
 - `BridgeOptions.maxSessions`（默认 32）— 上限。
 - `BridgeOptions.sessionScope`（默认 `'single'`；可选 `'thread'`）。
-- `BridgeOptions.initializeTimeoutMs`（默认 10s）— ACP `initialize` 握手。
+- `BridgeOptions.initializeTimeoutMs`（默认 10s）— ACP 子进程启动截止时间（Channel factory + `initialize` 握手）及默认请求超时。
 - `BridgeOptions.sessionRestoreTimeoutMs`（默认 60s）— ACP `loadSession` / `unstable_resumeSession` 截止时间。默认 60 秒；显式配置的 initialize 超时可以提高此值，但不能降低。
-- `BridgeOptions.channelIdleTimeoutMs`（默认 0；立即回收 ACP 子进程）。
+- `BridgeOptions.channelIdleTimeoutMs`（未设置或 `0` 时在 runtime 工作 drain 后回收，但单纯预热会为首次使用保留；正值或活跃的 keepalive 会延迟回收，且取较长的延迟）。
 - Capability tags：`session_create`、`session_id_override`、`session_scope_override`、`session_load`、`session_resume`、`unstable_session_resume`（已弃用的别名）、`session_list`、`session_info`、`session_close`、`session_metadata`、`session_set_model`、`client_identity`、`client_heartbeat`、`session_recap`、`session_generation`、`session_btw`、`session_context_usage`、`session_tasks`、`session_monitor_tool_correlation`、`session_stats`、`session_lsp`、`session_status`、`non_blocking_prompt`。
 
 ### 无状态 generation（`session_generation` 能力标签）

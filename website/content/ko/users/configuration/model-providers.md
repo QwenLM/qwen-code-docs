@@ -1,6 +1,3 @@
----
-title: Model Providers
----
 
 # 모델 제공자
 
@@ -21,6 +18,10 @@ Qwen Code는 `settings.json`의 `modelProviders` 설정을 통해 여러 모델 
 > [!note]
 >
 > **모델 고유성:** 동일한 `authType` 내의 모델은 `id` + `baseUrl`의 조합으로 고유하게 식별됩니다. 즉, 각 항목이 다른 `baseUrl`을 가지는 한 동일한 모델 ID(예: `"gpt-4o"`)를 단일 `authType` 아래에 여러 번 정의할 수 있습니다 — 예를 들어, 하나는 OpenAI를 직접 가리키고 다른 하나는 프록시 엔드포인트를 가리킵니다. 두 항목이 동일한 `id`와 동일한 `baseUrl`을 공유하면(또는 둘 다 `baseUrl`을 생략하면) 첫 번째 항목이 우선하며 후속 중복은 경고와 함께 건너뛰어집니다.
+
+> [!note]
+>
+> **핫 리로드 vs 재시작:** `settings.json`의 `modelProviders` 편집은 재시작 없이 실행 중인 대화형 세션에서 반영됩니다(파일 감시자는 약 300ms를 디바운스합니다; `/model`을 다시 열어 새 항목을 확인하세요, 현재 선택은 유지됩니다). `providerProtocol`은 시작 시 한 번 읽히며 **재시작이 필요합니다**.
 
 ### 이미지 생성 라우트
 
@@ -314,6 +315,7 @@ Qwen Code는 각 제공자에 요청을 전송하기 위해 다음 공식 SDK를
         "baseUrl": "http://localhost:11434/v1",
         "generationConfig": {
           "timeout": 300000,
+          "streamIdleTimeoutMs": 600000,
           "maxRetries": 1,
           "contextWindowSize": 32768,
           "samplingParams": {
@@ -457,9 +459,9 @@ Coding Plan 모델 구성은 버전 관리됩니다. Qwen Code가 모델 템플�
 
 - 기존 Coding Plan 모델 구성이 최신 버전으로 대체됩니다
 - 수동으로 추가한 사용자 정의 모델 구성은 보존됩니다
-- 업데이트된 구성의 첫 번째 모델로 자동 전환됩니다
+- 선택한 모델은 변경되지 않습니다; 업데이트된 구성에 더 이상 없는 경우 `/model`을 사용하여 새 모델을 선택하세요
 
-업데이트 과정은 수동 개입 없이 항상 최신 모델 구성과 기능에 접근할 수 있도록 보장합니다.
+업데이트 과정은 선택한 모델을 변경하지 않고 모델 구성과 기능을 새로 고칩니다.
 
 ### 수동 구성 (고급)
 

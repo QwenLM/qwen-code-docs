@@ -199,7 +199,11 @@ protected override onPromptEnd(chatId: string, sessionId: string, messageId?: st
 
 **Hooks d'appel d'outil** — surchargez `onToolCall()` pour afficher l'activité de l'agent (par ex., "Exécution de la commande shell...").
 
-**Hooks de streaming** — surchargez `onResponseChunk(chatId, chunk, sessionId)` pour un affichage progressif par chunk (par ex., modification d'un message sur place). Surchargez `onResponseComplete(chatId, fullText, sessionId)` pour personnaliser la livraison finale.
+**Hooks de streaming** — surchargez `onResponseChunk(chatId, chunk, sessionId, segment)` pour un affichage progressif par chunk (par ex., modification d'un message sur place). Surchargez `onResponseComplete(chatId, fullText, sessionId, segment)` pour personnaliser la livraison finale. En mode named-task géré par le démon, `segment.sourceLabel` est une métadonnée de livraison immuable pour ce segment. Affichez-le une fois sur chaque message ou carte visible indépendamment, y compris une réponse finale visible séparément, mais ne l'ajoutez pas aux tampons bruts ni au texte du modèle. Nettoyez l'état de segment appartenant à l'adaptateur depuis `onOutputSegmentEnd()`.
+
+**Attribution de named-task** — `sendThreadMessage(chatId, threadId, text, sourceLabel)` reçoit le même label texte optionnel pour les limites de livraison one-shot et proactive. L'implémentation par défaut gère les messages simples. Les adaptateurs qui surchargent la livraison, découpent les messages, émettent des cartes ou fournissent des envois de fallback doivent répéter le label à chaque limite visible indépendamment, échapper uniquement le label pour le dialecte de balisage cible, et inclure sa taille rendue dans les limites de la plateforme. Exécutez les vérifications no-reply, la projection de marqueurs média, le hachage d'audit, la persistance de transcription et la capture de corps de retry par rapport à la réponse brute avant présentation ; si la livraison est persistée pour un retry sûr au redémarrage, persistez le label capturé séparément.
+
+`ChannelUserInputRequestContext` interactif porte également `sourceLabel`. Les cartes, les remplacements de terminal et les fallbacks simples doivent le conserver sans affaiblir les vérifications existantes de requête, session, exécution, propriétaire et cible.
 
 **Streaming par blocs** — définissez `blockStreaming: "on"` dans la configuration du canal. La classe de base divise automatiquement les réponses en plusieurs messages aux limites des paragraphes. Aucun code de plugin n'est nécessaire — cela fonctionne en parallèle de `onResponseChunk`.
 
@@ -217,12 +221,18 @@ protected override supportsProactiveTarget(target: SessionTarget): boolean {
 protected override async pushProactive(
   target: SessionTarget,
   text: string,
+  sourceLabel?: string,
 ): Promise<void> {
-  await this.platformClient.send(target.chatId, text);
+  await this.sendThreadMessage(
+    target.chatId,
+    target.threadId,
+    text,
+    sourceLabel,
+  );
 }
 ```
 
-Utilisez `supportsProactiveDeliveryTarget()` lorsque la livraison générique du démon accepte une forme de cible différente, et `supportsProactiveWebhookTarget()` lorsque la livraison webhook diffère des boucles et des résultats en arrière-plan. Continuez à rejeter les cibles non prises en charge plutôt que de revenir à une autre conversation.
+Utilisez `supportsProactiveDeliveryTarget()` lorsque la livraison générique du démon accepte une forme de cible différente, et `supportsProactiveWebhookTarget()` lorsque la livraison webhook diffère des boucles et des résultats en arrière-plan. Gardez les cibles non prises en charge rejetées plutôt que de revenir à une autre conversation.
 
 **Médias** — remplissez `envelope.attachments` avec des images/fichiers. Voir [Pièces jointes](#attachments) ci-dessus.
 

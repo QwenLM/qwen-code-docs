@@ -8,7 +8,7 @@
 
 | 参数                                    | 类型                       | 默认值                                    | 作用                                                                                                                                                                              |
 | --------------------------------------- | -------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--hostname <host>`                     | string                     | `127.0.0.1`                               | 绑定地址。环回值：`127.0.0.1`、`localhost`、`::1`、`[::1]`。非环回地址需要在启动时提供 bearer token。拒绝 `host:port` 格式的输入，并提示使用 `--port`。 |
+| `--hostname <host>`                     | string                     | `127.0.0.1`                               | 绑定地址。环回值：任意 `127.0.0.0/8` 地址、`localhost`、`::1`、`[::1]`；`localhost` 仅解析一次并固定，且 trusted mode 还会在启动完成前验证实际监听地址。非环回结果需要 bearer token。`host:port` 格式的输入会被拒绝，并提示使用 `--port`。 |
 | `--port <n>`                            | number                     | `4170`                                    | 监听端口；`0` 表示临时端口。                                                                                                                                                   |
 | `--token <s>`                           | string                     | env                                       | Bearer token。覆盖 `QWEN_SERVER_TOKEN` 并在启动时进行 trim 处理。由于它会出现在进程命令行中，因此在部署时建议使用环境变量。                                           |
 | `--open`                                | boolean                    | `false`                                   | 在 runtime 就绪后打开挂载的 Web Shell。已配置的 token 通过 URL fragment 传递。当浏览器启动不符合条件时，裸 `--open` 仍然是静默的无操作。                                                                                                                                                      |
@@ -20,8 +20,9 @@
 | `--max-total-sessions <n>`              | number                       | 多个启动/恢复的工作区时派生                  | 守护进程级别的活跃会话上限。省略时，根据每个工作区的上限和启动/恢复的工作区数量派生一个有限的默认值。`0` / `Infinity` 表示无限制。                                         |
 | `--max-pending-prompts-per-session <n>` | number                       | `5`                                       | 每个会话已接受但处于 pending/running 状态的 prompt 上限。超出的 prompt 将返回 503。`0` / `Infinity` 表示无限制；负值或非整数值会抛出异常。                             |
 | `--max-connections <n>`                 | number                       | `256`                                     | HTTP 监听器的 `server.maxConnections`；`0` / `Infinity` 表示无限制。                                                                                                            |
-| `--enable-session-shell`                | boolean                      | `false`                                   | 启用直接的 `POST /session/:id/shell` 执行。需要 bearer token，且每次调用都必须携带绑定到会话的 `X-Qwen-Client-Id`。                                            |
+| `--enable-session-shell`                | boolean                      | `false`                                   | 启用直接的 `POST /session/:id/shell` 执行。在 bearer auth 或 trusted-loopback authority 下生效；每次调用都必须携带绑定到会话的 `X-Qwen-Client-Id`。                                            |
 | `--event-ring-size <n>`                 | number                       | `8000`                                    | 每个会话的 SSE 重放 ring；软上限为 `1_000_000`。                                                                                                                               |
+| `--session-prompt-settled-close-grace-ms <n>` | non-negative integer         | `0`                                       | prompt 稳定后、空闲会话可被自动关闭前的宽限期（毫秒）。基于轮询的 SSE 客户端利用此窗口重连，而不会触发会话重建。`0` = 立即关闭。                                                                                                                              |
 | `--compacted-replay-max-bytes <n>`      | positive integer             | `4194304`                                 | `POST /session/:id/load` 返回的有界内存重放快照的字节上限；硬上限为 `268435456`。                                                                                                         |
 | `--max-journal-events <n>`              | positive safe integer        | `10000`                                                                           | 每个会话未完成的轮次的 `liveJournal` 重放条目的基线上限。自适应增长可以提高它（参见 `--max-journal-bytes`）；固定任一 journal 标志都会禁用增长。                                                                                                            |
 | `--max-journal-bytes <n>`               | positive safe integer        | `8388608` (8 MiB)                                                                 | 每个会话 `liveJournal` 的基线字节上限。当轮次超过它时，自适应增长会按需提高会话的上限，向双倍增长但受限于剩余 pool 余量，且不超过每会话 256 MiB 的硬上限 — 在有效的 `--memory-budget-mb` 的 5% 的守护进程级别 pool 内（上限为 `1024` MB；当有效预算低于 1024 MB 最小值时为 0 — 增长禁用），由每个 workspace bridge 共享；没有余量时最旧的条目会被丢弃并标记 `history_truncated`。固定任一 journal 标志都会禁用增长。 |
@@ -34,13 +35,13 @@
 | `--external-tool-guard-mode <m>`        | `off` / `required`           | `off`                                                                             | 启用托管 ACP 外部预执行 Guard。`required` 模式下，如果其环回 provider 未完成 v1 握手，则启动失败。                                                                                   |
 | `--external-tool-guard-endpoint <url>`  | loopback HTTP(S) origin      | unset                                                                             | 仅在 `required` 模式下使用的 provider origin。必须是纯 origin 且使用 `127.0.0.1`、`localhost` 或 `::1`；路径、凭据、重定向和代理路由会被拒绝。                                           |
 | `--external-tool-guard-timeout-ms <n>`  | integer `100..30000`         | `3000`                                                                            | 每次握手和每次 prepare 的截止时间。超时在握手期间会导致启动失败，在轮次期间会 fail closed 该调用。                                                                                        |
-| `--allow-origin <pattern>`              | repeatable string            | unset                                                                             | 跨域白名单，用于替换默认的 CORS 拒绝策略。`*` 允许任何 origin，但需要 token。                                                                           |
+| `--allow-origin <pattern>`              | repeatable string            | unset                                                                             | 跨域白名单，用于替换默认的 CORS 拒绝策略。通配符和非环回 HTTP(S) origin 需要 token；无 token 的 HTTP(S) origin 必须是环回地址。                                                                           |
 | `--allow-private-auth-base-url`         | boolean                    | `false`                                   | 允许 `/workspace/auth/provider` 安装 localhost / 私有网络 auth provider 的 `baseUrl`；仅在受信任的本地开发环境中使用。                                            |
-| `--web` / `--no-web`                    | boolean                    | `true`                                    | 在守护进程根路径提供构建好的 Web Shell SPA（`GET /`、`/assets/*` 以及 `/session/:id` 文档导航）。这些入口点在 `bearerAuth` 之前挂载；每个 API 路由仍受 token 门控。`--no-web` 使守护进程仅提供 API。 |
+| `--web` / `--no-web`                    | boolean                    | `true`                                    | 在守护进程根路径提供构建好的 Web Shell SPA（`GET /`、`/assets/*` 以及 `/session/:id` 文档导航）。这些入口点在 `bearerAuth` 之前挂载；API 调用仍遵循已配置的 bearer auth 或 trusted-loopback authority。`--no-web` 使守护进程仅提供 API。 |
 | `--prompt-deadline-ms <n>`              | positive integer           | unset                                     | 服务端 prompt 的绝对时间限制（毫秒）。超时将中止并返回错误。                                                                                                      |
 | `--writer-idle-timeout-ms <n>`          | positive integer           | unset                                     | 每个 SSE 连接的空闲超时时间（毫秒）。如果在此时间内没有发送事件，守护进程将关闭 SSE 连接。                                                                |
-| `--channel-idle-timeout-ms <n>`         | non-negative integer       | `0`                                       | 在最后一个会话关闭后，保持 ACP 子进程存活的时间。`0` 表示立即回收。                                                                                  |
-| `--initialize-timeout-ms <n>`           | positive integer           | `10000`                                   | ACP 子进程请求超时时间，包括 initialize 握手（毫秒）。                                                                                                                                                       |
+| `--channel-idle-timeout-ms <n>`         | non-negative integer       | `0`                                       | 运行时工作 drain 后 ACP 子进程的自动回收延迟。首次使用前会保留普通预热。显式 keepalive 可延长已配置的延迟；以较长的剩余延迟为准。                                                                                  |
+| `--initialize-timeout-ms <n>`           | positive integer           | `10000`                                   | ACP 子进程启动截止时间（channel factory + initialize 握手）及默认请求超时时间（毫秒）。                                                                                                                                                       |
 | `--session-restore-timeout-ms <n>`      | positive integer             | `60000`                                                                           | ACP 会话 load/resume 超时时间（毫秒）。省略此参数时，显式提供的 initialize 超时时间会提高预算，但不会将其降低到默认值以下。                                                                            |
 | `--permission-response-timeout-ms <n>`  | non-negative integer         | `0`                                                                               | 普通权限和 `ask_user_question` 响应的共享挂钟超时时间。`0` 或省略该标志时无限等待；正值启用计时器。                                                                                                                          |
 | `--session-reap-interval-ms <n>`        | non-negative integer       | `60000`                                   | 会话回收扫描间隔；`0` 表示禁用。                                                                                                                                      |
@@ -69,6 +70,7 @@
 | `QWEN_SERVE_RATE_LIMIT_READ`        | `--rate-limit-read` 的环境变量回退值。                                                                                                                                    |
 | `QWEN_SERVE_RATE_LIMIT_WINDOW_MS`   | `--rate-limit-window-ms` 的环境变量回退值。                                                                                                                               |
 | `QWEN_SERVE_NEW_FILE_MODE`          | 守护进程文本写入的新文件权限模式策略：`owner`（默认值 — 新文件创建为 `0600`，不受 umask 影响）或 `system`（新文件遵循 `0o666 & ~umask`）。不区分大小写；字面值 `0600` 作为 `owner` 的别名被接受（不支持其他八进制模式），无法识别的值会在 stderr 警告并保持 `0600` 默认值。现有文件始终保留其权限模式。参见 [`qwen-serve.md` — Agent 文本写入的新文件权限模式](../../users/qwen-serve.md#new-file-mode-for-agent-text-writes)。 |
+| `QWEN_SERVE_SESSION_ATTACHMENTS_ROOT` | 覆盖会话附件的存储位置；未命中已配置 root 的读取/删除操作会回退到默认运行时临时目录，以便切换前的附件仍可读取。接受绝对路径、相对于守护进程 cwd 的路径或 `~` / `~/…`。参见 [`qwen-serve.md` — 会话附件存储](../../users/qwen-serve.md#session-attachment-storage)。                                                                                                                                                        |
 | `QWEN_CODE_MEMORY_PROJECT_SCOPE`    | `workspace` 按精确的工作区目录键控项目内存；`git-root` 选择旧版共享作用域。未设置时，守护进程注入 `workspace`；无法识别的值警告一次并保留旧版 `git-root` 行为。通过运行时 base env 传播，而非 `childEnvOverrides`；`--memory-project-scope` 优先级更高。每个工作区的 remember/forget/dream lane 将 pending 任务上限设为 `MAX_PENDING = 16`；N 个工作区最多允许 16·N 个排队任务，无守护进程级别上限。 |
 
 空白的 `QWEN_CODE_MEMORY_PROJECT_SCOPE` 值被视为未设置，因此默认为 `workspace`；无法识别的非空值仍然警告一次并保留旧版 `git-root` 行为。
@@ -118,6 +120,7 @@
 | 字段                         | 作用                                                                                        |
 | ----------------------------- | --------------------------------------------------------------------------------------------- |
 | `eventRingSize`               | 覆盖默认的每个会话 ring 大小。                                                  |
+| `sessionPromptSettledCloseGraceMs` | prompt 稳定后、空闲会话可被自动关闭前的宽限期。`0` = 立即关闭。                                                                |
 | `memoryProjectScope`          | 仅限 `runQwenServe`；优先级为选项、启动时环境变量，然后回退到 `workspace`。直接调用 `createServeApp` 的使用 `deps.daemonEnv`。                                          |
 | `maxPendingPromptsPerSession` | 每个会话的 pending prompt 上限；`0` / `Infinity` 表示无限制。                             |
 | `mcpPoolActive`               | 编程式开关，默认值来自 `QWEN_SERVE_NO_MCP_POOL`。                                |
@@ -125,10 +128,10 @@
 | `allowOrigins`                | 跨域白名单（`string[]`），对应 `--allow-origin`。                       |
 | `allowPrivateAuthBaseUrl`     | 允许安装私有 / localhost auth provider 的 `baseUrl`。                              |
 | `serveWebShell`               | 在守护进程根路径提供构建好的 Web Shell SPA（默认 `true`）；`false`（CLI 的 `--no-web`）使守护进程仅提供 API。当构建产物不包含 shell 资源时无效。 |
-| `enableSessionShell`          | 启用会话 shell 执行；仍然需要 bearer token 和绑定到会话的 client id。 |
+| `enableSessionShell`          | 启用会话 shell 执行；bearer auth 或 trusted-loopback authority 以及绑定到会话的 client id 仍然是必需的。 |
 | `promptDeadlineMs`            | Prompt 绝对时间限制。                                                                       |
 | `writerIdleTimeoutMs`         | SSE writer 空闲超时时间。                                                                      |
-| `channelIdleTimeoutMs`        | 在最后一个会话关闭后，保持 ACP 子进程预热状态的时间。                            |
+| `channelIdleTimeoutMs`        | 运行时工作 drain 后 ACP 子进程的自动回收延迟。首次使用前会保留普通预热；活跃的 keepalive 窗口可延长延迟。                            |
 | `initializeTimeoutMs`         | ACP 子进程请求超时时间，包括 initialize 握手。                                                                                    |
 | `sessionRestoreTimeoutMs`     | ACP 会话 load/resume 超时时间。优先级：显式的 restore 值；否则显式的 initialize 值会提高 60000 默认值但不会降低它；否则为 60000。 |
 | `sessionReapIntervalMs`       | 会话回收扫描间隔。                                                                 |
@@ -149,7 +152,7 @@
 | `statusProvider`                                                                                                        | 守护进程宿主预检单元。                                                                        |
 | `childEnvOverrides`                                                                                                     | 按句柄添加或移除环境变量。                                                                    |
 | `externalToolGuard`                                                                                                     | 可选的守护进程侧处理器，用于私有的子进程到父进程的 prepare RPC。bridge 在调用处理器前后验证通道所有权和当前活跃的 Prompt。 |
-| `channelIdleTimeoutMs`                                                                                                  | 最后一个会话关闭后，保持 ACP 子进程存活的时长（毫秒）；默认为 `0`。                           |
+| `channelIdleTimeoutMs`                                                                                                  | 运行时工作 drain 后 ACP 子进程的自动回收延迟。首次使用前会保留普通预热；活跃的 keepalive 窗口可延长延迟。                           |
 
 ## 重要默认值
 

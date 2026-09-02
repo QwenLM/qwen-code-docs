@@ -119,7 +119,7 @@ type WebShellSidebarFooterItem =
   | 'settings' // ⚙ 설정 패널
   | 'version' // 버전 라벨 (예: "v0.19.10")
   | 'theme' // ☀/🌙 라이트/다크 토글
-  | 'sessionsOverview' // ▦ 세션 개요 패널 (큰 화면만)
+  | 'sessionsOverview' // ▦ 세션 개요 패널
   | 'splitView' // ◧ 분할 보기 (큰 화면만)
   | 'daemonStatus' // 📊 데몬 상태 패널
   | 'collapse'; // ◁/▷ 접기/펼치기 토글
@@ -216,7 +216,6 @@ type WebShellSidebarSessionActionItem =
 /** 작동하는 인라인(호버 버튼) 핸들러가 있는 서브셋. */
 type WebShellSidebarSessionInlineActionItem =
   | 'pin'
-  | 'archive'
   | 'rename'
   | 'export'
   | 'delete';
@@ -230,7 +229,7 @@ interface WebShellSidebarSessionActionsOptions {
 세션 행에 표시되는 액션 버튼을 제어합니다:
 
 - **`items`**: 모든 액션(인라인 및 드롭다운 모두)에 대한 마스터 제어. 항목이 `items`에 없으면 모든 곳에서 숨겨집니다.
-- **`inlineItems`**: 어떤 항목이 **인라인 버튼**(호버 시)으로 나타나는지 제어합니다. 기본값은 `['pin']`입니다 — archive는 기본적으로 드롭다운에 남아 있습니다. 호버 슬롯이 행의 클릭 대상 위에 있어 실수로 클릭하기 쉽기 때문입니다. 작동하는 인라인 핸들러가 있는 항목만 사용 가능합니다: `'pin'`, `'archive'`, `'rename'`, `'export'`, `'delete'`. `'details'`와 `'group'`은 드롭다운 전용입니다.
+- **`inlineItems`**: 어떤 항목이 **인라인 버튼**(호버 시)으로 나타나는지 제어합니다. 기본값은 `['pin']`입니다. 작동하는 인라인 핸들러가 있는 항목만 사용 가능합니다: `'pin'`, `'rename'`, `'export'`, `'delete'`. `'details'`, `'group'`, `'archive'`는 드롭다운 전용입니다.
 
 **표시 우선순위**: 인라인 버튼이 표시되려면 `items` AND 항목의 내장 조건 AND `inlineItems`가 모두 통과해야 합니다. 예를 들어, `delete`를 인라인으로 표시하려면 `items`에 `'delete'`가 포함되고 AND `inlineItems`에 `'delete'`가 포함되어야 합니다.
 
@@ -239,7 +238,7 @@ interface WebShellSidebarSessionActionsOptions {
 | `undefined` (기본값)                    | 모든 액션 표시, pin만 인라인               |
 | `{ inlineItems: ['pin', 'delete'] }`     | Pin + delete를 인라인 버튼으로             |
 | `{ inlineItems: [] }`                    | 인라인 버튼 없음                           |
-| `{ inlineItems: ['archive', 'export'] }` | Archive + export를 인라인 버튼으로         |
+| `{ inlineItems: ['rename', 'export'] }` | Rename + export를 인라인 버튼으로          |
 
 드롭다운 트리거(⋮)는 활성화된 드롭다운 항목이 없으면 자동으로 숨겨집니다. 인라인 버튼은 기능 조건과 `items`가 모두 포함할 때만 표시됩니다. Archive는 현재 세션과 실행 중인 턴이 있는 세션에서는 비활성화됩니다. 데몬이 아카이브할 때 라이브 세션을 닫기 때문입니다.
 

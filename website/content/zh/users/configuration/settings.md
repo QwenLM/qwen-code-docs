@@ -80,6 +80,7 @@ Qwen Code 会自动将旧版配置设置迁移到新格式。旧设置文件会�
 | 设置 | 类型 | 描述 | 默认值 |
 | --- | --- | --- | --- |
 | `general.preferredEditor` | string | 用于打开文件的首选编辑器。 | `undefined` |
+| `general.outputStyle` | string | 输出样式的名称，决定响应的撰写方式：`Concise`、`Proactive`、`Explanatory` 或 `Learning`（不区分大小写）。留空或设置为 `default` 使用默认样式。`--output-style` 可在单次运行中覆盖它。在启动时读取一次：更改在下次启动时生效。在 `--bare` 和 `--safe-mode` 中被忽略。 | `undefined` |
 | `general.vimMode` | boolean | 启用 Vim 键绑定。 | `false` |
 | `general.enableAutoUpdate` | boolean | 启用启动时的自动更新检查和安装。 | `true` |
 | `general.showSessionRecap` | boolean | 离开终端后返回时，自动显示单行的“上次离开时的状态”回顾。默认关闭。无论此设置如何，均可使用 `/recap` 手动触发。 | `false` |
@@ -95,7 +96,6 @@ Qwen Code 会自动将旧版配置设置迁移到新格式。旧设置文件会�
 | `general.cleanupPeriodDays` | number | 保留 `~/.qwen/file-history/` 会话备份的天数，这些备份由 `/rewind` 使用。超过此时间的备份将由后台任务移除，该任务每天最多运行一次。`0` = 最小保留时间（约 1 小时）：保留过去一小时内触及的会话以及当前活动的会话。更改在重启后生效。 | `30` |
 | `general.language` | enum | 用户界面的语言。使用 `"auto"` 从系统设置中检测，或使用语言代码（例如 `"zh-CN"`、`"fr"`）。可以通过将 JS 语言环境文件放在 `~/.qwen/locales/` 中来添加自定义代码。请参阅 [i18n](../features/language)。需要重启。 | `"auto"` |
 | `general.outputLanguage` | string | 模型输出的语言。使用 `"auto"` 从系统设置中检测，或设置特定语言。需要重启。 | `"auto"` |
-| `general.dynamicCommandTranslation` | boolean | 启用动态斜杠命令描述的 AI 翻译。禁用时，动态命令保留其原始描述并跳过翻译模型调用。 | `false` |
 | `general.terminalBell` | boolean | 当响应完成或需要批准时，播放终端提示音。 | `true` |
 | `general.preventSystemSleep` | boolean | 在 Qwen Code 流式传输模型响应或执行工具时，防止系统进入睡眠状态。空闲提示时间和权限提示不会阻止睡眠。在启动时读取一次，因此更改在重启后生效。 | `true` |
 | `general.chatRecording` | boolean | 将聊天记录保存到磁盘。禁用此功能也会阻止 `--continue` 和 `--resume` 工作。需要重启。 | `true` |
@@ -111,7 +111,7 @@ Qwen Code 会自动将旧版配置设置迁移到新格式。旧设置文件会�
 | 设置 | 类型 | 描述 | 默认值 |
 | --- | --- | --- | --- |
 | `review.attribution` | boolean | 在 `/review` 发布的审查正文和行内评论末尾追加归属脚注，注明模型和 CLI 版本（例如 `_— qwen3-coder via Qwen Code /review (v0.21.2)_`）。禁用此选项可在不附带 AI 归属的情况下发布审查：脚注会被省略，发布的评论和正文列表会失去 `**[Critical]**`/`**[Suggestion]**` 标记。这些帖子在原始源码中仍然可识别：每个携带一个不可见的严重级别标记（`<!-- qwen-review critical -->`），审查正文携带一个账本标记（`<!-- qwen-review-ledger ... -->`）——任何读取评论正文的内容（GitHub API 自动化、与此设置耦合的工作流）仍然能识别 `/review` 产物，提交前重复检测通过严重级别标记识别审查账号的早期帖子，但来自其他账号的无归属帖子无法被识别。另一个后果：qwen-autofix 的 Critical-only 模式（在第 5 轮之后启用，或当计数窗口的 diff 增长预算触发时更早启用）不再将已发布的发现识别为 Critical 并延迟它们。禁用还会从嵌入审查正文的 machine-ledger 标记中隐去模型，因此在全新环境中（CI、另一个克隆——任何没有审查缓存的地方）从上次发布的审查恢复的增量锚点无法通过同模型检查，重新审查会回退到全量范围。 | `true` |
-| `review.effort` | enum | 未指定 `--effort` 时 `/review` 的默认 effort：`"low"`、`"medium"`、`"high"` 或 `"auto"`（内置规则：PR 为 high，本地变更为 medium）。显式的 `--effort` 优先；有效的 `--comment` 仍然强制 high，`--fix` 仍然将下限设为 medium。 | `"auto"` |
+| `review.effort` | enum | 当既未指定 `--effort` 也未由项目记住显式输入的层级时，`/review` 的默认 effort：`"low"`、`"medium"`、`"high"` 或 `"auto"`（内置规则：PR 为 high，本地变更为 medium）。显式或记住的层级优先；有效的 `--comment` 仍然强制 high，`--fix` 仍然将下限设为 medium。 | `"auto"` |
 | `review.comment` | boolean | 将每次 PR `/review` 视为传入了 `--comment`：无需该标志即可将发现发布到 pull request。发布仍然绑定到调用中指定的 PR。仅当你始终希望发布审查时才启用。 | `false` |
 | `review.severityFloor` | enum | 未指定 `--severity-floor` 时 PR `/review` 发布的最低严重级别：`"auto"`（轮次自适应默认值——建议通过第 5 轮发布，从第 6 轮起仅发布 Critical，否则可发布的高置信度建议会被记录并延迟，第 2-5 轮延迟自上一轮以来未更改的代码上的新建议；低置信度和 Nice-to-have 的发现仅限终端），`"critical"`（从第 1 轮开始采用该策略），或 `"suggestion"`（每轮都发布建议；关闭收敛策略）。非 PR 目标没有轮次，会忽略此设置。 | `"auto"` |
 | `review.reverseAuditRounds` | number | 降低每次 high-effort 审查的反向审计循环轮次上限。该上限原本遵循 diff 拓扑（10 小型 / 5 分 chunk；大型 diff 有审查截止时间为 3，无截止时间为 5）。此设置只能**降低**适用的任一层级：低于 3、高于该层级或不是大于零的整数的值会被忽略。降低上限不会使审查更快收敛——循环在连续两轮无新发现后结束——而是使它们更频繁地在收敛前停止，且每次此类停止都将结论上限为 Comment。 | `0`（未设置） |
@@ -370,6 +370,7 @@ Qwen Code 会自动将旧版配置设置迁移到新格式。旧设置文件会�
 | `tools.useRipgrep` | boolean | 使用 ripgrep 进行文件内容搜索，而不是回退实现。提供更快的搜索性能。 | `true` | |
 | `tools.useBuiltinRipgrep` | boolean | 使用内置的 ripgrep 二进制文件。当设置为 `false` 时，将改用系统级的 `rg` 命令。此设置仅在 `tools.useRipgrep` 为 `true` 时生效。 | `true` | |
 | `tools.workflowsEnabled` | boolean | 启用 Workflow 工具，允许模型编写并运行一个编排并行子代理的脚本。默认关闭；一次运行可以调度多个子代理并消耗相应的 token。 | `false` | 仅限 User、System 和 SystemDefaults 作用域；工作区值会被忽略。需要重启：是。环境变量覆盖：`QWEN_CODE_ENABLE_WORKFLOWS=1` 强制开启；`QWEN_CODE_DISABLE_WORKFLOWS=1` 强制关闭（disable 优先）。 |
+| `goals.modelProposed` | enum | 控制 `propose_goal` 工具，该工具允许模型提出一个会话 Goal 供你审批：`alwaysAsk` 在审批对话框中显示每个提案，在你接受之前不会设置任何内容；`"disabled"` 移除该工具。手动输入的 `/goal` 不受影响。 | `alwaysAsk` | 仅限 User、System 和 SystemDefaults 作用域；工作区值会被忽略。需要重启：是。 |
 | `tools.truncateToolOutputThreshold` | number | 如果工具输出大于此字符数，则进行截断。适用于 Shell、Grep、Glob、ReadFile 和 ReadManyFiles 工具。 | `25000` | 需要重启：是 |
 | `tools.truncateToolOutputLines` | number | 截断工具输出时保留的最大行数或条目数。适用于 Shell、Grep、Glob、ReadFile 和 ReadManyFiles 工具。 | `1000` | 需要重启：是 |
 | `tools.toolSearch.enabled` | boolean | 通过 ToolSearch 按需加载 MCP 工具以减小 prompt 大小。对于依赖基于前缀的 KV 缓存的模型（例如 DeepSeek），请禁用此功能以保持 prompt 前缀稳定并最大化缓存命中率。 | `true` | 需要重启：是 |
@@ -401,6 +402,8 @@ Qwen Code 会自动将旧版配置设置迁移到新格式。旧设置文件会�
 | `agents.builtin.exploreModel` | string | 内置 Explore subagent 的模型选择器。使用 `inherit` 继承主会话模型，`fast` 使用 `fastModel`，或模型 ID，或 `authType:model-id` 选择器。自定义的同名 Explore agent 保留其自身的模型配置。需要重启。 | `inherit` |
 | `agents.modelGrades` | object | 将语义等级名称映射到模型选择器，供 Agent 工具使用。需要重启。 | `undefined` |
 | `agents.allowedGrades` | array of strings | Agent 工具可使用的已配置模型等级的可选白名单。需要重启。 | `undefined` |
+| `agents.crossSessionMessaging` | boolean | 实验性功能。允许本机上的 Qwen Code 会话通过每个会话的本地套接字互相发送消息。开启后，此会话将对来自对等方的消息开放，使其可被其他会话发现，并允许其模型通过 `send_message` 向它们发送消息。需要重启。 | `false` |
+| `agents.crossSessionInbound` | enum | 其他会话发送给此会话的消息的处理方式：`accept` 投递消息，`hold` 暂存消息供 `/peers` 审查而不让模型处理，`refuse` 让此会话退出。未设置时表示审批模式对等（请参阅[向另一个运行中的会话发送消息](../features/commands.md#6-messaging-another-running-session)）。 | `undefined` |
 
 #### permissions
 

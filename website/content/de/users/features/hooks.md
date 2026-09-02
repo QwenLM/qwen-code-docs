@@ -724,7 +724,7 @@ Wenn das injizierte `additionalContext` an das Modell gesendet wird, wird es als
 }
 ```
 
-Der Hook verwendet die normalen Session-Felder des löschenden Runtimes (`session_id`, `transcript_path` und `cwd`); über ACP ist `transcript_path` leer, da der löschende Runtime kein eigenes Transkript hat. `SessionDelete` wird derzeit für den interaktiven `/delete`-Flow und ACPs explizite `deleteSession`-Methode ausgelöst; die Daemon-REST-Batchlöschung und internes Cleanup emittieren es nicht.
+Der Hook verwendet die normalen Session-Felder des löschenden Runtimes (`session_id`, `transcript_path` und `cwd`); über ACP ist `transcript_path` leer, da der löschende Runtime kein eigenes Transkript hat. `SessionDelete` wird derzeit für den interaktiven `/delete`-Flow und ACPs explizite `deleteSession`-Methode ausgelöst; die Daemon-REST-Batchlöschung und internes Cleanup emittieren es nicht. Ein Command-Hook wird zu Ende ausgeführt, wenn Qwen nach dem Dispatch beendet wird; seine stdout und stderr werden ignoriert und bleiben unabhängig von Qwens Pipes.
 
 #### MessageDisplay
 
@@ -842,6 +842,8 @@ Die Felder `context_usage`, `context_limit` und `input_tokens` ermöglichen es H
 - Protokollierung von Authentifizierungsfehlern
 - Benachrichtigungen bei Abrechnungsfehlern
 - Erfassung von Fehlerstatistiken
+
+Ein Command-Hook wird zu Ende ausgeführt, wenn Qwen nach dem Dispatch beendet wird; seine stdout und stderr werden ignoriert und bleiben unabhängig von Qwens Pipes.
 
 #### SubagentStart
 
@@ -1302,6 +1304,8 @@ Hooks werden in den Qwen Code-Einstellungen konfiguriert, typischerweise in `.qw
 ### Asynchrone Hooks
 
 Nur der Typ `command` unterstützt asynchrone Ausführung. Das Setzen von `"async": true` führt den Hook im Hintergrund aus, ohne den Hauptfluss zu blockieren.
+
+Async-Hooks sind auf den Qwen-Prozess beschränkt, da ihre erfasste Ausgabe über die In-Memory-Async-Hook-Registry zugestellt wird. Unter POSIX reklamiert Qwen einen noch laufenden Async-Hook-Prozessbaum, wenn es beendet wird, außer für Event-Typen, deren Abschnitte ausdrücklich eine Fire-and-Forget-Fertigstellung nach dem Beenden garantieren. Windows kann einen Nachkommen-Baum nach dem Beenden seines Roots nicht rekonstruieren, daher erfordert die vollständige Parent-Exit-Reklamation dort ein Job Object oder Descendant Tracking.
 
 **Funktionen:**
 

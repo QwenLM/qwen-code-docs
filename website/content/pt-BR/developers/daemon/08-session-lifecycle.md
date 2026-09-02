@@ -181,6 +181,7 @@ stream SSE.
 Retorna `{ sessionId, recap: string | null }`; `null` significa que o
 histórico era muito curto ou o modelo falhou temporariamente. Este endpoint é
 best-effort.
+
 ### Session BTW / Side Question (tag de capability `session_btw`)
 
 `POST /session/:id/btw` faz uma pergunta pontual no contexto da sessão sem interromper o fluxo principal da conversa. Ele usa `runForkedAgent` no caminho do cache para uma chamada LLM de turno único e sem ferramentas, retornando `{ sessionId, answer: string | null }`. A implementação impõe `BTW_MAX_INPUT_LENGTH`, proteções contra vazamento entre sessões e tratamento de timeout.
@@ -233,15 +234,15 @@ A capability `session_monitor_tool_correlation` garante adicionalmente que entra
 
 ### Pré-aquecimento do Filho ACP
 
-`bridge.preheat()` aquece o processo filho ACP antes da primeira sessão para que a primeira sessão real evite a latência de cold-start. Ele é combinado com `channelIdleTimeoutMs`, que mantém o filho ACP vivo após o fechamento da última sessão, e com o comportamento de skip-relaunch, que reutiliza um filho já ocioso quando uma nova sessão chega.
+`bridge.preheat()` permanece disponível para embedders explícitos, mas o `qwen serve` também tenta pré-aquecer o filho primário confiável após a inicialização para compatibilidade. Um pré-aquecimento com falha não é fatal e o próximo comando de runtime ou sessão tenta novamente; secundários confiáveis iniciam no primeiro uso. O Workspace Runtime é dono do filho enquanto houver trabalho ativo. Após todos os leases de sessão e gerenciamento drenarem, um `channelIdleTimeoutMs` omitido ou zero coleta o filho imediatamente; o próprio pré-aquecimento simples é preservado para o primeiro uso e não arma esse coletor. Um atraso configurado positivo ou keepalive ativo mantém o filho reutilizável pela janela restante mais longa. O comando público `ensure` do Workspace Runtime adiciona um lease de workspace renovável de dez minutos; cada chamada bem-sucedida reseta essa janela, inclusive quando o canal já estava ativo.
 
 ## Configuração
 
 - `BridgeOptions.maxSessions` (padrão 32) — limite máximo.
 - `BridgeOptions.sessionScope` (padrão `'single'`; opcional `'thread'`).
-- `BridgeOptions.initializeTimeoutMs` (padrão 10s) — handshake `initialize` do ACP.
+- `BridgeOptions.initializeTimeoutMs` (padrão 10s) — deadline de inicialização do filho ACP (factory do Channel + handshake `initialize`) e timeout padrão de requisição.
 - `BridgeOptions.sessionRestoreTimeoutMs` (padrão 60s) — deadline do ACP `loadSession` / `unstable_resumeSession`. O padrão é 60s; um timeout de initialize configurado explicitamente pode elevá-lo, mas nunca reduzi-lo.
-- `BridgeOptions.channelIdleTimeoutMs` (padrão 0; descarta o filho ACP imediatamente).
+- `BridgeOptions.channelIdleTimeoutMs` (não definido ou `0` coleta após drenagem do trabalho de runtime, exceto que o pré-aquecimento simples é preservado para o primeiro uso; um valor positivo ou keepalive ativo atrasa a coleta, e o atraso maior vence).
 - Tags de capability: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (alias depreciado), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
 
 ### Geração sem estado (tag de capability `session_generation`)

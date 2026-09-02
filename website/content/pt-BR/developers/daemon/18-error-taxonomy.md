@@ -8,7 +8,7 @@ Os modos de falha do daemon são uniões fechadas deliberadamente, para que cons
 2. **`packages/acp-bridge/`** — erros de ponte / mediador na fronteira entre daemon e filho ACP.
 3. **`packages/sdk-typescript/src/daemon/`** — wrapping do lado do SDK e campos de erro estruturados.
 
-As formas de erro no nível de fio são documentadas em [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md); este documento adiciona orientação de causa e remediação.
+As formas de erro no nível de wire são documentadas em [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md); este documento adiciona orientação de causa e remediação.
 
 ## Fronteira do sistema de arquivos (`packages/cli/src/serve/fs/errors.ts`)
 
@@ -52,14 +52,14 @@ Classes tipadas lançadas pela ponte / mediador. A maioria carrega um status HTT
 | `WorkspaceInitRaceError`              | 409  | Condição de corrida TOCTOU no init.                                                                  | Tente novamente.                                                                                                                                                                           |
 | `McpServerNotFoundError`              | 404  | Reinicialização para um servidor desconhecido.                                                        | Verifique o nome do servidor em `/workspace/mcp`.                                                                                                                                          |
 | `McpServerRestartFailedError`         | 502  | Reinicialização falhou dentro do filho ACP.                                                      | Verifique os logs do filho ACP; pode indicar um servidor MCP quebrado.                                                                                                                            |
-| `InvalidPermissionOptionError`        | 400  | Voto de fio tentou injetar `CANCEL_VOTE_SENTINEL` via `optionId`.                      | Votar com `{outcome: 'cancelled'}` em vez de um `optionId`.                                                                                                                     |
+| `InvalidPermissionOptionError`        | 400  | Voto via wire tentou injetar `CANCEL_VOTE_SENTINEL` via `optionId`.                      | Votar com `{outcome: 'cancelled'}` em vez de um `optionId`.                                                                                                                     |
 | `PermissionForbiddenError`            | 403  | A política recusou o eleitor (`designated_mismatch` / `remote_not_allowed`).              | Use o client id do originador (designado), pré-registre o eleitor (consenso) ou vote via loopback (apenas local). Consulte [`04-permission-mediation.md`](./04-permission-mediation.md). |
 | `CancelSentinelCollisionError`        | 500  | O agente publicou `'__cancelled__'` como um rótulo de opção legítimo.                       | Bug do agente — altere o rótulo da opção para qualquer coisa diferente do sentinela.                                                                                                         |
 | `PermissionPolicyNotImplementedError` | 500  | Política solicitada não incorporada neste daemon.                                          | Atualize o daemon ou altere `policy.permissionStrategy`.                                                                                                                            |
 | `BridgeChannelClosedError`            | 503  | Canal do filho ACP fechado durante a chamada.                                                    | Reconectar / tentar novamente; verifique `session_died` para a causa.                                                                                                                               |
 | `BridgeTimeoutError`                  | 504  | Tempo de parede no nível da ponte excedido.                                                      | Tente novamente; investigue lentidão subjacente.                                                                                                                                          |
 | `SessionRestoreTimeoutError`          | 504  | O load/resume de sessão ACP excedeu seu orçamento dedicado de restore.                                                                                                                                                                                                                                                  | Tente novamente após o atraso anunciado; inspecione os traces de estágio de restore antes de aumentar o orçamento.                                                                                                                                       |
-| `BridgeChannelQuarantinedError`       | 503  | A limpeza de restore abandonado foi inconclusiva (`restore_cleanup_failed`), ou um restore abandonado não liquidou um orçamento completo após seu prazo (`restore_settlement_overdue`); de qualquer forma, o canal do workspace recusa novas sessões até drenar. O corpo 503 carrega `reason` e `retryAfterSeconds`. | Continue usando as sessões existentes, aguarde o canal reciclar e então tente novamente o trabalho de nova sessão.                                                                                                                                       |
+| `BridgeChannelQuarantinedError`       | 503  | `reason` é `restore_cleanup_failed`, `restore_settlement_overdue`, `new_session_cleanup_failed` ou `new_session_settlement_overdue`. Um estado settlement-overdue é resolvido após uma falha tardia ser liquidada ou um sucesso tardio completar a limpeza de ID exato; uma limpeza inconclusiva transiciona para o estado cleanup-failed correspondente. Estados cleanup-failed duram até o canal do workspace drenar. O corpo 503 também carrega `retryAfterSeconds`. | Continue usando as sessões existentes e tente novamente após o atraso anunciado; estados cleanup-failed requerem reciclagem do canal, enquanto estados settlement-overdue podem se recuperar após a liquidação e qualquer limpeza necessária ser concluída.                                                                                                                                       |
 | `MissingCliEntryError`                | 500  | O arquivo de entrada da CLI `qwen` está faltando (definido em `status.ts`, não em `bridgeErrors.ts`). | Confirme que a instalação da CLI está completa; verifique se `packages/cli/index.ts` existe.                                                                                                  |
 
 ## Erros de configuração em tempo de inicialização (`packages/cli/src/serve/run-qwen-serve.ts`)
@@ -72,8 +72,8 @@ Classes tipadas lançadas pela ponte / mediador. A maioria carrega um status HTT
 
 | Classe                        | Quando                                                       | Observações                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | ---------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `UpstreamDeviceFlowError`    | O IdP upstream retorna um erro estruturado durante a votação. | `oauthError` é sanitizado com `sanitizeForStderr` antes da interpolação em stderr ou dicas de auditoria (defesa CVE-2021-42574 / Trojan Source; consulte [`12-auth-security.md`](./12-auth-security.md)).                                                                                                                                                                                                                                         |
-| `DeviceFlowPollTimeoutError` | O temporizador de corrida do registro dispara antes de o provedor retornar. | O código do provedor não deve lançar este tipo. Ele é exportado para testes, mas o registro protege `pollTimedOut` com a marca de tempo de execução `_isRegistryTimeout: boolean`, não `instanceof`. Um provedor que importa e lança `new DeviceFlowPollTimeoutError(ms)` ainda segue o caminho de auditoria genérico de lançamento do provedor porque `_isRegistryTimeout` padroniza para `false`; apenas a fábrica interna `makeRegistryPollTimeoutError(ms)` define a marca. |
+| `UpstreamDeviceFlowError`    | O IdP upstream retorna um erro estruturado durante o polling. | `oauthError` é sanitizado com `sanitizeForStderr` antes da interpolação em stderr ou dicas de auditoria (defesa CVE-2021-42574 / Trojan Source; consulte [`12-auth-security.md`](./12-auth-security.md)).                                                                                                                                                                                                                                         |
+| `DeviceFlowPollTimeoutError` | O temporizador de corrida do registro dispara antes de o provedor retornar. | O código do provedor não deve lançar este tipo. Ele é exportado para testes, mas o registro protege `pollTimedOut` com a marca de runtime `_isRegistryTimeout: boolean`, não `instanceof`. Um provedor que importa e lança `new DeviceFlowPollTimeoutError(ms)` ainda segue o caminho de auditoria genérico de lançamento do provedor porque `_isRegistryTimeout` padroniza para `false`; apenas a fábrica interna `makeRegistryPollTimeoutError(ms)` define a marca. |
 
 ## Tipos de erro do Daemon-host (`packages/acp-bridge/src/status.ts`)
 
@@ -97,25 +97,25 @@ Classes tipadas lançadas pela ponte / mediador. A maioria carrega um status HTT
 | `prompt_deadline_exceeded` | O prazo do tempo de parede do prompt expirou.                              |
 | `writer_idle_timeout`      | O escritor SSE não fez escritas bem-sucedidas antes de seu tempo limite ocioso. |
 
-Estes são expostos através do `errorKind` da célula de preflight para que UIs do cliente renderizem remediação estruturada (não stacks de chamadas brutas).
+Estes são expostos através do `errorKind` da célula de preflight para que UIs do cliente renderizem remediação estruturada (não stack traces brutos).
 
 ## Formas de erro de autenticação
 
 | Status | Corpo                                          | Quando                                                                                                                                      |
 | ------ | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `401`  | `{ error: 'Unauthorized' }`                   | Token bearer ausente / errado / sem esquema. Uniforme entre `cabeçalho ausente` / `esquema errado` / `token errado` para que sondagem não possa distinguir. |
-| `401`  | `{ error: '...', code: 'token_required' }`    | Rota estrita de gate de mutação em um daemon loopback sem token. SDKs renderizam dica "configure --token / --require-auth".                          |
+| `401`  | `{ error: '...', code: 'token_required' }`    | Rota estrita em um embed sem token e não confiável. Requisições primárias de loopback confiável passam. SDKs renderizam uma dica de configuração de token.                          |
 | `403`  | `{ error: 'Request denied by CORS policy' }` | `allowOriginCors` (runtime) / `denyBrowserOriginCors` (bootstrap) rejeitou uma requisição com cabeçalho `Origin`.                                                                             |
 | `403`  | `{ error: 'Invalid Host header' }`            | `hostAllowlist` rejeitou o cabeçalho `Host` (defesa contra rebinding de DNS).                                                                       |
 
 Consulte [`12-auth-security.md`](./12-auth-security.md) para o modelo completo de autenticação.
 
-## Resultados de permissão (sobrecarga de fio vs auditoria)
+## Resultados de permissão (sobrecarga de wire vs auditoria)
 
 `PermissionResolution` tem dois tipos terminais:
 
 - `{kind: 'option', optionId}` — um voto venceu.
-- `{kind: 'cancelled', reason: 'timeout' \| 'session_closed' \| 'agent_cancelled'}` — a requisição foi cancelada. A forma no fio é única (`{outcome: 'cancelled'}`); o log de auditoria distingue timeout / session_closed / voter-cancelled / agent-cancelled em `decisionReason.type`. Esta sobrecarga é preservada deliberadamente para evitar quebrar o contrato congelado de `permission.ts`.
+- `{kind: 'cancelled', reason: 'timeout' \| 'session_closed' \| 'agent_cancelled'}` — a requisição foi cancelada. A forma no wire é única (`{outcome: 'cancelled'}`); o log de auditoria distingue timeout / session_closed / voter-cancelled / agent-cancelled em `decisionReason.type`. Esta sobrecarga é preservada deliberadamente para evitar quebrar o contrato congelado de `permission.ts`.
 
 ## Empacotamento de erros no lado do SDK
 
@@ -139,7 +139,7 @@ flowchart LR
 ```mermaid
 flowchart TD
     A["401 recebido"] --> B{"body.code == 'token_required'?"}
-    B -->|sim| C["mutation-gate estrito — orientar usuário para --token / --require-auth"]
+    B -->|sim| C["gate estrito negou esta implantação — orientar usuário a configurar bearer auth"]
     B -->|não| D["plain Unauthorized — UI genérica 'verifique o token'"]
 ```
 
@@ -147,10 +147,10 @@ flowchart TD
 
 - Todas as classes de erro são exportadas de seus respectivos pacotes; consumidores do SDK podem usar `instanceof` com os tipos de `bridgeErrors.ts` quando executando no mesmo processo Node. Através da rede, utilize `body.code` / `body.kind` / `body.errorKind`.
 
-## Ressonâncias & Limitações Conhecidas
+## Ressalvas e Limitações Conhecidas
 
 - **`io_error` vs `permission_denied`** são distintos propositalmente. Não os confunda.
-- **Os motivos do `PermissionForbiddenError` (`designated_mismatch` / `remote_not_allowed`) são sobrecarregados** entre as políticas `designated` e `consensus`; o log de auditoria os distingue precisamente, mas a forma na rede não.
+- **Os motivos do `PermissionForbiddenError` (`designated_mismatch` / `remote_not_allowed`) são sobrecarregados** entre as políticas `designated` e `consensus`; o log de auditoria os distingue precisamente, mas a forma no wire não.
 - **`CancelSentinelCollisionError` indica um bug do lado do agente**, não um evento de segurança — a bridge recusa a requisição em vez de silenciosamente permitir que o sentinel corresponda a uma opção real.
 - **Erros tipados do lado do SDK ainda estão em evolução.** Os chamadores devem rotear por campos do corpo em vez de confiar na identidade da classe JS através da rede.
 - **`internal_error` sempre deve ser investigado.** Ele sinaliza que um construtor de `FsError` foi chamado com um tipo reservado para caminhos não-errno (erro de programador); o campo `cause` do corpo da resposta pode conter a exceção original.

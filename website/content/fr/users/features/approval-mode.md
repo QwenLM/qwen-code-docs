@@ -274,6 +274,9 @@ Qwen Code effectue les modifications de fichiers (les modifications dans l'espac
       // Optional: route ALL shell commands (including read-only ones like
       // ls, cat) through the classifier for defense-in-depth.
       // "classifyAllShell": true,
+      // Optional: send MCP tool calls to the classifier by name only
+      // (arguments are forwarded by default).
+      // "mcp": { "forwardArguments": false },
     },
   },
 }

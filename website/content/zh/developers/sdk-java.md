@@ -67,7 +67,7 @@ npx tsx scripts/run-java-daemon-sdk-e2e.ts
 
 启动 `qwen serve`，然后创建独立的线程作用域会话。`promptText` 仅在匹配的 `turn_complete` 到达后才返回；不完整的流会以 `PromptOutcomeIndeterminateException` 失败，而不是将部分文本作为成功返回。
 
-对于 `0.1.0-alpha` 所假设的生命周期保证，请使用与 SDK 相同源码修订版发布的 qwen-code 构建。daemon 必须包含 [#7386](https://github.com/QwenLM/qwen-code/pull/7386) 中的幂等每客户端 detach 账本、[#7400](https://github.com/QwenLM/qwen-code/pull/7400) 中的每轮次终端保证，以及此版本的已确认准入取消加 FIFO 取消 drain 围栏。仅有 #7400 commit 是不够的：相同线路的 daemon 可能在 agent 分发前确认取消而未停止已准入的 prompt，或者让未确认的会话级取消到达排队的后续 prompt。捆绑的 ACP 子进程使用一个已确认的准入感知取消握手；没有该扩展的自定义标准兼容 ACP 子进程会收到一个标准的 `session/cancel` 通知。功能协商无法区分较旧的相同线路 daemon 构建，因此 SDK 采用 fail closed 策略，而不是将部分输出报告为成功。
+对于 `0.1.0-alpha` 所假设的生命周期保证，请使用与 SDK 相同源码修订版发布的 qwen-code 构建。daemon 必须包含 [#7386](https://github.com/QwenLM/qwen-code/pull/7386) 中的幂等每客户端 detach 账本、[#7400](https://github.com/QwenLM/qwen-code/pull/7400) 中的每纪元终端保证，以及此版本的已确认准入取消加 FIFO 取消 drain 围栏。仅有 #7400 commit 是不够的：相同线路的 daemon 可能在 agent 分发前确认取消而未停止已准入的 prompt，或者让未确认的会话级取消到达排队的后续 prompt。捆绑的 ACP 子进程使用一个已确认的准入感知取消握手；没有该扩展的自定义标准兼容 ACP 子进程会收到一个标准的 `session/cancel` 通知。功能协商无法区分较旧的相同线路 daemon 构建，因此 SDK 采用 fail closed 策略，而不是将部分输出报告为成功。
 
 捆绑的取消握手会故意等待目标 prompt 调用在 daemon 分发其排队后续之前完成。它没有仅确认取消的超时：这样做可能让迟到的会话级取消到达下一个 prompt。如果 provider、工具或自定义集成无限期忽略其 `AbortSignal`，取消变更可能仍然处于结果未知状态，该会话不得被重用。将调用者观察边界内收到的正式 prompt 终端视为权威；否则在观察失败后关闭或销毁会话。在不干扰兄弟会话的情况下恢复卡住的共享 ACP 子进程需要更强的运行时隔离，这超出了此 alpha 合约的范围。
 
@@ -197,7 +197,7 @@ public static void runStreamingExample() {
 
 `0.1.0-alpha` 将整个构件的最低 Java 版本从 8 提升到 11。Java 8 应用程序必须继续使用 `0.0.3-alpha`。Logback 不再是运行时依赖项；请添加应用程序使用的 SLF4J provider。
 
-此 alpha 在无法证明 prompt 终端时故意采用 fail closed 策略。它不保证跨 daemon 重启的恰好一次执行、自动轮次恢复、快照/重同步、持久化游标或真正的 prompt-ID 定向取消。`prompt_cancelled` 和队列事件是建议性的；只有匹配的 `turn_complete` 和 `turn_error` 是终端性的。
+此 alpha 在无法证明 prompt 终端时故意采用 fail closed 策略。它不保证跨 daemon 重启的恰好一次执行、自动纪元恢复、快照/重同步、持久化游标或真正的 prompt-ID 定向取消。`prompt_cancelled` 和队列事件是建议性的；只有匹配的 `turn_complete` 和 `turn_error` 是终端性的。
 
 如果会话创建的传输结果不明确，daemon 可能保留一个其 ID 从未到达调用者的会话。SDK 不会重试创建，也无法 detach 该未知会话；daemon 端生命周期回收是恢复边界。
 
@@ -343,16 +343,17 @@ SDK 使用线程池来管理并发操作，默认配置如下：
 - **线程存活时间**：60 秒
 - **队列容量**：300 个任务（使用 LinkedBlockingQueue）
 - **线程命名前缀**："qwen_code_cli-pool-{number}"
-- **守护线程**：false
+- **守护线程**：true
 - **拒绝执行处理器**：CallerRunsPolicy
+
+默认线程池中仍在运行或排队的任务在 JVM 退出时会被丢弃。需要确保任务完成的调用者必须显式等待这些任务。
 
 ## 错误处理
 
 SDK 针对不同错误场景提供了特定的异常类型：
 
-- `SessionControlException`：会话控制（创建、初始化等）出现问题时抛出
+- `SessionControlException`：当会话控制出现问题时抛出，包括尝试使用已关闭或不可用的会话。会话构造和 `start()` 可以直接抛出它；`QwenCodeCli.newSession()` 将底层的创建和初始化失败包装在 `RuntimeException` 中。
 - `SessionSendPromptException`：发送提示或接收响应出现问题时抛出
-- `SessionClosedException`：尝试使用已关闭的会话时抛出
 
 ## 常见问题 / 故障排除
 

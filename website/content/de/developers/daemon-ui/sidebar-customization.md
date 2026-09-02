@@ -27,9 +27,9 @@ import { WebShellWithProviders } from '@qwen-code/web-shell';
 │ ① Branding (topRow)                 │  ✅ anpassbar
 ├─────────────────────────────────────┤
 │ ② Primäre Navigation                │  ✅ anpassbar
-│    [＋ Neue Aufgabe] [🧩 Plugins]   │
-│    [📅 Geplant]   [🎯 Ziele]        │
-│    [benutzerdefiniertes Rendering…] │
+│    [＋ Neue Aufgabe] [🧩 Plugins]      │
+│    [📅 Geplant] [🎯 Ziele]        │
+│    [custom render...]               │
 ├─────────────────────────────────────┤
 │ ③ Projekt-Header                    │  ✅ ein-/ausblendbar
 │    📁 Projekte ▼ [🔍] [＋]          │
@@ -122,8 +122,8 @@ type WebShellSidebarFooterItem =
   | 'settings' // ⚙ Einstellungsbereich
   | 'version' // Versionsbezeichnung (z. B. "v0.19.10")
   | 'theme' // ☀/🌙 Hell/Dunkel-Umschalter
-  | 'sessionsOverview' // ▦ Session-Übersichtsbereich (nur große Screens)
-  | 'splitView' // ◧ Split-View (nur große Screens)
+  | 'sessionsOverview' // ▦ Session-Übersichtsbereich
+  | 'splitView' // ◧ Split-View (nur große Screens)  
   | 'daemonStatus' // 📊 Daemon-Statusbereich
   | 'collapse'; // ◁/▷ Umschalter zum Ein-/Ausklappen
 
@@ -135,8 +135,8 @@ interface WebShellSidebarFooterOptions {
 
 | Wert                                         | Effekt                         |
 | -------------------------------------------- | ------------------------------ |
-| `undefined` (Standard)                       | Alle Elemente angezeigt                                                                      |
-| `false`                                      | Footer ausgeblendet; der Mobile-Drawer behält nur seine Schließen-Steuerung                  |
+| `undefined` (Standard)                       | Alle Elemente angezeigt                                                           |
+| `false`                                      | Footer ausgeblendet; der Mobile-Drawer behält nur seine Schließen-Steuerung |
 | `{ items: ['settings', 'theme', 'collapse'] }` | Nur aufgeführte Elemente angezeigt; der Mobile-Drawer behält immer seine Schließen-Steuerung |
 
 Der Footer passt sich automatisch an schmale Breiten an: Labels werden ausgeblendet und die Version
@@ -197,7 +197,9 @@ sidebar={{
 
 Dies entfernt den Tasks/Channels-Umschalter und fixiert jede aktive, archivierte, primäre
 und sekundäre Session-Abfrage auf `sourceType: "default"`. Das Weglassen der Option
-belässt den aktuellen Umschalter und den Zugriff auf Channel-Sessions unverändert.
+fixiert jede aktive, archivierte, primäre
+und sekundäre Session-Abfrage auf `sourceType: "default"`. Das Weglassen der Option
+beibehält den aktuellen Umschalter und den Zugriff auf Channel-Sessions unverändert.
 
 ### ③ Projekt-Header — `hideProjectHeader`
 
@@ -228,7 +230,6 @@ type WebShellSidebarSessionActionItem =
 /** Teilmenge mit funktionierenden Inline-(Hover-Button-)Handlern. */
 type WebShellSidebarSessionInlineActionItem =
   | 'pin'
-  | 'archive'
   | 'rename'
   | 'export'
   | 'delete';
@@ -242,22 +243,21 @@ interface WebShellSidebarSessionActionsOptions {
 Steuert, welche Aktionsbuttons auf Session-Zeilen erscheinen:
 
 - **`items`**: Hauptsteuerung für alle Aktionen (sowohl Inline als auch Dropdown). Wenn ein Element nicht in `items` ist, wird es überall ausgeblendet.
-- **`inlineItems`**: Steuert, welche Elemente als **Inline-Buttons** (beim Hovern) erscheinen. Standardmäßig `['pin']` — Archivieren bleibt standardmäßig im Dropdown, da der Hover-Slot auf dem Klick-Ziel der Zeile liegt und leicht versehentlich ausgelöst wird. Nur Elemente mit funktionierenden Inline-Handlern können verwendet werden: `'pin'`, `'archive'`, `'rename'`, `'export'`, `'delete'`. `'details'` und `'group'` sind nur im Dropdown verfügbar.
+- **`inlineItems`**: Steuert, welche Elemente als **Inline-Buttons** (beim Hovern) erscheinen. Standardmäßig `['pin']`. Nur Elemente mit funktionierenden Inline-Handlern können verwendet werden: `'pin'`, `'rename'`, `'export'`, `'delete'`. `'details'`, `'group'` und `'archive'` sind nur im Dropdown verfügbar.
 
 **Sichtbarkeitspriorität**: Sowohl `items` ALS AUCH die eingebaute Bedingung des Elements ALS AUCH `inlineItems` müssen alle erfüllt sein, damit der Inline-Button angezeigt wird. Zum Beispiel erfordert `delete` als Inline, dass `items` `'delete'` enthält UND `inlineItems` `'delete'` enthält.
 
 | Wert                                   | Effekt                                       |
 | -------------------------------------- | -------------------------------------------- |
 | `undefined` (Standard)                 | Alle Aktionen angezeigt, nur Pin als Inline |
-| `{ inlineItems: ['pin', 'delete'] }`   | Pin + Delete als Inline-Buttons              |
+| `{ inlineItems: ['pin', 'delete'] }`    | Pin + Delete als Inline-Buttons              |
 | `{ inlineItems: [] }`                  | Keine Inline-Buttons                         |
-| `{ inlineItems: ['archive', 'export'] }` | Archive + Export als Inline-Buttons        |
+| `{ inlineItems: ['rename', 'export'] }` | Umbenennen + Exportieren als Inline-Buttons |
 
 Der Dropdown-Auslöser (⋮) wird automatisch ausgeblendet, wenn keine Dropdown-Elemente
 aktiviert sind. Inline-Buttons werden nur angezeigt, wenn sowohl ihre Capability-
-Bedingung als auch `items` sie enthalten. Archivieren ist für die aktuelle Session
-und für jede Session mit einem laufenden Turn deaktiviert, da der Daemon die Live-
-Session beim Archivieren schließt.
+Bedingung als auch `items` sie enthalten. Archivieren ist für die aktuelle Session und für jede Session mit einem laufenden Turn
+deaktiviert, da der Daemon die Live-Session beim Archivieren schließt.
 
 ```tsx
 sidebar={{

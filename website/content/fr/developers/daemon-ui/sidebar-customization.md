@@ -122,7 +122,7 @@ type WebShellSidebarFooterItem =
   | 'settings' // ⚙ Panneau Paramètres
   | 'version' // étiquette de version (par ex. "v0.19.10")
   | 'theme' // ☀/🌙 bascule clair/sombre
-  | 'sessionsOverview' // ▦ panneau de vue d'ensemble des sessions (grands écrans uniquement)
+  | 'sessionsOverview' // ▦ panneau de vue d'ensemble des sessions (grands écrans uniquement) (grands écrans uniquement)
   | 'splitView' // ◧ vue partagée (grands écrans uniquement)
   | 'daemonStatus' // 📊 panneau de statut du démon
   | 'collapse'; // ◁/▷ bascule réduire/développer
@@ -225,10 +225,9 @@ type WebShellSidebarSessionActionItem =
   | 'pin' // 📌 Épingler/Désépingler (bouton inline)
   | 'archive'; // 📦 Archiver (menu déroulant)
 
-/** Sous-ensemble avec des gestionnaires inline (bouton au survol) fonctionnels. */
+/** Subset with working inline (hover-button) handlers. */
 type WebShellSidebarSessionInlineActionItem =
   | 'pin'
-  | 'archive'
   | 'rename'
   | 'export'
   | 'delete';
@@ -242,7 +241,7 @@ interface WebShellSidebarSessionActionsOptions {
 Contrôle quels boutons d'action apparaissent sur les lignes de session :
 
 - **`items`** : Contrôle principal de toutes les actions (inline et déroulant). Si un élément n'est pas dans `items`, il est masqué partout.
-- **`inlineItems`** : Contrôle quels éléments apparaissent comme **boutons inline** (au survol). Par défaut `['pin']` — l'archivage reste dans le menu déroulant par défaut car l'emplacement de survol se trouve sur la cible de clic de la ligne et est facile à activer accidentellement. Seuls les éléments avec des gestionnaires inline fonctionnels peuvent être utilisés : `'pin'`, `'archive'`, `'rename'`, `'export'`, `'delete'`. `'details'` et `'group'` sont uniquement en déroulant.
+- **`inlineItems`** : Contrôle quels éléments apparaissent comme **boutons inline** (au survol). Par défaut `['pin']`. Seuls les éléments avec des gestionnaires inline fonctionnels peuvent être utilisés : `'pin'`, `'rename'`, `'export'`, `'delete'`. `'details'`, `'group'` et `'archive'` sont uniquement en déroulant.
 
 **Priorité de visibilité** : `items` ET la condition intégrée de l'élément ET `inlineItems` doivent tous passer pour que le bouton inline s'affiche. Par exemple, `delete` en inline nécessite que `items` inclue `'delete'` ET que `inlineItems` inclue `'delete'`.
 
@@ -251,7 +250,7 @@ Contrôle quels boutons d'action apparaissent sur les lignes de session :
 | `undefined` (par défaut)                 | Toutes les actions affichées, uniquement pin en inline |
 | `{ inlineItems: ['pin', 'delete'] }`     | Pin + delete comme boutons inline            |
 | `{ inlineItems: [] }`                    | Aucun bouton inline                          |
-| `{ inlineItems: ['archive', 'export'] }` | Archive + export comme boutons inline        |
+| `{ inlineItems: ['rename', 'export'] }` | Rename + export comme boutons inline |
 
 Le déclencheur du menu déroulant (⋮) est automatiquement masqué quand aucun élément
 déroulant n'est activé. Les boutons inline ne sont affichés que lorsque leur condition

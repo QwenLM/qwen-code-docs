@@ -10,7 +10,7 @@
 
 1. **acceptEdits 快速路径** — 目标路径在工作区内的 Edit / Write 操作无需调用分类器即可自动批准。**例外情况：** 对 Qwen Code 自身的自修改表面（`.qwen/settings*.json`、`QWEN.md`、`AGENTS.md`、`QWEN.local.md`、配置的上下文文件名、`.qwen/rules/`、`.qwen/commands/`、`.qwen/agents/`、`.qwen/skills/`、`.qwen/hooks/`、`.mcp.json`）和持久化表面（`.git/`、`.husky/`、`package.json`、`.npmrc`、`Makefile`、`.github/workflows/` 等）的写入，即使在工作区内，也会路由到分类器。指向受保护路径的符号链接也会被解析并拒绝。通过 `cd && bash -lc '...'` 或其他包装器到达这些路径的 Shell 命令同样会经过分类器。
 2. **安全工具白名单** — 只读和仅元数据的内置工具（Read、Grep、Glob、LS、LSP、TodoWrite、AskUserQuestion 等）无需调用分类器即可自动批准。
-3. **LLM 分类器** — 其他所有操作（Shell 命令、Web 抓取、子 agent 生成、工作区外的编辑、MCP 工具）都会发送给两阶段分类器：
+3. **LLM 分类器** — 其他所有操作（Shell 命令、Web 抓取、子代理生成、工作区外的编辑、MCP 工具）都会发送给两阶段分类器：
    - **阶段 1（快速）** — 仅输出 `{ shouldBlock }`。耗时约 300ms。如果 `shouldBlock` 为 `false`，则允许该操作并继续调用。
    - **阶段 2（思考）** — 仅在阶段 1 判定为阻止时运行。使用思维链（chain-of-thought）审查来减少阶段 1 的误报。可以将阶段 1 的阻止降级为允许。在阻止时输出用户可见的 `reason`。
 
@@ -174,7 +174,7 @@
 - **不支持离线。** 分类器需要 LLM 调用。
 - **在慢路径上增加延迟。** 白名单 + acceptEdits 涵盖了大多数无延迟的调用，但 `run_shell_command` 通常会增加约 300ms（快速分类器路径）或约 3-5 秒（带思考审查的慢路径）。
 - **不能替代 `deny` 规则。** 分类器是尽力而为的。对于你确定绝对不应运行的命令，请将它们放入 `permissions.deny`。
-- **MCP 工具默认保守阻止。** 第三方 MCP 工具（`mcp__*`）通过 `toAutoClassifierInput` 覆盖来选择加入参数转发。未选择加入的工具仅向分类器暴露其名称——除非你编写了明确的 `allow` 规则，否则大多数此类调用会被保守阻止。这是设计上的故障时关闭（fail-closed）（凭据和大量内容不会泄漏到分类器 LLM 中）。如果你信任特定的 MCP 工具，请添加 `permissions.allow: ["mcp__server__tool"]` 以使其完全绕过分类器。
+- **MCP 工具根据其参数而非已验证的行为进行评判。** 第三方 MCP 工具（`mcp__*`）永远不会进入快路径白名单；每个来自未标记 `trust: true` 的服务器的调用都会连同服务器名称、工具名称、服务器自报告的注解（`readOnlyHint` / `destructiveHint` / `idempotentHint` / `openWorldHint`）以及有界的参数副本一起发送给分类器。分类器会被告知这些注解未经验证。它无法看到服务器实际对调用的处理，因此具有误导性的工具名称加上良性的参数仍可能通过。如果你信任特定的 MCP 工具，请添加 `permissions.allow: ["mcp__server__tool"]` 以使其完全绕过分类器；如果你希望分类器仅看到工具名称（例如当它针对与主模型不同的 provider 运行时），请设置 `permissions.autoMode.mcp.forwardArguments: false`——此时大多数 MCP 调用会被保守阻止。
 
 ## FAQ
 
@@ -187,14 +187,14 @@
 分类器只能看到每个工具的 `toAutoClassifierInput` 投影所暴露的内容：
 
 - `read_file` 和其他只读工具：不会被调用（它们在快速路径白名单中）。
-- `edit` / `write_file`：file_path 加上旧/新内容的前 80 个字符。不会转发完整内容。
+- `edit` / `write_file`：file_path 加上旧/新内容的前 300 个字符。不会转发完整内容。
 - `run_shell_command`：完整命令（必须如此——这是分类器评判的内容）。
 - `web_fetch`：仅 URL。不会转发 prompt 字段。
-- `agent`：子 agent 类型加上完整 prompt。prompt 是子 agent 将遵循的指令，因此分类器需要完整的 prompt 来检测会将子 agent 引向破坏性操作的攻击——这与 `run_shell_command` 转发完整命令的原因相同。
+- `agent`：子代理类型加上完整 prompt。prompt 是子 agent 将遵循的指令，因此分类器需要完整的 prompt 来检测会将子 agent 引向破坏性操作的攻击——这与 `run_shell_command` 转发完整命令的原因相同。
 
 工具结果（工具返回的实际内容）会从分类器对话记录中完全剥离。
 
-MCP 工具（`mcp__*`）遵循更严格的默认设置：除非 MCP 工具作者通过 `toAutoClassifierInput` 覆盖明确选择加入，否则不会转发其参数。分类器只能看到工具名称而看不到参数，因此除非用户编写了明确的允许规则，否则大多数 MCP 调用会被保守阻止。这是设计上的故障时关闭（fail-closed）——第三方工具不应在无意中将凭据或大量文件内容泄漏到分类器 LLM 中。
+MCP 工具（`mcp__*`）：服务器名称、工具名称、服务器的注解以及调用参数会被转发。每个字符串（值或键）截断至 2,000 个字符，名称截断至 200 个字符，整个负载共享 16,000 个字符的预算（按分类器接收的格式化形式计量），并且嵌套/条目数量有上限；每处截断都会就地标记（`…[truncated N chars]` 或 `[omitted: …]`），并附带 `arguments_truncated: true` / `name_truncated: true` 标志，以便分类器不会将省略误认为不存在。对话记录中的历史操作每条上限为 4,000 个字符，总计上限为 40,000 个字符（优先保留最新的；较旧的操作仅保留其工具名称）。这些参数是 agent 即将发送到该服务器的内容——分类器的数据泄露和外部写入规则只能应用于这些参数，并且它们已经由主模型生成，因此在相同的模型配置下将它们转发给分类器不会泄露任何新信息。如果你的分类器针对不同的 provider 运行，请设置 `permissions.autoMode.mcp.forwardArguments: false` 以恢复仅名称的投影（预期大多数 MCP 调用会被阻止）。
 
 **我可以禁用首次信息提示吗？**
 

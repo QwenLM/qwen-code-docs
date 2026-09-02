@@ -1,6 +1,3 @@
----
-title: Authentication
----
 
 # 인증
 
@@ -166,7 +163,7 @@ API Key 인증으로 시작하는 가장 간단한 방법은 모든 것을 단�
 | OpenAI 호환       | `openai`             | `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`(별칭: `QWEN_MODEL`)                        | OpenAI, Azure OpenAI, OpenRouter, Requesty, ModelScope, Alibaba Cloud, 모든 OpenAI 호환 엔드포인트 |
 | Anthropic         | `anthropic`          | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`                                   | Anthropic Claude                                                                                    |
 | Google GenAI      | `gemini`             | `GEMINI_API_KEY`, `GEMINI_MODEL`                                                                | Google Gemini                                                                                       |
-| Vertex AI         | `vertex-ai`          | `GOOGLE_API_KEY` 또는 `GOOGLE_CLOUD_PROJECT` (+ 선택적 `GOOGLE_CLOUD_LOCATION`), `GOOGLE_MODEL`(`gemini` 프로토콜 사용; 키 없는 프로젝트 전용 설정은 환경에서 자동 감지되지 않으므로 `--auth-type vertex-ai` 또는 `security.auth.selectedType`으로 auth 유형을 명시적으로 선택) | Google Vertex AI                                                                                    |
+| Vertex AI         | `vertex-ai`          | `GOOGLE_API_KEY` + `GOOGLE_MODEL`(`GOOGLE_GENAI_USE_VERTEXAI=true` 설정) 또는 `GOOGLE_CLOUD_PROJECT` + `GOOGLE_MODEL`(키 없는 ADC); `gemini` 프로토콜 사용 | Google Vertex AI                                                                                      |
 
 #### 1단계: `~/.qwen/settings.json`에서 모델 및 제공자 구성
 
@@ -254,7 +251,7 @@ export GEMINI_API_KEY="AIza..."
 
 Qwen Code는 찾는 **첫 번째** `.env` 파일을 자동 로드합니다(여러 파일 간에 변수가 **병합되지 않음**). `process.env`에 아직 없는 변수만 로드됩니다.
 
-검색 순서(현재 디렉토리에서 `/`를 향해 위로.walk):
+검색 순서(현재 디렉토리에서 `/`를 향해 위로 올라가며 검색):
 
 1. `.qwen/.env`(권장 — Qwen Code 변수를 다른 도구와 격리)
 2. `.env`

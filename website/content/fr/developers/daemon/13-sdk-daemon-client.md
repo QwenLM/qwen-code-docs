@@ -165,7 +165,7 @@ await client
   .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
 ```
 
-`DaemonSkillBatchToggleResult` contient les `results` ordonnés, un tableau `errors` de compatibilité, et les comptes d'activation/rafraîchissement de session au niveau du lot. Les démons actuels traitent chaque nom structurellement valide dans l'ordre de la requête, persistent ensemble toutes les modifications de déclaration résultantes en au plus une écriture de paramètres verrouillée, rafraîchissent les sessions actives une seule fois si quelque chose a changé, et renvoient un tableau `errors` vide sans consulter le catalogue de skills chargé. Activer un nom sans déclaration de workspace existante et sans entrée effective `skills.defaultDisabled` renvoie `changed: false` et n'effectue aucune écriture. Les types d'éléments d'erreur restent disponibles afin que le SDK puisse toujours décoder les réponses des anciens démons. La méthode lève une erreur en cas de réponse non-200.
+`DaemonSkillBatchToggleResult` contient les `results` ordonnés, un tableau `errors` de compatibilité, et les comptes d'activation/rafraîchissement de session au niveau du lot. Les démons actuels traitent chaque nom structurellement valide dans l'ordre de la requête, persistent ensemble toutes les modifications de déclaration résultantes en au plus une écriture de paramètres verrouillée, rafraîchissent les sessions actives une seule fois si quelque chose a changé, et renvoient un tableau `errors` vide sans consulter le catalogue de skills chargé. Activer enregistre un opt-in explicite de workspace `skills.enabled` même pour les noms pas encore installés, afin de pouvoir surcharger une désactivation interne à l'Extension ; une déclaration identique répétée reste une opération vide. Les types d'éléments d'erreur restent disponibles afin que le SDK puisse toujours décoder les réponses des anciens démons. La méthode lève une erreur en cas de réponse non-200.
 
 L'activation par lot d'extensions V2 conserve le modèle opérationnel asynchrone des extensions. Pré-vérifiez `extension_batch_activation_v2`, soumettez un lot global par défaut ou un lot de surcharge pour un workspace sélectionné, puis interrogez-le avec l'assistant d'opération existant :
 
@@ -186,6 +186,22 @@ const operation = await client.waitForExtensionOperation(workspaceHandle);
 ```
 
 Le résultat terminal de l'opération contient les `results` ordonnés. Les cibles n'ont pas besoin d'être installées lors de la définition de `enabled` ou `disabled` : le daemon stocke une déclaration de nom et préserve cette politique d'activation lorsqu'une extension portant ce nom est installée ultérieurement. Toutes les cibles modifiées partagent une génération de store d'extensions et une passe de réconciliation. Les lots globaux par défaut réconcilient chaque runtime enregistré ; les lots de workspace résolvent et réconcilient uniquement le runtime fiable sélectionné. Le `inherit` de workspace efface la surcharge exacte mais ne crée pas de déclaration pour un nom inconnu ; un effacement tout-inconnu réussit comme une opération vide sans réconciliation. Les méthodes d'activation singulières restent limitées aux installations.
+
+Pour les basculements de Skill d'Extension internes au workspace, pré-vérifiez `extension_state` et utilisez les méthodes REST groupées par ressource. Celles-ci n'écrivent pas les paramètres de Skill et n'activent pas une Extension parente désactivée :
+
+```ts
+const workspace = client.workspaceByCwd('/work/secondary');
+const state = await workspace.extensionState(extensionId);
+const handle = await workspace.setExtensionState(extensionId, {
+  skills: [
+    { name: 'review', state: 'enabled' },
+    { name: 'deploy', state: 'disabled' },
+  ],
+});
+const updated = await client.waitForExtensionOperation(handle);
+```
+
+`WorkspaceExtensionState` rapporte les valeurs par défaut du manifeste, les surcharges exactes de workspace et l'état effectif conscient des paramètres. L'opération renvoie les `resourceStates.skills` ordonnés et peut réussir avec des avertissements de rafraîchissement. Seul le groupe `skills` est pris en charge. Ne rétrogradez pas ces appels vers `setWorkspaceSkillEnabled`, qui écrit des paramètres de priorité supérieure à la place.
 
 Les noms d'affichage de workspace sont des métadonnées de présentation optionnelles. Pré-vérifiez `capabilities.features.includes('workspace_display_name')` ; les IDs de workspace et les chemins canoniques restent les seuls sélecteurs, et les noms d'affichage dupliqués sont valides.
 
