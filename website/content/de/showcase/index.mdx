@@ -2443,6 +2443,36 @@ export const showcaseItems = [
       { title: "Ein Befehl für alle laufenden Sitzungen", description: "Führe im Terminal `qwen sessions ps` aus. Alle laufenden interaktiven Sitzungen erscheinen zeilenweise – mit Name, Prozess-ID, Laufzeit und Verzeichnis.", command: "qwen sessions ps" },
     ],
   },
+  // === 3.9. Weekly-Demos ===
+  {
+    id: "feature-goal-draft",
+    title: "/goal-draft – aus einer vagen Idee ein Goal, das sich abarbeiten lässt",
+    description: "Der Befehl stellt erst ein paar Fragen, bis die Idee klar ist, entwirft ein überprüfbares Ziel und zeigt es dir im Bestätigungsdialog – bestätigst du, startet das Goal sofort.",
+    category: "Neue Funktionen",
+    features: ["Agent-Modus"],
+    thumbnail: "https://img.alicdn.com/imgextra/i3/O1CN01jinr31ylhOI7nOLI_!!6000000000320-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "Wer eine Aufgabe wirklich bis zum Ende durchgezogen haben will, scheitert selten an der Arbeit selbst, sondern an einem vagen Ziel – nach ein paar Schritten läuft die KI davon. `/goal-draft` räumt die Idee auf: Es stellt dir ein paar Fragen, klärt die unscharfen Stellen, entwirft ein überprüfbares Ziel und zeigt es dir im Bestätigungsdialog. Ein Klick auf Bestätigen, und das Goal läuft. Bei langen Aufgaben, die man besser bis zum Ende im Blick behält, schlägt die KI den Zielentwurf von sich aus vor und fragt dich.",
+    steps: [
+      { title: "/goal-draft eingeben", description: "Gib `/goal-draft` in der Konversation ein – gerne schon mit deiner ersten Idee.", command: "/goal-draft Hilf mir, meinen Wochenbericht-Prozess zu strukturieren" },
+      { title: "Ein paar Fragen beantworten", description: "Es stellt dir ein paar Fragen, bis die Idee klar ist, entwirft ein überprüfbares Ziel und zeigt es dir im Bestätigungsdialog; bestätigst du, startet das Goal sofort." },
+    ],
+  },
+  {
+    id: "feature-output-style",
+    title: "Wie die KI spricht: vier Output-Stile, du wählst",
+    description: "Vier eingebaute Output-Stile – Concise, Proactive, Explanatory und Learning. Mit `/output-style` mitten im Gespräch umschalten, die nächste Antwort kommt schon im neuen Stil.",
+    category: "Neue Funktionen",
+    features: ["Terminal"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01ORBFIb4BEaF7o1Mj_!!6000000005868-2-tps-3845-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "Manche wollen von der KI vor allem das Ergebnis, andere lassen sich gerne bei der Arbeit mitnehmen. Jetzt ist der Output-Stil wählbar, mit vier eingebauten Stilen: Concise sagt zuerst das Fazit und hält sich kurz, Proactive legt direkt los und nennt seine Annahme nur, wenn etwas unklar ist, Explanatory erklärt dir den relevanten Code, während es ihn ändert, und Learning arbeitet und erklärt zugleich – und überlässt dir kleine Entscheidungen zum Selbstmachen.",
+    steps: [
+      { title: "Einen Stil wählen", description: "Gib mitten im Gespräch `/output-style` ein und wähle aus – der Stil gilt sofort in dieser Konversation und auch beim nächsten Start. Für einen einzelnen Lauf hängst du beim Start `--output-style` an.", command: "/output-style" },
+    ],
+  },
 ]
 
 

@@ -2443,6 +2443,36 @@ export const showcaseItems = [
       { title: "Um comando lista as sessões em execução", description: "Execute `qwen sessions ps` no terminal: cada sessão interativa em execução na máquina aparece em uma linha, com nome da sessão, PID, tempo de execução e diretório.", command: "qwen sessions ps" },
     ],
   },
+  // === Demos do weekly de 3 de setembro ===
+  {
+    id: "feature-goal-draft",
+    title: "/goal-draft transforma uma ideia vaga em um Goal executável",
+    description: "Ele faz algumas perguntas para esclarecer a ideia vaga, redige um objetivo verificável e mostra num box de confirmação; você confirma e a execução do Goal começa.",
+    category: "Novidades",
+    features: ["Modo Agent"],
+    thumbnail: "https://img.alicdn.com/imgextra/i3/O1CN01jinr31ylhOI7nOLI_!!6000000000320-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "A gente quer que a IA leve uma tarefa até o fim, mas quando o objetivo fica mal explicado, o trabalho desvia do rumo no meio do caminho. O `/goal-draft` organiza a ideia: primeiro faz algumas perguntas para esclarecer os pontos vagos, depois redige um objetivo verificável e apresenta num box de confirmação. Você confirma e ele já começa a rodar o Goal. Em tarefas longas que pedem acompanhamento até o fim, a própria IA toma a iniciativa de redigir o objetivo e pergunta para você.",
+    steps: [
+      { title: "Digite /goal-draft", description: "Digite `/goal-draft` na conversa, podendo incluir a sua ideia inicial.", command: "/goal-draft me ajuda a organizar o processo dos relatórios semanais" },
+      { title: "Responda a algumas perguntas", description: "Ele faz algumas perguntas para esclarecer a ideia vaga, redige um objetivo verificável e mostra num box de confirmação; você confirma e a execução do Goal já começa." },
+    ],
+  },
+  {
+    id: "feature-output-style",
+    title: "O jeito de falar da IA: quatro estilos para você escolher",
+    description: "Quatro estilos de saída integrados — conciso, proativo, explicativo e didático — e o `/output-style` troca a qualquer momento durante a conversa; a próxima resposta já vem no novo estilo.",
+    category: "Novidades",
+    features: ["Operações no terminal"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01ORBFIb4BEaF7o1Mj_!!6000000005868-2-tps-3845-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "Tem quem queira uma IA que fale pouco e vá direto ao resultado, e quem prefira que ela explique enquanto trabalha, num jeito de aprender junto. Agora dá para escolher o estilo de saída: quatro estilos integrados — conciso, proativo, explicativo e didático. O conciso começa pela conclusão, sem rodeios; o proativo já executa e só fala das suposições quando algo está incerto; o explicativo comenta com você o código relevante na hora de mexer; o didático ensina enquanto trabalha e ainda deixa pequenas decisões para você mesmo tomar.",
+    steps: [
+      { title: "Escolha um estilo", description: "Digite `/output-style` na conversa e escolha um: vale imediatamente na conversa atual e continua na próxima inicialização; para testar só uma vez, use o parâmetro `--output-style` na inicialização.", command: "/output-style" },
+    ],
+  },
 ]
 
 <VideoShowcaseIndex

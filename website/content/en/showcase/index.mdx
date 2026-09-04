@@ -2443,6 +2443,36 @@ export const showcaseItems = [
       { title: "One command lists running sessions", description: "Run `qwen sessions ps` in the terminal. Every interactive session running on your machine shows up one per line, with session name, process ID, uptime, and directory.", command: "qwen sessions ps" },
     ],
   },
+  // === Sep 3 weekly demos ===
+  {
+    id: "feature-goal-draft",
+    title: "/goal-draft Turns a Vague Idea into a Goal You Can Actually Run",
+    description: "It asks a few questions to clear up the fuzzy parts, drafts a verifiable goal, and shows it to you in a confirmation box — click confirm and the Goal starts running.",
+    category: "What's New",
+    features: ["Agent Mode"],
+    thumbnail: "https://img.alicdn.com/imgextra/i3/O1CN01jinr31ylhOI7nOLI_!!6000000000320-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "You want the AI to see something through to the end, but you can't quite put the goal into words — and somewhere along the way it drifts off track. `/goal-draft` straightens the idea out first: it asks a few questions to pin down what's fuzzy, drafts a verifiable goal, and shows it to you in a confirmation box. Click confirm and it starts running the Goal right away. On a long task that genuinely needs seeing through, the AI drafts the goal itself and comes to you for a yes.",
+    steps: [
+      { title: "Type /goal-draft", description: "Type `/goal-draft` in the conversation, adding your rough idea if you have one.", command: "/goal-draft help me sort out my weekly-report workflow" },
+      { title: "Answer a few questions", description: "It asks a few questions to get the idea clear, drafts a verifiable goal, and hands it to you in a confirmation box; click confirm and the Goal starts running right away." },
+    ],
+  },
+  {
+    id: "feature-output-style",
+    title: "How the AI Talks Is Up to You — Four Styles to Pick From",
+    description: "Four built-in output styles: Concise, Proactive, Explanatory, Learning. Switch anytime mid-conversation with `/output-style` and the very next reply comes back in the new style.",
+    category: "What's New",
+    features: ["Terminal"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01ORBFIb4BEaF7o1Mj_!!6000000005868-2-tps-3845-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "Some people want the AI to say less and just hand over the result; others want it to talk while it works and bring them along. Now the output style is yours to choose, with four built in: Concise leads with the conclusion and skips the run-up, Proactive gets straight to work and only states an assumption when it isn't sure, Explanatory walks you through the relevant code as it edits, and Learning teaches while it works — even leaving a small decision or two for you to make yourself.",
+    steps: [
+      { title: "Pick a style", description: "Type `/output-style` in the conversation and choose one — it takes effect on the spot and is still there the next time you start up. Want to try it just once? Add the `--output-style` flag at launch.", command: "/output-style" },
+    ],
+  },
 ]
 
 <VideoShowcaseIndex

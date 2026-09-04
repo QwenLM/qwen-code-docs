@@ -1,0 +1,232 @@
+---
+title: "Qwen Code Weekly: Tonfall der KI frei wählen, DingTalk-Bot verschickt Dateien, eingebautes Terminal in der Web Shell"
+date: "2026-09-03"
+description: "Diese Woche zwei Stable-Releases — v0.22.3 und v0.23.0. Der Output-Stil ist frei wählbar und lässt sich mitten im Gespräch umschalten, der DingTalk-Bot verschickt Dateien als Anhänge, und die Web Shell hat ein eingebautes Terminal bekommen."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i4/O1CN01fdjO1BkcX8F2jBZY_!!6000000007755-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Weekly: Tonfall der KI frei wählen, DingTalk-Bot verschickt Dateien, eingebautes Terminal in der Web Shell"
+  date="2026-09-03"
+  author="Qwen Team"
+/>
+
+Qwen Code hat diese Woche zwei Stable-Releases ausgeliefert — v0.22.3 und v0.23.0 — mit 320+ gemergten PRs.
+
+**Der Tonfall der KI ist jetzt deine Wahl.** Vier eingebaute Output-Stile — Concise, Proactive, Explanatory und Learning — frei wählbar und mitten im Gespräch jederzeit umschaltbar.
+
+**Der DingTalk-Bot verschickt jetzt Dateien.** Berichte und Dokumente, die die KI geschrieben hat, gehen als Anhang direkt in den Chat — auf dem Handy einfach antippen.
+
+**Die Web Shell hat jetzt ein eingebautes Terminal.** Befehle laufen direkt neben dem Gespräch — jeder Tab ist unabhängig und arbeitet ungestört vor sich hin.
+
+## ✨ Neue Features
+
+### Output-Stil: Den Tonfall der KI wählen
+
+Unterschiedliche Leute erwarten Unterschiedliches von der KI: Manche wollen kurz und knapp nur das Ergebnis, andere lassen sich gerne bei der Arbeit erklären, was passiert. Diese Woche ist der Output-Stil wählbar, mit vier eingebauten Stilen:
+
+- **Concise** (knapp): Erst das Fazit, kein Vorspann und keine Prozessbeschreibung
+- **Proactive** (proaktiv): Legt direkt los; wenn etwas unklar ist, nennt die KI ihre Annahme und macht weiter, statt ständig nachzufragen
+- **Explanatory** (erklärend): Erklärt dir den relevanten Code, während sie ihn ändert
+- **Learning** (lehrend): Arbeitet und erklärt zugleich und überlässt dir kleine Entscheidungen zum Selbstmachen
+
+Drei Wege, ihn zu wählen: `general.outputStyle` in `settings.json` für dauerhafte Wirkung, `--output-style` beim Start für einen einzelnen Lauf, oder `/output-style` mitten im Gespräch — die nächste Antwort nutzt dann den neuen Stil.
+
+Was du damit machen kannst:
+
+- Nur Ergebnisse sehen wollen: auf Concise schalten, die KI liefert direkt das Fazit
+- Code lernen: auf Explanatory oder Learning schalten, die KI erklärt beim Ändern
+- Mitten im Gespräch den Stil wechseln: `/output-style` schaltet jederzeit um
+
+Siehe PRs [#9565](https://github.com/QwenLM/qwen-code/pull/9565), [#10283](https://github.com/QwenLM/qwen-code/pull/10283), [#10683](https://github.com/QwenLM/qwen-code/pull/10683)
+
+![Auswahl des Output-Stils](https://img.alicdn.com/imgextra/i4/O1CN01ORBFIb4BEaF7o1Mj_!!6000000005868-2-tps-3845-2160.png)
+
+### Goal: Die KI entwirft das Ziel, du bestätigst nur
+
+Letzte Woche hat `/goal-draft` der KI geholfen, das Goal sauber zu formulieren. Diese Woche zeigt dir die KI nach dem Entwurf das komplette Ziel in einem Bestätigungsdialog — nach dem Bestätigen startet das Goal sofort.
+
+Bei Aufgaben, die mehrere Runden dauern und klare Abschlusskriterien haben, entscheidet die KI jetzt selbst, dass es sich lohnt dranzubleiben: Sie entwirft das Goal und fragt dich. Wer das nicht mag, schaltet das Verhalten in den Einstellungen komplett ab. Bisher funktioniert das in Terminal-Sessions — die Web Shell folgt.
+
+Letzte Woche bekam Goal ein Token-Budget — diese Woche bestimmst du die Höhe selbst: `model.goalTokenBudget` in den Einstellungen ändern, größer oder kleiner, und -1 hebt das Limit ganz auf.
+
+Was du damit machen kannst:
+
+- Die KI schreibt das Goal, ein Klick auf Bestätigen und es legt los
+- Bei langen Aufgaben mit klaren Kriterien schlägt die KI von sich aus vor dranzubleiben
+- Budget rauf oder runter — ganz nach Bedarf
+
+Siehe PRs [#10171](https://github.com/QwenLM/qwen-code/pull/10171), [#10543](https://github.com/QwenLM/qwen-code/pull/10543)
+
+![Goal-Bestätigungsdialog](https://img.alicdn.com/imgextra/i1/O1CN011wJGIGZQiAG7nW9B_!!6000000000593-2-tps-3841-2160.png)
+
+### Code-Review: Fix-Runden prüfen nur Änderungen, Tiefe wird gemerkt
+
+**Fix-Runden prüfen nur noch Änderungen.** Im Loop aus Review, Fix und erneutem Review prüft jede weitere Runde nur die Dateien, die sich geändert haben. Unveränderte behalten das Ergebnis der Vorrunde — spart Tokens und Zeit.
+
+**Review-Tiefe wird gemerkt.** Hast du einmal explizit mit `--effort` eine Tiefe gewählt, reicht beim nächsten Mal im selben Projekt ein `/review` — und es läuft mit derselben Tiefe.
+
+**Lange Läufe geben Feedback.** Läuft eine Autofix-Runde länger, aktualisiert sich der Statuskommentar im PR etwa alle 10 Minuten — mit Laufzeit und letzter Aktivität siehst du sofort, ob noch gearbeitet wird.
+
+**Wiederkehrende Probleme werden markiert.** Taucht ein schweres Problem in derselben Datei nach dem Fix wieder auf, markiert das Review-Ergebnis diese Problemkette explizit und empfiehlt, den Ansatz zu wechseln.
+
+Was du damit machen kannst:
+
+- Lokal ändern und prüfen, Runde für Runde: Es werden nur geänderte Dateien erneut geprüft — auch mehrere Runden kosten kaum Tokens
+- Einmal `/review --effort high` im Projekt, danach reicht `/review` für dieselbe Tiefe
+- Autofix hängt stundenlang am PR: Der Statuskommentar aktualisiert sich alle 10 Minuten — auf einen Blick siehst du, ob noch gearbeitet wird
+
+Siehe PRs [#9659](https://github.com/QwenLM/qwen-code/pull/9659), [#9883](https://github.com/QwenLM/qwen-code/pull/9883), [#9771](https://github.com/QwenLM/qwen-code/pull/9771), [#10010](https://github.com/QwenLM/qwen-code/pull/10010)
+
+### DingTalk-Bot verschickt jetzt Dateien
+
+Der Channel-Bot in DingTalk konnte bisher nur Text und Bilder schicken. Berichte und Dokumente, die die KI erstellt hat, landeten als Text in der Nachricht — für die eigentliche Datei musste man zurück an den Rechner. Jetzt schickt der Bot Dateien als Anhang: Die KI schreibt den Bericht fertig und schickt die Datei direkt in den DingTalk-Chat, auf dem Handy antippen und herunterladen. Auch wenn der Bot dir proaktiv etwas meldet, kann er Dateien anhängen.
+
+Was du damit machen kannst:
+
+- Fertige Berichte und Dokumente der KI gehen als Anhang direkt nach DingTalk
+- Auf dem Handy antippen — ansehen oder herunterladen
+- Auch proaktive Meldungen des Bots können Dateien enthalten
+
+Siehe PR [#10893](https://github.com/QwenLM/qwen-code/pull/10893)
+
+![Bot schickt eine Datei als Anhang in einen DingTalk-Chat](https://img.alicdn.com/imgextra/i4/O1CN01SuHINQRUN9G3OTaQ_!!6000000004652-2-tps-1672-942.png)
+
+### Web Shell: Eingebautes Terminal, mehr Übersicht bei Sessions und Workspaces
+
+**Terminal direkt neben dem Chat.** Wer in der Web Shell arbeitet, will oft schnell selbst ein paar Befehle ausführen: einen Server starten und das Ergebnis ansehen, einen Build prüfen. Jetzt öffnet sich im rechten Panel ein Terminal direkt neben dem Gespräch. Jeder Tab ist ein eigenes Terminal, geöffnet im aktuellen Workspace-Verzeichnis — läuft in einem Tab ein langlaufender Dienst, tippst du im anderen normal weiter, ohne dass sie sich stören.
+
+![Integriertes Terminal in der Web Shell](https://img.alicdn.com/imgextra/i2/O1CN01gLcBvJPyiWE7nW9B_!!6000000004154-2-tps-3841-2160.png)
+
+**Tasks ohne Workspace.** Neue Tasks können jetzt Sessions sein, die zu keinem Workspace gehören — schnell eine Frage stellen oder etwas erledigen, das zu keinem konkreten Projekt gehört. Diese Sessions haben ihre eigene Liste; Umbenennen, Exportieren und Archivieren funktionieren ebenfalls.
+
+**Sessions über Gesprächsinhalt finden.** Titel vergessen? Suche einfach nach dem, was ihr damals besprochen habt — die passende Session erscheint samt einem Auszug aus der gefundenen Nachricht.
+
+**Scheduled Tasks mit sauberem Kontext.** Wenn ein Scheduled Task wiederholt läuft, kann jeder Lauf eine frische Session bekommen — der Kontext bleibt pro Lauf unabhängig. Sessions desselben Tasks werden automatisch in einer Gruppe zusammengefasst, die Liste bleibt übersichtlich.
+
+**Workspace-Status auf einen Blick.** Ein neues Workspace-Übersichtspanel listet alle Workspaces auf einer Seite: wie viele Sessions laufen, MCP-Verbindungsstatus, aktueller Branch, ob es uncommittete Änderungen gibt — und aus jeder Zeile kannst du direkt einen neuen Task starten.
+
+![Workspace-Übersichtspanel](https://img.alicdn.com/imgextra/i3/O1CN01bu5Xi34eXdD7nW9B_!!6000000001080-2-tps-3841-2160.png)
+
+**Session-Übersicht ist besser geworden.** Die Session-Übersicht ist jetzt eine Tabelle mit Sortierung, Filtern und Paginierung. Bei schmalem Fenster scrollt sie horizontal, während wichtige Spalten fixiert bleiben. Der Einstieg ist das Raster-Icon in der unteren Icon-Leiste der Sidebar — der Hover-Text lautet "Session-Übersicht".
+
+**Handy-Pairing wandert nach oben rechts.** Oben rechts im Chat sitzt jetzt ein kleines QR-Code-Symbol: Klick öffnet den Pairing-Code, mit dem Handy scannen — schon bist du mit dieser Session auf dem Rechner verbunden und kannst der KI vom Handy aus Aufgaben geben (das Feature heißt Local Control). Ist es nicht aktiviert, führt dich der Klick direkt in die Einstellungen zum Einschalten.
+
+**Git-Status vor jeder Aktion.** Neben Update Project, Commit und Push steht jetzt ein Statushinweis: wie viele Commits du voraus oder zurück liegst, wie viele uncommittete Änderungen es gibt. Beim Projekt-Update mit uncommitteten Änderungen kannst du sie erst stashen und dann aktualisieren — oder verwerfen und aktualisieren.
+
+Was du damit machen kannst:
+
+- Befehle direkt neben dem Gespräch ausführen
+- Nach Gesprächsinhalten suchen und alte Sessions wiederfinden
+- Status aller Workspaces auf einen Blick
+
+Siehe PRs [#9984](https://github.com/QwenLM/qwen-code/pull/9984), [#10514](https://github.com/QwenLM/qwen-code/pull/10514), [#10612](https://github.com/QwenLM/qwen-code/pull/10612), [#10233](https://github.com/QwenLM/qwen-code/pull/10233), [#10611](https://github.com/QwenLM/qwen-code/pull/10611), [#10589](https://github.com/QwenLM/qwen-code/pull/10589), [#10115](https://github.com/QwenLM/qwen-code/pull/10115), [#10432](https://github.com/QwenLM/qwen-code/pull/10432), [#10397](https://github.com/QwenLM/qwen-code/pull/10397), [#10390](https://github.com/QwenLM/qwen-code/pull/10390)
+
+## 📊 Weitere neue Features
+
+**Workflows lassen sich jetzt unterwegs steuern.** Laufende Workflows zeigen den Fortschritt und unterstützen Pause, Fortsetzen, Abbrechen und erneuten Lauf — Abbruch wirkt sofort. Siehe PRs [#10411](https://github.com/QwenLM/qwen-code/pull/10411), [#10468](https://github.com/QwenLM/qwen-code/pull/10468)
+
+**Memory getrennt nach Projekt und persönlich.** Wenn du die KI etwas merken lässt, bestimmst du, ob es ins aktuelle Projekt oder ins persönliche globale Memory geht. Beide Bereiche sind strikt getrennt, nichts vermischt sich. Siehe PR [#9895](https://github.com/QwenLM/qwen-code/pull/9895)
+
+**Sessions und PRs sind noch besser verknüpft.** Letzte Woche wurden PRs aus dem Git-Panel der Web Shell mit ihrer Session verknüpft. Diese Woche kamen weitere Bausteine dazu: farbige Status-Icons — grün für laufend, lila für gemerged, rot für geschlossen; über die Issue-Nummer findest du die zugehörige Session; und PRs, die die KI per `gh pr create` im Chat erstellt, werden ebenfalls erfasst. Siehe PRs [#9729](https://github.com/QwenLM/qwen-code/pull/9729), [#10258](https://github.com/QwenLM/qwen-code/pull/10258), [#10425](https://github.com/QwenLM/qwen-code/pull/10425), [#9739](https://github.com/QwenLM/qwen-code/pull/9739)
+
+**Mem0 als externes Memory jetzt offiziell nutzbar.** Wer Qwen Code an den Mem0-Gedächtnisdienst anbinden will, installiert das offizielle Erweiterungs-Paket, konfiguriert kurz — und es läuft. Siehe PRs [#10653](https://github.com/QwenLM/qwen-code/pull/10653), [#10634](https://github.com/QwenLM/qwen-code/pull/10634)
+
+**Sessions auf demselben Rechner schicken sich per Namen Nachrichten.** Arbeiten mehrere Sessions an verschiedenen Aufgaben, findet eine Session die andere per Namen und schickt ihr direkt eine Nachricht. Siehe PR [#10158](https://github.com/QwenLM/qwen-code/pull/10158)
+
+**Task-Status-Emojis anpassbar.** Im DingTalk-Channel kannst du die Emojis ändern, die während eines laufenden Tasks und nach Abschluss angezeigt werden. Siehe PR [#10610](https://github.com/QwenLM/qwen-code/pull/10610)
+
+**Provider-Konfiguration wirkt sofort.** Änderungen an `modelProviders` in `settings.json` stehen der aktuellen Session sofort zur Verfügung. Siehe PRs [#10582](https://github.com/QwenLM/qwen-code/pull/10582), [#10269](https://github.com/QwenLM/qwen-code/pull/10269)
+
+## 👏 Verbesserte Erfahrungen
+
+**Einheitliches Plus-Menü in der Web Shell-Eingabebox.** Anhänge, Dateien, Extensions, MCP-Dienste und Skills — alles hinter dem Plus-Button. Siehe PR [#10379](https://github.com/QwenLM/qwen-code/pull/10379)
+
+**Fettschrift wieder da, Session-Namen vollständig.** Fett formatierter Text in KI-Antworten wird wieder angezeigt, Session-Namen in der Sidebar sind vollständig sichtbar. Siehe PR [#10157](https://github.com/QwenLM/qwen-code/pull/10157)
+
+**Tool-Zusammenfassungen einklappbar.** Tool-Summary-Zeilen lassen sich zusammenklappen, Sub-Tools bleiben eingeklappt, MCP Apps und andere aggregierte Inhalte werden getrennt angezeigt. Siehe PR [#10231](https://github.com/QwenLM/qwen-code/pull/10231)
+
+**Terminal-Fehlermeldung mit einem Klick kopieren.** Fehler im Web Shell-Terminal lassen sich per Klick kopieren. Siehe PR [#10001](https://github.com/QwenLM/qwen-code/pull/10001)
+
+**Goal in der Fortsetzen-Liste sichtbar.** In der Liste und Suche zum Fortsetzen von Sessions zeigen Goal-Sessions direkt das Ziel. Siehe PR [#10295](https://github.com/QwenLM/qwen-code/pull/10295)
+
+**Lange Turns bleiben ausgeklappt.** Lange Turns, die über Paginierung nachgeladen werden, bleiben offen — einklappen kannst du sie selbst. Siehe PR [#10086](https://github.com/QwenLM/qwen-code/pull/10086)
+
+**Mehr Installationswege für Extensions.** Extensions lassen sich jetzt auch von einem lokalen Pfad und aus internen Git-Repos installieren. Siehe PRs [#10131](https://github.com/QwenLM/qwen-code/pull/10131), [#10156](https://github.com/QwenLM/qwen-code/pull/10156)
+
+**Artefakt-Updates sofort sichtbar.** Ändert sich der Inhalt eines Artefakts, aktualisieren sich Zeit und Größe sofort — die Vorschau zeigt immer die neueste Version. Siehe PR [#9929](https://github.com/QwenLM/qwen-code/pull/9929)
+
+## 🔧 Wichtige Fixes
+
+| Fix | Was es für dich bedeutet | PR |
+|------|-----------|-----|
+| **Chinesische Eingabe unter Windows jetzt sichtbar** | Beim Tippen mit Microsoft Pinyin im Windows Terminal wird der Kandidatentext nicht mehr vom Cursor verdeckt | [#9803](https://github.com/QwenLM/qwen-code/pull/9803) |
+| **Weißer Bildschirm in der Web Shell zeigt jetzt einen Hinweis** | Wenn die Seite nicht lädt, erscheint eine Fehlermeldung mit Option zur Wiederherstellung | [#10215](https://github.com/QwenLM/qwen-code/pull/10215) |
+| **Zu große Requests werden automatisch komprimiert** | Gibt das Gateway 413 zurück, wird der Kontext automatisch komprimiert und erneut versucht — die Session bleibt nutzbar | [#10408](https://github.com/QwenLM/qwen-code/pull/10408) |
+| **LM Studio kann wieder normal chatten** | Kompatibilitätsproblem mit Modellparametern behoben — LM Studio startet wieder normal neue Gespräche | [#10275](https://github.com/QwenLM/qwen-code/pull/10275) |
+| **AUTO mode strenger bei Schreibzugriffen außerhalb des Workspace** | Dateien außerhalb des Workspaces müssen jetzt immer manuell bestätigt werden | [#8744](https://github.com/QwenLM/qwen-code/pull/8744) |
+| **Streaming-Timeout-Schutz für Claude-Modelle** | Bleibt die Ausgabe hängen, wird sie per Timeout unterbrochen | [#9945](https://github.com/QwenLM/qwen-code/pull/9945) |
+| **DeepSeek nutzt das Standard-Sampling des Modells** | Die Temperatur wird nicht mehr auf null erzwungen — die Ausgabe entspricht besser dem Modell selbst | [#9879](https://github.com/QwenLM/qwen-code/pull/9879) |
+| **MCP-Verbindungen stabiler** | Verbindungshänger durch HTTP-Probes behoben | [#10091](https://github.com/QwenLM/qwen-code/pull/10091) |
+| **Vision-Modelle besser unterstützt** | qwen3.8-flash und qwen3.8-plus verarbeiten Bilder und Videos nativ; glm-4.6v und andere werden automatisch als Vision-Modelle erkannt | [#10195](https://github.com/QwenLM/qwen-code/pull/10195), [#10278](https://github.com/QwenLM/qwen-code/pull/10278) |
+| **Thinking-Steuerung für qwen3.8-max stabil** | Die Thinking-Stärke bleibt vor und nach der Ausführung in der Session synchron | [#10244](https://github.com/QwenLM/qwen-code/pull/10244) |
+| **Qwen3 Hybrid-Thinking gibt wieder korrekt aus** | Antworten, die zwei Thinking-Formate mischten, erzeugten vorher Fehler oder kaputte Ausgabe — jetzt erscheinen Reasoning und Antwort normal | [#9607](https://github.com/QwenLM/qwen-code/pull/9607) |
+| **Windows: Reinstallation verliert keine Skills mehr** | Die Skill-Installation sichert jetzt erst und ersetzt dann | [#10189](https://github.com/QwenLM/qwen-code/pull/10189) |
+| **Angepinnte Sessions bleiben in ihrer Gruppe** | Angepinnte Sessions werden in ihrer ursprünglichen Gruppe weiter angezeigt | [#10416](https://github.com/QwenLM/qwen-code/pull/10416) |
+| **DingTalk-Task-Karte erholt sich nach Netzwerkausfall** | Nach einem Verbindungsabbruch bleibt die Karte nicht mehr auf "laufend" stehen — auch Handys, die nach der Unterbrechung wieder online sind, sehen den aktuellen Fortschritt | [#10357](https://github.com/QwenLM/qwen-code/pull/10357) |
+| **Mehrere Bilder in DingTalk behalten ihre Reihenfolge** | Bilder in Rich-Text-Nachrichten werden in der richtigen Reihenfolge an die KI übergeben | [#9922](https://github.com/QwenLM/qwen-code/pull/9922) |
+| **Session-Name bleibt nach /clear erhalten** | Manuell umbenannte Sessions behalten ihren Namen auch nach dem Leeren | [#9260](https://github.com/QwenLM/qwen-code/pull/9260) |
+
+## 👥 Contributors
+
+| Contributor | Contributions | PR Links |
+|--------|---------|-------------|
+| **[@yiliang114](https://github.com/yiliang114)** | Große Ladung Session- und Stabilitäts-Fixes: automatischer Kompressions-Retry bei 413, Streaming-Timeout-Schutz für Claude-Modelle, Provider-Hot-Reload, Qwen3 Hybrid-Thinking-Stream, VS Code Extension an die Web Shell angebunden | [#10408](https://github.com/QwenLM/qwen-code/pull/10408), [#9945](https://github.com/QwenLM/qwen-code/pull/9945), [#10582](https://github.com/QwenLM/qwen-code/pull/10582), [#9607](https://github.com/QwenLM/qwen-code/pull/9607) |
+| **[@wenshao](https://github.com/wenshao)** | Review-System quer durchs Board gehärtet, Web Shell-Workspace und Session-Panels, PR-Suche nach verknüpfter Issue-Nummer, Statusanzeige im Branch-Wähler | [#10589](https://github.com/QwenLM/qwen-code/pull/10589), [#10612](https://github.com/QwenLM/qwen-code/pull/10612), [#10425](https://github.com/QwenLM/qwen-code/pull/10425), [#10397](https://github.com/QwenLM/qwen-code/pull/10397) |
+| **[@qqqys](https://github.com/qqqys)** | Interaktive Chats im Channel und Dateiversand in DingTalk, Output-Stil-Einstieg, Goal-Selbstvorschlag und Budget-Einstellung, Scheduled-Task-Sessions | [#10713](https://github.com/QwenLM/qwen-code/pull/10713), [#10893](https://github.com/QwenLM/qwen-code/pull/10893), [#10683](https://github.com/QwenLM/qwen-code/pull/10683), [#10171](https://github.com/QwenLM/qwen-code/pull/10171) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | Task-Benennung im Channel und Parallelitäts-Steuerung, eigenständiger Chat in der Web Shell, Daemon-Session-API, Mem0-Erweiterung | [#10198](https://github.com/QwenLM/qwen-code/pull/10198), [#10574](https://github.com/QwenLM/qwen-code/pull/10574), [#10514](https://github.com/QwenLM/qwen-code/pull/10514), [#10653](https://github.com/QwenLM/qwen-code/pull/10653) |
+| **[@chiga0](https://github.com/chiga0)** | Migration zur OpenTUI-Terminal-Rendering-Engine, Initialisierungs-Timeout-Handling für Channels | [#10134](https://github.com/QwenLM/qwen-code/pull/10134), [#10739](https://github.com/QwenLM/qwen-code/pull/10739), [#10404](https://github.com/QwenLM/qwen-code/pull/10404) |
+| **[@qwen-code-dev-bot](https://github.com/qwen-code-dev-bot)** | CI-Stabilität und Zuverlässigkeits-Fixes für Tests | [#10329](https://github.com/QwenLM/qwen-code/pull/10329), [#10572](https://github.com/QwenLM/qwen-code/pull/10572), [#10443](https://github.com/QwenLM/qwen-code/pull/10443) |
+| **[@AaronZ345](https://github.com/AaronZ345)** | Mehrere Fixes: DeepSeek-Sampling-Parameter, Wiederherstellung der Web Shell-Eingabebox, Fehleranzeige im Java SDK | [#9879](https://github.com/QwenLM/qwen-code/pull/9879), [#10232](https://github.com/QwenLM/qwen-code/pull/10232), [#9924](https://github.com/QwenLM/qwen-code/pull/9924) |
+| **[@ytahdn](https://github.com/ytahdn)** | Mehrere Web Shell-Verbesserungen: eingebautes Terminal, Session-Übersichtstabelle, Plus-Menü in der Eingabebox | [#9984](https://github.com/QwenLM/qwen-code/pull/9984), [#10115](https://github.com/QwenLM/qwen-code/pull/10115), [#10379](https://github.com/QwenLM/qwen-code/pull/10379) |
+| **[@LaZzyMan](https://github.com/LaZzyMan)** | qwen-live Sprachdienst, Stabilitätsverbesserungen für Computer Use | [#10367](https://github.com/QwenLM/qwen-code/pull/10367), [#10319](https://github.com/QwenLM/qwen-code/pull/10319) |
+| **[@callmeYe](https://github.com/callmeYe)** | Extension- und Skill-Verwaltung, Fix der Thinking-Steuerung für qwen3.8-max, Extension-Installation aus privaten Repos | [#10131](https://github.com/QwenLM/qwen-code/pull/10131), [#10244](https://github.com/QwenLM/qwen-code/pull/10244), [#10156](https://github.com/QwenLM/qwen-code/pull/10156) |
+| **[@DragonnZhang](https://github.com/DragonnZhang)** | Anzeige des Agent-Ausführungsmodus, Bereinigung von SDK-Abhängigkeiten | [#9955](https://github.com/QwenLM/qwen-code/pull/9955), [#10039](https://github.com/QwenLM/qwen-code/pull/10039) |
+| **[@harjothkhara](https://github.com/harjothkhara)** | Erholung bei weißem Bildschirm in der Web Shell, MCP-Verbindungsstabilität, Duplikatprüfung für Session-Namen | [#10215](https://github.com/QwenLM/qwen-code/pull/10215), [#10091](https://github.com/QwenLM/qwen-code/pull/10091), [#10032](https://github.com/QwenLM/qwen-code/pull/10032) |
+| **[@dreamWB](https://github.com/dreamWB)** | Artefakt-Snapshots in der Web Shell, Einstellung zur Anzeige des Session-Ursprungs | [#10747](https://github.com/QwenLM/qwen-code/pull/10747), [#10079](https://github.com/QwenLM/qwen-code/pull/10079) |
+| **[@tomsen02](https://github.com/tomsen02)** | Debug-Logs pro Session isoliert, Fix bei Verzeichnis-Trust-Prüfung | [#9930](https://github.com/QwenLM/qwen-code/pull/9930), [#10470](https://github.com/QwenLM/qwen-code/pull/10470) |
+| 🆕 **[@bluefateludi](https://github.com/bluefateludi)** | 🎉 Erster Beitrag: Sichtbarkeit der chinesischen Eingabe unter Windows, /review Kommentarbereichs-Prüfung | [#9803](https://github.com/QwenLM/qwen-code/pull/9803), [#9801](https://github.com/QwenLM/qwen-code/pull/9801) |
+| **[@destire-mio](https://github.com/destire-mio)** | Tabs der @-Vervollständigung unterstützen Mausklicks, ungültige Einstellungs-Einträge entfernt | [#8395](https://github.com/QwenLM/qwen-code/pull/8395), [#8754](https://github.com/QwenLM/qwen-code/pull/8754) |
+| 🆕 **[@Sumire-no-kai](https://github.com/Sumire-no-kai)** | 🎉 Erster Beitrag: Namensauflösung für Session-übergreifende Nachrichten, Feedback-Kategorisierung in Workflows | [#10083](https://github.com/QwenLM/qwen-code/pull/10083), [#10361](https://github.com/QwenLM/qwen-code/pull/10361) |
+| **[@xianjianlf2](https://github.com/xianjianlf2)** | Unterscheidung von Kompressions-Fehlergründen, Fix von Startkonflikten bei paralleler Entwicklung | [#9119](https://github.com/QwenLM/qwen-code/pull/9119), [#8456](https://github.com/QwenLM/qwen-code/pull/8456) |
+| **[@BenGuanRan](https://github.com/BenGuanRan)** | Mehrere Bilder in DingTalk-Rich-Text in Reihenfolge übergeben | [#9922](https://github.com/QwenLM/qwen-code/pull/9922) |
+| **[@DennisYu07](https://github.com/DennisYu07)** | SWE-bench-Ergebnisse in der README ergänzt | [#10808](https://github.com/QwenLM/qwen-code/pull/10808) |
+| 🆕 **[@Dmatut7](https://github.com/Dmatut7)** | 🎉 Erster Beitrag: Doku ergänzt — Schreibweise für belegbasiertes Reasoning | [#8702](https://github.com/QwenLM/qwen-code/pull/8702) |
+| 🆕 **[@imrehg](https://github.com/imrehg)** | 🎉 Erster Beitrag: npm-Skript-Kompatibilitäts-Fix | [#8725](https://github.com/QwenLM/qwen-code/pull/8725) |
+| 🆕 **[@KXHXK](https://github.com/KXHXK)** | 🎉 Erster Beitrag: Vertex AI Keyless-Authentifizierung automatisch erkannt | [#9045](https://github.com/QwenLM/qwen-code/pull/9045) |
+| 🆕 **[@liujiayi771](https://github.com/liujiayi771)** | 🎉 Erster Beitrag: Terminal-Hardware-Cursor-Ausrichtung | [#10417](https://github.com/QwenLM/qwen-code/pull/10417) |
+| 🆕 **[@lwind233](https://github.com/lwind233)** | 🎉 Erster Beitrag: Python SDK-Unterstützung für große Nachrichten | [#9337](https://github.com/QwenLM/qwen-code/pull/9337) |
+| 🆕 **[@MingyaWang](https://github.com/MingyaWang)** | 🎉 Erster Beitrag: Bildanzeige-Kompatibilität mit älteren sharp-Versionen | [#10633](https://github.com/QwenLM/qwen-code/pull/10633) |
+| 🆕 **[@mredbishop](https://github.com/mredbishop)** | 🎉 Erster Beitrag: Fix für fehlgeschlagenen Gesprächsstart in LM Studio | [#10275](https://github.com/QwenLM/qwen-code/pull/10275) |
+| **[@PratikWayase](https://github.com/PratikWayase)** | AUTO mode genehmigt keine Schreibzugriffe außerhalb des Workspace mehr automatisch | [#8744](https://github.com/QwenLM/qwen-code/pull/8744) |
+| **[@rbalachandar](https://github.com/rbalachandar)** | Klarere Hinweise beim Modellwechsel nach Provider-Update | [#9023](https://github.com/QwenLM/qwen-code/pull/9023) |
+| 🆕 **[@shoemoney](https://github.com/shoemoney)** | 🎉 Erster Beitrag: Web Shell-Fix für relative Pfadunterstützung | [#9817](https://github.com/QwenLM/qwen-code/pull/9817) |
+| **[@TianYuan1024](https://github.com/TianYuan1024)** | Korrektur von Testmetriken | [#10735](https://github.com/QwenLM/qwen-code/pull/10735) |
+| **[@tlysanhuo](https://github.com/tlysanhuo)** | /review merkt sich die Review-Tiefe | [#9883](https://github.com/QwenLM/qwen-code/pull/9883) |
+| 🆕 **[@tonydzi](https://github.com/tonydzi)** | 🎉 Erster Beitrag: Fix für Frage-Host im stream-json-Modus | [#9414](https://github.com/QwenLM/qwen-code/pull/9414) |
+| 🆕 **[@Wkewen](https://github.com/Wkewen)** | 🎉 Erster Beitrag: Web Shell-Terminal-Button zum Kopieren von Fehlermeldungen | [#10001](https://github.com/QwenLM/qwen-code/pull/10001) |
+| **[@yu-xin-c](https://github.com/yu-xin-c)** | Klarere Meldung bei Streaming-Timeout | [#9896](https://github.com/QwenLM/qwen-code/pull/9896) |
+| **[@zhou2024NAU](https://github.com/zhou2024NAU)** | Sicherheitsprüfung für Screenshot-Pfade unter Windows | [#9847](https://github.com/QwenLM/qwen-code/pull/9847) |
+| **[@zjgzx1988](https://github.com/zjgzx1988)** | Artefakt-Zeit und -Größe aktualisieren sofort | [#9929](https://github.com/QwenLM/qwen-code/pull/9929) |
+| **[@zjunothing](https://github.com/zjunothing)** | Rendering-Optimierung für wiederholte Bilder | [#8789](https://github.com/QwenLM/qwen-code/pull/8789) |
+
+<Callout type="info">
+  **Upgrade**: Führe `npm i @qwen-code/qwen-code@latest -g` aus um auf die neueste Version zu upgraden.
+</Callout>
+
+Bei Fragen oder Feedback eröffne gerne ein Issue auf [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
