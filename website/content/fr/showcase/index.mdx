@@ -2443,6 +2443,36 @@ export const showcaseItems = [
       { title: "Une commande, la liste des sessions en cours", description: "Dans le terminal, lancez `qwen sessions ps` : chaque session interactive en cours sur votre machine apparaît sur une ligne, avec son nom, son PID, sa durée d'exécution et son dossier.", command: "qwen sessions ps" },
     ],
   },
+  // === Démos du weekly du 3 septembre ===
+  {
+    id: "feature-goal-draft",
+    title: "/goal-draft : une idée floue devient un Goal exécutable",
+    description: "Il vous pose d'abord quelques questions pour cerner l'idée, rédige un objectif vérifiable et vous le présente dans une boîte de confirmation ; dès que vous validez, le Goal se lance.",
+    category: "Nouveautés",
+    features: ["Mode Agent"],
+    thumbnail: "https://img.alicdn.com/imgextra/i3/O1CN01jinr31ylhOI7nOLI_!!6000000000320-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "Vous aimeriez que l'IA mène une tâche jusqu'au bout, mais l'objectif est difficile à formuler et le cap se perd en cours de route. `/goal-draft` clarifie votre idée : il pose quelques questions pour lever les zones d'ombre, rédige un objectif vérifiable et vous le montre dans une boîte de confirmation. Vous validez, il enchaîne directement sur le Goal. Et sur les tâches longues qui demandent un suivi jusqu'au bout, l'IA prend elle-même l'initiative de préparer l'objectif et de vous le proposer.",
+    steps: [
+      { title: "Tapez /goal-draft", description: "Dans la conversation, tapez `/goal-draft`, en y joignant éventuellement votre idée de départ.", command: "/goal-draft aide-moi à clarifier mon processus de rapport hebdomadaire" },
+      { title: "Répondez à quelques questions", description: "Il pose quelques questions pour cerner l'idée floue, rédige un objectif vérifiable et vous le présente dans une boîte de confirmation ; vous cliquez sur confirmer, il lance immédiatement le Goal." },
+    ],
+  },
+  {
+    id: "feature-output-style",
+    title: "Quatre styles pour régler la façon dont l'IA vous répond",
+    description: "Quatre styles de sortie sont intégrés : concis, proactif, explicatif, pédagogique. `/output-style` bascule d'un style à l'autre en pleine conversation, et la réponse suivante l'adopte aussitôt.",
+    category: "Nouveautés",
+    features: ["Terminal"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01ORBFIb4BEaF7o1Mj_!!6000000005868-2-tps-3845-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "Les uns veulent une IA qui parle peu et va droit au résultat ; les autres préfèrent qu'elle explique en travaillant, pour apprendre au passage. Le style de sortie se choisit désormais parmi quatre préréglages : concis, la conclusion d'abord, sans détour ; proactif, elle se lance directement et ne signale ses hypothèses qu'en cas de doute ; explicatif, elle vous commente le code concerné chaque fois qu'elle en modifie ; pédagogique, elle enseigne en faisant et vous laisse prendre quelques petites décisions vous-même.",
+    steps: [
+      { title: "Choisissez un style", description: "Tapez `/output-style` dans la conversation et sélectionnez un style : il s'applique aussitôt à la session en cours et reste actif au prochain lancement. Pour un essai ponctuel, ajoutez l'argument `--output-style` à la commande de démarrage.", command: "/output-style" },
+    ],
+  },
 ]
 
 

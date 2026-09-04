@@ -2443,6 +2443,36 @@ export const showcaseItems = [
       { title: "コマンド一発で動いているセッションを一覧表示", description: "ターミナルで `qwen sessions ps` を実行すると、このマシンで動いているインタラクティブセッションが1行に1件ずつ表示され、セッション名、プロセスID、稼働時間、ディレクトリが分かります。", command: "qwen sessions ps" },
     ],
   },
+  // === 9月3日ウィークリーデモ ===
+  {
+    id: "feature-goal-draft",
+    title: "/goal-draft で曖昧なアイデアを実行可能な Goal に変える",
+    description: "まずいくつか質問して曖昧な考えを明確にし、検証可能な目標を下書きします。確認ボックスで提示するので、「確認」を押せばそのまま Goal の実行が始まります。",
+    category: "新機能",
+    features: ["Agentモード"],
+    thumbnail: "https://img.alicdn.com/imgextra/i3/O1CN01jinr31ylhOI7nOLI_!!6000000000320-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "「AI に最後まで見届けてほしい。でも目標をうまく言い表せなくて、進めているうちに本来の狙いからずれてしまう」——そんな場面に `/goal-draft` は役立ちます。まずいくつか質問して曖昧な点を明確にし、検証可能な目標を下書きしたうえで、確認ボックスで提示します。「確認」を押せば、そのまま Goal の実行が始まります。最後まで見通す必要がある長いタスクでは、AI の方から目標を下書きして確認を求められることもあります。",
+    steps: [
+      { title: "/goal-draft を入力", description: "会話内で `/goal-draft` と入力します。大まかなアイデアを添えても構いません。", command: "/goal-draft 週報のワークフローを整理したい" },
+      { title: "いくつかの質問に答える", description: "AI からいくつか質問が届き、曖昧なアイデアを明確にしたうえで、検証可能な目標を下書きして確認ボックスで提示します。「確認」を押せば、そのまま Goal の実行が始まります。" },
+    ],
+  },
+  {
+    id: "feature-output-style",
+    title: "AI の話し方を選べる、4種類の出力スタイル",
+    description: "「簡潔」「先回り」「解説」「コーチング」の4種類の出力スタイルを内蔵。会話の途中で `/output-style` からいつでも切り替えられ、次の応答からすぐに新しいスタイルになります。",
+    category: "新機能",
+    features: ["ターミナル操作"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01ORBFIb4BEaF7o1Mj_!!6000000005868-2-tps-3845-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "「AI にはとにかく話少なく、ズバリ結果だけ伝えてほしい」「やりながら教えてほしい」——人それぞれです。このたび出力スタイルを選べるようになり、「簡潔」「先回り」「解説」「コーチング」の4種類を内蔵しました。「簡潔」は結論から述べて回りくどくなく、「先回り」はとにかく着手し、迷う部分だけ前提として共有。「解説」はコード修正時にその周辺コードも一緒に説明し、「コーチング」は作業しながらレクチャーし、小さな判断はあなた自身に委ねて一緒に学んでいけるスタイルです。",
+    steps: [
+      { title: "スタイルを選ぶ", description: "会話で `/output-style` と入力して選べば、現在の会話に即時反映され、次回起動時もそのまま維持されます。一度だけ試したい場合は、起動時に `--output-style` 引数を付けてください。", command: "/output-style" },
+    ],
+  },
 ]
 
 

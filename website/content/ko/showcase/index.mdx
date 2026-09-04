@@ -1866,6 +1866,31 @@ export const showcaseItems = [
     model: "qwen3.8-max",
     overview: "Qwen Code 세션을 여러 개 동시에 열어 두면 어떤 게 어떤 것인지 헷갈리기 쉽습니다. `qwen sessions ps` 명령어는 지금 이 PC에서 실행 중인 모든 대화형 세션을 한 줄에 하나씩 보여줍니다. 세션 이름, 프로세스 번호, 실행 시간, 위치한 디렉터리까지. 목록에 보이는 세션은 전부 실제로 실행 중입니다. 세션을 닫으면 목록에서도 바로 사라집니다. 스크립트에 연결하려면 `--json`을 붙이면 됩니다.",
     steps: [{ title: "명령어 하나로 실행 중인 세션 목록", description: "터미널에서 `qwen sessions ps`를 실행하면 실행 중인 대화형 세션이 한 줄에 하나씩, 세션 이름, 프로세스 번호, 실행 시간, 디렉터리와 함께 표시됩니다.", command: "qwen sessions ps" }],
+  },
+  // === 9月3日周报演示 ===
+  {
+    id: "feature-goal-draft",
+    title: "/goal-draft로 흐릿한 생각을 실행 가능한 Goal로",
+    description: "몇 가지 질문으로 흐릿한 생각을 먼저 뚜렷이 하고, 검증 가능한 목표 초안을 만들어 확인 창에 보여줍니다. 확인을 누르면 바로 Goal이 실행됩니다.",
+    category: "기능 업데이트",
+    features: ["Agent 모드"],
+    thumbnail: "https://img.alicdn.com/imgextra/i3/O1CN01jinr31ylhOI7nOLI_!!6000000000320-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "AI에게 한 가지 일을 끝까지 맡기고 싶은데 목표를 말로 정확히 담기 어렵면, 하다 보면 자꾸 옆길로 새게 됩니다. `/goal-draft`는 생각을 정리하는 걸 도와줍니다. 몇 가지 질문을 먼저 던져 모호한 부분을 짚고, 검증 가능한 목표 초안을 만들어 확인 창에 보여줍니다. 확인을 누르면 그 자리에서 Goal 실행이 시작됩니다. 처음부터 끝까지 붙어서 마무리해야 할 긴 작업에서는 AI가 목표 초안을 먼저 만들어 오히려 물어보기도 합니다.",
+    steps: [{ title: "/goal-draft 입력", description: "대화에서 `/goal-draft`를 입력하세요. 대략적인 생각을 함께 적어도 됩니다.", command: "/goal-draft 주간 리포트 절차를 정리해 줘" },{ title: "몇 가지 질문에 답하기", description: "먼저 몇 가지 질문으로 흐릿한 부분을 명확히 하고, 검증 가능한 목표 초안을 만들어 확인 창에 보여줍니다. 확인을 누르면 바로 Goal 실행이 시작됩니다." }],
+  },
+  {
+    id: "feature-output-style",
+    title: "AI 말투, 네 가지 스타일 골라 쓰기",
+    description: "간결형·주도형·설명형·교육형 네 가지 출력 스타일이 기본 내장되어 있습니다. 대화 도중 `/output-style`로 언제든 바꾸면 다음 답변부터 바로 바뀐 스타일로 나옵니다.",
+    category: "기능 업데이트",
+    features: ["터미널"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01ORBFIb4BEaF7o1Mj_!!6000000005868-2-tps-3845-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "말수를 줄이고 결과만 딱 받고 싶은 사람이 있고, 하는 과정을 보면서 같이 배우고 싶은 사람도 있습니다. 이제 출력 스타일을 고를 수 있습니다. 간결형·주도형·설명형·교육형 네 가지가 기본 내장되어 있습니다. 간결형은 결론부터 말하고 에두르지 않으며, 주도형은 바로 작업에 들어가고 애매한 부분만 가정을 밝혀 둡니다. 설명형은 코드를 고치면서 관련 코드를 함께 짚어 주고, 교육형은 일을 하면서 가르치되 작은 결정은 직접 해볼 수 있도록 남겨 둡니다.",
+    steps: [{ title: "스타일 고르기", description: "대화에서 `/output-style`를 입력해 하나를 고르면 지금 대화에 바로 적용되고, 다음에 실행할 때도 그대로 유지됩니다. 한 번만 시험해 보려면 실행할 때 `--output-style` 인자를 붙이세요.", command: "/output-style" }],
   }
 ];
 

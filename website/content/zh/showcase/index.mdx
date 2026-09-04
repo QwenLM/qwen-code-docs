@@ -2443,6 +2443,36 @@ export const showcaseItems = [
       { title: "一条命令列出在跑的会话", description: "在终端运行 `qwen sessions ps`，本机正在跑的交互式会话一行一个，带会话名、进程号、运行时长和目录。", command: "qwen sessions ps" },
     ],
   },
+  // === 9月3日周报演示 ===
+  {
+    id: "feature-goal-draft",
+    title: "/goal-draft 把模糊想法变成可执行的 Goal",
+    description: "先问你几个问题把模糊想法问清楚，起草一份可验证的目标，用确认框拿给你看，点确认就开始跑 Goal。",
+    category: "功能更新",
+    features: ["Agent模式"],
+    thumbnail: "https://img.alicdn.com/imgextra/i3/O1CN01jinr31ylhOI7nOLI_!!6000000000320-2-tps-3840-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "想让 AI 盯着做完一件事，但目标说不清，写着写着就跑偏。`/goal-draft` 帮你把想法理清楚：它先问几个问题，把模糊的地方问明白，再起草一份可验证的目标，用确认框拿给你看。你点确认，它就直接开始跑 Goal。遇到该盯着做完的长任务，AI 还会主动把目标起草好问你。",
+    steps: [
+      { title: "输入 /goal-draft", description: "在对话里输入 `/goal-draft`，可以带上你的初步想法。", command: "/goal-draft 帮我把周报流程理顺" },
+      { title: "回答几个问题", description: "它先问你几个问题，把模糊想法问清楚，再起草一份可验证的目标，用确认框拿给你看；你点确认，它就直接开始跑 Goal。" },
+    ],
+  },
+  {
+    id: "feature-output-style",
+    title: "AI 的说话方式，四种风格随你挑",
+    description: "内置简洁、主动、讲解、教学四种输出风格，对话中途 `/output-style` 随时切，下一轮回复立刻换风格。",
+    category: "功能更新",
+    features: ["终端操作"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01ORBFIb4BEaF7o1Mj_!!6000000005868-2-tps-3845-2160.png",
+    videoUrl: null,
+    model: "qwen3.8-max",
+    overview: "有人想要 AI 话少、直接给结果，有人希望它边干边讲、带着学。现在输出风格可以选了，内置简洁、主动、讲解、教学四种风格：简洁先说结论不绕弯，主动直接开干、拿不准才说假设，讲解改代码时把相关代码讲给你听，教学边干边教、还留点小决定让你自己动手。",
+    steps: [
+      { title: "选一种风格", description: "对话里敲 `/output-style` 选一个，当前对话立刻生效、下次启动也还是它；只想临时试一次就启动时加 `--output-style` 参数。", command: "/output-style" },
+    ],
+  },
 ]
 
 
