@@ -780,3 +780,17 @@ qwen sessions ps
 # nota de dados brutos acima); pipe através de um sanitizador se o caminho não for confiável.
 qwen sessions ps --json | jq -r .cwd
 ```
+
+## 6. Enviando Mensagens para Outra Sessão em Execução
+
+Duas sessões interativas na mesma máquina podem enviar mensagens uma para a outra. O recurso é experimental e **desativado por padrão**; ative-o em `settings.json` e reinicie:
+
+```json
+{ "agents": { "crossSessionMessaging": true } }
+```
+
+Uma vez ativado, o modelo em uma sessão pode descobrir as outras com `list_agents` — cada uma aparece sob `sessions` com o `name` que `qwen sessions ps --json` registra (a visualização em tabela pode truncar nomes longos) — e endereçar uma com `send_message` usando esse nome como `to`. Quando duas sessões compartilham um nome, `list_agents` mostra cada uma com um curto `[ref]` e o envio deve incluí-lo (`name [ref]`); um nome simples que poderia significar qualquer uma é recusado em vez de adivinhado. `list_agents` também reporta o nome da própria sessão sob `self`, e `to: "*"` ainda significa "meus colegas da Agent Team" e nunca alcança outras sessões.
+
+Uma mensagem chega na outra sessão marcada como vindo de outra sessão, não do seu usuário, e não carrega nenhuma de suas autoridades lá: a sessão receptora age sobre ela apenas dentro de suas próprias configurações de permissão. Seu usuário pode escolher o que acontece com mensagens recebidas usando `agents.crossSessionInbound` (`accept`, `hold` ou `refuse`). Quando não definido, uma mensagem é entregue se a sessão receptora ainda revisa cada ação (modo default ou plan), ou se ambas as sessões estão em um modo que aplica ações sem revisão por ação; caso contrário, é mantida para revisão. Mensagens mantidas são listadas e liberadas com `/peers` na sessão receptora.
+
+A chamada `send_message` apenas confirma que a mensagem foi entregue à outra sessão. O que aconteceu com ela chega mais tarde como um recibo: se foi mantida, recusada, expirou ou endereçada incorretamente (o endereço mudou de mãos — liste os agentes novamente) — ou liberada após uma manutenção — um aviso aparece na transcrição da sessão remetente (`Message to <name>: …`). O modelo que a enviou não é informado; se a outra sessão responder, a resposta chega como uma mensagem entre sessões.

@@ -18,6 +18,10 @@ Utilisez `modelProviders` pour déclarer des modèles par id de fournisseur entr
 >
 > **Unicité des modèles :** Les modèles au sein du même `authType` sont identifiés de manière unique par la combinaison de `id` + `baseUrl`. Cela signifie que vous pouvez définir le même ID de modèle (par ex. `"gpt-4o"`) plusieurs fois sous un seul `authType`, tant que chaque entrée a une `baseUrl` différente — par exemple, l'une pointant directement vers OpenAI et l'autre vers un point de terminaison proxy. Si deux entrées partagent le même `id` et la même `baseUrl` (ou si les deux omettent `baseUrl`), la première occurrence l'emporte et les doublons suivants sont ignorés avec un avertissement.
 
+> [!note]
+>
+> **Rechargement à chaud vs redémarrage :** les modifications de `modelProviders` dans `settings.json` sont prises en compte par une session interactive en cours d'exécution sans redémarrage (le file watcher applique un debounce d'environ 300 ms ; rouvrez `/model` pour voir les nouvelles entrées, la sélection actuelle est conservée). `providerProtocol` est lu une seule fois au démarrage et **nécessite un redémarrage**.
+
 ### Routes de génération d'images
 
 Définissez `supportsImageGeneration: true` lorsqu'une route peut être utilisée par l'outil intégré
@@ -468,9 +472,11 @@ Les configurations des modèles Coding Plan sont versionnées. Lorsque Qwen Code
 
 - Remplacer les configurations existantes des modèles Coding Plan par les dernières versions
 - Préserver toutes les configurations de modèles personnalisées que vous avez ajoutées manuellement
-- Basculer automatiquement vers le premier modèle de la configuration mise à jour
+- Laisser votre modèle sélectionné inchangé ; s'il ne fait plus partie de la configuration
+  mise à jour, utilisez `/model` pour en choisir un autre
 
-Le processus de mise à jour garantit que vous avez toujours accès aux dernières configurations et fonctionnalités des modèles sans intervention manuelle.
+Le processus de mise à jour actualise les configurations et les fonctionnalités des modèles sans
+modifier votre modèle sélectionné.
 
 ### Configuration manuelle (Avancé)
 

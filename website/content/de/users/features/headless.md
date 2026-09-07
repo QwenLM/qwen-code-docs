@@ -117,6 +117,20 @@ qwen -p "Summarize this repository" \
   --append-system-prompt "Return exactly three bullets."
 ```
 
+### Wähle einen Ausgabestil
+
+Verwende `--output-style`, um einen der integrierten Ausgabestile für diesen Lauf auszuwählen. Ein Stil ist ein benannter Anweisungsblock, der auf den integrierten Prompt geschichtet wird und verändert, wie die Antwort geschrieben wird — `Concise` beginnt mit dem Ergebnis und lässt Einleitung und Erzählung weg, `Proactive` beginnt direkt mit der Arbeit statt Vorschläge zu machen, `Explanatory` fügt unterwegs kurze Anmerkungen zur Codebasis hinzu. Er überschreibt die Einstellung `general.outputStyle`; `default` wählt keinen Stil.
+
+```bash
+qwen -p "Why does the build fail on Windows?" --output-style Concise
+```
+
+> [!note]
+>
+> - `Learning` fordert dich auf, einen Teil des Codes zu schreiben, und wartet auf eine Antwort, daher wird es in Headless-Läufen übersprungen.
+> - Ein unbekannter Stilname gibt eine Warnung aus und der Lauf wird mit dem Standard-Stil fortgesetzt.
+> - `--output-style` hat keine Wirkung, wenn `--system-prompt` oder `QWEN_SYSTEM_MD` den integrierten Prompt ersetzt — ein Stil wird nur auf den integrierten Prompt geschichtet.
+
 > [!note]
 >
 > - `--system-prompt` gilt nur für die Hauptsitzung des aktuellen Laufs.
@@ -264,6 +278,7 @@ Wichtige Befehlszeilenoptionen für die Headless-Nutzung:
 | `--include-partial-messages` | Teilnachrichten in der Stream-JSON-Ausgabe einschließen                                                                                                                                                                                                                                                                                                                                                                        | `qwen -p "query" --output-format stream-json --include-partial-messages` |
 | `--system-prompt`            | System-Prompt der Hauptsitzung für diesen Lauf überschreiben                                                                                                                                                                                                                                                                                                                                                                   | `qwen -p "query" --system-prompt "You are a terse reviewer."`            |
 | `--append-system-prompt`     | Zusätzliche Anweisungen an den System-Prompt der Hauptsitzung für diesen Lauf anhängen                                                                                                                                                                                                                                                                                                                                         | `qwen -p "query" --append-system-prompt "Focus on concrete findings."`   |
+| `--output-style`             | Ausgabestil für diesen Lauf (`Concise`, `Proactive`, `Explanatory`, `Learning` oder `default` für keinen); überschreibt `general.outputStyle`                                                                                                                                                                                                                                                                                  | `qwen -p "query" --output-style Concise`                                 |
 | `--debug`, `-d`              | Debug-Modus aktivieren                                                                                                                                                                                                                                                                                                                                                                                                         | `qwen -p "query" --debug`                                                |
 | `--safe-mode`                | Deaktiviert alle Anpassungen – Kontextdateien, Hooks, Erweiterungen, Skills, MCP-Server, benutzerdefinierte Subagenten (nur integrierte Subagenten werden geladen), Berechtigungsregeln, aus Einstellungen stammende Approval-Mode-Überschreibungen, Speicherfunktionen und Sandbox-Einstellungen –, um Probleme zu isolieren; die CLI-Flags `--yolo` und `--approval-mode` bleiben wirksam. Siehe [Troubleshooting](../support/troubleshooting). Kann auch über `QWEN_CODE_SAFE_MODE=true` gesetzt werden. | `qwen -p "query" --safe-mode`                                            |
 | `--model`, `-m`              | Für diesen Lauf zu verwendendes Modell                                                                                                                                                                                                                                                                                                                                                                                         | `qwen -p "query" --model qwen3-coder-plus`                               |

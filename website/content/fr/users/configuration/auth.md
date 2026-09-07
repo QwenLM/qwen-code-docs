@@ -162,7 +162,7 @@ Le concept clé est **Model Providers** (`modelProviders`) : Qwen Code prend en 
 | Compatible OpenAI | `openai`             | `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL` (alias : `QWEN_MODEL`)                            | OpenAI, Azure OpenAI, OpenRouter, Requesty, ModelScope, Alibaba Cloud, tout endpoint compatible OpenAI |
 | Anthropic         | `anthropic`          | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`                                         | Anthropic Claude                                                                                      |
 | Google GenAI      | `gemini`             | `GEMINI_API_KEY`, `GEMINI_MODEL`                                                                     | Google Gemini                                                                                         |
-| Vertex AI         | `vertex-ai`          | `GOOGLE_API_KEY` ou `GOOGLE_CLOUD_PROJECT` (+ `GOOGLE_CLOUD_LOCATION` optionnel), `GOOGLE_MODEL` (utilise le protocole `gemini` ; un projet sans clé n'est pas détecté automatiquement depuis l'environnement, donc sélectionnez le type d'authentification explicitement avec `--auth-type vertex-ai` ou `security.auth.selectedType`) | Google Vertex AI                                                                                      |
+| Vertex AI         | `vertex-ai`          | `GOOGLE_API_KEY` + `GOOGLE_MODEL` (définit `GOOGLE_GENAI_USE_VERTEXAI=true`) ou `GOOGLE_CLOUD_PROJECT` + `GOOGLE_MODEL` (ADC sans clé) ; utilise le protocole `gemini` | Google Vertex AI                                                                                      |
 
 #### Étape 1 : Configurer les modèles et les fournisseurs dans `~/.qwen/settings.json`
 

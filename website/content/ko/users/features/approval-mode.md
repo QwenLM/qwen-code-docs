@@ -1,6 +1,3 @@
----
-title: Approval Mode
----
 
 # 승인 모드
 
@@ -278,6 +275,9 @@ Qwen Code가 파일 편집을 수행하고(워크스페이스 내 편집은 분�
       // 선택 사항: 모든 셸 명령어(ls, cat 같은 읽기 전용 포함)를
       // 분류기를 통해 방어를 강화합니다.
       // "classifyAllShell": true,
+      // 선택 사항: MCP 도구 호출을 이름만 분류기로 전송합니다
+      // (인수는 기본적으로 전달됨).
+      // "mcp": { "forwardArguments": false },
     },
   },
 }

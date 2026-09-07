@@ -162,7 +162,7 @@ API キー認証を開始する最も簡単な方法は、すべてを単一の 
 | OpenAI 互換 | `openai`             | `OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_MODEL`（エイリアス: `QWEN_MODEL`）                                                    | OpenAI、Azure OpenAI、OpenRouter、Requesty、ModelScope、Alibaba Cloud、その他の OpenAI 互換エンドポイント |
 | Anthropic         | `anthropic`          | `ANTHROPIC_API_KEY`、`ANTHROPIC_BASE_URL`、`ANTHROPIC_MODEL`                                                                 | Anthropic Claude                                                                                      |
 | Google GenAI      | `gemini`             | `GEMINI_API_KEY`、`GEMINI_MODEL`                                                                                             | Google Gemini                                                                                         |
-| Vertex AI         | `vertex-ai`          | `GOOGLE_API_KEY` または `GOOGLE_CLOUD_PROJECT`（+ オプションの `GOOGLE_CLOUD_LOCATION`）、`GOOGLE_MODEL`（`gemini` プロトコルを使用。キーなしのプロジェクトのみのセットアップは環境から自動検出されないため、`--auth-type vertex-ai` または `security.auth.selectedType` で認証タイプを明示的に選択） | Google Vertex AI                                                                                      |
+| Vertex AI         | `vertex-ai`          | `GOOGLE_API_KEY` + `GOOGLE_MODEL`（`GOOGLE_GENAI_USE_VERTEXAI=true` を設定）または `GOOGLE_CLOUD_PROJECT` + `GOOGLE_MODEL`（キーレス ADC）。`gemini` プロトコルを使用 | Google Vertex AI                                                                                      |
 
 #### ステップ 1: `~/.qwen/settings.json` でモデルとプロバイダーを設定する
 
@@ -302,11 +302,11 @@ Qwen Code を起動したら、`/model` コマンドを使用して設定され�
 コマンドライン引数で直接モデルを切り替えることもできます。これは複数のターミナルで作業する際に便利です。
 
 ```bash
-# In one terminal
+# 1つのターミナルで
 
 qwen --model "qwen3-coder-plus"
 
-# In another terminal
+# 別のターミナルで
 
 qwen --model "qwen3.5-plus"
 ```

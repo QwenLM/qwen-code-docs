@@ -162,7 +162,7 @@ export OPENAI_MODEL="qwen3-coder-plus"
 | OpenAI 兼容 | `openai` | `OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_MODEL`（别名：`QWEN_MODEL`） | OpenAI、Azure OpenAI、OpenRouter、Requesty、ModelScope、Alibaba Cloud、任何兼容 OpenAI 的 endpoint |
 | Anthropic | `anthropic` | `ANTHROPIC_API_KEY`、`ANTHROPIC_BASE_URL`、`ANTHROPIC_MODEL` | Anthropic Claude |
 | Google GenAI | `gemini` | `GEMINI_API_KEY`、`GEMINI_MODEL` | Google Gemini |
-| Vertex AI | `vertex-ai` | `GOOGLE_API_KEY` 或 `GOOGLE_CLOUD_PROJECT`（+ 可选 `GOOGLE_CLOUD_LOCATION`），`GOOGLE_MODEL`（使用 `gemini` 协议；无 key 的纯项目设置不会从环境中自动检测，因此需要使用 `--auth-type vertex-ai` 或 `security.auth.selectedType` 显式选择 auth type） | Google Vertex AI |
+| Vertex AI | `vertex-ai` | `GOOGLE_API_KEY` + `GOOGLE_MODEL`（设置 `GOOGLE_GENAI_USE_VERTEXAI=true`）或 `GOOGLE_CLOUD_PROJECT` + `GOOGLE_MODEL`（无 key ADC）；使用 `gemini` 协议 | Google Vertex AI |
 
 #### 步骤 1：在 `~/.qwen/settings.json` 中配置模型和 provider
 

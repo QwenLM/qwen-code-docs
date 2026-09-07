@@ -199,7 +199,11 @@ protected override onPromptEnd(chatId: string, sessionId: string, messageId?: st
 
 **工具调用钩子** — 重写 `onToolCall()` 以显示 agent 活动（例如，"正在运行 shell 命令..."）。
 
-**流式传输钩子** — 重写 `onResponseChunk(chatId, chunk, sessionId)` 以实现逐块渐进式显示（例如，就地编辑消息）。重写 `onResponseComplete(chatId, fullText, sessionId)` 以自定义最终交付。
+**流式传输钩子** — 重写 `onResponseChunk(chatId, chunk, sessionId, segment)` 以实现逐块渐进式显示（例如，就地编辑消息）。重写 `onResponseComplete(chatId, fullText, sessionId, segment)` 以自定义最终交付。在守护进程管理的命名任务模式下，`segment.sourceLabel` 是该段的不可变交付元数据。在每个独立可见的消息或卡片上渲染一次，包括单独可见的最终响应，但不要将其添加到原始缓冲区或模型文本中。从 `onOutputSegmentEnd()` 清除适配器拥有的段状态。
+
+**命名任务归属** — `sendThreadMessage(chatId, threadId, text, sourceLabel)` 接收相同的可选纯文本标签，用于一次性和主动交付边界。默认实现处理纯消息。覆盖交付、拆分消息、发出卡片或提供备用发送的适配器必须在每个独立可见的边界处重复标签，仅为目标标记方言转义标签，并将其渲染大小包含在平台限制中。对原始响应运行无回复检查、媒体标记投影、审计哈希、记录持久化和重试体捕获；如果交付被持久化以进行重启安全重试，则单独持久化捕获的标签。
+
+交互式 `ChannelUserInputRequestContext` 也携带 `sourceLabel`。卡片、终端替换和纯备用必须保留它，而不削弱现有的请求、会话、运行、所有者和目标检查。
 
 **块级流式传输** — 在 channel 配置中设置 `blockStreaming: "on"`。基类会自动在段落边界处将响应拆分为多条消息。无需插件代码 — 它与 `onResponseChunk` 协同工作。
 
@@ -217,8 +221,14 @@ protected override supportsProactiveTarget(target: SessionTarget): boolean {
 protected override async pushProactive(
   target: SessionTarget,
   text: string,
+  sourceLabel?: string,
 ): Promise<void> {
-  await this.platformClient.send(target.chatId, text);
+  await this.sendThreadMessage(
+    target.chatId,
+    target.threadId,
+    text,
+    sourceLabel,
+  );
 }
 ```
 

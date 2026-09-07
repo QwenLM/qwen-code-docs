@@ -165,7 +165,7 @@ await client
   .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
 ```
 
-`DaemonSkillBatchToggleResult` contém `results` ordenados, um array de compatibilidade `errors` e contagens de ativação/refresh de sessão em nível de lote. Os daemons atuais processam cada nome estruturalmente válido na ordem da requisição, persistem todas as alterações de declaração resultantes juntas em no máximo uma escrita bloqueada de configurações, atualizam sessões ativas uma vez quando algo mudou e retornam um array `errors` vazio sem consultar o catálogo de Skills carregado. Habilitar um nome sem declaração de workspace existente e sem entrada efetiva de `skills.defaultDisabled` retorna `changed: false` e não realiza escrita. Os tipos de item de erro permanecem disponíveis para que o SDK ainda possa decodificar respostas de daemons mais antigos. O método lança exceção em resposta não-200.
+`DaemonSkillBatchToggleResult` contém `results` ordenados, um array de compatibilidade `errors` e contagens de ativação/refresh de sessão em nível de lote. Os daemons atuais processam cada nome estruturalmente válido na ordem da requisição, persistem todas as alterações de declaração resultantes juntas em no máximo uma escrita bloqueada de configurações, atualizam sessões ativas uma vez quando algo mudou e retornam um array `errors` vazio sem consultar o catálogo de Skills carregado. Habilitar registra um opt-in explícito de `skills.enabled` do workspace mesmo para nomes ainda não instalados, de forma que pode sobrescrever a desativação interna da Extensão; uma declaração idêntica repetida continua sendo uma no-op. Os tipos de item de erro permanecem disponíveis para que o SDK ainda possa decodificar respostas de daemons mais antigos. O método lança exceção em resposta não-200.
 
 A ativação em lote de Extensões V2 retém o modelo assíncrono de operações de Extensões. Faça pre-flight de `extension_batch_activation_v2`, submeta um lote padrão global ou um lote de substituição de workspace selecionado, e então faça poll com o helper de operação existente:
 
@@ -186,6 +186,22 @@ const operation = await client.waitForExtensionOperation(workspaceHandle);
 ```
 
 O resultado terminal da operação contém `results` ordenados. Os alvos não precisam estar instalados ao definir `enabled` ou `disabled`: o daemon armazena uma declaração de nome e preserva essa política de ativação quando uma Extensão com esse nome é instalada posteriormente. Todos os alvos alterados compartilham uma geração do Extension Store e uma passagem de reconciliação. Lotes padrão globais reconciliam cada runtime registrado; lotes de workspace resolvem e reconciliam apenas o runtime confiável selecionado. O `inherit` do workspace limpa a substituição exata, mas não cria uma declaração para um nome desconhecido; uma limpeza totalmente desconhecida é bem-sucedida como no-op sem reconciliação. Os métodos de ativação singular permanecem apenas para instalados.
+
+Para trocas de Extension Skill internas ao workspace, faça pre-flight de `extension_state` e use os métodos REST agrupados por recurso. Estes não escrevem configurações de Skill nem ativam uma Extensão pai desativada:
+
+```ts
+const workspace = client.workspaceByCwd('/work/secondary');
+const state = await workspace.extensionState(extensionId);
+const handle = await workspace.setExtensionState(extensionId, {
+  skills: [
+    { name: 'review', state: 'enabled' },
+    { name: 'deploy', state: 'disabled' },
+  ],
+});
+const updated = await client.waitForExtensionOperation(handle);
+```
+
+`WorkspaceExtensionState` reporta os padrões do manifesto, substituições exatas do workspace e o estado efetivo consciente das configurações. A operação retorna `resourceStates.skills` ordenados e pode ser bem-sucedida com avisos de refresh. Apenas o grupo `skills` é suportado. Não rebaixe essas chamadas para `setWorkspaceSkillEnabled`, que escreve configurações de prioridade mais alta.
 
 Nomes de exibição de workspace são metadados de apresentação opcionais. Pre-flight `capabilities.features.includes('workspace_display_name')`; os ids de workspace e os caminhos canônicos continuam sendo os únicos seletores, e nomes de exibição duplicados são válidos.
 

@@ -119,7 +119,7 @@ type WebShellSidebarFooterItem =
   | 'settings' // ⚙ 设置面板
   | 'version' // 版本标签（例如 "v0.19.10"）
   | 'theme' // ☀/🌙 亮色/暗色切换
-  | 'sessionsOverview' // ▦ 会话概览面板（仅大屏幕）
+  | 'sessionsOverview' // ▦ 会话概览面板
   | 'splitView' // ◧ 分屏视图（仅大屏幕）
   | 'daemonStatus' // 📊 daemon 状态面板
   | 'collapse'; // ◁/▷ 折叠/展开切换
@@ -213,10 +213,9 @@ type WebShellSidebarSessionActionItem =
   | 'pin' // 📌 置顶/取消置顶（内联按钮）
   | 'archive'; // 📦 归档（下拉菜单）
 
-/** 具有可用内联（hover 按钮）处理程序的子集。 */
+/** Subset with working inline (hover-button) handlers. */
 type WebShellSidebarSessionInlineActionItem =
   | 'pin'
-  | 'archive'
   | 'rename'
   | 'export'
   | 'delete';
@@ -230,7 +229,7 @@ interface WebShellSidebarSessionActionsOptions {
 控制会话行上显示哪些操作按钮：
 
 - **`items`**：所有操作的主控（包括内联和下拉）。如果某项不在 `items` 中，则在各处隐藏。
-- **`inlineItems`**：控制哪些项作为**内联按钮**（hover 时）显示。默认为 `['pin']`——archive 默认保留在下拉菜单中，因为 hover 槽位位于行的点击目标上，容易被误触。只有具有可用内联处理程序的项才能使用：`'pin'`、`'archive'`、`'rename'`、`'export'`、`'delete'`。`'details'` 和 `'group'` 仅支持下拉。
+- **`inlineItems`**：控制哪些项作为**内联按钮**（hover 时）显示。默认为 `['pin']`。只有具有可用内联处理程序的项才能使用：`'pin'`、`'rename'`、`'export'`、`'delete'`。`'details'`、`'group'` 和 `'archive'` 仅支持下拉。
 
 **可见性优先级**：`items` AND 该项的内置条件 AND `inlineItems` 三者都必须通过，内联按钮才会显示。例如，`delete` 作为内联按钮需要 `items` 包含 `'delete'` AND `inlineItems` 包含 `'delete'`。
 
@@ -239,9 +238,9 @@ interface WebShellSidebarSessionActionsOptions {
 | `undefined`（默认）                      | 显示所有操作，仅 pin 作为内联按钮           |
 | `{ inlineItems: ['pin', 'delete'] }`     | Pin + delete 作为内联按钮                  |
 | `{ inlineItems: [] }`                    | 完全没有内联按钮                           |
-| `{ inlineItems: ['archive', 'export'] }` | Archive + export 作为内联按钮              |
+| `{ inlineItems: ['rename', 'export'] }` | Rename + export 作为内联按钮 |
 
-当没有启用下拉项时，下拉触发器（⋮）会自动隐藏。内联按钮仅在其能力条件和 `items` 都包含它们时才会显示。Archive 在当前会话以及任何正在运行轮次的会话上会被禁用，因为 daemon 在归档时会关闭实时会话。
+当没有启用下拉项时，下拉触发器（⋮）会自动隐藏。内联按钮仅在其能力条件和 `items` 都包含它们时才会显示。Archive 在当前会话以及任何正在运行实时轮次的会话上会被禁用，因为 daemon 在归档时会关闭实时会话。
 
 ```tsx
 sidebar={{

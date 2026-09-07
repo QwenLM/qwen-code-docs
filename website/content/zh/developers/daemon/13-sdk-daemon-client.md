@@ -165,7 +165,7 @@ await client
   .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
 ```
 
-`DaemonSkillBatchToggleResult` 包含有序的 `results`、兼容性 `errors` 数组，以及批次级别的激活/会话刷新计数。当前 daemon 按请求顺序处理每个结构有效的名称，在最多一次锁定的设置写入中一起持久化所有结果声明变更，有变更时刷新活跃会话一次，并在不查询已加载 Skill 目录的情况下返回空的 `errors` 数组。启用一个既没有现有工作区声明也没有有效 `skills.defaultDisabled` 条目的名称会返回 `changed: false` 且不执行写入。错误项类型仍然可用，因此 SDK 仍可解码旧版 daemon 的响应。该方法在非 200 响应时抛出。
+`DaemonSkillBatchToggleResult` 包含有序的 `results`、兼容性 `errors` 数组，以及批次级别的激活/会话刷新计数。当前 daemon 按请求顺序处理每个结构有效的名称，在最多一次锁定的设置写入中一起持久化所有结果声明变更，有变更时刷新活跃会话一次，并在不查询已加载 Skill 目录的情况下返回空的 `errors` 数组。启用会记录一个显式的工作区 `skills.enabled` 选择加入，即使对于尚未安装的名称也是如此，因此它可以覆盖 Extension 内部的禁用；相同的重复声明仍然是无操作。已退役的 `workspace_skill_toggle` 标签描述的是早期的目录验证行为，不再用于此契约。错误项类型仍然可用，因此 SDK 仍可解码旧版 daemon 的响应。该方法在非 200 响应时抛出。
 
 V2 Extension 批量激活保留了异步 Extension 操作模型。预检 `extension_batch_activation_v2`，提交全局默认批次或选定工作区覆盖批次，然后使用现有的操作辅助方法进行轮询：
 
@@ -186,6 +186,22 @@ const operation = await client.waitForExtensionOperation(workspaceHandle);
 ```
 
 终端操作结果包含有序的 `results`。设置 `enabled` 或 `disabled` 时目标不需要已安装：daemon 会存储一个名称声明，并在之后安装同名 Extension 时保留该激活策略。所有变更的目标共享一个 Extension Store generation 和一次调和。全局默认批次会调和每个已注册的运行时；工作区批次仅解析和调和选定的可信运行时。工作区的 `inherit` 会清除确切的覆盖但不会为未知名称创建声明；全部未知的清除会作为无操作成功而不进行调和。单一激活方法仍然仅限已安装的目标。
+
+对于工作区内部的 Extension Skill 切换，预检 `extension_state` 并使用按资源分组的 REST 方法。这些方法不会写入 Skill 设置或激活已禁用的父 Extension：
+
+```ts
+const workspace = client.workspaceByCwd('/work/secondary');
+const state = await workspace.extensionState(extensionId);
+const handle = await workspace.setExtensionState(extensionId, {
+  skills: [
+    { name: 'review', state: 'enabled' },
+    { name: 'deploy', state: 'disabled' },
+  ],
+});
+const updated = await client.waitForExtensionOperation(handle);
+```
+
+`WorkspaceExtensionState` 报告清单默认值、确切的工作区覆盖和有效的设置感知状态。该操作返回有序的 `resourceStates.skills`，并可能带有刷新警告成功。仅支持 `skills` 组。不要将这些调用降级为 `setWorkspaceSkillEnabled`，后者写入更高优先级的设置。
 
 工作区显示名称是可选的展示元数据。预检 `capabilities.features.includes('workspace_display_name')`；工作区 ID 和规范路径仍然是唯一的选择器，重复的显示名称是合法的。
 

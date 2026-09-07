@@ -32,12 +32,12 @@ export QWEN_SERVER_TOKEN="$(cat ~/.qwen-serve-token)"
 信頼されていない登録は、診断、バウンディングされたファイル読み取り、および宣言された永続化読み取りに表示されますが、ACP を開始できません。動的および永続化復元されたセカンダリは削除可能です。通常の削除は、ランタイムがビジーの場合は拒否します。強制削除は、アクティブリソースの終了を要求し、同じ cwd が再追加可能になる前に論理的削除をコミットします。
 クリーンアップは永続化コミットポイント以降でバウンディングされ、ベストエフォートです。障害は削除されたランタイムを復元する代わりにログに記録されます。
 
-ランタイムの分離は、cwd、環境オーバーレイ、ファイルシステム/信頼境界、ワークスペースサービス、ブリッジ、Voice リース状態、チャネルワーカー、および ACP/MCP リソース境界をカバーします。本番環境では、プライマリ ACP チャイルドの予熱を試み、障害時に最初の使用時にリトライします。信頼されたセカンダリはオンデマンドで開始し、信頼されていないセカンダリは ACP を開始しません。
-認証、HTTP レート制限、リスナーおよび Voice の受信キャップ、合計セッション受信、メトリクス、シャットダウン、およびプロセス障害半径はデーモン全体で共通です。それらのプロセスレベルの境界を独立させる必要がある場合は、別のデーモンを実行してください。
+ランタイムの分離は、cwd、環境オーバーレイ、ファイルシステム/信頼境界、ワークスペースサービス、ブリッジ、Voice リース状態、チャネルワーカー、および ACP/MCP リソース境界をカバーします。本番環境では、互換性のために信頼されたプライマリ ACP チャイルドのプリヒートを試みます。信頼されたセカンダリは、最初のランタイムバックされたコマンドまたは Session で開始され、信頼されていないセカンダリは ACP を開始しません。レガシーなプライマリルートは既存の互換性動作を保持します。
+認証、HTTP レート制限、リスナーおよび Voice の受け入れキャップ、合計セッション受け入れ、メトリクス、シャットダウン、およびプロセス障害半径はデーモン全体で共通です。それらのプロセスレベルの境界を独立させる必要がある場合は、別のデーモンを実行してください。
 
 ## Linux: systemd ユーザーユニット
 
-> **最初に `qwen` バイナリの場所を確認してください。** ユニットファイルの `ExecStart=` は**絶対パス**である必要があります — サービス管理はシェルの `PATH` を読み取りません。`which qwen` を実行して確認してください。一般的な場所: `/usr/local/bin/qwen` (Linuxbrew、手動インストール)、`~/.nvm/versions/node/vX.Y.Z/bin/qwen` (nvm)、`~/.fnm/aliases/default/bin/qwen` (fnm)、`~/.volta/bin/qwen` (Volta)。以下のテンプレートで `/PATH/TO/qwen` と表示されている箇所を実際のパスに置き換えてください。
+> **最初に `qwen` バイナリと信頼されたツールディレクトリを確認してください。** ユニットファイルの `ExecStart=` は**絶対パス**である必要があり、明示的な `PATH` には、デーモンセッションが必要とする `gh`、`git`、`npm`、スクリプトベースの `qwen` ランチャーが使用する `node` インプリターなどのツールの信頼されたディレクトリを含む必要があります。サービスマネージャーはシェルプロファイルを読み取りません。通常のシェルで `which qwen gh git npm node` を実行し、以下のテンプレートで `/PATH/TO/qwen` と `/PATH/TO/USER/BIN` が表示されている箇所を実際の実行ファイルとディレクトリに置き換えてください。
 
 `~/.config/systemd/user/qwen-serve.service`:
 
@@ -52,6 +52,9 @@ Type=simple
 WorkingDirectory=%h/project-a
 # `which qwen` を実行して絶対パスを確認してください。systemd は $PATH を読み取りません。
 ExecStart=/PATH/TO/qwen serve --hostname 127.0.0.1 --port 4170 --workspace %h/project-a --workspace %h/project-b
+# qwen のインタープリターとユーザーインストール済みツールを含む信頼されたディレクトリで
+# 最初のエントリを置き換えてください。systemd はシェルプロファイルを読み取りません。
+Environment=PATH=/PATH/TO/USER/BIN:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 # ベアラトークンをユニットに直接記述するのではなく、chmod 600 のファイルから読み取ります。
 # `Environment=` はトークンをユニットファイルに露出します (通常 644 = 全ユーザー可読)。
 # EnvironmentFile は、既に `chmod 600` で作成したユーザー所有のシークレットファイルにトークンを保持します。
@@ -85,11 +88,11 @@ systemctl --user disable --now qwen-serve.service
 
 `loginctl enable-linger` がない場合、ユーザーレベルの systemd インスタンスはユーザーがログアウトすると停止し、次回ログイン時にのみ再起動します — ヘッドレスな開発ボックスでは、SSH セッション終了時にデーモンが存続できません。`enable-linger` は「再起動後も持続」を実際に機能させるためのものです。
 
-**システム全体の代替** (共有開発ホスト、あまり一般的ではありません): ユニットを `/etc/systemd/system/qwen-serve@.service` に置き、`User=%i` を設定し、`sudo systemctl enable --now qwen-serve@<ユーザー名>.service` で管理します。それ以外の `[Service]` の本体は同じですが、このレベルでは全ユーザー可読の `Environment=` による露出がさらに問題となるため、常にユーザーの `chmod 600` ファイルを指す `EnvironmentFile=` を使用してください。シングルユーザーワークステーションではユーザーレベル + linger を選択してください。
+**システム全体の代替** (共有開発ホスト、あまり一般的ではありません): ユニットを `/etc/systemd/system/qwen-serve@.service` に置き、`User=%i` を設定し、`sudo systemctl enable --now qwen-serve@<ユーザー名>.service` で管理します。それ以外の `[Service]` の本体は同じです。機密性の低い `PATH` は `Environment=` に残せますが、ベアラトークンは決してそこに入れないでください。ユーザーの `chmod 600` ファイルを指す `EnvironmentFile=` を使用してください。シングルユーザーワークステーションではユーザーレベル + linger を選択してください。
 
 ## macOS: launchd ユーザーエージェント
 
-> **最初に `qwen` バイナリの場所を確認してください。** systemd と同様、`ProgramArguments` は**絶対パス**である必要があります。`which qwen` を実行して確認してください。macOS 上の一般的な場所: `/opt/homebrew/bin/qwen` (Apple Silicon の Homebrew)、`/usr/local/bin/qwen` (Intel の Homebrew、手動インストール)、`~/.nvm/versions/node/vX.Y.Z/bin/qwen` (nvm)、`~/.volta/bin/qwen` (Volta)。以下のテンプレートで `/PATH/TO/qwen` と表示されている箇所を置き換えてください。
+> **最初に `qwen` バイナリと信頼されたツールディレクトリを確認してください。** systemd と同じ制約です: `ProgramArguments` は**絶対パス**である必要があり、`EnvironmentVariables.PATH` にはデーモンセッションが必要とするツールを含む信頼されたディレクトリを含む必要があります。通常のシェルで `which qwen gh git npm node` を実行してください。macOS 上の一般的な場所: `/opt/homebrew/bin` (Apple Silicon の Homebrew)、`/usr/local/bin` (Intel の Homebrew と手動インストール)、`~/.nvm/versions/node/vX.Y.Z/bin` (nvm)、`~/.volta/bin` (Volta)。以下の実際の絶対パスに置き換えてください。launchd は `~` やシェル変数を展開しません。
 
 `~/Library/LaunchAgents/com.qwenlm.qwen-serve.plist`:
 
@@ -119,6 +122,10 @@ systemctl --user disable --now qwen-serve.service
   <string>/Users/YOUR-USERNAME/project-a</string>
   <key>EnvironmentVariables</key>
   <dict>
+    <!-- launchd はシェルプロファイルを読み取りません。最初のエントリを qwen のインタープリターと
+         ユーザーツールを含む信頼されたディレクトリで置き換えてください。 -->
+    <key>PATH</key>
+    <string>/PATH/TO/USER/BIN:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     <!-- 実際のトークンを入れたままこのファイルをコミットしないでください。また、plist 自体も chmod 600 にして、
          インラインのトークンが全ユーザー可読にならないようにしてください。 -->
     <key>QWEN_SERVER_TOKEN</key>
@@ -162,6 +169,8 @@ tail -f ~/Library/Logs/qwen-serve/out.log ~/Library/Logs/qwen-serve/err.log
 
 plist を編集した後 (例: トークンのローテーション) は、必ず `unload` してから `load` してください — `launchctl` は systemd の `daemon-reload` のように plist の変更を自動的に再読み込みしません。注意: 各 `load` でログファイルが切り詰められるため、インシデント調査中にローテーションする前にログを別途保存してください。
 
+どちらかのサービスを起動または再起動した後、新しいデーモンセッションを開き、コマンド内で `PATH` を変更せずに必要なツールが解決されることを確認してください。たとえば `command -v gh` です。ツールが見つからない場合は、その信頼された絶対パスを含むディレクトリをサービスレベルの `PATH` に追加してサービスをリロードしてください。`~/.zshrc`、`~/.bashrc`、または他のインタラクティブシェルプロファイルに依存しないでください。
+
 ## tmux セッション (インタラクティブな監督)
 
 `QWEN_SERVER_TOKEN` がシェルに既にエクスポートされていることを前提とします (上記のセットアップセクションを参照):
@@ -198,7 +207,7 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
   http://127.0.0.1:4170/capabilities | jq .protocolVersions         # デーモンの機能セット
 ```
 
-認証が設定されている場合 (つまりデーモンが `--token` / `QWEN_SERVER_TOKEN` を設定して起動されているか、`--require-auth=true` が指定されている場合)、ループバック上の `/health` を除くすべてのルートで `Authorization: Bearer <token>` が必要です。デーモンをトークンなしでループバックデフォルトで起動した場合 (`qwen serve` のゼロコンフィグパス)、どちらの呼び出しもヘッダーは不要です。上記のテンプレートはすべてトークンを設定しているため、実際には `Authorization` ヘッダーが必要です。`/capabilities` が `401` を返す場合、ユニット / plist のトークンが、`curl` が使用している環境変数エクスポートのトークンと一致していません。
+認証が設定されている場合 (`--token` または `QWEN_SERVER_TOKEN`)、通常のループバックバインド上の `/health` を除くすべての通常の API ルートで `Authorization: Bearer <token>` が必要です。チャネル Webhook ingress は常に設定された `x-qwen-webhook-secret` を使用し、Web Shell のドキュメントおよびアセットルートは事前認証のままです。`--require-auth=true` は起動時にトークンを要求し、Webhook 認証を変更せずにループバックの `/health` もベアラゲートの後ろに移動します。ループバックデフォルトでトークンなしでデーモンを起動した場合 (`qwen serve` のゼロコンフィグパス)、どちらの呼び出しもヘッダーを必要とせず、プライマリリスナーに到達できるローカルプロセスは、デーモンユーザーとしてのコード実行を含む、フルオペレーター API 権限を受け取ります。上記のテンプレートはすべてトークンを設定しているため、実際には `Authorization` ヘッダーが必要です。`/capabilities` が `401` を返す場合、ユニット / plist のトークンが、`curl` が使用している環境変数エクスポートのトークンと一致していません。
 
 ## トークンのローテーション
 
@@ -233,6 +242,6 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
 - **コンテナ化デプロイメント** — Dockerfile、docker-compose、Kubernetes マニフェスト、nginx + TLS リバースプロキシ、マルチインスタンストークン分離。エンタープライズパイロットが確定したら v0.16.x で対応予定。検証する人がいないとドキュメントは腐ります。
 - **クロスホスト連携 / 単一ホスト上のマルチデーモン調整** — 1つのデーモンで複数の登録されたワークスペースランタイムをホストできますが、デーモン間の調整は行いません。インスタンスパストークンキーイングと期限切れトークンのクリーンアップは v0.16.x で対応予定。
 - **一般的なデーモントークンストレージ** — Local Control は取り消し可能なデーモン所有のペアリングトークンを使用しますが、長期稼働のランタイムトークンストレージは引き続き BYO トークンです。永続的なトークンストアのインフラは v0.16.x で対応予定です。
-- **Windows ネイティブサービス** (`nssm`、Service Control Manager ラッパー) — 当面は [WSL2](https://learn.microsoft.com/ja-jp/windows/wsl/) を使用し、上記の systemd セクションに従ってください。
+- **Windows ネイティブサービス** (`nssm`、Service Control Manager ラッパー) — 当面は [WSL2](https://learn.microsoft.com/en-us/windows/wsl/) を使用し、上記の systemd セクションに従ってください。
 
 完全な延期機能リストについては、メインユーザーガイドの [v0.16-alpha 既知の制限](./qwen-serve.md#v016-alpha-known-limits) コールアウト、および v0.16-alpha ロールアウト追跡 Issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) を参照してください。

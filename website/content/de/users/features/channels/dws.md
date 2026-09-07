@@ -35,6 +35,8 @@ Füge einen Channel zu `~/.qwen/settings.json` hinzu:
       "senderPolicy": "pairing",
       "groupPolicy": "pairing",
       "watchTodos": true,
+      "startReaction": "🤔",
+      "endReaction": "赞",
       "groups": {
         "*": { "requireMention": true }
       },
@@ -75,6 +77,8 @@ qwen channel pairing approve dws-work CODE
 
 Gruppen-Erwähnungen verwenden zuerst den persönlichen Echtzeit-Event-Stream. Der Channel prüft außerdem alle fünf Sekunden die jüngste `@`-Nachrichtenhistorie, sodass Erwähnungen aus externen Gruppen wiederhergestellt werden, wenn DingTalk sie aus dem persönlichen Event-Stream weglässt. Nachrichten werden über beide Pfade nach Konversation und Nachrichten-ID dedupliziert.
 
+Gewöhnliche Direktnachrichten werden auf dieselbe Weise wiederhergestellt: Eine Fünf-Sekunden-Historienprüfung treibt jede Direktnachricht erneut an, die der Echtzeit-Stream weggelassen hat, dedupliziert nach Konversation und Nachrichten-ID über beide Pfade.
+
 Wenn eine Nachricht eine andere DingTalk-Nachricht zitiert, wird der zitierte Text als Antwortkontext für den Agenten auf beiden Pfaden – Echtzeit und Historien-Fallback – einbezogen.
 
 ## Dokument-Erwähnungen
@@ -85,7 +89,7 @@ Es gibt keine Dokument- oder Wissensbasis-Watchlist. Um eine Dokument-Aufgabe zu
 2. Aktiviere die Option, die eine DingTalk-Benachrichtigung an diesen Account sendet.
 3. DWS liefert die Benachrichtigungskarte über die Direktnachrichten-Historie des Accounts.
 
-Der Channel extrahiert die Dokument-ID, den Kommentar-Schlüssel und die Anfrage aus dieser Benachrichtigung. Er liest das referenzierte Dokument für den Kontext, fügt DingTalk `暗中观察`-Augen-Reaktion hinzu, während die Aufgabe läuft, und antwortet auf den ursprünglichen Dokumentkommentar. Der Echtzeit-DWS-Event-Stream wird verwendet, wenn er die Karte enthält; eine fünfsekündige inkrementelle Historienprüfung deckt Karten ab, die vom aktuellen Event-Stream weggelassen werden.
+Der Channel extrahiert die Dokument-ID, den Kommentar-Schlüssel und die Anfrage aus dieser Benachrichtigung. Er liest das referenzierte Dokument für den Kontext, fügt die konfigurierte Startreaktion hinzu, während die Aufgabe läuft, und antwortet auf den ursprünglichen Dokumentkommentar. Der Echtzeit-DWS-Event-Stream wird verwendet, wenn er die Karte enthält; eine fünfsekündige inkrementelle Historienprüfung deckt Karten ab, die vom aktuellen Event-Stream weggelassen werden.
 
 Kommentare, die keine Benachrichtigung erzeugen, werden by Design ignoriert. Doppelte Benachrichtigungsnachrichten für denselben Dokumentkommentar werden nur einmal ausgeführt. Dokument-Aufgaben folgen der `senderPolicy` und unterstützen `approvalMode` `default`, `plan` oder `yolo`; `default` wird verwendet, wenn nichts angegeben ist.
 
@@ -113,6 +117,6 @@ qwen serve --workspace /path/to/your/project --channel dws-work
 
 Führe nicht beide Formen gleichzeitig aus, da sie sich die Channel-Service-Lease teilen.
 
-Für die lokale Verifizierung sende eine Direktnachricht von einem anderen Account, genehmige das Pairing falls erforderlich, und stelle sicher, dass die Augen-Reaktion erscheint, während die Aufgabe läuft. Füge dann einen Dokumentkommentar mit aktivierter @Erwähnungs-Benachrichtigung hinzu. Der Channel sollte auf die Benachrichtigungsnachricht reagieren, das Dokument lesen und die endgültige Antwort unter dem ursprünglichen Kommentar veröffentlichen. Ein Kommentar mit deaktivierter Benachrichtigung sollte keine Aufgabe erzeugen.
+Für die lokale Verifizierung sende eine Direktnachricht von einem anderen Account, genehmige das Pairing falls erforderlich, und stelle sicher, dass die konfigurierte Startreaktion erscheint, während die Aufgabe läuft. Wenn eine Endreaktion konfiguriert ist, stelle sicher, dass sie danach die Startreaktion ersetzt. Füge dann einen Dokumentkommentar mit aktivierter @Erwähnungs-Benachrichtigung hinzu. Der Channel sollte auf die Benachrichtigungsnachricht reagieren, das Dokument lesen und die endgültige Antwort unter dem ursprünglichen Kommentar veröffentlichen. Ein Kommentar mit deaktivierter Benachrichtigung sollte keine Aufgabe erzeugen.
 
 Der Channel ignoriert Events von Absender-IDs, die DWS als den authentifizierten Account identifiziert, was Antwort- und Pairing-Loops verhindert, ohne die Identität aus dem Nachrichtentext abzuleiten. Das Starten der IM-Quellen erfordert diese autoritative Selbst-Identität: Wenn der authentifizierte Account keine openDingTalkId bereitstellt und keine frühere Session unter demselben Profil eine aufgezeichnet hat, verweigert der Channel die Verbindung. Ein Reconnect, der die ID vorübergehend verliert, behält die Filterung auf den zuvor aufgezeichneten Selbst-Absender-IDs bei.

@@ -59,7 +59,7 @@ Classes typées levées par le pont / médiateur. La plupart portent un statut H
 | `BridgeChannelClosedError`           | 503  | Le canal de l’enfant ACP s’est fermé en plein appel.                                   | Reconnectez / réessayez ; vérifiez `session_died` pour la cause.                                                                                                                        |
 | `BridgeTimeoutError`                 | 504  | Délai d'attente au niveau du pont dépassé.                                             | Réessayez ; enquêtez sur la lenteur sous-jacente.                                                                                                                                       |
 | `SessionRestoreTimeoutError`         | 504  | Le chargement/la reprise de session ACP a dépassé son budget de restauration dédié.    | Réessayez après le délai annoncé ; inspectez les traces de l'étape de restauration avant d'augmenter le budget.                                                                         |
-| `BridgeChannelQuarantinedError`      | 503  | Le nettoyage d'une restauration abandonnée n'a pas été concluant (`restore_cleanup_failed`), ou une restauration abandonnée n'a pas atteint un état stable après un budget complet passé son délai (`restore_settlement_overdue`) ; dans les deux cas, le canal du workspace refuse de nouvelles sessions jusqu'à ce qu'il se vide. Le corps 503 porte `reason` et `retryAfterSeconds`. | Continuez à utiliser les sessions existantes, attendez que le canal se recycle, puis réessayez avec de nouvelles sessions.                                                              |
+| `BridgeChannelQuarantinedError`      | 503  | `reason` est `restore_cleanup_failed`, `restore_settlement_overdue`, `new_session_cleanup_failed` ou `new_session_settlement_overdue`. Un état de settlement-overdue s'efface après qu'un échec tardif se résout ou qu'un succès tardif termine le nettoyage exact-ID ; un nettoyage non concluant transitionne vers l'état de cleanup-failed correspondant. Les états de cleanup-failed durent jusqu'à ce que le canal du workspace se vide. Le corps 503 porte aussi `retryAfterSeconds`. | Continuez à utiliser les sessions existantes et réessayez après le délai annoncé ; les états de cleanup-failed nécessitent un recyclage du canal, tandis que les états de settlement-overdue peuvent se rétablir après le settlement et la fin de tout nettoyage requis.                                                              |
 | `MissingCliEntryError`               | 500  | Le fichier d'entrée de la CLI `qwen` est manquant (défini dans `status.ts`, pas dans `bridgeErrors.ts`). | Vérifiez que l'installation de la CLI est complète ; vérifiez que `packages/cli/index.ts` existe.                                                                                        |
 
 ## Erreurs de configuration au démarrage (`packages/cli/src/serve/run-qwen-serve.ts`)
@@ -104,7 +104,7 @@ Ces erreurs sont remontées via le `errorKind` de la cellule de pré-vérificati
 | Statut | Corps                                        | Quand                                                                                                                                   |
 | ------ | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `401`  | `{ error: 'Unauthorized' }`                  | Jeton bearer manquant / erroné / sans schéma. Uniforme entre `en-tête manquant` / `mauvais schéma` / `mauvais jeton` pour empêcher le sondage. |
-| `401`  | `{ error: '...', code: 'token_required' }`   | Route stricte de mutation sur un démon loopback sans jeton. Le SDK affiche une indication "configure --token / --require-auth".         |
+| `401`  | `{ error: '...', code: 'token_required' }`   | Route stricte sur un embed non fiable sans jeton. Les requêtes primaires loopback fiables passent. Les SDKs affichent une indication de configuration du jeton.         |
 | `403`  | `{ error: 'Request denied by CORS policy' }` | `allowOriginCors` (runtime) / `denyBrowserOriginCors` (bootstrap) a rejeté une requête portant un en-tête `Origin`.                     |
 | `403`  | `{ error: 'Invalid Host header' }`           | `hostAllowlist` a rejeté l’en-tête `Host` (défense contre le détournement DNS).                                                        |
 
@@ -138,7 +138,7 @@ flowchart LR
 ```mermaid
 flowchart TD
     A["401 reçu"] --> B{"body.code == 'token_required' ?"}
-    B -->|yes| C["mutation-gate strict — guider l'utilisateur vers --token / --require-auth"]
+    B -->|yes| C["gate stricte a refusé ce déploiement — guider l'utilisateur pour configurer l'authentification bearer"]
     B -->|no| D["Unauthorized simple — UI générique 'vérifier le jeton'"]
 ```
 

@@ -68,6 +68,7 @@ Agrupados por domínio.
 | `mcp_child_refused_batch`    | S->C      | `refusedServers: [{ name, transport, reason: 'budget_exhausted' }], budget, liveCount, reservedCount, mode: 'enforce', scope?: 'workspace' \| 'session'`                                                                                                                                                                                                                                                                                          |
 | `mcp_server_restarted`       | S->C      | `serverName, durationMs, entryIndex?` para reinícios de pool multi-entry do F2                                                                                                                                                                                                                                                                                                                                                                            |
 | `mcp_server_restart_refused` | S->C      | `serverName, reason: 'budget_would_exceed' \| 'in_flight' \| 'disabled' \| 'restart_failed', entryIndex?, details?`. O quarto valor, `restart_failed`, carrega uma falha crítica subjacente para reinício multi-entry em modo pool. `MCP_RESTART_REFUSED_REASONS` rejeita motivos desconhecidos; um reducer de SDK mais antigo descarta silenciosamente novos valores de motivo aditivos porque `parseDaemonEvent` retorna `undefined`. Envie um novo motivo com um SDK que o conheça. |
+
 ### Controle de mutação (Wave 4 PR 16+17)
 
 | Tipo                     | Direção | Payload                                                                                                                                        |
@@ -106,30 +107,30 @@ Esses eventos têm o workspace como chave, não a sessão. O reducer da sessão 
 
 ### Mutação em runtime do MCP
 
-| Tipo                 | Direção | Trigger                                                       | Principais campos do payload                                                           |
+| Tipo                 | Direção | Gatilho                                                       | Principais campos do payload                                                           |
 | -------------------- | ------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | `mcp_server_added`   | S->C    | Servidor adicionado em runtime através de `POST /workspace/mcp/servers` | `name, transport, replaced, shadowedSettings, toolCount, originatorClientId` |
 | `mcp_server_removed` | S->C    | Servidor removido em runtime                                     | `name, wasShadowingSettings, originatorClientId`                             |
 
 ### Ciclo de vida das extensões
 
-| Tipo                 | Direção | Trigger                                                              | Principais campos do payload                                                                                                                               |
+| Tipo                 | Direção | Gatilho                                                              | Principais campos do payload                                                                                                                               |
 | -------------------- | ------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `extensions_changed` | S->C    | Trabalho de instalação/atualização de extensão em segundo plano concluído ou alteração de status | `refreshed, failed, status?: 'installed' \| 'enabled' \| 'disabled' \| 'updated' \| 'uninstalled' \| 'failed', source?, name?, version?, error?` |
 
 ### Injeção de mensagem no meio do turno
 
-| Tipo                        | Direção | Trigger                                                                                         | Principais campos do payload                                                                                                                 |
+| Tipo                        | Direção | Gatilho                                                                                         | Principais campos do payload                                                                                                                 |
 | --------------------------- | ------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | `mid_turn_message_injected` | S->C    | Web-shell ou cliente remoto injetou mensagens em um turno em execução via `POST /session/:id/inject` | `sessionId, messages: string[], originatorClientId?`; os consumidores DEVEM comparar `originatorClientId` com seu próprio id antes de fazer dedup. |
 
 ### Ciclo de vida do turno / pushes do assistente
 
-| Tipo                  | Direção | Trigger                                                                                                             | Principais campos do payload                                                                                                                                                                               |
+| Tipo                  | Direção | Gatilho                                                                                                             | Principais campos do payload                                                                                                                                                                               |
 | --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `prompt_cancelled`    | S->C    | O prompt foi cancelado através da rota explícita `cancelSession` **ou** desconexão SSE do originador                        | O envelope carimba `originatorClientId` para o cliente que cancelou. Isso significa "cancelamento solicitado", não "cancelamento confirmado". Assinantes pares aprendem que o prompt terminou.              |
 | `turn_complete`       | S->C    | Um turno foi concluído com sucesso                                                                                       | `sessionId, stopReason, promptId?, branchPoint?`. `promptId` vincula às respostas de prompt não bloqueantes (`202`). Turnos elegíveis incluem `branchPoint: { assistantRecordUuid, checkpointUuid }`. |
-| `turn_error`          | S->C    | Um turno falhou                                                                                                       | `sessionId, message, code?, promptId?`; mesmo mecanismo de correlação de `promptId`.                                                                                                                   |
+| `turn_error`          | S->C    | Um turno falhou                                                                                                       | `sessionId, message, code?, promptId?`; mesmo mecanismo de correlação de `promptId`. Para falhas `-32603` no lado do agente, `message` carrega o detalhe próprio do provedor quando o agente o forneceu (`data.details` / `data.message` / `data.error.message` aninhado), não o texto genérico de JSON-RPC. |
 | `session_rewound`     | S->C    | `POST /session/:id/rewind` teve sucesso                                                                                | `sessionId, promptId, targetTurnIndex, filesChanged[], filesFailed[], originatorClientId?`                                                                                                       |
 | `session_branched`    | S->C    | Evento de compatibilidade legado: o endpoint de branch agora retorna resultados diretamente e não publica mais este evento | `sourceSessionId, newSessionId, displayName, originatorClientId?`. Leitores mantêm suporte para produtores mais antigos. |
 | `followup_suggestion` | S->C    | O filho ACP gerou sugestões de follow-up em ghost-text após `end_turn`, encaminhadas via SSE por sessão               | `sessionId, suggestion, promptId`; o wire carrega apenas sugestões cujo `getFilterReason()===null`. Os clientes as renderizam como ghost-text de placeholder de input e as invalidam no próximo `sendPrompt`. |
@@ -184,6 +185,7 @@ Esses eventos têm o workspace como chave, não a sessão. O reducer da sessão 
 - `lastTurnComplete?: DaemonTurnCompleteData` - conclusão de turno bem-sucedida mais recente.
 - `lastTurnError?: DaemonTurnErrorData` - erro de turno mais recente.
 - `rewindCount`, `lastRewind?`, `lastBranch?` - eventos de rewind / branch mais recentes.
+
 ### `DaemonAuthState`
 
 Uma entrada por `providerId`, acionada por `auth_device_flow_*`. Cada fluxo expõe `{ deviceFlowId, status, providerId, expiresAt?, lastThrottleIntervalMs?, lastError? }`.

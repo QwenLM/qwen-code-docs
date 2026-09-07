@@ -116,9 +116,9 @@ function handleEvent(event: DaemonEvent): void {
 }
 ```
 
-## Aides pour les fichiers de l'espace de travail
+## Aides pour les fichiers du workspace
 
-Les routes de fichiers sont limitées à l'espace de travail, pas à la session. Liez un assistant qualifié à l'id du workspace sélectionné afin que chaque requête reste dans ce runtime :
+Les routes de fichiers sont limitées au workspace, pas à la session. Liez un assistant qualifié à l'id du workspace sélectionné afin que chaque requête reste dans ce runtime :
 
 ```ts
 const selected = client.workspaceById(selectedWorkspace.id);
@@ -134,7 +134,7 @@ const updated = await selected.editWorkspaceFile({
 console.log(updated.hash);
 ```
 
-`expectedHash` est un SHA-256 des octets bruts sur le disque. `mode: "replace"` et `editWorkspaceFile()` l'exigent afin que les clients obsolètes n'écrasent pas un fichier qu'ils n'ont pas lu juste avant. Les opérations d'écriture/édition nécessitent une configuration avec jeton porteur même en boucle locale ; démarrez le démon avec `--token` ou `QWEN_SERVER_TOKEN` avant de les utiliser.
+`expectedHash` est un SHA-256 des octets bruts sur le disque. `mode: "replace"` et `editWorkspaceFile()` l'exigent afin que les clients obsolètes n'écrasent pas un fichier qu'ils n'ont pas lu juste avant. Les opérations d'écriture/édition acceptent le listener primaire de boucle locale fiable sans jeton ; les déploiements non fiables nécessitent des identifiants bearer ou de pairing.
 
 ## Reconnexion avec `Last-Event-ID`
 
@@ -194,9 +194,9 @@ console.log(b.attached); // true — B joined A's session
 console.log(a.sessionId === b.sessionId); // true
 ```
 
-Les deux clients voient le même flux `session_update` / `permission_request`. Chacun peut envoyer une requête ; ils sont mis en file d'attente FIFO selon la garantie de l'agent « une invite active par session ».
+Les deux clients voient le même flux `session_update` / `permission_request`. Chacun peut envoyer une invite ; ils sont mis en file d'attente FIFO selon la garantie de l'agent « une invite active par session ».
 
-## Incompatibilité d'espace de travail
+## Incompatibilité de workspace
 
 Si `workspaceCwd` ne correspond à aucun workspace enregistré annoncé, `createOrAttachSession` est rejetée avec `DaemonHttpError` portant le statut `400` et un corps structuré. Un workspace enregistré mais non fiable retourne plutôt `403 untrusted_workspace` et ne doit pas être retenté contre le primaire :
 

@@ -165,7 +165,7 @@ await client
   .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
 ```
 
-`DaemonSkillBatchToggleResult` enthält sortierte `results`, ein Kompatibilitäts-`errors`-Array und batchweite Aktivierungs-/Session-Refresh-Zahlen. Aktuelle Daemons verarbeiten jeden strukturell gültigen Namen in Request-Reihenfolge, persistieren alle resultierenden Deklarationsänderungen zusammen in höchstens einem gelockten Settings-Write, refreshen aktive Sessions einmalig wenn sich etwas geändert hat, und geben ein leeres `errors`-Array zurück ohne den geladenen Skill-Katalog zu konsultieren. Das Aktivieren eines Namens ohne bestehende Workspace-Deklaration und ohne effektiven `skills.defaultDisabled`-Eintrag gibt `changed: false` zurück und führt keinen Write durch. Die Error-Item-Types bleiben verfügbar, sodass das SDK weiterhin Antworten älterer Daemons decodieren kann. Die Methode throwt bei einer Non-200-Antwort.
+`DaemonSkillBatchToggleResult` enthält sortierte `results`, ein Kompatibilitäts-`errors`-Array und batchweite Aktivierungs-/Session-Refresh-Zahlen. Aktuelle Daemons verarbeiten jeden strukturell gültigen Namen in Request-Reihenfolge, persistieren alle resultierenden Deklarationsänderungen zusammen in höchstens einem gelockten Settings-Write, refreshen aktive Sessions einmalig wenn sich etwas geändert hat, und geben ein leeres `errors`-Array zurück ohne den geladenen Skill-Katalog zu konsultieren. Das Aktivieren verzeichnet ein explizites Workspace-`skills.enabled`-Opt-in auch für noch nicht installierte Namen, sodass es Extension-interne Deaktivierungen überschreiben kann; eine identische wiederholte Deklaration bleibt ein No-Op. Die Error-Item-Types bleiben verfügbar, sodass das SDK weiterhin Antworten älterer Daemons decodieren kann. Die Methode throwt bei einer Non-200-Antwort.
 
 Die V2-Extension-Batchaktivierung behält das asynchrone Extension-Operationsmodell bei. Pre-flight `extension_batch_activation_v2`, submitte einen globalen Standard-Batch oder einen Selected-Workspace-Override-Batch, und polle ihn dann mit dem bestehenden Operations-Helper:
 
@@ -186,6 +186,22 @@ const operation = await client.waitForExtensionOperation(workspaceHandle);
 ```
 
 Das terminale Operationsergebnis enthält sortierte `results`. Targets müssen beim Setzen von `enabled` oder `disabled` nicht installiert sein: Der Daemon speichert eine Namensdeklaration und behält diese Aktivierungsrichtlinie bei, wenn später eine Extension mit diesem Namen installiert wird. Alle geänderten Targets teilen sich eine Extension-Store-Generation und einen Reconciliation-Durchlauf. Globale Standard-Batches reconcilen jede registrierte Runtime; Workspace-Batches lösen nur die ausgewählte vertrauenswürdige Runtime auf und reconcilen sie. Workspace `inherit` löscht das genaue Override, erstellt aber keine Deklaration für einen unbekannten Namen; ein All-Unknown-Clear gelingt als No-Op ohne Reconciliation. Einzelne Aktivierungsmethoden bleiben auf installierte beschränkt.
+
+Für workspace-interne Extension-Skill-Umschalter pre-flight `extension_state` und verwende die ressourcengruppierten REST-Methoden. Diese schreiben keine Skill-Settings und aktivieren keine deaktivierte Parent-Extension:
+
+```ts
+const workspace = client.workspaceByCwd('/work/secondary');
+const state = await workspace.extensionState(extensionId);
+const handle = await workspace.setExtensionState(extensionId, {
+  skills: [
+    { name: 'review', state: 'enabled' },
+    { name: 'deploy', state: 'disabled' },
+  ],
+});
+const updated = await client.waitForExtensionOperation(handle);
+```
+
+`WorkspaceExtensionState` meldet Manifest-Defaults, genaue Workspace-Overrides und den effektiven Settings-bewussten Zustand. Die Operation gibt sortierte `resourceStates.skills` zurück und kann mit Refresh-Warnungen erfolgreich sein. Nur die `skills`-Gruppe wird unterstützt. Degradiere diese Aufrufe nicht zu `setWorkspaceSkillEnabled`, das stattdessen höherprioritäre Settings schreibt.
 
 Workspace-Anzeigenamen sind optionale Präsentationsmetadaten. Pre-flight `capabilities.features.includes('workspace_display_name')`; Workspace-IDs und kanonische Pfade bleiben die einzigen Selektoren, und doppelte Anzeigenamen sind zulässig.
 

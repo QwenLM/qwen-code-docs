@@ -35,6 +35,8 @@ Ajoutez un canal à `~/.qwen/settings.json` :
       "senderPolicy": "pairing",
       "groupPolicy": "pairing",
       "watchTodos": true,
+      "startReaction": "🤔",
+      "endReaction": "赞",
       "groups": {
         "*": { "requireMention": true }
       },
@@ -77,6 +79,10 @@ Les mentions de groupe utilisent d'abord le flux d'événements personnel en tem
 
 Lorsqu'un message cite un autre message DingTalk, le texte cité est inclus comme contexte de réponse pour l'agent sur les chemins temps réel et de secours par historique.
 
+Les messages directs ordinaires sont récupérés de la même manière : une vérification de l'historique toutes les cinq secondes relance tout message direct omis par le flux en temps réel, dédupliqué par conversation et par ID de message sur les deux chemins.
+
+`startReaction` est le caractère emoji ou le nom de réaction DingTalk ajouté pendant qu'une tâche acceptée est en cours d'exécution ; une valeur omise ou vide utilise la valeur par défaut `🤔`. `endReaction` la remplace après que la tâche se termine, échoue ou est annulée ; une valeur omise ou vide désactive la réaction de fin.
+
 ## Mentions de documents
 
 Il n'y a pas de liste de surveillance de documents ou de base de connaissances. Pour démarrer une tâche de document :
@@ -85,7 +91,7 @@ Il n'y a pas de liste de surveillance de documents ou de base de connaissances. 
 2. Activez l'option qui envoie une notification DingTalk à ce compte.
 3. DWS délivre la carte de notification via l'historique des messages directs du compte.
 
-Le canal extrait l'ID du document, la clé de commentaire et la requête depuis cette notification. Il lit le document référencé pour le contexte, ajoute la réaction yeux `暗中观察` de DingTalk pendant l'exécution de la tâche, et répond au commentaire de document d'origine. Le flux d'événements DWS en temps réel est utilisé lorsqu'il contient la carte ; une vérification incrémentale de l'historique toutes les cinq secondes couvre les cartes omises par le flux d'événements actuel.
+Le canal extrait l'ID du document, la clé de commentaire et la requête depuis cette notification. Il lit le document référencé pour le contexte, ajoute la réaction de démarrage configurée pendant l'exécution de la tâche, et répond au commentaire de document d'origine. Le flux d'événements DWS en temps réel est utilisé lorsqu'il contient la carte ; une vérification incrémentale de l'historique toutes les cinq secondes couvre les cartes omises par le flux d'événements actuel.
 
 Les commentaires qui ne génèrent pas de notification sont ignorés par conception. Les messages de notification en double pour le même commentaire de document ne s'exécutent qu'une seule fois. Les tâches de document suivent `senderPolicy` et supportent `approvalMode` `default`, `plan` ou `yolo` ; `default` est utilisé lorsqu'il est omis.
 
@@ -113,6 +119,6 @@ qwen serve --workspace /path/to/your/project --channel dws-work
 
 N'exécutez pas les deux formes en même temps car elles partagent le bail de service de canal.
 
-Pour la vérification locale, envoyez un message direct depuis un autre compte, approuvez l'appairage si nécessaire, et vérifiez que la réaction yeux apparaît pendant l'exécution de la tâche. Ajoutez ensuite un commentaire de document avec la notification de @mention activée. Le canal devrait réagir au message de notification, lire le document et publier la réponse finale sous le commentaire d'origine. Un commentaire avec la notification désactivée ne devrait produire aucune tâche.
+Pour la vérification locale, envoyez un message direct depuis un autre compte, approuvez l'appairage si nécessaire, et vérifiez que la réaction de démarrage configurée apparaît pendant l'exécution de la tâche. Si une réaction de fin est configurée, vérifiez qu'elle remplace la réaction de démarrage par la suite. Ajoutez ensuite un commentaire de document avec la notification de @mention activée. Le canal devrait réagir au message de notification, lire le document et publier la réponse finale sous le commentaire d'origine. Un commentaire avec la notification désactivée ne devrait produire aucune tâche.
 
 Le canal ignore les événements provenant des IDs d'expéditeur que DWS identifie comme le compte authentifié, empêchant les boucles de réponse et d'appairage sans déduire l'identité du texte du message. Le démarrage des sources IM nécessite cette auto-identité autoritaire : si le compte authentifié n'expose aucun openDingTalkId et qu'aucune session antérieure sous le même profil n'en a enregistré un, le canal refuse de se connecter. Une reconnexion qui perd temporairement l'ID continue de filtrer sur les IDs d'expéditeur auto-enregistrés précédemment.

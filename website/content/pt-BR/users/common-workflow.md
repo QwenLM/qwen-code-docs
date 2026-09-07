@@ -545,7 +545,7 @@ como o Qwen Code lida com permissões?
 ```
 
 ```
-quais comandos de barra estão disponíveis?
+quais comandos slash estão disponíveis?
 ```
 
 ```
@@ -569,3 +569,35 @@ quais são as limitações do Qwen Code?
 > - O Qwen Code sempre tem acesso à documentação mais recente do Qwen Code, independentemente da versão que você está usando
 > - Faça perguntas específicas para obter respostas detalhadas
 > - O Qwen Code pode explicar recursos complexos como integração MCP, configurações empresariais e fluxos de trabalho avançados
+
+## Impor conclusões baseadas em evidências
+
+Quando o Qwen Code realiza trabalho de alto risco — revisão de código, solução de incidentes, auditorias ou investigação de dados de produção — uma conclusão confiante mas incorreta custa mais do que nenhuma conclusão. Você pode codificar a política de verificação da sua equipe no QWEN.md (veja [Memory](./features/memory.md)) para que se aplique a cada sessão, sem alterar os padrões de ninguém.
+
+As regras abaixo são adaptadas de uma retrospectiva de produção de uma implantação multi-agente, onde conclusões confiantes mas incorretas se repetidamente rastreadas até os mesmos modos de falha: inferir estado a partir do código em vez de consultá-lo, tratar uma condição satisfeita como prova e repetir afirmações anteriores como fatos.
+
+**1. Adicione uma política de verificação ao QWEN.md do seu projeto**
+
+Coloque este modelo em `QWEN.md` na raiz do seu repositório e faça commit, para que a política se aplique a toda a equipe:
+
+```markdown
+# Verification policy
+
+Treat these rules as mandatory in investigations, troubleshooting, reviews, and any task that draws conclusions:
+
+1. Verify before concluding. Back claims about data or system state with evidence from the authoritative source (database, API, logs, command output). Conclusions drawn from reading code alone must be labeled "unverified inference".
+2. Verify the full chain. Enumerate the causal chain and check every link; one satisfied necessary condition does not prove a conclusion.
+3. Treat conversation history as leads, not facts. Statements in earlier transcripts — including your own prior assertions — are leads. Re-verify them at the source before repeating them as facts.
+4. Troubleshoot in order: your own recent changes first, then docs and known issues, and only then external dependencies.
+5. 100% evidence rule in reviews. In review and audit tasks, report no conclusion without evidence; attach verifiable evidence (file:line, query result, log excerpt) to every claim.
+```
+
+**2. Escolha o escopo certo**
+
+Veja [Where to create QWEN.md](./features/memory.md#where-to-create-qwenmd) para saber qual arquivo se aplica a quem — faça commit da cópia do `QWEN.md` na raiz do projeto para que a política cubra toda a equipe.
+
+> [!tip]
+>
+> - Mantenha as regras específicas e acionáveis: "sustente cada afirmação com um resultado de query" funciona melhor do que "tenha cuidado".
+> - Mantenha a política curta — o QWEN.md é seguido de forma mais confiável quando é conciso (veja [Memory](./features/memory.md)).
+> - Adapte as regras ao seu stack: nomeie as ferramentas de query, dashboards ou comandos de log reais que sua equipe trata como fontes autoritativas.

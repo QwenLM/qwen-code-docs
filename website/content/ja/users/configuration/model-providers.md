@@ -18,6 +18,10 @@ Qwen Code では、`settings.json` の `modelProviders` 設定を通じて複数
 >
 > **モデルの一意性:** 同じ `authType` 内のモデルは、`id` と `baseUrl` の組み合わせによって一意に識別されます。つまり、各エントリが異なる `baseUrl` を持っている限り（例えば、1つは OpenAI に直接、もう1つはプロキシエンドポイントを指すなど）、同じモデル ID（例: `"gpt-4o"`）を単一の `authType` 内で複数回定義できます。2つのエントリが同じ `id` と同じ `baseUrl` を共有する場合（または両方とも `baseUrl` を省略している場合）、最初に出現したものが優先され、その後の重複は警告とともにスキップされます。
 
+> [!note]
+>
+> **ホットリロード vs 再起動:** `settings.json` 内の `modelProviders` の編集は、再起動なしで実行中のインタラクティブセッションに反映されます（ファイルウォッチャーは約300msでデバウンスします。`/model` を再度開いて新しいエントリを確認してください。現在の選択は保持されます）。`providerProtocol` は起動時に1回だけ読み込まれ、**再起動が必要です**。
+
 ### 画像生成ルート
 
 組み込みの `image_gen` ツールでルートを使用できる場合、`supportsImageGeneration: true` を設定します。この機能は、`capabilities.vision` や `generationConfig.modalities.image` などの画像入力サポートとは独立しています。
@@ -453,9 +457,9 @@ Coding Plan のモデル構成はバージョン管理されています。Qwen 
 
 - 既存の Coding Plan モデル構成を最新バージョンに置き換えます
 - 手動で追加したカスタムモデル構成は保持されます
-- 更新された構成の最初のモデルに自動的に切り替わります
+- 選択したモデルは変更されません。更新後の構成にそのモデルが存在しない場合は、`/model` を使用して新しいモデルを選択してください
 
-この更新プロセスにより、手動で操作することなく、常に最新のモデル構成と機能にアクセスできるようになります。
+更新プロセスは、選択したモデルを変更せずにモデル構成と機能を更新します。
 
 ### 手動構成（上級者向け）
 
@@ -622,8 +626,9 @@ Coding Plan モデルを手動で構成したい場合は、他の OpenAI 互換
 | プロトコル / プロバイダー | 通信時の形状 | 備考 |
 | --- | --- | --- |
 | **OpenAI / DashScope**（`qwen3.8-max` ファミリー） | フラットな `reasoning_effort: <effort>` ボディパラメータ | 5 つの `/effort` ティア（`low`、`medium`、`high`、`xhigh`、`max`）は、`qwen3.8-max` で始まるモデル ID（日付付きスナップショットや `-latest` エイリアスを含む）に対してそのまま透過的に渡されます。DashScope がモデル固有のマッピングを適用します。`reasoning_effort` と `thinking_budget` が競合する場合、通常の `extra_body` > `samplingParams` > `reasoning` の優先順位により、より高優先度のフィールドのみが保持されます。明示的な同一レイヤーのペアは `reasoning_effort` を保持し、クロスレイヤー解決前のプロバイダーの動作と一致します。静的フィールドが優先された場合、`/effort` はリクエストされたティアが有効であることを示唆する代わりにそのフィールドを報告します。effort ティアが優先された場合、競合する `enable_thinking` も削除されます。`extra_body` 内の明示的な `enable_thinking: false` は、削除されるのではなく尊重されます。設定されたティアを `reasoning_effort: 'none'` としてオーバーライドし、`extra_body` がそのまま勝つ数少ない場所の 1 つです。他の Qwen モデルは、選択された effort を `enable_thinking: true` にマッピングし続けます。`reasoning_effort` のオーバーライドは、`thinking_budget` と競合しない限りそのまま渡されます（DashScope が拒否するペアであり、その場合、不活性な `reasoning_effort` が削除され、`enable_thinking` と `thinking_budget` の両方が保持されます）。 |
-| **OpenAI / DeepSeek** (`api.deepseek.com`) | フラットな `reasoning_effort: <effort>` ボディパラメータ | ネストされた設定形状で `reasoning.effort` が設定されている場合、フラットな `reasoning_effort` に書き換えられ、`'low'`/`'medium'` は `'high'` に、`'xhigh'` は `'max'` に正規化されます。これは DeepSeek の[サーバー側の後方互換性](https://api-docs.deepseek.com/zh-cn/api/create-chat-completion)を反映しています。トップレベルの `samplingParams.reasoning_effort` または `extra_body.reasoning_effort` のオーバーライドは、この正規化をスキップしてそのまま送信されます。 |
-| **OpenAI**（その他の互換サーバー） | `reasoning: { effort, ... }` がそのまま渡される | プロバイダーが異なる形状を期待している場合、`samplingParams` 経由で設定します（例: GPT-5/o シリーズの場合は `samplingParams.reasoning_effort`）。 |
+| **OpenAI / DeepSeek** (`api.deepseek.com`) | フラットな `reasoning_effort: <effort>` ボディパラメータ | ネストされた設定形状で `reasoning.effort` が設定されている場合、フラットな `reasoning_effort` に書き換えられ、`'low'`/`'medium'` は `'high'` に、`'xhigh'` は `'max'` に正規化されます。これは DeepSeek の[サーバー側の後方互換性](https://api-docs.deepseek.com/zh-cn/api/create-chat-completion)を反映しています。トップレベルの `samplingParams.reasoning_effort` または `extra_body.reasoning_effort` のオーバーライドは、この正規化をスキップしてそのまま送信されます。`max` は実際の DeepSeek ホスト名でのみ受け付けられます。別のホスト上の `deepseek` という名前のモデルは、一般的な `xhigh` の上限を保持します。これは、リシェイプ自体のホスト名ゲートと一致します。 |
+| **OpenAI / Z.ai**（`z.ai`、`bigmodel.cn`） | フラットな `reasoning_effort: <effort>` ボディパラメータ | Z.ai ホスト上の GLM-5.2 以降は、`max` を含む完全なラダーを受け取り、ネストされた `reasoning.effort` はフラットなフィールドに書き換えられます。古い GLM ID、および他のホスト上の `glm-*` モデルは、一般的な `xhigh` の上限を保持します。モデル名だけでは、そのエンドポイントが何を受け付けるかは分かりません。 |
+| **OpenAI**（その他の互換サーバー） | `reasoning: { effort, ... }` がそのまま渡される | 設定された `max` は `xhigh` にクランプされます（1回だけログに記録されます）。`max` はベンダー固有の拡張機能であり、一般的な OpenAI ラダーの一部ではないためです。プロバイダーが異なる形状を期待している場合は、`samplingParams` 経由で設定します（例: GPT-5/o シリーズの場合は `samplingParams.reasoning_effort`）。明示的な `samplingParams` / `extra_body` の値はクランプされません。 |
 | **Anthropic**（実際の `api.anthropic.com`） | `output_config: { effort }` と `effort-2025-11-24` ベータヘッダー | 実際の Anthropic は `'low'`/`'medium'`/`'high'` のみを受け付けます。`'max'` は `debugLogger.warn` のログ（ジェネレーターごとに1回）と共に **`'high'` にクランプ**されます。最大限の effort を得たい場合は、baseURL をそれをサポートする DeepSeek 互換エンドポイントに切り替えてください。 |
 | **Anthropic** (`api.deepseek.com/anthropic`) | 同じく `output_config: { effort }` + ベータヘッダー | `'max'` は変更せずにそのまま渡されます。 |
 | **Gemini** (`@google/genai`) | `thinkingConfig: { includeThoughts: true, thinkingLevel }` | `'low'` → `LOW`、`'high'`/`'max'` → `HIGH`、その他 → `THINKING_LEVEL_UNSPECIFIED`（Gemini には `MAX` ティアがありません）。 |

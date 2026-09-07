@@ -142,7 +142,7 @@ Standardmäßig werden nur lesende Shell-Befehle (`ls`, `cat`, `git status`, …
 }
 ```
 
-Dies ist nützlich für Produktions- oder Hochsicherheitsumgebungen, in denen du Defense-in-Depth wünschst: Selbst scheinbar harmlose Befehle werden vor der Ausführung vom Klassifizierer überprüft. Der Kompromiss ist eine zusätzliche Latenz (~300 ms pro nur lesendem Shell-Aufruf) und die Abhängigkeit von der Verfügbarkeit des Klassifizierers – wenn die Klassifizierer-API nicht erreichbar ist, werden auch nur lesende Shell-Befehle blockiert (fail-closed).
+Dies ist nützlich für Produktions- oder Hochsicherheitsumgebungen, in denen du Defense-in-Depth wünschst: Selbst scheinbar harmlose Befehle werden vor der Ausführung vom Klassifizierer überprüft. Der Kompromiss ist eine zusätzliche Latenz (~300 ms pro nur lesendem Shell-Aufruf) und die Abhängigkeit von der Verfügbarkeit des Klassifizierers – wenn die Klassifizierer-API nicht erreichbar ist, erfordern auch nur lesende Shell-Befehle eine manuelle Genehmigung.
 
 > [!note]
 >
@@ -215,7 +215,7 @@ Wenn ein bestimmtes Tool Felder offenlegt, die du lieber schwärzen möchtest, e
 - **Nicht offline-fähig.** Der Klassifizierer erfordert einen LLM-Aufruf.
 - **Fügt Latenz auf dem langsamen Pfad hinzu.** Allowlist + acceptEdits decken die meisten Aufrufe ohne Latenz ab, aber ein `run_shell_command` fügt typischerweise ~300 ms (schneller Klassifizierer-Pfad) oder ~3-5 s (langsamer Pfad mit Thinking-Review) hinzu.
 - **Kein Ersatz für `deny`-Regeln.** Der Klassifizierer arbeitet nach dem Best-Effort-Prinzip. Für Befehle, von denen du sicher bist, dass sie niemals ausgeführt werden sollten, packe sie in `permissions.deny`.
-- **MCP-Tools blockieren standardmäßig konservativ.** MCP-Tools von Drittanbietern (`mcp__*`) optieren über den `toAutoClassifierInput`-Override für die Argumentweiterleitung. Tools, die nicht optiert haben, legen dem Klassifizierer nur ihren Namen offen – die meisten solcher Aufrufe werden konservativ blockiert, außer du hast eine explizite `allow`-Regel geschrieben. Dies ist standardmäßig fail-closed (Credentials und umfangreiche Inhalte leaken nicht in den Klassifizierer-LLM). Wenn du einem bestimmten MCP-Tool vertraust, füge `permissions.allow: ["mcp__server__tool"]` hinzu, damit es den Klassifizierer vollständig umgeht.
+- **MCP-Tools werden anhand ihrer Argumente beurteilt, nicht anhand verifizierten Verhaltens.** MCP-Tools von Drittanbietern (`mcp__*`) stehen niemals auf der Fast-Path-Allowlist; jeder Aufruf von einem Server, der nicht mit `trust: true` markiert ist, geht mit dem Servernamen, dem Tool-Namen, den vom Server selbst gemeldeten Annotationen (`readOnlyHint` / `destructiveHint` / `idempotentHint` / `openWorldHint`) und einer begrenzten Kopie der Argumente an den Klassifizierer. Dem Klassifizierer wird mitgeteilt, dass die Annotationen nicht verifiziert sind. Er kann nicht sehen, was der Server tatsächlich mit dem Aufruf macht, daher kann ein irreführender Tool-Name plus harmlose Argumente trotzdem durchgehen. Wenn du einem bestimmten MCP-Tool vertraust, füge `permissions.allow: ["mcp__server__tool"]` hinzu, damit es den Klassifizierer vollständig umgeht; wenn der Klassifizierer nur den Tool-Namen sehen soll (z. B. wenn er gegen einen anderen Provider läuft als das Hauptmodell), setze `permissions.autoMode.mcp.forwardArguments: false` – die meisten MCP-Aufrufe werden dann konservativ blockiert.
 
 ## FAQ
 
@@ -228,14 +228,14 @@ Auto Mode verwendet deine bestehende Modellkonfiguration weiter – derselbe End
 Der Klassifizierer sieht nur das, was die `toAutoClassifierInput`-Projektion jedes Tools offenlegt:
 
 - `read_file` und andere nur lesende Tools: werden nicht aufgerufen (sie sind auf der Fast-Path-Allowlist).
-- `edit` / `write_file`: file_path plus die ersten 80 Zeichen des alten/neuen Inhalts. Der vollständige Inhalt wird nicht weitergeleitet.
+- `edit` / `write_file`: file_path plus eine 300-Zeichen-Vorschau des alten/neuen Inhalts. Der vollständige Inhalt wird nicht weitergeleitet.
 - `run_shell_command`: der vollständige Befehl (das muss er – das ist es, was der Klassifizierer bewertet).
 - `web_fetch`: nur die URL. Das Prompt-Feld wird nicht weitergeleitet.
 - `agent`: Subagent-Typ plus der vollständige Prompt. Der Prompt ist die Anweisung, der der Sub-Agent folgen wird, daher benötigt der Klassifizierer ihn vollständig, um Angriffe zu erkennen, die den Sub-Agenten zu destruktiven Aktionen lenken würden – aus demselben Grund leitet `run_shell_command` den vollständigen Befehl weiter.
 
 Tool-Ergebnisse (der tatsächliche von Tools zurückgegebene Inhalt) werden vollständig aus dem Klassifizierer-Transkript entfernt.
 
-MCP-Tools (`mcp__*`) folgen einer strengeren Standardeinstellung: Ihre Parameter werden nicht weitergeleitet, außer der Autor des MCP-Tools hat explizit über den `toAutoClassifierInput`-Override optiert. Der Klassifizierer sieht den Tool-Namen, aber keine Argumente, daher werden die meisten MCP-Aufrufe konservativ blockiert, außer der Benutzer hat eine explizite Allow-Regel geschrieben. Dies ist standardmäßig fail-closed – Tools von Drittanbietern sollten nicht ohne Absicht Credentials oder umfangreiche Dateiinhalte in den Klassifizierer-LLM leaken.
+MCP-Tools (`mcp__*`): Der Servername, der Tool-Name, die Annotationen des Servers und die Aufrufargumente werden weitergeleitet. Jeder String (Wert oder Schlüssel) wird bei 2.000 Zeichen abgeschnitten, Namen bei 200, die gesamte Payload teilt sich ein Budget von 16.000 Zeichen, gemessen an der vom Klassifizierer empfangenen Pretty-Print-Form, und Verschachtelung / Eintragsanzahlen sind begrenzt; jeder Schnitt wird an Ort und Stelle markiert (`…[truncated N chars]` oder `[omitted: …]`) und mit `arguments_truncated: true` / `name_truncated: true` gekennzeichnet, damit der Klassifizierer eine Auslassung niemals als Abwesenheit missversteht. Historische Aktionen im Transkript sind auf jeweils 4.000 Zeichen und insgesamt 40.000 Zeichen begrenzt (neueste zuerst; ältere behalten nur ihren Tool-Namen). Die Argumente sind das, was der Agent gleich an diesen Server senden wird – die Data-Exfiltration- und External-Write-Regeln des Klassifizierers können nur auf sie angewendet werden, und sie wurden bereits vom Hauptmodell erzeugt, daher offenbart die Weiterleitung an einen Klassifizierer mit derselben Modellkonfiguration nichts Neues. Wenn dein Klassifizierer gegen einen anderen Provider läuft, setze `permissions.autoMode.mcp.forwardArguments: false`, um zur Name-only-Projektion zurückzukehren (erwarte, dass die meisten MCP-Aufrufe blockiert werden).
 
 **Kann ich die Informationsmeldung beim ersten Mal deaktivieren?**
 

@@ -226,15 +226,15 @@ spawn 소유 클라이언트의 HTTP 응답을 작성할 수 없을 때(TCP 핸�
 
 ### ACP 자식 예열
 
-`bridge.preheat()`는 첫 세션 전에 ACP 자식 프로세스를 워밍업하여 첫 실제 세션에서 콜드 스타트 레이턴시를 방지합니다. `channelIdleTimeoutMs`와 쌍을 이루며, 이는 마지막 세션이 닫힌 후에도 ACP 자식을 유지하고, skip-relaunch 동작은 새 세션이 도착할 때 이미 유휴 상태인 자식을 재사용합니다.
+`bridge.preheat()`는 명시적 임베더에게 여전히 사용 가능하지만, `qwen serve`도 호환성을 위해 시작 후 신뢰된 기본 자식을 예열하려고 시도합니다. 실패한 예열은 치명적이지 않으며 다음 런타임 명령이나 세션에서 재시도합니다. 신뢰된 보조 자식은 첫 사용 시 시작됩니다. 워크가 활성 상태인 동안 Workspace Runtime이 자식을 소유합니다. 모든 세션 및 관리 리스가 소진된 후, 생략되거나 0인 `channelIdleTimeoutMs`는 자식을 즉시 정리합니다. 일반 예열 자체는 첫 사용을 위해 보존되며 해당 정리기를 작동시키지 않습니다. 양수로 설정된 지연 또는 활성 킵얼라이브는 더 긴 남은 창 동안 자식을 재사용 가능하게 유지합니다. 공개 Workspace Runtime `ensure` 명령은 갱신 가능한 10분 워크스페이스 리스를 추가합니다. 각 성공적인 호출은 해당 창을 재설정하며, 채널이 이미 활성 상태인 경우에도 마찬가지입니다.
 
 ## 설정
 
 - `BridgeOptions.maxSessions`(기본값 32) — 상한.
 - `BridgeOptions.sessionScope`(기본값 `'single'`; 선택적 `'thread'`).
-- `BridgeOptions.initializeTimeoutMs`(기본값 10s) — ACP `initialize` 핸드셰이크.
+- `BridgeOptions.initializeTimeoutMs`(기본값 10s) — ACP 자식 시작 기한(Channel 팩토리 + `initialize` 핸드셰이크) 및 기본 요청 타임아웃.
 - `BridgeOptions.sessionRestoreTimeoutMs`(기본값 60s) — ACP `loadSession` / `unstable_resumeSession` 기한. 기본값 60s이며, 명시적으로 설정된 initialize 타임아웃이 이를 올릴 수 있지만 낮출 수는 없습니다.
-- `BridgeOptions.channelIdleTimeoutMs`(기본값 0; ACP 자식을 즉시 정리).
+- `BridgeOptions.channelIdleTimeoutMs`(설정되지 않거나 `0`이면 런타임 작업 소진 후 정리. 단, 일반 예열은 첫 사용을 위해 보존됨. 양수 값 또는 활성 킵얼라이브는 정리를 지연시키며, 더 긴 지연이 우선됨).
 - Capability 태그: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`(더 이상 사용되지 않는 별칭), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
 
 ### 무상태 생성(`session_generation` capability 태그)

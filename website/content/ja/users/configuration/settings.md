@@ -80,6 +80,7 @@ Qwen Code は、レガシーな設定を新しい形式に自動的に移行し�
 | 設定 | 型 | 説明 | デフォルト |
 | ------------------------------------------ | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
 | `general.preferredEditor` | string | ファイルを開く際に使用する優先エディタ。 | `undefined` |
+| `general.outputStyle` | string | 応答の書き方を形成する出力スタイルの名前: `Concise`、`Proactive`、`Explanatory`、または `Learning`（大文字と小文字を区別しません）。未設定のままにするか、デフォルトスタイルの場合は `default` を設定します。`--output-style` は 1 回の実行に対してこれをオーバーライドします。起動時に 1 回読み取られます。変更は次の起動時に有効になります。`--bare` および `--safe-mode` では無視されます。 | `undefined` |
 | `general.vimMode` | boolean | Vim キーバインドを有効にします。 | `false` |
 | `general.enableAutoUpdate` | boolean | 起動時の自動アップデートチェックとインストールを有効にします。 | `true` |
 | `general.showSessionRecap` | boolean | ターミナルから離れて戻った際に、一行の「前回までの状況」要約を自動表示します。デフォルトではオフです。この設定に関係なく、`/recap` で手動トリガーできます。 | `false` |
@@ -95,7 +96,6 @@ Qwen Code は、レガシーな設定を新しい形式に自動的に移行し�
 | `general.cleanupPeriodDays` | number | `/rewind` で使用される `~/.qwen/file-history/` セッションバックアップを保持する日数。これより古いバックアップは、1 日あたり最大 1 回実行されるバックグラウンドパスによって削除されます。`0` = 最小保持期間（約 1 時間）: 過去 1 時間に操作されたセッションと現在アクティブなセッションを保持します。変更は再起動後に有効になります。 | `30` |
 | `general.language` | enum | ユーザーインターフェースの言語。システム設定から検出する場合は `"auto"`、または言語コード（例: `"zh-CN"`、`"fr"`）を指定します。JS ロケールファイルを `~/.qwen/locales/` に配置することで、カスタムコードを追加できます。[i18n](../features/language) を参照してください。再起動が必要です。 | `"auto"` |
 | `general.outputLanguage` | string | モデル出力の言語。システム設定から検出する場合は `"auto"`、または特定の言語を設定します。再起動が必要です。 | `"auto"` |
-| `general.dynamicCommandTranslation` | boolean | 動的なスラッシュコマンドの説明の AI 翻訳を有効にします。無効にすると、動的コマンドは元の説明を保持し、翻訳モデルの呼び出しをスキップします。 | `false` |
 | `general.terminalBell` | boolean | レスポンスが完了したか、承認を必要とする際にターミナルベル音を鳴らします。 | `true` |
 | `general.preventSystemSleep` | boolean | Qwen Code がモデルレスポンスをストリーミング中、またはツールを実行中にシステムがスリープ状態になるのを防ぎます。アイドルプロンプト時間と権限プロンプトはスリープを抑制しません。起動時に 1 回だけ読み取られるため、変更は再起動後に有効になります。 | `true` |
 | `general.chatRecording` | boolean | チャット履歴をディスクに保存します。これを無効にすると、`--continue` と `--resume` も機能しなくなります。再起動が必要です。 | `true` |
@@ -362,6 +362,7 @@ OpenAI 互換リクエストにおいて、テキストのみのツール結果�
 | `tools.exclude`                       | 文字列の配列 | **非推奨。** 代わりに `permissions.deny` を使用してください。検出から除外するツール名。自動移行はされません。レガシー設定は起動時に引き続き尊重されます。 | `undefined` | |
 | `tools.disabled`                      | 文字列の配列 | レジストリから完全に非表示にするツール名。`permissions.deny`（実行時に呼び出しをブロックする）とは異なり、無効化されたツールは登録されないため、`/tools` に表示されず、モデルから検出または呼び出しできません。たとえば、`["enter_plan_mode"]` はモデルが勝手にプランモードに切り替えるのを防ぎます。スコープをまたいで和集合としてマージされます。 | `undefined` | |
 | `tools.visible`                       | 文字列の配列 | `tool_search` を必要とせずに起動時に表示される遅延ツール名。リストされたツールは初期セッションでコアツールと一緒に表示されます。スコープをまたいで和集合としてマージされます。 | `undefined` | |
+| `tools.eager` | 文字列の配列 | 初期モデルリクエストの対象となる、デフォルトで eager な組み込みツール名の許可リスト。リストにない非免除ツールは代わりに遅延されます。つまり、登録されたまま、`/tools` に一覧表示され、呼び出し可能で、`tool_search` 経由で検出可能です。デフォルトで既に遅延されているツールは、リストされていてもオンデマンドのままです。起動時に 1 つを表示するには `tools.visible` を使用します。`tool_search`、`structured_output`、プランモードのライフサイクルツール、`task_stop`、MCP ツール、および `computer_use__*` ツールは影響を受けず、通常の読み込み動作を維持します。明示的に空のリスト（`[]`）はアクティブであり、非免除のデフォルトで eager なすべてのツールを遅延させます。設定を省略すると制限なしになります。`tool_search` と組み合わされます。ToolSearch が登録されていない場合（`tools.toolSearch.enabled: false`、`tool_search` の deny ルール、または DeepSeek モデルの自動オプトアウト）、許可リストは引き続きスキーマを保留しますが、それらをロードし戻すものは何もないため、降格されたツールはそのセッションに対して到達不能になります（それらは `/tools` に残り、警告がログに記録されます）。2 つの例外があります。再開されたセッション履歴で参照される降格ツールは警告なしでスキーマが再送信され、`tools.visible` にリストされた降格ツールは事前に宣言されます。それらを削除する意図がある場合は `permissions.deny` を使用するか、ToolSearch をオンのままにしてください。使用不能なエントリ（空または不正な形式）は警告付きで削除され、リストの残りはアクティブなままです。後のスコープは前のリストを置き換えます。再起動が必要です。 | `undefined` | |
 | `tools.allowed`                       | 文字列の配列 | **非推奨。** 代わりに `permissions.allow` を使用してください。確認ダイアログをバイパスするツール名。自動移行はされません。レガシー設定は起動時に引き続き尊重されます。 | `undefined` | |
 | `tools.approvalMode`                  | string | ツール使用のデフォルトの承認モードを設定します。 | `auto` | 指定可能な値: `plan`（分析のみ、ファイルの修正やコマンドの実行は行わない）、`default`（ファイルの編集やシェルコマンドの実行前に承認を要求）、`auto-edit`（ファイルの編集を自動承認）、`auto`（LLM クラシファイアが安全なアクションを自動承認し、リスクのあるものをブロック）、`yolo`（すべてのツール呼び出しを自動承認） |
 | `tools.discoveryCommand` | string | ツール検出のために実行するコマンド。 | `undefined` | |
@@ -369,6 +370,7 @@ OpenAI 互換リクエストにおいて、テキストのみのツール結果�
 | `tools.useRipgrep` | boolean | フォールバック実装の代わりに、ファイル内容の検索に ripgrep を使用します。より高速な検索パフォーマンスを提供します。 | `true` | |
 | `tools.useBuiltinRipgrep` | boolean | バンドルされている ripgrep バイナリを使用します。`false` に設定すると、代わりにシステムレベルの `rg` コマンドが使用されます。この設定は `tools.useRipgrep` が `true` の場合にのみ有効です。 | `true` | |
 | `tools.workflowsEnabled` | boolean | サブエージェントを並列でオーケストレーションするスクリプトをモデルが作成・実行できる Workflow ツールを有効にします。デフォルトでオフです。実行時に多くのサブエージェントをディスパッチし、それに応じてトークンを消費する可能性があります。 | `false` | User、System、および SystemDefaults スコープのみ。ワークスペースの値は無視されます。再起動が必要: はい。環境変数オーバーライド: `QWEN_CODE_ENABLE_WORKFLOWS=1` で強制的にオン。`QWEN_CODE_DISABLE_WORKFLOWS=1` で強制的にオフ（disable が優先）。 |
+| `goals.modelProposed` | enum | モデルがセッション Goal を提案できるようにする `propose_goal` ツールを制御します。`alwaysAsk` はすべての提案を承認ダイアログに表示し、承認されるまで何も設定されません。`"disabled"` はツールを削除します。タイプされた `/goal` は影響を受けません。 | `alwaysAsk` | User、System、および SystemDefaults スコープのみ。ワークスペースの値は無視されます。再起動が必要: はい。 |
 | `tools.truncateToolOutputThreshold` | number | ツール出力がこの文字数より大きい場合、切り捨てます。Shell、Grep、Glob、ReadFile、および ReadManyFiles ツールに適用されます。 | `25000` | 再起動が必要: はい |
 | `tools.truncateToolOutputLines` | number | ツール出力を切り捨てる際に保持される最大行数またはエントリ数。Shell、Grep、Glob、ReadFile、および ReadManyFiles ツールに適用されます。 | `1000` | 再起動が必要: はい |
 
@@ -401,6 +403,8 @@ OpenAI 互換リクエストにおいて、テキストのみのツール結果�
 | `agents.builtin.exploreModel` | string | 組み込み Explore サブエージェントのモデルセレクター。メインセッションモデルには `inherit`、`fastModel` には `fast`、モデル ID、または `authType:model-id` セレクターを使用します。カスタムの同名 Explore エージェントは独自のモデル設定を保持します。再起動が必要です。 | `inherit` |
 | `agents.modelGrades` | object | Agent ツールに公開されるセマンティックグレード名をモデルセレクターにマッピングします。再起動が必要です。 | `undefined` |
 | `agents.allowedGrades` | array of strings | Agent ツールが使用できる、設定済みモデルグレードのオプションの許可リスト。再起動が必要です。 | `undefined` |
+| `agents.crossSessionMessaging` | boolean | 実験的。このマシン上の Qwen Code セッションがセッションごとのローカルソケットを介して相互にメッセージを送信できるようにします。これをオンにすると、このセッションがピアメッセージに対してオープンになり、他のセッションから検出可能になり、モデルが `send_message` からそれらにアドレス指定できるようになります。再起動が必要です。 | `false` |
+| `agents.crossSessionInbound` | enum | 他のセッションがこのセッションに送信するメッセージに対して何が起こるか: `accept` はそれらを配信し、`hold` はモデルがアクションを実行できないように `/peers` レビュー用にそれらを保留し、`refuse` はこのセッションをオプトアウトします。未設定の場合は承認モードのパリティを意味します（[別の実行中のセッションへのメッセージング](../features/commands.md#6-messaging-another-running-session) を参照）。 | `undefined` |
 
 #### permissions
 

@@ -66,7 +66,7 @@ Cria uma nova sessão de consulta com o Qwen Code.
 | `abortController`        | `AbortController`                              | -                | Controlador para cancelar a sessão de consulta. Chame `abortController.abort()` para encerrar a sessão e limpar recursos.                                                                                                                                                                                                                                                                                                                                                                |
 | `debug`                  | `boolean`                                      | `false`          | Ativa o modo debug para logging verbose do processo CLI.                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `maxSessionTurns`        | `number`                                       | `-1` (ilimitado) | Número máximo de turnos de conversa antes da sessão terminar automaticamente. Deve ser um inteiro. Um turno consiste em uma mensagem do usuário e uma resposta do assistente.                                                                                                                                                                                                                                                                                                                       |
-| `coreTools`              | `string[]`                                     | -                | Usa a semântica legada de allowlist `coreTools` / CLI `--core-tools`. Se especificado, apenas ferramentas principais correspondentes são registradas para a sessão. Esta é a única opção no estilo allowlist que restringe o registro de ferramentas embutidas; uma regra `permissions.deny` / `excludeTools` de ferramenta inteira (e `tools.disabled` no settings.json) também remove uma ferramenta do registro. `permissions.allow` no settings.json é puramente auto-aprovação e nunca remove, rebaixa ou oculta uma ferramenta (#10075). Para manter o schema de uma ferramenta fora da requisição inicial ao modelo, use `tools.eager` no settings.json (requer reinício, #9827); para removê-la completamente, use uma regra `excludeTools` / `permissions.deny` de ferramenta inteira — uma regra com um especificador (como `'Bash(rm *)'`) apenas nega invocações correspondentes em tempo de execução. Ferramentas MCP são isentas de remoção baseada em deny: oculte-as com os filtros `excludeTools` / `tools.disabled` por servidor (deny ainda bloqueia suas chamadas em tempo de execução). Exemplo: `['read_file', 'edit', 'run_shell_command']`. |
+| `coreTools`              | `string[]`                                     | -                | Usa a semântica legada de allowlist `coreTools` / CLI `--core-tools`. Se especificado, apenas ferramentas principais correspondentes são registradas para a sessão. Esta é a única opção no estilo allowlist que restringe o registro de ferramentas embutidas; uma regra `permissions.deny` / `excludeTools` de ferramenta inteira (e `tools.disabled` no settings.json) também remove uma ferramenta do registro. `permissions.allow` no settings.json é puramente auto-aprovação e nunca remove, rebaixa ou oculta uma ferramenta (#10075). Para manter o schema de uma ferramenta fora da requisição inicial ao modelo, use `tools.eager` no settings.json (requer reinício, #9827) — `tool_search`, `structured_output`, ferramentas do ciclo de vida do modo plan, `task_stop`, ferramentas `mcp__*` e `computer_use__*` são isentas dessa allowlist e mantêm seu carregamento normal; para remover uma ferramenta completamente, use uma regra `excludeTools` / `permissions.deny` de ferramenta inteira — uma regra com um especificador (como `'Bash(rm *)'`) apenas nega invocações correspondentes em tempo de execução. Ferramentas MCP são isentas de remoção baseada em deny: oculte-as com os filtros `excludeTools` / `tools.disabled` por servidor (deny ainda bloqueia suas chamadas em tempo de execução). Exemplo: `['read_file', 'edit', 'run_shell_command']`. |
 | `excludeTools`           | `string[]`                                     | -                | Equivalente a `permissions.deny` no settings.json. Ferramentas excluídas retornam um erro de permissão imediatamente. Tem a maior prioridade sobre todas as outras configurações de permissão. Suporta aliases de nomes de ferramentas e correspondência de padrões: nome da ferramenta (`'write_file'`), prefixo de comando shell (`'Bash(rm *)'`), ou padrões de caminho (`'Read(.env)'`, `'Edit(/src/**)'`).                                                                                                                                         |
 | `allowedTools`           | `string[]`                                     | -                | Equivalente a `permissions.allow` no settings.json para auto-aprovação. Ferramentas correspondentes ignoram o callback `canUseTool` e executam automaticamente. Aplica-se apenas quando a ferramenta requer confirmação. Assim como `permissions.allow`, esta é puramente auto-aprovação e nunca afeta quais ferramentas são registradas ou quais schemas são enviados (#10075). Suporta a mesma correspondência de padrões que `excludeTools`. Exemplo: `['Bash(git status)', 'Bash(npm test)']`. |
 | `authType`               | `'openai' \| 'anthropic' \| 'qwen-oauth' \| 'gemini' \| 'vertex-ai'` | -                | Tipo de autenticação para o serviço de IA. Quando fornecido, o SDK o encaminha para a CLI como `--auth-type`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -98,10 +98,10 @@ const q = query({
   prompt: 'Your prompt',
   options: {
     timeout: {
-      canUseTool: 60000, // 60 segundos para callback de permissão
-      mcpRequest: 600000, // 10 minutos para chamadas de ferramentas MCP
-      controlRequest: 60000, // 60 segundos para solicitações de controle
-      streamClose: 15000, // 15 segundos para espera de fechamento do stream
+      canUseTool: 60000, // 60 seconds for permission callback
+      mcpRequest: 600000, // 10 minutes for MCP tool calls
+      controlRequest: 60000, // 60 seconds for control requests
+      streamClose: 15000, // 15 seconds for stream close wait
     },
   },
 });
@@ -136,27 +136,27 @@ A instância `Query` retornada por `query()` fornece vários métodos:
 ```typescript
 const q = query({ prompt: 'Hello', options: {} });
 
-// Obter ID da sessão
+// Get session ID
 const sessionId = q.getSessionId();
 
-// Verificar se está fechada
+// Check if closed
 const closed = q.isClosed();
 
-// Interromper a operação atual
+// Interrupt the current operation
 await q.interrupt();
 
-// Alterar modo de permissão no meio da sessão
+// Change permission mode mid-session
 await q.setPermissionMode('yolo');
 
-// Alterar modelo no meio da sessão
+// Change model mid-session
 await q.setModel('qwen-max');
 
-// Obter detalhamento do uso da janela de contexto (contagens de tokens por categoria)
+// Get context window usage breakdown (token counts per category)
 const usage = await q.getContextUsage();
-// Passar true para sugerir que detalhes por item sejam exibidos
+// Pass true to hint that per-item details should be displayed
 const detail = await q.getContextUsage(true);
 
-// Fechar a sessão
+// Close the session
 await q.close();
 ```
 
@@ -222,7 +222,7 @@ async function* generateMessages(): AsyncIterable<SDKUserMessage> {
     parent_tool_use_id: null,
   };
 
-  // Aguardar alguma condição ou entrada do usuário
+  // Wait for some condition or user input
   yield {
     type: 'user',
     session_id: 'my-session',
@@ -249,12 +249,12 @@ for await (const message of result) {
 import { query, type CanUseTool } from '@qwen-code/sdk';
 
 const canUseTool: CanUseTool = async (toolName, input, { signal }) => {
-  // Permitir todas as operações de leitura
+  // Allow all read operations
   if (toolName.startsWith('read_')) {
     return { behavior: 'allow', updatedInput: input };
   }
 
-  // Solicitar ao usuário para operações de escrita (em uma aplicação real)
+  // Prompt user for write operations (in a real app)
   const userApproved = await promptUser(`Allow ${toolName}?`);
 
   if (userApproved) {
@@ -320,6 +320,7 @@ const result = query({
   },
 });
 ```
+
 ### Com Servidores MCP Incorporados ao SDK
 
 O SDK fornece `tool` e `createSdkMcpServer` para criar servidores MCP que são executados no mesmo processo que sua aplicação SDK. Isso é útil quando você deseja expor ferramentas personalizadas para a IA sem executar um processo de servidor separado.
@@ -366,25 +367,25 @@ Retorna um objeto `McpSdkServerConfigWithInstance` que pode ser passado diretame
 import { z } from 'zod';
 import { query, tool, createSdkMcpServer } from '@qwen-code/sdk';
 
-// Define uma ferramenta com esquema Zod
+// Define a tool with Zod schema
 const calculatorTool = tool(
   'calculate_sum',
-  'Adicionar dois números',
+  'Add two numbers',
   { a: z.number(), b: z.number() },
   async (args) => ({
     content: [{ type: 'text', text: String(args.a + args.b) }],
   }),
 );
 
-// Cria o servidor MCP
+// Create the MCP server
 const server = createSdkMcpServer({
   name: 'calculator',
   tools: [calculatorTool],
 });
 
-// Usa o servidor em uma consulta
+// Use the server in a query
 const result = query({
-  prompt: 'Quanto é 42 + 17?',
+  prompt: 'What is 42 + 17?',
   options: {
     permissionMode: 'yolo',
     mcpServers: {
@@ -406,13 +407,13 @@ import { query, isAbortError } from '@qwen-code/sdk';
 const abortController = new AbortController();
 
 const result = query({
-  prompt: 'Tarefa de longa duração...',
+  prompt: 'Long running task...',
   options: {
     abortController,
   },
 });
 
-// Aborta após 5 segundos
+// Abort after 5 seconds
 setTimeout(() => abortController.abort(), 5000);
 
 try {
@@ -421,7 +422,7 @@ try {
   }
 } catch (error) {
   if (isAbortError(error)) {
-    console.log('Consulta abortada');
+    console.log('Query was aborted');
   } else {
     throw error;
   }
@@ -436,12 +437,12 @@ O SDK fornece uma classe `AbortError` para lidar com consultas abortadas:
 import { AbortError, isAbortError } from '@qwen-code/sdk';
 
 try {
-  // ... operações de consulta
+  // ... query operations
 } catch (error) {
   if (isAbortError(error)) {
-    // Lida com abortamento
+    // Handle abort
   } else {
-    // Lida com outros erros
+    // Handle other errors
   }
 }
 ```

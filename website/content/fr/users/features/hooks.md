@@ -117,7 +117,8 @@ Par défaut, les HTTP hooks ne peuvent pas cibler des plages IP privées ou link
 
 - Ce paramètre est **uniquement honoré depuis les scopes de paramètres User, System et SystemDefaults**. Une valeur définie dans les paramètres Workspace (projet) est ignorée et journalisée comme un avertissement, afin qu'un dépôt cloné ne puisse jamais s'accorder lui-même ce contournement.
 - Le flag assouplit uniquement les vérifications de **plage** privées/CGNAT/link-local générales. Les endpoints de métadonnées cloud restent bloqués dans toutes les configurations : la liste `BLOCKED_HOSTS` est comparée littéralement (`metadata.google.internal`, `metadata.azure.internal`, ...), et les IP de métadonnées `169.254.169.254` et `100.100.100.200` sont bloquées sous toutes leurs formes sérialisées (y compris IPv4-mapped IPv6 comme `::ffff:a9fe:a9fe`) et après résolution DNS.
-- La liste blanche `security.allowedHttpHookUrls` s'applique toujours indépendamment. Dans les environnements managés, associez ce flag à une liste blanche pour que seuls les endpoints internes souhaités soient accessibles.
+- La liste blanche `security.allowedHttpHookUrls` s'applique toujours indépendamment. Dans les environnements managés, associez ce flag à une liste blanche pour que seuls les endpoints internes souhaités soient accessibles. Une liste blanche dans les paramètres Workspace (projet) n'est honorée que lorsqu'aucun scope User, System ou SystemDefaults n'en définit une ; sinon elle est ignorée et journalisée comme un avertissement, donc un dépôt peut restreindre où ses hooks envoient des données mais jamais remplacer une liste blanche que vous avez configurée (une liste blanche vide signifie « autoriser tout »).
+- Les HTTP hooks ne suivent jamais les redirections. Une réponse 3xx est traitée comme n'importe quel autre statut non-2xx : un échec de hook non bloquant, et la cible de redirection n'est jamais contactée.
 
 > **Avertissement :** Activer ce flag permet aux hooks d'atteindre l'infrastructure interne de votre réseau. Activez-le uniquement dans des paramètres gérés et fiables — jamais dans un dépôt que vous ne contrôlez pas.
 
@@ -769,7 +770,7 @@ Lorsqu'il est envoyé au modèle, l'`additionalContext` injecté est ajouté com
 }
 ```
 
-Le hook utilise les champs de session normaux du runtime qui supprime (`session_id`, `transcript_path` et `cwd`) ; via ACP, `transcript_path` est vide car le runtime qui supprime n'a pas sa propre transcription. `SessionDelete` se déclenche actuellement pour le flux interactif `/delete` et la méthode `deleteSession` explicite d'ACP ; la suppression par lot REST du démon et le nettoyage interne ne l'émettent pas.
+Le hook utilise les champs de session normaux du runtime qui supprime (`session_id`, `transcript_path` et `cwd`) ; via ACP, `transcript_path` est vide car le runtime qui supprime n'a pas sa propre transcription. `SessionDelete` se déclenche actuellement pour le flux interactif `/delete` et la méthode `deleteSession` explicite d'ACP ; la suppression par lot REST du démon et le nettoyage interne ne l'émettent pas. Un command hook est laissé se terminer si Qwen quitte après le dispatch ; ses stdout et stderr sont ignorés et restent indépendants des pipes de Qwen.
 
 #### MessageDisplay
 
@@ -887,6 +888,8 @@ Les champs `context_usage`, `context_limit` et `input_tokens` permettent aux scr
 - Journalisation des échecs d'authentification
 - Notifications d'erreurs de facturation
 - Collecte de statistiques d'erreurs
+
+Un command hook est laissé se terminer si Qwen quitte après le dispatch ; ses stdout et stderr sont ignorés et restent indépendants des pipes de Qwen.
 
 #### SubagentStart
 
@@ -1348,10 +1351,12 @@ Les hooks sont configurés dans les paramètres de Qwen Code, généralement dan
 
 Seul le type `command` prend en charge l'exécution asynchrone. Définir `"async": true` exécute le hook en arrière-plan sans bloquer le flux principal.
 
+Les async hooks sont limités au processus Qwen car leur sortie capturée est livrée via le registre de hooks async en mémoire. Sur POSIX, Qwen récupère un arbre de processus de hook async encore en cours d'exécution lorsqu'il quitte, sauf pour les types d'événements dont les sections garantissent explicitement une complétion fire-and-forget après la sortie. Windows ne peut pas reconstruire un arbre descendant après la sortie de sa racine, donc une récupération complète à la sortie du parent nécessite un Job Object ou un suivi des descendants.
+
 **Fonctionnalités :**
 
 - Ne peut pas retourner de contrôle de décision (l'opération a déjà eu lieu)
-- Les résultats sont injectés dans le tour de conversation suivant via `systemMessage` ou `additionalContext`
+- Les résultats sont injectés dans le tour de conversation suivant via `systemMessage` ou `additionalContext`, sauf pour les types d'événements fire-and-forget dont la sortie est ignorée documentés ci-dessus
 - Adapté pour l'audit, la journalisation, les tests en arrière-plan, etc.
 
 **Exemple :**

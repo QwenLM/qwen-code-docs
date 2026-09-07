@@ -63,7 +63,7 @@
 ## 术语表
 
 - **ACP** - Agent Client Protocol。daemon bridge 与 ACP 子进程之间通过 stdio 进行的 JSON-RPC 通信。这不是客户端用于连接 daemon 的 HTTP 协议。
-- **ACP child** - 承载一个工作区 agent 运行时的 `qwen --acp` 子进程。生产环境会尝试预热主 bridge，并在失败后首次使用时重试；受信任的次级运行时按需启动其子进程，而不受信任的次级运行时则不会。拥有的 bridge 将多个会话和客户端多路复用到该子进程上。
+- **ACP child** - 承载一个工作区 agent 运行时的 `qwen --acp` 子进程。生产环境会尝试预热受信任的主子进程以兼容；受信任的次级运行时在其首个运行时命令或 Session 时启动，而不受信任的次级运行时不会启动 ACP。旧版主路由保留其现有的兼容行为。拥有的 bridge 将多个会话和客户端多路复用到该子进程上。
 - **acp-bridge** - `@qwen-code/acp-bridge` 包（`packages/acp-bridge/`）。负责会话多路复用、权限仲裁器、事件总线和 channel factory。
 - **BridgeClient** - `packages/acp-bridge/src/bridgeClient.ts`。封装单个 ACP `ClientSideConnection`，处理 `requestPermission`、`sendPrompt` 和 `cancelSession`。
 - **Channel factory** - 用于生成或附加到 ACP child 的可插拔策略。默认的 `spawnChannel` 将 `qwen --acp` 作为子进程运行；`inMemoryChannel` 则在进程内运行以用于测试。
@@ -126,7 +126,7 @@
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | HTTP 路由     | 路由目录位于 `qwen-serve-protocol.md`；本 daemon 文档集仅引用它并说明实现归属。                                                                                                                 | [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md), [`20`](./20-quickstart-operations.md)           |
 | Event schema  | `EVENT_SCHEMA_VERSION = 1`；53 种已知事件类型；无 ID 订阅者的合成帧；`_meta.serverTimestamp` 由 `EventBus.publish()` 打时间戳（合成帧回退使用 `formatSseFrame()`）。                              | [`09`](./09-event-schema.md), [`10`](./10-event-bus.md)                                                   |
-| Capabilities  | `SERVE_PROTOCOL_VERSION = 'v1'`；75 个已注册标签；13 个条件标签。                                                                                                                               | [`11`](./11-capabilities-versioning.md)                                                                   |
+| Capabilities  | `SERVE_PROTOCOL_VERSION = 'v1'`；149 个已注册标签；43 个条件标签。                                                                                                                               | [`11`](./11-capabilities-versioning.md)                                                                   |
 | Session shell | `POST /session/:id/shell` 接口在启用 `--enable-session-shell`、bearer 认证及会话绑定的 `X-Qwen-Client-Id` 后可用；能力标签为条件性。                                                            | [`11`](./11-capabilities-versioning.md), [`17`](./17-configuration.md), [`20`](./20-quickstart-operations.md) |
 | 速率限制      | 可选的按层级 HTTP 速率限制通过 CLI 参数/环境变量和条件能力标签暴露。                                                                                                                            | [`11`](./11-capabilities-versioning.md), [`17`](./17-configuration.md)                                    |
 

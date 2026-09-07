@@ -75,6 +75,7 @@ export const CONDITIONAL_SERVE_FEATURES: ReadonlyMap<
       typeof t.writerIdleTimeoutMs === 'number' && t.writerIdleTimeoutMs > 0,
   ],
   ['workspace_settings', (t) => t.persistSettingAvailable === true],
+  ['user_language_sync', (t) => t.persistSettingAvailable === true],
   ['workspace_voice', (t) => t.persistSettingAvailable === true],
   [
     'workspace_voice_transcription',
@@ -108,7 +109,7 @@ Les tags de base ne sont pas présents dans la `Map` et sont annoncés de maniè
 
 Fondation : `health`, `daemon_status`, `capabilities`.
 
-Sessions : `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_storage_conflict_repair`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (conditionnel), `session_language`, `session_rewind`, `session_hooks`, `session_branch`.
+Sessions : `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_storage_conflict_repair`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (conditionnel), `session_language`, **`user_language_sync`** (conditionnel), `session_rewind`, `session_hooks`, `session_branch`.
 
 Streaming : `slow_client_warning`, `typed_event_schema`.
 
@@ -209,7 +210,7 @@ sequenceDiagram
 | Env                        | `QWEN_SERVE_NO_MCP_POOL=1`                                      | Arrête d'annoncer `mcp_workspace_pool` et `mcp_pool_restart` ; les événements MCP n'ajoutent plus le stamp `scope: 'workspace'`. |
 | Flag CLI                   | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}` | Ne modifie pas l'ensemble des tags (`mcp_guardrails` est toujours annoncé), mais modifie la réservation par serveur et le comportement de refus. |
 | Flag CLI / env             | `--rate-limit` / `QWEN_SERVE_RATE_LIMIT=1`                      | Annonce `rate_limit`.                                                                                                         |
-| Option intégrée            | `persistSettingAvailable`                                       | Annonce `workspace_settings` et `workspace_voice`.                                                                            |
+| Option intégrée            | `persistSettingAvailable`                                       | Annonce `workspace_settings`, `user_language_sync` et `workspace_voice`.                                                                            |
 | Option intégrée            | `voiceTranscriptionAvailable`                                   | Annonce `workspace_voice_transcription`.                                                                                      |
 | Flag CLI / option intégrée | `--enable-session-shell` / `sessionShellCommandEnabled`         | Annonce `session_shell_command`.                                                                                              |
 | État runtime               | Plus d'un runtime de workspace enregistré                       | Annonce `multi_workspace_sessions` et `multi_workspace_session_rewind` ; annonce aussi `multi_workspace_session_shell` quand le shell de session est effectivement activé. |

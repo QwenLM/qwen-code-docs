@@ -66,7 +66,7 @@ for await (const message of result) {
 | `abortController`         | `AbortController`                              | -               | Контроллер для отмены сессии запроса. Вызов `abortController.abort()` завершает сессию и освобождает ресурсы.                                                                                                                                                                                                                                                                                                                                                                               |
 | `debug`                   | `boolean`                                      | `false`         | Включить отладочный режим для подробного логирования от CLI-процесса.                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `maxSessionTurns`         | `number`                                       | `-1` (без лим.) | Максимальное количество шагов беседы до автоматического завершения сессии. Должно быть целым числом. Шаг состоит из сообщения пользователя и ответа ассистента.                                                                                                                                                                                                                                                                                                                              |
-| `coreTools`               | `string[]`                                     | -               | Использует устаревшую семантику белого списка `coreTools` / CLI `--core-tools`. Если указан, для сессии регистрируются только совпадающие основные инструменты. Это единственная опция в стиле белого списка, ограничивающая регистрацию встроенных инструментов; правило `permissions.deny` / `excludeTools` на весь инструмент (а также `tools.disabled` в settings.json) также удаляет инструмент из реестра. `permissions.allow` в settings.json — это чистое автоодобрение, которое никогда не удаляет, не понижает и не скрывает инструмент (#10075). Чтобы исключить схему инструмента из начального запроса к модели, используйте `tools.eager` в settings.json (требуется перезапуск, #9827); чтобы удалить его полностью, используйте правило `excludeTools` / `permissions.deny` на весь инструмент — правило со спецификатором (например, `'Bash(rm *)'`) блокирует только совпадающие вызовы во время выполнения. Инструменты MCP освобождены от удаления на основе deny: скрывайте их с помощью фильтров `excludeTools` / `tools.disabled` на уровне сервера (deny всё равно блокирует их вызовы во время выполнения). Пример: `['read_file', 'edit', 'run_shell_command']`. |
+| `coreTools`               | `string[]`                                     | -               | Использует устаревшую семантику белого списка `coreTools` / CLI `--core-tools`. Если указан, для сессии регистрируются только совпадающие основные инструменты. Это единственная опция в стиле белого списка, ограничивающая регистрацию встроенных инструментов; правило `permissions.deny` / `excludeTools` на весь инструмент (а также `tools.disabled` в settings.json) также удаляет инструмент из реестра. `permissions.allow` в settings.json — это чистое автоодобрение, которое никогда не удаляет, не понижает и не скрывает инструмент (#10075). Чтобы исключить схему инструмента из начального запроса к модели, используйте `tools.eager` в settings.json (требуется перезапуск, #9827) — `tool_search`, `structured_output`, инструменты жизненного цикла plan-mode, `task_stop`, `mcp__*` и `computer_use__*` освобождены от этого списка и загружаются в обычном режиме; чтобы удалить его полностью, используйте правило `excludeTools` / `permissions.deny` на весь инструмент — правило со спецификатором (например, `'Bash(rm *)'`) блокирует только совпадающие вызовы во время выполнения. Инструменты MCP освобождены от удаления на основе deny: скрывайте их с помощью фильтров `excludeTools` / `tools.disabled` на уровне сервера (deny всё равно блокирует их вызовы во время выполнения). Пример: `['read_file', 'edit', 'run_shell_command']`. |
 | `excludeTools`            | `string[]`                                     | -               | Эквивалент `permissions.deny` в settings.json. Исключённые инструменты сразу возвращают ошибку разрешения. Имеет наивысший приоритет над всеми остальными настройками разрешений. Поддерживает псевдонимы имён инструментов и шаблоны: имя инструмента (`'write_file'`), префикс команды (`'Bash(rm *)'`) или шаблоны путей (`'Read(.env)'`, `'Edit(/src/**)'`).                                                                                                                            |
 | `allowedTools`            | `string[]`                                     | -               | Эквивалент `permissions.allow` в settings.json для автоодобрения. Совпадающие инструменты обходят callback `canUseTool` и выполняются автоматически. Применяется только когда инструмент требует подтверждения. Как и `permissions.allow`, это чистое автоодобрение, которое никогда не влияет на то, какие инструменты регистрируются и какие схемы отправляются (#10075). Поддерживает те же шаблоны, что и `excludeTools`. Пример: `['Bash(git status)', 'Bash(npm test)']`. |
 | `authType`                | `'openai' \| 'anthropic' \| 'qwen-oauth' \| 'gemini' \| 'vertex-ai'` | -               | Тип аутентификации для сервиса ИИ. При указании SDK передаёт его в CLI как `--auth-type`.                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -366,7 +366,7 @@ SDK предоставляет функции `tool` и `createSdkMcpServer` д�
 import { z } from 'zod';
 import { query, tool, createSdkMcpServer } from '@qwen-code/sdk';
 
-// Define a tool with Zod schema
+// Определить инструмент со схемой Zod
 const calculatorTool = tool(
   'calculate_sum',
   'Add two numbers',
@@ -376,13 +376,13 @@ const calculatorTool = tool(
   }),
 );
 
-// Create the MCP server
+// Создать MCP-сервер
 const server = createSdkMcpServer({
   name: 'calculator',
   tools: [calculatorTool],
 });
 
-// Use the server in a query
+// Использовать сервер в запросе
 const result = query({
   prompt: 'What is 42 + 17?',
   options: {
@@ -412,7 +412,7 @@ const result = query({
   },
 });
 
-// Abort after 5 seconds
+// Прервать через 5 секунд
 setTimeout(() => abortController.abort(), 5000);
 
 try {
@@ -436,12 +436,12 @@ SDK предоставляет класс `AbortError` для обработки
 import { AbortError, isAbortError } from '@qwen-code/sdk';
 
 try {
-  // ... query operations
+  // ... операции запроса
 } catch (error) {
   if (isAbortError(error)) {
-    // Handle abort
+    // Обработка прерывания
   } else {
-    // Handle other errors
+    // Обработка других ошибок
   }
 }
 ```

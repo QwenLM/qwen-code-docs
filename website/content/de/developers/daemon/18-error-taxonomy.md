@@ -59,7 +59,7 @@ Typisierte Klassen, die von der Bridge/dem Mediator geworfen werden. Die meisten
 | `BridgeChannelClosedError`            | 503  | ACP-Child-Kanal während des Aufrufs geschlossen.                                   | Verbinde erneut / wiederhole; prüfe `session_died` auf Ursache.                                                                                                                       |
 | `BridgeTimeoutError`                  | 504  | Bridge-seitige Wanduhrzeit überschritten.                                          | Wiederhole; untersuche zugrundeliegende Langsamkeit.                                                                                                                                  |
 | `SessionRestoreTimeoutError`          | 504  | ACP-Session-Load/Resume hat sein dediziertes Restore-Budget überschritten.         | Wiederhole nach der angegebenen Verzögerung; inspiziere die Restore-Stage-Traces, bevor du das Budget erhöhst.                                                                        |
-| `BridgeChannelQuarantinedError`       | 503  | Das Cleanup verlassener Restores war nicht abschließend (`restore_cleanup_failed`) oder ein verlassener Restore hat nach seiner Frist ein volles Budget noch nicht abgerechnet (`restore_settlement_overdue`); in beiden Fällen verweigert der Workspace-Channel frische Sessions, bis er drainiert ist. Der 503-Body trägt `reason` und `retryAfterSeconds`. | Verwende weiterhin bestehende Sessions, warte bis der Channel recycelt ist, und wiederhole dann frische Session-Arbeit.                                                               |
+| `BridgeChannelQuarantinedError`       | 503  | `reason` ist `restore_cleanup_failed`, `restore_settlement_overdue`, `new_session_cleanup_failed` oder `new_session_settlement_overdue`. Ein Settlement-Overdue-Zustand wird bereinigt, nachdem ein später Fehler abgerechnet wurde oder ein später Erfolg die Exact-ID-Bereinigung abgeschlossen hat; eine nicht eindeutige Bereinigung geht in den entsprechenden Cleanup-Failed-Zustand über. Cleanup-Failed-Zustände bleiben bestehen, bis der Workspace-Channel drainiert ist. Der 503-Body trägt außerdem `retryAfterSeconds`. | Verwende weiterhin bestehende Sessions und wiederhole nach der angegebenen Verzögerung; Cleanup-Failed-Zustände erfordern einen Channel-Recycle, während Settlement-Overdue-Zustände sich erholen können, nachdem Settlement und erforderliche Bereinigungen abgeschlossen sind.                                                               |
 | `MissingCliEntryError`                | 500  | Die `qwen` CLI-Einstiegsdatei fehlt (definiert in `status.ts`, nicht `bridgeErrors.ts`). | Stelle sicher, dass die CLI-Installation vollständig ist; überprüfe, ob `packages/cli/index.ts` existiert.                                                                            |
 
 ## Boot-Zeit-Konfigurationsfehler (`packages/cli/src/serve/run-qwen-serve.ts`)
@@ -104,7 +104,7 @@ Diese werden über das `errorKind` der Preflight-Zelle an die Oberfläche gebrac
 | Status | Body                                         | Wann                                                                                                                                        |
 | ------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `401`  | `{ error: 'Unauthorized' }`                  | Fehlender/falscher/kein-Schema Bearer-Token. Einheitlich bei `fehlendem Header` / `falschem Schema` / `falschem Token`, sodass Sondierung keine Unterscheidung ermöglicht. |
-| `401`  | `{ error: '...', code: 'token_required' }`   | Mutations-Sperre auf strenger Route bei einem Daemon ohne Token auf Loopback. SDKs geben Hinweis "konfiguriere --token / --require-auth".    |
+| `401`  | `{ error: '...', code: 'token_required' }`   | Strenge Route auf einer nicht vertrauenswürdigen, tokenlosen Einbettung. Primäre Anfragen über vertrauenswürdigen Loopback werden durchgelassen. SDKs zeigen einen Hinweis zur Token-Konfiguration.    |
 | `403`  | `{ error: 'Request denied by CORS policy' }` | `allowOriginCors` (Runtime) / `denyBrowserOriginCors` (Bootstrap) hat eine Anfrage mit `Origin`-Header abgelehnt.                             |
 | `403`  | `{ error: 'Invalid Host header' }`           | `hostAllowlist` hat den `Host`-Header abgelehnt (DNS-Rebinding-Abwehr).                                                                      |
 
@@ -138,7 +138,7 @@ flowchart LR
 ```mermaid
 flowchart TD
     A["401 received"] --> B{"body.code == 'token_required'?"}
-    B -->|yes| C["mutation-gate strict — guide user to --token / --require-auth"]
+    B -->|yes| C["strict gate denied this deployment — guide user to configure bearer auth"]
     B -->|no| D["plain Unauthorized — generic 'check token' UI"]
 ```
 

@@ -75,6 +75,7 @@ export const CONDITIONAL_SERVE_FEATURES: ReadonlyMap<
       typeof t.writerIdleTimeoutMs === 'number' && t.writerIdleTimeoutMs > 0,
   ],
   ['workspace_settings', (t) => t.persistSettingAvailable === true],
+  ['user_language_sync', (t) => t.persistSettingAvailable === true],
   ['workspace_voice', (t) => t.persistSettingAvailable === true],
   [
     'workspace_voice_transcription',
@@ -108,7 +109,7 @@ export const CONDITIONAL_SERVE_FEATURES: ReadonlyMap<
 
 기반: `health`, `daemon_status`, `capabilities`.
 
-세션: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_storage_conflict_repair`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (조건부), `session_language`, `session_rewind`, `session_hooks`, `session_branch`.
+세션: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_storage_conflict_repair`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (조건부), `session_language`, **`user_language_sync`** (조건부), `session_rewind`, `session_hooks`, `session_branch`.
 
 스트리밍: `slow_client_warning`, `typed_event_schema`.
 
@@ -200,7 +201,7 @@ sequenceDiagram
 | 환경 변수                  | `QWEN_SERVE_NO_MCP_POOL=1`                                       | `mcp_workspace_pool` 및 `mcp_pool_restart` 광고가 중단됩니다. MCP 이벤트가 더 이상 `scope: 'workspace'`를 스탬프하지 않습니다.                                          |
 | CLI 플래그                 | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}`  | 태그 세트는 변경하지 않습니다(`mcp_guardrails`는 항상 광고됨). 서버별 예약 및 거부 동작만 변경합니다.                                                                    |
 | CLI 플래그 / 환경 변수     | `--rate-limit` / `QWEN_SERVE_RATE_LIMIT=1`                       | `rate_limit`를 광고합니다.                                                                                                                                              |
-| 임베디드 옵션              | `persistSettingAvailable`                                        | `workspace_settings` 및 `workspace_voice`를 광고합니다.                                                                                                                 |
+| 임베디드 옵션              | `persistSettingAvailable`                                        | `workspace_settings`, `user_language_sync`, `workspace_voice`를 광고합니다.                                                                                                                 |
 | 임베디드 옵션              | `voiceTranscriptionAvailable`                                    | `workspace_voice_transcription`을 광고합니다.                                                                                                                           |
 | CLI 플래그 / 임베디드 옵션 | `--enable-session-shell` / `sessionShellCommandEnabled`          | `session_shell_command`를 광고합니다.                                                                                                                                   |
 | 런타임 상태                | 등록된 워크스페이스 런타임이 둘 이상                              | `multi_workspace_sessions` 및 `multi_workspace_session_rewind`를 광고합니다. 세션 shell이 효과적으로 활성화된 경우 `multi_workspace_session_shell`도 광고합니다.         |

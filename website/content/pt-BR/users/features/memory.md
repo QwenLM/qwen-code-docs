@@ -19,6 +19,7 @@ Adicione coisas que, de outra forma, você teria que repetir em todas as sessõe
 - Convenções de código que sua equipe segue ("todos os novos arquivos devem ter comentários JSDoc")
 - Decisões de arquitetura ("usamos o padrão repository, nunca chamamos o banco de dados diretamente dos controllers")
 - Preferências pessoais ("sempre use pnpm, não npm")
+- Uma política de verificação para trabalho de alto risco — por exemplo, "verifique no banco de dados antes de concluir" (veja [Enforce evidence-based conclusions](../common-workflow.md#enforce-evidence-based-conclusions) para um modelo pronto)
 
 Não inclua coisas que o Qwen pode descobrir lendo o seu código. O QWEN.md funciona melhor quando é curto e específico — quanto maior ele fica, menos confiavelmente o Qwen o segue.
 

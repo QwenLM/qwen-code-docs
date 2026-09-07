@@ -75,6 +75,7 @@ export const CONDITIONAL_SERVE_FEATURES: ReadonlyMap<
       typeof t.writerIdleTimeoutMs === 'number' && t.writerIdleTimeoutMs > 0,
   ],
   ['workspace_settings', (t) => t.persistSettingAvailable === true],
+  ['user_language_sync', (t) => t.persistSettingAvailable === true],
   ['workspace_voice', (t) => t.persistSettingAvailable === true],
   [
     'workspace_voice_transcription',
@@ -108,7 +109,7 @@ export const CONDITIONAL_SERVE_FEATURES: ReadonlyMap<
 
 基盤: `health`, `daemon_status`, `capabilities`.
 
-セッション: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_storage_conflict_repair`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (conditional), `session_language`, `session_rewind`, `session_hooks`, `session_branch`.
+セッション: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_storage_conflict_repair`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (conditional), `session_language`, **`user_language_sync`** (conditional), `session_rewind`, `session_hooks`, `session_branch`.
 
 ストリーミング: `slow_client_warning`, `typed_event_schema`.
 
@@ -188,7 +189,7 @@ sequenceDiagram
 ## 状態とライフサイクル
 
 - `CAPABILITIES_SCHEMA_VERSION` はワイヤー上のエンベロープ形状のバージョンであり、現在は `1` です。エンベロープの破壊的変更がある場合にのみインクリメントします。
-- `SERVE_PROTOCOL_VERSION = 'v1'` はプロトコル機能のバージョンです。v1 内の機能追加は追加のみ可能です。古いクライアントは、新しいタグをプリフライトしない限り新しい動作を確認できません。機能の削除は v2 の破壊的変更となります。
+- `SERVE_PROTOCOL_VERSION = 'v1'` はプロトコル機能のバージョンです。v1 内の機能追加は追加のみ可能です。古いクライアントは、新しいタグをプリフライトしない限り新しい動作を確認できません。修正された動作が v1 内のケイパビリティを置き換える場合があります。置き換えタグが古いタグを置き換え、古いタグはアドバタイズされなくなり、クライアントは置き換えタグをプリフライトする必要があります。置き換えなしで機能を削除することは v2 の破壊的変更となります。
 - `EVENT_SCHEMA_VERSION = 1` は SSE フレームの `v` フィールドです（[`09-event-schema.md`](./09-event-schema.md) を参照）。これは独立したバージョン軸です。イベントスキーマのインクリメントはプロトコルバージョンのインクリメントを意味せず、その逆も同様です。
 - `session_resume` は `POST /session/:id/resume` の安定したデーモンケイパビリティです。基礎となる ACP メソッドがまだ `connection.unstable_resumeSession` という名前であるため、`unstable_session_resume` は非推奨のエイリアスとしてアドバタイズされ続けています。新しいクライアントは `session_resume` を機能検出する必要があります。
 
@@ -206,7 +207,7 @@ sequenceDiagram
 | 環境変数                   | `QWEN_SERVE_NO_MCP_POOL=1`                                        | `mcp_workspace_pool` と `mcp_pool_restart` のアドバタイズを停止します。MCP イベントは `scope: 'workspace'` をスタンプしなくなります。                                                        |
 | CLI フラグ                 | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}`   | タグセットは変更しません（`mcp_guardrails` は常にアドバタイズされます）が、サーバーごとのリザベーションと拒否動作を変更します。                                          |
 | CLI フラグ / 環境変数      | `--rate-limit` / `QWEN_SERVE_RATE_LIMIT=1`                        | `rate_limit` をアドバタイズします。                                                                                                                                               |
-| 組み込みオプション         | `persistSettingAvailable`                                         | `workspace_settings` と `workspace_voice` をアドバタイズします。                                                                                                                 |
+| 組み込みオプション         | `persistSettingAvailable`                                         | `workspace_settings`、`user_language_sync`、および `workspace_voice` をアドバタイズします。                                                                                                                 |
 | 組み込みオプション         | `voiceTranscriptionAvailable`                                     | `workspace_voice_transcription` をアドバタイズします。                                                                                                                            |
 | CLI フラグ / 組み込みオプション | `--enable-session-shell` / `sessionShellCommandEnabled`       | `session_shell_command` をアドバタイズします。                                                                                                                                    |
 | ランタイム状態             | 登録されたワークスペースランタイムが 2 つ以上                      | `multi_workspace_sessions` と `multi_workspace_session_rewind` をアドバタイズします。セッションシェルが実質的に有効な場合、`multi_workspace_session_shell` もアドバタイズします。 |

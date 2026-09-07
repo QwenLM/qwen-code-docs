@@ -199,7 +199,11 @@ protected override onPromptEnd(chatId: string, sessionId: string, messageId?: st
 
 **도구 호출 hook** — `onToolCall()`을 오버라이드하여 에이전트 활동(예: "셸 명령 실행 중...")을 표시합니다.
 
-**스트리밍 hook** — 청크별 점진적 표시를 위해 `onResponseChunk(chatId, chunk, sessionId)`를 오버라이드합니다(예: 메시지 제자리 편집). 최종 전달을 커스터마이즈하려면 `onResponseComplete(chatId, fullText, sessionId)`를 오버라이드합니다.
+**스트리밍 hook** — 청크별 점진적 표시를 위해 `onResponseChunk(chatId, chunk, sessionId, segment)`를 오버라이드합니다(예: 메시지 제자리 편집). 최종 전달을 커스터마이즈하려면 `onResponseComplete(chatId, fullText, sessionId, segment)`를 오버라이드합니다. 데몬 관리 이름 지정 작업 모드에서 `segment.sourceLabel`은 해당 세그먼트에 대한 변경 불가능한 전달 메타데이터입니다. 독립적으로 보이는 각 메시지나 카드에 한 번씩 렌더링하되, 별도로 보이는 최종 응답도 포함하되, 원시 버퍼나 모델 텍스트에는 추가하지 마세요. 어댑터 소유의 세그먼트 상태는 `onOutputSegmentEnd()`에서 정리합니다.
+
+**이름 지정 작업 속성** — `sendThreadMessage(chatId, threadId, text, sourceLabel)`는 일회성 및 능동적 전달 경계에 대해 동일한 선택적 일반 텍스트 레이블을 수신합니다. 기본 구현은 일반 메시지를 처리합니다. 전달을 재정의하거나, 메시지를 분할하거나, 카드를 내보내거나, 폴백 전송을 제공하는 어댑터는 독립적으로 보이는 모든 경계에서 레이블을 반복하고, 대상 마크업 방언에 대해 레이블만 이스케이프하며, 렌더링된 크기를 플랫폼 제한에 포함해야 합니다. 응답 원본에 대해 no-reply 검사, 미디어 마커 프로젝션, 감사 해싱, 트랜스크립트 영속화, 재시도 본문 캡처를 표시 전에 실행하세요. 전달이 재시작 안전 재시도를 위해 영속화되는 경우, 캡처된 레이블을 별도로 영속화하세요.
+
+대화형 `ChannelUserInputRequestContext`도 `sourceLabel`을 포함합니다. 카드, 터미널 교체, 일반 폴백은 기존 요청, 세션, 실행, 소유자, 대상 검사를 약화시키지 않으면서 이를 유지해야 합니다.
 
 **블록 스트리밍** — 채널 구성에서 `blockStreaming: "on"`을 설정합니다. 기본 클래스가 응답을 단락 경계에서 여러 메시지로 자동 분할합니다. 플러그인 코드가 필요 없습니다 — `onResponseChunk`와 함께 작동합니다.
 
@@ -217,8 +221,14 @@ protected override supportsProactiveTarget(target: SessionTarget): boolean {
 protected override async pushProactive(
   target: SessionTarget,
   text: string,
+  sourceLabel?: string,
 ): Promise<void> {
-  await this.platformClient.send(target.chatId, text);
+  await this.sendThreadMessage(
+    target.chatId,
+    target.threadId,
+    text,
+    sourceLabel,
+  );
 }
 ```
 

@@ -224,15 +224,15 @@ sequenceDiagram
 
 ### Прогрев дочернего процесса ACP
 
-`bridge.preheat()` прогревает дочерний процесс ACP перед первой сессией, чтобы первая реальная сессия избежала задержек холодного старта. Это работает в связке с `channelIdleTimeoutMs`, который поддерживает дочерний процесс ACP активным после закрытия последней сессии, и поведением skip-relaunch, которое повторно использует уже неактивный дочерний процесс при поступлении новой сессии.
+`bridge.preheat()` остается доступным для явных встраивающих систем, но `qwen serve` также пытается прогреть доверенный основной дочерний процесс после запуска для совместимости. Неудачный прогрев не является фатальным, и следующая команда runtime или сессия повторяет попытку; доверенные вторичные процессы запускаются при первом использовании. Workspace Runtime владеет дочерним процессом, пока работа активна. После завершения всех аренд сессий и управления пропущенный или нулевой `channelIdleTimeoutMs` уничтожает дочерний процесс немедленно; простой прогрев сохраняется для первого использования и не активирует этот механизм уничтожения. Положительная настроенная задержка или активный keepalive сохраняет дочерний процесс пригодным для повторного использования в течение более длительного оставшегося окна. Публичная команда Workspace Runtime `ensure` добавляет возобновляемую десятиминутную аренду рабочего пространства; каждый успешный вызов сбрасывает это окно, включая случаи, когда канал уже был активен.
 
 ## Конфигурация
 
 - `BridgeOptions.maxSessions` (по умолчанию 32) — лимит.
 - `BridgeOptions.sessionScope` (по умолчанию `'single'`; опционально `'thread'`).
-- `BridgeOptions.initializeTimeoutMs` (по умолчанию 10 с) — рукопожатие ACP `initialize`.
+- `BridgeOptions.initializeTimeoutMs` (по умолчанию 10 с) — дедлайн запуска дочернего процесса ACP (фабрика Channel + рукопожатие `initialize`) и таймаут запроса по умолчанию.
 - `BridgeOptions.sessionRestoreTimeoutMs` (по умолчанию 60 с) — дедлайн ACP `loadSession` / `unstable_resumeSession`. По умолчанию 60 с; явно настроенный таймаут инициализации может увеличить его, но не уменьшить.
-- `BridgeOptions.channelIdleTimeoutMs` (по умолчанию 0; немедленное уничтожение дочернего процесса ACP).
+- `BridgeOptions.channelIdleTimeoutMs` (отсутствует или `0` — уничтожение после завершения runtime-работы, за исключением того, что простой прогрев сохраняется для первого использования; положительное значение или активный keepalive задерживает уничтожение, причем действует более длительная задержка).
 - Теги возможностей: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (устаревший псевдоним), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
 
 ### Stateless generation (тег возможности `session_generation`)

@@ -344,16 +344,15 @@ Das SDK verwendet einen Thread-Pool zur Verwaltung gleichzeitiger Operationen mi
 - **Keep-Alive Time**: 60 Sekunden
 - **Queue-Kapazität**: 300 Tasks (mit LinkedBlockingQueue)
 - **Thread-Benennung**: "qwen_code_cli-pool-{number}"
-- **Daemon-Threads**: false
+- **Daemon-Threads**: true
 - **Rejected Execution Handler**: CallerRunsPolicy
 
 ## Fehlerbehandlung
 
 Das SDK bietet spezifische Exception-Typen für verschiedene Fehlerszenarien:
 
-- `SessionControlException`: Wird geworfen, wenn ein Problem mit der Session-Steuerung auftritt (Erstellung, Initialisierung usw.)
+- `SessionControlException`: Wird geworfen, wenn ein Problem mit der Session-Steuerung auftritt, einschließlich des Versuchs, eine geschlossene oder nicht verfügbare Session zu verwenden. Die Session-Konstruktion und `start()` können sie direkt werfen; `QwenCodeCli.newSession()` kapselt niedrigere Erstellungs- und Initialisierungsfehler in einer `RuntimeException`.
 - `SessionSendPromptException`: Wird geworfen, wenn ein Problem beim Senden eines Prompts oder Empfangen einer Antwort auftritt
-- `SessionClosedException`: Wird geworfen, wenn versucht wird, eine geschlossene Session zu verwenden
 
 ## FAQ / Fehlerbehebung
 

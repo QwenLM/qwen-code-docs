@@ -115,6 +115,20 @@ qwen -p "Summarize this repository" \
   --append-system-prompt "Return exactly three bullets."
 ```
 
+### 选择输出风格
+
+使用 `--output-style` 为本次运行选择一种内置输出风格。风格是叠加在内置 prompt 上的命名指令块，用于改变回答的撰写方式——`Concise` 以结果开头并省略前言和叙述，`Proactive` 直接开始工作而非提出建议，`Explanatory` 在此过程中添加关于代码库的简短说明。它会覆盖 `general.outputStyle` 设置；`default` 表示不选择任何风格。
+
+```bash
+qwen -p "Why does the build fail on Windows?" --output-style Concise
+```
+
+> [!note]
+>
+> - `Learning` 要求你编写部分代码并等待回复，因此在无头运行中会被跳过。
+> - 未知的风格名称会打印一条警告，运行将继续使用默认风格。
+> - 当 `--system-prompt` 或 `QWEN_SYSTEM_MD` 替换了内置 prompt 时，`--output-style` 无效——风格只能叠加在内置 prompt 上。
+
 > [!note]
 >
 > - `--system-prompt` 仅应用于当前运行的主会话。
@@ -262,6 +276,7 @@ qwen -p "Write code" --output-format stream-json --include-partial-messages | jq
 | `--include-partial-messages` | 在 stream-json 输出中包含部分消息                                                                                                                                                                                                                                                                                                                                                                                       | `qwen -p "query" --output-format stream-json --include-partial-messages` |
 | `--system-prompt`            | 覆盖本次运行的主会话系统 prompt                                                                                                                                                                                                                                                                                                                                                                                         | `qwen -p "query" --system-prompt "You are a terse reviewer."`            |
 | `--append-system-prompt`     | 为本次运行向主会话系统 prompt 追加额外指令                                                                                                                                                                                                                                                                                                                                                                              | `qwen -p "query" --append-system-prompt "Focus on concrete findings."`   |
+| `--output-style`             | 本次运行的输出风格（`Concise`、`Proactive`、`Explanatory`、`Learning` 或 `default` 表示无）；覆盖 `general.outputStyle`                                                                                                                                                                                                                                                                                                | `qwen -p "query" --output-style Concise`                                 |
 | `--debug`, `-d`              | 启用调试模式                                                                                                                                                                                                                                                                                                                                                                                                            | `qwen -p "query" --debug`                                                |
 | `--safe-mode`                | 禁用所有自定义项（包括上下文文件、hooks、扩展、skills、MCP 服务器、自定义 subagents（仅加载内置 subagents）、权限规则、源自设置的审批模式覆盖、memory 功能和沙盒设置）以隔离问题；CLI 标志 `--yolo` 和 `--approval-mode` 仍然生效。请参阅[故障排除](../support/troubleshooting)。也可通过 `QWEN_CODE_SAFE_MODE=true` 进行设置。 | `qwen -p "query" --safe-mode`                                            |
 | `--model`, `-m`              | 本次运行使用的模型                                                                                                                                                                                                                                                                                                                                                                                                      | `qwen -p "query" --model qwen3-coder-plus`                               |

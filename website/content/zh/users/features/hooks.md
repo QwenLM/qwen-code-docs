@@ -117,7 +117,8 @@ HTTP 钩子将钩子输入作为 POST 请求发送到指定的 URL。它们支�
 
 - 此设置**仅从 User、System 和 SystemDefaults 设置作用域中生效**。在 Workspace（项目）设置中设置的值将被忽略并记录为警告，因此克隆的仓库永远无法自行授予此绕过权限。
 - 该标志仅放宽通用私有/CGNAT/链路本地**范围**检查。云元数据端点在所有配置中保持阻止：`BLOCKED_HOSTS` 列表会逐字匹配（`metadata.google.internal`、`metadata.azure.internal` 等），元数据 IP `169.254.169.254` 和 `100.100.100.200` 在所有序列化形式（包括 IPv4 映射的 IPv6，如 `::ffff:a9fe:a9fe`）以及 DNS 解析后均被阻止。
-- `security.allowedHttpHookUrls` 白名单仍然独立适用。在托管环境中，请将此标志与白名单配合使用，以确保只有预期的内部端点可达。
+- `security.allowedHttpHookUrls` 白名单仍然独立适用。在托管环境中，请将此标志与白名单配合使用，以确保只有预期的内部端点可达。Workspace（项目）设置中的白名单仅在没有 User、System 或 SystemDefaults 作用域设置白名单时才会生效；否则它将被忽略并记录为警告，因此仓库可以缩小其钩子发送数据的位置，但永远无法替换你配置的白名单（空白名单表示"允许所有"）。
+- HTTP 钩子永远不会跟随重定向。3xx 响应被视为任何其他非 2xx 状态一样：非阻塞的钩子失败，并且永远不会联系重定向目标。
 
 > **警告：** 启用此标志允许钩子访问你网络上的内部基础设施。仅在受信任的托管环境中启用——绝不在你无法控制的仓库中启用。
 
@@ -725,7 +726,7 @@ sanitized hook context
 }
 ```
 
-该钩子使用删除运行时的常规会话字段（`session_id`、`transcript_path` 和 `cwd`）；通过 ACP 时，`transcript_path` 为空，因为删除运行时没有自己的记录。`SessionDelete` 当前在交互式 `/delete` 流程和 ACP 的显式 `deleteSession` 方法中触发；守护进程 REST 批量删除和内部清理不会发出此事件。
+该钩子使用删除运行时的常规会话字段（`session_id`、`transcript_path` 和 `cwd`）；通过 ACP 时，`transcript_path` 为空，因为删除运行时没有自己的记录。`SessionDelete` 当前在交互式 `/delete` 流程和 ACP 的显式 `deleteSession` 方法中触发；守护进程 REST 批量删除和内部清理不会发出此事件。如果 Qwen 在分发后退出，命令钩子会被允许继续完成；其 stdout 和 stderr 会被忽略，并且独立于 Qwen 的管道。
 
 #### MessageDisplay
 
@@ -844,6 +845,8 @@ sanitized hook context
 - 身份验证失败日志记录
 - 计费错误通知
 - 错误统计收集
+
+如果 Qwen 在分发后退出，命令钩子会被允许继续完成；其 stdout 和 stderr 会被忽略，并且独立于 Qwen 的管道。
 
 #### SubagentStart
 
@@ -1304,6 +1307,8 @@ Hook 在 Qwen Code 设置中进行配置，通常位于 `.qwen/settings.json` �
 ### 异步 Hook
 
 只有 `command` 类型支持异步执行。设置 `"async": true` 会在后台运行 hook，不会阻塞主流程。
+
+异步钩子的作用域限定在 Qwen 进程内，因为其捕获的输出通过内存中的异步钩子注册表传递。在 POSIX 系统上，Qwen 在退出时会回收仍在运行的异步钩子进程树，但其部分明确保证退出后 fire-and-forget 完成的事件类型除外。Windows 无法在其根进程退出后重建后代树，因此那里的完整父退出回收需要 Job Object 或后代跟踪。
 
 **特性：**
 

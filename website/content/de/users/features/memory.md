@@ -19,6 +19,7 @@ Füge Dinge hinzu, die du sonst in jeder Sitzung wiederholen müsstest:
 - Coding-Konventionen, die dein Team befolgt („alle neuen Dateien müssen JSDoc-Kommentare haben“)
 - Architekturentscheidungen („wir verwenden das Repository-Pattern, rufen die Datenbank nie direkt aus den Controllern auf“)
 - Persönliche Präferenzen („immer pnpm verwenden, nicht npm“)
+- Eine Verifizierungsrichtlinie für kritische Arbeit – zum Beispiel „vor dem Abschluss gegen die Datenbank verifizieren“ (siehe [Enforce evidence-based conclusions](../common-workflow.md#enforce-evidence-based-conclusions) für eine sofort verwendbare Vorlage)
 
 Füge keine Dinge hinzu, die Qwen durch das Lesen deines Codes selbst herausfinden kann. QWEN.md funktioniert am besten, wenn es kurz und spezifisch ist – je länger es wird, desto unzuverlässiger befolgt Qwen die Anweisungen.
 

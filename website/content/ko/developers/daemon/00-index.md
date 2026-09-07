@@ -8,7 +8,7 @@
 | -------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------ |
 | [`../../users/qwen-serve.md`](../../users/qwen-serve.md)                               | 운영자             | 사용자 퀵스타트, 플래그, 위협 모델                     |
 | [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md)                               | 프로토콜 구현자   | HTTP 라우트 카탈로그, 요청/응답 형태, 오류 코드        |
-| [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md)   | SDK 사용자         | 엔드투엔드 TypeScript 워크플로우                       |
+| [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md)   | SDK 사용자         | 엔드투엔드 TypeScript 워크스루                       |
 | [`../daemon-client-adapters/`](../daemon-client-adapters/)                             | 어댑터 작성자      | 레거시 클라이언트 어댑터 설계 문서                     |
 | [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md)                                    | 어댑터 작성자      | 클라이언트 어댑터 설계 노트                            |
 | [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md)       | F2 유지관리자     | 워크스페이스 MCP 트랜스포트 풀 설계 v2.2               |
@@ -63,7 +63,7 @@
 ## 용어집
 
 - **ACP** - Agent Client Protocol. 데몬 브리지와 ACP 자식 프로세스 간 stdio를 통한 JSON-RPC입니다. 클라이언트가 데몬에 사용하는 HTTP 프로토콜이 아닙니다.
-- **ACP 자식** - 하나의 워크스페이스 에이전트 런타임을 호스팅하는 `qwen --acp` 자식입니다. 프로덕션에서는 기본 브리지를 예열하고 실패 시 첫 사용 시 재시도합니다. 신뢰된 보조는 온디맨드로 자식을 시작하고, 신뢰되지 않은 보조는 시작하지 않습니다. 소유 브리지가 해당 자식 위에 세션과 클라이언트를 멀티플렉스합니다.
+- **ACP 자식** - 하나의 워크스페이스 에이전트 런타임을 호스팅하는 `qwen --acp` 자식입니다. 프로덕션에서는 호환성을 위해 신뢰된 기본 자식을 예열하려고 시도합니다. 신뢰된 보조는 첫 런타임 명령 또는 세션에서 시작되며, 신뢰되지 않은 보조는 ACP를 시작하지 않습니다. 레거시 기본 라우트는 기존 호환성 동작을 유지합니다. 소유 브리지가 해당 자식 위에 세션과 클라이언트를 멀티플렉스합니다.
 - **acp-bridge** - `@qwen-code/acp-bridge` 패키지(`packages/acp-bridge/`). 세션 멀티플렉싱, 권한 중재자, 이벤트 버스, 채널 팩토리를 소유합니다.
 - **BridgeClient** - `packages/acp-bridge/src/bridgeClient.ts`. 하나의 ACP `ClientSideConnection`을 래핑하고 `requestPermission`, `sendPrompt`, `cancelSession`을 처리합니다.
 - **채널 팩토리** - ACP 자식을 생성하거나 연결하는 플러그 가능한 전략입니다. 기본 `spawnChannel`은 `qwen --acp`를 서브프로세스로 실행합니다. `inMemoryChannel`은 테스트에서 인프로세스로 실행합니다.
@@ -114,9 +114,9 @@
 | 영역                    | 현재 상태                                                                                                                                                                                                                                      | 주요 문서                                                             |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
 | 부트스트랩 / 리슨 경로  | `qwen serve`는 `runQwenServe`를 지연 로드하고, 인증/워크스페이스/예산/설정을 검증하고, Express 앱을 빌드한 다음 `app.listen`을 호출하고 시그널까지 무기한 차단합니다.                                                                          | [`02`](./02-serve-runtime.md), [`20`](./20-quickstart-operations.md)  |
-| 인증 / 네트워크 가드레일 | 루프백은 기본적으로 베어러 없음. 루프백이 아닌 경우 베어러 필수. `--require-auth`는 베어러를 루프백과 `/health`까지 확장합니다. 호스트 허용 목록과 기본 CORS 거부가 활성입니다.                                                                | [`12`](./12-auth-security.md), [`17`](./17-configuration.md)          |
+| 인증 / 네트워크 가드레일 | 토큰 없는 루프백은 기본 리스너에게 로컬 운영자 권한을 부여합니다. 루프백이 아닌 경우 베어러가 필요합니다. `--require-auth`는 베어러를 루프백과 `/health`까지 확장합니다. 호스트 허용 목록과 기본 CORS 거부가 활성입니다.                                                                | [`12`](./12-auth-security.md), [`17`](./17-configuration.md)          |
 | 세션 수명주기           | `POST /session`, `load`, `resume`, 메타데이터 패치, 하트비트, 축출, 유휴 정리, 프롬프트 보류 제한, 우아한 종료가 문서화되어 있습니다.                                                                                                          | [`08`](./08-session-lifecycle.md), [`10`](./10-event-bus.md)          |
-| ACP 브리지              | 기본적으로 단일 ACP 자식이 멀티플렉스됩니다. `sessionScope`는 `single`과 `thread`를 지원합니다. `BridgeFileSystem`, 컨텍스트 파일 이름, 환경 오버레이, 채널 유휴 타임아웃이 연결되어 있습니다.                                                  | [`03`](./03-acp-bridge.md), [`07`](./07-workspace-filesystem.md)      |
+| ACP 브리지              | 기본적으로 단일 ACP 자식이 멀티플렉스됩니다. `sessionScope`는 `single`과 `thread`를 지원합니다. `BridgeFileSystem`, 컨텍스트 파일 이름, 환경 재정의, 채널 유휴 타임아웃이 연결되어 있습니다.                                                  | [`03`](./03-acp-bridge.md), [`07`](./07-workspace-filesystem.md)      |
 | MCP 풀 / 예산           | `QWEN_SERVE_NO_MCP_POOL=1`이 아닌 경우 워크스페이스 MCP 풀이 기본적으로 활성화됩니다. 가드레일 이벤트와 재시작 의미는 문서화되어 있습니다.                                                                                                     | [`05`](./05-mcp-transport-pool.md), [`06`](./06-mcp-budget-guardrails.md) |
 | 권한                    | F3 중재자는 `first-responder`, `designated`, `consensus`, `local-only`를 지원합니다. 잘못된 설정은 명시적으로 실패합니다.                                                                                                                      | [`04`](./04-permission-mediation.md), [`12`](./12-auth-security.md)   |
 
@@ -126,8 +126,8 @@
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
 | HTTP 라우트    | 라우트 카탈로그는 `qwen-serve-protocol.md`에 있습니다. 이 데몬 세트는 참조만 하고 구현 소유권을 설명합니다.                                                                                                                                            | [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md), [`20`](./20-quickstart-operations.md)        |
 | 이벤트 스키마  | `EVENT_SCHEMA_VERSION = 1`. 53개의 알려진 이벤트 타입. ID 없는 구독자 합성 프레임. `_meta.serverTimestamp`는 `EventBus.publish()`가 스탬프(합성 프레임의 경우 `formatSseFrame()` 폴백).                                                                  | [`09`](./09-event-schema.md), [`10`](./10-event-bus.md)                                                |
-| 기능           | `SERVE_PROTOCOL_VERSION = 'v1'`. 75개의 등록된 태그. 13개의 조건부 태그.                                                                                                                                                                               | [`11`](./11-capabilities-versioning.md)                                                                |
-| 세션 셸        | `POST /session/:id/shell`은 `--enable-session-shell`, 베어러 인증, 세션 바운드 `X-Qwen-Client-Id` 뒤에 존재합니다. 기능 태그는 조건부입니다.                                                                                                            | [`11`](./11-capabilities-versioning.md), [`17`](./17-configuration.md), [`20`](./20-quickstart-operations.md) |
+| 기능           | `SERVE_PROTOCOL_VERSION = 'v1'`. 149개의 등록된 태그. 43개의 조건부 태그.                                                                                                                                                                               | [`11`](./11-capabilities-versioning.md)                                                                |
+| 세션 셸        | `POST /session/:id/shell`은 `--enable-session-shell`, 베어러 또는 신뢰된 루프백 권한, 그리고 세션 바운드 `X-Qwen-Client-Id` 뒤에 존재합니다. 기능 태그는 조건부입니다.                                                                                                            | [`11`](./11-capabilities-versioning.md), [`17`](./17-configuration.md), [`20`](./20-quickstart-operations.md) |
 | 속도 제한      | 선택적 티어별 HTTP 속도 제한은 CLI 플래그/환경으로 노출되며 조건부 기능 태그입니다.                                                                                                                                                                     | [`11`](./11-capabilities-versioning.md), [`17`](./17-configuration.md)                                 |
 
 ### 클라이언트 / SDK

@@ -1,7 +1,7 @@
 # Computer Use
 
 Qwen Code verfügt über einen `computer-use`-Skill, der dem Modell beibringt,
-wie Desktop-Anwendungen bedient werden, über zwei separat installierte Pakete:
+wie man Desktop-Anwendungen bedient, über zwei separat installierte Pakete:
 
 ```text
 bundled computer-use skill
@@ -25,8 +25,8 @@ Node.js 22 oder später und npm werden benötigt.
 Bei der ersten Verwendung führt der Skill diese Befehle selbst aus:
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.1
-npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.2
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.2
+npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.3
 ```
 
 Starte Qwen Code neu, nachdem der MCP-Server erstmals hinzugefügt wurde. Der Skill setzt dann
@@ -78,6 +78,6 @@ Linux verwenden ihre plattformeigenen Accessibility- und Eingabe-Mechanismen.
 ## Siehe auch
 
 - [Skills](./skills.md)
-- [MCP-Server](./mcp.md)
+- [MCP servers](./mcp.md)
 - [Approval Mode](./approval-mode.md)
 - [Sandboxing](./sandbox.md)

@@ -199,9 +199,13 @@ protected override onPromptEnd(chatId: string, sessionId: string, messageId?: st
 
 **Hooks de chamada de ferramenta** — sobrescreva `onToolCall()` para exibir a atividade do agente (ex.: "Executando comando shell...").
 
-**Hooks de streaming** — sobrescreva `onResponseChunk(chatId, chunk, sessionId)` para exibição progressiva por chunk (ex.: editar uma mensagem no local). Sobrescreva `onResponseComplete(chatId, fullText, sessionId)` para personalizar a entrega final.
+**Hooks de streaming** — sobrescreva `onResponseChunk(chatId, chunk, sessionId, segment)` para exibição progressiva por chunk (ex.: editar uma mensagem no local). Sobrescreva `onResponseComplete(chatId, fullText, sessionId, segment)` para personalizar a entrega final. No modo de tarefa nomeada gerenciada por daemon, `segment.sourceLabel` é metadados de entrega imutáveis para aquele segmento. Renderize-o uma vez em cada mensagem ou card visível de forma independente, incluindo uma resposta final visível separadamente, mas não o adicione a buffers brutos ou texto do modelo. Limpe o estado de segmento pertencente ao adaptador a partir de `onOutputSegmentEnd()`.
 
 **Streaming em blocos** — defina `blockStreaming: "on"` na configuração do canal. A classe base divide automaticamente as respostas em várias mensagens nos limites dos parágrafos. Nenhum código de plugin é necessário — funciona junto com `onResponseChunk`.
+
+**Atribuição de tarefa nomeada** — `sendThreadMessage(chatId, threadId, text, sourceLabel)` recebe o mesmo label opcional em texto simples para limites de entrega pontual e proativa. A implementação padrão trata de mensagens simples. Adaptadores que sobrescrevem a entrega, dividem mensagens, emitem cards ou fornecem envios fallback devem repetir o label em cada limite visível de forma independente, fazer escape apenas do label para o dialeto de marcação alvo, e incluir seu tamanho renderizado nos limites da plataforma. Execute verificações de no-reply, projeção de marcadores de mídia, hash de auditoria, persistência de transcrição e captura de corpo de retry contra a resposta bruta antes da apresentação; se a entrega for persistida para retry seguro contra reinicialização, persista o label capturado separadamente.
+
+O `ChannelUserInputRequestContext` interativo também carrega `sourceLabel`. Cards, substituições de terminal e fallbacks simples devem retê-lo sem enfraquecer as verificações existentes de requisição, sessão, execução, proprietário e alvo.
 
 **Entrega proativa** — sobrescreva `supportsProactiveSend()` para retornar `true` quando o adaptador puder enviar sem uma requisição de entrada ativa. O `ChannelBase` usa essa capability para loops de canal persistentes, tarefas de webhook, resultados de agente em background e entrega do daemon. A política de alvo padrão rejeita alvos com thread; sobrescreva as verificações de alvo protegidas apenas para formas de alvo que sua plataforma pode entregar com segurança:
 
@@ -217,8 +221,14 @@ protected override supportsProactiveTarget(target: SessionTarget): boolean {
 protected override async pushProactive(
   target: SessionTarget,
   text: string,
+  sourceLabel?: string,
 ): Promise<void> {
-  await this.platformClient.send(target.chatId, text);
+  await this.sendThreadMessage(
+    target.chatId,
+    target.threadId,
+    text,
+    sourceLabel,
+  );
 }
 ```
 

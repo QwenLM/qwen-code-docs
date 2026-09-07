@@ -135,7 +135,7 @@ console.log(updated.hash);
 ```
 
 `expectedHash` ist SHA-256 über die rohen Bytes auf der Festplatte. `mode: "replace"` und
-`editWorkspaceFile()` erfordern es, damit veraltete Clients keine Datei überschreiben, die sie nicht gerade gelesen haben. Schreiben/Bearbeiten erfordert auch bei Loopback die Konfiguration eines Bearer-Tokens; starte den Daemon mit `--token` oder `QWEN_SERVER_TOKEN`, bevor du diese verwendest.
+`editWorkspaceFile()` erfordern es, damit veraltete Clients keine Datei überschreiben, die sie nicht gerade gelesen haben. Schreiben/Bearbeiten akzeptiert den Token-losen Trusted-Loopback-Primary-Listener; nicht vertrauenswürdige Deployments erfordern Bearer- oder Pairing-Credentials.
 
 ## Wiederverbindung mit `Last-Event-ID`
 
@@ -271,7 +271,7 @@ await client.cancel(session.sessionId);
 // Im Ereignisstrom siehst du den Prompt mit stopReason: "cancelled" aufgelöst.
 ```
 
-Cancel beendet nur den **aktiven** Prompt – alles, was du bereits per POST gesendet hast und das noch dahinter in der Warteschlange steht, wird weiter ausgeführt. (Siehe Protokollreferenz für die Begründung.)
+Cancel baut nur den **aktiven** Prompt ab – alles, was du bereits per POST gesendet hast und das noch dahinter in der Warteschlange steht, wird weiter ausgeführt. (Siehe Protokollreferenz für die Begründung.)
 
 ## Nächste Schritte
 

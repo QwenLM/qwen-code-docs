@@ -172,15 +172,15 @@ sequenceDiagram
 ### セッションリキャップ（`session_recap` 機能タグ）
 
 `POST /session/:id/recap` は、高速モデルに対して「どこまでやったか」を要約した1行のサマリーを要求します。これは `{ sessionId, recap: string | null }` を返します。`null` は履歴が短すぎるか、モデルが一時的に失敗したことを意味します。このエンドポイントはベストエフォート型です。
-### Session BTW / 追加質問 (`session_btw` capability tag)
+### セッション BTW / 追加質問 (`session_btw` capability tag)
 
 `POST /session/:id/btw` は、メインの会話フローを中断することなく、セッションコンテキストに対して一度限りの質問を行います。これはキャッシュパス上で `runForkedAgent` を使用して、ツールを使用しないシングルターンの LLM 呼び出しを行い、`{ sessionId, answer: string | null }` を返します。実装では `BTW_MAX_INPUT_LENGTH`、セッション間漏洩ガード、およびタイムアウト処理が強制されます。
 
 ### シェルコマンドの実行
 
-`POST /session/:id/shell` は、LLM を経由せずにデーモンホスト上で直接シェルコマンドを実行し、LLM を経由しません。`user_shell_command` / `user_shell_result` イベントを介してセッション SSE バス上で出力をストリーミングし、コマンドと結果を LLM の会話履歴に注入します。レスポンスは `{ exitCode, output, aborted }` です。ライブのセカンダリワークスペースセッションの場合、単一の REST ルートはセッションオーナーを解決し、そのランタイムのブリッジ上で実行するため、コマンドは所有ワークスペースの cwd で開始されます。このルートはパスサンドボックスを提供しません。ワークスペース限定の ACP クライアントは、所有ワークスペース接続上で `_qwen/session/shell` を引き続き使用できます。
+`POST /session/:id/shell` は、デーモンホスト上で直接シェルコマンドを実行し、LLM を経由しません。`user_shell_command` / `user_shell_result` イベントを介してセッション SSE バス上で出力をストリーミングし、コマンドと結果を LLM の会話履歴に注入します。レスポンスは `{ exitCode, output, aborted }` です。ライブのセカンダリワークスペースセッションの場合、単一の REST ルートはセッションオーナーを解決し、そのランタイムのブリッジ上で実行するため、コマンドは所有ワークスペースの cwd で開始されます。このルートはパスサンドボックスを提供しません。ワークスペース限定の ACP クライアントは、所有ワークスペース接続上で `_qwen/session/shell` を引き続き使用できます。
 
-### セッションの rewind
+### セッションリワインド
 
 `GET /session/:id/rewind/snapshots` と `POST /session/:id/rewind` は、所有するライブワークスペースランタイムを解決します。永続化されたセッションは、rewind 前にロードまたは再開する必要があります。Rewind は会話履歴を切り詰め、`edit` と `write_file` によって追跡されたファイルを選択的に復元します。シェルコマンド、Git、スクリプト、または手動の変更は元に戻しません。ファイルの復元はベストエフォート型のため、レスポンスは会話履歴がすでに移動した後でも `rewound: false` と `filesFailed[]` を報告する可能性があります。SDK の rewind 呼び出しは、クライアントがそうでない場合でも ACP トランスポートを使用している場合でも、常にオーナー認識 REST を使用します。これは、ミューテーションが厳格な REST 認証を保持する必要があるためです。
 
@@ -224,15 +224,15 @@ sequenceDiagram
 
 ### ACP 子プロセスのプレヒート
 
-`bridge.preheat()` は、最初のセッションの前に ACP 子プロセスをウォームアップし、最初の本セッションでコールドスタートのレイテンシを回避します。これは、最後のセッションが閉じた後も ACP 子プロセスを存続させる `channelIdleTimeoutMs` と、新しいセッションが到着したときにすでにアイドル状態の子プロセスを再利用する skip-relaunch 動作と組み合わせて使用されます。
+`bridge.preheat()` は明示的な埋め込み利用者に引き続き提供されますが、`qwen serve` は互換性のため起動後に信頼されたプライマリ子プロセスのプリヒートも試みます。プリヒートの失敗は致命的ではなく、次のランタイムコマンドまたはセッションがリトライします。信頼されたセカンダリは初回使用時に起動します。ワークスペースランタイムは作業がアクティブな間子プロセスを所有します。すべてのセッションおよび管理リースが drain した後、`channelIdleTimeoutMs` が省略または 0 の場合子プロセスは即座に回収されます。プレーンなプリヒート自体は初回使用のために保持され、そのリパーを起動しません。正の設定遅延またはアクティブなキープアライブは、より長い残りのウィンドウの間子プロセスを再利用可能に保ちます。公開のワークスペースランタイムの `ensure` コマンドは更新可能な10分のワークスペースリースを追加します。成功した呼び出しごとに、チャネルがすでにライブな場合も含め、そのウィンドウがリセットされます。
 
 ## 設定
 
 - `BridgeOptions.maxSessions`（デフォルト 32）— 上限。
 - `BridgeOptions.sessionScope`（デフォルト `'single'`、オプションで `'thread'`）。
-- `BridgeOptions.initializeTimeoutMs`（デフォルト 10s）— ACP `initialize` ハンドシェイク。
+- `BridgeOptions.initializeTimeoutMs`（デフォルト 10s）— ACP 子プロセスの起動デッドライン（Channel ファクトリ + `initialize` ハンドシェイク）およびデフォルトのリクエストタイムアウト。
 - `BridgeOptions.sessionRestoreTimeoutMs`（デフォルト 60s）— ACP `loadSession` / `unstable_resumeSession` のデッドライン。デフォルトは 60 秒で、明示的に設定された initialize タイムアウトはこれを上げることができますが、下げることはできません。
-- `BridgeOptions.channelIdleTimeoutMs`（デフォルト 0、ACP 子プロセスを即座に回収）。
+- `BridgeOptions.channelIdleTimeoutMs`（未設定または `0` はランタイムワークの drain 後に回収。ただしプレーンなプリヒートは初回使用のために保持される。正の値またはアクティブなキープアライブは回収を遅延させ、より長い遅延が優先される）。
 - 機能タグ: `session_create`、`session_id_override`、`session_scope_override`、`session_load`、`session_resume`、`unstable_session_resume`（非推奨のエイリアス）、`session_list`、`session_info`、`session_close`、`session_metadata`、`session_set_model`、`client_identity`、`client_heartbeat`、`session_recap`、`session_generation`、`session_btw`、`session_context_usage`、`session_tasks`、`session_monitor_tool_correlation`、`session_stats`、`session_lsp`、`session_status`、`non_blocking_prompt`。
 
 ### ステートレス生成（`session_generation` 機能タグ）

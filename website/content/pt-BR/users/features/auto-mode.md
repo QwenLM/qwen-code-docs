@@ -175,8 +175,8 @@ Isso é útil para ambientes de produção ou de alta segurança onde você
 deseja defesa em profundidade: mesmo comandos aparentemente inofensivos são revisados pelo
 classificador antes da execução. A contrapartida é a latência adicionada (~300ms
 por chamada shell somente leitura) e a dependência da disponibilidade do classificador — se
-a API do classificador estiver inacessível, os comandos shell somente leitura também serão
-bloqueados (fail-closed).
+a API do classificador estiver inacessível, os comandos shell somente leitura também
+exigirão aprovação manual.
 
 > [!note]
 >
@@ -187,18 +187,13 @@ bloqueados (fail-closed).
 
 ## Lendo a decisão
 
-Quando o classificador bloqueia uma ação, a chamada da ferramenta falha com um dos
-seguintes textos de erro:
+Quando o classificador bloqueia uma ação, a chamada de ferramenta falha com:
 
 - **`Blocked by auto mode policy: <reason>`** —
   o classificador considerou a ação insegura. O motivo vem do Estágio
   2 do classificador.
-- **`Auto mode classifier unavailable; action blocked for safety`** —
-  a API do classificador estava inacessível, expirou o tempo limite ou retornou uma
-  resposta não analisável. Este é um comportamento fail-closed: na dúvida,
-  bloqueie.
 
-Ambas as mensagens são seguidas por uma linha de orientação final informando ao agente
+Esta mensagem é seguida por uma linha de orientação final informando ao agente
 que a **ação negada especificamente** não deve ser concluída através de
 outra ferramenta, indireção de shell, script gerado, alias, symlink,
 alteração de configuração, hook, arquivo de comando, configuração MCP, payload codificado
@@ -292,14 +287,21 @@ refinada ao longo do tempo.
 - **Não é um substituto para regras `deny`.** O classificador é "best-effort".
   Para comandos que você tem certeza que nunca devem ser executados, coloque-os em
   `permissions.deny`.
-- **Ferramentas MCP têm bloqueio conservador por padrão.** Ferramentas MCP de terceiros
-  (`mcp__*`) optam pelo encaminhamento de argumentos via sobrescrita
-  `toAutoClassifierInput`. Ferramentas que não optaram expõem apenas seu nome ao
-  classificador — a maioria dessas chamadas é bloqueada conservadoramente, a menos que você tenha
-  escrito uma regra `allow` explícita. Isso é fail-closed por design (credenciais e
-  conteúdo volumoso não vazam para o LLM do classificador). Se você confia em uma
-  ferramenta MCP específica, adicione `permissions.allow: ["mcp__server__tool"]` para
-  que ela ignore o classificador completamente.
+- **Ferramentas MCP são julgadas por seus argumentos, não por comportamento verificado.**
+  Ferramentas MCP de terceiros (`mcp__*`) nunca estão na allowlist do caminho rápido;
+  cada chamada de um servidor que não está marcado como `trust: true` vai para o
+  classificador com o nome do servidor, o nome da ferramenta, as anotações
+  autorrelatadas do servidor (`readOnlyHint` / `destructiveHint` /
+  `idempotentHint` / `openWorldHint`) e uma cópia delimitada dos
+  argumentos. O classificador é informado de que as anotações não são verificadas. Ele
+  não pode ver o que o servidor realmente faz com a chamada, então um
+  nome de ferramenta enganoso mais argumentos benignos ainda pode passar. Se você
+  confia em uma ferramenta MCP específica, adicione
+  `permissions.allow: ["mcp__server__tool"]` para que ela ignore o
+  classificador completamente; se quiser que o classificador veja apenas o nome da ferramenta
+  (por exemplo, quando ele é executado contra um provedor diferente do
+  modelo principal), defina `permissions.autoMode.mcp.forwardArguments: false`
+  — a maioria das chamadas MCP será então bloqueada conservadoramente.
 
 ## FAQ
 
@@ -316,7 +318,7 @@ expõe:
 
 - `read_file` e outras ferramentas somente leitura: não invocadas (estão na
   allowlist do caminho rápido).
-- `edit` / `write_file`: file_path mais os primeiros 80 caracteres do
+- `edit` / `write_file`: file_path mais uma prévia de 300 caracteres do
   conteúdo antigo/novo. O conteúdo completo não é encaminhado.
 - `run_shell_command`: o comando completo (é necessário — é isso que o
   classificador avalia).
@@ -329,13 +331,24 @@ expõe:
 Os resultados das ferramentas (o conteúdo real retornado pelas ferramentas) são totalmente
 removidos da transcrição do classificador.
 
-As ferramentas MCP (`mcp__*`) seguem um padrão mais restrito: seus parâmetros
-não são encaminhados a menos que o autor da ferramenta MCP tenha optado explicitamente via
-sobrescrita `toAutoClassifierInput`. O classificador vê o nome da ferramenta,
-mas nenhum argumento, então a maioria das chamadas MCP será bloqueada conservadoramente,
-a menos que o usuário tenha escrito uma regra de permissão explícita. Isso é fail-
-closed por design — ferramentas de terceiros não devem vazar credenciais ou
-conteúdo volumoso de arquivos para o LLM do classificador sem intenção.
+Ferramentas MCP (`mcp__*`): o nome do servidor, o nome da ferramenta, as
+anotações do servidor e os argumentos da chamada são encaminhados. Cada string (valor
+ou chave) é cortada em 2.000 caracteres, nomes em 200, todo o payload
+compartilha um orçamento de 16.000 caracteres medido na forma formatada
+que o classificador recebe, e aninhamento / contagens de entradas são limitados; cada
+corte é marcado no local (`…[truncated N chars]` ou `[omitted: …]`) e
+sinalizado com `arguments_truncated: true` / `name_truncated: true` para que
+o classificador nunca confunda uma omissão com uma ausência. Ações
+históricas na transcrição são limitadas a 4.000 caracteres cada e
+40.000 no total (mais recentes mantidas primeiro; as mais antigas mantêm apenas seu nome
+de ferramenta). Os argumentos são o que o agente está prestes a
+enviar para aquele servidor — as regras de exfiltração de dados e
+escrita externa do classificador só podem ser aplicadas a eles, e eles já
+foram produzidos pelo modelo principal, então encaminhá-los para um classificador
+na mesma configuração de modelo não divulga nada de novo. Se seu
+classificador é executado contra um provedor diferente, defina
+`permissions.autoMode.mcp.forwardArguments: false` para restaurar a
+projeção somente de nome (espere que a maioria das chamadas MCP seja bloqueada).
 
 **Posso desativar a mensagem de informação da primeira vez?**
 

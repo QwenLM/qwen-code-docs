@@ -117,7 +117,8 @@ Por padrão, hooks HTTP não podem targetear faixas de IP privadas ou link-local
 
 - Esta configuração é **honrada apenas nos escopos de configurações User, System e SystemDefaults**. Um valor definido nas configurações de Workspace (projeto) é ignorado e registrado como aviso, então um repositório clonado nunca pode conceder essa bypass por conta própria.
 - O flag relaxa apenas as verificações de **faixa** privadas/CGNAT/link-local gerais. Endpoints de metadados de nuvem permanecem bloqueados em todas as configurações: a lista `BLOCKED_HOSTS` é correspondida literalmente (`metadata.google.internal`, `metadata.azure.internal`, ...), e os IPs de metadados `169.254.169.254` e `100.100.100.200` são bloqueados em todas as formas serializadas (incluindo IPv4-mapped IPv6 como `::ffff:a9fe:a9fe`) e após resolução DNS.
-- A lista de permissão `security.allowedHttpHookUrls` ainda se aplica independentemente. Em ambientes gerenciados, combine este flag com uma lista de permissão para que apenas os endpoints internos desejados sejam acessíveis.
+- A lista de permissão `security.allowedHttpHookUrls` ainda se aplica independentemente. Em ambientes gerenciados, combine este flag com uma lista de permissão para que apenas os endpoints internos desejados sejam acessíveis. Uma lista de permissão nas configurações de Workspace (projeto) é honrada apenas quando nenhum escopo User, System ou SystemDefaults define uma; caso contrário, é ignorada e registrada como aviso, então um repositório pode restringir para onde seus hooks enviam dados, mas nunca substituir uma lista de permissão que você configurou (uma lista de permissão vazia significa "permitir tudo").
+- Hooks HTTP nunca seguem redirecionamentos. Uma resposta 3xx é tratada como qualquer outro status não 2xx: uma falha não bloqueante de hook, e o alvo do redirecionamento nunca é contatado.
 
 > **Warning:** Habilitar este flag permite que hooks acessem infraestrutura interna na sua rede. Habilite-o apenas em configurações gerenciadas e confiáveis — nunca em um repositório que você não controla.
 
@@ -724,7 +725,7 @@ Quando enviado ao modelo, o `additionalContext` injetado é anexado como sua pr�
 }
 ```
 
-O hook usa os campos de sessão normais do runtime de exclusão (`session_id`, `transcript_path` e `cwd`); via ACP, `transcript_path` está vazio porque o runtime de exclusão não tem transcrição própria. `SessionDelete` atualmente dispara para o fluxo interativo `/delete` e o método `deleteSession` explícito do ACP; exclusão em batch via daemon REST e limpeza interna não o emitem.
+O hook usa os campos de sessão normais do runtime de exclusão (`session_id`, `transcript_path` e `cwd`); via ACP, `transcript_path` está vazio porque o runtime de exclusão não tem transcrição própria. `SessionDelete` atualmente dispara para o fluxo interativo `/delete` e o método `deleteSession` explícito do ACP; exclusão em batch via daemon REST e limpeza interna não o emitem. Um hook de comando é deixado para terminar se o Qwen sair após o despacho; seu stdout e stderr são ignorados e permanecem independentes dos pipes do Qwen.
 
 #### MessageDisplay
 
@@ -842,6 +843,8 @@ Os campos `context_usage`, `context_limit` e `input_tokens` permitem que scripts
 - Registro de falhas de autenticação
 - Notificações de erro de faturamento
 - Coleta de estatísticas de erros
+
+Um hook de comando é deixado para terminar se o Qwen sair após o despacho; seu stdout e stderr são ignorados e permanecem independentes dos pipes do Qwen.
 
 #### SubagentStart
 
@@ -1303,10 +1306,12 @@ Os hooks são configurados nas configurações do Qwen Code, geralmente em `.qwe
 
 Apenas o tipo `command` suporta execução assíncrona. Definir `"async": true` executa o hook em segundo plano sem bloquear o fluxo principal.
 
+Hooks assíncronos têm escopo no processo do Qwen porque sua saída capturada é entregue através do registro de hooks assíncronos em memória. No POSIX, o Qwen recupera uma árvore de processos de hooks assíncronos ainda em execução quando sai, exceto para tipos de evento cujas seções garantem explicitamente conclusão fire-and-forget após a saída. O Windows não pode reconstruir uma árvore de descendentes após seu processo raiz sair, então a recuperação completa na saída do pai lá requer um Job Object ou rastreamento de descendentes.
+
 **Recursos:**
 
 - Não pode retornar o controle de decisão (a operação já ocorreu)
-- Os resultados são injetados no próximo turno da conversa via `systemMessage` ou `additionalContext`
+- Os resultados são injetados no próximo turno da conversa via `systemMessage` ou `additionalContext`, exceto para tipos de evento fire-and-forget com saída ignorada documentados acima
 - Adequado para auditoria, logging, testes em segundo plano, etc.
 
 **Exemplo:**

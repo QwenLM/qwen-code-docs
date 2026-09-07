@@ -4,7 +4,7 @@
 
 `packages/acp-bridge/` 负责守护进程 HTTP 层与 ACP 子进程之间的边界。它被 `packages/cli/src/serve/`（即 `qwen serve` 守护进程）消费，并在 #4175 F1 第 3 步中被提取出来，以便未来的消费者（如 `channels/base/AcpBridge.ts`、VS Code IDE 伴侣插件）能够使用相同的 bridge 核心，而无需深入 CLI 包。
 
-每个活跃的 `WorkspaceRuntime` 拥有一个 `HttpAcpBridge` 实例。生产环境会尝试预热主 bridge，并在失败后于首次使用时重试。受信任的次级运行时会打开其 `AcpChannel` 并按需启动其子进程；不受信任的次级运行时无法启动 ACP。在 runtime 内部，bridge 通过 channel 提供多路复用的 session、每个 session 的 `EventBus`、一个 `MultiClientPermissionMediator`、一个 `BridgeFileSystem` 适配器，以及面向 ACP 的辅助函数（`spawnOrAttach`、`loadSession`、`resumeSession`、`sendPrompt`、`cancelSession`、`respondToPermission`，以及用于 workspace 状态和 MCP 重启的 extMethod RPC）。Bridge 和子进程不会在 workspace runtime 之间共享。
+每个活跃的 `WorkspaceRuntime` 拥有一个 `HttpAcpBridge` 实例。生产环境会尝试预热受信任的主子进程以保证兼容性；受信任的次级运行时在首个运行时命令或 Session 时打开其 `AcpChannel`，不受信任的次级运行时无法启动 ACP。遗留主路由保留其现有的兼容性行为。在 runtime 内部，bridge 通过 channel 提供多路复用的 session、每个 session 的 `EventBus`、一个 `MultiClientPermissionMediator`、一个 `BridgeFileSystem` 适配器，以及面向 ACP 的辅助函数（`spawnOrAttach`、`loadSession`、`resumeSession`、`sendPrompt`、`cancelSession`、`respondToPermission`，以及用于 workspace 状态和 MCP 重启的 extMethod RPC）。Bridge 和子进程绝不会在 workspace runtime 之间共享。
 
 ## 职责
 
@@ -47,7 +47,7 @@
 | `mediator`      | `MultiClientPermissionMediator` | 每个 bridge 实例一个。                                                                                                                                                                                                                                                                                                                                                                                 |
 | Constants       | —                               | `DEFAULT_INIT_TIMEOUT_MS = 10_000`、`MCP_RESTART_TIMEOUT_MS = 300_000`、`DEFAULT_MAX_SESSIONS = 32`、`MAX_EVENT_RING_SIZE = 1_000_000`、`DEFAULT_PERMISSION_TIMEOUT_MS = 0`、`DEFAULT_MAX_PENDING_PER_SESSION = 64`。                                                                                                                                                                                  |
 
-**`isDying` 不变量**：任何 teardown 路径都必须在 await `channel.kill()` **之前**同步设置 `ChannelInfo.isDying = true`。`ensureChannel` 将 dying channel 视为不存在并生成一个新的。如果没有这个标志，在 SIGTERM 宽限期（最长 10 秒）内到达的并发 `spawnOrAttach` 将会附加到一个即将关闭的 transport 上，并且调用者的 sessionId 在后续每次操作中都会返回 404。**设置点**（必须保持同步）：`ensureChannel`（初始化失败 + 延迟 shutdown 重新检查）、`doSpawn`（空 channel 上的 newSession 失败）、`killSession`（最后一个 session 离开）、`shutdown`（批量）。
+**`isDying` 不变量**：任何 teardown 路径都必须在 await `channel.kill()` **之前**同步设置 `ChannelInfo.isDying = true`。`ensureChannel` 将 dying channel 视为不存在并生成一个新的。如果没有这个标志，在 SIGTERM 宽限期（最长 10 秒）内到达的并发 `spawnOrAttach` 将会附加到一个即将关闭的 transport 上，并且调用者的 sessionId 在后续每次操作中都会返回 404。Teardown 包括初始化失败、空 channel 生成失败、workspace 空闲过期和 shutdown；关闭最后一个 Session 仅释放其租约并调度 workspace 空闲策略。
 
 **`channelInfo` 保留不变量**：在设置 `isDying = true` 时**不要**清除 `channelInfo`。`killAllSync` 在 SIGTERM 宽限期内仍必须能找到该 channel，以便在 `process.exit(1)` 时触发 SIGKILL。`aliveChannels` 会保留 dying 条目，直到 `channel.exited` 触发。
 
@@ -170,7 +170,7 @@ sequenceDiagram
 ## 状态与生命周期
 
 - Bridge 构造是同步的。调用者可以在第一个 session 之前预热 channel；否则第一次 `spawnOrAttach` 会冷启动 ACP 子进程。预热失败后，首次使用时可以自由重试。
-- 在 `sessionScope: 'single'` 下，`defaultEntry` 的生命周期与 bridge 相同；当 `sessionIds.size === 0`（在 `killSession` 之后）且 `isDying` 变为 true 时，channel 会被清理。
+- `defaultEntry` 是 `sessionScope: 'single'` 下可复用的逻辑 Session。Session 关闭仅移除其 Session 租约。在所有 Session、恢复、workspace 控制、发现、认证和运行时操作工作 drain 完毕且没有显式 ensure 保活窗口待处理后，省略或为零的 `channelIdleTimeoutMs` 会立即回收子进程。单纯的预热会为首次使用保留，且不会单独触发该立即回收器。正值或活跃的保活窗口会延迟回收；剩余延迟时间越长优先级越高。
 - `MAX_EVENT_RING_SIZE = 1_000_000` 是 `BridgeOptions.eventRingSize` 的软上限，用于在导致每个 session 约 500 MB 的 OOM 之前捕获操作员的拼写错误。
 - `DEFAULT_PERMISSION_TIMEOUT_MS = 0` 默认允许人工权限处理和提问无限期等待。`permissionResponseTimeoutMs` 在运维人员需要时启用挂钟上限；投票者取消、会话取消和关闭在不使用它时仍然可用。
 - `DEFAULT_MAX_PENDING_PER_SESSION = 64` 镜像了 `DEFAULT_MAX_SUBSCRIBERS`；超出的 `requestPermission` 调用会被解析为 cancelled，并附带 stderr 警告。
@@ -207,7 +207,7 @@ sequenceDiagram
 | `permissionPolicy`                            | 来自 `settings.json` 的 `policy.permissionStrategy` | `first-responder` / `designated` / `consensus` / `local-only` 之一。                                                 |
 | `permissionConsensusQuorum`                   | 来自 `settings.json`                               | consensus 策略的 N 值。                                                                                               |
 | `permissionAudit`                             | `createNoOpPermissionAuditPublisher()`             | 连接到 `PermissionAuditRing` 以获取审计跟踪。                                                                    |
-| `channelIdleTimeoutMs`                        | `0`                                                | 在最后一个 session 关闭后，保持 ACP 子进程存活的毫秒数。                                    |
+| `channelIdleTimeoutMs`                        | `0`                                                | 自动回收延迟；单纯预热在其首次状态读取后存活，且活跃保活可能延长它。                                                           |
 
 超时的 restore 在当前 ACP SDK 中不可取消。因此 bridge 会保持结算围栏和容量准入，直到真实请求结算或其 transport 关闭。迟到的结果仅会被精确关闭一次且不会被注册。清理不确定性仅隔离该 workspace 上的新 session 工作；现有的 session 和 workspace 控制流量继续运行，直到 channel drain 并被回收。
 

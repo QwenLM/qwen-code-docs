@@ -2,7 +2,7 @@
 
 개발자 워크스테이션에서 `qwen serve`를 장기간 백그라운드 프로세스로 실행하기 위한 레퍼런스 템플릿입니다. [v0.16-alpha 알려진 제한](./qwen-serve.md#v016-alpha-known-limits)과 함께 사용됩니다 — 로컬 전용, 단일 사용자, 자체 bearer token. 컨테이너화 / 다중 호스트 / TLS 프론트 배포는 v0.16.x로 연기됩니다.
 
-> **대상 독자**: 재부팅 후에도 데몬이 유지되길 원하고, 로그를 내구성 있는 위치에 저장하며, 깔끔한 `restart-on-failure` 시나리오를 원하는 독fooding 개발자. 단일 셸 세션 동안만 데몬이 필요다면 일반 `qwen serve`(foreground, Ctrl-C로 중지)로 충분합니다.
+> **대상 독자**: 재부팅 후에도 데몬이 유지되길 원하고, 로그를 내구성 있는 위치에 저장하며, 깔끔한 `restart-on-failure` 시나리오를 원하는 dogfooding 개발자. 단일 셸 세션 동안만 데몬이 필요다면 일반 `qwen serve`(foreground, Ctrl-C로 중지)로 충분합니다.
 
 ## Bearer token 생성 (한 번만)
 
@@ -39,16 +39,14 @@ export QWEN_SERVER_TOKEN="$(cat ~/.qwen-serve-token)"
 
 런타임 격리는 cwd, 환경 오버레이, 파일 시스템/신뢰 경계,
 작업 공간 서비스, 브리지, Voice lease 상태, 채널 워커 및 ACP/MCP
-리소스 경계를 포함합니다. 프로덕션은 기본 ACP 자식의 예열을 시도하고
-실패 시 첫 사용 시 재시도합니다. 신뢰할 수 있는 보조 작업 공간은 필요에 따라 시작하고,
-신뢰할 수 없는 보조 작업 공간은 ACP를 시작하지 않습니다.
+리소스 경계를 포함합니다. 프로덕션은 호환성을 위해 신뢰할 수 있는 기본 ACP 자식을 예열하려고 시도합니다. 신뢰할 수 있는 보조 작업 공간은 첫 런타임 기반 명령어 또는 Session에서 시작되며, 신뢰할 수 없는 보조 작업 공간은 ACP를 시작하지 않습니다. 레거시 기본 경로는 기존 호환성 동작을 유지합니다.
 인증, HTTP 속도 제한, 리스너 및 Voice 수용 한도,
 총 세션 수용, 메트릭, 종료 및 프로세스 장애 반경은
 데몬 전역으로 유지됩니다. 이러한 프로세스 수준 경계가 독립적이어야 하는 경우 별도의 데몬을 실행하세요.
 
 ## Linux: systemd 사용자 유닛
 
-> **먼저 `qwen` 바이너리를 찾으세요.** 유닛 파일의 `ExecStart=`는 **절대 경로**를 포함해야 합니다 — 서비스 관리자는 셸의 `PATH`를 읽지 않습니다. `which qwen`을 실행하여 경로를 확인하세요. 일반적인 위치: `/usr/local/bin/qwen`(Linuxbrew, 수동 설치), `~/.nvm/versions/node/vX.Y.Z/bin/qwen`(nvm), `~/.fnm/aliases/default/bin/qwen`(fnm), `~/.volta/bin/qwen`(Volta). 아래 템플릿에서 `/PATH/TO/qwen`으로 표시된 실제 경로를 대체하세요.
+> **먼저 `qwen` 바이너리와 신뢰할 수 있는 도구 디렉토리를 찾으세요.** 유닛 파일의 `ExecStart=`는 **절대 경로**를 포함해야 하며, 명시적 `PATH`에는 데몬 세션에 필요한 도구(`gh`, `git`, `npm` 및 스크립트 기반 `qwen` 런처가 사용하는 `node` 인터프리터)의 신뢰할 수 있는 디렉토리가 포함되어야 합니다. 서비스 관리자는 셸 프로필을 읽지 않습니다. 일반 셸에서 `which qwen gh git npm node`를 실행한 다음, 아래 템플릿에서 `/PATH/TO/qwen`과 `/PATH/TO/USER/BIN`으로 표시된 곳에 실제 실행 파일과 디렉토리로 대체하세요.
 
 `~/.config/systemd/user/qwen-serve.service`:
 
@@ -63,6 +61,9 @@ Type=simple
 WorkingDirectory=%h/project-a
 # `which qwen`을 실행하여 절대 경로를 확인하세요. systemd는 $PATH를 읽지 않습니다.
 ExecStart=/PATH/TO/qwen serve --hostname 127.0.0.1 --port 4170 --workspace %h/project-a --workspace %h/project-b
+# 첫 번째 항목을 qwen의 인터프리터와 사용자가 설치한 도구가 포함된
+# 신뢰할 수 있는 디렉토리로 대체하세요. systemd는 셸 프로필을 읽지 않습니다.
+Environment=PATH=/PATH/TO/USER/BIN:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 # 유닛에 인라인으로 삽입하는 대신 chmod 600 파일에서 bearer token을 읽습니다.
 # `Environment=`는 유닛 파일에서 token을 노출합니다
 # (일반적으로 644 = 모든 사용자 읽기 가능). EnvironmentFile은 token을
@@ -97,11 +98,11 @@ systemctl --user disable --now qwen-serve.service
 
 `loginctl enable-linger` 없이는 사용자 수준 systemd 인스턴스가 사용자가 로그아웃할 때 종료되고 다음 로그인 시에만 재시작됩니다 — 헤드리스 개발 박스에서는 SSH 세션이 종료될 때 데몬이 생존하지 못합니다. `enable-linger`가 "재부팅 후에도" 실제로 작동하게 합니다.
 
-**시스템 전체 대안**(공유 개발 호스트, 덜 일반적): 유닛을 `/etc/systemd/system/qwen-serve@.service`에 `User=%i`와 함께 배치하고, `sudo systemctl enable --now qwen-serve@<username>.service`로 관리합니다. 동일한 `[Service]` 본문을 사용하지만 — 모든 사용자가 읽을 수 있는 `Environment=` 노출은 이 수준에서 더 문제가 되므로 항상 사용자의 `chmod 600` 파일을 가리키는 `EnvironmentFile=`을 사용하세요. 단일 사용자 워크스테이션에는 사용자 수준 + linger를 선택하세요.
+**시스템 전체 대안**(공유 개발 호스트, 덜 일반적): 유닛을 `/etc/systemd/system/qwen-serve@.service`에 `User=%i`와 함께 배치하고, `sudo systemctl enable --now qwen-serve@<username>.service`로 관리합니다. 그 외에는 동일한 `[Service]` 본문을 사용합니다. 민감하지 않은 `PATH`는 `Environment=`에 그대로 둘 수 있지만, bearer token은 절대 여기에 넣지 마세요. 사용자의 `chmod 600` 파일을 가리키는 `EnvironmentFile=`을 사용하세요. 단일 사용자 워크스테이션에는 사용자 수준 + linger를 선택하세요.
 
 ## macOS: launchd 사용자 에이전트
 
-> **먼저 `qwen` 바이너리를 찾으세요.** systemd와 동일한 제약 — `ProgramArguments`는 **절대 경로**를 포함해야 합니다. `which qwen`을 실행하여 경로를 확인하세요. macOS의 일반적인 위치: `/opt/homebrew/bin/qwen`(Apple Silicon의 Homebrew), `/usr/local/bin/qwen`(Intel Homebrew, 수동 설치), `~/.nvm/versions/node/vX.Y.Z/bin/qwen`(nvm), `~/.volta/bin/qwen`(Volta). 템플릿에서 `/PATH/TO/qwen`으로 표시된 경로를 대체하세요.
+> **먼저 `qwen` 바이너리와 신뢰할 수 있는 도구 디렉토리를 찾으세요.** systemd와 동일한 제약입니다. `ProgramArguments`는 **절대 경로**를 포함해야 하며, `EnvironmentVariables.PATH`에는 데몬 세션에 필요한 도구가 포함된 신뢰할 수 있는 디렉토리가 포함되어야 합니다. 일반 셸에서 `which qwen gh git npm node`를 실행하세요. macOS의 일반적인 위치는 `/opt/homebrew/bin`(Apple Silicon의 Homebrew), `/usr/local/bin`(Intel의 Homebrew 및 수동 설치), `~/.nvm/versions/node/vX.Y.Z/bin`(nvm), `~/.volta/bin`(Volta)입니다. 아래 실제 절대 경로로 대체하세요. launchd는 `~`나 셸 변수를 확장하지 않습니다.
 
 `~/Library/LaunchAgents/com.qwenlm.qwen-serve.plist`:
 
@@ -131,6 +132,11 @@ systemctl --user disable --now qwen-serve.service
   <string>/Users/YOUR-USERNAME/project-a</string>
   <key>EnvironmentVariables</key>
   <dict>
+    <!-- launchd는 셸 프로필을 읽지 않습니다. 첫 번째 항목을
+         qwen의 인터프리터와 사용자 도구가 포함된 신뢰할 수 있는
+         디렉토리로 대체하세요. -->
+    <key>PATH</key>
+    <string>/PATH/TO/USER/BIN:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     <!-- 이 파일에 실제 token을 포함하여 커밋하지 마세요. 또한
          plist 자체를 chmod 600으로 설정하여 인라인 token이
          모든 사용자에게 읽히지 않도록 하세요. -->
@@ -180,6 +186,8 @@ tail -f ~/Library/Logs/qwen-serve/out.log ~/Library/Logs/qwen-serve/err.log
 
 plist를 편집한 후(예: token 순환) 반드시 `unload`한 다음 다시 `load`해야 합니다 — `launchctl`은 `systemd daemon-reload`와 달리 plist 변경 시 자동으로 다시 로드하지 않습니다. 참고: 각 `load`는 로그 파일을 자르므로 순환 전에 사고를 조사 중이라면 저장해 두세요.
 
+어느 쪽이든 서비스를 시작하거나 재시작한 후, 새 데몬 세션을 열고 명령 내부에서 `PATH`를 변경하지 않고도 필요한 도구가 해결되는지 확인하세요(예: `command -v gh`). 도구가 누락되어 있으면 해당 도구의 신뢰할 수 있는 절대 디렉토리를 서비스 수준의 `PATH`에 추가하고 서비스를 다시 로드하세요. `~/.zshrc`, `~/.bashrc` 또는 다른 대화형 셸 프로필에 의존하지 마세요.
+
 ## tmux 세션 (대화형 감독)
 
 `QWEN_SERVER_TOKEN`이 셸에 이미 export되어 있다고 가정합니다(위 설정 섹션 참조):
@@ -216,7 +224,7 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
   http://127.0.0.1:4170/capabilities | jq .protocolVersions         # 데몬의 기능 세트
 ```
 
-인증이 구성된 경우(즉, 데몬이 `--token` / `QWEN_SERVER_TOKEN`이 설정된 상태로 시작되었거나 `--require-auth=true`인 경우), loopback 바인드의 `/health`를 제외한 모든 경로는 `Authorization: Bearer <token>`을 요구합니다. loopback 기본값에서 token 없이 데몬을 시작한 경우(`qwen serve` zero-config 경로), 두 호출 모두 헤더를 필요로 하지 않습니다. 위 템플릿은 모두 token을 구성하므로 실제로는 `Authorization` 헤더가 필요합니다. `/capabilities`가 `401`을 반환하면 유닛 / plist의 token이 `curl`이 사용하는 env-exported token과 일치하지 않는 것입니다.
+인증이 구성된 경우(`--token` 또는 `QWEN_SERVER_TOKEN`), 일반 loopback 바인드에서 `/health`를 제외한 모든 일반 API 경로는 `Authorization: Bearer <token>`을 요구합니다. 채널 webhook 수신은 항상 구성된 `x-qwen-webhook-secret`을 사용하며, Web Shell 문서 및 에셋 경로는 사전 인증 상태로 유지됩니다. `--require-auth=true`는 부팅 시 token을 요구하며, webhook 인증을 변경하지 않고 loopback `/health`를 bearer 게이트 뒤로 이동시킵니다. loopback 기본값에서 token 없이 데몬을 시작한 경우(`qwen serve` zero-config 경로), 두 호출 모두 헤더를 필요로 하지 않으며, 기본 리스너에 도달할 수 있는 모든 로컬 프로세스는 데몬 사용자로 코드 실행을 포함한 전체 운영자 API 권한을 가집니다. 위 템플릿은 모두 token을 구성하므로 실제로는 `Authorization` 헤더가 필요합니다. `/capabilities`가 `401`을 반환하면 유닛 / plist의 token이 `curl`이 사용하는 env-exported token과 일치하지 않는 것입니다.
 
 ## Token 순환
 
@@ -250,7 +258,7 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
 
 - **컨테이너화 배포** — Dockerfile, docker-compose, Kubernetes 매니페스트, nginx + TLS 리버스 프록시, 다중 인스턴스 token 격리. 엔터프라이즈 파일럿이 확정되면 v0.16.x로 연기됩니다. 아무도 검증하지 않으면 문서가 부패하기 때문입니다.
 - **교차 호스트 페더레이션 / 한 호스트에서 다중 데몬 조정** — 하나의 데몬이 여러 등록된 작업 공간 런타임을 호스팅할 수 있지만 데몬 간 조정은 없습니다. 인스턴스 경로 token 키잉 + 오래된 token 정리는 v0.16.x로 연기됩니다.
-- **일반 데몬 token 저장** — `--local-control`은 해당 프로세스에 대해 새 token을 생성합니다; 장기 배포는 BYO-token을 유지합니다. 영구 token 저장소 인프라는 v0.16.x로 연기됩니다.
+- **일반 데몬 token 저장** — Local Control은 취소 가능한 데몬 소유 페어링 token을 사용하지만, 장기 실행 런타임 token 저장은 BYO-token으로 유지됩니다. 영구 token 저장소 인프라는 v0.16.x로 연기됩니다.
 - **Windows 네이티브 서비스**(`nssm`, Service Control Manager 래퍼) — 지금은 [WSL2](https://learn.microsoft.com/en-us/windows/wsl/)를 사용하고 위 systemd 섹션을 따르세요.
 
 전체 연기된 기능 목록에 대해서는 메인 사용자 가이드의 [v0.16-alpha 알려진 제한](./qwen-serve.md#v016-alpha-known-limits) 콜아웃을 참조하고, v0.16-alpha 롤아웃 추적 이슈에 대해서는 [#4175](https://github.com/QwenLM/qwen-code/issues/4175)를 참조하세요.

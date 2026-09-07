@@ -181,7 +181,7 @@ Sélectionnez ensuite « créer » et suivez les instructions pour définir :
 
 - Un identifiant unique décrivant l'objectif du sous-agent (par exemple `code-reviewer`, `api-designer`).
 - Quand Qwen Code doit utiliser cet agent
-- Quels outils il peut accéder
+- Les outils auxquels il peut accéder
 - Un prompt système décrivant le rôle et le comportement de l'agent
 
 > [!tip]
@@ -402,7 +402,7 @@ Supposons que vous deviez travailler sur plusieurs tâches simultanément avec u
 
 **1. Comprendre les Git worktrees**
 
-Les Git worktrees vous permettent de vérifier plusieurs branches du même dépôt dans des répertoires séparés. Chaque worktree possède son propre répertoire de travail avec des fichiers isolés, tout en partageant le même historique Git. En savoir plus dans la [documentation officielle de Git worktree](https://git-scm.com/docs/git-worktree).
+Les Git worktrees vous permettent d'extraire plusieurs branches du même dépôt dans des répertoires séparés. Chaque worktree possède son propre répertoire de travail avec des fichiers isolés, tout en partageant le même historique Git. En savoir plus dans la [documentation officielle de Git worktree](https://git-scm.com/docs/git-worktree).
 
 **2. Créer un nouveau worktree**
 
@@ -446,7 +446,7 @@ git worktree remove ../project-feature-a
 > [!tip]
 >
 > - Chaque worktree a son propre état de fichier indépendant, ce qui le rend parfait pour des sessions Qwen Code parallèles
-> - Les modifications apportées dans un worktree n'affectent pas les autres, empêchant les instances Qwen Code de s' interférer
+> - Les modifications apportées dans un worktree n'affectent pas les autres, empêchant les instances Qwen Code d'interférer entre elles
 > - Tous les worktrees partagent le même historique Git et les mêmes connexions distantes
 > - Pour les tâches longues, vous pouvez avoir Qwen Code qui travaille dans un worktree pendant que vous continuez le développement dans un autre
 > - Utilisez des noms de répertoires descriptifs pour identifier facilement à quelle tâche chaque worktree est destiné
@@ -569,3 +569,35 @@ quelles sont les limitations de Qwen Code ?
 > - Qwen Code a toujours accès à la documentation la plus récente de Qwen Code, indépendamment de la version que vous utilisez
 > - Posez des questions spécifiques pour obtenir des réponses détaillées
 > - Qwen Code peut expliquer des fonctionnalités complexes comme l'intégration MCP, les configurations d'entreprise et les workflows avancés
+
+## Imposer des conclusions fondées sur des preuves
+
+Lorsque Qwen Code effectue un travail à haut enjeu — revue de code, dépannage d'incidents, audits ou investigation de données de production — une conclusion confiante mais erronée coûte plus cher qu'une absence de conclusion. Vous pouvez encoder la politique de vérification de votre équipe dans QWEN.md (voir [Memory](./features/memory.md)) afin qu'elle s'applique à chaque session, sans modifier les paramètres par défaut de qui que ce soit.
+
+Les règles ci-dessous sont adaptées d'une rétrospective de production d'un déploiement multi-agents, où des conclusions confiantes mais erronées remontaient systématiquement aux mêmes modes de défaillance : déduire l'état à partir du code au lieu de le requêter, traiter une condition satisfaite comme une preuve, et répéter des déclarations antérieures comme des faits.
+
+**1. Ajoutez une politique de vérification au QWEN.md de votre projet**
+
+Placez ce modèle dans `QWEN.md` à la racine de votre dépôt et commitez-le, afin que la politique s'applique à toute l'équipe :
+
+```markdown
+# Verification policy
+
+Treat these rules as mandatory in investigations, troubleshooting, reviews, and any task that draws conclusions:
+
+1. Verify before concluding. Back claims about data or system state with evidence from the authoritative source (database, API, logs, command output). Conclusions drawn from reading code alone must be labeled "unverified inference".
+2. Verify the full chain. Enumerate the causal chain and check every link; one satisfied necessary condition does not prove a conclusion.
+3. Treat conversation history as leads, not facts. Statements in earlier transcripts — including your own prior assertions — are leads. Re-verify them at the source before repeating them as facts.
+4. Troubleshoot in order: your own recent changes first, then docs and known issues, and only then external dependencies.
+5. 100% evidence rule in reviews. In review and audit tasks, report no conclusion without evidence; attach verifiable evidence (file:line, query result, log excerpt) to every claim.
+```
+
+**2. Choisissez le bon périmètre**
+
+Voir [Où créer QWEN.md](./features/memory.md#where-to-create-qwenmd) pour savoir quel fichier s'applique à qui — commitez la copie `QWEN.md` à la racine du projet afin que la politique couvre toute l'équipe.
+
+> [!tip]
+>
+> - Gardez les règles spécifiques et actionnables : « étayer chaque affirmation avec un résultat de requête » fonctionne mieux que « soyez prudent ».
+> - Gardez la politique courte — QWEN.md est suivi plus fidèlement lorsqu'il est concis (voir [Memory](./features/memory.md)).
+> - Adaptez les règles à votre stack : nommez les outils de requête, tableaux de bord ou commandes de logs que votre équipe considère comme des sources faisant autorité.

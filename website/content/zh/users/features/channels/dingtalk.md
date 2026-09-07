@@ -209,6 +209,6 @@ qwen channel start
 
 这意味着钉钉在消息回调中未包含回复端点。可能是机器人权限配置错误。请检查开发者平台中的机器人设置。
 
-### "Sorry, something went wrong processing your message"
+### "Unable to process this message"
 
-这通常意味着代理遇到了错误。检查终端输出以获取详细信息。
+该回复会标识失败类别并建议下一步操作。如果问题持续存在，请将回复中显示的引用提供给机器人管理员；同一引用也会出现在频道进程日志中详细错误的旁边。

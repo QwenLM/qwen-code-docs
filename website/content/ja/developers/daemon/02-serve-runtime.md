@@ -8,7 +8,7 @@
 
 - `ServeOptions` の解析と検証: リッスンアドレス、認証、ワークスペース、セッション/接続の上限、MCP バジェット/プール、CORS、プロンプト/SSE/セッションのアイドルタイムアウト、レート制限、および関連するトグル。
 - プライマリワークスペースを正確に 1 回だけ**正規化**し、セッションランタイムを登録する前に繰り返された `--workspace` もすべて正規化します。プライマリの正規化形式は、`/capabilities.workspaceCwd`、`POST /session` のフォールバック、およびプライマリブリッジで共有されます。
-- 安全でない、または無効な起動構成を拒否します: トークンなしの非ループバックバインド、トークンなしの `--require-auth`、トークンなしの `--allow-origin '*'`、正の `mcpClientBudget` なしの `mcpBudgetMode='enforce'`、存在しないまたはディレクトリではない `--workspace`、および無効なタイムアウトまたはレート制限値。
+- 安全でない、または無効な起動構成を拒否します: トークンなしの非ループバックバインド、トークンなしの `--require-auth`、ワイルドカードまたは非ループバック HTTP(S) のトークンなしの `--allow-origin`、正の `mcpClientBudget` なしの `mcpBudgetMode='enforce'`、存在しないまたはディレクトリではない `--workspace`、および無効なタイムアウトまたはレート制限値。
 - `WorkspaceFileSystem` ファクトリ、権限監査パブリッシャー、`DaemonStatusProvider`、および `acp-bridge` を構築します。
 - Express アプリを構築し、ミドルウェア（可変オリジン許可リスト上の `allowOriginCors` -> `hostAllowlist` -> アクセスログ -> `bearerAuth` -> レート制限 -> JSON パーサー -> テレメトリ -> ルートごとの `mutationGate`）を接続し、セッション、ワークスペース CRUD、ファイル、デバイスフロー認証、権限投票、および ACP HTTP ルートをマウントします。（無条件の `denyBrowserOriginCors` ウォールは、ブートストラップアプリ `run-qwen-serve.ts` にのみ残っています。）
 - リッスンポートをバインドし、シグナルハンドラを登録します。
@@ -26,14 +26,14 @@
 
 | ミドルウェア（登録順）                          | 目的                                                                                                                     | 備考                                                                                                              |
 | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `allowOriginCors`                          | `MutableOriginAllowlist` 上の可変オリジン許可リスト: `--allow-origin <pattern>` エントリがシードし、Local Control は有効な間に LAN オリジンを追加します。一致しないオリジンは 403 拒否エンベロープを受け取ります。 | [`12-auth-security.md`](./12-auth-security.md) を参照。                                                               |
-| `hostAllowlist(bind, getPort)`              | ループバックでは、`Host` が `localhost`、`127.0.0.1`、`[::1]`、または `host.docker.internal` と実際のポートに属することを検証します。 | DNS リバインディングに対する防御。比較は大文字と小文字を区別せず、ポートごとにキャッシュされます。Local Control LAN リスナーは、プライマリのバインドに関係なく、常に広告された権限の Host チェックを強制します。 |
+| `allowOriginCors`                          | ランタイムアプリに `MutableOriginAllowlist` を介して常にインストールされる可変オリジン許可リスト: `--allow-origin <pattern>` エントリがシードし、Local Control は有効な間に LAN オリジンを追加します。一致しないオリジンは 403 拒否エンベロープを受け取ります。 | [`12-auth-security.md`](./12-auth-security.md) を参照。                                                               |
+| `hostAllowlist(bind, getPort)`              | ループバックでは、`Host` が `localhost`、`127.0.0.1`、`[::1]`、`host.docker.internal`、または正確にバインドされたループバックアドレスに属し、さらに実際のポートであることを検証します。ポートなしの形式はポート 80 と 443 で受け入れられます。 | DNS リバインディングに対する防御。比較は大文字と小文字を区別せず、ポートごとにキャッシュされます。Local Control LAN リスナーは、プライマリのバインドに関係なく、常に広告された権限の Host チェックを強制します。 |
 | アクセスログミドルウェア                       | リクエストが完了したときに、メソッド、パス、ステータス、durationMs、sessionId、および clientId を `DaemonLogger` に記録します。               | `bearerAuth` の**前**に登録されるため、401 拒否もログに記録されます。`/health` とハートビートはスキップされます。                 |
 | `bearerAuth(token)`                         | SHA-256 と `timingSafeEqual` による定数時間ベアラートークン比較。                                                            | トークンが設定されていない場合（ループバック開発のデフォルト）はオープンパススルーになります。`Bearer` スキームは大文字と小文字を区別しません。         |
 | レート制限ミドルウェア                       | プロンプト、ミューテーション、および読み取りルート用のオプションの階層ごとのトークンバケット。                                                      | `bearerAuth` の後、JSON 解析の前に登録されます。バケットが枯渇した場合、解析前に 429 を返します。     |
 | `express.json({ limit: '10mb' })`           | JSON ボディの解析。                                                                                                         | 解析エラーは 400 を返します。                                                                                          |
 | `daemonTelemetryMiddleware`                 | `withDaemonRequestSpan` を介して、このポイントに到達した分類済みデーモン API リクエストを OpenTelemetry スパンでラップします。       | 属性には正規化ルート、解決済みワークスペースハッシュ、sessionId、clientId、およびステータスコードが含まれます。これより前の認証、レート制限、およびボディパーサーによる拒否はこのスパン境界の外側にあります。 |
-| `createMutationGate` (ルートごと)            | ループバックでもトークンを必要とするミューテーションルート用のルートレベルのオプトインゲート。                                           | `401 { code: 'token_required' }` を返します。グローバルな `app.use` ではありません。ルートは必要に応じて `mutate({ strict: true })` を呼び出します。 |
+| `createMutationGate` (ルートごと)            | オペレーター権限を必要とするミューテーション用のルートレベルのオプトインゲート。信頼されたプライマリリスナーリクエスト、ベアラートークン認証済みリクエスト、およびペアリングされた Local Control リクエストが対象となります。                                           | 信頼されたループバック権限なしで厳格なゲートに到達したトークンなしのプライマリリクエストは `401 { code: 'token_required' }` を返します。欠落または無効な構成クレデンシャルは、ベアラミドルウェアによって事前に単純な `401 Unauthorized` で拒否されます。グローバルな `app.use` ではありません。ルートは必要に応じて `mutate({ strict: true })` を呼び出します。 |
 
 **サブシステム**:
 
@@ -49,7 +49,7 @@
 | `serve/daemon-logger.ts`                                         | `DaemonLogger` 構造化ファイルログ。[`19-observability.md`](./19-observability.md) を参照。                                                                                                                                                                                                                                                                                                                                                                     |
 | `serve/debug-mode.ts`                                            | HTTP レスポンスの詳細なエラーコンテキストを制御する共有 `isServeDebugMode()` 述語。                                                                                                                                                                                                                                                                                                                                                                   |
 | `serve/acp-http/`                                                | `/acp` にマウントされる ACP Streamable HTTP トランスポート (RFD #721)。7 つのファイルで、JSON-RPC POST、SSE GET、DELETE テアダウン、および REST サーフェスと並行した共有ブリッジの使用を実装します。                                                                                                                                                                                                                                                                       |
-| `serve/web-shell-static.ts`、`serve/web-shell-resolver.ts`       | ビルド済み Web Shell アセット（デーモンのブラウザ UI）を `/`、`/assets`、`/session/:id` に配置し、すべての API ルート後に登録される SPA ディープリンクのフォールバック。すべての起動モードで `bearerAuth` の**前**にマウントされます（ブラウザはナビゲーションやサブリソースに `Authorization` を付与できません）が、呼び出す API ルートはすべてトークン保護されています。アセットが存在しない場合は API のみの動作にフォールバックします。`--no-web` で無効化できます。 |
+| `serve/web-shell-static.ts`、`serve/web-shell-resolver.ts`       | ビルド済み Web Shell アセット（デーモンのブラウザ UI）を `/`、`/assets`、`/session/:id` に配置し、すべての API ルート後に登録される SPA ディープリンクのフォールバック。すべての起動モードで `bearerAuth` の**前**にマウントされます（ブラウザはナビゲーションやサブリソースに `Authorization` を付与できません）。API 呼び出しは通常の権限ポリシーに従います。構成されたトークンは、`--require-auth` が設定されていない限り、ループバックの `/health` を除く通常の API ルートを制限します。一方、チャネル Webhook の受信は常に独自の共有シークレットを使用し、トークンなしの信頼されたループバックプライマリリスナーはフルオペレーターアクセスを持ちます。アセットが存在しない場合は API のみの動作にフォールバックします。`--no-web` で無効化できます。 |
 
 **ACP ブリッジパッケージのインポート**:
 
@@ -70,7 +70,7 @@
 5. **ワークスペースの正規化**: `canonicalizeWorkspace(rawWorkspace)` は `realpathSync.native` を 1 回実行し、`/capabilities`、`POST /session` のフォールバック、およびブリッジに供給します。
 6. **MCP バジェット検証**: 正の整数。`enforce` はバジェットを必要とします。
 7. **MCP プールトグルの推論**: 親環境の `QWEN_SERVE_NO_MCP_POOL=1` は `mcpPoolActive=false` にするため、ケイパビリティは正直に `mcp_workspace_pool` と `mcp_pool_restart` を省略します。
-8. **CORS / タイムアウト / レート制限の検証**: `--allow-origin '*'` はトークンを必要とします。プロンプト、ライター、チャネルアイドル、セッションアイドル、リーパー、およびレート制限ウィンドウの値が無効な場合は即座に失敗します。
+8. **CORS / タイムアウト / レート制限の検証**: ワイルドカードおよび非ループバック HTTP(S) の `--allow-origin` 値はトークンを必要とします。プロンプト、ライター、チャネルアイドル、セッションアイドル、リーパー、およびレート制限ウィンドウの値が無効な場合は即座に失敗します。
 9. **ハンドルごとの `childEnvOverrides`**: `process.env` を変更する代わりに、`BridgeOptions.childEnvOverrides` を介して `QWEN_SERVE_MCP_CLIENT_BUDGET` と `QWEN_SERVE_MCP_BUDGET_MODE` を ACP 子プロセスに渡します。
 10. **`settings.json` を 1 回ロード**: `context.fileName`、`policy.permissionStrategy`、および `policy.consensusQuorum` を読み取ります。破損したファイルはデフォルトにフォールバックします。`validatePolicyConfig()` は `policy.*` を `SERVE_CAPABILITY_REGISTRY.permission_mediation.modes` に対してチェックします。不明な戦略または正でない `consensusQuorum` は `InvalidPolicyConfigError` をスローします。非 `consensus` 戦略の下で設定されたクォーラムは stderr 警告をログに記録します。
 11. **`PermissionAuditRing` を割り当て** (512 エントリ)。
