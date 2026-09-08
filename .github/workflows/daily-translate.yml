@@ -313,9 +313,18 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: translation-metrics
+          # quarantine-unrepairable.json carries the per-file reasons for
+          # every file quarantine could not repair. It used to be thrown away
+          # with the runner, leaving check-run annotations as the only record:
+          # one line per file, no reasons, reachable only run by run. #260 had
+          # to be reconstructed that way, from two runs, by hand.
+          #
+          # Note these are paths, not YAML: a `#` inside the block scalar below
+          # is a literal path pattern, not a comment.
           path: |
             website/translation-metrics.json
             website/orchestrator-manifest-*.metrics.json
+            website/quarantine-unrepairable.json
           retention-days: 90
           if-no-files-found: ignore
 
