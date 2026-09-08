@@ -74,6 +74,7 @@ jspm_packages/
 website/orchestrator-manifest-*.json
 website/orchestrator-agent-*.log
 website/translation-metrics.json
+website/quarantine-unrepairable.json
 website/tsconfig.tsbuildinfo
 
 # other
