@@ -42,6 +42,9 @@ permissions:
 jobs:
   smoke:
     name: Create a throwaway PR with the PAT
+    # workflow_dispatch can target any ref, but merging the probe PR writes to
+    # main, so the probe itself must only ever run from main.
+    if: github.ref_name == 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -71,8 +74,10 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # Any non-empty diff will do; keep it to one throwaway file outside
-          # website/ so it cannot reach the built site even if something goes
-          # wrong and this lands on main.
+          # website/ so it cannot alter the built site output even if something
+          # goes wrong and this lands on main. (deploy-docs.yml fires on ANY
+          # push to main regardless of which files changed — observing that is
+          # the point of Q3; this file merely keeps the built site untouched.)
           echo "PAT smoke test, run ${GITHUB_RUN_ID}" > .pat-smoke
           git add .pat-smoke
           git commit -m "chore: PAT smoke test (run ${GITHUB_RUN_ID})"
