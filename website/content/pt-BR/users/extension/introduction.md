@@ -1,16 +1,16 @@
 # Extensões do Qwen Code
 
-As extensões do Qwen Code empacotam prompts, servidores MCP, subagentes, habilidades e comandos personalizados em um formato familiar e amigável. Com as extensões, você pode expandir as capacidades do Qwen Code e compartilhá-las com outras pessoas. Elas são projetadas para serem facilmente instaláveis e compartilháveis.
+As extensões do Qwen Code empacotam prompts, servidores MCP, subagentes, skills e comandos personalizados em um formato familiar e amigável. Com as extensões, você pode expandir as capacidades do Qwen Code e compartilhá-las com outras pessoas. Elas são projetadas para serem facilmente instaláveis e compartilháveis.
 
 Extensões e plugins da [Gemini CLI Extensions Gallery](https://geminicli.com/extensions/), do [Claude Code Marketplace](https://claudemarketplaces.com/), do Qoder e o formato portável [Agent Plugins v1](./agent-plugins.md) podem ser instalados diretamente no Qwen Code. Essa compatibilidade entre plataformas oferece acesso a um rico ecossistema de extensões e plugins, expandindo dramaticamente as capacidades do Qwen Code sem exigir que os autores das extensões mantenham versões separadas.
 
 ## Gerenciamento de extensões
 
-Oferecemos um conjunto de ferramentas de gerenciamento de extensões usando tanto comandos CLI `qwen extensions` quanto comandos de barra `/extensions` dentro do CLI interativo.
+Oferecemos um conjunto de ferramentas de gerenciamento de extensões usando tanto comandos CLI `qwen extensions` quanto comandos slash `/extensions` dentro do CLI interativo.
 
 ### Gerenciamento de extensões em tempo de execução (comandos de barra)
 
-Você pode gerenciar extensões em tempo de execução dentro do CLI interativo usando comandos de barra `/extensions`. Esses comandos suportam recarga a quente, ou seja, as alterações entram em vigor imediatamente sem precisar reiniciar a aplicação.
+Você pode gerenciar extensões em tempo de execução dentro do CLI interativo usando comandos slash `/extensions`. Esses comandos suportam recarga a quente, ou seja, as alterações entram em vigor imediatamente sem precisar reiniciar a aplicação.
 
 | Comando                               | Descrição                                                                                                       |
 | ------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
@@ -66,7 +66,7 @@ Os plugins do Claude são convertidos automaticamente para o formato do Qwen Cod
 
 - `claude-plugin.json` é convertido para `qwen-extension.json`
 - Configurações de agente são convertidas para o formato de subagente do Qwen
-- Configurações de habilidade são convertidas para o formato de habilidade do Qwen
+- Configurações de skill são convertidas para o formato de habilidade do Qwen
 - Mapeamentos de ferramentas são tratados automaticamente
 
 Você pode navegar rapidamente pelas extensões disponíveis em diferentes marketplaces usando o comando `/extensions explore`:
@@ -300,7 +300,7 @@ O arquivo `qwen-extension.json` contém a configuração da extensão. O arquivo
 - `channels`: Um mapa de adaptadores de canal personalizados. A chave é o nome do tipo de canal e o valor tem um `entry` (caminho para o ponto de entrada JS compilado) e um `displayName` opcional. O ponto de entrada deve exportar um objeto `plugin` em conformidade com a interface `ChannelPlugin`. Consulte [Plugins de Canal](../features/channels/plugins) para um guia completo.
 - `contextFileName`: O nome do arquivo que contém o contexto da extensão. Isso será usado para carregar o contexto do diretório da extensão. Se esta propriedade não for usada, mas um arquivo `QWEN.md` estiver presente no diretório da sua extensão, esse arquivo será carregado.
 - `commands`: O diretório que contém comandos personalizados (padrão: `commands`). Comandos são arquivos `.md` que definem prompts.
-- `skills`: O diretório que contém habilidades personalizadas (padrão: `skills`). As habilidades são descobertas automaticamente e ficam disponíveis através do comando `/skills`.
+- `skills`: O diretório que contém skills personalizadas (padrão: `skills`). As skills são descobertas automaticamente e ficam disponíveis através do comando `/skills`.
 - `agents`: O diretório que contém subagentes personalizados (padrão: `agents`). Subagentes são arquivos `.yaml` ou `.md` que definem assistentes de IA especializados.
 - `settings`: Um array de configurações que a extensão requer. Ao instalar, os usuários serão solicitados a fornecer valores para essas configurações. Os valores são armazenados de forma segura e passados para servidores MCP como variáveis de ambiente.
   - Cada configuração tem as seguintes propriedades:
@@ -358,9 +358,9 @@ Forneceria estes comandos:
 - `/deploy` - Mostra como `[gcp] Comando personalizado de deploy.md` na ajuda
 - `/gcs:sync` - Mostra como `[gcp] Comando personalizado de sync.md` na ajuda
 
-### Habilidades personalizadas
+### Skills personalizadas
 
-As extensões podem fornecer habilidades personalizadas colocando arquivos de habilidade em um subdiretório `skills/` dentro do diretório da extensão. Cada habilidade deve ter um arquivo `SKILL.md` com frontmatter YAML definindo o nome e a descrição da habilidade.
+As extensões podem fornecer habilidades personalizadas colocando arquivos de skill em um subdiretório `skills/` dentro do diretório da extensão. Cada skill deve ter um arquivo `SKILL.md` com frontmatter YAML definindo o nome e a descrição da skill.
 
 **Exemplo**
 
@@ -372,7 +372,7 @@ As extensões podem fornecer habilidades personalizadas colocando arquivos de ha
         └── SKILL.md
 ```
 
-A habilidade estará disponível através do comando `/skills` quando a extensão estiver ativa.
+A skill estará disponível através do comando `/skills` quando a extensão estiver ativa.
 
 ### Subagentes personalizados
 

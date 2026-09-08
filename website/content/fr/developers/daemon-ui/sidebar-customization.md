@@ -176,6 +176,7 @@ interface WebShellSidebarOptions {
   defaultCollapsed?: boolean; // état réduit initial (persisté dans localStorage)
   showCompactToggle?: boolean; // afficher le bouton de réduction dans la zone de chat (par défaut : true)
   showSessionSourceSwitch?: boolean; // afficher le commutateur Tasks/Channels (par défaut : true)
+  showLive?: boolean; // afficher les conversations Live appartenant au démon (par défaut : false)
   branding?: false | WebShellSidebarBranding;
   primaryNav?: WebShellSidebarPrimaryNavOptions;
   hideProjectHeader?: boolean; // masquer la ligne d'en-tête "Projects" (par défaut : false = affiché)
@@ -198,6 +199,20 @@ sidebar={{
 Cela supprime le commutateur Tasks/Channels et fixe chaque requête de session active, archivée,
 primaire et secondaire à `sourceType: "default"`. Omettre cette option conserve
 le commutateur actuel et l'accès aux sessions de canal inchangé.
+
+### Conversations Live — `showLive`
+
+Les conversations Live sont masquées par défaut dans les hôtes intégrés. Activez l'opt-in quand
+l'hôte doit exposer le groupe Live appartenant au démon :
+
+Les versions précédentes affichaient ce groupe sans option explicite, donc les hôtes
+qui en dépendent doivent définir `showLive: true` lors de la mise à jour.
+
+```tsx
+sidebar={{
+  showLive: true,
+}}
+```
 
 ### ③ En-tête de projet — `hideProjectHeader`
 
@@ -326,5 +341,5 @@ fermer le tiroir mobile n'écrase pas cette largeur ni la préférence de réduc
 | WorkspaceSection    | `packages/web-shell/client/components/sidebar/WorkspaceSection.tsx`       |
 | Styles de la sidebar| `packages/web-shell/client/components/sidebar/WebShellSidebar.module.css` |
 | Intégration App     | `packages/web-shell/client/App.tsx` (chercher `WebShellSidebar`)          |
-| Point d'entrée (dev)| `packages/web-shell/client/main.tsx` (`sidebar: true`)                    |
+| Point d'entrée (dev)| `packages/web-shell/client/main.tsx` (`sidebar: { enabled: true, showLive: true }`) |
 

@@ -37,7 +37,7 @@ class DaemonChannelBridge extends EventEmitter {
     modelServiceId?: string;
     sessionScope?: SessionScope;
   });
-  newSession(cwd: string): Promise<string>;
+  newSession(cwd: string, options?: { worktree?: {} }): Promise<string>;
   loadSession(sessionId: string, cwd: string): Promise<string>;
   prompt(sessionId: string, text: string, options?): Promise<string>;
   cancelSession(sessionId: string): Promise<void>;
@@ -180,9 +180,9 @@ sequenceDiagram
 
 デーモンは各ワーカーが起動するときに `settings.json` からチャネル設定を読み取ります (`packages/cli/src/commands/channel/daemon-worker.ts` → `loadSettings` → `loadChannelsConfig`)。`POST /workspace/channel/reload` はこれらの設定を再読み込みし、コミットされたセレクションを強制的に reconciliation します。すべてのライフサイクル変更は 1 つの FIFO レーンを共有します。変更されていないワークスペースグループは通常のセレクション置き換えでも存続します。変更されたグループは、serve が所有する PID リースが保持されたまま、順次停止および起動します。
 
-置き換えが失敗した場合、 newly 起動されたワーカーは停止され、リクエストが返る前に古いワーカーが復元されます。SIGTERM と SIGKILL の後に exit を観察できないスーパーバイザーは子参照を保持し、停止に失敗します。マネージャーは PID リースを保持し、2 つ目のワーカーを起動することはありません。Webhook の設定とルーティングは、セレクションのコミットが成功した場合にのみ変更されます。ランタイムセレクションはプロセスローカルであり、デーモン再起動時に消えます。
+置き換えが失敗した場合、 新規に起動されたワーカーは停止され、リクエストが返る前に古いワーカーが復元されます。SIGTERM と SIGKILL の後に exit を観察できないスーパーバイザーは子参照を保持し、停止に失敗します。マネージャーは PID リースを保持し、2 つ目のワーカーを起動することはありません。Webhook の設定とルーティングは、セレクションのコミットが成功した場合にのみ変更されます。ランタイムセレクションはプロセスローカルであり、デーモン再起動時に消えます。
 
-アダプターの `connect()` 失敗はワーカーライフサイクルエラーとは別に報告されます。ワーカーは各境界付けられた、資格情報編集済みの失敗を起動 IPC 経由で送信し、次のアダプターを試す前にスーパーバイザーの確認を待ちます。部分的に接続されたワーカーは実行を継続し、スナップショットで `startupFailures` を公開します。動的試行のすべてのアダプターが失敗した場合、`502 channel_worker_start_failed` レスポンスはワークスペース注釈付きの試行失敗を運び、`state` はロールバック結果を反映します。その後の GET レスポンスは試行を保持しません。接続されたアダプターなしのデーモン起動は引き続き fail-fast です。オプションのアダプター `code` は診断のみであり、現在の `phase` は `connect` です。
+アダプターの `connect()` 失敗はワーカーライフサイクルエラーとは別に報告されます。ワーカーは各境界付けられた、資格情報削除済みの失敗を起動 IPC 経由で送信し、次のアダプターを試す前にスーパーバイザーの確認を待ちます。部分的に接続されたワーカーは実行を継続し、スナップショットで `startupFailures` を公開します。動的試行のすべてのアダプターが失敗した場合、`502 channel_worker_start_failed` レスポンスはワークスペース注釈付きの試行失敗を運び、`state` はロールバック結果を反映します。その後の GET レスポンスは試行を保持しません。接続されたアダプターなしのデーモン起動は引き続き fail-fast です。オプションのアダプター `code` は診断のみであり、現在の `phase` は `connect` です。
 
 ## 依存関係
 
@@ -197,7 +197,7 @@ sequenceDiagram
 | 設定項目                                     | 効果                                                                                                                                                                         |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `sessionScope`                           | `'user'` (送信者 + チャット)、`'chat_thread'` (チャネル + chatId + threadId)、または `'single'` (チャネルごとに 1 つの共有セッション)。レガシーの `'thread'` はすでに設定されている場合は保持されますが、新しい Web Shell の設定では提供されません。 |
-| `multiSession`                           | `sessionScope: 'user'` 向けのデーモン専用の名前付きタスク。オーナーカタログはワークスペース/チャネルの状態ディレクトリの下に永続化されます。webhook、グループ履歴のバックフィル、ループ、実行中タスクの切り替え、およびタスクごとのワークツリーは Part 2 で除外されます。 |
+| `multiSession`                           | `sessionScope: 'user'` 向けのデーモン専用の名前付きタスク。オーナーカタログはワークスペース/チャネルの状態ディレクトリの下に永続化されます。タスクは並行実行可能で、タスクごとの Git ワークツリーを選択可能であり、キャンセルと権限コマンドは正確なタスクに紐付いたままとなり、結果とインタラクティブな画面は元のタスクを識別します。Webhook、グループ履歴のバックフィル、およびループは引き続き除外されます。 |
 | `approvalMode`                           | `'auto'` (自動応答) / `'prompt'` (UI のレンダリング)。                                                                                                                              |
 | `allowlist?: string[]`                   | 許可される送信者 ID。未指定 = オープン。                                                                                                                                            |
 | `denylist?: string[]`                    | 拒否される送信者 ID。                                                                                                                                                             |

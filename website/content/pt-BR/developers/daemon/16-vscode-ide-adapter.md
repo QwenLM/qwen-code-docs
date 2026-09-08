@@ -88,8 +88,7 @@ e a chama com `response.stopReason`; caminhos de exceção não relacionados a a
 A classe de conexão é **apenas de transporte**. A integração real com o VS Code reside
 em `packages/vscode-ide-companion/src/webview/providers/ChatWebviewViewProvider.ts` (e outros).
 O provider se inscreve nos callbacks da conexão e os traduz em chamadas `postMessage`
-para o webview. O webview em si utiliza a biblioteca de componentes compartilhada `packages/webui/` para renderização —
-veja a Matriz de Adaptadores em [`01-architecture.md`](./01-architecture.md).
+para o webview. O webview incorpora o Web Shell para renderização.
 
 ### Serialização de conexão
 
@@ -178,7 +177,7 @@ sequenceDiagram
 
 - `packages/sdk-typescript/src/daemon/` — `DaemonClient`, `DaemonSessionClient` (o transporte real).
 - API de extensão do VS Code (`vscode.*`) — APIs do host, quick-pick, webview.
-- `packages/webui/src/adapters/ACPAdapter.ts` — renderização no webview de mensagens no formato ACP retransmitidas via `postMessage`.
+- `packages/web-shell/client/` — renderização webview incorporada para eventos de sessão do daemon.
 
 ## Configuração
 
@@ -191,7 +190,7 @@ sequenceDiagram
 | `lastEventId`                                       | `connect(options)`                 | Cursor de retomada (normalmente restaurado do estado do host).                                                      |
 | Configuração do VS Code `qwen.ide.daemonUrl` (ou equivalente) | Configurações do workspace | URL do daemon configurada pelo operador.                                                                            |
 
-## Riscos e Limitações Conhecidas
+## Ressalvas e Limitações Conhecidas
 
 - **Apenas loopback — recusa dura em `connect(options)`.** Operadores que desejarem apontar a IDE para um daemon remoto precisarão usar encaminhamento de porta SSH / proxy local; o adaptador não se conectará a uma URL não loopback.
 - **O caminho legado `AcpConnectionState` ainda é o principal** no IDE companion (filho stdio). Este adaptador é o transporte irmão para a migração Mode-B; veja [`../daemon-client-adapters/ide.md`](../daemon-client-adapters/ide.md) para os bloqueadores da migração e o trabalho planejado de paridade do `BridgeFileSystem`.
@@ -205,6 +204,6 @@ sequenceDiagram
 - `packages/vscode-ide-companion/src/services/daemonIdeConnection.ts` (`createSdkDaemonSessionFactory`)
 - `packages/vscode-ide-companion/src/types/connectionTypes.ts` (legado `AcpConnectionState`)
 - `packages/vscode-ide-companion/src/webview/providers/ChatWebviewViewProvider.ts` (ponte do webview)
-- `packages/webui/src/adapters/ACPAdapter.ts` (adaptador de mensagens ACP do webview)
+- `packages/web-shell/client/` (renderizador Web Shell incorporado)
 - Design preliminar: [`../daemon-client-adapters/ide.md`](../daemon-client-adapters/ide.md)
 - Referência do SDK: [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)

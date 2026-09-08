@@ -37,7 +37,7 @@ class DaemonChannelBridge extends EventEmitter {
     modelServiceId?: string;
     sessionScope?: SessionScope;
   });
-  newSession(cwd: string): Promise<string>;
+  newSession(cwd: string, options?: { worktree?: {} }): Promise<string>;
   loadSession(sessionId: string, cwd: string): Promise<string>;
   prompt(sessionId: string, text: string, options?): Promise<string>;
   cancelSession(sessionId: string): Promise<void>;
@@ -197,7 +197,7 @@ sequenceDiagram
 | 配置项 | 作用 |
 | --- | --- |
 | `sessionScope` | `'user'`（发送者 + 聊天）、`'chat_thread'`（渠道 + chatId + threadId）或 `'single'`（每个渠道一个共享会话）。旧版 `'thread'` 在已配置时保留，但不再为新的 Web Shell 配置提供。 |
-| `multiSession` | 仅用于 daemon 的 `sessionScope: 'user'` 命名任务。owner 目录持久化在工作区/渠道状态目录下方；任务可以并发运行，取消和权限命令保持精确任务关联，结果和交互界面识别其源任务。Webhook、群组历史回填、循环和每任务 worktree 仍然排除。 |
+| `multiSession` | 仅用于 daemon 的 `sessionScope: 'user'` 命名任务。owner 目录持久化在工作区/渠道状态目录下方；任务可以并发运行，可选择启用每任务 Git worktree，取消和权限命令保持精确任务关联，结果和交互界面识别其源任务。Webhook、群组历史回填和循环仍然排除。 |
 | `approvalMode` | `'auto'`（自动响应）/ `'prompt'`（渲染 UI）。 |
 | `allowlist?: string[]` | 允许的发送者 id；缺失则表示开放。 |
 | `denylist?: string[]` | 拒绝的发送者 id。 |

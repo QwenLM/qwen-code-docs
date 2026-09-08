@@ -70,8 +70,7 @@ flowchart TB
 | `packages/core`                                                                                              | UI 독립 에이전트 오케스트레이션, 모델 제공자 통합, 프롬프트 및 컨텍스트 구성, 도구 등록 및 실행, 권한, 세션, 메모리, 텔레메트리, 그리고 공유 서비스.                                                                        |
 | `packages/acp-bridge`                                                                                        | ACP 채널 수명주기, 세션 멀티플렉싱, 이벤트 전달, 권한 중재, 프로세스 생성, 그리고 데몬과 어댑터 호스트가 공유하는 파일시스템 경계.                                                                                        |
 | `packages/sdk-typescript`                                                                                    | `query()`를 통한 프로그램적 프로세스 실행과 `qwen serve`용 HTTP/SSE 클라이언트 및 트랜스크립트 프로젝션.                                                                                                                  |
-| `packages/webui`                                                                                             | TypeScript SDK 위에 구축된 공유 React 컴포넌트와 데몬 React 어댑터.                                                                                                                                                        |
-| `packages/web-shell`                                                                                         | `packages/webui`와 데몬 SDK 위에 구축된 터미널 스타일 브라우저 UI.                                                                                                                                                         |
+| `packages/web-shell`                                                                                             | TypeScript SDK 위에 구축된 브라우저 UI 및 데몬 React 어댑터.                                                                                                                                                                 |
 | `packages/web-templates`                                                                                     | 임베딩 가능한 JavaScript 및 CSS 문자열로 패키징된 웹 템플릿.                                                                                                                                                               |
 | `packages/audio-capture`                                                                                                                                                       | 음성 입력을 위한 네이티브 마이크 캡처.                                                                                                                                                                                     |
 | `packages/channels`                                                                                                                                                            | 메시징 서비스를 위한 공유 채널 런타임 및 플랫폼 어댑터.                                                                                                                                                                    |
@@ -93,8 +92,7 @@ flowchart TB
 프레젠테이션은 코어 런타임 외부에 남습니다:
 
 - Ink TUI는 로컬 대화형 세션을 렌더링합니다.
-- `packages/webui`는 데몬 상태를 React 제공자 및 hook에 적응시킵니다.
-- `packages/web-shell`은 브라우저 터미널 경험을 제공합니다.
+- `packages/web-shell`은 데몬 상태를 React 제공자 및 hook에 적응시키고 브라우저 경험을 제공합니다.
 - IDE 및 채널 패키지는 호스트별 이벤트를 공유 클라이언트 또는 브리지 계약으로 변환합니다.
 
 ### 코어 런타임
@@ -123,7 +121,7 @@ TypeScript SDK는 두 가지 클라이언트 스타일을 노출합니다:
 - `query()`는 프로그램적 로컬 사용을 위해 Qwen Code 프로세스를 시작하고 제어합니다.
 - 데몬 클라이언트는 HTTP와 SSE를 통해 `qwen serve`와 통신합니다.
 
-`packages/webui`는 데몬 클라이언트 위에 React 상태 레이어를 구축하고, `packages/web-shell`은 해당 상태 레이어 위에 브라우저 UI를 구축합니다. IDE 통합 및 데몬 관리 채널을 포함한 다른 클라이언트는 서버 구현 코드를 임포트하는 대신 동일한 SDK와 이벤트 계약을 재사용합니다.
+`packages/web-shell`은 데몬 클라이언트 위에 React 상태 레이어와 브라우저 UI를 구축합니다. IDE 통합 및 데몬 관리 채널을 포함한 다른 클라이언트는 서버 구현 코드를 임포트하는 대신 동일한 SDK와 이벤트 계약을 재사용합니다.
 
 ## 런타임 플로우
 

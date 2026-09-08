@@ -41,16 +41,16 @@ Publications stables régulières pour une utilisation en production.
 
 ### Publications Preview
 
-Publications preview hebdomadaires tous les mardis à 23:59 UTC pour un accès anticipé aux fonctionnalités à venir.
+Publications preview hebdomadaires tous les mardis à 17:00 UTC pour un accès anticipé aux fonctionnalités à venir.
 
 ### Publications Nightly
 
-Publications nightly quotidiennes à minuit UTC pour des tests de développement de pointe.
+Publications nightly quotidiennes à 21:00 UTC pour des tests de développement de pointe.
 
 ## Calendrier de publication automatisé
 
-- **Nightly** : Tous les jours à minuit UTC
-- **Preview** : Tous les mardis à 23:59 UTC
+- **Nightly** : Tous les jours à 21:00 UTC
+- **Preview** : Tous les mardis à 17:00 UTC
 - **Stable** : Publications manuelles déclenchées par les mainteneurs
 
 ### Comment utiliser les différents types de publication
@@ -128,7 +128,7 @@ Si vous avez besoin de tester le processus de publication sans réellement publi
 
 Cela exécutera l'ensemble du processus de publication mais sautera les étapes `npm publish` et `gh release create`. Vous pouvez inspecter les journaux du workflow pour vous assurer que tout fonctionne comme prévu.
 
-Il est crucial de tester localement toute modification du processus d'empaquetage et de publication avant de la valider. Cela garantit que les paquets seront publiés correctement et qu'ils fonctionneront comme prévu lorsqu'un utilisateur les installera.
+Il est crucial de tester localement toute modification du processus d'empaquetage et de publication avant de la committer. Cela garantit que les paquets seront publiés correctement et qu'ils fonctionneront comme prévu lorsqu'un utilisateur les installera.
 
 Pour valider vos modifications, vous pouvez effectuer une simulation (dry run) du processus de publication. Cela simulera le processus de publication sans réellement publier les paquets sur le registre npm.
 

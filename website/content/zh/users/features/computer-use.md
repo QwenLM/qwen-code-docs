@@ -22,8 +22,8 @@ Qwen Code 不捆绑 MCP server、SDK 或原生驱动。skill 会在缺少这些�
 首次使用时，skill 会自行运行以下命令：
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.2
-npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.3
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.3
+npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.4
 ```
 
 MCP server 首次添加后请重启 Qwen Code。skill 随后通过 `node_repl` 继续执行桌面任务。
@@ -37,17 +37,16 @@ SDK 安装不会修改 `package.json` 和 lockfile，但会写入工作区的 `n
 要求 Qwen Code 使用 `$computer-use` 执行桌面任务。引导完成后，它会遵循标准的 Computer Use 工作流：
 
 1. 发现目标应用和窗口；
-2. 观察完整的辅助功能状态；
-3. 尽可能通过当前的语义元素 token 执行操作；
-4. 每次变更后获取最新状态；
-5. 验证请求的结果；以及
-6. 关闭 SDK 客户端并重置 REPL。
+2. 观察完整的辅助功能状态，然后将自动增量更新累积到当前状态中；
+3. 通过当前的语义元素 token 执行一个或多个操作，包括跨兼容 diff 保留的未变更 token；
+4. 在决定下一步操作之前获取最新状态；并
+5. 仅在没有其他持久状态需要时，才关闭 SDK 客户端并重置 REPL。
 
 驱动是唯一计算观察差异的组件。模型代码使用类型化的 SDK 方法，不会分发任意的驱动工具名称。
 
 ## 权限
 
-Node REPL 是一个 MCP server，以普通 Node.js 权限执行模型编写的 JavaScript。其调用遵循 Qwen Code 正常的[审批流程](./approval-mode.md)。SDK 还会强制执行原生授权。
+Node REPL 是一个 MCP server，以普通 Node.js 权限执行模型编写的 JavaScript。其调用遵循 Qwen Code 正常的[MCP 审批流程](./approval-mode.md)。SDK 还会强制执行原生授权。
 
 在 macOS 上，辅助功能观察和输入需要 Accessibility 权限。截屏还需要 Screen Recording 权限。macOS 可能会将授权归因于启动 Qwen Code 的终端或 IDE。Windows 和 Linux 使用各自平台的辅助功能和输入机制。
 

@@ -1,7 +1,7 @@
 # Qwen Code Architektur-Überblick
 
 Qwen Code ist eine Monorepo, die ein interaktives Terminal, Headless- und
-programmierbare Ausführung, das Agent Client Protocol (ACP), einen langlebigen
+programmatische Ausführung, das Agent Client Protocol (ACP), einen langlebigen
 HTTP-Daemon, Web- und IDE-Clients sowie Messaging-Channel-Adapter unterstützt.
 Dieses Dokument ordnet diese Oberflächen den Packages zu, die sie
 implementieren, und erklärt die wichtigsten Runtime-Grenzen.
@@ -84,14 +84,13 @@ ohne einen HTTP-Daemon. Siehe den
 | `packages/core`                                                                                            | UI-unabhängige Agent-Orchestrierung, Model-Provider-Integration, Prompt- und Kontexterstellung, Tool-Registrierung und -Ausführung, Berechtigungen, Sessions, Memory, Telemetrie und Shared Services. |
 | `packages/acp-bridge`                                                                                      | ACP-Channel-Lifecycle, Session-Multiplexing, Event-Zustellung, Berechtigungsmediation, Prozess-Spawning und die Workspace-Dateisystem-Naht, die von Daemon- und Adapter-Hosts gemeinsam genutzt wird. |
 | `packages/sdk-typescript`                                                                                  | Programmatische Prozessausführung über `query()` sowie HTTP/SSE-Clients und Transkript-Projektion für `qwen serve`.                                                                             |
-| `packages/webui`                                                                                           | Gemeinsame React-Komponenten und der Daemon-React-Adapter, der auf dem TypeScript SDK aufbaut.                                                                                                  |
-| `packages/web-shell`                                                                                       | Die terminalartige Browser-UI, die auf `packages/webui` und dem Daemon-SDK aufbaut.                                                                                                             |
+| `packages/web-shell`                                                                                       | Die Browser-UI und der Daemon-React-Adapter, der auf dem TypeScript SDK aufbaut.                                                                                                                |
 | `packages/web-templates`                                                                                   | Web-Templates, die als einbettbare JavaScript- und CSS-Strings paketiert sind.                                                                                                                  |
 | `packages/audio-capture`                                                                                   | Native Mikrofon-Aufnahme für Spracheingabe.                                                                                                                                                     |
 | `packages/channels`                                                                                        | Die gemeinsame Channel-Runtime und Plattform-Adapter für Messaging-Dienste.                                                                                                                     |
 | `packages/desktop-shell`, `packages/vscode-ide-companion`, `packages/chrome-extension`, `packages/zed-extension` | Produkt- und Editor-Oberflächen, die Qwen Code an ihre Host-Umgebungen anpassen.                                                                                                                |
-| `packages/sdk-java`, `packages/sdk-python`                                                                 | Sprachspezifische programmierbare Clients.                                                                                                                                                      |
-| `packages/cua-driver`, `packages/mobile-mcp`                                                               | Computer-Use- und Mobilgeräte-Integrationen, die über MCP-k kompatible Grenzen exponiert werden.                                                                                                |
+| `packages/sdk-java`, `packages/sdk-python`                                                                 | Sprachspezifische programmatische Clients.                                                                                                                                                      |
+| `packages/cua-driver`, `packages/mobile-mcp`                                                               | Computer-Use- und Mobilgeräte-Integrationen, die über MCP-kompatible Grenzen exponiert werden.                                                                                                |
 | `integration-tests`                                                                                        | End-to-End-Abdeckung für CLI-, Interaktiv-, SDK-, Sandbox-, Hook- und Terminal-Verhalten.                                                                                                       |
 | `docs` und `docs-site`                                                                                     | Benutzer-, Entwickler-, Protokoll- und Designdokumentation sowie die Dokumentationswebsite.                                                                                                     |
 | `scripts`                                                                                                  | Build-, Packaging-, Release-, Validierungs- und Repository-Wartungsautomatisierung.                                                                                                             |
@@ -113,8 +112,8 @@ Channel- oder Wartungs-Flows.
 Die Präsentation bleibt außerhalb der Core-Runtime:
 
 - Das Ink TUI rendert lokale interaktive Sessions;
-- `packages/webui` adaptiert den Daemon-Zustand in React-Provider und Hooks;
-- `packages/web-shell` bietet das Browser-Terminal-Erlebnis;
+- `packages/web-shell` adaptiert den Daemon-Zustand in React-Provider und Hooks
+  und bietet das Browser-Erlebnis;
 - IDE- und Channel-Packages übersetzen hostspezifische Events in gemeinsame
   Client- oder Bridge-Verträge.
 
@@ -157,8 +156,8 @@ Das TypeScript SDK exponiert zwei Client-Stile:
   lokale Nutzung;
 - Daemon-Clients kommunizieren über HTTP und SSE mit `qwen serve`.
 
-`packages/webui` baut eine React-Zustandsschicht auf dem Daemon-Client auf, und
-`packages/web-shell` baut die Browser-UI auf dieser Zustandsschicht. Andere
+`packages/web-shell` baut eine React-Zustandsschicht und Browser-UI auf dem
+Daemon-Client auf. Andere
 Clients, einschließlich IDE-Integrationen und Daemon-verwalteter Channels,
 verwenden dasselbe SDK und dieselben Event-Verträge, statt
 Server-Implementierungscode zu importieren.

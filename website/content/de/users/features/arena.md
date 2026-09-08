@@ -16,11 +16,6 @@ Diese Seite behandelt:
 - [Interaktion mit Agenten](#interaktion-mit-agenten), einschließlich Anzeigemodi und Navigation
 - [Ergebnisse vergleichen und einen Gewinner auswählen](#ergebnisse-vergleichen-und-einen-gewinner-auswählen)
 - [Bewährte Vorgehensweisen](#bewährte-vorgehensweisen)
-- [Konfiguration](#konfiguration)
-- [Fehlerbehebung](#fehlerbehebung)
-- [Einschränkungen](#einschränkungen)
-- [Vergleich mit anderen Multi-Agent-Modi](#vergleich-mit-anderen-multi-agent-modi)
-- [Nächste Schritte](#nächste-schritte)
 
 ## Wann du Agent Arena verwenden solltest
 
@@ -109,23 +104,17 @@ Wenn du den vollständigen Reasoning-Pfad vor der Entscheidung überprüfen möc
 
 ## Konfiguration
 
-Das Verhalten der Arena kann in der [settings.json](../configuration/settings.md) angepasst werden:
+Arena-Einstellungen befinden sich unter `agents.arena` in der
+[settings.json](../configuration/settings.md). Das Schema akzeptiert
+`maxRoundsPerAgent` und `timeoutSeconds`, aber die CLI lässt beide
+Werte beim Aufbau der von `/arena` verwendeten Konfiguration weg. Die
+Setzung eines dieser Felder begrenzt daher nicht die Ausführung von `/arena`.
 
-```json
-{
-  "arena": {
-    "worktreeBaseDir": "~/.qwen/arena",
-    "maxRoundsPerAgent": 50,
-    "timeoutSeconds": 600
-  }
-}
-```
-
-| Einstellung                   | Beschreibung                        | Standard       |
-| :---------------------------- | :---------------------------------- | :------------- |
-| `arena.worktreeBaseDir`       | Basisverzeichnis für Arena-Worktrees | `~/.qwen/arena` |
-| `arena.maxRoundsPerAgent`     | Maximale Reasoning-Runden pro Agent | `50`           |
-| `arena.timeoutSeconds`        | Timeout für jeden Agenten in Sekunden| `600`          |
+| Einstellung                          | Beschreibung                                                                                               | Standardwert                         |
+| :----------------------------------- | :--------------------------------------------------------------------------------------------------------- | :----------------------------------- |
+| `agents.arena.worktreeBaseDir`       | Benutzerdefiniertes Basisverzeichnis für Arena-Worktrees. Absoluten Pfad verwenden; `~` wird nicht aufgelöst. | Der `arena`-Ordner im Qwen-Home-Verzeichnis |
+| `agents.arena.maxRoundsPerAgent`     | Vom Schema akzeptiert, wird aber derzeit nicht an `/arena` weitergeleitet; die Setzung hat keine Auswirkung auf die Ausführung. | Nicht gesetzt                           |
+| `agents.arena.timeoutSeconds`        | Vom Schema akzeptiert, wird aber derzeit nicht an `/arena` weitergeleitet; die Setzung hat keine Auswirkung auf die Ausführung. | Nicht gesetzt                           |
 
 ## Bewährte Vorgehensweisen
 
@@ -173,7 +162,7 @@ Für Routineänderungen wie das Umbenennen einer Variable oder das Aktualisieren
 
 - Überprüfe, ob jedes Modell in `--models` ordnungsgemäß mit gültigen API-Anmeldeinformationen konfiguriert ist
 - Stelle sicher, dass dein Arbeitsverzeichnis ein Git-Repository ist (Worktrees benötigen Git)
-- Stelle sicher, dass du Schreibzugriff auf das Basisverzeichnis der Worktrees hast (standardmäßig `~/.qwen/arena/`)
+- Stelle sicher, dass du Schreibzugriff auf das `arena`-Verzeichnis im Qwen-Home-Verzeichnis hast (das Standard-Basisverzeichnis der Worktrees)
 
 ### Worktree-Erstellung schlägt fehl
 
@@ -183,9 +172,9 @@ Für Routineänderungen wie das Umbenennen einer Variable oder das Aktualisieren
 
 ### Agent braucht zu lange
 
-- Erhöhe das Timeout: setze `arena.timeoutSeconds` in den Einstellungen
 - Reduziere die Aufgabenkomplexität – Arena-Aufgaben sollten fokussiert und klar definiert sein
-- Senke `arena.maxRoundsPerAgent`, wenn Agenten zu viele Runden verbrauchen
+- Verwende weniger Agenten oder Modelle mit geringerer Latenz
+- Stoppe den Arena-Run manuell, wenn ein Agent zu lange braucht
 
 ### Anwenden des Gewinners schlägt fehl
 

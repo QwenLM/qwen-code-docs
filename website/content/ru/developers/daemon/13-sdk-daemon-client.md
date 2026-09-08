@@ -152,7 +152,7 @@ await client
   .setWorkspaceSkillEnabled('review', true, { clientId: 'dashboard-1' });
 ```
 
-Pre-flight `capabilities.features.includes('workspace_skill_settings_toggle')`. Типизированный `DaemonSkillToggleResult` сообщает обрезанное запрошенное имя `skillName`, изменилось ли состояние на диске (`changed`), состояние активации (`applied`, `deferred` или `partial`) и количество обновлённых/ошибочных сессий. Запись касается только настроек и не требует наличия имени в `DaemonWorkspaceSkillStatus`; опциональное поле `userInvocable` этого типа (только для `false`) по-прежнему полезно для отображения живого каталога, но не блокирует сохранение. Устаревший тег `workspace_skill_toggle` описывал более раннее поведение с проверкой по каталогу и не анонсируется для этого контракта.
+Pre-flight `capabilities.features.includes('workspace_skill_settings_toggle')`. Типизированный `DaemonSkillToggleResult` сообщает обрезанное запрошенное имя `skillName`, изменилось ли состояние на диске (`changed`), состояние активации (`applied`, `deferred`, `reconciling` или `partial`) и количество обновлённых/ошибочных сессий. `reconciling` означает, что запись была сохранена и координатор рабочего пространства поставил обновление runtime в очередь. Запись касается только настроек и не требует наличия имени в `DaemonWorkspaceSkillStatus`; опциональное поле `userInvocable` этого типа (только для `false`) по-прежнему полезно для отображения живого каталога, но не блокирует сохранение. Устаревший тег `workspace_skill_toggle` описывал более раннее поведение с проверкой по каталогу и не анонсируется для этого контракта.
 
 Для пакетных изменений выполните pre-flight `workspace_skill_settings_batch_toggle` и вызовите любой из вариантов клиента с тем же контрактом:
 
@@ -321,7 +321,7 @@ SDK также экспортирует `packages/sdk-typescript/src/daemon/ui/`
 - Публичные константы включают `DAEMON_PLAN_TOOL_CALL_ID`.
 - `conformance.ts` содержит набор тестов на кросс-хостовую согласованность.
 
-Первый production-потребитель — это `packages/webui/src/daemon/` через React-провайдер `DaemonSessionProvider`. Подробную архитектуру, глоссарий, таблицу селекторов и связь с устаревшим `DaemonTuiAdapter` см. в [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md).
+Первый production-потребитель — это `packages/web-shell/client/daemon/` через React-провайдер `DaemonSessionProvider`. Подробную архитектуру, глоссарий, таблицу селекторов и связь с устаревшим `DaemonTuiAdapter` см. в [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md).
 
 Подпакет экспортируется из подпути `@qwen-code/sdk/daemon`. Существующий код, использующий `import { DaemonClient }`, не затрагивается.
 

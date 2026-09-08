@@ -144,7 +144,8 @@ qwen channel stop --daemon-url http://127.0.0.1:4170 --token secret
 `GET /workspace/:id/session-info`,
 `GET /session/:id/status`, `GET /session/:id/context`,
 `GET /session/:id/supported-commands`, 및
-`GET /session/:id/tasks`, `GET /session/:id/lsp`, 및
+`GET /session/:id/tasks`, `GET /session/:id/lsp`,
+`GET /session/:id/resources`, 및
 `GET /session/:id/transcript`.
 
 `GET /workspace/:id/session-info`(및 복수형
@@ -195,6 +196,8 @@ curl http://127.0.0.1:4170/session/$SESSION_ID/status
 `GET /session/:id/lsp`는 구조화된 세션별 LSP 상태를 반환합니다. 데몬을
 `--experimental-lsp`로 시작하여 생성된 에이전트 세션에서 LSP를 활성화하세요;
 그렇지 않으면 라우트는 `enabled: false`를 반환하며 서버가 없습니다.
+
+`GET /session/:id/resources`는 해당 라이브 세션 자체의 Config에서 정리된 Skill 및 MCP 스냅샷을 반환합니다. 세션이 기본 워크스페이스와 리소스가 다른 worktree나 다른 유효 디렉토리에서 실행될 수 있을 때 사용하세요. 워크스페이스 소유 MCP 인증, 풀, 예산 및 검색 오류 세부 정보는 이 세션 뷰에서 생략됩니다. 호출 전에 `session_resources` 기능을 확인하세요.
 
 `GET /daemon/status`는 통합된 문제 해결 스냅샷입니다. 기본
 `detail=summary`는 인메모리 데몬 상태만 읽습니다(세션, 권한,
@@ -296,6 +299,11 @@ curl -X POST http://127.0.0.1:4170/session/$SESSION_ID/prompt \
 {
   "experimental": {
     "todoStopGuard": true
+  },
+  "tools": {
+    "todoWrite": {
+      "enabled": true
+    }
   }
 }
 ```
@@ -304,7 +312,7 @@ curl -X POST http://127.0.0.1:4170/session/$SESSION_ID/prompt \
 
 무장된 체인이 관련 백그라운드 작업을 기다리는 동안, 관련 없는 cron/loop 발생 및 오래된 작업 알림이 지연됩니다. 반복 작업은 체인이 양보할 때까지 작업별로 제한되고 병합됩니다.
 
-이 옵션은 기본값이 `false`이며 재시작이 필요하고, 안전 모드, 베어 모드 및 승인 `plan` 모드에서 강제로 꺼집니다. 인메모리 전용입니다: 디스크에서 Todo 상태를 로드하거나 데몬을 재시작해도 무장되지 않습니다. 새 일반 프롬프트는 자체 최상위 `todo_write`를 성공적으로 실행해야 합니다; 재시도/계속 및 라이브 클라이언트 재연결은 현재 인메모리 작업 체인을 유지합니다. 세션 작업 디렉토리를 성공적으로 변경하면 정리되어 오래된 Todo가 새 워크스페이스에서 재개되지 않습니다.
+이 옵션은 기본값이 `false`이며 재시작이 필요하고, 안전 모드, 베어 모드 및 승인 `plan` 모드에서 강제로 꺼집니다. 인메모리 전용입니다: 디스크에서 Todo 상태를 로드하거나 데몬을 재시작해도 무장되지 않습니다. `settings.json`에 `tools.todoWrite.enabled`를 설정하고 Qwen Code를 재시작하면, 새 일반 프롬프트는 자체 최상위 `todo_write`를 성공적으로 실행해야 합니다; 재시도/계속 및 라이브 클라이언트 재연결은 현재 인메모리 작업 체인을 유지합니다. 세션 작업 디렉토리를 성공적으로 변경하면 정리되어 오래된 Todo가 새 워크스페이스에서 재개되지 않습니다.
 
 ## 인증
 
@@ -668,7 +676,7 @@ remember/dream 제어는 필수 모드가 활성인 동안 거부됩니다. 최�
 | `POST /session/:id/load`                                | 클라이언트에 렌더링된 유용한 로컬 기록이 **없는** 경우(콜드 재연결, 선택기-then-열기). 라이브 세션의 경우 데몬은 현재 제한된 재생 스냅샷 창을 반환하고 주입합니다; 오래된 재생이 삭제되면 스냅샷은 `history_truncated`로 시작됩니다. 기능 태그: `session_load`. |
 | `POST /session/:id/resume`                              | 클라이언트가 이미 화면에 턴을 가지고 있으며 데몬 측 핸들만 다시 필요로 하는 경우. 모델 컨텍스트는 UI 재생 없이 에이전트 측에서 복원됩니다 — SSE 스트림이 깨끗하게 유지됩니다. 기능 태그: `session_resume`(`unstable_session_resume`는 오래된 클라이언트를 위한 권장되지 않는 별칭으로 유지).     |
 | `GET /session/:id/transcript`                           | 클라이언트가 완전한 활성 영속 트랜스크립트가 필요한 경우. 커서 페이지에서 ID 없는 재생 프레임을 반환하며 `/load`를 호출하거나 클라이언트를 연결하거나 라이브 EventBus를 시딩하거나 라이브 세션을 생성하거나 라이브 재생 창을 변경하지 않습니다. 기능 태그: `session_transcript`.                    |
-| `GET /workspaces/:workspace/session/:id/transcript`     | 클라이언트가 ACP를 시작하거나 워크스페이스 설정을 로드하지 않고 선택된 워크스페이스의 활성 영속 트랜스크립트가 필요한 경우. 등록된 신뢰할 수 없는 보조 워크스페이스는 이 읽기 전용 경로를 사용할 수 있습니다. 기능 태그: `workspace_persisted_transcript`.                                            |
+| `GET /workspaces/:workspace/session/:id/transcript`     | 클라이언트가 선택된 워크스페이스의 활성 영속 트랜스크립트가 필요한 경우. Forward 및 cursor 페이지는 데몬 로컬로 유지됩니다; 라이브 세션의 backward 첫 페이지는 영속 꼬리를 플러시하기 위해 ACP를 시작하고 워크스페이스 설정을 로드할 수 있습니다. 등록된 신뢰할 수 없는 보조 워크스페이스는 이 읽기 전용 경로를 사용할 수 있습니다. 기능 태그: `workspace_persisted_transcript`. |
 | `GET /workspaces/:workspace/session/:id/export`         | 클라이언트가 선택된 신뢰 워크스페이스에서 완전한 `html`, `md`, `json` 또는 `jsonl` 첨부가 필요한 경우. ACP를 시작하거나 기본으로 폴백하지 않고 활성 영속 저장소를 읽습니다. 기능 태그: `workspace_session_export`.                                                         |
 | `GET /workspaces/:workspace/session/:id/archive/export` | 클라이언트가 선택된 신뢰 워크스페이스의 아카이브된 영속 저장소에서 동일한 첨부 형식이 필요한 경우. 아카이브 해제, ACP 시작 또는 활성 또는 기본 세션으로 폴백하지 않습니다. 기능 태그: `workspace_archived_session_export`.                                                |
 
@@ -699,7 +707,7 @@ for await (const event of session.events()) {
 curl "http://127.0.0.1:4170/session/$SESSION_ID/transcript?limit=100"
 ```
 
-등록된 워크스페이스의 경우 `client.workspaceById(workspaceId).getSessionTranscriptPage(sessionId, { cursor, limit })` 또는 `/workspaces/:workspace/session/:id/transcript`를 사용하세요. 워크스페이스 한정 메서드는 SDK 클라이언트에 교체 가능한 ACP 전송이 있더라도 항상 네이티브 REST를 사용합니다. 커서는 데몬 수명 전용이며 데몬 재시작 후 1페이지부터 재시작해야 합니다.
+등록된 워크스페이스의 경우 `client.workspaceById(workspaceId).getSessionTranscriptPage(sessionId, { cursor, limit })` 또는 `/workspaces/:workspace/session/:id/transcript`를 사용하세요. 워크스페이스 한정 메서드는 SDK 클라이언트에 교체 가능한 ACP 전송이 있더라도 항상 네이티브 REST를 사용합니다. 커서는 데몬 수명 전용이며 데몬 재시작 후 1페이지부터 재시작해야 합니다. 라이브 세션의 backward 첫 페이지는 읽기 전에 영속 꼬리를 플러시하기 위해 ACP를 시작하고 워크스페이스 설정을 로드할 수 있습니다.
 
 신뢰할 수 있는 등록된 워크스페이스의 전체 첨부의 경우 `workspace_session_export`를 사전 점검하고 `client.workspaceById(workspaceId).exportSession(sessionId, { format: 'html' })` 또는 원시 `/workspaces/:workspace/session/:id/export` 라우트를 호출하세요. `session_export` 또는 `workspace_qualified_rest_core`에서 지원을 추론하지 마세요; 오래된 데몬은 둘 다 광고하면서 기본 전용 내보내기를 유지할 수 있습니다. 현재 Web Shell 내보내기 작업은 기본 전용으로 유지됩니다; 다른 워크스페이스의 경우 SDK 또는 REST 라우트를 사용하세요.
 
@@ -707,7 +715,7 @@ curl "http://127.0.0.1:4170/session/$SESSION_ID/transcript?limit=100"
 
 `limit`은 활성 채팅 기록 수를 세며 발생된 재생 프레임 수를 세지 않습니다; 하나의 기록이 여러 `session_update` 이벤트를 생성할 수 있습니다. 첫 번째 응답은 JSONL 스냅샷 크기를 고정하고 `hasMore`가 true인 동안 `nextCursor`를 반환합니다. 이후 페이지는 페이지 1 이후의 추가를 무시하지만 파일이 삭제, 잘림, 교체, 아카이브되거나 동결된 커서와 충돌하면 `409`를 반환합니다. 매우 큰 스냅샷은 인덱싱 전에 `413 transcript_too_large`를 반환하여 데몬이 요청 경로에서 무제한 트랜스크립트 파일을 스캔하지 않습니다.
 
-레거시 단수 라우트를 통한 반복 페이징의 경우 `--channel-idle-timeout-ms`를 양의 값으로 설정하세요. 기본값 `0`에서는 유휴 워크스페이스의 ACP 자식 — 그리고 그가 보유한 프로세스 내 트랜스크립트 인덱스 캐시 — 가 매 페이지 후에 수거되므로 각 페이지가 자식을 재생성하고 동결된 접두사 전체를 재스캔하여 인덱스를 재구축합니다(페이지당 `O(snapshotSize)`). 양의 타임아웃은 커서 워크 전체에서 자식을 활성 상태로 유지하므로 캐시된 트랜스크립트 인덱스와 재생 구성을 재사용합니다. 워크스페이스 한정 영속 라우트는 ACP 자식을 시작하지 않으며 이 타임아웃의 영향을 받지 않습니다.
+레거시 단수 라우트를 통한 반복 페이징의 경우 `--channel-idle-timeout-ms`를 양의 값으로 설정하세요. 기본값 `0`에서는 유휴 워크스페이스의 ACP 자식 — 그리고 그가 보유한 프로세스 내 트랜스크립트 인덱스 캐시 — 가 매 페이지 후에 수거되므로 각 페이지가 자식을 재생성하고 동결된 접두사 전체를 재스캔하여 인덱스를 재구축합니다(페이지당 `O(snapshotSize)`). 양의 타임아웃은 커서 워크 전체에서 자식을 활성 상태로 유지하므로 캐시된 트랜스크립트 인덱스와 재생 구성을 재사용합니다. 워크스페이스 한정 forward 및 cursor 페이지는 데몬 로컬로 유지됩니다; 라이브 세션의 backward 첫 페이지만 플러시 장벽을 넘습니다.
 
 참고: 라이브 세션 기록 재생은 두 번 제한됩니다: `Last-Event-ID` 재연결을 위한 SSE 링과 `POST /session/:id/load`가 반환하는 스냅샷을 위한 `--compacted-replay-max-bytes`. 많은 턴이 있는 긴 기록은 어느 한도를 초과할 수 있습니다. 데몬은 `history_truncated`로 스냅샷 잘림을 표시합니다; 완전한 활성 영속 기록이 필요할 때 `/transcript`를 사용하세요.
 

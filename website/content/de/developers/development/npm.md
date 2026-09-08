@@ -41,16 +41,16 @@ Regelmäßige stabile Releases für den Produktionseinsatz.
 
 ### Preview-Releases
 
-Wöchentliche Preview-Releases jeden Dienstag um 23:59 UTC für frühen Zugriff auf kommende Funktionen.
+Wöchentliche Preview-Releases jeden Dienstag um 17:00 UTC für frühen Zugriff auf kommende Funktionen.
 
 ### Nightly-Releases
 
-Tägliche Nightly-Releases um Mitternacht UTC für aktuelle Entwicklungstests.
+Tägliche Nightly-Releases um 21:00 UTC für aktuelle Entwicklungstests.
 
 ## Automatisierter Release-Zeitplan
 
-- **Nightly**: Jeden Tag um Mitternacht UTC
-- **Preview**: Jeden Dienstag um 23:59 UTC
+- **Nightly**: Jeden Tag um 21:00 UTC
+- **Preview**: Jeden Dienstag um 17:00 UTC
 - **Stable**: Manuelle Releases, die von Maintainern ausgelöst werden
 
 ### So verwenden Sie verschiedene Release-Typen
@@ -155,7 +155,7 @@ Hier sind die wichtigsten Phasen:
 
 Phase 1: Pre-Release-Sanity-Checks und Versionierung
 
-- Was passiert: Bevor Dateien verschoben werden, stellt der Prozess sicher, dass sich das Projekt in einem guten Zustand befindet. Dies beinhaltet das Ausführen von Tests, Linting und Type-Checking (`npm run preflight`). Die Versionsnummer in der root package.json und packages/cli/package.json wird auf die neue Release-Version aktualisiert.
+- Was passiert: Bevor Dateien verschoben werden, stellt der Prozess sicher, dass sich das Projekt in einem guten Zustand befindet. Dies beinhaltet das Ausführen von Tests, Linting und Type-Checks (`npm run preflight`). Die Versionsnummer in der root package.json und packages/cli/package.json wird auf die neue Release-Version aktualisiert.
 - Warum: Dies garantiert, dass nur qualitativ hochwertiger, funktionierender Code veröffentlicht wird. Die Versionierung ist der erste Schritt, um ein neues Release zu kennzeichnen.
 
 Phase 2: Bauen des Quellcodes
@@ -201,7 +201,7 @@ Phase 4: Veröffentlichung auf NPM
 - Was passiert: Der Befehl `npm publish` wird aus dem Stammverzeichnis `dist` ausgeführt.
 - Warum: Indem `npm publish` aus dem `dist`-Verzeichnis heraus ausgeführt wird, werden nur die Dateien, die wir in Phase 3 sorgfältig zusammengestellt haben, in die NPM-Registry hochgeladen. Dies verhindert, dass Quellcode, Testdateien oder Entwicklungskonfigurationen versehentlich veröffentlicht werden, und resultiert in einem sauberen und minimalen Paket für die Benutzer.
 
-Dieser Prozess stellt sicher, dass das endgültig veröffentlichte Artefakt eine zweckgebundene, saubere und effiziente Repräsentation des Projekts ist, anstatt eine direkte Kopie des Entwicklungsworkspace.
+Dieser Prozess stellt sicher, dass das endgültig veröffentlichte Artefakt eine zweckgebundene, saubere und effiziente Repräsentation des Projekts ist, anstatt eine direkte Kopie des Entwicklungs-Workspace.
 
 ## NPM Workspaces
 

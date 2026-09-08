@@ -41,16 +41,16 @@ Lançamentos estáveis regulares para uso em produção.
 
 ### Lançamentos de Pré-visualização
 
-Lançamentos de pré-visualização semanais toda terça-feira às 23:59 UTC para acesso antecipado a funcionalidades futuras.
+Lançamentos de pré-visualização semanais toda terça-feira às 17:00 UTC para acesso antecipado a funcionalidades futuras.
 
 ### Lançamentos Noturnos
 
-Lançamentos noturnos diários à meia-noite UTC para testes de desenvolvimento de ponta.
+Lançamentos noturnos diários às 21:00 UTC para testes de desenvolvimento de ponta.
 
 ## Cronograma de Lançamentos Automatizados
 
-- **Nightly**: Todos os dias à meia-noite UTC
-- **Preview**: Toda terça-feira às 23:59 UTC
+- **Nightly**: Todos os dias às 21:00 UTC
+- **Preview**: Toda terça-feira às 17:00 UTC
 - **Stable**: Lançamentos manuais acionados pelos mantenedores
 
 ### Como Usar Diferentes Tipos de Lançamento
@@ -90,7 +90,7 @@ Após enviar um novo lançamento, testes de fumaça devem ser realizados para ga
 - `npx -y @qwen-code/qwen-code@latest --version` para validar que o push funcionou conforme esperado, se você não estava fazendo uma tag rc ou dev
 - `npx -y @qwen-code/qwen-code@<release tag> --version` para validar que a tag foi enviada apropriadamente
 - `_Isto é destrutivo localmente_ npm uninstall @qwen-code/qwen-code && npm uninstall -g @qwen-code/qwen-code && npm cache clean --force &&  npm install @qwen-code/qwen-code@<version>`
-- Recomenda-se realizar um teste de fumaça básico executando alguns comandos e ferramentas LLM para garantir que os pacotes estão funcionando conforme esperado. Vamos codificar isso mais no futuro.
+- Recomenda-se realizar um teste de fumaça básico executando alguns comandos e ferramentas LLM para garantir que os pacotes estão funcionando conforme esperado. Vamos formalizar isso mais detalhadamente no futuro.
 
 ## Quando mesclar a alteração de versão, ou não?
 
@@ -217,7 +217,7 @@ O arquivo `package.json` raiz define os workspaces para este projeto:
 }
 ```
 
-Isso informa ao NPM que qualquer pasta dentro do diretório `packages` é um pacote separado que deve ser gerenciado como parte do espaço de trabalho.
+Isso informa ao NPM que qualquer pasta dentro do diretório `packages` é um pacote separado que deve ser gerenciado como parte do workspace.
 
 ### Benefícios dos Workspaces
 

@@ -28,13 +28,14 @@ import { DaemonClient, type DaemonEvent } from '@qwen-code/sdk';
 
 const client = new DaemonClient({
   baseUrl: 'http://127.0.0.1:4170',
-  // PR 27 (v0.16-alpha): when `token` is omitted, DaemonClient falls
-  // back to `process.env.QWEN_SERVER_TOKEN` automatically — same env
-  // var the daemon's `--token` CLI flag falls back to. So either:
+  // PR 27 (v0.16-alpha): quando `token` é omitido, o DaemonClient faz
+  // fallback para `process.env.QWEN_SERVER_TOKEN` automaticamente — a mesma
+  // variável de ambiente para a qual a flag `--token` da CLI do daemon
+  // faz fallback. Então, ou:
   //   export QWEN_SERVER_TOKEN="$(openssl rand -hex 32)"   # one-shot
   //   export QWEN_SERVER_TOKEN="$(cat ./my-token-file)"    # user-managed file
   //   const client = new DaemonClient({ baseUrl: '...' });
-  // OR pass it explicitly when you have a different env-var name:
+  // OU passe explicitamente quando tiver um nome de variável de ambiente diferente:
   //   token: process.env.MY_TOKEN,
 });
 
@@ -147,7 +148,7 @@ let cursor: number | undefined;
 
 for await (const event of client.subscribeEvents(session.sessionId, {
   signal: abort.signal,
-  lastEventId: cursor, // resume from after this id; undefined = live only
+  lastEventId: cursor, // retome a partir deste id; undefined = apenas ao vivo
 })) {
   if (typeof event.id === 'number') cursor = event.id;
   handleEvent(event);
@@ -225,7 +226,7 @@ try {
 }
 ```
 
-Não faça retry contra o workspace primário após um mismatch. Atualize `/capabilities`, selecione a entrada pretendida de `workspaces[]` ou registre um workspace dinâmico elegível via `POST /workspaces`. Use daemons separados apenas quando autenticação, limite de taxa ou boundaries de falha de processo também precisarem ser independentes.
+Não tente novamente contra o workspace primário após uma incompatibilidade. Atualize `/capabilities`, selecione a entrada pretendida de `workspaces[]` ou registre um workspace dinâmico elegível via `POST /workspaces`. Use daemons separados apenas quando autenticação, limite de taxa ou fronteiras de falha de processo também precisarem ser independentes.
 
 ## Autenticação
 
@@ -245,7 +246,7 @@ const client = new DaemonClient({
 const client = new DaemonClient({ baseUrl: 'https://your-host:4170' });
 ```
 
-O fallback remove espaços em branco no início/fim (útil para `export QWEN_SERVER_TOKEN="$(cat token.txt)"` onde `cat` adiciona uma nova linha) e trata valores vazios/compostos apenas de espaços como não definidos (um `export QWEN_SERVER_TOKEN=""` desatualizado não enviará acidentalmente `Authorization: Bearer ` sem token). O fallback é executado uma vez na construção; mutações posteriores em `process.env` não afetam clientes já construídos. Pacotes de navegador (ex.: via `@qwen-code/webui`) obtêm `undefined` corretamente porque `globalThis.process` não existe lá.
+O fallback remove espaços em branco no início/fim (útil para `export QWEN_SERVER_TOKEN="$(cat token.txt)"` onde `cat` adiciona uma nova linha) e trata valores vazios/compostos apenas de espaços como não definidos (um `export QWEN_SERVER_TOKEN=""` desatualizado não enviará acidentalmente `Authorization: Bearer ` sem token). O fallback é executado uma vez na construção; mutações posteriores em `process.env` não afetam clientes já construídos. Pacotes de navegador (ex.: via `@qwen-code/web-shell`) obtêm `undefined` corretamente porque `globalThis.process` não existe lá.
 
 Tokens incorretos ou ausentes retornam `401` com um corpo uniforme – o SDK lança `DaemonHttpError` em qualquer 4xx/5xx de um manipulador de rota.
 

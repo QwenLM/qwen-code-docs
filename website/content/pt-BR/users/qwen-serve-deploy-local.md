@@ -51,7 +51,7 @@ precisarem ser independentes.
 
 ## Linux: unidade de usuário do systemd
 
-> **Encontre seu binário `qwen` primeiro.** O `ExecStart=` do arquivo de unidade deve conter um **caminho absoluto** — os gerenciadores de serviço não leem o `PATH` do seu shell. Execute `which qwen` para descobri‑lo. Locais comuns: `/usr/local/bin/qwen` (Linuxbrew, instalações manuais), `~/.nvm/versions/node/vX.Y.Z/bin/qwen` (nvm), `~/.fnm/aliases/default/bin/qwen` (fnm), `~/.volta/bin/qwen` (Volta). Substitua pelo caminho real onde os modelos abaixo mostram `/PATH/TO/qwen`.
+> **Encontre primeiro o binário `qwen` e os diretórios confiáveis de ferramentas.** O `ExecStart=` do arquivo de unidade deve conter um **caminho absoluto**, e seu `PATH` explícito deve incluir diretórios confiáveis para ferramentas que as sessões do daemon precisam, como `gh`, `git`, `npm` e o interpretador `node` usado por um launcher `qwen` baseado em script. Gerenciadores de serviço não leem o perfil do seu shell. Execute `which qwen gh git npm node` no seu shell normal e substitua o executável real e os diretórios em todos os lugares onde o modelo abaixo mostra `/PATH/TO/qwen` e `/PATH/TO/USER/BIN`.
 
 `~/.config/systemd/user/qwen-serve.service`:
 
@@ -104,7 +104,7 @@ Sem `loginctl enable-linger`, a instância do systemd em nível de usuário é e
 
 ## macOS: agente de usuário do launchd
 
-> **Encontre seu binário `qwen` primeiro.** A mesma restrição do systemd — `ProgramArguments` deve conter um **caminho absoluto**. Execute `which qwen` para descobri‑lo. Locais comuns no macOS: `/opt/homebrew/bin/qwen` (Homebrew no Apple Silicon), `/usr/local/bin/qwen` (Homebrew no Intel, instalações manuais), `~/.nvm/versions/node/vX.Y.Z/bin/qwen` (nvm), `~/.volta/bin/qwen` (Volta). Substitua abaixo onde o modelo mostra `/PATH/TO/qwen`.
+> **Encontre primeiro o binário `qwen` e os diretórios confiáveis de ferramentas.** Mesma restrição do systemd: `ProgramArguments` deve conter um **caminho absoluto**, enquanto `EnvironmentVariables.PATH` deve incluir diretórios confiáveis contendo ferramentas que as sessões do daemon precisam. Execute `which qwen gh git npm node` no seu shell normal. Locais comuns no macOS incluem `/opt/homebrew/bin` (Homebrew no Apple Silicon), `/usr/local/bin` (Homebrew no Intel e instalações manuais), `~/.nvm/versions/node/vX.Y.Z/bin` (nvm) e `~/.volta/bin` (Volta). Substitua os caminhos absolutos reais abaixo; o launchd não expande `~` nem variáveis de shell.
 
 `~/Library/LaunchAgents/com.qwenlm.qwen-serve.plist`:
 
@@ -217,7 +217,7 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
   http://127.0.0.1:4170/capabilities | jq .protocolVersions         # conjunto de recursos do daemon
 ```
 
-Quando a autenticação está configurada (ou seja, o daemon foi iniciado com `--token` / `QWEN_SERVER_TOKEN` definido, OU `--require-auth=true`), toda rota exceto `/health` no loopback exige `Authorization: Bearer <token>`. Se você iniciou o daemon sem um token na configuração padrão do loopback (caminho de configuração zero do `qwen serve`), nenhuma das chamadas exige cabeçalho. Os modelos acima configuram todos um token, portanto o cabeçalho `Authorization` é necessário na prática. Se `/capabilities` retornar `401`, o token da unidade / plist não corresponde ao token exportado no ambiente que seu `curl` está usando.
+Quando a autenticação está configurada (`--token` ou `QWEN_SERVER_TOKEN`), toda rota normal da API exceto `/health` em um bind de loopback comum exige `Authorization: Bearer <token>`; a entrada de webhook do canal sempre usa seu `x-qwen-webhook-secret` configurado, e as rotas de documento e ativo do Web Shell permanecem pré‑auth. `--require-auth=true` exige um token na inicialização e adicionalmente move o `/health` do loopback para trás do gate do bearer sem alterar a autenticação do webhook. Se você iniciou o daemon sem um token no padrão do loopback (o caminho sem configuração do `qwen serve`), nenhuma das chamadas exige cabeçalho e qualquer processo local que possa alcançar o listener principal recebe autoridade completa da API de operador, incluindo execução de código como o usuário do daemon. Os modelos acima configuram todos um token, portanto o cabeçalho `Authorization` é necessário na prática. Se `/capabilities` retornar `401`, o token da unidade / plist não corresponde ao token exportado no ambiente que seu `curl` está usando.
 
 ## Rotação de token
 

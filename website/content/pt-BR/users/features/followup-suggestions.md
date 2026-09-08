@@ -2,7 +2,7 @@
 
 O Qwen Code pode prever o que você deseja digitar em seguida e exibir como texto de placeholder na área de entrada. Esse recurso utiliza uma chamada de LLM para analisar o contexto da conversa e gerar uma sugestão natural para o próximo passo.
 
-Esse recurso funciona de ponta a ponta no CLI. Na WebUI, o hook e a infraestrutura de UI estão disponíveis, mas os aplicativos host precisam acionar a geração de sugestões e conectar o estado de acompanhamento para que as sugestões apareçam.
+Esse recurso funciona de ponta a ponta tanto no CLI quanto na Web Shell. A geração é automática e ocorre no lado do servidor: após cada turno concluído, o daemon emite a sugestão no stream da sessão (ativado por padrão; defina `ui.enableFollowupSuggestions` como `false` para desativar), e o composer da Web Shell já conecta o hook `useDaemonFollowupSuggestion`, então as sugestões são exibidas e aceitas sem necessidade de configuração adicional no host.
 
 ## Como Funciona
 
@@ -23,7 +23,7 @@ A sugestão é gerada enviando o histórico da conversa ao modelo, que prevê o 
 | `Right Arrow`  | Aceitar a sugestão e preenchê-la na entrada      |
 | Qualquer digitação | Descartar a sugestão e digitar normalmente    |
 
-`Enter` preenche a entrada em vez de enviar, portanto, aceitar um comando de barra sugerido (ex.: `/clear`) nunca é executado automaticamente — você mesmo o envia com um segundo `Enter`.
+`Enter` preenche a entrada em vez de enviar, portanto, aceitar um comando slash sugerido (ex.: `/clear`) nunca é executado automaticamente — você mesmo o envia com um segundo `Enter`.
 
 ## Quando as Sugestões Aparecem
 
@@ -110,4 +110,4 @@ As sugestões passam por filtros de qualidade para garantir que sejam úteis:
 - Não podem ser metacomentários ("nada a sugerir", "silêncio")
 - Não podem ser mensagens de erro ou rótulos prefixados ("Sugestão: ...")
 - Sugestões de uma palavra só são permitidas para comandos comuns (yes, commit, push, etc.)
-- Comandos de barra (ex.: `/commit`) são sempre permitidos como sugestões de uma palavra
+- Comandos slash (ex.: `/commit`) são sempre permitidos como sugestões de uma palavra

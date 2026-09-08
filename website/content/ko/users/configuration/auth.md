@@ -104,7 +104,78 @@ export OPENAI_MODEL="qwen3-coder-plus"
 >
 > Coding Plan은 표준 Dashscope 엔드포인트와 다른 전용 엔드포인트(`https://coding.dashscope.aliyuncs.com/v1`)를 사용합니다. 올바른 `baseUrl`을 사용하세요.
 
-## 🚀 옵션 3: API Key (유연한)
+## 🪙 옵션 3: Alibaba Cloud Token Plan
+
+팀이나 회사가 전용 ModelStudio 엔드포인트에서 사용량 기반 과금을 선호하는 경우 사용하세요.
+
+- **작동 방식**: Alibaba Cloud ModelStudio에서 Token Plan을 구독한 다음, 지역별 Token Plan 엔드포인트와 API 키를 사용하도록 Qwen Code를 구성합니다. 고정 월 요금 대신 실제 토큰 사용량에 대해 과금됩니다.
+- **요구 사항**: 계정 지역에 따라 [Alibaba Cloud ModelStudio(베이징)](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) 또는 [Alibaba Cloud ModelStudio(국제)](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)에서 Token Plan API 키를 획득합니다.
+- **이점**: 팀 및 회사용 사용량 기반 과금, 전용 지역별 엔드포인트, 다양한 모델(Qwen, DeepSeek, GLM, Kimi, Minimax 등)에 대한 접근.
+- **비용 및 할당량**: Alibaba Cloud ModelStudio Token Plan 문서 [베이징](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) [국제](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)를 참조하세요.
+
+Token Plan은 두 지역에서 사용 가능하며, 각 지역마다 전용 엔드포인트가 있습니다:
+
+| 지역                    | 엔드포인트                                                               | 콘솔 URL                                                                                          |
+| ------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| 중국(베이징)             | `https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1`     | [bailian.console.aliyun.com](https://bailian.console.aliyun.com/cn-beijing)                         |
+| 싱가포르(국제)           | `https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1` | [modelstudio.console.alibabacloud.com](https://modelstudio.console.alibabacloud.com/ap-southeast-1) |
+
+### 대화형 설정
+
+터미널에서 `qwen`을 입력하여 Qwen Code를 실행한 다음, `/auth` 명령을 실행하고 **Alibaba ModelStudio**를 선택한 후 하위 메뉴에서 **Token Plan**을 선택합니다. 지역을 선택합니다(**중국(베이징)** 또는 **싱가포르(국제)**). 그런 다음 API 키를 입력합니다. 마법사가 마지막 단계(3/3단계 · 모델 ID)를 표시하며, 여기서 구성할 모델 ID를 선택합니다: 엔드포인트에서 제공하는 모델이 여기에 표시되며 명시적으로 선택한 경우에만 적용됩니다. Token Plan API 키는 접두사 요구 사항이 없습니다(Coding Plan 키와 달리 `sk-sp-`로 시작하지 않음).
+
+인증 후 `/model` 명령을 사용하여 Token Plan에 구성된 모델을 탐색하고 전환합니다. 모델 라인업은 시간이 지남에 따라 변화하므로 의도적으로 여기에 나열하지 않습니다. 엔드포인트에서의 모델 검색은 위의 `/auth` 설정 단계에서 발생합니다(엔드포인트 자체 목록이 여기에 표시되며 명시적으로 선택해야 함). `/model`은 그러면 계획에 구성된 모델을 표시합니다.
+
+### 헤드리스 또는 스크립트 설정
+
+CI, 컨테이너 또는 스크립트의 경우 대화형 `/auth` 흐름 대신 환경 변수 또는 `settings.json`으로 Token Plan을 구성합니다.
+
+```bash
+export BAILIAN_TOKEN_PLAN_API_KEY="your-api-key"
+export OPENAI_BASE_URL="https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+export OPENAI_MODEL="qwen3.7-plus"
+```
+
+중국(베이징) 엔드포인트에는 `https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1`을, 국제(싱가포르) 엔드포인트에는 `https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1`을 사용하세요. `qwen3.7-plus`를 계획에 포함된 다른 모델로 교체하세요.
+
+`BAILIAN_TOKEN_PLAN_API_KEY`는 제공자별 키입니다: 다음 섹션의 `settings.json` 제공자 항목이 존재하면 효과가 있는데, 해당 항목이 이를 `envKey`로 선언하기 때문입니다. 환경 변수만으로 OpenAI 호환 인증을 선택하려면 대신 `OPENAI_API_KEY`를 export하세요 — 제공자별 키만으로는 인증 유형을 선택할 수 없습니다.
+
+### 대안: `settings.json`을 통한 구성
+
+대화형 `/auth` 흐름을 건너뛰려면 `~/.qwen/settings.json`에 다음을 추가하세요:
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "qwen3.7-plus",
+        "name": "qwen3.7-plus (Token Plan)",
+        "baseUrl": "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1",
+        "description": "qwen3.7-plus from Alibaba Cloud Token Plan",
+        "envKey": "BAILIAN_TOKEN_PLAN_API_KEY"
+      }
+    ]
+  },
+  "env": {
+    "BAILIAN_TOKEN_PLAN_API_KEY": "your-api-key"
+  },
+  "security": {
+    "auth": {
+      "selectedType": "openai"
+    }
+  },
+  "model": {
+    "name": "qwen3.7-plus"
+  }
+}
+```
+
+> [!note]
+>
+> Token Plan은 표준 DashScope 엔드포인트와 다른 전용 지역별 엔드포인트(`*.maas.aliyuncs.com`)를 사용합니다. `baseUrl`이 구독 지역과 일치하는지 확인하세요.
+
+## 🚀 옵션 4: API Key (유연한)
 
 OpenAI, Anthropic, Google, Azure OpenAI, OpenRouter, Requesty, ModelScope 또는 자체 호스팅 엔드포인트와 같은 타사 제공자에 연결하려는 경우 사용하세요. 여러 프로토콜과 제공자를 지원합니다.
 
@@ -320,13 +391,14 @@ qwen --model "qwen3.5-plus"
 | -------------------------------- | ------------------------------------------------------------------------------------- |
 | 대화형 인증 설정                 | `qwen`을 실행한 다음 `/auth` 사용                                                    |
 | Coding Plan 설정                 | `/auth` 사용 또는 Coding Plan 기본 URL과 함께 `BAILIAN_CODING_PLAN_API_KEY` 설정     |
+| Token Plan 설정                  | `/auth` 사용 또는 지역에 대한 Token Plan 기본 URL과 함께 `BAILIAN_TOKEN_PLAN_API_KEY` 설정 |
 | OpenRouter 설정                  | `/auth` 사용 또는 `OPENROUTER_API_KEY` 및 `OPENAI_BASE_URL=https://openrouter.ai/api/v1` 설정 |
 | Requesty 설정                    | `/auth` 사용 또는 `REQUESTY_API_KEY` 및 `OPENAI_BASE_URL=https://router.requesty.ai/v1` 설정  |
 | API 키 또는 사용자 정의 제공자 설정 | `~/.qwen/settings.json`, `.env` 또는 제공자별 환경 변수 구성                        |
 | 현재 인증 확인                   | Qwen Code 내부에서 `/doctor` 실행                                                    |
 | OAuth 브라우저 흐름              | `qwen`을 대화형으로 실행하고 `/auth` 사용; OAuth는 환경 변수만으로는 구성할 수 없음  |
 
-`qwen auth status`와 같은 레거시 호출은 이제 이러한 마이그레이션 경로와 함께 제거 알림을 출력합니다.
+`qwen auth status`와 같은 레거시 호출은 두 지역의 기본 URL을 포함한 Token Plan 항목과 함께 이러한 마이그레이션 경로를 요약하는 제거 알림을 출력합니다.
 
 ## 보안 참고 사항
 

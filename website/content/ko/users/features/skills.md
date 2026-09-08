@@ -183,6 +183,46 @@ disable-model-invocation: true
 
 두 필드를 모두 조합할 수 있지만, Skill은 일반적인 사용자 또는 모델 호출 경로로 접근할 수 없게 됩니다.
 
+### 선택 사항: 규칙을 결정적으로 강제 (`hooks:`)
+
+`SKILL.md` 본문의 모든 내용은 모델에 대한 지시사항입니다: 프롬프트 텍스트이므로 따를지 여부는 모델에 달려 있습니다. 모델이 어떻게 결정하든 규칙이 반드시 유지되어야 하는 경우 — 필수 값이 주입되지 않으면 실행을 거부하거나 보호된 경로를 절대 건드리지 않아야 하는 경우 — 프론트매터에 [hook](./hooks.md)을 선언하세요. hook은 코드로 실행되므로 모델의 협력에 의존하지 않습니다:
+
+```yaml
+---
+name: gated-skill
+description: Calls the downstream CLI using a runtime-injected session ID
+hooks:
+  PreToolUse:
+    - matcher: run_shell_command
+      hooks:
+        - type: command
+          command: '"$QWEN_SKILL_ROOT/scripts/gate-session-id.sh"'
+---
+```
+
+`$QWEN_SKILL_ROOT`는 Skill 자체의 디렉토리로 설정되므로, hook 명령어는 `SKILL.md`와 함께 제공되는 파일을 참조할 수 있습니다. 명령어 문자열은 셸에 전달되므로 **내부 따옴표를 유지**하세요: 따옴표가 없으면 공백이 포함된 프로젝트 경로가 두 단어로 분할되어 게이트가 실행되지 않습니다. **스크립트를 실행 가능하게** (`chmod +x`) 만들 수도 있습니다. 두 실수 모두 같은 방식으로 개방적으로 실패합니다: 도구 호출이 진행되며, 게이트가 실행되지 않았다는 메시지가 트랜스크립트나 로그에 나타나지 않습니다. `PreToolUse` hook은 종료 코드 `2`로 종료되면(표준 오류가 모델에 이유로 전달됨) 또는 `hookSpecificOutput.permissionDecision: "deny"`를 출력하면 도구 호출을 차단합니다:
+
+```bash
+#!/usr/bin/env bash
+if [ -z "${DOWNSTREAM_SESSION_ID:-}" ]; then
+  echo "Required input DOWNSTREAM_SESSION_ID is not available. Cannot proceed." >&2
+  exit 2
+fi
+exit 0
+```
+
+참고:
+
+- hook은 Skill이 호출될 때 등록되며 세션이 끝날 때까지 유지됩니다. 이는 두 호출 경로 모두에 해당됩니다 — 모델이 Skill을 호출하든 `/<skill-name>`을 입력하든.
+- 세션 hook은 인메모리에만 존재하므로 `--continue` / `--resume`으로 세션을 재개해도 복원되지 **않습니다**. 두 호출 경로 모두 동일합니다. Skill의 지시사항은 리플레이된 대화와 함께 돌아올 수 있지만 이를 강제해야 하는 hook은 사라집니다 — 재개 후 Skill을 다시 실행하여 게이트를 다시 활성화하세요.
+- 등록은 멱등합니다: Skill을 다시 호출해도 중복 hook이 쌓이지 않습니다.
+- 도구 이벤트에 항상 명시적인 `matcher:`를 지정하세요. 생략되면 빈 패턴으로 저장되어 `^`로 컴파일되며 어떤 도구 이름과도 매칭되지 않습니다 — hook은 등록되지만 절대 실행되지 않으며 이를 알리는 메시지도 없습니다. 모든 도구를 의미한다면 `*`를 사용하세요.
+- `command:`는 플랫폼 셸을 통해 실행됩니다: macOS와 Linux에서는 `bash`, Windows에서는 Git Bash가 감지되면(`MSYSTEM`/`TERM`), 그렇지 않으면 `cmd.exe` 또는 PowerShell. 위 예시는 POSIX 셸입니다 — `cmd.exe`에서는 `$QWEN_SKILL_ROOT`가 확장되지 않고 `.sh` 스크립트가 실행 가능하지 않으므로 게이트가 개방적으로 실패합니다. hook은 `shell: bash`를 설정하여 bash를 강제할 수 있지만 `PATH`의 `bash`로 해석되므로, Git Bash 외부의 Windows에서는 실제로 사용 중인 셸에 맞게 게이트를 작성하세요.
+- hook을 비활성화하는 세션은 어느 것도 등록하지 않습니다 — `disableAllHooks`, 안전 모드, ACP 클라이언트의 `skipHooks`. 이러한 세션에서도 Skill의 본문과 `allowedTools`는 여전히 적용되지만 게이트는 적용되지 않으므로, hook 강제에 의존하는 규칙은 여기서 강제되지 않습니다. Bare 모드는 더 나아가서: 어떤 Skill도 발견되지 않으므로 본문도 `allowedTools`도 없습니다.
+- **프로젝트** Skill의 hook은 저장소에서 제공한 명령어를 실행하므로 신뢰되는 폴더에서만 등록되며, hook이 실행될 때마다 그리고 권한이 결정될 때마다 신뢰가 다시 읽힙니다. IDE 컴패니언이 연결되어 있으면 이 값은 실시간입니다: 신뢰를 취소하면 다음 도구 호출에서 이미 등록된 게이트가 침묵화되고 — Skill의 `allowedTools`도 중단됩니다 — 재시작 없이. IDE 연결이 없으면 CLI가 시작될 때 값이 고정되므로 CLI의 신뢰 대화상자를 통한 변경은 재시작 시 적용됩니다. 신뢰 부여는 소급 등록하지 않습니다: Skill을 다시 호출하세요.
+- `hooks:`는 프로젝트, 사용자 및 번들 Skill에서 읽힙니다. 확장이 제공하는 Skill은 지원하지 않습니다; 대신 확장 자체의 매니페스트 수준 hook을 사용하세요.
+- 전체 이벤트 목록, matcher 구문 및 출력 형식은 [Hooks](./hooks.md)를 참조하세요.
+
 ## 지원 파일 추가
 
 `SKILL.md`와 함께 추가 파일을 생성합니다:

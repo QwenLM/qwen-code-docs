@@ -103,7 +103,78 @@ Wenn du den interaktiven `/auth`-Flow überspringen möchtest, füge Folgendes z
 >
 > Der Coding Plan verwendet einen dedizierten Endpunkt (`https://coding.dashscope.aliyuncs.com/v1`), der sich vom Standard-Dashscope-Endpunkt unterscheidet. Stelle sicher, dass du die korrekte `baseUrl` verwendest.
 
-## 🚀 Option 3: API Key (flexibel)
+## 🪙 Option 3: Alibaba Cloud Token Plan
+
+Verwende diese Option, wenn dein Team oder Unternehmen nutzungsbasierte Abrechnung über einen dedizierten ModelStudio-Endpunkt bevorzugt.
+
+- **Funktionsweise**: Abonniere den Token Plan in Alibaba Cloud ModelStudio und konfiguriere dann Qwen Code so, dass es den regionsspezifischen Token-Plan-Endpunkt und deinen API Key verwendet. Du wirst für die tatsächliche Token-Nutzung abgerechnet, nicht für eine feste monatliche Gebühr.
+- **Voraussetzungen**: Hole dir einen Token-Plan-API-Key von [Alibaba Cloud ModelStudio(Beijing)](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) oder [Alibaba Cloud ModelStudio(intl)](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model), abhängig von der Region deines Kontos.
+- **Vorteile**: Nutzungsbasierte Abrechnung für Teams und Unternehmen, dedizierte regionsspezifische Endpunkte, Zugriff auf eine breite Palette von Modellen (Qwen, DeepSeek, GLM, Kimi, Minimax und mehr).
+- **Kosten & Kontingent**: Siehe Alibaba Cloud ModelStudio Token Plan Dokumentation [Beijing](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model).
+
+Der Token Plan ist in zwei Regionen verfügbar, jeweils mit einem eigenen dedizierten Endpunkt:
+
+| Region                    | Endpunkt                                                               | Console-URL                                                                                         |
+| ------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| China (Beijing)           | `https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1`     | [bailian.console.aliyun.com](https://bailian.console.aliyun.com/cn-beijing)                         |
+| Singapore (International) | `https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1` | [modelstudio.console.alibabacloud.com](https://modelstudio.console.alibabacloud.com/ap-southeast-1) |
+
+### Interaktive Einrichtung
+
+Gib `qwen` im Terminal ein, um Qwen Code zu starten, führe dann den Befehl `/auth` aus, wähle **Alibaba ModelStudio** und wähle **Token Plan** aus dem Untermenü. Wähle deine Region (**China (Beijing)** oder **Singapore (International)**) und gib dann deinen API Key ein. Der Assistent zeigt dann seinen letzten Schritt (Schritt 3/3 · Modell-IDs), wo du die zu konfigurierenden Modell-IDs auswählst: die von deinem Endpunkt bereitgestellten Modelle werden dort angeboten und nur angewendet, wenn du sie explizit auswählst. Token-Plan-API-Keys haben keine Prefix-Anforderung (im Gegensatz zu Coding-Plan-Keys, die mit `sk-sp-` beginnen).
+
+Verwende nach der Authentifizierung den Befehl `/model`, um zwischen den für deinen Token Plan konfigurierten Modellen zu blättern und zu wechseln. Die Modellpalette entwickelt sich laufend, daher wird sie hier absichtlich nicht aufgelistet; die Modellerkennung vom Endpunkt erfolgt während des obigen `/auth`-Einrichtungsschritts (die eigene Liste des Endpunkts wird dort angeboten und muss explizit ausgewählt werden), und `/model` zeigt dann die für deinen Plan konfigurierten Modelle an.
+
+### Headless- oder Skript-Einrichtung
+
+Konfiguriere für CI, Container oder Skripte den Token Plan mit Umgebungsvariablen oder `settings.json`, anstatt den interaktiven `/auth`-Flow zu verwenden.
+
+```bash
+export BAILIAN_TOKEN_PLAN_API_KEY="your-api-key"
+export OPENAI_BASE_URL="https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+export OPENAI_MODEL="qwen3.7-plus"
+```
+
+Verwende `https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1` für den China (Beijing) Endpunkt oder `https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1` für den internationalen (Singapore) Endpunkt. Ersetze `qwen3.7-plus` durch ein beliebiges in deinem Plan enthaltenes Modell.
+
+Beachte, dass `BAILIAN_TOKEN_PLAN_API_KEY` ein providerspezifischer Key ist: er wird wirksam, sobald der `settings.json`-Provider-Eintrag im nächsten Abschnitt existiert, da dieser Eintrag ihn als `envKey` deklariert. Um die OpenAI-kompatible Authentifizierung nur mit Umgebungsvariablen auszuwählen, exportiere stattdessen `OPENAI_API_KEY` – providerspezifische Keys wählen nicht von sich aus den Authentifizierungstyp aus.
+
+### Alternative: Konfiguration über `settings.json`
+
+Wenn du den interaktiven `/auth`-Flow überspringen möchtest, füge Folgendes zu `~/.qwen/settings.json` hinzu:
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "qwen3.7-plus",
+        "name": "qwen3.7-plus (Token Plan)",
+        "baseUrl": "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1",
+        "description": "qwen3.7-plus from Alibaba Cloud Token Plan",
+        "envKey": "BAILIAN_TOKEN_PLAN_API_KEY"
+      }
+    ]
+  },
+  "env": {
+    "BAILIAN_TOKEN_PLAN_API_KEY": "your-api-key"
+  },
+  "security": {
+    "auth": {
+      "selectedType": "openai"
+    }
+  },
+  "model": {
+    "name": "qwen3.7-plus"
+  }
+}
+```
+
+> [!note]
+>
+> Der Token Plan verwendet dedizierte, regionsspezifische Endpunkte (`*.maas.aliyuncs.com`), die sich vom Standard-DashScope-Endpunkt unterscheiden. Stelle sicher, dass die `baseUrl` mit der Region deines Abonnements übereinstimmt.
+
+## 🚀 Option 4: API Key (flexibel)
 
 Verwende diese Option, wenn du dich mit Third-party Providern wie OpenAI, Anthropic, Google, Azure OpenAI, OpenRouter, Requesty, ModelScope oder einem selbst gehosteten Endpunkt verbinden möchtest. Unterstützt mehrere Protokolle und Provider.
 
@@ -319,13 +390,14 @@ Der eigenständige `qwen auth` CLI-Befehl wurde entfernt. Verwende stattdessen d
 | -------------------------------- | ------------------------------------------------------------------------------------------- |
 | Interaktives Authentifizierungs-Setup | `qwen` ausführen, dann `/auth` verwenden                                                                |
 | Coding Plan-Setup                | `/auth` verwenden oder `BAILIAN_CODING_PLAN_API_KEY` mit der Coding Plan-Base-URL setzen             |
+| Token Plan-Setup                 | `/auth` verwenden oder `BAILIAN_TOKEN_PLAN_API_KEY` mit der Token Plan-Base-URL für deine Region setzen |
 | OpenRouter-Setup                 | `/auth` verwenden oder `OPENROUTER_API_KEY` und `OPENAI_BASE_URL=https://openrouter.ai/api/v1` setzen |
 | Requesty-Setup                   | `/auth` verwenden oder `REQUESTY_API_KEY` und `OPENAI_BASE_URL=https://router.requesty.ai/v1` setzen  |
 | API-Key- oder Custom-Provider-Setup | `~/.qwen/settings.json`, `.env` oder providerspezifische Umgebungsvariablen konfigurieren       |
 | Aktuelle Authentifizierung prüfen     | `/doctor` innerhalb von Qwen Code ausführen                                                              |
 | OAuth-Browser-Flow               | `qwen` interaktiv ausführen und `/auth` verwenden; OAuth kann nicht nur mit Umgebungsvariablen konfiguriert werden    |
 
-Legacy-Aufrufe wie `qwen auth status` geben nun einen Entfernungshinweis mit diesen Migrationspfaden aus.
+Legacy-Aufrufe wie `qwen auth status` geben einen Entfernungshinweis aus, der diese Migrationspfade zusammenfasst, einschließlich eines Token-Plan-Eintrags mit den Base-URLs für beide Regionen.
 
 ## Security-Hinweise
 

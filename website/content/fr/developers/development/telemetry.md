@@ -379,9 +379,15 @@ N'activez cette option que si le fournisseur LLM envoie également des données 
 }
 ```
 
-### Autres en-têtes de corrélation sortante
+### Affinité de session Routify
 
-`X-Qwen-Code-Session-Id` et `X-Qwen-Code-Request-Id` ne font **pas partie de cette PR**. Ils seront conçus et proposés dans leur(s) propre(s) PR de suivi sous le même namespace `outboundCorrelation.*`, chacun avec son propre modèle de menace et son flux de consentement de l'opérateur. La revue de la PR #4390 (LaZzyMan) a établi le principe suivant : "le périmètre de la télémétrie n'inclut pas l'envoi d'identifiants aux fournisseurs LLM" ; le travail sur les en-têtes de corrélation fait l'objet de sa propre discussion de conception plutôt que d'être intégré à la télémétrie.
+Les requêtes LLM de Qwen Code via les chemins de fournisseur compatibles OpenAI, DashScope, Anthropic, Gemini et Vertex incluent l'ID de session Qwen Code actuel dans l'en-tête `session_id` lorsqu'elles sont adressées via HTTPS directement à `routify.alibaba-inc.com`, `routify-online.alibaba-inc.com`, ou `routify-pub.alibaba-inc.com`. Le ModelRouter de Routify utilise cette valeur pour l'affinité de session et le marquage de trafic. Ce comportement n'est pas contrôlé par `telemetry.enabled` ni `outboundCorrelation.*`.
+
+La correspondance de destination initiale est volontairement restrictive : Qwen Code n'attache pas l'en-tête aux sous-domaines, aux autres hôtes `alibaba-inc.com`, ni aux autres points de terminaison LLM. Le comportement de redirection fetch standard s'applique toujours après cette correspondance, donc une réponse Routify peut transmettre l'en-tête en redirigeant la requête.
+
+L'ID de session est lu pour chaque requête, donc une nouvelle session créée par `/clear` obtient une nouvelle valeur d'affinité sans reconstruire le client SDK. Gemini nécessite un `baseUrl` Routify explicite pour que Qwen Code puisse vérifier la destination.
+
+`X-Qwen-Code-Request-Id` n'est pas implémenté.
 
 ## Corrélation entrante (API HTTP du daemon)
 

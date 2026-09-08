@@ -83,7 +83,7 @@ Die Verbindung betreibt einen SSE-Consumer (`for await` über `session.events()`
 
 ### Webview-Brücke
 
-Die Verbindungsklasse ist **rein transportbezogen**. Die eigentliche VS Code-Integration befindet sich in `packages/vscode-ide-companion/src/webview/providers/ChatWebviewViewProvider.ts` (und verwandten Dateien). Der Provider abonniert die Callbacks der Verbindung und übersetzt sie in Webview-`postMessage`-Aufrufe. Das Webview selbst nutzt die gemeinsame Komponentenbibliothek `packages/webui/`, um die Darstellung zu rendern – siehe Adapter-Matrix in [`01-architecture.md`](./01-architecture.md).
+Die Verbindungsklasse ist **rein transportbezogen**. Die eigentliche VS Code-Integration befindet sich in `packages/vscode-ide-companion/src/webview/providers/ChatWebviewViewProvider.ts` (und verwandten Dateien). Der Provider abonniert die Callbacks der Verbindung und übersetzt sie in Webview-`postMessage`-Aufrufe. Das Webview bettet Web Shell zum Rendern ein.
 
 ### Connect-Serialisierung
 
@@ -172,7 +172,7 @@ sequenceDiagram
 
 - `packages/sdk-typescript/src/daemon/` — `DaemonClient`, `DaemonSessionClient` (der eigentliche Transport).
 - VS Code-Erweiterungs-API (`vscode.*`) — Host-APIs, Quick-Pick, Webview.
-- `packages/webui/src/adapters/ACPAdapter.ts` — Webview-Rendering von ACP-förmigen Nachrichten, die über `postMessage` weitergeleitet werden.
+- `packages/web-shell/client/` — eingebettetes Webview-Rendering für Daemon-Session-Ereignisse.
 
 ## Konfiguration
 
@@ -199,6 +199,6 @@ sequenceDiagram
 - `packages/vscode-ide-companion/src/services/daemonIdeConnection.ts` (`createSdkDaemonSessionFactory`)
 - `packages/vscode-ide-companion/src/types/connectionTypes.ts` (veralteter `AcpConnectionState`)
 - `packages/vscode-ide-companion/src/webview/providers/ChatWebviewViewProvider.ts` (Webview-Brücke)
-- `packages/webui/src/adapters/ACPAdapter.ts` (Webview-ACP-Nachrichtenadapter)
+- `packages/web-shell/client/` (eingebetteter Web-Shell-Renderer)
 - Entwurf: [`../daemon-client-adapters/ide.md`](../daemon-client-adapters/ide.md)
 - SDK-Referenz: [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)

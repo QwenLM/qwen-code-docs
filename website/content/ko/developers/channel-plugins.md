@@ -94,7 +94,7 @@ export class MyChannel extends ChannelBase {
 
 대부분의 어댑터는 `options`를 변경 없이 전달해야 합니다. 어댑터가 자체 `SessionRouter`를 생성하고 해당 라우터를 `super()`에 전달하는 경우, `ChannelBaseOptions`에서 `registerBridgeEvents: true`를 설정하여 `ChannelBase`가 `toolCall` 및 `sessionDied` 이벤트를 직접 수신할 수 있도록 합니다. 채널 게이트웨이에서 제공하는 라우터의 경우 설정하지 않은 채로 두세요.
 
-어댑터가 셸 명령 동작을 노출하는 경우, 활성화하기 전에 `bridge.shellCommand`가 존재하는지 확인하세요. 데몬 관리 워커는 데몬이 `session_shell_command` 기능을 광고하지 않는 한 해당 선택적 메서드를 생략합니다.
+어댑터가 셸 명령 또는 BTW 부가 질문 동작을 노출하는 경우, 활성화하기 전에 해당 `bridge.shellCommand` / `bridge.btw` 메서드가 존재하는지 확인하세요. 데몬 관리 워커는 데몬이 일치하는 `session_shell_command` / `session_btw` 기능을 광고하지 않는 한 해당 선택적 메서드를 생략합니다.
 
 ## Envelope
 

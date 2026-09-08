@@ -95,6 +95,27 @@ export DINGTALK_CLIENT_SECRET=<your-app-secret>
 
 设置 `"useConnectionManager": false` 可禁用 Qwen Code 的连接管理器，并回退到 SDK 的保活和自动重连行为。
 
+### 后台代理响应
+
+后台代理的输出会在每个响应段可用时立即发送。每条消息都会标注代理名称，以便并发工作仍可追溯。
+
+要将每个代理的通知轮次缓冲为一条带标签的消息发送，请在 `settings.json` 中为钉钉频道启用聚合：
+
+```json
+{
+  "channels": {
+    "my-dingtalk": {
+      "type": "dingtalk",
+      "clientId": "$DINGTALK_CLIENT_ID",
+      "clientSecret": "$DINGTALK_CLIENT_SECRET",
+      "aggregateBackgroundAgentResponses": true
+    }
+  }
+}
+```
+
+聚合默认禁用。如果代理轮次被中断、在生成最终响应前失败，或在十分钟内未完成，则会发送一条部分带标签的消息。
+
 ## 运行
 
 ```bash
@@ -161,6 +182,8 @@ qwen channel start
 **图片：** 发送图片（截图、图表等），代理将利用其视觉能力进行分析。这需要多模态模型——在频道配置中添加 `"model": "qwen3.5-plus"`（或其他支持视觉的模型）。钉钉支持直接发送图片或作为富文本消息（图文混合）的一部分。
 
 **文件：** 发送 PDF、代码文件或任何文档。机器人从钉钉服务器下载并本地保存，以便代理使用其文件工具读取。也支持音频和视频文件。此功能适用于任何模型。
+
+**生成的文件：** 明确要求代理发送已完成的本地文件，它可以将文件作为原生钉钉附件返回。文件必须非空、不超过 20 MB，且位于配置的工作区或系统临时目录内。一次响应最多发送五个文件。当 `blockStreaming` 设为 `"on"` 时，出站文件附件不可用；上传或投递失败会在最终文本中报告。
 
 ## 转发聊天记录
 

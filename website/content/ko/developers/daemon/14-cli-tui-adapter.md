@@ -11,7 +11,7 @@
 - **렌더러**(`render.ts`, `terminal.ts`, `toolPreview.ts`): 트랜스크립트 블록을 HTML, 터미널 텍스트, 도구 미리보기 문자열로 변환합니다. 호스트는 이를 사용하거나 교체할 수 있습니다.
 - **적합성**(`conformance.ts`): 채널, TUI, IDE 표면이 이 기본 요소로 마이그레이션할 때 사용되는 교차 호스트 일관성 테스트.
 
-첫 프로덕션 소비자는 **`packages/webui/src/daemon/`**([#4328](https://github.com/QwenLM/qwen-code/pull/4328))입니다. React `DaemonSessionProvider`와 트랜스크립트 어댑터를 통해 웹 UI가 호스트 `postMessage` 트래픽만 렌더링하는 대신 데몬 HTTP+SSE에 직접 연결할 수 있습니다. CLI TUI, 채널 베이스, VS Code IDE는 나중에 같은 레이어를 재사용할 수 있습니다. [`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md)에 v2 점진적 마이그레이션 가이드가 문서화되어 있습니다.
+첫 프로덕션 소비자는 [#4328](https://github.com/QwenLM/qwen-code/pull/4328)에서 도입되었으며 현재 **`packages/web-shell/client/daemon/`**에 있습니다. React `DaemonSessionProvider`와 트랜스크립트 어댑터를 통해 Web Shell이 데몬 HTTP+SSE에 직접 연결할 수 있습니다. CLI TUI, 채널 베이스, VS Code IDE도 같은 레이어를 재사용할 수 있습니다. [`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md)에 v2 점진적 마이그레이션 가이드가 문서화되어 있습니다.
 
 ## 책임
 
@@ -132,17 +132,19 @@ flowchart LR
 
 ## 소비자
 
-### `packages/webui/src/daemon/`
+### `packages/web-shell/client/daemon/`
 
 [#4328](https://github.com/QwenLM/qwen-code/pull/4328)에서 적용되었습니다.
 
 | 파일                        | 내보내기                                                                                                                                                                                                                                                                                                                        |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `DaemonSessionProvider.tsx` | React `<DaemonSessionProvider />`. `useDaemonSession()`, `useDaemonTranscriptStore()`, `useDaemonTranscriptState()`, `useDaemonTranscriptBlocks()`, `useDaemonPendingPermissions()`, `useDaemonActions()`, `useDaemonConnection()` 훅. `DaemonConnectionStatus`, `DaemonConnectionState`, `DaemonSessionContextValue` 타입 |
-| `transcriptAdapter.ts`      | SDK `DaemonTranscriptBlock`을 웹 UI의 `UnifiedMessage`로 적응. 마크다운 스트리밍 청크 병합 및 도구 호출 요약 포함                                                                                                                                                                                        |
-| `index.ts`                  | 서브패키지 배럴                                                                                                                                                                                                                                                                                                              |
+| `session/DaemonSessionProvider.tsx` | React `<DaemonSessionProvider />`; `useDaemonSession()`, `useDaemonTranscriptStore()`, `useDaemonTranscriptState()`, `useDaemonTranscriptBlocks()`, `useDaemonPendingPermissions()`, `useDaemonActions()`, `useDaemonConnection()` 훅; `DaemonConnectionStatus`, `DaemonConnectionState`, `DaemonSessionContextValue` 타입 |
+| `session/index.ts`                  | 세션 배럴: 제공자, 훅, 세션 타입                                                                                                                                                                                                                                                                                                                     |
+| `index.ts`                          | 서브패키지 배럴                                                                                                                                                                                                                                                                                                              |
 
-이제 웹 UI는 데몬 HTTP+SSE에 직접 연결하여 트랜스크립트를 렌더링할 수 있습니다. 기존 `ACPAdapter` 호스트 `postMessage` 경로도 계속 사용 가능합니다.
+트랜스크립트 어댑터는 이 디렉토리 외부에 있습니다: `packages/web-shell/client/adapters/transcriptAdapter.ts`는 미해결 SDK 권한 블록을 호스트 UI로 들어올리는 `extractPendingPermission(blocks): PermissionRequest | null`만 내보냅니다. 트랜스크립트 블록 자체는 SDK `ui/*` 레이어와 `useDaemonTranscriptBlocks()`를 통해 흐르며, Web Shell에는 `UnifiedMessage` 어댑터가 없습니다.
+
+웹 UI는 이제 데몬 HTTP+SSE에 직접 연결하여 트랜스크립트를 렌더링할 수 있습니다. 기존 `ACPAdapter` 호스트 `postMessage` 경로는 레거시 WebUI 워크스페이스와 함께 폐지되었으며, 웹뷰는 이제 렌더링을 위해 Web Shell을 임베드합니다([`16-vscode-ide-adapter.md`](./16-vscode-ide-adapter.md) 참조).
 
 ### 후속 마이그레이션
 
@@ -163,9 +165,9 @@ flowchart LR
 ## 의존성
 
 - 업스트림 와이어 타입: `packages/sdk-typescript/src/daemon/events.ts`([`09-event-schema.md`](./09-event-schema.md) 참조).
-- 실제 다운스트림 소비자: `packages/webui/src/daemon/`.
+- 실제 다운스트림 소비자: `packages/web-shell/client/daemon/`.
 - 후속 마이그레이션 대상: `packages/cli/src/ui/`, `packages/channels/base/`, `packages/vscode-ide-companion/src/services/daemonIdeConnection.ts`.
-- 병렬 참고 자료: [`../daemon-ui/README.md`](../daemon-ui/README.md), [`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md), [`../daemon-client-adapters/web-ui.md`](../daemon-client-adapters/web-ui.md).
+- 병렬 참고 자료: [`../daemon-ui/README.md`](../daemon-ui/README.md), [`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md), [`../daemon-client-adapters/web-shell.md`](../daemon-client-adapters/web-shell.md).
 
 ## 설정
 
@@ -176,7 +178,7 @@ flowchart LR
 ## 주의사항 및 알려진 제한
 
 - **`daemon-tui-adapter.ts`가 여전히 존재합니다.** CLI 패키지의 레거시 실험적 어댑터입니다. 새 코드는 SDK `ui/*`를 선호해야 합니다: `normalizeDaemonEvent`, `reduceDaemonTranscriptEvents`, `DaemonTranscriptBlock`.
-- **CLI TUI, 채널 베이스, VS Code IDE는 아직 마이그레이션되지 않았습니다.** 여전히 자체 렌더링 로직을 유지합니다. `docs/developers/daemon-client-adapters/` 디렉토리에는 여전히 `ide.md`, `channel-web.md` 및 역사적 `tui.md` 초안이 있습니다. 더 새로운 `web-ui.md`는 웹 UI 어댑터 설계를 다룹니다.
+- **CLI TUI, 채널 베이스, VS Code IDE는 아직 마이그레이션되지 않았습니다.** 여전히 자체 렌더링 로직을 유지합니다. `docs/developers/daemon-client-adapters/` 디렉토리에는 여전히 `ide.md`, `channel-web.md` 및 역사적 `tui.md` 초안이 있습니다. 더 새로운 `web-shell.md`는 웹 UI 어댑터 설계를 다룹니다.
 - **`eventId`가 기본 정렬 키입니다.** `createdAt`은 더 이상 사용되지 않는 별칭(`clientReceivedAt`)으로 남아 있습니다. 새 코드는 `selectTranscriptBlocksOrderedByEventId(state)`를 사용해야 합니다. `MIGRATION.md`는 `createdAt` 정렬에서 `eventId` 정렬로 전환하는 코드 변경을 보여줍니다.
 - **알 수 없는 와이어 타입은 `debug`로 정규화됩니다.** 이전 어댑터와 달리 더 이상 삭제되지 않습니다. 렌더러는 기본적으로 `debug`를 표시하지 않습니다. 호스트가 표시하려면 선택적으로 활성화해야 합니다.
 - **번들 크기**: `ui/*` 서브패키지는 `@qwen-code/sdk/daemon`을 통해 ESM 서브 경로로 내보내지며 React 또는 DOM 의존성을 끌어오지 않습니다. React 통합은 웹 UI 소비자가 `DaemonSessionProvider`를 사용할 때만 로드됩니다.
@@ -188,6 +190,6 @@ flowchart LR
 - `packages/sdk-typescript/src/daemon/ui/normalizer.ts`(와이어-to-UI 매핑)
 - `packages/sdk-typescript/src/daemon/ui/store.ts`, `render.ts`, `terminal.ts`, `toolPreview.ts`, `conformance.ts`
 - `packages/sdk-typescript/src/daemon/index.ts`(`ui/*` 재내보내기 블록)
-- `packages/webui/src/daemon/DaemonSessionProvider.tsx`, `transcriptAdapter.ts`
-- 업스트림 문서: [`../daemon-ui/README.md`](../daemon-ui/README.md), [`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md), [`../daemon-client-adapters/web-ui.md`](../daemon-client-adapters/web-ui.md)
+- `packages/web-shell/client/daemon/session/DaemonSessionProvider.tsx`, `packages/web-shell/client/adapters/transcriptAdapter.ts`
+- 업스트림 문서: [`../daemon-ui/README.md`](../daemon-ui/README.md), [`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md), [`../daemon-client-adapters/web-shell.md`](../daemon-client-adapters/web-shell.md)
 - 관련 PR: [#4328](https://github.com/QwenLM/qwen-code/pull/4328)(v1 트랜스크립트 레이어 및 웹 UI 제공자), [#4353](https://github.com/QwenLM/qwen-code/pull/4353)(v2 통합 완전성 후속)

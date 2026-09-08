@@ -86,7 +86,7 @@
 | `Down Arrow` / `Ctrl+N` | 向下导航建议。                                                                                         |
 | `Tab` / `Enter`         | 接受选中的建议。                                                                                       |
 | `Up Arrow` / `Ctrl+P`   | 向上导航建议。                                                                                         |
-| `Right Arrow`           | 当显示类别标签时，切换到下一个补全类别。当 prompt 为空时，也接受 ghost-text 建议。                      |
+| `Right Arrow`           | 当显示类别标签时，切换到下一个补全类别。当 prompt 为空时，也接受 `ghost-text` 建议。                      |
 | `Left Arrow`            | 当显示类别标签时，切换到上一个补全类别。                                                               |
 
 > 注意：当 `@` 补全菜单显示类别标签时，`Left Arrow` 和 `Right Arrow` 会切换类别而不是移动光标。如需移动光标，请先按 `Esc` 关闭菜单。`Alt/Option+Arrow` 的单词移动不受影响。
@@ -131,7 +131,7 @@
 
 ### tmux 触控板滚动
 
-在 tmux 内部，某些终端会在 qwen-code 接收到事件之前，将触控板或滚轮手势转换为普通的 `Up Arrow` 和 `Down Arrow` 序列。这些字节与真实的按键操作完全相同，因此 qwen-code 无法区分你是想滚动视口还是浏览历史命令。
+在 tmux 内部，某些终端会在 qwen-code 接收到事件之前，将触控板或滚轮手势转换为普通的 `Up Arrow` 和 `Down Arrow` 序列。这些字节与真实的按键操作完全相同，因此 qwen-code 无法区分你是想滚动视口还是导航 prompt 历史。
 
 如果触控板滚动在 tmux 中更改了 prompt 历史，请确保 `ui.useTerminalBuffer` 已启用；然后使用 `Shift+Up` / `Shift+Down`，或者在 tmux 将滚轮事件转发给应用时使用鼠标滚轮（需要 `ui.mouseTracking`）。如果你更倾向于使用宿主机的回滚缓冲区，请调整 tmux 中针对滚轮事件的鼠标绑定。
 

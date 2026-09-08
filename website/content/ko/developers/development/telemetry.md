@@ -253,9 +253,15 @@ LLM 프로바이더도 크로스 프로세스 trace 스티칭을 위해 사용�
 }
 ```
 
-### 기타 아웃바운드 상관관계 헤더
+### Routify 세션 어피니티
 
-`X-Qwen-Code-Session-Id`와 `X-Qwen-Code-Request-Id`는 **이 PR의 일부가 아닙니다**. 동일한 `outboundCorrelation.*` 네임스페이스에서 각각의 위협 모델과 운영자 동의 흐름을 갖춘 후속 PR에서 설계 및 제안될 예정입니다. PR #4390 리뷰(LaZzyMan)는 원칙을 수립했습니다: "telemetry의 작업 범위에 LLM 프로바이더에게 식별자를 전송하는 것은 포함되지 않습니다"; 상관관계 헤더 작업은 telemetry 아래로 들어가지 않고 자체 설계 토론으로 이동합니다.
+Qwen Code의 OpenAI 호환, DashScope, Anthropic, Gemini 및 Vertex 프로바이더 경로를 통한 LLM 요청은 `routify.alibaba-inc.com`, `routify-online.alibaba-inc.com` 또는 `routify-pub.alibaba-inc.com`으로 HTTPS 직접 전송 시 `session_id` 헤더에 현재 Qwen Code 세션 ID를 포함합니다. Routify의 ModelRouter는 세션 어피니티와 트래픽 마킹에 이 값을 사용합니다. 이 동작은 `telemetry.enabled` 또는 `outboundCorrelation.*`에 의해 제어되지 않습니다.
+
+초기 대상 매칭은 의도적으로 좁습니다: Qwen Code는 서브도메인, 다른 `alibaba-inc.com` 호스트 또는 다른 LLM 엔드포인트에 헤더를 첨부하지 않습니다. 해당 매칭 이후에는 표준 fetch 리디렉트 동작이 계속 적용되므로 Routify 응답은 요청을 리디렉트하여 헤더를 전달할 수 있습니다.
+
+세션 ID는 모든 요청마다 읽히므로 `/clear`로 생성된 새 세션은 SDK 클라이언트를 재구축하지 않고도 새 어피니티 값을 얻습니다. Gemini는 Qwen Code가 대상을 확인할 수 있도록 명시적 Routify `baseUrl`이 필요합니다.
+
+`X-Qwen-Code-Request-Id`는 구현되지 않았습니다.
 
 ## 인바운드 상관관계 (데몬 HTTP API)
 

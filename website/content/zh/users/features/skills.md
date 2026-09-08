@@ -183,6 +183,46 @@ disable-model-invocation: true
 
 你可以结合这两个字段，但这样该 Skill 就无法通过正常的用户或模型调用路径访问了。
 
+### 可选：确定性强制执行规则（`hooks:`）
+
+`SKILL.md` 主体中的所有内容都是对模型的指令：它们是提示文本，因此是否遵循取决于模型。当某条规则必须无条件成立时 —— 例如除非注入了必需值否则拒绝运行，或者永远不要触及受保护路径 —— 请在 frontmatter 中声明一个 [hook](./hooks.md)。Hooks 以代码方式运行，因此不依赖模型的配合：
+
+```yaml
+---
+name: gated-skill
+description: Calls the downstream CLI using a runtime-injected session ID
+hooks:
+  PreToolUse:
+    - matcher: run_shell_command
+      hooks:
+        - type: command
+          command: '"$QWEN_SKILL_ROOT/scripts/gate-session-id.sh"'
+---
+```
+
+`$QWEN_SKILL_ROOT` 被设置为 Skill 自身的目录，因此 hook 命令可以引用与 `SKILL.md` 一起提供的文件。命令字符串会被传递给 shell，因此**保留内部引号**：如果不加引号，包含空格的项目路径会被拆分为两个单词，导致 gate 永远不会运行。**还要使脚本可执行**（`chmod +x`）。这两种错误都会以相同的方式 fail-open：工具调用会继续执行，而 transcript 或日志中不会有任何信息表明 gate 没有运行。`PreToolUse` hook 在退出码为 `2` 时会阻止工具调用（stderr 会作为原因反馈给模型），或者当它打印 `hookSpecificOutput.permissionDecision: "deny"` 时也会阻止：
+
+```bash
+#!/usr/bin/env bash
+if [ -z "${DOWNSTREAM_SESSION_ID:-}" ]; then
+  echo "Required input DOWNSTREAM_SESSION_ID is not available. Cannot proceed." >&2
+  exit 2
+fi
+exit 0
+```
+
+注意事项：
+
+- Hooks 在 Skill 被调用时注册，并在会话的剩余时间内持续有效。这在两条调用路径上都成立 —— 无论是模型调用 Skill 还是你输入 `/<skill-name>`。
+- Session hooks 仅存在于内存中，因此使用 `--continue` / `--resume` 恢复会话时**不会**恢复它们，无论哪条调用路径都是如此。Skill 的指令可以随重放的对话一起回来，但用于强制执行它们的 hooks 已经消失 —— 恢复后请重新运行 Skill 以重新启用其 gate。
+- 注册是幂等的：重新调用 Skill 不会堆叠重复的 hooks。
+- 始终为工具事件提供显式的 `matcher:`。省略的 matcher 会被存储为空模式，编译后不匹配任何工具名称 —— hook 会注册但永远不会触发，且没有任何提示。如果你要匹配所有工具，请使用 `*`。
+- `command:` 通过平台 shell 运行：macOS 和 Linux 上使用 `bash`，Windows 上如果检测到 Git Bash（通过 `MSYSTEM`/`TERM`）也使用它，否则使用 `cmd.exe` 或 PowerShell。上面的示例是 POSIX shell —— 在 `cmd.exe` 下 `$QWEN_SKILL_ROOT` 不会被展开，`.sh` 脚本也不可执行，因此 gate 会在那里 fail-open。Hook 可以设置 `shell: bash` 来强制使用 bash，但这会解析为 `PATH` 上的任何 `bash`，因此在 Windows 上（Git Bash 之外）请为你实际使用的 shell 编写 gate。
+- 禁用 hooks 的会话不会注册任何 hooks —— 包括 `disableAllHooks`、安全模式以及 ACP 客户端的 `skipHooks`。Skill 的主体及其 `allowedTools` 在这些会话中仍然有效，但其 gate 不会生效，因此你依赖 hook 强制执行的规则在那里不会被强制执行。Bare 模式更进一步：根本不会发现任何 Skills，因此既没有主体也没有 `allowedTools`。
+- **项目** Skill 的 hooks 运行仓库提供的命令，因此它们仅在 trusted folder 中注册，并且信任状态会在每次 hook 触发和每次权限决策时重新读取。当有 IDE companion 连接时，该值是实时的：撤销信任会在下一次工具调用时静默已注册的 gate —— 并暂停 Skill 的 `allowedTools` —— 无需重启。没有 IDE 连接时，该值在 CLI 启动时固定，因此通过 CLI 自身的信任对话框进行的更改会在重启时生效。授予信任永远不会追溯注册：请再次调用 Skill。
+- `hooks:` 适用于项目、用户和内置 Skills。扩展提供的 Skills 不支持它；请改用扩展自身的 manifest 级别 hooks。
+- 完整的事件列表、matcher 语法和输出格式，请参见 [Hooks](./hooks.md)。
+
 ## 添加支持文件
 
 在 `SKILL.md` 旁边创建其他文件：
@@ -217,6 +257,7 @@ Qwen Code 从以下位置发现 Skills：
 - 个人 Skills：`~/.qwen/skills/`
 - 项目 Skills：`.qwen/skills/`
 - 扩展 Skills：由已安装扩展提供的 Skills
+- 内置 Skills：随 Qwen Code 一起提供的 Skills
 
 ### 扩展 Skills
 

@@ -8,7 +8,7 @@ Erfahre, wie du OpenTelemetry für Qwen Code aktivierst und einrichtest.
   - [Konfiguration](#configuration)
   - [Aliyun Telemetry](#aliyun-telemetry)
     - [Manueller OTLP-Export](#manual-otlp-export)
-  - [Lokale Telemetry](#local-telemetry)
+  - [Lokale Telemetrie](#local-telemetry)
     - [Dateibasierte Ausgabe (Empfohlen)](#file-based-output-recommended)
     - [Collector-basierter Export (Erweitert)](#collector-based-export-advanced)
   - [Logs und Metriken](#logs-and-metrics)
@@ -18,7 +18,6 @@ Erfahre, wie du OpenTelemetry für Qwen Code aktivierst und einrichtest.
     - [Spans](#spans)
     - [Ressourcenmetriken](#resource-metrics)
     - [Performance Monitoring (Reserviert)](#performance-monitoring-reserved)
-  - [Inbound-Korrelation (Daemon-HTTP-API)](#inbound-correlation-daemon-http-api)
 
 ## Migrationshinweise
 
@@ -254,9 +253,15 @@ Aktiviere dies nur, wenn der LLM-Provider ebenfalls in deinen OTel-Collector rep
 }
 ```
 
-### Weitere Outbound-Korrelations-Header
+### Routify-Session-Affinity
 
-`X-Qwen-Code-Session-Id` und `X-Qwen-Code-Request-Id` sind **nicht Teil dieses PRs**. Sie werden in eigenen Follow-up-PRs unter demselben `outboundCorrelation.*`-Namespace entworfen und vorgeschlagen, jeweils mit eigenem Threat Model und Operator-Consent-Flow. Das Review zu PR #4390 (LaZzyMan) hat das Prinzip etabliert: "Der Arbeitsumfang der Telemetrie umfasst nicht das Senden von Identifikatoren an LLM-Provider"; die Arbeit an Korrelations-Headern wird in eine eigene Design-Diskussion verschoben, anstatt unter Telemetrie zu landen.
+LLM-Anfragen von Qwen Code über die OpenAI-kompatiblen, DashScope-, Anthropic-, Gemini- und Vertex-Provider-Pfade enthalten die aktuelle Qwen Code-Session-ID im `session_id`-Header, wenn sie direkt über HTTPS an `routify.alibaba-inc.com`, `routify-online.alibaba-inc.com` oder `routify-pub.alibaba-inc.com` gerichtet sind. Routifys ModelRouter verwendet diesen Wert für Session-Affinity und Traffic-Marking. Dieses Verhalten wird nicht durch `telemetry.enabled` oder `outboundCorrelation.*` gesteuert.
+
+Das initiale Destination-Matching ist bewusst eng gefasst: Qwen Code hängt den Header nicht an Subdomains, andere `alibaba-inc.com`-Hosts oder andere LLM-Endpunkte an. Das Standard-Fetch-Redirect-Verhalten gilt weiterhin nach diesem Match, sodass eine Routify-Antwort den Header weiterleiten kann, indem sie die Anfrage umleitet.
+
+Die Session-ID wird für jede Anfrage gelesen, sodass eine neue Session, die durch `/clear` erstellt wird, einen neuen Affinity-Wert erhält, ohne den SDK-Client neu aufzubauen. Gemini erfordert eine explizite Routify-`baseUrl`, damit Qwen Code das Ziel verifizieren kann.
+
+`X-Qwen-Code-Request-Id` ist nicht implementiert.
 
 ## Inbound-Korrelation (Daemon-HTTP-API)
 

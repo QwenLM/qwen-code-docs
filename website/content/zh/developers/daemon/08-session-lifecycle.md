@@ -57,7 +57,7 @@ stateDiagram-v2
 
 `X-Qwen-Client-Id` 是**可选的**，但**强烈建议使用**。守护进程不会代为生成——client 需要自己选择并在请求中复用，以便守护进程进行投票归因、事件审计和重连检测。
 
-每个独立的控制器应使用不同的、稳定的 ID。WebUI 默认生成带 `webui_` 前缀的 ID。宿主和嵌入式 WebShell 仅在有意识地作为单个逻辑控制器行动时才应共享 ID；一旦共享，daemon 日志将无法区分是哪个发起了请求。
+每个独立的控制器应使用不同的、稳定的 ID。Web Shell 为兼容性保留历史使用的 `webui_` 前缀。宿主和嵌入式 Web Shell 仅在有意识地作为单个逻辑控制器行动时才应共享 ID；一旦共享，daemon 日志将无法区分是哪个发起了请求。
 
 验证规则：
 
@@ -109,6 +109,10 @@ sequenceDiagram
 
 1. 在 channel 上使用每个 session 的 `pendingRestoreIds` 集合，以便合并并发的 restore 调用（`RestoreInProgressError`）。
 2. 在 entry 上缓存 `restoreState`，以便后附加的 client 获取与原始恢复者相同的有效载荷。
+
+对于持久化的 Part 4A worktree 会话，恢复是此生命周期的完整性门控扩展。sidecar 显式标识请求的工作区根，checkout 必须规范地包含在相应的 `.qwen/worktrees/` 目录下，并且其标记必须是包含确切恢复会话 ID 的单链接常规文件。守护进程仅在这些检查通过后才重新定位空闲的已恢复子进程；活跃子进程仅在其报告的 cwd 已等于 worktree 时才被接受，而其报告的 cwd 缺失或在其他位置的活跃子进程会 fail closed 而不是在其 prompt 下被重新定位——除了无法延迟其恢复 prompt 的冷恢复（`suppressWorktreeContextRestore` 关闭，因此 bridge 触发了重新挂起的问题而不是停放它）：该形态保留 4B 之前的结果，返回不带 `worktreeState` 的规范 worktree 元数据，未重新定位，会话继续存活。重新定位和接受的响应返回带有 `worktreeState: "persisted-v1"` 的规范 worktree 元数据。携带 `supersededBy` 的 sidecar 永远不会恢复：路由返回 `409 worktree_session_superseded` 及替换会话 id，该分类仅根据该链接在任何标记读取之前决定，因此调用者仅在该 id 的加载成功后才重定向并修复其记录——预提交中断的传输命名的替换不是标记所有者，其本身无法恢复，并被重试的 reset 回收；`supersedes` 链接与旧 sidecar 一致而标记未移动（或缺失）的已恢复替换返回 `409 worktree_reset_interrupted`，其修复方式是对被取代会话重试 reset；缺少该一致链接对的缺失标记返回 `409 worktree_marker_missing`，其修复方式是重置任务而不是重试恢复，因为没有恢复路径会重新创建标记。中断分类优先检查。无效的 Part 4A 状态会分离现有附加或以 `requireZeroAttaches` 终止冷恢复；缺少 sidecar 同样无法提供证明。当有效恢复源为 Channel 所拥有时，路由会抑制 ACP 代理对 Part 4A 或无法分类的 sidecar 状态的尽力清理，因此验证失败会保留不确定的 checkout 证据。持久化源元数据优先；当其缺失时，load/resume 请求提供有效源。结构上有效的旧版 sidecar（无 `workspaceCwd`）保留现有的尽力代理恢复：它必须标识请求的工作区根或其 Git 仓库顶层，进行无标记证明的包含检查，可能被代理清理，并可能返回不带 `worktreeState` 的 `worktree`。除该显式旧版兼容情况外，仅有效恢复源非 Channel 所拥有的会话保留路由验证前的现有尽力清理。
+
+Worktree 所有权转移（`POST /session/:id/worktree-reset`，由 `session_worktree_reset_v1` 宣传）为此生命周期扩展了 Channel 任务重置：守护进程在根工作区中生成新的线程作用域替换，将其重新定位到已验证的 checkout 中，链接 sidecar 对（先在旧会话上设置 `supersededBy`，然后在替换上设置 `supersedes`），在每个 checkout 路由锁和准入屏障下将标记翻转到替换，该屏障拦截 prompt 准入以及在 checkout 中开始工作或移动会话 cwd 的另外七个写入者（rewind、cwd 变更、branch、fork、shell、goal control、workflow-task action），而 release 和 stop 路径设计上不设屏障，然后断开被取代会话的客户端注册和内存中的 worktree 关联。断开报告会报告被取代会话是否确实已消失：子进程仍持有后台工作的存活者保持屏障激活，被记录，并向调用者报告为 `supersededSessionLive: true`，而不是被成功响应掩盖。在传输过程中在被取代会话上被准入的屏障写入者被拒绝并返回 `409 worktree_reset_active`；完整的失败分类（包括重试回滚哪些崩溃窗口以及哪些 fail closed 交由操作员修复）记录在 `qwen-serve-protocol.md` 的该路由文档中。
 
 ### 心跳
 
@@ -234,7 +238,7 @@ sequenceDiagram
 - `BridgeOptions.initializeTimeoutMs`（默认 10s）— ACP 子进程启动截止时间（Channel factory + `initialize` 握手）及默认请求超时。
 - `BridgeOptions.sessionRestoreTimeoutMs`（默认 60s）— ACP `loadSession` / `unstable_resumeSession` 截止时间。默认 60 秒；显式配置的 initialize 超时可以提高此值，但不能降低。
 - `BridgeOptions.channelIdleTimeoutMs`（未设置或 `0` 时在 runtime 工作 drain 后回收，但单纯预热会为首次使用保留；正值或活跃的 keepalive 会延迟回收，且取较长的延迟）。
-- Capability tags：`session_create`、`session_id_override`、`session_scope_override`、`session_load`、`session_resume`、`unstable_session_resume`（已弃用的别名）、`session_list`、`session_info`、`session_close`、`session_metadata`、`session_set_model`、`client_identity`、`client_heartbeat`、`session_recap`、`session_generation`、`session_btw`、`session_context_usage`、`session_tasks`、`session_monitor_tool_correlation`、`session_stats`、`session_lsp`、`session_status`、`non_blocking_prompt`。
+- Capability tags：`session_create`、`session_id_override`、`session_scope_override`、`session_load`、`session_resume`、`unstable_session_resume`（已弃用的别名）、`session_list`、`session_info`、`session_close`、`session_metadata`、`session_set_model`、`client_identity`、`client_heartbeat`、`session_recap`、`session_generation`、`session_btw`、`session_context_usage`、`session_tasks`、`session_monitor_tool_correlation`、`session_stats`、`session_lsp`、`session_resources`、`session_status`、`non_blocking_prompt`。
 
 ### 无状态 generation（`session_generation` 能力标签）
 

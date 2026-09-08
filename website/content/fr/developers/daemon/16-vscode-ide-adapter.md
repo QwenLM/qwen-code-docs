@@ -83,7 +83,7 @@ et l'appelle avec `response.stopReason` ; les chemins d'exception non liés à u
 
 ### Pont vers la webview
 
-La classe de connexion est **transport uniquement**. L'intégration réelle dans VS Code se trouve dans `packages/vscode-ide-companion/src/webview/providers/ChatWebviewViewProvider.ts` (et compagnie). Le fournisseur s'abonne aux callbacks de la connexion et les traduit en appels `postMessage` de la webview. La webview elle-même utilise la bibliothèque de composants partagée `packages/webui/` pour le rendu — voir la matrice d'adaptateurs dans [`01-architecture.md`](./01-architecture.md).
+La classe de connexion est **transport uniquement**. L'intégration réelle dans VS Code se trouve dans `packages/vscode-ide-companion/src/webview/providers/ChatWebviewViewProvider.ts` (et compagnie). Le fournisseur s'abonne aux callbacks de la connexion et les traduit en appels `postMessage` de la webview. La webview intègre Web Shell pour le rendu.
 
 ### Sérialisation de la connexion
 
@@ -172,11 +172,11 @@ sequenceDiagram
 
 - `packages/sdk-typescript/src/daemon/` — `DaemonClient`, `DaemonSessionClient` (le transport réel).
 - API d'extension VS Code (`vscode.*`) — API hôtes, quick-pick, webview.
-- `packages/webui/src/adapters/ACPAdapter.ts` — rendu webview des messages de forme ACP relayés via `postMessage`.
+- `packages/web-shell/client/` — rendu webview intégré pour les événements de session du démon.
 
 ## Configuration
 
-| Réglage                                              | Où                              | Effet                                                             |
+| Knob                                                 | Où                              | Effet                                                             |
 | ---------------------------------------------------- | ------------------------------- | ----------------------------------------------------------------- |
 | `baseUrl`                                            | `connect(options)`              | URL du démon ; doit être une boucle locale.                       |
 | `token`                                              | `connect(options)`              | Jeton Bearer (estampillé via SDK).                                |
@@ -199,6 +199,6 @@ sequenceDiagram
 - `packages/vscode-ide-companion/src/services/daemonIdeConnection.ts` (`createSdkDaemonSessionFactory`)
 - `packages/vscode-ide-companion/src/types/connectionTypes.ts` (`AcpConnectionState` legacy)
 - `packages/vscode-ide-companion/src/webview/providers/ChatWebviewViewProvider.ts` (pont webview)
-- `packages/webui/src/adapters/ACPAdapter.ts` (adaptateur de message webview ACP)
+- `packages/web-shell/client/` (moteur de rendu Web Shell intégré)
 - Conception préliminaire : [`../daemon-client-adapters/ide.md`](../daemon-client-adapters/ide.md)
 - Référence SDK : [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)

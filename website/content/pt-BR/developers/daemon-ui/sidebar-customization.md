@@ -176,6 +176,7 @@ interface WebShellSidebarOptions {
   defaultCollapsed?: boolean; // initial collapsed state (persisted in localStorage)
   showCompactToggle?: boolean; // show the collapse button in the chat area (default: true)
   showSessionSourceSwitch?: boolean; // show the Tasks/Channels switch (default: true)
+  showLive?: boolean; // show daemon-owned Live conversations (default: false)
   branding?: false | WebShellSidebarBranding;
   primaryNav?: WebShellSidebarPrimaryNavOptions;
   hideProjectHeader?: boolean; // hide "Projects" header row (default: false = shown)
@@ -198,6 +199,20 @@ sidebar={{
 Isso remove o switch Tasks/Channels e fixa toda consulta de sessão ativa, arquivada,
 primária e secundária em `sourceType: "default"`. Omitir a opção mantém
 o switch atual e o acesso a sessões de canal inalterado.
+
+### Live conversations — `showLive`
+
+As conversas ao vivo ficam ocultas dos hosts incorporados por padrão. Ative essa opção quando o
+host deve expor o grupo Live gerenciado pelo daemon:
+
+Versões anteriores exibiam esse grupo sem uma opção explícita, então hosts
+que dependem dele devem definir `showLive: true` ao atualizar.
+
+```tsx
+sidebar={{
+  showLive: true,
+}}
+```
 
 ### ③ Cabeçalho do Projeto — `hideProjectHeader`
 
@@ -329,4 +344,4 @@ persistida de recolhimento do desktop.
 | WorkspaceSection    | `packages/web-shell/client/components/sidebar/WorkspaceSection.tsx`         |
 | Estilos da sidebar  | `packages/web-shell/client/components/sidebar/WebShellSidebar.module.css`   |
 | Integração no App   | `packages/web-shell/client/App.tsx` (buscar `WebShellSidebar`)              |
-| Entry point (dev)   | `packages/web-shell/client/main.tsx` (`sidebar: true`)                      |
+| Entry point (dev)   | `packages/web-shell/client/main.tsx` (`sidebar: { enabled: true, showLive: true }`) |

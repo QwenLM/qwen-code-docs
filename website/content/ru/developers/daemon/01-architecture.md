@@ -6,14 +6,14 @@
 
 Внутри дочернего процесса ACP MCP-серверы используются всем рабочим пространством через `McpTransportPool` (F2): один кортеж (имя_сервера + отпечаток_конфигурации) отображается на один транспорт MCP, независимо от того, сколько сессий его обнаруживают. `MultiClientPermissionMediator` (F3) моста координирует голосование за разрешения среди всех подключенных клиентов в рамках одной из четырёх политик.
 
-Этот документ даёт общую картину системы, на которой основаны остальные документы документации. Каждый критический поток показан в виде последовательной диаграммы Mermaid; детали реализации каждого компонента находятся в остальных 18 документах.
+Этот документ даёт **системную картину**, на которой основаны остальные документы документации. Каждый критический поток показан в виде последовательной диаграммы Mermaid; детали реализации каждого компонента находятся в остальных 18 документах.
 
 ## Топология процессов
 
 ```mermaid
 flowchart LR
     subgraph clients["Clients"]
-        WUI["Web UI<br/>(packages/webui/src/daemon)"]
+        WUI["Web Shell<br/>(packages/web-shell/client/daemon)"]
         TUI["CLI TUI<br/>(packages/cli/src/ui/daemon)"]
         IDE["VS Code IDE<br/>(packages/vscode-ide-companion)"]
         CH["Channel bots<br/>(DingTalk / WeChat / Telegram / Feishu)"]
@@ -98,7 +98,7 @@ flowchart TB
     end
 
     subgraph adapters["Adapters"]
-        WUIP["webui/src/daemon/<br/>DaemonSessionProvider.tsx"]
+        WUIP["web-shell/client/daemon/session/<br/>DaemonSessionProvider.tsx"]
         TUIA["cli/src/ui/daemon/<br/>daemon-tui-adapter.ts"]
         CHB["channels/base/<br/>DaemonChannelBridge.ts"]
         DT["channels/dingtalk"]
@@ -198,7 +198,7 @@ sequenceDiagram
 
 Кольцевой буфер ограничен (`eventRingSize`, по умолчанию 8000). Переподключающийся клиент, чей `Last-Event-ID` старше начала кольца, получает `state_resync_required` и должен восстановить данные из ограниченного окна повторного воспроизведения `loadSession` или использовать `resumeSession`, если у него уже есть локальная история. Медленные клиенты получают `slow_client_warning` при заполнении очереди на 75% и `client_evicted` при достижении лимита.
 
-## Workflow 3: много клиентское согласование разрешений
+## Workflow 3: многоклиентское согласование разрешений
 
 ```mermaid
 sequenceDiagram

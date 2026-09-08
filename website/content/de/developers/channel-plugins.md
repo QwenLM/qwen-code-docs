@@ -94,7 +94,7 @@ export class MyChannel extends ChannelBase {
 
 Die meisten Adapter sollten `options` unverändert durchreichen. Wenn ein Adapter seinen eigenen `SessionRouter` erstellt und diesen Router an `super()` übergibt, setze `registerBridgeEvents: true` in `ChannelBaseOptions`, damit `ChannelBase` die Ereignisse `toolCall` und `sessionDied` weiterhin direkt empfängt. Lasse es für Router, die vom Channel-Gateway bereitgestellt werden, nicht gesetzt.
 
-Wenn dein Adapter Shell-Befehlsverhalten verfügbar macht, prüfe, ob `bridge.shellCommand` existiert, bevor du es aktivierst. Vom Daemon verwaltete Worker lassen diese optionale Methode weg, es sei denn, der Daemon bewirbt die `session_shell_command`-Fähigkeit.
+Wenn dein Adapter Shell-Befehls- oder BTW-Side-Question-Verhalten verfügbar macht, prüfe, ob die entsprechende `bridge.shellCommand`- / `bridge.btw`-Methode existiert, bevor du sie aktivierst. Vom Daemon verwaltete Worker lassen diese optionalen Methoden weg, es sei denn, der Daemon bewirbt die passende `session_shell_command`- / `session_btw`-Fähigkeit.
 
 ## Das Envelope
 

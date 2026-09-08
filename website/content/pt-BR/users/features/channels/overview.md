@@ -61,6 +61,7 @@ Os canais são configurados sob a chave `channels` no `settings.json`. Cada cana
 | `model`                  | Não              | Modelo a ser usado para este canal (por exemplo, `qwen3.5-plus`). Substitui o modelo padrão. Útil para modelos multimodais que suportam entrada de imagens                               |
 | `senderPolicy`           | Não              | Quem pode falar com o bot: `allowlist` (padrão), `open` ou `pairing`                                                                                                   |
 | `allowedUsers`           | Não              | Lista de IDs de usuários autorizados a usar o bot (usado pelas políticas `allowlist` e `pairing`)                                                                                   |
+| `messagePrefix`          | Não              | Só despacha mensagens de usuário que começam com este prefixo exato, sensível a maiúsculas/minúsculas, após qualquer ` @mention` inicial; o prefixo e o espaço em branco seguinte são removidos antes do despacho |
 | `sessionScope`           | Não              | Como as sessões são delimitadas: `user` (padrão), `chat_thread` ou `single`. O `thread` legado permanece compatível quando já configurado, mas não é oferecido para novas configurações do Web Shell |
 | `multiSession`           | Não              | Retém até oito tarefas nomeadas com escopo do proprietário em um chat. Requer modo gerenciado pelo daemon, `sessionScope: "user"`, sem webhooks ou preenchimento retroativo de histórico de grupo, e sem Channel loops ativos |
 | `cwd`                    | Não              | Diretório de trabalho para o agente. O padrão é o diretório atual                                                                                                     |
@@ -75,6 +76,10 @@ Os canais são configurados sob a chave `channels` no `settings.json`. Cada cana
 | `blockStreaming`         | Não              | Entrega progressiva de respostas: `on` ou `off` (padrão). Consulte [Block Streaming](#block-streaming)                                                                        |
 | `blockStreamingChunk`    | Não              | Limites de tamanho do chunk: `{ "minChars": 400, "maxChars": 1000 }`. Consulte [Block Streaming](#block-streaming)                                                                    |
 | `blockStreamingCoalesce` | Não              | Flush por ociosidade: `{ "idleMs": 1500 }`. Consulte [Block Streaming](#block-streaming)                                                                                              |
+
+Quando `messagePrefix` está definido, toda mensagem escrita pelo usuário deve começar com o prefixo e um conteúdo não vazio, por exemplo `/review inspect #123`. Apenas o prefixo e as menções antes dele são removidos; uma menção que o usuário digitou após o prefixo chega ao agente inalterada. Comandos compartilhados e do agente usam a mesma regra (`/review /help`, `/review /clear`, e assim por diante). As ações registradas no menu de comandos do Telegram permanecem disponíveis sem o prefixo — a menos que o prefixo configurado seja uma delas, caso em que o prefixo vence e aquele comando também precisa ser enviado com prefixo (`/new /new`). Anexos precisam de uma legenda correspondente quando a plataforma suporta; mensagens de mídia sem legenda do Telegram, Feishu, WeChat, DingTalk e WeCom continuam funcionando, e seu texto placeholder nunca é citado de volta como histórico do grupo. Todos nativos, webhooks e eventos de atribuição ou solicitação de revisão gerados pelo provedor também continuam funcionando sem prefixo, pois são eventos do sistema e não mensagens de chat.
+
+Dois comportamentos são deliberados e vale conhecê-los antes de ativar o prefixo. Uma mensagem de voz cuja transcrição é preenchida pelo DingTalk ou WeCom conta como texto falado pelo usuário, então deve levar o prefixo como qualquer outra mensagem e é descartada caso contrário — apenas uma nota de voz não transcrita é executada como mídia sem legenda. E o prefixo é verificado antes do pareamento, então o primeiro contato de um remetente desconhecido ou de um grupo não aprovado também precisa levar o prefixo; sem essa ordem, toda mensagem sem prefixo em um grupo movimentado geraria uma resposta de pareamento, que é exatamente o ruído que o prefixo existe para suprimir. Informe novos usuários sobre o prefixo por outro canal, ou deixe canais de pareamento sem prefixo.
 
 ### Política de Remetente
 
@@ -113,7 +118,7 @@ O catálogo é privado para o canal, chat e remetente exatos. Os nomes das taref
 
 Resultados nomeados identificam sua tarefa de origem: chats diretos usam `[task]`, enquanto chats em grupo usam `[sender · task]`. Prompts de permissão de texto nomeados também mostram o ID exato da requisição e os comandos correspondentes `/approve <id>`, `/approve-always <id>` e `/deny <id>`. O rótulo é apenas de apresentação e não é armazenado na transcrição do modelo.
 
-Uma tarefa permanece selecionada para receber a próxima mensagem normal, mas outras tarefas nomeadas podem continuar executando concorrentemente no diretório de trabalho compartilhado. Criar ou selecionar outra tarefa não cancela nem redireciona o trabalho anterior, e resultados tardios mantêm o rótulo da tarefa de origem. Uma tarefa ocupada não pode ser fechada, mas seu prompt ativo pode ser cancelado com `/session cancel [<name>]` por meio do comportamento existente de cancelamento do Canal. Turnos enfileirados de forma independente não são cancelados, mas no modo de despacho `collect`, quaisquer follow-ups em buffer atrás do prompt cancelado são descartados pelo comportamento existente. A preparação de mídia não é direcionada. Comandos de permissão simples aplicam-se apenas à tarefa selecionada, enquanto um ID de requisição explícito pode responder a uma tarefa inativa pertencente ao usuário. Worktrees por tarefa estão planejados para a Parte 4. A memória do canal permanece com escopo do chat, não de uma tarefa nomeada.
+Uma tarefa permanece selecionada para receber a próxima mensagem normal, mas outras tarefas nomeadas podem continuar executando concorrentemente. `/session new <name>` compartilha o workspace configurado, enquanto `/session new <name> --worktree` cria um checkout isolado para aquela tarefa no diretório `.qwen/worktrees/` do workspace do daemon. O daemon verifica o proprietário persistido do worktree antes de reabrir a tarefa após uma reinicialização; um registro de propriedade ausente, alterado ou estranho usa fail closed em vez de mover silenciosamente a tarefa para o workspace compartilhado. Criar ou selecionar outra tarefa não cancela nem redireciona o trabalho anterior, e resultados tardios mantêm o rótulo da tarefa de origem. Uma tarefa ocupada não pode ser fechada, mas seu prompt ativo pode ser cancelado com `/session cancel [<name>]` por meio do comportamento existente de cancelamento do Canal. Turnos enfileirados de forma independente não são cancelados, mas no modo de despacho `collect`, quaisquer follow-ups em buffer atrás do prompt cancelado são descartados pelo comportamento existente. A preparação de mídia não é direcionada. Comandos de permissão simples aplicam-se apenas à tarefa selecionada, enquanto um ID de requisição explícito pode responder a uma tarefa inativa pertencente ao usuário. `/clear`, `/new` e `/reset` também funcionam em uma tarefa selecionada com worktree: a tarefa obtém uma conversa nova enquanto seu worktree e arquivos são mantidos. Uma tarefa ocupada com worktree recusa o reset até que seu prompt termine, e uma tarefa cujo registro de worktree foi danificado reporta a falha sem mexer nos arquivos. A memória do canal permanece com escopo do chat, não de uma tarefa nomeada.
 
 Este modo não está disponível no `qwen channel start` standalone, com webhooks, com `groupHistoryLimit` diferente de zero no canal ou no grupo, ou com loops de Canal. Se um loop ativo já existir para esse canal, o worker do daemon se recusa a iniciar até que o loop seja desativado.
 
@@ -212,7 +217,7 @@ qwen channel pairing approve my-channel <CODE>
 As aprovações de grupo são armazenadas pelo chat ID do grupo no escopo de workspace do canal. No GitHub e GitLab, o chat ID é o caminho do repositório/projeto, então uma renomeação ou transferência desvincula a aprovação armazenada — reaprove o grupo após renomear. Um repositório ou projeto recriado sob o mesmo caminho herda qualquer aprovação obsoleta — revogue aprovações de grupo após qualquer renomeação, transferência ou exclusão.
 Uma mensagem não mencionada nunca cria uma solicitação de pareamento de grupo, mesmo quando um grupo define `requireMention` como `false`; após a aprovação, a política de menção configurada se aplica normalmente.
 
-Solicitações de pareamento de grupo compartilham a mesma fila pendente que solicitações de pareamento de DM: um canal holds no máximo 3 solicitações pendentes no total, e um remetente holds no máximo uma solicitação pendente entre solicitações de usuário e grupo (consulte [Regras de Pareamento](#pairing-rules)).
+Solicitações de pareamento de grupo compartilham a mesma fila pendente que solicitações de pareamento de DM: um canal comporta no máximo 3 solicitações pendentes no total, e um remetente comporta no máximo uma solicitação pendente entre solicitações de usuário e grupo (consulte [Regras de Pareamento](#pairing-rules)).
 
 ### Filtragem por Menção
 
@@ -280,6 +285,7 @@ Por padrão, o Qwen ignora mensagens de grupo não mencionadas e não as armazen
 1. Adicione o bot a um grupo
 2. **Desative o modo de privacidade** no BotFather (`/mybots` → Bot Settings → Group Privacy → Turn Off) — caso contrário, o bot não verá mensagens que não sejam comandos
 3. **Remova e readicione o bot** ao grupo após alterar o modo de privacidade (o Telegram armazena essa configuração em cache)
+
 ### Encontrando o ID do Chat de um Grupo
 
 Para encontrar o ID do chat de um grupo para a allowlist `groups`:
@@ -425,10 +431,11 @@ Os canais suportam comandos slash. Eles são tratados localmente (sem ida e volt
 - `/help` — Lista os comandos disponíveis
 - `/clear` — Limpa sua sessão e começa do zero (aliases: `/reset`, `/new`)
 - `/status` — Mostra informações da sessão e política de acesso
+- `/btw <question>` — Faça uma pergunta lateral sem interromper a tarefa atual; apenas texto, até 4096 caracteres, requer uma conexão com o agente com suporte a perguntas laterais
 - `/sessions [all]` — Lista tarefas nomeadas abertas, ou inclui tarefas fechadas; disponível apenas com `multiSession: true`
 - `/session current` — Mostra a tarefa nomeada selecionada
 - `/session new <name>` — Cria e seleciona uma tarefa com workspace compartilhado
-- `/session new <name> --worktree` — Reconhecido, mas adiado para a Parte 4
+- `/session new <name> --worktree` — Cria e seleciona uma tarefa em seu próprio Git worktree; apenas no modo de tarefas nomeadas gerenciadas pelo daemon
 - `/session use <name>` — Seleciona uma tarefa aberta ou reabre uma tarefa fechada
 - `/session cancel [<name>]` — Cancela o prompt ativo da tarefa selecionada, ou nomeia outra tarefa pertencente ao usuário; turnos enfileirados de forma independente não são cancelados, mas follow-ups em modo `collect` em buffer atrás do prompt cancelado são descartados pelo comportamento existente de cancelamento; a preparação de mídia não é direcionada
 - `/session close <name>` — Fecha uma tarefa sem excluir sua transcrição

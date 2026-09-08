@@ -6,6 +6,19 @@ Este documento descreve a ferramenta `todo_write` para Qwen Code.
 
 Use `todo_write` para criar e gerenciar uma lista de tarefas estruturada para sua sessão de codificação atual. Esta ferramenta ajuda o assistente de IA a acompanhar o progresso e organizar tarefas complexas, fornecendo a você visibilidade sobre o trabalho que está sendo realizado.
 
+A ferramenta está desabilitada por padrão. Habilite-a em `settings.json` e reinicie o Qwen
+Code:
+
+```json
+{
+  "tools": {
+    "todoWrite": {
+      "enabled": true
+    }
+  }
+}
+```
+
 ### Argumentos
 
 `todo_write` aceita um argumento:
@@ -17,7 +30,7 @@ Use `todo_write` para criar e gerenciar uma lista de tarefas estruturada para su
 
 ## Como usar `todo_write` com Qwen Code
 
-O assistente de IA usará automaticamente esta ferramenta ao trabalhar em tarefas complexas e de várias etapas. Você não precisa solicitá-la explicitamente, mas pode pedir ao assistente que crie uma lista de tarefas se quiser ver a abordagem planejada para sua solicitação.
+Quando a ferramenta está habilitada, o assistente de IA pode usá-la para tarefas complexas e de várias etapas. Você também pode pedir ao assistente para criar uma lista de tarefas se quiser ver a abordagem planejada para sua solicitação.
 
 A ferramenta armazena listas de tarefas no seu diretório pessoal (`~/.qwen/todos/`) com arquivos específicos de sessão, para que cada sessão de codificação mantenha sua própria lista de tarefas.
 
@@ -58,6 +71,7 @@ todo_write(todos=[
 
 ## Notas importantes
 
-- **Uso automático:** O assistente de IA gerencia listas de tarefas automaticamente durante tarefas complexas.
+- **Opt-in:** Defina `tools.todoWrite.enabled` como `true` e reinicie o Qwen Code antes de usar a ferramenta.
+- **Uso automático quando habilitada:** O assistente de IA gerencia listas de tarefas durante tarefas complexas.
 - **Visibilidade do progresso:** Você verá listas de tarefas atualizadas em tempo real conforme o trabalho avança.
 - **Isolamento de sessão:** Cada sessão de codificação tem sua própria lista de tarefas que não interfere nas outras.

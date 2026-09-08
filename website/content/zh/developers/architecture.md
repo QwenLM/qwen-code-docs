@@ -60,7 +60,7 @@ flowchart TB
     CORE --> HOST
 ```
 
-该图展示了主要的生产路径。部分适配器也有独立模式：例如，`qwen channel start` 使用 ACP bridge 而无需 HTTP daemon。有关这些变体，请参见 [channel 插件指南](./channel-plugins.md#运行时模式)。
+该图展示了主要的生产路径。部分适配器也有独立模式：例如，`qwen channel start` 使用 ACP bridge 而无需 HTTP daemon。有关这些变体，请参见 [channel 插件指南](./channel-plugins.md#runtime-modes)。
 
 ## 仓库布局
 
@@ -70,8 +70,7 @@ flowchart TB
 | `packages/core`                                                                                            | 与 UI 无关的 agent 编排、模型提供者集成、提示词和上下文构建、工具注册和执行、权限、会话、内存、遥测以及共享服务。 |
 | `packages/acp-bridge`                                                                                      | ACP channel 生命周期、会话多路复用、事件传递、权限仲裁、进程生成，以及 daemon 和适配器宿主共享的文件系统接缝。                                 |
 | `packages/sdk-typescript`                                                                                  | 通过 `query()` 进行编程式进程执行，以及面向 `qwen serve` 的 HTTP/SSE 客户端和 transcript 投影。                                                                               |
-| `packages/webui`                                                                                           | 共享 React 组件以及基于 TypeScript SDK 构建的 daemon React 适配器。                                                                                                                |
-| `packages/web-shell`                                                                                       | 基于 `packages/webui` 和 daemon SDK 构建的终端风格浏览器 UI。                                                                                                                      |
+| `packages/web-shell`                                                                                       | 基于 TypeScript SDK 构建的浏览器 UI 和 daemon React 适配器。                                                                                                                             |
 | `packages/web-templates`                                                                                   | 打包为可嵌入 JavaScript 和 CSS 字符串的 Web 模板。                                                                                                                                 |
 | `packages/audio-capture`                                                                                   | 用于语音输入的本地麦克风捕获。                                                                                                                                                       |
 | `packages/channels`                                                                                        | 消息服务的共享 channel 运行时和平台适配器。                                                                                                                         |
@@ -93,8 +92,7 @@ flowchart TB
 展示层保持在核心运行时之外：
 
 - Ink TUI 渲染本地交互式会话；
-- `packages/webui` 将 daemon 状态适配为 React providers 和 hooks；
-- `packages/web-shell` 提供浏览器终端体验；
+- `packages/web-shell` 将 daemon 状态适配为 React providers 和 hooks，并提供浏览器体验；
 - IDE 和 channel 包将宿主特定的事件转换为共享的客户端或 bridge 契约。
 
 ### 核心运行时
@@ -123,7 +121,7 @@ TypeScript SDK 暴露两种客户端风格：
 - `query()` 启动并控制一个 Qwen Code 进程，用于编程式本地使用；
 - daemon 客户端通过 HTTP 和 SSE 与 `qwen serve` 通信。
 
-`packages/webui` 在 daemon 客户端之上构建 React 状态层，`packages/web-shell` 在该状态层之上构建浏览器 UI。其他客户端（包括 IDE 集成和 daemon 管理的 channels）复用相同的 SDK 和事件契约，而不是导入服务器实现代码。
+`packages/web-shell` 在 daemon 客户端之上构建 React 状态层和浏览器 UI。其他客户端（包括 IDE 集成和 daemon 管理的 channels）复用相同的 SDK 和事件契约，而不是导入服务器实现代码。
 
 ## 运行时流程
 

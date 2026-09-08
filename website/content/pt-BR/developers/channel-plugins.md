@@ -94,29 +94,29 @@ export class MyChannel extends ChannelBase {
 
 A maioria dos adaptadores deve passar `options` sem alterações. Se um adaptador criar seu próprio `SessionRouter` e passar esse roteador para `super()`, defina `registerBridgeEvents: true` em `ChannelBaseOptions` para que o `ChannelBase` ainda receba os eventos `toolCall` e `sessionDied` diretamente. Deixe-o não definido para roteadores fornecidos pelo gateway de canal.
 
-Se o seu adaptador expõe comportamento de comando shell, verifique se `bridge.shellCommand` existe antes de habilitá-lo. Workers gerenciados por daemon omitem esse método opcional, a menos que o daemon anuncie o capability `session_shell_command`.
+Se o seu adaptador expõe comportamento de comando shell ou de pergunta lateral BTW, verifique se o método correspondente `bridge.shellCommand` / `bridge.btw` existe antes de habilitá-lo. Workers gerenciados por daemon omitem esses métodos opcionais, a menos que o daemon anuncie o capability correspondente `session_shell_command` / `session_btw`.
 
 ## O Envelope
 
 O objeto de mensagem normalizado que você constrói a partir dos dados da plataforma. As flags booleanas acionam a lógica de gate, portanto, devem ser precisas.
 
-| Field            | Type         | Required | Notes                                                                      |
-| ---------------- | ------------ | -------- | -------------------------------------------------------------------------- |
-| `channelName`    | string       | Yes      | Use `this.name`                                                            |
-| `senderId`       | string       | Yes      | Deve ser estável entre mensagens (usado para roteamento de sessão + controle de acesso) |
-| `senderName`     | string       | Yes      | Nome de exibição                                                               |
-| `chatId`         | string       | Yes      | Deve distinguir DMs de grupos                                           |
-| `chatName`       | string       | No       | Nome do grupo/conversa quando fornecido pela plataforma                  |
-| `text`           | string       | Yes      | Remover @menções do bot                                                        |
-| `threadId`       | string       | No       | Para `sessionScope: "thread"`                                               |
-| `messageId`      | string       | No       | ID da mensagem da plataforma — útil para correlação de respostas                      |
-| `isGroup`        | boolean      | Yes      | O GroupGate depende disso                                                   |
-| `isMentioned`    | boolean      | Yes      | O GroupGate depende disso                                                   |
-| `isReplyToBot`   | boolean      | Yes      | O GroupGate depende disso                                                   |
-| `referencedText` | string       | No       | Mensagem citada — adicionada como contexto                                      |
-| `imageBase64`    | string       | No       | Imagem codificada em Base64 (legado — prefira `attachments`)                       |
-| `imageMimeType`  | string       | No       | ex.: `image/jpeg` (legado — prefira `attachments`)                         |
-| `attachments`    | Attachment[] | No       | Anexos de mídia estruturados (veja abaixo)                                   |
+| Campo            | Tipo         | Obrigatório | Notas                                                                         |
+| ---------------- | ------------ | ----------- | ----------------------------------------------------------------------------- |
+| `channelName`    | string       | Sim         | Use `this.name`                                                               |
+| `senderId`       | string       | Sim         | Deve ser estável entre mensagens (usado para roteamento de sessão + controle de acesso) |
+| `senderName`     | string       | Sim         | Nome de exibição                                                              |
+| `chatId`         | string       | Sim         | Deve distinguir DMs de grupos                                                 |
+| `chatName`       | string       | Não         | Nome do grupo/conversa quando fornecido pela plataforma                       |
+| `text`           | string       | Sim         | Remover @menções do bot                                                       |
+| `threadId`       | string       | Não         | Para `sessionScope: "thread"`                                                  |
+| `messageId`      | string       | Não         | ID da mensagem da plataforma — útil para correlação de respostas              |
+| `isGroup`        | boolean      | Sim         | O GroupGate depende disso                                                     |
+| `isMentioned`    | boolean      | Sim         | O GroupGate depende disso                                                     |
+| `isReplyToBot`   | boolean      | Sim         | O GroupGate depende disso                                                     |
+| `referencedText` | string       | Não         | Mensagem citada — adicionada como contexto                                    |
+| `imageBase64`    | string       | Não         | Imagem codificada em Base64 (legado — prefira `attachments`)                  |
+| `imageMimeType`  | string       | Não         | ex.: `image/jpeg` (legado — prefira `attachments`)                            |
+| `attachments`    | Attachment[] | Não         | Anexos de mídia estruturados (veja abaixo)                                    |
 
 ### Anexos
 

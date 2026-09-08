@@ -57,7 +57,7 @@ stateDiagram-v2
 
 `X-Qwen-Client-Id` は**任意**ですが、**強く推奨**されます。デーモンは呼び出し元に代わってこれを生成しません。クライアントは自分で選択し、リクエスト間で再利用することで、デーモンが投票の属性付け、イベントの監査、再接続の検出を行えるようにします。
 
-各独立したコントローラーは、個別の安定した ID を使用する必要があります。WebUI はデフォルトで `webui_` プレフィックス付きの ID を生成します。ホストと埋め込み WebShell は、意図的に 1 つの論理コントローラーとして動作する場合のみ ID を共有すべきです。一度共有すると、デーモンログはどちらがリクエストを発信したかを区別できなくなります。
+各独立したコントローラーは、個別の安定した ID を使用する必要があります。Web Shell は互換性のために歴史的な `webui_` プレフィックスを保持しています。ホストと埋め込み WebShell は、意図的に 1 つの論理コントローラーとして動作する場合のみ ID を共有すべきです。一度共有すると、デーモンログはどちらがリクエストを発信したかを区別できなくなります。
 
 検証ルール:
 
@@ -109,6 +109,10 @@ sequenceDiagram
 
 1. チャネル上のセッションごとの `pendingRestoreIds` セットを使用して、並行する復元呼び出しを統合します（`RestoreInProgressError`）。
 2. エントリに `restoreState` をキャッシュし、後からアタッチするクライアントが元の復元者と同じペイロードを取得できるようにします。
+
+永続化された Part 4A ワークツリーセッションでは、復元はこのライフサイクルの整合性ガード付き拡張となります。サイドカーは要求されたワークスペースルートを明示的に識別し、チェックアウトは対応する `.qwen/worktrees/` ディレクトリ以下に正規に包含されている必要があり、そのマーカーは復元されたセッション ID と正確に一致する内容を持つシングルリンクの通常ファイルでなければなりません。デーモンは、これらのチェックを経た後でのみ、アイドル状態の復元済み子プロセスを再配置します。アクティブな子プロセスは、報告された cwd がすでにワークツリーと等しい場合にのみ受け入れられます。報告された cwd が存在しないか他の場所にあるアクティブな子プロセスは、プロンプト実行中に再配置される代わりに fail closed となります。ただし、復元プロンプトを遅延できなかったコールドリストア（`suppressWorktreeContextRestore` がオフのため、ブリッジが質問をパークせず再発行した場合）は例外であり、pre-4B の結果を保持します。つまり、`worktreeState` なしで正規のワークツリーメタデータを返し、再配置されずにセッションは存続します。再配置および受け入れのレスポンスは、`worktreeState: "persisted-v1"` を含む正規のワークツリーメタデータを返します。`supersededBy` を持つサイドカーは復元されません。ルートは置換セッション ID とともに `409 worktree_session_superseded` を返します。この分類はマーカーの読み取り前にそのリンクのみから決定されるため、呼び出し元はその ID のロードが成功して初めてリダイレクトし、状態管理を修復します。プレコミット段階で中断された転送は、マーカーオーナーではない置換を指名します。この置換は自身を復元できず、リトライされたリセットによって回収されます。`supersedes` リンクが古いサイドカーと一致するもののマーカーが移動していない（または存在しない）復元済みの置換は、`409 worktree_reset_interrupted` を返します。その修復方法は、置換されたセッションに対してリセットをリトライすることです。一致するリンクペアがない状態でマーカーが存在しない場合は、`409 worktree_marker_missing` を返します。その修復方法は、復元の再トライではなくタスクのリセットです。どの復元パスもマーカーを再作成しないためです。中断の分類が最初にチェックされます。無効な Part 4A 状態は、既存のアタッチをデタッチするか、`requireZeroAttaches` によってコールドリストアをキルします。サイドカーが存在しない場合も同様に証明を提供しません。有効な復元ソースが Channel 所有である場合、ルートは Part 4A または分類不可能なサイドカー状態に対する ACP エージェントのベストエフォートクリーンアップを抑制し、検証失敗時に不確実なチェックアウト証拠を保持します。永続化されたソースメタデータが優先されます。存在しない場合は、load/resume リクエストが有効なソースを提供します。`workspaceCwd` を持たない構造的に有効なレガシーサイドカーは、代わりに既存のベストエフォートエージェントリストアを保持します。これは要求されたワークスペースルートまたはその Git リポジトリのトップレベルのいずれかを識別する必要があり、マーカー証明なしで包含チェックされ、エージェントによってクリーンアップされる場合があり、`worktreeState` なしで `worktree` を返す場合があります。この明示的なレガシー互換性のケースを除き、有効な復元ソースが Channel 所有でないセッションのみが、ルート検証前に既存のベストエフォートクリーンアップを保持します。
+
+ワークツリー所有権の移転（`POST /session/:id/worktree-reset`、`session_worktree_reset_v1` でアドバタイズされる）は、Channel タスクのリセットのためにこのライフサイクルを拡張します。デーモンはルートワークスペースに新しいスレッドスコープの置換をスポーンし、検証済みのチェックアウト内に再配置し、サイドカーペアをリンクします（まず古いセッションに `supersededBy`、次に置換に `supersedes`）。その後、チェックアウトごとのルートロックと、プロンプトの受け入れおよびチェックアウト内で作業を開始またはセッション cwd を移動する他の7つのライター（rewind、cwd 変更、branch、fork、shell、goal control、workflow-task action）をフェンスする受け入れバリアの下で、マーカーを置換に切り替え、置換されたセッションのクライアント登録とインメモリワークツリー関連を切断します。切断は、置換されたセッションが実際に消えたかどうかを報告します。子プロセスがまだバックグラウンド作業を保持している生存者は、バリアを armed 状態のまま保持し、ログに記録され、成功レスポンスで覆い隠されるのではなく `supersededSessionLive: true` として呼び出し元に報告されます。転送中に置換されたセッションで受け入れられたフェンス済みライターは、`409 worktree_reset_active` で拒否されます。リトライがどのクラッシュウィンドウをロールバックし、どれがオペレーター修復のために fail closed となるかを含む完全な失敗分類は、`qwen-serve-protocol.md` のルートとともにドキュメント化されています。
 
 ### ハートビート
 
@@ -172,6 +176,7 @@ sequenceDiagram
 ### セッションリキャップ（`session_recap` 機能タグ）
 
 `POST /session/:id/recap` は、高速モデルに対して「どこまでやったか」を要約した1行のサマリーを要求します。これは `{ sessionId, recap: string | null }` を返します。`null` は履歴が短すぎるか、モデルが一時的に失敗したことを意味します。このエンドポイントはベストエフォート型です。
+
 ### セッション BTW / 追加質問 (`session_btw` capability tag)
 
 `POST /session/:id/btw` は、メインの会話フローを中断することなく、セッションコンテキストに対して一度限りの質問を行います。これはキャッシュパス上で `runForkedAgent` を使用して、ツールを使用しないシングルターンの LLM 呼び出しを行い、`{ sessionId, answer: string | null }` を返します。実装では `BTW_MAX_INPUT_LENGTH`、セッション間漏洩ガード、およびタイムアウト処理が強制されます。
@@ -198,7 +203,7 @@ sequenceDiagram
 
 `POST /sessions/unarchive` は、アーカイブされた JSONL ファイルを `chats/` に戻します。これはストレージ状態の遷移に過ぎないため、クライアントはその後 `session/load` または `session/resume` を呼び出す必要があります。アーカイブされたセッションは load/resume に対して `409 session_archived` を返し、アーカイブ遷移と競合するミューテーションは `409 session_archiving` を返します。
 
-空、破損、および孤立した通常のトランスクリプトファイルは、会話としてロードできない場合でも、これらのライフサイクル操作の対象となります。所有権の安全性チェックは意図的に fail closed となり、オペレーターの介入を要求することがあります。ライターが認定ハンドオフ証明をシールした後に変更されたファイルは、オペレーターがシールされたロックと変更されたバイトを解決するまで `SessionTranscriptChangedError` で失敗します。バウンドされた所有権読み取りウィンドウを超える JSON 形式の最初の物理レコードは、レコードが修復または削減されるまで `SessionTranscriptIdentityUnavailableError` で失敗します。非オブジェクト接頭辞を持つ oversized の破損レコードは対象のままです。解析可能な回復レコードには文字列の `sessionId` と `cwd` 所有権フィールドを含める必要があり、ローカル/外部のアーカイブ状態が混在する場合も fail closed となります。`session_storage_conflict_repair` がアドバタイズされている場合、アーカイブとアンアーカイブは `resolveConflicts: true` を受け付けます。アーカイブはアーカイブされたコピーを保持し、アンアーカイブはアクティブなコピーを保持します。このオプションがない場合、アクティブ/アーカイブの競合はどちらの永続化されたコピーも移動、削除、上書きせず、バッチの `errors` 配列で返されます。アーカイブは引き続き、競合を分類する前にライブセッションを厳格にクローズし、キューに入れられたレコードをアクティブなトランスクリプトにフラッシュする可能性があります。ワークスペース限定のライフサイクルルートは、以前の HTTP `409 session_conflict` レスポンスの代わりに、HTTP `200` バッチエンベロープを使用するようになりました。
+空、破損、および孤立した通常のトランスクリプトファイルは、会話としてロードできない場合でも、これらのライフサイクル操作の対象となります。所有権の安全性チェックは意図的に fail closed となり、オペレーターの介入を要求することがあります。ライターが認定ハンドオフ証明をシールした後に変更されたファイルは、オペレーターがシールされたロックと変更されたバイトを解決するまで `SessionTranscriptChangedError` で失敗します。バウンドされた所有権読み取りウィンドウを超える JSON 形式の最初の物理レコードは、レコードが修復または削減されるまで `SessionTranscriptIdentityUnavailableError` で失敗します。非オブジェクト接頭辞を持つサイズ超過の破損レコードは対象のままです。解析可能な回復レコードには文字列の `sessionId` と `cwd` 所有権フィールドを含める必要があり、ローカル/外部のアーカイブ状態が混在する場合も fail closed となります。`session_storage_conflict_repair` がアドバタイズされている場合、アーカイブとアンアーカイブは `resolveConflicts: true` を受け付けます。アーカイブはアーカイブされたコピーを保持し、アンアーカイブはアクティブなコピーを保持します。このオプションがない場合、アクティブ/アーカイブの競合はどちらの永続化されたコピーも移動、削除、上書きせず、バッチの `errors` 配列で返されます。アーカイブは引き続き、競合を分類する前にライブセッションを厳格にクローズし、キューに入れられたレコードをアクティブなトランスクリプトにフラッシュする可能性があります。ワークスペース限定のライフサイクルルートは、以前の HTTP `409 session_conflict` レスポンスの代わりに、HTTP `200` バッチエンベロープを使用するようになりました。
 
 ### コンテキスト使用量 (`session_context_usage` capability tag)
 
@@ -216,7 +221,7 @@ sequenceDiagram
 
 ### セッション LSP ステータス (`session_lsp` capability tag)
 
-`GET /session/:id/lsp` は、daemon クライアント向けにサニタイズされたセッションごとの LSP ステータスを返します。これには、有効化状態、集計されたサーバー数、利用不可/初期化状態、およびサーバーごとの `name`、`status`、`languages`、`transport`、`command`、`error` が含まれます。無効または利用不可の LSP は、トランスポートエラーではなく HTTP 200 のステータスデータとして表現されます。
+`GET /session/:id/lsp` は、デーモンクライアント向けにサニタイズされたセッションごとの LSP ステータスを返します。これには、有効化状態、集計されたサーバー数、利用不可/初期化状態、およびサーバーごとの `name`、`status`、`languages`、`transport`、`command`、`error` が含まれます。無効または利用不可の LSP は、トランスポートエラーではなく HTTP 200 のステータスデータとして表現されます。
 
 ### コンパクトリプレイ
 
@@ -233,7 +238,7 @@ sequenceDiagram
 - `BridgeOptions.initializeTimeoutMs`（デフォルト 10s）— ACP 子プロセスの起動デッドライン（Channel ファクトリ + `initialize` ハンドシェイク）およびデフォルトのリクエストタイムアウト。
 - `BridgeOptions.sessionRestoreTimeoutMs`（デフォルト 60s）— ACP `loadSession` / `unstable_resumeSession` のデッドライン。デフォルトは 60 秒で、明示的に設定された initialize タイムアウトはこれを上げることができますが、下げることはできません。
 - `BridgeOptions.channelIdleTimeoutMs`（未設定または `0` はランタイムワークの drain 後に回収。ただしプレーンなプリヒートは初回使用のために保持される。正の値またはアクティブなキープアライブは回収を遅延させ、より長い遅延が優先される）。
-- 機能タグ: `session_create`、`session_id_override`、`session_scope_override`、`session_load`、`session_resume`、`unstable_session_resume`（非推奨のエイリアス）、`session_list`、`session_info`、`session_close`、`session_metadata`、`session_set_model`、`client_identity`、`client_heartbeat`、`session_recap`、`session_generation`、`session_btw`、`session_context_usage`、`session_tasks`、`session_monitor_tool_correlation`、`session_stats`、`session_lsp`、`session_status`、`non_blocking_prompt`。
+- 機能タグ: `session_create`、`session_id_override`、`session_scope_override`、`session_load`、`session_resume`、`unstable_session_resume`（非推奨のエイリアス）、`session_list`、`session_info`、`session_close`、`session_metadata`、`session_set_model`、`client_identity`、`client_heartbeat`、`session_recap`、`session_generation`、`session_btw`、`session_context_usage`、`session_tasks`、`session_monitor_tool_correlation`、`session_stats`、`session_lsp`、`session_resources`、`session_status`、`non_blocking_prompt`。
 
 ### ステートレス生成（`session_generation` 機能タグ）
 
@@ -241,7 +246,7 @@ sequenceDiagram
 
 ## 注意点および既知の制限
 
-- `connection.unstable_resumeSession` は ACP レイヤーではまだ不安定な場合がありますが、daemon は `session_resume` でコミットされた v1 ルート契約を公開します。`unstable_session_resume` は、非推奨の互換性エイリアスとしてのみ保持されています。
+- `connection.unstable_resumeSession` は ACP レイヤーではまだ不安定な場合がありますが、デーモンは `session_resume` でコミットされた v1 ルート契約を公開します。`unstable_session_resume` は、非推奨の互換性エイリアスとしてのみ保持されています。
 - v1 には**クライアントごとのエビクションはありません**。セッションごとおよびサブスクライバーごとの終了のみです。取り消しポリシーは F-series Wave 5 / PR 24 です。
 - `client_evicted` はセッションごとではなくサブスクライバーごとです。SSE サブスクライバーがエビクトされたクライアントは再接続できます。
 - 匿名クライアント（`X-Qwen-Client-Id` なし）は、`designated` または `consensus` ポリシーの下で投票できません。

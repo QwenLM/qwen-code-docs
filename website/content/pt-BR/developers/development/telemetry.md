@@ -252,9 +252,15 @@ Ative essa opção apenas quando o provedor de LLM também reportar para o seu c
 }
 ```
 
-### Outros headers de correlação de saída
+### Afinidade de sessão do Routify
 
-`X-Qwen-Code-Session-Id` e `X-Qwen-Code-Request-Id` **não fazem parte deste PR**. Eles serão projetados e propostos em seus próprios PRs de acompanhamento sob o mesmo namespace `outboundCorrelation.*`, cada um com seu próprio modelo de ameaças e fluxo de consentimento do operador. A revisão do PR #4390 (LaZzyMan) estabeleceu o princípio: "o escopo de trabalho da telemetria não inclui o envio de identificadores para provedores de LLM"; o trabalho de headers de correlação passa para sua própria discussão de design, em vez de ser incluído na telemetria.
+As requisições de LLM do Qwen Code através dos caminhos de provedor OpenAI-compatible, DashScope, Anthropic, Gemini e Vertex incluem o ID de sessão atual do Qwen Code no header `session_id` quando endereçadas via HTTPS diretamente para `routify.alibaba-inc.com`, `routify-online.alibaba-inc.com` ou `routify-pub.alibaba-inc.com`. O ModelRouter do Routify usa esse valor para afinidade de sessão e marcação de tráfego. Esse comportamento não é controlado por `telemetry.enabled` ou `outboundCorrelation.*`.
+
+A correspondência de destino inicial é deliberadamente restrita: o Qwen Code não anexa o header a subdomínios, outros hosts `alibaba-inc.com` ou outros endpoints de LLM. O comportamento padrão de redirecionamento de fetch ainda se aplica após essa correspondência, então uma resposta do Routify pode encaminhar o header redirecionando a requisição.
+
+O ID de sessão é lido para cada requisição, então uma nova sessão criada por `/clear` obtém um novo valor de afinidade sem reconstruir o cliente SDK. O Gemini requer um `baseUrl` explícito do Routify para que o Qwen Code possa verificar o destino.
+
+`X-Qwen-Code-Request-Id` não está implementado.
 
 ## Correlação de entrada (daemon HTTP API)
 

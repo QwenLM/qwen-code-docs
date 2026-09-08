@@ -1,6 +1,6 @@
 # Goals
 
-Um Goal mantém o Qwen Code trabalhando entre turnos até que uma condição declarada seja atendida. Defina um com `/goal <objetivo>`; após cada turno, um verificador independente checa a transcrição, e a sessão continua até que o objetivo seja verificado como completo, verificado como bloqueado, pausado ou limpo.
+Um Goal mantém o Qwen Code trabalhando entre turnos até que uma condição declarada seja atendida. Defina um com `/goal <objetivo>`, e a sessão continua por conta própria. Cada turno é registrado como evidência; quando o modelo propõe que o objetivo está completo ou bloqueado, um verificador independente julga essa proposta apenas com base na evidência. A sessão para quando o verificador aceita, ou quando o Goal é pausado, limpo ou interrompido por um limite.
 
 ## Comandos
 
@@ -12,9 +12,19 @@ Um Goal mantém o Qwen Code trabalhando entre turnos até que uma condição dec
 | `/goal edit <objetivo>`  | Revisar a redação do Goal ativo sem recomeçar.                |
 | `/goal pause` / `resume` | Parar ou continuar o loop sem perder o Goal.                  |
 | `/goal clear`            | Remover o Goal.                                               |
-| `/goal-draft <intencao>` | Fazer o objetivo ser escrito para você antes de defini-lo (abaixo). |
+| `/goal-draft <intent>`   | Fazer o objetivo ser escrito para você antes de defini-lo (abaixo). |
 
 Criar, editar ou retomar um Goal requer um workspace confiável (`/trust`). O uso headless é coberto no [Modo Headless](./headless.md#run-a-persistent-goal).
+
+Assim que um Goal fatura um turno, a pill do rodapé e cada cartão de status mostram o que ele gastou em relação à janela permitida, como `1.2k/30.0m`. O número conta as chamadas de modelo que o Goal faz em seus próprios turnos; subagentes e as próprias verificações do verificador não estão incluídos. A janela é definida por [`model.goalTokenBudget`](../configuration/settings.md); retomar um Goal que gastou sua janela concede outra por cima do que já foi gasto, então o número lê `30.0m/60.0m` em vez de recomeçar. Um Goal sem orçamento mostra apenas o que gastou. Um Goal que ainda não faturou um turno não mostra números.
+
+## Interrompendo um Goal
+
+Cancelar um turno do Goal pausa o Goal. Pressione Esc enquanto o modelo está respondendo ou enquanto suas ferramentas ainda estão executando, e o turno para, o Goal vai para `paused`, e o cartão e `/goal` dizem por que parou. Nada continua até que você execute `/goal resume`.
+
+Digitar uma mensagem enquanto um Goal está ativo não o pausa. Sua mensagem executa como o próximo turno do Goal, então use-a para direcionar o trabalho; use `/goal pause` ou `/goal clear` para pará-lo.
+
+Cada pausa declara seu motivo: que você o interrompeu, que você executou `/goal pause`, que o limite de tokens da sessão bloqueou a próxima requisição ao modelo, ou que o turno falhou. Um Goal parado por um limite mantém o motivo desse limite.
 
 ## Como um Goal é julgado
 
@@ -40,7 +50,9 @@ Inclua estes itens no objetivo, nesta ordem:
 | `On block:`  | O que reportar quando travado e qual decisão um humano deve tomar.                                                                      |
 | `Context:`   | Apenas fatos que o agente não pode encontrar no workspace: branch, ambiente, decisões anteriores.                                       |
 
-Mantenha apenas um objetivo e aproximadamente abaixo de 1.200 caracteres. `/goal set` e `/goal edit` colapsam quebras de linha em espaços, então numere os itens em vez de depender de quebras de linha.
+Mantenha apenas um objetivo. `/goal set` e `/goal edit` aceitam qualquer tamanho, mas fique aproximadamente abaixo de 1.200 caracteres: o objetivo é reenviado a cada turno do Goal. Um objetivo que o modelo propõe via `propose_goal` tem limite de 1.500 caracteres. Ambos os comandos colapsam quebras de linha em espaços, então numere os itens em vez de depender de quebras de linha.
+
+`Budget` é uma instrução ao modelo sobre quando parar e reportar um bloqueador. Escrever uma contagem de turnos ou limite de tempo no objetivo não configura um timer de runtime nem altera o orçamento de tokens do Goal.
 
 | Fraco                      | Por que falha                                               | Mais forte                                                                                                                                                                                                                              |
 | -------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -51,14 +63,20 @@ Mantenha apenas um objetivo e aproximadamente abaixo de 1.200 caracteres. `/goal
 
 ## Deixe o `/goal-draft` escrevê-lo
 
-`/goal-draft <o que você quer feito>` é uma skill integrada que faz o acima para você. Ela verifica se a requisição é um Goal de fato, lê o workspace para encontrar os comandos reais de teste e lint em vez de adivinhar, faz no máximo uma rodada de perguntas de múltipla escolha quando a resposta muda a verificação ou o escopo, redige o objetivo no formato acima, executa a autoverificação e o entrega: em uma sessão interativa, propõe o objetivo por meio do diálogo de aprovação `propose_goal` descrito abaixo; caso contrário, imprime uma linha `/goal set …` que você pode executar como está. Ela nunca inicia o trabalho em si, e nada é definido sem a sua aprovação.
+`/goal-draft <o que você quer feito>` é uma skill integrada que faz o acima para você. Ela lê apenas o suficiente do workspace para estabelecer o escopo e os comandos reais de verificação, sem executar testes, compilar, instalar dependências ou iniciar serviços. Faz no máximo uma rodada de perguntas quando escolhas essenciais não estão claras, então escreve um objetivo compacto, geralmente com 3–5 verificações de conclusão (menos quando suficiente). Requisitos explícitos são preservados; não adiciona verificações apenas para atingir uma contagem.
+
+Para uma auditoria, conclusão significa cobrir os cenários acordados e reportar evidências, incluindo passos de reprodução para defeitos confirmados. Não encontrar defeitos é um resultado válido. O rascunho não deve inventar um número mínimo de cenários, arquivos de evidência, rodadas de exploração ou defeitos.
+
+Se um critério de sucesso, comando, caminho de entrada ou decisão essencial não puder ser estabelecido, a skill retorna um rascunho marcado como "Needs clarification" com itens `<TODO: …>`. Ela não oferece esse rascunho para aprovação nem imprime um comando executável `/goal set` ou `/goal edit`. Padrões não essenciais são marcados com `[ASSUMPTION]`; eles não substituem critérios de sucesso ausentes.
+
+Assim que o objetivo estiver pronto, uma sessão de terminal interativa pode mostrar o diálogo de aprovação `propose_goal` descrito abaixo. Web Shell e outros clientes ACP, execuções headless, sessões com a ferramenta desativada e sessões com um Goal ativo recebem um comando para executar manualmente. A passagem diz que o rascunho não foi aplicado. A skill nunca inicia o trabalho em si, e nada é definido sem a sua aprovação.
+
+Passe um objetivo existente para refiná-lo: `/goal-draft all tests pass and the lint is clean`. Para um Goal ativo, uma solicitação explícita para refiná-lo produz `/goal edit`; uma substituição usa `/goal set`. Se a operação pretendida não estiver clara, a skill inclui essa escolha em sua única rodada de perguntas.
 
 ### Aprovar um Goal proposto pelo modelo
 
-Em uma sessão de terminal interativa, o modelo tem a ferramenta `propose_goal`. Quando o `/goal-draft` termina, ou quando você solicita um resultado que abrange vários turnos, ele pode propor o objetivo em vez de imprimir uma linha `/goal set …` para você copiar. A proposta aparece como um diálogo de aprovação mostrando o objetivo completo. Aprová-la define o Goal exatamente como o `/goal set` faria, no momento em que o turno atual termina (o modelo reconhece e para; o primeiro turno do Goal então começa por conta própria), e recusá-la não define nada — o modelo é informado apenas de que o Goal não foi definido, e não deve propô-lo novamente. A aprovação está vinculada ao turno que a solicitou: se esse turno for cancelado ou de alguma forma não chegar ao seu fim, a aprovação é descartada em vez de aplicada sob uma mensagem posterior ou um turno automatizado. Nenhuma regra de permissão ou modo de aprovação (incluindo YOLO) pula este diálogo, e a ferramenta recusa enquanto outro Goal estiver ativo, em modo de plano, em subagentes e em pastas não confiáveis. Ela não está disponível em execuções headless, nem ainda no Web Shell ou outras sessões orientadas por ACP (elas não passam pela fronteira de turno que aplica a aprovação); ali, a linha `/goal set` impressa continua sendo a passagem.
+Em uma sessão de terminal interativa, o modelo tem a ferramenta `propose_goal`. Quando o `/goal-draft` termina, ou quando você solicita um resultado que abrange vários turnos, ele pode propor o objetivo em vez de imprimir uma linha `/goal set …` para você copiar. A proposta aparece como um diálogo de aprovação mostrando o objetivo completo. Aprová-la define o Goal exatamente como o `/goal set` faria, no momento em que o turno atual termina (o modelo reconhece e para; o primeiro turno do Goal então começa por conta própria), e recusá-la não define nada — o modelo vê apenas que a chamada de ferramenta não foi permitida, e suas instruções dizem para não perguntar o porquê e não propor o mesmo objetivo novamente. A aprovação está vinculada ao turno que a solicitou: se esse turno for cancelado ou de alguma forma não chegar ao seu fim, a aprovação é descartada em vez de aplicada sob uma mensagem posterior ou um turno automatizado. Nenhuma regra de permissão ou modo de aprovação (incluindo YOLO) pula este diálogo, e a ferramenta recusa enquanto outro Goal estiver ativo, em modo de plano e em pastas não confiáveis; subagentes nunca a recebem. Ela não está disponível em execuções headless, nem ainda no Web Shell ou outras sessões orientadas por ACP (elas não passam pela fronteira de turno que aplica a aprovação); ali, a linha `/goal set` impressa continua sendo a passagem.
 
 Desative com `goals.modelProposed: "disabled"` nas suas configurações de usuário. Como a configuração decide se o modelo pode pedir para iniciar um loop autônomo, ela é respeitada apenas nos escopos de usuário e sistema; um valor em `.qwen/settings.json` do workspace é ignorado com um aviso.
 
-Passe um objetivo existente para refiná-lo: `/goal-draft all tests pass and the lint is clean`.
-
-A skill é instruída a ser somente leitura, e apenas suas ferramentas não mutáveis são aprovadas automaticamente (`get_goal`, `read_file`, `glob`, `grep_search`). `ask_user_question` deliberadamente não é aprovado automaticamente, então seu diálogo de pergunta é exibido antes que a skill redige a partir das suas respostas. Como outras skills integradas, uma skill de projeto ou pessoal chamada `goal-draft` a sobrescreve, e `skills.disabled` pode desativá-la. Consulte [Skills](./skills.md) para saber como as skills integradas são descobertas.
+A skill é instruída a ser somente leitura, e apenas suas ferramentas não mutáveis são aprovadas automaticamente (`get_goal`, `read_file`, `glob`, `grep_search`). `ask_user_question` deliberadamente não é aprovado automaticamente, então seu diálogo de pergunta é exibido antes que a skill redija a partir das suas respostas. Como outras skills integradas, uma skill de projeto ou pessoal chamada `goal-draft` a sobrescreve, e `skills.disabled` pode desativá-la. Consulte [Skills](./skills.md) para saber como as skills integradas são descobertas.

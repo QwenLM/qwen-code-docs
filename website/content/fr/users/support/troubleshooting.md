@@ -103,13 +103,13 @@ Ce guide fournit des solutions aux problèmes courants et des conseils de débog
   - **Solution :** Si le mode lecteur d'écran est désactivé, assurez-vous que `ui.useTerminalBuffer` est activé ; utilisez ensuite `Shift+Up` / `Shift+Down`, ou la molette de la souris lorsque tmux transmet les événements de la molette à l'application (nécessite `ui.mouseTracking`). Si vous préférez le scrollback de l'hôte, ajustez vos bindings de souris tmux pour les événements de la molette.
 
 - **Le clic droit ne fait rien, les liens ne s'ouvrent pas, ou le texte ne peut pas être sélectionné dans le terminal**
-  - **Problème :** Les menus contextuels natifs au clic droit, les clics sur les liens OSC 8 (Ctrl+Clic ou simple clic sur des URL) et la sélection de texte native du terminal cessent de fonctionner lorsque Qwen Code est en cours d'exécution.
-  - **Cause :** Lorsque `ui.mouseTracking` est activé (par défaut), Qwen Code capture tous les événements de souris via le suivi SGR pour alimenter la sélection de texte dans l'application, le clic pour positionner le curseur, le survol de ligne et le défilement de la vue. Le terminal transmet tous les événements de souris à l'application au lieu de les gérer nativement.
-  - **Solution :** Définissez `"ui.mouseTracking": false` dans votre `settings.json` pour restaurer les menus natifs au clic droit et les liens URL cliquables. Cela désactive toute interaction souris dans l'application. Dans l'historique virtualisé (`ui.useTerminalBuffer: true`, la valeur par défaut), la molette ne fera plus défiler la transcription — utilisez `Shift+↑/↓`, `PgUp/PgDn`, ou `Ctrl+Home/End` à la place. Pour restaurer également le scrollback natif du terminal, définissez `"ui.useTerminalBuffer": false`. Nécessite un redémarrage.
+  - **Problème :** Les menus contextuels natifs au clic droit, les clics sur les liens OSC 8 et la sélection de texte native du terminal cessent de fonctionner lorsque Qwen Code est en cours d'exécution.
+  - **Cause :** Lorsque `ui.mouseTracking` est activé (par défaut), Qwen Code capture tous les événements de souris via le suivi de souris SGR pour alimenter la sélection de texte dans l'application, le clic pour positionner, le survol de ligne, le basculement des éléments d'historique et le défilement de la vue. Le terminal transmet tous les événements de souris à l'application au lieu de les gérer nativement. Qwen Code fournit ses propres replacements lorsque le suivi est activé : un simple clic ouvre un lien http(s) OSC 8, et un clic droit sur un lien ou une sélection de texte ouvre un menu contextuel dans l'application.
+  - **Solution :** Définissez `"ui.mouseTracking": false` dans votre `settings.json`. Cela désactive toute interaction souris dans l'application, y compris l'ouverture de lien dans l'application et le menu contextuel. Dans l'historique virtualisé (`ui.useTerminalBuffer: true`, la valeur par défaut), la molette ne fera plus défiler la transcription — utilisez `Shift+↑/↓`, `PgUp/PgDn`, ou `Ctrl+Home/End` à la place. Pour restaurer également le scrollback natif du terminal, définissez `"ui.useTerminalBuffer": false`. Nécessite un redémarrage.
 
 ## IDE Companion ne se connecte pas
 
-- Assurez-vous que VS Code a un seul dossier d'espace de travail ouvert.
+- Assurez-vous que VS Code a un seul dossier workspace ouvert.
 - Redémarrez le terminal intégré après avoir installé l'extension afin qu'il hérite :
   - `QWEN_CODE_IDE_WORKSPACE_PATH`
   - `QWEN_CODE_IDE_SERVER_PORT`

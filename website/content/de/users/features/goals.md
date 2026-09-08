@@ -1,6 +1,6 @@
 # Goals
 
-Ein Goal hält Qwen Code über mehrere Turns hinweg am Arbeiten, bis eine festgelegte Bedingung erfüllt ist. Setze eines mit `/goal <objective>`; nach jedem Turn prüft ein unabhängiger Verifier das Transkript, und die Session läuft weiter, bis das Ziel als erledigt verifiziert, als blockiert verifiziert, pausiert oder gelöscht wird.
+Ein Goal hält Qwen Code über mehrere Turns hinweg am Arbeiten, bis eine genannte Bedingung erfüllt ist. Setze eines mit `/goal <objective>`, und die Session läuft von alleine weiter. Jeder Turn wird als Beleg aufgezeichnet; wenn das Modell vorschlägt, dass das Ziel erledigt oder blockiert ist, beurteilt ein unabhängiger Verifier diesen Vorschlag ausschließlich anhand der Belege. Die Session stoppt, wenn der Verifier akzeptiert, oder wenn das Goal pausiert, gelöscht oder durch ein Limit gestoppt wird.
 
 ## Befehle
 
@@ -15,6 +15,16 @@ Ein Goal hält Qwen Code über mehrere Turns hinweg am Arbeiten, bis eine festge
 | `/goal-draft <intent>` | Lässt das Ziel für dich schreiben, bevor du es setzt (unten). |
 
 Das Erstellen, Bearbeiten oder Fortsetzen eines Goals erfordert einen vertrauenswürdigen Workspace (`/trust`). Die Headless-Nutzung wird in [Headless-Modus](./headless.md#run-a-persistent-goal) behandelt.
+
+Sobald ein Goal einen Turn abgerechnet hat, zeigen die Footer-Pille und jede Statuskarte, was es gegen das erlaubte Fenster verbraucht hat, als `1.2k/30.0m`. Die Zahl zählt die Modellaufrufe, die das Goal in seinen eigenen Turns macht; Subagenten und die eigenen Checks des Verifiers sind nicht enthalten. Das Fenster wird von [`model.goalTokenBudget`](../configuration/settings.md) gesetzt; das Fortsetzen eines Goals, das sein Fenster verbraucht hat, gewährt ein weiteres oben auf das bereits verbrauchte, sodass die Zahl `30.0m/60.0m` anzeigt, statt von vorne zu beginnen. Ein Goal ohne Budget zeigt nur, was es verbraucht hat. Ein Goal, das noch keinen Turn abgerechnet hat, zeigt überhaupt keine Zahlen.
+
+## Ein Goal unterbrechen
+
+Das Abbrechen eines Goal-Turns pausiert das Goal. Drücke Esc, während das Modell antwortet oder seine Tools noch laufen, und der Turn stoppt, das Goal wechselt zu `paused`, und die Karte und `/goal` sagen beide, warum es gestoppt wurde. Nichts läuft weiter, bis du `/goal resume` ausführst.
+
+Eine Nachricht zu tippen, während ein Goal aktiv ist, pausiert es nicht. Deine Nachricht läuft als der nächste Goal-Turn, also nutze sie, um die Arbeit zu steuern; nutze `/goal pause` oder `/goal clear`, um es zu stoppen.
+
+Jede Pause gibt ihren Grund an: dass du es unterbrochen hast, dass du `/goal pause` ausgeführt hast, dass das Session-Token-Limit die nächste Modellanfrage blockiert hat, oder dass der Turn fehlgeschlagen ist. Ein durch ein Limit gestopptes Goal behält stattdessen den Grund für dieses Limit.
 
 ## Wie ein Goal beurteilt wird
 
@@ -40,7 +50,9 @@ Setze diese Bestandteile in das Ziel, in dieser Reihenfolge:
 | `On block:`  | Was zu melden ist, wenn es feststeckt, und welche Entscheidung ein Mensch treffen muss.                                                 |
 | `Context:`   | Nur Fakten, die der Agent nicht im Workspace finden kann: Branch, Umgebung, frühere Entscheidungen.                                     |
 
-Halte es bei einem Ziel und ungefähr unter 1.200 Zeichen. `/goal set` und `/goal edit` kollabieren Zeilenumbrüche zu Leerzeichen, also nummeriere die Elemente, statt dich auf Zeilenumbrüche zu verlassen.
+Halte es bei einem Ziel. `/goal set` und `/goal edit` akzeptieren beliebige Länge, aber bleibe ungefähr unter 1.200 Zeichen: das Ziel wird bei jedem Goal-Turn erneut gesendet. Ein Ziel, das das Modell über `propose_goal` vorschlägt, ist auf 1.500 Zeichen begrenzt. Beide Befehle klappen Zeilenumbrüche zu Leerzeichen zusammen, also nummeriere die Elemente, statt dich auf Zeilenumbrüche zu verlassen.
+
+`Budget` ist eine Anweisung an das Modell, wann es aufgeben und einen Blocker melden soll. Eine Turn-Anzahl oder ein Zeitlimit im Ziel zu schreiben konfiguriert keinen Runtime-Timer und ändert nicht das Token-Budget des Goals.
 
 | Schwach                    | Warum es scheitert                                          | Stärker                                                                                                                                                                                                                                 |
 | -------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -51,13 +63,19 @@ Halte es bei einem Ziel und ungefähr unter 1.200 Zeichen. `/goal set` und `/goa
 
 ## `/goal-draft` schreibt es für dich
 
-`/goal-draft <was erledigt werden soll>` ist ein gebündelter Skill, der das oben Beschriebene für dich erledigt. Er prüft, ob die Anfrage überhaupt ein Goal ist, liest den Workspace nach den echten Test- und Lint-Befehlen, statt zu raten, stellt höchstens eine Runde Multiple-Choice-Fragen, wenn die Antwort den Check oder den Umfang ändert, entwirft das Ziel im obigen Format, führt den Selbstcheck durch und übergibt es: in einer interaktiven Session schlägt er das Ziel über den unten beschriebenen `propose_goal`-Genehmigungsdialog vor, andernfalls gibt er eine `/goal set …`-Zeile aus, die du unverändert ausführen kannst. Er beginnt niemals die Arbeit selbst, und ohne deine Genehmigung wird nichts gesetzt.
+`/goal-draft <was erledigt werden soll>` ist ein gebündelter Skill, der das oben Beschriebene für dich erledigt. Er liest nur genug vom Workspace, um den Umfang und die echten Verifizierungsbefehle zu ermitteln, ohne Tests auszuführen, zu bauen, Abhängigkeiten zu installieren oder Services zu starten. Er stellt höchstens eine Runde Fragen, wenn wesentliche Entscheidungen unklar sind, und schreibt dann ein kompaktes Ziel, normalerweise mit 3–5 Completion-Checks (weniger, wenn genug). Explizite Anforderungen werden beibehalten; er fügt keine Checks hinzu, nur um eine Anzahl zu erreichen.
 
-Übergib ein bestehendes Ziel, um es zu straffen: `/goal-draft all tests pass and the lint is clean`.
+Für ein Audit bedeutet Completion, die vereinbarten Szenarien abzudecken und Belege zu melden, einschließlich Reproduktionsschritte für bestätigte Defekte. Keine Defekte zu finden ist ein gültiges Ergebnis. Der Draft sollte keine Mindestanzahl an Szenarien, Belegdateien, Explorationsrunden oder Defekten erfinden.
 
-### Approve a Goal the model proposes
+Wenn ein Erfolgskriterium, Befehl, Eingabepfad oder eine wesentliche Entscheidung nicht ermittelt werden kann, gibt der Skill einen Draft zurück, der mit "Needs clarification" und `<TODO: …>`-Elementen markiert ist. Er bietet diesen Draft nicht zur Genehmigung an und gibt keinen ausführbaren `/goal set`- oder `/goal edit`-Befehl aus. Unwesentliche Defaults sind mit `[ASSUMPTION]` markiert; sie ersetzen keine fehlenden Erfolgskriterien.
 
-In einer interaktiven Terminal-Session hat das Modell ein `propose_goal`-Tool. Wenn `/goal-draft` fertig ist oder wenn du ein Ergebnis anforderst, das sich über mehrere Turns erstreckt, kann es das Ziel vorschlagen, anstatt eine `/goal set …`-Zeile zum Kopieren auszugeben. Der Vorschlag erscheint als Genehmigungsdialog, der das vollständige Ziel anzeigt. Ihn zu genehmigen setzt das Goal genau wie `/goal set`, sobald der aktuelle Turn endet (das Modell bestätigt und stoppt; der erste Goal-Turn startet dann automatisch), und ihn abzulehnen setzt nichts – dem Modell wird nur mitgeteilt, dass das Goal nicht gesetzt wurde, und es darf es nicht erneut vorschlagen. Die Genehmigung ist an den Turn gebunden, der sie angefordert hat: Wird dieser Turn abgebrochen oder erreicht sonst nicht sein Ende, wird die Genehmigung verworfen, statt unter einer späteren Nachricht oder einem automatisierten Turn angewendet zu werden. Keine Berechtigungsregel oder Genehmigungsmodus (einschließlich YOLO) überspringt diesen Dialog, und das Tool verweigert die Ausführung, während ein anderes Goal aktiv ist, im Plan-Modus, in Subagenten und in nicht vertrauenswürdigen Ordnern. Es ist nicht in Headless-Runs verfügbar und auch noch nicht in Web Shell oder anderen ACP-gesteuerten Sessions (diese durchlaufen nicht die Turn-Grenze, die die Genehmigung anwendet); dort bleibt die ausgegebene `/goal set`-Zeile die Übergabe.
+Sobald das Ziel fertig ist, kann eine interaktive Terminal-Session den unten beschriebenen `propose_goal`-Genehmigungsdialog anzeigen. Web Shell und andere ACP-Clients, Headless-Runs, Sessions mit deaktiviertem Tool und Sessions mit einem aktiven Goal erhalten stattdessen einen Befehl zum manuellen Ausführen. Die Übergabe sagt, dass der Draft nicht angewendet wurde. Der Skill beginnt niemals die Arbeit selbst, und ohne deine Genehmigung wird nichts gesetzt.
+
+Übergib ein bestehendes Ziel, um es zu straffen: `/goal-draft all tests pass and the lint is clean`. Für ein aktives Goal erzeugt eine explizite Anfrage zum Straffen `/goal edit`; eine Ersetzung verwendet `/goal set`. Wenn die beabsichtigte Operation unklar ist, beinhaltet der Skill diese Wahl in seiner einzigen Fragerunde.
+
+### Ein vom Modell vorgeschlagenes Goal genehmigen
+
+In einer interaktiven Terminal-Session hat das Modell ein `propose_goal`-Tool. Wenn `/goal-draft` fertig ist oder wenn du ein Ergebnis anforderst, das sich über mehrere Turns erstreckt, kann es das Ziel vorschlagen, anstatt eine `/goal set …`-Zeile zum Kopieren auszugeben. Der Vorschlag erscheint als Genehmigungsdialog, der das vollständige Ziel anzeigt. Ihn zu genehmigen setzt das Goal genau wie `/goal set`, sobald der aktuelle Turn endet (das Modell bestätigt und stoppt; der erste Goal-Turn startet dann automatisch), und ihn abzulehnen setzt nichts — das Modell sieht nur, dass der Tool-Aufruf nicht erlaubt wurde, und seine Anweisungen sagen ihm, nicht nach dem Grund zu fragen und nicht dasselbe Ziel erneut vorzuschlagen. Die Genehmigung ist an den Turn gebunden, der sie angefordert hat: Wird dieser Turn abgebrochen oder erreicht sonst nicht sein Ende, wird die Genehmigung verworfen, statt unter einer späteren Nachricht oder einem automatisierten Turn angewendet zu werden. Keine Berechtigungsregel oder Genehmigungsmodus (einschließlich YOLO) überspringt diesen Dialog, und das Tool verweigert die Ausführung, während ein anderes Goal aktiv ist, im Plan-Modus und in nicht vertrauenswürdigen Ordnern; Subagenten wird es niemals angeboten. Es ist nicht in Headless-Runs verfügbar und auch noch nicht in Web Shell oder anderen ACP-gesteuerten Sessions (diese durchlaufen nicht die Turn-Grenze, die die Genehmigung anwendet); dort bleibt die ausgegebene `/goal set`-Zeile die Übergabe.
 
 Schalte es aus mit `goals.modelProposed: "disabled"` in deinen Benutzer-Einstellungen. Da die Einstellung entscheidet, ob das Modell dich fragen darf, eine autonome Schleife zu starten, wird sie nur aus Benutzer- und System-Scope berücksichtigt; ein Wert in einer Workspace-`.qwen/settings.json` wird mit einer Warnung ignoriert.
 

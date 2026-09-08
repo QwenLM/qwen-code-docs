@@ -2,7 +2,7 @@
 
 Qwen Code 可以预测你接下来想输入的内容，并在输入区域中以占位符文本的形式显示。该功能通过一次 LLM 调用分析对话上下文，生成自然的下一步操作建议。
 
-该功能在 CLI 中端到端工作。在 WebUI 中，相关的钩子和 UI 基础设施已经就绪，但宿主应用需要触发建议生成并连接后续状态，才能使建议显示出来。
+该功能在 CLI 和 Web Shell 中均端到端可用。建议生成是自动的，在服务端完成：每完成一个轮次，daemon 会在会话流上发出建议（默认开启；将 `ui.enableFollowupSuggestions` 设为 `false` 可关闭），而 Web Shell 的 composer 已经接入了 `useDaemonFollowupSuggestion` hook，因此建议可以直接渲染和接受，无需宿主额外接线。
 
 ## 工作原理
 

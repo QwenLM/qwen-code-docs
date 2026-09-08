@@ -2,7 +2,7 @@
 
 Qwen Code kann vorhersagen, was Sie als Nächstes eingeben möchten, und zeigt dies als Platzhaltertext im Eingabebereich an. Diese Funktion verwendet einen LLM-Aufruf, um den Gesprächskontext zu analysieren und einen natürlichen nächsten Schritt vorzuschlagen.
 
-Diese Funktion funktioniert im CLI vollständig durchgängig. In der WebUI sind der Hook und die UI-Infrastruktur vorhanden, aber Host-Anwendungen müssen die Generierung von Vorschlägen auslösen und den Nachfolgezustand verbinden, damit Vorschläge erscheinen.
+Diese Funktion funktioniert sowohl im CLI als auch in der WebShell durchgängig. Die Generierung erfolgt automatisch und serverseitig: Nach jedem abgeschlossenen Turn sendet der Daemon den Vorschlag auf dem Session-Stream (standardmäßig aktiviert; setzen Sie `ui.enableFollowupSuggestions` auf `false`, um dies zu deaktivieren), und der Composer der WebShell verbindet bereits den `useDaemonFollowupSuggestion`-Hook, sodass Vorschläge ohne zusätzliches Host-Wiring gerendert und angenommen werden können.
 
 ## Funktionsweise
 

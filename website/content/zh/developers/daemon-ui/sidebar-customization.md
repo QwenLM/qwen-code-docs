@@ -169,6 +169,7 @@ interface WebShellSidebarOptions {
   defaultCollapsed?: boolean; // 初始折叠状态（持久化到 localStorage）
   showCompactToggle?: boolean; // 在聊天区域显示折叠按钮（默认：true）
   showSessionSourceSwitch?: boolean; // 显示 Tasks/Channels 切换（默认：true）
+  showLive?: boolean; // 显示 daemon 拥有的 Live 会话（默认：false）
   branding?: false | WebShellSidebarBranding;
   primaryNav?: WebShellSidebarPrimaryNavOptions;
   hideProjectHeader?: boolean; // 隐藏"项目"头部行（默认：false = 显示）
@@ -188,6 +189,18 @@ sidebar={{
 ```
 
 这会移除 Tasks/Channels 切换，并将所有活跃、已归档、主会话和次级会话查询固定为 `sourceType: "default"`。省略该选项则保持当前的切换和 channel-session 访问不变。
+
+### Live 会话 — `showLive`
+
+Live 会话默认对嵌入宿主隐藏。当宿主需要暴露 daemon 拥有的 Live 分组时，选择启用：
+
+之前的版本在没有显式选项的情况下显示此分组，因此依赖它的宿主在升级时必须设置 `showLive: true`。
+
+```tsx
+sidebar={{
+  showLive: true,
+}}
+```
 
 ### ③ 项目头部 — `hideProjectHeader`
 
@@ -307,4 +320,4 @@ sidebar={{
 | WorkspaceSection    | `packages/web-shell/client/components/sidebar/WorkspaceSection.tsx`       |
 | Sidebar styles      | `packages/web-shell/client/components/sidebar/WebShellSidebar.module.css` |
 | App integration     | `packages/web-shell/client/App.tsx`（搜索 `WebShellSidebar`）             |
-| Entry point (dev)   | `packages/web-shell/client/main.tsx`（`sidebar: true`）                   |
+| Entry point (dev)   | `packages/web-shell/client/main.tsx`（`sidebar: { enabled: true, showLive: true }`） |
