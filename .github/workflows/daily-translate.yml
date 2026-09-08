@@ -76,7 +76,7 @@ jobs:
           {
             echo "### ⚠️ This run cannot publish a review branch"
             echo
-            echo "Ref \`${GITHUB_REF_NAME}\` is not \`main\`, so **Publish translation review branch** will be skipped."
+            echo "Ref \`${GITHUB_REF_NAME}\` is not \`main\`, so **Publish translation PR** will be skipped."
             echo
             echo "If changes are detected, translated content is uploaded as the \`translation-output\` artifact — download it from this run if you need the work."
           } >> "$GITHUB_STEP_SUMMARY"
@@ -105,6 +105,9 @@ jobs:
               --head "$branch" --limit 1 --json number --jq 'length')"
             if [ "$merged" -gt 0 ]; then
               git push origin --delete "$branch"
+              # Legacy: runs before the PR is opened automatically announced
+              # the branch with an issue instead. No new ones are created, but
+              # the last of them must still be closed when its PR merges.
               issue="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
                 --search "${branch} in:title" --limit 1 --json number --jq '.[0].number // empty')"
               [ -z "$issue" ] || gh issue close "$issue" --repo "$GITHUB_REPOSITORY" --comment "The translation PR was merged; closing this review notice."
@@ -238,14 +241,34 @@ jobs:
 
       # Generated content is never pushed to main directly (#201). A unique
       # branch avoids history rewrites; the next run waits for this PR to be
-      # reviewed and merged before spending model quota again. Organization
-      # policy forbids Actions from creating PRs, so an issue carries the
-      # one-click compare link instead.
-      - name: Publish translation review branch
+      # reviewed and merged before spending model quota again.
+      #
+      # The PR is opened with TRANSLATION_BOT_PAT, not GITHUB_TOKEN, because
+      # the organization forbids Actions from creating pull requests: the
+      # repository toggle cannot even be flipped, the API answers
+      # `409 The organization does not allow GitHub Actions to create or
+      # approve pull requests`. A user token is not subject to that policy.
+      # Verified end to end before this change landed (#255).
+      #
+      # The PAT is also what makes the merge deploy: pushes attributed to
+      # GITHUB_TOKEN do not start other workflows, so a bot-merged PR would
+      # never trigger deploy-docs.yml. Merging is still manual for now, so
+      # generated content keeps a human in the loop (#201).
+      #
+      # If the PAT expires this step fails, which is the intended behaviour:
+      # the branch is already pushed, so no translation is lost, and the
+      # scheduled failure is reported as an issue by the job below.
+      - name: Publish translation PR
         if: steps.detect.outputs.changed == 'true' && github.ref_name == 'main'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.TRANSLATION_BOT_PAT }}
         run: |
+          # An unset secret expands to an empty string, and every gh call
+          # below would then fail as an unattributable 401.
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "::error::secret TRANSLATION_BOT_PAT is empty or not set; cannot open the translation PR"
+            exit 1
+          fi
           git config user.name "qwen-docs-bot"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # Quarantine safety net: the dedicated step above already resolved
@@ -263,10 +286,19 @@ jobs:
             git commit -m "docs(i18n): daily incremental translation sync [skip ci]"
             branch="automation/daily-translation-${GITHUB_RUN_ID}"
             git push origin "HEAD:${branch}"
-            compare="https://github.com/${GITHUB_REPOSITORY}/compare/main...${branch}?expand=1"
-            gh issue create --repo "$GITHUB_REPOSITORY" \
-              --title "Translation batch awaits review: ${branch}" \
-              --body "A verified daily translation batch is ready on \`${branch}\`. Open ${compare}, create and review the pull request, then merge it; the normal \`main\` push workflow will build and deploy the site. Later scheduled runs pause until this branch has a merged PR."
+            run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            # printf rather than a multi-line literal: an unindented
+            # continuation line would terminate the YAML block scalar.
+            body="$(printf '%s\n' \
+              "Verified daily translation batch from scheduled run ${run_url}." \
+              "" \
+              "Review and merge to publish: the \`main\` push triggers \`deploy-docs.yml\`, which rebuilds and deploys the site. Later scheduled runs pause while this PR is open, so merging it also unblocks the next one." \
+              "" \
+              "Files whose structure could not be verified were restored from \`HEAD\` and are not included here; the run log lists them.")"
+            gh pr create --repo "$GITHUB_REPOSITORY" \
+              --base main --head "${branch}" \
+              --title "docs(i18n): daily translation sync (run ${GITHUB_RUN_ID})" \
+              --body "${body}"
           fi
 
       # Reporting runs only after the durable review-branch attempt. It also runs on
