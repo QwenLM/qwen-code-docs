@@ -1,6 +1,6 @@
 # Goals
 
-Un Goal maintient Qwen Code en activité à travers les tours jusqu'à ce qu'une condition déclarée soit remplie. Définissez-en un avec `/goal <objective>` ; après chaque tour, un vérificateur indépendant examine la transcription, et la session continue jusqu'à ce que l'objectif soit vérifié comme terminé, vérifié comme bloqué, mis en pause ou effacé.
+Un Goal maintient Qwen Code en activité à travers les tours jusqu'à ce qu'une condition déclarée soit remplie. Définissez-en un avec `/goal <objective>`, et la session continue d'elle-même. Chaque tour est enregistré comme preuve ; lorsque le modèle propose que l'objectif est terminé ou bloqué, un vérificateur indépendant juge cette proposition à partir des preuves uniquement. La session s'arrête lorsque le vérificateur accepte, ou lorsque le Goal est mis en pause, effacé ou arrêté par une limite.
 
 ## Commandes
 
@@ -15,6 +15,16 @@ Un Goal maintient Qwen Code en activité à travers les tours jusqu'à ce qu'une
 | `/goal-draft <intent>`   | Faire rédiger l'objectif pour vous avant de le définir (ci-dessous). |
 
 Créer, modifier ou reprendre un Goal nécessite un workspace de confiance (`/trust`). L'utilisation headless est couverte dans [Mode Headless](./headless.md#run-a-persistent-goal).
+
+Une fois qu'un Goal a facturé un tour, la pilule de pied de page et chaque carte de statut affichent ce qu'il a dépensé par rapport à la fenêtre autorisée, sous la forme `1.2k/30.0m`. Le chiffre compte les appels de modèle que le Goal fait dans ses propres tours ; les sous-agents et les vérifications du vérificateur ne sont pas inclus. La fenêtre est définie par [`model.goalTokenBudget`](../configuration/settings.md) ; reprendre un Goal qui a épuisé sa fenêtre en accorde une nouvelle en plus de ce qu'il a déjà dépensé, donc le chiffre affiche `30.0m/60.0m` au lieu de recommencer à zéro. Un Goal sans budget affiche uniquement ce qu'il a dépensé. Un Goal qui n'a pas encore facturé de tour n'affiche aucun chiffre.
+
+## Interrompre un Goal
+
+Annuler un tour de Goal met le Goal en pause. Appuyez sur Échap pendant que le modèle répond ou pendant que ses outils sont encore en cours d'exécution, et le tour s'arrête, le Goal passe à `paused`, et la carte et `/goal` indiquent tous deux pourquoi il s'est arrêté. Rien ne continue tant que vous n'avez pas exécuté `/goal resume`.
+
+Taper un message pendant qu'un Goal est actif ne le met pas en pause. Votre message s'exécute comme le prochain tour du Goal, utilisez-le donc pour orienter le travail ; utilisez `/goal pause` ou `/goal clear` pour l'arrêter.
+
+Chaque pause indique sa raison : vous l'avez interrompu, vous avez exécuté `/goal pause`, la limite de tokens de la session a bloqué la prochaine requête modèle, ou le tour a échoué. Un Goal arrêté par une limite conserve la raison de cette limite.
 
 ## Comment un Goal est évalué
 
@@ -40,7 +50,9 @@ Incorpérez ces éléments dans l'objectif, dans cet ordre :
 | `On block:`  | Quoi signaler en cas de blocage, et quelle décision un humain doit prendre.                                                           |
 | `Context:`   | Uniquement les faits que l'agent ne peut pas trouver dans le workspace : branche, environnement, décisions antérieures.                |
 
-Limitez-vous à un seul objectif et environ 1 200 caractères. `/goal set` et `/goal edit` fusionnent les sauts de ligne en espaces, numérotez donc les éléments plutôt que de compter sur les retours à la ligne.
+Limitez-vous à un seul objectif. `/goal set` et `/goal edit` acceptent n'importe quelle longueur, mais restez environ en dessous de 1 200 caractères : l'objectif est renvoyé à chaque tour du Goal. Un objectif que le modèle propose via `propose_goal` est limité à 1 500 caractères. Les deux commandes fusionnent les sauts de ligne en espaces, numérotez donc les éléments plutôt que de compter sur les retours à la ligne.
+
+`Budget` est une instruction au modèle sur le moment d'arrêter et de signaler un bloqueur. Écrire un nombre de tours ou une limite de temps dans l'objectif ne configure pas un timer d'exécution ni ne modifie le budget de tokens du Goal.
 
 | Faible                     | Pourquoi ça échoue                                        | Plus solide                                                                                                                                                                                                                              |
 | -------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -51,14 +63,20 @@ Limitez-vous à un seul objectif et environ 1 200 caractères. `/goal set` et `/
 
 ## Laissez `/goal-draft` le rédiger
 
-`/goal-draft <ce que vous voulez faire>` est un skill intégré qui fait ce qui précède pour vous. Il vérifie si la requête est bien un Goal, lit le workspace pour trouver les vraies commandes de test et de lint au lieu de deviner, pose au maximum une série de questions à choix multiples lorsque la réponse modifie la vérification ou le périmètre, rédige l'objectif dans le format ci-dessus, exécute l'auto-vérification, et vous le transmet : dans une session interactive, il propose l'objectif via la boîte de dialogue d'approbation `propose_goal` décrite ci-dessous, sinon il affiche une ligne `/goal set …` que vous pouvez exécuter telle quelle. Il ne démarre jamais le travail lui-même, et rien n'est défini sans votre approbation.
+`/goal-draft <ce que vous voulez faire>` est un skill intégré qui fait ce qui précède pour vous. Il ne lit que ce qu'il faut du workspace pour établir le périmètre et les vraies commandes de vérification, sans exécuter de tests, sans construire, sans installer de dépendances ni démarrer de services. Il pose au maximum un tour de questions lorsque des choix essentiels ne sont pas clairs, puis rédige un objectif compact, généralement avec 3 à 5 vérifications de complétion (moins lorsque c'est suffisant). Les exigences explicites sont préservées ; il n'ajoute pas de vérifications juste pour atteindre un compte.
 
-Passez un objectif existant pour le renforcer : `/goal-draft all tests pass and the lint is clean`.
+Pour un audit, la complétion signifie couvrir les scénarios convenus et rapporter les preuves, y compris les étapes de reproduction pour les défauts confirmés. Ne trouver aucun défaut est un résultat valide. Le draft ne doit pas inventer un nombre minimum de scénarios, de fichiers de preuve, de tours d'exploration ou de défauts.
+
+Si un critère de succès, une commande, un chemin d'entrée ou une décision essentielle ne peut pas être établi, le skill retourne un draft marqué « Needs clarification » avec des éléments `<TODO: …>`. Il ne propose pas ce draft pour approbation ni n'affiche de commande `/goal set` ou `/goal edit` exécutable. Les valeurs par défaut non essentielles sont marquées `[ASSUMPTION]` ; elles ne se substituent pas à des critères de succès manquants.
+
+Une fois l'objectif prêt, une session terminal interactive peut afficher la boîte de dialogue d'approbation `propose_goal` décrite ci-dessous. Web Shell et les autres clients ACP, les exécutions headless, les sessions avec l'outil désactivé et les sessions avec un Goal actif reçoivent plutôt une commande à exécuter manuellement. La transmission indique que le draft n'a pas été appliqué. Le skill ne démarre jamais le travail lui-même, et rien n'est défini sans votre approbation.
+
+Passez un objectif existant pour le renforcer : `/goal-draft all tests pass and the lint is clean`. Pour un Goal actif, une demande explicite de le renforcer produit `/goal edit` ; un remplacement utilise `/goal set`. Si l'opération souhaitée n'est pas claire, le skill inclut ce choix dans son unique tour de questions.
 
 Le skill est configuré pour être en lecture seule, et seuls ses outils non mutatifs sont auto-approuvés (`get_goal`, `read_file`, `glob`, `grep_search`). `ask_user_question` n'est volontairement pas auto-approuvé, donc sa boîte de dialogue de questions est affichée avant que le skill ne rédige à partir de vos réponses. Comme les autres skills intégrés, un skill de projet ou personnel nommé `goal-draft` le remplace, et `skills.disabled` peut le désactiver. Consultez [Skills](./skills.md) pour savoir comment les skills intégrés sont découverts.
 
 ### Approuver un Goal proposé par le modèle
 
-Dans une session terminal interactive, le modèle dispose d'un outil `propose_goal`. Lorsque `/goal-draft` se termine, ou lorsque vous demandez un résultat qui s'étend sur plusieurs tours, il peut proposer l'objectif au lieu d'afficher une ligne `/goal set …` à copier. La proposition apparaît sous forme d'une boîte de dialogue d'approbation affichant l'objectif complet. L'approuver définit le Goal exactement comme le ferait `/goal set`, au moment où le tour en cours se termine (le modèle acquiesce et s'arrête ; le premier tour du Goal démarre alors de lui-même), et la refuser ne définit rien — le modèle est simplement informé que le Goal n'a pas été défini, et ne doit pas le proposer à nouveau. L'approbation est liée au tour qui l'a demandée : si ce tour est annulé ou n'atteint jamais sa fin, l'approbation est abandonnée plutôt qu'appliquée sous un message ultérieur ou un tour automatisé. Aucune règle de permission ni mode d'approbation (y compris YOLO) ne contourne cette boîte de dialogue, et l'outil refuse lorsqu'un autre Goal est actif, en mode plan, dans les sous-agents, et dans les dossiers non fiables. Il n'est pas disponible dans les exécutions headless, ni encore dans Web Shell ou les autres sessions pilotées par ACP (elles ne traversent pas la limite de tour qui applique l'approbation) ; la ligne `/goal set` affichée reste alors le mécanisme de transmission.
+Dans une session terminal interactive, le modèle dispose d'un outil `propose_goal`. Lorsque `/goal-draft` se termine, ou lorsque vous demandez un résultat qui s'étend sur plusieurs tours, il peut proposer l'objectif au lieu d'afficher une ligne `/goal set …` à copier. La proposition apparaît sous forme d'une boîte de dialogue d'approbation affichant l'objectif complet. L'approuver définit le Goal exactement comme le ferait `/goal set`, au moment où le tour en cours se termine (le modèle acquiesce et s'arrête ; le premier tour du Goal démarre alors de lui-même), et la refuser ne définit rien — le modèle voit uniquement que l'appel d'outil n'a pas été autorisé, et ses instructions lui disent de ne pas demander pourquoi et de ne pas proposer le même objectif à nouveau. L'approbation est liée au tour qui l'a demandée : si ce tour est annulé ou n'atteint jamais sa fin, l'approbation est abandonnée plutôt qu'appliquée sous un message ultérieur ou un tour automatisé. Aucune règle de permission ni mode d'approbation (y compris YOLO) ne contourne cette boîte de dialogue, et l'outil refuse lorsqu'un autre Goal est actif, en mode plan et dans les dossiers non fiables ; les sous-agents ne se le voient jamais proposer. Il n'est pas disponible dans les exécutions headless, ni encore dans Web Shell ou les autres sessions pilotées par ACP (elles ne traversent pas la limite de tour qui applique l'approbation) ; la ligne `/goal set` affichée reste alors le mécanisme de transmission.
 
 Désactivez-le avec `goals.modelProposed: "disabled"` dans vos paramètres utilisateur. Parce que ce paramètre décide si le modèle peut vous demander de démarrer une boucle autonome, il est honoré uniquement depuis les portées utilisateur et système ; une valeur dans un `.qwen/settings.json` de workspace est ignorée avec un avertissement.

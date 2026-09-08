@@ -11,13 +11,13 @@
 - **渲染器**（`render.ts`、`terminal.ts`、`toolPreview.ts`）：将对话记录块渲染为 HTML、终端文本和工具预览字符串。宿主可以使用或替换它们。
 - **一致性**（`conformance.ts`）：跨宿主一致性测试，在渠道、TUI 和 IDE 界面迁移到这些原语时使用。
 
-首个生产环境使用者是 **`packages/webui/src/daemon/`**（[#4328](https://github.com/QwenLM/qwen-code/pull/4328)）。其 React `DaemonSessionProvider` 和对话记录适配器使 Web UI 能够直接连接到 daemon HTTP+SSE，而不仅仅是渲染宿主的 `postMessage` 流量。CLI TUI、渠道基础层和 VS Code IDE 后续可复用同一层；[`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md) 记录了 v2 增量迁移指南。
+首个生产环境使用者引入自 [#4328](https://github.com/QwenLM/qwen-code/pull/4328)，现位于 **`packages/web-shell/client/daemon/`**。其 React `DaemonSessionProvider` 和对话记录适配器让 Web Shell 直接连接到 daemon HTTP+SSE。CLI TUI、渠道基础层和 VS Code IDE 后续可复用同一层；[`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md) 记录了 v2 增量迁移指南。
 
 ## 职责
 
 - 将 53 种 daemon wire 事件规范化为稳定的 UI 词汇表（`DaemonUiEventType`），使渲染器无需检查 `rawEvent.data`。
 - 保持 daemon 单调递增的 SSE `eventId` 作为**主要排序键**，确保不同客户端以相同顺序渲染对话记录。
-- 使用纯 reducer 生成对话记录块，并提供用于待处理权限、当前工具、审批模式、工具进度和子 agent 子项的 selectors。
+- 使用纯 reducer 生成对话记录块，并提供用于待处理权限、当前工具、审批模式、工具进度和子代理子项的 selectors。
 - 提供基线 HTML 和终端渲染器，同时允许宿主特定的渲染。
 - 公开公共常量，例如用于计划面板的 `DAEMON_PLAN_TOOL_CALL_ID`。
 - 保持增量 wire 兼容性：未知事件类型会被规范化为 `debug` 而不是被丢弃。
@@ -132,17 +132,17 @@ flowchart LR
 
 ## 使用者
 
-### `packages/webui/src/daemon/`
+### `packages/web-shell/client/daemon/`
 
 此功能已在 [#4328](https://github.com/QwenLM/qwen-code/pull/4328) 中合入。
 
 | 文件                        | 导出                                                                                                                                                                                                                                                                                                                        |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `DaemonSessionProvider.tsx` | React `<DaemonSessionProvider />`；`useDaemonSession()`、`useDaemonTranscriptStore()`、`useDaemonTranscriptState()`、`useDaemonTranscriptBlocks()`、`useDaemonPendingPermissions()`、`useDaemonActions()`、`useDaemonConnection()` hooks；`DaemonConnectionStatus`、`DaemonConnectionState`、`DaemonSessionContextValue` 类型 |
-| `transcriptAdapter.ts`      | 将 SDK 的 `DaemonTranscriptBlock` 适配为 Web UI 的 `UnifiedMessage`，包括 markdown 流式分块合并和工具调用摘要                                                                                                                                                                                        |
+| `session/DaemonSessionProvider.tsx` | React `<DaemonSessionProvider />`；`useDaemonSession()`、`useDaemonTranscriptStore()`、`useDaemonTranscriptState()`、`useDaemonTranscriptBlocks()`、`useDaemonPendingPermissions()`、`useDaemonActions()`、`useDaemonConnection()` hooks；`DaemonConnectionStatus`、`DaemonConnectionState`、`DaemonSessionContextValue` 类型 |
+| `session/index.ts`                  | Session barrel：provider、hooks 和会话类型                                                                                                                                                                                                                                                                             |
 | `index.ts`                  | 子包入口文件                                                                                                                                                                                                                                                                                                              |
 
-Web UI 现在可以直接连接到 daemon HTTP+SSE 并渲染对话记录。旧的 `ACPAdapter` 宿主 `postMessage` 路径仍然可用。
+Web UI 现在可以直接连接到 daemon HTTP+SSE 并渲染对话记录。旧的 `ACPAdapter` 宿主 `postMessage` 路径已随遗留 WebUI 工作区退役；webviews 现在嵌入 Web Shell 进行渲染（参见 [`16-vscode-ide-adapter.md`](./16-vscode-ide-adapter.md)）。
 
 ### 后续迁移
 
@@ -163,9 +163,9 @@ Web UI 现在可以直接连接到 daemon HTTP+SSE 并渲染对话记录。旧�
 ## 依赖项
 
 - 上游 wire 类型：`packages/sdk-typescript/src/daemon/events.ts`（参见 [`09-event-schema.md`](./09-event-schema.md)）。
-- 实际下游使用者：`packages/webui/src/daemon/`。
+- 实际下游使用者：`packages/web-shell/client/daemon/`。
 - 后续迁移目标：`packages/cli/src/ui/`、`packages/channels/base/` 和 `packages/vscode-ide-companion/src/services/daemonIdeConnection.ts`。
-- 并行参考：[`../daemon-ui/README.md`](../daemon-ui/README.md)、[`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md) 和 [`../daemon-client-adapters/web-ui.md`](../daemon-client-adapters/web-ui.md)。
+- 并行参考：[`../daemon-ui/README.md`](../daemon-ui/README.md)、[`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md) 和 [`../daemon-client-adapters/web-shell.md`](../daemon-client-adapters/web-shell.md)。
 
 ## 配置
 
@@ -176,7 +176,7 @@ Web UI 现在可以直接连接到 daemon HTTP+SSE 并渲染对话记录。旧�
 ## 注意事项与已知限制
 
 - **`daemon-tui-adapter.ts` 仍然存在**。它是 CLI 包的遗留实验性适配器。新代码应优先使用 SDK 的 `ui/*`：`normalizeDaemonEvent`、`reduceDaemonTranscriptEvents` 和 `DaemonTranscriptBlock`。
-- **CLI TUI、渠道基础层和 VS Code IDE 尚未迁移**。它们仍然维护自己的渲染逻辑。`docs/developers/daemon-client-adapters/` 目录中仍有 `ide.md`、`channel-web.md` 和历史草稿 `tui.md`；较新的 `web-ui.md` 涵盖了 Web UI 适配器设计。
+- **CLI TUI、渠道基础层和 VS Code IDE 尚未迁移**。它们仍然维护自己的渲染逻辑。`docs/developers/daemon-client-adapters/` 目录中仍有 `ide.md`、`channel-web.md` 和历史草稿 `tui.md`；较新的 `web-shell.md` 涵盖了 Web Shell 适配器设计。
 - **`eventId` 是主要排序键**。`createdAt` 作为已弃用的别名（`clientReceivedAt`）保留。新代码应使用 `selectTranscriptBlocksOrderedByEventId(state)`。`MIGRATION.md` 展示了从 `createdAt` 排序切换到 `eventId` 排序的代码差异。
 - **未知 wire 类型规范化为 `debug`**。它们不再像旧适配器那样被丢弃。渲染器默认不显示 `debug`；宿主必须主动选择显示它。
 - **包体积**：`ui/*` 子包通过 `@qwen-code/sdk/daemon` 作为 ESM 子路径导出，不会引入 React 或 DOM 依赖项。仅当 Web UI 使用者使用 `DaemonSessionProvider` 时才会加载 React 集成。
@@ -188,6 +188,6 @@ Web UI 现在可以直接连接到 daemon HTTP+SSE 并渲染对话记录。旧�
 - `packages/sdk-typescript/src/daemon/ui/normalizer.ts`（wire 到 UI 的映射）
 - `packages/sdk-typescript/src/daemon/ui/store.ts`、`render.ts`、`terminal.ts`、`toolPreview.ts`、`conformance.ts`
 - `packages/sdk-typescript/src/daemon/index.ts`（`ui/*` 重新导出块）
-- `packages/webui/src/daemon/DaemonSessionProvider.tsx`、`transcriptAdapter.ts`
+- `packages/web-shell/client/daemon/session/DaemonSessionProvider.tsx`、`packages/web-shell/client/adapters/transcriptAdapter.ts`
 - 上游文档：[`../daemon-ui/README.md`](../daemon-ui/README.md)、[`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md)、[`../daemon-client-adapters/web-ui.md`](../daemon-client-adapters/web-ui.md)
 - 相关 PR：[#4328](https://github.com/QwenLM/qwen-code/pull/4328)（v1 对话记录层和 Web UI provider）、[#4353](https://github.com/QwenLM/qwen-code/pull/4353)（v2 统一完整性后续工作）

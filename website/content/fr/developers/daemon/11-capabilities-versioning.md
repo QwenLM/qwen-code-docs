@@ -109,7 +109,7 @@ Les tags de base ne sont pas présents dans la `Map` et sont annoncés de maniè
 
 Fondation : `health`, `daemon_status`, `capabilities`.
 
-Sessions : `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_storage_conflict_repair`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (conditionnel), `session_language`, **`user_language_sync`** (conditionnel), `session_rewind`, `session_hooks`, `session_branch`.
+Sessions : `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_storage_conflict_repair`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_resources`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (conditionnel), `session_language`, **`user_language_sync`** (conditionnel), `session_rewind`, `session_hooks`, `session_branch`.
 
 Streaming : `slow_client_warning`, `typed_event_schema`.
 
@@ -117,7 +117,7 @@ Identité et heartbeat : `client_identity`, `client_heartbeat`.
 
 Permissions : `session_permission_vote`, `permission_vote`, **`permission_mediation`** (`modes: ['first-responder', 'designated', 'consensus', 'local-only']`).
 
-Snapshots en lecture seule de l'espace de travail : `workspace_mcp`, `workspace_skills`, `workspace_providers`, `workspace_acp_status`, `workspace_env`, `workspace_preflight`, `workspace_hooks`, `workspace_extensions`.
+Snapshots en lecture seule du workspace : `workspace_mcp`, `workspace_skills`, `workspace_providers`, `workspace_acp_status`, `workspace_env`, `workspace_preflight`, `workspace_hooks`, `workspace_extensions`.
 
 Gestion des extensions : `extension_management_v2` ajoute le contrat global de catalogue/mutation/opération `/extensions/*` et la projection d'activation de workspace. Il est distinct de la surface de compatibilité `workspace_extensions` publiée et de `workspace_qualified_rest_core`.
 
@@ -127,7 +127,7 @@ Activation par lot d'extensions V2 : `extension_batch_activation_v2` ajoute des 
 
 Lectures de session qualifiées par workspace : `workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`, `workspace_session_live_state`. Les tags d'export actif et archivé sont indépendants les uns des autres ainsi que de `session_export` et `workspace_qualified_rest_core`, donc les clients doivent pré-vérifier l'état de stockage exact qu'ils ont l'intention d'exporter. La pagination de transcription persistée permet un secondaire non fiable dans le cadre de sa politique de lecture bornée ; les deux chemins d'export complets restent réservés aux fiables. `workspace_session_live_state` est également indépendant de `workspace_qualified_rest_core` et réservé aux fiables uniquement : il sert le snapshot en mémoire de la session live du runtime sélectionné et la version du catalogue et n'étend pas la politique de lecture persistée non fiable à l'état live du bridge.
 
-Mutation de l'espace de travail (Wave 4+) : `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, `workspace_skill_settings_toggle`, `workspace_skill_settings_batch_toggle`, **`workspace_settings`** (conditionnel), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, `workspace_file_upload`, **`workspace_reload`** (conditionnel).
+Mutation du workspace (Wave 4+) : `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, `workspace_skill_settings_toggle`, `workspace_skill_settings_batch_toggle`, **`workspace_settings`** (conditionnel), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, `workspace_file_upload`, **`workspace_reload`** (conditionnel).
 
 Garde-fous MCP : **`mcp_guardrails`** (`modes: ['warn', 'enforce']`), `mcp_guardrail_events`, `mcp_server_runtime_mutation`, **`mcp_workspace_pool`** (conditionnel), **`mcp_pool_restart`** (conditionnel).
 
@@ -204,7 +204,7 @@ sequenceDiagram
 
 ## Configuration
 
-| Source                     | Paramètre                                                       | Effet sur les capacités                                                                                                       |
+| Source                     | Knob                                                            | Effet sur les capacités                                                                                                       |
 | -------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | Flag CLI                   | `--require-auth`                                                | Annonce `require_auth`.                                                                                                       |
 | Env                        | `QWEN_SERVE_NO_MCP_POOL=1`                                      | Arrête d'annoncer `mcp_workspace_pool` et `mcp_pool_restart` ; les événements MCP n'ajoutent plus le stamp `scope: 'workspace'`. |

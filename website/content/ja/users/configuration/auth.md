@@ -103,7 +103,78 @@ export OPENAI_MODEL="qwen3-coder-plus"
 >
 > Coding Plan は、標準の Dashscope エンドポイントとは異なる専用エンドポイント（`https://coding.dashscope.aliyuncs.com/v1`）を使用します。必ず正しい `baseUrl` を使用してください。
 
-## 🚀 オプション 3: API キー（柔軟）
+## 🪙 オプション 3: Alibaba Cloud Token Plan
+
+チームや企業が専用 ModelStudio エンドポイントでの従量課金を希望する場合はこれを使用します。
+
+- **仕組み**: Alibaba Cloud ModelStudio で Token Plan を契約し、リージョン固有の Token Plan エンドポイントと API キーを使用するように Qwen Code を設定します。固定月額料金ではなく、実際のトークン使用量に対して課金されます。
+- **要件**: アカウントのリージョンに応じて、[Alibaba Cloud ModelStudio(Beijing)](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) または [Alibaba Cloud ModelStudio(intl)](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model) から Token Plan API キーを取得します。
+- **メリット**: チーム・企業向けの従量課金、リージョン固有の専用エンドポイント、幅広いモデル（Qwen、DeepSeek、GLM、Kimi、Minimax など）へのアクセス。
+- **コストとクォータ**: Alibaba Cloud ModelStudio Token Plan のドキュメント [Beijing](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model) を参照してください。
+
+Token Plan は 2 つのリージョンで利用可能で、それぞれに専用エンドポイントがあります。
+
+| リージョン                    | エンドポイント                                                                 | コンソール URL                                                                                         |
+| ------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| 中国（北京）           | `https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1`     | [bailian.console.aliyun.com](https://bailian.console.aliyun.com/cn-beijing)                         |
+| シンガポール（国際） | `https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1` | [modelstudio.console.alibabacloud.com](https://modelstudio.console.alibabacloud.com/ap-southeast-1) |
+
+### インタラクティブセットアップ
+
+ターミナルに `qwen` と入力して Qwen Code を起動し、`/auth` コマンドを実行して **Alibaba ModelStudio** を選択し、サブメニューから **Token Plan** を選択します。リージョン（**中国（北京）** または **シンガポール（国際）**）を選択し、API キーを入力します。ウィザードは最終ステップ（ステップ 3/3 · モデル ID）を表示し、そこで設定するモデル ID を選択します。エンドポイントで提供されるモデルがそこで提示され、明示的に選択した場合にのみ適用されます。Token Plan API キーにはプレフィックスの要件はありません（`sk-sp-` で始まる Coding Plan キーとは異なります）。
+
+認証後、`/model` コマンドを使用して、Token Plan 用に設定されたモデルを閲覧・切り替えできます。モデルラインアップは時間とともに進化するため、ここでは意図的に一覧にしていません。エンドポイントからのモデル検出は上記の `/auth` 設定ステップで行われます（エンドポイント自身のリストがそこで提示され、明示的に選択する必要があります）。`/model` はプラン用に設定されたモデルを表示します。
+
+### ヘッドレスまたはスクリプトによるセットアップ
+
+CI、コンテナ、またはスクリプトの場合は、インタラクティブな `/auth` フローの代わりに、環境変数または `settings.json` を使用して Token Plan を設定します。
+
+```bash
+export BAILIAN_TOKEN_PLAN_API_KEY="your-api-key"
+export OPENAI_BASE_URL="https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+export OPENAI_MODEL="qwen3.7-plus"
+```
+
+中国（北京）エンドポイントには `https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1` を、国際（シンガポール）エンドポイントには `https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1` を使用します。`qwen3.7-plus` はプランに含まれる任意のモデルに置き換えてください。
+
+`BAILIAN_TOKEN_PLAN_API_KEY` はプロバイダー固有のキーです。次のセクションの `settings.json` プロバイダーエントリが存在すると有効になります。そのエントリが `envKey` として宣言するためです。環境変数だけで OpenAI 互換認証を選択するには、代わりに `OPENAI_API_KEY` をエクスポートしてください。プロバイダー固有のキーだけでは認証タイプを選択できません。
+
+### 代替案: `settings.json` による設定
+
+インタラクティブな `/auth` フローをスキップしたい場合は、以下を `~/.qwen/settings.json` に追加します。
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "qwen3.7-plus",
+        "name": "qwen3.7-plus (Token Plan)",
+        "baseUrl": "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1",
+        "description": "qwen3.7-plus from Alibaba Cloud Token Plan",
+        "envKey": "BAILIAN_TOKEN_PLAN_API_KEY"
+      }
+    ]
+  },
+  "env": {
+    "BAILIAN_TOKEN_PLAN_API_KEY": "your-api-key"
+  },
+  "security": {
+    "auth": {
+      "selectedType": "openai"
+    }
+  },
+  "model": {
+    "name": "qwen3.7-plus"
+  }
+}
+```
+
+> [!note]
+>
+> Token Plan は、標準の DashScope エンドポイントとは異なるリージョン固有の専用エンドポイント（`*.maas.aliyuncs.com`）を使用します。`baseUrl` がサブスクリプションのリージョンと一致していることを確認してください。
+
+## 🚀 オプション 4: API キー（柔軟）
 
 OpenAI、Anthropic、Google、Azure OpenAI、OpenRouter、Requesty、ModelScope、またはセルフホスト型エンドポイントなどのサードパーティプロバイダーに接続したい場合はこれを使用します。複数のプロトコルとプロバイダーをサポートします。
 
@@ -325,7 +396,7 @@ qwen --model "qwen3.5-plus"
 | 現在の認証を確認     | Qwen Code 内で `/doctor` を実行                                                              |
 | OAuth ブラウザフロー               | `qwen` をインタラクティブに実行し、`/auth` を使用。OAuth は環境変数だけでは設定できません    |
 
-`qwen auth status` などのレガシーな呼び出しは、これらの移行パスを含む削除通知を出力するようになりました。
+`qwen auth status` などのレガシーな呼び出しは、これらの移行パスをまとめた削除通知を出力するようになりました。Token Plan のエントリには両リージョンのベース URL が含まれます。
 
 ## セキュリティに関する注意事項
 

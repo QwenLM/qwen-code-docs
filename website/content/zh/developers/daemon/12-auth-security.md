@@ -5,19 +5,19 @@
 `qwen serve` 默认是一个本地守护进程，在错误配置下会成为暴露面。它的安全模型是 **分层** 的，以便错误配置时安全失效（fails closed）：
 
 1. **绑定（Bind）** — 非回环绑定且没有 bearer 令牌时 **拒绝启动**。
-2. **Bearer 认证** — `bearerAuth` 中间件使用常量时间 SHA-256 比较保护除回环上 `/health` 之外的所有路由（`require_auth` 会将其扩展到回环和 `/health`）。
-3. **主机头允许列表** — 在回环上，只接受 `localhost`、`127.0.0.1`、`[::1]`、`host.docker.internal`（加端口号）；防止 DNS 重绑定攻击。Local Control LAN 监听器是例外，它始终强制执行其通告权限的 Host 检查，无论主绑定是什么。
-4. **来源控制** — 运行时应用始终安装 `allowOriginCors`，基于可变允许列表（`MutableOriginAllowlist`）：`--allow-origin <pattern>` 条目作为种子，Local Control 在启用时添加 LAN 来源。不匹配的来源收到 403 拒绝信封。无条件拒绝墙（`denyBrowserOriginCors`）仅保留在运行时启动之前回答请求的引导应用中。
-5. **逐路由变更门控** — Wave 4 的变更路由可以选择即使在回环上也返回 `401` 响应（当未配置令牌时），使用独特的 `code: 'token_required'` 错误。
-6. **设备流认证** — 为提供商提供独立的 OAuth 表面（`POST /workspace/auth/device-flow` + GET/DELETE 于 `/:id`）。
+2. **Bearer 认证** — `bearerAuth` 中间件使用常量时间 SHA-256 比较保护普通 API 路由（`/health` 在普通回环绑定上除外，`require_auth` 会将该端点也移到 bearer 之后）。Channel webhook 入口是独立的 pre-bearer 路由，通过 `x-qwen-webhook-secret` 认证。Web Shell 文档和资源路由在所有模式下都保持 pre-auth。
+3. **主机头允许列表** — 在回环上，只接受 `localhost`、`127.0.0.1`、`[::1]`、`host.docker.internal` 或精确绑定的回环地址（加端口）；监听 80 或 443 时也接受对应的无端口形式。该允许列表防御 DNS 重绑定。Local Control LAN 监听器是例外，它始终强制执行其通告权限的 Host 检查，无论主绑定是什么。
+4. **来源控制** — 运行时应用始终在可变允许列表（`MutableOriginAllowlist`）上安装 `allowOriginCors`：`--allow-origin <pattern>` 条目作为种子，Local Control 在启用时添加 LAN 来源。不匹配的来源收到 403 拒绝信封。无条件拒绝墙（`denyBrowserOriginCors`）仅保留在运行时启动之前回答请求的引导应用中。
+5. **逐路由变更门控** — 严格路由需要操作员权限。无令牌的回环主监听器被信任；bearer 认证和配对的 Local Control 请求也符合条件。没有可信权限到达此门控的无令牌主请求会收到独特的 `code: 'token_required'` 错误。缺失或无效的配置凭证以及未配对的 Local Control 凭证由其监听器作用域的 bearer 中间件以普通的 `401 Unauthorized` 提前拒绝。
+6. **设备流认证** — 为提供商认证提供独立的 OAuth 表面（`POST /workspace/auth/device-flow` + GET/DELETE 于 `/:id`）。
 
 本文档将逐一介绍每个层次以及启动路径强制执行的显式不变量。
 
 ## 职责
 
 - 拒绝在不安全的配置下启动。
-- 对每个 HTTP 请求执行 bearer（如果已配置）+ 主机（回环）+ 来源检查。
-- 提供逐路由变更门控，供 Wave 4 路由选择启用。
+- 在配置时通过 bearer 门控普通 API 请求（受回环 `/health` 豁免约束）；保持 channel webhook 入口在其独立的共享密钥门控之后；保持回环 Host 和浏览器 Origin 检查在认证和豁免路由之前。
+- 提供 Wave 4 路由选择启用的逐路由变更门控。
 - 托管设备流注册表，驱动提供商 OAuth 流程，并通过 SSE 事件可见。
 
 ## 架构
@@ -37,7 +37,8 @@ if (opts.requireAuth && !token) {
 }
 ```
 
-允许来源通配符有其自身的拒绝规则：
+无令牌的允许来源配置限制为回环 HTTP(S) 来源；
+非 HTTP(S) 条目保留其现有处理方式：
 
 ```ts
 const parsed = parseAllowOriginPatterns(opts.allowOrigins);
@@ -46,27 +47,36 @@ if (parsed.allowAny && !token) {
     "Refusing to start with --allow-origin '*' but no bearer token configured. ...",
   );
 }
+if (findNonLoopbackHttpOrigin(parsed) && !token) {
+  throw new Error(
+    'Refusing to start with a non-loopback HTTP(S) --allow-origin but no bearer token configured. ...',
+  );
+}
 ```
 
-所有三条拒绝都是显式的启动失败（显示在 stderr / 抛给嵌入式调用者），绝不会静默忽略。#3803 中的威胁模型明确禁止允许守护进程在没有保护的情况下绑定到回环之外。
+这些拒绝是显式的启动失败（显示在 stderr / 抛给嵌入者），绝不会静默忽略。#3803 中的威胁模型明确禁止允许守护进程在开放状态下绑定到回环之外。
+
+`runQwenServe()` 解析 `localhost` 一次，将监听器固定到该地址，并在发布可信回环权限之前验证实际监听地址；如果结果不在 `127.0.0.0/8` 或 `::1` 范围内，无令牌启动失败并关闭监听器。`createServeApp()` 不拥有套接字，因此其调用者仍负责确保声明的回环主机名仅绑定到回环。声明的非回环嵌入保持严格路由、会话 shell 和 Local Control 配对材料 fail closed。它还在构造时拒绝 `requireAuth: true` 而没有非空令牌，这样非严格路由不会在无效的加固配置下意外保持开放。
 
 ### 中间件链（HTTP 请求顺序）
 
 ```mermaid
 flowchart LR
-    REQ[请求] --> SO["剥离同源 Origin<br/>(Web Shell 支持)"]
-    SO --> AO["allowOriginCors<br/>(可变允许列表: --allow-origin<br/>patterns + Local Control LAN 来源)"]
+    REQ[Request] --> SO["strip same-origin Origin<br/>(Web Shell support)"]
+    SO --> AO["allowOriginCors<br/>(mutable allowlist: --allow-origin<br/>patterns + Local Control LAN origin)"]
     AO --> HA["hostAllowlist"]
-    HA --> LOG["访问日志中间件<br/>(DaemonLogger)"]
-    LOG --> BA["bearerAuth"]
-    BA --> RL["限流中间件<br/>(启用时)"]
-    RL --> JSON["express.json<br/>(body 解析器)"]
+    HA --> LOG["access-log middleware<br/>(DaemonLogger)"]
+    LOG --> WH{"Channel webhook?"}
+    WH -->|yes| WS["x-qwen-webhook-secret<br/>+ webhook rate/body limits"]
+    WH -->|no| BA["bearerAuth"]
+    BA --> RL["rate-limit middleware<br/>(when enabled)"]
+    RL --> JSON["express.json<br/>(body parser)"]
     JSON --> TEL["daemonTelemetryMiddleware<br/>(OTel span)"]
-    TEL --> MG["逐路由: mutationGate<br/>(可选严格模式)"]
-    MG --> HANDLER["路由处理器"]
+    TEL --> MG["per-route: mutationGate<br/>(opt-in strict)"]
+    MG --> HANDLER["route handler"]
 ```
 
-`mutationGate` 是一个逐路由的中间件工厂（`createMutationGate` 返回 `mutate()`）；路由在注册时调用 `mutate()` 或 `mutate({strict: true})`。它不是全局 `app.use()` 中间件。访问日志在 `bearerAuth` 之前注册，因此 401 拒绝也会被记录。限流在 `bearerAuth` 之后、`express.json()` 之前运行，因此只有经过认证的请求才会被计数，并且在超出限制时，大体积 body 会在解析前被拒绝。
+`mutationGate` 是一个逐路由的中间件工厂（`createMutationGate` 返回 `mutate()`）；路由在注册时调用 `mutate()` 或 `mutate({strict: true})`。它不是全局 `app.use()` 中间件。访问日志在 `bearerAuth` 之前注册，因此 401 拒绝也会被记录。普通 API 限流在 `bearerAuth` 之后、`express.json()` 之前运行，因此只有经过认证的请求才会被计数，并且在超出限制时大体积 body 会在解析前被拒绝。Channel webhook 入口在 bearer 认证之前分支，并应用其自己的共享密钥检查、变更层级限流检查和 1 MiB 解析器。
 
 ### `bearerAuth`
 
@@ -79,18 +89,18 @@ flowchart LR
 
 仅限回环。维护一个按端口键控的 `Set<string>`。允许的主机：
 
-- `localhost:<port>`、`127.0.0.1:<port>`、`[::1]:<port>`、`host.docker.internal:<port>`。
-- 另外，仅在绑定到端口 80 时，包含无端口形式（`localhost`、`127.0.0.1`、`[::1]`、`host.docker.internal`）（根据 RFC 7230 §5.4 默认端口省略）。
+- `localhost:<port>`、`127.0.0.1:<port>`、`[::1]:<port>`、`host.docker.internal:<port>`，以及具有相同端口的精确绑定回环地址。最后一种形式覆盖完整的受支持 IPv4 回环范围（`127.0.0.0/8`），而不会引入无关的 Host。
+- 以及对应的无端口形式，**仅**在绑定到端口 80 或 443 时（根据 RFC 7230 §5.4 默认端口省略）。
 
 主机比较是**不区分大小写**的——Express 会标准化头名称但不会标准化值，因此 Docker 代理将 Host 大写（如 `Localhost:4170`、`HOST.docker.internal`）时，如果使用精确字符串比较会返回 403。
 
-非回环绑定会绕过主闸门（操作员选择了暴露面；bearer 令牌会阻止主机伪造）。Local Control LAN 监听器是例外：它始终强制执行其通告权限的 Host 检查，无论主绑定是什么。
+非回环绑定绕过主闸门（操作员选择了暴露面；bearer 令牌门控 Host 伪造）。Local Control LAN 监听器是例外：它始终强制执行其通告权限的 Host 检查，无论主绑定是什么。
 
 ### `denyBrowserOriginCors`（仅引导应用）
 
-拒绝任何带有 `Origin` 头的请求。CLI/SDK 从不设置 Origin；只有浏览器会设置。返回确定性的 `403 { error: 'Request denied by CORS policy' }`，而不是 `cors` 包的 error-callback 会产生的 500 HTML。运行时应用不再安装此墙 — 它运行 `allowOriginCors`，基于可变允许列表（见下文）；拒绝行为作为未匹配来源分支保留在那里。此墙保留在引导应用（run-qwen-serve.ts）中，在运行时启动之前服务请求。
+拒绝任何带有 `Origin` 头的请求。CLI/SDK 从不设置 Origin；只有浏览器会设置。返回确定性的 `403 { error: 'Request denied by CORS policy' }`，而不是 `cors` 包的 error-callback 会产生的 500 HTML。运行时应用不再安装此墙 — 它在可变允许列表上运行 `allowOriginCors`（见下文）；拒绝行为作为未匹配来源分支保留在那里。此墙保留在引导应用（run-qwen-serve.ts）中，在运行时启动之前服务请求。
 
-例外：Web Shell 在**回环**绑定上的同源 XHR 由单独的中间件（在 `server/self-origin.ts` 中）处理，该中间件在 `Origin` 与回环自身来源（`127.0.0.1`、`localhost`、`[::1]`、`host.docker.internal`）之一匹配时将其剥离。在非回环绑定上，Shell 的 XHR 携带不匹配的 `Origin`，需要为守护进程来源配置 `--allow-origin`。
+例外：Web Shell 在**回环**绑定上的同源 XHR 由单独的中间件（在 `server/self-origin.ts` 中）处理，该中间件在 `Origin` 匹配规范回环自身来源（`127.0.0.1`、`localhost`、`[::1]`、`host.docker.internal`）或精确绑定回环地址之一时将其剥离。方案匹配的无端口来源仅在其默认端口（`http` 为 80，`https` 为 443）时被接受。在非回环绑定上，Shell 的 XHR 携带不匹配的 `Origin`，需要 `--allow-origin` 配置守护进程来源。
 
 ### `allowOriginCors`（运行时应用，始终安装）
 
@@ -99,6 +109,8 @@ flowchart LR
 - 匹配的 `Origin` 值会收到 `Access-Control-Allow-Origin`、`Access-Control-Allow-Headers` 和 `Access-Control-Allow-Methods`；`OPTIONS` 预检返回 `204`。
 - 不匹配的 `Origin` 值会收到与拒绝模式相同的确定性 `403 { error: 'Request denied by CORS policy' }`。
 - `--allow-origin '*'` 需要 `--token`；否则启动拒绝。
+- 没有令牌时，HTTP(S) `--allow-origin` 值限制为回环主机。非回环浏览器来源需要令牌，否则它可能行使完整操作员权限，包括以守护进程用户身份执行代码。
+- 显式浏览器扩展来源保留其无令牌的本地自动化路径。启动日志记录任何无令牌允许的浏览器来源获得完整操作员权限。
 - `parseAllowOriginPatterns()` 在启动时验证模式语法。
 - 只有在配置此模式时，才会公布 `allow_origin` 能力标签。
 

@@ -176,6 +176,7 @@ interface WebShellSidebarOptions {
   defaultCollapsed?: boolean; // initialer eingeklappter Zustand (in localStorage persistiert)
   showCompactToggle?: boolean; // den Einklapp-Button im Chatbereich anzeigen (Standard: true)
   showSessionSourceSwitch?: boolean; // den Tasks/Channels-Umschalter anzeigen (Standard: true)
+  showLive?: boolean; // Daemon-eigene Live-Konversationen anzeigen (Standard: false)
   branding?: false | WebShellSidebarBranding;
   primaryNav?: WebShellSidebarPrimaryNavOptions;
   hideProjectHeader?: boolean; // "Projekte"-Header-Zeile ausblenden (Standard: false = angezeigt)
@@ -197,9 +198,21 @@ sidebar={{
 
 Dies entfernt den Tasks/Channels-Umschalter und fixiert jede aktive, archivierte, primäre
 und sekundäre Session-Abfrage auf `sourceType: "default"`. Das Weglassen der Option
-fixiert jede aktive, archivierte, primäre
-und sekundäre Session-Abfrage auf `sourceType: "default"`. Das Weglassen der Option
 beibehält den aktuellen Umschalter und den Zugriff auf Channel-Sessions unverändert.
+
+### Live-Konversationen — `showLive`
+
+Live-Konversationen sind standardmäßig vor eingebetteten Hosts verborgen. Aktiviere die Option, wenn
+der Host die Daemon-eigene Live-Gruppe verfügbar machen soll:
+
+Frühere Versionen haben diese Gruppe ohne explizite Option angezeigt, daher müssen Hosts,
+die sich darauf verlassen, beim Upgrade `showLive: true` setzen.
+
+```tsx
+sidebar={{
+  showLive: true,
+}}
+```
 
 ### ③ Projekt-Header — `hideProjectHeader`
 
@@ -306,10 +319,10 @@ Diese `WebShellProps` beeinflussen das Sidebar-Verhalten indirekt:
 
 ## Eingeklappter und Mobile-Status
 
-| Status    | Verhalten                                          |
-| --------- | -------------------------------------------------- |
+| Status    | Verhalten                                                                                       |
+| --------- | ---------------------------------------------------------------------------------------------- |
 | Expanded  | Vollständige Sidebar mit Text-Labels                                                                  |
-| Collapsed | Icon-Rail-Modus (nur Logo, Stift-Symbol, Aktionssymbole)                                              |
+| Collapsed | Icon-Rail-Modus (nur Logo, Stift-Symbol, Aktionssymbole)                                             |
 | Mobile    | Drawer verwendet 70% seines Containers, innerhalb der Breitenlimits, mit Backdrop- und Footer-Schließen-Steuerung |
 
 Der Einklapp-Status wird in `localStorage` unter dem Schlüssel
@@ -328,4 +341,4 @@ Desktop-Einklapp-Einstellung.
 | WorkspaceSection  | `packages/web-shell/client/components/sidebar/WorkspaceSection.tsx`       |
 | Sidebar-Styles    | `packages/web-shell/client/components/sidebar/WebShellSidebar.module.css` |
 | App-Integration   | `packages/web-shell/client/App.tsx` (nach `WebShellSidebar` suchen)         |
-| Einstiegspunkt (Dev) | `packages/web-shell/client/main.tsx` (`sidebar: true`)                 |
+| Einstiegspunkt (Dev)   | `packages/web-shell/client/main.tsx` (`sidebar: { enabled: true, showLive: true }`) |

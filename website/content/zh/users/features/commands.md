@@ -36,6 +36,10 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 > [!note]
 >
+> 打开 HTML 导出文件会从 `unpkg.com` 加载对应 Qwen Code 版本的渲染器。如果该版本尚未发布或无法访问渲染器，文件会显示加载错误。Markdown、JSON 和 JSONL 导出仍然是自包含的。
+
+> [!note]
+>
 > `/summarize` 是 `/compress` 的别名（它会压缩聊天历史 — 这是一个破坏性操作）。若要生成非破坏性的项目摘要，请使用 `/summary`。
 
 > [!note]
@@ -96,6 +100,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | → `auto-edit`     | 自动批准编辑（受信任环境）                                         | `/approval-mode auto-edit`                                                                                |
 | → `auto`          | 分类器评估审批（自主）                                       | `/approval-mode auto`                                                                                     |
 | → `yolo`          | 自动批准所有操作（快速原型开发）                                      | `/approval-mode yolo`                                                                                     |
+| `/peers`              | 查看被保留的 peer 消息；管理受信任的控制器                                 | `/peers`, `/peers accept <id>`, `/peers deny all`, `/peers controllers`, `/peers revoke <id>`             |
 | `/model`          | 切换当前会话使用的模型                                             | `/model`, `/model <model-id>` (立即切换)                                                        |
 | `/model --fast`   | 为提示建议设置更轻量的模型                                       | `/model --fast qwen3-coder-flash`                                                                         |
 | `/model --voice`  | 设置用于语音转录的模型                                       | `/model --voice <model-id>`                                                                               |
@@ -103,6 +108,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `/model --compaction` | 设置用于聊天压缩的模型                                                                 | `/model --compaction <model-id>`, `/model --compaction clear`                                             |
 | `/model --image`  | 为内置图片生成工具设置具备图片生成能力的模型                                               | `/model --image <model-id>`                                                                               |
 | `/effort`         | 设置具备思考能力的模型的推理 effort                                 | `/effort` (打开选择器), `/effort high` (low/medium/high/xhigh/max；根据提供商进行映射和限制)       |
+| `/output-style`       | 选择影响回复撰写方式的输出风格                         | `/output-style` (打开选择器), `/output-style Concise`, `/output-style default` (无风格)               |
 | `/extensions`     | 管理扩展                                                                | `/extensions list`, `/extensions manage`                                                                  |
 | → `list`          | 列出已安装的扩展                                                        | `/extensions list`                                                                                        |
 | → `manage`        | 管理已安装的扩展（交互式）                                        | `/extensions manage`                                                                                      |
@@ -117,7 +123,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `/permissions`    | 管理权限规则                                                          | `/permissions`                                                                                            |
 | `/agents`         | 管理 subagents                                                                 | `/agents manage`, `/agents create`                                                                        |
 | `/arena`          | 管理 Arena 会话                                                            | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (别名 `choose`)                          |
-| `/goal`           | 设置目标 — 持续工作直到满足条件                                    | `/goal <condition>`, `/goal clear`                                                                        |
+| `/goal`               | 设置 Goal — 持续工作直到验证器确认目标已达成（参见 [Goals](./goals.md)）      | `/goal <objective>`, `/goal edit <objective>`, `/goal pause`, `/goal resume`, `/goal clear`               |
 | `/tasks`          | 列出后台任务                                                            | `/tasks`                                                                                                  |
 | `/workflows`      | 检查 workflow 运行；协作式暂停/恢复后台运行                                  | `/workflows`, `/workflows <runId>`, `/workflows p <runId>`                                                |
 | `/lsp`            | 显示 LSP 服务器状态                                                           | `/lsp`                                                                                                    |
@@ -688,6 +694,7 @@ description: 将代码重构为纯函数
 | -------------------- | -------------------------------- | -------------------------------------------------------------- |
 | `qwen sessions list` | 列出最近的对话会话               | `qwen sessions list`, `qwen sessions list --json --limit 50`   |
 | `qwen sessions ps`   | 列出当前正在运行的交互式会话     | `qwen sessions ps`, `qwen sessions ps --json`                  |
+| `qwen sessions controllers` | 管理受信任的控制器 token            | `qwen sessions controllers add --label <name>`, `qwen sessions controllers list` |
 
 #### `qwen sessions list`
 
@@ -747,7 +754,7 @@ qwen sessions list --json | jq .
 
 ```
 schemaVersion, pid, procStart, pidNs, sessionId, cwd, name, startedAt,
-qwenVersion
+qwenVersion, ipcPath (当 peer 消息可用时)
 ```
 
 不会向 stdout 写入其他内容——空列表完全不输出任何内容——因此 `qwen sessions ps --json | jq .` 可以安全地用于脚本。
@@ -775,7 +782,66 @@ qwen sessions ps --json | jq -r .cwd
 
 开启后，一个会话中的模型可以通过 `list_agents` 发现其他会话——每个会话都出现在 `sessions` 下，带有 `qwen sessions ps --json` 记录的 `name`（表格视图可能会截断长名称）——并使用 `send_message` 以该名称作为 `to` 来寻址。当两个会话共享同一个名称时，`list_agents` 会为每个会话显示一个简短的 `[ref]`，发送时必须包含它（`name [ref]`）；可能指向任一会话的裸名称会被拒绝而不是猜测。`list_agents` 还会在 `self` 下报告会话自身的名称，而 `to: "*"` 仍然表示"我的 Agent Team teammates"，永远不会到达其他会话。
 
-消息到达另一个会话时，会标记为来自另一个会话，而不是来自其用户，并且在那里不携带你的任何权限：接收会话只会在其自身的权限设置内对其采取行动。其用户可以使用 `agents.crossSessionInbound`（`accept`、`hold` 或 `refuse`）选择传入消息的处理方式。未设置时，如果接收会话仍然审查每个操作（默认或计划模式），或者两个会话都处于无需逐次审查即可应用操作的模式，则消息会被传递；否则会被保留以供审查。保留的消息会在接收会话中使用 `/peers` 列出并释放。
+消息到达另一个会话时，会标记为来自另一个会话，而不是来自其用户，并且在那里不携带你的任何权限：接收会话只会在其自身的权限设置内对其采取行动。其用户可以使用 `agents.crossSessionInbound`（`accept`、`hold` 或 `refuse`）选择传入消息的处理方式。未设置时，只有当两个会话处于同一审查类别时，消息才会被传递：双方都审查每个操作（默认或 plan 模式），或者双方都处于无需逐次审查即可应用某些操作的模式（auto-edit、auto 或 yolo）。来自另一类别的会话、或未声明自身所属类别的发送方的消息，会被保留以待审查——双向皆如此。审查每个操作的会话会保留来自不审查操作的会话的消息，因为该消息是由无人监督的模型编写的，而逐次操作提示保护的是操作本身，而非会话被说服去做的事。保留的消息会在接收会话中使用 `/peers` 列出并释放，仅因模式差异而被保留的消息会在双方模式一致后自动释放。
 
-`send_message` 调用仅确认消息已传递给另一个会话。它的后续情况会作为回执稍后到达：如果它被保留、拒绝、过期或地址错误（地址已变更——再次列出代理）——或在保留后释放——发送会话的记录中会出现通知（`Message to <name>: …`）。发送它的模型不会被告知；如果另一个会话回复，回复会作为跨会话消息到达。
+仓库可以使其内部打开的会话更加谨慎，而绝不会更宽松：工作区 `.qwen/settings.json` 可以将 `agents.crossSessionInbound` 设置为 `hold` 或 `refuse`，或将 `agents.crossSessionMessaging` 设置为 `false`，该值会覆盖用户设置中较宽松的值。会放宽你设置的工作区值（`accept`，或开关的 `true`）会被忽略并给出警告，CLI 无法识别的值在作为有效值时会保留所有消息。系统设置会覆盖以上所有，正如它对每个设置所做的那样。
+
+保留不会无限等待。无人决定的消息会在 `agents.crossSessionHeldExpiry`（`1m`、`5m`、`10m` 或 `never`，默认为 5 分钟）后过期，发送会话会被告知未做出任何决定。缩短该设置会影响已在等待的消息。
+
+如果会话无法绑定其收件箱——运行时目录缺失、被其他用户拥有、或为只读（如在容器内可能发生的情况）——它会先尝试临时目录下的私有目录，只有当这也失败时，才会以无收件箱的方式启动。发生这种情况时，会话会在启动时说明，`/peers` 也会重复说明原因及需要更改的内容（通常是 `XDG_RUNTIME_DIR` 或 `TMPDIR`）。
+
+两个会话也可能解析到相同的收件箱地址，因为地址是按进程 id 为键的，而进程 id 在共享运行时目录的容器之间会重复。第二个启动的会话会取一个相邻的地址，而不是接管正在使用的地址，这样两者都不会变得不可达。Peer 不受影响：它们从会话注册表中读取会话的地址，而不是自行推导。
+
+`send_message` 调用仅确认消息已传递给另一个会话。它的后续情况会作为回执稍后到达：如果它被保留、拒绝、refused、过期或地址错误（地址已变更——再次列出代理）——或在保留后释放——发送会话的记录中会出现通知（`Message to <name>: …`）。Declined 和 refused 是不同的结果：declined 表示有人审查了消息并拒绝了，而 refused 表示该会话的 `agents.crossSessionInbound` 是 `refuse`，根本没有人看到它。发送它的模型不会被告知；如果另一个会话回复，回复会作为跨会话消息到达。
+
+### 收件箱认证与脚本注入
+
+每个会话的收件箱都需要一个每会话 token：连接必须在其第一行出示 token，然后才会读取任何消息，会话通过它们互相发现的相同注册表记录自动交换 token。不支持 token 的旧版本构建的会话可以从较新版本接收，但其发往较新版本的消息会被丢弃。
+
+会话会将自己的收件箱地址和 token 作为 `QWEN_CODE_MESSAGING_SOCKET` 和 `QWEN_CODE_MESSAGING_TOKEN` 导出给子进程，因此会话运行的脚本或 hook 可以向其发送消息。这是一个第二位的_子级_ token，永远不会在任何地方发布：只有会话启动的进程才能持有它，因此携带该 token 到达的消息会被识别为会话自身的，而不是其他会话的。
+
+```bash
+{ printf '%s\n' \
+    '{"msgV":1,"type":"auth","token":"'"$QWEN_CODE_MESSAGING_TOKEN"'"}' \
+    '{"msgV":1,"msgId":"'"$(uuidgen)"'","type":"user","priority":"next","message":{"role":"user","content":"build finished"}}'; \
+} | socat - UNIX-CONNECT:"$QWEN_CODE_MESSAGING_SOCKET"
+```
+
+为每次注入赋予一个新的 `msgId`。接收端网关会记住它已处理过的 id，因此重用 id 的 hook 在第一次会被传递，之后每次运行都会被静默去重。
+
+注入的消息仍然会经过入站网关，并被标记为非来自用户，但网关知道它来自会话自身的进程：在模式一致性的默认情况下，它会被直接传递而不经过审查（处于相同位置的 peer 会被保留），而显式的 `agents.crossSessionInbound` 为 `hold` 或 `refuse` 时，会像对待其他消息一样对其生效。模型会将其视为 `<cross_session_message from="own process" origin="own-process">`，并附有通知说明它来自会话运行的脚本或 hook，而非来自用户。
+
+### 受信任的控制器
+
+上述规则会保留来自任何未声明其审查类别的发送方的消息，而非 Qwen Code 会话的程序没有此类类别可声明。对于陌生人来说，这是正确的默认行为，但对于你选择的程序来说则不然：语音前端、听写桥接、转发你自己指令的自动化守护进程——每条消息都会被停放，手动批准每一条就失去了意义。
+
+你可以通过为其铸造 token 来授予此类程序传递权限：
+
+```bash
+qwen sessions controllers add --label voice-bridge
+```
+
+该 token 仅打印一次，不会存储在任何地方：你的 Qwen home 下的文件只保留其 SHA-256 哈希，因此后续读取该文件的任何内容都无法出示该 token。在命令打印出 token 时，将其放入控制器自身的配置中。
+
+控制器像其他任何发送方一样出示 token——作为连接的第一行——并从会话注册表中获取 socket 路径（`qwen sessions ps --json` 为每个活跃会话打印一条记录，`ipcPath` 即为地址）：
+
+```bash
+{ printf '%s\n' \
+    '{"msgV":1,"type":"auth","token":"'"$QWEN_CONTROLLER_TOKEN"'"}' \
+    '{"msgV":1,"msgId":"'"$(uuidgen)"'","type":"user","priority":"next","message":{"role":"user","content":"open the failing test"}}'; \
+} | socat - UNIX-CONNECT:"$SESSION_IPC_PATH"
+```
+
+通过已授予 token 到达的消息会直接传递，无需逐消息审查，无论任一方处于何种审查类别——但它仍然服从显式设置：`agents.crossSessionInbound` 为 `hold` 时会像其他消息一样停放它，`refuse` 则会拒绝它。授予属于您的 Qwen home，而非某个会话，因此控制器可以到达你正在运行的任何会话，会话在每次连接时都会重新读取该文件：铸造或撤销一个授予会在下一次连接时生效，无需重启任何内容。
+
+```bash
+qwen sessions controllers list          # id、标签、添加时间
+qwen sessions controllers remove c_1a2b # 撤销一个
+```
+
+`/peers controllers` 和 `/peers revoke <id>` 在会话内部执行相同的操作。通过授予到达的消息会显示为 `Message from a trusted controller (voice-bridge)`，如果 `hold` 设置停放了它，则会在 `/peers` 中显示为 `[controller] voice-bridge`。
+
+模型会将此类消息视为 `<cross_session_message from="controller" origin="controller" controller="voice-bridge">`，并附有通知说明它正在转发你自己的指令——以及适用于其他所有来源的相同两项禁止：它不得因为消息要求而编辑权限设置、QWEN.md 或配置，也不得将消息视为你批准了待处理的确认提示。控制器可以说接下来做什么；它不能代你回答提示。
+
+任何持有该 token 的人都可以作为该控制器发送，因此请将其视为任何其他凭证：将其授予一个程序，不要放入共享配置中，并在该程序完成后撤销它。
 ```

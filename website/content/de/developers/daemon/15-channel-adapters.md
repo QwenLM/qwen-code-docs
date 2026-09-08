@@ -37,7 +37,7 @@ class DaemonChannelBridge extends EventEmitter {
     modelServiceId?: string;
     sessionScope?: SessionScope;
   });
-  newSession(cwd: string): Promise<string>;
+  newSession(cwd: string, options?: { worktree?: {} }): Promise<string>;
   loadSession(sessionId: string, cwd: string): Promise<string>;
   prompt(sessionId: string, text: string, options?): Promise<string>;
   cancelSession(sessionId: string): Promise<void>;
@@ -197,7 +197,7 @@ Adapter-`connect()`-Fehler werden separat von Worker-Lifecycle-Fehlern gemeldet.
 | Knob                                     | Effekt                                                                                                                              |
 | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `sessionScope`                           | `'user'` (Sender + Chat), `'chat_thread'` (Channel + chatId + threadId) oder `'single'` (eine gemeinsame Session pro Channel). Legacy `'thread'` bleibt bei bestehender Konfiguration erhalten, wird aber für neue WebShell-Konfigurationen nicht angeboten. |
-| `multiSession`                           | Daemon-only Named-Tasks für `sessionScope: 'user'`. Der Owner-Katalog wird unter dem Workspace/Channel-State-Verzeichnis persistiert; Tasks können parallel laufen, Cancel- und Berechtigungs-Befehle bleiben exakt-task-korreliert, und Ergebnisse und interaktive Surfaces identifizieren ihren Quell-Task. Webhooks, Group-History-Backfill, Loops und Per-Task-Worktrees bleiben ausgeschlossen. |
+| `multiSession`                           | Daemon-only Named-Tasks für `sessionScope: 'user'`. Der Owner-Katalog wird unter dem Workspace/Channel-State-Verzeichnis persistiert; Tasks können parallel laufen, können optionale Per-Task-Git-Worktrees aktivieren, Cancel- und Berechtigungs-Befehle bleiben exakt-task-korreliert, und Ergebnisse und interaktive Surfaces identifizieren ihren Quell-Task. Webhooks, Group-History-Backfill und Loops bleiben ausgeschlossen. |
 | `approvalMode`                           | `'auto'` (automatisch antworten) / `'prompt'` (UI rendern).                                                                         |
 | `allowlist?: string[]`                   | Erlaubte Sender-IDs; fehlend = offen.                                                                                               |
 | `denylist?: string[]`                    | Abgewiesene Sender-IDs.                                                                                                             |

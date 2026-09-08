@@ -336,7 +336,7 @@ Prompt 钩子可用于大多数钩子事件，包括：
 | `PreCompact`         | 对话压缩前                              | 触发器（`manual`、`auto`）                              |
 | `Notification`       | 发送通知时                              | 类型（`permission_prompt`、`idle_prompt`、`auth_success`） |
 | `PermissionRequest`  | 显示权限对话框时                        | 工具 id                                                 |
-| `PermissionDenied`   | 工具权限被拒绝时                        | 工具 id                                                 |
+| `PermissionDenied`   | 当 AUTO 模式分类拒绝工具调用时          | 工具 id                                                 |
 | `TodoCreated`        | 创建新的 todo 项时                      | 无（始终触发）                                          |
 | `TodoCompleted`      | todo 项被标记为已完成时                 | 无（始终触发）                                          |
 
@@ -1298,6 +1298,7 @@ Hook 在 Qwen Code 设置中进行配置，通常位于 `.qwen/settings.json` �
 ```
 
 ## Hook 执行
+
 ### 并行与顺序执行
 
 - 默认情况下，hook 并行执行以提升性能
@@ -1313,7 +1314,7 @@ Hook 在 Qwen Code 设置中进行配置，通常位于 `.qwen/settings.json` �
 **特性：**
 
 - 无法返回决策控制（操作已发生）
-- 结果会在下一轮对话中通过 `systemMessage` 或 `additionalContext` 注入
+- 结果会在下一轮对话中通过 `systemMessage` 或 `additionalContext` 注入，但上述文档中忽略输出的 fire-and-forget 事件类型除外
 - 适用于审计、日志记录、后台测试等场景
 
 **示例：**

@@ -80,7 +80,7 @@ const baseUrl = validateDaemonBaseUrl(options.baseUrl);
 
 ### 웹뷰 브리징
 
-연결 클래스는 **전송 전용**입니다. 실제 VS Code 통합은 `packages/vscode-ide-companion/src/webview/providers/ChatWebviewViewProvider.ts`(및 관련 파일)에 있습니다. 프로바이더는 연결의 콜백을 구독하고 이를 웹뷰 `postMessage` 호출로 변환합니다. 웹뷰 자체는 공유 `packages/webui/` 컴포넌트 라이브러리를 사용하여 렌더링합니다. [`01-architecture.md`](./01-architecture.md)의 Adapter Matrix를 참조하세요.
+연결 클래스는 **전송 전용**입니다. 실제 VS Code 통합은 `packages/vscode-ide-companion/src/webview/providers/ChatWebviewViewProvider.ts`(및 관련 파일)에 있습니다. 프로바이더는 연결의 콜백을 구독하고 이를 웹뷰 `postMessage` 호출로 변환합니다. 웹뷰는 렌더링을 위해 Web Shell을 임베딩합니다.
 
 ### 연결 직렬화
 
@@ -169,7 +169,7 @@ sequenceDiagram
 
 - `packages/sdk-typescript/src/daemon/` — `DaemonClient`, `DaemonSessionClient`(실제 전송).
 - VS Code 확장 API(`vscode.*`) — 호스트 API, 퀵픽, 웹뷰.
-- `packages/webui/src/adapters/ACPAdapter.ts` — `postMessage`를 통해 전달된 ACP 형태 메시지의 웹뷰 렌더링.
+- `packages/web-shell/client/` — daemon 세션 이벤트에 대한 임베디드 웹뷰 렌더링.
 
 ## 설정
 
@@ -196,6 +196,6 @@ sequenceDiagram
 - `packages/vscode-ide-companion/src/services/daemonIdeConnection.ts` (`createSdkDaemonSessionFactory`)
 - `packages/vscode-ide-companion/src/types/connectionTypes.ts` (레거시 `AcpConnectionState`)
 - `packages/vscode-ide-companion/src/webview/providers/ChatWebviewViewProvider.ts` (웹뷰 브리지)
-- `packages/webui/src/adapters/ACPAdapter.ts` (웹뷰 ACP 메시지 adapter)
+- `packages/web-shell/client/` (임베디드 Web Shell 렌더러)
 - 초안 설계: [`../daemon-client-adapters/ide.md`](../daemon-client-adapters/ide.md)
 - SDK 참조: [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)

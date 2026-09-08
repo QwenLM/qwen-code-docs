@@ -4,7 +4,7 @@
 
 | Catégorie                        | Phase 1                                                                                                                                                                            | Phase 2                                                                                                                                                                                 |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Expérience utilisateur                 | ✅ UI Terminal<br>✅ Support du protocole OpenAI<br>✅ Paramètres<br>✅ OAuth<br>✅ Contrôle du cache<br>✅ Mémoire<br>✅ Compression<br>✅ Thème                                                | Meilleure UI<br>Onboarding<br>LogView<br>✅ Session<br>Permissions<br>🔄 Compatibilité multiplateforme<br>✅ Plan de codage<br>✅ Fournisseur Anthropic<br>✅ Entrée multimodale<br>✅ WebUI unifiée |
+| Expérience utilisateur                 | ✅ UI Terminal<br>✅ Support du protocole OpenAI<br>✅ Paramètres<br>✅ OAuth<br>✅ Contrôle du cache<br>✅ Mémoire<br>✅ Compression<br>✅ Thème                                                | Meilleure UI<br>Onboarding<br>LogView<br>✅ Session<br>Permission<br>🔄 Compatibilité multiplateforme<br>✅ Plan de codage<br>✅ Fournisseur Anthropic<br>✅ Entrée multimodale<br>✅ Web Shell unifié |
 | Flux de travail de codage                 | ✅ Commandes slash<br>✅ MCP<br>✅ Mode Plan<br>✅ TodoWrite<br>✅ SubAgent<br>✅ Multi-modèle<br>✅ Gestion du chat<br>✅ Outils (WebFetch, Bash, TextSearch, FileReadFile, EditFile) | 🔄 Hooks<br>✅ Skill<br>✅ Mode headless<br>✅ Outils (WebSearch)<br>✅ Support LSP<br>✅ Exécuteur concurrent                                                                              |
 | Développement de capacités ouvertes      | ✅ Commandes personnalisées                                                                                                                                                                 | ✅ SDK QwenCode<br>✅ Système d'extension                                                                                                                                                  |
 | Intégration de l'écosystème communautaire |                                                                                                                                                                                    | ✅ Plugin VSCode<br>✅ ACP/Zed<br>✅ GHA                                                                                                                                                |
@@ -19,7 +19,7 @@
 | Fonctionnalité                 | Version   | Description                                             | Catégorie                        | Phase |
 | ----------------------- | --------- | ------------------------------------------------------- | ------------------------------- | ----- |
 | **Plan de codage**         | `V0.10.0` | Authentification et modèles pour le plan de codage Alibaba Cloud       | Expérience utilisateur                 | 2     |
-| WebUI unifiée           | `V0.9.0`  | Bibliothèque de composants WebUI partagée pour VSCode/CLI           | Expérience utilisateur                 | 2     |
+| Web Shell unifié           | `V0.9.0`  | UI navigateur partagée pour VS Code et `qwen serve`           | Expérience utilisateur                 | 2     |
 | Export de chat             | `V0.8.0`  | Export des sessions en Markdown/HTML/JSON/JSONL             | Expérience utilisateur                 | 2     |
 | Système d'extension        | `V0.8.0`  | Gestion complète des extensions avec commandes slash           | Développement de capacités ouvertes      | 2     |
 | Support LSP             | `V0.7.0`  | Service LSP expérimental (`--experimental-lsp`)         | Flux de travail de codage                 | 2     |
@@ -65,7 +65,7 @@
 | ---------------------------- | -------- | ----------- | --------------------------------- | --------------------------- |
 | Meilleure UI                    | P1       | Planifié     | Interaction UI terminal optimisée | Expérience utilisateur             |
 | Onboarding                   | P1       | Planifié     | Flux d'intégration pour les nouveaux utilisateurs          | Expérience utilisateur             |
-| Permissions                   | P1       | Planifié     | Optimisation du système de permissions    | Expérience utilisateur             |
+| Permission                   | P1       | Planifié     | Optimisation du système de permissions    | Expérience utilisateur             |
 | Compatibilité multiplateforme | P1       | En cours | Compatibilité Windows/Linux/macOS | Expérience utilisateur             |
 | LogView                      | P2       | Planifié     | Fonctionnalité de visualisation et de débogage des logs | Expérience utilisateur             |
 | Hooks                        | P2       | En cours | Système de hooks d'extension            | Flux de travail de codage             |

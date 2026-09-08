@@ -79,7 +79,7 @@ qwen --continue -p "/goal"
 | `/goal resume`                       | 재개 가능한 Goal을 재개하고 헤드리스 Goal 작업을 시작한다.                                    |
 | `/goal clear`                        | 확인이나 모델 호출 없이 Goal을 초기화한다.                                     |
 
-Goal의 품질은 완료 조건에 달려 있습니다. 검증자가 판단할 수 있는 것과 없는 것에 대해서는 [Goals](./goals.md)를 참조하고, 설정 전에 목표를 초안 작성하려면 `qwen -p "/goal-draft <intent>"`를 사용하세요.
+Goal의 품질은 완료 조건에 달려 있다. 검증자가 판단할 수 있는 것과 없는 것에 대해서는 [Goals](./goals.md)를 참조하고, 설정 전에 목표를 초안 작성하려면 `qwen -p "/goal-draft <intent>"`를 사용한다.
 
 런타임에 예약된 Goal 계속 세그먼트는 `--max-session-turns`에 포함되지 않지만, 실제 사용자 프롬프트는 포함된다. 명시적인 `--max-wall-time` 및 `--max-tool-calls` 예산은 계속 적용되며, 어느 쪽을 초과하면 활성 Goal 작업이 일시 중지된 후 해당 예산 관련 오류로 런이 종료된다.
 
@@ -87,7 +87,7 @@ Goal의 품질은 완료 조건에 달려 있습니다. 검증자가 판단할 �
 
 > [!note]
 >
-> 이 동작은 표준 헤드리스 CLI 런에 적용된다. ACP는 여전히 레거시 Goal 커맨드 경로를 사용한다.
+> 이 동작은 표준 헤드리스 CLI 런에 적용된다. ACP 기반 세션(IDE 통합, Web Shell)은 `sessionGoalControl` 확장 메서드를 통해 동일한 Goal 런타임을 구동하며, 각 상태 변경을 `goal_state` 스트림 이벤트 대신 `_meta.goalState`를 포함하는 `session/update` 알림으로 수신한다.
 
 ## 메인 세션 프롬프트 커스터마이즈
 
@@ -119,7 +119,7 @@ qwen -p "Summarize this repository" \
 
 ### 출력 스타일 선택
 
-`--output-style`을 사용하여 이번 런에 내장 출력 스타일 중 하나를 선택한다. 스타일은 내장 프롬프트에 적용되는 이름 붙은 명령어 블록으로, 답변이 작성되는 방식을 변경한다 — `Concise`는 결과부터 시작하고 서두와 설명을 생략하며, `Proactive`는 제안 대신 바로 작업을 시작하고, `Explanatory`는 진행 과정에서 코드베이스에 대한 간단한 설명을 추가한다. `general.outputStyle` 설정을 재정의하며, `default`는 스타일을 선택하지 않는다.
+`--output-style`을 사용하여 이번 런에 [출력 스타일](./output-styles)(내장 또는 커스텀)을 선택한다. 스타일은 내장 프롬프트에 적용되는 이름 붙은 명령어 블록으로, 답변이 작성되는 방식을 변경한다 — `Concise`는 결과부터 시작하고 서두와 설명을 생략하며, `Proactive`는 제안 대신 바로 작업을 시작하고, `Explanatory`는 진행 과정에서 코드베이스에 대한 간단한 설명을 추가한다. `general.outputStyle` 설정을 재정의하며, `default`는 스타일을 선택하지 않는다.
 
 ```bash
 qwen -p "Why does the build fail on Windows?" --output-style Concise
@@ -257,7 +257,7 @@ qwen -p "Explain Docker" --output-format json > docker-explanation.json
 qwen -p "Add more details" >> docker-explanation.txt
 
 # 다른 도구로 파이프
-qwen -p "What is Kubernetes?" --output-format json | jq '.response'
+qwen -p "What is Kubernetes?" --output-format json | jq -r '.[-1].result'
 qwen -p "Explain microservices" | wc -w
 qwen -p "List programming languages" | grep -i "python"
 
@@ -278,7 +278,7 @@ qwen -p "Write code" --output-format stream-json --include-partial-messages | jq
 | `--include-partial-messages` | stream-json 출력에 partial 메시지 포함                                                                                                                                                                                                                                                                                                                                                                                 | `qwen -p "query" --output-format stream-json --include-partial-messages` |
 | `--system-prompt`            | 이번 런의 메인 세션 시스템 프롬프트 오버라이드                                                                                                                                                                                                                                                                                                                                                                           | `qwen -p "query" --system-prompt "You are a terse reviewer."`            |
 | `--append-system-prompt`     | 이번 런의 메인 세션 시스템 프롬프트에 추가 명령어 추가                                                                                                                                                                                                                                                                                                                                                       | `qwen -p "query" --append-system-prompt "Focus on concrete findings."`   |
-| `--output-style`             | 이번 런의 출력 스타일(`Concise`, `Proactive`, `Explanatory`, `Learning`, 또는 none인 `default`); `general.outputStyle`을 재정의                                                                                                                                                                                                                                                                                          | `qwen -p "query" --output-style Concise`                                 |
+| `--output-style`             | 이번 런의 출력 스타일(`Concise`, `Proactive`, `Explanatory`, `Learning`, 커스텀 스타일 이름, 또는 none인 `default`); `general.outputStyle`을 재정의                                                                                                                                                                                                                                                                                          | `qwen -p "query" --output-style Concise`                                 |
 | `--debug`, `-d`              | 디버그 모드 활성화                                                                                                                                                                                                                                                                                                                                                                                                              | `qwen -p "query" --debug`                                                |
 | `--safe-mode`                | 모든 커스터마이징 비활성화 — 컨텍스트 파일, hook, extension, skill, MCP 서버, 커스텀 서브에이전트(내장 서브에이전트만 로드), 권한 규칙, 설정 기반 승인 모드 오버라이드, 메모리 기능, 샌드박스 설정 — 하여 문제를 격리한다. CLI 플래그 `--yolo` 및 `--approval-mode`는 여전히 적용된다. [Troubleshooting](../support/troubleshooting) 참조. `QWEN_CODE_SAFE_MODE=true`로도 설정 가능. | `qwen -p "query" --safe-mode`                                            |
 | `--model`, `-m`              | 이번 런에 사용할 모델                                                                                                                                                                                                                                                                                                                                                                                                      | `qwen -p "query" --model qwen3-coder-plus`                               |
@@ -317,7 +317,7 @@ Qwen Code는 다음 임계값 중 하나를 초과하면 무인 런을 중단할
 
 ### 권장 조합
 
-- **신뢰할 수 있는 격리 환경(임시 CI 러너, 컨테이너):** `qwen -p "..." --yolo --max-session-turns N --max-wall-time 10m --output-format json`. 턴 예산과 실제 경과 시간 예산을 고정하여 멈춘 에이전트가 CI 분태를 소모하지 않도록 하고, `--output-format json`으로 런 후 사용량 / 도구 호출 감사를 위한 데이터를 캡처한다.
+- **신뢰할 수 있는 격리 환경(임시 CI 러너, 컨테이너):** `qwen -p "..." --yolo --max-session-turns N --max-wall-time 10m --output-format json`. 턴 예산과 실제 경과 시간 예산을 고정하여 멈춘 에이전트가 CI 시간을 소모하지 않도록 하고, `--output-format json`으로 런 후 사용량 / 도구 호출 감사를 위한 데이터를 캡처한다.
 - **로컬 머신 또는 공유 인프라:** `--sandbox`를 추가하거나 `QWEN_SANDBOX=1`을 설정하여 shell / write / edit 도구가 샌드박스 이미지 내부에서 실행되도록 한다.
 - **레이트 리밋 재시도가 포함된 장시간 CI:** `QWEN_CODE_UNATTENDED_RETRY=1`을 `--max-wall-time`과 함께 사용한다. 재시도 환경 변수는 일시적인 429 / 529 응답을 지나서 런을 유지하고, 실제 경과 시간 예산은 지속적으로 실패하는 프로바이더가 작업을 무기한 연장하지 못하도록 한다.
 - **제한된 감사 / 탐색:** 읽기 전용 작업의 경우, `--max-tool-calls 25`로 모델이 grep / read를 얼마나 적극적으로 수행할 수 있는지 제한한다. `--exclude-tools shell,write,edit`와 함께 사용하여 제한을 의미 있게 만든다.
@@ -334,14 +334,14 @@ cat src/auth.py | qwen -p "Review this authentication code for security issues" 
 
 ```bash
 result=$(git diff --cached | qwen -p "Write a concise commit message for these changes" --output-format json)
-echo "$result" | jq -r '.response'
+echo "$result" | jq -r '.[-1].result'
 ```
 
 ### API 문서
 
 ```bash
 result=$(cat api/routes.js | qwen -p "Generate OpenAPI spec for these routes" --output-format json)
-echo "$result" | jq -r '.response' > openapi.json
+echo "$result" | jq -r '.[-1].result' > openapi.json
 ```
 
 ### 배치 코드 분석
@@ -350,7 +350,7 @@ echo "$result" | jq -r '.response' > openapi.json
 for file in src/*.py; do
     echo "Analyzing $file..."
     result=$(cat "$file" | qwen -p "Find potential bugs and suggest improvements" --output-format json)
-    echo "$result" | jq -r '.response' > "reports/$(basename "$file").analysis"
+    echo "$result" | jq -r '.[-1].result' > "reports/$(basename "$file").analysis"
     echo "Completed analysis for $(basename "$file")" >> reports/progress.log
 done
 ```
@@ -359,7 +359,7 @@ done
 
 ```bash
 result=$(git diff origin/main...HEAD | qwen -p "Review these changes for bugs, security issues, and code quality" --output-format json)
-echo "$result" | jq -r '.response' > pr-review.json
+echo "$result" | jq -r '.[-1].result' > pr-review.json
 ```
 
 ### 로그 분석
@@ -372,7 +372,7 @@ grep "ERROR" /var/log/app.log | tail -20 | qwen -p "Analyze these errors and sug
 
 ```bash
 result=$(git log --oneline v1.0.0..HEAD | qwen -p "Generate release notes from these commits" --output-format json)
-response=$(echo "$result" | jq -r '.response')
+response=$(echo "$result" | jq -r '.[-1].result')
 echo "$response"
 echo "$response" >> CHANGELOG.md
 ```
@@ -381,12 +381,12 @@ echo "$response" >> CHANGELOG.md
 
 ```bash
 result=$(qwen -p "Explain this database schema" --include-directories db --output-format json)
-total_tokens=$(echo "$result" | jq -r '.stats.models // {} | to_entries | map(.value.tokens.total) | add // 0')
-models_used=$(echo "$result" | jq -r '.stats.models // {} | keys | join(", ") | if . == "" then "none" else . end')
-tool_calls=$(echo "$result" | jq -r '.stats.tools.totalCalls // 0')
-tools_used=$(echo "$result" | jq -r '.stats.tools.byName // {} | keys | join(", ") | if . == "" then "none" else . end')
+total_tokens=$(echo "$result" | jq -r '.[-1].stats.models // {} | to_entries | map(.value.tokens.total) | add // 0')
+models_used=$(echo "$result" | jq -r '.[-1].stats.models // {} | keys | join(", ") | if . == "" then "none" else . end')
+tool_calls=$(echo "$result" | jq -r '.[-1].stats.tools.totalCalls // 0')
+tools_used=$(echo "$result" | jq -r '.[-1].stats.tools.byName // {} | keys | join(", ") | if . == "" then "none" else . end')
 echo "$(date): $total_tokens tokens, $tool_calls tool calls ($tools_used) used with models: $models_used" >> usage.log
-echo "$result" | jq -r '.response' > schema-docs.md
+echo "$result" | jq -r '.[-1].result' > schema-docs.md
 echo "Recent usage trends:"
 tail -5 usage.log
 ```

@@ -11,7 +11,7 @@
 - **Renderers** (`render.ts`, `terminal.ts`, `toolPreview.ts`) : convertissent les blocs de transcript en HTML, texte de terminal et chaînes de prévisualisation d'outils. Les hôtes peuvent les utiliser ou les remplacer.
 - **Conformité** (`conformance.ts`) : tests de cohérence inter-hôtes utilisés lors de la migration des surfaces de canal, TUI et IDE vers ces primitives.
 
-Le premier consommateur en production est **`packages/webui/src/daemon/`** ([#4328](https://github.com/QwenLM/qwen-code/pull/4328)). Son `DaemonSessionProvider` React et son adaptateur de transcript permettent à l'UI web de se connecter directement au daemon HTTP+SSE au lieu de se limiter au rendu du trafic `postMessage` de l'hôte. Le CLI TUI, le canal de base et l'IDE VS Code pourront réutiliser cette même couche ultérieurement ; [`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md) documente le guide de migration incrémentale v2.
+Le premier consommateur en production a été introduit dans [#4328](https://github.com/QwenLM/qwen-code/pull/4328) et se trouve maintenant dans **`packages/web-shell/client/daemon/`**. Son `DaemonSessionProvider` React et son adaptateur de transcript permettent à Web Shell de se connecter directement au daemon HTTP+SSE. Le CLI TUI, le canal de base et l'IDE VS Code peuvent réutiliser cette même couche ; [`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md) documente le guide de migration incrémentale v2.
 
 ## Responsabilités
 
@@ -132,17 +132,19 @@ Les hôtes peuvent s'arrêter à `(E)` et implémenter leur propre reducer, ou c
 
 ## Consommateurs
 
-### `packages/webui/src/daemon/`
+### `packages/web-shell/client/daemon/`
 
 Cela a été intégré dans [#4328](https://github.com/QwenLM/qwen-code/pull/4328).
 
-| Fichier                       | Exports                                                                                                                                                                                                                                                                                                                        |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `DaemonSessionProvider.tsx` | React `<DaemonSessionProvider />` ; hooks `useDaemonSession()`, `useDaemonTranscriptStore()`, `useDaemonTranscriptState()`, `useDaemonTranscriptBlocks()`, `useDaemonPendingPermissions()`, `useDaemonActions()`, `useDaemonConnection()` ; types `DaemonConnectionStatus`, `DaemonConnectionState`, `DaemonSessionContextValue` |
-| `transcriptAdapter.ts`      | Adapte le `DaemonTranscriptBlock` du SDK en `UnifiedMessage` de l'UI web, incluant la fusion des chunks de streaming markdown et les résumés d'appels d'outils                                                                                                                                                                                        |
-| `index.ts`                  | Barrel du sous-package                                                                                                                                                                                                                                                                                                              |
+| Fichier                                | Exports                                                                                                                                                                                                                                                                                                                        |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `session/DaemonSessionProvider.tsx` | React `<DaemonSessionProvider />` ; hooks `useDaemonSession()`, `useDaemonTranscriptStore()`, `useDaemonTranscriptState()`, `useDaemonTranscriptBlocks()`, `useDaemonPendingPermissions()`, `useDaemonActions()`, `useDaemonConnection()` ; types `DaemonConnectionStatus`, `DaemonConnectionState`, `DaemonSessionContextValue` |
+| `session/index.ts`                  | Barrel de session : provider, hooks et types de session                                                                                                                                                                                                                                                                             |
+| `index.ts`                          | Barrel du sous-package                                                                                                                                                                                                                                                                                                              |
 
-L'UI web peut désormais se connecter directement au daemon HTTP+SSE et rendre un transcript. L'ancien chemin `postMessage` de l'hôte `ACPAdapter` reste disponible.
+L'adaptateur de transcript se trouve en dehors de ce répertoire : `packages/web-shell/client/adapters/transcriptAdapter.ts` exporte uniquement `extractPendingPermission(blocks): PermissionRequest | null`, qui extrait les blocs de permission non résolus du SDK pour les UIs hôtes. Les blocs de transcript eux-mêmes transitent par la couche SDK `ui/*` et `useDaemonTranscriptBlocks()` ; il n'y a pas d'adaptateur `UnifiedMessage` dans Web Shell.
+
+L'UI web peut désormais se connecter directement au daemon HTTP+SSE et rendre un transcript. L'ancien chemin `postMessage` de l'hôte `ACPAdapter` a été retiré avec le workspace WebUI legacy ; les webviews intègrent maintenant Web Shell pour le rendu (voir [`16-vscode-ide-adapter.md`](./16-vscode-ide-adapter.md)).
 
 ### Migrations ultérieures
 
@@ -163,9 +165,9 @@ L'UI web peut désormais se connecter directement au daemon HTTP+SSE et rendre u
 ## Dépendances
 
 - Types wire en amont : `packages/sdk-typescript/src/daemon/events.ts` (voir [`09-event-schema.md`](./09-event-schema.md)).
-- Consommateur réel en aval : `packages/webui/src/daemon/`.
+- Consommateur réel en aval : `packages/web-shell/client/daemon/`.
 - Cibles de migration ultérieures : `packages/cli/src/ui/`, `packages/channels/base/` et `packages/vscode-ide-companion/src/services/daemonIdeConnection.ts`.
-- Références parallèles : [`../daemon-ui/README.md`](../daemon-ui/README.md), [`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md) et [`../daemon-client-adapters/web-ui.md`](../daemon-client-adapters/web-ui.md).
+- Références parallèles : [`../daemon-ui/README.md`](../daemon-ui/README.md), [`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md) et [`../daemon-client-adapters/web-shell.md`](../daemon-client-adapters/web-shell.md).
 
 ## Configuration
 
@@ -176,7 +178,7 @@ L'UI web peut désormais se connecter directement au daemon HTTP+SSE et rendre u
 ## Mises en garde et limites connues
 
 - **`daemon-tui-adapter.ts` existe toujours**. Il s'agit de l'adaptateur expérimental legacy du package CLI. Le nouveau code doit préférer le SDK `ui/*` : `normalizeDaemonEvent`, `reduceDaemonTranscriptEvents` et `DaemonTranscriptBlock`.
-- **Le CLI TUI, le canal de base et l'IDE VS Code ne sont pas encore migrés**. Ils conservent leur propre logique de rendu. Le répertoire `docs/developers/daemon-client-adapters/` contient toujours `ide.md`, `channel-web.md` et le brouillon historique `tui.md` ; le plus récent `web-ui.md` couvre la conception de l'adaptateur d'UI web.
+- **Le CLI TUI, le canal de base et l'IDE VS Code ne sont pas encore migrés**. Ils conservent leur propre logique de rendu. Le répertoire `docs/developers/daemon-client-adapters/` contient toujours `ide.md`, `channel-web.md` et le brouillon historique `tui.md` ; le plus récent `web-shell.md` couvre la conception de l'adaptateur d'UI web.
 - **`eventId` est la clé de tri principale**. `createdAt` reste comme alias obsolète (`clientReceivedAt`). Le nouveau code doit utiliser `selectTranscriptBlocksOrderedByEventId(state)`. `MIGRATION.md` montre le diff de code pour passer du tri par `createdAt` au tri par `eventId`.
 - **Les types wire inconnus sont normalisés en `debug`**. Ils ne sont plus ignorés comme dans l'ancien adaptateur. Les renderers n'affichent pas `debug` par défaut ; les hôtes doivent explicitement l'activer pour l'afficher.
 - **Taille du bundle** : le sous-package `ui/*` est exporté en tant que sous-chemin ESM via `@qwen-code/sdk/daemon` et n'entraîne pas de dépendances React ou DOM. L'intégration React n'est chargée que lorsqu'un consommateur d'UI web utilise `DaemonSessionProvider`.
@@ -188,6 +190,6 @@ L'UI web peut désormais se connecter directement au daemon HTTP+SSE et rendre u
 - `packages/sdk-typescript/src/daemon/ui/normalizer.ts` (mapping wire vers UI)
 - `packages/sdk-typescript/src/daemon/ui/store.ts`, `render.ts`, `terminal.ts`, `toolPreview.ts`, `conformance.ts`
 - `packages/sdk-typescript/src/daemon/index.ts` (bloc de ré-exportation `ui/*`)
-- `packages/webui/src/daemon/DaemonSessionProvider.tsx`, `transcriptAdapter.ts`
-- Documentation en amont : [`../daemon-ui/README.md`](../daemon-ui/README.md), [`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md), [`../daemon-client-adapters/web-ui.md`](../daemon-client-adapters/web-ui.md)
+- `packages/web-shell/client/daemon/session/DaemonSessionProvider.tsx`, `packages/web-shell/client/adapters/transcriptAdapter.ts`
+- Documentation en amont : [`../daemon-ui/README.md`](../daemon-ui/README.md), [`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md), [`../daemon-client-adapters/web-shell.md`](../daemon-client-adapters/web-shell.md)
 - PRs de contexte : [#4328](https://github.com/QwenLM/qwen-code/pull/4328) (couche de transcript v1 et fournisseur d'UI web), [#4353](https://github.com/QwenLM/qwen-code/pull/4353) (suivi de complétude unifiée v2)

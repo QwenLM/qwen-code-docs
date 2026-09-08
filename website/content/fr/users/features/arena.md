@@ -104,23 +104,17 @@ Si vous souhaitez inspecter le cheminement de raisonnement complet avant de déc
 
 ## Configuration
 
-Le comportement d'Arena peut être personnalisé dans [settings.json](../configuration/settings.md) :
+Les paramètres d'Arena sont imbriqués sous `agents.arena` dans
+[settings.json](../configuration/settings.md). Le schéma accepte
+`maxRoundsPerAgent` et `timeoutSeconds`, mais le CLI ignore actuellement ces deux
+valeurs lors de la construction de la configuration utilisée par `/arena`. Définir l'un ou l'autre de ces champs
+ne limite donc pas les exécutions de `/arena`.
 
-```json
-{
-  "arena": {
-    "worktreeBaseDir": "~/.qwen/arena",
-    "maxRoundsPerAgent": 50,
-    "timeoutSeconds": 600
-  }
-}
-```
-
-| Réglage                   | Description                        | Valeur par défaut |
-| :------------------------ | :--------------------------------- | :--------------- |
-| `arena.worktreeBaseDir`   | Répertoire de base pour les worktrees Arena | `~/.qwen/arena` |
-| `arena.maxRoundsPerAgent` | Nombre maximal de tours de raisonnement par agent | `50`             |
-| `arena.timeoutSeconds`    | Délai d'expiration pour chaque agent en secondes | `600`            |
+| Paramètre                          | Description                                                                                          | Valeur par défaut                     |
+| :--------------------------------- | :--------------------------------------------------------------------------------------------------- | :------------------------------------ |
+| `agents.arena.worktreeBaseDir`     | Répertoire de base personnalisé pour les worktrees Arena. Utilisez un chemin absolu ; `~` n'est pas interprété. | Le répertoire `arena` de l'accueil Qwen |
+| `agents.arena.maxRoundsPerAgent`   | Accepté par le schéma, mais actuellement non transmis à `/arena` ; le définir n'a aucun effet sur l'exécution | Non défini                            |
+| `agents.arena.timeoutSeconds`      | Accepté par le schéma, mais actuellement non transmis à `/arena` ; le définir n'a aucun effet sur l'exécution | Non défini                            |
 
 ## Bonnes pratiques
 
@@ -178,9 +172,9 @@ Pour les modifications courantes comme renommer une variable ou mettre à jour u
 
 ### L'agent prend trop de temps
 
-- Augmentez le délai d'expiration : définissez `arena.timeoutSeconds` dans les paramètres
 - Réduisez la complexité de la tâche — les tâches Arena doivent être ciblées et bien définies
-- Diminuez `arena.maxRoundsPerAgent` si les agents utilisent trop de tours
+- Utilisez moins d'agents ou des modèles à plus faible latence
+- Arrêtez manuellement l'exécution de l'Arena si un agent prend trop de temps
 
 ### L'application du gagnant échoue
 

@@ -152,9 +152,9 @@ await client
   .setWorkspaceSkillEnabled('review', true, { clientId: 'dashboard-1' });
 ```
 
-프리플라이트 `capabilities.features.includes('workspace_skill_settings_toggle')`. 타입화된 `DaemonSkillToggleResult`은 trim된 요청 `skillName`, 디스크 상태 `changed` 여부, 활성화 상태(`applied`, `deferred`, `partial`), 새로고침/실패한 세션 수를 보고합니다. 이 쓰기는 설정 전용이며 이름이 `DaemonWorkspaceSkillStatus`에 나타날 것을 요구하지 않습니다. 해당 상태 타입의 선택적 false 전용 `userInvocable` 필드는 라이브 카탈로그 렌더링에 유용하지만 지속성을 제한하지는 않습니다. 지원 중단된 `workspace_skill_toggle` 태그는 이전의 카탈로그 검증 동작을 설명했으며 이 계약에서는 광고되지 않습니다.
+프리플라이트 `capabilities.features.includes('workspace_skill_settings_toggle')`. 타입화된 `DaemonSkillToggleResult`은 trim된 요청 `skillName`, 디스크 상태 `changed` 여부, 활성화 상태(`applied`, `deferred`, `reconciling`, 또는 `partial`), 새로고침/실패한 세션 수를 보고합니다. `reconciling`은 쓰기가 지속되었고 워크스페이스 코디네이터가 런타임 새로고침을 큐에 넣었음을 의미합니다. 이 쓰기는 설정 전용이며 이름이 `DaemonWorkspaceSkillStatus`에 나타날 것을 요구하지 않습니다. 해당 상태 타입의 선택적 false 전용 `userInvocable` 필드는 라이브 카탈로그 렌더링에 유용하지만 지속성을 제한하지는 않습니다. 지원 중단된 `workspace_skill_toggle` 태그는 이전의 카탈로그 검증 동작을 설명했으며 이 계약에서는 광고되지 않습니다.
 
-일괄 변경의 경우, `workspace_skill_settings_batch_toggle`를 프리플라이트하고 동일한 계약으로 두 클라이언트 형태 중 하나를 호출합니다:
+일괄 변경의 경우, `workspace_skill_settings_batch_toggle`를 프리플라이트하고 동일한 계약으로 두 클라이언트 형태 중 하나를 호출합니다. 라우트와 요청 본문은 변경되지 않습니다:
 
 ```ts
 await client.setWorkspaceSkillsEnabled(['review', 'deploy'], false, {
@@ -165,7 +165,7 @@ await client
   .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
 ```
 
-`DaemonSkillBatchToggleResult`은 정렬된 `results`, 호환성 `errors` 배열, 그리고 일괄 수준 활성화/세션 새로고침 카운트를 포함합니다. 현재 데몬은 요청 순서대로 구조적으로 유효한 모든 이름을 처리하고, 결과적으로 생성된 모든 선언 변경을 최대 한 번의 잠긴 설정 쓰기로 함께 지속하고, 변경 사항이 있으면 활성 세션을 한 번 새로고침하며, 로드된 Skill 카탈로그를 참조하지 않고 빈 `errors` 배열을 반환합니다. 기존 워크스페이스 선언이 없고 유효한 `skills.defaultDisabled` 항목도 없는 이름을 활성화하면 `changed: false`를 반환하고 쓰기를 수행하지 않습니다. 오류 항목 타입은 SDK가 이전 데몬의 응답을 계속 디코딩할 수 있도록 유지됩니다. 이 메서드는 200이 아닌 응답에서 throw합니다.
+`DaemonSkillBatchToggleResult`은 정렬된 `results`, 호환성 `errors` 배열, 그리고 일괄 수준 활성화/세션 새로고침 카운트를 포함합니다. 현재 데몬은 요청 순서대로 구조적으로 유효한 모든 이름을 처리하고, 결과적으로 생성된 모든 선언 변경을 최대 한 번의 잠긴 설정 쓰기로 함께 지속하고, 변경 사항이 있으면 활성 세션을 한 번 새로고침하며, 로드된 Skill 카탈로그를 참조하지 않고 빈 `errors` 배열을 반환합니다. 설치되지 않은 이름에 대해서도 명시적 워크스페이스 `skills.enabled` 옵트인을 기록하므로 Extension 내부 비활성화를 재정의할 수 있습니다. 동일한 반복 선언은 여전히 no-op입니다. 오류 항목 타입은 SDK가 이전 데몬의 응답을 계속 디코딩할 수 있도록 유지됩니다. 이 메서드는 200이 아닌 응답에서 throw합니다.
 
 V2 Extension 배치 활성화는 비동기 Extension 작업 모델을 유지합니다. `extension_batch_activation_v2`를 프리플라이트하고, 전역 기본 배치 또는 선택된 워크스페이스 오버라이드 배치를 제출한 다음 기존 작업 헬퍼로 폴링합니다:
 
@@ -186,6 +186,22 @@ const operation = await client.waitForExtensionOperation(workspaceHandle);
 ```
 
 최종 작업 결과는 정렬된 `results`를 포함합니다. `enabled` 또는 `disabled` 설정 시 대상이 설치되어 있을 필요는 없습니다. 데몬이 이름 선언을 저장하고 해당 이름의 Extension이 나중에 설치될 때 해당 활성화 정책을 보존합니다. 변경된 모든 대상은 하나의 Extension Store 세대와 한 번의 조정 패스를 공유합니다. 전역 기본 배치는 등록된 모든 런타임을 조정하고, 워크스페이스 배치는 선택된 신뢰 런타임만 해결하고 조정합니다. 워크스페이스 `inherit`은 정확한 오버라이드를 제거하지만 알 수 없는 이름에 대한 선언을 생성하지 않습니다. 모두 알 수 없는 이름의 제거는 조정 없이 no-op로 성공합니다. 단일 활성화 메서드는 설치된 대상만 유지합니다.
+
+워크스페이스 내부 Extension Skill 전환의 경우, `extension_state`를 프리플라이트하고 리소스 그룹화된 REST 메서드를 사용합니다. 이 메서드는 Skill 설정을 쓰거나 비활성화된 부모 Extension을 활성화하지 않습니다:
+
+```ts
+const workspace = client.workspaceByCwd('/work/secondary');
+const state = await workspace.extensionState(extensionId);
+const handle = await workspace.setExtensionState(extensionId, {
+  skills: [
+    { name: 'review', state: 'enabled' },
+    { name: 'deploy', state: 'disabled' },
+  ],
+});
+const updated = await client.waitForExtensionOperation(handle);
+```
+
+`WorkspaceExtensionState`는 매니페스트 기본값, 정확한 워크스페이스 재정의, 그리고 효과적인 설정 인식 상태를 보고합니다. 작업은 정렬된 `resourceStates.skills`를 반환하며 새로고침 경고와 함께 성공할 수 있습니다. `skills` 그룹만 지원됩니다. 이 호출을 더 높은 우선순위의 설정을 쓰는 `setWorkspaceSkillEnabled`로 다운그레이드하지 마십시오.
 
 워크스페이스 표시 이름은 선택적 프레젠테이션 메타데이터입니다. 프리플라이트 `capabilities.features.includes('workspace_display_name')`. 워크스페이스 ID와 표준 경로는 유일한 선택자이며, 중복 표시 이름도 유효합니다.
 
@@ -305,7 +321,7 @@ SDK는 또한 `packages/sdk-typescript/src/daemon/ui/`를 내보냅니다. 이�
 - 공개 상수에는 `DAEMON_PLAN_TOOL_CALL_ID`가 포함됩니다.
 - `conformance.ts`는 교차 호스트 일관성 테스트 스위트를 포함합니다.
 
-첫 프로덕션 소비자는 React의 `DaemonSessionProvider`를 통한 `packages/webui/src/daemon/`입니다. 자세한 아키텍처, 용어집, 셀렉터 테이블, 레거시 `DaemonTuiAdapter`와의 관계는 [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md)를 참조하세요.
+첫 프로덕션 소비자는 React의 `DaemonSessionProvider`를 통한 `packages/web-shell/client/daemon/`입니다. 자세한 아키텍처, 용어집, 셀렉터 테이블, 레거시 `DaemonTuiAdapter`와의 관계는 [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md)를 참조하세요.
 
 이 서브패키지는 `@qwen-code/sdk/daemon` 서브 경로에서 내보내집니다. `import { DaemonClient }`를 사용하는 기존 코드는 영향을 받지 않습니다.
 

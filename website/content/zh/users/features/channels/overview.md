@@ -63,6 +63,7 @@
 | `allowedUsers`           | 否               | 允许使用机器人的用户 ID 列表（由 `allowlist` 和 `pairing` 策略使用）                                                                                             |
 | `sessionScope`           | 否               | 会话作用域：`user`（默认）、`chat_thread` 或 `single`。旧版 `thread` 在已配置时仍兼容，但不再为新的 Web Shell 配置提供                                                  |
 | `multiSession`           | 否               | 在一个聊天中保留最多八个按所有者作用域的命名任务。需要守护进程管理模式、`sessionScope: "user"`，不使用 webhook 或群聊历史回填，且未启用频道循环                    |
+| `messagePrefix`          | 否               | 仅分发以任何前导 `@提及` 之后以此精确大小写敏感前缀开头的用户消息；前缀及其后的空白会在分发前被移除                                                                                   |
 | `cwd`                    | 否               | agent 的工作目录。默认为当前目录                                                                                                                                 |
 | `approvalMode`           | 否               | 频道会话的工具审批模式。无人值守的 webhook 任务需要 `yolo`；该设置应用于频道上的每个会话                                                                          |
 | `instructions`           | 否               | 自定义指令，会追加到每个会话的第一条消息之前                                                                                                                     |
@@ -75,6 +76,10 @@
 | `blockStreaming`         | 否               | 渐进式响应交付：`on` 或 `off`（默认）。参见 [分块流式输出](#block-streaming)                                                                                       |
 | `blockStreamingChunk`    | 否               | 分块大小边界：`{ "minChars": 400, "maxChars": 1000 }`。参见 [分块流式输出](#block-streaming)                                                                       |
 | `blockStreamingCoalesce` | 否               | 空闲刷新：`{ "idleMs": 1500 }`。参见 [分块流式输出](#block-streaming)                                                                                              |
+
+设置 `messagePrefix` 后，每条用户撰写的消息都必须以前缀和非空内容开头，例如 `/review inspect #123`。只有前缀和其前方的提及会被移除；用户在前缀之后输入的提及会原样到达 agent。共享命令和 agent 命令使用相同的规则（`/review /help`、`/review /clear` 等）。Telegram 注册的命令菜单操作仍然无需前缀即可使用——除非配置的前缀本身就是其中之一，此时前缀优先，该命令也必须带前缀发送（`/new /new`）。附件在平台支持时需要匹配的说明文字；无说明文字的 Telegram、飞书、微信、钉钉和企业微信媒体消息仍会继续运行，其占位文本不会作为群聊历史被引用回来。原生 todo、webhook 以及提供者生成的任务分配或评审请求事件也无需前缀即可运行，因为它们是系统事件而非聊天消息。
+
+有两个行为是刻意设计的，在启用前缀之前值得了解。钉钉或企业微信自动填入转录文本的语音消息被视为用户口述的文本，因此它必须像其他消息一样携带前缀，否则会被丢弃——只有未转录的语音笔记才会作为无说明文字媒体运行。而且前缀在配对之前检查，因此来自未知发送者或未批准群组的首次联系也必须携带前缀；如果不按此顺序，繁忙群组中每条未带前缀的消息都会触发配对回复，而这正是前缀要消除的噪音。请通过其他渠道告知新用户前缀，或者保持配对频道不使用前缀。
 
 ### 发送者策略
 
@@ -113,7 +118,7 @@
 
 命名结果会标识其来源任务：私聊使用 `[task]`，而群聊使用 `[sender · task]`。命名文本权限提示还会显示确切的请求 ID 以及对应的 `/approve <id>`、`/approve-always <id>` 和 `/deny <id>` 命令。该标签仅用于展示，不会存储在模型对话记录中。
 
-一个任务保持选中状态以接收下一条普通消息，但其他命名任务可能在共享工作目录中继续并发运行。创建或选择另一个任务不会取消或重新定向早期的工作，延迟的结果保留其来源任务标签。繁忙的任务无法关闭，但其活跃提示可以通过现有的频道取消行为使用 `/session cancel [<name>]` 取消。独立排队的轮次不会被取消，但在 `collect` 调度模式下，缓冲在被取消提示之后的后续消息会被该现有行为丢弃。媒体准备不会被定向。裸权限命令仅适用于选中的任务，而明确的请求 ID 可以响应所属的非活动任务。按任务的 worktree 计划在 Part 4 中实现。频道记忆仍然作用于聊天而非命名任务。
+一个任务保持选中状态以接收下一条普通消息，但其他命名任务可能继续并发运行。`/session new <name>` 共享配置的工作区，而 `/session new <name> --worktree` 在守护进程工作区的 `.qwen/worktrees/` 目录下为该任务创建一个隔离的检出。守护进程在重启后重新打开任务之前会验证持久化的 worktree 所有者；缺失、变更或外来所有权的记录会 fail closed（失败即拒绝），而不是静默地将任务移入共享工作区。创建或选择另一个任务不会取消或重新定向早期的工作，延迟的结果保留其来源任务标签。繁忙的任务无法关闭，但其活跃提示可以通过现有的频道取消行为使用 `/session cancel [<name>]` 取消。独立排队的轮次不会被取消，但在 `collect` 调度模式下，缓冲在被取消提示之后的后续消息会被该现有行为丢弃。媒体准备不会被定向。裸权限命令仅适用于选中的任务，而明确的请求 ID 可以响应所属的非活动任务。`/clear`、`/new` 和 `/reset` 也适用于选中的 worktree 任务：任务获得新的对话，同时保留其 worktree 和文件。繁忙的 worktree 任务在提示完成前会拒绝重置，worktree 记录损坏的任务会报告失败而不会触碰文件。频道记忆仍然作用于聊天而非命名任务。
 
 此模式在独立 `qwen channel start`、使用 webhook、频道或群组的 `groupHistoryLimit` 非零，或启用频道循环时不可用。如果该频道已存在启用的循环，守护进程 worker 将拒绝启动，直到循环被禁用。
 
@@ -426,10 +431,11 @@ curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates" | python3
 - `/help` —— 列出可用命令
 - `/clear` —— 清除当前会话并重新开始（别名：`/reset`、`/new`）
 - `/status` —— 显示会话信息和访问策略
+- `/btw <question>` —— 提出一个侧面问题而不中断当前任务；纯文本问题，最多 4096 个字符，需要支持侧面问题的 agent 连接
 - `/sessions [all]` —— 列出打开的命名任务，或包含已关闭的任务；仅在 `multiSession: true` 时可用
 - `/session current` —— 显示选定的命名任务
 - `/session new <name>` —— 创建并选择共享工作区任务
-- `/session new <name> --worktree` —— 已识别但推迟到 Part 4
+- `/session new <name> --worktree` —— 创建并选择位于其自身 Git worktree 中的任务；仅限守护进程管理的命名任务模式
 - `/session use <name>` —— 选择打开的任务或重新打开已关闭的任务
 - `/session cancel [<name>]` —— 取消选中任务的活跃提示，或指定另一个所属任务；独立排队的轮次不会被取消，但 `collect` 模式下缓冲在被取消提示之后的后续消息会被现有取消行为丢弃；媒体准备不会被定向
 - `/session close <name>` —— 关闭任务但不删除其对话记录
@@ -437,8 +443,6 @@ curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates" | python3
 - `/loop list` —— 列出当前聊天的循环
 - `/loop inspect <id>` —— 显示循环状态和运行详情
 - `/loop cancel <id>` —— 禁用循环
-
-所有其他斜杠命令（例如 `/compress`、`/summary`）都会转发给 agent。命名任务命令仅在启用该模式时注册，因此 `/sessions` 对现有配置仍保持 agent 可见。
 
 所有其他斜杠命令（例如 `/compress`、`/summary`）都会转发给 agent。命名任务命令仅在启用该模式时注册，因此 `/sessions` 对现有配置仍保持 agent 可见。
 

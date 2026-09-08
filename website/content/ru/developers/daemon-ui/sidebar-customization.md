@@ -175,6 +175,7 @@ interface WebShellSidebarOptions {
   defaultCollapsed?: boolean; // initial collapsed state (persisted in localStorage)
   showCompactToggle?: boolean; // show the collapse button in the chat area (default: true)
   showSessionSourceSwitch?: boolean; // show the Tasks/Channels switch (default: true)
+  showLive?: boolean; // show daemon-owned Live conversations (default: false)
   branding?: false | WebShellSidebarBranding;
   primaryNav?: WebShellSidebarPrimaryNavOptions;
   hideProjectHeader?: boolean; // hide "Projects" header row (default: false = shown)
@@ -197,6 +198,20 @@ sidebar={{
 Это удаляет переключатель Tasks/Channels и фиксирует все запросы активных, архивных, первичных
 и вторичных сессий на `sourceType: "default"`. Если опция не указана, текущий переключатель
 и доступ к сессиям каналов остаются без изменений.
+
+### Live conversations — `showLive`
+
+Live conversations скрыты от встроенных хостов по умолчанию. Включите явно, если
+хост должен предоставлять группу Live, принадлежащую демону:
+
+Предыдущие версии отображали эту группу без явной опции, поэтому хосты,
+которые зависят от неё, должны установить `showLive: true` при обновлении.
+
+```tsx
+sidebar={{
+  showLive: true,
+}}
+```
 
 ### ③ Project Header — `hideProjectHeader`
 
@@ -324,4 +339,4 @@ sidebar={{
 | WorkspaceSection    | `packages/web-shell/client/components/sidebar/WorkspaceSection.tsx`       |
 | Sidebar styles      | `packages/web-shell/client/components/sidebar/WebShellSidebar.module.css` |
 | App integration     | `packages/web-shell/client/App.tsx` (search `WebShellSidebar`)            |
-| Entry point (dev)   | `packages/web-shell/client/main.tsx` (`sidebar: true`)                    |
+| Entry point (dev)   | `packages/web-shell/client/main.tsx` (`sidebar: { enabled: true, showLive: true }`) |

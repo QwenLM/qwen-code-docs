@@ -30,7 +30,7 @@ Agent Arena usa significativamente mais tokens do que uma única sessão (cada a
 
 ## Iniciar uma sessão na arena
 
-Use o comando de barra `/arena` para iniciar uma sessão. Especifique os modelos que deseja competir e a tarefa:
+Use o comando slash `/arena` para iniciar uma sessão. Especifique os modelos que deseja competir e a tarefa:
 
 ```
 /arena --models qwen3.5-plus,glm-5,kimi-k2.5 "Refatorar o módulo de autenticação para usar tokens JWT"
@@ -104,23 +104,17 @@ Se você quiser inspecionar o caminho completo de raciocínio antes de decidir, 
 
 ## Configuração
 
-O comportamento da Arena pode ser personalizado em [settings.json](../configuration/settings.md):
+As configurações da Arena estão aninhadas sob `agents.arena` em
+[settings.json](../configuration/settings.md). O schema aceita
+`maxRoundsPerAgent` e `timeoutSeconds`, mas o CLI atualmente descarta ambos
+os valores ao construir a configuração usada por `/arena`. Definir qualquer
+um desses campos, portanto, não limita as execuções do `/arena`.
 
-```json
-{
-  "arena": {
-    "worktreeBaseDir": "~/.qwen/arena",
-    "maxRoundsPerAgent": 50,
-    "timeoutSeconds": 600
-  }
-}
-```
-
-| Configuração                | Descrição                                    | Padrão          |
-| :-------------------------- | :------------------------------------------- | :-------------- |
-| `arena.worktreeBaseDir`   | Diretório base para as worktrees da arena    | `~/.qwen/arena` |
-| `arena.maxRoundsPerAgent` | Número máximo de rodadas de raciocínio por agente | `50`            |
-| `arena.timeoutSeconds`    | Timeout para cada agente em segundos          | `600`           |
+| Configuração                       | Descrição                                                                                              | Padrão                           |
+| :--------------------------------- | :----------------------------------------------------------------------------------------------------- | :------------------------------- |
+| `agents.arena.worktreeBaseDir`     | Diretório base personalizado para worktrees da Arena. Use um caminho absoluto; `~` não é expandido.    | O diretório `arena` home do Qwen |
+| `agents.arena.maxRoundsPerAgent`   | Aceito pelo schema, mas atualmente não encaminhado para `/arena`; defini-lo não tem efeito na execução | Não definido                     |
+| `agents.arena.timeoutSeconds`      | Aceito pelo schema, mas atualmente não encaminhado para `/arena`; defini-lo não tem efeito na execução | Não definido                     |
 
 ## Melhores práticas
 
@@ -168,7 +162,8 @@ Para alterações rotineiras, como renomear uma variável ou atualizar um arquiv
 
 - Verifique se cada modelo em `--models` está configurado corretamente com credenciais de API válidas
 - Verifique se seu diretório de trabalho é um repositório Git (worktrees exigem Git)
-- Certifique-se de que você tem acesso de escrita ao diretório base das worktrees (`~/.qwen/arena/` por padrão)
+- Certifique-se de que você tem acesso de escrita ao diretório `arena` sob o diretório
+  home do Qwen (o diretório base padrão das worktrees)
 
 ### Falha na criação da worktree
 
@@ -178,9 +173,9 @@ Para alterações rotineiras, como renomear uma variável ou atualizar um arquiv
 
 ### Agente demorando demais
 
-- Aumente o timeout: defina `arena.timeoutSeconds` nas configurações
 - Reduza a complexidade da tarefa — as tarefas da Arena devem ser focadas e bem definidas
-- Diminua `arena.maxRoundsPerAgent` se os agentes estiverem gastando muitas rodadas
+- Use menos agentes ou modelos com menor latência
+- Pare a execução da Arena manualmente se um agente estiver demorando demais
 
 ### Falha ao aplicar o vencedor
 

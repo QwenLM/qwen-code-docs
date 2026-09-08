@@ -37,7 +37,7 @@ class DaemonChannelBridge extends EventEmitter {
     modelServiceId?: string;
     sessionScope?: SessionScope;
   });
-  newSession(cwd: string): Promise<string>;
+  newSession(cwd: string, options?: { worktree?: {} }): Promise<string>;
   loadSession(sessionId: string, cwd: string): Promise<string>;
   prompt(sessionId: string, text: string, options?): Promise<string>;
   cancelSession(sessionId: string): Promise<void>;
@@ -197,7 +197,7 @@ Les échecs de `connect()` des adaptateurs sont rapportés séparément des erre
 | Knob                                       | Effet                                                                                                    |
 | ---------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `sessionScope`                           | `'user'` (expéditeur + chat), `'chat_thread'` (canal + chatId + threadId), ou `'single'` (une session partagée par canal). L'ancien `'thread'` est préservé lorsqu'il est déjà configuré mais n'est pas proposé pour les nouvelles configurations Web Shell. |
-| `multiSession`                           | Tâches nommées daemon-only pour `sessionScope: 'user'`. Le catalogue propriétaire est persisté sous le répertoire d'état workspace/canal ; les tâches peuvent s'exécuter concurremment, les commandes d'annulation et de permission restent corrélées à la tâche exacte, et les résultats et surfaces interactives identifient leur tâche source. Les webhooks, le backfill d'historique de groupe, les boucles et les worktrees par tâche restent exclus. |
+| `multiSession`                           | Tâches nommées daemon-only pour `sessionScope: 'user'`. Le catalogue propriétaire est persisté sous le répertoire d'état workspace/canal ; les tâches peuvent s'exécuter concurremment, peuvent activer des worktrees Git par tâche, les commandes d'annulation et de permission restent corrélées à la tâche exacte, et les résultats et surfaces interactives identifient leur tâche source. Les webhooks, le backfill d'historique de groupe, les boucles et les worktrees par tâche restent exclus. |
 | `approvalMode`                           | `'auto'` (réponse automatique) / `'prompt'` (affichage de l'UI).                                                         |
 | `allowlist?: string[]`                   | IDs des expéditeurs autorisés ; vide = ouvert à tous.                                                                       |
 | `denylist?: string[]`                    | IDs des expéditeurs refusés.                                                                                        |

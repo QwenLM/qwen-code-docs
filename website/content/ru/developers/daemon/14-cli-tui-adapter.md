@@ -11,7 +11,7 @@
 - **Рендереры** (`render.ts`, `terminal.ts`, `toolPreview.ts`): преобразуют блоки транскрипта в HTML, текст терминала и строки предпросмотра инструментов. Хосты могут использовать их или заменить своими.
 - **Соответствие** (`conformance.ts`): кросс-хостовые тесты на согласованность, используемые при миграции каналов, TUI и IDE на эти примитивы.
 
-Первым production-потребителем является **`packages/webui/src/daemon/`** ([#4328](https://github.com/QwenLM/qwen-code/pull/4328)). Его React-`DaemonSessionProvider` и адаптер транскрипта позволяют веб-UI подключаться напрямую к HTTP+SSE демона вместо того, чтобы просто рендерить трафик `postMessage` хоста. CLI TUI, база каналов и VS Code IDE смогут переиспользовать этот же слой позже; [`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md) документирует руководство по инкрементальной миграции v2.
+Первым production-потребителем является **`packages/web-shell/client/daemon/`** ([#4328](https://github.com/QwenLM/qwen-code/pull/4328)). Его React `DaemonSessionProvider` и адаптер транскрипта позволяют Web Shell подключаться напрямую к HTTP+SSE демона. CLI TUI, база каналов и VS Code IDE могут переиспользовать этот же слой; [`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md) документирует руководство по инкрементальной миграции v2.
 
 ## Зоны ответственности
 
@@ -132,17 +132,19 @@ flowchart LR
 
 ## Потребители
 
-### `packages/webui/src/daemon/`
+### `packages/web-shell/client/daemon/`
 
 Это было добавлено в [#4328](https://github.com/QwenLM/qwen-code/pull/4328).
 
-| Файл                        | Экспорты                                                                                                                                                                                                                                                                                                                        |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `DaemonSessionProvider.tsx` | React `<DaemonSessionProvider />`; хуки `useDaemonSession()`, `useDaemonTranscriptStore()`, `useDaemonTranscriptState()`, `useDaemonTranscriptBlocks()`, `useDaemonPendingPermissions()`, `useDaemonActions()`, `useDaemonConnection()`; типы `DaemonConnectionStatus`, `DaemonConnectionState`, `DaemonSessionContextValue` |
-| `transcriptAdapter.ts`      | Адаптирует `DaemonTranscriptBlock` из SDK в `UnifiedMessage` веб-UI, включая слияние чанков потокового markdown и сводки вызовов инструментов                                                                                                                                                                                        |
-| `index.ts`                  | Barrel подпакета                                                                                                                                                                                                                                                                                                              |
+| Файл                                | Экспорты                                                                                                                                                                                                                                                                                                                        |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `session/DaemonSessionProvider.tsx` | React `<DaemonSessionProvider />`; `useDaemonSession()`, `useDaemonTranscriptStore()`, `useDaemonTranscriptState()`, `useDaemonTranscriptBlocks()`, `useDaemonPendingPermissions()`, `useDaemonActions()`, `useDaemonConnection()` хуки; `DaemonConnectionStatus`, `DaemonConnectionState`, `DaemonSessionContextValue` типы |
+| `session/index.ts`                  | Session barrel: провайдер, хуки и типы сессии                                                                                                                                                                                                                                                                                      |
+| `index.ts`                          | Barrel подпакета                                                                                                                                                                                                                                                                                                              |
 
-Теперь веб-UI может подключаться напрямую к HTTP+SSE демона и рендерить транскрипт. Старый путь хоста `postMessage` через `ACPAdapter` остается доступным.
+Адаптер транскрипта находится вне этой директории: `packages/web-shell/client/adapters/transcriptAdapter.ts` экспортирует только `extractPendingPermission(blocks): PermissionRequest | null`, поднимая неразрешенные блоки разрешений SDK для UI-хостов. Сами блоки транскрипта проходят через слой SDK `ui/*` и `useDaemonTranscriptBlocks()`; в Web Shell отсутствует адаптер `UnifiedMessage`.
+
+Веб-UI теперь может подключаться напрямую к HTTP+SSE демона и рендерить транскрипт. Старый путь хоста `postMessage` через `ACPAdapter` был выведен из эксплуатации вместе с устаревшим рабочим пространством WebUI; веб-представления теперь встраивают Web Shell для рендеринга (см. [`16-vscode-ide-adapter.md`](./16-vscode-ide-adapter.md)).
 
 ### Последующие миграции
 
@@ -163,9 +165,9 @@ flowchart LR
 ## Зависимости
 
 - Wire-типы из вышестоящего кода: `packages/sdk-typescript/src/daemon/events.ts` (см. [`09-event-schema.md`](./09-event-schema.md)).
-- Реальный нижестоящий потребитель: `packages/webui/src/daemon/`.
+- Реальный нижестоящий потребитель: `packages/web-shell/client/daemon/`.
 - Цели для последующей миграции: `packages/cli/src/ui/`, `packages/channels/base/` и `packages/vscode-ide-companion/src/services/daemonIdeConnection.ts`.
-- Параллельные ссылки: [`../daemon-ui/README.md`](../daemon-ui/README.md), [`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md) и [`../daemon-client-adapters/web-ui.md`](../daemon-client-adapters/web-ui.md).
+- Параллельные ссылки: [`../daemon-ui/README.md`](../daemon-ui/README.md), [`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md) и [`../daemon-client-adapters/web-shell.md`](../daemon-client-adapters/web-shell.md).
 
 ## Конфигурация
 
@@ -176,7 +178,7 @@ flowchart LR
 ## Ограничения и известные нюансы
 
 - **`daemon-tui-adapter.ts` все еще существует**. Это устаревший экспериментальный адаптер пакета CLI. В новом коде следует предпочитать SDK `ui/*`: `normalizeDaemonEvent`, `reduceDaemonTranscriptEvents` и `DaemonTranscriptBlock`.
-- **CLI TUI, база каналов и VS Code IDE еще не мигрированы**. Они по-прежнему используют собственную логику рендеринга. В директории `docs/developers/daemon-client-adapters/` все еще находятся `ide.md`, `channel-web.md` и исторический черновик `tui.md`; более новый `web-ui.md` описывает дизайн адаптера веб-UI.
+- **CLI TUI, база каналов и VS Code IDE еще не мигрированы**. Они по-прежнему используют собственную логику рендеринга. В директории `docs/developers/daemon-client-adapters/` все еще находятся `ide.md`, `channel-web.md` и исторический черновик `tui.md`; более новый `web-shell.md` описывает дизайн адаптера веб-UI.
 - **`eventId` является первичным ключом сортировки**. `createdAt` остается как устаревший алиас (`clientReceivedAt`). В новом коде следует использовать `selectTranscriptBlocksOrderedByEventId(state)`. В `MIGRATION.md` показан diff кода для переключения с сортировки по `createdAt` на сортировку по `eventId`.
 - **Неизвестные типы wire-событий нормализуются в `debug`**. Они больше не отбрасываются, как в старом адаптере. Рендереры не отображают `debug` по умолчанию; хосты должны явно включить его отображение.
 - **Размер бандла**: подпакет `ui/*` экспортируется как ESM-подпуть через `@qwen-code/sdk/daemon` и не подтягивает зависимости React или DOM. Интеграция с React загружается только тогда, когда потребитель веб-UI использует `DaemonSessionProvider`.
@@ -188,6 +190,6 @@ flowchart LR
 - `packages/sdk-typescript/src/daemon/ui/normalizer.ts` (маппинг wire-событий в UI)
 - `packages/sdk-typescript/src/daemon/ui/store.ts`, `render.ts`, `terminal.ts`, `toolPreview.ts`, `conformance.ts`
 - `packages/sdk-typescript/src/daemon/index.ts` (блок реэкспорта `ui/*`)
-- `packages/webui/src/daemon/DaemonSessionProvider.tsx`, `transcriptAdapter.ts`
-- Вышестоящая документация: [`../daemon-ui/README.md`](../daemon-ui/README.md), [`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md), [`../daemon-client-adapters/web-ui.md`](../daemon-client-adapters/web-ui.md)
+- `packages/web-shell/client/daemon/session/DaemonSessionProvider.tsx`, `packages/web-shell/client/adapters/transcriptAdapter.ts`
+- Вышестоящая документация: [`../daemon-ui/README.md`](../daemon-ui/README.md), [`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md), [`../daemon-client-adapters/web-shell.md`](../daemon-client-adapters/web-shell.md)
 - Контекстные PR: [#4328](https://github.com/QwenLM/qwen-code/pull/4328) (слой транскрипта v1 и провайдер веб-UI), [#4353](https://github.com/QwenLM/qwen-code/pull/4353) (последующее унифицированное дополнение v2)

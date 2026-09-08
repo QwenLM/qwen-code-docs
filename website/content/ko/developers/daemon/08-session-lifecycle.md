@@ -47,7 +47,7 @@ stateDiagram-v2
     Died --> [*]: session_died terminal frame
 ```
 
-### Attach vs Spawn
+### Attach vs spawn
 
 `sessionScope: 'single'`(기본값)에서 브리지의 `defaultEntry`는 모든 연결 클라이언트가 공유합니다. `defaultEntry`가 이미 존재하는 상태에서 `POST /session`이 도착하면 새 ACP 자식을 생성하지 않고 `attached: true`를 반환합니다. 브리지는 `attachCount`를 동기적으로 증가시키고 호출자의 `X-Qwen-Client-Id`를 `clientIds`에 등록합니다.
 
@@ -57,7 +57,7 @@ stateDiagram-v2
 
 `X-Qwen-Client-Id`는 **선택 사항**이지만 **강력히 권장**됩니다. 데몬이 호출자를 대신해 생성하지 않습니다. 클라이언트가 직접 선택하여 요청 간에 재사용하면, 데몬이 투표 귀인, 이벤트 감사, 재연결 감지를 수행할 수 있습니다.
 
-각 독립 컨트롤러는 고유하고 안정적인 ID를 사용해야 합니다. WebUI는 기본적으로 `webui_` 접두사로 ID를 생성합니다. 호스트와 임베디드 WebShell은 의도적으로 하나의 논리적 컨트롤러로 동작할 때만 ID를 공유해야 합니다. 일단 공유되면 데몬 로그는 어느 쪽이 요청을 발생시켰는지 구별할 수 없습니다.
+각 독립 컨트롤러는 고유하고 안정적인 ID를 사용해야 합니다. Web Shell은 호환성을 위해 역사적 `webui_` 접두사를 유지합니다. 호스트와 임베디드 Web Shell은 의도적으로 하나의 논리적 컨트롤러로 동작할 때만 ID를 공유해야 합니다. 일단 공유되면 데몬 로그는 어느 쪽이 요청을 발생시켰는지 구별할 수 없습니다.
 
 검증 규칙:
 
@@ -110,6 +110,10 @@ sequenceDiagram
 
 1. 채널의 세션별 `pendingRestoreIds` 집합을 사용해 동시 복원 호출을 병합(`RestoreInProgressError`).
 2. 엔트리에 `restoreState`를 캐시하여 늦게 연결하는 클라이언트도 원래 복원자와 동일한 페이로드를 받도록 함.
+
+영속화된 Part 4A worktree 세션의 경우, 복원은 이 생명주기의 무결성 검증 기반 확장입니다. 사이드카는 요청된 워크스페이스 루트를 명시적으로 식별하며, 체크아웃은 해당 `.qwen/worktrees/` 디렉토리 아래에 정규적으로 포함되어야 하고, 그 마커는 정확히 복원된 세션 ID를 포함하는 단일 링크 일반 파일이어야 합니다. 데몬은 이 검사들을 통과한 후에만 유휴 상태의 복원된 자식을 재배치합니다. 활성 자식은 보고된 cwd가 이미 worktree와 동일할 때만 허용되며, 보고된 cwd가 없거나 다른 곳에 있는 활성 자식은 프롬프트 아래에서 재배치되는 대신 실패를 닫습니다. 단, 복원 프롬프트를 지연할 수 없는 콜드 복원은 예외입니다(`suppressWorktreeContextRestore`가 꺼져 있어 브리지가 질문을 주차하지 않고 다시 전송한 경우). 이 형태는 pre-4B 결과를 유지하여 `worktreeState` 없이 정규 worktree 메타데이터를 반환하며, 재배치되지 않고 세션이 생존합니다. 재배치 및 허용된 응답은 `worktreeState: "persisted-v1"`과 함께 정규 worktree 메타데이터를 반환합니다. `supersededBy`를 가진 사이드카는 절대 복원되지 않습니다. 라우트는 대체 세션 id와 함께 `409 worktree_session_superseded`를 반환합니다. 이 분류는 마커 읽기 전에 해당 링크만으로 결정되므로, 호출자는 해당 id의 로드가 성공한 후에만 리디렉션하고 bookkeeping을 복구합니다. pre-commit 중단된 전송은 마커 소유자가 아닌 대체자를 지명하며, 자체적으로 복원될 수 없고 재시도된 리셋에 의해 정리됩니다. `supersedes` 링크가 이전 사이드카와 일치하지만 마커가 이동하지 않았거나 존재하지 않는 복원된 대체자는 `409 worktree_reset_interrupted`를 반환하며, 복구는 초과된 세션에 대해 리셋을 재시도하는 것입니다. 일치하는 링크 쌍 없이 마커가 누락된 경우 `409 worktree_marker_missing`를 반환하며, 복구는 복원을 재시도하는 것이 아니라 작업을 리셋하는 것입니다. 어떤 복원 경로도 마커를 재생성하지 않기 때문입니다. 중단 분류가 먼저 확인됩니다. 잘못된 Part 4A 상태는 기존 연결을 분리하거나 `requireZeroAttaches`로 콜드 복원을 종료합니다. 누락된 사이드카 역시 증명을 제공하지 않습니다. 유효한 복원 소스가 Channel 소유인 경우, 라우트는 Part 4A 또는 분류 불가능한 사이드카 상태에 대한 ACP 에이전트의 best-effort 정리를 억제하여 검증 실패 시 불확실한 체크아웃 증거를 보존합니다. 영속화된 소스 메타데이터가 우선하며, 없을 때 로드/재개 요청이 유효한 소스를 제공합니다. `workspaceCwd` 없는 구조적으로 유효한 레거시 사이드카는 기존 best-effort 에이전트 복원을 유지합니다: 요청된 워크스페이스 루트 또는 Git 저장소 최상위 레벨 중 하나를 식별해야 하며, 마커 증명 없이 포함 검사를 받고, 에이전트에 의해 정리될 수 있으며, `worktreeState` 없이 `worktree`를 반환할 수 있습니다. 명시적 레거시 호환성 경우를 제외하고, 유효한 복원 소스가 Channel 소유가 아닌 세션만 라우트 검증 전에 기존 best-effort 정리를 유지합니다.
+
+Worktree 소유권 이전(`POST /session/:id/worktree-reset`, `session_worktree_reset_v1`로 광고)은 Channel 작업 리셋을 위해 이 생명주기를 확장합니다: 데몬은 루트 워크스페이스에 새로운 스레드 범위 대체자를 생성하고, 검증된 체크아웃으로 재배치하며, 사이드카 쌍을 연결합니다(먼저 이전 세션에 `supersededBy`, 그 다음 대체자에 `supersedes`). 체크아웃별 라우트 락과 프롬프트 허용을 포함하여 체크아웃에서 작업을 시작하거나 세션 cwd를 이동하는 7개의 다른 작성자(rewind, cwd 변경, branch, fork, shell, goal control, workflow-task 작업)를 펜싱하는 허용 배리어 하에서 마커를 대체자로 전환합니다. 이 경우 release 및 stop 경로는 설계상 펜싱되지 않습니다. 그런 다음 초과된 세션의 클라이언트 등록과 인메모리 worktree 연관을 차단합니다. 차단 결과는 초과된 세션이 실제로 사라졌는지 보고합니다: 자식이 아직 백그라운드 작업을 보유하고 있는 생존자는 배리어를 무장 상태로 유지하고, 로그에 기록되며, 성공 응답으로 덮어쓰는 대신 호출자에게 `supersededSessionLive: true`로 보고됩니다. 전송 중 초과된 세션에서 허용된 펜싱 작성자는 `409 worktree_reset_active`로 거부됩니다. 재시도가 어떤 크래시 창을 되돌리고 어떤 것이 운영자 복구를 위해 실패를 닫는지를 포함한 전체 실패 분류는 `qwen-serve-protocol.md`의 라우트와 함께 문서화되어 있습니다.
 
 ### 하트비트
 
@@ -235,7 +239,7 @@ spawn 소유 클라이언트의 HTTP 응답을 작성할 수 없을 때(TCP 핸�
 - `BridgeOptions.initializeTimeoutMs`(기본값 10s) — ACP 자식 시작 기한(Channel 팩토리 + `initialize` 핸드셰이크) 및 기본 요청 타임아웃.
 - `BridgeOptions.sessionRestoreTimeoutMs`(기본값 60s) — ACP `loadSession` / `unstable_resumeSession` 기한. 기본값 60s이며, 명시적으로 설정된 initialize 타임아웃이 이를 올릴 수 있지만 낮출 수는 없습니다.
 - `BridgeOptions.channelIdleTimeoutMs`(설정되지 않거나 `0`이면 런타임 작업 소진 후 정리. 단, 일반 예열은 첫 사용을 위해 보존됨. 양수 값 또는 활성 킵얼라이브는 정리를 지연시키며, 더 긴 지연이 우선됨).
-- Capability 태그: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`(더 이상 사용되지 않는 별칭), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
+- Capability 태그: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`(더 이상 사용되지 않는 별칭), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_resources`, `session_status`, `non_blocking_prompt`.
 
 ### 무상태 생성(`session_generation` capability 태그)
 

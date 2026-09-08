@@ -169,6 +169,7 @@ interface WebShellSidebarOptions {
   defaultCollapsed?: boolean; // initial collapsed state (persisted in localStorage)
   showCompactToggle?: boolean; // show the collapse button in the chat area (default: true)
   showSessionSourceSwitch?: boolean; // show the Tasks/Channels switch (default: true)
+  showLive?: boolean; // show daemon-owned Live conversations (default: false)
   branding?: false | WebShellSidebarBranding;
   primaryNav?: WebShellSidebarPrimaryNavOptions;
   hideProjectHeader?: boolean; // hide "Projects" header row (default: false = shown)
@@ -188,6 +189,18 @@ sidebar={{
 ```
 
 これにより Tasks/Channels スイッチが削除され、アクティブ、アーカイブ、プライマリ、セカンダリのすべてのセッションクエリが `sourceType: "default"` に固定されます。このオプションを省略すると、現在のスイッチとチャネルセッションへのアクセスは変更されません。
+
+### Live コンバセーション — `showLive`
+
+Live コンバセーションは、デフォルトでは埋め込みホストから非表示です。ホストがデーモン所有の Live グループを公開する必要がある場合はオプトインしてください。
+
+以前のリリースでは明示的なオプションなしでこのグループが表示されていたため、これに依存するホストはアップグレード時に `showLive: true` を設定する必要があります。
+
+```tsx
+sidebar={{
+  showLive: true,
+}}
+```
 
 ### ③ プロジェクトヘッダー — `hideProjectHeader`
 
@@ -307,5 +320,5 @@ sidebar={{
 | WorkspaceSection     | `packages/web-shell/client/components/sidebar/WorkspaceSection.tsx`         |
 | Sidebar styles       | `packages/web-shell/client/components/sidebar/WebShellSidebar.module.css`   |
 | App integration      | `packages/web-shell/client/App.tsx`（`WebShellSidebar` を検索）              |
-| Entry point (dev)    | `packages/web-shell/client/main.tsx`（`sidebar: true`）                      |
+| Entry point (dev)    | `packages/web-shell/client/main.tsx`（`sidebar: { enabled: true, showLive: true }`） |
 

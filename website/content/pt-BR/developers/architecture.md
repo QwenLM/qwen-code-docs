@@ -1,7 +1,3 @@
----
-title: Visão Geral da Arquitetura
-description: Arquitetura do Qwen Code — pacotes, limites de runtime e fluxos de execução.
----
 
 # Visão Geral da Arquitetura do Qwen Code
 
@@ -89,8 +85,7 @@ exigir um daemon HTTP. Consulte o
 | `packages/core`                                                                                              | Orquestração de agente independente de UI, integração com provedores de modelo, construção de prompt e contexto, registro e execução de ferramentas, permissões, sessões, memória, telemetria e serviços compartilhados. |
 | `packages/acp-bridge`                                                                                        | Ciclo de vida do canal ACP, multiplexação de sessões, entrega de eventos, mediação de permissões, spawn de processos e a interface de filesystem compartilhada por daemon e hosts adaptadores. |
 | `packages/sdk-typescript`                                                                                    | Execução programática de processos via `query()` mais clientes HTTP/SSE e projeção de transcrição para `qwen serve`.                                                                         |
-| `packages/webui`                                                                                             | Componentes React compartilhados e o adaptador React do daemon construído sobre o SDK TypeScript.                                                                                             |
-| `packages/web-shell`                                                                                         | A UI de terminal no navegador construída sobre `packages/webui` e o SDK do daemon.                                                                                                           |
+| `packages/web-shell`                                                                                         | A UI do navegador e o adaptador React do daemon construído sobre o SDK TypeScript.                                                                                                            |
 | `packages/web-templates`                                                                                     | Templates web empacotados como strings de JavaScript e CSS incorporáveis.                                                                                                                     |
 | `packages/audio-capture`                                                                                     | Captura nativa de microfone para entrada por voz.                                                                                                                                            |
 | `packages/channels`                                                                                          | O runtime de canal compartilhado e adaptadores de plataforma para serviços de mensagens.                                                                                                     |
@@ -117,8 +112,8 @@ então inicia um dos fluxos interativo, headless, ACP, daemon, canal ou manuten�
 A apresentação permanece fora do runtime do core:
 
 - o TUI Ink renderiza sessões interativas locais;
-- o `packages/webui` adapta o estado do daemon a providers e hooks React;
-- o `packages/web-shell` fornece a experiência de terminal no navegador;
+- o `packages/web-shell` adapta o estado do daemon a providers e hooks React e
+  fornece a experiência do navegador;
 - pacotes de IDE e canal traduzem eventos específicos do host em contratos
   compartilhados de cliente ou bridge.
 
@@ -159,11 +154,10 @@ O SDK TypeScript expõe dois estilos de cliente:
 - `query()` inicia e controla um processo do Qwen Code para uso local programático;
 - clientes do daemon se comunicam com o `qwen serve` via HTTP e SSE.
 
-O `packages/webui` constrói uma camada de estado React sobre o cliente do daemon,
-e o `packages/web-shell` constrói a UI do navegador sobre essa camada de estado.
-Outros clientes, incluindo integrações de IDE e canais gerenciados pelo daemon,
-reutilizam o mesmo SDK e contratos de eventos em vez de importar código de
-implementação do servidor.
+O `packages/web-shell` constrói uma camada de estado React e a UI do navegador
+sobre o cliente do daemon. Outros clientes, incluindo integrações de IDE e
+canais gerenciados pelo daemon, reutilizam o mesmo SDK e contratos de eventos
+em vez de importar código de implementação do servidor.
 
 ## Fluxos de runtime
 

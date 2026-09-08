@@ -1,6 +1,6 @@
 # Qwen Code Hooks
 
-## Vue d'ensemble
+## Overview
 
 Les hooks de Qwen Code offrent un mécanisme puissant pour étendre et personnaliser le comportement de l'application Qwen Code. Les hooks permettent aux utilisateurs d'exécuter des scripts ou des programmes personnalisés à des points spécifiques du cycle de vie de l'application, comme avant l'exécution d'un outil, après son exécution, au début/fin d'une session, et lors d'autres événements clés.
 

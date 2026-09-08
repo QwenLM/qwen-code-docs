@@ -47,7 +47,7 @@ Qwen Code 的内置工具可以大致分为以下几类：
 - **[Shell 工具](./shell.md) (`run_shell_command`)：** 用于执行 shell 命令。
 - **[监控工具](./monitor.md) (`monitor`)：** 用于运行长时间执行的 shell 命令，并以后台任务通知的形式流式输出结果。
 - **[Web 获取工具](./web-fetch.md) (`web_fetch`)：** 用于从 URL 获取内容。
-- **[任务清单写入工具](./todo-write.md) (`todo_write`)：** 用于在编码会话期间创建和管理结构化任务列表。
+- **[任务清单写入工具](./todo-write.md) (`todo_write`)：** 一个可选（opt-in）工具，用于在编码会话期间创建和管理结构化任务列表。
 - **[代理工具](./task.md) (`agent`)：** 用于将复杂任务委托给专门的子代理。
 - **[退出计划模式工具](./exit-plan-mode.md) (`exit_plan_mode`)：** 用于退出计划模式并继续实施。
 

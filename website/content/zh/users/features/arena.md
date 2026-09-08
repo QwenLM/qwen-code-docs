@@ -104,23 +104,16 @@ Agent Arena 目前支持**进程内模式**，所有代理在同一终端进程�
 
 ## 配置
 
-Arena 的行为可以在 [settings.json](../configuration/settings.md) 中自定义：
+Arena 的设置嵌套在
+[settings.json](../configuration/settings.md) 的 `agents.arena` 下。该 schema 接受
+`maxRoundsPerAgent` 和 `timeoutSeconds`，但 CLI 在构建 `/arena` 使用的配置时会丢弃这两个
+值。因此，设置其中任何字段都不会限制 `/arena` 的运行。
 
-```json
-{
-  "arena": {
-    "worktreeBaseDir": "~/.qwen/arena",
-    "maxRoundsPerAgent": 50,
-    "timeoutSeconds": 600
-  }
-}
-```
-
-| 设置                        | 描述                         | 默认值           |
-| :-------------------------- | :--------------------------- | :--------------- |
-| `arena.worktreeBaseDir`     | Arena 工作树的基目录         | `~/.qwen/arena`  |
-| `arena.maxRoundsPerAgent`   | 每个代理的最大推理轮数       | `50`             |
-| `arena.timeoutSeconds`      | 每个代理的超时时间（秒）     | `600`            |
+| 设置                          | 描述                                                                                          | 默认值                         |
+| :---------------------------- | :-------------------------------------------------------------------------------------------- | :----------------------------- |
+| `agents.arena.worktreeBaseDir`   | Arena worktree 的自定义基目录。使用绝对路径；`~` 不会被展开。                | Qwen 主目录下的 `arena` 目录 |
+| `agents.arena.maxRoundsPerAgent` | schema 接受，但当前不会转发给 `/arena`；设置它不会对运行产生任何影响 | 未设置                           |
+| `agents.arena.timeoutSeconds`    | schema 接受，但当前不会转发给 `/arena`；设置它不会对运行产生任何影响 | 未设置                           |
 
 ## 最佳实践
 
@@ -168,7 +161,8 @@ Arena 代理独立工作，彼此无通信。任务应能在提示中完整描�
 
 - 确认 `--models` 中的每个模型都已正确配置，且 API 凭据有效
 - 检查你的工作目录是否是一个 Git 仓库（工作树需要 Git）
-- 确保你对工作树基目录（默认为 `~/.qwen/arena/`）有写入权限
+- 确保你对 Qwen 主目录
+  目录下的 `arena` 目录（默认 worktree 基目录）有写入权限
 
 ### 工作树创建失败
 
@@ -178,9 +172,9 @@ Arena 代理独立工作，彼此无通信。任务应能在提示中完整描�
 
 ### 代理耗时过长
 
-- 增加超时时间：在设置中配置 `arena.timeoutSeconds`
 - 降低任务复杂性——Arena 任务应聚焦且定义清晰
-- 如果代理执行轮数过多，降低 `arena.maxRoundsPerAgent`
+- 使用更少的代理或延迟更低的模型
+- 如果某个代理耗时过长，手动停止 Arena 运行
 
 ### 应用胜者失败
 

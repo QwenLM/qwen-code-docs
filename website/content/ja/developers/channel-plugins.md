@@ -94,7 +94,7 @@ export class MyChannel extends ChannelBase {
 
 ほとんどのアダプターは `options` を変更せずにそのまま渡す必要があります。アダプターが独自の `SessionRouter` を作成し、そのルーターを `super()` に渡す場合は、`ChannelBaseOptions` で `registerBridgeEvents: true` を設定し、`ChannelBase` が `toolCall` および `sessionDied` イベントを直接受信できるようにします。チャネルゲートウェイによって提供されるルーターの場合は、設定しないままにします。
 
-アダプターがシェルコマンドの動作を公開する場合は、有効にする前に `bridge.shellCommand` が存在することを確認してください。デーモンが `session_shell_command` ケイパビリティをアドバタイズしない限り、デーモン管理ワーカーはそのオプションメソッドを省略します。
+アダプターがシェルコマンドまたは BTW サイドクエスションの動作を公開する場合は、有効にする前に `bridge.shellCommand` / `bridge.btw` メソッドがそれぞれ存在することを確認してください。デーモン管理ワーカーは、デーモンが対応する `session_shell_command` / `session_btw` ケイパビリティをアドバタイズしない限り、それらのオプションメソッドを省略します。
 
 ## エンベロープ
 

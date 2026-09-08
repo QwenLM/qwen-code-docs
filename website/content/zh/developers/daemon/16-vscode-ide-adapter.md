@@ -80,7 +80,7 @@ const baseUrl = validateDaemonBaseUrl(options.baseUrl);
 
 ### Webview 桥接
 
-连接类**仅负责传输**。实际的 VS Code 集成位于 `packages/vscode-ide-companion/src/webview/providers/ChatWebviewViewProvider.ts`（及相关文件）中。该提供者订阅连接的回调，并将其转换为 webview 的 `postMessage` 调用。Webview 本身使用共享的 `packages/webui/` 组件库进行渲染——参见 [`01-architecture.md`](./01-architecture.md) 中的适配器矩阵。
+连接类**仅负责传输**。实际的 VS Code 集成位于 `packages/vscode-ide-companion/src/webview/providers/ChatWebviewViewProvider.ts`（及相关文件）中。该提供者订阅连接的回调，并将其转换为 webview 的 `postMessage` 调用。Webview 内嵌 Web Shell 进行渲染。
 
 ### 连接序列化
 
@@ -169,7 +169,7 @@ sequenceDiagram
 
 - `packages/sdk-typescript/src/daemon/` — `DaemonClient`、`DaemonSessionClient`（实际传输层）。
 - VS Code 扩展 API（`vscode.*`）— 宿主 API、快速选择、webview。
-- `packages/webui/src/adapters/ACPAdapter.ts` — 通过 `postMessage` 中继的 ACP 形状消息的 webview 渲染。
+- `packages/web-shell/client/` — 守护进程会话事件的嵌入式 webview 渲染。
 
 ## 配置
 
@@ -196,6 +196,6 @@ sequenceDiagram
 - `packages/vscode-ide-companion/src/services/daemonIdeConnection.ts`（`createSdkDaemonSessionFactory`）
 - `packages/vscode-ide-companion/src/types/connectionTypes.ts`（传统的 `AcpConnectionState`）
 - `packages/vscode-ide-companion/src/webview/providers/ChatWebviewViewProvider.ts`（webview 桥接）
-- `packages/webui/src/adapters/ACPAdapter.ts`（webview ACP 消息适配器）
+- `packages/web-shell/client/`（嵌入式 Web Shell 渲染器）
 - 设计草案：[`../daemon-client-adapters/ide.md`](../daemon-client-adapters/ide.md)
 - SDK 参考：[`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)

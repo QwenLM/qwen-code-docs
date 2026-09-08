@@ -109,7 +109,7 @@ Baseline-Tags sind nicht in der `Map` vorhanden und werden bedingungslos beworbe
 
 Grundlagen: `health`, `daemon_status`, `capabilities`.
 
-Sessions: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_storage_conflict_repair`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (konditional), `session_language`, **`user_language_sync`** (konditional), `session_rewind`, `session_hooks`, `session_branch`.
+Sessions: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_storage_conflict_repair`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_resources`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (konditional), `session_language`, **`user_language_sync`** (konditional), `session_rewind`, `session_hooks`, `session_branch`.
 
 Streaming: `slow_client_warning`, `typed_event_schema`.
 
@@ -204,7 +204,7 @@ sequenceDiagram
 ## Konfiguration
 
 | Quelle                     | Einstellung                                                     | Auswirkung auf Capabilities                                                                                                 |
-| -------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| -------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | CLI-Flag                   | `--require-auth`                                                | Bewirbt `require_auth`.                                                                                                     |
 | Env                        | `QWEN_SERVE_NO_MCP_POOL=1`                                      | Stoppt das Bewerben von `mcp_workspace_pool` und `mcp_pool_restart`; MCP-Events stempeln nicht mehr `scope: 'workspace'`.   |
 | CLI-Flag                   | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}` | Ändert nicht das Tag-Set (`mcp_guardrails` wird immer beworben), ändert aber die serverbezogene Reservierung und das Ablehnungsverhalten. |

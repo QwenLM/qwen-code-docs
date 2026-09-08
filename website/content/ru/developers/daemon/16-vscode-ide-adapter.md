@@ -2,7 +2,7 @@
 
 ## Обзор
 
-`packages/vscode-ide-companion/src/services/daemonIdeConnection.ts` — это **адаптер демона для расширения VS Code**. Он позволяет компаньону IDE подключаться к работающему демону `qwen serve` по HTTP + SSE вместо запуска дочернего процесса stdio через `qwen --acp` (устаревший путь `AcpConnectionState`). Это аналог транспорта для VS Code от [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md).
+`packages/vscode-ide-companion/src/services/daemonIdeConnection.ts` — это **адаптер демона для расширения VS Code**. Он позволяет компаньону IDE подключаться к работающему демону `qwen serve` по HTTP + SSE вместо запуска дочернего процесса stdio через `qwen --acp` (устаревший путь `AcpConnectionState`). Это эквивалент родственного транспорта [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md) для хостов VS Code.
 
 Веб-представление чата IDE потребляет события демона через этот адаптер; запросы разрешений отображаются как нативные диалоги быстрого выбора VS Code.
 
@@ -85,7 +85,7 @@ HTTP-ответ демона на запрос и вызывает его с `re
 
 ### Связь с веб-представлением
 
-Класс соединения отвечает **только за транспорт**. Фактическая интеграция с VS Code находится в `packages/vscode-ide-companion/src/webview/providers/ChatWebviewViewProvider.ts` (и связанных файлах). Провайдер подписывается на колбэки соединения и преобразует их в вызовы `postMessage` веб-представления. Само веб-представление использует общую библиотеку компонентов из `packages/webui/` для рендеринга — см. Матрицу адаптеров в [`01-architecture.md`](./01-architecture.md).
+Класс соединения отвечает **только за транспорт**. Фактическая интеграция с VS Code находится в `packages/vscode-ide-companion/src/webview/providers/ChatWebviewViewProvider.ts` (и связанных файлах). Провайдер подписывается на колбэки соединения и преобразует их в вызовы `postMessage` веб-представления. Веб-представление встраивает Web Shell для рендеринга.
 
 ### Сериализация соединения
 
@@ -174,7 +174,7 @@ sequenceDiagram
 
 - `packages/sdk-typescript/src/daemon/` — `DaemonClient`, `DaemonSessionClient` (собственно транспорт).
 - API расширений VS Code (`vscode.*`) — API хоста, быстрый выбор, веб-представление.
-- `packages/webui/src/adapters/ACPAdapter.ts` — рендеринг сообщений в формате ACP, передаваемых через `postMessage`, в веб-представлении.
+- `packages/web-shell/client/` — встроенный рендеринг веб-представления для событий сессии демона.
 
 ## Конфигурация
 
@@ -201,6 +201,6 @@ sequenceDiagram
 - `packages/vscode-ide-companion/src/services/daemonIdeConnection.ts` (`createSdkDaemonSessionFactory`)
 - `packages/vscode-ide-companion/src/types/connectionTypes.ts` (устаревший `AcpConnectionState`)
 - `packages/vscode-ide-companion/src/webview/providers/ChatWebviewViewProvider.ts` (мост веб-представления)
-- `packages/webui/src/adapters/ACPAdapter.ts` (адаптер ACP-сообщений для веб-представления)
+- `packages/web-shell/client/` (встроенный рендерер Web Shell)
 - Черновик дизайна: [`../daemon-client-adapters/ide.md`](../daemon-client-adapters/ide.md)
 - Справочник по SDK: [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)

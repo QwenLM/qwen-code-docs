@@ -4,7 +4,7 @@
 
 | 카테고리                          | Phase 1                                                                                                                                                                            | Phase 2                                                                                                                                                                                 |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 사용자 경험                 | ✅ Terminal UI<br>✅ Support OpenAI Protocol<br>✅ Settings<br>✅ OAuth<br>✅ Cache Control<br>✅ Memory<br>✅ Compress<br>✅ Theme                                                | Better UI<br>OnBoarding<br>LogView<br>✅ Session<br>Permission<br>🔄 Cross-platform Compatibility<br>✅ Coding Plan<br>✅ Anthropic Provider<br>✅ Multimodal Input<br>✅ Unified WebUI |
+| 사용자 경험                 | ✅ Terminal UI<br>✅ Support OpenAI Protocol<br>✅ Settings<br>✅ OAuth<br>✅ Cache Control<br>✅ Memory<br>✅ Compress<br>✅ Theme                                                | Better UI<br>OnBoarding<br>LogView<br>✅ Session<br>Permission<br>🔄 Cross-platform Compatibility<br>✅ Coding Plan<br>✅ Anthropic Provider<br>✅ Multimodal Input<br>✅ Unified Web Shell |
 | 코딩 워크플로우                 | ✅ Slash Commands<br>✅ MCP<br>✅ PlanMode<br>✅ TodoWrite<br>✅ SubAgent<br>✅ Multi Model<br>✅ Chat Management<br>✅ Tools (WebFetch, Bash, TextSearch, FileReadFile, EditFile) | 🔄 Hooks<br>✅ Skill<br>✅ Headless Mode<br>✅ Tools (WebSearch)<br>✅ LSP Support<br>✅ Concurrent Runner                                                                              |
 | 개방형 기능 구축      | ✅ Custom Commands                                                                                                                                                                 | ✅ QwenCode SDK<br>✅ Extension System                                                                                                                                                  |
 | 커뮤니티 생태계 통합 |                                                                                                                                                                                    | ✅ VSCode Plugin<br>✅ ACP/Zed<br>✅ GHA                                                                                                                                                |
@@ -19,11 +19,11 @@
 | 기능                 | 버전   | 설명                                             | 카테고리                        | Phase |
 | ----------------------- | --------- | ------------------------------------------------------- | ------------------------------- | ----- |
 | **Coding Plan**         | `V0.10.0` | Alibaba Cloud Coding Plan 인증 및 모델       | 사용자 경험                 | 2     |
-| Unified WebUI           | `V0.9.0`  | VSCode/CLI 공유 WebUI 컴포넌트 라이브러리           | 사용자 경험                 | 2     |
+| Unified Web Shell       | `V0.9.0`  | VS Code 및 `qwen serve`를 위한 공유 브라우저 UI   | 사용자 경험                 | 2     |
 | Export Chat             | `V0.8.0`  | 세션을 Markdown/HTML/JSON/JSONL로 내보내기             | 사용자 경험                 | 2     |
 | Extension System        | `V0.8.0`  | 슬래시 명령어를 포함한 전체 확장 관리           | 개방형 기능 구축      | 2     |
 | LSP Support             | `V0.7.0`  | 실험적 LSP 서비스 (`--experimental-lsp`)         | 코딩 워크플로우                 | 2     |
-| Anthropic Provider      | `V0.7.0`  | Anthropic API 프로바이더 지원                          | 사용자 경험                 | 2     |
+| Anthropic Provider      | `V0.7.0`  | Anthropic API 제공자 지원                          | 사용자 경험                 | 2     |
 | User Feedback Dialog    | `V0.7.0`  | 피로도 메커니즘이 포함된 앱 내 피드백 수집       | 관리 기능     | 2     |
 | Concurrent Runner       | `V0.6.0`  | Git 통합 배치 CLI 실행                | 코딩 워크플로우                 | 2     |
 | Multimodal Input        | `V0.6.0`  | 이미지, PDF, 오디오, 비디오 입력 지원                  | 사용자 경험                 | 2     |

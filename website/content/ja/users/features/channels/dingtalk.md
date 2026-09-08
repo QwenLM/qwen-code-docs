@@ -95,6 +95,31 @@ export DINGTALK_CLIENT_SECRET=<your-app-secret>
 
 `"useConnectionManager": false` に設定すると、Qwen Code の接続マネージャーを無効にし、SDK のキープアライブと自動再接続の動作にフォールバックします。
 
+### バックグラウンドエージェントの応答
+
+バックグラウンドエージェントの出力は、各応答セグメントが利用可能になり次第送信されます。
+各メッセージにはエージェント名がラベル付けされ、並行作業の归属を明確にします。
+
+各エージェントの通知ターンをバッファリングして 1 つのラベル付きメッセージとして送信するには、
+`settings.json` で DingTalk チャンネルの集約を有効にします。
+
+```json
+{
+  "channels": {
+    "my-dingtalk": {
+      "type": "dingtalk",
+      "clientId": "$DINGTALK_CLIENT_ID",
+      "clientSecret": "$DINGTALK_CLIENT_SECRET",
+      "aggregateBackgroundAgentResponses": true
+    }
+  }
+}
+```
+
+集約はデフォルトで無効です。エージェントのターンが中断された場合、
+最終応答を生成せずに失敗した場合、または 10 分以内に完了しない場合は、
+部分的なラベル付きメッセージが送信されます。
+
 ## 実行
 
 ```bash

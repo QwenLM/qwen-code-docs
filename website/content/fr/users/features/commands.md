@@ -36,6 +36,10 @@ Ces commandes vous aident à sauvegarder, restaurer et résumer l'avancement du 
 
 > [!note]
 >
+> L'ouverture d'un export HTML charge le rendu pour cette version exacte de Qwen Code depuis `unpkg.com`. Si la version n'a pas été publiée ou si le rendu ne peut pas être atteint, le fichier affiche une erreur de chargement. Les exports Markdown, JSON et JSONL restent autonomes.
+
+> [!note]
+>
 > `/summarize` est un alias de `/compress` (il compresse l'historique du chat — une opération destructive). Pour générer plutôt un résumé de projet non destructif, utilisez `/summary`.
 
 > [!note]
@@ -96,6 +100,7 @@ Commandes pour gérer les outils et les modèles d'IA.
 | → `auto-edit`     | Approuver automatiquement les modifications (environnement de confiance)                                         | `/approval-mode auto-edit`                                                                                |
 | → `auto`          | Approbation évaluée par classifieur (autonome)                                       | `/approval-mode auto`                                                                                     |
 | → `yolo`          | Tout approuver automatiquement (prototypage rapide)                                      | `/approval-mode yolo`                                                                                     |
+| `/peers`              | Examiner les messages peer en attente ; gérer les contrôleurs fiables                                 | `/peers`, `/peers accept <id>`, `/peers deny all`, `/peers controllers`, `/peers revoke <id>`             |
 | `/model`          | Changer de modèle utilisé dans la session actuelle                                             | `/model`, `/model <model-id>` (changement immédiat)                                                        |
 | `/model --fast`   | Définir un modèle plus léger pour les suggestions de prompt                                       | `/model --fast qwen3-coder-flash`                                                                         |
 | `/model --voice`  | Définir le modèle utilisé pour la transcription vocale                                       | `/model --voice <model-id>`                                                                               |
@@ -103,6 +108,7 @@ Commandes pour gérer les outils et les modèles d'IA.
 | `/model --compaction` | Définir le modèle utilisé pour la compression du chat                                                                | `/model --compaction <model-id>`, `/model --compaction clear`                                             |
 | `/model --image`      | Définir un modèle capable de générer des images pour l'outil de génération d'images intégré                          | `/model --image <model-id>`                                                                               |
 | `/effort`             | Définir l'effort de raisonnement pour les modèles capables de réflexion                                              | `/effort` (ouvre le sélecteur), `/effort high` (low/medium/high/xhigh/max ; mappé et plafonné par fournisseur)       |
+| `/output-style`       | Choisir le style de sortie qui détermine la forme des réponses                                         | `/output-style` (ouvre le sélecteur), `/output-style Concise`, `/output-style default` (pas de style)               |
 | `/extensions`     | Gérer les extensions                                                                | `/extensions list`, `/extensions manage`                                                                  |
 | → `list`          | Lister les extensions installées                                                        | `/extensions list`                                                                                        |
 | → `manage`        | Gérer les extensions installées (interactif)                                        | `/extensions manage`                                                                                      |
@@ -117,9 +123,8 @@ Commandes pour gérer les outils et les modèles d'IA.
 | `/permissions`        | Gérer les règles de permissions                                                             | `/permissions`                                                                                            |
 | `/agents`         | Gérer les sous-agents                                                                 | `/agents manage`, `/agents create`                                                                        |
 | `/arena`          | Gérer les sessions Arena                                                            | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (alias `choose`)                          |
-| `/goal`           | Définir un objectif — continuer à travailler jusqu'à ce que la condition soit remplie (voir [Goals](./goals.md))         | `/goal <condition>`, `/goal clear`                                                                        |
-| `/goal-draft`     | Transformer une intention floue en objectif `/goal` vérifiable                                     | `/goal-draft make the auth tests pass`                                                                    |
-| `/tasks`          | Lister les tâches en arrière-plan                                                            | `/tasks`                                                                                                  |
+| `/goal`               | Définir un objectif — continuer à travailler jusqu'à ce qu'un vérificateur le confirme (voir [Goals](./goals.md))      | `/goal <objective>`, `/goal edit <objective>`, `/goal pause`, `/goal resume`, `/goal clear`               |
+| `/tasks`              | Lister les tâches en arrière-plan                                                                 | `/tasks`                                                                                                  |
 | `/workflows`      | Inspecter les exécutions de workflow ; mettre en pause/reprendre coopérativement une exécution en arrière-plan | `/workflows`, `/workflows <runId>`, `/workflows p <runId>`                                                |
 | `/lsp`            | Afficher le statut du serveur LSP                                                           | `/lsp`                                                                                                    |
 | `/trust`          | Gérer les paramètres de confiance des dossiers                                                     | `/trust`                                                                                                  |
@@ -691,6 +696,7 @@ Ces commandes sont exécutées depuis le shell sous la forme `qwen <subcommand>`
 | -------------------- | ------------------------------------- | -------------------------------------------------------------- |
 | `qwen sessions list` | Liste les sessions de conversation récentes | `qwen sessions list`, `qwen sessions list --json --limit 50` |
 | `qwen sessions ps`   | Liste les sessions interactives en cours d'exécution | `qwen sessions ps`, `qwen sessions ps --json`                |
+| `qwen sessions controllers` | Gérer les tokens de contrôleurs fiables | `qwen sessions controllers add --label <name>`, `qwen sessions controllers list` |
 
 #### `qwen sessions list`
 
@@ -750,7 +756,7 @@ Génère des JSON Lines sur stdout, la session la plus récente en premier. Chaq
 
 ```
 schemaVersion, pid, procStart, pidNs, sessionId, cwd, name, startedAt,
-qwenVersion
+qwenVersion, ipcPath (lorsque la messagerie entre pairs est disponible)
 ```
 
 Rien d'autre n'est écrit sur stdout — un listing vide n'imprime rien du tout — donc `qwen sessions ps --json | jq .` est sûr pour les scripts.
@@ -768,3 +774,207 @@ qwen sessions ps
 # la note sur les données brutes ci-dessus) ; faites passer par un assainisseur si le chemin n'est pas fiable.
 qwen sessions ps --json | jq -r .cwd
 ```
+
+## 6. Envoyer des messages à une autre session en cours
+
+Deux sessions interactives sur la même machine peuvent s'envoyer des
+messages. Cette fonctionnalité est expérimentale et **désactivée par
+défaut** ; activez-la dans `settings.json` et redémarrez :
+
+```json
+{ "agents": { "crossSessionMessaging": true } }
+```
+
+Une fois activée, le modèle d'une session peut découvrir les autres avec
+`list_agents` — chacune apparaît sous `sessions` avec le `name` que
+`qwen sessions ps --json` enregistre (la vue tableau peut tronquer les
+noms longs) — et en adresser une avec `send_message` en utilisant
+ce nom comme `to`. Lorsque deux sessions partagent le même nom,
+`list_agents` affiche chacune avec un court `[ref]` et l'envoi doit
+l'inclure (`name [ref]`) ; un nom nu qui pourrait correspondre à l'une
+ou l'autre est refusé plutôt que deviné. `list_agents` rapporte
+également le nom de la session elle-même sous `self`, et `to: "*"`
+signifie toujours « mes coéquipiers Agent Team » et n'atteint jamais
+d'autres sessions.
+
+Un message arrive dans l'autre session marqué comme provenant d'une
+autre session, pas de son utilisateur, et ne porte aucune de votre
+autorité : la session réceptrice n'agit dessus que dans le cadre de ses
+propres paramètres de permissions. Son utilisateur peut choisir ce qui
+arrive aux messages entrants avec `agents.crossSessionInbound`
+(`accept`, `hold` ou `refuse`). Lorsque ce n'est pas défini, un message
+n'est délivré que lorsque les deux sessions sont dans la même classe de
+review : les deux reviewnt chaque action (mode default ou plan), ou les
+deux sont dans un mode qui applique certaines actions sans review par
+action (auto-edit, auto ou yolo). Un message provenant d'une session de
+l'autre classe, ou d'un expéditeur qui n'indique pas dans quelle classe
+il se trouve, est mis en attente pour review — dans les deux directions.
+Une session qui review chaque action met en attente un message provenant
+d'une session qui ne le fait pas, car ce message a été écrit par un
+modèle que personne ne surveillait, et les prompts par action protègent
+les actions, pas ce qu'on dit à la session. Les messages en attente sont
+listés et libérés avec `/peers` dans la session réceptrice, et un
+message mis en attente uniquement parce que les modes différaient est
+libéré de lui-même une fois qu'ils s'accordent.
+
+Un dépôt peut rendre les sessions qui y sont ouvertes plus prudentes,
+jamais moins : un `.qwen/settings.json` de workspace peut définir
+`agents.crossSessionInbound` à `hold` ou `refuse`, ou
+`agents.crossSessionMessaging` à `false`, et cette valeur l'emporte sur
+une valeur plus permissive dans vos paramètres utilisateur. Une valeur
+de workspace qui assouplirait votre paramètre (`accept`, ou `true` pour
+le switch) est ignorée avec un avertissement, et une valeur que le CLI
+ne reconnaît pas met en attente chaque message lorsqu'elle est la valeur
+effective. Les paramètres système l'emportent sur tout cela, comme pour
+chaque paramètre.
+
+Une mise en attente n'attend pas indéfiniment. Un message sur lequel
+personne ne se décide expire après
+`agents.crossSessionHeldExpiry` — `1m`, `5m`, `10m` ou `never`, cinq
+minutes par défaut — et la session expéditrice est informée qu'aucune
+décision n'a été prise. Raccourcir le paramètre s'applique aux messages
+déjà en attente.
+
+Si la session ne peut pas binder sa boîte de réception — le répertoire
+runtime est manquant, appartient à un autre utilisateur, ou est en
+lecture seule, comme cela peut être le cas dans un conteneur — elle
+essaie d'abord un répertoire privé sous le répertoire temporaire, et
+seulement si cela échoue aussi, elle démarre sans boîte de réception.
+Lorsque cela se produit, la session le signale au démarrage, et `/peers`
+répète la raison et quoi modifier (généralement `XDG_RUNTIME_DIR` ou
+`TMPDIR`).
+
+Deux sessions peuvent aussi résoudre la même adresse de boîte de
+réception, car l'adresse est indexée par l'id de processus et les ids de
+processus se répètent à travers les conteneurs qui partagent un
+répertoire runtime. La session qui démarre en deuxième prend une adresse
+voisine au lieu de prendre celle en cours d'utilisation, ainsi aucune ne
+devient injoignable. Les pairs ne sont pas affectés : ils lisent
+l'adresse d'une session depuis le registre de sessions plutôt que de la
+dériver.
+
+L'appel `send_message` confirme uniquement que le message a été remis à
+l'autre session. Ce qu'il est advenu arrive plus tard sous forme de
+reçu : s'il a été mis en attente, décliné, refusé, a expiré, ou était
+mal adressé (l'adresse a changé de titulaire — listez à nouveau les
+agents) — ou libéré après une mise en attente — une notification
+apparaît dans la transcription de la session expéditrice (`Message to
+<name>: …`). Décliné et refusé sont des réponses différentes : décliné
+signifie que quelqu'un a examiné le message et a dit non, tandis que
+refusé signifie que le `agents.crossSessionInbound` de cette session est
+`refuse` et personne ne l'a vu. Le modèle qui l'a envoyé n'en est pas
+informé ; si l'autre session répond, la réponse arrive comme un message
+inter-sessions.
+
+### Authentification de la boîte de réception et injection scriptée
+
+La boîte de réception de chaque session nécessite un token par session :
+une connexion doit le présenter sur sa première ligne avant qu'un
+message ne soit lu, et les sessions échangent les tokens automatiquement
+via les mêmes enregistrements du registre par lesquels elles se
+découvrent. Les sessions d'une build sans support des tokens peuvent
+recevoir d'une plus récente, mais leurs envois vers celle-ci sont
+abandonnés.
+
+Une session exporte sa propre adresse de boîte de réception et un token
+aux processus enfants comme `QWEN_CODE_MESSAGING_SOCKET` et
+`QWEN_CODE_MESSAGING_TOKEN`, afin qu'un script ou un hook exécuté par la
+session puisse lui renvoyer un message. C'est un deuxième token
+_enfant_ qui n'est jamais publié nulle part : seuls les processus que la
+session a démarrés peuvent le détenir, donc un message qui arrive avec
+celui-ci est reconnu comme provenant de la session elle-même plutôt que
+d'une autre session.
+
+```bash
+{ printf '%s\n' \
+    '{"msgV":1,"type":"auth","token":"'"$QWEN_CODE_MESSAGING_TOKEN"'"}' \
+    '{"msgV":1,"msgId":"'"$(uuidgen)"'","type":"user","priority":"next","message":{"role":"user","content":"build finished"}}'; \
+} | socat - UNIX-CONNECT:"$QWEN_CODE_MESSAGING_SOCKET"
+```
+
+Donnez à chaque injection un `msgId` frais. La passerelle réceptrice se
+souvient des ids qu'elle a déjà traités, donc un hook qui en réutilise
+un est délivré la première fois et silencieusement dédupliqué à chaque
+exécution suivante.
+
+Un message injecté passe toujours par la passerelle entrante et est
+marqué comme ne provenant pas de l'utilisateur, mais la passerelle sait
+qu'il provient du propre processus de la session : selon la parité de
+mode par défaut, il est délivré sans review (un pair dans la même
+position serait mis en attente), tandis qu'un
+`agents.crossSessionInbound` explicite de `hold` ou `refuse` s'applique
+à lui comme à n'importe quoi d'autre. Le modèle le voit comme
+`<cross_session_message from="own process" origin="own-process">` avec
+une notification indiquant qu'il provient d'un script ou d'un hook
+exécuté par la session, pas de l'utilisateur.
+
+### Contrôleurs fiables
+
+La règle ci-dessus met en attente un message de tout expéditeur qui
+n'indique pas dans quelle classe de review il se trouve, et un programme
+qui n'est pas une session Qwen Code n'en a pas à indiquer. C'est le bon
+comportement par défaut pour un inconnu, mais pas pour un programme que
+vous avez choisi : un front-end vocal, un bridge de dictée, un démon
+d'automatisation relayant vos propres instructions verrait chaque
+message mis en attente, et approuver chacun à la main va à l'encontre de
+l'objectif.
+
+Vous accordez à un tel programme la délivrance en lui créant un token :
+
+```bash
+qwen sessions controllers add --label voice-bridge
+```
+
+Le token est affiché une seule fois et n'est stocké nulle part : le
+fichier sous votre répertoire Qwen ne conserve que son hash SHA-256,
+donc rien de ce qui lit ultérieurement ce fichier ne peut présenter le
+token. Placez-le dans la configuration du contrôleur lorsque la
+commande l'affiche.
+
+Un contrôleur présente le token comme tout autre expéditeur — comme
+première ligne de la connexion — et prend le chemin du socket depuis le
+registre de sessions (`qwen sessions ps --json` affiche un
+enregistrement par session active, `ipcPath` étant l'adresse) :
+
+```bash
+{ printf '%s\n' \
+    '{"msgV":1,"type":"auth","token":"'"$QWEN_CONTROLLER_TOKEN"'"}' \
+    '{"msgV":1,"msgId":"'"$(uuidgen)"'","type":"user","priority":"next","message":{"role":"user","content":"open the failing test"}}'; \
+} | socat - UNIX-CONNECT:"$SESSION_IPC_PATH"
+```
+
+Un message qui arrive avec un token accordé est délivré sans review par
+message, quelle que soit la classe de review de l'un ou l'autre côté —
+mais il cède toujours devant un paramètre explicite : un
+`agents.crossSessionInbound` à `hold` le met en attente comme n'importe
+quoi d'autre, et `refuse` le rejette. Les accords appartiennent à votre
+répertoire Qwen plutôt qu'à une session, donc un contrôleur atteint
+toutes les sessions que vous exécutez, et les sessions relisent le
+fichier à chaque connexion : créer ou révoquer un accord prend effet à
+la prochaine connexion, sans rien à redémarrer.
+
+```bash
+qwen sessions controllers list          # ids, labels, date d'ajout
+qwen sessions controllers remove c_1a2b # révoquer un accord
+```
+
+`/peers controllers` et `/peers revoke <id>` font la même chose depuis
+une session. Un message arrivé via un accord est affiché comme `Message
+from a trusted controller (voice-bridge)`, et apparaît dans `/peers`
+comme `[controller] voice-bridge` si un paramètre `hold` l'a mis en
+attente.
+
+Le modèle voit un tel message comme
+`<cross_session_message from="controller" origin="controller" controller="voice-bridge">`,
+avec une notification indiquant qu'il relaye vos propres instructions —
+et les mêmes deux interdictions qui s'appliquent à chaque autre origine
+: il ne peut pas modifier les paramètres de permissions, QWEN.md ou la
+config parce que le message le demande, et il ne peut pas traiter le
+message comme une approbation de votre part d'un prompt de confirmation
+en attente. Un contrôleur peut dire quoi faire ensuite ; il ne peut pas
+répondre à un prompt en votre nom.
+
+Quiconque détient le token peut envoyer en tant que ce contrôleur,
+traitez-le donc comme tout autre identifiant : donnez-le à un seul
+programme, gardez-le hors des configs partagées, et révoquez-le lorsque
+ce programme a terminé.

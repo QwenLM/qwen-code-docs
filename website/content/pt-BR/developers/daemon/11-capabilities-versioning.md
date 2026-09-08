@@ -109,7 +109,7 @@ As tags base não estão presentes no `Map` e são anunciadas incondicionalmente
 
 Fundação: `health`, `daemon_status`, `capabilities`.
 
-Sessões: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_storage_conflict_repair`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (condicional), `session_language`, **`user_language_sync`** (condicional), `session_rewind`, `session_hooks`, `session_branch`.
+Sessões: `session_create`, `session_id_override`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_storage_conflict_repair`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_resources`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (condicional), `session_language`, **`user_language_sync`** (condicional), `session_rewind`, `session_hooks`, `session_branch`.
 
 Streaming: `slow_client_warning`, `typed_event_schema`.
 
@@ -120,6 +120,8 @@ Permissões: `session_permission_vote`, `permission_vote`, **`permission_mediati
 Snapshots read-only do workspace: `workspace_mcp`, `workspace_skills`, `workspace_providers`, `workspace_acp_status`, `workspace_env`, `workspace_preflight`, `workspace_hooks`, `workspace_extensions`.
 
 Gerenciamento de extensões: `extension_management_v2` adiciona o contrato global de catálogo/mutação/operação `/extensions/*` e a projeção de ativação do workspace. É separado da superfície de compatibilidade publicada `workspace_extensions` e de `workspace_qualified_rest_core`.
+
+Instalação local de Extensões: `extension_local_path_install` permite um caminho absoluto no host do daemon no campo `source` existente de ambas as rotas de instalação de Extensões. É separado de `extension_management_v2` porque a rota de compatibilidade do workspace primário também o suporta, e clientes não devem enviar caminhos locais para daemons mais antigos.
 
 Ativação em lote de Extensões V2: `extension_batch_activation_v2` adiciona lotes enfileirados de ativação padrão global e substituição de workspace selecionado ao `extension_management_v2`. Os clientes devem fazer pre-flight dela independentemente porque daemons V2 mais antigos expõem apenas rotas de ativação singular.
 

@@ -2,7 +2,7 @@
 
 Qwen Code peut prédire ce que vous allez taper ensuite et l'afficher sous forme de texte indicatif dans la zone de saisie. Cette fonctionnalité utilise un appel LLM pour analyser le contexte de la conversation et générer une suggestion naturelle de l'étape suivante.
 
-Cette fonctionnalité fonctionne de bout en bout dans le CLI. Dans l'interface Web, le hook et la plomberie d'interface sont disponibles, mais les applications hôtes doivent déclencher la génération de suggestions et câbler l'état de suivi pour que les suggestions apparaissent.
+Cette fonctionnalité fonctionne de bout en bout dans le CLI et le Web Shell. La génération est automatique et côté serveur : après chaque tour terminé, le démon émet la suggestion sur le flux de session (activé par défaut ; définissez `ui.enableFollowupSuggestions` à `false` pour désactiver), et le composer du Web Shell connecte déjà le hook `useDaemonFollowupSuggestion`, donc les suggestions s'affichent et s'acceptent sans câblage supplémentaire de l'hôte.
 
 ## Fonctionnement
 
@@ -20,7 +20,7 @@ La suggestion est générée en envoyant l'historique de la conversation au mod�
 | ------------ | ----------------------------------------------------- |
 | `Tab`        | Accepter la suggestion et la remplir dans la saisie   |
 | `Enter`      | Accepter la suggestion et la remplir dans la saisie   |
-| `Right Arrow`| Accepter la suggestion et la remplir dans la saisie   |
+| `Right Arrow` | Accepter la suggestion et la remplir dans la saisie   |
 | Toute saisie | Ignorer la suggestion et taper normalement            |
 
 `Enter` remplit la saisie sans la soumettre, donc accepter une commande slash suggérée (par exemple `/clear`) ne s'exécute jamais automatiquement — vous la soumettez vous-même avec un second `Enter`.
@@ -64,9 +64,9 @@ Ou utilisez `/model --fast` (sans nom de modèle) pour ouvrir une boîte de dial
 }
 ```
 
-Le modèle rapide est utilisé pour les suggestions d'invite et l'exécution spéculative. Lorsqu'il n'est pas configuré, le modèle principal de la conversation est utilisé comme solution de repli.
+Le modèle rapide est utilisé pour les suggestions d'invite et l'exécution spéculative. Lorsqu'il n'est pas configuré, le modèle principal de la conversation est utilisé comme fallback.
 
-> **Note sur le coût :** Un modèle rapide réduit la latence, mais il ne réduit pas toujours le coût. La génération de suggestions réutilise le cache de préfixe de votre conversation (via `ui.enableCacheSharing`, activé par défaut) — mais un cache de préfixe est propre à chaque modèle. Pointer `fastModel` vers un modèle différent crée une bifurcation vers un cache séparé, de sorte que tout l'historique de la conversation est refacturé comme entrée non mise en cache sur le modèle rapide. Pour les longues conversations, la valeur par défaut (modèle principal + cache partagé) peut être **moins chère** qu'un modèle rapide, car la majeure partie de l'historique est facturée au tarif réduit du cache en cache. Définissez `fastModel` lorsque la latence est plus importante que le coût par tour.
+> **Note sur le coût :** Un modèle rapide réduit la latence, mais il ne réduit pas toujours le coût. La génération de suggestions réutilise le cache de préfixe de votre conversation (via `ui.enableCacheSharing`, activé par défaut) — mais un cache de préfixe est propre à chaque modèle. Pointer `fastModel` vers un modèle différent crée une bifurcation vers un cache séparé, de sorte que tout l'historique de la conversation est refacturé comme entrée non mise en cache sur le modèle rapide. Pour les longues conversations, la valeur par défaut (modèle principal + cache partagé) peut être **moins chère** qu'un modèle rapide, car la majeure partie de l'historique est facturée au tarif réduit du cache. Définissez `fastModel` lorsque la latence est plus importante que le coût par tour.
 
 Le mode de réflexion/raisonnement est automatiquement désactivé pour toutes les tâches en arrière-plan (génération de suggestions et spéculation), quelle que soit la configuration de réflexion de votre modèle principal. Cela évite de gaspiller des tokens en raisonnement interne inutile pour ces tâches.
 

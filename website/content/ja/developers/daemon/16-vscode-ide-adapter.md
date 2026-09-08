@@ -80,7 +80,7 @@ const baseUrl = validateDaemonBaseUrl(options.baseUrl);
 
 ### Webview ブリッジ
 
-コネクションクラスは**トランスポートのみ**です。実際の VS Code 統合は `packages/vscode-ide-companion/src/webview/providers/ChatWebviewViewProvider.ts`（および関連ファイル）にあります。プロバイダーはコネクションのコールバックを購読し、それらを Webview の `postMessage` 呼び出しに変換します。Webview 自体は共有の `packages/webui/` コンポーネントライブラリを使用してレンダリングします。詳細については、[`01-architecture.md`](./01-architecture.md) のアダプターマトリックスを参照してください。
+コネクションクラスは**トランスポートのみ**です。実際の VS Code 統合は `packages/vscode-ide-companion/src/webview/providers/ChatWebviewViewProvider.ts`（および関連ファイル）にあります。プロバイダーはコネクションのコールバックを購読し、それらを Webview の `postMessage` 呼び出しに変換します。Webview はレンダリングのために Web Shell を埋め込んでいます。
 
 ### 接続のシリアライズ
 
@@ -169,7 +169,7 @@ sequenceDiagram
 
 - `packages/sdk-typescript/src/daemon/` — `DaemonClient`、`DaemonSessionClient` (実際のトランスポート)。
 - VS Code extension API (`vscode.*`) — ホスト API、クイックピック、Webview。
-- `packages/webui/src/adapters/ACPAdapter.ts` — `postMessage` 経由で中継される ACP 形状メッセージの Webview レンダリング。
+- `packages/web-shell/client/` — デーモンセッションイベントの埋め込み Webview レンダリング。
 
 ## 設定
 
@@ -196,6 +196,6 @@ sequenceDiagram
 - `packages/vscode-ide-companion/src/services/daemonIdeConnection.ts` (`createSdkDaemonSessionFactory`)
 - `packages/vscode-ide-companion/src/types/connectionTypes.ts` (legacy `AcpConnectionState`)
 - `packages/vscode-ide-companion/src/webview/providers/ChatWebviewViewProvider.ts` (webview bridge)
-- `packages/webui/src/adapters/ACPAdapter.ts` (webview ACP-message adapter)
+- `packages/web-shell/client/` (埋め込み Web Shell レンダラー)
 - Draft design: [`../daemon-client-adapters/ide.md`](../daemon-client-adapters/ide.md)
 - SDK reference: [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)

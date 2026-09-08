@@ -183,6 +183,46 @@ disable-model-invocation: true
 
 Você pode combinar ambos os campos, mas então a Skill não será acessível através dos caminhos normais de invocação pelo usuário ou pelo modelo.
 
+### Opcional: impor uma regra deterministicamente (`hooks:`)
+
+Tudo no corpo de um `SKILL.md` é uma instrução para o modelo: é texto de prompt, então segui-lo depende do modelo. Quando uma regra deve ser respeitada independentemente do que o modelo decida — recusar executar a menos que um valor obrigatório tenha sido injetado, nunca alterar um caminho protegido — declare um [hook](./hooks.md) no frontmatter. Hooks são executados como código, portanto não dependem da cooperação do modelo:
+
+```yaml
+---
+name: gated-skill
+description: Calls the downstream CLI using a runtime-injected session ID
+hooks:
+  PreToolUse:
+    - matcher: run_shell_command
+      hooks:
+        - type: command
+          command: '"$QWEN_SKILL_ROOT/scripts/gate-session-id.sh"'
+---
+```
+
+`$QWEN_SKILL_ROOT` é definido como o diretório da própria Skill, então os comandos do hook podem referenciar arquivos enviados junto com o `SKILL.md`. A string do comando é passada para um shell, então **mantenha as aspas internas**: sem aspas, um caminho de projeto contendo um espaço se divide em duas palavras e o gate nunca é executado. **Torne o script executável** (`chmod +x`) também. Ambos os erros resultam em fail-open da mesma forma: a chamada de ferramenta prossegue, e nada aparece na transcrição ou no log indicando que o gate não foi executado. Um hook `PreToolUse` bloqueia a chamada de ferramenta quando sai com código `2` (stderr é devolvido ao modelo como motivo), ou quando imprime `hookSpecificOutput.permissionDecision: "deny"`:
+
+```bash
+#!/usr/bin/env bash
+if [ -z "${DOWNSTREAM_SESSION_ID:-}" ]; then
+  echo "Required input DOWNSTREAM_SESSION_ID is not available. Cannot proceed." >&2
+  exit 2
+fi
+exit 0
+```
+
+Observações:
+
+- Os hooks são registrados quando a Skill é invocada e duram pelo resto da sessão. Isso é verdade em ambos os caminhos de invocação — tanto quando o modelo chama a Skill quanto quando você digita `/<skill-name>`.
+- Os hooks de sessão existem apenas na memória, então retomar uma sessão com `--continue` / `--resume` **não** os restaura, em nenhum caminho de invocação. As instruções da Skill podem voltar com a conversa reexecutada, enquanto os hooks que deveriam aplicá-las se foram — reexecute a Skill após retomar para rearmar seu gate.
+- O registro é idempotente: reinvocar uma Skill não acumula hooks duplicados.
+- Sempre defina um `matcher:` explícito para um evento de ferramenta. Um matcher omitido é armazenado como padrão vazio, que é compilado para `^$` e não corresponde a nenhum nome de ferramenta — o hook é registrado mas nunca é disparado, sem nada para indicar isso. Use `*` se quiser todas as ferramentas.
+- O `command:` é executado pelo shell da plataforma: `bash` no macOS e Linux, e no Windows o Git Bash quando detectado (`MSYSTEM`/`TERM`), caso contrário `cmd.exe` ou PowerShell. O exemplo acima é shell POSIX — sob `cmd.exe`, `$QWEN_SKILL_ROOT` não é expandido e um script `.sh` não é executável, então o gate falha abertamente ali. Um hook pode definir `shell: bash` para forçar o bash, mas isso resolve para qualquer `bash` no `PATH`, então no Windows fora do Git Bash escreva o gate para o shell que você realmente tem.
+- Sessões que desabilitam hooks não registram nenhum — `disableAllHooks`, modo seguro e o `skipHooks` de um cliente ACP. O corpo da Skill e seus `allowedTools` ainda se aplicam nessas sessões, mas seu gate não, então uma regra que depende de um hook para ser aplicada não será aplicada ali. O modo bare vai além: nenhuma Skill é descoberta, então não há corpo nem `allowedTools`.
+- Os hooks de uma Skill de **projeto** executam comandos fornecidos pelo repositório, então são registrados apenas em uma pasta confiável, e a confiança é relida toda vez que um hook é disparado e toda vez que uma permissão é decidida. Com um companion de IDE conectado, esse valor é dinâmico: revogar a confiança silencia um gate já registrado — e suspende os `allowedTools` da Skill — na próxima chamada de ferramenta, sem reiniciar. Sem conexão de IDE, o valor é fixado quando a CLI inicia, então uma alteração feita pelo próprio diálogo de confiança da CLI entra em vigor na reinicialização. Conceder confiança nunca registra retroativamente: invoque a Skill novamente.
+- `hooks:` é lido para Skills de projeto, de usuário e integradas. Skills fornecidas por extensões não o suportam; use os hooks de nível de manifesto da própria extensão.
+- Consulte [Hooks](./hooks.md) para a lista completa de eventos, sintaxe de matcher e formato de saída.
+
 ## Adicionar arquivos de suporte
 
 Crie arquivos adicionais junto com o `SKILL.md`:

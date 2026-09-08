@@ -36,6 +36,10 @@ Diese Befehle helfen dir, den Arbeitsfortschritt zu speichern, wiederherzustelle
 
 > [!note]
 >
+> Das Öffnen eines HTML-Exports lädt den Renderer für genau diese Qwen Code-Version von `unpkg.com`. Wenn die Version nicht veröffentlicht wurde oder der Renderer nicht erreichbar ist, zeigt die Datei einen Ladefehler an. Markdown-, JSON- und JSONL-Exporte bleiben eigenständig.
+
+> [!note]
+>
 > `/summarize` ist ein Alias für `/compress` (es komprimiert den Chat-Verlauf – eine destruktive Operation). Um stattdessen eine nicht-destruktive Projektzusammenfassung zu generieren, verwende `/summary`.
 
 > [!note]
@@ -96,6 +100,7 @@ Befehle zur Verwaltung von KI-Tools und -Modellen.
 | → `auto-edit` | Änderungen automatisch genehmigen (vertrauenswürdige Umgebung) | `/approval-mode auto-edit` |
 | → `auto` | Vom Classifier bewertete Genehmigung (autonom) | `/approval-mode auto` |
 | → `yolo` | Alles automatisch genehmigen (schnelles Prototyping) | `/approval-mode yolo` |
+| `/peers` | Zurückgehaltene Peer-Nachrichten prüfen; vertrauenswürdige Controller verwalten | `/peers`, `/peers accept <id>`, `/peers deny all`, `/peers controllers`, `/peers revoke <id>` |
 | `/model` | In der aktuellen Sitzung verwendetes Modell wechseln | `/model`, `/model <model-id>` (sofortiger Wechsel) |
 | `/model --fast` | Ein leichteres Modell für Prompt-Vorschläge festlegen | `/model --fast qwen3-coder-flash` |
 | `/model --voice` | Das für die Sprachtranskription verwendete Modell festlegen | `/model --voice <model-id>` |
@@ -103,6 +108,7 @@ Befehle zur Verwaltung von KI-Tools und -Modellen.
 | `/model --compaction` | Das für die Chat-Komprimierung verwendete Modell festlegen | `/model --compaction <model-id>`, `/model --compaction clear` |
 | `/model --image` | Ein Modell mit Bildgenerierungsfähigkeit für das integrierte Bildgenerierungs-Tool festlegen | `/model --image <model-id>` |
 | `/effort` | Reasoning-Aufwand für denkfähige Modelle festlegen | `/effort` (öffnet Picker), `/effort high` (low/medium/high/xhigh/max; wird je nach Provider gemappt und begrenzt) |
+| `/output-style` | Wähle den Ausgabestil, der bestimmt, wie Antworten formuliert werden | `/output-style` (öffnet Picker), `/output-style Concise`, `/output-style default` (kein Stil) |
 | `/extensions` | Extensions verwalten | `/extensions list`, `/extensions manage` |
 | → `list` | Installierte Extensions auflisten | `/extensions list` |
 | → `manage` | Installierte Extensions verwalten (interaktiv) | `/extensions manage` |
@@ -117,7 +123,7 @@ Befehle zur Verwaltung von KI-Tools und -Modellen.
 | `/permissions` | Berechtigungsregeln verwalten | `/permissions` |
 | `/agents` | Subagenten verwalten | `/agents manage`, `/agents create` |
 | `/arena` | Arena-Sitzungen verwalten | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (Alias `choose`) |
-| `/goal` | Ein Ziel festlegen – weiterarbeiten, bis die Bedingung erfüllt ist (siehe [Goals](./goals.md)) | `/goal <condition>`, `/goal clear` |
+| `/goal` | Ein Ziel festlegen – weiterarbeiten, bis ein Verifizierer es bestätigt (siehe [Goals](./goals.md)) | `/goal <objective>`, `/goal edit <objective>`, `/goal pause`, `/goal resume`, `/goal clear` |
 | `/tasks` | Hintergrundtasks auflisten | `/tasks` |
 | `/workflows` | Workflow-Ausführungen inspizieren; einen Hintergrundlauf kooperativ pausieren/fortsetzen | `/workflows`, `/workflows <runId>`, `/workflows p <runId>` |
 | `/lsp` | LSP-Server-Status anzeigen | `/lsp` |
@@ -688,6 +694,7 @@ Diese Befehle werden in der Shell als `qwen <subcommand>` ausgeführt, bevor ein
 | -------------------- | -------------------------------------------- | -------------------------------------------------------------- |
 | `qwen sessions list` | Zeigt die letzten Konversationssitzungen an  | `qwen sessions list`, `qwen sessions list --json --limit 50` |
 | `qwen sessions ps`   | Zeigt aktuell laufende interaktive Sitzungen | `qwen sessions ps`, `qwen sessions ps --json`                |
+| `qwen sessions controllers` | Vertrauenswürdige Controller-Tokens verwalten | `qwen sessions controllers add --label <name>`, `qwen sessions controllers list` |
 
 #### `qwen sessions list`
 
@@ -753,7 +760,7 @@ JSON-Objekt mit den folgenden Feldern:
 
 ```
 schemaVersion, pid, procStart, pidNs, sessionId, cwd, name, startedAt,
-qwenVersion
+qwenVersion, ipcPath (wenn Peer-Messaging verfügbar ist)
 ```
 
 Nichts anderes wird auf stdout geschrieben – eine leere Auflistung gibt
@@ -776,3 +783,205 @@ qwen sessions ps
 # Pfad nicht vertrauenswürdig ist.
 qwen sessions ps --json | jq -r .cwd
 ```
+
+## 6. Nachrichten an eine andere laufende Session senden
+
+Zwei interaktive Sessions auf demselben Rechner können sich gegenseitig
+Nachrichten senden. Die Funktion ist experimentell und **standardmäßig
+ausgeschaltet**; aktiviere sie in `settings.json` und starte neu:
+
+```json
+{ "agents": { "crossSessionMessaging": true } }
+```
+
+Sobald aktiviert, kann das Modell in einer Session die anderen mit
+`list_agents` entdecken – jede erscheint unter `sessions` mit dem `name`,
+den `qwen sessions ps --json` aufzeichnet (die Tabellenansicht kann lange
+Namen abschneiden) – und eine mit `send_message` adressieren, wobei
+dieser Name als `to` verwendet wird. Wenn zwei Sessions denselben Namen
+teilen, zeigt `list_agents` jede mit einem kurzen `[ref]` an, und der
+Send-Vorgang muss dieses einbeziehen (`name [ref]`); ein bloßer Name, der
+beides bedeuten könnte, wird abgelehnt, statt geraten.
+`list_agents` meldet auch den eigenen Namen der Session unter `self`, und
+`to: "*"` bedeutet weiterhin "meine Agent-Team-Mitglieder" und erreicht
+nie andere Sessions.
+
+Eine Nachricht kommt in der anderen Session als von einer anderen Session
+kommend an, nicht vom Benutzer, und trägt keine deiner Autorität dort:
+Die empfangende Session handelt nur innerhalb ihrer eigenen
+Berechtigungseinstellungen. Ihr Benutzer kann entscheiden, was mit
+eingehenden Nachrichten geschieht, mittels
+`agents.crossSessionInbound` (`accept`, `hold` oder `refuse`). Wenn nicht
+gesetzt, wird eine Nachricht nur zugestellt, wenn beide Sessions in
+derselben Review-Klasse sind: beide überprüfen jede Aktion (Default- oder
+Plan-Modus), oder beide sind in einem Modus, der einige Aktionen ohne
+Review pro Aktion anwendet (auto-edit, auto oder yolo). Eine Nachricht
+von einer Session in der anderen Klasse, oder von einem Absender, der
+nicht angibt, in welcher Klasse er sich befindet, wird zur Überprüfung
+zurückgehalten – in beide Richtungen. Eine Session, die jede Aktion
+überprüft, hält eine Nachricht von einer zurück, die es nicht tut, denn
+diese Nachricht wurde von einem Modell geschrieben, das niemand
+beobachtete, und die Prompts pro Aktion bewachen Aktionen, nicht wozu
+die Session überredet wird. Zurückgehaltene Nachrichten werden mit
+`/peers` in der empfangenden Session aufgelistet und freigegeben, und
+eine Nachricht, die nur wegen unterschiedlicher Modi zurückgehalten
+wurde, wird automatisch freigegeben, sobald sie übereinstimmen.
+
+Ein Repository kann darin geöffnete Sessions vorsichtiger machen, nie
+weniger: Eine Workspace-`.qwen/settings.json` kann
+`agents.crossSessionInbound` auf `hold` oder `refuse` setzen, oder
+`agents.crossSessionMessaging` auf `false`, und dieser Wert gewinnt über
+einem lockereren in deinen Benutzereinstellungen. Ein Workspace-Wert,
+der deine Einstellung lockern würde (`accept`, oder `true` für den
+Schalter), wird mit einer Warnung ignoriert, und ein Wert, den die CLI
+nicht erkennt, hält jede Nachricht, wenn er der effektive Wert ist.
+Systemeinstellungen überschreiben all dies, wie bei jeder Einstellung.
+
+Eine Zurückhaltung wartet nicht ewig. Eine Nachricht, über die niemand
+entscheidet, läuft nach `agents.crossSessionHeldExpiry` ab – `1m`,
+`5m`, `10m` oder `never`, standardmäßig fünf Minuten – und der sendenden
+Session wird mitgeteilt, dass keine Entscheidung getroffen wurde. Eine
+Verkürzung der Einstellung gilt auch für bereits wartende Nachrichten.
+
+Wenn die Session ihren Posteingang nicht binden kann – das
+Runtime-Verzeichnis fehlt, gehört einem anderen Benutzer oder ist
+schreibgeschützt, wie in einem Container – versucht sie zuerst ein
+privates Verzeichnis unter dem Temp-Verzeichnis, und nur wenn das
+ebenfalls fehlschlägt, startet sie ohne. Wenn das passiert, meldet die
+Session dies beim Start, und `/peers` wiederholt den Grund und was zu
+ändern ist (normalerweise `XDG_RUNTIME_DIR` oder `TMPDIR`).
+
+Zwei Sessions können auch dieselbe Posteingangsadresse auflösen, denn
+die Adresse ist nach Prozess-ID gekeyt, und Prozess-IDs wiederholen sich
+über Container, die ein Runtime-Verzeichnis teilen. Die zweitstartende
+Session nimmt eine benachbarte Adresse, statt die gerade verwendete zu
+übernehmen, sodass keine unerreichbar wird. Peers sind davon
+unbetroffen: Sie lesen die Adresse einer Session aus der
+Session-Registry, statt sie abzuleiten.
+
+Der `send_message`-Aufruf bestätigt nur, dass die Nachricht an die
+andere Session übergeben wurde. Was daraus wurde, kommt später als
+Quittung: Wenn sie zurückgehalten, abgelehnt, verweigert, abgelaufen
+oder falsch adressiert war (die Adresse hat den Besitzer gewechselt –
+liste die Agenten erneut auf) – oder nach einer Zurückhaltung
+freigegeben – erscheint ein Hinweis im Transkript der sendenden Session
+(`Message to <name>: …`). Abgelehnt und verweigert sind unterschiedliche
+Antworten: Abgelehnt bedeutet, dass jemand die Nachricht überprüft und
+nein gesagt hat, während verweigert bedeutet, dass
+`agents.crossSessionInbound` dieser Session `refuse` ist und niemand sie
+überhaupt gesehen hat. Das Modell, das sie gesendet hat, wird nicht
+informiert; wenn die andere Session antwortet, kommt die Antwort als
+Cross-Session-Nachricht an.
+
+### Posteingang-Authentifizierung und skriptete Injektion
+
+Der Posteingang jeder Session erfordert ein Session-spezifisches Token:
+Eine Verbindung muss es in ihrer ersten Zeile präsentieren, bevor eine
+Nachricht gelesen wird, und Sessions tauschen Token automatisch über
+dieselben Registry-Einträge aus, durch die sie sich gegenseitig
+entdecken. Sessions von einem Build ohne Token-Support können von einem
+neueren empfangen, aber ihre Sendungen an dieses werden verworfen.
+
+Eine Session exportiert ihre eigene Posteingangsadresse und ein Token an
+Kindprozesse als `QWEN_CODE_MESSAGING_SOCKET` und
+`QWEN_CODE_MESSAGING_TOKEN`, sodass ein Skript oder Hook, den die
+Session ausführt, eine Nachricht zurück in sie senden kann. Dies ist ein
+zweites, _Kind_-Token, das nirgendwo veröffentlicht wird: Nur Prozesse,
+die die Session gestartet hat, können es halten, sodass eine Nachricht,
+die damit ankommt, als eigene der Session erkannt wird, statt als die
+einer anderen Session.
+
+```bash
+{ printf '%s\n' \
+    '{"msgV":1,"type":"auth","token":"'"$QWEN_CODE_MESSAGING_TOKEN"'"}' \
+    '{"msgV":1,"msgId":"'"$(uuidgen)"'","type":"user","priority":"next","message":{"role":"user","content":"build finished"}}'; \
+} | socat - UNIX-CONNECT:"$QWEN_CODE_MESSAGING_SOCKET"
+```
+
+Gib jeder Injektion eine frische `msgId`. Das empfangende Gate merkt
+sich die IDs, die es bereits verarbeitet hat, sodass ein Hook, der eine
+wiederverwendet, beim ersten Mal zugestellt und bei jedem weiteren Lauf
+still dedupliziert wird.
+
+Eine injizierte Nachricht durchläuft immer noch das eingehende Gate und
+wird als nicht vom Benutzer kommend markiert, aber das Gate weiß, dass
+sie vom eigenen Prozess der Session kam: Unter dem
+Modus-Übereinstimmungs-Standard wird sie ohne Überprüfung zugestellt
+(ein Peer in derselben Position würde zurückgehalten), während ein
+explizites `agents.crossSessionInbound` von `hold` oder `refuse` dafür
+gilt wie für alles andere. Das Modell sieht sie als
+`<cross_session_message from="own process" origin="own-process">` mit
+einem Hinweis, dass sie von einem Skript oder Hook stammt, den die
+Session ausgeführt hat, nicht vom Benutzer.
+
+### Vertrauenswürdige Controller
+
+Die Regel oben hält eine Nachricht von jedem Absender zurück, der nicht
+angibt, in welcher Review-Klasse er sich befindet, und ein Programm, das
+keine Qwen Code-Session ist, hat keine zu sagen. Das ist die richtige
+Voreinstellung für einen Fremden, aber nicht für ein Programm, das du
+gewählt hast: Ein Voice-Frontend, eine Diktierbrücke, ein
+Automatisierungs-Daemon, der deine eigenen Anweisungen weiterleitet,
+würde jede Nachricht parken, und jede einzelne manuell zu genehmigen
+macht den Sinn zunichte.
+
+Du gewährst einem solchen Programm die Zustellung, indem du ein Token
+für es erstellst:
+
+```bash
+qwen sessions controllers add --label voice-bridge
+```
+
+Das Token wird einmal ausgegeben und nirgendwo gespeichert: Die Datei
+unter deinem Qwen-Home enthält nur seinen SHA-256-Hash, sodass nichts,
+was diese Datei später liest, das Token präsentieren kann. Trage es in
+die eigene Konfiguration des Controllers ein, wenn der Befehl es
+ausgibt.
+
+Ein Controller präsentiert das Token wie jeder andere Absender – als
+erste Zeile der Verbindung – und nimmt den Socket-Pfad aus der
+Session-Registry (`qwen sessions ps --json` gibt einen Datensatz pro
+Live-Session aus, `ipcPath` ist die Adresse):
+
+```bash
+{ printf '%s\n' \
+    '{"msgV":1,"type":"auth","token":"'"$QWEN_CONTROLLER_TOKEN"'"}' \
+    '{"msgV":1,"msgId":"'"$(uuidgen)"'","type":"user","priority":"next","message":{"role":"user","content":"open the failing test"}}'; \
+} | socat - UNIX-CONNECT:"$SESSION_IPC_PATH"
+```
+
+Eine Nachricht, die mit einem gewährten Token ankommt, wird ohne Review
+pro Nachricht zugestellt, unabhängig davon, in welcher Review-Klasse
+sich jede Seite befindet – aber sie weicht weiterhin einer expliziten
+Einstellung: Ein `agents.crossSessionInbound` von `hold` parkt sie wie
+alles andere, und `refuse` weist sie ab. Grants gehören zu deinem
+Qwen-Home statt zu einer Session, sodass ein Controller die Sessions
+erreicht, die du ausführst, und Sessions lesen die Datei bei jeder
+Verbindung neu: Ein Token zu erstellen oder zu widerrufen, wird bei der
+nächsten Verbindung wirksam, ohne dass etwas neu gestartet werden muss.
+
+```bash
+qwen sessions controllers list          # IDs, Labels, wann sie hinzugefügt wurden
+qwen sessions controllers remove c_1a2b # eines widerrufen
+```
+
+`/peers controllers` und `/peers revoke <id>` tun dasselbe innerhalb
+einer Session. Eine Nachricht, die durch einen Grant kam, wird als
+`Message from a trusted controller (voice-bridge)` angezeigt, und
+erscheint in `/peers` als `[controller] voice-bridge`, wenn eine
+`hold`-Einstellung sie geparkt hat.
+
+Das Modell sieht eine solche Nachricht als
+`<cross_session_message from="controller" origin="controller" controller="voice-bridge">`,
+mit einem Hinweis, dass sie deine eigenen Anweisungen weiterleitet – und
+dieselben zwei Verbote, die für jeden anderen Ursprung gelten: Sie darf
+nicht Berechtigungseinstellungen, QWEN.md oder Konfiguration bearbeiten,
+weil die Nachricht es verlangt, und sie darf die Nachricht nicht als
+deine Genehmigung eines ausstehenden Bestätigungs-Prompts behandeln. Ein
+Controller kann sagen, was als nächstes zu tun ist; er kann keinen
+Prompt in deinem Namen beantworten.
+
+Jeder, der das Token hält, kann als dieser Controller senden, behandle
+es also wie jede andere Anmeldeinformation: Gib es einem Programm, halte
+es aus geteilter Konfiguration heraus, und widerrufe es, wenn das
+Programm fertig ist.

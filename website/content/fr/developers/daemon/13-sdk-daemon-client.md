@@ -152,7 +152,7 @@ await client
   .setWorkspaceSkillEnabled('review', true, { clientId: 'dashboard-1' });
 ```
 
-Pré-vérifiez `capabilities.features.includes('workspace_skill_settings_toggle')`. Le `DaemonSkillToggleResult` typé rapporte le `skillName` demandé après tronquage, si l'état disque a `changed`, l'état d'activation (`applied`, `deferred` ou `partial`), et les comptes de sessions rafraîchies/échouées. L'écriture est limitée aux paramètres et ne nécessite pas que le nom apparaisse dans `DaemonWorkspaceSkillStatus` ; le champ optionnel false-only `userInvocable` de ce type de statut reste utile pour afficher le catalogue live mais ne conditionne pas la persistance. Le tag obsolète `workspace_skill_toggle` décrivait le comportement antérieur validé par le catalogue et n'est pas annoncé pour ce contrat.
+Pré-vérifiez `capabilities.features.includes('workspace_skill_settings_toggle')`. Le `DaemonSkillToggleResult` typé rapporte le `skillName` demandé après tronquage, si l'état disque a `changed`, l'état d'activation (`applied`, `deferred`, `reconciling` ou `partial`), et les comptes de sessions rafraîchies/échouées. L'écriture est limitée aux paramètres et ne nécessite pas que le nom apparaisse dans `DaemonWorkspaceSkillStatus` ; le champ optionnel false-only `userInvocable` de ce type de statut reste utile pour afficher le catalogue live mais ne conditionne pas la persistance. Le tag obsolète `workspace_skill_toggle` décrivait le comportement antérieur validé par le catalogue et n'est pas annoncé pour ce contrat.
 
 Pour les modifications par lot, pré-vérifiez `workspace_skill_settings_batch_toggle` et appelez l'une ou l'autre forme du client avec le même contrat. Les routes et les corps de requête sont inchangés :
 
@@ -321,7 +321,7 @@ Le SDK exporte également `packages/sdk-typescript/src/daemon/ui/`, un ensemble 
 - Les constantes publiques incluent `DAEMON_PLAN_TOOL_CALL_ID`.
 - `conformance.ts` contient la suite de tests de cohérence multi-hôtes.
 
-Le premier consommateur en production est `packages/webui/src/daemon/` via le `DaemonSessionProvider` de React. Consultez [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md) pour l'architecture détaillée, le glossaire, le tableau des sélecteurs et la relation avec l'ancien `DaemonTuiAdapter`.
+Le premier consommateur en production est `packages/web-shell/client/daemon/` via le `DaemonSessionProvider` de React. Consultez [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md) pour l'architecture détaillée, le glossaire, le tableau des sélecteurs et la relation avec l'ancien `DaemonTuiAdapter`.
 
 Le sous-package est exporté depuis le sous-chemin `@qwen-code/sdk/daemon`. Le code existant qui fait `import { DaemonClient }` n'est pas affecté.
 
@@ -337,18 +337,18 @@ import { DaemonClient, DaemonSessionClient } from '@qwen-code/sdk/daemon';
 const client = new DaemonClient({ baseUrl: 'http://127.0.0.1:4170', token });
 const session = await DaemonSessionClient.createOrAttach(client);
 
-// First subscription — starts live (or from ring start for new sessions).
+// Premier abonnement — démarre en live (ou depuis le début du ring pour les nouvelles sessions).
 for await (const event of session.events()) {
   console.log(event.type, event.id);
-  // session.lastEventId is bumped on each id-bearing frame.
+  // session.lastEventId est incrémenté à chaque trame portant un id.
   if (shouldStop(event)) break;
 }
 
-// Reconnect — automatically sends Last-Event-ID: <last seen id>.
-// The daemon replays missed events from the ring, then goes live.
+// Reconnexion — envoie automatiquement Last-Event-ID: <dernier id vu>.
+// Le daemon rejoue les événements manquants depuis le ring, puis passe en live.
 for await (const event of session.events()) {
-  // Replay frames arrive first, then a synthetic `replay_complete`,
-  // then live events.
+  // Les trames de relecture arrivent en premier, puis un `replay_complete` synthétique,
+  // puis les événements live.
   handleEvent(event);
 }
 ```
@@ -360,26 +360,26 @@ Pour un contrôle de plus bas niveau, utilisez `DaemonClient.subscribeEvents` di
 ```ts
 const client = new DaemonClient({ baseUrl: 'http://127.0.0.1:4170', token });
 
-let cursor: number | undefined; // undefined = live-only on first connect
+let cursor: number | undefined; // undefined = live uniquement à la première connexion
 
 async function* subscribe(sessionId: string, signal: AbortSignal) {
   for await (const event of client.subscribeEvents(sessionId, {
     lastEventId: cursor,
     signal,
   })) {
-    // Only id-bearing frames advance the cursor.
+    // Seules les trames portant un id font avancer le curseur.
     if (event.id !== undefined) {
       cursor = event.id;
     }
-    // Handle ring-eviction gap.
+    // Gérer le trou d'éviction du ring.
     if (event.type === 'state_resync_required') {
-      // State is stale — reload the daemon's bounded replay snapshot window.
+      // L'état est obsolète — recharger la fenêtre de snapshot de relecture bornée du daemon.
       await client.loadSession(sessionId);
       continue;
     }
     if (event.type === 'history_truncated') {
-      // Informational only. Render a status notice, then continue applying
-      // the retained replay events; do not trigger another reload.
+      // Informatif uniquement. Afficher un avis de statut, puis continuer à appliquer
+      // les événements de relecture conservés ; ne pas déclencher un autre rechargement.
     }
     yield event;
   }
@@ -397,12 +397,12 @@ async function resilientSubscribe(session: DaemonSessionClient) {
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
-      // `resume: true` (default) passes the tracked lastSeenEventId.
+      // `resume: true` (par défaut) passe le lastSeenEventId suivi.
       for await (const event of session.events()) {
-        attempt = 0; // reset on successful event
+        attempt = 0; // réinitialiser lors d'un événement réussi
         handleEvent(event);
       }
-      break; // clean stream end
+      break; // fin propre du flux
     } catch (err) {
       const delay = BASE_DELAY_MS * 2 ** Math.min(attempt, 5);
       await new Promise((r) => setTimeout(r, delay));
@@ -431,7 +431,7 @@ Les appelants qui persistent le curseur entre les redémarrages de processus peu
 const session = new DaemonSessionClient({
   client,
   session: { sessionId, workspaceCwd, attached: true },
-  lastEventId: persistedCursor, // resume from persisted position
+  lastEventId: persistedCursor, // reprendre depuis la position persistée
 });
 ```
 
@@ -455,7 +455,7 @@ La valeur doit être un entier fini et non négatif (validé à la construction)
 - **`fetchTimeoutMs` s'applique par appel, et non au niveau de la connexion.** Les lectures longues du corps de la réponse partagent le même timer. Un daemon qui stream des réponses doit remplacer le timeout par appel ou définir le timeout à `0`.
 - **SSE contourne le fetch timeout** — les connexions SSE de longue durée ne sont pas tuées par `fetchTimeoutMs`. Utilisez `AbortSignal` pour une annulation contrôlée par l'appelant.
 - **La limite du tampon de `parseSseStream` est de 16 MiB** par mesure de sécurité. Une seule trame plus grande que cela interrompt l'itérateur (le daemon n'émet jamais légitimement de telles trames).
-- **`asKnownDaemonEvent` retourne `undefined` pour les types d'événements non reconnus.** Les consommateurs du SDK doivent gérer cette branche plutôt que de supposer que l'union est exhaustive ; c'est le contrat de compatibilité ascendante. Les événements non reconnus incrémentent `DaemonSessionViewState.unrecognizedKnownEventCount`.
+- **`asKnownDaemonEvent` retourne `undefined` pour les types d'événements non reconnus.** Les consommateurs du SDK doivent gérer cette branche plutôt que de supposer que l'union est exhaustive ; c'est le contrat de compatibilité descendante. Les événements non reconnus incrémentent `DaemonSessionViewState.unrecognizedKnownEventCount`.
 - **`client_evicted`, `slow_client_warning`, `stream_error` ne font pas partie du ring de relecture.** Se reconnecter après une expulsion reprend depuis le ring du daemon ; vous ne reverrez pas la trame d'expulsion.
 - **`DaemonClient` ne fait pas de retry automatique.** Les échecs réseau se manifestent par des rejets ; la stratégie de reconnexion / relecture relève de la responsabilité de l'appelant (`DaemonSessionClient.events()` facilite la relecture, mais la reconnexion reste à faire par appel).
 

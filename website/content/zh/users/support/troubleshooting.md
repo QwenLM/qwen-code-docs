@@ -104,8 +104,8 @@
 
 - **问题：右键无反应、链接无法打开、或终端中无法选择文本**
   - **现象：** 当 Qwen Code 运行时，原生右键上下文菜单、OSC 8 超链接点击（Ctrl+Click 或直接点击 URL）以及终端原生的文本选择停止工作。
-  - **原因：** 当 `ui.mouseTracking` 启用（默认）时，Qwen Code 通过 SGR 鼠标跟踪捕获所有鼠标事件，以支持应用内文本选择、点击定位、行悬停和视口滚动。终端将每个鼠标事件转发给应用，而不是原生处理。
-  - **解决方案：** 在 `settings.json` 中设置 `"ui.mouseTracking": false` 以恢复原生右键菜单和可点击的 URL 链接。这将关闭所有应用内鼠标交互。在虚拟化历史记录（`ui.useTerminalBuffer: true`，默认）中，滚轮将不再滚动对话记录 —— 请使用 `Shift+↑/↓`、`PgUp/PgDn` 或 `Ctrl+Home/End` 代替。要同时恢复终端原生回滚，请设置 `"ui.useTerminalBuffer": false`。需要重启。
+  - **原因：** 当 `ui.mouseTracking` 启用（默认）时，Qwen Code 通过 SGR 鼠标跟踪捕获所有鼠标事件，以支持应用内文本选择、点击定位、行悬停、历史项切换和视口滚动。终端将每个鼠标事件转发给应用，而不是原生处理。Qwen Code 在跟踪开启时提供自己的替代行为：单击可打开 http(s) OSC 8 超链接，右键单击链接或文本选择可打开应用内上下文菜单。
+  - **解决方案：** 如果你倾向于使用终端的原生处理方式，请在 `settings.json` 中设置 `"ui.mouseTracking": false`。这将关闭所有应用内鼠标交互，包括应用内链接打开和上下文菜单。在虚拟化历史记录（`ui.useTerminalBuffer: true`，默认）中，滚轮将不再滚动对话记录 —— 请使用 `Shift+↑/↓`、`PgUp/PgDn` 或 `Ctrl+Home/End` 代替。要同时恢复终端原生回滚，请设置 `"ui.useTerminalBuffer": false`。需要重启。
 
 ## IDE Companion 无法连接
 

@@ -13,7 +13,7 @@
 ```mermaid
 flowchart LR
     subgraph clients["客户端"]
-        WUI["Web UI<br/>(packages/webui/src/daemon)"]
+        WUI["Web Shell<br/>(packages/web-shell/client/daemon)"]
         TUI["CLI TUI<br/>(packages/cli/src/ui/daemon)"]
         IDE["VS Code IDE<br/>(packages/vscode-ide-companion)"]
         CH["频道机器人<br/>(钉钉 / 微信 / Telegram / 飞书)"]
@@ -98,7 +98,7 @@ flowchart TB
     end
 
     subgraph adapters["适配器"]
-        WUIP["webui/src/daemon/<br/>DaemonSessionProvider.tsx"]
+        WUIP["web-shell/client/daemon/session/<br/>DaemonSessionProvider.tsx"]
         TUIA["cli/src/ui/daemon/<br/>daemon-tui-adapter.ts"]
         CHB["channels/base/<br/>DaemonChannelBridge.ts"]
         DT["channels/dingtalk"]
@@ -346,6 +346,6 @@ sequenceDiagram
 
 - 设计问题: [#3803](https://github.com/QwenLM/qwen-code/issues/3803) (守护进程设计), [#4175](https://github.com/QwenLM/qwen-code/issues/4175) (F 系列里程碑).
 - 用户指南: [`../../users/qwen-serve.md`](../../users/qwen-serve.md).
-- 有线协议参考: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md).
+- 线路协议参考: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md).
 - F2 设计文档: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md).
 - F2 设计说明: issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) 提交 4-6.

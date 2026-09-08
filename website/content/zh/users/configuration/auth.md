@@ -103,7 +103,78 @@ export OPENAI_MODEL="qwen3-coder-plus"
 >
 > Coding Plan 使用专属 endpoint（`https://coding.dashscope.aliyuncs.com/v1`），这与标准的 Dashscope endpoint 不同。请确保使用正确的 `baseUrl`。
 
-## 🚀 选项 3：API Key（灵活）
+## 🪙 选项 3：Alibaba Cloud Token Plan
+
+如果你的团队或企业更倾向于在专属的 ModelStudio endpoint 上按量计费，请使用此选项。
+
+- **工作原理**：在 Alibaba Cloud ModelStudio 中订阅 Token Plan，然后配置 Qwen Code 使用对应区域的 Token Plan endpoint 和你的 API key。你将按实际使用的 token 量计费，而不是固定月费。
+- **要求**：根据你账号所在的区域，从 [Alibaba Cloud ModelStudio(Beijing)](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) 或 [Alibaba Cloud ModelStudio(intl)](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model) 获取 Token Plan API key。
+- **优势**：面向团队和企业的按量计费、专属的区域 endpoint、访问广泛的模型（Qwen、DeepSeek、GLM、Kimi、Minimax 等）。
+- **费用与配额**：查看 Alibaba Cloud ModelStudio Token Plan 文档 [Beijing](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)。
+
+Token Plan 在两个区域可用，每个区域都有其专属的 endpoint：
+
+| 区域 | Endpoint | 控制台 URL |
+| --- | --- | --- |
+| 中国（北京） | `https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1` | [bailian.console.aliyun.com](https://bailian.console.aliyun.com/cn-beijing) |
+| 新加坡（国际） | `https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1` | [modelstudio.console.alibabacloud.com](https://modelstudio.console.alibabacloud.com/ap-southeast-1) |
+
+### 交互式配置
+
+在终端中输入 `qwen` 启动 Qwen Code，然后运行 `/auth` 命令，选择 **Alibaba ModelStudio**，并在子菜单中选择 **Token Plan**。选择你的区域（**中国（北京）** 或 **新加坡（国际）**），然后输入你的 API key。向导随后会显示其最后一步（步骤 3/3 · 模型 ID），你可以在这里选择要配置的模型 ID：你的 endpoint 所提供的模型会在此处列出，并且仅在你明确选择时才会生效。Token Plan API key 没有前缀要求（与以 `sk-sp-` 开头的 Coding Plan key 不同）。
+
+身份验证完成后，使用 `/model` 命令浏览和切换为你的 Token Plan 配置的模型。模型阵容会随时间变化，因此这里有意不列出具体模型；来自 endpoint 的模型发现发生在上述 `/auth` 配置步骤中（endpoint 自己的列表会在此处提供，必须明确选择），然后 `/model` 会显示为你的计划配置的模型。
+
+### 无头或脚本化配置
+
+对于 CI、容器或脚本，请使用环境变量或 `settings.json` 来配置 Token Plan，而不是交互式 `/auth` 流程。
+
+```bash
+export BAILIAN_TOKEN_PLAN_API_KEY="your-api-key"
+export OPENAI_BASE_URL="https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+export OPENAI_MODEL="qwen3.7-plus"
+```
+
+中国（北京）endpoint 使用 `https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1`，国际（新加坡）endpoint 使用 `https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1`。将 `qwen3.7-plus` 替换为你的计划中包含的任何模型。
+
+请注意，`BAILIAN_TOKEN_PLAN_API_KEY` 是 provider 特定的 key：一旦下一节中的 `settings.json` provider 条目存在，它就会生效，因为该条目将其声明为 `envKey`。要仅使用环境变量选择 OpenAI 兼容的身份验证，请改为导出 `OPENAI_API_KEY` —— provider 特定的 key 本身不会选择身份验证类型。
+
+### 替代方案：通过 `settings.json` 配置
+
+如果你希望跳过交互式 `/auth` 流程，请将以下内容添加到 `~/.qwen/settings.json` 中：
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "qwen3.7-plus",
+        "name": "qwen3.7-plus (Token Plan)",
+        "baseUrl": "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1",
+        "description": "qwen3.7-plus from Alibaba Cloud Token Plan",
+        "envKey": "BAILIAN_TOKEN_PLAN_API_KEY"
+      }
+    ]
+  },
+  "env": {
+    "BAILIAN_TOKEN_PLAN_API_KEY": "your-api-key"
+  },
+  "security": {
+    "auth": {
+      "selectedType": "openai"
+    }
+  },
+  "model": {
+    "name": "qwen3.7-plus"
+  }
+}
+```
+
+> [!note]
+>
+> Token Plan 使用专属的区域 endpoint（`*.maas.aliyuncs.com`），这与标准的 DashScope endpoint 不同。请确保 `baseUrl` 与你订阅的区域匹配。
+
+## 🚀 选项 4：API Key（灵活）
 
 如果你希望连接到 OpenAI、Anthropic、Google、Azure OpenAI、OpenRouter、Requesty、ModelScope 等第三方 provider 或自托管 endpoint，请使用此选项。支持多种协议和 provider。
 
@@ -319,13 +390,14 @@ qwen --model "qwen3.5-plus"
 | --- | --- |
 | 交互式身份验证配置 | 运行 `qwen`，然后使用 `/auth` |
 | Coding Plan 配置 | 使用 `/auth`，或设置 `BAILIAN_CODING_PLAN_API_KEY` 及 Coding Plan base URL |
+| Token Plan 配置 | 使用 `/auth`，或设置 `BAILIAN_TOKEN_PLAN_API_KEY` 及对应区域的 Token Plan base URL |
 | OpenRouter 配置 | 使用 `/auth`，或设置 `OPENROUTER_API_KEY` 和 `OPENAI_BASE_URL=https://openrouter.ai/api/v1` |
 | Requesty 配置 | 使用 `/auth`，或设置 `REQUESTY_API_KEY` 和 `OPENAI_BASE_URL=https://router.requesty.ai/v1` |
 | API key 或自定义 provider 配置 | 配置 `~/.qwen/settings.json`、`.env` 或 provider 特定的环境变量 |
 | 检查当前身份验证 | 在 Qwen Code 中运行 `/doctor` |
 | OAuth 浏览器流程 | 交互式运行 `qwen` 并使用 `/auth`；OAuth 无法仅通过环境变量配置 |
 
-像 `qwen auth status` 这样的旧版调用现在会打印移除通知及这些迁移路径。
+像 `qwen auth status` 这样的旧版调用现在会打印移除通知及这些迁移路径，其中包括包含两个区域 base URL 的 Token Plan 条目。
 
 ## 安全注意事项
 

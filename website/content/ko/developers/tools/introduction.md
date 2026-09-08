@@ -1,6 +1,3 @@
----
-title: Qwen Code Tools
----
 
 # Qwen Code 도구
 
@@ -53,7 +50,7 @@ Qwen Code의 내장 도구는 다음과 같이 분류할 수 있습니다:
 - **[웹 가져오기 도구](./web-fetch.md) (`web_fetch`):** URL에서 콘텐츠 검색.
 - **[Todo Write 도구](./todo-write.md) (`todo_write`):** 코딩 세션 중 구조화된 작업 목록 생성 및 관리.
 - **[에이전트 도구](./task.md) (`agent`):** 복잡한 작업을 전문 서브에이전트에 위임.
-- **[Exit Plan Mode 도구](./exit-plan-mode.md) (`exit_plan_mode`):** plan mode를 종료하고 구현 진행.
+- **[Exit Plan Mode 도구](./exit-plan-mode.md) (`exit_plan_mode`):** 계획 모드를 종료하고 구현 진행.
 
 또한 다음 기능이 포함되어 있습니다:
 

@@ -1,10 +1,22 @@
 # Todo Write Tool (`todo_write`)
 
-Dieses Dokument beschreibt das `todo_write`-Tool für Qwen Code.
+In diesem Dokument wird das `todo_write`-Tool für Qwen Code beschrieben.
 
 ## Beschreibung
 
-Verwende `todo_write`, um eine strukturierte Aufgabenliste für deine aktuelle Coding-Session zu erstellen und zu verwalten. Dieses Tool hilft dem KI-Assistenten, den Fortschritt zu verfolgen und komplexe Aufgaben zu organisieren, und gibt dir Einblick in die durchgeführten Arbeiten.
+Verwende `todo_write`, um eine strukturierte Aufgabenliste für deine aktuelle Coding-Session zu erstellen und zu verwalten. Dieses Tool hilft dem KI-Assistenten, den Fortschritt zu verfolgen und komplexe Aufgaben zu organisieren, und verschafft dir Einblick in die gerade ausgeführten Arbeiten.
+
+Das Tool ist standardmäßig deaktiviert. Aktiviere es in `settings.json` und starte Qwen Code neu:
+
+```json
+{
+  "tools": {
+    "todoWrite": {
+      "enabled": true
+    }
+  }
+}
+```
 
 ### Argumente
 
@@ -15,13 +27,13 @@ Verwende `todo_write`, um eine strukturierte Aufgabenliste für deine aktuelle C
   - `status` (String, erforderlich): Der aktuelle Status (`pending`, `in_progress` oder `completed`).
   - `id` (String, erforderlich): Eine eindeutige Kennung für das Todo-Element.
 
-## So verwendest du `todo_write` mit Qwen Code
+## Verwendung von `todo_write` mit Qwen Code
 
-Der KI-Assistent wird dieses Tool automatisch verwenden, wenn er an komplexen, mehrstufigen Aufgaben arbeitet. Du musst es nicht explizit anfordern, aber du kannst den Assistenten bitten, eine Todo-Liste zu erstellen, wenn du den geplanten Ansatz für deine Anfrage sehen möchtest.
+Wenn das Tool aktiviert ist, kann der KI-Assistent es für komplexe, mehrstufige Aufgaben verwenden. Du kannst den Assistenten auch bitten, eine Todo-Liste zu erstellen, wenn du den geplanten Ansatz für deine Anfrage sehen möchtest.
 
 Das Tool speichert Todo-Listen in deinem Home-Verzeichnis (`~/.qwen/todos/`) in sitzungsspezifischen Dateien, sodass jede Coding-Session ihre eigene Aufgabenliste behält.
 
-## Wann der KI dieses Tool verwendet
+## Wann der KI-Assistent dieses Tool verwendet
 
 Der Assistent verwendet `todo_write` für:
 
@@ -30,7 +42,7 @@ Der Assistent verwendet `todo_write` für:
 - Refactoring-Vorgänge über mehrere Dateien hinweg
 - Jegliche Arbeiten mit 3 oder mehr verschiedenen Aktionen
 
-Der Assistent wird dieses Tool nicht für einfache, einstufige Aufgaben oder rein informative Anfragen verwenden.
+Der Assistent verwendet dieses Tool nicht für einfache, einstufige Aufgaben oder rein informative Anfragen.
 
 ### `todo_write`-Beispiele
 
@@ -58,6 +70,7 @@ todo_write(todos=[
 
 ## Wichtige Hinweise
 
-- **Automatische Nutzung:** Der KI-Assistent verwaltet Todo-Listen automatisch während komplexer Aufgaben.
-- **Fortschrittstransparenz:** Du wirst sehen, wie Todo-Listen in Echtzeit aktualisiert werden, während die Arbeit voranschreitet.
-- **Sitzungsisolierung:** Jede Coding-Session hat ihre eigene Todo-Liste, die andere nicht beeinträchtigt.
+- **Opt-in:** Setze `tools.todoWrite.enabled` auf `true` und starte Qwen Code neu, bevor du das Tool verwendest.
+- **Automatische Nutzung wenn aktiviert:** Der KI-Assistent verwaltet Todo-Listen während komplexer Aufgaben.
+- **Fortschrittssichtbarkeit:** Du siehst, wie Todo-Listen in Echtzeit aktualisiert werden, während die Arbeit voranschreitet.
+- **Session-Isolierung:** Jede Coding-Session hat ihre eigene Todo-Liste, die andere nicht beeinflusst.

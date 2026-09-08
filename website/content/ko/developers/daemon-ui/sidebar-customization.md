@@ -169,6 +169,7 @@ interface WebShellSidebarOptions {
   defaultCollapsed?: boolean; // 초기 접힌 상태 (localStorage에 저장)
   showCompactToggle?: boolean; // 채팅 영역에 접기 버튼 표시 (기본값: true)
   showSessionSourceSwitch?: boolean; // Tasks/Channels 전환 표시 (기본값: true)
+  showLive?: boolean; // 데몬 소유 Live 대화 표시 (기본값: false)
   branding?: false | WebShellSidebarBranding;
   primaryNav?: WebShellSidebarPrimaryNavOptions;
   hideProjectHeader?: boolean; // "Projects" 헤더 행 숨김 (기본값: false = 표시)
@@ -188,6 +189,18 @@ sidebar={{
 ```
 
 이렇게 하면 Tasks/Channels 전환이 제거되고 모든 활성, 아카이브, 기본, 보조 세션 쿼리가 `sourceType: "default"`로 고정됩니다. 이 옵션을 생략하면 기존 전환과 채널 세션 접근이 변경되지 않은 상태로 유지됩니다.
+
+### Live 대화 — `showLive`
+
+Live 대화는 기본적으로 임베딩 호스트에서 숨겨집니다. 호스트에서 데몬 소유 Live 그룹을 노출해야 하는 경우 옵트인합니다:
+
+이전 릴리스에서는 명시적 옵션 없이 이 그룹을 표시했으므로, 이에 의존하는 호스트는 업그레이드 시 `showLive: true`를 설정해야 합니다.
+
+```tsx
+sidebar={{
+  showLive: true,
+}}
+```
 
 ### ③ 프로젝트 헤더 — `hideProjectHeader`
 
@@ -307,4 +320,4 @@ sidebar={{
 | WorkspaceSection    | `packages/web-shell/client/components/sidebar/WorkspaceSection.tsx`       |
 | Sidebar 스타일      | `packages/web-shell/client/components/sidebar/WebShellSidebar.module.css` |
 | App 통합            | `packages/web-shell/client/App.tsx` (`WebShellSidebar` 검색)              |
-| 엔트리 포인트 (개발) | `packages/web-shell/client/main.tsx` (`sidebar: true`)                    |
+| 엔트리 포인트 (개발) | `packages/web-shell/client/main.tsx` (`sidebar: { enabled: true, showLive: true }`) |
