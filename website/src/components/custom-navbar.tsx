@@ -8,7 +8,6 @@ import { GitHubIcon, DiscordIcon } from "nextra/icons";
 import { Button } from "nextra/components";
 import { FileText, Star, BookOpen, Newspaper } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
-import { get } from "http";
 import { getBasePath } from "@/lib/blog-utils";
 import { getLocaleFromPathname } from "@/lib/locale-path";
 
