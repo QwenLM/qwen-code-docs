@@ -9,6 +9,8 @@ import { Button } from "nextra/components";
 import { FileText, Star, BookOpen, Newspaper } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { get } from "http";
+import { getBasePath } from "@/lib/blog-utils";
+import { getLocaleFromPathname } from "@/lib/locale-path";
 
 // 定义接口类型
 interface NavbarProps {
@@ -76,16 +78,11 @@ const getUserLanguage = (): string => {
   if (typeof window === "undefined") return "en";
 
   // 首先从URL路径中获取语言
-  const pathname = window.location.pathname;
-  const pathSegments = pathname.split("/").filter(Boolean);
-
-  if (pathSegments.length > 0) {
-    const possibleLang = pathSegments[0];
-    const supportedLanguages = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR", "ko"];
-    if (supportedLanguages.includes(possibleLang)) {
-      return possibleLang;
-    }
-  }
+  const pathLocale = getLocaleFromPathname(
+    window.location.pathname,
+    getBasePath()
+  );
+  if (pathLocale) return pathLocale;
 
   // 如果URL中没有语言信息，使用浏览器语言
   const browserLang = navigator.language.toLowerCase();
