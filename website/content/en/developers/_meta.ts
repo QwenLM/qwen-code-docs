@@ -22,6 +22,10 @@ export default {
   tools: 'Tools',
   'qwen-serve-protocol': 'qwen serve HTTP protocol',
   daemon: 'Daemon Mode (Developer Deep Dive)',
+  'daemon-client-adapters': 'Daemon Client Adapters',
+  'daemon-ui': 'Daemon UI',
+  extensions: 'Extensions',
+  development: 'Development',
 
   examples: 'Examples',
 };

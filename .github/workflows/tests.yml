@@ -2,9 +2,14 @@
 # regression they cover would still have reached main (#158 added the first
 # src/ test and hit exactly that).
 #
-# Scoped to code paths on purpose. The nightly translation PR touches hundreds
-# of files under website/content, and none of them can affect a unit test — a
-# `website/**` filter would run this on every one of those for nothing.
+# Scoped to code paths, plus the English content tree. The original scoping
+# note said content changes "can not affect a unit test"; that stopped being
+# true when check-nav-coverage started asserting that every documentation
+# directory under content/en has a sidebar entry. New sections arrive through
+# the nightly translation PR, which is exactly the PR where nav drift is
+# introduced, so that check has to run there — it costs one fast job. Other
+# locales stay out: they are regenerated from English by `qwen-translator meta`
+# and would only report the same gap seven more times.
 name: Tests
 
 on:
@@ -12,6 +17,7 @@ on:
     paths:
       - "website/src/**"
       - "website/scripts/**"
+      - "website/content/en/**"
       - "website/package.json"
       - "website/package-lock.json"
       - ".github/workflows/tests.yml"
@@ -20,6 +26,7 @@ on:
     paths:
       - "website/src/**"
       - "website/scripts/**"
+      - "website/content/en/**"
       - "website/package.json"
       - "website/package-lock.json"
       - ".github/workflows/tests.yml"
