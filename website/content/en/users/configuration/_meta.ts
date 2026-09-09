@@ -6,5 +6,6 @@ export default {
   },
   'qwen-ignore': 'Ignoring Files',
   'trusted-folders': 'Trusted Folders',
+  'model-providers': 'Model Providers',
   themes: 'Themes',
 };

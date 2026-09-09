@@ -6,14 +6,16 @@
 // appended it after the curated entries with a filename-derived title. That
 // went unnoticed for three months.
 //
-// This catches the same shape early: a documentation directory that exists
-// under `content/en` but has no entry in its parent `_meta.ts`.
+// This catches the same shape early: a page or directory that exists under
+// `content/en` but has no entry in its parent `_meta.ts`.
 //
 // Scope notes:
-//   - Directories, not pages. A section silently falling off the sidebar is the
-//     failure that actually happened and the one that looks worst; requiring an
-//     entry for all ~250 pages would need a large "known unlisted" baseline for
-//     no extra protection.
+//   - Pages as well as directories. Sections are the loudest failure, but the
+//     same drift hits individual pages — `users/qwen-serve`, the daemon user
+//     guide, was itself unlisted. Checking both needs no baseline: with the
+//     entries this landed alongside, `content/en` is fully covered.
+//   - `index` files are exempt; they are a directory's landing page and Nextra
+//     resolves them from the directory entry.
 //   - `content/en` only. The other locales are regenerated from it by
 //     `qwen-translator meta`, so checking them would just report the same gap
 //     seven more times.
@@ -37,25 +39,31 @@ function metaKeys(metaPath) {
 }
 
 /**
- * Find documentation directories with no entry in their parent `_meta.ts`.
+ * Find pages and directories with no entry in their parent `_meta.ts`.
  *
- * A directory whose parent has no `_meta.ts` at all is skipped: Nextra orders
- * that level automatically and there is no mirror to fall behind.
+ * A level whose directory has no `_meta.ts` at all is skipped: Nextra orders it
+ * automatically and there is no mirror to fall behind.
  *
  * @param {string} contentRoot e.g. `website/content/en`
  * @returns {string[]} paths relative to `contentRoot`, sorted
  */
-export function findUnlistedDirectories(contentRoot) {
+export function findUnlistedEntries(contentRoot) {
   const unlisted = [];
 
   const walk = (dir, relative) => {
     const keys = metaKeys(path.join(dir, '_meta.ts'));
+    const child = (name) => (relative ? `${relative}/${name}` : name);
+
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue;
-      if (NON_PAGE_DIRS.has(entry.name)) continue;
-      const childRelative = relative ? `${relative}/${entry.name}` : entry.name;
-      if (keys && !keys.has(entry.name)) unlisted.push(childRelative);
-      walk(path.join(dir, entry.name), childRelative);
+      if (entry.isDirectory()) {
+        if (NON_PAGE_DIRS.has(entry.name)) continue;
+        if (keys && !keys.has(entry.name)) unlisted.push(child(entry.name));
+        walk(path.join(dir, entry.name), child(entry.name));
+        continue;
+      }
+      const page = entry.name.match(/^(.+)\.mdx?$/);
+      if (!page || page[1] === 'index') continue;
+      if (keys && !keys.has(page[1])) unlisted.push(child(page[1]));
     }
   };
 

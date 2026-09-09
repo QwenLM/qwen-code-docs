@@ -6,7 +6,7 @@ import { test } from 'node:test';
 
 import {
   DEFAULT_CONTENT_ROOT,
-  findUnlistedDirectories,
+  findUnlistedEntries,
 } from './check-nav-coverage.js';
 
 function fixture(tree) {
@@ -19,13 +19,31 @@ function fixture(tree) {
   return root;
 }
 
-test('every documentation directory is listed in the sidebar', () => {
-  // The real guard. A section added upstream and synced here without a nav
-  // entry renders with a filename-derived title after the curated ones — which
-  // is how `developers/daemon` sat at the bottom of the Developer Guide for
-  // three months. Add the entry to the matching `_meta.ts`, or add the
-  // directory to NON_PAGE_DIRS if it holds assets rather than pages.
-  deepStrictEqual(findUnlistedDirectories(DEFAULT_CONTENT_ROOT), []);
+test('every page and directory is listed in the sidebar', () => {
+  // The real guard. Content synced from upstream without a nav entry renders
+  // with a filename-derived title after the curated ones — which is how
+  // `developers/daemon` sat at the bottom of the Developer Guide for three
+  // months, and `users/qwen-serve` with it. Add the entry to the matching
+  // `_meta.ts`, or add the directory to NON_PAGE_DIRS if it holds assets.
+  deepStrictEqual(findUnlistedEntries(DEFAULT_CONTENT_ROOT), []);
+});
+
+test('reports a page its directory _meta.ts omits', () => {
+  const root = fixture({
+    '_meta.ts': "export default {\n  overview: 'Overview',\n};",
+    'overview.md': '# Overview',
+    'qwen-serve.md': '# Daemon mode',
+  });
+  deepStrictEqual(findUnlistedEntries(root), ['qwen-serve']);
+});
+
+test('exempts index pages, which the directory entry resolves', () => {
+  const root = fixture({
+    '_meta.ts': "export default {\n  daemon: 'Daemon',\n};",
+    'daemon/_meta.ts': 'export default {};',
+    'daemon/index.md': '# Daemon',
+  });
+  deepStrictEqual(findUnlistedEntries(root), []);
 });
 
 test('reports a directory its parent _meta.ts omits', () => {
@@ -34,7 +52,7 @@ test('reports a directory its parent _meta.ts omits', () => {
     'users/index.md': '# Users',
     'developers/index.md': '# Developers',
   });
-  deepStrictEqual(findUnlistedDirectories(root), ['developers']);
+  deepStrictEqual(findUnlistedEntries(root), ['developers']);
 });
 
 test('reports nested directories by their path', () => {
@@ -44,14 +62,14 @@ test('reports nested directories by their path', () => {
     'developers/tools/index.md': '# Tools',
     'developers/daemon/00-index.md': '# Daemon',
   });
-  deepStrictEqual(findUnlistedDirectories(root), ['developers/daemon']);
+  deepStrictEqual(findUnlistedEntries(root), ['developers/daemon']);
 });
 
 test('skips levels that have no _meta.ts, since nothing can drift there', () => {
   const root = fixture({
     'developers/daemon/00-index.md': '# Daemon',
   });
-  deepStrictEqual(findUnlistedDirectories(root), []);
+  deepStrictEqual(findUnlistedEntries(root), []);
 });
 
 test('ignores asset directories', () => {
@@ -60,7 +78,7 @@ test('ignores asset directories', () => {
     'images/logo.png': '',
     'assets/style.css': '',
   });
-  deepStrictEqual(findUnlistedDirectories(root), []);
+  deepStrictEqual(findUnlistedEntries(root), []);
 });
 
 test('accepts quoted keys, which hyphenated directory names require', () => {
@@ -68,5 +86,5 @@ test('accepts quoted keys, which hyphenated directory names require', () => {
     '_meta.ts': "export default {\n  'daemon-ui': 'Daemon UI',\n};",
     'daemon-ui/index.md': '# Daemon UI',
   });
-  deepStrictEqual(findUnlistedDirectories(root), []);
+  deepStrictEqual(findUnlistedEntries(root), []);
 });
