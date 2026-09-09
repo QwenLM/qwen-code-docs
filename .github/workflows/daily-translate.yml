@@ -319,12 +319,20 @@ jobs:
           # one line per file, no reasons, reachable only run by run. #260 had
           # to be reconstructed that way, from two runs, by hand.
           #
+          # orchestrator-agent-*.log holds what each agent session actually
+          # returned. Only its stderr reaches the step log, so a rejected
+          # structured output shows up there as a bare parse error with no way
+          # to see the response that caused it. One log per attempt, and a
+          # failed attempt keeps its own (`-retryN`), so a deterministic
+          # failure is visible as the same rejection twice.
+          #
           # Note these are paths, not YAML: a `#` inside the block scalar below
           # is a literal path pattern, not a comment.
           path: |
             website/translation-metrics.json
             website/orchestrator-manifest-*.metrics.json
             website/quarantine-unrepairable.json
+            website/orchestrator-agent-*.log
           retention-days: 90
           if-no-files-found: ignore
 

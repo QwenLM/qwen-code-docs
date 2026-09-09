@@ -732,9 +732,14 @@ async function cmdTranslate(lang) {
   for (const chunk of chunks) {
     part++;
     const suffix = chunks.length > 1 ? `-part${part}` : "";
+    // Name the files, not just the count. A structured-output rejection that
+    // fails before per-document context — a truncated JSON response, say —
+    // reports only the parse error, so the step log alone could not say which
+    // document was lost. That gap cost a full investigation pass on #260.
     console.log(
       `[orch] ${lang}: dispatching agent for ${chunk.length} file(s)` +
-        (chunks.length > 1 ? ` (part ${part}/${chunks.length})...` : "...")
+        (chunks.length > 1 ? ` (part ${part}/${chunks.length})` : "") +
+        `: ${chunk.map((c) => relInContent(c.file)).join(", ")}...`
     );
     let status;
     let log;
