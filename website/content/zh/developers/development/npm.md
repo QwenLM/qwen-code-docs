@@ -41,16 +41,16 @@
 
 ### 预览版（Preview Releases）
 
-每周二 UTC 时间 23:59 发布预览版，以便提前体验即将推出的功能。
+每周二 UTC 时间 17:00 发布预览版，以便提前体验即将推出的功能。
 
 ### 每日构建版（Nightly Releases）
 
-每天 UTC 时间午夜发布每日构建版，用于前沿开发测试。
+每天 UTC 时间 21:00 发布每日构建版，用于前沿开发测试。
 
 ## 自动发布计划
 
-- **每日构建**：每天 UTC 时间午夜
-- **预览版**：每周二 UTC 时间 23:59
+- **每日构建**：每天 UTC 时间 21:00
+- **预览版**：每周二 UTC 时间 17:00
 - **稳定版**：由维护者手动触发
 
 ### 如何使用不同发布类型
@@ -96,8 +96,8 @@ npm install -g @qwen-code/qwen-code@nightly
 
 上述从当前或较旧 commit 创建补丁或热修复版本的模式会使仓库处于以下状态：
 
-1.  **Tag (`vX.Y.Z-patch.1`)**：此标签正确地指向 main 上包含你要发布的稳定代码的原始 commit。这一点至关重要。任何人检出此标签都会得到与发布 exact 相同的代码。
-2.  **Branch (`release-vX.Y.Z-patch.1`)**：此分支在 tagged commit 之上包含一个新的 commit。该新 commit 仅包含 `package.json`（以及其他相关文件，如 `package-lock.json`）中的版本号更改。
+1.  **Tag (`vX.Y.Z-patch.1`)**：此标签正确地指向 main 上包含你要发布的稳定代码的原始 commit。这一点至关重要。任何人检出此标签都会得到与发布完全相同的代码。
+2.  **Branch (`release-vX.Y.Z-patch.1`)**：此分支在被标记的 commit 之上包含一个新的 commit。该新 commit 仅包含 `package.json`（以及其他相关文件，如 `package-lock.json`）中的版本号更改。
 
 这种分离是好的。它使你的 main 分支历史保持干净，避免发布特定的版本提升，直到你决定合并它们。
 

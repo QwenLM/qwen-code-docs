@@ -545,12 +545,44 @@ Coding Plan モデルを手動で構成したい場合は、他の OpenAI 互換
 | 3        | `settings.model.generationConfig`             | **ランタイムモデル**（プロバイダーモデルが選択されていない場合）にのみ使用されます                       |
 | 4        | コンテンツジェネレーターのデフォルト          | プロバイダー固有のデフォルト（例: OpenAI と Gemini）- ランタイムモデルにのみ適用                         |
 
+### `customHeaders` の動的値
+
+`customHeaders` の値にはプレースホルダー `${session_id}` を含めることができます。これはリクエストごとに現在の Qwen Code セッション ID に展開されます。会話ごとに安定した識別子が必要なゲートウェイ（例えば OpenCode Go は `x-opencode-session` なしではリクエストを拒否します）で使用します。
+
+```json
+{
+  "generationConfig": {
+    "customHeaders": {
+      "x-opencode-session": "${session_id}"
+    }
+  }
+}
+```
+
+この値は SDK クライアントに組み込まれるのではなくリクエストごとに解決されるため、`/new` や `/resume` で再起動なしにローテーションされます。
+
+⚠️ **2つのステップが必要です。** 上記のプロバイダーエントリだけでは不十分です。プレースホルダーは、[`outboundCorrelation.allowDynamicHeaderValues`](./settings.md#outboundcorrelation) をオンにしない限り機能しません。
+
+```json
+{
+  "outboundCorrelation": {
+    "allowDynamicHeaderValues": true
+  }
+}
+```
+
+これを有効にするまで、プレースホルダーを含む値は送信されずに**破棄**され、Qwen Code は起動時にヘッダー名とこの設定を指定して警告を出力します。ヘッダーがリテラルの `${session_id}` を含んで送信されることはありません。
+
+このスイッチはグローバルです。これは同意の決定であり、値の_送信先_とは分離されています。展開された値はライブセッション状態を受信者に伝達し、スイッチは `${session_id}` を展開できるかどうかのみを制御します。どの設定ソースがヘッダーを提供したかは識別しません。
+
+**プライバシーに関する注意:** セッション ID は会話の存続期間中安定した識別子であるため、送信先のホストはその会話のすべてのリクエストをグループ化できます。どのホストが該当するかは、ヘッダーを持つプロバイダーエントリによって決まりま��。`baseUrl` と同期を取るための個別のホストリストはありません。
+
 ### アトミックなフィールドの扱い
 
 以下のフィールドはアトミックなオブジェクトとして扱われます。プロバイダーの値がオブジェクト全体を完全に置き換え、マージは行われません。
 
 - `samplingParams` - Temperature、top_p、max_tokens など
-- `customHeaders` - カスタム HTTP ヘッダー
+- `customHeaders` - カスタム HTTP ヘッダー（`${session_id}` を含む場合があります。[動的値](#customheaders-の動的値)を参照）
 - `extra_body` - 追加のリクエストボディパラメータ
 
 ### 例
@@ -625,7 +657,7 @@ Coding Plan モデルを手動で構成したい場合は、他の OpenAI 互換
 
 | プロトコル / プロバイダー | 通信時の形状 | 備考 |
 | --- | --- | --- |
-| **OpenAI / DashScope**（`qwen3.8-max` ファミリー） | フラットな `reasoning_effort: <effort>` ボディパラメータ | 5 つの `/effort` ティア（`low`、`medium`、`high`、`xhigh`、`max`）は、`qwen3.8-max` で始まるモデル ID（日付付きスナップショットや `-latest` エイリアスを含む）に対してそのまま透過的に渡されます。DashScope がモデル固有のマッピングを適用します。`reasoning_effort` と `thinking_budget` が競合する場合、通常の `extra_body` > `samplingParams` > `reasoning` の優先順位により、より高優先度のフィールドのみが保持されます。明示的な同一レイヤーのペアは `reasoning_effort` を保持し、クロスレイヤー解決前のプロバイダーの動作と一致します。静的フィールドが優先された場合、`/effort` はリクエストされたティアが有効であることを示唆する代わりにそのフィールドを報告します。effort ティアが優先された場合、競合する `enable_thinking` も削除されます。`extra_body` 内の明示的な `enable_thinking: false` は、削除されるのではなく尊重されます。設定されたティアを `reasoning_effort: 'none'` としてオーバーライドし、`extra_body` がそのまま勝つ数少ない場所の 1 つです。他の Qwen モデルは、選択された effort を `enable_thinking: true` にマッピングし続けます。`reasoning_effort` のオーバーライドは、`thinking_budget` と競合しない限りそのまま渡されます（DashScope が拒否するペアであり、その場合、不活性な `reasoning_effort` が削除され、`enable_thinking` と `thinking_budget` の両方が保持されます）。 |
+| **OpenAI / DashScope**（`qwen3.8-max` ファミリー） | フラットな `reasoning_effort: <effort>` ボディパラメータ | 5 つの `/effort` ティア（`low`、`medium`、`high`、`xhigh`、`max`）は、`qwen3.8-max` で始まるモデル ID（日付付きスナップショットや `-latest` エイリアスを含む）に対してそのまま透過的に渡されます。DashScope がモデル固有のマッピングを適用します。このファミリーのラダーは `xhigh` で止まるため、設定された `max` は送信されて拒否されるのではなく `xhigh` にクランプされます（1回だけログに記録されます）。`samplingParams` または `extra_body` 内の明示的な `reasoning_effort` はそのままのオーバーライドであり、クランプされません。`reasoning_effort` と `thinking_budget` が競合する場合、通常の `extra_body` > `samplingParams` > `reasoning` の優先順位により、より高優先度のフィールドのみが保持されます。明示的な同一レイヤーのペアは `reasoning_effort` を保持し、クロスレイヤー解決前のプロバイダーの動作と一致します。静的フィールドが優先された場合、`/effort` はリクエストされたティアが有効であることを示唆する代わりにそのフィールドを報告します。effort ティアが優先された場合、競合する `enable_thinking` も削除されます。`extra_body` 内の明示的な `enable_thinking: false` は、削除されるのではなく尊重されます。設定されたティアを `reasoning_effort: 'none'` としてオーバーライドし、`extra_body` がそのまま勝つ数少ない場所の 1 つです。他の Qwen モデルは、選択された effort を `enable_thinking: true` にマッピングし続けます。`reasoning_effort` のオーバーライドは、`thinking_budget` と競合しない限りそのまま渡されます（DashScope が拒否するペアであり、その場合、不活性な `reasoning_effort` が削除され、`enable_thinking` と `thinking_budget` の両方が保持されます）。 |
 | **OpenAI / DeepSeek** (`api.deepseek.com`) | フラットな `reasoning_effort: <effort>` ボディパラメータ | ネストされた設定形状で `reasoning.effort` が設定されている場合、フラットな `reasoning_effort` に書き換えられ、`'low'`/`'medium'` は `'high'` に、`'xhigh'` は `'max'` に正規化されます。これは DeepSeek の[サーバー側の後方互換性](https://api-docs.deepseek.com/zh-cn/api/create-chat-completion)を反映しています。トップレベルの `samplingParams.reasoning_effort` または `extra_body.reasoning_effort` のオーバーライドは、この正規化をスキップしてそのまま送信されます。`max` は実際の DeepSeek ホスト名でのみ受け付けられます。別のホスト上の `deepseek` という名前のモデルは、一般的な `xhigh` の上限を保持します。これは、リシェイプ自体のホスト名ゲートと一致します。 |
 | **OpenAI / Z.ai**（`z.ai`、`bigmodel.cn`） | フラットな `reasoning_effort: <effort>` ボディパラメータ | Z.ai ホスト上の GLM-5.2 以降は、`max` を含む完全なラダーを受け取り、ネストされた `reasoning.effort` はフラットなフィールドに書き換えられます。古い GLM ID、および他のホスト上の `glm-*` モデルは、一般的な `xhigh` の上限を保持します。モデル名だけでは、そのエンドポイントが何を受け付けるかは分かりません。 |
 | **OpenAI**（その他の互換サーバー） | `reasoning: { effort, ... }` がそのまま渡される | 設定された `max` は `xhigh` にクランプされます（1回だけログに記録されます）。`max` はベンダー固有の拡張機能であり、一般的な OpenAI ラダーの一部ではないためです。プロバイダーが異なる形状を期待している場合は、`samplingParams` 経由で設定します（例: GPT-5/o シリーズの場合は `samplingParams.reasoning_effort`）。明示的な `samplingParams` / `extra_body` の値はクランプされません。 |
@@ -645,7 +677,7 @@ Coding Plan モデルを手動で構成したい場合は、他の OpenAI 互換
 
 > [!warning]
 >
-> OpenAI 互換プロバイダーで `generationConfig.samplingParams` が設定されている場合、パイプラインはそれらのキーを**そのまま**通信時に送信し、個別の `reasoning` の注入を完全にスキップします。したがって、`{ samplingParams: { temperature: 0.5 }, reasoning: { effort: 'max' } }` のような設定では、OpenAI/DeepSeek リクエストにおいて reasoning フィールドが暗黙に破棄されます。
+> OpenAI 互換プロバイダーで `generationConfig.samplingParams` が設定されている場合、パイプラインはそれらのキーを**そのまま**通信時に送信し、個別の `reasoning` の注入を完全にスキップします。したがって、`{ samplingParams: { temperature: 0.5 }, reasoning: { effort: 'max' } }` のような設定では、OpenAI/DeepSeek リクエストにおいて reasoning フィールドが暗黙に破棄されます。`samplingParams` 内に配置された `reasoning` オブジェクトはユーザー自身の値であり、変更せずに送信されます。上記の effort 上限は、パイプラインが `/effort` から注入するティアにのみ適用されます。
 >
 > DashScope Qwen モデルは例外です。プロバイダーは `reasoning` を直接読み取り、`reasoning_effort` または `enable_thinking` にマッピングします。qwen3.8-max ファミリーでは、ワイヤーパラメータが競合する場合、プロバイダー固有の `samplingParams` フィールドが引き続き優先されます。古い qwen ハイブリッドでは、設定された effort ティアは `enable_thinking: true` に折りたたまれ、`samplingParams.enable_thinking` の値をオーバーライドします。
 >

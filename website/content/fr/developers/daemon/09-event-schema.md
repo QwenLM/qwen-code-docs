@@ -71,27 +71,27 @@ Regroupés par domaine.
 
 ### Contrôle des mutations (Wave 4 PR 16+17)
 
-| Type                     | Direction | Payload                                                                                                                                        |
+| Type                     | Direction | Charge utile                                                                                                                                     |
 | ------------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `memory_changed`         | S->C      | Mémoire fichier : `scope: 'workspace' \| 'global', filePath, mode, bytesWritten` ; mémoire managée : `scope: 'managed', source, taskId, touchedScopes` |
 | `agent_changed`          | S->C      | `change: 'created' \| 'updated' \| 'deleted', name, level: 'project' \| 'user'`                                                                |
 | `approval_mode_changed`  | S->C      | `sessionId, previous, next, persisted: boolean`                                                                                                |
 | `tool_toggled`           | S->C      | `toolName, enabled` ; affecte le prochain spawn d'enfant ACP et ne modifie pas les sessions déjà en cours d'exécution.                                            |
-| `settings_changed`       | S->C      | L'écriture des paramètres du workspace est terminée. Le payload inclut `key` ; `value`, `scope` et `mutation` (skill-toggle) sont optionnels.                        |
-| `settings_reloaded`      | S->C      | Le service workspace du daemon relit les paramètres. Le payload est ouvert.                                                                                     |
+| `settings_changed`       | S->C      | L'écriture des paramètres du workspace est terminée. La charge utile inclut `key` ; `value`, `scope` et `mutation` (skill-toggle) sont optionnels.                        |
+| `settings_reloaded`      | S->C      | Le service workspace du démon relit les paramètres. La charge utile est ouverte.                                                                                     |
 | `trust_change_requested` | S->C      | `workspaceCwd, desiredState: 'trusted' \| 'untrusted', reason?`                                                                                |
 | `workspace_initialized`  | S->C      | `path, action: 'created' \| 'overwrote' \| 'noop', originatorClientId?`                                                                        |
 | `github_setup_completed` | S->C      | `releaseTag, readmeUrl, secretsUrl?, workflows: [{path, status, sizeBytes?, error?}], gitignore: {path, status, added?, error?}`               |
 
 Les API de skill-toggle attachent des métadonnées optionnelles `mutation: { id, kind: 'skill_toggle', skills: [{ name, enabled }], activation, sessionsRefreshed, sessionsFailed }`. Chaque événement `skills.disabled` / `skills.enabled` de la même requête partage un seul id de mutation. Les autres écritures de paramètres omettent `mutation`. Les écritures du service workspace incluent `scope` ; certains autres émetteurs (par exemple les changements de modèle de session) l'omettent. Le normalisateur du SDK définit `scope` manquant à `'workspace'` par défaut.
 
-`memory_changed` couvre également les tâches de mémoire managée sans session. Pour ces payloads, `scope` est `"managed"`, `source` est l'un des éléments suivants : `"workspace_memory_remember"`, `"workspace_memory_forget"` ou `"workspace_memory_dream"`, `taskId` est l'identifiant de la tâche en file d'attente, et `touchedScopes` liste les scopes de mémoire managée qui ont changé (`"user"` et/ou `"project"`). Aucun événement n'est émis lorsqu'une tâche remember/forget/dream se termine sans toucher la mémoire managée.
+`memory_changed` couvre également les tâches de mémoire managée sans session. Pour ces charges utiles, `scope` est `"managed"`, `source` est l'un des éléments suivants : `"workspace_memory_remember"`, `"workspace_memory_forget"` ou `"workspace_memory_dream"`, `taskId` est l'identifiant de la tâche en file d'attente, et `touchedScopes` liste les scopes de mémoire managée qui ont changé (`"user"` et/ou `"project"`). Aucun événement n'est émis lorsqu'une tâche remember/forget/dream se termine sans toucher la mémoire managée.
 
 ### Flux d'authentification par appareil (PR 21)
 
-Ces événements sont indexés par workspace, et non par session. Le reducer de session les traite comme des no-ops ; `reduceDaemonAuthEvent` les projette dans l'état au niveau du workspace.
+Ces événements sont indexés par workspace, et non par session. Le réducteur de session les traite comme des no-ops ; `reduceDaemonAuthEvent` les projette dans l'état au niveau du workspace.
 
-| Type                          | Direction | Payload                                               |
+| Type                          | Direction | Charge utile                                          |
 | ----------------------------- | --------- | ----------------------------------------------------- |
 | `auth_device_flow_started`    | S->C      | `deviceFlowId, providerId, expiresAt`                 |
 | `auth_device_flow_throttled`  | S->C      | `deviceFlowId, intervalMs`                            |
@@ -101,26 +101,26 @@ Ces événements sont indexés par workspace, et non par session. Le reducer de 
 
 ### Mutation runtime MCP
 
-| Type                 | Direction | Déclencheur                                                       | Champs de payload clés                                                           |
+| Type                 | Direction | Déclencheur                                                       | Champs clés de la charge utile                                                    |
 | -------------------- | --------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | `mcp_server_added`   | S->C      | Serveur ajouté à l'exécution via `POST /workspace/mcp/servers` | `name, transport, replaced, shadowedSettings, toolCount, originatorClientId` |
 | `mcp_server_removed` | S->C      | Serveur supprimé à l'exécution                                     | `name, wasShadowingSettings, originatorClientId`                             |
 
 ### Cycle de vie des extensions
 
-| Type                 | Direction | Déclencheur                                                              | Champs de payload clés                                                                                                                               |
+| Type                 | Direction | Déclencheur                                                              | Champs clés de la charge utile                                                                                                                         |
 | -------------------- | --------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `extensions_changed` | S->C      | Travail d'installation/actualisation d'extension en arrière-plan terminé ou changement de statut | `refreshed, failed, status?: 'installed' \| 'enabled' \| 'disabled' \| 'updated' \| 'uninstalled' \| 'failed', source?, name?, version?, error?` |
+| `extensions_changed` | S->C      | Travail d'installation/actualisation d'extension en arrière-plan terminé ou changement de statut | `refreshed, failed, status?: 'installed' \| 'enabled' \| 'disabled' \| 'updated' \| 'uninstalled' \| 'failed', source?, name?, version?, error?`. Un démon annonçant `extension_activation_explicit_refresh` valide l'activation sans la diffuser, donc une activation réussie n'émet plus `enabled`/`disabled` ; ceux-ci proviennent de démons plus anciens, et les plus récents convergent l'activation via une diffusion de rafraîchissement sans statut. |
 
 ### Injection de messages en cours de tour
 
-| Type                        | Direction | Déclencheur                                                                                         | Champs de payload clés                                                                                                                 |
+| Type                        | Direction | Déclencheur                                                                                         | Champs clés de la charge utile                                                                                                          |
 | --------------------------- | --------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `mid_turn_message_injected` | S->C      | Le web-shell ou un client distant injecte des messages dans un tour en cours via `POST /session/:id/inject` | `sessionId, messages: string[], originatorClientId?` ; les consommateurs DOIVENT comparer `originatorClientId` à leur propre identifiant avant la déduplication. |
 
 ### Cycle de vie du tour / pushes de l'assistant
 
-| Type                  | Direction | Déclencheur                                                                                                             | Champs de payload clés                                                                                                                                                                               |
+| Type                  | Direction | Déclencheur                                                                                                             | Champs clés de la charge utile                                                                                                                                                                         |
 | --------------------- | --------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `prompt_cancelled`    | S->C      | Le prompt est annulé via la route explicite `cancelSession` **ou** déconnexion SSE de l'origine                        | L'enveloppe ajoute `originatorClientId` pour le client qui annule. Cela signifie "annulation demandée", et non "annulation confirmée". Les abonnés pairs apprennent que le prompt est terminé.              |
 | `turn_complete`       | S->C      | Un tour se termine avec succès                                                                                       | `sessionId, stopReason, promptId?, branchPoint?`. `promptId` fait le lien avec les réponses de prompt non bloquantes (`202`). Les tours éligibles terminés incluent `branchPoint: { assistantRecordUuid, checkpointUuid }`.         |
@@ -139,7 +139,7 @@ Ces événements sont indexés par workspace, et non par session. Le reducer de 
 | `DAEMON_KNOWN_EVENT_TYPE_VALUES`       | `packages/sdk-typescript/src/daemon/events.ts` | Liste fermée avec 53 types.                                                                                         |
 | `DaemonEventEnvelope<TType, TData>`    | `events.ts`                                    | Enveloppe générique.                                                                                                  |
 | `DaemonKnownEventType`                 | `events.ts`                                    | `typeof DAEMON_KNOWN_EVENT_TYPE_VALUES[number]`.                                                                   |
-| Types de payload par événement                | `events.ts`                                    | La plupart des types d'événements ont une interface `DaemonXxxData` ; `user_shell_*` est actuellement analysé de manière ad hoc par le normalisateur d'UI. |
+| Types de charge utile par événement                | `events.ts`                                    | La plupart des types d'événements ont une interface `DaemonXxxData` ; `user_shell_*` est actuellement analysé de manière ad hoc par le normalisateur d'UI. |
 | `asKnownDaemonEvent(evt)`              | `events.ts`                                    | Retourne `KnownDaemonEvent \| undefined`.                                                                           |
 | `reduceDaemonSessionEvent(state, evt)` | `events.ts`                                    | Projette dans `DaemonSessionViewState`.                                                                            |
 | `reduceDaemonAuthEvent(state, evt)`    | `events.ts`                                    | Projette dans `DaemonAuthState`.                                                                                   |
@@ -158,7 +158,7 @@ Ces événements sont indexés par workspace, et non par session. Le reducer de 
 - `lastModelSwitchFailure?: DaemonModelSwitchFailedData` - provenant de `model_switch_failed`.
 - `terminalEvent?` - événement terminal brut.
 - `streamError?: DaemonStreamErrorData` - dernier payload `stream_error`.
-- `unrecognizedKnownEventCount`, `lastUnrecognizedKnownEvent?` - l'événement a été reconnu par `asKnownDaemonEvent` mais le reducer n'a pas encore d'état dédié pour celui-ci.
+- `unrecognizedKnownEventCount`, `lastUnrecognizedKnownEvent?` - l'événement a été reconnu par `asKnownDaemonEvent` mais le réducteur n'a pas encore d'état dédié pour celui-ci.
 - `droppedPermissionRequestCount`, `lastDroppedPermissionRequestId?` - une requête de permission malformée n'a pas pu entrer dans la map pending.
 - `unmatchedPermissionResolutionCount`, `lastUnmatchedPermissionResolutionId?` - la résolution de permission n'avait aucune requête pending correspondante.
 - `slowClientWarningCount`, `lastSlowClientWarning?` - provenant de `slow_client_warning`.
@@ -170,12 +170,12 @@ Ces événements sont indexés par workspace, et non par session. Le reducer de 
 - `workspaceInitCount`, `lastWorkspaceInit?` - provenant de `workspace_initialized`.
 - `mcpRestartCount`, `lastMcpRestart?` - provenant de `mcp_server_restarted`.
 - `mcpRestartRefusedCount`, `lastMcpRestartRefused?` - provenant de `mcp_server_restart_refused`.
-- `settings_changed` / `settings_reloaded` - reconnus par `asKnownDaemonEvent` ; le reducer de session ne maintient pas de champs d'état de vue dédiés. Les événements `settings_changed` de skill-toggle portent des métadonnées `mutation` optionnelles pour que les hôtes puissent appliquer les changements uniquement liés aux skills de manière incrémentale au lieu de recharger la tâche. Les autres UI peuvent toujours traiter l'événement comme un signal d'actualisation.
+- `settings_changed` / `settings_reloaded` - reconnus par `asKnownDaemonEvent` ; le réducteur de session ne maintient pas de champs d'état de vue dédiés. Les événements `settings_changed` de skill-toggle portent des métadonnées `mutation` optionnelles pour que les hôtes puissent appliquer les changements uniquement liés aux skills de manière incrémentale au lieu de recharger la tâche. Les autres UI peuvent toujours traiter l'événement comme un signal d'actualisation.
 - `permissionVoteProgress: Record<string, DaemonPermissionPartialVoteData>` - progression du vote par consensus.
 - `forbiddenVotes: DaemonPermissionForbiddenData[]`, `forbiddenVoteCount` - enregistrements de votes rejetés par la politique, plafonnés à 32.
 - `awaitingResync: boolean` - défini par `state_resync_required` ; vidé lorsque le consommateur réinitialise l'état de vue.
 - `resyncRequiredCount`, `lastResyncRequired?` - observabilité de la resynchronisation.
-- `lastFollowupSuggestion?: DaemonFollowupSuggestionData` - dernière suggestion de suivi poussée par le daemon.
+- `lastFollowupSuggestion?: DaemonFollowupSuggestionData` - dernière suggestion de suivi poussée par le démon.
 - `lastTurnComplete?: DaemonTurnCompleteData` - dernière complétion de tour réussie.
 - `lastTurnError?: DaemonTurnErrorData` - dernière erreur de tour.
 - `rewindCount`, `lastRewind?`, `lastBranch?` - derniers événements rewind / branch.
@@ -259,7 +259,7 @@ Le nom d'affichage existant `_meta.toolName` est conservé. L'interface utilisat
 - **`resyncRequiredCount: number`** - compteur d'observabilité.
 - **`lastResyncRequired?: DaemonStateResyncRequiredData`** - dernière charge utile.
 
-Tant que `awaitingResync = true`, le reducer **ignore l'application des deltas** et n'autorise que l'ensemble fermé `RESYNC_PASSTHROUGH_TYPES` :
+Tant que `awaitingResync = true`, le réducteur **ignore l'application des deltas** et n'autorise que l'ensemble fermé `RESYNC_PASSTHROUGH_TYPES` :
 
 | Type transitant        | Pourquoi il est toujours appliqué pendant la resynchronisation                                          |
 | ----------------------- | ------------------------------------------------------------------------------ |
@@ -274,7 +274,7 @@ Tant que `awaitingResync = true`, le reducer **ignore l'application des deltas**
 `lastEventId` continue d'avancer de manière monotone via `advanceLastEventId(base)` pendant la resynchronisation. Après que l'appelant a réinitialisé et effacé `awaitingResync`, les deltas suivants s'alignent sur le bon curseur.
 
 `reduceDaemonAuthEvent` projette les événements de flux d'appareil (device-flow) dans des entrées d'état d'authentification au niveau du workspace, ayant conceptuellement la forme
-`{deviceFlowId, status, providerId, expiresAt?, lastThrottleIntervalMs?, lastError?}`. Dans le code, le reducer stocke `status`, `errorKind`, `hint`,
+`{deviceFlowId, status, providerId, expiresAt?, lastThrottleIntervalMs?, lastError?}`. Dans le code, le réducteur stocke `status`, `errorKind`, `hint`,
 `intervalMs`, `lastSeenEventId`, `authorizedExpiresAt` et `accountAlias` sur
 `DaemonDeviceFlowReducerState` ; les charges utiles des événements du démon restent quant à elles conformes aux formes par événement listées ci-dessus.
 
@@ -291,7 +291,7 @@ Tant que `awaitingResync = true`, le reducer **ignore l'application des deltas**
 - [`10-event-bus.md`](./10-event-bus.md) - canal de livraison.
 - [`11-capabilities-versioning.md`](./11-capabilities-versioning.md) - comment les SDKs pré-vérifient `typed_event_schema`, `mcp_guardrail_events` et `permission_mediation`.
 - [`04-permission-mediation.md`](./04-permission-mediation.md) - comment les événements de permission sont produits.
-- [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md) - `asKnownDaemonEvent`, reducers et forme de l'état de la vue.
+- [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md) - `asKnownDaemonEvent`, réducteurs et forme de l'état de la vue.
 
 ## Configuration
 
@@ -303,7 +303,7 @@ Tant que `awaitingResync = true`, le reducer **ignore l'application des deltas**
 - Six types de trames synthétiques n'ont volontairement pas d'`id` ; le code du SDK ne doit pas supposer que chaque événement a un id.
 - `permission_partial_vote` n'apparaît que sous `consensus`. `permission_forbidden` apparaît sous `designated`, `consensus` et `local-only`, mais pas sous `first-responder`.
 - `mcp_child_refused_batch` n'apparaît qu'en `mode: 'enforce'` ; le mode `warn` ne refuse jamais.
-- Les événements `auth_device_flow_*` ne sont pas liés à une session. Lors de la consommation via `DaemonSessionClient`, utilisez `reduceDaemonAuthEvent` pour ceux-ci plutôt que le reducer de session.
+- Les événements `auth_device_flow_*` ne sont pas liés à une session. Lors de la consommation via `DaemonSessionClient`, utilisez `reduceDaemonAuthEvent` pour ceux-ci plutôt que le réducteur de session.
 
 ## Références
 

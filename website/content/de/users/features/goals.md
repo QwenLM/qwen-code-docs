@@ -18,13 +18,17 @@ Das Erstellen, Bearbeiten oder Fortsetzen eines Goals erfordert einen vertrauens
 
 Sobald ein Goal einen Turn abgerechnet hat, zeigen die Footer-Pille und jede Statuskarte, was es gegen das erlaubte Fenster verbraucht hat, als `1.2k/30.0m`. Die Zahl zählt die Modellaufrufe, die das Goal in seinen eigenen Turns macht; Subagenten und die eigenen Checks des Verifiers sind nicht enthalten. Das Fenster wird von [`model.goalTokenBudget`](../configuration/settings.md) gesetzt; das Fortsetzen eines Goals, das sein Fenster verbraucht hat, gewährt ein weiteres oben auf das bereits verbrauchte, sodass die Zahl `30.0m/60.0m` anzeigt, statt von vorne zu beginnen. Ein Goal ohne Budget zeigt nur, was es verbraucht hat. Ein Goal, das noch keinen Turn abgerechnet hat, zeigt überhaupt keine Zahlen.
 
+Jeder Turn, den die Session selbstständig ausführt, berichtet, was das Goal bisher verbraucht hat, wie viele Turns dahinterliegen und — außer das Goal läuft unbegrenzt — das erlaubte Fenster. Jeder solcher Turn außer der letzten Wind-Down-Übergabe trägt auch ständige Anweisungen, den Workspace erneut zu prüfen, statt den Berichten früherer Turns zu vertrauen, auf den Endzustand hinzuarbeiten, den das Ziel verlangt, etwas anderes zu tun, wenn der vorherige Turn nichts geändert hat (ab dem zweiten Turn, sobald es einen vorherigen Turn zu beurteilen gibt), und jede Anforderung gegen zitierbare Belege zu prüfen, bevor vorgeschlagen wird, dass das Goal erledigt ist.
+
+Ein langes Goal komprimiert periodisch die aufgezeichneten Belege mit einem Side-Model-Call in Checkpoint-Claims, damit spätere Turns und der Verifier sie noch zitieren können. Dieser Call wird durch [`model.goalCheckpointTimeoutSeconds`](../configuration/settings.md) begrenzt, standardmäßig 180 Sekunden; ein Checkpoint, der nicht rechtzeitig fertig wird, wird als inconclusive Check aufgegeben — der Checkpoint-Stall-Streak bleibt erhalten statt erhöht zu werden — und ein späterer Turn versucht es erneut. Der Call wird gestreamt, sodass der Transport-Timeout pro Anfrage nur Connect und erste Antwort begrenzt, und die Obergrenze selbst stoppt bei der 15-Minuten-Lebensdauer-Kappe der Stream-Guards, weil jenseits davon der Guard und nicht die Einstellung den Call beendet. Dieses 15-Minuten-Limit der Einstellung ist fest, und das Anheben der eigenen Kappe des Stream-Guards hebt es nicht an.
+
 ## Ein Goal unterbrechen
 
 Das Abbrechen eines Goal-Turns pausiert das Goal. Drücke Esc, während das Modell antwortet oder seine Tools noch laufen, und der Turn stoppt, das Goal wechselt zu `paused`, und die Karte und `/goal` sagen beide, warum es gestoppt wurde. Nichts läuft weiter, bis du `/goal resume` ausführst.
 
 Eine Nachricht zu tippen, während ein Goal aktiv ist, pausiert es nicht. Deine Nachricht läuft als der nächste Goal-Turn, also nutze sie, um die Arbeit zu steuern; nutze `/goal pause` oder `/goal clear`, um es zu stoppen.
 
-Jede Pause gibt ihren Grund an: dass du es unterbrochen hast, dass du `/goal pause` ausgeführt hast, dass das Session-Token-Limit die nächste Modellanfrage blockiert hat, oder dass der Turn fehlgeschlagen ist. Ein durch ein Limit gestopptes Goal behält stattdessen den Grund für dieses Limit.
+Jede Pause gibt ihren Grund an: dass du es unterbrochen hast, dass du `/goal pause` ausgeführt hast, dass das Session-Token-Limit die nächste Modellanfrage blockiert hat, dass der Turn fehlgeschlagen ist oder dass drei Turns hintereinander nichts aufgezeichnet haben, was der Verifier beurteilen könnte, und kein Vorschlag — Goal-Bookkeeping-Reads (`get_goal`, `update_goal`) zählen nicht als Fortschritt. Ein durch ein Limit gestopptes Goal behält stattdessen den Grund für dieses Limit.
 
 ## Wie ein Goal beurteilt wird
 

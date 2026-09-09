@@ -566,12 +566,62 @@ Die Konfigurationsauflösung folgt einem strikten Layering-Modell mit einer ents
 | 3        | `settings.model.generationConfig`             | Wird nur für **Runtime Models** verwendet (wenn kein Provider-Modell ausgewählt ist)                     |
 | 4        | Content-Generator-Defaults                    | Provider-spezifische Defaults (z. B. OpenAI vs. Gemini) – nur für Runtime Models                         |
 
+### Dynamische Werte in `customHeaders`
+
+Ein `customHeaders`-Wert kann den Placeholder `${session_id}` enthalten, der
+pro Request mit der aktuellen Qwen Code Session-ID expandiert wird. Verwende
+ihn für Gateways, die eine stabile pro-Konversation-ID benötigen – OpenCode Go
+beispielsweise lehnt Requests ohne `x-opencode-session` ab:
+
+```json
+{
+  "generationConfig": {
+    "customHeaders": {
+      "x-opencode-session": "${session_id}"
+    }
+  }
+}
+```
+
+Da der Wert pro Request aufgelöst wird, statt in den SDK-Client eingebaut zu
+sein, rotieren ihn `/new` und `/resume` ohne Neustart.
+
+⚠️ **Zwei Schritte sind erforderlich.** Der Provider-Eintrag oben ist nur die
+halbe Miete – ein Placeholder ist inert, bis du auch
+[`outboundCorrelation.allowDynamicHeaderValues`](./settings.md#outboundcorrelation)
+einschaltst:
+
+```json
+{
+  "outboundCorrelation": {
+    "allowDynamicHeaderValues": true
+  }
+}
+```
+
+Bis du das tust, wird ein Wert, der einen Placeholder enthält, **verworfen**
+statt gesendet, und Qwen Code gibt beim Start eine Warnung aus, die den Header
+und diese Einstellung nennt. Der Header wird niemals mit einem literalen
+`${session_id}` darin gesendet.
+
+Der Schalter ist global, weil er eine Einwilligungsentscheidung ist, getrennt
+von _wohin_ der Wert geht: ein expandierter Wert trägt Live-Session-Status zu
+demjenigen, der ihn empfängt, und der Schalter steuert nur, ob `${session_id}`
+expandiert werden darf. Er identifiziert nicht, welche Einstellungsquelle den
+Header bereitgestellt hat.
+
+**Datenschutzhinweis:** Die Session-ID ist ein stabiler Identifier für die
+Lebensdauer einer Konversation, sodass jeder Host, an den du sie sendest, jede
+Anfrage dieser Konversation gruppieren kann. Welche Hosts das sind, wird
+dadurch entschieden, welche Provider-Einträge den Header tragen – es gibt keine
+separate Host-Liste, die mit deiner `baseUrl` synchron gehalten werden müsste.
+
 ### Atomare Feldbehandlung
 
 Die folgenden Felder werden als atomare Objekte behandelt – Provider-Werte ersetzen das gesamte Objekt vollständig, es findet kein Merging statt:
 
 - `samplingParams` – Temperature, top_p, max_tokens usw.
-- `customHeaders` – Benutzerdefinierte HTTP-Header
+- `customHeaders` – Benutzerdefinierte HTTP-Header (können `${session_id}` enthalten; siehe [Dynamische Werte](#dynamische-werte-in-customheaders))
 - `extra_body` – Zusätzliche Request-Body-Parameter
 
 ### Beispiel

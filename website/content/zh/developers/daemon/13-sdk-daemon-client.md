@@ -152,7 +152,7 @@ await client
   .setWorkspaceSkillEnabled('review', true, { clientId: 'dashboard-1' });
 ```
 
-预检 `capabilities.features.includes('workspace_skill_settings_toggle')`。类型化的 `DaemonSkillToggleResult` 报告经过修剪的请求 `skillName`、磁盘状态是否 `changed`、激活状态（`applied`、`deferred`、`reconciling` 或 `partial`），以及刷新/失败的会话计数。该写入仅涉及设置，不要求名称出现在 `DaemonWorkspaceSkillStatus` 中；该状态类型的可选仅 false 的 `userInvocable` 字段仍对渲染实时目录有用，但不会控制持久化。已退役的 `workspace_skill_toggle` 标签描述的是早期的目录验证行为，不再用于此契约。
+预检 `capabilities.features.includes('workspace_skill_settings_toggle')`。类型化的 `DaemonSkillToggleResult` 报告经过修剪的请求 `skillName`、磁盘状态是否 `changed`、激活状态（`applied`、`deferred`、`reconciling` 或 `partial`），以及刷新/失败的会话计数。`reconciling` 表示写入已持久化，并且工作区协调器已排队运行时刷新。该写入仅涉及设置，不要求名称出现在 `DaemonWorkspaceSkillStatus` 中；该状态类型的可选仅 false 的 `userInvocable` 字段仍对渲染实时目录有用，但不会控制持久化。已退役的 `workspace_skill_toggle` 标签描述的是早期的目录验证行为，不再用于此契约。
 
 批量变更时，先预检 `workspace_skill_settings_batch_toggle`，然后以相同的契约调用任一客户端形态。路由和请求体保持不变：
 
@@ -185,7 +185,7 @@ const workspaceHandle = await client
 const operation = await client.waitForExtensionOperation(workspaceHandle);
 ```
 
-终端操作结果包含有序的 `results`。设置 `enabled` 或 `disabled` 时目标不需要已安装：daemon 会存储一个名称声明，并在之后安装同名 Extension 时保留该激活策略。所有变更的目标共享一个 Extension Store generation 和一次调和。全局默认批次会调和每个已注册的运行时；工作区批次仅解析和调和选定的可信运行时。工作区的 `inherit` 会清除确切的覆盖但不会为未知名称创建声明；全部未知的清除会作为无操作成功而不进行调和。单一激活方法仍然仅限已安装的目标。
+终端操作结果包含有序的 `results`。设置 `enabled` 或 `disabled` 时目标不需要已安装：daemon 会存储一个名称声明，并在之后安装同名 Extension 时保留该激活策略。所有变更的目标共享一个 Extension Store generation。当广播了 `extension_activation_explicit_refresh` 时，激活操作在持久化策略提交后完成，不会刷新活跃会话。需要立即生效的调用方应为每个需要立即应用变更的会话所在的工作区提交 `workspace.refreshExtensionRuntime()`；刷新是一个独立的操作，可以等待其完成，也可以留在后台执行。全局默认批次会更改每个已注册工作区继承的默认激活，除非该工作区持有该名称的确切覆盖（或匹配旧版路径规则），并且没有单次刷新可以覆盖所有运行时；工作区批次仅更改选定的可信运行时。旧版 daemon 已在激活操作内部进行刷新，因此除非该能力存在，否则客户端不得提交额外的刷新。30 秒的 generation 调和器仍然是调用方未刷新的工作区的独立最终收敛路径。工作区的 `inherit` 会清除确切的覆盖但不会为未知名称创建声明；全部未知的清除会作为无操作成功。单一激活方法仍然仅限已安装的目标。
 
 对于工作区内部的 Extension Skill 切换，预检 `extension_state` 并使用按资源分组的 REST 方法。这些方法不会写入 Skill 设置或激活已禁用的父 Extension：
 

@@ -2,7 +2,7 @@
 
 Qwen Code peut prédire ce que vous allez taper ensuite et l'afficher sous forme de texte indicatif dans la zone de saisie. Cette fonctionnalité utilise un appel LLM pour analyser le contexte de la conversation et générer une suggestion naturelle de l'étape suivante.
 
-Cette fonctionnalité fonctionne de bout en bout dans le CLI et le Web Shell. La génération est automatique et côté serveur : après chaque tour terminé, le démon émet la suggestion sur le flux de session (activé par défaut ; définissez `ui.enableFollowupSuggestions` à `false` pour désactiver), et le composer du Web Shell connecte déjà le hook `useDaemonFollowupSuggestion`, donc les suggestions s'affichent et s'acceptent sans câblage supplémentaire de l'hôte.
+Cette fonctionnalité fonctionne de bout en bout dans le CLI et le Web Shell. La génération est automatique et côté serveur : après chaque tour terminé proprement (la raison d'arrêt `end_turn` du démon — un tour `cancelled`, `refusal`, `max_tokens` ou `max_turn_requests` n'en génère pas), le démon émet la suggestion sur le flux de session (activé par défaut ; définissez `ui.enableFollowupSuggestions` à `false` pour désactiver), et le composer du Web Shell connecte déjà le hook `useDaemonFollowupSuggestion`, donc les suggestions s'affichent et s'acceptent sans câblage supplémentaire de l'hôte.
 
 ## Fonctionnement
 
@@ -36,7 +36,7 @@ Les suggestions sont générées lorsque toutes les conditions suivantes sont r�
 - Le mode d'approbation n'est pas défini sur `plan`
 - La fonctionnalité est activée (activée par défaut — mettez `ui.enableFollowupSuggestions` à `false` pour la désactiver)
 
-Les suggestions n'apparaissent pas en mode non interactif (par exemple, mode headless/SDK).
+Les suggestions n'apparaissent pas en mode non interactif du CLI (par exemple, mode headless/SDK). Dans le démon, la génération est côté serveur et s'exécute après chaque tour qui remplit les conditions ci-dessus, donc un client headless ou SDK qui ne peut pas afficher la suggestion doit définir `ui.enableFollowupSuggestions` à `false` pour éviter le coût LLM par tour.
 
 Les suggestions sont automatiquement ignorées lorsque :
 

@@ -567,12 +567,58 @@ La résolution de la configuration suit un modèle d'empilement strict avec une 
 | 3        | `settings.model.generationConfig`             | Utilisé uniquement pour les **modèles d'exécution** (lorsqu'aucun modèle de fournisseur n'est sélectionné) |
 | 4        | Valeurs par défaut du générateur de contenu   | Valeurs par défaut spécifiques au fournisseur (ex. OpenAI vs Gemini) - uniquement pour les modèles d'exécution |
 
+### Valeurs dynamiques dans `customHeaders`
+
+Une valeur `customHeaders` peut contenir le placeholder `${session_id}`, qui est
+développé à chaque requête avec l'ID de session Qwen Code en cours. Utilisez-le pour les passerelles
+qui nécessitent un identifiant stable par conversation — OpenCode Go, par exemple,
+rejette les requêtes sans `x-opencode-session` :
+
+```json
+{
+  "generationConfig": {
+    "customHeaders": {
+      "x-opencode-session": "${session_id}"
+    }
+  }
+}
+```
+
+Comme la valeur est résolue à chaque requête plutôt qu'intégrée dans le client SDK,
+`/new` et `/resume` la renouvellent sans redémarrage.
+
+⚠️ **Deux étapes sont nécessaires.** L'entrée de fournisseur ci-dessus n'est que la moitié du travail — un
+placeholder est inerte tant que vous n'activez pas également
+[`outboundCorrelation.allowDynamicHeaderValues`](./settings.md#outboundcorrelation) :
+
+```json
+{
+  "outboundCorrelation": {
+    "allowDynamicHeaderValues": true
+  }
+}
+```
+
+Tant que ce n'est pas fait, une valeur contenant un placeholder est **supprimée** au lieu d'être envoyée,
+et Qwen Code affiche un avertissement au démarrage nommant l'en-tête et ce paramètre.
+L'en-tête n'est jamais envoyé avec un `${session_id}` littéral.
+
+Le switch est global car il s'agit d'une décision de consentement, séparée de _où_ la
+valeur va : une valeur développée transporte l'état de session live à quiconque la reçoit,
+et le switch contrôle uniquement si `${session_id}` peut être développé. Il n'identifie pas
+quelle source de paramètres a fourni l'en-tête.
+
+**Note de confidentialité :** l'ID de session est un identifiant stable pendant toute la durée d'une
+conversation, donc tout hôte auquel vous l'envoyez peut regrouper chaque requête de cette
+conversation. Quels sont ces hôtes dépend des entrées de fournisseur qui portent
+l'en-tête — il n'y a pas de liste d'hôtes séparée à synchroniser avec votre `baseUrl`.
+
 ### Traitement atomique des champs
 
 Les champs suivants sont traités comme des objets atomiques : les valeurs du fournisseur remplacent complètement l'objet entier, aucune fusion n'est effectuée :
 
 - `samplingParams` - Température, top_p, max_tokens, etc.
-- `customHeaders` - En-têtes HTTP personnalisés
+- `customHeaders` - En-têtes HTTP personnalisés (peuvent contenir `${session_id}` ; voir [Valeurs dynamiques](#dynamic-values-in-customheaders))
 - `extra_body` - Paramètres supplémentaires du corps de la requête
 
 ### Exemple

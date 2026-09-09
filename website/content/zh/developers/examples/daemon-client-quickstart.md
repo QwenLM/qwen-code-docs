@@ -1,19 +1,21 @@
-# DaemonClient 快速入门 (TypeScript)
+# API-only DaemonClient 快速入门 (TypeScript)
 
-一个最小化的端到端示例：在另一个终端启动 `qwen serve` 守护进程，然后使用 SDK 的 `DaemonClient` 从 Node 脚本驱动它。另见：[守护进程模式用户指南](../../users/qwen-serve.md) 和 [HTTP 协议参考](../qwen-serve-protocol.md)。
+一个最小化的端到端示例：在另一个终端启动一个纯 API 的 `qwen serve` 守护进程，然后使用 SDK 的 `DaemonClient` 从 Node 脚本驱动它。另见：[守护进程模式用户指南](../../users/qwen-serve.md) 和 [HTTP 协议参考](../qwen-serve-protocol.md)。
 
 ## 设置
 
 在一个终端中：
 
 ```bash
-qwen serve --port 4170 \
+qwen serve --no-web --port 4170 \
   --workspace /path/to/project-a \
   --workspace /path/to/project-b
 # → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/project-a)
 ```
 
-每个 `--workspace` 值必须是绝对目录路径。第一个启动工作区是主工作区，对于省略 `cwd` 的请求，它仍然是兼容性默认值；`/capabilities.workspaces[]` 是客户端在显式选择任何运行时应使用的目录清单。
+`--no-web` 会移除 Web Shell 资源；它不会选择更小的 REST/SSE API 配置。每个 `--workspace` 值必须是绝对目录。第一个启动工作区是主工作区，对于省略 `cwd` 的请求，它仍然是兼容性默认值；`/capabilities.workspaces[]` 是客户端在显式选择任何运行时应使用的目录清单。
+
+无令牌的本地回环默认设置适用于单用户工作站。在共享主机上，请设置 `QWEN_SERVER_TOKEN` 并添加 `--require-auth`；非本地回环绑定需要令牌。
 
 在另一个终端中：
 
@@ -238,7 +240,7 @@ const client = new DaemonClient({
 const client = new DaemonClient({ baseUrl: 'https://your-host:4170' });
 ```
 
-回退机制会去除首尾空白字符（这对于 `export QWEN_SERVER_TOKEN="$(cat token.txt)"` 很方便，因为 `cat` 会添加一个换行符），并将空值或仅空白字符的值视为未设置（过时的 `export QWEN_SERVER_TOKEN=""` 不会意外地发送没有 token 的 `Authorization: Bearer `）。回退仅在构造时运行一次；之后对 `process.env` 的修改不会影响已构建的客户端。浏览器包（例如通过 `@qwen-code/webui`）会干净地得到 `undefined`，因为那里没有 `globalThis.process`。
+回退机制会去除首尾空白字符（这对于 `export QWEN_SERVER_TOKEN="$(cat token.txt)"` 很方便，因为 `cat` 会添加一个换行符），并将空值或仅空白字符的值视为未设置（过时的 `export QWEN_SERVER_TOKEN=""` 不会意外地发送没有 token 的 `Authorization: Bearer `）。回退仅在构造时运行一次；之后对 `process.env` 的修改不会影响已构建的客户端。浏览器包（例如通过 `@qwen-code/web-shell`）会干净地得到 `undefined`，因为那里没有 `globalThis.process`。
 
 错误的或缺失的 token 会返回带有统一响应体的 `401` —— SDK 在任何路由处理器返回 4xx/5xx 时抛出 `DaemonHttpError`。
 
