@@ -125,6 +125,8 @@ Workspace 只读快照（Workspace read-only snapshots）：`workspace_mcp`, `wo
 
 V2 Extension 批量激活：`extension_batch_activation_v2` 在 `extension_management_v2` 之上添加全局默认激活队列和选定 workspace 覆盖批次。客户端必须独立预检它，因为旧版 V2 daemon 仅暴露单一激活路由。
 
+显式 Extension 激活刷新：`extension_activation_explicit_refresh` 表示单一和批量激活操作在持久化策略提交时完成，不会直接刷新活跃会话。需要立即生效的客户端应等待激活成功，然后为每个需要立即应用更改的会话的 workspace 提交 workspace 运行时刷新操作；全局默认批次会更改每个 workspace 继承的默认激活，除非该 workspace 持有该名称的精确覆盖（或匹配遗留路径规则），并且没有单次刷新可以覆盖每个运行时，因此调用者未刷新的 workspace 只会在下一个 30 秒的 generation-reconciler 周期收敛。没有此 tag 的 daemon 已经在激活操作中包含刷新，因此调用者不得在那里提交兼容性刷新。
+
 Workspace 限定会话读取（Workspace-qualified session reads）：`workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`, `workspace_session_live_state`。活跃和已归档的导出 tag 彼此独立，也与 `session_export` 和 `workspace_qualified_rest_core` 独立，因此客户端必须预检其打算导出的确切存储状态。持久化转录分页允许在受限读取策略下的不受信任次级运行时；两条完整导出路径仍然仅限受信任运行时。`workspace_session_live_state` 同样独立于 `workspace_qualified_rest_core` 且仅限受信任运行时：它提供所选运行时的纯内存活跃会话快照和目录版本，不会将不受信任次级运行时的持久化读取策略扩展到活跃 bridge 状态。
 
 Workspace 变更（Wave 4+）：`workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, `workspace_skill_settings_toggle`, `workspace_skill_settings_batch_toggle`, **`workspace_settings`** (conditional), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, `workspace_file_upload`, **`workspace_reload`** (conditional)。两个 Skill settings tag 取代了已退役的经目录验证的 `workspace_skill_toggle` 和 `workspace_skill_batch_toggle` tag。

@@ -18,13 +18,17 @@ Criar, editar ou retomar um Goal requer um workspace confiável (`/trust`). O us
 
 Assim que um Goal fatura um turno, a pill do rodapé e cada cartão de status mostram o que ele gastou em relação à janela permitida, como `1.2k/30.0m`. O número conta as chamadas de modelo que o Goal faz em seus próprios turnos; subagentes e as próprias verificações do verificador não estão incluídos. A janela é definida por [`model.goalTokenBudget`](../configuration/settings.md); retomar um Goal que gastou sua janela concede outra por cima do que já foi gasto, então o número lê `30.0m/60.0m` em vez de recomeçar. Um Goal sem orçamento mostra apenas o que gastou. Um Goal que ainda não faturou um turno não mostra números.
 
+Cada turno que a sessão executa por conta própria reporta o que o Goal gastou até agora, quantos turnos estão atrás dele e — a menos que o Goal execute sem limites — a janela que lhe é permitida. Cada turno desse, exceto a passagem final de encerramento, também carrega instruções permanentes para re-verificar o workspace em vez de confiar nos relatórios de turnos anteriores, para trabalhar em direção ao estado final que o objetivo pede, para fazer algo diferente quando o turno anterior não mudou nada (a partir do segundo turno, uma vez que haja um turno anterior para julgar), e para verificar cada requisito contra evidência citável antes de propor que o Goal está concluído.
+
+Um Goal longo comprime periodicamente a evidência que registrou em afirmações de checkpoint com uma chamada de modelo lateral, para que turnos posteriores e o verificador ainda possam citá-la. Essa chamada é limitada por [`model.goalCheckpointTimeoutSeconds`](../configuration/settings.md), 180 segundos por padrão; um checkpoint que não termina a tempo é abandonado como uma verificação inconclusiva — a sequência de estagnação de checkpoint é preservada em vez de incrementada — e um turno posterior a tenta novamente. A chamada é feita em streaming, então o timeout de transporte por requisição limita apenas a conexão e a primeira resposta, e o próprio teto para no limite de vida de 15 minutos dos guardas de streaming, porque além disso é o guarda, não a configuração, que encerra a chamada. Esse limite de 15 minutos na configuração é fixo, e aumentar o próprio teto do guarda de streaming não o eleva.
+
 ## Interrompendo um Goal
 
 Cancelar um turno do Goal pausa o Goal. Pressione Esc enquanto o modelo está respondendo ou enquanto suas ferramentas ainda estão executando, e o turno para, o Goal vai para `paused`, e o cartão e `/goal` dizem por que parou. Nada continua até que você execute `/goal resume`.
 
 Digitar uma mensagem enquanto um Goal está ativo não o pausa. Sua mensagem executa como o próximo turno do Goal, então use-a para direcionar o trabalho; use `/goal pause` ou `/goal clear` para pará-lo.
 
-Cada pausa declara seu motivo: que você o interrompeu, que você executou `/goal pause`, que o limite de tokens da sessão bloqueou a próxima requisição ao modelo, ou que o turno falhou. Um Goal parado por um limite mantém o motivo desse limite.
+Cada pausa declara seu motivo: que você o interrompeu, que você executou `/goal pause`, que o limite de tokens da sessão bloqueou a próxima requisição ao modelo, que o turno falhou, ou que três turnos consecutivos não registraram nada que o verificador pudesse julgar e nenhuma proposta — leituras de contabilidade do Goal (`get_goal`, `update_goal`) não contam como progresso. Um Goal parado por um limite mantém o motivo desse limite.
 
 ## Como um Goal é julgado
 

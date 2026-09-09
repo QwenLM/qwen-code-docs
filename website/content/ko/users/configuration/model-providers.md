@@ -547,6 +547,38 @@ Coding Plan 모델을 수동으로 구성하려면 다른 OpenAI 호환 제공�
 | 3         | `settings.model.generationConfig`             | **런타임 모델**에만 사용(제공자 모델이 선택되지 않은 경우)                                                 |
 | 4         | 콘텐츠 생성기 기본값                          | 제공자별 기본값(예: OpenAI vs Gemini) - 런타임 모델에만                                                   |
 
+### `customHeaders`의 동적 값
+
+`customHeaders` 값은 `${session_id}` 플레이스홀더를 포함할 수 있으며, 이는 요청마다 현재 Qwen Code 세션 ID로 확장됩니다. 대화별 안정적 식별자가 필요한 게이트웨이에 사용하세요 — 예를 들어 OpenCode Go는 `x-opencode-session` 없이 요청을 거부합니다:
+
+```json
+{
+  "generationConfig": {
+    "customHeaders": {
+      "x-opencode-session": "${session_id}"
+    }
+  }
+}
+```
+
+값이 SDK 클라이언트에 고정되는 대신 요청마다 해석되므로, `/new`와 `/resume`은 재시작 없이 이를 순환시킵니다.
+
+⚠️ **두 단계가 필요합니다.** 위의 제공자 항목은 절반에 불과합니다 — 플레이스홀더는 [`outboundCorrelation.allowDynamicHeaderValues`](./settings.md#outboundcorrelation)도 켜기 전까지는 작동하지 않습니다:
+
+```json
+{
+  "outboundCorrelation": {
+    "allowDynamicHeaderValues": true
+  }
+}
+```
+
+설정하기 전까지는 플레이스홀더를 포함한 값이 전송되는 대신 **삭제**되며, Qwen Code는 시작 시 헤더와 이 설정을 언급하는 경고를 출력합니다. 헤더는 리터럴 `${session_id}`가 포함된 상태로 전송되지 않습니다.
+
+이 스위치는 전역입니다. 동의 결정이기 때문이며, 값이 _어디로_ 가는지와는 분리됩니다: 확장된 값은 실시간 세션 상태를 수신자에게 전달하며, 스위치는 `${session_id}`가 확장될 수 있는지 여부만 제어합니다. 어떤 설정 소스가 헤더를 제공했는지는 식별하지 않습니다.
+
+**개인정보 참고:** 세션 ID는 대화 수명 동안 안정적인 식별자이므로, 이를 전송하는 모든 호스트는 해당 대화의 모든 요청을 그룹화할 수 있습니다. 어떤 호스트인지는 헤더를 운반하는 제공자 항목에 의해 결정됩니다 — `baseUrl`과 동기화해야 할 별도의 호스트 목록은 없습니다.
+
 ### 원자적 필드 처리
 
 다음 필드는 원자적 객체로 취급됩니다 - 제공자 값이 전체 객체를 완전히 대체하며, 병합이 발생하지 않습니다:

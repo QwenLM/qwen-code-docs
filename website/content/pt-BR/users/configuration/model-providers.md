@@ -561,12 +561,58 @@ A resolução de configuração segue um modelo de camadas estrito com uma regra
 | 3          | `settings.model.generationConfig`             | Usado apenas para **Modelos de Runtime** (quando nenhum modelo de provedor está selecionado)                  |
 | 4          | Padrões do gerador de conteúdo                | Padrões específicos do provedor (ex.: OpenAI vs Gemini) - apenas para Modelos de Runtime                      |
 
+### Valores dinâmicos em `customHeaders`
+
+Um valor de `customHeaders` pode conter o placeholder `${session_id}`, que é
+expandido por requisição com o ID da sessão atual do Qwen Code. Use-o para gateways
+que exigem um identificador estável por conversa — o OpenCode Go, por exemplo,
+rejeita requisições sem `x-opencode-session`:
+
+```json
+{
+  "generationConfig": {
+    "customHeaders": {
+      "x-opencode-session": "${session_id}"
+    }
+  }
+}
+```
+
+Como o valor é resolvido por requisição em vez de ser incorporado ao cliente SDK,
+`/new` e `/resume` o rotacionam sem necessidade de reinicialização.
+
+⚠️ **Duas etapas são necessárias.** A entrada do provedor acima é apenas metade — um
+placeholder é inerte até que você também ative
+[`outboundCorrelation.allowDynamicHeaderValues`](./settings.md#outboundcorrelation):
+
+```json
+{
+  "outboundCorrelation": {
+    "allowDynamicHeaderValues": true
+  }
+}
+```
+
+Até que você faça isso, um valor que contenha um placeholder é **descartado** em vez de enviado,
+e o Qwen Code imprime um aviso na inicialização nomeando o header e esta configuração.
+O header nunca é enviado com um `${session_id}` literal.
+
+O switch é global porque é uma decisão de consentimento, separada de _para onde_ o
+valor vai: um valor expandido carrega estado de sessão ao vivo para quem o recebe,
+e o switch controla apenas se `${session_id}` pode ser expandido. Ele não
+identifica qual fonte de configurações forneceu o header.
+
+**Nota de privacidade:** o ID da sessão é um identificador estável durante a vida de uma
+conversa, então qualquer host para o qual você o enviar pode agrupar todas as requisições daquela
+conversa. Quais hosts são esses é decidido por quais entradas de provedor carregam
+o header — não há uma lista separada de hosts para manter em sincronia com seu `baseUrl`.
+
 ### Tratamento de campos atômicos
 
 Os seguintes campos são tratados como objetos atômicos - os valores do provedor substituem completamente o objeto inteiro, não ocorrendo mesclagem:
 
 - `samplingParams` - Temperature, top_p, max_tokens, etc.
-- `customHeaders` - Cabeçalhos HTTP personalizados
+- `customHeaders` - Cabeçalhos HTTP personalizados (podem conter `${session_id}`; veja [Valores dinâmicos](#valores-dinâmicos-em-customheaders))
 - `extra_body` - Parâmetros extras do corpo da requisição
 
 ### Exemplo

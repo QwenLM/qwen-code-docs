@@ -35,10 +35,10 @@ Construtor:
 
 ```ts
 new DaemonClient({
-  baseUrl: string,                  // default 'http://127.0.0.1:4170'
+  baseUrl: string,                  // padrão 'http://127.0.0.1:4170'
   token?: string,
-  fetch?: typeof globalThis.fetch,  // injectable for tests
-  fetchTimeoutMs?: number,          // 0 = disabled; default DEFAULT_FETCH_TIMEOUT_MS
+  fetch?: typeof globalThis.fetch,  // injetável para testes
+  fetchTimeoutMs?: number,          // 0 = desativado; padrão DEFAULT_FETCH_TIMEOUT_MS
 });
 ```
 
@@ -185,7 +185,7 @@ const workspaceHandle = await client
 const operation = await client.waitForExtensionOperation(workspaceHandle);
 ```
 
-O resultado terminal da operação contém `results` ordenados. Os alvos não precisam estar instalados ao definir `enabled` ou `disabled`: o daemon armazena uma declaração de nome e preserva essa política de ativação quando uma Extensão com esse nome é instalada posteriormente. Todos os alvos alterados compartilham uma geração do Extension Store e uma passagem de reconciliação. Lotes padrão globais reconciliam cada runtime registrado; lotes de workspace resolvem e reconciliam apenas o runtime confiável selecionado. O `inherit` do workspace limpa a substituição exata, mas não cria uma declaração para um nome desconhecido; uma limpeza totalmente desconhecida é bem-sucedida como no-op sem reconciliação. Os métodos de ativação singular permanecem apenas para instalados.
+O resultado terminal da operação contém `results` ordenados. Os alvos não precisam estar instalados ao definir `enabled` ou `disabled`: o daemon armazena uma declaração de nome e preserva essa política de ativação quando uma Extensão com esse nome é instalada posteriormente. Todos os alvos alterados compartilham uma geração do Extension Store. Quando `extension_activation_explicit_refresh` é anunciado, as operações de ativação terminam após o commit durável da política sem atualizar as sessões ativas. Um chamador que precise de aplicação imediata deve então submeter `workspace.refreshExtensionRuntime()` para cada workspace cujas sessões precisam aplicar a mudança imediatamente; o refresh é uma operação separada e pode ser aguardado ou deixado em background. Um lote padrão global altera a ativação padrão que cada workspace registrado herda, a menos que esse workspace tenha uma substituição exata para o nome (ou corresponda a uma regra de caminho legada), e não possui um único refresh que cubra cada runtime; um lote de workspace altera apenas o runtime confiável selecionado. Daemons mais antigos já fazem o refresh dentro da operação de ativação, então os clientes não devem submeter o refresh extra a menos que a capability esteja presente. O reconciliador de geração de 30 segundos permanece como um caminho independente de convergência eventual para workspaces que o chamador não atualizou. O `inherit` do workspace limpa a substituição exata, mas não cria uma declaração para um nome desconhecido; uma limpeza totalmente desconhecida é bem-sucedida como no-op. Os métodos de ativação singular permanecem apenas para instalados.
 
 Para trocas de Extension Skill internas ao workspace, faça pre-flight de `extension_state` e use os métodos REST agrupados por recurso. Estes não escrevem configurações de Skill nem ativam uma Extensão pai desativada:
 
@@ -337,18 +337,18 @@ import { DaemonClient, DaemonSessionClient } from '@qwen-code/sdk/daemon';
 const client = new DaemonClient({ baseUrl: 'http://127.0.0.1:4170', token });
 const session = await DaemonSessionClient.createOrAttach(client);
 
-// First subscription — starts live (or from ring start for new sessions).
+// Primeira assinatura — inicia ao vivo (ou do início do ring para novas sessões).
 for await (const event of session.events()) {
   console.log(event.type, event.id);
-  // session.lastEventId is bumped on each id-bearing frame.
+  // session.lastEventId é incrementado a cada frame com id.
   if (shouldStop(event)) break;
 }
 
-// Reconnect — automatically sends Last-Event-ID: <last seen id>.
-// The daemon replays missed events from the ring, then goes live.
+// Reconexão — envia automaticamente Last-Event-ID: <último id visto>.
+// O daemon faz o replay dos eventos perdidos do ring e depois vai para ao vivo.
 for await (const event of session.events()) {
-  // Replay frames arrive first, then a synthetic `replay_complete`,
-  // then live events.
+  // Frames de replay chegam primeiro, depois um `replay_complete` sintético,
+  // depois eventos ao vivo.
   handleEvent(event);
 }
 ```
@@ -360,26 +360,26 @@ Para um controle de nível mais baixo, use `DaemonClient.subscribeEvents` direta
 ```ts
 const client = new DaemonClient({ baseUrl: 'http://127.0.0.1:4170', token });
 
-let cursor: number | undefined; // undefined = live-only on first connect
+let cursor: number | undefined; // undefined = apenas ao vivo na primeira conexão
 
 async function* subscribe(sessionId: string, signal: AbortSignal) {
   for await (const event of client.subscribeEvents(sessionId, {
     lastEventId: cursor,
     signal,
   })) {
-    // Only id-bearing frames advance the cursor.
+    // Apenas frames com id avançam o cursor.
     if (event.id !== undefined) {
       cursor = event.id;
     }
-    // Handle ring-eviction gap.
+    // Lidar com lacuna de evicção do ring.
     if (event.type === 'state_resync_required') {
-      // State is stale — reload the daemon's bounded replay snapshot window.
+      // O estado está obsoleto — recarregar a janela de snapshot de replay limitado do daemon.
       await client.loadSession(sessionId);
       continue;
     }
     if (event.type === 'history_truncated') {
-      // Informational only. Render a status notice, then continue applying
-      // the retained replay events; do not trigger another reload.
+      // Apenas informativo. Exibir um aviso de status e continuar aplicando
+      // os eventos de replay retidos; não disparar outro recarregamento.
     }
     yield event;
   }
@@ -397,12 +397,12 @@ async function resilientSubscribe(session: DaemonSessionClient) {
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
-      // `resume: true` (default) passes the tracked lastSeenEventId.
+      // `resume: true` (padrão) passa o lastSeenEventId rastreado.
       for await (const event of session.events()) {
-        attempt = 0; // reset on successful event
+        attempt = 0; // reset em caso de evento bem-sucedido
         handleEvent(event);
       }
-      break; // clean stream end
+      break; // fim limpo do stream
     } catch (err) {
       const delay = BASE_DELAY_MS * 2 ** Math.min(attempt, 5);
       await new Promise((r) => setTimeout(r, delay));
@@ -431,7 +431,7 @@ Chamadores que persistem o cursor entre reinicializações de processo podem ini
 const session = new DaemonSessionClient({
   client,
   session: { sessionId, workspaceCwd, attached: true },
-  lastEventId: persistedCursor, // resume from persisted position
+  lastEventId: persistedCursor, // retomar a partir da posição persistida
 });
 ```
 

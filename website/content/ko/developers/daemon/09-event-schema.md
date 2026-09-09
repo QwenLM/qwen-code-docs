@@ -110,7 +110,7 @@ Skill 토글 API는 선택적 `mutation: { id, kind: 'skill_toggle', skills: [{ 
 
 | Type                 | Direction | Trigger                                                              | Key payload fields                                                                                                                               |
 | -------------------- | --------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `extensions_changed` | S->C      | 백그라운드 extension 설치/새로고침 작업 완료 또는 상태 변경          | `refreshed, failed, status?: 'installed' \| 'enabled' \| 'disabled' \| 'updated' \| 'uninstalled' \| 'failed', source?, name?, version?, error?` |
+| `extensions_changed` | S->C      | 백그라운드 extension 설치/새로고침 작업 완료 또는 상태 변경          | `refreshed, failed, status?: 'installed' \| 'enabled' \| 'disabled' \| 'updated' \| 'uninstalled' \| 'failed', source?, name?, version?, error?`. `extension_activation_explicit_refresh`를 광고하는 daemon은 브로드캐스트 없이 activation을 커밋하므로, 성공적인 activation은 더 이상 `enabled`/`disabled`를 발행하지 않는다. 이들은 오래된 daemon에서 나오며, 새로운 daemon은 status 없는 refresh 브로드캐스트를 통해 activation을 수렴한다. |
 
 ### Mid-turn 메시지 주입
 
@@ -231,7 +231,7 @@ flowchart LR
 
 중요한 이유: 상대적 시간을 렌더링하거나 트랜스크립트 블록을 정렬하는 다중 클라이언트 UI는 각 브라우저/탭/폰의 로컬 클록 대신 서버 시간을 사용해야 한다. 서버 스탬핑은 클라이언트 간 순서를 일관되게 유지한다.
 
-SDK 접근: `event._meta?.serverTimestamp`를 선호한다. 호환 경로에서 `event.serverTimestamp` 또는 `event.data._meta.serverTimestamp`를_probe_할 수도 있다. ACP 페이로드 `data._meta`와 daemon 엔벨로프 `_meta`를 혼동하지 말 것.
+SDK 접근: `event._meta?.serverTimestamp`를 선호한다. 호환 경로에서 `event.serverTimestamp` 또는 `event.data._meta.serverTimestamp`를 탐색할 수도 있다. ACP 페이로드 `data._meta`와 daemon 엔벨로프 `_meta`를 혼동하지 말 것.
 
 ### `originatorClientId`
 

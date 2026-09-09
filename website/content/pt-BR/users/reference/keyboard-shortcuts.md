@@ -89,6 +89,11 @@ Foque o pill de Tarefas em segundo plano no rodapé (use `Down Arrow` a partir d
 | `Right Arrow`                        | Muda para a próxima categoria de complementação quando as abas de categoria estão visíveis. Também aceita uma sugestão ghost-text quando o prompt está vazio. |
 | `Left Arrow`                         | Muda para a categoria anterior de complementação quando as abas de categoria estão visíveis. |
 
+> Nota: enquanto o menu de complementação ` @` estiver exibindo abas de categoria, `Left Arrow` e
+> `Right Arrow` alternam categorias em vez de mover o cursor. Pressione `Esc` para
+> fechar o menu primeiro se precisar mover o cursor. O movimento de palavras com `Alt/Option+Arrow`
+> não é afetado.
+
 ## Pesquisa no histórico
 
 Pressione `Ctrl+R` para pesquisar no histórico de prompts, ou no histórico do shell enquanto o modo shell estiver ativo.

@@ -2,7 +2,7 @@
 
 O Qwen Code pode prever o que você deseja digitar em seguida e exibir como texto de placeholder na área de entrada. Esse recurso utiliza uma chamada de LLM para analisar o contexto da conversa e gerar uma sugestão natural para o próximo passo.
 
-Esse recurso funciona de ponta a ponta tanto no CLI quanto na Web Shell. A geração é automática e ocorre no lado do servidor: após cada turno concluído, o daemon emite a sugestão no stream da sessão (ativado por padrão; defina `ui.enableFollowupSuggestions` como `false` para desativar), e o composer da Web Shell já conecta o hook `useDaemonFollowupSuggestion`, então as sugestões são exibidas e aceitas sem necessidade de configuração adicional no host.
+Esse recurso funciona de ponta a ponta tanto no CLI quanto na Web Shell. A geração é automática e ocorre no lado do servidor: após cada turno concluído corretamente (o motivo de parada `end_turn` do daemon — um turno `cancelled`, `refusal`, `max_tokens` ou `max_turn_requests` não recebe sugestão), o daemon emite a sugestão no stream da sessão (ativado por padrão; defina `ui.enableFollowupSuggestions` como `false` para desativar), e o composer da Web Shell já conecta o hook `useDaemonFollowupSuggestion`, então as sugestões são exibidas e aceitas sem necessidade de configuração adicional no host.
 
 ## Como Funciona
 
@@ -36,7 +36,7 @@ As sugestões são geradas quando todas as seguintes condições são atendidas:
 - O modo de aprovação não está definido como `plan`
 - O recurso está habilitado (ativado por padrão — defina `ui.enableFollowupSuggestions` como `false` para desativá-lo)
 
-As sugestões não aparecerão no modo não interativo (ex.: modo headless/SDK).
+As sugestões não aparecerão no modo não interativo do CLI (ex.: modo headless/SDK). No daemon, a geração é no lado do servidor e ocorre após cada turno que atende às condições acima, portanto, um cliente headless ou SDK que não possa exibir a sugestão deve definir `ui.enableFollowupSuggestions` como `false` para evitar o custo de LLM por turno.
 
 As sugestões são descartadas automaticamente quando:
 
@@ -78,7 +78,7 @@ Estas configurações podem ser definidas em `settings.json`:
 | -------------------------------- | ------- | ------ | --------------------------------------------------------------------------------- |
 | `ui.enableFollowupSuggestions`   | boolean | `true` | Habilitar ou desabilitar sugestões de acompanhamento                              |
 | `ui.enableCacheSharing`          | boolean | `true` | Usar consultas bifurcadas com cache para reduzir custo (experimental)             |
-| `ui.enableSpeculation`           | boolean | `false`| Executar sugestões especulativamente antes do envio (experimental)                |
+| `ui.enableSpeculation`           | boolean | `false` | Executar sugestões especulativamente antes do envio (experimental)                |
 | `fastModel`                      | string  | `""`   | Modelo para sugestões de prompt e execução especulativa                           |
 
 ### Exemplo
