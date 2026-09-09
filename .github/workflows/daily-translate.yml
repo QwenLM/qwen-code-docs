@@ -310,7 +310,7 @@ jobs:
       - name: Upload translation metrics
         if: always()
         continue-on-error: true
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: translation-metrics
           # quarantine-unrepairable.json carries the per-file reasons for
@@ -319,12 +319,20 @@ jobs:
           # one line per file, no reasons, reachable only run by run. #260 had
           # to be reconstructed that way, from two runs, by hand.
           #
+          # orchestrator-agent-*.log holds what each agent session actually
+          # returned. Only its stderr reaches the step log, so a rejected
+          # structured output shows up there as a bare parse error with no way
+          # to see the response that caused it. One log per attempt, and a
+          # failed attempt keeps its own (`-retryN`), so a deterministic
+          # failure is visible as the same rejection twice.
+          #
           # Note these are paths, not YAML: a `#` inside the block scalar below
           # is a literal path pattern, not a comment.
           path: |
             website/translation-metrics.json
             website/orchestrator-manifest-*.metrics.json
             website/quarantine-unrepairable.json
+            website/orchestrator-agent-*.log
           retention-days: 90
           if-no-files-found: ignore
 
@@ -337,7 +345,7 @@ jobs:
       # pushed a review branch, so there is nothing to preserve locally.
       - name: Upload translations that cannot be committed
         if: always() && steps.detect.outputs.changed == 'true' && (github.ref_name != 'main' || failure())
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: translation-output
           # translation-changelog.json is deliberately not listed: the

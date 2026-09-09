@@ -55,7 +55,7 @@ unabhängig sein müssen.
 
 ## Linux: systemd-Benutzer-Unit
 
-> **Finden Sie zuerst Ihr `qwen`-Binary.** Der `ExecStart=` in der Unit-Datei muss einen **absoluten Pfad** enthalten – Dienstmanager lesen nicht das `PATH` Ihrer Shell. Führen Sie `which qwen` aus, um ihn zu finden. Häufige Orte: `/usr/local/bin/qwen` (Linuxbrew, manuelle Installationen), `~/.nvm/versions/node/vX.Y.Z/bin/qwen` (nvm), `~/.fnm/aliases/default/bin/qwen` (fnm), `~/.volta/bin/qwen` (Volta). Ersetzen Sie den tatsächlichen Pfad überall dort, wo die Vorlagen `/PFAD/ZU/qwen` zeigen.
+> **Finden Sie zuerst Ihr `qwen`-Binary und die vertrauenswürdigen Tool-Verzeichnisse.** Der `ExecStart=` in der Unit-Datei muss einen **absoluten Pfad** enthalten, und das explizite `PATH` muss vertrauenswürdige Verzeichnisse für Tools enthalten, die Daemon-Sessions benötigen, wie `gh`, `git`, `npm` und den `node`-Interpreter, der von einem skriptbasierten `qwen`-Launcher verwendet wird. Dienstmanager lesen nicht Ihr Shell-Profil. Führen Sie `which qwen gh git npm node` in Ihrer normalen Shell aus und ersetzen Sie dann die tatsächlichen Executable- und Verzeichnispfade überall dort, wo die Vorlage unten `/PFAD/ZU/qwen` und `/PFAD/ZU/BENUTZER/BIN` zeigt. Häufige Orte: `/usr/local/bin/qwen` (Linuxbrew, manuelle Installationen), `~/.nvm/versions/node/vX.Y.Z/bin/qwen` (nvm), `~/.fnm/aliases/default/bin/qwen` (fnm), `~/.volta/bin/qwen` (Volta). Ersetzen Sie den tatsächlichen Pfad überall dort, wo die Vorlagen `/PFAD/ZU/qwen` zeigen.
 
 `~/.config/systemd/user/qwen-serve.service`:
 
@@ -70,6 +70,9 @@ Type=simple
 WorkingDirectory=%h/project-a
 # Führen Sie `which qwen` aus, um den absoluten Pfad zu finden. systemd liest $PATH nicht.
 ExecStart=/PFAD/ZU/qwen serve --hostname 127.0.0.1 --port 4170 --workspace %h/project-a --workspace %h/project-b
+# Ersetzen Sie den ersten Eintrag durch vertrauenswürdige Verzeichnisse, die den
+# Interpreter von qwen und benutzerinstallierte Tools enthalten. systemd liest keine Shell-Profile.
+Environment=PATH=/PFAD/ZU/BENUTZER/BIN:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 # Lesen Sie den Bearer-Token aus einer chmod 600-Datei, anstatt ihn in der Unit
 # inline zu setzen. `Environment=` würde den Token in der Unit-Datei offenlegen
 # (normalerweise 644 = weltlesbar). EnvironmentFile hält den Token in der
@@ -104,11 +107,11 @@ systemctl --user disable --now qwen-serve.service
 
 Ohne `loginctl enable-linger` wird die systemd-Instanz auf Benutzerebene heruntergefahren, wenn sich der Benutzer abmeldet, und startet erst beim nächsten Login neu – auf einem headless Entwicklungsrechner würde der Daemon das Ende einer SSH-Sitzung nicht überleben. `enable-linger` ist das, was „über Neustarts hinweg“ tatsächlich funktionieren lässt.
 
-**Systemweite Alternative** (gemeinsam genutzte Entwicklungsrechner, seltener): Legen Sie die Unit unter `/etc/systemd/system/qwen-serve@.service` mit `User=%i` ab, verwalten Sie sie via `sudo systemctl enable --now qwen-serve@<benutzername>.service`. Ansonsten gleicher `[Service]`-Rumpf – aber weltlesbare `Environment=`-Offenlegung ist auf dieser Ebene noch problematischer, verwenden Sie daher immer `EnvironmentFile=` mit Verweis auf die `chmod 600`-Datei des Benutzers. Wählen Sie für Einzelbenutzer-Workstations die Benutzerebene + linger.
+**Systemweite Alternative** (gemeinsam genutzte Entwicklungsrechner, seltener): Legen Sie die Unit unter `/etc/systemd/system/qwen-serve@.service` mit `User=%i` ab, verwalten Sie sie via `sudo systemctl enable --now qwen-serve@<benutzername>.service`. Ansonsten gleicher `[Service]`-Rumpf. Das nicht sensible `PATH` kann in `Environment=` bleiben, aber setzen Sie den Bearer-Token niemals dort: Verwenden Sie `EnvironmentFile=` mit Verweis auf die `chmod 600`-Datei des Benutzers. Wählen Sie für Einzelbenutzer-Workstations die Benutzerebene + linger.
 
 ## macOS: launchd-Benutzer-Agent
 
-> **Finden Sie zuerst Ihr `qwen`-Binary.** Gleiche Einschränkung wie bei systemd – `ProgramArguments` muss einen **absoluten Pfad** enthalten. Führen Sie `which qwen` aus, um ihn zu finden. Häufige Orte auf macOS: `/opt/homebrew/bin/qwen` (Homebrew auf Apple Silicon), `/usr/local/bin/qwen` (Homebrew auf Intel, manuelle Installationen), `~/.nvm/versions/node/vX.Y.Z/bin/qwen` (nvm), `~/.volta/bin/qwen` (Volta). Ersetzen Sie unten, wo die Vorlage `/PFAD/ZU/qwen` zeigt.
+> **Finden Sie zuerst Ihr `qwen`-Binary und die vertrauenswürdigen Tool-Verzeichnisse.** Gleiche Einschränkung wie bei systemd: `ProgramArguments` muss einen **absoluten Pfad** enthalten, während `EnvironmentVariables.PATH` vertrauenswürdige Verzeichnisse enthalten muss, die Tools für Daemon-Sessions benötigen. Führen Sie `which qwen gh git npm node` in Ihrer normalen Shell aus. Häufige Orte auf macOS: `/opt/homebrew/bin/qwen` (Homebrew auf Apple Silicon), `/usr/local/bin/qwen` (Homebrew auf Intel, manuelle Installationen), `~/.nvm/versions/node/vX.Y.Z/bin/qwen` (nvm), `~/.volta/bin/qwen` (Volta). Ersetzen Sie unten, wo die Vorlage `/PFAD/ZU/qwen` zeigt.
 
 `~/Library/LaunchAgents/com.qwenlm.qwen-serve.plist`:
 
@@ -133,6 +136,10 @@ Ohne `loginctl enable-linger` wird die systemd-Instanz auf Benutzerebene herunte
     <string>--workspace</string>
     <string>/Users/IHR-BENUTZERNAME/project-b</string>
   </array>
+  <!-- launchd liest keine Shell-Profile. Ersetzen Sie den ersten Eintrag durch
+       vertrauenswürdige Verzeichnisse, die den Interpreter von qwen und Benutzertools enthalten. -->
+  <key>PATH</key>
+  <string>/PFAD/ZU/BENUTZER/BIN:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
   <!-- launchd expandiert `~` oder `$HOME` NICHT – absolute Pfade verwenden. -->
   <key>WorkingDirectory</key>
   <string>/Users/IHR-BENUTZERNAME/project-a</string>
@@ -220,7 +227,7 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
   http://127.0.0.1:4170/capabilities | jq .protocolVersions         # Feature-Set des Daemons
 ```
 
-Wenn Auth konfiguriert ist (d. h. der Daemon wurde mit `--token` / gesetztem `QWEN_SERVER_TOKEN` gestartet, ODER `--require-auth=true`), benötigt jede Route außer `/health` auf Loopback-Binds `Authorization: Bearer <token>`. Wenn du den Daemon ohne Token auf dem Loopback-Standard gestartet hast (der `qwen serve`-Nullkonfigurationspfad), benötigt keiner der Aufrufe einen Header. Die obigen Vorlagen konfigurieren alle einen Token, daher wird der `Authorization`-Header in der Praxis benötigt. Wenn `/capabilities` `401` zurückgibt, stimmt der Token in der Unit/plist nicht mit dem per `export` gesetzten Token überein, den dein `curl` verwendet.
+Wenn Auth konfiguriert ist (`--token` oder `QWEN_SERVER_TOKEN`), benötigt jede normale API-Route außer `/health` auf einem gewöhnlichen Loopback-Bind `Authorization: Bearer <token>`; Channel-Webhook-Eingang verwendet immer seinen konfigurierten `x-qwen-webhook-secret`, und Web Shell-Dokument- und Asset-Routen bleiben pre-auth. `--require-auth=true` erfordert einen Token beim Start und verschiebt zusätzlich `/health` auf Loopback hinter das Bearer-Gate, ohne die Webhook-Authentifizierung zu ändern. Wenn Sie den Daemon ohne Token auf dem Loopback-Standard gestartet haben (der `qwen serve`-Nullkonfigurationspfad), benötigt keiner der Aufrufe einen Header und jeder lokale Prozess, der den primären Listener erreichen kann, erhält volle Operator-API-Berechtigung, einschließlich Code-Ausführung als Daemon-Benutzer. Die obigen Vorlagen konfigurieren alle einen Token, daher wird der `Authorization`-Header in der Praxis benötigt. Wenn `/capabilities` `401` zurückgibt, stimmt der Token in der Unit/plist nicht mit dem per `export` gesetzten Token überein, den dein `curl` verwendet.
 
 ## Token-Rotation
 

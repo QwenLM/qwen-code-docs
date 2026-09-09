@@ -113,7 +113,7 @@ export const CONDITIONAL_SERVE_FEATURES: ReadonlyMap<
 
 ストリーミング: `slow_client_warning`, `typed_event_schema`.
 
-ID と heartbeat: `client_identity`, `client_heartbeat`.
+アイデンティティと heartbeat: `client_identity`, `client_heartbeat`.
 
 権限: `session_permission_vote`, `permission_vote`, **`permission_mediation`** (`modes: ['first-responder', 'designated', 'consensus', 'local-only']`).
 
@@ -124,6 +124,8 @@ ID と heartbeat: `client_identity`, `client_heartbeat`.
 ローカル拡張機能のインストール: `extension_local_path_install` は、両方の拡張機能インストールルートの既存の `source` フィールドにおいて、デーモンホスト上の絶対パスを許可します。プライマリワークスペースの互換性ルートもこれをサポートするため、`extension_management_v2` とは分離されています。また、クライアントは古いデーモンにローカルパスを送信してはなりません。
 
 V2 拡張機能のバッチアクティベーション: `extension_batch_activation_v2` は、`extension_management_v2` にキューイングされたグローバルデフォルトアクティベーションおよび選択ワークスペースオーバーライドのバッチを追加します。古い V2 デーモンは単一のアクティベーションルートのみを公開するため、クライアントはこれを独立してプリフライトする必要があります。
+
+明示的な拡張機能アクティベーションのリフレッシュ: `extension_activation_explicit_refresh` は、単一およびバッチのアクティベーション操作が、アクティブなセッションを直接リフレッシュせずに永続的なポリシーコミットで完了することを意味します。即時の適用が必要なクライアントは、アクティベーションの成功を待機し、変更を即座に適用する必要があるセッションを持つ各ワークスペースに対してワークスペースランタイムリフレッシュ操作を送信する必要があります。グローバルデフォルトのバッチは、そのワークスペースが名前の正確なオーバーライド（またはレガシーパスルールに一致）を持たない限り、各ワークスペースが継承するデフォルトアクティベーションを変更します。また、すべてのランタイムをカバーする単一のリフレッシュはないため、呼び出し元がリフレッシュしないワークスペースは、次の 30 秒の generation-reconciler パスでのみ収束します。このタグを持たないデーモンはすでにアクティベーション操作にリフレッシュを含んでいるため、呼び出し元はそこで互換性リフレッシュを送信してはなりません。
 
 ワークスペース修飾セッション読み取り: `workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`, `workspace_session_live_state`。アクティブおよびアーカイブのエクスポートタグは互いに、また `session_export` や `workspace_qualified_rest_core` とも独立しています。そのため、クライアントはエクスポートする正確なストレージ状態をプリフライトする必要があります。永続化トランスクリプトのページングは、バウンドされた読み取りポリシーの下で信頼されないセカンダリを許可します。両方のフルエクスポートパスは信頼されたのみです。`workspace_session_live_state` も同様に `workspace_qualified_rest_core` から独立しており、信頼されたのみです。選択されたランタイムのメモリ内のライブセッションスナップショットとカタログバージョンを提供し、信頼されないセカンダリの永続化読み取りポリシーをライブブリッジ状態には拡張しません。
 

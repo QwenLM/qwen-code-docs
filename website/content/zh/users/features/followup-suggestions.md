@@ -2,7 +2,7 @@
 
 Qwen Code 可以预测你接下来想输入的内容，并在输入区域中以占位符文本的形式显示。该功能通过一次 LLM 调用分析对话上下文，生成自然的下一步操作建议。
 
-该功能在 CLI 和 Web Shell 中均端到端可用。建议生成是自动的，在服务端完成：每完成一个轮次，daemon 会在会话流上发出建议（默认开启；将 `ui.enableFollowupSuggestions` 设为 `false` 可关闭），而 Web Shell 的 composer 已经接入了 `useDaemonFollowupSuggestion` hook，因此建议可以直接渲染和接受，无需宿主额外接线。
+该功能在 CLI 和 Web Shell 中均端到端可用。建议生成是自动的，在服务端完成：每完成一个干净结束的轮次（daemon 的 `end_turn` 停止原因——`cancelled`、`refusal`、`max_tokens` 或 `max_turn_requests` 的轮次不会生成建议），daemon 会在会话流上发出建议（默认开启；将 `ui.enableFollowupSuggestions` 设为 `false` 可关闭），而 Web Shell 的 composer 已经接入了 `useDaemonFollowupSuggestion` hook，因此建议可以直接渲染和接受，无需宿主额外接线。
 
 ## 工作原理
 
@@ -36,7 +36,7 @@ Qwen Code 完成响应后，经过短暂的延迟（约 300ms），一条建议�
 - 审批模式未设置为 `plan`
 - 该功能已启用（默认开启——将 `ui.enableFollowupSuggestions` 设为 `false` 可关闭）
 
-在非交互模式（例如 headless/SDK 模式）下不会出现建议。
+在 CLI 的非交互模式（例如 headless/SDK 模式）下不会出现建议。在 daemon 中，建议生成在服务端完成，会在每个满足上述条件的轮次后运行，因此无法渲染建议的 headless 或 SDK 客户端应将 `ui.enableFollowupSuggestions` 设为 `false`，以避免每轮的 LLM 开销。
 
 建议在以下情况会自动取消：
 

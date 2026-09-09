@@ -81,13 +81,13 @@ Qwen CodeでOpenTelemetryを有効化し、セットアップする方法につ�
 **センシティブなスパン属性:** `includeSensitiveSpanAttributes` が有効な場合、以下の2つのことが起こります:
 
 1. **ネイティブスパン属性**が標準的なOpenTelemetry GenAI JSONを保持します:
-   - LLM入力メッセージ（`gen_ai.input.messages`）
+   - メインエージェントおよびLLM入力メッセージ（`gen_ai.input.messages`）
    - システム指示（`gen_ai.system_instructions`）
    - ツール定義（`gen_ai.tool.definitions`）
-   - LLM出力メッセージ（`gen_ai.output.messages`）
+   - メインエージェントおよびLLM出力メッセージ（`gen_ai.output.messages`）
    - 最終実行ツール引数（`gen_ai.tool.call.arguments`）
    - 成功したツール結果（`gen_ai.tool.call.result`）
-   - インタラクションスパンはGenAI推論スパンではないため、引き続き `new_context` を使用します。
+   - インタラクションスパンは互換性の `new_context` 属性を保持します。
 
    メインエージェントの入力はコンテキスト展開前の元のユーザーテキスト投影であり、メインエージェントの出力はすべてのツールおよび継続の作業が確定した後の最終的なユーザー可視回答です。LLM値はプロバイダー最終のSDKリクエストオブジェクトと生プロバイダー応答から取得され、その入力には履歴、展開されたファイル、システム指示、およびツール結果が含まれる可能性があり、その出力にはすべてのプロバイダー候補が含まれる可能性があります。ツール値は最終呼び出しパラメータと成功したモデル向け結果から取得されます。各標準GenAI値はコンパクトJSONであり、完全でスキーマ有効である必要があります。無効、循環参照、または `sensitiveSpanAttributeMaxLength` より長い値は全体として省略されます。JSONが切り詰められることはなく、プレビュー、ハッシュ、または切り詰めメタデータは出力されません。インタラクション固有の `new_context` 属性は既存の切り詰め動作を保持します。デフォルトの最大値は属性ごとに1 MiB（`1048576`）で、受け入れ範囲は `1..104857600`（100 MiB）です。上限はUTF-8バイト数ではなくJavaScript文字列長として測定されます。したがって、非ASCIIコンテンツはOTLPエクスポート後にバイト数が増加する可能性があります。
 
@@ -252,9 +252,15 @@ LLM プロバイダーもクロスプロセスのトレース結合のために 
 }
 ```
 
-### その他のアウトバウンド相関ヘッダー
+### Routifyセッションアフィニティ
 
-`X-Qwen-Code-Session-Id` と `X-Qwen-Code-Request-Id` は **この PR の対象外です**。これらは、同じ `outboundCorrelation.*` 名前空間の下で、それぞれ独自の脅威モデルとオペレーターの同意フローを備えた後続の PR で設計・提案される予定です。PR #4390 のレビュー（LaZzyMan）で、「テレメトリの作業範囲には LLM プロバイダーへの識別子の送信は含まれない」という原則が確立されました。相関ヘッダーの作業は、テレメトリの下に実装するのではなく、独自の設計議論に移行されます。
+OpenAI互換、DashScope、Anthropic、Gemini、およびVertexプロバイダーパスを通じたQwen CodeのLLMリクエストは、`routify.alibaba-inc.com`、`routify-online.alibaba-inc.com`、または `routify-pub.alibaba-inc.com` にHTTPSで直接アドレス指定される場合、`session_id` ヘッダーに現在のQwen CodeセッションIDを含めます。RoutifyのModelRouterはこの値をセッションアフィニティとトラフィックマーキングに使用します。この動作は `telemetry.enabled` または `outboundCorrelation.*` によって制御されません。
+
+初期宛先マッチは意図的に狭く制限されています。Qwen Codeはサブドメイン、他の `alibaba-inc.com` ホスト、または他のLLMエンドポイントにヘッダーを付加しません。そのマッチ以降も標準のfetchリダイレクト動作が適用されるため、Routifyレスポンスはリクエストをリダイレクトすることでヘッダーを転送できます。
+
+セッションIDはリクエストごとに読み取られるため、`/clear` で作成された新しいセッションはSDKクライアントを再構築せずに新しいアフィニティ値を取得します。Geminiは明示的なRoutify `baseUrl` を必要とします。これによりQwen Codeは宛先を検証できます。
+
+`X-Qwen-Code-Request-Id` は実装されていません。
 
 ## インバウンド相関（デーモン HTTP API）
 
@@ -609,7 +615,8 @@ Alibaba Cloud Managed Service for OpenTelemetry で Qwen Code のテレメトリ
 #### Arena メトリクス
 
 - `qwen-code.arena.session.count` (Counter, Int): ステータス別の Arena セッション。
-  - **属性**: `status`, `display_backend` (オプション)
+  - **Attributes**: `status`, `display_backend` (オプション)
+
 - `qwen-code.arena.session.duration` (Histogram, ms): Arena セッションの所要時間。
   - **Attributes**: `status`
 

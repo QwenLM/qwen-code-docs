@@ -110,7 +110,7 @@ Skill トグル API はオプションの `mutation: { id, kind: 'skill_toggle',
 
 | Type                 | Direction | Trigger                                                              | Key payload fields                                                                                                                               |
 | -------------------- | --------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `extensions_changed` | S->C      | バックグラウンドでの拡張機能のインストール/リフレッシュ作業の完了、またはステータスの変更 | `refreshed, failed, status?: 'installed' \| 'enabled' \| 'disabled' \| 'updated' \| 'uninstalled' \| 'failed', source?, name?, version?, error?` |
+| `extensions_changed` | S->C      | バックグラウンドでの拡張機能のインストール/リフレッシュ作業の完了、またはステータスの変更 | `refreshed, failed, status?: 'installed' \| 'enabled' \| 'disabled' \| 'updated' \| 'uninstalled' \| 'failed', source?, name?, version?, error?`。`extension_activation_explicit_refresh` を公開するデーモンはアクティベーションをブロードキャストせずにコミットするため、成功したアクティベーションはもはや `enabled`/`disabled` を出力しません。それらは古いデーモンからのものあり、新しいデーモンはステータスなしのリフレッシュブロードキャストを通じてアクティベーションを収束させます。 |
 
 ### ターン中のメッセージ挿入
 

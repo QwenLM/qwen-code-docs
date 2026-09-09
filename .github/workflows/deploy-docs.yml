@@ -43,7 +43,7 @@ jobs:
       # Persistent webpack cache (see scripts/clean-next.mjs): warm cache
       # cuts the compile phase from ~4-5min to ~1min.
       - name: Cache Next.js build cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: website/.next/cache
           key: next-${{ runner.os }}-${{ hashFiles('website/package-lock.json') }}-${{ github.sha }}

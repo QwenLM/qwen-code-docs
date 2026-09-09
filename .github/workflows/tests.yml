@@ -1,0 +1,59 @@
+# The website's tests existed before this workflow but nothing ran them, so a
+# regression they cover would still have reached main (#158 added the first
+# src/ test and hit exactly that).
+#
+# Scoped to code paths on purpose. The nightly translation PR touches hundreds
+# of files under website/content, and none of them can affect a unit test — a
+# `website/**` filter would run this on every one of those for nothing.
+name: Tests
+
+on:
+  pull_request:
+    paths:
+      - "website/src/**"
+      - "website/scripts/**"
+      - "website/package.json"
+      - "website/package-lock.json"
+      - ".github/workflows/tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "website/src/**"
+      - "website/scripts/**"
+      - "website/package.json"
+      - "website/package-lock.json"
+      - ".github/workflows/tests.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  website:
+    name: Website unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      # `npm ci`, not `npm install`: tsx is a devDependency the test script
+      # needs on PATH, and a partial install is exactly how `npm test` ends up
+      # reporting `sh: 1: tsx: not found`.
+      - name: Install dependencies
+        working-directory: ./website
+        run: npm ci --no-audit --no-fund
+
+      - name: Run tests
+        working-directory: ./website
+        run: npm test

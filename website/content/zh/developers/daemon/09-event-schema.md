@@ -109,7 +109,7 @@ Skill toggle API 会附加可选的 `mutation: { id, kind: 'skill_toggle', skill
 
 | Type                 | Direction | Trigger                                                              | Key payload fields                                                                                                                               |
 | -------------------- | --------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `extensions_changed` | S->C      | 后台扩展安装/刷新工作完成或状态变更 | `refreshed, failed, status?: 'installed' \| 'enabled' \| 'disabled' \| 'updated' \| 'uninstalled' \| 'failed', source?, name?, version?, error?` |
+| `extensions_changed` | S->C      | 后台扩展安装/刷新工作完成或状态变更 | `refreshed, failed, status?: 'installed' \| 'enabled' \| 'disabled' \| 'updated' \| 'uninstalled' \| 'failed', source?, name?, version?, error?`。声明了 `extension_activation_explicit_refresh` 的 daemon 会直接提交激活而不广播，因此成功的激活不再发出 `enabled`/`disabled`；这些事件来自旧版 daemon，新版 daemon 通过无状态的刷新广播来收敛激活状态。 |
 
 ### 轮次中消息注入
 

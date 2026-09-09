@@ -545,12 +545,45 @@ Coding Plan 模型配置具有版本控制。当 Qwen Code 检测到模型模板
 | 3        | `settings.model.generationConfig`             | 仅用于 **Runtime Models**（未选择 provider 模型时）                                    |
 | 4        | Content-generator 默认值                    | Provider 特定默认值（例如 OpenAI 与 Gemini）- 仅用于 Runtime Models                            |
 
+### `customHeaders` 中的动态值
+
+`customHeaders` 的值可以包含占位符 `${session_id}`，它会在每次请求时扩展为当前 Qwen Code 会话 ID。可用于要求每个对话具有稳定标识符的网关——例如 OpenCode Go 会拒绝缺少 `x-opencode-session` 的请求：
+
+```json
+{
+  "generationConfig": {
+    "customHeaders": {
+      "x-opencode-session": "${session_id}"
+    }
+  }
+}
+```
+
+由于该值是在每次请求时解析的，而非烘焙到 SDK 客户端中，`/new` 和 `/resume` 可以在不重启的情况下轮换它。
+
+⚠️ **需要两个步骤。** 上面的 provider 条目只是一半——占位符本身是惰性的，你还需要开启
+[`outboundCorrelation.allowDynamicHeaderValues`](./settings.md#outboundcorrelation)：
+
+```json
+{
+  "outboundCorrelation": {
+    "allowDynamicHeaderValues": true
+  }
+}
+```
+
+在此之前，包含占位符的值会被**丢弃**而不会发送，Qwen Code 会在启动时打印一条警告，指明该 header 和此设置名。该 header 绝不会带着字面量 `${session_id}` 被发出。
+
+该开关是全局的，因为它是一个同意决策，独立于值被发送到_哪里_：扩展后的值会将实时会话状态带给接收方，而该开关仅控制 `${session_id}` 是否可以被扩展。它不会标识是哪个设置源提供了该 header。
+
+**隐私说明：** 会话 ID 在对话生命周期内是一个稳定的标识符，因此你发送到的任何 host 都可以将该对话的每个请求归组。具体是哪些 host 由哪些 provider 条目携带该 header 决定——没有单独的 host 列表需要与你的 `baseUrl` 保持同步。
+
 ### 原子字段处理
 
 以下字段被视为原子对象——provider 的值将完全替换整个对象，不会发生合并：
 
 - `samplingParams` - Temperature、top_p、max_tokens 等。
-- `customHeaders` - 自定义 HTTP headers
+- `customHeaders` - 自定义 HTTP headers（可能包含 `${session_id}`；参见[动态值](#customheaders-中的动态值)）
 - `extra_body` - 额外的请求体参数
 
 ### 示例

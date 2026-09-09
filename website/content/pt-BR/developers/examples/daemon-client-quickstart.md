@@ -1,19 +1,19 @@
-# Guia rápido do DaemonClient (TypeScript)
+# Guia rápido do DaemonClient somente API (TypeScript)
 
-Um exemplo mínimo de ponta a ponta: inicie um daemon `qwen serve` em outro terminal e controle-o a partir de um script Node com o `DaemonClient` do SDK. Veja também: [Guia do usuário do modo Daemon](../../users/qwen-serve.md) e [Referência do protocolo HTTP](../qwen-serve-protocol.md).
+Um exemplo mínimo de ponta a ponta: inicie um daemon `qwen serve` somente API em outro terminal e controle-o a partir de um script Node com o `DaemonClient` do SDK. Veja também: [Guia do usuário do modo Daemon](../../users/qwen-serve.md) e [Referência do protocolo HTTP](../qwen-serve-protocol.md).
 
 ## Configuração
 
 Em um terminal:
 
 ```bash
-qwen serve --port 4170 \
+qwen serve --no-web --port 4170 \
   --workspace /path/to/project-a \
   --workspace /path/to/project-b
 # → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/project-a)
 ```
 
-Cada valor de `--workspace` deve ser um diretório absoluto. O primeiro workspace de inicialização é o primário e continua sendo o padrão de compatibilidade para requisições que omitem `cwd`; `/capabilities.workspaces[]` é o catálogo que os clientes devem usar ao selecionar qualquer runtime explicitamente.
+`--no-web` remove os assets da Web Shell; não seleciona um perfil menor de API REST/SSE. Cada valor de `--workspace` deve ser um diretório absoluto. O primeiro workspace de inicialização é o primário e continua sendo o padrão de compatibilidade para requisições que omitem `cwd`; `/capabilities.workspaces[]` é o catálogo que os clientes devem usar ao selecionar qualquer runtime explicitamente.
 
 Em outro terminal:
 

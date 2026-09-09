@@ -1,8 +1,8 @@
-# Followup Suggestions
+# 후속 제안
 
 Qwen Code는 다음에 입력할 내용을 예측하고 입력 영역에 플레이스홀더 텍스트로 표시할 수 있습니다. 이 기능은 LLM 호출을 사용하여 대화 컨텍스트를 분석하고 자연스러운 다음 단계 제안을 생성합니다.
 
-이 기능은 CLI와 Web Shell 모두에서 엔드투엔드로 작동합니다. 생성은 자동이며 서버 측에서 처리됩니다. 각 턴이 완료되면 데몬이 세션 스트림에서 제안을 내보냅니다(기본적으로 켜져 있으며, 옵트아웃하려면 `ui.enableFollowupSuggestions`를 `false`로 설정). Web Shell의 컴포저는 이미 `useDaemonFollowupSuggestion` hook이 연결되어 있어, 추가 호스트 wiring 없이 제안이 렌더링되고 수락됩니다.
+이 기능은 CLI와 Web Shell 모두에서 엔드투엔드로 작동합니다. 생성은 자동이며 서버 측에서 처리됩니다. 각 턴이 정상적으로 완료될 때마다(데몬의 `end_turn` 정지 이유 — `cancelled`, `refusal`, `max_tokens`, `max_turn_requests` 턴은 제외) 데몬이 세션 스트림에서 제안을 내보냅니다(기본적으로 켜져 있으며, 옵트아웃하려면 `ui.enableFollowupSuggestions`를 `false`로 설정). Web Shell의 컴포저는 이미 `useDaemonFollowupSuggestion` hook이 연결되어 있어, 추가 호스트 연결 없이 제안이 렌더링되고 수락됩니다.
 
 ## 작동 방식
 
@@ -36,7 +36,7 @@ Qwen Code가 응답을 완료한 후, 짧은 지연(~300ms) 후에 제안이 입
 - 승인 모드가 `plan`으로 설정되지 않았을 때
 - 기능이 활성화되어 있을 때 (기본적으로 켜져 있음 — `ui.enableFollowupSuggestions`를 `false`로 설정하면 끄기)
 
-제안은 비대화형 모드(예: 헤드리스/SDK 모드)에서는 나타나지 않습니다.
+제안은 CLI의 비대화형 모드(예: 헤드리스/SDK 모드)에서는 나타나지 않습니다. 데몬에서 생성은 서버 측에서 이루어지며 위 조건을 충족하는 모든 턴 이후에 실행되므로, 제안을 렌더링할 수 없는 헤드리스 또는 SDK 클라이언트는 턴당 LLM 비용을 피하기 위해 `ui.enableFollowupSuggestions`를 `false`로 설정해야 합니다.
 
 제안은 다음 상황에서 자동으로 해제됩니다:
 
@@ -76,7 +76,7 @@ fast 모델은 프롬프트 제안과 투기적 실행에 사용됩니다. 구�
 
 | 설정                           | 타입    | 기본값  | 설명                                                        |
 | ------------------------------ | ------- | ------- | ----------------------------------------------------------- |
-| `ui.enableFollowupSuggestions` | boolean | `true`  | followup 제안을 활성화 또는 비활성화                         |
+| `ui.enableFollowupSuggestions` | boolean | `true`  | 후속 제안을 활성화 또는 비활성화                         |
 | `ui.enableCacheSharing`        | boolean | `true`  | 비용을 줄이기 위해 캐시 인식 포크 쿼리 사용 (실험적)         |
 | `ui.enableSpeculation`         | boolean | `false` | 제출 전 제안을 투기적으로 실행 (실험적)                      |
 | `fastModel`                    | string  | `""`    | 프롬프트 제안 및 투기적 실행에 사용할 모델                   |

@@ -1,19 +1,21 @@
-# Prise en main rapide de DaemonClient (TypeScript)
+# Démarrage rapide de DaemonClient API-only (TypeScript)
 
-Un exemple minimal de bout en bout : démarrez un démon `qwen serve` dans un autre terminal, puis pilotez-le depuis un script Node avec le `DaemonClient` du SDK. Voir aussi : [Guide utilisateur du mode démon](../../users/qwen-serve.md) et [Référence du protocole HTTP](../qwen-serve-protocol.md).
+Un exemple minimal de bout en bout : démarrez un démon `qwen serve` API-only dans un autre terminal, puis pilotez-le depuis un script Node avec le `DaemonClient` du SDK. Voir aussi : [Guide utilisateur du mode démon](../../users/qwen-serve.md) et [Référence du protocole HTTP](../qwen-serve-protocol.md).
 
 ## Configuration
 
 Dans un terminal :
 
 ```bash
-qwen serve --port 4170 \
+qwen serve --no-web --port 4170 \
   --workspace /path/to/project-a \
   --workspace /path/to/project-b
-# → qwen serve écoute sur http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/project-a)
+# → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/project-a)
 ```
 
-Chaque valeur `--workspace` doit être un répertoire absolu. Le workspace de démarrage est le primaire et reste la valeur par défaut de compatibilité pour les requêtes qui omettent `cwd` ; `/capabilities.workspaces[]` est le catalogue que les clients doivent utiliser pour sélectionner explicitement un runtime.
+`--no-web` supprime les assets du Web Shell ; il ne sélectionne pas un profil d'API REST/SSE plus petit. Chaque valeur `--workspace` doit être un répertoire absolu. Le workspace de démarrage est le primaire et reste la valeur par défaut de compatibilité pour les requêtes qui omettent `cwd` ; `/capabilities.workspaces[]` est le catalogue que les clients doivent utiliser pour sélectionner explicitement un runtime.
+
+Le comportement par défaut sans jeton en boucle locale est destiné à un poste de travail mono-utilisateur. Sur un hôte partagé, définissez `QWEN_SERVER_TOKEN` et ajoutez `--require-auth` ; les liaisons non en boucle locale nécessitent un jeton.
 
 Dans un autre terminal :
 

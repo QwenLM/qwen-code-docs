@@ -2,7 +2,7 @@
 
 Qwen Code kann vorhersagen, was Sie als Nächstes eingeben möchten, und zeigt dies als Platzhaltertext im Eingabebereich an. Diese Funktion verwendet einen LLM-Aufruf, um den Gesprächskontext zu analysieren und einen natürlichen nächsten Schritt vorzuschlagen.
 
-Diese Funktion funktioniert sowohl im CLI als auch in der WebShell durchgängig. Die Generierung erfolgt automatisch und serverseitig: Nach jedem abgeschlossenen Turn sendet der Daemon den Vorschlag auf dem Session-Stream (standardmäßig aktiviert; setzen Sie `ui.enableFollowupSuggestions` auf `false`, um dies zu deaktivieren), und der Composer der WebShell verbindet bereits den `useDaemonFollowupSuggestion`-Hook, sodass Vorschläge ohne zusätzliches Host-Wiring gerendert und angenommen werden können.
+Diese Funktion funktioniert sowohl im CLI als auch in der WebShell durchgängig. Die Generierung erfolgt automatisch und serverseitig: Nach jedem sauber abgeschlossenen Turn (der `end_turn`-Stoppgrund des Daemons – ein `cancelled`-, `refusal`-, `max_tokens`- oder `max_turn_requests`-Turn erhält keinen) sendet der Daemon den Vorschlag auf dem Session-Stream (standardmäßig aktiviert; setzen Sie `ui.enableFollowupSuggestions` auf `false`, um dies zu deaktivieren), und der Composer der WebShell verbindet bereits den `useDaemonFollowupSuggestion`-Hook, sodass Vorschläge ohne zusätzliches Host-Wiring gerendert und angenommen werden können.
 
 ## Funktionsweise
 
@@ -36,7 +36,7 @@ Vorschläge werden generiert, wenn alle folgenden Bedingungen erfüllt sind:
 - Der Genehmigungsmodus ist nicht auf `plan` gesetzt
 - Die Funktion ist aktiviert (standardmäßig aktiviert – setzen Sie `ui.enableFollowupSuggestions` auf `false`, um sie zu deaktivieren)
 
-Vorschläge erscheinen nicht im nicht-interaktiven Modus (z. B. headless/SDK-Modus).
+Vorschläge erscheinen nicht im nicht-interaktiven Modus des CLI (z. B. Headless-/SDK-Modus). Im Daemon erfolgt die Generierung serverseitig und läuft nach jedem Turn, der die oben genannten Bedingungen erfüllt. Ein Headless- oder SDK-Client, der den Vorschlag nicht rendern kann, sollte daher `ui.enableFollowupSuggestions` auf `false` setzen, um die LLM-Kosten pro Turn zu vermeiden.
 
 Vorschläge werden automatisch verworfen, wenn:
 
