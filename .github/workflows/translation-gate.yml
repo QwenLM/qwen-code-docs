@@ -1,0 +1,68 @@
+# Runs the nightly's own structural gate on the files a pull request changes.
+#
+# The nightly gates everything it writes, so its PRs arrive pre-checked.
+# Human-authored PRs that touch website/content do not: blog posts, showcase
+# entries and hand-written translations reach main with no structural
+# verification at all. #268 is the shape of what gets through -- a table left
+# in English inside a German page, a tool list that lost two entries.
+#
+# It calls `orchestrator.mjs check`, which uses the same structuralProblems()
+# the nightly uses. Two copies of a gate drift; one does not.
+#
+# Only the PR's own files are checked. The repository carries pre-existing
+# gate failures (#260) and a check that reported those on an unrelated PR
+# would be switched off within a week.
+#
+# What it cannot see: whether the prose is *correctly* translated. #268's two
+# reversed sentences pass every check here. This catches the mechanical half
+# and makes no claim on the other.
+
+name: Translation gate
+
+on:
+  pull_request:
+    paths:
+      - "website/content/**"
+      - "translator/orchestrator/orchestrator.mjs"
+      - ".github/workflows/translation-gate.yml"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: translation-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: Structural gate on changed pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Check the pages this PR changes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          # Removed files would fail the existence check anyway, but asking for
+          # them makes the log read as if they were skipped for being English.
+          files="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/files" --paginate \
+            --jq '.[] | select(.status != "removed") | .filename' \
+            | grep '^website/content/' || true)"
+          if [ -z "$files" ]; then
+            echo "No content pages changed."
+            exit 0
+          fi
+          echo "$files" | sed 's/^/  /'
+          node translator/orchestrator/orchestrator.mjs check \
+            --files "$(echo "$files" | paste -sd,)"
