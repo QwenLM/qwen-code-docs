@@ -1,0 +1,123 @@
+# Regenerates a localized navigation file (`_meta.ts`) from the English one.
+#
+# translator/src/sync.ts deliberately skips every `_meta.*` when copying
+# upstream docs, because this site has tabs upstream does not. Navigation is
+# therefore a manual mirror, and it drifts: #263 found `developers/_meta.ts`
+# missing entries in every locale, and absent entirely for `ko`.
+#
+# `qwen-translation meta` fixes that, but running it by hand has four traps
+# this workflow removes:
+#
+#   1. It needs model credentials. They live in this repo as
+#      TRANSLATE_CODING_PLAN_API_KEY; running locally spends the operator's own.
+#   2. Bare `meta` translates all 18 `_meta.ts` files into 7 locales -- 126
+#      model calls that overwrite every curated navigation file to fix one.
+#      `-f` is mandatory below, so the blast radius is the file you name.
+#   3. translation.config.json is resolved from the cwd and lives in website/.
+#      Run it from the repo root and the config is not found; the fallback
+#      target list in meta-translator.ts is then used, which contains `es`
+#      (a locale this site does not have) and omits `ja` (one it does).
+#   4. bin/qwen-translator requires ../dist, which is not committed.
+#
+# The result arrives as a PR, never a direct push: an LLM writing a `_meta.ts`
+# can translate the KEYS as well as the values, and a wrong key silently drops
+# the page from the sidebar. That diff needs eyes.
+
+name: Regenerate navigation meta
+
+on:
+  workflow_dispatch:
+    inputs:
+      file:
+        description: "Meta file, relative to website/content/en (e.g. developers/_meta.ts)"
+        required: true
+        default: "developers/_meta.ts"
+      languages:
+        description: "Space-separated locales"
+        required: true
+        default: "zh de fr ru ja pt-BR ko"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: regenerate-nav-meta
+  cancel-in-progress: false
+
+jobs:
+  regenerate:
+    name: Translate one _meta.ts into each locale
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: translator/package-lock.json
+
+      - name: Build the translator CLI
+        working-directory: ./translator
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Translate
+        working-directory: ./website
+        env:
+          OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
+          OPENAI_BASE_URL: ${{ vars.TRANSLATE_BASE_URL || 'https://coding.dashscope.aliyuncs.com/v1' }}
+          QWEN_MODEL: ${{ vars.QWEN_MODEL || 'qwen3.7-plus' }}
+          FILE: ${{ inputs.file }}
+          LANGS: ${{ inputs.languages }}
+        run: |
+          set -euo pipefail
+          if [ -z "${FILE// }" ]; then
+            echo "::error::file is required; a bare \`meta\` run would rewrite every navigation file"
+            exit 1
+          fi
+          if [ ! -f "content/en/${FILE}" ]; then
+            echo "::error::content/en/${FILE} does not exist"
+            exit 1
+          fi
+          for lang in $LANGS; do
+            echo "::group::${FILE} -> ${lang}"
+            node ../translator/dist/cli.js meta -f "${FILE}" -l "${lang}"
+            echo "::endgroup::"
+          done
+
+      - name: Open a PR with the result
+        env:
+          GH_TOKEN: ${{ secrets.TRANSLATION_BOT_PAT }}
+          FILE: ${{ inputs.file }}
+          LANGS: ${{ inputs.languages }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "::error::secret TRANSLATION_BOT_PAT is empty or not set; cannot open the PR"
+            exit 1
+          fi
+          git config user.name "qwen-docs-bot"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add website/content
+          if git diff --cached --quiet; then
+            echo "::warning::every locale already matched the English navigation; nothing to propose"
+            exit 0
+          fi
+          branch="automation/nav-meta-${GITHUB_RUN_ID}"
+          git commit -m "docs(nav): regenerate ${FILE} for ${LANGS}"
+          git push origin "HEAD:${branch}"
+          body="$(printf '%s\n' \
+            "Regenerated \`${FILE}\` for: ${LANGS}." \
+            "" \
+            "From run ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}." \
+            "" \
+            "Check the keys, not just the values. An LLM writing a \`_meta.ts\` can translate the keys too, and a wrong key drops the page from the sidebar without any build error.")"
+          gh pr create --repo "$GITHUB_REPOSITORY" \
+            --base main --head "${branch}" \
+            --title "docs(nav): regenerate ${FILE}" \
+            --body "${body}"
