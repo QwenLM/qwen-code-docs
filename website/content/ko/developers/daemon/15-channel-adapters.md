@@ -176,13 +176,17 @@ sequenceDiagram
 
 ### 런타임 선택 및 설정 리로드
 
-장기 실행되는 `ChannelWorkerManager`는 커밋된 daemon 선택과 워크스페이스 그룹별 슈퍼바이저를 소유합니다. daemon은 `--channel` 없이 부팅될 수 있으며, 첫 번째 엄격 게이트된 `PUT /workspace/channel`이 channel 런타임을 동적으로 로드하고, 서비스 pidfile을 예약하고, 워크스페이스 소유권을 해석하고, 선택된 워커를 시작합니다. `GET /workspace/channel`은 매니저 스냅샷을 읽고 `DELETE /workspace/channel`은 멱등적으로 중지합니다. SDK 헬퍼는 `getChannelWorkerControl()`, `setChannelWorkerSelection()`, `stopChannelWorker()`이며, CLI 진입점은 `qwen channel set`과 원격 `status` 및 `stop` 변형입니다.
+장기 실행되는 `ChannelWorkerManager`는 커밋된 daemon 선택과 워크스페이스 그룹별 슈퍼바이저를 소유합니다. 명시적 `--channel` 선택이 우선하며 fail-fast를 유지합니다. 플래그 없이 부팅되면 신뢰된 primary 워크스페이스의 `serve.channels` 설정이 복원됩니다. 이를 통해 channel 런타임이 동적으로 로드되고, 서비스 pidfile이 예약되며, 워크스페이스 소유권이 해석되고, 선택된 워커가 시작됩니다. 보조 워크스페이스는 자체 `serve.channels`를 독립적으로 복원하지 않습니다. 두 시작 소스 모두 없는 경우, 첫 번째 엄격 게이트된 `PUT /workspace/channel`이 지연 초기화를 수행합니다. `GET /workspace/channel`은 매니저 스냅샷을 읽고 `DELETE /workspace/channel`은 멱등적으로 중지합니다. SDK 헬퍼는 `getChannelWorkerControl()`, `setChannelWorkerSelection()`, `stopChannelWorker()`이며, CLI 진입점은 `qwen channel set`과 원격 `status` 및 `stop` 변형입니다.
+
+저장된 시작 이름은 비어 있으면 안 되며, 선행 또는 후행 공백이 없어야 하고, 안전하지 않은 제어 문자나 보이지 않는 문자를 포함하면 안 됩니다. 유효하지 않은 항목은 배열 인덱스별로 개별적으로 건너뛰어지고 기록됩니다. daemon은 이를 다른 인스턴스 이름으로 다듬거나 설정을 다시 작성하지 않습니다. 워커 인수는 `--channel=<value>`를 사용하므로 이름 내부의 선행 대시를 유지합니다. Channel 관리는 영속화된 시작 설정과 실제 런타임 상태를 계속 보고합니다.
+
+유효하지 않은 시작 필드나 워커 시작 전 검증 또는 리스 에러는 관련 없는 설정을 버리지 않고 자동 복원을 건너뛰고 `serve.channels` 소스를 기록합니다. 워커 시작이 실패한 후, daemon은 정리가 성공한 경우에만 계속 실행됩니다. 전역 런타임 시작 타임아웃과 확인되지 않은 워커 중지는 기존 시작 실패 경로를 따릅니다. 워커 종료가 확인되지 않는 동안 서비스 리스는 유지됩니다. 건너뛰거나 실패한 복원 시도는 daemon 로그를 확인하세요.
 
 daemon은 각 워커 시작 시 `settings.json`에서 channel 설정을 읽습니다(`packages/cli/src/commands/channel/daemon-worker.ts` → `loadSettings` → `loadChannelsConfig`). `POST /workspace/channel/reload`은 해당 설정을 다시 읽고 커밋된 선택을 강제로 조정합니다. 모든 라이프사이클 변경은 하나의 FIFO 레인을 공유합니다. 변경되지 않은 워크스페이스 그룹은 일반 선택 교체에서 생존합니다. 변경된 그룹은 serve 소유 PID 임대가 유지된 상태에서 순차적으로 중지되고 시작됩니다.
 
 교체가 실패하면, 새로 시작된 워커가 중지되고 요청이 반환되기 전에 이전 워커가 복원됩니다. SIGTERM과 SIGKILL 이후에도 종료를 관찰하지 못하는 슈퍼바이저는 자식 참조를 유지하고 중지에 실패합니다. 매니저는 PID 임대를 유지하고 두 번째 워커를 시작하지 않습니다. Webhook 설정과 라우팅은 선택 커밋이 성공한 경우에만 변경됩니다. 런타임 선택은 프로세스 로컬이며 daemon 재시작 시 사라집니다.
 
-adapter `connect()` 실패는 워커 라이프사이클 에러와 별도로 보고됩니다. 워커는 각 경계가 있고 자격 증명이 삭제된 실패를 시작 IPC를 통해 보내고, 다음 adapter를 시도하기 전에 슈퍼바이저의 확인을 기다립니다. 부분적으로 연결된 워커는 실행 상태로 유지되며 스냅샷에 `startupFailures`를 노출합니다. 동적 시도에서 모든 adapter가 실패하면, `502 channel_worker_start_failed` 응답은 워크스페이스가 주석된 시도된 실패를 전달하며 `state`는 롤백 결과를 반영합니다. 이후 GET 응답은 시도를 유지하지 않습니다. 연결된 adapter 없이 daemon이 부팅되면 fail-fast로 동작합니다. 선택적 adapter `code`는 진단용이며, 현재 `phase`는 `connect`입니다.
+adapter `connect()` 실패는 워커 라이프사이클 에러와 별도로 보고됩니다. 워커는 각 경계가 있고 자격 증명이 삭제된 실패를 시작 IPC를 통해 보내고, 다음 adapter를 시도하기 전에 슈퍼바이저의 확인을 기다립니다. 부분적으로 연결된 워커는 실행 상태로 유지되며 스냅샷에 `startupFailures`를 노출합니다. 동적 시도에서 모든 adapter가 실패하면, `502 channel_worker_start_failed` 응답은 워크스페이스가 주석된 시도된 실패를 전달하며 `state`는 롤백 결과를 반영합니다. 이후 GET 응답은 시도를 유지하지 않습니다. 명시적 `--channel` 부팅에서 연결된 adapter가 없으면 fail-fast를 유지합니다. 설정 기반 시작 실패는 기록되며, 전역 런타임 시작 타임아웃 내에서 정리가 성공한 후 daemon이 계속 실행될 수 있습니다. 선택적 adapter `code`는 진단용이며, 현재 `phase`는 `connect`입니다.
 
 ## 의존성
 

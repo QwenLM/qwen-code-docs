@@ -99,23 +99,6 @@ export DINGTALK_CLIENT_SECRET=<your-app-secret>
 
 后台代理的输出会在每个响应段可用时立即发送。每条消息都会标注代理名称，以便并发工作仍可追溯。
 
-要将每个代理的通知轮次缓冲为一条带标签的消息发送，请在 `settings.json` 中为钉钉频道启用聚合：
-
-```json
-{
-  "channels": {
-    "my-dingtalk": {
-      "type": "dingtalk",
-      "clientId": "$DINGTALK_CLIENT_ID",
-      "clientSecret": "$DINGTALK_CLIENT_SECRET",
-      "aggregateBackgroundAgentResponses": true
-    }
-  }
-}
-```
-
-聚合默认禁用。如果代理轮次被中断、在生成最终响应前失败，或在十分钟内未完成，则会发送一条部分带标签的消息。
-
 ## 运行
 
 ```bash

@@ -8,6 +8,8 @@ conexão e o que ela envia de volta. Tudo aqui é o que o código faz
 hoje no schema version 1 e frame version 1; a última seção diz o que
 pode mudar e como você será avisado.
 
+Para um programa Node, ` @qwen-code/sdk/peer` implementa o lado que entra nesta página — o registro, a inbox, a linha de autenticação, frames e recibos — usando apenas Node, e seus testes o executam contra a própria implementação do Qwen Code em ambas as direções. Ele não aplica nada do §6 à sua própria inbox: um programa que precisa de limites de taxa, retenções ou uma janela de duplicidade os aplica por conta própria. Use-o, ou continue lendo para escrever o seu.
+
 Todo valor que cruza uma fronteira de processo é não confiável na
 chegada e validado pelo leitor. Onde esta página diz que um campo
 "must" ter uma determinada forma, um valor que não a tenha é descartado,
@@ -76,12 +78,12 @@ para si mesmo: seu próprio `pid`, `procStart` e `pidNs` calculados da
 mesma forma, um `sessionId` que ele gera (qualquer UUID), `kind:
 "external"`, um `name` (o seu, ou derivado da mesma forma; é achatado
 para uma linha e limitado quando exibido), e `ipcPath` + `ipcToken`
-para uma inbox que ele mesmo vincula (§2). Escreva em um arquivo
+para uma inbox que ele mesmo vincula (§2). No Linux, `pidNs` é obrigatório: cada leitor o compara com o seu próprio, então um registro sem ele nunca é listado — e nunca é varrido. `procStart` também é obrigatório, por um motivo diferente: sem ele, um leitor recorre à verificação simples de atividade do PID e não consegue distinguir um PID reciclado do processo que escreveu o registro. Escreva em um arquivo
 temporário no mesmo diretório e faça `rename` sobre o alvo; crie o
-arquivo 0600; recuse escrever através de um symlink. Remova o registro
+arquivo 0600; recuse escrever através de um symlink. Se `<pid>.json` já contiver algo que você não pode provar ter sido deixado por um processo anterior com seu PID — mesmo `pidNs`, mesmo boot id, start ticks diferentes — escreva `<pid>-<8 hex>.json` em vez de substituí-lo: os leitores aceitam ambos os nomes, e o registro ali pode pertencer a um processo ativo em outro namespace ou em outra máquina. Remova o registro
 ao sair. Um registro cujo processo não existe mais é varrido pela
 próxima sessão que listar, mas apenas quando `procStart` prova que o
-PID não foi simplesmente reutilizado.
+PID não foi simplesmente reutilizado. `PeerEndpoint.start()` em ` @qwen-code/sdk/peer` faz tudo isso e remove o registro novamente no `close()`.
 
 **Leitura.** Qualquer coisa que possa ler o diretório pode ler todos os
 registros, incluindo tokens: poder descobrir uma sessão e poder se
