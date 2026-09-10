@@ -857,7 +857,7 @@ dériver.
 
 L'appel `send_message` confirme uniquement que le message a été remis à
 l'autre session. Ce qu'il est advenu arrive plus tard sous forme de
-reçu : s'il a été mis en attente, décliné, refusé, a expiré, ou était
+reçu : s'il a été mis en attente, décliné, refusé, abandonné, a expiré, ou était
 mal adressé (l'adresse a changé de titulaire — listez à nouveau les
 agents) — ou libéré après une mise en attente — une notification
 apparaît dans la transcription de la session expéditrice (`Message to

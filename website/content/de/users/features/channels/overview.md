@@ -126,26 +126,26 @@ Dieser Modus ist nicht verfügbar im eigenständigen `qwen channel start`, mit W
 Channel Memory speichert dauerhaften Kontext für einen Chat oder Thread. Einträge haben stabile
 IDs, sodass eine Listen-Antwort für deterministische Folgeoperationen verwendet werden kann.
 
-- `Remember: use staging environment by default` is the deterministic form and saves exactly one
-  scalar entry for the current chat or thread.
+- `Remember: use staging environment by default` ist die deterministische Form und speichert genau
+  einen skalaren Eintrag für den aktuellen Chat oder Thread.
 - Um mehrere separate Fakten in einer Anfrage zu speichern, verwende eine natürliche Phrase, die
   über den Classifier geleitet wird. Zum Beispiel:
-  `Remember these three conventions: use staging; test before release; prefer German replies` creates entries
-  that you can manage independently. Exakte Duplikate werden übersprungen und
+  `Remember these three conventions: use staging; test before release; prefer German replies` erstellt Einträge,
+  die du unabhängig voneinander verwalten kannst. Exakte Duplikate werden übersprungen und
   gemeldet, ohne einen weiteren Eintrag zu erstellen. Anfragen, die nach
   Anmeldedaten aussehen, werden abgelehnt; entferne Geheimnisse und speichere die
   nicht sensiblen Fakten separat.
-- `view memory` lists entries and their stable IDs. Use `view memory page 2` to view
-  a later page, `view memory <id>` to view one entry, or a natural filtered
-  request such as `show German preferences only` to list the matching entries.
-- `view the last memory`, `change the staging memory to default to production`, and
-  `forget the last one` work when the natural reference resolves to exactly one entry.
-  Natural updates and removals first show the proposed change. Confirm an
-  update with `confirm memory update`, or a removal with
-  `confirm memory removal`, within 60 seconds. Exakte-ID-Updates und
+- `view memory` listet die Einträge und ihre stabilen IDs auf. Mit `view memory page 2` rufst du
+  eine spätere Seite auf, mit `view memory <id>` einen einzelnen Eintrag, oder verwende eine
+  natürlichsprachliche gefilterte Anfrage wie `show German preferences only`, um die passenden Einträge aufzulisten.
+- `view the last memory`, `change the staging memory to default to production` und
+  `forget the last one` funktionieren, wenn sich die natürlichsprachliche Referenz auf genau einen
+  Eintrag auflösen lässt. Natürlichsprachliche Aktualisierungen und Löschungen zeigen zunächst die
+  vorgeschlagene Änderung an. Bestätige eine Aktualisierung mit `confirm memory update` bzw. eine
+  Löschung mit `confirm memory removal` innerhalb von 60 Sekunden. Exakte-ID-Updates und
   -Löschungen bleiben sofort und benötigen keine Bestätigung.
-- `clear memory` starts the clear-all confirmation flow; `confirm clear memory` completes
-  it.
+- `clear memory` startet den Bestätigungsablauf zum vollständigen Leeren; `confirm clear memory`
+  schließt ihn ab.
 
 Wenn eine natürliche Inspektions-, Update- oder Löschanfrage mehrere Einträge trifft,
 gibt der Bot die Kandidaten-IDs und Vorschauen zurück, ohne den Memory zu ändern. Es

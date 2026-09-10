@@ -133,7 +133,7 @@ Pour un commentaire d'issue ou de pull request accepté, le canal ajoute la réa
 
 Le canal GitHub publie uniquement les réponses terminées. Les chunks intermédiaires du modèle ne sont jamais publiés sous forme de commentaires séparés.
 
-Si GitHub renvoie un échec de livraison définitif, comme une réponse
+Si GitHub renvoie un échec de livraison définitif dont on sait qu'il n'a rien écrit, comme une réponse
 de rate-limit, le canal stocke la réponse finale dans
 `~/.qwen/channels/<workspace-scope>/<channel>-<name-hash>-github-pending-deliveries.json`
 avec des permissions de fichier privées et la re-tente au prochain démarrage du canal. La
