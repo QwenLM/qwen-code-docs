@@ -205,8 +205,6 @@ protected override onPromptEnd(chatId: string, sessionId: string, messageId?: st
 
 대화형 `ChannelUserInputRequestContext`도 `sourceLabel`을 포함합니다. 카드, 터미널 교체, 일반 폴백은 기존 요청, 세션, 실행, 소유자, 대상 검사를 약화시키지 않으면서 이를 유지해야 합니다.
 
-**블록 스트리밍** — 채널 구성에서 `blockStreaming: "on"`을 설정합니다. 기본 클래스가 응답을 단락 경계에서 여러 메시지로 자동 분할합니다. 플러그인 코드가 필요 없습니다 — `onResponseChunk`와 함께 작동합니다.
-
 **능동적 전달** — 어댑터가 활성 수신 요청 없이 전송할 수 있는 경우 `supportsProactiveSend()`를 오버라이드하여 `true`를 반환합니다. `ChannelBase`는 지속 채널 루프, 웹훅 작업, 백그라운드 에이전트 결과, 데몬 전달에 이 기능을 사용합니다. 기본 대상 정책은 스레드 대상을 거부합니다. 플랫폼이 안전하게 전달할 수 있는 대상 형태에 대해서만 보호된 대상 확인을 오버라이드하세요:
 
 ```typescript

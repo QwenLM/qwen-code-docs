@@ -23,7 +23,7 @@ Qwen Code не включает MCP-сервер, SDK или нативный д
 
 ```bash
 qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.3
-npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.4
+npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.5
 ```
 
 Перезапустите Qwen Code после первого добавления MCP-сервера. Затем навык продолжает задачу рабочего стола через `node_repl`.

@@ -73,9 +73,6 @@
 | `groupHistoryLimit`      | 否               | 可选的群聊历史回填。`0` 或省略则禁用。正整数表示在下次机器人被 @提及/回复时，持久化保存该数量的来自已授权发送者或已批准配对群组成员的未被提及群消息。              |
 | `groups`                 | 否               | 每个群组的设置。键为群聊 ID 或 `"*"`（表示默认设置）。参见 [群聊](#group-chats)                                                                                  |
 | `dispatchMode`           | 否               | 当机器人繁忙时发送消息的处理方式：`steer`（默认）、`collect` 或 `followup`。参见 [调度模式](#dispatch-modes)                                                       |
-| `blockStreaming`         | 否               | 渐进式响应交付：`on` 或 `off`（默认）。参见 [分块流式输出](#block-streaming)                                                                                       |
-| `blockStreamingChunk`    | 否               | 分块大小边界：`{ "minChars": 400, "maxChars": 1000 }`。参见 [分块流式输出](#block-streaming)                                                                       |
-| `blockStreamingCoalesce` | 否               | 空闲刷新：`{ "idleMs": 1500 }`。参见 [分块流式输出](#block-streaming)                                                                                              |
 
 设置 `messagePrefix` 后，每条用户撰写的消息都必须以前缀和非空内容开头，例如 `/review inspect #123`。只有前缀和其前方的提及会被移除；用户在前缀之后输入的提及会原样到达 agent。共享命令和 agent 命令使用相同的规则（`/review /help`、`/review /clear` 等）。Telegram 注册的命令菜单操作仍然无需前缀即可使用——除非配置的前缀本身就是其中之一，此时前缀优先，该命令也必须带前缀发送（`/new /new`）。附件在平台支持时需要匹配的说明文字；无说明文字的 Telegram、飞书、微信、钉钉和企业微信媒体消息仍会继续运行，其占位文本不会作为群聊历史被引用回来。原生 todo、webhook 以及提供者生成的任务分配或评审请求事件也无需前缀即可运行，因为它们是系统事件而非聊天消息。
 
@@ -371,33 +368,11 @@ curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates" | python3
 }
 ```
 
-## 分块流式输出
+## 响应投递
 
-默认情况下，agent 会工作一段时间，然后发送一个完整的长回复。启用分块流式输出后，回复会在 agent 工作时以多条较短的消息陆续到达 —— 类似于 ChatGPT 或 Claude 展示渐进式输出的方式。
+频道使用正常的响应投递路径。共享的投递层发送已完成的响应，适配器可以提供原生的渐进式显示，例如就地更新交互卡片。平台消息长度限制仍可能会拆分长响应。
 
-```json
-{
-  "channels": {
-    "my-channel": {
-      "type": "telegram",
-      "blockStreaming": "on",
-      "blockStreamingChunk": { "minChars": 400, "maxChars": 1000 },
-      "blockStreamingCoalesce": { "idleMs": 1500 },
-      ...
-    }
-  }
-}
-```
-
-### 工作原理
-
-- agent 的回复会在段落边界处被拆分为多个块，并作为独立的消息发送
-- `minChars`（默认 400） —— 块长度至少达到此值时才发送，以避免发送大量碎片化消息
-- `maxChars`（默认 1000） —— 如果块长度达到此值且没有自然断点，则直接发送
-- `idleMs`（默认 1500） —— 如果 agent 暂停（例如正在运行工具），则发送目前缓冲的内容
-- 当 agent 完成时，任何剩余的文本会立即发送
-
-只有 `blockStreaming` 是必填项。分块（chunk）和合并（coalesce）设置是可选的，并具有合理的默认值。
+已退役的 `blockStreaming`、`blockStreamingChunk` 和 `blockStreamingCoalesce` 设置不再受支持，可以从频道配置中移除。它们不会影响投递。频道设置管理会拒绝为这些字段新添加或更改的值。未更改的存储值在编辑保留频道的 `type` 时会被保留或移除；更改频道的 `type` 需要先移除这些字段。
 
 ## 定时频道循环
 

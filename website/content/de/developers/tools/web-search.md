@@ -2,12 +2,38 @@
 
 Qwen Code bietet Websuche auf zwei Arten:
 
-1. **Integriertes `web_search`-Tool** (opt-in) — unterstützt von der DashScope Responses API Server-seitigen Suche. Funktioniert mit einem standardmäßigen Bailian (DashScope) API-Schlüssel; kein zusätzlicher Anbieter oder MCP-Setup erforderlich.
-2. **MCP-Integrationen (Model Context Protocol)** — verbinden Sie einen beliebigen externen Suchdienst (Tavily, GLM und andere). Verwenden Sie dies, wenn Sie keinen DashScope-Schlüssel haben.
+1. **Integriertes `web_search`-Tool** — unterstützt von der DashScope Responses API Server-seitigen Suche. Bei unterstützten ModelStudio- und OpenAI-kompatiblen DashScope-Konfigurationen standardmäßig beim Start aktiviert; kein zusätzlicher Anbieter oder MCP-Setup erforderlich.
+2. **MCP-Integrationen (Model Context Protocol)** — verbinden Sie einen beliebigen externen Suchdienst (Tavily, GLM und andere). Verwenden Sie dies, wenn Ihr Anbieter das integrierte Tool nicht bereitstellen kann.
 
 ## Integriertes `web_search` (opt-in)
 
-Das integrierte Tool sendet eine eigenständige Suchanfrage an ein kleines Hilfsmodell mit den Server-seitigen `web_search`- (und `web_extractor`-) Tools von DashScope und gibt die erzählten Ergebnisse sowie Quell-URLs zurück. Es wird nie implizit aktiviert — zwei Einstellungen sind erforderlich:
+Das integrierte Tool sendet eine eigenständige Suchanfrage an ein kleines Hilfsmodell mit den Server-seitigen `web_search`- (und `web_extractor`-) Tools von DashScope und gibt die erzählten Ergebnisse sowie Quell-URLs zurück.
+
+### Wenn es sich automatisch einschaltet
+
+Wenn Sie unter `tools.webSearch` nichts konfiguriert haben, wird das Tool registriert, sobald das Modell, das Sie ausführen, die Suchanfrage mit denselben Credentials bereitstellen kann:
+
+| Wie Sie sich angemeldet haben                                                                                                  | Integrierte Suche                               |
+| ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- |
+| Alibaba ModelStudio → **Standard-API-Schlüssel**                                                                               | ein                                             |
+| Alibaba ModelStudio → **Token Plan**                                                                                           | ein                                             |
+| Alibaba ModelStudio → **Coding Plan**                                                                                          | aus — sein Endpunkt ist für diese API nicht verifiziert |
+| Ein OpenAI-kompatibler `modelProviders`- oder Custom-Provider-Eintrag auf einem erkannten DashScope-Responses-Host mit direktem Schlüssel | ein                                             |
+| Drittanbieter (OpenRouter, DeepSeek, ModelScope, …), benutzerdefinierte Endpunkte auf anderen Hosts, lokale Modelle            | aus                                             |
+
+Suchen werden über denselben Schlüssel wie Ihr Hauptmodell abgerechnet. Die Berechtigungsbehandlung folgt dem aktiven Genehmigungsmodus und den Regeln; im Genehmigungsmodus `default` fordert die erste Suche eine Bestätigung. Wenn Ihr Anbieter das Tool nicht bereitstellen kann, erscheint es einfach nicht beim Start — keine Startwarnung.
+
+So schalten Sie es aus:
+
+```json
+{ "tools": { "webSearch": { "enabled": false } } }
+```
+
+oder `ENABLE_WEB_SEARCH=false`. Bare-Modus und Safe-Modus deaktivieren es immer.
+
+### Explizite Konfiguration
+
+Richten Sie das Tool auf einen ModelStudio Standard/Token-Plan- oder einen anderen verifizierten DashScope-Responses-Eintrag. Dies ist nützlich, wenn Ihr Hauptmodell auf einem anderen Anbieter läuft und Sie einen separaten unterstützten DashScope-Schlüssel besitzen. Coding-Plan-Hosts sind von der automatischen Aktivierung ausgeschlossen, da die Responses-Such-Tools dort nicht verifiziert sind. Sie können explizit mit `tools.webSearch.model` aktivieren; wenn der Endpunkt sie nicht bereitstellt, schlägt die erste Suche lautstark fehl. Verwenden Sie einen MCP-Suchanbieter, wenn Sie sich nicht auf diesen unverified Pfad verlassen wollen.
 
 ```json
 {
@@ -29,11 +55,11 @@ Das integrierte Tool sendet eine eigenständige Suchanfrage an ein kleines Hilfs
 }
 ```
 
-| Einstellung                    | Umgebungs-Override     | Bedeutung                                                                                                                                                         |
-| ------------------------------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tools.webSearch.enabled`      | `ENABLE_WEB_SEARCH`    | Opt-in-Flag. Erforderlich.                                                                                                                                        |
-| `tools.webSearch.model`        | `WEB_SEARCH_MODEL`     | Suchmodell-Selektor, aufgelöst gegen `modelProviders` wie `fastModel` (`modelId` oder `authType:modelId`). Erforderlich — kein Standard. Empfohlen: `qwen3.6-plus`. |
-| `tools.webSearch.webExtractor` | `WEB_SEARCH_EXTRACTOR` | Dem Such-Agenten erlauben, Ergebnisseiten für besser fundierte Antworten zu öffnen (Standard `true`; wird von DashScope separat berechnet).                        |
+| Einstellung                    | Umgebungs-Override     | Bedeutung                                                                                                                                                                                                                                                                       |
+| ------------------------------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tools.webSearch.enabled`      | `ENABLE_WEB_SEARCH`    | Auf `false` setzen, um das Tool auszuschalten. Die implizite Startaktivierung erfordert, dass `enabled`, `model` und das reine Umgebungs-Backend nicht gesetzt sind. `true` zu setzen erlaubt automatische Ableitung nur wenn das reine Umgebungs-Backend ebenfalls nicht gesetzt ist; andernfalls ist ein `model` erforderlich.             |
+| `tools.webSearch.model`        | `WEB_SEARCH_MODEL`     | Suchmodell-Selektor für den expliziten Pfad (`modelId` oder `authType:modelId`). Mit `WEB_SEARCH_BASE_URL` ist es die reine Modell-ID für diesen Endpunkt; andernfalls muss es mit einem deklarierten DashScope-kompatiblen `modelProviders`-Eintrag übereinstimmen. Der automatische Pfad verwendet `qwen3.6-plus`.                            |
+| `tools.webSearch.webExtractor` | `WEB_SEARCH_EXTRACTOR` | Dem Such-Agenten erlauben, Ergebnisseiten für besser fundierte Antworten zu öffnen (Standard `true`; wird von DashScope separat berechnet).                                                                                                                                                          |
 
 ### Nur-Umgebungsvariablen-Konfiguration (ohne settings.json)
 
@@ -51,26 +77,28 @@ export DASHSCOPE_API_KEY=sk-...        # oder stattdessen WEB_SEARCH_API_KEY set
 Hinweise:
 
 - Der Selektor muss sich auf einen DashScope-kompatiblen `modelProviders`-Eintrag auflösen, der einen direkten API-Schlüssel über `envKey` trägt. Ihr Hauptmodell kann ein beliebiger Anbieter sein — nur die Such-Anfrage benötigt einen DashScope-Eintrag. Qwen OAuth kann das Tool nicht bereitstellen.
-- Wenn aktiviert, aber fehlerhaft konfiguriert, bleibt das Tool ausgeschaltet und eine Startmeldung erklärt, welche Bedingung fehlgeschlagen ist.
-- Suchen werden über Ihren DashScope-Schlüssel abgerechnet (`usage.x_tools` zählt). Das Tool fordert standardmäßig eine Bestätigung an; Genehmigung mit „immer zulassen" persistiert eine standardmäßige `WebSearch`-Berechtigungsregel, wie bei anderen Tools.
+- Welche Anbieter das Tool aktivieren können, wird beim Start entschieden. Einmal aktiv, folgt das Such-Backend dem aktuell ausgewählten Modell bei der nächsten Suche; Wechsel zu einem nicht unterstützten Anbieter lässt diesen Aufruf fehlschlagen, während Wechsel von einer Session, in der das Tool fehlte, weiterhin einen Neustart erfordert, um es zu registrieren.
+- Die automatische Host-Erkennung akzeptiert absichtlich nur bekannte DashScope-Regionale, Token-Plan-MaaS- und interne Alibaba-Hosts. Generische `*.alicloudapi.com`-Gateways und `DASHSCOPE_PROXY_BASE_URL` sind ausgeschlossen, da sie nicht dafür bekannt sind, die Responses-Such-Tools weiterzuleiten.
+- Wenn explizit aktiviert, aber fehlerhaft konfiguriert, bleibt das Tool ausgeschaltet und eine Startmeldung erklärt, welche Bedingung fehlgeschlagen ist. Die automatische Aktivierung gibt niemals eine Meldung aus.
+- Suchen werden über Ihren DashScope-Schlüssel abgerechnet (`usage.x_tools` zählt). Der Genehmigungsmodus Auto (Standard) lässt den Classifier Suchen ohne Nachfrage genehmigen; im Genehmigungsmodus `default` fragt das Tool nach, und Genehmigung mit „immer zulassen" persistiert eine standardmäßige `WebSearch`-Berechtigungsregel, wie bei anderen Tools.
 - Es gibt keine clientseitige Modell-Allowlist; ein Modell, das der Responses-Endpunkt nicht bereitstellt, schlägt bei der ersten Verwendung lautstark fehl.
 
 ## MCP-Alternativen
 
-Wenn Sie keinen DashScope-Schlüssel haben, steht die Websuche durch die Verbindung eines externen MCP-Servers zur Verfügung — siehe die folgenden Dienste.
+Wenn Ihr Anbieter das integrierte Tool nicht bereitstellen kann, steht die Websuche durch die Verbindung eines externen MCP-Servers zur Verfügung — siehe die folgenden Dienste.
 
 ## ⚠️ Historischer Breaking Change: Ursprüngliches integriertes `web_search` entfernt
 
 > **Betroffene Versionen:** `V0.0.7+` bis zur letzten Version mit dem ursprünglichen integrierten Multi-Anbieter-Websuchtool.
 
-Das ursprüngliche integrierte `web_search`-Tool (Tavily/Google/GLM/DashScope Multi-Anbieter) und seine Konfiguration wurden **entfernt**. Das neue Opt-in-Tool oben ist eine andere Implementierung mit einer anderen Konfiguration. Wenn Sie einen der folgenden Punkte verwendet haben, migrieren Sie entweder zum neuen integrierten Tool (DashScope) oder zu MCP:
+Das ursprüngliche integrierte `web_search`-Tool (Tavily/Google/GLM/DashScope Multi-Anbieter) und seine Konfiguration wurden **entfernt**. Das oben dokumentierte integrierte Tool ist eine andere Implementierung mit einer anderen Konfiguration. Wenn Sie einen der folgenden Punkte verwendet haben, migrieren Sie entweder zum neuen integrierten Tool (DashScope) oder zu MCP:
 
 | Entfernt                                                                  | Was zu tun ist                                                        |
 | ------------------------------------------------------------------------- | --------------------------------------------------------------------- |
 | `webSearch`-Block in `settings.json`                                      | Stattdessen einen MCP-Server in `mcpServers` konfigurieren (siehe unten) |
 | `advanced.tavilyApiKey` in `settings.json`                                | Den [Tavily MCP-Server](#tavily-websearch) verwenden                  |
 | `TAVILY_API_KEY`-Umgebungsvariable                                        | Den [Tavily MCP-Server](#tavily-websearch) verwenden                  |
-| `DASHSCOPE_API_KEY` für die Websuche                                      | Das [integrierte `web_search`-Tool](#integriertes-web_search-opt-in) verwenden |
+| `DASHSCOPE_API_KEY` für die Websuche                                      | Das [integrierte `web_search`-Tool](#integriertes-web_search) verwenden |
 | `GLM_API_KEY` für die Websuche                                            | Den [GLM WebSearch Prime MCP](#glm-websearch-prime-zhipuai) verwenden |
 | `--tavily-api-key` / `--glm-api-key` / `--dashscope-api-key` CLI-Flags | Über `mcpServers` in `settings.json` konfigurieren                    |
 

@@ -13,7 +13,7 @@ qwen serve --no-web --port 4170 \
 # → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/project-a)
 ```
 
-`--no-web` 会移除 Web Shell 资源；它不会选择更小的 REST/SSE API 配置。每个 `--workspace` 值必须是绝对目录。第一个启动工作区是主工作区，对于省略 `cwd` 的请求，它仍然是兼容性默认值；`/capabilities.workspaces[]` 是客户端在显式选择任何运行时应使用的目录清单。
+`--no-web` 会移除 Web Shell 资源及其绑定的界面：`POST /workspace/local-control/enable` 在所有平台上都会 fail closed（失败即拒绝），返回 `409 local_control_web_shell_unavailable`；在 macOS 上，`/live/*` 路由、`/live/host` WebSocket 以及 `experimental.liveVoice.*` 设置键不会被注册 —— 因此驱动 SDK Live 方法的集成必须在不使用 `--no-web` 的情况下运行。它不是一个功能配置开关：会话、提示词、工作区、权限和 SSE 路由保持不变。每个 `--workspace` 值必须是绝对目录。第一个启动工作区是主工作区，对于省略 `cwd` 的请求，它仍然是兼容性默认值；`/capabilities.workspaces[]` 是客户端在显式选择任何运行时应使用的目录清单。
 
 无令牌的本地回环默认设置适用于单用户工作站。在共享主机上，请设置 `QWEN_SERVER_TOKEN` 并添加 `--require-auth`；非本地回环绑定需要令牌。
 

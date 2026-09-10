@@ -9,7 +9,7 @@
 - `qwen channel start [name]` は、スタンドアロンの ACP バックチャネルサービスです。アダプターに `ChannelAgentBridge` の `AcpBridge` 実装を渡します。
 - `qwen serve --channel <name>` および `qwen serve --channel all` は、実験的なデーモン管理モードです。名前付きセレクションは所有ワークスペースごとにグループ化され、`qwen serve` は所有ランタイムごとにプロセス外のワーカーを 1 つ起動します。各ワーカーは SDK を介してデーモンに接続し、アダプターは `DaemonChannelBridge` ベースの `ChannelAgentBridge` ファサードを受け取ります。`--channel all` は引き続きプライマリのみのセレクションです。
 
-デーモン管理モードでは、各チャネルは受信チャットトラフィックを、設定可能な `SessionScope` (`user`、`chat_thread`、または `single`) の下のデーモンセッションにマッピングします。レガシーな Channel 値 `thread` は既存の設定では読み書き可能ですが、新しい Web Shell の設定では提供されません。これはデーモンブリッジ独自の `single`/`thread` セッション作成ノブとは別のものです。`sessionScope: "user"` かつ `multiSession: true` の場合、`ChannelBase` はチャネル、チャット、および送信者をキーとする永続化された名前付きセッションカタログを追加し、`SessionRouter` は選択されたセッションを互換性ルートとして保持します。正確な名前付きセッションのロードは、レガシーな load-or-replace パスを使用することはありません。アダプターは `DaemonChannelBridge` に委任し、それは SDK の `DaemonSessionClient` に委任します ([`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md) を参照)。各名前付きチャネルは、登録された 1 つの信頼されたワークスペースに解決される必要があります。ワーカーはそのランタイムの標準 cwd、`QWEN_DAEMON_WORKSPACE`、および環境オーバーレイを使用します。所有権の解決はプライマリにフォールバックすることはありません。
+デーモン管理モードでは、各チャネルは受信チャットトラフィックを、設定可能な `SessionScope` (`user`、`chat_thread`、または `single`) の下のデーモンセッションにマッピングします。レガシーな Channel 値 `thread` は既存の設定では読み書き可能ですが、新しい Web Shell の設定では提供されません。これはデーモンブリッジ独自の `single`/`thread` セッション作成ノブとは別のものです。`sessionScope: "user"` かつ `multiSession: true` の場合、`ChannelBase` はチャネル、チャット、および送信者をキーとする永続化された名前付きセッションカタログを追加し、`SessionRouter` は選択されたセッションを互換性ルートとして保持します。正確な名前付きセッションのロードは、レガシーな load-or-replace パスを使用することはありません。名前付きターンは非同期準備の前に正確なセッションを予約し、後のセレクション変更後も互換性ルートを再バインドせずにバインドされたままです。名前付きタスクは並行して実行でき、`/session cancel [<name>]` は検証済みのアクティブなプロンプトのみをターゲットにし、ベアテキストの権限コマンドは選択されたタスクのみを考慮します。`/session new <name> --worktree` はさらにデーモン管理の Git ワークツリー分離をリクエストします。デーモンは正規のワークツリーパスと `worktreeState: "persisted-v1"` を返します。ブリッジはルート記録前にこのアテステーションを検証し、リアタッチも同じチェックを繰り返します。名前付きターンは配信専用のタスクソースラベルもキャプチャします。1対1チャットは `[task]` を使用し、グループは `[sender · task]` を使用し、正確なテキスト権限プロンプトはリクエスト ID を含みます。このラベルはモデルレスポンスやトランスクリプトには追加されません。アダプターは `DaemonChannelBridge` に委任し、それは SDK の `DaemonSessionClient` に委任します ([`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md) を参照)。各名前付きチャネルは、登録された 1 つの信頼されたワークスペースに解決される必要があります。ワーカーはそのランタイムの標準 cwd、`QWEN_DAEMON_WORKSPACE`、および環境オーバーレイを使用します。所有権の解決はプライマリにフォールバックすることはありません。
 
 ### Webhook トリガーのチャネルタスク
 
@@ -67,9 +67,9 @@ abstract class ChannelBase {
 }
 ```
 
-すべての内部メッセージ配信は `sendThreadMessage(chatId, threadId, text)` を通じてルーティングされます。デフォルト実装は `threadId` を無視して `sendMessage(chatId, text)` にフォールスルーします。IM アダプターは影響を受けません。ポーリングアダプター (GitHub など) は `sendThreadMessage` をオーバーライドして、`threadId` を使用して特定の issue/PR にコメントを投稿します。
+すべての内部メッセージ配信は `sendThreadMessage(chatId, threadId, text, sourceLabel)` を通じてルーティングされます。デフォルト実装は `threadId` を無視して `sendMessage(chatId, attributedText)` にフォールスルーします。ポーリング、リッチカード、メディア、ストリーミング、およびプラットフォーム分割アダプターはこの境界をオーバーライドし、オプションのプレーンテキストソースラベルがプラットフォーム用にエスケープされ、生のレスポンス状態を変更せずに独立して表示されるすべてのオブジェクトで繰り返されるようにします。
 
-共通の横断的関心事を処理します: 送信者ゲーティング (許可リスト / 拒否リスト)、グループゲーティング、メッセージブロックストリーミング (チャンクサイズ、スロットリング)、受信デバウンス。
+共通の横断的関心事を処理します: 送信者ゲーティング (許可リスト / 拒否リスト)、グループゲーティング、受信デバウンス。
 
 ### チャネル別アダプター
 
@@ -141,9 +141,9 @@ sequenceDiagram
 
     D-->>SC: SSE: session_update (agent_message_chunk)
     SC-->>BR: DaemonEvent
-    BR-->>CB: 'textChunk' の emit
-    CB->>CB: レスポンスの組み立て / ブロックスストリーミング
-    CB->>AD: sendMessage(chatId, チャンクまたは完全なレスポンス)
+    BR-->>CB: emit 'textChunk' -> onResponseChunk (デフォルトは no-op)
+    BR-->>CB: prompt() が完全なレスポンスで解決
+    CB->>AD: sendThreadMessage(chatId, threadId, full response, sourceLabel)
     AD->>CH: sendText / sendMessage / sendChunk
 ```
 
@@ -197,11 +197,10 @@ sequenceDiagram
 | 設定項目                                     | 効果                                                                                                                                                                         |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `sessionScope`                           | `'user'` (送信者 + チャット)、`'chat_thread'` (チャネル + chatId + threadId)、または `'single'` (チャネルごとに 1 つの共有セッション)。レガシーの `'thread'` はすでに設定されている場合は保持されますが、新しい Web Shell の設定では提供されません。 |
-| `multiSession`                           | `sessionScope: 'user'` 向けのデーモン専用の名前付きタスク。オーナーカタログはワークスペース/チャネルの状態ディレクトリの下に永続化されます。タスクは並行実行可能で、タスクごとの Git ワークツリーを選択可能であり、キャンセルと権限コマンドは正確なタスクに紐付いたままとなり、結果とインタラクティブな画面は元のタスクを識別します。Webhook、グループ履歴のバックフィル、およびループは引き続き除外されます。 |
+| `multiSession`                           | `sessionScope: 'user'` 向けのデーモン専用の名前付きタスク。オーナーカタログはワークスペース/チャネルの状態ディレクトリの下に永続化されます。タスクは並行して実行でき、タスクごとの Git ワークツリーを選択でき、キャンセルと権限コマンドは正確なタスクに相関されたままとなり、結果とインタラクティブな画面はソースタスクを識別します。Webhook、グループ履歴のバックフィル、およびループは引き続き除外されます。 |
 | `approvalMode`                           | `'auto'` (自動応答) / `'prompt'` (UI のレンダリング)。                                                                                                                              |
 | `allowlist?: string[]`                   | 許可される送信者 ID。未指定 = オープン。                                                                                                                                            |
 | `denylist?: string[]`                    | 拒否される送信者 ID。                                                                                                                                                             |
-| `chunkSize`, `chunkIntervalMs`           | アウトバウンドブロックストリーミングの設定。                                                                                                                                             |
 | `daemon: { baseUrl, token?, clientId? }` | `DaemonChannelSessionFactory` に転送されます。                                                                                                                                    |
 
 チャネル固有のキーがその上に追加されます (DingTalk: `streamCredentials`、WeChat: `ilinkUrl`、`botId`、Telegram: `botToken`、Feishu: `clientId` (appId)、`clientSecret` (appSecret)、`verificationToken`、`encryptKey` (webhook モード))。

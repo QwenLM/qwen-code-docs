@@ -98,7 +98,7 @@ Qwen Code 프로젝트는 핵심 패키지를 NPM 레지스트리에 게시하�
 
 **빌드 및 패키징 프로세스**
 
-배포 채널에 따라 두 가지 distinct 빌드 프로세스가 사용됩니다:
+배포 채널에 따라 두 가지 서로 다른 빌드 프로세스가 사용됩니다:
 
 - **NPM 게시:** NPM 레지스트리에 게시하기 위해 `@qwen-code/qwen-code-core`와 `@qwen-code/qwen-code`의 TypeScript 소스 코드가 TypeScript Compiler(`tsc`)를 사용하여 표준 JavaScript로 트랜스파일됩니다. 결과물인 `dist/` 디렉토리가 NPM 패키지에 게시됩니다. 이는 TypeScript 라이브러리의 표준 접근 방식입니다.
 
@@ -115,3 +115,9 @@ Docker 기반 실행 방법은 `qwen-code-sandbox` 컨테이너 이미지로 지
 1.  `tsc`를 사용하여 NPM 패키지를 빌드합니다.
 2.  NPM 패키지를 아티팩트 레지스트리에 게시합니다.
 3.  번들된 애셋이 포함된 GitHub 릴리스를 생성합니다.
+
+**OpenTUI 프리뷰 플레이버**
+
+독립 아카이브는 기본적으로 클래식 Node.js 플레이버로 제공됩니다. `OPENTUI_PREVIEW_RELEASE_ENABLED` 저장소 변수를 `true`로 설정하면 bun/OpenTUI 프리뷰 플레이버도 추가로 빌드되며, 이 아카이브에는 `-opentui-preview` 접미사가 붙고 런처의 `QWEN_TUI_RENDERER` 기본값이 `opentui`로 설정됩니다. 변수를 설정하지 않으면 해당 플레이버가 빌드되지 않습니다.
+
+이 변수는 새 릴리스에서 무엇을 빌드할지만 결정합니다. 릴리스를 Aliyun OSS에 미러링하는 워크플로는 이 변수를 읽지 않습니다. 해당 워크플로는 어떤 태그든 다시 디스패치할 수 있으며, 플레이버가 존재하기 전에 생성된 태그에는 검증할 프리뷰 아카이브가 없으므로 실제로 릴리스에서 제공된 아카이브에서 플레이버를 파생합니다.

@@ -528,7 +528,7 @@ Alibaba Cloud Managed Service for OpenTelemetry で Qwen Code のテレメトリ
 - `qwen-code.workflow_keyword`: ワークフローのキーワードトリガーが発火しました。
 
 - `qwen-code.workflow_run`: ワークフローの実行が終了状態に達しました。
-  - **属性**: `status` (string), `agents_dispatched` (int), `agents_completed` (int), `phase_count` (int), `tokens_spent` (int), `duration_ms` (int)
+  - **属性**: `status` (string), `agents_dispatched` (int), `agents_completed` (int, すべての settle したディスパッチ), `agents_failed` (int, 失敗ステータスの settle したディスパッチ), `agents_cached` (int, 以前の実行から提供された settle したディスパッチ), `agents_respawned` (int, 以前の失敗または中断された試行の後に再実行されたディスパッチ呼び出し), `phase_count` (int), `tokens_spent` (int), `duration_ms` (int)。`agents_failed` と `agents_cached` は `agents_completed` のサブセットであり、`agents_respawned` は来歴を記述するもので追加の成果カウントではありません。
 
 #### 自動メモリイベント
 
@@ -632,7 +632,7 @@ Alibaba Cloud Managed Service for OpenTelemetry で Qwen Code のテレメトリ
 - `qwen-code.arena.result.selected` (Counter, Int): Arena 結果の選択数。
   - **Attributes**: `model_id`
 
-#### Auto-Memory Metrics
+#### 自動メモリメトリクス
 
 - `qwen-code.memory.extract.count` (Counter, Int): Auto-memory の抽出実行回数。
   - **Attributes**: `trigger` ("auto"/"manual"), `status`
@@ -652,12 +652,12 @@ Alibaba Cloud Managed Service for OpenTelemetry で Qwen Code のテレメトリ
 - `qwen-code.memory.recall.duration` (Histogram, ms): recall の所要時間。
   - **Attributes**: `strategy`
 
-#### API Request Breakdown
+#### APIリクエストの内訳
 
 - `qwen-code.api.request.breakdown` (Histogram, ms): フェーズ別の API リクエスト時間の内訳。
   - **Attributes**: `model`, `phase` ("request_preparation"/"network_latency"/"response_processing"/"token_processing")
 
-### Daemon Metrics
+### デーモンメトリクス
 
 デーモンプロセス（長時間稼働する HTTP サーバーモード）は、独自のメトリクスを公開します。
 
@@ -672,19 +672,19 @@ Alibaba Cloud Managed Service for OpenTelemetry で Qwen Code のテレメトリ
   - **Attributes**: `route`
   - **Buckets**: 1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 30000
 
-#### Sessions
+#### セッション
 
 - `qwen-code.daemon.session.active` (ObservableGauge, Int): 現在アクティブなセッション数。
 
 - `qwen-code.daemon.session.lifecycle` (Counter, Int): セッションのライフサイクルイベント。
   - **Attributes**: `action` ("spawn"/"close"/"die")
 
-#### Channels
+#### チャネル
 
 - `qwen-code.daemon.channel.lifecycle` (Counter, Int): ACP チャネルのライフサイクルイベント。
   - **Attributes**: `action` ("spawn"/"exit"), `expected` (boolean, optional)
 
-#### Prompts
+#### プロンプト
 
 - `qwen-code.daemon.prompt.queue_wait` (Histogram, ms): プロンプト FIFO キューの待機時間。
   - **Buckets**: 1, 5, 10, 50, 100, 500, 1000, 5000, 10000, 30000, 60000
@@ -692,20 +692,20 @@ Alibaba Cloud Managed Service for OpenTelemetry で Qwen Code のテレメトリ
 - `qwen-code.daemon.prompt.duration` (Histogram, ms): エンドツーエンドのプロンプト所要時間。
   - **Buckets**: 100, 500, 1000, 2500, 5000, 10000, 30000, 60000, 120000, 300000, 600000
 
-#### Errors
+#### エラー
 
 - `qwen-code.daemon.bridge.error.count` (Counter, Int): 種類別のブリッジエラー数。
   - **Attributes**: `error_type` (既知のクラス名または "unknown")
 
 - `qwen-code.daemon.cancel.count` (Counter, Int): キャンセルリクエスト数。
 
-#### Resources
+#### リソース
 
 - `qwen-code.daemon.sse.active` (ObservableGauge, Int): アクティブな SSE 接続数。
 
 - `qwen-code.daemon.process.heap_used` (ObservableGauge, Int, bytes): ヒープメモリ使用量。
 
-### Spans
+### スパン
 
 分散トレースの span は `qwen-code.interaction` をルートとするツリーを形成します。CLI では、各 interaction は独自の `traceId` を持つトレースルートであり、ACP とデーモンパスはインバウンドの親コンテキストを継承する場合があります。プロンプト間の相関には `session.id` 属性が使用されます。
 
@@ -767,7 +767,7 @@ Qwen CodeはこのARMS固有のリソース属性または `gen_ai.span.kind` �
 - `qwen-code.daemon.bridge`: デーモンブリッジ操作をラップします。
   - **Attributes**: `qwen-code.daemon.operation`
 
-#### Resource Metrics
+#### リソースメトリクス
 
 - `qwen-code.memory.usage` (Histogram, bytes): メモリ使用量。テレメトリが有効な場合、メモリプレッシャーモニターによって記録されます。
   - **Attributes**: `memory_type` (string: "heap_used"/"rss")
@@ -775,7 +775,7 @@ Qwen CodeはこのARMS固有のリソース属性または `gen_ai.span.kind` �
 - `qwen-code.cpu.usage` (Histogram, percent): CPU 使用率。テレメトリが有効な場合、メモリプレッシャーモニターによって記録されます。
   - **Attributes**: (none)
 
-### Performance Monitoring (Reserved)
+### パフォーマンスモニタリング（予約済み）
 
 以下のメトリクスは定義されていますが、**本番環境ではまだ有効化されていません**。専用のパフォーマンスモニタリング設定フラグの背後で有効化される予定です。
 

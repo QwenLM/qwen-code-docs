@@ -46,7 +46,6 @@ Ajoutez le canal à `~/.qwen/settings.json` :
       "allowedUsers": ["operator-github-username"],
       "sessionScope": "chat_thread",
       "cwd": "/path/to/your/project",
-      "blockStreaming": "off",
       "groupPolicy": "open",
       "groups": {
         "*": { "requireMention": true }
@@ -87,7 +86,6 @@ L'authentification locale `gh` nécessite un `baseUrl` HTTPS afin que le credent
 | `groupPolicy`             | `"disabled"`             | Doit être `"open"`, `"allowlist"` avec le dépôt (`owner/repo`) listé dans `groups`, ou `"pairing"` avec le dépôt approuvé pour que les notifications circulent |
 | `senderPolicy`            | `"allowlist"`            | Qui peut déclencher le bot                                                                    |
 | `groups.*.requireMention` | `true`                   | Exiger les @mentions pour les commentaires ordinaires ; les raisons de notification dirigées s'exécutent toujours |
-| `blockStreaming`          | `"off"`                  | Toujours forcé à `"off"` ; les chunks intermédiaires du modèle ne sont pas publiés ; `"on"` n'est pas supporté |
 | `reasonFilter`            | non défini               | Allowlist optionnelle de raisons de notification GitHub à traiter                             |
 
 Utilisez `reasonFilter` pour éliminer les classes de notifications bruyantes comme `ci_activity` ou `state_change`. N'utilisez pas `reasonFilter: ["mention"]` comme remplacement de `groups.*.requireMention` : la raison `mention` de GitHub est persistante au niveau du thread, de sorte que de vraies nouvelles @mentions peuvent arriver plus tard sous les raisons `comment`, `subscribed`, `author` ou autres et seraient ignorées.
@@ -133,15 +131,9 @@ Pour un commentaire d'issue ou de pull request accepté, le canal ajoute la réa
 
 ### Sortie finale uniquement
 
-Le canal GitHub force toujours la livraison finale uniquement. L'adaptateur définit `blockStreaming` à `"off"`, donc les chunks intermédiaires du modèle ne sont jamais publiés comme des commentaires séparés et `blockStreaming: "on"` n'est pas supporté.
+Le canal GitHub publie uniquement les réponses terminées. Les chunks intermédiaires du modèle ne sont jamais publiés sous forme de commentaires séparés.
 
-```json
-{
-  "blockStreaming": "off"
-}
-```
-
-Si GitHub renvoie un échec de livraison sans écriture définitif, comme une réponse
+Si GitHub renvoie un échec de livraison définitif dont on sait qu'il n'a rien écrit, comme une réponse
 de rate-limit, le canal stocke la réponse finale dans
 `~/.qwen/channels/<workspace-scope>/<channel>-<name-hash>-github-pending-deliveries.json`
 avec des permissions de fichier privées et la re-tente au prochain démarrage du canal. La

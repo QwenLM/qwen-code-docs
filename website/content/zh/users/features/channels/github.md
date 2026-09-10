@@ -46,7 +46,6 @@ gh auth login --hostname github.example.com
       "allowedUsers": ["operator-github-username"],
       "sessionScope": "chat_thread",
       "cwd": "/path/to/your/project",
-      "blockStreaming": "off",
       "groupPolicy": "open",
       "groups": {
         "*": { "requireMention": true }
@@ -87,7 +86,6 @@ export GITHUB_TOKEN="ghp_your_token_here"
 | `groupPolicy`             | `"disabled"`             | 必须为 `"open"`、`"allowlist"`（需在 `groups` 中列出仓库 `owner/repo`）或 `"pairing"`（需批准仓库）才能接收通知 |
 | `senderPolicy`            | `"allowlist"`            | 谁可以触发 bot                                                                              |
 | `groups.*.requireMention` | `true`                   | 普通评论需要 @提及；定向通知原因仍会运行                                                    |
-| `blockStreaming`          | `"off"`                  | 始终强制为 `"off"`；中间模型片段不会发布；不支持 `"on"`                                     |
 | `reasonFilter`            | 未设置                   | 可选的 GitHub 通知原因允许列表                                                              |
 
 使用 `reasonFilter` 过滤掉嘈杂的通知类别，如 `ci_activity` 或 `state_change`。不要使用 `reasonFilter: ["mention"]` 替代 `groups.*.requireMention`：GitHub 的 `mention` 原因在线程级别是粘性的，因此新的 @提及可能会在 `comment`、`subscribed`、`author` 或其他原因下到达，并被跳过。
@@ -133,13 +131,7 @@ export GITHUB_TOKEN="ghp_your_token_here"
 
 ### 仅最终输出
 
-GitHub channel 始终强制仅最终交付。适配器将 `blockStreaming` 设置为 `"off"`，因此中间模型片段永远不会作为单独的评论发布，且不支持 `blockStreaming: "on"`。
-
-```json
-{
-  "blockStreaming": "off"
-}
-```
+GitHub channel 仅发布已完成的响应。中间模型片段永远不会作为单独的评论发布。
 
 如果 GitHub 返回确定的不写入交付失败（如速率限制响应），channel 会将最终回复存储在
 `~/.qwen/channels/<workspace-scope>/<channel>-<name-hash>-github-pending-deliveries.json`

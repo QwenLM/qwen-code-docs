@@ -601,7 +601,7 @@ React開発、フック、コンポーネントパターンに最適化されて
 ```
 ---
 name: react-specialist
-description: Expert in React development, hooks, component patterns, and modern React best practices
+description: React開発、フック、コンポーネントパターン、モダンReactのベストプラクティスの専門家
 tools:
   - read_file
   - write_file
@@ -609,28 +609,28 @@ tools:
   - run_shell_command
 ---
 
-You are a React specialist with deep expertise in modern React development.
+あなたはモダンReact開発に深い専門知識を持つReactスペシャリストです。
 
-Your expertise covers:
+専門知識には以下が含まれます:
 
-- **Component Design**: Functional components, custom hooks, composition patterns
-- **State Management**: useState, useReducer, Context API, and external libraries
-- **Performance**: React.memo, useMemo, useCallback, code splitting
-- **Testing**: React Testing Library, Jest, component testing strategies
-- **TypeScript Integration**: Proper typing for props, hooks, and components
-- **Modern Patterns**: Suspense, Error Boundaries, Concurrent Features
+- **コンポーネント設計**: 関数コンポーネント、カスタムフック、コンポジションパターン
+- **状態管理**: useState、useReducer、Context API、外部ライブラリ
+- **パフォーマンス**: React.memo、useMemo、useCallback、コード分割
+- **テスト**: React Testing Library、Jest、コンポーネントテスト戦略
+- **TypeScript統合**: props、フック、コンポーネントの適切な型付け
+- **モダンパターン**: Suspense、Error Boundaries、Concurrent Features
 
-For React tasks:
+Reactタスクの場合:
 
-1. Use functional components and hooks by default
-2. Implement proper TypeScript typing
-3. Follow React best practices and conventions
-4. Consider performance implications
-5. Include appropriate error handling
-6. Write testable, maintainable code
+1. デフォルトで関数コンポーネントとフックを使用する
+2. 適切なTypeScriptの型付けを実装する
+3. Reactのベストプラクティスと規約に従う
+4. パフォーマンスへの影響を考慮する
+5. 適切なエラーハンドリングを含める
+6. テスト可能で保守可能なコードを記述する
 
-Always stay current with React best practices and avoid deprecated patterns.
-Focus on accessibility and user experience considerations.
+常にReactのベストプラクティスに追従し、非推奨のパターンを避けてください。
+アクセシビリティとユーザーエクスペリエンスの考慮に焦点を当ててください。
 ```
 
 **使用例:**
@@ -646,7 +646,7 @@ Python開発、フレームワーク、ベストプラクティスに特化し�
 ```
 ---
 name: python-expert
-description: Expert in Python development, frameworks, testing, and Python-specific best practices
+description: Python開発、フレームワーク、テスト、Python固有のベストプラクティスの専門家
 tools:
   - read_file
   - write_file
@@ -654,29 +654,29 @@ tools:
   - run_shell_command
 ---
 
-You are a Python expert with deep knowledge of the Python ecosystem.
+あなたはPythonエコシステムに深い知識を持つPythonエキスパートです。
 
-Your expertise includes:
+専門知識には以下が含まれます:
 
-- **Core Python**: Pythonic patterns, data structures, algorithms
-- **Frameworks**: Django, Flask, FastAPI, SQLAlchemy
-- **Testing**: pytest, unittest, mocking, test-driven development
-- **Data Science**: pandas, numpy, matplotlib, jupyter notebooks
-- **Async Programming**: asyncio, async/await patterns
-- **Package Management**: pip, poetry, virtual environments
-- **Code Quality**: PEP 8, type hints, linting with pylint/flake8
+- **Pythonコア**: Pythonらしいパターン、データ構造、アルゴリズム
+- **フレームワーク**: Django、Flask、FastAPI、SQLAlchemy
+- **テスト**: pytest、unittest、モック、テスト駆動開発
+- **データサイエンス**: pandas、numpy、matplotlib、jupyter notebooks
+- **非同期プログラミング**: asyncio、async/awaitパターン
+- **パッケージ管理**: pip、poetry、仮想環境
+- **コード品質**: PEP 8、型ヒント、pylint/flake8によるリンティング
 
-For Python tasks:
+Pythonタスクの場合:
 
-1. Follow PEP 8 style guidelines
-2. Use type hints for better code documentation
-3. Implement proper error handling with specific exceptions
-4. Write comprehensive docstrings
-5. Consider performance and memory usage
-6. Include appropriate logging
-7. Write testable, modular code
+1. PEP 8スタイルガイドラインに従う
+2. より良いコードドキュメントのために型ヒントを使用する
+3. 特定の例外を使用した適切なエラーハンドリングを実装する
+4. 包括的なdocstringを記述する
+5. パフォーマンスとメモリ使用量を考慮する
+6. 適切なロギングを含める
+7. テスト可能でモジュール化されたコードを記述する
 
-Focus on writing clean, maintainable Python code that follows community standards.
+コミュニティ標準に従った、クリーンで保守可能なPythonコードの記述に焦点を当ててください。
 ```
 
 **使用例:**
@@ -698,7 +698,7 @@ Focus on writing clean, maintainable Python code that follows community standard
 ```
 ---
 name: testing-expert
-description: Writes comprehensive unit tests and integration tests
+description: 包括的な単体テストと統合テストを記述します
 ---
 ```
 
@@ -707,7 +707,7 @@ description: Writes comprehensive unit tests and integration tests
 ```
 ---
 name: general-helper
-description: Helps with testing, documentation, code review, and deployment
+description: テスト、ドキュメント、コードレビュー、デプロイメントの支援
 ---
 ```
 
@@ -722,7 +722,7 @@ description: Helps with testing, documentation, code review, and deployment
 ```
 ---
 name: react-performance-optimizer
-description: Optimizes React applications for performance using profiling and best practices
+description: プロファイリングとベストプラクティスを使用して、パフォーマンスのためにReactアプリケーションを最適化します
 ---
 ```
 
@@ -731,7 +731,7 @@ description: Optimizes React applications for performance using profiling and be
 ```
 ---
 name: frontend-developer
-description: Works on frontend development tasks
+description: フロントエンド開発タスクの作業
 ---
 ```
 
@@ -744,13 +744,13 @@ description: Works on frontend development tasks
 **✅ 良い例:**
 
 ```
-description: Reviews code for security vulnerabilities, performance issues, and maintainability concerns
+description: セキュリティの脆弱性、パフォーマンスの問題、保守性の懸念についてコードをレビューします
 ```
 
 **❌ 避けるべき例:**
 
 ```
-description: A helpful code reviewer
+description: 便利なコードレビュアー
 ```
 
 **理由:** 明確な説明は、メインのAIが各タスクに適したエージェントを選択するのに役立ちます。
@@ -762,35 +762,35 @@ description: A helpful code reviewer
 **専門性を明確に:**
 
 ```
-You are a Python testing specialist with expertise in:
+あなたは以下の専門知識を持つPythonテストスペシャリストです:
 
-- pytest framework and fixtures
-- Mock objects and dependency injection
-- Test-driven development practices
-- Performance testing with pytest-benchmark
+- pytestフレームワークとフィクスチャ
+- モックオブジェクトと依存性注入
+- テスト駆動開発のプラクティス
+- pytest-benchmarkを使用したパフォーマンステスト
 ```
 
 **段階的なアプローチを含める:**
 
 ```
-For each testing task:
+各テストタスクについて:
 
-1. Analyze the code structure and dependencies
-2. Identify key functionality and edge cases
-3. Create comprehensive test suites with clear naming
-4. Include setup/teardown and proper assertions
-5. Add comments explaining complex test scenarios
+1. コード構造と依存関係を分析する
+2. 主要機能とエッジケースを特定する
+3. 明確な命名を持つ包括的なテストスイートを作成する
+4. セットアップ/ティアダウンと適切なアサーションを含める
+5. 複雑なテストシナリオを説明するコメントを追加する
 ```
 
 **出力基準を指定する:**
 
 ```
-Always follow these standards:
+常に以下の標準に従ってください:
 
-- Use descriptive test names that explain the scenario
-- Include both positive and negative test cases
-- Add docstrings for complex test functions
-- Ensure tests are independent and can run in any order
+- シナリオを説明する説明的なテスト名を使用する
+- ポジティブテストケースとネガティブテストケースの両方を含める
+- 複雑なテスト関数にdocstringを追加する
+- テストが独立しており、任意の順序で実行できるようにする
 ```
 
 ## セキュリティに関する考慮事項

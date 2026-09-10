@@ -14,7 +14,7 @@ Subagents sind unabhängige KI-Assistenten, die:
 
 ## Fork-Subagent
 
-Zusätzlich zu benannten Subagents unterstützt Qwen Code **Forking** – explizit ausgewählt mit `subagent_type: "fork"`. Ein Fork erbt den vollständigen Gesprächskontext des übergeordneten Agents und läuft normalerweise abgekoppelt im Hintergrund. Forks funktionieren sowohl in interaktiven als auch in Headless-Sitzungen; Headless-Forks verwenden immer den Hintergrundpfad. Wird `subagent_type` weggelassen, wird **nicht** geforkt; es wird der Allzweck-Subagent gestartet. Top-Level benannte Subagents laufen standardmäßig im Hintergrund und liefern ihre Ergebnisse über Abschlussbenachrichtigungen. Setze `run_in_background: false`, wenn der aktuelle Turn auf das Ergebnis eines regulären Subagents inline warten muss.
+Zusätzlich zu benannten Subagents unterstützt Qwen Code **Forking** – explizit ausgewählt mit `subagent_type: "fork"`. Ein Fork erbt den vollständigen Gesprächskontext des übergeordneten Agents und läuft normalerweise abgekoppelt im Hintergrund. Forks funktionieren sowohl in interaktiven als auch in Headless-Sessions; Headless-Forks verwenden immer den Hintergrundpfad. Wird `subagent_type` weggelassen, wird **nicht** geforkt; es wird der Allzweck-Subagent gestartet. Top-Level benannte Subagents laufen standardmäßig im Hintergrund und liefern ihre Ergebnisse über Abschlussbenachrichtigungen. Setze `run_in_background: false`, wenn der aktuelle Turn auf das Ergebnis eines regulären Subagents inline warten muss.
 
 ## Fork-Kontext mit `fork_turns`
 
@@ -123,13 +123,21 @@ Fork-Kinder können keine weiteren Sub-Agenten starten. Dies wird zur Laufzeit e
 
 Top-Level reguläre Subagents laufen standardmäßig im Hintergrund. Nachdem ein Hintergrund-Agent fertig ist, behält Qwen Code genügend Zustand, um verwandte Arbeit fortzusetzen, ohne einen doppelten Agenten zu starten:
 
-- `list_agents` gibt die adressierbaren Hintergrund-Agenten in der aktuellen Sitzung zurück, einschließlich kompatibler Agenten, die mit einer fortgesetzten Sitzung wiederhergestellt wurden. Jeder Eintrag enthält eine `task_id`, den Status und ob er eine Nachricht empfangen kann.
+- `list_agents` gibt die adressierbaren Hintergrund-Agenten in der aktuellen Session zurück, einschließlich kompatibler Agenten, die mit einer fortgesetzten Session wiederhergestellt wurden. Jeder Eintrag enthält eine `task_id`, den Status und ob er eine Nachricht empfangen kann.
 - `send_message` mit dieser `task_id` stellt eine Nachricht für einen laufenden Agenten in die Warteschlange, setzt einen pausierten Agenten fort oder setzt einen abgeschlossenen Agenten fort. Abgeschlossene Agenten verwenden ihren vorhandenen Runtime wenn verfügbar und werden andernfalls aus ihrem behaltenen Transkript wiederbelebt.
 - Ein fortgesetzter Agent meldet sein nächstes Ergebnis über eine weitere Abschlussbenachrichtigung.
 
-Wenn eine Sitzung wiederhergestellt wird, werden kompatible Hintergrund-Agenten wieder zum Sitzungsregister hinzugefügt. Eine Aufgabe kann sichtbar, aber nicht fortsetzbar sein, wenn ihr behaltener Zustand fehlt oder inkompatibel ist; `list_agents` meldet in diesem Fall den Grund.
+Wenn eine Session wiederhergestellt wird, werden kompatible Hintergrund-Agenten wieder zum Session-Roster hinzugefügt. Eine Aufgabe kann sichtbar, aber nicht fortsetzbar sein, wenn ihr behaltener Zustand fehlt oder inkompatibel ist; `list_agents` meldet in diesem Fall den Grund.
 
 Verwende die Fortsetzung für verwandte Folgeaufgaben. Starte einen neuen Agenten, wenn die Aufgabe nicht verwandt ist oder der vorherige Agent nicht fortgesetzt werden kann.
+
+## Notification Queue
+
+In der interaktiven TUI und der ACP-Session teilen sich Abschlussbenachrichtigungen von Hintergrund-Agenten, Shells, Monitoren und Workflows eine Queue, die in einen Modell-Turn drainiert, sobald die Session idle ist. Diese Queues fassen höchstens 20 Benachrichtigungen, sodass ein aktiver Produzent keinen unbegrenzten Rückstau ansammeln kann. Die lokale Queue der Headless-CLI ist durch diese Regel nicht begrenzt.
+
+Wenn eine 21. Benachrichtigung eintrifft, entfernt Qwen Code zuerst einen Interims-Monitor-Pulse – die nächste Abfrage des Monitors ersetzt ihn – und andernfalls die älteste Benachrichtigung in der Queue. Agenten-Ergebnisse, Workflow-Ergebnisse und geplante Prompts werden in der interaktiven TUI niemals entfernt; stattdessen wird eine Benachrichtigung, die eines verdrängen würde, verworfen, ebenso wie ein eintreffender Pulse, wenn nur terminale Ergebnisse in der Queue sind.
+
+Verworfene Benachrichtigungen werden gemeldet, anstatt stillschweigend verworfen zu werden. Die Zusammenfassung erscheint vor der nächsten Benachrichtigung im Live-Transkript. ACP stellt sie auch dem Modell-Input dieses Turns voran; die TUI hält sie für den nächsten Notification-Batch geparkt, sodass Cron-Prompts unverändert durch Slash-, Shell- und ` @`-Preprocessing laufen. Eine Daemon-Benachrichtigung wird aufgezeichnet, bevor sie bestätigt wird, sodass nach einem Reload ihre dauerhafte Aufzeichnung der späteren Overflow-Zusammenfassung vorangehen kann. ACP kann eine ausstehende Zusammenfassung verwerfen, wenn die Session gelöscht oder gewechselt wird, oder wenn ein Client den Notification-Turn abbricht oder vorzeitig ersetzt. Das Verwerfen einer Benachrichtigung stoppt oder löscht niemals ihre Aufgabe, und abgeschlossene Aufgaben behalten ihre Ergebnisse; die Zusammenfassung verweist auf `/tasks` und Task-Ausgabedateien, wenn es eine Task zu inspizieren gibt. Ein verworfener geplanter Prompt wurde niemals zugestellt und wird nicht wiederholt. Eine Daemon-Benachrichtigung, die aufgezeichnet wurde aber nicht live zugestellt werden konnte, bleibt im Session-Transkript verfügbar und wird separat von verlorenen Benachrichtigungen gemeldet.
 
 ## Arbeitsverzeichnis von Agenten
 
@@ -258,7 +266,7 @@ tools:
 
 Der Selektor `fast` verwendet dieselbe `fastModel`-Einstellung, die in `settings.json` oder mit `/model --fast` konfiguriert ist. Diese Einstellung kann selbst auf ein Modell unter einem anderen konfigurierten Authentifizierungstyp verweisen, wie z. B. `openai:deepseek-v4-flash`. Wenn der Selektor zu einem anderen Authentifizierungstyp auflöst, erstellt Qwen Code einen dedizierten Laufzeit-Provider für diese Subagent-Anfrage und sendet dem Provider nur die nackte Modell-ID.
 
-Der integrierte Explore-Agent erbt standardmäßig das Hauptsitzungsmodell. Um ein anderes Modell nur für diesen integrierten Agenten auszuwählen, konfiguriere `agents.builtin.exploreModel` in der `settings.json` und starte Qwen Code neu:
+Der integrierte Explore-Agent erbt standardmäßig das Modell der Haupt-Session. Um ein anderes Modell nur für diesen integrierten Agenten auszuwählen, konfiguriere `agents.builtin.exploreModel` in der `settings.json` und starte Qwen Code neu:
 
 Frühere Versionen verwendeten standardmäßig `fastModel` für Explore. Um dieses Verhalten beizubehalten, setze `agents.builtin.exploreModel` auf `fast`.
 
@@ -294,7 +302,7 @@ Das Agent-Tool akzeptiert dann `model: "small"` oder `model: "high"` für regul�
 
 Verwenden Sie das optionale `approvalMode`-Frontmatter-Feld, um zu steuern, wie die Werkzeugaufrufe eines Subagents genehmigt werden. Gültige Werte:
 
-- `default`: Werkzeuge erfordern interaktive Genehmigung (genau wie der Standard des Hauptsitzung)
+- `default`: Werkzeuge erfordern interaktive Genehmigung (genau wie der Standard der Haupt-Session)
 - `plan`: Nur-Analyse-Modus – der Agent plant, führt aber keine Änderungen aus
 - `auto-edit`: Werkzeuge werden automatisch ohne Rückfrage genehmigt (empfohlen für die meisten Agenten)
 - `yolo`: Alle Werkzeuge werden automatisch genehmigt, einschließlich potenziell destruktiver
@@ -302,9 +310,9 @@ Verwenden Sie das optionale `approvalMode`-Frontmatter-Feld, um zu steuern, wie 
 
 Wenn Sie dieses Feld weglassen, wird der Berechtigungsmodus des Subagents automatisch bestimmt:
 
-- Wenn die übergeordnete Sitzung im **yolo**- oder **auto-edit**-Modus ist, erbt der Subagent diesen Modus. Ein permissiver Elternteil bleibt permissiv.
-- Wenn die übergeordnete Sitzung im **plan**-Modus ist, bleibt der Subagent im plan-Modus. Eine reine Analyse-Sitzung kann keine Dateien durch einen delegierten Agenten ändern.
-- Wenn die übergeordnete Sitzung im **default**-Modus ist (in einem vertrauenswürdigen Ordner), erhält der Subagent **auto-edit**, damit er autonom arbeiten kann.
+- Wenn die übergeordnete Session im **yolo**- oder **auto-edit**-Modus ist, erbt der Subagent diesen Modus. Ein permissiver Elternteil bleibt permissiv.
+- Wenn die übergeordnete Session im **plan**-Modus ist, bleibt der Subagent im plan-Modus. Eine reine Analyse-Sitzung kann keine Dateien durch einen delegierten Agenten ändern.
+- Wenn die übergeordnete Session im **default**-Modus ist (in einem vertrauenswürdigen Ordner), erhält der Subagent **auto-edit**, damit er autonom arbeiten kann.
 
 Wenn Sie `approvalMode` explizit setzen, haben die permissiven Modi des Elternteils immer noch Vorrang. Wenn der Elternteil beispielsweise im yolo-Modus ist, wird ein Subagent mit `approvalMode: plan` trotzdem im yolo-Modus ausgeführt.
 
@@ -327,7 +335,7 @@ Nehmen Sie keine Änderungen an Dateien vor.
 
 Verwenden Sie `tools` und `disallowedTools`, um zu steuern, auf welche Werkzeuge ein Subagent zugreifen kann.
 
-**`tools` (Allowlist):** Wenn angegeben, kann der Subagent nur die aufgeführten Werkzeuge verwenden. Wenn weggelassen, erbt der Subagent alle verfügbaren Werkzeuge von der übergeordneten Sitzung.
+**`tools` (Allowlist):** Wenn angegeben, kann der Subagent nur die aufgeführten Werkzeuge verwenden. Wenn weggelassen, erbt der Subagent alle verfügbaren Werkzeuge von der übergeordneten Session.
 
 ```
 ---
@@ -356,7 +364,7 @@ disallowedTools:
 
 Wenn sowohl `tools` als auch `disallowedTools` gesetzt sind, wird zuerst die Allowlist angewendet, dann entfernt die Blocklist aus dieser Menge.
 
-**MCP-Werkzeuge** folgen den gleichen Regeln. Wenn ein Subagent keine `tools`-Liste hat, erbt er alle MCP-Werkzeuge von der übergeordneten Sitzung. Wenn ein Subagent eine explizite `tools`-Liste hat, erhält er nur MCP-Werkzeuge, die explizit in dieser Liste genannt werden.
+**MCP-Werkzeuge** folgen den gleichen Regeln. Wenn ein Subagent keine `tools`-Liste hat, erbt er alle MCP-Werkzeuge von der übergeordneten Session. Wenn ein Subagent eine explizite `tools`-Liste hat, erhält er nur MCP-Werkzeuge, die explizit in dieser Liste genannt werden.
 
 Das Feld `disallowedTools` unterstützt MCP-Server-Level-Muster:
 
@@ -381,7 +389,7 @@ Qwen Code akzeptiert die unten aufgeführten Frontmatter-Felder aus Claude Code 
 | `permissionMode`  | Enum-String      | `acceptEdits`, `auto`, `bypassPermissions`, `default`, `dontAsk`, `plan`. Wird beim Parsen auf `approvalMode` abgebildet; wenn beide gesetzt sind, gewinnt das explizite `approvalMode`.                                                                                                                                 |
 | `maxTurns`        | positive Ganzzahl | Begrenzt das Turn-Budget des Agenten. Wird zur Laufzeit in `runConfig.max_turns` eingebunden; wenn beide gesetzt sind, gewinnt das Feld der obersten Ebene. Der veraltete verschachtelte Wert wird beim Speichern aus der Datei entfernt, um zwei Wahrheitsquellen zu vermeiden.                                            |
 | `color`           | Enum-String      | Anzeigefarbe. Erlaubte Werte: `red`, `blue`, `green`, `yellow`, `purple`, `orange`, `pink`, `cyan` (entspricht CCs `_Y`). Der veraltete qwen-Sentinel `auto` bleibt aus Gründen der Rückwärtskompatibilität erhalten. Andere Werte werden beim Parsen stillschweigend ignoriert.                                         |
-| `mcpServers`      | Record von Specs  | Pro-Agent überschreibbare MCP-Server. Werden mit der MCP-Server-Menge der Sitzung zusammengeführt, wenn der Agent startet; bei Schlüsselkollision gewinnt die Agent-Spezifikation (entspricht CCs `scope: 'agent'`-Semantik). Fehlerhafte Einträge werden pro Schlüssel mit einer Warnung verworfen, nicht der gesamte Agent. |
+| `mcpServers`      | Record von Specs  | Pro-Agent überschreibbare MCP-Server. Werden mit der MCP-Server-Menge der Session zusammengeführt, wenn der Agent startet; bei Schlüsselkollision gewinnt die Agent-Spezifikation (entspricht CCs `scope: 'agent'`-Semantik). Fehlerhafte Einträge werden pro Schlüssel mit einer Warnung verworfen, nicht der gesamte Agent. |
 | `hooks`           | Record von Arrays | Pro-Agent Hooks. Schlüssel sind CC-Hook-Ereignisnamen (`PreToolUse`, `PostToolUse`, `UserPromptSubmit`, …); Werte sind Arrays von `{ matcher?, hooks: [...] }`-Definitionen in der gleichen Form wie das `hooks`-Feld in `settings.json`. Werden registriert, während der Agent läuft, und entfernt, wenn er stoppt.   |
 
 Beispiel mit allen oben genannten:
@@ -795,7 +803,7 @@ Always follow these standards:
 ## Sicherheitsaspekte
 
 - **Tool-Einschränkungen**: Verwenden Sie `tools`, um einzuschränken, auf welche Tools ein Subagent zugreifen kann, oder `disallowedTools`, um bestimmte Tools zu blockieren, während alles andere vererbt wird
-- **Berechtigungsmodus**: Subagenten erben standardmäßig den Berechtigungsmodus ihres übergeordneten Agenten. Plan-Modus-Sitzungen können nicht über delegierte Agenten auf Auto-Edit eskalieren. Privilegierte Modi (Auto-Edit, Yolo) sind in nicht vertrauenswürdigen Ordnern blockiert.
+- **Berechtigungsmodus**: Subagenten erben standardmäßig den Berechtigungsmodus ihres übergeordneten Agenten. Plan-Modus-Sessions können nicht über delegierte Agenten auf Auto-Edit eskalieren. Privilegierte Modi (Auto-Edit, Yolo) sind in nicht vertrauenswürdigen Ordnern blockiert.
 - **Provider-Auswahl**: Ein Subagent mit `model: authType:modelId` oder `model: fast`, wobei `fastModel` zu einem anderen Authentifizierungstyp aufgelöst wird, sendet die Modellanfragen dieses Subagenten an den ausgewählten Provider. Stellen Sie sicher, dass dieser Provider für die Aufgabe und die Daten des Subagenten geeignet ist.
 - **Sandboxing**: Die gesamte Tool-Ausführung folgt demselben Sicherheitsmodell wie die direkte Tool-Nutzung
 - **Audit-Trail**: Alle Aktionen der Subagenten werden protokolliert und sind in Echtzeit sichtbar

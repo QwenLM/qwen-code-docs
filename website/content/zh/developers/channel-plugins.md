@@ -205,8 +205,6 @@ protected override onPromptEnd(chatId: string, sessionId: string, messageId?: st
 
 交互式 `ChannelUserInputRequestContext` 也携带 `sourceLabel`。卡片、终端替换和纯备用必须保留它，而不削弱现有的请求、会话、运行、所有者和目标检查。
 
-**块级流式传输** — 在 channel 配置中设置 `blockStreaming: "on"`。基类会自动在段落边界处将响应拆分为多条消息。无需插件代码 — 它与 `onResponseChunk` 协同工作。
-
 **主动投递** — 当 adapter 可以在没有活动入站请求的情况下发送时，重写 `supportsProactiveSend()` 返回 `true`。`ChannelBase` 将此能力用于持久 channel 循环、webhook 任务、后台 agent 结果和 daemon 投递。默认目标策略拒绝线程目标；仅针对你的平台能安全投递的目标形状重写受保护的目标检查：
 
 ```typescript

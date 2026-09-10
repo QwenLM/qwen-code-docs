@@ -36,6 +36,10 @@ Qwen Code 명령어는 특정 접두사를 통해 실행되며 세 가지 범주
 
 > [!note]
 >
+> HTML 내보내기를 열면 `unpkg.com`에서 해당 Qwen Code 버전의 렌더러를 로드합니다. 해당 버전이 아직 배포되지 않았거나 렌더러에 도달할 수 없는 경우, 파일에 로드 오류가 표시됩니다. Markdown, JSON, JSONL 내보내기는 자체 완결적입니다.
+
+> [!note]
+>
 > `/summarize`는 `/compress`의 별칭입니다(대화 기록을 압축합니다 — 되돌릴 수 없는 작업). 비파괴적 프로젝트 요약을 생성하려면 `/summary`를 사용하세요.
 
 > [!note]
@@ -96,7 +100,7 @@ AI 도구와 모델을 관리하는 명령어입니다.
 | → `auto-edit`         | 편집을 자동 승인 (신뢰할 수 있는 환경)                                               | `/approval-mode auto-edit`                                                                                |
 | → `auto`              | 분류기 평가 기반 승인 (자율 실행)                                                    | `/approval-mode auto`                                                                                     |
 | → `yolo`              | 모든 작업을 자동 승인 (빠른 프로토타이핑)                                            | `/approval-mode yolo`                                                                                     |
-| `/peers`              | 이 머신의 다른 Qwen Code 세션에서 보류된 메시지를 검토                                 | `/peers`, `/peers accept <id>`, `/peers deny all`                                                         |
+| `/peers`              | 보류된 피어 메시지를 검토하고, 신뢰되는 컨트롤러를 관리                                 | `/peers`, `/peers accept <id>`, `/peers deny all`, `/peers controllers`, `/peers revoke <id>`             |
 | `/model`              | 현재 세션에서 사용되는 모델을 전환                                                    | `/model`, `/model <model-id>` (즉시 전환)                                                                 |
 | `/model --fast`       | 프롬프트 제안에 사용할 경량 모델을 설정                                               | `/model --fast qwen3-coder-flash`                                                                         |
 | `/model --voice`      | 음성 트랜스크립션에 사용할 모델을 설정                                                | `/model --voice <model-id>`                                                                               |
@@ -104,6 +108,7 @@ AI 도구와 모델을 관리하는 명령어입니다.
 | `/model --compaction` | 대화 압축에 사용할 모델을 설정                                                        | `/model --compaction <model-id>`, `/model --compaction clear`                                             |
 | `/model --image`      | 내장 이미지 생성 도구에 사용할 이미지 전용 모델을 설정                                 | `/model --image <model-id>`                                                                               |
 | `/effort`             | 사고(thinking) 가능 모델의 추론 강도를 설정                                           | `/effort` (피커 열기), `/effort high` (low/medium/high/xhigh/max; 제공자별로 매핑 및 제한됨)              |
+| `/output-style`       | 응답 작성 방식을 결정하는 출력 스타일을 선택                                           | `/output-style` (피커 열기), `/output-style Concise`, `/output-style default` (스타일 없음)               |
 | `/extensions`         | 확장을 관리                                                                          | `/extensions list`, `/extensions manage`                                                                  |
 | → `list`              | 설치된 확장을 나열                                                                   | `/extensions list`                                                                                        |
 | → `manage`            | 설치된 확장을 관리 (대화형)                                                          | `/extensions manage`                                                                                      |
@@ -118,7 +123,7 @@ AI 도구와 모델을 관리하는 명령어입니다.
 | `/permissions`        | 권한 규칙을 관리                                                                      | `/permissions`                                                                                            |
 | `/agents`             | 서브에이전트를 관리                                                                   | `/agents manage`, `/agents create`                                                                        |
 | `/arena`              | Arena 세션을 관리                                                                     | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (`choose` 별칭)                           |
-| `/goal`               | 목표를 설정 — 조건이 충족될 때까지 작업을 계속 ([Goals](./goals.md) 참조)              | `/goal <condition>`, `/goal clear`                                                                        |
+| `/goal`               | 목표를 설정 — 검증자가 확인할 때까지 작업을 계속 ([Goals](./goals.md) 참조)             | `/goal <objective>`, `/goal edit <objective>`, `/goal pause`, `/goal resume`, `/goal clear`               |
 | `/tasks`              | 백그라운드 작업을 나열                                                                | `/tasks`                                                                                                  |
 | `/workflows`          | 워크플로우 실행을 검사; 백그라운드 실행을 협력적으로 일시정지/재개                    | `/workflows`, `/workflows <runId>`, `/workflows p <runId>`                                                |
 | `/lsp`                | LSP 서버 상태를 표시                                                                  | `/lsp`                                                                                                    |
@@ -691,7 +696,8 @@ Requirements:
 | 명령어               | 설명                      | 사용 예시                                                  |
 | -------------------- | ------------------------- | ---------------------------------------------------------- |
 | `qwen sessions list` | 최근 대화 세션을 나열     | `qwen sessions list`, `qwen sessions list --json --limit 50` |
-| `qwen sessions ps`   | 현재 실행 중인 대화 세션을 나열 | `qwen sessions ps`, `qwen sessions ps --json`                |
+| `qwen sessions ps`          | 현재 실행 중인 대화 세션을 나열 | `qwen sessions ps`, `qwen sessions ps --json`                                    |
+| `qwen sessions controllers` | 신뢰되는 컨트롤러 토큰을 관리   | `qwen sessions controllers add --label <name>`, `qwen sessions controllers list` |
 
 #### `qwen sessions list`
 
@@ -743,7 +749,9 @@ qwen sessions list --json | jq .
 
 **사람이 읽을 수 있는 출력 (기본값):**
 
-다음 열이 있는 표: NAME, PID, AGE, DIRECTORY.
+다음 열이 있는 표: NAME, KIND, PID, AGE, DIRECTORY.
+
+KIND는 세션을 등록한 주체를 나타냅니다 — 터미널 사용자는 `tui`, Qwen Code 세션이 아닌 프로그램(음성 프론트엔드, 릴레이)은 `external`, 다른 프로그램이 구동하는 세션은 `headless` 또는 `serve`입니다. 이는 NAME, DIRECTORY와 마찬가지로 자기 보고입니다: 여기 있는 모든 필드는 해당 세션 프로세스가 직접 작성한 것이며, 세션이 수행할 수 있는 작업은 이에 의존하지 않습니다. 레코드 형식과 자체 프로그램 등록 방법은 [Cross-Session Protocol](./cross-session-protocol.md)을 참조하세요.
 
 **JSON 출력 (`--json`):**
 
@@ -751,7 +759,7 @@ stdout에 JSON Lines를 최신 세션부터 출력합니다. 각 줄은 다음 �
 
 ```
 schemaVersion, pid, procStart, pidNs, sessionId, cwd, name, startedAt,
-qwenVersion
+qwenVersion, kind, ipcPath (피어 메시징 사용 가능한 경우)
 ```
 
 stdout에는 다른 것이 출력되지 않습니다 — 빈 목록은 아무것도 출력하지 않으므로 `qwen sessions ps --json | jq .`는 안전하게 스크립팅할 수 있습니다.
@@ -780,6 +788,79 @@ qwen sessions ps --json | jq -r .cwd
 
 활성화하면, 한 세션의 모델이 `list_agents`로 다른 세션을 발견할 수 있습니다 — 각 세션은 `sessions` 아래에 `qwen sessions ps --json`이 기록하는 `name`으로 표시됩니다(표 뷰에서는 긴 이름이 잘릴 수 있음) — `send_message`로 해당 이름을 `to`로 사용하여 메시지를 보냅니다. 두 세션이 같은 이름을 공유할 때, `list_agents`는 각 세션에 짧은 `[ref]`를 표시하며 전송 시 이를 포함해야 합니다(`name [ref]`); 둘 중 하나일 수 있는 단순 이름은 추측하지 않고 거부됩니다. `list_agents`는 세션 자체의 이름도 `self` 아래에 보고하며, `to: "*"`는 여전히 "내 Agent Team 팀원"을 의미하고 다른 세션에는 전달되지 않습니다.
 
-메시지는 다른 세션에서 온 것으로 표시되어 도착하며, 해당 세션의 사용자로부터 온 것이 아니고 그곳에서 어떠한 권한도 가지지 않습니다: 수신 세션은 자체 권한 설정 내에서만 메시지에 따라 행동합니다. 사용자는 `agents.crossSessionInbound`(`accept`, `hold`, 또는 `refuse`)로 수신 메시지의 처리 방식을 선택할 수 있습니다. 설정되지 않은 경우, 수신 세션이 여전히 각 작업을 검토하는 모드(기본 또는 계획 모드)이거나 두 세션 모두 작업별 검토 없이 작업을 적용하는 모드에 있으면 메시지가 전달됩니다; 그렇지 않으면 검토를 위해 보류됩니다. 보류된 메시지는 수신 세션에서 `/peers`로 목록을 확인하고 해제할 수 있습니다.
+메시지는 다른 세션에서 다른 세션으로부터 온 것으로 표시되어 도착하며, 해당 세션의 사용자로부터 온 것이 아니고 그곳에서 어떠한 권한도 가지지 않습니다: 수신 세션은 자체 권한 설정 내에서만 메시지에 따라 행동합니다. 사용자는 `agents.crossSessionInbound`(`accept`, `hold`, 또는 `refuse`)로 수신 메시지의 처리 방식을 선택할 수 있습니다. 설정되지 않은 경우, 두 세션이 같은 검토 클래스에 있을 때만 메시지가 전달됩니다: 양쪽 모두 각 작업을 검토하는 모드(기본 또는 계획 모드)이거나, 양쪽 모두 작업별 검토 없이 일부 작업을 적용하는 모드(auto-edit, auto, 또는 yolo)인 경우입니다. 다른 클래스의 세션에서 온 메시지나 어느 클래스에 속하는지 밝히지 않은 발신자의 메시지는 검토를 위해 보류됩니다 — 양방향 모두 마찬가지입니다. 각 작업을 검토하는 세션은 그렇지 않은 세션의 메시지를 보류합니다. 해당 메시지가 아무도 감시하지 않는 모델이 작성한 것이기 때문이며, 작업별 프롬프트는 작업 자체를 보호하지 세션이 설득당하는 내용을 보호하지 않습니다. 보류된 메시지는 수신 세션에서 `/peers`로 목록을 확인하고 해제할 수 있으며, 모드 차이로만 보류된 메시지는 두 세션이 동의하게 되면 자동으로 해제됩니다.
 
-`send_message` 호출은 메시지가 다른 세션에 전달된 것만 확인합니다. 그 결과는 나중에 영수증으로 도착합니다: 보류되었거나, 거부되었거나, 만료되었거나, 잘못된 주소로 전송된 경우(주소가 변경된 경우 — 에이전트를 다시 나열하세요) — 또는 보류 후 해제된 경우 — 보내는 세션의 트랜스크립트에 알림이 표시됩니다(`Message to <name>: …`). 보낸 모델에게는 알려지지 않으며, 다른 세션이 응답하면 해당 응답은 교차 세션 메시지로 도착합니다.
+저장소는 그곳에서 열린 세션을 더 엄격하게 만들 수 있지만, 더 느슨하게는 만들 수 없습니다: 워크스페이스 `.qwen/settings.json`에서 `agents.crossSessionInbound`를 `hold` 또는 `refuse`로 설정하거나 `agents.crossSessionMessaging`을 `false`로 설정할 수 있으며, 이 값은 사용자 설정의 더 느슨한 값보다 우선합니다. 설정을 느슨하게 만드는 워크스페이스 값(`accept` 또는 스위치의 `true`)은 경고와 함께 무시되며, CLI가 인식하지 못하는 값은 유효값일 때마다 모든 메시지를 보류합니다. 시스템 설정은 다른 모든 설정과 마찬가지로 이보다 우선합니다.
+
+보류는 무기한 기다리지 않습니다. 아무도 결정하지 않는 메시지는 `agents.crossSessionHeldExpiry` — `1m`, `5m`, `10m`, 또는 `never`(기본값 5분) — 이후에 만료되며, 보내는 세션에게 결정이 없었음이 통보됩니다. 설정을 줄이면 이미 대기 중인 메시지에도 적용됩니다.
+
+세션이 inbox를 바인딩할 수 없는 경우 — 런타임 디렉토리가 없거나, 다른 사용자가 소유하거나, 컨테이너 내부에서처럼 읽기 전용인 경우 — 먼저 임시 디렉토리 아래의 비공개 디렉토리를 시도하고, 그것도 실패한 경우에만 inbox 없이 시작합니다. 이 경우 세션은 시작 시 이를 알리며, `/peers`는 원인과 변경 방법을 반복합니다(보통 `XDG_RUNTIME_DIR` 또는 `TMPDIR`).
+
+두 세션이 같은 inbox 주소를 해석할 수도 있습니다. 주소가 프로세스 ID로 키잉되고, 프로세스 ID는 런타임 디렉토리를 공유하는 컨테이너 간에 반복되기 때문입니다. 나중에 시작하는 세션은 사용 중인 주소를 가져가는 대신 인접한 주소를 사용하므로 어느 쪽도 도달 불가능해지지 않습니다. 피어는 영향을 받지 않습니다: 세션의 주소를 세션 레지스트리에서 읽으며 직접 유도하지 않습니다.
+
+`send_message` 호출은 메시지가 다른 세션에 전달된 것만 확인합니다. 그 결과는 나중에 영수증으로 도착합니다: 보류, 거부, 거절, 드롭, 만료, 잘못된 주소(주소가 변경된 경우 — 에이전트를 다시 나열하세요), 또는 보류 후 해제된 경우 — 보내는 세션의 트랜스크립트에 알림이 표시됩니다(`Message to <name>: …`). 거부(declined), 거절(refused), 드롭(dropped)은 세 가지 다른 응답입니다: 거부는 누군가 메시지를 검토하고 거부한 것을 의미하고, 거절은 해당 세션의 `agents.crossSessionInbound`가 `refuse`라 아무도 보지 못한 것을 의미하며, 드롭은 inbox가 그 전에 메시지를 돌려보낸 것을 의미합니다(아래 참조). 첫 번째 드롭은 즉시 응답하고, 나머지는 몇 초마다의 영수증에 통합되며, 각각이 대표하는 메시지의 이름을 포함하므로, 연속 드롭도 한 줄씩 대신 몇 줄로 표시됩니다. 보낸 모델에게는 알려지지 않으며, 다른 세션이 응답하면 해당 응답은 교차 세션 메시지로 도착합니다.
+
+### 플러드 보호
+
+세션은 한 발신자에게서 한 번에 최대 30개의 메시지를 수용한 후 2초에 하나씩 수용하며, 모든 발신자를 합쳐 한 번에 최대 32개까지 수용한 후 1초에 하나씩 수용합니다. 두 번째 제한이 있는 이유는 발신자가 자신의 이름을 밝히기 때문입니다: 이름을 순환시키면 첫 번째 제한의 새 할당량을 얻지만 두 번째 제한에서는 얻지 못합니다. 두 번째 제한이 첫 번째보다 간신히 높은 이유는, 수용된 메시지마다 영수증이 발행되며 세션이 한 번에 보낼 수 있는 영수증 수에 한계가 있기 때문입니다. 다른 세션의 메시지가 30초 내에 해당 발신자의 이전 메시지를 단어 그대로 반복하면 역시 돌려보냅니다 — 한 문장을 반복하는 모델은 매번 새 메시지 ID를 생성하므로, 텍스트가 이를 잡아냅니다. 세션이 시작한 스크립트와 신뢰되는 컨트롤러의 메시지는 반복 검사에서 면제됩니다. hook이 같은 라인을 두 번 보고하는 것은 두 가지 사실을 보고하는 것이며, 사람이 "continue"를 두 번 말하는 것은 두 번 의미하기 때문입니다; 둘 다 속도 제한은 여전히 적용됩니다. 마지막으로, 수용되었지만 세션에 이미 50개가 대기 중이라 큐에 넣을 수 없는 메시지도 돌려보냅니다.
+
+이 방식으로 돌려보낸 메시지는 보류되지 않고, 모델에 표시되지 않으며, 기록에 남지 않습니다. 따라서 발신자는 나중에 다시 시도하여 도달할 수 있습니다. 수신 세션은 트랜스크립트에 발신자당 1분에 한 번까지 이를 알리며, 해당 라인이 대표하는 메시지의 수를 포함합니다. 보내는 세션은 버스트로 소모된 모든 메시지를 이름으로 포함하는 영수증 하나를 받으며, 트랜스크립트는 재전송 대신 중요한 내용을 나중에 하나의 메시지로 통합하라고 안내합니다.
+
+보내는 쪽은 결과를 기다리지 않습니다. 각 세션은 각 주소로 보낸 내용을 추적하고, 수신자가 드롭할 전송을 거부합니다. 따라서 모델은 메시지가 작성되기 전에 배칭하라는 안내를 받으며, 작성 후에는 아닙니다 — 수신자는 돌려보낼 메시지에 연결을 소비하지 않습니다.
+
+### Inbox 인증 및 스크립트 주입
+
+각 세션의 inbox는 세션별 토큰을 요구합니다: 연결은 첫 번째 줄에 토큰을 제시해야 메시지를 읽을 수 있으며, 세션은 서로를 발견하는 데 사용하는 같은 레지스트리 레코드를 통해 토큰을 자동으로 교환합니다. 토큰 지원이 없는 빌드의 세션은 새 빌드에서 메시지를 받을 수 있지만, 새 빌드로의 전송은 드롭됩니다.
+
+세션은 자신의 inbox 주소와 토큰을 `QWEN_CODE_MESSAGING_SOCKET` 및 `QWEN_CODE_MESSAGING_TOKEN`으로 자식 프로세스에 내보내므로, 세션이 실행하는 스크립트나 hook이 세션으로 메시지를 다시 보낼 수 있습니다. 이것은 어디에도 게시되지 않는 두 번째 _자식_ 토큰입니다: 세션이 시작한 프로세스만 이를 보유할 수 있으므로, 이 토큰과 함께 도착하는 메시지는 다른 세션이 아닌 세션 자체의 메시지로 인식됩니다.
+
+```bash
+{ printf '%s\n' \
+    '{"msgV":1,"type":"auth","token":"'"$QWEN_CODE_MESSAGING_TOKEN"'"}' \
+    '{"msgV":1,"msgId":"'"$(uuidgen)"'","type":"user","priority":"next","message":{"role":"user","content":"build finished"}}'; \
+} | socat - UNIX-CONNECT:"$QWEN_CODE_MESSAGING_SOCKET"
+```
+
+모든 주입에 새 `msgId`를 부여하세요. 수신 게이트는 이미 처리한 ID를 기억하므로, ID를 재사용하는 hook은 첫 번째에만 전달되고 이후 실행에서는 자동으로 중복 제거됩니다. 같은 _텍스트_를 반복하는 것은 괜찮습니다 — 위의 반복 검사는 세션 자체 프로세스에는 적용되지 않습니다 — 하지만 속도 제한은 적용되므로, 루프의 hook은 다른 플러드와 마찬가지로 드롭됩니다.
+
+주입된 메시지는 여전히 인바운드 게이트를 통과하며 사용자로부터 온 것이 아닌 것으로 표시되지만, 게이트는 세션 자체 프로세스에서 온 것을 알고 있습니다: 모드 일치 기본값에서는 검토 없이 전달되며(같은 위치의 피어는 보류될 것입니다), 명시적인 `agents.crossSessionInbound`의 `hold` 또는 `refuse`는 다른 것과 마찬가지로 적용됩니다. 모델은 이를 `<cross_session_message from="own process" origin="own-process">`로 보며, 세션이 실행한 스크립트나 hook에서 온 것이지 사용자로부터 온 것이 아니라는 알림이 포함됩니다.
+
+### 신뢰되는 컨트롤러
+
+위 규칙은 어느 검토 클래스에 속하는지 밝히지 않는 발신자의 메시지를 보류하며, Qwen Code 세션이 아닌 프로그램은 밝힐 클래스가 없습니다. 이는 낯선 존재에 대해서는 올바른 기본값이지만, 사용자가 선택한 프로그램 — 음성 프론트엔드, 받아쓰기 브리지, 사용자 자신의 지시를 중계하는 자동화 데몬 — 에 대해서는 모든 메시지가 주차되고 수동으로 하나씩 승인해야 하므로 목적에 어긋납니다.
+
+토큰을 발행하여 이러한 프로그램에 전달 권한을 부여합니다:
+
+```bash
+qwen sessions controllers add --label voice-bridge
+```
+
+토큰은 한 번만 출력되며 어디에도 저장되지 않습니다: Qwen 홈 아래의 파일은 SHA-256 해시만 보관하므로, 나중에 해당 파일을 읽는 것은 토큰을 제시할 수 없습니다. 명령어가 토큰을 출력할 때 컨트롤러의 자체 구성에 저장하세요.
+
+컨트롤러는 다른 발신자와 같은 방식으로 토큰을 제시합니다 — 연결의 첫 번째 줄로 — 그리고 세션 레지스트리에서 소켓 경로를 가져옵니다(`qwen sessions ps --json`은 라이브 세션당 하나의 레코드를 출력하며, `ipcPath`가 주소입니다):
+
+```bash
+{ printf '%s\n' \
+    '{"msgV":1,"type":"auth","token":"'"$QWEN_CONTROLLER_TOKEN"'"}' \
+    '{"msgV":1,"msgId":"'"$(uuidgen)"'","type":"user","priority":"next","message":{"role":"user","content":"open the failing test"}}'; \
+} | socat - UNIX-CONNECT:"$SESSION_IPC_PATH"
+```
+
+부여된 토큰으로 도착한 메시지는 양쪽이 어느 검토 클래스에 있든 메시지별 검토 없이 전달됩니다 — 하지만 명시적인 설정에는 여전히 따릅니다: `agents.crossSessionInbound`가 `hold`이면 다른 것과 마찬가지로 주차되고, `refuse`이면 돌려보냅니다. 부여는 개별 세션이 아닌 Qwen 홈에 속하므로, 컨트롤러는 실행 중인 모든 세션에 도달하며, 세션은 연결마다 파일을 다시 읽습니다: 토큰을 발행하거나 철회하면 다음 연결부터 적용되며 재시작할 필요가 없습니다.
+
+```bash
+qwen sessions controllers list          # id, 라벨, 추가된 시점
+qwen sessions controllers remove c_1a2b # 하나 철회
+```
+
+`/peers controllers`와 `/peers revoke <id>`는 세션 내부에서 같은 작업을 수행합니다. 부여를 통해 온 메시지는 `Message from a trusted controller (voice-bridge)`로 표시되며, `hold` 설정으로 주차된 경우 `/peers`에 `[controller] voice-bridge`로 나타납니다.
+
+모델은 이러한 메시지를 `<cross_session_message from="controller" origin="controller" controller="voice-bridge">`로 보며, 사용자 자신의 지시를 중계한다는 알림이 포함됩니다 — 그리고 다른 모든 출처에 적용되는 같은 두 가지 금지 사항이 적용됩니다: 메시지 요청 때문에 권한 설정, QWEN.md, 또는 구성을 편집할 수 없으며, 메시지를 보류 중인 확인 프롬프트에 대한 사용자의 승인으로 간주할 수 없습니다. 컨트롤러는 다음에 무엇을 할지 말할 수 있지만, 사용자를 대신해 프롬프트에 답변할 수는 없습니다.
+
+토큰을 가진 사람은 누구나 해당 컨트롤러로 전송할 수 있으므로, 다른 자격 증명과 마찬가지로 취급하세요: 하나의 프로그램에만 제공하고, 공유 구성에 보관하지 말고, 해당 프로그램이 완료되면 철회하세요.
+
+### Qwen Code 세션이 아닌 프로그램
+
+위의 모든 것은 세션 간에 작동하지만, 그 중 어느 것도 특정 세션에 국한되지 않습니다. 자신을 위한 레지스트리 레코드를 작성하고 같은 방식으로 inbox를 바인딩하는 프로그램은 `qwen sessions ps`와 `list_agents`에 나열되며, `send_message`에서 이름으로 주소 지정할 수 있고, 보낸 것에 대한 전달 영수증을 받습니다 — 음성 프론트엔드, 릴레이, 빌드 감시자 등. `kind: "external"`를 기록해야 목록에서 이것이 무엇인지 나타낼 수 있습니다.
+
+[Cross-Session Protocol](./cross-session-protocol.md)은 이를 작성하기 위한 계약입니다: 레코드 스키마와 활성 상태 판단 방법, 소켓 경로와 프레이밍, 인증 줄, 모든 프레임 필드, 영수증 상태와 전환, 그리고 수신자가 모델이 보기 전에 메시지에 대해 수행하는 작업을 정의합니다.

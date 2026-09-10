@@ -46,7 +46,6 @@ gh auth login --hostname github.example.com
       "allowedUsers": ["operator-github-username"],
       "sessionScope": "chat_thread",
       "cwd": "/path/to/your/project",
-      "blockStreaming": "off",
       "groupPolicy": "open",
       "groups": {
         "*": { "requireMention": true }
@@ -87,7 +86,6 @@ GitHub Enterprise Server の場合は、`baseUrl` を設定します。
 | `groupPolicy`             | `"disabled"`             | 通知を流すには `"open"`、`groups` にリポジトリ（`owner/repo`）をリストした `"allowlist"`、またはリポジトリを承認済みの `"pairing"` が必要 |
 | `senderPolicy`            | `"allowlist"`            | ボットをトリガーできるユーザー                                                              |
 | `groups.*.requireMention` | `true`                   | 通常のコメントに @メンションを要求する。通知理由が直接指定されている場合は引き続き実行される |
-| `blockStreaming`          | `"off"`                  | 常に `"off"` に固定される。中間モデルチャンクは公開されない。`"on"` はサポートされない      |
 | `reasonFilter`            | 未設定                   | 処理する GitHub 通知理由のオプションの許可リスト                                            |
 
 `reasonFilter` を使用して、`ci_activity` や `state_change` などのノイズの多い通知クラスを除外します。`groups.*.requireMention` の代わりに `reasonFilter: ["mention"]` を使用しないでください。GitHub の `mention` 理由はスレッドレベルで保持されるため、実際の新しい @メンションが後から `comment`、`subscribed`、`author`、またはその他の理由で届くことがあり、それらはスキップされてしまいます。
@@ -133,13 +131,7 @@ GitHub Enterprise Server の場合は、`baseUrl` を設定します。
 
 ### 最終出力のみ
 
-GitHub チャネルは常に最終出力のみの配信を強制します。アダプターは `blockStreaming` を `"off"` に設定するため、中間モデルチャンクは別のコメントとして公開されず、`blockStreaming: "on"` はサポートされません。
-
-```json
-{
-  "blockStreaming": "off"
-}
-```
+GitHub チャネルは完了したレスポンスのみを公開します。中間モデルチャンクは別のコメントとして公開されることはありません。
 
 GitHub がレートリミットレスポンスなどの確定的な書き込み失敗を返した場合、チャネルは最終返信を `~/.qwen/channels/<workspace-scope>/<channel>-<name-hash>-github-pending-deliveries.json` にプライベートファイル権限で保存し、次回のチャネル起動時に再試行します。対応する受信タスクは、その配信が成功するか確定的な終端失敗に達するまで `reply_pending` 状態のままです。あいまいな配信失敗は自動的に再試行されません。GitHub がコメントを作成した可能性があるためです。
 

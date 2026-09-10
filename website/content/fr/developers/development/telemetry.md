@@ -345,6 +345,7 @@ sortants** qui atteignent les points de terminaison des fournisseurs LLM tiers
 (DashScope, OpenAI, Anthropic, etc.). Destinataires différents, décision de consentement différente.
 **Toutes les valeurs sont désactivées par défaut.** Consultez la discussion de révision de la PR #4390
 pour la justification du cadrage.
+
 ### `outboundCorrelation.propagateTraceContext`
 
 ```jsonc
@@ -659,7 +660,7 @@ Les événements suivants sont enregistrés :
 - `qwen-code.workflow_keyword` : Le déclencheur de mot-clé de workflow est activé.
 
 - `qwen-code.workflow_run` : L'exécution du workflow a atteint un état terminal.
-  - **Attributs** : `status` (string), `agents_dispatched` (int), `agents_completed` (int), `phase_count` (int), `tokens_spent` (int), `duration_ms` (int)
+  - **Attributs** : `status` (string), `agents_dispatched` (int), `agents_completed` (int, tous les dispatches terminés), `agents_failed` (int, dispatches terminés avec le statut failed), `agents_cached` (int, dispatches terminés servis depuis une exécution précédente), `agents_respawned` (int, appels dispatchés ré-exécutés après une tentative précédente échouée ou interrompue), `phase_count` (int), `tokens_spent` (int), `duration_ms` (int). `agents_failed` et `agents_cached` sont des sous-ensembles de `agents_completed`, tandis que `agents_respawned` décrit la provenance et n'est pas un compteur de résultat supplémentaire.
 
 #### Événements d'Auto-Memory
 
@@ -747,6 +748,7 @@ Les métriques sont des mesures numériques du comportement dans le temps. Les n
 
 - `qwen-code.arena.session.count` (Counter, Int) : Sessions Arena par statut.
   - **Attributs** : `status`, `display_backend` (optionnel)
+
 - `qwen-code.arena.session.duration` (Histogram, ms) : Durée de la session Arena.
   - **Attributs** : `status`
 

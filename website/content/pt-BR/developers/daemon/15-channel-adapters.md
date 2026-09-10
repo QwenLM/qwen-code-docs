@@ -69,7 +69,7 @@ abstract class ChannelBase {
 
 Toda entrega interna de mensagens passa por `sendThreadMessage(chatId, threadId, text, sourceLabel)`. A implementação padrão delega para `sendMessage(chatId, attributedText)`, ignorando `threadId`. Adaptadores de polling, rich-card, mídia, streaming e divisão por plataforma sobrescrevem esse limite para que o rótulo de origem opcional em texto simples seja escapado para a plataforma e repetido em cada objeto visível independentemente sem mutar o estado bruto da resposta.
 
-Lida com preocupações transversais comuns: filtragem de remetente (allowlist / denylist), filtragem de grupo, streaming de blocos de mensagens (tamanho do chunk, limitação de taxa), debounce de entrada.
+Lida com preocupações transversais comuns: filtragem de remetente (allowlist / denylist), filtragem de grupo, debounce de entrada.
 
 ### Adaptadores por canal
 
@@ -141,9 +141,9 @@ sequenceDiagram
 
     D-->>SC: SSE: session_update (agent_message_chunk)
     SC-->>BR: DaemonEvent
-    BR-->>CB: emit 'textChunk'
-    CB->>CB: assemble response / block streaming
-    CB->>AD: sendMessage(chatId, chunk or full response)
+    BR-->>CB: emit 'textChunk' -> onResponseChunk (default no-op)
+    BR-->>CB: prompt() resolves with the full response
+    CB->>AD: sendThreadMessage(chatId, threadId, full response, sourceLabel)
     AD->>CH: sendText / sendMessage / sendChunk
 ```
 
@@ -201,7 +201,6 @@ Falhas no `connect()` do adaptador são reportadas separadamente dos erros de ci
 | `approvalMode`                           | `'auto'` (resposta automática) / `'prompt'` (renderiza UI).                                                 |
 | `allowlist?: string[]`                   | IDs de remetente permitidos; ausente = aberto.                                                              |
 | `denylist?: string[]`                    | IDs de remetente negados.                                                                                   |
-| `chunkSize`, `chunkIntervalMs`           | Configurações de streaming de blocos de saída.                                                              |
 | `daemon: { baseUrl, token?, clientId? }` | Encaminhado para `DaemonChannelSessionFactory`.                                                             |
 
 Chaves específicas do canal são adicionadas por cima (DingTalk: `streamCredentials`; WeChat: `ilinkUrl`, `botId`; Telegram: `botToken`; Feishu: `clientId` (appId), `clientSecret` (appSecret), `verificationToken`, `encryptKey` (modo webhook)).

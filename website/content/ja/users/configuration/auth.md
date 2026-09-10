@@ -390,6 +390,7 @@ qwen --model "qwen3.5-plus"
 | -------------------------------- | ------------------------------------------------------------------------------------------- |
 | インタラクティブな認証設定 | `qwen` を実行し、`/auth` を使用                                                                |
 | Coding Plan の設定                | `/auth` を使用、または Coding Plan ベース URL で `BAILIAN_CODING_PLAN_API_KEY` を設定             |
+| Token Plan の設定                 | `/auth` を使用、またはリージョンの Token Plan ベース URL で `BAILIAN_TOKEN_PLAN_API_KEY` を設定    |
 | OpenRouter の設定                 | `/auth` を使用、または `OPENROUTER_API_KEY` と `OPENAI_BASE_URL=https://openrouter.ai/api/v1` を設定 |
 | Requesty の設定                   | `/auth` を使用、または `REQUESTY_API_KEY` と `OPENAI_BASE_URL=https://router.requesty.ai/v1` を設定  |
 | API キーまたはカスタムプロバイダーの設定 | `~/.qwen/settings.json`、`.env`、またはプロバイダー固有の環境変数を設定       |

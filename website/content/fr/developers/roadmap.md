@@ -56,7 +56,7 @@
 | TodoWrite               | `V0.0.10` | Gestion des tâches et suivi de la progression                   | Flux de travail de codage                 | 1     |
 | Outil : TextSearch        | `V0.0.8+` | Outil de recherche de texte (grep, supporte .qwenignore)           | Flux de travail de codage                 | 1     |
 | Outil : WebFetch          | `V0.0.7+` | Outil de récupération de contenu web                               | Flux de travail de codage                 | 1     |
-| Outil : WebSearch         | `V0.0.7+` | Outil de recherche web (utilisant l'API Tavily)                      | Flux de travail de codage                 | 1     |
+| Outil : WebSearch         | `V0.0.7+` | Recherche web intégrée (API DashScope Responses)                      | Flux de travail de codage                 | 1     |
 | OAuth                   | `V0.0.5+` | Authentification de connexion OAuth (Qwen OAuth)                 | Expérience utilisateur                 | 1     |
 
 #### Fonctionnalités à développer

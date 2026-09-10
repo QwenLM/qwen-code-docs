@@ -205,8 +205,6 @@ protected override onPromptEnd(chatId: string, sessionId: string, messageId?: st
 
 Interaktiver `ChannelUserInputRequestContext` trägt ebenfalls `sourceLabel`. Karten, Terminal-Ersetzungen und Plain-Fallbacks müssen es beibehalten, ohne die bestehenden Request-, Session-, Run-, Owner- und Target-Prüfungen zu schwächen.
 
-**Block-Streaming** – setze `blockStreaming: "on"` in der Channel-Konfiguration. Die Basisklasse teilt Antworten automatisch an Absatzgrenzen in mehrere Nachrichten auf. Kein Plugin-Code erforderlich – es funktioniert parallel zu `onResponseChunk`.
-
 **Proaktive Zustellung** – überschreibe `supportsProactiveSend()`, um `true` zurückzugeben, wenn der Adapter ohne eine aktive eingehende Anfrage senden kann. `ChannelBase` nutzt diese Fähigkeit für persistente Channel-Loops, Webhook-Tasks, Hintergrund-Agent-Ergebnisse und Daemon-Zustellung. Die Standard-Target-Policy lehnt Thread-Targets ab; überschreibe die geschützten Target-Prüfungen nur für Target-Formen, die deine Plattform sicher zustellen kann:
 
 ```typescript

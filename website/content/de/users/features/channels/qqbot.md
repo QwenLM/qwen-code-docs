@@ -63,7 +63,6 @@ export QQ_APP_SECRET=<dein-app-secret>
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "instructions": "你是一个通过 QQ Bot 对话的 AI 助手。回复控制在 2000 字符以内。",
-      "blockStreaming": "on",
       "groupPolicy": "disabled",
       "groups": {
         "*": { "requireMention": true }
@@ -81,8 +80,8 @@ export QQ_APP_SECRET=<dein-app-secret>
 | `appSecret` | —        | QQ Bot AppSecret. Unterstützt die `$ENV_VAR`-Syntax. Wenn weggelassen, wird die QR-Code-Anmeldung genutzt. |
 | `sandbox`   | `false`  | Setze auf `true`, um die QQ-Sandbox-API-Umgebung zu verwenden (`sandbox.api.sgroup.qq.com`) |
 
-Alle standardmäßigen Channel-Optionen (siehe [Channel Übersicht](./overview#options)) werden ebenfalls unterstützt:
-`senderPolicy`, `allowedUsers`, `sessionScope`, `cwd`, `instructions`, `groupPolicy`, `groups`, `dispatchMode`, `blockStreaming`, `blockStreamingChunk`, `blockStreamingCoalesce`.
+Alle standardmäßigen Channel-Optionen (siehe [Channel-Übersicht](./overview#options)) werden ebenfalls unterstützt:
+`senderPolicy`, `allowedUsers`, `sessionScope`, `cwd`, `instructions`, `groupPolicy`, `groups`, `dispatchMode`.
 
 ## Ausführung
 

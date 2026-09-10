@@ -13,7 +13,7 @@ qwen serve --no-web --port 4170 \
 # → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/project-a)
 ```
 
-`--no-web` supprime les assets du Web Shell ; il ne sélectionne pas un profil d'API REST/SSE plus petit. Chaque valeur `--workspace` doit être un répertoire absolu. Le workspace de démarrage est le primaire et reste la valeur par défaut de compatibilité pour les requêtes qui omettent `cwd` ; `/capabilities.workspaces[]` est le catalogue que les clients doivent utiliser pour sélectionner explicitement un runtime.
+`--no-web` supprime les assets du Web Shell et les surfaces qui y sont liées : `POST /workspace/local-control/enable` échoue alors systématiquement avec `409 local_control_web_shell_unavailable` sur toutes les plateformes, et sur macOS les routes `/live/*`, le WebSocket `/live/host` ainsi que les clés de configuration `experimental.liveVoice.*` ne sont pas enregistrés — une intégration qui pilote les méthodes Live du SDK doit donc être lancée sans `--no-web`. Ce n'est pas un switch de profil de fonctionnalités : les routes de session, de prompt, de workspace, de permission et SSE restent inchangées. Chaque valeur `--workspace` doit être un répertoire absolu. Le workspace de démarrage est le primaire et reste la valeur par défaut de compatibilité pour les requêtes qui omettent `cwd` ; `/capabilities.workspaces[]` est le catalogue que les clients doivent utiliser lorsqu'ils sélectionnent explicitement un runtime.
 
 Le comportement par défaut sans jeton en boucle locale est destiné à un poste de travail mono-utilisateur. Sur un hôte partagé, définissez `QWEN_SERVER_TOKEN` et ajoutez `--require-auth` ; les liaisons non en boucle locale nécessitent un jeton.
 
@@ -245,7 +245,7 @@ const client = new DaemonClient({
 const client = new DaemonClient({ baseUrl: 'https://your-host:4170' });
 ```
 
-Le repli supprime les espaces en début et fin de chaîne (pratique pour `export QWEN_SERVER_TOKEN="$(cat token.txt)"` où `cat` ajoute un saut de ligne) et traite les valeurs vides/uniquement espacées comme non définies (un `export QWEN_SERVER_TOKEN=""` périmé n'enverra pas accidentellement `Authorization: Bearer ` sans jeton). Le repli s'exécute une fois à la construction ; les mutations ultérieures de `process.env` n'affectent pas les clients déjà construits. Les bundles navigateurs (par exemple via `@qwen-code/webui`) obtiennent proprement `undefined` car `globalThis.process` n'existe pas là-bas.
+Le repli supprime les espaces en début et fin de chaîne (pratique pour `export QWEN_SERVER_TOKEN="$(cat token.txt)"` où `cat` ajoute un saut de ligne) et traite les valeurs vides/uniquement espacées comme non définies (un `export QWEN_SERVER_TOKEN=""` périmé n'enverra pas accidentellement `Authorization: Bearer ` sans jeton). Le repli s'exécute une fois à la construction ; les mutations ultérieures de `process.env` n'affectent pas les clients déjà construits. Les bundles navigateurs (par exemple via `@qwen-code/web-shell`) obtiennent proprement `undefined` car `globalThis.process` n'existe pas là-bas.
 
 Les jetons erronés/manquants renvoient une `401` avec un corps uniforme — le SDK lance `DaemonHttpError` pour tout 4xx/5xx provenant d'un gestionnaire de route.
 

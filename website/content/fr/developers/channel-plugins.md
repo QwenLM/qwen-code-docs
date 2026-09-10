@@ -94,7 +94,7 @@ export class MyChannel extends ChannelBase {
 
 La plupart des adaptateurs doivent transmettre les `options` sans les modifier. Si un adaptateur crée son propre `SessionRouter` et passe ce routeur à `super()`, définissez `registerBridgeEvents: true` dans `ChannelBaseOptions` afin que `ChannelBase` reçoive toujours directement les événements `toolCall` et `sessionDied`. Laissez cette option non définie pour les routeurs fournis par la passerelle de canal.
 
-Si votre adaptateur expose un comportement de commande shell ou de question secondaire BTW, vérifiez que la méthode correspondante `bridge.shellCommand` / `bridge.btw` existe avant de l'activer. Les workers gérés par un daemon omettent ces méthodes optionnelles sauf si le daemon annonce la capacité correspondante `session_shell_command` / `session_btw`.
+Si votre adaptateur expose un comportement de commande shell ou de question secondaire, vérifiez que la méthode correspondante `bridge.shellCommand` / `bridge.btw` existe avant de l'activer. Les workers gérés par un daemon omettent ces méthodes optionnelles sauf si le daemon annonce la capacité correspondante `session_shell_command` / `session_btw`.
 
 ## L'Envelope
 
@@ -204,8 +204,6 @@ protected override onPromptEnd(chatId: string, sessionId: string, messageId?: st
 **Attribution de named-task** — `sendThreadMessage(chatId, threadId, text, sourceLabel)` reçoit le même label texte optionnel pour les limites de livraison one-shot et proactive. L'implémentation par défaut gère les messages simples. Les adaptateurs qui surchargent la livraison, découpent les messages, émettent des cartes ou fournissent des envois de fallback doivent répéter le label à chaque limite visible indépendamment, échapper uniquement le label pour le dialecte de balisage cible, et inclure sa taille rendue dans les limites de la plateforme. Exécutez les vérifications no-reply, la projection de marqueurs média, le hachage d'audit, la persistance de transcription et la capture de corps de retry par rapport à la réponse brute avant présentation ; si la livraison est persistée pour un retry sûr au redémarrage, persistez le label capturé séparément.
 
 `ChannelUserInputRequestContext` interactif porte également `sourceLabel`. Les cartes, les remplacements de terminal et les fallbacks simples doivent le conserver sans affaiblir les vérifications existantes de requête, session, exécution, propriétaire et cible.
-
-**Streaming par blocs** — définissez `blockStreaming: "on"` dans la configuration du canal. La classe de base divise automatiquement les réponses en plusieurs messages aux limites des paragraphes. Aucun code de plugin n'est nécessaire — cela fonctionne en parallèle de `onResponseChunk`.
 
 **Livraison proactive** — surchargez `supportsProactiveSend()` pour retourner `true` lorsque l'adaptateur peut envoyer sans requête entrante active. `ChannelBase` utilise cette capacité pour les boucles de canal persistantes, les tâches webhook, les résultats d'agents en arrière-plan et la livraison du démon. La politique de cible par défaut rejette les cibles threadées ; ne surchargez les vérifications de cible protégées que pour les formes de cible que votre plateforme peut délivrer en toute sécurité :
 

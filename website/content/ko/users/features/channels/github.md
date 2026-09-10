@@ -1,6 +1,3 @@
----
-title: GitHub
----
 
 # GitHub
 
@@ -50,7 +47,6 @@ gh auth login --hostname github.example.com
       "allowedUsers": ["operator-github-username"],
       "sessionScope": "chat_thread",
       "cwd": "/path/to/your/project",
-      "blockStreaming": "off",
       "groupPolicy": "open",
       "groups": {
         "*": { "requireMention": true }
@@ -91,7 +87,6 @@ GitHub Enterprise Server의 경우 `baseUrl`을 설정하세요:
 | `groupPolicy`           | `"disabled"`             | 알림이 흐르려면 `"open"`, `groups`에 저장소(`owner/repo`)가 나열된 `"allowlist"` 또는 저장소가 승인된 `"pairing"`이어야 함 |
 | `senderPolicy`          | `"allowlist"`            | 봇을 트리거할 수 있는 사용자                                                                 |
 | `groups.*.requireMention` | `true`                 | 일반 댓글에 @mention 필요. 직접 알림 이유는 계속 실행                                         |
-| `blockStreaming`        | `"off"`                  | 항상 `"off"`로 강제. 중간 모델 청크가 별도 댓글로 게시되지 않음. `"on"`은 지원되지 않음       |
 | `reasonFilter`          | 설정 안 됨               | 처리할 GitHub 알림 이유의 선택적 허용 목록                                                    |
 
 `reasonFilter`를 사용하여 `ci_activity`나 `state_change` 같은 시끄러운 알림 클래스를 제거하세요. `groups.*.requireMention`을 대체하기 위해 `reasonFilter: ["mention"]`을 사용하지 마세요. GitHub의 `mention` 이유는 스레드 수준에서 고정되어 있으므로 실제 새 @mention이 나중에 `comment`, `subscribed`, `author` 또는 다른 이유로 도착할 수 있으며 건너뛰어집니다.
@@ -137,13 +132,7 @@ GitHub Enterprise Server의 경우 `baseUrl`을 설정하세요:
 
 ### 최종만 출력
 
-GitHub 채널은 항상 최종만 전달을 강제합니다. 어댑터는 `blockStreaming`을 `"off"`로 설정하므로 중간 모델 청크가 별도 댓글로 게시되지 않으며 `blockStreaming: "on"`은 지원되지 않습니다.
-
-```json
-{
-  "blockStreaming": "off"
-}
-```
+GitHub 채널은 완료된 응답만 게시합니다. 중간 모델 청크는 별도 댓글로 게시되지 않습니다.
 
 GitHub가 속도 제한 응답 같은 확정적 무쓰기 전달 실패를 반환하면 채널은 최종 응답을
 `~/.qwen/channels/<workspace-scope>/<channel>-<name-hash>-github-pending-deliveries.json`에

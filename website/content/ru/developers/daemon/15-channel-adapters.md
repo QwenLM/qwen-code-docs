@@ -69,7 +69,7 @@ abstract class ChannelBase {
 
 Вся внутренняя доставка сообщений проходит через `sendThreadMessage(chatId, threadId, text, sourceLabel)`. Реализация по умолчанию пробрасывает вызов в `sendMessage(chatId, attributedText)`, игнорируя `threadId`. Адаптеры опроса, богатых карточек, медиа, потоковой передачи и разделения по платформам переопределяют эту границу, чтобы необязательная текстовая метка источника экранировалась для платформы и повторялась на каждом независимо видимом объекте без изменения состояния сырого ответа.
 
-Обрабатывает общие сквозные задачи: фильтрация отправителей (allowlist / denylist), фильтрация групп, потоковая передача блоков сообщений (размер чанка, троттлинг), debouncing входящих сообщений.
+Обрабатывает общие сквозные задачи: фильтрация отправителей (allowlist / denylist), фильтрация групп, debouncing входящих сообщений.
 
 ### Адаптеры конкретных каналов
 
@@ -141,9 +141,9 @@ sequenceDiagram
 
     D-->>SC: SSE: session_update (agent_message_chunk)
     SC-->>BR: DaemonEvent
-    BR-->>CB: emit 'textChunk'
-    CB->>CB: сборка ответа / потоковая передача блоков
-    CB->>AD: sendMessage(chatId, чанк или полный ответ)
+    BR-->>CB: emit 'textChunk' -> onResponseChunk (по умолчанию no-op)
+    BR-->>CB: prompt() разрешается с полным ответом
+    CB->>AD: sendThreadMessage(chatId, threadId, полный ответ, sourceLabel)
     AD->>CH: sendText / sendMessage / sendChunk
 ```
 
@@ -201,7 +201,6 @@ sequenceDiagram
 | `approvalMode`                           | `'auto'` (авто-ответ) / `'prompt'` (отображение UI).                                                      |
 | `allowlist?: string[]`                   | Разрешенные id отправителей; если отсутствует = открытый доступ.                                          |
 | `denylist?: string[]`                    | Запрещенные id отправителей.                                                                              |
-| `chunkSize`, `chunkIntervalMs`           | Настройки потоковой передачи исходящих блоков.                                                            |
 | `daemon: { baseUrl, token?, clientId? }` | Передается в `DaemonChannelSessionFactory`.                                                               |
 
 Специфичные для канала ключи добавляются поверх (DingTalk: `streamCredentials`; WeChat: `ilinkUrl`, `botId`; Telegram: `botToken`; Feishu: `clientId` (appId), `clientSecret` (appSecret), `verificationToken`, `encryptKey` (для режима webhook)).

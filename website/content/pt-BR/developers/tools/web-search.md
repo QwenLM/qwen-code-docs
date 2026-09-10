@@ -2,12 +2,38 @@
 
 O Qwen Code oferece pesquisa na web de duas formas:
 
-1. **Ferramenta integrada `web_search`** (opt-in) — suportada pelo search server-side da DashScope Responses API. Funciona com uma chave de API padrão do Bailian (DashScope); sem provedor extra ou configuração MCP.
-2. **Integrações MCP (Model Context Protocol)** — conecte qualquer serviço de busca externo (Tavily, GLM e outros). Use quando você não tem uma chave DashScope.
+1. **Ferramenta integrada `web_search`** — suportada pelo search server-side da DashScope Responses API. Ativada por padrão na inicialização para configurações ModelStudio e OpenAI-compatíveis com DashScope suportadas; sem provedor extra ou configuração MCP.
+2. **Integrações MCP (Model Context Protocol)** — conecte qualquer serviço de busca externo (Tavily, GLM e outros). Use esta opção quando seu provedor não puder suportar a ferramenta integrada.
 
-## `web_search` integrado (opt-in)
+## `web_search` integrado
 
-A ferramenta integrada emite uma requisição de busca autônoma para um pequeno modelo auxiliar com as ferramentas `web_search` (e `web_extractor`) server-side do DashScope, e retorna os achados narrados mais URLs de origem. Ela nunca é ativada implicitamente — duas configurações são necessárias:
+A ferramenta integrada emite uma requisição de busca autônoma para um pequeno modelo auxiliar com as ferramentas `web_search` (e `web_extractor`) server-side do DashScope, e retorna os achados narrados mais URLs de origem.
+
+### Quando ela se ativa sozinha
+
+Se você não configurou nada em `tools.webSearch`, a ferramenta é registrada sempre que o modelo que você está executando pode suportar a requisição de busca com as mesmas credenciais:
+
+| Como você fez login                                                                                                  | Busca integrada                                 |
+| -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| Alibaba ModelStudio → **Chave de API Padrão**                                                                        | ativada                                         |
+| Alibaba ModelStudio → **Token Plan**                                                                                 | ativada                                         |
+| Alibaba ModelStudio → **Coding Plan**                                                                                | desativada — seu endpoint não é verificado para esta API |
+| Uma entrada `modelProviders` compatível com OpenAI ou Provedor Personalizado em um host reconhecido de DashScope Responses, com uma chave direta | ativada                                         |
+| Provedores de terceiros (OpenRouter, DeepSeek, ModelScope, …), endpoints personalizados em outros hosts, modelos locais | desativada                                      |
+
+Buscas são cobradas na mesma chave do seu modelo principal. O tratamento de permissões segue o modo de aprovação ativo e as regras; no modo de aprovação `default`, a primeira busca pede confirmação. Quando seu provedor não pode suportar a ferramenta, ela simplesmente não aparece na inicialização — nenhum aviso de inicialização.
+
+Para desativá-la:
+
+```json
+{ "tools": { "webSearch": { "enabled": false } } }
+```
+
+ou `ENABLE_WEB_SEARCH=false`. O modo bare e o modo safe sempre a desativam.
+
+### Configurando-a explicitamente
+
+Aponte a ferramenta para um ModelStudio Standard/Token Plan ou outra entrada verificada de DashScope Responses. Isso é útil quando seu modelo principal está em outro provedor e você também tem uma chave DashScope suportada separada. Hosts do Coding Plan são excluídos da ativação automática porque as ferramentas de busca Responses não são verificadas neles. Você pode ativar explicitamente com `tools.webSearch.model`; se o endpoint não as servir, a primeira busca falha de forma explícita. Use um provedor de busca MCP se não quiser depender desse caminho não verificado.
 
 ```json
 {
@@ -29,11 +55,11 @@ A ferramenta integrada emite uma requisição de busca autônoma para um pequeno
 }
 ```
 
-| Configuração                   | Substituição por env   | Significado                                                                                                                                                          |
-| ------------------------------ | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tools.webSearch.enabled`      | `ENABLE_WEB_SEARCH`    | Flag opt-in. Obrigatório.                                                                                                                                            |
-| `tools.webSearch.model`        | `WEB_SEARCH_MODEL`     | Seletor do modelo de busca, resolvido contra `modelProviders` como `fastModel` (`modelId` ou `authType:modelId`). Obrigatório — sem padrão. Recomendado: `qwen3.6-plus`. |
-| `tools.webSearch.webExtractor` | `WEB_SEARCH_EXTRACTOR` | Permite que o agente de busca abra páginas de resultado para respostas melhor fundamentadas (padrão `true`; cobrado separadamente pelo DashScope).                     |
+| Configuração                   | Substituição por env   | Significado                                                                                                                                                                                                                                                                               |
+| ------------------------------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tools.webSearch.enabled`      | `ENABLE_WEB_SEARCH`    | Defina `false` para desativar a ferramenta. A ativação implícita na inicialização requer deixar `enabled`, `model` e o backend somente-env não definidos. Definir `true` permite a derivação automática somente quando o backend somente-env também não está definido; caso contrário, um `model` é obrigatório. |
+| `tools.webSearch.model`        | `WEB_SEARCH_MODEL`     | Seletor do modelo de busca para o caminho explícito (`modelId` ou `authType:modelId`). Com `WEB_SEARCH_BASE_URL`, é o id simples do modelo para aquele endpoint; caso contrário, deve corresponder a uma entrada `modelProviders` compatível com DashScope declarada. O caminho automático usa `qwen3.6-plus`. |
+| `tools.webSearch.webExtractor` | `WEB_SEARCH_EXTRACTOR` | Permite que o agente de busca abra páginas de resultado para respostas melhor fundamentadas (padrão `true`; cobrado separadamente pelo DashScope).                                                                                                                                                                |
 
 ### Configuração apenas por env (sem settings.json)
 
@@ -51,26 +77,28 @@ export DASHSCOPE_API_KEY=sk-...        # ou defina WEB_SEARCH_API_KEY em vez dis
 Notas:
 
 - O seletor deve resolver para uma entrada `modelProviders` compatível com DashScope portando uma chave de API direta via `envKey`. Seu modelo principal pode ser qualquer provedor — apenas a requisição do lado da busca precisa de uma entrada DashScope. Qwen OAuth não pode suportar a ferramenta.
-- Se habilitada mas mal configurada, a ferramenta permanece desligada e um aviso de inicialização explica qual condição falhou.
-- Buscas cobram sua chave DashScope (`usage.x_tools` conta). A ferramenta pede confirmação por padrão; aprovar com "sempre permitir" persiste uma regra de permissão `WebSearch` padrão, como outras ferramentas.
+- Quais provedores podem ativar a ferramenta é decidido na inicialização. Uma vez ativa, o backend de busca segue o modelo atualmente selecionado na próxima busca; mudar para um provedor não suportado faz aquela invocação falhar, enquanto mudar de uma sessão onde a ferramenta estava ausente ainda exige uma reinicialização para registrá-la.
+- A detecção automática de host aceita intencionalmente apenas hosts regionais conhecidos do DashScope, Token Plan MaaS e hosts internos Alibaba. Gateways genéricos `*.alicloudapi.com` e `DASHSCOPE_PROXY_BASE_URL` são excluídos porque não se sabe se encaminham as ferramentas de busca Responses.
+- Se habilitada explicitamente mas mal configurada, a ferramenta permanece desligada e um aviso de inicialização explica qual condição falhou. A ativação automática nunca emite um aviso.
+- Buscas cobram sua chave DashScope (`usage.x_tools` conta). O modo de aprovação automática (o padrão) permite que o classificador aprove buscas sem prompt; no modo de aprovação `default`, a ferramenta pergunta, e aprovar com "sempre permitir" persiste uma regra de permissão `WebSearch` padrão, como outras ferramentas.
 - Não há lista de permissão de modelo no lado do cliente; um modelo que o endpoint Responses não serve falha de forma explícita no primeiro uso.
 
 ## Alternativas MCP
 
-Se você não tem uma chave DashScope, a pesquisa na web está disponível conectando um servidor MCP externo — consulte os serviços abaixo.
+Se seu provedor não puder suportar a ferramenta integrada, a pesquisa na web está disponível conectando um servidor MCP externo — consulte os serviços abaixo.
 
 ## ⚠️ Mudança Significativa Histórica: `web_search` integrado original removido
 
 > **Versões afetadas:** `V0.0.7+` até a última versão com a busca web integrada multi-provedor original.
 
-A ferramenta `web_search` integrada original (multi-provedor Tavily/Google/GLM/DashScope) e sua configuração foram **removidas**. A nova ferramenta integrada opt-in acima é uma implementação diferente com configuração diferente. Se você estava usando qualquer um dos seguintes, migre para a nova ferramenta integrada (DashScope) ou para MCP:
+A ferramenta `web_search` integrada original (multi-provedor Tavily/Google/GLM/DashScope) e sua configuração foram **removidas**. A ferramenta integrada documentada acima é uma implementação diferente com configuração diferente. Se você estava usando qualquer um dos seguintes, migre para a nova ferramenta integrada (DashScope) ou para MCP:
 
 | Removido                                                               | O que fazer                                                        |
 | ---------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | Bloco `webSearch` em `settings.json`                                   | Configure um servidor MCP em `mcpServers` em vez disso (veja abaixo) |
 | `advanced.tavilyApiKey` em `settings.json`                             | Use o [servidor MCP Tavily](#tavily-websearch)                     |
 | Variável de ambiente `TAVILY_API_KEY`                                  | Use o [servidor MCP Tavily](#tavily-websearch)                     |
-| `DASHSCOPE_API_KEY` para pesquisa na web                               | Use a [ferramenta `web_search` integrada](#built-in-web_search-opt-in) |
+| `DASHSCOPE_API_KEY` para pesquisa na web                               | Use a [ferramenta `web_search` integrada](#built-in-web_search)      |
 | `GLM_API_KEY` para pesquisa na web                                     | Use o [GLM WebSearch Prime MCP](#glm-websearch-prime-zhipuai)      |
 | Flags CLI `--tavily-api-key` / `--glm-api-key` / `--dashscope-api-key` | Configure via `mcpServers` em `settings.json`                      |
 
