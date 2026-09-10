@@ -1,5 +1,6 @@
 export default {
   commands: 'Commands',
+  'cross-session-protocol': 'Cross-Session Protocol',
   'code-review': 'Code Review',
   'followup-suggestions': 'Followup Suggestions',
   'tool-use-summaries': 'Tool-Use Summaries',
@@ -22,5 +23,14 @@ export default {
   hooks: 'Hooks',
   'status-line': 'Status Line',
   'scheduled-tasks': 'Scheduled Tasks',
+  'auto-mode': 'Auto Mode',
+  'computer-use': 'Computer Use',
+  goals: 'Goals',
+  'markdown-rendering': 'Markdown Rendering',
+  'multi-agent-coordination': 'Multi-Agent Coordination',
+  'output-styles': 'Output Styles',
+  'structured-output': 'Structured Output',
+  'terminal-images': 'Terminal Images',
+  worktree: 'Worktrees',
   tips: 'Contextual Tips',
 };
