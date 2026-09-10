@@ -252,9 +252,15 @@ traceparent: 00-<32-hex traceId>-<16-hex parentSpanId>-<01-sampled | 00-not-samp
 }
 ```
 
-### 其他出站关联 header
+### Routify 会话亲和性
 
-`X-Qwen-Code-Session-Id` 和 `X-Qwen-Code-Request-Id` **不属于本 PR 的范围**。它们将在后续的独立 PR 中进行设计和提案，使用相同的 `outboundCorrelation.*` 命名空间，每个都有各自的威胁模型和 operator 同意流程。PR #4390 的 review（LaZzyMan）确立了一项原则：“telemetry 的工作范围不包括向 LLM provider 发送标识符”；关联 header 的工作将转移到其独立的设计讨论中，而不是归入 telemetry 之下。
+Qwen Code 通过 OpenAI 兼容、DashScope、Anthropic、Gemini 和 Vertex provider 路径发出的 LLM 请求，在通过 HTTPS 直接访问 `routify.alibaba-inc.com`、`routify-online.alibaba-inc.com` 或 `routify-pub.alibaba-inc.com` 时，会在 `session_id` header 中包含当前 Qwen Code 会话 ID。Routify 的 ModelRouter 使用此值进行会话亲和性和流量标记。此行为不受 `telemetry.enabled` 或 `outboundCorrelation.*` 控制。
+
+初始目标匹配故意范围狭窄：Qwen Code 不会将 header 附加到子域名、其他 `alibaba-inc.com` 主机或其他 LLM 端点。标准 fetch 重定向行为在匹配后仍然适用，因此 Routify 响应可以通过重定向请求来转发 header。
+
+每个请求都会读取会话 ID，因此通过 `/clear` 创建的新会话无需重建 SDK 客户端即可获得新的亲和性值。Gemini 需要显式的 Routify `baseUrl`，以便 Qwen Code 可以验证目标。
+
+`X-Qwen-Code-Request-Id` 未实现。
 
 ## 入站关联（daemon HTTP API）
 
@@ -522,7 +528,7 @@ daemon HTTP API 在每个请求上接受标准 W3C `traceparent` header。两个
 - `qwen-code.workflow_keyword`：触发工作流关键字。
 
 - `qwen-code.workflow_run`：工作流运行达到终止状态。
-  - **属性**：`status`（string）、`agents_dispatched`（int）、`agents_completed`（int）、`phase_count`（int）、`tokens_spent`（int）、`duration_ms`（int）
+  - **属性**：`status`（string）、`agents_dispatched`（int）、`agents_completed`（int，所有已结算的分派）、`agents_failed`（int，状态为 failed 的已结算分派）、`agents_cached`（int，从先前运行中服务的已结算分派）、`agents_respawned`（int，在先前失败或中断的尝试后重新运行的分派调用）、`phase_count`（int）、`tokens_spent`（int）、`duration_ms`（int）。`agents_failed` 和 `agents_cached` 是 `agents_completed` 的子集，而 `agents_respawned` 描述来源，不是额外的结果计数。
 
 #### 自动记忆事件
 
@@ -706,8 +712,11 @@ Daemon 进程（长时间运行的 HTTP 服务器模式）会暴露其自身的�
 
 现有的 Qwen 特有的 `qwen-code.config`/`cli_config` 和 RUM `session_start` 记录仍可用于兼容。GenAI 请求 span 继续使用 `gen_ai.conversation.id` 表示同一个所属会话 ID。
 
-- `qwen-code.interaction`：每个用户 prompt 轮次的 root span。
-  - **属性**：`session.id`，可选 ARMS 扩展 `gen_ai.user.id`，`qwen-code.prompt_id`，`qwen-code.message_type`，`qwen-code.model`，`qwen-code.approval_mode`，`interaction.sequence`，`interaction.duration_ms`，`qwen-code.turn_status`（"ok"/"error"/"cancelled"）
+- `qwen-code.interaction`：主代理调用 span。它涵盖一个逻辑 prompt 的所有 LLM 请求、工具审批/执行和续接。用户查询、重试、定时 prompt、通知、teammate 消息和 Goal 轮次创建调用；工具结果、hook 和引导复用确切的活动 prompt ID。
+  - **GenAI 属性**：`gen_ai.operation.name`（`invoke_agent`）、`gen_ai.agent.name`（`qwen-code`）、`gen_ai.conversation.id`、可选 `gen_ai.output.type`（仅在使用配置的 JSON Schema 时为 `json`）、敏感 `gen_ai.input.messages`、敏感 `gen_ai.output.messages`，以及可选 ARMS 扩展 `gen_ai.user.id`
+  - **兼容性属性**：`session.id`、`qwen-code.prompt_id`、`qwen-code.message_type`、`qwen-code.model`、`qwen-code.approval_mode`、`interaction.sequence`、`interaction.duration_ms`、`qwen-code.turn_status`（"ok"/"error"/"cancelled"）
+  - `gen_ai.request.model` 被有意省略，因为代理支持覆盖、回退和动态模型选择。`gen_ai.provider.name` 以及代理 ID/版本/描述也被省略。
+  - 代理输入是一个原始用户 prompt，而非扩展后的模型请求。代理输出是一个最终用户可见文本投影；结构化 JSON 使用紧凑 JSON 文本并带有 `finish_reason=tool_call`。两者都会被省略，除非启用了敏感 span 属性且完整 JSON 符合每个属性的限制。
 
 - `qwen-code.llm_request`：封装单次 LLM API 调用。
   - **GenAI 属性**：`gen_ai.operation.name`，`gen_ai.provider.name`，`gen_ai.conversation.id`，可选 ARMS 扩展 `gen_ai.user.id`，`gen_ai.request.model`，`gen_ai.request.stream`，`gen_ai.request.choice.count`，`gen_ai.request.max_tokens`，`gen_ai.request.temperature`，`gen_ai.request.top_p`，`gen_ai.request.frequency_penalty`，`gen_ai.request.presence_penalty`，`gen_ai.request.stop_sequences`，可选 `gen_ai.output.type`，`gen_ai.response.id`，`gen_ai.response.model`，`gen_ai.response.finish_reasons`，`gen_ai.response.time_to_first_chunk`，`gen_ai.usage.input_tokens`，`gen_ai.usage.output_tokens`，`gen_ai.usage.cache_read.input_tokens`，`gen_ai.usage.cache_creation.input_tokens`
@@ -717,7 +726,7 @@ Daemon 进程（长时间运行的 HTTP 服务器模式）会暴露其自身的�
   - 流式请求发出 `gen_ai.request.stream=true`。`gen_ai.response.time_to_first_chunk` 测量从 provider 调用到 provider 适配器产生的第一个规范化响应的秒数，这可能与第一个原始网络帧不同。非流式请求省略两个标准流式属性，因为在语义约定中缺少 `gen_ai.request.stream` 表示非流式。
 
 - `qwen-code.tool`：封装完整的 tool 生命周期（审批等待 + 执行）。
-  - **属性**：`session.id`，可选 ARMS 扩展 `gen_ai.user.id`，`gen_ai.operation.name`（`execute_tool`），`gen_ai.tool.name`，`gen_ai.tool.type`（`function`），`gen_ai.tool.call.id`，`tool.call_id`，`duration_ms`，`success`，`error`，`tool.failure_kind`（string，可选——具体的失败原因，例如 "cancelled"、"tool_error"、"tool_exception"、"timeout"、"permission_denied"、"pre_hook_blocked"）
+  - **属性**：`session.id`，可选 ARMS 扩展 `gen_ai.user.id`，`gen_ai.operation.name`（`execute_tool`），可选继承的 `gen_ai.agent.name`，`gen_ai.tool.name`，`gen_ai.tool.type`（`function`），`gen_ai.tool.call.id`，`tool.call_id`，`duration_ms`，`success`，`error`，失败时的 `error.type`，`tool.failure_kind`（string，可选——具体的失败原因，例如 "cancelled"、"tool_error"、"tool_exception"、"timeout"、"permission_denied"、"pre_hook_blocked"）
 
 - `qwen-code.tool.execution`：封装 tool 执行阶段（审批后）。仅为已尝试的执行发出。
   - **属性**：`session.id`，`gen_ai.tool.name`（可选），`tool.call_id`（可选），`duration_ms`，`success`，`error`，`execution_status`（"success"/"error"/"cancelled"），`error_type`，`error.type`
@@ -746,6 +755,8 @@ LLM span 现在使用标准的 `gen_ai.request.*`、`gen_ai.response.*` 和 `gen
   }
 }
 ```
+
+成功和已取消的 GenAI span 将 `SpanStatus` 保留为 `UNSET`。失败时设置 `ERROR`、有界的状态描述和低基数 `error.type`。
 
 Qwen Code 不注入此 ARMS 特有的资源属性或 `gen_ai.span.kind`。ARMS 可以从 `gen_ai.operation.name` 推断 LLM、Tool 和 Agent 角色。
 

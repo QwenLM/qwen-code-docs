@@ -53,10 +53,12 @@ interface WebShellSidebarBranding {
 
 | 值                                 | 效果                                              |
 | ---------------------------------- | ------------------------------------------------- |
-| `undefined`（默认）                | Qwen logo + "Qwen Code" 文本                      |
+| `undefined`（默认）                | 已解析品牌：`brand` prop → daemon `GET /brand` → 内置 Qwen logo + "Qwen Code" 文本 |
 | `false`                            | 完全隐藏品牌行                                    |
 | `{ render: () => <MyHeader /> }`   | 使用自定义内容完全替换                            |
 | `{ hideWhenCompact: false }`       | 在折叠的图标栏模式下保持品牌区可见                |
+
+默认行是数据驱动的，而非固定不变：提供 `ui.brand` 配置的 daemon 会替换文本和标识，嵌入宿主可以通过 shell 组件的 `brand` prop 覆盖两者（`onBrandResolved` 会向宿主自身的 chrome 报告解析结果）。`branding.render` 仍然是最高优先级的覆盖——它优先于 prop 和 daemon 解析的值，与之前完全一致。
 
 ```tsx
 sidebar={{
