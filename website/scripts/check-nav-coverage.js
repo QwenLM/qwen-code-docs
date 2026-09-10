@@ -22,6 +22,7 @@
 
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /**
  * Directories that hold assets rather than pages. They have no sidebar entry
@@ -72,7 +73,7 @@ export function findUnlistedEntries(contentRoot) {
 }
 
 export const DEFAULT_CONTENT_ROOT = path.join(
-  path.dirname(new URL(import.meta.url).pathname),
+  path.dirname(fileURLToPath(import.meta.url)),
   '..',
   'content',
   'en',

@@ -1,8 +1,14 @@
 import { deepStrictEqual } from 'node:assert';
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import {
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
+import { pathToFileURL } from 'node:url';
 
 import {
   DEFAULT_CONTENT_ROOT,
@@ -26,6 +32,22 @@ test('every page and directory is listed in the sidebar', () => {
   // months, and `users/qwen-serve` with it. Add the entry to the matching
   // `_meta.ts`, or add the directory to NON_PAGE_DIRS if it holds assets.
   deepStrictEqual(findUnlistedEntries(DEFAULT_CONTENT_ROOT), []);
+});
+
+test('decodes escaped checkout paths for the default content root', async () => {
+  const source = readFileSync(
+    new URL('./check-nav-coverage.js', import.meta.url),
+    'utf8',
+  );
+  const root = fixture({
+    'checkout with spaces/scripts/check-nav-coverage.js': source,
+  });
+  const modulePath = path.join(
+    root,
+    'checkout with spaces/scripts/check-nav-coverage.js',
+  );
+  const copiedModule = await import(pathToFileURL(modulePath).href);
+  deepStrictEqual(copiedModule.DEFAULT_CONTENT_ROOT.includes('%20'), false);
 });
 
 test('reports a page its directory _meta.ts omits', () => {
