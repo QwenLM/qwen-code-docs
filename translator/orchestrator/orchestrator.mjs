@@ -509,6 +509,12 @@ function trimCodeSpans(text) {
         return line;
       }
       if (fenced) return line;
+      // A run of two or more backticks is a different construct (a span that
+      // itself contains a backtick), and splitting on single backticks
+      // mis-pairs its delimiters: "Use `` ` x ` `` carefully" would come back
+      // as "Use `` `x` `` carefully". The artifact this repairs only ever
+      // appears in single-backtick spans, so skip the line rather than guess.
+      if (line.includes("``")) return line;
       const parts = line.split("`");
       for (let i = 1; i < parts.length - 1; i += 2)
         if (parts[i].trim()) parts[i] = parts[i].trim();
