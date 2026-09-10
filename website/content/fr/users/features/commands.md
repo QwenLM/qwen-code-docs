@@ -748,7 +748,9 @@ Liste les sessions interactives Qwen Code en cours d'exécution sur cette machin
 
 **Sortie lisible par l'homme (par défaut) :**
 
-Un tableau avec les colonnes : NAME, PID, AGE, DIRECTORY.
+Un tableau avec les colonnes : NAME, KIND, PID, AGE, DIRECTORY.
+
+KIND indique ce qui a enregistré la session — `tui` pour quelqu'un devant un terminal, `external` pour un programme qui n'est pas du tout une session Qwen Code (un front-end vocal, un relay), et `headless` ou `serve` pour une session pilotée par un autre programme. C'est un auto-rapport, comme NAME et DIRECTORY : chaque champ ici a été écrit par le processus qu'il décrit, et rien de ce qu'une session est autorisée à faire n'en dépend. Voir [Cross-Session Protocol](./cross-session-protocol.md) pour le format d'enregistrement et comment enregistrer votre propre programme.
 
 **Sortie JSON (`--json`) :**
 
@@ -756,7 +758,7 @@ Génère des JSON Lines sur stdout, la session la plus récente en premier. Chaq
 
 ```
 schemaVersion, pid, procStart, pidNs, sessionId, cwd, name, startedAt,
-qwenVersion, ipcPath (lorsque la messagerie entre pairs est disponible)
+qwenVersion, kind, ipcPath (lorsque la messagerie entre pairs est disponible)
 ```
 
 Rien d'autre n'est écrit sur stdout — un listing vide n'imprime rien du tout — donc `qwen sessions ps --json | jq .` est sûr pour les scripts.
@@ -859,12 +861,15 @@ reçu : s'il a été mis en attente, décliné, refusé, a expiré, ou était
 mal adressé (l'adresse a changé de titulaire — listez à nouveau les
 agents) — ou libéré après une mise en attente — une notification
 apparaît dans la transcription de la session expéditrice (`Message to
-<name>: …`). Décliné et refusé sont des réponses différentes : décliné
-signifie que quelqu'un a examiné le message et a dit non, tandis que
-refusé signifie que le `agents.crossSessionInbound` de cette session est
-`refuse` et personne ne l'a vu. Le modèle qui l'a envoyé n'en est pas
-informé ; si l'autre session répond, la réponse arrive comme un message
-inter-sessions.
+<name>: …`). Décliné, refusé et abandonné sont trois réponses différentes : décliné signifie que quelqu'un a examiné le message et a dit non, refusé signifie que le `agents.crossSessionInbound` de cette session est `refuse` et personne ne l'a vu du tout, et abandonné signifie que sa boîte de réception a rejeté le message avant tout cela (voir ci-dessous). Le premier abandon est répondu immédiatement et les autres sont regroupés dans un reçu toutes les quelques secondes, chacun nommant les messages qu'il représente, donc une série d'entre eux ne coûte que quelques lignes plutôt qu'une ligne chacun. Le modèle qui l'a envoyé n'en est pas informé ; si l'autre session répond, la réponse arrive comme un message inter-sessions.
+
+### Protection contre les inondations
+
+Une session accepte jusqu'à 30 messages d'un seul expéditeur d'un coup puis un toutes les deux secondes, et jusqu'à 32 d'un coup de tous les expéditeurs réunis puis un par seconde. La seconde limite existe car un expéditeur se nomme lui-même : faire tourner ce nom obtient un nouveau quota de la première limite mais pas de la seconde. Elle est à peine au-dessus de la première car chaque message accepté génère un reçu, et une session ne peut en envoyer qu'un certain nombre à la fois. Un message provenant d'une autre session qui répète le message précédent de cet expéditeur mot pour mot dans les 30 secondes est également rejeté — un modèle qui boucle sur une phrase génère un nouvel id de message à chaque fois, c'est donc le texte qui le détecte. Les messages provenant d'un script démarré par la session et d'un contrôleur fiable sont exemptés de la vérification de répétition, car un hook qui rapporte la même ligne deux fois rapporte deux faits et une personne qui dit « continue » deux fois le signifie deux fois ; les deux sont toujours soumis aux limites de débit. Enfin, un message qui est accepté mais ne peut pas être mis en file d'attente car la session en a déjà 50 en attente est également rejeté.
+
+Un message rejeté de cette façon n'est jamais mis en attente, jamais montré au modèle, et ne laisse aucune trace, donc l'expéditeur peut réessayer plus tard et arriver à destination. La session réceptrice l'indique dans sa transcription au plus une fois par minute par expéditeur, avec un compteur de ce que cette ligne représente. La session expéditrice reçoit un seul reçu nommant chaque message que la rafale lui a coûté, et sa transcription dit de regrouper ce qui compte encore dans un message ultérieur plutôt que de renvoyer.
+
+Le côté expéditeur n'attend pas pour le savoir. Chaque session suit ce qu'elle a envoyé à chaque adresse et refuse un envoi que le récepteur rejetterait, donc le modèle est informé de regrouper avant que le message ne soit écrit plutôt qu'après — et le récepteur ne dépense jamais de connexion sur un message qu'il allait rejeter.
 
 ### Authentification de la boîte de réception et injection scriptée
 
@@ -895,7 +900,7 @@ d'une autre session.
 Donnez à chaque injection un `msgId` frais. La passerelle réceptrice se
 souvient des ids qu'elle a déjà traités, donc un hook qui en réutilise
 un est délivré la première fois et silencieusement dédupliqué à chaque
-exécution suivante.
+exécution suivante. Répéter le même _texte_ est acceptable — la vérification de répétition ci-dessus ne s'applique pas aux propres processus d'une session — mais les limites de débit s'appliquent, donc un hook dans une boucle est rejeté comme n'importe quelle autre inondation.
 
 Un message injecté passe toujours par la passerelle entrante et est
 marqué comme ne provenant pas de l'utilisateur, mais la passerelle sait
@@ -978,3 +983,9 @@ Quiconque détient le token peut envoyer en tant que ce contrôleur,
 traitez-le donc comme tout autre identifiant : donnez-le à un seul
 programme, gardez-le hors des configs partagées, et révoquez-le lorsque
 ce programme a terminé.
+
+### Programmes qui ne sont pas des sessions Qwen Code
+
+Tout ce qui précède fonctionne entre sessions, mais rien n'y est spécifique à une seule. Un programme qui écrit un enregistrement de registre pour lui-même et lie une boîte de réception de la même manière est listé par `qwen sessions ps` et par `list_agents`, peut être adressé par nom depuis `send_message`, et reçoit des accusés de réception pour ce qu'il envoie — un front-end vocal, un relay, un surveillant de build. Il doit enregistrer `kind: "external"` pour qu'un listing puisse dire ce qu'il est.
+
+[Cross-Session Protocol](./cross-session-protocol.md) est le contrat pour en écrire un : le schéma d'enregistrement et comment la vitalité est jugée, les chemins de socket et le framing, la ligne d'authentification, chaque champ de trame, les états de reçu et leurs transitions, et ce qu'un récepteur fait d'un message avant que son modèle ne le voie.

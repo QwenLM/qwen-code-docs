@@ -6,7 +6,7 @@ Ce guide explique comment configurer un canal Qwen Code sur QQ via l'API officie
 
 - Un compte QQ (application mobile pour scanner le code QR)
 
-## Configuration
+## Installation
 
 ### Connexion par code QR
 
@@ -63,7 +63,6 @@ export QQ_APP_SECRET=<votre-secret-d'application>
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "instructions": "Vous êtes un assistant IA qui dialogue via QQ Bot. Limitez vos réponses à 2000 caractères.",
-      "blockStreaming": "on",
       "groupPolicy": "disabled",
       "groups": {
         "*": { "requireMention": true }
@@ -82,7 +81,7 @@ export QQ_APP_SECRET=<votre-secret-d'application>
 | `sandbox`   | `false`    | Définir sur `true` pour utiliser l'environnement API sandbox QQ (`sandbox.api.sgroup.qq.com`) |
 
 Toutes les options standard des canaux (voir [Présentation des canaux](./overview#options)) sont également prises en charge :
-`senderPolicy`, `allowedUsers`, `sessionScope`, `cwd`, `instructions`, `groupPolicy`, `groups`, `dispatchMode`, `blockStreaming`, `blockStreamingChunk`, `blockStreamingCoalesce`.
+`senderPolicy`, `allowedUsers`, `sessionScope`, `cwd`, `instructions`, `groupPolicy`, `groups`, `dispatchMode`.
 
 ## Exécution
 

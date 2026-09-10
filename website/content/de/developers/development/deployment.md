@@ -115,3 +115,9 @@ Der Veröffentlichungsprozess ist durch GitHub Actions automatisiert. Der Releas
 1.  Erstellen der NPM-Pakete mit `tsc`.
 2.  Veröffentlichen der NPM-Pakete in der Artefakt-Registry.
 3.  Erstellen von GitHub-Releases mit gebündelten Assets.
+
+**OpenTUI-Preview-Variante**
+
+Standalone-Archive werden standardmäßig in der klassischen Node.js-Variante ausgeliefert. Wenn die Repository-Variable `OPENTUI_PREVIEW_RELEASE_ENABLED` auf `true` gesetzt wird, wird zusätzlich die bun/OpenTUI-Preview-Variante gebaut, deren Archive das Suffix `-opentui-preview` tragen und deren Launcher `QWEN_TUI_RENDERER` standardmäßig auf `opentui` setzt. Wenn die Variable nicht gesetzt wird, bleibt diese Variante deaktiviert.
+
+Die Variable bestimmt ausschließlich, was ein neuer Release baut. Der Workflow, der ein Release auf Aliyun OSS spiegelt, liest sie nicht: Dieser Workflow kann für jeden Tag erneut ausgelöst werden, und ein Tag, der vor der Existenz dieser Variante erstellt wurde, hat keine Preview-Archive zum Verifizieren, daher leitet er die Variante aus den Archiven ab, die tatsächlich im Release ausgeliefert wurden.

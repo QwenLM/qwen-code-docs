@@ -274,7 +274,7 @@ Ein ungültiger, aber vorhandener Header wird abgelehnt (der Span bleibt parentl
 
 ### Erzwungenes Sampling unter Inbound-Parents
 
-Unter dem Standard-`parentbased_always_on`-Sampler (und anderen parentbased-Defaults) steuert das Sampled-Flag eines Remote-Parents, ob Daemon-Spans getracet werden. Da der Aufrufer entschieden hat, dass der Trace wichtig ist, erzwingt die Extraktion das SAMPLED-Flag bei Inbound-Parents. Der einzige Opt-out ist `OTEL_TRACES_SAMPLER=parentbased_always_off`, das die Flags des Aufrufers respektiert – beachte, dass es auch das Root-Span-Sampling für den gesamten Daemon deaktiviert, nicht nur für inbound-verknüpfte Anfragen.
+Unter dem Standard-`parentbased_always_on`-Sampler (und anderen parentbased-Defaults) ist das `sampled=0`-Flag eines Remote-Parents eine Head-based-Entscheidung auf der Aufruferseite, keine Aufforderung, Daemon-Telemetrie zu verwerfen, daher erzwingt die Extraktion das SAMPLED-Flag bei Inbound-Parents. Der einzige Opt-out ist `OTEL_TRACES_SAMPLER=parentbased_always_off`, das die Flags des Aufrufers respektiert – beachte, dass es auch das Root-Span-Sampling für den gesamten Daemon deaktiviert, nicht nur für inbound-verknüpfte Anfragen.
 
 **Warnung:** Ein konstanter `traceparent` (z. B. hardcoded in einem Load-Test-Client) re-parented jede Daemon-Anfrage in einen einzigen Trace; generiere einen frischen Header pro Anfrage.
 
@@ -526,7 +526,7 @@ Die folgenden Ereignisse werden geloggt:
 - `qwen-code.workflow_keyword`: Workflow-Keyword-Trigger ausgelöst.
 
 - `qwen-code.workflow_run`: Workflow-Lauf hat den Endzustand erreicht.
-  - **Attribute**: `status` (string), `agents_dispatched` (int), `agents_completed` (int), `phase_count` (int), `tokens_spent` (int), `duration_ms` (int)
+  - **Attribute**: `status` (string), `agents_dispatched` (int), `agents_completed` (int, alle abgeschlossenen Dispatches), `agents_failed` (int, abgeschlossene Dispatches mit Status „failed"), `agents_cached` (int, abgeschlossene Dispatches aus einem vorherigen Lauf), `agents_respawned` (int, Dispatch-Calls, die nach einem fehlgeschlagenen oder unterbrochenen Versuch erneut ausgeführt wurden), `phase_count` (int), `tokens_spent` (int), `duration_ms` (int). `agents_failed` und `agents_cached` sind Teilmengen von `agents_completed`, während `agents_respawned` die Herkunft beschreibt und keine zusätzliche Ergebnisanzahl ist.
 
 #### Auto-Memory-Ereignisse
 

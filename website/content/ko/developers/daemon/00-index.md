@@ -58,7 +58,7 @@
 - [`17-configuration.md`](./17-configuration.md) - 데몬에 영향을 미치는 환경 변수, CLI 플래그, `settings.json` 키.
 - [`18-error-taxonomy.md`](./18-error-taxonomy.md) - 레이어별 타입화된 오류와 복구 방법.
 - [`19-observability.md`](./19-observability.md) - `QWEN_SERVE_DEBUG`, 디버깅 레시피, 텔레메트리 갭.
-- [`20-quickstart-operations.md`](./20-quickstart-operations.md) - 최단 시작 경로, curl 검사, 라우트 맵, 임베디드 호출 레시피.
+- [`20-quickstart-operations.md`](./20-quickstart-operations.md) - 최단 시작 경로, curl 검사, 라우트 맵, 그리고 임베딩 경계(인프로세스 호스팅은 내부용이며, 외부 통합은 `qwen serve --no-web`과 HTTP/SSE 프로토콜을 사용). 내부 `createServeApp` 수명주기 레시피는 [`02-serve-runtime.md`](./02-serve-runtime.md)에 있습니다.
 
 ## 용어집
 

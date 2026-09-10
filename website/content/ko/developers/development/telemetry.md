@@ -520,7 +520,7 @@ Alibaba Cloud Managed Service for OpenTelemetry에서 Qwen Code telemetry를 보
 - `qwen-code.workflow_keyword`: 워크플로 키워드 트리거 발생.
 
 - `qwen-code.workflow_run`: 워크플로 실행이 터미널 상태에 도달.
-  - **속성**: `status`(string), `agents_dispatched`(int), `agents_completed`(int), `phase_count`(int), `tokens_spent`(int), `duration_ms`(int)
+  - **속성**: `status`(string), `agents_dispatched`(int), `agents_completed`(int, 모든 완료된 디스패치), `agents_failed`(int, 실패 상태로 완료된 디스패치), `agents_cached`(int, 이전 실행에서 제공된 완료된 디스패치), `agents_respawned`(int, 이전 실패 또는 중단된 시도 후 재실행된 디스패치 호출), `phase_count`(int), `tokens_spent`(int), `duration_ms`(int). `agents_failed`와 `agents_cached`는 `agents_completed`의 하위 집합이며, `agents_respawned`는 출처를 설명하는 것이지 추가 결과 카운트가 아닙니다.
 
 #### 자동 메모리 이벤트
 
@@ -722,7 +722,7 @@ Alibaba Cloud Managed Service for OpenTelemetry에서 Qwen Code telemetry를 보
   - **속성**: `session.id`, 선택적 ARMS 확장 `gen_ai.user.id`, `gen_ai.operation.name`(`execute_tool`), 선택적 상속 `gen_ai.agent.name`, `gen_ai.tool.name`, `gen_ai.tool.type`(`function`), `gen_ai.tool.call.id`, `tool.call_id`, `duration_ms`, `success`, `error`, 실패 시 `error.type`, `tool.failure_kind`(string, 선택 — 구체적인 실패 이유, 예: "cancelled", "tool_error", "tool_exception", "timeout", "permission_denied", "pre_hook_blocked")
 
 - `qwen-code.tool.execution`: 도구 실행 단계(승인 후)를 래핑. 시도된 실행에 대해서만 배출됨.
-  - **속성**: `session.id`, `gen_ai.tool.name`(선택), `tool.call_id`(선택), `duration_ms`, `success`, `error`, `execution_status`("success"/"error"/"cancelled"), `error_type`, 실패 시 `error.type`
+  - **속성**: `session.id`, `gen_ai.tool.name`(선택), `tool.call_id`(선택), `duration_ms`, `success`, `error`, `execution_status`("success"/"error"/"cancelled"), `error_type`, `error.type`
 
 - `qwen-code.tool.blocked_on_user`: 도구가 사용자 승인을 기다리는 시간.
   - **속성**: `session.id`, `tool.name`, `tool.call_id`, `duration_ms`, `decision`("proceed_once"/"proceed_always"/"cancel"/"aborted"/"auto_approved"/"error"), `source`("cli"/"ide"/"hook"/"auto"/"system")

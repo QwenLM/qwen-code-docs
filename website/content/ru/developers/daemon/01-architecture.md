@@ -6,7 +6,7 @@
 
 Внутри дочернего процесса ACP MCP-серверы используются всем рабочим пространством через `McpTransportPool` (F2): один кортеж (имя_сервера + отпечаток_конфигурации) отображается на один транспорт MCP, независимо от того, сколько сессий его обнаруживают. `MultiClientPermissionMediator` (F3) моста координирует голосование за разрешения среди всех подключенных клиентов в рамках одной из четырёх политик.
 
-Этот документ даёт **системную картину**, на которой основаны остальные документы документации. Каждый критический поток показан в виде последовательной диаграммы Mermaid; детали реализации каждого компонента находятся в остальных 18 документах.
+Этот документ даёт **системную картину**, на которой основаны остальные документы. Каждый критический поток показан в виде последовательной диаграммы Mermaid; детали реализации каждого компонента находятся в остальных 18 документах.
 
 ## Топология процессов
 
@@ -147,16 +147,19 @@ flowchart TB
 sequenceDiagram
     autonumber
     participant C as Client (SDK)
-    participant MW as Middleware<br/>(CORS→host→log→bearer→rate-limit→JSON→telemetry→mutationGate)
+    participant MW as Middleware<br/>(origin-strip→log→trace-id→host→same-origin→CORS→bearer→rate-limit→JSON→telemetry→mutationGate)
     participant R as Route handler
     participant BR as AcpBridge
     participant BC as BridgeClient
     participant CH as ACP child
 
     C->>MW: POST /session/:id/prompt<br/>Authorization: Bearer …<br/>X-Qwen-Client-Id: …
-    MW->>MW: allowOriginCors (mutable allowlist; unmatched Origin -> 403)
+    MW->>MW: loopback same-origin Origin strip
+    MW->>MW: access-log hook (skips GET /health and POST */heartbeat)
+    MW->>MW: inbound trace-id capture
     MW->>MW: hostAllowlist (DNS rebinding guard)
-    MW->>MW: access-log hook
+    MW->>MW: remote same-origin Origin strip + bearer check (non-loopback with a token)
+    MW->>MW: allowOriginCors (mutable allowlist; unmatched Origin -> 403)
     MW->>MW: bearerAuth (constant-time compare)
     MW->>MW: rateLimit (when enabled)
     MW->>MW: express.json body parser
@@ -241,7 +244,7 @@ sequenceDiagram
     end
 ```
 
-Кросс-политический запасной выход: любой клиент может проголосовать `CANCEL_VOTE_SENTINEL`, чтобы прервать запрос как `cancelled / agent_cancelled`. Мост защищается от попыток протащить sentinel через обычное поле `optionId` из вызовов по сети (`InvalidPermissionOptionError`).
+Аварийный выход вне рамок одной политики: любой клиент может проголосовать `CANCEL_VOTE_SENTINEL`, чтобы прервать запрос как `cancelled / agent_cancelled`. Мост защищается от попыток удалённых участников протащить sentinel через обычное поле `optionId` (`InvalidPermissionOptionError`).
 
 ## Workflow 4: захват / освобождение / перезапуск пула транспортов MCP
 

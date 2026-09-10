@@ -55,7 +55,7 @@ Construído sobre o **[OpenTelemetry]** — o framework de observabilidade neutr
 
 Todo o comportamento de telemetria é controlado através do seu arquivo `.qwen/settings.json`. Essas configurações podem ser sobrescritas por variáveis de ambiente ou flags de CLI.
 
-| Setting                           | Environment Variable                                 | CLI Flag                                                 | Description                                                                                                                                    | Values            | Default                 |
+| Configuração                      | Variável de Ambiente                                 | Flag CLI                                                   | Descrição                                                                                                                                      | Valores           | Padrão                  |
 | --------------------------------- | ---------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ----------------------- |
 | `enabled`                         | `QWEN_TELEMETRY_ENABLED`                             | `--telemetry` / `--no-telemetry`                         | Habilitar ou desabilitar telemetria                                                                                                            | `true`/`false`    | `false`                 |
 | `target`                          | `QWEN_TELEMETRY_TARGET`                              | `--telemetry-target <local\|gcp>` _(deprecated)_         | Rótulo de destino informativo; não controla o roteamento do exportador — defina `otlpEndpoint` ou `outfile` para configurar para onde os dados são enviados | `"gcp"`/`"local"` | `"local"`               |
@@ -329,7 +329,7 @@ Definir apenas `"target": "gcp"` não configura o destino de exportação. Se `o
    }
    ```
 
-   Para deployments em contêiner, defina `QWEN_TELEMETRY_USER_ID` no ambiente do processo.
+   Para deployments em contêiner, defina `QWEN_TELEMETRY_USER_ID=user-079458` em vez disso.
 
    `telemetry.resourceAttributes.user.id` continua sendo uma dimensão de Resource não relacionada e não popula a Análise de Sessão do ARMS; remova-o ao migrar para a configuração em nível de span.
 
@@ -529,7 +529,7 @@ Os seguintes eventos são registrados em log:
 - `qwen-code.workflow_keyword`: O gatilho de palavra-chave do workflow é disparado.
 
 - `qwen-code.workflow_run`: A execução do workflow atinge o estado terminal.
-  - **Atributos**: `status` (string), `agents_dispatched` (int), `agents_completed` (int), `phase_count` (int), `tokens_spent` (int), `duration_ms` (int)
+  - **Atributos**: `status` (string), `agents_dispatched` (int), `agents_completed` (int, todos os dispatches resolvidos), `agents_failed` (int, dispatches resolvidos com status de falha), `agents_cached` (int, dispatches resolvidos servidos de uma execução anterior), `agents_respawned` (int, chamadas dispatch re-executadas após uma tentativa anterior falha ou interrompida), `phase_count` (int), `tokens_spent` (int), `duration_ms` (int). `agents_failed` e `agents_cached` são subconjuntos de `agents_completed`, enquanto `agents_respawned` descreve proveniência e não é uma contagem de resultado adicional.
 
 #### Eventos de Auto-Memória
 
@@ -672,14 +672,14 @@ O processo daemon (modo de servidor HTTP de longa duração) expõe suas própri
   - **Atributos**: `route`
   - **Buckets**: 1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 30000
 
-#### Sessions
+#### Sessões
 
 - `qwen-code.daemon.session.active` (ObservableGauge, Int): Sessões ativas no momento.
 
 - `qwen-code.daemon.session.lifecycle` (Counter, Int): Eventos do ciclo de vida da sessão.
   - **Atributos**: `action` ("spawn"/"close"/"die")
 
-#### Channels
+#### Canais
 
 - `qwen-code.daemon.channel.lifecycle` (Counter, Int): Eventos do ciclo de vida do canal ACP.
   - **Atributos**: `action` ("spawn"/"exit"), `expected` (boolean, optional)
@@ -692,14 +692,14 @@ O processo daemon (modo de servidor HTTP de longa duração) expõe suas própri
 - `qwen-code.daemon.prompt.duration` (Histogram, ms): Duração ponta a ponta do prompt.
   - **Buckets**: 100, 500, 1000, 2500, 5000, 10000, 30000, 60000, 120000, 300000, 600000
 
-#### Errors
+#### Erros
 
 - `qwen-code.daemon.bridge.error.count` (Counter, Int): Erros de bridge por tipo.
   - **Atributos**: `error_type` (nome de classe conhecido ou "unknown")
 
 - `qwen-code.daemon.cancel.count` (Counter, Int): Contagem de requisições de cancelamento.
 
-#### Resources
+#### Recursos
 
 - `qwen-code.daemon.sse.active` (ObservableGauge, Int): Conexões SSE ativas.
 

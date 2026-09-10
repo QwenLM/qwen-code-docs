@@ -114,3 +114,9 @@ Le processus de publication est automatisé via GitHub Actions. Le workflow de p
 1.  Construire les paquets NPM à l'aide de `tsc`.
 2.  Publier les paquets NPM sur le registre d'artefacts.
 3.  Créer des versions GitHub avec les assets groupés.
+
+**Variante preview OpenTUI**
+
+Les archives autonomes sont publiées par défaut dans la variante classique Node.js. Définir la variable de dépôt `OPENTUI_PREVIEW_RELEASE_ENABLED` à `true` construit également la variante preview bun/OpenTUI, dont les archives portent le suffixe `-opentui-preview` et dont le lanceur définit `QWEN_TUI_RENDERER` à `opentui` par défaut. Laisser la variable non définie désactive cette variante.
+
+Cette variable détermine uniquement ce qu'une nouvelle version construit. Le workflow qui miroite une version vers Aliyun OSS ne la lit pas : ce workflow peut être redéclenché pour n'importe quel tag, et un tag créé avant l'existence de la variante n'a pas d'archives preview à vérifier, donc il dérive la variante à partir des archives que la version a effectivement publiées.

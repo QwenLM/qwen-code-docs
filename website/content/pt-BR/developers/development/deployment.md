@@ -115,3 +115,9 @@ O processo de release é automatizado por meio do GitHub Actions. O fluxo de tra
 1.  Build dos pacotes NPM usando `tsc`.
 2.  Publicação dos pacotes NPM no registro de artefatos.
 3.  Criação de releases no GitHub com assets empacotados.
+
+**Sabor preview OpenTUI**
+
+Os arquivos standalone são distribuídos por padrão no sabor clássico Node.js. Definir a variável de repositório `OPENTUI_PREVIEW_RELEASE_ENABLED` como `true` também compila o sabor preview bun/OpenTUI, cujos arquivos carregam o sufixo `-opentui-preview` e cujo launcher define `QWEN_TUI_RENDERER` como `opentui` por padrão. Deixar a variável indefinida mantém esse sabor desativado.
+
+A variável decide apenas o que uma nova release compila. O workflow que espelha uma release para o Aliyun OSS não a lê: esse workflow pode ser re-despachado para qualquer tag, e uma tag criada antes do sabor existir não tem arquivos preview para verificar, então deriva o sabor dos arquivos que a release de fato publicou.

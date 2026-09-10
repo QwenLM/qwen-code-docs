@@ -47,6 +47,7 @@ As ferramentas integradas do Qwen Code podem ser amplamente categorizadas da seg
 - **[Ferramenta Shell](./shell.md) (`run_shell_command`):** Para executar comandos shell.
 - **[Ferramenta Monitor](./monitor.md) (`monitor`):** Para executar comandos shell de longa duração que transmitem saída como notificações de tarefas em segundo plano.
 - **[Ferramenta Web Fetch](./web-fetch.md) (`web_fetch`):** Para recuperar conteúdo de URLs.
+- **[Ferramenta Web Search](./web-search.md) (`web_search`):** Para pesquisar na web. Disponível na inicialização quando um provedor compatível pode suportá-la.
 - **[Ferramenta Todo Write](./todo-write.md) (`todo_write`):** Uma ferramenta opt-in para criar e gerenciar listas de tarefas estruturadas durante sessões de codificação.
 - **[Ferramenta Agent](./task.md) (`agent`):** Para delegar tarefas complexas a subagentes especializados.
 - **[Ferramenta Exit Plan Mode](./exit-plan-mode.md) (`exit_plan_mode`):** Para sair do modo de planejamento e prosseguir com a implementação.

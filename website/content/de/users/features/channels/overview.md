@@ -74,9 +74,7 @@ Channels werden unter dem Schlüssel `channels` in der `settings.json` konfiguri
 | `groupHistoryLimit`      | Nein             | Optionales Nachladen der Gruppenhistorie. `0` oder weggelassen deaktiviert es. Eine positive Zahl speichert so viele nicht erwähnte Gruppennachrichten von autorisierten Absendern oder Mitgliedern genehmigter gepaarter Gruppen für die nächste Bot-Erwähnung/Antwort. |
 | `groups`                 | Nein             | Einstellungen pro Gruppe. Schlüssel sind Gruppenchat-IDs oder `"*"` für Standardwerte. Siehe [Group Chats](#group-chats)                                                                     |
 | `dispatchMode`           | Nein             | Was passiert, wenn du eine Nachricht sendest, während der Bot beschäftigt ist: `steer` (Standard), `collect` oder `followup`. Siehe [Dispatch Modes](#dispatch-modes)                         |
-| `blockStreaming`         | Nein             | Progressive Antwortauslieferung: `on` oder `off` (Standard). Siehe [Block Streaming](#block-streaming)                                                                        |
-| `blockStreamingChunk`    | Nein             | Chunk-Größenbegrenzungen: `{ "minChars": 400, "maxChars": 1000 }`. Siehe [Block Streaming](#block-streaming)                                                                    |
-| `blockStreamingCoalesce` | Nein             | Idle-Flush: `{ "idleMs": 1500 }`. Siehe [Block Streaming](#block-streaming)                                                                                              |
+
 
 Wenn `messagePrefix` gesetzt ist, muss jede vom Benutzer verfasste Nachricht mit dem Präfix und einer nicht-leeren Payload beginnen, zum Beispiel `/review inspect #123`. Nur das Präfix und die Erwähnungen davor werden entfernt; eine Erwähnung, die der Benutzer nach dem Präfix eingegeben hat, erreicht den Agenten unverändert. Shared- und Agenten-Befehle verwenden dieselbe Regel (`/review /help`, `/review /clear` und so weiter). Telegrams registrierte Befehlsmenü-Aktionen bleiben ohne das Präfix verfügbar – außer das konfigurierte Präfix ist selbst eines davon, in diesem Fall gewinnt das Präfix und dieser Befehl muss ebenfalls mit Präfix gesendet werden (`/new /new`). Anhänge benötigen eine passende Caption, wenn die Plattform eine unterstützt; Telegram-, Feishu-, WeChat-, DingTalk- und WeCom-Mediennachrichten ohne Caption laufen weiterhin, und ihr Platzhalter-Text wird nie als Gruppenhistorie zurück zitiert. Native Todos, Webhooks und vom Provider generierte Zuweisungs- oder Review-Request-Ereignisse laufen ebenfalls ohne Präfix, da sie Systemereignisse sind und keine Chat-Nachrichten.
 
@@ -128,27 +126,26 @@ Dieser Modus ist nicht verfügbar im eigenständigen `qwen channel start`, mit W
 Channel Memory speichert dauerhaften Kontext für einen Chat oder Thread. Einträge haben stabile
 IDs, sodass eine Listen-Antwort für deterministische Folgeoperationen verwendet werden kann.
 
-- `记住：默认使用 staging 环境` ist die deterministische Form und speichert genau einen
-  Skalareintrag für den aktuellen Chat oder Thread.
+- `Remember: use staging environment by default` is the deterministic form and saves exactly one
+  scalar entry for the current chat or thread.
 - Um mehrere separate Fakten in einer Anfrage zu speichern, verwende eine natürliche Phrase, die
   über den Classifier geleitet wird. Zum Beispiel:
-  `请记住这三条约定：使用 staging；发布前测试；优先中文回复` erstellt Einträge,
-  die du unabhängig verwalten kannst. Exakte Duplikate werden übersprungen und
+  `Remember these three conventions: use staging; test before release; prefer German replies` creates entries
+  that you can manage independently. Exakte Duplikate werden übersprungen und
   gemeldet, ohne einen weiteren Eintrag zu erstellen. Anfragen, die nach
   Anmeldedaten aussehen, werden abgelehnt; entferne Geheimnisse und speichere die
   nicht sensiblen Fakten separat.
-- `查看记忆` listet Einträge und ihre stabilen IDs auf. Verwende `查看第 2 页记忆`, um
-  eine spätere Seite anzuzeigen, `查看记忆 <id>`, um einen Eintrag anzuzeigen, oder eine
-  natürliche gefilterte Anfrage wie `只看中文偏好`, um die passenden Einträge aufzulisten.
-- `查看刚才那条记忆`, `把关于 staging 的记忆改成默认使用 production` und
-  `忘掉刚才那条` funktionieren, wenn sich die natürliche Referenz auf genau einen
-  Eintrag auflösen lässt. Natürliche Updates und Löschungen zeigen zuerst die
-  vorgeschlagene Änderung. Bestätige ein Update mit `确认更新记忆` oder
-  `confirm memory update`, oder eine Löschung mit `确认删除记忆` oder
-  `confirm memory removal`, innerhalb von 60 Sekunden. Exakte-ID-Updates und
+- `view memory` lists entries and their stable IDs. Use `view memory page 2` to view
+  a later page, `view memory <id>` to view one entry, or a natural filtered
+  request such as `show German preferences only` to list the matching entries.
+- `view the last memory`, `change the staging memory to default to production`, and
+  `forget the last one` work when the natural reference resolves to exactly one entry.
+  Natural updates and removals first show the proposed change. Confirm an
+  update with `confirm memory update`, or a removal with
+  `confirm memory removal`, within 60 seconds. Exakte-ID-Updates und
   -Löschungen bleiben sofort und benötigen keine Bestätigung.
-- `清空记忆` startet den Alles-löschen-Bestätigungsflow; `确认清空记忆` schließt
-  ihn ab.
+- `clear memory` starts the clear-all confirmation flow; `confirm clear memory` completes
+  it.
 
 Wenn eine natürliche Inspektions-, Update- oder Löschanfrage mehrere Einträge trifft,
 gibt der Bot die Kandidaten-IDs und Vorschauen zurück, ohne den Memory zu ändern. Es
@@ -190,7 +187,7 @@ Memory bleibt auf den aktuellen Chat oder Thread bezogen. Er wird nicht in einer
 gesamten Channel geteilt wird und nicht auf ein Ziel bezogen ist.
 
 Channel Memory lernt nicht automatisch Fakten aus normalen Gesprächen und
-akzeptiert `第一个` nicht als Bestätigung für eine mehrdeutige natürliche Referenz.
+akzeptiert `first one` nicht als Bestätigung für eine mehrdeutige natürliche Referenz.
 Verwende eine klare Remember-Anfrage und eine exakte Eintrags-ID, wenn eine
 natürliche Referenz mehrdeutig ist.
 
@@ -420,34 +417,11 @@ Du kannst den Dispatch-Modus auch pro Gruppe festlegen und damit den Channel-Sta
 }
 ```
 
-## Block-Streaming
+## Response delivery
 
-Standardmäßig arbeitet der Agent eine Weile und sendet dann eine einzige große Response. Wenn Block-Streaming aktiviert ist, trifft die Antwort als mehrere kürzere Nachrichten ein, während der Agent noch arbeitet – ähnlich wie ChatGPT oder Claude progressive Ausgaben anzeigen.
+Channels use their normal response delivery path. The shared delivery layer sends completed responses, and adapters may provide native progressive display, such as updating an interactive card in place. Platform message-length limits may still split long responses.
 
-
-```json
-{
-  "channels": {
-    "my-channel": {
-      "type": "telegram",
-      "blockStreaming": "on",
-      "blockStreamingChunk": { "minChars": 400, "maxChars": 1000 },
-      "blockStreamingCoalesce": { "idleMs": 1500 },
-      ...
-    }
-  }
-}
-```
-
-### So funktioniert es
-
-- Die Response des Agenten wird an Absatzgrenzen in Blöcke aufgeteilt und als separate Nachrichten gesendet
-- `minChars` (Standard 400) – Sende einen Block erst, wenn er mindestens diese Länge hat, um Spam durch winzige Nachrichten zu vermeiden
-- `maxChars` (Standard 1000) – Wenn ein Block diese Länge ohne natürliche Pause erreicht, wird er trotzdem gesendet
-- `idleMs` (Standard 1500) – Wenn der Agent pausiert (z. B. bei der Ausführung eines Tools), sende den bisher gepufferten Inhalt
-- Wenn der Agent fertig ist, wird der restliche Text sofort gesendet
-
-Nur `blockStreaming` ist erforderlich. Die Chunk- und Coalesce-Einstellungen sind optional und haben sinnvolle Standardwerte.
+The obsolete `blockStreaming`, `blockStreamingChunk`, and `blockStreamingCoalesce` settings are no longer supported and can be removed from channel configuration. They do not affect delivery. Channel settings management rejects newly added or changed values for these fields. An unchanged stored value is retained, or removed, when the edit keeps the channel's `type`; changing a channel's `type` requires removing these fields first.
 
 ## Scheduled Channel Loops
 

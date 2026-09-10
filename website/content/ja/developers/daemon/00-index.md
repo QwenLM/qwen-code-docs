@@ -58,7 +58,7 @@
 - [`17-configuration.md`](./17-configuration.md) - daemon に影響する環境変数、CLI フラグ、`settings.json` キー。
 - [`18-error-taxonomy.md`](./18-error-taxonomy.md) - 各レイヤーの型付きエラーと修復手順。
 - [`19-observability.md`](./19-observability.md) - `QWEN_SERVE_DEBUG`、デバッグレシピ、テレメトリのギャップ。
-- [`20-quickstart-operations.md`](./20-quickstart-operations.md) - 最短の起動パス、curl チェック、ルートマップ、および組み込み呼び出しレシピ。
+- [`20-quickstart-operations.md`](./20-quickstart-operations.md) - 最短の起動パス、curl チェック、ルートマップ、および埋め込み境界（プロセス内ホスティングは内部用です。外部統合は `qwen serve --no-web` と HTTP/SSE プロトコルを使用します）。内部の `createServeApp` ライフサイクルレシピは [`02-serve-runtime.md`](./02-serve-runtime.md) にあります。
 
 ## 用語集
 
@@ -144,7 +144,7 @@
 | 領域                    | 現在の状態                                                                                                                                             | 主要ドキュメント                          |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- |
 | 設定           | `qwen serve` の全フラグ、環境変数、`settings.json`、`ServeOptions`、`BridgeOptions`、および重要な定数が1つのページにまとめられています。                   | [`17`](./17-configuration.md)         |
-| クイックスタート / 運用 | 最短の起動パス、起動レシピ、curl チェック、Web Shell の認証動作、ルート分割、シャットダウン動作、および組み込み呼び出しレシピについて説明しています。 | [`20`](./20-quickstart-operations.md) |
+| クイックスタート / 運用 | 最短の起動パス、起動レシピ、curl チェック、Web Shell の認証動作、ルート分割、シャットダウン動作、および埋め込み境界について説明しています。内部の `createServeApp` ライフサイクルレシピは [`02`](./02-serve-runtime.md) にあります。 | [`20`](./20-quickstart-operations.md) |
 | エラー                  | 起動時の明示的な失敗、ルートエラー、ブリッジエラー、EventBusエラー、ファイルシステムエラー、およびメディエーターエラーについて、対処法とともに要約されています。        | [`18`](./18-error-taxonomy.md)        |
 | オブザーバビリティ           | `QWEN_SERVE_DEBUG`、curlレシピ、有用なイベント、テレメトリのギャップ、および調査チェックリストについてドキュメント化されています。                                             | [`19`](./19-observability.md)         |
 

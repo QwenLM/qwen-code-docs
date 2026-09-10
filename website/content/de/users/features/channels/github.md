@@ -46,7 +46,6 @@ Füge den Channel zu `~/.qwen/settings.json` hinzu:
       "allowedUsers": ["operator-github-username"],
       "sessionScope": "chat_thread",
       "cwd": "/path/to/your/project",
-      "blockStreaming": "off",
       "groupPolicy": "open",
       "groups": {
         "*": { "requireMention": true }
@@ -87,7 +86,6 @@ Lokale `gh`-Authentifizierung erfordert eine HTTPS-`baseUrl`, damit das Daemon-H
 | `groupPolicy`           | `"disabled"`             | Muss `"open"`, `"allowlist"` mit dem Repo (`owner/repo`) in `groups` aufgelistet, oder `"pairing"` mit genehmigtem Repo sein, damit Benachrichtigungen fließen können |
 | `senderPolicy`          | `"allowlist"`            | Wer den Bot auslösen kann                                                          |
 | `groups.*.requireMention` | `true`                 | @Erwähnungen für gewöhnliche Kommentare erforderlich; direkte Benachrichtigungsgründe laufen trotzdem |
-| `blockStreaming`          | `"off"`                  | Immer auf `"off"` erzwungen; zwischengeschriebene Modell-Chunks werden nicht veröffentlicht; `"on"` wird nicht unterstützt |
 | `reasonFilter`          | nicht gesetzt            | Optionale Allowlist von GitHub-Benachrichtigungsgründen zur Verarbeitung            |
 
 Verwende `reasonFilter`, um laute Benachrichtigungsklassen wie `ci_activity` oder `state_change` auszufiltern. Verwende nicht `reasonFilter: ["mention"]` als Ersatz für `groups.*.requireMention`: GitHubs `mention`-Grund ist auf Thread-Ebene klebrig (sticky), sodass echte neue @Erwähnungen später unter `comment`, `subscribed`, `author` oder anderen Gründen eintreffen können und übersprungen würden.
@@ -133,13 +131,7 @@ Für einen akzeptierten Issue- oder Pull-Request-Kommentar fügt der Channel Git
 
 ### Final-Only-Ausgabe
 
-Der GitHub-Channel erzwingt immer Final-Only-Delivery. Der Adapter setzt `blockStreaming` auf `"off"`, sodass zwischengeschriebene Modell-Chunks niemals als separate Kommentare veröffentlicht werden und `blockStreaming: "on"` nicht unterstützt wird.
-
-```json
-{
-  "blockStreaming": "off"
-}
-```
+Der GitHub-Channel veröffentlicht nur abgeschlossene Antworten. Zwischengeschriebene Modell-Chunks werden niemals als separate Kommentare veröffentlicht.
 
 Wenn GitHub eine definitive No-Write-Delivery-Fehlermeldung zurückgibt, wie etwa eine Rate-Limit-Antwort, speichert der Channel die finale Antwort in
 `~/.qwen/channels/<workspace-scope>/<channel>-<name-hash>-github-pending-deliveries.json`

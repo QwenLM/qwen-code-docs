@@ -4,7 +4,7 @@
 
 O `qwen serve` é um daemon local por padrão e uma superfície exposta em configuração incorreta. Seu modelo de segurança é **em camadas** para que uma configuração errada falhe de forma segura:
 
-1. **Bind** — bind fora do loopback sem um token bearer **se recusa a iniciar**.
+1. **Bind** — um bind fora do loopback sempre carrega um bearer: o do operador, ou um efêmero de 128 bits gerado e impresso uma única vez na inicialização. A inicialização só recusa quando uma fonte de token fornecida está explicitamente vazia/com apenas espaços, ou quando um `localhost` solicitado resolve para fora do loopback sem nenhuma fonte de token resolvida (o que nunca gera).
 2. **Autenticação Bearer** — o middleware `bearerAuth` com comparação SHA-256 em tempo constante protege as rotas normais da API, exceto `/health` em um bind de loopback comum (`require_auth` move esse endpoint para trás do bearer também). A entrada de webhook de canal é uma rota pré-bearer separada autenticada por `x-qwen-webhook-secret`. As rotas de documento e ativos do Web Shell permanecem pré-auth em qualquer modo.
 3. **Lista de permissão do cabeçalho Host** — no loopback, apenas `localhost`, `127.0.0.1`, `[::1]`, `host.docker.internal` ou o endereço de loopback vinculado exato (mais porta) são aceitos; as formas sem porta correspondentes também são aceitas ao escutar na 80 ou 443. A allowlist defende contra DNS rebinding. O listener LAN do Local Control é a exceção que sempre impõe sua verificação de Host por autoridade anunciada, qualquer que seja o bind primário.
 4. **Controle de Origin** — o app de runtime sempre instala `allowOriginCors` sobre uma allowlist mutável (`MutableOriginAllowlist`): as entradas `--allow-origin <pattern>` a semeiam, e o Local Control adiciona o origin da LAN enquanto ativo. Origins não correspondentes recebem o envelope de negação 403. A muralha de negação incondicional (`denyBrowserOriginCors`) sobrevive apenas no app de bootstrap que responde antes do runtime iniciar.
@@ -27,6 +27,15 @@ Este documento percorre cada camada e as invariantes explícitas que o caminho d
 Em `run-qwen-serve.ts`:
 
 ```ts
+// A non-loopback bind with neither --token nor QWEN_SERVER_TOKEN first
+// generates an ephemeral 128-bit base64url bearer (16 random bytes, 22
+// URL-safe characters; printed once at startup, rotated per process). The
+// first refusal below therefore fires only when a token source was supplied
+// but is explicitly empty/whitespace, or when the requested hostname resolves
+// off-loopback (localhost pinned to a non-loopback address never generates).
+// Generation is loopback-suppressed, so the second refusal is a loopback-only
+// fail-fast: on a non-loopback bind the generated token already satisfies
+// --require-auth.
 if (!isLoopbackBind(opts.hostname) && !token) {
   throw new Error('Refusing to bind <host>:<port> without a bearer token. ...');
 }
@@ -62,11 +71,14 @@ Estas recusas são falhas explícitas de inicialização (visíveis em stderr / 
 
 ```mermaid
 flowchart LR
-    REQ[Request] --> SO["strip same-origin Origin<br/>(Web Shell support)"]
+    REQ[Request] --> LS["loopback self-origin strip<br/>(server/self-origin.ts)"]
+    LS --> LOG["access-log middleware<br/>(DaemonLogger)"]
+    LOG --> TID["inbound trace-id capture"]
+    TID --> HA["hostAllowlist<br/>(loopback DNS-rebinding defense;<br/>primary gate passes through on<br/>non-loopback binds, Local Control<br/>keeps its own Host gate)"]
+    HA --> SO["remote same-origin check<br/>(credential check + Origin strip)"]
     SO --> AO["allowOriginCors<br/>(mutable allowlist: --allow-origin<br/>patterns + Local Control LAN origin)"]
-    AO --> HA["hostAllowlist"]
-    HA --> LOG["access-log middleware<br/>(DaemonLogger)"]
-    LOG --> WH{"Channel webhook?"}
+    AO --> H["pre-auth /health<br/>(loopback, unless --require-auth)"]
+    H --> WH{"Channel webhook?"}
     WH -->|yes| WS["x-qwen-webhook-secret<br/>+ webhook rate/body limits"]
     WH -->|no| BA["bearerAuth"]
     BA --> RL["rate-limit middleware<br/>(when enabled)"]
@@ -76,7 +88,9 @@ flowchart LR
     MG --> HANDLER["route handler"]
 ```
 
-`mutationGate` é uma fábrica de middlewares por rota (`createMutationGate` retorna `mutate()`); as rotas chamam `mutate()` ou `mutate({strict: true})` no momento do registro. Não é um middleware global `app.use()`. O log de acesso é registrado antes de `bearerAuth` para que rejeições 401 ainda sejam registradas. O rate limiting executa depois de `bearerAuth` e antes de `express.json()`, para que apenas requisições autenticadas sejam contabilizadas e corpos grandes sejam rejeitados antes do parsing quando um limite é excedido. A entrada de webhook de canal faz branch antes do bearer auth e aplica sua própria verificação de segredo compartilhado, verificação de rate de tier de mutação e parser de 1 MiB.
+`mutationGate` é uma fábrica de middlewares por rota (`createMutationGate` retorna `mutate()`); as rotas chamam `mutate()` ou `mutate({strict: true})` no momento do registro. Não é um middleware global `app.use()`. O log de acesso e a captura de trace-id de entrada são registrados antes da muralha de origin e da verificação de credencial de mesma origem, então esses curtos-circuitos 403/401 são registrados como qualquer outra rejeição e a linha de log ainda se junta ao trace id do chamador; ambos também precedem `bearerAuth`, então rejeições 401 ainda são registradas. A allowlist de Host de loopback é registrada antes da rota de health pré-auth para que a defesa contra DNS rebinding a cubra. O `/health` pré-auth fica abaixo da muralha de origin (sondagens cross-origin correspondidas carregam cabeçalhos CORS); o log de acesso isenta `GET /health` e `POST */heartbeat` por caminho antes de anexar seu finish logger, então sondagens exatas `GET /health` e `POST */heartbeat` permanecem sem log em qualquer posição de montagem e rejeições da muralha nesses caminhos isentos também ficam sem log (`HEAD /health` e `GET /health/` são registrados como qualquer requisição). O rate limiting normal da API executa depois de `bearerAuth` e antes de `express.json()`, para que apenas requisições autenticadas sejam contabilizadas e corpos grandes sejam rejeitados antes do parsing quando um limite é excedido. A entrada de webhook de canal faz branch antes do bearer auth e aplica sua própria verificação de segredo compartilhado, verificação de rate de tier de mutação e parser de 1 MiB.
+
+A superfície de mesma origem consiste em dois middlewares em `server/self-origin.ts`, montados separadamente: a remoção de `Origin` apenas para loopback é instalada antes do log de acesso (apenas remove um `Origin` correspondente, nunca rejeita), e `installRemoteSelfOriginMiddleware` executa imediatamente antes de `allowOriginCors` em um listener primário fora do loopback com um token configurado. O remoto corresponde um `Origin` canônico contra o esquema direto do socket mais a autoridade `Host` normalizada — cabeçalhos forwarded nunca são consultados — e autentica com bearer a correspondência antes de remover `Origin`, então as mutações HTTP de mesma origem do Web Shell integrado não precisam de `--allow-origin`. Seu predicado pré-auth (`web-shell-preauth.ts`) isenta os pontos de entrada do shell (`/`, `//`, `/assets*`, `/mcp-app-sandbox`, navegações exatas de documento `/session/:id`) da verificação de credencial porque fetches de module-script do navegador carregam `Origin` sem `Authorization`. Upgrades de WebSocket e origins `https` de proxy TLS frontal não são cobertos: o gate de upgrade mantém sua própria política CSWSH (origin de loopback, entrada `--allow-origin`, ou o próprio origin do listener do Local Control), e o origin `https` de um proxy nunca pode corresponder ao esquema do socket simples.
 
 ### `bearerAuth`
 
@@ -100,7 +114,7 @@ Binds fora do loopback ignoram o portão primário (o operador escolheu a superf
 
 Rejeita qualquer requisição com cabeçalho `Origin`. CLI/SDK nunca definem Origin; apenas navegadores o fazem. Retorna `403 { error: 'Request denied by CORS policy' }` deterministicamente, em vez do 500 HTML que o callback de erro do pacote `cors` produziria. O app de runtime não instala mais esta muralha — ele executa `allowOriginCors` sobre a allowlist mutável (abaixo); o comportamento de negação sobrevive lá como o branch de origin não correspondido. A muralha permanece no app de bootstrap (run-qwen-serve.ts) que serve requisições antes do runtime iniciar.
 
-Exceção: as XHRs de mesma origem do Web Shell em um bind de **loopback** são tratadas por um middleware separado (em `server/self-origin.ts`) que remove `Origin` quando coincide com um dos self-origins canônicos de loopback (`127.0.0.1`, `localhost`, `[::1]`, `host.docker.internal`) ou o endereço de loopback vinculado exato. Origins sem porta com esquema correspondente são aceitos apenas para sua porta padrão (`http` na 80, `https` na 443). Em binds fora do loopback, as XHRs do shell carregam um `Origin` não correspondido e precisam de `--allow-origin` para o origin do daemon.
+Exceção: as XHRs de mesma origem do Web Shell em um bind de **loopback** são tratadas por um middleware separado (em `server/self-origin.ts`) que remove `Origin` quando coincide com um dos self-origins canônicos de loopback (`127.0.0.1`, `localhost`, `[::1]`, `host.docker.internal`) ou o endereço de loopback vinculado exato. Origins sem porta com esquema correspondente são aceitos apenas para sua porta padrão (`http` na 80, `https` na 443). Em binds fora do loopback, um segundo middleware (`installRemoteSelfOriginMiddleware`, no mesmo arquivo) cobre as XHRs do shell: ele autentica com bearer uma requisição cujo `Origin` canônico é igual ao esquema direto do socket mais a autoridade `Host` normalizada — cabeçalhos forwarded nunca são confiados — e remove esse `Origin` antes da muralha, então essas requisições não precisam de uma entrada `--allow-origin`. Origins cross-origin e `null` permanecem rejeitados, e as rotas de upgrade de WebSocket mais um origin `https` de proxy TLS frontal ainda exigem uma (veja [Cadeia de middlewares](#middleware-chain-http-request-order)).
 
 ### `allowOriginCors` (app de runtime, sempre instalado)
 
@@ -108,8 +122,8 @@ O app de runtime instala `allowOriginCors(originAllowlist)` incondicionalmente; 
 
 - Valores de `Origin` correspondentes recebem `Access-Control-Allow-Origin`, `Access-Control-Allow-Headers` e `Access-Control-Allow-Methods`; o preflight `OPTIONS` retorna `204`.
 - Valores de `Origin` não correspondentes recebem o mesmo `403 { error: 'Request denied by CORS policy' }` determinístico do modo de negação.
-- `--allow-origin '*'` exige `--token`; caso contrário, a inicialização é recusada.
-- Sem um token, valores HTTP(S) de `--allow-origin` são limitados a hosts de loopback. Um origin de navegador fora do loopback exige um token porque caso contrário poderia exercer a API completa do operador, incluindo execução de código como o usuário do daemon.
+- `--allow-origin '*'` exige um token bearer; em binds de loopback a inicialização recusa quando nenhum está configurado, enquanto em binds fora do loopback o token efêmero gerado satisfaz a guarda (a recusa é apenas no loopback).
+- Sem um token, valores HTTP(S) de `--allow-origin` são limitados a hosts de loopback em binds de loopback; em binds fora do loopback o token gerado satisfaz a mesma guarda. Um origin de navegador fora do loopback autentica com o bearer em toda rota da API porque caso contrário poderia exercer a API completa do operador, incluindo execução de código como o usuário do daemon; as exceções pré-auth são as rotas de documento/ativo do Web Shell e o sandbox do MCP App (`/`, `/assets*`, `/mcp-app-sandbox`, navegações exatas `/session/:id`), mais a entrada de webhook de canal, que faz branch antes de `bearerAuth` e autentica com seu próprio `x-qwen-webhook-secret` em vez do bearer, e — apenas em binds de loopback — `/health` (protegido por bearer em outros lugares).
 - Origins de extensão de navegador explícitos mantêm seu caminho de automação local sem token. Logs de inicialização indicam que qualquer origin de navegador permitido sem token recebe autoridade completa do operador.
 - `parseAllowOriginPatterns()` valida a sintaxe dos padrões na inicialização.
 - A tag de capability `allow_origin` é anunciada apenas quando este modo está configurado.
@@ -268,7 +282,7 @@ sequenceDiagram
 | Flag            | `--token`                                                                               | Token bearer (sobrescreve o env).                                       |
 | CLI flags       | `--open-with-auth`                                                                      | Reutiliza ou gera um bearer do Web Shell no loopback antes da inicialização do daemon. |
 | Flag            | `--require-auth`                                                                        | Estende bearer para loopback + `/health`. Inicia apenas com um token.   |
-| Flag            | `--hostname`                                                                            | Bind fora do loopback exige `--token` (ou env).                         |
+| Flag            | `--hostname`                                                                            | Bind fora do loopback sempre carrega um bearer — `--token`, `QWEN_SERVER_TOKEN`, ou um efêmero gerado; uma fonte explicitamente vazia recusa. |
 | Flag            | `--allow-origin <pattern>`                                                              | Alterna para modo de lista de permissão CORS. Wildcard e origins HTTP(S) fora do loopback exigem um token. |
 | Tags de capability | `require_auth` (condicional), `auth_device_flow` (sempre), `allow_origin` (condicional) | Veja [`11-capabilities-versioning.md`](./11-capabilities-versioning.md). |
 

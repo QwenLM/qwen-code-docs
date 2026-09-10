@@ -58,7 +58,7 @@ Escolha o caminho que corresponde ao seu objetivo:
 - [`17-configuration.md`](./17-configuration.md) - env vars, flags de CLI, chaves do `settings.json` que afetam o daemon.
 - [`18-error-taxonomy.md`](./18-error-taxonomy.md) - erros tipados por camada com remediação.
 - [`19-observability.md`](./19-observability.md) - `QWEN_SERVE_DEBUG`, receitas de depuração, lacunas de telemetria.
-- [`20-quickstart-operations.md`](./20-quickstart-operations.md) - caminho de inicialização mais curto, verificações com curl, mapa de rotas e receitas de invocação incorporadas.
+- [`20-quickstart-operations.md`](./20-quickstart-operations.md) - caminho de inicialização mais curto, verificações com curl, mapa de rotas e o limite de embedding (hospedagem in-process é interna; integrações externas usam `qwen serve --no-web` mais o protocolo HTTP/SSE). A receita de ciclo de vida interna do `createServeApp` está em [`02-serve-runtime.md`](./02-serve-runtime.md).
 
 ## Glossário
 
@@ -143,7 +143,7 @@ Use estas âncoras ao transitar da documentação para o código mais recente da
 | Área                    | Estado atual                                                                                                                                             | Documentação principal                          |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
 | Configuração           | Flags completas de `qwen serve`, variáveis de ambiente, `settings.json`, `ServeOptions`, `BridgeOptions` e constantes importantes são coletadas em uma página.                   | [`17`](./17-configuration.md)         |
-| Quickstart / operações | O caminho de inicialização mais curto, receitas de inicialização, verificações com curl, comportamento de autenticação do Web Shell, divisão de rotas, comportamento de desligamento e receitas de invocação incorporada são abordados. | [`20`](./20-quickstart-operations.md) |
+| Quickstart / operações | O caminho de inicialização mais curto, receitas de inicialização, verificações com curl, comportamento de autenticação do Web Shell, divisão de rotas, comportamento de desligamento e o limite de embedding são abordados. A receita de ciclo de vida interna do `createServeApp` está em [`02`](./02-serve-runtime.md). | [`20`](./20-quickstart-operations.md) |
 | Erros                  | Falhas explícitas no momento da inicialização, erros de rota, erros de bridge, erros do EventBus, erros de sistema de arquivos e erros de mediador são resumidos com suas respectivas soluções.        | [`18`](./18-error-taxonomy.md)        |
 | Observabilidade           | `QWEN_SERVE_DEBUG`, receitas com curl, eventos úteis, lacunas de telemetria e checklists de investigação estão documentados.                                             | [`19`](./19-observability.md)         |
 

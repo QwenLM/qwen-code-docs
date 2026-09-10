@@ -115,3 +115,9 @@ Qwen Code 项目是一个 monorepo，它将核心包发布到 NPM 注册表：
 1.  使用 `tsc` 构建 NPM 包。
 2.  将 NPM 包发布到制品注册表。
 3.  创建包含打包资源的 GitHub 发布版本。
+
+**OpenTUI 预览风味**
+
+独立归档默认以经典 Node.js 风味发布。将 `OPENTUI_PREVIEW_RELEASE_ENABLED` 仓库变量设置为 `true` 会额外构建 bun/OpenTUI 预览风味，其归档带有 `-opentui-preview` 后缀，启动器将 `QWEN_TUI_RENDERER` 默认设置为 `opentui`。不设置该变量则保持该风味关闭。
+
+该变量仅决定新发布的构建内容。将发布镜像到阿里云 OSS 的工作流程不会读取该变量：该工作流可以对任意标签重新触发，而在该风味存在之前创建的标签没有预览归档可供验证，因此它从发布实际包含的归档中推导出风味。

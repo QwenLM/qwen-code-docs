@@ -61,9 +61,8 @@ export QQ_APP_SECRET=<seu-app-secret>
       "sandbox": false,
       "senderPolicy": "open",
       "sessionScope": "user",
-      "cwd": "/caminho/para/seu/projeto",
+      "cwd": "/path/to/your/project",
       "instructions": "你是一个通过 QQ Bot 对话的 AI 助手。回复控制在 2000 字符以内。",
-      "blockStreaming": "on",
       "groupPolicy": "disabled",
       "groups": {
         "*": { "requireMention": true }
@@ -82,7 +81,7 @@ export QQ_APP_SECRET=<seu-app-secret>
 | `sandbox`   | `false`  | Defina como `true` para usar o ambiente de API sandbox do QQ (`sandbox.api.sgroup.qq.com`) |
 
 Todas as opções padrão de canal (veja [Visão Geral do Canal](./overview#options)) também são suportadas:
-`senderPolicy`, `allowedUsers`, `sessionScope`, `cwd`, `instructions`, `groupPolicy`, `groups`, `dispatchMode`, `blockStreaming`, `blockStreamingChunk`, `blockStreamingCoalesce`.
+`senderPolicy`, `allowedUsers`, `sessionScope`, `cwd`, `instructions`, `groupPolicy`, `groups`, `dispatchMode`.
 
 ## Execução
 

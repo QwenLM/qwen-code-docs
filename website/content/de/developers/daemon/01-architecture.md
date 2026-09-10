@@ -4,7 +4,7 @@
 
 Ein `qwen serve`-Prozess beherbergt standardmäßig einen Express-HTTP-Server und einen primären Workspace. Mit aktiviertem `multi_workspace_sessions` kann er zusätzlich weitere Workspace-Runtimes für den Live-Session-Closed-Loop beherbergen; jeder registrierte Workspace besitzt sein eigenes `@qwen-code/acp-bridge`- / `qwen --acp`-Kindprozess-Paar. Mehrere Clients (CLI TUI, IDE-Begleiter, IM-Channel-Bots, Web-BFFs, benutzerdefinierte Skripte) verbinden sich über HTTP + SSE und teilen sich entweder eine ACP-Session (`sessionScope: 'single'`, Standard) oder teilen Sessions nach Gesprächsfaden auf (`sessionScope: 'thread'`).
 
-Innerhalb des ACP-Kindprozesses werden MCP-Server Workspace-weit über `McpTransportPool` (F2) gemeinsam genutzt: Ein einzelnes Tupel aus (Servername + Konfigurationsfingerabdruck) wird auf einen MCP-Transport abgebildet, unabhängig davon, wie viele Sitzungen ihn entdecken. Der `MultiClientPermissionMediator` (F3) der Bridge koordiniert Berechtigungsvoten aller verbundenen Clients unter einer von vier Richtlinien.
+Innerhalb des ACP-Kindprozesses werden MCP-Server Workspace-weit über `McpTransportPool` (F2) gemeinsam genutzt: Ein einzelnes Tupel aus (Servername + Konfigurationsfingerabdruck) wird auf einen MCP-Transport abgebildet, unabhängig davon, wie viele Sessions ihn entdecken. Der `MultiClientPermissionMediator` (F3) der Bridge koordiniert Berechtigungsvoten aller verbundenen Clients unter einer von vier Richtlinien.
 
 Dieses Dokument liefert das **Systembild**, auf dem der Rest dieser Dokumentation aufbaut. Jeder kritische Ablauf wird als Mermaid-Sequenzdiagramm dargestellt; Details zur Implementierung der einzelnen Komponenten finden sich in den anderen 18 Dokumenten.
 
@@ -147,16 +147,19 @@ Drei Vertrauensgrenzen sind relevant: die HTTP-Kante (`serve/auth.ts` Middleware
 sequenceDiagram
     autonumber
     participant C as Client (SDK)
-    participant MW as Middleware<br/>(CORS→host→log→bearer→rate-limit→JSON→telemetry→mutationGate)
+    participant MW as Middleware<br/>(origin-strip→log→trace-id→host→same-origin→CORS→bearer→rate-limit→JSON→telemetry→mutationGate)
     participant R as Route handler
     participant BR as AcpBridge
     participant BC as BridgeClient
     participant CH as ACP child
 
     C->>MW: POST /session/:id/prompt<br/>Authorization: Bearer …<br/>X-Qwen-Client-Id: …
-    MW->>MW: allowOriginCors (mutable allowlist; unmatched Origin -> 403)
+    MW->>MW: loopback same-origin Origin strip
+    MW->>MW: access-log hook (skips GET /health and POST */heartbeat)
+    MW->>MW: inbound trace-id capture
     MW->>MW: hostAllowlist (DNS rebinding guard)
-    MW->>MW: access-log hook
+    MW->>MW: remote same-origin Origin strip + bearer check (non-loopback with a token)
+    MW->>MW: allowOriginCors (mutable allowlist; unmatched Origin -> 403)
     MW->>MW: bearerAuth (constant-time compare)
     MW->>MW: rateLimit (when enabled)
     MW->>MW: express.json body parser
@@ -290,7 +293,7 @@ sequenceDiagram
     P-->>S: single result or {entries: RestartResult[]}
 ```
 
-`releaseSession(sessionId)` nutzt den umgekehrten `sessionToEntries`-Index, um jeden Eintrag, den die Sitzung hält, in O(refs) freizugeben. Beim Herunterfahren des Daemons setzt `drainAll()` das `draining`-Flag (lehnt neue Akquises ab) und wartet darauf, dass jeder Eintrag unter einem konfigurierbaren Timeout schließt.
+`releaseSession(sessionId)` nutzt den umgekehrten `sessionToEntries`-Index, um jeden Eintrag, den die Session hält, in O(refs) freizugeben. Beim Herunterfahren des Daemons setzt `drainAll()` das `draining`-Flag (lehnt neue Akquises ab) und wartet darauf, dass jeder Eintrag unter einem konfigurierbaren Timeout schließt.
 
 ## Workflow 5: Lebenszyklus – Start und sauberes Herunterfahren
 

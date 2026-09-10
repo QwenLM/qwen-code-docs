@@ -2,7 +2,7 @@
 
 Qwen Code 首次运行时的 `/auth` 菜单包含三个顶级选项。请根据你运行 CLI 的方式选择对应的选项：
 
-- **Alibaba ModelStudio**：官方推荐的配置方式。打开子菜单后可选择 **Coding Plan**（面向个人开发者 · 包含每周配额）、**Token Plan**（面向团队和企业 · 按量计费并提供专属 endpoint）或 **Standard API Key**（使用现有的 ModelStudio API key 进行连接）。
+- **Alibaba ModelStudio**：官方推荐的配置方式。打开子菜单后可选择 **Coding Plan**（面向个人开发者 · 包含每周配额）、**Token Plan**（面向团队和企业 · 按量计费并提供专属 endpoint）或 **Standard API Key**（使用现有的 ModelStudio API key 进行连接）。Token Plan 和 Standard API Key 还可在无需额外配置的情况下启用内置的 [`web_search` 工具](../../developers/tools/web-search.md)。
 - **Third-party Providers**：选择内置的 provider 并使用 API key 进行连接（DeepSeek、Grok、MiniMax、Z.AI、Kimi、Idealab、ModelScope、OpenRouter、Requesty）。
 - **Custom Provider**：手动连接本地服务器、代理或不支持的 provider —— 支持 OpenAI、Anthropic、Gemini 及其他兼容的 endpoint。
 
@@ -373,11 +373,11 @@ Qwen Code 会自动加载它找到的**第一个** `.env` 文件（变量**不�
 你也可以直接通过命令行参数切换模型，这在跨多个终端工作时非常方便。
 
 ```bash
-# In one terminal
+# 在一个终端中
 
 qwen --model "qwen3-coder-plus"
 
-# In another terminal
+# 在另一个终端中
 
 qwen --model "qwen3.5-plus"
 ```

@@ -58,7 +58,7 @@ Choisissez le parcours qui correspond à votre objectif :
 - [`17-configuration.md`](./17-configuration.md) - variables d'environnement, flags CLI, clés `settings.json` qui affectent le daemon.
 - [`18-error-taxonomy.md`](./18-error-taxonomy.md) - erreurs typées par couche avec remédiation.
 - [`19-observability.md`](./19-observability.md) - `QWEN_SERVE_DEBUG`, recettes de débogage, lacunes de télémétrie.
-- [`20-quickstart-operations.md`](./20-quickstart-operations.md) - chemin de démarrage le plus court, vérifications curl, carte des routes, et recettes d'invocation intégrées.
+- [`20-quickstart-operations.md`](./20-quickstart-operations.md) - chemin de démarrage le plus court, vérifications curl, carte des routes, et limite d'intégration (l'hébergement in-process est interne ; les intégrations externes utilisent `qwen serve --no-web` plus le protocole HTTP/SSE). La recette du cycle de vie interne `createServeApp` se trouve dans [`02-serve-runtime.md`](./02-serve-runtime.md).
 
 ## Glossaire
 
@@ -143,7 +143,7 @@ Utilisez ces ancres pour passer de la documentation au code le plus récent de l
 | Domaine                    | État actuel                                                                                                                                             | Documentation principale                          |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
 | Configuration           | L'ensemble des flags `qwen serve`, des variables d'environnement, de `settings.json`, de `ServeOptions`, de `BridgeOptions` et des constantes importantes sont regroupés sur une seule page.                   | [`17`](./17-configuration.md)         |
-| Démarrage rapide / opérations | Le chemin de démarrage le plus court, les recettes de lancement, les vérifications curl, le comportement d'authentification du Web Shell, la répartition des routes, le comportement d'arrêt et les recettes d'invocation intégrée y sont couverts. | [`20`](./20-quickstart-operations.md) |
+| Démarrage rapide / opérations | Le chemin de démarrage le plus court, les recettes de lancement, les vérifications curl, le comportement d'authentification du Web Shell, la répartition des routes, le comportement d'arrêt et la limite d'intégration y sont couverts. La recette du cycle de vie interne `createServeApp` se trouve dans [`02`](./02-serve-runtime.md). | [`20`](./20-quickstart-operations.md) |
 | Erreurs                  | Les échecs explicites au démarrage, les erreurs de route, les erreurs de bridge, les erreurs d'EventBus, les erreurs de système de fichiers et les erreurs de médiateur sont résumés avec leurs solutions.        | [`18`](./18-error-taxonomy.md)        |
 | Observabilité           | `QWEN_SERVE_DEBUG`, les recettes curl, les événements utiles, les lacunes de télémétrie et les checklists d'investigation sont documentés.                                             | [`19`](./19-observability.md)         |
 
