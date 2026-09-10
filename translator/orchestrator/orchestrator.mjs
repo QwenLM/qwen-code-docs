@@ -477,6 +477,46 @@ const TRANSLATE_CHUNK = 1;
 // Retry once; repeated failures stay in the next run's backlog.
 const TRANSLATE_ATTEMPTS = 2;
 
+/**
+ * Trim the inside of inline code spans.
+ *
+ * The translation agent reliably emits `` ` @qwen-code/webui` `` where the
+ * document holds `` `@qwen-code/webui` `` — a spurious space just inside the
+ * span. In run 34412117469 that single artifact accounted for 20 of 54
+ * unmatchable `old` anchors, each one discarding a whole document's
+ * translation. Nothing semantic distinguishes the two, so the anchor is
+ * repaired rather than the model re-prompted (the prompt has told it to copy
+ * verbatim since the beginning; it still does this).
+ *
+ * Only closed spans on a single line are touched, and fenced blocks are left
+ * alone, so `foo` bar keeps its space: that one belongs to the prose between
+ * spans, not to a span.
+ */
+/** Index of `needle` in `hay` when it occurs exactly once, else -1. */
+function matchExactlyOnce(hay, needle) {
+  const at = hay.indexOf(needle);
+  if (at < 0) return -1;
+  return hay.indexOf(needle, at + needle.length) >= 0 ? -1 : at;
+}
+
+function trimCodeSpans(text) {
+  let fenced = false;
+  return text
+    .split("\n")
+    .map((line) => {
+      if (/^\s*(```|~~~)/.test(line)) {
+        fenced = !fenced;
+        return line;
+      }
+      if (fenced) return line;
+      const parts = line.split("`");
+      for (let i = 1; i < parts.length - 1; i += 2)
+        if (parts[i].trim()) parts[i] = parts[i].trim();
+      return parts.join("`");
+    })
+    .join("\n");
+}
+
 function translationSchema(documents) {
   return {
     type: "object",
@@ -597,18 +637,29 @@ function applyTranslationPatches(lang, documents, result) {
           typeof replacement.new !== "string"
         )
           throw new Error(`${rel}: replacement ${i + 1} is invalid`);
-        const at = next.indexOf(replacement.old);
-        if (
-          at < 0 ||
-          next.indexOf(replacement.old, at + replacement.old.length) >= 0
-        )
+        let { old, new: text } = replacement;
+        let at = matchExactlyOnce(next, old);
+        if (at < 0) {
+          // Second attempt with the code-span artifact repaired. Strictly a
+          // fallback: an anchor that already matched never reaches here, so
+          // this cannot change how an accepted patch applies. `new` is
+          // repaired too — it carries the same artifact, and writing it
+          // through would put the malformed span into the published page.
+          const repaired = trimCodeSpans(old);
+          if (repaired !== old) {
+            const retry = matchExactlyOnce(next, repaired);
+            if (retry >= 0) {
+              old = repaired;
+              text = trimCodeSpans(text);
+              at = retry;
+            }
+          }
+        }
+        if (at < 0)
           throw new Error(
             `${rel}: replacement ${i + 1} does not match exactly once`
           );
-        next =
-          next.slice(0, at) +
-          replacement.new +
-          next.slice(at + replacement.old.length);
+        next = next.slice(0, at) + text + next.slice(at + old.length);
       }
     }
     writes.push({ dest, content: next });
