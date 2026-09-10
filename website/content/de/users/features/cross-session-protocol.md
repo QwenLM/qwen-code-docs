@@ -9,7 +9,8 @@ Jeder Wert, der eine Prozessgrenze überschreitet, ist bei Ankunft nicht vertrau
 Eine laufende Session veröffentlicht einen Datensatz:
 
 ```
-$QWEN_HOME/sessions/<pid>.json        (Verzeichnis 0700, Datei 0600)
+$QWEN_HOME/sessions/<pid>.json            (Verzeichnis 0700, Datei 0600)
+$QWEN_HOME/sessions/<pid>-<8 hex>.json    (ein Prozess, der mehrere Sessions hostet)
 ```
 
 `$QWEN_HOME` ist standardmäßig `~/.qwen`. Der Dateiname ist die PID des Schreibers und sonst nichts; ein Datensatz, dessen `pid`-Feld nicht mit seinem Dateinamen übereinstimmt, wird ignoriert.
@@ -34,7 +35,7 @@ $QWEN_HOME/sessions/<pid>.json        (Verzeichnis 0700, Datei 0600)
 | Feld            | Bedeutung                                                                                                                                                                                                                                                                                                         |
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `schemaVersion` | Immer `1`. Ein Leser überspringt einen Datensatz mit einer höheren Version und löscht ihn nie.                                                                                                                                                                                                                    |
-| `pid`           | Die Prozess-ID des Schreibers. Muss dem Dateinamen entsprechen.                                                                                                                                                                                                                                                   |
+| `pid`           | Die Prozess-ID des Schreibers. Muss der PID entsprechen, nach der der Dateiname benannt ist: der ganze Name für die bloße Form, die Ziffern vor dem `-<8 hex>`-Suffix für die geprägte.                                                                                                                                  |
 | `procStart`     | `<boot id>:<process start ticks>` unter Linux (`/proc/sys/kernel/random/boot_id` und Feld 22 von `/proc/<pid>/stat`); `null` andernorts. Schützt vor PID-Wiederverwendung und vor Datensätzen, die auf einem anderen Rechner geschrieben wurden, der dieses Home-Verzeichnis teilt.                              |
 | `pidNs`         | Inode-Nummer von `/proc/self/ns/pid` unter Linux; `null` andernorts. Ein Leser listet und bereinigt nur Datensätze aus seinem eigenen Namespace.                                                                                                                                                                  |
 | `sessionId`     | Die ID der Session. `/clear` und `/resume` tauschen sie unter derselben PID aus, also den Datensatz vor jedem Senden erneut lesen.                                                                                                                                                                                |
@@ -55,6 +56,8 @@ $QWEN_HOME/sessions/<pid>.json        (Verzeichnis 0700, Datei 0600)
 **Liveness.** Ein Datensatz ist live, wenn alle folgenden Bedingungen erfüllt sind: der Dateiname stimmt mit `pid` überein; `pidNs` entspricht dem des Lesers; die Boot-ID in `procStart` entspricht der des Lesers (oder `procStart` ist `null`); und die PID ist lebendig mit denselben Start-Ticks. Ein live Datensatz mit einem `ipcPath` muss noch immer angewählt werden, bevor er als erreichbar angekündigt wird — eine Socket-Datei überlebt einen Crash.
 
 **Refs.** Angezeigte Handles verwenden `ref = sha256(sessionId)[0:6]`. Zwei Sessions dürfen denselben `name` teilen; die Adressgrammatik, die ein Sender tippt, ist `name`, `name [ref]`, `[ref]` oder das bloße `ref`, und ein mehrdeutiger `name` ist ein Fehler statt einer Vermutung.
+
+**Mehrere Datensätze von einem Prozess.** Jedes `qwen --acp`-Kind — vom Daemon erzeugt oder direkt von einem Editor oder einem anderen Client gesteuert — schreibt einen Datensatz pro Session, benannt als `<pid>-<8 hex>.json`, ab seiner ersten Session. Das Suffix wird bei der Registrierung geprägt und ändert sich nie; eine darunter ausgetauschte Session-ID ist ein Patch des Datensatzes, keine Umbenennung. Jeder von ihnen trägt denselben `ipcPath`, da der Prozess eine Inbox für alle seine Sessions bindet und sie durch die `toSessionId` auf jedem Frame unterscheidet — also **immer `toSessionId` mitsenden**: ein Frame ohne eine, der einen solchen Prozess erreicht, wird mit `misaddressed` beantwortet, da es keine einzelne Session gibt, die gemeint sein könnte. Liveness, Sweeping und die Namespace- und Boot-Guards lesen den Datensatz genau wie beim bloßen Namen; nur die PID/Dateiname-Übereinstimmungsprüfung unterscheidet sich, und nur indem `pid` mit den Ziffern vor dem Suffix verglichen wird statt mit dem ganzen Namen.
 
 ## 2. Der Inbox-Socket
 
@@ -83,8 +86,8 @@ Drei Arten von Token werden akzeptiert, und die Inbox merkt sich, welches sie ge
 | Präsentiert                                                                   | Die Inbox folgert               | Effekt                                                                            |
 | ----------------------------------------------------------------------------- | ------------------------------- | --------------------------------------------------------------------------------- |
 | Das `ipcToken` aus dem Registry-Datensatz des Ziels                           | einen gewöhnlichen Peer         | unterliegt Policy und Mode-Parität (§6)                                           |
-| `QWEN_CODE_MESSAGING_TOKEN` aus der eigenen Umgebung des Ziels                | einen Prozess, den die Session gestartet hat | wird unter der Paritäts-Std Einstellung zugestellt; `origin="own-process"`        |
-| Ein Controller-Token `qpc_<64 hex>`, erzeugt mit `qwen sessions controllers add` | ein Programm, dem der Benutzer vertraut | wird unter der Paritäts-Std Einstellung zugestellt; `origin="controller"` mit dem Label des Grants |
+| `QWEN_CODE_MESSAGING_TOKEN` aus der eigenen Umgebung des Ziels                | einen Prozess, den die Session gestartet hat | wird unter der Paritäts-Voreinstellung zugestellt; `origin="own-process"`                       |
+| Ein Controller-Token `qpc_<64 hex>`, erzeugt mit `qwen sessions controllers add` | ein Programm, dem der Benutzer vertraut      | wird unter der Paritäts-Voreinstellung zugestellt; `origin="controller"` mit dem Label des Grants |
 
 Eine erste Zeile, die keine Auth-Zeile ist oder ein Token präsentiert, das auf keines der drei passt, trennt die Verbindung still. Wenn der Datensatz kein `ipcToken` hat, sende keine Auth-Zeile; eine ältere Inbox liest sie als unbekannten Frame-Typ und überspringt sie, daher ist es immer sicher, mit einer zu beginnen.
 
@@ -198,4 +201,7 @@ gefolgt von einem Hinweis, der die Autorität des Senders angibt. `origin="own-p
 
 - **Name Yielding.** Zwei Sessions in einem Verzeichnis können denselben `name` registrieren; heute werden sie nur durch `ref` unterschieden. Eine Registrierung, die einem live Namen nachgibt, und ein Control-Frame, der Peers mitteilt, dass eine Session sich umbenannt hat, stehen beide noch aus.
 - **Gleiche-Namen-Reporting.** `qwen sessions ps` und `list_agents` markieren Datensätze, die noch kollidieren, nicht.
-- **Daemon-verwaltete Sessions.** Nur die interaktive UI registriert sich heute, daher ist eine Session, die `qwen serve` antreibt, nicht in der Registry, kann nicht adressiert werden und kann nicht senden. Die `serve`- und `headless`-Kinds sind dafür reserviert.
+- **Name Yielding.** Zwei Sessions in einem Verzeichnis können denselben `name` registrieren; heute werden sie nur durch `ref` unterschieden. Eine Registrierung, die einem live Namen nachgibt, und ein Control-Frame, der Peers mitteilt, dass eine Session sich umbenannt hat, stehen beide noch aus.
+- **Gleiche-Namen-Reporting.** `qwen sessions ps` und `list_agents` markieren Datensätze, die noch kollidieren, nicht.
+- **Eingehende Nachrichten an ACP-gesteuerte Sessions.** Eine Session, die ein Programm über ACP steuert — vom Daemon erzeugt oder nicht — registriert sich und kann senden, beantwortet aber alles, was an sie gesendet wird, mit `refused`: ein Hold ist eine Frage an eine Person, und niemand beobachtet eine Hold-Liste in ihrem Namen. Wo eine zurückgehaltene Nachricht für diese Sessions auftauchen sollte — bei ihrem Client oder der eigenen API des Daemon — ist noch offen.
+- **Sessions hinter einer Inbox sind ein einziger Sender für jeden Peer.** Ein Prozess, der mehrere Sessions hostet, sendet mit einer einzigen `from`-Adresse, sodass das Pro-Sender-Budget und das Duplicate-Fenster (§6) des Empfängers von allen Sessions dieses Prozesses gemeinsam genutzt werden: eine beschäftigte Geschwister-Session kann das Kontingent einer anderen aufbrauchen, und ein Body, der gerade an eine gesendet wurde, kann innerhalb des Fensters nicht an ihre Geschwister-Session wiederholt werden. Eine Pro-Session-Abrechnung müsste einem vom Frame behaupteten Feld vertrauen, was das Vertrauensmodell von §3 ausschließt.

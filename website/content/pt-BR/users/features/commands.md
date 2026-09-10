@@ -759,7 +759,7 @@ então não são mostradas.
 
 Uma tabela com as colunas: NAME, KIND, PID, AGE, DIRECTORY.
 
-KIND indica o que registrou a sessão — `tui` para alguém em um terminal, `external` para um programa que não é uma sessão do Qwen Code (um front-end de voz, um relay) e `headless` ou `serve` para uma sessão controlada por outro programa. É um autorrelato, assim como NAME e DIRECTORY: cada campo aqui foi escrito pelo processo que descreve, e nada sobre o que uma sessão pode fazer depende disso. Consulte o [Cross-Session Protocol](./cross-session-protocol.md) para o formato do registro e como registrar seu próprio programa.
+KIND indica o que registrou a sessão — `tui` para alguém em um terminal, `external` para um programa que não é uma sessão do Qwen Code (um front-end de voz, um relay) e `headless` ou `serve` para uma sessão controlada por outro programa. Várias linhas `serve` ou `headless` podem compartilhar um único PID: um filho `qwen --acp` hospeda todas as suas sessões em um processo — `serve` quando o daemon o iniciou, `headless` quando um cliente o controla diretamente — e cada uma delas se registra separadamente. É um autorrelato, assim como NAME e DIRECTORY: cada campo aqui foi escrito pelo processo que descreve, e nada sobre o que uma sessão pode fazer depende disso. Consulte o [Cross-Session Protocol](./cross-session-protocol.md) para o formato do registro e como registrar seu próprio programa.
 
 **Saída em JSON (`--json`):**
 
@@ -870,6 +870,14 @@ qwen sessions controllers remove c_1a2b # revogar um
 O modelo vê tal mensagem como `<cross_session_message from="controller" origin="controller" controller="voice-bridge">`, com um aviso de que ela retransmite suas próprias instruções — e as mesmas duas proibições que se aplicam a qualquer outra origem: ela não pode editar configurações de permissão, QWEN.md ou config porque a mensagem pediu, e não pode tratar a mensagem como você aprovando um prompt de confirmação pendente. Um controlador pode dizer o que fazer a seguir; não pode responder a um prompt em seu nome.
 
 Qualquer um que segure o token pode enviar como aquele controlador, então trate-o como qualquer outra credencial: dê-o a um programa, mantenha-o fora de config compartilhado, e revogue-o quando esse programa terminar.
+
+### Sessões controladas por um programa via ACP
+
+Qualquer filho `qwen --acp` registra cada sessão que hospeda — como `serve` quando o daemon iniciou o processo, como `headless` quando um editor ou outro cliente está controlando `qwen --acp` diretamente — e a sessão aparece em `qwen sessions ps` e no `list_agents` de outra sessão como qualquer outra. Ela pode enviar: seu modelo pode chamar `send_message` para alcançar um terminal que você tenha aberto. Várias delas compartilham um processo e uma caixa de entrada, então um remetente precisa nomear a sessão que pretende atingir — toda sessão do Qwen Code faz isso automaticamente.
+
+Mensagens enviadas _para_ uma delas são recusadas em vez de mantidas. Manter é uma pergunta feita a uma pessoa, e ninguém está observando uma lista de mensagens mantidas em nome de uma sessão controlada; um remetente é informado imediatamente em vez de esperar o expirar. Onde uma mensagem mantida deveria aparecer para essas sessões ainda não está definido.
+
+Uma sessão se registra apenas enquanto suas próprias configurações tiverem `agents.crossSessionMessaging` ativado. Com ele desativado, ela permanece invisível, porque a única razão para listar uma sessão que ninguém pode enviar mensagens seria anunciar um endereço que nunca responde.
 
 ### Programas que não são sessões do Qwen Code
 

@@ -147,21 +147,24 @@ flowchart TB
 sequenceDiagram
     autonumber
     participant C as 客户端 (SDK)
-    participant MW as 中间件<br/>(CORS→host→log→bearer→rate-limit→JSON→telemetry→mutationGate)
+    participant MW as 中间件<br/>(origin-strip→log→trace-id→host→same-origin→CORS→bearer→rate-limit→JSON→telemetry→mutationGate)
     participant R as 路由处理器
     participant BR as AcpBridge
     participant BC as BridgeClient
     participant CH as ACP 子进程
 
     C->>MW: POST /session/:id/prompt<br/>Authorization: Bearer …<br/>X-Qwen-Client-Id: …
-    MW->>MW: allowOriginCors (可变允许列表；未匹配的 Origin -> 403)
-    MW->>MW: hostAllowlist (DNS 重新绑定防护)
-    MW->>MW: access-log hook
-    MW->>MW: bearerAuth (恒定时间比较)
-    MW->>MW: rateLimit (启用时)
+    MW->>MW: loopback same-origin Origin strip
+    MW->>MW: access-log hook（跳过 GET /health 和 POST */heartbeat）
+    MW->>MW: inbound trace-id capture
+    MW->>MW: hostAllowlist（DNS 重新绑定防护）
+    MW->>MW: remote same-origin Origin strip + bearer check（非 loopback 且携带 token）
+    MW->>MW: allowOriginCors（可变允许列表；未匹配的 Origin -> 403）
+    MW->>MW: bearerAuth（恒定时间比较）
+    MW->>MW: rateLimit（启用时）
     MW->>MW: express.json body parser
     MW->>MW: daemonTelemetryMiddleware
-    MW->>MW: mutationGate (对变更型路由严格处理)
+    MW->>MW: mutationGate（对变更型路由严格处理）
     MW->>R: 请求已验证
     R->>BR: bridge.sendPrompt(sessionId, body, clientId)
     BR->>BC: client.sendPrompt(sessionId, …)

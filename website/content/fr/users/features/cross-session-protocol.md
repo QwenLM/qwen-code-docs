@@ -19,12 +19,17 @@ la respecte pas est supprimée, jamais rejetée avec une erreur.
 Une session en cours publie un enregistrement :
 
 ```
-$QWEN_HOME/sessions/<pid>.json        (répertoire 0700, fichier 0600)
+$QWEN_HOME/sessions/<pid>.json            (répertoire 0700, fichier 0600)
+$QWEN_HOME/sessions/<pid>-<8 hex>.json    (un processus hébergeant plusieurs sessions)
 ```
 
-`$QWEN_HOME` vaut par défaut `~/.qwen`. Le nom de fichier est le PID de
-l'écrivain et rien d'autre ; un enregistrement dont le champ `pid` ne
-correspond pas à son nom de fichier est ignoré.
+`$QWEN_HOME` vaut par défaut `~/.qwen`. Le nom de fichier est indexé par le PID de
+l'écrivain — soit le PID seul, soit le PID, un tiret et huit caractères
+hexadécimaux minuscules générés à l'inscription (voir « Plusieurs
+enregistrements pour un processus » ci-dessous). Un enregistrement dont
+le champ `pid` ne correspond pas au préfixe PID de son nom de fichier —
+comparé en forme décimale canonique, donc un nom avec des zéros initiaux
+ne correspond à rien — est ignoré.
 
 ```json
 {
@@ -46,7 +51,7 @@ correspond pas à son nom de fichier est ignoré.
 | Champ           | Signification                                                                                                                                                                                                                                                                                         |
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `schemaVersion` | Toujours `1`. Un lecteur saute un enregistrement dont la version est supérieure et ne le supprime jamais.                                                                                                                                                                                             |
-| `pid`           | L'identifiant de processus de l'écrivain. Doit correspondre au nom de fichier.                                                                                                                                                                                                                        |
+| `pid`           | L'identifiant de processus de l'écrivain. Doit être égal au PID indexé par le nom de fichier : le nom entier pour la forme nue, les chiffres avant le suffixe `-<8 hex>` pour la forme générée.                                                                                                          |
 | `procStart`     | `<boot id>:<process start ticks>` sur Linux (`/proc/sys/kernel/random/boot_id` et champ 22 de `/proc/<pid>/stat`) ; `null` ailleurs. Protège contre la réutilisation de PID et contre les enregistrements écrits sur une autre machine partageant ce répertoire home.                                |
 | `pidNs`         | Numéro d'inode de `/proc/self/ns/pid` sur Linux ; `null` ailleurs. Un lecteur ne liste et ne nettoie que les enregistrements de son propre namespace.                                                                                                                                                 |
 | `sessionId`     | L'identifiant de session. `/clear` et `/resume` le remplacent sous le même PID, donc relisez l'enregistrement avant chaque envoi.                                                                                                                                                                     |
@@ -89,7 +94,7 @@ conception. N'affichez pas `ipcToken` là où un modèle ou un log pourrait
 le voir.
 
 **Liveness.** Un enregistrement est actif lorsque toutes ces conditions
-sont remplies : le nom de fichier correspond à `pid` ; `pidNs` est égal
+sont remplies : le nom de fichier est `<pid>.json` ou `<pid>-<8 hex>.json` et son préfixe PID est égal à `pid` ; `pidNs` est égal
 à celui du lecteur ; le boot id dans `procStart` est égal à celui du
 lecteur (ou `procStart` est `null`) ; et le PID est actif avec les mêmes
 ticks de démarrage. Un enregistrement actif avec un `ipcPath` doit
@@ -100,6 +105,23 @@ socket survit à un crash.
 Deux sessions peuvent partager un `name` ; la grammaire d'adresse qu'un
 expéditeur saisit est `name`, `name [ref]`, `[ref]` ou le `ref` seul, et
 un `name` ambigu est une erreur plutôt qu'une supposition.
+
+**Plusieurs enregistrements pour un processus.** Tout enfant `qwen --acp` — lancé
+par le démon, ou piloté directement par un éditeur ou un autre client —
+écrit un enregistrement par session, nommé `<pid>-<8 hex>.json`, dès sa
+première session. Le suffixe est généré à l'inscription et ne change
+jamais ; un id de session changé en dessous est un correctif de
+l'enregistrement, pas un renommage. Chacun d'eux porte le même
+`ipcPath`, car le processus lie une seule boîte de réception pour toutes
+ses sessions et les distingue par le `toSessionId` de chaque frame —
+donc **envoyez toujours `toSessionId`** : une frame sans ce champ qui
+atteint un tel processus reçoit une réponse `misaddressed`, car il n'y a
+pas de session unique à laquelle elle pourrait correspondre. La liveness,
+le nettoyage et les gardes de namespace et de boot lisent
+l'enregistrement exactement comme pour le nom nu ; seule la
+vérification de correspondance PID/nom de fichier diffère, et uniquement
+en comparant `pid` avec les chiffres avant le suffixe plutôt qu'avec le
+nom entier.
 
 ## 2. Le socket de la boîte de réception
 
@@ -335,7 +357,19 @@ l'enveloppe sont neutralisées dans `content`.
   sont tous deux à venir.
 - **Rapport de noms identiques.** `qwen sessions ps` et `list_agents` ne
   signalent pas les enregistrements qui entrent encore en collision.
-- **Sessions gérées par le démon.** Seul l'UI interactif s'enregistre
-  aujourd'hui, donc une session pilotée par `qwen serve` n'est pas dans
-  le registre, ne peut pas être adressée, et ne peut pas envoyer. Les
-  types `serve` et `headless` lui sont réservés.
+- **Messages entrants vers les sessions pilotées par ACP.** Une session
+  qu'un programme pilote via ACP — lancée par le démon ou non —
+  s'enregistre et peut envoyer, mais répond `refused` à tout ce qui lui
+  est envoyé : une mise en attente est une question posée à une personne,
+  et personne ne surveille une liste d'attente en son nom. L'endroit où
+  un message en attente devrait apparaître pour ces sessions — son
+  client, ou l'API propre du démon — reste ouvert.
+- **Les sessions derrière une seule boîte de réception sont un seul
+  expéditeur pour chaque pair.** Un processus hébergeant plusieurs
+  sessions envoie avec une seule adresse `from`, donc le budget par
+  expéditeur et la fenêtre de doublons (§6) du récepteur sont partagés
+  par toutes les sessions de ce processus à la fois : un sibling occupé
+  peut dépenser le quota d'un autre, et un corps juste envoyé à l'un ne
+  peut pas être répété à son sibling dans la fenêtre. Une comptabilité
+  par session devrait faire confiance à un champ affirmé par la frame, ce
+  que le modèle de confiance de §3 exclut.

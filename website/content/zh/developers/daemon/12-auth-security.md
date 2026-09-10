@@ -2,10 +2,10 @@
 
 ## 概述
 
-`qwen serve` 默认是一个本地守护进程，在错误配置下会成为暴露面。它的安全模型是 **分层** 的，以便错误配置时安全失效（fails closed）：
+`qwen serve` 默认是一个本地守护进程，在错误配置下会成为暴露面。它的安全模型是 **分层** 的，以便错误配置时 fail closed：
 
-1. **绑定（Bind）** — 非回环绑定且没有 bearer 令牌时 **拒绝启动**。
-2. **Bearer 认证** — `bearerAuth` 中间件使用常量时间 SHA-256 比较保护普通 API 路由（`/health` 在普通回环绑定上除外，`require_auth` 会将该端点也移到 bearer 之后）。Channel webhook 入口是独立的 pre-bearer 路由，通过 `x-qwen-webhook-secret` 认证。Web Shell 文档和资源路由在所有模式下都保持 pre-auth。
+1. **绑定** — 非回环绑定始终携带 bearer：操作员的，或在启动时生成并打印一次的临时 128 位 bearer。仅当提供的令牌源明确为空/空白，或请求的 `localhost` 解析到非回环地址（无令牌源已解析，即永不生成）时，启动才拒绝。
+2. **Bearer 认证** — `bearerAuth` 中间件使用常量时间 SHA-256 比较保护普通 API 路由，`/health` 在普通回环绑定上除外（`require_auth` 也会将该端点移到 bearer 之后）。Channel webhook 入口是独立的 pre-bearer 路由，通过 `x-qwen-webhook-secret` 认证。Web Shell 文档和资源路由在所有模式下都保持 pre-auth。
 3. **主机头允许列表** — 在回环上，只接受 `localhost`、`127.0.0.1`、`[::1]`、`host.docker.internal` 或精确绑定的回环地址（加端口）；监听 80 或 443 时也接受对应的无端口形式。该允许列表防御 DNS 重绑定。Local Control LAN 监听器是例外，它始终强制执行其通告权限的 Host 检查，无论主绑定是什么。
 4. **来源控制** — 运行时应用始终在可变允许列表（`MutableOriginAllowlist`）上安装 `allowOriginCors`：`--allow-origin <pattern>` 条目作为种子，Local Control 在启用时添加 LAN 来源。不匹配的来源收到 403 拒绝信封。无条件拒绝墙（`denyBrowserOriginCors`）仅保留在运行时启动之前回答请求的引导应用中。
 5. **逐路由变更门控** — 严格路由需要操作员权限。无令牌的回环主监听器被信任；bearer 认证和配对的 Local Control 请求也符合条件。没有可信权限到达此门控的无令牌主请求会收到独特的 `code: 'token_required'` 错误。缺失或无效的配置凭证以及未配对的 Local Control 凭证由其监听器作用域的 bearer 中间件以普通的 `401 Unauthorized` 提前拒绝。
@@ -62,11 +62,14 @@ if (findNonLoopbackHttpOrigin(parsed) && !token) {
 
 ```mermaid
 flowchart LR
-    REQ[Request] --> SO["strip same-origin Origin<br/>(Web Shell support)"]
+    REQ[Request] --> LS["loopback self-origin strip<br/>(server/self-origin.ts)"]
+    LS --> LOG["access-log middleware<br/>(DaemonLogger)"]
+    LOG --> TID["inbound trace-id capture"]
+    TID --> HA["hostAllowlist<br/>(loopback DNS-rebinding defense;<br/>primary gate passes through on<br/>non-loopback binds, Local Control<br/>keeps its own Host gate)"]
+    HA --> SO["remote same-origin check<br/>(credential check + Origin strip)"]
     SO --> AO["allowOriginCors<br/>(mutable allowlist: --allow-origin<br/>patterns + Local Control LAN origin)"]
-    AO --> HA["hostAllowlist"]
-    HA --> LOG["access-log middleware<br/>(DaemonLogger)"]
-    LOG --> WH{"Channel webhook?"}
+    AO --> H["pre-auth /health<br/>(loopback, unless --require-auth)"]
+    H --> WH{"Channel webhook?"}
     WH -->|yes| WS["x-qwen-webhook-secret<br/>+ webhook rate/body limits"]
     WH -->|no| BA["bearerAuth"]
     BA --> RL["rate-limit middleware<br/>(when enabled)"]
@@ -76,7 +79,7 @@ flowchart LR
     MG --> HANDLER["route handler"]
 ```
 
-`mutationGate` 是一个逐路由的中间件工厂（`createMutationGate` 返回 `mutate()`）；路由在注册时调用 `mutate()` 或 `mutate({strict: true})`。它不是全局 `app.use()` 中间件。访问日志在 `bearerAuth` 之前注册，因此 401 拒绝也会被记录。普通 API 限流在 `bearerAuth` 之后、`express.json()` 之前运行，因此只有经过认证的请求才会被计数，并且在超出限制时大体积 body 会在解析前被拒绝。Channel webhook 入口在 bearer 认证之前分支，并应用其自己的共享密钥检查、变更层级限流检查和 1 MiB 解析器。
+`mutationGate` 是一个逐路由的中间件工厂（`createMutationGate` 返回 `mutate()`）；路由在注册时调用 `mutate()` 或 `mutate({strict: true})`。它不是全局 `app.use()` 中间件。访问日志和入站 trace-id 捕获在来源墙和同源凭证检查之前注册，因此那些 403/401 短路会像其他每次拒绝一样被记录，并且日志行仍会加入调用方的 trace id；两者也都先于 `bearerAuth`，因此 401 拒绝仍会被记录。回环 Host 允许列表在 pre-auth health 路由之前注册，因此 DNS 重绑定防御覆盖它。Pre-auth `/health` 位于来源墙之下（匹配的跨域探测携带 CORS 头）；访问日志在附加其 finish logger 之前按路径豁免 `GET /health` 和 `POST */heartbeat`，因此精确路径的 `GET /health` 和 `POST */heartbeat` 探测在任何挂载位置都保持未记录，那些豁免路径上的墙拒绝同样未记录（`HEAD /health` 和 `GET /health/` 像任何请求一样被记录）。普通 API 限流在 `bearerAuth` 之后、`express.json()` 之前运行，因此只有经过认证的请求才会被计数，并且在超出限制时大体积 body 会在解析前被拒绝。Channel webhook 入口在 bearer 认证之前分支，并应用其自己的共享密钥检查、变更层级限流检查和 1 MiB 解析器。
 
 ### `bearerAuth`
 
@@ -100,7 +103,7 @@ flowchart LR
 
 拒绝任何带有 `Origin` 头的请求。CLI/SDK 从不设置 Origin；只有浏览器会设置。返回确定性的 `403 { error: 'Request denied by CORS policy' }`，而不是 `cors` 包的 error-callback 会产生的 500 HTML。运行时应用不再安装此墙 — 它在可变允许列表上运行 `allowOriginCors`（见下文）；拒绝行为作为未匹配来源分支保留在那里。此墙保留在引导应用（run-qwen-serve.ts）中，在运行时启动之前服务请求。
 
-例外：Web Shell 在**回环**绑定上的同源 XHR 由单独的中间件（在 `server/self-origin.ts` 中）处理，该中间件在 `Origin` 匹配规范回环自身来源（`127.0.0.1`、`localhost`、`[::1]`、`host.docker.internal`）或精确绑定回环地址之一时将其剥离。方案匹配的无端口来源仅在其默认端口（`http` 为 80，`https` 为 443）时被接受。在非回环绑定上，Shell 的 XHR 携带不匹配的 `Origin`，需要 `--allow-origin` 配置守护进程来源。
+例外：Web Shell 在**回环**绑定上的同源 XHR 由单独的中间件（在 `server/self-origin.ts` 中）处理，该中间件在 `Origin` 匹配规范回环自身来源（`127.0.0.1`、`localhost`、`[::1]`、`host.docker.internal`）或精确绑定回环地址之一时将其剥离。方案匹配的无端口来源仅在其默认端口（`http` 为 80，`https` 为 443）时被接受。在非回环绑定上，第二个中间件（`installRemoteSelfOriginMiddleware`，在同一文件中）代替覆盖 Shell 的 XHR：它对规范 `Origin` 等于直接套接字方案加规范化 `Host` 权限的请求进行 bearer 认证 — 转发头从不被信任 — 并在墙前剥离该 `Origin`，因此这些请求不需要 `--allow-origin` 条目。跨域和 `null` 来源仍被拒绝，WebSocket 升级路由以及 TLS 前置代理 `https` 来源仍需要一个条目（参见[中间件链](#中间件链http-请求顺序)）。
 
 ### `allowOriginCors`（运行时应用，始终安装）
 
@@ -108,8 +111,8 @@ flowchart LR
 
 - 匹配的 `Origin` 值会收到 `Access-Control-Allow-Origin`、`Access-Control-Allow-Headers` 和 `Access-Control-Allow-Methods`；`OPTIONS` 预检返回 `204`。
 - 不匹配的 `Origin` 值会收到与拒绝模式相同的确定性 `403 { error: 'Request denied by CORS policy' }`。
-- `--allow-origin '*'` 需要 `--token`；否则启动拒绝。
-- 没有令牌时，HTTP(S) `--allow-origin` 值限制为回环主机。非回环浏览器来源需要令牌，否则它可能行使完整操作员权限，包括以守护进程用户身份执行代码。
+- `--allow-origin '*'` 需要 bearer 令牌；在回环绑定上启动时在没有配置的情况下拒绝，而在非回环绑定上生成的临时令牌满足守卫（拒绝仅限回环）。
+- 没有令牌时，HTTP(S) `--allow-origin` 值限制为回环绑定上的回环主机；在非回环绑定上生成的令牌满足相同的守卫。非回环浏览器来源在每个 API 路由上使用 bearer 进行认证，因为它否则可以行使完整的操作员 API，包括以守护进程用户身份执行代码；pre-auth 例外是 Web Shell 文档/资源路由和 MCP App 沙箱（`/`、`/assets*`、`/mcp-app-sandbox`、精确的 `/session/:id` 导航），以及 channel webhook 入口，它在 `bearerAuth` 之前分支并使用自己的 `x-qwen-webhook-secret` 而不是 bearer 进行认证，以及 — 仅在回环绑定上 — `/health`（在其他地方由 bearer 门控）。
 - 显式浏览器扩展来源保留其无令牌的本地自动化路径。启动日志记录任何无令牌允许的浏览器来源获得完整操作员权限。
 - `parseAllowOriginPatterns()` 在启动时验证模式语法。
 - 只有在配置此模式时，才会公布 `allow_origin` 能力标签。
@@ -118,19 +121,19 @@ flowchart LR
 
 逐路由的可选门控。行为矩阵：
 
-| 守护进程配置           | 路由选项         | 结果                           |
-| ---------------------- | ---------------- | ------------------------------ |
-| `requireAuth=true`     | 任意             | 透传¹                          |
-| 配置了 `token`         | 任意             | 透传²                          |
-| 无令牌（回环开发）     | `strict: false`  | 透传                           |
-| 无令牌（回环开发）     | `strict: true`，未认证 | `401 { code: 'token_required' }` |
-| 无令牌（回环开发）     | `strict: true`，已认证³ | 透传                          |
+| 守护进程/请求权限                                      | 路由选项      | 结果                           |
+| ------------------------------------------------------------- | --------------- | -------------------------------- |
+| 配置了令牌                                              | 任意             | 透传¹                     |
+| 可信回环主监听器                             | 任意             | 透传                      |
+| 配对的 Local Control 监听器                                 | `strict: true`  | 透传                      |
+| 无可信回环权限的无令牌主请求 | `strict: true`  | `401 { code: 'token_required' }` |
+| 任何无令牌部署                                     | `strict: false` | 透传                      |
 
-¹ `--require-auth` 仅在配置令牌时启动，因此全局的 `bearerAuth` 已经对未认证的调用方返回了 401。
-² 任何令牌配置都会使全局的 `bearerAuth` 强制要求所有地方都携带 bearer；该门控是多余的但无害。
-³ 通过监听器作用域的凭证认证：Local Control LAN 监听器即使在无令牌的守护进程上也会验证其配对凭证，并将请求标记为已认证，因此严格路由对配对的 LAN 客户端通过。
+¹ 任何令牌配置都会使全局 `bearerAuth` 在普通 API 路由上在门控之前强制执行 bearer 认证，回环 `/health` 除外，除非设置了 `--require-auth`。Channel webhook 入口在此中间件之前使用自己的共享密钥进行认证。该门控在它保护的路由上是冗余但无害的。`--require-auth` 本身不是认证，只有与令牌一起才有效。
 
-`code: 'token_required'` 的形式与 `bearerAuth` 的纯 `Unauthorized` 不同，因此 SDK 客户端可以渲染"配置 --token / --require-auth"提示，而不是通用的 401。
+可信回环模式从 `loopback bind && no configured token && !requireAuth` 派生一次。它仅授权通过主监听器到达的请求。它不会标记内部 bearer 认证的标记，因此监听器凭证和部署权限保持为独立的事实。`code: 'token_required'` 形式保留给旧的守护进程和无令牌的非可信嵌入，其请求到达严格门控，因此 SDK 客户端可以渲染配置提示而不是通用的 401。配置令牌和 Local Control 凭证失败保留较早的纯 `401 Unauthorized` 响应。
+
+Local Control 状态和启用响应仅向具有操作员权限的调用方公开其配对 URL 和 QR：可信的主监听器调用方、bearer 认证的主调用方和已配对的 LAN 客户端。未配对的 LAN 调用方和非可信嵌入无法检索它。启用仍然需要主监听器；LAN 客户端可以在配对后访问或根据现有规则请求禁用。
 
 **Wave 4+ 严格路由**：`/workspace/memory`、`/workspace/agents/*`、`/workspace/agents/generate`、`/file/write`、`/file/edit`、`/workspace/tools/:name/enable`、`/workspace/mcp/:server/restart`、`/workspace/mcp/:server/{enable,disable,authenticate,clear-auth}`、`/workspace/mcp/servers`（POST/DELETE）、`/workspace/auth/device-flow`、`/workspace/init`、`/session/:id/approval-mode`、`/session/:id/rewind` 以及 `/session/:id/shell`。
 
@@ -138,7 +141,7 @@ flowchart LR
 
 ### `/health` 豁免
 
-在回环绑定上，`/health` 在 bearer 中间件**之前**注册，因此 Pod 内的存活探针不需要携带令牌。非回环绑定将 `/health` 也置于 bearer 之后，与其他路由一样。`--require-auth` 会移除豁免：回环上的 `/health` 也需要 `Authorization: Bearer <token>`。
+在回环绑定上，`/health` 在 bearer 中间件**之前**注册，因此 Pod 内的存活探针不需要携带令牌。非回环绑定将 `/health` 与其他普通 API 路由一起门控。`--require-auth` 会移除豁免：回环上的 `/health` 也需要 `Authorization: Bearer <token>`。Channel webhook 入口在所有模式下都保持在 bearer 认证之外，并需要自己的 `x-qwen-webhook-secret`。
 
 ### v1 客户端标识（`X-Qwen-Client-Id`）是自报告的
 
@@ -221,25 +224,27 @@ sequenceDiagram
 
 认证后，`caps.features.includes('require_auth')` 确认部署已经加固。
 
-### Wave 4 变更门控在无令牌回环上
+### 受信任回环上的严格变更
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant C as 客户端
+    participant C as 本地客户端
     participant BA as bearerAuth (无操作，无令牌)
     participant MG as mutationGate({strict: true})
     participant R as 处理器
 
     C->>BA: POST /workspace/memory (无Authorization)
     BA->>MG: 透传
-    MG-->>C: 401 { code: 'token_required', error: '...' }
+    MG->>MG: 主监听器 + 可信回环模式
+    MG->>R: next()
+    R-->>C: 路由结果
 ```
 
 ## 状态与生命周期
 
 - Bearer 令牌在启动时读取并去除首尾空格（否则 `cat token.txt` 中的换行符会静默破坏比较）。
-- 仅限 CLI 的 `--open-with-auth` 模式在启动前运行：在经过确定性的环回/Web Shell 检查后，它应用相同的选项优先于环境变量选择，并且仅当没有非空的所选令牌存在时，才会用 32 个随机字节（编码为 base64url）填充 `ServeOptions.token`。生成的凭证具有进程生命周期，不会被写入 `process.env` 或由守护进程持久化，并通过现有的 URL fragment 传递给浏览器。Web Shell 将其浏览器副本保留在每标签的 `sessionStorage` 中。裸 `--open` 和直接 `runQwenServe()` 调用者永远不会生成它。
+- 仅限 CLI 的 `--open-with-auth` 模式在启动前运行：在经过确定性的回环/Web Shell 检查后，它应用相同的选项优先于环境变量选择，并且仅当没有非空的所选令牌存在时，才会用 32 个随机字节（编码为 base64url）填充 `ServeOptions.token`。生成的凭证具有进程生命周期，不会被写入 `process.env` 或由守护进程持久化，并通过现有的 URL fragment 传递给浏览器。Web Shell 将其浏览器副本保留在每标签的 `sessionStorage` 中。裸 `--open` 和直接 `runQwenServe()` 调用者永远不会生成它。
 - 允许主机集合按端口缓存；在端口更改时重建（临时端口 `0` → `listen` 后的实际端口）。
 - 变更门控在每次应用构建时构造 `passthrough` 和 `strictDenier`；每个路由调用返回缓存的闭包（无每次请求分配）。
 - 设备流注册表在 `shutdown()` 的第 1 阶段释放，因此待处理的流在 HTTP 拆除前解析为 `cancelled`。
@@ -259,14 +264,14 @@ sequenceDiagram
 | 标志         | `--token`                                                                            | Bearer 令牌（覆盖环境变量）。                                            |
 | CLI 标志     | `--open-with-auth`                                                                   | 在 daemon 启动前复用或生成环回 Web Shell bearer。                       |
 | 标志         | `--require-auth`                                                                     | 将 bearer 扩展到回环 + `/health`。仅在有令牌时启动。                     |
-| 标志         | `--hostname`                                                                         | 非回环绑定需要 `--token`（或环境变量）。                                  |
-| 标志         | `--allow-origin <pattern>`                                                           | 切换到 CORS 允许列表模式。`'*'` 需要令牌。                                |
+| 标志         | `--hostname`                                                                         | 非回环绑定始终携带 bearer — `--token`、`QWEN_SERVER_TOKEN` 或生成的临时 bearer；明确空的源会拒绝。 |
+| 标志         | `--allow-origin <pattern>`                                                           | 切换到 CORS 允许列表模式。通配符和非回环 HTTP(S) 来源需要令牌。           |
 | 能力标签     | `require_auth`（条件性）、`auth_device_flow`（始终）、`allow_origin`（条件性）       | 参见 [`11-capabilities-versioning.md`](./11-capabilities-versioning.md)。 |
 
 ## 注意事项与已知限制
 
 - **`--require-auth` 遮蔽了特性预检。** 未认证的客户端无法发现 `require_auth` 标签；它们的发现面就是 401 响应体本身。
-- **变更门控的 body 解析顺序**：`mutationGate({strict: true})` 的 401 响应在 `express.json()` 解析 body **之后** 触发。在饱和的回环监听器上的最坏情况：`--max-connections × express.json({limit: '10mb'})` ≈ 2.5 GB 瞬时内存。这是故意接受的仅回环攻击面。
+- **变更门控 body 解析器顺序**：`mutationGate({strict: true})` 的 401 响应在 `express.json()` 解析 body **之后** 触发。在饱和监听器上的最坏情况：`--max-connections × express.json({limit: '10mb'})` ≈ 2.5 GB 瞬时。非回环生产入口点已经在普通 API 解析器之前要求 bearer 认证；channel webhook 入口在其单独的 1 MiB 解析器之前检查其共享密钥。直接非可信嵌入拥有自己的监听器暴露。
 - **同源 Origin 剥离** 在 `server.ts` 中发生在 `allowOriginCors` _之前_。如果未来的改动将剥离移到其他地方，Web Shell 将失效。
 - **令牌比较是基于 SHA-256 摘要**，而不是原始令牌。通过将可变长度的令牌比较缩减为固定大小的摘要比较，减少了时间泄露。
 - 守护进程目前**不**支持 mTLS、请求签名或配对令牌持有证明。`--rate-limit` 提供基于 client-id / IP 键的 HTTP 限流；它不是客户端身份认证。

@@ -18,12 +18,16 @@ nunca rejeitado com um erro.
 Uma sessão em execução publica um registro:
 
 ```
-$QWEN_HOME/sessions/<pid>.json        (directory 0700, file 0600)
+$QWEN_HOME/sessions/<pid>.json            (directory 0700, file 0600)
+$QWEN_HOME/sessions/<pid>-<8 hex>.json    (a process hosting several sessions)
 ```
 
-`$QWEN_HOME` tem como padrão `~/.qwen`. O nome do arquivo é o PID do
-escritor e nada mais; um registro cujo campo `pid` não concorda com o
-nome do arquivo é ignorado.
+`$QWEN_HOME` tem como padrão `~/.qwen`. O nome do arquivo tem como chave o PID do escritor — seja o PID puro,
+ou o PID, um hífen e oito caracteres hexadecimais minúsculos cunhados
+no registro (veja "Vários registros de um processo" abaixo). Um registro
+cujo campo `pid` não concorda com o prefixo de PID do seu nome de
+arquivo — comparado na forma decimal canônica, de modo que um nome com
+zeros à esquerda não concorda com nada — é ignorado.
 
 ```json
 {
@@ -45,7 +49,7 @@ nome do arquivo é ignorado.
 | Campo           | Significado                                                                                                                                                                                                                                                                                                     |
 | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `schemaVersion` | Sempre `1`. Um leitor pula um registro com versão maior e nunca o deleta.                                                                                                                                                                                                                                       |
-| `pid`           | O id do processo do escritor. Deve ser igual ao nome do arquivo.                                                                                                                                                                                                                                                |
+| `pid`           | O id do processo do escritor. Deve ser igual ao PID pelo qual o nome do arquivo tem chave: o nome inteiro para a forma pura, os dígitos antes do sufixo `-<8 hex>` para a cunhada.                                                                                                                                                                                                                                                |
 | `procStart`     | `<boot id>:<process start ticks>` no Linux (`/proc/sys/kernel/random/boot_id` e campo 22 de `/proc/<pid>/stat`); `null` nos demais. Protege contra reutilização de PID e contra registros escritos em outra máquina que compartilha este diretório home.                                                       |
 | `pidNs`         | Número do inode de `/proc/self/ns/pid` no Linux; `null` nos demais. Um leitor só lista e varre registros do seu próprio namespace.                                                                                                                                                                              |
 | `sessionId`     | O id da sessão. `/clear` e `/resume` trocam esse id sob o mesmo PID, então releia o registro antes de cada envio.                                                                                                                                                                                               |
@@ -85,7 +89,7 @@ autenticar nela são uma única capability por design. Não imprima
 `ipcToken` em nenhum lugar onde um modelo ou um log possa vê-lo.
 
 **Atividade.** Um registro está ativo quando todas estas condições são
-atendidas: o nome do arquivo corresponde a `pid`; `pidNs` é igual ao do
+atendidas: o nome do arquivo é `<pid>.json` ou `<pid>-<8 hex>.json` e seu prefixo de PID é igual a `pid`; `pidNs` é igual ao do
 leitor; o boot id dentro de `procStart` é igual ao do leitor (ou
 `procStart` é `null`); e o PID está vivo com os mesmos start ticks. Um
 registro ativo com um `ipcPath` ainda precisa ter o socket conectado
@@ -96,6 +100,22 @@ a um crash.
 sessões podem compartilhar um `name`; a gramática de endereçamento que
 um remetente digita é `name`, `name [ref]`, `[ref]` ou o `ref` puro, e
 um `name` ambíguo é um erro em vez de uma suposição.
+
+**Vários registros de um processo.** Qualquer filho de `qwen --acp` —
+gerado pelo daemon, ou controlado diretamente por um editor ou outro
+cliente — escreve um registro por sessão, chamado `<pid>-<8 hex>.json`,
+desde sua primeira sessão. O sufixo é cunhado no registro e nunca
+muda; um id de sessão trocado por baixo é um patch no registro, não
+uma renomeação. Cada um deles carrega o mesmo `ipcPath`, porque o
+processo vincula uma inbox para todas as suas sessões e as distingue
+pelo `toSessionId` em cada frame — então **sempre envie
+`toSessionId`**: um frame sem um que chegue a tal processo recebe
+resposta `misaddressed`, pois não há uma única sessão a que poderia se
+referir. Atividade, varredura e as proteções de namespace e boot leem
+o registro exatamente como fazem para o nome puro; apenas a
+verificação de concordância PID/nome do arquivo difere, e somente na
+comparação de `pid` com os dígitos antes do sufixo em vez do nome
+inteiro.
 
 ## 2. O socket da inbox
 
@@ -320,7 +340,18 @@ de `content`.
   peers que uma sessão mudou de nome, ainda estão por vir.
 - **Relatório de nomes iguais.** `qwen sessions ps` e `list_agents` não
   sinalizam registros que ainda colidem.
-- **Sessões gerenciadas pelo daemon.** Apenas a UI interativa registra
-  hoje, então uma sessão que `qwen serve` controla não está no
-  registro, não pode ser endereçada e não pode enviar. Os kinds `serve`
-  e `headless` estão reservados para isso.
+- **Mensagens de entrada para sessões controladas por ACP.** Uma sessão
+  que um programa controla via ACP — gerada pelo daemon ou não —
+  registra-se e pode enviar, mas responde `refused` a qualquer coisa
+  enviada a ela: uma retenção é uma pergunta feita a uma pessoa, e
+  ninguém está observando uma lista de retenções em seu nome. Onde uma
+  mensagem retida deve aparecer para essas sessões — seu cliente, ou a
+  própria API do daemon — ainda está em aberto.
+- **Sessões atrás de uma inbox são um único remetente para cada peer.**
+  Um processo que hospeda várias sessões envia com um único endereço
+  `from`, então a cota por remetente e a janela de duplicidade (§6) do
+  receptor são compartilhadas por todas as sessões desse processo de
+  uma vez: um irmão ocupado pode gastar a cota de outro, e um corpo
+  recém-enviado a um não pode ser repetido para seu irmão dentro da
+  janela. A contabilidade por sessão teria que confiar em um campo
+  afirmado pelo frame, o que o modelo de confiança da §3 descarta.

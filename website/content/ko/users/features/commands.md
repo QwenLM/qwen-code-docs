@@ -106,7 +106,7 @@ AI 도구와 모델을 관리하는 명령어입니다.
 | `/model --voice`      | 음성 트랜스크립션에 사용할 모델을 설정                                                | `/model --voice <model-id>`                                                                               |
 | `/model --vision`     | 텍스트 전용 메인 모델에 이미지를 전달하기 위한 vision bridge 모델을 설정              | `/model --vision <model-id>`                                                                              |
 | `/model --compaction` | 대화 압축에 사용할 모델을 설정                                                        | `/model --compaction <model-id>`, `/model --compaction clear`                                             |
-| `/model --image`      | 내장 이미지 생성 도구에 사용할 이미지 전용 모델을 설정                                 | `/model --image <model-id>`                                                                               |
+| `/model --image`      | 내장 이미지 생성 도구에 사용할 이미지 생성 가능 모델을 설정                            | `/model --image <model-id>`                                                                               |
 | `/effort`             | 사고(thinking) 가능 모델의 추론 강도를 설정                                           | `/effort` (피커 열기), `/effort high` (low/medium/high/xhigh/max; 제공자별로 매핑 및 제한됨)              |
 | `/output-style`       | 응답 작성 방식을 결정하는 출력 스타일을 선택                                           | `/output-style` (피커 열기), `/output-style Concise`, `/output-style default` (스타일 없음)               |
 | `/extensions`         | 확장을 관리                                                                          | `/extensions list`, `/extensions manage`                                                                  |

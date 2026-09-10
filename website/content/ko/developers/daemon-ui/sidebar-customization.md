@@ -53,7 +53,7 @@ interface WebShellSidebarBranding {
 
 | 값                               | 효과                                              |
 | -------------------------------- | ------------------------------------------------- |
-| `undefined` (기본값)             | Qwen 로고 + "Qwen Code" 텍스트                    |
+| `undefined` (기본값)             | 해결된 브랜드: `brand` prop → 데몬 `GET /brand` → 내장 Qwen 로고 + "Qwen Code" 텍스트 |
 | `false`                          | 브랜딩 행 전체 숨김                               |
 | `{ render: () => <MyHeader /> }` | 커스텀 콘텐츠로 전체 교체                         |
 | `{ hideWhenCompact: false }`     | 접힌 아이콘 레일 모드에서도 브랜딩 표시 유지       |
@@ -244,7 +244,7 @@ interface WebShellSidebarSessionActionsOptions {
 - **`items`**: 모든 액션(인라인 및 드롭다운 모두)에 대한 마스터 제어. 항목이 `items`에 없으면 모든 곳에서 숨겨집니다.
 - **`inlineItems`**: 어떤 항목이 **인라인 버튼**(호버 시)으로 나타나는지 제어합니다. 기본값은 `['pin']`입니다. 작동하는 인라인 핸들러가 있는 항목만 사용 가능합니다: `'pin'`, `'rename'`, `'export'`, `'delete'`. `'details'`, `'group'`, `'archive'`는 드롭다운 전용입니다.
 
-**표시 우선순위**: 인라인 버튼이 표시되려면 `items` AND 항목의 내장 조건 AND `inlineItems`가 모두 통과해야 합니다. 예를 들어, `delete`를 인라인으로 표시하려면 `items`에 `'delete'`가 포함되고 AND `inlineItems`에 `'delete'`가 포함되어야 합니다.
+**표시 우선순위**: 인라인 버튼이 표시되려면 `items` AND 항목의 내장 조건 AND `inlineItems`가 모두 통과해야 합니다. 예를 들어, `delete`를 인라인으로 표시하려면 `items`에 `'delete'`가 포함되고 `inlineItems`에도 `'delete'`가 포함되어야 합니다.
 
 | 값                                     | 효과                                     |
 | ---------------------------------------- | ------------------------------------------ |
@@ -253,7 +253,7 @@ interface WebShellSidebarSessionActionsOptions {
 | `{ inlineItems: [] }`                    | 인라인 버튼 없음                           |
 | `{ inlineItems: ['rename', 'export'] }` | Rename + export를 인라인 버튼으로          |
 
-드롭다운 트리거(⋮)는 활성화된 드롭다운 항목이 없으면 자동으로 숨겨집니다. 인라인 버튼은 기능 조건과 `items`가 모두 포함할 때만 표시됩니다. Archive는 현재 세션과 실행 중인 턴이 있는 세션에서는 비활성화됩니다. 데몬이 아카이브할 때 라이브 세션을 닫기 때문입니다.
+드롭다운 트리거(⋮)는 활성화된 드롭다운 항목이 없으면 자동으로 숨겨집니다. 인라인 버튼은 기능 조건과 `items`가 모두 포함할 때만 표시됩니다. Archive는 현재 세션과 실행 중인 턴이 있는 세션에서는 비활성화됩니다. 데몬이 아카이브 시 라이브 세션을 닫기 때문입니다.
 
 ```tsx
 sidebar={{
