@@ -1424,6 +1424,104 @@ function cmdQuarantine() {
   }
 }
 
+/**
+ * Prose lines long enough that an identical copy in the target means the line
+ * was never translated, rather than that both languages happen to agree.
+ *
+ * Fenced blocks are skipped wholesale: code, terminal transcripts, mermaid
+ * diagrams and agent-prompt examples are *supposed* to match the source, and
+ * counting them buried the real signal under 41 false positives when this was
+ * first measured. Headings and blockquotes are skipped for being short and
+ * often proper nouns; table rows are kept, because a table of English option
+ * descriptions inside an otherwise translated page is exactly the case worth
+ * catching (#268). Inline code and link targets are removed before counting
+ * words, so a line is only prose if eight or more plain Latin words survive.
+ */
+function untranslatedProse(text) {
+  const lines = [];
+  let fenced = false;
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (/^(```|~~~)/.test(line)) {
+      fenced = !fenced;
+      continue;
+    }
+    if (fenced) continue;
+    if (line.length < 60) continue;
+    if (/^[#>]/.test(line)) continue;
+    if (/^\|[\s:|-]+\|?$/.test(line)) continue;
+    const words = line
+      .replace(/`[^`]*`/g, "")
+      .replace(/\[[^\]]*\]\([^)]*\)/g, "")
+      .split(/\s+/)
+      .filter((w) => /^[A-Za-z][A-Za-z,.;:'()-]*$/.test(w));
+    if (words.length >= 8) lines.push(line);
+  }
+  return lines;
+}
+
+/**
+ * Run the structural gate over an explicit list of files, for use on a pull
+ * request rather than inside a nightly run.
+ *
+ * The nightly already gates everything it writes, so automation PRs arrive
+ * pre-checked. Human-authored PRs that touch `website/content` do not: blog
+ * posts, showcase entries and hand-written translations reach `main` with no
+ * structural verification at all. This is the same `structuralProblems()` the
+ * nightly uses -- deliberately the same function, so the two cannot drift.
+ *
+ * Only the files named are checked. The repository carries pre-existing gate
+ * failures (#260), and a checker that reports those on an unrelated PR would
+ * be turned off within a week.
+ */
+function cmdCheck(files) {
+  const list = (files || "")
+    .split(/[,\n]/)
+    .map((f) => f.trim())
+    .filter(Boolean);
+  if (!list.length) {
+    console.log("[orch] check: no files given, nothing to do");
+    return;
+  }
+  let checked = 0;
+  let bad = 0;
+  for (const file of list) {
+    const rel = file.replace(/^website\/content\//, "");
+    const slash = rel.indexOf("/");
+    if (slash < 0) continue;
+    const lang = rel.slice(0, slash);
+    const inLang = rel.slice(slash + 1);
+    if (lang === "en") continue;
+    if (!/\.mdx?$/.test(inLang)) continue;
+    const target = path.join(OPTS.contentDir, lang, inLang);
+    const source = path.join(OPTS.contentDir, "en", inLang);
+    // A page with no English counterpart is locale-only content, not a
+    // translation: there is nothing to compare it against.
+    if (!fs.existsSync(target) || !fs.existsSync(source)) continue;
+    checked++;
+    const en = fs.readFileSync(source, "utf8");
+    const tg = fs.readFileSync(target, "utf8");
+    const problems = structuralProblems(en, tg, lang);
+    // Reported, never fatal: this one is a heuristic, and the codebase
+    // already spells a soft finding `WARN` (see verifyFile's link count).
+    const sourceProse = new Set(untranslatedProse(en));
+    const copied = untranslatedProse(tg).filter((l) => sourceProse.has(l));
+    if (copied.length) {
+      console.log(
+        `::warning file=${file}::${copied.length} line(s) identical to the English source; first: ${copied[0].slice(0, 120)}`
+      );
+      console.log(`WARN ${file}: ${copied.length} line(s) look untranslated`);
+    }
+    if (!problems.length) continue;
+    bad++;
+    for (const problem of problems)
+      console.log(`::error file=${file}::${problem}`);
+    console.log(`FAIL ${file}: ${problems.join("; ")}`);
+  }
+  console.log(`[orch] check: ${checked} file(s) checked, ${bad} failed`);
+  if (bad) process.exitCode = 1;
+}
+
 function cmdReportBatch() {
   const logDir = path.resolve(flags["log-dir"] || "/tmp");
   const logs = fs.existsSync(logDir)
@@ -1549,6 +1647,9 @@ switch (cmd) {
   case "quarantine":
     cmdQuarantine();
     break;
+  case "check":
+    cmdCheck(flags.files);
+    break;
   case "report-batch":
     cmdReportBatch();
     break;
@@ -1557,7 +1658,7 @@ switch (cmd) {
     break;
   default:
     console.log(
-      "usage: orchestrator.mjs <detect|preflight|sync-en|seed|translate|verify|scan|advance|quarantine|report-batch|report> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv]"
+      "usage: orchestrator.mjs <detect|preflight|sync-en|seed|translate|verify|scan|advance|quarantine|check|report-batch|report> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv] [--files csv]"
     );
     process.exitCode = cmd ? 1 : 0;
 }
