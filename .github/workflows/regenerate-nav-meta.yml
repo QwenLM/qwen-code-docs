@@ -67,6 +67,7 @@ jobs:
           npm run build
 
       - name: Translate
+        id: translate
         working-directory: ./website
         env:
           OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
@@ -84,17 +85,59 @@ jobs:
             echo "::error::content/en/${FILE} does not exist"
             exit 1
           fi
+          # One locale failing must not discard the ones that already
+          # succeeded. Under `set -e` the step would abort, "Open a PR" would
+          # be skipped for having a failed predecessor, and every translation
+          # produced so far would leave with the runner. Collect instead, and
+          # let the last step decide the run's colour.
+          done_langs=""
+          failed_langs=""
           for lang in $LANGS; do
             echo "::group::${FILE} -> ${lang}"
-            node ../translator/dist/cli.js meta -f "${FILE}" -l "${lang}"
+            if node ../translator/dist/cli.js meta -f "${FILE}" -l "${lang}"; then
+              done_langs="${done_langs} ${lang}"
+            else
+              failed_langs="${failed_langs} ${lang}"
+              echo "::warning::${lang} failed; continuing with the remaining locales"
+            fi
             echo "::endgroup::"
           done
+          {
+            echo "done=${done_langs# }"
+            echo "failed=${failed_langs# }"
+          } >> "$GITHUB_OUTPUT"
+
+      # A translated KEY is the failure that costs a page: Nextra routes on
+      # the key, so `tools:` becoming `outils:` drops the section from the
+      # sidebar with no build error and no runtime error. Asking a reviewer to
+      # "check the keys" across seven locales is asking a person to run a
+      # diff; run it mechanically instead.
+      #
+      # Separator entries are exempt. Their key is a display label rather than
+      # a route, so translating `'Qwen Code SDK'` is correct, and comparing it
+      # would report a mismatch on every locale.
+      - name: Check navigation keys against English
+        id: keys
+        working-directory: ./website
+        env:
+          FILE: ${{ inputs.file }}
+          LANGS: ${{ steps.translate.outputs.done }}
+        run: |
+          set -uo pipefail
+          node ../.github/scripts/check-nav-keys.mjs > key-report.txt || true
+          if [ -s key-report.txt ]; then
+            while IFS= read -r line; do echo "::error::${FILE}: ${line}"; done < key-report.txt
+            echo "mismatch=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "mismatch=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Open a PR with the result
         env:
           GH_TOKEN: ${{ secrets.TRANSLATION_BOT_PAT }}
           FILE: ${{ inputs.file }}
-          LANGS: ${{ inputs.languages }}
+          DONE: ${{ steps.translate.outputs.done }}
+          FAILED: ${{ steps.translate.outputs.failed }}
         run: |
           set -euo pipefail
           if [ -z "${GH_TOKEN}" ]; then
@@ -109,15 +152,35 @@ jobs:
             exit 0
           fi
           branch="automation/nav-meta-${GITHUB_RUN_ID}"
-          git commit -m "docs(nav): regenerate ${FILE} for ${LANGS}"
+          git commit -m "docs(nav): regenerate ${FILE} for ${DONE}"
           git push origin "HEAD:${branch}"
+          # printf arguments rather than a multi-line literal: an unindented
+          # continuation line would terminate the YAML block scalar above.
+          report="$(cat website/key-report.txt 2>/dev/null || true)"
+          if [ -n "$report" ]; then
+            keyline="Route-key check FAILED. These drop pages from the sidebar and must be fixed before merging: ${report}"
+            suffix=" (key mismatch)"
+          else
+            keyline="Route keys match the English file. Separator keys are exempt: their key is a label, not a route."
+            suffix=""
+          fi
           body="$(printf '%s\n' \
-            "Regenerated \`${FILE}\` for: ${LANGS}." \
+            "Regenerated \`${FILE}\` for: ${DONE:-none}." \
             "" \
-            "From run ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}." \
+            "${FAILED:+Failed, and therefore absent from this PR: ${FAILED}}" \
             "" \
-            "Check the keys, not just the values. An LLM writing a \`_meta.ts\` can translate the keys too, and a wrong key drops the page from the sidebar without any build error.")"
+            "${keyline}" \
+            "" \
+            "From run ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}.")"
           gh pr create --repo "$GITHUB_REPOSITORY" \
             --base main --head "${branch}" \
-            --title "docs(nav): regenerate ${FILE}" \
+            --title "docs(nav): regenerate ${FILE}${suffix}" \
             --body "${body}"
+
+      # Last, so a failed locale or a drifted key still leaves the PR behind
+      # to work from: red run, preserved work.
+      - name: Fail if a locale failed or a key drifted
+        if: steps.translate.outputs.failed != '' || steps.keys.outputs.mismatch == 'true'
+        run: |
+          echo "::error::failed locales: '${{ steps.translate.outputs.failed }}'; key mismatch: ${{ steps.keys.outputs.mismatch }}"
+          exit 1
