@@ -4,7 +4,7 @@
 
 `packages/acp-bridge/`는 데몬의 HTTP 레이어와 ACP 자식 프로세스 사이의 경계를 소유합니다. `packages/cli/src/serve/`(`qwen serve` 데몬)에 의해 소비되며, 향후 소비자(`channels/base/AcpBridge.ts`, VS Code IDE 컴패니언)가 CLI 패키지에 접근하지 않고 동일한 브리지 코어를 사용할 수 있도록 #4175 F1 3단계에서 추출되었습니다.
 
-각 활성 `WorkspaceRuntime`은 하나의 `HttpAcpBridge` 인스턴스를 소유합니다. 프로덕션에서는 기본 브리지를 예열하고 실패 시 첫 사용 시 재시도합니다. 신뢰된 보조는 온디맨드로 `AcpChannel`을 열고 자식을 시작합니다. 신뢰되지 않은 보조는 ACP를 시작할 수 없습니다. 런타임 내에서 브리지는 채널 위에 멀티플렉스된 세션, 세션별 `EventBus`, `MultiClientPermissionMediator`, `BridgeFileSystem` 어댑터, ACP 지향 헬퍼(`spawnOrAttach`, `loadSession`, `resumeSession`, `sendPrompt`, `cancelSession`, `respondToPermission`, 워크스페이스 상태 및 MCP 재시작을 위한 extMethod RPC)를 제공합니다. 브리지와 자식은 워크스페이스 런타임 간에 공유되지 않습니다.
+각 활성 `WorkspaceRuntime`은 하나의 `HttpAcpBridge` 인스턴스를 소유합니다. 프로덕션에서는 호환성을 위해 신뢰된 기본 자식을 예열하려고 시도합니다; 신뢰된 보조는 첫 런타임 명령 또는 Session에서 `AcpChannel`을 열고, 신뢰되지 않은 보조는 ACP를 시작할 수 없습니다. 레거시 기본 경로는 기존 호환성 동작을 유지합니다. 런타임 내에서 브리지는 채널 위에 멀티플렉스된 세션, 세션별 `EventBus`, `MultiClientPermissionMediator`, `BridgeFileSystem` 어댑터, ACP 지향 헬퍼(`spawnOrAttach`, `loadSession`, `resumeSession`, `sendPrompt`, `cancelSession`, `respondToPermission`, 워크스페이스 상태 및 MCP 재시작을 위한 extMethod RPC)를 제공합니다. 브리지와 자식은 워크스페이스 런타임 간에 공유되지 않습니다.
 
 ## 책임
 
@@ -47,7 +47,7 @@
 | `mediator`      | `MultiClientPermissionMediator` | 브리지 인스턴스당 하나.                                                                                                                                                                                                                                                                                                                                                             |
 | 상수            | —                             | `DEFAULT_INIT_TIMEOUT_MS = 10_000`, `MCP_RESTART_TIMEOUT_MS = 300_000`, `DEFAULT_MAX_SESSIONS = 32`, `MAX_EVENT_RING_SIZE = 1_000_000`, `DEFAULT_PERMISSION_TIMEOUT_MS = 0`, `DEFAULT_MAX_PENDING_PER_SESSION = 64`.                                                                                                                                                                |
 
-**`isDying` 불변식**: 모든 종료 경로는 `channel.kill()`을 await하기 **전에** `ChannelInfo.isDying = true`를 동기적으로 설정해야 합니다. `ensureChannel`은 dying 채널을 부재로 취급하고 새 채널을 생성합니다. 이 플래그 없이는 SIGTERM 유예 창(최대 10초) 동안 도착하는 동시 `spawnOrAttach`가 곧 종료될 트랜스포트에 연결되고 호출자의 sessionId가 후속 작업에서 모두 404를 받을 수 있습니다. **설정 사이트**(동기화 유지 필요): `ensureChannel`(초기화 실패 + 지연 종료 재검사), `doSpawn`(빈 채널의 newSession 실패), `killSession`(마지막 세션 퇴장), `shutdown`(일괄).
+**`isDying` 불변식**: 모든 종료 경로는 `channel.kill()`을 await하기 **전에** `ChannelInfo.isDying = true`를 동기적으로 설정해야 합니다. `ensureChannel`은 dying 채널을 부재로 취급하고 새 채널을 생성합니다. 이 플래그 없이는 SIGTERM 유예 창(최대 10초) 동안 도착하는 동시 `spawnOrAttach`가 곧 종료될 트랜스포트에 연결되고 호출자의 sessionId가 후속 작업에서 모두 404를 받을 수 있습니다. 종료에는 초기화 실패, 빈 채널 생성 실패, 워크스페이스 유휴 만료, 종료가 포함됩니다; 마지막 Session을 닫으면 해당 리스만 해제되고 워크스페이스 유휴 정책이 예약됩니다.
 
 **`channelInfo` 보존 불변식**: `isDying = true`를 설정할 때 `channelInfo`를 지우지 **마세요**. `killAllSync`는 SIGTERM 유예 창 동안 채널을 찾아 `process.exit(1)`에서 SIGKILL을 발생시켜야 합니다. `aliveChannels`는 `channel.exited`가 발생할 때까지 dying 엔트리를 보유합니다.
 
@@ -170,7 +170,7 @@ sequenceDiagram
 ## 상태 및 수명주기
 
 - 브리지 생성은 동기적입니다. 호출자는 첫 세션 전에 채널을 예열할 수 있습니다. 그렇지 않으면 첫 `spawnOrAttach`이 ACP 자식을 콜드 스타트합니다. 실패한 예열은 첫 사용 시 재시도할 수 있습니다.
-- `defaultEntry`는 `sessionScope: 'single'`에서 브리지의 수명주기 동안 존재합니다. 채널은 `sessionIds.size === 0`(`killSession` 후) AND `isDying`이 true로 전환될 때 정리됩니다.
+- `defaultEntry`는 `sessionScope: 'single'`에서 재사용 가능한 논리 Session입니다. Session 종료는 해당 Session 리스만 제거합니다. 모든 Session, 복원, 워크스페이스 제어, 검색, 인증, 런타임 작업이 드레인되고 명시적 ensure 킵얼라이브 창이 대기 중이지 않을 때, 생략되거나 0인 `channelIdleTimeoutMs`는 자식을 즉시 회수합니다. 단순 예열은 첫 사용을 위해 보존되며 단독으로 즉시 회수기를 작동시키지 않습니다. 양수 값 또는 활성 킵얼라이브 창은 회수를 지연시킵니다; 더 긴 남은 지연이 우선합니다.
 - `MAX_EVENT_RING_SIZE = 1_000_000`은 운영자 오타로 인한 세션당 ~500MB OOM을 방지하는 `BridgeOptions.eventRingSize`의 소프트 상한입니다.
 - `DEFAULT_PERMISSION_TIMEOUT_MS = 0`은 인간 권한과 질문이 기본적으로 무기한 대기하도록 합니다. `permissionResponseTimeoutMs`는 운영자가 필요할 때 벽시계 상한을 활성화합니다. 투표자 취소, 세션 취소, 종료은 이것 없이도 사용 가능합니다.
 - `DEFAULT_MAX_PENDING_PER_SESSION = 64`는 `DEFAULT_MAX_SUBSCRIBERS`를 미러링합니다. 초과 `requestPermission` 호출은 stderr 경고와 함께 cancelled로 해결됩니다.
@@ -180,7 +180,7 @@ sequenceDiagram
 | 업스트림                                                                                   | 다운스트림                                   |
 | ------------------------------------------------------------------------------------------ | -------------------------------------------- |
 | `@agentclientprotocol/sdk` — `ClientSideConnection`, `PROTOCOL_VERSION`, ACP 타입           | `packages/cli/src/serve/` (데몬)              |
-| `@qwen-code/qwen-code-core` — `ApprovalMode`, `TrustGateError`, `getCurrentGeminiMdFilename` | `packages/channels/base/` (계획, F4)          |
+| `@qwen-code/qwen-code-core` — `ApprovalMode`, `TrustGateError`                     | `packages/channels/base/` (계획, F4)          |
 | `node:crypto`, `node:fs`, `node:path`                                                      | `packages/vscode-ide-companion/` (계획, F4)   |
 
 ## 구성
@@ -201,14 +201,13 @@ sequenceDiagram
 | `childEnvOverrides`                           | `{}`                                               | ACP 자식에 대한 핸들별 환경 추가/제거.                                                                                                                   |
 | `externalToolGuard`                           | (없음)                                             | 비공개 자식→부모 사전 실행 결정을 위한 선택적 핸들러. 브리지는 현재 활성 프롬프트의 소유 채널에서만 수락합니다.                                             |
 | `persistApprovalMode`, `persistDisabledTools` | —                                                  | Wave 4 뮤테이션 라우트를 위한 설정 쓰기 hook.                                                                                                            |
-| `contextFilename`                             | `settings.json`의 `context.fileName`에서            | `getCurrentGeminiMdFilename`을 재정의합니다.                                                                                                             |
 | `statusProvider`                              | (없음)                                             | 데몬 호스트 프리플라이트 셀(`DaemonStatusProvider`).                                                                                                     |
 | `delegateReadTextFileToClient`                | `true`                                             | 동일 호스트 런타임에서만 `false`로 설정하여 자식 `FileSystemService.readTextFile` 소비자가 일반 CLI 파일시스템 서비스를 사용하도록 합니다.                    |
 | `fileSystem`                                  | (없음)                                             | ACP `readTextFile` / `writeTextFile`을 위한 `BridgeFileSystem` 어댑터.                                                                                   |
 | `permissionPolicy`                            | `settings.json`의 `policy.permissionStrategy`에서    | `first-responder` / `designated` / `consensus` / `local-only` 중 하나.                                                                                   |
 | `permissionConsensusQuorum`                   | `settings.json`에서                                 | consensus 정책의 N.                                                                                                                                      |
 | `permissionAudit`                             | `createNoOpPermissionAuditPublisher()`              | 감사 추적을 위해 `PermissionAuditRing`에 연결합니다.                                                                                                     |
-| `channelIdleTimeoutMs`                        | `0`                                                | 마지막 세션이 닫힌 후 ACP 자식을 이 밀리초 동안 유지합니다.                                                                                               |
+| `channelIdleTimeoutMs`                        | `0`                                                | 자동 회수 지연; 단순 예열은 첫 상태 읽기까지 생존하며, 활성 킵얼라이브가 이를 연장할 수 있습니다.                                                           |
 
 타임아웃된 복원은 현재 ACP SDK에서 취소할 수 없습니다. 따라서 브리지는 실제 요청이 해결되거나 트랜스포트가 닫힐 때까지 정산 펜스와 용량 승인을 유지합니다. 늦은 결과는 정확히 한 번 닫히고 등록되지 않습니다. 정리 불확실성은 해당 워크스페이스의 새 세션 작업만 격리합니다; 기존 세션 및 워크스페이스 제어 트래픽은 채널이 드레인되고 재순환될 때까지 계속됩니다.
 

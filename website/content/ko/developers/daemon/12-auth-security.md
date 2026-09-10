@@ -4,7 +4,7 @@
 
 `qwen serve`는 기본적으로 로컬 데몬이며, 잘못된 설정 시 노출될 수 있는 표면입니다. 보안 모델은 **계층적**으로 설계되어 설정 오류 시 안전하게 실패합니다.
 
-1. **바인드** — 루프백이 아닌 바인드에서 베어러 토큰 없이 시작하려고 하면 **시작이 거부됩니다**.
+1. **바인드** — 루프백이 아닌 바인드는 항상 베어러를 수반합니다: 운영자의 토큰, 또는 시작 시 한 번 생성되고 출력되는 임시 128-bit 토큰입니다. 부팅은 제공된 토큰 소스가 명시적으로 비어 있거나 공백인 경우, 또는 요청된 `localhost`가 루프백 외부로 해석되고 토큰 소스가 확인되지 않은 경우(이 경우 토큰이 생성되지 않음)에만 거부됩니다.
 2. **베어러 인증** — `bearerAuth` 미들웨어가 상수 시간 SHA-256 비교를 통해 일반 루프백 바인드에서 `/health`를 제외한 일반 API 라우트를 보호합니다(`require_auth`는 해당 엔드포인트도 베어러 뒤로 이동합니다). 채널 웹훅 수신은 `x-qwen-webhook-secret`로 인증되는 베어러 이전의 별도 라우트입니다. Web Shell 문서 및 에셋 라우트는 모든 모드에서 인증 이전에 유지됩니다.
 3. **Host 헤더 허용 목록** — 루프백에서는 `localhost`, `127.0.0.1`, `[::1]`, `host.docker.internal`, 또는 정확히 바인딩된 루프백 주소(포트 포함)만 허용됩니다. 80 또는 443에서 수신할 때는 포트 없는 형태도 허용됩니다. 이 허용 목록은 DNS 리바인딩으로부터 방어합니다. Local Control LAN 리스너는 예외로, 기본 바인드와 관계없이 항상 광고된 authority의 Host 검사를 강제합니다.
 4. **Origin 제어** — 런타임 앱은 항상 가변 허용 목록(`MutableOriginAllowlist`) 위에 `allowOriginCors`를 설치합니다: `--allow-origin <pattern>` 항목이 시딩하고, Local Control이 활성화된 동안 LAN origin을 추가합니다. 일치하지 않는 origin은 403 거부 엔벨로프를 받습니다. 무조건적 거부 방어벽(`denyBrowserOriginCors`)은 런타임 시작 전에 응답하는 부트스트랩 앱에만 남아 있습니다.
@@ -27,6 +27,15 @@
 `run-qwen-serve.ts`에서:
 
 ```ts
+// A non-loopback bind with neither --token nor QWEN_SERVER_TOKEN first
+// generates an ephemeral 128-bit base64url bearer (16 random bytes, 22
+// URL-safe characters; printed once at startup, rotated per process). The
+// first refusal below therefore fires only when a token source was supplied
+// but is explicitly empty/whitespace, or when the requested hostname resolves
+// off-loopback (localhost pinned to a non-loopback address never generates).
+// Generation is loopback-suppressed, so the second refusal is a loopback-only
+// fail-fast: on a non-loopback bind the generated token already satisfies
+// --require-auth.
 if (!isLoopbackBind(opts.hostname) && !token) {
   throw new Error('Refusing to bind <host>:<port> without a bearer token. ...');
 }
@@ -63,11 +72,14 @@ if (findNonLoopbackHttpOrigin(parsed) && !token) {
 
 ```mermaid
 flowchart LR
-    REQ[Request] --> SO["strip same-origin Origin<br/>(Web Shell support)"]
+    REQ[Request] --> LS["loopback self-origin strip<br/>(server/self-origin.ts)"]
+    LS --> LOG["access-log middleware<br/>(DaemonLogger)"]
+    LOG --> TID["inbound trace-id capture"]
+    TID --> HA["hostAllowlist<br/>(loopback DNS-rebinding defense;<br/>primary gate passes through on<br/>non-loopback binds, Local Control<br/>keeps its own Host gate)"]
+    HA --> SO["remote same-origin check<br/>(credential check + Origin strip)"]
     SO --> AO["allowOriginCors<br/>(mutable allowlist: --allow-origin<br/>patterns + Local Control LAN origin)"]
-    AO --> HA["hostAllowlist"]
-    HA --> LOG["access-log middleware<br/>(DaemonLogger)"]
-    LOG --> WH{"Channel webhook?"}
+    AO --> H["pre-auth /health<br/>(loopback, unless --require-auth)"]
+    H --> WH{"Channel webhook?"}
     WH -->|yes| WS["x-qwen-webhook-secret<br/>+ webhook rate/body limits"]
     WH -->|no| BA["bearerAuth"]
     BA --> RL["rate-limit middleware<br/>(when enabled)"]
@@ -77,7 +89,9 @@ flowchart LR
     MG --> HANDLER["route handler"]
 ```
 
-`mutationGate`는 라우트별 미들웨어 팩토리입니다(`createMutationGate`가 `mutate()`를 반환). 라우트는 등록 시 `mutate()` 또는 `mutate({strict: true})`를 호출합니다. 전역 `app.use()` 미들웨어가 아닙니다. 접근 로그는 `bearerAuth` 이전에 등록되므로 401 거부도 기록됩니다. 일반 API 속도 제한은 `bearerAuth` 이후, `express.json()` 이전에 실행되므로 인증된 요청만 카운트되고, 제한을 초과할 경우 큰 본문이 파싱 전에 거부됩니다. 채널 웹훅 수신은 베어러 인증 이전에 분기하며, 자체 공유 비밀 검사, 뮤테이션 티어 속도 검사, 1 MiB 파서를 적용합니다.
+`mutationGate`는 라우트별 미들웨어 팩토리입니다(`createMutationGate`가 `mutate()`를 반환). 라우트는 등록 시 `mutate()` 또는 `mutate({strict: true})`를 호출합니다. 전역 `app.use()` 미들웨어가 아닙니다. 접근 로깅과 인바운드 trace-id 캡처는 origin 방어벽과 동일 출처 자격 증명 검사 이전에 등록되므로, 해당 403/401 단락 회로도 다른 모든 거부와 마찬가지로 기록되며 로그 라인은 호출자의 trace id와 결합됩니다. 둘 다 `bearerAuth`보다 앞섰으므로 401 거부도 기록됩니다. 루프백 Host 허용 목록은 인증 이전 health 라우트 이전에 등록되므로 DNS 리바인딩 방어가 이를 커버합니다. 인증 이전 `/health`는 origin 방어벽 아래에 위치합니다(일치하는 교차 origin 프로브는 CORS 헤더를 수반). 접근 로그는 finish 로거를 부착하기 전에 경로별로 `GET /health`와 `POST */heartbeat`를 면제하므로, 정확히 경로가 일치하는 `GET /health`와 `POST */heartbeat` 프로브는 어떤 마운트 위치에서도 기록되지 않으며 해당 면제 경로에서의 방어벽 거부도 마찬가지로 기록되지 않습니다(`HEAD /health`와 `GET /health/`는 다른 모든 요청처럼 기록됨). 일반 API 속도 제한은 `bearerAuth` 이후, `express.json()` 이전에 실행되므로 인증된 요청만 카운트되고, 제한을 초과할 경우 큰 본문이 파싱 전에 거부됩니다. 채널 웹훅 수신은 베어러 인증 이전에 분기하며, 자체 공유 비밀 검사, 뮤테이션 티어 속도 검사, 1 MiB 파서를 적용합니다.
+
+동일 출처 표면은 `server/self-origin.ts`의 두 미들웨어로 구성되어 있으며 분리되어 설치됩니다: 루프백 전용 `Origin` 제거는 접근 로그 이전에 설치되고(일치하는 `Origin`만 삭제하며 절대 거부하지 않음), `installRemoteSelfOriginMiddleware`는 설정된 토큰을 가진 비 루프백 기본 리스너에서 `allowOriginCors` 직전에 실행됩니다. 원격 미들웨어는 표준 `Origin`을 직접 소켓 스킴과 정규화된 `Host` authority에 대해 매칭합니다 — 전달된 헤더는 절대 참조되지 않습니다 — 그리고 일치하면 `Origin`을 삭제하기 전에 베어러 인증하므로, 내장 Web Shell의 동일 출처 HTTP 뮤테이션은 `--allow-origin`이 필요 없습니다. 인증 이전 술어(`web-shell-preauth.ts`)는 셸 진입점(`/`, `//`, `/assets*`, `/mcp-app-sandbox`, 정확한 `/session/:id` 문서 탐색)을 자격 증명 검사에서 면제합니다. 브라우저 모듈 스크립트 fetch는 `Authorization` 없이 `Origin`을 운반하기 때문입니다. WebSocket 업그레이드와 TLS 프론트 프록시 `https` origin은 커버되지 않습니다: 업그레이드 게이트는 자체 CSWSH 정책(루프백 origin, `--allow-origin` 항목, 또는 Local Control 리스너의 자체 origin)을 유지하며, 프록시의 `https` origin은 평문 소켓의 스킴과 절대 매칭되지 않습니다.
 
 ### `bearerAuth`
 
@@ -101,7 +115,7 @@ Host 비교는 **대소문자를 구분하지 않습니다**. Express는 헤더 
 
 `Origin` 헤더가 포함된 모든 요청을 거부합니다. CLI/SDK는 Origin을 설정하지 않습니다. 브라우저만 설정합니다. `cors` 패키지의 오류 콜백이 생성할 500 HTML 대신 결정론적인 `403 { error: 'Request denied by CORS policy' }`를 반환합니다. 런타임 앱은 더 이상 이 방어벽을 설치하지 않습니다 — 가변 허용 목록 위에서 `allowOriginCors`를 실행합니다(아래 참조); 거부 동작은 일치하지 않는 origin 분기로서 거기서 생존합니다. 이 방어벽은 런타임 시작 전에 요청을 처리하는 부트스트랩 앱(run-qwen-serve.ts)에만 남아 있습니다.
 
-예외: **루프백** 바인드에서 Web Shell의 동일 출처 XHR은 별도 미들웨어(`server/self-origin.ts`)에서 처리되며, Origin이 표준 루프백 자체 Origin(`127.0.0.1`, `localhost`, `[::1]`, `host.docker.internal`) 중 하나 또는 정확히 바인딩된 루프백 주소와 일치할 때 `Origin`을 제거합니다. 스키마가 일치하는 포트 없는 origin은 해당 기본 포트(80의 `http`, 443의 `https`)에서만 허용됩니다. 루프백이 아닌 바인드에서 셸의 XHR은 일치하지 않는 `Origin`을 가지며 데몬 origin에 대해 `--allow-origin`이 필요합니다.
+예외: **루프백** 바인드에서 Web Shell의 동일 출처 XHR은 별도 미들웨어(`server/self-origin.ts`)에서 처리되며, Origin이 표준 루프백 자체 Origin(`127.0.0.1`, `localhost`, `[::1]`, `host.docker.internal`) 중 하나 또는 정확히 바인딩된 루프백 주소와 일치할 때 `Origin`을 제거합니다. 스키마가 일치하는 포트 없는 origin은 해당 기본 포트(80의 `http`, 443의 `https`)에서만 허용됩니다. 루프백이 아닌 바인드에서는 동일 파일의 두 번째 미들웨어(`installRemoteSelfOriginMiddleware`)가 셸의 XHR을 대신 처리합니다: 표준 `Origin`이 직접 소켓 스킴과 정규화된 `Host` authority와 일치하는 요청을 베어러 인증하고 — 전달된 헤더는 절대 신뢰되지 않습니다 — 방어벽 이전에 해당 `Origin`을 제거하므로, 해당 요청은 `--allow-origin` 항목이 필요 없습니다. 교차 origin과 `null` origin은 계속 거부되며, WebSocket 업그레이드 라우트와 TLS 프론트 프록시 `https` origin은 여전히 항목이 필요합니다([미들웨어 체인](#middleware-chain-http-request-order) 참조).
 
 ### `allowOriginCors` (런타임 앱, 항상 설치)
 
@@ -109,8 +123,8 @@ Host 비교는 **대소문자를 구분하지 않습니다**. Express는 헤더 
 
 - 일치하는 `Origin` 값은 `Access-Control-Allow-Origin`, `Access-Control-Allow-Headers`, `Access-Control-Allow-Methods`를 받습니다. `OPTIONS` 프리플라이트는 `204`를 반환합니다.
 - 일치하지 않는 `Origin` 값은 거부 모드와 동일한 결정론적 `403 { error: 'Request denied by CORS policy' }`를 받습니다.
-- `--allow-origin '*'`는 `--token`이 필요합니다. 그렇지 않으면 부팅이 거부됩니다.
-- 토큰 없이 HTTP(S) `--allow-origin` 값은 루프백 호스트로 제한됩니다. 루프백이 아닌 브라우저 origin은 토큰이 필요한데, 그렇지 않으면 코드 실행을 포함한 전체 운영자 API를 실행할 수 있기 때문입니다.
+- `--allow-origin '*'`는 베어러 토큰이 필요합니다. 루프백 바인드에서는 미설정 시 부팅이 거부되지만, 루프백이 아닌 바인드에서는 생성된 임시 토큰이 가드를 충족합니다(거부는 루프백 전용).
+- 토큰 없이 HTTP(S) `--allow-origin` 값은 루프백 바인드에서 루프백 호스트로 제한됩니다. 루프백이 아닌 바인드에서는 생성된 토큰이 동일한 가드를 충족합니다. 루프백이 아닌 브라우저 origin은 모든 API 라우트에서 베어러로 인증되는데, 그렇지 않으면 데몬 사용자로 코드 실행을 포함한 전체 운영자 API를 실행할 수 있기 때문입니다. 인증 이전 예외는 Web Shell 문서/에셋 라우트와 MCP App 샌드박스(`/`, `/assets*`, `/mcp-app-sandbox`, 정확한 `/session/:id` 탐색), 그리고 `bearerAuth` 이전에 분기하여 베어러 대신 자체 `x-qwen-webhook-secret`로 인증하는 채널 웹훅 수신, 그리고 루프백 바인드에서만 `/health`(다른 곳에서 베어러 게이트됨)입니다.
 - 명시적 브라우저 확장 origin은 토큰 없는 로컬 자동화 경로를 유지합니다. 시작 로그에서 토큰 없이 허용된 브라우저 origin이 전체 운영자 권한을 받음을 기록합니다.
 - `parseAllowOriginPatterns()`는 부트 시 패턴 구문을 검증합니다.
 - `allow_origin` 기능 태그는 이 모드가 설정된 경우에만 광고됩니다.
@@ -268,7 +282,7 @@ sequenceDiagram
 | 플래그          | `--token`                                                                               | 베어러 토큰(환경 변수를 재정의).                                        |
 | CLI 플래그      | `--open-with-auth`                                                                      | 데몬 부팅 전 루프백 Web Shell 베어러를 재사용 또는 생성.                 |
 | 플래그          | `--require-auth`                                                                        | 베어러를 루프백 + `/health`로 확장. 토큰이 있어야 부팅 가능.             |
-| 플래그          | `--hostname`                                                                            | 루프백이 아닌 바인드는 `--token`(또는 환경 변수)이 필요합니다.           |
+| 플래그          | `--hostname`                                                                            | 루프백이 아닌 바인드는 항상 베어러를 수반합니다 — `--token`, `QWEN_SERVER_TOKEN`, 또는 생성된 임시 토큰. 명시적으로 비어 있는 소스는 거부됩니다. |
 | 플래그          | `--allow-origin <pattern>`                                                              | CORS 허용 목록 모드로 전환. 와일드카드 및 루프백이 아닌 HTTP(S) origin은 토큰이 필요합니다. |
 | 기능 태그       | `require_auth`(조건부), `auth_device_flow`(항상), `allow_origin`(조건부)                 | [`11-capabilities-versioning.md`](./11-capabilities-versioning.md) 참조. |
 

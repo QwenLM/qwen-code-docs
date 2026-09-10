@@ -58,7 +58,7 @@
 - [`17-configuration.md`](./17-configuration.md) - 影响 daemon 的环境变量、CLI 参数、`settings.json` 键。
 - [`18-error-taxonomy.md`](./18-error-taxonomy.md) - 各层类型化错误及修复方案。
 - [`19-observability.md`](./19-observability.md) - `QWEN_SERVE_DEBUG`、调试指南、遥测盲区。
-- [`20-quickstart-operations.md`](./20-quickstart-operations.md) - 最短启动路径、curl 检查、路由映射及内嵌调用指南。
+- [`20-quickstart-operations.md`](./20-quickstart-operations.md) - 最短启动路径、curl 检查、路由映射及嵌入边界（进程内托管为内部使用；外部集成使用 `qwen serve --no-web` 加 HTTP/SSE 协议）。内部 `createServeApp` 生命周期方案位于 [`02-serve-runtime.md`](./02-serve-runtime.md)。
 
 ## 术语表
 
@@ -144,7 +144,7 @@
 | 领域              | 当前状态                                                                                                                                             | 主要文档                              |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
 | 配置              | 完整的 `qwen serve` 标志、环境变量、`settings.json`、`ServeOptions`、`BridgeOptions` 及重要常量均汇总在一个页面中。                                   | [`17`](./17-configuration.md)         |
-| 快速入门 / 运维   | 涵盖最短启动路径、启动方案、curl 检查、Web Shell 鉴权行为、路由拆分、关闭行为以及嵌入式调用方案。                                                       | [`20`](./20-quickstart-operations.md) |
+| 快速入门 / 运维   | 涵盖最短启动路径、启动方案、curl 检查、Web Shell 鉴权行为、路由拆分、关闭行为及嵌入边界。内部 `createServeApp` 生命周期方案位于 [`02`](./02-serve-runtime.md)。 | [`20`](./20-quickstart-operations.md) |
 | 错误              | 总结了启动时的显式失败、路由错误、bridge 错误、EventBus 错误、文件系统错误和 mediator 错误，并提供了修复建议。                                        | [`18`](./18-error-taxonomy.md)        |
 | 可观测性          | 记录了 `QWEN_SERVE_DEBUG`、curl 方案、有用事件、遥测盲区以及排查清单。                                                                              | [`19`](./19-observability.md)         |
 

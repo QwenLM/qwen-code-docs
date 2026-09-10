@@ -42,6 +42,9 @@
 
 如果您的 PR 引入了面向用户的变更（例如，新命令、修改的标志或行为变化），您还必须更新 `/docs` 目录中的相关文档。
 
+新增或更新的设计文档必须在同一目录和 PR 中同时包含完整的英文（`<name>.md`）和简体中文（`<name>.zh-CN.md`）版本。
+保持两者的结构、决策、约束和验收标准一致，并添加双向语言链接。请参阅设计文档要求：[English](../design/README.md) 或 [简体中文](../design/README.zh-CN.md)。
+
 #### 6. 编写清晰的提交信息和良好的 PR 描述
 
 您的 PR 应具有清晰、描述性的标题，以及关于变更的详细描述。请遵循 [Conventional Commits](https://www.conventionalcommits.org/) 标准编写提交信息。

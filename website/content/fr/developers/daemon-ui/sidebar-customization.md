@@ -56,10 +56,12 @@ interface WebShellSidebarBranding {
 
 | Valeur                           | Effet                                             |
 | -------------------------------- | ------------------------------------------------- |
-| `undefined` (par défaut)         | Logo Qwen + texte "Qwen Code"                     |
+| `undefined` (par défaut)         | Marque résolue : prop `brand` → démon `GET /brand` → logo Qwen intégré + texte "Qwen Code" |
 | `false`                          | Ligne de branding entièrement masquée             |
 | `{ render: () => <MyHeader /> }` | Remplacement complet par du contenu personnalisé  |
 | `{ hideWhenCompact: false }`     | Garder le branding visible en mode icônes réduites|
+
+La ligne par défaut est pilotée par les données, pas figée : un démon qui sert une configuration `ui.brand` renomme le texte et change le logo, et un hôte d'intégration peut remplacer les deux avec la prop `brand` du composant shell (`onBrandResolved` communique le résultat pour le chrome de l'hôte). `branding.render` reste l'override de plus haute priorité — il l'emporte sur la prop et sur la valeur résolue par le démon, exactement comme avant.
 
 ```tsx
 sidebar={{
@@ -122,7 +124,7 @@ type WebShellSidebarFooterItem =
   | 'settings' // ⚙ Panneau Paramètres
   | 'version' // étiquette de version (par ex. "v0.19.10")
   | 'theme' // ☀/🌙 bascule clair/sombre
-  | 'sessionsOverview' // ▦ panneau de vue d'ensemble des sessions (grands écrans uniquement) (grands écrans uniquement)
+  | 'sessionsOverview' // ▦ panneau de vue d'ensemble des sessions
   | 'splitView' // ◧ vue partagée (grands écrans uniquement)
   | 'daemonStatus' // 📊 panneau de statut du démon
   | 'collapse'; // ◁/▷ bascule réduire/développer

@@ -442,7 +442,126 @@ function cmdSyncEn() {
   console.log(`[orch] sync-en: copied=${copied} deleted=${deleted}`);
 }
 
-function renderPrompt(lang, batch) {
+// A document whose English source is larger than this is translated one
+// slice at a time. The number is measured, not guessed: in run 34462813835
+// every source above 47KB failed with a truncated JSON response, and every
+// one at 29KB or below succeeded. 40KB sits in that gap.
+const SECTION_SPLIT_BYTES = 40000;
+// Each slice stays under the largest source that has been translated whole.
+const SECTION_BUDGET_BYTES = 30000;
+
+/**
+ * Split a markdown document at heading boundaries, greedily packing sections
+ * up to SECTION_BUDGET_BYTES.
+ *
+ * The failure this exists for is an output limit, not an input one: the model
+ * has to emit the translated text of everything it is asked to change, and
+ * for the four documents that dominate the backlog that response reached
+ * 90-177KB and was cut mid-string, discarding the whole document's work. In
+ * run 34462813835 that was 45 of 53 failures, and `users/configuration/
+ * settings.md`, `model-providers.md`, `users/qwen-serve.md` and
+ * `daemon/02-serve-runtime.md` between them accounted for 26 of them, every
+ * night, for weeks.
+ *
+ * Fences are tracked so a `## ` inside a code block is not a boundary. A
+ * section that is over budget on its own is split again at `### `, and if it
+ * is still over budget it is emitted whole -- a slice that is too large is
+ * still strictly better than sending the entire document.
+ */
+function splitSections(text, budget = SECTION_BUDGET_BYTES) {
+  const cut = (body, marker) => {
+    const parts = [];
+    let current = [];
+    let fenced = false;
+    for (const line of body.split("\n")) {
+      if (/^\s*(```|~~~)/.test(line)) fenced = !fenced;
+      if (!fenced && line.startsWith(marker) && current.length) {
+        parts.push(current.join("\n"));
+        current = [];
+      }
+      current.push(line);
+    }
+    if (current.length) parts.push(current.join("\n"));
+    return parts;
+  };
+
+  // Blank-line blocks, as a last resort when headings do not divide a section
+  // finely enough. `settings.md` is why this exists: one of its twelve `## `
+  // sections is 239KB with four `### ` inside it, so heading splits alone left
+  // a slice eight times over budget. Fences are tracked here too -- cutting a
+  // code block in half would hand the model a document it cannot reason about.
+  const cutBlocks = (body) => {
+    const blocks = [];
+    let current = [];
+    let fenced = false;
+    for (const line of body.split("\n")) {
+      if (/^\s*(```|~~~)/.test(line)) fenced = !fenced;
+      if (!fenced && line.trim() === "" && current.length) {
+        blocks.push(current.join("\n"));
+        current = [];
+      }
+      current.push(line);
+    }
+    if (current.length) blocks.push(current.join("\n"));
+    return blocks;
+  };
+
+  // Line packing, when even blank lines do not divide a block. Every remaining
+  // over-budget block measured was a long markdown table -- rows carry no
+  // blank line between them, so a 48KB table is one "block". A fence is never
+  // broken: if one is open, lines keep accumulating until it closes, so an
+  // oversized code block stays whole (it needs no translation anyway).
+  const cutLines = (body) => {
+    const out = [];
+    let current = [];
+    let size = 0;
+    let fenced = false;
+    for (const line of body.split("\n")) {
+      const isFence = /^\s*(```|~~~)/.test(line);
+      if (!fenced && !isFence && size && size + line.length + 1 > budget) {
+        out.push(current.join("\n"));
+        current = [];
+        size = 0;
+      }
+      if (isFence) fenced = !fenced;
+      current.push(line);
+      size += line.length + 1;
+    }
+    if (current.length) out.push(current.join("\n"));
+    return out;
+  };
+
+  const pieces = [];
+  const push = (piece, depth) => {
+    if (Buffer.byteLength(piece) <= budget || depth > 2) {
+      pieces.push(piece);
+      return;
+    }
+    const next =
+      depth === 0
+        ? cut(piece, "### ")
+        : depth === 1
+          ? cutBlocks(piece)
+          : cutLines(piece);
+    if (next.length < 2) {
+      push(piece, depth + 1);
+      return;
+    }
+    for (const part of next) push(part, depth + 1);
+  };
+  for (const section of cut(text, "## ")) push(section, 0);
+
+  const slices = [];
+  for (const piece of pieces) {
+    const last = slices[slices.length - 1];
+    if (last && Buffer.byteLength(last + "\n" + piece) <= budget)
+      slices[slices.length - 1] = last + "\n" + piece;
+    else slices.push(piece);
+  }
+  return slices.length ? slices : [text];
+}
+
+function renderPrompt(lang, batch, slice) {
   const tpl = fs.readFileSync(
     path.join(HERE, "prompts", "translate.md"),
     "utf8"
@@ -452,7 +571,11 @@ function renderPrompt(lang, batch) {
     const target = path.join(OPTS.contentDir, lang, rel);
     return {
       path: rel,
-      source: fs.readFileSync(path.join(OPTS.contentDir, "en", rel), "utf8"),
+      // A slice replaces the source with the part being worked on. The target
+      // stays whole, because that is what the replacements have to anchor in.
+      source: slice
+        ? slice.text
+        : fs.readFileSync(path.join(OPTS.contentDir, "en", rel), "utf8"),
       target: fs.existsSync(target) ? fs.readFileSync(target, "utf8") : null
     };
   });
@@ -466,6 +589,14 @@ function renderPrompt(lang, batch) {
       "{{STYLE}}",
       fs.readFileSync(path.join(HERE, "STYLE.md"), "utf8")
     )
+    .replaceAll(
+      "{{SCOPE}}",
+      slice
+        ? `This request covers part ${slice.index} of ${slice.total} of the source document. ` +
+          `The \`source\` below is only that part; \`target\` is the whole current translation. ` +
+          `Return replacements that bring the target in line with this part alone, and leave the rest of the target untouched.`
+        : ""
+    )
     .replaceAll("{{DOCUMENTS}}", JSON.stringify(documents));
   return { documents, prompt };
 }
@@ -476,6 +607,52 @@ const TRANSLATE_CHUNK = 1;
 
 // Retry once; repeated failures stay in the next run's backlog.
 const TRANSLATE_ATTEMPTS = 2;
+
+/**
+ * Trim the inside of inline code spans.
+ *
+ * The translation agent reliably emits `` ` @qwen-code/webui` `` where the
+ * document holds `` `@qwen-code/webui` `` — a spurious space just inside the
+ * span. In run 34412117469 that single artifact accounted for 20 of 54
+ * unmatchable `old` anchors, each one discarding a whole document's
+ * translation. Nothing semantic distinguishes the two, so the anchor is
+ * repaired rather than the model re-prompted (the prompt has told it to copy
+ * verbatim since the beginning; it still does this).
+ *
+ * Only closed spans on a single line are touched, and fenced blocks are left
+ * alone, so `foo` bar keeps its space: that one belongs to the prose between
+ * spans, not to a span.
+ */
+/** Index of `needle` in `hay` when it occurs exactly once, else -1. */
+function matchExactlyOnce(hay, needle) {
+  const at = hay.indexOf(needle);
+  if (at < 0) return -1;
+  return hay.indexOf(needle, at + needle.length) >= 0 ? -1 : at;
+}
+
+function trimCodeSpans(text) {
+  let fenced = false;
+  return text
+    .split("\n")
+    .map((line) => {
+      if (/^\s*(```|~~~)/.test(line)) {
+        fenced = !fenced;
+        return line;
+      }
+      if (fenced) return line;
+      // A run of two or more backticks is a different construct (a span that
+      // itself contains a backtick), and splitting on single backticks
+      // mis-pairs its delimiters: "Use `` ` x ` `` carefully" would come back
+      // as "Use `` `x` `` carefully". The artifact this repairs only ever
+      // appears in single-backtick spans, so skip the line rather than guess.
+      if (line.includes("``")) return line;
+      const parts = line.split("`");
+      for (let i = 1; i < parts.length - 1; i += 2)
+        if (parts[i].trim()) parts[i] = parts[i].trim();
+      return parts.join("`");
+    })
+    .join("\n");
+}
 
 function translationSchema(documents) {
   return {
@@ -597,18 +774,29 @@ function applyTranslationPatches(lang, documents, result) {
           typeof replacement.new !== "string"
         )
           throw new Error(`${rel}: replacement ${i + 1} is invalid`);
-        const at = next.indexOf(replacement.old);
-        if (
-          at < 0 ||
-          next.indexOf(replacement.old, at + replacement.old.length) >= 0
-        )
+        let { old, new: text } = replacement;
+        let at = matchExactlyOnce(next, old);
+        if (at < 0) {
+          // Second attempt with the code-span artifact repaired. Strictly a
+          // fallback: an anchor that already matched never reaches here, so
+          // this cannot change how an accepted patch applies. `new` is
+          // repaired too — it carries the same artifact, and writing it
+          // through would put the malformed span into the published page.
+          const repaired = trimCodeSpans(old);
+          if (repaired !== old) {
+            const retry = matchExactlyOnce(next, repaired);
+            if (retry >= 0) {
+              old = repaired;
+              text = trimCodeSpans(text);
+              at = retry;
+            }
+          }
+        }
+        if (at < 0)
           throw new Error(
             `${rel}: replacement ${i + 1} does not match exactly once`
           );
-        next =
-          next.slice(0, at) +
-          replacement.new +
-          next.slice(at + replacement.old.length);
+        next = next.slice(0, at) + text + next.slice(at + old.length);
       }
     }
     writes.push({ dest, content: next });
@@ -741,6 +929,57 @@ async function cmdTranslate(lang) {
         (chunks.length > 1 ? ` (part ${part}/${chunks.length})` : "") +
         `: ${chunk.map((c) => relInContent(c.file)).join(", ")}...`
     );
+    // Large sources are worked one slice at a time. Slices are independent:
+    // one failing does not abandon the rest, because a partially updated page
+    // is closer to correct than the fully stale one it replaces, and anything
+    // structurally broken is caught by verify and restored by quarantine.
+    const enPath = path.join(OPTS.contentDir, "en", relInContent(chunk[0].file));
+    const targetPath = path.join(
+      OPTS.contentDir,
+      lang,
+      relInContent(chunk[0].file)
+    );
+    const source = fs.existsSync(enPath) ? fs.readFileSync(enPath, "utf8") : "";
+    const slices =
+      chunk.length === 1 &&
+      fs.existsSync(targetPath) &&
+      Buffer.byteLength(source) > SECTION_SPLIT_BYTES
+        ? splitSections(source)
+        : [null];
+    if (slices.length > 1)
+      console.log(
+        `[orch] ${lang}: source is ${Math.round(
+          Buffer.byteLength(source) / 1024
+        )}KB, translating in ${slices.length} slices`
+      );
+    let failedSlices = 0;
+    for (let sliceIndex = 0; sliceIndex < slices.length; sliceIndex++) {
+      const slice =
+        slices[sliceIndex] === null
+          ? undefined
+          : {
+              text: slices[sliceIndex],
+              index: sliceIndex + 1,
+              total: slices.length
+            };
+      const sliceSuffix = slice ? `${suffix}-slice${slice.index}` : suffix;
+      const outcome = await translateOnce(lang, chunk, slice, sliceSuffix);
+      if (outcome !== 0) failedSlices++;
+    }
+    if (failedSlices) {
+      console.log(
+        `::warning::${lang}: ${failedSlices}/${slices.length} slice(s) failed on part ${part}/${chunks.length}; its files stay in the backlog`
+      );
+      process.exitCode = 1;
+    }
+  }
+}
+
+/**
+ * One dispatch of one chunk (optionally one slice of it), with the retry #217
+ * added. Returns the agent's exit status.
+ */
+async function translateOnce(lang, chunk, slice, suffix) {
     let status;
     let log;
     for (let attempt = 1; attempt <= TRANSLATE_ATTEMPTS; attempt++) {
@@ -750,11 +989,12 @@ async function cmdTranslate(lang) {
       // failure.
       ({ status, log } = await runAgent(
         lang,
-        renderPrompt(lang, chunk),
+        renderPrompt(lang, chunk, slice),
         attempt === 1 ? suffix : `${suffix}-retry${attempt - 1}`
       ));
       console.log(
         `[orch] ${lang}: agent exit=${status}` +
+          (slice ? ` (slice ${slice.index}/${slice.total})` : "") +
           (attempt > 1 ? ` on retry ${attempt - 1}` : "") +
           ` (log: ${log})`
       );
@@ -764,21 +1004,10 @@ async function cmdTranslate(lang) {
         // attempt already translated. That redundancy is what keeps this
         // simple, and with one file per session it is cheap; verify's "touched
         // this session" check is satisfied by the rewrite either way.
-        console.log(
-          `[orch] ${lang}: part ${part}/${chunks.length} failed; retrying once...`
-        );
+        console.log(`[orch] ${lang}: ${suffix || "part"} failed; retrying once...`);
       }
     }
-    if (status !== 0) {
-      // The workflow's `|| true` keeps the step alive; surface the failure
-      // in the run summary anyway, and leave the chunk's files in the
-      // backlog (verify fails them; they are retried next run).
-      console.log(
-        `::warning::${lang}: agent exited ${status} on part ${part}/${chunks.length} after ${TRANSLATE_ATTEMPTS} attempts; its files stay in the backlog`
-      );
-      process.exitCode = 1;
-    }
-  }
+    return status;
 }
 
 // ---------- structural gate ----------
@@ -1424,6 +1653,104 @@ function cmdQuarantine() {
   }
 }
 
+/**
+ * Prose lines long enough that an identical copy in the target means the line
+ * was never translated, rather than that both languages happen to agree.
+ *
+ * Fenced blocks are skipped wholesale: code, terminal transcripts, mermaid
+ * diagrams and agent-prompt examples are *supposed* to match the source, and
+ * counting them buried the real signal under 41 false positives when this was
+ * first measured. Headings and blockquotes are skipped for being short and
+ * often proper nouns; table rows are kept, because a table of English option
+ * descriptions inside an otherwise translated page is exactly the case worth
+ * catching (#268). Inline code and link targets are removed before counting
+ * words, so a line is only prose if eight or more plain Latin words survive.
+ */
+function untranslatedProse(text) {
+  const lines = [];
+  let fenced = false;
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (/^(```|~~~)/.test(line)) {
+      fenced = !fenced;
+      continue;
+    }
+    if (fenced) continue;
+    if (line.length < 60) continue;
+    if (/^[#>]/.test(line)) continue;
+    if (/^\|[\s:|-]+\|?$/.test(line)) continue;
+    const words = line
+      .replace(/`[^`]*`/g, "")
+      .replace(/\[[^\]]*\]\([^)]*\)/g, "")
+      .split(/\s+/)
+      .filter((w) => /^[A-Za-z][A-Za-z,.;:'()-]*$/.test(w));
+    if (words.length >= 8) lines.push(line);
+  }
+  return lines;
+}
+
+/**
+ * Run the structural gate over an explicit list of files, for use on a pull
+ * request rather than inside a nightly run.
+ *
+ * The nightly already gates everything it writes, so automation PRs arrive
+ * pre-checked. Human-authored PRs that touch `website/content` do not: blog
+ * posts, showcase entries and hand-written translations reach `main` with no
+ * structural verification at all. This is the same `structuralProblems()` the
+ * nightly uses -- deliberately the same function, so the two cannot drift.
+ *
+ * Only the files named are checked. The repository carries pre-existing gate
+ * failures (#260), and a checker that reports those on an unrelated PR would
+ * be turned off within a week.
+ */
+function cmdCheck(files) {
+  const list = (files || "")
+    .split(/[,\n]/)
+    .map((f) => f.trim())
+    .filter(Boolean);
+  if (!list.length) {
+    console.log("[orch] check: no files given, nothing to do");
+    return;
+  }
+  let checked = 0;
+  let bad = 0;
+  for (const file of list) {
+    const rel = file.replace(/^website\/content\//, "");
+    const slash = rel.indexOf("/");
+    if (slash < 0) continue;
+    const lang = rel.slice(0, slash);
+    const inLang = rel.slice(slash + 1);
+    if (lang === "en") continue;
+    if (!/\.mdx?$/.test(inLang)) continue;
+    const target = path.join(OPTS.contentDir, lang, inLang);
+    const source = path.join(OPTS.contentDir, "en", inLang);
+    // A page with no English counterpart is locale-only content, not a
+    // translation: there is nothing to compare it against.
+    if (!fs.existsSync(target) || !fs.existsSync(source)) continue;
+    checked++;
+    const en = fs.readFileSync(source, "utf8");
+    const tg = fs.readFileSync(target, "utf8");
+    const problems = structuralProblems(en, tg, lang);
+    // Reported, never fatal: this one is a heuristic, and the codebase
+    // already spells a soft finding `WARN` (see verifyFile's link count).
+    const sourceProse = new Set(untranslatedProse(en));
+    const copied = untranslatedProse(tg).filter((l) => sourceProse.has(l));
+    if (copied.length) {
+      console.log(
+        `::warning file=${file}::${copied.length} line(s) identical to the English source; first: ${copied[0].slice(0, 120)}`
+      );
+      console.log(`WARN ${file}: ${copied.length} line(s) look untranslated`);
+    }
+    if (!problems.length) continue;
+    bad++;
+    for (const problem of problems)
+      console.log(`::error file=${file}::${problem}`);
+    console.log(`FAIL ${file}: ${problems.join("; ")}`);
+  }
+  console.log(`[orch] check: ${checked} file(s) checked, ${bad} failed`);
+  if (bad) process.exitCode = 1;
+}
+
 function cmdReportBatch() {
   const logDir = path.resolve(flags["log-dir"] || "/tmp");
   const logs = fs.existsSync(logDir)
@@ -1549,6 +1876,9 @@ switch (cmd) {
   case "quarantine":
     cmdQuarantine();
     break;
+  case "check":
+    cmdCheck(flags.files);
+    break;
   case "report-batch":
     cmdReportBatch();
     break;
@@ -1557,7 +1887,7 @@ switch (cmd) {
     break;
   default:
     console.log(
-      "usage: orchestrator.mjs <detect|preflight|sync-en|seed|translate|verify|scan|advance|quarantine|report-batch|report> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv]"
+      "usage: orchestrator.mjs <detect|preflight|sync-en|seed|translate|verify|scan|advance|quarantine|check|report-batch|report> [--lang L] [--limit N] [--content-dir D] [--baseline B] [--manifest M] [--langs csv] [--files csv]"
     );
     process.exitCode = cmd ? 1 : 0;
 }

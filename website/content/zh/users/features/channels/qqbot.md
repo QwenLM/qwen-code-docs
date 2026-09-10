@@ -1,4 +1,4 @@
-# QQ 机器人
+# QQ Bot (QQ机器人)
 
 本指南介绍如何通过 QQ 官方 Bot 开放平台 API 设置 Qwen Code 频道。
 
@@ -63,7 +63,6 @@ export QQ_APP_SECRET=<your-app-secret>
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "instructions": "你是一个通过 QQ Bot 对话的 AI 助手。回复控制在 2000 字符以内。",
-      "blockStreaming": "on",
       "groupPolicy": "disabled",
       "groups": {
         "*": { "requireMention": true }
@@ -82,7 +81,7 @@ export QQ_APP_SECRET=<your-app-secret>
 | `sandbox`     | `false`   | 设为 `true` 以使用 QQ 沙箱 API 环境（`sandbox.api.sgroup.qq.com`）   |
 
 所有标准频道选项（见[频道概览](./overview#options)）同样支持：
-`senderPolicy`、`allowedUsers`、`sessionScope`、`cwd`、`instructions`、`groupPolicy`、`groups`、`dispatchMode`、`blockStreaming`、`blockStreamingChunk`、`blockStreamingCoalesce`。
+`senderPolicy`、`allowedUsers`、`sessionScope`、`cwd`、`instructions`、`groupPolicy`、`groups`、`dispatchMode`。
 
 ## 运行
 

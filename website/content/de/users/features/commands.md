@@ -751,7 +751,9 @@ im Live-Prozess-Register und werden daher nicht angezeigt.
 
 **Menschenlesbare Ausgabe (Standard):**
 
-Eine Tabelle mit den Spalten: NAME, PID, AGE, DIRECTORY.
+Eine Tabelle mit den Spalten: NAME, KIND, PID, AGE, DIRECTORY.
+
+KIND beschreibt, was die Session registriert hat – `tui` für jemanden an einem Terminal, `external` für ein Programm, das gar keine Qwen Code-Session ist (ein Voice-Frontend, ein Relay), und `headless` oder `serve` für eine Session, die von einem anderen Programm gesteuert wird. Mehrere `serve`- oder `headless`-Zeilen können sich eine PID teilen: ein `qwen --acp`-Kind hostet alle seine Sessions in einem Prozess – `serve`, wenn der Daemon es gespawnt hat, `headless`, wenn ein Client es direkt steuert – und jede davon registriert sich separat. Es ist ein Self-Report, wie NAME und DIRECTORY: jedes Feld hier wurde von dem Prozess geschrieben, den es beschreibt, und nichts darüber, was eine Session tun darf, hängt davon ab. Siehe [Cross-Session Protocol](./cross-session-protocol.md) für das Record-Format und wie man ein eigenes Programm registriert.
 
 **JSON-Ausgabe (`--json`):**
 
@@ -760,7 +762,7 @@ JSON-Objekt mit den folgenden Feldern:
 
 ```
 schemaVersion, pid, procStart, pidNs, sessionId, cwd, name, startedAt,
-qwenVersion, ipcPath (wenn Peer-Messaging verfügbar ist)
+qwenVersion, kind, ipcPath (wenn Peer-Messaging verfügbar ist)
 ```
 
 Nichts anderes wird auf stdout geschrieben – eine leere Auflistung gibt
@@ -865,13 +867,57 @@ Quittung: Wenn sie zurückgehalten, abgelehnt, verweigert, abgelaufen
 oder falsch adressiert war (die Adresse hat den Besitzer gewechselt –
 liste die Agenten erneut auf) – oder nach einer Zurückhaltung
 freigegeben – erscheint ein Hinweis im Transkript der sendenden Session
-(`Message to <name>: …`). Abgelehnt und verweigert sind unterschiedliche
+(`Message to <name>: …`). Abgelehnt, verweigert und verworfen sind drei unterschiedliche
 Antworten: Abgelehnt bedeutet, dass jemand die Nachricht überprüft und
-nein gesagt hat, während verweigert bedeutet, dass
-`agents.crossSessionInbound` dieser Session `refuse` ist und niemand sie
-überhaupt gesehen hat. Das Modell, das sie gesendet hat, wird nicht
-informiert; wenn die andere Session antwortet, kommt die Antwort als
+nein gesagt hat, verweigert bedeutet, dass `agents.crossSessionInbound`
+dieser Session `refuse` ist und niemand sie überhaupt gesehen hat, und
+verworfen bedeutet, dass ihr Posteingang die Nachricht vor alledem
+abgewiesen hat (siehe unten). Der erste Verwurf wird sofort beantwortet
+und die restlichen werden alle paar Sekunden in eine Quittung
+zusammengefasst, die jeweils die Nachrichten nennt, für die sie steht,
+sodass eine Serie davon nur eine Handvoll Zeilen kostet statt eine pro
+Nachricht. Das Modell, das sie gesendet hat, wird nicht informiert; wenn
+die andere Session antwortet, kommt die Antwort als
 Cross-Session-Nachricht an.
+
+### Flood-Schutz
+
+Eine Session akzeptiert bis zu 30 Nachrichten auf einmal von einem
+Absender und danach eine alle zwei Sekunden, sowie bis zu 32 auf einmal
+von allen Absendern zusammen und danach eine pro Sekunde. Das zweite
+Limit existiert, weil ein Absender sich selbst benennt: Rotieren des
+Namens bringt eine frische Zuteilung vom ersten Limit, aber nicht vom
+zweiten. Es liegt knapp über dem ersten, weil jede akzeptierte Nachricht
+eine Quittung erzeugt, und eine Session kann nur so viele davon
+gleichzeitig verschicken. Eine Nachricht von einer anderen Session, die
+die vorherige Nachricht desselben Absenders Wort für Wort innerhalb von
+30 Sekunden wiederholt, wird ebenfalls abgewiesen – ein Modell, das auf
+einem Satz schleift, prägt jedes Mal eine frische Nachrichten-ID, also
+fängt es der Text ab. Nachrichten von einem Skript, das die Session
+gestartet hat, und von einem vertrauenswürdigen Controller sind von der
+Wiederholungsprüfung ausgenommen, denn ein Hook, der dieselbe Zeile
+zweimal meldet, meldet zwei Fakten, und eine Person, die zweimal
+„continue" sagt, meint es zweimal; beide unterliegen weiterhin den
+Ratenlimits. Schließlich wird eine Nachricht, die akzeptiert wird, aber
+nicht gequeut werden kann, weil die Session bereits 50 wartende hat,
+ebenfalls abgewiesen.
+
+Eine Nachricht, die auf diese Weise abgewiesen wird, wird niemals
+zurückgehalten, niemals dem Modell gezeigt, und hinterlässt keinen
+Record, sodass der Absender es später erneut versuchen und landen kann.
+Die empfangende Session meldet dies in ihrem Transkript höchstens einmal
+pro Minute pro Absender, mit einem Zähler für das, wofür die Zeile
+steht. Die sendende Session bekommt eine Quittung, die jede Nachricht
+nennt, die der Burst gekostet hat, und ihr Transkript sagt, sie soll das
+noch Relevante in eine spätere Nachricht zusammenfassen, statt erneut zu
+senden.
+
+Die sendende Seite wartet nicht, um es herauszufinden. Jede Session
+verfolgt, was sie an jede Adresse gesendet hat, und verweigert einen
+Send, den der Empfänger verwerfen würde, sodass das Modell gesagt
+bekommt, es soll batchen, bevor die Nachricht geschrieben wird, statt
+danach – und der Empfänger gibt niemals eine Verbindung für eine
+Nachricht aus, die er abweisen würde.
 
 ### Posteingang-Authentifizierung und skriptete Injektion
 
@@ -985,3 +1031,45 @@ Jeder, der das Token hält, kann als dieser Controller senden, behandle
 es also wie jede andere Anmeldeinformation: Gib es einem Programm, halte
 es aus geteilter Konfiguration heraus, und widerrufe es, wenn das
 Programm fertig ist.
+
+### Sessions, die ein Programm über ACP steuert
+
+Jedes `qwen --acp`-Kind registriert jede Session, die es hostet – als
+`serve`, wenn der Daemon den Prozess gespawnt hat, als `headless`, wenn
+ein Editor oder ein anderer Client `qwen --acp` direkt steuert – und die
+Session erscheint in `qwen sessions ps` und im `list_agents` einer
+anderen Session wie jede andere. Sie kann senden: ihr Modell kann
+`send_message` aufrufen, um ein Terminal zu erreichen, das du offen hast.
+Mehrere davon teilen sich einen Prozess und einen Posteingang, also muss
+ein Absender die Session benennen, die er meint – jede Qwen Code-Session
+tut das automatisch.
+
+Nachrichten, die _an_ eine solche gesendet werden, werden abgelehnt
+statt zurückgehalten. Zurückhaltung ist eine Frage an einen Menschen,
+und niemand beobachtet eine Liste zurückgehaltener Nachrichten für eine
+gesteuerte Session; ein Absender wird stattdessen sofort benachrichtigt,
+statt ein Ablaufen abzuwarten. Wo eine zurückgehaltene Nachricht für
+diese Sessions auftauchen sollte, ist noch nicht geklärt.
+
+Eine Session registriert sich nur, solange ihre eigenen Einstellungen
+`agents.crossSessionMessaging` aktiviert haben. Mit ausgeschaltetem
+bleibt sie unsichtbar, denn der einzige Grund, eine Session aufzulisten,
+die niemand ansprechen kann, wäre, eine Adresse zu bewerben, die
+niemals antwortet.
+
+### Programme, die keine Qwen Code-Sessions sind
+
+Alles oben funktioniert zwischen Sessions, aber nichts davon ist
+spezifisch für eine. Ein Programm, das einen Registry-Eintrag für sich
+selbst schreibt und einen Posteingang auf dieselbe Weise bindet, wird
+von `qwen sessions ps` und von `list_agents` aufgelistet, kann namentlich
+von `send_message` adressiert werden, und empfängt Zustellquittungen für
+das, was es sendet – ein Voice-Frontend, ein Relay, ein Build-Watcher. Es
+sollte `kind: "external"` aufzeichnen, damit eine Auflistung sagen kann,
+was es ist.
+
+[Cross-Session Protocol](./cross-session-protocol.md) ist der Vertrag,
+um eines zu schreiben: das Record-Schema und wie Liveness beurteilt
+wird, die Socket-Pfade und das Framing, die Auth-Zeile, jedes
+Frame-Feld, die Quittungs-Zustände und ihre Übergänge, und was ein
+Empfänger mit einer Nachricht tut, bevor sein Modell sie sieht.

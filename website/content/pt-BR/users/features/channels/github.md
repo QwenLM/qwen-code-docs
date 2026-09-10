@@ -46,7 +46,6 @@ Adicione o canal em `~/.qwen/settings.json`:
       "allowedUsers": ["operator-github-username"],
       "sessionScope": "chat_thread",
       "cwd": "/path/to/your/project",
-      "blockStreaming": "off",
       "groupPolicy": "open",
       "groups": {
         "*": { "requireMention": true }
@@ -87,7 +86,6 @@ A autenticação local do `gh` requer um `baseUrl` HTTPS para que a credencial d
 | `groupPolicy`             | `"disabled"`             | Deve ser `"open"`, `"allowlist"` com o repo (`owner/repo`) listado em `groups`, ou `"pairing"` com o repo aprovado para que as notificações fluam |
 | `senderPolicy`            | `"allowlist"`            | Quem pode acionar o bot                                                                      |
 | `groups.*.requireMention` | `true`                   | Exigir @menções para comentários comuns; motivos de notificação direcionados ainda executam  |
-| `blockStreaming`          | `"off"`                  | Sempre forçado para `"off"`; chunks intermediários do modelo não são publicados; `"on"` não é suportado |
 | `reasonFilter`            | não definido             | Allowlist opcional de motivos de notificação do GitHub a processar                           |
 
 Use `reasonFilter` para descartar classes de notificação ruidosas como `ci_activity` ou `state_change`. Não use `reasonFilter: ["mention"]` como substituto para `groups.*.requireMention`: o motivo `mention` do GitHub é persistente no nível da thread, então novas @menções reais podem chegar depois sob `comment`, `subscribed`, `author` ou outros motivos e seriam ignoradas.
@@ -133,13 +131,7 @@ Para um comentário de issue ou pull request aceito, o canal adiciona a reação
 
 ### Output apenas final
 
-O canal do GitHub sempre força entrega final-only. O adapter define `blockStreaming` como `"off"`, então chunks intermediários do modelo nunca são publicados como comentários separados e `blockStreaming: "on"` não é suportado.
-
-```json
-{
-  "blockStreaming": "off"
-}
-```
+O canal do GitHub publica apenas respostas completas. Chunks intermediários do modelo nunca são publicados como comentários separados.
 
 Se o GitHub retornar uma falha de entrega definitiva de não-escrita, como uma resposta de rate-limit, o canal armazena a resposta final em `~/.qwen/channels/<workspace-scope>/<channel>-<name-hash>-github-pending-deliveries.json` com permissões de arquivo privadas e a reprocessa na próxima inicialização do canal. A tarefa recebida correspondente permanece no estado `reply_pending` até que essa entrega seja bem-sucedida ou atinja uma falha terminal definitiva. Falhas de entrega ambíguas não são reprocessadas automaticamente porque o GitHub pode ter criado o comentário.
 

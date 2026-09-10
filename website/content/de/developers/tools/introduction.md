@@ -47,6 +47,7 @@ Die integrierten Tools von Qwen Code lassen sich grob wie folgt kategorisieren:
 - **[Shell-Tool](./shell.md) (`run_shell_command`):** Zum Ausführen von Shell-Befehlen.
 - **[Monitor-Tool](./monitor.md) (`monitor`):** Zum Ausführen langlebiger Shell-Befehle, die die Ausgabe als Hintergrundaufgaben-Benachrichtigungen streamen.
 - **[Web-Fetch-Tool](./web-fetch.md) (`web_fetch`):** Zum Abrufen von Inhalten von URLs.
+- **[Web-Search-Tool](./web-search.md) (`web_search`):** Zum Durchsuchen des Webs. Beim Start verfügbar, wenn ein unterstützter Provider es bereitstellen kann.
 - **[Todo-Write-Tool](./todo-write.md) (`todo_write`):** Ein optionales Tool zum Erstellen und Verwalten strukturierter Aufgabenlisten während Codierungssitzungen.
 - **[Agent-Tool](./task.md) (`agent`):** Zum Delegieren komplexer Aufgaben an spezialisierte Subagents.
 - **[Exit-Plan-Mode-Tool](./exit-plan-mode.md) (`exit_plan_mode`):** Zum Verlassen des Planungsmodus und Fortfahren mit der Implementierung.

@@ -63,7 +63,6 @@ export QQ_APP_SECRET=<your-app-secret>
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "instructions": "你是一个通过 QQ Bot 对话的 AI 助手。回复控制在 2000 字符以内。",
-      "blockStreaming": "on",
       "groupPolicy": "disabled",
       "groups": {
         "*": { "requireMention": true }
@@ -82,7 +81,7 @@ export QQ_APP_SECRET=<your-app-secret>
 | `sandbox`   | `false` | QQ 샌드박스 API 환경(`sandbox.api.sgroup.qq.com`)을 사용하려면 `true`로 설정하세요.          |
 
 모든 표준 채널 옵션([채널 개요](./overview#options) 참조)도 지원됩니다:
-`senderPolicy`, `allowedUsers`, `sessionScope`, `cwd`, `instructions`, `groupPolicy`, `groups`, `dispatchMode`, `blockStreaming`, `blockStreamingChunk`, `blockStreamingCoalesce`.
+`senderPolicy`, `allowedUsers`, `sessionScope`, `cwd`, `instructions`, `groupPolicy`, `groups`, `dispatchMode`.
 
 ## 실행
 
@@ -127,7 +126,7 @@ QQ 서버가 어떤 이유로든 Markdown 메시지를 거부하면, 채널이 �
 
 - **자동 재연결:** WebSocket 연결이 끊어지면, 지수 백오프로 재시도합니다(최대 20회, 재시도 간격 최대 30초)
 - **세션 복원:** WebSocket이 잠시 끊어지면, QQ의 `RESUME` opcode를 사용하여 진행 중 메시지를 잃지 않고 세션을 복원합니다
-- **서버 간 컨텍스트 continuation:** 채팅 세션과 라우팅 상태가 디스크에 저장됩니다. 데몬이 재시작되면 대화가 중단된 지점에서 계속됩니다
+- **서버 간 컨텍스트 연속성:** 채팅 세션과 라우팅 상태가 디스크에 저장됩니다. 데몬이 재시작되면 대화가 중단된 지점에서 계속됩니다
 - **하트비트 모니터링:** HEARTBEAT_ACK 타임아웃이 감지되면 좀비 연결을 방지하기 위해 재연결을 강제합니다
 - **메시지 중복 제거:** 재연결 후 재생된 메시지가 감지되어 건너뜁니다
 

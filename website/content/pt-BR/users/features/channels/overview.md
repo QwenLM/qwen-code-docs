@@ -73,9 +73,6 @@ Os canais são configurados sob a chave `channels` no `settings.json`. Cada cana
 | `groupHistoryLimit`      | Não              | Preenchimento retroativo opt-in do histórico do grupo. `0` ou omitido desativa. Um número positivo persiste essa quantidade de mensagens de grupo não mencionadas de remetentes autorizados ou membros de grupos pareados aprovados para a próxima menção/resposta do bot. |
 | `groups`                 | Não              | Configurações por grupo. As chaves são IDs de chats em grupo ou `"*"` para os padrões. Consulte [Chats em Grupo](#group-chats)                                                                     |
 | `dispatchMode`           | Não              | O que acontece quando você envia uma mensagem enquanto o bot está ocupado: `steer` (padrão), `collect` ou `followup`. Consulte [Modos de Despacho](#dispatch-modes)                         |
-| `blockStreaming`         | Não              | Entrega progressiva de respostas: `on` ou `off` (padrão). Consulte [Block Streaming](#block-streaming)                                                                        |
-| `blockStreamingChunk`    | Não              | Limites de tamanho do chunk: `{ "minChars": 400, "maxChars": 1000 }`. Consulte [Block Streaming](#block-streaming)                                                                    |
-| `blockStreamingCoalesce` | Não              | Flush por ociosidade: `{ "idleMs": 1500 }`. Consulte [Block Streaming](#block-streaming)                                                                                              |
 
 Quando `messagePrefix` está definido, toda mensagem escrita pelo usuário deve começar com o prefixo e um conteúdo não vazio, por exemplo `/review inspect #123`. Apenas o prefixo e as menções antes dele são removidos; uma menção que o usuário digitou após o prefixo chega ao agente inalterada. Comandos compartilhados e do agente usam a mesma regra (`/review /help`, `/review /clear`, e assim por diante). As ações registradas no menu de comandos do Telegram permanecem disponíveis sem o prefixo — a menos que o prefixo configurado seja uma delas, caso em que o prefixo vence e aquele comando também precisa ser enviado com prefixo (`/new /new`). Anexos precisam de uma legenda correspondente quando a plataforma suporta; mensagens de mídia sem legenda do Telegram, Feishu, WeChat, DingTalk e WeCom continuam funcionando, e seu texto placeholder nunca é citado de volta como histórico do grupo. Todos nativos, webhooks e eventos de atribuição ou solicitação de revisão gerados pelo provedor também continuam funcionando sem prefixo, pois são eventos do sistema e não mensagens de chat.
 
@@ -371,33 +368,11 @@ Você também pode definir o modo de dispatch por grupo, substituindo o padrão 
 }
 ```
 
-## Block Streaming
+## Entrega de respostas
 
-Por padrão, o agente trabalha por um tempo e depois envia uma resposta grande. Com o block streaming ativado, a resposta chega como várias mensagens mais curtas enquanto o agente ainda está trabalhando — semelhante a como o ChatGPT ou o Claude mostram a saída progressiva.
+Os canais usam seu caminho normal de entrega de respostas. A camada de entrega compartilhada envia as respostas concluídas, e os adaptadores podem fornecer exibição progressiva nativa, como atualizar um cartão interativo no lugar. Os limites de comprimento de mensagem da plataforma ainda podem dividir respostas longas.
 
-```json
-{
-  "channels": {
-    "my-channel": {
-      "type": "telegram",
-      "blockStreaming": "on",
-      "blockStreamingChunk": { "minChars": 400, "maxChars": 1000 },
-      "blockStreamingCoalesce": { "idleMs": 1500 },
-      ...
-    }
-  }
-}
-```
-
-### Como funciona
-
-- A resposta do agente é dividida em blocos nos limites dos parágrafos e enviada como mensagens separadas
-- `minChars` (padrão 400) — não envia um bloco até que ele tenha pelo menos esse tamanho, para evitar spam de mensagens muito curtas
-- `maxChars` (padrão 1000) — se um bloco atingir esse tamanho sem uma quebra natural, envia-o mesmo assim
-- `idleMs` (padrão 1500) — se o agente pausar (por exemplo, ao executar uma ferramenta), envia o que está em buffer até o momento
-- Quando o agente termina, qualquer texto restante é enviado imediatamente
-
-Apenas `blockStreaming` é obrigatório. As configurações de chunk e coalesce são opcionais e possuem padrões sensatos.
+As configurações obsoletas `blockStreaming`, `blockStreamingChunk` e `blockStreamingCoalesce` não são mais suportadas e podem ser removidas da configuração do canal. Elas não afetam a entrega. O gerenciamento de configurações do canal rejeita valores recém-adicionados ou alterados para esses campos. Um valor armazenado inalterado é mantido ou removido quando a edição mantém o `type` do canal; alterar o `type` de um canal requer a remoção desses campos primeiro.
 
 ## Loops de Canal Agendados
 

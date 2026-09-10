@@ -68,7 +68,7 @@
 | `logPrompts`                      | `QWEN_TELEMETRY_LOG_PROMPTS`                         | `--telemetry-log-prompts` / `--no-telemetry-log-prompts` | Включать промпты в логи телеметрии                                                                                                              | `true`/`false`    | `true`                  |
 | `userId`                          | `QWEN_TELEMETRY_USER_ID`                             | -                                                        | Стабильный идентификатор конечного пользователя, записываемый в спаны GenAI как расширение ARMS `gen_ai.user.id`; предпочтительно псевдонимное значение                  | string            | -                       |
 | `includeSensitiveSpanAttributes`  | `QWEN_TELEMETRY_INCLUDE_SENSITIVE_SPAN_ATTRIBUTES`   | -                                                        | Включать стандартные сообщения GenAI, инструкции, определения инструментов, аргументы инструментов и успешные результаты инструментов как нативные атрибуты спанов | `true`/`false`    | `false`                 |
-| `sensitiveSpanAttributeMaxLength` | `QWEN_TELEMETRY_SENSITIVE_SPAN_ATTRIBUTE_MAX_LENGTH` | -                                                        | Максимальная длина JavaScript-строки для полезной нагрузки каждого чувствительного нативного атрибута спана. Установите меньшее значение, если ваш бэкенд отклоняет большие атрибуты. | `1..104857600`    | `1048576`               |
+| `sensitiveSpanAttributeMaxLength` | `QWEN_TELEMETRY_SENSITIVE_SPAN_ATTRIBUTE_MAX_LENGTH` | -                                                        | Максимальная длина компактной JSON-строки для каждого чувствительного нативного атрибута спана. Установите меньшее значение, если ваш бэкенд отклоняет большие атрибуты. | `1..104857600`    | `1048576`               |
 | `resourceAttributes`              | `OTEL_RESOURCE_ATTRIBUTES` (+ `OTEL_SERVICE_NAME`)   | -                                                        | Статические атрибуты ресурсов, прикрепляемые к каждому экспортируемому спану / логу / метрике. См. [Атрибуты ресурсов](#resource-attributes) ниже.              | `key=value,…`     | `{}`                    |
 | `metrics.includeSessionId`        | `QWEN_TELEMETRY_METRICS_INCLUDE_SESSION_ID`          | -                                                        | Включать `session.id` в точки данных метрик. **Отключено по умолчанию** для защиты бэкендов метрик от разрастания временных рядов.                       | `true`/`false`    | `false`                 |
 
@@ -602,7 +602,7 @@ OpenTelemetry, настройте Qwen Code на экспорт в OTLP-эндп
 - `qwen-code.workflow_keyword`: Срабатывает триггер ключевого слова воркфлоу.
 
 - `qwen-code.workflow_run`: Запуск воркфлоу достигает терминального состояния.
-  - **Атрибуты**: `status` (string), `agents_dispatched` (int), `agents_completed` (int), `phase_count` (int), `tokens_spent` (int), `duration_ms` (int)
+  - **Атрибуты**: `status` (string), `agents_dispatched` (int), `agents_completed` (int, все завершённые диспатчи), `agents_failed` (int, завершённые диспатчи со статусом failed), `agents_cached` (int, завершённые диспатчи, поданные из предыдущего запуска), `agents_respawned` (int, повторно запущенные вызовы после предыдущей неудачной или прерванной попытки), `phase_count` (int), `tokens_spent` (int), `duration_ms` (int). `agents_failed` и `agents_cached` являются подмножествами `agents_completed`, а `agents_respawned` описывает происхождение и не является дополнительным счётчиком результатов.
 
 #### События автопамяти
 
@@ -690,36 +690,37 @@ OpenTelemetry, настройте Qwen Code на экспорт в OTLP-эндп
 
 - `qwen-code.arena.session.count` (Counter, Int): Сессии арены по статусу.
   - **Атрибуты**: `status`, `display_backend` (опционально)
-- `qwen-code.arena.session.duration` (Histogram, ms): Длительность сессии Arena.
+
+- `qwen-code.arena.session.duration` (Histogram, ms): Длительность сессии арены.
   - **Атрибуты**: `status`
 
-- `qwen-code.arena.agent.count` (Counter, Int): Количество завершений агента Arena.
+- `qwen-code.arena.agent.count` (Counter, Int): Завершения агентов арены.
   - **Атрибуты**: `status`, `model_id`
 
-- `qwen-code.arena.agent.duration` (Histogram, ms): Длительность выполнения агента Arena.
+- `qwen-code.arena.agent.duration` (Histogram, ms): Длительность выполнения агента арены.
   - **Атрибуты**: `model_id`
 
-- `qwen-code.arena.agent.tokens` (Counter, Int): Использование токенов агентами Arena.
+- `qwen-code.arena.agent.tokens` (Counter, Int): Использование токенов агентами арены.
   - **Атрибуты**: `model_id`, `type` ("input"/"output")
 
-- `qwen-code.arena.result.selected` (Counter, Int): Количество выборов результата в Arena.
+- `qwen-code.arena.result.selected` (Counter, Int): Выборы результата арены.
   - **Атрибуты**: `model_id`
 
-#### Метрики Auto-Memory
+#### Метрики автопамяти
 
-- `qwen-code.memory.extract.count` (Counter, Int): Количество запусков извлечения Auto-Memory.
+- `qwen-code.memory.extract.count` (Counter, Int): Количество запусков извлечения автопамяти.
   - **Атрибуты**: `trigger` ("auto"/"manual"), `status`
 
 - `qwen-code.memory.extract.duration` (Histogram, ms): Длительность извлечения.
   - **Атрибуты**: `trigger`, `status`
 
-- `qwen-code.memory.dream.count` (Counter, Int): Количество запусков dream в Auto-Memory.
+- `qwen-code.memory.dream.count` (Counter, Int): Количество запусков dream в автопамяти.
   - **Атрибуты**: `trigger` ("auto"/"manual"), `status`
 
 - `qwen-code.memory.dream.duration` (Histogram, ms): Длительность выполнения dream.
   - **Атрибуты**: `trigger`, `status`
 
-- `qwen-code.memory.recall.count` (Counter, Int): Количество операций recall в Auto-Memory.
+- `qwen-code.memory.recall.count` (Counter, Int): Количество операций recall в автопамяти.
   - **Атрибуты**: `strategy` ("none"/"heuristic"/"model")
 
 - `qwen-code.memory.recall.duration` (Histogram, ms): Длительность recall.
@@ -734,7 +735,7 @@ OpenTelemetry, настройте Qwen Code на экспорт в OTLP-эндп
 
 Процесс демона (режим долгоживущего HTTP-сервера) предоставляет собственные метрики.
 
-> **Note:** Три Observable Gauge (`daemon.session.active`, `daemon.sse.active`, `daemon.process.heap_used`) — это метрики на основе callback-функций, которые обновляются при каждом интервале сбора; `registerDaemonGaugeCallbacks()` должна вызываться при инициализации демона для регистрации callback-функций наблюдения.
+> **Примечание:** Три Observable Gauge (`daemon.session.active`, `daemon.sse.active`, `daemon.process.heap_used`) — это метрики на основе callback-функций, которые обновляются при каждом интервале сбора; `registerDaemonGaugeCallbacks()` должна вызываться при инициализации демона для регистрации callback-функций наблюдения.
 
 #### HTTP
 
@@ -755,7 +756,7 @@ OpenTelemetry, настройте Qwen Code на экспорт в OTLP-эндп
 #### Каналы
 
 - `qwen-code.daemon.channel.lifecycle` (Counter, Int): События жизненного цикла ACP-канала.
-  - **Атрибуты**: `action` ("spawn"/"exit"), `expected` (boolean, optional)
+  - **Атрибуты**: `action` ("spawn"/"exit"), `expected` (boolean, опционально)
 
 #### Промпты
 
@@ -809,7 +810,7 @@ OpenTelemetry, настройте Qwen Code на экспорт в OTLP-эндп
   - **Атрибуты**: `session.id`, `tool.name`, `tool.call_id`, `duration_ms`, `decision` ("proceed_once"/"proceed_always"/"cancel"/"aborted"/"auto_approved"/"error"), `source` ("cli"/"ide"/"hook"/"auto"/"system")
 
 - `qwen-code.hook`: Оборачивает каждое место срабатывания хука pre/post-tool-use.
-  - **Атрибуты**: `session.id`, `hook_event` ("PreToolUse"/"PostToolUse"/"PostToolUseFailure"/"PostToolBatch"), `tool.name`, `tool.use_id` (optional), `is_interrupt` (boolean, optional), `duration_ms`, `success`, `should_proceed` (optional), `should_stop` (optional), `block_type` (optional), `error` (optional)
+  - **Атрибуты**: `session.id`, `hook_event` ("PreToolUse"/"PostToolUse"/"PostToolUseFailure"/"PostToolBatch"), `tool.name`, `tool.use_id` (опционально), `is_interrupt` (boolean, опционально), `duration_ms`, `success`, `should_proceed` (опционально), `should_stop` (опционально), `block_type` (опционально), `error` (опционально)
 
 - `qwen-code.subagent`: Оборачивает одиночный вызов субагента.
   - **Атрибуты**: `gen_ai.operation.name` (`invoke_agent`), `gen_ai.agent.name`, `gen_ai.agent.description`, `gen_ai.conversation.id`, опциональное расширение ARMS `gen_ai.user.id`, опционально `gen_ai.request.model`, `qwen-code.subagent.id`, `qwen-code.subagent.name`, `qwen-code.subagent.invocation_kind` ("foreground"/"fork"/"background"), `qwen-code.subagent.is_built_in`, `qwen-code.subagent.depth`, `qwen-code.subagent.status`, `qwen-code.subagent.terminate_reason`, `qwen-code.subagent.duration_ms`
@@ -861,10 +862,10 @@ Qwen Code не внедряет этот специфичный для ARMS ат
   - **Атрибуты**: `function_name`, `phase` ("validation"/"preparation"/"execution"/"result_processing")
 
 - `qwen-code.token.efficiency` (Histogram, ratio): Метрики эффективности использования токенов.
-  - **Атрибуты**: `model`, `metric`, `context` (optional)
+  - **Атрибуты**: `model`, `metric`, `context` (опционально)
 
 - `qwen-code.performance.score` (Histogram, score): Сводная оценка производительности (0-100).
-  - **Атрибуты**: `category`, `baseline` (optional)
+  - **Атрибуты**: `category`, `baseline` (опционально)
 
 - `qwen-code.performance.regression` (Counter, Int): События обнаружения регрессии.
   - **Атрибуты**: `metric`, `severity` ("low"/"medium"/"high"), `current_value`, `baseline_value`

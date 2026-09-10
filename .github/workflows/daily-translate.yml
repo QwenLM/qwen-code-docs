@@ -283,7 +283,17 @@ jobs:
           if git diff --cached --quiet; then
             echo "::warning::nothing verified to commit this run — check the agent logs above"
           else
-            git commit -m "docs(i18n): daily incremental translation sync [skip ci]"
+            # No `[skip ci]`. It dates from when this job pushed straight to
+            # main and had to stop deploy-docs.yml running twice. Since #201
+            # the work goes to a branch and then a PR, and nothing watches a
+            # push to `automation/*` -- but GitHub honours the marker on
+            # `pull_request` events too, so it silently suppressed every check
+            # on the generated PR, the structural gate (#271) included. PR
+            # #272 opened with no checks at all because of this line.
+            #
+            # The merge commit carries no marker, so deploy-docs.yml still
+            # runs when the PR lands.
+            git commit -m "docs(i18n): daily incremental translation sync"
             branch="automation/daily-translation-${GITHUB_RUN_ID}"
             git push origin "HEAD:${branch}"
             run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"

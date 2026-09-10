@@ -56,7 +56,7 @@
 | TodoWrite               | `V0.0.10` | 任务管理与进度跟踪                   | 编码工作流                 | 1     |
 | 工具: TextSearch        | `V0.0.8+` | 文本搜索工具（grep，支持 .qwenignore）           | 编码工作流                 | 1     |
 | 工具: WebFetch          | `V0.0.7+` | 网页内容抓取工具                               | 编码工作流                 | 1     |
-| 工具: WebSearch         | `V0.0.7+` | 网页搜索工具（使用 Tavily API）                      | 编码工作流                 | 1     |
+| 工具: WebSearch         | `V0.0.7+` | 内置网页搜索（DashScope Responses API）                      | 编码工作流                 | 1     |
 | OAuth                   | `V0.0.5+` | OAuth 登录认证（Qwen OAuth）                 | 用户体验                 | 1     |
 
 #### 待开发功能

@@ -56,7 +56,7 @@
 | TodoWrite               | `V0.0.10` | タスク管理と進捗追跡                   | コーディングワークフロー                 | 1     |
 | ツール: TextSearch        | `V0.0.8+` | テキスト検索ツール (grep、.qwenignore サポート)           | コーディングワークフロー                 | 1     |
 | ツール: WebFetch          | `V0.0.7+` | Web コンテンツ取得ツール                               | コーディングワークフロー                 | 1     |
-| ツール: WebSearch         | `V0.0.7+` | Web 検索ツール (Tavily API 使用)                      | コーディングワークフロー                 | 1     |
+| ツール: WebSearch         | `V0.0.7+` | 組み込み Web 検索 (DashScope Responses API)           | コーディングワークフロー                 | 1     |
 | OAuth                   | `V0.0.5+` | OAuth ログイン認証 (Qwen OAuth)                 | ユーザーエクスペリエンス                 | 1     |
 
 #### 開発予定機能

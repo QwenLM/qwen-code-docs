@@ -56,10 +56,17 @@ interface WebShellSidebarBranding {
 
 | Valor                              | Efeito                                                       |
 | ---------------------------------- | ------------------------------------------------------------ |
-| `undefined` (padrão)               | Logo do Qwen + texto "Qwen Code"                             |
+| `undefined` (padrão)               | Marca resolvida: prop `brand` → daemon `GET /brand` → logo integrado do Qwen + texto "Qwen Code" |
 | `false`                            | Linha de branding oculta completamente                       |
 | `{ render: () => <MyHeader /> }`   | Substituição completa com conteúdo personalizado             |
 | `{ hideWhenCompact: false }`       | Manter branding visível no modo icon-rail recolhido          |
+
+A linha padrão é orientada por dados, não fixa: um daemon que serve uma
+configuração `ui.brand` renomeia o texto e troca a marca, e um host de
+embedding pode sobrescrever ambos com a prop `brand` do componente shell
+(`onBrandResolved` reporta o resultado para o chrome do próprio host).
+`branding.render` continua sendo o override de maior precedência — vence
+a prop e o valor resolvido pelo daemon, exatamente como antes.
 
 ```tsx
 sidebar={{

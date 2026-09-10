@@ -69,7 +69,7 @@ abstract class ChannelBase {
 
 Die gesamte interne Nachrichtenzustellung läuft über `sendThreadMessage(chatId, threadId, text, sourceLabel)`. Die Standard-Implementierung fällt auf `sendMessage(chatId, attributedText)` durch und ignoriert `threadId`. Polling-, Rich-Card-, Media-, Streaming- und Platform-Splitting-Adapter überschreiben diese Grenze, sodass das optionale Plain-Text-Source-Label für die Plattform escaped und auf jedem unabhängig sichtbaren Objekt wiederholt wird, ohne den Raw-Response-State zu verändern.
 
-Behandelt gängige Cross-Cutting-Concerns: Sender-Gating (Allowlist / Denylist), Group-Gating, Message-Block-Streaming (Chunk-Größe, Throttling), Inbound-Debounce.
+Behandelt gängige Cross-Cutting-Concerns: Sender-Gating (Allowlist / Denylist), Group-Gating, Inbound-Debounce.
 
 ### Channel-spezifische Adapter
 
@@ -141,9 +141,9 @@ sequenceDiagram
 
     D-->>SC: SSE: session_update (agent_message_chunk)
     SC-->>BR: DaemonEvent
-    BR-->>CB: emit 'textChunk'
-    CB->>CB: Antwort assemblieren / Block-Streaming
-    CB->>AD: sendMessage(chatId, Chunk oder vollständige Antwort)
+    BR-->>CB: emit 'textChunk' -> onResponseChunk (default no-op)
+    BR-->>CB: prompt() resolves with the full response
+    CB->>AD: sendThreadMessage(chatId, threadId, full response, sourceLabel)
     AD->>CH: sendText / sendMessage / sendChunk
 ```
 
@@ -196,12 +196,11 @@ Adapter-`connect()`-Fehler werden separat von Worker-Lifecycle-Fehlern gemeldet.
 
 | Knob                                     | Effekt                                                                                                                              |
 | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `sessionScope`                           | `'user'` (Sender + Chat), `'chat_thread'` (Channel + chatId + threadId) oder `'single'` (eine gemeinsame Session pro Channel). Legacy `'thread'` bleibt bei bestehender Konfiguration erhalten, wird aber für neue WebShell-Konfigurationen nicht angeboten. |
-| `multiSession`                           | Daemon-only Named-Tasks für `sessionScope: 'user'`. Der Owner-Katalog wird unter dem Workspace/Channel-State-Verzeichnis persistiert; Tasks können parallel laufen, können optionale Per-Task-Git-Worktrees aktivieren, Cancel- und Berechtigungs-Befehle bleiben exakt-task-korreliert, und Ergebnisse und interaktive Surfaces identifizieren ihren Quell-Task. Webhooks, Group-History-Backfill und Loops bleiben ausgeschlossen. |
-| `approvalMode`                           | `'auto'` (automatisch antworten) / `'prompt'` (UI rendern).                                                                         |
-| `allowlist?: string[]`                   | Erlaubte Sender-IDs; fehlend = offen.                                                                                               |
-| `denylist?: string[]`                    | Abgewiesene Sender-IDs.                                                                                                             |
-| `chunkSize`, `chunkIntervalMs`           | Outbound-Block-Streaming-Einstellungen.                                                                                             |
+| `sessionScope`                           | `'user'` (Sender + Chat), `'chat_thread'` (Channel + chatId + threadId) oder `'single'` (eine gemeinsame Session pro Channel). Das veraltete `'thread'` bleibt erhalten, wenn es bereits konfiguriert ist, wird für neue Web-Shell-Konfigurationen aber nicht mehr angeboten.                                                                                                                                                              |
+| `multiSession`                           | Nur im Daemon verfügbare benannte Tasks für `sessionScope: 'user'`. Der Owner-Katalog wird unterhalb des Workspace-/Channel-State-Verzeichnisses persistiert; Tasks können nebenläufig laufen, können sich für eigene Git-Worktrees pro Task entscheiden, Abbruch- und Berechtigungsbefehle bleiben exakt dem jeweiligen Task zugeordnet, und Ergebnisse sowie interaktive Oberflächen weisen ihren Ursprungs-Task aus. Webhooks, das Nachladen von Gruppenverläufen und Loops bleiben ausgeschlossen. |
+| `approvalMode`                           | `'auto'` (automatisch antworten) / `'prompt'` (UI rendern).                                                                                                                                                                                                                                                                                                                                                 |
+| `allowlist?: string[]`                   | Erlaubte Sender-IDs; fehlt der Eintrag, ist der Zugang offen.                                                                                                                                                                                                                                                                                                                                                               |
+| `denylist?: string[]`                    | Gesperrte Sender-IDs.                                                                                                                                                                                                                                                                                                                                                                                |
 | `daemon: { baseUrl, token?, clientId? }` | Wird an `DaemonChannelSessionFactory` weitergeleitet.                                                                               |
 
 Channel-spezifische Keys werden darüber hinaus hinzugefügt (DingTalk: `streamCredentials`; WeChat: `ilinkUrl`, `botId`; Telegram: `botToken`; Feishu: `clientId` (appId), `clientSecret` (appSecret), `verificationToken`, `encryptKey` (Webhook-Modus)).

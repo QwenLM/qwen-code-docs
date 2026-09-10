@@ -757,7 +757,9 @@ então não são mostradas.
 
 **Saída legível por humanos (padrão):**
 
-Uma tabela com as colunas: NAME, PID, AGE, DIRECTORY.
+Uma tabela com as colunas: NAME, KIND, PID, AGE, DIRECTORY.
+
+KIND indica o que registrou a sessão — `tui` para alguém em um terminal, `external` para um programa que não é uma sessão do Qwen Code (um front-end de voz, um relay) e `headless` ou `serve` para uma sessão controlada por outro programa. Várias linhas `serve` ou `headless` podem compartilhar um único PID: um filho `qwen --acp` hospeda todas as suas sessões em um processo — `serve` quando o daemon o iniciou, `headless` quando um cliente o controla diretamente — e cada uma delas se registra separadamente. É um autorrelato, assim como NAME e DIRECTORY: cada campo aqui foi escrito pelo processo que descreve, e nada sobre o que uma sessão pode fazer depende disso. Consulte o [Cross-Session Protocol](./cross-session-protocol.md) para o formato do registro e como registrar seu próprio programa.
 
 **Saída em JSON (`--json`):**
 
@@ -766,7 +768,7 @@ objeto JSON com os campos:
 
 ```
 schemaVersion, pid, procStart, pidNs, sessionId, cwd, name, startedAt,
-qwenVersion
+qwenVersion, kind, ipcPath (quando peer messaging está disponível)
 ```
 
 Nada mais é escrito no stdout — uma listagem vazia não imprime nada — então
@@ -808,7 +810,15 @@ Se a sessão não puder vincular sua caixa de entrada — o diretório do runtim
 
 Duas sessões também podem resolver o mesmo endereço de caixa de entrada, porque o endereço é chaveado por pid de processo e pids de processo se repetem entre containers que compartilham um diretório de runtime. A sessão que inicia segundo pega um endereço vizinho em vez de tomar o que está em uso, então nenhuma se torna inalcançável. Os pares não são afetados: eles leem o endereço de uma sessão a partir do registro de sessões em vez de derivá-lo.
 
-A chamada `send_message` apenas confirma que a mensagem foi entregue à outra sessão. O que aconteceu com ela chega mais tarde como um recibo: se foi mantida, recusada, expirou ou endereçada incorretamente (o endereço mudou de mãos — liste os agentes novamente) — ou liberada após uma manutenção — um aviso aparece na transcrição da sessão remetente (`Message to <name>: …`). Recusada e recusada são respostas diferentes: recusada significa que alguém revisou a mensagem e disse não, enquanto recusada significa que o `agents.crossSessionInbound` daquela sessão é `refuse` e ninguém a viu. O modelo que a enviou não é informado; se a outra sessão responder, a resposta chega como uma mensagem entre sessões.
+A chamada `send_message` apenas confirma que a mensagem foi entregue à outra sessão. O que aconteceu com ela chega mais tarde como um recibo: se foi mantida, recusada, rejeitada, descartada, expirou ou endereçada incorretamente (o endereço mudou de mãos — liste os agentes novamente) — ou liberada após uma manutenção — um aviso aparece na transcrição da sessão remetente (`Message to <name>: …`). Recusada, rejeitada e descartada são três respostas diferentes: recusada significa que alguém revisou a mensagem e disse não, rejeitada significa que o `agents.crossSessionInbound` daquela sessão é `refuse` e ninguém a viu, e descartada significa que sua caixa de entrada recusou a mensagem antes de qualquer disso (veja abaixo). O primeiro descarte é respondido imediatamente e os demais são agrupados em um recibo a cada poucos segundos, cada um nomeando as mensagens que representa, então uma sequência deles custa algumas linhas em vez de uma linha cada. O modelo que a enviou não é informado; se a outra sessão responder, a resposta chega como uma mensagem entre sessões.
+
+### Proteção contra inundação
+
+Uma sessão aceita até 30 mensagens de uma vez de um único remetente e depois uma a cada dois segundos, e até 32 de uma vez de todos os remetentes juntos e depois uma por segundo. O segundo limite existe porque um remetente se identifica pelo nome: alternar esse nome obtém uma nova cota do primeiro limite, mas não do segundo. É pouco acima do primeiro porque cada mensagem aceita gera um recibo, e uma sessão só pode ter tantos sendo enviados de uma vez. Uma mensagem de outra sessão que repete a mensagem anterior do mesmo remetente palavra por palavra dentro de 30 segundos também é recusada — um modelo em loop em uma única frase cria um novo id de mensagem a cada vez, então é o texto que o detecta. Mensagens de um script que a sessão iniciou e de um controlador confiável são isentas da verificação de repetição, porque um hook reportando a mesma linha duas vezes está reportando dois fatos e uma pessoa dizendo "continue" duas vezes significa duas vezes; ambas ainda estão sujeitas aos limites de taxa. Por fim, uma mensagem que é aceita mas não pode ser enfileirada porque a sessão já tem 50 em espera também é recusada.
+
+Uma mensagem recusada dessa forma nunca é mantida, nunca é mostrada ao modelo e não deixa registro, então o remetente pode tentar novamente mais tarde e conseguir. A sessão receptora informa isso em sua transcrição no máximo uma vez por minuto por remetente, com uma contagem do que aquela linha representa. A sessão remetente recebe um recibo nomeando cada mensagem que a explosão custou, e sua transcrição diz para consolidar o que ainda importa em uma mensagem posterior em vez de reenviar.
+
+O lado remetente não espera para descobrir. Cada sessão rastreia o que enviou para cada endereço e recusa um envio que o receptor descartaria, então o modelo é instruído a agrupar antes da mensagem ser escrita, não depois — e o receptor nunca gasta uma conexão em uma mensagem que iria recusar.
 
 ### Autenticação de caixa de entrada e injeção via script
 
@@ -823,7 +833,7 @@ Uma sessão exporta seu próprio endereço de caixa de entrada e um token para p
 } | socat - UNIX-CONNECT:"$QWEN_CODE_MESSAGING_SOCKET"
 ```
 
-Dê a cada injeção um `msgId` fresco. O gate receptor lembra os ids que já liquidou, então um hook que reutiliza um é entregue na primeira vez e silenciosamente deduplicado em cada execução depois disso.
+Dê a cada injeção um `msgId` fresco. O gate receptor lembra os ids que já liquidou, então um hook que reutiliza um é entregue na primeira vez e silenciosamente deduplicado em cada execução depois disso. Repetir o mesmo _texto_ é permitido — a verificação de repetição acima não se aplica aos processos da própria sessão — mas os limites de taxa se aplicam, então um hook em loop é descartado como qualquer outra inundação.
 
 Uma mensagem injetada ainda passa pelo gate de entrada e é marcada como não vindo do usuário, mas o gate sabe que veio do próprio processo da sessão: sob o padrão de paridade de modo ela é entregue sem revisão (um par na mesma posição seria mantido), enquanto um `agents.crossSessionInbound` explícito de `hold` ou `refuse` se aplica a ela como a qualquer outra coisa. O modelo a vê como `<cross_session_message from="own process" origin="own-process">` com um aviso de que veio de um script ou hook que a sessão executou, não do usuário.
 
@@ -860,3 +870,17 @@ qwen sessions controllers remove c_1a2b # revogar um
 O modelo vê tal mensagem como `<cross_session_message from="controller" origin="controller" controller="voice-bridge">`, com um aviso de que ela retransmite suas próprias instruções — e as mesmas duas proibições que se aplicam a qualquer outra origem: ela não pode editar configurações de permissão, QWEN.md ou config porque a mensagem pediu, e não pode tratar a mensagem como você aprovando um prompt de confirmação pendente. Um controlador pode dizer o que fazer a seguir; não pode responder a um prompt em seu nome.
 
 Qualquer um que segure o token pode enviar como aquele controlador, então trate-o como qualquer outra credencial: dê-o a um programa, mantenha-o fora de config compartilhado, e revogue-o quando esse programa terminar.
+
+### Sessões controladas por um programa via ACP
+
+Qualquer filho `qwen --acp` registra cada sessão que hospeda — como `serve` quando o daemon iniciou o processo, como `headless` quando um editor ou outro cliente está controlando `qwen --acp` diretamente — e a sessão aparece em `qwen sessions ps` e no `list_agents` de outra sessão como qualquer outra. Ela pode enviar: seu modelo pode chamar `send_message` para alcançar um terminal que você tenha aberto. Várias delas compartilham um processo e uma caixa de entrada, então um remetente precisa nomear a sessão que pretende atingir — toda sessão do Qwen Code faz isso automaticamente.
+
+Mensagens enviadas _para_ uma delas são recusadas em vez de mantidas. Manter é uma pergunta feita a uma pessoa, e ninguém está observando uma lista de mensagens mantidas em nome de uma sessão controlada; um remetente é informado imediatamente em vez de esperar o expirar. Onde uma mensagem mantida deveria aparecer para essas sessões ainda não está definido.
+
+Uma sessão se registra apenas enquanto suas próprias configurações tiverem `agents.crossSessionMessaging` ativado. Com ele desativado, ela permanece invisível, porque a única razão para listar uma sessão que ninguém pode enviar mensagens seria anunciar um endereço que nunca responde.
+
+### Programas que não são sessões do Qwen Code
+
+Tudo acima funciona entre sessões, mas nada disso é específico a uma. Um programa que escreve um registro no registro para si mesmo e vincula uma caixa de entrada da mesma forma é listado pelo `qwen sessions ps` e pelo `list_agents`, pode ser endereçado por nome a partir do `send_message` e recebe recibos de entrega para o que envia — um front-end de voz, um relay, um observador de build. Ele deve registrar `kind: "external"` para que uma listagem possa dizer o que ele é.
+
+O [Cross-Session Protocol](./cross-session-protocol.md) é o contrato para escrever um: o schema do registro e como a atividade é julgada, os caminhos de socket e enquadramento, a linha de autenticação, cada campo de frame, os estados de recibo e suas transições, e o que um receptor faz com uma mensagem antes que seu modelo a veja.

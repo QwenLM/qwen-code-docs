@@ -1,0 +1,186 @@
+# Regenerates a localized navigation file (`_meta.ts`) from the English one.
+#
+# translator/src/sync.ts deliberately skips every `_meta.*` when copying
+# upstream docs, because this site has tabs upstream does not. Navigation is
+# therefore a manual mirror, and it drifts: #263 found `developers/_meta.ts`
+# missing entries in every locale, and absent entirely for `ko`.
+#
+# `qwen-translation meta` fixes that, but running it by hand has four traps
+# this workflow removes:
+#
+#   1. It needs model credentials. They live in this repo as
+#      TRANSLATE_CODING_PLAN_API_KEY; running locally spends the operator's own.
+#   2. Bare `meta` translates all 18 `_meta.ts` files into 7 locales -- 126
+#      model calls that overwrite every curated navigation file to fix one.
+#      `-f` is mandatory below, so the blast radius is the file you name.
+#   3. translation.config.json is resolved from the cwd and lives in website/.
+#      Run it from the repo root and the config is not found; the fallback
+#      target list in meta-translator.ts is then used, which contains `es`
+#      (a locale this site does not have) and omits `ja` (one it does).
+#   4. bin/qwen-translator requires ../dist, which is not committed.
+#
+# The result arrives as a PR, never a direct push: an LLM writing a `_meta.ts`
+# can translate the KEYS as well as the values, and a wrong key silently drops
+# the page from the sidebar. That diff needs eyes.
+
+name: Regenerate navigation meta
+
+on:
+  workflow_dispatch:
+    inputs:
+      file:
+        description: "Meta file, relative to website/content/en (e.g. developers/_meta.ts)"
+        required: true
+        default: "developers/_meta.ts"
+      languages:
+        description: "Space-separated locales"
+        required: true
+        default: "zh de fr ru ja pt-BR ko"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: regenerate-nav-meta
+  cancel-in-progress: false
+
+jobs:
+  regenerate:
+    name: Translate one _meta.ts into each locale
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: translator/package-lock.json
+
+      - name: Build the translator CLI
+        working-directory: ./translator
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Translate
+        id: translate
+        working-directory: ./website
+        env:
+          OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
+          OPENAI_BASE_URL: ${{ vars.TRANSLATE_BASE_URL || 'https://coding.dashscope.aliyuncs.com/v1' }}
+          QWEN_MODEL: ${{ vars.QWEN_MODEL || 'qwen3.7-plus' }}
+          FILE: ${{ inputs.file }}
+          LANGS: ${{ inputs.languages }}
+        run: |
+          set -euo pipefail
+          if [ -z "${FILE// }" ]; then
+            echo "::error::file is required; a bare \`meta\` run would rewrite every navigation file"
+            exit 1
+          fi
+          if [ ! -f "content/en/${FILE}" ]; then
+            echo "::error::content/en/${FILE} does not exist"
+            exit 1
+          fi
+          # One locale failing must not discard the ones that already
+          # succeeded. Under `set -e` the step would abort, "Open a PR" would
+          # be skipped for having a failed predecessor, and every translation
+          # produced so far would leave with the runner. Collect instead, and
+          # let the last step decide the run's colour.
+          done_langs=""
+          failed_langs=""
+          for lang in $LANGS; do
+            echo "::group::${FILE} -> ${lang}"
+            if node ../translator/dist/cli.js meta -f "${FILE}" -l "${lang}"; then
+              done_langs="${done_langs} ${lang}"
+            else
+              failed_langs="${failed_langs} ${lang}"
+              echo "::warning::${lang} failed; continuing with the remaining locales"
+            fi
+            echo "::endgroup::"
+          done
+          {
+            echo "done=${done_langs# }"
+            echo "failed=${failed_langs# }"
+          } >> "$GITHUB_OUTPUT"
+
+      # A translated KEY is the failure that costs a page: Nextra routes on
+      # the key, so `tools:` becoming `outils:` drops the section from the
+      # sidebar with no build error and no runtime error. Asking a reviewer to
+      # "check the keys" across seven locales is asking a person to run a
+      # diff; run it mechanically instead.
+      #
+      # Separator entries are exempt. Their key is a display label rather than
+      # a route, so translating `'Qwen Code SDK'` is correct, and comparing it
+      # would report a mismatch on every locale.
+      - name: Check navigation keys against English
+        id: keys
+        working-directory: ./website
+        env:
+          FILE: ${{ inputs.file }}
+          LANGS: ${{ steps.translate.outputs.done }}
+        run: |
+          set -uo pipefail
+          node ../.github/scripts/check-nav-keys.mjs > key-report.txt || true
+          if [ -s key-report.txt ]; then
+            while IFS= read -r line; do echo "::error::${FILE}: ${line}"; done < key-report.txt
+            echo "mismatch=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "mismatch=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open a PR with the result
+        env:
+          GH_TOKEN: ${{ secrets.TRANSLATION_BOT_PAT }}
+          FILE: ${{ inputs.file }}
+          DONE: ${{ steps.translate.outputs.done }}
+          FAILED: ${{ steps.translate.outputs.failed }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "::error::secret TRANSLATION_BOT_PAT is empty or not set; cannot open the PR"
+            exit 1
+          fi
+          git config user.name "qwen-docs-bot"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add website/content
+          if git diff --cached --quiet; then
+            echo "::warning::every locale already matched the English navigation; nothing to propose"
+            exit 0
+          fi
+          branch="automation/nav-meta-${GITHUB_RUN_ID}"
+          git commit -m "docs(nav): regenerate ${FILE} for ${DONE}"
+          git push origin "HEAD:${branch}"
+          # printf arguments rather than a multi-line literal: an unindented
+          # continuation line would terminate the YAML block scalar above.
+          report="$(cat website/key-report.txt 2>/dev/null || true)"
+          if [ -n "$report" ]; then
+            keyline="Route-key check FAILED. These drop pages from the sidebar and must be fixed before merging: ${report}"
+            suffix=" (key mismatch)"
+          else
+            keyline="Route keys match the English file. Separator keys are exempt: their key is a label, not a route."
+            suffix=""
+          fi
+          body="$(printf '%s\n' \
+            "Regenerated \`${FILE}\` for: ${DONE:-none}." \
+            "" \
+            "${FAILED:+Failed, and therefore absent from this PR: ${FAILED}}" \
+            "" \
+            "${keyline}" \
+            "" \
+            "From run ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}.")"
+          gh pr create --repo "$GITHUB_REPOSITORY" \
+            --base main --head "${branch}" \
+            --title "docs(nav): regenerate ${FILE}${suffix}" \
+            --body "${body}"
+
+      # Last, so a failed locale or a drifted key still leaves the PR behind
+      # to work from: red run, preserved work.
+      - name: Fail if a locale failed or a key drifted
+        if: steps.translate.outputs.failed != '' || steps.keys.outputs.mismatch == 'true'
+        run: |
+          echo "::error::failed locales: '${{ steps.translate.outputs.failed }}'; key mismatch: ${{ steps.keys.outputs.mismatch }}"
+          exit 1

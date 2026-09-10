@@ -19,7 +19,7 @@
 | Funcionalidade                 | Versão   | Descrição                                             | Categoria                        | Fase |
 | ----------------------- | --------- | ------------------------------------------------------- | ------------------------------- | ----- |
 | **Coding Plan**         | `V0.10.0` | Autenticação e modelos do Alibaba Cloud Coding Plan       | Experiência do Usuário                 | 2     |
-| WebUI Unificada           | `V0.9.0`  | UI de navegador compartilhada para VS Code e `qwen serve`           | Experiência do Usuário                 | 2     |
+| Web Shell Unificada       | `V0.9.0`  | UI de navegador compartilhada para VS Code e `qwen serve`          | Experiência do Usuário                 | 2     |
 | Exportar Chat             | `V0.8.0`  | Exportar sessões para Markdown/HTML/JSON/JSONL             | Experiência do Usuário                 | 2     |
 | Sistema de Extensões        | `V0.8.0`  | Gerenciamento completo de extensões com comandos slash           | Construção de Capacidades Abertas      | 2     |
 | Suporte a LSP             | `V0.7.0`  | Serviço LSP experimental (`--experimental-lsp`)         | Fluxo de Trabalho de Codificação                 | 2     |
@@ -56,7 +56,7 @@
 | TodoWrite               | `V0.0.10` | Gerenciamento de tarefas e rastreamento de progresso                   | Fluxo de Trabalho de Codificação                 | 1     |
 | Ferramenta: TextSearch        | `V0.0.8+` | Ferramenta de pesquisa de texto (grep, suporta .qwenignore)           | Fluxo de Trabalho de Codificação                 | 1     |
 | Ferramenta: WebFetch          | `V0.0.7+` | Ferramenta de busca de conteúdo web                               | Fluxo de Trabalho de Codificação                 | 1     |
-| Ferramenta: WebSearch         | `V0.0.7+` | Ferramenta de pesquisa web (usando a API do Tavily)                      | Fluxo de Trabalho de Codificação                 | 1     |
+| Ferramenta: WebSearch         | `V0.0.7+` | Ferramenta de pesquisa web integrada (API do DashScope Responses)                      | Fluxo de Trabalho de Codificação                 | 1     |
 | OAuth                   | `V0.0.5+` | Autenticação de login OAuth (Qwen OAuth)                 | Experiência do Usuário                 | 1     |
 
 #### Funcionalidades a Desenvolver

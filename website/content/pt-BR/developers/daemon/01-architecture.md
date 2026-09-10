@@ -20,7 +20,7 @@ flowchart LR
         SDK["Qualquer consumidor SDK<br/>(packages/sdk-typescript/src/daemon)"]
     end
 
-    subgraph daemon["qwen serve process (primary workspace plus optional session runtimes)"]
+    subgraph daemon["Processo qwen serve (workspace primário mais runtimes de sessão opcionais)"]
         EXP["App Express<br/>(packages/cli/src/serve/server.ts)"]
         BR["AcpBridge<br/>(packages/acp-bridge/src/bridge.ts)"]
         MED["MultiClientPermissionMediator<br/>(F3)"]
@@ -147,16 +147,19 @@ Três fronteiras de confiança são importantes: a borda HTTP (cadeia de middlew
 sequenceDiagram
     autonumber
     participant C as Cliente (SDK)
-    participant MW as Middleware<br/>(CORS→host→log→bearer→rate-limit→JSON→telemetry→mutationGate)
+    participant MW as Middleware<br/>(origin-strip→log→trace-id→host→same-origin→CORS→bearer→rate-limit→JSON→telemetry→mutationGate)
     participant R as Handler de rota
     participant BR as AcpBridge
     participant BC as BridgeClient
     participant CH as Filho ACP
 
     C->>MW: POST /session/:id/prompt<br/>Authorization: Bearer …<br/>X-Qwen-Client-Id: …
-    MW->>MW: allowOriginCors (allowlist mutável; Origin sem match -> 403)
+    MW->>MW: loopback same-origin Origin strip
+    MW->>MW: hook de access-log (pula GET /health e POST */heartbeat)
+    MW->>MW: captura de trace-id de entrada
     MW->>MW: hostAllowlist (proteção contra DNS rebinding)
-    MW->>MW: hook de access-log
+    MW->>MW: remote same-origin Origin strip + verificação bearer (non-loopback com token)
+    MW->>MW: allowOriginCors (allowlist mutável; Origin sem match -> 403)
     MW->>MW: bearerAuth (comparação em tempo constante)
     MW->>MW: rateLimit (quando habilitado)
     MW->>MW: express.json body parser

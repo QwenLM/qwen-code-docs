@@ -73,9 +73,6 @@ Les canaux sont configurés sous la clé `channels` dans `settings.json`. Chaque
 | `groupHistoryLimit`      | Non               | Remplissage opt-in de l'historique de groupe. `0` ou omis le désactive. Un nombre positif conserve ce nombre de messages de groupe non mentionnés provenant d'expéditeurs autorisés ou de membres de groupes approuvés par appairage pour la prochaine mention/réponse du bot. |
 | `groups`                 | Non               | Paramètres par groupe. Les clés sont les ID des chats de groupe ou `"*"` pour les valeurs par défaut. Voir [Chats de groupe](#chats-de-groupe)                                                                     |
 | `dispatchMode`           | Non               | Ce qui se passe lorsque vous envoyez un message alors que le bot est occupé : `steer` (par défaut), `collect` ou `followup`. Voir [Modes de dispatch](#modes-de-dispatch)                         |
-| `blockStreaming`         | Non               | Livraison progressive des réponses : `on` ou `off` (par défaut). Voir [Streaming par blocs](#streaming-par-blocs)                                                                        |
-| `blockStreamingChunk`    | Non               | Limites de taille des chunks : `{ "minChars": 400, "maxChars": 1000 }`. Voir [Streaming par blocs](#streaming-par-blocs)                                                                    |
- `blockStreamingCoalesce` | Non               | Flush en cas d'inactivité : `{ "idleMs": 1500 }`. Voir [Streaming par blocs](#streaming-par-blocs)                                                                                              |
 
 Lorsque `messagePrefix` est défini, chaque message rédigé par un utilisateur doit commencer par le préfixe et un contenu non vide, par exemple `/review inspect #123`. Seuls le préfixe et les mentions avant celui-ci sont retirés ; une mention saisie par l'utilisateur après le préfixe atteint l'agent sans modification. Les commandes partagées et les commandes de l'agent suivent la même règle (`/review /help`, `/review /clear`, etc.). Les actions du menu de commandes enregistré de Telegram restent disponibles sans le préfixe — sauf si le préfixe configuré est lui-même l'une d'elles, auquel cas le préfixe l'emporte et cette commande doit aussi être envoyée avec le préfixe (`/new /new`). Les pièces jointes nécessitent une légende correspondante lorsque la plateforme en supporte une ; les messages média Telegram, Feishu, WeChat, DingTalk et WeCom sans légende continuent de s'exécuter, et leur texte indicatif n'est jamais repris comme historique de groupe. Les todos natifs, les webhooks, et les événements d'assignation ou de demande de review générés par le fournisseur continuent également de s'exécuter sans préfixe car ce sont des événements système et non des messages de chat.
 
@@ -419,33 +416,11 @@ Vous pouvez également définir le mode de dispatch par groupe, outrepassant ain
 }
 ```
 
-## Streaming par blocs
+## Livraison des réponses
 
-Par défaut, l'agent travaille pendant un moment puis envoie une seule grande réponse. Avec le streaming par blocs activé, la réponse arrive sous forme de plusieurs messages plus courts pendant que l'agent travaille encore — de la même manière que ChatGPT ou Claude affichent une sortie progressive.
+Les canaux utilisent leur chemin de livraison de réponse normal. La couche de livraison partagée envoie les réponses terminées, et les adaptateurs peuvent fournir un affichage progressif natif, comme la mise à jour d'une carte interactive sur place. Les limites de longueur de message de la plateforme peuvent encore diviser les réponses longues.
 
-```json
-{
-  "channels": {
-    "my-channel": {
-      "type": "telegram",
-      "blockStreaming": "on",
-      "blockStreamingChunk": { "minChars": 400, "maxChars": 1000 },
-      "blockStreamingCoalesce": { "idleMs": 1500 },
-      ...
-    }
-  }
-}
-```
-
-### Fonctionnement
-
-- La réponse de l'agent est divisée en blocs au niveau des limites de paragraphes et envoyée sous forme de messages distincts
-- `minChars` (par défaut 400) — n'envoie pas un bloc tant qu'il n'atteint pas au moins cette longueur, pour éviter de spammer avec de minuscules messages
-- `maxChars` (par défaut 1000) — si un bloc atteint cette longueur sans coupure naturelle, il est envoyé quand même
-- `idleMs` (par défaut 1500) — si l'agent fait une pause (par exemple, lors de l'exécution d'un outil), envoie ce qui est en mémoire tampon jusqu'à présent
-- Lorsque l'agent a terminé, tout texte restant est envoyé immédiatement
-
-Seul `blockStreaming` est requis. Les paramètres de chunk et de coalesce sont optionnels et ont des valeurs par défaut raisonnables.
+Les paramètres obsolètes `blockStreaming`, `blockStreamingChunk` et `blockStreamingCoalesce` ne sont plus supportés et peuvent être supprimés de la configuration du canal. Ils n'affectent pas la livraison. La gestion des paramètres du canal rejette les valeurs nouvellement ajoutées ou modifiées pour ces champs. Une valeur stockée inchangée est conservée, ou supprimée, lorsque la modification conserve le `type` du canal ; changer le `type` d'un canal nécessite de supprimer ces champs au préalable.
 
 ## Boucles de canal planifiées
 

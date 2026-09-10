@@ -23,7 +23,7 @@ Qwen Code 不捆绑 MCP server、SDK 或原生驱动。skill 会在缺少这些�
 
 ```bash
 qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.3
-npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.4
+npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.5
 ```
 
 MCP server 首次添加后请重启 Qwen Code。skill 随后通过 `node_repl` 继续执行桌面任务。

@@ -46,7 +46,6 @@ gh auth login --hostname github.example.com
       "allowedUsers": ["operator-github-username"],
       "sessionScope": "chat_thread",
       "cwd": "/path/to/your/project",
-      "blockStreaming": "off",
       "groupPolicy": "open",
       "groups": {
         "*": { "requireMention": true }
@@ -87,7 +86,6 @@ export GITHUB_TOKEN="ghp_your_token_here"
 | `groupPolicy`             | `"disabled"`             | Должен быть `"open"`, `"allowlist"` с указанием репозитория (`owner/repo`) в `groups` или `"pairing"` с одобренным репозиторием для потока уведомлений |
 | `senderPolicy`            | `"allowlist"`            | Кто может запускать бота                                                                      |
 | `groups.*.requireMention` | `true`                   | Требовать @упоминания для обычных комментариев; направленные причины уведомлений всё равно выполняются |
-| `blockStreaming`          | `"off"`                  | Всегда принудительно `"off"`; промежуточные чанки модели не публикуются; `"on"` не поддерживается |
 | `reasonFilter`            | не задан                 | Опциональный allowlist причин уведомлений GitHub для обработки                                |
 
 Используйте `reasonFilter`, чтобы отфильтровать шумные классы уведомлений, такие как `ci_activity` или `state_change`. Не используйте `reasonFilter: ["mention"]` как замену `groups.*.requireMention`: причина `mention` в GitHub закрепляется на уровне треда, поэтому реальные новые @упоминания могут приходить позже с причинами `comment`, `subscribed`, `author` или другими и будут пропущены.
@@ -133,13 +131,7 @@ export GITHUB_TOKEN="ghp_your_token_here"
 
 ### Только финальный вывод
 
-Канал GitHub всегда принудительно использует только финальную доставку. Адаптер устанавливает `blockStreaming` в `"off"`, поэтому промежуточные чанки модели никогда не публикуются как отдельные комментарии, и `blockStreaming: "on"` не поддерживается.
-
-```json
-{
-  "blockStreaming": "off"
-}
-```
+Канал GitHub публикует только завершённые ответы. Промежуточные чанки модели никогда не публикуются как отдельные комментарии.
 
 Если GitHub возвращает определённый отказ доставки без записи, например, ответ rate-limit, канал сохраняет финальный ответ в
 `~/.qwen/channels/<workspace-scope>/<channel>-<name-hash>-github-pending-deliveries.json`

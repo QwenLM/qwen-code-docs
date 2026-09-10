@@ -69,7 +69,7 @@ abstract class ChannelBase {
 
 Toute la livraison de messages interne passe par `sendThreadMessage(chatId, threadId, text, sourceLabel)`. L'implémentation par défaut retombe sur `sendMessage(chatId, attributedText)`, en ignorant `threadId`. Les adaptateurs de polling, de cartes riches, de média, de streaming et de découpage par plateforme surchargent cette limite afin que l'étiquette de source en texte brut optionnelle soit échappée pour la plateforme et répétée sur chaque objet visible indépendamment sans muter l'état de réponse brut.
 
-Gère les préoccupations transversales communes : filtrage des expéditeurs (allowlist / denylist), filtrage des groupes, streaming des blocs de messages (taille des chunks, throttling), debounce entrant.
+Gère les préoccupations transversales communes : filtrage des expéditeurs (allowlist / denylist), filtrage des groupes, debounce entrant.
 
 ### Adaptateurs par canal
 
@@ -141,9 +141,9 @@ sequenceDiagram
 
     D-->>SC: SSE: session_update (agent_message_chunk)
     SC-->>BR: DaemonEvent
-    BR-->>CB: emit 'textChunk'
-    CB->>CB: assemble response / block streaming
-    CB->>AD: sendMessage(chatId, chunk or full response)
+    BR-->>CB: emit 'textChunk' -> onResponseChunk (default no-op)
+    BR-->>CB: prompt() resolves with the full response
+    CB->>AD: sendThreadMessage(chatId, threadId, full response, sourceLabel)
     AD->>CH: sendText / sendMessage / sendChunk
 ```
 
@@ -197,11 +197,10 @@ Les échecs de `connect()` des adaptateurs sont rapportés séparément des erre
 | Knob                                       | Effet                                                                                                    |
 | ---------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `sessionScope`                           | `'user'` (expéditeur + chat), `'chat_thread'` (canal + chatId + threadId), ou `'single'` (une session partagée par canal). L'ancien `'thread'` est préservé lorsqu'il est déjà configuré mais n'est pas proposé pour les nouvelles configurations Web Shell. |
-| `multiSession`                           | Tâches nommées daemon-only pour `sessionScope: 'user'`. Le catalogue propriétaire est persisté sous le répertoire d'état workspace/canal ; les tâches peuvent s'exécuter concurremment, peuvent activer des worktrees Git par tâche, les commandes d'annulation et de permission restent corrélées à la tâche exacte, et les résultats et surfaces interactives identifient leur tâche source. Les webhooks, le backfill d'historique de groupe, les boucles et les worktrees par tâche restent exclus. |
+| `multiSession`                           | Tâches nommées daemon-only pour `sessionScope: 'user'`. Le catalogue propriétaire est persisté sous le répertoire d'état workspace/canal ; les tâches peuvent s'exécuter concurremment, peuvent activer des worktrees Git par tâche, les commandes d'annulation et de permission restent corrélées à la tâche exacte, et les résultats et surfaces interactives identifient leur tâche source. Les webhooks, le backfill d'historique de groupe et les boucles restent exclus. |
 | `approvalMode`                           | `'auto'` (réponse automatique) / `'prompt'` (affichage de l'UI).                                                         |
 | `allowlist?: string[]`                   | IDs des expéditeurs autorisés ; vide = ouvert à tous.                                                                       |
 | `denylist?: string[]`                    | IDs des expéditeurs refusés.                                                                                        |
-| `chunkSize`, `chunkIntervalMs`           | Paramètres de streaming des blocs sortants.                                                                        |
 | `daemon: { baseUrl, token?, clientId? }` | Transmis à `DaemonChannelSessionFactory`.                                                               |
 
 Des clés spécifiques au canal s'ajoutent par-dessus (DingTalk : `streamCredentials` ; WeChat : `ilinkUrl`, `botId` ; Telegram : `botToken` ; Feishu : `clientId` (appId), `clientSecret` (appSecret), `verificationToken`, `encryptKey` (mode webhook)).

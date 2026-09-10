@@ -73,9 +73,6 @@
 | `groupHistoryLimit`    | 아니오                | 옵트인 그룹 기록 백필. `0` 또는 생략하면 비활성화. 양수는 다음 봇 mention/응답까지 승인된 발신자 또는 승인된 페어링 그룹의 멤버로부터 해당 수의 mention되지 않은 그룹 메시지를 저장합니다. |
 | `groups`               | 아니오                | 그룹별 설정. 키는 그룹 채팅 ID 또는 기본값의 `"*"`. [Group Chats](#group-chats) 참조                                                                              |
 | `dispatchMode`         | 아니오                | 봇이 바쁠 때 메시지를 보내면 어떻게 되는가: `steer`(기본값), `collect` 또는 `followup`. [Dispatch Modes](#dispatch-modes) 참조                                     |
-| `blockStreaming`       | 아니오                | 프로그레시브 응답 전달: `on` 또는 `off`(기본값). [Block Streaming](#block-streaming) 참조                                                                          |
-| `blockStreamingChunk`  | 아니오                | 청크 크기 경계: `{ "minChars": 400, "maxChars": 1000 }`. [Block Streaming](#block-streaming) 참조                                                                  |
-| `blockStreamingCoalesce` | 아니오              | 유휴 플러시: `{ "idleMs": 1500 }`. [Block Streaming](#block-streaming) 참조                                                                                        |
 
 `messagePrefix`가 설정되면 모든 사용자 작성 메시지는 접두사와 비어 있지 않은 페이로드로 시작해야 합니다. 예를 들어 `/review inspect #123`입니다. 접두사와 그 앞의 mention만 제거되며, 사용자가 접두사 뒤에 입력한 mention은 변경 없이 에이전트에 전달됩니다. 공유 및 에이전트 명령어도 동일한 규칙을 사용합니다(`/review /help`, `/review /clear` 등). Telegram의 등록된 명령 메뉴 동작은 접두사 없이도 사용 가능합니다. 다만 설정된 접두사가 그 중 하나이면 접두사가 우선하며 해당 명령어도 접두사와 함께 전송해야 합니다(`/new /new`). 첨부 파일은 플랫폼이 지원하는 경우 일치하는 캡션이 필요합니다. 캡션 없는 Telegram, Feishu, WeChat, DingTalk, WeCom 미디어 메시지는 계속 실행되며 플레이스홀더 텍스트는 그룹 기록으로 인용되지 않습니다. 네이티브 todo, 웹훅, 제공자 생성 할당 또는 리뷰 요청 이벤트도 접두사 없이 계속 실행됩니다. 이들은 채팅 메시지가 아닌 시스템 이벤트이기 때문입니다.
 
@@ -371,33 +368,11 @@ curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates" | python3
 }
 ```
 
-## 블록 스트리밍
+## 응답 전달
 
-기본적으로 에이전트는 잠시 작업한 후 하나의 큰 응답을 보냅니다. 블록 스트리밍이 활성화되면 응답이 에이전트가 아직 작업 중인 동안 여러 개의 짧은 메시지로 도착합니다 — ChatGPT나 Claude가 프로그레시브 출력을 표시하는 방식과 유사합니다.
+채널은 일반적인 응답 전달 경로를 사용합니다. 공유 전달 레이어가 완료된 응답을 전송하며, 어댑터는 대화형 카드를 제자리에서 업데이트하는 방식과 같은 네이티브 프로그레시브 표시를 제공할 수 있습니다. 플랫폼 메시지 길이 제한은 여전히 긴 응답을 분할할 수 있습니다.
 
-```json
-{
-  "channels": {
-    "my-channel": {
-      "type": "telegram",
-      "blockStreaming": "on",
-      "blockStreamingChunk": { "minChars": 400, "maxChars": 1000 },
-      "blockStreamingCoalesce": { "idleMs": 1500 },
-      ...
-    }
-  }
-}
-```
-
-### 작동 방식
-
-- 에이전트의 응답이 단락 경계에서 블록으로 분할되어 별도 메시지로 전송됩니다
-- `minChars`(기본값 400) — 작은 메시지를 스팸하는 것을 방지하기 위해 최소 이 길이가 될 때까지 블록을 보내지 않음
-- `maxChars`(기본값 1000) — 자연스러운 중단 없이 블록이 이만큼 길어지면 어쨌든 전송
-- `idleMs`(기본값 1500) — 에이전트가 일시 중지하면(예: 도구 실행) 지금까지 버퍼된 내용을 전송
-- 에이전트가 완료되면 남은 텍스트가 즉시 전송됨
-
-`blockStreaming`만 필요합니다. 청크 및 병합 설정은 선택적이며 합리적인 기본값이 있습니다.
+오래된 `blockStreaming`, `blockStreamingChunk` 및 `blockStreamingCoalesce` 설정은 더 이상 지원되지 않으며 채널 구성에서 제거할 수 있습니다. 이들은 전달에 영향을 주지 않습니다. 채널 설정 관리자는 이러한 필드의 새로 추가되거나 변경된 값을 거부합니다. 변경되지 않은 저장 값은 채널의 `type`을 유지하는 편집에서 보존되거나 제거되며, 채널의 `type`을 변경하려면 먼저 이러한 필드를 제거해야 합니다.
 
 ## 예약된 채널 루프
 

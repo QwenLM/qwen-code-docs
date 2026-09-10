@@ -1,19 +1,21 @@
-# DaemonClient-Kurzanleitung (TypeScript)
+# API-only DaemonClient-Kurzanleitung (TypeScript)
 
-Ein minimales End-to-End-Beispiel: Starte einen `qwen serve`-Daemon in einem anderen Terminal und steuere ihn dann über ein Node-Skript mit dem `DaemonClient` des SDK. Siehe auch: [Daemon-Modus-Benutzerhandbuch](../../users/qwen-serve.md) und [HTTP-Protokollreferenz](../qwen-serve-protocol.md).
+Ein minimales End-to-End-Beispiel: Starte einen API-only `qwen serve`-Daemon in einem anderen Terminal und steuere ihn dann über ein Node-Skript mit dem `DaemonClient` des SDK. Siehe auch: [Daemon-Modus-Benutzerhandbuch](../../users/qwen-serve.md) und [HTTP-Protokollreferenz](../qwen-serve-protocol.md).
 
 ## Einrichtung
 
 In einem Terminal:
 
 ```bash
-qwen serve --port 4170 \
+qwen serve --no-web --port 4170 \
   --workspace /path/to/project-a \
   --workspace /path/to/project-b
 # → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/project-a)
 ```
 
-Jeder `--workspace`-Wert muss ein absolutes Verzeichnis sein. Der erste Start-Workspace ist primär und bleibt die Kompatibilitäts-Standardvorgabe für Requests, die `cwd` weglassen; `/capabilities.workspaces[]` ist der Katalog, den Clients verwenden sollten, wenn sie eine Runtime explizit auswählen.
+`--no-web` entfernt die WebShell-Assets und die daran gebundenen Surfaces: `POST /workspace/local-control/enable` schlägt dann auf jeder Plattform fail-closed mit `409 local_control_web_shell_unavailable` fehl, und auf macOS werden die `/live/*`-Routen, der `/live/host`-WebSocket und die `experimental.liveVoice.*`-Einstellungsschlüssel nicht registriert – eine Integration, die die Live-Methoden des SDK antreibt, muss daher ohne `--no-web` laufen. Es ist kein Feature-Profil-Switch: Session-, Prompt-, Workspace-, Permission- und SSE-Routen bleiben unverändert. Jeder `--workspace`-Wert muss ein absolutes Verzeichnis sein. Der erste Start-Workspace ist primär und bleibt die Kompatibilitäts-Standardvorgabe für Requests, die `cwd` weglassen; `/capabilities.workspaces[]` ist der Katalog, den Clients verwenden sollten, wenn sie eine Runtime explizit auswählen.
+
+Der Token-lose Loopback-Standard ist für eine Single-User-Workstation gedacht. Auf einem gemeinsam genutzten Host setze `QWEN_SERVER_TOKEN` und füge `--require-auth` hinzu; Non-Loopback-Bindungen erfordern einen Token.
 
 In einem anderen:
 
@@ -244,7 +246,7 @@ const client = new DaemonClient({
 const client = new DaemonClient({ baseUrl: 'https://your-host:4170' });
 ```
 
-Der Fallback entfernt führende/nachfolgende Leerzeichen (praktisch für `export QWEN_SERVER_TOKEN="$(cat token.txt)"`, wo `cat` einen Zeilenumbruch hinzufügt) und behandelt leere / nur-Whitespace-Werte als nicht gesetzt (ein veraltetes `export QWEN_SERVER_TOKEN=""` sendet nicht versehentlich `Authorization: Bearer ` ohne Token). Der Fallback wird einmal bei der Konstruktion ausgeführt; spätere `process.env`-Mutationen wirken sich nicht auf bereits erstellte Clients aus. Browser-Bundles (z. B. über `@qwen-code/webui`) erhalten sauber `undefined`, da `globalThis.process` dort nicht existiert.
+Der Fallback entfernt führende/nachfolgende Leerzeichen (praktisch für `export QWEN_SERVER_TOKEN="$(cat token.txt)"`, wo `cat` einen Zeilenumbruch hinzufügt) und behandelt leere / nur-Whitespace-Werte als nicht gesetzt (ein veraltetes `export QWEN_SERVER_TOKEN=""` sendet nicht versehentlich `Authorization: Bearer ` ohne Token). Der Fallback wird einmal bei der Konstruktion ausgeführt; spätere `process.env`-Mutationen wirken sich nicht auf bereits erstellte Clients aus. Browser-Bundles (z. B. über `@qwen-code/web-shell`) erhalten sauber `undefined`, da `globalThis.process` dort nicht existiert.
 
 Falsche/fehlende Tokens geben `401` mit einem einheitlichen Body zurück – das SDK wirft `DaemonHttpError` bei jedem 4xx/5xx von einem Route-Handler.
 

@@ -48,6 +48,7 @@ Qwen Code의 내장 도구는 다음과 같이 분류할 수 있습니다:
 - **[셸 도구](./shell.md) (`run_shell_command`):** 셸 명령 실행.
 - **[모니터 도구](./monitor.md) (`monitor`):** 백그라운드 작업 알림으로 출력을 스트리밍하는 장기간 실행 셸 명령 실행.
 - **[웹 가져오기 도구](./web-fetch.md) (`web_fetch`):** URL에서 콘텐츠 검색.
+- **[웹 검색 도구](./web-search.md) (`web_search`):** 웹 검색. 지원되는 제공자가 있는 경우 시작 시 사용 가능합니다.
 - **[Todo Write 도구](./todo-write.md) (`todo_write`):** 코딩 세션 중 구조화된 작업 목록 생성 및 관리.
 - **[에이전트 도구](./task.md) (`agent`):** 복잡한 작업을 전문 서브에이전트에 위임.
 - **[Exit Plan Mode 도구](./exit-plan-mode.md) (`exit_plan_mode`):** 계획 모드를 종료하고 구현 진행.

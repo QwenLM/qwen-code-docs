@@ -1,19 +1,21 @@
-# DaemonClient クイックスタート (TypeScript)
+# API-only DaemonClient クイックスタート (TypeScript)
 
-最小限のエンドツーエンドの例: 別のターミナルで `qwen serve` デーモンを起動し、SDK の `DaemonClient` を使って Node スクリプトから操作します。関連: [デーモンモードユーザーガイド](../../users/qwen-serve.md) と [HTTP プロトコルリファレンス](../qwen-serve-protocol.md)。
+最小限のエンドツーエンドの例: 別のターミナルで API-only の `qwen serve` デーモンを起動し、SDK の `DaemonClient` を使って Node スクリプトから操作します。関連: [デーモンモードユーザーガイド](../../users/qwen-serve.md) と [HTTP プロトコルリファレンス](../qwen-serve-protocol.md)。
 
 ## セットアップ
 
 1 つ目のターミナルで:
 
 ```bash
-qwen serve --port 4170 \
+qwen serve --no-web --port 4170 \
   --workspace /path/to/project-a \
   --workspace /path/to/project-b
 # → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/project-a)
 ```
 
-各 `--workspace` の値は絶対ディレクトリである必要があります。最初の起動ワークスペースがプライマリとなり、`cwd` を省略したリクエストの互換性デフォルトとして残ります。`/capabilities.workspaces[]` は、ランタイムを明示的に選択する際にクライアントが使用すべきカタログです。
+`--no-web` は Web Shell アセットとそれに紐づくサーフェスを削除します。`POST /workspace/local-control/enable` は全プラットフォームで fail closed となり `409 local_control_web_shell_unavailable` を返し、macOS では `/live/*` ルート、`/live/host` WebSocket、および `experimental.liveVoice.*` 設定キーは登録されません。そのため、SDK の Live メソッドを使用するインテグレーションは `--no-web` なしで実行する必要があります。これは機能プロファイルの切り替えではありません。セッション、プロンプト、ワークスペース、権限、および SSE ルートは変更されません。各 `--workspace` の値は絶対ディレクトリである必要があります。最初の起動ワークスペースがプライマリとなり、`cwd` を省略したリクエストの互換性デフォルトとして残ります。`/capabilities.workspaces[]` は、ランタイムを明示的に選択する際にクライアントが使用すべきカタログです。
+
+トークン不要なループバックのデフォルトは、シングルユーザーのワークステーションを想定しています。共有ホストでは、`QWEN_SERVER_TOKEN` を設定し `--require-auth` を追加してください。非ループバックのバインドにはトークンが必要です。
 
 もう 1 つのターミナルで:
 
@@ -244,7 +246,7 @@ const client = new DaemonClient({
 const client = new DaemonClient({ baseUrl: 'https://your-host:4170' });
 ```
 
-フォールバックは先頭/末尾の空白を除去し ( `export QWEN_SERVER_TOKEN="$(cat token.txt)"` で `cat` が改行を追加する場合に便利)、空または空白のみの値は未設定として扱います (古い `export QWEN_SERVER_TOKEN=""` が誤ってトークンなしの `Authorization: Bearer ` を送信するのを防ぎます)。フォールバックはコンストラクタで 1 回実行されます。その後の `process.env` の変更は既に構築されたクライアントには影響しません。ブラウザバンドル (例: `@qwen-code/webui` 経由) では `globalThis.process` が存在しないため、きれいに `undefined` になります。
+フォールバックは先頭/末尾の空白を除去し ( `export QWEN_SERVER_TOKEN="$(cat token.txt)"` で `cat` が改行を追加する場合に便利)、空または空白のみの値は未設定として扱います (古い `export QWEN_SERVER_TOKEN=""` が誤ってトークンなしの `Authorization: Bearer ` を送信するのを防ぎます)。フォールバックはコンストラクタで 1 回実行されます。その後の `process.env` の変更は既に構築されたクライアントには影響しません。ブラウザバンドル (例: `@qwen-code/web-shell` 経由) では `globalThis.process` が存在しないため、きれいに `undefined` になります。
 
 間違ったトークンや欠落したトークンは、統一されたボディとともに `401` を返します。SDK はルートハンドラからのすべての 4xx/5xx で `DaemonHttpError` をスローします。
 

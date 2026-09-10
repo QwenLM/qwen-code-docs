@@ -1,19 +1,21 @@
-# DaemonClient 퀵스타트 (TypeScript)
+# API-only DaemonClient 퀵스타트 (TypeScript)
 
-최소한의 엔드투엔드 예제입니다. 다른 터미널에서 `qwen serve` 데몬을 시작한 다음, SDK의 `DaemonClient`로 Node 스크립트에서 제어합니다. 참고: [데몬 모드 사용자 가이드](../../users/qwen-serve.md) 및 [HTTP 프로토콜 레퍼런스](../qwen-serve-protocol.md).
+최소한의 엔드투엔드 예제입니다. 다른 터미널에서 API 전용 `qwen serve` 데몬을 시작한 다음, SDK의 `DaemonClient`로 Node 스크립트에서 제어합니다. 참고: [데몬 모드 사용자 가이드](../../users/qwen-serve.md) 및 [HTTP 프로토콜 레퍼런스](../qwen-serve-protocol.md).
 
 ## 설정
 
 한쪽 터미널에서:
 
 ```bash
-qwen serve --port 4170 \
+qwen serve --no-web --port 4170 \
   --workspace /path/to/project-a \
   --workspace /path/to/project-b
 # → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/project-a)
 ```
 
-각 `--workspace` 값은 절대 경로 디렉터리여야 합니다. 첫 번째 시작 workspace가 primary이며, `cwd`를 생략한 요청에 대한 호환성 기본값으로 유지됩니다. `/capabilities.workspaces[]`는 런타임을 명시적으로 선택할 때 클라이언트가 사용해야 하는 카탈로그입니다.
+`--no-web`은 Web Shell 에셋과 그에 바인딩된 서페스를 제거합니다. `POST /workspace/local-control/enable`은 모든 플랫폼에서 `409 local_control_web_shell_unavailable`로 실패하며, macOS에서는 `/live/*` 라우트, `/live/host` WebSocket, `experimental.liveVoice.*` 설정 키가 등록되지 않습니다. 따라서 SDK의 Live 메서드를 사용하는 통합은 `--no-web` 없이 실행해야 합니다. 이것은 기능 프로필 전환이 아닙니다. 세션, 프롬프트, 워크스페이스, 권한, SSE 라우트는 변경되지 않습니다. 각 `--workspace` 값은 절대 경로 디렉터리여야 합니다. 첫 번째 시작 워크스페이스가 primary이며, `cwd`를 생략한 요청에 대한 호환성 기본값으로 유지됩니다. `/capabilities.workspaces[]`는 런타임을 명시적으로 선택할 때 클라이언트가 사용해야 하는 카탈로그입니다.
+
+토큰 없는 루프백 기본값은 단일 사용자 워크스테이션용입니다. 공유 호스트에서는 `QWEN_SERVER_TOKEN`을 설정하고 `--require-auth`를 추가하세요. 루프백이 아닌 바인딩에는 토큰이 필요합니다.
 
 다른 터미널에서:
 
@@ -134,7 +136,7 @@ const updated = await selected.editWorkspaceFile({
 console.log(updated.hash);
 ```
 
-`expectedHash`는 디스크의 원시 바이트에 대한 SHA-256입니다. `mode: "replace"` 및 `editWorkspaceFile()`은 오래된 클라이언트가 방금 읽지 않은 파일을 덮어쓰지 않도록 이를 요구합니다. 쓰기/편집은 루프백에서도 bearer token 설정이 필요합니다. 사용하기 전에 데몬을 `--token` 또는 `QWEN_SERVER_TOKEN`과 함께 시작하세요.
+`expectedHash`는 디스크의 원시 바이트에 대한 SHA-256입니다. `mode: "replace"` 및 `editWorkspaceFile()`은 오래된 클라이언트가 방금 읽지 않은 파일을 덮어쓰지 않도록 이를 요구합니다. 쓰기/편집은 토큰 없는 신뢰 루프백 primary 리스너를 허용합니다. 신뢰할 수 없는 배포에서는 bearer 또는 페어링 자격 증명이 필요합니다.
 
 ## `Last-Event-ID`로 재연결
 
@@ -243,7 +245,7 @@ const client = new DaemonClient({
 const client = new DaemonClient({ baseUrl: 'https://your-host:4170' });
 ```
 
-폴백은 앞뒤 공백을 제거하며(`cat`이 개행 문자를 추가하는 `export QWEN_SERVER_TOKEN="$(cat token.txt)"`에 유용), 빈 값 또는 공백만 있는 값을 미설정으로 처리합니다(오래된 `export QWEN_SERVER_TOKEN=""`이 토큰 없이 `Authorization: Bearer `를 실수로 전송하지 않습니다). 폴백은 생성 시 한 번만 실행되며, 이후 `process.env` 변경은 이미 생성된 클라이언트에 영향을 주지 않습니다. 브라우저 번들(예: `@qwen-code/webui` 통함)은 `globalThis.process`가 존재하지 않기 때문에 `undefined`를 cleanly 받습니다.
+폴백은 앞뒤 공백을 제거하며(`cat`이 개행 문자를 추가하는 `export QWEN_SERVER_TOKEN="$(cat token.txt)"`에 유용), 빈 값 또는 공백만 있는 값을 미설정으로 처리합니다(오래된 `export QWEN_SERVER_TOKEN=""`이 토큰 없이 `Authorization: Bearer `를 실수로 전송하지 않습니다). 폴백은 생성 시 한 번만 실행되며, 이후 `process.env` 변경은 이미 생성된 클라이언트에 영향을 주지 않습니다. 브라우저 번들(예: `@qwen-code/web-shell`)은 `globalThis.process`가 존재하지 않기 때문에 `undefined`를 깔끔하게 받습니다.
 
 잘못되었거나 누락된 토큰은 균일한 본문과 함께 `401`을 반환합니다 — SDK는 라우트 핸들러의 4xx/5xx에서 `DaemonHttpError`를 발생시킵니다.
 

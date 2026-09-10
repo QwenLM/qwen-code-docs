@@ -24,5 +24,7 @@ Trusted glossary:
 Trusted style reference:
 {{STYLE}}
 
+{{SCOPE}}
+
 Untrusted documents encoded as JSON (`target` is null when missing):
 {{DOCUMENTS}}

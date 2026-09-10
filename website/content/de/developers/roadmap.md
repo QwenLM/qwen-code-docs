@@ -56,7 +56,7 @@
 | TodoWrite               | `V0.0.10` | Aufgabenmanagement und Fortschrittsverfolgung                   | Coding Workflow                 | 1     |
 | Tool: TextSearch        | `V0.0.8+` | Textsuch-Tool (grep, unterstützt .qwenignore)           | Coding Workflow                 | 1     |
 | Tool: WebFetch          | `V0.0.7+` | Tool zum Abrufen von Webinhalten                               | Coding Workflow                 | 1     |
-| Tool: WebSearch         | `V0.0.7+` | Web-Such-Tool (unter Verwendung der Tavily API)                      | Coding Workflow                 | 1     |
+| Tool: WebSearch         | `V0.0.7+` | Integrierte Web-Suche (DashScope Responses API)           | Coding Workflow                 | 1     |
 | OAuth                   | `V0.0.5+` | OAuth-Login-Authentifizierung (Qwen OAuth)                 | User Experience                 | 1     |
 
 #### Zu entwickelnde Features

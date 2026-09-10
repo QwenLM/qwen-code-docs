@@ -58,7 +58,7 @@ Wähle den Pfad, der deinem Ziel entspricht:
 - [`17-configuration.md`](./17-configuration.md) - Umgebungsvariablen, CLI-Flags, `settings.json`-Keys, die den Daemon beeinflussen.
 - [`18-error-taxonomy.md`](./18-error-taxonomy.md) - Typisierte Fehler pro Schicht mit Behebungslösungen.
 - [`19-observability.md`](./19-observability.md) - `QWEN_SERVE_DEBUG`, Debugging-Rezepte, Telemetrie-Lücken.
-- [`20-quickstart-operations.md`](./20-quickstart-operations.md) - Kürzester Startpfad, Curl-Checks, Route-Map und eingebettete Aufruf-Rezepte.
+- [`20-quickstart-operations.md`](./20-quickstart-operations.md) - Kürzester Startpfad, Curl-Checks, Route-Map und die Embedding-Grenze (In-Process-Hosting ist intern; externe Integrationen verwenden `qwen serve --no-web` plus das HTTP/SSE-Protokoll). Das interne `createServeApp`-Lifecycle-Rezept befindet sich in [`02-serve-runtime.md`](./02-serve-runtime.md).
 
 ## Glossar
 
@@ -143,7 +143,7 @@ Verwende diese Anker, wenn du von der Dokumentation in den neuesten `main`-Code 
 | Bereich | Aktueller Status | Primäre Dokumentation |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
 | Konfiguration           | Vollständige `qwen serve`-Flags, Umgebungsvariablen, `settings.json`, `ServeOptions`, `BridgeOptions` und wichtige Konstanten sind auf einer Seite zusammengefasst.                   | [`17`](./17-configuration.md)         |
-| Quickstart / Betrieb | Schnellster Startpfad, Start-Rezepte, curl-Prüfungen, Web-Shell-Authentifizierungsverhalten, Route-Aufteilung, Shutdown-Verhalten und Rezepte für eingebettete Aufrufe werden behandelt. | [`20`](./20-quickstart-operations.md) |
+| Quickstart / Betrieb | Schnellster Startpfad, Start-Rezepte, curl-Prüfungen, Web-Shell-Authentifizierungsverhalten, Route-Aufteilung, Shutdown-Verhalten und die Embedding-Grenze werden behandelt. Das interne `createServeApp`-Lifecycle-Rezept befindet sich in [`02`](./02-serve-runtime.md). | [`20`](./20-quickstart-operations.md) |
 | Fehler                  | Explizite Startfehler, Route-Fehler, Bridge-Fehler, EventBus-Fehler, Dateisystemfehler und Mediator-Fehler werden mitsamt Behebungsmaßnahmen zusammengefasst.        | [`18`](./18-error-taxonomy.md)        |
 | Observability           | `QWEN_SERVE_DEBUG`, curl-Rezepte, nützliche Events, Telemetrie-Lücken und Checklisten zur Fehleruntersuchung sind dokumentiert.                                             | [`19`](./19-observability.md)         |
 

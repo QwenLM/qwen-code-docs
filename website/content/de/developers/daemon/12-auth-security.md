@@ -4,7 +4,7 @@
 
 `qwen serve` ist standardmäßig ein lokaler Daemon und bei falscher Konfiguration eine exponierte Oberfläche. Das Sicherheitsmodell ist **geschichtet** aufgebaut, so dass Fehlkonfigurationen im geschlossenen Zustand fehlschlagen:
 
-1. **Bind** – Ein Nicht-Loopback-Bind ohne Bearer-Token **verweigert den Start**.
+1. **Bind** – Ein Nicht-Loopback-Bind trägt immer einen Bearer: den des Operators oder einen ephemeren 128-Bit-Token, der einmalig beim Start generiert und ausgegeben wird. Der Boot verweigert nur, wenn eine bereitgestellte Token-Quelle explizit leer/Whitespace ist oder wenn ein angeforderter `localhost` außerhalb des Loopback aufgelöst wird ohne dass eine Token-Quelle aufgelöst wurde (was niemals generiert).
 2. **Bearer-Auth** – `bearerAuth`-Middleware mit konstantem SHA-256-Vergleich schützt normale API-Routes außer `/health` bei einem gewöhnlichen Loopback-Bind (`require_auth` verschiebt auch diesen Endpunkt hinter den Bearer). Channel-Webhook-Eingänge sind eine separate Pre-Bearer-Route, authentifiziert durch `x-qwen-webhook-secret`. Web-Shell-Dokument- und Asset-Routes bleiben in jedem Modus Pre-Auth.
 3. **Host-Header-Allowlist** – Auf Loopback werden nur `localhost`, `127.0.0.1`, `[::1]`, `host.docker.internal` oder die exakte gebundene Loopback-Adresse (plus Port) akzeptiert; die entsprechenden Port-losen Formen werden ebenfalls akzeptiert, wenn auf 80 oder 443 gelauscht wird. Die Allowlist wehrt DNS-Rebinding ab. Der Local-Control-LAN-Listener ist die Ausnahme, die immer ihre beworbene-Autorität-Hostprüfung erzwingt, unabhängig vom primären Bind.
 4. **Origin-Kontrolle** – Die Runtime-App installiert immer `allowOriginCors` über eine mutable Allowlist (`MutableOriginAllowlist`): Die `--allow-origin <pattern>`-Einträge seeden sie, und Local Control fügt die LAN-Origin hinzu, während es aktiviert ist. Nicht übereinstimmende Origins erhalten den 403-Deny-Envelope. Die bedingungslose deny-Mauer (`denyBrowserOriginCors`) überlebt nur in der Bootstrap-App, die vor dem Start der Runtime antwortet.
@@ -27,6 +27,15 @@ Dieses Dokument erläutert jede Schicht und die expliziten Invarianten, die der 
 In `run-qwen-serve.ts`:
 
 ```ts
+// A non-loopback bind with neither --token nor QWEN_SERVER_TOKEN first
+// generates an ephemeral 128-bit base64url bearer (16 random bytes, 22
+// URL-safe characters; printed once at startup, rotated per process). The
+// first refusal below therefore fires only when a token source was supplied
+// but is explicitly empty/whitespace, or when the requested hostname resolves
+// off-loopback (localhost pinned to a non-loopback address never generates).
+// Generation is loopback-suppressed, so the second refusal is a loopback-only
+// fail-fast: on a non-loopback bind the generated token already satisfies
+// --require-auth.
 if (!isLoopbackBind(opts.hostname) && !token) {
   throw new Error('Refusing to bind <host>:<port> without a bearer token. ...');
 }
@@ -56,17 +65,20 @@ if (findNonLoopbackHttpOrigin(parsed) && !token) {
 
 Diese Verweigerungen sind explizite Bootfehler (sichtbar in stderr / werden an den Embedder geworfen), nie stillschweigend. Das Bedrohungsmodell aus #3803 verbietet ausdrücklich, einen Daemon stillschweigend offen über Loopback hinaus zu binden.
 
-`runQwenServe()` löst `localhost` einmal auf, pinnt den Listener an diese Adresse und verifiziert die tatsächliche Listener-Adresse vor der Veröffentlichung der vertrauenswürdigen Loopback-Autorität; wenn das Ergebnis außerhalb von `127.0.0.0/8` oder `::1` liegt, schlägt der tokenlose Start fehl und schließt den Listener. `createServeApp()` besitzt kein Socket, daher bleibt sein Aufrufer dafür verantwortlich, dass ein deklarierte Loopback-Hostname nur an Loopback gebunden wird. Ein deklarierter Nicht-Loopback-Eembed behält strenge Routes, Session-Shell und Local-Control-Pairing-Material im fail-closed-Zustand. Er lehnt auch `requireAuth: true` ohne ein nicht-leeres Token bei der Konstruktion ab, so dass nicht-strenge Routes nicht versehentlich unter einer ungültigen gehärteten Konfiguration offen bleiben.
+`runQwenServe()` löst `localhost` einmal auf, pinnt den Listener an diese Adresse und verifiziert die tatsächliche Listener-Adresse vor der Veröffentlichung der vertrauenswürdigen Loopback-Autorität; wenn das Ergebnis außerhalb von `127.0.0.0/8` oder `::1` liegt, schlägt der tokenlose Start fehl und schließt den Listener. `createServeApp()` besitzt kein Socket, daher bleibt sein Aufrufer dafür verantwortlich, dass ein deklarierter Loopback-Hostname nur an Loopback gebunden wird. Ein deklarierter Nicht-Loopback-Embed behält strenge Routes, Session-Shell und Local-Control-Pairing-Material im fail-closed-Zustand. Er lehnt auch `requireAuth: true` ohne ein nicht-leeres Token bei der Konstruktion ab, so dass nicht-strenge Routes nicht versehentlich unter einer ungültigen gehärteten Konfiguration offen bleiben.
 
 ### Middleware-Kette (HTTP-Anfragereihenfolge)
 
 ```mermaid
 flowchart LR
-    REQ[Request] --> SO["strip same-origin Origin<br/>(Web Shell support)"]
+    REQ[Request] --> LS["loopback self-origin strip<br/>(server/self-origin.ts)"]
+    LS --> LOG["access-log middleware<br/>(DaemonLogger)"]
+    LOG --> TID["inbound trace-id capture"]
+    TID --> HA["hostAllowlist<br/>(loopback DNS-rebinding defense;<br/>primary gate passes through on<br/>non-loopback binds, Local Control<br/>keeps its own Host gate)"]
+    HA --> SO["remote same-origin check<br/>(credential check + Origin strip)"]
     SO --> AO["allowOriginCors<br/>(mutable allowlist: --allow-origin<br/>patterns + Local Control LAN origin)"]
-    AO --> HA["hostAllowlist"]
-    HA --> LOG["access-log middleware<br/>(DaemonLogger)"]
-    LOG --> WH{"Channel webhook?"}
+    AO --> H["pre-auth /health<br/>(loopback, unless --require-auth)"]
+    H --> WH{"Channel webhook?"}
     WH -->|yes| WS["x-qwen-webhook-secret<br/>+ webhook rate/body limits"]
     WH -->|no| BA["bearerAuth"]
     BA --> RL["rate-limit middleware<br/>(when enabled)"]
@@ -76,7 +88,42 @@ flowchart LR
     MG --> HANDLER["route handler"]
 ```
 
-`mutationGate` ist eine Per-Route-Middleware-Factory (`createMutationGate` gibt `mutate()` zurück); Routes rufen bei der Registrierung `mutate()` oder `mutate({strict: true})` auf. Es handelt sich nicht um ein globales `app.use()`. Das Access-Logging wird vor `bearerAuth` registriert, so dass auch 401-Ablehnungen protokolliert werden. Das Rate-Limit wird nach `bearerAuth` und vor `express.json()` ausgeführt, so dass nur authentifizierte Anfragen gezählt werden und große Bodies vor dem Parsen abgelehnt werden, wenn ein Limit überschritten wird. Channel-Webhook-Eingänge zweigen vor der Bearer-Authentifizierung ab und wenden ihre eigene Shared-Secret-Prüfung, Mutation-Tier-Rate-Prüfung und einen 1-MiB-Parser an.
+`mutationGate` ist eine Per-Route-Middleware-Factory (`createMutationGate` gibt
+`mutate()` zurück); Routes rufen `mutate()` oder `mutate({strict: true})` bei der Registrierung
+auf. Es ist kein globales `app.use()`-Middleware. Access-Logging und Inbound-
+Trace-ID-Erfassung werden vor der Origin-Mauer und der Same-Origin-
+Credential-Prüfung registriert, so dass diese 403/401-Kurzschlüsse wie jede andere
+Ablehnung protokolliert werden und die Log-Zeile weiterhin die Trace-ID des Aufrufers
+enthält; beide gehen auch `bearerAuth` voraus, so dass 401-Ablehnungen weiterhin
+protokolliert werden. Die Loopback-Host-Allowlist wird vor der Pre-Auth-Health-
+Route registriert, so dass die DNS-Rebinding-Abwehr sie abdeckt. Pre-Auth-`/health` sitzt unterhalb
+der Origin-Mauer (übereinstimmende Cross-Origin-Probes tragen CORS-Header); das Access-
+Log befreit `GET /health` und `POST */heartbeat` nach Pfad vor dem Anhängen seines
+Finish-Loggers, so dass exakte Pfad-`GET /health`- und `POST */heartbeat`-Probes
+an jeder Mount-Position nicht protokolliert werden und Mauer-Ablehnungen auf diesen befreiten Pfaden
+ebenfalls nicht protokolliert werden (`HEAD /health` und `GET /health/` werden wie jede
+Anfrage protokolliert). Normales API-Rate-Limiting
+läuft nach `bearerAuth` und vor `express.json()`, so dass nur authentifizierte
+Anfragen gezählt werden und große Bodies vor dem Parsen abgelehnt werden, wenn ein Limit
+überschritten wird. Channel-Webhook-Eingänge zweigen vor der Bearer-Authentifizierung ab und wenden ihre
+eigene Shared-Secret-Prüfung, Mutation-Tier-Rate-Prüfung und einen 1-MiB-Parser an.
+
+Die Same-Origin-Oberfläche besteht aus zwei Middlewares in `server/self-origin.ts`, getrennt
+montiert: der nur-Loopback `Origin`-Strip wird vor dem Access-Log installiert (er
+löscht nur eine übereinstimmende `Origin`, lehnt nie ab), und
+`installRemoteSelfOriginMiddleware` läuft unmittelbar vor
+`allowOriginCors` auf einem Nicht-Loopback-Primär-Listener mit konfiguriertem Token.
+Die Remote-Variante gleicht eine kanonische `Origin` gegen das direkte Socket-Schema
+plus die normalisierte `Host`-Autorität ab — Forwarded-Header werden nie konsultiert —
+und bearer-authentifiziert die Übereinstimmung vor dem Löschen von `Origin`, so dass die eingebauten
+WebShell-Same-Origin-HTTP-Mutationen kein `--allow-origin` benötigen. Sein Pre-Auth-
+Prädikat (`web-shell-preauth.ts`) befreit die Shell-Endpunkte (`/`, `//`,
+`/assets*`, `/mcp-app-sandbox`, exakte `/session/:id`-Dokument-Navigationen) von
+der Credential-Prüfung, weil Browser-Module-Script-Fetches `Origin`
+ohne `Authorization` mitführen. WebSocket-Upgrades und TLS-Front-Proxy-`https`-Origins
+sind nicht abgedeckt: das Upgrade-Gate behält seine eigene CSWSH-Policy (Loopback-Origin,
+`--allow-origin`-Eintrag oder die eigene Origin des Local-Control-Listeners), und eine
+Proxy-`https`-Origin kann niemals dem Schema des einfachen Sockets entsprechen.
 
 ### `bearerAuth`
 
@@ -100,7 +147,7 @@ Nicht-Loopback-Bindings umgehen das primäre Gate (der Betreiber wählt die Angr
 
 Lehnt jede Anfrage mit einem `Origin`-Header ab. CLI/SDK setzen nie Origin; nur Browser tun das. Gibt deterministisch `403 { error: 'Request denied by CORS policy' }` zurück, statt des 500 HTML, das der Fehler-Callback des `cors`-Pakets produzieren würde. Die Runtime-App installiert diese Mauer nicht mehr – sie betreibt `allowOriginCors` über die mutable Allowlist (unten); das Deny-Verhalten überlebt dort als nicht-übereinstimmender-Origin-Branch. Die Mauer bleibt in der Bootstrap-App (run-qwen-serve.ts), die Anfragen vor dem Start der Runtime bedient.
 
-Ausnahme: Die Same-Origin-XHRs der WebShell bei einem **Loopback**-Bind werden von einer separaten Middleware (in `server/self-origin.ts`) behandelt, die `Origin` entfernt, wenn es mit einer der kanonischen Loopback-Self-Origins (`127.0.0.1`, `localhost`, `[::1]`, `host.docker.internal`) oder der exakten gebundenen Loopback-Adresse übereinstimmt. Scheme-matched Port-lose Origins werden nur für ihren Standardport akzeptiert (`http` auf 80, `https` auf 443). Bei Nicht-Loopback-Binds tragen die XHRs der Shell einen nicht übereinstimmenden `Origin` und benötigen `--allow-origin` für die Daemon-Origin.
+Ausnahme: Die Same-Origin-XHRs der WebShell bei einem **Loopback**-Bind werden von einer separaten Middleware (in `server/self-origin.ts`) behandelt, die `Origin` entfernt, wenn es mit einer der kanonischen Loopback-Self-Origins (`127.0.0.1`, `localhost`, `[::1]`, `host.docker.internal`) oder der exakten gebundenen Loopback-Adresse übereinstimmt. Scheme-matched Port-lose Origins werden nur für ihren Standardport akzeptiert (`http` auf 80, `https` auf 443). Bei Nicht-Loopback-Binds deckt eine zweite Middleware (`installRemoteSelfOriginMiddleware`, in derselben Datei) die XHRs der Shell stattdessen ab: sie bearer-authentifiziert eine Anfrage, deren kanonische `Origin` dem direkten Socket-Schema plus der normalisierten `Host`-Autorität entspricht — Forwarded-Header werden nie vertraut — und entfernt diese `Origin` vor der Mauer, so dass diese Anfragen keinen `--allow-origin`-Eintrag benötigen. Cross-Origin- und `null`-Origins werden weiterhin abgelehnt, und die WebSocket-Upgrade-Routen sowie eine TLS-Front-Proxy-`https`-Origin erfordern weiterhin einen (siehe [Middleware-Kette](#middleware-chain-http-request-order)).
 
 ### `allowOriginCors` (Runtime-App, immer installiert)
 
@@ -113,8 +160,8 @@ dem Listener hinzugefügt/entfernt):
 - Passende `Origin`-Werte erhalten `Access-Control-Allow-Origin`,
   `Access-Control-Allow-Headers` und `Access-Control-Allow-Methods`; `OPTIONS`-Preflight gibt `204` zurück.
 - Nicht passende `Origin`-Werte erhalten denselben deterministischen `403 { error: 'Request denied by CORS policy' }` wie im Deny-Modus.
-- `--allow-origin '*'` erfordert `--token`; sonst verweigert der Boot.
-- Ohne Token sind HTTP(S)-`--allow-origin`-Werte auf Loopback-Hosts beschränkt. Eine Nicht-Loopback-Browser-Origin erfordert ein Token, da sie sonst die volle Operator-API ausüben könnte, einschließlich Code-Ausführung als Daemon-Benutzer.
+- `--allow-origin '*'` erfordert einen Bearer-Token; bei Loopback-Binds verweigert der Boot, wenn keiner konfiguriert ist, während bei Nicht-Loopback-Binds der generierte ephemere Token die Bedingung erfüllt (die Verweigerung ist nur auf Loopback).
+- Ohne Token sind HTTP(S)-`--allow-origin`-Werte auf Loopback-Hosts bei Loopback-Binds beschränkt; bei Nicht-Loopback-Binds erfüllt der generierte Token dieselbe Bedingung. Eine Nicht-Loopback-Browser-Origin authentifiziert sich mit dem Bearer auf jeder API-Route, da sie sonst die volle Operator-API ausüben könnte, einschließlich Code-Ausführung als Daemon-Benutzer; die Pre-Auth-Ausnahmen sind die WebShell-Dokument-/Asset-Routes und die MCP-App-Sandbox (`/`, `/assets*`, `/mcp-app-sandbox`, exakte `/session/:id`-Navigationen), sowie der Channel-Webhook-Eingang, der vor `bearerAuth` zweigt und sich mit seinem eigenen `x-qwen-webhook-secret` statt dem Bearer authentifiziert, und — nur bei Loopback-Binds — `/health` (anderweitig Bearer-geschützt).
 - Explizite Browser-Erweiterungs-Origin behalten ihren tokenlosen lokalen Automatisierungspfad. Startup-Logs zeigen an, dass jedes tokenlose erlaubte Browser-Origin volle Operator-Autorität erhält.
 - `parseAllowOriginPatterns()` validiert die Pattern-Syntax beim Boot.
 - Das Capability-Tag `allow_origin` wird nur beworben, wenn dieser Modus konfiguriert ist.
@@ -135,7 +182,7 @@ Per-Route-Opt-in-Gate. Verhaltensmatrix:
 
 Der Vertrauenswürdiger-Loopback-Modus wird einmal aus `loopback bind && no configured token && !requireAuth` abgeleitet. Er autorisiert nur Anfragen, die über den primären Listener eintreffen. Er setzt nicht die interne Bearer-authentifizierte Markierung, daher bleiben Listener-Credentials und Deployment-Autorität unterschiedliche Fakten. Die Form `code: 'token_required'` bleibt für ältere Daemons und tokenlose nicht-vertrauenswürdige Embeds, deren Anfragen das strenge Gate erreichen, damit SDK-Clients einen Konfigurationshinweis statt einer generischen 401 anzeigen können. Fehler bei konfigurierten Tokens und Local-Control-Credentials behalten die frühere einfache `401 Unauthorized`-Antwort.
 
-Local-Control-Status- und Enable-Antworten expose ihre Pairing-URL und QR nur für Aufrufer mit Operator-Autorität: vertrauenswürdige primäre Listener-Aufrufer, Bearer-authentifizierte primäre Aufrufer und bereits gepaarte LAN-Clients. Ungepaarte LAN-Aufrufer und nicht-vertrauenswürdige Embeds können sie nicht abrufen. Das Aktivieren erfordert weiterhin den primären Listener; LAN-Clients dürfen nach dem Pairing zugreifen oder unter den bestehenden Regeln Deaktivierung anfordern.
+Local-Control-Status- und Enable-Antworten legen ihre Pairing-URL und QR nur für Aufrufer mit Operator-Autorität offen: vertrauenswürdige primäre Listener-Aufrufer, Bearer-authentifizierte primäre Aufrufer und bereits gepaarte LAN-Clients. Ungepaarte LAN-Aufrufer und nicht-vertrauenswürdige Embeds können sie nicht abrufen. Das Aktivieren erfordert weiterhin den primären Listener; LAN-Clients dürfen nach dem Pairing zugreifen oder unter den bestehenden Regeln Deaktivierung anfordern.
 
 **Strenge Routes der Welle 4+**: `/workspace/memory`, `/workspace/agents/*`,
 `/workspace/agents/generate`, `/file/write`, `/file/edit`,
@@ -163,7 +210,7 @@ Auswirkungen:
 - `local-only` ist nicht betroffen, da es auf `fromLoopback` prüft, das vom Daemon aus der entfernten Verbindungsadresse gesetzt wird.
 - `first-responder` ist nicht betroffen, da es identitätsunabhängig ist.
 
-Ein zukünftiger Pair-Token-Mechanismus wird ein pro Session eindeutiges Geheimnis aus `POST /session` ausstellen; `designated`/`consensus`-Stimmen müssen es dann vorweisen. Bis dahin sollten Bereitstellungen, die eine gehärtete Designated-Policy benötigen, entweder Loopback binden oder hinter einem authentifizierten Reverse-Proxy laufen. Siehe [`04-permission-mediation.md`](./04-permission-mediation.md) für details auf Policy-Ebene.
+Ein zukünftiger Pair-Token-Mechanismus wird ein pro Session eindeutiges Geheimnis aus `POST /session` ausstellen; `designated`/`consensus`-Stimmen müssen es dann vorweisen. Bis dahin sollten Bereitstellungen, die eine gehärtete Designated-Policy benötigen, entweder Loopback binden oder hinter einem authentifizierten Reverse-Proxy laufen. Siehe [`04-permission-mediation.md`](./04-permission-mediation.md) für Details auf Policy-Ebene.
 
 ### Device-Flow-Auth
 
@@ -256,7 +303,7 @@ sequenceDiagram
 
 - Der Bearer-Token wird beim Boot gelesen und getrimmt (Zeilenumbrüche aus `cat token.txt` würden den Vergleich sonst stillschweigend brechen).
 - Der CLI-exklusive `--open-with-auth`-Modus läuft vor dem Boot: Nach deterministischen Loopback/WebShell-Prüfungen wendet er dieselbe Option-über-Umgebung-Auswahl an und füllt `ServeOptions.token` mit 32 zufälligen Bytes, kodiert als Base64url, nur wenn kein nicht-leeres ausgewähltes Token existiert. Das generierte Credential hat Prozesslebensdauer, wird nicht in `process.env` geschrieben oder vom Daemon persistiert und erreicht den Browser über das bestehende URL-Fragment. Die WebShell behält ihre Browser-Kopie im `sessionStorage` pro Tab. Bare `--open` und direkte `runQwenServe()`-Aufrufer generieren es niemals.
-- Der Allow-Host-Set wird pro Port gecacht; bei Portänderung neu aufgebaut (ephemeral `0` → echter Port nach `listen`).
+- Das Allow-Host-Set wird pro Port gecacht; bei Portänderung neu aufgebaut (ephemeral `0` → echter Port nach `listen`).
 - Das Mutations-Gate konstruiert `passthrough` und `strictDenier` einmalig pro App-Build; der Per-Route-Aufruf gibt den gecachten Closure zurück (keine Pro-Anfrage-Allokation).
 - Das Device-Flow-Register wird in `shutdown()` Phase 1 entsorgt, so dass ausstehende Flows vor dem HTTP-Tear-Down als `cancelled` aufgelöst werden.
 
@@ -275,7 +322,7 @@ sequenceDiagram
 | Flag            | `--token`                                                                          | Bearer-Token (überschreibt Env).                                         |
 | CLI-Flags       | `--open-with-auth`                                                                 | Wiederverwendung oder Generierung eines Loopback-WebShell-Bearer-Tokens vor dem Daemon-Boot. |
 | Flag            | `--require-auth`                                                                   | Erweitert Bearer auf Loopback + `/health`. Startet nur mit Token.        |
-| Flag            | `--hostname`                                                                       | Nicht-Loopback-Bind erfordert `--token` (oder Env).                          |
+| Flag            | `--hostname`                                                                       | Nicht-Loopback-Bind trägt immer einen Bearer — `--token`, `QWEN_SERVER_TOKEN` oder einen generierten ephemeren Token; eine explizit leere Quelle verweigert.                          |
 | Flag            | `--allow-origin <pattern>`                                                         | Wechsel in CORS-Allowlist-Modus. Wildcard- und Nicht-Loopback-HTTP(S)-Origins erfordern ein Token. |
 | Capability-Tags | `require_auth` (bedingt), `auth_device_flow` (immer), `allow_origin` (bedingt) | Siehe [`11-capabilities-versioning.md`](./11-capabilities-versioning.md). |
 

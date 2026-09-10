@@ -13,7 +13,9 @@ qwen serve --no-web --port 4170 \
 # → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/project-a)
 ```
 
-`--no-web` remove os assets da Web Shell; não seleciona um perfil menor de API REST/SSE. Cada valor de `--workspace` deve ser um diretório absoluto. O primeiro workspace de inicialização é o primário e continua sendo o padrão de compatibilidade para requisições que omitem `cwd`; `/capabilities.workspaces[]` é o catálogo que os clientes devem usar ao selecionar qualquer runtime explicitamente.
+`--no-web` remove os assets da Web Shell e as superfícies a eles vinculadas: `POST /workspace/local-control/enable` então fail closed com `409 local_control_web_shell_unavailable` em todas as plataformas, e no macOS as rotas `/live/*`, o WebSocket `/live/host` e as chaves de configuração `experimental.liveVoice.*` não são registradas — portanto, uma integração que acione os métodos Live do SDK deve ser executada sem `--no-web`. Não é um seletor de perfil de recursos: as rotas de sessão, prompt, workspace, permissão e SSE permanecem inalteradas. Cada valor de `--workspace` deve ser um diretório absoluto. O primeiro workspace de inicialização é o primário e continua sendo o padrão de compatibilidade para requisições que omitem `cwd`; `/capabilities.workspaces[]` é o catálogo que os clientes devem usar ao selecionar qualquer runtime explicitamente.
+
+O padrão de loopback sem token é destinado a estações de trabalho de usuário único. Em um host compartilhado, defina `QWEN_SERVER_TOKEN` e adicione `--require-auth`; vinculações não-loopback exigem um token.
 
 Em outro terminal:
 

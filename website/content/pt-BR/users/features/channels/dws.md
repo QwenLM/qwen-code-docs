@@ -84,6 +84,12 @@ Mensagens diretas ordinárias são recuperadas da mesma forma: uma verificação
 
 `startReaction` é o caractere de emoji ou o nome de reação do DingTalk adicionado enquanto uma tarefa aceita está em execução; um valor omitido ou vazio usa o padrão `🤔`. `endReaction` substitui a reação de início após a tarefa ser concluída, falhar ou ser cancelada; um valor omitido ou vazio desativa a reação de término.
 
+### Entrega de Respostas IM
+
+Uma resposta de grupo com @ ou mensagem direta concluída é salva em checkpoint antes do primeiro envio e tentada novamente em segundo plano sem reexecutar a tarefa. O backoff começa em cinco segundos, dobra progressivamente e atinge o limite de cinco minutos. Uma resposta é abandonada após 16 tentativas de entrega com falha. Adiamentos locais causados por um canal desconectado ou uma aprovação de pareamento ilegível usam um limite separado de 32 verificações consecutivas, para que não consumam o orçamento de tentativas de transporte. Uma resposta é descartada imediatamente quando a autorização do remetente, do grupo ou da mensagem direta é revogada de forma definitiva. A fila comporta até 100 respostas e remove a entrada mais antiga independentemente da contagem de tentativas quando cheia; trocar o perfil DWS configurado limpa a fila. Esses descartes são reportados no stderr do canal, não enviados como notificações de chat.
+
+Respostas IM enfileiradas com mais de 12.000 code points são truncadas, com `[Response truncated for DWS delivery.]` anexado à mensagem que o destinatário vê. Respostas de comentários de documentos e comentários de todos nativos não usam esse caminho de retry enfileirado nem de truncamento: cada turno faz uma chamada de envio de comentário, resultados desconhecidos são absorvidos, e falhas definitivas propagam para a política de retry de turno de entrada existente. A reação de término marca a conclusão da tarefa, não a entrega da resposta, portanto uma resposta IM com retry pode chegar depois que essa reação aparecer.
+
 ## Menções a Documentos
 
 Não há lista de observação de documentos ou base de conhecimento. Para iniciar uma tarefa de documento:
@@ -120,6 +126,6 @@ qwen serve --workspace /path/to/your/project --channel dws-work
 
 Não execute ambas as formas ao mesmo tempo porque elas compartilham o lease do serviço de canal.
 
-Para verificação local, envie uma mensagem direta de outra conta, aprove o pareamento se necessário, e verifique se a reação de início configurada aparece enquanto a tarefa é executada. Se uma reação de término estiver configurada, verifique se ela substitui a reação de início depois. Em seguida, adicione um comentário de documento com notificação de @menção ativada. O canal deve reagir à mensagem de notificação, ler o documento e postar a resposta final sob o comentário original. Um comentário com notificação desativada não deve produzir nenhuma tarefa.
+Para verificação local, envie uma mensagem direta de outra conta, aprove o pareamento se necessário, e verifique se a reação de início configurada aparece enquanto a tarefa é executada. Se uma reação de término estiver configurada, verifique se ela substitui a reação de início depois que a tarefa termina; a entrega da resposta pode ser concluída mais tarde, conforme descrito acima. Em seguida, adicione um comentário de documento com notificação de @menção ativada. O canal deve reagir à mensagem de notificação, ler o documento e postar a resposta final sob o comentário original. Um comentário com notificação desativada não deve produzir nenhuma tarefa.
 
 O canal ignora eventos de IDs de remetente que o DWS identifica como a conta autenticada, prevenindo loops de resposta e pareamento sem inferir identidade a partir do texto da mensagem. Iniciar as fontes IM requer essa identidade própria autoritativa: se a conta autenticada não expõe um openDingTalkId e nenhuma sessão anterior sob o mesmo perfil registrou um, o canal se recusa a conectar. Uma reconexão que perde temporariamente o ID mantém o filtro nos IDs de remetente próprio registrados anteriormente.
