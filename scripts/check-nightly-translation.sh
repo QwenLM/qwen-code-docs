@@ -18,9 +18,31 @@ set -uo pipefail
 R="${REPO:-QwenLM/qwen-code-docs}"
 BOT="${BOT_LOGIN:-qwen-code-review-bot}"
 
-read -r id st cc < <(gh run list --repo "$R" --workflow "Daily Incremental Translation" \
-  --limit 1 --json databaseId,status,conclusion \
-  --jq '"\(.[0].databaseId) \(.[0].status) \(.[0].conclusion // "-")"')
+# Not simply the newest run. A run that finds a translation PR still open
+# skips its model work and produces no branch, and reporting on that one made
+# the script announce "opened by a human" for a batch it had never looked at.
+# Walk back to the newest run that actually produced a batch.
+id=""
+skipped=0
+while read -r candidate; do
+  [ -n "$candidate" ] || continue
+  if gh api "repos/$R/branches/automation/daily-translation-$candidate" -q .name >/dev/null 2>&1 ||
+     [ -n "$(gh pr list --repo "$R" --state all --head "automation/daily-translation-$candidate" \
+       --limit 1 --json number --jq '.[0].number // empty')" ]; then
+    id="$candidate"
+    break
+  fi
+  skipped=$((skipped + 1))
+done < <(gh run list --repo "$R" --workflow "Daily Incremental Translation" \
+  --limit 6 --json databaseId --jq '.[].databaseId')
+
+if [ -z "$id" ]; then
+  echo "run : none of the last 6 runs produced a batch — all skipped, or all quiet"
+  exit 0
+fi
+[ "$skipped" -eq 0 ] || echo "note: skipped $skipped later run(s) that produced no batch (paused on an open PR)"
+
+read -r st cc < <(gh api "repos/$R/actions/runs/$id" --jq '"\(.status) \(.conclusion // "-")"')
 branch="automation/daily-translation-$id"
 echo "run : $id  $st/$cc   https://github.com/$R/actions/runs/$id"
 
