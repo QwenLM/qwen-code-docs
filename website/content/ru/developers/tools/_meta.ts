@@ -8,7 +8,8 @@ export default {
   'exit-plan-mode': 'Выход из режима планирования',
   'web-fetch': 'Получение данных из веба',
   'web-search': 'Веб-поиск',
-  memory: 'Память',
   'mcp-server': 'Серверы MCP',
+  memory: 'Память',
+  monitor: 'Монитор',
   sandbox: 'Песочница',
 };

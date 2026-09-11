@@ -8,7 +8,8 @@ export default {
   'exit-plan-mode': '退出计划模式',
   'web-fetch': '网页获取',
   'web-search': '网页搜索',
-  memory: '记忆',
   'mcp-server': 'MCP 服务器',
+  memory: '记忆',
+  monitor: '监控',
   sandbox: '沙箱',
 };

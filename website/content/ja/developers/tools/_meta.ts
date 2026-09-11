@@ -8,7 +8,8 @@ export default {
   'exit-plan-mode': 'プランモードの終了',
   'web-fetch': 'Web フェッチ',
   'web-search': 'Web 検索',
-  memory: 'メモリ',
   'mcp-server': 'MCP サーバー',
+  memory: 'メモリ',
+  monitor: 'Monitor',
   sandbox: 'サンドボックス',
 };
