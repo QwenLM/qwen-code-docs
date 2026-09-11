@@ -361,4 +361,35 @@ describe("dropKeysWithoutPages", () => {
     assert.doesNotMatch(seen, /Dive In|Agent SDK/);
     assert.match(seen, /architecture/);
   });
+
+  it("never binds one existing entry to two English entries", async () => {
+    // An exact key match and an anchor match can point at the same entry:
+    // zh keys `GitHub` like English but sits where English has `Discord`, so
+    // the anchor `a#1#0` and the key `GitHub` both resolve to it. Emitting it
+    // for both slots writes `'GitHub'` twice, and a duplicate key in a
+    // `_meta.ts` collapses at require() time without a word from Nextra or
+    // from the nav guard. The key wins, and `Discord` goes to the model.
+    const { dir, meta } = tree({
+      en:
+        `export default {\n  'Discord': {\n    type: 'page',\n    href: 'https://discord.gg/x',\n  },\n  a: 'A',\n  'GitHub': {\n    type: 'page',\n    href: 'https://github.com/x',\n  },\n  b: 'B',\n};\n`,
+      zh:
+        `export default {\n  'GitHub': {\n    type: 'page',\n    href: 'https://github.com/x',\n  },\n  a: '甲',\n};\n`,
+      pages: ["a.md", "b.md"]
+    });
+    let seen = "";
+    meta.translateMetaFileContent = async (partial: string) => {
+      seen = partial;
+      return partial.replace("'Discord'", "'Discord 社区'");
+    };
+    await meta.translateMetaFile("_meta.ts", "zh");
+    const out = fs.readFileSync(path.join(dir, "zh", "_meta.ts"), "utf8");
+    assert.deepEqual(
+      [...out.matchAll(/^  (?:'([^']+)'|([A-Za-z0-9_$-]+)):/gm)].map(
+        (m) => m[1] ?? m[2]
+      ),
+      ["Discord 社区", "a", "GitHub", "b"]
+    );
+    assert.match(seen, /Discord/);
+    assert.doesNotMatch(seen, /GitHub/);
+  });
 });
