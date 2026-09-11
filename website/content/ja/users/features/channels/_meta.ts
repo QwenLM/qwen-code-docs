@@ -3,5 +3,11 @@ export default {
   telegram: 'Telegram',
   weixin: 'WeChat',
   dingtalk: 'DingTalk',
+  wecom: 'WeCom',
+  feishu: 'Feishu (Lark)',
+  qqbot: 'QQ Bot',
+  dws: 'DingTalk Workspace',
+  github: 'GitHub',
+  gitlab: 'GitLab',
   plugins: 'プラグイン',
 };
