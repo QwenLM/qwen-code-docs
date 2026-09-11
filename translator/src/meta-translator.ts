@@ -155,14 +155,101 @@ export class MetaTranslator {
       // Telegram and WeChat. 33 values were rewritten that way in a single
       // run and had to be restored by hand (#278). Only what is missing is
       // sent to the model.
-      const have = new Set((existing?.entries ?? []).map(([key]) => key));
-      const missing = source.entries.filter(([key]) => !have.has(key));
+      // Most keys are route segments and read identically in every locale, so
+      // they match by key. `separator`, `menu` and `href` entries are the
+      // exception: their key can BE the display text, so a translated file may
+      // key them in the target language -- `'Erste Schritte'` where English
+      // has `'Getting started'`. Matching those by key alone missed, which
+      // sent the localized separator to be "filled in" from English and
+      // replaced the German heading with the English one. When the key misses
+      // they are anchored to the first route key that follows them. Position
+      // alone carries no identity: it
+      // binds a heading to the wrong section the moment English inserts or
+      // moves one, and route keys are never translated, so they survive
+      // insertion, deletion and reorder. A `type: 'page'` entry without
+      // `href` keys a route and stays on the key path.
+      const isLabelKeyed = (text: string) =>
+        /\btype\s*:\s*['"](?:separator|menu)['"]/.test(text) ||
+        /\bhref\s*:/.test(text);
 
-      if (existing && !missing.length) {
+      // Anchor id per label-keyed entry, undefined for route-keyed ones.
+      // Inside a run of consecutive label-keyed entries there is no identity
+      // to match on -- an offset is just position again, and position binds
+      // the wrong heading as soon as English inserts into the run. The run
+      // length is part of the id so runs of different length never match:
+      // the entries fall through and are re-translated instead of guessed.
+      const anchors = (entries: ReadonlyArray<[string, string]>) => {
+        const ids: Array<string | undefined> = entries.map(() => undefined);
+        let run: number[] = [];
+        const bind = (anchor: string) => {
+          const size = run.length;
+          run.forEach((at, offset) => (ids[at] = `${anchor}#${size}#${offset}`));
+          run = [];
+        };
+        entries.forEach(([key, text], at) => {
+          if (isLabelKeyed(text)) run.push(at);
+          else bind(key);
+        });
+        bind("");
+        return ids;
+      };
+
+      // Exact key matches are taken first, across the whole file, and the
+      // entry one consumes is off the table for the anchor pass. Both
+      // separator conventions are in use: `users/_meta.ts` translates the
+      // separator key, so only the anchor can identify it, while
+      // `developers/_meta.ts` keys it in English and localizes `title`, where
+      // the key IS exact evidence of identity. Anchors are inference -- they
+      // shift when English grows a run and vanish when dropKeysWithoutPages
+      // removes the route key behind them because that page is untranslated
+      // in this locale. Letting inference outrank exact evidence bound one
+      // heading to another heading's entry and then matched that same entry
+      // again by key, emitting its key twice. A duplicate key in a `_meta.ts`
+      // collapses silently at require() time, so nothing catches it. Anything
+      // left unresolved goes back to the model instead of being guessed.
+      const match = (
+        target: ReadonlyArray<[string, string]>,
+        wanted: ReadonlyArray<[string, string]>
+      ) => {
+        const targetAnchors = anchors(target);
+        const byKey = new Map<string, number>();
+        const byAnchor = new Map<string, number>();
+        target.forEach(([key], i) => {
+          byKey.set(key, i);
+          const id = targetAnchors[i];
+          if (id !== undefined) byAnchor.set(id, i);
+        });
+
+        const taken = new Set<number>();
+        const found: Array<number | undefined> = wanted.map(([key]) => {
+          const i = byKey.get(key);
+          if (i === undefined) return undefined;
+          taken.add(i);
+          return i;
+        });
+        const wantedAnchors = anchors(wanted);
+        wanted.forEach((_, j) => {
+          const id = wantedAnchors[j];
+          if (found[j] !== undefined || id === undefined) return;
+          const i = byAnchor.get(id);
+          if (i === undefined || taken.has(i)) return;
+          taken.add(i);
+          found[j] = i;
+        });
+        return found.map((i) => (i === undefined ? undefined : target[i][1]));
+      };
+
+      const resolved = match(existing?.entries ?? [], source.entries);
+      const missingAt = source.entries
+        .map((_, i) => i)
+        .filter((i) => resolved[i] === undefined);
+
+      if (existing && !missingAt.length) {
         console.log(chalk.gray(`  = ${targetLanguage}: already complete`));
         return;
       }
 
+      const missing = missingAt.map((i) => source.entries[i]);
       const partial = [
         ...source.head,
         ...missing.map(([, text]) => text),
@@ -171,12 +258,18 @@ export class MetaTranslator {
       const translated = this.parseEntries(
         await this.translateMetaFileContent(partial, targetLanguage)
       );
-      const fresh = new Map(translated.entries);
-      const kept = new Map(existing?.entries ?? []);
+
+      // The model only sees the missing entries, so anchors are resolved
+      // within that reduced list on both sides.
+      const fresh = match(translated.entries, missing);
+      const filled = new Map<number, string>();
+      fresh.forEach((text, j) => {
+        if (text !== undefined) filled.set(missingAt[j], text);
+      });
 
       // English order, existing values preserved, new values filled in.
       const merged = source.entries
-        .map(([key]) => kept.get(key) ?? fresh.get(key))
+        .map((_, i) => resolved[i] ?? filled.get(i))
         .filter((text): text is string => text !== undefined);
 
       await fs.writeFile(
