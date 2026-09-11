@@ -25,7 +25,6 @@ export default {
   daemon: '데몬 모드 (개발자 심화)',
   'daemon-client-adapters': '데몬 클라이언트 어댑터',
   'daemon-ui': '데몬 UI',
-  extensions: '확장 프로그램',
   development: '개발',
 
   examples: '예제',
