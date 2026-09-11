@@ -33,10 +33,27 @@ for (const lang of langs) {
     console.log(`${lang}: cannot be loaded — ${err.message}`);
     continue;
   }
-  const missing = en.filter((k) => !keys.includes(k));
+  const dir = `${process.cwd()}/content/${lang}/${file}`.replace(/\/[^/]+$/, "");
+  const hasPage = (k) =>
+    fs.existsSync(`${dir}/${k}`) ||
+    fs.existsSync(`${dir}/${k}.md`) ||
+    fs.existsSync(`${dir}/${k}.mdx`);
+  // An English key whose page this locale does not have yet is *correctly*
+  // absent from its `_meta`, so it is not a gap. Listing it would be the bug.
+  const missing = en.filter((k) => !keys.includes(k) && hasPage(k));
   const extra = keys.filter((k) => !en.includes(k));
   if (missing.length || extra.length)
     console.log(
       `${lang}: missing [${missing.join(", ")}] unexpected [${extra.join(", ")}]`
     );
+  // Matching English is not enough. A locale regenerated from English lists
+  // every English key, including pages that locale has not been translated
+  // yet -- and Nextra refuses to build a `_meta` key with no page behind it,
+  // taking the whole site down. That is what `ko` did: its file was created
+  // from nothing, listed `extensions`, and the deploy of 2026-09-11 failed
+  // with "refers to a page that cannot be found" while the key check said
+  // everything matched.
+  const orphans = keys.filter((k) => !hasPage(k));
+  if (orphans.length)
+    console.log(`${lang}: keys with no page [${orphans.join(", ")}]`);
 }
