@@ -141,21 +141,56 @@ export class MetaTranslator {
     await fs.ensureDir(path.dirname(targetPath));
 
     try {
-      // 读取源文件内容
       const sourceContent = await fs.readFile(sourcePath, "utf-8");
+      const source = this.parseEntries(sourceContent);
+      const existing = (await fs.pathExists(targetPath))
+        ? this.parseEntries(await fs.readFile(targetPath, "utf-8"))
+        : null;
 
-      // 直接使用 LLM 翻译整个文件内容
-      const translatedContent = await this.translateMetaFileContent(
-        sourceContent,
-        targetLanguage
+      // Additive. Re-translating a key that already has a value rewrites a
+      // human-reviewed string for no reason, and the rewrite drifts toward
+      // English: one regeneration turned de `Fähigkeiten` into `Skills`, ja
+      // `LSP（言語サーバープロトコル）` into `LSP (Language Server Protocol)`,
+      // and zh `频道` into `通道` -- a mistranslation, in a section about
+      // Telegram and WeChat. 33 values were rewritten that way in a single
+      // run and had to be restored by hand (#278). Only what is missing is
+      // sent to the model.
+      const have = new Set((existing?.entries ?? []).map(([key]) => key));
+      const missing = source.entries.filter(([key]) => !have.has(key));
+
+      if (existing && !missing.length) {
+        console.log(chalk.gray(`  = ${targetLanguage}: already complete`));
+        return;
+      }
+
+      const partial = [
+        ...source.head,
+        ...missing.map(([, text]) => text),
+        ...source.tail
+      ].join("\n");
+      const translated = this.parseEntries(
+        await this.translateMetaFileContent(partial, targetLanguage)
       );
+      const fresh = new Map(translated.entries);
+      const kept = new Map(existing?.entries ?? []);
 
-      // 写入目标文件
+      // English order, existing values preserved, new values filled in.
+      const merged = source.entries
+        .map(([key]) => kept.get(key) ?? fresh.get(key))
+        .filter((text): text is string => text !== undefined);
+
       await fs.writeFile(
         targetPath,
-        this.dropKeysWithoutPages(translatedContent, path.dirname(targetPath)),
+        this.dropKeysWithoutPages(
+          [...source.head, ...merged, ...source.tail].join("\n"),
+          path.dirname(targetPath)
+        ),
         "utf-8"
       );
+      if (existing)
+        console.log(
+          chalk.gray(`  + ${targetLanguage}: ${missing.length} new key(s)`)
+        );
     } catch (error: any) {
       console.error(
         chalk.red(`❌ 翻译文件失败 ${metaFilePath}: ${error.message}`)
@@ -230,6 +265,78 @@ export class MetaTranslator {
    * Separator entries are kept regardless: their key is a display label,
    * not a route.
    */
+
+  /**
+   * Split a `_meta.ts` into its preamble, one text block per top-level entry,
+   * and its tail, preserving the original formatting of every block.
+   *
+   * Shares its brace handling with dropKeysWithoutPages: string literals are
+   * blanked before counting, because a value carrying a `}` would otherwise
+   * close the object early.
+   */
+  private parseEntries(content: string): {
+    head: string[];
+    entries: Array<[string, string]>;
+    tail: string[];
+  } {
+    const bare = (line: string): string =>
+      line.replace(/'[^']*'|"[^"]*"|`[^`]*`/g, (m) => " ".repeat(m.length));
+
+    const head: string[] = [];
+    const tail: string[] = [];
+    const entries: Array<[string, string]> = [];
+    let current: string[] = [];
+    let key: string | null = null;
+    let depth = 0;
+    let started = false;
+
+    const flush = () => {
+      const k = key;
+      key = null;
+      if (!current.length || k === null) {
+        current = [];
+        return;
+      }
+      entries.push([k, current.join("\n")]);
+      current = [];
+    };
+
+    for (const line of content.split("\n")) {
+      const clean = bare(line);
+      if (!started) {
+        head.push(line);
+        if (clean.includes("{")) {
+          started = true;
+          depth = 1;
+        }
+        continue;
+      }
+      if (depth === 1) {
+        const match = line.match(
+          /^\s*(?:'([^']+)'|"([^"]+)"|([A-Za-z0-9_$-]+))\s*:/
+        );
+        if (match) {
+          flush();
+          key = match[1] ?? match[2] ?? match[3] ?? null;
+        }
+      }
+      const opening = (clean.match(/{/g) || []).length;
+      const closing = (clean.match(/}/g) || []).length;
+      if (depth === 1 && closing > opening) {
+        flush();
+        depth = 0;
+        tail.push(line);
+        continue;
+      }
+      depth += opening - closing;
+      if (key !== null) current.push(line);
+      else if (depth === 0) tail.push(line);
+      else head.push(line);
+    }
+    flush();
+    return { head, entries, tail };
+  }
+
   private dropKeysWithoutPages(content: string, targetDir: string): string {
     if (!content.includes("export default")) return content;
 
