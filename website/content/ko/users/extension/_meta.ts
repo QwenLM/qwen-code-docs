@@ -1,6 +1,6 @@
 export default {
-  introduction: 'Introdução',
-  'agent-plugins': 'Plugins de Agente',
+  introduction: '소개',
+  'agent-plugins': '에이전트 플러그인',
   'getting-started-extensions': {
     display: 'hidden',
   },
