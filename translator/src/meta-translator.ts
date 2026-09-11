@@ -201,8 +201,18 @@ export class MetaTranslator {
           const id = ids[i];
           if (id !== undefined) byAnchor.set(id, text);
         });
+        // A label-keyed entry still falls back to its key. Both conventions
+        // are in use: `users/_meta.ts` translates the separator key, while
+        // `developers/_meta.ts` keys it in English and localizes `title`. For
+        // the second one the key IS exact evidence of identity, and the
+        // anchor is only structural inference -- it shifts when English grows
+        // a run, and it disappears when the route key behind it has no page
+        // in that locale yet, which is exactly what dropKeysWithoutPages does
+        // to a locale running behind English. The fallback can only add hits,
+        // never misses, so it preserves reviewed headings the anchor alone
+        // would have sent back to the model.
         return (key: string, id: string | undefined) =>
-          id === undefined ? byKey.get(key) : byAnchor.get(id);
+          id === undefined ? byKey.get(key) : byAnchor.get(id) ?? byKey.get(key);
       };
 
       const lookupExisting = index(existing?.entries ?? []);

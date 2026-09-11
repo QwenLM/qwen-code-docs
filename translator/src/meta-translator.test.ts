@@ -334,4 +334,31 @@ describe("dropKeysWithoutPages", () => {
     assert.match(seen, /Discord/);
     assert.match(seen, /GitHub/);
   });
+
+  it("keeps an English-keyed heading when the locale lags on its anchor page", async () => {
+    // developers/_meta.ts keys its separators in English and localizes
+    // `title`, so the key is exact evidence of identity. The anchor is not:
+    // zh has no `architecture` key because that page is untranslated and
+    // dropKeysWithoutPages removed it, which leaves the two headings adjacent
+    // on the zh side and anchored to `sdk-typescript` as a run of two, while
+    // English anchors them separately. Anchor-only matching missed both and
+    // sent the reviewed `深入了解` back to the model.
+    const { dir, meta } = tree({
+      en:
+        `export default {\n  'Dive In': {\n    title: 'Dive In',\n    type: 'separator',\n  },\n  architecture: 'Architecture',\n  'Agent SDK': {\n    title: 'Agent SDK',\n    type: 'separator',\n  },\n  'sdk-typescript': 'TypeScript SDK',\n};\n`,
+      zh:
+        `export default {\n  'Dive In': {\n    title: '深入了解',\n    type: 'separator',\n  },\n  'Agent SDK': {\n    title: 'Agent SDK',\n    type: 'separator',\n  },\n  'sdk-typescript': 'TypeScript SDK',\n};\n`,
+      pages: ["sdk-typescript.md"]
+    });
+    let seen = "";
+    meta.translateMetaFileContent = async (partial: string) => {
+      seen = partial;
+      return partial.replace("'Dive In'", "'深入'");
+    };
+    await meta.translateMetaFile("_meta.ts", "zh");
+    const out = fs.readFileSync(path.join(dir, "zh", "_meta.ts"), "utf8");
+    assert.match(out, /title: '深入了解'/);
+    assert.doesNotMatch(seen, /Dive In|Agent SDK/);
+    assert.match(seen, /architecture/);
+  });
 });
