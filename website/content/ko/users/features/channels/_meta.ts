@@ -1,5 +1,5 @@
 export default {
-  overview: 'Aperçu',
+  overview: '개요',
   telegram: 'Telegram',
   weixin: 'WeChat',
   dingtalk: 'DingTalk',
@@ -9,5 +9,5 @@ export default {
   dws: 'DingTalk Workspace',
   github: 'GitHub',
   gitlab: 'GitLab',
-  plugins: 'Plugins',
+  plugins: '플러그인',
 };
