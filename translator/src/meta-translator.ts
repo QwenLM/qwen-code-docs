@@ -151,7 +151,11 @@ export class MetaTranslator {
       );
 
       // 写入目标文件
-      await fs.writeFile(targetPath, translatedContent, "utf-8");
+      await fs.writeFile(
+        targetPath,
+        this.dropKeysWithoutPages(translatedContent, path.dirname(targetPath)),
+        "utf-8"
+      );
     } catch (error: any) {
       console.error(
         chalk.red(`❌ 翻译文件失败 ${metaFilePath}: ${error.message}`)
@@ -207,6 +211,106 @@ export class MetaTranslator {
   /**
    * 使用 LLM 直接翻译 _meta.ts 文件内容
    */
+
+  /**
+   * Remove entries whose key has no page in the target locale.
+   *
+   * The translation copies every key from English, including pages that
+   * locale does not have yet -- and Nextra refuses to build a `_meta` key
+   * with no page behind it, which takes the whole site down rather than
+   * degrading one entry. `ko/developers/_meta.ts` did exactly that on
+   * 2026-09-11: generated from nothing, it listed `extensions`, and the
+   * deploy failed with "refers to a page that cannot be found".
+   *
+   * The CI guard catches this now, but catching it leaves a human to delete
+   * a line every time a locale runs behind English. Dropping it at the
+   * source is the fix; the key comes back on its own once the page is
+   * translated and navigation is regenerated.
+   *
+   * Separator entries are kept regardless: their key is a display label,
+   * not a route.
+   */
+  private dropKeysWithoutPages(content: string, targetDir: string): string {
+    if (!content.includes("export default")) return content;
+
+    // Brace depth has to ignore braces inside string literals, or a value
+    // like `'Beta } soon'` closes the object early and takes every entry
+    // after it away with the closing brace. Blank the literals, count on the
+    // copy, keep the original line.
+    const bare = (line: string): string =>
+      line.replace(/'[^']*'|"[^"]*"|`[^`]*`/g, (m) => " ".repeat(m.length));
+
+    const lines = content.split("\n");
+    const kept: string[] = [];
+    let depth = 0;
+    let entry: string[] = [];
+    let entryKey: string | null = null;
+    let started = false;
+
+    const flush = () => {
+      const key = entryKey;
+      // Cleared before any early return. Leaving a stale key set makes every
+      // later line fail the key match and fall into `entry` instead of
+      // `kept` -- which is how the closing brace went missing.
+      entryKey = null;
+      if (!entry.length) return;
+      const text = entry.join("\n");
+      entry = [];
+      // `separator` is not the only entry with nothing behind it: a `menu`,
+      // or a `page` backed by an `href`, has no file either, and
+      // translateMetaFileContent already preserves display/type/href verbatim.
+      const isStructural = /\b(?:type|href)\s*:/.test(text);
+      const hasPage =
+        key !== null &&
+        [".md", ".mdx", ""].some((ext) =>
+          fs.existsSync(path.join(targetDir, key + ext))
+        );
+      if (isStructural || key === null || hasPage) {
+        kept.push(text);
+        return;
+      }
+      console.log(
+        chalk.yellow(
+          `  drop "${key}": no page for it in ${path.basename(targetDir)}`
+        )
+      );
+    };
+
+    for (const line of lines) {
+      const clean = bare(line);
+      if (!started) {
+        kept.push(line);
+        if (clean.includes("{")) {
+          started = true;
+          depth = 1;
+        }
+        continue;
+      }
+      if (depth === 1) {
+        const match = line.match(
+          /^\s*(?:'([^']+)'|"([^"]+)"|([A-Za-z0-9_$-]+))\s*:/
+        );
+        if (match) {
+          flush();
+          entryKey = match[1] ?? match[2] ?? match[3] ?? null;
+        }
+      }
+      const opening = (clean.match(/{/g) || []).length;
+      const closing = (clean.match(/}/g) || []).length;
+      if (depth === 1 && closing > opening) {
+        flush();
+        depth = 0;
+        kept.push(line);
+        continue;
+      }
+      depth += opening - closing;
+      if (entryKey !== null) entry.push(line);
+      else kept.push(line);
+    }
+    flush();
+    return kept.join("\n");
+  }
+
   private async translateMetaFileContent(
     sourceContent: string,
     targetLanguage: string

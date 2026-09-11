@@ -2,8 +2,8 @@
 // Prints one line per locale that disagrees, and nothing at all when they
 // all match, so the caller can test with `[ -s report ]`.
 //
-// Separator entries are skipped: `{ type: 'separator' }` uses its key as a
-// display label rather than a route, so a translated one is correct.
+// Structural entries are skipped: a `separator`, `menu`, or `href`-backed
+// `page` has no file behind it, and its key is a label rather than a route.
 //
 // Run from website/. FILE is relative to content/en, LANGS is space-separated.
 import fs from "node:fs";
@@ -18,7 +18,9 @@ const routeKeys = (p) => {
   const obj = mod.default || mod;
   return Object.keys(obj).filter((k) => {
     const v = obj[k];
-    return !(v && typeof v === "object" && v.type === "separator");
+      // A separator is not the only entry with nothing behind it: `menu` and
+      // `href`-backed `page` entries have no file either.
+      return !(v && typeof v === "object" && (v.type || v.href));
   });
 };
 

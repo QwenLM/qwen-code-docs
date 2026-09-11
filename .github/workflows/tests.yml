@@ -20,6 +20,9 @@ on:
       - "website/content/en/**"
       - "website/package.json"
       - "website/package-lock.json"
+      - "translator/src/**"
+      - "translator/package.json"
+      - "translator/package-lock.json"
       - ".github/workflows/tests.yml"
   push:
     branches: [main]
@@ -29,6 +32,9 @@ on:
       - "website/content/en/**"
       - "website/package.json"
       - "website/package-lock.json"
+      - "translator/src/**"
+      - "translator/package.json"
+      - "translator/package-lock.json"
       - ".github/workflows/tests.yml"
 
 permissions:
@@ -63,4 +69,30 @@ jobs:
 
       - name: Run tests
         working-directory: ./website
+        run: npm test
+
+  # The translator package had 18 tests before this job existed and not one of
+  # them had ever run in CI -- tests.yml only reached ./website. The filter
+  # that guards a generated `_meta.ts` from taking the site down lives here.
+  translator:
+    name: Translator unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: translator/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./translator
+        run: npm ci --no-audit --no-fund
+
+      - name: Run tests
+        working-directory: ./translator
         run: npm test
