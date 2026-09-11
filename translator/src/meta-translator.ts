@@ -155,30 +155,66 @@ export class MetaTranslator {
       // Telegram and WeChat. 33 values were rewritten that way in a single
       // run and had to be restored by hand (#278). Only what is missing is
       // sent to the model.
-      // A separator's key IS its display text, so a translated file keys it
-      // in the target language -- `'Erste Schritte'` where English has
+      // Most keys are route segments and read identically in every locale, so
+      // they match by key. `separator`, `menu` and `href` entries are the
+      // exception: their key IS the display text, so a translated file keys
+      // them in the target language -- `'Erste Schritte'` where English has
       // `'Getting started'`. Matching those by key never hits, which sent the
       // localized separator to be "filled in" from English and replaced the
-      // German heading with the English one. They are matched by position
-      // among the structural entries instead. Same for `menu` and `href`
-      // entries, whose titles are localized the same way.
-      const isStructural = (text: string) => /\b(?:type|href)\s*:/.test(text);
-      const byKey = new Map(existing?.entries ?? []);
-      const byPosition = (existing?.entries ?? [])
-        .filter(([, text]) => isStructural(text))
-        .map(([, text]) => text);
+      // German heading with the English one. They are anchored to the first
+      // route key that follows them. Position alone carries no identity: it
+      // binds a heading to the wrong section the moment English inserts or
+      // moves one, and route keys are never translated, so they survive
+      // insertion, deletion and reorder. A `type: 'page'` entry without
+      // `href` keys a route and stays on the key path.
+      const isLabelKeyed = (text: string) =>
+        /\btype\s*:\s*['"](?:separator|menu)['"]/.test(text) ||
+        /\bhref\s*:/.test(text);
 
-      let structural = 0;
-      const resolved = source.entries.map(([key, text]) =>
-        isStructural(text) ? byPosition[structural++] : byKey.get(key)
+      // Anchor id per label-keyed entry, undefined for route-keyed ones. The
+      // offset within a run keeps consecutive headings distinct.
+      const anchors = (entries: ReadonlyArray<[string, string]>) => {
+        const ids: Array<string | undefined> = entries.map(() => undefined);
+        let run: number[] = [];
+        const bind = (anchor: string) => {
+          run.forEach((at, offset) => (ids[at] = `${anchor}#${offset}`));
+          run = [];
+        };
+        entries.forEach(([key, text], at) => {
+          if (isLabelKeyed(text)) run.push(at);
+          else bind(key);
+        });
+        bind("");
+        return ids;
+      };
+
+      const index = (entries: ReadonlyArray<[string, string]>) => {
+        const ids = anchors(entries);
+        const byKey = new Map(entries);
+        const byAnchor = new Map<string, string>();
+        entries.forEach(([, text], i) => {
+          const id = ids[i];
+          if (id !== undefined) byAnchor.set(id, text);
+        });
+        return (key: string, id: string | undefined) =>
+          id === undefined ? byKey.get(key) : byAnchor.get(id);
+      };
+
+      const lookupExisting = index(existing?.entries ?? []);
+      const sourceAnchors = anchors(source.entries);
+      const resolved = source.entries.map(([key], i) =>
+        lookupExisting(key, sourceAnchors[i])
       );
-      const missing = source.entries.filter((_, i) => resolved[i] === undefined);
+      const missingAt = source.entries
+        .map((_, i) => i)
+        .filter((i) => resolved[i] === undefined);
 
-      if (existing && !missing.length) {
+      if (existing && !missingAt.length) {
         console.log(chalk.gray(`  = ${targetLanguage}: already complete`));
         return;
       }
 
+      const missing = missingAt.map((i) => source.entries[i]);
       const partial = [
         ...source.head,
         ...missing.map(([, text]) => text),
@@ -187,17 +223,20 @@ export class MetaTranslator {
       const translated = this.parseEntries(
         await this.translateMetaFileContent(partial, targetLanguage)
       );
-      const fresh = new Map(translated.entries);
-      let freshStructural = translated.entries
-        .filter(([, text]) => isStructural(text))
-        .map(([, text]) => text);
+
+      // The model only sees the missing entries, so anchors are resolved
+      // within that reduced list on both sides.
+      const lookupFresh = index(translated.entries);
+      const missingAnchors = anchors(missing);
+      const filled = new Map<number, string>();
+      missing.forEach(([key], j) => {
+        const text = lookupFresh(key, missingAnchors[j]);
+        if (text !== undefined) filled.set(missingAt[j], text);
+      });
 
       // English order, existing values preserved, new values filled in.
       const merged = source.entries
-        .map(([key, text], i) =>
-          resolved[i] ??
-          (isStructural(text) ? freshStructural.shift() : fresh.get(key))
-        )
+        .map((_, i) => resolved[i] ?? filled.get(i))
         .filter((text): text is string => text !== undefined);
 
       await fs.writeFile(

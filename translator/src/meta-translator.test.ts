@@ -248,4 +248,60 @@ describe("dropKeysWithoutPages", () => {
     assert.match(out, /进阶/);
     assert.doesNotMatch(out, /Advanced/);
   });
+
+  it("translates a separator English has inserted mid-file", async () => {
+    // Matching headings by position only lines up when the new one is last.
+    // Insert in the middle and slot 1 on the English side is `Deploying`
+    // while slot 1 in the target is the reviewed `参考`, which then binds to
+    // the wrong section and renders `入门 / 参考 / 部署`.
+    const { dir, meta } = tree({
+      en:
+        `export default {\n  'Getting started': {\n    type: 'separator',\n  },\n  a: 'A',\n  'Deploying': {\n    type: 'separator',\n  },\n  b: 'B',\n  'Reference': {\n    type: 'separator',\n  },\n  c: 'C',\n};\n`,
+      zh:
+        `export default {\n  '入门': {\n    type: 'separator',\n  },\n  a: '甲',\n  '参考': {\n    type: 'separator',\n  },\n  c: '丙',\n};\n`,
+      pages: ["a.md", "b.md", "c.md"]
+    });
+    let seen = "";
+    meta.translateMetaFileContent = async (partial: string) => {
+      seen = partial;
+      return `export default {\n  '部署': {\n    type: 'separator',\n  },\n  b: '乙',\n};\n`;
+    };
+    await meta.translateMetaFile("_meta.ts", "zh");
+    const out = fs.readFileSync(path.join(dir, "zh", "_meta.ts"), "utf8");
+    assert.deepEqual(
+      [...out.matchAll(/'([^']+)': \{/g)].map((m) => m[1]),
+      ["入门", "部署", "参考"]
+    );
+    assert.match(seen, /Deploying/);
+    assert.doesNotMatch(seen, /Getting started|Reference/);
+  });
+
+  it("keeps a page tab on the key path when English inserts one mid-list", async () => {
+    // The root _meta.ts is all `type: 'page'`: those keys are routes, so they
+    // are never translated and the localized title lives in `title`. Treating
+    // them as label-keyed sent the already-translated `blog` to the model,
+    // wrote `blog` twice and dropped `community` -- a key with no page behind
+    // it fails the whole site build.
+    const { dir, meta } = tree({
+      en:
+        `export default {\n  users: {\n    type: 'page',\n    title: 'Users',\n  },\n  community: {\n    type: 'page',\n    title: 'Community',\n  },\n  blog: {\n    type: 'page',\n    title: 'Blog',\n  },\n};\n`,
+      zh:
+        `export default {\n  users: {\n    type: 'page',\n    title: '用户指南',\n  },\n  blog: {\n    type: 'page',\n    title: '博客',\n  },\n};\n`,
+      pages: ["users.md", "community.md", "blog.md"]
+    });
+    let seen = "";
+    meta.translateMetaFileContent = async (partial: string) => {
+      seen = partial;
+      return partial.replace("'Community'", "'社区'");
+    };
+    await meta.translateMetaFile("_meta.ts", "zh");
+    const out = fs.readFileSync(path.join(dir, "zh", "_meta.ts"), "utf8");
+    assert.deepEqual(
+      [...out.matchAll(/^  ([A-Za-z0-9_$-]+): \{/gm)].map((m) => m[1]),
+      ["users", "community", "blog"]
+    );
+    assert.match(out, /title: '博客'/);
+    assert.match(out, /title: '社区'/);
+    assert.doesNotMatch(seen, /Blog|Users/);
+  });
 });
