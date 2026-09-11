@@ -8,7 +8,8 @@ export default {
   'exit-plan-mode': 'Quitter le mode plan',
   'web-fetch': 'Récupération web',
   'web-search': 'Recherche web',
-  memory: 'Mémoire',
   'mcp-server': 'Serveurs MCP',
+  memory: 'Mémoire',
+  monitor: 'Moniteur',
   sandbox: 'Bac à sable',
 };
