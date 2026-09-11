@@ -1,0 +1,218 @@
+---
+title: "Qwen Code 주간 업데이트: 실행한 워크플로 다시 찾기, Web Shell에서 Plan과 YOLO 동시 켜기, 그룹 채팅 봇의 여러 작업 병행"
+date: "2026-09-10"
+description: "이번 주에는 v0.23.1, v0.23.2 두 개의 정식 버전을 출시했습니다. 워크플로에 전용 관리 페이지가 생겨 실행한 모든 기록을 나중에 다시 볼 수 있고, Web Shell에서는 Plan과 YOLO를 함께 켤 수 있으며 컨텍스트가 무엇에 가득 찼는지도 확인할 수 있습니다. Channel 봇은 한 그룹에서 여러 작업을 병행할 수 있고, 작업마다 독립된 워크스페이스로 파일을 수정합니다."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i4/O1CN014CYLY3sLV8H2jBZY_!!6000000008034-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 주간 업데이트: 실행한 워크플로 다시 찾기, Web Shell에서 Plan과 YOLO 동시 켜기, 그룹 채팅 봇의 여러 작업 병행"
+  date="2026-09-10"
+  author="Qwen Team"
+/>
+
+Qwen Code는 이번 주에 v0.23.1, v0.23.2 두 개의 정식 버전을 출시하고 PR 210개 이상을 병합했습니다.
+
+**워크플로 전용 관리 페이지가 생겼습니다.** Web Shell에서 실행마다 어디까지 진행됐고, Agent를 몇 개 파견했으며, token을 얼마나 소비했는지 볼 수 있습니다.
+
+**Web Shell이 세 군데 편해졌습니다.** 컨텍스트가 무엇에 가득 찼는지 클릭 한 번으로 확인하고, 이전 대화를 넘길 때 내비게이션 바가 생겼으며, Plan과 YOLO를 동시에 켤 수 있습니다.
+
+**Channel 작업에 이름을 붙일 수 있습니다.** DingTalk에서 여러 일을 동시에 진행하면서 작업마다 이름을 붙이고 언제든 전환할 수 있고, 각자 독립된 워크스페이스로 파일을 수정합니다.
+
+## ✨ 새로운 기능
+
+### 워크플로 전용 관리 페이지가 생겼습니다
+
+지난주에 워크플로는 일시 중지, 재개, 취소를 지원했지만 터미널에서 명령을 입력해야 했습니다. 이번 주에는 Web Shell에 전용 페이지가 생겼습니다.
+
+사이드바에서 Workflows를 클릭하거나 대화에 `/workflows`를 입력하면 됩니다. 페이지는 저장됨, 실행 중, 기록 세 개의 탭으로 나뉘고, 실행마다 단계 진행 상황, 파견한 Agent, 대기 중인 승인, 소비한 token이 모두 표시됩니다. 저장된 워크플로를 열면 설명, 적용 시나리오, 스크립트 경로와 소스 코드를 바로 볼 수 있습니다.
+
+이렇게 활용할 수 있습니다:
+
+- 페이지에서 워크플로가 어디까지 진행됐고 Agent를 몇 개 파견했는지 확인
+- 중간에 멈추고 싶으면 멈추고, 다시 하고 싶으면 재실행
+- 저장된 워크플로를 열어 스크립트와 설명 확인
+
+관련 PR: [#10594](https://github.com/QwenLM/qwen-code/pull/10594)
+
+![워크플로 관리 페이지와 실행 기록](https://img.alicdn.com/imgextra/i2/O1CN01PCJtvWxPdqB5qXmK_!!6000000003747-0-tps-2880-1704.jpg)
+
+### Web Shell: 컨텍스트 사용량 확인, Plan과 YOLO도 함께 켜기
+
+**컨텍스트가 무엇에 가득 찼는지 클릭 한 번으로 봅니다.** 대화 헤더에 아이콘이 하나 추가됐고, 누르면 컨텍스트 사용량 탭이 열립니다. 창을 얼마나 사용했고 얼마가 남았는지, 여기에 시스템 프롬프트, 내장 도구, MCP 도구, 메모리 파일, 스킬, 메시지가 각각 얼마나 차지하는지 알 수 있고, 각 항목을 펼쳐 구체적 내용까지 볼 수 있습니다.
+
+**이전 대화를 넘길 내비게이션 바가 생겼습니다.** 대화 영역 왼쪽에 눈금 내비게이션이 추가됐습니다. 눈금에 마우스를 올리면 해당 라운드의 질문이 표시되고, 클릭하면 바로 이동합니다.
+
+**Plan과 실행 권한이 분리됐습니다.** Plan을 권한 메뉴에서 꺼내 독립된 토글로 만들었습니다. Default, Auto Edit, Auto, YOLO와 자유롭게 조합할 수 있고, 이전에는 Plan을 고르면 YOLO를 함께 쓸 수 없었습니다. 계획 승인이 끝나면 자동으로 꺼집니다. `/plan` 계열 명령을 모두 지원합니다.
+
+**작업이 끝나면 브라우저로 알림을 받을 수 있습니다.** 설정의 UI 항목에 '브라우저 작업 알림' 토글이 추가됐습니다. 켜고 권한을 허용하면, 페이지가 백그라운드에 있거나 포커스가 벗어난 상태에서 지켜보던 대화가 끝나거나 실패할 때 브라우저 알림이 뜹니다. 기본은 꺼져 있고, 알림에는 대화 내용과 디렉터리 경로가 포함되지 않습니다.
+
+**백그라운드 Agent가 아직 도는지 알 수 있습니다.** 백그라운드 Agent 카드의 아이콘에 은은한 맥동 표시가 붙고, 포그라운드 Agent의 접힌 행에는 얼마나 실행 중인지와 지금 어떤 하위 도구를 돌리는지 표시됩니다.
+
+이렇게 활용할 수 있습니다:
+
+- 대화 헤더의 아이콘을 클릭해 컨텍스트가 무엇에 가득 찼는지 확인
+- 왼쪽 눈금 바를 클릭해 이전 대화의 아무 라운드로든 이동
+- Plan과 YOLO를 동시에 켤 수 있음
+
+관련 PR: [#11177](https://github.com/QwenLM/qwen-code/pull/11177), [#11208](https://github.com/QwenLM/qwen-code/pull/11208), [#11054](https://github.com/QwenLM/qwen-code/pull/11054), [#11423](https://github.com/QwenLM/qwen-code/pull/11423), [#11398](https://github.com/QwenLM/qwen-code/pull/11398), [#10939](https://github.com/QwenLM/qwen-code/pull/10939)
+
+![Web Shell 컨텍스트 사용량과 이전 대화 내비게이션](https://img.alicdn.com/imgextra/i2/O1CN01yczeDSrnU7J7nW9B_!!6000000005871-2-tps-3841-2160.png)
+
+### Channel: 한 그룹에서 여러 작업 병행, 워크스페이스도 각자 사용
+
+Channel 봇은 QR 코드를 스캔해 DingTalk, Feishu 등 채팅 도구에 붙여 쓰는 Qwen Code 봇입니다. 이전에는 한 그룹의 봇이 동시에 한 가지만 할 수 있었습니다. PR을 보게 하면서 김에 새 기능도 만들라고 하고 싶은데, 두 일은 같은 대화에 몰려 서로 방해만 했습니다. 이제 Channel에 이름 지정 작업이 생겨 여러 일을 동시에 진행할 수 있습니다.
+
+**한 그룹 채팅에서 여러 작업을 엽니다.** `/session new <이름>`으로 작업을 만들고, 한 사람이 한 그룹에서 최대 8개까지 만들 수 있으며, 각자 세션과 기록을 따로 가집니다. `/session use <이름>`으로 언제든 전환하고, 작업이 도는 중에도 다른 작업을 만들거나 전환할 수 있습니다. `/session cancel <이름>`으로 지정한 작업만 멈춥니다. 모든 응답에 출처 표시가 붙고, 개별 채팅에서는 작업 이름, 그룹 채팅에서는 '누구 · 어느 작업'으로 표시됩니다. 중간에 무관한 질문을 하고 싶으면 `/btw <질문>`을 보내면 되고, 주 작업은 그대로 진행됩니다.
+
+**작업마다 구획을 나눠 일합니다.** 작업을 만들 때 `--worktree`를 붙이면 그 작업은 자기 디렉터리와 브랜치에서 일하므로, 여러 일이 동시에 파일을 수정해도 각자 따로 됩니다. `/clear`, `/new`, `/reset`은 새로운 대화로 갈아탈 뿐이고, 만들어 놓은 파일과 브랜치는 그대로 남으며, 봇을 재시작해도 작업은 유지됩니다. 세션 전체를 삭제하면 그 작업이 만든 워크스페이스와 브랜치까지 함께 정리되고, 커밋되지 않은 변경 사항이 남아 있으면 그대로 보존됩니다.
+
+쓰기 전에 설정에서 해당 Channel의 `sessionScope: "user"`와 `multiSession: true` 두 항목을 켜 주세요.
+
+이렇게 활용할 수 있습니다:
+
+- PR 검토와 새 기능 작성을 동시에 돌리고, 기록은 각자 따로
+- `--worktree`를 붙여 파일 수정을 각자 따로 진행
+- 작업이 도는 중에 다른 질문을 끼워도 주 작업은 그대로 진행
+
+관련 PR: [#10198](https://github.com/QwenLM/qwen-code/pull/10198), [#10420](https://github.com/QwenLM/qwen-code/pull/10420), [#10574](https://github.com/QwenLM/qwen-code/pull/10574), [#10712](https://github.com/QwenLM/qwen-code/pull/10712), [#10713](https://github.com/QwenLM/qwen-code/pull/10713), [#10643](https://github.com/QwenLM/qwen-code/pull/10643), [#11015](https://github.com/QwenLM/qwen-code/pull/11015), [#11308](https://github.com/QwenLM/qwen-code/pull/11308), [#11309](https://github.com/QwenLM/qwen-code/pull/11309)
+
+![DingTalk 그룹 채팅의 작업 목록과 작업 이름 표시](https://img.alicdn.com/imgextra/i3/O1CN01F6Zrp3rdS2C3OTaQ_!!6000000007002-2-tps-1672-942.png)
+
+### DingTalk: 권한 확인은 카드로, 작업 진행 상황은 상태 이모지로
+
+**도구 권한 확인이 카드가 됐습니다.** AI가 승인이 필요한 작업을 실행하려 하면 DingTalk에 네이티브 인터랙션 카드가 오고, 버튼만 누르면 됩니다: 한 번 허용, 거부, 항상 허용.
+
+**작업 진행 상황에 상태 이모지가 붙습니다.** AI가 일하는 동안, 보낸 메시지에 👀 외에도 현재 단계에 따라 상태 태그가 바뀝니다: 🤔 생각 중, 📖 읽는 중, 🔎 검색 중, 🖥️ 실행 중, 🛠️ 편집 중, 🗑️ 삭제 중, 🌐 가져오는 중 등이며, 끝나면 최종 상태 이모지 하나만 남습니다.
+
+**백그라운드 Agent의 말에 이름이 붙습니다.** 여러 백그라운드 Agent가 병렬로 돌면 각 응답 앞에 `Agent · 이름`이 표시되어 누가 말하고 있는지 구분됩니다. 메시지가 많다면 `aggregateBackgroundAgentResponses`를 켜서 라운드마다 한 건으로 합칠 수 있습니다.
+
+이렇게 활용할 수 있습니다:
+
+- AI가 권한을 요구하면 카드를 클릭
+- 메시지를 보낸 뒤 이모지만으로 AI가 어디까지 왔는지 확인
+- 여러 Agent가 동시에 말해도 각각 누가 말하는지 표시
+
+관련 PR: [#10457](https://github.com/QwenLM/qwen-code/pull/10457), [#10504](https://github.com/QwenLM/qwen-code/pull/10504), [#10899](https://github.com/QwenLM/qwen-code/pull/10899)
+
+![DingTalk 권한 확인 카드와 작업 상태 이모지](https://img.alicdn.com/imgextra/i1/O1CN01VaNX5bBRqIJ3OTaQ_!!6000000000244-2-tps-1672-942.png)
+
+### 클라우드에 돌린 Qwen Code가 내 컴퓨터의 프로젝트를 수정합니다
+
+Qwen Code를 클라우드 서버에 설치해 돌리고, 사람은 자기 컴퓨터 앞에서 브라우저로 지시하는 사용 방식이 이제 꽤 흔합니다. 문제는 AI가 클라우드 서버의 파일만 본다는 점입니다. 노트북 안의 프로젝트는 손이 닿지 않아서, 예전에는 파일을 올려 놓고 고친 뒤 다시 내려받아야 했습니다.
+
+이제 브라우저에서 자기 컴퓨터의 폴더 하나를 골라 현재 세션에 맡길 수 있습니다. 고르고 나면 그 세션이 폴더 안의 파일을 나열, 읽기, 검색, 쓰기 하고, 모든 경로는 고른 폴더를 기준으로 계산됩니다. 사이드바 하단에는 현재 어떤 폴더가 연결됐고 도구를 몇 개 제공하는지 표시됩니다.
+
+이 폴더는 연결한 바로 그 세션에만 열립니다. 탭을 닫거나 연결이 끊기거나 세션이 끝나면 바로 회수됩니다.
+
+이렇게 활용할 수 있습니다:
+
+- 서버는 클라우드에 둔 채로 내 컴퓨터의 프로젝트를 직접 수정하게 함
+- 폴더 하나를 맡기고 파일 업로드와 결과 다운로드 없이 진행
+- 이번엔 A 프로젝트, 다음엔 B 프로젝트로 넘겨도 AI는 지금 맡긴 것만 봅니다
+
+관련 PR: [#10962](https://github.com/QwenLM/qwen-code/pull/10962)
+
+![브라우저에서 선택한 폴더와 사이드바 하단의 연결 정보](https://img.alicdn.com/imgextra/i1/O1CN01icNh99MVcVH7nW9B_!!6000000004405-2-tps-3841-2160.png)
+
+## 📊 그 외 새로운 기능
+
+**출력 스타일을 직접 만들 수 있습니다.** 지난주에는 내장 출력 스타일 네 가지를 고를 수 있었다면, 이번 주에는 직접 정의합니다. `~/.qwen/output-styles/`에 Markdown 파일을 두면 전역 스타일, 프로젝트의 `.qwen/output-styles/`에 두면 프로젝트 스타일이고, 파일 본문이 그 스타일의 프롬프트입니다. 관련 PR: [#10761](https://github.com/QwenLM/qwen-code/pull/10761)
+
+**내장 웹 검색이 자동으로 켜집니다.** Bailian의 Standard API Key나 Token Plan을 쓰면 `web_search`가 자동으로 사용 가능해지고, 비용은 현재 사용 중인 계정에 청구됩니다. Coding Plan은 Bailian 서비스 제공자 설정을 직접 지정해야 합니다. 관련 PR: [#11348](https://github.com/QwenLM/qwen-code/pull/11348), [#11450](https://github.com/QwenLM/qwen-code/pull/11450)
+
+**대화를 HTML로 내보냅니다.** CLI, Web, VS Code의 `/export html`이 같은 파이프라인을 사용하며, 내보낸 파일에서 전문 검색, 선택, 복사, 인쇄가 됩니다. 내보낸 파일을 열려면 네트워크 연결이 필요합니다. 관련 PR: [#10076](https://github.com/QwenLM/qwen-code/pull/10076)
+
+**Goal이 얼마를 썼는지 보입니다.** Goal에는 token 예산이 있어 다 쓰면 멈추고 돌려주는데, 이전에는 사용량을 볼 수 없었습니다. 이제 터미널 하단, 상태 카드, Web Shell 모두에서 사용량과 상한이 표시되고, 멈춘 뒤에도 숫자가 남습니다. Goal이 3 라운드 연속 판단할 만한 성과를 내지 못하면 스스로 일시 중지하고, 메시지를 보내 중단한 것은 공회전으로 치지 않습니다. 관련 PR: [#11248](https://github.com/QwenLM/qwen-code/pull/11248), [#11254](https://github.com/QwenLM/qwen-code/pull/11254), [#11239](https://github.com/QwenLM/qwen-code/pull/11239), [#11257](https://github.com/QwenLM/qwen-code/pull/11257)
+
+**Channel 설정 항목이 두 개 늘었습니다.** 그룹 채팅 메시지가 뒤섞여 있으면 Channel에 `messagePrefix`를 지정할 수 있습니다. 이 접두사로 시작하는 메시지만 봇을 트리거합니다. `instructions`는 특정 Channel에 상시 요구 사항을 고정으로 두는 설정으로, 응답 말투나 특정 유형 문제를 누구에게 넘길지 같은 것을 적고, 모든 Channel 유형에서 쓸 수 있습니다. 관련 PR: [#10817](https://github.com/QwenLM/qwen-code/pull/10817), [#11082](https://github.com/QwenLM/qwen-code/pull/11082)
+
+**사고 강도를 설정할 수 있는 모델이 늘었습니다.** GPT-6 Astra는 low부터 max까지 5단계를 지원하고 기본은 medium입니다. GPT-5 계열은 각자 지원하는 단계에 맞춥니다. deepseek-v4-pro도 연결됐고 high와 max를 지원합니다. 관련 PR: [#11295](https://github.com/QwenLM/qwen-code/pull/11295), [#10999](https://github.com/QwenLM/qwen-code/pull/10999)
+
+**리뷰에 두 관점이 추가됐습니다.** 변경 사항에 `SKILL.md`, `QWEN.md` 같은 지시 파일이 포함되면, 한 Agent가 수정된 지시를 실제로 돌려 본 뒤 글이 약속한 내용과 어긋난 곳을 찾습니다. 다른 관점은 PR 설명에서 짚은 주제를 일부러 피하면서 변경 사항 전체를 독립적으로 봅니다. 관련 PR: [#10221](https://github.com/QwenLM/qwen-code/pull/10221)
+
+**로컬 코드 검색 도구를 바로 설치합니다.** 'zvec-grep 설치해 줘'라고 말하거나 `/zvec-grep-install`를 입력하면 zvec-grep를 설치하고 Qwen Code에 연결해 줍니다. 키워드 검색과 시맨틱 검색을 합친 로컬 코드 검색 도구입니다. 관련 PR: [#10723](https://github.com/QwenLM/qwen-code/pull/10723)
+
+**할 일 목록 도구는 직접 켜야 합니다.** AI가 여러 단계의 작업을 할 때 스스로 작업 목록을 만들고 하나씩 체크하는데, 화면에 보이는 그 목록이 `todo_write` 도구입니다. 기본 도구 목록에서 빠졌으니 필요하면 설정에서 `tools.todoWrite.enabled`를 `true`로 바꾸고 재시작하세요. 관련 PR: [#10645](https://github.com/QwenLM/qwen-code/pull/10645)
+
+**접속 주소를 직접 지정해도 명령 한 줄로 QR 코드가 나옵니다.** 이전에 `--hostname`을 수동으로 바인딩하려면 토큰과 허용 출처를 직접 설정해야 했고, 다 채우지 못하면 서비스가 시작을 거부했습니다. 이제 `qwen serve --hostname 0.0.0.0`이면 충분하고, 스마트폰으로 터미널의 QR 코드를 스캔하면 로그인된 Web Shell로 바로 들어갑니다. 관련 PR: [#11172](https://github.com/QwenLM/qwen-code/pull/11172)
+
+**서비스 인스턴스를 여러 개 동시에 돌립니다.** 같은 컴퓨터에서 여러 Qwen Code 서비스 인스턴스를 동시에 실행할 수 있고, 충돌하면 Web Shell이 재시도 안내를 표시합니다. 관련 PR: [#10924](https://github.com/QwenLM/qwen-code/pull/10924), [#11207](https://github.com/QwenLM/qwen-code/pull/11207)
+
+**Mem0 메모리에 쓰고 지울 수 있습니다.** Mem0를 연결하면 메모리를 Qwen Code가 작성하고 삭제할 수 있습니다. 관리자가 배포한 Mem0에는 자동 회상도 켤 수 있어서, 질문마다 가장 관련 높은 기록 몇 건을 자동으로 데려옵니다. 관련 PR: [#11311](https://github.com/QwenLM/qwen-code/pull/11311), [#11337](https://github.com/QwenLM/qwen-code/pull/11337), [#11246](https://github.com/QwenLM/qwen-code/pull/11246), [#11397](https://github.com/QwenLM/qwen-code/pull/11397)
+
+## 👏 사용성 개선
+
+**터미널에서 링크를 클릭할 수 있습니다.** 한 번 클릭하면 출력의 링크가 열리고, 우클릭하면 메뉴가 떠서 링크 열기, 주소 복사, 선택 내용 복사를 할 수 있습니다. 관련 PR: [#10979](https://github.com/QwenLM/qwen-code/pull/10979)
+
+**도구 호출 인자를 그 자리에 표시합니다.** 설정에서 `ui.showToolCallArgs`를 켜면 도구 호출이 각각 한 행을 차지하고, 아래에 실제로 전달된 인자가 한 줄 JSON으로 표시됩니다. 기본은 꺼져 있습니다. 관련 PR: [#10565](https://github.com/QwenLM/qwen-code/pull/10565)
+
+**ACP를 지원하는 에디터에서 서브 Agent의 작업이 보입니다.** 서브 Agent가 실행되는 동안, 어떤 도구를 돌리고 어떤 권한을 기다리는지 등이 상위 도구 카드에 실시간으로 표시됩니다. 관련 PR: [#8729](https://github.com/QwenLM/qwen-code/pull/8729)
+
+**Token Plan 설정 절차가 문서에 실렸습니다.** 접속 지점, 리전, 환경 변수명과 `settings.json` 예시가 모두 정리돼 있습니다. 관련 PR: [#10980](https://github.com/QwenLM/qwen-code/pull/10980), [#10993](https://github.com/QwenLM/qwen-code/pull/10993)
+
+## 🔧 주요 수정 사항
+
+| 수정 사항 | 사용자에게 미치는 영향 | PR |
+|------|-----------|-----|
+| **시작이 끝나기 전 입력이 사라지지 않습니다** | 설정 초기화가 끝나기 전까지 입력창이 친 글을 삼키지 않고, 시작 진행 상황은 그대로 표시됩니다 | [#11000](https://github.com/QwenLM/qwen-code/pull/11000) |
+| **슬래시 명령은 입력한 원문대로 실행** | 엔터를 치면 친 원문대로 실행되고, 자동완성 추천이 몰래 명령을 바꾸지 않습니다 | [#10929](https://github.com/QwenLM/qwen-code/pull/10929), [#10987](https://github.com/QwenLM/qwen-code/pull/10987), [#10986](https://github.com/QwenLM/qwen-code/pull/10986) |
+| **명령 실행 결과가 대화에 보입니다** | 슬래시 명령의 결과, `/clear`의 피드백, 모델이 도는 중에 중간에서 한 말이 이전에 대화에 나타나지 않았습니다 | [#10947](https://github.com/QwenLM/qwen-code/pull/10947) |
+| **tmux에서 중국어 입력기 후보창이 가려지지 않습니다** | 후보 글자가 커서 위치의 회색 배경 상자에 가려지지 않습니다 | [#10998](https://github.com/QwenLM/qwen-code/pull/10998) |
+| **@봇 뒤의 슬래시 명령도 인식합니다** | 그룹에서 봇을 @ 하고 `/btw` 같은 명령을 입력하면 이전에는 일반 메시지로 취급됐습니다 | [#10930](https://github.com/QwenLM/qwen-code/pull/10930) |
+| **다른 DingTalk 세션의 메시지가 서로 간섭하지 않습니다** | 개별 채팅과 각 그룹이 따로 처리되어 병행할 수 있습니다 | [#10952](https://github.com/QwenLM/qwen-code/pull/10952) |
+| **AUTO mode에서 차단된 뒤 수동 재시도 가능** | AUTO mode가 어떤 작업을 차단한 뒤에도 같은 인자로 재시도하면 사람 확인을 한 번 거치므로 모드를 바꿀 필요가 없습니다 | [#11025](https://github.com/QwenLM/qwen-code/pull/11025) |
+| **붙여 넣을 때 텍스트를 우선합니다** | 클립보드에 텍스트와 이미지·파일이 함께 있으면 Web Shell은 텍스트를 사용합니다 | [#11334](https://github.com/QwenLM/qwen-code/pull/11334) |
+| **밝은 테마에서 터미널 선택 글자가 보입니다** | 이전에 선택 영역이 반투명 흰색이라 밝은 테마의 터미널 배경과 섞였습니다 | [#11445](https://github.com/QwenLM/qwen-code/pull/11445) |
+| **이전 대화 넘기기가 안정적입니다** | 렌더링이 느릴 때 이전 대화로 올리면 중간에 한 번 뛰던 현상이 사라졌습니다 | [#11366](https://github.com/QwenLM/qwen-code/pull/11366), [#11430](https://github.com/QwenLM/qwen-code/pull/11430) |
+| **브랜치가 뒤처진 상태에서는 Push를 누르지 않습니다** | 브랜치가 업스트림보다 뒤처지면 Push 버튼이 비활성화되고, 앞선 수와 뒤진 수를 정확히 표시합니다 | [#10754](https://github.com/QwenLM/qwen-code/pull/10754) |
+| **레이트 리밋 오류는 자동으로 재시도합니다** | Anthropic 호환 인터페이스를 쓸 때 레이트 리밋을 만나도 바로 중단하지 않고 자동으로 재시도합니다 | [#11216](https://github.com/QwenLM/qwen-code/pull/11216) |
+| **모바일 단축키 패널을 사용할 수 있습니다** | 터치 화면에서 단축키 칸이 비어 있었지만 이제 이전 대화 입력, 커서 이동, 셸 모드 종료를 모두 쓸 수 있습니다 | [#11454](https://github.com/QwenLM/qwen-code/pull/11454) |
+| **OpenAI 호환 서비스 제공자에서 인자 없는 도구가 오류나지 않습니다** | llama.cpp처럼 도구 schema를 엄격히 요구하는 서비스 제공자에서 인자가 없는 도구가 더 이상 거부되지 않습니다 | [#11431](https://github.com/QwenLM/qwen-code/pull/11431), [#10080](https://github.com/QwenLM/qwen-code/pull/10080) |
+
+## 👥 기여자
+
+| 기여자 | 기여 내용 | 참고 PR 링크 |
+|--------|---------|-------------|
+| **[@yiliang114](https://github.com/yiliang114)** | Web Shell과 안정성 대거 개선: 구버전 웹 프론트 제거, 슬래시 명령 원문 제출, 시작 시점 입력 보호, OpenAI·Cerebras 호환 수정, sharp 고위험 취약점 업그레이드, Channel 상시 지시 필드 | [#9812](https://github.com/QwenLM/qwen-code/pull/9812), [#10929](https://github.com/QwenLM/qwen-code/pull/10929), [#11000](https://github.com/QwenLM/qwen-code/pull/11000), [#11082](https://github.com/QwenLM/qwen-code/pull/11082), [#11431](https://github.com/QwenLM/qwen-code/pull/11431), [#11435](https://github.com/QwenLM/qwen-code/pull/11435) |
+| **[@qqqys](https://github.com/qqqys)** | Goal 예산 표시와 공회전 일시 중지, 워크플로 시각화 관리, 사용자 정의 출력 스타일, 세션 간 메시지 신뢰성, AUTO mode 수동 재시도, 웹 검색 기본 활성화, Channel 메시지 접두사 필터, 백그라운드 Agent 응답 집계 토글 | [#11248](https://github.com/QwenLM/qwen-code/pull/11248), [#11239](https://github.com/QwenLM/qwen-code/pull/11239), [#10594](https://github.com/QwenLM/qwen-code/pull/10594), [#10761](https://github.com/QwenLM/qwen-code/pull/10761), [#10809](https://github.com/QwenLM/qwen-code/pull/10809), [#10817](https://github.com/QwenLM/qwen-code/pull/10817), [#10899](https://github.com/QwenLM/qwen-code/pull/10899), [#11025](https://github.com/QwenLM/qwen-code/pull/11025), [#11348](https://github.com/QwenLM/qwen-code/pull/11348) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | Channel 이름 지정 작업과 Worktree 격리, 세션 라운드 내비게이션, daemon 병행 처리와 세션 쓰기 리스, Mem0 메모리 읽기·쓰기·삭제, 브라우저 작업 알림 | [#10643](https://github.com/QwenLM/qwen-code/pull/10643), [#11015](https://github.com/QwenLM/qwen-code/pull/11015), [#11054](https://github.com/QwenLM/qwen-code/pull/11054), [#11208](https://github.com/QwenLM/qwen-code/pull/11208), [#10924](https://github.com/QwenLM/qwen-code/pull/10924), [#11311](https://github.com/QwenLM/qwen-code/pull/11311), [#11398](https://github.com/QwenLM/qwen-code/pull/11398) |
+| **[@wenshao](https://github.com/wenshao)** | 브라우저 디렉터리 세션 연결, 컨텍스트 사용량 탭, 분할 화면 내비게이션, GPT-5·GPT-6 사고 강도, 리뷰에 두 관점 추가, 주소 수동 바인딩 시 명령 한 줄로 페어링 QR 코드 | [#10962](https://github.com/QwenLM/qwen-code/pull/10962), [#11177](https://github.com/QwenLM/qwen-code/pull/11177), [#11250](https://github.com/QwenLM/qwen-code/pull/11250), [#11172](https://github.com/QwenLM/qwen-code/pull/11172), [#11295](https://github.com/QwenLM/qwen-code/pull/11295), [#10221](https://github.com/QwenLM/qwen-code/pull/10221) |
+| **[@qwen-code-dev-bot](https://github.com/qwen-code-dev-bot)** | CI 및 테스트 안정성 수정 | [#10855](https://github.com/QwenLM/qwen-code/pull/10855), [#11046](https://github.com/QwenLM/qwen-code/pull/11046), [#11391](https://github.com/QwenLM/qwen-code/pull/11391) |
+| **[@ytahdn](https://github.com/ytahdn)** | Web Shell 다수 개선과 수정: Plan과 실행 권한 분리, 워크스페이스별 스킬 관리, 아티팩트 아이콘 커스터마이즈, 밝은 테마 터미널 선택, 모바일 단축키 | [#11423](https://github.com/QwenLM/qwen-code/pull/11423), [#10697](https://github.com/QwenLM/qwen-code/pull/10697), [#11247](https://github.com/QwenLM/qwen-code/pull/11247), [#11445](https://github.com/QwenLM/qwen-code/pull/11445), [#11454](https://github.com/QwenLM/qwen-code/pull/11454) |
+| **[@chiga0](https://github.com/chiga0)** | 터미널 렌더링 엔진 마무리, 터미널 링크 원클릭 열기와 우클릭 메뉴, 명령 출력 표시 수정 | [#11152](https://github.com/QwenLM/qwen-code/pull/11152), [#10979](https://github.com/QwenLM/qwen-code/pull/10979), [#10947](https://github.com/QwenLM/qwen-code/pull/10947) |
+| 🆕 **[@now-ing](https://github.com/now-ing)** | 🎉 첫 기여: Token Plan 설정 문서, tmux 중국어 입력기 후보창 수정 | [#10980](https://github.com/QwenLM/qwen-code/pull/10980), [#10998](https://github.com/QwenLM/qwen-code/pull/10998) |
+| **[@BenGuanRan](https://github.com/BenGuanRan)** | DingTalk 권한 인터랙션 카드, 생명 주기 상태 이모지, Channel pidfile로 PID 재사용 방지 | [#10457](https://github.com/QwenLM/qwen-code/pull/10457), [#10504](https://github.com/QwenLM/qwen-code/pull/10504), [#10687](https://github.com/QwenLM/qwen-code/pull/10687) |
+| **[@DragonnZhang](https://github.com/DragonnZhang)** | 할 일 목록 도구를 직접 켜는 방식으로 변경, 레이트 리밋 오류 자동 재시도 | [#10645](https://github.com/QwenLM/qwen-code/pull/10645), [#11216](https://github.com/QwenLM/qwen-code/pull/11216) |
+| **[@AaronZ345](https://github.com/AaronZ345)** | 워크스페이스별 세션 격리 수정, 문서 보강 | [#10273](https://github.com/QwenLM/qwen-code/pull/10273), [#9860](https://github.com/QwenLM/qwen-code/pull/9860) |
+| **[@callmeYe](https://github.com/callmeYe)** | 모델 사고 능력 설정화, 확장 기능 활성화와 갱신 분리 | [#10999](https://github.com/QwenLM/qwen-code/pull/10999), [#10991](https://github.com/QwenLM/qwen-code/pull/10991) |
+| **[@LaZzyMan](https://github.com/LaZzyMan)** | Computer Use 자동 관찰의 차이값 안정화 | [#11293](https://github.com/QwenLM/qwen-code/pull/11293), [#11299](https://github.com/QwenLM/qwen-code/pull/11299) |
+| **[@TianYuan1024](https://github.com/TianYuan1024)** | 도구 호출 인자 인라인 표시, 스킬 hooks 등록 수정 | [#10565](https://github.com/QwenLM/qwen-code/pull/10565), [#11068](https://github.com/QwenLM/qwen-code/pull/11068) |
+| **[@tomsen02](https://github.com/tomsen02)** | 세션 관리 설정의 요청별 해석, 런타임 루트 디렉터리 고정 리팩터링 | [#10095](https://github.com/QwenLM/qwen-code/pull/10095), [#10988](https://github.com/QwenLM/qwen-code/pull/10988) |
+| 🆕 **[@XIQIXIQIXIQI](https://github.com/XIQIXIQIXIQI)** | 🎉 첫 기여: 다운로드 주소 설정 가능, 세션 재생 시 신원 유지 | [#11150](https://github.com/QwenLM/qwen-code/pull/11150), [#11062](https://github.com/QwenLM/qwen-code/pull/11062) |
+| **[@yu-xin-c](https://github.com/yu-xin-c)** | 리뷰 저강도 리콜 하한, Goal 예산 소진 카드 라벨 | [#9912](https://github.com/QwenLM/qwen-code/pull/9912), [#10553](https://github.com/QwenLM/qwen-code/pull/10553) |
+| **[@zjunothing](https://github.com/zjunothing)** | ACP 세션 제목 갱신, 이미지 캐시 성능 | [#8782](https://github.com/QwenLM/qwen-code/pull/8782), [#10626](https://github.com/QwenLM/qwen-code/pull/10626) |
+| 🆕 **[@aniruddhaadak80](https://github.com/aniruddhaadak80)** | 🎉 첫 기여: 도구 취소 메시지에 정지 지시 추가 | [#10180](https://github.com/QwenLM/qwen-code/pull/10180) |
+| **[@destire-mio](https://github.com/destire-mio)** | 질문 취소 사유 표시 | [#9070](https://github.com/QwenLM/qwen-code/pull/9070) |
+| 🆕 **[@dvd233](https://github.com/dvd233)** | 🎉 첫 기여: 브랜치 생성 롤백 시 훅이 만든 커밋을 잃지 않음 | [#11300](https://github.com/QwenLM/qwen-code/pull/11300) |
+| 🆕 **[@GCGH159](https://github.com/GCGH159)** | 🎉 첫 기여: 세션 간 메시지 대상을 두 개 적으면 명확한 오류 표시 | [#10090](https://github.com/QwenLM/qwen-code/pull/10090) |
+| **[@he-yufeng](https://github.com/he-yufeng)** | 예약 작업 E2E 예산 분할 | [#11085](https://github.com/QwenLM/qwen-code/pull/11085) |
+| 🆕 **[@JonathanOrr](https://github.com/JonathanOrr)** | 🎉 첫 기여: 파일 편집 결과에 전체 경로 추가 | [#8607](https://github.com/QwenLM/qwen-code/pull/8607) |
+| 🆕 **[@LizunovSergey](https://github.com/LizunovSergey)** | 🎉 첫 기여: 셀 값 선택 대화상자의 전체 선택 범위 수정 | [#10857](https://github.com/QwenLM/qwen-code/pull/10857) |
+| **[@PratikWayase](https://github.com/PratikWayase)** | ACP 클라이언트에 서브 Agent 실행 진행 상황 표시 | [#8729](https://github.com/QwenLM/qwen-code/pull/8729) |
+| 🆕 **[@rootkiller6788](https://github.com/rootkiller6788)** | 🎉 첫 기여: Goal 준비 검사를 비동기 거절로 변경 | [#10647](https://github.com/QwenLM/qwen-code/pull/10647) |
+| 🆕 **[@Theater-ahyeon](https://github.com/Theater-ahyeon)** | 🎉 첫 기여: Web Shell 후속 제안 버튼 설명 문구 수정 | [#10851](https://github.com/QwenLM/qwen-code/pull/10851) |
+| 🆕 **[@w9lsky](https://github.com/w9lsky)** | 🎉 첫 기여: 세션 리소스 디렉터리 API | [#10837](https://github.com/QwenLM/qwen-code/pull/10837) |
+| **[@water-in-stone](https://github.com/water-in-stone)** | 대화를 HTML로 내보내기 | [#10076](https://github.com/QwenLM/qwen-code/pull/10076) |
+| 🆕 **[@zhourrr](https://github.com/zhourrr)** | 🎉 첫 기여: 내장 zvec-grep 설치 스킬 | [#10723](https://github.com/QwenLM/qwen-code/pull/10723) |
+
+<Callout type="info">
+  **업데이트 방법**: `npm i @qwen-code/qwen-code@latest -g`를 실행하면 최신 버전으로 업데이트할 수 있습니다.
+</Callout>
+
+문제나 제안이 있다면 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)로 알려 주세요!
