@@ -1,22 +1,24 @@
 export default {
-  'はじめに': {
+  'Getting started': {
     type: 'separator',
-    title: 'はじめに', // タイトルは省略可能
+    title: 'はじめに', // タイトルは任意です
   },
   overview: '概要',
   quickstart: 'クイックスタート',
   'common-workflow': 'コマンドのワークフロー',
-  'ターミナル外での利用': {
+  'Outside of the terminal': {
     type: 'separator',
-    title: 'ターミナル外での利用', // タイトルは省略可能
+    title: 'ターミナル外での利用', // タイトルは任意です
   },
   'integration-vscode': 'Visual Studio Code',
   'integration-zed': 'Zed IDE',
   'integration-jetbrains': 'JetBrains IDE',
   'integration-github-action': 'GitHub Actions',
-  'Qwen Code を使ったコーディング': {
+  'qwen-serve': 'デーモンモード',
+  'qwen-serve-deploy-local': 'ローカルデプロイ',
+  'Code with Qwen Code': {
     type: 'separator',
-    title: 'Qwen Code を使ったコーディング', // タイトルは省略可能
+    title: 'Qwen Code でコーディング', // タイトルは任意です
   },
   features: '機能',
   configuration: '設定',
@@ -24,6 +26,8 @@ export default {
   reference: 'リファレンス',
   support: 'サポート',
   // 後で修正が必要
+  'conversations-recovery': '会話の復元',
+  // 要改善
   'ide-integration': {
     display: 'hidden',
   },

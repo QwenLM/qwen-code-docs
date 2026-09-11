@@ -1,12 +1,12 @@
 export default {
-  'Erste Schritte': {
+  'Getting started': {
     type: 'separator',
     title: 'Erste Schritte', // Titel ist optional
   },
   overview: 'Übersicht',
   quickstart: 'Schnellstart',
   'common-workflow': 'Befehls-Workflows',
-  'Außerhalb des Terminals': {
+  'Outside of the terminal': {
     type: 'separator',
     title: 'Außerhalb des Terminals', // Titel ist optional
   },
@@ -14,9 +14,11 @@ export default {
   'integration-zed': 'Zed-IDE',
   'integration-jetbrains': 'JetBrains-IDEs',
   'integration-github-action': 'GitHub-Aktionen',
-  'Code mit Qwen Code': {
+  'qwen-serve': 'Daemon-Modus',
+  'qwen-serve-deploy-local': 'Lokales Deployment',
+  'Code with Qwen Code': {
     type: 'separator',
-    title: 'Code mit Qwen Code', // Titel ist optional
+    title: 'Entwickeln mit Qwen Code', // Titel ist optional
   },
   features: 'Funktionen',
   configuration: 'Konfiguration',
@@ -24,6 +26,8 @@ export default {
   reference: 'Referenz',
   support: 'Support',
   // muss noch überarbeitet werden
+  'conversations-recovery': 'Konversationswiederherstellung',
+  // muss überarbeitet werden
   'ide-integration': {
     display: 'hidden',
   },
