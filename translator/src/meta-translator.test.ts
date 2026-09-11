@@ -188,14 +188,14 @@ describe("dropKeysWithoutPages", () => {
 
   it("keeps a localized separator instead of replacing it with English", async () => {
     // A separator's key is its display text, so the target keys it in its own
-    // language and matching by key never hits. That sent the German heading
+    // language and matching by key misses. That sent the localized heading
     // to be "filled in" from English and replaced it -- the whole point of
     // the additive path, defeated through the one entry keyed by its label.
     const { dir, meta } = tree({
       en:
         `export default {\n  'Getting started': {\n    title: 'Getting started',\n    type: 'separator',\n  },\n  a: 'A',\n  b: 'B',\n};\n`,
       zh:
-        `export default {\n  'Erste Schritte': {\n    title: 'Erste Schritte',\n    type: 'separator',\n  },\n  a: '甲',\n};\n`,
+        `export default {\n  '入门指南': {\n    title: '入门指南',\n    type: 'separator',\n  },\n  a: '甲',\n};\n`,
       pages: ["a.md", "b.md"]
     });
     let seen = "";
@@ -205,7 +205,7 @@ describe("dropKeysWithoutPages", () => {
     };
     await meta.translateMetaFile("_meta.ts", "zh");
     const out = fs.readFileSync(path.join(dir, "zh", "_meta.ts"), "utf8");
-    assert.match(out, /Erste Schritte/, "the localized separator must survive");
+    assert.match(out, /入门指南/, "the localized separator must survive");
     assert.doesNotMatch(out, /Getting started/, "English must not replace it");
     assert.match(out, /a: '甲'/);
     assert.match(out, /b: '乙'/);
