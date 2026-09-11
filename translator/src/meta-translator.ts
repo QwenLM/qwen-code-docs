@@ -231,8 +231,14 @@ export class MetaTranslator {
    * not a route.
    */
   private dropKeysWithoutPages(content: string, targetDir: string): string {
-    const start = content.indexOf("{", content.indexOf("export default"));
-    if (start < 0) return content;
+    if (!content.includes("export default")) return content;
+
+    // Brace depth has to ignore braces inside string literals, or a value
+    // like `'Beta } soon'` closes the object early and takes every entry
+    // after it away with the closing brace. Blank the literals, count on the
+    // copy, keep the original line.
+    const bare = (line: string): string =>
+      line.replace(/'[^']*'|"[^"]*"|`[^`]*`/g, (m) => " ".repeat(m.length));
 
     const lines = content.split("\n");
     const kept: string[] = [];
@@ -242,45 +248,56 @@ export class MetaTranslator {
     let started = false;
 
     const flush = () => {
+      const key = entryKey;
+      // Cleared before any early return. Leaving a stale key set makes every
+      // later line fail the key match and fall into `entry` instead of
+      // `kept` -- which is how the closing brace went missing.
+      entryKey = null;
       if (!entry.length) return;
       const text = entry.join("\n");
-      const isSeparator = /type:\s*['"]separator['"]/.test(text);
-      const hasPage =
-        entryKey !== null &&
-        [".md", ".mdx", ""].some((ext) =>
-          fs.existsSync(path.join(targetDir, entryKey + ext))
-        );
-      if (isSeparator || entryKey === null || hasPage) kept.push(text);
-      else
-        console.log(
-          chalk.yellow(
-            `  ↷ dropped "${entryKey}": no page for it in ${path.basename(targetDir)}`
-          )
-        );
       entry = [];
-      entryKey = null;
+      // `separator` is not the only entry with nothing behind it: a `menu`,
+      // or a `page` backed by an `href`, has no file either, and
+      // translateMetaFileContent already preserves display/type/href verbatim.
+      const isStructural = /\b(?:type|href)\s*:/.test(text);
+      const hasPage =
+        key !== null &&
+        [".md", ".mdx", ""].some((ext) =>
+          fs.existsSync(path.join(targetDir, key + ext))
+        );
+      if (isStructural || key === null || hasPage) {
+        kept.push(text);
+        return;
+      }
+      console.log(
+        chalk.yellow(
+          `  drop "${key}": no page for it in ${path.basename(targetDir)}`
+        )
+      );
     };
 
     for (const line of lines) {
+      const clean = bare(line);
       if (!started) {
         kept.push(line);
-        if (line.includes("{")) {
+        if (clean.includes("{")) {
           started = true;
           depth = 1;
         }
         continue;
       }
       if (depth === 1) {
-        const match = line.match(/^\s*(?:'([^']+)'|"([^"]+)"|([A-Za-z0-9_$-]+))\s*:/);
+        const match = line.match(
+          /^\s*(?:'([^']+)'|"([^"]+)"|([A-Za-z0-9_$-]+))\s*:/
+        );
         if (match) {
           flush();
           entryKey = match[1] ?? match[2] ?? match[3] ?? null;
         }
       }
-      const closing = (line.match(/}/g) || []).length;
-      const opening = (line.match(/{/g) || []).length;
+      const opening = (clean.match(/{/g) || []).length;
+      const closing = (clean.match(/}/g) || []).length;
       if (depth === 1 && closing > opening) {
-        // The object literal's own closing brace: everything after it is tail.
         flush();
         depth = 0;
         kept.push(line);
