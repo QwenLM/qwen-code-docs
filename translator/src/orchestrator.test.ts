@@ -326,3 +326,84 @@ test("contamination parsing is source-aware and respects Markdown code", () => {
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("quarantine keeps output closer to the source but still restores a mangled one", () => {
+  // cmdQuarantine reads HEAD via `git show`, with the orchestrator's own
+  // repository root as cwd, so the fixture has to be a real repository with a
+  // copy of the orchestrator inside it.
+  const root = fs.realpathSync(
+    fs.mkdtempSync(path.join(os.tmpdir(), "qwen-quarantine-test-"))
+  );
+  const contentDir = path.join(root, "website", "content");
+  const copied = path.join(root, "translator", "orchestrator", "orchestrator.mjs");
+  const fence = (n: number) =>
+    Array.from({ length: n }, (_, i) => `\`\`\`\nblock ${i}\n\`\`\`\n`).join("");
+
+  try {
+    fs.mkdirSync(path.dirname(copied), { recursive: true });
+    fs.copyFileSync(orchestrator, copied);
+    for (const lang of ["en", "de"]) {
+      fs.mkdirSync(path.join(contentDir, lang), { recursive: true });
+    }
+    // EN has gained blocks the translations are behind on: 4 fences vs 0.
+    fs.writeFileSync(path.join(contentDir, "en", "stale.md"), `# S\n${fence(2)}`);
+    fs.writeFileSync(path.join(contentDir, "en", "mangled.md"), `# M\n${fence(2)}`);
+    fs.writeFileSync(path.join(contentDir, "de", "stale.md"), "# S\n");
+    fs.writeFileSync(path.join(contentDir, "de", "mangled.md"), "# M\n");
+
+    execFileSync("git", ["init", "-q", "-b", "main"], { cwd: root });
+    execFileSync("git", ["config", "user.email", "test@example.com"], { cwd: root });
+    execFileSync("git", ["config", "user.name", "Test"], { cwd: root });
+    execFileSync("git", ["add", "."], { cwd: root });
+    execFileSync("git", ["commit", "-qm", "stale translations"], { cwd: root });
+
+    // This run's output: two fences (balanced, closer to EN's four) versus
+    // three (unbalanced, so not a stale document but a mangled one).
+    const closer = `# S\n${fence(1)}`;
+    fs.writeFileSync(path.join(contentDir, "de", "stale.md"), closer);
+    fs.writeFileSync(
+      path.join(contentDir, "de", "mangled.md"),
+      `# M\n${fence(1)}\`\`\`\nunclosed\n`
+    );
+    fs.writeFileSync(
+      path.join(root, "website", "orchestrator-manifest-de.failed.txt"),
+      "de/stale.md\nde/mangled.md\n"
+    );
+
+    const result = spawnSync(
+      process.execPath,
+      [
+        copied,
+        "quarantine",
+        "--content-dir",
+        contentDir,
+        "--baseline",
+        path.join(root, "website", "last-sync.json"),
+      ],
+      { encoding: "utf8" }
+    );
+
+    assert.equal(result.status, 0, result.stdout || result.stderr);
+    assert.match(result.stdout, /de\/stale\.md.*closer to the EN source/);
+    assert.match(result.stdout, /1 kept as closer to the source/);
+    assert.equal(
+      fs.readFileSync(path.join(contentDir, "de", "stale.md"), "utf8"),
+      closer
+    );
+    // The mangled one is not salvageable, so HEAD comes back and it is
+    // reported for the next run to look at.
+    assert.equal(
+      fs.readFileSync(path.join(contentDir, "de", "mangled.md"), "utf8"),
+      "# M\n"
+    );
+    const report = JSON.parse(
+      fs.readFileSync(path.join(root, "website", "quarantine-unrepairable.json"), "utf8")
+    );
+    assert.deepEqual(
+      report.map((r: { entry: string }) => r.entry),
+      ["de/mangled.md"]
+    );
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});

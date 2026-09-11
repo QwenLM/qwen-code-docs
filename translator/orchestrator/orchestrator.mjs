@@ -1016,6 +1016,30 @@ function fenceCount(text) {
   return (text.match(/^\s*(```|~~~)/gm) || []).length;
 }
 
+/**
+ * Whether every code fence in the document is closed. A translation that is
+ * merely behind the EN source is short whole blocks but still balanced; one the
+ * agent truncated or mangled is not. Comparing counts against EN cannot tell
+ * those apart, and conflating them is what deadlocks a stale file (#260).
+ */
+function fencesBalanced(text) {
+  let fence = null;
+  for (const line of text.split("\n")) {
+    const marker = line.match(/^ {0,3}(`{3,}|~{3,})/);
+    if (!marker) continue;
+    if (!fence) {
+      fence = { char: marker[1][0], length: marker[1].length };
+    } else if (
+      marker[1][0] === fence.char &&
+      marker[1].length >= fence.length &&
+      /^[ \t]*$/.test(line.slice(marker[0].length))
+    ) {
+      fence = null;
+    }
+  }
+  return fence === null;
+}
+
 function hasFrontmatter(text) {
   return text.startsWith("---\n");
 }
@@ -1581,6 +1605,30 @@ function readFromHead(repoRel) {
   }
 }
 
+/**
+ * Both HEAD and this run's output fail the structural gate. Restoring HEAD is
+ * only right when HEAD is the better of the two — otherwise the restore
+ * reinstates the exact input that fails again tomorrow, so a file whose HEAD is
+ * already behind the EN source can never advance, and every night re-buys the
+ * same guaranteed failure (#260).
+ *
+ * Progress is admitted narrowly, and only when it is monotone: the output must
+ * fail on nothing but the fence count, its own fences must be balanced, and
+ * that count must be strictly closer to EN than HEAD's. A truncated output has
+ * *fewer* fences, so it moves away from EN and is still rejected. HEAD matching
+ * EN exactly leaves nothing to be closer than, which the comparison already
+ * rules out.
+ */
+function closerToSource(en, current, head, newBad) {
+  if (newBad.length !== 1 || !newBad[0].startsWith("code fence mismatch"))
+    return false;
+  if (!fencesBalanced(current)) return false;
+  const want = fenceCount(en);
+  return (
+    Math.abs(fenceCount(current) - want) < Math.abs(fenceCount(head) - want)
+  );
+}
+
 function cmdQuarantine() {
   const dir = path.dirname(OPTS.baseline);
   const lists = fs
@@ -1589,6 +1637,7 @@ function cmdQuarantine() {
   let restored = 0;
   let kept = 0;
   let removed = 0;
+  let advanced = 0;
   const unrepairable = [];
   for (const listName of lists) {
     const entries = fs
@@ -1632,6 +1681,15 @@ function cmdQuarantine() {
           )}]; keeping this run's structurally sound translation`
         );
         kept++;
+      } else if (closerToSource(en, current, head, newBad)) {
+        // No write: this run's output is already on disk. It stays in the
+        // backlog, so the next run picks it up from a closer starting point.
+        advanced++;
+        console.log(
+          `::warning::${entry}: HEAD and this run's output both fail the gate, but the output's ` +
+            `code fences are closer to the EN source (head=${fenceCount(head)} ` +
+            `new=${fenceCount(current)} en=${fenceCount(en)}); keeping it`
+        );
       } else {
         fs.writeFileSync(target, head);
         restored++;
@@ -1644,6 +1702,7 @@ function cmdQuarantine() {
   }
   console.log(
     `[orch] quarantine: ${restored} restored from HEAD, ${kept} kept over a corrupt HEAD, ` +
+      `${advanced} kept as closer to the source, ` +
       `${removed} removed, ${unrepairable.length} unrepairable`
   );
   if (unrepairable.length) {
