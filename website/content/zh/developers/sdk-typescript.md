@@ -65,7 +65,7 @@ for await (const message of result) {
 | `mcpServers`             | `Record<string, McpServerConfig>`              | -                | 要连接的 MCP（模型上下文协议）服务器。支持外部服务器（stdio/SSE/HTTP）和 SDK 内嵌服务器。外部服务器通过传输选项（如 `command`、`args`、`url`、`httpUrl` 等）配置。SDK 服务器使用 `{ type: 'sdk', name: string, instance: Server }`。                                                                                                                                                                                           |
 | `abortController`        | `AbortController`                              | -                | 用于取消查询会话的控制器。调用 `abortController.abort()` 可终止会话并清理资源。                                                                                                                                                                                                                                                                                                                                          |
 | `debug`                  | `boolean`                                      | `false`          | 开启调试模式，打印 CLI 进程的详细日志。                                                                                                                                                                                                                                                                                                                                                                                   |
-| `maxSessionTurns`        | `number`                                       | `-1`（无限制）   | 会话在自动终止前最大对话轮数。一轮包括一条用户消息和一条助手响应。                                                                                                                                                                                                                                                                                                                                                      |
+| `maxSessionTurns`        | `number`                                       | `-1`（无限制）   | 会话在自动终止前最大对话轮数。必须是整数。一轮包括一条用户消息和一条助手响应。                                                                                                                                                                                                                                                                                                                                                      |
 | `coreTools`              | `string[]`                                     | -                | 使用旧版 `coreTools` / CLI `--core-tools` 允许列表语义。如果指定，只有匹配的核心工具会被注册到会话中。这是唯一限制内置工具注册的允许列表风格选项；整工具的 `permissions.deny` / `excludeTools` 规则（以及 settings.json 中的 `tools.disabled`）也会将工具从注册表中移除。settings.json 中的 `permissions.allow` 是纯粹的自动审批，永远不会移除、降级或隐藏工具（#10075）。要将工具的 schema 排除在初始模型请求之外，请在 settings.json 中使用 `tools.eager`（需要重启，#9827）——`tool_search`、`structured_output`、plan-mode 生命周期工具、`task_stop`、`mcp__*` 和 `computer_use__*` 工具不受该允许列表限制，保持正常加载；要完全移除，请使用整工具的 `excludeTools` / `permissions.deny` 规则——带有说明符的规则（如 `'Bash(rm *)'`）仅在运行时拒绝匹配的调用。MCP 工具不受基于 deny 的移除影响：请改用每服务器的 `excludeTools` / `tools.disabled` 过滤器来隐藏它们（deny 仍然会在运行时阻止其调用）。示例：`['read_file', 'edit', 'run_shell_command']`。 |
 | `excludeTools`           | `string[]`                                     | -                | 等同于 settings.json 中的 `permissions.deny`。被排除的工具会立即返回权限错误。优先级高于所有其他权限设置。支持工具名称别名和模式匹配：工具名称（`'write_file'`）、shell 命令前缀（`'Bash(rm *)'`）或路径模式（`'Read(.env)'`、`'Edit(/src/**)'`）。                                                                                                                                                                    |
 | `allowedTools`           | `string[]`                                     | -                | 等同于 settings.json 中的 `permissions.allow`，用于自动审批。匹配的工具绕过 `canUseTool` 回调自动执行。仅在工具需要确认时生效。与 `permissions.allow` 一样，这是纯粹的自动审批，永远不会影响注册了哪些工具或发送了哪些 schema（#10075）。支持与 `excludeTools` 相同的模式匹配。示例：`['Bash(git status)', 'Bash(npm test)']`。 |
@@ -181,6 +181,59 @@ console.log(session.sessionId); // 550e8400-e29b-41d4-a716-446655440000
 SDK 在发送变更之前要求 daemon 具备 `session_id_override` 能力。REST 模式直接序列化 `sessionId`；活跃的 ACP 适配器将其映射为 `session/new._meta["qwen-code/sessionId"]`。SDK 会验证成功响应，如果 daemon 返回不同的 ID 则抛出 `DaemonSessionIdProtocolError`。
 
 此选项始终创建新的线程会话，而非幂等附加。如果创建结果不明确，请使用已知 ID 进行加载或恢复。省略此选项则保留现有的创建或附加行为。
+
+## 与运行中的会话通信
+
+`@qwen-code/sdk/peer` 允许一个本身不是 Qwen Code 会话的程序加入同一台机器上以同一用户身份运行的会话——例如语音前端、中继器或构建监视器。该程序会出现在 `qwen sessions ps` 中，也会出现在所有开启了 `agents.crossSessionMessaging` 的会话的 `list_agents` 中——正是这一设置让这些会话可以通过 `send_message` 按名称向它发送消息。它也可以向它们回复消息。它仅在 Node 上运行，除 Node 本身外不需要任何其他依赖。
+
+```typescript
+import { PeerEndpoint } from '@qwen-code/sdk/peer';
+
+const endpoint = await PeerEndpoint.start({
+  name: 'voice-bridge',
+  onMessage: (message) =>
+    console.log(`${message.fromName}: ${message.content}`),
+});
+
+const [session] = await endpoint.list();
+if (session) {
+  const sent = await endpoint.send({
+    to: session.address,
+    content: 'What are you working on?',
+  });
+  if (sent.kind === 'sent') {
+    const receipt = await endpoint.awaitReceipt(sent.msgId, { final: true });
+    console.log(receipt?.status); // delivered, denied, refused, ...
+  }
+}
+
+await endpoint.close();
+```
+
+类似上面的消息会被保留，等待该会话的用户审阅。要在不经审阅的情况下直接向会话发送指令，请使用 `qwen sessions controllers add --label voice-bridge` 创建一个控制器令牌，将其提供给 endpoint，并在需要出示该令牌的发送中标记：
+
+```typescript
+const endpoint = await PeerEndpoint.start({
+  name: 'voice-bridge',
+  controllerToken: process.env['QWEN_CONTROLLER_TOKEN'],
+});
+await endpoint.send({
+  to: 'my-app-3f',
+  content: 'run the tests',
+  controller: true,
+});
+```
+
+需要注意的事项：
+
+- 会话只有在其 `agents.crossSessionMessaging` 设置开启时才有收件箱，而该设置默认关闭。没有它，会话不会出现在 `list()` 中，其自身的 `list_agents` 和 `send_message` 也无法看到或联系到该程序。`qwen sessions ps` 无论如何都会列出该程序。
+- 消息在恰好两种情况下会不经审阅直接送达：发送时出示了控制器令牌（`controller: true`），或其 `fromMode` 指定了接收会话自身的审阅类别。`fromMode` 是一个没有任何机制验证的声明，因此非编码会话的程序不应设置它。记录中的任何字段——无论是 `kind` 还是 `name`——都不能确保送达。接收会话的 `agents.crossSessionInbound` 设置优先于以上两者：其中的 `hold` 或 `refuse` 会覆盖控制器令牌。
+- 仅标记意在指导会话的发送。地址是从任何以你的身份运行的程序都可以写入的记录中解析的，因此控制器发送会将令牌出示给响应该地址的进程记录。发往另一个 peer endpoint 的控制器发送会被直接丢弃不予读取，因为 endpoint 的收件箱只接受自身的令牌。
+- endpoint 的收件箱不会应用 Qwen Code 会话对自身的任何保护：没有速率限制、没有保留、也没有超出其已回复的最近 200 条消息之外的去重窗口。每条消息都会被回复 `delivered` 并在到达时交给 `onMessage`，因此如需限制请在此处自行实施。没有 `onMessage` 时，每条消息都会被回复 `refused`。
+- 退出前请调用 `close()`，包括在你自己的信号处理器中。未关闭就被终止的进程会留下其记录，直到某个 Qwen Code 会话列出该目录并发现进程已消失。
+- 仅支持 UNIX domain socket：尚不支持 Windows。
+
+记录模式、线路格式和回执状态记录在[跨会话协议](../users/features/cross-session-protocol.md)中。
 
 ## 权限模式
 

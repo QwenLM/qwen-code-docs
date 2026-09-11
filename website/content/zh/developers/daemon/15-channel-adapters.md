@@ -176,13 +176,17 @@ sequenceDiagram
 
 ### 运行时选择与设置重新加载
 
-长生命周期的 `ChannelWorkerManager` 持有已提交的 daemon 选择和按工作区分组的 supervisor。daemon 可以在启动时不带 `--channel`；第一个严格门控的 `PUT /workspace/channel` 会动态加载渠道运行时、保留服务 pidfile、解析工作区所属关系，并启动所选的 worker。`GET /workspace/channel` 读取管理器快照，`DELETE /workspace/channel` 幂等地停止它。SDK 辅助方法有 `getChannelWorkerControl()`、`setChannelWorkerSelection()` 和 `stopChannelWorker()`；CLI 入口是 `qwen channel set` 以及远程 `status` 和 `stop` 变体。
+长生命周期的 `ChannelWorkerManager` 持有已提交的 daemon 选择和按工作区分组的 supervisor。显式的 `--channel` 选择具有最高优先级并保持 fail-fast。在无标志启动时，恢复可信主工作区的 `serve.channels` 设置；这会动态加载渠道运行时、保留服务 pidfile、解析工作区所属关系，并启动所选的 worker。次级工作区不会独立恢复其自身的 `serve.channels`。在两种启动来源均缺失的情况下，第一个严格门控的 `PUT /workspace/channel` 执行惰性初始化。`GET /workspace/channel` 读取管理器快照，`DELETE /workspace/channel` 幂等地停止它。SDK 辅助方法有 `getChannelWorkerControl()`、`setChannelWorkerSelection()` 和 `stopChannelWorker()`；CLI 入口是 `qwen channel set` 以及远程 `status` 和 `stop` 变体。
+
+存储的启动名称必须非空，前后无空白，且不包含不安全的控制字符或不可见字符。无效条目会逐个跳过并按数组索引记录日志；守护进程不会将其裁剪为另一个实例名称，也不会重写设置。worker 参数使用 `--channel=<value>`，这会保留名称中的前导短横线。渠道管理继续报告持久化的启动设置和实际运行时状态。
+
+无效的启动字段或在 worker 启动前的验证或租约错误会跳过自动恢复，并记录其 `serve.channels` 来源而不丢弃无关设置。worker 启动失败后，守护进程仅在清理成功时继续。全局运行时启动超时和未确认的 worker 停止遵循现有的启动失败路径；在 worker 终止未确认期间，服务租约保持持有。请检查守护进程日志以了解跳过或失败的恢复尝试。
 
 守护进程在每个 worker 启动时从 `settings.json` 读取渠道设置（`packages/cli/src/commands/channel/daemon-worker.ts` → `loadSettings` → `loadChannelsConfig`）。`POST /workspace/channel/reload` 重新读取这些设置并强制调和已提交的选择。所有生命周期变更共享一个 FIFO 通道。未变更的工作区分组在普通选择替换中保留；变更的分组按顺序停止和启动，同时 serve 持有的 PID 租约保持不变。
 
 如果替换失败，新启动的 worker 会被停止，旧 worker 会在请求返回前恢复。无法在 SIGTERM 和 SIGKILL 后观察到退出的 supervisor 会保留其子引用并导致停止失败；管理器保留 PID 租约，永远不会启动第二个 worker。Webhook 配置和路由仅在选择提交成功时才会变更。运行时选择是进程本地的，在 daemon 重启时消失。
 
-适配器 `connect()` 失败与 worker 生命周期错误分开报告。worker 通过启动 IPC 发送每个有界的、凭证已编辑的失败，并在尝试下一个适配器之前等待 supervisor 确认。部分连接的 worker 保持运行并在其快照中暴露 `startupFailures`。如果动态尝试中的每个适配器都失败，`502 channel_worker_start_failed` 响应携带带工作区注释的尝试失败信息，而 `state` 反映回滚结果；后续 GET 响应不保留尝试信息。daemon 启动时没有已连接的适配器仍然快速失败。可选的适配器 `code` 仅用于诊断，当前 `phase` 为 `connect`。
+适配器 `connect()` 失败与 worker 生命周期错误分开报告。worker 通过启动 IPC 发送每个有界的、凭证已编辑的失败，并在尝试下一个适配器之前等待 supervisor 确认。部分连接的 worker 保持运行并在其快照中暴露 `startupFailures`。如果动态尝试中的每个适配器都失败，`502 channel_worker_start_failed` 响应携带带工作区注释的尝试失败信息，而 `state` 反映回滚结果；后续 GET 响应不保留尝试信息。显式 `--channel` 启动且没有已连接的适配器仍然快速失败。源自设置的启动失败会被记录日志，并允许守护进程在清理成功后继续，但受全局运行时启动超时的限制。可选的适配器 `code` 仅用于诊断，当前 `phase` 为 `connect`。
 
 ## 依赖
 

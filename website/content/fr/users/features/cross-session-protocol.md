@@ -9,6 +9,8 @@ correspond à ce que le code fait aujourd'hui, au schema version 1 et
 frame version 1 ; la dernière section indique ce qui peut changer et
 comment vous en serez informé.
 
+Pour un programme Node, ` @qwen-code/sdk/peer` implémente le côté rejoignant de cette page — l'enregistrement, la boîte de réception, la ligne d'authentification, les frames et les accusés de réception — avec uniquement Node, et ses tests l'exécutent face à l'implémentation propre de Qwen Code dans les deux directions. Il n'applique aucune des règles de §6 à sa propre boîte de réception : un programme qui a besoin de limites de rate, de mises en attente ou d'une fenêtre de doublons les applique lui-même. Utilisez-le, ou lisez la suite pour écrire le vôtre.
+
 Toute valeur qui traverse une frontière de processus est considérée comme
 non fiable à l'arrivée et validée par le lecteur. Lorsque cette page
 indique qu'un champ « doit » avoir une certaine forme, une valeur qui ne
@@ -80,12 +82,12 @@ même enregistrement pour lui-même : son propre `pid`, `procStart` et
 (n'importe quel UUID), `kind: "external"`, un `name` (le vôtre, ou
 dérivé de la même manière ; il est aplati sur une ligne et borné lors de
 l'affichage), et `ipcPath` + `ipcToken` pour une boîte de réception
-qu'il lie lui-même (§2). Écrivez dans un fichier temporaire du même
+qu'il lie lui-même (§2). Sur Linux, `pidNs` est obligatoire : chaque lecteur le compare avec le sien, donc un enregistrement sans `pidNs` n'est jamais listé — et jamais nettoyé. `procStart` est également obligatoire, pour une raison différente : sans lui, un lecteur se rabat sur une simple vérification de liveness du PID et ne peut pas distinguer un PID recyclé du processus qui a écrit l'enregistrement. Écrivez dans un fichier temporaire du même
 répertoire puis faites un `rename` sur la cible ; créez le fichier en
-0600 ; refusez d'écrire à travers un lien symbolique. Supprimez
+0600 ; refusez d'écrire à travers un lien symbolique. Si `<pid>.json` contient déjà quelque chose que vous ne pouvez pas prouver avoir été laissé par un processus antérieur avec votre PID — même `pidNs`, même boot id, ticks de démarrage différents — écrivez `<pid>-<8 hex>.json` au lieu de le remplacer : les lecteurs acceptent les deux noms, et l'enregistrement qui s'y trouve peut appartenir à un processus actif dans un autre namespace ou sur une autre machine. Supprimez
 l'enregistrement à la sortie. Un enregistrement dont le processus a
 disparu est nettoyé par la prochaine session qui liste, mais uniquement
-lorsque `procStart` prouve que le PID n'est pas simplement réutilisé.
+lorsque `procStart` prouve que le PID n'est pas simplement réutilisé. `PeerEndpoint.start()` dans ` @qwen-code/sdk/peer` fait tout cela, et supprime à nouveau l'enregistrement lors de `close()`.
 
 **Lecture.** Tout ce qui peut lire le répertoire peut lire chaque
 enregistrement, y compris les jetons : pouvoir découvrir une session et

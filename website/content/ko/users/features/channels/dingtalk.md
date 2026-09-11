@@ -101,24 +101,6 @@ export DINGTALK_CLIENT_SECRET=<your-app-secret>
 배경 에이전트 출력은 각 응답 세그먼트가 준비되는 즉시 전송됩니다.
 모든 메시지는 에이전트 이름으로 라벨링되어 동시 작업의 출처를 추적할 수 있습니다.
 
-각 에이전트의 알림 턴을 버퍼링하여 하나의 라벨링된 메시지로 전송하려면,
-`settings.json`에서 DingTalk 채널의 집계를 활성화하세요:
-
-```json
-{
-  "channels": {
-    "my-dingtalk": {
-      "type": "dingtalk",
-      "clientId": "$DINGTALK_CLIENT_ID",
-      "clientSecret": "$DINGTALK_CLIENT_SECRET",
-      "aggregateBackgroundAgentResponses": true
-    }
-  }
-}
-```
-
-집계는 기본적으로 비활성화되어 있습니다. 에이전트 턴이 중단되거나, 최종 응답을 생성하지 못한 채 실패하거나, 10분 이내에 완료되지 않으면 부분 라벨링 메시지가 전송됩니다.
-
 ## 실행
 
 ```bash

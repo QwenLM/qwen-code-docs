@@ -4,7 +4,7 @@
 
 `packages/acp-bridge/` は、デーモンの HTTP レイヤーと ACP 子プロセス間の境界を担います。これは `packages/cli/src/serve/`（`qwen serve` デーモン）によって利用され、将来のコンシューマー（`channels/base/AcpBridge.ts`、VS Code IDE コンパニオン）が CLI パッケージに直接依存せずに同じブリッジコアを利用できるようにするため、#4175 F1 step 3 で抽出されました。
 
-各アクティブな `WorkspaceRuntime` は1つの `HttpAcpBridge` インスタンスを所有します。本番環境ではプライマリブリッジのプリヒートを試み、失敗時は初回使用時にリトライします。信頼されたセカンダリは `AcpChannel` をオープンし、オンデマンドで子プロセスを起動します。信頼されていないセカンダリは ACP を起動できません。ランタイム内で、ブリッジはチャネル上の多重化セッション、セッションごとの `EventBus`、`MultiClientPermissionMediator`、`BridgeFileSystem` アダプター、および ACP 指向のヘルパー（`spawnOrAttach`、`loadSession`、`resumeSession`、`sendPrompt`、`cancelSession`、`respondToPermission`、さらにワークスペースステータスと MCP 再起動用の extMethod RPC）を提供します。ブリッジと子プロセスはワークスペースランタイム間で共有されることはありません。
+各アクティブな `WorkspaceRuntime` は1つの `HttpAcpBridge` インスタンスを所有します。本番環境では互換性のために信頼されたプライマリ子のプリヒートを試みます。信頼されたセカンダリは初回のランタイムコマンドまたは Session で `AcpChannel` をオープンし、信頼されていないセカンダリは ACP を起動できません。レガシープライマリルートは既存の互換性動作を維持します。ランタイム内で、ブリッジはチャネル上の多重化セッション、セッションごとの `EventBus`、`MultiClientPermissionMediator`、`BridgeFileSystem` アダプター、および ACP 指向のヘルパー（`spawnOrAttach`、`loadSession`、`resumeSession`、`sendPrompt`、`cancelSession`、`respondToPermission`、さらにワークスペースステータスと MCP 再起動用の extMethod RPC）を提供します。ブリッジと子プロセスはワークスペースランタイム間で共有されることはありません。
 
 ## 責務
 
@@ -170,7 +170,7 @@ sequenceDiagram
 ## 状態とライフサイクル
 
 - ブリッジの構築は同期的です。呼び出し元は最初のセッションの前にチャネルをプリヒートできます。そうでない場合、最初の `spawnOrAttach` が ACP 子プロセスをコールドスタートします。失敗したプリヒートは、初回使用時のリトライを自由にできます。
-- `defaultEntry` は `sessionScope: 'single'` の下でブリッジの存続期間中存続します。チャネルは `sessionIds.size === 0`（`killSession` の後）になり、かつ `isDying` が true に反転したときに破棄されます。
+- `defaultEntry` は `sessionScope: 'single'` の下で再利用可能な論理 Session です。Session クローズはその Session リースのみを削除します。すべての Session、リストア、ワークスペース制御、ディスカバリー、認証、およびランタイム操作のワークが drain され、明示的な ensure キープライブウィンドウが保留中でない場合、省略されたまたはゼロの `channelIdleTimeoutMs` は子を即座に回収します。通常のプリヒートは初回使用のために保持され、それ自体では即座の回収を起動しません。正の値またはアクティブなキープライブウィンドウは回収を遅らせ、残りの遅延がより長い方が優先されます。
 - `MAX_EVENT_RING_SIZE = 1_000_000` は `BridgeOptions.eventRingSize` のソフト上限であり、セッションあたり約 500 MB の OOM を引き起こす前にオペレーターのタイプミスを捕捉します。
 - `DEFAULT_PERMISSION_TIMEOUT_MS = 0` は、デフォルトで人間の権限と質問が無期限に待機できるようにします。`permissionResponseTimeoutMs` は、オペレーターが必要な場合に経過時間上限を有効にします。これがない場合でも、投票者のキャンセル、セッションのキャンセル、およびシャットダウンが利用可能です。
 - `DEFAULT_MAX_PENDING_PER_SESSION = 64` は `DEFAULT_MAX_SUBSCRIBERS` を反映しており、超過した `requestPermission` 呼び出しは stderr の警告とともに cancelled として解決されます。
@@ -201,7 +201,6 @@ sequenceDiagram
 | `childEnvOverrides`                           | `{}`                                               | ACP 子プロセス用のハンドルごとの環境変数の追加 / 削除。                                                                  |
 | `externalToolGuard`                           | （なし）                                             | オプションのプライベート子→親の事前実行判定用ハンドラ。ブリッジは、現在アクティブなプロンプトを所有するチャネルからのみこれを受け付けます。 |
 | `persistApprovalMode`, `persistDisabledTools` | —                                                  | Wave 4 変更ルート用の設定書き込みフック。                                                                  |
-| `contextFilename`                             | `settings.json` の `context.fileName` から          | `getCurrentGeminiMdFilename` をオーバーライド。                                                                               |
 | `statusProvider`                              | （なし）                                             | デーモンホストのプレフライトセル（`DaemonStatusProvider`）。                                                                 |
 | `delegateReadTextFileToClient`                | `true`                                             | 同一ホストのランタイムでのみ `false` に設定し、子プロセスの `FileSystemService.readTextFile` の全コンシューマーが通常の CLI ファイルシステムサービスを使用するようにします。                    |
 | `fileSystem`                                  | （なし）                                             | ACP `readTextFile` / `writeTextFile` 用の `BridgeFileSystem` アダプター。                                                  |
