@@ -14,6 +14,8 @@ export default {
   'integration-zed': 'Zed IDE',
   'integration-jetbrains': 'JetBrains IDE',
   'integration-github-action': 'GitHub Actions',
+  'qwen-serve': '守护进程模式',
+  'qwen-serve-deploy-local': '本地部署',
   '使用 Qwen Code 编程': {
     type: 'separator',
     title: '使用 Qwen Code 编程', // 标题为可选
@@ -23,6 +25,8 @@ export default {
   extension: '扩展',
   reference: '参考文档',
   support: '支持',
+  // 需要优化
+  'conversations-recovery': '会话恢复',
   // 需要优化
   'ide-integration': {
     display: 'hidden',
