@@ -185,4 +185,67 @@ describe("dropKeysWithoutPages", () => {
       /a: '甲'/
     );
   });
+
+  it("keeps a localized separator instead of replacing it with English", async () => {
+    // A separator's key is its display text, so the target keys it in its own
+    // language and matching by key never hits. That sent the German heading
+    // to be "filled in" from English and replaced it -- the whole point of
+    // the additive path, defeated through the one entry keyed by its label.
+    const { dir, meta } = tree({
+      en:
+        `export default {\n  'Getting started': {\n    title: 'Getting started',\n    type: 'separator',\n  },\n  a: 'A',\n  b: 'B',\n};\n`,
+      zh:
+        `export default {\n  'Erste Schritte': {\n    title: 'Erste Schritte',\n    type: 'separator',\n  },\n  a: '甲',\n};\n`,
+      pages: ["a.md", "b.md"]
+    });
+    let seen = "";
+    meta.translateMetaFileContent = async (partial: string) => {
+      seen = partial;
+      return `export default {\n  b: '乙',\n};\n`;
+    };
+    await meta.translateMetaFile("_meta.ts", "zh");
+    const out = fs.readFileSync(path.join(dir, "zh", "_meta.ts"), "utf8");
+    assert.match(out, /Erste Schritte/, "the localized separator must survive");
+    assert.doesNotMatch(out, /Getting started/, "English must not replace it");
+    assert.match(out, /a: '甲'/);
+    assert.match(out, /b: '乙'/);
+    // Only the genuinely missing key is sent.
+    assert.doesNotMatch(seen, /separator/);
+    assert.match(seen, /b: 'B'/);
+  });
+
+  it("does not call the model when only a localized separator differs", async () => {
+    const { dir, meta } = tree({
+      en: `export default {\n  'Getting started': {\n    type: 'separator',\n  },\n  a: 'A',\n};\n`,
+      zh: `export default {\n  '入门': {\n    type: 'separator',\n  },\n  a: '甲',\n};\n`,
+      pages: ["a.md"]
+    });
+    let called = false;
+    meta.translateMetaFileContent = async () => {
+      called = true;
+      return "";
+    };
+    await meta.translateMetaFile("_meta.ts", "zh");
+    assert.equal(called, false);
+    assert.match(
+      fs.readFileSync(path.join(dir, "zh", "_meta.ts"), "utf8"),
+      /入门/
+    );
+  });
+
+  it("translates a separator English has newly added", async () => {
+    const { dir, meta } = tree({
+      en:
+        `export default {\n  '入门': {\n    type: 'separator',\n  },\n  a: 'A',\n  'Advanced': {\n    type: 'separator',\n  },\n  b: 'B',\n};\n`,
+      zh: `export default {\n  '入门': {\n    type: 'separator',\n  },\n  a: '甲',\n};\n`,
+      pages: ["a.md", "b.md"]
+    });
+    meta.translateMetaFileContent = async () =>
+      `export default {\n  '进阶': {\n    type: 'separator',\n  },\n  b: '乙',\n};\n`;
+    await meta.translateMetaFile("_meta.ts", "zh");
+    const out = fs.readFileSync(path.join(dir, "zh", "_meta.ts"), "utf8");
+    assert.match(out, /入门/);
+    assert.match(out, /进阶/);
+    assert.doesNotMatch(out, /Advanced/);
+  });
 });

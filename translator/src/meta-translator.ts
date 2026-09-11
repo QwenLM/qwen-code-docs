@@ -155,8 +155,24 @@ export class MetaTranslator {
       // Telegram and WeChat. 33 values were rewritten that way in a single
       // run and had to be restored by hand (#278). Only what is missing is
       // sent to the model.
-      const have = new Set((existing?.entries ?? []).map(([key]) => key));
-      const missing = source.entries.filter(([key]) => !have.has(key));
+      // A separator's key IS its display text, so a translated file keys it
+      // in the target language -- `'Erste Schritte'` where English has
+      // `'Getting started'`. Matching those by key never hits, which sent the
+      // localized separator to be "filled in" from English and replaced the
+      // German heading with the English one. They are matched by position
+      // among the structural entries instead. Same for `menu` and `href`
+      // entries, whose titles are localized the same way.
+      const isStructural = (text: string) => /\b(?:type|href)\s*:/.test(text);
+      const byKey = new Map(existing?.entries ?? []);
+      const byPosition = (existing?.entries ?? [])
+        .filter(([, text]) => isStructural(text))
+        .map(([, text]) => text);
+
+      let structural = 0;
+      const resolved = source.entries.map(([key, text]) =>
+        isStructural(text) ? byPosition[structural++] : byKey.get(key)
+      );
+      const missing = source.entries.filter((_, i) => resolved[i] === undefined);
 
       if (existing && !missing.length) {
         console.log(chalk.gray(`  = ${targetLanguage}: already complete`));
@@ -172,11 +188,16 @@ export class MetaTranslator {
         await this.translateMetaFileContent(partial, targetLanguage)
       );
       const fresh = new Map(translated.entries);
-      const kept = new Map(existing?.entries ?? []);
+      let freshStructural = translated.entries
+        .filter(([, text]) => isStructural(text))
+        .map(([, text]) => text);
 
       // English order, existing values preserved, new values filled in.
       const merged = source.entries
-        .map(([key]) => kept.get(key) ?? fresh.get(key))
+        .map(([key, text], i) =>
+          resolved[i] ??
+          (isStructural(text) ? freshStructural.shift() : fresh.get(key))
+        )
         .filter((text): text is string => text !== undefined);
 
       await fs.writeFile(
