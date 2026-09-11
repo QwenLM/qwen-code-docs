@@ -5,21 +5,28 @@ export default {
   },
   architecture: 'Architektur',
   roadmap: 'Roadmap',
-  contributing: 'Beitragshandbuch',
+  contributing: 'Leitfaden für Mitwirkende',
   'Qwen Code SDK': {
-    title: 'Agent-SDK',
+    title: 'Agent SDK',
     type: 'separator',
   },
-  'sdk-typescript': 'TypeScript-SDK',
-  'sdk-java': 'Java-SDK (Alpha)',
+  'sdk-typescript': 'TypeScript SDK',
+  'sdk-python': 'Python SDK (Alpha)',
+  'sdk-java': 'Java SDK (Alpha)',
   'Dive Into Qwen Code': {
-    title: 'In Qwen Code eintauchen',
+    title: 'Qwen Code im Detail',
     type: 'separator',
   },
 
+  'channel-plugins': 'Leitfaden für Channel-Plugins',
   tools: 'Tools',
+  'rest-api-integration': 'Leitfaden zur REST-API-Integration',
+  'qwen-serve-protocol': 'qwen serve HTTP-Protokoll',
+  daemon: 'Daemon-Modus (Deep Dive für Entwickler)',
+  'daemon-client-adapters': 'Daemon-Client-Adapter',
+  'daemon-ui': 'Daemon-UI',
+  extensions: 'Erweiterungen',
+  development: 'Entwicklung',
 
-  examples: {
-    display: 'hidden',
-  },
+  examples: 'Beispiele',
 };
