@@ -30,6 +30,9 @@ test("preflight retries a transient network failure", async () => {
           ...process.env,
           OPENAI_API_KEY: "test-key",
           OPENAI_BASE_URL: `http://127.0.0.1:${address.port}`,
+          // The real first backoff is 15s. The point here is that a retry
+          // happens at all, not how long it waits for.
+          PREFLIGHT_BACKOFF_MS: "10",
         },
       }
     );
@@ -42,7 +45,7 @@ test("preflight retries a transient network failure", async () => {
 
     assert.equal(status, 0, output);
     assert.equal(requests, 2);
-    assert.match(output, /attempt 1\/3 failed.*retrying/);
+    assert.match(output, /attempt 1\/5 failed.*retrying in/);
     assert.match(output, /credentials OK/);
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()));

@@ -1797,6 +1797,9 @@ function cmdReportBatch() {
  * fails fast.
  */
 const PREFLIGHT_ATTEMPTS = 5;
+// Overridable so the test for this does not have to sit through the real
+// backoff; nothing in CI or the workflow sets it.
+const PREFLIGHT_BACKOFF_MS = Number(process.env.PREFLIGHT_BACKOFF_MS) || 15_000;
 
 async function cmdPreflight() {
   const base = (
@@ -1849,7 +1852,10 @@ async function cmdPreflight() {
         console.log(`::error::preflight: ${err.message}${cause}`);
         process.exit(1);
       }
-      const wait = Math.min(120_000, 15_000 * 2 ** (attempt - 1));
+      const wait = Math.min(
+        8 * PREFLIGHT_BACKOFF_MS,
+        PREFLIGHT_BACKOFF_MS * 2 ** (attempt - 1)
+      );
       console.log(
         `::warning::preflight attempt ${attempt}/${PREFLIGHT_ATTEMPTS} failed: ${err.message}${cause}; retrying in ${wait / 1000}s...`
       );
