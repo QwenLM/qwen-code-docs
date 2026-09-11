@@ -151,7 +151,11 @@ export class MetaTranslator {
       );
 
       // 写入目标文件
-      await fs.writeFile(targetPath, translatedContent, "utf-8");
+      await fs.writeFile(
+        targetPath,
+        this.dropKeysWithoutPages(translatedContent, path.dirname(targetPath)),
+        "utf-8"
+      );
     } catch (error: any) {
       console.error(
         chalk.red(`❌ 翻译文件失败 ${metaFilePath}: ${error.message}`)
@@ -207,6 +211,89 @@ export class MetaTranslator {
   /**
    * 使用 LLM 直接翻译 _meta.ts 文件内容
    */
+
+  /**
+   * Remove entries whose key has no page in the target locale.
+   *
+   * The translation copies every key from English, including pages that
+   * locale does not have yet -- and Nextra refuses to build a `_meta` key
+   * with no page behind it, which takes the whole site down rather than
+   * degrading one entry. `ko/developers/_meta.ts` did exactly that on
+   * 2026-09-11: generated from nothing, it listed `extensions`, and the
+   * deploy failed with "refers to a page that cannot be found".
+   *
+   * The CI guard catches this now, but catching it leaves a human to delete
+   * a line every time a locale runs behind English. Dropping it at the
+   * source is the fix; the key comes back on its own once the page is
+   * translated and navigation is regenerated.
+   *
+   * Separator entries are kept regardless: their key is a display label,
+   * not a route.
+   */
+  private dropKeysWithoutPages(content: string, targetDir: string): string {
+    const start = content.indexOf("{", content.indexOf("export default"));
+    if (start < 0) return content;
+
+    const lines = content.split("\n");
+    const kept: string[] = [];
+    let depth = 0;
+    let entry: string[] = [];
+    let entryKey: string | null = null;
+    let started = false;
+
+    const flush = () => {
+      if (!entry.length) return;
+      const text = entry.join("\n");
+      const isSeparator = /type:\s*['"]separator['"]/.test(text);
+      const hasPage =
+        entryKey !== null &&
+        [".md", ".mdx", ""].some((ext) =>
+          fs.existsSync(path.join(targetDir, entryKey + ext))
+        );
+      if (isSeparator || entryKey === null || hasPage) kept.push(text);
+      else
+        console.log(
+          chalk.yellow(
+            `  ↷ dropped "${entryKey}": no page for it in ${path.basename(targetDir)}`
+          )
+        );
+      entry = [];
+      entryKey = null;
+    };
+
+    for (const line of lines) {
+      if (!started) {
+        kept.push(line);
+        if (line.includes("{")) {
+          started = true;
+          depth = 1;
+        }
+        continue;
+      }
+      if (depth === 1) {
+        const match = line.match(/^\s*(?:'([^']+)'|"([^"]+)"|([A-Za-z0-9_$-]+))\s*:/);
+        if (match) {
+          flush();
+          entryKey = match[1] ?? match[2] ?? match[3] ?? null;
+        }
+      }
+      const closing = (line.match(/}/g) || []).length;
+      const opening = (line.match(/{/g) || []).length;
+      if (depth === 1 && closing > opening) {
+        // The object literal's own closing brace: everything after it is tail.
+        flush();
+        depth = 0;
+        kept.push(line);
+        continue;
+      }
+      depth += opening - closing;
+      if (entryKey !== null) entry.push(line);
+      else kept.push(line);
+    }
+    flush();
+    return kept.join("\n");
+  }
+
   private async translateMetaFileContent(
     sourceContent: string,
     targetLanguage: string
