@@ -1,20 +1,22 @@
 export default {
-  'Bien démarrer': {
+  'Getting started': {
     type: 'separator',
-    title: 'Bien démarrer', // Le titre est facultatif
+    title: 'Pour commencer', // Le titre est facultatif
   },
-  overview: 'Aperçu',
+  overview: 'Vue d\'ensemble',
   quickstart: 'Démarrage rapide',
-  'common-workflow': 'Flux de commandes',
-  'En dehors du terminal': {
+  'common-workflow': 'Workflows de commandes',
+  'Outside of the terminal': {
     type: 'separator',
     title: 'En dehors du terminal', // Le titre est facultatif
   },
   'integration-vscode': 'Visual Studio Code',
   'integration-zed': 'Zed IDE',
-  'integration-jetbrains': 'IDE JetBrains',
-  'integration-github-action': 'Actions GitHub',
-  'Coder avec Qwen Code': {
+  'integration-jetbrains': 'JetBrains IDEs',
+  'integration-github-action': 'Github Actions',
+  'qwen-serve': 'Mode démon',
+  'qwen-serve-deploy-local': 'Déploiement local',
+  'Code with Qwen Code': {
     type: 'separator',
     title: 'Coder avec Qwen Code', // Le titre est facultatif
   },
@@ -23,7 +25,8 @@ export default {
   extension: 'Extension',
   reference: 'Référence',
   support: 'Support',
-  // À affiner
+  'conversations-recovery': 'Récupération de conversation',
+  // à affiner
   'ide-integration': {
     display: 'hidden',
   },

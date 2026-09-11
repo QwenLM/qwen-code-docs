@@ -11,19 +11,22 @@ export default {
     title: 'Außerhalb des Terminals', // Titel ist optional
   },
   'integration-vscode': 'Visual Studio Code',
-  'integration-zed': 'Zed-IDE',
-  'integration-jetbrains': 'JetBrains-IDEs',
-  'integration-github-action': 'GitHub-Aktionen',
-  'Code mit Qwen Code': {
+  'integration-zed': 'Zed IDE',
+  'integration-jetbrains': 'JetBrains IDEs',
+  'integration-github-action': 'GitHub Actions',
+  'qwen-serve': 'Daemon-Modus',
+  'qwen-serve-deploy-local': 'Lokales Deployment',
+  'Entwickeln mit Qwen Code': {
     type: 'separator',
-    title: 'Code mit Qwen Code', // Titel ist optional
+    title: 'Entwickeln mit Qwen Code', // Titel ist optional
   },
-  features: 'Funktionen',
+  features: 'Features',
   configuration: 'Konfiguration',
   extension: 'Erweiterung',
   reference: 'Referenz',
   support: 'Support',
-  // muss noch überarbeitet werden
+  'conversations-recovery': 'Konversationswiederherstellung',
+  // muss noch verfeinert werden
   'ide-integration': {
     display: 'hidden',
   },
