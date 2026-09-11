@@ -25,7 +25,6 @@ export default {
   extension: '扩展',
   reference: '参考文档',
   support: '支持',
-  // 需要优化
   'conversations-recovery': '会话恢复',
   // 需要优化
   'ide-integration': {

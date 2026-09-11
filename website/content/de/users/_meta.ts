@@ -25,7 +25,6 @@ export default {
   extension: 'Erweiterung',
   reference: 'Referenz',
   support: 'Support',
-  // muss noch überarbeitet werden
   'conversations-recovery': 'Konversationswiederherstellung',
   // muss verfeinert werden
   'ide-integration': {

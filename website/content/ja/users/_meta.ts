@@ -25,7 +25,6 @@ export default {
   extension: '拡張機能',
   reference: 'リファレンス',
   support: 'サポート',
-  // 後で修正が必要
   'conversations-recovery': '会話の復元',
   // 要改善
   'ide-integration': {

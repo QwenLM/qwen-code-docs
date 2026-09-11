@@ -25,7 +25,6 @@ export default {
   extension: 'Расширение',
   reference: 'Справочник',
   support: 'Поддержка',
-  // требует уточнения
   'conversations-recovery': 'Восстановление диалогов',
   // требует доработки
   'ide-integration': {
