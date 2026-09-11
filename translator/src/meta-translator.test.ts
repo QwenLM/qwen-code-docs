@@ -304,4 +304,34 @@ describe("dropKeysWithoutPages", () => {
     assert.match(out, /title: '社区'/);
     assert.doesNotMatch(seen, /Blog|Users/);
   });
+
+  it("re-translates a run of adjacent links when English grows it", async () => {
+    // Adjacent label-keyed entries have no identity between them, so an
+    // offset inside the run is position again: inserting `Discord` in front
+    // bound it to the reviewed `GitHub 仓库`, dropped Discord and emitted
+    // `GitHub` a second time -- a duplicate key. A run whose length changed
+    // is ambiguous, so the whole run goes back to the model.
+    const { dir, meta } = tree({
+      en:
+        `export default {\n  a: 'A',\n  'Discord': {\n    type: 'page',\n    href: 'https://discord.gg/x',\n  },\n  'GitHub': {\n    type: 'page',\n    href: 'https://github.com/x',\n  },\n};\n`,
+      zh:
+        `export default {\n  a: '甲',\n  'GitHub 仓库': {\n    type: 'page',\n    href: 'https://github.com/x',\n  },\n};\n`,
+      pages: ["a.md"]
+    });
+    let seen = "";
+    meta.translateMetaFileContent = async (partial: string) => {
+      seen = partial;
+      return partial
+        .replace("'Discord'", "'Discord 社区'")
+        .replace("'GitHub'", "'GitHub 仓库'");
+    };
+    await meta.translateMetaFile("_meta.ts", "zh");
+    const out = fs.readFileSync(path.join(dir, "zh", "_meta.ts"), "utf8");
+    assert.deepEqual(
+      [...out.matchAll(/'([^']+)': \{/g)].map((m) => m[1]),
+      ["Discord 社区", "GitHub 仓库"]
+    );
+    assert.match(seen, /Discord/);
+    assert.match(seen, /GitHub/);
+  });
 });

@@ -171,13 +171,18 @@ export class MetaTranslator {
         /\btype\s*:\s*['"](?:separator|menu)['"]/.test(text) ||
         /\bhref\s*:/.test(text);
 
-      // Anchor id per label-keyed entry, undefined for route-keyed ones. The
-      // offset within a run keeps consecutive headings distinct.
+      // Anchor id per label-keyed entry, undefined for route-keyed ones.
+      // Inside a run of consecutive label-keyed entries there is no identity
+      // to match on -- an offset is just position again, and position binds
+      // the wrong heading as soon as English inserts into the run. The run
+      // length is part of the id so runs of different length never match:
+      // the entries fall through and are re-translated instead of guessed.
       const anchors = (entries: ReadonlyArray<[string, string]>) => {
         const ids: Array<string | undefined> = entries.map(() => undefined);
         let run: number[] = [];
         const bind = (anchor: string) => {
-          run.forEach((at, offset) => (ids[at] = `${anchor}#${offset}`));
+          const size = run.length;
+          run.forEach((at, offset) => (ids[at] = `${anchor}#${size}#${offset}`));
           run = [];
         };
         entries.forEach(([key, text], at) => {
