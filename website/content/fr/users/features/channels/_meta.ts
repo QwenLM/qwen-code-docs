@@ -1,7 +1,13 @@
 export default {
-  overview: 'Aperçu',
+  overview: 'Vue d\'ensemble',
   telegram: 'Telegram',
   weixin: 'WeChat',
   dingtalk: 'DingTalk',
+  wecom: 'WeCom',
+  feishu: 'Feishu (Lark)',
+  qqbot: 'QQ Bot',
+  dws: 'DingTalk Workspace',
+  github: 'GitHub',
+  gitlab: 'GitLab',
   plugins: 'Plugins',
 };
