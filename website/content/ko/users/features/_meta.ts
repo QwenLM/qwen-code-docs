@@ -10,9 +10,6 @@ export default {
   memory: '메모리',
   headless: '헤드리스 모드',
   'dual-output': '이중 출력',
-  checkpointing: {
-    display: 'hidden',
-  },
   'approval-mode': '승인 모드',
   mcp: 'MCP',
   lsp: 'LSP (Language Server Protocol)',
