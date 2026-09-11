@@ -1752,9 +1752,12 @@ function untranslatedProse(text) {
  * Run the structural gate over an explicit list of files, for use on a pull
  * request rather than inside a nightly run.
  *
- * The nightly already gates everything it writes, so automation PRs arrive
- * pre-checked. Human-authored PRs that touch `website/content` do not: blog
- * posts, showcase entries and hand-written translations reach `main` with no
+ * The nightly already gates everything it writes, and its branches are
+ * excluded by the workflow -- since #260 it knowingly keeps a translation that
+ * still fails on fence count when that count is closer to the EN source, and
+ * reporting that improvement here would turn its own PR red. Human-authored
+ * PRs that touch `website/content` are gated by nothing else: blog posts,
+ * showcase entries and hand-written translations reach `main` with no
  * structural verification at all. This is the same `structuralProblems()` the
  * nightly uses -- deliberately the same function, so the two cannot drift.
  *
