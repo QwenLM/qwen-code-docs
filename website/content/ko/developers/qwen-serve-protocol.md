@@ -4,15 +4,15 @@
 
 ## 인증
 
-데몬이 `--token` 또는 `QWEN_SERVER_TOKEN`과 함께 시작되었을 때, **루프백 바인드의 `/health`를 제외한 모든 라우트**는 다음 헤더를 포함해야 합니다:
+데몬이 `--token` 또는 `QWEN_SERVER_TOKEN`과 함께 시작되었을 때 — 또는 둘 다 없이 비루프백으로 바인딩되어 시작 시 일회성 ephemeral bearer를 생성하고 출력하는 경우 — **일반 루프백 바인드의 `/health`를 제외한 모든 일반 API 라우트**는 다음 헤더를 포함해야 합니다:
 
 ```
 Authorization: Bearer <token>
 ```
 
-구성된 토큰이 없는 경우(루프백 개발 기본값)에는 헤더가 선택 사항입니다. 토큰 비교는 상수 시간 연산입니다. 401 응답은 `missing header` / `wrong scheme` / `wrong token` 모두 동일합니다.
+루프백 기본값에서 구성된 토큰이 없으면 헤더가 선택 사항이며, 기본 리스너를 통해 도착하는 요청은 전체 운영자 API 권한을 가집니다. 워크스페이스 신뢰, 세션 소유권, `X-Qwen-Client-Id`, 권한, 기능, 검증 및 리소스 검사는 여전히 적용됩니다. 토큰 비교는 상수 시간 연산입니다. 401 응답은 `missing header` / `wrong scheme` / `wrong token` 모두 동일합니다.
 
-**`--open-with-auth`.** 기본값으로 꺼져 있는 이 CLI 모드는 루프백 바인드와 사용 가능한 Web Shell을 요구합니다. 일반적인 `--token`-우선-`QWEN_SERVER_TOKEN` 선택을 재사용하거나, 해당 선택이 비어 있을 때 데몬 시작 전에 base64url로 인코딩된 32바이트 난수를 생성합니다. 브라우저는 선택된 bearer를 `#token=`을 통해 받아 탬별로 저장하며, 프로토콜과 미들웨어는 일반 구성된 토큰을 봅니다. 맨 `--open`, 직접 임베디드 호출자, 비루프백 바인드 및 다른 클라이언트는 자동 자격 증명을 받지 않습니다. 브라우저 비호환 환경은 비밀을 포함한 프래그먼트 URL을 출력하여 수동으로 열 수 있게 합니다. 루프백 `/health`와 정적 Web Shell 자산은 아래 설명된 면제를 유지합니다; `--require-auth`는 여전히 `/health`를 게이트합니다.
+**`--open-with-auth`.** 기본값으로 꺼져 있는 이 CLI 모드는 루프백 바인드와 사용 가능한 Web Shell을 요구합니다. 일반적인 `--token`-우선-`QWEN_SERVER_TOKEN` 선택을 재사용하거나, 해당 선택이 비어 있을 때 데몬 시작 전에 base64url로 인코딩된 32바이트 난수를 생성합니다. 브라우저는 선택된 bearer를 `#token=`을 통해 받아 탭별로 저장하며, 프로토콜과 미들웨어는 일반 구성된 토큰을 봅니다. 프래그먼트 전달은 이 플래그가 아닌 해결된 토큰을 기준으로 합니다: 모든 `--open` 실행은 해결된 bearer(구성되거나 생성된)를 실행된 URL의 `#token=` 프래그먼트에 첨부합니다(런처가 경고하듯이 `ps` / `/proc`를 통해 로컬 사용자에게 표시됨). 따라서 비루프백 바인드와 맨 `--open`은 동일한 방식으로 생성된 bearer를 브라우저에 전달합니다. 이 플래그의 고유한 기여는 루프백에서의 토큰 _생성_과 브라우저 비호환 수동 URL 폴백입니다. `RunHandle.resolvedToken`을 무시하는 직접 임베디드 호출자와 브라우저를 실행하지 않는 클라이언트만 자동 자격 증명을 받지 않습니다. 브라우저 비호환 환경은 비밀을 포함한 프래그먼트 URL을 수동으로 열 수 있도록 출력합니다. 루프백 `/health`와 정적 Web Shell 자산은 아래 설명된 면제를 유지합니다; `--require-auth`는 여전히 `/health`를 게이트합니다.
 
 **`/health` 면제**(루프백): 루프백 바인드(`127.0.0.1` / `localhost` / `::1` / `[::1]`)에서 `/health`는 bearer 미들웨어보다 먼저 등록되므로, 파드 내부의 liveness probe는 데몬이 `--token`과 함께 시작되었더라도 토큰을 포함할 필요가 없습니다. 비루프백 바인드(`--hostname 0.0.0.0` 등)에서는 `/health`가 다른 모든 라우트와 동일하게 bearer 뒤에 게이트됩니다 — 근거는 [`GET /health`](#get-health) 섹션을 참조하세요.
 
@@ -202,12 +202,13 @@ ACP 채널 초기화 예산이 `newSession`이 디스패치되기 전에 만료�
  'slow_client_warning', 'typed_event_schema',
  'session_set_model', 'client_identity', 'client_heartbeat',
  'session_permission_vote', 'permission_vote', 'workspace_mcp', 'workspace_skills',
+ 'workspace_skills_config_runtime',
  'workspace_providers', 'workspace_acp_preheat', 'workspace_acp_status',
  'auth_provider_install', 'workspace_memory',
  'workspace_agents', 'workspace_agent_generate', 'workspace_env',
  'workspace_preflight', 'session_context', 'session_context_usage',
  'session_supported_commands', 'session_tasks', 'session_monitor_tool_correlation', 'session_stats',
- 'session_lsp', 'session_status',
+ 'session_lsp', 'session_resources', 'session_status',
  'session_close', 'session_metadata', 'session_organization',
  'session_archive', 'mcp_guardrails',
  'workspace_mcp_manage', 'mcp_guardrail_events',
@@ -216,19 +217,20 @@ ACP 채널 초기화 예산이 `newSession`이 디스패치되기 전에 만료�
  'workspace_file_upload',
  'session_approval_mode_control', 'workspace_tool_toggle',
  'workspace_skill_settings_toggle', 'workspace_skill_settings_batch_toggle',
- 'extension_batch_activation_v2',
+ 'extension_batch_activation_v2', 'extension_activation_explicit_refresh',
+ 'extension_state',
  'workspace_settings', 'workspace_init', 'workspace_mcp_restart',
  'session_recap', 'session_generation', 'session_btw', 'session_shell_command',
- 'standalone_sessions_v1',
+ 'standalone_sessions_v1', 'standalone_session_options_v1',
  'mcp_workspace_pool', 'mcp_pool_restart',
  'require_auth', 'allow_origin', 'auth_device_flow',
  'permission_mediation', 'prompt_absolute_deadline', 'writer_idle_timeout',
- 'non_blocking_prompt', 'session_language', 'session_rewind',
+ 'non_blocking_prompt', 'session_language', 'user_language_sync', 'session_rewind',
  'workspace_hooks', 'session_hooks', 'workspace_extensions',
  'session_branch', 'rate_limit', 'workspace_reload', 'channel_delivery',
  'multi_workspace_sessions', 'multi_workspace_session_rewind',
  'multi_workspace_session_shell', 'persistent_workspace_registration',
- 'workspace_display_name',
+ 'workspace_display_name', 'workspace_runtime_removal', 'workspace_runtime',
  'workspace_qualified_rest_core', 'workspace_qualified_voice',
  'workspace_qualified_memory', 'extension_management_v2', 'extension_git_credentials',
  'extension_local_path_install',
@@ -250,6 +252,31 @@ ACP 채널 초기화 예산이 `newSession`이 디스패치되기 전에 만료�
 
 `workspace_runtime_removal`은 `DELETE /workspaces/:workspace`를 통한 동기식 즉시 제거를 광고합니다. 기능 워크스페이스 항목에 선택적 `removable`이 추가됩니다; `removable: true`인 행만 제거할 수 있습니다. 제거는 런타임에 대한 모든 영구 등록 별칭도 잊지만, 파일, 설정, 트랜스크립트, 아카이브를 삭제하지는 않습니다.
 
+`workspace_runtime`은 `GET /workspace/runtime/status`, `POST /workspace/runtime/ensure`, 그리고 `/workspaces/:workspace/runtime/...` 상당 라우트를 광고합니다. `ensure`는 기능 선택을 받지 않습니다: 선택된 신뢰 워크스페이스의 ACP 런타임을 시작하거나 재사용하며, 라이프사이클 상태와 단조 런타임 에포크를 반환합니다. 기본 라우트는 기본 런타임만 소유합니다; 한정 라우트는 선택된 등록된 런타임만 해석하며 절대 폴백하지 않습니다. 성공적인 ensure는 런타임의 10분 키프얼라이브 창을 갱신합니다. Status는 읽기 전용이며 자식을 시작하지 않습니다. 동시 ensure는 하나의 물리적 시작을 공유합니다. 시작 진행 중 또는 실패 시 재시도 가능한 `503 runtime_still_starting` 또는 `503 runtime_initialization_failed`를 반환합니다. 기능 준비는 ensure 관측 예산이 만료된 후에도 계속될 수 있습니다; 해당 경우 ensure는 여전히 라이브 런타임을 반환하지만 상태 폴링을 위해 준비되지 않은 기능 상태를 가집니다. 이 기능은 모든 활성 런타임 브리지가 권위 있는 라이프사이클 스냅샷을 제공할 때만 광고됩니다; 선택된 레거시 주입 브리지는 추측된 상태나 에포크 대신 `501 workspace_runtime_not_supported`를 반환합니다.
+
+런타임 상태 및 ensure 응답은 다음 형식을 사용합니다:
+
+```json
+{
+  "v": 1,
+  "workspaceCwd": "/work/project",
+  "state": "active",
+  "runtimeLive": true,
+  "runtimeEpoch": 4,
+  "capabilities": {
+    "skills": {
+      "state": "ready",
+      "revision": 2,
+      "runtimeEpoch": 4
+    }
+  }
+}
+```
+
+`capabilities.skills.state`는 `not_started`, `starting`, `ready`, `stale`, 또는 `error`입니다; 실패 시 `capabilities.skills.error`에 `{code, message}`가 포함됩니다. Skills 카탈로그는 최상위 레벨과 기능 `runtimeEpoch` 값이 일치할 때만 최신입니다. `revision`은 하나의 런타임 에포크 내 Skills 준비 순서를 결정하며 에포크 간에 비교하면 안 됩니다.
+
+`workspace_skills_config_runtime`은 `/workspace/{config,runtime}/skills`와 `/workspaces/:workspace/{config,runtime}/skills` 아래의 분할된 Skills 읽기 및 구성 변이를 광고합니다. Web Shell은 Skills 관리에 이 라우트를 사용하며, 새 세션을 작성하는 동안 슬래시 명령어를 구성에서 즉시 채운 다음 일치하는 에포크의 런타임 카탈로그로 교체합니다. 이 기능이 없으면 클라이언트는 레거시 Skills 라우트를 계속 사용해야 하며 Skills만을 위해 런타임 ensure를 호출하면 안 됩니다.
+
 `session_load`와 `session_resume`은 명시적 복원 라우트(`POST /session/:id/load` 및 `POST /session/:id/resume`)를 광고합니다. 이전 데몬은 이 경로에 대해 `404`를 반환하므로, SDK 클라이언트는 호출 전에 `caps.features`를 프리플라이트해야 합니다. `unstable_session_resume`는 기본 ACP 메서드가 `connection.unstable_resumeSession`으로 명명되었던 동안 출시된 SDK와의 호환성을 위해 여전히 지원 중단된 별칭으로 광고됩니다; 새 클라이언트는 `session_resume`을 게이트해야 합니다.
 
 `limits.sessionRestoreTimeoutMs`가 존재할 때, 이는 기본 ACP `loadSession` / `unstable_resumeSession` 요청에 대한 데몬의 벽시계 예산입니다. 부가적인 v1 필드입니다. TypeScript SDK는 데몬에 10초의 클라이언트 여유를 제공하고, WebUI 워치독은 15초를 제공합니다; 이전 데몬과 통신하는 클라이언트는 각각 70초와 75초를 사용해야 합니다.
@@ -263,6 +290,8 @@ ACP 채널 초기화 예산이 `newSession`이 디스패치되기 전에 만료�
 `workspace_archived_session_export`는 `GET /workspaces/:workspace/session/:id/archive/export`를 광고하며, 선택된 워크스페이스의 아카이브된 지속 스토리지에서의 신뢰 전용 전체 내보내기입니다. `workspace_session_export` 및 `workspace_qualified_rest_core`와 독립적입니다; 클라이언트는 이 태그를 직접 프리플라이트해야 합니다. 별개 라우트는 이전 데몬이 아카이브 의도를 무시하고 동일한 ID의 활성 트랜스크립트를 반환하는 것을 방지합니다.
 
 `workspace_session_live_state`는 `GET /workspaces/:workspace/sessions/live-state`를 광고하며, 선택된 워크스페이스 런타임의 라이브 세션에 대한 신뢰 전용 인메모리 스냅샷과 클라이언트에게 완전한 지속 카탈로그 리로드가 필요한 시기를 알리는 인메모리 카탈로그 버전을 포함합니다. `workspace_qualified_rest_core`와 독립적입니다; 출시된 데몬은 이 라우트를 구현하지 않고도 더 넓은 워크스페이스 REST 기능을 광고할 수 있으므로, 클라이언트는 이 태그를 직접 프리플라이트해야 합니다. 이 태그는 무조건적입니다 — 신뢰되는 단일 워크스페이스 기본값이 ID 또는 cwd로 라우트를 사용할 수 있기 때문입니다; 워크스페이스별 신뢰 검사는 여전히 모든 요청에 적용되며, 라우트는 관대한 신뢰되지 않은 보조 지속 카탈로그 읽기 정책을 라이브 브리지 상태로 확장하지 않습니다. 이 태그는 엔드포인트가 존재함을 의미합니다; 모든 라이브 항목이 선택적 `updatedAt` 활동 워터마크를 갖는다고 약속하지는 않으며, 이는 라이프사이클에 따라 다릅니다.
+
+선택적 최상위 `/capabilities` 필드 `sessionLiveStatePollIntervalMs`는 데몬 전체 라이브 상태 폴링 간격을 밀리초로 광고합니다. 시작 환경 변수 `QWEN_SESSION_LIVE_STATE_POLL_INTERVAL_MS`에서 한 번 해석되며, 워크스페이스 환경 오버레이와 독립적입니다. `1000`부터 `2147483647`까지의 정수 값이 허용되며, 없거나 잘못된 값은 `5000`을 사용합니다. Web Shell은 모든 워크스페이스 라이브 상태 폴링에 이 힌트를 소비하며, 이전 또는 호환되지 않는 데몬의 부재 또는 잘못된 필드에 대해 `5000`으로 폴백합니다. 이 필드는 라우트의 스냅샷 의미, 즉시 로컬/가시성 새로고침, 또는 전체 카탈로그 폴링을 변경하지 않습니다. SDK 클라이언트는 자체 타이머에 대한 책임을 유지합니다.
 
 `slow_client_warning`는 SSE 백프레셔 동작을 다룹니다: (a) 데몬은 구독자의 라이브 프레임 백로그 또는 라이브 직렬화 바이트 백로그가 75%를 초과할 때 `slow_client_warning` 합성 이벤트 스트림 프레임을 내보냅니다(오버플로우 에피소드당 한 번, 두 측정값 모두 37.5% 미만으로 배출된 후 재설정); (b) `GET /session/:id/events`는 `?maxQueued=N` 쿼리 파라미터(범위 `[16, 2048]`)를 받아 큰 리플레이 링에 대한 콜드 재연결 시 구독자별 프레임 백로그를 사전 sizing합니다. 직렬화 바이트 상한은 데몬 소유(구독자당 기본 **2 MiB**)이며, 라이브 전용이고 의도적으로 쿼리 파라미터가 없습니다. 데몬 전체 링 크기는 `--event-ring-size`(기본 **8000**, #3803 §02 참조)로 제어됩니다. 이전 데몬은 경고/쿼리 동작이 없으므로 — 옵트인 전에 이 태그를 프리플라이트하세요.
 
@@ -286,11 +315,13 @@ ACP 채널 초기화 예산이 `newSession`이 디스패치되기 전에 만료�
 
 `session_lsp`는 `GET /session/:id/lsp`를 광고하며, 데몬 클라이언트를 위한 읽기 전용 구조화된 LSP 상태 스냅샷입니다. 이전 데몬은 `404`를 반환합니다; 원격 LSP 상태를 노출하기 전에 이 태그를 프리플라이트하세요.
 
+`session_resources`는 `GET /session/:id/resources`를 광고하며, 선택된 라이브 세션의 Config에서 구축된 삭제된 Skill 및 MCP 스냅샷의 읽기 전용 쌍입니다. 이 라우트는 라이브 세션 소유자 범위를 가집니다: 기본 런타임으로 절대 폴백하지 않으며 워크스페이스 상태에서 세션의 리소스를 추론하지 않습니다. 중첩된 `skills`와 `mcp` 객체는 해당 워크스페이스 상태 페이로드를 재사용하지만, MCP 인증, 풀, 워크스페이스 예산, 그리고 워크스페이스 발견 오류 보강은 생략합니다. 선택된 세션의 MCP 매니저가 보고하는 상태, 발견, 그리고 회계는 그대로 유지됩니다. 이전 데몬은 `404`를 반환합니다; 세션 리소스 카탈로그를 노출하기 전에 이 태그를 프리플라이트하세요.
+
 `session_status`는 `GET /session/:id/status`를 광고하며, ID별 단일 세션의 라이브 브리지 요약입니다. `clientCount`와 `hasActivePrompt` 외에, 라이브 세션은 `isWaitingForPermission`, `isWaitingForUserQuestion`, `pendingInteractionCount`, 그리고 실패한 턴 이후 유지되는 `turnError`를 노출합니다. 오류는 다음 프롬프트가 실제로 시작될 때 정리됩니다. 현재 브리지에서 실행 중인 턴을 완료한 라이브 세션은 `updatedAt`도 포함합니다 — 라이브 상태 라우트에 문서화된 것과 동일한 활동 워터마크; 이 라우트는 브리지 요약을 직접 반환하므로, 값은 지속 트랜스크립트 mtime과 병합되지 않으며 세션 목록이 보고하는 것보다 이전일 수 있습니다. 단일 세션 상태 응답과 워크스페이스 세션 목록 모두 `turnError`와 `pendingInteractions`를 포함합니다: 렌더링 준비된 권한 작업 또는 `ask_user_question` 질문과 기존 권한 투표 라우트에 필요한 `requestId` 및 선택 가능한 옵션입니다. 각 사용자 질문에는 `answerKey`가 있습니다; 해당 값으로 키된 `answers`로 투표합니다(예: `{ "0": "Polling" }`). 지속 전용 세션은 런타임이 존재하지 않으므로 런타임 상태를 생략합니다. 이전 데몬은 `404`를 반환합니다; 전체 세션 목록을 스캔하는 대신 단일 세션의 상태를 폴링하기 전에 이 태그를 프리플라이트하세요.
 
 `session_info`는 `GET /workspace/:id/session-info`와 그 `/workspaces/:workspace/session-info` 쌍을 광고합니다. 응답은 목록 메타데이터를 수화하지 않고 지속된 활성 및 아카이브된 세션 수를 집계합니다. 명시적인 O(n) 디스크 스캔이며 폴링해서는 안 됩니다; 클라이언트는 `truncated: true`를 하한 결과로 취급해야 합니다.
 
-`session_approval_mode_control`, `workspace_tool_toggle`, `workspace_skill_settings_toggle`, `workspace_skill_settings_batch_toggle`, `extension_batch_activation_v2`, `workspace_init`, `workspace_mcp_restart`는 아래에 문서화된 변이 제어 라우트를 광고합니다. 이들은 변이 게이트에 의해 엄격하게 게이트됩니다(bearer 토큰 없이 구성된 데몬은 이들을 401 `token_required`로 거부). 이전 데몬은 `404`를 반환합니다; 해당 기능을 노출하기 전에 각 태그를 프리플라이트하세요.
+`session_approval_mode_control`, `workspace_tool_toggle`, `workspace_skill_settings_toggle`, `workspace_skill_settings_batch_toggle`, `extension_batch_activation_v2`, `workspace_init`, 그리고 `workspace_mcp_restart`는 아래에 문서화된 변이 제어 라우트를 광고합니다. 승인 모드 제어는 비엄격 호환성 게이트를 유지합니다. 다른 제어들은 운영자 권한에 의해 엄격하게 게이트됩니다: 신뢰 루프백 기본, bearer 인증, 또는 페어링된 Local Control 요청이 통과합니다. 신뢰 루프백 권한 없이 엄격 게이트에 도달하는 토큰 없는 기본 요청은 401 `token_required`를 반환합니다; 누락되거나 잘못된 구성된 자격 증명과 페어링되지 않은 Local Control 자격 증명은 bearer 미들웨어에 의해 더 일찍 단순 `401 Unauthorized`로 거부됩니다. 이 라우트 중 하나가 없는 데몬은 `404`를 반환합니다. 설정별 Skill 태그는 다릅니다: 지원 중단된 태그 세대의 데몬은 `workspace_skill_toggle`과 `workspace_skill_batch_toggle`를 광고하고 동일한 경로에서 카탈로그 검증된 계약을 제공합니다. 지원 중단된 단일 대상 라우트는 HTTP `404 skill_not_found` 또는 `409 skill_not_toggleable`를 반환할 수 있습니다; 지원 중단된 배치 라우트는 HTTP 200을 반환하고 카탈로그 유도 실패를 `errors[]`에 배치합니다. 각 기능을 노출하기 전에 각 태그를 프리플라이트하고, 라우트 도달 가능성을 탐색하여 설정별 Skill 계약을 추론하지 마세요. 라우트 경로와 요청 본문은 변경되지 않았습니다.
 
 `mcp_guardrails`(이슈 [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 14)는 MCP 예산 표면을 다룹니다: `GET /workspace/mcp`의 `clientCount` / `clientBudget` / `budgetMode` / `budgets[]` 필드, 서버별 셀의 `disabledReason` 필드, 그리고 `--mcp-client-budget` / `--mcp-budget-mode` CLI 플래그. 이전 데몬은 새 필드를 완전히 생략합니다; SDK 클라이언트는 `budgets[]` 의미에 의존하기 전에 이 태그를 프리플라이트합니다. 레지스트리 설명자는 향후 기능 모드 노출을 위해 `modes: ['warn', 'enforce']`도 포함합니다 — 현재는 클라이언트가 스냅샷의 `budgetMode` 필드에서 모드를 추론합니다. `enforce` 모드에서의 서버 거부는 `Object.entries(mcpServers)` 선언 순서에 따라 결정적입니다; 향후 범위 우선순위 레이어(qwen-code가 채택할 경우)는 claude-code의 `plugin < user < project < local` 규칙을 반영하여 "최저 우선순위 먼저"로 변경할 수 있습니다.
 
@@ -309,6 +340,8 @@ ACP 채널 초기화 예산이 `newSession`이 디스패치되기 전에 만료�
 `extension_local_path_install`는 `POST /workspace/extensions/install`과 `POST /extensions/install` 모두에서 데몬 로컬 Extension 소스를 광고합니다. `source`는 데몬 호스트에 존재하는 절대 경로여야 합니다. 상대 경로는 지원되지 않으므로 데몬 프로세스 cwd가 소스 정체성을 변경하거나 GitHub `owner/repo` 단축을 그림자 처리할 수 없습니다. 기존 설치 작업은 Extension을 관리 저장소로 복사합니다; 소스를 링크하지 않습니다. 이전 데몬은 로컬 소스를 거부하므로 클라이언트는 이 태그를 프리플라이트해야 합니다.
 
 `extension_batch_activation_v2`는 `PUT /extensions/activation`과 `PUT /workspaces/:workspace/extensions/activation`을 추가합니다. 둘 다 `extensionNames`에서 1–100개의 이름을 받아들이고, 대소문자를 구분하지 않고 중복을 제거하면서 처음 본 순서를 유지하며, 변경된 대상을 하나의 생성으로 지속하고, 하나의 `202` 작업 핸들을 반환합니다. 대상은 `enabled` 또는 `disabled`를 설정할 때 설치되어 있을 필요가 없습니다: 해당 이름은 해당 이름의 Extension이 설치될 때 보존되는 desired-state 선언을 생성합니다. 전역 라우트는 `state: "enabled" | "disabled"`를 받아들이고, V2 `defaultActivation`을 작성하며, 등록된 모든 런타임을 조정합니다. 워크스페이스 라우트도 `"inherit"`을 받아들이고, 선택된 신뢰되는 런타임에 대한 정확한 재정의를 적용 또는 제거하며, 해당 런타임만 조정합니다. `inherit`은 알 수 없는 이름을 선언하지 않습니다; 전체 알 수 없는 제거는 `updated: false`를 보고하고 조정을 건너뜁니다. 단일 활성화 라우트는 설치 전용 및 ID 주소 지정으로 남아 있습니다.
+
+`extension_activation_explicit_refresh`는 단일 및 배치 활성화 작업이 활성 세션을 직접 새로고침하지 않고 내구성 정책 커밋 후에 완료됨을 의미합니다. 즉시 적용이 필요한 호출자는 활성화 성공을 기다린 후 동기식 기본 워크스페이스 `POST /workspace/extensions/refresh`(새로고침 카운트를 직접 반환) 또는 선택된 워크스페이스의 비동기식 `POST /workspaces/:workspace/extensions/refresh`(별도 작업 핸들을 반환) 중 하나를 제출해야 합니다. 두 형태는 상호 교환 가능하지 않습니다: 비동기 작업은 런타임 조정이 완료될 때 적용된 생성을 기록하는 반면, 동기식 라우트는 아무것도 기록하지 않으므로 생성 조정기는 여전히 해당 워크스페이스를 대기 중으로 취급하고 다음 패스에서 세션을 다시 새로고침합니다. 특정 워크스페이스를 지정할 수 있는 호출자는 비동기 형태를 선호해야 합니다. 새로고침 실패는 활성화 결과를 롤백하거나 다운그레이드하지 않습니다. 이 기능이 없는 데몬은 이미 활성화에 런타임 새로고침을 포함하므로, 호환성 클라이언트는 두 번째 새로고침을 제출하면 안 됩니다. 독립적인 30초 생성 조정기는 계속 활성화되어 있으며 일반적으로 다음 패스에서 커밋된 정책을 적용합니다; 실패한 조정은 이후 패스에서 재시도됩니다.
 
 ### Extension Management V2 와이어 계약
 
@@ -474,15 +507,15 @@ Content-Type: application/json
 {
   "v": 1,
   "operationId": "<operation-id>",
-  "operation": "activation",
+  "operation": "uninstall",
   "status": "succeeded_with_warnings",
   "createdAt": 1750000000000,
   "updatedAt": 1750000000200,
   "result": {
-    "status": "disabled",
+    "status": "uninstalled",
     "name": "demo",
-    "refreshed": 1,
-    "failed": 1
+    "refreshed": 2,
+    "failed": 0
   },
   "warnings": [
     {
@@ -520,7 +553,9 @@ Content-Type: application/json
 | `workspace_voice_transcription`     | 기본 워크스페이스에 구성된 Voice 전사 모델이 있습니다. |
 | `session_shell_command`             | 세션 셸 실행이 명시적으로 활성화되어 있습니다. |
 | `standalone_sessions_v1`            | 데몬이 완전한 독립 세션 런타임, 라이프사이클 코디네이터, 내구성 삭제 저널, 관리 디렉토리 구현, 그리고 `/standalone/sessions` 라우트 패밀리를 설치했습니다. 완전한 의존성 그래프 없는 직접 임베드는 라우트와 이 태그를 모두 생략합니다. |
+| `standalone_session_options_v1`     | 완전한 독립 세션 런타임이 설치되어 있습니다(`standalone_sessions_v1`와 동일한 조건), 읽기 전용 세션 없는 `GET /standalone/session-options` 라우트가 내부 Conversations 런타임에 등록됩니다. |
 | `session_artifacts_persistence`     | 세션 아티팩트 지속성이 런타임에 와이어링되어 있습니다. |
+| `session_sources`                   | 세션 소스 지속성이 런타임에 와이어링되어 있습니다. 메타데이터 전용 워크스페이스 파일, 업로드된 첨부 파일, 그리고 HTTP(S) 링크를 라이브 세션 소유자를 통해 등록합니다. |
 | `session_generation`                | 세션 생성 도우미를 사용할 수 있습니다. |
 | `scheduled_task_session_reuse`      | 내구성 예약 작업 세션 관리가 활성 상태이며 모든 관리 데몬 런타임이 작업이 현재 기존 세션에 명시적으로 바인딩할 수 있는 콜백을 설치했습니다. |
 | `workspace_generation`              | 워크스페이스 범위 생성 도우미를 사용할 수 있습니다. |
@@ -589,7 +624,7 @@ Liveness probe. 기본 형식은 리스너가 올라와 있으면 `200 {"status"
 }
 ```
 
-`sessions`, `pendingPermissions`, `activePrompts`는 합계입니다. `activeWork`는 어떤 런타임이든 수락되었지만 미확정 프롬프트(FIFO 대기 프롬프트 포함), 실행 중인 백그라운드 Agent, 대기열/진행 중인 Agent 터미널 알림, 또는 Session 관리 백그라운드 셸 작업이 있을 때 true입니다. 셸 작업은 셸 레지스트리가 실행 중인 항목을 보고하는 동안 그리고 터미널 알림이 대기열에 있거나 부모 계속을 구동하는 동안 활성으로 유지됩니다; 어떤 수의 셸도 하나의 제한된 집계 홀드에 기여합니다. 모니터, 워크플로, 크론 작업, 후속 제안, 셸 레지스트리가 더 이상 추적할 수 없는 외부 프로세스는 이 필드에서 제외됩니다. 세션 범위입니다: 아직 세션이 attach되지 않은 채널 레벨 작업 — 생성 중, 보류 중인 복원, MCP 검색 또는 인증 — 은 카운트되지 않으므로, 데몬이 아직 해당 채널을 회수하지 않으려 해도 `activeWork`가 false일 수 있습니다. 이 필드를 "데몬이 회수 가능함"으로 해석하지 마세요; 세션 소유 작업만 설명합니다. `activeWorkReporting`는 그 부울의 얼마나 많은 부분이 실제로 보증되는지를 말합니다: 모든 라이브 세션이 필수 범주를 모두 보고하는 자식의 최신 보고서로 커버될 때 `full`, 어떤 세션도 보고를 협상하지 않았을 때 `none`, 그 사이의 모든 것(오래된 스냅샷 또는 필수 범주를 생략하는 협상된 자식 포함)에 대해 `partial`입니다. 3개의 보고서 간격보다 오래된 스냅샷은 커버리지로 카운트되지 않습니다: 세션이 유휴하다는 보고서가 아니므로, 세션은 자식이 결코 보고하지 않은 것과 동일하게 유지로 읽힙니다. 협상되었지만 불완전한 자식에 대해 일반 자동 정리도 비활성화됩니다; `shell`을 이해하지 못하는 자식은 완전한 현재 술어에 따라 조건부 종료를 안전하게 승인할 수 없습니다. 완전히 지원되지 않는 역사적 자식은 레거시 정리 동작을 유지하며, 명시적 close, kill, shutdown, 채널 종료는 강제 작업으로 남아 있습니다. `activeWorkStaleMs`는 부울이 기반하는 가장 오래된 스냅샷의 나이이며 **커버된 세션 중**에서이며, 어떤 세션도 커버되지 않을 때 `0`입니다; 이것은 진단용입니다 — 신선도는 이미 데몬에 의해 `activeWorkReporting`에 등급이 매겨지기 때문입니다(오직 데몬만이 각 채널의 협상된 케이던스를 알고 있습니다). 등급은 런타임별이 아닌 모든 관리 런타임에 대해 한 번 계산된 후 결합됩니다 — 세션이 없는 런타임은 공허하게 완전하며, 이를 증거로 취급하면 빈 워크스페이스가 다른 워크스페이스의 미보고 세션을 보증할 수 있게 됩니다. `lastActivityAt`은 가장 최신의 null이 아닌 워크스페이스 활동 시간이며 `idleSinceMs`는 동일한 스냅샷에서 파생됩니다. `channelAlive`는 하나 이상의 관리 워크스페이스 채널이 라이브임을 의미합니다; 모든 워크스페이스가 정상이라는 의미는 아닙니다. `connectedClients`와 선택적 `rateLimitHits`는 워크스페이스별 합계가 아닌 데몬 전체 카운터로 남아 있습니다.
+`sessions`, `pendingPermissions`, `activePrompts`는 합계입니다. `activeWork`는 어떤 런타임이든 수락되었지만 미확정 프롬프트(FIFO 대기 프롬프트 포함), 실행 중인 백그라운드 Agent, 대기열/진행 중인 Agent 터미널 알림, Session 관리 백그라운드 셸 또는 워크플로 작업, 또는 자식 소유 Session 턴이 있을 때 true입니다. 집계 `session` 홀드는 goal 및 cron 처리, 히스토리 변이, 그리고 대기열 또는 실행 중인 Monitor 계속을 커버합니다; 포그라운드 프롬프트는 데몬 소유로 남아 있습니다. 실행 중인 Monitor, 후속 제안, 그리고 셸 레지스트리가 더 이상 추적할 수 없는 외부 프로세스는 이 필드에서 제외됩니다. 세션 범위입니다: 아직 세션이 attach되지 않은 채널 레벨 작업 — 생성 중, 보류 중인 복원, MCP 검색 또는 인증 — 은 카운트되지 않으므로, 데몬이 아직 해당 채널을 회수하지 않으려 해도 `activeWork`가 false일 수 있습니다. 이 필드를 "데몬이 회수 가능함"으로 해석하지 마세요; 세션 소유 작업만 설명합니다. `activeWorkReporting`는 그 부울의 얼마나 많은 부분이 실제로 보증되는지를 말합니다: 모든 라이브 세션이 필수 범주를 모두 보고하는 자식의 최신 보고서로 커버될 때 `full`, 어떤 세션도 보고를 협상하지 않았을 때 `none`, 그 사이의 모든 것(오래된 스냅샷 또는 필수 범주를 생략하는 협상된 자식 포함)에 대해 `partial`입니다. 3개의 보고서 간격보다 오래된 스냅샷은 커버리지로 카운트되지 않습니다: 세션이 유휴하다는 보고서가 아니므로, 세션은 자식이 결코 보고하지 않은 것과 동일하게 유지로 읽힙니다. 협상되었지만 불완전한 자식에 대해 일반 자동 정리도 비활성화됩니다; `shell` 또는 `session`을 이해하지 못하는 자식은 완전한 현재 술어에 따라 조건부 종료를 안전하게 승인할 수 없습니다. 완전히 지원되지 않는 역사적 자식은 레거시 정리 동작을 유지하며, 명시적 close, kill, shutdown, 채널 종료는 강제 작업으로 남아 있습니다. `activeWorkStaleMs`는 부울이 기반하는 가장 오래된 스냅샷의 나이이며 **커버된 세션 중**에서이며, 어떤 세션도 커버되지 않을 때 `0`입니다; 이것은 진단용입니다 — 신선도는 이미 데몬에 의해 `activeWorkReporting`에 등급이 매겨지기 때문입니다(오직 데몬만이 각 채널의 협상된 케이던스를 알고 있습니다). 등급은 런타임별이 아닌 모든 관리 런타임에 대해 한 번 계산된 후 결합됩니다 — 세션이 없는 런타임은 공허하게 완전하며, 이를 증거로 취급하면 빈 워크스페이스가 다른 워크스페이스의 미보고 세션을 보증할 수 있게 됩니다. `lastActivityAt`은 가장 최신의 null이 아닌 워크스페이스 활동 시간이며 `idleSinceMs`는 동일한 스냅샷에서 파생됩니다. `channelAlive`는 하나 이상의 관리 워크스페이스 채널이 라이브임을 의미합니다; 모든 워크스페이스가 정상이라는 의미는 아닙니다. `connectedClients`와 선택적 `rateLimitHits`는 워크스페이스별 합계가 아닌 데몬 전체 카운터로 남아 있습니다.
 
 재시작 컨트롤러는 다음 경우 데몬이 바쁘다고 취급해야 합니다:
 
@@ -606,7 +641,7 @@ const busy =
 
 > ⚠️ 딥 probe는 **정보 제공용**이며 실제 liveness 검증이나 원자적 회수 리스가 아닙니다. 협상된 ACP 자식은 협상된 케이던스로 채널 전체 활성 작업 스냅샷을 게시하며, 데몬은 그 신선도를 `activeWorkReporting`에 등급을 매깁니다 — 하지만 누락된 보고서 때문에 채널을 종료하지는 않습니다. 하나의 세션의 침묵이 프로세스가 죽었다는 증거가 아니기 때문입니다. 전송 liveness와 정지된 Agent 감지는 별개의 메커니즘입니다. `connectedClients`는 REST SSE 연결을 카운트하며 모든 ACP 전송을 카운트하지 않습니다. 유휴 회수에는 반복 샘플과 정상 종료를 사용하세요; 전송 및 워크스페이스별 진단에는 인증된 `/daemon/status`를 사용하세요. 관리 런타임 게터가 throw하면, 딥 헬스는 부분 합계를 반환하기보다 `503 {"status":"degraded","reason":"aggregation_failed"}`와 함께 닫히며, 데몬 로그가 실패한 워크스페이스 런타임을 식별합니다. 부트스트랩 중 런타임 레지스트리가 준비되기 전에는 `Retry-After: 1`과 함께 `503 {"status":"degraded","reason":"bootstrap"}`를 반환합니다. 리스너 liveness의 경우, `?deep` 없이 기본 `/health`를 사용하세요.
 
-**인증:** **비루프백 바인드에서만** 필요합니다. 루프백(`127.0.0.1`, `::1`, `[::1]`)에서 `/health`는 bearer 미들웨어 전에 등록되므로 파드 내부의 k8s/Compose probe는 토큰을 포함할 필요가 없습니다. 비루프백(`--hostname 0.0.0.0` 등)에서 라우트는 bearer 미들웨어 후에 등록되며 유효한 토큰 없이는 401을 반환합니다 — 그렇지 않으면 인증되지 않은 호출자가 임의 주소를 probe하여 `qwen serve`가 존재하는지 확인할 수 있으며, 이는 포트 스캔과 결합되면 심각도가 낮은 정보 유출입니다. CORS 거부 + 호스트 허용 목록은 여전히 루프백 면제에 적용됩니다.
+**인증:** 비루프백 바인드와 루프백이 `--require-auth`로 강화되었을 때 필요합니다. 일반 루프백 바인드(`127.0.0.0/8`, `localhost`, `::1`, `[::1]`)에서 `/health`는 bearer 미들웨어 전에 등록되므로 파드 내부의 k8s/Compose probe는 토큰을 포함할 필요가 없습니다. 비루프백(`--hostname 0.0.0.0` 등) 또는 강화된 루프백에서 라우트는 bearer 미들웨어 후에 등록되며 유효한 토큰 없이는 401을 반환합니다 — 그렇지 않으면 인증되지 않은 호출자가 임의 주소를 probe하여 `qwen serve`가 존재하는지 확인할 수 있으며, 이는 포트 스캔과 결합되면 심각도가 낮은 정보 유출입니다. CORS 거부 + Host 허용 목록은 여전히 일반 루프백 면제에 적용됩니다.
 
 ### `GET /daemon/status`
 
@@ -645,8 +680,10 @@ bearer 인증과 속도 제한 이후에 등록되며, 루프백 바인드에서
     "sessionShellCommandEnabled": false
   },
   "limits": {
+    "maxRegisteredWorkspaces": 256,
+    "maxChannelControlWorkspaces": 25,
     "maxSessions": 32,
-    "maxTotalSessions": null,
+    "maxTotalSessions": 800,
     "maxPendingPromptsPerSession": 5,
     "listenerMaxConnections": 256,
     "eventRingSize": 8000,
@@ -731,7 +768,9 @@ ACP 자식 이벤트 루프 지연은 `/daemon/status`에 포함되지 않습니
 
 `runtime.memory.pressure`는 해당 블록 내에서 부가적이며 데몬 루트 프로세스 자체의 메모리 압력을 보고합니다: `mode`(`off` / `observe`), `level`(`normal` / `soft` / `hard` / `critical`), `source`(`rss` / `heap` / `unknown`), `ratio`, 그리고 비율이 파생되는 여섯 개의 원시 수치 — `rssBytes`, `rssRatio`, `availableBytes`, `heapUsedBytes`, `heapRatio`, `heapLimitBytes`. `ratio`는 `rssRatio`와 `heapRatio` 중 더 큰 값이며, `source`는 어느 쪽이었는지의 이름입니다; 동점은 `rss`로 보고됩니다. `availableBytes`는 바이트 단위의 `limits.memory.availableMemoryMb`입니다 — 의도적으로 `effectiveBudgetMb`가 아닌 감지된 cgroup/호스트 수치인데, 프로세스를 종료시키는 것은 운영자의 정책 수치가 아닌 실제 제한이기 때문입니다. `source: "unknown"`은 어떤 분모도 측정 가능하지 않았음을 의미하며 건강으로 읽으면 안 됩니다; `level`은 분류할 것이 없기 때문에 해당 경우에만 `normal`입니다. 수치는 데몬 **루트 프로세스만**을 커버합니다: 이 프로세스 자체의 `memoryUsage()`이므로 자식의 성장은 이 수치를 이동시키지 않습니다. `runtime.memory.children`이 이를 별도로 보고하며, 어떤 수치도 프로세스 트리 메모리가 아닙니다. 두 모드 모두 전체 블록을 보고합니다; `observe`만 추가로 경로 없는 `daemon_memory_pressure` 경고를 상태 롤업으로 올리므로, `off`는 최상위 `status`를 변경하지 않은 상태로 둡니다. 어떤 모드에서도 remediation이 없습니다. 이 필드는 SDK 미러에서 선택 사항입니다. 해당 필드 이전에 `runtime.memory`를 전송한 데몬이 해당 필드 없이 블록을 전송하기 때문입니다.
 
-`limits.maxTotalSessions`은 부가적입니다. `null`은 효과적인 데몬 전체의 신규 세션 상한이 비활성화됨을 의미합니다. 여러 시작/복원된 워크스페이스가 존재할 때, `--max-total-sessions`가 생략되고 `maxSessionsPerWorkspace`가 유한하면, 데몬은 효과적인 총 상한을 `maxSessionsPerWorkspace * startupWorkspaceCount`로 한 번 도출합니다; 이후 동적 등록은 이를 재계산하지 않습니다. 설정되면, 데몬 전체의 신규 세션 생성을 제한하며 기존 `session_limit_exceeded` 오류 형태에 `scope: "total"`을 추가하여 보고합니다.
+`limits.maxRegisteredWorkspaces`는 부가적이며 해석된 사용자 등록 상한을 보고합니다(기본값 256, 1에서 256까지 구성 가능). `limits.maxChannelControlWorkspaces`는 표준 데몬에서 채널이 비활성화 상태에서도 독립적인 제어/복구 소유자 상한 25를 보고합니다. 커스텀 컨트롤러는 해당 필드를 적용할 때만 광고합니다. 이 필드들은 부트스트랩 및 준비 응답 모두에 존재합니다; 이전 데몬은 이를 생략할 수 있습니다. 채널 컨트롤러는 후보 워커를 구성하기 전에 상한을 초과하는 전환기 소유자 합집합을 `409 channel_control_workspace_limit_reached`로 거부합니다; 부트 시 초기 합집합이 상한을 초과하면 리스너가 게시되기 전에 시작이 실패하므로 HTTP 표면이 없습니다. 등록 용량은 SDK 채널 타임아웃을 결정하지 않습니다.
+
+`limits.maxTotalSessions`은 부가적입니다. `null`은 효과적인 데몬 전체의 신규 세션 상한이 비활성화됨을 의미합니다. 해석된 등록 용량(기본값 256, `QWEN_SERVE_MAX_WORKSPACES` 또는 임베디드 `maxRegisteredWorkspaces`를 통해 구성 가능)이 25를 초과하고 `--max-total-sessions`가 생략되면, 표준 데몬은 하나의 시작 워크스페이스가 있더라도 고정 총합 800을 사용합니다. 등록 용량이 25 이하일 때, 유한한 `maxSessionsPerWorkspace`를 가진 여러 시작/복원된 워크스페이스는 동일한 시작+복원된 카운트에 대해 `maxSessionsPerWorkspace * workspaceCount`로 효과적인 총합을 한 번 도출합니다; 하나의 시작 또는 복원된 워크스페이스는 무제한 기본값을 유지합니다. 명시적 총 상한은 비활성화된 값을 포함하여 우선합니다. 이후 동적 등록은 총합을 재계산하지 않습니다. 직접 `createServeApp` 임베드는 자체 공유 어드미션 정책을 제공해야 합니다. 설정되면, 데몬 전체의 신규 세션 생성을 제한하며 기존 `session_limit_exceeded` 오류 형태에 `scope: "total"`을 추가하여 총 한계 실패를 보고합니다.
 
 `runtime.channel.live`는 데몬 내부의 ACP 브리지 채널을 보고합니다.
 채널 어댑터 워커가 아닙니다. 데몬 관리 채널은
@@ -740,14 +779,13 @@ ACP 자식 이벤트 루프 지연은 `/daemon/status`에 포함되지 않습니
 도달한 후 종료되면, `/daemon/status`는 데몬을 온라인 상태로 유지하고
 경고 이슈 코드 `channel_worker_exited`를 보고합니다.
 
-데몬 관리 채널 워커 시작은 여전히 실패 시 즉시 중단됩니다: `qwen serve
---channel ...`이 ready에 도달하는 워커를 시작할 수 없으면, serve 시작이
-실패합니다. 워커가 ready에 도달한 후, 예기치 않은 종료는 serve
-슈퍼바이저가 제한된 정책 내에서 재시작합니다: 5분 창 내에서 최대 3회의
-재시작 시도, 1초, 5초, 15초 백오프. 워커는 15초마다 IPC 하트비트를
-전송합니다; 45초 동안 하트비트가 관찰되지 않으면, 슈퍼바이저는 워커를
-오래된 것으로 간주하고, kill하고, `staleHeartbeatAt`을 기록하며, 동일한
-재시작 경로를 사용합니다.
+명시적 `qwen serve --channel ...`의 데몬 관리 채널 워커 시작은 여전히 실패 시 즉시 중단되며 지속된 시작 설정보다 우선합니다. 플래그 없는 부트는 신뢰된 기본 워크스페이스에서 `serve.channels`를 복원합니다. 보조 워크스페이스는 자체 `serve.channels`를 독립적으로 복원하지 않습니다. 명시적 또는 기본 워크스페이스 선택이 없으면, 채널 런타임 로딩은 지연 상태로 유지됩니다.
+
+저장된 시작 이름은 비어 있지 않아야 하며, 선행 또는 후행 공백이 없어야 하고, 안전하지 않은 제어 문자나 보이지 않는 문자를 포함하면 안 됩니다. 잘못된 항목은 개별적으로 건너뛰어지며 배열 인덱스로 기록됩니다; 시작은 다른 인스턴스 이름으로 트리밍하거나 설정을 재작성하지 않습니다. 워커 인수는 `--channel=<value>`를 사용하며, 선행 대시를 이름의 일부로 보존합니다.
+
+워커 시작 전 잘못된 시작 필드 또는 검증 또는 리스 오류는 자동 복원을 건너뛰며, `serve.channels`를 식별하는 로그를 남기고, 관련 없는 설정은 계속 적용됩니다. 실패한 워커 시작은 정리가 성공한 후 데몬이 계속 진행할 수 있도록 합니다. 전역 런타임 시작 타임아웃과 확인되지 않은 워커 중지는 기존 시작 실패 경로를 따릅니다; 워커 종료가 확인되지 않는 동안 리스는 계속 유지됩니다. 건너뛰거나 실패한 복원에 대해서는 데몬 로그를 확인하세요. 채널 관리는 지속된 시작 설정과 실제 런타임 상태를 보고합니다.
+
+워커가 ready에 도달한 후, 예기치 않은 종료는 제한된 정책 내에서 serve 슈퍼바이저에 의해 재시작됩니다: 5분 창 내에서 최대 3회의 재시작 시도, 1초, 5초, 15초 백오프. 워커는 15초마다 IPC 하트비트를 전송합니다; 45초 동안 하트비트가 관찰되지 않으면, 슈퍼바이저는 워커를 오래된 것으로 간주하고, kill하고, `staleHeartbeatAt`을 기록하며, 동일한 재시작 경로를 사용합니다.
 
 `runtime.channelWorker`는 부가적인 운영 필드를 포함할 수 있습니다:
 `requestedChannels`, `pid`, `startedAt`, `exitCode`, `signal`, `error`,
@@ -820,14 +858,7 @@ ACP 자식 이벤트 루프 지연은 `/daemon/status`에 포함되지 않습니
 선택은 건강한 워커를 그대로 유지하지만, 워커가 중지되었거나 실패한
 동일한 선택은 복구합니다.
 
-`DELETE /workspace/channel`은 strict-gated이며 멱등입니다. `{ changed, state }`를
-반환합니다; 성공적인 상태는 비활성입니다. `POST
-/workspace/channel/reload` 또한 strict-gated이며 설정을 다시 읽고,
-워크스페이스 그룹을 재해석하며, 커밋된 선택을 강제 조정합니다.
-
-비활성화 상태에서 `409 channel_worker_not_enabled`를 반환합니다.
-`channel_reload` 기능은 매니저가 커밋된 reloadable 선택을 가진 동안에만
-동적으로 광고됩니다.
+`DELETE /workspace/channel`은 strict-gated이며 멱등입니다. `{ changed, state }`를 반환합니다; 성공적인 상태는 비활성입니다. `POST /workspace/channel/reload` 또한 strict-gated이며 설정을 다시 읽고, 워크스페이스 그룹을 재해석하며, 커밋된 선택을 강제 조정합니다. 비활성화 상태에서 `409 channel_worker_not_enabled`를 반환합니다. `channel_reload` 기능은 매니저가 커밋된 reloadable 선택을 가진 동안에만 동적으로 광고됩니다.
 
 모든 enable, replace, reload, stop, 데몬 종료는 하나의 FIFO
 라이프사이클 레인에 진입합니다. GET은 해당 레인을 기다리지 않습니다.
@@ -842,24 +873,16 @@ ACP 자식 이벤트 루프 지연은 `/daemon/status`에 포함되지 않습니
 
 - `400 invalid_channel_selection`, `channel_workspace_mismatch`, 또는 `ambiguous_channel_workspace`
 - `403 untrusted_workspace`
-- `409 channel_service_conflict` 또는 `channel_worker_not_enabled`
+- `409 channel_service_conflict`, `channel_worker_not_enabled`, 또는 `channel_control_workspace_limit_reached`
 - `500 channel_worker_stop_failed`
 - `502 channel_worker_start_failed`, `rolledBack`과 선택적 자격증명 편집 `rollbackError` 포함
 - `503 daemon_draining`
 
-구성된 토큰 없는 데몬에 대한 strict write는 제어 코드 실행 전
-`401 token_required`를 반환합니다. 요청이 시작되면, HTTP 클라이언트
-연결 해제는 라이프사이클 트랜잭션을 취소하지 않습니다; 클라이언트는
-동일한 PUT을 안전하게 재시도할 수 있습니다.
+신뢰 루프백 권한 없이 게이트에 도달하는 토큰 없는 기본 요청의 Strict write는 제어 코드 실행 전 `401 token_required`를 반환합니다. 누락되거나 잘못된 구성된 자격 증명과 페어링되지 않은 Local Control 자격 증명은 단순 `401 Unauthorized`로 더 일찍 거부됩니다.
+신뢰 루프백 기본 요청은 정상적으로 실행됩니다.
+요청이 시작되면, HTTP 클라이언트 연결 해제는 라이프사이클 트랜잭션을 취소하지 않습니다; 클라이언트는 동일한 PUT을 안전하게 재시도할 수 있습니다.
 
-`502 channel_worker_start_failed`의 경우, 응답은 추가로
-`startupFailures[]`와 `startupFailuresTruncated`를 포함할 수 있습니다.
-각 실패는 시도된 워커의 신뢰된 `workspaceCwd`를 추가합니다. 이 필드는
-실패한 트랜잭션을 설명하며, `state`는 롤백 후 현재 상태를 설명합니다;
-이후 GET은 실패한 시도를 유지하지 않습니다. 부분적으로 연결된 워커는
-대신 성공을 반환하고 워커 스냅샷에서 실패를 노출합니다. 부트 시
-전체 실패는 여전히 쿼리 가능한 데몬이 존재하기 전에 `qwen serve`를
-중단합니다.
+`502 channel_worker_start_failed`의 경우, 응답은 추가로 `startupFailures[]`와 `startupFailuresTruncated`를 포함할 수 있습니다. 각 실패는 시도된 워커의 신뢰된 `workspaceCwd`를 추가합니다. 이 필드들은 실패한 트랜잭션을 설명하며, `state`는 롤백 후 현재 상태를 설명합니다; 이후 GET은 실패한 시도를 유지하지 않습니다. 부분적으로 연결된 워커는 대신 성공을 반환하고 워커 스냅샷에서 실패를 노출합니다. 연결된 어댑터 없는 명시적 `--channel` 부트는 시작에 실패합니다. 설정 유도 시작 실패는 기록되며 전역 런타임 시작 타임아웃의 적용을 받으며 정리가 성공한 후 데몬이 계속 진행할 수 있도록 합니다. 정리 확인 실패는 일반 시작 실패 동작과 서비스 리스를 유지합니다.
 
 `--daemon-url` 없는 `qwen channel status`는 계속 pidfile 메타데이터를
 읽습니다; `--daemon-url`과 함께는 `GET /workspace/channel`을 읽습니다.
@@ -893,19 +916,9 @@ bearer 토큰, 민감한 워커 환경 값, 프록시 URL 자격 증명이 편�
 절대 반환되지 않습니다. Channel 스냅샷은 `Cache-Control: no-store`를
 사용합니다.
 
-필드 디스크립터는 `properties`를 통해 중첩된 객체 메타데이터를 노출할 수
-있습니다. 숫자 디스크립터는 열린 하한에 `exclusiveMinimum`을 사용할 수
-있습니다. 광고된 필드 kind를 렌더링하지 않는 클라이언트는 기존 구성
-값을 강제 변환하거나 삭제하지 않고 보존해야 합니다. 객체 필드는 필수일
-수 없으며, 중첩된 속성은 시크릿 또는 환경 해석 가능 필드일 수 없습니다;
-해당 관리 프로토콜은 최상위 레벨만 유지됩니다. 중첩된 `required` 속성은
-부모 객체가 write에 존재하는 동안에만 적용됩니다; 부모 객체를 생략하면
-중첩된 요구사항이 검사되지 않습니다. Write는 각 필드의 저장된 값을
-전체적으로 교체하므로, 객체를 보존하려면 저장된 객체를 다시 전송해야
-합니다; 데몬은 부분 객체를 병합하지 않습니다.
+필드 디스크립터는 `properties`를 통해 중첩된 객체 메타데이터를 노출할 수 있습니다. 숫자 디스크립터는 열린 하한에 `exclusiveMinimum`을 사용할 수 있습니다. 문자열 및 시크릿 디스크립터는 `multiline`을 사용하여 클라이언트에게 다중 줄 텍스트 영역을 요청할 수 있습니다; 디스크립터 타입은 최상위 필드에서만 이를 허용합니다. 광고된 필드 kind를 렌더링하지 않는 클라이언트는 기존 구성 값을 강제 변환하거나 삭제하지 않고 보존해야 하며, `multiline` 필드를 단일 줄 컨트롤로 렌더링하는 클라이언트는 개행이 제거된 입력 값을 다시 작성하지 않고 저장된 값을 그대로 보존해야 합니다. 객체 필드는 필수일 수 없으며, 중첩된 속성은 시크릿 또는 환경 해석 가능 필드일 수 없습니다; 해당 관리 프로토콜은 최상위 레벨만 유지됩니다. 중첩된 `required` 속성은 부모 객체가 write에 존재하는 동안에만 적용됩니다; 부모 객체를 생략하면 중첩된 요구사항이 검사되지 않습니다. Write는 각 필드의 저장된 값을 전체적으로 교체하므로, 객체를 보존하려면 저장된 객체를 다시 전송해야 합니다; 데몬은 부분 객체를 병합하지 않습니다.
 
-구성 write는 낙관적 동시성 제어와 strict bearer-token 게이트를
-사용합니다:
+구성 write는 낙관적 동시성 제어와 strict 운영자 권한 게이트를 사용합니다:
 
 - `PUT /workspace/channels/:name`
 - `DELETE /workspace/channels/:name`
@@ -931,8 +944,7 @@ strict-gated `POST` 요청입니다. 해석된 워크스페이스가 소유한
 
   `{ "senderId": "..." }` 또는 `{ "groupId": "..." }`
 
-모든 페어링 라우트는 bearer 토큰이 필요하며 `Cache-Control: no-store`를
-사용합니다. 요청, 승인, 취소는 선택된 Channel 인스턴스와 워크스페이스로
+모든 페어링 라우트는 strict 운영자 권한을 요구하며 `Cache-Control: no-store`를 사용합니다. 요청, 승인, 취소는 선택된 Channel 인스턴스와 워크스페이스로
 범위 지정됩니다. 대기 중인 요청은 타입화된 사용자 또는 그룹 주체를
 포함합니다; 그룹 요청은 또한 요청을 시작한 sender를 유지합니다. 승인
 스냅샷은 `senderIds`와 `groupIds`를 포함합니다. 허용 목록은
@@ -1050,9 +1062,11 @@ device-flow 사용자 코드, 또는 검증 URL을 절대 포함하지 않습니
     "..."
   ],
   "limits": {
+    "maxRegisteredWorkspaces": 256,
+    "maxChannelControlWorkspaces": 25,
     "maxPendingPromptsPerSession": 5,
     "maxSessionsPerWorkspace": 32,
-    "maxTotalSessions": 64,
+    "maxTotalSessions": 800,
     "sessionRestoreTimeoutMs": 60000
   },
   "modelServices": [],
@@ -1085,7 +1099,32 @@ device-flow 사용자 코드, 또는 검증 URL을 절대 포함하지 않습니
 
 > **`workspaces[]`** 는 등록된 모든 런타임을 나열합니다. 최신 단일 워크스페이스 데몬은 `multi_workspace_sessions`가 없을 때도 기본 런타임을 포함하므로 클라이언트가 워크스페이스 한정 라우트에 필요한 안정적 id를 발견할 수 있습니다; 이전 데몬은 이 배열을 생략할 수 있습니다. 각 항목은 `{ id, cwd, displayName?, primary, trusted, removable? }`입니다. `displayName`은 프레젠테이션 전용이며 미설정 시 생략됩니다. 첫 번째/기본 워크스페이스는 여전히 `workspaceCwd`에 미러링됩니다; 새 클라이언트는 해당 항목의 `cwd`를 `POST /session`에 전달하여 기본이 아닌 런타임을 선택합니다. 신뢰되지 않는 워크스페이스는 진단용으로 광고되지만 신뢰가 변경될 때까지 새 세션 생성을 `403 untrusted_workspace`로 거부합니다. `removable`는 런타임 제거를 지원하는 데몬에 존재하며 프로세스 동적 또는 영구성 복구된 보조 런타임에 대해서만 true입니다.
 
+> **`session_worktree_persistence_v1`** 은 데몬이 Part 4A worktree 소유권을 지속하고 검증할 수 있음을 의미합니다. 성공적인 worktree 생성 응답과, 유휴 상태에서 자식이 재배치되었거나 이미 검증된 worktree cwd를 보고하는 복원 응답은 `worktree` 메타데이터와 `worktreeState: "persisted-v1"`을 전달합니다. 레거시 최선 노력 복원, 또는 복원 프롬프트가 주차되지 않고 발사된 콜드 복원(`suppressWorktreeContextRestore`가 꺼져 있어 라우트가 브리지에게 지연을 요청하지 않음)은 현재 cwd 없이 활성 프롬프트를 보고할 수 있으며, 해당 경우 해당 증명 없이 `worktree`를 반환할 수 있습니다. 격리를 요청하는 클라이언트는 이 태그를 프리플라이트하고 각 응답을 검증해야 합니다; `worktree` 객체만으로는 내구성 소유권 증명이 아닙니다.
+
+> **`session_worktree_reset_v1`** 은 데몬이 worktree 소유권 이전을 지원함을 의미합니다: `POST /session/:id/worktree-reset`는 지속된 worktree 세션의 체크아웃 소유권을 새 교체 세션으로 이동합니다. 복원 응답은 이와 함께 세 가지 타입의 409 분류를 얻습니다: `worktree_session_superseded`(세션의 사이드카에 `supersededBy` 링크가 있음 — 분류는 해당 링크만으로 마커 읽기 전에 결정되며, 링크는 마커가 뒤집히기 전에 작성되므로 본문의 `replacementSessionId`는 소유권 증명이 아닌 리다이렉트입니다: 프리커밋 중단 상태에서는 마커 소유자가 아닌 세션을 지칭하며, 자체적으로 복원될 수 없고 재시도된 리셋에 의해 정리됩니다), `worktree_marker_missing`(체크아웃 마커가 부재; 마커를 재생성하려면 작업을 리셋하세요 — 복원 재시도는 마커를 작성하는 복원 경로가 없으므로 불가능), 그리고 `worktree_reset_interrupted`(이전 이전이 사이드카 링크가 일치한 채로 중간에 충돌; 리셋을 재시도하세요). 중단 분류가 먼저 확인됩니다: `supersedes`/`supersededBy` 링크가 일치하는 누락 마커는 `worktree_marker_missing`가 아닌 `worktree_reset_interrupted`로 표면화됩니다. 이전 프로토콜과 실패 분류는 아래 라우트 섹션을 참조하세요.
+
 워크스페이스 기능 태그와 `workspaces[]`는 동적입니다. 워크스페이스를 추가하는 클라이언트는 변경 완료 후 `/capabilities`를 다시 가져와야 합니다; 데몬은 이전 응답을 캐시한 클라이언트에게 기능 변경을 브로드캐스트하지 않습니다. 포겟팅 영구성은 활성 런타임을 언로드하지 않으므로 해당 런타임은 재시작까지 광고된 상태로 유지됩니다.
+
+### `GET /brand`
+
+Web Shell의 제품 브랜딩으로, 셸을 화이트라벨링하려는 호스트를 위한 것입니다. 운영자 설정 스코프의 `ui.brand`에서 해결됩니다. `web_shell_brand` 기능 태그로 게이트되며, 라우트가 없는 데몬은 404를 응답합니다.
+
+```json
+{
+  "name": "QiuQiu Code",
+  "logoDataUri": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%2F%3E"
+}
+```
+
+> **두 필드 모두 선택 사항이며, `{}`도 정상 응답입니다.** 부재 필드는 "클라이언트의 내장 브랜드 사용"을 의미합니다 — Web Shell은 자체 이름과 인라인 로고를 렌더링합니다. 클라이언트는 빈 본문을 오류로 취급해서는 안 됩니다.
+
+> **핸들러는 구성된 로고가 거부된 경우에도 항상 200을 응답합니다.** 누락된 파일, 심볼릭 링크, 하드 링크된 파일, 디렉토리, 비 SVG 문서, 또는 32 KiB를 초과하는 콘텐츠는 `logoDataUri` 없는 본문을 반환하며, 이유는 데몬의 stderr에 `qwen serve: GET /brand: ui.brand.logoPath …`로 기록됩니다. 따라서 클라이언트는 "브랜드 미구성"과 "운영자의 로고가 거부됨"을 구분할 수 없습니다; 운영자 대면 채널은 데몬 로그입니다. 거부보다 부드러운 두 가지 권고가 있습니다: 사용 가능한 `viewBox`가 없고 양수이며 비퍼센트 `width`/`height`가 없는 루트 `<svg>`(잘못되었거나 영역이 0인 viewBox는 사용 불가능으로 간주) — 브라우저가 사이드바의 고정 크기에서 빈 상태로 렌더링할 수 있습니다; 그리고 접두사 바인딩된 루트에서 접두사 없는 요소가 기본 네임스페이스 바인딩이 없어 보이지 않게 렌더링되는 경우입니다. 핸들러 앞의 미들웨어는 핸들러 실행 전에 응답합니다 — bearer 인증이 필요하지만 부재할 때 `401`, 선택적 속도 제한기가 작동 중일 때 `429`. 드레이닝 중인 데몬은 이 라우트를 거부하지 않습니다: 속도 제한기는 드레이닝 중에도 관대하므로, 핸들러는 리스너가 닫히고 클라이언트가 연결 실패를 볼 때까지 200을 계속 응답합니다. 시작은 이 라우트에서 503이 아닙니다: 기본 지연 런타임 경로에서 요청은 런타임이 준비될 때까지 _보류_된 후 200을 응답하므로, 짧은 클라이언트 타임아웃이 조기에 발화할 수 있습니다. `code: "daemon_runtime_starting"`을 가진 503은 런타임 준비 전에 응답하는 구성(예: `--open`)에서만 도달하며 재시도 가능합니다; `code: "daemon_runtime_failed"`를 가진 503은 데몬 재시작까지 터미널이며 `Retry-After`를 전달하지 않습니다 — 재시도하지 마세요.
+
+> **워크스페이스 설정은 절대 기여하지 않습니다.** 라우트는 `skipWorkspaceSettings`로 설정을 로드하므로, 저장소의 `.qwen/settings.json`은 제품 이름을 변경하거나 데몬이 읽고 모든 연결된 브라우저에 인라인할 파일을 지정할 수 없습니다. 시스템 기본값, 사용자, 시스템만 해당 우선순위로 읽힙니다. 같은 이유로, 플레이스홀더 치환이 값을 변경할 경우 브랜드 값은 데몬 stderr에 경고와 함께 거부됩니다: 치환은 프로세스 전역 환경에서 가져오며, 워크스페이스의 `.qwen/.env` 또는 `env` 블록이 부트 시 먼저 채웁니다. 해결 불가능한 플레이스홀더(변수가 설정되지 않음)는 그대로 유지되므로, 오타가 있는 변수는 조용히 폴백하는 대신 리터럴 텍스트로 표시됩니다.
+
+> **`logoDataUri`는 이미지로 렌더링되어야 하며, 마크업으로 주입되어서는 안 됩니다.** 데몬은 읽은 SVG를 수정하지 않습니다. `img` src 또는 favicon href를 통해 로드된 SVG는 스크립트를 실행할 수 없습니다; 문서에 주입된 SVG는 실행할 수 있습니다. Web Shell은 항상 이를 이미지 컨텍스트에만 할당하며, 이 불변성이 수정기 부재를 안전하게 만듭니다.
+
+> **프로세스 전역.** 라우트는 워크스페이스 선택자나 세션 id를 받지 않습니다: 값은 사용자 전역 구성에서 파생되므로 데몬이 제공하는 모든 워크스페이스에서 동일합니다. `bearerAuth`와 속도 제한기 이후, Web Shell SPA 폴백 이전에 등록되므로 모든 `Accept` 헤더에 대해 JSON을 응답합니다.
 
 ### `POST /workspaces`
 
@@ -1114,7 +1153,7 @@ device-flow 사용자 코드, 또는 검증 URL을 절대 포함하지 않습니
 
 `displayName`은 주변 공백이 트리밍된 후 256자를 초과할 수 없는 문자열입니다. 빈 결과는 이름 없음으로 취급되며, 내부 C0(`U+0000`–`U+001F`) 또는 DEL(`U+007F`) 제어 문자는 거부됩니다. JSON `null`은 생성 값이 아니며 `400 invalid_display_name`을 반환합니다; 초기 이름을 제공하지 않으려면 필드를 생략하세요. 중복 표시 이름은 허용됩니다. 프로세스 로컬 등록과 함께 제공된 이름은 해당 데몬 프로세스 동안만 지속됩니다; `persist: true`는 재시작 후 복구할 수 있도록 영구성 등록과 함께 저장합니다. 이미 영구적인 워크스페이스에 대해 요청을 반복하면 멱등적이며 이름을 변경하지 않습니다.
 
-오류는 `400 invalid_path` / `invalid_persist_flag` / `invalid_persist_target` / `invalid_display_name`, `409 workspace_exists` / `workspace_nested` / `workspace_limit_reached`, `500 workspace_registration_store_error` / `runtime_creation_failed`, 그리고 `501 persistence_not_available` / `not_implemented`를 포함합니다.
+오류는 `400 invalid_path` / `invalid_persist_flag` / `invalid_persist_target` / `invalid_display_name`, `409 workspace_exists` / `workspace_nested` / `workspace_limit_reached` / `workspace_registration_store_too_large`, `500 workspace_registration_store_error` / `runtime_creation_failed`, 그리고 `501 persistence_not_available` / `not_implemented`를 포함합니다.
 
 ### `PATCH /workspaces/:workspace`
 
@@ -1420,6 +1459,17 @@ egress 프로브가 적용될 때까지 예약된 상태로 유지됩니다.
       "userInvocable": false,
       "installedPath": "/home/alice/project/.qwen/skills/review/SKILL.md",
       "argumentHint": "[path]"
+    },
+    {
+      "kind": "skill",
+      "status": "ok",
+      "name": "database-review",
+      "description": "Review database changes",
+      "level": "extension",
+      "modelInvocable": true,
+      "installedPath": "/home/alice/.qwen/extensions/alibabacloud-database-suite/skills/database-review/SKILL.md",
+      "extensionName": "alibabacloud-database-suite",
+      "extensionDisplayName": "Alibaba Cloud Database Suite"
     }
   ]
 }
@@ -1427,14 +1477,20 @@ egress 프로브가 적용될 때까지 예약된 상태로 유지됩니다.
 
 `level`은 `project`, `user`, `extension`, 또는 `bundled` 중 하나입니다.
 `userInvocable`(boolean, 선택 사항)은 일반 skill에 대해 생략되며(이는
-`true`를 의미) skill이 수동으로 호출될 수 없거나 skill API를 통해
-토글될 수 없을 때만 `false`로 존재합니다. `modelInvocable`은 독립적입니다: `false`는
+`true`를 의미) skill이 수동으로 호출될 수 없을 때만 `false`로
+존재합니다. 설정 전용 Skill 토글 라우트를 게이트하지 않습니다(아래 설명). `modelInvocable`은 독립적입니다: `false`는
 skill이 수동으로 사용 가능하지만 모델 호출에서는 숨겨짐을 의미합니다.
 `installedPath`는 skill의 `SKILL.md`에 대한 기존 절대 경로입니다; 데몬은
 심볼릭 링크를 별도로 해석하거나 정규화하지 않고 저장된 대로 반환합니다. 현재 데몬은
 모든 skill에 대해 이를 내보내며, 클라이언트는 이전 v1 데몬에서의 부재를
 허용해야 합니다. Skill 본문, hook, `skillRoot`, 및 기타 skill
 구성은 제외됩니다. `errors`는 발견이 성공하면 생략됩니다.
+
+Extension 소유 skill의 경우, `extensionName`은 정규 매니페스트 이름이며
+소유자 ID로 사용하기 안전합니다. `extensionDisplayName`은 선택적인
+현지화된 프레젠테이션 값이며 고유하지 않을 수 있습니다. 새 클라이언트는
+`extensionDisplayName ?? extensionName`을 표시해야 합니다; 이전 데몬은
+display 필드를 생략합니다.
 
 반복 읽기는 마지막 커밋된 워크스페이스 스냅샷에서 제공되며,
 자식의 인메모리 캐시에 대해 주기적으로 재검증됩니다. 읽기는 skill
@@ -1695,9 +1751,39 @@ interface DaemonPreflightCell extends DaemonStatusCell {
   `egress` 셀을 `status: 'not_started'`로 둡니다.
 
 프리플라이트 요청 제공 중 브리지가 ACP 자식에 도달하지 못하면(예: 요청 중 채널 종료), 인벨롭의 `errors` 배열은
-실패를 설명하는 단일 `ServeStatusCell`을 carrying하며 셀은
+실패를 설명하는 단일 `ServeStatusCell`을 포함하며 셀은
 `not_started` ACP 플레이스홀더로 폴백합니다. 데몬 수준 셀은 여전히
 반환됩니다.
+
+### `GET /workspace/tools`
+
+기본 워크스페이스의 ACP 자식이 보고한 도구 카탈로그를 반환합니다. 이것은
+레거시 기본 워크스페이스 라우트입니다: 워크스페이스 선택자가 없으며 비기본
+런타임의 도구를 추론하는 데 사용해서는 안 됩니다.
+
+```json
+{
+  "v": 1,
+  "workspaceCwd": "/canonical/path",
+  "initialized": true,
+  "acpChannelLive": true,
+  "tools": [
+    {
+      "name": "ReadFile",
+      "displayName": "Read",
+      "description": "Read a file",
+      "enabled": true
+    }
+  ]
+}
+```
+
+ACP 자식이 활성 상태가 아닐 때에도 라우트는 여전히 `200`을
+`acpChannelLive: false`, 빈 `tools` 배열, 그리고 선택적 `errors` 배열의
+`not_started` 항목과 함께 반환합니다. 예기치 않은 브리지 실패는 표준 `500`
+브리지 오류 응답을 사용합니다. TypeScript SDK 메서드는 `workspaceTools()`이며
+전용 기능 태그가 없으므로 이전 데몬을 지원하는 클라이언트는 `404`를
+지원되지 않는 것으로 취급해야 합니다.
 
 ### 워크스페이스 파일 라우트
 
@@ -1808,9 +1894,11 @@ GET /file?path=big.log&limit=500&cursor=… → next page
 
 #### `POST /file/write`
 
-텍스트 파일을 생성하거나 교체합니다. 엄격한 변형 라우트입니다: 구성된 토큰 없는
-루프백에서 `401 { "code": "token_required" }`를 반환합니다.
-`--require-auth`가 있으면 전역 bearer 미들웨어가 라우트 실행 전에
+텍스트 파일을 생성하거나 교체합니다. 엄격한 변형 라우트입니다: 토큰 없는
+신뢰 루프백 기본 요청은 인증됩니다. 신뢰 루프백 권한 없이 게이트에 도달하는
+토큰 없는 기본 요청은 `401 { "code": "token_required" }`를 반환합니다.
+구성된 토큰 및 Local Control 자격 증명 실패는 단순 `401 Unauthorized`로 더 일찍
+거부됩니다; `--require-auth`가 있으면 전역 bearer 미들웨어가 라우트 실행 전에
 인증되지 않은 요청을 거부합니다.
 
 본문:
@@ -1915,7 +2003,11 @@ GET /file?path=big.log&limit=500&cursor=… → next page
 }
 ```
 
-`state`는 `POST /session`, `POST /session/:id/load`, 그리고 `POST /session/:id/resume`에서 사용되는 것과 동일한 ACP 모델/모드/구성 옵션 형태를 미러링합니다.
+최상위 세션의 경우, `state`는 `POST /session`,
+`POST /session/:id/load`, 그리고 `POST /session/:id/resume`에서 사용되는 것과 동일한 ACP
+모델/모드/구성 옵션 형태를 미러링합니다.
+`subagent.` 접두사가 있는 가상 세션 id는 부모 런타임에 대해 해석되며
+빈 `state` 객체를 반환합니다.
 
 ### `GET /session/:id/supported-commands`
 
@@ -2008,6 +2100,41 @@ GET /file?path=big.log&limit=500&cursor=… → next page
 `status`는 `NOT_STARTED`, `IN_PROGRESS`, `READY`, 또는 `FAILED` 중 하나입니다. 선택적 `error`는 실패한 서버에서 사용 가능할 때 존재합니다. 비활성화된 LSP(bare 모드 포함)는 HTTP 200을 `enabled: false`, 0 카운트, `servers: []`로 반환합니다. 구성된 서버 없이 LSP가 활성화되면 `enabled: true`, `configuredServers: 0`, `servers: []`를 반환합니다. 클라이언트 존재 전에 초기화가 실패하면 응답에 `initializationError`가 포함될 수 있습니다; 활성 클라이언트가 스냅샷을 제공할 수 없으면 응답에 `statusUnavailable: true`가 포함됩니다.
 
 이 라우트는 안정적 클라이언트 대면 필드만 노출합니다. 프로세스 ID, spawn 인자, stderr 테일, root URI, 워크스페이스 폴더 경로와 같은 디버그 내부를 의도적으로 생략합니다.
+
+### `GET /session/:id/resources`
+
+```json
+{
+  "v": 1,
+  "sessionId": "<sid>",
+  "workspaceCwd": "/canonical/session/path",
+  "skills": {
+    "v": 1,
+    "workspaceCwd": "/canonical/session/path",
+    "initialized": true,
+    "skills": []
+  },
+  "mcp": {
+    "v": 1,
+    "workspaceCwd": "/canonical/session/path",
+    "initialized": true,
+    "discoveryState": "completed",
+    "servers": []
+  }
+}
+```
+
+이 라이브 세션 소유자 라우트는 선택된 세션의 Config를 자체 ACP 연결을 통해 읽습니다. 프로세스 전역 또는 워크스페이스 수준 상태 라우트를 결합하지 않으며, 콜드 런타임을 초기화하거나, 클라이언트를 attach하거나, 기본 워크스페이스로 폴백하지 않습니다. 알 수 없는 세션과 영구적 전용 세션은 기존 `session_not_found` 응답을 반환합니다.
+
+중첩된 객체는 정확한 `GET /workspace/skills` 및
+`GET /workspace/mcp` 상태 계약을 사용합니다. 이들의 `workspaceCwd` 필드는
+스냅샷을 생성한 Config를 식별하며 최상위 값과 일치합니다. 기존
+수정 규칙이 여전히 적용됩니다: MCP 자격 증명과 헤더, 환경 값,
+Skill 본문, 그리고 원시 설정은 응답에 절대 나타나지 않습니다. MCP
+인증, 풀, 워크스페이스 예산, 그리고 워크스페이스 발견 오류 보강은
+백업 상태가 워크스페이스 소유이거나 세션이 아닌 서버 이름으로만 키되기 때문에
+부재합니다. 선택된 세션의 자체 MCP 매니저의 상태, 발견, 그리고 회계는
+그대로 유지됩니다.
 
 ### Standalone session lifecycle (`standalone_sessions_v1`)
 
@@ -2132,9 +2259,11 @@ ACP 클라이언트는 확장 메타데이터 필드를 통해 동일한 동작�
 
 `attached: true`는 세션이 이미 활성이었음을 의미합니다(이전 `session/load`/`session/resume`에서, 또는 합쳐진 동시 호출자가 바로 앞에 경쟁했을 때).
 
+영구적 세션이 Part 4A worktree를 소유할 때, load/resume은 사이드카, 정규 포함, 그리고 정확한 체크아웃 마커를 검증합니다. 유휴 자식은 응답 전에 재배치됩니다; 활성 자식은 보고된 cwd가 이미 worktree와 동일할 때만 증명되며, 보고된 cwd가 없거나 다른 곳에 있는 활성 자식은 프롬프트 아래로 이동되는 대신 fail-closed됩니다 — 단 복원 프롬프트를 지연할 수 없는 콜드 복원은 제외입니다(`suppressWorktreeContextRestore`가 꺼져 있음 — 유효 소스가 Channel 소유가 아닌 모든 복원 — 또는 지연 API 없는 브리지): 해당 형태는 여전히 `worktreeState` 없이 `worktree`를 반환하며, 재배치되지 않고 세션은 생존합니다. 재배치된 및 증명된 응답은 `worktree`와 `worktreeState: "persisted-v1"`을 반환합니다. 복원 측 타입화된 409 분류(`session_worktree_reset_v1`로 광고): `worktree_session_superseded`는 세션의 사이드카에 `supersededBy` 링크가 있을 때 — 분류는 해당 링크만 읽으며, 체크아웃별 소유권 잠금 아래에서 마커 읽기 전에 이루어지므로, load가 대기하는 동안 롤백되는 이전은 호출자를 같은 데몬이 삭제 중인 세션으로 리다이렉트할 수 없습니다; 하지만 링크는 마커가 뒤집히기 전에 작성되므로, 본문의 `replacementSessionId`는 소유권 이동 증명이 아닌 검증할 리다이렉트입니다: 커밋된 이전 후 호출자는 해당 id를 대신 로드하고 기록을 업데이트해야 하지만, 프리커밋 중단 상태에서는 마커 소유자가 아닌 교체를 지칭하며, 자체 복원은 `worktree_reset_interrupted`를 반환하고 재시도된 리셋이 이를 정리합니다 — 따라서 `replacementSessionId`는 해당 id의 load가 성공할 때까지 작업의 세션 id로 영구화되면 안 됩니다; `worktree_reset_interrupted`는 복원된 세션의 `supersedes` 링크와 명명된 세션의 `supersededBy` 링크가 일치하지만 마커가 이동하지 않았거나 부재일 때 — 이전 리셋이 전송 중간에 충돌했으며 재시도된 리셋이 수정입니다; 그리고 `worktree_marker_missing`는 해당 일치 링크 쌍 없이 체크아웃 마커가 부재일 때 — 작업 리셋이 수정입니다, 어떤 복원 경로도 마커를 재생성하지 않고 복원 재시도가 같은 409를 반환하기 때문입니다. 중단 분류가 먼저 확인되므로, 일치하는 링크 쌍은 `worktree_marker_missing`로 표면화되지 않습니다. 유효 복원 소스가 Channel 소유일 때마다, 라우트는 Part 4A 또는 분류 불가능한 사이드카 상태에 대한 에이전트의 최선 노력 정리를 억제하므로, 오래된, 외부의, 모호한, 또는 소유권 불일치 영구적 상태가 보존되고 요청을 실패시킵니다. 영구적 소스 메타데이터가 우선합니다; 부재 시, load/resume 요청이 유효 소스를 제공합니다. Part 4A `workspaceCwd` 필드 없는 구조적으로 유효한 레거시 사이드카는 기존 최선 노력 에이전트 복원을 유지하며, 해당 경로로 정리될 수 있고, `worktreeState` 없이 `worktree`를 반환할 수 있습니다; 클라이언트는 해당 호환성 메타데이터에서 격리를 추론하면 안 됩니다. 해당 명시적 레거시 호환성 경우를 제외하고, 유효 복원 소스가 Channel 소유가 아닌 세션만 라우트 검증 전 기존 최선 노력 정리를 유지합니다. 누락된 사이드카는 worktree 증명을 반환하지 않습니다; 격리 인식 클라이언트는 세션을 공유 워크스페이스에 다시 바인딩하는 대신 해당 응답을 거부해야 합니다.
+
 **SSE를 통한 히스토리 리플레이.** 에이전트 측에서 `loadSession`이 진행 중일 때 에이전트는 영구적 턴에 대해 `session_update` 알림을 내보내거나 응답 메타데이터에서 벌크 리플레이 업데이트를 반환할 수 있습니다. 데몬은 라우트 응답이 반환되기 전에 해당 이벤트를 세션의 한정된 리플레이 스냅샷 창에 시딩합니다. 활성 세션에 대해 `POST /session/:id/load`는 해당 한정 창(`compactedReplay`, `liveJournal`, `lastEventId`)만 약속하며 전체 트랜스크립트는 아닙니다. 창은 `--compacted-replay-max-bytes`(기본값 4 MiB, 최대 256 MiB)로 바이트 제한됩니다; 오래된 리플레이 항목이 삭제되면 `compactedReplay[0]`은 id 없는 `history_truncated` 마커입니다. 진행 중 `liveJournal`은 `--max-journal-events`(기본값 10,000 리플레이 항목)와 `--max-journal-bytes`(기본값 8 MiB의 직렬화된 소스 이벤트)로 별도로 제한됩니다. 이들은 세션별 **기본** 캡입니다. 진행 중 턴이 이를 초과하면 데몬은 먼저 적응적 성장을 시도합니다: 해당 세션의 캡을 2배까지 올립니다(세션당 하드 캡 256 MiB, 항목은 비례적으로 확장, 남은 풀 헤드룸으로 제한) — 모든 활성 세션에 걸쳐 부여된 성장이 데몬 전체 성장 풀(데몬의 유효 메모리 예산의 5%로 크기 지정 — 전달 시 `--memory-budget-mb` 값, 해결된 사용 가능 메모리로 캡, 그렇지 않으면 자동 감지 메모리의 50%) — `1024` MB로 캡. 회계는 데몬 전체입니다 — 다중 워크스페이스 데몬은 워크스페이스당 하나의 브리지를 실행하며 모두 단일 풀을 공유합니다. 성장은 수요에 따라 풀이 허용하는 범위에서만; 운영자가 고정한 `--max-journal-events` 또는 `--max-journal-bytes`는 이를 비활성화하며, 유효 예산이 1024 MB 최소 미만인 호스트도 마찬가지입니다(`insufficientMemory`): 풀이 0이고 적응적 성장이 전면 비활성화됩니다. 연속적인 호환되는 `agent_message_chunk` 또는 `agent_thought_chunk` 소스 이벤트는 항목당 최대 256개 소스 이벤트까지 리플레이 항목을 공유하며, 도구, 귀속, 출처, 그리고 개별 메시지 경계는 유지됩니다. 저널이 성장이 허용하는 (성장했을 수 있는) 캡을 초과하면 — 헤드룸이 부여되지 않거나 부여가 초과분의 일부만 커버하는 경우 포함 — 가장 오래된 항목이 통째로 삭제되며(보유된 테일이 바이트 캡보다 훨씬 작을 수 있음) `scope: 'live_journal'`을 가진 `history_truncated` 마커가 앞에 추가됩니다; `truncatedEvents`와 `retainedEvents` 필드는 리플레이 항목이 아닌 소스 이벤트를 카운트하며, `maxBytes` / `maxEvents`는 적용 중인 캡을 반영합니다(이미 성장했을 수 있음). 클라이언트는 해당 마커를 상태로 렌더링하고 보유된 이벤트를 계속 적용해야 합니다. 전체 영구적 트랜스크립트 접근은 `GET /session/:id/transcript`를 통해 별도로 노출됩니다.
 
-리플레이 창 바이트 캡은 자식이 영구적 트랜스크립트를 재구성한 후에 적용됩니다; 온디스크 JSONL 읽기를 제한하지 않습니다. 데몬 예산을 초과하는 복원은 복원 예산에서 유도된 `Retry-After`(5-120초로 클램프)와 `{code: "session_restore_timeout", errorKind: "restore_timeout", retryable: true, sessionId, action, timeoutMs}`와 함께 `504`를 반환합니다. 데몬은 여전히 실행 중인 ACP 요청을 펜싱하고 늦은 세션을 정리합니다. 같은 id에 대한 재시도는 해당 정리가 정착될 때까지 복원 예산의 `Retry-After`(5-120초로 클램프)와 함께 `409 restore_in_progress`를 `reason: "awaiting_abandoned_cleanup"`와 함께 반환합니다. 늦은 정리가 불확실하거나 포기된 복원이 마감 후에도 여전히 한 전체 복원 예산 동안 정착되지 않으면 해당 워크스페이스의 새 세션은 `503 acp_channel_unavailable`를 `reason: "restore_cleanup_failed"` 또는 `"restore_settlement_overdue"`와 함께 반환합니다; 이미 활성인 세션은 채널이 드레인되는 동안 사용 가능합니다.
+리플레이 창 바이트 캡은 자식이 영구적 트랜스크립트를 재구성한 후에 적용됩니다; 온디스크 JSONL 읽기를 제한하지 않습니다. 데몬 예산을 초과하는 복원은 복원 예산에서 유도된 `Retry-After`(5-120초로 클램프)와 `{code: "session_restore_timeout", errorKind: "restore_timeout", retryable: true, sessionId, action, timeoutMs}`와 함께 `504`를 반환합니다. 데몬은 여전히 실행 중인 ACP 요청을 펜싱하고 늦은 세션을 등록하는 대신 정리합니다. 같은 id에 대한 재시도는 해당 정리가 정착될 때까지 복원 예산의 `Retry-After`(5-120초로 클램프)와 함께 `409 restore_in_progress`를 `reason: "awaiting_abandoned_cleanup"`와 함께 반환합니다. 늦은 정리가 불확실하거나 포기된 복원이 마감 후에도 여전히 한 전체 복원 예산 동안 정착되지 않으면 해당 워크스페이스의 새 세션은 `503 acp_channel_unavailable`를 `reason: "restore_cleanup_failed"` 또는 `"restore_settlement_overdue"`와 함께 반환합니다. 타임아웃된 세션 초기화는 늦게 정착하는 이전 ACP 자식에 대해 동일한 fail-closed 어드미션 정책을 따릅니다: 불확실한 정리는 `reason: "new_session_cleanup_failed"`를 반환하고, 추가 초기화 예산 하나 동안 정착되지 않은 상태로 남는 요청은 `reason: "new_session_settlement_overdue"`를 반환합니다. 정착 기한 초과 상태는 늦은 실패가 정착된 직후, 또는 늦은 성공이 정확히 해당 ID 정리를 완료한 직후 즉시 해소됩니다; 불확실한 정리는 해당 정리 실패 상태로 전환됩니다. 정리 실패 상태는 워크스페이스 채널이 드레인되고 재순환될 때까지 지속됩니다. 두 경우 모두 이미 활성인 세션은 사용 가능합니다.
 
 **오류:**
 
@@ -2143,7 +2272,8 @@ ACP 클라이언트는 확장 메타데이터 필드를 통해 동일한 동작�
 - `403` — `cwd`가 신뢰되지 않는 비기본 워크스페이스를 대상으로 할 때 `untrusted_workspace`.
 - `503` — `session_limit_exceeded`(`--max-sessions`에 대해 카운트; 진행 중 복원도 계산됨).
 - `504` — `session_restore_timeout`; 재시도 가능, 복원 예산에서 유도된 `Retry-After`(5-120초로 클램프)와 함께 — 같은 세션 id는 늦은 정리가 정착될 때까지 펜싱된 상태로 유지되기 때문.
-- `503` — 워크스페이스 채널이 새 세션 작업에 닫혀 있을 때 `acp_channel_unavailable`. `reason`이 이유를 설명합니다: 포기된 복원을 결정적으로 정리할 수 없을 때 `restore_cleanup_failed`, 또는 포기된 복원이 마감 후 한 전체 복원 예산 동안 여전히 정착되지 않았을 때 `restore_settlement_overdue`. 두 경우 모두 기존 세션은 사용 가능하며 새 세션 작업은 워크스페이스 채널 드레인 후 재시도 가능합니다 — 본문은 `retryAfterSeconds`를 carrying하며 헤더는 일치하는 예산 유도 `Retry-After`를 가집니다 — 격리가 펜스를 초과하여 생존하며 새 id는 힌트를 carrying할 409를 절대 보지 못하기 때문.
+- `504` — `init_timeout`; 재시도 불가능, `Retry-After` 없음, `sideEffectPossible` 없음, 펜스 설치 없음. 복원 요청이 디스패치되기 전 채널 초기화가 타임아웃될 때(`ensureChannel` 단계) 발생합니다; 복원이 시도되지 않았으므로 세션 id가 펜스되지 않고 정리가 펜딩되지 않습니다.
+- `503` — 워크스페이스 채널이 새 세션 작업에 닫혀 있을 때 `acp_channel_unavailable`. `reason`이 이유를 설명합니다: 포기된 복원을 결정적으로 정리할 수 없을 때 `restore_cleanup_failed`; 포기된 복원이 마감 후 한 전체 복원 예산 동안 여전히 정착되지 않았을 때 `restore_settlement_overdue`; 공개 초기화 타임아웃 이후 생성된 세션을 결정적으로 닫을 수 없을 때 `new_session_cleanup_failed`; 또는 타임아웃된 초기화가 마감 후 추가 초기화 예산 하나 동안 여전히 정착되지 않았을 때 `new_session_settlement_overdue`. 기존 세션은 사용 가능합니다. 정착 기한 초과 상태는 늦은 실패가 정착되거나 늦은 성공이 정확히 해당 ID 정리를 완료한 후 해소됩니다; 불확실한 정리는 일치하는 정리 실패 상태로 전환되며, 워크스페이스 채널이 드레인되고 재순환되어야 합니다. 본문은 `retryAfterSeconds`를 carrying하며 헤더는 일치하는 예산 유도 `Retry-After`를 가지므로 클라이언트가 일반 5초 폴링 케이던스 대신 운영 예산 규모의 백오프를 사용합니다.
 - `409` — `restore_in_progress`(같은 id에 대한 `session/resume`이 이미 진행 중이거나 새 생성이 복원이 소유한 id를 제공). 복원이 활성 동안 `Retry-After: 5`; `awaiting_abandoned_cleanup`로 펜싱되면 예산 유도 힌트. 동일 작업 경쟁(같은 id에 대한 두 동시 `session/load`)은 합쳐집니다 — 정확히 하나만 `attached: false`를 반환하고 나머지는 같은 `state`와 함께 `attached: true`를 반환.
 - `409` — 같은 세션 id가 다른 워크스페이스 런타임에서 이미 활성이거나 복원 중일 때 `session_workspace_conflict`.
 - `409` — id가 `chats/archive/` 아래에만 존재할 때 `session_archived`; `load` 또는 `resume` 전에 `POST /sessions/unarchive`를 호출.
@@ -2159,7 +2289,9 @@ ACP 클라이언트는 확장 메타데이터 필드를 통해 동일한 동작�
 | 필드     | 필수 | 참고                                                                                                                                                                                                                                                                                                                                                       |
 | -------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `cursor` | 아니오 | 이전 페이지에서 반환된 불투명 base64url 커서. 첫 페이지에서는 생략합니다. 커서는 데몬 발급 및 변조 검사됩니다; 수정하면 `400 invalid_transcript_cursor`를 반환합니다. 트랜스크립트 파일 정체성과 동결된 첫 페이지 바이트 크기에 바인딩됩니다; 파일을 삭제, 잘라내기, 교체, 또는 아카이브하면 무효화되어 `409`를 반환합니다. |
-| `limit`  | 아니오 | 페이지에 포함할 활성 `ChatRecord` 수. 기본값 `100`, 최대 `500`. 하나의 레코드에서 여러 리플레이 프레임이 생성될 수 있으므로 `events.length`가 `limit`보다 클 수 있습니다. 잘못된 값은 `400 invalid_transcript_limit`을 반환합니다.                                                                                                              |
+| `limit`  | 아니오 | 페이지에 포함할 활성 `ChatRecord`의 목표 수. 기본값 `100`, 최대 `500`. 역방향 페이지는 턴과 도구 호출/결과 경계를 유지하기 위해 최대 `3 * limit` 레코드로 확장될 수 있습니다. 하나의 레코드에서 여러 리플레이 프레임이 생성될 수 있으므로 `events.length`가 더 클 수 있습니다. 잘못된 값은 `400 invalid_transcript_limit`을 반환합니다. |
+| `direction` | 아니오 | 허용되는 유일한 값은 `backward`이며, 최신 레코드부터 페이지를 시작합니다. 첫 페이지에서 정방향으로 페이지네이션하려면 파라미터를 생략하거나, `cursor`에 동결된 방향을 계속하세요. `cursor`, `beforeRecordId`, `atRecordId`, 또는 `snapshot`과 함께 사용할 수 없습니다. |
+| `beforeRecordId` | 아니오 | 이 레코드 id 이전에 역방향 페이지를 시작합니다. 역방향을 의미하므로 `direction`을 함께 보내지 마세요. `cursor` 또는 `atRecordId`와 함께 사용할 수 없으며, `snapshot`과 함께 사용할 수 있습니다. |
 
 응답:
 
@@ -2194,12 +2326,18 @@ ACP 클라이언트는 확장 메타데이터 필드를 통해 동일한 동작�
 
 **오류:**
 
-- `400` — 잘못된 `limit`, `cursor`, 또는 세션 id 형태.
+- `400` — 잘못된 `limit`, `cursor`, `direction`, `beforeRecordId`, 또는 세션 id 형태. 페이징 파라미터는 상호 배타적입니다: `cursor`는 `beforeRecordId`, `atRecordId`, 또는 `snapshot`과 함께 사용할 수 없으며, `snapshot`은 `atRecordId` 또는 `beforeRecordId`가 필요하고, `atRecordId`는 `snapshot`이 필요하며, `backward`는 커서나 레코드 앵커와 함께 사용할 수 없습니다.
 - `404` — 첫 페이지 요청 시 활성 영구적 세션 id가 존재하지 않음.
 - `409` — `/load`와 동일한 로드 가능성 검사에서의 `session_archived`, `session_archiving`, 또는 `session_conflict`.
 - `409` — 커서 발급 후 파일이 삭제, 잘라내기, 교체, 또는 아카이브되어 트랜스크립트 스냅샷을 사용할 수 없음; 프리플라이트가 커서 요청에 대한 활성 파일을 더 이상 찾을 수 없을 때도 적용됩니다.
 - `413` — 동결된 트랜스크립트 스냅샷이 데몬 인덱싱 캡을 초과할 때 `transcript_too_large`.
 - `413` — 하나의 집합 레코드가 워크스페이스 한정 페이지 예산을 초과하거나 직렬화된 페이지가 응답 예산을 초과할 때 `transcript_page_too_large`.
+
+### `GET /session/:id/export`
+
+기본 워크스페이스의 활성 영구적 세션 트랜스크립트를 다운로드합니다. 선택적 `format` 쿼리는 `html`(기본값), `md`, `json`, 또는 `jsonl`입니다. `caps.features.session_export`를 프리플라이트합니다.
+
+성공적인 응답은 정리된 파일 이름, `Cache-Control: no-store`, 그리고 `X-Content-Type-Options: nosniff`를 가진 첨부 파일입니다. 콘텐츠 타입은 선택된 형식에 따라 `text/html`, `text/markdown`, `application/json`, 또는 `application/jsonl`입니다. 이 라우트는 영구적 스토지만 읽습니다: 활성 소유자를 해결하지 않고, ACP를 시작하지 않으며, 클라이언트를 첨부하지 않습니다. 대상이 비기본 워크스페이스에 있을 수 있을 때 아래 워크스페이스 한정 라우트를 사용하세요. 잘못된 형식은 `400 invalid_export_format`을 반환하고, 활성 세션이 없으면 `404`를 반환하며, 아카이브된 상태나 전환 중이거나 충돌하는 스토리지는 `409`를 반환합니다. TypeScript SDK 메서드는 `exportSession()`입니다.
 
 ### `GET /workspaces/:workspace/session/:id/transcript`
 
@@ -2207,9 +2345,9 @@ ACP 클라이언트는 확장 메타데이터 필드를 통해 동일한 동작�
 
 선택자와 쿼리 파라미터는 기존 다중 워크스페이스 및 트랜스크립트 규칙을 따릅니다. 신뢰되는 기본 및 보조 런타임과 신뢰되지 않는 보조 런타임이 읽을 수 있습니다. 신뢰되지 않는 기본은 `403 untrusted_workspace`를 반환합니다. 아카이브된 콘텐츠는 반환되지 않습니다.
 
-이 워크스페이스 한정 라우트에서 `limit`은 최대 레코드 수입니다. 페이지는 4 MiB 영구적 소스 예산에서 더 일찍 중단되고 계속 커서를 반환할 수 있습니다. 직렬화된 응답은 32 MiB로, 커서는 64 KiB로 제한됩니다. 리플레이 상태가 커서 캡을 초과하면 페이지는 성공적으로 변환된 이벤트를 `partial: true`, `hasMore: false`, `nextCursor` 없이 반환합니다.
+이 워크스페이스 한정 라우트에서 `limit`은 정방향 페이지의 최대 레코드 수입니다. 역방향 페이지는 턴과 도구 호출/결과 쌍이 유지되도록 최대 `3 * limit` 레코드로 확장될 수 있습니다. 페이지는 4 MiB 영구적 소스 예산에서 더 일찍 중단되고 계속 커서를 반환할 수 있습니다. 직렬화된 응답은 32 MiB로, 커서는 64 KiB로 제한됩니다. 리플레이 상태가 커서 캡을 초과하면 페이지는 성공적으로 변환된 이벤트를 `partial: true`, `hasMore: false`, `nextCursor` 없이 반환합니다.
 
-레거시 단수 라우트와 달리 이 경로는 데몬 프로세스 내에서 완전히 구현됩니다. 워크스페이스 브리지를 호출하거나, ACP를 시작하거나, 설정을 로드하거나, 프로젝트 정의 에이전트나 skill을 파싱하거나, `session-transcript-cursor-key`를 생성/수리하지 않습니다. 도구 프레임은 런타임 도구 레지스트리를 참조하지 않고 영구적 도구 이름과 설명을 사용합니다. HMAC 커서 키는 데몬 메모리에만 존재하며 워크스페이스별로 격리되고 재시작 시 회전합니다; 이전 데몬 프로세스의 커서는 `400 invalid_transcript_cursor`를 반환합니다.
+정방향 페이지와 커서 페이지는 데몬 프로세스 내부에서 완전히 구현됩니다. 활성 세션에 대한 역방향 첫 페이지는 영구적 테일이 최신 상태가 되도록 1-레코드 워크스페이스 브리지 플러시 배리어를 먼저 통과합니다; 해당 배리어는 ACP를 시작하고 워크스페이스 설정을 로드할 수 있습니다. 영구적 페이지 읽기 자체는 프로젝트 정의 에이전트나 skill을 파싱하거나 `session-transcript-cursor-key`를 생성/수리하지 않습니다. 도구 프레임은 런타임 도구 레지스트리를 참조하지 않고 영구적 도구 이름과 설명을 사용합니다. HMAC 커서 키는 데몬 메모리에만 존재하며 워크스페이스별로 격리되고 재시작 시 회전합니다; 이전 데몬 프로세스의 커서는 `400 invalid_transcript_cursor`를 반환합니다.
 
 ### `GET /workspaces/:workspace/session/:id/export`
 
@@ -2233,11 +2371,43 @@ TypeScript SDK 호출자는 `WorkspaceDaemonClient.exportArchivedSession(session
 
 영구적 ACP 세션을 id로 복원하지만 히스토리를 SSE로 리플레이하지 **않습니다**. 모델 컨텍스트는 에이전트 측에서 내부적으로 복원됩니다(`geminiClient.initialize`가 `config.getResumedSessionData`를 읽는 방식); SSE 스트림은 이미 히스토리가 렌더링된 클라이언트를 위해 깨끗하게 유지됩니다. `caps.features.session_resume`를 프리플라이트합니다; `unstable_session_resume`는 이전 클라이언트를 위한 지원 중단된 호환성 별칭으로 남아 있습니다.
 
-`/load`와 동일한 요청 형태입니다. 동일한 응답 형태 — `state`는 ACP의 `ResumeSessionResponse`를 미러링합니다. 동일한 오류 인벨롭, `409 restore_in_progress` 포함(이는 `session/load`가 진행 중일 때 발생합니다; 다른 `session/resume` 뒤에서 경쟁하는 `session/resume`은 합쳐집니다).
+`/load`와 동일한 `cwd`, `approvalMode`, `sourceType`, `sourceId` 필드를 허용합니다. `historyPageSize`는 여기서 파싱되지 않으며 조용히 무시됩니다. `liveReplayMode`는 파싱되고 검증됩니다 — 잘못된 값은 `400 invalid_live_replay_mode`를 반환합니다 — 하지만 레거시 독립 호환성 복원만 이를 전달하며, 일반 resume 경로는 이를 삭제합니다. 두 필드 모두 게시된 resume 요청의 일부가 아닙니다. 동일한 응답 형태 — `state`는 ACP의 `ResumeSessionResponse`를 미러링합니다. 동일한 오류 인벨롭, `409 restore_in_progress` 포함(이는 `session/load`가 진행 중일 때 발생합니다; 다른 `session/resume` 뒤에서 경쟁하는 `session/resume`은 합쳐집니다).
 
 클라이언트에 히스토리가 렌더링되지 않았을 때(콜드 리커넥트, 피커 → 열기) `/load`를 사용합니다. 클라이언트에 이미 턴이 화면에 표시되고 데몬 측 핸들만 필요할 때 `/resume`을 사용합니다.
 
 > ⚠️ **`unstable_session_resume`가 여전히 광고되는 이유는?** 데몬의 HTTP 라우트와 `session_resume` 기능은 v1에서 안정적이지만, 브리지는 여전히 ACP의 `connection.unstable_resumeSession`을 호출합니다. 이전 태그는 `session_resume` 이전에 출시된 SDK가 계속 작동할 수 있도록 유지됩니다.
+
+### `POST /session/:id/worktree-reset`
+
+지속된 Part 4A worktree 세션의 체크아웃 소유권을 새 교체 세션으로 이전합니다. `session_worktree_reset_v1`을 프리플라이트합니다 — 이전 데몬은 이 라우트에 대해 `404`를 반환합니다. 이 라우트는 Channel 이름 지정 작업 `/clear`가 파일을 버리지 않고 worktree 작업을 재설정하는 방법입니다: 교체 세션은 완전히 새로운 대화를 얻고, 대체된 세션은 카탈로그에 트랜스크립트를 유지하지만 다시 복원할 수 없습니다.
+
+요청 본문(모든 필드 선택 사항):
+
+```json
+{
+  "cwd": "/canonical/path",
+  "modelServiceId": "service-id",
+  "approvalMode": "plan",
+  "sourceType": "channel",
+  "sourceId": "dingtalk-main"
+}
+```
+
+`cwd`는 `POST /session/:id/load`와 동일한 해석을 따르며 데몬의 기본 워크스페이스에 대해서는 생략할 수 있습니다. 메타데이터 필드는 교체 세션에 worktree 생성과 동일한 스레드 범위 및 소스 규칙을 스탬프합니다.
+
+성공 시 라우트는 교체 세션의 생성 형태 응답으로 `200`을 반환합니다 — 새 `sessionId`, `workspaceCwd`, 검증된 정규 worktree 경로와 동일한 `currentCwd`, `worktree` 메타데이터, 그리고 `worktreeState: "persisted-v1"`. 호출자는 이전 id에 대한 핸들을 버리고 그때부터 교체 id를 사용합니다; 이전 id의 이후 복원은 `replacementSessionId`와 함께 `worktree_session_superseded`를 반환하며, 클라이언트는 이를 사용하여 오래된 부킹을 자가 치유할 수 있습니다 — 하지만 해당 id의 load가 성공한 경우에만 가능합니다. 분류는 사이드카 링크에서만 결정되며, 해당 링크는 마커가 뒤집히기 전에 작성되므로, 커밋 전 중단된 이전은 마커 소유자가 아닌 교체를 반환하며, 자체 복원은 `worktree_reset_interrupted`를 반환하고 재시도된 리셋이 이를 정리합니다.
+
+이 라우트는 `X-Qwen-Client-Id`를 절대 읽지 않으므로 교체 세션은 attach 없이 생성됩니다 — 하지만 성공 응답이 등록 없는 것은 아닙니다. 새 이전은 해당 생성에 대한 소유자 스타일 `clientId`를 발행하고, 교체 세션에 등록하며, 본문에서 보고합니다; 커밋된 이전의 멱등적 재개는 아무것도 보고하지 않습니다. 발행된 id는 attach가 아니며(교체 세션의 attach 카운트는 변경되지 않으므로 `requireZeroAttaches`를 가진 `killSession`은 여전히 이를 attach되지 않은 것으로 봅니다), 하지만 활성 클라이언트 등록이 정확히 데몬의 유휴 정리를 막는 것입니다: 사용하지 않을 id를 분리하지 않으면 교체 세션이 무기한 활성 상태로 유지되며 — 마커 없이 여전히 활성 상태인 교체 세션은 이후 리셋이 분해를 거부하는 형태입니다. 응답을 교체 세션의 정체성으로 취급하고, 등록된 클라이언트가 필요할 때 일반 `POST /session/:id/load` 또는 `/resume` 표면을 통해 attach하세요.
+
+이전은 체크아웃별로 worktree 복원 및 다른 리셋에 대해 직렬화되며, 두 세션 중 하나가 바쁠 때(진행 중인 프롬프트 또는 펜딩 상호작용) 실행을 거부하고, 대체된 세션에 어드미션 배리어를 설치합니다: 설치된 동안 정확히 8개의 라이터가 어드미션에서 `worktree_reset_active`로 거부됩니다 — `POST /session/:id/prompt`, `/rewind`, `/cd`, `/branch`, `/fork`, `/shell`, `/goal`, 그리고 `/tasks/:taskId/workflow-action`. 다른 7개는 펜스됩니다: 각각 세션 cwd를 이동하거나 프롬프트 어드미션을 통과하지 않고 해당 cwd에서 작업을 시작하기 때문입니다 — 셸 명령은 세션의 유효 cwd에서 실행되며, 재배치된 worktree 세션의 경우 체크아웃 자체입니다; fork 서브에이전트는 해당 cwd에서 도구를 실행합니다; rewind는 이를 기준으로 파일을 복원합니다; cd는 이를 이동시키며 체크아웃의 하위 디렉토리로도 이동합니다; branch는 대체된 세션의 지속된 히스토리를 변이시키고 소유권이 이동 중인 동안 파생 세션을 생성합니다; goal `resume`은 큐에 있는 턴을 승격하고 계속을 큐에 넣습니다; workflow action은 저장된 워크플로를 실행하거나 활성 실행을 재시작하며 세션의 자체 도구 레지스트리를 통해 실행합니다. `POST /session/:id/continue`는 아홉 번째 게이트가 아닙니다: 펜스된 프롬프트 어드미션을 통해 수락된 계속을 구동하며 거기에서 거부됩니다. 해당 목록이 전체 펜스이며, 펜스가 자식에 도달하는 모든 것은 아닙니다 — 해제 및 중지 경로는 설계상 이전 중간에도 사용 가능합니다(작업 취소, goal 정리, 클라이언트 분리, 세션 종료), 그리고 데몬 내부 배경 알림 인큐 — 서브 세션의 부모에 대한 완료 확인으로 HTTP 라우트가 호출하지 않는 — 또한 펜스되지 않습니다: 턴을 시작하는 대신 알림을 인큐하기 때문입니다. 이전의 마지막 단계는 대체된 세션의 클라이언트 등록을 끊고, 인메모리 worktree 연관을 정리하며, 대체된 세션이 실제로 사라졌는지 보고합니다. 생존자 — 배경 작업을 여전히 보유하고 있어 마지막 분리가 트리거하는 유휴 종료가 거부되고 지연되는 자식 — 는 덮어쓰기 대신 표면화됩니다: 데몬이 이를 기록하고, 배리어가 해당 항목에 유일한 펜스로 남아 설치된 상태를 유지하며, `200` 본문은 `supersededSessionLive: true`를 carry하여 호출자가 대체된 id가 여전히 활성 상태이고 소유권이 방금 이동한 체크아웃 내에서 재attach 가능함을 알 수 있습니다. 충돌 안전성은 창별이며, 쓰기 순서가 창을 정의합니다: 이전 사이드카의 `supersededBy` 링크가 먼저 작성되고, 그 다음 `supersedes`를 carry하는 교체 사이드카가 작성되며, 마커가 마지막에 뒤집힙니다. 따라서 뒤집기 전 충돌은 이전 세션을 세 가지 형태 중 하나로 권위 있게 남기며 재시도가 구분합니다 — 링크가 전혀 없는 경우(교체 세션은 일반 고아이며 재시도는 단순히 새 이전을 시작합니다), 교체 사이드카가 없는 역방향 링크만 있는 경우(재시도는 `worktree_reset_invalid_state`로 fail-closed되며 운영자 수리를 위해 중단된 상태를 그대로 둡니다), 또는 두 링크가 모두 있는 경우(재시도는 부분 이전을 롤백하고 새 이전을 완료합니다 — 중단된 교체가 클라이언트가 여전히 attach되어 있어 제거할 수 없는 경우 제외, 이 경우 롤백은 `worktree_reset_invalid_state`로 fail-closed되며 두 링크를 유지하므로 해당 클라이언트가 사라지면 이후 재시도가 수렴합니다). 뒤집기 후 충돌은 교체 세션을 권위 있게 남기며 재시도는 no-op으로 재개합니다. 이전 세션은 절대 삭제되지 않으며 worktree 체크아웃은 리셋으로 제거되지 않습니다.
+
+**오류:**
+
+- `404` — 세션 레코드가 존재하지 않을 때 `session_not_found`.
+- `409` — 세션에 유효한 Part 4A 사이드카가 없을 때 `worktree_reset_unsupported`(worktree 세션이 아님).
+- `409` — 이전에 관여된 세션이 바쁠 때 `worktree_reset_active`; 안정된 후 재시도하세요. 배리어가 커버하는 라이터의 어드미션 — 프롬프트, rewind, cwd 변경, branch, fork, 셸 명령, goal 제어, 또는 workflow-task action — 이전 중인 세션에서 동일한 코드로 실패합니다.
+- `409` — 손상된 사이드카, 잘못된 마커, 포함 실패, 또는 일관성 없는 대체 링크 쌍에 대한 `worktree_reset_invalid_state`. 이 요청이 시작한 것에 대해 비파괴적입니다: 이 요청이 시작한 부분 이전은 호출자가 보기 전에 롤백되며, fail-closed 재개 분기 — 잘못된 마커, 동의하지 않는 대체 링크 쌍(교체 사이드카가 없는 역방향 링크 포함), 모호한 마커 소유자, 그리고 마커가 부재한 동안 이 데몬에서 여전히 활성 상태인 교체 — 는 운영자 수리를 위해 기존 중단된 상태를 그대로 두므로 해당 형태는 이후 리셋 또는 복원에 계속 보입니다. 해당 상태 중 하나에 대한 재시도는 이를 다시 읽고 동일한 409를 반환합니다: 수렴하지 않으므로 해당 상태는 재시도 루프가 아닌 운영자 수리가 필요합니다. 구체적인 이유는 와이어가 아닌 데몬 로그에 기록됩니다.
+- `500` — fail-closed 내부 오류(예: 리셋 지원 없는 브리지, 또는 롤백 후 재배치 거부); 그대로는 재시도 불가능합니다. 하나의 `500`은 종류가 다릅니다: 뒤집기가 내구성 있게 커밋된 _후_ 자체 포스트 커밋 테일이 실패한 마커 이전은 소유권이 이동했음을 보고하고, 파괴적 롤백을 절대 실행하지 않으며, 리셋을 재시도하여 수리되며 이는 커밋된 이전을 멱등적으로 재개합니다.
 
 ### `GET /workspace/:id/session-info` 및 `GET /workspaces/:workspace/session-info`
 
@@ -2485,13 +2655,15 @@ curl http://127.0.0.1:4170/workspaces/<workspace-id>/sessions
 }
 ```
 
-`resolveConflicts`는 선택 사항이며 기본값은 `false`입니다. 기본적으로 동시에 존재하는 활성 및 아카이브 JSONL 파일은 `errors`에 충돌을 생성하며, 어느 복사본도 이동, 제거 또는 덮어쓰기되지 않습니다; 활성 전용 세션은 `alreadyActive`에 반환됩니다. `resolveConflicts: true`이면, 아카이브 해제는 활성 복사본을 유지하고 아카이브된 복사본을 제거하며, id를 `unarchived`와 `resolvedConflicts` 모두에 보고합니다. 같은 id에 대한 아카이브 또는 아카이브 해제가 진행 중이면 일괄 처리 시작 전 `409 session_archiving`를 반환합니다.
+`resolveConflicts`는 선택 사항이며 기본값은 `false`입니다. 기본적으로 동시에 존재하는 활성 및 아카이브 JSONL 파일은 `errors`에 충돌을 생성하며, 어느 복사본도 이동, 제거 또는 덮어쓰지 않습니다; 활성 전용 세션은 데몬이 writer 또는 maintenance 리스를 획득하여 펜딩된 사이드카 정리를 조정할 준비가 된 후 `alreadyActive`에 반환됩니다. 라이브 세션이 여전히 writer 리스를 보유하고 있으면, 활성 전용 id는 해당 세션이 닫힐 때까지 `errors`에 보고됩니다. `resolveConflicts: true`이면, 아카이브 해제는 두 복사본이 선택된 워크스페이스가 관리할 수 있는 일반 트랜스크립트 파일인 경우에만 충돌을 복구하며, 소유한 빈 또는 손상된 트랜스크립트도 포함됩니다. 활성 복사본을 유지하고 아카이브된 복사본을 제거하며, id를 `unarchived`와 `resolvedConflicts` 모두에 보고합니다. 이 옵션은 소유권 검사를 우회하지 않습니다; 혼합된 로컬/외부 또는 기타 모호한 소유권은 `errors`에 보고되며 어느 복사본도 이동되지 않습니다. 같은 id에 대한 아카이브 또는 아카이브 해제가 진행 중이면 일괄 처리 시작 전 `409 session_archiving`를 반환합니다.
+
+트랜스크립트 이동 또는 충돌 복구는 이후 정리 소유권 검사가 실패하더라도 롤백되지 않습니다. 해당 경우 id는 아카이브 상태가 이미 변경되었더라도 `errors`에만 나타날 수 있으며, `unarchived`와 `resolvedConflicts`에서 생략될 수 있습니다. 아카이브된 복사본이나 충돌이 남아있다는 증거로 간주하기 전에 같은 워크스페이스에 대해 같은 라이프사이클 요청을 재시도하세요. 서비스가 저장된 트랜스크립트 정체성을 확인하고 필요한 writer 또는 maintenance 리스를 획득할 수 있으면, 재시도는 세션 목록이 생략하는 빈 또는 손상된 트랜스크립트에 대해서도 권위 있는 `alreadyActive` 상태를 보고하고 펜딩된 사이드카 정리를 재개합니다. 저장된 정체성을 확인할 수 없는 트랜스크립트는 재시도 시 계속 `errors`를 보고하며 수동 검사가 필요합니다; 활성 세션이 여전히 리스를 보유하고 있기 때문인 경우를 포함하여 필요한 리스를 획득할 수 없는 재시도는 리스를 사용할 수 있게 될 때까지 `errors`에 남아있습니다.
 
 ACP-over-HTTP는 벤더 메서드 `_qwen/sessions/archive` 및 `_qwen/sessions/unarchive`를 통해 동일한 요청 및 응답 본문을 사용합니다. REST 라우트 테이블은 ACP 전송을 위해 `POST /sessions/archive` 및 `POST /sessions/unarchive`를 해당 메서드에 매핑합니다.
 
 ### 다중 워크스페이스 활성 세션 라우팅
 
-`multi_workspace_sessions`가 광고되면 활성 세션 작업은 `sessionId`에서 워크스페이스를 식별합니다; 클라이언트는 URL에 워크스페이스 선택자를 추가하지 않습니다. 기존 소유자 라우팅된 라이프사이클 작업에 더해, 이는 `PATCH /session/:id/metadata`, `POST /session/:id/recap`, `POST /session/:id/generate`, `POST /session/:id/btw`, `POST /session/:id/mid-turn-message`, `GET /session/:id/mid-turn-messages`, `DELETE /session/:id/mid-turn-messages/:messageId`, `POST /session/:id/tasks/:taskId/cancel`, `POST /session/:id/goal/clear`, `POST /session/:id/continue`, `POST /session/:id/language`, `POST /session/:id/artifacts`, 그리고 `DELETE /session/:id/artifacts/:artifactId`에도 적용됩니다. 데몬은 각 요청을 활성 세션을 소유한 신뢰 런타임으로 라우팅합니다. 신뢰되지 않는 비기본 소유자는 `403 untrusted_workspace`를 반환하고, 누락된 활성 소유자는 `404 session_not_found`를 반환하며, 모호한 소유자는 `500 ambiguous_session_owner`로 실패합니다.
+`multi_workspace_sessions`가 광고되면 활성 세션 작업은 `sessionId`에서 워크스페이스를 식별합니다; 클라이언트는 URL에 워크스페이스 선택자를 추가하지 않습니다. 기존 소유자 라우팅된 라이프사이클 작업에 더해, 이는 `PATCH /session/:id/metadata`, `POST /session/:id/recap`, `POST /session/:id/generate`, `POST /session/:id/btw`, `POST /session/:id/mid-turn-message`, `GET /session/:id/mid-turn-messages`, `DELETE /session/:id/mid-turn-messages/:messageId`, `POST /session/:id/tasks/:taskId/cancel`, `POST /session/:id/goal/clear`, `POST /session/:id/continue`, `POST /session/:id/language`, `POST /session/:id/artifacts`, `DELETE /session/:id/artifacts/:artifactId`, `GET /session/:id/sources`, `POST /session/:id/sources`, 그리고 `DELETE /session/:id/sources/:sourceId`에도 적용됩니다. 데몬은 각 요청을 활성 세션을 소유한 신뢰 런타임으로 라우팅합니다. 신뢰되지 않는 비기본 소유자는 `403 untrusted_workspace`를 반환하고, 누락된 활성 소유자는 `404 session_not_found`를 반환하며, 모호한 소유자는 `500 ambiguous_session_owner`로 실패합니다.
 
 이 규칙은 활성 세션 전용이며 모든 워크스페이스 없는 세션 라우트를 다중 워크스페이스 인식으로 만들지는 않습니다. 영구적 또는 아카이브 작업은 문서화된 워크스페이스 한정 라우트를 사용합니다. `POST /session/:id/branch`, `POST /session/:id/fork`, 그리고 `POST /session/:id/cd`는 의도적으로 기본 전용으로 유지되며 비기본 소유자에 대해 `non_primary_session_route_not_supported`를 반환합니다.
 
@@ -2504,6 +2676,26 @@ ACP-over-HTTP는 벤더 메서드 `_qwen/sessions/archive` 및 `_qwen/sessions/u
 큐에 있는 메시지가 활성 턴으로 드레인될 때 데몬은 정렬된 `messages` 및 `messageIds` 배열(그리고 알려진 경우 실행 중 턴의 `promptId`)을 taşı는 `mid_turn_message_injected`를 발행합니다. 이는 영구적 트랜스크립트 항목이 아닌 일시적 중복 제거 신호입니다: 클라이언트는 해당 메시지 id로 등록된 완료 콜백을 정산하고 로컬 펜딩 행을 삭제합니다. 이전 데몬은 페이로드에 `originatorClientId`도 포함합니다. 놓친 에코는 위의 쿼리를 통해 정산 링에서 복구됩니다.
 
 `session_mid_turn_message_mutation`이 광고되면 첨부된 세션 클라이언트는 `DELETE /session/:id/mid-turn-messages/:messageId`를 호출할 수 있습니다. 턴 중간 큐나 승격된 펜딩 프롬프트 상태에서 메시지를 제거합니다; 이미 실행 중인 승격된 메시지를 제거하면 해당 턴이 중단되어 일반 펜딩 프롬프트 제거와 일치합니다. 데몬 소유 큐 추가 및 제거는 기존 `pending_prompt_added` 및 `pending_prompt_completed` 세션 이벤트를 발행하여 첨부된 클라이언트가 두 권위 있는 큐 스냅샷을 새로 고칩니다. `{ "removed": false }`는 메시지가 이미 주입되었거나, 완료되었거나, 찾을 수 없었음을 의미합니다.
+
+### `GET /session/:id/pending-prompts`
+
+현재 실행 중인 프롬프트와 라이브 세션의 FIFO에서 대기 중인 프롬프트를 반환합니다. 요청은 `X-Qwen-Client-Id`를 포함할 수 있으며, 존재할 경우 첨부된 클라이언트를 식별해야 합니다.
+
+```json
+{
+  "pendingPrompts": [
+    {
+      "promptId": "<prompt-id>",
+      "text": "Explain the failure",
+      "queuedAt": 1700000000123,
+      "state": "running",
+      "originatorClientId": "<client-id>"
+    }
+  ]
+}
+```
+
+`state`는 디스패치 중인 프롬프트에 대해 `running`이고 대기 중인 프롬프트에 대해 `queued`입니다. `content`는 프롬프트가 이미지와 같은 구조화된 콘텐츠를 포함할 때 나타납니다. 이것은 라이브 세션 소유자 라우트입니다: `404`는 라이브 소유자가 없음을 의미하고 `503`은 소유자가 일시적으로 사용 불가능함을 의미합니다. 신뢰되지 않는 비기본 소유자는 `403 untrusted_workspace`를 반환하고, 둘 이상의 워크스페이스에서 라이브인 id는 `500 ambiguous_session_owner`를 반환합니다. 전용 기능 태그는 없습니다; 이전 데몬은 `404`를 반환합니다. TypeScript SDK 메서드는 `getPendingPrompts()`입니다.
 
 ### `POST /session/:id/prompt`
 
@@ -2535,7 +2727,13 @@ ACP-over-HTTP는 벤더 메서드 `_qwen/sessions/archive` 및 `_qwen/sessions/u
 { "promptId": "session-id########1", "lastEventId": 42 }
 ```
 
-`202` 응답은 수락을 확인하며 에이전트 완료가 아닙니다. `lastEventId` 이후 세션 SSE 스트림을 관측하고 `promptId`로 `turn_complete` 또는 `turn_error`를 상관시킵니다. `turn_complete.data.stopReason`은 `end_turn`, `cancelled`, `max_tokens`, `error`, 또는 `length`일 수 있습니다.
+`202` 응답은 수락을 확인하며 에이전트 완료가 아닙니다. `lastEventId` 이후 세션 SSE 스트림을 관측하고 `promptId`로 `turn_complete` 또는 `turn_error`를 상관시킵니다.
+
+`turn_complete.data.stopReason`은 에이전트가 반환한 ACP `StopReason`을 전달합니다 — `end_turn`, `max_tokens`, `max_turn_requests`, `refusal` 또는 `cancelled`. 데몬은 에이전트가 실행하지 않고 중단된 프롬프트에 대해서도 `cancelled`를 발행할 수 있습니다. 큐에 있는 프롬프트 제거, 호출자 연결 끊기, 또는 드레인/티어다운이 포함되며, 해당 값은 에이전트가 프롬프트를 실행했음을 증명하지 않습니다. **필드를 열린 문자열로 취급하세요**: 와이어에서 `string`으로 타입이 지정되며, ACP 세트는 증가할 수 있고, 이를 철저히 switch하는 클라이언트는 다음 추가 시점에 중단됩니다.
+
+두 가지 데몬 측 결과는 이 필드로 전달되지 **않습니다**. 데몬 내부에서 실패한 턴 — 마감 만료, 티어다운 플러시, 자식 충돌 — 은 `turn_error` 이벤트로 발행되며, `turn_complete` stopReason으로는 절대 발행되지 않습니다. 해당 `data`는 항상 `message`를 전달하며, `code`는 데몬이 실패를 분류했을 때만 존재합니다(마감 만료 → `prompt_deadline_exceeded`, 티어다운 플러시 → `channel_closed`, `session_closed`, `session_killed` 또는 `daemon_shutdown`). ACP 자식이 요청 중간에 사망하여 거부된 프롬프트의 프레임은 `code`와 `errorKind` 모두를 가지지 않습니다. 둘 다 선택적인 것으로 취급하고 `message`를 기준으로 분기하세요.
+
+재시작 후 영구적 히스토리에서 복구된 턴은 스트림에서 전혀 재발행되지 않습니다; `POST /session/:id/load` 응답 본문의 `promptTerminals[]`에서 표면화됩니다 — 영구적 테일이 턴이 완료되었음을 보일 때 `{ terminal: "completed", stopReason: "reconstructed_from_transcript" }`로, 또는 데몬이 턴 중간에 사망했을 때 **`stopReason` 없이** `{ terminal: "interrupted", code: "daemon_lost" }`로 표시됩니다. `promptId`로 항목을 매칭하고 `terminal`을 기준으로 분기하세요; 레저에 세션에 대한 증거가 없을 때 `promptTerminals`는 응답에서 완전히 생략됩니다.
 
 HTTP 클라이언트가 프롬프트 중간에 연결을 끊으면 데몬은 에이전트에 ACP `cancel` 알림을 보내며 프롬프트는 `stopReason: "cancelled"`로 정리됩니다.
 
@@ -3070,6 +3268,21 @@ SSE 수준의 `id:` / `event:` 줄은 EventSource 호환성을 위해 `envelope.
 - SSE 요청에서 `?maxQueued=N`(범위 `[16, 2048]`)으로 프레임 캡만 재정의합니다. `?maxQueuedBytes`는 의도적으로 없습니다; 클라이언트가 데몬 메모리 예산을 올릴 수 없습니다.
 - 구독자의 활성 프레임 백로그나 활성 바이트 백로그가 75%를 초과하면 버스는 해당 구독자에게 `slow_client_warning` 합성 프레임을 강제 푸시합니다(오버플로우 에피소드당 한 번; 두 측정값 모두 37.5% 이하로 드레인된 후 재무장). 스트림은 열린 상태로 유지됩니다 — 경고는 클라이언트가 더 빨리 드레인하거나 깔끔하게 분리 + 재연결할 수 있도록 하는 미리 알림입니다.
 - 활성 프레임 캡이 오버플로우하면 버스는 `reason: "queue_overflow"`와 함께 `client_evicted`를 발행합니다. 활성 바이트 캡이 오버플로우하면 `reason: "queue_bytes_overflow"`를 발행합니다. 두 경우 모두 종단 프레임이 강제 푸시되고 구독이 닫힙니다.
+
+### `POST /session/:id/permission/:requestId`
+
+아래에 문서화된 동일한 투표를 행사하지만, 명명된 라이브 세션을 소유한 런타임을 통해 라우팅합니다. 새로운 멀티 워크스페이스 통합은 레거시 프로세스 전역 라우트 대신 이 형태를 사용해야 합니다. 프리플라이트 `caps.features.session_permission_vote`.
+
+요청 본문, 중재 정책, 결과, 그리고 성공 응답은 `POST /permission/:requestId`와 동일합니다. 선택적 `X-Qwen-Client-Id` 헤더는 designated 및 consensus 정책에 참여합니다. 실패는 기록된 곳에서 안정적인 `code` 값을 사용하며, 형식이 잘못된 입력과 펜딩 요청 경합 손실은 `code`를 생략할 수 있습니다:
+
+- `400` — 형식이 잘못된 투표 본문(`code` 없음) 또는 유효하지 않은 클라이언트 정체성(`invalid_client_id`), 또는 선택된 옵션이 제공되지 않았을 때 `invalid_option_id`. 동일한 투표를 재시도하지 말고 제공된 옵션을 다시 읽으세요.
+- `403` — 활성 정책이 투표자를 거부할 때 `permission_forbidden`, 또는 비기본 소유 워크스페이스가 신뢰되지 않을 때 `untrusted_workspace`. 신뢰되지 않는 기본 소유자는 이 신뢰 검사에서 면제되며 투표가 수락될 수 있습니다.
+- `404` — 라이브 소유자가 없을 때 `session_not_found`, 또는 요청이 펜딩 중이 아닐 때 `code` 없음.
+- `500` — 에이전트의 `allowedOptionIds`에 예약된 `__cancelled__` 센티널이 포함될 때 `cancel_sentinel_collision`, 또는 둘 이상의 워크스페이스가 세션을 주장할 때 `ambiguous_session_owner`.
+- `501` — 이 빌드에서 구현되지 않은 정책에 대해 `permission_policy_not_implemented`.
+- `503` — 소유한 런타임을 사용할 수 없을 때 `workspace_runtime_unavailable`, 또는 데몬이 더 이상 작업을 수락하지 않을 때 `daemon_draining`.
+
+기본 브리지에 대해 재시도하지 않습니다. TypeScript SDK 메서드는 `respondToSessionPermission()`입니다.
 
 ### `POST /permission/:requestId`
 

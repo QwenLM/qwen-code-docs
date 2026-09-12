@@ -369,10 +369,14 @@ Les extensions peuvent fournir des skills personnalisés en plaçant des fichier
 ├── qwen-extension.json
 └── skills/
     └── pdf-processor/
-        └── SKILL.md
+        └── SKILL.md   # frontmatter: name: pdf-processor
 ```
 
-Le skill sera disponible via la commande `/skills` lorsque l'extension est active.
+fournit un skill, enregistré sous `gcp:pdf-processor` — le `name` de l'extension, un deux-points, puis le nom indiqué dans le `SKILL.md`. Exécutez-le avec `/gcp:pdf-processor` ; `/skills` le liste et l'étiquette avec le nom d'affichage de l'extension, avec fallback sur son `name` lorsque le manifeste n'en déclare aucun.
+
+Contrairement aux commandes personnalisées de l'extension, qui sont nommées d'après leurs fichiers (`/deploy` et `/gcs:sync` ci-dessus, et préfixées uniquement en cas de collision — voir Résolution des conflits ci-dessous), un skill d'extension porte toujours son propriétaire : deux extensions qui fournissent toutes deux un `pdf-processor` vous donnent deux skills au lieu d'un qui éclipse l'autre. Le préfixe est ajouté au chargement du skill, donc le `name` dans votre `SKILL.md` n'est jamais réécrit sur le disque.
+
+Les paramètres qui nomment les skills traitent les deux orthographes de manière asymétrique : `skills.disabled` bloque un skill sous les deux noms, tandis que `skills.enabled` l'active uniquement sous le nom préfixé. Consultez [Extension Skills](../features/skills.md#extension-skills).
 
 ### Sous-agents personnalisés
 

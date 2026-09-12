@@ -40,7 +40,7 @@ Aprenda como habilitar e configurar o OpenTelemetry para o Qwen Code.
 Construído sobre o **[OpenTelemetry]** — o framework de observabilidade neutro em relação a fornecedores e padrão da indústria — o sistema de observabilidade do Qwen Code fornece:
 
 - **Compatibilidade Universal**: Exporte para qualquer backend OpenTelemetry (Aliyun, Jaeger, Prometheus, Datadog, etc.)
-- **Dados Padronizados**: Use formatos e métodos de coleta consistentes em toda a sua ferramenta
+- **Dados Padronizados**: Use formatos e métodos de coleta consistentes em toda a sua toolchain
 - **Integração à Prova de Futuro**: Conecte-se com a infraestrutura de observabilidade existente e futura
 - **Sem Vendor Lock-in**: Alterne entre backends sem alterar sua instrumentação
 
@@ -65,7 +65,7 @@ Todo o comportamento de telemetria é controlado através do seu arquivo `.qwen/
 | `otlpLogsEndpoint`                | `QWEN_TELEMETRY_OTLP_LOGS_ENDPOINT`                  | -                                                        | Substituição de endpoint por sinal para logs (somente HTTP)                                                                                    | URL string        | -                       |
 | `otlpMetricsEndpoint`             | `QWEN_TELEMETRY_OTLP_METRICS_ENDPOINT`               | -                                                        | Substituição de endpoint por sinal para métricas (somente HTTP)                                                                                | URL string        | -                       |
 | `outfile`                         | `QWEN_TELEMETRY_OUTFILE`                             | `--telemetry-outfile <path>`                             | Salvar telemetria em arquivo (sobrescreve a exportação OTLP)                                                                                   | file path         | -                       |
-| `logPrompts`                      | `QWEN_TELEMETRY_LOG_PROMPTS`                         | `--telemetry-log-prompts` / `--no-telemetry-log-prompts` | Incluir prompts nos logs de telemetria                                                                                                         | `true`/`false`    | `true`                  |
+| `logPrompts`                      | `QWEN_TELEMETRY_LOG_PROMPTS`                         | `--telemetry-log-prompts` / `--no-telemetry-log-prompts` | Incluir conteúdo de prompts do usuário e texto de requisição/resposta da API nos logs de telemetria                                                                                                         | `true`/`false`    | `true`                  |
 | `userId`                          | `QWEN_TELEMETRY_USER_ID`                             | -                                                        | Identificador estável de usuário final gravado nos spans GenAI como a extensão ARMS `gen_ai.user.id`; prefira um valor pseudônimo              | string            | -                       |
 | `includeSensitiveSpanAttributes`  | `QWEN_TELEMETRY_INCLUDE_SENSITIVE_SPAN_ATTRIBUTES`   | -                                                        | Incluir mensagens GenAI padrão, instruções, definições de ferramentas, argumentos de ferramentas e resultados bem-sucedidos de ferramentas como atributos de span nativos | `true`/`false`    | `false`                 |
 | `sensitiveSpanAttributeMaxLength` | `QWEN_TELEMETRY_SENSITIVE_SPAN_ATTRIBUTE_MAX_LENGTH` | -                                                        | Comprimento máximo de string JSON compacta para cada atributo de span nativo sensível. Defina um valor menor se o seu backend rejeitar atributos grandes. | `1..104857600`    | `1048576`               |
@@ -91,7 +91,7 @@ Todo o comportamento de telemetria é controlado através do seu arquivo `.qwen/
 
    A entrada do agente principal é uma projeção original do texto do usuário antes da expansão de contexto, e a saída do agente principal é uma resposta final visível ao usuário após todo o trabalho de ferramenta e continuação ser resolvido. Os valores do LLM ainda vêm de objetos de requisição SDK finalizados pelo provedor e respostas brutas do provedor, então sua entrada pode incluir histórico, arquivos expandidos, instruções do sistema e resultados de ferramentas, e sua saída pode incluir cada candidato do provedor. Os valores de ferramentas vêm dos parâmetros finais de invocação e do resultado bem-sucedido voltado ao modelo. Cada valor GenAI padrão é JSON compacto e deve ser completo e válido quanto ao schema. Um valor inválido, cíclico ou maior que `sensitiveSpanAttributeMaxLength` é omitido por completo; o JSON nunca é truncado e nenhuma prévia, hash ou metadado de truncamento é emitido. O atributo `new_context` específico de interação mantém seu comportamento de truncamento existente. O padrão máximo é 1 MiB (`1048576`) por atributo e o intervalo aceito é `1..104857600` (100 MiB). O limite é medido como comprimento de string JavaScript, não como bytes UTF-8. Conteúdo não-ASCII pode, portanto, ocupar mais bytes após a exportação OTLP.
 
-2. **Spans da ponte log-to-span** (usados quando traces HTTP são exportados sem um endpoint de logs) mantêm seus campos existentes `prompt`, `function_args` e `response_text`, em vez de serem descartados.
+2. **Spans da ponte log-to-span** (usados quando traces HTTP são exportados sem um endpoint de logs) mantêm `function_args`, `error`, `error.message` e `error_message`, além de `prompt`, `request_text` e `response_text` quando `logPrompts` também está habilitado, em vez de descartar esses atributos.
 
 ⚠️ **Aviso de segurança:** habilitar esta flag transmite o histórico completo da conversa, conteúdos de arquivos lidos por `read_file`, comandos de shell e suas saídas (incluindo segredos em variáveis de ambiente ou argumentos) e respostas do modelo para o backend OTLP configurado. Trate o backend como um sink de dados privilegiado. A flag é `false` por padrão.
 
@@ -103,7 +103,7 @@ Esta configuração não desabilita dados sensíveis nos logs do OTel ou em outr
 
 As variáveis de ambiente de endpoint por sinal também aceitam os nomes padrão do OpenTelemetry: `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`, `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`, `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`. As variantes `QWEN_TELEMETRY_OTLP_*` têm precedência sobre as variantes `OTEL_*`.
 
-**Identidade do usuário final:** `telemetry.userId` e `QWEN_TELEMETRY_USER_ID` são opt-ins explícitos para o atributo de span ARMS `gen_ai.user.id`. A variável de ambiente tem precedência após ambos os valores serem trimados; um valor de ambiente em branco faz fallback para as configurações. O identificador é gravado apenas em spans de interação, LLM, Tool e Agent. Não é um atributo de Resource, atributo de log ou métrica, valor de Baggage de saída ou campo GenAI padrão do OpenTelemetry. Prefira um identificador pseudônimo estável. O valor é resolvido na inicialização, então alterações de configuração requerem reinício. Não configure um valor em nível de processo em um daemon ou instância de canal que atenda a múltiplos usuários finais.
+**Identidade do usuário final:** `telemetry.userId` e `QWEN_TELEMETRY_USER_ID` são opt-ins explícitos para o atributo de span ARMS `gen_ai.user.id`. A variável de ambiente tem precedência após ambos os valores serem aparados; um valor de ambiente em branco faz fallback para as configurações. O identificador é gravado apenas em spans de interação, LLM, Tool e Agent. Não é um atributo de Resource, atributo de log ou métrica, valor de Baggage de saída ou campo GenAI padrão do OpenTelemetry. Prefira um identificador pseudônimo estável. O valor é resolvido na inicialização, então alterações de configuração requerem reinício. Não configure um valor em nível de processo em um daemon ou instância de canal que atenda a múltiplos usuários finais.
 
 Para informações detalhadas sobre todas as opções de configuração, consulte o [Guia de Configuração](../../users/configuration/settings.md).
 
@@ -116,7 +116,7 @@ Duas fontes, mescladas em ordem de prioridade (menor → maior):
 1. A variável de ambiente padrão `OTEL_RESOURCE_ATTRIBUTES`
 2. `telemetry.resourceAttributes` em `.qwen/settings.json` (sobrescreve a variável de ambiente em caso de conflito de chave)
 
-`OTEL_SERVICE_NAME` é uma saída separada — quando definida, sobrescreve `service.name` de qualquer outra fonte (de acordo com a especificação do OpenTelemetry).
+`OTEL_SERVICE_NAME` é um mecanismo de escape separado — quando definido, sobrescreve `service.name` de qualquer outra fonte (de acordo com a especificação do OpenTelemetry).
 
 #### Exemplos
 
@@ -266,7 +266,7 @@ O ID de sessão é lido para cada requisição, então uma nova sessão criada p
 
 A API HTTP do daemon aceita o header W3C padrão `traceparent` em cada requisição. Dois consumidores o leem independentemente:
 
-- **Re-parenting do span de requisição (telemetria habilitada).** Quando o SDK de telemetria é inicializado, um header válido é extraído como o parent remoto do span de requisição, para que os spans do daemon se anexem sob o trace do chamador em vez de iniciar um novo. O caminho de encaminhamento `_meta` lê a mesma cadeia de parent, então os spans de subprocesso de sessão encaminhados através de uma requisição do daemon também o herdam.
+- **Reparenting do span de requisição (telemetria habilitada).** Quando o SDK de telemetria é inicializado, um header válido é extraído como o pai remoto do span de requisição, para que os spans do daemon se anexem sob o trace do chamador em vez de iniciar um novo. O caminho de encaminhamento `_meta` lê a mesma cadeia de parent, então os spans de subprocesso de sessão encaminhados através de uma requisição do daemon também o herdam.
 - **Campo `traceId` no log de acesso (ambos os modos).** Um middleware dedicado de captura pré-autenticação analisa o header em cada requisição — incluindo aquelas interrompidas na autenticação (401), no limitador de taxa (429), no parser de body JSON (400) ou nunca correspondidas por nenhuma rota (404) — e o log de acesso emite o trace id do chamador como um campo camelCase `traceId`. Com a telemetria desabilitada, este campo é a única junção entre uma linha de log do daemon e os logs do chamador (ou backend de traces), então uma única query salva funciona para ambos os modos sem configuração de telemetria.
 
 Um header inválido mas presente é rejeitado (o span permanece sem parent) e deixa um breadcrumb DEBUG com limitação de taxa (`qwen-code.daemon.traceparent.invalid`) registrando o valor rejeitado, para que uma junção entre serviços quebrada seja diagnosticável apenas a partir dos logs do daemon.
@@ -275,7 +275,7 @@ Um header inválido mas presente é rejeitado (o span permanece sem parent) e de
 
 Sob o sampler padrão `parentbased_always_on` (e outros padrões parentbased), a flag `sampled=0` de um parent remoto é uma decisão head-based no lado do chamador, não uma solicitação para descartar a telemetria do daemon, então a extração força a flag SAMPLED nos parents de entrada. A única maneira de desativar é `OTEL_TRACES_SAMPLER=parentbased_always_off`, que honra as flags do chamador — note que ele também desativa a amostragem de span raiz para todo o daemon, não apenas para requisições vinculadas a entrada.
 
-**Aviso:** um `traceparent` constante (por exemplo, codificado em um cliente de teste de carga) re-parentea cada requisição do daemon em um único trace; gere um header novo por requisição.
+**Aviso:** um `traceparent` constante (por exemplo, codificado em um cliente de teste de carga) reparentiza cada requisição do daemon em um único trace; gere um header novo por requisição.
 
 ## Telemetria Aliyun
 
@@ -777,7 +777,7 @@ O Qwen Code não injeta este atributo de recurso específico do ARMS nem `gen_ai
 
 ### Monitoramento de Desempenho (Reservado)
 
-As seguintes métricas estão definidas, mas **ainda não habilitadas em produção**. Elas serão ativadas por trás de uma flag de configuração dedicada ao monitoramento de desempenho.
+As seguintes métricas estão definidas, mas **ainda não habilitadas em produção**. Elas serão ativadas atrás de uma flag de configuração dedicada de monitoramento de desempenho.
 
 - `qwen-code.startup.duration` (Histogram, ms): Tempo de inicialização da CLI por fase.
   - **Atributos**: `phase` (string)

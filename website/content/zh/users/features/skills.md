@@ -27,6 +27,8 @@ Skills 是**由模型调用**的 —— 模型会根据你的请求和 Skill 的
 
 > **注意：** 如果你之前使用 `/skills <skill-name>` 运行过 Skill，该语法现在只会打开 Skills 面板并忽略尾部参数。请使用 `/<skill-name>` 直接运行 Skill。
 
+`<skill-name>` 始终是 Skill 的注册名称。对于来自已安装扩展的 Skill，该名称包含其所有者 —— `rust:pdf` 而非 `pdf` —— 因此你需要输入 `/rust:pdf`。请参见[扩展 Skills 的命名方式](#how-extension-skills-are-named)。
+
 ### 优势
 
 - 针对你的工作流扩展 Qwen Code
@@ -126,7 +128,7 @@ Show concrete examples of using this Skill.
 
 Qwen Code 目前会验证以下内容：
 
-- `name` 必须是非空字符串，且匹配 `/^[\p{L}\p{N}_:.-]+$/u` —— 支持 Unicode 字母和数字（中日韩/西里尔/带音标的拉丁字母均可），以及 `_`、`:`、`.`、`-`。空格、斜杠、括号和其他结构上不安全的字符会在解析时被拒绝。
+- `name` 必须是非空字符串，且匹配 `/^[\p{L}\p{N}_:.-]+$/u` —— 支持 Unicode 字母和数字（中日韩/西里尔/带音标的拉丁字母均可），以及 `_`、`:`、`.`、`-`。空格、斜杠、括号和其他结构上不安全的字符会在解析时被拒绝。允许的 `:` 使得扩展注册的 Skill（`rust:pdf`）和作者自己选择冒号的 Skill（在 `rust` 扩展内编写的 `rust:chat`）可以共享同一模式，因此注册名称中的冒号并不能证明所有者 —— 请参见[扩展 Skills 的命名方式](#how-extension-skills-are-named)。
 - `description` 必须是非空字符串
 - `priority` 是可选的。如果存在，它必须是一个有限数字。较高的值仅在 `/skills` 列表中排序靠前 —— 斜杠命令补全（输入 `/`）和 `/help` 自定义命令视图保持字母顺序，因此高优先级的 Skill 永远不会重新排序内置命令。省略或无效的值将被视为未设置，其行为类似于 `0`。
 
@@ -266,6 +268,33 @@ Qwen Code 从以下位置发现 Skills：
 在安装并启用扩展时，会自动发现和加载扩展 Skills。
 
 要查看哪些扩展提供了 Skills，请检查扩展的 `qwen-extension.json` 文件中的 `skills` 字段。
+
+#### 扩展 Skills 的命名方式
+
+Qwen Code 将来自已安装扩展的 Skill 注册为 `<extensionName>:<name>`，其中 `<extensionName>` 是该扩展的 `qwen-extension.json` 中的 `name` 字段，`<name>` 是 Skill 自身的 frontmatter `name`。名为 `pdf` 的 Skill 在 `rust` 扩展中会被注册为 `rust:pdf`。
+
+该前缀是在 Skill 加载时添加的，不会写入文件：你的 `SKILL.md` 保留你编写的名称，Qwen Code 也不会通过拆分注册名称来恢复原始名称（作者可能合法地在 `rust` 内编写 `rust:chat`）。只有扩展 Skills 会被添加前缀 —— 个人、项目和内置 Skills 保留你编写的单一拼写。
+
+在引用 Skill 的所有地方使用注册名称：
+
+- 使用 `/rust:pdf` 调用它。单独的 `/pdf` 不是别名 —— 扩展的 Skill 只能通过其注册名称访问。
+- 模型将其作为 `Skill { skill: "rust:pdf" }` 调用，与在 `<available_skills>` 中读取的名称相同。
+- 两个各自包含名为 `pdf` 的 Skill 的扩展会生成两个 Skills（`rust:pdf` 和 `docs-suite:pdf`），而不是一个胜出另一个消失。
+
+你读取和选择 Skills 的界面也会显示所有者：Skills 面板（包括被设置锁定的行）、裸 `/skills` 在交互式 UI 之外打印的只读列表（ACP 和其他非交互模式 —— 交互模式下该命令会打开面板），以及 `/` 命令面板中的徽章，显示为 `[Extension: Rust]` 而非单独的 `[Extension]`。这些标签优先使用扩展的 `displayName`，如果没有则回退到 `name`。
+
+#### 扩展 Skills 与 `skills.*` 设置
+
+`skills.disabled`、`skills.defaultDisabled` 和 `slashCommands.disabled` 在**两种**拼写下都会匹配扩展 Skill，因此在前缀存在之前你编写的 `skills.disabled: ["pdf"]` 仍然会隐藏 `rust:pdf`。限制只能移除功能，因此重命名 Skill 不能解除限制。
+
+`skills.enabled` 是例外，也是现有设置文件的唯一可见变化：它授予功能，因此只匹配注册名称。`skills.enabled: ["pdf"]` 不再单独选择扩展的 `pdf` —— 请写 `skills.enabled: ["rust:pdf"]`。唯一继续生效的裸名称对是位于 `skills.defaultDisabled` 中的前缀前的选择，具有相同拼写：取消比较条目本身，因此 `defaultDisabled: ["pdf"]` + `enabled: ["pdf"]` 取消该条目 —— 然后该 skill 根据此工作区存储的启用状态启用，否则使用扩展自身的默认值；对于默认关闭的 skill，请在 `skills.enabled` 中写 `rust:pdf`。
+
+在 Skills 面板中切换 Skill 会写入注册名称并仅移除该条目，因此启用 `rust:pdf` 会保留遗留的 `disabled: ["pdf"]` 不变。当该遗留条目位于更高范围时 —— 系统默认值、用户或系统设置 —— 面板会说明这一点并锁定该行，命名要编辑的范围而不是提供无法移动它的切换。此工作区自身设置中的遗留条目也会以相同方式锁定该行，命名该条目及其范围（`skills.disabled 'pdf' (Workspace)` 或 `skills.defaultDisabled 'pdf' (Workspace)`），以便你知道要编辑哪个文件中的哪个列表。
+
+两个值得了解的限制：
+
+- 跨级优先级不变，仍然精确比较注册名称（`project` > `user` > `extension` > `bundled`），因此你编写为 `rust:pdf` 的个人或项目 Skill 优先级高于扩展的 `pdf`。个人或项目 Skill 与内置 Skill 之间的裸名称冲突也仍然由该优先级决定，而不是由前缀决定。与自定义命令冲突的 Skill 不是这样 —— 在斜杠表面上，最后一个加载器胜出，自定义命令在 Skills 之后加载，因此 `/pdf` 运行自定义命令而 Skill 仍对模型可用。
+- Skill 名称也用作文件名：Skill 读取调用参数的文件会将 `[A-Za-z0-9._-]` 之外的每个字符替换为 `_`，因此注册为 `rust:pdf` 的扩展 Skill 和编写为 `rust_pdf` 的个人或项目 Skill 都会解析为 `qwen-skill-args-rust_pdf.txt` 并共享一个参数文件。（前缀很少与自身冲突 —— `rust:rust_pdf` 变为 `rust_rust_pdf` —— 但扩展名称可能包含 `_`，因此 `rust_pdf:x` 和 `rust:pdf_x` 折叠为相同的文件名。）非 ASCII 字母也以相同方式折叠，因此编写的 `café` 和编写的 `caf_` 都会落到 `caf_` —— 这是一个早于前缀的限制，前缀只是使其更容易遇到。避免使用将 `:` 转换为 `_` 后与另一个名称相同的 Skill 名称。
 
 要查看可用的 Skills，请直接询问 Qwen Code：
 

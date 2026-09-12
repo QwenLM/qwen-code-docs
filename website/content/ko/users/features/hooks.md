@@ -52,11 +52,13 @@ Command hooks는 자식 프로세스를 통해 명령어를 실행합니다. 입
 | `command`       | `string`                 | 예   | 실행할 명령어                               |
 | `name`          | `string`                 | 아니오 | Hook 이름(로깅용)                         |
 | `description`   | `string`                 | 아니오 | Hook 설명                                 |
-| `timeout`       | `number`                 | 아니오 | 타임아웃(밀리초), 기본값 60000            |
+| `timeout`       | `number`                 | 아니오 | 타임아웃(초), 기본값 60                   |
 | `async`         | `boolean`                | 아니오 | 백그라운드에서 비동기 실행 여부           |
 | `env`           | `Record<string, string>` | 아니오 | 환경 변수                                 |
 | `shell`         | `"bash" \| "powershell"` | 아니오 | 사용할 셸                                 |
 | `statusMessage` | `string`                 | 아니오 | 실행 중 표시되는 상태 메시지              |
+
+`timeout`은 command, HTTP, prompt hook에서 초 단위이며, SDK에 등록된 function hook은 밀리초를 유지합니다. Command hook 타임아웃은 이전에는 밀리초로 작성되었으므로, command hook에서 `1000` 이상의 값은 여전히 밀리초로 읽히며 기존 설정이 계속 작동합니다. 마이그레이션하려면 `timeout`이 `1000` 이상인 command hook을 찾아 초 단위로 값을 다시 작성하십시오(예: `10000`을 `10`으로). Command hook에 1000초 이상의 타임아웃을 주려면 밀리초로 계속 작성하십시오(예: 30분에 `1800000`). `"30s"`와 같이 양수가 아닌 command hook `timeout`은 무시되며 60초 기본값이 적용됩니다. 디버그 로깅이 활성화되면(`QWEN_DEBUG_LOG_FILE=1`), 밀리초 단위 또는 무시된 `timeout`을 가진 각 command hook은 해당 세션의 디버그 로그에 세션당 한 번씩 이름이 기록됩니다.
 
 **예시:**
 
@@ -71,7 +73,7 @@ Command hooks는 자식 프로세스를 통해 명령어를 실행합니다. 입
             "type": "command",
             "command": "$QWEN_PROJECT_DIR/.qwen/hooks/security-check.sh",
             "name": "security-check",
-            "timeout": 10000
+            "timeout": 10
           }
         ]
       }
@@ -106,7 +108,7 @@ HTTP hooks는 hook 입력을 POST 요청으로 지정된 URL에 전송합니다.
 
 #### 프라이빗 네트워크 hook 허용(관리 환경만 해당)
 
-기본적으로 HTTP hooks는 프라이빗 또는 링크 로컬 IP 범위를 대상으로 할 수 없습니다. hook 수신자가 자체 엔드포인트(예: `172.16.0.0/12`로 해석되는 내부 API 게이트웨이)인 플랫폼 관리 환경에서는 다음 설정으로 IP 범위 검사를 완화할 수 있습니다:
+기본적으로 HTTP hooks는 프라이빗 또는 링크 로컬 IP 범위를 대상으로 할 수 없습니다. hook 수신자가 자체 VPC 내부 엔드포인트(예: `172.16.0.0/12`로 해석되는 내부 API 게이트웨이)인 플랫폼 관리 환경에서는 다음 설정으로 IP 범위 검사를 완화할 수 있습니다:
 
 ```json
 {
@@ -337,7 +339,7 @@ Hook은 Qwen Code 세션 중 특정 시점에서 발생합니다. 각 이벤트�
 | `PreCompact`         | 대화 압축 전                                    | 트리거 (`manual`, `auto`)                                    |
 | `Notification`       | 알림 전송 시                                    | 유형 (`permission_prompt`, `idle_prompt`, `auth_success`)    |
 | `PermissionRequest`  | 권한 대화상자 표시 시                           | 도구 id                                                      |
-| `PermissionDenied`   | 도구 권한 거부 시                               | 도구 id                                                      |
+| `PermissionDenied`   | AUTO 모드 분류가 도구 호출을 거부할 때            | 도구 id                                                      |
 | `TodoCreated`        | 새 todo 항목 생성 시                            | 없음(항상 발생)                                              |
 | `TodoCompleted`      | todo 항목이 완료로 표시될 때                    | 없음(항상 발생)                                              |
 
@@ -436,11 +438,14 @@ Qwen은 hook 프로세스, 엔드포인트, 콜백 또는 모델 제공자가 �
   "transcript_path": "string",
   "cwd": "string",
   "hook_event_name": "string",
-  "timestamp": "string"
+  "timestamp": "string",
+  "permission_mode": "default | plan | auto_edit | auto | yolo",
+  "agent_id": "string (only when the event fires inside a subagent)",
+  "prompt_id": "string (when the event belongs to a model turn)"
 }
 ```
 
-이벤트별 필드는 hook 유형에 따라 추가됩니다. 서브에이전트에서 실행될 때 `agent_id`와 `agent_type`이 추가로 포함됩니다.
+이벤트별 필드는 hook 유형에 따라 추가됩니다. `permission_mode`는 도구 및 서브에이전트 이벤트가 해당 이벤트에 적용된 모드를 보고하는 경우를 제외하고는 세션의 승인 모드입니다. `agent_id`는 이벤트가 서브에이전트 내부에서 발생할 때만 존재하며, `agent_type`은 `SessionStart`, `SubagentStart`, `SubagentStop`에서 보고됩니다.
 
 Hook 입력은 확장 가능한 JSON 계약입니다: 기존 이벤트에 새 선택적 필드를 추가할 수 있습니다. 소비자는 알 수 없는 필드를 무시해야 합니다. 알 수 없는 속성을 거부하는 엄격한 디코더는 Qwen Code를 업그레이드하기 전에 각 새 선택적 필드를 명시적으로 허용하도록 업데이트해야 합니다. 보안에 민감한 hook의 경우 디코더 실패가 fail-open 또는 fail-closed 동작을 변경할 수 있으므로, 관리자는 롤아웃 전에 배포된 hook에 대해 업그레이드된 페이로드를 검증해야 합니다.
 
@@ -452,7 +457,7 @@ Hook 출력은 `stdout`(command) 또는 HTTP 응답 본문(http)을 통해 JSON�
 
 | 종료 코드 | 동작                                                                                |
 | :-------- | :---------------------------------------------------------------------------------- |
-| `0`       | 성공. `stdout`의 JSON을 파싱하여 동작을 제어합니다.                                 |
+| `0`       | 성공. `stdout`의 JSON 객체가 동작을 제어합니다. `42`와 같은 단순 JSON 값을 포함한 기타 `stdout`은 일반 텍스트입니다: `SessionStart`, `UserPromptSubmit`, `UserPromptExpansion`에서 모델 컨텍스트에 추가되며 다른 이벤트에서는 시스템 메시지로 유지됩니다. JSON 객체처럼 보이지만 파싱되지 않는 출력은 모델 컨텍스트에 절대 추가되지 않습니다. |
 | `2`       | **차단 오류**. `stdout`을 무시하고 `stderr`를 모델에 대한 오류 피드백으로 전달합니다.|
 | 기타      | 비차단 오류. `stderr`는 디버그 모드에서만 표시되며 실행이 계속됩니다.              |
 
@@ -770,7 +775,7 @@ sanitized hook context
 
 ```json
 {
-  "stop_hook_active": "boolean indicating if stop hook is active",
+  "stop_hook_active": "true when this turn is continuing because a stop hook blocked the previous stop check (still true after tool calls made during that continuation); false on the first check and again once the stop is allowed, the blocking cap is reached, the user steers or sends new input, or a new turn, retry or goal turn starts",
   "last_assistant_message": "the last message from the assistant",
   "context_usage": "ratio of context window used (may exceed 1 when tokens exceed window; optional)",
   "context_limit": "context window size in tokens (optional)",
@@ -893,7 +898,7 @@ Command hook은 디스패치 후 Qwen이 종료하면 완료될 때까지 남겨
 ```json
 {
   "permission_mode": "default | plan | auto_edit | yolo",
-  "stop_hook_active": "boolean indicating if stop hook is active",
+  "stop_hook_active": "false on the first stop check; true when the subagent is continuing because a SubagentStop hook blocked its previous stop",
   "agent_id": "identifier for the subagent",
   "agent_type": "type of agent",
   "agent_transcript_path": "path to the subagent's transcript",
@@ -1157,7 +1162,7 @@ exit 0
             "type": "command",
             "command": "$HOME/.qwen/hooks/todo-validator.sh",
             "name": "todo-validator",
-            "timeout": 5000
+            "timeout": 5
           }
         ]
       }
@@ -1251,7 +1256,7 @@ exit 0
             "type": "command",
             "command": "$HOME/.qwen/hooks/todo-completion-validator.sh",
             "name": "completion-validator",
-            "timeout": 5000
+            "timeout": 5
           }
         ]
       }
@@ -1284,7 +1289,7 @@ Hooks는 Qwen Code 설정에서 구성되며, 일반적으로 `.qwen/settings.js
             "command": "/path/to/security-check.sh",
             "name": "security-check",
             "description": "Run security checks before tool execution",
-            "timeout": 30000
+            "timeout": 30
           }
         ]
       }
@@ -1323,6 +1328,7 @@ Async hooks는 Qwen 프로세스로 범위가 지정됩니다. 캡처된 출력�
 - 결정 제어를 반환할 수 없습니다(작업이 이미 발생함)
 - 결과는 다음 대화 턴에서 `systemMessage` 또는 `additionalContext`를 통해 주입됩니다. 단, 위에서 문서화된 출력이 무시되는 fire-and-forget 이벤트 유형은 제외됩니다.
 - 감사, 로깅, 백그라운드 테스트 등에 적합
+- 완료되거나 `timeout`(기본 60초)에 도달할 때까지 10개의 동시 async hook 슬롯 중 하나를 차지합니다
 
 **예시:**
 
@@ -1337,7 +1343,7 @@ Async hooks는 Qwen 프로세스로 범위가 지정됩니다. 캡처된 출력�
             "type": "command",
             "command": "$QWEN_PROJECT_DIR/.qwen/hooks/run-tests-async.sh",
             "async": true,
-            "timeout": 300000
+            "timeout": 300
           }
         ]
       }
@@ -1363,7 +1369,7 @@ fi
 
 - Hook은 사용자 환경에서 사용자 권한으로 실행됩니다
 - 프로젝트 레벨 hook은 신뢰할 수 있는 폴더 상태가 필요합니다
-- 타임아웃은 멈춘 hook을 방지합니다(기본값: 60초)
+- 타임아웃은 멈춘 hook을 방지합니다(command hook의 경우 기본값: 60초)
 
 ## 모범 사례
 
@@ -1423,7 +1429,7 @@ exit 0
             "command": "${SECURITY_CHECK_SCRIPT}",
             "name": "security-checker",
             "description": "Security validation for bash commands",
-            "timeout": 10000
+            "timeout": 10
           }
         ]
       }
