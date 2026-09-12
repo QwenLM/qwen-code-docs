@@ -61,7 +61,7 @@ Qwen Code와 새 쿼리 세션을 생성합니다.
 | `permissionMode`         | `'default' \| 'plan' \| 'auto-edit' \| 'auto' \| 'yolo'` | `'default'`      | 도구 실행 승인을 제어하는 승인 모드. 자세한 내용은 [승인 모드](#승인-모드)를 참조하세요.                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `canUseTool`             | `CanUseTool`                                             | -                | 도구 실행 승인을 위한 커스텀 권한 핸들러. 도구가 확인을 요구할 때 호출됩니다. 60초 이내에 응답해야 하며, 그렇지 않으면 요청이 자동 거부됩니다. [커스텀 권한 핸들러](#커스텀-권한-핸들러)를 참조하세요.                                                                                                                                                                                                                                                                                                                     |
 | `env`                    | `Record<string, string>`                                 | -                | Qwen Code 프로세스에 전달할 환경 변수. 현재 프로세스 환경과 병합됩니다.                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `systemPrompt`           | `string \| QuerySystemPromptPreset`                      | -                | 메인 세션의 시스템 프롬프트 구성. 문자열을 사용하면 내장 Qwen Code 시스템 프롬프트를 완전히 오버라이드하고, 프리셋 객체를 사용하면 내장 프롬프트를 유지하면서 추가 지시를 덧붙입니다.                                                                                                                                                                                                                                                                                                                                                |
+| `systemPrompt`           | `string \| QuerySystemPromptPreset`                      | -                | 메인 세션의 시스템 프롬프트 구성. 문자열을 사용하면 내장 Qwen Code 시스템 프롬프트를 완전히 재정의하고, 프리셋 객체를 사용하면 내장 프롬프트를 유지하면서 추가 지시를 덧붙입니다.                                                                                                                                                                                                                                                                                                                                                |
 | `mcpServers`             | `Record<string, McpServerConfig>`                        | -                | 연결할 모델 컨텍스트 프로토콜(MCP) 서버. 외부 서버(stdio/SSE/HTTP) 및 SDK 내장 서버를 지원합니다. 외부 서버는 `command`, `args`, `url`, `httpUrl` 등의 transport 옵션으로 구성합니다. SDK 서버는 `{ type: 'sdk', name: string, instance: Server }`를 사용합니다.                                                                                                                                                                                                                                                        |
 | `abortController`        | `AbortController`                                        | -                | 쿼리 세션을 취소하는 컨트롤러. `abortController.abort()`를 호출하여 세션을 종료하고 리소스를 정리합니다.                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `debug`                  | `boolean`                                                | `false`          | CLI 프로세스의 상세 로깅을 위한 디버그 모드를 활성화합니다.                                                                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -181,6 +181,59 @@ console.log(session.sessionId); // 550e8400-e29b-41d4-a716-446655440000
 SDK는 mutation을 전송하기 전에 daemon의 `session_id_override` capability를 요구합니다. REST 모드는 `sessionId`를 직접 직렬화하고, 활성 ACP 어댑터는 이를 `session/new._meta["qwen-code/sessionId"]`에 매핑합니다. SDK는 성공 응답을 확인하고 daemon이 다른 ID를 반환하면 `DaemonSessionIdProtocolError`를 throw합니다.
 
 이 옵션은 항상 새 스레드 세션을 생성하며 멱등적인 attach가 아닙니다. 생성 결과가 모호한 경우, 알려진 ID를 load 또는 resume과 함께 사용하세요. 이 옵션을 생략하면 기존 create-or-attach 동작이 유지됩니다.
+
+## 실행 중인 세션과 대화
+
+`@qwen-code/sdk/peer`는 Qwen Code 세션이 아닌 프로그램이 동일한 머신에서 동일한 사용자로 실행되는 세션에 참여할 수 있게 합니다 — 음성 프론트엔드, 릴레이, 빌드 감시자 등. 이 프로그램은 `qwen sessions ps`에 표시되며, `agents.crossSessionMessaging`이 켜진 모든 세션의 `list_agents`에도 표시됩니다. 이를 통해 해당 세션들이 `send_message`로 이름으로 메시지를 보낼 수 있습니다. 이 프로그램도 그들에게 메시지를 보낼 수 있습니다. Node에서만 실행되며 Node 자체 외에는 아무것도 필요하지 않습니다.
+
+```typescript
+import { PeerEndpoint } from ' @qwen-code/sdk/peer';
+
+const endpoint = await PeerEndpoint.start({
+  name: 'voice-bridge',
+  onMessage: (message) =>
+    console.log(`${message.fromName}: ${message.content}`),
+});
+
+const [session] = await endpoint.list();
+if (session) {
+  const sent = await endpoint.send({
+    to: session.address,
+    content: 'What are you working on?',
+  });
+  if (sent.kind === 'sent') {
+    const receipt = await endpoint.awaitReceipt(sent.msgId, { final: true });
+    console.log(receipt?.status); // delivered, denied, refused, ...
+  }
+}
+
+await endpoint.close();
+```
+
+그런 메시지는 세션의 사용자가 검토할 수 있도록 보류됩니다. 검토 없이 세션을 지시하려면 `qwen sessions controllers add --label voice-bridge`로 컨트롤러 토큰을 생성하고, 이를 엔드포인트에 제공하고, 이를 제시해야 하는 send에 표시하세요:
+
+```typescript
+const endpoint = await PeerEndpoint.start({
+  name: 'voice-bridge',
+  controllerToken: process.env['QWEN_CONTROLLER_TOKEN'],
+});
+await endpoint.send({
+  to: 'my-app-3f',
+  content: 'run the tests',
+  controller: true,
+});
+```
+
+알아둘 사항:
+
+- 세션은 `agents.crossSessionMessaging` 설정이 켜져 있는 동안에만 inbox를 가지며, 이 설정은 기본적으로 꺼져 있습니다. 이 설정이 없으면 세션은 `list()`에 나타나지 않으며, 세션의 `list_agents`와 `send_message`도 프로그램을 보거나 도달할 수 없습니다. `qwen sessions ps`는 이 설정과 상관없이 프로그램을 나열합니다.
+- 메시지는 정확히 두 가지 경우에 검토 없이 전달됩니다: send가 컨트롤러 토큰을 제시하는 경우(`controller: true`) 또는 `fromMode`가 수신 세션의 자체 검토 클래스를 이름으로 지정하는 경우입니다. `fromMode`는 아무것도 인증하지 않는 주장이므로, 코딩 세션이 아닌 프로그램은 이를 생략해야 합니다. 레코드의 어떤 것도 — `kind`도, `name`도 — 전달을 보장하지 않습니다. 수신 세션의 `agents.crossSessionInbound` 설정이 둘보다 우선합니다: 해당 설정에서 `hold` 또는 `refuse`가 컨트롤러 토큰보다 우선합니다.
+- 세션을 지시하려는 send에만 표시하세요. 주소는 사용자로서 실행되는 모든 프로그램이 작성할 수 있는 레코드에서 확인되므로, 컨트롤러 send는 해당 주소에 응답하는 프로세스의 레코드에 토큰을 제시합니다. 다른 peer 엔드포인트로의 컨트롤러 send는 읽지 않고 삭제됩니다. 엔드포인트의 inbox는 자체 토큰만 수락하기 때문입니다.
+- 엔드포인트의 inbox는 Qwen Code 세션이 자체에 적용하는 보호를 전혀 적용하지 않습니다: 속도 제한 없음, 보류 없음, 그리고 응답한 마지막 200개 메시지 이상의 중복 창 없음. 모든 메시지는 `delivered`로 응답되고 도착하는 대로 `onMessage`로 전달되므로, 필요하면 거기에서 자체 제한을 적용하세요. `onMessage`가 없으면 모든 메시지는 `refused`로 응답됩니다.
+- 종료하기 전에 `close()`를 호출하세요. 자체 signal handler에서도 마찬가지입니다. 닫지 않고 종료된 프로세스는 Qwen Code 세션이 디렉토리를 나열하고 프로세스가 사라진 것을 확인할 때까지 레코드를 남깁니다.
+- UNIX 도메인 소켓만: Windows는 아직 지원되지 않습니다.
+
+레코드 스키마, wire 형식 및 영수증 상태는 [Cross-Session Protocol](../users/features/cross-session-protocol.md)에 문서화되어 있습니다.
 
 ## 승인 모드
 

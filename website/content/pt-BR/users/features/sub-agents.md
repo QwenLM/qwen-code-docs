@@ -12,6 +12,33 @@ Subagentes são assistentes de IA independentes que:
 - **Trabalham de forma autônoma** - Uma vez que recebem uma tarefa, trabalham independentemente até a conclusão ou falha
 - **Fornecem feedback detalhado** - Você pode ver seu progresso, uso de ferramentas e estatísticas de execução em tempo real
 
+## Subagentes Claude Code e Codex
+
+Os agentes integrados `claude-code` e `codex` delegam para ferramentas nativas instaladas separadamente. Instale e autentique o Claude Code com seu adaptador `claude-agent-acp`, ou o Codex com seu executável `codex`, e torne o executável disponível no `PATH`. Esses agentes usam seu modelo nativo e configurações de autenticação. O Qwen Code não faz fallback para seu próprio modelo quando o executável está ausente.
+
+Ambos os agentes usam execução em primeiro plano por padrão; defina `run_in_background: true` para receber uma notificação de conclusão em segundo plano. Eles exigem um workspace confiável e não estão disponíveis em modo seguro. Ambos os executores suportam macOS/Linux (incluindo WSL); lançamentos nativos no Windows são rejeitados antes da inicialização com orientações sobre a plataforma.
+
+O Claude Code usa o executor ACP e suporta entrada continuada enquanto sua sessão é mantida. O Codex usa um thread efêmero de app-server para uma única tarefa e retorna a resposta final. Tarefas do Codex não podem receber mensagens nem retomar; inicie uma nova tarefa em vez disso. Progresso de ferramenta nativa, contagens de tokens e custo não são reportados para o Codex. Sessões nativas não podem ser restauradas após reiniciar o Qwen Code.
+
+Para um agente Codex personalizado, use o frontmatter `executor` existente:
+
+```markdown
+---
+name: codex-review
+description: Review code with Codex
+executor:
+  kind: codex
+  command: codex
+background: false
+---
+
+Review the changes and report verified defects.
+```
+
+Omitir `executor.args` inicia `codex app-server --stdio`; argumentos fornecidos substituem esse padrão. Use `kind: acp` e `command: claude-agent-acp` para um agente Claude Code personalizado. Substituições de modelo Qwen, listas de ferramentas, hooks de subagente, `maxTurns`, histórico de fork, equipes e workflows não são suportados para executores externos. Lançamentos em worktree usam o ciclo de vida de isolamento existente do Agent e executam o processo nativo no worktree selecionado.
+
+O Codex executa sem supervisão. Sem uma substituição de agente, sessões default, plan e auto usam um sandbox somente leitura; o classificador AUTO do Qwen não inspeciona comandos nativos. Modos intermediários de subagente do Qwen não concedem acesso nativo durante delegação aninhada. Selecione explicitamente auto-edit na sessão ou na definição do agente Codex para permitir escritas no workspace e comandos de workspace sem supervisão, ou yolo para acesso total. Uma sessão já em auto-edit ou yolo tem precedência sobre uma definição de agente mais restritiva. Outros modos de aprovação efetivos são rejeitados. Solicitações nativas de permissão adicional ou entrada do usuário são recusadas. Um `runConfig.max_time_minutes` configurado limita a execução. O executor aguarda a limpeza do processo no cancelamento; a notificação de cancelamento em segundo plano compartilhada pode chegar mais cedo sob seu fallback de cinco segundos.
+
 ## Subagente Fork
 
 Além dos subagentes nomeados, o Qwen Code suporta **forking** — selecionado explicitamente com `subagent_type: "fork"`. Um fork herda o contexto completo de conversa do pai e normalmente executa de forma destacada em segundo plano. Forks funcionam tanto em sessões interativas quanto headless; forks headless sempre usam o caminho em segundo plano. Omitir `subagent_type` **não** faz fork; inicia o subagente de uso geral. Subagentes nomeados de nível superior executam em segundo plano por padrão e entregam seus resultados através de notificações de conclusão. Defina `run_in_background: false` quando o turno atual precisa aguardar o resultado de um subagente regular inline.
@@ -77,7 +104,7 @@ Como `fork_tools`, um perfil de fork é uma restrição selecionada pelo chamado
 | ------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Contexto      | Começa do zero, sem histórico de conversa do pai                  | Herda todo o histórico do pai por padrão; `fork_turns` pode selecionar uma janela recente limitada                                                                                                    |
 | Prompt de sistema | Usa seu próprio prompt configurado                             | Usa o prompt de sistema exato do pai (para compartilhamento de cache)                                                                                                                                 |
-| Ferramentas   | Conjunto de declarações configurado sem ferramentas de pergunta interativa | Mantém o conjunto de declarações derivado do pai para cache; a execução sempre rejeita `ask_user_question`, e `fork_tools` ou `fork_profile` podem estreitá-lo independentemente                        |
+| Ferramentas   | Conjunto de declarações configurado sem ferramentas de pergunta interativa | Mantém o conjunto de declarações derivado do pai para cache; a execução sempre rejeita `ask_user_question`, e `fork_tools` ou `fork_profile` podem estreitá-lo independentemente sem alterar essa declaração                        |
 | Execução      | Segundo plano por padrão; suporta opt-out explícito de primeiro plano | Sempre destacado; o pai continua imediatamente                                                                                                                                                        |
 | Caso de uso   | Tarefas especializadas (testes, docs)                             | Tarefas paralelas que precisam do contexto atual                                                                                                                                                      |
 
@@ -130,6 +157,14 @@ Subagentes regulares de nível superior executam em segundo plano por padrão. A
 Quando uma sessão é restaurada, agentes em segundo plano compatíveis são adicionados de volta ao roster da sessão. Uma tarefa pode estar visível mas não continuável quando seu estado retido está ausente ou incompatível; `list_agents` reporta o motivo nesse caso.
 
 Use continuação para trabalho de acompanhamento relacionado. Lance um novo agente quando a tarefa não for relacionada ou o agente anterior não puder ser retomado.
+
+## Fila de Notificações
+
+No TUI interativo e na sessão ACP, notificações de conclusão de agentes em segundo plano, shells, monitores e workflows compartilham uma fila que é drenada para um turno do modelo assim que a sessão fica ociosa. Essas filas contêm no máximo 20 notificações para que um produtor ruidoso não acumule um backlog ilimitado. A fila local do CLI headless não é limitada por essa regra.
+
+Quando uma 21ª notificação chega, o Qwen Code remove primeiro um pulso interim do monitor — a próxima pesquisa do monitor o substitui — e caso contrário a notificação enfileirada mais antiga. Resultados de agentes, resultados de workflows e prompts agendados nunca são removidos no TUI interativo; uma notificação que deslocaria um deles é descartada, assim como um pulso recebido quando apenas resultados terminais estão enfileirados.
+
+Notificações descartadas são reportadas em vez de descartadas silenciosamente. O resumo aparece antes da próxima notificação na transcrição ao vivo. O ACP também o prefixa à entrada do modelo daquele turno; o TUI o mantém estacionado para o próximo lote de Notificações para que prompts cron ainda passem inalterados pelo pré-processamento de slash, shell e ` @`. Uma notificação de daemon é registrada antes de ser reconhecida, então após um reload seu registro durável pode preceder o resumo de overflow posterior. O ACP pode descartar um resumo pendente se a sessão for limpa ou trocada, ou se um cliente cancelar ou preemptar o turno de notificação. Descartar uma notificação nunca para ou exclui sua tarefa, e tarefas concluídas mantêm seus resultados; o resumo aponta para `/tasks` e arquivos de saída da tarefa quando há uma tarefa para inspecionar. Um prompt agendado descartado nunca foi entregue e não é re-tentado. Uma notificação de daemon que foi registrada mas não pôde ser entregue ao vivo permanece disponível na transcrição da sessão e é reportada separadamente das notificações perdidas.
 
 ## Diretório de Trabalho do Agente
 

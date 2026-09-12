@@ -55,7 +55,7 @@ Qwen Code との新しいクエリセッションを作成します。
 
 | オプション                 | 型                                             | デフォルト         | 説明                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | -------------------------- | ---------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cwd`                    | `string`                                                             | `process.cwd()`  | クエリセッションの作業ディレクトリ。ファイル操作やコマンドが実行されるコンテキストを決定します。                                                                                                                                                                                                                                                                                                                                                                                    |
+| `cwd`                    | `string`                                                             | `process.cwd()`  | クエリセッションの作業ディレクトリ。ファイル操作やコマンドの実行コンテキストを決定します。                                                                                                                                                                                                                                                                                                                                                                                    |
 | `model`                  | `string`                                                             | -                | 使用する AI モデル（例: `'qwen-max'`、`'qwen-plus'`、`'qwen-turbo'`）。`OPENAI_MODEL` および `QWEN_MODEL` 環境変数より優先されます。                                                                                                                                                                                                                                                                                                                                                       |
 | `pathToQwenExecutable`   | `string`                                                             | バンドル CLI      | Qwen Code 実行ファイルへのパス。複数の形式に対応: `'qwen'`（PATH からのネイティブバイナリ）、`'/path/to/qwen'`（明示的なパス）、`'/path/to/cli.js'`（Node.js バンドル）、`'node:/path/to/cli.js'`（Node.js ランタイムを強制）、`'bun:/path/to/cli.js'`（Bun ランタイムを強制）。未指定の場合、SDK はパッケージに同梱されたバンドル CLI を使用します。 |
 | `permissionMode`           | `'default' \| 'plan' \| 'auto-edit' \| 'auto' \| 'yolo'` | `'default'`        | ツール実行の承認を制御するパーミッションモード。詳細は [パーミッションモード](#permission-modes) を参照。                                                                                                                                                                                                                                                                                                                                                                               |
@@ -179,6 +179,59 @@ console.log(session.sessionId); // 550e8400-e29b-41d4-a716-446655440000
 SDK は変更を送信する前にデーモンの `session_id_override` ケーパビリティを要求します。REST モードでは `sessionId` が直接シリアライズされ、アクティブな ACP アダプタはそれを `session/new._meta["qwen-code/sessionId"]` にマッピングします。SDK は成功レスポンスを検証し、デーモンが異なる ID を返した場合に `DaemonSessionIdProtocolError` をスローします。
 
 このオプションは常に新しいスレッドセッションを作成し、冪等なアタッチではありません。作成の結果が曖昧な場合は、既知の ID を使用して load または resume してください。オプションを省略すると、既存の create-or-attach 動作が維持されます。
+
+## 実行中のセッションとの通信
+
+`@qwen-code/sdk/peer` を使用すると、Qwen Code セッションではないプログラムが、同じマシン上の同じユーザーとして実行されているセッションに参加できます — ボイスフロントエンド、リレー、ビルドウォッチャーなどです。このプログラムは `qwen sessions ps` に表示され、`agents.crossSessionMessaging` が有効になっているすべてのセッションの `list_agents` に表示されます。これは、これらのセッションが `send_message` で名前でメッセージを送信できるようにする機能でもあります。このプログラムはそれらのセッションにメッセージを送信することもできます。Node でのみ動作し、Node 自体以外のものは必要ありません。
+
+```typescript
+import { PeerEndpoint } from '@qwen-code/sdk/peer';
+
+const endpoint = await PeerEndpoint.start({
+  name: 'voice-bridge',
+  onMessage: (message) =>
+    console.log(`${message.fromName}: ${message.content}`),
+});
+
+const [session] = await endpoint.list();
+if (session) {
+  const sent = await endpoint.send({
+    to: session.address,
+    content: 'What are you working on?',
+  });
+  if (sent.kind === 'sent') {
+    const receipt = await endpoint.awaitReceipt(sent.msgId, { final: true });
+    console.log(receipt?.status); // delivered, denied, refused, ...
+  }
+}
+
+await endpoint.close();
+```
+
+このようなメッセージは、セッションのユーザーが確認するために保持されます。確認なしにセッションを操作するには、`qwen sessions controllers add --label voice-bridge` でコントローラートークンを作成し、それをエンドポイントに提供して、それを提示すべき送信にマークを付けます。
+
+```typescript
+const endpoint = await PeerEndpoint.start({
+  name: 'voice-bridge',
+  controllerToken: process.env['QWEN_CONTROLLER_TOKEN'],
+});
+await endpoint.send({
+  to: 'my-app-3f',
+  content: 'run the tests',
+  controller: true,
+});
+```
+
+注意すべき点:
+
+- セッションは、`agents.crossSessionMessaging` 設定がオンの間のみ受信トレイを持ちます。この設定はデフォルトでオフです。これがないと、セッションは `list()` に表示されず、セッション自身の `list_agents` と `send_message` もプログラムを見たり到達したりできません。`qwen sessions ps` はこの設定に関係なくプログラムをリストします。
+- メッセージが確認なしに配信されるのは正確に2つのケースです。送信がコントローラートークンを提示する場合（`controller: true`）、または `fromMode` が受信セッション自身のレビュークラスを指定している場合です。`fromMode` は何も認証しない主張なので、コーディングセッションではないプログラムはそれを省略する必要があります。レコード内の何も — `kind` も `name` も — 配信を保証しません。受信セッションの `agents.crossSessionInbound` 設定が両方より優先されます。そこでの `hold` または `refuse` はコントローラートークンより優先されます。
+- セッションを操作するための送信のみをマークしてください。アドレスは、あなたとして実行されている任意のプログラムが書き込めるレコードから解決されるため、コントローラー送信はそのアドレスに答えるプロセスのレコードにトークンを提示します。別の peer エンドポイントへのコントローラー送信は読まれずにドロップされます。エンドポイントの受信トレイは独自のトークンのみを受け付けるためです。
+- エンドポイントの受信トレイは、Qwen Code セッションが自身の受信トレイに適用する保護のいずれも適用しません。レート制限もなく、保留もなく、最後に応答した200メッセージを超える重複ウィンドウもありません。すべてのメッセージは `delivered` として応答され、到着時に `onMessage` に渡されます。必要に応じてそこで独自の制限を適用してください。`onMessage` がない場合、すべてのメッセージは `refused` として応答されます。
+- 終了する前に `close()` を呼び出してください。独自のシグナルハンドラからも含みます。close せずに kill されたプロセスは、Qwen Code セッションがディレクトリをリストしてプロセスがいなくなったことを確認するまで、そのレコードを残します。
+- UNIX ドメインソケットのみ: Windows はまだサポートされていません。
+
+レコードスキーマ、ワイヤ形式、および受信状態は [Cross-Session Protocol](../users/features/cross-session-protocol.md) に文書化されています。
 
 ## パーミッションモード
 

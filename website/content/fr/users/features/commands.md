@@ -26,7 +26,7 @@ Ces commandes vous aident à sauvegarder, restaurer et résumer l'avancement du 
 | `/compress-fast` | Compression rapide sans IA — supprime les anciennes sorties d'outils et les parties de réflexion | `/compress-fast`                                              |
 | `/resume`        | Reprendre une session de conversation précédente                                   | `/resume` ou `/continue`                                      |
 | `/recap`         | Générer immédiatement un résumé d'une ligne de la session                                    | `/recap`                                                      |
-| `/restore`       | Rétablir les fichiers du projet au point de contrôle avant l'exécution d'un appel d'outil            | `/restore` (liste) ou `/restore <ID>`                          |
+| `/restore`       | Rétablir les fichiers du projet au checkpoint avant l'exécution d'un appel d'outil            | `/restore` (liste) ou `/restore <ID>`                          |
 | `/delete`        | Supprimer une session précédente                                                | `/delete`                                                     |
 | `/branch`        | Forker la conversation actuelle dans une nouvelle session                         | `/branch`                                                     |
 | `/fork`          | Lancer un agent en arrière-plan qui hérite de l'intégralité de la conversation             | `/fork <directive>`                                           |
@@ -36,7 +36,7 @@ Ces commandes vous aident à sauvegarder, restaurer et résumer l'avancement du 
 
 > [!note]
 >
-> L'ouverture d'un export HTML charge le rendu pour cette version exacte de Qwen Code depuis `unpkg.com`. Si la version n'a pas été publiée ou si le rendu ne peut pas être atteint, le fichier affiche une erreur de chargement. Les exports Markdown, JSON et JSONL restent autonomes.
+> L'ouverture d'un export HTML charge le moteur de rendu et la feuille de style pour cette version exacte de Qwen Code depuis `unpkg.com`. Si la version n'a pas été publiée ou si l'un ou l'autre de ces éléments ne peut pas être atteint, le fichier affiche une erreur de chargement. Les exports Markdown, JSON et JSONL restent autonomes.
 
 > [!note]
 >
@@ -750,7 +750,7 @@ Liste les sessions interactives Qwen Code en cours d'exécution sur cette machin
 
 Un tableau avec les colonnes : NAME, KIND, PID, AGE, DIRECTORY.
 
-KIND indique ce qui a enregistré la session — `tui` pour quelqu'un devant un terminal, `external` pour un programme qui n'est pas du tout une session Qwen Code (un front-end vocal, un relay), et `headless` ou `serve` pour une session pilotée par un autre programme. C'est un auto-rapport, comme NAME et DIRECTORY : chaque champ ici a été écrit par le processus qu'il décrit, et rien de ce qu'une session est autorisée à faire n'en dépend. Voir [Cross-Session Protocol](./cross-session-protocol.md) pour le format d'enregistrement et comment enregistrer votre propre programme.
+KIND indique ce qui a enregistré la session — `tui` pour quelqu'un devant un terminal, `external` pour un programme qui n'est pas du tout une session Qwen Code (un front-end vocal, un relay), et `headless` ou `serve` pour une session pilotée par un autre programme. Plusieurs lignes `serve` ou `headless` peuvent partager un même PID : un enfant `qwen --acp` héberge toutes ses sessions dans un seul processus — `serve` quand le démon l'a engendré, `headless` quand un client le pilote directement — et chacune s'enregistre séparément. C'est un auto-rapport, comme NAME et DIRECTORY : chaque champ ici a été écrit par le processus qu'il décrit, et rien de ce qu'une session est autorisée à faire n'en dépend. Voir [Cross-Session Protocol](./cross-session-protocol.md) pour le format d'enregistrement et comment enregistrer votre propre programme.
 
 **Sortie JSON (`--json`) :**
 
@@ -984,8 +984,18 @@ traitez-le donc comme tout autre identifiant : donnez-le à un seul
 programme, gardez-le hors des configs partagées, et révoquez-le lorsque
 ce programme a terminé.
 
+### Sessions pilotées par un programme via ACP
+
+Tout enfant `qwen --acp` enregistre chaque session qu'il héberge — en tant que `serve` quand le démon a engendré le processus, en tant que `headless` quand un éditeur ou un autre client pilote `qwen --acp` directement — et la session apparaît dans `qwen sessions ps` et dans le `list_agents` d'une autre session comme n'importe laquelle. Elle peut envoyer : son modèle peut appeler `send_message` pour atteindre un terminal que vous avez ouvert. Plusieurs d'entre eux partagent un processus et une boîte de réception, donc un expéditeur doit nommer la session qu'il vise — chaque session Qwen Code le fait automatiquement.
+
+Les messages envoyés _à_ l'une d'elles sont refusés plutôt que mis en attente. Une mise en attente est une question posée à une personne, et personne ne surveille une liste de messages en attente pour le compte d'une session pilotée ; un expéditeur est informé immédiatement au lieu d'attendre l'expiration. L'endroit où un message en attente devrait apparaître pour ces sessions n'est pas encore fixé.
+
+Une session ne s'enregistre que tant que son propre paramètre `agents.crossSessionMessaging` est actif. Sans cela, elle reste invisible, car la seule raison de lister une session à laquelle personne ne peut envoyer des messages serait d'annoncer une adresse qui ne répond jamais.
+
 ### Programmes qui ne sont pas des sessions Qwen Code
 
 Tout ce qui précède fonctionne entre sessions, mais rien n'y est spécifique à une seule. Un programme qui écrit un enregistrement de registre pour lui-même et lie une boîte de réception de la même manière est listé par `qwen sessions ps` et par `list_agents`, peut être adressé par nom depuis `send_message`, et reçoit des accusés de réception pour ce qu'il envoie — un front-end vocal, un relay, un surveillant de build. Il doit enregistrer `kind: "external"` pour qu'un listing puisse dire ce qu'il est.
 
 [Cross-Session Protocol](./cross-session-protocol.md) est le contrat pour en écrire un : le schéma d'enregistrement et comment la vitalité est jugée, les chemins de socket et le framing, la ligne d'authentification, chaque champ de trame, les états de reçu et leurs transitions, et ce qu'un récepteur fait d'un message avant que son modèle ne le voie.
+
+Un programme Node n'a pas besoin d'écrire tout cela à la main : ` @qwen-code/sdk/peer` implémente le contrat. `PeerEndpoint.start({ name })` publie l'enregistrement et lie la boîte de réception, `list()` et `send()` adressent les sessions par nom, et `onMessage` reçoit ce qu'elles envoient.

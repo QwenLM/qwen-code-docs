@@ -26,7 +26,7 @@ import { query } from '@qwen-code/sdk';
 const result = query({
   prompt: 'Quels fichiers se trouvent dans le répertoire actuel ?',
   options: {
-    cwd: '/chemin/vers/projet',
+    cwd: '/path/to/project',
   },
 });
 
@@ -57,7 +57,7 @@ Crée une nouvelle session de requête avec Qwen Code.
 | ------------------------ | ---------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `cwd`                    | `string`                                       | `process.cwd()`   | Le répertoire de travail pour la session de requête. Détermine le contexte dans lequel les opérations sur les fichiers et les commandes sont exécutées.                                                                                                                                                                                                                                                                                                                                                       |
 | `model`                  | `string`                                       | -                 | Le modèle IA à utiliser (ex. `'qwen-max'`, `'qwen-plus'`, `'qwen-turbo'`). Prédomine sur les variables d'environnement `OPENAI_MODEL` et `QWEN_MODEL`.                                                                                                                                                                                                                                                                                                                                                         |
-| `pathToQwenExecutable`   | `string`                                       | CLI intégrée      | Chemin vers l'exécutable Qwen Code. Prend en charge plusieurs formats : `'qwen'` (binaire natif depuis le PATH), `'/chemin/vers/qwen'` (chemin explicite), `'/chemin/vers/cli.js'` (bundle Node.js), `'node:/chemin/vers/cli.js'` (forcer l'exécution Node.js), `'bun:/chemin/vers/cli.js'` (forcer l'exécution Bun). S'il n'est pas fourni, le SDK utilise la CLI intégrée incluse dans le package. |
+| `pathToQwenExecutable`   | `string`                                       | CLI intégrée      | Chemin vers l'exécutable Qwen Code. Prend en charge plusieurs formats : `'qwen'` (binaire natif depuis le PATH), `'/path/to/qwen'` (chemin explicite), `'/path/to/cli.js'` (bundle Node.js), `'node:/path/to/cli.js'` (forcer l'exécution Node.js), `'bun:/path/to/cli.js'` (forcer l'exécution Bun). S'il n'est pas fourni, le SDK utilise la CLI intégrée incluse dans le package. |
 | `permissionMode`         | `'default' \| 'plan' \| 'auto-edit' \| 'auto' \| 'yolo'` | `'default'`       | Mode de permission contrôlant l'approbation d'exécution des outils. Voir [Modes de permission](#modes-de-permission) pour plus de détails.                                                                                                                                                                                                                                                                                                                                                                   |
 | `canUseTool`             | `CanUseTool`                                   | -                 | Gestionnaire de permission personnalisé pour l'approbation d'exécution des outils. Invoqué lorsqu'un outil nécessite une confirmation. Doit répondre dans les 60 secondes, sinon la demande est automatiquement refusée. Voir [Gestionnaire de permission personnalisé](#gestionnaire-de-permission-personnalisé).                                                                                                                                                                                             |
 | `env`                    | `Record<string, string>`                       | -                 | Variables d'environnement à transmettre au processus Qwen Code. Fusionnées avec l'environnement du processus actuel.                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -65,7 +65,7 @@ Crée une nouvelle session de requête avec Qwen Code.
 | `mcpServers`             | `Record<string, McpServerConfig>`              | -                 | Serveurs MCP (Model Context Protocol) à connecter. Prend en charge les serveurs externes (stdio/SSE/HTTP) et les serveurs intégrés au SDK. Les serveurs externes sont configurés avec des options de transport comme `command`, `args`, `url`, `httpUrl`, etc. Les serveurs SDK utilisent `{ type: 'sdk', name: string, instance: Server }`.                                                                                                                                                                    |
 | `abortController`        | `AbortController`                              | -                 | Contrôleur pour annuler la session de requête. Appelez `abortController.abort()` pour terminer la session et libérer les ressources.                                                                                                                                                                                                                                                                                                                                                                          |
 | `debug`                  | `boolean`                                      | `false`           | Active le mode débogage pour une journalisation détaillée du processus CLI.                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `maxSessionTurns`        | `number`                                       | `-1` (illimité)   | Nombre maximum de tours de conversation avant que la session ne se termine automatiquement. Un tour consiste en un message utilisateur et une réponse de l'assistant.                                                                                                                                                                                                                                                                                                                                          |
+| `maxSessionTurns`        | `number`                                       | `-1` (illimité)   | Nombre maximum de tours de conversation avant que la session ne se termine automatiquement. Doit être un entier. Un tour consiste en un message utilisateur et une réponse de l'assistant.                                                                                                                                                                                                                                                                                                                                          |
 | `coreTools`              | `string[]`                                               | -                | Utilise l'ancienne sémantique `coreTools` / liste d'autorisation CLI `--core-tools`. Si spécifié, seuls les outils de base correspondants sont enregistrés pour la session. Il s'agit de la seule option de type liste d'autorisation qui restreint l'enregistrement des outils intégrés ; une règle `permissions.deny` / `excludeTools` portant sur un outil entier (et `tools.disabled` dans settings.json) supprime également un outil du registre. `permissions.allow` dans settings.json est de l'auto-approbation pure et ne supprime, ne rétrograde ni ne masque jamais un outil (#10075). Pour exclure le schéma d'un outil de la requête initiale au modèle, utilisez `tools.eager` dans settings.json (nécessite un redémarrage, #9827) — `tool_search`, `structured_output`, les outils du cycle de vie du mode plan, `task_stop`, les outils `mcp__*` et `computer_use__*` sont exemptés de cette liste d'autorisation et conservent leur chargement normal ; pour le supprimer entièrement, utilisez une règle `excludeTools` / `permissions.deny` portant sur un outil entier — une règle avec un spécificateur (comme `'Bash(rm *)'`) ne refuse que les invocations correspondantes au runtime. Les outils MCP sont exemptés de la suppression par refus : masquez-les plutôt avec les filtres `excludeTools` / `tools.disabled` par serveur (le refus bloque toujours leurs appels au runtime). Exemple : `['read_file', 'edit', 'run_shell_command']`. |
 | `excludeTools`           | `string[]`                                     | -                 | Équivalent à `permissions.deny` dans settings.json. Les outils exclus retournent immédiatement une erreur de permission. Priorité la plus élevée sur tous les autres paramètres de permission. Prend en charge les alias de noms d'outils et la correspondance de motifs : nom d'outil (`'write_file'`), préfixe de commande shell (`'Bash(rm *)'`), ou motifs de chemin (`'Read(.env)'`, `'Edit(/src/**)'`).                                                                                                 |
 | `allowedTools`           | `string[]`                                               | -                | Équivalent à `permissions.allow` dans settings.json pour l'auto-approbation. Les outils correspondants contournent le callback `canUseTool` et s'exécutent automatiquement. S'applique uniquement lorsque l'outil nécessite une confirmation. Comme `permissions.allow`, il s'agit d'auto-approbation pure et cela n'affecte jamais les outils enregistrés ni les schémas envoyés (#10075). Prend en charge la même correspondance de motifs que `excludeTools`. Exemple : `['Bash(git status)', 'Bash(npm test)']`. |
@@ -181,6 +181,59 @@ console.log(session.sessionId); // 550e8400-e29b-41d4-a716-446655440000
 Le SDK exige la capacité `session_id_override` du démon avant d'envoyer la mutation. En mode REST, `sessionId` est sérialisé directement ; un adaptateur ACP actif le mappe vers `session/new._meta["qwen-code/sessionId"]`. Le SDK vérifie la réponse de succès et lève `DaemonSessionIdProtocolError` si le démon retourne un ID différent.
 
 Cette option crée toujours une nouvelle session thread et n'est pas un attach idempotent. Si le résultat de création est ambigu, utilisez l'ID connu avec load ou resume. Omettre l'option préserve le comportement existant de create-or-attach.
+
+## Communication avec les sessions en cours
+
+`@qwen-code/sdk/peer` permet à un programme qui n'est pas une session Qwen Code de rejoindre les sessions exécutées par le même utilisateur sur la même machine — un front-end vocal, un relais, un watcher de build. Le programme apparaît dans `qwen sessions ps`, et dans le `list_agents` de chaque session qui a `agents.crossSessionMessaging` activé — ce qui permet également à ces sessions de lui envoyer des messages par son nom avec `send_message`. Il peut leur répondre. Il fonctionne uniquement sur Node et n'a besoin de rien d'autre que Node lui-même.
+
+```typescript
+import { PeerEndpoint } from '@qwen-code/sdk/peer';
+
+const endpoint = await PeerEndpoint.start({
+  name: 'voice-bridge',
+  onMessage: (message) =>
+    console.log(`${message.fromName}: ${message.content}`),
+});
+
+const [session] = await endpoint.list();
+if (session) {
+  const sent = await endpoint.send({
+    to: session.address,
+    content: 'Sur quoi travaillez-vous ?',
+  });
+  if (sent.kind === 'sent') {
+    const receipt = await endpoint.awaitReceipt(sent.msgId, { final: true });
+    console.log(receipt?.status); // delivered, denied, refused, ...
+  }
+}
+
+await endpoint.close();
+```
+
+Un message comme celui-ci est mis en attente pour que l'utilisateur de la session puisse l'examiner. Pour diriger une session sans cet examen, créez un controller token avec `qwen sessions controllers add --label voice-bridge`, donnez-le à l'endpoint, et marquez les envois qui doivent le présenter :
+
+```typescript
+const endpoint = await PeerEndpoint.start({
+  name: 'voice-bridge',
+  controllerToken: process.env['QWEN_CONTROLLER_TOKEN'],
+});
+await endpoint.send({
+  to: 'my-app-3f',
+  content: 'exécute les tests',
+  controller: true,
+});
+```
+
+Points à connaître :
+
+- Une session n'a une boîte de réception que lorsque son paramètre `agents.crossSessionMessaging` est activé, et ce paramètre est désactivé par défaut. Sans cela, la session n'apparaît pas dans `list()`, et ses propres `list_agents` et `send_message` ne peuvent pas non plus voir ou atteindre le programme. `qwen sessions ps` liste le programme dans tous les cas.
+- Un message est livré sans examen dans exactement deux cas : l'envoi présente un controller token (`controller: true`), ou son `fromMode` nomme la classe de review de la session destinataire. `fromMode` est une revendication que rien n'authentifie, donc un programme qui n'est pas une session de codage devrait l'omettre. Rien dans l'enregistrement — ni `kind`, ni `name` — ne garantit la livraison. Le paramètre `agents.crossSessionInbound` de la session destinataire l'emporte sur les deux : `hold` ou `refuse` à cet endroit gagne sur un controller token.
+- Marquez uniquement les envois destinés à diriger une session. Les adresses sont résolues à partir d'enregistrements que n'importe quel programme exécuté par vous peut écrire, donc un envoi controller présente le token à l'enregistrement du processus qui répond à cette adresse. Un envoi controller vers un autre peer endpoint est supprimé sans être lu, car la boîte de réception d'un endpoint n'accepte que son propre token.
+- La boîte de réception de l'endpoint n'applique aucune des protections qu'une session Qwen Code applique à la sienne : pas de rate limit, pas de holds, et pas de fenêtre de doublon au-delà des 200 derniers messages auxquels il a répondu. Chaque message reçoit une réponse `delivered` et est transmis à `onMessage` à son arrivée, donc appliquez vos propres limites à cet endroit si vous en avez besoin. Sans `onMessage`, chaque message reçoit une réponse `refused`.
+- Appelez `close()` avant de quitter, y compris depuis vos propres gestionnaires de signaux. Un processus tué sans fermeture laisse son enregistrement derrière lui jusqu'à ce qu'une session Qwen Code liste le répertoire et voie que le processus a disparu.
+- Sockets de domaine UNIX uniquement : Windows n'est pas encore pris en charge.
+
+Le schéma d'enregistrement, le format de transmission et les états de reçu sont documentés dans [Cross-Session Protocol](../users/features/cross-session-protocol.md).
 
 ## Modes de permission
 

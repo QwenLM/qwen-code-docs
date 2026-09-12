@@ -22,20 +22,20 @@ npm install @qwen-code/sdk
 ```typescript
 import { query } from '@qwen-code/sdk';
 
-// Single-Turn-Abfrage
+// Single-turn query
 const result = query({
-  prompt: 'Welche Dateien befinden sich im aktuellen Verzeichnis?',
+  prompt: 'What files are in the current directory?',
   options: {
-    cwd: '/pfad/zum/projekt',
+    cwd: '/path/to/project',
   },
 });
 
-// Über Nachrichten iterieren
+// Iterate over messages
 for await (const message of result) {
   if (message.type === 'assistant') {
     console.log('Assistant:', message.message.content);
   } else if (message.type === 'result') {
-    console.log('Ergebnis:', message.result);
+    console.log('Result:', message.result);
   }
 }
 ```
@@ -181,6 +181,59 @@ console.log(session.sessionId); // 550e8400-e29b-41d4-a716-446655440000
 Das SDK benötigt die `session_id_override`-Capability des Daemons vor dem Senden der Mutation. Der REST-Modus serialisiert `sessionId` direkt; ein aktiver ACP-Adapter mappt es auf `session/new._meta["qwen-code/sessionId"]`. Das SDK überprüft die Erfolgsantwort und wirft `DaemonSessionIdProtocolError`, wenn der Daemon eine andere ID zurückgibt.
 
 Diese Option erzeugt immer eine neue Thread-Session und ist kein idempotentes Attach. Wenn das Ergebnis der Erstellung mehrdeutig ist, verwende die bekannte ID mit Load oder Resume. Das Weglassen der Option behält das bestehende Create-or-Attach-Verhalten bei.
+
+## Kommunikation mit laufenden Sessions
+
+`@qwen-code/sdk/peer` ermöglicht es einem Programm, das keine Qwen Code-Session ist, sich den Sessions anzuschließen, die als derselbe Benutzer auf derselben Maschine laufen – ein Voice-Frontend, ein Relay, ein Build-Watcher. Das Programm erscheint in `qwen sessions ps` und in der `list_agents` jeder Session, die `agents.crossSessionMessaging` aktiviert hat – was auch ermöglicht, dass diese Sessions ihm per Namen mit `send_message` Nachrichten senden können. Es kann ihnen ebenfalls Nachrichten senden. Es läuft nur auf Node und benötigt nichts außer Node selbst.
+
+```typescript
+import { PeerEndpoint } from '@qwen-code/sdk/peer';
+
+const endpoint = await PeerEndpoint.start({
+  name: 'voice-bridge',
+  onMessage: (message) =>
+    console.log(`${message.fromName}: ${message.content}`),
+});
+
+const [session] = await endpoint.list();
+if (session) {
+  const sent = await endpoint.send({
+    to: session.address,
+    content: 'What are you working on?',
+  });
+  if (sent.kind === 'sent') {
+    const receipt = await endpoint.awaitReceipt(sent.msgId, { final: true });
+    console.log(receipt?.status); // delivered, denied, refused, ...
+  }
+}
+
+await endpoint.close();
+```
+
+Eine solche Nachricht wird zur Überprüfung durch den Benutzer der Session zurückgehalten. Um eine Session ohne diese Überprüfung zu steuern, erstelle ein Controller-Token mit `qwen sessions controllers add --label voice-bridge`, übergib es dem Endpoint und markiere die Sends, die es präsentieren sollen:
+
+```typescript
+const endpoint = await PeerEndpoint.start({
+  name: 'voice-bridge',
+  controllerToken: process.env['QWEN_CONTROLLER_TOKEN'],
+});
+await endpoint.send({
+  to: 'my-app-3f',
+  content: 'run the tests',
+  controller: true,
+});
+```
+
+Wichtige Hinweise:
+
+- Eine Session hat nur dann eine Inbox, wenn ihre `agents.crossSessionMessaging`-Einstellung aktiviert ist, und diese Einstellung ist standardmäßig deaktiviert. Ohne sie erscheint die Session nicht in `list()`, und ihre eigenen `list_agents` und `send_message` können das Programm ebenfalls nicht sehen oder erreichen. `qwen sessions ps` listet das Programm unabhängig davon auf.
+- Eine Nachricht wird genau in zwei Fällen ohne Überprüfung zugestellt: Der Send präsentiert ein Controller-Token (`controller: true`), oder sein `fromMode` benennt die eigene Review-Klasse der empfangenden Session. `fromMode` ist eine Behauptung, die nichts authentifiziert, daher sollte ein Programm, das keine Coding-Session ist, es weglassen. Nichts im Record – nicht `kind`, nicht `name` – erzwingt die Zustellung. Die `agents.crossSessionInbound`-Einstellung der empfangenden Session hat Vorrang vor beiden: `hold` oder `refuse` dort gewinnt gegenüber einem Controller-Token.
+- Markiere nur die Sends, die zur Steuerung einer Session bestimmt sind. Adressen werden aus Records aufgelöst, die jedes als dein Benutzer laufende Programm schreiben kann, daher präsentiert ein Controller-Send das Token demjenigen Prozess, dessen Record auf diese Adresse antwortet. Ein Controller-Send an einen anderen Peer-Endpoint wird ungelesen verworfen, da die Inbox eines Endpoints nur sein eigenes Token akzeptiert.
+- Die Inbox des Endpoints wendet keinen der Schutzmechanismen an, die eine Qwen Code-Session auf ihre eigene anwendet: kein Rate-Limit, keine Holds und kein Duplicate-Window über die letzten 200 beantworteten Nachrichten hinaus. Jede Nachricht wird als `delivered` beantwortet und bei Eingang an `onMessage` übergeben, also wende dort deine eigenen Limits an, wenn du sie benötigst. Ohne `onMessage` wird jede Nachricht als `refused` beantwortet.
+- Rufe `close()` vor dem Beenden auf, einschließlich aus deinen eigenen Signal-Handlern. Ein Prozess, der ohne Schließen getötet wird, hinterlässt seinen Record, bis eine Qwen Code-Session das Verzeichnis auflistet und sieht, dass der Prozess nicht mehr existiert.
+- Nur UNIX-Domain-Sockets: Windows wird noch nicht unterstützt.
+
+Das Record-Schema, Wire-Format und Receipt-States sind dokumentiert in [Cross-Session Protocol](../users/features/cross-session-protocol.md).
 
 ## Berechtigungsmodi
 

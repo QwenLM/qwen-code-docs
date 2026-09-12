@@ -2,15 +2,16 @@
 
 ## 개요
 
-`packages/cli/src/serve/`는 `qwen serve`의 부트 레이어입니다. CLI 플래그를 `ServeOptions`로 변환하고, 시작 구성을 검증하고, Express 앱을 빌드하고, 미들웨어를 연결하고, 라우트를 등록하고, 데몬 호스트 프리플라이트/상태 제공자를 노출하고, 권한 감사 링을 유지하고, 2단계 우아한 종료 시퀀스를 소유합니다. HTTP 관련 작업은 이 레이어에 있고, ACP 관련 작업은 `@qwen-code/acp-bridge`의 한 단계 아래에 있습니다([`03-acp-bridge.md`](./03-acp-bridge.md) 참조).
+`packages/cli/src/serve/`는 `qwen serve`의 부트 레이어입니다. CLI 플래그를 `ServeOptions`로 변환하고, 시작 구성을 검증하고, Express 앱을 빌드하고, 미들웨어를 연결하고, 라우트를 등록하고, 데몬 호스트 프리플라이트/상태 제공자를 노출하고, 권한 감사 링을 유지하고, 2단계 우아한 종료 시퀀스를 소유합니다. HTTP 관련 작업은 이 레이어에 있고, ACP 관련 작업은 이 레이어 바로 아래 `@qwen-code/acp-bridge`에 있습니다([`03-acp-bridge.md`](./03-acp-bridge.md) 참조).
 
 ## 책임
 
 - `ServeOptions`를 파싱하고 검증합니다: 리슨 주소, 인증, 워크스페이스, 세션/연결 캡, MCP 예산/풀, CORS, 프롬프트/SSE/세션 유휴 타임아웃, 속도 제한 및 관련 토글.
 - 기본 워크스페이스를 정확히 한 번 **정규화**하고, 세션 런타임을 등록하기 전에 반복되는 모든 `--workspace`를 정규화합니다. 기본 정규 형태는 `/capabilities.workspaceCwd`, `POST /session` 폴백, 기본 브리지가 공유합니다.
+- 베어러를 해석합니다: `--token`, 다음으로 `QWEN_SERVER_TOKEN`, 그리고 어느 소스도 없고 요청된 `--hostname`이 루프백이 아닌 경우(리터럴 `localhost`를 먼저 한 번 해석) — 시작 시 한 번만 출력되는 생성된 임시 128비트 base64url 베어러(22자). 루프백 표기는 `--require-auth`가 설정되지 않는 한 생성하지 않으며 신뢰된 토큰 없는 모드를 유지합니다. 생성은 표기에 따라 키가 결정되는 반면 부트 거부는 해석된 주소를 읽으므로 두 가지 예외가 남습니다: 루프백 밖으로 해석되는 `localhost`는 생성하지 않으며 토큰 소스가 해석되었을 때만 부트하고 그렇지 않으면 `Refusing to bind …`를 출력합니다; 그리고 루프백으로 해석되는 리터럴이 아닌 이름은 생성하여 신뢰된 토큰 없는 모드를 잃고 베어러가 토큰만 출력합니다.
 - 안전하지 않거나 잘못된 시작 구성을 거부합니다: 토큰 없는 루프백이 아닌 바인드, 토큰 없는 `--require-auth`, 토큰 없는 와일드카드 또는 루프백이 아닌 HTTP(S) `--allow-origin`, 양의 `mcpClientBudget` 없는 `mcpBudgetMode='enforce'`, 존재하지 않거나 디렉토리가 아닌 `--workspace`, 잘못된 타임아웃 또는 속도 제한 값.
 - `WorkspaceFileSystem` 팩토리, 권한 감사 발행자, `DaemonStatusProvider`, `acp-bridge`를 생성합니다.
-- Express 앱을 빌드하고, 미들웨어를 연결하고(`allowOriginCors`를 가변 origin 허용 목록 위에 -> `hostAllowlist` -> 접근 로그 -> `bearerAuth` -> 속도 제한 -> JSON 파서 -> 텔레메트리 -> 라우트별 `mutationGate`), 세션, 워크스페이스 CRUD, 파일, 디바이스 플로우 인증, 권한 투표, ACP HTTP 라우트를 마운트합니다. (무조건적인 `denyBrowserOriginCors` 방어벽은 부트스트랩 앱 `run-qwen-serve.ts`에만 남아 있습니다.)
+- Express 앱을 빌드하고, 미들웨어를 연결하고(루프백 `Origin` 스트립 -> 접근 로그 -> 인바운드 trace-id 캡처 -> `hostAllowlist` -> 원격 동일 출처 `Origin` 스트립 -> 가변 origin 허용 목록 위의 `allowOriginCors` -> 프리인증 `/health` -> 프리인증 Web Shell 에셋 -> 채널 웹훅 -> `bearerAuth` -> 속도 제한 -> JSON 파서 -> 텔레메트리 -> 라우트별 `mutationGate`), 세션, 워크스페이스 CRUD, 파일, 디바이스 플로우 인증, 권한 투표, ACP HTTP 라우트를 마운트합니다. (무조건적인 `denyBrowserOriginCors` 방어벽은 부트스트랩 앱 `run-qwen-serve.ts`에만 남아 있습니다.)
 - 리슨 포트를 바인딩하고 시그널 핸들러를 등록합니다.
 - SIGINT/SIGTERM에서 2단계 종료를 실행합니다. 두 번째 시그널에서 강제 종료합니다.
 
@@ -61,16 +62,16 @@
 
 ### 부트 시퀀스
 
-`runQwenServe()`가 이 시퀀스를 시작하기 전에, CLI 전용 `--open-with-auth` 모드가 루프백/Web Shell 적격성을 검증하고 `ServeOptions.token`을 선택된 구성 토큰으로 채우거나, 해당 선택이 비어 있으면 base64url로 인코딩된 32바이트 무작위 값으로 채웁니다. 직접 임베더와 해당 기본값 해제 플래그 없는 호출은 토큰을 생성하지 않습니다.
+`runQwenServe()`가 이 시퀀스를 시작하기 전에, CLI 전용 `--open-with-auth` 모드가 루프백/Web Shell 적격성을 검증하고 `ServeOptions.token`을 선택된 구성 토큰으로 채우거나, 해당 선택이 비어 있으면 base64url로 인코딩된 32바이트 무작위 값(256비트 베어러)으로 채웁니다. 그렇게 생성된 값은 아래 모든 단계에서 일반적인 구성 토큰으로 취급됩니다 — 그래서 `--require-auth --open-with-auth`로 부팅할 수 있는 것입니다 — 그리고 1단계의 루프백이 아닌 임시 베어러와는 별도의 생성기입니다. `createServeApp`을 직접 호출하는 임베더는 토큰을 생성하지 않습니다.
 
-1. `opts.token` 또는 `QWEN_SERVER_TOKEN`에서 토큰을 **해석하고 트림**합니다. `cat token.txt`의 후행 개행이 베어러 비교를 조용히 깨뜨리는 것을 방지합니다.
+1. **토큰 해석**: `opts.token` 또는 `QWEN_SERVER_TOKEN`에서 토큰을 해석하며, `cat token.txt`의 후행 개행이 베어러 비교를 조용히 깨뜨리지 못하도록 트림합니다. 요청된 `--hostname`이 루프백이 아닌 경우(리터럴 `localhost`를 먼저 한 번 해석) **어느 소스도** 없으면, 거부하는 대신 임시 128비트(16바이트) 베어러를 22자의 base64url 문자로 생성합니다; 이 값은 `listen()` 후 원격 퀵스타트에서 한 번 출력되며 매 재시작마다 회전합니다. 루프백 표기는 절대 생성하지 않으므로 신뢰된 토큰 없는 모드를 유지합니다. **명시적으로 비어 있는** 소스(`--token ''`, 또는 `QWEN_SERVER_TOKEN`이 비어 있거나 공백만 있는 값으로 설정된 경우)는 "부재"가 아니므로 항상 생성을 억제합니다 — 하지만 빈 값은 해석된 토큰을 한 방향으로만 결정합니다: 빈 `--token`은 설정된 환경 값을 가리고 토큰 없이 해석되는 반면, 빈 환경 값은 `--token`이 전달되지 않았을 때만 토큰 없이 해석됩니다(비어 있지 않은 `--token`이 여전히 우선합니다); 두 경우 모두 해석된 토큰이 없는 루프백이 아닌 바인드는 아래 가드에서 여전히 실패합니다.
 2. **호스트네임 오타 가드**: `--hostname localhost:4170`은 오류를 발생시키고 `--port`를 제안합니다.
-3. **인증 프리플라이트**: 토큰 없는 루프백이 아닌 바인드는 거부합니다. 토큰 없는 `--require-auth`는 거부합니다.
+3. **인증 프리플라이트**: _해석된_ 토큰이 없는 루프백이 아닌 바인드는 거부합니다 — 명시적으로 비어 있는 소스를 통해 도달할 수 있거나, 일회성 해석이 루프백 밖으로 떨어지는 `localhost` 바인드를 통해 도달할 수 있습니다(생성은 표기에 따라 키가 결정되므로 거기서는 아무것도 생성되지 않았습니다); `--require-auth`는 토큰 없는 바인드에서 거부하며, 1단계 이후에는 구성 소스 없는 루프백 바인드를 의미합니다. 와일드카드 및 루프백이 아닌 HTTP(S) `--allow-origin` 가드는 동일한 해석된 토큰을 읽으므로, 루프백이 아닌 바인드에서 생성된 베어러가 이를 충족하고 이러한 거부도 루프백 전용입니다.
 4. **워크스페이스 검증**: 절대 경로, 존재 여부, 디렉토리 여부. `EACCES` / `EPERM`은 플래그를 가리키도록 래핑됩니다.
 5. **워크스페이스 정규화**: `canonicalizeWorkspace(rawWorkspace)`는 `realpathSync.native`를 한 번 실행하고 `/capabilities`, `POST /session` 폴백, 브리지에 전달합니다.
 6. **MCP 예산 검증**: 양의 정수. `enforce`는 예산이 필요합니다.
 7. **MCP 풀 토글 추론**: 부모 환경 `QWEN_SERVE_NO_MCP_POOL=1`은 `mcpPoolActive=false`를 만들므로 기능이 정직하게 `mcp_workspace_pool`과 `mcp_pool_restart`를 생략합니다.
-8. **CORS / 타임아웃 / 속도 제한 검증**: 와일드카드 및 루프백이 아닌 HTTP(S) `--allow-origin` 값에는 토큰이 필요합니다. 프롬프트, writer, 채널 유휴, 세션 유휴, 리퍼, 속도 제한 창 값은 잘못된 경우 빠르게 실패합니다.
+8. **CORS / 타임아웃 / 속도 제한 검증**: 와일드카드 및 루프백이 아닌 HTTP(S) `--allow-origin` 값에는 해석된 토큰이 필요합니다(이러한 거부가 루프백 전용인 이유는 3단계 참조); 프롬프트, writer, 채널 유휴, 세션 유휴, 리퍼, 속도 제한 창 값은 잘못된 경우 빠르게 실패합니다.
 9. **핸들별 `childEnvOverrides`**: `process.env`를 변경하는 대신 `BridgeOptions.childEnvOverrides`를 통해 `QWEN_SERVE_MCP_CLIENT_BUDGET`과 `QWEN_SERVE_MCP_BUDGET_MODE`를 ACP 자식에게 전달합니다.
 10. **`settings.json`을 한 번 로드**: `context.fileName`, `policy.permissionStrategy`, `policy.consensusQuorum`을 읽습니다. 손상된 파일은 기본값으로 폴백합니다. `validatePolicyConfig()`는 `policy.*`를 `SERVE_CAPABILITY_REGISTRY.permission_mediation.modes`에 대해 검사합니다. 알 수 없는 전략이나 양수가 아닌 `consensusQuorum`은 `InvalidPolicyConfigError`를 throw합니다. `consensus`가 아닌 전략에서 설정된 쿼럼은 stderr 경고를 기록합니다.
 11. **`PermissionAuditRing` 할당** (512 엔트리).
@@ -141,7 +142,7 @@
 ## 주의사항 및 알려진 제한
 
 - `deps.fsFactory` 또는 `deps.bridge` 없는 직접 `createServeApp`은 `trusted: false`를 기본값으로 사용합니다. 에이전트 측 ACP `writeTextFile`은 `untrusted_workspace`로 거부합니다. 경고는 한 번만 출력됩니다.
-- 런타임 앱은 가변 허용 목록 위에서 `allowOriginCors`를 실행합니다. 일치하지 않는 `Origin` 값은 403 거부 엔벨로프를 받습니다(무조건적인 `denyBrowserOriginCors` 방어벽은 부트스트랩 앱에만 남아 있습니다). **루프백** Web Shell은 다른 미들웨어가 먼저 일치하는 루프백 동일 출처 값을 제거하기 때문에 작동합니다 — 루프백이 아닌 바인드는 Web Shell의 XHR에 `--allow-origin`이 필요합니다.
+- 런타임 앱은 가변 허용 목록 위에서 `allowOriginCors`를 실행합니다; 일치하지 않는 `Origin` 값은 403 거부 엔벨로프를 받습니다(무조건적인 `denyBrowserOriginCors` 방어벽은 부트스트랩 앱에만 남아 있습니다). **루프백** Web Shell은 다른 미들웨어가 먼저 일치하는 루프백 동일 출처 값을 제거하기 때문에 작동합니다; 토큰이 있는 루프백이 아닌 바인드에서 Shell의 동일 출처 XHR은 베어러 인증되며 방어벽 앞에서 `Origin`이 제거되므로 `--allow-origin`이 필요하지 않습니다. 여전히 허용 목록 항목이 필요한 세 가지 경우가 있습니다: WebSocket 업그레이드(터미널, 음성), `https` origin이 일반 소켓과 절대 일치하지 않는 TLS 종료 프론트 프록시, 그리고 `Host` 헤더를 재작성하는 일반 HTTP 중계기 — nginx의 기본 `proxy_set_header Host $proxy_host`와 k8s Ingress가 모두 그렇습니다. 포트 변환만으로는 **루프백이 아닌 바인드**에서 아무것도 필요하지 않습니다(`docker -p 8080:4170`): 검사는 `Origin`을 정규화된 전달된 `Host`와만 비교하고 리슨 포트를 참조하지 않습니다(스킴 기본값 `:80`/`:443`만 제거되며; 비기본 포트는 그대로 유지되어야 합니다). 기본 **루프백** 바인드에서는 그렇지 않습니다: DNS 리바인딩 Host 허용 목록은 데몬 자체 포트만 수락하므로, 포트를 변환하는 터널(`ssh -L 8080:localhost:4170`)은 Shell 문서를 포함한 모든 요청에서 `403 Invalid Host header`로 거부되며 `--allow-origin`으로 이를 재정의할 수 없습니다 — 동일한 포트를 전달하거나 루프백이 아닌 바인드를 사용하십시오. WebSocket 및 TLS 종료 케이스의 해결책은 `--allow-origin <origin>`입니다; Host 재작성 중계기는 대신 `Host`를 그대로 전달하도록 구성할 수 있습니다 — 하지만 TLS가 프록시에서 종료되면 도움이 되지 않는데, 스킴이 데몬 자체 소켓에서 읽히기 때문입니다.
 - 본문 파서 순서: `mutate({ strict: true })`를 사용하는 라우트는 `express.json()` 이후에만 401을 반환합니다. 최악의 경우는 `--max-connections × express.json({limit: '10mb'})`로, 포화된 루프백 리스너에서 최대 약 2.5GB의 일시적 메모리입니다. 이 트레이드오프는 의도적입니다.
 - 하나의 프로세스에서 여러 데몬은 핸들별 `childEnvOverrides`를 사용해야 합니다. `defaultSpawnChannelFactory`가 생성 시 환경의 스냅샷을 찍기 때문에 `process.env`를 변경하면 경합이 발생합니다.
 

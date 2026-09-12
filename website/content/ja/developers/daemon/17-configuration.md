@@ -4,7 +4,7 @@
 
 このページでは、`qwen serve` デーモンとそのアダプターに影響を与えるすべての設定（環境変数、CLIフラグ、`settings.json` のキー、プログラムからのオプション）をまとめています。機能固有のページでは、横断的な設定の詳細が必要な場合にここへリンクしています。
 
-## CLIフラグ（`qwen serve`）
+## CLI フラグ（`qwen serve`）
 
 | フラグ                                    | 型                         | デフォルト                                                                           | 効果                                                                                                                                                                                                                    |
 | --------------------------------------- | ---------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -17,7 +17,7 @@
 | `--workspace <dir>`                     | absolute path / repeatable   | `process.cwd()`                                                                   | 起動時のワークスペースランタイム。繰り返して追加の分離されたランタイムを登録できます。最初がプライマリです。すべての値は絶対パスかつディレクトリである必要があります。起動時に正規化されます。                                                    |
 | `--memory-project-scope <mode>`         | `git-root` / `workspace`     | `workspace`                                                                       | プロジェクトメモリのパーティション。`workspace` は正確なワークスペースディレクトリごとに分離します。`git-root` は同じ Git ルートにあるワークスペース間で共有されるレガシー互換スコープです。`QWEN_CODE_MEMORY_PROJECT_SCOPE` をオーバーライドします。                               |
 | `--max-sessions <n>`                    | number                       | `32`                                                                              | ワークスペースごとのアクティブセッション上限。`0` / `Infinity` は無制限を意味します。`NaN` / 負の値はエラーをスローします。                                                                                                                        |
-| `--max-total-sessions <n>`              | number                       | 複数の起動時/復元ワークスペース用に導出                                  | デーモン全体のアクティブセッション上限。省略時、ワークスペースごとの上限と起動時/復元ワークスペース数から有限のデフォルト値が 1 回だけ導出されます。`0` / `Infinity` は無制限を意味します。                                         |
+| `--max-total-sessions <n>`              | number                       | `800`、または capacity 25 以下で導出                                  | デーモン全体のアクティブセッション上限。省略時、registration capacity が 25 より大きい場合（デフォルトの 256 を含む。1 つのワークスペースでも同様）は 800 です。capacity が 25 以下の場合は、ワークスペースごとの上限と起動時/復元ワークスペース数から 1 回だけ導出され、そのようなワークスペースが 1 つの場合は無制限です。`0` / `Infinity` は無制限を意味します。                                         |
 | `--max-pending-prompts-per-session <n>` | number                       | `5`                                                                               | セッションごとに受け入れられたが保留中または実行中のプロンプトの上限。超過したプロンプトは 503 を返します。`0` / `Infinity` は無制限を意味します。負の値または非整数値はエラーをスローします。                             |
 | `--max-connections <n>`                 | number                       | `256`                                                                             | HTTPリスナーの `server.maxConnections`。`0` / `Infinity` は無制限を意味します。                                                                                                            |
 | `--enable-session-shell`                | boolean                      | `false`                                                                           | `POST /session/:id/shell` の直接実行を有効にします。ベアラートークンまたは trusted-loopback authority で有効になります。すべての呼び出しにセッションにバインドされた `X-Qwen-Client-Id` を含める必要があります。                                            |
@@ -73,7 +73,7 @@
 | `QWEN_SERVE_SESSION_ATTACHMENTS_ROOT` | セッション添付ファイルの保存場所をオーバーライドします。設定されたルートに一致しない読み取り/削除はデフォルトのランタイム一時ディレクトリにフォールバックするため、切り替え前の添付ファイルも読み取り可能です。絶対パス、デーモンの cwd からの相対パス、または `~` / `~/…` を受け付けます。[`qwen-serve.md` — セッション添付ファイルのストレージ](../../users/qwen-serve.md#session-attachment-storage) を参照してください。                                                                                                                                                                                                                                                                                       |
 | `QWEN_CODE_MEMORY_PROJECT_SCOPE`    | `workspace` はプロジェクトメモリを正確なワークスペースディレクトリごとにキー付けします。`git-root` はレガシーの共有スコープを選択します。未設定時、デーモンは `workspace` を注入します。認識されない値は 1 回だけ警告し、レガシーの `git-root` 動作を保持します。`childEnvOverrides` ではなくランタイムベース環境経由で伝播します。`--memory-project-scope` が優先されます。各ワークスペースの remember/forget/dream レーンは保留中タスクを `MAX_PENDING = 16` にキャップします。N ワークスペースでは最大 16·N のキューイングされたタスクを許可し、デーモン全体のキャップはありません。 |
 
-空の `QWEN_CODE_MEMORY_PROJECT_SCOPE` 値は未設定として扱われ、デフォルトで `workspace` になります。空でない認識されない値は引き続き 1 回だけ警告し、レガシーの `git-root` 動作を保持します。
+空の `QWEN_CODE_MEMORY_PROJECT_SCOPE` 値は未設定として扱われ、デフォルトで `workspace` になります。空でない未認識の値は引き続き 1 回だけ警告し、レガシーの `git-root` 動作を保持します。
 
 ### `qwen serve` CLIラッパーによって読み込まれる変数
 
@@ -128,7 +128,7 @@
 | `allowOrigins`                | クロスオリジン許可リスト（`string[]`）。`--allow-origin` に対応します。                       |
 | `allowPrivateAuthBaseUrl`     | プライベート / localhost 認証プロバイダーの `baseUrl` のインストールを許可します。                              |
 | `serveWebShell`               | デーモンルートでビルド済み Web Shell SPA を提供します（デフォルト `true`）。`false`（CLI の `--no-web`）はデーモンを API のみにします。ビルドがシェルアセットを省略する場合は効果はありません。 |
-| `enableSessionShell`          | セッションシェル実行を有効にします。ベアラートークンとセッションにバインドされたクライアントIDは引き続き必要です。 |
+| `enableSessionShell`          | セッションシェル実行を有効にします。ベアラ認証または trusted-loopback authority、およびセッションにバインドされたクライアントIDが引き続き必要です。 |
 | `promptDeadlineMs`            | プロンプトの実時間制限。                                                                       |
 | `writerIdleTimeoutMs`         | SSEライターアイドルタイムアウト。                                                                      |
 | `channelIdleTimeoutMs`        | ランタイムの作業が drain された後の ACP 子プロセスの自動 reap 遅延。Plain preheat は初回使用のために保持されます。アクティブな keepalive ウィンドウが遅延を延長する場合があります。                                  |

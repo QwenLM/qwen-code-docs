@@ -36,7 +36,7 @@ Esses comandos ajudam você a salvar, restaurar e resumir o progresso do trabalh
 
 > [!note]
 >
-> Abrir uma exportação HTML carrega o renderizador daquela versão exata do Qwen Code a partir de `unpkg.com`. Se a versão não tiver sido publicada ou o renderizador não puder ser alcançado, o arquivo exibirá um erro de carregamento. As exportações em Markdown, JSON e JSONL permanecem autocontidas.
+> Abrir uma exportação HTML carrega o renderizador e a folha de estilos daquela versão exata do Qwen Code a partir de `unpkg.com`. Se a versão não tiver sido publicada ou qualquer um dos recursos não puder ser alcançado, o arquivo exibirá um erro de carregamento. As exportações em Markdown, JSON e JSONL permanecem autocontidas.
 
 > [!note]
 >
@@ -46,7 +46,7 @@ Esses comandos ajudam você a salvar, restaurar e resumir o progresso do trabalh
 >
 > `/summary` aceita um argumento opcional `[path]` para salvar o resumo em um local personalizado dentro da raiz do projeto. Sem argumento, ele salva em `.qwen/PROJECT_SUMMARY.md`. Resumos com caminho personalizado não são detectados pelo fluxo de boas-vindas (`ui.enableWelcomeBack`), que lê apenas o local padrão `.qwen/PROJECT_SUMMARY.md`.
 
-### 1.2 Controle de Interface e Espaço de Trabalho
+### 1.2 Controle de Interface e Workspace
 
 Comandos para ajustar a aparência da interface e o ambiente de trabalho.
 
@@ -61,7 +61,7 @@ Comandos para ajustar a aparência da interface e o ambiente de trabalho.
 | `/theme`             | Alterar o tema visual do Qwen Code                                                                                                                                                     | `/theme`                                                                          |
 | `/vim`               | Ativar/desativar o modo de edição Vim na área de entrada                                                                                                                                           | `/vim`                                                                            |
 | `/voice`             | Alternar entrada por ditado de voz                                                                                                                                                      | `/voice`, `/voice hold`, `/voice tap`, `/voice off`, `/voice status`              |
-| `/directory`         | Gerenciar espaço de trabalho com suporte a múltiplos diretórios                                                                                                                                          | `/dir add ./src,./tests`, `/dir show`                                             |
+| `/directory`         | Gerenciar workspace com suporte a múltiplos diretórios                                                                                                                                          | `/dir add ./src,./tests`, `/dir show`                                             |
 | `/cd`                | Mover esta sessão para um novo diretório de trabalho                                                                                                                                      | `/cd ../other-project`                                                            |
 | `/editor`            | Abrir diálogo para selecionar o editor suportado                                                                                                                                            | `/editor`                                                                         |
 | `/statusline`        | Abrir diálogo interativo de predefinição da [linha de status](./status-line.md)                                                                                                                    | `/statusline`                                                                     |
@@ -134,7 +134,7 @@ Comandos para gerenciar ferramentas e modelos de IA.
 
 > [!warning]
 >
-> Os modos de aprovação `auto-edit`, `auto` e `yolo` ignoram os prompts de aprovação para execuções de ferramentas. No modo `yolo`, todas as ações — incluindo comandos de shell, escrita de arquivos e requisições de rede — são executadas sem confirmação. Use esses modos apenas em ambientes confiáveis, isolados (sandboxed) ou descartáveis.
+> Os modos de aprovação `auto-edit`, `auto` e `yolo` ignoram os prompts de aprovação para execuções de ferramentas. No modo `yolo`, todas as ações — incluindo comandos de shell, escrita de arquivos e requisições de rede — são executadas sem confirmação. Use esses modos apenas em ambientes confiáveis, em sandbox ou descartáveis.
 
 > [!note]
 >
@@ -313,9 +313,9 @@ Se o terminal ficar desfocado por **5+ minutos** e for focado novamente, um resu
 ```
 > /recap
 
-❯ Refatorando loopDetectionService.ts para resolver o OOM de sessão longa causado por
-  streamContentHistory e contentStats ilimitados. O próximo passo é
-  implementar a opção B (janela deslizante LRU com FNV-1a) pendente de confirmação.
+❯ Refactoring loopDetectionService.ts to address long-session OOM caused by
+  unbounded streamContentHistory and contentStats. The next step is to
+  implement option B (LRU sliding window with FNV-1a) pending confirmation.
 ```
 
 > [!tip]
@@ -354,16 +354,16 @@ Diffs por turno requerem que o file checkpointing esteja habilitado (ativado por
 **Exemplo:**
 
 ```
-┌ /diff · Turno 3 "refactor the auth middleware" ──── 3 arquivos +45 -12 ┐
-│                                                                        │
-│ ◀ Current · T3 · T2 · T1 ▶                                             │
-│                                                                        │
-│ › src/utils/parser.ts                                  +30 -8          │
-│   src/utils/parser.test.ts                             +12 -2          │
-│   README.md                                            +3 -2           │
-│                                                                        │
-│ ←/→ origem · ↑/↓ arquivo · Enter ver · Esc fechar                      │
-└────────────────────────────────────────────────────────────────────────┘
+┌ /diff · Turn 3 "refactor the auth middleware" ──── 3 files +45 -12 ┐
+│                                                                     │
+│ ◀ Current · T3 · T2 · T1 ▶                                         │
+│                                                                     │
+│ › src/utils/parser.ts                              +30 -8           │
+│   src/utils/parser.test.ts                         +12 -2           │
+│   README.md                                        +3 -2            │
+│                                                                     │
+│ ←/→ source · ↑/↓ file · Enter view · Esc close                     │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 **Modo não interativo:**
@@ -884,3 +884,5 @@ Uma sessão se registra apenas enquanto suas próprias configurações tiverem `
 Tudo acima funciona entre sessões, mas nada disso é específico a uma. Um programa que escreve um registro no registro para si mesmo e vincula uma caixa de entrada da mesma forma é listado pelo `qwen sessions ps` e pelo `list_agents`, pode ser endereçado por nome a partir do `send_message` e recebe recibos de entrega para o que envia — um front-end de voz, um relay, um observador de build. Ele deve registrar `kind: "external"` para que uma listagem possa dizer o que ele é.
 
 O [Cross-Session Protocol](./cross-session-protocol.md) é o contrato para escrever um: o schema do registro e como a atividade é julgada, os caminhos de socket e enquadramento, a linha de autenticação, cada campo de frame, os estados de recibo e suas transições, e o que um receptor faz com uma mensagem antes que seu modelo a veja.
+
+Um programa Node não precisa escrever nada disso à mão: `@qwen-code/sdk/peer` implementa o contrato. `PeerEndpoint.start({ name })` publica o registro e vincula a caixa de entrada, `list()` e `send()` endereçam sessões por nome, e `onMessage` recebe o que elas enviam.

@@ -30,13 +30,13 @@ Diese Befehle helfen dir, den Arbeitsfortschritt zu speichern, wiederherzustelle
 | `/delete` | Eine vorherige Sitzung löschen | `/delete` |
 | `/branch` | Die aktuelle Konversation in eine neue Sitzung abspalten | `/branch` |
 | `/fork` | Einen Hintergrund-Agenten erzeugen, der die gesamte Konversation erbt | `/fork <directive>` |
-| `/rewind` | Konversation auf einen vorherigen Schritt zurückspulen | `/rewind` oder `/rollback` |
+| `/rewind` | Konversation auf einen vorherigen Turn zurückspulen | `/rewind` oder `/rollback` |
 | `/export` | Sitzungsverlauf in eine Datei exportieren | `/export html`, `/export md`, `/export json`, `/export jsonl` |
 | `/rename` | Die aktuelle Sitzung umbenennen oder taggen | `/rename My Feature` oder `/tag` |
 
 > [!note]
 >
-> Das Öffnen eines HTML-Exports lädt den Renderer für genau diese Qwen Code-Version von `unpkg.com`. Wenn die Version nicht veröffentlicht wurde oder der Renderer nicht erreichbar ist, zeigt die Datei einen Ladefehler an. Markdown-, JSON- und JSONL-Exporte bleiben eigenständig.
+> Das Öffnen eines HTML-Exports lädt den Renderer und das Stylesheet für genau diese Qwen Code-Version von `unpkg.com`. Wenn die Version nicht veröffentlicht wurde oder eines der beiden Assets nicht erreichbar ist, zeigt die Datei einen Ladefehler an. Markdown-, JSON- und JSONL-Exporte bleiben eigenständig.
 
 > [!note]
 >
@@ -56,7 +56,7 @@ Befehle zum Anpassen der Benutzeroberfläche und der Arbeitsumgebung.
 | `/context` | Aufschlüsselung der Kontextfenster-Nutzung anzeigen | `/context` |
 | → `detail` | Aufschlüsselung der Kontextnutzung pro Element anzeigen | `/context detail` |
 | `/history` | Einstellungen für die Verlaufsanzeige und Sichtbarkeit steuern | `/history collapse-on-resume`, `/history expand-on-resume`, `/history expand-now` |
-| `/diff` | Öffnet einen interaktiven Diff-Viewer, der uncommitted Änderungen und Diffs pro Schritt anzeigt. Verwende ←/→, um zwischen dem aktuellen Git-Diff und einzelnen Konversationsschritten zu wechseln, ↑/↓, um Dateien zu durchsuchen | `/diff` |
+| `/diff` | Öffnet einen interaktiven Diff-Viewer, der uncommitted Änderungen und Diffs pro Turn anzeigt. Verwende ←/→, um zwischen dem aktuellen Git-Diff und einzelnen Konversations-Turns zu wechseln, ↑/↓, um Dateien zu durchsuchen | `/diff` |
 | `/log` | Öffnet einen Commit-Verlauf-Viewer für den Workspace (nur Web Shell) | `/log` |
 | `/theme` | Visuelles Theme von Qwen Code ändern | `/theme` |
 | `/vim` | Vim-Bearbeitungsmodus im Eingabebereich ein-/ausschalten | `/vim` |
@@ -238,7 +238,7 @@ Der Befehl `/advisor` führt eine unabhängige, schreibgeschützte Überprüfung
 - Das Reviewer-Modell **kann keine Tools ausführen** – Tools werden auf Request-Ebene entfernt (derselbe Mechanismus wie bei `/btw`), sodass die Überprüfung niemals Code schreibt oder Befehle ausführt; jeder Anspruch muss im sichtbaren Transkript begründet sein
 - Die Hauptkonversation wird **nicht** unterbrochen; die Überprüfung wird nur dir angezeigt
 - Die Überprüfung wird als gerahmter Markdown-Block mit vier festen Abschnitten dargestellt – **Verdict**, **Risks**, **Missing evidence** und **Recommendation** – unter einem `/advisor · <model>`-Header, der das aufgelöste Reviewer-Modell nennt
-- Im Gegensatz zu `/btw`, das Fire-and-Forget ist und die Sitzung benutzbar lässt, blockiert `/advisor` die Eingabe, bis die Überprüfung zurückkehrt; über ein volles Kontextfenster mit einem starken Reviewer kann dies zehn Sekunden dauern
+- Im Gegensatz zu `/btw`, das Fire-and-Forget ist und die Sitzung benutzbar lässt, blockiert `/advisor` die Eingabe, bis die Überprüfung zurückkehrt; über ein volles Kontextfenster mit einem starken Reviewer kann dies Dutzende von Sekunden dauern
 - Standardmäßig wird das Hauptmodell verwendet; setze [`advisorModel`](../configuration/settings.md#advisormodel), um die Überprüfung an ein anderes (typischerweise stärkeres) Modell weiterzuleiten – das aktuelle Transkript wird an dieses Modell gesendet, auch wenn es einen anderen Provider verwendet
 
 **Beispiel:**
@@ -522,7 +522,7 @@ Speichere häufig verwendete Prompts als Shortcut-Befehle, um die Arbeitseffizie
 | ---------------- | ------------------------------------------ | -------------------------------------- | -------- | ---------------------------------------------------- |
 | Namespace        | Unterverzeichnis erstellt doppelpunkt-benannte Befehle  | Bessere Befehlsorganisation            |          |                                                      |
 | Globale Befehle  | `~/.qwen/commands/`                        | In allen Projekten verfügbar              | Niedrig      | Persönlich häufig verwendete Befehle, projektübergreifende Nutzung |
-| Projekt-Befehle | `<project root directory>/.qwen/commands/` | Projektspezifisch, versionierbar | Hoch     | Team-Sharing, projektspezifische Befehhe              |
+| Projekt-Befehle | `<project root directory>/.qwen/commands/` | Projektspezifisch, versionierbar | Hoch     | Team-Sharing, projektspezifische Befehle              |
 
 Prioritätsregeln: Projekt-Befehle > Benutzer-Befehle (Projekt-Befehl wird verwendet, wenn die Namen identisch sind)
 
@@ -1073,3 +1073,8 @@ um eines zu schreiben: das Record-Schema und wie Liveness beurteilt
 wird, die Socket-Pfade und das Framing, die Auth-Zeile, jedes
 Frame-Feld, die Quittungs-Zustände und ihre Übergänge, und was ein
 Empfänger mit einer Nachricht tut, bevor sein Modell sie sieht.
+
+Ein Node-Programm muss nichts davon von Hand schreiben:
+` @qwen-code/sdk/peer` implementiert den Vertrag. `PeerEndpoint.start({ name })`
+publiziert den Record und bindet den Posteingang, `list()` und `send()` adressieren
+Sessions nach Name, und `onMessage` empfängt, was sie senden.

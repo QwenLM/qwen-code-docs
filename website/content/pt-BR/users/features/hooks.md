@@ -17,7 +17,7 @@ Os hooks são habilitados por padrão. Você pode desabilitar temporariamente to
 
 Isso desabilita todos os hooks sem excluir suas configurações.
 
-## What are Hooks?
+## O que são Hooks?
 
 Hooks são scripts ou programas definidos pelo usuário que são executados automaticamente pelo Qwen Code em pontos predefinidos do fluxo do aplicativo. Eles permitem que os usuários:
 
@@ -32,7 +32,7 @@ Hooks são scripts ou programas definidos pelo usuário que são executados auto
 
 O Qwen Code suporta quatro tipos de executores de hook:
 
-| Type       | Description                                                                                    |
+| Tipo       | Descrição                                                                                      |
 | :--------- | :--------------------------------------------------------------------------------------------- |
 | `command`  | Executa um comando de shell. Recebe JSON via `stdin` e retorna os resultados via `stdout`.     |
 | `http`     | Envia JSON como corpo de uma requisição `POST` para uma URL especificada. Retorna os resultados via corpo da resposta HTTP. |
@@ -43,21 +43,21 @@ O Qwen Code suporta quatro tipos de executores de hook:
 
 Os hooks de comando executam comandos via processos filhos. O JSON de entrada é passado via stdin, e a saída é retornada via stdout.
 
-**Configuration:**
+**Configuração:**
 
-| Field           | Type                     | Required | Description                                 |
-| :-------------- | :----------------------- | :------- | :------------------------------------------ |
-| `type`          | `"command"`              | Yes      | Tipo do hook                                |
-| `command`       | `string`                 | Yes      | Comando a ser executado                     |
-| `name`          | `string`                 | No       | Nome do hook (para logs)                    |
-| `description`   | `string`                 | No       | Descrição do hook                           |
-| `timeout`       | `number`                 | No       | Timeout em milissegundos, padrão 60000      |
-| `async`         | `boolean`                | No       | Se deve ser executado de forma assíncrona em segundo plano |
-| `env`           | `Record<string, string>` | No       | Variáveis de ambiente                       |
-| `shell`         | `"bash" \| "powershell"` | No       | Shell a ser usado                           |
-| `statusMessage` | `string`                 | No       | Mensagem de status exibida durante a execução |
+| Campo           | Tipo                     | Obrigatório | Descrição                                 |
+| :-------------- | :----------------------- | :---------- | :------------------------------------------ |
+| `type`          | `"command"`              | Sim         | Tipo do hook                                |
+| `command`       | `string`                 | Sim         | Comando a ser executado                     |
+| `name`          | `string`                 | Não         | Nome do hook (para logs)                    |
+| `description`   | `string`                 | Não         | Descrição do hook                           |
+| `timeout`       | `number`                 | Não         | Timeout em milissegundos, padrão 60000      |
+| `async`         | `boolean`                | Não         | Se deve ser executado de forma assíncrona em segundo plano |
+| `env`           | `Record<string, string>` | Não         | Variáveis de ambiente                       |
+| `shell`         | `"bash" \| "powershell"` | Não         | Shell a ser usado                           |
+| `statusMessage` | `string`                 | Não         | Mensagem de status exibida durante a execução |
 
-**Example:**
+**Exemplo:**
 
 ```json
 {
@@ -83,20 +83,20 @@ Os hooks de comando executam comandos via processos filhos. O JSON de entrada é
 
 Os hooks HTTP enviam a entrada do hook como requisições POST para URLs especificadas. Eles suportam listas de permissão de URL, proteção contra SSRF no nível de DNS, interpolação de variáveis de ambiente e outros recursos de segurança.
 
-**Configuration:**
+**Configuração:**
 
-| Field            | Type                     | Required | Description                                               |
-| :--------------- | :----------------------- | :------- | :-------------------------------------------------------- |
-| `type`           | `"http"`                 | Yes      | Tipo do hook                                              |
-| `url`            | `string`                 | Yes      | URL de destino                                            |
-| `headers`        | `Record<string, string>` | No       | Cabeçalhos da requisição (suporta interpolação de variáveis de ambiente) |
-| `allowedEnvVars` | `string[]`               | No       | Lista de permissão de variáveis de ambiente permitidas na URL/cabeçalhos |
-| `timeout`        | `number`                 | No       | Timeout em segundos, padrão 600                           |
-| `name`           | `string`                 | No       | Nome do hook (para logs)                                  |
-| `statusMessage`  | `string`                 | No       | Mensagem de status exibida durante a execução             |
-| `once`           | `boolean`                | No       | Executar apenas uma vez por evento por sessão (apenas hooks HTTP) |
+| Campo            | Tipo                     | Obrigatório | Descrição                                               |
+| :--------------- | :----------------------- | :---------- | :-------------------------------------------------------- |
+| `type`           | `"http"`                 | Sim         | Tipo do hook                                              |
+| `url`            | `string`                 | Sim         | URL de destino                                            |
+| `headers`        | `Record<string, string>` | Não         | Cabeçalhos da requisição (suporta interpolação de variáveis de ambiente) |
+| `allowedEnvVars` | `string[]`               | Não         | Lista de permissão de variáveis de ambiente permitidas na URL/cabeçalhos |
+| `timeout`        | `number`                 | Não         | Timeout em segundos, padrão 600                           |
+| `name`           | `string`                 | Não         | Nome do hook (para logs)                                  |
+| `statusMessage`  | `string`                 | Não         | Mensagem de status exibida durante a execução             |
+| `once`           | `boolean`                | Não         | Executar apenas uma vez por evento por sessão (apenas hooks HTTP) |
 
-**Security Features:**
+**Recursos de Segurança:**
 
 - **Lista de permissão de URL**: Configure os padrões de URL permitidos via `allowedUrls`
 - **Proteção contra SSRF**: Bloqueia IPs privados (10.x.x.x, 172.16-31.x.x, 192.168.x.x, etc.), mas permite endereços de loopback (127.0.0.1, ::1)
@@ -105,7 +105,7 @@ Os hooks HTTP enviam a entrada do hook como requisições POST para URLs especif
 
 #### Allowing private-network hooks (managed environments only)
 
-Por padrão, hooks HTTP não podem targetear faixas de IP privadas ou link-local. Em ambientes gerenciados por plataformas onde o receptor do hook é um endpoint interno de primeira parte na VPC (por exemplo, um gateway de API interno resolvendo para `172.16.0.0/12`), você pode relaxar as verificações de faixa de IP com:
+Por padrão, hooks HTTP não podem ter como alvo faixas de IP privadas ou link-local. Em ambientes gerenciados por plataformas onde o receptor do hook é um endpoint interno de primeira parte na VPC (por exemplo, um gateway de API interno resolvendo para `172.16.0.0/12`), você pode relaxar as verificações de faixa de IP com:
 
 ```json
 {
@@ -115,14 +115,14 @@ Por padrão, hooks HTTP não podem targetear faixas de IP privadas ou link-local
 }
 ```
 
-- Esta configuração é **honrada apenas nos escopos de configurações User, System e SystemDefaults**. Um valor definido nas configurações de Workspace (projeto) é ignorado e registrado como aviso, então um repositório clonado nunca pode conceder essa bypass por conta própria.
+- Esta configuração é **honrada apenas nos escopos de configurações User, System e SystemDefaults**. Um valor definido nas configurações de Workspace (projeto) é ignorado e registrado como aviso, então um repositório clonado nunca pode conceder esse bypass por conta própria.
 - O flag relaxa apenas as verificações de **faixa** privadas/CGNAT/link-local gerais. Endpoints de metadados de nuvem permanecem bloqueados em todas as configurações: a lista `BLOCKED_HOSTS` é correspondida literalmente (`metadata.google.internal`, `metadata.azure.internal`, ...), e os IPs de metadados `169.254.169.254` e `100.100.100.200` são bloqueados em todas as formas serializadas (incluindo IPv4-mapped IPv6 como `::ffff:a9fe:a9fe`) e após resolução DNS.
 - A lista de permissão `security.allowedHttpHookUrls` ainda se aplica independentemente. Em ambientes gerenciados, combine este flag com uma lista de permissão para que apenas os endpoints internos desejados sejam acessíveis. Uma lista de permissão nas configurações de Workspace (projeto) é honrada apenas quando nenhum escopo User, System ou SystemDefaults define uma; caso contrário, é ignorada e registrada como aviso, então um repositório pode restringir para onde seus hooks enviam dados, mas nunca substituir uma lista de permissão que você configurou (uma lista de permissão vazia significa "permitir tudo").
 - Hooks HTTP nunca seguem redirecionamentos. Uma resposta 3xx é tratada como qualquer outro status não 2xx: uma falha não bloqueante de hook, e o alvo do redirecionamento nunca é contatado.
 
-> **Warning:** Habilitar este flag permite que hooks acessem infraestrutura interna na sua rede. Habilite-o apenas em configurações gerenciadas e confiáveis — nunca em um repositório que você não controla.
+> **Aviso:** Habilitar este flag permite que hooks acessem infraestrutura interna na sua rede. Habilite-o apenas em configurações gerenciadas e confiáveis — nunca em um repositório que você não controla.
 
-**Example:**
+**Exemplo:**
 
 ```json
 {
@@ -148,7 +148,7 @@ Por padrão, hooks HTTP não podem targetear faixas de IP privadas ou link-local
 }
 ```
 
-**Example: External Judgment Service Adapter**
+**Exemplo: Adaptador de Serviço de Julgamento Externo**
 
 A configuração `remote-security-check` acima espera que `http://127.0.0.1:8080/hooks/pre-tool-use` já esteja executando um serviço que fala este contrato (POST `{tool_name, tool_input, ...}` entrada, `hookSpecificOutput.permissionDecision` saída). Aqui está um adaptador mínimo, apenas com stdlib, que preenche essa parte faltante, conectado a um backend de julgamento concreto para que tudo seja executável e testável de ponta a ponta, em vez de um stub. Apenas a função `review()` é específica do backend — troque seu corpo e formato de request/response por qualquer que seja o serviço que você usar; todo o resto (o servidor, o tratamento fail-open, o formato de resposta do hook) permanece o mesmo independente do backend.
 
@@ -216,34 +216,34 @@ Testado de ponta a ponta contra a API real de produção acima: uma entrada genu
 
 Os hooks de função chamam diretamente funções JavaScript/TypeScript registradas. Eles são usados internamente pelo sistema de Skills e atualmente não são expostos como uma API pública para usuários finais.
 
-**Note**: Para a maioria dos casos de uso, use **hooks de comando** ou **hooks HTTP** em vez disso, que podem ser configurados em arquivos de configurações.
+**Nota**: Para a maioria dos casos de uso, use **hooks de comando** ou **hooks HTTP** em vez disso, que podem ser configurados em arquivos de configurações.
 
 ### Prompt Hooks
 
 Os hooks de prompt usam um LLM para avaliar a entrada do hook e retornar uma decisão. Isso é útil para tomar decisões inteligentes com base no contexto, como determinar se uma operação deve ser permitida ou bloqueada.
 
-> **Data handling:** Um hook de prompt envia sua entrada de evento para o provedor de modelo configurado. Quando o logging de debug baseado em arquivos está habilitado, a requisição do hook de prompt totalmente expandida também é escrita no log de debug da sessão. Trate a entrada do hook e os logs de debug como potencialmente sensíveis.
+> **Tratamento de dados:** Um hook de prompt envia sua entrada de evento para o provedor de modelo configurado. Quando o logging de debug baseado em arquivos está habilitado, a requisição do hook de prompt totalmente expandida também é escrita no log de debug da sessão. Trate a entrada do hook e os logs de debug como potencialmente sensíveis.
 
-**How it works:**
+**Como funciona:**
 
 1. O JSON de entrada do hook é injetado no seu prompt usando o placeholder `$ARGUMENTS`
 2. O prompt é enviado para um LLM (padrão: seu modelo atual)
 3. O LLM retorna uma resposta JSON com a decisão
 4. O Qwen Code processa a decisão e continua ou bloqueia a execução de acordo
 
-**Configuration:**
+**Configuração:**
 
-| Field           | Type       | Required | Description                                         |
-| :-------------- | :--------- | :------- | :-------------------------------------------------- |
-| `type`          | `"prompt"` | Yes      | Tipo do hook                                        |
-| `prompt`        | `string`   | Yes      | Prompt enviado para o LLM. Use `$ARGUMENTS` para a entrada do hook |
-| `model`         | `string`   | No       | Modelo a ser usado (padrão: seu modelo atual)       |
-| `timeout`       | `number`   | No       | Timeout em segundos, padrão 30                      |
-| `name`          | `string`   | No       | Nome do hook (para logs)                            |
-| `description`   | `string`   | No       | Descrição do hook                                   |
-| `statusMessage` | `string`   | No       | Mensagem de status exibida durante a execução       |
+| Campo           | Tipo       | Obrigatório | Descrição                                         |
+| :-------------- | :--------- | :---------- | :-------------------------------------------------- |
+| `type`          | `"prompt"` | Sim         | Tipo do hook                                        |
+| `prompt`        | `string`   | Sim         | Prompt enviado para o LLM. Use `$ARGUMENTS` para a entrada do hook |
+| `model`         | `string`   | Não         | Modelo a ser usado (padrão: seu modelo atual)       |
+| `timeout`       | `number`   | Não         | Timeout em segundos, padrão 30                      |
+| `name`          | `string`   | Não         | Nome do hook (para logs)                            |
+| `description`   | `string`   | Não         | Descrição do hook                                   |
+| `statusMessage` | `string`   | Não         | Mensagem de status exibida durante a execução       |
 
-**Response Format:**
+**Formato de Resposta:**
 
 O LLM deve retornar um JSON com a seguinte estrutura:
 
@@ -255,13 +255,13 @@ O LLM deve retornar um JSON com a seguinte estrutura:
 }
 ```
 
-| Field               | Description                                                                |
+| Campo               | Descrição                                                                  |
 | :------------------ | :------------------------------------------------------------------------- |
 | `ok`                | `true` para permitir/continuar, `false` para bloquear/parar                |
 | `reason`            | Obrigatório quando `ok` é `false`. Mostrado ao modelo para explicar o bloqueio |
 | `additionalContext` | Opcional. Contexto adicional para injetar na conversa ao permitir          |
 
-**Supported Events:**
+**Eventos Suportados:**
 
 Os hooks de prompt podem ser usados com a maioria dos eventos de hook, incluindo:
 
@@ -271,7 +271,7 @@ Os hooks de prompt podem ser usados com a maioria dos eventos de hook, incluindo
 - `SubagentStop` - Avalia os resultados do subagente
 - `UserPromptSubmit` - Avalia ou enriquece os prompts elegíveis vinculados ao modelo
 
-**Example: Stop Hook**
+**Exemplo: Hook de Stop**
 
 ```json
 {
@@ -293,7 +293,7 @@ Os hooks de prompt podem ser usados com a maioria dos eventos de hook, incluindo
 
 Quando `ok` é `false`, o Qwen Code continuará trabalhando e usará o `reason` como contexto para a próxima resposta.
 
-**Example: PreToolUse Hook**
+**Exemplo: Hook de PreToolUse**
 
 ```json
 {
@@ -320,7 +320,7 @@ Quando `ok` é `false`, o Qwen Code continuará trabalhando e usará o `reason` 
 
 Os hooks são disparados em pontos específicos durante uma sessão do Qwen Code. Diferentes eventos suportam diferentes matchers para filtrar as condições de disparo.
 
-| Event                | Triggered When                                  | Matcher Target                                                 |
+| Evento               | Disparado Quando                                | Alvo do Matcher                                                |
 | :------------------- | :---------------------------------------------- | :------------------------------------------------------------- |
 | `PreToolUse`         | Antes da execução da ferramenta                 | Tool id (`write_file`, `read_file`, `run_shell_command`, etc.) |
 | `PostToolUse`        | Após a execução bem-sucedida da ferramenta      | Tool id                                                        |
@@ -336,7 +336,7 @@ Os hooks são disparados em pontos específicos durante uma sessão do Qwen Code
 | `PreCompact`         | Antes da compactação da conversa                | Gatilho (`manual`, `auto`)                                     |
 | `Notification`       | Quando as notificações são enviadas             | Tipo (`permission_prompt`, `idle_prompt`, `auth_success`)      |
 | `PermissionRequest`  | Quando o diálogo de permissão é exibido         | Tool id                                                        |
-| `PermissionDenied`   | Quando a permissão da ferramenta é negada       | Tool id                                                        |
+| `PermissionDenied`   | Quando a classificação no modo AUTO nega uma chamada de ferramenta | Tool id                                                        |
 | `TodoCreated`        | Quando um novo item de todo é criado            | Nenhum (sempre dispara)                                        |
 | `TodoCompleted`      | Quando um item de todo é marcado como concluído | Nenhum (sempre dispara)                                        |
 ### Padrões de Matcher
@@ -355,12 +355,13 @@ Os hooks são disparados em pontos específicos durante uma sessão do Qwen Code
 | Eventos de Todo         | `TodoCreated`, `TodoCompleted`                                                             | ❌ Não           | N/A                                                            |
 | Eventos de Prompt       | `UserPromptSubmit`                                                                         | ❌ Não           | N/A                                                            |
 | Eventos de Stop         | `Stop`                                                                                     | ❌ Não           | N/A                                                            |
-| Message Display     | `MessageDisplay`                                                                           | ❌ Não           | N/A                                                            |
+| Exibição de Mensagem | `MessageDisplay`                                                                           | ❌ Não           | N/A                                                            |
 
 **Sintaxe do Matcher:**
 
 - String vazia `""` ou `"*"` corresponde a todos os eventos desse tipo
-- Sintaxe padrão de regex suportada (por exemplo, `^run_shell_command$`, `read_.*`, `(write_file|edit)`)
+- Sintaxe padrão de regex suportada (por exemplo, `^run_shell_command$`, `^read_.*$`, `(write_file|edit)`)
+- Hooks de ferramenta recebem o tool id de runtime em `tool_name` (por exemplo, `write_file`). Nomes de exibição built-in como `WriteFile` e `ReadFile` também são aceitos como aliases de matcher para compatibilidade, mas novas configurações devem preferir os tool ids de runtime.
 - Hooks de ferramenta recebem o tool id de runtime em `tool_name` (por exemplo, `write_file`). Nomes de exibição built-in como `WriteFile` e `ReadFile` também são aceitos como aliases de matcher para compatibilidade, mas novas configurações devem preferir os tool ids de runtime.
 
 **Exemplos:**
@@ -434,11 +435,14 @@ O Qwen não controla se um processo de hook, endpoint, callback ou provedor de m
   "transcript_path": "string",
   "cwd": "string",
   "hook_event_name": "string",
-  "timestamp": "string"
+  "timestamp": "string",
+  "permission_mode": "default | plan | auto_edit | auto | yolo",
+  "agent_id": "string (only when the event fires inside a subagent)",
+  "prompt_id": "string (when the event belongs to a model turn)"
 }
 ```
 
-Campos específicos do evento são adicionados com base no tipo de hook. Ao executar em um subagente, `agent_id` e `agent_type` são incluídos adicionalmente.
+Campos específicos do evento são adicionados com base no tipo de hook. `permission_mode` é o modo de aprovação da sessão, a menos que o evento reporte o modo que se aplicou a ele, como os eventos de ferramenta e subagente fazem. `agent_id` está presente apenas quando o evento dispara dentro de um subagente; `agent_type` é reportado em `SessionStart`, `SubagentStart` e `SubagentStop`.
 
 A entrada do hook é um contrato JSON extensível para frente: novos campos opcionais podem ser adicionados a eventos existentes. Consumidores devem ignorar campos desconhecidos. Um decodificador estrito que rejeita propriedades desconhecidas deve ser atualizado para permitir explicitamente cada novo campo opcional antes de atualizar o Qwen Code. Para hooks sensíveis à segurança, uma falha do decodificador pode alterar o comportamento fail-open ou fail-closed, então administradores devem validar o payload atualizado contra o hook implantado antes do rollout.
 
@@ -448,11 +452,11 @@ A saída do hook é retornada via `stdout` (command) ou corpo da resposta HTTP (
 
 **Comportamento do Código de Saída (Hooks de Comando):**
 
-| Código de Saída | Comportamento                                                                              |
-| :-------- | :------------------------------------------------------------------------------------ |
-| `0`       | Sucesso. Analisa o JSON no `stdout` para controlar o comportamento.                                  |
-| `2`       | **Erro de bloqueio**. Ignora o `stdout`, passa o `stderr` como feedback de erro para o modelo. |
-| Other     | Erro não bloqueante. O `stderr` é exibido apenas no modo de depuração, a execução continua.           |
+| Código de Saída | Comportamento                                                                                                                                                                                                                                                                                                                                                                        |
+| :-------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `0`       | Sucesso. Um objeto JSON no `stdout` controla o comportamento. Qualquer outro `stdout`, incluindo valores JSON simples como `42`, é texto puro: é adicionado ao contexto do modelo em `SessionStart`, `UserPromptSubmit` e `UserPromptExpansion`, e mantido como mensagem de sistema em outros eventos. Saída que parece um objeto JSON mas não faz parse nunca é adicionada ao contexto do modelo. |
+| `2`       | **Erro de bloqueio**. Ignora `stdout`, passa `stderr` como feedback de erro para o modelo.                                                                                                                                                                                                                                                                                          |
+| Other     | Erro não bloqueante. `stderr` exibido apenas no modo de depuração, a execução continua.                                                                                                                                                                                                                                                                                                    |
 
 **Estrutura de Saída:**
 
@@ -1451,11 +1455,11 @@ Um hook HTTP PostToolUse que envia todos os registros de execução de ferrament
 }
 ```
 
-### Exemplo 3: Hook de Validação de Prompt Submetido pela TUI Interativa
+### Exemplo 3: Hook de Validação de Prompt Submetido
 
-Para inspecionar o conteúdo vinculado ao modelo atual, leia `prompt`. Esse campo pode incluir conteúdo gerado ou expandido, não é a entrada original do usuário e não implica que `UserPromptSubmit` cubra todo envio do modelo. Não faça fallback silencioso de `submitted_prompt` para `prompt` quando a proveniência da fonte for necessária.
+No caminho core/headless, `prompt` pode incluir conteúdo gerado ou expandido em vez da entrada original do usuário. No ACP, ele começa com o texto da requisição pré-expansão, então lê-lo não inspeciona corpos de anexos ou a entrada completa do modelo. `UserPromptSubmit` não cobre todo envio do modelo. Não faça fallback silencioso de `submitted_prompt` para `prompt` quando a proveniência da fonte for necessária.
 
-Um hook UserPromptSubmit que valida submissões interativas suportadas pela TUI em busca de informações sensíveis e fornece contexto para prompts longos. Ele ignora invocações onde a proveniência da fonte não está disponível. A verificação de palavras-chave é ilustrativa e não é uma política DLP completa:
+Um hook UserPromptSubmit que valida texto submetido suportado e fornece contexto para prompts longos. Ele também é executado em submissões headless e submissões ACP/daemon declaradas explicitamente; não é exclusivo da TUI. Ele ignora invocações onde a proveniência da fonte não está disponível. Um resultado de bloqueio para a invocação afetada, incluindo nesses caminhos não-TUI. A verificação de palavras-chave é ilustrativa e não é uma política DLP completa:
 
 **prompt_validator.py**
 
