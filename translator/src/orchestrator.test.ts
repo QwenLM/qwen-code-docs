@@ -101,16 +101,16 @@ test("self-heals closed target-only frontmatter without refreshing a stale file"
   }
 });
 
-test("quarantine keeps a sound replacement over corrupt HEAD", () => {
+test("quarantine separates unwritten files from rejected translations", () => {
   const root = fs.realpathSync(
-    fs.mkdtempSync(path.join(os.tmpdir(), "qwen-quarantine-test-"))
+    fs.mkdtempSync(path.join(os.tmpdir(), "qwen-quarantine-test-")),
   );
   const contentDir = path.join(root, "website", "content");
   const copiedOrchestrator = path.join(
     root,
     "translator",
     "orchestrator",
-    "orchestrator.mjs"
+    "orchestrator.mjs",
   );
 
   try {
@@ -118,10 +118,25 @@ test("quarantine keeps a sound replacement over corrupt HEAD", () => {
     fs.mkdirSync(path.join(contentDir, "en"), { recursive: true });
     fs.mkdirSync(path.join(contentDir, "zh"), { recursive: true });
     fs.copyFileSync(orchestrator, copiedOrchestrator);
-    fs.writeFileSync(path.join(contentDir, "en", "repaired.md"), "# Repaired\n");
-    fs.writeFileSync(path.join(contentDir, "zh", "repaired.md"), "---\n\n# 损坏\n");
-    fs.writeFileSync(path.join(contentDir, "en", "restored.md"), "# Restored\n");
+    fs.writeFileSync(
+      path.join(contentDir, "en", "repaired.md"),
+      "# Repaired\n",
+    );
+    fs.writeFileSync(
+      path.join(contentDir, "zh", "repaired.md"),
+      "---\n\n# 损坏\n",
+    );
+    fs.writeFileSync(
+      path.join(contentDir, "en", "restored.md"),
+      "# Restored\n",
+    );
     fs.writeFileSync(path.join(contentDir, "zh", "restored.md"), "# 原版本\n");
+    fs.writeFileSync(
+      path.join(contentDir, "en", "unwritten.md"),
+      "# Updated\n```sh\nqwen\n```\n",
+    );
+    const unwritten = path.join(contentDir, "zh", "unwritten.md");
+    fs.writeFileSync(unwritten, "# 旧译文\n");
 
     execFileSync("git", ["init", "-q"], { cwd: root });
     execFileSync("git", ["config", "user.email", "test@example.com"], {
@@ -131,11 +146,57 @@ test("quarantine keeps a sound replacement over corrupt HEAD", () => {
     execFileSync("git", ["add", "."], { cwd: root });
     execFileSync("git", ["commit", "-qm", "fixture"], { cwd: root });
 
+    const stale = new Date("2000-01-01T00:00:00Z");
+    fs.utimesSync(unwritten, stale, stale);
+    const manifest = path.join(
+      root,
+      "website",
+      "orchestrator-manifest-zh.json",
+    );
+    fs.writeFileSync(
+      manifest,
+      JSON.stringify({
+        createdAt: Date.now(),
+        files: ["docs/unwritten.md"],
+      }),
+    );
+    const verify = spawnSync(
+      process.execPath,
+      [
+        copiedOrchestrator,
+        "verify",
+        "--lang",
+        "zh",
+        "--content-dir",
+        contentDir,
+        "--manifest",
+        manifest,
+      ],
+      { encoding: "utf8" },
+    );
+    assert.equal(verify.status, 1, verify.stdout || verify.stderr);
+    assert.match(verify.stdout, /target not touched this session/);
+    assert.doesNotMatch(verify.stdout, /code fence mismatch/);
+    fs.writeFileSync(
+      path.join(root, "website", "orchestrator-manifest-zh.metrics.json"),
+      JSON.stringify({
+        failures: [
+          {
+            file: "unwritten.md",
+            problems: ["target not touched this session"],
+          },
+        ],
+      }),
+    );
+
     fs.writeFileSync(path.join(contentDir, "zh", "repaired.md"), "# 已修复\n");
-    fs.writeFileSync(path.join(contentDir, "zh", "restored.md"), "```\n# 损坏\n");
+    fs.writeFileSync(
+      path.join(contentDir, "zh", "restored.md"),
+      "```\n# 损坏\n",
+    );
     fs.writeFileSync(
       path.join(root, "website", "orchestrator-manifest-zh.failed.txt"),
-      "zh/repaired.md\nzh/restored.md\n"
+      "zh/repaired.md\nzh/restored.md\nzh/unwritten.md\n",
     );
 
     const result = spawnSync(
@@ -148,23 +209,30 @@ test("quarantine keeps a sound replacement over corrupt HEAD", () => {
         "--baseline",
         path.join(root, "website", "last-sync.json"),
       ],
-      { encoding: "utf8" }
+      { encoding: "utf8" },
     );
 
     assert.equal(result.status, 0, result.stdout || result.stderr);
     assert.ok(
       fs.existsSync(path.join(contentDir, "zh", "repaired.md")),
-      result.stdout || result.stderr
+      result.stdout || result.stderr,
     );
     assert.equal(
       fs.readFileSync(path.join(contentDir, "zh", "repaired.md"), "utf8"),
-      "# 已修复\n"
+      "# 已修复\n",
     );
     assert.equal(
       fs.readFileSync(path.join(contentDir, "zh", "restored.md"), "utf8"),
-      "# 原版本\n"
+      "# 原版本\n",
     );
-    assert.match(result.stdout, /1 restored from HEAD, 1 kept over a corrupt HEAD/);
+    assert.match(
+      result.stdout,
+      /1 restored from HEAD, 1 kept over a corrupt HEAD/,
+    );
+    assert.match(result.stdout, /0 unrepairable, 1 not written/);
+    assert.doesNotMatch(result.stdout, /unwritten\.md: HEAD.*corrupt/);
+    assert.equal(fs.readFileSync(unwritten, "utf8"), "# 旧译文\n");
+    assert.equal(fs.statSync(unwritten).mtimeMs, stale.getTime());
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
