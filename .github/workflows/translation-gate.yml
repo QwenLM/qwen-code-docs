@@ -43,7 +43,7 @@ jobs:
     # strictly closer to the EN source -- without that, a page already behind
     # the source can never advance. Re-checking that output here would report
     # the improvement as a failure and turn the nightly's own PR red.
-    if: ${{ !startsWith(github.head_ref, 'automation/daily-translation-') }}
+    if: ${{ github.event.pull_request.head.repo.full_name != github.repository || !startsWith(github.head_ref, 'automation/daily-translation-') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
