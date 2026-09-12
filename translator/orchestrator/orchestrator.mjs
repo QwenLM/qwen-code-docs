@@ -1858,6 +1858,11 @@ function cmdReportBatch() {
  * any non-2xx or network failure exits non-zero so the workflow step
  * fails fast.
  */
+const PREFLIGHT_ATTEMPTS = 5;
+// Overridable so the test for this does not have to sit through the real
+// backoff; nothing in CI or the workflow sets it.
+const PREFLIGHT_BACKOFF_MS = Number(process.env.PREFLIGHT_BACKOFF_MS) || 15_000;
+
 async function cmdPreflight() {
   const base = (
     process.env.OPENAI_BASE_URL || "https://coding.dashscope.aliyuncs.com/v1"
@@ -1868,7 +1873,16 @@ async function cmdPreflight() {
     process.exit(1);
   }
   const model = OPTS.model || process.env.QWEN_MODEL || "qwen3.7-plus";
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  // Five attempts over ~3.5 minutes, not three over three seconds.
+  //
+  // The old window was 1s + 2s, which only ever caught a single dropped
+  // packet. The endpoint this runs against blips for longer than that: the
+  // scheduled runs of 09-09 and 09-11 both died here inside a minute, and
+  // both succeeded on a rerun with nothing changed in between. A night of
+  // translation is worth several minutes of waiting, and when the endpoint
+  // really is down the job still fails -- just later, and having actually
+  // tried.
+  for (let attempt = 1; attempt <= PREFLIGHT_ATTEMPTS; attempt++) {
     try {
       const res = await fetch(`${base}/chat/completions`, {
         method: "POST",
@@ -1896,14 +1910,18 @@ async function cmdPreflight() {
       return;
     } catch (err) {
       const cause = err.cause?.code ? ` (${err.cause.code})` : "";
-      if (attempt === 3) {
+      if (attempt === PREFLIGHT_ATTEMPTS) {
         console.log(`::error::preflight: ${err.message}${cause}`);
         process.exit(1);
       }
-      console.log(
-        `::warning::preflight attempt ${attempt}/3 failed: ${err.message}${cause}; retrying...`
+      const wait = Math.min(
+        8 * PREFLIGHT_BACKOFF_MS,
+        PREFLIGHT_BACKOFF_MS * 2 ** (attempt - 1)
       );
-      await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+      console.log(
+        `::warning::preflight attempt ${attempt}/${PREFLIGHT_ATTEMPTS} failed: ${err.message}${cause}; retrying in ${wait / 1000}s...`
+      );
+      await new Promise((resolve) => setTimeout(resolve, wait));
     }
   }
 }
