@@ -204,8 +204,8 @@ jobs:
         run: node translator/orchestrator/orchestrator.mjs report-batch --log-dir /tmp
 
       # advance wrote per-language .failed.txt quarantine lists. Broken files
-      # are resolved against HEAD so the commit below stages only sound
-      # translations; they stay in the backlog for the next run. (The old
+      # are resolved against HEAD so the commit below does not stage a
+      # regression; they stay in the backlog for the next run. (The old
       # single-job layout quarantined "before build"; after the #184 split
       # there is no build in this job — the restore exists so broken output
       # never reaches main, which is what kept the build green before.)
@@ -215,6 +215,14 @@ jobs:
       # that reinstates the corruption and throws away this run's work, so a
       # file committed broken could never be repaired (#216). The orchestrator
       # command decides per file on structure; see cmdQuarantine.
+      #
+      # Trusting HEAD whenever the new output also fails is the same mistake
+      # one step in: a stale file whose HEAD is already short of the EN source
+      # fails the gate before anything is translated, so the restore re-buys
+      # the identical failure every night (#260). An output that still fails
+      # but is strictly closer to the source is therefore kept and committed.
+      # It remains in the backlog, so the next run starts from it rather than
+      # from HEAD.
       - name: Quarantine failed translations
         if: steps.detect.outputs.changed == 'true'
         run: node translator/orchestrator/orchestrator.mjs quarantine

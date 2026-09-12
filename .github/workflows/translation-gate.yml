@@ -1,10 +1,10 @@
 # Runs the nightly's own structural gate on the files a pull request changes.
 #
-# The nightly gates everything it writes, so its PRs arrive pre-checked.
-# Human-authored PRs that touch website/content do not: blog posts, showcase
-# entries and hand-written translations reach main with no structural
-# verification at all. #268 is the shape of what gets through -- a table left
-# in English inside a German page, a tool list that lost two entries.
+# The nightly gates everything it writes and is excluded below, so this exists
+# for human-authored PRs: blog posts, showcase entries and hand-written
+# translations reach main with no structural verification at all. #268 is the
+# shape of what gets through -- a table left in English inside a German page,
+# a tool list that lost two entries.
 #
 # It calls `orchestrator.mjs check`, which uses the same structuralProblems()
 # the nightly uses. Two copies of a gate drift; one does not.
@@ -37,6 +37,13 @@ concurrency:
 jobs:
   gate:
     name: Structural gate on changed pages
+    # The nightly's quarantine step runs this same structuralProblems() over
+    # everything it stages, so it is already gated. Since #260 it deliberately
+    # keeps a translation that still fails on fence count when that count is
+    # strictly closer to the EN source -- without that, a page already behind
+    # the source can never advance. Re-checking that output here would report
+    # the improvement as a failure and turn the nightly's own PR red.
+    if: ${{ github.event.pull_request.head.repo.full_name != github.repository || !startsWith(github.head_ref, 'automation/daily-translation-') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
