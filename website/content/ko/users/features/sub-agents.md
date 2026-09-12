@@ -12,6 +12,33 @@
 - **자율 작동** - 작업이 부여되면 완료 또는 실패할 때까지 독립적으로 작업합니다
 - **상세한 피드백** - 진행 상황, 도구 사용, 실행 통계를 실시간으로 확인할 수 있습니다
 
+## Claude Code와 Codex 서브에이전트
+
+내장된 `claude-code` 및 `codex` 에이전트는 별도로 설치된 네이티브 도구로 위임합니다. Claude Code는 `claude-agent-acp` 어댑터로, Codex는 `codex` 실행 파일로 설치 및 인증하고 `PATH`에서 사용할 수 있도록 해야 합니다. 이 에이전트들은 자체 모델과 인증 설정을 사용하며, 실행 파일이 없으면 Qwen Code가 자체 모델로 폴백하지 않습니다.
+
+두 에이전트 모두 기본적으로 포그라운드에서 실행됩니다. 백그라운드 완료 알림을 받으려면 `run_in_background: true`를 설정합니다. 신뢰할 수 있는 워크스페이스가 필요하며 안전 모드에서는 사용할 수 없습니다. 두 실행기 모두 macOS/Linux(WSL 포함)를 지원합니다. 네이티브 Windows 실행은 시작 전 플랫폼 안내와 함께 거부됩니다.
+
+Claude Code는 ACP 실행기를 사용하며 세션이 유지되는 동안 추가 입력을 지원합니다. Codex는 단일 작업을 위한 일시적인 앱 서버 스레드를 사용하고 최종 답변을 반환합니다. Codex 작업은 메시지를 받거나 재개할 수 없습니다. 대신 새 작업을 시작하세요. Codex의 네이티브 도구 진행 상황, 토큰 수, 비용은 보고되지 않습니다. Qwen Code를 재시작한 후에는 네이티브 세션을 복원할 수 없습니다.
+
+사용자 정의 Codex 에이전트를 위해 기존 `executor` 프론트매터를 사용합니다:
+
+```markdown
+---
+name: codex-review
+description: Review code with Codex
+executor:
+  kind: codex
+  command: codex
+background: false
+---
+
+Review the changes and report verified defects.
+```
+
+`executor.args`를 생략하면 `codex app-server --stdio`가 시작됩니다. 제공된 인수는 해당 기본값을 대체합니다. 사용자 정의 Claude Code 에이전트에는 `kind: acp`와 `command: claude-agent-acp`를 사용합니다. Qwen 모델 재정의, 도구 목록, 서브에이전트 hook, `maxTurns`, 포크 기록, 팀, 워크플로우는 외부 실행기에서 지원되지 않습니다. Worktree 실행은 기존 Agent 격리 라이프사이클을 사용하며 선택한 worktree에서 네이티브 프로세스를 실행합니다.
+
+Codex는 무인으로 실행됩니다. 에이전트 재정의가 없으면 기본, 계획, 자동 세션이 읽기 전용 샌드박스를 사용합니다. Qwen의 AUTO 분류기는 네이티브 명령을 검사하지 않습니다. 중간 Qwen 서브에이전트 모드는 중첩 위임 중에 네이티브 접근을 부여하지 않습니다. 워크스페이스 쓰기 및 무인 워크스페이스 명령을 허용하려면 세션이나 Codex 에이전트 정의에서 auto-edit를 명시적으로 선택하고, 전체 접근을 위해서는 yolo를 선택합니다. 이미 auto-edit나 yolo인 세션이 더 엄격한 에이전트 정의보다 우선합니다. 다른 유효한 승인 모드는 거부됩니다. 추가 권한이나 사용자 입력에 대한 네이티브 요청은 거부됩니다. 구성된 `runConfig.max_time_minutes`가 실행을 제한합니다. 실행기는 취소 시 프로세스 정리를 기다립니다. 공유 백그라운드 취소 알림은 5초 폴백 아래에서 더 일찍 도착할 수 있습니다.
+
 ## Fork 서브에이전트
 
 Qwen Code는 이름 지정 서브에이전트 외에도 **포킹**을 지원합니다 — `subagent_type: "fork"`로 명시적으로 선택합니다. Fork는 부모의 전체 대화 컨텍스트를 상속하며 일반적으로 백그라운드에서 분리되어 실행됩니다. Fork는 인터랙티브 세션과 헤드리스 세션 모두에서 동작합니다. 헤드리스 fork는 항상 백그라운드 경로를 사용합니다. `subagent_type`을 생략하면 fork가 **아니며**, 범용 서브에이전트가 실행됩니다. 최상위 이름 지정 서브에이전트는 기본적으로 백그라운드에서 실행되며 완료 알림을 통해 결과를 전달합니다. 일반 서브에이전트의 결과를 현재 턴에서 바로 기다려야 하는 경우 `run_in_background: false`를 설정합니다.
@@ -473,7 +500,7 @@ react-specialist 서브에이전트에게 이 컴포넌트의 성능을 최적�
 ```
 ---
 name: testing-expert
-description: 모범 사례를 사용하여 종합적인 단위 테스트, 통합 테스트를 작성하고 테스트 자동화를 처리합니다
+description: Writes comprehensive unit tests, integration tests, and handles test automation with best practices
 tools:
   - read_file
   - write_file
@@ -517,7 +544,7 @@ Focus on both positive and negative test cases.
 ```
 ---
 name: documentation-writer
-description: 종합적인 문서, README 파일, API 문서, 사용자 가이드를 생성합니다
+description: Creates comprehensive documentation, README files, API docs, and user guides
 tools:
   - read_file
   - write_file
@@ -569,7 +596,7 @@ the actual implementation. Use clear headings, bullet points, and examples.
 ```
 ---
 name: code-reviewer
-description: 모범 사례, 보안 문제, 성능, 유지보수성을 위해 코드를 리뷰합니다
+description: Reviews code for best practices, security issues, performance, and maintainability
 tools:
   - read_file
   - read_many_files
@@ -613,7 +640,7 @@ React 개발, 훅, 컴포넌트 패턴에 최적화되어 있습니다.
 ```
 ---
 name: react-specialist
-description: React 개발, 훅, 컴포넌트 패턴, 모던 React 모범 사례의 전문가입니다
+description: Expert in React development, hooks, component patterns, and modern React best practices
 tools:
   - read_file
   - write_file
@@ -658,7 +685,7 @@ Python 개발, 프레임워크, 모범 사례에 특화되어 있습니다.
 ```
 ---
 name: python-expert
-description: Python 개발, 프레임워크, 테스트, Python 특정 모범 사례의 전문가입니다
+description: Expert in Python development, frameworks, testing, and Python-specific best practices
 tools:
   - read_file
   - write_file
@@ -710,7 +737,7 @@ Focus on writing clean, maintainable Python code that follows community standard
 ```
 ---
 name: testing-expert
-description: 종합적인 단위 테스트와 통합 테스트를 작성합니다
+description: Writes comprehensive unit tests and integration tests
 ---
 ```
 
@@ -719,7 +746,7 @@ description: 종합적인 단위 테스트와 통합 테스트를 작성합니�
 ```
 ---
 name: general-helper
-description: 테스트, 문서, 코드 리뷰, 배포를 도와줍니다
+description: Helps with testing, documentation, code review, and deployment
 ---
 ```
 
@@ -734,7 +761,7 @@ description: 테스트, 문서, 코드 리뷰, 배포를 도와줍니다
 ```
 ---
 name: react-performance-optimizer
-description: 프로파일링과 모범 사례를 사용하여 React 애플리케이션의 성능을 최적화합니다
+description: Optimizes React applications for performance using profiling and best practices
 ---
 ```
 
@@ -743,7 +770,7 @@ description: 프로파일링과 모범 사례를 사용하여 React 애플리케
 ```
 ---
 name: frontend-developer
-description: 프론트엔드 개발 작업을 처리합니다
+description: Works on frontend development tasks
 ---
 ```
 
@@ -756,13 +783,13 @@ description: 프론트엔드 개발 작업을 처리합니다
 **✅ 좋은 예:**
 
 ```
-description: 보안 취약성, 성능 문제, 유지보수성 우려에 대해 코드를 리뷰합니다
+description: Reviews code for security vulnerabilities, performance issues, and maintainability concerns
 ```
 
 **❌ 피해야 할 예:**
 
 ```
-description: 도움이 되는 코드 리뷰어
+description: A helpful code reviewer
 ```
 
 **이유:** 명확한 설명은 메인 AI가 각 작업에 적합한 에이전트를 선택하는 데 도움이 됩니다.

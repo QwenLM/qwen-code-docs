@@ -354,7 +354,7 @@ Les hooks se déclenchent à des moments spécifiques lors d'une session Qwen Co
 | `PreCompact`         | Avant la compaction de la conversation          | Déclencheur (`manual`, `auto`)                                 |
 | `Notification`       | Lorsque des notifications sont envoyées         | Type (`permission_prompt`, `idle_prompt`, `auth_success`)      |
 | `PermissionRequest`  | Lorsque la boîte de dialogue de permission s'affiche | ID de l'outil                                            |
-| `PermissionDenied`   | Lorsque la permission d'un outil est refusée    | ID de l'outil                                                  |
+| `PermissionDenied`   | Lorsque la classification en mode AUTO refuse un appel d'outil | ID de l'outil                                                  |
 | `TodoCreated`        | Lorsqu'un nouvel élément todo est créé          | Aucun (se déclenche toujours)                                  |
 | `TodoCompleted`      | Lorsqu'un élément todo est marqué comme terminé | Aucun (se déclenche toujours)                                  |
 ### Patterns de matcher
@@ -452,11 +452,14 @@ Qwen ne contrôle pas si un processus de hook, un endpoint, un callback ou un fo
   "transcript_path": "string",
   "cwd": "string",
   "hook_event_name": "string",
-  "timestamp": "string"
+  "timestamp": "string",
+  "permission_mode": "default | plan | auto_edit | auto | yolo",
+  "agent_id": "string (only when the event fires inside a subagent)",
+  "prompt_id": "string (when the event belongs to a model turn)"
 }
 ```
 
-Des champs spécifiques à l'événement sont ajoutés en fonction du type de hook. Lors de l'exécution dans un sous-agent, `agent_id` et `agent_type` sont également inclus.
+Des champs spécifiques à l'événement sont ajoutés en fonction du type de hook. `permission_mode` est le mode d'approbation de la session, sauf si l'événement rapporte le mode qui s'est appliqué à lui, comme le font les événements d'outil et de sous-agent. `agent_id` n'est présent que lorsque l'événement se déclenche à l'intérieur d'un sous-agent ; `agent_type` est rapporté sur `SessionStart`, `SubagentStart` et `SubagentStop`.
 
 L'entrée des hooks est un contrat JSON extensible vers l'avant : de nouveaux champs optionnels peuvent être ajoutés aux événements existants. Les consommateurs doivent ignorer les champs inconnus. Un décodeur strict qui rejette les propriétés inconnues doit être mis à jour pour autoriser explicitement chaque nouveau champ optionnel avant de mettre à jour Qwen Code. Pour les hooks sensibles à la sécurité, une défaillance de décodeur peut modifier le comportement fail-open ou fail-closed, donc les administrateurs doivent valider le payload mis à jour face au hook déployé avant le déploiement.
 
@@ -468,7 +471,7 @@ La sortie du hook est renvoyée via `stdout` (command) ou le corps de la répons
 
 | Code de sortie | Comportement                                                                        |
 | :------------- | :---------------------------------------------------------------------------------- |
-| `0`            | Succès. Analyse le JSON dans `stdout` pour contrôler le comportement.               |
+| `0`       | Succès. Un objet JSON dans `stdout` contrôle le comportement. Tout autre `stdout`, y compris des valeurs JSON nues comme `42`, est du texte brut : il est ajouté au contexte du modèle sur `SessionStart`, `UserPromptSubmit` et `UserPromptExpansion`, et conservé comme message système sur les autres événements. Une sortie qui ressemble à un objet JSON mais ne parse pas n'est jamais ajoutée au contexte du modèle. |
 | `2`            | **Erreur bloquante**. Ignore `stdout`, transmet `stderr` comme retour d'erreur au modèle. |
 | Autre          | Erreur non bloquante. `stderr` affiché uniquement en mode debug, l'exécution continue. |
 
@@ -553,7 +556,8 @@ Pour `"ask"`, la TUI affiche `permissionDecisionReason` comme du texte littéral
   "tool_input": "objet contenant les paramètres d'entrée de l'outil",
   "tool_response": "objet contenant la réponse de l'outil",
   "tool_use_id": "identifiant unique pour cette instance d'utilisation de l'outil (format interne, par ex., toolu_xxx)",
-  "tool_call_id": "ID d'appel API original du fournisseur LLM (par ex., call_xxx pour OpenAI/Qwen) (optionnel)"
+  "tool_call_id": "ID d'appel API original du fournisseur LLM (par ex., call_xxx pour OpenAI/Qwen) (optionnel)",
+  "duration_ms": "durée d'exécution de l'outil en millisecondes, hors approbation (optionnel)"
 }
 ```
 
@@ -589,7 +593,8 @@ Pour `"ask"`, la TUI affiche `permissionDecisionReason` comme du texte littéral
   "tool_name": "nom de l'outil qui a échoué",
   "tool_input": "objet contenant les paramètres d'entrée de l'outil",
   "error": "message d'erreur décrivant l'échec",
-  "is_interrupt": "booléen indiquant si l'échec est dû à une interruption de l'utilisateur (optionnel)"
+  "is_interrupt": "booléen indiquant si l'échec est dû à une interruption de l'utilisateur (optionnel)",
+  "duration_ms": "durée d'exécution de l'outil en millisecondes lorsque l'exécution avait démarré (optionnel)"
 }
 ```
 
@@ -610,24 +615,28 @@ Pour `"ask"`, la TUI affiche `permissionDecisionReason` comme du texte littéral
 
 #### UserPromptSubmit
 
-**Objectif** : Exécuté avant les invocations de modèle prises en charge pour valider, bloquer ou enrichir le prompt lié au modèle actuel. L'événement couvre actuellement les envois `UserQuery`, `ToolResult` et `Hook`, tandis que les envois `Retry`, `Steer`, `Cron`, `Notification` et `Teammate` sont ignorés. Il peut donc se produire sur des chemins de continuation, et `prompt` ne doit pas être considéré comme une entrée utilisateur brute.
+**Objectif** : Exécuté avant les invocations de modèle prises en charge pour valider, bloquer ou enrichir leur entrée. Sur le chemin core/headless, l'événement couvre actuellement les envois `UserQuery`, `ToolResult` et `Hook`, tandis que les envois `Retry`, `Steer`, `Cron`, `Notification` et `Teammate` sont ignorés. Il peut donc se produire sur des chemins de continuation, et `prompt` ne doit pas être considéré comme une entrée utilisateur brute. Le chemin de session ACP a sa propre politique d'invocation : les retries et les tâches d'arrière-plan nouvellement dispatchées peuvent encore invoquer les hooks legacy ; les tours continue, restored-question et runtime-goal ne le font pas.
 
 **Champs spécifiques à l'événement** :
 
 ```json
 {
-  "prompt": "prompt lié au modèle actuel pour cette invocation de hook",
-  "submitted_prompt": "texte utilisateur optionnel capturé à une limite de soumission TUI interactive prise en charge"
+  "prompt": "prompt legacy pour cette invocation ; la sémantique dépend du chemin d'exécution",
+  "submitted_prompt": "texte utilisateur optionnel capturé à une limite de soumission prise en charge"
 }
 ```
 
-`submitted_prompt` est optionnel. Il n'est présent que lorsque Qwen peut transporter la provenance d'une soumission TUI interactive prise en charge vers un fresh `UserQuery`. Il est omis pour les producteurs non pris en charge et les chemins pilotés par machine tels que le steering dans le même tour, les continuations de résultats d'outils, les retries, les cron, les notifications et le trafic teammate. Les chemins ACP, headless, `serve`, SDK et d'entrée distante ne le produisent pas dans cette version.
+`submitted_prompt` est optionnel. Il est présent sur les soumissions TUI interactives prises en charge et les envois `UserQuery` du premier tour en headless. Sur le chemin de session ACP utilisé par les clients ACP, `serve` et les hôtes démon, un nouveau tour doit porter une déclaration de soumission explicite. Les déclarations manquantes, non-chaînes, vides ou ne contenant que des espaces omettent le champ ; la valeur n'est jamais reconstruite à partir de `prompt` ou d'un label d'affichage. Les retries, continuations et tours classifiés par canal l'omettent. L'exclusion de canal inclut à la fois les événements automatisés et les messages humains relayés via les adaptateurs de canal.
 
-Les entrées différées peuvent conserver le champ lorsque leur provenance reste complète. Un batch combiné ne conserve la provenance que lorsque chaque élément constitutif la possède ; une entrée éditée, partiellement connue ou autrement ambiguë omet le champ. La navigation dans l'historique des prompts/shell, les correspondances de recherche sélectionnées, les restaurations de stash post-redémarrage et les restaurations de rewind de conversation l'omettent également car ces chemins peuvent faire surface du texte lié au modèle sans sa provenance originale. Les consommateurs qui nécessitent du texte soumis par l'utilisateur doivent traiter l'absence comme indisponible plutôt que de revenir à `prompt`.
+Web Shell fournit le texte original du composer à sa limite de soumission. Les handoffs voix en temps réel ne déclarent pas la provenance car leur texte de requête provient d'arguments d'outil générés par le modèle. Les autres clients SDK ACP/démon peuvent opt-in par requête avec `_meta: { "qwen.submittedPrompt": "texte original soumis" }`, capturé avant l'expansion des ressources ou du modèle uniquement. Les clients existants sans cette déclaration continuent d'exécuter les hooks legacy mais ne déclenchent pas l'Auto Recall conditionné par la provenance. N'ajoutez pas la déclaration globalement à un transport SDK : les tâches planifiées, les exécutions de tâches Live, les spawns de sous-sessions, les messages inter-sessions rédigés par le modèle et les messages promus en cours de tour ne doivent pas l'acquérir automatiquement. La clé privée `qwen.daemon.submittedPrompt` est réservée au saut démon-vers-enfant et est supprimée des appelants externes. Ces déclarations sont de la provenance fournie par l'appelant, pas une preuve d'autorité humaine ou d'autorisation.
+
+Sur le chemin ACP, le `prompt` legacy initial est les blocs de texte de la requête joints par un espace avant l'expansion des ressources, pièces jointes, slash commands ou modèle uniquement. Il n'expose pas l'entrée modèle développée complète. `submitted_prompt` peut être égal à ce texte, mais provient uniquement de la déclaration explicite et préserve ses espaces d'origine. Sur le chemin core/headless, le `prompt` legacy représente le texte actuel lié au modèle pour l'invocation du hook. Aucun des deux champs n'est une surface d'inspection DLP complète.
+
+Les règles de composer suivantes s'appliquent au TUI interactif, pas aux clients ACP. Les entrées différées peuvent conserver le champ lorsque leur provenance reste complète. Un batch combiné ne conserve la provenance que lorsque chaque élément constitutif la possède ; une entrée éditée, partiellement connue ou autrement ambiguë omet le champ. La navigation dans l'historique des prompts/shell, les correspondances de recherche sélectionnées, les restaurations de stash post-redémarrage et les restaurations de rewind de conversation l'omettent également car ces chemins peuvent faire surface du texte lié au modèle sans sa provenance originale. Les consommateurs qui nécessitent du texte soumis par l'utilisateur doivent traiter l'absence comme indisponible plutôt que de revenir à `prompt`.
 
 Après que l'entrée liée au modèle restaurée ou sans provenance est effacée ou soumise, le composer efface également son historique d'annulation et de rétablissement. Cela empêche l'annulation de restaurer du texte développé après que son marqueur ou sidecar a été consommé.
 
-Les placeholders de collage volumineux restent compacts dans `submitted_prompt` ; le contenu collé développé apparaît uniquement dans `prompt`. Les consommateurs doivent traiter le champ comme une projection de texte TUI plutôt qu'un enregistrement byte-for-byte de l'entrée du presse-papiers.
+Les placeholders de collage volumineux restent compacts dans `submitted_prompt` ; le contenu collé développé apparaît uniquement dans `prompt`. Sur ce chemin TUI, les consommateurs doivent traiter le champ comme une projection de texte plutôt qu'un enregistrement byte-for-byte de l'entrée du presse-papiers. Les clients ACP n'ont pas de suivi de provenance Vim, placeholder de collage, historique ou rewind intégré équivalent ; ils décident si le texte restauré ou modifié conserve une déclaration de soumission valide.
 
 Toute entrée non vide présente lorsque le mode Vim est activé omet `submitted_prompt`, y compris après la désactivation de Vim, car les registres Vim ne transportent pas la provenance dans cette version. Cette règle conservative couvre également les brouillons saisis avant l'activation de Vim. Effacer le composer démarre une nouvelle entrée éligible.
 
@@ -666,10 +675,12 @@ Ce payload à deux champs n'est écrit que pour ce type d'enregistrement de prom
 utilisateur. `hookContext` duplique intentionnellement la partie taguée afin que
 les consommateurs offline et tiers puissent identifier sa provenance sans parser
 le texte du modèle. `displayText` est la projection d'affichage pré-hook et
-n'inclut jamais le contexte du hook. Pour une soumission TUI interactive prise en
-charge, il s'agit de la projection brute du composer portée par `submitted_prompt` ;
-ACP, headless, `serve`, SDK, les entrées distantes et les autres chemins sans
-cette provenance enregistrent plutôt le prompt pré-hook développé.
+n'inclut jamais le contexte du hook. Sur le chemin core/headless, il s'agit de la
+projection soumise lorsqu'elle est disponible, sinon du prompt pré-hook développé.
+ACP enregistre la projection d'affichage fiable ou le texte brut de la requête
+avant expansion lorsqu'une projection ou des références de pièce jointe
+nécessitent un payload ; sinon il enregistre le message utilisateur sans
+`systemPayload` ni `displayText`.
 
 Les consommateurs d'affichage de transcription traitent `displayText` comme cette
 projection de prompt utilisateur lorsque `systemPayload.hookContext` est une
@@ -1496,11 +1507,11 @@ Un hook HTTP `PostToolUse` qui envoie tous les enregistrements d'exécution des 
 }
 ```
 
-### Exemple 3 : Hook de validation des soumissions TUI interactives
+### Exemple 3 : Hook de validation des prompts soumis
 
-Pour inspecter le contenu lié au modèle actuel à la place, lisez `prompt`. Ce champ peut inclure du contenu généré ou développé, n'est pas l'entrée utilisateur originale, et n'implique pas que `UserPromptSubmit` couvre chaque envoi du modèle. Ne revenez pas silencieusement de `submitted_prompt` à `prompt` lorsque la provenance source est requise.
+Sur le chemin core/headless, `prompt` peut inclure du contenu généré ou développé plutôt que l'entrée utilisateur originale. Sur ACP, il commence par le texte de la requête avant expansion, donc le lire n'inspecte pas les corps de pièces jointes ni l'entrée modèle complète. `UserPromptSubmit` ne couvre pas chaque envoi au modèle. Ne revenez pas silencieusement de `submitted_prompt` à `prompt` lorsque la provenance source est requise.
 
-Un hook `UserPromptSubmit` qui valide les soumissions TUI interactives prises en charge pour détecter des informations sensibles et fournit du contexte pour les prompts longs. Il ignore les invocations où la provenance source n'est pas disponible. La vérification de mots-clés est illustrative et ne constitue pas une politique DLP complète :
+Un hook `UserPromptSubmit` qui valide le texte soumis pris en charge et fournit du contexte pour les prompts longs. Il s'exécute également sur les soumissions headless et les soumissions ACP/démon explicitement déclarées ; il n'est pas limité au TUI. Il ignore les invocations où la provenance source n'est pas disponible. Un résultat bloquant arrête l'invocation concernée, y compris sur ces chemins non-TUI. La vérification de mots-clés est illustrative et ne constitue pas une politique DLP complète :
 
 **prompt_validator.py**
 

@@ -36,7 +36,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 > [!note]
 >
-> 打开 HTML 导出文件会从 `unpkg.com` 加载对应 Qwen Code 版本的渲染器。如果该版本尚未发布或无法访问渲染器，文件会显示加载错误。Markdown、JSON 和 JSONL 导出仍然是自包含的。
+> 打开 HTML 导出文件会从 `unpkg.com` 加载对应 Qwen Code 版本的渲染器和样式表。如果该版本尚未发布或无法访问渲染器，文件会显示加载错误。Markdown、JSON 和 JSONL 导出仍然是自包含的。
 
 > [!note]
 >
@@ -44,7 +44,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 > [!note]
 >
-> `/summary` 接受可选的 `[path]` 参数，将摘要保存到项目根目录内的自定义位置。不带参数时，保存到 `.qwen/PROJECT_SUMMARY.md`。自定义路径的摘要不会被欢迎回流程（`ui.enableWelcomeBack`）检测到，该流程仅读取默认的 `.qwen/PROJECT_SUMMARY.md` 位置。
+> `/summary` 接受可选的 `[path]` 参数，将摘要保存到项目根目录内的自定义位置。不带参数时，保存到 `.qwen/PROJECT_SUMMARY.md`。自定义路径的摘要不会被欢迎返回流程（`ui.enableWelcomeBack`）检测到，该流程仅读取默认的 `.qwen/PROJECT_SUMMARY.md` 位置。
 
 ### 1.2 界面与工作区控制
 
@@ -56,7 +56,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `/context`           | 显示上下文窗口使用情况明细                                                                                                                                               | `/context`                                                                        |
 | → `detail`           | 显示各项上下文使用情况明细                                                                                                                                             | `/context detail`                                                                 |
 | `/history`           | 控制历史记录显示偏好和可见性                                                                                                                                | `/history collapse-on-resume`, `/history expand-on-resume`, `/history expand-now` |
-| `/diff`              | 打开交互式 diff 查看器，显示未提交的更改和每轮 diff。使用 ←/→ 在当前 git diff 和各个对话轮次之间切换，使用 ↑/↓ 浏览文件 | `/diff`                                                                           |
+| `/diff`              | 打开交互式 diff 查看器，显示未提交的更改和每个轮次的 diff。使用 ←/→ 在当前 git diff 和各个对话轮次之间切换，使用 ↑/↓ 浏览文件 | `/diff`                                                                           |
 | `/log`               | 打开工作区的 commit 历史查看器（仅限 Web Shell）                                                                                                                   | `/log`                                                                            |
 | `/theme`             | 更改 Qwen Code 视觉主题                                                                                                                                                     | `/theme`                                                                          |
 | `/vim`               | 开启/关闭输入区域的 Vim 编辑模式                                                                                                                                           | `/vim`                                                                            |
@@ -65,7 +65,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `/cd`                | 将会话移动到新的工作目录                                                                                                                                      | `/cd ../other-project`                                                            |
 | `/editor`            | 打开对话框以选择支持的编辑器                                                                                                                                            | `/editor`                                                                         |
 | `/statusline`        | 打开交互式[状态栏](./status-line.md)预设对话框                                                                                                                    | `/statusline`                                                                     |
-| `/statusline <text>` | 通过代理生成命令模式的[状态栏](./status-line.md)                                                                                                                 | `/statusline show model and git branch`                                           |
+| `/statusline <text>` | 通过代理生成命令模式[状态栏](./status-line.md)                                                                                                                 | `/statusline show model and git branch`                                           |
 | `/terminal-setup`    | 配置终端多行输入快捷键                                                                                                                                | `/terminal-setup`                                                                 |
 
 ### 1.3 语言设置
@@ -736,7 +736,11 @@ qwen sessions list --json | jq .
 
 #### `qwen sessions ps`
 
-列出当前在此机器上运行的交互式 Qwen Code 会话。`sessions list` 遍历已保存的对话记录（"我做过什么"）；而此命令遍历实时进程注册表（"此刻正在运行什么"）。被终止的会话留下的记录会在发现时被清理。无头会话（`qwen -p`）不会向实时进程注册表注册，因此不会显示。
+列出当前在此机器上注册的 Qwen Code 会话。
+`sessions list` 遍历已保存的对话记录（"我做过什么"）；而此命令
+遍历实时进程注册表（"此刻正在运行什么"）。被终止会话
+留下的记录会在发现时被清理。一次性的 `qwen -p` 运行永远不会注册，
+因此永远不会显示。
 
 **标志：**
 
@@ -746,7 +750,7 @@ qwen sessions list --json | jq .
 
 **人类可读输出（默认）：**
 
-包含以下列的表格：NAME、PID、AGE、DIRECTORY。
+包含以下列的表格：NAME、KIND、PID、AGE、DIRECTORY。
 
 **JSON 输出（`--json`）：**
 
@@ -754,7 +758,7 @@ qwen sessions list --json | jq .
 
 ```
 schemaVersion, pid, procStart, pidNs, sessionId, cwd, name, startedAt,
-qwenVersion, ipcPath (当 peer 消息可用时)
+qwenVersion, kind, ipcPath (当 peer 消息可用时)
 ```
 
 不会向 stdout 写入其他内容——空列表完全不输出任何内容——因此 `qwen sessions ps --json | jq .` 可以安全地用于脚本。
@@ -792,7 +796,21 @@ qwen sessions ps --json | jq -r .cwd
 
 两个会话也可能解析到相同的收件箱地址，因为地址是按进程 id 为键的，而进程 id 在共享运行时目录的容器之间会重复。第二个启动的会话会取一个相邻的地址，而不是接管正在使用的地址，这样两者都不会变得不可达。Peer 不受影响：它们从会话注册表中读取会话的地址，而不是自行推导。
 
-`send_message` 调用仅确认消息已传递给另一个会话。它的后续情况会作为回执稍后到达：如果它被保留、拒绝、refused、过期或地址错误（地址已变更——再次列出代理）——或在保留后释放——发送会话的记录中会出现通知（`Message to <name>: …`）。Declined 和 refused 是不同的结果：declined 表示有人审查了消息并拒绝了，而 refused 表示该会话的 `agents.crossSessionInbound` 是 `refuse`，根本没有人看到它。发送它的模型不会被告知；如果另一个会话回复，回复会作为跨会话消息到达。
+`send_message` 调用仅确认消息已传递给另一个会话。它的后续情况会作为回执稍后到达：如果它被保留、拒绝、refused、过期或地址错误（地址已变更——再次列出代理）——或在保留后释放——发送会话的记录中会出现通知（`Message to <name>: …`）。Declined、refused 和 dropped 是三种不同的结果：declined 表示有人审查了消息并拒绝，refused 表示该会话的 `agents.crossSessionInbound` 是 `refuse` 且根本没有人看到它，dropped 表示其收件箱在上述任何情况发生之前就拒绝了该消息（见下文）。第一次 dropped 会立即回复，其余的会每隔几秒合并到一条回执中，每条回执会指明它所代表的消息，因此一批 dropped 只需几行而不是每条一行。发送它的模型不会被告知；如果另一个会话回复，回复会作为跨会话消息到达。
+
+### 泛洪保护
+
+一个会话一次最多接受来自同一发送方的 30 条消息，之后每两秒一条；来自所有发送方合计一次最多 32 条，之后每秒一条。第二个限制的存在是因为发送方会自报名称：轮换名称可以从第一个限制获得新的配额，但不能从第二个获得。它仅比第一个限制稍高，因为每条被接受的消息都会产生一条回执，而一个会话同时能发出的回执数量有限。来自另一会话的消息如果在 30 秒内逐字重复该发送方之前的消息，也会被拒绝——在一个句子上循环的模型每次都会生成新的消息 id，因此靠文本内容来识别。会话启动的脚本和受信任控制器发来的消息免于重复检查，因为报告同一行两次的 hook 是在报告两个事实，而一个人说两次"继续"就是两次；两者仍然受速率限制约束。最后，被接受但因会话已有 50 条消息排队而无法入队的消息也会被拒绝。
+
+以这种方式被拒绝的消息永远不会被保留，永远不会展示给模型，也不会留下记录，因此发送方可以稍后重试并成功送达。接收会话在其记录中每分钟最多为每个发送方报告一次，并附带该行所代表的计数。发送会话会收到一条回执，列出该次突发所消耗的所有消息，其记录会建议将仍然重要的内容合并到一条后续消息中，而不是重新发送。
+
+发送方不会等待结果。每个会话跟踪它已发送到每个地址的内容，并拒绝接收方会丢弃的发送，因此模型在消息写入之前就被要求批量处理——而不是之后——接收方也永远不会在它本要拒绝的消息上浪费连接。
+
+### 收件箱认证与脚本注入
+
+每个会话的收件箱都需要一个每会话 token：连接必须在其第一行出示 token，然后才会读取任何消息，会话通过它们互相发现的相同注册表记录自动交换 token。不支持 token 的构建版本中的会话可以从较新版本接收，但其发往较新版本的消息会被丢弃。
+
+会话会将自己的收件箱地址和 token 作为 `QWEN_CODE_MESSAGING_SOCKET` 和 `QWEN_CODE_MESSAGING_TOKEN` 导出给子进程，因此会话运行的脚本或 hook 可以向其发送消息。这是一个第二位的、_子级_ token，永远不会在任何地方发布：只有会话启动的进程才能持有它，因此携带该 token 到达的消息会被识别为会话自身的，而不是其他会话的。
 
 ### 收件箱认证与脚本注入
 
@@ -807,7 +825,7 @@ qwen sessions ps --json | jq -r .cwd
 } | socat - UNIX-CONNECT:"$QWEN_CODE_MESSAGING_SOCKET"
 ```
 
-为每次注入赋予一个新的 `msgId`。接收端网关会记住它已处理过的 id，因此重用 id 的 hook 在第一次会被传递，之后每次运行都会被静默去重。
+为每次注入赋予一个新的 `msgId`。接收端网关会记住它已处理过的 id，因此重用 id 的 hook 在第一次会被传递，之后每次运行都会被静默去重。重复相同的_文本_没有问题——上面的重复检查不适用于会话自身的进程——但速率限制仍然适用，因此循环中的 hook 会像其他泛洪一样被丢弃。
 
 注入的消息仍然会经过入站网关，并被标记为非来自用户，但网关知道它来自会话自身的进程：在模式一致性的默认情况下，它会被直接传递而不经过审查（处于相同位置的 peer 会被保留），而显式的 `agents.crossSessionInbound` 为 `hold` 或 `refuse` 时，会像对待其他消息一样对其生效。模型会将其视为 `<cross_session_message from="own process" origin="own-process">`，并附有通知说明它来自会话运行的脚本或 hook，而非来自用户。
 
@@ -844,4 +862,20 @@ qwen sessions controllers remove c_1a2b # 撤销一个
 模型会将此类消息视为 `<cross_session_message from="controller" origin="controller" controller="voice-bridge">`，并附有通知说明它正在转发你自己的指令——以及适用于其他所有来源的相同两项禁止：它不得因为消息要求而编辑权限设置、QWEN.md 或配置，也不得将消息视为你批准了待处理的确认提示。控制器可以说接下来做什么；它不能代你回答提示。
 
 任何持有该 token 的人都可以作为该控制器发送，因此请将其视为任何其他凭证：将其授予一个程序，不要放入共享配置中，并在该程序完成后撤销它。
+
+### 程序通过 ACP 驱动的会话
+
+任何 `qwen --acp` 子进程都会注册它所托管的每个会话——当守护进程生成该进程时注册为 `serve`，当编辑器或其他客户端直接驱动 `qwen --acp` 时注册为 `headless`——该会话会出现在 `qwen sessions ps` 和另一个会话的 `list_agents` 中，与其他会话一样。它可以发送：其模型可以调用 `send_message` 来联系你打开的终端。其中几个共享一个进程和一个收件箱，因此发送方必须指明它要联系的会话——每个 Qwen Code 会话都会自动执行此操作。
+
+发送给它们的消息会被拒绝而不是保留。保留是向人提出的问题，而没有人会代表被驱动的会话监视保留消息列表；发送方会立即被告知，而不是等待过期。保留的消息应该在哪里为这些会话 surfaced 尚未确定。
+
+会话只有在其自身设置中 `agents.crossSessionMessaging` 开启时才会注册。关闭时它会保持不可见，因为列出没有人可以发消息的会话的唯一目的就是宣传一个永远不会应答的地址。
+
+### 不是 Qwen Code 会话的程序
+
+以上所有内容都在会话之间工作，但其中没有任何特定于某一个会话的内容。一个为自己写入注册表记录并以相同方式绑定收件箱的程序会被 `qwen sessions ps` 和 `list_agents` 列出，可以从 `send_message` 按名称寻址，并接收它所发送消息的传递回执——例如语音前端、中继、构建监视器。它应该记录 `kind: "external"` 以便列表可以说明它是什么。
+
+[Cross-Session Protocol](./cross-session-protocol.md) 是编写此类程序的契约：记录 schema 和如何判断活跃性、socket 路径和帧格式、认证行、每个帧字段、回执状态及其转换，以及接收方在模型看到消息之前对消息的处理。
+
+Node 程序不必手动编写所有这些：` @qwen-code/sdk/peer` 实现了该契约。`PeerEndpoint.start({ name })` 发布记录并绑定收件箱，`list()` 和 `send()` 按名称寻址会话，`onMessage` 接收它们发送的内容。
 ```

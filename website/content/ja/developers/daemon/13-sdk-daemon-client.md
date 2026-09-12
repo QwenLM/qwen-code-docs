@@ -152,7 +152,7 @@ await client
   .setWorkspaceSkillEnabled('review', true, { clientId: 'dashboard-1' });
 ```
 
-事前に `capabilities.features.includes('workspace_skill_settings_toggle')` を確認してください。型付きの `DaemonSkillToggleResult` は、トリミング済みのリクエスト `skillName`、ディスク状態の `changed`、アクティベーション状態（`applied`、`deferred`、または `partial`）、およびリフレッシュ/失敗したセッション数を報告します。書き込みは設定のみで、名前が `DaemonWorkspaceSkillStatus` に存在する必要はありません。そのステータス型のオプションの false のみの `userInvocable` フィールドはライブカタログのレンダリングに引き続き有用ですが、永続化を制限しません。廃止された `workspace_skill_toggle` タグは以前のカタログ検証済み動作を記述しており、このコントラクトではアドバタイズされていません。
+事前に `capabilities.features.includes('workspace_skill_settings_toggle')` を確認してください。型付きの `DaemonSkillToggleResult` は、トリミング済みのリクエスト `skillName`、ディスク状態の `changed`、アクティベーション状態（`applied`、`deferred`、`reconciling`、または `partial`）、およびリフレッシュ/失敗したセッション数を報告します。`reconciling` は、書き込みが永続化され、ワークスペースコーディネーターがランタイムのリフレッシュをキューに入れたことを意味します。書き込みは設定のみで、名前が `DaemonWorkspaceSkillStatus` に存在する必要はありません。そのステータス型のオプションの false のみの `userInvocable` フィールドはライブカタログのレンダリングに引き続き有用ですが、永続化を制限しません。廃止された `workspace_skill_toggle` タグは以前のカタログ検証済み動作を記述しており、このコントラクトではアドバタイズされていません。
 
 バッチ変更の場合は、事前に `workspace_skill_settings_batch_toggle` を確認し、同じコントラクトでどちらのクライアント形状でも呼び出します。
 
@@ -165,7 +165,7 @@ await client
   .setWorkspaceSkillsEnabled(['review', 'deploy'], true);
 ```
 
-`DaemonSkillBatchToggleResult` には、順序付きの `results`、互換性のための `errors` 配列、およびバッチレベルのアクティベーション/セッションリフレッシュのカウントが含まれます。現在のデーモンは、リクエスト順序で構造的に有効な名前をすべて処理し、すべての結果の宣言変更を最大 1 回のロックされた設定書き込みで一緒に永続化し、変更があった場合にアクティブなセッションを一度だけリフレッシュし、ロードされたスキルカタログを参照せずに空の `errors` 配列を返します。既存のワークスペース宣言がなく、有効な `skills.defaultDisabled` エントリもない名前を有効にしても `changed: false` が返され、書き込みは行われません。エラーアイテムの型は、SDK が古いデーモンからのレスポンスを引き続きデコードできるようにするために残されています。このメソッドは非 200 レスポンスの場合にスローします。
+`DaemonSkillBatchToggleResult` には、順序付きの `results`、互換性のための `errors` 配列、およびバッチレベルのアクティベーション/セッションリフレッシュのカウントが含まれます。現在のデーモンは、リクエスト順序で構造的に有効な名前をすべて処理し、すべての結果の宣言変更を最大 1 回のロックされた設定書き込みで一緒に永続化し、変更があった場合にアクティブなセッションを一度だけリフレッシュし、ロードされたスキルカタログを参照せずに空の `errors` 配列を返します。有効にすると、まだインストールされていない名前の場合でも、明示的なワークスペースの `skills.enabled` オプトインが記録されるため、Extension 内部の無効化をオーバーライドできます。同一の宣言を繰り返しても no-op になります。エラーアイテムの型は、SDK が古いデーモンからのレスポンスを引き続きデコードできるようにするために残されています。このメソッドは非 200 レスポンスの場合にスローします。
 
 V2 Extension バッチアクティベーションは非同期の Extension 操作モデルを保持します。事前に `extension_batch_activation_v2` を確認し、グローバルデフォルトバッチまたは選択されたワークスペースのオーバーライドバッチを提出し、既存の操作ヘルパーでポーリングします:
 
@@ -185,7 +185,23 @@ const workspaceHandle = await client
 const operation = await client.waitForExtensionOperation(workspaceHandle);
 ```
 
-最終的な操作結果には順序付きの `results` が含まれます。`enabled` または `disabled` を設定する際、ターゲットはインストールされている必要はありません。デーモンは名前宣言を保存し、その名前の Extension が後からインストールされたときにそのアクティベーションポリシーを保持します。変更されたすべてのターゲットは 1 つの Extension Store 世代と 1 回の reconciliation を共有します。グローバルデフォルトバッチは登録されたすべてのランタイムを reconciliation します。ワークスペースバッチは選択された信頼されたランタイムのみを解決および reconciliation します。ワークスペースの `inherit` は正確なオーバーライドをクリアしますが、不明な名前の宣言は作成しません。すべて不明なクリアは reconciliation なしの no-op として成功します。単一のアクティベーションメソッドはインストール済みのみのままです。
+最終的な操作結果には順序付きの `results` が含まれます。`enabled` または `disabled` を設定する際、ターゲットはインストールされている必要はありません。デーモンは名前宣言を保存し、その名前の Extension が後からインストールされたときにそのアクティベーションポリシーを保持します。変更されたすべてのターゲットは 1 つの Extension Store 世代を共有します。`extension_activation_explicit_refresh` がアドバタイズされている場合、アクティベーション操作は永続的なポリシーコミット後にアクティブなセッションをリフレッシュせずに完了します。即時の適用が必要な呼び出し元は、変更を即座に適用する必要があるセッションを持つ各ワークスペースに対して `workspace.refreshExtensionRuntime()` を提出します。リフレッシュは別の操作であり、待機することもバックグラウンドに残すこともできます。グローバルデフォルトバッチは、そのワークスペースが名前の正確なオーバーライドを保持していない限り（またはレガシーなパスルールに一致しない限り）、登録されたすべてのワークスペースが継承するデフォルトのアクティベーションを変更しますが、すべてのランタイムをカバーする単一のリフレッシュは存在しません。ワークスペースバッチは選択された信頼されたランタイムのみを変更します。古いデーモンはすでにアクティベーション操作内でリフレッシュを行うため、クライアントはケイパビリティが存在する場合を除いて追加のリフレッシュを提出してはなりません。30秒の世代 reconciler は、呼び出し元がリフレッシュしなかったワークスペースのための独立した最終収束パスとして残っています。ワークスペースの `inherit` は正確なオーバーライドをクリアしますが、不明な名前の宣言は作成しません。すべて不明なクリアは no-op として成功します。単一のアクティベーションメソッドはインストール済みのみのままです。
+
+ワークスペース内部の Extension スキルスイッチの場合は、`extension_state` をプリフライトし、リソースグループ化された REST メソッドを使用します。これらはスキル設定を書き込んだり、無効化された親 Extension をアクティブ化したりしません。
+
+```ts
+const workspace = client.workspaceByCwd('/work/secondary');
+const state = await workspace.extensionState(extensionId);
+const handle = await workspace.setExtensionState(extensionId, {
+  skills: [
+    { name: 'review', state: 'enabled' },
+    { name: 'deploy', state: 'disabled' },
+  ],
+});
+const updated = await client.waitForExtensionOperation(handle);
+```
+
+`WorkspaceExtensionState` はマニフェストのデフォルト、正確なワークスペースオーバーライド、および設定を考慮した有効な状態を報告します。操作は順序付きの `resourceStates.skills` を返し、リフレッシュの警告付きで成功する場合があります。サポートされるのは `skills` グループのみです。これらの呼び出しを `setWorkspaceSkillEnabled` にダウングレードしないでください。そちらはより優先度の高い設定を書き込みます。
 
 ワークスペースの表示名はオプションのプレゼンテーションメタデータです。事前に `capabilities.features.includes('workspace_display_name')` を確認してください。ワークスペース ID と正規パスが唯一のセレクターであり、表示名の重複は有効です。
 
@@ -291,7 +307,7 @@ sequenceDiagram
 
 - `globalThis.fetch`（Node 18+ の組み込み、ブラウザー、undici など）。テスト用に `DaemonClient` ごとに注入可能です。
 - ネイティブの `AbortController` / `AbortSignal.any` / `setTimeout`。
-- `@qwen-code/qwen-codeCore` や `@qwen-code/acp-bridge` への推移的な依存関係はありません — SDK パッケージは完全に分離されており、外部のコンシューマーがデーモンの内部実装を取り込むことはありません。
+- `@qwen-code/qwen-code-core` や `@qwen-code/acp-bridge` への推移的な依存関係はありません — SDK パッケージは完全に分離されており、外部のコンシューマーがデーモンの内部実装を取り込むことはありません。
 
 ## `ui/*` サブパッケージ ([#4328](https://github.com/QwenLM/qwen-code/pull/4328) + [#4353](https://github.com/QwenLM/qwen-code/pull/4353))
 
@@ -305,7 +321,7 @@ SDK は `packages/sdk-typescript/src/daemon/ui/` もエクスポートします�
 - パブリック定数には `DAEMON_PLAN_TOOL_CALL_ID` が含まれます。
 - `conformance.ts` にはクロスホスト一貫性テストスイートが含まれています。
 
-最初の本番環境でのコンシューマーは、React の `DaemonSessionProvider` を介した `packages/webui/src/daemon/` です。詳細なアーキテクチャ、用語集、セレクターテーブル、およびレガシーな `DaemonTuiAdapter` との関係については、[`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md) を参照してください。
+最初の本番環境でのコンシューマーは、React の `DaemonSessionProvider` を介した `packages/web-shell/client/daemon/` です。詳細なアーキテクチャ、用語集、セレクターテーブル、およびレガシーな `DaemonTuiAdapter` との関係については、[`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md) を参照してください。
 
 このサブパッケージは `@qwen-code/sdk/daemon` サブパスからエクスポートされます。`import { DaemonClient }` を実行している既存のコードは影響を受けません。
 

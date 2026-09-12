@@ -2,9 +2,9 @@
 
 ## 概述
 
-本页面汇总了影响 `qwen serve` 守护进程及其适配器的所有设置：环境变量、CLI 参数、`settings.json` 键以及编程式选项。当特定功能页面需要跨领域的配置细节时，会链接回此处。
+本页面汇总了影响 `qwen serve` 守护进程及其适配器的所有设置：环境变量、CLI 标志、`settings.json` 键以及编程式选项。当特定功能页面需要跨领域的配置细节时，会链接回此处。
 
-## CLI 参数 (`qwen serve`)
+## CLI 标志 (`qwen serve`)
 
 | 参数                                    | 类型                       | 默认值                                    | 作用                                                                                                                                                                              |
 | --------------------------------------- | -------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -17,7 +17,7 @@
 | `--workspace <dir>`                     | absolute path / repeatable   | `process.cwd()`                           | 启动时的工作区运行时；重复使用可注册额外的隔离运行时。第一个为主运行时。每个值必须是绝对路径且为目录；在启动时进行规范化处理。                                                                                                      |
 | `--memory-project-scope <mode>`         | `git-root` / `workspace`     | `workspace`                               | 项目内存分区。`workspace` 按精确的工作区目录隔离；`git-root` 是同一 Git root 下工作区共享的旧版兼容作用域。覆盖 `QWEN_CODE_MEMORY_PROJECT_SCOPE`。                               |
 | `--max-sessions <n>`                    | number                     | `32`                                      | 每个工作区的活跃会话上限。`0` / `Infinity` 表示无限制；`NaN` 或负值会抛出异常。                                                                                                |
-| `--max-total-sessions <n>`              | number                       | 多个启动/恢复的工作区时派生                  | 守护进程级别的活跃会话上限。省略时，根据每个工作区的上限和启动/恢复的工作区数量派生一个有限的默认值。`0` / `Infinity` 表示无限制。                                         |
+| `--max-total-sessions <n>`              | number                       | `800`, or derived at capacity 25 or less                                          | 守护进程级别的活跃会话上限。省略时，在注册容量大于 25（包括默认值 256）时为 800，即使只有一个工作区也是如此。在容量为 25 或更少时，根据每个工作区的上限和启动/恢复的工作区数量派生一次，其中一个这样的工作区是无限制的。`0` / `Infinity` 表示无限制。                                         |
 | `--max-pending-prompts-per-session <n>` | number                       | `5`                                       | 每个会话已接受但处于 pending/running 状态的 prompt 上限。超出的 prompt 将返回 503。`0` / `Infinity` 表示无限制；负值或非整数值会抛出异常。                             |
 | `--max-connections <n>`                 | number                       | `256`                                     | HTTP 监听器的 `server.maxConnections`；`0` / `Infinity` 表示无限制。                                                                                                            |
 | `--enable-session-shell`                | boolean                      | `false`                                   | 启用直接的 `POST /session/:id/shell` 执行。在 bearer auth 或 trusted-loopback authority 下生效；每次调用都必须携带绑定到会话的 `X-Qwen-Client-Id`。                                            |
@@ -90,7 +90,7 @@
 | `QWEN_SERVE_MCP_CLIENT_BUDGET`   | 正整数字符串，由 ACP 子进程的 `readBudgetFromEnv()` 消费。                                               |
 | `QWEN_SERVE_MCP_BUDGET_MODE`     | `off` / `warn` / `enforce`。                                                                                              |
 | `QWEN_SERVE_MCP_POOL_TRANSPORTS` | 逗号分隔的 transport 白名单；默认的 pooled transports 为 `stdio,websocket`；可以显式包含 `http,sse`。 |
-| `QWEN_SERVE_MCP_POOL_DRAIN_MS`   | Pool 条目的空闲排空延迟；默认值为 `30000`，限制在 `1000..600000` 毫秒之间。                                              |
+| `QWEN_SERVE_MCP_POOL_DRAIN_MS`   | Pool 条目的空闲 drain 延迟；默认值为 `30000`，限制在 `1000..600000` 毫秒之间。                                              |
 
 ### 由 SDK / 适配器读取
 
@@ -139,7 +139,7 @@
 | `rateLimit*`                  | 分层 HTTP 速率限制开关、阈值和时间窗口。                                      |
 ## `BridgeOptions`（编程式 bridge 嵌入）
 
-`packages/acp-bridge/src/bridgeOptions.ts` 定义了 bridge 选项。完整表格请参见 [`03-acp-bridge.md`](./03-acp-bridge.md)。关键字段如下：
+`packages/acp-bridge/src/bridgeOptions.ts` 定义了 bridge 选项。完整表格请参见 [`03-acp-bridge.md`](./03-acp-bridge.md)。关键字段：
 
 | 字段                                                                                                                      | 作用                                                                                          |
 | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |

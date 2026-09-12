@@ -4,7 +4,7 @@ O Qwen Code permite configurar vários provedores de modelos por meio da configu
 
 ## Visão Geral
 
-Use `modelProviders` para declarar modelos por id de provedor que podem ser alternados no seletor `/model`. Cada chave é um id de provedor e seu valor é **um array de definições de modelo** (`ModelConfig[]`). Para provedores integrados, a chave deve ser um tipo de auth válido (`openai`, `anthropic`, `gemini`, `vertex-ai`); um id de provedor personalizado (ex.: `idealab`) é permitido desde que você o mapeie para um protocolo via a configuração de nível superior [`providerProtocol`](#ids-de-provedor-personalizados-providerprotocol). Cada entrada de modelo requer um `id`; `envKey` é **opcional e recomendado** (quando omitido, usa a chave de ambiente padrão do tipo de auth, por exemplo, `OPENAI_API_KEY` para `openai`), com `name`, `description`, `baseUrl` e `generationConfig` opcionais. As credenciais nunca são persistidas nas configurações; o runtime as lê de `process.env[envKey]`. Os modelos Qwen OAuth permanecem hard-coded e não podem ser sobrescritos.
+Use `modelProviders` para declarar modelos por id de provedor que podem ser alternados no seletor `/model`. Cada chave é um id de provedor e seu valor é **um array de definições de modelo** (`ModelConfig[]`). Para provedores integrados, a chave deve ser um tipo de auth válido (`openai`, `openai-responses`, `anthropic`, `gemini`, `vertex-ai`); um id de provedor personalizado (ex.: `idealab`) é permitido desde que você o mapeie para um protocolo via a configuração de nível superior [`providerProtocol`](#ids-de-provedor-personalizados-providerprotocol). Cada entrada de modelo requer um `id`; `envKey` é **opcional e recomendado** (quando omitido, usa a chave de ambiente padrão do tipo de auth, por exemplo, `OPENAI_API_KEY` para `openai`), com `name`, `description`, `baseUrl` e `generationConfig` opcionais. As credenciais nunca são persistidas nas configurações; o runtime as lê de `process.env[envKey]`. Os modelos Qwen OAuth permanecem hard-coded e não podem ser sobrescritos.
 
 > [!note]
 >
@@ -80,8 +80,9 @@ As chaves do objeto `modelProviders` devem ser valores válidos de `authType`. O
 
 | Auth Type    | Description                                                                                                                                     |
 | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `openai`     | APIs compatíveis com OpenAI (OpenAI, Azure OpenAI, servidores de inferência locais como vLLM/Ollama)                                            |
-| `anthropic`  | API Anthropic Claude                                                                                                                            |
+| `openai`           | APIs compatíveis com OpenAI (OpenAI, Azure OpenAI, servidores de inferência locais como vLLM/Ollama)                                                         |
+| `openai-responses` | API `/v1/responses` da OpenAI (replay de raciocínio nativo via `reasoning.encrypted_content`, não o formato Chat Completions usado pelo `openai`)      |
+| `anthropic`        | API Anthropic Claude                                                                                                                            |
 | `gemini`     | API Google Gemini                                                                                                                               |
 | `qwen-oauth` | Qwen OAuth (hard-coded, não pode ser sobrescrito em `modelProviders`)                                                                           |
 | `vertex-ai`  | Google Vertex AI (usa o protocolo `gemini` e o SDK `@google/genai` no modo Vertex AI; selecioná-lo define `GOOGLE_GENAI_USE_VERTEXAI=true`)     |
@@ -119,9 +120,10 @@ Sem uma entrada `providerProtocol` correspondente, um id de provedor personaliza
 
 O Qwen Code usa os seguintes SDKs oficiais para enviar requisições para cada provedor:
 
-| Auth Type    | SDK Package                                                                                     |
-| ------------ | ----------------------------------------------------------------------------------------------- |
-| `openai`     | [`openai`](https://www.npmjs.com/package/openai) - SDK oficial OpenAI para Node.js              |
+| Auth Type          | Transport                                                                                                          |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `openai`           | [`openai`](https://www.npmjs.com/package/openai) - SDK oficial OpenAI para Node.js                                     |
+| `openai-responses` | Chamadas HTTP/SSE diretas para `/v1/responses` (sem SDK); embeddings usam [`openai`](https://www.npmjs.com/package/openai) |
 | `anthropic`  | [`@anthropic-ai/sdk`](https://www.npmjs.com/package/@anthropic-ai/sdk) - SDK oficial Anthropic  |
 | `gemini`     | [`@google/genai`](https://www.npmjs.com/package/@google/genai) - SDK oficial Google GenAI       |
 | `qwen-oauth` | [`openai`](https://www.npmjs.com/package/openai) com provedor personalizado (compatível com DashScope) |
@@ -215,6 +217,41 @@ Este tipo de autenticação suporta não apenas a API oficial da OpenAI, mas tam
   }
 }
 ```
+
+### OpenAI Responses API (`openai-responses`)
+
+Este tipo de auth tem como alvo o endpoint `/v1/responses` da OpenAI em vez do Chat Completions. Quando o endpoint retorna raciocínio criptografado com texto de pensamento visível, ele faz replay do raciocínio de turnos anteriores entre turnos e via `--resume` usando `reasoning.encrypted_content`. Endpoints compatíveis que fazem streaming de `response.reasoning_text.delta` também exibem seu raciocínio, mas endpoints sem `encrypted_content` não conseguem fazer replay do estado de raciocínio opaco. Use `reasoning.effort` (e não `extra_body.enable_thinking`, usado pelo wire do Chat Completions) para controlar a intensidade do raciocínio.
+
+```json
+{
+  "env": {
+    "OPENAI_API_KEY": "sk-your-actual-openai-key-here"
+  },
+  "modelProviders": {
+    "openai-responses": [
+      {
+        "id": "gpt-5.1",
+        "name": "GPT-5.1 (Responses API)",
+        "envKey": "OPENAI_API_KEY",
+        "baseUrl": "https://api.openai.com/v1",
+        "generationConfig": {
+          "timeout": 60000,
+          "reasoning": {
+            "effort": "high"
+          },
+          "samplingParams": {
+            "temperature": 0.7,
+            "max_tokens": 4096
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+> [!note]
+> `extra_body` neste wire é apenas preenchimento: uma chave é escrita no corpo da requisição apenas quando a requisição gerada não tem valor para ela, portanto não pode sobrescrever um campo que o pipeline já definiu (`model`, `input`, `reasoning`, `temperature`, `max_output_tokens`, ...). A chave legada `enable_thinking` é a única exceção até a isso — ela é removida em vez de encaminhada (não é um campo da Responses API) e traduzida para `reasoning.effort: "medium"` quando nenhum `reasoning` explícito está definido. Defina `reasoning.effort` diretamente em vez de `extra_body.enable_thinking` para este provedor.
 
 ### Anthropic (`anthropic`)
 
@@ -381,7 +418,7 @@ export VLLM_API_KEY="not-needed"
 
 > [!note]
 >
-> O parâmetro `extra_body` é **suportado apenas para provedores compatíveis com OpenAI** (`openai`, `qwen-oauth`). Ele é ignorado para os provedores Anthropic e Gemini.
+> O parâmetro `extra_body` é **suportado apenas para provedores compatíveis com OpenAI** (`openai`, `openai-responses`, `qwen-oauth`). Ele é ignorado para os provedores Anthropic e Gemini. No `openai-responses`, a chave `enable_thinking` é traduzida em vez de encaminhada — veja a nota da [API OpenAI Responses](#openai-responses-api-openai-responses).
 
 > [!note]
 >

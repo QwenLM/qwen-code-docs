@@ -58,8 +58,8 @@ Cria uma nova sessão de consulta com o Qwen Code.
 | `cwd`                    | `string`                                       | `process.cwd()`  | O diretório de trabalho para a sessão de consulta. Determina o contexto no qual operações de arquivo e comandos são executados.                                                                                                                                                                                                                                                                                                                                                           |
 | `model`                  | `string`                                       | -                | O modelo de IA a usar (ex.: `'qwen-max'`, `'qwen-plus'`, `'qwen-turbo'`). Tem precedência sobre as variáveis de ambiente `OPENAI_MODEL` e `QWEN_MODEL`.                                                                                                                                                                                                                                                                                                                                 |
 | `pathToQwenExecutable`   | `string`                                       | CLI integrada  | Caminho para o executável do Qwen Code. Suporta múltiplos formatos: `'qwen'` (binário nativo do PATH), `'/path/to/qwen'` (caminho explícito), `'/path/to/cli.js'` (bundle Node.js), `'node:/path/to/cli.js'` (força runtime Node.js), `'bun:/path/to/cli.js'` (força runtime Bun). Se não fornecido, o SDK usa a CLI integrada incluída no pacote. |
-| `permissionMode`         | `'default' \| 'plan' \| 'auto-edit' \| 'auto' \| 'yolo'` | `'default'`      | Modo de permissão que controla a aprovação de execução de ferramentas. Veja [Modos de Permissão](#modos-de-permissão) para detalhes.                                                                                                                                                                                                                                                                                                                                                           |
-| `canUseTool`             | `CanUseTool`                                   | -                | Manipulador de permissão personalizado para aprovação de execução de ferramentas. É invocado quando uma ferramenta requer confirmação. Deve responder em até 60 segundos ou a solicitação será negada automaticamente. Veja [Manipulador de Permissão Personalizado](#manipulador-de-permissão-personalizado).                                                                                                                                                                                     |
+| `permissionMode`         | `'default' \| 'plan' \| 'auto-edit' \| 'auto' \| 'yolo'` | `'default'`      | Modo de permissão que controla a aprovação de execução de ferramentas. Veja [Modos de Permissão](#permission-modes) para detalhes.                                                                                                                                                                                                                                                                                                                                                           |
+| `canUseTool`             | `CanUseTool`                                   | -                | Manipulador de permissão personalizado para aprovação de execução de ferramentas. É invocado quando uma ferramenta requer confirmação. Deve responder em até 60 segundos ou a solicitação será negada automaticamente. Veja [Manipulador de Permissão Personalizado](#custom-permission-handler).                                                                                                                                                                                     |
 | `env`                    | `Record<string, string>`                       | -                | Variáveis de ambiente a serem passadas para o processo do Qwen Code. Mescladas com o ambiente do processo atual.                                                                                                                                                                                                                                                                                                                                                                          |
 | `systemPrompt`           | `string \| QuerySystemPromptPreset`            | -                | Configuração do prompt de sistema para a sessão principal. Use uma string para substituir completamente o prompt de sistema embutido do Qwen Code, ou um objeto de preset para manter o prompt embutido e acrescentar instruções extras.                                                                                                                                                                                                                                                  |
 | `mcpServers`             | `Record<string, McpServerConfig>`              | -                | Servidores MCP (Model Context Protocol) para conectar. Suporta servidores externos (stdio/SSE/HTTP) e servidores embutidos no SDK. Servidores externos são configurados com opções de transporte como `command`, `args`, `url`, `httpUrl`, etc. Servidores SDK usam `{ type: 'sdk', name: string, instance: Server }`.                                                                                                                                                                                        |
@@ -181,6 +181,88 @@ console.log(session.sessionId); // 550e8400-e29b-41d4-a716-446655440000
 O SDK requer a capability `session_id_override` do daemon antes de enviar a mutação. O modo REST serializa `sessionId` diretamente; um adapter ACP ativo o mapeia para `session/new._meta["qwen-code/sessionId"]`. O SDK verifica a resposta de sucesso e lança `DaemonSessionIdProtocolError` se o daemon retornar um ID diferente.
 
 Esta opção sempre cria uma nova sessão de thread e não é um attach idempotente. Se o resultado da criação for ambíguo, use o ID conhecido com load ou resume. Omitir a opção preserva o comportamento existente de create-or-attach.
+
+## Conversando com sessões em execução
+
+`@qwen-code/sdk/peer` permite que um programa que não é uma sessão do Qwen Code participe das
+sessões em execução como o mesmo usuário na mesma máquina — um front-end de voz, um
+relay, um observador de build. O programa aparece em `qwen sessions ps` e no
+`list_agents` de cada sessão que tem `agents.crossSessionMessaging` ativado
+— que também é o que permite que essas sessões enviem mensagens para ele por nome com
+`send_message`. Ele pode enviar mensagens de volta para elas. Executa apenas no Node e não precisa
+de nada além do próprio Node.
+
+```typescript
+import { PeerEndpoint } from ' @qwen-code/sdk/peer';
+
+const endpoint = await PeerEndpoint.start({
+  name: 'voice-bridge',
+  onMessage: (message) =>
+    console.log(`${message.fromName}: ${message.content}`),
+});
+
+const [session] = await endpoint.list();
+if (session) {
+  const sent = await endpoint.send({
+    to: session.address,
+    content: 'What are you working on?',
+  });
+  if (sent.kind === 'sent') {
+    const receipt = await endpoint.awaitReceipt(sent.msgId, { final: true });
+    console.log(receipt?.status); // delivered, denied, refused, ...
+  }
+}
+
+await endpoint.close();
+```
+
+Uma mensagem como essa é mantida para o usuário da sessão revisar. Para direcionar uma
+sessão sem essa revisão, crie um token de controlador com
+`qwen sessions controllers add --label voice-bridge`, forneça-o ao endpoint
+e marque os envios que devem apresentá-lo:
+
+```typescript
+const endpoint = await PeerEndpoint.start({
+  name: 'voice-bridge',
+  controllerToken: process.env['QWEN_CONTROLLER_TOKEN'],
+});
+await endpoint.send({
+  to: 'my-app-3f',
+  content: 'run the tests',
+  controller: true,
+});
+```
+
+Coisas a saber:
+
+- Uma sessão tem uma caixa de entrada apenas enquanto sua configuração `agents.crossSessionMessaging`
+  está ativada, e a configuração está desativada por padrão. Sem ela, a sessão não
+  aparece em `list()`, e seu próprio `list_agents` e `send_message` não podem ver
+  ou alcançar o programa também. `qwen sessions ps` lista o programa independentemente.
+- Uma mensagem é entregue sem revisão em exatamente dois casos: o envio
+  apresenta um token de controlador (`controller: true`), ou seu `fromMode` nomeia a
+  classe de revisão da sessão receptora. `fromMode` é uma afirmação que nada
+  autentica, então um programa que não é uma sessão de codificação deve deixá-la
+  de fora. Nada no registro — nem `kind`, nem `name` — garante a entrega. A
+  configuração `agents.crossSessionInbound` da sessão receptora tem precedência sobre ambos:
+  `hold` ou `refuse` lá vence um token de controlador.
+- Marque apenas os envios destinados a direcionar uma sessão. Endereços são resolvidos a partir de
+  registros que qualquer programa executando como você pode escrever, então um envio de controlador apresenta
+  o token para o registro de qualquer processo que responda a esse endereço. Um
+  envio de controlador para outro endpoint peer é descartado sem leitura, porque a
+  caixa de entrada de um endpoint aceita apenas seu próprio token.
+- A caixa de entrada do endpoint não aplica nenhuma das proteções que uma sessão do Qwen Code
+  aplica à sua própria: sem limite de taxa, sem retenções e sem janela de duplicatas além
+  das últimas 200 mensagens que respondeu. Cada mensagem é respondida como `delivered` e
+  entregue ao `onMessage` conforme chega, então aplique seus próprios limites lá se você
+  precisar. Sem `onMessage`, cada mensagem é respondida como `refused`.
+- Chame `close()` antes de sair, incluindo de seus próprios manipuladores de sinal. Um
+  processo encerrado sem fechar deixa seu registro para trás até que uma sessão do Qwen Code
+  liste o diretório e veja que o processo se foi.
+- Apenas UNIX domain sockets: Windows ainda não é suportado.
+
+O schema de registro, formato de wire e estados de recibo estão documentados em
+[Cross-Session Protocol](../users/features/cross-session-protocol.md).
 
 ## Modos de Permissão
 

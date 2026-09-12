@@ -1,4 +1,4 @@
-# Subagents (Unteragenten)
+# Subagents
 
 Subagents sind spezialisierte KI-Assistenten, die bestimmte Arten von Aufgaben innerhalb von Qwen Code übernehmen. Sie ermöglichen es Ihnen, fokussierte Arbeit an KI-Agenten zu delegieren, die mit aufgabenspezifischen Prompts, Werkzeugen und Verhaltensweisen konfiguriert sind.
 
@@ -11,6 +11,33 @@ Subagents sind unabhängige KI-Assistenten, die:
 - **Gesteuerte Werkzeuge verwenden** – Sie können konfigurieren, auf welche Werkzeuge jeder Subagent Zugriff hat
 - **Autonom arbeiten** – Einmal mit einer Aufgabe betraut, arbeiten sie unabhängig bis zur Fertigstellung oder bis zum Scheitern
 - **Detailliertes Feedback geben** – Sie können ihren Fortschritt, ihre Werkzeugnutzung und Ausführungsstatistiken in Echtzeit sehen
+
+## Claude-Code- und Codex-Subagents
+
+Die integrierten `claude-code`- und `codex`-Agenten delegieren an separat installierte native Tools. Installiere und authentifiziere Claude Code mit seinem `claude-agent-acp`-Adapter oder Codex mit seiner `codex`-Executable und mache die Executable über `PATH` verfügbar. Diese Agenten verwenden ihre nativen Modell- und Authentifizierungseinstellungen. Qwen Code weicht nicht auf sein eigenes Modell aus, wenn die Executable fehlt.
+
+Beide Agenten verwenden standardmäßig Vordergrundausführung; setze `run_in_background: true`, um eine Hintergrund-Abschlussbenachrichtigung zu erhalten. Sie benötigen einen vertrauenswürdigen Workspace und sind im Safe-Modus nicht verfügbar. Beide Executoren unterstützen macOS/Linux (einschließlich WSL); native Windows-Starts werden vor dem Start mit einer Plattformanleitung abgelehnt.
+
+Claude Code verwendet den ACP-Executor und unterstützt fortlaufende Eingaben, während seine Session erhalten bleibt. Codex verwendet einen ephemeralen App-Server-Thread für eine einzelne Aufgabe und gibt die endgültige Antwort zurück. Codex-Aufgaben können keine Nachrichten empfangen oder fortgesetzt werden; starte stattdessen eine neue Aufgabe. Nativer Tool-Fortschritt, Token-Zählungen und Kosten werden für Codex nicht berichtet. Native Sessions können nach einem Neustart von Qwen Code nicht wiederhergestellt werden.
+
+Für einen benutzerdefinierten Codex-Agenten verwende das vorhandene `executor`-Frontmatter:
+
+```markdown
+---
+name: codex-review
+description: Review code with Codex
+executor:
+  kind: codex
+  command: codex
+background: false
+---
+
+Review the changes and report verified defects.
+```
+
+Das Weglassen von `executor.args` startet `codex app-server --stdio`; übergebene Argumente ersetzen diesen Standard. Verwende `kind: acp` und `command: claude-agent-acp` für einen benutzerdefinierten Claude-Code-Agenten. Qwen-Modell-Overrides, Tool-Listen, Subagent-Hooks, `maxTurns`, Fork-Historie, Teams und Workflows werden für externe Executoren nicht unterstützt. Worktree-Starts verwenden den vorhandenen Agent-Isolationslebenszyklus und führen den nativen Prozess im ausgewählten Worktree aus.
+
+Codex läuft unbeaufsichtigt. Ohne Agent-Override verwenden default-, plan- und auto-Sessions eine read-only Sandbox; Qwen's AUTO-Klassifizierer inspiziert native Befehle nicht. Intermediate Qwen-Subagent-Modi gewähren bei verschachtelter Delegation keinen nativen Zugriff. Wähle explizit auto-edit in der Session oder der Codex-Agent-Definition, um Workspace-Schreibzugriffe und unbeaufsichtigte Workspace-Befehle zu erlauben, oder yolo für vollständigen Zugriff. Eine Session, die sich bereits in auto-edit oder yolo befindet, hat Vorrang vor einer strengeren Agent-Definition. Andere effektive Genehmigungsmodi werden abgelehnt. Native Anfragen nach zusätzlicher Berechtigung oder Benutzereingaben werden abgelehnt. Ein konfiguriertes `runConfig.max_time_minutes` begrenzt die Ausführung. Der Executor wartet bei Abbruch auf die Prozessbereinigung; die gemeinsame Hintergrund-Abbruchbenachrichtigung kann unter ihrem Fünf-Sekunden-Fallback früher eintreffen.
 
 ## Fork-Subagent
 
@@ -769,35 +796,35 @@ description: Ein hilfreicher Code-Reviewer
 **Seien Sie spezifisch in Bezug auf Fachwissen:**
 
 ```
-You are a Python testing specialist with expertise in:
+Sie sind ein Python-Test-Spezialist mit Fachwissen in:
 
-- pytest framework and fixtures
-- Mock objects and dependency injection
-- Test-driven development practices
-- Performance testing with pytest-benchmark
+- pytest-Framework und Fixtures
+- Mock-Objekte und Dependency Injection
+- Testgetriebene Entwicklungspraktiken
+- Leistungstests mit pytest-benchmark
 ```
 
 **Fügen Sie schrittweise Ansätze hinzu:**
 
 ```
-For each testing task:
+Gehen Sie bei jeder Testaufgabe wie folgt vor:
 
-1. Analyze the code structure and dependencies
-2. Identify key functionality and edge cases
-3. Create comprehensive test suites with clear naming
-4. Include setup/teardown and proper assertions
-5. Add comments explaining complex test scenarios
+1. Analysieren Sie die Codestruktur und Abhängigkeiten
+2. Identifizieren Sie die wichtigsten Funktionen und Grenzfälle
+3. Erstellen Sie umfassende Test-Suiten mit klarer Benennung
+4. Fügen Sie Setup/Teardown und sinnvolle Assertions hinzu
+5. Kommentieren Sie komplexe Testszenarien
 ```
 
 **Geben Sie Ausgabestandards an:**
 
 ```
-Always follow these standards:
+Befolgen Sie stets diese Standards:
 
-- Use descriptive test names that explain the scenario
-- Include both positive and negative test cases
-- Add docstrings for complex test functions
-- Ensure tests are independent and can run in any order
+- Verwenden Sie aussagekräftige Testnamen, die das Szenario erklären
+- Fügen Sie sowohl positive als auch negative Testfälle hinzu
+- Fügen Sie Docstrings für komplexe Testfunktionen hinzu
+- Stellen Sie sicher, dass die Tests unabhängig sind und in beliebiger Reihenfolge ausgeführt werden können
 ```
 
 ## Sicherheitsaspekte

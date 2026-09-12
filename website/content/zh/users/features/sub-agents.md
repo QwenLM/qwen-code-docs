@@ -12,6 +12,33 @@
 - **自主工作** — 一旦分派任务，它们会独立工作直到完成或失败
 - **提供详细反馈** — 你可以实时查看它们的进度、工具使用和执行统计
 
+## Claude Code 和 Codex 子代理
+
+内建的 `claude-code` 和 `codex` 代理会委托给单独安装的原生工具。使用 `claude-agent-acp` 适配器安装并认证 Claude Code，或使用 `codex` 可执行文件安装 Codex，并将可执行文件添加到 `PATH` 中。这些代理使用其原生模型和认证设置。当可执行文件缺失时，Qwen Code 不会回退到自己的模型。
+
+两个代理都默认在前台执行；设置 `run_in_background: true` 以接收后台完成通知。它们需要受信任的工作区，在安全模式下不可用。两个执行器都支持 macOS/Linux（包括 WSL）；原生 Windows 启动会在启动前被拒绝，并提供平台指导。
+
+Claude Code 使用 ACP 执行器，并在会话保留期间支持继续输入。Codex 使用临时应用服务器线程处理单个任务并返回最终答案。Codex 任务不能接收消息或恢复；请改为启动新任务。Codex 不报告原生工具进度、token 计数和成本。重启 Qwen Code 后无法恢复原生会话。
+
+对于自定义 Codex 代理，使用现有的 `executor` frontmatter：
+
+```markdown
+---
+name: codex-review
+description: Review code with Codex
+executor:
+  kind: codex
+  command: codex
+background: false
+---
+
+Review the changes and report verified defects.
+```
+
+省略 `executor.args` 会启动 `codex app-server --stdio`；提供的参数会替换该默认值。对于自定义 Claude Code 代理，使用 `kind: acp` 和 `command: claude-agent-acp`。外部执行器不支持 Qwen 模型覆盖、工具列表、子代理 hook、`maxTurns`、fork 历史、团队和工作流。Worktree 启动使用现有的 Agent 隔离生命周期，并在选定的 worktree 中运行原生进程。
+
+Codex 在无监督的情况下运行。没有代理覆盖时，default、plan 和 auto 会话使用只读沙箱；Qwen 的 AUTO 分类器不检查原生命令。中间的 Qwen 子代理模式在嵌套委派期间不授予原生访问权限。在会话或 Codex 代理定义中显式选择 auto-edit 以允许工作区写入和无监督的工作区命令，或选择 yolo 以获得完全访问权限。已经处于 auto-edit 或 yolo 的会话优先于更严格的代理定义。其他有效的审批模式会被拒绝。原生的额外权限或用户输入请求会被拒绝。配置的 `runConfig.max_time_minutes` 限制执行时间。执行器在取消时等待进程清理；共享的后台取消通知可以在其五秒回退下更早到达。
+
 ## Fork 子代理
 
 除了命名的子代理外，Qwen Code 还支持 **fork** — 通过显式指定 `subagent_type: "fork"` 来选择。Fork 继承父对话的完整上下文，通常在后台分离运行。Fork 在交互式和无头会话中均可工作；无头 fork 始终使用后台路径。省略 `subagent_type` **不会** 创建 fork；它会启动通用子代理。顶级命名的子代理默认在后台运行，并通过完成通知传递结果。当当前轮次必须等待常规子代理的内联结果时，设置 `run_in_background: false`。
@@ -597,6 +624,7 @@ Provide constructive feedback with:
 Focus on actionable feedback with specific examples and suggested solutions.
 Prioritize issues by impact and provide rationale for recommendations.
 ```
+
 **使用场景：**
 
 - "审查此认证实现是否存在安全问题"
@@ -702,7 +730,7 @@ Focus on writing clean, maintainable Python code that follows community standard
 
 #### 单一职责原则
 
-每个子智能体应有清晰、专注的用途。
+每个子代理应有清晰、专注的用途。
 
 **✅ 好：**
 
@@ -750,7 +778,7 @@ description: Works on frontend development tasks
 
 #### 可操作的描述
 
-编写能清晰表明何时使用该智能体的描述。
+编写能清晰表明何时使用该子代理的描述。
 
 **✅ 好：**
 
@@ -807,8 +835,8 @@ Always follow these standards:
 ## 安全考虑
 
 - **工具限制**：使用 `tools` 限制子代理可以访问的工具，或使用 `disallowedTools` 阻止特定工具，同时继承其他所有工具。
-- **权限模式**：子代理默认继承其父级的权限模式。计划模式下的会话不能通过委派给其他智能体升级为自动编辑模式。在不受信任的文件夹中，特权模式（自动编辑、yolo）将被阻止。
-- **提供商选择**：子智能体配置了 `model: authType:modelId` 或 `model: fast`（其中 `fastModel` 解析为另一种认证类型）时，该子智能体的模型请求将发送给所选提供商。请确保提供商适合子智能体的任务和数据。
+- **权限模式**：子代理默认继承其父级的权限模式。计划模式下的会话不能通过委派的代理升级为自动编辑模式。在不受信任的文件夹中，特权模式（自动编辑、yolo）将被阻止。
+- **提供商选择**：子代理配置了 `model: authType:modelId` 或 `model: fast`（其中 `fastModel` 解析为另一种认证类型）时，该子代理的模型请求将发送给所选提供商。请确保提供商适合子代理的任务和数据。
 - **沙箱**：所有工具执行遵循与直接使用工具相同的安全模型。
 - **审计追踪**：所有子代理的操作都会记录并可实时查看。
 - **访问控制**：项目和用户级别的分离提供了适当的边界。

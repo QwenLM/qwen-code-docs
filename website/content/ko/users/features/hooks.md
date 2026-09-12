@@ -537,7 +537,8 @@ Hook 출력은 세 가지 범주의 필드를 지원합니다:
   "tool_input": "object containing the tool's input parameters",
   "tool_response": "object containing the tool's response",
   "tool_use_id": "unique identifier for this tool use instance (internal format, e.g., toolu_xxx)",
-  "tool_call_id": "original API call ID from the LLM provider (e.g., call_xxx for OpenAI/Qwen) (optional)"
+  "tool_call_id": "original API call ID from the LLM provider (e.g., call_xxx for OpenAI/Qwen) (optional)",
+  "duration_ms": "tool execution time in milliseconds, excluding approval (optional)"
 }
 ```
 
@@ -573,7 +574,8 @@ Hook 출력은 세 가지 범주의 필드를 지원합니다:
   "tool_name": "name of the tool that failed",
   "tool_input": "object containing the tool's input parameters",
   "error": "error message describing the failure",
-  "is_interrupt": "boolean indicating if failure was due to user interruption (optional)"
+  "is_interrupt": "boolean indicating if failure was due to user interruption (optional)",
+  "duration_ms": "tool execution time in milliseconds when execution had started (optional)"
 }
 ```
 
@@ -594,24 +596,28 @@ Hook 출력은 세 가지 범주의 필드를 지원합니다:
 
 #### UserPromptSubmit
 
-**용도**: 지원되는 모델 호출 전에 실행되어 현재 모델 바인딩 프롬프트를 검증, 차단 또는 보강합니다. 이 이벤트는 현재 `UserQuery`, `ToolResult` 및 `Hook` 전송을 다루며, `Retry`, `Steer`, `Cron`, `Notification` 및 `Teammate` 전송은 건너뜁니다. 따라서 계속 경로에서 발생할 수 있으며, `prompt`를 원시 사용자 입력으로 가정해서는 안 됩니다.
+**용도**: 지원되는 모델 호출 전에 실행되어 입력을 검증, 차단 또는 보강합니다. core/headless 경로에서 이 이벤트는 현재 `UserQuery`, `ToolResult` 및 `Hook` 전송을 다루며, `Retry`, `Steer`, `Cron`, `Notification` 및 `Teammate` 전송은 건너뜁니다. 따라서 계속 경로에서 발생할 수 있으며, `prompt`를 원시 사용자 입력으로 가정해서는 안 됩니다. ACP 세션 경로에는 자체 호출 정책이 있습니다: 재시도 및 새로 디스패치된 백그라운드 작업은 여전히 레거시 hook를 호출할 수 있지만, continue, restored-question 및 runtime-goal 턴은 호출하지 않습니다.
 
 **이벤트별 필드**:
 
 ```json
 {
-  "prompt": "current model-bound prompt for this hook invocation",
-  "submitted_prompt": "optional user text captured at a supported interactive TUI submission boundary"
+  "prompt": "legacy prompt for this invocation; semantics depend on the execution path",
+  "submitted_prompt": "optional user text captured at a supported submission boundary"
 }
 ```
 
-`submitted_prompt`는 선택 사항입니다. Qwen이 지원되는 대화형 TUI 제출에서 새 `UserQuery`로 출처를 전달할 수 있을 때만 존재합니다. 지원되지 않는 생산자 및 동일 턴 스티어링, 도구 결과 계속, 재시도, cron, 알림, 팀메이트 트래픽과 같은 기계 기반 경로에서는 생략됩니다. ACP, 헤드리스, `serve`, SDK 및 원격 입력 경로는 이 버전에서 이를 생성하지 않습니다.
+`submitted_prompt`는 선택 사항입니다. 지원되는 대화형 TUI 제출 및 첫 턴 헤드리스 `UserQuery` 전송에 존재합니다. ACP 클라이언트, `serve` 및 데몬 호스트에서 사용하는 ACP 세션 경로에서, 새 턴은 명시적 제출 선언을 포함해야 합니다. 선언이 없거나, 문자열이 아니거나, 비어 있거나, 공백만 있는 선언은 필드를 생략합니다; 값은 `prompt`나 디스플레이 레이블에서 재구성되지 않습니다. 재시도, 계속 및 채널 분류 턴은 이를 생략합니다. 채널 제외에는 자동화된 이벤트와 채널 어댑터를 통해 중계된 인간 메시지 모두 포함됩니다.
 
-지연된 입력은 출처가 완전한 상태로 유지되는 경우 필드를 보존할 수 있습니다. 결합된 배치는 모든 구성 항목에 출처가 있을 때만 출처를 유지합니다; 편집되거나 부분적으로 알려졌거나 기타 모호한 입력은 필드를 생략합니다. 프롬프트, 명령어 및 셸 기록 탐색 또는 선택된 검색 일치, 재시작 간 stash 복원 및 대화 되감기 복원도 이를 생략합니다. 이러한 경로는 원래 출처 없이 모델 바인딩 텍스트를 표시할 수 있기 때문입니다. 사용자 제출 텍스트가 필요한 소비자는 `prompt`로 폴백하는 대신 부재를 사용 불가로 취급해야 합니다.
+Web Shell은 제출 경계에서 원본 컴포저 텍스트를 제공합니다. Realtime voice 핸드오프는 요청 텍스트가 모델이 생성한 도구 인수에서 오기 때문에 출처를 선언하지 않습니다. 다른 ACP/데몬 SDK 클라이언트는 요청별로 `_meta: { "qwen.submittedPrompt": "original submitted text" }`를 통해 옵트인할 수 있으며, 리소스 또는 모델 전용 확장 전에 캡처됩니다. 이 선언 없이 기존 클라이언트는 레거시 hook를 계속 실행하지만 출처 게이트 Auto Recall을 트리거하지 않습니다. SDK 전송에 선언을 전역적으로 추가하지 마십시오: 예약된 작업, Live 작업 실행, 서브세션 스폰, 모델이 작성한 크로스세션 메시지 및 승격된 mid-turn 메시지는 자동으로 이를 획득해서는 안 됩니다. 비공개 `qwen.daemon.submittedPrompt` 키는 데몬간 홉을 위해 예약되어 있으며 외부 호출자에서 제거됩니다. 이러한 선언은 호출자 제공 출처이며, 인간 작성 또는 권한 부여의 증거가 아닙니다.
+
+ACP 경로에서 초기 레거시 `prompt`는 리소스, 첨부, 슬래시 명령어 또는 모델 전용 확장 전에 공백으로 결합된 요청의 텍스트 블록입니다. 완전한 확장된 모델 입력을 노출하지 않습니다. `submitted_prompt`는 해당 텍스트와 동일할 수 있지만, 명시적 선언에서만 오며 원본 공백을 보존합니다. core/headless 경로에서 레거시 `prompt`는 hook 호출의 현재 모델 바인딩 텍스트를 나타냅니다. 어느 필드도 완전한 DLP 검사 표면이 아닙니다.
+
+다음 컴포저 규칙은 대화형 TUI에 적용되며, ACP 클라이언트에는 적용되지 않습니다. 지연된 입력은 출처가 완전한 상태로 유지되는 경우 필드를 보존할 수 있습니다. 결합된 배치는 모든 구성 항목에 출처가 있을 때만 출처를 유지합니다; 편집되거나 부분적으로 알려졌거나 기타 모호한 입력은 필드를 생략합니다. 프롬프트, 명령어 및 셸 기록 탐색 또는 선택된 검색 일치, 재시작 간 stash 복원 및 대화 되감기 복원도 이를 생략합니다. 이러한 경로는 원래 출처 없이 모델 바인딩 텍스트를 표시할 수 있기 때문입니다. 사용자 제출 텍스트가 필요한 소비자는 `prompt`로 폴백하는 대신 부재를 사용 불가로 취급해야 합니다.
 
 복원되거나 출처를 사용할 수 없는 모델 바인딩 입력이 지워지거나 제출된 후, 컴포저는 실행 취소 및 다시 실행 기록도 지웁니다. 이는 마커나 사이드카가 소비된 후 실행 취소가 확장된 텍스트를 복원하는 것을 방지합니다.
 
-대형 붙여넣기 플레이스홀더는 `submitted_prompt`에서 압축된 상태로 유지됩니다; 확장된 붙여넣기 내용은 `prompt`에만 나타납니다. 소비자는 이 필드를 클립보드 입력의 바이트 단위 기록이 아닌 TUI 텍스트 프로젝션으로 취급해야 합니다.
+대형 붙여넣기 플레이스홀더는 `submitted_prompt`에서 압축된 상태로 유지됩니다; 확장된 붙여넣기 내용은 `prompt`에만 나타납니다. 해당 TUI 경로에서 소비자는 이 필드를 클립보드 입력의 바이트 단위 기록이 아닌 텍스트 프로젝션으로 취급해야 합니다. ACP 클라이언트에는 Vim, 붙여넣기 플레이스홀더, 기록 또는 되감기 출처 추적에 해당하는 내장 기능이 없습니다; 복원되거나 편집된 텍스트가 유효한 제출 선언을 유지할지 여부는 ACP 클라이언트가 결정합니다.
 
 Vim 모드가 활성화된 상태에서 존재하는 비어 있지 않은 입력은 Vim이 비활성화된 후에도 `submitted_prompt`를 생략합니다. Vim 레지스터가 이 버전에서 출처를 전달하지 않기 때문입니다. 이 보수적 규칙은 Vim을 활성화하기 전에 입력된 초안도 포함합니다. 컴포저를 지우면 새 적합한 입력이 시작됩니다.
 
@@ -640,7 +646,7 @@ sanitized hook context
 }
 ```
 
-이 두 필드 페이로드는 이 유형의 사용자 프롬프트 레코드에만 기록됩니다. `hookContext`는 태그된 파트를 의도적으로 중복하여 오프라인 및 서드파티 소비자가 모델 텍스트를 파싱하지 않고도 출처를 식별할 수 있게 합니다. `displayText`는 pre-hook 디스플레이 프로젝션이며 hook 컨텍스트를 절대 포함하지 않습니다. 지원되는 인터랙티브 TUI 제출의 경우 `submitted_prompt`가 운반하는 원본 composer 프로젝션입니다; ACP, 헤드리스, `serve`, SDK, 원격 입력 및 해당 출처 기록이 없는 다른 경로는 대신 확장된 pre-hook 프롬프트를 기록합니다.
+이 두 필드 페이로드는 이 유형의 사용자 프롬프트 레코드에만 기록됩니다. `hookContext`는 태그된 파트를 의도적으로 중복하여 오프라인 및 서드파티 소비자가 모델 텍스트를 파싱하지 않고도 출처를 식별할 수 있게 합니다. `displayText`는 pre-hook 디스플레이 프로젝션이며 hook 컨텍스트를 절대 포함하지 않습니다. core/headless 경로에서 사용 가능한 경우 제출된 프로젝션이며, 그렇지 않은 경우 확장된 pre-hook 프롬프트입니다. ACP는 프로젝션 또는 첨부 참조가 페이로드를 필요로 할 때 확장 전 신뢰할 수 있는 디스플레이 프로젝션 또는 원시 요청 텍스트를 기록합니다; 그렇지 않으면 `systemPayload`나 `displayText` 없이 사용자 메시지를 기록합니다.
 
 트랜스크립트 디스플레이 소비자는 `systemPayload.hookContext`가 문자열일 때 `displayText`를 이 사용자 프롬프트 프로젝션으로 취급합니다. 릴리스된 `displayText` 전용 사용자 프롬프트 레코드와의 호환성을 위해, 하나 이상의 다른 파트 뒤에 있는 최종 파트의 완전한 태그된 컨텍스트는 동등한 페어링 증거입니다. Notification, cron 및 mid-turn 레코드도 `displayText`를 가질 수 있지만, 해당 값은 컴팩트 디스플레이 레이블이며 해당 증거 없이는 모델 바인딩 텍스트로 대체되어서는 안 됩니다.
 레거시 베어 컨텍스트 레코드는 컨텍스트를 안정적으로 분리할 수 없으므로 모델 바인딩 디스플레이 동작을 유지합니다. 현재 태그된 형태를 사용하는 메타데이터 없는 레코드의 경우, 호환성 소비자는 동일한 완전한 최종 태그된 파트를 제거할 수 있습니다; 임의의 태그 유사 사용자 텍스트가 hook 출처라고 추론해서는 안 됩니다.
@@ -1455,11 +1461,11 @@ exit 0
 }
 ```
 
-### 예시 3: 대화형 TUI 제출 프롬프트 유효성 검증 Hook
+### 예시 3: 제출된 프롬프트 유효성 검증 Hook
 
-현재 모델 바인딩 내용을 대신 검사하려면 `prompt`를 읽으십시오. 해당 필드는 생성되거나 확장된 내용을 포함할 수 있으며, 원본 사용자 입력이 아니며, `UserPromptSubmit`가 모든 모델 전송을 다루는 것은 아닙니다. 소스 출처가 필요한 경우 `submitted_prompt`에서 `prompt`로 조용히 폴백하지 마십시오.
+core/headless 경로에서 `prompt`는 원본 사용자 입력이 아닌 생성되거나 확장된 내용을 포함할 수 있습니다. ACP에서는 확장 전 요청 텍스트로 시작하므로, 이를 읽어도 첨부 본문이나 완전한 모델 입력을 검사하지 않습니다. `UserPromptSubmit`는 모든 모델 전송을 다루지 않습니다. 소스 출처가 필요한 경우 `submitted_prompt`에서 `prompt`로 조용히 폴백하지 마십시오.
 
-민감 정보에 대한 지원되는 대화형 TUI 제출을 검증하고 긴 프롬프트에 대한 컨텍스트를 제공하는 UserPromptSubmit hook입니다. 소스 출처를 사용할 수 없는 호출은 건너뜁니다. 키워드 검사는 예시이며 완전한 DLP 정책이 아닙니다:
+지원되는 제출 텍스트를 검증하고 긴 프롬프트에 대한 컨텍스트를 제공하는 UserPromptSubmit hook입니다. 헤드리스 제출 및 명시적으로 선언된 ACP/데몬 제출에서도 실행되며, TUI 전용이 아닙니다. 소스 출처를 사용할 수 없는 호출은 건너뜁니다. 차단 결과는 이러한 비 TUI 경로를 포함한 영향받는 호출을 중지합니다. 키워드 검사는 예시이며 완전한 DLP 정책이 아닙니다:
 
 **prompt_validator.py**
 
