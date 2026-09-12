@@ -1216,7 +1216,8 @@ function verifyFile(lang, f, manifest) {
       fs.utimesSync(target, targetStat.atime, targetStat.mtime);
     tg = healed;
   }
-  if (!touchedThisSession) problems.push("target not touched this session");
+  if (!touchedThisSession)
+    return { ok: false, problems: ["target not touched this session"] };
   problems.push(...structuralProblems(en, tg, lang));
   const linksEn = (en.match(/\]\(/g) || []).length;
   const linksTg = (tg.match(/\]\(/g) || []).length;
@@ -1639,7 +1640,19 @@ function cmdQuarantine() {
   let removed = 0;
   let advanced = 0;
   const unrepairable = [];
+  let unwritten = 0;
   for (const listName of lists) {
+    const metricsFile = path.join(
+      dir,
+      listName.replace(/\.failed\.txt$/, ".metrics.json")
+    );
+    const unwrittenFiles = new Set(
+      fs.existsSync(metricsFile)
+        ? JSON.parse(fs.readFileSync(metricsFile, "utf8")).failures
+            .filter((f) => f.problems.includes("target not touched this session"))
+            .map((f) => f.file)
+        : []
+    );
     const entries = fs
       .readFileSync(path.join(dir, listName), "utf8")
       .split("\n")
@@ -1650,6 +1663,13 @@ function cmdQuarantine() {
       if (slash < 0) continue;
       const lang = entry.slice(0, slash);
       const rel = entry.slice(slash + 1);
+      if (unwrittenFiles.has(rel)) {
+        unwritten++;
+        console.log(
+          `::warning::${entry}: target not touched this session; retaining the existing translation for retry`
+        );
+        continue;
+      }
       const target = path.join(OPTS.contentDir, lang, rel);
       const repoRel = path.relative(ROOT, target).split(path.sep).join("/");
       const head = readFromHead(repoRel);
@@ -1703,7 +1723,7 @@ function cmdQuarantine() {
   console.log(
     `[orch] quarantine: ${restored} restored from HEAD, ${kept} kept over a corrupt HEAD, ` +
       `${advanced} kept as closer to the source, ` +
-      `${removed} removed, ${unrepairable.length} unrepairable`
+      `${removed} removed, ${unrepairable.length} unrepairable, ${unwritten} not written`
   );
   if (unrepairable.length) {
     const report = path.join(dir, "quarantine-unrepairable.json");
