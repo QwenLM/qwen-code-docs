@@ -8,9 +8,10 @@
 
 - 解析并验证 `ServeOptions`：监听地址、认证、工作区、会话/连接上限、MCP 预算/池、CORS、prompt/SSE/会话空闲超时、速率限制及相关开关。
 - 对主工作区进行**规范化**处理，且仅执行一次；在注册会话运行时之前，对每个重复的 `--workspace` 也进行规范化。主规范化形式由 `/capabilities.workspaceCwd`、`POST /session` 回退机制和主 bridge 共享。
-- 拒绝不安全或无效的启动配置：无 token 的非环回绑定、无 token 的 `--require-auth`、无 token 的通配符或非环回 HTTP(S) `--allow-origin`、无正数 `mcpClientBudget` 的 `mcpBudgetMode='enforce'`、不存在或非目录的 `--workspace`，以及无效的超时或速率限制值。
+- 解析 bearer：依次检查 `--token`、`QWEN_SERVER_TOKEN`，当两者均不存在且请求的 `--hostname` 为非环回地址（字面量 `localhost` 优先按自身解析）时，生成一个临时的 128 位 base64url bearer（22 个字符），并在启动时打印一次。环回拼写形式永不生成 token，并保持受信任的无 token 模式，除非设置了 `--require-auth`。生成依据拼写形式决定密钥，而启动拒绝检查则依据解析后的地址，这产生两种特殊情况：解析到非环回地址的 `localhost` 永不生成 token，且仅在 token 来源已解析时才允许启动（否则输出 `Refusing to bind …`）；非字面量名称解析到环回地址时会生成 token，从而失去受信任的无 token 模式，其 bearer 仅以 token 形式打印。
+- 拒绝不安全或无效的启动配置：非环回绑定但其 token 来源显式为空、无 token 的环回绑定上设置 `--require-auth`、无 token 的环回绑定上使用通配符或非环回 HTTP(S) `--allow-origin`、无正数 `mcpClientBudget` 的 `mcpBudgetMode='enforce'`、不存在或非目录的 `--workspace`，以及无效的超时或速率限制值。
 - 构建 `WorkspaceFileSystem` 工厂、权限审计发布者、`DaemonStatusProvider` 和 `acp-bridge`。
-- 构建 Express 应用，连接中间件（`allowOriginCors`（基于可变来源允许列表） -> `hostAllowlist` -> 访问日志 -> `bearerAuth` -> 速率限制 -> JSON 解析器 -> 遥测 -> 每路由 `mutationGate`），并挂载会话、工作区 CRUD、文件、设备流认证、权限投票和 ACP HTTP 路由。（无条件拒绝的 `denyBrowserOriginCors` 墙仅保留在引导应用 `run-qwen-serve.ts` 中。）
+- 构建 Express 应用，连接中间件（环回 `Origin` 剥离 -> 访问日志 -> 入站 trace-id 捕获 -> `hostAllowlist` -> 远程同源 `Origin` 剥离 -> 基于可变来源允许列表的 `allowOriginCors` -> 预认证 `/health` -> 预认证 Web Shell 资源 -> channel webhook -> `bearerAuth` -> 速率限制 -> JSON 解析器 -> 遥测 -> 每路由 `mutationGate`），并挂载会话、工作区 CRUD、文件、设备流认证、权限投票和 ACP HTTP 路由。（无条件拒绝的 `denyBrowserOriginCors` 墙仅保留在引导应用 `run-qwen-serve.ts` 中。）
 - 绑定监听端口并注册信号处理器。
 - 在 SIGINT/SIGTERM 上运行两阶段关闭；在收到第二个信号时强制退出。
 
@@ -61,11 +62,11 @@
 
 ### 启动序列
 
-在 `runQwenServe()` 启动此序列之前，仅 CLI 使用的 `--open-with-auth` 模式会验证环回/Web Shell 资格，并使用选定的已配置 token 填充 `ServeOptions.token`，当该选择为空时则使用 32 个随机字节以 base64url 编码。直接嵌入者和未使用该默认关闭标志的调用不会生成 token。
+在 `runQwenServe()` 启动此序列之前，仅 CLI 使用的 `--open-with-auth` 模式会验证环回/Web Shell 资格，并使用选定的已配置 token 填充 `ServeOptions.token`，当该选择为空时则使用 32 个随机字节（256 位 bearer）以 base64url 编码。就以下每个步骤而言，该生成的值被视为普通的已配置 token — 这也是 `--require-auth --open-with-auth` 能够启动的原因 — 并且它与步骤 1 中的非环回临时 bearer 是独立的生成器。直接调用 `createServeApp` 的直接嵌入者从不生成 token。
 
-1. 从 `opts.token` 或 `QWEN_SERVER_TOKEN` **解析并修剪 token**；这可以避免 `cat token.txt` 产生的尾部换行符悄悄破坏 bearer 比较。
+1. **解析 token**：从 `opts.token` 或 `QWEN_SERVER_TOKEN` 获取并修剪，使 `cat token.txt` 产生的尾部换行符无法悄悄破坏 bearer 比较。当请求的 `--hostname` 为非环回地址（字面量 `localhost` 优先按自身解析一次）且**两个**来源均不存在时，生成一个临时的 128 位（16 字节）bearer（22 个 base64url 字符），而不是拒绝；该值在 `listen()` 之后由远程快速启动打印一次，并在每次重启时轮换。环回拼写形式永不生成，因此保留受信任的无 token 模式。**显式为空白**的来源（`--token ''`，或 `QWEN_SERVER_TOKEN` 设置为空值或仅含空白字符的值）不算“不存在”，因此始终抑制生成 — 但空白性仅在一个方向上决定解析后的 token：空白的 `--token` 会遮蔽已设置的环境值并解析为无 token，而空白的环境值仅在未传递 `--token` 时才解析为无 token（非空白的 `--token` 仍然优先）；在这两种情况下，没有解析到 token 的非环回绑定仍然无法通过下方的守卫。
 2. **主机名拼写错误防护**：`--hostname localhost:4170` 会报错并建议改用 `--port`。
-3. **认证预检**：无 token 的非环回地址会被拒绝；无 token 的 `--require-auth` 会被拒绝。
+3. **认证预检**：没有_解析后_ token 的非环回绑定会被拒绝 — 这可能通过显式为空的来源达到，或通过 `localhost` 绑定的一次性解析落到非环回地址达到（生成依据拼写形式决定，因此那里没有生成任何内容）；`--require-auth` 在无 token 的绑定上拒绝，经过步骤 1 后这意味着没有已配置来源的环回绑定。通配符和非环回 HTTP(S) `--allow-origin` 守卫读取相同的解析后 token，因此在非环回绑定上生成的 bearer 可以满足它们，这些拒绝也仅限环回。
 4. **工作区验证**：绝对路径、存在、是目录。`EACCES` / `EPERM` 会被包装以指向该标志。
 5. **规范化工作区**：`canonicalizeWorkspace(rawWorkspace)` 运行一次 `realpathSync.native`，并将其提供给 `/capabilities`、`POST /session` 回退机制和 bridge。
 6. **MCP 预算验证**：正整数；`enforce` 需要预算。
@@ -140,7 +141,7 @@
 ## 注意事项与已知限制
 
 - 直接调用 `createServeApp` 时，若未提供 `deps.fsFactory` 或 `deps.bridge`，则默认 `trusted: false`；agent 端的 ACP `writeTextFile` 会因 `untrusted_workspace` 而拒绝执行。该警告仅打印一次。
-- 运行时应用运行 `allowOriginCors`，基于可变允许列表；未匹配的 `Origin` 值收到 403 拒绝信封（无条件拒绝的 `denyBrowserOriginCors` 墙仅保留在引导应用中）。**环回地址**上的 Web Shell 能正常工作是因为另一个中间件会先剥离匹配的环回同源值 — 非环回绑定需要 `--allow-origin` 才能支持 Shell 的 XHR 请求。
+- 运行时应用基于可变允许列表运行 `allowOriginCors`；未匹配的 `Origin` 值收到 403 拒绝信封（无条件拒绝的 `denyBrowserOriginCors` 墙仅保留在引导应用中）。**环回** Web Shell 能正常工作是因为另一个中间件会先剥离匹配的环回同源值；在带 token 的非环回绑定上，Shell 的同源 XHR 经过 bearer 认证，其 `Origin` 在到达该墙之前被剥离，因此不需要 `--allow-origin`。仍有三种情况需要允许列表条目：WebSocket 升级（终端、语音）、TLS 终止的前端代理（其 `https` 来源永远无法匹配明文 socket），以及任何重写 `Host` 头的明文 HTTP 中间层 — nginx 默认的 `proxy_set_header Host $proxy_host` 和 k8s Ingress 都会这样做。仅端口转换在**非环回绑定**上不需要任何配置（`docker -p 8080:4170`）：检查仅将 `Origin` 与规范化后的转发 `Host` 进行比较，从不查询监听端口（仅剥离协议默认的 `:80`/`:443`；非默认端口必须原样保留在其中）。在默认的**环回**绑定上则不行：DNS 重绑定 Host 允许列表仅接受 daemon 自身的端口，因此端口转换隧道（`ssh -L 8080:localhost:4170`）会对每个请求（包括 shell 文档）返回 `403 Invalid Host header` 拒绝，且 `--allow-origin` 无法覆盖它 — 请转发相同端口或绑定非环回地址。WebSocket 和 TLS 终止情况的补救措施是 `--allow-origin <origin>`；重写 Host 的中间层可以改为配置为原样转发 `Host` — 但一旦 TLS 在代理处终止则无法帮助，因为协议是从 daemon 自身的 socket 读取的。
 - Body-parser 顺序：使用 `mutate({ strict: true })` 的路由只有在 `express.json()` 之后才会返回 401。最坏情况下的内存占用为 `--max-connections × express.json({limit: '10mb'})`，在饱和的 loopback 监听器上可能产生高达约 2.5 GB 的瞬态内存；这种权衡是有意为之的。
 - 同一进程中的多个 daemon 必须使用针对每个 handle 的 `childEnvOverrides`；修改 `process.env` 会产生竞态条件，因为 `defaultSpawnChannelFactory` 会在 spawn 时对 env 进行快照。
 

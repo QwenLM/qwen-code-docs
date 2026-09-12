@@ -14,6 +14,8 @@ export default {
   'integration-zed': 'Zed IDE',
   'integration-jetbrains': 'JetBrains IDE',
   'integration-github-action': 'GitHub Actions',
+  'qwen-serve': 'デーモンモード',
+  'qwen-serve-deploy-local': 'ローカルデプロイ',
   'Qwen Code を使ったコーディング': {
     type: 'separator',
     title: 'Qwen Code を使ったコーディング', // タイトルは省略可能
@@ -23,7 +25,8 @@ export default {
   extension: '拡張機能',
   reference: 'リファレンス',
   support: 'サポート',
-  // 後で修正が必要
+  'conversations-recovery': '会話の復元',
+  // 要改善
   'ide-integration': {
     display: 'hidden',
   },

@@ -14,6 +14,8 @@ export default {
   'integration-zed': 'Zed IDE',
   'integration-jetbrains': 'IDE JetBrains',
   'integration-github-action': 'Действия GitHub',
+  'qwen-serve': 'Режим демона',
+  'qwen-serve-deploy-local': 'Локальное развертывание',
   'Программирование с помощью Qwen Code': {
     type: 'separator',
     title: 'Программирование с помощью Qwen Code', // Заголовок необязателен
@@ -23,7 +25,8 @@ export default {
   extension: 'Расширение',
   reference: 'Справочник',
   support: 'Поддержка',
-  // требует уточнения
+  'conversations-recovery': 'Восстановление диалогов',
+  // требует доработки
   'ide-integration': {
     display: 'hidden',
   },

@@ -1,10 +1,10 @@
-# Qwen Code 钩子
+# Qwen Code hook
 
 ## 概述
 
-Qwen Code 钩子提供了一种强大的机制，用于扩展和自定义 Qwen Code 应用程序的行为。钩子允许用户在应用程序生命周期的特定节点（如工具执行前、工具执行后、会话开始/结束以及其他关键事件期间）执行自定义脚本或程序。
+Qwen Code hook 提供了一种强大的机制，用于扩展和自定义 Qwen Code 应用程序的行为。hook 允许用户在应用程序生命周期的特定节点（如工具执行前、工具执行后、会话开始/结束以及其他关键事件期间）执行自定义脚本或程序。
 
-钩子默认处于启用状态。你可以通过在设置文件（与 `hooks` 同级）中将 `disableAllHooks` 设置为 `true` 来临时禁用所有钩子：
+hook 默认处于启用状态。你可以通过在设置文件（与 `hooks` 同级）中将 `disableAllHooks` 设置为 `true` 来临时禁用所有 hook：
 
 ```json
 {
@@ -15,11 +15,11 @@ Qwen Code 钩子提供了一种强大的机制，用于扩展和自定义 Qwen C
 }
 ```
 
-这会禁用所有钩子，但不会删除其配置。
+这会禁用所有 hook，但不会删除其配置。
 
-## 什么是钩子？
+## 什么是 hook？
 
-钩子是由用户定义的脚本或程序，Qwen Code 会在应用程序流程的预定义节点自动执行它们。它们允许用户：
+hook 是由用户定义的脚本或程序，Qwen Code 会在应用程序流程的预定义节点自动执行它们。它们允许用户：
 
 - 监控和审计工具使用情况
 - 强制执行安全策略
@@ -28,29 +28,29 @@ Qwen Code 钩子提供了一种强大的机制，用于扩展和自定义 Qwen C
 - 与外部系统和服务集成
 - 以编程方式修改工具输入或响应
 
-## 钩子类型
+## hook 类型
 
-Qwen Code 支持四种钩子执行器类型：
+Qwen Code 支持四种 hook 执行器类型：
 
 | 类型       | 描述                                                                                       |
 | :--------- | :----------------------------------------------------------------------------------------- |
 | `command`  | 执行 shell 命令。通过 `stdin` 接收 JSON，通过 `stdout` 返回结果。                          |
 | `http`     | 将 JSON 作为 `POST` 请求体发送到指定的 URL。通过 HTTP 响应体返回结果。                     |
-| `function` | 直接调用已注册的 JavaScript 函数（仅限会话级钩子）。                                       |
+| `function` | 直接调用已注册的 JavaScript 函数（仅限会话级 hook）。                                       |
 | `prompt`   | 使用 LLM 评估钩子输入并返回决策。                                                          |
 
-### 命令钩子
+### 命令 hook
 
-命令钩子通过子进程执行命令。输入 JSON 通过 stdin 传递，输出通过 stdout 返回。
+命令 hook 通过子进程执行命令。输入 JSON 通过 stdin 传递，输出通过 stdout 返回。
 
 **配置：**
 
 | 字段            | 类型                     | 必填 | 描述                                 |
 | :-------------- | :----------------------- | :--- | :----------------------------------- |
-| `type`          | `"command"`              | 是   | 钩子类型                             |
+| `type`          | `"command"`              | 是   | hook 类型                             |
 | `command`       | `string`                 | 是   | 要执行的命令                         |
-| `name`          | `string`                 | 否   | 钩子名称（用于日志记录）             |
-| `description`   | `string`                 | 否   | 钩子描述                             |
+| `name`          | `string`                 | 否   | hook 名称（用于日志记录）             |
+| `description`   | `string`                 | 否   | hook 描述                             |
 | `timeout`       | `number`                 | 否   | 超时时间（毫秒），默认 60000         |
 | `async`         | `boolean`                | 否   | 是否在后台异步运行                   |
 | `env`           | `Record<string, string>` | 否   | 环境变量                             |
@@ -79,22 +79,22 @@ Qwen Code 支持四种钩子执行器类型：
 }
 ```
 
-### HTTP 钩子
+### HTTP hook
 
-HTTP 钩子将钩子输入作为 POST 请求发送到指定的 URL。它们支持 URL 白名单、DNS 级 SSRF 防护、环境变量插值等安全特性。
+HTTP hook 将 hook 输入作为 POST 请求发送到指定的 URL。它们支持 URL 白名单、DNS 级 SSRF 防护、环境变量插值等安全特性。
 
 **配置：**
 
 | 字段             | 类型                     | 必填 | 描述                                               |
 | :--------------- | :----------------------- | :--- | :------------------------------------------------- |
-| `type`           | `"http"`                 | 是   | 钩子类型                                           |
+| `type`           | `"http"`                 | 是   | hook 类型                                           |
 | `url`            | `string`                 | 是   | 目标 URL                                           |
 | `headers`        | `Record<string, string>` | 否   | 请求头（支持环境变量插值）                         |
 | `allowedEnvVars` | `string[]`               | 否   | URL/请求头中允许使用的环境变量白名单               |
 | `timeout`        | `number`                 | 否   | 超时时间（秒），默认 600                           |
-| `name`           | `string`                 | 否   | 钩子名称（用于日志记录）                           |
+| `name`           | `string`                 | 否   | hook 名称（用于日志记录）                           |
 | `statusMessage`  | `string`                 | 否   | 执行期间显示的状态消息                             |
-| `once`           | `boolean`                | 否   | 每个会话中每个事件仅执行一次（仅限 HTTP 钩子）     |
+| `once`           | `boolean`                | 否   | 每个会话中每个事件仅执行一次（仅限 HTTP hook）     |
 
 **安全特性：**
 
@@ -103,9 +103,9 @@ HTTP 钩子将钩子输入作为 POST 请求发送到指定的 URL。它们支�
 - **DNS 验证**：在请求前验证域名解析，以防止 DNS 重绑定攻击
 - **环境变量插值**：使用 `${VAR}` 语法，仅允许 `allowedEnvVars` 白名单中的变量
 
-#### 允许私有网络钩子（仅限托管环境）
+#### 允许私有网络 hook（仅限托管环境）
 
-默认情况下，HTTP 钩子无法指向私有或链路本地 IP 范围。在平台托管环境中，如果钩子接收方是第一方 VPC 内部端点（例如，解析到 `172.16.0.0/12` 的内部 API 网关），你可以通过以下配置放宽 IP 范围检查：
+默认情况下，HTTP hook 无法指向私有或链路本地 IP 范围。在平台托管环境中，如果 hook 接收方是第一方 VPC 内部端点（例如，解析到 `172.16.0.0/12` 的内部 API 网关），你可以通过以下配置放宽 IP 范围检查：
 
 ```json
 {
@@ -118,7 +118,7 @@ HTTP 钩子将钩子输入作为 POST 请求发送到指定的 URL。它们支�
 - 此设置**仅从 User、System 和 SystemDefaults 设置作用域中生效**。在 Workspace（项目）设置中设置的值将被忽略并记录为警告，因此克隆的仓库永远无法自行授予此绕过权限。
 - 该标志仅放宽通用私有/CGNAT/链路本地**范围**检查。云元数据端点在所有配置中保持阻止：`BLOCKED_HOSTS` 列表会逐字匹配（`metadata.google.internal`、`metadata.azure.internal` 等），元数据 IP `169.254.169.254` 和 `100.100.100.200` 在所有序列化形式（包括 IPv4 映射的 IPv6，如 `::ffff:a9fe:a9fe`）以及 DNS 解析后均被阻止。
 - `security.allowedHttpHookUrls` 白名单仍然独立适用。在托管环境中，请将此标志与白名单配合使用，以确保只有预期的内部端点可达。Workspace（项目）设置中的白名单仅在没有 User、System 或 SystemDefaults 作用域设置白名单时才会生效；否则它将被忽略并记录为警告，因此仓库可以缩小其钩子发送数据的位置，但永远无法替换你配置的白名单（空白名单表示"允许所有"）。
-- HTTP 钩子永远不会跟随重定向。3xx 响应被视为任何其他非 2xx 状态一样：非阻塞的钩子失败，并且永远不会联系重定向目标。
+- HTTP hook 永远不会跟随重定向。3xx 响应被视为任何其他非 2xx 状态一样：非阻塞的钩子失败，并且永远不会联系重定向目标。
 
 > **警告：** 启用此标志允许钩子访问你网络上的内部基础设施。仅在受信任的托管环境中启用——绝不在你无法控制的仓库中启用。
 
@@ -212,21 +212,21 @@ if __name__ == "__main__":
 
 已针对上述真实生产 API 进行了端到端实时测试：真正具有破坏性的输入（`{"tool_name": "run_shell_command", "tool_input": {"command": "rm -rf /important_data"}}`）返回了 `permissionDecision: "deny"` 及真实解释；良性输入（`ls -la`）返回了 `"allow"`。在判断后端出现任何网络/超时/格式错误响应问题时均 fail-open，因此服务中断永远不会阻止合法的工具调用——与上面 `command` 钩子示例使用各自退出码遵循的相同原则。
 
-### 函数钩子
+### 函数 hook
 
-函数钩子直接调用已注册的 JavaScript/TypeScript 函数。它们由 Skill 系统在内部使用，目前尚未作为公共 API 暴露给最终用户。
+函数 hook 直接调用已注册的 JavaScript/TypeScript 函数。它们由 Skill 系统在内部使用，目前尚未作为公共 API 暴露给最终用户。
 
 **注意**：对于大多数用例，请改用**命令钩子**或 **HTTP 钩子**，它们可以在设置文件中进行配置。
 
-### Prompt 钩子
+### Prompt hook
 
-Prompt 钩子使用 LLM 评估钩子输入并返回决策。这对于基于上下文做出智能决策非常有用，例如决定是否允许或阻止某个操作。
+Prompt hook 使用 LLM 评估 hook 输入并返回决策。这对于基于上下文做出智能决策非常有用，例如决定是否允许或阻止某个操作。
 
-> **数据处理：** Prompt 钩子将其事件输入发送到配置的模型提供商。当启用基于文件的调试日志时，完全展开的 prompt 钩子请求也会写入会话调试日志。请将钩子输入和调试日志视为可能包含敏感信息。
+> **数据处理：** Prompt hook 将其事件输入发送到配置的模型提供商。当启用基于文件的调试日志时，完全展开的 prompt hook 请求也会写入会话调试日志。请将钩子输入和调试日志视为可能包含敏感信息。
 
 **工作原理：**
 
-1. 钩子输入 JSON 通过 `$ARGUMENTS` 占位符注入到你的 prompt 中
+1. hook 输入 JSON 通过 `$ARGUMENTS` 占位符注入到你的 prompt 中
 2. prompt 被发送到 LLM（默认使用你当前的模型）
 3. LLM 返回包含决策结果的 JSON 响应
 4. Qwen Code 处理该决策，并相应地继续或阻止执行
@@ -235,12 +235,12 @@ Prompt 钩子使用 LLM 评估钩子输入并返回决策。这对于基于上�
 
 | 字段            | 类型       | 必填 | 描述                                         |
 | :-------------- | :--------- | :--- | :------------------------------------------- |
-| `type`          | `"prompt"` | 是   | 钩子类型                                     |
-| `prompt`        | `string`   | 是   | 发送到 LLM 的 prompt。使用 `$ARGUMENTS` 获取钩子输入 |
+| `type`          | `"prompt"` | 是   | hook 类型                                     |
+| `prompt`        | `string`   | 是   | 发送到 LLM 的 prompt。使用 `$ARGUMENTS` 获取 hook 输入 |
 | `model`         | `string`   | 否   | 要使用的模型（默认使用你当前的模型）         |
 | `timeout`       | `number`   | 否   | 超时时间（秒），默认 30                      |
-| `name`          | `string`   | 否   | 钩子名称（用于日志记录）                     |
-| `description`   | `string`   | 否   | 钩子描述                                     |
+| `name`          | `string`   | 否   | hook 名称（用于日志记录）                     |
+| `description`   | `string`   | 否   | hook 描述                                     |
 | `statusMessage` | `string`   | 否   | 执行期间显示的状态消息                       |
 
 **响应格式：**
@@ -263,7 +263,7 @@ LLM 必须返回具有以下结构的 JSON：
 
 **支持的事件：**
 
-Prompt 钩子可用于大多数钩子事件，包括：
+Prompt hook 可用于大多数 hook 事件，包括：
 
 - `PreToolUse` - 评估是否允许工具调用
 - `PostToolUse` - 评估工具结果并可能注入上下文
@@ -316,9 +316,9 @@ Prompt 钩子可用于大多数钩子事件，包括：
 }
 ```
 
-## 钩子事件
+## hook 事件
 
-钩子在 Qwen Code 会话的特定节点触发。不同的事件支持不同的 matcher 来过滤触发条件。
+hook 在 Qwen Code 会话的特定节点触发。不同的事件支持不同的 matcher 来过滤触发条件。
 
 | 事件                 | 触发时机                                | Matcher 目标                                            |
 | :------------------- | :-------------------------------------- | :------------------------------------------------------ |
@@ -330,7 +330,7 @@ Prompt 钩子可用于大多数钩子事件，包括：
 | `SessionEnd`         | 会话结束时                              | 原因（`clear`、`logout`、`prompt_input_exit` 等）       |
 | `SessionDelete`      | 显式选择的会话被删除后                  | 无                                                      |
 | `MessageDisplay`     | 回复流式传输时反复触发                  | 无（始终触发）                                          |
-| `Stop`               | 当 Qwen 准备结束响应时                  | 无（始终触发）                                          |
+| `Stop`               | 当 Claude 准备结束响应时                | 无（始终触发）                                          |
 | `SubagentStart`      | 子代理启动时                            | 代理类型（`Bash`、`Explorer`、`Plan` 等）               |
 | `SubagentStop`       | 子代理停止时                            | 代理类型                                                |
 | `PreCompact`         | 对话压缩前                              | 触发器（`manual`、`auto`）                              |
@@ -536,7 +536,8 @@ Hook 输出支持三类字段：
   "tool_input": "object containing the tool's input parameters",
   "tool_response": "object containing the tool's response",
   "tool_use_id": "unique identifier for this tool use instance (internal format, e.g., toolu_xxx)",
-  "tool_call_id": "original API call ID from the LLM provider (e.g., call_xxx for OpenAI/Qwen) (optional)"
+  "tool_call_id": "original API call ID from the LLM provider (e.g., call_xxx for OpenAI/Qwen) (optional)",
+  "duration_ms": "tool execution time in milliseconds, excluding approval (optional)"
 }
 ```
 
@@ -593,24 +594,28 @@ Hook 输出支持三类字段：
 
 #### UserPromptSubmit
 
-**用途**：在受支持的模型调用之前执行，用于验证、阻止或丰富当前的模型绑定 prompt。该事件目前覆盖 `UserQuery`、`ToolResult` 和 `Hook` 发送，而 `Retry`、`Steer`、`Cron`、`Notification` 和 `Teammate` 发送会被跳过。因此它可能在续接路径上发生，`prompt` 不应被假定为原始用户输入。
+**用途**：在受支持的模型调用之前执行，用于验证、阻止或丰富其输入。在核心/无头路径上，该事件目前覆盖 `UserQuery`、`ToolResult` 和 `Hook` 发送，而 `Retry`、`Steer`、`Cron`、`Notification` 和 `Teammate` 发送会被跳过。因此它可能在续接路径上发生，`prompt` 不应被假定为原始用户输入。ACP 会话路径有自己的调用策略：重试和新分派的后台任务仍可调用旧式 hook；continue、已恢复问题和运行时目标轮次则不会。
 
 **事件特定字段**：
 
 ```json
 {
-  "prompt": "current model-bound prompt for this hook invocation",
-  "submitted_prompt": "optional user text captured at a supported interactive TUI submission boundary"
+  "prompt": "legacy prompt for this invocation; semantics depend on the execution path",
+  "submitted_prompt": "optional user text captured at a supported submission boundary"
 }
 ```
 
-`submitted_prompt` 是可选的。仅当 Qwen 能够从受支持的交互式 TUI 提交将来源信息传递到新的 `UserQuery` 时才存在。对于不受支持的生成方和机器驱动路径（如同城转向、工具结果续接、重试、cron、通知和队友流量），该字段会被省略。ACP、无头模式、`serve`、SDK 和远程输入路径在当前版本中不会生成此字段。
+`submitted_prompt` 是可选的。它存在于受支持的交互式 TUI 提交和首轮无头 `UserQuery` 发送中。在 ACP 客户端、`serve` 和守护进程主机使用的 ACP 会话路径上，新轮次必须携带显式提交声明。缺失、非字符串、空或仅空白的声明会省略该字段；该值从不从 `prompt` 或显示标签重建。重试、续接和 channel 分类的轮次会省略它。channel 排除包括自动化事件和通过 channel 适配器中继的人类消息。
 
-延迟输入在其来源信息完整时可以保留该字段。组合批次仅在每个组成项都具有来源信息时才保留来源信息；经过编辑、部分已知或以其他方式不明确的输入会省略该字段。Prompt、命令和 shell 历史导航或选定的搜索匹配、跨重启的暂存恢复以及对话倒带恢复也会省略该字段，因为这些路径可能在没有原始来源信息的情况下显示模型绑定文本。需要用户提交文本的消费者应将缺失视为不可用，而不是回退到 `prompt`。
+Web Shell 在其提交边界提供原始编辑器文本。实时语音交接不声明来源，因为其请求文本来自模型生成的工具参数。其他 ACP/守护进程 SDK 客户端可以通过 `_meta: { "qwen.submittedPrompt": "original submitted text" }` 按请求选择加入，在资源或模型专属扩展之前捕获。没有此声明的现有客户端继续运行旧式 hook，但不触发来源门控的 Auto Recall。不要将声明全局添加到 SDK 传输：计划任务、Live 任务运行、子会话生成、模型编写的跨会话消息和提升的轮次中间消息不得自动获取它。私有的 `qwen.daemon.submittedPrompt` 键保留用于守护进程到子进程的跳转，并从外部调用方剥离。这些声明是调用方提供的来源，而非人类作者身份或授权的证明。
+
+在 ACP 路径上，初始旧式 `prompt` 是在资源、附件、斜杠命令或模型专属扩展之前用空格连接的请求文本块。它不暴露完整的展开后模型输入。`submitted_prompt` 可以等于该文本，但仅来自显式声明并保留其原始空白。在核心/无头路径上，旧式 `prompt` 表示 hook 调用的当前模型绑定文本。这两个字段都不是完整的 DLP 检查面。
+
+以下编辑器规则适用于交互式 TUI，不适用于 ACP 客户端。延迟输入在其来源保持完整时可以保留该字段。组合批次仅在每个组成项都有来源时才保留来源；编辑的、部分已知或以其他方式不明确的输入会省略该字段。Prompt、命令和 shell 历史导航或选定的搜索匹配、跨重启的暂存恢复以及对话倒带恢复也会省略它，因为这些路径可能在没有原始来源的情况下显示模型绑定文本。需要用户提交文本的消费者应将缺失视为不可用，而不是回退到 `prompt`。
 
 在恢复或来源不可用的模型绑定输入被清除或提交后，编辑器也会清除其撤销和重做历史。这可以防止撤销在标记或附带内容被消费后恢复展开的文本。
 
-大段粘贴的占位符在 `submitted_prompt` 中保持紧凑；展开的粘贴内容仅出现在 `prompt` 中。消费者应将此字段视为 TUI 文本投影，而不是剪贴板输入的逐字节记录。
+大段粘贴的占位符在 `submitted_prompt` 中保持紧凑；展开的粘贴内容仅出现在 `prompt` 中。在该 TUI 路径上，消费者应将该字段视为文本投影而不是剪贴板输入的逐字节记录。ACP 客户端没有等效的内置 Vim、粘贴占位符、历史或倒带来源跟踪；它们决定恢复或编辑的文本是否保留有效的提交声明。
 
 在启用 Vim 模式时存在的任何非空输入都会省略 `submitted_prompt`，包括在禁用 Vim 之后，因为 Vim 寄存器在当前版本中不携带来源信息。此保守规则也涵盖了在启用 Vim 之前输入的草稿。清除编辑器会开始一个新的符合条件的输入。
 
@@ -639,7 +644,7 @@ sanitized hook context
 }
 ```
 
-此双字段载荷仅针对此类用户 prompt 记录写入。`hookContext` 故意重复带标签的部分，以便离线和第三方消费者无需解析模型文本即可识别其来源。`displayText` 是钩子前的显示投影，绝不包含钩子上下文。对于受支持的交互式 TUI 提交，它是由 `submitted_prompt` 携带的原始编辑器投影；ACP、无头模式、`serve`、SDK、远程输入以及没有该来源信息的其他路径则记录展开后的钩子前 prompt。
+此双字段载荷仅针对此类用户 prompt 记录写入。`hookContext` 故意重复带标签的部分，以便离线和第三方消费者无需解析模型文本即可识别其来源。`displayText` 是钩子前的显示投影，绝不包含钩子上下文。在核心/无头路径上，它是可用时的提交投影，否则是展开后的钩子前 prompt。ACP 记录可信的显示投影或展开前的原始请求文本（当投影或附件引用需要载荷时）；否则它记录用户消息而不带 `systemPayload` 或 `displayText`。
 
 当 `systemPayload.hookContext` 为字符串时，会话记录显示消费者将 `displayText` 视为此用户 prompt 投影。为了与已发布的仅含 `displayText` 的用户 prompt 记录兼容，在至少一个其他部分之后的最后一个部分中包含完整的带标签上下文可作为等效的配对证据。通知、cron 和轮次中间记录也可能具有 `displayText`，但这些值是紧凑的显示标签，在没有该证据的情况下不得替换其模型绑定文本。
 传统的裸上下文记录保留其模型绑定的显示行为，因为无法可靠地分离上下文。对于使用当前带标签形状的无元数据记录，兼容性消费者可以移除相同的完整最终带标签部分；他们不得推断任意类似标签的用户文本是钩子来源。
@@ -1454,11 +1459,11 @@ exit 0
 }
 ```
 
-### 示例 3：交互式 TUI 提交 Prompt 验证 Hook
+### 示例 3：提交的 Prompt 验证 Hook
 
-要检查当前模型绑定的内容，请阅读 `prompt`。该字段可能包含生成或展开的内容，不是原始用户输入，也不表示 `UserPromptSubmit` 覆盖每次模型发送。当需要来源信息时，不要从 `submitted_prompt` 静默回退到 `prompt`。
+在核心/无头路径上，`prompt` 可能包含生成或展开的内容，而不是原始用户输入。在 ACP 上，它以展开前的请求文本开头，因此读取它不会检查附件正文或完整的模型输入。`UserPromptSubmit` 并不覆盖每次模型发送。当需要来源溯源时，不要从 `submitted_prompt` 静默回退到 `prompt`。
 
-一个 `UserPromptSubmit` hook，用于验证受支持的交互式 TUI 提交中的敏感信息，并为过长的提示词提供上下文。它会跳过来源信息不可用的调用。关键字检查仅为示例，不构成完整的 DLP 策略：
+一个 `UserPromptSubmit` hook，用于验证受支持的已提交文本并为过长的提示词提供上下文。它还会在无头提交以及显式声明的 ACP/守护进程提交上运行；并非仅限于 TUI。它会跳过来源溯源不可用的调用。阻塞结果会停止受影响的调用，包括这些非 TUI 路径。关键字检查仅为示例，并非完整的 DLP 策略：
 
 **prompt_validator.py**
 
