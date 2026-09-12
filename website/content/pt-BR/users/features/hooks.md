@@ -539,7 +539,8 @@ Para `"ask"`, a TUI exibe `permissionDecisionReason` como texto literal em vez d
   "tool_input": "object containing the tool's input parameters",
   "tool_response": "object containing the tool's response",
   "tool_use_id": "unique identifier for this tool use instance (internal format, e.g., toolu_xxx)",
-  "tool_call_id": "original API call ID from the LLM provider (e.g., call_xxx for OpenAI/Qwen) (optional)"
+  "tool_call_id": "original API call ID from the LLM provider (e.g., call_xxx for OpenAI/Qwen) (optional)",
+  "duration_ms": "tool execution time in milliseconds, excluding approval (optional)"
 }
 ```
 
@@ -575,7 +576,8 @@ Para `"ask"`, a TUI exibe `permissionDecisionReason` como texto literal em vez d
   "tool_name": "name of the tool that failed",
   "tool_input": "object containing the tool's input parameters",
   "error": "error message describing the failure",
-  "is_interrupt": "boolean indicating if failure was due to user interruption (optional)"
+  "is_interrupt": "boolean indicating if failure was due to user interruption (optional)",
+  "duration_ms": "tool execution time in milliseconds when execution had started (optional)"
 }
 ```
 
@@ -596,24 +598,28 @@ Para `"ask"`, a TUI exibe `permissionDecisionReason` como texto literal em vez d
 
 #### UserPromptSubmit
 
-**Propósito**: Executado antes de invocações de modelo suportadas para validar, bloquear ou enriquecer o prompt vinculado ao modelo atual. O evento atualmente cobre envios `UserQuery`, `ToolResult` e `Hook`, enquanto envios `Retry`, `Steer`, `Cron`, `Notification` e `Teammate` são ignorados. Ele pode, portanto, ocorrer em caminhos de continuação, e `prompt` não deve ser considerado como entrada bruta do usuário.
+**Propósito**: Executado antes de invocações de modelo suportadas para validar, bloquear ou enriquecer sua entrada. No caminho core/headless, o evento atualmente cobre os envios `UserQuery`, `ToolResult` e `Hook`, enquanto os envios `Retry`, `Steer`, `Cron`, `Notification` e `Teammate` são ignorados. Ele pode, portanto, ocorrer em caminhos de continuação, e `prompt` não deve ser considerado como entrada bruta do usuário. O caminho de sessão ACP tem sua própria política de invocação: retentativas e tarefas em segundo plano recém-despachadas ainda podem invocar hooks legados; turnos de continuação, pergunta restaurada e objetivo de runtime não.
 
 **Campos específicos do evento**:
 
 ```json
 {
-  "prompt": "prompt vinculado ao modelo atual para esta invocação do hook",
-  "submitted_prompt": "texto opcional do usuário capturado em uma borda de submissão interativa suportada pela TUI"
+  "prompt": "prompt legado para esta invocação; a semântica depende do caminho de execução",
+  "submitted_prompt": "texto opcional do usuário capturado em uma borda de submissão suportada"
 }
 ```
 
-`submitted_prompt` é opcional. Está presente apenas quando o Qwen pode carregar proveniência de uma submissão interativa suportada pela TUI para um `UserQuery` fresco. É omitido para produtores não suportados e caminhos automáticos como steering no mesmo turno, continuações de resultado de ferramenta, retentativas, cron, notificações e tráfego de teammate. Caminhos ACP, headless, `serve`, SDK e entrada remota não o produzem nesta versão.
+`submitted_prompt` é opcional. Está presente em submissões interativas suportadas pela TUI e em envios `UserQuery` do primeiro turno headless. No caminho de sessão ACP usado por clientes ACP, `serve` e hosts daemon, um turno fresco deve carregar uma declaração de submissão explícita. Declarações ausentes, não-string, vazias ou apenas com espaços em branco omitem o campo; o valor nunca é reconstruído a partir de `prompt` ou de um rótulo de exibição. Retentativas, continuações e turnos classificados como canal o omitem. A exclusão de canal inclui tanto eventos automatizados quanto mensagens humanas retransmitidas através de adaptadores de canal.
 
-Entrada diferida pode reter o campo quando sua proveniência permanece completa. Um batch combinado retém proveniência apenas quando cada item constituinte a possui; entrada editada, parcialmente conhecida ou de outra forma ambígua omite o campo. Navegação de prompt, comando e histórico do shell ou matches de busca selecionados, restaurações de stash entre reinícios e restaurações de rewind de conversa também o omitem porque esses caminhos podem surface texto vinculado ao modelo sem sua proveniência original. Consumidores que requerem texto submetido pelo usuário devem tratar ausência como indisponível em vez de fazer fallback para `prompt`.
+O Web Shell fornece o texto original do compositor em sua borda de submissão. Handoffs de voz em tempo real não declaram proveniência porque seu texto de requisição vem de argumentos de ferramenta gerados pelo modelo. Outros clientes SDK ACP/daemon podem optar por inclusão por requisição com `_meta: { "qwen.submittedPrompt": "original submitted text" }`, capturado antes da expansão de recursos ou apenas do modelo. Clientes existentes sem essa declaração continuam executando hooks legados mas não disparam o Auto Recall com gate de proveniência. Não adicione a declaração globalmente a um transporte SDK: tarefas agendadas, execuções de tarefa Live, spawns de sub-sessão, mensagens entre sessões autoradas pelo modelo e mensagens promovidas no meio do turno não devem adquiri-la automaticamente. A chave privada `qwen.daemon.submittedPrompt` é reservada para o salto daemon-to-child e é removida para chamadores externos. Essas declarações são proveniência fornecida pelo chamador, não prova de autoria ou autorização humana.
+
+No caminho ACP, o `prompt` legado inicial são os blocos de texto da requisição unidos com um espaço antes da expansão de recursos, anexos, comandos slash ou apenas do modelo. Ele não expõe a entrada completa expandida do modelo. `submitted_prompt` pode ser igual a esse texto, mas vem apenas da declaração explícita e preserva seus espaços em branco originais. No caminho core/headless, o `prompt` legado representa o texto atual vinculado ao modelo para a invocação do hook. Nenhum dos dois campos é uma superfície completa de inspeção DLP.
+
+As seguintes regras do compositor se aplicam à TUI interativa, não a clientes ACP. Entrada diferida pode reter o campo quando sua proveniência permanece completa. Um batch combinado retém proveniência apenas quando cada item constituinte a possui; entrada editada, parcialmente conhecida ou de outra forma ambígua omite o campo. Navegação de prompt, comando e histórico do shell ou matches de busca selecionados, restaurações de stash entre reinícios e restaurações de rewind de conversa também o omitem porque esses caminhos podem apresentar texto vinculado ao modelo sem sua proveniência original. Consumidores que requerem texto submetido pelo usuário devem tratar ausência como indisponível em vez de fazer fallback para `prompt`.
 
 Após entrada vinculada ao modelo restaurada ou sem proveniência disponível ser limpa ou submetida, o compositor também limpa seu histórico de undo e redo. Isso impede que o undo restaure texto expandido após seu marcador ou sidecar ter sido consumido.
 
-Placeholders de colagem grande permanecem compactos em `submitted_prompt`; o conteúdo colado expandido aparece apenas em `prompt`. Consumidores devem tratar o campo como uma projeção de texto da TUI em vez de um registro byte-a-byte da entrada da área de transferência.
+Placeholders de colagem grande permanecem compactos em `submitted_prompt`; o conteúdo colado expandido aparece apenas em `prompt`. Nesse caminho da TUI, consumidores devem tratar o campo como uma projeção de texto em vez de um registro byte-a-byte da entrada da área de transferência. Clientes ACP não possuem rastreamento equivalente integrado de proveniência para Vim, placeholder de colagem, histórico ou rewind; eles definem se texto restaurado ou editado retém uma declaração de submissão válida.
 
 Qualquer entrada não vazia presente enquanto o modo Vim está habilitado omite `submitted_prompt`, inclusive após o Vim ser desabilitado, porque registradores do Vim não carregam proveniência nesta versão. Esta regra conservadora também cobre rascunhos inseridos antes de habilitar o Vim. Limpar o compositor inicia uma nova entrada elegível.
 
@@ -642,7 +648,7 @@ Para um `UserQuery` com esse contexto adicionado, o registro JSONL da sessão pr
 }
 ```
 
-Esse payload de dois campos é escrito apenas para este tipo de registro de prompt do usuário. `hookContext` duplica intencionalmente a parte com tag para que consumidores offline e de terceiros possam identificar sua proveniência sem analisar o texto do modelo. `displayText` é a projeção de exibição pré-hook e nunca inclui o contexto do hook. Para uma submissão interativa suportada pela TUI, é a projeção bruta do compositor carregada por `submitted_prompt`; caminhos ACP, headless, `serve`, SDK, entrada remota e outros sem essa proveniência registram o prompt expandido pré-hook em vez disso.
+Esse payload de dois campos é escrito apenas para este tipo de registro de prompt do usuário. `hookContext` duplica intencionalmente a parte com tag para que consumidores offline e de terceiros possam identificar sua proveniência sem analisar o texto do modelo. `displayText` é a projeção de exibição pré-hook e nunca inclui o contexto do hook. No caminho core/headless, é a projeção submetida quando disponível, caso contrário o prompt pré-hook expandido. O ACP registra a projeção de exibição confiável ou o texto bruto da requisição antes da expansão quando uma projeção ou referências de anexo requerem um payload; caso contrário, registra a mensagem do usuário sem `systemPayload` ou `displayText`.
 
 Consumidores de exibição de transcrição tratam `displayText` como essa projeção de prompt do usuário quando `systemPayload.hookContext` é uma string. Para compatibilidade com registros de prompt do usuário lançados apenas com `displayText`, um contexto com tag completo na parte final após pelo menos uma outra parte é evidência de pareamento equivalente. Registros de notificação, cron e meio de turno também podem ter `displayText`, mas esses valores são rótulos de exibição compactos e não devem ser substituídos pelo texto vinculado ao modelo sem essa evidência.
 Registros legados com contexto bruto mantêm seu comportamento de exibição vinculado ao modelo porque o contexto não pode ser separado de forma confiável. Para registros sem metadados que usam a forma com tag atual, consumidores de compatibilidade podem remover a mesma parte final com tag completa; não devem inferir que texto arbitrário semelhante a tag do usuário é proveniência de hook.
@@ -766,7 +772,7 @@ O hook usa os campos de sessão normais do runtime de exclusão (`session_id`, `
 
 ```json
 {
-  "stop_hook_active": "boolean indicating if stop hook is active",
+  "stop_hook_active": "true when this turn is continuing because a stop hook blocked the previous stop check (still true after tool calls made during that continuation); false on the first check and again once the stop is allowed, the blocking cap is reached, the user steers or sends new input, or a new turn, retry or goal turn starts",
   "last_assistant_message": "the last message from the assistant",
   "context_usage": "ratio of context window used (may exceed 1 when tokens exceed window; optional)",
   "context_limit": "context window size in tokens (optional)",
@@ -888,7 +894,7 @@ Um hook de comando é deixado para terminar se o Qwen sair após o despacho; seu
 ```json
 {
   "permission_mode": "default | plan | auto_edit | yolo",
-  "stop_hook_active": "boolean indicating if stop hook is active",
+  "stop_hook_active": "false on the first stop check; true when the subagent is continuing because a SubagentStop hook blocked its previous stop",
   "agent_id": "identifier for the subagent",
   "agent_type": "type of agent",
   "agent_transcript_path": "path to the subagent's transcript",
@@ -1246,7 +1252,7 @@ exit 0
             "type": "command",
             "command": "$HOME/.qwen/hooks/todo-completion-validator.sh",
             "name": "completion-validator",
-            "timeout": 5000
+            "timeout": 5
           }
         ]
       }
@@ -1279,7 +1285,7 @@ Os hooks são configurados nas configurações do Qwen Code, geralmente em `.qwe
             "command": "/path/to/security-check.sh",
             "name": "security-check",
             "description": "Run security checks before tool execution",
-            "timeout": 30000
+            "timeout": 30
           }
         ]
       }
@@ -1317,6 +1323,7 @@ Hooks assíncronos têm escopo no processo do Qwen porque sua saída capturada �
 - Não pode retornar o controle de decisão (a operação já ocorreu)
 - Os resultados são injetados no próximo turno da conversa via `systemMessage` ou `additionalContext`, exceto para tipos de evento fire-and-forget com saída ignorada documentados acima
 - Adequado para auditoria, logging, testes em segundo plano, etc.
+- Ocupa um dos 10 slots de hook assíncrono simultâneos até terminar ou atingir seu `timeout` (60 segundos por padrão)
 
 **Exemplo:**
 
@@ -1331,7 +1338,7 @@ Hooks assíncronos têm escopo no processo do Qwen porque sua saída capturada �
             "type": "command",
             "command": "$QWEN_PROJECT_DIR/.qwen/hooks/run-tests-async.sh",
             "async": true,
-            "timeout": 300000
+            "timeout": 300
           }
         ]
       }
@@ -1357,7 +1364,7 @@ fi
 
 - Os hooks são executados no ambiente do usuário com os privilégios do usuário
 - Hooks no nível do projeto requerem status de pasta confiável
-- Timeouts previnem que hooks fiquem travados (padrão: 60 segundos)
+- Timeouts previnem que hooks fiquem travados (padrão: 60 segundos para hooks de comando)
 
 ## Boas Práticas
 
@@ -1417,7 +1424,7 @@ Configure em `.qwen/settings.json`:
             "command": "${SECURITY_CHECK_SCRIPT}",
             "name": "security-checker",
             "description": "Security validation for bash commands",
-            "timeout": 10000
+            "timeout": 10
           }
         ]
       }

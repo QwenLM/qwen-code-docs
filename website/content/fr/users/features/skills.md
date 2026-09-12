@@ -25,6 +25,8 @@ Si vous souhaitez invoquer un Skill explicitement, tapez-le comme une commande s
 
 Commencez à taper `/` pour utiliser l'autocomplétion et parcourir les Skills disponibles avec leurs descriptions. La commande `/skills` ouvre le panneau des Skills, où vous pouvez parcourir, rechercher, activer/désactiver et lancer des Skills de manière interactive.
 
+`<skill-name>` est toujours le nom enregistré du Skill. Pour un Skill provenant d'une extension installée, ce nom inclut son propriétaire — `rust:pdf`, pas `pdf` — donc vous tapez `/rust:pdf`. Voir [Comment les Skills d'extension sont nommés](#how-extension-skills-are-named).
+
 > **Remarque :** Si vous avez précédemment exécuté un Skill avec `/skills <skill-name>`, cette syntaxe ouvre désormais simplement le panneau des Skills et ignore l'argument final. Utilisez `/<skill-name>` pour exécuter un Skill directement.
 
 ### Avantages
@@ -134,7 +136,7 @@ Montrez des exemples concrets d'utilisation de ce Skill.
 
 Qwen Code valide actuellement que :
 
-- `name` est une chaîne non vide correspondant à `/^[\p{L}\p{N}_:.-]+$/u` — lettres et chiffres Unicode (CJK / cyrillique / latin accentué tous OK), plus `_`, `:`, `.`, `-`. Les espaces, les slashes, les crochets et autres caractères structurellement non sûrs sont rejetés lors de l'analyse.
+- `name` est une chaîne non vide correspondant à `/^[\p{L}\p{N}_:.-]+$/u` — lettres et chiffres Unicode (CJK / cyrillique / latin accentué tous OK), plus `_`, `:`, `.`, `-`. Les espaces, les slashes, les crochets et autres caractères structurellement non sûrs sont rejetés lors de l'analyse. Le `:` admis est ce qui permet à un Skill enregistré par une extension (`rust:pdf`) et à un auteur qui choisit lui-même un colon (`rust:chat`, écrit dans l'extension `rust`) de partager un même motif, donc un colon dans un nom enregistré n'est pas une preuve de propriétaire — voir [Comment les Skills d'extension sont nommés](#how-extension-skills-are-named).
 - `description` est une chaîne non vide
 - `priority` est optionnel. Lorsqu'il est présent, il doit s'agir d'un nombre fini. Les valeurs plus élevées sont triées plus tôt dans la liste `/skills` uniquement — l'autocomplétion des commandes slash (en tapant `/`) et la vue des commandes personnalisées `/help` restent alphabétiques, de sorte qu'un Skill à haute priorité ne réordonne jamais les commandes intégrées. Les valeurs omises ou invalides sont traitées comme non définies, ce qui se comporte comme `0`.
 
@@ -274,6 +276,33 @@ Les extensions peuvent fournir des skills personnalisés qui deviennent disponib
 Les skills d'extension sont automatiquement découverts et chargés lorsque l'extension est installée et activée.
 
 Pour voir quelles extensions fournissent des skills, vérifiez la présence d'un champ `skills` dans le fichier `qwen-extension.json` de l'extension.
+
+#### Comment les Skills d'extension sont nommés
+
+Qwen Code enregistre un Skill provenant d'une extension installée sous la forme `<extensionName>:<name>`, où `<extensionName>` est le champ `name` du `qwen-extension.json` de cette extension et `<name>` est le `name` du frontmatter du Skill. Un Skill nommé `pdf` dans l'extension `rust` est enregistré en tant que `rust:pdf`.
+
+Le préfixe est ajouté lors du chargement du Skill, pas écrit dans le fichier : votre `SKILL.md` conserve le nom que vous avez rédigé, et Qwen Code ne récupère jamais le nom rédigé en décomposant le nom enregistré (un auteur peut légitimement écrire `rust:chat` dans `rust`). Seuls les Skills d'extension sont préfixés — les Skills personnels, de projet et intégrés conservent l'orthographe unique que vous avez rédigée.
+
+Utilisez le nom enregistré partout où vous faites référence au Skill :
+
+- Invoquez-le en tant que `/rust:pdf`. Le `/pdf` nu n'est pas un alias — le Skill de l'extension n'est accessible que sous son nom enregistré.
+- Le modèle l'appelle en tant que `Skill { skill: "rust:pdf" }`, le même nom qu'il lit dans `<available_skills>`.
+- Deux extensions qui fournissent chacune un Skill nommé `pdf` vous donnent deux Skills (`rust:pdf` et `docs-suite:pdf`) au lieu d'un qui gagne et l'autre qui disparaît.
+
+Les surfaces où vous lisez et choisissez les Skills nomment également le propriétaire : le panneau des Skills (y compris les lignes qu'un paramètre a verrouillées), la liste en lecture seule qu'un `/skills` nu affiche en dehors de l'UI interactive (ACP et autres modes non interactifs — en mode interactif, la commande ouvre le panneau), et le badge dans la palette de commandes `/`, qui affiche `[Extension: Rust]` au lieu d'un simple `[Extension]`. Ces labels préfèrent le `displayName` de l'extension et utilisent son `name` en fallback si aucun n'est déclaré.
+
+#### Les Skills d'extension et les paramètres `skills.*`
+
+`skills.disabled`, `skills.defaultDisabled` et `slashCommands.disabled` correspondent à un Skill d'extension sous **l'une ou l'autre** orthographe, donc un `skills.disabled: ["pdf"]` que vous avez écrit avant l'existence du préfixe masque toujours `rust:pdf`. Une restriction ne peut que retirer une capacité, donc renommer un Skill n'est pas autorisé à en lever une.
+
+`skills.enabled` est l'exception, et le seul changement visible pour un fichier de paramètres existant : il accorde une capacité, donc il ne correspond qu'au nom enregistré. `skills.enabled: ["pdf"]` n'active plus seul le `pdf` d'une extension — écrivez `skills.enabled: ["rust:pdf"]`. Le seul couple nu qui continue à fonctionner est un opt-in pré-préfixe situé dans `skills.defaultDisabled` avec la même orthographe : l'annulation compare les entrées elles-mêmes, donc `defaultDisabled: ["pdf"]` + `enabled: ["pdf"]` annule l'entrée — le skill se retrouve alors activé selon l'enablement stockée pour ce workspace, sinon le défaut propre de l'extension ; pour un skill désactivé par défaut, écrivez `rust:pdf` dans `skills.enabled`.
+
+Activer/désactiver un Skill dans le panneau des Skills écrit le nom enregistré et supprime uniquement cette entrée, donc activer `rust:pdf` laisse un `disabled: ["pdf"]` legacy intact. Lorsque cette entrée legacy se trouve dans un scope supérieur — défauts système, utilisateur ou paramètres système — le panneau l'indique et verrouille la ligne, nommant le scope à modifier au lieu de proposer un toggle qui ne peut pas le déplacer. Une entrée legacy dans les paramètres propres à ce workspace verrouille la ligne de la même manière, nommant l'entrée et son scope (`skills.disabled 'pdf' (Workspace)` ou `skills.defaultDisabled 'pdf' (Workspace)`) pour que vous sachiez quelle liste dans quel fichier modifier.
+
+Deux limites à connaître :
+
+- La priorité entre niveaux est inchangée et compare toujours exactement les noms enregistrés (`project` > `user` > `extension` > `bundled`), donc un Skill personnel ou de projet que vous rédigez en tant que `rust:pdf` surpasse le `pdf` de l'extension. Les collisions de noms nus entre un Skill personnel ou de projet et un Skill intégré sont également toujours résolues par cette priorité, pas par le préfixe. Un Skill qui entre en collision avec une commande personnalisée ne l'est pas — sur la surface slash, le dernier chargeur gagne, et les commandes personnalisées se chargent après les Skills, donc `/pdf` exécute la commande personnalisée tandis que le Skill reste disponible pour le modèle.
+- Les noms de Skills sont également utilisés comme noms de fichiers : le fichier depuis lequel un Skill lit ses arguments d'invocation remplace chaque caractère en dehors de `[A-Za-z0-9._-]` par `_`, donc un Skill d'extension enregistré en tant que `rust:pdf` et un Skill personnel ou de projet rédigé `rust_pdf` résolvent tous les deux vers `qwen-skill-args-rust_pdf.txt` et partagent un seul fichier d'arguments. (Le préfixe entre rarement en collision avec lui-même — `rust:rust_pdf` devient `rust_rust_pdf` — mais les noms d'extension peuvent contenir `_`, donc `rust_pdf:x` et `rust:pdf_x` se replient vers le même nom de fichier.) Les lettres non-ASCII se replient de la même manière, donc un `café` rédigé et un `caf_` rédigé aboutissent tous les deux à `caf_` — une limitation qui précède le préfixe, qui rend simplement cela plus facile à rencontrer. Évitez un nom de Skill qui est un autre nom avec `:` transformé en `_`.
 
 Pour voir les Skills disponibles, demandez directement à Qwen Code :
 

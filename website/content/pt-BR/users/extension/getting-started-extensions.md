@@ -248,6 +248,8 @@ Subagentes são assistentes de IA especializados em tarefas específicas.
 
 Após reiniciar o Qwen Code, suas skills personalizadas estarão disponíveis via `/skills` e subagentes via `/agents manage`.
 
+Uma skill de extensão é registrada sob o nome do seu proprietário: a skill acima se torna `my-first-extension:code-analyzer`, então você a executa como `/my-first-extension:code-analyzer`. `skills.disabled` pode bloqueá-la sob esse nome ou sob o nome simples `code-analyzer` que você criou; `skills.enabled` a reativa apenas sob o nome com prefixo. Consulte [Extension Skills](../features/skills.md#extension-skills).
+
 ## Passo 6: Adicionar um `QWEN.md` Personalizado
 
 Você pode fornecer contexto persistente ao modelo adicionando um arquivo `QWEN.md` à sua extensão. Isso é útil para dar instruções sobre como o modelo deve se comportar ou informações sobre as ferramentas da sua extensão. Observe que nem sempre é necessário para extensões criadas para expor comandos e prompts.
@@ -283,7 +285,7 @@ Reinicie o CLI novamente. O modelo agora terá o contexto do seu arquivo `QWEN.m
 
 Depois que estiver satisfeito com sua extensão, você pode compartilhá-la com outras pessoas. As duas principais formas de publicar extensões são por meio de um repositório Git ou via GitHub Releases. Usar um repositório Git público é o método mais simples.
 
-Para instruções detalhadas sobre ambos os métodos, consulte o [Guia de Publicação de Extensões](extension-releasing.md).
+Para instruções detalhadas sobre ambos os métodos, consulte o [Guia de Publicação de Extensões](./extension-releasing.md).
 
 ## Conclusão
 

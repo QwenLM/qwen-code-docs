@@ -5,25 +5,27 @@
 
 ## 身份验证
 
-当守护进程使用 `--token` 或 `QWEN_SERVER_TOKEN` 启动时，**除环回绑定（loopback binds）上的 `/health` 外的所有路由**都必须携带：
+当守护进程使用 `--token` 或 `QWEN_SERVER_TOKEN` 启动时——或者两者都未配置但绑定了非环回地址（此时会生成临时 bearer 并在启动时打印一次）——**除普通环回绑定上的 `/health` 外的所有常规 API 路由**都必须携带：
 
 ```
 Authorization: Bearer <token>
 ```
 
-如果未配置 token（环回开发的默认情况），则该 header 是可选的。Token 比较采用恒定时间算法。对于 `missing header` / `wrong scheme` / `wrong token`，401 响应格式是统一的。
+在环回默认地址上未配置 token 时，该 header 是可选的，通过主监听器到达的请求拥有完整的 operator API 权限。Workspace 信任、session 所有权、`X-Qwen-Client-Id`、权限、功能、验证和资源检查仍然适用。Token 比较采用恒定时间算法。对于 `missing header` / `wrong scheme` / `wrong token`，401 响应格式是统一的。
 
-**`--open-with-auth`。** 这个默认关闭的 CLI 模式要求使用环回绑定且 Web Shell 可用。它复用正常的 `--token` 优先于 `QWEN_SERVER_TOKEN` 的选择；如果两者都为空，则会在 daemon 启动前生成 32 个随机字节并编码为 base64url。浏览器通过 `#token=` 接收所选 bearer 并按标签页保存；协议和中间件看到的只是一个普通的已配置 token。单独使用 `--open`、直接嵌入的调用者、非环回绑定和其他客户端都不会获得自动凭据。浏览器不可用的环境会输出带有密钥片段的 URL，供手动打开。环回 `/health` 和 Web Shell 静态资源保留下文所述的豁免；`--require-auth` 仍会保护 `/health`。
+**`--open-with-auth`。** 这个默认关闭的 CLI 模式要求使用环回绑定且 Web Shell 可用。它复用正常的 `--token` 优先于 `QWEN_SERVER_TOKEN` 的选择；如果两者都为空，则会在 daemon 启动前生成 32 个随机字节并编码为 base64url。浏览器通过 `#token=` 接收所选 bearer 并按标签页保存；协议和中间件看到的只是一个普通的已配置 token。Fragment 传递以解析后的 token 为键，而非以此标志为键：任何 `--open` 启动都会将解析后的 bearer（已配置或已生成）附加到启动 URL 的 `#token=` fragment（本地用户可通过 `ps` / `/proc` 看到，启动器会发出警告），因此非环回绑定加上单独的 `--open` 也会以相同方式将其生成的 bearer 交给浏览器；此标志的独特贡献在于环回上的 token _生成_ 以及浏览器不可用时的手动 URL 回退。只有忽略 `RunHandle.resolvedToken` 的直接嵌入调用者，以及从不启动浏览器的客户端，才不会获得自动凭据。浏览器不可用的环境会输出带有密钥的 fragment URL 供手动打开。环回 `/health` 和静态 Web Shell 资源保留下文所述的豁免；`--require-auth` 仍会保护 `/health`。
 
-**`/health` 豁免**（Bctum）：在环回绑定（`127.0.0.1` / `localhost` / `::1` / `[::1]`）上，`/health` 在 bearer 中间件之前注册，因此即使守护进程使用 `--token` 启动，pod 内的存活探针（liveness probes）也无需携带 token。非环回绑定（如 `--hostname 0.0.0.0`）会像其他所有路由一样将 `/health` 置于 bearer 验证之后——有关基本原理，请参阅 [`GET /health`](#get-health) 部分。
+Channel webhook 入口（`POST /channels/:channelName/webhooks/:source`）在所有模式下都独立于此 bearer 契约。挂载时，它在 `bearerAuth` 之前注册，并使用其配置的 `x-qwen-webhook-secret` 进行身份验证；轮换 daemon bearer 不会轮换 webhook 源密钥。
 
-**`--require-auth`（#4175 PR 15）。** 在启动时传递此标志，可将"必须具有 token"的规则扩展到环回绑定。如果没有 token，启动将失败；同时取消 `/health` 豁免（因此 `/health` 也需要 `Authorization: Bearer …`）。
+**`/health` 豁免**（Bctum）：在环回绑定（`127.0.0.0/8` / `localhost` / `::1` / `[::1]`）上，`/health` 在 bearer 中间件之前注册，因此即使守护进程使用 `--token` 启动，pod 内的存活探针（liveness probes）也无需携带 token。非环回绑定（如 `--hostname 0.0.0.0`）会像其他所有路由一样将 `/health` 置于 bearer 验证之后——有关基本原理，请参阅 [`GET /health`](#get-health) 部分。
 
-启用该标志后，全局 `bearerAuth` 中间件将拦截**所有**路由——包括 `/capabilities`。因此，**未经身份验证**的客户端无法通过预检 `caps.features` 来发现需要身份验证：这种情况下的发现途径是 **401 响应体**本身（根据 [身份验证](#身份验证) 部分，所有路由的响应格式统一）。`require_auth` 能力标签是一种**身份验证后的确认**——一旦客户端成功通过身份验证并读取 `/capabilities`，该标签的存在即可确认守护进程是使用 `--require-auth` 启动的（这对于审计/合规 UI 以及 SDK 客户端在设置面板中显示"此部署已加固"非常有用）。选择加入每路由严格模式的变更路由（Wave 4 后续跟进）在无 token 的环回默认情况下被访问时，会返回 `401 { code: "token_required", error: "…" }` 拒绝请求——但在启用 `--require-auth` 的情况下，全局 bearer 中间件会在每路由拦截之前使请求短路，因此未经身份验证的调用者实际看到的是旧版的 `Unauthorized` 响应体。
+**`--require-auth`（#4175 PR 15）。** 在启动时传递此标志，可将"必须具有 token"的规则扩展到环回绑定。当没有 token 源解析时启动将失败——在环回上这意味着 `--token`、`QWEN_SERVER_TOKEN` 或 `--open-with-auth`（它在启动前安装自己生成的 token，因此 `--require-auth --open-with-auth` 可以启动）。快速失败仅限环回：非环回绑定会解析其在没有配置源时生成的临时 bearer，这就能满足该标志。无论哪种情况都会取消 `/health` 豁免，因此 `/health` 也需要 `Authorization: Bearer …`。
 
-**`--allow-origin <pattern>`（T2.4 [#4514](https://github.com/QwenLM/qwen-code/issues/4514)）。** 默认情况下，跨域访问守护进程的浏览器 webui 会被阻止——任何携带 `Origin` header 的请求都会返回 `403 {"error":"Request denied by CORS policy"}`，因为 CLI/SDK 客户端从不发送 `Origin`，守护进程将其存在视为请求来自操作员未加入的浏览器上下文的标志。在启动时传递 `--allow-origin <pattern>`（可重复）以安装允许列表（allowlist）来替代拦截墙。每个 pattern 可以是：
+启用该标志后，全局 `bearerAuth` 中间件将拦截**所有常规 API 路由**——包括 `/health` 和 `/capabilities`。Channel webhook 入口仍然独立使用共享密钥认证，Web Shell 文档和资源路由仍然保持预认证。因此，**未经身份验证**的客户端无法通过预检 `caps.features` 来发现需要身份验证：这种情况下的发现途径是 **401 响应体**本身（根据 [身份验证](#身份验证) 部分，bearer 拦截的路由响应格式统一）。`require_auth` 能力标签是一种**身份验证后的确认**——一旦客户端成功通过身份验证并读取 `/capabilities`，该标签的存在即可确认守护进程是使用 `--require-auth` 启动的（这对于审计/合规 UI 以及 SDK 客户端在设置面板中显示"此部署已加固"非常有用）。严格变更路由接受受信任环回主监听器请求、bearer 认证请求或配对的 Local Control 请求。不受信任的无 token 嵌入仍然会收到 `401 { code: "token_required", error: "…" }`；启用 `--require-auth` 后，全局 bearer 中间件会首先以旧版 `Unauthorized` 响应体拒绝。
 
-- 字面量 `*` —— 允许任何 origin。**风险**：当配置了 `*` 但未设置 bearer token（来源可以是 `--token`、`QWEN_SERVER_TOKEN` 或要求在启动时提供 token 的 `--require-auth`）时，启动将被拒绝。当列表中包含 `*` 时，启动日志会在 stderr 发出警告。**建议**：在环回绑定上与 `--require-auth` 结合使用，这样 `/health` 也会受 bearer 拦截——默认情况下它在环回绑定时注册在 bearer 中间件之前（因此 k8s/Compose 探针可以在没有 token 的情况下访问它），而 `*` 允许列表使它可以被任何跨域浏览器访问。`--require-auth` 仍然让 Web Shell 静态资源（`/`、`/assets/*` 和 `/session/:id` 文档导航）在环回上保持预认证——它们被设计为挂载在 bearer 中间件之前——因此在 `*` 允许列表下它们仍然可以被任何跨域浏览器读取；`--no-web` 移除了该暴露面。在非环回绑定上，bearer 在启动时已经是强制的，且 `/health` 注册在其之后，因此 `*` 在无 token 情况下暴露的唯一表面是 Web Shell 静态资源（`/`、`/assets/*` 和 `/session/:id` 文档导航——它们的 JS 仍然调用受 token 拦截的路由）。`--no-web` 甚至可以移除该表面；实际的 API 暴露面无论如何都是受拦截的。
+**`--allow-origin <pattern>`（T2.4 [#4514](https://github.com/QwenLM/qwen-code/issues/4514)）。** 默认情况下，跨域访问守护进程的浏览器 webui 会被阻止——任何携带 `Origin` header 的请求都会返回 `403 {"error":"Request denied by CORS policy"}`，因为 CLI/SDK 客户端从不发送 `Origin`，守护进程将其存在视为请求来自操作员未加入的浏览器上下文的标志。在非环回绑定且带有 token 的情况下，拦截墙之前有一个例外：同源请求（`Origin` 等于直接 socket scheme 加上规范化的 `Host` 权限）会进行 bearer 认证并在**主监听器**上剥离其 `Origin`——bearer 有效时遵循路由自身的状态，bearer 缺失或无效时返回 `401`，**但预认证的 Web Shell 文档、`/assets/*` 和 `/mcp-app-sandbox` 路由除外，它们像在所有其他模式中一样无需凭据即可提供服务**——只有跨域或不匹配的 `Origin` 值才会保留 `403` 信封。在启动时传递 `--allow-origin <pattern>`（可重复）以安装允许列表（allowlist）来替代拦截墙。每个 pattern 可以是：
+
+- 字面量 `*` —— 允许任何 origin。**风险**：当配置了 `*` 但没有 bearer token 解析时，启动将拒绝。该守卫读取_已解析的_ token——`--token`、`QWEN_SERVER_TOKEN`、`--open-with-auth` 生成的环回 token，或者非环回绑定在两个配置源都不存在时生成的临时 bearer——因此此拒绝仅限环回。当列表中包含 `*` 时，启动日志会在 stderr 发出警告。**建议**：在环回绑定上与 `--require-auth` 结合使用，这样 `/health` 也会受 bearer 拦截——默认情况下它在环回绑定时注册在 bearer 中间件之前（因此 k8s/Compose 探针可以在没有 token 的情况下访问它），而 `*` 允许列表使它可以被任何跨域浏览器访问。`--require-auth` 仍然让 Web Shell 静态资源（`/`、`/assets/*` 和 `/session/:id` 文档导航）在环回上保持预认证——它们被设计为挂载在 bearer 中间件之前——因此在 `*` 允许列表下它们仍然可以被任何跨域浏览器读取；`--no-web` 移除了该暴露面。在非环回绑定上，bearer 在启动时已经是强制的，且 `/health` 注册在其之后，因此 `*` 在无 token 情况下暴露的唯一表面是 Web Shell 静态资源（`/`、`/assets/*` 和 `/session/:id` 文档导航——它们的 JS 仍然调用受 token 拦截的路由）。常规 API 路由受 bearer 拦截，channel webhook 入口保留其自己的共享密钥闸门，Web Shell 静态资源（`/`、`/assets/*` 和 `/session/:id` 文档导航）保持预认证，除非 `--no-web` 移除它们。
 - 规范的 URL origin —— `<scheme>://<host>[:<port>]`。**无尾部斜杠、无路径、无用户信息、无查询参数。** 如果条目未通过往返测试 `new URL(pattern).origin === pattern`，启动将拒绝并抛出 `InvalidAllowOriginPatternError`；错误信息会指出错误的 pattern 和规范形式。严格设计：静默规范化（例如去除尾部 `/`）会让拼写错误溜走并接受模糊输入。
 
 匹配的 origin 在每个请求中都会收到标准的 CORS 响应 header：
@@ -37,15 +39,15 @@ Access-Control-Max-Age: 86400
 Access-Control-Expose-Headers: Retry-After, X-Qwen-Event-Epoch, X-Qwen-SSE-Stream-Id
 ```
 
-`Access-Control-Allow-Origin` 会逐字回显请求的 origin（浏览器发送时的大小写），而不是字面量 `*`，即使在 `*` 模式下也是如此——浏览器缓存基于它与 `Vary: Origin` 的配对来缓存响应，回显方式为在后续版本中添加 `Access-Control-Allow-Credentials` 留出了空间，而无需更改 schema。暴露的 header 允许浏览器 webui 遵循重试提示、保留 SSE epoch 并关联已接受的物理流。今天**不**发送 `Access-Control-Allow-Credentials`：守护进程通过 `Authorization` 中的 bearer 进行身份验证，这可以在没有 `credentials: 'include'` 的情况下跨域工作。
+`Access-Control-Allow-Origin` 会逐字回显请求的 origin（浏览器发送时的大小写），而不是字面量 `*`，即使在 `*` 模式下也是如此——浏览器缓存基于它与 `Vary: Origin` 的配对来缓存响应，回显方式为在后续版本中添加 `Access-Control-Allow-Credentials` 留出了空间，而无需更改 schema。暴露的 header 允许浏览器 webui 遵循重试提示、保留 SSE epoch 并关联已接受的物理流。今天**不**发送 `Access-Control-Allow-Credentials`：守护进程通过 `Authorization` 中的 bearer 进行身份验证，这可以在没有 `credentials: 'include'` 的情况下跨域工作；受信任环回权限不需要浏览器凭据。
 
-OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Control-Request-Headers` 的 OPTIONS）会直接返回 `204 No Content` 以及上述 header。这是传统的 CORS 模式，是安全的——预检仅确认守护进程将接受哪些 methods/headers；实际的后续请求仍会运行完整的链路（host 允许列表 → bearer 身份验证 → 路由），因此反 DNS 重绑定和 bearer 强制执行仍会在读取或变更任何状态之前触发。来自匹配 origin 的普通 OPTIONS 请求会继续流向下游，并附带 CORS header。
+OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Control-Request-Headers` 的 OPTIONS）会直接返回 `204 No Content` 以及上述 header。这是传统的 CORS 模式，是安全的——预检仅确认守护进程将接受哪些 methods/headers；实际的后续请求仍会运行 Host 闸门，然后在读取或变更任何状态之前经过 bearer/listener 权限或 channel webhook 共享密钥闸门。来自匹配 origin 的普通 OPTIONS 请求会继续流向下游，并附带 CORS header。
 
 不匹配允许列表的 origin 仍会收到 `403 {"error":"Request denied by CORS policy"}`——与默认拦截墙的响应格式相同，因此已经解析了拦截墙响应的客户端无需对部署了允许列表的守护进程进行特殊处理。拒绝路径**不会**发出任何 `Access-Control-*` header（浏览器会忽略它们，并且发出它们会通过 header 的存在间接暴露允许列表的大小）。
 
 配置的 pattern 列表故意**不**在 `/capabilities` 中回显——浏览器 webui 已经知道自己的 origin（毕竟它调用了守护进程），并且暴露该列表会让 `/capabilities` 的未身份验证读取者枚举每个受信任的 origin（这对于配置错误的部署是有用的侦察信息）。SDK 客户端通过 `caps.features.allow_origin` 标签来判断"此守护进程允许跨域浏览器访问"，而无需知道具体是哪些 origin。
 
-环回自 origin 请求（例如 Web Shell 在相同的 `127.0.0.1:port` 调用守护进程）由一个**独立**的 Origin 剥离 shim 处理，该 shim 在 CORS 中间件**之前**运行，并移除 `127.0.0.1:port` / `localhost:port` / `[::1]:port` / `host.docker.internal:port` 的 `Origin` header。因此，无论 `--allow-origin` 如何配置，它们都能通过——操作员无需列出守护进程自身的端口即可使 Web Shell 正常工作。
+环回自 origin 请求（例如 Web Shell 在相同的 `127.0.0.1:port` 调用守护进程）由一个**独立**的 Origin 剥离 shim 处理，该 shim 在 CORS 中间件**之前**运行，并移除 `127.0.0.1:port` / `localhost:port` / `[::1]:port` / `host.docker.internal:port` 或确切绑定的环回地址和端口的 `Origin` header。它还接受浏览器为默认端口发送的 scheme 匹配的无端口形式：端口 80 上的 `http://host` 和端口 443 上的 `https://host`。因此，无论 `--allow-origin` 如何配置，它们都能通过——操作员无需列出守护进程自身的端口即可使 Web Shell 正常工作。
 
 ## 常见错误格式
 
@@ -103,9 +105,27 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 }
 ```
 
-当 `--max-total-sessions` 拒绝新 session 时，返回相同的响应格式，但 `"scope": "total"`。
+当有效的 daemon 全局总上限拒绝新 session 时——`--max-total-sessions`，或 `limits.maxTotalSessions` 下描述的默认值——，返回相同的响应格式，但 `"scope": "total"`。
 
 附加到现有 session 的操作**不**计入上限，因此即使达到容量上限，空闲守护进程的重连也能继续工作。
+
+如果 ACP channel 初始化预算在 `newSession` 分发之前过期，`POST /session` 返回 `504`，并带有 `Retry-After: 5` 和：
+
+```json
+{
+  "error": "AcpSessionBridge initialize timed out after 10000ms",
+  "code": "init_timeout",
+  "errorKind": "init_timeout",
+  "retryable": true,
+  "sideEffectPossible": false,
+  "phase": "channel.initialize",
+  "timeoutMs": 10000
+}
+```
+
+`timeoutMs`——以及 `error` 的数字后缀——反映 daemon 配置的 `--initialize-timeout-ms` 预算（上述值为默认值）。上述完整的安全重试格式仅在普通 session 创建时发出，其中 channel 初始化严格先于每个持久化变更：在该路径上，`sideEffectPossible: false` 字段是权威的，因为初始化先于 ACP `newSession` 请求，理解此结构化契约的客户端可以在公告的延迟后重试，而不会冒重复 Session 的风险。
+
+携带 `branch` 或 `worktree` 的请求，以及由变更路由（非普通创建）显示的初始化超时（例如 `POST /session/:id/branch` 和 `POST /session/:id/side-task`，其中已提交的 fork 可能比失败的握手存活更久），返回相同的 `504`，带有 `code: "init_timeout"`、`phase` 和 `timeoutMs`——但不带有 `Retry-After`、`retryable` 或 `sideEffectPossible`。对于这些情况，变更结果未知：branch 和 worktree 准备在 channel 初始化之前变更 git，失败时尝试的回滚是尽力的（失败的 checkout 回滚会使 workspace 留在新分支上，重试可能会出现 branch-already-exists 冲突）。将所有 5xx 变更响应归类为模糊的客户端会保守地 fail closed，并应对缩减后的格式应用相同的策略。`POST /session/:id/load` 和 `POST /session/:id/resume` 在 channel 初始化在恢复请求分发之前超时时（`ensureChannel` 阶段）显示相同的缩减后的 `init_timeout` `504`；与其 Errors 列表中记录的 `session_restore_timeout` `504` 不同，此格式不带有 `Retry-After`、不带有 `retryable`，也不设置栅栏，因为恢复从未被分发。`POST /session` 上的 `newSession` 分发超时是个例外：它返回 `504`，带有 `code: "init_timeout"`、`retryable: true` 和预算派生的 `Retry-After`，但不带有 `phase` 或 `sideEffectPossible`，因为创建结果是模糊的。所有其他超时标签保留通用映射。
 
 `RestoreInProgressError` —— 由 `POST /session/:id/load`、`POST /session/:id/resume` 或调用者指定 ID 的 `POST /session`（当另一个注册已拥有该 id 时）发出 —— 返回 `409` 和：
 
@@ -128,7 +148,7 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 | `reason`                     | 含义                                                                                                           | `Retry-After`                                                  |
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
 | `restore_in_progress`        | 普通恢复正在运行。                                                                                              | `5`（与 `session_limit_exceeded` 匹配）                         |
-| `awaiting_abandoned_cleanup` | 公共调用者已收到 `504`，不可取消的 ACP 请求及其清理尚未结算。                                                      | 有效恢复预算（秒），限制在 `5`–`120` 之间                       |
+| `awaiting_abandoned_cleanup` | 公共调用者已收到超时（恢复的 `504`，或 session 初始化的 `init_timeout`），不可取消的 ACP 请求及其清理尚未结算。 | 超时操作的预算（秒）——恢复，或调用者指定 ID 的 spawn 的初始化——限制在 `5`–`120` 之间 |
 
 公共恢复请求受 `limits.sessionRestoreTimeoutMs`（默认 60 秒）管控。在 `504` 之后，该 id 保持围栏状态，直到迟到的 ACP 请求和清理结算完毕，因此以普通 5 秒节奏持续重试的客户端会在无法清除的 409 上空转——请遵循 `awaiting_abandoned_cleanup` 附带的预算派生提示。
 
@@ -185,12 +205,13 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
  'slow_client_warning', 'typed_event_schema',
  'session_set_model', 'client_identity', 'client_heartbeat',
  'session_permission_vote', 'permission_vote', 'workspace_mcp', 'workspace_skills',
+ 'workspace_skills_config_runtime',
  'workspace_providers', 'workspace_acp_preheat', 'workspace_acp_status',
  'auth_provider_install', 'workspace_memory',
  'workspace_agents', 'workspace_agent_generate', 'workspace_env',
  'workspace_preflight', 'session_context', 'session_context_usage',
  'session_supported_commands', 'session_tasks', 'session_monitor_tool_correlation', 'session_stats',
- 'session_lsp', 'session_status',
+ 'session_lsp', 'session_resources', 'session_status',
  'session_close', 'session_metadata', 'session_organization',
  'session_archive', 'mcp_guardrails',
  'workspace_mcp_manage', 'mcp_guardrail_events',
@@ -199,19 +220,20 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
  'workspace_file_upload',
  'session_approval_mode_control', 'workspace_tool_toggle',
  'workspace_skill_settings_toggle', 'workspace_skill_settings_batch_toggle',
- 'extension_batch_activation_v2',
+ 'extension_batch_activation_v2', 'extension_activation_explicit_refresh',
+ 'extension_state',
  'workspace_settings', 'workspace_init', 'workspace_mcp_restart',
  'session_recap', 'session_generation', 'session_btw', 'session_shell_command',
- 'standalone_sessions_v1',
+ 'standalone_sessions_v1', 'standalone_session_options_v1',
  'mcp_workspace_pool', 'mcp_pool_restart',
  'require_auth', 'allow_origin', 'auth_device_flow',
  'permission_mediation', 'prompt_absolute_deadline', 'writer_idle_timeout',
- 'non_blocking_prompt', 'session_language', 'session_rewind',
+ 'non_blocking_prompt', 'session_language', 'user_language_sync', 'session_rewind',
  'workspace_hooks', 'session_hooks', 'workspace_extensions',
  'session_branch', 'rate_limit', 'workspace_reload', 'channel_delivery',
  'multi_workspace_sessions', 'multi_workspace_session_rewind',
  'multi_workspace_session_shell', 'persistent_workspace_registration',
- 'workspace_display_name',
+ 'workspace_display_name', 'workspace_runtime_removal', 'workspace_runtime',
  'workspace_qualified_rest_core', 'workspace_qualified_voice',
  'workspace_qualified_memory', 'extension_management_v2', 'extension_git_credentials',
  'extension_local_path_install',
@@ -233,11 +255,36 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 
 `workspace_runtime_removal` 通告通过 `DELETE /workspaces/:workspace` 进行的同步热移除。Capability 中的 workspace 条目新增可选 `removable`；仅 `removable: true` 的行可被移除。移除同时会遗忘该 runtime 的每个持久化注册别名，但不会删除文件、设置、转录或归档。
 
+`workspace_runtime` 通告 `GET /workspace/runtime/status`、`POST /workspace/runtime/ensure` 及其 `/workspaces/:workspace/runtime/...` 等效路由。`ensure` 不接受能力选择：它启动或复用选定受信任 workspace 的 ACP runtime，并返回其生命周期状态和单调递增的 runtime epoch。主路由仅由主 runtime 拥有；限定路由仅解析选定的已注册 runtime，且从不回退。成功的 ensure 会续期 runtime 的十分钟保活窗口。Status 是只读的，从不会启动子进程。并发的 ensure 共享一次物理启动。启动进行中或失败会返回可重试的 `503 runtime_still_starting` 或 `503 runtime_initialization_failed`。能力准备可能在 ensure 观测预算过期后继续；在这种情况下，ensure 仍然返回活跃的 runtime，但能力状态为 not-ready，供状态轮询使用。该能力仅在所有活跃 runtime bridge 提供权威生命周期快照时被通告；选定的旧版注入 bridge 返回 `501 workspace_runtime_not_supported`，而非猜测的状态或 epoch。
+
+Runtime 状态和 ensure 响应使用以下结构：
+
+```json
+{
+  "v": 1,
+  "workspaceCwd": "/work/project",
+  "state": "active",
+  "runtimeLive": true,
+  "runtimeEpoch": 4,
+  "capabilities": {
+    "skills": {
+      "state": "ready",
+      "revision": 2,
+      "runtimeEpoch": 4
+    }
+  }
+}
+```
+
+`capabilities.skills.state` 为 `not_started`、`starting`、`ready`、`stale` 或 `error`；失败时在 `capabilities.skills.error` 中包含 `{code, message}`。Skills 目录仅当顶层和能力 `runtimeEpoch` 值匹配时才被视为最新。`revision` 在一个 runtime epoch 内排列 Skills 准备顺序，不得跨 epoch 比较。
+
+`workspace_skills_config_runtime` 通告拆分后的 Skills 读取和配置变更，位于 `/workspace/{config,runtime}/skills` 和 `/workspaces/:workspace/{config,runtime}/skills`。Web Shell 使用这些路由进行 Skills 管理，并在组装新 session 时，立即从 config 填充斜杠命令，然后再用匹配 epoch 的 runtime 目录替换它们。当该功能缺失时，客户端必须继续使用旧版 Skills 路由，且不得仅为 Skills 调用 runtime ensure。
+
 `session_load` 和 `session_resume` 宣告了显式恢复路由（`POST /session/:id/load` 和 `POST /session/:id/resume`）。旧版 daemon 对这些路径返回 `404`，因此 SDK 客户端在调用前应预先检查 `caps.features`。`unstable_session_resume` 仍作为已弃用的别名被宣告，以兼容在底层 ACP 方法名为 `connection.unstable_resumeSession` 时发布的 SDK；新客户端应使用 `session_resume` 进行门控。
 
-`session_transcript` 通告 `GET /session/:id/transcript`，一个对持久化活跃 session JSONL 的只读分页重放视图。它与 `/load` 不同：不会附加客户端、不会为活跃 EventBus 播种、不会创建活跃 session，也不会改变活跃重放窗口。客户端应在需要长 session 的完整磁盘转录时使用它，并继续仅在冷 UI 恢复期间使用 `/load` 进行有界的活跃重放。
+`limits.sessionRestoreTimeoutMs`（存在时）是 daemon 对底层 ACP `loadSession` / `unstable_resumeSession` 请求的挂钟预算。它是一个附加的 v1 字段。TypeScript SDK 给 daemon 10 秒的客户端裕量，Web Shell watchdog 给 15 秒；与旧版 daemon 通信的客户端应分别使用 70 秒和 75 秒。
 
-`limits.sessionRestoreTimeoutMs`（存在时）是 daemon 对底层 ACP `loadSession` / `unstable_resumeSession` 请求的挂钟预算。它是一个附加的 v1 字段。TypeScript SDK 给 daemon 10 秒的客户端裕量，WebUI watchdog 给 15 秒；与旧版 daemon 通信的客户端应分别使用 70 秒和 75 秒。
+`session_transcript` 通告 `GET /session/:id/transcript`，一个对持久化活跃 session JSONL 的只读分页重放视图。它与 `/load` 不同：不会附加客户端、不会为活跃 EventBus 播种、不会创建活跃 session，也不会改变活跃重放窗口。客户端应在需要长 session 的完整磁盘转录时使用它，并继续仅在冷 UI 恢复期间使用 `/load` 进行有界的活跃重放。
 
 `workspace_persisted_transcript` 通告 `GET /workspaces/:workspace/session/:id/transcript`，一个 daemon 本地的仅持久化分页器，不启动 ACP、不查询活跃 bridge 状态、不加载设置、不发现项目能力，也不创建旧版持久化 cursor key。该标签是无条件的，因为受信任的单 workspace 主实例可以使用复数路由；每个 workspace 的信任授权仍然在每个请求上进行评估。已注册的不受信任的次要 workspace 可以读取，而不受信任的主 workspace 仍然会被拒绝。
 
@@ -246,6 +293,8 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 `workspace_archived_session_export` 通告 `GET /workspaces/:workspace/session/:id/archive/export`，一个仅限受信任的选定 workspace 归档持久化存储的完整导出。它独立于 `workspace_session_export` 和 `workspace_qualified_rest_core`；客户端必须直接预检此标签。独立的路由防止旧版 daemon 忽略归档意图并返回具有相同 id 的活跃转录。
 
 `workspace_session_live_state` 通告 `GET /workspaces/:workspace/sessions/live-state`，一个仅限受信任的、仅内存的选定 workspace runtime 活跃 session 快照，以及一个内存中的目录版本，告知客户端何时需要进行完整的持久化目录重新加载。它独立于 `workspace_qualified_rest_core`：已发布的 daemon 可以通告更广泛的 workspace REST 能力而不实现此路由，因此客户端必须直接预检此标签。该标签是无条件的，因为受信任的单 workspace 主实例可以通过 id 或 cwd 使用该路由；每个 workspace 的信任检查仍然在每个请求上适用，且该路由不会将宽松的不受信任次要持久化目录读取策略扩展到活跃 bridge 状态。该标签表示端点存在；并不保证每个活跃项都携带可选的 `updatedAt` 活动水位标记，该标记取决于生命周期。
+
+可选的顶层 `/capabilities` 字段 `sessionLiveStatePollIntervalMs` 通告 daemon 全局的 live-state 轮询间隔（毫秒）。它从启动环境变量 `QWEN_SESSION_LIVE_STATE_POLL_INTERVAL_MS` 解析一次，独立于 workspace 环境覆盖。接受 `1000` 到 `2147483647` 的整数值；缺失或无效的值使用 `5000`。Web Shell 将所有 workspace 的 live-state 轮询消费此提示，并对旧版或不兼容 daemon 的缺失或无效字段也回退到 `5000`。此字段不改变路由的快照语义、即时本地/可见性刷新或完整目录轮询。SDK 客户端仍然负责自己的定时器。
 
 `slow_client_warning` 涵盖 SSE 背压行为：(a) 当订阅者的实时帧积压或实时序列化字节积压超过 75% 时，daemon 会发出一个 `slow_client_warning` 合成事件流帧，每次溢出事件仅发出一次（当两项指标均降至 37.5% 以下时重新触发）；(b) `GET /session/:id/events` 接受 `?maxQueued=N` 查询参数（范围 `[16, 2048]`），用于在针对大型重放环进行冷重连时，预设每个订阅者的帧积压大小。序列化字节上限由 daemon 控制（默认每个订阅者 **2 MiB**），仅限实时数据，且故意不提供查询参数。全局 ring 大小由 `--event-ring-size` 控制（默认 **8000**，参见 #3803 §02）。旧版 daemon 会静默缺失该警告/查询行为——在启用前请预先检查此 tag。
 
@@ -267,11 +316,13 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 
 `session_lsp` 宣告了 `GET /session/:id/lsp`，即为 daemon 客户端提供的只读结构化 LSP 状态快照。旧版 daemon 返回 `404`；在暴露远程 LSP 状态前，请预先检查此 tag。
 
+`session_resources` 通告 `GET /session/:id/resources`，即一对只读的经过清理的 Skill 和 MCP 快照，基于选定活跃 session 的 Config 构建。该路由的作用域限定为活跃 session 所有者：它从不回退到主 runtime，也不从 workspace 状态推断 session 的资源。嵌套的 `skills` 和 `mcp` 对象复用相应的 workspace 状态 payload，但省略 MCP 身份验证、池、workspace 预算和 workspace 发现错误增强。选定 session 的 MCP manager 报告的状态、发现和计数仍然保留。旧版 daemon 返回 `404`；在显示 session 资源目录前，请预先检查此 tag。
+
 `session_status` 宣告了 `GET /session/:id/status`，即按 id 查询单个会话的实时桥接摘要。除了 `clientCount` 和 `hasActivePrompt` 外，活跃 session 还暴露 `isWaitingForPermission`、`isWaitingForUserQuestion`、`pendingInteractionCount`，以及失败 turn 后保留的 `turnError`。该错误在下一次 prompt 实际开始时清除。在当前 bridge 中已稳定运行 turn 的活跃 session 还携带 `updatedAt`，与 live-state 路由下记录的活动水位标记相同；由于此路由直接返回 bridge 摘要，该值不会与持久化转录 mtime 合并，可能早于 session 列表报告的值。单 session 状态响应和 workspace session 列表都包含 `turnError` 和 `pendingInteractions`：可渲染的权限操作或 `ask_user_question` 问题，加上现有权限投票路由所需的 `requestId` 和可选选项。每个用户问题都有一个 `answerKey`；使用 `answers` 投票，例如 `{ "0": "Polling" }`，以该值为键。仅持久化的 session 省略 runtime 状态，因为不存在 runtime。旧版 daemon 返回 `404`；在轮询单个 session 状态而非扫描完整 session 列表前，请预先检查此 tag。
 
 `session_info` 宣告 `GET /workspace/:id/session-info` 及其 `/workspaces/:workspace/session-info` 对应路由。响应聚合持久化的活跃和归档 session 计数，而不加载列表元数据。这是一个显式的 O(n) 磁盘扫描，不得被轮询；客户端应将 `truncated: true` 视为下界结果。
 
-`session_approval_mode_control`、`workspace_tool_toggle`、`workspace_skill_toggle`、`workspace_skill_batch_toggle`、`extension_batch_activation_v2`、`workspace_init` 和 `workspace_mcp_restart` 宣告了下文记录的变更控制路由。它们受变更门控的严格限制（未配置 bearer token 的 daemon 会以 401 `token_required` 拒绝它们）。旧版 daemon 返回 `404`；在暴露相应功能前，请预先检查每个 tag。
+`session_approval_mode_control`、`workspace_tool_toggle`、`workspace_skill_settings_toggle`、`workspace_skill_settings_batch_toggle`、`extension_batch_activation_v2`、`workspace_init` 和 `workspace_mcp_restart` 宣告下文记录的变更控制路由。Approval-mode 控制保留其非严格兼容门控。其他控制受 operator 权限的严格门控：受信任环回主监听器、bearer 认证或配对的 Local Control 请求可以通过。到达严格门控但没有受信任环回权限的无 token 主监听器请求返回 401 `token_required`；缺失或无效的配置凭据以及未配对的 Local Control 凭据由 bearer 中间件更早以纯 `401 Unauthorized` 拒绝。缺少这些路由之一的 daemon 返回 `404`。Settings 特定的 Skill 标签不同：已退役标签代的 daemon 通告 `workspace_skill_toggle` 和 `workspace_skill_batch_toggle`，并在相同路径上提供其目录验证的契约。已退役的单目标路由可以返回 HTTP `404 skill_not_found` 或 `409 skill_not_toggleable`；已退役的批量路由返回 HTTP 200 并将目录派生的失败放在 `errors[]` 中。在暴露其功能前预检每个标签，且不要通过探测路由可达性来推断 settings 特定的 Skill 契约。路由路径和请求体未变更。
 
 `mcp_guardrails`（issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 14）涵盖 MCP 预算层面：`GET /workspace/mcp` 上的 `clientCount` / `clientBudget` / `budgetMode` / `budgets[]` 字段、每个服务器单元上的 `disabledReason` 字段，以及 `--mcp-client-budget` / `--mcp-budget-mode` CLI 标志。旧版 daemon 会完全省略这些新字段；SDK 客户端在依赖 `budgets[]` 语义前应预先检查此 tag。注册表描述符还包含 `modes: ['warn', 'enforce']`，以便未来暴露功能模式——目前，客户端从快照的 `budgetMode` 字段推断模式。在 `enforce` 模式下，服务器拒绝行为由 `Object.entries(mcpServers)` 的声明顺序决定；未来的作用域优先级层（如果 qwen-code 采用）会将其转变为"最低优先级优先"，以镜像 claude-code 的 `plugin < user < project < local` 约定。
 
@@ -289,7 +340,9 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 
 `extension_local_path_install` 在 `POST /workspace/extensions/install` 和 `POST /extensions/install` 上通告 daemon 本地的 Extension 源。`source` 必须是 daemon 主机上实际存在的绝对路径。相对路径仍不受支持，以免 daemon 进程 cwd 改变源的身份，或遮蔽 GitHub `owner/repo` 简写。现有安装操作会将 Extension 复制到托管存储，而不是链接源目录。客户端必须预检此标签，因为旧版 daemon 会拒绝本地源。
 
-`extension_batch_activation_v2` 新增 `PUT /extensions/activation` 和 `PUT /workspaces/:workspace/extensions/activation`。两者接受 `extensionNames` 中的 1–100 个名称，以不区分大小写的方式去重同时保留首次出现的顺序，在一代中持久化变更的目标，并返回一个 `202` 操作句柄。设置 `enabled` 或 `disabled` 时目标无需已安装：其名称会创建一个期望状态声明，当安装同名 Extension 时该声明会被保留。全局路由接受 `state: "enabled" | "disabled"`，写入 V2 `defaultActivation`，并调和每个已注册的 runtime。workspace 路由还接受 `"inherit"`，为选定的受信任 runtime 应用或清除精确覆盖，并仅调和该 runtime。`inherit` 不会为未知名称创建声明；全未知清除报告 `updated: false` 并跳过调和。单数激活路由保持为仅已安装且按 id 寻址。
+`extension_batch_activation_v2` 新增 `PUT /extensions/activation` 和 `PUT /workspaces/:workspace/extensions/activation`。两者接受 `extensionNames` 中的 1–100 个名称，以不区分大小写的方式去重同时保留首次出现的顺序，在一代中持久化变更的目标，并返回一个 `202` 操作句柄。设置 `enabled` 或 `disabled` 时目标无需已安装：其名称会创建一个期望状态声明，当安装同名 Extension 时该声明会被保留。全局路由接受 `state: "enabled" | "disabled"` 并写入 V2 `defaultActivation`；workspace 路由还接受 `"inherit"`，为选定的受信任 runtime 应用或清除精确覆盖。`inherit` 不会声明未知名称，全未知清除报告 `updated: false`。
+
+`extension_activation_explicit_refresh` 表示单数和批量激活操作在持久化策略提交完成后即结束，不会直接刷新活跃 session。需要立即生效的调用方应等待激活成功后，提交同步的主 workspace `POST /workspace/extensions/refresh`（直接返回刷新计数）或选定 workspace 的异步 `POST /workspaces/:workspace/extensions/refresh`（返回独立的操作句柄）。两种形式不可互换：异步操作在其 runtime 调和完成时记录已应用的 generation，而同步路由不记录任何内容，因此 generation 调和器仍然将该 workspace 视为待处理，并在下一次遍历时再次刷新其 session。可以寻址特定 workspace 的调用方应优先使用异步形式。刷新失败不会回滚或降级激活结果。没有此能力的 daemon 已在激活中包含 runtime 刷新，因此兼容客户端不得提交第二次刷新。独立的 30 秒 generation 调和器保持启用，通常在其下一次遍历时应用已提交的策略；失败的调和由后续重试。
 
 ### Extension Management V2 线路契约
 
@@ -306,10 +359,33 @@ OPTIONS 预检请求（带有 `Access-Control-Request-Method` 或 `Access-Contro
 | `DELETE /extensions/:extensionId`                                  | `202` 卸载操作，或 extension 不存在时的幂等 `204`                              |
 | `GET /extensions/operations/:operationId`                          | `200` 操作快照                                                                |
 | `GET /workspaces/:workspace/extensions`                            | `200` workspace 激活投影                                                      |
+| `GET /workspaces/:workspace/extensions/:extensionId/state`         | `200` workspace 资源状态（`extension_state`）                                 |
+| `PUT /workspaces/:workspace/extensions/:extensionId/state`         | `202` workspace 资源状态操作（`extension_state`）                             |
 | `PUT /workspaces/:workspace/extensions/activation`                 | `202` 精确 workspace 激活批量操作                                             |
 | `PUT /workspaces/:workspace/extensions/:extensionId/activation`    | `202` 精确 workspace 激活操作                                                 |
 | `DELETE /workspaces/:workspace/extensions/:extensionId/activation` | `202` 清除覆盖操作                                                            |
 | `POST /workspaces/:workspace/extensions/refresh`                   | `202` runtime 刷新操作                                                        |
+
+#### Workspace 资源状态
+
+独立预检 `extension_state`。它仅支持 Skills；不表示 MCP 资源管理。两个路由都选择已注册的 workspace runtime，且从不回退到主 runtime。GET 遵循现有的只读信任规则；PUT 需要受信任的 workspace。
+
+```json
+{
+  "skills": [
+    { "name": "review", "state": "enabled" },
+    { "name": "deploy", "state": "disabled" }
+  ]
+}
+```
+
+PUT 接受 1–100 个条目，包括单元素批量。它在排队前拒绝格式错误的条目、不区分大小写的重复名称和不支持的组。所有名称必须属于已安装的目标 Extension，包括当前禁用的 Skills；无效目标会使操作失败而不进行部分写入。一次锁定的 store 提交会合并精确规范 workspace 的列出覆盖。未列出的 Skills 和其他 workspace 会被保留。没有 settings 写入、未来名称声明或父 Extension 的隐式激活。
+
+GET 返回 `v: 1`、`workspaceId`、`workspaceCwd`、`extensionId`、`name` 和 `skills`。每个 Skill 有 `name`、`defaultEnabled`、可空的 `workspaceEnabled`、`effectiveEnabled`，以及可选的 `disabledReason`/`lockedScope`。manifest 的可选 `skillStates` 提供默认值；缺失值默认为启用。对于活跃的父级，优先级为 settings 硬禁用、settings 显式启用、settings 默认禁用、workspace 内部覆盖、manifest 默认。内部禁用使用 `disabledReason: "default"` 且从不锁定 settings。禁用或移除的父级不能通过 Skill 覆盖复活。
+
+`set_extension_state` 操作返回 `status: "updated"` 以及有序的 `result.resourceStates.skills`；`result.states` 保留其更新检查含义。持久化状态不能证明每个 session 都已刷新。daemon 仅刷新目标 runtime 的 Skills 及其命令/模型上下文，包括引导和实时 session，而不重启不相关的 MCP/LSP/hooks。提交后刷新失败会产生警告而不回滚状态。覆盖在重启和 Extension 更新后仍然有效，并在卸载时移除。客户端不得回退到 Skill settings API，它会写入更高优先级的设置。
+
+#### 全局目录
 
 全局目录响应为：
 
@@ -496,11 +572,13 @@ Workspace 限定的变更使用相同的全局 `/extensions/operations/:operatio
 | `scratch_workspace_registration`    | 托管的 scratch workspace 创建可用——runtime 工厂、经过验证的托管 scratch 根目录和 runtime 处置已连接，且每个托管 runtime 都遵守 scratch 根目录边界。                                                                                                                                                                                                                                                                                                                                          |
 | `workspace_runtime_removal`         | 可移除的动态或持久化恢复的次要 runtime 可以通过管理路由进行排空和移除。                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `native_directory_picker`           | daemon 主机可以打开原生 OS 目录选择器（macOS 上的 `osascript`、Windows 上的 PowerShell、有显示器的 Linux 主机上的 `zenity`）。无头主机省略该标签，以便客户端隐藏浏览功能，而不是显示保证会失败的选择器。                                                                                                                                                                                                                                                                                                                                                   |
+| `workspace_local_open`              | daemon 主机可以在主机的 OS 文件管理器中打开 workspace 目录（macOS 上的 `open`、Windows 上的 `explorer.exe`、有显示器的 Linux 主机上的 `xdg-open`）。无头主机省略该标签，以便客户端隐藏"本地打开"功能，而不是显示保证会失败的启动。打开的路径始终是通过 `POST /workspaces/:workspace/open` 解析的已注册 workspace cwd；该路由接受可选的 JSON body `{ "target": "terminal" }`（缺失/其他值 = 文件夹），并返回 `{ kind: 'workspace-local-open', opened: true, target }`，其中 `target` 设置为 `folder` 或 `terminal`。                                                                                                                                                                       |
+| `workspace_local_terminal`          | daemon 主机可以在 workspace 目录中打开终端窗口（macOS 上的 `open -a Terminal`、Windows 上的 `wt.exe` 并以 `cmd.exe` 作为回退、有显示器的 Linux 主机上的 `gnome-terminal`/`konsole`/`xterm`）。无头主机省略该标签，以便客户端隐藏"在终端中打开"功能，而不是显示保证会失败的启动。由 `POST /workspaces/:workspace/open` 提供服务，body 为 `{ "target": "terminal" }`。                                                                                                                                                                                                                                                                                         |
 | `workspace_qualified_acp`           | ACP HTTP 和多 workspace runtime 均已启用，因此复数 ACP 端点可以选择次要 runtime。                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `workspace_qualified_voice`         | 多 workspace runtime 和共享 ACP/Voice WebSocket 监听器均已启用，因此每个 workspace 限定的 Voice 模态对次要 runtime 均可达。                                                                                                                                                                                                                                                                                                                                                                  |
 | `workspace_qualified_memory`        | ACP HTTP 和多 workspace runtime 均已启用，因此 workspace 限定的托管 memory 路由可以为 remember、forget 和 dream 操作选择按 workspace 的任务通道。                                                                                                                                                                                                                                                                                                                                              |
-| `client_mcp_over_ws`                | daemon 接受通过 ACP WebSocket 的客户端托管 MCP server。这是显式 opting，CDP 隧道路径不需要它。                                                                                                                                                                                                                                                                                                                                                                                               |
-| `cdp_tunnel_over_ws`                | daemon 暴露反向 `/cdp` WebSocket 隧道，通过显式 opting 或因 Chrome extension origin 被允许。这仅表示隧道存在；并不意味着 Chrome DevTools MCP 工具已注册。                                                                                                                                                                                                                                                                                                                                      |
+| `client_mcp_over_ws`                | daemon 接受通过 ACP WebSocket 的客户端托管 MCP server。这是显式 opt-in，CDP 隧道路径不需要它。                                                                                                                                                                                                                                                                                                                                                                                               |
+| `cdp_tunnel_over_ws`                | daemon 暴露反向 `/cdp` WebSocket 隧道，通过显式 opt-in 或因 Chrome extension origin 被允许。这仅表示隧道存在；并不意味着 Chrome DevTools MCP 工具已注册。                                                                                                                                                                                                                                                                                                                                      |
 | `browser_automation_mcp`            | ACP HTTP 已启用，`cdp_tunnel_over_ws` 处于活动状态，无 bearer token 阻止 `/cdp`，且 `QWEN_CDP_MCP_COMMAND` 命名了一个外部 stdio MCP adapter。主 CLI 包不捆绑浏览器自动化 adapter；没有此 tag 时，Chrome extension 侧面板聊天可能仍然有效，但 console/network/screenshot/click 工具默认不注册。                                                                                                                                                                                                    |
 | `voice_transcribe`                  | Voice WebSocket 端点已挂载；仍需配置 Voice 模型才能成功转录。                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `realtime_voice`                    | macOS WebShell daemon 已启用 Live Voice 且原生 Host 集成处于活动状态。`/live/status` 报告就绪状态，但该能力在功能启用前会被撤回。                                                                                                                                                                                                                                                                                                                                                             |
@@ -559,7 +637,7 @@ const busy =
 
 > ⚠️ 深度探针是**信息性的**，并非真正的存活验证或原子回收租约。协商的 ACP 子进程按协商的节奏发布 channel 范围的活跃工作快照，daemon 将其新鲜度分级到 `activeWorkReporting` 中 — 但它绝不会因缺失报告而终止 channel，因为一个 session 的沉默不是进程已死亡的证据。传输活跃性和停滞 Agent 检测是独立的机制。`connectedClients` 统计的是 REST SSE 连接，而非所有 ACP 传输。使用重复采样和优雅关闭进行空闲回收；使用经过认证的 `/daemon/status` 进行传输和按 workspace 的诊断。如果任何受管 runtime getter 抛出异常，深度探针会 fail closed 并返回 `503 {"status":"degraded","reason":"aggregation_failed"}`，而不是返回部分汇总，daemon 日志会标识失败的 workspace runtime。在引导期间，runtime 注册表就绪之前，它返回 `503 {"status":"degraded","reason":"bootstrap"}` 并带有 `Retry-After: 1`。对于 listener 存活检查，请使用不带 `?deep` 的默认 `/health`。
 
-**Auth：** **仅在非环回绑定（non-loopback binds）时需要**。在环回地址（`127.0.0.1`、`::1`、`[::1]`）上，`/health` 在 bearer 中间件之前注册，因此 pod 内的 k8s/Compose 探针无需携带 token。在非环回地址（`--hostname 0.0.0.0` 等）上，该路由在 bearer 中间件之后注册，如果没有有效 token 则返回 401——否则未经身份验证的调用者可以探测任意地址以确认 `qwen serve` 是否存在，这是一种低严重性的信息泄露，与端口扫描结合会产生不良影响。CORS 拒绝 + Host 白名单在环回豁免中依然适用。
+**Auth：** 在非环回绑定以及使用 `--require-auth` 加固环回时需要。在普通环回绑定（`127.0.0.0/8`、`localhost`、`::1`、`[::1]`）上，`/health` 在 bearer 中间件之前注册，因此 pod 内的 k8s/Compose 探针无需携带 token。在非环回（`--hostname 0.0.0.0` 等）或加固环回上，该路由在 bearer 中间件之后注册，如果没有有效 token 则返回 401——否则未经身份验证的调用者可以探测任意地址以确认 `qwen serve` 是否存在，这是一种低严重性的信息泄露，与端口扫描结合会产生不良影响。CORS 拒绝 + Host 允许列表在普通环回豁免中依然适用。
 
 ### `GET /daemon/status`
 
@@ -598,8 +676,10 @@ const busy =
     "sessionShellCommandEnabled": false
   },
   "limits": {
+    "maxRegisteredWorkspaces": 256,
+    "maxChannelControlWorkspaces": 25,
     "maxSessions": 32,
-    "maxTotalSessions": null,
+    "maxTotalSessions": 800,
     "maxPendingPromptsPerSession": 5,
     "listenerMaxConnections": 256,
     "eventRingSize": 8000,
@@ -667,13 +747,23 @@ const busy =
 
 `runtime.memory.children` 在该块内是增量的，报告 `childRssCoverage` 命名的子进程的聚合 RSS：`rssBytes`（它们自报 RSS 的总和）、`sampled`（有多少产生了读数）和 `oldestReadingAgeMs`（总和中最早读数的年龄，因此调用者可以判断各部分的采集时间间隔）。`sampled` 的分母是兄弟字段 `activeAcpChildren`，不在块内重复；当 `sampled` 较低时，`rssBytes` 是下界而非总量。采样由活跃的 SSE/WS watcher 门控，因此对无人流式传输的 daemon 发起状态请求会报告 `sampled: 0`，即使有活跃子进程——旁边的 `activeAcpChildren` 使该差距可见，而 `rssBytes: 0` 且 `sampled: 0` 永远不表示测量为零。当没有采样时以及当每个贡献者都是早于该字段的 bridge 时，`oldestReadingAgeMs` 为 `null`，因此它永远不表示"新鲜"。将总和视为同时高估和低估：按进程汇总 RSS 会重复计算子进程共享的页面，而每个子进程仅报告自己的进程，因此其 MCP 后代和每个 channel worker 都缺失。它不是 daemon 树的内存。该字段在 SDK 镜像中是可选的，因为报告 `primary_only` 的 daemon 从不发送它。
 
+`runtime.memory.children.heap` 在该块内是增量的，报告每个 ACP 子进程的 lifetime V8 老年代高水位标记，聚合为**最大值而非总和**：`peakOldGenerationBytes`、`peakLiveSetBytes`、`peakTotalHeapBytes`、`majorGcCount`、`majorGcMs`、`unclassifiedSpaceNames` 和 `reported`。堆上限按子进程应用且峰值在不同时间达到，因此总和无法回答任何问题；每个字段是跨报告子进程的独立最大值，而不是单个子进程的画像，按子进程上限针对每个轴独立判断。`reported` 统计 `sampled` 中有多少贡献了数据，当某些子进程早于这些字段时会更低。每个字节数字覆盖**老年代**——`--max-old-space-size` 实际限制的部分——而不仅仅是 `old_space`，因为子进程可能在 `old_space` 只有几 MB 时就用尽上限而 `large_object_space` 持有所有内容。`peakOldGenerationBytes` 是已提交字节，随子进程获得的上限上升，因此将其视为工作负载需求的上限而非实际需求；`peakLiveSetBytes` 是 major GC 后存活的部分，不随上限移动，这正是它能说明子进程无法容纳的数字；将其视为上限而非精确活跃集，因为 GC 条目异步到达且在收集和读取之间分配的任何内容都被计入。`peakLiveSetBytes` 在观察到 major GC 之前为 `0`，这是缺失而非测量。`unclassifiedSpaceNames` 是没有报告子进程能分类的堆空间的并集；V8 在版本间重命名和添加空间，未知空间从总和中丢弃，丢弃会低估——因此非空数组意味着字节数字不完整，不得被视为完整测量。当没有采样子进程报告时，整个对象为 `null`，而非零对象；没有 SSE/WS watcher 附加时根本不采样，因此这是常规状态而非边界情况。所有这些都是观察性的：这里没有任何内容决定子进程大小、拒绝 spawn 或将 `limits.memory.enforced` 从 `false` 移开。
+
 `runtime.memory.pressure` 在该块内是增量的，报告 daemon 根进程自身的内存压力：`mode`（`off` / `observe`）、`level`（`normal` / `soft` / `hard` / `critical`）、`source`（`rss` / `heap` / `unknown`）、`ratio`，以及比率来源的六个原始数据——`rssBytes`、`rssRatio`、`availableBytes`、`heapUsedBytes`、`heapRatio`、`heapLimitBytes`。`ratio` 是 `rssRatio` 和 `heapRatio` 中较大的一个，`source` 命名其来源；平局报告为 `rss`。`availableBytes` 是 `limits.memory.availableMemoryMb` 的字节形式——故意使用检测到的 cgroup/主机数据而非 `effectiveBudgetMb`，因为终止进程的是真实限制，而非操作员的策略数字。`source: "unknown"` 表示两个分母都不可测量，不得被解读为健康；`level` 在这种情况下为 `normal` 仅因为没有可分类的内容。这些数据仅覆盖 daemon **根进程**：它们是此进程自身的 `memoryUsage()`，因此子进程增长不会影响它们。`runtime.memory.children` 单独报告子进程数据，两个数据都不是进程树内存。两种模式都报告整个块；仅 `observe` 会额外将无路径的 `daemon_memory_pressure` 警告提升到状态汇总中，因此 `off` 保持顶层 `status` 不变。两种模式下都不会自动修复。该字段在 SDK 镜像中是可选的，因为在它存在之前就发布了 `runtime.memory` 的 daemon 会发送不包含它的块。
 
-`limits.maxTotalSessions` 是增量字段。`null` 表示有效的 daemon 全局新 session 上限已禁用。当存在多个启动/恢复的 workspace、省略了 `--max-total-sessions`，且 `maxSessionsPerWorkspace` 有限时，daemon 会将有效的总上限推导为 `maxSessionsPerWorkspace * startupWorkspaceCount`；后续动态注册不会重新计算。设置后，它限制跨 daemon 的新 session 创建，并使用现有的 `session_limit_exceeded` 错误格式加上 `scope: "total"` 报告总限制失败。
+`limits.maxRegisteredWorkspaces` 是增量字段，报告已解析的用户注册上限（默认 256，可配置为 1 到 256）。`limits.maxChannelControlWorkspaces` 报告标准 daemon 上独立的控制/恢复所有者上限 25，即使 channel 被禁用。自定义控制器仅在强制执行时通告该字段。这些字段存在于引导和就绪响应上；旧版 daemon 可能省略它们。channel 控制器在构建候选 worker 之前以 `409 channel_control_workspace_limit_reached` 拒绝超过其上限的过渡所有者联合；超过上限的初始引导时联合在监听器发布前失败启动，因此没有 HTTP 表面。注册容量不决定 SDK channel 超时。
+
+`limits.maxTotalSessions` 是增量字段。`null` 表示有效的 daemon 全局新 session 上限已禁用。当已解析的注册容量（默认 256，可通过 `QWEN_SERVE_MAX_WORKSPACES` 或嵌入的 `maxRegisteredWorkspaces` 配置）超过 25 且省略 `--max-total-sessions` 时，标准 daemon 使用固定的总数 800，即使只有一个启动 workspace。在注册容量为 25 或更少时，多个启动/恢复的 workspace 和有限的 `maxSessionsPerWorkspace` 会将有效的总数一次性推导为 `maxSessionsPerWorkspace * workspaceCount`，覆盖相同的启动加恢复计数；一个启动或恢复的 workspace 保留无限的默认值。显式总限制（包括禁用值）优先。后续动态注册不会重新计算总数。直接 `createServeApp` 嵌入必须提供自己的共享准入策略。设置后，它限制跨 daemon 的新 session 创建，并使用现有的 `session_limit_exceeded` 错误格式加上 `scope: "total"` 报告总限制失败。
 
 `runtime.channel.live` 报告 daemon 内部的 ACP bridge 通道。它不是 channel-adapter worker。Daemon 管理的通道使用 `runtime.channelWorker`，其 `state` 为 `disabled`、`starting`、`running`、`exited`、`failed` 或 `stopped` 之一。当 worker 达到 `running` 状态然后退出时，`/daemon/status` 保持 daemon 在线，并报告 warning issue 代码 `channel_worker_exited`。
 
-Daemon 管理的 channel worker 启动依然保持快速失败（fail-fast）：如果 `qwen serve --channel ...` 无法启动一个达到 ready 状态的 worker，则 serve 启动失败。在 worker 达到 ready 状态后，意外退出将由 serve supervisor 在有限策略内重启：在 5 分钟窗口内最多尝试重启 3 次，退避时间分别为 1s、5s 和 15s。Worker 每 15s 发送一次 IPC 心跳；如果 45s 内未观察到心跳，supervisor 会将 worker 视为过期，将其终止，记录 `staleHeartbeatAt`，并使用相同的路径进行重启。
+Daemon 管理的 channel worker 从显式 `qwen serve --channel ...` 启动仍然保持快速失败并优先于持久化的启动设置。无标志的启动从受信任的主 workspace 恢复 `serve.channels`。次要 workspace 不会独立恢复自己的 `serve.channels`。在没有显式或主 workspace 选择时，channel runtime 加载保持惰性。
+
+存储的启动名称必须非空、无前后空白且不包含不安全的控制或不可见字符。无效条目会被逐个跳过并按数组索引记录；启动不会将它们修剪为其他实例名称或重写设置。Worker 参数使用 `--channel=<value>`，将前导破折号保留为名称的一部分。
+
+无效的启动字段或在 worker 启动前的验证或租约错误会跳过自动恢复，日志标识 `serve.channels`，而不相关的设置仍然生效。失败的 worker 启动允许 daemon 在清理成功后继续。全局 runtime 启动超时和未确认的 worker 停止遵循现有的启动失败路径；租约在 worker 终止未确认期间保持持有。检查 daemon 日志以了解跳过或失败的恢复。Channel 管理报告持久化的启动设置和实际的 runtime 状态。
+
+在 worker 达到 ready 后，意外退出将由 serve supervisor 在有限策略内重启：在 5 分钟窗口内最多尝试重启 3 次，退避时间分别为 1s、5s 和 15s。Worker 每 15s 发送一次 IPC 心跳；如果 45s 内未观察到心跳，supervisor 会将 worker 视为过期，将其终止，记录 `staleHeartbeatAt`，并使用相同的路径进行重启。
 
 `runtime.channelWorker` 可能包含附加的操作字段：`requestedChannels`、`pid`、`startedAt`、`exitCode`、`signal`、`error`、`restartCount`、`lastExitAt`、`lastRestartAt`、`nextRestartAt`、`lastHeartbeatAt`、`staleHeartbeatAt`、`startupFailures` 和 `startupFailuresTruncated`。每个启动失败包含 `channel`、`phase`（当前为 `connect`）、可选的 adapter 提供的 `code`，以及经过凭证脱敏的 `message`。当前 worker 代最多保留 64 个失败；截断标志表示观察到了更多失败。`code` 是诊断性的，不是稳定的跨适配器分类。`restartCount` 是此 serve 进程在其生命周期内进行的重新启动尝试次数；除非存在其他 issue，否则 `restartCount > 0` 的运行中 worker 是健康的。如果运行中 worker 的 `requestedChannels` 包含 `channels` 中缺失的名称，则报告 `channel_worker_partial_connect`。
 
@@ -727,16 +817,16 @@ Daemon 管理的 channel worker 启动依然保持快速失败（fail-fast）：
 
 - `400 invalid_channel_selection`、`channel_workspace_mismatch` 或 `ambiguous_channel_workspace`
 - `403 untrusted_workspace`
-- `409 channel_service_conflict` 或 `channel_worker_not_enabled`
+- `409 channel_service_conflict`、`channel_worker_not_enabled` 或 `channel_control_workspace_limit_reached`
 - `500 channel_worker_stop_failed`
 - `502 channel_worker_start_failed`，带有 `rolledBack` 和可选的经过凭证脱敏的 `rollbackError`
 - `503 daemon_draining`
 
-对没有配置 token 的 daemon 的严格写入在控制代码运行前返回 `401 token_required`。请求开始后，断开 HTTP 客户端不会取消生命周期事务；客户端可以安全地重试相同的 PUT。
+到达严格闸门但没有受信任环回权限的无 token 主请求在控制代码运行前返回 `401 token_required`。缺失或无效的配置凭据以及未配对的 Local Control 凭据会更早被纯 `401 Unauthorized` 拒绝。受信任环回主请求正常执行。请求开始后，断开 HTTP 客户端不会取消生命周期事务；客户端可以安全地重试相同的 PUT。
 
-对于 `502 channel_worker_start_failed`，响应可能还包含 `startupFailures[]` 和 `startupFailuresTruncated`。每个失败添加所尝试 worker 的受信任 `workspaceCwd`。这些字段描述失败的事务，而 `state` 描述回滚后的当前状态；后续的 GET 不会保留失败的尝试。部分连接的 worker 则返回成功，并在 worker 快照中暴露其失败。启动时的全部失败仍然会在可查询的 daemon 存在之前中止 `qwen serve`。
+对于 `502 channel_worker_start_failed`，响应可能还包含 `startupFailures[]` 和 `startupFailuresTruncated`。每个失败添加所尝试 worker 的受信任 `workspaceCwd`。这些字段描述失败的事务，而 `state` 描述回滚后的当前状态；后续的 GET 不会保留失败的尝试。部分连接的 worker 则返回成功，并在 worker 快照中暴露其失败。显式 `--channel` 启动但没有连接的 adapter 会失败启动。设置派生的启动失败会被记录并允许 daemon 在清理成功后继续，受全局 runtime 启动超时约束。确认清理失败会保留正常的启动失败行为和服务租约。
 
-`qwen channel status` 在不带 `--daemon-url` 时继续读取 pidfile 元数据；带 `--daemon-url` 时读取 `GET /workspace/channel`。在重启窗口期间，serve 拥有的 pidfile 保持保留状态，但会省略 `workerPid`，以免客户端显示过期的 worker 进程。在多 workspace daemon 上，pidfile 还携带一个附加的 `workers[]` 数组（每个 workspace 的 `workspaceId` / `workspaceCwd` / `channels` / 活跃 `workerPid`），而顶层的 `channels`（并集）和 `workerPid`（主 workspace）保持填充，以兼容旧版读取者；单 workspace daemon 保持原始的单 worker 结构。Worker 的 stdout/stderr 会被转发到 daemon 日志中，同时会脱敏（redacted）bearer token、敏感的 worker 环境变量值以及代理 URL 凭据。
+`qwen channel status` 不带 `--daemon-url` 时继续读取 pidfile 元数据；带 `--daemon-url` 时读取 `GET /workspace/channel`。在重启窗口期间，serve 拥有的 pidfile 保持保留状态，但会省略 `workerPid`，以免客户端显示过期的 worker 进程。在多 workspace daemon 上，pidfile 还携带一个附加的 `workers[]` 数组（每个 workspace 的 `workspaceId` / `workspaceCwd` / `channels` / 活跃 `workerPid`），而顶层的 `channels`（并集）和 `workerPid`（主 workspace）保持填充，以兼容旧版读取者；单 workspace daemon 保持原始的单 worker 结构。Worker 的 stdout/stderr 会被转发到 daemon 日志中，同时会脱敏（redacted）bearer token、敏感的 worker 环境变量值以及代理 URL 凭据。
 
 ### Workspace Channel 管理
 
@@ -751,9 +841,9 @@ Daemon 管理的 channel worker 启动依然保持快速失败（fail-fast）：
 
 目录将本管理 API 支持的类型标记为 `manageable: true`。实例快照包含修订版、脱敏的秘密存在状态元数据、启动状态和 runtime 状态；字面秘密永远不会被返回。Channel 快照使用 `Cache-Control: no-store`。
 
-字段描述符可以通过 `properties` 暴露嵌套对象元数据。数值描述符可以使用 `exclusiveMinimum` 表示开放下界。不渲染已通告字段类型的客户端必须保留其现有配置值，而不是强制转换或删除它。对象字段不能是必需的，嵌套属性不能是秘密或环境可解析字段；这些管理协议仍然仅限顶层。嵌套的 `required` 属性仅在其父对象存在于写入中时才被强制执行；省略父对象则其嵌套要求不被检查。写入会整体替换每个字段的存储值，因此保留对象意味着重新发送存储的对象；daemon 不会合并部分对象。
+字段描述符可以通过 `properties` 暴露嵌套对象元数据。数值描述符可以使用 `exclusiveMinimum` 表示开放下界。字符串和秘密描述符可以使用 `multiline` 请求客户端提供多行文本区域；描述符类型仅允许在顶层字段上使用。不渲染已通告字段类型的客户端必须保留其现有配置值，而不是强制转换或删除它，而在单行控件中渲染 `multiline` 字段的客户端必须逐字保留存储的值，而不是写回其去除换行符的输入值。对象字段不能是必需的，嵌套属性不能是秘密或环境可解析字段；这些管理协议仍然仅限顶层。嵌套的 `required` 属性仅在其父对象存在于写入中时才被强制执行；省略父对象则其嵌套要求不被检查。写入会整体替换每个字段的存储值，因此保留对象意味着重新发送存储的对象；daemon 不会合并部分对象。
 
-配置写入使用乐观并发和严格的 bearer token 门控：
+配置写入使用乐观并发和严格的 operator-authority 闸门：
 
 - `PUT /workspace/channels/:name`
 - `DELETE /workspace/channels/:name`
@@ -771,7 +861,7 @@ Runtime 操作是严格门控的 `POST` 请求，目标为 `.../channels/:name/s
 - `GET .../channels/:name/pairing-approvals`
 - `DELETE .../channels/:name/pairing-approvals` 携带 `{ "senderId": "..." }` 或 `{ "groupId": "..." }`
 
-所有配对路由都需要 bearer token 并使用 `Cache-Control: no-store`。请求、批准和撤销的作用域限定在选定的 Channel 实例和 workspace。待处理的请求包含类型化的 user 或 group subject；group 请求还保留发起请求的 sender。批准快照包含 `senderIds` 和 `groupIds`，因为允许列表不持久化显示名称。撤销未知的 user 或 group 返回 `404 channel_pairing_approval_not_found`。
+所有配对路由都需要严格的 operator authority 并使用 `Cache-Control: no-store`。请求、批准和撤销的作用域限定在选定的 Channel 实例和 workspace。待处理的请求包含类型化的 user 或 group subject；group 请求还保留发起请求的 sender。批准快照包含 `senderIds` 和 `groupIds`，因为允许列表不持久化显示名称。撤销未知的 user 或 group 返回 `404 channel_pairing_approval_not_found`。
 
 ### Channel 投递和 Notify
 
@@ -858,9 +948,12 @@ Content-Type: application/json
     "..."
   ],
   "limits": {
+    "maxRegisteredWorkspaces": 256,
+    "maxChannelControlWorkspaces": 25,
     "maxPendingPromptsPerSession": 5,
     "maxSessionsPerWorkspace": 32,
-    "maxTotalSessions": 64
+    "maxTotalSessions": 800,
+    "sessionRestoreTimeoutMs": 60000
   },
   "modelServices": [],
   "workspaceCwd": "/canonical/path/to/primary-workspace",
@@ -891,6 +984,10 @@ Content-Type: application/json
 > **`workspaceCwd`** 是此 daemon 主 workspace 的规范绝对路径。使用它可以省略 `POST /session` 上的 `cwd`（该路由会回退到此主路径），并保持旧版单 workspace 客户端的兼容性。v=1 的附加项：§02 之前的 v=1 daemon 会省略此字段——针对旧版本构建的客户端在使用前应进行 null 检查。
 
 > **`workspaces[]`** 列出每个已注册的 runtime。较新的单 workspace daemon 即使在 `multi_workspace_sessions` 缺失时也会在 `workspaces[]` 中包含主 runtime，以便客户端可以发现 workspace 限定路由所需的稳定 id；旧版 daemon 可能省略该数组。每个条目为 `{ id, cwd, displayName?, primary, trusted, removable? }`。`displayName` 仅用于展示，未设置时会被省略。第一个/主 workspace 仍然由 `workspaceCwd` 镜像；新客户端通过将该条目的 `cwd` 传递给 `POST /session` 来选择非主 runtime。不受信任的 workspace 会被通告用于诊断，但在信任变更之前会以 `403 untrusted_workspace` 拒绝新 session 创建。`removable` 存在于支持 runtime 移除的 daemon 上，且仅对进程动态或持久化恢复的次要 runtime 为 true。
+
+> **`session_worktree_persistence_v1`** 表示 daemon 可以持久化和验证 Part 4A worktree 所有权。成功的 worktree 创建响应，以及其子项在空闲时被重新定位或已报告已验证 worktree cwd 的恢复响应，携带 `worktree` 元数据和 `worktreeState: "persisted-v1"`。旧版尽力恢复，或冷恢复中其恢复提示被触发而非停放（`suppressWorktreeContextRestore` 关闭，因此该路由未向 bridge 请求延迟）并因此报告活跃 prompt 但无当前 cwd 的恢复，可能仍然返回 `worktree` 但不带该证明。请求隔离的客户端必须预检此标签并验证每个响应；仅 `worktree` 对象本身不是持久所有权的证明。
+
+> **`session_worktree_reset_v1`** 表示 daemon 支持 worktree 所有权转移：`POST /session/:id/worktree-reset` 将持久化 worktree session 的 checkout 所有权转移到一个新的替换 session。恢复响应在其旁边新增三个类型化的 409 分类：`worktree_session_superseded`（session 的 sidecar 携带 `supersededBy` 链接——该分类仅根据该链接决定，在任何 marker 读取之前，且该链接在 marker 翻转之前写入，因此 body 的 `replacementSessionId` 是待验证的重定向而非所有权证明：在 pre-commit 中断状态下，它命名的 session 不是 marker 所有者，本身无法恢复，并被重试的 reset 回收）、`worktree_marker_missing`（checkout marker 缺失；重置任务以重新创建它——恢复重试无法做到，因为没有恢复路径会写入 marker），以及 `worktree_reset_interrupted`（先前的转移在中途崩溃，其 sidecar 链接一致；重试 reset）。中断分类优先检查：缺失 marker 但其 `supersedes`/`supersededBy` 链接一致时表现为 `worktree_reset_interrupted`，而非 `worktree_marker_missing`。转移协议和失败分类见下文的路由部分。
 
 Workspace 功能标签和 `workspaces[]` 是动态的。添加 workspace 的客户端必须在变更完成后重新获取 `/capabilities`；daemon 不会向缓存了早期响应的客户端广播能力变更。遗忘持久化不会卸载活跃的 runtime，因此该 runtime 在重启前仍会被通告。
 
@@ -1728,6 +1825,7 @@ Daemon 会写入目标目录中的一个随机临时文件，在支持的地方�
 | Route                                            | Request                                                                                                                                                      | Success                                                                                                                                        |
 | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `POST /standalone/sessions`                      | `{ "sessionId": "<UUID>", "modelServiceId"?: string, "approvalMode"?: ApprovalMode }`                                                                        | `200`，包含独立 session、`context: { "kind": "standalone" }` 及其托管的无项目输出目录。创建无需 prompt。 |
+| `GET /standalone/session-options`                | none；任何 query 字段都会被拒绝并返回 400                                                                                                                   | `200`，包含 `{ v, initialized, current?, approvalMode?, providers, errors? }`；内部 workspace 路径和 ACP-channel 状态会被省略    |
 | `GET /standalone/sessions`                       | Query：`cursor?`、`size?`（1-100）、`archiveState?`（`active` 或 `archived`）                                                                                  | `200 { sessions, nextCursor?, liveMergeFailed?, truncated? }`                                                                                  |
 | `GET /standalone/sessions/:id`                   | none                                                                                                                                                         | 本地创建进行中时为 `202 { sessionId, state: "creating" }`，否则为 `200` 及精确摘要。                              |
 | `POST /standalone/sessions/:id/load`             | 仅限现有恢复选项：`historyPageSize?`、`liveReplayMode?`、`hideInheritedHistory?`、`approvalMode?`；客户端身份保留在 `X-Qwen-Client-Id` 中。 | `200` 已恢复的独立 session。                                                                                                             |
@@ -1756,7 +1854,8 @@ Request：
   "cwd": "/absolute/path/to/workspace",
   "modelServiceId": "qwen-prod",
   "sessionId": "550e8400-e29b-41d4-a716-446655440000",
-  "sessionScope": "thread"
+  "sessionScope": "thread",
+  "worktree": { "slug": "feature-a" }
 }
 ```
 
@@ -1766,17 +1865,26 @@ Request：
 | `modelServiceId` | no       | 选择 agent 将通过哪个配置的*模型服务*（后端 provider — 阿里云百炼、OpenRouter 等）进行路由。如果省略，agent 将使用其默认值。如果 workspace 已经有一个 session，这会在现有 session 上调用 `setSessionModel` 并广播 `model_switched`。这与 `POST /session/:id/model` 上的 `modelId` 不同，后者选择在已绑定服务**内部**的模型。`/capabilities` 上的 `modelServices` 数组保留用于广播配置的服务；在 Stage 1 中它始终为 `[]`（使用 agent 的默认服务，不通过 HTTP 枚举）。 |
 | `sessionId`      | no       | 调用者选择的 RFC 变体 UUID v1-v5。Daemon 将其规范化为小写并始终创建新的线程 session；不会将此字段视为幂等附加。发送前请确认 `caps.features` 包含 `session_id_override`，因为旧版 daemon 可能会忽略未知字段。`null` 等价于省略。                                                                                                                                                                                                                                                                                                                              |
 | `sessionScope`   | no       | 每次请求的 session 共享覆盖。`'single'`（daemon 全局默认值）使第二个相同 workspace 的 `POST /session` 重用现有 session（`attached: true`）；`'thread'` 强制每次调用都创建一个新的独立 session。省略则继承 daemon 全局默认值。枚举之外的值返回 `400 { code: 'invalid_session_scope' }`。旧版 daemon（#4175 PR 5 之前）会静默忽略此字段 — 发送前请预检 `caps.features.session_scope_override`。目前生产环境中 daemon 全局默认值硬编码为 `'single'`；#4175 可能会在后续版本中添加 `--sessionScope` CLI 标志。         |
+| `worktree`       | no       | 在用户命名的 Git worktree 中创建新的线程 session。可选的 `slug` 使用 daemon 的 worktree 名称验证。预检 `session_worktree_persistence_v1`；客户端不得从旧版 worktree 形状的响应中推断持久隔离。Worktree 创建不是附加操作，不能与分支创建组合。该路由仅在重定位、排他性所有权标记创建、sidecar 持久化和最终 runtime-generation 检查完成后才返回成功。                                                                                                                      |
 Response:
 
 ```json
 {
   "sessionId": "<uuid>",
   "workspaceCwd": "/canonical/path",
-  "attached": false
+  "attached": false,
+  "worktree": {
+    "slug": "feature-a",
+    "path": "/canonical/path/.qwen/worktrees/feature-a",
+    "branch": "worktree-feature-a"
+  },
+  "worktreeState": "persisted-v1"
 }
 ```
 
 `attached: true` 表示该 workspace 的 session 已存在，你现在正在共享它。
+
+`worktreeState` 仅针对经过验证的 worktree session 存在。旧版尽力恢复可能返回 `worktree` 但不包含 `worktreeState`。冷 Part 4A 恢复中其恢复提示被触发而非停放（`suppressWorktreeContextRestore` 关闭，因此该路由未向 bridge 请求延迟）的恢复也会返回未验证的 `worktree` 元数据，直到提示结算：子项报告为活跃但无当前 cwd，在活跃提示下无法进行重定位，该路由保留 session 而不是终止调用方刚刚恢复的 session。两种响应都不是持久化执行根证明。请求了 worktree 隔离的客户端在路由 prompt 前必须要求 `worktreeState: "persisted-v1"` 和预期的规范路径；初始 load 可在活跃提示结算后重试。在 SDK 重新附加时，结果根据响应是否仍携带 `worktree` 元数据而分裂：携带该元数据但缺少验证或路径变更的响应对该客户端是终态的——新附加被分离，prompt 不会重试——而完全不包含 `worktree` 对象的响应则会自愈：客户端丢弃其缓存的 worktree 声明，保留新附加，并在同一次调用中重试 prompt。自愈不会门控该重试，因此一个轮次仍可能在客户端无法再验证的目录中执行（客户端从未见过的 `exit_worktree` 是常见原因，客户端无法将其与清除的内存关联区分）。因此，隔离感知的调用方必须在分发 prompt 前自行重新验证 worktree 验证；丢弃的声明仅使该调用方在其下一次 load 或选择时在其自身的身份闸门处 fail closed。
 
 调用者提供的 ID 在所有当前已注册的 workspace runtime 和每个仍然活跃的 bridge generation（包括排空中的替换）中是唯一的。活跃的、待处理的、活动的、归档的或 worktree 支持的重复返回 `409 session_id_conflict`。无效值返回 `400 invalid_session_id`；不可用的活跃所有者或持久化状态检查返回可重试的 `503 session_id_admission_unavailable`。在 bridge 或存储健康状况变更后使用有界退避重试；`retryable` 表示另一次尝试是安全的，而非立即重试会成功。如果下游 agent 返回不同的 ID，daemon 会移除该孤儿并返回 `500 session_id_not_honored`。在模糊响应之后，加载或恢复已知 ID，而不是重试创建作为附加。
 
@@ -1843,6 +1951,8 @@ Response:
 
 `attached: true` 表示 session 已经处于活跃状态（要么是因为之前的 `session/load`/`session/resume`，要么是因为一个被合并的并发调用方刚好抢先完成）。
 
+当持久化的 session 拥有 Part 4A worktree 时，load/resume 会验证其 sidecar、规范包含性和精确的 checkout marker。空闲的子进程在响应返回前被重新定位；活跃的子进程仅在其报告的 cwd 已等于 worktree 时才被认证，而报告的 cwd 缺失或位于其他位置的活跃子进程会 fail closed 而不是被移动到其 prompt 下——除非是无法延迟恢复提示的冷恢复（`suppressWorktreeContextRestore` 关闭——任何有效源不是 Channel 拥有的恢复——或缺少延迟 API 的 bridge）：那种情况仍然返回 `worktree` 但不带 `worktreeState`，不重新定位，session 继续存在。重新定位和认证的响应返回 `worktree` 加上 `worktreeState: "persisted-v1"`。恢复端的类型化 409 分类（由 `session_worktree_reset_v1` 通告）：当 session 的 sidecar 携带 `supersededBy` 链接时为 `worktree_session_superseded`——该分类仅读取该链接，在每个 checkout 所有权锁下且在任何 marker 读取之前，因此在 load 等待时回滚的转移不会将调用方重定向到同一 daemon 正在删除的 session；不过该链接在 marker 翻转之前写入，所以 body 的 `replacementSessionId` 是待验证的重定向而非所有权已转移的证明：在已提交的转移后调用方应加载该 id 并更新其记录，但在 pre-commit 中断状态下它命名的替换 session 不是 marker 所有者，其自己的恢复返回 `worktree_reset_interrupted`，然后重试的 reset 会回收它——所以 `replacementSessionId` 在其 load 成功前不得被持久化为任务的 session id；当恢复的 session 的 `supersedes` 链接和命名 session 的 `supersededBy` 链接一致但 marker 从未移动或缺失时为 `worktree_reset_interrupted`——之前的 reset 在转移中途崩溃，重试的 reset 是修复；当 checkout marker 缺失且没有一致的链接对时为 `worktree_marker_missing`——重置任务是修复，因为没有恢复路径会重建 marker，恢复重试返回相同的 409。中断分类首先被检查，所以一致的链接对永远不会显示为 `worktree_marker_missing`。当有效恢复源是 Channel 拥有时，路由抑制 agent 对 Part 4A 或不可分类 sidecar 状态的尽力清理，所以陈旧、外来、模糊或所有权不匹配的持久化状态被保留并使请求失败。持久化源元数据优先；当它缺失时，load/resume 请求提供有效源。结构有效的旧版 sidecar 没有 Part 4A `workspaceCwd` 字段时保留现有的尽力 agent 恢复，可能被该路径清理，并可能返回 `worktree` 但不带 `worktreeState`；客户端不得从该兼容元数据推断隔离。除了那个明确的旧版兼容情况，只有有效恢复源不是 Channel 拥有的 session 才在路由验证前保留现有的尽力清理。缺失的 sidecar 不返回 worktree 认证；隔离感知的客户端必须拒绝该响应而不是将 session 重新绑定到共享 workspace。
+
 **通过 SSE 重放历史记录。** 当 agent 端的 `loadSession` 正在进行时，agent 可能会为持久化的 turn 发出 `session_update` 通知，或在响应元数据中返回批量重放更新。Daemon 在路由响应返回之前将这些事件播种到 session 的有界重放快照窗口中。对于活跃 session，`POST /session/:id/load` 仅承诺该有界窗口（`compactedReplay`、`liveJournal`、`lastEventId`），而非完整转录。窗口由 `--compacted-replay-max-bytes`（默认 4 MiB，最大 256 MiB）进行字节上限；如果较旧的重放条目被丢弃，`compactedReplay[0]` 是一个无 id 的 `history_truncated` 标记。进行中的 `liveJournal` 由 `--max-journal-events`（默认 10 000）和 `--max-journal-bytes`（默认 8 MiB）单独限制；超出时，最旧的日志条目被丢弃，并前置一个 `scope: 'live_journal'` 的 `history_truncated` 标记。客户端应将该标记渲染为状态并继续应用保留的事件。完整的持久化转录访问通过 `GET /session/:id/transcript` 单独暴露。
 
 **Errors:**
@@ -1897,6 +2007,8 @@ Response:
 
 为了保护 daemon 内存和延迟，超过转录索引上限的快照会在 daemon 扫描 JSONL 之前失败。客户端收到 `413 transcript_too_large`，应回退到导出/离线处理或请用户缩短/归档较旧的历史。
 
+重放窗口的字节上限在子进程重建持久化转录之后生效；它们不限磁盘 JSONL 读取。超过 daemon 预算的恢复返回 `504`，并带有从恢复预算派生的 `Retry-After`（限制在 5-120s），以及 `{code: "session_restore_timeout", errorKind: "restore_timeout", retryable: true, sessionId, action, timeoutMs}`。Daemon 栅栏仍在运行的 ACP 请求并清理任何迟到的 session 而不是注册它。同一 id 的重试返回 `409 restore_in_progress`，并带有 `reason: "awaiting_abandoned_cleanup"` 和恢复预算派生的 `Retry-After`（限制在 5-120s），直到清理结算。如果迟到恢复清理不确定，或者被放弃的恢复在截止时间后仍未结算一个完整恢复预算，该 workspace 上的新 session 返回 `503 acp_channel_unavailable`，并带有 `reason: "restore_cleanup_failed"` 或 `"restore_settlement_overdue"`。超时的 session 初始化对迟到结算的旧 ACP 子进程遵循相同的 fail closed 准入策略：不确定的清理返回 `reason: "new_session_cleanup_failed"`，而超过一个额外初始化预算仍未结算的请求返回 `reason: "new_session_settlement_overdue"`。结算超时状态在迟到失败结算或迟到成功完成其精确 id 清理后立即清除；不确定的清理转换为相应的清理失败状态。清理失败状态持续到 workspace channel 排空并回收。两种情况下已活跃的 session 仍然可用。
+
 如果在产生一些帧后重放转换失败，可能会出现 `partial: true` 和 `replayError`。部分响应从不包含 `nextCursor`，因此客户端不会默默地分页跳过未转换的记录。
 
 **Errors:**
@@ -1940,11 +2052,43 @@ TypeScript SDK 调用者使用 `WorkspaceDaemonClient.exportArchivedSession(sess
 
 通过 id 恢复持久化的 ACP session，**不**通过 SSE 重放历史记录。model context 会在 agent 端内部恢复（通过 `geminiClient.initialize` 读取 `config.getResumedSessionData`）；对于已经渲染了历史记录的客户端，SSE 流保持干净。Pre-flight 检查 `caps.features.session_resume`；`unstable_session_resume` 仍作为面向旧客户端的已弃用兼容别名保留。
 
-请求结构与 `/load` 相同。响应结构也相同 —— `state` 镜像了 ACP 的 `ResumeSessionResponse`。错误信封也相同，包括 `409 restore_in_progress`（当 `session/load` 正在进行时触发；在另一个 `session/resume` 之后竞争的 `session/resume` 会被合并）。
+接受与 `/load` 相同的 `cwd`、`approvalMode`、`sourceType` 和 `sourceId` 字段。`historyPageSize` 不在此处解析，会被静默忽略。`liveReplayMode` 会被解析和验证——无效值返回 `400 invalid_live_replay_mode`——但只有旧版独立兼容恢复会转发它；普通恢复路径会丢弃它。这两个字段都不属于已发布的恢复请求。响应结构相同 —— `state` 镜像 ACP 的 `ResumeSessionResponse`。错误信封也相同，包括 `409 restore_in_progress`（当 `session/load` 正在进行时触发；在另一个 `session/resume` 之后竞争的 `session/resume` 会被合并）。
 
 当客户端没有渲染历史记录时（冷重连，picker → open），使用 `/load`。当客户端已经在屏幕上显示了 turns，只需要拿回 daemon 端的 handle 时，使用 `/resume`。
 
 > ⚠️ **为什么 `unstable_session_resume` 仍在被通告？** daemon 的 HTTP 路由和 `session_resume` capability 在 v1 中是稳定的，但 bridge 仍然调用 ACP 的 `connection.unstable_resumeSession`。保留旧标签仅仅是为了让在 `session_resume` 之前发布的 SDK 能够继续工作。
+
+### `POST /session/:id/worktree-reset`
+
+将持久化的 Part 4A worktree session 的 checkout 所有权转移到一个新的替换 session。预检 `session_worktree_reset_v1` —— 旧版 daemon 对此路由返回 `404`。该路由是 Channel 命名任务 `/clear` 在不丢弃文件的情况下重置 worktree 任务的方式：替换 session 获得全新的对话，而被取代的 session 保留其转录在目录中，但永远无法再被恢复。
+
+请求体（所有字段可选）：
+
+```json
+{
+  "cwd": "/canonical/path",
+  "modelServiceId": "service-id",
+  "approvalMode": "plan",
+  "sourceType": "channel",
+  "sourceId": "dingtalk-main"
+}
+```
+
+`cwd` 遵循与 `POST /session/:id/load` 相同的解析规则，对于 daemon 的主 workspace 可以省略。元数据字段为替换 session 盖上与 worktree 创建相同的线程作用域和来源约定。
+
+成功时，该路由返回 `200`，带有替换 session 的创建形状响应 —— 新的 `sessionId`、`workspaceCwd`、`currentCwd` 等于已验证的规范 worktree 路径、`worktree` 元数据和 `worktreeState: "persisted-v1"`。调用方丢弃其对旧 id 的句柄，从那时起使用替换 id；旧 id 的后续恢复返回 `worktree_session_superseded` 和 `replacementSessionId`，客户端也可以用它来自愈过时的记录 —— 但仅在该 id 的 load 成功后。分类仅由 sidecar 链接决定，该链接在 marker 翻转之前写入，因此中断的 pre-commit 转移会返回一个不是 marker 所有者的替换，其自身的恢复返回 `worktree_reset_interrupted`，然后重试的 reset 会回收它。
+
+该路由从不读取 `X-Qwen-Client-Id`，因此替换 session 以未附加状态生成 —— 但成功响应并非无需注册。新的转移为该 spawn 创建一个所有者风格的 `clientId`，在替换 session 上注册它，并在 body 中报告；已提交转移的幂等恢复不报告。创建的 id 不是附加（替换 session 的附加计数不变，因此带有 `requireZeroAttaches` 的 `killSession` 仍然将其视为未附加），但活跃的客户端注册正是阻止 daemon 空闲清理的原因：分离一个你不继续使用的 id，否则替换 session 会无限期保持活跃 —— 而没有 marker 仍然活跃的替换正是后续 reset 拒绝拆解的形状。将响应视为替换 session 的身份，当需要注册客户端时，通过正常的 `POST /session/:id/load` 或 `/resume` 界面附加它。
+
+转移在每个 checkout 上针对 worktree 恢复和其他 reset 进行串行化，拒绝在任一 session 繁忙时运行（prompt 在飞行中或有待处理的交互），并在被取代的 session 上启用准入屏障：当它启用时，恰好八个写入者在准入时被 `worktree_reset_active` 拒绝 —— `POST /session/:id/prompt`、`/rewind`、`/cd`、`/branch`、`/fork`、`/shell`、`/goal` 和 `/tasks/:taskId/workflow-action`。其他七个被围栏阻止，因为每个都会移动 session cwd 或在其中开始工作而不通过 prompt 准入：shell 命令在 session 的有效 cwd 中运行，对于重定位的 worktree session，这就是 checkout 本身；fork agent 在该 cwd 中运行其工具；rewind 相对于它恢复文件；cd 移动它，包括移动到 checkout 的子目录；branch 在所有权转移期间变更被取代 session 的持久化历史并生成派生 session；goal `resume` 提升排队的轮次并排队继续；workflow action 通过 session 自己的工具注册表运行保存的 workflow 或重启活跃运行。`POST /session/:id/continue` 不是第九个闸门：它通过被围栏的 prompt 准入驱动已接受的继续，并在那里被拒绝。该列表就是整个围栏，围栏不是到达子进程的所有内容 —— 释放和停止路径在转移期间按设计保持可用（取消任务、清除 goal、分离客户端、终止 session），daemon 内部的后台通知入队 —— 子 session 对其父进程的完成确认，没有 HTTP 路由调用 —— 也不受围栏限制，因为它入队通知而不是开始轮次。转移的最后一步切断被取代 session 的客户端注册，清除其内存中的 worktree 关联，并报告被取代的 session 是否真的消失了。幸存者 —— 仍然持有后台工作的子进程，因此最后一次分离触发的空闲关闭被拒绝并延迟 —— 被呈现而不是被掩盖：daemon 记录它，屏障在该条目上保持启用作为唯一剩下的围栏，`200` body 携带 `supersededSessionLive: true`，以便调用方知道被取代的 id 仍然活跃并且可以在所有权刚刚移动的 checkout 内重新附加。崩溃安全性是按窗口的，写入顺序定义窗口：旧 sidecar 的 `supersededBy` 链接首先写入，然后是携带 `supersedes` 的替换 sidecar，marker 最后翻转。因此，翻转前的崩溃会使旧 session 在重试可以区分的三种形状之一中具有权威性 —— 完全没有链接（替换是普通孤儿，重试只是开始新的转移）、仅有反向链接且替换 sidecar 缺失（重试 fail closed 返回 `worktree_reset_invalid_state` 并保持中断状态不变以供操作员修复）、或两个链接都存在（重试回滚部分转移并完成新的转移 —— 除非中断的替换无法被移除因为客户端仍然附加到它，在这种情况下回滚 fail closed 返回 `worktree_reset_invalid_state` 并保留两个链接，因此后续重试在该客户端消失后收敛）。翻转后的崩溃使替换具有权威性，重试作为无操作恢复。旧 session 永远不会被删除，worktree checkout 永远不会被 reset 移除。
+
+**错误：**
+
+- `404` —— 当 session 记录不存在时返回 `session_not_found`。
+- `409` —— 当 session 没有有效的 Part 4A sidecar（不是 worktree session）时返回 `worktree_reset_unsupported`。
+- `409` —— 当转移涉及的 session 繁忙时返回 `worktree_reset_active`；等待其稳定后重试。转移中的 session 上屏障覆盖的任何写入者的准入 —— prompt、rewind、cwd 变更、branch、fork、shell 命令、goal 控制或 workflow-task action —— 都会以相同的 code 失败。
+- `409` —— 对于损坏的 sidecar、无效的 marker、包含失败或不一致的取代链接对，返回 `worktree_reset_invalid_state`。对此请求开始的内容是非破坏性的：此请求开始的任何部分转移都会在调用方看到之前回滚，而 fail-closed 恢复分支 —— 无效的 marker、不一致的取代链接对（包括替换 sidecar 缺失的反向链接）、模糊的 marker 所有者、以及 marker 缺失时在此 daemon 上仍然活跃的替换 —— 保持先前存在的中断状态不变以供操作员修复，因此该形状对后续的 reset 或恢复保持可见。对这些状态之一的重试会重新读取它并返回相同的 409：它不会收敛，因此该状态需要操作员修复而不是重试循环。具体原因写入 daemon 日志而不是线路。
+- `500` —— fail-closed 内部错误（例如没有 reset 支持的 bridge，或回滚后的重定位拒绝）；按原样不可重试。一个 `500` 性质不同：在翻转持久提交后自身的 post-commit 尾部失败的 marker 转移报告所有权已移动，从不运行破坏性回滚，并通过重试 reset 修复，这会幂等地恢复已提交的转移。
 
 ### `GET /workspace/:id/session-info` 和 `GET /workspaces/:workspace/session-info`
 
@@ -2419,13 +2563,45 @@ curl -X DELETE http://127.0.0.1:4170/session/$SID
 
 ### 变更：approval, tools, skills, init, MCP restart
 
-Daemon 暴露五个变更控制路由，允许远程客户端在不接触 daemon 宿主机 CLI 的情况下更改运行时状态。这五个路由均：
+Daemon 暴露五个变更控制路由，允许远程客户端在不接触 daemon 宿主机 CLI 的情况下更改运行时姿态。Approval-mode 控制保留其非严格兼容门控。工具切换、skill 切换、workspace init 和 MCP 重启使用严格变更门控：受信任环回主监听器、bearer 认证和配对的 Local Control 请求可以通过。到达门控但没有受信任环回权限的无 token 主请求会收到 `401 {code: 'token_required'}`；缺失或无效的配置凭据以及未配对的 Local Control 凭据会更早被纯 `401 Unauthorized` 拒绝。这五个路由均：
 
-- 受 PR 15 中引入的 **strict** mutation gate 控制。未配置 bearer token 的 daemon 会以 `401 {code: 'token_required'}` 拒绝请求。在启用前请先配置 `--token`（或 `QWEN_SERVER_TOKEN`）。
 - 接收并记录 `X-Qwen-Client-Id` 请求头（PR 7 审计链）。当该请求头携带受信任的 id 时，daemon 会在相应的 SSE 事件中发出 `originatorClientId`，以便跨客户端 UI 能够抑制自身变更产生的回显。
-- 在暴露功能前，对每个按 tag 划分的能力进行预检 (pre-flight)。旧版 daemon 会为该路由返回 `404`。
+- 在暴露功能前，对每个按 tag 划分的能力进行预检 (pre-flight)。缺少某路由的 daemon 返回 `404`。对于 Skill 设置路由，tag 缺失也可能意味着同一路径提供的是已退役的目录验证契约：单目标路由可以返回 HTTP `404 skill_not_found` 或 `409 skill_not_toggleable`，而批量路由返回 HTTP 200 并将目录派生的失败放在 `errors[]` 中。不要将路由探测用作版本检查。
 
 工具切换、skill 切换、init 和 MCP 重启路由会发出 **workspace 作用域** 的事件：每个活跃的 session SSE 总线都会收到该事件，无论触发变更时附加的是哪个 session。`approval-mode` 发出的是 **session 作用域** 的事件，因为该更改仅局限于单个 session 的 `Config`。
+
+#### 拆分 Skills 配置和运行时路由
+
+Capability tag：`workspace_skills_config_runtime`。
+
+`GET /workspace/config/skills` 读取 daemon 本地的全局配置所有者。`GET /workspaces/:workspace/config/skills` 读取精确的已注册 workspace 配置，不需要活跃或受信任的运行时。两者都返回正常的 Skills 状态结构，不要求包含 `runtimeEpoch`：
+
+```json
+{
+  "v": 1,
+  "workspaceCwd": "/work/project",
+  "initialized": true,
+  "skills": []
+}
+```
+
+`GET /workspace/runtime/skills` 和 `GET /workspaces/:workspace/runtime/skills` 读取选定的受信任运行时而不启动它。活跃目录包含生成它的运行时 generation：
+
+```json
+{
+  "v": 1,
+  "workspaceCwd": "/work/project",
+  "initialized": true,
+  "runtimeEpoch": 4,
+  "skills": []
+}
+```
+
+全局安装和删除使用 `POST /workspace/config/skills/install` 和 `DELETE /workspace/config/skills/:name?scope=global`。Workspace 安装、删除和启用使用 `POST /workspaces/:workspace/config/skills/install`、`DELETE /workspaces/:workspace/config/skills/:name?scope=workspace` 和 `POST /workspaces/:workspace/config/skills/:name/enable`。配置写入在调度运行时调和之前先提交持久化状态。当没有可更新的当前运行时，其 `activation` 为 `deferred`；当更新已排队时为 `reconciling`；无操作切换保留门面的 activation，而不是声称发生了运行时刷新。
+
+当 daemon 本地的 Skill 清单无法枚举时，配置删除返回 `503 skills_config_unavailable`，而非确定性的 not-found 响应。
+
+单数变更所有者以 `400 workspace_scope_requires_qualified_workspace` 拒绝 workspace 作用域；限定变更以 `400 global_scope_requires_singular_owner` 拒绝全局作用域。限定写入需要受信任的 workspace。旧版注入 bridge 对需要运行时协调的限定配置写入返回 `501 workspace_runtime_not_supported`。未知、已移除、转换中和排空中的 workspace 遵循标准的限定 workspace 错误，从不回退到主 workspace。
 
 #### `POST /session/:id/approval-mode`
 
@@ -2494,11 +2670,11 @@ SSE 事件（workspace 作用域）：`tool_toggled`，携带 `{toolName, enable
 
 #### `POST /workspace/skills/:name/enable`
 
-Capability tag: `workspace_skill_toggle`。Workspace 限定形式为 `POST /workspaces/:workspace/skills/:name/enable`。
+Capability tag：`workspace_skill_settings_toggle`。Workspace 限定形式为 `POST /workspaces/:workspace/skills/:name/enable`。
 
-通过 workspace skill 设置切换已加载的、用户可调用的 skill，匹配 CLI `/skills` 面板的 Space 键行为。查找不区分大小写，而持久化和响应使用 skill 的规范名称。启用 `skills.defaultDisabled` 的 skill 会添加一个 workspace `skills.enabled` 选择加入；禁用会移除该选择加入并添加一个 workspace `skills.disabled` 条目。不再加载的 skill 的现有条目会被保留，目标的重复/大小写变体条目会被合并。从系统默认、用户或系统作用域继承的硬禁用条目会锁定 skill：workspace 作用域无法覆盖它。
+更新指定名称的 workspace Skill 设置，不查询已加载的 Skill 目录。修剪后的请求名称被传递给持久化并在响应中返回。启用任何名称都会记录一个 workspace `skills.enabled` 选择加入，即使尚未安装；禁用会移除该选择加入并添加一个 workspace `skills.disabled` 条目。不再加载的 Skill 的现有条目会被保留，目标的重复/大小写变体条目会被合并。从更高作用域继承的硬 `skills.disabled` 条目对有效可用性仍然具有权威性，但不会阻止 workspace 作用域记录或移除其自身的声明。Workspace 声明 otherwise 参与通常的 `skills.disabled > skills.enabled > skills.defaultDisabled` 解析，并可以覆盖更高作用域的 `skills.defaultDisabled` 或 `skills.enabled` 条目。
 
-这不同于 ACP `qwen/skills/setEnabled` 托管 skill 操作和 `disable-model-invocation` frontmatter 字段。有效的 skill 可用性遵循 `skills.disabled` > `skills.enabled` > `skills.defaultDisabled`。硬禁用和默认禁用都会将 skill 从斜杠命令/模型可用性中移除，并拒绝后续的 skill 执行。`disable-model-invocation: true` 保持直接用户调用可用，仅将 skill 从模型调用中隐藏。
+这不同于 ACP `qwen/skills/setEnabled` 托管 skill 操作和 `disable-model-invocation` frontmatter 字段。对于活跃的 Extension 父级，有效的 Skill 可用性遵循 `skills.disabled` > `skills.enabled` > `skills.defaultDisabled` > workspace 内部覆盖 > manifest `skillStates` > enabled。硬禁用和默认禁用都会将 skill 从斜杠命令/模型可用性中移除，并拒绝后续的 skill 执行。`disable-model-invocation: true` 保持直接用户调用可用，仅将 skill 从模型调用中隐藏。
 
 请求：
 
@@ -2519,23 +2695,21 @@ Capability tag: `workspace_skill_toggle`。Workspace 限定形式为 `POST /work
 }
 ```
 
-`activation` 在每个活跃 session 都刷新时为 `applied`，在没有 ACP 子进程时为 `deferred`（持久化设置会在一个子进程启动时使用），在至少一个活跃 session 刷新失败时为 `partial`。繁忙的 session 也包含在内。Daemon 为 ACP 子进程和每个活跃 session 重新加载 workspace 设置，通知 SkillManager 消费者，并推送 `available_commands_update`。已发送给模型的请求不会被重写；后续的验证、命令快照和模型上下文使用新状态。如果持久化失败，不会发出刷新或事件。如果 session 刷新失败，已提交的设置会被保留。当子进程返回每个 session 的结果时，session 计数是精确的。如果刷新控制本身在返回这些结果之前失败，`sessionsFailed: 1` 是一个保守的下界，表示刷新请求失败。
+`activation` 独立于 `changed` 反映子进程活跃性和任何所需的刷新。当 ACP 子进程活跃且任何所需的刷新成功时为 `applied`，当活跃性检查时没有子进程活跃或变更的请求在所需刷新期间失去其子进程/session 时为 `deferred`，当至少一个其他所需刷新失败时为 `partial`。因此无操作可以是 `applied` 或 `deferred` 且 `changed: false`；当 `changed` 为 true 且 activation 为 `deferred` 时，持久化声明会在子进程启动时使用。繁忙的 session 包含在所需刷新中。Daemon 为 ACP 子进程和每个活跃 session 重新加载 workspace 设置，通知 SkillManager 消费者，并推送 `available_commands_update`。已发送给模型的请求不会被重写；后续的验证、命令快照和模型上下文使用新状态。如果持久化失败，不会发出刷新或事件。如果 session 刷新失败，已提交的设置会被保留。当子进程返回每个 session 的结果时，session 计数是精确的。如果刷新控制本身在返回这些结果之前失败，`sessionsFailed: 1` 是一个保守的下界，表示刷新请求失败。
 
 错误：
 
 - `400 {code: 'invalid_skill_name'}` — 路径参数为空，或超过 256 个字符。
 - `400 {code: 'invalid_enabled_flag'}` — `enabled` 缺失或不是布尔值。
 - `403 {code: 'untrusted_workspace'}` — 选定的 workspace 不受信任。
-- `404 {code: 'skill_not_found'}` — 没有已加载的 skill 匹配该名称。
-- `409 {code: 'skill_not_toggleable', reason: 'not_user_invocable' | 'inactive_extension' | 'locked', lockedScope?: 'system' | 'user' | 'systemDefaults'}` — CLI 面板不允许切换目标。`lockedScope` 仅在 `reason` 为 `locked` 时存在。
 
-该变更复用 workspace 作用域的 `settings_changed` 事件（针对每个变更的 key，`skills.disabled` 和/或 `skills.enabled`）；它不添加新的事件类型。Workspace skill 状态 cell 包含可选的 `disabledReason: 'hard' | 'default' | 'inactive_extension'` 和 `lockedScope: 'system' | 'user' | 'systemDefaults'` 字段。
+该变更复用 workspace 作用域的 `settings_changed` 事件（针对每个变更的 key，`skills.disabled` 和/或 `skills.enabled`）；它不添加新的事件类型。每个事件都包含相同的 `mutation` 对象：`{ id, kind: 'skill_toggle', skills: [{ name, enabled }], activation, sessionsRefreshed, sessionsFailed }`。`id` 关联一个切换请求产生的每个 settings 事件。`skills` 列出 workspace 设置声明实际变更的请求名称和请求的启用值；更高作用域的设置可能使有效可用性保持不变。Workspace skill 状态 cell 包含可选的 `disabledReason: 'hard' | 'default' | 'inactive_extension'` 和 `lockedScope: 'system' | 'user' | 'systemDefaults'` 字段。
 
 #### `POST /workspace/skills/enable`
 
-Capability tag：`workspace_skill_batch_toggle`。Workspace 限定形式为 `POST /workspaces/:workspace/skills/enable`。
+Capability tag：`workspace_skill_settings_batch_toggle`。Workspace 限定形式为 `POST /workspaces/:workspace/skills/enable`。
 
-在一个请求中切换最多 100 个已加载的 Skill；上限按去重前的原始 `skillNames` 条目计数。名称会被修剪并按大小写不敏感去重，同时保留首次出现的顺序。Daemon 根据一个 Skill 状态快照进行验证，在一次锁定的设置写入中持久化所有有效变更，并刷新活跃 session 一次。对于预期的目标错误采用尽力处理：未知、隐藏、非活跃 extension 或锁定的目标会被记录在 `errors` 中，不会阻止其他有效目标被应用。意外的持久化或 runtime generation 失败仍会使整个请求失败。
+在一个请求中更新最多 100 个名称的 workspace Skill 设置；上限按去重前的原始 `skillNames` 条目计数。名称会被修剪并按大小写不敏感去重，同时保留首次出现的顺序和大小写。Daemon 不查询已加载的 Skill 目录。它在最多一次锁定的设置写入中应用所有 resulting 声明变更，并在有任何变更时刷新活跃 session 一次。启用始终记录一个显式的 workspace `skills.enabled` 选择加入，包括尚未安装的名称，因此它可以覆盖 Extension 的内部禁用。重复相同的声明仍然是无操作。意外的持久化或运行时 generation 失败会使整个请求失败。
 
 请求：
 
@@ -2564,19 +2738,18 @@ Capability tag：`workspace_skill_batch_toggle`。Workspace 限定形式为 `POS
       "skillName": "deploy",
       "enabled": false,
       "changed": true
-    }
-  ],
-  "errors": [
+    },
     {
       "skillName": "missing",
-      "code": "skill_not_found",
-      "error": "Skill not found: missing"
+      "enabled": false,
+      "changed": true
     }
-  ]
+  ],
+  "errors": []
 }
 ```
 
-目标错误使用 `skill_not_found`、`skill_not_toggleable` 或 `skill_inactive_extension`。格式错误的请求返回 HTTP 400 并附带 `invalid_skill_names`、`invalid_skill_name` 或 `invalid_enabled_flag`。身份验证、workspace 信任、客户端身份、意外的持久化失败和 runtime generation 失败通过标准路由门控使整个请求失败。批次级的 `activation`、`sessionsRefreshed` 和 `sessionsFailed` 描述所有已变更结果共享的单次活跃 session 刷新。`activation` 报告刷新尝试而非结果：没有目标变更的批次（例如每个目标都出错）在 session 活跃时仍然回答 `applied`，匹配单个 Skill 的无操作响应，因此请从每个结果的 `changed` 标志和 `errors` 数组派生实际变更内容。
+格式错误的请求返回 HTTP 400 并附带 `invalid_skill_names`、`invalid_skill_name` 或 `invalid_enabled_flag`。身份验证、workspace 信任、客户端身份、意外的持久化失败和运行时 generation 失败通过标准路由门控使整个请求失败。`errors` 保留在响应中以保持线路兼容，对于结构有效的名称为空。批次级的 `activation`、`sessionsRefreshed` 和 `sessionsFailed` 描述子进程活跃性和所有已变更结果共享的单次活跃 session 刷新。没有目标变更的批次在子进程活跃时仍然可以回答 `applied`，在没有子进程时回答 `deferred`，匹配单个 Skill 的无操作响应，因此请从每个结果的 `changed` 标志派生实际变更内容。当至少一个目标变更时，daemon 发出与单个 Skill 路由相同的 `settings_changed` 变更元数据；该请求的每个 `skills.disabled` / `skills.enabled` 事件共享一个 `mutation.id`。
 
 #### `POST /workspace/init`
 
@@ -2732,6 +2905,38 @@ SSE 级别的 `id:` / `event:` 行复制了 `envelope.id` / `envelope.type`，�
 - 仅通过 SSE 请求上的 `?maxQueued=N`（范围 `[16, 2048]`）覆盖帧上限。故意不提供 `?maxQueuedBytes`；客户端无法提高 daemon 的内存预算。
 - 当订阅者的实时帧积压或实时字节积压超过 75% 时，总线会向该订阅者强制推送一个 `slow_client_warning` 合成帧（每次溢出事件仅推送一次；当两项指标均降至 37.5% 以下时重新激活）。流保持打开 — 此警告是一个提醒，以便客户端可以更快地排空队列或干净地断开并重新连接。
 - 如果实时帧上限溢出，总线会发出 `client_evicted`，`reason` 为 `"queue_overflow"`。如果实时字节上限溢出，则发出 `reason` 为 `"queue_bytes_overflow"`。在这两种情况下，终态帧都会被强制推送，并且订阅关闭。
+
+### `POST /session/:id/permission/:requestId`
+
+投下与下文相同的投票，但通过拥有指定活跃 session 的 runtime 进行路由。新的多 workspace 集成应使用此形式，而不是旧版的全局进程路由。预检
+`caps.features.session_permission_vote`。
+
+请求体、调解策略、结果和成功响应
+与 `POST /permission/:requestId` 完全相同。可选的
+`X-Qwen-Client-Id` header 参与 designated 和 consensus 策略。
+失败情况使用稳定的 `code` 值（如下所述）；格式错误的输入和丢失的
+pending-request 竞争可能会省略 `code`：
+
+- `400` — 格式错误的投票 body（无 `code`）或无效的客户端标识
+  （`invalid_client_id`），或当选中的选项未被提供时返回
+  `invalid_option_id`。请重新读取提供的选项，而不是重试相同的投票。
+- `403` — 当活跃策略拒绝投票者时返回 `permission_forbidden`，或
+  当非主的拥有 workspace 不受信任时返回
+  `untrusted_workspace`。
+  不受信任的主拥有者豁免于此信任检查，投票可能被接受。
+- `404` — 当没有活跃的拥有者时返回 `session_not_found`，或当请求
+  不处于 pending 状态时无 `code`。
+- `500` — 当 agent 的 `allowedOptionIds`
+  包含保留的 `__cancelled__` 哨兵值时返回 `cancel_sentinel_collision`，或
+  当多个 workspace 声称拥有该 session 时返回 `ambiguous_session_owner`。
+- `501` — 当策略未被此构建实现时返回
+  `permission_policy_not_implemented`。
+- `503` — 当拥有的 runtime
+  不可用时返回 `workspace_runtime_unavailable`，或当 daemon 不再接受
+  工作时返回 `daemon_draining`。
+
+它永远不会重试主 bridge。TypeScript SDK 方法为
+`respondToSessionPermission()`。
 
 ### `POST /permission/:requestId`
 

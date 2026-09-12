@@ -167,13 +167,13 @@ await server.connect(transport);
 
 保存文件后，重启 Qwen Code。你现在可以运行 `/fs:grep-code "some pattern"` 来使用你的新命令。
 
-## 第五步：添加自定义技能和子代理（可选）
+## 第五步：添加自定义 skill 和子代理（可选）
 
-扩展还可以提供自定义技能和子代理，以扩展 Qwen Code 的能力。
+扩展还可以提供自定义 skill 和子代理，以扩展 Qwen Code 的能力。
 
-### 添加自定义技能
+### 添加自定义 skill
 
-技能是模型调用的能力，AI 可以在相关时自动使用它们。
+skill 是模型调用的能力，AI 可以在相关时自动使用它们。
 
 1.  创建一个 `skills` 目录和一个技能子目录：
 
@@ -246,7 +246,9 @@ await server.connect(transport);
     5. 验证功能是否保留
     ```
 
-重启 Qwen Code 后，你的自定义技能将通过 `/skills` 使用，子代理通过 `/agents manage` 使用。
+重启 Qwen Code 后，你的自定义 skill 将通过 `/skills` 使用，子代理通过 `/agents manage` 使用。
+
+扩展 skill 注册在其所有者名称下：上述 skill 变为 `my-first-extension:code-analyzer`，因此你可以通过 `/my-first-extension:code-analyzer` 运行它。`skills.disabled` 可以在该名称或你编写的原始 `code-analyzer` 名称下将其禁用；`skills.enabled` 仅在带前缀的名称下将其重新启用。请参阅 [Extension Skills](../features/skills.md#extension-skills)。
 
 ## 第六步：添加自定义 `QWEN.md`
 
@@ -283,7 +285,7 @@ await server.connect(transport);
 
 对你的扩展满意后，可以与他人分享。发布扩展的两种主要方式是通过 Git 仓库或 GitHub Releases。使用公共 Git 仓库是最简单的方法。
 
-有关两种方法的详细说明，请参阅[扩展发布指南](extension-releasing.md)。
+有关两种方法的详细说明，请参阅[扩展发布指南](./extension-releasing.md)。
 
 ## 总结
 

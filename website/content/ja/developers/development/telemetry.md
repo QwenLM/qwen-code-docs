@@ -65,7 +65,7 @@ Qwen CodeでOpenTelemetryを有効化し、セットアップする方法につ�
 | `otlpLogsEndpoint`                | `QWEN_TELEMETRY_OTLP_LOGS_ENDPOINT`                  | -                                                        | ログ用のシグナル別エンドポイントオーバーライド（HTTPのみ）                                                                                     | URL string        | -                       |
 | `otlpMetricsEndpoint`             | `QWEN_TELEMETRY_OTLP_METRICS_ENDPOINT`               | -                                                        | メトリクス用のシグナル別エンドポイントオーバーライド（HTTPのみ）                                                                               | URL string        | -                       |
 | `outfile`                         | `QWEN_TELEMETRY_OUTFILE`                             | `--telemetry-outfile <path>`                             | Telemetryをファイルに保存（OTLPエクスポートをオーバーライド）                                                                                  | file path         | -                       |
-| `logPrompts`                      | `QWEN_TELEMETRY_LOG_PROMPTS`                         | `--telemetry-log-prompts` / `--no-telemetry-log-prompts` | Telemetryログにプロンプトを含める                                                                                                              | `true`/`false`    | `true`                  |
+| `logPrompts`                      | `QWEN_TELEMETRY_LOG_PROMPTS`                         | `--telemetry-log-prompts` / `--no-telemetry-log-prompts` | Telemetryログにユーザープロンプトの内容とAPIリクエスト/レスポンステキストを含める                                                                 | `true`/`false`    | `true`                  |
 | `userId`                          | `QWEN_TELEMETRY_USER_ID`                             | -                                                        | ARMS拡張の `gen_ai.user.id` としてGenAIスパンに書き込まれる安定したエンドユーザー識別子。仮名値を推奨します                                   | string            | -                       |
 | `includeSensitiveSpanAttributes`  | `QWEN_TELEMETRY_INCLUDE_SENSITIVE_SPAN_ATTRIBUTES`   | -                                                        | 標準GenAIメッセージ、指示、ツール定義、ツール引数、および成功したツール結果をネイティブスパン属性として含める                                  | `true`/`false`    | `false`                 |
 | `sensitiveSpanAttributeMaxLength` | `QWEN_TELEMETRY_SENSITIVE_SPAN_ATTRIBUTE_MAX_LENGTH` | -                                                        | 各センシティブなネイティブスパン属性の最大コンパクトJSON文字列長。バックエンドが大きな属性を拒否する場合は低く設定してください                 | `1..104857600`    | `1048576`               |
@@ -91,7 +91,7 @@ Qwen CodeでOpenTelemetryを有効化し、セットアップする方法につ�
 
    メインエージェントの入力はコンテキスト展開前の元のユーザーテキスト投影であり、メインエージェントの出力はすべてのツールおよび継続の作業が確定した後の最終的なユーザー可視回答です。LLM値はプロバイダー最終のSDKリクエストオブジェクトと生プロバイダー応答から取得され、その入力には履歴、展開されたファイル、システム指示、およびツール結果が含まれる可能性があり、その出力にはすべてのプロバイダー候補が含まれる可能性があります。ツール値は最終呼び出しパラメータと成功したモデル向け結果から取得されます。各標準GenAI値はコンパクトJSONであり、完全でスキーマ有効である必要があります。無効、循環参照、または `sensitiveSpanAttributeMaxLength` より長い値は全体として省略されます。JSONが切り詰められることはなく、プレビュー、ハッシュ、または切り詰めメタデータは出力されません。インタラクション固有の `new_context` 属性は既存の切り詰め動作を保持します。デフォルトの最大値は属性ごとに1 MiB（`1048576`）で、受け入れ範囲は `1..104857600`（100 MiB）です。上限はUTF-8バイト数ではなくJavaScript文字列長として測定されます。したがって、非ASCIIコンテンツはOTLPエクスポート後にバイト数が増加する可能性があります。
 
-2. **ログからスパンへのブリッジスパン**（ログエンドポイントなしでHTTPトレースがエクスポートされる場合に使用）は、ドロップされる代わりに既存の `prompt`、`function_args`、`response_text` フィールドを保持します。
+2. **ログからスパンへのブリッジスパン**（ログエンドポイントなしでHTTPトレースがエクスポートされる場合に使用）は、これらの属性をドロップする代わりに `function_args`、`error`、`error.message`、`error_message` を保持し、`logPrompts` も有効な場合は `prompt`、`request_text`、`response_text` も保持します。
 
 ⚠️ **セキュリティ警告:** このフラグを有効にすると、完全な会話履歴、`read_file` によって読み取られたファイルの内容、シェルコマンドとその出力（環境変数や引数に含まれるシークレットを含む）、およびモデルの応答が設定されたOTLPバックエンドにストリーミングされます。バックエンドは特権的なデータシンクとして扱ってください。このフラグのデフォルトは `false` です。
 
@@ -439,10 +439,10 @@ Alibaba Cloud Managed Service for OpenTelemetry で Qwen Code のテレメトリ
 #### API イベント
 
 - `qwen-code.api_request`: LLM API への送信リクエスト。
-  - **属性**: `model` (string), `prompt_id` (string), `request_text` (string, オプション), `subagent_name` (string, オプション)
+  - **属性**: `model` (string), `prompt_id` (string), `request_text` (string, オプション — `log_prompts_enabled` が true の場合にのみリクエスト内容を含む; log-to-span ブリッジスパンはさらに `includeSensitiveSpanAttributes` を必要とする; 非透過な `thoughtSignature` プロバイダーペイロードが含まれ、そのポリシー決定は #11682 で追跡されている), `subagent_name` (string, オプション)
 
 - `qwen-code.api_response`: LLM API から受信したレスポンス。
-  - **属性**: `response_id` (string), `model` (string), `status_code` (int/string, オプション), `duration_ms` (int), `input_token_count` (int), `output_token_count` (int), `cached_content_token_count` (int), `thoughts_token_count` (int), `total_token_count` (int), `prompt_id` (string), `auth_type` (string, オプション), `response_text` (string, オプション), `subagent_name` (string, オプション)
+  - **属性**: `response_id` (string), `model` (string), `status_code` (int/string, オプション), `duration_ms` (int), `input_token_count` (int), `output_token_count` (int), `cached_content_token_count` (int), `thoughts_token_count` (int), `total_token_count` (int), `prompt_id` (string), `auth_type` (string, オプション), `response_text` (string, オプション — `log_prompts_enabled` が true の場合にのみ可視レスポンス内容を含む; log-to-span ブリッジスパンはさらに `includeSensitiveSpanAttributes` を必要とする; 内部プロンプト ID または可視テキストを持たないレスポンスの場合は内容を持たない), `subagent_name` (string, オプション)
 
 - `qwen-code.api_error`: API リクエストが失敗しました。
   - **属性**: `model` (string), `prompt_id` (string), `duration_ms` (int), `error_message` (string), `response_id` (string, オプション), `auth_type` (string, オプション), `error_type` (string, オプション), `status_code` (int/string, オプション), `subagent_name` (string, オプション)

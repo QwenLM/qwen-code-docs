@@ -163,20 +163,19 @@ Les commandes personnalisées permettent de créer des raccourcis pour des promp
 
     Cette commande, `/fs:grep-code`, prendra un argument, exécutera la commande shell `grep` avec celui-ci et redirigera les résultats dans un prompt pour résumé.
 
-> [!note]
-> Les commandes utilisent le format Markdown avec un frontmatter YAML optionnel. Le format TOML est déprécié mais toujours pris en charge pour la rétrocompatibilité.
+> **Remarque :** Les commandes utilisent le format Markdown avec un frontmatter YAML optionnel. Le format TOML est déprécié mais toujours pris en charge pour la rétrocompatibilité.
 
 Après avoir enregistré le fichier, redémarrez Qwen Code. Vous pouvez maintenant exécuter `/fs:grep-code "un motif"` pour utiliser votre nouvelle commande.
 
-## Étape 5 : Ajouter des compétences et sous-agents personnalisés (optionnel)
+## Étape 5 : Ajouter des skills et sous-agents personnalisés (optionnel)
 
-Les extensions peuvent également fournir des compétences et sous-agents personnalisés pour étendre les capacités de Qwen Code.
+Les extensions peuvent également fournir des skills et sous-agents personnalisés pour étendre les capacités de Qwen Code.
 
-### Ajouter une compétence personnalisée
+### Ajouter un skill personnalisé
 
-Les compétences sont des capacités invoquées par le modèle que l'IA peut utiliser automatiquement lorsque cela est pertinent.
+Les skills sont des capacités invoquées par le modèle que l'IA peut utiliser automatiquement lorsque cela est pertinent.
 
-1.  Créez un répertoire `skills` avec un sous-répertoire pour la compétence :
+1.  Créez un répertoire `skills` avec un sous-répertoire pour le skill :
 
     ```bash
     mkdir -p skills/code-analyzer
@@ -247,7 +246,9 @@ Les sous-agents sont des assistants IA spécialisés pour des tâches spécifiqu
     5. Vérifiez que la fonctionnalité est préservée
     ```
 
-Après avoir redémarré Qwen Code, vos compétences personnalisées seront disponibles via `/skills` et les sous-agents via `/agents manage`.
+Après avoir redémarré Qwen Code, vos skills personnalisés seront disponibles via `/skills` et les sous-agents via `/agents manage`.
+
+Un skill d'extension est enregistré sous le nom de son propriétaire : le skill ci-dessus devient `my-first-extension:code-analyzer`, vous l'exécutez donc avec `/my-first-extension:code-analyzer`. `skills.disabled` peut le bloquer sous ce nom ou sous le nom simple `code-analyzer` que vous avez créé ; `skills.enabled` le réactive sous le nom préfixé uniquement. Voir [Extension Skills](../features/skills.md#extension-skills).
 
 ## Étape 6 : Ajouter un fichier `QWEN.md` personnalisé
 
@@ -284,7 +285,7 @@ Redémarrez à nouveau le CLI. Le modèle aura désormais le contexte de votre f
 
 Une fois satisfait de votre extension, vous pouvez la partager avec d'autres. Les deux principales façons de publier des extensions sont via un dépôt Git ou via les GitHub Releases. L'utilisation d'un dépôt Git public est la méthode la plus simple.
 
-Pour des instructions détaillées sur les deux méthodes, veuillez consulter le [Guide de publication des extensions](extension-releasing.md).
+Pour des instructions détaillées sur les deux méthodes, veuillez consulter le [Guide de publication des extensions](./extension-releasing.md).
 
 ## Conclusion
 
@@ -293,7 +294,7 @@ Vous avez réussi à créer une extension Qwen Code ! Vous avez appris à :
 - Initialiser une nouvelle extension à partir d'un modèle.
 - Ajouter des outils personnalisés avec un serveur MCP.
 - Créer des commandes personnalisées pratiques.
-- Ajouter des compétences et sous-agents personnalisés.
+- Ajouter des skills et sous-agents personnalisés.
 - Fournir un contexte persistant au modèle.
 - Lier votre extension pour le développement local.
 
