@@ -37,14 +37,14 @@
 
 | Operation                                                                                   | Capability           | Scope                 | TypeScript SDK                          |
 | ------------------------------------------------------------------------------------------- | -------------------- | --------------------- | --------------------------------------- |
-| [`GET /session/:id/status`](./qwen-serve-protocol.md#get-sessionidstatus)                   | `session_status`     | `live-session-owner`  | `DaemonClient.sessionStatus`            |
+| [`GET /session/:id/status`](https://qwenlm.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/#get-sessionidstatus)                   | `session_status`     | `live-session-owner`  | `DaemonClient.sessionStatus`            |
 | [`POST /session/:id/prompt`](./qwen-serve-protocol.md#post-sessionidprompt)                 | `session_prompt`     | `live-session-owner`  | `DaemonClient.promptNonBlocking`        |
 | [`POST /session/:id/cancel`](./qwen-serve-protocol.md#post-sessionidcancel)                 | `session_cancel`     | `live-session-owner`  | `DaemonClient.cancel`                   |
 | [`GET /session/:id/events`](./qwen-serve-protocol.md#get-sessionidevents-sse)               | `session_events`     | `live-session-owner`  | `DaemonClient.subscribeEvents`          |
 | [`GET /session/:id/transcript`](./qwen-serve-protocol.md#get-sessionidtranscript)           | `session_transcript` | `persisted-workspace` | `DaemonClient.getSessionTranscriptPage` |
 | [`GET /session/:id/context`](./qwen-serve-protocol.md#get-sessionidcontext)                 | `session_context`    | `live-session-owner`  | `DaemonClient.sessionContext`           |
-| [`GET /session/:id/export`](./qwen-serve-protocol.md#get-sessionidexport)                   | `session_export`     | `legacy-primary`      | `DaemonClient.exportSession`            |
-| [`GET /session/:id/pending-prompts`](./qwen-serve-protocol.md#get-sessionidpending-prompts) | —                    | `live-session-owner`  | `DaemonClient.getPendingPrompts`        |
+| [`GET /session/:id/export`](https://qwenlm.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/#get-sessionidexport)                   | `session_export`     | `legacy-primary`      | `DaemonClient.exportSession`            |
+| [`GET /session/:id/pending-prompts`](https://qwenlm.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/#get-sessionidpending-prompts) | —                    | `live-session-owner`  | `DaemonClient.getPendingPrompts`        |
 
 `POST /session/:id/prompt` 在提示进入队列时返回 `202`，而非 Agent 完成时。请先订阅，然后通过 `promptId` 关联 `turn_complete` 或 `turn_error`。
 
@@ -61,12 +61,12 @@
 
 | Operation                                                             | Capability             | Scope            | TypeScript SDK                        |
 | --------------------------------------------------------------------- | ---------------------- | ---------------- | ------------------------------------- |
-| [`GET /workspace/tools`](./qwen-serve-protocol.md#get-workspacetools) | —                      | `legacy-primary` | `DaemonClient.workspaceTools`         |
+| [`GET /workspace/tools`](https://qwenlm.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/#get-workspacetools) | —                      | `legacy-primary` | `DaemonClient.workspaceTools`         |
 | [`GET /file`](./qwen-serve-protocol.md#get-file)                      | `workspace_file_read`  | `legacy-primary` | `DaemonClient.readWorkspaceFile`      |
 | [`GET /file/bytes`](./qwen-serve-protocol.md#get-filebytes)           | `workspace_file_bytes` | `legacy-primary` | `DaemonClient.readWorkspaceFileBytes` |
-| [`GET /stat`](./qwen-serve-protocol.md#get-stat)                      | `workspace_file_read`  | `legacy-primary` | `DaemonClient.fileStat`               |
-| [`GET /list`](./qwen-serve-protocol.md#get-list)                      | `workspace_file_read`  | `legacy-primary` | `DaemonClient.dirList`                |
-| [`GET /glob`](./qwen-serve-protocol.md#get-glob)                      | `workspace_file_read`  | `legacy-primary` | `DaemonClient.glob`                   |
+| [`GET /stat`](https://qwenlm.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/#get-stat)                      | `workspace_file_read`  | `legacy-primary` | `DaemonClient.fileStat`               |
+| [`GET /list`](https://qwenlm.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/#get-list)                      | `workspace_file_read`  | `legacy-primary` | `DaemonClient.dirList`                |
+| [`GET /glob`](https://qwenlm.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/#get-glob)                      | `workspace_file_read`  | `legacy-primary` | `DaemonClient.glob`                   |
 
 这些单一路由定位主工作区。暴露多个已注册工作区的集成应使用完整协议中记录的工作区限定对应路由，并预检 `workspace_qualified_rest_core`。
 

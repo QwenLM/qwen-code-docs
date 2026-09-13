@@ -68,14 +68,14 @@
 
 | Operation                                                                                   | Capability           | Scope                 | TypeScript SDK                          |
 | ------------------------------------------------------------------------------------------- | -------------------- | --------------------- | --------------------------------------- |
-| [`GET /session/:id/status`](./qwen-serve-protocol.md#get-sessionidstatus)                   | `session_status`     | `live-session-owner`  | `DaemonClient.sessionStatus`            |
+| [`GET /session/:id/status`](https://qwenlm.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/#get-sessionidstatus)                   | `session_status`     | `live-session-owner`  | `DaemonClient.sessionStatus`            |
 | [`POST /session/:id/prompt`](./qwen-serve-protocol.md#post-sessionidprompt)                 | `session_prompt`     | `live-session-owner`  | `DaemonClient.promptNonBlocking`        |
 | [`POST /session/:id/cancel`](./qwen-serve-protocol.md#post-sessionidcancel)                 | `session_cancel`     | `live-session-owner`  | `DaemonClient.cancel`                   |
 | [`GET /session/:id/events`](./qwen-serve-protocol.md#get-sessionidevents-sse)               | `session_events`     | `live-session-owner`  | `DaemonClient.subscribeEvents`          |
 | [`GET /session/:id/transcript`](./qwen-serve-protocol.md#get-sessionidtranscript)           | `session_transcript` | `persisted-workspace` | `DaemonClient.getSessionTranscriptPage` |
 | [`GET /session/:id/context`](./qwen-serve-protocol.md#get-sessionidcontext)                 | `session_context`    | `live-session-owner`  | `DaemonClient.sessionContext`           |
-| [`GET /session/:id/export`](./qwen-serve-protocol.md#get-sessionidexport)                   | `session_export`     | `legacy-primary`      | `DaemonClient.exportSession`            |
-| [`GET /session/:id/pending-prompts`](./qwen-serve-protocol.md#get-sessionidpending-prompts) | —                    | `live-session-owner`  | `DaemonClient.getPendingPrompts`        |
+| [`GET /session/:id/export`](https://qwenlm.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/#get-sessionidexport)                   | `session_export`     | `legacy-primary`      | `DaemonClient.exportSession`            |
+| [`GET /session/:id/pending-prompts`](https://qwenlm.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/#get-sessionidpending-prompts) | —                    | `live-session-owner`  | `DaemonClient.getPendingPrompts`        |
 
 `POST /session/:id/prompt` возвращает `202`, когда промпт поступает в очередь, а
 не когда Агент завершает работу. Сначала подпишитесь, затем сопоставляйте

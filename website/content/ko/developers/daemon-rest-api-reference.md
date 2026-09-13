@@ -37,7 +37,7 @@
 
 | Operation                                                                                   | Capability           | Scope                 | TypeScript SDK                          |
 | ------------------------------------------------------------------------------------------- | -------------------- | --------------------- | --------------------------------------- |
-| [`GET /session/:id/status`](./qwen-serve-protocol.md#get-sessionidstatus)                   | `session_status`     | `live-session-owner`  | `DaemonClient.sessionStatus`            |
+| [`GET /session/:id/status`](https://qwenlm.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/#get-sessionidstatus)                   | `session_status`     | `live-session-owner`  | `DaemonClient.sessionStatus`            |
 | [`POST /session/:id/prompt`](./qwen-serve-protocol.md#post-sessionidprompt)                 | `session_prompt`     | `live-session-owner`  | `DaemonClient.promptNonBlocking`        |
 | [`POST /session/:id/cancel`](./qwen-serve-protocol.md#post-sessionidcancel)                 | `session_cancel`     | `live-session-owner`  | `DaemonClient.cancel`                   |
 | [`GET /session/:id/events`](./qwen-serve-protocol.md#get-sessionidevents-sse)               | `session_events`     | `live-session-owner`  | `DaemonClient.subscribeEvents`          |
@@ -64,9 +64,9 @@
 | [`GET /workspace/tools`](./qwen-serve-protocol.md#get-workspacetools) | —                      | `legacy-primary` | `DaemonClient.workspaceTools`         |
 | [`GET /file`](./qwen-serve-protocol.md#get-file)                      | `workspace_file_read`  | `legacy-primary` | `DaemonClient.readWorkspaceFile`      |
 | [`GET /file/bytes`](./qwen-serve-protocol.md#get-filebytes)           | `workspace_file_bytes` | `legacy-primary` | `DaemonClient.readWorkspaceFileBytes` |
-| [`GET /stat`](./qwen-serve-protocol.md#get-stat)                      | `workspace_file_read`  | `legacy-primary` | `DaemonClient.fileStat`               |
-| [`GET /list`](./qwen-serve-protocol.md#get-list)                      | `workspace_file_read`  | `legacy-primary` | `DaemonClient.dirList`                |
-| [`GET /glob`](./qwen-serve-protocol.md#get-glob)                      | `workspace_file_read`  | `legacy-primary` | `DaemonClient.glob`                   |
+| [`GET /stat`](https://qwenlm.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/#get-stat)                      | `workspace_file_read`  | `legacy-primary` | `DaemonClient.fileStat`               |
+| [`GET /list`](https://qwenlm.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/#get-list)                      | `workspace_file_read`  | `legacy-primary` | `DaemonClient.dirList`                |
+| [`GET /glob`](https://qwenlm.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/#get-glob)                      | `workspace_file_read`  | `legacy-primary` | `DaemonClient.glob`                   |
 
 이러한 단일 라우트는 기본 워크스페이스를 대상으로 합니다. 여러 등록된 워크스페이스를 노출하는 통합은 전체 프로토콜에 문서화되고 `workspace_qualified_rest_core`를 프리플라이트하는 워크스페이스 한정 대응 항목을 사용해야 합니다.
 

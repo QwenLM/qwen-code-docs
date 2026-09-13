@@ -71,7 +71,7 @@ dieses Vertrags, nicht deprecated.
 | [`GET /session/:id/events`](./qwen-serve-protocol.md#get-sessionidevents-sse)               | `session_events`     | `live-session-owner`  | `DaemonClient.subscribeEvents`          |
 | [`GET /session/:id/transcript`](./qwen-serve-protocol.md#get-sessionidtranscript)           | `session_transcript` | `persisted-workspace` | `DaemonClient.getSessionTranscriptPage` |
 | [`GET /session/:id/context`](./qwen-serve-protocol.md#get-sessionidcontext)                 | `session_context`    | `live-session-owner`  | `DaemonClient.sessionContext`           |
-| [`GET /session/:id/export`](./qwen-serve-protocol.md#get-sessionidexport)                   | `session_export`     | `legacy-primary`      | `DaemonClient.exportSession`            |
+| [`GET /session/:id/export`](https://qwenlm.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/#get-sessionidexport)                   | `session_export`     | `legacy-primary`      | `DaemonClient.exportSession`            |
 | [`GET /session/:id/pending-prompts`](./qwen-serve-protocol.md#get-sessionidpending-prompts) | —                    | `live-session-owner`  | `DaemonClient.getPendingPrompts`        |
 
 `POST /session/:id/prompt` gibt `202` zurück, wenn der Prompt die Warteschlange betritt, nicht
@@ -93,7 +93,7 @@ Runtime gehört, denselben `404` zurückgeben wie für eine bereits aufgelöste 
 
 | Operation                                                             | Capability             | Scope            | TypeScript SDK                        |
 | --------------------------------------------------------------------- | ---------------------- | ---------------- | ------------------------------------- |
-| [`GET /workspace/tools`](./qwen-serve-protocol.md#get-workspacetools) | —                      | `legacy-primary` | `DaemonClient.workspaceTools`         |
+| [`GET /workspace/tools`](https://qwenlm.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/#get-workspacetools) | —                      | `legacy-primary` | `DaemonClient.workspaceTools`         |
 | [`GET /file`](./qwen-serve-protocol.md#get-file)                      | `workspace_file_read`  | `legacy-primary` | `DaemonClient.readWorkspaceFile`      |
 | [`GET /file/bytes`](./qwen-serve-protocol.md#get-filebytes)           | `workspace_file_bytes` | `legacy-primary` | `DaemonClient.readWorkspaceFileBytes` |
 | [`GET /stat`](./qwen-serve-protocol.md#get-stat)                      | `workspace_file_read`  | `legacy-primary` | `DaemonClient.fileStat`               |

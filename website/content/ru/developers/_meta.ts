@@ -21,6 +21,7 @@ export default {
   'channel-plugins': 'Руководство по плагинам каналов',
   tools: 'Инструменты',
   'rest-api-integration': 'Руководство по интеграции REST API',
+  'daemon-rest-api-reference': 'Справочник по REST API демона',
   'qwen-serve-protocol': 'HTTP-протокол qwen serve',
   daemon: 'Режим демона (углубленное руководство для разработчиков)',
   'daemon-client-adapters': 'Адаптеры клиентов демона',
