@@ -3,7 +3,9 @@
 Для команд, встраивающих Qwen Code в собственный продукт поверх HTTP: запустите `qwen serve`
 как бэкенд и управляйте им из собственного фронтенда.
 
-Эта страница — отправная точка. Полный справочник маршрутов находится в
+Эта страница — отправная точка. Курируемый
+[справочник Daemon REST API](./daemon-rest-api-reference.md) описывает стабильную
+поверхность интеграции и ссылается на контракт OpenAPI 3.1. Полный протокол находится в
 [`qwen-serve-protocol.md`](./qwen-serve-protocol.md); внутреннее устройство описано в
 [углублённом руководстве по демону](./daemon/00-index.md); рабочий пример на TypeScript —
 в [`examples/daemon-client-quickstart.md`](./examples/daemon-client-quickstart.md).
@@ -20,7 +22,7 @@
 | демон + брендированный Web Shell       | брендинг, а не код                | не реализовано ([#11357](https://github.com/QwenLM/qwen-code/issues/11357))                                                                                                                                                      |
 | демон + самостоятельно собранный Web Shell | сборку фронтенда              | не реализовано ([#11358](https://github.com/QwenLM/qwen-code/issues/11358))                                                                                                                                                      |
 | демон через SDK `DaemonClient`         | клиентский код, без сырого HTTP   | доступен сейчас ([TS](./sdk-typescript.md), [Java](./sdk-java.md)) — [Python SDK](./sdk-python.md) работает только с процесс-транспортом и не имеет клиента демона, поэтому Python-интеграция использует путь 2 через сырой HTTP |
-| демон через MCP bridge                 | ничего — другой агент управляет им | поставляется как `qwen-serve-mcp` в `@qwen-code/sdk` — см. [README бриджа](../../packages/sdk-typescript/src/daemon-mcp/serve-bridge/README.md); `QWEN_BRIDGE_ALLOW_GLOBAL_SCOPE` опционально разрешает мутации в глобальной области |
+| демон через MCP bridge                 | ничего — другой агент управляет им | поставляется как `qwen-serve-mcp` в `@qwen-code/sdk` — см. [README бриджа](https://github.com/QwenLM/qwen-code/blob/main/packages/sdk-typescript/src/daemon-mcp/serve-bridge/README.md); `QWEN_BRIDGE_ALLOW_GLOBAL_SCOPE` опционально разрешает мутации в глобальной области |
 
 Headless `qwen -p` и ACP через stdio для редакторов — это отдельные пути интеграции.
 Каналы и расширения также могут работать через демон; см.
@@ -61,21 +63,55 @@ Headless `qwen -p` и ACP через stdio для редакторов — эт�
 
 ## Запуск демона
 
+Сгенерируйте токен один раз в терминале 1. Встроенная команда оболочки выводит его,
+чтобы вы могли вставить то же значение в скрытый запрос, показанный ниже, в каждом
+остальном терминале:
+
 ```bash
 export QWEN_SERVER_TOKEN="$(openssl rand -hex 32)"
+printf 'Copy this token to the other terminals: %s\n' "$QWEN_SERVER_TOKEN"
+export DAEMON_URL=http://127.0.0.1:4170
+```
 
+Терминал 1 — эта команда блокирует, поэтому оставьте её работающей:
+
+```bash
 qwen serve --no-web --require-auth \
   --hostname 0.0.0.0 --port 4170 \
   --workspace /srv/project
 ```
 
+В каждом другом терминале вставьте токен, выведенный терминалом 1, когда `read`
+запросит его. Это сохраняет токен вне истории оболочки и аргументов дочерних
+процессов:
+
+```bash
+read -rsp 'QWEN_SERVER_TOKEN: ' QWEN_SERVER_TOKEN; printf '\n'
+export QWEN_SERVER_TOKEN
+export DAEMON_URL=http://127.0.0.1:4170
+```
+
+`DAEMON_URL` — это loopback-базовый URL, который использует каждая клиентская
+команда ниже — экспортируйте его с тем же значением в каждом терминале, где вы
+их запускаете — и он совпадает с `servers[0].url` в
+[артефакте OpenAPI](./daemon-rest-api-reference.md). Демон всё ещё привязывается
+к `0.0.0.0`, чтобы удалённый хост мог достичь его, но не направляйте `DAEMON_URL`
+на этот хост в открытом виде: bearer-токен, который может управлять оболочкой,
+читается любым на пути. Подключайтесь к не-loopback хосту через TLS (см. ниже).
+
 `--no-web` сохраняет перечисленные ниже маршруты, но отключает ресурсы Web Shell и
 зависимые поверхности: на macOS — маршруты `/live/*` и сокет `/live/host`, а на
-каждой платформе — `GET /mcp-app-sandbox`. Передавайте токен через переменную окружения,
-а не через `--token`, который доступен любому локальному пользователю через `/proc/<pid>/cmdline`.
+каждой платформе — `GET /mcp-app-sandbox`. Передавайте токен через переменную
+окружения, а не через `--token`, который доступен любому локальному пользователю
+через `/proc/<pid>/cmdline`.
 
 Примеры Bash ниже передают заголовок Authorization через файловый дескриптор
 с помощью встроенной команды `printf` оболочки, не включая токен в аргументы curl.
+Они требуют Bash, curl и jq. Для доступа с других устройств завершите TLS, как
+описано в
+[HTTPS / TLS для мобильного и кросс-устройственного доступа](../users/qwen-serve.md#https--tls-for-mobile--cross-device-access);
+демон затем обслуживает `https://` на том же порту, поэтому переэкспортируйте
+`DAEMON_URL` со схемой `https://` перед запуском команд ниже.
 
 ## Маршруты, которые реально использует интеграция
 
@@ -98,11 +134,11 @@ git, установка расширений, доверие к рабочему
 | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
 | [`POST /session`](./qwen-serve-protocol.md#post-session)                                                                             | Создание. Отправьте `sessionScope: "thread"` для независимого разговора |
 | [`DELETE /session/:id`](./qwen-serve-protocol.md#delete-sessionid)                                                                   | Закрытие. Сохранённая сессия остаётся и может быть перезагружена    |
-| [`POST /session/:id/load`](./qwen-serve-protocol.md#post-sessionidload) · [`/resume`](./qwen-serve-protocol.md#post-sessionidresume) | Восстановление сохранённой сессии                                   |
+| [`POST /session/:id/load`](./qwen-serve-protocol.md#post-sessionidload) · [`POST /session/:id/resume`](./qwen-serve-protocol.md#post-sessionidresume) | Восстановление сохранённой сессии                                   |
 | [`POST /session/:id/heartbeat`](./qwen-serve-protocol.md#post-sessionidheartbeat)                                                    | Отсрочка idle-утилизатора                                           |
 | [`PATCH /session/:id/metadata`](./qwen-serve-protocol.md#patch-sessionidmetadata)                                                    | Метаданные сессии                                                   |
 | [`POST /session/:id/model`](./qwen-serve-protocol.md#post-sessionidmodel)                                                            | Переключение модели в пределах привязанной службы                   |
-| `GET /session/:id/status`                                                                                                            | Статус среды выполнения — _отдельного раздела справочника пока нет_ |
+| [`GET /session/:id/status`](./qwen-serve-protocol.md#get-sessionidstatus)                                                                             | Статус среды выполнения                                                        |
 
 ### Промптинг и потоковая передача
 
@@ -112,14 +148,14 @@ git, установка расширений, доверие к рабочему
 | [`POST /session/:id/cancel`](./qwen-serve-protocol.md#post-sessionidcancel)     | Отмена только активного промпта                        |
 | [`GET /session/:id/events`](./qwen-serve-protocol.md#get-sessionidevents-sse)   | Поток SSE. Подписывайтесь **до** отправки промпта      |
 | [`GET /session/:id/transcript`](./qwen-serve-protocol.md#get-sessionidtranscript) | История разговора                                    |
-| [`GET /session/:id/context`](./qwen-serve-protocol.md#get-sessionidcontext)     | Использование окна контекста                           |
-| `GET /session/:id/export` · `GET /session/:id/pending-prompts`                  | _Отдельных разделов справочника пока нет_              |
+| [`GET /session/:id/context`](./qwen-serve-protocol.md#get-sessionidcontext)                                                                                             | Модель верхнего уровня, режим и состояние параметров конфигурации; виртуальные субагенты возвращают пустой `state` |
+| [`GET /session/:id/export`](./qwen-serve-protocol.md#get-sessionidexport) · [`GET /session/:id/pending-prompts`](./qwen-serve-protocol.md#get-sessionidpending-prompts) | Экспорт сохранённого транскрипта · список промптов в очереди                             |
 
 ### Разрешения
 
 | Маршрут                                                                            | Назначение                                                                                                                                                                                                                                                                                     |
 | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /session/:id/permission/:requestId`                                          | Ответ на `permission_request`. Маршрутизируется к среде выполнения, владеющей сессией, поэтому работает корректно при любой конфигурации рабочего пространства — _отдельного раздела пока нет_                                                                                                  |
+| [`POST /session/:id/permission/:requestId`](./qwen-serve-protocol.md#post-sessionidpermissionrequestid) | Ответ на `permission_request`. Маршрутизируется к среде выполнения, владеющей сессией, и никогда не возвращается к первичному бриджу; недоверенный не-основной владелец отклоняется, тогда как недоверенный основной владелец переходит к активной политике разрешений                                                |
 | [`POST /permission/:requestId`](./qwen-serve-protocol.md#post-permissionrequestid) | Процесс-глобальная форма, подключённая только к бриджу **основного** рабочего пространства: возвращает `404` для сессии, принадлежащей другой зарегистрированной среде выполнения, с тем же телом, что и пропавший голос при политике `first-responder` по умолчанию — поэтому `404` здесь сам по себе не означает, что запрос уже был отвечен |
 
 ### Контекст рабочего пространства только для чтения
@@ -127,15 +163,8 @@ git, установка расширений, доверие к рабочему
 | Маршрут                                                                                                        | Назначение                                                                                                                                                     |
 | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`GET /file`](./qwen-serve-protocol.md#get-file) · [`/file/bytes`](./qwen-serve-protocol.md#get-filebytes)     | Чтение файла или диапазона байт                                                                                                                               |
-| `GET /stat` · `GET /list` · `GET /glob`                                                                        | Метаданные пути, список каталога, glob — _отдельных разделов пока нет_                                                                                        |
-| `GET /workspace/tools`                                                                                         | Инструменты, сообщённые активным дочерним ACP-процессом; без него ответ содержит `acpChannelLive: false`, `tools: []` и ошибку `not_started` — _отдельного раздела пока нет_ |
-
-> **Покрытие справочника.** 17 из 25 вышеперечисленных маршрутов имеют отдельные разделы.
-> Из 8 отмеченных иначе некоторые упомянуты лишь вскользь, а три отсутствуют
-> полностью: `GET /session/:id/pending-prompts`,
-> `POST /session/:id/permission/:requestId` и `GET /workspace/tools`.
-> Закрытие этого пробела отслеживается в
-> [#11359](https://github.com/QwenLM/qwen-code/issues/11359).
+| [`GET /stat`](./qwen-serve-protocol.md#get-stat) · [`GET /list`](./qwen-serve-protocol.md#get-list) · [`GET /glob`](./qwen-serve-protocol.md#get-glob) | Метаданные пути, список каталога, glob                                                                                              |
+| [`GET /workspace/tools`](./qwen-serve-protocol.md#get-workspacetools)                                                                                  | Инструменты, сообщённые активным дочерним ACP-процессом; без него ответ содержит `acpChannelLive: false`, `tools: []` и ошибку `not_started` |
 
 ## Минимальный поток
 
@@ -143,7 +172,7 @@ git, установка расширений, доверие к рабочему
 `policy.permission` (чтобы знать, кто может отвечать на запросы разрешений).
 
 ```bash
-curl -sH @<(printf 'Authorization: Bearer %s\n' "$QWEN_SERVER_TOKEN") http://daemon:4170/capabilities
+curl -sH @<(printf 'Authorization: Bearer %s\n' "$QWEN_SERVER_TOKEN") "$DAEMON_URL/capabilities"
 ```
 
 **2. Создание сессии.** Используйте `sessionScope: "thread"`, если вызывающие не должны
@@ -152,13 +181,22 @@ curl -sH @<(printf 'Authorization: Bearer %s\n' "$QWEN_SERVER_TOKEN") http://dae
 независимых вызывающих через одну очередь.
 
 ```bash
-curl -sX POST http://daemon:4170/session \
+SESSION_JSON="$(curl -sX POST "$DAEMON_URL/session" \
   -H @<(printf 'Authorization: Bearer %s\n' "$QWEN_SERVER_TOKEN") -H 'Content-Type: application/json' \
-  -d '{"sessionScope":"thread"}'
+  -d '{"sessionScope":"thread"}')" || echo "create failed (curl exit $?)" >&2
+printf '%s\n' "$SESSION_JSON"
+SID="$(printf '%s' "$SESSION_JSON" | jq -er '.sessionId // empty')"
+export SID
+: "${SID:?no sessionId in the create response}"
 # → {"sessionId":"…","workspaceCwd":"/srv/project","attached":false}
 ```
 
-**3. Подписка до отправки промпта.** `Last-Event-ID: 0` воспроизводит с самого старого
+**3. Подписка до отправки промпта.** Запустите это во втором терминале с тем же
+`QWEN_SERVER_TOKEN` и `DAEMON_URL`, и с `SID`, установленным в `sessionId`, который
+напечатал шаг 2: экспорты не пересекают терминалы, поэтому переэкспортируйте токен и
+`DAEMON_URL` там и установите `SID` в этот `sessionId` самостоятельно. Не вставляйте
+блок обратно в терминал 1 — его присваивание `SID=` перезапишет значение,
+которое используют шаги 4-6. `Last-Event-ID: 0` воспроизводит с самого старого
 сохранённого события — так вы ловите события, возникшие между созданием и подпиской,
 в частности `model_switch_failed`. При **подключении** (значение по умолчанию
 `sessionScope: "single"` переиспользует существующую сессию) это событие — единственный
@@ -170,7 +208,11 @@ curl -sX POST http://daemon:4170/session \
 ключа `modelApplied`.
 
 ```bash
-curl -N http://daemon:4170/session/$SID/events \
+# терминал 2 — переэкспортируйте то, что нужно; переменные оболочки не пересекают терминалы
+# export QWEN_SERVER_TOKEN='<the token from step 1>'
+# export DAEMON_URL=http://127.0.0.1:4170
+SID='<sessionId from step 2>'
+curl -N "$DAEMON_URL/session/$SID/events" \
   -H @<(printf 'Authorization: Bearer %s\n' "$QWEN_SERVER_TOKEN") \
   -H 'Accept: text/event-stream' -H 'Last-Event-ID: 0'
 ```
@@ -189,7 +231,7 @@ curl -N http://daemon:4170/session/$SID/events \
 [`POST /session/:id/prompt`](./qwen-serve-protocol.md#post-sessionidprompt).
 
 ```bash
-curl -sX POST http://daemon:4170/session/$SID/prompt \
+curl -sX POST "$DAEMON_URL/session/$SID/prompt" \
   -H @<(printf 'Authorization: Bearer %s\n' "$QWEN_SERVER_TOKEN") -H 'Content-Type: application/json' \
   -d '{"prompt":[{"type":"text","text":"What does src/main.ts do?"}]}'
 # → 202 {"promptId":"…","lastEventId":42}
@@ -214,11 +256,19 @@ curl -sX POST http://daemon:4170/session/$SID/prompt \
 явно и решите заранее, как он отвечает: автоодобрение уже может действовать без того,
 чтобы кто-либо его выбирал.
 
-Отвечайте на маршруте сессии: он маршрутизируется к среде выполнения, владеющей сессией,
-поэтому работает при любой конфигурации рабочего пространства.
+Отвечайте на маршруте сессии: он достигает владеющего рабочего пространства, когда
+ровно одна активная среда выполнения владеет сессией, и никогда не возвращается
+к первичному бриджу. Недоверенный не-основной владелец возвращает `403 untrusted_workspace`;
+основная среда выполнения освобождена от этой проверки доверия, поэтому недоверенный
+основной владелец может принять голос. Неразрешённый владелец завершается с fail closed
+вместо голосования на неправильной среде выполнения — `404 session_not_found`,
+`500 ambiguous_session_owner` или `503 workspace_runtime_unavailable` с
+`Retry-After: 1` (повторить; голос не был записан). Скопируйте `data.requestId` из
+события `permission_request` и установите его перед голосованием:
 
 ```bash
-curl -sX POST http://daemon:4170/session/$SID/permission/$REQUEST_ID \
+export REQUEST_ID='<data.requestId>'
+curl -sX POST "$DAEMON_URL/session/$SID/permission/$REQUEST_ID" \
   -H @<(printf 'Authorization: Bearer %s\n' "$QWEN_SERVER_TOKEN") -H 'Content-Type: application/json' \
   -d '{"outcome":{"outcome":"selected","optionId":"proceed_once"}}'
 ```

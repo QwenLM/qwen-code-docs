@@ -3,9 +3,11 @@
 Für Teams, die Qwen Code über HTTP in ihr eigenes Produkt einbinden: `qwen serve`
 als Backend ausführen und vom eigenen Frontend aus ansteuern.
 
-Diese Seite ist der Einstiegspunkt. Die vollständige Routenreferenz steht in
+Diese Seite ist der Einstiegspunkt. Die kuratierte
+[Daemon-REST-API-Referenz](./daemon-rest-api-reference.md) deckt die stabile
+Integrationsfläche ab und verlinkt auf den OpenAPI-3.1-Kontrakt. Das vollständige Protokoll steht in
 [`qwen-serve-protocol.md`](./qwen-serve-protocol.md); die Interna im
-[Daemon-Deep-Dive](./daemon/00-index.md); ein ausführbares TypeScript-Beispiel findet sich in
+[Daemon-Deep-Dive](./daemon/00-index.md); ein ausführbarer TypeScript-Walkthrough ist
 [`examples/daemon-client-quickstart.md`](./examples/daemon-client-quickstart.md).
 
 ## Welche Pfade es gibt
@@ -20,7 +22,7 @@ Frontends gehört euch?**
 | Daemon + gebrandete WebShell           | Branding, kein Code                | nicht gebaut ([#11357](https://github.com/QwenLM/qwen-code/issues/11357))                                                                                                                                                         |
 | Daemon + selbst gehosteter WebShell-Build | den Frontend-Build               | nicht gebaut ([#11358](https://github.com/QwenLM/qwen-code/issues/11358))                                                                                                                                                         |
 | Daemon über SDK `DaemonClient`        | Client-Code, niemals rohes HTTP       | verfügbar heute ([TS](./sdk-typescript.md), [Java](./sdk-java.md)) — das [Python SDK](./sdk-python.md) unterstützt nur Prozess-Transport und hat keinen Daemon-Client; eine Python-Integration nutzt Pfad 2 über rohes HTTP                     |
-| Daemon über MCP-Bridge                | nichts — ein anderer Agent steuert ihn | verfügbar als `qwen-serve-mcp` in ` @qwen-code/sdk` — siehe die [Bridge-README](../../packages/sdk-typescript/src/daemon-mcp/serve-bridge/README.md); `QWEN_BRIDGE_ALLOW_GLOBAL_SCOPE` erlaubt optional globale Schreibmutationen |
+| Daemon über MCP-Bridge                | nichts — ein anderer Agent steuert ihn | verfügbar als `qwen-serve-mcp` in ` @qwen-code/sdk` — siehe die [Bridge-README](https://github.com/QwenLM/qwen-code/blob/main/packages/sdk-typescript/src/daemon-mcp/serve-bridge/README.md); `QWEN_BRIDGE_ALLOW_GLOBAL_SCOPE` erlaubt optional globale Schreibmutationen |
 
 Headless `qwen -p` und ACP über stdio für Editoren sind separate Integrations-
 pfade. Channels und Extensions können ebenfalls über den Daemon laufen; siehe den
@@ -42,7 +44,7 @@ Prozess, den OAuth-Status, den Datei-Cache und den Hierarchie-Speicher-Parse. Di
 ist also der Workspace: Wenn der Kindprozess endet, wird jede darauf multiplexte Session
 gemeinsam abgebaut. Dimensioniere den Container für den Daemon plus einen Kindprozess pro
 registriertem Workspace, mit Reserve für einen zusätzlichen Kindprozess pro Runtime während eines Channel-Swaps.
-Wenn Sessions unabhängig fehlschlagen müssen, betriebe separate Daemons —
+Wenn Sessions unabhängig fehlschlagen müssen, betreibe separate Daemons —
 `--max-sessions` begrenzt die Parallelität, nicht den Auswirkungsradius.
 
 **Authentifizierung ist Single-Operator.** Das Runtime-Bearer-Token gewährt Zugriff auf
@@ -60,13 +62,40 @@ Authentifizierung; er ist inaktiv, bis eine Channel-Webhook-Quelle konfiguriert 
 
 ## Den Daemon starten
 
+Generiere das Token einmal in Terminal 1. Das Shell-Builtin gibt es aus, damit du
+denselben Wert in das versteckte Prompt einfügen kannst, das unten in jedem anderen Terminal angezeigt wird:
+
 ```bash
 export QWEN_SERVER_TOKEN="$(openssl rand -hex 32)"
+printf 'Copy this token to the other terminals: %s\n' "$QWEN_SERVER_TOKEN"
+export DAEMON_URL=http://127.0.0.1:4170
+```
 
+Terminal 1 — dieser Befehl blockiert, also lass ihn laufen:
+
+```bash
 qwen serve --no-web --require-auth \
   --hostname 0.0.0.0 --port 4170 \
   --workspace /srv/project
 ```
+
+In jedem anderen Terminal füge das von Terminal 1 ausgegebene Token ein, wenn `read`
+danach fragt. Das hält das Token aus der Shell-History und Kindprozess-Argumenten
+heraus:
+
+```bash
+read -rsp 'QWEN_SERVER_TOKEN: ' QWEN_SERVER_TOKEN; printf '\n'
+export QWEN_SERVER_TOKEN
+export DAEMON_URL=http://127.0.0.1:4170
+```
+
+`DAEMON_URL` ist die Loopback-Basis-URL, die jeder Client-Befehl unten verwendet —
+exportiere sie in jedem Terminal, in dem du sie ausführst, mit demselben Wert — und
+sie entspricht `servers[0].url` im [OpenAPI-Artefakt](./daemon-rest-api-reference.md).
+Der Daemon bindet weiterhin `0.0.0.0`, damit ein entfernter Host ihn erreichen kann,
+aber verweise nicht im Klartext mit `DAEMON_URL` auf diesen Host: Ein Bearer-Token,
+das eine Shell steuern kann, ist von jedem auf dem Pfad lesbar. Erreiche einen
+Nicht-Loopback-Host über TLS (siehe unten).
 
 `--no-web` erhält die unten aufgeführten Routen, deaktiviert aber die WebShell-Assets und
 abhängige Oberflächen: unter macOS die `/live/*`-Routen und den `/live/host`-Socket, und auf
@@ -75,6 +104,10 @@ jeder Plattform `GET /mcp-app-sandbox`. Übergib das Token über die Umgebungsva
 
 Die Bash-Beispiele unten übergeben den Authorization-Header über einen Datei-Deskriptor
 mittels des Shell-`printf`-Builtins, wodurch das Token aus den curl-Argumenten herausgehalten wird.
+Sie erfordern Bash, curl und jq. Für geräteübergreifenden Zugriff terminiere TLS wie
+in [HTTPS / TLS for mobile and cross-device access](../users/qwen-serve.md#https--tls-for-mobile--cross-device-access)
+beschrieben; der Daemon serviert dann `https://` auf demselben Port, also re-exportiere
+`DAEMON_URL` mit dem `https://`-Schema, bevor du die folgenden Befehle ausführst.
 
 ## Die Routen, die eine Integration tatsächlich nutzt
 
@@ -97,11 +130,11 @@ Das sind die Routen, die eine REST-Integration benötigt. Den Rest als intern be
 | ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
 | [`POST /session`](./qwen-serve-protocol.md#post-session)                                                                             | Erstellen. `sessionScope: "thread"` für eine unabhängige Konversation senden |
 | [`DELETE /session/:id`](./qwen-serve-protocol.md#delete-sessionid)                                                                   | Schließen. Die persistierte Session überlebt und kann neu geladen werden             |
-| [`POST /session/:id/load`](./qwen-serve-protocol.md#post-sessionidload) · [`/resume`](./qwen-serve-protocol.md#post-sessionidresume) | Eine persistierte Session wiederherstellen                                           |
+| [`POST /session/:id/load`](./qwen-serve-protocol.md#post-sessionidload) · [`POST /session/:id/resume`](./qwen-serve-protocol.md#post-sessionidresume) | Eine persistierte Session wiederherstellen                                           |
 | [`POST /session/:id/heartbeat`](./qwen-serve-protocol.md#post-sessionidheartbeat)                                                    | Den Idle-Reaper aufschieben                                                 |
 | [`PATCH /session/:id/metadata`](./qwen-serve-protocol.md#patch-sessionidmetadata)                                                    | Session-Metadaten                                                      |
 | [`POST /session/:id/model`](./qwen-serve-protocol.md#post-sessionidmodel)                                                            | Modell innerhalb des gebundenen Service wechseln                                 |
-| `GET /session/:id/status`                                                                                                            | Runtime-Status — _noch kein eigener Referenzabschnitt_                 |
+| [`GET /session/:id/status`](./qwen-serve-protocol.md#get-sessionidstatus)                                                                             | Runtime-Status                                                        |
 
 ### Prompting und Streaming
 
@@ -111,30 +144,31 @@ Das sind die Routen, die eine REST-Integration benötigt. Den Rest als intern be
 | [`POST /session/:id/cancel`](./qwen-serve-protocol.md#post-sessionidcancel)       | Nur den aktiven Prompt abbrechen                          |
 | [`GET /session/:id/events`](./qwen-serve-protocol.md#get-sessionidevents-sse)     | SSE-Stream. **Vor** dem Prompting abonnieren             |
 | [`GET /session/:id/transcript`](./qwen-serve-protocol.md#get-sessionidtranscript) | Konversationsverlauf                                   |
-| [`GET /session/:id/context`](./qwen-serve-protocol.md#get-sessionidcontext)       | Context-Window-Nutzung                                   |
-| `GET /session/:id/export` · `GET /session/:id/pending-prompts`                    | _Noch keine eigenen Referenzabschnitte_                  |
+| [`GET /session/:id/context`](./qwen-serve-protocol.md#get-sessionidcontext)                                                                                             | Top-Level-Modell, -Modus und Konfigurationsoptions-Status; virtuelle Subagenten geben ein leeres `state` zurück |
+| [`GET /session/:id/export`](./qwen-serve-protocol.md#get-sessionidexport) · [`GET /session/:id/pending-prompts`](./qwen-serve-protocol.md#get-sessionidpending-prompts) | Das persistierte Transkript exportieren · wartende Prompten auflisten                                     |
+
+Token-Usage ist nicht Teil dieser Oberfläche: Für eine Top-Level-Session
+gibt `GET /session/:id/context` das aktive Modell, den Modus und den
+Konfigurationsoptions-Status zurück. Eine virtuelle Session-ID mit `subagent.`-Präfix
+löst sich gegen ihre Parent-Runtime auf und gibt ein leeres `state`-Objekt zurück.
+Usage-Counter stehen auf `GET /session/:id/context-usage`, einer Route, die dieser
+Kontrakt nicht spezifiziert — sie trägt den `session_context_usage`-Capability-Tag
+und ist nur in den internen [Session-Lifecycle-Notizen](./daemon/08-session-lifecycle.md#context-usage-session_context_usage-capability-tag) beschrieben.
 
 ### Berechtigungen
 
 | Route                                                                              | Zweck                                                                                                                                                                                                                                                                                     |
 | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /session/:id/permission/:requestId`                                          | Eine `permission_request` beantworten. Wird an die Runtime geleitet, der die Session gehört, also in jedem Workspace-Zustand korrekt — _noch kein eigener Abschnitt_                                                                                                                                          |
+| [`POST /session/:id/permission/:requestId`](./qwen-serve-protocol.md#post-sessionidpermissionrequestid) | Eine `permission_request` beantworten. Wird an die Runtime geleitet, der die Session gehört, und fällt niemals auf die primäre Bridge zurück; ein nicht vertrauenswürdiger Nicht-Primär-Owner wird abgelehnt, während ein nicht vertrauenswürdiger Primär-Owner mit der aktiven Permission-Policy fortfährt                                                |
 | [`POST /permission/:requestId`](./qwen-serve-protocol.md#post-permissionrequestid) | Prozessglobales Formular, nur mit der Bridge des **primären** Workspaces verbunden: gibt `404` für eine Session, die einer anderen registrierten Runtime gehört, mit demselben Body wie eine verlorene Stimme unter der Standard-`first-responder`-Policy — eine `404` hier bedeutet also nicht unbedingt, dass die Anfrage bereits beantwortet wurde |
 
 ### Nur-lesender Workspace-Kontext
 
 | Route                                                                                                      | Zweck                                                                                                                                                          |
 | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`GET /file`](./qwen-serve-protocol.md#get-file) · [`/file/bytes`](./qwen-serve-protocol.md#get-filebytes) | Eine Datei oder einen Byte-Bereich lesen                                                                                                                                     |
-| `GET /stat` · `GET /list` · `GET /glob`                                                                    | Pfad-Metadaten, Verzeichnis-Listing, Glob — _noch keine eigenen Abschnitte_                                                                                             |
-| `GET /workspace/tools`                                                                                     | Vom aktiven ACP-Kindprozess gemeldete Tools; ohne diesen hat die Response `acpChannelLive: false`, `tools: []` und einen `not_started`-Fehler — _noch kein eigener Abschnitt_ |
-
-> **Referenzabdeckung.** 17 der 25 obigen Routen haben eigene Abschnitte.
-> Von den 8 anders markierten sind einige nur beiläufig erwähnt und drei fehlen
-> vollständig: `GET /session/:id/pending-prompts`,
-> `POST /session/:id/permission/:requestId` und `GET /workspace/tools`.
-> Das Schließen dieser Lücke wird verfolgt in
-> [#11359](https://github.com/QwenLM/qwen-code/issues/11359).
+| [`GET /file`](./qwen-serve-protocol.md#get-file) · [`GET /file/bytes`](./qwen-serve-protocol.md#get-filebytes) | Eine Datei oder einen Byte-Bereich lesen                                                                                                                                     |
+| [`GET /stat`](./qwen-serve-protocol.md#get-stat) · [`GET /list`](./qwen-serve-protocol.md#get-list) · [`GET /glob`](./qwen-serve-protocol.md#get-glob) | Pfad-Metadaten, Verzeichnis-Listing, Glob                                                                                              |
+| [`GET /workspace/tools`](./qwen-serve-protocol.md#get-workspacetools)                                                                                  | Vom aktiven ACP-Kindprozess gemeldete Tools; ohne einen hat die Response `acpChannelLive: false`, `tools: []` und einen `not_started`-Fehler |
 
 ## Minimaler Ablauf
 
@@ -142,7 +176,7 @@ Das sind die Routen, die eine REST-Integration benötigt. Den Rest als intern be
 `policy.permission` lesen (damit bekannt ist, wer Permission-Anfragen beantworten darf).
 
 ```bash
-curl -sH @<(printf 'Authorization: Bearer %s\n' "$QWEN_SERVER_TOKEN") http://daemon:4170/capabilities
+curl -sH @<(printf 'Authorization: Bearer %s\n' "$QWEN_SERVER_TOKEN") "$DAEMON_URL/capabilities"
 ```
 
 **2. Session erstellen.** `sessionScope: "thread"` verwenden, es sei denn, Caller sollen
@@ -151,13 +185,22 @@ Create im selben Workspace die bestehende Session _wiederverwenden_ und serialis
 Caller durch eine einzige Warteschlange.
 
 ```bash
-curl -sX POST http://daemon:4170/session \
+SESSION_JSON="$(curl -sX POST "$DAEMON_URL/session" \
   -H @<(printf 'Authorization: Bearer %s\n' "$QWEN_SERVER_TOKEN") -H 'Content-Type: application/json' \
-  -d '{"sessionScope":"thread"}'
+  -d '{"sessionScope":"thread"}')" || echo "create failed (curl exit $?)" >&2
+printf '%s\n' "$SESSION_JSON"
+SID="$(printf '%s' "$SESSION_JSON" | jq -er '.sessionId // empty')"
+export SID
+: "${SID:?no sessionId in the create response}"
 # → {"sessionId":"…","workspaceCwd":"/srv/project","attached":false}
 ```
 
-**3. Vor dem Prompting abonnieren.** `Last-Event-ID: 0` replayt vom ältesten
+**3. Vor dem Prompting abonnieren.** Führe dies in einem zweiten Terminal mit demselben
+`QWEN_SERVER_TOKEN` und `DAEMON_URL` aus, wobei `SID` auf die `sessionId` gesetzt ist,
+die Schritt 2 ausgegeben hat: Exports wechseln nicht zwischen Terminals, also re-exportiere
+das Token und `DAEMON_URL` dort und setze `SID` selbst auf diese `sessionId`. Füge den
+Block nicht zurück in Terminal 1 ein — seine `SID=`-Zuweisung würde den Wert überschreiben,
+den Schritte 4-6 verwenden. `Last-Event-ID: 0` replayt vom ältesten
 zurückgehaltenen Event, wodurch Events erfasst werden, die zwischen Create und
 Subscribe gefeuert wurden — insbesondere `model_switch_failed`. Bei einem **Attach**
 (das Standard-`sessionScope: "single"` wiederverwendet eine bestehende Session) ist dieses Event das einzige
@@ -169,7 +212,11 @@ deterministische Signal, auf das gehandelt werden sollte, statt auf ein Event au
 ohne `modelServiceId` hat überhaupt keinen `modelApplied`-Schlüssel.
 
 ```bash
-curl -N http://daemon:4170/session/$SID/events \
+# terminal 2 — re-exportiere was du brauchst; Shell-Variablen wechseln nicht zwischen Terminals
+# export QWEN_SERVER_TOKEN='<das Token aus Schritt 1>'
+# export DAEMON_URL=http://127.0.0.1:4170
+SID='<sessionId aus Schritt 2>'
+curl -N "$DAEMON_URL/session/$SID/events" \
   -H @<(printf 'Authorization: Bearer %s\n' "$QWEN_SERVER_TOKEN") \
   -H 'Accept: text/event-stream' -H 'Last-Event-ID: 0'
 ```
@@ -188,7 +235,7 @@ bei `turn_error` `message` und optionale `code` / `errorKind` lesen — siehe
 [`POST /session/:id/prompt`](./qwen-serve-protocol.md#post-sessionidprompt).
 
 ```bash
-curl -sX POST http://daemon:4170/session/$SID/prompt \
+curl -sX POST "$DAEMON_URL/session/$SID/prompt" \
   -H @<(printf 'Authorization: Bearer %s\n' "$QWEN_SERVER_TOKEN") -H 'Content-Type: application/json' \
   -d '{"prompt":[{"type":"text","text":"What does src/main.ts do?"}]}'
 # → 202 {"promptId":"…","lastEventId":42}
@@ -213,11 +260,19 @@ Integration vom Approval-Gating abhängt, pinne `tools.approvalMode` explizit un
 entscheide vorab, wie er antwortet: Auto-Approval kann bereits aktiv sein, ohne
 dass jemand es gewählt hat.
 
-Auf der Session-scoped Route antworten: Sie wird an die Runtime geleitet, der die
-Session gehört, also funktioniert sie unabhängig von der Workspace-Konfiguration.
+Antworte auf der Session-scoped Route: Sie erreicht den owning Workspace, wann immer
+genau eine aktive Runtime die Session besitzt, und fällt niemals auf die primäre
+Bridge zurück. Ein nicht vertrauenswürdiger Nicht-Primär-Owner gibt `403 untrusted_workspace` zurück;
+die primäre Runtime ist von diesem Trust-Check ausgenommen, ein nicht vertrauenswürdiger Primär-Owner
+kann also die Stimme akzeptieren. Ein nicht aufgelöster Owner geht fail-closed statt auf
+der falschen Runtime abzustimmen — `404 session_not_found`, `500 ambiguous_session_owner` oder
+`503 workspace_runtime_unavailable` mit `Retry-After: 1` (retry; die Stimme wurde
+nicht aufgezeichnet). Kopiere `data.requestId` aus dem `permission_request`-Event und
+setze sie vor der Abstimmung:
 
 ```bash
-curl -sX POST http://daemon:4170/session/$SID/permission/$REQUEST_ID \
+export REQUEST_ID='<data.requestId>'
+curl -sX POST "$DAEMON_URL/session/$SID/permission/$REQUEST_ID" \
   -H @<(printf 'Authorization: Bearer %s\n' "$QWEN_SERVER_TOKEN") -H 'Content-Type: application/json' \
   -d '{"outcome":{"outcome":"selected","optionId":"proceed_once"}}'
 ```

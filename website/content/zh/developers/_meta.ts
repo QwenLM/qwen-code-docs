@@ -21,6 +21,7 @@ export default {
   'channel-plugins': 'Channel 插件指南',
   tools: '工具',
   'rest-api-integration': 'REST API 集成指南',
+  'daemon-rest-api-reference': 'Daemon REST API 参考',
   'qwen-serve-protocol': 'qwen serve HTTP 协议',
   daemon: '守护进程模式（开发者深入解析）',
   'daemon-client-adapters': '守护进程客户端适配器',

@@ -1,6 +1,6 @@
-# Erste Schritte mit Qwen Code Erweiterungen
+# Erste Schritte mit Qwen Code-Erweiterungen
 
-Diese Anleitung führt Sie durch die Erstellung Ihrer ersten Qwen Code Erweiterung. Sie lernen, wie Sie eine neue Erweiterung einrichten, ein benutzerdefiniertes Tool über einen MCP-Server hinzufügen, einen benutzerdefinierten Befehl erstellen und dem Modell mit einer `QWEN.md`-Datei Kontext bereitstellen.
+Diese Anleitung führt Sie durch die Erstellung Ihrer ersten Qwen Code-Erweiterung. Sie lernen, wie Sie eine neue Erweiterung einrichten, ein benutzerdefiniertes Tool über einen MCP-Server hinzufügen, einen benutzerdefinierten Befehl erstellen und dem Modell mit einer `QWEN.md`-Datei Kontext bereitstellen.
 
 ## Voraussetzungen
 
@@ -163,7 +163,7 @@ Benutzerdefinierte Befehle bieten eine Möglichkeit, Abkürzungen für komplexe 
 
     Dieser Befehl (`/fs:grep-code`) nimmt ein Argument entgegen, führt den Shell-Befehl `grep` damit aus und leitet die Ergebnisse zur Zusammenfassung in einen Prompt.
 
-> **Note:** Befehle verwenden das Markdown-Format mit optionalem YAML-Frontmatter. Das TOML-Format ist veraltet, wird aber aus Gründen der Abwärtskompatibilität weiterhin unterstützt.
+> **Hinweis:** Befehle verwenden das Markdown-Format mit optionalem YAML-Frontmatter. Das TOML-Format ist veraltet, wird aber aus Gründen der Abwärtskompatibilität weiterhin unterstützt.
 
 Nach dem Speichern der Datei starten Sie Qwen Code neu. Sie können nun `/fs:grep-code "some pattern"` ausführen, um Ihren neuen Befehl zu verwenden.
 
@@ -248,6 +248,8 @@ Subagents sind spezialisierte KI-Assistenten für bestimmte Aufgaben.
 
 Nach einem Neustart von Qwen Code sind Ihre benutzerdefinierten Skills über `/skills` und Subagents über `/agents manage` verfügbar.
 
+Ein Erweiterungs-Skill wird unter dem Namen seines Owners registriert: Der obige Skill wird zu `my-first-extension:code-analyzer`, Sie führen ihn also als `/my-first-extension:code-analyzer` aus. `skills.disabled` kann ihn unter beiden Namen blockieren – sowohl unter dem Owner-präfixierten als auch unter dem von Ihnen geschriebenen einfachen `code-analyzer`; `skills.enabled` nimmt ihn nur unter dem präfixierten Namen wieder auf. Siehe [Extension Skills](../features/skills.md#extension-skills).
+
 ## Schritt 6: Eine benutzerdefinierte `QWEN.md` hinzufügen
 
 Sie können dem Modell persistenten Kontext bereitstellen, indem Sie eine `QWEN.md`-Datei zu Ihrer Erweiterung hinzufügen. Dies ist nützlich, um dem Modell Anweisungen zum Verhalten oder Informationen über die Tools Ihrer Erweiterung zu geben. Beachten Sie, dass dies bei Erweiterungen, die Befehle und Prompts bereitstellen, nicht immer erforderlich ist.
@@ -283,11 +285,11 @@ Starten Sie die CLI erneut. Das Modell hat nun in jeder Sitzung, in der die Erwe
 
 Sobald Sie mit Ihrer Erweiterung zufrieden sind, können Sie sie mit anderen teilen. Die beiden wichtigsten Methoden zur Veröffentlichung von Erweiterungen sind über ein Git-Repository oder über GitHub Releases. Die Verwendung eines öffentlichen Git-Repositorys ist die einfachste Methode.
 
-Eine detaillierte Anleitung zu beiden Methoden finden Sie im [Leitfaden zur Veröffentlichung von Erweiterungen](extension-releasing.md).
+Eine detaillierte Anleitung zu beiden Methoden finden Sie im [Leitfaden zur Veröffentlichung von Erweiterungen](./extension-releasing.md).
 
 ## Fazit
 
-Sie haben erfolgreich eine Qwen Code Erweiterung erstellt! Sie haben gelernt, wie man:
+Sie haben erfolgreich eine Qwen Code-Erweiterung erstellt! Sie haben gelernt, wie man:
 
 - Eine neue Erweiterung aus einer Vorlage erstellt
 - Benutzerdefinierte Tools mit einem MCP-Server hinzufügt

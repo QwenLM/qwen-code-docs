@@ -1,4 +1,4 @@
-# Agent Skill
+# Agent Skills
 
 > Qwen Code의 기능을 확장하는 Skill을 생성, 관리, 공유하세요.
 
@@ -25,7 +25,9 @@ Skill을 명시적으로 호출하려면 Skill 이름을 슬래시 명령어로 
 
 `/`를 입력하기 시작하면 자동 완성으로 사용 가능한 Skill과 설명을 탐색할 수 있습니다. `/skills` 명령어는 Skill 패널을 열어 Skill을 탐색, 검색, 토글, 대화식으로 실행할 수 있습니다.
 
-> **참고:** 이전에 `/skills <skill-name>`으로 Skill을 실행했다면, 해당 구문은 이제 Skill 패널을 열고 trailing 인수를 무시합니다. Skill을 직접 실행하려면 `/<skill-name>`을 사용하세요.
+`<skill-name>`은 항상 Skill의 등록 이름입니다. 설치된 확장의 Skill은 해당 이름에 소유자가 포함됩니다 — `pdf`가 아닌 `rust:pdf` — 따라서 `/rust:pdf`를 입력합니다. [확장 Skill의 이름 지정 방식](#how-extension-skills-are-named)을 참조하세요.
+
+> **참고:** 이전에 `/skills <skill-name>`으로 Skill을 실행했다면, 해당 구문은 이제 Skill 패널을 열고 뒤따르는 인수를 무시합니다. Skill을 직접 실행하려면 `/<skill-name>`을 사용하세요.
 
 ### 이점
 
@@ -126,7 +128,7 @@ Show concrete examples of using this Skill.
 
 Qwen Code는 현재 다음을 검증합니다:
 
-- `name`은 `/^[\p{L}\p{N}_:.-]+$/u`와 일치하는 비어 있지 않은 문자열 — 유니코드 문자와 숫자(CJK / 키릴 / 악센트 Latin 모두 가능) 그리고 `_`, `:`, `.`, `-`. 공백, 슬래시, 대괄호 및 기타 구조적으로 안전하지 않은 문자는 파싱 시 거부됩니다.
+- `name`은 `/^[\p{L}\p{N}_:.-]+$/u`와 일치하는 비어 있지 않은 문자열 — 유니코드 문자와 숫자(CJK / 키릴 / 악센트 Latin 모두 가능) 그리고 `_`, `:`, `.`, `-`. 공백, 슬래시, 대괄호 및 기타 구조적으로 안전하지 않은 문자는 파싱 시 거부됩니다. 허용된 `:`는 확장에 의해 등록된 Skill(`rust:pdf`)과 콜론을 직접 선택한 작성자(`rust` 확장 내에 작성된 `rust:chat`)가 하나의 패턴을 공유할 수 있게 하므로, 등록 이름의 콜론이 소유자의 증거는 아닙니다 — [확장 Skill의 이름 지정 방식](#how-extension-skills-are-named)을 참조하세요.
 - `description`은 비어 있지 않은 문자열
 - `priority`는 선택 사항. 존재하면 유한한 숫자여야 합니다. 높은 값은 `/skills` 목록에서만 먼저 정렬됩니다 — 슬래시 명령어 자동 완성(`/` 입력)과 `/help` 사용자 정의 명령어 보기는 알파벳 순서를 유지하므로, 우선순위가 높은 Skill이 내장 명령어를 재정렬하지 않습니다. 생략되거나 잘못된 값은 설정되지 않은 것으로 처리되며 `0`과 동일하게 동작합니다.
 
@@ -218,7 +220,7 @@ exit 0
 - 등록은 멱등합니다: Skill을 다시 호출해도 중복 hook이 쌓이지 않습니다.
 - 도구 이벤트에 항상 명시적인 `matcher:`를 지정하세요. 생략되면 빈 패턴으로 저장되어 `^`로 컴파일되며 어떤 도구 이름과도 매칭되지 않습니다 — hook은 등록되지만 절대 실행되지 않으며 이를 알리는 메시지도 없습니다. 모든 도구를 의미한다면 `*`를 사용하세요.
 - `command:`는 플랫폼 셸을 통해 실행됩니다: macOS와 Linux에서는 `bash`, Windows에서는 Git Bash가 감지되면(`MSYSTEM`/`TERM`), 그렇지 않으면 `cmd.exe` 또는 PowerShell. 위 예시는 POSIX 셸입니다 — `cmd.exe`에서는 `$QWEN_SKILL_ROOT`가 확장되지 않고 `.sh` 스크립트가 실행 가능하지 않으므로 게이트가 개방적으로 실패합니다. hook은 `shell: bash`를 설정하여 bash를 강제할 수 있지만 `PATH`의 `bash`로 해석되므로, Git Bash 외부의 Windows에서는 실제로 사용 중인 셸에 맞게 게이트를 작성하세요.
-- hook을 비활성화하는 세션은 어느 것도 등록하지 않습니다 — `disableAllHooks`, 안전 모드, ACP 클라이언트의 `skipHooks`. 이러한 세션에서도 Skill의 본문과 `allowedTools`는 여전히 적용되지만 게이트는 적용되지 않으므로, hook 강제에 의존하는 규칙은 여기서 강제되지 않습니다. Bare 모드는 더 나아가서: 어떤 Skill도 발견되지 않으므로 본문도 `allowedTools`도 없습니다.
+- hook을 비활성화하는 세션은 어느 것도 등록하지 않습니다 — `disableAllHooks`, 안전 모드, ACP 클라이언트의 `skipHooks`. 이러한 세션에서도 Skill의 본문과 `allowedTools`는 여전히 적용되지만 게이트는 적용되지 않으므로, hook 강제에 의존하는 규칙은 여기서 강제되지 않습니다. 베어 모드는 더 나아가서: 어떤 Skill도 발견되지 않으므로 본문도 `allowedTools`도 없습니다.
 - **프로젝트** Skill의 hook은 저장소에서 제공한 명령어를 실행하므로 신뢰되는 폴더에서만 등록되며, hook이 실행될 때마다 그리고 권한이 결정될 때마다 신뢰가 다시 읽힙니다. IDE 컴패니언이 연결되어 있으면 이 값은 실시간입니다: 신뢰를 취소하면 다음 도구 호출에서 이미 등록된 게이트가 침묵화되고 — Skill의 `allowedTools`도 중단됩니다 — 재시작 없이. IDE 연결이 없으면 CLI가 시작될 때 값이 고정되므로 CLI의 신뢰 대화상자를 통한 변경은 재시작 시 적용됩니다. 신뢰 부여는 소급 등록하지 않습니다: Skill을 다시 호출하세요.
 - `hooks:`는 프로젝트, 사용자 및 번들 Skill에서 읽힙니다. 확장이 제공하는 Skill은 지원하지 않습니다; 대신 확장 자체의 매니페스트 수준 hook을 사용하세요.
 - 전체 이벤트 목록, matcher 구문 및 출력 형식은 [Hooks](./hooks.md)를 참조하세요.
@@ -266,6 +268,33 @@ Qwen Code는 다음에서 Skill을 발견합니다:
 확장 skill은 확장이 설치되고 활성화되면 자동으로 발견되고 로드됩니다.
 
 어떤 확장이 skill을 제공하는지 확인하려면 확장의 `qwen-extension.json` 파일에서 `skills` 필드를 확인하세요.
+
+#### 확장 Skill의 이름 지정 방식
+
+Qwen Code는 설치된 확장의 Skill을 `<extensionName>:<name>`으로 등록합니다. 여기서 `<extensionName>`은 해당 확장의 `qwen-extension.json`의 `name` 필드이고 `<name>`은 Skill 자체의 프론트매터 `name`입니다. `rust` 확장의 `pdf`라는 Skill은 `rust:pdf`로 등록됩니다.
+
+이 접두사는 Skill이 로드되는 동안 추가되며 파일에 기록되지 않습니다: `SKILL.md`는 작성한 이름을 유지하며, Qwen Code는 등록 이름을 분리하여 작성한 이름을 복구하지 않습니다(작성자가 `rust` 내에 `rust:chat`을 합법적으로 작성할 수 있음). 확장 Skill만 접두사가 추가됩니다 — 개인, 프로젝트 및 번들 Skill은 작성한 단일 철자를 유지합니다.
+
+Skill을 참조하는 모든 곳에서 등록 이름을 사용하세요:
+
+- `/rust:pdf`로 호출합니다. 단순 `/pdf`는 별칭이 아닙니다 — 확장의 Skill은 등록 이름으로만 접근 가능합니다.
+- 모델은 `Skill { skill: "rust:pdf" }`로 호출하며, `<available_skills>`에서 읽는 동일한 이름입니다.
+- 각각 `pdf`라는 Skill을 제공하는 두 확장은 하나가 승리하고 하나가 사라지는 것이 아니라 두 Skill(`rust:pdf`와 `docs-suite:pdf`)을 제공합니다.
+
+Skill을 읽고 선택하는 표면에서도 소유자를 이름으로 표시합니다: Skill 패널(설정이 잠근 행 포함), 대화형 UI 외부에서 단순 `/skills`가 인쇄하는 읽기 전용 목록(ACP 및 기타 비대화형 모드 — 대화형으로 명령어는 패널을 엽니다), 그리고 `[Extension]` 대신 `[Extension: Rust]`를 읽는 `/` 명령어 팔레트의 배지. 이러한 레이블은 확장의 `displayName`을 선호하고 선언하지 않으면 `name`으로 폴백합니다.
+
+#### Extension Skill과 `skills.*` 설정
+
+`skills.disabled`, `skills.defaultDisabled`, 및 `slashCommands.disabled`는 확장 Skill을 **두** 철자 모두에서 매칭하므로, 접두사가 존재하기 전에 작성한 `skills.disabled: ["pdf"]`도 `rust:pdf`를 숨깁니다. 제한은 기능만 제거할 수 있으므로, Skill 이름 변경은 제한을 해제하지 않습니다.
+
+`skills.enabled`가 예외이며 기존 설정 파일의 유일한 가시적 변경입니다: 기능을 부여하므로 등록 이름만 매칭합니다. `skills.enabled: ["pdf"]`는 더 이상 확장의 `pdf`를 단독으로 옵트인하지 않습니다 — `skills.enabled: ["rust:pdf"]`를 작성하세요. 계속 작동하는 유일한 단순 쌍은 동일한 철자로 `skills.defaultDisabled`에 있는 접두사 이전 옵트인입니다: 취소는 항목 자체를 비교하므로 `defaultDisabled: ["pdf"]` + `enabled: ["pdf"]`는 항목을 취소합니다 — 그런 다음 skill은 이 워크스페이스에 저장된 활성화에 따라 활성화되고, 그렇지 않으면 확장 자체의 기본값이 됩니다; 기본값이 꺼진 skill의 경우 `skills.enabled`에 `rust:pdf`를 작성하세요.
+
+Skill 패널에서 Skill을 토글하면 등록 이름이 기록되고 해당 항목만 제거되므로 `rust:pdf`를 활성화하면 레거시 `disabled: ["pdf"]`가 그대로 유지됩니다. 해당 레거시 항목이 더 높은 범위 — 시스템 기본값, 사용자 또는 시스템 설정 — 에 있으면 패널이 그렇게 말하고 범위를 편집하도록 이름으로 지정하여 토글을 제공하는 대신 행을 잠급니다. 이 워크스페이스 자체 설정의 레거시 항목도 같은 방식으로 행을 잠그고, 항목과 해당 범위(`skills.disabled 'pdf' (Workspace)` 또는 `skills.defaultDisabled 'pdf' (Workspace)`)를 이름으로 지정하여 어느 파일의 어느 목록을 편집해야 하는지 알 수 있습니다.
+
+알아둘 만한 두 가지 제한:
+
+- 교차 수준 우선순위는 변경되지 않았으며 여전히 등록 이름을 정확히 비교합니다(`project` > `user` > `extension` > `bundled`), 따라서 `rust:pdf`로 작성한 개인 또는 프로젝트 Skill은 확장의 `pdf`보다 우선합니다. 개인 또는 프로젝트 Skill과 번들 Skill 사이의 단순 이름 충돌도 마찬가지로 접두사가 아닌 해당 우선순위에 의해 해결됩니다. 사용자 정의 명령어와 충돌하는 Skill은 그렇지 않습니다 — 슬래시 표면에서 마지막 로더가 승리하며, 사용자 정의 명령어가 Skill 후에 로드되므로 `/pdf`는 사용자 정의 명령어를 실행하는 반면 Skill은 모델에게 계속 사용 가능합니다.
+- Skill 이름은 파일 이름으로도 사용됩니다: Skill이 호출 인수를 읽는 파일은 `[A-Za-z0-9._-]` 외부의 모든 문자를 `_`로 대체하므로 `rust:pdf`로 등록된 확장 Skill과 `rust_pdf`로 작성된 개인 또는 프로젝트 Skill은 모두 `qwen-skill-args-rust_pdf.txt`로 해석되고 하나의 인수 파일을 공유합니다. (접두사는 거의 자체적으로 충돌하지 않습니다 — `rust:rust_pdf`는 `rust_rust_pdf`가 됩니다 — 하지만 확장 이름에 `_`가 포함될 수 있으므로 `rust_pdf:x`와 `rust:pdf_x`는 동일한 파일 이름으로 접힙니다.) 비ASCII 문자도 같은 방식으로 접히므로 작성한 `café`와 작성한 `caf_`는 모두 `caf_`에 도달합니다 — 접두사 이전에 존재했던 제한으로, 접두사가 이를 더 쉽게 만듭니다. `:`가 `_`로 변환된 다른 이름인 Skill 이름을 피하세요.
 
 사용 가능한 Skill을 보려면 Qwen Code에게 직접 물어보세요:
 
@@ -385,7 +414,7 @@ code ~/.qwen/skills/my-skill/SKILL.md
 code .qwen/skills/my-skill/SKILL.md
 ```
 
-일반 세션 중에 Qwen Code는 개인 및 프로젝트 Skill 디렉토리를 감시합니다. Skill을 추가, 편집, 제거하면 짧은 지연 후 Skill 목록과 호출 상태가 자동으로 새로 고쳐집니다. Bare 모드는 이 감시자를 시작하지 않으므로 해당 모드에서 Skill 변경 사항을 로드하려면 Qwen Code를 재시작하세요.
+일반 세션 중에 Qwen Code는 개인 및 프로젝트 Skill 디렉토리를 감시합니다. Skill을 추가, 편집, 제거하면 짧은 지연 후 Skill 목록과 호출 상태가 자동으로 새로 고쳐집니다. 베어 모드는 이 감시자를 시작하지 않으므로 해당 모드에서 Skill 변경 사항을 로드하려면 Qwen Code를 재시작하세요.
 
 ## Skill 제거
 

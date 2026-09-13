@@ -65,7 +65,7 @@ Qwen Code의 OpenTelemetry를 활성화하고 설정하는 방법을 알아봅�
 | `otlpLogsEndpoint`                | `QWEN_TELEMETRY_OTLP_LOGS_ENDPOINT`                  | -                                                        | 로그에 대한 시그널별 엔드포인트 재정의(HTTP만)                                                                                      | URL 문자열        | -                       |
 | `otlpMetricsEndpoint`             | `QWEN_TELEMETRY_OTLP_METRICS_ENDPOINT`               | -                                                        | 메트릭에 대한 시그널별 엔드포인트 재정의(HTTP만)                                                                                   | URL 문자열        | -                       |
 | `outfile`                         | `QWEN_TELEMETRY_OUTFILE`                             | `--telemetry-outfile <path>`                             | telemetry를 파일로 저장(OTLP 내보내기 재정의)                                                                                         | 파일 경로         | -                       |
-| `logPrompts`                      | `QWEN_TELEMETRY_LOG_PROMPTS`                         | `--telemetry-log-prompts` / `--no-telemetry-log-prompts` | telemetry 로그에 프롬프트 포함                                                                                                      | `true`/`false`    | `true`                  |
+| `logPrompts`                      | `QWEN_TELEMETRY_LOG_PROMPTS`                         | `--telemetry-log-prompts` / `--no-telemetry-log-prompts` | telemetry 로그에 사용자 프롬프트 내용과 API 요청/응답 텍스트 포함                                                                                                      | `true`/`false`    | `true`                  |
 | `userId`                          | `QWEN_TELEMETRY_USER_ID`                             | -                                                        | ARMS 확장 `gen_ai.user.id`로 GenAI 스팬에 기록되는 안정적 최종 사용자 식별자; 가명 값 권장                  | 문자열            | -                       |
 | `includeSensitiveSpanAttributes`  | `QWEN_TELEMETRY_INCLUDE_SENSITIVE_SPAN_ATTRIBUTES`   | -                                                        | 표준 GenAI 메시지, 지시사항, 도구 정의, 도구 인수 및 성공한 도구 결과를 네이티브 스팬 속성으로 포함 | `true`/`false`    | `false`                 |
 | `sensitiveSpanAttributeMaxLength` | `QWEN_TELEMETRY_SENSITIVE_SPAN_ATTRIBUTE_MAX_LENGTH` | -                                                        | 각 민감한 네이티브 스팬 속성의 최대 압축 JSON 문자열 길이. 백엔드가 큰 속성을 거부하면 낮게 설정.       | `1..104857600`    | `1048576`               |
@@ -87,11 +87,11 @@ Qwen Code의 OpenTelemetry를 활성화하고 설정하는 방법을 알아봅�
    - 메인 에이전트 및 LLM 출력 메시지(`gen_ai.output.messages`)
    - 최종 실행된 도구 인수(`gen_ai.tool.call.arguments`)
    - 성공한 도구 결과(`gen_ai.tool.call.result`)
-   - 인터랙션 스팬은 GenAI 추론 스팬이 아니므로 계속 `new_context`를 사용합니다.
+   - 인터랙션 스팬은 호환성 `new_context` 속성을 유지합니다.
 
    메인 에이전트 입력은 컨텍스트 확장 전 하나의 원본 사용자 텍스트 프로젝션이며, 메인 에이전트 출력은 모든 도구 및 계속 작업이 정리된 후 하나의 최종 사용자 표시 답변입니다. LLM 값은 여전히 프로바이더 최종 SDK 요청 객체와 원본 프로바이더 응답에서 가져오므로, 입력에는 기록, 확장된 파일, 시스템 지시사항 및 도구 결과가 포함될 수 있고 출력에는 모든 프로바이더 후보가 포함될 수 있습니다. 도구 값은 최종 호출 매개변수와 성공한 모델 대면 결과에서 가져옵니다. 각 표준 GenAI 값은 압축 JSON이며 완전하고 스키마 유효해야 합니다. 유효하지 않거나 순환적이거나 `sensitiveSpanAttributeMaxLength`를 초과하는 값은 전체가 생략됩니다. JSON은 절대 잘리지 않으며 미리보기, 해시 또는 잘림 메타데이터가 배출되지 않습니다. 인터랙션별 `new_context` 속성은 기존 잘림 동작을 유지합니다. 기본 최대값은 속성당 1 MiB(`1048576`)이며 허용 범위는 `1..104857600`(100 MiB)입니다. 제한은 UTF-8 바이트가 아닌 JavaScript 문자열 길이로 측정됩니다. 따라서 비 ASCII 콘텐츠는 OTLP 내보내기 후에 더 많은 바이트를 차지할 수 있습니다.
 
-2. **로그-스팬 브리지 스팬**(로그 엔드포인트 없이 HTTP trace가 내보내기될 때 사용)은 기존 `prompt`, `function_args` 및 `response_text` 필드를 유지합니다(삭제되지 않음).
+2. **로그-스팬 브리지 스팬**(HTTP trace가 로그 엔드포인트 없이 내보내기될 때 사용)은 `function_args`, `error`, `error.message` 및 `error_message`를 유지하며, `logPrompts`도 활성화된 경우 추가로 `prompt`, `request_text` 및 `response_text`를 유지합니다(이러한 속성을 삭제하는 대신).
 
 ⚠️ **보안 경고:** 이 플래그를 활성화하면 전체 대화 기록, `read_file`이 읽은 파일 내용, 셸 명령어와 그 출력(환경 변수나 인수의 비밀 포함), 모델 응답이 구성된 OTLP 백엔드로 스트리밍됩니다. 백엔드를 특권 데이터 싱크로 취급하세요. 플래그의 기본값은 `false`입니다.
 
@@ -431,10 +431,10 @@ Alibaba Cloud Managed Service for OpenTelemetry에서 Qwen Code telemetry를 보
 #### API 이벤트
 
 - `qwen-code.api_request`: LLM API로의 나가는 요청.
-  - **속성**: `model`(string), `prompt_id`(string), `request_text`(string, 선택), `subagent_name`(string, 선택)
+  - **속성**: `model`(string), `prompt_id`(string), `request_text`(string, 선택 — `log_prompts_enabled`가 true일 때만 요청 내용을 포함; 로그-스팬 브리지 스팬은 추가로 `includeSensitiveSpanAttributes`를 요구함; 불투명한 `thoughtSignature` 프로바이더 페이로드가 포함되며, 정책 결정은 #11682에서 추적됨), `subagent_name`(string, 선택)
 
 - `qwen-code.api_response`: LLM API로부터 수신한 응답.
-  - **속성**: `response_id`(string), `model`(string), `status_code`(int/string, 선택), `duration_ms`(int), `input_token_count`(int), `output_token_count`(int), `cached_content_token_count`(int), `thoughts_token_count`(int), `total_token_count`(int), `prompt_id`(string), `auth_type`(string, 선택), `response_text`(string, 선택), `subagent_name`(string, 선택)
+  - **속성**: `response_id`(string), `model`(string), `status_code`(int/string, 선택), `duration_ms`(int), `input_token_count`(int), `output_token_count`(int), `cached_content_token_count`(int), `thoughts_token_count`(int), `total_token_count`(int), `prompt_id`(string), `auth_type`(string, 선택), `response_text`(string, 선택 — `log_prompts_enabled`가 true일 때만 가시 응답 내용을 포함; 로그-스팬 브리지 스팬은 추가로 `includeSensitiveSpanAttributes`를 요구함; 내부 prompt ID나 가시 텍스트가 없는 응답에 대해서는 내용을 전달하지 않음), `subagent_name`(string, 선택)
 
 - `qwen-code.api_error`: API 요청 실패.
   - **속성**: `model`(string), `prompt_id`(string), `duration_ms`(int), `error_message`(string), `response_id`(string, 선택), `auth_type`(string, 선택), `error_type`(string, 선택), `status_code`(int/string, 선택), `subagent_name`(string, 선택)
@@ -771,25 +771,25 @@ Qwen Code는 이 ARMS별 리소스 속성이나 `gen_ai.span.kind`를 주입하�
 
 다음 메트릭은 정의되었지만 **아직 프로덕션에서 활성화되지 않았습니다**. 전용 성능 모니터링 구성 플래그 뒤에서 활성화될 예정입니다.
 
-- `qwen-code.startup.duration`(Histogram, ms): 단계별 CLI 시작 시간.
-  - **속성**: `phase`(string)
+- `qwen-code.startup.duration` (Histogram, ms): 단계별 CLI 시작 시간.
+  - **속성**: `phase` (string)
 
-- `qwen-code.tool.queue.depth`(Histogram, count): 실행 큐의 도구 수.
+- `qwen-code.tool.queue.depth` (Histogram, count): 실행 큐의 도구 수.
 
-- `qwen-code.tool.execution.breakdown`(Histogram, ms): 단계별 도구 실행 시간.
-  - **속성**: `function_name`, `phase`("validation"/"preparation"/"execution"/"result_processing")
+- `qwen-code.tool.execution.breakdown` (Histogram, ms): 단계별 도구 실행 시간.
+  - **속성**: `function_name`, `phase` ("validation"/"preparation"/"execution"/"result_processing")
 
-- `qwen-code.token.efficiency`(Histogram, ratio): 토큰 효율 메트릭.
-  - **속성**: `model`, `metric`, `context`(선택)
+- `qwen-code.token.efficiency` (Histogram, ratio): 토큰 효율 메트릭.
+  - **속성**: `model`, `metric`, `context` (선택)
 
-- `qwen-code.performance.score`(Histogram, score): 복합 성능 점수(0-100).
-  - **속성**: `category`, `baseline`(선택)
+- `qwen-code.performance.score` (Histogram, score): 복합 성능 점수 (0-100).
+  - **속성**: `category`, `baseline` (선택)
 
-- `qwen-code.performance.regression`(Counter, Int): 회귀 감지 이벤트.
-  - **속성**: `metric`, `severity`("low"/"medium"/"high"), `current_value`, `baseline_value`
+- `qwen-code.performance.regression` (Counter, Int): 회귀 감지 이벤트.
+  - **속성**: `metric`, `severity` ("low"/"medium"/"high"), `current_value`, `baseline_value`
 
-- `qwen-code.performance.regression.percentage_change`(Histogram, percent): 기준선 대비 백분율 변화.
+- `qwen-code.performance.regression.percentage_change` (Histogram, percent): 기준선 대비 백분율 변화.
   - **속성**: `metric`, `severity`, `current_value`, `baseline_value`
 
-- `qwen-code.performance.baseline.comparison`(Histogram, percent): 기준선 대비 성능.
+- `qwen-code.performance.baseline.comparison` (Histogram, percent): 기준선 대비 성능.
   - **속성**: `metric`, `category`, `current_value`, `baseline_value`

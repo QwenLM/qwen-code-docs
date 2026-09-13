@@ -21,6 +21,7 @@ export default {
   'channel-plugins': 'Leitfaden für Channel-Plugins',
   tools: 'Tools',
   'rest-api-integration': 'Leitfaden zur REST-API-Integration',
+  'daemon-rest-api-reference': 'Daemon-REST-API-Referenz',
   'qwen-serve-protocol': 'qwen serve HTTP-Protokoll',
   daemon: 'Daemon-Modus (Deep Dive für Entwickler)',
   'daemon-client-adapters': 'Daemon-Client-Adapter',

@@ -30,7 +30,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `/delete`        | 删除之前的会话                                                | `/delete`                                                     |
 | `/branch`        | 将当前对话分叉到新会话中                         | `/branch`                                                     |
 | `/fork`          | 生成一个继承完整对话的后台代理                         | `/fork <directive>`                                           |
-| `/rewind`        | 将对话回退到上一轮                                   | `/rewind` 或 `/rollback`                                      |
+| `/rewind`        | 将对话回退到之前的某个轮次                             | `/rewind` 或 `/rollback`                                      |
 | `/export`        | 将会话历史导出到文件                                           | `/export html`, `/export md`, `/export json`, `/export jsonl` |
 | `/rename`        | 重命名或标记当前会话                                        | `/rename My Feature` 或 `/tag`                                |
 
@@ -64,8 +64,8 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `/directory`         | 管理多目录支持工作区                                                                                                                                          | `/dir add ./src,./tests`, `/dir show`                                             |
 | `/cd`                | 将会话移动到新的工作目录                                                                                                                                      | `/cd ../other-project`                                                            |
 | `/editor`            | 打开对话框以选择支持的编辑器                                                                                                                                            | `/editor`                                                                         |
-| `/statusline`        | 打开交互式[状态栏](./status-line.md)预设对话框                                                                                                                    | `/statusline`                                                                     |
-| `/statusline <text>` | 通过代理生成命令模式[状态栏](./status-line.md)                                                                                                                 | `/statusline show model and git branch`                                           |
+| `/statusline`        | 打开交互式 [status line](./status-line.md) 预设对话框                                                                                                                 | `/statusline`                                                                     |
+| `/statusline <text>` | 通过代理生成命令模式 [status line](./status-line.md)                                                                                                                  | `/statusline show model and git branch`                                           |
 | `/terminal-setup`    | 配置终端多行输入快捷键                                                                                                                                | `/terminal-setup`                                                                 |
 
 ### 1.3 语言设置
@@ -310,9 +310,9 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 ```
 > /recap
 
-❯ 重构 loopDetectionService.ts 以解决由无界的 streamContentHistory 和
-  contentStats 引起的长会话 OOM 问题。下一步是实施选项 B（使用 FNV-1a
-  的 LRU 滑动窗口），等待确认。
+❯ Refactoring loopDetectionService.ts to address long-session OOM caused by
+  unbounded streamContentHistory and contentStats. The next step is to
+  implement option B (LRU sliding window with FNV-1a) pending confirmation.
 ```
 
 > [!tip]
@@ -348,7 +348,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 **示例：**
 
 ```
-┌ /diff · 轮次 3 "重构 auth 中间件" ──── 3 个文件 +45 -12 ──────────┐
+┌ /diff · Turn 3 "refactor the auth middleware" ──── 3 files +45 -12 ┐
 │                                                                     │
 │ ◀ Current · T3 · T2 · T1 ▶                                         │
 │                                                                     │
@@ -356,7 +356,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 │   src/utils/parser.test.ts                         +12 -2           │
 │   README.md                                        +3 -2            │
 │                                                                     │
-│ ←/→ 来源 · ↑/↓ 文件 · Enter 查看 · Esc 关闭                        │
+│ ←/→ source · ↑/↓ file · Enter view · Esc close                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -365,7 +365,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 在无头（`--prompt`）或非交互上下文中，`/diff` 会打印工作树与 HEAD 对比的纯文本摘要。不提供每个轮次的导航。
 
 ```
-3 个文件已更改，+45 / -12
+3 files changed, +45 / -12
   +30  -8  src/utils/parser.ts
   +12  -2  src/utils/parser.test.ts
    +3  -2  README.md

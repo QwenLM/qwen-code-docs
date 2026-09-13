@@ -1,6 +1,3 @@
----
-title: Getting Started with Extensions
----
 
 # Qwen Code 확장 시작하기
 
@@ -251,6 +248,8 @@ Skill은 AI가 관련 있을 때 자동으로 사용할 수 있는 모델 호출
     ```
 
 Qwen Code를 재시작한 후 사용자 정의 skill은 `/skills`를 통해, 서브에이전트는 `/agents manage`를 통해 사용할 수 있습니다.
+
+확장 skill은 소유자의 이름으로 등록됩니다: 위의 skill은 `my-first-extension:code-analyzer`가 되므로 `/my-first-extension:code-analyzer`로 실행합니다. `skills.disabled`는 해당 이름이나 작성한 일반 `code-analyzer` 이름 중 하나로 차단할 수 있습니다. `skills.enabled`는 접두사가 붙은 이름으로만 다시 옵트인합니다. [Extension Skills](../features/skills.md#extension-skills)를 참조하세요.
 
 ## 6단계: 사용자 정의 `QWEN.md` 추가
 

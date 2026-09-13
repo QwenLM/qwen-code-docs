@@ -51,11 +51,13 @@ Qwen Code は 4 種類のフック実行タイプをサポートしています�
 | `command`       | `string`                 | Yes      | 実行するコマンド                          |
 | `name`          | `string`                 | No       | フック名（ログ用）                     |
 | `description`   | `string`                 | No       | フックの説明                            |
-| `timeout`       | `number`                 | No       | タイムアウト（ミリ秒）、デフォルト 60000      |
+| `timeout`       | `number`                 | No       | タイムアウト（秒）、デフォルト 60              |
 | `async`         | `boolean`                | No       | バックグラウンドで非同期に実行するかどうか |
 | `env`           | `Record<string, string>` | No       | 環境変数                       |
 | `shell`         | `"bash" \| "powershell"` | No       | 使用するシェル                                |
 | `statusMessage` | `string`                 | No       | 実行中に表示されるステータスメッセージ   |
+
+`timeout` は command、HTTP、prompt フックでは秒単位です。SDK で登録された function フックはミリ秒単位のままです。Command フックのタイムアウトは以前ミリ秒単位で記述されていたため、command フックでは `1000` 以上の値は今でもミリ秒として読み込まれ、既存の設定は引き続き動作します。移行するには、`timeout` が `1000` 以上の command フックを探し、値を秒単位で書き直してください（例: `10000` は `10` に）。Command フックに 1000 秒以上のタイムアウトを設定するには、引き続きミリ秒単位で記述してください（例: 30 分の場合は `1800000`）。`"30s"` のように正の数値でない command フックの `timeout` は無視され、60 秒のデフォルトが適用されます。デバッグログを有効にすると（`QWEN_DEBUG_LOG_FILE=1`）、ミリ秒単位または無視された `timeout` を持つ各 command フックは、そのセッションのデバッグログにセッションごとに 1 回名前が記録されます。
 
 **例:**
 
@@ -70,7 +72,7 @@ Qwen Code は 4 種類のフック実行タイプをサポートしています�
             "type": "command",
             "command": "$QWEN_PROJECT_DIR/.qwen/hooks/security-check.sh",
             "name": "security-check",
-            "timeout": 10000
+            "timeout": 10
           }
         ]
       }
@@ -336,7 +338,7 @@ LLM は以下の構造を持つ JSON を返す必要があります。
 | `PreCompact`         | 会話の圧縮前            | トリガー（`manual`、`auto`）                                |
 | `Notification`       | 通知の送信時               | タイプ（`permission_prompt`、`idle_prompt`、`auth_success`） |
 | `PermissionRequest`  | 権限ダイアログの表示時           | ツール ID                                                  |
-| `PermissionDenied`   | ツール権限が拒否された時         | ツール ID                                                  |
+| `PermissionDenied`   | AUTO モードの分類がツール呼び出しを拒否したとき | ツール ID                                                  |
 | `TodoCreated`        | 新しい todo アイテムが作成されたとき           | なし（常に発生）                                       |
 | `TodoCompleted`      | todo アイテムが完了としてマークされたとき   | なし（常に発生）                                       |
 ### マッチャーパターン
@@ -434,11 +436,14 @@ Qwen は、フックプロセス、エンドポイント、コールバック、
   "transcript_path": "string",
   "cwd": "string",
   "hook_event_name": "string",
-  "timestamp": "string"
+  "timestamp": "string",
+  "permission_mode": "default | plan | auto_edit | auto | yolo",
+  "agent_id": "string (only when the event fires inside a subagent)",
+  "prompt_id": "string (when the event belongs to a model turn)"
 }
 ```
 
-イベント固有のフィールドは hook タイプに基づいて追加されます。サブエージェント内で実行されている場合、`agent_id` と `agent_type` が追加で含まれます。
+イベント固有のフィールドは hook タイプに基づいて追加されます。`permission_mode` は、イベントが適用されたモードを報告する場合（ツールやサブエージェントのイベントなど）を除き、セッションの承認モードです。`agent_id` はイベントがサブエージェント内で発生した場合にのみ存在します。`agent_type` は `SessionStart`、`SubagentStart`、`SubagentStop` で報告されます。
 
 フック入力は前方拡張可能な JSON 契約です。既存のイベントに新しいオプションフィールドが追加される可能性があります。コンシューマーは未知のフィールドを無視してください。未知のプロパティを拒否する厳密なデコーダーは、Qwen Code をアップグレードする前に、新しいオプションフィールドごとに明示的に許可するように更新する必要があります。セキュリティに敏感なフックでは、デコーダーの失敗が fail-open または fail-closed の動作を変更する可能性があるため、管理者はロールアウト前にアップグレードされたペイロードをデプロイされたフックに対して検証する必要があります。
 
@@ -448,9 +453,9 @@ Hook の出力は、`stdout`（command）または HTTP レスポンスボディ
 
 **終了コードの動作（Command Hooks）:**
 
-| 終了コード | 動作                                                                              |
-| :-------- | :------------------------------------------------------------------------------------ |
-| `0`       | 成功。`stdout` の JSON をパースして動作を制御します。                                  |
+| 終了コード | 動作                                                                                                                                                                                                                                                                                                                                                                       |
+| :-------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `0`       | 成功。`stdout` の JSON オブジェクトが動作を制御します。`42` などのベア JSON 値を含むその他の `stdout` はプレーンテキストです。`SessionStart`、`UserPromptSubmit`、`UserPromptExpansion` ではモデルコンテキストに追加され、その他のイベントではシステムメッセージとして保持されます。JSON オブジェクトのように見えても解析できない出力は、モデルコンテキストに追加されません。 |
 | `2`       | **ブロッキングエラー**。`stdout` を無視し、`stderr` をエラーフィードバックとしてモデルに渡します。 |
 | その他     | 非ブロッキングエラー。`stderr` はデバッグモードでのみ表示され、実行は継続されます。           |
 
@@ -535,7 +540,8 @@ Hook の出力は 3 つのフィールドカテゴリをサポートしていま
   "tool_input": "object containing the tool's input parameters",
   "tool_response": "object containing the tool's response",
   "tool_use_id": "unique identifier for this tool use instance (internal format, e.g., toolu_xxx)",
-  "tool_call_id": "original API call ID from the LLM provider (e.g., call_xxx for OpenAI/Qwen) (optional)"
+  "tool_call_id": "original API call ID from the LLM provider (e.g., call_xxx for OpenAI/Qwen) (optional)",
+  "duration_ms": "ツール実行時間（ミリ秒）、承認時間を除く（オプション）"
 }
 ```
 
@@ -571,7 +577,8 @@ Hook の出力は 3 つのフィールドカテゴリをサポートしていま
   "tool_name": "name of the tool that failed",
   "tool_input": "object containing the tool's input parameters",
   "error": "error message describing the failure",
-  "is_interrupt": "boolean indicating if failure was due to user interruption (optional)"
+  "is_interrupt": "boolean indicating if failure was due to user interruption (optional)",
+  "duration_ms": "実行が開始されていた場合のツール実行時間（ミリ秒）（オプション）"
 }
 ```
 
@@ -592,24 +599,28 @@ Hook の出力は 3 つのフィールドカテゴリをサポートしていま
 
 #### UserPromptSubmit
 
-**目的**: サポートされたモデル呼び出しの前に実行され、現在のモデルバインドされたプロンプトの検証、ブロック、または拡張を行います。このイベントは現在 `UserQuery`、`ToolResult`、および `Hook` の送信をカバーし、`Retry`、`Steer`、`Cron`、`Notification`、および `Teammate` の送信はスキップされます。したがって継続パスで発生する可能性があり、`prompt` は生のユーザー入力であると想定してはなりません。
+**目的**: サポートされたモデル呼び出しの前に実行され、入力を検証、ブロック、または拡張します。コア/ヘッドレスパスでは、このイベントは現在 `UserQuery`、`ToolResult`、および `Hook` の送信をカバーし、`Retry`、`Steer`、`Cron`、`Notification`、および `Teammate` の送信はスキップされます。したがって継続パスで発生する可能性があり、`prompt` は生のユーザー入力であると想定してはなりません。ACP セッションパスには独自の呼び出しポリシーがあります：リトライと新規にディスパッチされたバックグラウンドタスクはレガシーフックを呼び出すことができますが、continue、復元された質問、およびランタイムゴールのターンは呼び出しません。
 
 **イベント固有のフィールド**:
 
 ```json
 {
-  "prompt": "current model-bound prompt for this hook invocation",
-  "submitted_prompt": "optional user text captured at a supported interactive TUI submission boundary"
+  "prompt": "この呼び出しのレガシープロンプト。セマンティクスは実行パスに依存します",
+  "submitted_prompt": "サポートされた送信境界でキャプチャされたオプションのユーザーテキスト"
 }
 ```
 
-`submitted_prompt` はオプションです。Qwen がサポートされたインタラクティブ TUI 送信から新しい `UserQuery` に出所を伝達できる場合にのみ存在します。サポートされていないプロデューサーや、同じターンの steering、ツール結果の継続、リトライ、cron、通知、チメイトトラフィックなどのマシン駆動パスでは省略されます。ACP、ヘッドレス、`serve`、SDK、およびリモート入力パスでは、このバージョンでは生成されません。
+`submitted_prompt` はオプションです。サポートされたインタラクティブ TUI 送信と、最初のターンのヘッドレス `UserQuery` 送信に存在します。ACP クライアント、`serve`、およびデーモンホストが使用する ACP セッションパスでは、新しいターンは明示的な送信宣言を持つ必要があります。宣言がない、文字列でない、空、または空白のみの宣言はフィールドを省略します。値は `prompt` や表示ラベルから再構築されることはありません。リトライ、継続、およびチャネル分類されたターンはそれを省略します。チャネルの除外には、自動イベントとチャネルアダプター経由で中継された人間メッセージの両方が含まれます。
 
-遅延入力は、出所が完全に維持されている場合にフィールドを保持することがあります。結合されたバッチは、構成要素の各項目に出所がある場合にのみ出所を保持します。編集された、部分的に既知の、またはその他の曖昧な入力はフィールドを省略します。プロンプト、コマンド、およびシェルの履歴ナビゲーションまたは選択された検索マッチ、クロス再起動のスタッシュ復元、および会話の rewind 復元も、出所なしでモデルバインドされたテキストを表面に出す可能性があるため、フィールドを省略します。ユーザー送信テキストを必要とするコンシューマーは、不在を `prompt` にフォールバックするのではなく、利用不可として扱うべきです。
+Web Shell は送信境界で元の composer テキストを提供します。リアルタイム音声ハンドオフは、リクエストテキストがモデル生成のツール引数から来るため、出所を宣言しません。他の ACP/デーモン SDK クライアントは、リクエストごとに `_meta: { "qwen.submittedPrompt": "original submitted text" }` でオプトインでき、リソースまたはモデルのみの拡張前にキャプチャされます。この宣言なしの既存のクライアントはレガシーフックの実行を続行しますが、出所ゲートされた Auto Recall はトリガーしません。宣言を SDK トランスポートにグローバルに追加しないでください：スケジュールされたタスク、Live ターンの実行、サブセッションのスポーン、モデルが作成したクロスセッションメッセージ、および昇格されたミッドターンメッセージは自動的に取得してはなりません。プライベートな `qwen.daemon.submittedPrompt` キーはデーモンから子へのホップ用に予約されており、外部の呼び出し元からは削除されます。これらの宣言は呼び出し元から提供された出所であり、人間のオーサーシップや認可の証明ではありません。
+
+ACP パスでは、初期のレガシー `prompt` はリソース、添付ファイル、スラッシュコマンド、またはモデルのみの拡張前にスペースで結合されたリクエストのテキストブロックです。完全に拡張されたモデル入力は公開しません。`submitted_prompt` はそのテキストと等しくなり得ますが、明示的な宣言からのみ来て、元の空白を保持します。コア/ヘッドレスパスでは、レガシー `prompt` はフック呼び出しの現在のモデルバインドされたテキストを表します。どちらのフィールドも完全な DLP 検査サーフェスではありません。
+
+以下の composer ルールはインタラクティブ TUI に適用され、ACP クライアントには適用されません。遅延入力は、出所が完全に維持されている場合にフィールドを保持できます。結合されたバッチは、構成要素の各項目に出所がある場合にのみ出所を保持します。編集された、部分的に既知の、またはその他の曖昧な入力はフィールドを省略します。プロンプト、コマンド、およびシェルの履歴ナビゲーションまたは選択された検索マッチ、クロス再起動のスタッシュ復元、および会話の rewind 復元も、出所なしでモデルバインドされたテキストを表面に出す可能性があるため、フィールドを省略します。ユーザー送信テキストを必要とするコンシューマーは、不在を `prompt` にフォールバックするのではなく、利用不可として扱うべきです。
 
 復元または出所利用不可のモデルバインドされた入力がクリアまたは送信された後、composer はその undo および redo 履歴もクリアします。これにより、マーカーまたはサイドカーが消費された後に undo が展開されたテキストを復元するのを防ぎます。
 
-大きなペーストプレースホルダーは `submitted_prompt` 内でコンパクトなままです。展開されたペースト内容は `prompt` にのみ表示されます。コンシューマーはフィールドをクリップボード入力のバイト単位の記録ではなく、TUI テキスト投影として扱うべきです。
+大きなペーストプレースホルダーは `submitted_prompt` 内でコンパクトなままです。展開されたペースト内容は `prompt` にのみ表示されます。その TUI パスでは、コンシューマーはフィールドをクリップボード入力のバイト単位の記録ではなく、テキスト投影として扱うべきです。ACP クライアントには、同等の組み込み Vim、ペーストプレースホルダー、履歴、または rewind の出所追跡はありません。復元または編集されたテキストが有効な送信宣言を保持するかどうかは、クライアントが管理します。
 
 Vim モードが有効になっている間に存在する空でない入力は、Vim が無効にされた後も `submitted_prompt` を省略します。これは、このバージョンでは Vim レジスタが出所を伝達しないためです。この保守的なルールは、Vim を有効にする前に記入された下書きもカバーします。composer をクリアすると、新しい対象入力が開始されます。
 
@@ -638,7 +649,7 @@ sanitized hook context
 }
 ```
 
-この 2 フィールドのペイロードは、この種類のユーザープロンプトレコードに対してのみ書き込まれます。`hookContext` は意図的にタグ付けされたパートを複製しており、オフラインおよびサードパーティのコンシューマーがモデルテキストを解析せずに出所を識別できるようにします。`displayText` はフック前の表示投影であり、フックコンテキストを含むことはありません。サポートされたインタラクティブ TUI 送信については、`submitted_prompt` で運ばれる生の composer 投影です。ACP、ヘッドレス、`serve`、SDK、リモート入力、およびその出所を持たないその他のパスは、代わりに展開されたフック前のプロンプトを記録します。
+この 2 フィールドのペイロードは、この種類のユーザープロンプトレコードに対してのみ書き込まれます。`hookContext` は意図的にタグ付けされたパートを複製しており、オフラインおよびサードパーティのコンシューマーがモデルテキストを解析せずに出所を識別できるようにします。`displayText` はフック前の表示投影であり、フックコンテキストを含むことはありません。コア/ヘッドレスパスでは、利用可能な場合は送信された投影であり、それ以外の場合は展開されたフック前のプロンプトです。ACP は、投影または添付ファイルの参照がペイロードを必要とする場合は、信頼された表示投影または拡張前の生リクエストテキストを記録します。それ以外の場合は、`systemPayload` や `displayText` なしでユーザーメッセージを記録します。
 
 トランスクリプト表示コンシューマーは、`systemPayload.hookContext` が文字列である場合、このユーザープロンプト投影として `displayText` を扱います。リリース済みの `displayText` のみのユーザープロンプトレコードとの互換性のために、少なくとも 1 つの他のパートの後の最終パートにおける完全なタグ付けされたコンテキストは、同等なペアリング証拠です。通知、cron、およびミッドターンのレコードも `displayText` を持つ場合がありますが、それらの値はコンパクトな表示ラベルであり、その証拠なしにモデルバインドされたテキストと置き換えられてはなりません。
 レガシーなベアコンテキストのレコードは、コンテキストを確実に分離できないため、モデルバインドされた表示動作を保持します。現在のタグ付けされた形状を使用するメタデータフリーのレコードについて、互換性コンシューマーは同じ完全な最終タグ付けパートを削除できます。任意のタグのようなユーザーテキストがフックの出所であると推測してはなりません。
@@ -762,7 +773,7 @@ sanitized hook context
 
 ```json
 {
-  "stop_hook_active": "boolean indicating if stop hook is active",
+  "stop_hook_active": "このターンが前の stop チェックを stop フックがブロックしたために継続している場合は true（その継続中に行われたツール呼び出しの後も true のまま）；最初のチェックでは false、また stop が許可された場合、ブロック上限に達した場合、ユーザーが steering するか新しい入力を送信した場合、または新しいターン、リトライ、またはゴールターンが開始した場合も false",
   "last_assistant_message": "the last message from the assistant",
   "context_usage": "ratio of context window used (may exceed 1 when tokens exceed window; optional)",
   "context_limit": "context window size in tokens (optional)",
@@ -884,7 +895,7 @@ sanitized hook context
 ```json
 {
   "permission_mode": "default | plan | auto_edit | yolo",
-  "stop_hook_active": "boolean indicating if stop hook is active",
+  "stop_hook_active": "最初の stop チェックでは false；SubagentStop フックが前の stop をブロックしたためにサブエージェントが継続している場合は true",
   "agent_id": "identifier for the subagent",
   "agent_type": "type of agent",
   "agent_transcript_path": "path to the subagent's transcript",
@@ -1148,7 +1159,7 @@ exit 0
             "type": "command",
             "command": "$HOME/.qwen/hooks/todo-validator.sh",
             "name": "todo-validator",
-            "timeout": 5000
+            "timeout": 5
           }
         ]
       }
@@ -1242,7 +1253,7 @@ exit 0
             "type": "command",
             "command": "$HOME/.qwen/hooks/todo-completion-validator.sh",
             "name": "completion-validator",
-            "timeout": 5000
+            "timeout": 5
           }
         ]
       }
@@ -1275,7 +1286,7 @@ exit 0
             "command": "/path/to/security-check.sh",
             "name": "security-check",
             "description": "Run security checks before tool execution",
-            "timeout": 30000
+            "timeout": 30
           }
         ]
       }
@@ -1327,7 +1338,7 @@ exit 0
             "type": "command",
             "command": "$QWEN_PROJECT_DIR/.qwen/hooks/run-tests-async.sh",
             "async": true,
-            "timeout": 300000
+            "timeout": 300
           }
         ]
       }
@@ -1413,7 +1424,7 @@ exit 0
             "command": "${SECURITY_CHECK_SCRIPT}",
             "name": "security-checker",
             "description": "Security validation for bash commands",
-            "timeout": 10000
+            "timeout": 10
           }
         ]
       }

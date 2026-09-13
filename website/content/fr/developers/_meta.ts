@@ -20,7 +20,8 @@ export default {
 
   'channel-plugins': 'Guide des plugins de canal',
   tools: 'Outils',
-  'rest-api-integration': 'Guide d\'intégration de l\'API REST',
+  'rest-api-integration': "Guide d'intégration de l'API REST",
+  'daemon-rest-api-reference': "Référence de l'API REST du démon",
   'qwen-serve-protocol': 'Protocole HTTP qwen serve',
   daemon: 'Mode Daemon (Exploration approfondie pour les développeurs)',
   'daemon-client-adapters': 'Adaptateurs client Daemon',

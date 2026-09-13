@@ -65,7 +65,7 @@
 | `otlpLogsEndpoint`                | `QWEN_TELEMETRY_OTLP_LOGS_ENDPOINT`                  | -                                                        | Logs 的单信号端点覆盖（仅限 HTTP）                                                                                              | URL 字符串        | -                       |
 | `otlpMetricsEndpoint`             | `QWEN_TELEMETRY_OTLP_METRICS_ENDPOINT`               | -                                                        | Metrics 的单信号端点覆盖（仅限 HTTP）                                                                                           | URL 字符串        | -                       |
 | `outfile`                         | `QWEN_TELEMETRY_OUTFILE`                             | `--telemetry-outfile <path>`                             | 将遥测数据保存到文件（覆盖 OTLP 导出）                                                                                                 | 文件路径         | -                       |
-| `logPrompts`                      | `QWEN_TELEMETRY_LOG_PROMPTS`                         | `--telemetry-log-prompts` / `--no-telemetry-log-prompts` | 在遥测日志中包含 prompts                                                                                                              | `true`/`false`    | `true`                  |
+| `logPrompts`                      | `QWEN_TELEMETRY_LOG_PROMPTS`                         | `--telemetry-log-prompts` / `--no-telemetry-log-prompts` | 在遥测日志中包含用户 prompt 内容和 API 请求/响应文本                                                                                    | `true`/`false`    | `true`                  |
 | `userId`                          | `QWEN_TELEMETRY_USER_ID`                             | -                                                        | 稳定的终端用户标识符，作为 ARMS 扩展 `gen_ai.user.id` 写入 GenAI span；建议使用 pseudonymous 值                  | string            | -                       |
 | `includeSensitiveSpanAttributes`  | `QWEN_TELEMETRY_INCLUDE_SENSITIVE_SPAN_ATTRIBUTES`   | -                                                        | 将标准 GenAI 消息、指令、工具定义、工具参数和成功的工具结果作为原生 span 属性包含在内 | `true`/`false`    | `false`                 |
 | `sensitiveSpanAttributeMaxLength` | `QWEN_TELEMETRY_SENSITIVE_SPAN_ATTRIBUTE_MAX_LENGTH` | -                                                        | 每个敏感原生 span 属性的最大紧凑 JSON 字符串长度。如果你的后端拒绝大属性，请设置较低的值。       | `1..104857600`    | `1048576`               |
@@ -91,7 +91,7 @@
 
    主代理输入是上下文扩展前的一个原始用户文本投影，主代理输出是所有工具和续接工作结算后的一个最终用户可见答案。LLM 值仍然来自 provider 最终的 SDK 请求对象和原始 provider 响应，因此其输入可以包含历史、扩展的文件、系统指令和工具结果，其输出可以包含每个 provider 候选。Tool 值来自最终调用参数和面向模型的成功结果。每个标准 GenAI 值都是紧凑 JSON，必须完整且符合 schema。无效、循环引用或超过 `sensitiveSpanAttributeMaxLength` 的值将被整体省略；JSON 永远不会被截断，也不会发出预览、哈希或截断元数据。interaction 特有的 `new_context` 属性保留其现有的截断行为。每个属性的默认最大值为 1 MiB（`1048576`），接受范围为 `1..104857600`（100 MiB）。限制以 JavaScript 字符串长度而非 UTF-8 字节数衡量。因此，非 ASCII 内容在 OTLP 导出后可能会占用更多字节。
 
-2. **Log-to-span 桥接 span**（在未配置 logs 端点而导出 HTTP traces 时使用）保留其现有的 `prompt`、`function_args` 和 `response_text` 字段，而不是被丢弃。
+2. **Log-to-span 桥接 span**（在未配置 logs 端点而导出 HTTP traces 时使用）保留 `function_args`、`error`、`error.message` 和 `error_message`，以及在 `logPrompts` 同时启用时保留 `prompt`、`request_text` 和 `response_text`，而不是丢弃这些属性。
 
 ⚠️ **安全警告：** 启用此标志会将完整的对话历史记录、`read_file` 读取的文件内容、shell 命令及其输出（包括环境变量或参数中的 secrets）以及模型响应流式传输到配置的 OTLP 后端。请将后端视为特权数据接收器。该标志默认为 `false`。
 
@@ -439,10 +439,10 @@ daemon HTTP API 在每个请求上接受标准 W3C `traceparent` header。两个
 #### API 事件
 
 - `qwen-code.api_request`：发往 LLM API 的出站请求。
-  - **属性**：`model`（string）、`prompt_id`（string）、`request_text`（string，可选）、`subagent_name`（string，可选）
+  - **属性**：`model`（string）、`prompt_id`（string）、`request_text`（string，可选——仅在 `log_prompts_enabled` 为 true 时包含请求内容；log-to-span bridge span 还需要 `includeSensitiveSpanAttributes`；包含不透明的 `thoughtSignature` provider 负载，其策略决策记录在 #11682 中）、`subagent_name`（string，可选）
 
 - `qwen-code.api_response`：从 LLM API 接收到的响应。
-  - **属性**：`response_id`（string）、`model`（string）、`status_code`（int/string，可选）、`duration_ms`（int）、`input_token_count`（int）、`output_token_count`（int）、`cached_content_token_count`（int）、`thoughts_token_count`（int）、`total_token_count`（int）、`prompt_id`（string）、`auth_type`（string，可选）、`response_text`（string，可选）、`subagent_name`（string，可选）
+  - **属性**：`response_id`（string）、`model`（string）、`status_code`（int/string，可选）、`duration_ms`（int）、`input_token_count`（int）、`output_token_count`（int）、`cached_content_token_count`（int）、`thoughts_token_count`（int）、`total_token_count`（int）、`prompt_id`（string）、`auth_type`（string，可选）、`response_text`（string，可选——仅在 `log_prompts_enabled` 为 true 时包含可见响应内容；log-to-span bridge span 还需要 `includeSensitiveSpanAttributes`；对于内部 prompt id 或没有可见文本的响应，不携带任何内容）、`subagent_name`（string，可选）
 
 - `qwen-code.api_error`：API 请求失败。
   - **属性**：`model`（string）、`prompt_id`（string）、`duration_ms`（int）、`error_message`（string）、`response_id`（string，可选）、`auth_type`（string，可选）、`error_type`（string，可选）、`status_code`（int/string，可选）、`subagent_name`（string，可选）
@@ -616,6 +616,7 @@ daemon HTTP API 在每个请求上接受标准 W3C `traceparent` header。两个
 
 - `qwen-code.arena.session.count`（Counter，Int）：按状态统计 Arena 会话。
   - **属性**：`status`、`display_backend`（可选）
+
 - `qwen-code.arena.session.duration` (Histogram, ms)：Arena 会话持续时间。
   - **属性**：`status`
 
@@ -740,6 +741,8 @@ Daemon 进程（长时间运行的 HTTP 服务器模式）会暴露其自身的�
 - `qwen-code.subagent`：封装单次 subagent 调用。
   - **属性**：`gen_ai.operation.name`（`invoke_agent`），`gen_ai.agent.name`，`gen_ai.agent.description`，`gen_ai.conversation.id`，可选 ARMS 扩展 `gen_ai.user.id`，可选 `gen_ai.request.model`，`qwen-code.subagent.id`，`qwen-code.subagent.name`，`qwen-code.subagent.invocation_kind`（"foreground"/"fork"/"background"），`qwen-code.subagent.is_built_in`，`qwen-code.subagent.depth`，`qwen-code.subagent.status`，`qwen-code.subagent.terminate_reason`，`qwen-code.subagent.duration_ms`
 
+成功和已取消的 GenAI span 将 `SpanStatus` 保留为 `UNSET`。失败时设置 `ERROR`、有界的状态描述和低基数 `error.type`。
+
 #### GenAI 字段迁移与 ARMS 识别
 
 LLM span 现在使用标准的 `gen_ai.request.*`、`gen_ai.response.*` 和 `gen_ai.usage.*` 字段，不再具有完全等价的私有别名。请求采样属性仅以其标准名称写入；不再发出裸 `temperature`、`top_p`、`max_tokens`、penalty、choice-count 或 stop-sequence 别名。Tool span 同样使用 `gen_ai.tool.name` 而不使用 `tool.name`；blocked-on-user 和 hook span 保留 `tool.name`，因为它们不是 GenAI Tool span。无效别名 `gen_ai.usage.cached_tokens`、`gen_ai.server.time_to_first_token` 和 `gen_ai.usage.reasoning_tokens` 不再发出。使用 `gen_ai.usage.cache_read.input_tokens` 获取 provider 报告的缓存读取，使用 `gen_ai.response.time_to_first_chunk` 获取标准流式延迟。私有 `ttft_ms` Span 属性仍可用于首个用户可见输出延迟，并继续驱动 `/stats`、`sampling_ms` 和输出 token 吞吐量；`gen_ai.response.time_to_first_chunk` 是独立的测量首个规范化 chunk 延迟的标准属性。完整的版本固定合约和延迟字段记录在 [GenAI 和 ARMS 字段对齐](../../design/gen-ai-arms-field-alignment.md)中。
@@ -755,8 +758,6 @@ LLM span 现在使用标准的 `gen_ai.request.*`、`gen_ai.response.*` 和 `gen
   }
 }
 ```
-
-成功和已取消的 GenAI span 将 `SpanStatus` 保留为 `UNSET`。失败时设置 `ERROR`、有界的状态描述和低基数 `error.type`。
 
 Qwen Code 不注入此 ARMS 特有的资源属性或 `gen_ai.span.kind`。ARMS 可以从 `gen_ai.operation.name` 推断 LLM、Tool 和 Agent 角色。
 

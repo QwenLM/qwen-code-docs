@@ -113,7 +113,7 @@ Qwen Code は、レガシーな設定を新しい形式に自動的に移行し�
 | `review.attribution` | boolean | `/review` が投稿するレビュー本文およびインラインコメントに、モデル名と CLI バージョン（例: `_— qwen3-coder via Qwen Code /review (v0.21.2)_`）を記述した帰属フッターを追加します。無効にすると、AI 帰属表示なしでレビューを投稿できます。フッターは省略され、投稿されたコメントと本文リストは `**[Critical]**`/`**[Suggestion]**` マーカーを失います。投稿は生ソースでは識別可能なままです。各コメントには不可視の重大度マーカー（`<!-- qwen-review critical -->`）が含まれ、レビュー本文にはレジャーマーカー（`<!-- qwen-review-ledger ... -->`）が含まれます。コメント本文を読み取るもの（GitHub API 自動化、この設定が連動するワークフロー）は引き続き `/review` の成果物として認識でき、事前送信の重複検出はレビューアカウントの過去の投稿を重大度マーカーで認識しますが、他のアカウントからの帰属なし投稿は検出できません。もう一つの影響として、qwen-autofix の Critical-only モード（ラウンド 5 以降、またはカウントウィンドウの diff 成長予算がトリップされた場合に発動）は、投稿された発見を Critical として認識しなくなり、それらを延期します。無効にすると、レビュー本文に埋め込まれたマシンレジャーマーカーからモデル情報も除外されるため、新しい環境（CI、別のクローン — レビューキャッシュがない場所）では、前回の投稿レビューから復元されたインクリメンタルアンカーが同一モデルチェックに失敗し、再レビューはフルレンジにフォールバックします。 | `true`     |
 | `review.effort`      | enum    | `--effort` もプロジェクトで記憶された明示的にタイプされたレベルも適用されない場合の `/review` のデフォルトの努力レベル: `"low"`、`"medium"`、`"high"`、または `"auto"`（組み込みルール: PR の場合は high、ローカル変更の場合は medium）。明示的または記憶されたレベルが優先されます。有効な `--comment` は引き続き high を強制し、`--fix` は引き続き medium を下限とします。                                                                                                                | `"auto"`   |
 | `review.comment`     | boolean | すべての PR `/review` を `--comment` が渡されたものとして扱います:  発見はフラグなしでプルリクエストに投稿されます。投稿は呼び出しで指定された PR にバインドされます。常にレビューを公開したい場合にのみ有効にしてください。                                                                                                                                                                                                                                                                | `false`    |
-| `review.severityFloor` | enum    | `--severity-floor` が指定されていない場合に PR `/review` が投稿する最低の重大度: `"auto"`（ラウンド適応型のデフォルト — Suggestions はラウンド 5 まで投稿され、ラウンド 6 からは Criticals のみ。それ以外に投稿可能な高信頼度の Suggestions は記録され延期される。ラウンド 2〜5 は前ラウンドから変更されていないコード上の新しい Suggestions を延期する。低信頼度と Nice-to-have の発見はターミナルのみに留まる）、`"critical"`（ラウンド 1 からその姿勢）、または `"suggestion"`（Suggestions が毎ラウンド投稿される。収束の姿勢をオフにする）。PR 以外のターゲットにはラウンドがなく、これは無視される。 | `"auto"` |
+| `review.severityFloor` | enum    | `--severity-floor` が指定されていない場合に PR `/review` が投稿する最低の重大度: `"auto"`（ラウンド適応型のデフォルト — Suggestions はラウンド 5 まで投稿され、ラウンド 6 からは Criticals のみ。それ以外に投稿可能な高信頼度の Suggestions — および新規サーフェスで fail closed に分類された Critical — は記録され延期される。ラウンド 2〜5 は前ラウンドから変更されていないコード上の新しい Suggestions を延期する。低信頼度と Nice-to-have の発見はターミナルのみに留まる）、`"critical"`（ラウンド 1 からその姿勢）、または `"suggestion"`（Suggestions が毎ラウンド投稿される。収束の姿勢をオフにする）。PR 以外のターゲットにはラウンドがなく、これは無視される。 | `"auto"` |
 | `review.reverseAuditRounds` | number  | 高努力のレビューごとに逆監査ループのラウンド上限を引き下げます。上限はそれ以外の場合、diff のトポロジーに従います（小 10 / チャンク付き 5。巨大な diff はレビューデッドラインありで 3、なしで 5）。これは適用される tier を**下げる**ことのみ可能です。3 未満、tier を超える、または 0 より大きい整数でない値は無視されます。上限を下げてもレビューの収束が早くなるわけではありません — ループは 2 回連続のドライラウンドで終了します — 収束前に停止することが多くなり、そのような停止ごとに判定は Comment にキャップされます。 | `0`（未設定） |
 
 これらの設定はオペレータースコープ（User、System、SystemDefaults）からのみ読み取られます。ワークスペースの `.qwen/settings.json` の値は無視されるため、リポジトリがレビュアーのレビューポリシーを設定することはできません。
@@ -158,6 +158,7 @@ Qwen Code は、レガシーな設定を新しい形式に自動的に移行し�
 | `ui.showScrollbar`                      | boolean          | アプリ内のスクロール可能なビューポート（Virtualized History）で自動非表示スクロールバーを表示します。スクロール中に表示され、アイドル時にフェードアウトします。完全に非表示にするには無効にします。インタラクティブターミナル UI にのみ適用されます。                                                                                                                                                                                                                                                                                                                                                                                                                                              | `true`        |
 | `ui.mouseTracking`                      | boolean          | アプリ内の SGR マウストラッキングを有効にします。有効にすると、Qwen Code はテキスト選択、テキスト入力内のクリック位置指定、行ホバー、履歴アイテムの切り替え、ビューポートスクロールのためにマウスイベントをキャプチャします。ターミナルはすべてのマウスイベントをアプリに転送するため、Qwen Code はターミナルがネイティブに実行できなくなった操作の代替を提供します。シングルクリックでポインター下の http(s) ハイパーリンクを開き（他のリンクスキームはクリップボードにコピーされます）、リンクまたはテキスト選択上で右クリックすると、Open Link / Copy Link Address / Copy Selection を含むアプリ内のコンテキストメニューが開きます。無効にすると、マウスを完全にターミナルに戻します（ネイティブの右クリックメニューとリンククリック）。これにより、アプリ内のすべてのマウス操作が無効になり、Virtualized History ではホイールがトランスクリプトをスクロールしなくなります。代わりに Shift+↑/↓、PgUp/PgDn、または Ctrl+Home/End を使用してください（`ui.useTerminalBuffer: false` と組み合わせてネイティブターミナルスクロールバックを復元）。インタラクティブターミナル UI にのみ適用されます。 | `true`        |
 | `ui.hideBuiltinWorktreeIndicator`         | boolean          | フッターの組み込み `⎇ worktree-<branch> (<slug>)` 行を非表示にします。worktree の状態は引き続き stdin ペイロード経由でカスタムステータスラインスクリプトに渡されます。カスタムステータスラインが worktree 自体をレンダリングする場合を除き、デフォルトのままにしてください。                                                                                                                                                                                                                                                                     | `false`       |
+
 #### ide
 
 | 設定 | 型 | 説明 | デフォルト |
@@ -300,7 +301,7 @@ OpenAI 互換リクエストにおいて、テキストのみのツール結果�
 
 | 設定 | 型 | 説明 | デフォルト |
 | --- | --- | --- | --- |
-| `compactionModel` | string | チャット圧縮（自動コンパクション）に使用されるモデル。空欄にすると、メインモデルにフォールバックします。小さく高速なモデルは、圧縮のレイテンシとコストを削減できます。`/model --compaction` で設定またはクリアすることもできます。 | `""` |
+| `compactionModel` | string | チャット圧縮（自動コンパクション）に使用されるモデル。空欄にすると、メインモデルにフォールバックします。より小さく高速なモデルは、圧縮のレイテンシとコストを削減できます。`/model --compaction` で設定またはクリアすることもできます。 | `""` |
 
 #### imageModel
 
@@ -342,8 +343,8 @@ OpenAI 互換リクエストにおいて、テキストのみのツール結果�
 | `context.includeDirectories` | array | ワークスペースコンテキストに含める追加のディレクトリ。ワークスペースコンテキストに含める追加の絶対パスまたは相対パスの配列を指定します。存在しないディレクトリは、デフォルトで警告とともにスキップされます。パスには `~` を使用してユーザーのホームディレクトリを参照できます。この設定は `--include-directories` コマンドラインフラグと組み合わせて使用できます。 | `[]` |
 | `context.loadFromIncludeDirectories` | boolean | `/memory refresh` コマンドの動作を制御します。`true` に設定すると、追加されたすべてのディレクトリから `QWEN.md` ファイルが読み込まれます。`false` に設定すると、`QWEN.md` はカレントディレクトリからのみ読み込まれます。 | `false` |
 | `context.fileFiltering.respectGitIgnore` | boolean | 検索時に .gitignore ファイルを尊重します。 | `true` |
-| `context.fileFiltering.respectQwenIgnore` | boolean | 検索時に .qwenignore および設定されたカスタム無視ファイルを尊重します。 | `true` |
-| `context.fileFiltering.customIgnoreFiles` | array | `respectQwenIgnore` が有効な場合に、デフォルトの互換ファイル（`.agentignore`、`.aiignore`）の代わりに使用する、プロジェクトルートからの相対的な無視ファイル。`.qwenignore` は常に含まれます。 | `[".agentignore", ".aiignore"]` |
+| `context.fileFiltering.respectQwenIgnore` | boolean | 検索時に .qwenignore および設定されたカスタム ignore ファイルを尊重します。 | `true` |
+| `context.fileFiltering.customIgnoreFiles` | array | `respectQwenIgnore` が有効な場合に、デフォルトの互換ファイル（`.agentignore`、`.aiignore`）の代わりに使用する、プロジェクトルートからの相対的な ignore ファイル。`.qwenignore` は常に含まれます。 | `[".agentignore", ".aiignore"]` |
 | `context.fileFiltering.enableRecursiveFileSearch` | boolean | プロンプトで `@` プレフィックスを補完する際に、現在のツリー下のファイル名を再帰的に検索するかどうか。 | `true` |
 | `context.fileFiltering.enableFuzzySearch` | boolean | `true` の場合、ファイル検索時にファジー検索機能を有効にします。ファイル数が非常に多いプロジェクトでパフォーマンスを向上させるには `false` に設定します。 | `true` |
 | `context.clearContextOnIdle.toolResultsThresholdMinutes` | number | 古いツール結果コンテンツをクリアするまでの非アクティブ時間（分）。アイドルトリガーを無効にするには `-1` を使用します。 | `60` |
@@ -366,8 +367,8 @@ OpenAI 互換リクエストにおいて、テキストのみのツール結果�
 | `tools.sandboxImage` | string | `--sandbox-image` および `QWEN_SANDBOX_IMAGE` が設定されていない場合に Docker/Podman によって使用されるサンドボックスイメージの URI。 | `undefined` | |
 | `tools.shell.enableInteractiveShell`  | boolean | インタラクティブなシェル体験のために `node-pty` を使用します。`child_process` へのフォールバックも引き続き適用されます。 | `true` | |
 | `tools.shell.defaultTimeoutMs`        | number | エージェントが開始したフォアグラウンドシェルコマンドのデフォルトタイムアウト（ミリ秒単位）。シェルツールの呼び出しごとのタイムアウトがこれをオーバーライドします。未設定の場合、フォアグラウンドコマンドは 120000 ms（2 分）後にタイムアウトします。`0` に設定するとタイムアウトを無効にします。 | `undefined` | |
-| `tools.shell.heartbeatIntervalMs`     | number | フォアグラウンドシェルコマンドが出力を生成していない間に出力される liveness ハートビートの間隔（ミリ秒単位）。ハートビートは ACP クライアントと stream-json コンシューマーに転送され、サイレントなコマンドとデッドセッションを区別できます。未設定の場合、ハートビートは 10000 ms（10 秒）ごとに出力されます。`0` に設定するとハートビートを無効にします。 | `undefined` | |
-| `tools.core`                          | 文字列の配列 | **非推奨。** 次のバージョンで削除されます。空でないリストは、コアツールセット（ファイル、シェル、検索および関連する組み込み）を許可リストに制限します。リストにないコアツールは無効になります（fail-closed）。そのセット外のツール — 動的に検出されたツール（MCP、スキル）や `agent`、`list_agents`、プランモードのライフサイクルツール、goal ツール、`task_stop`、`send_message`、`tool_search` などの合成/システム組み込み — は設計上許可リストをバイパスします。ツールの呼び出しをブロックするには `permissions.deny` を使用してください（MCP ツールはリストされたままになり、実行時に拒否されます）、または `tools.disabled` / サーバーごとの `excludeTools` フィルターを使用してレジストリから完全に削除してください。空のリスト（`[]`）は未設定として扱われ、何も無効化しません。`permissions.allow` ではこの制限を再現できません — これは純粋な自動承認です（#10075）。`tools.eager` を使用して、初期時に送信されるデフォルトで eager なツールスキーマを制限します（リストにないツールは遅延されます。無効化ではなく、`tool_search` 経由でロード可能なままです）。また、`permissions.deny` でツールを完全にブロックします。 | `undefined` | |
+| `tools.shell.heartbeatIntervalMs`     | number | フォアグラウンドシェルコマンドが出力を生成していない間に出力される liveness heartbeat の間隔（ミリ秒単位）。heartbeat は ACP クライアントと stream-json コンシューマーに転送され、サイレントなコマンドとデッドセッションを区別できます。未設定の場合、heartbeat は 10000 ms（10 秒）ごとに出力されます。`0` に設定すると heartbeat を無効にします。 | `undefined` | |
+| `tools.core`                          | 文字列の配列 | **非推奨。** 次のバージョンで削除されます。空でないリストは、コアツールセット（ファイル、シェル、検索および関連する組み込み）を許可リストに制限します。リストにないコアツールは無効になります（fail closed — 失敗時は拒否）。そのセット外のツール — 動的に検出されたツール（MCP、スキル）や `agent`、`list_agents`、プランモードのライフサイクルツール、goal ツール、`task_stop`、`send_message`、`tool_search` などの合成/システム組み込み — は設計上許可リストをバイパスします。ツールの呼び出しをブロックするには `permissions.deny` を使用してください（MCP ツールはリストされたままになり、実行時に拒否されます）、または `tools.disabled` / サーバーごとの `excludeTools` フィルターを使用してレジストリから完全に削除してください。空のリスト（`[]`）は未設定として扱われ、何も無効化しません。`permissions.allow` ではこの制限を再現できません — これは純粋な自動承認です（#10075）。`tools.eager` を使用して、初期時に送信されるデフォルトで eager なツールスキーマを制限します（リストにないツールは遅延されます。無効化ではなく、`tool_search` 経由でロード可能なままです）。また、`permissions.deny` でツールを完全にブロックします。 | `undefined` | |
 | `tools.exclude`                       | 文字列の配列 | **非推奨。** 代わりに `permissions.deny` を使用してください。検出から除外するツール名。自動移行はされません。レガシー設定は起動時に引き続き尊重されます。 | `undefined` | |
 | `tools.disabled`                      | 文字列の配列 | レジストリから完全に非表示にするツール名。`permissions.deny`（実行時に呼び出しをブロックする）とは異なり、無効化されたツールは登録されないため、`/tools` に表示されず、モデルから検出または呼び出しできません。たとえば、`["enter_plan_mode"]` はモデルが勝手にプランモードに切り替えるのを防ぎます。スコープをまたいで和集合としてマージされます。 | `undefined` | |
 | `tools.visible`                       | 文字列の配列 | `tool_search` を必要とせずに起動時に表示される遅延ツール名。リストされたツールは初期セッションでコアツールと一緒に表示されます。スコープをまたいで和集合としてマージされます。 | `undefined` | |
@@ -384,7 +385,7 @@ OpenAI 互換リクエストにおいて、テキストのみのツール結果�
 | `tools.truncateToolOutputLines` | number | ツール出力を切り捨てる際に保持される最大行数またはエントリ数。Shell、Grep、Glob、ReadFile、および ReadManyFiles ツールに適用されます。 | `1000` | 再起動が必要: はい |
 
 | `tools.toolSearch.enabled` | boolean | ToolSearch 経由で MCP ツールをオンデマンドで読み込み、プロンプトサイズを削減します。プレフィックスベースの KV キャッシングに依存するモデル（DeepSeek など）では、これを無効にしてプロンプトのプレフィックスを安定させ、キャッシュヒット率を最大化してください。 | `true` | 再起動が必要: はい |
-| `tools.toolSearch.threshold` | number | 遅延ツール（組み込みと MCP の両方）の事前読み込みのセッション開始時バジェットとして使用されるコンテキストウィンドウの割合。すべての遅延ツールのスキーマを合計してこのバジェット内に収まる場合、ToolSearch 経由でオンデマンド読み込みするのではなく、すべて事前に宣言されます — 安定した宣言リストはセッション全体でプレフィックス KV キャッシュを有効に保ちます。遅延ツールを常にオンデマンドで読み込むには `0` を設定します。 | `10` | 再起動が必要: はい |
+| `tools.toolSearch.threshold` | number | 通常の遅延ツール（組み込みと MCP の両方）を事前読み込みするためのセッション開始時バジェットとして使用されるコンテキストウィンドウの割合。それらのスキーマを合計してこのバジェット内に収まる場合、ToolSearch 経由でオンデマンドで読み込まれるのではなく、事前に宣言されます。`tools.eager` によって降格されたツールはこの事前読み込みから除外され、オンデマンドのままです。遅延ツールを常にオンデマンドで読み込むには `0` を設定します。 | `10` | 再起動が必要: はい |
 | `tools.listDirectory.enabled` | boolean | 組み込みの `list_directory` ツールを有効にします。ほとんどの場合、`glob` でディレクトリの一覧表示がカバーされるため、デフォルトでは無効になっています。`coreTools` 許可リスト（`--core-tools` / `tools.core`）に明示的にリストされた場合も自動的に再有効化されます。 | `false` | 再起動が必要: はい |
 | `tools.todoWrite.enabled` | boolean | 組み込みの `todo_write` ツールとそのシステムプロンプトガイドを有効にします。デフォルトでは無効です。 | `false` | 再起動が必要: はい |
 > [!note]
@@ -414,7 +415,7 @@ OpenAI 互換リクエストにおいて、テキストのみのツール結果�
 | `agents.modelGrades` | object | Agent ツールに公開されるセマンティックグレード名をモデルセレクターにマッピングします。再起動が必要です。 | `undefined` |
 | `agents.allowedGrades` | array of strings | Agent ツールが使用できる、設定済みモデルグレードのオプションの許可リスト。再起動が必要です。 | `undefined` |
 | `agents.crossSessionMessaging` | boolean | 実験的。このマシン上の Qwen Code セッションがセッションごとのローカルソケットを介して相互にメッセージを送信できるようにします。これをオンにすると、このセッションがピアメッセージに対してオープンになり、他のセッションから検出可能になり、モデルが `send_message` からそれらにアドレス指定できるようになります。再起動が必要です。 | `false` |
-| `agents.crossSessionInbound` | enum | 他のセッションがこのセッションに送信するメッセージに対して何が起こるか: `accept` はそれらを配信し、`hold` はモデルがアクションを実行できないように `/peers` レビュー用にそれらを保留し、`refuse` はこのセッションをオプトアウトします。未設定の場合は承認モードのパリティを意味します（[別の実行中のセッションへのメッセージング](../features/commands.md#6-messaging-another-running-session) を参照）。 | `undefined` |
+| `agents.crossSessionInbound` | enum | セッション間メッセージの受信時に何が起こるか: `accept` はそれらを配信し、`hold` はモデルがアクションを実行できないように `/peers` レビュー用にそれらを保留し、`refuse` はこのセッションをオプトアウトします。未設定の場合は[ユーザー発行のコントローラー](../features/commands.md#trusted-controllers)とこのセッション自身のサブプロセスが自動配信し、他のセッションは[レビュークラスのパリティ](../features/commands.md#6-messaging-another-running-session)を使用します。その他のメッセージはレビュー用に保留されます。ワークスペースはこの値を厳しくすることのみ可能です（オペレーター設定値または未設定のデフォルトより厳格な場合の `hold` または `refuse`）。有効な認識されない値はすべてのメッセージを保留します。 | `undefined` |
 
 #### permissions
 
@@ -494,7 +495,7 @@ OpenAI 互換リクエストにおいて、テキストのみのツール結果�
 | --------------- | ------------------------------- | ------------------------------------------------------------ |
 | `tools.allowed` | `permissions.allow`             | 自動移行されません。起動時に引き続き尊重されます        |
 | `tools.exclude` | `permissions.deny`              | 自動移行されません。起動時に引き続き尊重されます        |
-| `tools.core`    | `tools.eager` (+ `permissions.deny`) | `permissions.allow` には自動移行されません。`permissions.allow` は純粋な自動承認であり、許可リストの制限を再現できないためです（#10075）。`tools.eager` はリストにないデフォルトで eager なツールを遅延させます（`tool_search` 経由でロード可能なまま）。`permissions.deny` は組み込みツールをレジストリから完全に削除します（MCP ツールはリストされたままになり、ランタイムで拒否されます — それらを明示的に削除するには `tools.disabled` / サーバーごとの `excludeTools` フィルタを使用してください）。どちらも空でない `tools.core` 許可リストの fail-closed 保証をコアツールセットに対して維持しません。将来のリリースで追加された組み込みは明示的に拒否されるまで登録されるため、拒否リストはリリースごとに再監査する必要があります。空の `tools.core` リストは未設定として扱われ、何も無効化しません。 |
+| `tools.core`    | `tools.eager` (+ `permissions.deny`) | `permissions.allow` には自動移行されません。`permissions.allow` は純粋な自動承認であり、許可リストの制限を再現できないためです（#10075）。`tools.eager` はリストにないデフォルトで eager なツールを遅延させます（`tool_search` 経由でロード可能なまま）。`permissions.deny` は組み込みツールをレジストリから完全に削除します（MCP ツールはリストされたままになり、ランタイムで拒否されます — それらを明示的に削除するには `tools.disabled` / サーバーごとの `excludeTools` フィルタを使用してください）。どちらも空でない `tools.core` 許可リストの fail closed（失敗時は拒否）保証をコアツールセットに対して維持しません。将来のリリースで追加された組み込みは明示的に拒否されるまで登録されるため、拒否リストはリリースごとに再監査する必要があります。空の `tools.core` リストは未設定として扱われ、何も無効化しません。 |
 
 **設定例:**
 
@@ -517,7 +518,7 @@ CLI で利用可能なスラッシュコマンドを制御します。マルチ�
 
 | 設定 | 型 | 説明 | デフォルト |
 | ------------------------ | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| `slashCommands.disabled` | array of strings | 非表示にして実行を拒否するスラッシュコマンド名。最終的なコマンド名に対して大文字と小文字を区別せずにマッチングされます（拡張コマンドの場合、これは `myext.deploy` のような曖昧さ解消された形式です）。**スコープをまたいで和集合としてマージされる**ため、ワークスペース設定はユーザーまたはシステム設定で定義されたエントリに追加することはできますが、削除することはできません。 | `undefined` |
+| `slashCommands.disabled` | array of strings | 非表示にして実行を拒否するスラッシュコマンド名。最終的なコマンド名に対して大文字と小文字を区別せずにマッチングされます（拡張コマンドの場合、これは `myext.deploy` のような曖昧さ解消された形式です）。ただし、[Skill](../features/skills) コマンドは**どちらの**表記でもゲートされます — 登録名（`rust:pdf`）または `SKILL.md` が記述する名前（`pdf`）のいずれかです — そのため、そのプレフィックスが存在する前に書かれたエントリでも引き続きゲートします。**スコープをまたいで和集合としてマージされる**ため、ワークスペース設定はユーザーまたはシステム設定で定義されたエントリに追加することはできますが、削除することはできません。 | `undefined` |
 
 同じ拒否リストは、`--disabled-slash-commands` CLI フラグ（カンマ区切りまたは繰り返し）および `QWEN_DISABLED_SLASH_COMMANDS` 環境変数を通じても提供できます。これら 3 つのソースからの値は和集合として結合されます。
 
@@ -543,11 +544,13 @@ CLI で利用可能なスラッシュコマンドを制御します。マルチ�
 | 設定 | 型 | 説明 | デフォルト |
 | --- | --- | --- | --- |
 | `skills.disabledLevels` | array of strings | スキル検出から完全にスキップするレベル。サポートされる値は `project`、`user`、`extension`、`bundled` です。設定スコープをまたいで和集合としてマージされます。`["bundled"]` を使用すると、ホスト提供のスキルを保持したまますべての組み込みスキルを非表示にします。注: `skills.directories` のエントリは `user` レベルで検出されるため、`["user"]` はそれらも非表示にします。 | `undefined` |
-| `skills.disabled` | array of strings | 強制的に無効化されるスキル名。大文字と小文字を区別せずにマッチングされ、設定スコープをまたいで**和集合としてマージされる**ため、プロジェクト設定はユーザーまたはシステムのエントリをオーバーライドできません。非表示にされたスキルは `<available_skills>` や `/<name>` スラッシュコマンドとして表示されません。 | `undefined` |
-| `skills.defaultDisabled` | array of strings | デフォルトで無効になっていますが、`skills.enabled` でオプトインできるスキル名。大文字と小文字を区別せずにマッチングされ、設定スコープをまたいで和集合としてマージされます。 | `undefined` |
-| `skills.enabled` | array of strings | マッチする `skills.defaultDisabled` エントリをオーバーライドする明示的なオプトイン。大文字と小文字を区別せずにマッチングされ、設定スコープをまたいで和集合としてマージされます。この設定は `skills.disabled` をオーバーライドしたり、`skills.disabledLevels` で除外されたレベルからスキルを再有効化したりすることはできません。 | `undefined` |
+| `skills.disabled` | array of strings | 強制的に無効化されるスキル名。大文字と小文字を区別せずにマッチングされ、設定スコープをまたいで**和集合としてマージされる**ため、プロジェクト設定はユーザーまたはシステムのエントリをオーバーライドできません。非表示にされたスキルは `<available_skills>` や `/<name>` スラッシュコマンドとして表示されません。拡張スキルはどちらの表記でもマッチします — 登録名（`rust:pdf`）または `SKILL.md` が記述する名前（`pdf`）のいずれかです — そのため、プレフィックスが存在する前に書かれたエントリでも引き続き有効です。 | `undefined` |
+| `skills.defaultDisabled` | array of strings | デフォルトで無効になっていますが、`skills.enabled` でオプトインできるスキル名。大文字と小文字を区別せずにマッチングされ、設定スコープをまたいで和集合としてマージされます。拡張スキルは `skills.disabled` と同様にどちらの表記でもマッチします。 | `undefined` |
+| `skills.enabled` | array of strings | 明示的なオプトイン。マッチする `skills.defaultDisabled` エントリをオーバーライドし、拡張スキルについては、所有拡張のデフォルトおよびこのワークスペースの保存された有効化もオーバーライドします。大文字と小文字を区別せずにマッチングされ、設定スコープをまたいで和集合としてマージされます — スキルの登録名**のみ**に対してマッチするため、拡張スキルには `rust:pdf` が必要です。裸の `pdf` はグラントとしてマッチしません — 同一表記の `skills.defaultDisabled` エントリをキャンセルするだけです（下記の同一綴りルールに従います）。キャンセルされると、このワークスペース用に保存された有効化が決定し、そうでない場合は所有拡張のデフォルトが使用されます。この設定は `skills.disabled` をオーバーライドしたり、`skills.disabledLevels` で除外されたレベルからスキルを再有効化したりすることはできません。 | `undefined` |
 
 優先順位は `skills.disabled` > `skills.enabled` > `skills.defaultDisabled` です。たとえば、ユーザーはスキルを `defaultDisabled` に配置し、プロジェクトは同じ名前を `enabled` に追加できます。どのスコープでもハードな `disabled` エントリが常に優先されます。
+
+すべてのリストはリテラルのスキル名を保持し、トリミング後に大文字と小文字を区別せずにマッチングされ、グロブサポートはありません。`skills.enabled` は、2 つのエントリが同じ綴りである場合にのみ `skills.defaultDisabled` エントリをキャンセルします。このステップはエントリをスキルに解決するのではなく、エントリ自体を比較するためです — そのため、デフォルトを解除されオプトインされる必要がある拡張スキルは、両方のリストで `rust:pdf` と記述されます。上記の 2 つのリストがどちらの表記も受け入れる理由と、このリストが受け入れない理由については、[Extension Skills](../features/skills#extension-skills) を参照してください。
 
 #### mcp
 
@@ -646,7 +649,7 @@ Qwen Code のログ記録とメトリクス収集を設定します。詳細に�
 | `telemetry.target` | string | テレメトリ送信先の情報ラベル（`local` または `gcp`）。エクスポーターのルーティングは制御しません。データの送信先を設定するには、`telemetry.otlpEndpoint` または `telemetry.outfile` を設定してください。 | |
 | `telemetry.otlpEndpoint` | string | OTLP エクスポーターのエンドポイント。 | |
 | `telemetry.otlpProtocol` | string | OTLP エクスポーターのプロトコル（`grpc` または `http`）。 | |
-| `telemetry.logPrompts` | boolean | ユーザープロンプトの内容をログに含めるかどうか。 | |
+| `telemetry.logPrompts` | boolean | ユーザープロンプトの内容と API リクエスト/レスポンスのテキストをログに含めるかどうか。 | |
 | `telemetry.userId` | string | ARMS 拡張 `gen_ai.user.id` として GenAI スパンに書き込まれる安定したエンドユーザー識別子。偽匿名値を推奨します。共有マルチユーザーデーモンまたはチャネルインスタンスに対してプロセス全体の値を設定しないでください。 | |
 | `telemetry.includeSensitiveSpanAttributes` | boolean | 有効にすると、ユーザープロンプト、システムプロンプト、ツールの入出力、モデルの応答がそのままネイティブな OTel スパン属性に添付されます（ログからスパンへのブリッジスパンに加えて）。⚠️ ファイルの内容、シェルコマンド、会話履歴などの機密データが OTLP バックエンドにストリーミングされます。 | `false` |
 | `telemetry.sensitiveSpanAttributeMaxLength` | number | 各機密ネイティブ OTel スパン属性のコンテンツペイロードの最大 JavaScript 文字列長。`1` から `104857600`（100 MiB）の間である必要があります。コレクターまたはバックエンドが大きな属性を拒否する場合は、より低い値に設定してください。 | `1048576` |
@@ -761,7 +764,7 @@ Qwen Code は `.env` ファイルから環境変数を自動的に読み込む�
 
 > [!tip]
 >
-> **環境変数の除外:** CLI の動作への干渉を防ぐため、一部の環境変数（`DEBUG` や `DEBUG_MODE` など）はデフォルトでプロジェクトの `.env` ファイルから自動的に除外されます。`.qwen/.env` ファイルの変数は除外されません。この動作は、`settings.json` ファイルの `advanced.excludedEnvVars` 設定を使用してカスタマイズできます。
+> **環境変数の除外:** CLI の動作への干渉を防ぐため、一部の環境変数（`DEBUG` や `DEBUG_MODE` など）はデフォルトでプロジェクトの `.env` ファイルから自動的に除外されます。`.qwen/.env` ファイルの変数は、このデフォルトリストによって除外されることはありません。この動作は、`settings.json` ファイルの `advanced.excludedEnvVars` 設定を使用してカスタマイズできます。
 
 > [!warning]
 >
@@ -780,7 +783,7 @@ Qwen Code は `.env` ファイルから環境変数を自動的に読み込む�
 | `QWEN_TELEMETRY_OTLP_PROTOCOL` | OTLP プロトコル（`grpc` または `http`）を設定します。 | `telemetry.otlpProtocol` 設定をオーバーライドします。 |
 | `QWEN_TELEMETRY_LOG_PROMPTS` | `true` または `1` に設定すると、ユーザープロンプトのログ記録が有効または無効になります。その他の値は無効として扱われます。 | `telemetry.logPrompts` 設定をオーバーライドします。 |
 | `QWEN_TELEMETRY_USER_ID` | インタラクション、LLM、ツール、およびエージェントスパンに `gen_ai.user.id` として安定したエンドユーザー識別子を設定します。偽匿名値を推奨します。 | トリミング後に `telemetry.userId` をオーバーライドします。空の値は設定にフォールバックします。これはプロセス全体であり、共有マルチユーザープロセスでリクエストごとの ID として使用してはなりません。 |
-| `QWEN_TELEMETRY_INCLUDE_SENSITIVE_SPAN_ATTRIBUTES` | `true` または `1` に設定すると、ユーザープロンプト、システムプロンプト、ツールの入出力、モデルの応答がそのままネイティブな OTel スパン属性に添付されます（また、ログからスパンへのブリッジスパン上の `prompt` / `function_args` / `response_text` も保持されます）。その他の値では無効になります。 | `telemetry.includeSensitiveSpanAttributes` 設定をオーバーライドします。⚠️ 機密データが OTLP バックエンドにストリーミングされます。 |
+| `QWEN_TELEMETRY_INCLUDE_SENSITIVE_SPAN_ATTRIBUTES` | `true` または `1` に設定すると、ユーザープロンプト、システムプロンプト、ツールの入出力、モデルの応答がそのままネイティブな OTel スパン属性に添付されます（また、ログからスパンへのブリッジスパン上の `function_args`、`error`、`error.message`、`error_message` を保持し、さらに `telemetry.logPrompts` も有効な場合は `prompt` / `request_text` / `response_text` も保持されます）。その他の値では無効になります。 | `telemetry.includeSensitiveSpanAttributes` 設定をオーバーライドします。⚠️ 機密データが OTLP バックエンドにストリーミングされます。 |
 | `QWEN_TELEMETRY_SENSITIVE_SPAN_ATTRIBUTE_MAX_LENGTH` | 各機密ネイティブ OTel スパン属性のコンテンツペイロードの最大 JavaScript 文字列長を設定します。`104857600`（100 MiB）以下の正の整数である必要があります。 | `telemetry.sensitiveSpanAttributeMaxLength` 設定をオーバーライドします。デフォルトは `1048576`（1 MiB）です。コレクターまたはバックエンドが大きなスパン属性を拒否する場合は、低い値に設定してください。 |
 | `QWEN_TELEMETRY_OUTFILE` | テレメトリを書き込むファイルパスを設定します。設定すると、OTLP エクスポートがオーバーライドされます。 | `telemetry.outfile` 設定をオーバーライドします。 |
 | `QWEN_SANDBOX` | `settings.json` の `sandbox` 設定の代替手段です。 | `true`、`false`、`docker`、`podman`、またはカスタムコマンド文字列を受け付けます。 |
@@ -801,7 +804,7 @@ Qwen Code は `.env` ファイルから環境変数を自動的に読み込む�
 | `QWEN_CODE_LEGACY_MCP_BLOCKING` | `1` に設定すると、`Config.initialize()` が戻る前に設定されたすべての MCP サーバーの discover ハンドシェイクを同期的に待機する、プログレッシブ MCP 以前の動作に戻します。 | デフォルトではオフです。最新の qwen-code では、UI がすでにインタラクティブな状態で MCP サーバーがバックグラウンドでオンラインになり、モデルはサーバーが安定してから約 16 ms 以内に新しいツールの各バッチを認識します。このフラグは、少なくとも 1 リリースの間、ロールバック用の脱出ハッチとして保持されています。例: `export QWEN_CODE_LEGACY_MCP_BLOCKING=1` |
 | `QWEN_CODE_LEGACY_ERASE_LINES` | `=1` はターミナルの再描画オプティマイザーを強制的に無効化します（行単位の消去シーケンスを復元）。`=0` は WSL でも強制的に有効化します（WSL では ConPTY がオプティマイザーのバッチ処理されたカーソル移動を誤って処理するため、デフォルトでスキップされます（issue #7634））。未設定 = プラットフォームのデフォルト（`WSL_DISTRO_NAME` または `WSL_INTEROP` が設定されている場合はスキップ）。 | ストリーミング出力の回帰用の脱出ハッチ。環境から読み取られるため、環境をスクラブするランチャー（`sudo` など）もそれを削除します — 代わりに起動時に渡してください: `sudo QWEN_CODE_LEGACY_ERASE_LINES=1 qwen`。例: `export QWEN_CODE_LEGACY_ERASE_LINES=1` |
 
-When both user-level `.env` ファイルで同じ変数が定義されている場合、Qwen 固有のファイルが優先されます。`<QWEN_HOME>/.env`（`QWEN_HOME` が未設定の場合は `~/.qwen/.env`）は `~/.env` よりも先に読み込まれ、既存の環境変数の値は上書きされません。
+両方のユーザーレベルの `.env` ファイルで同じ変数が定義されている場合、Qwen 固有のファイルが優先されます。`<QWEN_HOME>/.env`（`QWEN_HOME` が未設定の場合は `~/.qwen/.env`）は `~/.env` よりも先に読み込まれ、既存の環境変数の値は上書きされません。
 
 ### スタンドアロンアップデートのダウンロードソース
 
@@ -846,7 +849,7 @@ CLI の実行時に直接渡された引数は、その特定セッションに�
 | `--yolo` | | すべてのツール呼び出しを自動的に承認する YOLO モードを有効にします。 | | |
 | `--approval-mode` | | ツール呼び出しの承認モードを設定します。 | `plan`, `default`, `auto-edit`, `auto`, `yolo` | サポートされているモード: `plan`: 分析のみ。ファイルの修正やコマンドの実行は行いません。`default`: ファイルの編集やシェルコマンドの実行に承認を要求します（デフォルトの動作）。`auto-edit`: 編集ツール（`edit`、`write_file`、`notebook_edit`）を自動的に承認し、その他のツールについてはプロンプトを表示します。`auto`: LLM クラシファイアが安全なアクションを自動的に承認し、リスクのあるアクションをブロックします。`yolo`: すべてのツール呼び出しを自動的に承認します（`--yolo` と同等）。`--yolo` と同時に使用することはできません。新しい統合アプローチでは、`--yolo` の代わりに `--approval-mode=yolo` を使用します。例: `qwen --approval-mode auto-edit`<br>詳細については [Approval Mode](../features/approval-mode) を参照してください。 |
 | `--allowed-tools` | | 確認ダイアログをバイパスするツール名のカンマ区切りリスト。 | ツール名 | 例: `qwen --allowed-tools "Shell(git status)"` |
-| `--disabled-slash-commands` | | 非表示または無効にするスラッシュコマンド名（カンマ区切りまたは繰り返し）。`slashCommands.disabled` 設定および `QWEN_DISABLED_SLASH_COMMANDS` 環境変数と統合されます。最終的なコマンド名に対して大文字と小文字を区別せずにマッチングされます。 | コマンド名 | 例: `qwen --disabled-slash-commands "auth,mcp,extensions"` |
+| `--disabled-slash-commands` | | 非表示または無効にするスラッシュコマンド名（カンマ区切りまたは繰り返し）。`slashCommands.disabled` 設定および `QWEN_DISABLED_SLASH_COMMANDS` 環境変数と統合されます。最終的なコマンド名に対して大文字と小文字を区別せずにマッチングされます。Skill コマンドのどちらの表記でも同じルールが適用されます。 | コマンド名 | 例: `qwen --disabled-slash-commands "auth,mcp,extensions"` |
 | `--telemetry` | | [テレメトリ](../../developers/development/telemetry.md)を有効にします。 | | |
 | `--telemetry-target` | | テレメトリのターゲットを設定します。 | | 詳細については [テレメトリ](../../developers/development/telemetry.md) を参照してください。 |
 | `--telemetry-otlp-endpoint` | | テレメトリの OTLP エンドポイントを設定します。 | | 詳細については [テレメトリ](../../developers/development/telemetry.md) を参照してください。 |

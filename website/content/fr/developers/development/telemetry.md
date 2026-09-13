@@ -76,7 +76,7 @@ Ces paramètres peuvent être remplacés par des variables d'environnement ou de
 | `otlpLogsEndpoint`                | `QWEN_TELEMETRY_OTLP_LOGS_ENDPOINT`                  | -                                                        | Remplacement de point de terminaison par signal pour les logs (HTTP uniquement)                                                                                              | URL string        | -                       |
 | `otlpMetricsEndpoint`             | `QWEN_TELEMETRY_OTLP_METRICS_ENDPOINT`               | -                                                        | Remplacement de point de terminaison par signal pour les métriques (HTTP uniquement)                                                                                           | URL string        | -                       |
 | `outfile`                         | `QWEN_TELEMETRY_OUTFILE`                             | `--telemetry-outfile <path>`                             | Enregistrer la télémétrie dans un fichier (remplace l'exportation OTLP)                                                                                                 | file path         | -                       |
-| `logPrompts`                      | `QWEN_TELEMETRY_LOG_PROMPTS`                         | `--telemetry-log-prompts` / `--no-telemetry-log-prompts` | Inclure les prompts dans les logs de télémétrie                                                                                                              | `true`/`false`    | `true`                  |
+| `logPrompts`                      | `QWEN_TELEMETRY_LOG_PROMPTS`                         | `--telemetry-log-prompts` / `--no-telemetry-log-prompts` | Inclure le contenu des prompts utilisateur et le texte des requêtes/réponses API dans les logs de télémétrie                                                                                                              | `true`/`false`    | `true`                  |
 | `userId`                          | `QWEN_TELEMETRY_USER_ID`                             | -                                                        | Identifiant utilisateur stable écrit sur les spans GenAI en tant qu'extension ARMS `gen_ai.user.id` ; préférez une valeur pseudonyme                  | string            | -                       |
 | `includeSensitiveSpanAttributes`  | `QWEN_TELEMETRY_INCLUDE_SENSITIVE_SPAN_ATTRIBUTES`   | -                                                        | Inclure les messages GenAI standard, les instructions, les définitions d'outils, les arguments d'outils et les résultats d'outils réussis en tant qu'attributs de span natifs | `true`/`false`    | `false`                 |
 | `sensitiveSpanAttributeMaxLength` | `QWEN_TELEMETRY_SENSITIVE_SPAN_ATTRIBUTE_MAX_LENGTH` | -                                                        | Longueur maximale de chaîne JSON compact pour chaque attribut de span natif sensible. Définissez une valeur plus faible si votre backend rejette les attributs volumineux.       | `1..104857600`    | `1048576`               |
@@ -130,8 +130,9 @@ deux choses se produisent :
    plus d'octets après l'exportation OTLP.
 
 2. **Les spans du pont log-to-span** (utilisés lorsque les traces HTTP sont exportées sans
-   point de terminaison de logs) conservent leurs champs existants `prompt`, `function_args` et
-   `response_text`, au lieu d'être supprimés.
+   point de terminaison de logs) conservent `function_args`, `error`, `error.message` et
+   `error_message`, ainsi que `prompt`, `request_text` et `response_text` lorsque
+   `logPrompts` est également activé, au lieu de supprimer ces attributs.
 
 ⚠️ **Avertissement de sécurité :** l'activation de ce flag diffuse l'historique complet des conversations,
 le contenu des fichiers lus par `read_file`, les commandes shell et leur sortie (y compris
@@ -571,10 +572,10 @@ Les événements suivants sont enregistrés :
 #### Événements d'API
 
 - `qwen-code.api_request` : Requête sortante vers l'API LLM.
-  - **Attributs** : `model` (string), `prompt_id` (string), `request_text` (string, optionnel), `subagent_name` (string, optionnel)
+  - **Attributs** : `model` (string), `prompt_id` (string), `request_text` (string, optionnel — contient le contenu de la requête uniquement lorsque `log_prompts_enabled` est true ; les spans du pont log-to-span requièrent également `includeSensitiveSpanAttributes` ; la charge utile opaque `thoughtSignature` du fournisseur est incluse, avec sa décision de politique suivie dans #11682), `subagent_name` (string, optionnel)
 
 - `qwen-code.api_response` : Réponse reçue de l'API LLM.
-  - **Attributs** : `response_id` (string), `model` (string), `status_code` (int/string, optionnel), `duration_ms` (int), `input_token_count` (int), `output_token_count` (int), `cached_content_token_count` (int), `thoughts_token_count` (int), `total_token_count` (int), `prompt_id` (string), `auth_type` (string, optionnel), `response_text` (string, optionnel), `subagent_name` (string, optionnel)
+  - **Attributs** : `response_id` (string), `model` (string), `status_code` (int/string, optionnel), `duration_ms` (int), `input_token_count` (int), `output_token_count` (int), `cached_content_token_count` (int), `thoughts_token_count` (int), `total_token_count` (int), `prompt_id` (string), `auth_type` (string, optionnel), `response_text` (string, optionnel — contient le contenu de réponse visible uniquement lorsque `log_prompts_enabled` est true ; les spans du pont log-to-span requièrent également `includeSensitiveSpanAttributes` ; aucun contenu n'est fourni pour les identifiants de prompt internes ou les réponses sans texte visible), `subagent_name` (string, optionnel)
 
 - `qwen-code.api_error` : Échec de la requête API.
   - **Attributs** : `model` (string), `prompt_id` (string), `duration_ms` (int), `error_message` (string), `response_id` (string, optionnel), `auth_type` (string, optionnel), `error_type` (string, optionnel), `status_code` (int/string, optionnel), `subagent_name` (string, optionnel)
@@ -917,7 +918,7 @@ Qwen Code n'injecte pas cet attribut de ressource spécifique à ARMS ni `gen_ai
 - `qwen-code.cpu.usage` (Histogram, percent) : Pourcentage d'utilisation du CPU. Enregistré par le moniteur de pression mémoire lorsque la télémétrie est activée.
   - **Attributs** : (aucun)
 
-### Surveillance des Performances (Réservé)
+### Surveillance des performances (réservé)
 
 Les métriques suivantes sont définies mais **pas encore activées en production**. Elles seront activées via un flag de configuration dédié à la surveillance des performances.
 

@@ -27,16 +27,28 @@ A sugestão é gerada enviando o histórico da conversa ao modelo, que prevê o 
 
 ## Quando as Sugestões Aparecem
 
-As sugestões são geradas quando todas as seguintes condições são atendidas:
+O CLI interativo e o daemon decidem isso separadamente, e eles não aplicam as mesmas condições: o CLI controla a geração em seus próprios renderizadores, enquanto o daemon controla no lado do servidor para cada cliente conectado à sessão.
 
-- O modelo concluiu sua resposta (não durante o streaming)
+Ambos os lados requerem todas as seguintes condições:
+
 - Pelo menos 2 turnos do modelo ocorreram na conversa
-- Não há erros na resposta mais recente
-- Nenhum diálogo de confirmação pendente (ex.: confirmação do shell, permissões)
 - O modo de aprovação não está definido como `plan`
 - O recurso está habilitado (ativado por padrão — defina `ui.enableFollowupSuggestions` como `false` para desativá-lo)
 
-As sugestões não aparecerão no modo não interativo do CLI (ex.: modo headless/SDK). No daemon, a geração é no lado do servidor e ocorre após cada turno que atende às condições acima, portanto, um cliente headless ou SDK que não possa exibir a sugestão deve definir `ui.enableFollowupSuggestions` como `false` para evitar o custo de LLM por turno.
+O CLI interativo adicionalmente requer:
+
+- A sessão é interativa — o CLI nunca gera sugestões em seu próprio modo não interativo ou SDK
+- O modelo concluiu sua resposta (não durante o streaming)
+- Não há erros na resposta mais recente
+- Nenhum diálogo de confirmação está pendente (ex.: confirmação do shell, permissões)
+
+O daemon adicionalmente requer:
+
+- O turno terminou corretamente, ou seja, seu motivo de parada é `end_turn` — um turno cancelado, recusado ou truncado não recebe sugestão
+- Os turnos automáticos não estão sendo retidos pelo todo stop guard, e nenhum prompt enfileirado está aguardando execução
+- A entrada mais recente no histórico da conversa é uma resposta do modelo
+
+Como a geração no lado do daemon ocorre para cada cliente conectado à sessão, ela também ocorre para clientes que não conseguem exibir o resultado. Um cliente assim — um consumidor headless ou SDK de uma sessão do daemon, que não é o modo não interativo do CLI mencionado acima — deve definir `ui.enableFollowupSuggestions` como `false` para evitar o custo de LLM por turno para uma saída que descarta.
 
 As sugestões são descartadas automaticamente quando:
 
@@ -66,9 +78,9 @@ Ou use `/model --fast` (sem um nome de modelo) para abrir um diálogo de seleç�
 
 O modelo rápido é usado para sugestões de prompt e execução especulativa. Quando não configurado, o modelo da conversa principal é usado como fallback.
 
-> **Nota de custo:** Um modelo rápido reduz a latência, mas nem sempre reduz o custo. A geração de sugestões reutiliza o cache de prefixo da sua conversa (via `ui.enableCacheSharing`, ativado por padrão) — mas um cache de prefixo é por modelo. Apontar `fastModel` para um modelo diferente bifurca para um cache separado, de modo que todo o histórico da conversa é recobrado como entrada não cacheada no modelo rápido. Em conversas longas, o padrão (modelo principal + cache compartilhado) pode ser **mais barato** do que um modelo rápido, já que a maior parte do histórico é cobrada à taxa descontada de cache. Defina `fastModel` quando a latência importar mais que o custo por turno.
+> **Nota de custo:** Um modelo rápido reduz a latência, mas nem sempre reduz o custo. A geração de sugestões reutiliza o cache de prefixo da sua conversa (via `ui.enableCacheSharing`, ativado por padrão) — mas um cache de prefixo é por modelo. Apontar `fastModel` para um modelo diferente bifurca para um cache separado, de modo que todo o histórico da conversa é re-faturado como entrada não cacheada no modelo rápido. Em conversas longas, o padrão (modelo principal + cache compartilhado) pode ser **mais barato** do que um modelo rápido, já que a maior parte do histórico é cobrada à taxa descontada de cache. Defina `fastModel` quando a latência importar mais que o custo por turno.
 
-O modo de raciocínio/pensamento é desabilitado automaticamente para todas as tarefas em segundo plano (geração de sugestões e especulação), independentemente da configuração de pensamento do seu modelo principal. Isso evita desperdiçar tokens com raciocínio interno que não é necessário para essas tarefas.
+O modo thinking/reasoning é desabilitado automaticamente para todas as tarefas em segundo plano (geração de sugestões e especulação), independentemente da configuração de pensamento do seu modelo principal. Isso evita desperdiçar tokens com raciocínio interno que não é necessário para essas tarefas.
 
 ## Configuração
 

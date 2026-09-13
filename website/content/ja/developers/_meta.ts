@@ -21,6 +21,7 @@ export default {
   'channel-plugins': 'チャネルプラグインガイド',
   tools: 'ツール',
   'rest-api-integration': 'REST API 統合ガイド',
+  'daemon-rest-api-reference': 'デーモン REST API リファレンス',
   'qwen-serve-protocol': 'qwen serve HTTP プロトコル',
   daemon: 'デーモンモード (開発者向け詳細ガイド)',
   'daemon-client-adapters': 'デーモンクライアントアダプター',

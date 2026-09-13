@@ -140,6 +140,10 @@ Befehle zur Verwaltung von KI-Tools und -Modellen.
 >
 > `/workflows`, `/lsp` und `/trust` werden nur registriert, wenn die jeweilige Funktion aktiviert ist – über die user/system-scoped Einstellung `tools.workflowsEnabled` oder die Umgebungsvariable `QWEN_CODE_ENABLE_WORKFLOWS=1`, das CLI-Flag `--experimental-lsp` bzw. die Einstellung `security.folderTrust.enabled`. Workspace-Werte für `tools.workflowsEnabled` werden ignoriert. Wenn sie deaktiviert sind, werden sie nicht angezeigt und melden einen unbekannten Befehl. Ebenso werden `/dream` und `/forget` nur registriert, wenn verwaltetes Auto-Memory verfügbar ist; andernfalls werden sie nicht angezeigt.
 
+> [!note]
+>
+> Ein Skill aus einer installierten Extension ist ebenfalls ein Slash-Befehl, und sein Name trägt seinen Owner: `/rust:pdf`, nicht `/pdf`. Die bloße Form ist kein Alias – wenn ein anderer Skill `pdf` heißt, führt `/pdf` stattdessen diesen Skill aus. `slashCommands.disabled` blockiert einen solchen Befehl unter beiden Schreibweisen, sodass ein Eintrag, der geschrieben wurde, bevor der Name den Owner trug, weiterhin zuschlägt. Siehe [How extension Skills are named](./skills.md#how-extension-skills-are-named).
+
 ### 1.5 Integrierte Skills
 
 Diese Befehle rufen gebündelte Skills auf, die spezialisierte Workflows bereitstellen.
@@ -676,7 +680,7 @@ Anforderungen:
 | Fehlerbehandlung       | Shell-Fehlerausgabe nutzen          | Ausführungsfehler ignorieren                    |
 | Dateiorganisation    | Nach Funktion in Verzeichnissen organisieren | Alle Befehle im Stammverzeichnis              |
 | Beschreibungsfeld    | Immer eine klare Beschreibung angeben    | Sich auf automatisch generierte Beschreibungen verlassen          |
-#### Übersicht der Sicherheitsfunktionen
+#### Zusammenfassung der Sicherheitsfunktionen
 
 | Sicherheitsmechanismus   | Schutzwirkung                | Benutzeraktion           |
 | ------------------------ | ---------------------------- | ------------------------ |

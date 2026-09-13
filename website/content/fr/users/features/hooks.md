@@ -51,11 +51,13 @@ Les command hooks exécutent des commandes via des processus enfants. Le JSON d'
 | `command`       | `string`                 | Yes      | Commande à exécuter                         |
 | `name`          | `string`                 | No       | Nom du hook (pour les logs)                 |
 | `description`   | `string`                 | No       | Description du hook                         |
-| `timeout`       | `number`                 | No       | Délai d'expiration en millisecondes, 60000 par défaut |
+| `timeout`       | `number`                 | No       | Délai d'expiration en secondes, 60 par défaut         |
 | `async`         | `boolean`                | No       | Exécution asynchrone en arrière-plan        |
 | `env`           | `Record<string, string>` | No       | Variables d'environnement                   |
 | `shell`         | `"bash" \| "powershell"` | No       | Shell à utiliser                            |
 | `statusMessage` | `string`                 | No       | Message de statut affiché pendant l'exécution |
+
+`timeout` est en secondes pour les hooks command, HTTP et prompt ; les hooks function enregistrés par le SDK conservent les millisecondes. Les timeouts des hooks command étaient auparavant écrits en millisecondes, donc pour les hooks command une valeur de `1000` ou plus est toujours lue comme des millisecondes et les paramètres existants continuent de fonctionner. Pour migrer, recherchez les hooks command dont le `timeout` est de `1000` ou plus et réécrivez la valeur en secondes, par exemple `10000` en `10`. Pour donner à un hook command un timeout de 1000 secondes ou plus, continuez à l'écrire en millisecondes, par exemple `1800000` pour 30 minutes. Un `timeout` de hook command qui n'est pas un nombre positif, comme `"30s"`, est ignoré et le défaut de 60 secondes s'applique. Avec la journalisation de debug activée (`QWEN_DEBUG_LOG_FILE=1`), chaque hook command avec un `timeout` en millisecondes ou ignoré est nommé une fois par session dans le log de debug de cette session.
 
 **Exemple :**
 
@@ -70,7 +72,7 @@ Les command hooks exécutent des commandes via des processus enfants. Le JSON d'
             "type": "command",
             "command": "$QWEN_PROJECT_DIR/.qwen/hooks/security-check.sh",
             "name": "security-check",
-            "timeout": 10000
+            "timeout": 10
           }
         ]
       }
@@ -818,7 +820,7 @@ Le hook utilise les champs de session normaux du runtime qui supprime (`session_
 
 ```json
 {
-  "stop_hook_active": "booléen indiquant si le hook d'arrêt est actif",
+  "stop_hook_active": "true lorsque ce tour continue parce qu'un hook Stop a bloqué la vérification d'arrêt précédente (toujours true après les appels d'outil effectués pendant cette continuation) ; false lors de la première vérification et à nouveau une fois que l'arrêt est autorisé, que le plafond de blocage est atteint, que l'utilisateur oriente ou envoie une nouvelle entrée, ou qu'un nouveau tour, une retry ou un tour d'objectif démarre",
   "last_assistant_message": "dernier message de l'assistant",
   "context_usage": "ratio de la fenêtre de contexte utilisée (peut dépasser 1 lorsque les tokens dépassent la fenêtre ; optionnel)",
   "context_limit": "taille de la fenêtre de contexte en tokens (optionnel)",
@@ -911,8 +913,8 @@ Un command hook est laissé se terminer si Qwen quitte après le dispatch ; ses 
 ```json
 {
   "permission_mode": "default | plan | auto_edit | yolo",
-  "agent_id": "identifier for the subagent",
-  "agent_type": "type of agent (Bash, Explorer, Plan, Custom, etc.)"
+  "agent_id": "identifiant du sous-agent",
+  "agent_type": "type d'agent (Bash, Explorer, Plan, Custom, etc.)"
 }
 ```
 
@@ -926,7 +928,7 @@ Un command hook est laissé se terminer si Qwen quitte après le dispatch ; ses 
 ```json
 {
   "hookSpecificOutput": {
-    "additionalContext": "Subagent initialized with restricted permissions."
+    "additionalContext": "Sous-agent initialisé avec des permissions restreintes."
   }
 }
 ```
@@ -940,11 +942,11 @@ Un command hook est laissé se terminer si Qwen quitte après le dispatch ; ses 
 ```json
 {
   "permission_mode": "default | plan | auto_edit | yolo",
-  "stop_hook_active": "boolean indicating if stop hook is active",
-  "agent_id": "identifier for the subagent",
-  "agent_type": "type of agent",
-  "agent_transcript_path": "path to the subagent's transcript",
-  "last_assistant_message": "the last message from the subagent"
+  "stop_hook_active": "false lors de la première vérification d'arrêt ; true lorsque le sous-agent continue parce qu'un hook SubagentStop a bloqué son arrêt précédent",
+  "agent_id": "identifiant du sous-agent",
+  "agent_type": "type d'agent",
+  "agent_transcript_path": "chemin vers la transcription du sous-agent",
+  "last_assistant_message": "dernier message du sous-agent"
 }
 ```
 
@@ -958,7 +960,7 @@ Un command hook est laissé se terminer si Qwen quitte après le dispatch ; ses 
 ```json
 {
   "decision": "block",
-  "reason": "Must be provided when Qwen Code is blocked from stopping"
+  "reason": "Doit être fourni lorsque Qwen Code est empêché de s'arrêter"
 }
 ```
 
@@ -971,7 +973,7 @@ Un command hook est laissé se terminer si Qwen quitte après le dispatch ; ses 
 ```json
 {
   "trigger": "manual | auto",
-  "custom_instructions": "custom instructions currently set"
+  "custom_instructions": "instructions personnalisées actuellement définies"
 }
 ```
 
@@ -985,7 +987,7 @@ Un command hook est laissé se terminer si Qwen quitte après le dispatch ; ses 
 ```json
 {
   "hookSpecificOutput": {
-    "additionalContext": "Compacting conversation to maintain optimal context window."
+    "additionalContext": "Compaction de la conversation pour maintenir une fenêtre de contexte optimale."
   }
 }
 ```
@@ -999,7 +1001,7 @@ Un command hook est laissé se terminer si Qwen quitte après le dispatch ; ses 
 ```json
 {
   "trigger": "manual | auto",
-  "compact_summary": "the summary generated by the compaction process"
+  "compact_summary": "le résumé généré par le processus de compaction"
 }
 ```
 
@@ -1055,8 +1057,8 @@ Un command hook est laissé se terminer si Qwen quitte après le dispatch ; ses 
 
 ```json
 {
-  "message": "notification message content",
-  "title": "notification title (optional)",
+  "message": "contenu du message de notification",
+  "title": "titre de la notification (optionnel)",
   "notification_type": "permission_prompt | idle_prompt | auth_success"
 }
 ```
@@ -1073,7 +1075,7 @@ Un command hook est laissé se terminer si Qwen quitte après le dispatch ; ses 
 ```json
 {
   "hookSpecificOutput": {
-    "additionalContext": "Notification processed by monitoring system."
+    "additionalContext": "Notification traitée par le système de monitoring."
   }
 }
 ```
@@ -1087,9 +1089,9 @@ Un command hook est laissé se terminer si Qwen quitte après le dispatch ; ses 
 ```json
 {
   "permission_mode": "default | plan | auto_edit | yolo",
-  "tool_name": "name of the tool requesting permission",
-  "tool_input": "object containing the tool's input parameters",
-  "permission_suggestions": "array of suggested permissions (optional)"
+  "tool_name": "nom de l'outil demandant la permission",
+  "tool_input": "objet contenant les paramètres d'entrée de l'outil",
+  "permission_suggestions": "tableau de permissions suggérées (optionnel)"
 }
 ```
 
@@ -1109,7 +1111,7 @@ Un command hook est laissé se terminer si Qwen quitte après le dispatch ; ses 
   "hookSpecificOutput": {
     "decision": {
       "behavior": "allow",
-      "message": "Permission granted based on security policy",
+      "message": "Permission accordée sur la base de la politique de sécurité",
       "interrupt": false
     }
   }
@@ -1129,10 +1131,10 @@ Les hooks de todo s'exécutent en deux phases :
 
 ```json
 {
-  "todo_id": "unique identifier for the todo item",
-  "todo_content": "content/description of the todo item",
+  "todo_id": "identifiant unique de l'élément todo",
+  "todo_content": "contenu/description de l'élément todo",
   "todo_status": "pending | in_progress | completed",
-  "all_todos": "array of all todo items in the current list",
+  "all_todos": "tableau de tous les éléments todo de la liste actuelle",
   "phase": "validation | postWrite"
 }
 ```
@@ -1153,7 +1155,7 @@ Pendant la phase `postWrite`, le todo a déjà été persisté. Les hooks peuven
 ```json
 {
   "decision": "allow",
-  "reason": "Todo content validated successfully"
+  "reason": "Contenu du todo validé avec succès"
 }
 ```
 
@@ -1162,7 +1164,7 @@ Pendant la phase `postWrite`, le todo a déjà été persisté. Les hooks peuven
 ```json
 {
   "decision": "block",
-  "reason": "Todo content too short. Minimum 5 characters required."
+  "reason": "Contenu du todo trop court. 5 caractères minimum requis."
 }
 ```
 
@@ -1204,7 +1206,7 @@ exit 0
             "type": "command",
             "command": "$HOME/.qwen/hooks/todo-validator.sh",
             "name": "todo-validator",
-            "timeout": 5000
+            "timeout": 5
           }
         ]
       }
@@ -1298,7 +1300,7 @@ exit 0
             "type": "command",
             "command": "$HOME/.qwen/hooks/todo-completion-validator.sh",
             "name": "completion-validator",
-            "timeout": 5000
+            "timeout": 5
           }
         ]
       }
@@ -1331,7 +1333,7 @@ Les hooks sont configurés dans les paramètres de Qwen Code, généralement dan
             "command": "/path/to/security-check.sh",
             "name": "security-check",
             "description": "Run security checks before tool execution",
-            "timeout": 30000
+            "timeout": 30
           }
         ]
       }
@@ -1369,6 +1371,7 @@ Les async hooks sont limités au processus Qwen car leur sortie capturée est li
 - Ne peut pas retourner de contrôle de décision (l'opération a déjà eu lieu)
 - Les résultats sont injectés dans le tour de conversation suivant via `systemMessage` ou `additionalContext`, sauf pour les types d'événements fire-and-forget dont la sortie est ignorée documentés ci-dessus
 - Adapté pour l'audit, la journalisation, les tests en arrière-plan, etc.
+- Occupe l'un des 10 slots de hooks async simultanés jusqu'à ce qu'il se termine ou atteigne son `timeout` (60 secondes par défaut)
 
 **Exemple :**
 
@@ -1383,7 +1386,7 @@ Les async hooks sont limités au processus Qwen car leur sortie capturée est li
             "type": "command",
             "command": "$QWEN_PROJECT_DIR/.qwen/hooks/run-tests-async.sh",
             "async": true,
-            "timeout": 300000
+            "timeout": 300
           }
         ]
       }
@@ -1409,7 +1412,7 @@ fi
 
 - Les hooks s'exécutent dans l'environnement de l'utilisateur avec les privilèges de celui-ci
 - Les hooks au niveau du projet nécessitent que le dossier soit considéré comme fiable
-- Les timeouts empêchent les hooks de bloquer indéfiniment (par défaut : 60 secondes)
+- Les timeouts empêchent les hooks de bloquer indéfiniment (par défaut : 60 secondes pour les hooks command)
 
 ## Bonnes pratiques
 
@@ -1469,7 +1472,7 @@ Configurez dans `.qwen/settings.json` :
             "command": "${SECURITY_CHECK_SCRIPT}",
             "name": "security-checker",
             "description": "Security validation for bash commands",
-            "timeout": 10000
+            "timeout": 10
           }
         ]
       }

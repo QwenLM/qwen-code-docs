@@ -27,16 +27,28 @@ La suggestion est générée en envoyant l'historique de la conversation au mod�
 
 ## Quand les suggestions apparaissent
 
-Les suggestions sont générées lorsque toutes les conditions suivantes sont réunies :
+Le CLI interactif et le démon décident séparément, et ils n'appliquent pas les mêmes conditions : le CLI contrôle lui-même la génération, dans chacun de ses renderers, tandis que le démon la contrôle côté serveur pour chaque client attaché à la session.
 
-- Le modèle a terminé sa réponse (pas pendant le streaming)
+Les deux côtés exigent toutes les conditions suivantes :
+
 - Au moins 2 tours de modèle ont eu lieu dans la conversation
+- Le mode d'approbation n'est pas défini sur `plan`
+- La fonctionnalité est activée (activée par défaut — définissez `ui.enableFollowupSuggestions` à `false` pour la désactiver)
+
+Le CLI interactif exige en plus :
+
+- La session est interactive — le CLI ne génère jamais de suggestions en mode non interactif ou SDK
+- Le modèle a terminé sa réponse (pas pendant le streaming)
 - Il n'y a pas d'erreur dans la réponse la plus récente
 - Aucune boîte de dialogue de confirmation n'est en attente (par exemple, confirmation shell, autorisations)
-- Le mode d'approbation n'est pas défini sur `plan`
-- La fonctionnalité est activée (activée par défaut — mettez `ui.enableFollowupSuggestions` à `false` pour la désactiver)
 
-Les suggestions n'apparaissent pas en mode non interactif du CLI (par exemple, mode headless/SDK). Dans le démon, la génération est côté serveur et s'exécute après chaque tour qui remplit les conditions ci-dessus, donc un client headless ou SDK qui ne peut pas afficher la suggestion doit définir `ui.enableFollowupSuggestions` à `false` pour éviter le coût LLM par tour.
+Le démon exige en plus :
+
+- Le tour s'est terminé proprement, c'est-à-dire que sa raison d'arrêt est `end_turn` — un tour annulé, refusé ou tronqué n'obtient pas de suggestion
+- Les tours automatiques ne sont pas retenus par le garde d'arrêt todo, et aucun prompt en file d'attente n'attend d'être exécuté
+- L'entrée la plus récente dans l'historique de la conversation est une réponse du modèle
+
+Parce que la génération côté démon a lieu pour chaque client attaché à la session, elle a lieu aussi pour les clients qui ne peuvent pas afficher le résultat. Un tel client — un consommateur headless ou SDK d'une session démon, ce qui n'est pas le mode non interactif du CLI mentionné ci-dessus — devrait définir `ui.enableFollowupSuggestions` à `false` pour éviter de payer le coût LLM par tour pour une sortie qu'il rejette.
 
 Les suggestions sont automatiquement ignorées lorsque :
 
@@ -77,7 +89,7 @@ Ces paramètres peuvent être configurés dans `settings.json` :
 | Réglage                        | Type    | Défaut  | Description                                                               |
 | ------------------------------ | ------- | ------- | ------------------------------------------------------------------------- |
 | `ui.enableFollowupSuggestions` | boolean | `true`  | Activer ou désactiver les suggestions de suivi                            |
-| `ui.enableCacheSharing`        | boolean | `true`  | Utiliser des requêtes en cache avec bifurcation pour réduire les coûts (expérimental) |
+| `ui.enableCacheSharing`        | boolean | `true`  | Utiliser des requêtes forkées aware du cache pour réduire les coûts (expérimental) |
 | `ui.enableSpeculation`         | boolean | `false` | Exécuter spéculativement les suggestions avant soumission (expérimental)  |
 | `fastModel`                    | string  | `""`    | Modèle pour les suggestions d'invite et l'exécution spéculative           |
 

@@ -369,10 +369,14 @@ qwen extensions settings list <extension-name>
 ├── qwen-extension.json
 └── skills/
     └── pdf-processor/
-        └── SKILL.md
+        └── SKILL.md   # frontmatter: name: pdf-processor
 ```
 
-当扩展处于活动状态时，该技能可通过 `/skills` 命令使用。
+提供一个技能，注册为 `gcp:pdf-processor` —— 即扩展的 `name`、一个冒号、然后是 `SKILL.md` 作者所起的名称。使用 `/gcp:pdf-processor` 运行它；`/skills` 会列出它并以扩展的显示名称标注，当清单未声明显示名称时回退到 `name`。
+
+与扩展的自定义指令不同（自定义指令按文件名命名——如上述的 `/deploy` 和 `/gcs:sync`，仅在冲突时添加前缀——参见下文冲突解决），扩展技能始终携带其所有者：两个扩展都附带 `pdf-processor` 会给你两个技能，而不是一个遮蔽另一个。前缀在技能加载时添加，因此 `SKILL.md` 中的 `name` 永远不会在磁盘上被改写。
+
+以技能名称为参数的设置对两种拼写的处理是不对称的：`skills.disabled` 在任一名称下都会阻止技能，而 `skills.enabled` 仅在带前缀的名称下将其启用。请参阅[扩展技能](../features/skills.md#extension-skills)。
 
 ### 自定义子代理
 

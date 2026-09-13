@@ -157,7 +157,7 @@ Apenas pacotes com escopo (`@escopo/nome-pacote`) são suportados para evitar am
 
 Git 2.37 ou mais recente é necessário para fontes com credenciais, não-GitHub, marketplace aninhado, submódulos e Git LFS, pois o Qwen Code usa `http.curloptResolve` para fixar conexões Git em resultados de DNS validados. Em versões mais antigas do Git, o Qwen Code suporta apenas repositórios raiz públicos e anônimos `https://github.com/{owner}/{repo}[.git]`, resolvendo o ref solicitado para um commit e baixando o arquivo fonte do GitHub com as mesmas verificações de rede pública e segurança de arquivo.
 
-Como o fallback para Git antigo instala a partir de um arquivo fonte em vez de um clone, ele não pode instalar repositórios que dependem de symlinks, submódulos ou Git LFS, e limita downloads a 100 MiB comprimidos e arquivos a 100.000 entradas / 1 GiB expandidos. Instalações baseadas em release ainda são preferíveis quando um repositório publica releases.
+Como o fallback para Git antigo instala a partir de um arquivo fonte em vez de um clone, ele não pode instalar repositórios que dependem de submódulos ou Git LFS, e limita downloads a 100 MiB comprimidos e arquivos a 100.000 entradas / 1 GiB expandidos / 8 MiB de metadados de caminho, incluindo arquivos materializados a partir de no máximo 100 symlinks. Symlinks que apontam diretamente para arquivos regulares no repositório são suportados em sistemas que permitem a criação de symlinks; o Windows pode exigir o Modo Desenvolvedor ou privilégios elevados. O fallback rejeita links de diretório, encadeados, quebrados, absolutos, que escapam do repositório, hard links e links com barra invertida literal POSIX. Outros caminhos de instalação de Agent Plugin continuam a omitir symlinks. Instalações baseadas em release ainda são preferíveis quando um repositório publica releases.
 
 ```bash
 qwen extensions install https://github.com/github/github-mcp-server
@@ -372,7 +372,11 @@ As extensões podem fornecer habilidades personalizadas colocando arquivos de sk
         └── SKILL.md
 ```
 
-A skill estará disponível através do comando `/skills` quando a extensão estiver ativa.
+fornece uma skill, registrada como `gcp:pdf-processor` — o `name` da extensão, dois pontos e então o nome que os autores do `SKILL.md` definiram. Execute com `/gcp:pdf-processor`; `/skills` a lista e a rotula com o nome de exibição da extensão, usando o `name` como fallback quando o manifesto não declara nenhum.
+
+Diferentemente dos comandos personalizados da extensão, que são nomeados conforme seus arquivos (`/deploy` e `/gcs:sync` acima, e prefixados apenas quando há colisão — veja Resolução de conflitos abaixo), uma skill de extensão sempre carrega seu dono: duas extensões que ambas incluem um `pdf-processor` geram duas skills em vez de uma sombrear a outra. O prefixo é adicionado quando a skill é carregada, então o `name` no seu `SKILL.md` nunca é reescrito em disco.
+
+Configurações que nomeiam skills tratam as duas grafias de forma assimétrica: `skills.disabled` bloqueia uma skill sob qualquer nome, enquanto `skills.enabled` a habilita apenas sob o nome com prefixo. Consulte [Extension Skills](../features/skills.md#extension-skills).
 
 ### Subagentes personalizados
 
@@ -388,6 +392,8 @@ As extensões podem fornecer subagentes personalizados colocando arquivos de con
 ```
 
 Os subagentes de extensão aparecem no diálogo do gerenciador de subagentes na seção "Extension Agents".
+
+### Resolução de conflitos
 
 ### Resolução de conflitos
 

@@ -37,7 +37,7 @@ Qwen Code 支持四种 hook 执行器类型：
 | `command`  | 执行 shell 命令。通过 `stdin` 接收 JSON，通过 `stdout` 返回结果。                          |
 | `http`     | 将 JSON 作为 `POST` 请求体发送到指定的 URL。通过 HTTP 响应体返回结果。                     |
 | `function` | 直接调用已注册的 JavaScript 函数（仅限会话级 hook）。                                       |
-| `prompt`   | 使用 LLM 评估钩子输入并返回决策。                                                          |
+| `prompt`   | 使用 LLM 评估 hook 输入并返回决策。                                                          |
 
 ### 命令 hook
 
@@ -51,11 +51,13 @@ Qwen Code 支持四种 hook 执行器类型：
 | `command`       | `string`                 | 是   | 要执行的命令                         |
 | `name`          | `string`                 | 否   | hook 名称（用于日志记录）             |
 | `description`   | `string`                 | 否   | hook 描述                             |
-| `timeout`       | `number`                 | 否   | 超时时间（毫秒），默认 60000         |
+| `timeout`       | `number`                 | 否   | 超时时间（秒），默认 60         |
 | `async`         | `boolean`                | 否   | 是否在后台异步运行                   |
 | `env`           | `Record<string, string>` | 否   | 环境变量                             |
 | `shell`         | `"bash" \| "powershell"` | 否   | 要使用的 Shell                       |
 | `statusMessage` | `string`                 | 否   | 执行期间显示的状态消息               |
+
+`timeout` 对于 command、HTTP 和 prompt hook 以秒为单位；SDK 注册的 function hook 保留毫秒。命令 hook 的超时曾经以毫秒为单位编写，因此对于命令 hook，`1000` 或更大的值仍然被读取为毫秒，现有设置继续正常工作。要迁移，请查找 `timeout` 为 `1000` 或更大的命令 hook，并将该值改写为秒，例如将 `10000` 改写为 `10`。要为命令 hook 设置 1000 秒或更长的超时，继续以毫秒为单位编写，例如 30 分钟写为 `1800000`。不是正数的命令 hook `timeout`（如 `"30s"`）会被忽略，并应用 60 秒默认值。启用调试日志（`QWEN_DEBUG_LOG_FILE=1`）后，每个具有毫秒或被忽略的 `timeout` 的命令 hook 会在该会话的调试日志中被命名一次。
 
 **示例：**
 
@@ -70,7 +72,7 @@ Qwen Code 支持四种 hook 执行器类型：
             "type": "command",
             "command": "$QWEN_PROJECT_DIR/.qwen/hooks/security-check.sh",
             "name": "security-check",
-            "timeout": 10000
+            "timeout": 10
           }
         ]
       }
@@ -117,10 +119,10 @@ HTTP hook 将 hook 输入作为 POST 请求发送到指定的 URL。它们支持
 
 - 此设置**仅从 User、System 和 SystemDefaults 设置作用域中生效**。在 Workspace（项目）设置中设置的值将被忽略并记录为警告，因此克隆的仓库永远无法自行授予此绕过权限。
 - 该标志仅放宽通用私有/CGNAT/链路本地**范围**检查。云元数据端点在所有配置中保持阻止：`BLOCKED_HOSTS` 列表会逐字匹配（`metadata.google.internal`、`metadata.azure.internal` 等），元数据 IP `169.254.169.254` 和 `100.100.100.200` 在所有序列化形式（包括 IPv4 映射的 IPv6，如 `::ffff:a9fe:a9fe`）以及 DNS 解析后均被阻止。
-- `security.allowedHttpHookUrls` 白名单仍然独立适用。在托管环境中，请将此标志与白名单配合使用，以确保只有预期的内部端点可达。Workspace（项目）设置中的白名单仅在没有 User、System 或 SystemDefaults 作用域设置白名单时才会生效；否则它将被忽略并记录为警告，因此仓库可以缩小其钩子发送数据的位置，但永远无法替换你配置的白名单（空白名单表示"允许所有"）。
-- HTTP hook 永远不会跟随重定向。3xx 响应被视为任何其他非 2xx 状态一样：非阻塞的钩子失败，并且永远不会联系重定向目标。
+- `security.allowedHttpHookUrls` 白名单仍然独立适用。在托管环境中，请将此标志与白名单配合使用，以确保只有预期的内部端点可达。Workspace（项目）设置中的白名单仅在没有 User、System 或 SystemDefaults 作用域设置白名单时才会生效；否则它将被忽略并记录为警告，因此仓库可以缩小其 hook 发送数据的位置，但永远无法替换你配置的白名单（空白名单表示"允许所有"）。
+- HTTP hook 永远不会跟随重定向。3xx 响应被视为任何其他非 2xx 状态一样：非阻塞的 hook 失败，并且永远不会联系重定向目标。
 
-> **警告：** 启用此标志允许钩子访问你网络上的内部基础设施。仅在受信任的托管环境中启用——绝不在你无法控制的仓库中启用。
+> **警告：** 启用此标志允许 hook 访问你网络上的内部基础设施。仅在受信任的托管环境中启用——绝不在你无法控制的仓库中启用。
 
 **示例：**
 
@@ -150,7 +152,7 @@ HTTP hook 将 hook 输入作为 POST 请求发送到指定的 URL。它们支持
 
 **示例：外部判断服务适配器**
 
-上面的 `remote-security-check` 配置假定 `http://127.0.0.1:8080/hooks/pre-tool-use` 已经运行着一个遵循此协议的服务（POST 接收 `{tool_name, tool_input, ...}`，返回 `hookSpecificOutput.permissionDecision`）。下面是一个最小的、仅使用标准库的适配器，它补全了缺失的部分，连接到一个具体的判断后端，使整个示例可运行并可端到端测试，而不仅仅是一个桩代码。只有 `review()` 函数是后端特定的——将其函数体以及请求/响应形状替换为你使用的任何服务；其余部分（服务器、fail-open 处理、钩子响应形状）无论后端如何都保持不变。
+上面的 `remote-security-check` 配置假定 `http://127.0.0.1:8080/hooks/pre-tool-use` 已经运行着一个遵循此协议的服务（POST 接收 `{tool_name, tool_input, ...}`，返回 `hookSpecificOutput.permissionDecision`）。下面是一个最小的、仅使用标准库的适配器，它补全了缺失的部分，连接到一个具体的判断后端，使整个示例可运行并可端到端测试，而不仅仅是一个桩代码。只有 `review()` 函数是后端特定的——将其函数体以及请求/响应形状替换为你使用的任何服务；其余部分（服务器、fail-open 处理、hook 响应形状）无论后端如何都保持不变。
 
 _声明：下面使用的后端 [invinoveritas](https://api.babyblueviper.com) 是作者关联的服务——在此使用是因为它是可以端到端验证的服务，并非推荐。任何返回 JSON 裁决的 HTTP 服务都同样适用；只需更改 `review()` 即可。_
 
@@ -210,19 +212,19 @@ if __name__ == "__main__":
     HTTPServer(("127.0.0.1", 8080), Handler).serve_forever()
 ```
 
-已针对上述真实生产 API 进行了端到端实时测试：真正具有破坏性的输入（`{"tool_name": "run_shell_command", "tool_input": {"command": "rm -rf /important_data"}}`）返回了 `permissionDecision: "deny"` 及真实解释；良性输入（`ls -la`）返回了 `"allow"`。在判断后端出现任何网络/超时/格式错误响应问题时均 fail-open，因此服务中断永远不会阻止合法的工具调用——与上面 `command` 钩子示例使用各自退出码遵循的相同原则。
+已针对上述真实生产 API 进行了端到端实时测试：真正具有破坏性的输入（`{"tool_name": "run_shell_command", "tool_input": {"command": "rm -rf /important_data"}}`）返回了 `permissionDecision: "deny"` 及真实解释；良性输入（`ls -la`）返回了 `"allow"`。在判断后端出现任何网络/超时/格式错误响应问题时均 fail-open，因此服务中断永远不会阻止合法的工具调用——与上面 `command` hook 示例使用各自退出码遵循的相同原则。
 
 ### 函数 hook
 
 函数 hook 直接调用已注册的 JavaScript/TypeScript 函数。它们由 Skill 系统在内部使用，目前尚未作为公共 API 暴露给最终用户。
 
-**注意**：对于大多数用例，请改用**命令钩子**或 **HTTP 钩子**，它们可以在设置文件中进行配置。
+**注意**：对于大多数用例，请改用**命令 hook** 或 **HTTP hook**，它们可以在设置文件中进行配置。
 
 ### Prompt hook
 
 Prompt hook 使用 LLM 评估 hook 输入并返回决策。这对于基于上下文做出智能决策非常有用，例如决定是否允许或阻止某个操作。
 
-> **数据处理：** Prompt hook 将其事件输入发送到配置的模型提供商。当启用基于文件的调试日志时，完全展开的 prompt hook 请求也会写入会话调试日志。请将钩子输入和调试日志视为可能包含敏感信息。
+> **数据处理：** Prompt hook 将其事件输入发送到配置的模型提供商。当启用基于文件的调试日志时，完全展开的 prompt hook 请求也会写入会话调试日志。请将hook 输入和调试日志视为可能包含敏感信息。
 
 **工作原理：**
 
@@ -271,7 +273,7 @@ Prompt hook 可用于大多数 hook 事件，包括：
 - `SubagentStop` - 评估子代理结果
 - `UserPromptSubmit` - 评估或丰富符合条件的模型绑定 prompt
 
-**示例：Stop 钩子**
+**示例：Stop hook**
 
 ```json
 {
@@ -293,7 +295,7 @@ Prompt hook 可用于大多数 hook 事件，包括：
 
 当 `ok` 为 `false` 时，Qwen Code 将继续工作，并使用 `reason` 作为下一次响应的上下文。
 
-**示例：PreToolUse 钩子**
+**示例：PreToolUse hook**
 
 ```json
 {
@@ -573,7 +575,8 @@ Hook 输出支持三类字段：
   "tool_name": "name of the tool that failed",
   "tool_input": "object containing the tool's input parameters",
   "error": "error message describing the failure",
-  "is_interrupt": "boolean indicating if failure was due to user interruption (optional)"
+  "is_interrupt": "boolean indicating if failure was due to user interruption (optional)",
+  "duration_ms": "tool execution time in milliseconds when execution had started (optional)"
 }
 ```
 
@@ -768,7 +771,7 @@ sanitized hook context
 
 ```json
 {
-  "stop_hook_active": "boolean indicating if stop hook is active",
+  "stop_hook_active": "true when this turn is continuing because a stop hook blocked the previous stop check (still true after tool calls made during that continuation); false on the first check and again once the stop is allowed, the blocking cap is reached, the user steers or sends new input, or a new turn, retry or goal turn starts",
   "last_assistant_message": "the last message from the assistant",
   "context_usage": "ratio of context window used (may exceed 1 when tokens exceed window; optional)",
   "context_limit": "context window size in tokens (optional)",
@@ -891,7 +894,7 @@ sanitized hook context
 ```json
 {
   "permission_mode": "default | plan | auto_edit | yolo",
-  "stop_hook_active": "boolean indicating if stop hook is active",
+  "stop_hook_active": "false on the first stop check; true when the subagent is continuing because a SubagentStop hook blocked its previous stop",
   "agent_id": "identifier for the subagent",
   "agent_type": "type of agent",
   "agent_transcript_path": "path to the subagent's transcript",
@@ -1249,7 +1252,7 @@ exit 0
             "type": "command",
             "command": "$HOME/.qwen/hooks/todo-completion-validator.sh",
             "name": "completion-validator",
-            "timeout": 5000
+            "timeout": 5
           }
         ]
       }
@@ -1282,7 +1285,7 @@ Hook 在 Qwen Code 设置中进行配置，通常位于 `.qwen/settings.json` �
             "command": "/path/to/security-check.sh",
             "name": "security-check",
             "description": "Run security checks before tool execution",
-            "timeout": 30000
+            "timeout": 30
           }
         ]
       }
@@ -1321,6 +1324,7 @@ Hook 在 Qwen Code 设置中进行配置，通常位于 `.qwen/settings.json` �
 - 无法返回决策控制（操作已发生）
 - 结果会在下一轮对话中通过 `systemMessage` 或 `additionalContext` 注入，但上述文档中忽略输出的 fire-and-forget 事件类型除外
 - 适用于审计、日志记录、后台测试等场景
+- 占用 10 个并发异步 hook 槽位之一，直到完成或达到 `timeout`（默认 60 秒）
 
 **示例：**
 
@@ -1335,7 +1339,7 @@ Hook 在 Qwen Code 设置中进行配置，通常位于 `.qwen/settings.json` �
             "type": "command",
             "command": "$QWEN_PROJECT_DIR/.qwen/hooks/run-tests-async.sh",
             "async": true,
-            "timeout": 300000
+            "timeout": 300
           }
         ]
       }
@@ -1361,7 +1365,7 @@ fi
 
 - Hook 在用户环境中以用户权限运行
 - 项目级 hook 需要受信任的文件夹状态
-- 超时机制可防止 hook 挂起（默认：60 秒）
+- 超时机制可防止 hook 挂起（默认：command hook 为 60 秒）
 
 ## 最佳实践
 
@@ -1421,7 +1425,7 @@ exit 0
             "command": "${SECURITY_CHECK_SCRIPT}",
             "name": "security-checker",
             "description": "Security validation for bash commands",
-            "timeout": 10000
+            "timeout": 10
           }
         ]
       }

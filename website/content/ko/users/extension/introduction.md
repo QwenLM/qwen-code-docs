@@ -365,15 +365,21 @@ Qwen Code가 시작되면 모든 확장을 로드하고 구성을 병합합니�
 
 **예시**
 
+`gcp`라는 확장이 다음 구조를 가집니다:
+
 ```
-.qwen/extensions/my-extension/
+.qwen/extensions/gcp/
 ├── qwen-extension.json
 └── skills/
     └── pdf-processor/
-        └── SKILL.md
+        └── SKILL.md   # frontmatter: name: pdf-processor
 ```
 
-확장이 활성일 때 `/skills` 명령어를 통해 skill을 사용할 수 있습니다.
+하나의 skill을 제공하며, `gcp:pdf-processor`로 등록됩니다 — 확장의 `name`, 콜론, 그리고 `SKILL.md` 작성자가 지정한 이름입니다. `/gcp:pdf-processor`로 실행합니다. `/skills`는 이를 목록에 표시하고 확장의 표시 이름으로 레이블을 지정하며, 매니페스트에 표시 이름이 없으면 `name`으로 대체합니다.
+
+확장의 사용자 정의 명령어(위에서 `/deploy`와 `/gcs:sync`이며, 충돌 시에만 접두사가 추가됨 — 아래 충돌 해결 참조)와 달리, 확장 skill은 항상 소유자를 포함합니다. 두 확장이 모두 `pdf-processor`를 제공하면 하나가 다른 하나를 가리는 대신 두 개의 skill이 제공됩니다. 접두사는 skill이 로드될 때 추가되므로 `SKILL.md`의 `name`은 디스크에서 다시 작성되지 않습니다.
+
+이름으로 skill을 참조하는 설정은 두 가지 표기법을 비대칭적으로 처리합니다. `skills.disabled`는 두 이름 모두에서 skill을 차단하고, `skills.enabled`는 접두사가 붙은 이름에서만 옵트인합니다. [Extension Skills](../features/skills.md#extension-skills)를 참조하세요.
 
 ### 사용자 정의 서브에이전트
 

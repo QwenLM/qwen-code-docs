@@ -27,16 +27,28 @@ Der Vorschlag wird generiert, indem der Gesprächsverlauf an das Modell gesendet
 
 ## Wann Vorschläge erscheinen
 
-Vorschläge werden generiert, wenn alle folgenden Bedingungen erfüllt sind:
+Das interaktive CLI und der Daemon entscheiden dies getrennt voneinander, und sie wenden nicht dieselben Bedingungen an: Das CLI steuert die Generierung selbst, in jedem seiner Renderer, während der Daemon sie serverseitig für jeden Client steuert, der mit der Session verbunden ist.
 
-- Das Modell hat seine Antwort abgeschlossen (nicht während des Streamings)
-- Es haben mindestens 2 Modell-Durchläufe im Gespräch stattgefunden
-- Die letzte Antwort enthält keine Fehler
-- Es sind keine Bestätigungsdialoge anhängig (z. B. Shell-Bestätigung, Berechtigungen)
+Beide Seiten erfordern alle folgenden Bedingungen:
+
+- Mindestens 2 Modell-Turns haben im Gespräch stattgefunden
 - Der Genehmigungsmodus ist nicht auf `plan` gesetzt
 - Die Funktion ist aktiviert (standardmäßig aktiviert – setzen Sie `ui.enableFollowupSuggestions` auf `false`, um sie zu deaktivieren)
 
-Vorschläge erscheinen nicht im nicht-interaktiven Modus des CLI (z. B. Headless-/SDK-Modus). Im Daemon erfolgt die Generierung serverseitig und läuft nach jedem Turn, der die oben genannten Bedingungen erfüllt. Ein Headless- oder SDK-Client, der den Vorschlag nicht rendern kann, sollte daher `ui.enableFollowupSuggestions` auf `false` setzen, um die LLM-Kosten pro Turn zu vermeiden.
+Das interaktive CLI erfordert zusätzlich:
+
+- Die Session ist interaktiv – das CLI generiert niemals Vorschläge im eigenen nicht-interaktiven oder SDK-Modus
+- Das Modell hat seine Antwort abgeschlossen (nicht während des Streamings)
+- Die letzte Antwort enthält keine Fehler
+- Es sind keine Bestätigungsdialoge anhängig (z. B. Shell-Bestätigung, Berechtigungen)
+
+Der Daemon erfordert zusätzlich:
+
+- Der Turn wurde sauber beendet, das heißt sein Stoppgrund ist `end_turn` – ein abgebrochener, abgelehnter oder gekürzter Turn erhält keinen Vorschlag
+- Automatische Turns werden nicht vom Todo-Stop-Guard gehalten, und kein vorgemerkter Prompt wartet auf Ausführung
+- Der neueste Eintrag im Gesprächsverlauf ist eine Modellantwort
+
+Da die daemon-seitige Generierung für jeden mit der Session verbundenen Client erfolgt, geschieht sie auch für Clients, die das Ergebnis nicht rendern können. Ein solcher Client – ein Headless- oder SDK-Konsument einer Daemon-Session, der nicht dem eigenen nicht-interaktiven Modus des CLI oben entspricht – sollte `ui.enableFollowupSuggestions` auf `false` setzen, um die LLM-Kosten pro Turn für verworfene Ausgaben zu vermeiden.
 
 Vorschläge werden automatisch verworfen, wenn:
 

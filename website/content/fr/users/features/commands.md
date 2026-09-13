@@ -162,7 +162,7 @@ La commande `/btw` vous permet de poser des questions annexes rapides sans inter
 
 | Commande               | Description                           |
 | ---------------------- | ------------------------------------- |
-| `/btw <votre question>`| Pose une question annexe rapide       |
+| `/btw <votre question>` | Pose une question annexe rapide       |
 | `?btw <votre question>`| Syntaxe alternative pour les questions annexes |
 
 **Fonctionnement :**
@@ -238,7 +238,7 @@ La commande `/advisor` exécute une revue indépendante et en lecture seule de l
 - La revue est envoyée via un appel API séparé et en tour unique avec le contexte de conversation récent (jusqu'aux 40 derniers messages)
 - Le modèle relecteur **ne peut pas exécuter d'outils** — les outils sont retirés au niveau de la requête (le même mécanisme que `/btw`), donc la revue n'écrit jamais de code ni n'exécute de commandes ; chaque affirmation doit être ancrée dans la transcription visible
 - La conversation principale n'est **pas** interrompue ; la revue vous est montrée uniquement
-- La revue est rendue sous forme de bloc markdown encadré avec quatre sections fixes — **Verdict**, **Risques**, **Preuves manquantes**, et **Recommandation** — sous un en-tête `/advisor · <model>` qui nomme le modèle relecteur résolu
+- La revue est rendue sous forme de bloc markdown encadré avec quatre sections fixes — **Verdict**, **Risques**, **Preuves manquantes** et **Recommandation** — sous un en-tête `/advisor · <model>` qui nomme le modèle relecteur résolu
 - Contrairement à `/btw`, qui est fire-and-forget et laisse la session utilisable, `/advisor` bloque la saisie jusqu'au retour de la revue ; sur une fenêtre de contexte complète avec un relecteur puissant, cela peut prendre des dizaines de secondes
 - Par défaut, le modèle principal est utilisé ; définissez [`advisorModel`](../configuration/settings.md#advisormodel) pour acheminer la revue vers un modèle différent (généralement plus puissant) — la transcription récente est envoyée à ce modèle même s'il utilise un autre fournisseur
 
@@ -806,7 +806,7 @@ propres paramètres de permissions. Son utilisateur peut choisir ce qui
 arrive aux messages entrants avec `agents.crossSessionInbound`
 (`accept`, `hold` ou `refuse`). Lorsque ce n'est pas défini, un message
 n'est délivré que lorsque les deux sessions sont dans la même classe de
-review : les deux reviewnt chaque action (mode default ou plan), ou les
+review : les deux reviewent chaque action (mode default ou plan), ou les
 deux sont dans un mode qui applique certaines actions sans review par
 action (auto-edit, auto ou yolo). Un message provenant d'une session de
 l'autre classe, ou d'un expéditeur qui n'indique pas dans quelle classe

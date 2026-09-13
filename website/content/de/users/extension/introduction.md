@@ -364,15 +364,21 @@ Erweiterungen können benutzerdefinierte Skills bereitstellen, indem sie Skill-D
 
 **Beispiel**
 
+Eine Erweiterung mit dem Namen `gcp` und der folgenden Struktur:
+
 ```
-.qwen/extensions/my-extension/
+.qwen/extensions/gcp/
 ├── qwen-extension.json
 └── skills/
     └── pdf-processor/
-        └── SKILL.md
+        └── SKILL.md   # frontmatter: name: pdf-processor
 ```
 
-Der Skill ist über den Befehl `/skills` verfügbar, wenn die Erweiterung aktiv ist.
+stellt einen Skill bereit, registriert als `gcp:pdf-processor` — der `name` der Erweiterung, ein Doppelpunkt, dann der Name, den die `SKILL.md` vorgibt. Führen Sie ihn mit `/gcp:pdf-processor` aus; `/skills` listet ihn auf und beschriftet ihn mit dem Anzeigenamen der Erweiterung, wobei auf `name` zurückgefallen wird, wenn das Manifest keinen angibt.
+
+Im Gegensatz zu benutzerdefinierten Befehlen der Erweiterung, die nach ihren Dateien benannt werden (`/deploy` und `/gcs:sync` oben, und nur mit Präfix versehen, wenn es eine Kollision gibt — siehe Konfliktlösung unten), trägt ein Erweiterungs-Skill immer seinen Owner: zwei Erweiterungen, die beide einen `pdf-processor` mitliefern, ergeben zwei Skills, anstatt dass einer den anderen verdrängt. Das Präfix wird hinzugefügt, wenn der Skill geladen wird, sodass der `name` in Ihrer `SKILL.md` niemals auf der Festplatte umgeschrieben wird.
+
+Einstellungen, die Skills benennen, behandeln die beiden Schreibweisen asymmetrisch: `skills.disabled` blockiert einen Skill unter beiden Namen, während `skills.enabled` ihn nur unter dem präfixierten Namen aktiviert. Siehe [Erweiterungs-Skills](../features/skills.md#extension-skills).
 
 ### Benutzerdefinierte Subagents
 

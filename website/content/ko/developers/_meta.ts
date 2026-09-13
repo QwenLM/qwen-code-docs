@@ -21,6 +21,7 @@ export default {
   'channel-plugins': '채널 플러그인 가이드',
   tools: '도구',
   'rest-api-integration': 'REST API 통합 가이드',
+  'daemon-rest-api-reference': '데몬 REST API 레퍼런스',
   'qwen-serve-protocol': 'qwen serve HTTP 프로토콜',
   daemon: '데몬 모드 (개발자 심화)',
   'daemon-client-adapters': '데몬 클라이언트 어댑터',

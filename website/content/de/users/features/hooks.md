@@ -32,7 +32,7 @@ Hooks sind benutzerdefinierte Skripte oder Programme, die von Qwen Code automati
 
 Qwen Code unterstützt vier Hook-Executor-Typen:
 
-| Type       | Description                                                                                    |
+| Typ        | Beschreibung                                                                                   |
 | :--------- | :--------------------------------------------------------------------------------------------- |
 | `command`  | Führt einen Shell-Befehl aus. Empfängt JSON über `stdin`, gibt Ergebnisse über `stdout` zurück. |
 | `http`     | Sendet JSON als `POST`-Request-Body an eine angegebene URL. Gibt Ergebnisse über den HTTP-Response-Body zurück. |
@@ -45,17 +45,19 @@ Command Hooks führen Befehle über Child Processes aus. Input-JSON wird über s
 
 **Konfiguration:**
 
-| Field           | Type                     | Required | Description                                 |
-| :-------------- | :----------------------- | :------- | :------------------------------------------ |
-| `type`          | `"command"`              | Yes      | Hook-Typ                                    |
-| `command`       | `string`                 | Yes      | Auszuführender Befehl                       |
-| `name`          | `string`                 | No       | Hook-Name (für Logging)                     |
-| `description`   | `string`                 | No       | Hook-Beschreibung                           |
-| `timeout`       | `number`                 | No       | Timeout in Millisekunden, Standard 60000    |
-| `async`         | `boolean`                | No       | Ob asynchron im Hintergrund ausgeführt werden soll |
-| `env`           | `Record<string, string>` | No       | Umgebungsvariablen                          |
-| `shell`         | `"bash" \| "powershell"` | No       | Zu verwendende Shell                        |
-| `statusMessage` | `string`                 | No       | Statusmeldung, die während der Ausführung angezeigt wird |
+| Feld            | Typ                      | Erforderlich | Beschreibung                              |
+| :-------------- | :----------------------- | :----------- | :---------------------------------------- |
+| `type`          | `"command"`              | Ja           | Hook-Typ                                  |
+| `command`       | `string`                 | Ja           | Auszuführender Befehl                     |
+| `name`          | `string`                 | Nein         | Hook-Name (für Logging)                   |
+| `description`   | `string`                 | Nein         | Hook-Beschreibung                         |
+| `timeout`       | `number`                 | Nein         | Timeout in Sekunden, Standard 60          |
+| `async`         | `boolean`                | Nein         | Ob asynchron im Hintergrund ausgeführt werden soll |
+| `env`           | `Record<string, string>` | Nein         | Umgebungsvariablen                        |
+| `shell`         | `"bash" \| "powershell"` | Nein         | Zu verwendende Shell                      |
+| `statusMessage` | `string`                 | Nein         | Statusmeldung, die während der Ausführung angezeigt wird |
+
+`timeout` erfolgt in Sekunden für Command-, HTTP- und Prompt-Hooks; SDK-registrierte Function-Hooks behalten Millisekunden. Command-Hook-Timeouts wurden früher in Millisekunden angegeben, daher wird bei Command-Hooks ein Wert von `1000` oder mehr weiterhin als Millisekunden interpretiert und bestehende Einstellungen funktionieren weiterhin. Zum Migrieren, suche nach Command-Hooks, deren `timeout` `1000` oder mehr beträgt, und schreibe den Wert in Sekunden um, beispielsweise `10000` als `10`. Um einem Command-Hook einen Timeout von 1000 Sekunden oder mehr zu geben, schreibe ihn weiterhin in Millisekunden, beispielsweise `1800000` für 30 Minuten. Ein Command-Hook-`timeout`, der keine positive Zahl ist, wie `"30s"`, wird ignoriert und der 60-Sekunden-Standardwert gilt. Bei aktiviertem Debug-Logging (`QWEN_DEBUG_LOG_FILE=1`) wird jeder Command-Hook mit einem Millisekunden- oder ignorierten `timeout` einmal pro Session in deren Debug-Log namentlich aufgeführt.
 
 **Beispiel:**
 
@@ -70,7 +72,7 @@ Command Hooks führen Befehle über Child Processes aus. Input-JSON wird über s
             "type": "command",
             "command": "$QWEN_PROJECT_DIR/.qwen/hooks/security-check.sh",
             "name": "security-check",
-            "timeout": 10000
+            "timeout": 10
           }
         ]
       }
@@ -85,16 +87,16 @@ HTTP Hooks senden den Hook-Input als POST-Requests an angegebene URLs. Sie unter
 
 **Konfiguration:**
 
-| Field            | Type                     | Required | Description                                               |
-| :--------------- | :----------------------- | :------- | :-------------------------------------------------------- |
-| `type`           | `"http"`                 | Yes      | Hook-Typ                                                  |
-| `url`            | `string`                 | Yes      | Ziel-URL                                                  |
-| `headers`        | `Record<string, string>` | No       | Request-Header (unterstützt Interpolation von Umgebungsvariablen) |
-| `allowedEnvVars` | `string[]`               | No       | Whitelist der Umgebungsvariablen, die in URL/Headern erlaubt sind |
-| `timeout`        | `number`                 | No       | Timeout in Sekunden, Standard 600                         |
-| `name`           | `string`                 | No       | Hook-Name (für Logging)                                   |
-| `statusMessage`  | `string`                 | No       | Statusmeldung, die während der Ausführung angezeigt wird  |
-| `once`           | `boolean`                | No       | Wird nur einmal pro Ereignis und Session ausgeführt (nur HTTP Hooks) |
+| Feld             | Typ                      | Erforderlich | Beschreibung                                                |
+| :--------------- | :----------------------- | :----------- | :---------------------------------------------------------- |
+| `type`           | `"http"`                 | Ja           | Hook-Typ                                                    |
+| `url`            | `string`                 | Ja           | Ziel-URL                                                    |
+| `headers`        | `Record<string, string>` | Nein         | Request-Header (unterstützt Interpolation von Umgebungsvariablen) |
+| `allowedEnvVars` | `string[]`               | Nein         | Whitelist der Umgebungsvariablen, die in URL/Headern erlaubt sind |
+| `timeout`        | `number`                 | Nein         | Timeout in Sekunden, Standard 600                           |
+| `name`           | `string`                 | Nein         | Hook-Name (für Logging)                                     |
+| `statusMessage`  | `string`                 | Nein         | Statusmeldung, die während der Ausführung angezeigt wird    |
+| `once`           | `boolean`                | Nein         | Wird nur einmal pro Ereignis und Session ausgeführt (nur HTTP Hooks) |
 
 **Sicherheitsfunktionen:**
 
@@ -233,15 +235,15 @@ Prompt Hooks nutzen ein LLM, um den Hook-Input auszuwerten und eine Entscheidung
 
 **Konfiguration:**
 
-| Field           | Type       | Required | Description                                         |
-| :-------------- | :--------- | :------- | :-------------------------------------------------- |
-| `type`          | `"prompt"` | Yes      | Hook-Typ                                            |
-| `prompt`        | `string`   | Yes      | An das LLM gesendeter Prompt. Verwende `$ARGUMENTS` für den Hook-Input |
-| `model`         | `string`   | No       | Zu verwendendes Modell (Standard ist dein aktuelles Modell) |
-| `timeout`       | `number`   | No       | Timeout in Sekunden, Standard 30                    |
-| `name`          | `string`   | No       | Hook-Name (für Logging)                             |
-| `description`   | `string`   | No       | Hook-Beschreibung                                   |
-| `statusMessage` | `string`   | No       | Statusmeldung, die während der Ausführung angezeigt wird |
+| Feld            | Typ        | Erforderlich | Beschreibung                                      |
+| :-------------- | :--------- | :----------- | :------------------------------------------------ |
+| `type`          | `"prompt"` | Ja           | Hook-Typ                                          |
+| `prompt`        | `string`   | Ja           | An das LLM gesendeter Prompt. Verwende `$ARGUMENTS` für den Hook-Input |
+| `model`         | `string`   | Nein         | Zu verwendendes Modell (Standard ist dein aktuelles Modell) |
+| `timeout`       | `number`   | Nein         | Timeout in Sekunden, Standard 30                  |
+| `name`          | `string`   | Nein         | Hook-Name (für Logging)                           |
+| `description`   | `string`   | Nein         | Hook-Beschreibung                                 |
+| `statusMessage` | `string`   | Nein         | Statusmeldung, die während der Ausführung angezeigt wird |
 
 **Antwortformat:**
 
@@ -320,7 +322,7 @@ Wenn `ok` `false` ist, arbeitet Qwen Code weiter und verwendet den `reason` als 
 
 Hooks werden an bestimmten Punkten während einer Qwen Code-Session ausgelöst. Verschiedene Ereignisse unterstützen unterschiedliche Matcher, um Trigger-Bedingungen zu filtern.
 
-| Event                | Triggered When                                  | Matcher Target                                                 |
+| Ereignis             | Ausgelöst wenn                                  | Matcher-Ziel                                                   |
 | :------------------- | :---------------------------------------------- | :------------------------------------------------------------- |
 | `PreToolUse`         | Vor der Tool-Ausführung                         | Tool-Id (`write_file`, `read_file`, `run_shell_command`, usw.) |
 | `PostToolUse`        | Nach erfolgreicher Tool-Ausführung              | Tool-Id                                                        |
@@ -771,7 +773,7 @@ Der Hook verwendet die normalen Session-Felder des löschenden Runtimes (`sessio
 
 ```json
 {
-  "stop_hook_active": "boolean indicating if stop hook is active",
+  "stop_hook_active": "true when this turn is continuing because a stop hook blocked the previous stop check (still true after tool calls made during that continuation); false on the first check and again once the stop is allowed, the blocking cap is reached, the user steers or sends new input, or a new turn, retry or goal turn starts",
   "last_assistant_message": "the last message from the assistant",
   "context_usage": "ratio of context window used (may exceed 1 when tokens exceed window; optional)",
   "context_limit": "context window size in tokens (optional)",
@@ -893,7 +895,7 @@ Ein Command-Hook wird zu Ende ausgeführt, wenn Qwen nach dem Dispatch beendet w
 ```json
 {
   "permission_mode": "default | plan | auto_edit | yolo",
-  "stop_hook_active": "boolean indicating if stop hook is active",
+  "stop_hook_active": "false on the first stop check; true when the subagent is continuing because a SubagentStop hook blocked its previous stop",
   "agent_id": "identifier for the subagent",
   "agent_type": "type of agent",
   "agent_transcript_path": "path to the subagent's transcript",
@@ -1157,7 +1159,7 @@ exit 0
             "type": "command",
             "command": "$HOME/.qwen/hooks/todo-validator.sh",
             "name": "todo-validator",
-            "timeout": 5000
+            "timeout": 5
           }
         ]
       }
@@ -1251,7 +1253,7 @@ exit 0
             "type": "command",
             "command": "$HOME/.qwen/hooks/todo-completion-validator.sh",
             "name": "completion-validator",
-            "timeout": 5000
+            "timeout": 5
           }
         ]
       }
@@ -1284,7 +1286,7 @@ Hooks werden in den Qwen Code-Einstellungen konfiguriert, typischerweise in `.qw
             "command": "/path/to/security-check.sh",
             "name": "security-check",
             "description": "Run security checks before tool execution",
-            "timeout": 30000
+            "timeout": 30
           }
         ]
       }
@@ -1322,6 +1324,7 @@ Async-Hooks sind auf den Qwen-Prozess beschränkt, da ihre erfasste Ausgabe übe
 - Kann keine Steuerungsentscheidung zurückgeben (die Operation wurde bereits ausgeführt)
 - Ergebnisse werden im nächsten Konversations-Turn über `systemMessage` oder `additionalContext` injiziert, außer bei Output-ignorierten Fire-and-forget-Event-Typen, die oben dokumentiert sind
 - Geeignet für Auditing, Logging, Hintergrundtests usw.
+- Belegt einen von 10 gleichzeitigen Async-Hook-Slots, bis er abgeschlossen ist oder sein `timeout` erreicht (standardmäßig 60 Sekunden)
 
 **Beispiel:**
 
@@ -1336,7 +1339,7 @@ Async-Hooks sind auf den Qwen-Prozess beschränkt, da ihre erfasste Ausgabe übe
             "type": "command",
             "command": "$QWEN_PROJECT_DIR/.qwen/hooks/run-tests-async.sh",
             "async": true,
-            "timeout": 300000
+            "timeout": 300
           }
         ]
       }
@@ -1362,7 +1365,7 @@ fi
 
 - Hooks werden in der Umgebung des Benutzers mit Benutzerrechten ausgeführt
 - Hooks auf Projektebene erfordern den Status eines vertrauenswürdigen Ordners
-- Timeouts verhindern hängende Hooks (Standard: 60 Sekunden)
+- Timeouts verhindern hängende Hooks (Standard: 60 Sekunden für Command-Hooks)
 
 ## Best Practices
 
@@ -1422,7 +1425,7 @@ Konfiguration in `.qwen/settings.json`:
             "command": "${SECURITY_CHECK_SCRIPT}",
             "name": "security-checker",
             "description": "Security validation for bash commands",
-            "timeout": 10000
+            "timeout": 10
           }
         ]
       }

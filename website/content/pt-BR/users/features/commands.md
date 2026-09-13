@@ -6,13 +6,13 @@ Os comandos do Qwen Code são acionados por meio de prefixos específicos e se d
 
 | Tipo de Prefixo                | Descrição da Função                                | Caso de Uso Típico                                                 |
 | -------------------------- | --------------------------------------------------- | ---------------------------------------------------------------- |
-| Comandos de Barra (`/`)       | Controle em nível meta do próprio Qwen Code              | Gerenciamento de sessões, modificação de configurações, obtenção de ajuda              |
+| Comandos Slash (`/`)       | Controle em nível meta do próprio Qwen Code              | Gerenciamento de sessões, modificação de configurações, obtenção de ajuda              |
 | Comandos de Arroba (`@`)          | Injeção rápida de conteúdo de arquivos locais na conversa | Permitir que a IA analise arquivos especificados ou código em diretórios |
 | Comandos de Exclamação (`!`) | Interação direta com o Shell do sistema                | Execução de comandos do sistema como `git status`, `ls`, etc.          |
 
-## 1. Comandos de Barra (`/`)
+## 1. Comandos Slash (`/`)
 
-Os comandos de barra são usados para gerenciar sessões, interface e comportamento básico do Qwen Code.
+Os comandos slash são usados para gerenciar sessões, interface e comportamento básico do Qwen Code.
 
 ### 1.1 Gerenciamento de Sessões e Projetos
 
@@ -139,6 +139,10 @@ Comandos para gerenciar ferramentas e modelos de IA.
 > [!note]
 >
 > `/workflows`, `/lsp` e `/trust` são registrados apenas quando seus respectivos recursos estão habilitados — por meio da configuração `tools.workflowsEnabled` com escopo de usuário/sistema ou da env var `QWEN_CODE_ENABLE_WORKFLOWS=1`, da flag CLI `--experimental-lsp` e da configuração `security.folderTrust.enabled`, respectivamente. Valores de workspace para `tools.workflowsEnabled` são ignorados. Quando desabilitados, eles não aparecerão e retornarão um erro de comando desconhecido. Da mesma forma, `/dream` e `/forget` são registrados apenas quando a auto-memória gerenciada está disponível; sem ela, não aparecerão.
+
+> [!note]
+>
+> Uma skill de uma extensão instalada também é um comando slash, e seu nome carrega seu dono: `/rust:pdf`, não `/pdf`. A forma simples não é um alias — se outra skill se chamar `pdf`, `/pdf` executará aquela skill em vez disso. `slashCommands.disabled` bloqueia tal comando sob qualquer grafia, então uma entrada escrita antes de o nome carregar o dono ainda pega. Veja [How extension Skills are named](./skills.md#how-extension-skills-are-named).
 
 ### 1.5 Skills Integradas
 
@@ -379,7 +383,7 @@ Em contextos headless (`--prompt`) ou não interativos, o `/diff` imprime um res
 
 **Web Shell:** Na UI do Web Shell (`qwen serve`), o `/diff` abre uma caixa de diálogo gráfica de diff. Uma barra de abas na parte superior permite alternar entre a visualização **Changes** e a visualização **History** (`/log`).
 
-#### History Viewer (`/log`) — Apenas Web Shell
+#### Visualizador de Histórico (`/log`) — Apenas Web Shell
 
 O comando `/log` abre um navegador de histórico de commits para o workspace atual. Está disponível apenas na UI do Web Shell; a CLI/TUI não possui este comando.
 
@@ -804,13 +808,13 @@ Uma mensagem chega na outra sessão marcada como vindo de outra sessão, não do
 
 Um repositório pode tornar as sessões abertas nele mais cautelosas, nunca menos: um `.qwen/settings.json` de workspace pode definir `agents.crossSessionInbound` como `hold` ou `refuse`, ou `agents.crossSessionMessaging` como `false`, e esse valor prevalece sobre um valor mais permissivo nas suas configurações de usuário. Um valor de workspace que tornaria sua configuração mais permissiva (`accept`, ou `true` para o switch) é ignorado com um aviso, e um valor que a CLI não reconhece mantém toda mensagem quando é o valor efetivo. Configurações de sistema sobrescrevem tudo isso, como fazem para toda configuração.
 
-Uma manutenção não espera para sempre. Uma mensagem sobre a qual ninguém decide expira após `agents.crossSessionHeldExpiry` — `1m`, `5m`, `10m` ou `never`, cinco minutos por padrão — e a sessão remetente é informada de que nenhuma decisão foi tomada. Encurtar a configuração se aplica a mensagens já em espera.
+Uma retenção não espera para sempre. Uma mensagem sobre a qual ninguém decide expira após `agents.crossSessionHeldExpiry` — `1m`, `5m`, `10m` ou `never`, cinco minutos por padrão — e a sessão remetente é informada de que nenhuma decisão foi tomada. Encurtar a configuração se aplica a mensagens já em espera.
 
 Se a sessão não puder vincular sua caixa de entrada — o diretório do runtime estiver faltando, pertencer a outro usuário ou ser somente leitura, como pode acontecer dentro de um container — ela primeiro tenta um diretório privado sob o diretório temporário, e apenas se isso também falhar é que inicia sem uma. Quando isso acontece, a sessão informa isso na inicialização, e `/peers` repete o motivo e o que mudar (geralmente `XDG_RUNTIME_DIR` ou `TMPDIR`).
 
 Duas sessões também podem resolver o mesmo endereço de caixa de entrada, porque o endereço é chaveado por pid de processo e pids de processo se repetem entre containers que compartilham um diretório de runtime. A sessão que inicia segundo pega um endereço vizinho em vez de tomar o que está em uso, então nenhuma se torna inalcançável. Os pares não são afetados: eles leem o endereço de uma sessão a partir do registro de sessões em vez de derivá-lo.
 
-A chamada `send_message` apenas confirma que a mensagem foi entregue à outra sessão. O que aconteceu com ela chega mais tarde como um recibo: se foi mantida, recusada, rejeitada, descartada, expirou ou endereçada incorretamente (o endereço mudou de mãos — liste os agentes novamente) — ou liberada após uma manutenção — um aviso aparece na transcrição da sessão remetente (`Message to <name>: …`). Recusada, rejeitada e descartada são três respostas diferentes: recusada significa que alguém revisou a mensagem e disse não, rejeitada significa que o `agents.crossSessionInbound` daquela sessão é `refuse` e ninguém a viu, e descartada significa que sua caixa de entrada recusou a mensagem antes de qualquer disso (veja abaixo). O primeiro descarte é respondido imediatamente e os demais são agrupados em um recibo a cada poucos segundos, cada um nomeando as mensagens que representa, então uma sequência deles custa algumas linhas em vez de uma linha cada. O modelo que a enviou não é informado; se a outra sessão responder, a resposta chega como uma mensagem entre sessões.
+A chamada `send_message` apenas confirma que a mensagem foi entregue à outra sessão. O que aconteceu com ela chega mais tarde como um recibo: se foi mantida, recusada, rejeitada, descartada, expirou ou endereçada incorretamente (o endereço mudou de mãos — liste os agentes novamente) — ou liberada após uma retenção — um aviso aparece na transcrição da sessão remetente (`Message to <name>: …`). Recusada, rejeitada e descartada são três respostas diferentes: recusada significa que alguém revisou a mensagem e disse não, rejeitada significa que o `agents.crossSessionInbound` daquela sessão é `refuse` e ninguém a viu, e descartada significa que sua caixa de entrada recusou a mensagem antes de qualquer disso (veja abaixo). O primeiro descarte é respondido imediatamente e os demais são agrupados em um recibo a cada poucos segundos, cada um nomeando as mensagens que representa, então uma sequência deles custa algumas linhas em vez de uma linha cada. O modelo que a enviou não é informado; se a outra sessão responder, a resposta chega como uma mensagem entre sessões.
 
 ### Proteção contra inundação
 
