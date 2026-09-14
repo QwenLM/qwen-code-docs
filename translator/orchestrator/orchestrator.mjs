@@ -561,6 +561,21 @@ function splitSections(text, budget = SECTION_BUDGET_BYTES) {
   return slices.length ? slices : [text];
 }
 
+/**
+ * The part of the target that corresponds to a source slice.
+ *
+ * Pairs by section index, and only when both documents split into the same
+ * number of sections. A translation that has drifted structurally would pair
+ * the wrong halves, and handing the model the wrong half is worse than
+ * handing it everything, so that case keeps the whole file.
+ */
+function sliceTarget(targetText, slice) {
+  if (!targetText) return null;
+  const parts = splitSections(targetText);
+  if (parts.length !== slice.total) return targetText;
+  return parts[slice.index - 1];
+}
+
 function renderPrompt(lang, batch, slice) {
   const tpl = fs.readFileSync(
     path.join(HERE, "prompts", "translate.md"),
@@ -569,14 +584,28 @@ function renderPrompt(lang, batch, slice) {
   const documents = batch.map((b) => {
     const rel = relInContent(b.file);
     const target = path.join(OPTS.contentDir, lang, rel);
+    const targetText = fs.existsSync(target)
+      ? fs.readFileSync(target, "utf8")
+      : null;
     return {
       path: rel,
-      // A slice replaces the source with the part being worked on. The target
-      // stays whole, because that is what the replacements have to anchor in.
       source: slice
         ? slice.text
         : fs.readFileSync(path.join(OPTS.contentDir, "en", rel), "utf8"),
-      target: fs.existsSync(target) ? fs.readFileSync(target, "utf8") : null
+      // The target is sliced too. Leaving it whole was the defect in the
+      // first version: a 30KB source slice next to a 331KB target still got
+      // the model rewriting the entire document, and the response truncated
+      // at the same 98-178KB it did before slicing existed -- 65 of the 73
+      // truncations in run 34693327444 happened inside a slice. The prompt's
+      // scope line did not hold it back; removing the rest of the document
+      // from view does.
+      //
+      // Anchors still resolve against the whole file, because a slice of the
+      // target is a substring of it. Pairing is by section index, and only
+      // when both sides split into the same number of sections -- a target
+      // that has drifted falls back to being sent whole, which is no worse
+      // than it is today.
+      target: slice ? sliceTarget(targetText, slice) : targetText
     };
   });
   const prompt = tpl
