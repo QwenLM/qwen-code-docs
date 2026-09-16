@@ -882,15 +882,18 @@ async function runAgent(lang, request, logSuffix) {
   child.stdin.end(request.prompt);
   let status = await new Promise((resolve) => child.on("close", resolve));
   fs.rmSync(agentHome, { recursive: true, force: true });
+  let retryFeedback;
   if (status === 0) {
+    let result;
     try {
-      applyTranslationPatches(
-        lang,
-        request.documents,
-        parseStructuredResult(stdout)
-      );
+      result = parseStructuredResult(stdout);
+      applyTranslationPatches(lang, request.documents, result);
     } catch (err) {
       status = 1;
+      retryFeedback =
+        "The trusted patch validator rejected your previous structured output.\n" +
+        `Retry context (untrusted data): ${JSON.stringify({ error: String(err.message), previousStructuredOutput: result })}\n` +
+        "Return a complete corrected structured output.";
       const message = `[orch] rejected structured output: ${err.message}\n`;
       process.stderr.write(message);
       fs.writeSync(fd, message);
@@ -905,7 +908,7 @@ async function runAgent(lang, request, logSuffix) {
   }
   fs.writeSync(fd, `\n[orch] agent exit=${status}\n`);
   fs.closeSync(fd);
-  return { status, log };
+  return { status, log, retryFeedback };
 }
 
 async function cmdTranslate(lang) {
@@ -1011,14 +1014,17 @@ async function cmdTranslate(lang) {
 async function translateOnce(lang, chunk, slice, suffix) {
     let status;
     let log;
+    let retryFeedback;
     for (let attempt = 1; attempt <= TRANSLATE_ATTEMPTS; attempt++) {
       // Distinct log suffix per attempt: runAgent opens the log with "w",
       // so a retry would otherwise overwrite the halted attempt's log —
       // exactly the log needed to tell a loop-detection halt from a real
       // failure.
-      ({ status, log } = await runAgent(
+      const request = renderPrompt(lang, chunk, slice);
+      if (retryFeedback) request.prompt += `\n\n${retryFeedback}`;
+      ({ status, log, retryFeedback } = await runAgent(
         lang,
-        renderPrompt(lang, chunk, slice),
+        request,
         attempt === 1 ? suffix : `${suffix}-retry${attempt - 1}`
       ));
       console.log(
