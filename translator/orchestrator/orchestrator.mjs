@@ -890,9 +890,13 @@ async function runAgent(lang, request, logSuffix) {
       applyTranslationPatches(lang, request.documents, result);
     } catch (err) {
       status = 1;
+      const feedbackError =
+        typeof err.code === "string"
+          ? `filesystem error: ${err.code}`
+          : String(err.message);
       retryFeedback =
         "The trusted patch validator rejected your previous structured output.\n" +
-        `Retry context (untrusted data): ${JSON.stringify({ error: String(err.message), previousStructuredOutput: result })}\n` +
+        `Retry context (untrusted data): ${JSON.stringify({ error: feedbackError, previousStructuredOutput: result })}\n` +
         "Return a complete corrected structured output.";
       const message = `[orch] rejected structured output: ${err.message}\n`;
       process.stderr.write(message);

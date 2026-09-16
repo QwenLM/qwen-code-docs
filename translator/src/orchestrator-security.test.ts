@@ -81,7 +81,7 @@ if (process.env.FAKE_RETRY === "1") {
   if (!fs.existsSync(process.env.FAKE_ATTEMPT_FILE)) {
     fs.writeFileSync(process.env.FAKE_ATTEMPT_FILE, "1");
     old = "不存在。";
-  } else if (!prompt.includes("trusted patch validator rejected") || !prompt.includes("不存在。")) {
+  } else if (!prompt.includes("does not match exactly once") || !prompt.includes("不存在。")) {
     process.exit(24);
   }
 }
