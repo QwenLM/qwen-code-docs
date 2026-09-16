@@ -22,8 +22,8 @@ Node.js 22 ou posterior e npm são necessários.
 No primeiro uso, a skill executa estes comandos por conta própria:
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.3
-npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.5
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.5
+npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.9
 ```
 
 Reinicie o Qwen Code após o servidor MCP ser adicionado pela primeira vez. A skill então retoma a tarefa de desktop através do `node_repl`.
@@ -34,15 +34,26 @@ Remover a configuração do MCP ou a instalação do SDK do workspace desativa o
 
 ## Uso
 
-Peça ao Qwen Code para usar `$computer-use` para a tarefa de desktop. Após o bootstrap, ele segue o fluxo de trabalho padrão do Computer Use:
+Peça ao Qwen Code para usar `$computer-use` para a tarefa de desktop. Após o bootstrap, ele usa o fluxo de trabalho de aplicativo no macOS:
 
-1. descobre o aplicativo e a janela exatos;
-2. observa o estado completo de acessibilidade e acumula atualizações incrementais automáticas no estado atual;
-3. executa uma ou mais ações através dos tokens semânticos de elemento atuais, incluindo tokens inalterados retidos em diffs compatíveis;
+1. vincula o aplicativo com `computer.getApp(nameOrIdentifierOrPath)`;
+2. lê `app.getState()` para texto de acessibilidade compacto, seguido de atualizações incrementais automáticas;
+3. executa uma ou mais ações usando os IDs curtos de elemento nesse texto;
 4. busca o estado mais recente antes de decidir o que fazer a seguir; e
 5. fecha o cliente SDK e reseta o REPL apenas quando nenhum outro estado persistente for necessário.
 
-O driver é o único componente que computa diffs de observação. O código do modelo usa os métodos tipados do SDK e não despacha nomes arbitrários de ferramentas do driver.
+O driver é o único componente que computa diffs de observação. O código do modelo usa os métodos tipados do SDK e não despacha nomes arbitrários de ferramentas do driver. O handle do aplicativo rastreia a janela atual e os diálogos, mantém a identidade nativa do elemento internamente e delega a entrada ao driver nativo. O código do modelo não escolhe modos de primeiro plano ou segundo plano. Ações não confirmadas não são reproduzidas. `getState()` pode abrir um aplicativo parado descoberto; as ações nunca o reiniciam. As APIs exatas de janela existentes permanecem disponíveis no Windows e Linux.
+
+```js
+const app = await computer.getApp('Microsoft Excel');
+nodeRepl.write((await app.getState()).text);
+// Use an element ID from the returned state.
+await app.click(37);
+await app.typeText('hello');
+nodeRepl.write((await app.getState()).text);
+```
+
+Atualize o estado após abrir ou fechar um diálogo antes de reutilizar IDs de elemento. Cada atualização de estado do App captura a screenshot atual internamente. O retorno padrão a mantém oculta; solicite-a explicitamente com `app.getState({ includeScreenshot: true })` quando o modelo precisar da imagem.
 
 ## Permissões
 

@@ -27,7 +27,7 @@ La suggestion est générée en envoyant l'historique de la conversation au mod�
 
 ## Quand les suggestions apparaissent
 
-Le CLI interactif et le démon décident séparément, et ils n'appliquent pas les mêmes conditions : le CLI contrôle lui-même la génération, dans chacun de ses renderers, tandis que le démon la contrôle côté serveur pour chaque client attaché à la session.
+Le CLI interactif et le démon décident séparément, et ils n'appliquent pas les mêmes conditions : le CLI contrôle lui-même la génération, tandis que le démon la contrôle côté serveur pour chaque client attaché à la session.
 
 Les deux côtés exigent toutes les conditions suivantes :
 
@@ -40,7 +40,7 @@ Le CLI interactif exige en plus :
 - La session est interactive — le CLI ne génère jamais de suggestions en mode non interactif ou SDK
 - Le modèle a terminé sa réponse (pas pendant le streaming)
 - Il n'y a pas d'erreur dans la réponse la plus récente
-- Aucune boîte de dialogue de confirmation n'est en attente (par exemple, confirmation shell, autorisations)
+- Aucune boîte de dialogue de confirmation n'est en attente (par exemple, confirmation shell, autorisations). Un renderer lit cet état directement ; l'autre se base sur ses propres appels d'outils en attente et ne peut pas voir une boîte de dialogue shell ouverte en cours de tour, donc une suggestion peut quand même être générée derrière celle-ci. Rien n'est affiché dans ce cas — le composer est démonté pendant que la boîte de dialogue est ouverte — donc le coût est simplement l'appel de génération de ce tour, pas une suggestion sur laquelle vous pourriez agir par erreur
 
 Le démon exige en plus :
 

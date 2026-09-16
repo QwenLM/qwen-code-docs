@@ -29,6 +29,7 @@ qwen extensions install owner/my-agent-plugin
 | Streamable HTTP MCP 서버                   | 예                                       |
 | 레거시 HTTP+SSE MCP 서버                   | 아니오; 항목이 건너뛰어짐               |
 | Commands, agents 및 hooks                  | 아니오; 해당 디렉토리는 무시됨           |
+| Workflows                                  | 아니오; 디렉토리가 무시됨                |
 | Qwen 컨텍스트, 설정, 채널 및 앱            | 아니오                                   |
 | `extensions.*` 클라이언트 네임스페이스      | 아니오; 미구현 네임스페이스는 무시됨     |
 

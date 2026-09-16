@@ -29,6 +29,7 @@ Le manifeste racine doit cibler le schéma v1 canonique :
 | Serveurs MCP Streamable HTTP               | Oui                                      |
 | Serveurs MCP HTTP+SSE legacy               | Non ; l'entrée est ignorée               |
 | Commandes, agents et hooks                 | Non ; ces répertoires sont ignorés       |
+| Workflows                                  | Non ; le répertoire est ignoré           |
 | Contexte, paramètres, canaux et apps Qwen  | Non                                      |
 | Namespaces client `extensions.*`           | Non ; les namespaces non implémentés sont ignorés |
 

@@ -1,4 +1,5 @@
 export default {
+  'agent-board': 'Agent Board',
   commands: '命令',
   'cross-session-protocol': '跨会话协议',
   'code-review': '代码审查',

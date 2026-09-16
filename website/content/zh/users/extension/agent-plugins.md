@@ -32,6 +32,7 @@ qwen extensions install owner/my-agent-plugin
 | Streamable HTTP MCP 服务器                 | 是                                     |
 | 旧版 HTTP+SSE MCP 服务器                   | 否；该条目会被跳过                     |
 | Commands、agents 和 hooks                  | 否；这些目录会被忽略                   |
+| Workflows                                  | 否；该目录会被忽略                     |
 | Qwen context、settings、channels 和 apps   | 否                                     |
 | `extensions.*` 客户端命名空间              | 否；未实现的命名空间会被忽略           |
 

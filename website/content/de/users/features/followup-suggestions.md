@@ -27,7 +27,7 @@ Der Vorschlag wird generiert, indem der Gesprächsverlauf an das Modell gesendet
 
 ## Wann Vorschläge erscheinen
 
-Das interaktive CLI und der Daemon entscheiden dies getrennt voneinander, und sie wenden nicht dieselben Bedingungen an: Das CLI steuert die Generierung selbst, in jedem seiner Renderer, während der Daemon sie serverseitig für jeden Client steuert, der mit der Session verbunden ist.
+Das interaktive CLI und der Daemon entscheiden dies getrennt voneinander, und sie wenden nicht dieselben Bedingungen an: Das CLI steuert die Generierung selbst, während der Daemon sie serverseitig für jeden Client steuert, der mit der Session verbunden ist.
 
 Beide Seiten erfordern alle folgenden Bedingungen:
 
@@ -40,7 +40,7 @@ Das interaktive CLI erfordert zusätzlich:
 - Die Session ist interaktiv – das CLI generiert niemals Vorschläge im eigenen nicht-interaktiven oder SDK-Modus
 - Das Modell hat seine Antwort abgeschlossen (nicht während des Streamings)
 - Die letzte Antwort enthält keine Fehler
-- Es sind keine Bestätigungsdialoge anhängig (z. B. Shell-Bestätigung, Berechtigungen)
+- Es sind keine Bestätigungsdialoge anhängig (z. B. Shell-Bestätigung, Berechtigungen). Ein Renderer liest diesen Zustand direkt; der andere steuert die Generierung über seine eigenen ausstehenden Tool-Aufrufe und kann einen Shell-Dialog nicht sehen, der mitten im Turn geöffnet wird, sodass dennoch ein Vorschlag im Hintergrund generiert werden kann. In diesem Fall wird nichts angezeigt – der Composer wird ausgehängt, während der Dialog sichtbar ist – es kostet also nur den Generierungsaufruf dieses Turns, nicht einen Vorschlag, den Sie versehentlich ausführen könnten.
 
 Der Daemon erfordert zusätzlich:
 
@@ -53,7 +53,7 @@ Da die daemon-seitige Generierung für jeden mit der Session verbundenen Client 
 Vorschläge werden automatisch verworfen, wenn:
 
 - Sie mit der Eingabe beginnen
-- Ein neuer Modell-Durchlauf beginnt
+- Ein neuer Modell-Turn beginnt
 - Der Vorschlag angenommen wird
 
 ## Schnelles Modell
@@ -78,7 +78,7 @@ Oder verwenden Sie `/model --fast` (ohne Modellnamen), um einen Auswahldialog zu
 
 Das schnelle Modell wird für Eingabevorschläge und spekulative Ausführung verwendet. Wenn nicht konfiguriert, wird das Hauptgesprächsmodell als Fallback verwendet.
 
-> **Kostenhinweis:** Ein schnelles Modell senkt die Latenz, aber nicht unbedingt die Kosten. Die Vorschlagsgenerierung verwendet den Präfix-Cache Ihres Gesprächs erneut (über `ui.enableCacheSharing`, standardmäßig aktiviert) – aber ein Präfix-Cache ist pro Modell. Wenn Sie `fastModel` auf ein anderes Modell setzen, wird ein separater Cache erstellt, sodass der gesamte Gesprächsverlauf auf dem schnellen Modell erneut als ungecachte Eingabe abgerechnet wird. Bei langen Gesprächen kann die Standardeinstellung (Hauptmodell + gemeinsamer Cache) **günstiger** sein als ein schnelles Modell, da der Großteil des Verlaufs zum reduzierten Cache-Tarif abgerechnet wird. Setzen Sie `fastModel` nur, wenn die Latenz wichtiger ist als die Kosten pro Durchlauf.
+> **Kostenhinweis:** Ein schnelles Modell senkt die Latenz, aber nicht unbedingt die Kosten. Die Vorschlagsgenerierung verwendet den Präfix-Cache Ihres Gesprächs erneut (über `ui.enableCacheSharing`, standardmäßig aktiviert) – aber ein Präfix-Cache ist pro Modell. Wenn Sie `fastModel` auf ein anderes Modell setzen, wird ein separater Cache erstellt, sodass der gesamte Gesprächsverlauf auf dem schnellen Modell erneut als ungecachte Eingabe abgerechnet wird. Bei langen Gesprächen kann die Standardeinstellung (Hauptmodell + gemeinsamer Cache) **günstiger** sein als ein schnelles Modell, da der Großteil des Verlaufs zum reduzierten Cache-Tarif abgerechnet wird. Setzen Sie `fastModel` nur, wenn die Latenz wichtiger ist als die Kosten pro Turn.
 
 Der Denk-/Überlegungsmodus wird automatisch für alle Hintergrundaufgaben (Vorschlagsgenerierung und Spekulation) deaktiviert, unabhängig von der Denkkonfiguration Ihres Hauptmodells. So wird vermieden, dass Token für interne Überlegungen verschwendet werden, die für diese Aufgaben nicht benötigt werden.
 

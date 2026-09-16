@@ -1,4 +1,5 @@
 export default {
+  'agent-board': 'Agent Board',
   commands: '명령어',
   'cross-session-protocol': '크로스 세션 프로토콜',
   'code-review': '코드 리뷰',

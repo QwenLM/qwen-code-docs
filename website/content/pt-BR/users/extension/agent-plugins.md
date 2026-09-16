@@ -22,13 +22,14 @@ O manifesto raiz deve apontar para o schema canônico v1:
 
 ## Capabilities suportadas
 
-| Capability                                 | Suporte                                  |
+| Capability                                 | Support                                  |
 | ------------------------------------------ | ---------------------------------------- |
 | `skills/*/SKILL.md` filho direto           | Sim                                      |
 | Servidores MCP stdio                       | Sim                                      |
 | Servidores MCP HTTP streamable             | Sim                                      |
 | Servidores MCP HTTP+SSE legados            | Não; a entrada é ignorada                |
 | Comandos, agentes e hooks                  | Não; esses diretórios são ignorados      |
+| Workflows                                  | Não; o diretório é ignorado              |
 | Contexto, configurações, canais e apps Qwen | Não                                     |
 | Namespaces de cliente `extensions.*`       | Não; namespaces não implementados são ignorados |
 
