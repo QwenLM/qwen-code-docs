@@ -1,4 +1,5 @@
 export default {
+  'agent-board': 'Agent Board',
   commands: 'Comandos',
   'cross-session-protocol': 'Protocolo entre sessões',
   'code-review': 'Revisão de código',
