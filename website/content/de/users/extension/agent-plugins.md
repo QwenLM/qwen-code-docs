@@ -28,11 +28,12 @@ Das Root-Manifest muss auf das kanonische v1-Schema verweisen:
 | Stdio-MCP-Server                             | Ja                                       |
 | Streamable-HTTP-MCP-Server                   | Ja                                       |
 | Legacy-HTTP+SSE-MCP-Server                   | Nein; der Eintrag wird übersprungen      |
+| Workflows                                    | Nein; das Verzeichnis wird ignoriert       |
 | Commands, Agents und Hooks                   | Nein; diese Verzeichnisse werden ignoriert |
 | Qwen-Kontext, Einstellungen, Channels und Apps | Nein                                   |
 | `extensions.*`-Client-Namespaces             | Nein; nicht implementierte Namespaces werden ignoriert |
 
-Skills folgen der [Agent Skills Specification](https://agentskills.io/specification).
+Skills folgen der [Agent Skills specification](https://agentskills.io/specification).
 Ein ungültiger Skill wird übersprungen, ohne gültige Nachbar-Skills zu deaktivieren. Das experimentelle `allowed-tools`-Feld wird als String erkannt, gewährt aber keine vorab genehmigten Qwen-Tools.
 
 Für Stdio-MCP-Server expandiert Qwen Code `${PLUGIN_ROOT}` und `${PLUGIN_DATA}` einmalig in `args`, Umgebungswerten und `cwd`. `PLUGIN_DATA` ist ein beschreibbares, installations-spezifisches Verzeichnis, dessen Inhalt über Updates und Neuinstallationen hinweg erhalten bleibt. Remote-MCP-Endpunkte müssen HTTPS verwenden, ausgenommen Loopback-HTTP-Endpunkte.

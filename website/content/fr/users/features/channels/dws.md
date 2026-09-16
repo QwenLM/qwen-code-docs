@@ -65,13 +65,17 @@ Le mode d'approbation YOLO est disponible pour les bots de réponse qui doivent 
 
 Le mode YOLO approuve automatiquement chaque appel d'outil. Utilisez-le uniquement pour un compte bot et un workspace de confiance.
 
-`senderPolicy` et `groupPolicy` sont par défaut à `pairing` pour un canal DWS nouvellement géré. Approuvez un utilisateur ou un groupe avec le code renvoyé par le canal :
+`senderPolicy` et `groupPolicy` sont par défaut à `pairing` pour un canal DWS nouvellement géré. `dmPolicy` est par défaut à `open`, y compris pour les configurations existantes qui l'omettent. Approuvez un utilisateur ou un groupe avec le code renvoyé par le canal :
 
 ```bash
 qwen channel pairing approve dws-work CODE
 ```
 
 `senderPolicy` contrôle les expéditeurs de messages directs, les auteurs de notifications de document, les créateurs de todos natifs et les expéditeurs dans les groupes `open` ou `allowlist`. `groupPolicy` contrôle les conversations de groupe. Un groupe appairé approuvé suit le comportement partagé du canal et autorise ses membres ; les groupes open et allowlist doivent également passer `senderPolicy`.
+
+L'accès aux groupes et aux messages directs peut être configuré indépendamment. Pour un canal réservé aux groupes, définissez `dmPolicy: "disabled"` et choisissez un `groupPolicy` activé. Pour un canal réservé aux messages directs, définissez `groupPolicy: "disabled"` et `dmPolicy: "open"`. L'accès aux messages directs contrôle également les notifications de document. Le polling des todos natifs reste contrôlé séparément par `watchTodos`.
+
+Les sources de chat désactivées ne sont ni abonnées ni interrogées par polling, et leurs messages ne peuvent pas démarrer de nouvelles tâches via des callbacks tardifs ou une relecture persistée. Le travail en attente et les curseurs d'historique sont conservés : après la réactivation d'une source, le mécanisme de récupération existant peut traiter les messages plus anciens, y compris les messages de l'intervalle désactivé. L'autorisation d'expéditeur, l'appairage de groupe et les exigences de mention s'appliquent toujours.
 
 `groups` contrôle le comportement de mention. Un ID de groupe concret remplace `"*"`. Avec `requireMention: true`, seul un message @ réveille le canal. Avec `requireMention: false`, les messages ordinaires sont également reçus après que les politiques de groupe et d'expéditeur sont passées.
 

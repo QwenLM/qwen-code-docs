@@ -66,13 +66,17 @@ O modo de aprovação YOLO está disponível para bots de resposta que devem exe
 
 O modo YOLO aprova automaticamente toda chamada de ferramenta. Use-o apenas para uma conta e workspace de bot confiáveis.
 
-`senderPolicy` e `groupPolicy` têm padrão `pairing` para um canal DWS gerenciado recém-criado. Aprove um usuário ou grupo com o código retornado pelo canal:
+`senderPolicy` e `groupPolicy` têm padrão `pairing` para um canal DWS gerenciado recém-criado. `dmPolicy` tem padrão `open`, incluindo configurações existentes que o omitem. Aprove um usuário ou grupo com o código retornado pelo canal:
 
 ```bash
 qwen channel pairing approve dws-work CODE
 ```
 
 `senderPolicy` controla remetentes de mensagens diretas, autores de notificações de documentos, criadores de todos nativos e remetentes em grupos `open` ou `allowlist`. `groupPolicy` controla conversas em grupo. Um grupo pareado aprovado segue o comportamento compartilhado do canal e autoriza seus membros; grupos open e allowlist também precisam passar pelo `senderPolicy`.
+
+O acesso a grupo e mensagem direta pode ser configurado independentemente. Para um canal somente de grupo, defina `dmPolicy: "disabled"` e escolha um `groupPolicy` habilitado. Para um canal somente de mensagem direta, defina `groupPolicy: "disabled"` e `dmPolicy: "open"`. O acesso a mensagem direta também controla as notificações de documento. O polling de todos nativos permanece controlado separadamente por `watchTodos`.
+
+Fontes de chat desabilitadas não são inscritas nem consultadas via polling, e suas mensagens não podem iniciar novas tarefas por meio de callbacks atrasados ou replay persistido. O trabalho pendente e os cursores de histórico são mantidos: após reabilitar uma fonte, o mecanismo de recuperação existente pode processar mensagens mais antigas, incluindo mensagens do intervalo desabilitado. A autorização de remetente, o pareamento de grupo e os requisitos de menção ainda se aplicam.
 
 `groups` controla o comportamento de menção. Um ID de grupo concreto sobrescreve `"*"`. Com `requireMention: true`, apenas uma mensagem com @ ativa o canal. Com `requireMention: false`, mensagens ordinárias também são recebidas após as políticas de grupo e remetente passarem.
 
@@ -81,6 +85,8 @@ As menções de grupo usam o stream de eventos pessoais em tempo real primeiro. 
 Quando uma mensagem cita outra mensagem do DingTalk, o texto citado é incluído como contexto de resposta para o agente tanto no caminho em tempo real quanto no fallback de histórico.
 
 Mensagens diretas ordinárias são recuperadas da mesma forma: uma verificação de histórico de cinco segundos re-processa qualquer mensagem direta omitida pelo stream em tempo real, deduplicada por conversa e ID de mensagem em ambos os caminhos.
+
+Fontes de chat desabilitadas não são inscritas nem consultadas via polling, e suas mensagens não podem iniciar novas tarefas por meio de callbacks atrasados ou replay persistido. O trabalho pendente e os cursores de histórico são mantidos: após reabilitar uma fonte, o mecanismo de recuperação existente pode processar mensagens mais antigas, incluindo mensagens do intervalo desabilitado. A autorização de remetente, o pareamento de grupo e os requisitos de menção ainda se aplicam.
 
 `startReaction` é o caractere de emoji ou o nome de reação do DingTalk adicionado enquanto uma tarefa aceita está em execução; um valor omitido ou vazio usa o padrão `🤔`. `endReaction` substitui a reação de início após a tarefa ser concluída, falhar ou ser cancelada; um valor omitido ou vazio desativa a reação de término.
 

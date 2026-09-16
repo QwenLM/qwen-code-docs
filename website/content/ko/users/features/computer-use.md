@@ -23,8 +23,8 @@ Node.js 22 이상이 필요하며 npm도 필요합니다.
 처음 사용 시 skill이 다음 명령을 직접 실행합니다:
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.3
-npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.5
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.5
+npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.9
 ```
 
 MCP 서버가 처음 추가된 후 Qwen Code를 재시작하세요. 그런 다음 skill이 `node_repl`을 통해 데스크톱 작업을 계속합니다.
@@ -35,15 +35,26 @@ MCP 구성이나 워크스페이스 SDK 설치를 제거하면 실행 경로가 
 
 ## 사용
 
-Qwen Code에게 데스크톱 작업에 `$computer-use`를 사용하도록 요청하세요. 부트스트랩 후 표준 Computer Use 워크플로를 따릅니다:
+Qwen Code에게 데스크톱 작업에 `$computer-use`를 사용하도록 요청하세요. 부트스트랩 후 macOS에서 앱 워크플로를 사용합니다:
 
-1. 정확한 애플리케이션과 창을 발견합니다.
-2. 전체 접근성 상태를 관찰한 후, 자동 증분 업데이트를 현재 상태에 누적합니다.
-3. 호환 가능한 diff에서 유지되는 변경 없는 토큰을 포함하여, 현재 시맨틱 요소 토큰을 통해 하나 이상의 동작을 수행합니다.
+1. `computer.getApp(nameOrIdentifierOrPath)`로 애플리케이션을 바인딩합니다;
+2. 간결한 접근성 텍스트를 위해 `app.getState()`를 읽고, 이후 자동 증분 업데이트를 수행합니다;
+3. 해당 텍스트의 짧은 요소 ID를 사용하여 하나 이상의 동작을 수행합니다;
 4. 다음 동작을 결정하기 전에 최신 상태를 가져옵니다.
 5. 다른 영구 상태가 필요하지 않을 때만 SDK 클라이언트를 닫고 REPL을 초기화합니다.
 
-드라이버만이 관찰 diff를 계산하는 유일한 구성 요소입니다. 모델 코드는 타입화된 SDK 메서드를 사용하며 임의의 드라이버 도구 이름을 디스패치하지 않습니다.
+드라이버만이 관찰 diff를 계산하는 유일한 구성 요소입니다. 모델 코드는 타입화된 SDK 메서드를 사용하며 임의의 드라이버 도구 이름을 디스패치하지 않습니다. 앱 핸들은 현재 창과 대화 상자를 추적하고, 내부적으로 네이티브 요소 ID를 유지하며, 입력을 네이티브 드라이버에 위임합니다. 모델 코드는 포그라운드/백그라운드 모드를 선택하지 않습니다. 확인되지 않은 동작은 리플레이되지 않습니다. `getState()`는 발견된 중지된 앱을 열 수 있으며, 동작은 앱을 재시작하지 않습니다. 기존 정확 창 API는 Windows와 Linux에서 계속 사용 가능합니다.
+
+```js
+const app = await computer.getApp('Microsoft Excel');
+nodeRepl.write((await app.getState()).text);
+// Use an element ID from the returned state.
+await app.click(37);
+await app.typeText('hello');
+nodeRepl.write((await app.getState()).text);
+```
+
+요소 ID를 재사용하기 전에 대화 상자를 열거나 닫은 후 상태를 새로고침하세요. 각 App 상태 새로고침은 내부적으로 현재 스크린샷을 캡처합니다. 기본 반환은 숨겨진 상태로 유지하며, 모델이 이미지가 필요할 때 `app.getState({ includeScreenshot: true })`로 명시적으로 요청하세요.
 
 ## 권한
 

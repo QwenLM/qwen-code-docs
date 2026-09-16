@@ -29,6 +29,7 @@ qwen extensions install owner/my-agent-plugin
 | Streamable HTTP MCP サーバー                 | はい                                      |
 | レガシー HTTP+SSE MCP サーバー               | なし。エントリはスキップされます          |
 | コマンド、エージェント、フック               | なし。これらのディレクトリは無視されます  |
+| ワークフロー                                 | なし。ディレクトリは無視されます          |
 | Qwen コンテキスト、設定、チャネル、アプリ    | なし                                      |
 | `extensions.*` クライアント名前空間          | なし。未実装の名前空間は無視されます      |
 

@@ -40,7 +40,7 @@ O CLI interativo adicionalmente requer:
 - A sessão é interativa — o CLI nunca gera sugestões em seu próprio modo não interativo ou SDK
 - O modelo concluiu sua resposta (não durante o streaming)
 - Não há erros na resposta mais recente
-- Nenhum diálogo de confirmação está pendente (ex.: confirmação do shell, permissões)
+- Nenhum diálogo de confirmação está pendente (ex.: confirmação do shell, permissões). Um renderizador lê esse estado diretamente; o outro controla com base em suas próprias chamadas de ferramenta pendentes e não consegue ver um diálogo do shell aberto no meio do turno, então uma sugestão ainda pode ser gerada por trás dele. Nada é exibido nesse caso — o composer é desmontado enquanto o diálogo está ativo — então o custo é a chamada de geração daquele turno, não uma sugestão que você possa acionar por engano.
 
 O daemon adicionalmente requer:
 

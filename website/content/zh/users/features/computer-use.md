@@ -22,8 +22,8 @@ Qwen Code 不捆绑 MCP server、SDK 或原生驱动。skill 会在缺少这些�
 首次使用时，skill 会自行运行以下命令：
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.3
-npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.5
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.5
+npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.9
 ```
 
 MCP server 首次添加后请重启 Qwen Code。skill 随后通过 `node_repl` 继续执行桌面任务。
@@ -34,15 +34,26 @@ SDK 安装不会修改 `package.json` 和 lockfile，但会写入工作区的 `n
 
 ## 使用
 
-要求 Qwen Code 使用 `$computer-use` 执行桌面任务。引导完成后，它会遵循标准的 Computer Use 工作流：
+要求 Qwen Code 使用 `$computer-use` 执行桌面任务。引导完成后，它在 macOS 上使用 app 工作流：
 
-1. 发现目标应用和窗口；
-2. 观察完整的辅助功能状态，然后将自动增量更新累积到当前状态中；
-3. 通过当前的语义元素 token 执行一个或多个操作，包括跨兼容 diff 保留的未变更 token；
+1. 通过 `computer.getApp(nameOrIdentifierOrPath)` 绑定应用；
+2. 读取 `app.getState()` 获取紧凑的辅助功能文本，随后进行自动增量更新；
+3. 使用该文本中的短元素 ID 执行一个或多个操作；
 4. 在决定下一步操作之前获取最新状态；并
 5. 仅在没有其他持久状态需要时，才关闭 SDK 客户端并重置 REPL。
 
-驱动是唯一计算观察差异的组件。模型代码使用类型化的 SDK 方法，不会分发任意的驱动工具名称。
+驱动是唯一计算观察差异的组件。模型代码使用类型化的 SDK 方法，不会分发任意的驱动工具名称。app 句柄跟踪当前窗口和对话框，在内部保留原生元素标识，并将输入委托给原生驱动。模型代码不选择前台/后台模式。未确认的操作不会被重放。`getState()` 可以打开已发现的已停止应用；操作永远不会重启它。现有的精确窗口 API 在 Windows 和 Linux 上仍然可用。
+
+```js
+const app = await computer.getApp('Microsoft Excel');
+nodeRepl.write((await app.getState()).text);
+// Use an element ID from the returned state.
+await app.click(37);
+await app.typeText('hello');
+nodeRepl.write((await app.getState()).text);
+```
+
+在重新使用元素 ID 之前，打开或关闭对话框后请刷新状态。每次 App 状态刷新都会在内部捕获当前截图。默认返回会隐藏截图；当模型需要图像时，通过 `app.getState({ includeScreenshot: true })` 显式请求。
 
 ## 权限
 

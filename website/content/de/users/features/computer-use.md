@@ -25,8 +25,8 @@ Node.js 22 oder später und npm werden benötigt.
 Bei der ersten Verwendung führt der Skill diese Befehle selbst aus:
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.3
-npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.5
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.5
+npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.9
 ```
 
 Starte Qwen Code neu, nachdem der MCP-Server erstmals hinzugefügt wurde. Der Skill setzt dann
@@ -41,17 +41,38 @@ Ausführungspfad; es gibt kein Legacy-Fallback.
 
 ## Verwendung
 
-Bitte Qwen Code, `$computer-use` für die Desktop-Aufgabe zu verwenden. Nach dem Bootstrap folgt es
-dem standardmäßigen Computer-Use-Workflow:
+Bitte Qwen Code, `$computer-use` für die Desktop-Aufgabe zu verwenden. Nach dem Bootstrap verwendet es
+den App-Workflow unter macOS:
 
-1. Ermittelt die genaue Anwendung und das Fenster;
-2. Beobachtet den vollständigen Accessibility-Zustand und akkumuliert dann automatische inkrementelle Updates in den aktuellen Zustand;
-3. Führt eine oder mehrere Aktionen über aktuelle semantische Element-Tokens aus, einschließlich unveränderter Tokens, die über kompatible Diffs hinweg beibehalten werden;
+1. Bindet die Anwendung mit `computer.getApp(nameOrIdentifierOrPath)`;
+2. Liest `app.getState()` für kompakten Accessibility-Text, gefolgt von automatischen
+   inkrementellen Updates;
+3. Führt eine oder mehrere Aktionen über die kurzen Element-IDs in diesem Text aus;
 4. Ruft den neuesten Zustand ab, bevor entschieden wird, was als Nächstes zu tun ist; und
-5. Schließt den SDK-Client und setzt das REPL nur zurück, wenn kein anderer persistenter Zustand benötigt wird.
+5. Schließt den SDK-Client und setzt das REPL nur zurück, wenn kein anderer persistenter
+   Zustand benötigt wird.
 
 Der Driver ist die einzige Komponente, die Beobachtungs-Diffs berechnet. Modell-Code
 verwendet die typisierten SDK-Methoden und dispatcht keine beliebigen Driver-Tool-Namen.
+Das App-Handle verfolgt das aktuelle Fenster und Dialoge, behält die native Element-
+Identität intern und delegiert Eingaben an den nativen Driver. Modell-Code wählt keine
+Foreground/Background-Modi. Unbestätigte Aktionen werden nicht replayed.
+`getState()` kann eine entdeckte gestoppte App öffnen; Aktionen starten sie nie neu.
+Vorhandene Exact-Window-APIs bleiben unter Windows und Linux verfügbar.
+
+```js
+const app = await computer.getApp('Microsoft Excel');
+nodeRepl.write((await app.getState()).text);
+// Use an element ID from the returned state.
+await app.click(37);
+await app.typeText('hello');
+nodeRepl.write((await app.getState()).text);
+```
+
+Aktualisiere den Zustand nach dem Öffnen oder Schließen eines Dialogs, bevor Element-IDs
+wiederverwendet werden. Jeder App-Zustands-Refresh erfasst intern den aktuellen Screenshot.
+Die Standard-Rückgabe hält ihn verborgen; fordere ihn explizit mit
+`app.getState({ includeScreenshot: true })` an, wenn das Modell das Bild benötigt.
 
 ## Berechtigungen
 
