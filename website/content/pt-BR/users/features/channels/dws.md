@@ -86,8 +86,6 @@ Quando uma mensagem cita outra mensagem do DingTalk, o texto citado é incluído
 
 Mensagens diretas ordinárias são recuperadas da mesma forma: uma verificação de histórico de cinco segundos re-processa qualquer mensagem direta omitida pelo stream em tempo real, deduplicada por conversa e ID de mensagem em ambos os caminhos.
 
-Fontes de chat desabilitadas não são inscritas nem consultadas via polling, e suas mensagens não podem iniciar novas tarefas por meio de callbacks atrasados ou replay persistido. O trabalho pendente e os cursores de histórico são mantidos: após reabilitar uma fonte, o mecanismo de recuperação existente pode processar mensagens mais antigas, incluindo mensagens do intervalo desabilitado. A autorização de remetente, o pareamento de grupo e os requisitos de menção ainda se aplicam.
-
 `startReaction` é o caractere de emoji ou o nome de reação do DingTalk adicionado enquanto uma tarefa aceita está em execução; um valor omitido ou vazio usa o padrão `🤔`. `endReaction` substitui a reação de início após a tarefa ser concluída, falhar ou ser cancelada; um valor omitido ou vazio desativa a reação de término.
 
 ### Entrega de Respostas IM
