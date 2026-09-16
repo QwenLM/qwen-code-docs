@@ -76,7 +76,16 @@ const systemPrompt = args[args.indexOf("--system-prompt") + 1];
 if (!prompt.includes("# Guide") || !prompt.includes("pairwise non-overlapping") || !systemPrompt.includes("exactly one structured_output") || prompt.includes("sentinel-secret")) process.exit(22);
 if (process.cwd().includes(${JSON.stringify(project)}) || process.env.HOME === ${JSON.stringify(process.env.HOME)}) process.exit(23);
 const path = process.env.FAKE_ESCAPE === "1" ? "../../outside.md" : "guide.md";
-const payload = { translations: [{ path, replacements: [{ old: "旧内容。", new: "新内容。" }] }] };
+let old = "旧内容。";
+if (process.env.FAKE_RETRY === "1") {
+  if (!fs.existsSync(process.env.FAKE_ATTEMPT_FILE)) {
+    fs.writeFileSync(process.env.FAKE_ATTEMPT_FILE, "1");
+    old = "不存在。";
+  } else if (!prompt.includes("does not match exactly once") || !prompt.includes("不存在。")) {
+    process.exit(24);
+  }
+}
+const payload = { translations: [{ path, replacements: [{ old, new: "新内容。" }] }] };
 process.stdout.write(JSON.stringify([{ type: "result", is_error: false, structured_result: payload }]));
 `
     );
@@ -109,6 +118,19 @@ process.stdout.write(JSON.stringify([{ type: "result", is_error: false, structur
     };
     const success = spawnSync(process.execPath, args, { encoding: "utf8", env });
     assert.equal(success.status, 0, success.stdout || success.stderr);
+    assert.equal(fs.readFileSync(target, "utf8"), "# 指南\n新内容。\n");
+
+    fs.writeFileSync(target, "# 指南\n旧内容。\n");
+    const retry = spawnSync(process.execPath, args, {
+      encoding: "utf8",
+      env: {
+        ...env,
+        FAKE_RETRY: "1",
+        FAKE_ATTEMPT_FILE: path.join(root, "attempt"),
+      },
+    });
+    assert.equal(retry.status, 0, retry.stdout || retry.stderr);
+    assert.match(retry.stdout, /failed; retrying once/);
     assert.equal(fs.readFileSync(target, "utf8"), "# 指南\n新内容。\n");
 
     const rejected = spawnSync(process.execPath, args, {
