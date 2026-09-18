@@ -10,7 +10,7 @@ Stelle sicher, dass du Folgendes hast:
 
 - Ein **Terminal** oder eine Eingabeaufforderung geöffnet
 - Ein Code-Projekt, mit dem du arbeiten kannst
-- Einen API-Key von Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)) oder ein Alibaba Cloud Coding Plan ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) / [intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)) Abonnement
+- Einen API-Key von Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)) oder ein Alibaba Cloud Token Plan ([Beijing](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) Abonnement
 
 ## Schritt 1: Qwen Code installieren
 
@@ -69,9 +69,8 @@ qwen
 Das Menü beim ersten Start ermöglicht dir die Verbindung mit einem Modellanbieter. Wähle eine der folgenden Optionen:
 
 - **Alibaba ModelStudio** – die empfohlene Einrichtung. Öffnet ein Untermenü:
-  - **Coding Plan**: Für einzelne Entwickler mit einem inkludierten wöchentlichen Kontingent und verschiedenen Modelloptionen. Siehe die [Coding Plan Anleitung](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) ([intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)) für die Einrichtung.
-  - **Token Plan**: Nutzungsbasierte Abrechnung mit einem dedizierten Endpunkt, gedacht für Teams und Unternehmen.
-  - **Standard API Key**: Verbinde einen vorhandenen API-Key von Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)). Siehe die API-Einrichtungsanleitung ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)) für Details.
+  - **Token Plan**: nutzungsbasierte Abrechnung mit einem dedizierten Endpunkt, gedacht für Teams und Unternehmen. Siehe den [Token Plan Guide](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) ([intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) für Einrichtungsanweisungen.
+  - **Standard API Key**: Verbinde einen vorhandenen API-Key von Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)). Siehe den API-Einrichtungsleitfaden für Details.
 - **Drittanbieter** – Wähle einen integrierten Anbieter (DeepSeek, Grok, MiniMax, Z.AI, Kimi, Idealab, ModelScope, OpenRouter, Requesty und weitere) und verbinde ihn mit einem API-Key.
 - **Eigener Anbieter** – Verbinde manuell einen lokalen Server, Proxy oder nicht unterstützten Anbieter.
 

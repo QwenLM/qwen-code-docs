@@ -12,6 +12,8 @@
     "plans",
     "superpowers",
     "verification",
+    "users/features/omni-fixed-policies-preset.json",
+    "users/features/omni-media-policies.md",
     "declarative-agents-port.md",
     "yaml-parser-replacement.md"
   ]

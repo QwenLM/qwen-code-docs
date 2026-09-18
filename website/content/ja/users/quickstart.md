@@ -10,7 +10,7 @@
 
 - **ターミナル** またはコマンドプロンプトが開いていること
 - 作業するコードプロジェクト
-- Alibaba Cloud ModelStudio の API キー（[Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)）、または Alibaba Cloud Coding Plan（[Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) / [intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)）のサブスクリプション
+- Alibaba Cloud ModelStudio の API キー（[Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)）、または Alibaba Cloud Token Plan（[Beijing](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)）のサブスクリプション
 
 ## ステップ1: Qwen Code のインストール
 
@@ -69,8 +69,7 @@ qwen
 初回起動時のメニューでは、モデルプロバイダーを選択できます。以下から選択してください：
 
 - **Alibaba ModelStudio** — 推奨される設定です。サブメニューが開きます：
-  - **Coding Plan**: 個人開発者向けで、週ごとの利用枠と多様なモデルオプションが含まれています。設定手順については [Coding Plan ガイド](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index)（[intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)）を参照してください。
-  - **Token Plan**: 専用エンドポイントを使用した従量課金制で、チームや企業向けです。
+  - **Token Plan**: 専用エンドポイントを使用した従量課金制で、チームや企業向けです。設定手順については [Token Plan ガイド](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856)（[intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)）を参照してください。
   - **Standard API Key**: 既存の Alibaba Cloud ModelStudio（[Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)）の API キーを接続します。詳細は API 設定ガイド（[Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)）を参照してください。
 - **Third-party Providers** — 内蔵プロバイダー（DeepSeek、Grok、MiniMax、Z.AI、Kimi、Idealab、ModelScope、OpenRouter、Requesty など）を選択し、API キーで接続します。
 - **Custom Provider** — ローカルサーバー、プロキシ、またはサポートされていないプロバイダーを手動で接続します。
@@ -135,7 +134,7 @@ Qwen Code は以下の処理を行います：
 
 > [!note]
 >
-> Qwen Code はファイルを変更する前に必ず許可を求めます。個々の変更を承認するか、セッションで「すべて接受」モードを有効にできます。
+> Qwen Code はファイルを変更する前に必ず許可を求めます。個々の変更を承認するか、セッションで「すべて受け入れる」モードを有効にできます。
 
 ### Qwen Code で Git を使用する
 

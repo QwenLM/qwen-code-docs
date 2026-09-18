@@ -70,8 +70,8 @@ qwen
 
 - **Alibaba ModelStudio** — 권장 설정. 하위 메뉴를 엽니다:
   - **Coding Plan**: 개인 개발자용, 주간 할당량 포함 및 다양한 모델 옵션. 설정 방법은 [Coding Plan 가이드](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index)([intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index))를 참조하세요.
-  - **Token Plan**: 사용량 기반 과금, 전용 엔드포인트, 팀 및 기업 대상.
-  - **Standard API Key**: Alibaba Cloud ModelStudio([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/))의 기존 API 키로 연결. 자세한 내용은 API 설정 가이드([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721))를 참조하세요.
+  - **Token Plan**: 사용량 기반 과금, 전용 엔드포인트, 팀 및 기업 대상. 설정 방법은 [Token Plan 가이드](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856)([intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model))를 참조하세요.
+  - **Standard API Key**: Alibaba Cloud ModelStudio([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/))의 기존 API 키로 연결합니다. 자세한 내용은 API 설정 가이드([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721))를 참조하세요.
 - **Third-party Providers** — 내장 제공자(DeepSeek, Grok, MiniMax, Z.AI, Kimi, Idealab, ModelScope, OpenRouter, Requesty 등)를 선택하고 API 키로 연결합니다.
 - **Custom Provider** — 로컬 서버, 프록시 또는 지원되지 않는 제공자를 수동으로 연결합니다.
 
@@ -247,7 +247,7 @@ review my changes and suggest improvements
 
 **단계별 지침을 사용하세요**
 
-- 복잡한 작업을 단계으로 분할하세요:
+- 복잡한 작업을 단계로 분할하세요:
 
 ```
 1. create a new database table for user profiles
