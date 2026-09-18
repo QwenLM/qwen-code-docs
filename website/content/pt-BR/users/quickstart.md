@@ -10,7 +10,7 @@ Certifique-se de ter:
 
 - Um **terminal** ou prompt de comando aberto
 - Um projeto de código para trabalhar
-- Uma chave de API do Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)), ou uma assinatura do Alibaba Cloud Coding Plan ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) / [intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index))
+- Uma chave de API do Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)), ou uma assinatura do Alibaba Cloud Token Plan ([Beijing](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model))
 
 ## Passo 1: Instalar o Qwen Code
 
@@ -69,8 +69,7 @@ qwen
 O menu de primeira execução permite conectar um provedor de modelo. Escolha um dos seguintes:
 
 - **Alibaba ModelStudio** — a configuração recomendada. Abre um submenu:
-  - **Coding Plan**: para desenvolvedores individuais, com uma cota semanal inclusa e diversas opções de modelos. Veja o [guia do Coding Plan](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) ([intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)) para instruções de configuração.
-  - **Token Plan**: faturamento baseado em uso com um endpoint dedicado, voltado para equipes e empresas.
+  - **Token Plan**: faturamento baseado em uso com um endpoint dedicado, voltado para equipes e empresas. Veja o [guia do Token Plan](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) ([intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) para instruções de configuração.
   - **Standard API Key**: conecte-se com uma chave de API existente do Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)). Veja o guia de configuração de API ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)) para detalhes.
 - **Provedores de terceiros** — escolha um provedor embutido (DeepSeek, Grok, MiniMax, Z.AI, Kimi, Idealab, ModelScope, OpenRouter, Requesty e outros) e conecte-se com uma chave de API.
 - **Provedor personalizado** — conecte manualmente um servidor local, proxy ou provedor não suportado.
@@ -272,7 +271,7 @@ crie um dashboard mostrando produtos que são mais frequentemente devolvidos por
 - Pressione `?` para ver todos os atalhos de teclado disponíveis
 - Use Tab para completar comandos
 - Pressione ↑ para histórico de comandos
-- Digite `/` para ver todos os comandos de barra
+- Digite `/` para ver todos os comandos slash
 
 ## Obtendo ajuda
 

@@ -3,7 +3,7 @@
 [![@qwen-code/qwen-code downloads](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code)
 [![@qwen-code/qwen-code version](https://img.shields.io/npm/v/@qwen-code/qwen-code.svg)](https://www.npmjs.com/package/@qwen-code/qwen-code)
 
-> 터미널에서 작동하며 아이디어를 코드보다 빠르게 구현할 수 있도록 도와주는 Qwen의 에이전트 기반 코딩 도구인 Qwen Code에 대해 알아보세요.
+> 터미널에서 작동하며 아이디어를 그 어느 때보다 빠르게 구현할 수 있도록 도와주는 Qwen의 에이전트 기반 코딩 도구인 Qwen Code에 대해 알아보세요.
 
 ## 30초 만에 시작하기
 
@@ -34,7 +34,7 @@ cd your-project
 qwen
 ```
 
-처음 실행하면 모델 제공자를 연결하라는 메시지가 표시됩니다. 메뉴에는 **Alibaba ModelStudio**(Coding Plan, Token Plan 또는 표준 API 키), **Third-party Providers**(DeepSeek, MiniMax, Z.AI, Kimi, OpenRouter 등 내장 제공자, API 키로 연결), **Custom Provider**(로컬 서버, 프록시 또는 지원되지 않는 제공자)가 있습니다. [Alibaba Cloud Coding Plan](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index)([intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index))의 경우 **Alibaba ModelStudio → Coding Plan**을 선택하고, ModelStudio API 키를 사용하려면 **Alibaba ModelStudio → Standard API Key**를 선택한 후 API 설정 가이드([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721))를 따르세요. 그런 다음 코드베이스를 이해하는 것부터 시작해 봅시다. 다음 명령어 중 하나를 시도해 보세요:
+처음 실행하면 모델 제공자를 연결하라는 메시지가 표시됩니다. 메뉴에는 **Alibaba ModelStudio**(공식 권장 설정), **Third-party Providers**(DeepSeek, MiniMax, Z.AI, Kimi, OpenRouter 등 API 키로 연결되는 내장 제공자), **Custom Provider**(로컬 서버, 프록시 또는 지원되지 않는 제공자)가 있습니다. [Alibaba Cloud Token Plan](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856)([intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model))의 경우 **Alibaba ModelStudio → Token Plan**을 선택하고, ModelStudio API 키를 사용하려면 **Alibaba ModelStudio → Standard API Key**를 선택한 후 API 설정 가이드([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721))를 따르세요. 그런 다음 코드베이스를 이해하는 것부터 시작해 봅시다. 다음 명령어 중 하나를 시도해 보세요:
 
 ```
 what does this project do?

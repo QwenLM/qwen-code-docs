@@ -10,7 +10,7 @@
 
 - 一个打开的 **终端** 或命令提示符
 - 一个可供操作的项目代码
-- 来自阿里云模型即服务的 API key（[国内站](https://bailian.console.aliyun.com/) / [国际站](https://modelstudio.console.alibabacloud.com/)），或阿里云编码计划（[国内站](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) / [国际站](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)）订阅
+- 来自阿里云模型即服务的 API key（[国内站](https://bailian.console.aliyun.com/) / [国际站](https://modelstudio.console.alibabacloud.com/)），或阿里云 Token 计划（[国内站](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [国际站](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)）订阅
 
 ## 第一步：安装 Qwen Code
 
@@ -69,8 +69,7 @@ qwen
 首次运行时的菜单会让你连接一个模型提供商。请从以下选项中选择：
 
 - **阿里云模型即服务** — 推荐的设置方式。打开子菜单：
-  - **编码计划**：面向个人开发者，包含每周配额和多种模型选择。请参阅[编码计划指南](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index)（[国际站](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)）了解设置说明。
-  - **Token 计划**：按用量计费，使用专有端点，适用于团队和企业。
+  - **Token 计划**：按用量计费，使用专有端点，适用于团队和企业。请参阅 [Token 计划指南](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856)（[国际站](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)）了解设置说明。
   - **标准 API Key**：使用阿里云模型即服务（[国内站](https://bailian.console.aliyun.com/) / [国际站](https://modelstudio.console.alibabacloud.com/)）的现有 API key 进行连接。详情请参阅 API 设置指南（[国内站](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [国际站](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)）。
 - **第三方提供商** — 选择内置提供商（DeepSeek、Grok、MiniMax、Z.AI、Kimi、Idealab、ModelScope、OpenRouter、Requesty 等），并通过 API key 连接。
 - **自定义提供商** — 手动连接本地服务器、代理或不受支持的提供商。
@@ -156,7 +155,6 @@ Qwen Code 让 Git 操作变得自然对话化：
 ```
 
 ```
-
 让我看看最近 5 次提交
 ```
 
@@ -200,8 +198,7 @@ Qwen Code 将：
 **编写测试**
 
 ```
-
-计算器函数的单元测试
+为计算器函数编写单元测试
 ```
 
 **更新文档**

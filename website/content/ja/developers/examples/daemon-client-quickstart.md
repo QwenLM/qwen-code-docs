@@ -4,6 +4,8 @@
 
 ## セットアップ
 
+このチュートリアルは Qwen Code `v0.24.0` と ` @qwen-code/sdk@0.1.12` を対象としています。
+
 1 つ目のターミナルで:
 
 ```bash
@@ -20,7 +22,7 @@ qwen serve --no-web --port 4170 \
 もう 1 つのターミナルで:
 
 ```bash
-npm install @qwen-code/sdk
+npm install @qwen-code/sdk@0.1.12
 ```
 
 ## Hello デーモン
@@ -118,6 +120,42 @@ function handleEvent(event: DaemonEvent): void {
   }
 }
 ```
+
+## 復元、ステータスのポーリング、履歴の読み取り
+
+ライブセッションを閉じても、永続化されたトランスクリプトは削除されません。ID を保存し、ライブオーナーを閉じてから復元します。クライアントが永続化されたターンを SSE ストリームにリプレイする必要がある場合は `loadSession` を使用します。クライアントがすでにそれらのターンを描画済みで、デーモン側のハンドルのみを復元すればよい場合は `resumeSession` を使用します。どちらのメソッドも中断されたターンを継続しません。それが必要な場合は `continueSession` を別途呼び出してください。
+
+```ts
+const savedSessionId = session.sessionId;
+await client.closeSession(savedSessionId, session.clientId);
+
+const restored =
+  process.env.HISTORY_ALREADY_RENDERED === '1'
+    ? await client.resumeSession(savedSessionId, {
+        workspaceCwd: selectedWorkspace.cwd,
+      })
+    : await client.loadSession(savedSessionId, {
+        workspaceCwd: selectedWorkspace.cwd,
+        historyPageSize: 100,
+      });
+
+const status = await client.sessionStatus(
+  restored.sessionId,
+  restored.clientId,
+);
+console.log({
+  active: status.hasActivePrompt,
+  waitingForPermission: status.isWaitingForPermission,
+});
+
+const history = await client.getSessionTranscriptPage(restored.sessionId, {
+  limit: 100,
+  clientId: restored.clientId,
+});
+console.log(`history events=${history.events.length} more=${history.hasMore}`);
+```
+
+`sessionStatus` はライブオーナーのみを読み取ります。`getSessionTranscriptPage` は永続化された履歴を読み取り、次のページが利用可能な場合に不透明な `nextCursor` を返します。その値を `cursor` としてそのまま渡してください。自分で構築しないでください。
 
 ## ワークスペースファイルヘルパー
 

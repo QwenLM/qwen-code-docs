@@ -10,7 +10,7 @@
 
 - Открытый **терминал** или командная строка
 - Проект с кодом для работы
-- API-ключ от Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)) или подписка Alibaba Cloud Coding Plan ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) / [intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index))
+- API-ключ от Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)) или подписка Alibaba Cloud Token Plan ([Beijing](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model))
 
 ## Шаг 1: Установка Qwen Code
 
@@ -69,8 +69,7 @@ qwen
 Меню первого запуска позволяет подключить провайдера модели. Выберите один из вариантов:
 
 - **Alibaba ModelStudio** — рекомендуемая настройка. Открывает подменю:
-  - **Coding Plan**: для индивидуальных разработчиков, включает еженедельную квоту и различные варианты моделей. Инструкции по настройке см. в [руководстве Coding Plan](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) ([intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)).
-  - **Token Plan**: оплата по факту использования с выделенной конечной точкой, предназначена для команд и компаний.
+  - **Token Plan**: оплата по факту использования с выделенной конечной точкой, предназначена для команд и компаний. Инструкции по настройке см. в [руководстве Token Plan](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) ([intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)).
   - **Standard API Key**: подключение с существующим API-ключом от Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)). Подробнее см. в руководстве по настройке API ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)).
 - **Third-party Providers** — выберите встроенного провайдера (DeepSeek, Grok, MiniMax, Z.AI, Kimi, Idealab, ModelScope, OpenRouter, Requesty и другие) и подключите его с помощью API-ключа.
 - **Custom Provider** — вручную подключите локальный сервер, прокси или неподдерживаемого провайдера.

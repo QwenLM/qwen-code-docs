@@ -22,7 +22,7 @@ Node.js 22 ou ultérieur et npm sont requis.
 Lors de sa première utilisation, le skill exécute lui-même ces commandes :
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.5
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.6
 npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.9
 ```
 

@@ -4,6 +4,8 @@
 
 ## 设置
 
+本演练针对 Qwen Code `v0.24.0` 和 `@qwen-code/sdk@0.1.12`。
+
 在一个终端中：
 
 ```bash
@@ -112,6 +114,44 @@ function handleEvent(event: DaemonEvent): void {
   }
 }
 ```
+
+## 恢复、轮询状态与读取历史
+
+关闭一个活动会话不会删除其持久化的转录。保存 id，
+关闭活动所有者，然后恢复它。当客户端需要将持久化的轮次重放到其 SSE 流中时，使用 `loadSession`；当客户端已经渲染了这些轮次，只需恢复守护进程端的句柄时，使用 `resumeSession`。两种方法都不会继续一个中断的轮次；如需继续，请单独调用 `continueSession`。
+
+```ts
+const savedSessionId = session.sessionId;
+await client.closeSession(savedSessionId, session.clientId);
+
+const restored =
+  process.env.HISTORY_ALREADY_RENDERED === '1'
+    ? await client.resumeSession(savedSessionId, {
+        workspaceCwd: selectedWorkspace.cwd,
+      })
+    : await client.loadSession(savedSessionId, {
+        workspaceCwd: selectedWorkspace.cwd,
+        historyPageSize: 100,
+      });
+
+const status = await client.sessionStatus(
+  restored.sessionId,
+  restored.clientId,
+);
+console.log({
+  active: status.hasActivePrompt,
+  waitingForPermission: status.isWaitingForPermission,
+});
+
+const history = await client.getSessionTranscriptPage(restored.sessionId, {
+  limit: 100,
+  clientId: restored.clientId,
+});
+console.log(`history events=${history.events.length} more=${history.hasMore}`);
+```
+
+`sessionStatus` 只读取活动所有者。`getSessionTranscriptPage` 读取
+持久化历史，并在还有下一页时返回一个不透明的 `nextCursor`；将该值作为 `cursor` 传回，不要自行构造。
 
 ## 工作区文件辅助方法
 
