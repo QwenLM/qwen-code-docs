@@ -68,7 +68,7 @@ Was du damit machen kannst:
 
 Siehe PRs [#11943](https://github.com/QwenLM/qwen-code/pull/11943), [#11917](https://github.com/QwenLM/qwen-code/pull/11917), [#11939](https://github.com/QwenLM/qwen-code/pull/11939), [#11805](https://github.com/QwenLM/qwen-code/pull/11805), [#11691](https://github.com/QwenLM/qwen-code/pull/11691)
 
-[🎥 Demo-Platzhalter: ein gespeicherter Workflow läuft per Name, mit Struktur-Vorschau des +500k-Budgets im Genehmigungs-Popup]
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/6Q-thx8OjfJ0qJzi4BINKewWQfL_fWlVRqn5BQTyU60.mp4" controls></video>
 
 ### Goal bekommt Grenzen für Runden und Zeit
 
@@ -86,13 +86,15 @@ Was du damit machen kannst:
 - Auf die Statuskarte schauen und wissen: wie viele Runden und wie viel Zeit noch übrig
 - In der Web Shell den Vorschlag freigeben und Goal loslaufen lassen
 
-[📸 Screenshot-Platzhalter: Goal-Statuskarte mit Runden- und Zeitgrenze]
+![Mit einem Limit von 3 Runden stoppt der Goal von selbst, sobald es erreicht ist, und weist darauf hin, dass sich das Fenster verlängern lässt](https://img.alicdn.com/imgextra/i2/O1CN01VsCGz0wiVsK1wazs_!!6000000002597-2-tps-958-622.png)
 
-### Channel: Meldestil wählbar, Antworten lassen sich nachvollziehen
+### Channel: Benachrichtigungsmodus wählen und nachvollziehen, warum der Bot so geantwortet hat
 
-Der Channel-Bot hatte diese Woche drei Änderungen: der Meldestil für Hintergrund-Aufgaben ist wählbar, der Präfix-Filter ist raus, und Channel-Gespräche lassen sich originalgetreu ansehen.
+Der Channel-Bot hatte diese Woche drei Änderungen: der Benachrichtigungsmodus für Hintergrund-Aufgaben ist wählbar, der Präfix-Filter ist raus, und Channel-Gespräche lassen sich originalgetreu ansehen.
 
-**Meldestil für Hintergrund-Aufgaben.** Wählbar in den Channel-Einstellungen, DingTalk zieht vor. Standardmäßig kommt zuerst das Hauptergebnis; ist die Hintergrund-Aufgabe fertig, gibt es eine separate Meldung. Alternativ geht jede vollständige Antwort einzeln raus, oder du wartest, bis alle zugehörigen Hintergrund-Arbeiten durch sind, und bekommst nur eine finale Meldung — soll es im Chat ruhiger zugehen, liest du einfach nur die letzte.
+**Benachrichtigungsmodus für Hintergrund-Aufgaben.** Wählbar in den Channel-Einstellungen, DingTalk ist zuerst dabei. Der Standard Per turn bringt zuerst das Hauptergebnis und danach für jede fertige Hintergrund-Aufgabe eine eigene Benachrichtigung. Per response schickt jede vollständige Antwort einzeln raus. Per task wartet, bis sämtliche zugehörigen Hintergrund-Arbeiten durch sind, und kommt am Ende mit genau einer Benachrichtigung — die ruhige Wahl für den Gruppenchat.
+
+![Benachrichtigungsmodus in den Channel-Einstellungen: Per task, Per response, Per turn (Standard)](https://img.alicdn.com/imgextra/i1/O1CN01D3zn0QE4IaE5cC36_!!6000000004834-0-tps-2766-1698.jpg)
 
 **Der Präfix-Filter ist raus.** Bisher ließ sich ein Startkürzel konfigurieren: Nur Nachrichten mit diesem Präfix beantwortete der Bot. Diese Einstellung gibt es nicht mehr — jede Nachricht, die Absender-, Gruppen- oder @-Regel durchgelassen haben, löst den Bot jetzt direkt aus.
 
@@ -110,15 +112,15 @@ Siehe PRs [#11822](https://github.com/QwenLM/qwen-code/pull/11822), [#11571](htt
 
 **Dev-Adresse direkt in der Vorschau, HTML bleibt erhalten.** Die Web Shell hat rechts ein Web-Vorschau-Panel: Dev-Adresse eintragen, Seite ansehen, zwischen Desktop- und Handy-Breite wechseln. Jedes gelieferte HTML wird als eigene Fassung gespeichert — auch eine Woche später öffnet sich genau diese, und mehrere Fassungen lassen sich untereinander vergleichen ([#11276](https://github.com/QwenLM/qwen-code/pull/11276)).
 
+![Vorschau einer lokalen Entwicklerseite rechts, links die beiden gespeicherten Versionskarten im Gespräch](https://img.alicdn.com/imgextra/i3/O1CN01Eku0NKR0GfI3FPgI_!!6000000002241-2-tps-1600-1050.png)
+
 **Nachricht bearbeiten, unterbrochene Gespräche laufen weiter.** Deine zuletzt gesendete Nachricht kannst du im Gespräch bearbeiten und neu senden; die Antwort dieser Runde entsteht neu, Bilder und Dateien bleiben unverändert dabei ([#11650](https://github.com/QwenLM/qwen-code/pull/11650)). Bricht ein Gespräch mitten in einer Runde ab, bietet es beim erneuten Öffnen Fortsetzen an — es läuft genau dort weiter, wo es aufgehört hat ([#11545](https://github.com/QwenLM/qwen-code/pull/11545)).
 
-**Browser-Benachrichtigungen kennen das Gespräch.** Die gerade erst gekommene Funktion nennt jetzt das Gespräch und schneidet Frage und Antwort an; ein Klick auf die Benachrichtigung landet genau in diesem Gespräch ([#11447](https://github.com/QwenLM/qwen-code/pull/11447)). Eingebaute Seiten haben das standardmäßig an, einmal die Browser-Erlaubnis erteilen genügt.
+**Browser-Benachrichtigungen kennen das Gespräch.** Die gerade erst gekommene Funktion nennt jetzt das Gespräch und schneidet Frage und Antwort an; ein Klick auf die Benachrichtigung landet genau in diesem Gespräch ([#11447](https://github.com/QwenLM/qwen-code/pull/11447)).
 
 **Kontextnutzung präzise, Komprimierung per Klick.** Das Kontext-Panel zeigt exakt genutzte, gesamte und verbleibende Tokens sowie die Anteile je Kategorie und hat den Komprimierungs-Button direkt dabei; er steht auch in der Hover-Karte am Eingabefeld ([#11700](https://github.com/QwenLM/qwen-code/pull/11700), [#11782](https://github.com/QwenLM/qwen-code/pull/11782)).
 
 **Weitere Verbesserungen.** Die Übersichtsseite gruppiert Gespräche nach Status und findet sie per Branch und PR-Nummer ([#11238](https://github.com/QwenLM/qwen-code/pull/11238)); hochgeladene Dateien, Projektdateien und Web-Links sammeln sich in einer Sources-Liste ([#11262](https://github.com/QwenLM/qwen-code/pull/11262)); geplante Aufgaben bekommen eigenes Modell und eigene Gruppe ([#11396](https://github.com/QwenLM/qwen-code/pull/11396)); mit einer Adresse verbindest du dich mit Qwen Code auf einem anderen Rechner ([#11548](https://github.com/QwenLM/qwen-code/pull/11548)).
-
-[📸 Screenshot-Platzhalter: Vorschau-Panel der Web Shell und zwei archivierten HTML-Karten]
 
 ## 📊 Weitere neue Features
 

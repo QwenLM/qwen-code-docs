@@ -68,7 +68,7 @@ Qwen Code 本周发布 v0.23.3、v0.23.4、v0.24.0 三个正式版本，267 个 
 
 详见 PR [#11943](https://github.com/QwenLM/qwen-code/pull/11943)、[#11917](https://github.com/QwenLM/qwen-code/pull/11917)、[#11939](https://github.com/QwenLM/qwen-code/pull/11939)、[#11805](https://github.com/QwenLM/qwen-code/pull/11805)、[#11691](https://github.com/QwenLM/qwen-code/pull/11691)
 
-[🎥 演示占位：按名字运行保存的工作流，并展示 +500k 预算的结构预览弹窗]
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/6Q-thx8OjfJ0qJzi4BINKewWQfL_fWlVRqn5BQTyU60.mp4" controls></video>
 
 ### Goal 能限轮数和时间了
 
@@ -86,13 +86,15 @@ Qwen Code 本周发布 v0.23.3、v0.23.4、v0.24.0 三个正式版本，267 个 
 - 瞄一眼状态卡就知道还剩几轮、还剩多少时间
 - 在 Web Shell 里批准提案，它自己开跑
 
-[📸 截图占位：带轮数与时间上限的 Goal 状态卡]
+![把轮数上限设成 3 后，Goal 跑到上限就自己停下，并提示可以续一个窗口](https://img.alicdn.com/imgextra/i2/O1CN01VsCGz0wiVsK1wazs_!!6000000002597-2-tps-958-622.png)
 
-### Channel：机器人汇报方式可选，排查它为什么这么回能追查了
+### Channel：机器人通知方式可选，它为什么这么回能追查了
 
 Channel 机器人这周三件事：后台任务的通知方式能选了、消息前缀过滤下线了、Channel 会话原样可查了。
 
-**后台任务的通知方式能选了。** 在 Channel 设置里选，钉钉先支持。默认先送主结果，后台任务完成后再单独送通知；也可以每一条完整回答都发，或者等关联的后台活全部干完，只发一份最终结果——群里想安静就只看最后一条。
+**后台任务的通知方式能选了。** 在 Channel 设置里选，钉钉先支持。默认是按轮：先送主结果，后台任务完成后再单独送通知；按回复会把每一条完整回答都发出来；按任务等关联的后台活全部干完，只发一份最终结果——群里想安静就选按任务。
+
+![在 Channel 配置里选通知方式：按任务、按回复、按轮（默认）](https://img.alicdn.com/imgextra/i1/O1CN01D3zn0QE4IaE5cC36_!!6000000004834-0-tps-2766-1698.jpg)
 
 **消息前缀过滤下线。** 以前可以配一个开头暗号，消息必须带这个前缀机器人才理。这个配置去掉了：现在凡是通过发送人、群、@ 规则放行的消息，直接说什么都触发机器人。
 
@@ -110,15 +112,15 @@ Channel 机器人这周三件事：后台任务的通知方式能选了、消息
 
 **开发地址直接预览，HTML 自动留档。** Web Shell 右侧加了网页预览面板，填本地开发地址就能看页面，桌面和手机宽度随意切。对话里每交付一次 HTML，就存下一个独立版本，隔一周点开还是当时那一版，几版能挨个对比（[#11276](https://github.com/QwenLM/qwen-code/pull/11276)）。
 
+![右侧预览本地开发中的页面，左侧对话里留着两次交付的版本卡片](https://img.alicdn.com/imgextra/i3/O1CN01Eku0NKR0GfI3FPgI_!!6000000002241-2-tps-1600-1050.png)
+
 **消息改完重发，中断的会话原地继续。** 最近一条你自己发的消息可以就地编辑再发出去，改完重新生成这一轮的回答，带过去的图片和文件原样保留（[#11650](https://github.com/QwenLM/qwen-code/pull/11650)）。跑到一半断掉的对话重开时会出现继续执行的操作，接着原来的对话往下跑（[#11545](https://github.com/QwenLM/qwen-code/pull/11545)）。
 
-**浏览器通知认得会话了。** 上周刚加的通知，这周会写明是哪个会话、带上问题和回答的节选，点通知直接落到那个对话（[#11447](https://github.com/QwenLM/qwen-code/pull/11447)）。内置页面默认开着，浏览器里允许一次通知即可。
+**浏览器通知认得会话了。** 上周刚加的通知，这周会写明是哪个会话、带上问题和回答的节选，点通知直接落到那个对话（[#11447](https://github.com/QwenLM/qwen-code/pull/11447)）。
 
 **上下文用量看得准，点一下就压缩。** 上下文面板显示精确的已用、总量、剩余和各类占比，并且直接放了压缩按钮；输入框旁悬停的卡片里也有，点一下完成压缩（[#11700](https://github.com/QwenLM/qwen-code/pull/11700)、[#11782](https://github.com/QwenLM/qwen-code/pull/11782)）。
 
 **其他改进。** 会话总览页按状态分区、能按分支和 PR 号搜索（[#11238](https://github.com/QwenLM/qwen-code/pull/11238)）；上传的文件、项目文件、网页链接归进一个 Sources 列表（[#11262](https://github.com/QwenLM/qwen-code/pull/11262)）；定时任务能指定用哪个模型、归到哪个分组（[#11396](https://github.com/QwenLM/qwen-code/pull/11396)）；能填地址连上另一台机器的 Qwen Code（[#11548](https://github.com/QwenLM/qwen-code/pull/11548)）。
-
-[📸 截图占位：Web Shell 预览面板与两张留档版本卡片]
 
 ## 📊 更多新功能
 

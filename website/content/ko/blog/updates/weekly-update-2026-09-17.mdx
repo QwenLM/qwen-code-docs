@@ -68,7 +68,7 @@ Claude Code나 Codex를 이미 설치했다면, Qwen Code에서 일정 구간을
 
 관련 PR: [#11943](https://github.com/QwenLM/qwen-code/pull/11943), [#11917](https://github.com/QwenLM/qwen-code/pull/11917), [#11939](https://github.com/QwenLM/qwen-code/pull/11939), [#11805](https://github.com/QwenLM/qwen-code/pull/11805), [#11691](https://github.com/QwenLM/qwen-code/pull/11691)
 
-[🎥 데모 자리표시자: 저장된 워크플로를 이름으로 실행하고 +500k 예산의 구조 미리보기 팝업 표시]
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/6Q-thx8OjfJ0qJzi4BINKewWQfL_fWlVRqn5BQTyU60.mp4" controls></video>
 
 ### Goal에 라운드와 시간 상한을 둘 수 있습니다
 
@@ -86,13 +86,15 @@ Claude Code나 Codex를 이미 설치했다면, Qwen Code에서 일정 구간을
 - 상태 카드를 한 번 보면 남은 라운드수와 남은 시간이 바로 보임
 - Web Shell에서 제안을 승인하면 스스로 실행 시작
 
-[📸 스크린샷 자리표시자: 라운드와 시간 상한이 표시된 Goal 상태 카드]
+![라운드 상한을 3으로 두면 한도에 닿은 순간 Goal이 스스로 멈추고 창을 늘릴 수 있다고 안내합니다](https://img.alicdn.com/imgextra/i2/O1CN01VsCGz0wiVsK1wazs_!!6000000002597-2-tps-958-622.png)
 
-### Channel: 봇 보고 방식을 고르고, "왜 이렇게 답했나"를 추적 가능
+### Channel: 봇이 알림 보내는 방식을 고르고, "왜 이렇게 답했나"는 추적 가능
 
 Channel 봇은 이번 주에 세 가지를 바꿨습니다. 백그라운드 작업의 알림 방식을 고를 수 있고, 메시지 접두사 필터는 사라졌으며, Channel 세션을 있는 그대로 볼 수 있습니다.
 
-**백그라운드 작업의 알림 방식을 고릅니다.** Channel 설정에서 지정하고, DingTalk이 먼저 지원합니다. 기본은 주요 결과를 먼저 보내고 백그라운드 작업이 끝나면 알림을 따로 전송합니다. 매번 완성된 답변을 모두 보내거나, 연결된 백그라운드가 전부 끝날 때까지 기다렸다가 최종 결과 하나만 보낼 수도 있습니다. 그룹 채팅을 조용히 쓰려면 마지막 한 건만 보면 됩니다.
+**백그라운드 작업의 알림 방식을 고릅니다.** Channel 설정에서 지정하고, DingTalk이 먼저 지원합니다. 기본값인 Per turn은 주요 결과를 먼저 전하고, 백그라운드 작업이 하나 끝날 때마다 알림을 따로 전합니다. Per response는 완성된 답변을 매번 전합니다. Per task는 연결된 백그라운드가 전부 끝날 때까지 기다렸다가 최종 결과 하나만 전합니다. 그룹 채팅을 조용히 쓰려면 이쪽입니다.
+
+![Channel 설정에서 알림 방식 선택: Per task, Per response, Per turn (기본)](https://img.alicdn.com/imgextra/i1/O1CN01D3zn0QE4IaE5cC36_!!6000000004834-0-tps-2766-1698.jpg)
 
 **메시지 접두사 필터가 사라졌습니다.** 예전에는 맨 앞에 붙일 접두사를 지정해서, 그 접두사가 있는 메시지만 봇이 처리하게 할 수 있었습니다. 이 설정은 폐기됐습니다. 이제 발신자·그룹·@ 규칙을 통과한 메시지는 그대로 말해도 봇이 반응합니다.
 
@@ -110,15 +112,15 @@ Channel 봇은 이번 주에 세 가지를 바꿨습니다. 백그라운드 작�
 
 **개발 주소를 바로 미리보기, HTML은 자동 보관.** Web Shell 오른쪽에 웹 페이지 미리보기 패널이 추가됐습니다. 로컬 개발 주소를 넣으면 그 자리에서 페이지가 보이고, 데스크톱과 모바일 폭을 자유롭게 바꿉니다. 대화에서 HTML을 한 번 넘길 때마다 독립된 버전으로 저장돼, 일주일 뒤에도 그때 그 상태로 열리고 여러 버전을 나란히 비교할 수 있습니다 ([#11276](https://github.com/QwenLM/qwen-code/pull/11276)).
 
+![오른쪽에서 로컬 개발 페이지를 미리보는 중, 왼쪽 대화에는 전달된 두 개의 버전 카드가 남아 있습니다](https://img.alicdn.com/imgextra/i3/O1CN01Eku0NKR0GfI3FPgI_!!6000000002241-2-tps-1600-1050.png)
+
 **보낸 메시지를 고쳐 다시 보내고, 끊긴 대화는 그 자리에서 이어갑니다.** 내가 방금 보낸 마지막 메시지는 그 자리에서 수정해 다시 보낼 수 있고, 고치면 이 라운드의 답변이 다시 생성됩니다. 붙였던 이미지와 파일은 그대로 유지됩니다 ([#11650](https://github.com/QwenLM/qwen-code/pull/11650)). 도중에 끊긴 대화는 다시 열면 이어서 실행 동작이 뜨고, 기존 대화 흐름을 그대로 이어갑니다 ([#11545](https://github.com/QwenLM/qwen-code/pull/11545)).
 
-**브라우저 알림이 세션을 구분합니다.** 지난주에 갓 추가한 알림이 이번 주에는 어떤 세션인지 명시하고 질문과 답변 일부도 함께 실립니다. 알림을 누르면 그 대화로 바로 떨어집니다 ([#11447](https://github.com/QwenLM/qwen-code/pull/11447)). 내장 페이지는 기본으로 켜져 있고, 브라우저에서 알림을 한 번 허용하면 됩니다.
+**브라우저 알림이 세션을 구분합니다.** 지난주에 갓 추가한 알림이 이번 주에는 어떤 세션인지 명시하고 질문과 답변 일부도 함께 실립니다. 알림을 누르면 그 대화로 바로 떨어집니다 ([#11447](https://github.com/QwenLM/qwen-code/pull/11447)).
 
 **컨텍스트 사용량이 정확하고, 클릭 한 번으로 압축합니다.** 컨텍스트 패널에 사용한 양, 총량, 남은 양과 항목별 비중이 정확한 숫자로 뜨고 압축 버튼이 바로 들어갔습니다. 입력창 옆에 마우스를 올렸을 때 나오는 카드에도 있어서, 클릭하면 압축이 끝납니다 ([#11700](https://github.com/QwenLM/qwen-code/pull/11700), [#11782](https://github.com/QwenLM/qwen-code/pull/11782)).
 
 **그 외 개선.** 세션 개요 페이지가 상태로 나뉘고 브랜치와 PR 번호로 검색할 수 있습니다 ([#11238](https://github.com/QwenLM/qwen-code/pull/11238)); 올린 파일, 프로젝트 파일, 웹 링크가 Sources 목록 하나로 정리되고 ([#11262](https://github.com/QwenLM/qwen-code/pull/11262)); 예약 작업에 쓸 모델과 묶을 그룹을 지정할 수 있으며 ([#11396](https://github.com/QwenLM/qwen-code/pull/11396)); 주소를 입력해 다른 컴퓨터의 Qwen Code에 연결할 수 있습니다 ([#11548](https://github.com/QwenLM/qwen-code/pull/11548)).
-
-[📸 스크린샷 자리표시자: Web Shell 미리보기 패널과 보관된 두 버전 카드]
 
 ## 📊 그 외 새로운 기능
 

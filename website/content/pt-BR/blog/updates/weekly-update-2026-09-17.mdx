@@ -68,7 +68,7 @@ Na prática:
 
 Veja os PRs [#11943](https://github.com/QwenLM/qwen-code/pull/11943), [#11917](https://github.com/QwenLM/qwen-code/pull/11917), [#11939](https://github.com/QwenLM/qwen-code/pull/11939), [#11805](https://github.com/QwenLM/qwen-code/pull/11805), [#11691](https://github.com/QwenLM/qwen-code/pull/11691)
 
-[🎥 Placeholder de demonstração: rodar um workflow salvo pelo nome e mostrar o cartão de aprovação com a prévia da estrutura e o orçamento `+500k`]
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/6Q-thx8OjfJ0qJzi4BINKewWQfL_fWlVRqn5BQTyU60.mp4" controls></video>
 
 ### O Goal agora limita rodadas e tempo
 
@@ -86,13 +86,15 @@ Na prática:
 - Dê uma olhada no cartão de status e saiba quantas rodadas e quanto tempo ainda restam
 - Aprove a proposta no Web Shell e deixe ele trabalhando
 
-[📸 Placeholder de captura: cartão de status do Goal com limites de rodadas e de tempo]
+![Com o limite de 3 rodadas, o Goal para sozinho ao atingi-lo e informa que a janela pode ser prolongada](https://img.alicdn.com/imgextra/i2/O1CN01VsCGz0wiVsK1wazs_!!6000000002597-2-tps-958-622.png)
 
-### Channel: você escolhe como o bot avisa e consegue ver o que ele recebeu
+### Channel: escolha como o bot notifica e descubra por que ele respondeu daquele jeito
 
 Três coisas no bot do Channel esta semana: deu para escolher o formato do aviso das tarefas em segundo plano, o filtro por prefixo de mensagem saiu do ar, e as conversas do Channel ficaram auditáveis do jeito que chegaram ao modelo.
 
-**Dá para escolher o aviso de tarefa em segundo plano.** A opção fica nas configurações do Channel, começando pelo DingTalk. Por padrão você recebe primeiro o resultado principal e, quando a tarefa em segundo plano termina, chega um aviso separado; dá também para enviar cada resposta completa, ou esperar todo o trabalho ligado a ela acabar e mandar só o resultado final — se o grupo precisa de silêncio, fique só com a última mensagem.
+**Dá para escolher como o bot notifica.** A opção fica nas configurações do Channel, começando pelo DingTalk. O padrão, Per turn, manda primeiro o resultado principal e, depois, cada tarefa em segundo plano que termina envia um aviso próprio. Per response envia cada resposta completa assim que ela fica pronta. Per task espera todo o trabalho relacionado acabar e manda um único resultado final — é a escolha para deixar o grupo tranquilo.
+
+![Escolha do modo de notificação nas configurações do Channel: Per task, Per response, Per turn (padrão)](https://img.alicdn.com/imgextra/i1/O1CN01D3zn0QE4IaE5cC36_!!6000000004834-0-tps-2766-1698.jpg)
 
 **O filtro por prefixo saiu do ar.** Antes dava para combinar uma senha de abertura: só mensagem com aquele prefixo acordava o bot. A configuração foi removida: agora toda mensagem que passar pelas regras de remetente, grupo e @ aciona o bot, com qualquer texto.
 
@@ -110,15 +112,15 @@ Veja os PRs [#11822](https://github.com/QwenLM/qwen-code/pull/11822), [#11571](h
 
 **Prévia do endereço de desenvolvimento, HTML arquivado sozinho.** O lado direito do Web Shell ganhou um painel de prévia de páginas: informe o endereço local de desenvolvimento e veja o site, alternando entre largura de desktop e de celular. Cada HTML entregue na conversa vira uma versão guardada à parte: abra uma semana depois e é exatamente aquela versão, e dá para comparar as versões entre si ([#11276](https://github.com/QwenLM/qwen-code/pull/11276)).
 
+![Prévia de uma página de desenvolvimento local à direita e os dois cartões de versões entregues à esquerda na conversa](https://img.alicdn.com/imgextra/i3/O1CN01Eku0NKR0GfI3FPgI_!!6000000002241-2-tps-1600-1050.png)
+
 **Edite e reenvie a sua mensagem; conversa interrompida continua no ponto.** A última mensagem que você mandou pode ser editada ali mesmo e reenviada: a resposta da rodada é gerada de novo, e as imagens e arquivos que foram junto continuam lá ([#11650](https://github.com/QwenLM/qwen-code/pull/11650)). Uma conversa que caiu no meio do caminho oferece a opção de continuar quando você reabre, e ela segue do ponto em que parou ([#11545](https://github.com/QwenLM/qwen-code/pull/11545)).
 
-**As notificações do navegador apontam para a sessão certa.** O aviso que entrou semana passada agora diz qual sessão é, traz um trecho da pergunta e da resposta, e clicar nele abre a conversa direto ([#11447](https://github.com/QwenLM/qwen-code/pull/11447)). Nas páginas integradas ele vem ligado por padrão; basta autorizar as notificações uma vez no navegador.
+**As notificações do navegador apontam para a sessão certa.** O aviso que entrou semana passada agora diz qual sessão é, traz um trecho da pergunta e da resposta, e clicar nele abre a conversa direto ([#11447](https://github.com/QwenLM/qwen-code/pull/11447)).
 
 **Uso de contexto com número exato e compressão em um clique.** O painel de contexto mostra usado, total, restante e a participação de cada tipo, com o botão de comprimir ali dentro; o cartão que aparece ao passar o mouse perto da caixa de entrada também tem, e um clique faz a compressão ([#11700](https://github.com/QwenLM/qwen-code/pull/11700), [#11782](https://github.com/QwenLM/qwen-code/pull/11782)).
 
 **Outras melhorias.** A página de visão geral das sessões se organiza por estado e aceita busca por branch e número de PR ([#11238](https://github.com/QwenLM/qwen-code/pull/11238)); arquivos enviados, arquivos do projeto e links de página agora ficam numa lista única de Sources ([#11262](https://github.com/QwenLM/qwen-code/pull/11262)); tarefas agendadas podem escolher o modelo e o agrupamento ([#11396](https://github.com/QwenLM/qwen-code/pull/11396)); e dá para informar um endereço e conectar ao Qwen Code de outra máquina ([#11548](https://github.com/QwenLM/qwen-code/pull/11548)).
-
-[📸 Placeholder de captura: painel de prévia do Web Shell e dois cartões de versões arquivadas]
 
 ## 📊 Mais funcionalidades
 

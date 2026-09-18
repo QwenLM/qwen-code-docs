@@ -68,7 +68,7 @@ Ce que vous pouvez en faire :
 
 Voir les PR [#11943](https://github.com/QwenLM/qwen-code/pull/11943), [#11917](https://github.com/QwenLM/qwen-code/pull/11917), [#11939](https://github.com/QwenLM/qwen-code/pull/11939), [#11805](https://github.com/QwenLM/qwen-code/pull/11805), [#11691](https://github.com/QwenLM/qwen-code/pull/11691)
 
-[🎥 Emplacement démo : exécution d'un workflow enregistré par son nom, avec la fenêtre de prévisualisation de structure et le budget +500k]
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/6Q-thx8OjfJ0qJzi4BINKewWQfL_fWlVRqn5BQTyU60.mp4" controls></video>
 
 ### Goal se limite en tours et en durée
 
@@ -86,13 +86,15 @@ Ce que vous pouvez en faire :
 - Lire sur la carte d'état combien de tours et de minutes restent
 - Approuver une proposition dans le Web Shell et le laisser démarrer seul
 
-[📸 Emplacement capture : carte d'état Goal avec plafonds de tours et de durée]
+![Avec une limite de 3 tours, le Goal s'arrête seul une fois la limite atteinte et indique que la fenêtre peut être prolongée](https://img.alicdn.com/imgextra/i2/O1CN01VsCGz0wiVsK1wazs_!!6000000002597-2-tps-958-622.png)
 
-### Channel : le bot choisit comment il rend compte, et ses réponses se retracent
+### Channel : le mode de notification du bot se choisit, et ses réponses se retracent
 
 Trois changements sur le bot Channel cette semaine : le mode de notification des tâches d'arrière-plan se choisit, le filtrage par préfixe de message disparaît, et les sessions Channel se consultent telles quelles.
 
-**Le mode de notification des tâches d'arrière-plan se choisit.** Réglez-le dans les paramètres du Channel, DingTalk est pris en charge en premier. Par défaut, le résultat principal arrive d'abord, puis chaque tâche d'arrière-plan envoie sa propre notification une fois terminée ; vous pouvez aussi recevoir chaque réponse complète, ou attendre que tout le travail d'arrière-plan lié soit fini pour ne recevoir qu'un résultat final — pour tenir un groupe au calme, gardez le dernier message.
+**Le mode de notification des tâches d'arrière-plan se choisit.** Réglez-le dans les paramètres du Channel, DingTalk est pris en charge en premier. Le réglage par défaut, Per turn, envoie d'abord le résultat principal, puis chaque tâche d'arrière-plan terminée ajoute sa propre notification. Per response envoie chaque réponse complète dès qu'elle est prête. Per task attend que tout le travail lié soit terminé et n'envoie qu'un seul résultat final — c'est le choix qui tient le groupe au calme.
+
+![Choix du mode de notification dans les réglages du Channel : Per task, Per response, Per turn (par défaut)](https://img.alicdn.com/imgextra/i1/O1CN01D3zn0QE4IaE5cC36_!!6000000004834-0-tps-2766-1698.jpg)
 
 **Le filtrage par préfixe de message disparaît.** On pouvait imposer un mot d'ouverture : sans ce préfixe, le bot ignorait le message. Cette configuration est retirée : désormais, tout message accepté par les règles d'expéditeur, de groupe ou de mention déclenche le bot, quel que soit son contenu.
 
@@ -110,15 +112,15 @@ Voir les PR [#11822](https://github.com/QwenLM/qwen-code/pull/11822), [#11571](h
 
 **Aperçu direct de l'adresse de développement, HTML archivé automatiquement.** Un panneau d'aperçu web s'ajoute à droite du Web Shell : saisissez l'adresse de votre serveur de développement local et regardez la page, en largeur bureau ou mobile au choix. À chaque HTML livré dans la conversation, une version distincte est archivée ; rouvert une semaine plus tard, il reste exactement la version du moment, et plusieurs versions se comparent côte à côte ([#11276](https://github.com/QwenLM/qwen-code/pull/11276)).
 
+![Aperçu d'une page de développement local à droite, les deux cartes de versions enregistrées à gauche dans la conversation](https://img.alicdn.com/imgextra/i3/O1CN01Eku0NKR0GfI3FPgI_!!6000000002241-2-tps-1600-1050.png)
+
 **Un message modifié se relance, une session interrompue reprend sur place.** Votre dernier message envoyé peut être édité sur place puis renvoyé : la réponse du tour est régénérée, et les images et fichiers déjà joints sont conservés tels quels ([#11650](https://github.com/QwenLM/qwen-code/pull/11650)). Une conversation interrompue en cours de route propose une action de reprise à la réouverture et repart là où elle s'était arrêtée ([#11545](https://github.com/QwenLM/qwen-code/pull/11545)).
 
-**Les notifications du navigateur savent de quelle session il s'agit.** Ajoutées la semaine dernière, elles précisent désormais la session concernée et citent un extrait de la question et de la réponse ; un clic sur la notification ouvre cette conversation ([#11447](https://github.com/QwenLM/qwen-code/pull/11447)). Les pages intégrées l'ont activé par défaut, et une seule autorisation dans le navigateur suffit.
+**Les notifications du navigateur savent de quelle session il s'agit.** Ajoutées la semaine dernière, elles précisent désormais la session concernée et citent un extrait de la question et de la réponse ; un clic sur la notification ouvre cette conversation ([#11447](https://github.com/QwenLM/qwen-code/pull/11447)).
 
 **La consommation de contexte est exacte, et un clic la comprime.** Le panneau de contexte affiche avec précision ce qui est utilisé, le total, le reste et la part de chaque catégorie, et embarque directement le bouton de compression ; la carte survolée à côté du champ de saisie l'a aussi, et un clic termine la compression ([#11700](https://github.com/QwenLM/qwen-code/pull/11700), [#11782](https://github.com/QwenLM/qwen-code/pull/11782)).
 
 **Autres améliorations.** La page de synthèse des sessions se range par état et se recherche par branche ou numéro de PR ([#11238](https://github.com/QwenLM/qwen-code/pull/11238)) ; fichiers téléversés, fichiers du projet et liens web rejoignent une seule liste Sources ([#11262](https://github.com/QwenLM/qwen-code/pull/11262)) ; une tâche planifiée peut désigner le modèle à utiliser et son groupe ([#11396](https://github.com/QwenLM/qwen-code/pull/11396)) ; une adresse saisie à la main permet de rejoindre le Qwen Code d'une autre machine ([#11548](https://github.com/QwenLM/qwen-code/pull/11548)).
-
-[📸 Emplacement capture : panneau d'aperçu du Web Shell et deux cartes de versions archivées]
 
 ## 📊 Autres nouvelles fonctionnalités
 

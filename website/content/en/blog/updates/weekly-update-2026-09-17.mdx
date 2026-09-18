@@ -68,7 +68,7 @@ What you can do:
 
 See PRs [#11943](https://github.com/QwenLM/qwen-code/pull/11943), [#11917](https://github.com/QwenLM/qwen-code/pull/11917), [#11939](https://github.com/QwenLM/qwen-code/pull/11939), [#11805](https://github.com/QwenLM/qwen-code/pull/11805), [#11691](https://github.com/QwenLM/qwen-code/pull/11691)
 
-[🎥 Demo placeholder: running a saved workflow by name, and the structure-preview dialog for a +500k budget]
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/6Q-thx8OjfJ0qJzi4BINKewWQfL_fWlVRqn5BQTyU60.mp4" controls></video>
 
 ### Goal Can Now Be Capped by Turns and Time
 
@@ -86,13 +86,15 @@ What you can do:
 - Glance at the status card to know how many turns and how much time remain
 - Approve a proposal in the Web Shell and let it go
 
-[📸 Screenshot placeholder: the Goal status card with turn and time limits]
+![With the turn cap set to 3, the Goal stops on its own once the cap is reached and notes the window can be extended](https://img.alicdn.com/imgextra/i2/O1CN01VsCGz0wiVsK1wazs_!!6000000002597-2-tps-958-622.png)
 
-### Channel: Choose How the Bot Reports, See Exactly What It Received
+### Channel: Pick How the Bot Notifies, and Trace Why It Replied Like That
 
 Three things for the Channel bot this week: you can pick how background-task notices arrive, message-prefix filtering is retired, and Channel sessions are inspectable as-is.
 
-**Pick how background tasks report.** Choose in Channel settings, DingTalk first. By default the main result goes out first, and each finished background task then sends its own notice; you can also send every complete answer, or wait until all linked background work is done and send one final result — to keep the group quiet, read only the last one.
+**Pick how background tasks report.** Choose it in Channel settings, DingTalk first. The default, Per turn, sends the main result first and then a separate notice for each finished background task. Per response sends every complete answer as it lands. Per task waits until all the linked background work is done and delivers a single final result — that last one keeps the group quiet.
+
+![Choosing the notification mode in Channel settings: Per task, Per response, Per turn (default)](https://img.alicdn.com/imgextra/i1/O1CN01D3zn0QE4IaE5cC36_!!6000000004834-0-tps-2766-1698.jpg)
 
 **Message-prefix filtering is retired.** You used to set a prefix a message had to carry before the bot would respond. That setting is gone: any message that passes the sender, group, and @ rules now triggers the bot, whatever it says.
 
@@ -110,15 +112,15 @@ See PRs [#11822](https://github.com/QwenLM/qwen-code/pull/11822), [#11571](https
 
 **Preview your dev URL, archive every HTML delivery.** The Web Shell gains a web preview panel on the right. Type a local dev address and watch the page, switching between desktop and mobile widths freely. Every time HTML is delivered in a conversation, it's stored as its own version — open it a week later and it's still that exact version, and the versions sit side by side for comparison ([#11276](https://github.com/QwenLM/qwen-code/pull/11276)).
 
+![Previewing a local dev page on the right, with the two delivered version cards kept in the conversation on the left](https://img.alicdn.com/imgextra/i3/O1CN01Eku0NKR0GfI3FPgI_!!6000000002241-2-tps-1600-1050.png)
+
 **Edit a message and resend, resume an interrupted session in place.** The last message you sent can be edited right there and resubmitted, regenerating the reply for that turn while images and files carry over untouched ([#11650](https://github.com/QwenLM/qwen-code/pull/11650)). A conversation that broke mid-run offers a continue action when reopened, picking up where it left off ([#11545](https://github.com/QwenLM/qwen-code/pull/11545)).
 
-**Browser notifications know which session they're about.** The notifications added last week now name the session and carry excerpts of the question and answer; clicking one lands you straight in that conversation ([#11447](https://github.com/QwenLM/qwen-code/pull/11447)). Built-in pages have them on by default — allow notifications once in the browser and you're set.
+**Browser notifications know which session they're about.** The notifications added last week now name the session and carry excerpts of the question and answer; clicking one lands you straight in that conversation ([#11447](https://github.com/QwenLM/qwen-code/pull/11447)).
 
 **Context usage reads exactly right, and one click compresses.** The context panel shows exact used, total, remaining, and the share per category, with a compress button built right in; the hover card next to the input box has it too — one click and compression is done ([#11700](https://github.com/QwenLM/qwen-code/pull/11700), [#11782](https://github.com/QwenLM/qwen-code/pull/11782)).
 
 **Other improvements.** The sessions overview page is sectioned by status and searchable by branch and PR number ([#11238](https://github.com/QwenLM/qwen-code/pull/11238)); uploaded files, project files, and web links now group into one Sources list ([#11262](https://github.com/QwenLM/qwen-code/pull/11262)); scheduled tasks can pick which model to use and which group to belong to ([#11396](https://github.com/QwenLM/qwen-code/pull/11396)); you can type an address and connect to Qwen Code on another machine ([#11548](https://github.com/QwenLM/qwen-code/pull/11548)).
-
-[📸 Screenshot placeholder: the Web Shell preview panel with two archived version cards]
 
 ## 📊 More New Features
 
