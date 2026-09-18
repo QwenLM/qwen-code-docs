@@ -13,7 +13,12 @@ const CustomImg = (props: ImgHTMLAttributes<HTMLImageElement>) => {
   const isProduction = process.env.NODE_ENV === "production";
   const assetPrefix = isProduction ? "/qwen-code-docs" : "";
   // 将 ../assets/ 替换为带前缀的 /assets/
-  const adjustedSrc = src?.replace(/\.\.\/assets\//, `${assetPrefix}/assets/`);
+  const rawSrc =
+    typeof src === "string" ? src : (src as { src?: string } | undefined)?.src;
+  const adjustedSrc = rawSrc?.replace(
+    /\.\.\/assets\//,
+    `${assetPrefix}/assets/`,
+  );
   return <img src={adjustedSrc} {...rest} />;
 };
 
