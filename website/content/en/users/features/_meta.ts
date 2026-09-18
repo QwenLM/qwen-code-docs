@@ -27,7 +27,6 @@ export default {
   'auto-mode': 'Auto Mode',
   'computer-use': 'Computer Use',
   'browser-use': 'Browser Use',
-  'omni-media-policies': 'Omni Media Policies',
   goals: 'Goals',
   'markdown-rendering': 'Markdown Rendering',
   'multi-agent-coordination': 'Multi-Agent Coordination',
