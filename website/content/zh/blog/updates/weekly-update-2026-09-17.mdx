@@ -1,0 +1,219 @@
+---
+title: "Qwen Code 周报：把活儿分给 Claude Code 和 Codex 去干，工作流一句话开跑、能定 token 上限，Goal 能限轮数和时间"
+date: "2026-09-17"
+description: "本周发布 v0.23.3、v0.23.4、v0.24.0 三个正式版本。Qwen Code 可以把子任务直接交给 Claude Code 或 Codex 去做；工作流能按名字调用、随扩展分发，消息里写 `+500k` 就能定这一轮的 token 上限；Goal 能设轮数和活跃时长上限；Web Shell 新增网页预览面板，每次交付的 HTML 单独留档。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i3/O1CN01rY7K44HlTAD2jBZY_!!6000000007094-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 周报：把活儿分给 Claude Code 和 Codex 去干，工作流一句话开跑、能定 token 上限，Goal 能限轮数和时间"
+  date="2026-09-17"
+  author="Qwen Team"
+/>
+
+Qwen Code 本周发布 v0.23.3、v0.23.4、v0.24.0 三个正式版本，267 个 PR 合入。
+
+**活儿能分给 Claude Code 和 Codex 去干。** 内置了两个子代理，用你登录的账号和模型干活，Qwen Code 负责派活、管权限、收结果。
+
+**工作流按名字就能跑。** 保存好的、扩展带的都能直接调用；消息末尾写 `+500k`，这一轮的 token 上限就定了。
+
+**Goal 能限轮数和时间了。** 配好上限，跑满自己收手，状态卡上显示 `3/20 turns`。
+
+**Web Shell 能预览网页了。** 本地起的服务当场看效果，桌面和手机宽度随意切；对话里每次交付的 HTML 自动存成一个版本，点开还是当时那版。
+
+## ✨ 新增特性
+
+### 把活儿分给 Claude Code 或 Codex 去干
+
+装了 Claude Code 或 Codex 的人，现在可以在 Qwen Code 里直接把一段活交给它们：对话里说一句"用 claude-code 子代理审一下这个模块"，这个子任务就交给 Claude Code 去做，用你登录的账号和模型。跑完的活计和权限请求都归在 Qwen Code 这一个会话里，你看到的还是一整条对话流。
+
+这两个子代理默认在前台执行。Codex 默认只读：它看代码、给意见，要动文件得在会话里开 auto-edit 或 YOLO，或者在子代理定义里明确授予写权限。Claude Code 支持在任务进行中和它多轮沟通；Codex 目前是派一个任务、拿回一份答案。macOS 和 Linux 直接可用，Windows 请走 WSL。
+
+想接别的智能体，在 `.qwen/agents/` 的子代理定义文件里声明一个 `executor` 块，写上启动它的命令即可。
+
+你能用它做什么：
+
+- 代码审查、改一版方案这类活分给 Claude Code 或 Codex，用你登录的账号和模型
+- 让 Codex 只读仓库给意见，文件动不动由你授权
+- 在子代理定义里接其他支持 ACP 协议的外部智能体
+
+详见 PR [#11003](https://github.com/QwenLM/qwen-code/pull/11003)、[#11474](https://github.com/QwenLM/qwen-code/pull/11474)
+
+![派给子代理的活由外部工具干完，结果回到同一个会话里汇报](https://img.alicdn.com/imgextra/i3/O1CN01bFnXR1kU29J3FPfU_!!6000000000154-2-tps-1600-1000.png)
+
+### 工作流：一句话开跑，要派多少活、花多少 token 心里有数
+
+上周工作流有了管理页面，这周让它更容易跑起来。
+
+**工作流存好之后，一句话就能跑。** 对话里说"跑一下 audit 这个工作流"，或者在输入框里敲 `/audit`，它就开始干活。
+
+**这一轮的 token 上限能写在消息里。** 末尾加一个 `+500k`，跑起来的流程拿着这个上限安排干活，快到上限就自己收手。批准弹窗里多了一份结构预览：哪一步会派子代理、哪里同时铺开、哪里来回循环，跑之前就能看清。真跑起来超出预期，任务条上会亮一个流程偏大的提醒。
+
+**工作流能打包进扩展分发。** 扩展装上之后，它带的工作流直接出现在工作流管理页里，标好来自哪个扩展；装之前会先告诉你这个扩展带了哪几套。
+
+**子代理的思考深度能指定。** 派出去的每个子代理都能单独设，还能限制它能用哪些工具。查资料、整理这类活设浅一点，判断、审查这类活设深一点。
+
+**权限确认只对你批准那版有效。** 流程改了一个字，下次运行会重新弹权限确认。
+
+你能用它做什么：
+
+- 同一套流程这期、下期都直接跑
+- 跑之前看清它要派多少活，顺手定个 token 上限
+- 同事做的工作流，你装个扩展就有
+
+详见 PR [#11943](https://github.com/QwenLM/qwen-code/pull/11943)、[#11917](https://github.com/QwenLM/qwen-code/pull/11917)、[#11939](https://github.com/QwenLM/qwen-code/pull/11939)、[#11805](https://github.com/QwenLM/qwen-code/pull/11805)、[#11691](https://github.com/QwenLM/qwen-code/pull/11691)
+
+[🎥 演示占位：按名字运行保存的工作流，并展示 +500k 预算的结构预览弹窗]
+
+### Goal 能限轮数和时间了
+
+上周 Goal 能看见花了多少 token，这周补上了更常用的两种上限。
+
+**轮数和时间都能设上限。** 在设置里配 `model.goalMaxTurns` 和 `model.goalMaxActiveMinutes`，就能说"最多跑 20 轮""最多干 30 分钟"，两项默认不开。跑满之后会先给一轮收尾时间，把手上的结果交代清楚再停下。`/goal resume` 是在原额度上续一个新窗口，只续用掉的那一项（[#11457](https://github.com/QwenLM/qwen-code/pull/11457)）。
+
+**还剩多少余量看得见。** 状态卡上直接显示 `3/20 turns`、`12m 3s/30m`（[#11999](https://github.com/QwenLM/qwen-code/pull/11999)）。时间只算实际干活的时长。Goal 派出去的前台子代理和验收检查花掉的 token，也都算进这条 Goal 的账（[#11998](https://github.com/QwenLM/qwen-code/pull/11998)）。要验收的东西太多时，检查会自动拆成小批跑完，卡住的那批会缩小范围重试（[#11365](https://github.com/QwenLM/qwen-code/pull/11365)、[#11690](https://github.com/QwenLM/qwen-code/pull/11690)）。
+
+**Web Shell 里批准就开跑。** 对 Goal 提案点批准，这一轮回复正常结束后 Goal 自动开始干活（[#11360](https://github.com/QwenLM/qwen-code/pull/11360)）。
+
+你能用它做什么：
+
+- 让 Goal 排查一个问题，先把上限配好，跑满了还能续
+- 瞄一眼状态卡就知道还剩几轮、还剩多少时间
+- 在 Web Shell 里批准提案，它自己开跑
+
+[📸 截图占位：带轮数与时间上限的 Goal 状态卡]
+
+### Channel：机器人汇报方式可选，排查它为什么这么回能追查了
+
+Channel 机器人这周三件事：后台任务的通知方式能选了、消息前缀过滤下线了、Channel 会话原样可查了。
+
+**后台任务的通知方式能选了。** 在 Channel 设置里选，钉钉先支持。默认先送主结果，后台任务完成后再单独送通知；也可以每一条完整回答都发，或者等关联的后台活全部干完，只发一份最终结果——群里想安静就只看最后一条。
+
+**消息前缀过滤下线。** 以前可以配一个开头暗号，消息必须带这个前缀机器人才理。这个配置去掉了：现在凡是通过发送人、群、@ 规则放行的消息，直接说什么都触发机器人。
+
+**Channel 会话原样可查。** 在 CLI 或 Web Shell 里重开一个 Channel 会话，每一轮显示的就是模型实际收到的完整内容，包括常驻指令、群历史、谁发的——排查"机器人为什么这么回"的时候一步到位。
+
+你能用它做什么：
+
+- 长任务可以干完再汇报，群里不会一条接一条刷屏
+- 不用在消息开头加指定词，@ 它或私聊直接说就行
+- 回复有问题时，能在 CLI 或 Web Shell 里看到它当时收到的完整内容
+
+详见 PR [#11822](https://github.com/QwenLM/qwen-code/pull/11822)、[#11571](https://github.com/QwenLM/qwen-code/pull/11571)、[#11646](https://github.com/QwenLM/qwen-code/pull/11646)
+
+### Web Shell 多重更新
+
+**开发地址直接预览，HTML 自动留档。** Web Shell 右侧加了网页预览面板，填本地开发地址就能看页面，桌面和手机宽度随意切。对话里每交付一次 HTML，就存下一个独立版本，隔一周点开还是当时那一版，几版能挨个对比（[#11276](https://github.com/QwenLM/qwen-code/pull/11276)）。
+
+**消息改完重发，中断的会话原地继续。** 最近一条你自己发的消息可以就地编辑再发出去，改完重新生成这一轮的回答，带过去的图片和文件原样保留（[#11650](https://github.com/QwenLM/qwen-code/pull/11650)）。跑到一半断掉的对话重开时会出现继续执行的操作，接着原来的对话往下跑（[#11545](https://github.com/QwenLM/qwen-code/pull/11545)）。
+
+**浏览器通知认得会话了。** 上周刚加的通知，这周会写明是哪个会话、带上问题和回答的节选，点通知直接落到那个对话（[#11447](https://github.com/QwenLM/qwen-code/pull/11447)）。内置页面默认开着，浏览器里允许一次通知即可。
+
+**上下文用量看得准，点一下就压缩。** 上下文面板显示精确的已用、总量、剩余和各类占比，并且直接放了压缩按钮；输入框旁悬停的卡片里也有，点一下完成压缩（[#11700](https://github.com/QwenLM/qwen-code/pull/11700)、[#11782](https://github.com/QwenLM/qwen-code/pull/11782)）。
+
+**其他改进。** 会话总览页按状态分区、能按分支和 PR 号搜索（[#11238](https://github.com/QwenLM/qwen-code/pull/11238)）；上传的文件、项目文件、网页链接归进一个 Sources 列表（[#11262](https://github.com/QwenLM/qwen-code/pull/11262)）；定时任务能指定用哪个模型、归到哪个分组（[#11396](https://github.com/QwenLM/qwen-code/pull/11396)）；能填地址连上另一台机器的 Qwen Code（[#11548](https://github.com/QwenLM/qwen-code/pull/11548)）。
+
+[📸 截图占位：Web Shell 预览面板与两张留档版本卡片]
+
+## 📊 更多新功能
+
+**联网搜索每一轮有次数上限。** 默认一个会话最多 200 次 `web_search`，`tools.webSearch.maxPerSession` 可调。用满后 AI 带着已收集的信息继续写，并告诉你还可以要求加额度。详见 PR [#11852](https://github.com/QwenLM/qwen-code/pull/11852)、[#11692](https://github.com/QwenLM/qwen-code/pull/11692)
+
+**跨会话消息默认开启。** 同一台机器上的多个 Qwen Code 会话默认可互相发现，`/peers` 列出在线会话，会话之间能让 AI 互发消息交代进度；不想要的话把 `agents.crossSessionMessaging` 设为 `false` 关掉。详见 PR [#11840](https://github.com/QwenLM/qwen-code/pull/11840)
+
+**思考强度能配的模型更多了。** Moonshot K3 支持 low/high/max 三档，K2.6 用原生思考开关，Qwen 3.8 支持 low/medium/xhigh，DeepSeek V4 Pro 和 Flash 支持 low/high/max；Standard API Key 的配置流程也补上了这批新模型，Token Plan 新增 Qwen 3.8 Flash 和 DeepSeek V4 Pro-0813。详见 PR [#11349](https://github.com/QwenLM/qwen-code/pull/11349)
+
+**VS Code 的会话历史并成一份。** 终端、浏览器、VS Code 里创建的对话出现在同一个历史列表里，直接点开即可。详见 PR [#11713](https://github.com/QwenLM/qwen-code/pull/11713)
+
+**终端里能翻看你配的钩子了。** `/hooks` 从一行状态变成能逐层查看事件、匹配规则和每条钩子的详情，刚改的配置打开就会重新读一遍，整体被关掉时还会说明原因；钩子跑起来也会报进度。详见 PR [#11903](https://github.com/QwenLM/qwen-code/pull/11903)、[#11904](https://github.com/QwenLM/qwen-code/pull/11904)、[#11906](https://github.com/QwenLM/qwen-code/pull/11906)
+
+**能按 OpenAI Responses 协议接模型。** 服务商类型里新增 `openai-responses`，走 OpenAI 的 `/v1/responses` 接口，流式输出、工具调用、思考摘要都支持。详见 PR [#8169](https://github.com/QwenLM/qwen-code/pull/8169)
+
+**Linux 多了一种内核沙箱。** 设置里选用 bwrap 后端后，AI 可写的范围限定在工作区、临时目录和必要缓存，其余文件系统只读；不用容器工具、不用 root，另有一个子命令能查看当前边界并做自检。详见 PR [#11614](https://github.com/QwenLM/qwen-code/pull/11614)
+
+**一个后台服务能带的工作区更多了。** `qwen serve` 默认能带的工作区从 25 个提到 256 个，要改用 `QWEN_SERVE_MAX_WORKSPACES`。详见 PR [#11515](https://github.com/QwenLM/qwen-code/pull/11515)
+
+## 👏 体验优化
+
+**重新打开大会话明显更快。** 旧的长对话重开、Web Shell 各面板的打开，都提速了。详见 PR [#11595](https://github.com/QwenLM/qwen-code/pull/11595)、[#11644](https://github.com/QwenLM/qwen-code/pull/11644)
+
+**你发的链接能点了。** Web Shell 里你自己消息中的网址渲染成可点击的链接。详见 PR [#11464](https://github.com/QwenLM/qwen-code/pull/11464)
+
+**读的时候界面不会自己动。** 审批面板不会在你读的过程中改尺寸；本轮摘要固定出现在输出末尾，只出现一次。详见 PR [#11930](https://github.com/QwenLM/qwen-code/pull/11930)、[#11986](https://github.com/QwenLM/qwen-code/pull/11986)
+
+**回答的来源点开能翻页。** 回答里的脚注按同源归成一组，悬停就翻开分页预览；每一轮回答下面还列出这轮用到的全部来源，包括没挂上脚注的附件。详见 PR [#11480](https://github.com/QwenLM/qwen-code/pull/11480)
+
+**问过的问题留在对话里。** 一轮处理完做汇总后，你提过的问题和答案仍然显示在对话里可以回看。详见 PR [#11461](https://github.com/QwenLM/qwen-code/pull/11461)
+
+**回合导航跟着你读。** Web Shell 右侧的回合导航条按阅读位置点亮，读到哪一轮亮哪一轮。详见 PR [#11801](https://github.com/QwenLM/qwen-code/pull/11801)
+
+**新模型排在最前。** 服务商配置里新发现的模型排到列表头部，好找。详见 PR [#11449](https://github.com/QwenLM/qwen-code/pull/11449)
+
+**独立 Web Shell 也认识你的设置。** 主题和语言设置在独立页面里同样生效。详见 PR [#11961](https://github.com/QwenLM/qwen-code/pull/11961)
+
+## 🔧 重要修复
+
+| 修复 | 对你的影响 | PR |
+|------|-----------|-----|
+| **后台任务汇报时界面崩溃** | 后台 agent 或监视任务完成、通知落回对话时，终端界面可能整个崩掉、这一轮白跑，问题已根治 | [#11565](https://github.com/QwenLM/qwen-code/pull/11565), [#11835](https://github.com/QwenLM/qwen-code/pull/11835) |
+| **Windows 命令不再堆积残留进程** | 每条 shell 命令遗留的 conhost.exe 会占资源到进程退出；PowerShell 短命令实测从约 3.2 秒降到 0.23 秒 | [#11497](https://github.com/QwenLM/qwen-code/pull/11497), [#11313](https://github.com/QwenLM/qwen-code/pull/11313) |
+| **刷新页面保住待确认项** | 会话重新加载后，还没答复的权限确认和提问会保留下来 | [#11468](https://github.com/QwenLM/qwen-code/pull/11468) |
+| **网络抖一下不再掐掉这一轮** | EOF 这类瞬时断连改为带上限自动重试，Channel 和托管会话这类没法手动重试的场景尤其明显 | [#10347](https://github.com/QwenLM/qwen-code/pull/10347), [#11291](https://github.com/QwenLM/qwen-code/pull/11291) |
+| **模型干活时你插的消息不丢** | 跑一半发出去的消息会被保留下来，进入队列 | [#11289](https://github.com/QwenLM/qwen-code/pull/11289) |
+| **取消的回复看得到、刷不没** | 被中断的回答跨刷新保留，并显示中断前跑了多久 | [#11608](https://github.com/QwenLM/qwen-code/pull/11608) |
+| **Web 终端恢复可用** | 独立安装包里的 Web 终端修好，终端面板也不再卡死 | [#11881](https://github.com/QwenLM/qwen-code/pull/11881), [#11748](https://github.com/QwenLM/qwen-code/pull/11748) |
+| **钉钉引用消息里的图片文件读得到** | 引用他人消息里的图片和文件之前取不到 | [#11759](https://github.com/QwenLM/qwen-code/pull/11759) |
+| **命令钩子超时单位改成按秒** | 之前 `"timeout": 10` 实际是 10 毫秒就被掐掉，现在和文档一致按秒生效（老配置里 ≥1000 的值仍按毫秒理解，无需改动） | [#11615](https://github.com/QwenLM/qwen-code/pull/11615) |
+| **钩子里带空格的项目路径不再坏** | bash 钩子引用项目目录变量时，路径带空格会拼坏 | [#11864](https://github.com/QwenLM/qwen-code/pull/11864) |
+| **定时任务夏令时触发正确** | 跨越夏令时切换时，下一次触发时间算得准 | [#11723](https://github.com/QwenLM/qwen-code/pull/11723) |
+| **终端窗口矮了弹窗不裁切** | 确认弹窗在低终端窗口里完整显示在画面内 | [#9040](https://github.com/QwenLM/qwen-code/pull/9040), [#11656](https://github.com/QwenLM/qwen-code/pull/11656) |
+| **VS Code 的 diff 面板能关、编辑不丢** | diff 面板正常关闭；权限确认取消后编辑框内容还给你 | [#10494](https://github.com/QwenLM/qwen-code/pull/10494), [#11171](https://github.com/QwenLM/qwen-code/pull/11171) |
+| **VS Code 面板的历史回来了** | 早前切换之后不见的那部分会话历史重新能看到 | [#11495](https://github.com/QwenLM/qwen-code/pull/11495) |
+| **团队任务不重复派给多人** | 过期的队长身份不会把同一件事同时派给好几个队友 | [#10237](https://github.com/QwenLM/qwen-code/pull/10237) |
+| **报错那一轮的通知不丢** | 某一轮带着错误收场时，队列里的后台任务通知照样排空送达 | [#11559](https://github.com/QwenLM/qwen-code/pull/11559) |
+
+## 👥 贡献者
+
+| 贡献者 | 贡献内容 | 参考 PR 链接 |
+|--------|---------|-------------|
+| **[@yiliang114](https://github.com/yiliang114)** | Web Shell 远程 daemon 连接、VS Code 会话历史合并与找回、Windows 终端进程清理、Web 终端修复一批、报错轮通知排空、独立 Web Shell 主题语言生效 | [#11548](https://github.com/QwenLM/qwen-code/pull/11548), [#11713](https://github.com/QwenLM/qwen-code/pull/11713), [#11497](https://github.com/QwenLM/qwen-code/pull/11497), [#11881](https://github.com/QwenLM/qwen-code/pull/11881), [#11495](https://github.com/QwenLM/qwen-code/pull/11495), [#11961](https://github.com/QwenLM/qwen-code/pull/11961) |
+| **[@qqqys](https://github.com/qqqys)** | Goal 轮数与时间上限、提案批准后自动开跑、工作流按名调用与 `+500k` token 上限、跨会话消息默认开启、Channel 通知方式与前缀过滤下线、定时任务选模型选分组、联网搜索次数上限 | [#11457](https://github.com/QwenLM/qwen-code/pull/11457), [#11360](https://github.com/QwenLM/qwen-code/pull/11360), [#11943](https://github.com/QwenLM/qwen-code/pull/11943), [#11917](https://github.com/QwenLM/qwen-code/pull/11917), [#11840](https://github.com/QwenLM/qwen-code/pull/11840), [#11822](https://github.com/QwenLM/qwen-code/pull/11822), [#11396](https://github.com/QwenLM/qwen-code/pull/11396), [#11852](https://github.com/QwenLM/qwen-code/pull/11852) |
+| **[@wenshao](https://github.com/wenshao)** | 把任务分给 Claude Code / Codex、Web Shell 网页预览与交付留档、中断会话原地继续、上下文概览与手动压缩、会话总览页改版 | [#11003](https://github.com/QwenLM/qwen-code/pull/11003), [#11474](https://github.com/QwenLM/qwen-code/pull/11474), [#11276](https://github.com/QwenLM/qwen-code/pull/11276), [#11545](https://github.com/QwenLM/qwen-code/pull/11545), [#11700](https://github.com/QwenLM/qwen-code/pull/11700), [#11238](https://github.com/QwenLM/qwen-code/pull/11238) |
+| **[@ytahdn](https://github.com/ytahdn)** | Web Shell 消息改完重发、取消回复保留、工具详情文件预览、上下文详情定制、审批面板稳定与摘要去重 | [#11650](https://github.com/QwenLM/qwen-code/pull/11650), [#11608](https://github.com/QwenLM/qwen-code/pull/11608), [#11982](https://github.com/QwenLM/qwen-code/pull/11982), [#11996](https://github.com/QwenLM/qwen-code/pull/11996), [#11930](https://github.com/QwenLM/qwen-code/pull/11930), [#11986](https://github.com/QwenLM/qwen-code/pull/11986) |
+| **[@qwen-code-dev-bot](https://github.com/qwen-code-dev-bot)** | CI 与测试稳定性修复 | [#11537](https://github.com/QwenLM/qwen-code/pull/11537), [#11530](https://github.com/QwenLM/qwen-code/pull/11530), [#11362](https://github.com/QwenLM/qwen-code/pull/11362) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | 浏览器通知升级、Linux bwrap 内核沙箱、服务托管准入、SDK 独立会话创建 | [#11447](https://github.com/QwenLM/qwen-code/pull/11447), [#11614](https://github.com/QwenLM/qwen-code/pull/11614), [#11911](https://github.com/QwenLM/qwen-code/pull/11911), [#11812](https://github.com/QwenLM/qwen-code/pull/11812) |
+| **[@callmeYe](https://github.com/callmeYe)** | Kimi/Qwen/DeepSeek 思考档位、会话材料统一列表、来源脚注分页预览、导航跟随阅读位置、外部推理配置 | [#11349](https://github.com/QwenLM/qwen-code/pull/11349), [#11262](https://github.com/QwenLM/qwen-code/pull/11262), [#11480](https://github.com/QwenLM/qwen-code/pull/11480), [#11801](https://github.com/QwenLM/qwen-code/pull/11801), [#11856](https://github.com/QwenLM/qwen-code/pull/11856) |
+| **[@LaZzyMan](https://github.com/LaZzyMan)** | Computer Use 应用绑定操作与观察压缩、Omni 多模态管线合入主干、桌面端打包修复 | [#11705](https://github.com/QwenLM/qwen-code/pull/11705), [#12019](https://github.com/QwenLM/qwen-code/pull/12019), [#11841](https://github.com/QwenLM/qwen-code/pull/11841), [#11479](https://github.com/QwenLM/qwen-code/pull/11479) |
+| **[@DragonnZhang](https://github.com/DragonnZhang)** | 会话恢复提速、Responses 链路错误恢复、shell 输出 token 上限、CodeMode 执行模式 | [#11595](https://github.com/QwenLM/qwen-code/pull/11595), [#11596](https://github.com/QwenLM/qwen-code/pull/11596), [#11652](https://github.com/QwenLM/qwen-code/pull/11652), [#11727](https://github.com/QwenLM/qwen-code/pull/11727), [#10607](https://github.com/QwenLM/qwen-code/pull/10607) |
+| **[@bluefateludi](https://github.com/bluefateludi)** | Fireworks 请求兼容修复、Web Shell 侧边栏测试统一 | [#11701](https://github.com/QwenLM/qwen-code/pull/11701), [#9797](https://github.com/QwenLM/qwen-code/pull/9797) |
+| **[@chiga0](https://github.com/chiga0)** | OpenTUI 渲染缝隙修复、ACP 权限队列按会话隔离 | [#11630](https://github.com/QwenLM/qwen-code/pull/11630), [#11802](https://github.com/QwenLM/qwen-code/pull/11802) |
+| **[@netbrah](https://github.com/netbrah)** | OpenAI Responses 协议接入、思考签名保留 | [#8169](https://github.com/QwenLM/qwen-code/pull/8169), [#8260](https://github.com/QwenLM/qwen-code/pull/8260) |
+| **[@shenyankm](https://github.com/shenyankm)** | LSP 文档同步修复、短终端弹窗裁切修复 | [#11443](https://github.com/QwenLM/qwen-code/pull/11443), [#9040](https://github.com/QwenLM/qwen-code/pull/9040) |
+| **[@tanzhenxin](https://github.com/tanzhenxin)** | Responses 流式错误信息保留、Computer Use 效率修复 | [#11523](https://github.com/QwenLM/qwen-code/pull/11523), [#11683](https://github.com/QwenLM/qwen-code/pull/11683) |
+| **[@yu-xin-c](https://github.com/yu-xin-c)** | Goal 阻塞状态卡标签修正、/compress 集成测试加强 | [#11174](https://github.com/QwenLM/qwen-code/pull/11174), [#11259](https://github.com/QwenLM/qwen-code/pull/11259) |
+| **[@AaronZ345](https://github.com/AaronZ345)** | 多 agent 任务重复派发修复 | [#10237](https://github.com/QwenLM/qwen-code/pull/10237) |
+| **[@BenGuanRan](https://github.com/BenGuanRan)** | 钉钉私聊带上发送人身份 | [#12017](https://github.com/QwenLM/qwen-code/pull/12017) |
+| 🆕 **[@Bug-killer-prog](https://github.com/Bug-killer-prog)** | 🎉 首次贡献：Windows 测试会话修复 | [#11750](https://github.com/QwenLM/qwen-code/pull/11750) |
+| 🆕 **[@CanReader](https://github.com/CanReader)** | 🎉 首次贡献：VS Code diff 关闭修复 | [#10494](https://github.com/QwenLM/qwen-code/pull/10494) |
+| **[@harjothkhara](https://github.com/harjothkhara)** | 技能开关身份识别修复 | [#11831](https://github.com/QwenLM/qwen-code/pull/11831) |
+| 🆕 **[@kabishou11](https://github.com/kabishou11)** | 🎉 首次贡献：qwen serve 的 MCP 配置加载修复 | [#11145](https://github.com/QwenLM/qwen-code/pull/11145) |
+| 🆕 **[@lorenzozanee](https://github.com/lorenzozanee)** | 🎉 首次贡献：已取消的排队工具请求不再执行 | [#11483](https://github.com/QwenLM/qwen-code/pull/11483) |
+| **[@nerdalytics](https://github.com/nerdalytics)** | 扩展技能按扩展名命名 | [#10841](https://github.com/QwenLM/qwen-code/pull/10841) |
+| **[@now-ing](https://github.com/now-ing)** | 子代理关闭时错误信息保留 | [#11190](https://github.com/QwenLM/qwen-code/pull/11190) |
+| **[@pomelo-nwu](https://github.com/pomelo-nwu)** | README 界面一览 | [#11491](https://github.com/QwenLM/qwen-code/pull/11491) |
+| **[@shoemoney](https://github.com/shoemoney)** | DashScope 请求元数据按模型族发送 | [#11606](https://github.com/QwenLM/qwen-code/pull/11606) |
+| **[@TianYuan1024](https://github.com/TianYuan1024)** | 恢复会话时重新应用技能副作用 | [#11280](https://github.com/QwenLM/qwen-code/pull/11280) |
+| 🆕 **[@wangxiongts](https://github.com/wangxiongts)** | 🎉 首次贡献：Qwen Live 视觉输入、主动协助与本地记忆 | [#11369](https://github.com/QwenLM/qwen-code/pull/11369) |
+| 🆕 **[@zaalipro](https://github.com/zaalipro)** | 🎉 首次贡献：终端界面崩溃根治 | [#11565](https://github.com/QwenLM/qwen-code/pull/11565) |
+| **[@zhangxy-zju](https://github.com/zhangxy-zju)** | ACP 资源链接保留原始文件名 | [#11721](https://github.com/QwenLM/qwen-code/pull/11721) |
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！

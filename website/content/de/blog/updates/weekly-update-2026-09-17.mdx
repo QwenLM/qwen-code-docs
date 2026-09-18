@@ -1,0 +1,219 @@
+---
+title: "Qwen Code Weekly: Aufgaben an Claude Code und Codex abgeben, Workflows per Satz starten und mit Token-Limit, Goal mit Runden- und Zeitgrenze"
+date: "2026-09-17"
+description: "Diese Woche kommen drei Stable-Releases — v0.23.3, v0.23.4 und v0.24.0. Qwen Code gibt Teilaufgaben direkt an Claude Code oder Codex ab. Workflows lassen sich per Name aufrufen und mit Extensions verteilen; ein `+500k` in der Nachricht setzt das Token-Limit für diese Runde. Goal bekommt Grenzen für Runden und aktive Zeit. Die Web Shell hat ein neues Web-Vorschau-Panel, und jede gelieferte HTML-Fassung bleibt einzeln erhalten."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i3/O1CN01rY7K44HlTAD2jBZY_!!6000000007094-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Weekly: Aufgaben an Claude Code und Codex abgeben, Workflows per Satz starten und mit Token-Limit, Goal mit Runden- und Zeitgrenze"
+  date="2026-09-17"
+  author="Qwen Team"
+/>
+
+Qwen Code hat diese Woche drei Stable-Releases ausgeliefert — v0.23.3, v0.23.4 und v0.24.0 — mit 267 gemergten PRs.
+
+**Aufgaben gehen jetzt an Claude Code und Codex.** Zwei eingebaute Subagents arbeiten mit deinem angemeldeten Konto und dessen Modell. Qwen Code verteilt die Arbeit, regelt die Rechte und holt die Ergebnisse zurück.
+
+**Workflows laufen auf Namen.** Gespeicherte und mitgebrachte rufst du direkt auf; schreibst du ans Ende der Nachricht `+500k`, steht das Token-Limit für diese Runde fest.
+
+**Goal hat jetzt Grenzen für Runden und Zeit.** Einmal konfiguriert, stoppt es sich von selbst, wenn die Grenze erreicht ist — die Statuskarte zeigt `3/20 turns`.
+
+**Die Web Shell zeigt Webseiten live.** Lokale Dev-Server siehst du sofort, Desktop- und Handy-Breite wechselst du frei. Jedes gelieferte HTML wird automatisch als eigene Fassung gespeichert und öffnet sich später genau so, wie es war.
+
+## ✨ Neue Features
+
+### Aufgaben an Claude Code oder Codex abgeben
+
+Wer Claude Code oder Codex installiert hat, kann ab sofort aus Qwen Code heraus eine Teilaufgabe dorthin geben: Sag im Gespräch „lass dieses Modul vom claude-code-Subagent prüfen" — der Subtask geht an Claude Code, mit deinem angemeldeten Konto und dessen Modell. Die fertige Arbeit und die Genehmigungsanfragen landen in ein und demselben Qwen Code-Gespräch; du siehst weiterhin einen durchgehenden Gesprächsstrom.
+
+Beide Subagents laufen standardmäßig im Vordergrund. Codex startet schreibgeschützt: Es liest Code und gibt Kommentare ab. Soll es Dateien anfassen, schaltest du im Gespräch auto-edit oder YOLO ein oder erteilst die Schreibrechte explizit in der Subagent-Definition. Mit Claude Code kannst du während einer Aufgabe mehrmals hin und her reden; Codex bekommt aktuell einen Auftrag und liefert eine Antwort zurück. macOS und Linux funktionieren direkt, auf Windows bitte WSL nutzen.
+
+Weitere Agents bindest du in der Subagent-Datei unter `.qwen/agents/` mit einem `executor`-Block ein — dort steht das Startkommando.
+
+Was du damit machen kannst:
+
+- Code-Reviews oder ein überarbeiteter Entwurf gehen an Claude Code oder Codex — mit deinem Konto und dessen Modell
+- Codex liest das Repository schreibgeschützt und sagt seine Meinung; ob Dateien geändert werden, entscheidest du
+- Über die Subagent-Definition sprichst du jeden externen Agent an, der ACP unterstützt
+
+Siehe PRs [#11003](https://github.com/QwenLM/qwen-code/pull/11003), [#11474](https://github.com/QwenLM/qwen-code/pull/11474)
+
+![Die beim Subagent bestellte Arbeit erledigt das externe Tool, das Ergebnis kehrt ins gleiche Gespräch zurück](https://img.alicdn.com/imgextra/i3/O1CN01bFnXR1kU29J3FPfU_!!6000000000154-2-tps-1600-1000.png)
+
+### Workflows: per Satz starten und wissen, wie viel Arbeit und Tokens sie kosten
+
+Letzte Woche bekamen Workflows eine Verwaltungsseite, diese Woche laufen sie leichter an.
+
+**Ein gespeicherter Workflow startet auf Zuruf.** Sag im Gespräch „führe den audit-Workflow aus" oder tippe `/audit` ins Eingabefeld — es geht los.
+
+**Das Token-Limit der Runde steht in der Nachricht.** Ein `+500k` am Ende: Der gestartete Workflow plant seine Arbeit mit diesem Limit und hört kurz davor von selbst auf. Im Genehmigungs-Popup sitzt zusätzlich eine Struktur-Vorschau — welcher Schritt Subagents losschickt, wo parallel gearbeitet wird und wo geschleift wird. Läuft der Workflow dann größer als erwartet, leuchtet am Task-Balken ein Hinweis darauf.
+
+**Workflows lassen sich in Extensions verpacken.** Ist die Extension installiert, erscheinen ihre Workflows direkt auf der Verwaltungsseite, mit dem Namen der Quelle; schon vor der Installation siehst du, welche Workflows die Extension mitbringt.
+
+**Die Denk-Tiefe jedes Subagents ist einstellbar.** Für jeden gestarteten Subagent separat, dazu eine Liste der Tools, die er benutzen darf. Für Recherchieren und Sortieren reicht eine flachere Stufe, für Prüfen und Urteilen eine tiefere.
+
+**Die Genehmigung gilt nur für genau diese Fassung.** Ändert sich der Workflow auch nur um ein Zeichen, fragt der nächste Lauf wieder nach Rechten.
+
+Was du damit machen kannst:
+
+- Dieselbe Ablaufsteuerung diese Woche und nächste Woche einfach weiterlaufen lassen
+- Vor dem Start sehen, wie viel Arbeit der Workflow verteilt, und dabei ein Token-Limit setzen
+- Workflows von Kolleginnen holst du dir mit einer Extension
+
+Siehe PRs [#11943](https://github.com/QwenLM/qwen-code/pull/11943), [#11917](https://github.com/QwenLM/qwen-code/pull/11917), [#11939](https://github.com/QwenLM/qwen-code/pull/11939), [#11805](https://github.com/QwenLM/qwen-code/pull/11805), [#11691](https://github.com/QwenLM/qwen-code/pull/11691)
+
+[🎥 Demo-Platzhalter: ein gespeicherter Workflow läuft per Name, mit Struktur-Vorschau des +500k-Budgets im Genehmigungs-Popup]
+
+### Goal bekommt Grenzen für Runden und Zeit
+
+Letzte Woche sah Goal, wie viele Tokens es verbraucht hat, diese Woche kommen die beiden praktischeren Grenzen dazu.
+
+**Runden und Zeit haben ein Limit.** Setze in den Einstellungen `model.goalMaxTurns` und `model.goalMaxActiveMinutes`, dann heißen die Vorgaben „maximal 20 Runden" oder „maximal 30 Minuten"; beide sind standardmäßig aus. Ist eine erreicht, bekommt Goal erst eine Abschlussrunde, um das laufende Ergebnis sauber zu erklären, und stoppt dann. `/goal resume` hängt ein neues Fenster an dasselbe Budget an und verlängert nur die verbrauchte Position ([#11457](https://github.com/QwenLM/qwen-code/pull/11457)).
+
+**Der Rest ist sichtbar.** Die Statuskarte zeigt direkt `3/20 turns` und `12m 3s/30m` ([#11999](https://github.com/QwenLM/qwen-code/pull/11999)). Bei der Zeit zählt nur die tatsächlich arbeitende Dauer. Was ein von Goal gestarteter Frontend-Subagent und die Abnahmeprüfung verbrauchen, läuft ebenfalls auf das Konto dieses Goals ([#11998](https://github.com/QwenLM/qwen-code/pull/11998)). Steht zu viel Abnahme an, zerlegt die Prüfung das automatisch in kleinere Durchgänge; ein blockierter Durchgang wird enger gefasst erneut versucht ([#11365](https://github.com/QwenLM/qwen-code/pull/11365), [#11690](https://github.com/QwenLM/qwen-code/pull/11690)).
+
+**In der Web Shell startet es per Klick.** Gibst du einem Goal-Vorschlag deine Freigabe, startet Goal nach dem normalen Ende dieser Antwort von selbst ([#11360](https://github.com/QwenLM/qwen-code/pull/11360)).
+
+Was du damit machen kannst:
+
+- Goal eine Untersuchung machen lassen — erst Grenzen setzen, und wenn sie erreicht sind, verlängern
+- Auf die Statuskarte schauen und wissen: wie viele Runden und wie viel Zeit noch übrig
+- In der Web Shell den Vorschlag freigeben und Goal loslaufen lassen
+
+[📸 Screenshot-Platzhalter: Goal-Statuskarte mit Runden- und Zeitgrenze]
+
+### Channel: Meldestil wählbar, Antworten lassen sich nachvollziehen
+
+Der Channel-Bot hatte diese Woche drei Änderungen: der Meldestil für Hintergrund-Aufgaben ist wählbar, der Präfix-Filter ist raus, und Channel-Gespräche lassen sich originalgetreu ansehen.
+
+**Meldestil für Hintergrund-Aufgaben.** Wählbar in den Channel-Einstellungen, DingTalk zieht vor. Standardmäßig kommt zuerst das Hauptergebnis; ist die Hintergrund-Aufgabe fertig, gibt es eine separate Meldung. Alternativ geht jede vollständige Antwort einzeln raus, oder du wartest, bis alle zugehörigen Hintergrund-Arbeiten durch sind, und bekommst nur eine finale Meldung — soll es im Chat ruhiger zugehen, liest du einfach nur die letzte.
+
+**Der Präfix-Filter ist raus.** Bisher ließ sich ein Startkürzel konfigurieren: Nur Nachrichten mit diesem Präfix beantwortete der Bot. Diese Einstellung gibt es nicht mehr — jede Nachricht, die Absender-, Gruppen- oder @-Regel durchgelassen haben, löst den Bot jetzt direkt aus.
+
+**Channel-Gespräche originalgetreu ansehen.** Öffnest du ein Channel-Gespräch in der CLI oder der Web Shell neu, zeigt jede Runde genau das, was das Modell erhalten hat — inklusive ständiger Anweisung, Gruppenverlauf und Absender. Wenn du dich fragst, warum der Bot so geantwortet hat, ist das die komplette Antwort in einem Schritt.
+
+Was du damit machen kannst:
+
+- Lange Aufgaben melden sich erst, wenn sie fertig sind — der Chat flutet nicht mehr mit Einzelantworten
+- Kein Startwort mehr nötig: @-Erwähnung oder Einzelchat reicht
+- Bei komischen Antworten siehst du in CLI oder Web Shell, was der Bot in dem Moment bekommen hat
+
+Siehe PRs [#11822](https://github.com/QwenLM/qwen-code/pull/11822), [#11571](https://github.com/QwenLM/qwen-code/pull/11571), [#11646](https://github.com/QwenLM/qwen-code/pull/11646)
+
+### Web Shell: mehrere Verbesserungen
+
+**Dev-Adresse direkt in der Vorschau, HTML bleibt erhalten.** Die Web Shell hat rechts ein Web-Vorschau-Panel: Dev-Adresse eintragen, Seite ansehen, zwischen Desktop- und Handy-Breite wechseln. Jedes gelieferte HTML wird als eigene Fassung gespeichert — auch eine Woche später öffnet sich genau diese, und mehrere Fassungen lassen sich untereinander vergleichen ([#11276](https://github.com/QwenLM/qwen-code/pull/11276)).
+
+**Nachricht bearbeiten, unterbrochene Gespräche laufen weiter.** Deine zuletzt gesendete Nachricht kannst du im Gespräch bearbeiten und neu senden; die Antwort dieser Runde entsteht neu, Bilder und Dateien bleiben unverändert dabei ([#11650](https://github.com/QwenLM/qwen-code/pull/11650)). Bricht ein Gespräch mitten in einer Runde ab, bietet es beim erneuten Öffnen Fortsetzen an — es läuft genau dort weiter, wo es aufgehört hat ([#11545](https://github.com/QwenLM/qwen-code/pull/11545)).
+
+**Browser-Benachrichtigungen kennen das Gespräch.** Die gerade erst gekommene Funktion nennt jetzt das Gespräch und schneidet Frage und Antwort an; ein Klick auf die Benachrichtigung landet genau in diesem Gespräch ([#11447](https://github.com/QwenLM/qwen-code/pull/11447)). Eingebaute Seiten haben das standardmäßig an, einmal die Browser-Erlaubnis erteilen genügt.
+
+**Kontextnutzung präzise, Komprimierung per Klick.** Das Kontext-Panel zeigt exakt genutzte, gesamte und verbleibende Tokens sowie die Anteile je Kategorie und hat den Komprimierungs-Button direkt dabei; er steht auch in der Hover-Karte am Eingabefeld ([#11700](https://github.com/QwenLM/qwen-code/pull/11700), [#11782](https://github.com/QwenLM/qwen-code/pull/11782)).
+
+**Weitere Verbesserungen.** Die Übersichtsseite gruppiert Gespräche nach Status und findet sie per Branch und PR-Nummer ([#11238](https://github.com/QwenLM/qwen-code/pull/11238)); hochgeladene Dateien, Projektdateien und Web-Links sammeln sich in einer Sources-Liste ([#11262](https://github.com/QwenLM/qwen-code/pull/11262)); geplante Aufgaben bekommen eigenes Modell und eigene Gruppe ([#11396](https://github.com/QwenLM/qwen-code/pull/11396)); mit einer Adresse verbindest du dich mit Qwen Code auf einem anderen Rechner ([#11548](https://github.com/QwenLM/qwen-code/pull/11548)).
+
+[📸 Screenshot-Platzhalter: Vorschau-Panel der Web Shell und zwei archivierten HTML-Karten]
+
+## 📊 Weitere neue Features
+
+**Websuche hat ein Limit pro Sitzung.** Standardmäßig maximal 200 `web_search`-Aufrufe pro Gespräch, einstellbar über `tools.webSearch.maxPerSession`. Nach dem Limit schreibt die KI mit den gesammelten Infos weiter und sagt dir, dass du mehr anfordern kannst. Siehe PRs [#11852](https://github.com/QwenLM/qwen-code/pull/11852), [#11692](https://github.com/QwenLM/qwen-code/pull/11692)
+
+**Nachrichten über Sessions hinweg sind standardmäßig an.** Auf einem Rechner finden sich mehrere Qwen Code-Gespräche jetzt von selbst; `/peers` listet die aktiven Gespräche, und die KI kann zwischen ihnen Status hin- und herschicken. Wer das nicht will, setzt `agents.crossSessionMessaging` auf `false`. Siehe PR [#11840](https://github.com/QwenLM/qwen-code/pull/11840)
+
+**Mehr Modelle mit einstellbarer Thinking-Stärke.** Moonshot K3 kann low/high/max, K2.6 nutzt den nativen Thinking-Schalter, Qwen 3.8 kann low/medium/xhigh, DeepSeek V4 Pro und Flash können low/high/max. Die Konfiguration für Standard API Key hat diese neuen Modelle ebenfalls bekommen, beim Token Plan kommen Qwen 3.8 Flash und DeepSeek V4 Pro-0813 dazu. Siehe PR [#11349](https://github.com/QwenLM/qwen-code/pull/11349)
+
+**Der Session-Verlauf in VS Code wird eins.** Gespräche aus Terminal, Browser und VS Code erscheinen in derselben Historienliste und lassen sich direkt öffnen. Siehe PR [#11713](https://github.com/QwenLM/qwen-code/pull/11713)
+
+**Hooks im Terminal nachschlagen.** `/hooks` zeigt nicht mehr nur eine Statuszeile, sondern Events, Matching-Regeln und jede Hook einzeln, Ebene für Ebene. Frisch geänderte Konfigurationen werden beim Öffnen neu gelesen, und ist alles abgeschaltet, steht der Grund dabei. Laufende Hooks melden ihren Fortschritt. Siehe PRs [#11903](https://github.com/QwenLM/qwen-code/pull/11903), [#11904](https://github.com/QwenLM/qwen-code/pull/11904), [#11906](https://github.com/QwenLM/qwen-code/pull/11906)
+
+**Modelle über das OpenAI Responses-Protokoll.** Mit `openai-responses` kommt ein neuer Provider-Typ, der über `/v1/responses` läuft — mit Streaming, Tool-Calls und Thinking-Summaries. Siehe PR [#8169](https://github.com/QwenLM/qwen-code/pull/8169)
+
+**Linux bekommt ein zweites Sandbox-Backend.** Wählst du in den Einstellungen bwrap, darf die KI nur im Workspace, in temporären Verzeichnissen und nötigen Caches schreiben — der Rest des Dateisystems bleibt read-only. Ohne Container-Tool, ohne root. Ein Unterkommando zeigt die aktuellen Grenzen und macht einen Selbsttest. Siehe PR [#11614](https://github.com/QwenLM/qwen-code/pull/11614)
+
+**Mehr Workspaces an einem Dienst.** `qwen serve` betreut standardmäßig 256 statt 25 Workspaces; zum Ändern `QWEN_SERVE_MAX_WORKSPACES`. Siehe PR [#11515](https://github.com/QwenLM/qwen-code/pull/11515)
+
+## 👏 Verbesserte Erfahrungen
+
+**Große Gespräche öffnen schneller.** Das erneute Öffnen alter langer Gespräche und die Panels der Web Shell sind spürbar flotter geworden. Siehe PRs [#11595](https://github.com/QwenLM/qwen-code/pull/11595), [#11644](https://github.com/QwenLM/qwen-code/pull/11644)
+
+**Deine Links sind klickbar.** In der Web Shell werden URLs aus deinen eigenen Nachrichten als Links dargestellt. Siehe PR [#11464](https://github.com/QwenLM/qwen-code/pull/11464)
+
+**Beim Lesen springt nichts.** Das Genehmigungs-Panel ändert seine Größe nicht, während du liest; die Zusammenfassung der Runde steht fest am Ende der Ausgabe und nur einmal. Siehe PRs [#11930](https://github.com/QwenLM/qwen-code/pull/11930), [#11986](https://github.com/QwenLM/qwen-code/pull/11986)
+
+**Belege öffnen sich mit Blättern.** Fußnoten in einer Antwort gruppieren nach Quelle, ein Hover öffnet die Seiten-Vorschau; unter jeder Runde steht außerdem die Liste aller verwendeten Quellen, inklusive der Anhänge ohne Fußnote. Siehe PR [#11480](https://github.com/QwenLM/qwen-code/pull/11480)
+
+**Deine Fragen bleiben im Gespräch.** Nach der Zusammenfassung am Rundenende sind deine Frage und die Antwort weiterhin da und nachlesbar. Siehe PR [#11461](https://github.com/QwenLM/qwen-code/pull/11461)
+
+**Die Runden-Navigation folgt beim Lesen.** Der Navigationsbalken rechts in der Web Shell leuchtet dort, wo du gerade liest. Siehe PR [#11801](https://github.com/QwenLM/qwen-code/pull/11801)
+
+**Neue Modelle stehen oben.** In der Provider-Konfiguration landen neu gefundene Modelle am Anfang der Liste. Siehe PR [#11449](https://github.com/QwenLM/qwen-code/pull/11449)
+
+**Die eigenständige Web Shell kennt deine Einstellungen.** Theme und Sprache wirken jetzt auch dort. Siehe PR [#11961](https://github.com/QwenLM/qwen-code/pull/11961)
+
+## 🔧 Wichtige Fixes
+
+| Fix | Was es für dich bedeutet | PR |
+|------|-----------|-----|
+| **Absturz beim Bericht aus dem Hintergrund** | Schlug ein Hintergrund-Agent oder ein Monitor-Job zurück ins Gespräch, konnte die Terminal-Oberfläche komplett abstürzen und die Runde war umsonst — das ist behoben | [#11565](https://github.com/QwenLM/qwen-code/pull/11565), [#11835](https://github.com/QwenLM/qwen-code/pull/11835) |
+| **Windows ohne Restprozesse** | Das conhost.exe, das jeder shell-Befehl hinterließ, hielt Ressourcen bis zum Prozessende belegt; kurze PowerShell-Befehle brauchen gemessen nicht mehr rund 3.2 Sekunden, sondern 0.23 | [#11497](https://github.com/QwenLM/qwen-code/pull/11497), [#11313](https://github.com/QwenLM/qwen-code/pull/11313) |
+| **Offene Anfragen überleben einen Reload** | Nach dem Neuladen eines Gesprächs bleiben unbeantwortete Genehmigungs- und Frage-Prompts erhalten | [#11468](https://github.com/QwenLM/qwen-code/pull/11468) |
+| **Kurzer Netzwerk-Abbruch stoppt die Runde nicht** | Temporäre Abbrüche wie EOF werden jetzt automatisch und begrenzt wiederholt; besonders spürbar bei Channel und verwalteten Gesprächen, wo manuell nicht neu versucht werden kann | [#10347](https://github.com/QwenLM/qwen-code/pull/10347), [#11291](https://github.com/QwenLM/qwen-code/pull/11291) |
+| **Dazwischengesendetes geht nicht verloren** | Nachrichten, die du abschickst während die KI noch arbeitet, bleiben erhalten und wandern in die Warteschlange | [#11289](https://github.com/QwenLM/qwen-code/pull/11289) |
+| **Abgebrochene Antworten bleiben sichtbar** | Eine unterbrochene Antwort übersteht Reloads, mit der Anzeige, wie lange sie vorher lief | [#11608](https://github.com/QwenLM/qwen-code/pull/11608) |
+| **Web-Terminal funktioniert wieder** | Das Web-Terminal im eigenständigen Installer ist repariert, das Terminal-Panel hängt sich nicht mehr auf | [#11881](https://github.com/QwenLM/qwen-code/pull/11881), [#11748](https://github.com/QwenLM/qwen-code/pull/11748) |
+| **Medien in zitierten DingTalk-Nachrichten** | Bilder und Dateien aus einer zitierten Nachricht waren vorher nicht erreichbar | [#11759](https://github.com/QwenLM/qwen-code/pull/11759) |
+| **Hook-Timeout zählt in Sekunden** | `"timeout": 10` bedeutete bisher 10 Millisekunden und kappte sofort; jetzt wie dokumentiert in Sekunden (alte Werte ≥1000 bleiben Millisekunden, nichts zu ändern) | [#11615](https://github.com/QwenLM/qwen-code/pull/11615) |
+| **Pfade mit Leerzeichen in Hooks** | Bash-Hooks, die die Projektverzeichnis-Variable nutzen, bauten mit Leerzeichen im Pfad kaputte Kommandos | [#11864](https://github.com/QwenLM/qwen-code/pull/11864) |
+| **Geplante Aufgaben bei Sommerzeit** | Über eine Sommerzeitumstellung rechnet der nächste Auslösezeitpunkt korrekt | [#11723](https://github.com/QwenLM/qwen-code/pull/11723) |
+| **Popups passen in niedrige Terminals** | Bestätigungs-Popups werden im flachen Terminalfenster nicht mehr abgeschnitten | [#9040](https://github.com/QwenLM/qwen-code/pull/9040), [#11656](https://github.com/QwenLM/qwen-code/pull/11656) |
+| **VS Code: Diff-Panel schließbar, Eingaben bleiben** | Das Diff-Panel schließt normal; nach einer abgelehnten Genehmigung bleibt der Inhalt des Eingabefelds erhalten | [#10494](https://github.com/QwenLM/qwen-code/pull/10494), [#11171](https://github.com/QwenLM/qwen-code/pull/11171) |
+| **VS Code: Verlauf wieder da** | Der nach dem früheren Wechsel verschwundene Teil der Session-Historie ist zurück | [#11495](https://github.com/QwenLM/qwen-code/pull/11495) |
+| **Team-Aufgaben nur an einen** | Ein abgelaufener Leader-Status verteilt dieselbe Aufgabe nicht mehr an mehrere Teammitglieder gleichzeitig | [#10237](https://github.com/QwenLM/qwen-code/pull/10237) |
+| **Meldung auch bei Fehler-Runde** | Endet eine Runde mit einem Fehler, werden die Hintergrund-Meldungen in der Warteschlange trotzdem zugestellt | [#11559](https://github.com/QwenLM/qwen-code/pull/11559) |
+
+## 👥 Contributors
+
+| Contributor | Contributions | PR Links |
+|--------|---------|-------------|
+| **[@yiliang114](https://github.com/yiliang114)** | Web Shell-Verbindung zu entferntem Daemon, Zusammenführen und Wiederfinden der VS Code-Sessionshistorie, Aufräumen der Windows-Terminalprozesse, mehrere Web-Terminal-Fixes, Meldungen nach Fehler-Runden, Theme und Sprache in der eigenständigen Web Shell | [#11548](https://github.com/QwenLM/qwen-code/pull/11548), [#11713](https://github.com/QwenLM/qwen-code/pull/11713), [#11497](https://github.com/QwenLM/qwen-code/pull/11497), [#11881](https://github.com/QwenLM/qwen-code/pull/11881), [#11495](https://github.com/QwenLM/qwen-code/pull/11495), [#11961](https://github.com/QwenLM/qwen-code/pull/11961) |
+| **[@qqqys](https://github.com/qqqys)** | Goal-Runden- und Zeitgrenze, automatischer Start nach Freigabe eines Vorschlags, Workflow-Aufruf per Name mit `+500k` Token-Limit, Session-übergreifende Nachrichten standardmäßig an, Channel-Meldestil und Wegfall des Präfix-Filters, Modell- und Gruppenwahl bei geplanten Aufgaben, Limit für Websuche-Aufrufe | [#11457](https://github.com/QwenLM/qwen-code/pull/11457), [#11360](https://github.com/QwenLM/qwen-code/pull/11360), [#11943](https://github.com/QwenLM/qwen-code/pull/11943), [#11917](https://github.com/QwenLM/qwen-code/pull/11917), [#11840](https://github.com/QwenLM/qwen-code/pull/11840), [#11822](https://github.com/QwenLM/qwen-code/pull/11822), [#11396](https://github.com/QwenLM/qwen-code/pull/11396), [#11852](https://github.com/QwenLM/qwen-code/pull/11852) |
+| **[@wenshao](https://github.com/wenshao)** | Aufgaben an Claude Code / Codex, Web-Vorschau und Archiv der Lieferungen in der Web Shell, fortsetzen unterbrochener Gespräche, Kontext-Übersicht und manuelle Komprimierung, überarbeitete Session-Übersichtsseite | [#11003](https://github.com/QwenLM/qwen-code/pull/11003), [#11474](https://github.com/QwenLM/qwen-code/pull/11474), [#11276](https://github.com/QwenLM/qwen-code/pull/11276), [#11545](https://github.com/QwenLM/qwen-code/pull/11545), [#11700](https://github.com/QwenLM/qwen-code/pull/11700), [#11238](https://github.com/QwenLM/qwen-code/pull/11238) |
+| **[@ytahdn](https://github.com/ytahdn)** | Nachrichten bearbeiten und neu senden, Erhalt abgebrochener Antworten, Datei-Vorschau in Tool-Details, anpassbare Kontext-Details, stabiles Genehmigungs-Panel und Zusammenfassung nur einmal | [#11650](https://github.com/QwenLM/qwen-code/pull/11650), [#11608](https://github.com/QwenLM/qwen-code/pull/11608), [#11982](https://github.com/QwenLM/qwen-code/pull/11982), [#11996](https://github.com/QwenLM/qwen-code/pull/11996), [#11930](https://github.com/QwenLM/qwen-code/pull/11930), [#11986](https://github.com/QwenLM/qwen-code/pull/11986) |
+| **[@qwen-code-dev-bot](https://github.com/qwen-code-dev-bot)** | CI-Stabilität und Zuverlässigkeits-Fixes für Tests | [#11537](https://github.com/QwenLM/qwen-code/pull/11537), [#11530](https://github.com/QwenLM/qwen-code/pull/11530), [#11362](https://github.com/QwenLM/qwen-code/pull/11362) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | Browser-Benachrichtigungen überarbeitet, bwrap-Kernel-Sandbox für Linux, Zulassung für Service-Hosting, eigene Session-Erstellung im SDK | [#11447](https://github.com/QwenLM/qwen-code/pull/11447), [#11614](https://github.com/QwenLM/qwen-code/pull/11614), [#11911](https://github.com/QwenLM/qwen-code/pull/11911), [#11812](https://github.com/QwenLM/qwen-code/pull/11812) |
+| **[@callmeYe](https://github.com/callmeYe)** | Thinking-Stufen für Kimi/Qwen/DeepSeek, einheitliche Materialliste des Gesprächs, Blätter-Vorschau für Quellen-Fußnoten, Navigation folgt der Lesestelle, Konfiguration für externes Reasoning | [#11349](https://github.com/QwenLM/qwen-code/pull/11349), [#11262](https://github.com/QwenLM/qwen-code/pull/11262), [#11480](https://github.com/QwenLM/qwen-code/pull/11480), [#11801](https://github.com/QwenLM/qwen-code/pull/11801), [#11856](https://github.com/QwenLM/qwen-code/pull/11856) |
+| **[@LaZzyMan](https://github.com/LaZzyMan)** | App-Bindung und komprimierte Beobachtung in Computer Use, Omni-Multimodal-Pipeline im Hauptzweig, Packaging-Fix für den Desktop-Build | [#11705](https://github.com/QwenLM/qwen-code/pull/11705), [#12019](https://github.com/QwenLM/qwen-code/pull/12019), [#11841](https://github.com/QwenLM/qwen-code/pull/11841), [#11479](https://github.com/QwenLM/qwen-code/pull/11479) |
+| **[@DragonnZhang](https://github.com/DragonnZhang)** | Schnelleres Session-Recovery, Fehlerbehandlung im Responses-Pfad, Token-Limit für shell-Ausgaben, CodeMode-Ausführungsmodus | [#11595](https://github.com/QwenLM/qwen-code/pull/11595), [#11596](https://github.com/QwenLM/qwen-code/pull/11596), [#11652](https://github.com/QwenLM/qwen-code/pull/11652), [#11727](https://github.com/QwenLM/qwen-code/pull/11727), [#10607](https://github.com/QwenLM/qwen-code/pull/10607) |
+| **[@bluefateludi](https://github.com/bluefateludi)** | Fireworks-Kompatibilität der Requests, einheitliche Web Shell-Sidebar-Tests | [#11701](https://github.com/QwenLM/qwen-code/pull/11701), [#9797](https://github.com/QwenLM/qwen-code/pull/9797) |
+| **[@chiga0](https://github.com/chiga0)** | Rendering-Lücken bei OpenTUI, ACP-Genehmigungswarteschlange pro Session getrennt | [#11630](https://github.com/QwenLM/qwen-code/pull/11630), [#11802](https://github.com/QwenLM/qwen-code/pull/11802) |
+| **[@netbrah](https://github.com/netbrah)** | OpenAI Responses-Protokoll angebunden, Thinking-Signatur erhalten | [#8169](https://github.com/QwenLM/qwen-code/pull/8169), [#8260](https://github.com/QwenLM/qwen-code/pull/8260) |
+| **[@shenyankm](https://github.com/shenyankm)** | LSP-Dokumentensync repariert, Popup-Beschneidung im niedrigen Terminal | [#11443](https://github.com/QwenLM/qwen-code/pull/11443), [#9040](https://github.com/QwenLM/qwen-code/pull/9040) |
+| **[@tanzhenxin](https://github.com/tanzhenxin)** | Fehlermeldungen im Responses-Streaming erhalten, Computer Use effizienter | [#11523](https://github.com/QwenLM/qwen-code/pull/11523), [#11683](https://github.com/QwenLM/qwen-code/pull/11683) |
+| **[@yu-xin-c](https://github.com/yu-xin-c)** | Label der Goal-Blockade-Karte korrigiert, `/compress`-Integrationstest verschärft | [#11174](https://github.com/QwenLM/qwen-code/pull/11174), [#11259](https://github.com/QwenLM/qwen-code/pull/11259) |
+| **[@AaronZ345](https://github.com/AaronZ345)** | Mehrfachen Task-Dispatch im Multi-Agent-Betrieb behoben | [#10237](https://github.com/QwenLM/qwen-code/pull/10237) |
+| **[@BenGuanRan](https://github.com/BenGuanRan)** | Absender-Identität in DingTalk-Einzelnachrichten | [#12017](https://github.com/QwenLM/qwen-code/pull/12017) |
+| 🆕 **[@Bug-killer-prog](https://github.com/Bug-killer-prog)** | 🎉 Erster Beitrag: Windows-Test-Sessions repariert | [#11750](https://github.com/QwenLM/qwen-code/pull/11750) |
+| 🆕 **[@CanReader](https://github.com/CanReader)** | 🎉 Erster Beitrag: Schließen des VS Code-Diff-Panels | [#10494](https://github.com/QwenLM/qwen-code/pull/10494) |
+| **[@harjothkhara](https://github.com/harjothkhara)** | Identität beim Skill-Schalter erkannt | [#11831](https://github.com/QwenLM/qwen-code/pull/11831) |
+| 🆕 **[@kabishou11](https://github.com/kabishou11)** | 🎉 Erster Beitrag: MCP-Konfiguration lädt bei `qwen serve` | [#11145](https://github.com/QwenLM/qwen-code/pull/11145) |
+| 🆕 **[@lorenzozanee](https://github.com/lorenzozanee)** | 🎉 Erster Beitrag: Abgebrochene Tool-Anfragen aus der Warteschlange laufen nicht mehr an | [#11483](https://github.com/QwenLM/qwen-code/pull/11483) |
+| **[@nerdalytics](https://github.com/nerdalytics)** | Extensions-Skills nach der Extension benannt | [#10841](https://github.com/QwenLM/qwen-code/pull/10841) |
+| **[@now-ing](https://github.com/now-ing)** | Fehlermeldung beim Schließen eines Subagents erhalten | [#11190](https://github.com/QwenLM/qwen-code/pull/11190) |
+| **[@pomelo-nwu](https://github.com/pomelo-nwu)** | Oberflächenübersicht im README | [#11491](https://github.com/QwenLM/qwen-code/pull/11491) |
+| **[@shoemoney](https://github.com/shoemoney)** | DashScope-Metadaten pro Modellfamilie | [#11606](https://github.com/QwenLM/qwen-code/pull/11606) |
+| **[@TianYuan1024](https://github.com/TianYuan1024)** | Skill-Nebenwirkungen beim Session-Recovery erneut angewandt | [#11280](https://github.com/QwenLM/qwen-code/pull/11280) |
+| 🆕 **[@wangxiongts](https://github.com/wangxiongts)** | 🎉 Erster Beitrag: visuelle Eingabe, proaktive Unterstützung und lokales Memory für Qwen Live | [#11369](https://github.com/QwenLM/qwen-code/pull/11369) |
+| 🆕 **[@zaalipro](https://github.com/zaalipro)** | 🎉 Erster Beitrag: Terminal-Absturz beseitigt | [#11565](https://github.com/QwenLM/qwen-code/pull/11565) |
+| **[@zhangxy-zju](https://github.com/zhangxy-zju)** | ACP-Ressourcen-Links mit ursprünglichem Dateinamen | [#11721](https://github.com/QwenLM/qwen-code/pull/11721) |
+
+<Callout type="info">
+  **Upgrade**: Führe `npm i @qwen-code/qwen-code@latest -g` aus um auf die neueste Version zu upgraden.
+</Callout>
+
+Bei Fragen oder Feedback eröffne gerne ein Issue auf [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
