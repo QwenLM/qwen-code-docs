@@ -26,6 +26,7 @@ export default {
   'scheduled-tasks': 'Tâches planifiées',
   'auto-mode': 'Mode automatique',
   'computer-use': "Utilisation de l'ordinateur",
+  'browser-use': 'Browser Use',
   goals: 'Objectifs',
   'markdown-rendering': 'Rendu Markdown',
   'multi-agent-coordination': 'Coordination multi-agents',
