@@ -63,6 +63,9 @@ jobs:
     name: Sync, translate & publish review branch
     runs-on: ubuntu-latest
     timeout-minutes: 360
+    env:
+      # The Beijing MaaS endpoint can exceed Node's 250 ms per-address limit.
+      NODE_OPTIONS: --network-family-autoselection-attempt-timeout=1000
     steps:
       # The review-branch step below is gated on `main`, so any other
       # ref translates for hours at real API cost but cannot publish the
