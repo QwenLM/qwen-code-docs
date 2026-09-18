@@ -23,6 +23,7 @@ export default {
   'scheduled-tasks': '예약된 작업',
   'auto-mode': '자동 모드',
   'computer-use': '컴퓨터 사용',
+  'browser-use': 'Browser Use',
   goals: '목표',
   'markdown-rendering': '마크다운 렌더링',
   'multi-agent-coordination': '멀티 에이전트 조율',
