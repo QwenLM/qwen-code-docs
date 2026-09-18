@@ -40,7 +40,7 @@ Qwen Code は2つの方法でウェブ検索を提供します。
   "modelProviders": {
     "openai": [
       {
-        "id": "qwen3.6-plus",
+        "id": "qwen3.8-flash",
         "envKey": "DASHSCOPE_API_KEY",
         "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1"
       }
@@ -49,7 +49,7 @@ Qwen Code は2つの方法でウェブ検索を提供します。
   "tools": {
     "webSearch": {
       "enabled": true,
-      "model": "qwen3.6-plus"
+      "model": "qwen3.8-flash"
     }
   }
 }
@@ -58,8 +58,10 @@ Qwen Code は2つの方法でウェブ検索を提供します。
 | 設定                           | 環境変数オーバーライド    | 意味                                                                                                                                                                     |
 | ------------------------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `tools.webSearch.enabled`      | `ENABLE_WEB_SEARCH`       | `false` を設定するとツールをオフにします。暗黙的な起動時アクティベーションには、`enabled`、`model`、および環境変数のみのバックエンドが未設定である必要があります。`true` を設定すると、環境変数のみのバックエンドが未設定の場合にのみ自動派生が許可されます。それ以外の場合は `model` が必要です。 |
-| `tools.webSearch.model`        | `WEB_SEARCH_MODEL`        | 明示的パスの検索モデルセレクター（`modelId` または `authType:modelId`）。`WEB_SEARCH_BASE_URL` と共に、そのエンドポイントのプレーンなモデル ID です。それ以外の場合は、宣言された DashScope 互換の `modelProviders` エントリと一致する必要があります。自動パスは `qwen3.6-plus` を使用します。 |
+| `tools.webSearch.model`        | `WEB_SEARCH_MODEL`        | 明示的パスの検索モデルセレクター（`modelId` または `authType:modelId`）。`WEB_SEARCH_BASE_URL` と共に、そのエンドポイントのプレーンなモデル ID です。それ以外の場合は、宣言された DashScope 互換の `modelProviders` エントリと一致する必要があります。自動パスは `qwen3.8-flash` を使用します。 |
 | `tools.webSearch.webExtractor` | `WEB_SEARCH_EXTRACTOR`    | 検索エージェントが結果ページを開いてより的確な回答を得られるようにします（デフォルト `true`。DashScope により別途課金されます）。                                         |
+| `tools.webSearch.timeoutMs`    | `WEB_SEARCH_TIMEOUT_MS`   | 1回の検索の合計時間予算（ミリ秒単位、デフォルト `120000`、最大 `600000`。その他の値はデフォルトに戻ります）。時間切れになった検索は、少なくとも1回の検索呼び出しが完了していれば、到着したものを部分的な結果として返します。最初の検索呼び出しが完了する前に予算が尽きた場合、ツールは代わりにタイムアウトエラーを報告します。実行された検索なしのナレーションは監査可能な証拠ではないためです。この予算より低い値のツールごとの実行上限（`QWEN_CODE_TOOL_EXECUTION_TIMEOUT_MS`）が先に発生し、部分的な結果を破棄します。`timeoutMs` より大きい値に設定してください。 |
+| `tools.webSearch.maxPerSession`| `WEB_SEARCH_MAX_PER_SESSION` | 1セッションあたりの `web_search` 呼び出しの最大数（デフォルト `200`、最大 `10000`。その他の値はデフォルトに戻ります）。このカウントはサブエージェントと共有され、セッションが変更されるとリセットされます（`/clear`、`/resume`、分岐）。上限に達すると、それ以降の検索はスキップされ、収集したもので続行するようモデルに指示されます。 |
 
 ### 環境変数のみの設定（settings.json なし）
 
@@ -67,7 +69,7 @@ Qwen Code は2つの方法でウェブ検索を提供します。
 
 ```bash
 export ENABLE_WEB_SEARCH=true
-export WEB_SEARCH_MODEL=qwen3.6-plus
+export WEB_SEARCH_MODEL=qwen3.8-flash
 export WEB_SEARCH_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 export DASHSCOPE_API_KEY=sk-...        # または WEB_SEARCH_API_KEY を設定
 ```
@@ -82,6 +84,8 @@ export DASHSCOPE_API_KEY=sk-...        # または WEB_SEARCH_API_KEY を設定
 - 明示的に有効化されているが設定が誤っている場合、ツールはオフのままで、起動時の通知にどの条件が失敗したかが説明されます。自動アクティベーションは通知を発しません。
 - 検索は DashScope キーで課金されます（`usage.x_tools` カウント）。自動承認モード（デフォルト）では、クラシファイアがプロンプトなしで検索を承認します。`default` 承認モードではツールが確認を求め、「常に許可」で承認すると、他のツールと同様に標準の `WebSearch` 権限ルールが永続化されます。
 - クライアントサイドのモデル許可リストはありません。Responses エンドポイントが提供しないモデルは、初回使用時に明示的に失敗します。
+- 時間予算を超えた検索は、少なくとも1回の検索呼び出しが完了していれば、到着したものを部分的な結果として返します。最初の検索呼び出しが完了する前に予算が尽きた場合、ツールは代わりにタイムアウトエラーを報告します。実行された検索なしのナレーションは監査可能な証拠ではないためです。検索呼び出しは完了したがナレーションされた回答が届かなかった場合、結果にはエージェントが読み取ったページテキストの最大6,000文字が生のページコンテンツとして含まれます。
+- セッションごとの上限は `web_search` ツール呼び出しの数をカウントします。1回の呼び出しが内部で実行する検索の数ではありません。失敗した呼び出しも、リクエストが送信されたためカウントされます。スキップされた呼び出しはエラーではありません。予算が使用済みであることをモデルに伝え、本当に追加の検索が必要な場合は `tools.webSearch.maxPerSession` を上げるようユーザーに依頼するように指示します。
 
 ## MCP 代替手段
 

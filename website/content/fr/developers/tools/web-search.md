@@ -40,7 +40,7 @@ Pointez l'outil vers un ModelStudio Standard/Token Plan ou une autre entrée Das
   "modelProviders": {
     "openai": [
       {
-        "id": "qwen3.6-plus",
+        "id": "qwen3.8-flash",
         "envKey": "DASHSCOPE_API_KEY",
         "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1"
       }
@@ -49,7 +49,7 @@ Pointez l'outil vers un ModelStudio Standard/Token Plan ou une autre entrée Das
   "tools": {
     "webSearch": {
       "enabled": true,
-      "model": "qwen3.6-plus"
+      "model": "qwen3.8-flash"
     }
   }
 }
@@ -58,8 +58,10 @@ Pointez l'outil vers un ModelStudio Standard/Token Plan ou une autre entrée Das
 | Paramètre                        | Remplacement env           | Signification                                                                                                                                                                                                                                                                       |
 | -------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `tools.webSearch.enabled`        | `ENABLE_WEB_SEARCH`        | Mettez `false` pour désactiver l'outil. L'activation implicite au démarrage nécessite de laisser `enabled`, `model` et le backend env-only non définis. Mettre `true` permet la dérivation automatique uniquement lorsque le backend env-only est également non défini ; sinon un `model` est requis. |
-| `tools.webSearch.model`          | `WEB_SEARCH_MODEL`         | Sélecteur de modèle de recherche pour le chemin explicite (`modelId` ou `authType:modelId`). Avec `WEB_SEARCH_BASE_URL`, c'est l'id de modèle brut pour ce point de terminaison ; sinon il doit correspondre à une entrée `modelProviders` compatible DashScope déclarée. Le chemin automatique utilise `qwen3.6-plus`. |
+| `tools.webSearch.model`          | `WEB_SEARCH_MODEL`         | Sélecteur de modèle de recherche pour le chemin explicite (`modelId` ou `authType:modelId`). Avec `WEB_SEARCH_BASE_URL`, c'est l'id de modèle brut pour ce point de terminaison ; sinon il doit correspondre à une entrée `modelProviders` compatible DashScope déclarée. Le chemin automatique utilise `qwen3.8-flash`. |
 | `tools.webSearch.webExtractor`   | `WEB_SEARCH_EXTRACTOR`     | Permet à l'agent de recherche d'ouvrir les pages de résultats pour des réponses mieux fondées (par défaut `true` ; facturé séparément par DashScope).                                                                                                                                  |
+| `tools.webSearch.timeoutMs`     | `WEB_SEARCH_TIMEOUT_MS`      | Budget de temps total pour une recherche, en millisecondes (par défaut `120000`, max `600000` ; les autres valeurs sont remplacées par la valeur par défaut). Une recherche qui dépasse son temps renvoie ce qui est arrivé sous forme de résultat partiel une fois qu'au moins un appel de recherche s'est terminé ; si le budget expire avant que le premier appel de recherche ne se termine, l'outil signale plutôt une erreur de délai d'attente, car une narration sans recherche exécutée n'est pas une preuve vérifiable. Une limite d'exécution par outil (`QWEN_CODE_TOOL_EXECUTION_TIMEOUT_MS`) inférieure à ce budget se déclenche en premier et annule le résultat partiel ; gardez-la supérieure à `timeoutMs`. |
+| `tools.webSearch.maxPerSession` | `WEB_SEARCH_MAX_PER_SESSION` | Nombre maximal d'appels `web_search` dans une session (par défaut `200`, max `10000` ; les autres valeurs sont remplacées par la valeur par défaut). Le compteur est partagé avec les sous-agents et est réinitialisé lors du changement de session (`/clear`, `/resume`, branchement). Une fois atteint, les recherches suivantes sont ignorées et le modèle est informé de continuer avec ce qu'il a collecté.                                                                                                                                                  |
 
 ### Configuration par variables d'environnement uniquement (sans settings.json)
 
@@ -67,7 +69,7 @@ Pour les environnements où vous ne pouvez pas écrire de fichier de paramètres
 
 ```bash
 export ENABLE_WEB_SEARCH=true
-export WEB_SEARCH_MODEL=qwen3.6-plus
+export WEB_SEARCH_MODEL=qwen3.8-flash
 export WEB_SEARCH_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 export DASHSCOPE_API_KEY=sk-...        # ou définissez WEB_SEARCH_API_KEY à la place
 ```
@@ -82,6 +84,8 @@ Notes :
 - Si activé explicitement mais mal configuré, l'outil reste désactivé et une notification au démarrage explique quelle condition a échoué. L'activation automatique n'émet jamais de notification.
 - Les recherches facturent votre clé DashScope (`usage.x_tools` compte). Le mode d'approbation auto (par défaut) permet au classificateur d'approuver les recherches sans invite ; en mode d'approbation `default`, l'outil demande, et approuver avec « toujours autoriser » persiste une règle de permission `WebSearch` standard, comme les autres outils.
 - Il n'y a pas de liste d'autorisation de modèles côté client ; un modèle que le point de terminaison Responses ne sert pas échoue bruyamment à la première utilisation.
+- Une recherche qui dépasse son budget de temps renvoie ce qui est arrivé sous forme de résultat partiel une fois qu'au moins un appel de recherche s'est terminé ; si le budget expire avant que le premier appel de recherche ne se termine, l'outil signale plutôt une erreur de délai d'attente, car une narration sans recherche exécutée n'est pas une preuve vérifiable. Lorsqu'un appel de recherche s'est terminé mais que la réponse narrée n'est jamais arrivée, le résultat contient au plus 6 000 caractères du texte de page que l'agent avait lu, étiqueté comme contenu de page brut.
+- La limite par session compte les appels d'outil `web_search`, pas les recherches qu'un appel exécute en interne, et un appel qui échoue compte quand même car la requête a été envoyée. Un appel ignoré n'est pas une erreur : il indique au modèle que le budget est épuisé et qu'il doit vous demander d'augmenter `tools.webSearch.maxPerSession` si davantage de recherches sont réellement nécessaires.
 
 ## Alternatives MCP
 

@@ -4,6 +4,9 @@ Un exemple minimal de bout en bout : démarrez un démon `qwen serve` API-only d
 
 ## Configuration
 
+Ce guide pratique cible Qwen Code `v0.24.0` et
+`@qwen-code/sdk@0.1.12`.
+
 Dans un terminal :
 
 ```bash
@@ -20,7 +23,7 @@ Le comportement par défaut sans jeton en boucle locale est destiné à un poste
 Dans un autre terminal :
 
 ```bash
-npm install @qwen-code/sdk
+npm install @qwen-code/sdk@0.1.12
 ```
 
 ## Bonjour le démon
@@ -117,6 +120,49 @@ function handleEvent(event: DaemonEvent): void {
   }
 }
 ```
+
+## Restaurer, consulter le statut et lire l'historique
+
+Fermer une session live ne supprime pas sa transcription persistée. Sauvegardez l'id,
+fermez le propriétaire live, puis restaurez-la. Utilisez `loadSession` lorsque le client a besoin
+que les tours persistés soient rejoués dans son flux SSE ; utilisez `resumeSession` lorsque le
+client a déjà ces tours rendus et a seulement besoin que le handle côté démon soit
+restauré. Aucune de ces deux méthodes ne continue un tour interrompu ; appelez `continueSession`
+séparément lorsque cela est nécessaire.
+
+```ts
+const savedSessionId = session.sessionId;
+await client.closeSession(savedSessionId, session.clientId);
+
+const restored =
+  process.env.HISTORY_ALREADY_RENDERED === '1'
+    ? await client.resumeSession(savedSessionId, {
+        workspaceCwd: selectedWorkspace.cwd,
+      })
+    : await client.loadSession(savedSessionId, {
+        workspaceCwd: selectedWorkspace.cwd,
+        historyPageSize: 100,
+      });
+
+const status = await client.sessionStatus(
+  restored.sessionId,
+  restored.clientId,
+);
+console.log({
+  active: status.hasActivePrompt,
+  waitingForPermission: status.isWaitingForPermission,
+});
+
+const history = await client.getSessionTranscriptPage(restored.sessionId, {
+  limit: 100,
+  clientId: restored.clientId,
+});
+console.log(`history events=${history.events.length} more=${history.hasMore}`);
+```
+
+`sessionStatus` ne lit qu'un propriétaire live. `getSessionTranscriptPage` lit
+l'historique persisté et renvoie un `nextCursor` opaque lorsqu'une autre page est
+disponible ; repassez cette valeur comme `cursor` plutôt que d'en construire une.
 
 ## Aides pour les fichiers du workspace
 

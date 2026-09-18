@@ -5,7 +5,7 @@ Qwen Code bietet Websuche auf zwei Arten:
 1. **Integriertes `web_search`-Tool** — unterstützt von der DashScope Responses API Server-seitigen Suche. Bei unterstützten ModelStudio- und OpenAI-kompatiblen DashScope-Konfigurationen standardmäßig beim Start aktiviert; kein zusätzlicher Anbieter oder MCP-Setup erforderlich.
 2. **MCP-Integrationen (Model Context Protocol)** — verbinden Sie einen beliebigen externen Suchdienst (Tavily, GLM und andere). Verwenden Sie dies, wenn Ihr Anbieter das integrierte Tool nicht bereitstellen kann.
 
-## Integriertes `web_search` (opt-in)
+## Integriertes `web_search`
 
 Das integrierte Tool sendet eine eigenständige Suchanfrage an ein kleines Hilfsmodell mit den Server-seitigen `web_search`- (und `web_extractor`-) Tools von DashScope und gibt die erzählten Ergebnisse sowie Quell-URLs zurück.
 
@@ -40,7 +40,7 @@ Richten Sie das Tool auf einen ModelStudio Standard/Token-Plan- oder einen ander
   "modelProviders": {
     "openai": [
       {
-        "id": "qwen3.6-plus",
+        "id": "qwen3.8-flash",
         "envKey": "DASHSCOPE_API_KEY",
         "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1"
       }
@@ -49,7 +49,7 @@ Richten Sie das Tool auf einen ModelStudio Standard/Token-Plan- oder einen ander
   "tools": {
     "webSearch": {
       "enabled": true,
-      "model": "qwen3.6-plus"
+      "model": "qwen3.8-flash"
     }
   }
 }
@@ -58,8 +58,10 @@ Richten Sie das Tool auf einen ModelStudio Standard/Token-Plan- oder einen ander
 | Einstellung                    | Umgebungs-Override     | Bedeutung                                                                                                                                                                                                                                                                       |
 | ------------------------------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `tools.webSearch.enabled`      | `ENABLE_WEB_SEARCH`    | Auf `false` setzen, um das Tool auszuschalten. Die implizite Startaktivierung erfordert, dass `enabled`, `model` und das reine Umgebungs-Backend nicht gesetzt sind. `true` zu setzen erlaubt automatische Ableitung nur wenn das reine Umgebungs-Backend ebenfalls nicht gesetzt ist; andernfalls ist ein `model` erforderlich.             |
-| `tools.webSearch.model`        | `WEB_SEARCH_MODEL`     | Suchmodell-Selektor für den expliziten Pfad (`modelId` oder `authType:modelId`). Mit `WEB_SEARCH_BASE_URL` ist es die reine Modell-ID für diesen Endpunkt; andernfalls muss es mit einem deklarierten DashScope-kompatiblen `modelProviders`-Eintrag übereinstimmen. Der automatische Pfad verwendet `qwen3.6-plus`.                            |
-| `tools.webSearch.webExtractor` | `WEB_SEARCH_EXTRACTOR` | Dem Such-Agenten erlauben, Ergebnisseiten für besser fundierte Antworten zu öffnen (Standard `true`; wird von DashScope separat berechnet).                                                                                                                                                          |
+| `tools.webSearch.model`        | `WEB_SEARCH_MODEL`     | Suchmodell-Selektor für den expliziten Pfad (`modelId` oder `authType:modelId`). Mit `WEB_SEARCH_BASE_URL` ist es die reine Modell-ID für diesen Endpunkt; andernfalls muss es mit einem deklarierten DashScope-kompatiblen `modelProviders`-Eintrag übereinstimmen. Der automatische Pfad verwendet `qwen3.8-flash`.                            |
+| `tools.webSearch.webExtractor`  | `WEB_SEARCH_EXTRACTOR`       | Dem Such-Agenten erlauben, Ergebnisseiten für besser fundierte Antworten zu öffnen (Standard `true`; wird von DashScope separat berechnet).                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `tools.webSearch.timeoutMs`     | `WEB_SEARCH_TIMEOUT_MS`      | Gesamtzeitbudget für eine Suche in Millisekunden (Standard `120000`, Maximum `600000`; andere Werte fallen auf den Standard zurück). Eine Suche, der die Zeit ausgeht, gibt das Eingetroffene als Teilergebnis zurück, sobald mindestens ein Suchaufruf abgeschlossen ist; wenn das Budget abläuft, bevor der erste Suchaufruf fertig wird, meldet das Tool stattdessen einen Timeout-Fehler, da eine Erzählung ohne ausgeführte Suche kein überprüfbarer Nachweis ist. Eine pro-Tool-Ausführungsobergrenze (`QWEN_CODE_TOOL_EXECUTION_TIMEOUT_MS`) unterhalb dieses Budgets feuert zuerst und verwirft das Teilergebnis; lassen Sie sie über `timeoutMs`. |
+| `tools.webSearch.maxPerSession` | `WEB_SEARCH_MAX_PER_SESSION` | Maximale `web_search`-Aufrufe in einer Session (Standard `200`, Maximum `10000`; andere Werte fallen auf den Standard zurück). Das Zähler wird mit Subagents geteilt und setzt sich zurück, wenn die Session wechselt (`/clear`, `/resume`, Branching). Wenn er erreicht ist, werden weitere Suchen übersprungen und das Modell wird angewiesen, mit dem fortzufahren, was es gesammelt hat.                                                                                                                                                                                                                          |
 
 ### Nur-Umgebungsvariablen-Konfiguration (ohne settings.json)
 
@@ -67,7 +69,7 @@ Für Umgebungen, in denen Sie keine Einstellungsdatei schreiben können (abgesch
 
 ```bash
 export ENABLE_WEB_SEARCH=true
-export WEB_SEARCH_MODEL=qwen3.6-plus
+export WEB_SEARCH_MODEL=qwen3.8-flash
 export WEB_SEARCH_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 export DASHSCOPE_API_KEY=sk-...        # oder stattdessen WEB_SEARCH_API_KEY setzen
 ```
@@ -82,6 +84,8 @@ Hinweise:
 - Wenn explizit aktiviert, aber fehlerhaft konfiguriert, bleibt das Tool ausgeschaltet und eine Startmeldung erklärt, welche Bedingung fehlgeschlagen ist. Die automatische Aktivierung gibt niemals eine Meldung aus.
 - Suchen werden über Ihren DashScope-Schlüssel abgerechnet (`usage.x_tools` zählt). Der Genehmigungsmodus Auto (Standard) lässt den Classifier Suchen ohne Nachfrage genehmigen; im Genehmigungsmodus `default` fragt das Tool nach, und Genehmigung mit „immer zulassen" persistiert eine standardmäßige `WebSearch`-Berechtigungsregel, wie bei anderen Tools.
 - Es gibt keine clientseitige Modell-Allowlist; ein Modell, das der Responses-Endpunkt nicht bereitstellt, schlägt bei der ersten Verwendung lautstark fehl.
+- Eine Suche, die ihr Zeitbudget überschreitet, gibt das Eingetroffene als Teilergebnis zurück, sobald mindestens ein Suchaufruf abgeschlossen ist; wenn das Budget abläuft, bevor der erste Suchaufruf fertig wird, meldet das Tool stattdessen einen Timeout-Fehler, da eine Erzählung ohne ausgeführte Suche kein überprüfbarer Nachweis ist. Wenn ein Suchaufruf abgeschlossen wurde, aber die erzählte Antwort nie eingetroffen ist, enthält das Ergebnis höchstens 6.000 Zeichen des Seitentextes, den der Agent gelesen hatte, gekennzeichnet als roher Seiteninhalt.
+- Die pro-Session-Obergrenze zählt `web_search`-Tool-Aufrufe, nicht die Suchen, die ein Aufruf intern ausführt, und ein fehlgeschlagener Aufruf zählt trotzdem, da die Anfrage gesendet wurde. Ein übersprungener Aufruf ist kein Fehler: Er teilt dem Modell mit, dass das Budget aufgebraucht ist, und dass es Sie bitten soll, `tools.webSearch.maxPerSession` zu erhöhen, wenn wirklich mehr Suchen benötigt werden.
 
 ## MCP-Alternativen
 

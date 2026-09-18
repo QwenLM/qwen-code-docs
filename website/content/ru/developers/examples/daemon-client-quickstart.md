@@ -4,6 +4,9 @@
 
 ## Настройка
 
+В этом руководстве используется Qwen Code `v0.24.0` и
+`@qwen-code/sdk@0.1.12`.
+
 В одном терминале:
 
 ```bash
@@ -20,7 +23,7 @@ qwen serve --no-web --port 4170 \
 В другом:
 
 ```bash
-npm install @qwen-code/sdk
+npm install @qwen-code/sdk@0.1.12
 ```
 
 ## Привет, демон
@@ -118,6 +121,48 @@ function handleEvent(event: DaemonEvent): void {
   }
 }
 ```
+
+## Восстановление, опрос статуса и чтение истории
+
+Закрытие живой сессии не удаляет её сохранённый транскрипт. Сохраните идентификатор,
+закройте живого владельца, затем восстановите сессию. Используйте `loadSession`, когда клиенту нужно
+воспроизвести сохранённые ходы в своём потоке SSE; используйте `resumeSession`, когда
+клиент уже отобразил эти ходы и нужно лишь восстановить handle на стороне демона.
+Ни один из этих методов не продолжает прерванный ход; для этого отдельно вызовите `continueSession`.
+
+```ts
+const savedSessionId = session.sessionId;
+await client.closeSession(savedSessionId, session.clientId);
+
+const restored =
+  process.env.HISTORY_ALREADY_RENDERED === '1'
+    ? await client.resumeSession(savedSessionId, {
+        workspaceCwd: selectedWorkspace.cwd,
+      })
+    : await client.loadSession(savedSessionId, {
+        workspaceCwd: selectedWorkspace.cwd,
+        historyPageSize: 100,
+      });
+
+const status = await client.sessionStatus(
+  restored.sessionId,
+  restored.clientId,
+);
+console.log({
+  active: status.hasActivePrompt,
+  waitingForPermission: status.isWaitingForPermission,
+});
+
+const history = await client.getSessionTranscriptPage(restored.sessionId, {
+  limit: 100,
+  clientId: restored.clientId,
+});
+console.log(`history events=${history.events.length} more=${history.hasMore}`);
+```
+
+`sessionStatus` читает только живого владельца. `getSessionTranscriptPage` читает
+сохранённую историю и возвращает непрозрачный `nextCursor`, когда доступна следующая страница;
+передайте это значение обратно как `cursor`, а не конструируйте его самостоятельно.
 
 ## Вспомогательные функции для файлов рабочей области
 

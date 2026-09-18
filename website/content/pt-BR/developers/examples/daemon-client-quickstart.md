@@ -4,6 +4,9 @@ Um exemplo mínimo de ponta a ponta: inicie um daemon `qwen serve` somente API e
 
 ## Configuração
 
+Este passo a passo tem como alvo o Qwen Code `v0.24.0` e
+` @qwen-code/sdk@0.1.12`.
+
 Em um terminal:
 
 ```bash
@@ -20,7 +23,7 @@ O padrão de loopback sem token é destinado a estações de trabalho de usuári
 Em outro terminal:
 
 ```bash
-npm install @qwen-code/sdk
+npm install @qwen-code/sdk@0.1.12
 ```
 
 ## Olá, daemon
@@ -120,6 +123,49 @@ function handleEvent(event: DaemonEvent): void {
   }
 }
 ```
+
+## Restaurar, consultar status e ler histórico
+
+Fechar uma sessão ao vivo não exclui sua transcrição persistida. Salve o id,
+feche o proprietário ao vivo e depois restaure-a. Use `loadSession` quando o cliente precisar
+que turnos persistidos sejam reproduzidos em seu fluxo SSE; use `resumeSession` quando o
+cliente já tiver esses turnos renderizados e precisar apenas restaurar o handle do lado do daemon.
+Nenhum dos dois métodos continua um turno interrompido; chame `continueSession`
+separadamente quando isso for necessário.
+
+```ts
+const savedSessionId = session.sessionId;
+await client.closeSession(savedSessionId, session.clientId);
+
+const restored =
+  process.env.HISTORY_ALREADY_RENDERED === '1'
+    ? await client.resumeSession(savedSessionId, {
+        workspaceCwd: selectedWorkspace.cwd,
+      })
+    : await client.loadSession(savedSessionId, {
+        workspaceCwd: selectedWorkspace.cwd,
+        historyPageSize: 100,
+      });
+
+const status = await client.sessionStatus(
+  restored.sessionId,
+  restored.clientId,
+);
+console.log({
+  active: status.hasActivePrompt,
+  waitingForPermission: status.isWaitingForPermission,
+});
+
+const history = await client.getSessionTranscriptPage(restored.sessionId, {
+  limit: 100,
+  clientId: restored.clientId,
+});
+console.log(`history events=${history.events.length} more=${history.hasMore}`);
+```
+
+`sessionStatus` lê apenas um proprietário ao vivo. `getSessionTranscriptPage` lê
+histórico persistido e retorna um `nextCursor` opaco quando outra página está
+disponível; passe esse valor de volta como `cursor` em vez de construir um.
 
 ## Helpers de arquivos do workspace
 
