@@ -41,8 +41,8 @@ stateDiagram-v2
     Live --> RestoreInProgress: POST /session/:id/load 或 /resume
     RestoreInProgress --> Live: restoreState 缓存在 entry 上
     RestoreInProgress --> Live: RestoreInProgressError (合并等待者)
-    Live --> Closed: DELETE /session/:id (最后一个 client)
-    Live --> Died: ACP 子进程退出 / 触发 channel.exited
+    Live --> Closed: DELETE /session/:id (最后一个 client) 或已确认的工作区运行时停止
+    Live --> Died: ACP 子进程退出 / 已确认工作区停止之外的 channel.exited，或守护进程关闭
     Closed --> [*]: session_closed 终端帧
     Died --> [*]: session_died 终端帧
 ```
@@ -132,8 +132,8 @@ Worktree 所有权转移（`POST /session/:id/worktree-reset`，由 `session_wor
 
 | 终端帧 | 触发条件 |
 | --- | --- |
-| `session_closed` | `DELETE /session/:id` (client_close) 或编程式关闭。 |
-| `session_died` | `channel.exited` 因任何原因触发（崩溃、子进程被 kill）。当使用 OS 退出路径时，会携带 `exitCode?` + `signalCode?`。 |
+| `session_closed` | `DELETE /session/:id` (client_close)、编程式关闭，或已确认的工作区运行时停止（`cause: workspace_runtime_stop`）。与停止关联的致命退出还会携带 `persistenceUnconfirmed: true`。 |
+| `session_died` | 已确认工作区停止之外的 `channel.exited`（崩溃或守护进程发起的 kill，例如 unknown-close-outcome 恢复），或守护进程关闭（`reason: daemon_shutdown`，不经过 channel 退出即发布）。当使用 OS 退出路径时，携带 `exitCode?` + `signalCode?`。 |
 | `client_evicted` | EventBus 上的单订阅者队列溢出（参见 [`10-event-bus.md`](./10-event-bus.md)）。这不是 session 级别的终止——仅关闭该订阅者。 |
 | `stream_error` | `SubscriberLimitExceededError` 或其他路由级别的 stream 失败。 |
 

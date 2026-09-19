@@ -125,7 +125,7 @@ Saisissez `qwen` dans le terminal pour lancer Qwen Code, puis exécutez la comma
 
 Après l'authentification, utilisez la commande `/model` pour parcourir et basculer entre les modèles configurés pour votre Token Plan. La gamme de modèles évolue au fil du temps, elle n'est donc volontairement pas listée ici ; la découverte des modèles depuis l'endpoint se produit lors de l'étape de configuration `/auth` ci-dessus (la propre liste de l'endpoint y est proposée et doit être sélectionnée explicitement), puis `/model` affiche les modèles configurés pour votre plan.
 
-### Configuration sans interface ou scriptée
+### Configuration headless ou scriptée
 
 Pour les CI, conteneurs ou scripts, configurez le Token Plan avec des variables d'environnement ou `settings.json` au lieu du flux interactif `/auth`.
 
@@ -283,6 +283,7 @@ Modifiez `~/.qwen/settings.json` (créez-le s'il n'existe pas). Vous pouvez mél
 | Champ              | Requis | Description                                                                                                                                        |
 | ------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `id`               | Oui      | ID du modèle envoyé à l'API (par exemple `gpt-4o`, `claude-sonnet-4-20250514`)                                                                               |
+| `wireApi`          | Non       | Format de requête compatible OpenAI : `chat-completions` ou `responses`. Omettre pour hériter du protocole du fournisseur.                                        |
 | `name`             | Non       | Nom d'affichage dans le sélecteur `/model` (par défaut `id`)                                                                                             |
 | `envKey`           | Non       | Nom de la variable d'environnement pour la clé API (par exemple `OPENAI_API_KEY`) ; optionnel/recommandé — revient à la clé d'environnement par défaut du type d'authentification s'il est omis |
 | `baseUrl`          | Non       | Remplacement de l'endpoint API (utile pour les proxys ou les endpoints personnalisés)                                                                                     |

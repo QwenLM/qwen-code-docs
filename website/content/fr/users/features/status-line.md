@@ -8,22 +8,22 @@ La ligne d'état affiche des informations contextuelles de la session — nom du
 - **Mode commande** — exécutez une commande shell qui reçoit un contexte JSON structuré via stdin. Flexibilité totale pour le formatage personnalisé.
 
 ```
-Single-line status (default approval mode — 1 row):
+Statut sur une seule ligne (mode d'approbation par défaut — 1 rangée) :
 ┌─────────────────────────────────────────────────────────────────┐
 │  user@host ~/project (main) ctx:34%   docker | Debug | 67%     │  ← ligne d'état
 └─────────────────────────────────────────────────────────────────┘
 
-Multi-line status (up to 2 lines — 2 rows):
+Statut multi-lignes (jusqu'à 2 lignes — 2 rangées) :
 ┌─────────────────────────────────────────────────────────────────┐
 │  user@host ~/project (main) ctx:34%   docker | Debug | 67%     │  ← ligne d'état 1
 │  ████████░░░░░░░░░░ 34% context                                │  ← ligne d'état 2
 └─────────────────────────────────────────────────────────────────┘
 
-Multi-line status + non-default mode (3 rows max):
+Statut multi-lignes + mode non par défaut (3 rangées max) :
 ┌─────────────────────────────────────────────────────────────────┐
 │  user@host ~/project (main) ctx:34%   docker | Debug | 67%     │  ← ligne d'état 1
 │  ████████░░░░░░░░░░ 34% context                                │  ← ligne d'état 2
-│  auto-accept edits (shift + tab to cycle)                       │  ← indicateur de mode
+│  accepter les modif. auto (shift + tab pour changer)            │  ← indicateur de mode
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -38,6 +38,8 @@ Le moyen le plus simple de configurer une ligne d'état est la commande `/status
 ```
 
 Cela ouvre le configurateur du mode prédéfini. Utilisez les touches fléchées pour naviguer, la barre d'espace pour activer/désactiver les éléments, et Entrée pour confirmer. Votre sélection est automatiquement enregistrée dans les paramètres.
+
+Lorsque moins de 16 rangées sont disponibles, la boîte de dialogue passe à une disposition compacte en liste seule, sans recherche ni aperçu.
 
 Vous pouvez également donner des instructions spécifiques à `/statusline` pour qu'elle génère une configuration en mode commande :
 
@@ -73,7 +75,7 @@ Ajoutez un objet `statusLine` sous la clé `ui` dans `~/.qwen/settings.json` :
 }
 ```
 
-| Field                  | Type       | Required | Description                                                                                                |
+| Champ                  | Type       | Obligatoire | Description                                                                                                |
 | ---------------------- | ---------- | -------- | ---------------------------------------------------------------------------------------------------------- |
 | `type`                 | `"preset"` | Oui      | Doit être `"preset"`                                                                                       |
 | `items`                | string[]   | Oui      | Liste ordonnée des ID d'éléments prédéfinis à afficher (voir tableau ci-dessous). Les éléments sont joints avec `\|` comme séparateur. |
@@ -82,26 +84,26 @@ Ajoutez un objet `statusLine` sous la clé `ui` dans `~/.qwen/settings.json` :
 
 ### Éléments prédéfinis disponibles
 
-| Item ID                | Default | Description                                                        |
+| ID d'élément           | Par défaut | Description                                                     |
 | ---------------------- | ------- | ------------------------------------------------------------------ |
-| `model-with-reasoning` | Yes     | Nom du modèle actuel avec le niveau de raisonnement (ex. `qwen-3-235b high`)  |
+| `model-with-reasoning` | Oui     | Nom du modèle actuel avec le niveau de raisonnement (ex. `qwen-3-235b high`)  |
 | `model`                |         | Nom du modèle actuel sans le niveau de raisonnement                |
-| `git-branch`           | Yes     | Nom de la branche Git actuelle (masqué si hors d'un dépôt git)     |
+| `git-branch`           | Oui     | Nom de la branche Git actuelle (masqué si hors d'un dépôt git)     |
 | `context-remaining`    |         | Pourcentage de la fenêtre de contexte restant (ex. `Context 65.7% left`) |
 | `total-input-tokens`   |         | Total cumulé des tokens d'entrée utilisés dans la session (ex. `30.0k total in`) |
 | `total-output-tokens`  |         | Total cumulé des tokens de sortie utilisés dans la session (ex. `5.0k total out`) |
 | `current-dir`          |         | Répertoire de travail actuel                                       |
-| `project-name`         | Yes     | Nom du projet (basename du répertoire de travail)                  |
+| `project-name`         | Oui     | Nom du projet (basename du répertoire de travail)                  |
 | `pull-request-number`  |         | Numéro de la PR ouverte pour la branche actuelle (nécessite le CLI `gh`) |
 | `branch-changes`       |         | Statistiques des modifications de fichiers de la session (ex. `+120 -30`) |
-| `context-used`         | Yes     | Pourcentage de la fenêtre de contexte utilisé (ex. `Context 34.3% used`) |
+| `context-used`         | Oui     | Pourcentage de la fenêtre de contexte utilisé (ex. `Context 34.3% used`) |
 | `run-state`            |         | État compact de la session (`Ready`, `Working`, ou `Confirm`)      |
 | `qwen-version`         |         | Version de Qwen Code (ex. `v0.14.1`)                               |
 | `context-window-size`  |         | Taille totale de la fenêtre de contexte (ex. `131.1k window`)      |
 | `used-tokens`          |         | Nombre de tokens du prompt actuel (ex. `45.0k used`)               |
 | `session-id`           |         | Identifiant de la session actuelle                                 |
 
-Les éléments marqués **Yes** dans la colonne Default sont présélectionnés lorsque vous ouvrez la boîte de dialogue `/statusline` pour la première fois.
+Les éléments marqués **Oui** dans la colonne Par défaut sont présélectionnés lorsque vous ouvrez la boîte de dialogue `/statusline` pour la première fois.
 
 `total-input-tokens` et `total-output-tokens` sont les totaux de la session. Ils additionnent l'utilisation des tokens au fil des tours, donc les tokens d'entrée peuvent augmenter rapidement car chaque nouvelle requête au modèle inclut à nouveau le contexte de la conversation actuelle. Utilisez `used-tokens` si vous souhaitez connaître la taille du prompt actuel plutôt que la consommation cumulative de la session.
 
@@ -169,7 +171,7 @@ Ajoutez un objet `statusLine` sous la clé `ui` dans `~/.qwen/settings.json` :
 }
 ```
 
-| Field                  | Type        | Required | Description                                                                                                                       |
+| Champ                  | Type        | Obligatoire | Description                                                                                                                       |
 | ---------------------- | ----------- | -------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `type`                 | `"command"` | Oui      | Doit être `"command"`                                                                                                             |
 | `command`              | string      | Oui      | Commande shell à exécuter. Reçoit le JSON via stdin, la sortie standard est affichée (jusqu'à 2 lignes).                          |
@@ -237,7 +239,7 @@ La commande reçoit un objet JSON via stdin avec les champs suivants :
 }
 ```
 
-| Field                                 | Type             | Description                                                                        |
+| Champ                                 | Type             | Description                                                                        |
 | ------------------------------------- | ---------------- | ---------------------------------------------------------------------------------- |
 | `session_id`                          | string           | Identifiant unique de la session                                                   |
 | `version`                             | string           | Version de Qwen Code                                                               |

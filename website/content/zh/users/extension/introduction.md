@@ -282,6 +282,7 @@ qwen extensions update --all
   "commands": "commands",
   "skills": "skills",
   "agents": "agents",
+  "workflows": "workflows",
   "settings": [
     {
       "name": "API Key",
@@ -302,6 +303,7 @@ qwen extensions update --all
 - `commands`：包含自定义指令的目录（默认值：`commands`）。指令是定义提示词的 `.md` 文件。
 - `skills`：包含自定义技能的目录（默认值：`skills`）。技能会自动发现，并通过 `/skills` 命令可用。
 - `agents`：包含自定义子代理的目录（默认值：`agents`）。子代理是定义专门的 AI 助手的 `.yaml` 或 `.md` 文件。
+- `workflows`：一个目录，或包含 workflow 脚本的目录和 `.js` 文件列表（默认值：`workflows`）。请参阅[自定义工作流](#自定义工作流)。
 - `settings`：扩展所需的设置数组。安装时，系统会提示用户为这些设置提供值。这些值会安全存储，并作为环境变量传递给 MCP 服务器。
   - 每个设置具有以下属性：
     - `name`：设置的显示名称
@@ -392,6 +394,55 @@ qwen extensions settings list <extension-name>
 ```
 
 扩展子代理会出现在子代理管理器对话框的“扩展代理”部分。
+
+### 自定义工作流
+
+扩展可以通过在 `workflows/` 子目录中放置 `.js` 文件，或者在清单的 `workflows` 中列出的目录和文件中放置 `.js` 文件来发布 workflow 脚本。它们仅在通过 [`tools.workflowsEnabled`](../configuration/settings.md) 设置启用 Workflows 时才会显示，该设置默认关闭；安装同意提示无论如何都会列出它们。
+
+**示例**
+
+名为 `gcp` 的扩展具有以下结构：
+
+```
+.qwen/extensions/gcp/
+├── qwen-extension.json
+└── workflows/
+    └── deep-research.js
+```
+
+当其脚本声明一个静态 `meta` 对象且 `name: 'deep-research'` 时，提供一个 workflow，注册为 `gcp:deep-research` —— 即扩展的 `name`、一个冒号、然后是 `meta.name`。使用 `/gcp:deep-research` 运行它，从另一个 workflow 中使用 `workflow('gcp:deep-research')` 调用它，或让模型通过 `Workflow({ name: 'gcp:deep-research' })` 按名称运行它。与扩展 skill 类似，扩展 workflow 始终携带其所有者，因此它永远不会遮蔽你的项目或用户 workflow。如果同一扩展还附带了同名的 skill，该 skill 保留 `/gcp:deep-research`，而 workflow 的斜杠命令被重命名为 `/gcp.gcp:deep-research`，与任何冲突的扩展命令一样；写为 `gcp:deep-research` 的 `slashCommands.disabled` 条目仍然会同时移除两者。具有相同名称的用户或项目自定义命令（例如 `commands/gcp/deep-research.md`）最后加载并获得斜杠命令，此时 workflow 仍可通过 `workflow('gcp:deep-research')` 访问。
+
+每个脚本必须声明一个静态 `export const meta = { name, description }` 块。`description` 显示在安装同意提示和命令列表中。文件名可以与 `meta.name` 不同；调用始终使用元数据名称。如果多个脚本声明相同的 `meta.name`，则保留第一个发现的脚本。超过 500 字符的 `description` 会在显示时被缩短。
+
+脚本还可以声明 `whenToUse`，一个说明 workflow 何时适用的句子：
+
+```js
+export const meta = {
+  name: 'deep-research',
+  description: 'Researches a question across the codebase and the web',
+  whenToUse:
+    'When the user asks for a sourced, multi-angle answer to an open question',
+};
+```
+
+只有声明了 `whenToUse` 的 workflow 才会连同其描述一起被列给模型，以便模型在请求匹配时启动它；每次运行仍需经过 workflow 审批。没有它，模型看不到该 workflow，此时它仅在你调用它、按名称请求它或另一个 workflow 调用它时运行。`whenToUse` 超过 500 字符时会被缩短，与 `description` 一样，并且由于它存在于脚本中，更改它会使下次更新再次请求同意。
+
+在交互式 UI 中，`/gcp:deep-research` 直接启动 workflow。在无头模式和通过 ACP 时，同一命令会要求模型按名称运行它，随后进行审批。
+
+要让模型启动你扩展的 workflows 而不允许它编写和运行自己的脚本，请使用 [`tools.workflowNameOnly`](../configuration/settings.md)（或 `QWEN_CODE_WORKFLOW_NAME_ONLY=1`）进行部署，并按名称允许 workflows，例如 `Workflow(name:gcp:deep-research)`。该锁使模型启动的每次运行都可通过此类规则寻址；它本身不会批准任何内容，因此请继续请求你尚未允许的名称。
+
+发现过程刻意保持狭窄：
+
+- 仅读取每个目录内的 `.js` 文件；子目录会被忽略。
+- `meta.name` 必须使用小写字母、数字和短横线，以字母开头，最多包含 41 个字符。
+- 每个声明的路径必须保持在扩展目录内。链接的扩展（`qwen extensions link`）会跳过符号链接的 workflow 文件和目录；已安装的扩展是一个副本，其中每个符号链接都已被其指向的文件替换。
+- 大于 256 KiB 的脚本或缺少有效 `meta` 块的脚本会被跳过并显示警告。
+
+安装扩展会在同意提示中列出其 workflows。当更新添加或移除 workflow、更改 workflow 的名称或描述或更改脚本的代码时会再次请求同意；当仅代码更改时，提示会命名已更改的脚本。扩展 workflows 遵循与你自己的已保存 workflows 相同的规则：它们在不受信任的文件夹中和在 bare 模式下被隐藏，每次运行都经过通常的 workflow 审批，该审批显示脚本的开头。按名称或路径运行的“始终允许”被保存为固定到脚本内容的规则，例如 `Workflow(name:gcp:deep-research,sha256:3f2a9c1d0b4e5f67)`，因此一旦脚本更改它就会停止应用。你不带 `sha256` 编写的规则，例如 `Workflow(name:gcp:deep-research)`，允许该脚本的每个版本。
+
+对默认 `workflows/` 目录中文件的编辑会被自动获取。其他声明路径下的更改在 `/reload-plugins` 或重启后生效。
+
+附带 workflows 的 Claude Code 插件会在安装时被转换。未声明 `workflows` 的插件保留其 `workflows/` 目录，该目录作为默认值被发现。当插件声明 `workflows` 时，声明的文件保留其相对路径并在转换后的扩展清单中显式列出，并且仅发现这些文件：不同目录中具有相同基本名称的文件在其 `meta.name` 值下保持不同，插件同时附带的 `workflows/` 目录会被复制但不会被读取。声明目录内的符号链接在其目标保持在插件内时会被复制为常规文件。
 
 ### 冲突解决
 
