@@ -97,7 +97,7 @@ export DINGTALK_CLIENT_SECRET=<your-app-secret>
 
 ### ターン出力モード
 
-[共有の `outputMode` 設定](./overview#turn-output-mode) は、DingTalk がアシスタントの結果をいつ配信するかを制御します。現在、このポリシーと統合されているアダプターは DingTalk のみです。デフォルトは `per_turn` で、`outputMode` が省略されている場合も同様です。
+[共有の `outputMode` 設定](https://qwenlm.github.io/qwen-code-docs/en/users/features/channels/overview/#turn-output-mode) は、DingTalk がアシスタントの結果をいつ配信するかを制御します。現在、このポリシーと統合されているアダプターは DingTalk のみです。デフォルトは `per_turn` で、`outputMode` が省略されている場合も同様です。
 
 - `per_task`: メインタスクとそれに関連するバックグラウンドタスクおよび通知が完了するまで待機し、タスクの最後の空でないアシスタントの応答を含む 1 つの最終結果カードを配信します。
 - `per_response`: 完了した各アシスタントの応答がそれぞれ独自の完了結果カードを受け取ります。トークンチャンクは現在のカードを更新し、新しいカードは作成しません。バックグラウンドのアシスタント応答も個別に配信されます。

@@ -98,7 +98,7 @@ export DINGTALK_CLIENT_SECRET=<your-app-secret>
 
 ### 턴 출력 모드
 
-[공유 `outputMode` 설정](./overview#turn-output-mode)은 DingTalk이 어시스턴트 결과를 언제 전달하는지를 제어합니다. DingTalk은 현재 이 정책과 통합된 유일한 어댑터입니다. 기본값은 `per_turn`이며, `outputMode`가 생략된 경우에도 동일합니다:
+[공유 `outputMode` 설정](https://qwenlm.github.io/qwen-code-docs/en/users/features/channels/overview/#turn-output-mode)은 DingTalk이 어시스턴트 결과를 언제 전달하는지를 제어합니다. DingTalk은 현재 이 정책과 통합된 유일한 어댑터입니다. 기본값은 `per_turn`이며, `outputMode`가 생략된 경우에도 동일합니다:
 
 - `per_task`: 메인 작업과 연관된 배경 작업 및 알림이 완료될 때까지 기다린 다음, 작업의 마지막 비어 있지 않은 어시스턴트 응답을 포함하는 하나의 최종 결과 카드를 전달합니다.
 - `per_response`: 각 완전한 어시스턴트 응답이 자체 완료 결과 카드를 받습니다. 토큰 청크는 현재 카드를 업데이트하며 새 카드를 생성하지 않습니다. 배경 어시스턴트 응답도 별도로 전달됩니다.
