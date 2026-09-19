@@ -1,0 +1,221 @@
+---
+title: "Qwen Code Hebdo : les tâches partent chez Claude Code et Codex, un workflow se lance en une phrase avec son plafond de tokens, et Goal se limite en tours et en durée"
+date: "2026-09-17"
+description: "Trois versions stables publiées cette semaine : v0.23.3, v0.23.4 et v0.24.0. Qwen Code peut confier une sous-tâche à Claude Code ou à Codex. Les workflows se lancent par leur nom et se distribuent avec les extensions ; écrire `+500k` dans un message fixe le plafond de tokens du tour. Goal accepte des limites de tours et de durée. Le Web Shell ajoute un panneau d'aperçu des pages web, et chaque livraison HTML est archivée en version distincte."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i3/O1CN01rY7K44HlTAD2jBZY_!!6000000007094-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Hebdo : les tâches partent chez Claude Code et Codex, un workflow se lance en une phrase avec son plafond de tokens, et Goal se limite en tours et en durée"
+  date="2026-09-17"
+  author="Qwen Team"
+/>
+
+Qwen Code publie cette semaine trois versions stables — v0.23.3, v0.23.4 et v0.24.0 — avec 267 PR fusionnées.
+
+**Les tâches partent chez Claude Code et Codex.** Deux sous-agents sont intégrés : ils travaillent avec le compte où vous êtes connecté et leur propre modèle, et Qwen Code distribue le travail, gère les droits et récupère les résultats.
+
+**Un workflow se lance par son nom.** Ceux que vous avez enregistrés comme ceux livrés par une extension sont appelables directement ; écrivez `+500k` à la fin d'un message et le plafond de tokens du tour est fixé.
+
+**Goal se limite en tours et en durée.** Réglez les plafonds : il s'arrête de lui-même une fois la limite atteinte, et la carte d'état affiche `3/20 turns`.
+
+**Le Web Shell prévisualise les pages web.** Le service lancé en local se regarde en direct, en largeur bureau ou mobile au choix ; chaque HTML livré dans la conversation est archivé en version séparée, et vous rouvrez exactement celle du moment.
+
+## ✨ Nouvelles fonctionnalités
+
+### Confier une tâche à Claude Code ou à Codex
+
+Si Claude Code ou Codex est installé chez vous, vous pouvez désormais leur remettre une portion de travail depuis Qwen Code : dites dans la conversation « fais relire ce module par le sous-agent claude-code », et la sous-tâche part chez Claude Code, avec le compte où vous êtes connecté et son modèle. Le travail rendu comme les demandes de droit reviennent dans cette seule session Qwen Code : vous ne voyez toujours qu'un seul fil de conversation.
+
+Ces deux sous-agents s'exécutent par défaut au premier plan. Codex est en lecture seule par défaut : il lit le code et donne son avis, mais modifier des fichiers demande d'activer auto-edit ou YOLO dans la session, ou de lui accorder explicitement l'écriture dans sa définition. Claude Code accepte plusieurs échanges pendant qu'une tâche avance ; Codex, pour l'instant, reçoit une tâche et rend une réponse. Sur macOS et Linux, c'est utilisable directement ; sur Windows, passez par WSL.
+
+Pour brancher d'autres agents, déclarez un bloc `executor` avec la commande qui les démarre dans leur fichier de définition de sous-agent, dans `.qwen/agents/`.
+
+Ce que vous pouvez en faire :
+
+- Confier une review de code ou une nouvelle version d'un plan à Claude Code ou Codex, avec votre compte et leur modèle
+- Laisser Codex lire le dépôt et donner son avis sans toucher aux fichiers tant que vous ne l'autorisez pas
+- Brancher d'autres agents externes parlant le protocole ACP dans une définition de sous-agent
+
+Voir les PR [#11003](https://github.com/QwenLM/qwen-code/pull/11003), [#11474](https://github.com/QwenLM/qwen-code/pull/11474)
+
+![Une tâche confiée à un sous-agent, exécutée par un outil externe, dont le résultat revient dans la même session](https://img.alicdn.com/imgextra/i3/O1CN01bFnXR1kU29J3FPfU_!!6000000000154-2-tps-1600-1000.png)
+
+### Workflows : on les lance par leur nom, et l'effort comme les tokens se voient avant de démarrer
+
+La semaine dernière, les workflows avaient eu leur page de gestion. Cette semaine, ils se lancent plus facilement.
+
+**Un workflow enregistré se lance en une phrase.** Dites « lance le workflow audit » dans la conversation, ou tapez `/audit` dans le champ de saisie : le travail démarre.
+
+**Le plafond de tokens du tour s'écrit dans le message.** Ajoutez `+500k` à la fin, et le workflow qui démarre s'organise avec ce plafond : il s'arrête de lui-même à l'approche de la limite. La fenêtre de confirmation ajoute une prévisualisation de la structure : à quelle étape des sous-agents sont lancés, où tout se déploie en parallèle, où la boucle tourne — vous voyez tout cela avant de démarrer. Si l'exécution dépasse vraiment les attentes, une alerte de flux surdimensionné s'allume sur la barre de tâche.
+
+**Les workflows se packagent dans une extension.** Une fois l'extension installée, ses workflows apparaissent directement dans la page de gestion des workflows, avec leur extension d'origine indiquée ; avant l'installation, on vous liste quels workflows elle apporte.
+
+**L'intensité de réflexion se règle par sous-agent.** Chaque sous-agent lancé peut avoir la sienne, ainsi qu'une restriction des outils qu'il a le droit d'utiliser. Réglez-la bas pour la recherche documentaire ou le tri, haut pour le jugement et la review.
+
+**La confirmation des droits ne vaut que pour la version approuvée.** Changez un seul caractère du flux, et l'exécution suivante redemande la confirmation des droits.
+
+Ce que vous pouvez en faire :
+
+- Lancer le même flux cette semaine et la suivante sans rien reprendre
+- Voir combien de travail il va distribuer avant de démarrer, et fixer un plafond de tokens au passage
+- Récupérer en installant une extension les workflows qu'un collègue a construits
+
+Voir les PR [#11943](https://github.com/QwenLM/qwen-code/pull/11943), [#11917](https://github.com/QwenLM/qwen-code/pull/11917), [#11939](https://github.com/QwenLM/qwen-code/pull/11939), [#11805](https://github.com/QwenLM/qwen-code/pull/11805), [#11691](https://github.com/QwenLM/qwen-code/pull/11691)
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/6Q-thx8OjfJ0qJzi4BINKewWQfL_fWlVRqn5BQTyU60.mp4" controls></video>
+
+### Goal se limite en tours et en durée
+
+La semaine dernière, un Goal affichait les tokens dépensés. Cette semaine, deux plafonds plus courants s'ajoutent.
+
+**Les tours et la durée ont chacun un plafond.** Réglez `model.goalMaxTurns` et `model.goalMaxActiveMinutes` dans les paramètres pour dire « 20 tours maximum » ou « 30 minutes de travail maximum » ; les deux options sont désactivées par défaut. Une fois la limite atteinte, une durée de clôture est d'abord accordée pour rendre compte du travail en cours avant de s'arrêter. `/goal resume` ouvre une nouvelle fenêtre sur les mêmes plafonds, en ne rechargeant que la dimension consommée ([#11457](https://github.com/QwenLM/qwen-code/pull/11457)).
+
+**Le reste disponible se voit.** La carte d'état affiche directement `3/20 turns` et `12m 3s/30m` ([#11999](https://github.com/QwenLM/qwen-code/pull/11999)). La durée ne compte que le temps de travail réel. Les tokens dépensés par les sous-agents d'avant-plan lancés par un Goal et par ses vérifications d'acceptation sont eux aussi portés au compte de ce Goal ([#11998](https://github.com/QwenLM/qwen-code/pull/11998)). Quand il y a trop de points à vérifier, les vérifications se découpent automatiquement en petits lots, et un lot bloqué est relancé avec un périmètre réduit ([#11365](https://github.com/QwenLM/qwen-code/pull/11365), [#11690](https://github.com/QwenLM/qwen-code/pull/11690)).
+
+**Dans le Web Shell, approuver suffit à démarrer.** Approuvez une proposition de Goal : le Goal démarre de lui-même une fois la réponse du tour en cours terminée normalement ([#11360](https://github.com/QwenLM/qwen-code/pull/11360)).
+
+Ce que vous pouvez en faire :
+
+- Charger un Goal de diagnostiquer un problème après avoir fixé les plafonds, et prolonger s'il les atteint
+- Lire sur la carte d'état combien de tours et de minutes restent
+- Approuver une proposition dans le Web Shell et le laisser démarrer seul
+
+![Avec une limite de 3 tours, le Goal s'arrête seul une fois la limite atteinte et indique que la fenêtre peut être prolongée](https://img.alicdn.com/imgextra/i2/O1CN01VsCGz0wiVsK1wazs_!!6000000002597-2-tps-958-622.png)
+
+### Channel : le mode de notification du bot se choisit, et ses réponses se retracent
+
+Trois changements sur le bot Channel cette semaine : le mode de notification des tâches d'arrière-plan se choisit, le filtrage par préfixe de message disparaît, et les sessions Channel se consultent telles quelles.
+
+**Le mode de notification des tâches d'arrière-plan se choisit.** Réglez-le dans les paramètres du Channel, DingTalk est pris en charge en premier. Le réglage par défaut, Per turn, envoie d'abord le résultat principal, puis chaque tâche d'arrière-plan terminée ajoute sa propre notification. Per response envoie chaque réponse complète dès qu'elle est prête. Per task attend que tout le travail lié soit terminé et n'envoie qu'un seul résultat final — c'est le choix qui tient le groupe au calme.
+
+![Choix du mode de notification dans les réglages du Channel : Per task, Per response, Per turn (par défaut)](https://img.alicdn.com/imgextra/i1/O1CN01D3zn0QE4IaE5cC36_!!6000000004834-0-tps-2766-1698.jpg)
+
+**Le filtrage par préfixe de message disparaît.** On pouvait imposer un mot d'ouverture : sans ce préfixe, le bot ignorait le message. Cette configuration est retirée : désormais, tout message accepté par les règles d'expéditeur, de groupe ou de mention déclenche le bot, quel que soit son contenu.
+
+**Les sessions Channel se consultent telles quelles.** Rouvrez une session Channel dans le CLI ou le Web Shell : chaque tour affiche exactement ce que le modèle a reçu, consignes permanentes, historique du groupe et auteur du message compris. Pour comprendre « pourquoi le bot a répondu comme ça », vous avez tout en une fois.
+
+Ce que vous pouvez en faire :
+
+- Faire travailler une longue tâche et ne rendre compte qu'à la fin, sans inonder le groupe de messages
+- Ne plus préfixer vos messages : mentionnez-le ou parlez-lui en privé, directement
+- Retrouver, dans le CLI ou le Web Shell, ce qu'il avait reçu au moment d'une réponse douteuse
+
+Voir les PR [#11822](https://github.com/QwenLM/qwen-code/pull/11822), [#11571](https://github.com/QwenLM/qwen-code/pull/11571), [#11646](https://github.com/QwenLM/qwen-code/pull/11646)
+
+### Web Shell : plusieurs nouveautés d'un coup
+
+**Aperçu direct de l'adresse de développement, HTML archivé automatiquement.** Un panneau d'aperçu web s'ajoute à droite du Web Shell : saisissez l'adresse de votre serveur de développement local et regardez la page, en largeur bureau ou mobile au choix. À chaque HTML livré dans la conversation, une version distincte est archivée ; rouvert une semaine plus tard, il reste exactement la version du moment, et plusieurs versions se comparent côte à côte ([#11276](https://github.com/QwenLM/qwen-code/pull/11276)).
+
+![Aperçu d'une page de développement local à droite, les deux cartes de versions enregistrées à gauche dans la conversation](https://img.alicdn.com/imgextra/i3/O1CN01Eku0NKR0GfI3FPgI_!!6000000002241-2-tps-1600-1050.png)
+
+**Un message modifié se relance, une session interrompue reprend sur place.** Votre dernier message envoyé peut être édité sur place puis renvoyé : la réponse du tour est régénérée, et les images et fichiers déjà joints sont conservés tels quels ([#11650](https://github.com/QwenLM/qwen-code/pull/11650)). Une conversation interrompue en cours de route propose une action de reprise à la réouverture et repart là où elle s'était arrêtée ([#11545](https://github.com/QwenLM/qwen-code/pull/11545)).
+
+**Les notifications du navigateur savent de quelle session il s'agit.** Ajoutées la semaine dernière, elles précisent désormais la session concernée et citent un extrait de la question et de la réponse ; un clic sur la notification ouvre cette conversation ([#11447](https://github.com/QwenLM/qwen-code/pull/11447)).
+
+**La consommation de contexte est exacte, et un clic la comprime.** Le panneau de contexte affiche avec précision ce qui est utilisé, le total, le reste et la part de chaque catégorie, et embarque directement le bouton de compression ; la carte survolée à côté du champ de saisie l'a aussi, et un clic termine la compression ([#11700](https://github.com/QwenLM/qwen-code/pull/11700), [#11782](https://github.com/QwenLM/qwen-code/pull/11782)).
+
+**Autres améliorations.** La page de synthèse des sessions se range par état et se recherche par branche ou numéro de PR ([#11238](https://github.com/QwenLM/qwen-code/pull/11238)) ; fichiers téléversés, fichiers du projet et liens web rejoignent une seule liste Sources ([#11262](https://github.com/QwenLM/qwen-code/pull/11262)) ; une tâche planifiée peut désigner le modèle à utiliser et son groupe ([#11396](https://github.com/QwenLM/qwen-code/pull/11396)) ; une adresse saisie à la main permet de rejoindre le Qwen Code d'une autre machine ([#11548](https://github.com/QwenLM/qwen-code/pull/11548)).
+
+## 📊 Autres nouvelles fonctionnalités
+
+**La recherche web a un plafond par session.** Jusqu'à 200 appels `web_search` par session par défaut, réglable via `tools.webSearch.maxPerSession`. Une fois le quota épuisé, l'IA continue de rédiger avec les informations déjà collectées et vous signale que vous pouvez demander plus. Voir les PR [#11852](https://github.com/QwenLM/qwen-code/pull/11852), [#11692](https://github.com/QwenLM/qwen-code/pull/11692)
+
+**Les messages inter-sessions sont activés par défaut.** Plusieurs sessions Qwen Code sur la même machine se détectent désormais par défaut ; `/peers` liste les sessions en ligne, et les IA peuvent s'envoyer des messages d'une session à l'autre pour rendre compte de l'avancement. Pour revenir en arrière, passez `agents.crossSessionMessaging` à `false`. Voir le PR [#11840](https://github.com/QwenLM/qwen-code/pull/11840)
+
+**Davantage de modèles règlent l'intensité de réflexion.** Moonshot K3 accepte les trois paliers low/high/max, K2.6 utilise l'interrupteur de réflexion natif, Qwen 3.8 accepte low/medium/xhigh, et DeepSeek V4 Pro comme Flash acceptent low/high/max ; le parcours de configuration d'une Standard API Key a été complété pour ces nouveaux modèles, et le Token Plan accueille Qwen 3.8 Flash et DeepSeek V4 Pro-0813. Voir le PR [#11349](https://github.com/QwenLM/qwen-code/pull/11349)
+
+**L'historique des sessions de VS Code est fusionné.** Les conversations créées dans le terminal, le navigateur ou VS Code apparaissent dans une seule liste d'historique, ouvrables d'un clic. Voir le PR [#11713](https://github.com/QwenLM/qwen-code/pull/11713)
+
+**Vos hooks se parcourent dans le terminal.** `/hooks` n'est plus une simple ligne d'état : l'outil déroule les événements, les règles de correspondance et le détail de chaque hook, couche par couche. Une configuration que vous venez de modifier est relue à l'ouverture, et une désactivation globale en explique la raison. La progression d'un hook qui s'exécute s'affiche aussi. Voir les PR [#11903](https://github.com/QwenLM/qwen-code/pull/11903), [#11904](https://github.com/QwenLM/qwen-code/pull/11904), [#11906](https://github.com/QwenLM/qwen-code/pull/11906)
+
+**Les modèles se branchent aussi via le protocole OpenAI Responses.** Le type `openai-responses` rejoint la liste des fournisseurs : il passe par l'interface `/v1/responses` d'OpenAI, avec la sortie en flux, les appels d'outils et les résumés de réflexion. Voir le PR [#8169](https://github.com/QwenLM/qwen-code/pull/8169)
+
+**Linux gagne un second type de bac à sable noyau.** Après avoir choisi le backend bwrap dans les paramètres, le périmètre inscriptible de l'IA se limite au workspace, aux répertoires temporaires et aux caches nécessaires, et le reste du système de fichiers passe en lecture seule. Aucun outil de conteneur, aucun droit root. Une sous-commande affiche les limites en vigueur et lance une auto-vérification. Voir le PR [#11614](https://github.com/QwenLM/qwen-code/pull/11614)
+
+**Un service en arrière-plan porte plus de workspaces.** `qwen serve` accepte par défaut 256 workspaces au lieu de 25 ; utilisez `QWEN_SERVE_MAX_WORKSPACES` pour changer ce plafond. Voir le PR [#11515](https://github.com/QwenLM/qwen-code/pull/11515)
+
+## 👏 Améliorations de l'expérience
+
+**Rouvrir une grosse session va nettement plus vite.** La réouverture des longues conversations comme l'ouverture des panneaux du Web Shell ont été accélérées. Voir les PR [#11595](https://github.com/QwenLM/qwen-code/pull/11595), [#11644](https://github.com/QwenLM/qwen-code/pull/11644)
+
+**Les liens que vous envoyez se cliquent.** Dans le Web Shell, les URL présentes dans vos propres messages sont rendues comme des liens cliquables. Voir le PR [#11464](https://github.com/QwenLM/qwen-code/pull/11464)
+
+**L'interface ne bouge plus pendant que vous lisez.** Le panneau d'approbation ne change plus de taille en cours de lecture ; le résumé du tour s'affiche une seule fois, fixé en fin de sortie. Voir les PR [#11930](https://github.com/QwenLM/qwen-code/pull/11930), [#11986](https://github.com/QwenLM/qwen-code/pull/11986)
+
+**Les sources d'une réponse s'ouvrent en pagination.** Les notes de bas de page d'une réponse sont groupées par source commune et se déplient au survol en aperçu paginé ; sous chaque tour, la liste complète des sources utilisées est affichée, annexes sans note comprises. Voir le PR [#11480](https://github.com/QwenLM/qwen-code/pull/11480)
+
+**Les questions posées restent dans la conversation.** Après la synthèse de fin de tour, vos questions et leurs réponses restent visibles et relisables dans la conversation. Voir le PR [#11461](https://github.com/QwenLM/qwen-code/pull/11461)
+
+**La navigation par tour suit votre lecture.** La barre de navigation par tour à droite du Web Shell s'illumine selon votre position : le tour lu est celui marqué. Voir le PR [#11801](https://github.com/QwenLM/qwen-code/pull/11801)
+
+**Les nouveaux modèles passent en tête.** Dans la configuration d'un fournisseur, les modèles nouvellement découverts sont placés en tête de liste. Voir le PR [#11449](https://github.com/QwenLM/qwen-code/pull/11449)
+
+**Le Web Shell autonome connaît aussi vos paramètres.** Les réglages de thème et de langue s'appliquent également dans la page autonome. Voir le PR [#11961](https://github.com/QwenLM/qwen-code/pull/11961)
+
+## 🔧 Corrections importantes
+
+| Correction | Impact pour vous | PR |
+|------|-----------|-----|
+| **Crash de l'interface au compte rendu des tâches d'arrière-plan** | Quand un agent ou une tâche de surveillance d'arrière-plan terminait et reposait sa notification dans la conversation, l'interface du terminal pouvait crasher et le tour était perdu. La cause est traitée. | [#11565](https://github.com/QwenLM/qwen-code/pull/11565), [#11835](https://github.com/QwenLM/qwen-code/pull/11835) |
+| **Les commandes Windows n'accumulent plus de processus résiduels** | Le conhost.exe laissé par chaque commande shell retenait des ressources jusqu'à son extinction ; sur une commande PowerShell courte, le temps mesuré tombe de 3.2 secondes à 0.23 seconde. | [#11497](https://github.com/QwenLM/qwen-code/pull/11497), [#11313](https://github.com/QwenLM/qwen-code/pull/11313) |
+| **Recharger la page conserve les éléments en attente** | Après rechargement d'une session, les confirmations de droit et les questions restées sans réponse sont conservées. | [#11468](https://github.com/QwenLM/qwen-code/pull/11468) |
+| **Une micro-coupure réseau ne coupe plus le tour** | Les déconnexions passagères de type EOF sont désormais relancées automatiquement avec une limite. C'est particulièrement visible sur les Channels et les sessions hébergées, où le relancement manuel n'existe pas. | [#10347](https://github.com/QwenLM/qwen-code/pull/10347), [#11291](https://github.com/QwenLM/qwen-code/pull/11291) |
+| **Vos messages pendant que le modèle travaille ne se perdent plus** | Un message envoyé en cours d'exécution est conservé et placé en file d'attente. | [#11289](https://github.com/QwenLM/qwen-code/pull/11289) |
+| **Les réponses annulées restent visibles, et survivent au rechargement** | Une réponse interrompue est conservée d'un rechargement à l'autre, avec la durée d'exécution avant l'interruption. | [#11608](https://github.com/QwenLM/qwen-code/pull/11608) |
+| **Le terminal web redevient utilisable** | Le terminal web du paquet d'installation autonome est réparé, et le panneau de terminal ne se fige plus. | [#11881](https://github.com/QwenLM/qwen-code/pull/11881), [#11748](https://github.com/QwenLM/qwen-code/pull/11748) |
+| **Les images et fichiers cités sur DingTalk sont lisibles** | Les images et fichiers joints dans le message cité d'un tiers n'étaient pas récupérables. | [#11759](https://github.com/QwenLM/qwen-code/pull/11759) |
+| **Le délai d'expiration des hooks de commande se compte en secondes** | `"timeout": 10` coupait au bout de 10 millisecondes ; le réglage vaut désormais 10 secondes, conformément à la documentation (les valeurs ≥1000 d'une configuration existante restent comprises en millisecondes, rien à changer). | [#11615](https://github.com/QwenLM/qwen-code/pull/11615) |
+| **Les chemins de projet avec espaces ne cassent plus les hooks** | Un hook bash référençant la variable de répertoire du projet produisait un chemin corrompu quand celui-ci contenait des espaces. | [#11864](https://github.com/QwenLM/qwen-code/pull/11864) |
+| **Les tâches planifiées traversent correctement l'heure d'été** | Autour d'un changement d'heure d'été, l'heure du prochain déclenchement est calculée juste. | [#11723](https://github.com/QwenLM/qwen-code/pull/11723) |
+| **Les fenêtres de confirmation ne sont plus rognées si le terminal est bas** | La fenêtre de confirmation s'affiche entièrement dans un terminal de faible hauteur. | [#9040](https://github.com/QwenLM/qwen-code/pull/9040), [#11656](https://github.com/QwenLM/qwen-code/pull/11656) |
+| **Le panneau de diff de VS Code se ferme, et les éditions ne se perdent plus** | Le panneau de diff se ferme normalement ; après l'annulation d'une confirmation de droit, le contenu du champ d'édition vous est rendu. | [#10494](https://github.com/QwenLM/qwen-code/pull/10494), [#11171](https://github.com/QwenLM/qwen-code/pull/11171) |
+| **L'historique du panneau VS Code revient** | Les conversations disparues après un changement de panneau sont de nouveau visibles. | [#11495](https://github.com/QwenLM/qwen-code/pull/11495) |
+| **Une tâche d'équipe n'est plus distribuée à plusieurs** | Un rôle de chef d'équipe expiré ne distribue plus la même tâche à plusieurs coéquipiers en même temps. | [#10237](https://github.com/QwenLM/qwen-code/pull/10237) |
+| **La notification du tour terminé en erreur n'est pas perdue** | Quand un tour se termine sur une erreur, les notifications de tâches d'arrière-plan en file sont quand même traitées et livrées. | [#11559](https://github.com/QwenLM/qwen-code/pull/11559) |
+
+## 👥 Contributeurs
+
+| Contributeur | Contributions | PR de référence |
+|--------|---------|-------------|
+| **[@yiliang114](https://github.com/yiliang114)** | Connexion du Web Shell à un daemon distant, fusion et retrouvailles de l'historique des sessions VS Code, nettoyage des processus du terminal Windows, un lot de réparations du terminal web, livraison des notifications d'un tour en erreur, thème et langue appliqués au Web Shell autonome | [#11548](https://github.com/QwenLM/qwen-code/pull/11548), [#11713](https://github.com/QwenLM/qwen-code/pull/11713), [#11497](https://github.com/QwenLM/qwen-code/pull/11497), [#11881](https://github.com/QwenLM/qwen-code/pull/11881), [#11495](https://github.com/QwenLM/qwen-code/pull/11495), [#11961](https://github.com/QwenLM/qwen-code/pull/11961) |
+| **[@qqqys](https://github.com/qqqys)** | Plafonds de tours et de durée des Goals, démarrage automatique après approbation d'une proposition, lancement des workflows par leur nom avec plafond de tokens `+500k`, messages inter-sessions activés par défaut, modes de notification des Channels et retrait du filtrage par préfixe, choix du modèle et du groupe des tâches planifiées, plafond d'appels de la recherche web | [#11457](https://github.com/QwenLM/qwen-code/pull/11457), [#11360](https://github.com/QwenLM/qwen-code/pull/11360), [#11943](https://github.com/QwenLM/qwen-code/pull/11943), [#11917](https://github.com/QwenLM/qwen-code/pull/11917), [#11840](https://github.com/QwenLM/qwen-code/pull/11840), [#11822](https://github.com/QwenLM/qwen-code/pull/11822), [#11396](https://github.com/QwenLM/qwen-code/pull/11396), [#11852](https://github.com/QwenLM/qwen-code/pull/11852) |
+| **[@wenshao](https://github.com/wenshao)** | Tâches confiées à Claude Code / Codex, aperçu web et archivage des livraisons dans le Web Shell, reprise sur place des sessions interrompues, synthèse du contexte et compression manuelle, refonte de la page de synthèse des sessions | [#11003](https://github.com/QwenLM/qwen-code/pull/11003), [#11474](https://github.com/QwenLM/qwen-code/pull/11474), [#11276](https://github.com/QwenLM/qwen-code/pull/11276), [#11545](https://github.com/QwenLM/qwen-code/pull/11545), [#11700](https://github.com/QwenLM/qwen-code/pull/11700), [#11238](https://github.com/QwenLM/qwen-code/pull/11238) |
+| **[@ytahdn](https://github.com/ytahdn)** | Édition et renvoi des messages du Web Shell, conservation des réponses annulées, aperçu fichier dans le détail des outils, détail du contexte personnalisé, stabilité du panneau d'approbation et dédoublonnage des résumés | [#11650](https://github.com/QwenLM/qwen-code/pull/11650), [#11608](https://github.com/QwenLM/qwen-code/pull/11608), [#11982](https://github.com/QwenLM/qwen-code/pull/11982), [#11996](https://github.com/QwenLM/qwen-code/pull/11996), [#11930](https://github.com/QwenLM/qwen-code/pull/11930), [#11986](https://github.com/QwenLM/qwen-code/pull/11986) |
+| **[@qwen-code-dev-bot](https://github.com/qwen-code-dev-bot)** | Corrections de stabilité du CI et de fiabilité des tests | [#11537](https://github.com/QwenLM/qwen-code/pull/11537), [#11530](https://github.com/QwenLM/qwen-code/pull/11530), [#11362](https://github.com/QwenLM/qwen-code/pull/11362) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | Notifications du navigateur repérées par session, bac à sable noyau bwrap sous Linux, accès aux sessions hébergées par le service, création de sessions indépendantes via le SDK | [#11447](https://github.com/QwenLM/qwen-code/pull/11447), [#11614](https://github.com/QwenLM/qwen-code/pull/11614), [#11911](https://github.com/QwenLM/qwen-code/pull/11911), [#11812](https://github.com/QwenLM/qwen-code/pull/11812) |
+| **[@callmeYe](https://github.com/callmeYe)** | Paliers de réflexion Kimi/Qwen/DeepSeek, liste unifiée des matériaux de session, pagination des notes de bas de page des sources, navigation suivant la position de lecture, configuration de raisonnement externe | [#11349](https://github.com/QwenLM/qwen-code/pull/11349), [#11262](https://github.com/QwenLM/qwen-code/pull/11262), [#11480](https://github.com/QwenLM/qwen-code/pull/11480), [#11801](https://github.com/QwenLM/qwen-code/pull/11801), [#11856](https://github.com/QwenLM/qwen-code/pull/11856) |
+| **[@LaZzyMan](https://github.com/LaZzyMan)** | Liaison d'application et compression d'observation pour Computer Use, intégration du pipeline multimodal Omni dans la branche principale, corrections de l'empaquetage de la version desktop | [#11705](https://github.com/QwenLM/qwen-code/pull/11705), [#12019](https://github.com/QwenLM/qwen-code/pull/12019), [#11841](https://github.com/QwenLM/qwen-code/pull/11841), [#11479](https://github.com/QwenLM/qwen-code/pull/11479) |
+| **[@DragonnZhang](https://github.com/DragonnZhang)** | Accélération de la reprise de session, récupération d'erreur sur le chemin Responses, plafond de tokens de la sortie shell, mode d'exécution CodeMode | [#11595](https://github.com/QwenLM/qwen-code/pull/11595), [#11596](https://github.com/QwenLM/qwen-code/pull/11596), [#11652](https://github.com/QwenLM/qwen-code/pull/11652), [#11727](https://github.com/QwenLM/qwen-code/pull/11727), [#10607](https://github.com/QwenLM/qwen-code/pull/10607) |
+| **[@bluefateludi](https://github.com/bluefateludi)** | Correction de compatibilité des requêtes Fireworks, tests unifiés de la barre latérale du Web Shell | [#11701](https://github.com/QwenLM/qwen-code/pull/11701), [#9797](https://github.com/QwenLM/qwen-code/pull/9797) |
+| **[@chiga0](https://github.com/chiga0)** | Correction des fentes de rendu d'OpenTUI, isolation par session de la file des droits ACP | [#11630](https://github.com/QwenLM/qwen-code/pull/11630), [#11802](https://github.com/QwenLM/qwen-code/pull/11802) |
+| **[@netbrah](https://github.com/netbrah)** | Prise en charge du protocole OpenAI Responses, conservation de la signature de réflexion | [#8169](https://github.com/QwenLM/qwen-code/pull/8169), [#8260](https://github.com/QwenLM/qwen-code/pull/8260) |
+| **[@shenyankm](https://github.com/shenyankm)** | Correction de la synchronisation des documents LSP, correction du rognage des fenêtres sur terminal bas | [#11443](https://github.com/QwenLM/qwen-code/pull/11443), [#9040](https://github.com/QwenLM/qwen-code/pull/9040) |
+| **[@tanzhenxin](https://github.com/tanzhenxin)** | Conservation du message d'erreur du flux Responses, correctifs d'efficacité de Computer Use | [#11523](https://github.com/QwenLM/qwen-code/pull/11523), [#11683](https://github.com/QwenLM/qwen-code/pull/11683) |
+| **[@yu-xin-c](https://github.com/yu-xin-c)** | Libellé corrigé de la carte Goal bloqué, tests d'intégration de `/compress` renforcés | [#11174](https://github.com/QwenLM/qwen-code/pull/11174), [#11259](https://github.com/QwenLM/qwen-code/pull/11259) |
+| **[@AaronZ345](https://github.com/AaronZ345)** | Correction de la distribution répétée des tâches multi-agents | [#10237](https://github.com/QwenLM/qwen-code/pull/10237) |
+| **[@BenGuanRan](https://github.com/BenGuanRan)** | Les messages privés DingTalk portent l'identité de leur expéditeur | [#12017](https://github.com/QwenLM/qwen-code/pull/12017) |
+| 🆕 **[@Bug-killer-prog](https://github.com/Bug-killer-prog)** | 🎉 Première contribution : correction des sessions de test sous Windows | [#11750](https://github.com/QwenLM/qwen-code/pull/11750) |
+| 🆕 **[@CanReader](https://github.com/CanReader)** | 🎉 Première contribution : fermeture du panneau de diff VS Code corrigée | [#10494](https://github.com/QwenLM/qwen-code/pull/10494) |
+| **[@harjothkhara](https://github.com/harjothkhara)** | Correction de la reconnaissance d'identité de l'interrupteur de skills | [#11831](https://github.com/QwenLM/qwen-code/pull/11831) |
+| 🆕 **[@kabishou11](https://github.com/kabishou11)** | 🎉 Première contribution : correction du chargement de la configuration MCP de `qwen serve` | [#11145](https://github.com/QwenLM/qwen-code/pull/11145) |
+| 🆕 **[@lorenzozanee](https://github.com/lorenzozanee)** | 🎉 Première contribution : une requête d'outil annulée dans la file ne s'exécute plus | [#11483](https://github.com/QwenLM/qwen-code/pull/11483) |
+| **[@nerdalytics](https://github.com/nerdalytics)** | Skills d'extension nommés d'après leur extension | [#10841](https://github.com/QwenLM/qwen-code/pull/10841) |
+| **[@now-ing](https://github.com/now-ing)** | Conservation du message d'erreur à la fermeture d'un sous-agent | [#11190](https://github.com/QwenLM/qwen-code/pull/11190) |
+| **[@pomelo-nwu](https://github.com/pomelo-nwu)** | Aperçu de l'interface dans le README | [#11491](https://github.com/QwenLM/qwen-code/pull/11491) |
+| **[@shoemoney](https://github.com/shoemoney)** | Métadonnées des requêtes DashScope envoyées par famille de modèle | [#11606](https://github.com/QwenLM/qwen-code/pull/11606) |
+| **[@TianYuan1024](https://github.com/TianYuan1024)** | Reapplication des effets de bord des skills à la reprise d'une session | [#11280](https://github.com/QwenLM/qwen-code/pull/11280) |
+| 🆕 **[@wangxiongts](https://github.com/wangxiongts)** | 🎉 Première contribution : entrée visuelle, aide proactive et mémoire locale pour Qwen Live | [#11369](https://github.com/QwenLM/qwen-code/pull/11369) |
+| 🆕 **[@zaalipro](https://github.com/zaalipro)** | 🎉 Première contribution : cause racine traitée pour le crash de l'interface du terminal | [#11565](https://github.com/QwenLM/qwen-code/pull/11565) |
+| **[@zhangxy-zju](https://github.com/zhangxy-zju)** | Les liens de ressources ACP gardent le nom de fichier d'origine | [#11721](https://github.com/QwenLM/qwen-code/pull/11721) |
+
+<Callout type="info">
+  **Mise à jour** : exécutez `npm i @qwen-code/qwen-code@latest -g` pour passer à la dernière version.
+</Callout>
+
+Si vous avez des questions ou des suggestions, n'hésitez pas à nous les faire part sur [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) !
