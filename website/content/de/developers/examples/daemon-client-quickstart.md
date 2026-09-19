@@ -4,6 +4,9 @@ Ein minimales End-to-End-Beispiel: Starte einen API-only `qwen serve`-Daemon in 
 
 ## Einrichtung
 
+Diese Anleitung verwendet Qwen Code `v0.24.0` und
+`@qwen-code/sdk@0.1.12`.
+
 In einem Terminal:
 
 ```bash
@@ -20,7 +23,7 @@ Der Token-lose Loopback-Standard ist für eine Single-User-Workstation gedacht. 
 In einem anderen:
 
 ```bash
-npm install @qwen-code/sdk
+npm install @qwen-code/sdk@0.1.12
 ```
 
 ## Hallo Daemon
@@ -116,6 +119,49 @@ function handleEvent(event: DaemonEvent): void {
   }
 }
 ```
+
+## Wiederherstellen, Status abfragen und Verlauf lesen
+
+Das Schließen einer Live-Session löscht nicht ihr persistiertes Transkript. Speichere die ID,
+schließe den Live-Owner und stelle sie dann wieder her. Verwende `loadSession`, wenn der Client
+persistierte Turns in seinen SSE-Stream wiedergegeben haben muss; verwende `resumeSession`, wenn
+der Client diese Turns bereits gerendert hat und nur das daemon-seitige Handle wiederhergestellt
+werden muss. Keine der beiden Methoden setzt einen unterbrochenen Turn fort; rufe dafür separat
+`continueSession` auf.
+
+```ts
+const savedSessionId = session.sessionId;
+await client.closeSession(savedSessionId, session.clientId);
+
+const restored =
+  process.env.HISTORY_ALREADY_RENDERED === '1'
+    ? await client.resumeSession(savedSessionId, {
+        workspaceCwd: selectedWorkspace.cwd,
+      })
+    : await client.loadSession(savedSessionId, {
+        workspaceCwd: selectedWorkspace.cwd,
+        historyPageSize: 100,
+      });
+
+const status = await client.sessionStatus(
+  restored.sessionId,
+  restored.clientId,
+);
+console.log({
+  active: status.hasActivePrompt,
+  waitingForPermission: status.isWaitingForPermission,
+});
+
+const history = await client.getSessionTranscriptPage(restored.sessionId, {
+  limit: 100,
+  clientId: restored.clientId,
+});
+console.log(`history events=${history.events.length} more=${history.hasMore}`);
+```
+
+`sessionStatus` liest nur einen Live-Owner. `getSessionTranscriptPage` liest
+persistierten Verlauf und gibt einen undurchsichtigen `nextCursor` zurück, wenn eine weitere
+Seite verfügbar ist; übergib diesen Wert als `cursor`, anstatt einen eigenen zu konstruieren.
 
 ## Workspace-Datei-Helpers
 

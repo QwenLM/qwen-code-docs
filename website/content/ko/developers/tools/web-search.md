@@ -41,7 +41,7 @@ Qwen Code는 두 가지 방식으로 웹 검색을 제공합니다:
   "modelProviders": {
     "openai": [
       {
-        "id": "qwen3.6-plus",
+        "id": "qwen3.8-flash",
         "envKey": "DASHSCOPE_API_KEY",
         "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1"
       }
@@ -50,7 +50,7 @@ Qwen Code는 두 가지 방식으로 웹 검색을 제공합니다:
   "tools": {
     "webSearch": {
       "enabled": true,
-      "model": "qwen3.6-plus"
+      "model": "qwen3.8-flash"
     }
   }
 }
@@ -59,8 +59,10 @@ Qwen Code는 두 가지 방식으로 웹 검색을 제공합니다:
 | 설정                           | 환경 변수 오버라이드    | 의미                                                                                                                                                                                                                                                                       |
 | ------------------------------ | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `tools.webSearch.enabled`      | `ENABLE_WEB_SEARCH`     | 도구를 끄려면 `false`로 설정. 암묵적 시작 활성화는 `enabled`, `model`, 환경 변수 전용 백엔드가 설정되지 않은 상태여야 함. `true`로 설정하면 환경 변수 전용 백엔드가 설정되지 않은 경우에만 자동 유도가 허용되며, 그렇지 않으면 `model`이 필요함.                    |
-| `tools.webSearch.model`        | `WEB_SEARCH_MODEL`     | 명시적 경로를 위한 검색 모델 선택기(`modelId` 또는 `authType:modelId`). `WEB_SEARCH_BASE_URL`과 함께 해당 엔드포인트의 일반 모델 id; 그렇지 않으면 선언된 DashScope 호환 `modelProviders` 항목과 일치해야 함. 자동 경로는 `qwen3.6-plus`를 사용.                            |
+| `tools.webSearch.model`        | `WEB_SEARCH_MODEL`     | 명시적 경로를 위한 검색 모델 선택기(`modelId` 또는 `authType:modelId`). `WEB_SEARCH_BASE_URL`과 함께 해당 엔드포인트의 일반 모델 id; 그렇지 않으면 선언된 DashScope 호환 `modelProviders` 항목과 일치해야 함. 자동 경로는 `qwen3.8-flash`를 사용.                            |
 | `tools.webSearch.webExtractor` | `WEB_SEARCH_EXTRACTOR` | 검색 에이전트가 더 나은 근거 기반 답변을 위해 결과 페이지를 열 수 있도록 허용(기본값 `true`; DashScope에서 별도로 청구됨).                                                                                                                                                          |
+| `tools.webSearch.timeoutMs`     | `WEB_SEARCH_TIMEOUT_MS`      | 한 번의 검색에 대한 총 시간 예산(밀리초 단위, 기본값 `120000`, 최대 `600000`; 다른 값은 기본값으로 폴백). 시간이 초과된 검색은 최소 한 번의 검색 호출이 완료된 경우 도착한 내용을 부분 결과로 반환합니다; 첫 번째 검색 호출이 완료되기 전에 예산이 만료되면, 실행된 검색 없는 서술은 감사 가능한 증거가 아니므로 도구 대신 타임아웃 오류를 보고합니다. 이 예산 이하의 도구별 실행 캡(`QWEN_CODE_TOOL_EXECUTION_TIMEOUT_MS`)이 먼저 발생하여 부분 결과를 폐기합니다; `timeoutMs`보다 크게 유지하세요. |
+| `tools.webSearch.maxPerSession` | `WEB_SEARCH_MAX_PER_SESSION` | 한 세션에서의 최대 `web_search` 호출 수(기본값 `200`, 최대 `10000`; 다른 값은 기본값으로 폴백). 카운트는 서브에이전트와 공유되며 세션이 변경될 때 리셋됩니다(`/clear`, `/resume`, 분기). 한도에 도달하면 이후 검색은 건너뛰어지고 모델이 수집한 것으로 계속하도록 안내됩니다.                                                                                                                                                                                                                                                  |
 
 ### 환경 변수 전용 설정(settings.json 없음)
 
@@ -68,7 +70,7 @@ Qwen Code는 두 가지 방식으로 웹 검색을 제공합니다:
 
 ```bash
 export ENABLE_WEB_SEARCH=true
-export WEB_SEARCH_MODEL=qwen3.6-plus
+export WEB_SEARCH_MODEL=qwen3.8-flash
 export WEB_SEARCH_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 export DASHSCOPE_API_KEY=sk-...        # 또는 WEB_SEARCH_API_KEY를 대신 설정
 ```
@@ -83,6 +85,8 @@ export DASHSCOPE_API_KEY=sk-...        # 또는 WEB_SEARCH_API_KEY를 대신 설
 - 명시적으로 활성화되었지만 잘못 구성된 경우, 도구는 꺼진 상태로 유지되며 시작 시 알림이 어떤 조건이 실패했는지 설명합니다. 자동 활성화는 알림을 발생시키지 않습니다.
 - 검색은 DashScope 키로 청구됩니다(`usage.x_tools`가 카운트). 자동 승인 모드(기본값)는 분류기가 확인 없이 검색을 승인하도록 합니다; `default` 승인 모드에서는 도구가 질문하며, "항상 허용"으로 승인하면 다른 도구와 마찬가지로 표준 `WebSearch` 권한 규칙이 지속됩니다.
 - 클라이언트 측 모델 허용 목록이 없습니다; Responses 엔드포인트가 제공하지 않는 모델은 첫 사용 시 오류가 발생합니다.
+- 시간 예산을 초과한 검색은 최소 한 번의 검색 호출이 완료된 경우 도착한 내용을 부분 결과로 반환합니다; 첫 번째 검색 호출이 완료되기 전에 예산이 만료되면, 실행된 검색 없는 서술은 감사 가능한 증거가 아니므로 도구 대신 타임아웃 오류를 보고합니다. 검색 호출은 완료되었지만 서술된 답변이 도착하지 않은 경우, 결과는 에이전트가 읽은 페이지 텍스트의 최대 6,000자까지 포함하며 원시 페이지 콘텐츠로 레이블됩니다.
+- 세션당 캡은 한 번의 호출이 내부에서 실행하는 검색이 아닌 `web_search` 도구 호출을 카운트하며, 요청이 전송되었기 때문에 실패한 호출도 카운트됩니다. 건너뛴 호출은 오류가 아닙니다: 모델에게 예산이 소진되었음을 알리고, 더 많은 검색이 실제로 필요한 경우 `tools.webSearch.maxPerSession`을 올리도록 요청합니다.
 
 ## MCP 대안
 

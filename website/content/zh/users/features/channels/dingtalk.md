@@ -95,9 +95,46 @@ export DINGTALK_CLIENT_SECRET=<your-app-secret>
 
 设置 `"useConnectionManager": false` 可禁用 Qwen Code 的连接管理器，并回退到 SDK 的保活和自动重连行为。
 
-### 后台代理响应
+### Turn 输出模式
 
-后台代理的输出会在每个响应段可用时立即发送。每条消息都会标注代理名称，以便并发工作仍可追溯。
+[共享的 `outputMode` 设置](https://qwenlm.github.io/qwen-code-docs/en/users/features/channels/overview/#turn-output-mode) 控制 DingTalk 何时投递助手结果。DingTalk 是目前唯一集成此策略的适配器。默认值为 `per_turn`，包括省略 `outputMode` 时：
+
+- `per_task`：等待主任务及其关联的后台任务和通知完成，然后投递一个最终结果卡片，包含该任务最后一个非空助手回复。
+- `per_response`：每个完整的助手回复都有自己独立的结果卡片。Token 片段更新当前卡片，不会创建新卡片。后台助手回复也会单独投递。
+- `per_turn`：主提示结束后，主状态卡片立即以该轮次最后一个非空助手回复完成。之后每个后台通知轮次保留各自的最后一个非空助手回复，并作为单独的已完成卡片发送。
+
+在 `per_turn` 和 `per_task` 模式下，后台 shell、monitor 和 workflow 输出包含一个标题，标明其类型、状态和任务标签（如可用）。在 `per_response` 模式下，响应体按原样投递。后台代理回复在所有模式下均保留原始内容。
+
+在默认的 `per_turn` 模式下，后台任务永远不会延长主卡片的生命周期，后续回调也无法覆盖它。例如，一个主结果后跟十一个独立的后台通知轮次，会产生一个主结果卡片和十一个后续结果卡片。选择 `per_task` 可等待该任务关联的后台工作并接收一个最终结果。结果来自助手；不会生成额外摘要，也不会拼接中间回复。
+
+```json
+{
+  "channels": {
+    "my-dingtalk": {
+      "type": "dingtalk",
+      "clientId": "$DINGTALK_CLIENT_ID",
+      "clientSecret": "$DINGTALK_CLIENT_SECRET",
+      "outputMode": "per_turn",
+      "interactiveCards": {
+        "enabled": true,
+        "statusCard": { "enabled": true }
+      }
+    }
+  }
+}
+```
+
+互动状态卡片提供原生卡片展示。当状态卡片不可用或所有互动卡片被禁用时，同样的输出策略通过普通消息应用：`per_task` 等待完整任务，`per_response` 发送每个完整响应，`per_turn` 每轮发送一个结果。超过卡片内容限制的后台结果也会回退到普通消息。平台消息长度限制可能会拆分长文本。文件和图片投递保持现有规则。
+
+该设置适用于 DingTalk 会话回复及其关联的后台跟进。它不会合并同一会话中不相关的任务。Channel loop 和 webhook 运行保留现有展示方式。
+
+`per_task` 等待与该提示关联的 Agent、后台 shell、monitor 和 workflow 工作，包括由其通知轮次启动的工作。已暂停的任务和长时间运行的 monitor 会保持其打开状态，直到完成或你取消。未来计划运行和独立管理的守护进程子会话是独立的工作，不包含在此任务边界内。
+
+如果 Todo Stop Guard 让位于同一会话中排队的消息，等待中的 `per_task` 请求将以取消结束，以便排队的消息可以开始。其保留的回复不会作为成功的任务结果投递。关联的后台工作仍可用于该会话。
+
+被中断的独立后台轮次，或在十分钟后仍未结束的，可能会投递标记为部分的结果。这不会重新打开已完成的主卡片。
+
+仅接受 `per_task`、`per_response` 和 `per_turn`。未发布的 `final_only` 和 `process_and_result` 值不是别名；请将它们替换为所需模式。移除 `outputMode` 将恢复 `per_turn` 默认值。没有单独的后台聚合开关。
 
 ## 运行
 
@@ -193,7 +230,7 @@ qwen channel start
 
 - **使用钉钉 markdown 感知指令**——钉钉支持标题、粗体、链接、代码块和表格。由于窄屏可能会水平滚动，请保持表格紧凑。
 - **限制访问**——在组织环境下，`senderPolicy: "open"` 可能可以接受。如需更严格的控制，使用 `"allowlist"` 或 `"pairing"`。参见[私聊配对](./overview#dm-pairing)了解详情。
-- **引用消息**——引用（回复）用户消息会将引用的文本作为上下文提供给代理。如果引用的消息是图片、文件、音频或视频消息，机器人会以与直接发送时相同的方式下载并附加它。暂不支持引用机器人回复。
+- **引用消息**——引用（回复）用户消息会将引用的文本作为上下文提供给代理。富文本引用保留其文本顺序并附加嵌入的图片。如果引用的消息是图片、文件、音频或视频消息，机器人会以与直接发送时相同的方式下载并附加它。暂不支持引用机器人回复。
 
 ## 故障排查
 

@@ -40,7 +40,7 @@ Qwen Code 提供两种网络搜索方式：
   "modelProviders": {
     "openai": [
       {
-        "id": "qwen3.6-plus",
+        "id": "qwen3.8-flash",
         "envKey": "DASHSCOPE_API_KEY",
         "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1"
       }
@@ -49,7 +49,7 @@ Qwen Code 提供两种网络搜索方式：
   "tools": {
     "webSearch": {
       "enabled": true,
-      "model": "qwen3.6-plus"
+      "model": "qwen3.8-flash"
     }
   }
 }
@@ -58,8 +58,10 @@ Qwen Code 提供两种网络搜索方式：
 | 设置                           | 环境变量覆盖           | 含义                                                                                                                                                                                                                                                                       |
 | ------------------------------ | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `tools.webSearch.enabled`      | `ENABLE_WEB_SEARCH`    | 设为 `false` 以关闭工具。隐式启动激活需要保持 `enabled`、`model` 和仅环境变量的后端未设置。设置 `true` 仅在仅环境变量的后端也未设置时才允许自动推导；否则需要 `model`。                                                                                                        |
-| `tools.webSearch.model`        | `WEB_SEARCH_MODEL`     | 显式路径的搜索模型选择器（`modelId` 或 `authType:modelId`）。配合 `WEB_SEARCH_BASE_URL` 使用时，它是该端点的纯模型 id；否则必须匹配已声明的 DashScope 兼容 `modelProviders` 条目。自动路径使用 `qwen3.6-plus`。                                                              |
+| `tools.webSearch.model`        | `WEB_SEARCH_MODEL`     | 显式路径的搜索模型选择器（`modelId` 或 `authType:modelId`）。配合 `WEB_SEARCH_BASE_URL` 使用时，它是该端点的纯模型 id；否则必须匹配已声明的 DashScope 兼容 `modelProviders` 条目。自动路径使用 `qwen3.8-flash`。                                                              |
 | `tools.webSearch.webExtractor` | `WEB_SEARCH_EXTRACTOR` | 允许搜索代理打开结果页面以获得更有依据的回答（默认 `true`；由 DashScope 单独计费）。                                                                                                                                                                                          |
+| `tools.webSearch.timeoutMs`     | `WEB_SEARCH_TIMEOUT_MS`      | 单次搜索的总时间预算，单位为毫秒（默认 `120000`，最大值 `600000`；其他值回退到默认值）。超时的搜索在至少一次搜索调用完成后，将已到达的内容作为部分结果返回；如果预算在首次搜索调用完成前耗尽，工具会报告超时错误，因为没有执行搜索的叙述不构成可审计的证据。低于此预算的单工具执行上限（`QWEN_CODE_TOOL_EXECUTION_TIMEOUT_MS`）会先触发并丢弃部分结果；请保持它高于 `timeoutMs`。 |
+| `tools.webSearch.maxPerSession` | `WEB_SEARCH_MAX_PER_SESSION` | 单个会话中最大的 `web_search` 调用次数（默认 `200`，最大值 `10000`；其他值回退到默认值）。该计数与子代理共享，并在会话变更时重置（`/clear`、`/resume`、分支）。达到上限后，后续搜索会被跳过，并告知模型使用已收集的内容继续。                                                                                                                                                              |
 
 ### 仅环境变量配置（无需 settings.json）
 
@@ -67,7 +69,7 @@ Qwen Code 提供两种网络搜索方式：
 
 ```bash
 export ENABLE_WEB_SEARCH=true
-export WEB_SEARCH_MODEL=qwen3.6-plus
+export WEB_SEARCH_MODEL=qwen3.8-flash
 export WEB_SEARCH_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 export DASHSCOPE_API_KEY=sk-...        # 或者设置 WEB_SEARCH_API_KEY
 ```
@@ -82,6 +84,8 @@ export DASHSCOPE_API_KEY=sk-...        # 或者设置 WEB_SEARCH_API_KEY
 - 如果显式启用但配置错误，工具将保持关闭状态，启动通知会说明哪个条件失败。自动激活永远不会发出通知。
 - 搜索使用你的 DashScope 密钥计费（`usage.x_tools` 计数）。Auto 审批模式（默认）让分类器无需提示即可批准搜索；在 `default` 审批模式下，工具会询问，使用"始终允许"批准会持久化一个标准的 `WebSearch` 权限规则，与其他工具一样。
 - 没有客户端模型白名单；Responses 端点不支持的模型会在首次使用时明确报错。
+- 超过时间预算的搜索在至少一次搜索调用完成后，将已到达的内容作为部分结果返回；如果预算在首次搜索调用完成前耗尽，工具会报告超时错误，因为没有执行搜索的叙述不构成可审计的证据。当搜索调用已完成但叙述性回答未到达时，结果最多包含代理已读取的 6,000 个字符的页面文本，标记为原始页面内容。
+- 每会话上限计算的是 `web_search` 工具调用次数，而非单次调用内部运行的搜索次数，失败的调用也计入，因为请求已发送。被跳过的调用不是错误：它会告知模型预算已用完，并建议在确实需要更多搜索时提高 `tools.webSearch.maxPerSession`。
 
 ## MCP 替代方案
 

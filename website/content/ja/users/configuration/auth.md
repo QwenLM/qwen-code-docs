@@ -2,7 +2,7 @@
 
 Qwen Code の初回起動時に表示される `/auth` メニューには、3つのトップレベルオプションがあります。CLI の実行方法に合わせて選択してください。
 
-- **Alibaba ModelStudio**: 公式推奨セットアップ。**Coding Plan**（個人開発者向け・週間クォータ含む）、**Token Plan**（チーム・企業向け・専用エンドポイントでの従量課金）、または **Standard API Key**（既存の ModelStudio API キーで接続）のサブメニューを開きます。
+- **Alibaba ModelStudio**: 公式推奨セットアップ。**Coding Plan**（個人開発者向け・週間クォータ含む）、**Token Plan**（チーム・企業向け・専用エンドポイントでの従量課金）、または **Standard API Key**（既存の ModelStudio API キーで接続）のサブメニューを開きます。Token Plan と Standard API Key は、追加の設定なしで組み込みの [`web_search` ツール](../../developers/tools/web-search.md)も有効にします。
 - **Third-party Providers**: 組み込みプロバイダーを選択し、API キーで接続します（DeepSeek、Grok、MiniMax、Z.AI、Kimi、Idealab、ModelScope、OpenRouter、Requesty）。
 - **Custom Provider**: ローカルサーバー、プロキシ、またはサポートされていないプロバイダーに手動で接続します。OpenAI、Anthropic、Gemini、およびその他の互換エンドポイントをサポートします。
 
@@ -283,6 +283,7 @@ API キー認証を開始する最も簡単な方法は、すべてを単一の 
 | フィールド              | 必須 | 説明                                                                                                                                        |
 | ------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `id`               | はい      | API に送信されるモデル ID（例: `gpt-4o`、`claude-sonnet-4-20250514`）                                                                               |
+| `wireApi`          | いいえ       | OpenAI 互換リクエスト形式: `chat-completions` または `responses`。省略するとプロバイダープロトコルを継承します。                                        |
 | `name`             | いいえ       | `/model` ピッカーでの表示名（デフォルトは `id`）                                                                                             |
 | `envKey`           | いいえ       | API キーの環境変数名（例: `OPENAI_API_KEY`）。任意/推奨。省略時は認証タイプのデフォルトの環境変数キーになります。 |
 | `baseUrl`          | いいえ       | API エンドポイントのオーバーライド（プロキシやカスタムエンドポイントに有用）                                                                                     |

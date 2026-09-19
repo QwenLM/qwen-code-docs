@@ -283,6 +283,7 @@ export OPENAI_MODEL="qwen3.7-plus"
 | 字段 | 必填 | 描述 |
 | --- | --- | --- |
 | `id` | 是 | 发送给 API 的模型 ID（例如 `gpt-4o`、`claude-sonnet-4-20250514`） |
+| `wireApi` | 否 | OpenAI 兼容的请求格式：`chat-completions` 或 `responses`。省略则继承 provider 协议。 |
 | `name` | 否 | `/model` 选择器中的显示名称（默认为 `id`） |
 | `envKey` | 否 | API key 的环境变量名（例如 `OPENAI_API_KEY`）；可选/推荐 —— 省略时默认为该身份验证类型的默认环境变量 |
 | `baseUrl` | 否 | API endpoint 覆盖（适用于代理或自定义 endpoint） |
