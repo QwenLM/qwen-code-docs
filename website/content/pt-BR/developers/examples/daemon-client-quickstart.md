@@ -5,7 +5,7 @@ Um exemplo mínimo de ponta a ponta: inicie um daemon `qwen serve` somente API e
 ## Configuração
 
 Este passo a passo tem como alvo o Qwen Code `v0.24.0` e
-` @qwen-code/sdk@0.1.12`.
+`@qwen-code/sdk@0.1.12`.
 
 Em um terminal:
 

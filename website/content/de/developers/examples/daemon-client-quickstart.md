@@ -5,7 +5,7 @@ Ein minimales End-to-End-Beispiel: Starte einen API-only `qwen serve`-Daemon in 
 ## Einrichtung
 
 Diese Anleitung verwendet Qwen Code `v0.24.0` und
-` @qwen-code/sdk@0.1.12`.
+`@qwen-code/sdk@0.1.12`.
 
 In einem Terminal:
 
