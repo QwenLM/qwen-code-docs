@@ -1117,6 +1117,36 @@ function normalizeFrontmatter(source, target) {
   );
 }
 
+function normalizeRestProtocolLinks(target, lang, rel) {
+  if (rel !== "developers/daemon-rest-api-reference.md") return target;
+  const protocolPath = path.join(
+    OPTS.contentDir,
+    lang,
+    "developers/qwen-serve-protocol.md"
+  );
+  const protocol = fs.existsSync(protocolPath)
+    ? fs.readFileSync(protocolPath, "utf8")
+    : "";
+  const headings = protocol.split("\n").filter((line) => /^#{1,6} /.test(line));
+  const englishUrl =
+    "https://qwenlm.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/";
+  return target.replace(
+    /\[`([^`]+)`\]\(\.\/qwen-serve-protocol\.md#([^)]+)\)/g,
+    (link, operation, anchor) => {
+      const heading = headings
+        .find((line) => line.replace(/^#+ /, "").startsWith(`\`${operation}\``));
+      const id = heading
+        ?.replace(/^#+ /, "")
+        .toLowerCase()
+        .replace(/[`/:(),.]/g, "")
+        .replace(/ /g, "-");
+      return id === anchor
+        ? link
+        : `[\`${operation}\`](${englishUrl}#${anchor})`;
+    }
+  );
+}
+
 /**
  * Cheap structural sanity check of the frontmatter YAML, without a YAML
  * parser: every non-empty, non-indented line must open a mapping entry
@@ -1248,7 +1278,11 @@ function verifyFile(lang, f, manifest) {
   // Self-heal: translation agents sometimes drop the "./" on relative links
   // (GitHub renders bare paths; webpack resolves them as modules and fails).
   // Repair at the gate so stale on-disk files never break the build.
-  const healed = normalizeFrontmatter(en, normalizeRelativeLinks(tg));
+  const healed = normalizeRestProtocolLinks(
+    normalizeFrontmatter(en, normalizeRelativeLinks(tg)),
+    lang,
+    rel
+  );
   if (healed !== tg) {
     fs.writeFileSync(target, healed);
     if (!touchedThisSession)

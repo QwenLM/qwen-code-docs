@@ -101,6 +101,63 @@ test("self-heals closed target-only frontmatter without refreshing a stale file"
   }
 });
 
+test("falls back to English for untranslated REST protocol sections", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "qwen-orchestrator-test-"));
+  const contentDir = path.join(root, "content");
+  const manifest = path.join(root, "manifest.json");
+  const developers = path.join(contentDir, "de", "developers");
+  const reference = path.join(developers, "daemon-rest-api-reference.md");
+
+  try {
+    fs.mkdirSync(path.join(contentDir, "en", "developers"), { recursive: true });
+    fs.mkdirSync(developers, { recursive: true });
+    const links =
+      "[`GET /health`](./qwen-serve-protocol.md#get-health)\n" +
+      "[`GET /session/:id/export`](./qwen-serve-protocol.md#get-sessionidexport)\n";
+    fs.writeFileSync(
+      path.join(contentDir, "en", "developers", "daemon-rest-api-reference.md"),
+      links
+    );
+    fs.writeFileSync(reference, links);
+    fs.writeFileSync(
+      path.join(developers, "qwen-serve-protocol.md"),
+      "## `GET /health`\n"
+    );
+    fs.writeFileSync(
+      manifest,
+      JSON.stringify({
+        createdAt: 0,
+        files: ["docs/developers/daemon-rest-api-reference.md"],
+      })
+    );
+
+    const result = spawnSync(
+      process.execPath,
+      [
+        orchestrator,
+        "verify",
+        "--lang",
+        "de",
+        "--content-dir",
+        contentDir,
+        "--manifest",
+        manifest,
+      ],
+      { encoding: "utf8" }
+    );
+
+    assert.equal(result.status, 0, result.stdout || result.stderr);
+    const healed = fs.readFileSync(reference, "utf8");
+    assert.match(healed, /\.\/qwen-serve-protocol\.md#get-health/);
+    assert.match(
+      healed,
+      /https:\/\/qwenlm\.github\.io\/qwen-code-docs\/en\/developers\/qwen-serve-protocol\/#get-sessionidexport/
+    );
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("quarantine separates unwritten files from rejected translations", () => {
   const root = fs.realpathSync(
     fs.mkdtempSync(path.join(os.tmpdir(), "qwen-quarantine-test-")),
