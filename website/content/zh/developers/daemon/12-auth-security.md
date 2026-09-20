@@ -27,6 +27,15 @@
 在 `run-qwen-serve.ts` 中：
 
 ```ts
+// A non-loopback bind with neither --token nor QWEN_SERVER_TOKEN first
+// generates an ephemeral 128-bit base64url bearer (16 random bytes, 22
+// URL-safe characters; printed once at startup, rotated per process). The
+// first refusal below therefore fires only when a token source was supplied
+// but is explicitly empty/whitespace, or when the requested hostname resolves
+// off-loopback (localhost pinned to a non-loopback address never generates).
+// Generation is loopback-suppressed, so the second refusal is a loopback-only
+// fail-fast: on a non-loopback bind the generated token already satisfies
+// --require-auth.
 if (!isLoopbackBind(opts.hostname) && !token) {
   throw new Error('Refusing to bind <host>:<port> without a bearer token. ...');
 }
@@ -80,6 +89,8 @@ flowchart LR
 ```
 
 `mutationGate` 是一个逐路由的中间件工厂（`createMutationGate` 返回 `mutate()`）；路由在注册时调用 `mutate()` 或 `mutate({strict: true})`。它不是全局 `app.use()` 中间件。访问日志和入站 trace-id 捕获在来源墙和同源凭证检查之前注册，因此那些 403/401 短路会像其他每次拒绝一样被记录，并且日志行仍会加入调用方的 trace id；两者也都先于 `bearerAuth`，因此 401 拒绝仍会被记录。回环 Host 允许列表在 pre-auth health 路由之前注册，因此 DNS 重绑定防御覆盖它。Pre-auth `/health` 位于来源墙之下（匹配的跨域探测携带 CORS 头）；访问日志在附加其 finish logger 之前按路径豁免 `GET /health` 和 `POST */heartbeat`，因此精确路径的 `GET /health` 和 `POST */heartbeat` 探测在任何挂载位置都保持未记录，那些豁免路径上的墙拒绝同样未记录（`HEAD /health` 和 `GET /health/` 像任何请求一样被记录）。普通 API 限流在 `bearerAuth` 之后、`express.json()` 之前运行，因此只有经过认证的请求才会被计数，并且在超出限制时大体积 body 会在解析前被拒绝。Channel webhook 入口在 bearer 认证之前分支，并应用其自己的共享密钥检查、变更层级限流检查和 1 MiB 解析器。
+
+同源表面是 `server/self-origin.ts` 中的两个中间件，分别挂载：仅限回环的 `Origin` 剥离安装在访问日志之前（它只删除匹配的 `Origin`，从不拒绝），而 `installRemoteSelfOriginMiddleware` 在具有配置令牌的非回环主监听器上立即在 `allowOriginCors` 之前运行。远程中间件将规范 `Origin` 与直接套接字方案加上规范化的 `Host` 权限匹配——从不咨询转发头——并在删除 `Origin` 之前对匹配进行 bearer 认证，因此内置 Web Shell 的同源 HTTP 变更不需要 `--allow-origin`。其 pre-auth 谓词（`web-shell-preauth.ts`）免除 shell 入口点（`/`、`//`、`/assets*`、`/manifest.webmanifest`、`/sw.js`、`/mcp-app-sandbox`、精确的 `/session/:id` 文档导航）的凭证检查，因为浏览器 module-script 获取携带 `Origin` 但不携带 `Authorization`。WebSocket 升级和 TLS 前置代理 `https` 来源不被覆盖：升级网关保持其自己的 CSWSH 策略（回环来源、`--allow-origin` 条目或 Local Control 监听器自己的来源），代理的 `https` 来源永远无法匹配纯套接字的方案。
 
 ### `bearerAuth`
 

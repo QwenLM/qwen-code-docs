@@ -216,9 +216,10 @@ exit 0
 注意事项：
 
 - Hooks 在 Skill 被调用时注册，并在会话的剩余时间内持续有效。这在两条调用路径上都成立 —— 无论是模型调用 Skill 还是你输入 `/<skill-name>`。
-- Session hooks 仅存在于内存中，因此使用 `--continue` / `--resume` 恢复会话时**不会**恢复它们，无论哪条调用路径都是如此。Skill 的指令可以随重放的对话一起回来，但用于强制执行它们的 hooks 已经消失 —— 恢复后请重新运行 Skill 以重新启用其 gate。
+- 使用 `--continue` / `--resume` 恢复会话时，会重新应用**模型**通过 Skill 工具加载的每个 Skill 的两部分 —— `allowedTools` 允许规则和 `hooks:` —— 因为这些调用在对话中被记录为工具调用。这些授权仅在恢复的会话中有效，与实时调用相同。你自己通过 `/<skill-name>` 启动的 Skill 会作为普通提示提交，不会留下工具调用记录，因此不会被恢复 —— 恢复后请重新运行 `/<skill-name>` 以重新启用其 gate。
+- 对于当前新工具调用会拒绝的 Skill（已禁用、通过 `disable-model-invocation` 对模型隐藏、或尚未激活的 `paths:` Skill）、文件夹不再受信任的**项目** Skill、或记录的主体与 `SKILL.md` 中的主体不匹配的 Skill（因为被编辑过，或因太长而为模型截断），Resume 不会重新应用它们。在这些情况下，声明了 `hooks:` 或 `allowedTools` 的 Skill 会留下一行调试日志说明原因。Resume 还会跳过（不留日志）从 `exec` 脚本内部加载的 Skill 以及不再被发现的 Skill（例如已被移除或重命名的）。匹配仅覆盖主体，因此仅编辑 frontmatter 会使用新的 `allowedTools` 和 `hooks:` 重新应用。
 - 注册是幂等的：重新调用 Skill 不会堆叠重复的 hooks。
-- 始终为工具事件提供显式的 `matcher:`。省略的 matcher 会被存储为空模式，编译后不匹配任何工具名称 —— hook 会注册但永远不会触发，且没有任何提示。如果你要匹配所有工具，请使用 `*`。
+- Skill hook 的 `matcher:` 遵循与设置 hook 相同的规则（请参见 [Hooks](./hooks.md)）。省略或空的 `matcher:` 会匹配所有工具，且 matcher 不是锚定的，因此 `edit` 也会匹配 `notebook_edit`。Skill hooks 过去将其 matcher 包装在 `^…` 中以精确匹配一个工具，并在省略时不匹配任何内容：写 `^edit` 精确匹配一个工具，写排除项 `^(?!write_file).*` 在省略时不匹配任何内容。
 - `command:` 通过平台 shell 运行：macOS 和 Linux 上使用 `bash`，Windows 上如果检测到 Git Bash（通过 `MSYSTEM`/`TERM`）也使用它，否则使用 `cmd.exe` 或 PowerShell。上面的示例是 POSIX shell —— 在 `cmd.exe` 下 `$QWEN_SKILL_ROOT` 不会被展开，`.sh` 脚本也不可执行，因此 gate 会在那里 fail-open。Hook 可以设置 `shell: bash` 来强制使用 bash，但这会解析为 `PATH` 上的任何 `bash`，因此在 Windows 上（Git Bash 之外）请为你实际使用的 shell 编写 gate。
 - 禁用 hooks 的会话不会注册任何 hooks —— 包括 `disableAllHooks`、安全模式以及 ACP 客户端的 `skipHooks`。Skill 的主体及其 `allowedTools` 在这些会话中仍然有效，但其 gate 不会生效，因此你依赖 hook 强制执行的规则在那里不会被强制执行。Bare 模式更进一步：根本不会发现任何 Skills，因此既没有主体也没有 `allowedTools`。
 - **项目** Skill 的 hooks 运行仓库提供的命令，因此它们仅在 trusted folder 中注册，并且信任状态会在每次 hook 触发和每次权限决策时重新读取。当有 IDE companion 连接时，该值是实时的：撤销信任会在下一次工具调用时静默已注册的 gate —— 并暂停 Skill 的 `allowedTools` —— 无需重启。没有 IDE 连接时，该值在 CLI 启动时固定，因此通过 CLI 自身的信任对话框进行的更改会在重启时生效。授予信任永远不会追溯注册：请再次调用 Skill。
