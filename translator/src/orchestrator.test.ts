@@ -101,63 +101,6 @@ test("self-heals closed target-only frontmatter without refreshing a stale file"
   }
 });
 
-test("falls back to English for untranslated REST protocol sections", () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "qwen-orchestrator-test-"));
-  const contentDir = path.join(root, "content");
-  const manifest = path.join(root, "manifest.json");
-  const developers = path.join(contentDir, "de", "developers");
-  const reference = path.join(developers, "daemon-rest-api-reference.md");
-
-  try {
-    fs.mkdirSync(path.join(contentDir, "en", "developers"), { recursive: true });
-    fs.mkdirSync(developers, { recursive: true });
-    const links =
-      "[`GET /health`](./qwen-serve-protocol.md#get-health)\n" +
-      "[`GET /session/:id/export`](./qwen-serve-protocol.md#get-sessionidexport)\n";
-    fs.writeFileSync(
-      path.join(contentDir, "en", "developers", "daemon-rest-api-reference.md"),
-      links
-    );
-    fs.writeFileSync(reference, links);
-    fs.writeFileSync(
-      path.join(developers, "qwen-serve-protocol.md"),
-      "## `GET /health`\n"
-    );
-    fs.writeFileSync(
-      manifest,
-      JSON.stringify({
-        createdAt: 0,
-        files: ["docs/developers/daemon-rest-api-reference.md"],
-      })
-    );
-
-    const result = spawnSync(
-      process.execPath,
-      [
-        orchestrator,
-        "verify",
-        "--lang",
-        "de",
-        "--content-dir",
-        contentDir,
-        "--manifest",
-        manifest,
-      ],
-      { encoding: "utf8" }
-    );
-
-    assert.equal(result.status, 0, result.stdout || result.stderr);
-    const healed = fs.readFileSync(reference, "utf8");
-    assert.match(healed, /\.\/qwen-serve-protocol\.md#get-health/);
-    assert.match(
-      healed,
-      /https:\/\/qwenlm\.github\.io\/qwen-code-docs\/en\/developers\/qwen-serve-protocol\/#get-sessionidexport/
-    );
-  } finally {
-    fs.rmSync(root, { recursive: true, force: true });
-  }
-});
-
 test("quarantine separates unwritten files from rejected translations", () => {
   const root = fs.realpathSync(
     fs.mkdtempSync(path.join(os.tmpdir(), "qwen-quarantine-test-")),
@@ -194,6 +137,33 @@ test("quarantine separates unwritten files from rejected translations", () => {
     );
     const unwritten = path.join(contentDir, "zh", "unwritten.md");
     fs.writeFileSync(unwritten, "# 旧译文\n");
+    for (const lang of ["en", "zh"])
+      fs.mkdirSync(path.join(contentDir, lang, "developers"), { recursive: true });
+    const protocol = path.join(
+      contentDir,
+      "zh",
+      "developers/qwen-serve-protocol.md",
+    );
+    const reference = path.join(
+      contentDir,
+      "zh",
+      "developers/daemon-rest-api-reference.md",
+    );
+    fs.writeFileSync(
+      path.join(contentDir, "en", "developers/qwen-serve-protocol.md"),
+      "## `GET /health`\n## `GET /session/:id/export`\n" +
+        "## `GET /workspace/:id/session-info` and `GET /workspaces/:workspace/session-info`\n",
+    );
+    fs.writeFileSync(
+      protocol,
+      "## `GET /health`\n" +
+        "## `GET /workspace/:id/session-info` und `GET /workspaces/:workspace/session-info`\n",
+    );
+    fs.writeFileSync(
+      reference,
+      "[`GET /health`](./qwen-serve-protocol.md#get-health)\n" +
+        "[`GET /workspaces/:workspace/session-info`](./qwen-serve-protocol.md#get-workspaceidsession-info-und-get-workspacesworkspacesession-info)\n",
+    );
 
     execFileSync("git", ["init", "-q"], { cwd: root });
     execFileSync("git", ["config", "user.email", "test@example.com"], {
@@ -252,8 +222,20 @@ test("quarantine separates unwritten files from rejected translations", () => {
       "```\n# 损坏\n",
     );
     fs.writeFileSync(
+      protocol,
+      "## `GET /health`\n## `GET /session/:id/export`\n" +
+        "## `GET /workspace/:id/session-info` und `GET /workspaces/:workspace/session-info`\n```\n",
+    );
+    fs.writeFileSync(
+      reference,
+      "[`GET /health`](./qwen-serve-protocol.md#get-health)\n" +
+        "[`GET /session/:id/export`](./qwen-serve-protocol.md#lokaler-export)\n" +
+        "[`GET /workspaces/:workspace/session-info`](./qwen-serve-protocol.md#get-workspaceidsession-info-und-get-workspacesworkspacesession-info)\n",
+    );
+    fs.writeFileSync(
       path.join(root, "website", "orchestrator-manifest-zh.failed.txt"),
-      "zh/repaired.md\nzh/restored.md\nzh/unwritten.md\n",
+      "zh/repaired.md\nzh/restored.md\nzh/unwritten.md\n" +
+        "zh/developers/qwen-serve-protocol.md\n",
     );
 
     const result = spawnSync(
@@ -284,12 +266,21 @@ test("quarantine separates unwritten files from rejected translations", () => {
     );
     assert.match(
       result.stdout,
-      /1 restored from HEAD, 1 kept over a corrupt HEAD/,
+      /2 restored from HEAD, 1 kept over a corrupt HEAD/,
     );
     assert.match(result.stdout, /0 unrepairable, 1 not written/);
     assert.doesNotMatch(result.stdout, /unwritten\.md: HEAD.*corrupt/);
     assert.equal(fs.readFileSync(unwritten, "utf8"), "# 旧译文\n");
     assert.equal(fs.statSync(unwritten).mtimeMs, stale.getTime());
+    assert.doesNotMatch(fs.readFileSync(protocol, "utf8"), /export/);
+    assert.match(
+      fs.readFileSync(reference, "utf8"),
+      /https:\/\/qwenlm\.github\.io\/qwen-code-docs\/en\/developers\/qwen-serve-protocol\/#get-sessionidexport/,
+    );
+    assert.match(
+      fs.readFileSync(reference, "utf8"),
+      /\.\/qwen-serve-protocol\.md#get-workspaceidsession-info-und-get-workspacesworkspacesession-info/,
+    );
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

@@ -1119,30 +1119,40 @@ function normalizeFrontmatter(source, target) {
 
 function normalizeRestProtocolLinks(target, lang, rel) {
   if (rel !== "developers/daemon-rest-api-reference.md") return target;
-  const protocolPath = path.join(
-    OPTS.contentDir,
-    lang,
-    "developers/qwen-serve-protocol.md"
-  );
-  const protocol = fs.existsSync(protocolPath)
-    ? fs.readFileSync(protocolPath, "utf8")
-    : "";
-  const headings = protocol.split("\n").filter((line) => /^#{1,6} /.test(line));
+  const anchorsFor = (locale) => {
+    const protocolPath = path.join(
+      OPTS.contentDir,
+      locale,
+      "developers/qwen-serve-protocol.md"
+    );
+    const protocol = fs.existsSync(protocolPath)
+      ? fs.readFileSync(protocolPath, "utf8")
+      : "";
+    const anchors = new Map();
+    const headings = protocol.split("\n").filter((line) => /^#{1,6} /.test(line));
+    for (const heading of headings) {
+      const id = heading
+        .replace(/^#+ /, "")
+        .toLowerCase()
+        .replace(/[`/:(),.]/g, "")
+        .replace(/ /g, "-");
+      for (const match of heading.matchAll(/`([^`]+)`/g))
+        anchors.set(match[1], id);
+    }
+    return anchors;
+  };
+  const localAnchors = anchorsFor(lang);
+  const englishAnchors = anchorsFor("en");
   const englishUrl =
     "https://qwenlm.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/";
   return target.replace(
     /\[`([^`]+)`\]\(\.\/qwen-serve-protocol\.md#([^)]+)\)/g,
     (link, operation, anchor) => {
-      const heading = headings
-        .find((line) => line.replace(/^#+ /, "").startsWith(`\`${operation}\``));
-      const id = heading
-        ?.replace(/^#+ /, "")
-        .toLowerCase()
-        .replace(/[`/:(),.]/g, "")
-        .replace(/ /g, "-");
-      return id === anchor
-        ? link
-        : `[\`${operation}\`](${englishUrl}#${anchor})`;
+      if (localAnchors.get(operation) === anchor) return link;
+      const englishAnchor = englishAnchors.get(operation);
+      return englishAnchor
+        ? `[\`${operation}\`](${englishUrl}#${englishAnchor})`
+        : link;
     }
   );
 }
@@ -1278,11 +1288,7 @@ function verifyFile(lang, f, manifest) {
   // Self-heal: translation agents sometimes drop the "./" on relative links
   // (GitHub renders bare paths; webpack resolves them as modules and fails).
   // Repair at the gate so stale on-disk files never break the build.
-  const healed = normalizeRestProtocolLinks(
-    normalizeFrontmatter(en, normalizeRelativeLinks(tg)),
-    lang,
-    rel
-  );
+  const healed = normalizeFrontmatter(en, normalizeRelativeLinks(tg));
   if (healed !== tg) {
     fs.writeFileSync(target, healed);
     if (!touchedThisSession)
@@ -1703,6 +1709,17 @@ function closerToSource(en, current, head, newBad) {
   );
 }
 
+function normalizeRestProtocolReferences() {
+  const rel = "developers/daemon-rest-api-reference.md";
+  for (const lang of OPTS.langs) {
+    const reference = path.join(OPTS.contentDir, lang, rel);
+    if (!fs.existsSync(reference)) continue;
+    const current = fs.readFileSync(reference, "utf8");
+    const normalized = normalizeRestProtocolLinks(current, lang, rel);
+    if (normalized !== current) fs.writeFileSync(reference, normalized);
+  }
+}
+
 function cmdQuarantine() {
   const dir = path.dirname(OPTS.baseline);
   const lists = fs
@@ -1793,6 +1810,7 @@ function cmdQuarantine() {
       }
     }
   }
+  normalizeRestProtocolReferences();
   console.log(
     `[orch] quarantine: ${restored} restored from HEAD, ${kept} kept over a corrupt HEAD, ` +
       `${advanced} kept as closer to the source, ` +
