@@ -8,9 +8,9 @@ Use macOS ou Linux com Chrome 125 ou posterior. **Instale e ative a extensão Qw
 
 Descreva sua tarefa no navegador diretamente, por exemplo:
 
-> Read my open dashboard and summarize today's orders.
+> Leia meu painel aberto e resuma os pedidos de hoje.
 
-O Qwen seleciona a skill Browser Use quando apropriado. Se uma dependência de runtime precisar de configuração no primeiro uso, o Qwen irá orientá-lo e poderá pedir que você reinicie. Não é necessário uma extensão Qwen separada para o Browser Use nem um processo `qwen serve`.
+O Qwen seleciona a skill Browser Use quando apropriado. A primeira tarefa no navegador registra automaticamente um pequeno programa de conexão local no seu diretório de usuário; as tarefas subsequentes o reutilizam. O Qwen confirma a conexão com a extensão antes de operar as páginas. Se não conseguir conectar, abra o Chrome e verifique se a extensão está ativada no perfil desejado, e tente novamente. Se uma dependência de runtime precisar de configuração no primeiro uso, o Qwen irá orientá-lo e poderá pedir que você reinicie. Não é necessário uma extensão Qwen separada para o Browser Use nem um processo `qwen serve`.
 
 ## Desativar
 
