@@ -175,7 +175,7 @@ await server.connect(transport);
 
 skill 是模型调用的能力，AI 可以在相关时自动使用它们。
 
-1.  创建一个 `skills` 目录和一个技能子目录：
+1.  创建一个 `skills` 目录和一个 skill 子目录：
 
     ```bash
     mkdir -p skills/code-analyzer
@@ -250,9 +250,27 @@ skill 是模型调用的能力，AI 可以在相关时自动使用它们。
 
 扩展 skill 注册在其所有者名称下：上述 skill 变为 `my-first-extension:code-analyzer`，因此你可以通过 `/my-first-extension:code-analyzer` 运行它。`skills.disabled` 可以在该名称或你编写的原始 `code-analyzer` 名称下将其禁用；`skills.enabled` 仅在带前缀的名称下将其重新启用。请参阅 [Extension Skills](../features/skills.md#extension-skills)。
 
+### 添加条件规则
+
+扩展也可以附带 `rules/` 目录。规则是一个 Markdown 文件，其 `paths:` 前置元数据指定它适用于哪些文件，并且只有当工具调用触及匹配文件时，它才会进入提示：
+
+```markdown
+---
+description: 此项目如何绘制图表
+paths:
+  - 'src/**/*.chart.ts'
+---
+
+使用 `theme/charts.ts` 中的调色板。不要硬编码十六进制值。
+```
+
+**扩展的规则必须是条件性的** —— 没有 `paths:` 的规则会被跳过，并在启动警告中被提及。基线规则会成为每个请求的一部分，这正是下一步中 `QWEN.md` 注释要求你避免的。规则在提示中按所有者标记显示，如 `my-first-extension:rules/charting.md`。请参阅 [Rules](../features/rules.md)。
+
 ## 第六步：添加自定义 `QWEN.md`
 
 你可以通过向扩展添加 `QWEN.md` 文件来为模型提供持久化的上下文。这对于告诉模型如何行为或提供扩展工具的信息非常有用。请注意，对于仅用于暴露命令和提示的扩展，你可能并不总是需要这个。
+
+> **这是放置指令最昂贵的地方。** 扩展的上下文文件会被拼接到**扩展处于活动状态的每个会话的每个请求**的系统提示中，无论手头的工作是否与你的扩展有关 —— 没有相关性门控，也没有大小限制。在一个实测会话中，九个扩展的上下文文件占据了 9,989 个 token，占请求在对话本身之前所承载内容的 21%。将上下文文件限制在始终为真的少数事实 —— 扩展的身份、其词汇、一个硬约束 —— 并将场景指导放在 [skill](../features/skills.md) 中。skill 仅按其名称和描述列出 —— 在同一个实测会话中，84 个 skill 平均每个约 55 个 token —— 并在被调用时加载其主体，而[基于 `paths:` 门控](../features/skills.md#optional-gate-a-skill-on-file-paths-paths)的 skill 在匹配文件被触及之前甚至不会被列出。`/context detail` 会列出每个扩展的上下文文件，以便你了解其成本。
 
 1.  在扩展目录的根目录下创建一个名为 `QWEN.md` 的文件：
 
@@ -279,7 +297,7 @@ skill 是模型调用的能力，AI 可以在相关时自动使用它们。
     }
     ```
 
-再次重启 CLI。在扩展处于活动状态的每个会话中，模型现在都将拥有来自 `QWEN.md` 文件的上下文。
+再次重启 CLI。在扩展处于活动状态的每个会话中，模型现在都将拥有来自 `QWEN.md` 文件的上下文 —— 并且在这些会话的每个请求中都是如此，这就是为什么上面的注释要求你保持简短，并将任何场景特定的内容交给 skill 来处理。
 
 ## 第七步：发布你的扩展
 
@@ -294,7 +312,7 @@ skill 是模型调用的能力，AI 可以在相关时自动使用它们。
 - 从模板引导新扩展。
 - 使用 MCP 服务器添加自定义工具。
 - 创建方便的自定义命令。
-- 添加自定义技能和子代理。
+- 添加自定义 skill 和子代理。
 - 为模型提供持久化的上下文。
 - 链接扩展以进行本地开发。
 

@@ -1,5 +1,7 @@
 # Cache de Tokens e Otimização de Custos
 
+O cache reduz o preço do prefixo que cada requisição carrega. Para tornar esse prefixo menor desde o início — menos schemas de ferramentas residentes, arquivos de contexto menores — veja [Resident Context Cost](./context-cost.md); os dois se complementam.
+
 O Qwen Code otimiza automaticamente os custos de API por meio do cache de tokens ao usar autenticação via chave de API. Esse recurso armazena conteúdo usado com frequência, como instruções do sistema e histórico de conversas, para reduzir o número de tokens processados em solicitações subsequentes.
 
 ## Como Isso Beneficia Você

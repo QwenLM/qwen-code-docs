@@ -18,7 +18,12 @@ Beschreibe deine Browser-Aufgabe direkt, zum Beispiel:
 
 > Lies mein geöffnetes Dashboard und fasse die heutigen Bestellungen zusammen.
 
-Qwen wählt bei Bedarf den Browser-Use-Skill aus. Wenn eine Laufzeitabhängigkeit
+Qwen wählt bei Bedarf den Browser-Use-Skill aus. Die erste Browser-Aufgabe
+registriert automatisch ein kleines lokales Verbindungsprogramm in deinem
+Benutzerverzeichnis; spätere Aufgaben verwenden es wieder. Qwen bestätigt die
+Verbindung mit der Erweiterung, bevor es Seiten bedient. Wenn keine Verbindung
+hergestellt werden kann, öffne Chrome und stelle sicher, dass die Erweiterung
+im gewünschten Profil aktiviert ist, und versuche es erneut. Wenn eine Laufzeitabhängigkeit
 bei der ersten Verwendung konfiguriert werden muss, leitet Qwen dich an und fordert
 dich gegebenenfalls zum Neustart auf.
 Es wird keine separate Browser-Use-Qwen-Erweiterung und kein `qwen serve`-Prozess benötigt.

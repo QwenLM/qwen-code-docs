@@ -12,7 +12,7 @@ Browser Use 让 Qwen Code 能够操作你 Chrome 浏览器中的页面，使用�
 
 > 读取我打开的仪表板并总结今天的订单。
 
-Qwen 会在合适的时候选择 Browser Use skill。如果某个运行时依赖项在首次使用时需要配置，Qwen 会引导你完成，并可能要求你重启。不需要单独的 Browser Use Qwen 扩展或 `qwen serve` 进程。
+Qwen 会在合适的时候选择 Browser Use skill。首次浏览器任务会自动在你的用户目录下注册一个小型本地连接程序；后续任务会复用它。Qwen 在操作页面之前会先与扩展确认连接。如果无法连接，请打开 Chrome 并检查该扩展是否已在目标配置文件中启用，然后重试。如果某个运行时依赖项在首次使用时需要配置，Qwen 会引导你完成，并可能要求你重启。不需要单独的 Browser Use Qwen 扩展或 `qwen serve` 进程。
 
 ## 禁用
 

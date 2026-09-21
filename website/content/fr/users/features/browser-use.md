@@ -18,7 +18,7 @@ Décrivez votre tâche de navigateur directement, par exemple :
 
 > Lis mon tableau de bord ouvert et résume les commandes d'aujourd'hui.
 
-Qwen sélectionne le skill Browser Use lorsque c'est approprié. Si une dépendance d'exécution
+Qwen sélectionne le skill Browser Use lorsque c'est approprié. La première tâche navigateur enregistre automatiquement un petit programme de connexion local dans votre répertoire utilisateur ; les tâches suivantes le réutilisent. Qwen confirme la connexion avec l'extension avant d'opérer sur les pages. S'il ne peut pas se connecter, ouvrez Chrome et vérifiez que l'extension est activée dans le profil prévu, puis réessayez. Si une dépendance d'exécution
 nécessite une configuration lors de la première utilisation, Qwen vous guidera et pourra vous demander de redémarrer.
 Aucune extension Qwen Browser Use séparée ni processus `qwen serve` n'est nécessaire.
 
