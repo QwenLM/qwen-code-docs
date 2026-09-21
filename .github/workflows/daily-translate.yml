@@ -250,6 +250,16 @@ jobs:
             echo "::warning::last-sync.json has not advanced in ${AGE} days — the translation backlog is growing."
           fi
 
+      # The PR runs these same tests, but by then a known-bad branch has
+      # already been published. Gate publication so generated PRs start green;
+      # failures still preserve translation-output and trigger report-failure.
+      - name: Verify website before publishing
+        if: steps.detect.outputs.changed == 'true' && github.ref_name == 'main'
+        working-directory: ./website
+        run: |
+          npm ci --no-audit --no-fund
+          npm test
+
       # Generated content is never pushed to main directly (#201). A unique
       # branch avoids history rewrites; the next run waits for this PR to be
       # reviewed and merged before spending model quota again.
