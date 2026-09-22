@@ -250,9 +250,27 @@ Após reiniciar o Qwen Code, suas skills personalizadas estarão disponíveis vi
 
 Uma skill de extensão é registrada sob o nome do seu proprietário: a skill acima se torna `my-first-extension:code-analyzer`, então você a executa como `/my-first-extension:code-analyzer`. `skills.disabled` pode bloqueá-la sob esse nome ou sob o nome simples `code-analyzer` que você criou; `skills.enabled` a reativa apenas sob o nome com prefixo. Consulte [Extension Skills](../features/skills.md#extension-skills).
 
+### Adicionando Regras Condicionais
+
+Uma extensão também pode incluir um diretório `rules/`. Uma regra é um arquivo Markdown cujo `paths:` no frontmatter indica a quais arquivos ela se aplica, e ela entra no prompt somente quando uma chamada de ferramenta acessa um arquivo correspondente:
+
+```markdown
+---
+description: Como este projeto visualiza dados
+paths:
+  - 'src/**/*.chart.ts'
+---
+
+Use a paleta de `theme/charts.ts`. Nunca use um valor hex fixo.
+```
+
+**As regras de uma extensão devem ser condicionais** — uma regra sem `paths:` é ignorada e mencionada em um aviso de inicialização. Uma regra base faria parte de toda requisição, que é exatamente o que a nota do `QWEN.md` no próximo passo pede para evitar. As regras aparecem no prompt identificadas pelo proprietário, como `my-first-extension:rules/charting.md`. Consulte [Rules](../features/rules.md).
+
 ## Passo 6: Adicionar um `QWEN.md` Personalizado
 
 Você pode fornecer contexto persistente ao modelo adicionando um arquivo `QWEN.md` à sua extensão. Isso é útil para dar instruções sobre como o modelo deve se comportar ou informações sobre as ferramentas da sua extensão. Observe que nem sempre é necessário para extensões criadas para expor comandos e prompts.
+
+> **Este é o lugar mais caro para colocar instruções.** O arquivo de contexto de uma extensão é concatenado ao prompt do sistema de **cada requisição de cada sessão em que a extensão está ativa**, independentemente de o trabalho em mãos ter qualquer relação com a sua extensão — não há gate por relevância nem limite de tamanho. Em uma sessão medida, os arquivos de contexto de nove extensões totalizaram 9.989 tokens, 21% de tudo que a requisição carregava antes da conversa em si. Mantenha o arquivo de contexto restrito aos poucos fatos que são sempre verdadeiros — a identidade da extensão, seu vocabulário, uma restrição rígida — e coloque orientações de cenário em uma [skill](../features/skills.md). Uma skill é listada apenas pelo seu nome e descrição — na mesma sessão medida, 84 skills tiveram média de cerca de 55 tokens cada — e carrega seu corpo quando invocada, e uma skill [com gate em `paths:`](../features/skills.md#optional-gate-a-skill-on-file-paths-paths) nem chega a ser listada até que um arquivo correspondente seja acessado. `/context detail` nomeia o arquivo de contexto de cada extensão para que você possa ver quanto o seu custa.
 
 1.  Crie um arquivo chamado `QWEN.md` na raiz do diretório da sua extensão:
 
@@ -279,7 +297,7 @@ Você pode fornecer contexto persistente ao modelo adicionando um arquivo `QWEN.
     }
     ```
 
-Reinicie o CLI novamente. O modelo agora terá o contexto do seu arquivo `QWEN.md` em todas as sessões onde a extensão estiver ativa.
+Reinicie o CLI novamente. O modelo agora terá o contexto do seu arquivo `QWEN.md` em todas as sessões onde a extensão estiver ativa — e em cada requisição dessas sessões, motivo pelo qual a nota acima pede que você o mantenha curto e use uma skill para qualquer coisa específica de cenário.
 
 ## Passo 7: Publicando Sua Extensão
 

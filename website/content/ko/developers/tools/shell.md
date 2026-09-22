@@ -1,6 +1,3 @@
----
-title: Shell Tool
----
 
 # Shell 도구 (`run_shell_command`)
 
@@ -116,7 +113,7 @@ run_shell_command(command="docker-compose up", description="Start all services",
 
 `tools.shell.enableInteractiveShell` 설정은 셸 명령이 `node-pty`(대화형 PTY)를 통해 실행되는지 일반 `child_process` 백엔드를 통해 실행되는지 제어합니다. 활성화되면 `vim`, `git rebase -i` 및 TUI 프로그램과 같은 대화형 세션이 올바르게 작동합니다.
 
-이 설정은 대부분의 플랫폼에서 기본값이 `true`입니다. Windows 빌드 **<= 19041**(Windows 10 버전 2004 이전)에서는 알려진 신뢰성 문제(출력 누락, 중단)로 인해 기본값이 `false`입니다. 이는 VS Code에서 사용하는 것과 동일한 기준입니다([microsoft/vscode#123725](https://github.com/microsoft/vscode/issues/123725)). 런타임에 `node-pty`를 사용할 수 없는 경우, 이 설정과 관계없이 도구가 `child_process`로 폴백합니다.
+설정을 생략하면 명시적 일회성 프롬프트는 `child_process`를 사용하고, 대화형 TUI, ACP, stream-json 입력, stdin 전용 및 파일 입력 세션은 PTY를 사용합니다. Windows 빌드 **<= 19041**(Windows 10 버전 2004 이전)에서는 이전 ConPTY 구현의 알려진 신뢰성 문제(출력 누락, 중단)로 인해 PTY 모드가 `child_process`로 폴백합니다. 이는 VS Code에서 사용하는 것과 동일한 기준입니다([microsoft/vscode#123725](https://github.com/microsoft/vscode/issues/123725)). 런타임에 `node-pty`를 사용할 수 없는 경우, 도구 역시 `child_process`로 폴백합니다.
 
 기본값을 명시적으로 재정의하려면 `settings.json`에 값을 설정하세요:
 

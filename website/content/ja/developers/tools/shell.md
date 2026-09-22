@@ -112,7 +112,7 @@ run_shell_command(command="docker-compose up", description="Start all services",
 
 `tools.shell.enableInteractiveShell` 設定は、シェルコマンドを `node-pty`（インタラクティブ PTY）経由で実行するか、プレーンな `child_process` バックエンドで実行するかを制御します。有効にすると、`vim`、`git rebase -i`、TUI プログラムなどのインタラクティブセッションが正しく動作します。
 
-この設定は、ほとんどのプラットフォームでデフォルトで `true` になっています。Windows ビルド **<= 19041**（Windows 10 バージョン 2004 より前）では、古い ConPTY 実装には既知の信頼性の問題（出力の欠落、ハング）があるため、デフォルトで `false` になります。これは、VS Code で使用されているのと同じカットオフと一致します（[microsoft/vscode#123725](https://github.com/microsoft/vscode/issues/123725)）。実行時に `node-pty` が利用できない場合、この設定に関係なくツールは `child_process` にフォールバックします。
+設定が省略された場合、明示的なワンショットプロンプトは `child_process` を使用し、インタラクティブ TUI、ACP、stream-json 入力、stdin のみ、およびファイル入力セッションは PTY を使用します。Windows ビルド **<= 19041**（Windows 10 バージョン 2004 より前）では、古い ConPTY 実装には既知の信頼性の問題（出力の欠落、ハング）があるため、PTY モードは `child_process` にフォールバックします。これは、VS Code で使用されているのと同じカットオフと一致します（[microsoft/vscode#123725](https://github.com/microsoft/vscode/issues/123725)）。実行時に `node-pty` が利用できない場合、ツールは `child_process` にフォールバックします。
 
 デフォルトを明示的にオーバーライドするには、`settings.json` で値を設定します。
 

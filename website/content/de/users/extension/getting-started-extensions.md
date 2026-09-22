@@ -250,9 +250,27 @@ Nach einem Neustart von Qwen Code sind Ihre benutzerdefinierten Skills über `/s
 
 Ein Erweiterungs-Skill wird unter dem Namen seines Owners registriert: Der obige Skill wird zu `my-first-extension:code-analyzer`, Sie führen ihn also als `/my-first-extension:code-analyzer` aus. `skills.disabled` kann ihn unter beiden Namen blockieren – sowohl unter dem Owner-präfixierten als auch unter dem von Ihnen geschriebenen einfachen `code-analyzer`; `skills.enabled` nimmt ihn nur unter dem präfixierten Namen wieder auf. Siehe [Extension Skills](../features/skills.md#extension-skills).
 
+### Bedingte Regeln hinzufügen
+
+Eine Erweiterung kann auch ein `rules/`-Verzeichnis mitliefern. Eine Regel ist eine Markdown-Datei, deren `paths:`-Frontmatter angibt, auf welche Dateien sie sich bezieht, und sie gelangt nur in den Prompt, wenn ein Tool-Aufruf eine passende Datei berührt:
+
+```markdown
+---
+description: Wie dieses Projekt Daten chartt
+paths:
+  - 'src/**/*.chart.ts'
+---
+
+Verwende die Palette aus `theme/charts.ts`. Hex-Werte niemals hart codieren.
+```
+
+**Die Regeln einer Erweiterung müssen bedingt sein** – eine Regel ohne `paths:` wird übersprungen und in einer Startup-Warnung namentlich erwähnt. Eine Basis-Regel wäre Teil jedes Requests, und genau das ist es, was die `QWEN.md`-Notiz im nächsten Schritt zu vermeiden bittet. Regeln erscheinen im Prompt, gekennzeichnet mit dem Owner-Namen, als `my-first-extension:rules/charting.md`. Siehe [Rules](../features/rules.md).
+
 ## Schritt 6: Eine benutzerdefinierte `QWEN.md` hinzufügen
 
 Sie können dem Modell persistenten Kontext bereitstellen, indem Sie eine `QWEN.md`-Datei zu Ihrer Erweiterung hinzufügen. Dies ist nützlich, um dem Modell Anweisungen zum Verhalten oder Informationen über die Tools Ihrer Erweiterung zu geben. Beachten Sie, dass dies bei Erweiterungen, die Befehle und Prompts bereitstellen, nicht immer erforderlich ist.
+
+> **Dies ist der teuerste Ort für Anweisungen.** Die Kontextdatei einer Erweiterung wird an den System-Prompt **jedes Requests jeder Session, in der die Erweiterung aktiv ist**, angehängt – unabhängig davon, ob die aktuelle Arbeit irgendetwas mit Ihrer Erweiterung zu tun hat. Es gibt kein Relevanz-Gating und kein Größenlimit. In einer gemessenen Session machten die Kontextdateien von neun Erweiterungen 9.989 Tokens aus, 21 % dessen, was der Request vor der eigentlichen Konversation enthielt. Beschränken Sie die Kontextdatei auf die wenigen Fakten, die immer gelten – die Identität der Erweiterung, ihr Vokabular, ein harter Constraint – und lagern Sie szenario-spezifische Anleitungen stattdessen in einen [Skill](../features/skills.md) aus. Ein Skill wird nur mit Name und Beschreibung aufgelistet – in derselben gemessenen Session kamen 84 Skills auf durchschnittlich etwa 55 Tokens pro Skill – und lädt seinen Inhalt erst, wenn er aufgerufen wird. Ein auf [`paths:`](../features/skills.md#optional-gate-a-skill-on-file-paths-paths) gegateter Skill wird sogar erst aufgelistet, wenn eine passende Datei berührt wird. `/context detail` zeigt die Kontextdatei jeder Erweiterung an, damit Sie sehen, was Ihre kostet.
 
 1.  Erstellen Sie eine Datei mit dem Namen `QWEN.md` im Stammverzeichnis Ihres Erweiterungsverzeichnisses:
 
@@ -279,7 +297,7 @@ Sie können dem Modell persistenten Kontext bereitstellen, indem Sie eine `QWEN.
     }
     ```
 
-Starten Sie die CLI erneut. Das Modell hat nun in jeder Sitzung, in der die Erweiterung aktiv ist, den Kontext aus Ihrer `QWEN.md`-Datei.
+Starten Sie die CLI erneut. Das Modell hat nun in jeder Sitzung, in der die Erweiterung aktiv ist, den Kontext aus Ihrer `QWEN.md`-Datei – und in jedem Request dieser Sessions, weshalb die obige Notiz Sie bittet, sie kurz zu halten und für alles Szenario-spezifische einen Skill zu verwenden.
 
 ## Schritt 7: Ihre Erweiterung veröffentlichen
 

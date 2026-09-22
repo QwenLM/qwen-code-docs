@@ -176,7 +176,7 @@ sequenceDiagram
 
 ### 运行时选择与设置重新加载
 
-长生命周期的 `ChannelWorkerManager` 持有已提交的 daemon 选择和按工作区分组的 supervisor。显式的 `--channel` 选择具有最高优先级并保持 fail-fast。在无标志启动时，恢复可信主工作区的 `serve.channels` 设置；这会动态加载渠道运行时、保留服务 pidfile、解析工作区所属关系，并启动所选的 worker。次级工作区不会独立恢复其自身的 `serve.channels`。在两种启动来源均缺失的情况下，第一个严格门控的 `PUT /workspace/channel` 执行惰性初始化。`GET /workspace/channel` 读取管理器快照，`DELETE /workspace/channel` 幂等地停止它。SDK 辅助方法有 `getChannelWorkerControl()`、`setChannelWorkerSelection()` 和 `stopChannelWorker()`；CLI 入口是 `qwen channel set` 以及远程 `status` 和 `stop` 变体。
+长生命周期的 `ChannelWorkerManager` 持有已提交的 daemon 选择和按工作区分组的 supervisor。显式的 `--channel` 选择具有最高优先级并保持 fail-fast。在无标志启动时，恢复每个可信已注册工作区自身的 `serve.channels` 设置；这会动态加载渠道运行时、保留服务 pidfile、解析工作区所属关系，并启动所选的 worker。列出名称的工作区打破原本模糊的所属关系平局，非主工作区贡献的无法解析的名称会被丢弃并记录日志，而不是让整个恢复失败。`all` 保持仅主工作区。在两种启动来源均缺失的情况下，第一个严格门控的 `PUT /workspace/channel` 执行惰性初始化。`GET /workspace/channel` 读取管理器快照，`DELETE /workspace/channel` 幂等地停止它。SDK 辅助方法有 `getChannelWorkerControl()`、`setChannelWorkerSelection()` 和 `stopChannelWorker()`；CLI 入口是 `qwen channel set` 以及远程 `status` 和 `stop` 变体。
 
 存储的启动名称必须非空，前后无空白，且不包含不安全的控制字符或不可见字符。无效条目会逐个跳过并按数组索引记录日志；守护进程不会将其裁剪为另一个实例名称，也不会重写设置。worker 参数使用 `--channel=<value>`，这会保留名称中的前导短横线。渠道管理继续报告持久化的启动设置和实际运行时状态。
 

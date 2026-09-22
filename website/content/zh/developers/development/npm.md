@@ -96,8 +96,8 @@ npm install -g @qwen-code/qwen-code@nightly
 
 上述从当前或较旧 commit 创建补丁或热修复版本的模式会使仓库处于以下状态：
 
-1.  **Tag (`vX.Y.Z-patch.1`)**：此标签正确地指向 main 上包含你要发布的稳定代码的原始 commit。这一点至关重要。任何人检出此标签都会得到与发布完全相同的代码。
-2.  **Branch (`release-vX.Y.Z-patch.1`)**：此分支在被标记的 commit 之上包含一个新的 commit。该新 commit 仅包含 `package.json`（以及其他相关文件，如 `package-lock.json`）中的版本号更改。
+1.  Tag (`vX.Y.Z-patch.1`)：此标签正确地指向 main 上包含你要发布的稳定代码的原始 commit。这一点至关重要。任何人检出此标签都会得到与发布完全相同的代码。
+2.  Branch (`release-vX.Y.Z-patch.1`)：此分支在被标记的 commit 之上包含一个新的 commit。该新 commit 仅包含 `package.json`（以及其他工作区清单文件）中的版本号更改。
 
 这种分离是好的。它使你的 main 分支历史保持干净，避免发布特定的版本提升，直到你决定合并它们。
 
@@ -153,12 +153,12 @@ npm_package_version=9.9.9 SANDBOX_IMAGE_REGISTRY="registry" SANDBOX_IMAGE_NAME="
 
 以下是关键阶段：
 
-### 阶段 1：发布前的健康检查和版本控制
+阶段 1：发布前的健康检查和版本控制
 
 - 发生什么：在移动任何文件之前，流程确保项目处于良好状态。这涉及运行测试、linting 和类型检查（`npm run preflight`）。根目录 `package.json` 和 `packages/cli/package.json` 中的版本号将更新为新版本号。
 - 原因：这保证了只有高质量、可工作的代码才会被发布。版本控制是标志新版本的第一步。
 
-### 阶段 2：构建源代码
+阶段 2：构建源代码
 
 - 发生什么：`packages/core/src` 和 `packages/cli/src` 中的 TypeScript 源代码被编译成 JavaScript。
 - 文件移动：
@@ -166,11 +166,11 @@ npm_package_version=9.9.9 SANDBOX_IMAGE_REGISTRY="registry" SANDBOX_IMAGE_NAME="
   - `packages/cli/src/**/*.ts` -> 编译到 -> `packages/cli/dist/`
 - 原因：开发过程中编写的 TypeScript 代码需要转换成可由 Node.js 运行的纯 JavaScript。核心包先构建，因为 CLI 包依赖于它。
 
-### 阶段 3：打包和组装最终的可发布包
+阶段 3：打包和组装最终的可发布包
 
 这是最关键阶段，文件被移动并转换为用于发布的最终状态。该过程使用现代打包技术创建最终包。
 
-1.  **Bundle 创建**：
+1.  Bundle 创建：
     - 发生什么：`prepare-package.js` 脚本在 `dist` 目录中创建一个干净的发布包。
     - 关键转换：
       - 将 `README.md` 和 `LICENSE` 复制到 `dist/`
@@ -179,12 +179,12 @@ npm_package_version=9.9.9 SANDBOX_IMAGE_REGISTRY="registry" SANDBOX_IMAGE_NAME="
       - 保持发布依赖项最小化（不包含捆绑的运行时依赖）
       - 为 `node-pty` 保留可选依赖项
 
-2.  **JavaScript Bundle 创建**：
+2.  JavaScript Bundle 创建：
     - 发生什么：来自 `packages/core/dist` 和 `packages/cli/dist` 的构建后的 JavaScript 使用 esbuild 被捆绑成一个单独的可执行 JavaScript 文件。
     - 文件位置：`dist/cli.js`
     - 原因：这将创建一个包含所有必要应用程序代码的单个优化文件。它简化了包，消除了在安装时进行复杂依赖解析的需要。
 
-3.  **静态和支持文件复制**：
+3.  静态和支持文件复制：
     - 发生什么：不属于源代码但包正常运行或良好描述所需的关键文件被复制到 `dist` 目录。
     - 文件移动：
       - `README.md` -> `dist/README.md`
@@ -196,7 +196,7 @@ npm_package_version=9.9.9 SANDBOX_IMAGE_REGISTRY="registry" SANDBOX_IMAGE_NAME="
       - 国际化需要 locales 支持
       - 供应商文件包含必要的运行时依赖
 
-### 阶段 4：发布到 NPM
+阶段 4：发布到 NPM
 
 - 发生什么：在根 `dist` 目录内运行 `npm publish` 命令。
 - 原因：通过在 `dist` 目录内运行 `npm publish`，只有我们在阶段 3 中精心组装的文件才会被上传到 NPM 注册表。这防止了任何源代码、测试文件或开发配置被意外发布，从而为用户提供一个干净、最小的包。
@@ -221,6 +221,6 @@ npm_package_version=9.9.9 SANDBOX_IMAGE_REGISTRY="registry" SANDBOX_IMAGE_NAME="
 
 ### Workspaces 的好处
 
-- **简化依赖管理**：从项目根目录运行 `npm install` 将为工作区中的所有包安装所有依赖项，并将它们链接在一起。这意味着你不需要在每个包的目录中运行 `npm install`。
-- **自动链接**：工作区中的包可以相互依赖。当你运行 `npm install` 时，NPM 会自动在包之间创建符号链接。这意味着当你对一个包进行更改时，更改会立即可用于依赖于它的其他包。
+- **简化依赖管理**：从项目根目录运行 `corepack pnpm install --frozen-lockfile` 将安装工作区中每个包的依赖项并将它们链接在一起，因此你不需要在每个包的目录中单独安装。
+- **自动链接**：工作区中的包可以相互依赖。当你从根目录安装时，pnpm 会在包之间创建符号链接。这意味着当你对一个包进行更改时，更改会立即可用于依赖于它的其他包。
 - **简化脚本执行**：你可以使用 `--workspace` 标志从项目根目录运行任何包中的脚本。例如，要运行 `cli` 包中的 `build` 脚本，你可以运行 `npm run build --workspace @qwen-code/qwen-code`。

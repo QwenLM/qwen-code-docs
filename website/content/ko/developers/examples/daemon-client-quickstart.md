@@ -4,6 +4,8 @@
 
 ## 설정
 
+이 연습은 Qwen Code `v0.24.0` 및 `@qwen-code/sdk@0.1.12`를 대상으로 합니다.
+
 한쪽 터미널에서:
 
 ```bash
@@ -20,7 +22,7 @@ qwen serve --no-web --port 4170 \
 다른 터미널에서:
 
 ```bash
-npm install @qwen-code/sdk
+npm install @qwen-code/sdk@0.1.12
 ```
 
 ## Hello daemon
@@ -117,6 +119,49 @@ function handleEvent(event: DaemonEvent): void {
   }
 }
 ```
+
+## 복원, 상태 폴링, 기록 읽기
+
+라이브 세션을 닫아도 지속된 트랜스크립트는 삭제되지 않습니다. id를 저장하고,
+라이브 소유자를 닫은 다음 복원합니다. 클라이언트가 지속된 턴을 SSE 스트림으로
+리플레이해야 하면 `loadSession`을 사용하고, 클라이언트가 이미 해당 턴을
+렌더링했고 데몬 측 핸들만 복원하면 되면 `resumeSession`을 사용하세요.
+두 메서드 모두 중단된 턴을 이어가지 않습니다. 그것이 필요하면
+`continueSession`을 별도로 호출하세요.
+
+```ts
+const savedSessionId = session.sessionId;
+await client.closeSession(savedSessionId, session.clientId);
+
+const restored =
+  process.env.HISTORY_ALREADY_RENDERED === '1'
+    ? await client.resumeSession(savedSessionId, {
+        workspaceCwd: selectedWorkspace.cwd,
+      })
+    : await client.loadSession(savedSessionId, {
+        workspaceCwd: selectedWorkspace.cwd,
+        historyPageSize: 100,
+      });
+
+const status = await client.sessionStatus(
+  restored.sessionId,
+  restored.clientId,
+);
+console.log({
+  active: status.hasActivePrompt,
+  waitingForPermission: status.isWaitingForPermission,
+});
+
+const history = await client.getSessionTranscriptPage(restored.sessionId, {
+  limit: 100,
+  clientId: restored.clientId,
+});
+console.log(`history events=${history.events.length} more=${history.hasMore}`);
+```
+
+`sessionStatus`는 라이브 소유자만 읽습니다. `getSessionTranscriptPage`는
+지속된 기록을 읽으며, 다음 페이지가 있으면 불투명한 `nextCursor`를 반환합니다.
+그 값을 직접 구성하지 말고 `cursor`로 다시 전달하세요.
 
 ## Workspace 파일 헬퍼
 
