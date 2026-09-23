@@ -60,6 +60,34 @@ Qwen Code 支持多种兼容 OpenAI 的提供商。请参考你具体提供商�
 >
 > 在使用 Vertex AI 时，你需遵守 [Google Cloud 服务条款](https://cloud.google.com/terms) 和 [Google Cloud 隐私声明](https://cloud.google.com/privacy)，而非 Qwen Code 的条款。请查阅 Google Cloud 的文档，以了解关于数据使用、留存及隐私实践的具体细节。
 
+## Chrome 扩展与 Browser Use
+
+Qwen Code Chrome 扩展将 Chrome 连接到运行在你计算机上的 Qwen Code。其侧边栏显示本地 Qwen Code Web 应用，Browser Use 通过本地 Native Messaging host 交换浏览器命令与结果。以下描述了为浏览器任务所处理的数据，与下文可选的使用统计分开说明。
+
+### 用于你的任务的浏览器数据
+
+浏览器工具可以访问打开的 HTTP(S) 标签页标题与 URL、页面文本与结构、截图、浏览器交互结果，以及调试信息（如控制台消息、网络活动和 Cookie）。显式的浏览器历史搜索会在请求的查询限制内返回匹配的 URL、页面标题和访问时间。根据你选择的页面和任务，这些结果可能包含个人标识信息、健康信息、财务或支付信息、认证信息、个人通信以及位置信息。该扩展还使用导航来源信息，将最近由助手操作打开的新页面与同一浏览器会话关联。
+
+这些能力支持你通过 Qwen Code 请求的浏览器任务和 Web 开发工作。浏览器工具在你的 Chrome 配置文件中运行，包括你已登录的页面。请据此选择你要与助手共享的页面和任务。
+
+### 本地处理与 AI 提供商
+
+该扩展将浏览器命令与结果发送到同一台计算机上的 Qwen Code。Qwen Code 可能会将这些结果包含在对话上下文中，并将其传输到为该会话配置的 AI 提供商。提供商的隐私、留存和模型训练条款如本声明其他部分所述适用。扩展的本地连接只是此数据流的一部分；后续处理可能在你选择的 AI 提供商处进行。
+
+### 存储的数据与用户控制
+
+该扩展在 Chrome 扩展本地存储中保存连接偏好设置、可选的本地守护进程认证令牌以及持久的浏览器实例标识符。它还在 Chrome 会话存储中保存标签页和会话所有权状态，以支持在其后台 service worker 重启后进行清理。
+
+包含在 Qwen Code 对话中或由浏览器工具保存的浏览器结果可能保留在本地对话记录、截图、下载或其他输出文件中。使用适用的 Qwen Code 和文件系统控制来管理这些记录。AI 提供商的留存由其各自的政策单独管理。
+
+你可以在 Chrome 的扩展管理器中禁用或卸载该扩展以停止其浏览器集成。清除扩展存储会移除其保存的偏好设置、令牌和实例标识符。移除扩展后，单独安装的 Qwen Code 应用程序、其 Native Messaging host、本地对话和文件，以及已发送到 AI 提供商的副本需单独管理。
+
+### 浏览器数据的有限使用
+
+Qwen Code 对通过 Chrome 扩展接收的数据的使用和传输遵循 [Chrome Web Store 用户数据政策](https://developer.chrome.com/docs/webstore/program-policies/user-data)，包括其有限使用要求。浏览器数据用于提供扩展的单一用途：将 Chrome 连接到 Qwen Code 以进行用户请求的浏览器协助。这些数据不会被出售、用于广告，或用于确定信用worthiness或贷款资格。传输仅限于提供该功能，包括由你配置的 AI 提供商进行的处理，以及该政策允许的其他用途。
+
+有关浏览器数据处理的问题，请通过 [Qwen Code issue tracker](https://github.com/QwenLM/qwen-code/issues) 联系团队。仅分享解释问题所需的详细信息；从公开报告中移除凭证和私密页面内容。
+
 ## 使用统计与遥测
 
 Qwen Code 可能会收集匿名的使用统计和[遥测](../../developers/development/telemetry)数据，以改善用户体验和产品质量。此数据收集为可选功能，可通过配置设置进行控制。

@@ -112,7 +112,7 @@ run_shell_command(command="docker-compose up", description="Start all services",
 
 `tools.shell.enableInteractiveShell` 设置控制 shell 命令是通过 `node-pty`（交互式 PTY）还是普通的 `child_process` 后端执行。启用后，`vim`、`git rebase -i` 和 TUI 程序等交互式会话可以正常工作。
 
-此设置在大多数平台上默认为 `true`。在 Windows 内部版本 **<= 19041**（Windows 10 版本 2004 之前）上，它默认为 `false`，因为较旧的 ConPTY 实现存在已知的可靠性问题（输出丢失、挂起）。这与 VS Code 使用的相同分界线一致（[microsoft/vscode#123725](https://github.com/microsoft/vscode/issues/123725)）。如果在运行时 `node-pty` 不可用，无论此设置如何，该工具都会回退到 `child_process`。
+当省略此设置时，显式一次性提示使用 `child_process`；交互式 TUI、ACP、stream-json 输入、仅 stdin 和文件输入会话使用 PTY。在 Windows 内部版本 **<= 19041**（Windows 10 版本 2004 之前）上，PTY 模式会回退到 `child_process`，因为较旧的 ConPTY 实现存在已知的可靠性问题（输出丢失、挂起）。这与 VS Code 使用的相同分界线一致（[microsoft/vscode#123725](https://github.com/microsoft/vscode/issues/123725)）。如果在运行时 `node-pty` 不可用，该工具也会回退到 `child_process`。
 
 要显式覆盖默认值，请在 `settings.json` 中设置该值：
 

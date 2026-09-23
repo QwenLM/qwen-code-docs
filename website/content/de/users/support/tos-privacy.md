@@ -60,6 +60,34 @@ Wenn Sie sich mit Google Cloud Vertex AI authentifizieren, gelten die Nutzungsbe
 >
 > Bei Verwendung von Vertex AI unterliegen Sie den [Nutzungsbedingungen von Google Cloud](https://cloud.google.com/terms) und der [Datenschutzerklärung von Google Cloud](https://cloud.google.com/privacy), nicht den Bedingungen von Qwen Code. Bitte lesen Sie die Dokumentation von Google Cloud für spezifische Details zur Datennutzung, -aufbewahrung und zu Datenschutzpraktiken.
 
+## Chrome-Erweiterung und Browser Use
+
+Die Qwen Code Chrome-Erweiterung verbindet Chrome mit Qwen Code, das auf Ihrem Computer läuft. Ihr Seitenbereich zeigt die lokale Qwen Code-Webanwendung, und Browser Use tauscht Browserbefehle und -ergebnisse über einen lokalen Native Messaging Host aus. Im Folgenden werden die Daten beschrieben, die für Browseraufgaben verarbeitet werden, getrennt von den optionalen Nutzungsstatistiken, die unten beschrieben werden.
+
+### Für Ihre Aufgaben verwendete Browserdaten
+
+Browser-Tools können auf offene HTTP(S)-Tab-Titel und URLs, Seitentext und -struktur, Screenshots, Browser-Interaktionsergebnisse und Debug-Informationen wie Konsolennachrichten, Netzwerkaktivität und Cookies zugreifen. Explizite Browser-Verlaufssuchen geben passende URLs, Seitentitel und Besuchszeiten innerhalb der angeforderten Abfragelimits zurück. Abhängig von den von Ihnen gewählten Seiten und Aufgaben können diese Ergebnisse persönliche Identifikatoren, Gesundheitsinformationen, Finanz- oder Zahlungsinformationen, Authentifizierungsinformationen, persönliche Kommunikation und Standortinformationen enthalten. Die Erweiterung verwendet außerdem Navigation-Source-Informationen, um neue Seiten, die durch eine kürzliche Assistentenaktion geöffnet wurden, derselben Browser-Sitzung zuzuordnen.
+
+Diese Funktionen unterstützen die Browseraufgaben und Webentwicklungsarbeit, die Sie von Qwen Code anfordern. Browser-Tools arbeiten in Ihrem Chrome-Profil, einschließlich Seiten, auf denen Sie angemeldet sind. Wählen Sie die Seiten und Aufgaben, die Sie mit dem Assistenten teilen, entsprechend aus.
+
+### Lokale Verarbeitung und KI-Anbieter
+
+Die Erweiterung sendet Browserbefehle und -ergebnisse an Qwen Code auf demselben Computer. Qwen Code kann diese Ergebnisse in den Konversationskontext einbeziehen und an den für diese Sitzung konfigurierten KI-Anbieter übertragen. Die Datenschutz-, Aufbewahrungs- und Modelltrainingsbedingungen des Anbieters gelten, wie elsewhere in dieser Datenschutzerklärung beschrieben. Die lokale Verbindung der Erweiterung ist ein Teil dieses Datenflusses; die nachfolgende Verarbeitung kann bei Ihrem gewählten KI-Anbieter stattfinden.
+
+### Gespeicherte Daten und Benutzersteuerung
+
+Die Erweiterung speichert Verbindungspräferenzen, ein optionales lokales Daemon-Authentifizierungstoken und eine persistente Browser-Instanz-ID im lokalen Speicher der Chrome-Erweiterung. Sie speichert auch Tab- und Session-Besitzstatus im Chrome-Session-Speicher, um die Bereinigung nach Neustarts ihres Hintergrund-Service-Workers zu unterstützen.
+
+Browser-Ergebnisse, die in Qwen Code-Konversationen einbezogen oder von Browser-Tools gespeichert werden, können in lokalen Konversationsaufzeichnungen, Screenshots, Downloads oder anderen Ausgabedateien verbleiben. Verwalten Sie diese Aufzeichnungen mit den entsprechenden Qwen Code- und Dateisystemsteuerungen. Die Aufbewahrung durch KI-Anbieter wird separat vom gewählten Anbieter geregelt.
+
+Sie können die Chrome-Erweiterung im Erweiterungsmanager von Chrome deaktivieren oder deinstallieren, um die Browser-Integration zu beenden. Das Löschen des Erweiterungsspeichers entfernt seine gespeicherten Präferenzen, Token und die Instanz-ID. Das Entfernen der Erweiterung hinterlässt die separat installierte Qwen Code-Anwendung, ihren Native Messaging Host, lokale Konversationen und Dateien sowie Kopien, die bereits an einen KI-Anbieter gesendet wurden, die separat verwaltet werden müssen.
+
+### Eingeschränkte Nutzung von Browserdaten
+
+Die Nutzung und Weitergabe von Daten, die Qwen Code über die Chrome-Erweiterung erhält, entspricht der [Chrome Web Store User Data Policy](https://developer.chrome.com/docs/webstore/program-policies/user-data), einschließlich der Limited-Use-Anforderungen. Browserdaten werden verwendet, um den einzigen Zweck der Erweiterung bereitzustellen: die Verbindung von Chrome mit Qwen Code für vom Benutzer angeforderte Browser-Unterstützung. Sie werden nicht verkauft, für Werbung verwendet oder zur Bestimmung der Kreditwürdigkeit oder Kreditberechtigung genutzt. Übertragungen sind auf die Bereitstellung dieser Funktionalität beschränkt, einschließlich der Verarbeitung durch den von Ihnen konfigurierten KI-Anbieter, sowie anderer durch diese Richtlinie erlaubter Verwendungen.
+
+Bei Fragen zur Verarbeitung von Browserdaten kontaktieren Sie das Team über den [Qwen Code Issue Tracker](https://github.com/QwenLM/qwen-code/issues). Teilen Sie nur die Details mit, die zur Erläuterung der Frage erforderlich sind; entfernen Sie Anmeldedaten und private Seiteninhalte aus öffentlichen Berichten.
+
 ## Nutzungsstatistiken und Telemetrie
 
 Qwen Code kann anonyme Nutzungsstatistiken und [Telemetriedaten](../../developers/development/telemetry) erfassen, um die Benutzererfahrung und Produktqualität zu verbessern. Diese Datenerfassung ist optional und kann über Konfigurationseinstellungen gesteuert werden.

@@ -129,6 +129,8 @@ V2 Extension 批量激活：`extension_batch_activation_v2` 在 `extension_manag
 
 Workspace 限定会话读取（Workspace-qualified session reads）：`workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`, `workspace_session_live_state`。活跃和已归档的导出 tag 彼此独立，也与 `session_export` 和 `workspace_qualified_rest_core` 独立，因此客户端必须预检其打算导出的确切存储状态。持久化转录分页允许在受限读取策略下的不受信任次级运行时；两条完整导出路径仍然仅限受信任运行时。`workspace_session_live_state` 同样独立于 `workspace_qualified_rest_core` 且仅限受信任运行时：它提供所选运行时的纯内存活跃会话快照和目录版本，不会将不受信任次级运行时的持久化读取策略扩展到活跃 bridge 状态。
 
+批量会话目录（Batch session catalogs）：`session_catalog_batch` 独立地广播 `POST /sessions/catalog`，支持最多 20 个已注册的 workspace，提供每 workspace 游标、显式条目错误和可选的组目录。该 tag 是无条件的，包括单 workspace daemon。发现一次即可，缺失时回退到现有的 workspace 限定 list/group 请求；其支持性不能从 `session_list`、`multi_workspace_sessions` 或 `workspace_qualified_rest_core` 推断。该批量操作不会启动 ACP，并排除内部 workspace。
+
 Workspace 变更（Wave 4+）：`workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, `workspace_skill_settings_toggle`, `workspace_skill_settings_batch_toggle`, **`workspace_settings`** (conditional), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, `workspace_file_upload`, **`workspace_reload`** (conditional)。两个 Skill settings tag 取代了已退役的经目录验证的 `workspace_skill_toggle` 和 `workspace_skill_batch_toggle` tag。
 
 MCP 防护栏（MCP guardrails）：**`mcp_guardrails`** (`modes: ['warn', 'enforce']`), `mcp_guardrail_events`, `mcp_server_runtime_mutation`, **`mcp_workspace_pool`** (conditional), **`mcp_pool_restart`** (conditional)。
