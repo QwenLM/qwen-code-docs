@@ -35,7 +35,7 @@ qwen extensions link /path/to/my-channel-extension
     "my-bot": {
       "type": "my-platform",
       "apiKey": "$MY_PLATFORM_API_KEY",
-      "senderPolicy": "open",
+      "privatePolicy": "open",
       "cwd": "/path/to/project"
     }
   }
@@ -47,15 +47,15 @@ qwen extensions link /path/to/my-channel-extension
 Все стандартные параметры каналов работают и с пользовательскими каналами:
 
 | Параметр       | Описание                                       |
-| -------------- | ---------------------------------------------- |
-| `senderPolicy` | `allowlist`, `pairing` или `open`              |
-| `allowedUsers` | Статический список разрешенных ID отправителей |
+| --------------- | -------------------------------------------------------------------------------------------------- |
+| `privatePolicy` | `disabled`, `allowlist`, `pairing` или `open`                                                      |
+| `allowedUsers`  | Private-message allowlist of user IDs                                                              |
 | `sessionScope` | `user`, `chat_thread` или `single`; устаревшее значение `thread` остаётся совместимым с существующими конфигурациями |
 | `cwd`          | Рабочая директория для агента                  |
 | `instructions` | Добавляются в начало первого сообщения каждой сессии |
 | `model`        | Переопределение модели для канала              |
 | `groupPolicy`  | `disabled`, `allowlist`, `pairing` или `open`  |
-| `dmPolicy`     | `open` или `disabled`                          |
+| `dmPolicy`      | Deprecated private fallback: `open` или `disabled`                                                  |
 | `groups`       | Настройки для каждой группы                    |
 
 Подробнее о каждом параметре см. в разделе [Обзор](./overview).

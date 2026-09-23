@@ -24,7 +24,7 @@ Node.js 22 이상이 필요하며 npm도 필요합니다.
 
 ```bash
 qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.6
-npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.9
+npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.11
 ```
 
 MCP 서버가 처음 추가된 후 Qwen Code를 재시작하세요. 그런 다음 skill이 `node_repl`을 통해 데스크톱 작업을 계속합니다.
@@ -43,7 +43,7 @@ Qwen Code에게 데스크톱 작업에 `$computer-use`를 사용하도록 요청
 4. 다음 동작을 결정하기 전에 최신 상태를 가져옵니다.
 5. 다른 영구 상태가 필요하지 않을 때만 SDK 클라이언트를 닫고 REPL을 초기화합니다.
 
-드라이버만이 관찰 diff를 계산하는 유일한 구성 요소입니다. 모델 코드는 타입화된 SDK 메서드를 사용하며 임의의 드라이버 도구 이름을 디스패치하지 않습니다. 앱 핸들은 현재 창과 대화 상자를 추적하고, 내부적으로 네이티브 요소 ID를 유지하며, 입력을 네이티브 드라이버에 위임합니다. 모델 코드는 포그라운드/백그라운드 모드를 선택하지 않습니다. 확인되지 않은 동작은 리플레이되지 않습니다. `getState()`는 발견된 중지된 앱을 열 수 있으며, 동작은 앱을 재시작하지 않습니다. 기존 정확 창 API는 Windows와 Linux에서 계속 사용 가능합니다.
+드라이버는 관찰 diff를 계산하는 유일한 구성 요소입니다. 모델 코드는 타입화된 SDK 메서드를 사용하며 임의의 드라이버 도구 이름을 디스패치하지 않습니다. 앱 핸들은 현재 창과 대화 상자를 추적하고, 내부적으로 네이티브 요소 ID를 유지하며, 입력을 네이티브 드라이버에 위임합니다. 모델 코드는 포그라운드/백그라운드 모드를 선택하지 않습니다. 확인되지 않은 동작은 리플레이되지 않습니다. `getState()`는 발견된 중지된 앱을 열 수 있으며, 동작은 앱을 재시작하지 않습니다. 기존 정확 창 API는 Windows와 Linux에서 계속 사용 가능합니다.
 
 ```js
 const app = await computer.getApp('Microsoft Excel');
@@ -70,7 +70,7 @@ macOS에서 접근성 관찰과 입력에는 Accessibility 권한이 필요합�
 
 ## 참고 자료
 
-- [Skills](./skills.md)
-- [MCP servers](./mcp.md)
+- [스킬](./skills.md)
+- [MCP 서버](./mcp.md)
 - [승인 모드](./approval-mode.md)
 - [샌드박싱](./sandbox.md)

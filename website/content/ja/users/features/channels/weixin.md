@@ -28,7 +28,7 @@ qwen channel configure-weixin
   "channels": {
     "my-weixin": {
       "type": "weixin",
-      "senderPolicy": "pairing",
+      "privatePolicy": "pairing",
       "allowedUsers": [],
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
@@ -82,7 +82,7 @@ WeChatチャンネルはすべての標準チャンネルオプション ([Chann
 - **プレーンテキスト指示を使用する** — WeChatはすべてのMarkdownを削除するため、"Use plain text only" のような指示を追加して、エージェントが整形された応答を生成して乱雑に見えるのを防ぎます。
 - **応答は短く** — WeChatのメッセージバブルは簡潔なテキストが最適です。指示に文字数制限を追加すると役立ちます（例："Keep responses under 500 characters"）。
 - **セッションの期限切れ** — ログに "Session expired (errcode -14)" と表示された場合、WeChatログインが期限切れです。チャンネルを停止し、`qwen channel configure-weixin` を再実行して再度ログインしてください。
-- **アクセス制限** — `senderPolicy: "pairing"` または `"allowlist"` を使用して、ボットと通信できるユーザーを制御します。詳細は [DM Pairing](./overview#dm-pairing) を参照してください。
+- **アクセス制限** — `privatePolicy: "pairing"` または `"allowlist"` を使用して、ボットと通信できるユーザーを制御します。詳細は [DM Pairing](./overview#dm-pairing) を参照してください。
 
 ## トラブルシューティング
 
@@ -98,7 +98,7 @@ WeChatログインセッションが期限切れです。チャンネルを停�
 
 - ターミナル出力でエラーを確認する
 - チャンネルが動作していることを確認する (`qwen channel start my-weixin`)
-- `senderPolicy: "allowlist"` を使用している場合、自分のWeChatユーザーIDが `allowedUsers` に含まれていることを確認する
+- `privatePolicy: "allowlist"` を使用している場合、自分のWeChatユーザーIDが `allowedUsers` に含まれていることを確認する
 
 ### 画像が機能しない
 

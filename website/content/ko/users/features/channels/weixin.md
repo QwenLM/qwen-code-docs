@@ -28,7 +28,7 @@ QR 코드 URL이 표시됩니다. WeChat 모바일 앱으로 스캔하여 인증
   "channels": {
     "my-weixin": {
       "type": "weixin",
-      "senderPolicy": "pairing",
+      "privatePolicy": "pairing",
       "allowedUsers": [],
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
@@ -82,7 +82,7 @@ WeChat 채널은 모든 표준 채널 옵션([채널 개요](./overview#options)
 - **일반 텍스트 지시 사용** — WeChat은 모든 Markdown을 제거하므로, "Use plain text only"와 같은 지시를 추가하여 에이전트가 지저분하게 보이는 포맷된 응답을 생성하지 않도록 하세요.
 - **응답을 짧게 유지** — WeChat 메시지 버블은 간결한 텍스트에 가장 잘 작동합니다. 지시에 문자 수 제한을 추가하면 도움이 됩니다(예: "Keep responses under 500 characters").
 - **세션 만료** — 로그에 "Session expired (errcode -14)"가 표시되면 WeChat 로그인이 만료된 것입니다. 채널을 중지하고 `qwen channel configure-weixin`을 다시 실행하여 다시 로그인하세요.
-- **액세스 제한** — 봇과 대화할 수 있는 사람을 제어하려면 `senderPolicy: "pairing"` 또는 `"allowlist"`를 사용하세요. 자세한 내용은 [DM 페어링](./overview#dm-pairing)을 참조하세요.
+- **액세스 제한** — 봇과 대화할 수 있는 사람을 제어하려면 `privatePolicy: "pairing"` 또는 `"allowlist"`를 사용하세요. 자세한 내용은 [DM 페어링](./overview#dm-pairing)을 참조하세요.
 
 ## 문제 해결
 
