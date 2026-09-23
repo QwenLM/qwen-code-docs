@@ -28,7 +28,7 @@ qwen channel configure-weixin
   "channels": {
     "my-weixin": {
       "type": "weixin",
-      "senderPolicy": "pairing",
+      "privatePolicy": "pairing",
       "allowedUsers": [],
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
@@ -82,7 +82,7 @@ qwen channel start
 - **使用纯文本指令**——由于微信会移除所有 Markdown，请添加类似"仅使用纯文本"的指令，避免代理生成格式杂乱的回复。
 - **保持回复简短**——微信消息气泡适合简洁的文本。在指令中添加字符限制会有帮助（例如"保持回复在 500 字符以内"）。
 - **会话过期**——如果在日志中看到"Session expired (errcode -14)"，表明微信登录已过期。停止频道并重新运行 `qwen channel configure-weixin` 来重新登录。
-- **限制访问**——使用 `senderPolicy: "pairing"` 或 `"allowlist"` 来控制可以与机器人对话的成员。详情请参阅[私聊配对](./overview#dm-pairing)。
+- **限制访问**——使用 `privatePolicy: "pairing"` 或 `"allowlist"` 来控制可以与机器人对话的成员。详情请参阅[私聊配对](./overview#dm-pairing)。
 
 ## 故障排除
 
@@ -98,7 +98,7 @@ qwen channel start
 
 - 检查终端输出中的错误信息
 - 确认频道正在运行（`qwen channel start my-weixin`）
-- 如果使用了 `senderPolicy: "allowlist"`，请确保您的微信用户 ID 在 `allowedUsers` 中
+- 如果使用了 `privatePolicy: "allowlist"`，请确保您的微信用户 ID 在 `allowedUsers` 中
 
 ### 图片无法正常使用
 

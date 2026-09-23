@@ -35,7 +35,7 @@ qwen extensions link /path/to/my-channel-extension
     "my-bot": {
       "type": "my-platform",
       "apiKey": "$MY_PLATFORM_API_KEY",
-      "senderPolicy": "open",
+      "privatePolicy": "open",
       "cwd": "/path/to/project"
     }
   }
@@ -48,14 +48,14 @@ qwen extensions link /path/to/my-channel-extension
 
 | オプション     | 説明                                         |
 | -------------- | -------------------------------------------- |
-| `senderPolicy` | `allowlist`、`pairing`、または `open`         |
-| `allowedUsers` | 送信者 ID の静的な許可リスト                 |
+| `privatePolicy` | `disabled`、`allowlist`、`pairing`、または `open` |
+| `allowedUsers` | ユーザー ID のプライベートメッセージ許可リスト |
 | `sessionScope` | `user`、`chat_thread`、または `single`。レガシーの `thread` は既存の設定では互換性が保たれます |
 | `cwd`          | エージェントの作業ディレクトリ               |
 | `instructions` | 各セッションの最初のメッセージに付加される指示 |
 | `model`        | チャネルのモデルオーバーライド               |
 | `groupPolicy`  | `disabled`、`allowlist`、または `open`        |
-| `dmPolicy`     | `open` または `disabled`                      |
+| `dmPolicy`     | 非推奨のプライベートフォールバック: `open` または `disabled` |
 | `groups`       | グループごとの設定                           |
 
 各オプションの詳細については、[Overview](./overview) を参照してください。

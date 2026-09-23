@@ -1,6 +1,3 @@
----
-title: Custom Channel Plugins
----
 
 # 사용자 정의 채널 플러그인
 
@@ -39,7 +36,7 @@ qwen extensions link /path/to/my-channel-extension
     "my-bot": {
       "type": "my-platform",
       "apiKey": "$MY_PLATFORM_API_KEY",
-      "senderPolicy": "open",
+      "privatePolicy": "open",
       "cwd": "/path/to/project"
     }
   }
@@ -52,14 +49,14 @@ qwen extensions link /path/to/my-channel-extension
 
 | 옵션           | 설명                                   |
 | -------------- | -------------------------------------- |
-| `senderPolicy` | `allowlist`, `pairing` 또는 `open`     |
-| `allowedUsers` | 발신자 ID의 정적 허용 목록             |
+| `privatePolicy` | `disabled`, `allowlist`, `pairing` 또는 `open`                                                      |
+| `allowedUsers`  | Private-message allowlist of user IDs                                                              |
 | `sessionScope` | `user`, `chat_thread` 또는 `single`; 레거시 `thread`는 기존 구성에 대해 호환됨 |
 | `cwd`          | 에이전트의 작업 디렉토리               |
 | `instructions` | 각 세션의 첫 번째 메시지에 앞에 추가   |
 | `model`        | 채널의 모델 재정의                     |
 | `groupPolicy`  | `disabled`, `allowlist`, `pairing` 또는 `open`  |
-| `dmPolicy`     | `open` 또는 `disabled`                 |
+| `dmPolicy`      | Deprecated private fallback: `open` or `disabled`                                                  |
 | `groups`       | 그룹별 설정                            |
 
 각 옵션에 대한 자세한 내용은 [Overview](./overview)를 참조하세요.

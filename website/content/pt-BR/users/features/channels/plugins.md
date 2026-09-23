@@ -35,7 +35,7 @@ Adicione uma entrada de canal ao `~/.qwen/settings.json` usando o tipo personali
     "my-bot": {
       "type": "my-platform",
       "apiKey": "$MY_PLATFORM_API_KEY",
-      "senderPolicy": "open",
+      "privatePolicy": "open",
       "cwd": "/path/to/project"
     }
   }
@@ -48,14 +48,14 @@ Todas as opções padrão de canal funcionam com canais personalizados:
 
 | Opção          | Descrição                                      |
 | -------------- | ---------------------------------------------- |
-| `senderPolicy` | `allowlist`, `pairing` ou `open`               |
+| `privatePolicy` | `disabled`, `allowlist`, `pairing` ou `open`                                                      |
 | `allowedUsers` | Lista de permissões estática de IDs de remetentes |
 | `sessionScope` | `user`, `chat_thread` ou `single`; o `thread` legado permanece compatível para configurações existentes |
 | `cwd`          | Diretório de trabalho para o agente            |
 | `instructions` | Prefixado à primeira mensagem de cada sessão   |
 | `model`        | Substituição do modelo para o canal            |
 | `groupPolicy`  | `disabled`, `allowlist`, `pairing` ou `open`   |
-| `dmPolicy`     | `open` ou `disabled`                           |
+| `dmPolicy`      | Fallback privado obsoleto: `open` ou `disabled`                                                  |
 | `groups`       | Configurações por grupo                        |
 
 Consulte a [Visão Geral](./overview) para obter detalhes sobre cada opção.
