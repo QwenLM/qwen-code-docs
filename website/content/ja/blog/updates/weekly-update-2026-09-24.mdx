@@ -1,0 +1,183 @@
+---
+title: "Qwen Code 週報：コンテキストの消費元がファイルまで分かる、別のマシンのプロジェクトも編集できる、中断したワークフローは続きから"
+date: "2026-09-24"
+description: "今週は v0.24.1 ～ v0.24.4 の 4 つの安定版をリリースし、200 件の PR がマージされました。コンテキストが満杯でも、どのファイル・どの拡張機能が食ったかまで特定できます。SSH アドレスを 1 行入れるだけで別のマシンのプロジェクトを読み書きでき、そのマシンに Qwen Code は不要。中断したワークフローは、再起動後に続きから実行できます。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i3/O1CN01CO7a1m2N6cE2jBZY_!!6000000000184-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 週報：コンテキストの消費元がファイルまで分かる、別のマシンのプロジェクトも編集できる、中断したワークフローは続きから"
+  date="2026-09-24"
+  author="Qwen Team"
+/>
+
+Qwen Code は今週、v0.24.1 ～ v0.24.4 の 4 つの安定版をリリースし、200 件の PR がマージされました。
+
+**コンテキストが満杯でも、どのファイル・どの拡張機能が食ったか分かります。** 何を閉じればいいか分かり、空きが戻る。
+
+**SSH アドレス 1 行で、別のマシンのプロジェクトを編集できます。** コードがサーバーやビルド機、同僚のマシンにあっても、自分の席から向こうのファイルを書き換え、向こうのビルドを走らせられる。
+
+**ワークフローが途中で途切れても、再起動後に続きから走ります。** 完了済みの部分はそのまま流用。数時間かかる長いフローでも、失敗した箇所だけ埋め合わせれば済みます。
+
+## ✨ 新機能
+
+### コンテキストが満杯でも、どのファイル・どの拡張機能が食ったか分かる
+
+`/context` はコンテキストを由来別に分解して並べます——システムプロンプト、内蔵ツール、MCP ツール、メモリファイル、スキル、拡張機能が抱えるファイル。今週はここに「起動時コンテキスト」とキャッシュプレフィックスの 2 行を増やしました。`/context detail` を掘ると個々のファイルまで見え、拡張機能が持ち込んだものは `Extension: 拡張名 · ファイル名` と表記され、それぞれどれだけの容量を食っているかも分かります。ターミナルと Web Shell で表示は同期しています。
+
+**多すぎると一言お知らせします。** 常駐コンテキスト（`QWEN.md` と自動メモリ）の合計が「ウィンドウの 15%」と「1 万 Token」のうち小さいほうを超えると、読み込み時に知らせてくれます。
+
+**拡張機能のルールは、該当ファイルに触れたときだけ効かせることもできます。** アクセスしたファイルにヒットしたときだけコンテキストを注入し、普段は場所を取りません。
+
+こんなことに使えます：
+
+- コンテキストが埋まりかけたら、まずどのファイル・どの拡張機能が食っているか見極める
+- 拡張機能を入れたらコンテキストが一気に増えたとき、`/context detail` でどれか特定する
+- 超過の案内を受けたら、`QWEN.md` を絞るのか自動メモリを切るのかを判断できる
+
+詳しくは PR [#12119](https://github.com/QwenLM/qwen-code/pull/12119)、[#12318](https://github.com/QwenLM/qwen-code/pull/12318)、[#12034](https://github.com/QwenLM/qwen-code/pull/12034)
+
+[📸 スクリーンショット：`/context detail` で拡張由来が示された画面]
+
+### SSH アドレス 1 行で、別のマシンのプロジェクトを直接編集
+
+プロジェクトがサーバーやビルド機、同僚のマシンに置いてあって、そこを Qwen Code に触らせたい。以前は向こうのマシンに Qwen Code を入れてサービスを起動し、そのうえでアドレスを打ち込む必要がありました。今は Web Shell でワークスペースを追加するとき、ディレクトリパスに SSH アドレスを 1 行書くだけです：
+
+```text
+ssh://user@host/absolute/project
+```
+
+向こうのマシンに Qwen Code が未導入なら、このアドレスを入力して登録します。すでに Qwen Code サービスが動いているマシンなら、アドレスとトークンを 1 回保存しておけば、以後はワークスペース追加時にそれを選ぶだけ。登録してしまえば、向こうのファイルの読み書き、向こうでのコマンド実行、向こうの Git 状態の確認まで、すべて手元の 1 本の会話の中で完結します。追加したてのワークスペースは閲覧のみで、「信頼」を承認してから編集できるようになります。
+
+こんなことに使えます：
+
+- コードも依存関係もビルド機にある。手元の会話から向こうのファイルを書き換え、向こうのビルドを走らせる
+- 人のマシンにある既存の環境を借りて一度検証する
+- ローカルとリモートのプロジェクトを同時にぶら下げ、1 本の会話を行き来しながら編集する
+
+詳しくは PR [#12255](https://github.com/QwenLM/qwen-code/pull/12255)、[#12085](https://github.com/QwenLM/qwen-code/pull/12085)、[#12412](https://github.com/QwenLM/qwen-code/pull/12412)
+
+[🎥 デモ：Web Shell で `ssh://` アドレスを入力してリモートワークスペースを登録し、向こうのファイルを編集させる]
+
+### ワークフローが途中で途切れても、再起動後に続きから走れる
+
+フローが途中まで進んだところで仕事を終えたい、あるいはマシンの再起動で途切れた——そんなとき、以前は最初からやり直すしかありませんでした。今は実行のたびに記録が残るので、次回はその続きから走れます。
+
+**再起動後は向こうから教えてくれます。** Qwen Code を開くと、起動時の案内に「どの実行が途切れたか、何ステップ目で止まったか、サブ Agent がいくつ完了していたか」が並び、`/workflows` へ誘導します。これらの実行は履歴リストにも残っています。
+
+**Web Shell の履歴実行カードにボタンが付きました。** 「失敗した経路のみ再実行」は成功しなかった部分だけをやり直し、「すべて再実行」は最初からやり直します。
+
+こんなことに使えます：
+
+- 途中まで走らせて終了。翌朝まず、どこで止まったかを確認できる
+- サブ Agent の 2 つだけ失敗した長いフローは、「失敗した経路のみ再実行」でその 2 箇所だけ埋め合わせる
+- 同じフローをもう一度最初から検証し直したいときは「すべて再実行」を押す
+
+詳しくは PR [#12159](https://github.com/QwenLM/qwen-code/pull/12159)、[#12291](https://github.com/QwenLM/qwen-code/pull/12291)、[#12097](https://github.com/QwenLM/qwen-code/pull/12097)
+
+[📸 スクリーンショット：再起動後の起動案内 + Web Shell の履歴実行カードにある 2 つのボタン]
+
+### Web Shell：複数のアップデート
+
+**ファイルを承認する前に、変更を開いて見せます。** 確認が必要なファイル変更は、承認カードに「今回どの行を足し、どこを消したか」を直接並べます。既存ファイルの編集、新規ファイルの作成、notebook の変更の 3 種に対応。詳しくは PR [#12443](https://github.com/QwenLM/qwen-code/pull/12443)
+
+**長いログを貼るとカードに折りたたまれます。** 貼り付けた内容が 200 行または 8000 文字を超えると自動で折りたたまれ、タイトルは冒頭の一部を採用。「入力欄に表示」を押すと入力欄に戻せます。`/` や `!` で始まる貼り付け、短い貼り付け、選択範囲を置き換える内容は折りたたまれません。詳しくは PR [#12084](https://github.com/QwenLM/qwen-code/pull/12084)
+
+**右側パネルに Trajectory タブを追加できます。** 1 ラウンド走らせて遅い・高いと感じたら、開けば時間がどこへ消えたか分かります——各ラウンドの所要時間、最初の文字が出るまでの待ち時間、食った Token 量、最も時間を食ったツール呼び出し。入口は右側の拡張エリアの「タブを追加」から Trajectory を選びます。詳しくは PR [#12388](https://github.com/QwenLM/qwen-code/pull/12388)
+
+**Git の履歴が見つけやすくなりました。** Web Shell のコミット履歴はブランチのツリー図で表示し、全ブランチの切り替え、コミットメッセージ・作者・ハッシュでの検索も可能です。リモートリポジトリのアドレスも画面から追加・削除でき、ターミナルを開いてコマンドを打つ必要がありません。入口はいずれも入力欄の上にあるブランチタブです。詳しくは PR [#12152](https://github.com/QwenLM/qwen-code/pull/12152)、[#11163](https://github.com/QwenLM/qwen-code/pull/11163)
+
+**その他の改善。** 計画モードのスイッチは入力欄のツールバーから「+」メニューに収納し、オンのあいだは入力欄の上に閉じられるタブを残します（[#12218](https://github.com/QwenLM/qwen-code/pull/12218)）。`/export` で書き出したファイルは、会話の中でプレビュー・ダウンロードできるカードになります（[#12050](https://github.com/QwenLM/qwen-code/pull/12050)）。
+
+[📸 スクリーンショット：承認カード内の赤緑 diff + Trajectory タブ]
+
+## 📊 その他の新機能
+
+**Web Shell を PC の独立アプリとしてインストールできます。** アドレスバーの右にインストールの入口が出て、押すと専用のアイコンと別ウィンドウが与えられ、ストアで入れたアプリのように使えます。条件は Chrome / Edge 111 以上、Firefox 128 以上、Safari 16.4 以上、アドレスがローカル（`127.0.0.1` または `localhost`）か HTTPS であること。LAN の IP でアクセスしている場合はインストールできません。詳しくは PR [#11722](https://github.com/QwenLM/qwen-code/pull/11722)
+
+**デスクトップ版でウィンドウ内の文字サイズを変えられます。** `Cmd` / `Ctrl` に `-` / `=` / `0` を添えるか、トラックパッドを 2 本指でつまむ。50% ～ 300% の範囲で自在で、次回開いても前回調整した比率のままです。詳しくは PR [#12410](https://github.com/QwenLM/qwen-code/pull/12410)
+
+**Goal の枠が入力欄の上に表示されます。** あのステータス行は従来の Token 予算に加えて、ターン数と時間の上限も示すようになりました。たとえば `3 / 20 turns`、`12m 3s / 30m 0s` のように。上限を設定していない Goal は従来どおりです。`/export` で書き出すセッション記録にも Goal の全工程が載ります。詳しくは PR [#12201](https://github.com/QwenLM/qwen-code/pull/12201)、[#12099](https://github.com/QwenLM/qwen-code/pull/12099)
+
+**Goal が「完了」と言っても、会話中の実際の経過で判定します。** `/goal` で目標を掲げて数ターン走らせるとき、本人が「終わった」と言うだけでは認められません。受け入れチェックが直近の会話で何が起きたかを見返し、合わなければ未完成と判定します。詳しくは PR [#12105](https://github.com/QwenLM/qwen-code/pull/12105)
+
+**派遣するサブ Agent をコンテナの中で動かせるようにしました。** リポジトリ全体をスキャンさせたり大量のコマンドを走らせたりしても、home ディレクトリで SSH key や認証情報を探される心配はありません。実行するコマンドも読み書きも、すべて Docker か Podman のコンテナ内に閉じ込められ、変更できるのはワークスペースだけになります。この動かし方をするには起動前に `QWEN_AGENT_EXECUTION_BACKEND=docker` を設定します。代償としてワークフロー、Agent Team、MCP、LSP、スキルはまとめて停止し、Windows はまだ未対応です。詳しくは PR [#11711](https://github.com/QwenLM/qwen-code/pull/11711)
+
+**1 つのプロバイダーの下で 2 種類のインターフェースを混ぜて置けます。** あるモデルだけ OpenAI の Responses プロトコルに通したいなら、そのモデルの項目に `"wireApi": "responses"` を 1 行足すだけ。残りのモデルは従来どおり Chat を通ります。`/auth` でカスタムプロバイダーを設定するときも、「API 形式を選択」というステップを選べます。詳しくは PR [#11538](https://github.com/QwenLM/qwen-code/pull/11538)
+
+## 👏 体験改善
+
+**スマホで Web Shell を使うのが滑らかになりました。** サービスを対外アドレスにバインドすると、Web Shell のセッションページの右上にもペアリングコードが出るようになり、スマホで読み込めば現在のセッションに入れます。トークンを手入力する必要はありません。スマホ側の画面も入力欄を作り直し、十数個のアクションを「メッセージに追加」のドロワーに収納しました。詳しくは PR [#12322](https://github.com/QwenLM/qwen-code/pull/12322)、[#12252](https://github.com/QwenLM/qwen-code/pull/12252)
+
+**入力欄まわりがすっきりしました。** セッションがまだ張られていないとき、ワークスペースの選択と Git ブランチのタブは入力欄のツールバーから下の独立した行へ移動。セッション開始後は、ワークスペースは上部にフォルダのアイコン 1 つだけ表示し、マウスを乗せると完全なパスが見えます。会話内のリンク系の成果物カードは、そのまま新しいページを開く方式に変わりました。詳しくは PR [#12299](https://github.com/QwenLM/qwen-code/pull/12299)、[#12317](https://github.com/QwenLM/qwen-code/pull/12317)
+
+**圧縮結果が読みやすい文章になりました。** `/compress` のあと「コンテキストを圧縮しました X → Y」と表示し、圧縮するものがないときは「圧縮は不要です。」と返します。セッションを開き直した後、コンテキストのリングに表示される数字も最新になります。詳しくは PR [#12141](https://github.com/QwenLM/qwen-code/pull/12141)
+
+**主でないワークスペースでも Channel の自動接続が効きます。** 1 つの `qwen serve` に複数のワークスペースをぶら下げ、それぞれ別の Channel ボットを繋いでいる場合、サービスの起動時に信頼済みワークスペースそれぞれの Channel を復元します。「Qwen Code 起動時に自動接続」のスイッチを押して保存すれば、本当に効くようになりました。詳しくは PR [#12385](https://github.com/QwenLM/qwen-code/pull/12385)
+
+**Linux のサンドボックスはツール実行だけを閉じ込める方式に変更。** 前回まで Qwen Code 全体を bwrap に入れる設定は、この版では直接エラーとなり、移行の案内が 1 行出ます。`tools.executionSandbox` に切り替えると、制約を受けるのはコマンドラインやファイル読み書きといったツール実行だけ。Qwen Code 本体・モデルへのリクエスト・ログイン状態はローカルに残ります。詳しくは PR [#12267](https://github.com/QwenLM/qwen-code/pull/12267)
+
+**スクリプトからの 1 回きりの呼び出しが速くなりました。** `qwen -p` のように 1 文走らせて終わる使い方で、実測 7.7 秒 → 5.1 秒、メモリ 640 MiB → 421 MiB に短縮。プロセスを 1 つ減らしました。詳しくは PR [#12340](https://github.com/QwenLM/qwen-code/pull/12340)
+
+**ターミナルにペアリングコードが出ないとき、理由を添えます。** 対外アドレスにバインドしてスマホで読み込ませようとしたとき、ターミナルにコードが出なければ理由を説明し、代わりにアドレスだけを載せたコードを出します。読み込めばスマホで 1 回トークンを入力するだけで接続できます。トークン入りのコードを無理に出したい場合は `qwen serve --token-qr` を使ってください。詳しくは PR [#12266](https://github.com/QwenLM/qwen-code/pull/12266)
+
+## 🔧 重要な修正
+
+| 修正 | あなたへの影響 | PR |
+|------|-----------|-----|
+| **途中で Esc を押して中止したのに失敗扱いにならない** | キュー入りタスクで Esc を押すと、中止が実際のエラーとして記録され、モデルは失敗とみなして弁明やリカバーに動いていました。今は中止は中止として扱われます | [#11154](https://github.com/QwenLM/qwen-code/pull/11154) |
+| **DeepSeek 公式 API のコンテキストを実際のウィンドウどおりに計算** | モデル名に `deepseek-flash` と手で書いたり `deepseek-v4` だけ書いたりすると、1M のウィンドウを 128K として扱い、長い会話が圧縮を繰り返して途切れていました。今はどちらの書き方も 1M コンテキスト / 384K 出力を引き出せます | [#11909](https://github.com/QwenLM/qwen-code/pull/11909), [#12124](https://github.com/QwenLM/qwen-code/pull/12124) |
+| **セッションを開き直したとき「前回の回答が中断されました」と誤表示しない** | `/docs` や `/export` のようなローカルコマンドの後にセッションを開き直すと、前回中断された旨の案内と「続行」が出て、すでに済んだ作業をやり直させていました。今は表示されず、本当に中断されたものは従来どおり続けられます | [#12052](https://github.com/QwenLM/qwen-code/pull/12052), [#12007](https://github.com/QwenLM/qwen-code/pull/12007) |
+| **トップバーで既存セッションが「新規セッション」にならない** | 既存のセッションを開くとまず「新規セッション」と表示され、しばらくして本名に変わり、メッセージを送るとまた戻ることがありました。今は開いた瞬間から本名です | [#12379](https://github.com/QwenLM/qwen-code/pull/12379) |
+| **ページをリロードしてもコンテキスト使用量がゼロに戻らない** | リロードやセッション開き直しで入力欄横のコンテキスト使用量が消えるか 0 になり、もう 1 通送らないと復活しませんでした。今は比率がそのまま残ります | [#12070](https://github.com/QwenLM/qwen-code/pull/12070) |
+| **メッセージ内の参照がリロード後も小さなタブのまま** | `@ファイル`・MCP・拡張機能への参照を含むメッセージは、リロードすると生の長いテキストに戻り、ファイルも開けませんでした。今はタブのまま維持され、開いてプレビューできます | [#12404](https://github.com/QwenLM/qwen-code/pull/12404) |
+| **MCP の対話 UI がセッションを開き直しても表示される** | グラフやフォームのようなインタラクティブな UI はその場限りで、開き直すとプレーンテキスト 1 行になっていました。今は開き直しても残り、読み込めない場合は理由も示します | [#12131](https://github.com/QwenLM/qwen-code/pull/12131), [#11960](https://github.com/QwenLM/qwen-code/pull/11960) |
+| **拡張機能の更新に進捗表示、終わったあとも催促しない** | 「今すぐ更新」を押しても反応がなく、もう一度押すと同時に 2 つ走り、成功したのに「今すぐ更新」が残っていました。今は進捗を表示し、実行中の多重クリックを禁じ、完了後は案内を出しません | [#11886](https://github.com/QwenLM/qwen-code/pull/11886) |
+| **スマホで上下キーによる履歴遡りが復活** | iPhone のブラウザで上下矢印を押しても反応せず、ウェルカムページから送った最初のメッセージも辿れませんでした。今は矢印が正常に動き、離れて戻っても下書きが残ります | [#12362](https://github.com/QwenLM/qwen-code/pull/12362) |
+| **フローチャートを縮小して全体を見ても細い帯にならない** | mermaid 図を縮小すると、3000px 超の幅が約 500px の細い帯に描かれ、左にドラッグすると図の先頭が二度と戻りませんでした。今はキャンバスが固定され、ズーム範囲が図に追随します | [#12177](https://github.com/QwenLM/qwen-code/pull/12177) |
+| **サービスが home ディレクトリでも Channel 設定が保存直後から見える** | `qwen serve` の作業ディレクトリが home のとき、Channel の保存は成功を返すのに一覧は 0 configured、ページを開き直すと設定が消えていました。今は読み書きが一致します | [#11083](https://github.com/QwenLM/qwen-code/pull/11083) |
+| **日本語を含む内容で言語サービスの結果が消えない** | LSP を有効にすると、返り値に日本語（日本語タイトル付きの Markdown、日本語ファイル名）が含まれる場合、その結果だけ捨てられ、「記号が見つからない」のような空の結果に見えました。今は正常に返ります | [#12210](https://github.com/QwenLM/qwen-code/pull/12210) |
+| **ワークフローの履歴実行が丸ごと消えない** | 実行記録を書き込んでいる途中で途切れると、その実行が履歴リストから消えていました。今は記録がしっかり残ります | [#12341](https://github.com/QwenLM/qwen-code/pull/12341), [#12347](https://github.com/QwenLM/qwen-code/pull/12347) |
+| **レビューの結論とカバレッジレポートがより信頼できる** | レビューのサブ Agent が一定の確率で、今回の PR の作業コピーではなくメインのチェックアウト先を読んでいました。しかも diff で変更中のファイルです。カバレッジも「レビュー未達のセクション」を存在しないのに 1 件水増しし、作者に対して「diff に未レビューが 1 箇所ある」と告げていました | [#11926](https://github.com/QwenLM/qwen-code/pull/11926), [#12370](https://github.com/QwenLM/qwen-code/pull/12370) |
+
+## 👥 コントリビューター
+
+| コントリビューター | 貢献内容 | 参考 PR リンク |
+|--------|---------|-------------|
+| **[@yiliang114](https://github.com/yiliang114)** | 承認前に diff を見せる、`/context` で拡張機能別のコスト表示、デスクトップ版のウィンドウズームと macOS タイトルバー、リモートワークスペースの簡素化、1 回きりの headless 高速化、LSP の非 ASCII 修正 | [#12443](https://github.com/QwenLM/qwen-code/pull/12443), [#12318](https://github.com/QwenLM/qwen-code/pull/12318), [#12410](https://github.com/QwenLM/qwen-code/pull/12410), [#12393](https://github.com/QwenLM/qwen-code/pull/12393), [#12340](https://github.com/QwenLM/qwen-code/pull/12340), [#12210](https://github.com/QwenLM/qwen-code/pull/12210) |
+| **[@qqqys](https://github.com/qqqys)** | ブラウザでの音声通話と画面共有応答、Realtime モデルのルーティング、Trajectory タブ、ワークフローのチェックポイントと続き実行、Goal の判定を会話末尾の参照に変更、主でないワークスペースの Channel 復元 | [#12189](https://github.com/QwenLM/qwen-code/pull/12189), [#12378](https://github.com/QwenLM/qwen-code/pull/12378), [#12173](https://github.com/QwenLM/qwen-code/pull/12173), [#12388](https://github.com/QwenLM/qwen-code/pull/12388), [#12159](https://github.com/QwenLM/qwen-code/pull/12159), [#12291](https://github.com/QwenLM/qwen-code/pull/12291), [#12105](https://github.com/QwenLM/qwen-code/pull/12105), [#12385](https://github.com/QwenLM/qwen-code/pull/12385) |
+| **[@wenshao](https://github.com/wenshao)** | SSH ワークスペースをリモート側サービス不要で、スマホ読み込みペアリングと入力欄の再レイアウト、Git のブランチツリー図とリモートリポジトリ管理、iPhone の履歴遡り修正、計画モードの入口を「+」メニューに収納 | [#12255](https://github.com/QwenLM/qwen-code/pull/12255), [#12322](https://github.com/QwenLM/qwen-code/pull/12322), [#12252](https://github.com/QwenLM/qwen-code/pull/12252), [#12152](https://github.com/QwenLM/qwen-code/pull/12152), [#11163](https://github.com/QwenLM/qwen-code/pull/11163), [#12362](https://github.com/QwenLM/qwen-code/pull/12362) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | サンドボックス実行の土台、ツール実行だけを bwrap に入れる方式と旧設定の移行、サービス管理の枠とワークスペース停止、セッションのデバッグログ整理、MCP リソース読み込みの警告、マネージドランタイムと永続化の土台 | [#12267](https://github.com/QwenLM/qwen-code/pull/12267), [#12269](https://github.com/QwenLM/qwen-code/pull/12269), [#12067](https://github.com/QwenLM/qwen-code/pull/12067), [#12008](https://github.com/QwenLM/qwen-code/pull/12008), [#12374](https://github.com/QwenLM/qwen-code/pull/12374), [#11960](https://github.com/QwenLM/qwen-code/pull/11960) |
+| **[@ytahdn](https://github.com/ytahdn)** | 長い貼り付けのカード化、書き出しファイルのカード化、圧縮結果の読みやすい文言、トップバーのタイトルと参照タブのリロードをまたぐ 2 箇所の修正、フローチャートのズームキャンバス修正、スラッシュコマンドでの誤った中断表示の修正 | [#12084](https://github.com/QwenLM/qwen-code/pull/12084), [#12050](https://github.com/QwenLM/qwen-code/pull/12050), [#12141](https://github.com/QwenLM/qwen-code/pull/12141), [#12379](https://github.com/QwenLM/qwen-code/pull/12379), [#12404](https://github.com/QwenLM/qwen-code/pull/12404), [#12177](https://github.com/QwenLM/qwen-code/pull/12177) |
+| **[@qwen-code-dev-bot](https://github.com/qwen-code-dev-bot)** | home ディレクトリが書き込み不可でも起動が落ちない、CI とリリース工程の一時的な失敗のリトライ、設定パネルの設定エイリアス補完 | [#10455](https://github.com/QwenLM/qwen-code/pull/10455), [#11731](https://github.com/QwenLM/qwen-code/pull/11731), [#11879](https://github.com/QwenLM/qwen-code/pull/11879), [#12103](https://github.com/QwenLM/qwen-code/pull/12103) |
+| **[@tanzhenxin](https://github.com/tanzhenxin)** | Browser SDK と Chrome の接続経路、複数セッションで 1 つの Chrome プロファイルを共有、Chrome 拡張のパッケージング・公開パイプラインとプライバシー説明、モデル別の OpenAI インターフェース選択 | [#11241](https://github.com/QwenLM/qwen-code/pull/11241), [#11242](https://github.com/QwenLM/qwen-code/pull/11242), [#12229](https://github.com/QwenLM/qwen-code/pull/12229), [#12329](https://github.com/QwenLM/qwen-code/pull/12329), [#12330](https://github.com/QwenLM/qwen-code/pull/12330), [#11538](https://github.com/QwenLM/qwen-code/pull/11538) |
+| **[@chiga0](https://github.com/chiga0)** | 実験用レンダラーと既定レンダラーの挙動差の是正、レンダラーのバージョンアップ | [#11806](https://github.com/QwenLM/qwen-code/pull/11806), [#12309](https://github.com/QwenLM/qwen-code/pull/12309), [#12321](https://github.com/QwenLM/qwen-code/pull/12321) |
+| 🆕 **[@Lilian0122](https://github.com/Lilian0122)** | 🎉 初貢献：ホスト側で Web Shell 設定項目の表示範囲をカスタマイズ、狭いパネルでのメッセージ編集時のオーバーフロー修正 | [#11975](https://github.com/QwenLM/qwen-code/pull/11975), [#12328](https://github.com/QwenLM/qwen-code/pull/12328), [#12175](https://github.com/QwenLM/qwen-code/pull/12175) |
+| **[@callmeYe](https://github.com/callmeYe)** | 拡張ディレクトリ更新の読み取り専用リスト、Markdown メッセージの完了ステータス | [#12153](https://github.com/QwenLM/qwen-code/pull/12153), [#12431](https://github.com/QwenLM/qwen-code/pull/12431) |
+| **[@DragonnZhang](https://github.com/DragonnZhang)** | 遅延読み込みツールのコンテキストキャッシュ保持、notebook のページ読み込みの null 処理 | [#10410](https://github.com/QwenLM/qwen-code/pull/10410), [#12421](https://github.com/QwenLM/qwen-code/pull/12421) |
+| **[@dvd233](https://github.com/dvd233)** | SDK の E2E テストで遅延ツール呼び出しに対応、パッケージ検証の出力分離 | [#12365](https://github.com/QwenLM/qwen-code/pull/12365), [#12367](https://github.com/QwenLM/qwen-code/pull/12367) |
+| **[@he-yufeng](https://github.com/he-yufeng)** | DeepSeek 公式 API の flash モデル名を V4 の上限で解釈、V4 の世代サフィックスをモデル名の正規化で保持 | [#11909](https://github.com/QwenLM/qwen-code/pull/11909), [#12124](https://github.com/QwenLM/qwen-code/pull/12124) |
+| 🆕 **[@jabrailkhalil](https://github.com/jabrailkhalil)** | 🎉 初貢献：Web Shell をブラウザからインストール可能に、モバイル向けの暗号化分離された接続設定 | [#11722](https://github.com/QwenLM/qwen-code/pull/11722), [#12121](https://github.com/QwenLM/qwen-code/pull/12121) |
+| **[@kabishou11](https://github.com/kabishou11)** | レビューのサブ Agent に正しい PR ワークスペースパスを渡す、`/context` で本セッションのキャッシュカウントを使う | [#11926](https://github.com/QwenLM/qwen-code/pull/11926), [#12066](https://github.com/QwenLM/qwen-code/pull/12066) |
+| **[@CanReader](https://github.com/CanReader)** | レビューフローのリポジトリ全体隔離の説明ドキュメントを追加 | [#10493](https://github.com/QwenLM/qwen-code/pull/10493) |
+| 🆕 **[@cactuser-Lu](https://github.com/cactuser-Lu)** | 最初のメッセージのセッションが置き換えられそうになっても保持 | [#12149](https://github.com/QwenLM/qwen-code/pull/12149) |
+| 🆕 **[@elizabethbrunette21](https://github.com/elizabethbrunette21)** | 🎉 初貢献：リロード失敗後、キュー入りメッセージの紐付けを復元 | [#12279](https://github.com/QwenLM/qwen-code/pull/12279) |
+| **[@harjothkhara](https://github.com/harjothkhara)** | プロバイダー順序のテストに Grok と MiniMax を追加 | [#10089](https://github.com/QwenLM/qwen-code/pull/10089) |
+| 🆕 **[@L4XB](https://github.com/L4XB)** | 🎉 初貢献：削除済みセッションが履歴に残した古い入力をクリーンアップ | [#11769](https://github.com/QwenLM/qwen-code/pull/11769) |
+| 🆕 **[@mohammedmessaoudene-cmd](https://github.com/mohammedmessaoudene-cmd)** | 🎉 初貢献：サービスマネージメントガイドのテストをプロトコルの章立てに沿って整理 | [#11808](https://github.com/QwenLM/qwen-code/pull/11808) |
+| **[@now-ing](https://github.com/now-ing)** | マネージドな OpenAI 互換ゲートウェイの `baseUrl` をどこまで書くかの説明 | [#11155](https://github.com/QwenLM/qwen-code/pull/11155) |
+| **[@samuelhsin](https://github.com/samuelhsin)** | バックエンドで 1 リクエスト複数ワークスペースのセッションディレクトリ取得 | [#12254](https://github.com/QwenLM/qwen-code/pull/12254) |
+| **[@shenyankm](https://github.com/shenyankm)** | セッション作成中の連続リクエストを通す | [#11913](https://github.com/QwenLM/qwen-code/pull/11913) |
+| **[@Willam2004](https://github.com/Willam2004)** | 同一アドレスのプロバイダーへの同時リクエストを 1 回に統合 | [#12327](https://github.com/QwenLM/qwen-code/pull/12327) |
+| **[@XIQIXIQIXIQI](https://github.com/XIQIXIQIXIQI)** | 再生時にユーザーが添付したリソースリンクを保持 | [#12088](https://github.com/QwenLM/qwen-code/pull/12088) |
+
+<Callout type="info">
+  **アップグレード方法**：`npm i @qwen-code/qwen-code@latest -g` を実行すると最新バージョンにアップグレードできます。
+</Callout>
+
+ご意見・ご要望は [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) までお気軽にどうぞ！
