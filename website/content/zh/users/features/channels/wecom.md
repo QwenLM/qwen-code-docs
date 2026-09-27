@@ -1,6 +1,6 @@
 # WeCom (企业微信)
 
-本指南介绍如何配置 Qwen Code 接入 WeCom 智能机器人。
+本指南介绍如何将 Qwen Code 与 WeCom 智能机器人（企业微信智能机器人）配合使用。
 
 ## 前提条件
 
@@ -34,7 +34,7 @@
       "type": "wecom",
       "botId": "$WECOM_BOT_ID",
       "secret": "$WECOM_SECRET",
-      "senderPolicy": "allowlist",
+      "privatePolicy": "allowlist",
       "allowedUsers": ["zhangsan"],
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
@@ -73,13 +73,14 @@ qwen channel start my-wecom
 
 ## 访问控制
 
-`senderPolicy` 的工作方式与其他 IM 通道相同：
+`privatePolicy` 的工作方式与其他 IM 通道相同：
 
-- `allowlist`：仅 `allowedUsers` 中的用户可以使用该机器人。这是推荐的企业默认设置。
-- `pairing`：用户必须先完成配对才能使用该机器人。
-- `open`：任何可以向机器人发送消息的人都可以使用它。
+- `disabled`：忽略所有私信，不创建配对请求。
+- `allowlist`：仅顶层 `allowedUsers` 中的用户才能发送私信。这是推荐的企业默认设置。
+- `pairing`：用户必须先完成配对才能发送私信。
+- `open`：任何可以向机器人发送私信的人都可以使用它。
 
-对于群聊，将 `groupPolicy` 设置为 `"allowlist"`、`"pairing"` 或 `"open"`。在 `"pairing"` 模式下，群聊中首次提及时会创建一个配对请求，需要审批一次后才能开始响应。请注意，在 `groupPolicy: "pairing"` 下，访问权限按群聊授予：一旦某个群聊被批准，**该群聊的任何成员**都可以使用该机器人；`senderPolicy` 和 `allowedUsers` 不会限制已批准群聊的成员。WeCom 仅投递提及智能机器人的群消息，因此每个投递的群回调都被视为已提及。`requireMention` 设置无法启用对未提及群消息的响应，因为这些消息不会投递到机器人。
+对于群聊，将 `groupPolicy` 设置为 `"allowlist"`、`"pairing"` 或 `"open"`。在 `"pairing"` 模式下，群聊中首次提及时会创建一个配对请求，需要审批一次后才能开始响应。请注意，在 `groupPolicy: "pairing"` 下，访问权限按群聊授予：一旦某个群聊被批准，**该群聊的任何成员**都可以使用该机器人（可通过群组的 `senders: "allowlist"` 和 `allowedUsers` 进行限制）；`privatePolicy` 和顶层 `allowedUsers` 不会限制已批准群聊的成员。WeCom 仅投递提及智能机器人的群消息，因此每个投递的群回调都被视为已提及。`requireMention` 设置无法启用对未提及群消息的响应，因为这些消息不会投递到机器人。
 
 ### 群提及兼容性
 

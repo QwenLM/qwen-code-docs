@@ -35,7 +35,7 @@ Füge einen Channel-Eintrag zu `~/.qwen/settings.json` hinzu, wobei du den von d
     "my-bot": {
       "type": "my-platform",
       "apiKey": "$MY_PLATFORM_API_KEY",
-      "senderPolicy": "open",
+      "privatePolicy": "open",
       "cwd": "/path/to/project"
     }
   }
@@ -48,14 +48,14 @@ Alle Standard-Channel-Optionen funktionieren auch mit benutzerdefinierten Channe
 
 | Option         | Beschreibung                                                                                        |
 | -------------- | -------------------------------------------------------------------------------------------------- |
-| `senderPolicy` | `allowlist`, `pairing` oder `open`                                                                  |
-| `allowedUsers` | Statische Allowlist der Sender-IDs                                                                     |
+| `privatePolicy` | `disabled`, `allowlist`, `pairing` oder `open`                                                      |
+| `allowedUsers`  | Allowlist für Private-Nachrichten mit Benutzer-IDs                                                     |
 | `sessionScope` | `user`, `chat_thread` oder `single`; Legacy-`thread` bleibt für bestehende Konfigurationen kompatibel |
 | `cwd`          | Arbeitsverzeichnis für den Agenten                                                                    |
 | `instructions` | Wird der ersten Nachricht jeder Session vorangestellt                                                     |
 | `model`        | Model-Override für den Channel                                                                     |
 | `groupPolicy`  | `disabled`, `allowlist`, `pairing` oder `open`                                                      |
-| `dmPolicy`     | `open` oder `disabled`                                                                               |
+| `dmPolicy`      | Veralteter Private-Fallback: `open` oder `disabled`                                                  |
 | `groups`       | Einstellungen pro Gruppe                                                                                 |
 
 Details zu den einzelnen Optionen findest du in der [Übersicht](./overview).

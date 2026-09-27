@@ -34,7 +34,7 @@ Adicione o canal ao `~/.qwen/settings.json`:
       "type": "wecom",
       "botId": "$WECOM_BOT_ID",
       "secret": "$WECOM_SECRET",
-      "senderPolicy": "allowlist",
+      "privatePolicy": "allowlist",
       "allowedUsers": ["zhangsan"],
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
@@ -73,13 +73,14 @@ Abra o WeCom e envie uma mensagem para o robô inteligente.
 
 ## Controle de Acesso
 
-`senderPolicy` funciona da mesma forma que em outros canais de IM:
+`privatePolicy` funciona da mesma forma que em outros canais de IM:
 
-- `allowlist`: apenas usuários em `allowedUsers` podem usar o bot. Este é o padrão recomendado para empresas.
+- `disabled`: ignora todas as mensagens privadas sem criar solicitações de pareamento.
+- `allowlist`: apenas os usuários no `allowedUsers` de nível superior podem enviar mensagens privadas. Este é o padrão recomendado para empresas.
 - `pairing`: os usuários devem fazer o pareamento antes de usar o bot.
 - `open`: qualquer pessoa que possa enviar mensagens para o robô pode usá-lo.
 
-Para grupos, defina `groupPolicy` como `"allowlist"`, `"pairing"` ou `"open"`. Sob `"pairing"`, a primeira menção do grupo cria uma solicitação de pareamento que deve ser aprovada uma vez antes que as respostas comecem. Note que sob `groupPolicy: "pairing"`, o acesso é concedido por grupo: uma vez que um grupo é aprovado, **qualquer membro desse grupo** pode usar o bot; `senderPolicy` e `allowedUsers` não controlam o acesso de membros de um grupo aprovado. O WeCom só entrega mensagens de grupo que mencionam o robô inteligente, então todo callback de grupo entregue é tratado como mencionado. A configuração `requireMention` não pode habilitar respostas a mensagens de grupo não mencionadas porque essas mensagens não são entregues ao bot.
+Para grupos, defina `groupPolicy` como `"allowlist"`, `"pairing"` ou `"open"`. Sob `"pairing"`, a primeira menção do grupo cria uma solicitação de pareamento que deve ser aprovada uma vez antes que as respostas comecem. Note que sob `groupPolicy: "pairing"`, o acesso é concedido por grupo: uma vez que um grupo é aprovado, **qualquer membro desse grupo** pode usar o bot por padrão (restrinja com `senders: "allowlist"` e `allowedUsers` do grupo); `privatePolicy` e o `allowedUsers` de nível superior não controlam o acesso de membros de um grupo aprovado. O WeCom só entrega mensagens de grupo que mencionam o robô inteligente, então todo callback de grupo entregue é tratado como mencionado. A configuração `requireMention` não pode habilitar respostas a mensagens de grupo não mencionadas porque essas mensagens não são entregues ao bot.
 
 ### Compatibilidade de Menções em Grupo
 

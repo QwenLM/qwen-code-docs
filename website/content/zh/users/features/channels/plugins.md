@@ -35,7 +35,7 @@ qwen extensions link /path/to/my-channel-extension
     "my-bot": {
       "type": "my-platform",
       "apiKey": "$MY_PLATFORM_API_KEY",
-      "senderPolicy": "open",
+      "privatePolicy": "open",
       "cwd": "/path/to/project"
     }
   }
@@ -48,14 +48,14 @@ qwen extensions link /path/to/my-channel-extension
 
 | 选项             | 描述                                           |
 | ---------------- | ---------------------------------------------- |
-| `senderPolicy`   | `allowlist`、`pairing` 或 `open`               |
-| `allowedUsers`   | 发送者 ID 的静态白名单                         |
+| `privatePolicy` | `disabled`、`allowlist`、`pairing` 或 `open`     |
+| `allowedUsers`  | 用户 ID 的私信白名单                           |
 | `sessionScope`   | `user`、`chat_thread` 或 `single`；旧版 `thread` 在已配置时仍兼容 |
 | `cwd`            | agent 的工作目录                               |
 | `instructions`   | 追加到每个会话的第一条消息之前                 |
 | `model`          | 该 channel 的模型覆盖配置                      |
 | `groupPolicy`    | `disabled`、`allowlist`、`pairing` 或 `open`   |
-| `dmPolicy`       | `open` 或 `disabled`                           |
+| `dmPolicy`      | 已弃用的私信回退：`open` 或 `disabled`         |
 | `groups`         | 每个群组的设置                                 |
 
 有关每个选项的详细信息，请参阅[概述](./overview)。

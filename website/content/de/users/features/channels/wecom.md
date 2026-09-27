@@ -34,7 +34,7 @@ Füge den Channel zu `~/.qwen/settings.json` hinzu:
       "type": "wecom",
       "botId": "$WECOM_BOT_ID",
       "secret": "$WECOM_SECRET",
-      "senderPolicy": "allowlist",
+      "privatePolicy": "allowlist",
       "allowedUsers": ["zhangsan"],
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
@@ -73,13 +73,14 @@ qwen channel start my-wecom
 
 ## Zugriffskontrolle
 
-`senderPolicy` funktioniert genauso wie bei anderen IM-Channels:
+`privatePolicy` funktioniert genauso wie bei anderen IM-Channels:
 
-- `allowlist`: Nur Benutzer in `allowedUsers` können den Bot verwenden. Dies ist die empfohlene Standardeinstellung für Unternehmen.
+- `disabled`: Ignoriere alle privaten Nachrichten, ohne Pairing-Anfragen zu erstellen.
+- `allowlist`: Nur Benutzer in der obersten `allowedUsers`-Liste können private Nachrichten senden. Dies ist die empfohlene Standardeinstellung für Unternehmen.
 - `pairing`: Benutzer müssen sich koppeln, bevor sie den Bot verwenden können.
 - `open`: Jeder, der dem Roboter Nachrichten senden kann, kann ihn verwenden.
 
-Für Gruppen setze `groupPolicy` auf `"allowlist"`, `"pairing"` oder `"open"`. Unter `"pairing"` erzeugt die erste Erwähnung der Gruppe eine Pairing-Anfrage, die einmalig genehmigt werden muss, bevor Antworten gestartet werden. Beachte, dass unter `groupPolicy: "pairing"` der Zugriff pro Gruppe erteilt wird: Sobald eine Gruppe genehmigt ist, kann **jedes Mitglied dieser Gruppe** den Bot verwenden; `senderPolicy` und `allowedUsers` beschränken nicht die Mitglieder einer genehmigten Gruppe. WeCom stellt nur Gruppennachrichten zu, die den intelligenten Roboter erwähnen, daher wird jeder zugestellte Gruppen-Callback als erwähnt behandelt. Die `requireMention`-Einstellung kann keine Antworten auf nicht erwähnte Gruppennachrichten aktivieren, da diese Nachrichten nicht an den Bot zugestellt werden.
+Für Gruppen setze `groupPolicy` auf `"allowlist"`, `"pairing"` oder `"open"`. Unter `"pairing"` erzeugt die erste Erwähnung der Gruppe eine Pairing-Anfrage, die einmalig genehmigt werden muss, bevor Antworten gestartet werden. Beachte, dass unter `groupPolicy: "pairing"` der Zugriff pro Gruppe erteilt wird: Sobald eine Gruppe genehmigt ist, kann **jedes Mitglied dieser Gruppe** den Bot standardmäßig verwenden (einschränkbar mit `senders: "allowlist"` und `allowedUsers` der Gruppe); `privatePolicy` und die oberste `allowedUsers`-Liste beschränken nicht die Mitglieder einer genehmigten Gruppe. WeCom stellt nur Gruppennachrichten zu, die den intelligenten Roboter erwähnen, daher wird jeder zugestellte Gruppen-Callback als erwähnt behandelt. Die `requireMention`-Einstellung kann keine Antworten auf nicht erwähnte Gruppennachrichten aktivieren, da diese Nachrichten nicht an den Bot zugestellt werden.
 
 ### Group Mention Compatibility
 

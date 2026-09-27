@@ -28,7 +28,7 @@ Adicione o canal ao `~/.qwen/settings.json`:
   "channels": {
     "my-weixin": {
       "type": "weixin",
-      "senderPolicy": "pairing",
+      "privatePolicy": "pairing",
       "allowedUsers": [],
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
@@ -82,7 +82,7 @@ Canais WeChat suportam todas as opções padrão de canal (consulte [Visão Gera
 - **Use instruções em texto simples** — Como o WeChat remove todo Markdown, adicione instruções como "Use apenas texto simples" para evitar que o agente produza respostas formatadas que fiquem bagunçadas.
 - **Mantenha as respostas curtas** — As bolhas de mensagem do WeChat funcionam melhor com texto conciso. Adicionar um limite de caracteres às suas instruções ajuda (ex.: "Mantenha respostas com menos de 500 caracteres").
 - **Expiração de sessão** — Se você vir "Session expired (errcode -14)" nos logs, seu login do WeChat expirou. Pare o canal e execute `qwen channel configure-weixin` novamente para fazer login.
-- **Restrinja o acesso** — Use `senderPolicy: "pairing"` ou `"allowlist"` para controlar quem pode falar com o bot. Veja [Pareamento de DM](./overview#dm-pairing) para detalhes.
+- **Restrinja o acesso** — Use `privatePolicy: "pairing"` ou `"allowlist"` para controlar quem pode falar com o bot. Veja [Pareamento de DM](./overview#dm-pairing) para detalhes.
 
 ## Solução de Problemas
 
@@ -98,7 +98,7 @@ Sua sessão de login do WeChat expirou. Pare o canal e execute `qwen channel con
 
 - Verifique a saída do terminal em busca de erros
 - Confirme que o canal está em execução (`qwen channel start my-weixin`)
-- Se estiver usando `senderPolicy: "allowlist"`, certifique-se de que seu ID de usuário do WeChat está em `allowedUsers`
+- Se estiver usando `privatePolicy: "allowlist"`, certifique-se de que seu ID de usuário do WeChat está em `allowedUsers`
 
 ### Imagens não funcionam
 

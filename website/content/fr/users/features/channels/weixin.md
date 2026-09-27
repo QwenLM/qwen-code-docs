@@ -28,7 +28,7 @@ Ajoutez le canal dans `~/.qwen/settings.json` :
   "channels": {
     "my-weixin": {
       "type": "weixin",
-      "senderPolicy": "pairing",
+      "privatePolicy": "pairing",
       "allowedUsers": [],
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
@@ -82,7 +82,7 @@ Les canaux WeChat prennent en charge toutes les options standard des canaux (voi
 - **Utilisez des instructions en texte brut** — Étant donné que WeChat supprime tout Markdown, ajoutez des instructions comme "Utilisez uniquement du texte brut" pour éviter que l'agent produise des réponses formatées qui semblent brouillonnes.
 - **Gardez les réponses courtes** — Les bulles de messages WeChat fonctionnent mieux avec un texte concis. Ajouter une limite de caractères à vos instructions aide (par exemple, "Limitez vos réponses à 500 caractères").
 - **Expiration de session** — Si vous voyez "Session expired (errcode -14)" dans les logs, votre session WeChat a expiré. Arrêtez le canal et exécutez à nouveau `qwen channel configure-weixin` pour vous reconnecter.
-- **Restreindre l'accès** — Utilisez `senderPolicy: "pairing"` ou `"allowlist"` pour contrôler qui peut parler au bot. Voir [Appariement DM](./overview#dm-pairing) pour plus de détails.
+- **Restreindre l'accès** — Utilisez `privatePolicy: "pairing"` ou `"allowlist"` pour contrôler qui peut parler au bot. Voir [Pairing DM](./overview#dm-pairing) pour plus de détails.
 
 ## Dépannage
 
