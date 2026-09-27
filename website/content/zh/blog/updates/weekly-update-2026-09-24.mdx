@@ -1,0 +1,181 @@
+---
+title: "Qwen Code 周报：上下文占用能查到文件，项目不在你电脑上也能改，工作流中断不用重来"
+date: "2026-09-24"
+description: "本周发布 v0.24.1 ~ v0.24.4 共 4 个正式版本，200 个 PR 合入。上下文满了能查是哪个文件、哪个扩展吃掉的；填一条 SSH 地址就能读写另一台电脑上的项目，那台机器不用装 Qwen Code；工作流被打断后重启能接着跑。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i3/O1CN01CO7a1m2N6cE2jBZY_!!6000000000184-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 周报：上下文占用能查到文件，项目不在你电脑上也能改，工作流中断不用重来"
+  date="2026-09-24"
+  author="Qwen Team"
+/>
+
+Qwen Code 本周发布 v0.24.1 ~ v0.24.4 共 4 个正式版本，200 个 PR 合入。
+
+**上下文满了，能查是哪个文件、哪个扩展吃掉的。** 知道该关掉哪一个，把地方腾回来。
+
+**一条 SSH 地址就能改另一台电脑上的项目。** 代码在服务器、编译机或者同事的机器上，你坐在自己电脑前就能让它改那边的文件、跑那边的构建。
+
+**工作流跑一半被打断，重启后能接着跑。** 跑完的部分直接沿用，几小时的长流程只要补失败那几处。
+
+## ✨ 新增特性
+
+### 上下文满了，能查是哪个文件、哪个扩展吃掉的
+
+`/context` 把上下文按来源拆开列——系统提示、内置工具、MCP 工具、记忆文件、Skills、扩展带的文件，这周补上「启动上下文」和缓存前缀两行。`/context detail` 往下能看到具体文件，扩展带进来的标成 `Extension: 扩展名 · 文件名`，并给出各占多少。终端和 Web Shell 两边同步。
+
+**占太多会提醒你一句。** 常驻上下文（`QWEN.md` 和自动记忆）加起来超过「窗口的 15%」和「1 万 token」里较小的那个数时，加载会提示一下。
+
+**扩展带的规则可以只在碰到对应文件时才生效。** 命中你访问的那个文件才注入上下文，平时不占地方。
+
+你能用它做什么：
+
+- 上下文快满了，先看清是哪几个文件、哪个扩展在吃
+- 装了扩展发现上下文涨了一截，用 `/context detail` 点出来是哪个
+- 收到超量提示，知道该精简 `QWEN.md` 还是关掉自动记忆
+
+详见 PR [#12119](https://github.com/QwenLM/qwen-code/pull/12119)、[#12318](https://github.com/QwenLM/qwen-code/pull/12318)、[#12034](https://github.com/QwenLM/qwen-code/pull/12034)
+
+![打开 `/context detail`，上下文占用按来源拆开列——系统提示、内置工具等各吃多少一目了然](https://img.alicdn.com/imgextra/i2/O1CN0124FyxI87WvD7nW9B_!!6000000004493-2-tps-3841-2160.png)
+
+### 一条 SSH 地址，直接改另一台电脑上的项目
+
+项目放在服务器上、编译机里，或者同事的机器上，你想让 Qwen Code 去改。以前你得先在那台机器上把 Qwen Code 装上、把服务跑起来，再把地址填过来。现在 Web Shell 里添加工作区时，目录路径直接写一条 SSH 地址：
+
+```text
+ssh://user@host/absolute/project
+```
+
+那台机器上没装 Qwen Code 的，填这条地址注册进来；已经在跑 Qwen Code 服务的，存一次地址和令牌，之后添加工作区直接选中它。注册进来之后，读写那边的文件、在那边执行命令、看那边的 Git 状态，都在你本地这一条对话里完成。刚添加进来的工作区只能看，授权「信任」后才能改文档。
+
+你能用它做什么：
+
+- 代码和依赖都在编译机上，你在本地对话里让它改那边的文件、跑那边的构建
+- 借别人机器上现成的环境验证一次
+- 本机项目和远端项目同时挂着，一条对话里来回改
+
+详见 PR [#12255](https://github.com/QwenLM/qwen-code/pull/12255)、[#12085](https://github.com/QwenLM/qwen-code/pull/12085)、[#12412](https://github.com/QwenLM/qwen-code/pull/12412)
+
+![「添加工作区」弹窗里，路径栏直接填上远端机器的 `ssh://` 地址](https://img.alicdn.com/imgextra/i2/O1CN01GKD6qskCzLB5qXns_!!6000000001607-2-tps-2880-1800.png)
+
+### 工作流跑一半被打断，重启后能接着跑
+
+一个流程跑到一半要下班，或者机器重启被打断，以前只能整个从头再来，现在每次运行都留了记录，下次能接着往下跑。
+
+**重启之后会主动跟你说。** 打开 Qwen Code 时，启动提示里会列出哪一次运行被打断、停在第几步、有几个子代理已经跑完了，并让你去 `/workflows` 里看。这些运行也都进了历史列表。
+
+**Web Shell 的历史运行卡片上有按钮。** 「重试失败路径」只重跑没成功的那部分，「全部重跑」从头再来。
+
+你能用它做什么：
+
+- 跑到一半要下班，明天开机先看看它停在哪一步
+- 只有两个子代理失败的长流程，用「重试失败路径」补那两处
+- 同一套流程想再从头验证一遍，点「全部重跑」
+
+详见 PR [#12159](https://github.com/QwenLM/qwen-code/pull/12159)、[#12291](https://github.com/QwenLM/qwen-code/pull/12291)、[#12097](https://github.com/QwenLM/qwen-code/pull/12097)
+
+![Web Shell 的历史运行列表里，一次工作流运行展开成 Scan、Review、Verify 三段流程图，每个子代理的状态和耗时一目了然，右上角就是「全部重跑」按钮](https://img.alicdn.com/imgextra/i3/O1CN01QrqwGFCQRAD2GrYu_!!6000000007099-2-tps-1119-697.png)
+
+### Web Shell 多重更新
+
+**批准改文件前，改动摊开给你看。** 需要你确认的文件修改，审批卡片里直接列出这次新增了哪些行、删了哪些行，覆盖改文件、写新文件、改 notebook 这三类。详见 PR [#12443](https://github.com/QwenLM/qwen-code/pull/12443)
+
+**粘一大段日志会折成一张卡片。** 粘进来的内容超过 200 行或者 8000 字符时自动折起来，标题取开头一段，要点开就按「显示到输入框」放回输入框。以 `/` 或 `!` 开头的粘贴、短粘贴、替换选区里的内容都不会被折。详见 PR [#12084](https://github.com/QwenLM/qwen-code/pull/12084)
+
+**右侧面板能加「轨迹」页签。** 跑完一轮觉得慢或者贵，打开它就能看出时间花在哪：每一轮用了多久、第一个字多久出来、吃掉多少 token，哪个工具调用最费时间。入口在右侧扩展区的「添加页签」里选「轨迹」。详见 PR [#12388](https://github.com/QwenLM/qwen-code/pull/12388)
+
+**Git 历史更好找了。** Web Shell 的提交历史以分支线图显示，还能切换全部分支，并按提交信息、作者或哈希搜索。远程仓库地址也能在界面里加和删，不用开终端敲命令。入口都在输入框上方的分支标签里。详见 PR [#12152](https://github.com/QwenLM/qwen-code/pull/12152)、[#11163](https://github.com/QwenLM/qwen-code/pull/11163)
+
+**其他改进。** 计划模式开关从输入框工具条收进「+」菜单，开着的时候输入框上方留一个可关掉的标签（[#12218](https://github.com/QwenLM/qwen-code/pull/12218)）；`/export` 导出的文件在对话里变成一张能预览、能下载的卡片（[#12050](https://github.com/QwenLM/qwen-code/pull/12050)）。
+
+![右侧面板打开「轨迹」页签，每轮耗时、第一个字多久出来、哪个工具调用最费时间都列了出来](https://img.alicdn.com/imgextra/i4/O1CN01E5hhS6BoDzE7nW9B_!!6000000003486-2-tps-3841-2160.png)
+
+## 📊 更多新功能
+
+**Web Shell 能装成电脑上的独立 App。** 地址栏右边出现安装入口，点一下就有自己的图标、开独立窗口，用起来跟商店装的应用一样。要求 Chrome / Edge 111 以上、Firefox 128 以上、Safari 16.4 以上，地址是本机地址（`127.0.0.1` 或 `localhost`）或者 HTTPS，用局域网 IP 访问时装不上。详见 PR [#11722](https://github.com/QwenLM/qwen-code/pull/11722)
+
+**桌面版能调窗口里的字大小了。** 按 `Cmd` / `Ctrl` 加 `-` / `=` / `0`，或者两指在触控板上捏合，50% 到 300% 之间随意，下次打开还是你上回调好的比例。详见 PR [#12410](https://github.com/QwenLM/qwen-code/pull/12410)
+
+**Goal 的额度显示在输入框上方。** 那条状态除了原有的 token 预算，现在还会显示轮数和时间上限，比如 `3 / 20 turns`、`12m 3s / 30m 0s`；没设上限的 Goal 保持原样。`/export` 导出的会话记录里也会带上 Goal 的完整过程。详见 PR [#12201](https://github.com/QwenLM/qwen-code/pull/12201)、[#12099](https://github.com/QwenLM/qwen-code/pull/12099)
+
+**Goal 报完成，得看对话里的实际经过。** 用 `/goal` 让它带着目标跑几轮，它自己说「做完了」不作数——验收会回看最近这段对话真正发生了什么，对不上就判未完成。详见 PR [#12105](https://github.com/QwenLM/qwen-code/pull/12105)
+
+**派出去的子代理，可以关在容器里干活。** 你让它扫整个仓库、跑一堆命令，不用担心它在 home 目录里翻到你的 SSH key 和凭证：它执行的每条命令、每次读写都关在一个 Docker 或 Podman 容器里，改得动的只有工作区。要这么跑就在启动前设 `QWEN_AGENT_EXECUTION_BACKEND=docker`，代价是工作流、Agent Team、MCP、LSP、skills 会一起停掉，Windows 也还不支持。详见 PR [#11711](https://github.com/QwenLM/qwen-code/pull/11711)
+
+**一个服务商下能混着挂两种接口。** 想让某个模型走 OpenAI 的 Responses 协议，在这个模型条目上加一行 `"wireApi": "responses"` 就够，其余模型照旧走 Chat；`/auth` 配自定义服务商时也有「选择 API 格式」这一步可选。详见 PR [#11538](https://github.com/QwenLM/qwen-code/pull/11538)
+## 👏 体验优化
+
+**手机上用 Web Shell 更顺了。** 服务绑到对外地址时，Web Shell 的会话页右上角也能出配对码，手机扫一下就进当前会话，不用手动输令牌；进了手机页面，输入框也重新排过，十几个动作收进「添加到消息」抽屉。详见 PR [#12322](https://github.com/QwenLM/qwen-code/pull/12322)、[#12252](https://github.com/QwenLM/qwen-code/pull/12252)
+
+**输入框这块清爽了些。** 会话还没建立时，工作区选择和 Git 分支标签从输入框工具条挪到下面单独一行；会话建立后，工作区只在顶部显示一个文件夹图标，鼠标悬停能看到完整路径。对话里链接类的产物卡片改成直接开新页面。详见 PR [#12299](https://github.com/QwenLM/qwen-code/pull/12299)、[#12317](https://github.com/QwenLM/qwen-code/pull/12317)
+
+**压缩结果说中文了。** `/compress` 之后显示「上下文已压缩 X → Y」，没什么可压的时候说「无需压缩。」，重开会话之后上下文圆环上的数字也是新的。详见 PR [#12141](https://github.com/QwenLM/qwen-code/pull/12141)
+
+**非主工作区的 Channel 自动连接会生效。** 一个 `qwen serve` 带多个工作区、各自挂不同 Channel 机器人时，服务启动现在会把每个受信任工作区自己的 Channel 都恢复起来，那几个「Qwen Code 启动时自动连接」开关点了保存之后是真的生效。详见 PR [#12385](https://github.com/QwenLM/qwen-code/pull/12385)
+
+**Linux 沙箱改成只关工具执行。** 上一期那种把整个 Qwen Code 关进 bwrap 的配法，这版会直接报错并给出一句迁移提示，换成 `tools.executionSandbox` 之后，受约束的只剩命令行、读写文件这些工具执行，Qwen Code 本体、模型请求和你的登录状态都留在本机。详见 PR [#12267](https://github.com/QwenLM/qwen-code/pull/12267)
+
+**脚本里一次性调用更快。** `qwen -p` 这种跑一句就退出的用法实测从 7.7 秒降到 5.1 秒，内存从 640 MiB 降到 421 MiB，少起一个进程。详见 PR [#12340](https://github.com/QwenLM/qwen-code/pull/12340)
+
+**终端不出配对码时会说明原因。** 绑了对外地址想让手机扫码连上来，如果终端没出码，它会说明原因，并另给一张只含地址的码，扫开后在手机上输一次令牌就能连。要强行打出带令牌的码，用 `qwen serve --token-qr`。详见 PR [#12266](https://github.com/QwenLM/qwen-code/pull/12266)
+## 🔧 重要修复
+
+| 修复 | 对你的影响 | PR |
+|------|-----------|-----|
+| **中途按 Esc 取消不会被当成执行失败** | 排队任务里按 Esc，取消会被记成一次真报错，模型拿它当失败去补救解释。现在取消就是取消 | [#11154](https://github.com/QwenLM/qwen-code/pull/11154) |
+| **DeepSeek 官方 API 的上下文按真实窗口算** | 模型名手写 `deepseek-flash` 或只写 `deepseek-v4` 时，1M 的窗口被当成 128K 用，长会话反复压缩直到中断。现在两种写法都能拿到 1M 上下文 / 384K 输出 | [#11909](https://github.com/QwenLM/qwen-code/pull/11909), [#12124](https://github.com/QwenLM/qwen-code/pull/12124) |
+| **重开会话不再误报「上一轮回答被打断」** | 跑完 `/docs`、`/export` 这类本地命令后重开会话，会提示上次被打断，还递给你一个「继续执行」去重做已经干完的事。现在不再冒出来，真被打断的照旧能续 | [#12052](https://github.com/QwenLM/qwen-code/pull/12052), [#12007](https://github.com/QwenLM/qwen-code/pull/12007) |
+| **顶栏不把老会话显示成「新会话」** | 点开已有会话先显示「新建会话」，过一会儿才换成真名字，发消息还会闪回去。现在进来就是真名字 | [#12379](https://github.com/QwenLM/qwen-code/pull/12379) |
+| **刷新页面后上下文占用不清零** | 刷新或重开会话，输入框旁边的上下文占用会消失或显示 0，得再发一条消息才恢复。现在比例还在 | [#12070](https://github.com/QwenLM/qwen-code/pull/12070) |
+| **消息里的引用刷新后还是小标签** | 带 `@文件`、MCP、扩展引用的消息一刷新就退回成一长串原始文本，文件也点不开。现在还是标签，能点开预览 | [#12404](https://github.com/QwenLM/qwen-code/pull/12404) |
+| **MCP 交互界面重开会话后还能显示** | 图表、表单那类可交互界面以前只在当场能看，重开会话只剩一句纯文本。现在重开还在，加载不上也会说明原因 | [#12131](https://github.com/QwenLM/qwen-code/pull/12131), [#11960](https://github.com/QwenLM/qwen-code/pull/11960) |
+| **扩展更新有进度，更新完不再反复催** | 点「立即更新」没反应、还能再点一次同时跑两遍，更新成功了仍然挂着「立即更新」。现在显示进度、期间不许重复点，更新完不再提示 | [#11886](https://github.com/QwenLM/qwen-code/pull/11886) |
+| **手机上按上下箭头翻历史恢复可用** | iPhone 浏览器里点上下箭头经常没反应，从欢迎页发出的第一条消息也翻不到。现在箭头正常，翻走再翻回来草稿还在 | [#12362](https://github.com/QwenLM/qwen-code/pull/12362) |
+| **缩小看流程图不再挤成一小条** | 把 mermaid 图缩小看整体时，三千多像素宽的图被画进约 500 像素的小条，往左拖一下图的开头就永久回不来。现在画布固定，缩放范围跟着图走 | [#12177](https://github.com/QwenLM/qwen-code/pull/12177) |
+| **服务跑在主目录时，Channel 配置存进去能看见** | `qwen serve` 的工作目录设成主目录时，Channel 保存明明返回成功，列表却显示 0 configured，重开页面配置就没了。现在读写一致 | [#11083](https://github.com/QwenLM/qwen-code/pull/11083) |
+| **中文内容不会让语言服务的结果凭空消失** | 开了 LSP 之后，只要返回内容里有中文（中文标题的 Markdown、中文文件名），这条结果就被丢掉，表现为「找不到符号」这类假空结果。现在正常返回 | [#12210](https://github.com/QwenLM/qwen-code/pull/12210) |
+| **工作流的历史运行不再整条消失** | 运行记录写到一半被打断，这次运行会从历史列表里消失。现在记录留得住 | [#12341](https://github.com/QwenLM/qwen-code/pull/12341), [#12347](https://github.com/QwenLM/qwen-code/pull/12347) |
+| **审查的结论和覆盖率报告更可信** | 审查子代理有相当比例在读主检出目录而不是这次 PR 的工作副本，读的还是 diff 正在改的文件；覆盖率还会凭空多报一个「没审到的 section」，对着作者说你的 diff 有一处没审 | [#11926](https://github.com/QwenLM/qwen-code/pull/11926), [#12370](https://github.com/QwenLM/qwen-code/pull/12370) |
+
+## 👥 贡献者
+
+| 贡献者 | 贡献内容 | 参考 PR 链接 |
+|--------|---------|-------------|
+| **[@yiliang114](https://github.com/yiliang114)** | 审批前先给看 diff、`/context` 按扩展点名成本、桌面版窗口缩放与 macOS 标题栏、远端工作区流程简化、一次性 headless 提速、LSP 非 ASCII 修复 | [#12443](https://github.com/QwenLM/qwen-code/pull/12443), [#12318](https://github.com/QwenLM/qwen-code/pull/12318), [#12410](https://github.com/QwenLM/qwen-code/pull/12410), [#12393](https://github.com/QwenLM/qwen-code/pull/12393), [#12340](https://github.com/QwenLM/qwen-code/pull/12340), [#12210](https://github.com/QwenLM/qwen-code/pull/12210) |
+| **[@qqqys](https://github.com/qqqys)** | 浏览器里的语音通话与共享屏幕应答、Realtime 模型路由、轨迹页签、工作流检查点与断点续跑、Goal 判定改看对话末尾、非主工作区 Channel 恢复 | [#12189](https://github.com/QwenLM/qwen-code/pull/12189), [#12378](https://github.com/QwenLM/qwen-code/pull/12378), [#12173](https://github.com/QwenLM/qwen-code/pull/12173), [#12388](https://github.com/QwenLM/qwen-code/pull/12388), [#12159](https://github.com/QwenLM/qwen-code/pull/12159), [#12291](https://github.com/QwenLM/qwen-code/pull/12291), [#12105](https://github.com/QwenLM/qwen-code/pull/12105), [#12385](https://github.com/QwenLM/qwen-code/pull/12385) |
+| **[@wenshao](https://github.com/wenshao)** | SSH 工作区免远端服务、手机扫码配对与输入区重排、Git 分支线图与远程仓库管理、iPhone 翻历史修复、计划模式入口收进「+」菜单 | [#12255](https://github.com/QwenLM/qwen-code/pull/12255), [#12322](https://github.com/QwenLM/qwen-code/pull/12322), [#12252](https://github.com/QwenLM/qwen-code/pull/12252), [#12152](https://github.com/QwenLM/qwen-code/pull/12152), [#11163](https://github.com/QwenLM/qwen-code/pull/11163), [#12362](https://github.com/QwenLM/qwen-code/pull/12362) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | 沙箱执行底座、工具执行单独进 bwrap 与旧配法迁移、服务托管名额与工作区停止、会话调试日志清理、MCP 资源加载告警、托管运行时与持久化底座 | [#12267](https://github.com/QwenLM/qwen-code/pull/12267), [#12269](https://github.com/QwenLM/qwen-code/pull/12269), [#12067](https://github.com/QwenLM/qwen-code/pull/12067), [#12008](https://github.com/QwenLM/qwen-code/pull/12008), [#12374](https://github.com/QwenLM/qwen-code/pull/12374), [#11960](https://github.com/QwenLM/qwen-code/pull/11960) |
+| **[@ytahdn](https://github.com/ytahdn)** | 长粘贴折成卡片、导出文件变卡片、压缩结果说中文、顶栏标题与引用标签两处跨刷新修复、流程图缩放画布修复、slash 命令误报打断修复 | [#12084](https://github.com/QwenLM/qwen-code/pull/12084), [#12050](https://github.com/QwenLM/qwen-code/pull/12050), [#12141](https://github.com/QwenLM/qwen-code/pull/12141), [#12379](https://github.com/QwenLM/qwen-code/pull/12379), [#12404](https://github.com/QwenLM/qwen-code/pull/12404), [#12177](https://github.com/QwenLM/qwen-code/pull/12177) |
+| **[@qwen-code-dev-bot](https://github.com/qwen-code-dev-bot)** | 主目录不可写时不再炸掉启动、CI 与发布环节的瞬时失败重试、设置面板里的配置别名补齐 | [#10455](https://github.com/QwenLM/qwen-code/pull/10455), [#11731](https://github.com/QwenLM/qwen-code/pull/11731), [#11879](https://github.com/QwenLM/qwen-code/pull/11879), [#12103](https://github.com/QwenLM/qwen-code/pull/12103) |
+| **[@tanzhenxin](https://github.com/tanzhenxin)** | Browser SDK 与 Chrome 连接通道、多个会话共用一个 Chrome 配置文件、Chrome 扩展的打包发布流水线与隐私说明、按模型选 OpenAI 接口 | [#11241](https://github.com/QwenLM/qwen-code/pull/11241), [#11242](https://github.com/QwenLM/qwen-code/pull/11242), [#12229](https://github.com/QwenLM/qwen-code/pull/12229), [#12329](https://github.com/QwenLM/qwen-code/pull/12329), [#12330](https://github.com/QwenLM/qwen-code/pull/12330), [#11538](https://github.com/QwenLM/qwen-code/pull/11538) |
+| **[@chiga0](https://github.com/chiga0)** | 实验渲染器与默认渲染器的行为差异收口、渲染器版本升级 | [#11806](https://github.com/QwenLM/qwen-code/pull/11806), [#12309](https://github.com/QwenLM/qwen-code/pull/12309), [#12321](https://github.com/QwenLM/qwen-code/pull/12321) |
+| 🆕 **[@Lilian0122](https://github.com/Lilian0122)** | 🎉 首次贡献：宿主定制 Web Shell 设置项的显示范围、窄面板里的消息编辑溢出修复 | [#11975](https://github.com/QwenLM/qwen-code/pull/11975), [#12328](https://github.com/QwenLM/qwen-code/pull/12328), [#12175](https://github.com/QwenLM/qwen-code/pull/12175) |
+| **[@callmeYe](https://github.com/callmeYe)** | 扩展目录刷新只读清单、Markdown 消息完成状态 | [#12153](https://github.com/QwenLM/qwen-code/pull/12153), [#12431](https://github.com/QwenLM/qwen-code/pull/12431) |
+| **[@DragonnZhang](https://github.com/DragonnZhang)** | 延迟加载工具保留上下文缓存、notebook 分页读取的空值处理 | [#10410](https://github.com/QwenLM/qwen-code/pull/10410), [#12421](https://github.com/QwenLM/qwen-code/pull/12421) |
+| **[@dvd233](https://github.com/dvd233)** | SDK 端到端测试支持延迟工具调用、发包校验输出隔离 | [#12365](https://github.com/QwenLM/qwen-code/pull/12365), [#12367](https://github.com/QwenLM/qwen-code/pull/12367) |
+| **[@he-yufeng](https://github.com/he-yufeng)** | DeepSeek 官方 API 的 flash 模型名按 V4 上限解析、V4 代次后缀在模型名归一化中保留 | [#11909](https://github.com/QwenLM/qwen-code/pull/11909), [#12124](https://github.com/QwenLM/qwen-code/pull/12124) |
+| 🆕 **[@jabrailkhalil](https://github.com/jabrailkhalil)** | 🎉 首次贡献：Web Shell 可被浏览器安装、移动端加密隔离的连接配置 | [#11722](https://github.com/QwenLM/qwen-code/pull/11722), [#12121](https://github.com/QwenLM/qwen-code/pull/12121) |
+| **[@kabishou11](https://github.com/kabishou11)** | 审查子代理拿到正确的 PR 工作区路径、`/context` 用本会话的缓存计数 | [#11926](https://github.com/QwenLM/qwen-code/pull/11926), [#12066](https://github.com/QwenLM/qwen-code/pull/12066) |
+| **[@CanReader](https://github.com/CanReader)** | 补上审查流程整仓隔离的说明文档 | [#10493](https://github.com/QwenLM/qwen-code/pull/10493) |
+| 🆕 **[@cactuser-Lu](https://github.com/cactuser-Lu)** | 首条消息的会话被顶替时保住会话 | [#12149](https://github.com/QwenLM/qwen-code/pull/12149) |
+| 🆕 **[@elizabethbrunette21](https://github.com/elizabethbrunette21)** | 🎉 首次贡献：刷新失败后排队的消息绑定能恢复 | [#12279](https://github.com/QwenLM/qwen-code/pull/12279) |
+| **[@harjothkhara](https://github.com/harjothkhara)** | 服务商顺序测试补上 Grok 与 MiniMax | [#10089](https://github.com/QwenLM/qwen-code/pull/10089) |
+| 🆕 **[@L4XB](https://github.com/L4XB)** | 🎉 首次贡献：清掉已删会话残留在历史里的旧输入 | [#11769](https://github.com/QwenLM/qwen-code/pull/11769) |
+| 🆕 **[@mohammedmessaoudene-cmd](https://github.com/mohammedmessaoudene-cmd)** | 🎉 首次贡献：服务托管指南的测试按协议章节归位 | [#11808](https://github.com/QwenLM/qwen-code/pull/11808) |
+| **[@now-ing](https://github.com/now-ing)** | 说明托管 OpenAI 兼容网关的 `baseUrl` 填到哪一层 | [#11155](https://github.com/QwenLM/qwen-code/pull/11155) |
+| **[@samuelhsin](https://github.com/samuelhsin)** | 后端一次请求拿多个工作区的会话目录 | [#12254](https://github.com/QwenLM/qwen-code/pull/12254) |
+| **[@shenyankm](https://github.com/shenyankm)** | 创建会话期间的连续请求放行 | [#11913](https://github.com/QwenLM/qwen-code/pull/11913) |
+| **[@Willam2004](https://github.com/Willam2004)** | 相同地址的服务商请求并发时合并成一次 | [#12327](https://github.com/QwenLM/qwen-code/pull/12327) |
+| **[@XIQIXIQIXIQI](https://github.com/XIQIXIQIXIQI)** | 回放时保留用户附带的资源链接 | [#12088](https://github.com/QwenLM/qwen-code/pull/12088) |
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！
