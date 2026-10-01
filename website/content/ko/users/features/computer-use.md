@@ -23,7 +23,7 @@ Node.js 22 이상이 필요하며 npm도 필요합니다.
 처음 사용 시 skill이 다음 명령을 직접 실행합니다:
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.6
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.7
 npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.11
 ```
 
@@ -61,6 +61,22 @@ nodeRepl.write((await app.getState()).text);
 Node REPL은 일반적인 Node.js 권한으로 모델이 작성한 JavaScript를 실행하는 MCP 서버입니다. 호출은 Qwen Code의 일반 [MCP 승인 흐름](./approval-mode.md)을 따릅니다. SDK는 네이티브 인증도 강제합니다.
 
 macOS에서 접근성 관찰과 입력에는 Accessibility 권한이 필요합니다. 스크린샷은 추가로 Screen Recording 권한이 필요합니다. macOS는 권한 부여를 Qwen Code를 실행한 터미널이나 IDE에 귀속시킬 수 있습니다. Windows와 Linux는 플랫폼별 접근성 및 입력 기능을 사용합니다.
+
+## 원격 세션에서 눈앞의 컴퓨터 사용
+
+Qwen Code가 헤드리스 모드 머신(개발 박스, 서버)에서 실행될 때에도, skill이 사용자가 앉은 데스크톱을 계속 제어할 수 있습니다. 해당 컴퓨터가 자신의 `node_repl`을 하나의 원격 세션에 빌려줍니다. 현재 macOS에서 동작합니다.
+
+컴퓨터에서 한 번만 설정하면 됩니다:
+
+```bash
+npx -y @qwen-code/node-repl-mcp@0.1.7 desktop-relay install
+```
+
+이 명령은 `~/.qwen/desktop-relay` 아래에 `node_repl`과 SDK를 설치하고 `127.0.0.1:47821`에 launchd 소켓을 등록합니다. 백그라운드에서 실행되는 것은 없습니다. launchd는 연결이 발생할 때만 단기 프로세스를 시작합니다.
+
+- **Web Shell에서.** 원격 데몬은 `QWEN_SERVE_CLIENT_MCP_OVER_WS=1`로 실행되어야 하며, Web Shell은 보안 페이지(https 또는 SSH 터널을 통한 `http://localhost`)여야 합니다. 세션에서 사이드바 하단의 **Use this computer**를 선택한 다음 **Connect this computer**를 선택합니다.
+
+컴퓨터의 대화 상자가 모든 연결을 허용할지 묻습니다. 허용된 세션은 로컬 Computer Use와 마찬가지로 사용자의 권한으로 컴퓨터에서 코드를 실행하고 화면을 보고 제어할 수 있습니다. 연결을 해제하거나 세션이 종료될 때까지입니다. macOS는 처음 Accessibility와 Screen Recording 아래에서 `node`를 허용할지 묻습니다.
 
 ## 문제 해결
 

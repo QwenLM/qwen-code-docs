@@ -22,7 +22,7 @@ Qwen Code не включает MCP-сервер, SDK или нативный д
 При первом использовании навык самостоятельно выполняет следующие команды:
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.6
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.7
 npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.11
 ```
 
@@ -47,7 +47,7 @@ npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.11
 ```js
 const app = await computer.getApp('Microsoft Excel');
 nodeRepl.write((await app.getState()).text);
-// Use an element ID from the returned state.
+// Используйте идентификатор элемента из возвращённого состояния.
 await app.click(37);
 await app.typeText('hello');
 nodeRepl.write((await app.getState()).text);
@@ -60,6 +60,22 @@ nodeRepl.write((await app.getState()).text);
 Node REPL — это MCP-сервер, который выполняет написанный моделью JavaScript с обычными правами Node.js. Его вызовы следуют обычному [потоку одобрения MCP](./approval-mode.md) Qwen Code. SDK также применяет нативную авторизацию.
 
 На macOS для наблюдения доступности и ввода требуется разрешение Accessibility. Скриншоты дополнительно требуют разрешения Screen Recording. macOS может привязать выдачу разрешения к терминалу или IDE, из которых запущен Qwen Code. Windows и Linux используют свои платформенные средства доступности и ввода.
+
+## Использование компьютера перед вами из удалённой сессии
+
+Когда Qwen Code работает на машине без графической среды (dev box, сервер), навык всё равно может управлять рабочим столом, за которым вы сидите: этот компьютер предоставляет свой собственный `node_repl` одной удалённой сессии. Сейчас это работает на macOS.
+
+Настройте это один раз на вашем компьютере:
+
+```bash
+npx -y @qwen-code/node-repl-mcp@0.1.7 desktop-relay install
+```
+
+Это установит `node_repl` и SDK в `~/.qwen/desktop-relay` и зарегистрирует сокет launchd на `127.0.0.1:47821`. В фоне ничего не работает; launchd запускает короткоживущий процесс только при подключении.
+
+- **Из Web Shell.** Удалённый демон должен запускаться с `QWEN_SERVE_CLIENT_MCP_OVER_WS=1`, а Web Shell должен быть защищённой страницей (https или `http://localhost` через SSH-туннель). В сессии выберите **Use this computer** в футере боковой панели, затем **Connect this computer**.
+
+Диалог на вашем компьютере запрашивает разрешение на каждое подключение. Разрешённая сессия может выполнять код на вашем компьютере с вашими правами, видеть и управлять его экраном — так же, как локальный Computer Use — пока вы не отключите её или она не завершится. При первом подключении macOS запросит разрешение для `node` в Accessibility и Screen Recording.
 
 ## Устранение неполадок
 
