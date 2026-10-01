@@ -346,29 +346,40 @@ function cmdSeed() {
 const RELATIVE_LINK =
   /\]\((?!\.|\/|#|[a-zA-Z][a-zA-Z0-9+.-]*:)([^)\s]+)(\s+"[^"]*")?\)/g;
 
-function normalizeRelativeLinks(text) {
+/**
+ * Apply fn to every line outside a fenced code block; a null result drops the
+ * line. Fenced content is example code, and changing it would silently drift
+ * from upstream.
+ */
+function mapOutsideFences(text, fn) {
   let inFence = false;
   let fenceMark = "";
-  return text
-    .split("\n")
-    .map((line) => {
-      const fence = line.match(/^\s*(```|~~~)/);
-      if (fence) {
-        if (!inFence) {
-          inFence = true;
-          fenceMark = fence[1];
-        } else if (fence[1] === fenceMark) {
-          inFence = false;
-        }
-        return line;
+  const out = [];
+  for (const line of text.split("\n")) {
+    const fence = line.match(/^\s*(```|~~~)/);
+    if (fence) {
+      if (!inFence) {
+        inFence = true;
+        fenceMark = fence[1];
+      } else if (fence[1] === fenceMark) {
+        inFence = false;
       }
-      if (inFence) return line;
-      return line.replace(
-        RELATIVE_LINK,
-        (_m, target, title) => `](./${target}${title ?? ""})`
-      );
-    })
-    .join("\n");
+      out.push(line);
+      continue;
+    }
+    const mapped = inFence ? line : fn(line);
+    if (mapped !== null) out.push(mapped);
+  }
+  return out.join("\n");
+}
+
+function normalizeRelativeLinks(text) {
+  return mapOutsideFences(text, (line) =>
+    line.replace(
+      RELATIVE_LINK,
+      (_m, target, title) => `](./${target}${title ?? ""})`
+    )
+  );
 }
 
 // A page with a locale sibling opens with a switcher such as
@@ -378,18 +389,14 @@ function normalizeRelativeLinks(text) {
 const LINK_ONLY_LINE = /^\s*\[[^\]]*\]\([^)]*\)(\s*\|\s*\[[^\]]*\]\([^)]*\))*\s*$/;
 
 function dropLocaleSwitcher(text) {
-  return text
-    .split("\n")
-    .filter(
-      (line) =>
-        !(
-          LINK_ONLY_LINE.test(line) &&
-          [...line.matchAll(/\]\(([^)#\s]+)/g)].some((m) =>
-            LOCALE_SIBLING.test(m[1])
-          )
-        )
+  return mapOutsideFences(text, (line) =>
+    LINK_ONLY_LINE.test(line) &&
+    [...line.matchAll(/\]\(([^)#\s]+)/g)].some((m) =>
+      LOCALE_SIBLING.test(m[1])
     )
-    .join("\n");
+      ? null
+      : line
+  );
 }
 
 /**
@@ -412,7 +419,7 @@ async function listNewPagesInNav(upstreamDocsDir) {
     OPTS.contentDir,
     "..",
     "scripts",
-    "check-nav-coverage.js"
+    "check-nav-coverage.mjs"
   );
   if (!fs.existsSync(coverage)) return 0;
   const { findUnlistedEntries } = await import(pathToFileURL(coverage).href);

@@ -537,7 +537,8 @@ test("sync-en lists new upstream pages in _meta.ts and skips locale siblings", (
     fs.writeFileSync(path.join(docs, "overview.md"), "# Overview\n");
     fs.writeFileSync(
       path.join(docs, "recovery.md"),
-      "# Recovery\n\n[English](recovery.md) | [简体中文](recovery.zh-CN.md)\n\nBody.\n"
+      "# Recovery\n\n[English](recovery.md) | [简体中文](recovery.zh-CN.md)\n\nBody.\n\n" +
+        "```md\n[English](a.md) | [简体中文](a.zh-CN.md)\n```\n"
     );
     fs.writeFileSync(path.join(docs, "recovery.zh-CN.md"), "# 恢复\n");
     fs.writeFileSync(path.join(docs, "batch.md"), "# Batch Heading\n");
@@ -558,8 +559,8 @@ test("sync-en lists new upstream pages in _meta.ts and skips locale siblings", (
     );
     fs.mkdirSync(path.join(site, "scripts"));
     fs.copyFileSync(
-      path.resolve(__dirname, "../../website/scripts/check-nav-coverage.js"),
-      path.join(site, "scripts", "check-nav-coverage.js")
+      path.resolve(__dirname, "../../website/scripts/check-nav-coverage.mjs"),
+      path.join(site, "scripts", "check-nav-coverage.mjs")
     );
     fs.writeFileSync(
       path.join(site, "translation.config.json"),
@@ -586,9 +587,12 @@ test("sync-en lists new upstream pages in _meta.ts and skips locale siblings", (
     assert.equal(result.status, 0, result.stdout + result.stderr);
     assert.match(result.stdout, /nav-listed=2/);
     assert.equal(fs.existsSync(path.join(enUsers, "recovery.zh-CN.md")), false);
-    assert.doesNotMatch(
+    // The page's own switcher goes; the same line inside a fence is an
+    // example and stays.
+    assert.equal(
       fs.readFileSync(path.join(enUsers, "recovery.md"), "utf8"),
-      /简体中文/
+      "# Recovery\n\n\nBody.\n\n" +
+        "```md\n[English](a.md) | [简体中文](a.zh-CN.md)\n```\n"
     );
     // Upstream's own title wins; the H1 is the fallback.
     assert.equal(
