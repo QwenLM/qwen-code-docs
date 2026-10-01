@@ -35,7 +35,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "../..");
@@ -140,8 +140,17 @@ function loadExcludes() {
 }
 const EXCLUDES = loadExcludes();
 
+/**
+ * Upstream sometimes ships its own translation next to a page, e.g.
+ * `users/hosted-workspace-recovery.zh-CN.md`. That is not English source:
+ * mirrored into content/en it becomes a Chinese page in the English sidebar,
+ * and every locale's translation of it fails the contamination check.
+ */
+const LOCALE_SIBLING = /\.[a-z]{2}(-[A-Z]{2})?\.mdx?$/;
+
 /** rel is relative to docsPath, e.g. "design/foo.md". */
 function isExcluded(rel) {
+  if (LOCALE_SIBLING.test(rel)) return true;
   return EXCLUDES.some((p) => rel === p || rel.startsWith(p + "/"));
 }
 
@@ -362,6 +371,95 @@ function normalizeRelativeLinks(text) {
     .join("\n");
 }
 
+// A page with a locale sibling opens with a switcher such as
+// `[English](./x.md) | [简体中文](./x.zh-CN.md)`. The sibling is not mirrored
+// (see LOCALE_SIBLING), so the link would 404, and the line's CJK text fails
+// every translation's contamination check. The site has its own switcher.
+const LINK_ONLY_LINE = /^\s*\[[^\]]*\]\([^)]*\)(\s*\|\s*\[[^\]]*\]\([^)]*\))*\s*$/;
+
+function dropLocaleSwitcher(text) {
+  return text
+    .split("\n")
+    .filter(
+      (line) =>
+        !(
+          LINK_ONLY_LINE.test(line) &&
+          [...line.matchAll(/\]\(([^)#\s]+)/g)].some((m) =>
+            LOCALE_SIBLING.test(m[1])
+          )
+        )
+    )
+    .join("\n");
+}
+
+/**
+ * Give every page and directory under content/en an entry in its parent
+ * `_meta.ts`.
+ *
+ * Upstream `_meta` files are never mirrored (this site carries tabs upstream
+ * does not), so a page upstream adds arrives with no sidebar entry. The
+ * website's nav-coverage test rightly rejects that, and since the nightly
+ * runs that test before publishing, one new upstream page blocked every
+ * translation until someone edited `_meta.ts` by hand (#314). Appending the
+ * entry here puts it in the nightly PR, where it can be reviewed or moved.
+ *
+ * The title is upstream's own `_meta.ts` value when it has one, else the
+ * page's H1, else the key itself.
+ */
+async function listNewPagesInNav(upstreamDocsDir) {
+  const enDir = path.join(OPTS.contentDir, "en");
+  const coverage = path.join(
+    OPTS.contentDir,
+    "..",
+    "scripts",
+    "check-nav-coverage.js"
+  );
+  if (!fs.existsSync(coverage)) return 0;
+  const { findUnlistedEntries } = await import(pathToFileURL(coverage).href);
+
+  const quote = (s) => `'${s.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
+  const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const titleFor = (dir, key) => {
+    const upstreamMeta = path.join(upstreamDocsDir, dir, "_meta.ts");
+    if (fs.existsSync(upstreamMeta)) {
+      const m = fs
+        .readFileSync(upstreamMeta, "utf8")
+        .match(
+          new RegExp(
+            `^\\s*(['"]?)${escapeRe(key)}\\1\\s*:\\s*(['"])(.*?)\\2\\s*,?\\s*$`,
+            "m"
+          )
+        );
+      if (m) return m[3];
+    }
+    for (const ext of [".md", ".mdx"]) {
+      const page = path.join(enDir, dir, key + ext);
+      if (!fs.existsSync(page)) continue;
+      const h1 = fs.readFileSync(page, "utf8").match(/^#\s+(.+?)\s*#*\s*$/m);
+      if (h1) return h1[1];
+    }
+    return key;
+  };
+
+  let added = 0;
+  for (const rel of findUnlistedEntries(enDir)) {
+    const dir = path.dirname(rel) === "." ? "" : path.dirname(rel);
+    const key = path.basename(rel);
+    const metaPath = path.join(enDir, dir, "_meta.ts");
+    const source = fs.readFileSync(metaPath, "utf8");
+    const close = source.lastIndexOf("};");
+    if (close === -1) {
+      console.log(`[orch] cannot list ${rel}: no closing "};" in ${metaPath}`);
+      continue;
+    }
+    const entry = `  ${quote(key)}: ${quote(titleFor(dir, key))},\n`;
+    fs.writeFileSync(metaPath, source.slice(0, close) + entry + source.slice(close));
+    console.log(`[orch] nav: listed ${rel} in ${path.join(dir, "_meta.ts")}`);
+    added++;
+  }
+  return added;
+}
+
 function mirrorAssets() {
   const docsDir = path.join(OPTS.tempDir, OPTS.docsPath);
   if (!fs.existsSync(docsDir)) return 0;
@@ -402,7 +500,7 @@ function mirrorAssets() {
   return copied;
 }
 
-function cmdSyncEn() {
+async function cmdSyncEn() {
   const commit = ensureUpstream();
   const upstream = upstreamDocs();
   const base = loadBaseline();
@@ -412,8 +510,8 @@ function cmdSyncEn() {
     // upstreamDocs() indexes .md only; assets are mirrored below.
     const dest = path.join(enDir, relInContent(f));
     const srcPath = path.join(OPTS.tempDir, f);
-    const normalized = normalizeRelativeLinks(
-      fs.readFileSync(srcPath, "utf8")
+    const normalized = dropLocaleSwitcher(
+      normalizeRelativeLinks(fs.readFileSync(srcPath, "utf8"))
     );
     if (fs.existsSync(dest) && fs.readFileSync(dest, "utf8") === normalized)
       continue;
@@ -439,7 +537,11 @@ function cmdSyncEn() {
     delete base.files[f];
   }
   if (deleted > 0) saveBaseline(base, commit);
-  console.log(`[orch] sync-en: copied=${copied} deleted=${deleted}`);
+  // After deletions, so an entry is never added for a page about to vanish.
+  const listed = await listNewPagesInNav(path.join(OPTS.tempDir, OPTS.docsPath));
+  console.log(
+    `[orch] sync-en: copied=${copied} deleted=${deleted} nav-listed=${listed}`
+  );
 }
 
 // A document whose English source is larger than this is translated one
@@ -2047,7 +2149,7 @@ switch (cmd) {
     await cmdPreflight();
     break;
   case "sync-en":
-    cmdSyncEn();
+    await cmdSyncEn();
     break;
   case "translate":
     await cmdTranslate(flags.lang);

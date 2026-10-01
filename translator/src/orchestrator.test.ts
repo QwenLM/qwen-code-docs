@@ -523,3 +523,80 @@ test("quarantine keeps output closer to the source but still restores a mangled 
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("sync-en lists new upstream pages in _meta.ts and skips locale siblings", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "qwen-orchestrator-test-"));
+  const upstream = path.join(root, "upstream");
+  const site = path.join(root, "website");
+  const contentDir = path.join(site, "content");
+  const enUsers = path.join(contentDir, "en", "users");
+
+  try {
+    const docs = path.join(upstream, "docs", "users");
+    fs.mkdirSync(docs, { recursive: true });
+    fs.writeFileSync(path.join(docs, "overview.md"), "# Overview\n");
+    fs.writeFileSync(
+      path.join(docs, "recovery.md"),
+      "# Recovery\n\n[English](recovery.md) | [简体中文](recovery.zh-CN.md)\n\nBody.\n"
+    );
+    fs.writeFileSync(path.join(docs, "recovery.zh-CN.md"), "# 恢复\n");
+    fs.writeFileSync(path.join(docs, "batch.md"), "# Batch Heading\n");
+    fs.writeFileSync(
+      path.join(docs, "_meta.ts"),
+      "export default {\n  batch: 'Batch Mode',\n};\n"
+    );
+    const git = (...args: string[]) =>
+      execFileSync("git", ["-C", upstream, ...args], { stdio: "ignore" });
+    git("init", "-q", "-b", "main");
+    git("add", ".");
+    git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "docs");
+
+    fs.mkdirSync(enUsers, { recursive: true });
+    fs.writeFileSync(
+      path.join(enUsers, "_meta.ts"),
+      "export default {\n  overview: 'Overview',\n};\n"
+    );
+    fs.mkdirSync(path.join(site, "scripts"));
+    fs.copyFileSync(
+      path.resolve(__dirname, "../../website/scripts/check-nav-coverage.js"),
+      path.join(site, "scripts", "check-nav-coverage.js")
+    );
+    fs.writeFileSync(
+      path.join(site, "translation.config.json"),
+      JSON.stringify({ targetLanguages: ["zh"] })
+    );
+
+    const result = spawnSync(
+      process.execPath,
+      [
+        orchestrator,
+        "sync-en",
+        "--repo",
+        upstream,
+        "--temp-dir",
+        path.join(root, "clone"),
+        "--content-dir",
+        contentDir,
+        "--baseline",
+        path.join(site, "last-sync.json"),
+      ],
+      { encoding: "utf8" }
+    );
+
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.match(result.stdout, /nav-listed=2/);
+    assert.equal(fs.existsSync(path.join(enUsers, "recovery.zh-CN.md")), false);
+    assert.doesNotMatch(
+      fs.readFileSync(path.join(enUsers, "recovery.md"), "utf8"),
+      /简体中文/
+    );
+    // Upstream's own title wins; the H1 is the fallback.
+    assert.equal(
+      fs.readFileSync(path.join(enUsers, "_meta.ts"), "utf8"),
+      "export default {\n  overview: 'Overview',\n" +
+        "  'batch': 'Batch Mode',\n  'recovery': 'Recovery',\n};\n"
+    );
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
