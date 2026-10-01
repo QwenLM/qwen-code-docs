@@ -144,7 +144,7 @@ jobs:
           cd translator/orchestrator
           node orchestrator.mjs sync-en | tee /tmp/orch-sync-en.log
           node orchestrator.mjs detect | tee /tmp/orch-detect.log
-          if grep -qE 'copied=[1-9][0-9]*|deleted=[1-9][0-9]*' /tmp/orch-sync-en.log \
+          if grep -qE 'copied=[1-9][0-9]*|deleted=[1-9][0-9]*|nav-listed=[1-9][0-9]*' /tmp/orch-sync-en.log \
             || grep -qE 'backlog [A-Za-z-]+: [1-9][0-9]*' /tmp/orch-detect.log; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
             if [ "$GITHUB_REF_NAME" != "main" ]; then

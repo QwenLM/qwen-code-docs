@@ -13,7 +13,7 @@ import { pathToFileURL } from 'node:url';
 import {
   DEFAULT_CONTENT_ROOT,
   findUnlistedEntries,
-} from './check-nav-coverage.js';
+} from './check-nav-coverage.mjs';
 
 function fixture(tree) {
   const root = mkdtempSync(path.join(tmpdir(), 'nav-coverage-'));
@@ -36,15 +36,15 @@ test('every page and directory is listed in the sidebar', () => {
 
 test('decodes escaped checkout paths for the default content root', async () => {
   const source = readFileSync(
-    new URL('./check-nav-coverage.js', import.meta.url),
+    new URL('./check-nav-coverage.mjs', import.meta.url),
     'utf8',
   );
   const root = fixture({
-    'checkout with spaces/scripts/check-nav-coverage.js': source,
+    'checkout with spaces/scripts/check-nav-coverage.mjs': source,
   });
   const modulePath = path.join(
     root,
-    'checkout with spaces/scripts/check-nav-coverage.js',
+    'checkout with spaces/scripts/check-nav-coverage.mjs',
   );
   const copiedModule = await import(pathToFileURL(modulePath).href);
   deepStrictEqual(copiedModule.DEFAULT_CONTENT_ROOT.includes('%20'), false);
