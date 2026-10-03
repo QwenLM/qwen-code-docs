@@ -1,6 +1,3 @@
----
-title: Feishu
----
 
 # Feishu(비서우) / Lark
 
@@ -68,7 +65,7 @@ Feishu 사용자 및 채팅 ID를 레이블로 유지합니다.
       "type": "feishu",
       "clientId": "<your-app-id>",
       "clientSecret": "<your-app-secret>",
-      "senderPolicy": "open",
+      "privatePolicy": "open",
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "groupPolicy": "open",

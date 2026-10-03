@@ -70,7 +70,7 @@ Das Menü beim ersten Start ermöglicht dir die Verbindung mit einem Modellanbie
 
 - **Alibaba ModelStudio** – die empfohlene Einrichtung. Öffnet ein Untermenü:
   - **Token Plan**: nutzungsbasierte Abrechnung mit einem dedizierten Endpunkt, gedacht für Teams und Unternehmen. Siehe den [Token Plan Guide](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) ([intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) für Einrichtungsanweisungen.
-  - **Standard API Key**: Verbinde einen vorhandenen API-Key von Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)). Siehe den API-Einrichtungsleitfaden für Details.
+  - **Standard API Key**: Verbinde einen vorhandenen API-Key von Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)). Siehe den API-Einrichtungsleitfaden ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)) für Details.
 - **Drittanbieter** – Wähle einen integrierten Anbieter (DeepSeek, Grok, MiniMax, Z.AI, Kimi, Idealab, ModelScope, OpenRouter, Requesty und weitere) und verbinde ihn mit einem API-Key.
 - **Eigener Anbieter** – Verbinde manuell einen lokalen Server, Proxy oder nicht unterstützten Anbieter.
 
@@ -78,7 +78,7 @@ Das Menü beim ersten Start ermöglicht dir die Verbindung mit einem Modellanbie
 
 > [!note]
 >
-> Wenn du Qwen Code zum ersten Mal mit deinem Qwen-Konto authentifizierst, wird automatisch ein Arbeitsbereich namens ".qwen" für dich erstellt. Dieser Arbeitsbereich bietet eine zentrale Kostenverfolgung und -verwaltung für die gesamte Qwen Code-Nutzung in deiner Organisation.
+> Qwen Code speichert seine Konfiguration und Anpassungen in `.qwen`-Verzeichnissen: `~/.qwen/` für benutzerweite Einstellungen (z. B. `settings.json`) und globale Custom Commands, und `<project>/.qwen/` für projektspezifische Dateien wie Custom Commands und Summaries.
 
 > [!tip]
 >
@@ -228,7 +228,7 @@ Hier sind die wichtigsten Befehle für die tägliche Nutzung:
 | `/doctor`            | Aktuelle Authentifizierung und Umgebung prüfen      | `/doctor`                     |
 | `/help`              | Hilfeinformationen zu verfügbaren Befehlen anzeigen | `/help` oder `/?`             |
 | `/compress`          | Chatverlauf durch Zusammenfassung ersetzen (Tokens sparen) | `/compress`           |
-| `/clear`             | Terminal-Bildschirm leeren                          | `/clear` (Shortcut: `Strg+L`) |
+| `/clear`             | Gesprächsverlauf löschen und Kontext freigeben          | `/clear` (Aliase: `reset`, `new`) |
 | `/theme`             | Visuelles Design von Qwen Code ändern               | `/theme`                      |
 | `/language`          | Spracheinstellungen anzeigen oder ändern            | `/language`                   |
 | → `ui [Sprache]`     | Sprache der Benutzeroberfläche festlegen            | `/language ui de-DE`          |

@@ -15,7 +15,7 @@
 
 ## 查找你的用户 ID
 
-使用 `senderPolicy: "allowlist"` 或 `"pairing"` 时，你需要提供 Telegram 用户 ID（一个数字 ID，不是用户名）。
+使用 `privatePolicy: "allowlist"` 或 `"pairing"` 时，你需要提供 Telegram 用户 ID（一个数字 ID，不是用户名）。
 
 最简单的查找方法：
 
@@ -32,7 +32,7 @@
     "my-telegram": {
       "type": "telegram",
       "token": "$TELEGRAM_BOT_TOKEN",
-      "senderPolicy": "allowlist",
+      "privatePolicy": "allowlist",
       "allowedUsers": ["YOUR_USER_ID"],
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
@@ -74,7 +74,7 @@ qwen channel start
 2. **在 BotFather 中关闭隐私模式**：`/mybots` → 选择你的机器人 → Bot Settings → Group Privacy → 关闭
 3. 将机器人添加到群组。如果它已经在群组中，请**移除并重新添加**（Telegram 会缓存机器人加入时的隐私设置）
 4. 如果使用 `groupPolicy: "allowlist"`，请将群组的聊天 ID 添加到配置的 `groups` 中
-5. 如果使用 `groupPolicy: "pairing"`，请在回复开始前批准该群组的配对请求。注意，一旦群组被批准，**该群组的任何成员**都可以使用机器人；`senderPolicy` 和 `allowedUsers` 不会限制已批准群组的成员。
+5. 如果使用 `groupPolicy: "pairing"`，请在回复开始前批准该群组的配对请求。注意，一旦群组被批准，**该群组的任何成员**都可以默认使用机器人（可通过群组的 `senders: "allowlist"` 和 `allowedUsers` 进行限制）；`privatePolicy` 和顶层的 `allowedUsers` 不会限制已批准群组的成员。
 
 默认情况下，机器人在群组中需要通过 @提及或回复来响应。如果希望特定群组对所有消息都响应（适用于专用任务群组），可设置 `"requireMention": false`。详见[群聊](./overview#group-chats)。
 
@@ -90,7 +90,7 @@ qwen channel start
 
 - **保持指令简洁聚焦**——Telegram 有 4096 字符的消息限制。添加类似 "keep responses short" 的指令有助于 agent 保持在限制内。
 - **使用 `sessionScope: "user"`**——这样每个用户都有独立的对话。使用 `/clear` 重新开始。
-- **限制访问**——使用 `senderPolicy: "allowlist"` 限制为固定用户集，或使用 `"pairing"` 让新用户通过你通过 CLI 批准的代码请求访问。详见[私聊配对](./overview#dm-pairing)。
+- **限制访问**——使用 `privatePolicy: "allowlist"` 限制为固定用户集，或使用 `"pairing"` 让新用户通过你通过 CLI 批准的代码请求访问。详见[私聊配对](./overview#dm-pairing)。
 
 ## 消息格式
 
@@ -101,7 +101,7 @@ agent 的 Markdown 响应会自动转换为 Telegram 兼容的 HTML。代码块�
 ### 机器人无响应
 
 - 检查 Bot Token 是否正确，以及环境变量是否已设置
-- 如果使用 `senderPolicy: "allowlist"`，确认你的用户 ID 在 `allowedUsers` 中；如果使用 `"pairing"`，确认已获得批准
+- 如果使用 `privatePolicy: "allowlist"`，确认你的用户 ID 在 `allowedUsers` 中；如果使用 `"pairing"`，确认已获得批准
 - 检查终端输出中的错误信息
 
 ### 机器人在群组中无响应

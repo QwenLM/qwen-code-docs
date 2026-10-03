@@ -15,7 +15,7 @@ Este guia aborda a configuração de um canal do Qwen Code no Telegram.
 
 ## Encontrando Seu User ID
 
-Para usar `senderPolicy: "allowlist"` ou `"pairing"`, você precisa do seu user ID do Telegram (um ID numérico, não seu username).
+Para usar `privatePolicy: "allowlist"` ou `"pairing"`, você precisa do seu user ID do Telegram (um ID numérico, não seu username).
 
 A maneira mais fácil de encontrá-lo:
 
@@ -32,7 +32,7 @@ Adicione o canal ao `~/.qwen/settings.json`:
     "my-telegram": {
       "type": "telegram",
       "token": "$TELEGRAM_BOT_TOKEN",
-      "senderPolicy": "allowlist",
+      "privatePolicy": "allowlist",
       "allowedUsers": ["YOUR_USER_ID"],
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
@@ -57,10 +57,10 @@ Ou adicione-o a um arquivo `.env` que seja carregado antes da execução.
 ## Executando
 
 ```bash
-# Start only the Telegram channel
+# Inicia apenas o canal do Telegram
 qwen channel start my-telegram
 
-# Or start all configured channels together
+# Ou inicia todos os canais configurados juntos
 qwen channel start
 ```
 
@@ -74,7 +74,7 @@ Para usar o bot em grupos do Telegram:
 2. **Desative o modo de privacidade** no BotFather: `/mybots` → selecione seu bot → Bot Settings → Group Privacy → Turn Off
 3. Adicione o bot a um grupo. Se ele já estiver no grupo, **remova e adicione-o novamente** (o Telegram armazena em cache as configurações de privacidade do momento em que o bot entrou)
 4. Se estiver usando `groupPolicy: "allowlist"`, adicione o chat ID do grupo a `groups` na sua configuração
-5. Se estiver usando `groupPolicy: "pairing"`, aprove a solicitação de pareamento do grupo uma vez antes que as respostas comecem. Note que uma vez que um grupo é aprovado, **qualquer membro daquele grupo** pode usar o bot; `senderPolicy` e `allowedUsers` não controlam os membros de um grupo aprovado.
+5. Se estiver usando `groupPolicy: "pairing"`, aprove a solicitação de pareamento do grupo uma vez antes que as respostas comecem. Note que uma vez que um grupo é aprovado, **qualquer membro daquele grupo** pode usar o bot por padrão (restrinja com `senders: "allowlist"` e `allowedUsers` do grupo); `privatePolicy` e `allowedUsers` do nível superior não controlam os membros de um grupo aprovado.
 
 Por padrão, o bot exige uma @menção ou uma resposta para responder em grupos. Defina `"requireMention": false` para um grupo específico para que ele responda a todas as mensagens (útil para grupos de tarefas dedicados). Veja [Conversas em Grupo](./overview#group-chats) para detalhes completos.
 
@@ -90,7 +90,7 @@ Você pode enviar fotos e documentos para o bot, não apenas texto.
 
 - **Mantenha as instruções concisas e focadas** — O Telegram tem um limite de 4096 caracteres por mensagem. Adicionar instruções como "mantenha as respostas curtas" ajuda o agente a permanecer dentro dos limites.
 - **Use `sessionScope: "user"`** — Isso dá a cada usuário sua própria conversa. Use `/clear` para recomeçar.
-- **Restrinja o acesso** — Use `senderPolicy: "allowlist"` para um conjunto fixo de usuários, ou `"pairing"` para permitir que novos usuários solicitem acesso com um código que você aprova via CLI. Veja [DM Pairing](./overview#dm-pairing) para detalhes.
+- **Restrinja o acesso** — Use `privatePolicy: "allowlist"` para um conjunto fixo de usuários, ou `"pairing"` para permitir que novos usuários solicitem acesso com um código que você aprova via CLI. Veja [Pareamento de DM](./overview#dm-pairing) para detalhes.
 
 ## Formatação de Mensagens
 
@@ -101,7 +101,7 @@ As respostas em markdown do agente são automaticamente convertidas para HTML co
 ### O bot não responde
 
 - Verifique se o token do bot está correto e se a variável de ambiente está definida
-- Verifique se seu user ID está em `allowedUsers` se estiver usando `senderPolicy: "allowlist"`, ou se você foi aprovado se estiver usando `"pairing"`
+- Verifique se seu user ID está em `allowedUsers` se estiver usando `privatePolicy: "allowlist"`, ou se você foi aprovado se estiver usando `"pairing"`
 - Verifique a saída do terminal em busca de erros
 
 ### O bot não responde em grupos
@@ -111,7 +111,7 @@ As respostas em markdown do agente são automaticamente convertidas para HTML co
 - Se estiver usando `"pairing"`, verifique se a solicitação de pareamento do grupo foi aprovada
 - Certifique-se de que **Group Privacy está desligado** no BotFather — sem isso, o bot não consegue ver mensagens que não sejam comandos em grupos
 - Se você alterou o modo de privacidade depois de adicionar o bot a um grupo, **remova e adicione o bot novamente** ao grupo
-- Por padrão, o bot exige uma @menção ou uma resposta. Envie `@seubot oi` para testar
+- Por padrão, o bot exige uma @menção ou uma resposta. Envie `@yourbotname hello` para testar
 
 ### "Desculpe, algo deu errado ao processar sua mensagem"
 
