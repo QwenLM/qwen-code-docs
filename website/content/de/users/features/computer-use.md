@@ -25,7 +25,7 @@ Node.js 22 oder später und npm werden benötigt.
 Bei der ersten Verwendung führt der Skill diese Befehle selbst aus:
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.6
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.7
 npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.11
 ```
 
@@ -85,6 +85,34 @@ Unter macOS erfordern Accessibility-Beobachtung und Eingabe eine Accessibility-B
 Screenshots erfordern zusätzlich Screen Recording-Berechtigung. macOS kann
 die Genehmigung dem Terminal oder der IDE zuordnen, das Qwen Code gestartet hat. Windows und
 Linux verwenden ihre plattformeigenen Accessibility- und Eingabe-Mechanismen.
+
+## Den Computer vor dir von einer Remote-Session aus nutzen
+
+Wenn Qwen Code auf einer Headless-Maschine läuft (eine Dev-Box, ein Server), kann
+der Skill trotzdem den Desktop steuern, an dem du sitzt: Dieser Computer stellt
+sein eigenes `node_repl` einer Remote-Session zur Verfügung. Es funktioniert
+derzeit unter macOS.
+
+Richte es einmal auf deinem Computer ein:
+
+```bash
+npx -y @qwen-code/node-repl-mcp@0.1.7 desktop-relay install
+```
+
+Dies installiert `node_repl` und das SDK unter `~/.qwen/desktop-relay` und registriert
+einen launchd-Socket auf `127.0.0.1:47821`. Nichts läuft im Hintergrund; launchd
+startet einen kurzlebigen Prozess nur, wenn sich etwas verbindet.
+
+- **Von der Web Shell.** Der Remote-Daemon muss mit
+  `QWEN_SERVE_CLIENT_MCP_OVER_WS=1` laufen, und die Web Shell muss eine sichere Seite
+  sein (https oder `http://localhost` über einen SSH-Tunnel). Wähle in einer Session
+  **Use this computer** im Sidebar-Footer und dann **Connect this computer**.
+
+Ein Dialog auf deinem Computer fragt dich, ob du jede Verbindung erlauben möchtest.
+Eine erlaubte Session kann Code auf deinem Computer mit deinen Berechtigungen
+ausführen und seinen Bildschirm sehen und steuern, genau wie lokales Computer Use,
+bis du sie trennst oder sie endet. macOS fragt beim ersten Mal, ob `node` unter
+Accessibility und Screen Recording erlaubt werden soll.
 
 ## Fehlerbehebung
 

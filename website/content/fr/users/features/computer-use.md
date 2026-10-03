@@ -22,7 +22,7 @@ Node.js 22 ou ultérieur et npm sont requis.
 Lors de sa première utilisation, le skill exécute lui-même ces commandes :
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.6
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.7
 npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.11
 ```
 
@@ -60,6 +60,22 @@ Actualisez l'état après avoir ouvert ou fermé une boîte de dialogue avant de
 Le Node REPL est un serveur MCP qui exécute du JavaScript écrit par le modèle avec les autorisations ordinaires de Node.js. Ses appels suivent le [flux d'approbation MCP](./approval-mode.md) normal de Qwen Code. Le SDK applique également l'autorisation native.
 
 Sur macOS, l'observation de l'accessibilité et les entrées nécessitent la permission Accessibility. Les captures d'écran nécessitent en plus la permission Screen Recording. macOS peut attribuer l'octroi au terminal ou à l'IDE qui a lancé Qwen Code. Windows et Linux utilisent leurs facilités d'accessibilité et d'entrée propres à chaque plateforme.
+
+## Utiliser l'ordinateur devant vous depuis une session distante
+
+Lorsque Qwen Code s'exécute sur une machine headless (une machine de dev, un serveur), le skill peut toujours piloter le bureau auquel vous êtes assis : cet ordinateur prête son propre `node_repl` à une session distante. Cela fonctionne sur macOS aujourd'hui.
+
+Configurez-le une seule fois sur votre ordinateur :
+
+```bash
+npx -y @qwen-code/node-repl-mcp@0.1.7 desktop-relay install
+```
+
+Cela installe `node_repl` et le SDK sous `~/.qwen/desktop-relay` et enregistre un socket launchd sur `127.0.0.1:47821`. Rien ne s'exécute en arrière-plan ; launchd ne démarre un processus de courte durée que lorsque quelque chose se connecte.
+
+- **Depuis le Web Shell.** Le démon distant doit s'exécuter avec `QWEN_SERVE_CLIENT_MCP_OVER_WS=1`, et le Web Shell doit être une page sécurisée (https, ou `http://localhost` via un tunnel SSH). Dans une session, choisissez **Use this computer** dans le pied de page de la barre latérale, puis **Connect this computer**.
+
+Une boîte de dialogue sur votre ordinateur vous demande d'autoriser chaque connexion. Une session autorisée peut exécuter du code sur votre ordinateur avec vos permissions, voir et contrôler son écran, tout comme le Computer Use local, jusqu'à ce que vous la déconnectiez ou qu'elle se termine. macOS demande d'autoriser `node` pour Accessibility et Screen Recording la première fois.
 
 ## Dépannage
 

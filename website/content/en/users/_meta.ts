@@ -30,4 +30,5 @@ export default {
   'ide-integration': {
     display: 'hidden',
   },
+  'hosted-workspace-recovery': 'Hosted Workspace operator recovery',
 };

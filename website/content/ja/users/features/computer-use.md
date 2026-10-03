@@ -22,7 +22,7 @@ Node.js 22 以降と npm が必要です。
 初回使用時に、スキルが以下のコマンドを自分で実行します。
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.6
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.7
 npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.11
 ```
 
@@ -60,6 +60,22 @@ nodeRepl.write((await app.getState()).text);
 Node REPL は、モデルが作成した JavaScript を通常の Node.js 権限で実行する MCP サーバーです。その呼び出しは Qwen Code の通常の [MCP 承認フロー](./approval-mode.md) に従います。SDK もネイティブの認可を強制します。
 
 macOS では、アクセシビリティの観測と入力に Accessibility 権限が必要です。スクリーンショットにはさらに Screen Recording 権限が必要です。macOS は Qwen Code を起動したターミナルまたは IDE に付与を帰属させる場合があります。Windows と Linux はプラットフォームのアクセシビリティおよび入力機能を使用します。
+
+## リモートセッションから目の前のコンピューターを操作する
+
+Qwen Code がヘッドレスマシン（開発ボックスやサーバー）で動作している場合でも、スキルはあなたが座っているデスクトップを操作できます。そのコンピューターは自身の `node_repl` を 1 つのリモートセッションに貸し出します。現在 macOS で動作します。
+
+お使いのコンピューターで一度だけセットアップを行います。
+
+```bash
+npx -y @qwen-code/node-repl-mcp@0.1.7 desktop-relay install
+```
+
+これにより `~/.qwen/desktop-relay` 以下に `node_repl` と SDK がインストールされ、`127.0.0.1:47821` に launchd ソケットが登録されます。バックグラウンドで動作するものはありません。launchd は接続があったときにのみ短命のプロセスを起動します。
+
+- **Web Shell から。** リモートデーモンは `QWEN_SERVE_CLIENT_MCP_OVER_WS=1` で実行する必要があります。また Web Shell はセキュアなページ（https、または SSH トンネル経由の `http://localhost`）である必要があります。セッション内で、サイドバーのフッターにある **このコンピューターを使用** を選択し、次に **このコンピューターを接続** を選択します。
+
+お使いのコンピューターにダイアログが表示され、接続ごとに許可を求めるプロンプトが出ます。許可されたセッションは、ローカルの Computer Use と同様に、あなたの権限でコンピューター上でコードを実行し、画面を表示・制御できます。接続を解除するかセッションが終了するまで続きます。macOS では、初回時に Accessibility と Screen Recording の権限で `node` の許可を求められます。
 
 ## トラブルシューティング
 

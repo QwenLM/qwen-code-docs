@@ -1,0 +1,30 @@
+# Hosted-Workspace-Operator-Recovery
+
+
+Verwenden Sie dieses Verfahren ausschließlich für einen Linux-durable-local-process-Worker auf dem ursprünglichen Host, dessen unvollständige Hosted-Shell-Capture eine Workspace-Lease behalten hat. Ein Neustart zwischen `prepare` und `complete` hebt die Fence nicht auf; der Operator muss weiterhin sicherstellen, dass alle potenziellen Writer gestoppt sind und nicht neu gestartet werden können, und dann den Nachweis mit `complete` einreichen. Die Recovery macht den physischen Workspace für neue Sessions verfügbar. Sie schließt den ursprünglichen Shell-Aufruf nicht ab, wiederholt ihn nicht und zertifiziert ihn nicht.
+
+Der Wartungsbefehl wird als `qwen-managed-agent-server-*-operator-recovery.jar` ausgeliefert. Führen Sie ihn auf dem ursprünglichen Worker-Host als Service-OS-Konto mit den Datenbankeinstellungen des Dienstes, dem Runtime-Credential-Key und `QWEN_MANAGED_AGENT_RUNTIME_STATE_DIRECTORY` aus. Setzen Sie `QWEN_MANAGED_AGENT_RUNTIME_DURABLE_LOCAL_PROCESS=true`, `QWEN_MANAGED_AGENT_RUNTIME_PROVISIONER=local-process` und `QWEN_MANAGED_AGENT_RUNTIME_OPERATOR_RECOVERY_ENABLED=true` für diesen Wartungsprozess. Halten Sie die Datenbank- und Credential-Umgebung privat. Führen Sie die Service-Datenbankmigration vor dem Ausführen des Befehls durch. Der Befehl startet keinen HTTP-Listener, Scheduler oder Worker.
+
+1. Suchen Sie die `runtime.runtimeBindingId` und `runtime.generation` des betroffenen Runs. Wenn der Run-Datensatz nicht verfügbar ist, kann ein autorisierter DBA eine Read-only-Abfrage gegen `qwen_runtime_binding` für die betroffene `tenant_id` und `workspace_id` verwenden, um `binding_id`, `runtime_generation` und `binding_state` aufzulisten; prüfen Sie jeden Kandidaten und verwenden Sie nur denjenigen mit der übereinstimmenden gehaltenen Lease und dem Shell-Capture. Führen Sie `java -jar qwen-managed-agent-server-*-operator-recovery.jar inspect <bindingId> <generation>` aus. Notieren Sie den zurückgegebenen `holderKey`, die Runtime-Session, den Shell-Aufruf, `captureStatus` und `captureReason`. Die Recovery erfordert ein gespeichertes `producer_lost`-Shell-Ergebnis und eine exakte, weiterhin gehaltene Workspace-Lease. Ein nicht unterstützter Legacy-Worker, eine fehlende Registrierungsidentität oder ein fehlender Holder können nicht durch das Ersetzen von Identitätsdatensätzen repariert werden.
+2. Führen Sie `java -jar qwen-managed-agent-server-*-operator-recovery.jar prepare <bindingId> <generation> <holderKey> '<incident reason>'` aus. Speichern Sie die zurückgegebene `recoveryId`. Eine Live- oder Recovery-blockierte Bindung wird als `OPERATOR_RECOVERY` gefenced; eine bereits LOST-Bindung bleibt LOST und wird vom Hintergrund-Recovery-Scan ausgeschlossen. Keine Workspace-Lease wird freigegeben. Das Wiederholen mit demselben Service-OS-Konto und Grund ist sicher. Ein anderes protokolliertes Konto, ein anderer Grund, eine andere Generation oder ein anderer Holder wird abgelehnt. Protokollieren Sie den menschlichen Operator separat im Incident-Datensatz; `operator_id` identifiziert das OS-Konto, das den Befehl ausführt.
+3. Stoppen Sie den ursprünglichen Worker und überprüfen Sie **alle** möglichen Writer auf den Workspace, einschließlich abgekoppelter Kinder und externer Supervisors. Verhindern Sie, dass der ursprüngliche Worker und die Writer neu gestartet werden. Bestätigen Sie, dass sie gestoppt wurden. Prozessgruppen-Death, Pipe-EOF, verstrichene Zeit und der Verlust der Parent-PID allein sind nicht ausreichend. Wenn dies nicht festgestellt werden kann, stoppen Sie hier und lassen Sie den Workspace gefenced.
+4. Erstellen Sie eine reguläre, nicht-symlinkierte UTF-8-JSON-Datei mit maximal 8 KiB direkt im privaten Runtime-State-Verzeichnis, Modus `0600`, mit genau diesen Feldern (ersetzen Sie die Beispielwerte):
+
+   ```json
+   {
+     "version": 1,
+     "recoveryId": "<recoveryId>",
+     "verifiedAt": "2026-09-29T03:00:00Z",
+     "method": "host inspection",
+     "actions": "Stopped worker and detached writers; disabled their external restart source; verified no writer remains",
+     "restartPrevention": true
+   }
+   ```
+
+   `verifiedAt` muss eine tatsächliche UTC-Verifizierungszeit sein, die nicht früher als `prepare` und nicht mehr als fünf Minuten vor der Uhr des Wartungshosts liegt. Notieren Sie konkrete Schritte und die Quelle der Neustartverhinderung; schreiben Sie die Erklärung niemals, bevor diese Überprüfungen abgeschlossen sind. Halten Sie die Datei und den Incident-Datensatz privat.
+
+5. Führen Sie `java -jar qwen-managed-agent-server-*-operator-recovery.jar complete <recoveryId> <absoluteEvidenceFile>` aus. Der Befehl prüft die exakte gespeicherte Worker-Identität und, beim selben Boot, deren Fehlen; nach einem Neustart des ursprünglichen Hosts prüft er die geänderte Boot-Identität. Er tombstoned dann die Registrierung, persistiert die unveränderliche Erklärung und übernimmt nur den ursprünglichen Holder. Er kann nach einem Crash oder einem temporären Datenbankfehler mit **derselben Datei** wiederholt werden. Eine geänderte Erklärung wird abgelehnt. Erfolgreiche Ausgabe ist `completed`.
+
+Starten Sie nach dem Abschluss eine **neue** Session und überprüfen Sie, dass sie den Workspace verwenden kann. Untersuchen Sie den ursprünglichen Turn separat: seine Teilweise Ausgabe und unsicheren Effekte bleiben unsicher, und kein Shell-Aufruf wird replayed. Löschen Sie keine SQL-Tabellen oder Registrierungsdateien manuell, um eine Ablehnung zu umgehen. Wenn die ursprüngliche Registrierung fehlt oder beschädigt ist oder der Worker aus einem älteren ephemeralen Modus stammt, wird dieses Verfahren nicht unterstützt; eskalieren Sie mit den bewahrten Beweisen, anstatt sie zu fälschen.
+
+Die Software kann die registrierte Worker-Identität und den exakten SQL-Holder überprüfen, aber sie kann nicht beweisen, dass beliebige entkommene Nachkommen gestoppt wurden. Die Erklärung des Operators ist die Vertrauensgrenze für diese Tatsache.

@@ -37,4 +37,6 @@ export default {
   'terminal-images': 'Terminal Images',
   worktree: 'Worktrees',
   tips: 'Contextual Tips',
+  'batch': 'Batch Mode (DashScope)',
+  'mem0': 'Mem0',
 };

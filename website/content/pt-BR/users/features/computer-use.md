@@ -22,7 +22,7 @@ Node.js 22 ou posterior e npm são necessários.
 No primeiro uso, a skill executa estes comandos por conta própria:
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.6
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.7
 npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.11
 ```
 
@@ -60,6 +60,22 @@ Atualize o estado após abrir ou fechar um diálogo antes de reutilizar IDs de e
 O Node REPL é um servidor MCP que executa JavaScript escrito pelo modelo com autoridade Node.js ordinária. Suas chamadas seguem o [fluxo de aprovação MCP](./approval-mode.md) normal do Qwen Code. O SDK também impõe autorização nativa.
 
 No macOS, a observação de acessibilidade e a entrada requerem permissão de Accessibility. Screenshots também requerem permissão de Screen Recording. O macOS pode atribuir a concessão ao terminal ou IDE que iniciou o Qwen Code. Windows e Linux usam suas facilidades de acessibilidade e entrada de plataforma.
+
+## Use o computador à sua frente a partir de uma sessão remota
+
+Quando o Qwen Code é executado em uma máquina headless (uma dev box, um servidor), a skill ainda pode controlar o desktop onde você está: esse computador empresta seu próprio `node_repl` para uma sessão remota. Funciona no macOS atualmente.
+
+Configure uma vez no seu computador:
+
+```bash
+npx -y @qwen-code/node-repl-mcp@0.1.7 desktop-relay install
+```
+
+Isso instala o `node_repl` e o SDK em `~/.qwen/desktop-relay` e registra um socket launchd em `127.0.0.1:47821`. Nada é executado em segundo plano; o launchd inicia um processo de curta duração apenas quando algo se conecta.
+
+- **A partir da Web Shell.** O daemon remoto deve ser executado com `QWEN_SERVE_CLIENT_MCP_OVER_WS=1`, e a Web Shell deve ser uma página segura (https, ou `http://localhost` através de um túnel SSH). Em uma sessão, escolha **Use this computer** no rodapé da barra lateral, depois **Connect this computer**.
+
+Uma caixa de diálogo no seu computador pede para permitir cada conexão. Uma sessão permitida pode executar código no seu computador com suas permissões e ver e controlar sua tela, assim como o Computer Use local, até que você a desconecte ou ela termine. O macOS pede para permitir o `node` em Accessibility e Screen Recording na primeira vez.
 
 ## Solução de problemas
 

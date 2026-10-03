@@ -6,4 +6,5 @@ export default {
   deployment: {
     display: 'hidden',
   },
+  'ci-variables': 'CI and Release Variables',
 };

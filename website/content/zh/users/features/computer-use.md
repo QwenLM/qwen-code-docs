@@ -22,7 +22,7 @@ Qwen Code 不捆绑 MCP server、SDK 或原生驱动。skill 会在缺少这些�
 首次使用时，skill 会自行运行以下命令：
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.6
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.7
 npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.11
 ```
 
@@ -60,6 +60,22 @@ nodeRepl.write((await app.getState()).text);
 Node REPL 是一个 MCP server，以普通 Node.js 权限执行模型编写的 JavaScript。其调用遵循 Qwen Code 正常的[MCP 审批流程](./approval-mode.md)。SDK 还会强制执行原生授权。
 
 在 macOS 上，辅助功能观察和输入需要 Accessibility 权限。截屏还需要 Screen Recording 权限。macOS 可能会将授权归因于启动 Qwen Code 的终端或 IDE。Windows 和 Linux 使用各自平台的辅助功能和输入机制。
+
+## 从远程会话使用面前的计算机
+
+当 Qwen Code 在无头机器（开发机、服务器）上运行时，skill 仍然可以驱动你所在的桌面：该计算机将其 `node_repl` 借给一个远程会话。目前在 macOS 上可用。
+
+在你的计算机上一次性设置：
+
+```bash
+npx -y @qwen-code/node-repl-mcp@0.1.7 desktop-relay install
+```
+
+这会在 `~/.qwen/desktop-relay` 下安装 `node_repl` 和 SDK，并在 `127.0.0.1:47821` 上注册一个 launchd socket。后台没有运行的进程；launchd 只在有连接时启动一个短生命周期的进程。
+
+- **从 Web Shell。** 远程守护进程必须使用 `QWEN_SERVE_CLIENT_MCP_OVER_WS=1` 运行，Web Shell 必须是安全页面（https，或通过 SSH 隧道的 `http://localhost`）。在会话中，在侧边栏页脚选择 **使用此计算机**，然后 **连接此计算机**。
+
+你计算机上的对话框会要求你允许每个连接。被允许的会话可以在你的计算机上以你的权限运行代码，并查看和控制其屏幕，就像本地 Computer Use 一样，直到你断开连接或它结束。macOS 首次会要求允许 `node` 使用辅助功能和屏幕录制权限。
 
 ## 故障排除
 
