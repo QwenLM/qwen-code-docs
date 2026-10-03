@@ -62,7 +62,7 @@
       "type": "feishu",
       "clientId": "<your-app-id>",
       "clientSecret": "<your-app-secret>",
-      "senderPolicy": "open",
+      "privatePolicy": "open",
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "groupPolicy": "open",

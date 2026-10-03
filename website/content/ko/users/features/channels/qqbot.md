@@ -59,7 +59,7 @@ export QQ_APP_SECRET=<your-app-secret>
       "appID": "YOUR_APP_ID",
       "appSecret": "$QQ_APP_SECRET",
       "sandbox": false,
-      "senderPolicy": "open",
+      "privatePolicy": "open",
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "instructions": "你是一个通过 QQ Bot 对话的 AI 助手。回复控制在 2000 字符以内。",
@@ -81,7 +81,7 @@ export QQ_APP_SECRET=<your-app-secret>
 | `sandbox`   | `false` | QQ 샌드박스 API 환경(`sandbox.api.sgroup.qq.com`)을 사용하려면 `true`로 설정하세요.          |
 
 모든 표준 채널 옵션([채널 개요](./overview#options) 참조)도 지원됩니다:
-`senderPolicy`, `allowedUsers`, `sessionScope`, `cwd`, `instructions`, `groupPolicy`, `groups`, `dispatchMode`.
+`privatePolicy`, `allowedUsers`, `sessionScope`, `cwd`, `instructions`, `groupPolicy`, `groups`, `dispatchMode`.
 
 ## 실행
 
@@ -102,7 +102,7 @@ QQ 그룹에서 봇을 사용하려면:
 1. 채널 구성에서 `groupPolicy`를 `"allowlist"`, `"pairing"` 또는 `"open"`으로 설정하세요
 2. QQ Bot Open Platform 대시보드에서 그룹 관리자가 봇을 초대하여 QQ 그룹에 추가하세요
 3. 그룹 멤버는 봇에게 **@멘션**해야 응답이 트리거됩니다
-4. `groupPolicy: "pairing"`을 사용하는 경우, 응답이 시작되기 전에 그룹의 페어링 요청을 한 번 승인하세요. 그룹이 승인되면 **해당 그룹의 모든 멤버**가 봇을 사용할 수 있습니다. `senderPolicy`와 `allowedUsers`는 승인된 그룹의 멤버를 제한하지 않습니다.
+4. `groupPolicy: "pairing"`을 사용하는 경우, 응답이 시작되기 전에 그룹의 페어링 요청을 한 번 승인하세요. 그룹이 승인되면 기본적으로 **해당 그룹의 모든 멤버**가 봇을 사용할 수 있습니다(그룹의 `senders: "allowlist"`와 `allowedUsers`로 제한 가능). `privatePolicy`와 최상위 `allowedUsers`는 승인된 그룹의 멤버를 제한하지 않습니다.
 
 QQ Bot API V2는 봇을 @멘션한 그룹 메시지만 전달합니다 — 봇은 모든 그룹 메시지를 볼 수 없습니다. 기본적으로 `requireMention`은 `true`이며 QQ에서는 그대로 두는 것이 좋습니다.
 
@@ -115,6 +115,37 @@ QQ Bot 채널은 Markdown 포맷(`msg_type=2`)을 지원합니다. 에이전트�
 QQ 서버가 어떤 이유로든 Markdown 메시지를 거부하면, 채널이 자동으로 일반 텍스트로 재시도합니다 — 봇의 Markdown 기능이 서버 측에서 제한되어 있어도 메시지가 항상 전달됩니다.
 
 이는 모든 Markdown을 제거하는 WeChat 채널과 반대입니다. QQ 채널에서는 에이전트가 전체 Markdown을 자유롭게 사용할 수 있습니다.
+
+## 이미지 및 비디오
+
+사용자는 봇에게 이미지와 비디오를 전송할 수 있습니다. 이미지는 비전 입력으로 에이전트에게 전달되므로 에이전트가 실제 이미지를 볼 수 있습니다 — 스크린샷, 오류 메시지, 다이어그램 모두 작동합니다 — 그리고 동일한 파일이 모델을 사용할 수 없는 경우를 위해 임시 로컬 경로에도 저장됩니다. 비디오는 임시 로컬 경로에 저장되고 해당 경로가 에이전트에게 전달됩니다.
+
+미디어 메시지에 텍스트는 필요하지 않습니다 — 이미지 전용 또는 비디오 전용 메시지도 턴을 시작하며, 채널은 플레이스홀더로 `(image)` 또는 `(video)`를 사용합니다. 메시지에 텍스트도 포함된 경우 해당 텍스트가 캡션으로 유지됩니다.
+
+- 이미지는 최대 8 MB, 비디오는 최대 20 MB로 제한되며, 메시지당 최대 5개의 첨부 파일까지 처리됩니다. 이보다 큰 파일은 건너뛰어 채널의 stderr에 기록됩니다.
+- 다운로드된 파일은 삭제되지 않습니다. 시스템 임시 디렉토리에 남아 있으며, 시스템이 자체 일정에 따라 정리합니다.
+
+이미지 입력에는 이미지를 허용하는 모델이 필요합니다. 모델이 멀티모달이지만 이름으로 인식되지 않는 경우 해당 기능을 선언하세요. 이 필드는 해당 모델을 제공하는 제공자 엔트리에 있어야 합니다. 최상위 `model.generationConfig` 값은 제공자 기반 모델에 대해 무시되기 때문입니다:
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "your-model-id",
+        "baseUrl": "https://example.invalid/v1",
+        "generationConfig": {
+          "modalities": { "image": true }
+        }
+      }
+    ]
+  }
+}
+```
+
+텍스트 전용 모델의 경우 에이전트는 이미지 대신 "지원되지 않는 이미지" 메모와 저장된 경로를 받습니다.
+
+QQ로 이미지나 비디오를 다시 전송하는 것은 지원되지 않습니다.
 
 ## 토큰 관리
 
@@ -135,7 +166,7 @@ QQ 서버가 어떤 이유로든 Markdown 메시지를 거부하면, 채널이 �
 - **Markdown 자유롭게 사용** — WeChat과 달리, QQ는 Markdown을 네이티브로 렌더링합니다. 굵게, 코드 블록, 목록, 링크가 모두 작동합니다.
 - **응답을 2000자 이하로 유지** — 더 긴 응답은 자동으로 청크로 분할됩니다. 지시에 길이 힌트를 추가하면 에이전트가 간결하게 유지하는 데 도움이 됩니다.
 - **테스트에 샌드박스 사용** — 개발 중에 샌드박스 API를 사용하려면 `"sandbox": true`로 설정하세요. 프로덕션 메시지에는 영향이 없습니다.
-- **액세스 제한** — 고정된 QQ 사용자 집합에 대해 `senderPolicy: "allowlist"`를 사용하거나, CLI에서 새 사용자를 승인하려면 `"pairing"`을 사용하세요. 자세한 내용은 [DM 페어링](./overview#dm-pairing)을 참조하세요.
+- **액세스 제한** — 고정된 QQ 사용자 집합에 대해 `privatePolicy: "allowlist"`를 사용하거나, CLI에서 새 사용자를 승인하려면 `"pairing"`을 사용하세요. 자세한 내용은 [DM 페어링](./overview#dm-pairing)을 참조하세요.
 
 ## Telegram과의 주요 차이점
 
@@ -154,7 +185,7 @@ QQ 서버가 어떤 이유로든 Markdown 메시지를 거부하면, 채널이 �
 
 - 터미널 출력에서 오류를 확인하세요
 - 채널이 실행 중인지 확인하세요 (`qwen channel status`)
-- `senderPolicy: "allowlist"`를 사용하는 경우, QQ 사용자 ID가 `allowedUsers`에 있는지 확인하세요
+- `privatePolicy: "allowlist"`를 사용하는 경우, QQ 사용자 ID가 `allowedUsers`에 있는지 확인하세요
 - 첫 시작 시 터미널에 QR 코드가 표시됩니다 — QQ 앱으로 스캔하세요
 
 ### 봇이 그룹에서 응답하지 않음

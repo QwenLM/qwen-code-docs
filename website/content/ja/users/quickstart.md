@@ -78,7 +78,7 @@ qwen
 
 > [!note]
 >
-> Qwen Code を Qwen アカウントで初めて認証すると、".qwen" というワークスペースが自動的に作成されます。このワークスペースは、組織内のすべての Qwen Code 使用に関する集中コスト追跡と管理を提供します。
+> Qwen Code は設定とカスタマイズを `.qwen` ディレクトリに保存します。`~/.qwen/` はユーザーレベルの設定（例: `settings.json`）とグローバルカスタムコマンド用、`<project>/.qwen/` はプロジェクト固有のファイル（カスタムコマンドやサマリーなど）用です。
 
 > [!tip]
 >
@@ -228,7 +228,7 @@ review my changes and suggest improvements
 | `/doctor`               | 現在の認証と環境を確認                                   | `/doctor`                      |
 | `/help`                 | 利用可能なコマンドのヘルプを表示                         | `/help` または `/?`            |
 | `/compress`             | チャット履歴を要約して Token を節約                     | `/compress`                    |
-| `/clear`                | ターミナル画面の内容をクリア                             | `/clear`（ショートカット: `Ctrl+L`） |
+| `/clear`                | 会話履歴をクリアしてコンテキストを解放                   | `/clear`（エイリアス: `reset`、`new`） |
 | `/theme`                | Qwen Code のビジュアルテーマを変更                       | `/theme`                       |
 | `/language`             | 言語設定の表示または変更                                 | `/language`                    |
 | → `ui [language]`       | UIインターフェースの言語を設定                           | `/language ui zh-CN`           |

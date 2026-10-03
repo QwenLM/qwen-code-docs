@@ -57,12 +57,12 @@ brew install qwen-code
 Lorsque vous démarrez une session interactive avec la commande `qwen`, vous serez invité à configurer l'authentification :
 
 ```bash
-# Vous serez invité à configurer l'authentification lors de la première utilisation
+# You'll be prompted to set up authentication on first use
 qwen
 ```
 
 ```bash
-# Ou exécutez /auth à tout moment pour changer la méthode d'authentification
+# Or run /auth anytime to change authentication method
 /auth
 ```
 
@@ -70,7 +70,7 @@ Le menu de première exécution vous permet de connecter un fournisseur de modè
 
 - **Alibaba ModelStudio** — la configuration recommandée. Ouvre un sous-menu :
   - **Token Plan** : facturation à l'utilisation avec un point de terminaison dédié, destiné aux équipes et aux entreprises. Voir le [guide Token Plan](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) ([intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) pour les instructions de configuration.
-  - **Standard API Key** : connectez-vous avec une clé API existante d'Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)). Voir le guide de configuration de l'API ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091)(https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)) pour plus de détails.
+  - **Standard API Key** : connectez-vous avec une clé API existante d'Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)). Voir le guide de configuration de l'API ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)) pour plus de détails.
 - **Fournisseurs tiers** — choisissez un fournisseur intégré (DeepSeek, Grok, MiniMax, Z.AI, Kimi, Idealab, ModelScope, OpenRouter, Requesty, et plus) et connectez-vous avec une clé API.
 - **Fournisseur personnalisé** — connectez manuellement un serveur local, un proxy ou un fournisseur non pris en charge.
 
@@ -78,7 +78,7 @@ Le menu de première exécution vous permet de connecter un fournisseur de modè
 
 > [!note]
 >
-> Lors de la première authentification de Qwen Code avec votre compte Qwen, un espace de travail appelé ".qwen" est automatiquement créé pour vous. Cet espace de travail offre un suivi et une gestion centralisés des coûts pour toute l'utilisation de Qwen Code dans votre organisation.
+> Qwen Code stocke sa configuration et ses personnalisations dans les répertoires `.qwen` : `~/.qwen/` pour les paramètres utilisateur (par ex. `settings.json`) et les commandes personnalisées globales, et `<project>/.qwen/` pour les fichiers spécifiques au projet tels que les commandes personnalisées et les résumés.
 
 > [!tip]
 >
@@ -89,9 +89,9 @@ Le menu de première exécution vous permet de connecter un fournisseur de modè
 Ouvrez votre terminal dans n'importe quel répertoire de projet et démarrez Qwen Code :
 
 ```bash
-# facultatif
-cd /chemin/vers/votre/projet
-# démarrer qwen
+# optional
+cd /path/to/your/project
+# start qwen
 qwen
 ```
 
@@ -228,7 +228,7 @@ Voici les commandes les plus importantes pour une utilisation quotidienne :
 | `/doctor`             | Vérifier l'authentification et l'environnement actuels | `/doctor`                      |
 | `/help`               | Afficher l'aide pour les commandes disponibles         | `/help` ou `/?`                |
 | `/compress`           | Remplacer l'historique de la discussion par un résumé pour économiser des Tokens | `/compress` |
-| `/clear`              | Effacer le contenu de l'écran du terminal              | `/clear` (raccourci : `Ctrl+L`) |
+| `/clear`              | Effacer l'historique de conversation et libérer le contexte | `/clear` (alias : `reset`, `new`) |
 | `/theme`              | Changer le thème visuel de Qwen Code                   | `/theme`                       |
 | `/language`           | Afficher ou modifier les paramètres de langue          | `/language`                    |
 | → `ui [language]`     | Définir la langue de l'interface utilisateur           | `/language ui zh-CN`           |

@@ -78,7 +78,7 @@ qwen
 
 > [!note]
 >
-> 当你首次使用 Qwen 账号认证 Qwen Code 时，系统会自动为你创建一个名为 ".qwen" 的工作空间。该工作空间为你组织内的所有 Qwen Code 使用情况提供集中的成本跟踪和管理。
+> Qwen Code 将配置和自定义项存储在 `.qwen` 目录中：`~/.qwen/` 用于用户级设置（如 `settings.json`）和全局自定义命令，`<project>/.qwen/` 用于项目级文件，如自定义命令和摘要。
 
 > [!tip]
 >
@@ -228,7 +228,7 @@ Qwen Code 将：
 | `/doctor`             | 检查当前身份认证和环境                         | `/doctor`                      |
 | `/help`               | 显示可用命令的帮助信息                         | `/help` 或 `/?`                |
 | `/compress`           | 用摘要替换聊天历史以节省 Token                 | `/compress`                    |
-| `/clear`              | 清除终端屏幕内容                               | `/clear`（快捷键：`Ctrl+L`）   |
+| `/clear`              | 清除对话历史并释放上下文                               | `/clear`（别名：`reset`、`new`）   |
 | `/theme`              | 更改 Qwen Code 的视觉主题                      | `/theme`                       |
 | `/language`           | 查看或更改语言设置                             | `/language`                    |
 | → `ui [语言]`         | 设置 UI 界面语言                              | `/language ui zh-CN`           |

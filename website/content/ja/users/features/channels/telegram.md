@@ -15,7 +15,7 @@
 
 ## ユーザー ID の確認
 
-`senderPolicy: "allowlist"` または `"pairing"` を使用するには、Telegram ユーザー ID（数値のID、ユーザー名ではありません）が必要です。
+`privatePolicy: "allowlist"` または `"pairing"` を使用するには、Telegram ユーザー ID（数値のID、ユーザー名ではありません）が必要です。
 
 最も簡単な確認方法:
 
@@ -32,7 +32,7 @@
     "my-telegram": {
       "type": "telegram",
       "token": "$TELEGRAM_BOT_TOKEN",
-      "senderPolicy": "allowlist",
+      "privatePolicy": "allowlist",
       "allowedUsers": ["YOUR_USER_ID"],
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
@@ -74,7 +74,7 @@ Telegram グループでボットを使用する場合:
 2. **BotFather でプライバシーモードを無効**にします: `/mybots` → ボットを選択 → Bot Settings → Group Privacy → Turn Off
 3. ボットをグループに追加します。すでにグループにいる場合は、**一度削除してから再追加**してください（Telegram は参加時のプライバシー設定をキャッシュします）
 4. `groupPolicy: "allowlist"` を使用する場合は、設定の `groups` にグループのチャット ID を追加します
-5. `groupPolicy: "pairing"` を使用している場合、応答が開始される前にグループのペアリングリクエストを一度承認してください。グループが承認されると、**そのグループのどのメンバーでも**ボットを使用できることに注意してください。`senderPolicy` と `allowedUsers` は、承認されたグループのメンバーを制限しません。
+5. `groupPolicy: "pairing"` を使用している場合、応答が開始される前にグループのペアリングリクエストを一度承認してください。グループが承認されると、デフォルトで**そのグループのどのメンバーでも**ボットを使用できることに注意してください（グループの `senders: "allowlist"` と `allowedUsers` で制限できます）。`privatePolicy` と最上位の `allowedUsers` は、承認されたグループのメンバーを制限しません。
 
 デフォルトでは、ボットはグループ内で @メンションまたは返信があった場合のみ応答します。特定のグループで `"requireMention": false` を設定すると、すべてのメッセージに応答するようになります（専用タスクグループに便利です）。詳細は[グループチャット](./overview#group-chats)を参照してください。
 
@@ -90,7 +90,7 @@ Telegram グループでボットを使用する場合:
 
 - **インストラクションは簡潔に** — Telegram のメッセージ文字数制限は4096文字です。「応答は短く」などの指示を追加すると、エージェントが制限内に収まりやすくなります。
 - **`sessionScope: "user"` を使用** — これにより、ユーザーごとに個別の会話が割り当てられます。`/clear` で会話をリセットできます。
-- **アクセスを制限** — 固定ユーザーには `senderPolicy: "allowlist"` を、新しいユーザーが CLI で承認するコードを使ってアクセスをリクエストできるようにするには `"pairing"` を使用します。詳細は[DMペアリング](./overview#dm-pairing)を参照してください。
+- **アクセスを制限** — 固定ユーザーには `privatePolicy: "allowlist"` を、新しいユーザーが CLI で承認するコードを使ってアクセスをリクエストできるようにするには `"pairing"` を使用します。詳細は[DMペアリング](./overview#dm-pairing)を参照してください。
 
 ## メッセージフォーマット
 
@@ -101,7 +101,7 @@ Telegram グループでボットを使用する場合:
 ### ボットが応答しない
 
 - ボットトークンが正しく、環境変数が設定されているか確認してください
-- `senderPolicy: "allowlist"` を使用している場合、ユーザー ID が `allowedUsers` に含まれているか、`"pairing"` を使用している場合は承認されているか確認してください
+- `privatePolicy: "allowlist"` を使用している場合、ユーザー ID が `allowedUsers` に含まれているか、`"pairing"` を使用している場合は承認されているか確認してください
 - ターミナルの出力でエラーを確認してください
 
 ### グループでボットが応答しない
