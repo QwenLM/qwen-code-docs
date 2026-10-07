@@ -72,6 +72,18 @@ Kompatibilitätsprüfung.
    und Maschinen, die das Dateisystem gemeinsam nutzen. Verifizieren Sie die
    Fence vom relevanten Host/Namespace aus. Wenn Sie dies nicht herstellen
    können, stoppen Sie hier und fragen Sie einen Operator, der dies kann.
+   Wenn ein Daemon durch `SIGKILL` oder ein OOM-Ereignis beim selben Boot
+   getötet wurde, kann sein abgekoppelter ACP-Writer-Kindprozess noch am
+   Leben sein und die Lease halten. Das Töten des Daemons hebt diese Fence
+   nicht auf: fencen Sie den Kindprozess ebenfalls, bevor Sie fortfahren,
+   und versuchen Sie nicht, den Lock zu umgehen oder zu entfernen. Ein
+   Host-Reboot oder ein Neustart in einen neuen PID-Namespace ist ein
+   anderer Identitätsgrenzen-Fall; er bedeutet nicht, dass ein
+   Writer-Kindprozess überlebt hat. Wenn ein Daemon unter einem Wrapper
+   oder Supervisor läuft, notieren Sie seine ACP-Nachfahren vor einem
+   geordneten Stopp und beziehen Sie sie in die Stopp-/Fence-Operation
+   ein. Dadurch kann ein normaler Shutdown sie zurückfordern und dieser
+   manuelle Pfad bleibt auf wirklich nicht-saubere Exits beschränkt.
 3. Prüfen Sie den exakten Datensatz und alle zugehörigen Claim-/Retired-
    Artefakte mit einem Maintainer. Stellen Sie fest, ob das letzte Transkript
    und der Übergabebeweis autoritativ sind. Bearbeiten Sie keine

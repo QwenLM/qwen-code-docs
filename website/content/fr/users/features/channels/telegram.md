@@ -15,7 +15,7 @@ Ce guide explique comment configurer un canal Qwen Code sur Telegram.
 
 ## Trouver votre identifiant utilisateur
 
-Pour utiliser `senderPolicy: "allowlist"` ou `"pairing"`, vous avez besoin de votre identifiant utilisateur Telegram (un ID numérique, pas votre nom d'utilisateur).
+Pour utiliser `privatePolicy: "allowlist"` ou `"pairing"`, vous avez besoin de votre identifiant utilisateur Telegram (un ID numérique, pas votre nom d'utilisateur).
 
 Le moyen le plus simple de le trouver :
 
@@ -32,7 +32,7 @@ Ajoutez le canal dans `~/.qwen/settings.json` :
     "my-telegram": {
       "type": "telegram",
       "token": "$TELEGRAM_BOT_TOKEN",
-      "senderPolicy": "allowlist",
+      "privatePolicy": "allowlist",
       "allowedUsers": ["YOUR_USER_ID"],
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
@@ -73,8 +73,8 @@ Pour utiliser le bot dans des groupes Telegram :
 1. Définissez `groupPolicy` sur `"allowlist"`, `"pairing"` ou `"open"` dans la configuration du canal
 2. **Désactivez le mode privé** dans BotFather : `/mybots` → sélectionnez votre bot → Bot Settings → Group Privacy → Désactiver
 3. Ajoutez le bot à un groupe. S'il était déjà dans le groupe, **supprimez-le et ajoutez-le à nouveau** (Telegram met en cache les paramètres de confidentialité au moment où le bot a rejoint)
-4. Si vous utilisez `groupPolicy: "allowlist"`, ajoutez l'ID du groupe à `groups` dans votre configuration
-5. Si vous utilisez `groupPolicy: "pairing"`, approuvez la demande d'appairage du groupe une fois avant que les réponses ne commencent. Notez qu'une fois qu'un groupe est approuvé, **tout membre de ce groupe** peut utiliser le bot ; `senderPolicy` et `allowedUsers` ne filtrent pas les membres d'un groupe approuvé.
+4. Si vous utilisez `groupPolicy: "allowlist"`, ajoutez l'ID de chat du groupe à `groups` dans votre configuration
+5. Si vous utilisez `groupPolicy: "pairing"`, approuvez la demande d'appairage du groupe une fois avant que les réponses ne commencent. Notez qu'une fois qu'un groupe est approuvé, **tout membre de ce groupe** peut utiliser le bot par défaut (restreignez avec le `senders: "allowlist"` du groupe et `allowedUsers`) ; `privatePolicy` et les `allowedUsers` de premier niveau ne filtrent pas les membres d'un groupe approuvé.
 
 Par défaut, le bot nécessite une @mention ou une réponse pour répondre dans les groupes. Définissez `"requireMention": false` pour un groupe spécifique afin qu'il réponde à tous les messages (utile pour les groupes de travail dédiés). Voir [Discussions de groupe](./overview#group-chats) pour tous les détails.
 
@@ -90,7 +90,7 @@ Vous pouvez envoyer des photos et des documents au bot, pas seulement du texte.
 
 - **Gardez les instructions concises** — Telegram a une limite de 4096 caractères par message. Ajouter des instructions comme « gardez les réponses courtes » aide l'agent à rester dans les limites.
 - **Utilisez `sessionScope: "user"`** — Cela donne à chaque utilisateur sa propre conversation. Utilisez `/clear` pour recommencer.
-- **Restreignez l'accès** — Utilisez `senderPolicy: "allowlist"` pour un ensemble fixe d'utilisateurs, ou `"pairing"` pour permettre aux nouveaux utilisateurs de demander l'accès avec un code que vous approuvez via la CLI. Voir [Couplage par MP](./overview#dm-pairing) pour les détails.
+- **Restreignez l'accès** — Utilisez `privatePolicy: "allowlist"` pour un ensemble fixe d'utilisateurs, ou `"pairing"` pour permettre aux nouveaux utilisateurs de demander l'accès avec un code que vous approuvez via la CLI. Voir [Couplage par MP](./overview#dm-pairing) pour les détails.
 
 ## Formatage des messages
 
@@ -101,17 +101,17 @@ Les réponses Markdown de l'agent sont automatiquement converties en HTML compat
 ### Le bot ne répond pas
 
 - Vérifiez que le token du bot est correct et que la variable d'environnement est définie
-- Vérifiez que votre identifiant utilisateur se trouve dans `allowedUsers` si vous utilisez `senderPolicy: "allowlist"`, ou que vous avez été approuvé si vous utilisez `"pairing"`
+- Vérifiez que votre identifiant utilisateur se trouve dans `allowedUsers` si vous utilisez `privatePolicy: "allowlist"`, ou que vous avez été approuvé si vous utilisez `"pairing"`
 - Vérifiez la sortie du terminal pour les erreurs
 
 ### Le bot ne répond pas dans les groupes
 
 - Vérifiez que `groupPolicy` est défini sur `"allowlist"`, `"pairing"` ou `"open"` (la valeur par défaut est `"disabled"`)
-- Si vous utilisez `"allowlist"`, vérifiez que l'ID du groupe est dans la configuration `groups`
+- Si vous utilisez `"allowlist"`, vérifiez que l'ID de chat du groupe est dans la configuration `groups`
 - Si vous utilisez `"pairing"`, vérifiez que la demande d'appairage du groupe a été approuvée
 - Assurez-vous que **Group Privacy est désactivé** dans BotFather — sans cela, le bot ne peut pas voir les messages non-commandes dans les groupes
 - Si vous avez changé le mode de confidentialité après avoir ajouté le bot à un groupe, **supprimez et ré-ajoutez le bot** au groupe
-- Par défaut, le bot nécessite une @mention ou une réponse. Envoyez `@nomdevotrebonjour` pour tester
+- Par défaut, le bot nécessite une @mention ou une réponse. Envoyez `@yourbotname hello` pour tester
 
 ### « Désolé, une erreur s'est produite lors du traitement de votre message »
 

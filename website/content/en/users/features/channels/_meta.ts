@@ -10,4 +10,5 @@ export default {
   github: 'GitHub',
   gitlab: 'GitLab',
   plugins: 'Plugins',
+  'email': 'Email',
 };

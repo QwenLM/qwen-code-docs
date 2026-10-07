@@ -67,6 +67,17 @@ abaixo.
    compartilham o filesystem. Verifique o fence a partir do host/namespace
    relevante. Se não puder estabelecer isso, pare aqui e consulte um operador
    que possa.
+   Se um daemon foi morto por `SIGKILL` ou um evento de OOM no mesmo boot, seu
+   filho writer ACP desanexado pode ainda estar vivo e segurando o lease. Matar
+   o daemon não limpa esse fence: faça o fence do filho também antes de
+   continuar, e não tente novamente contornando ou removendo o lock para burlá-lo.
+   Um reboot do host ou uma reinicialização em um novo namespace de PID é um
+   caso diferente de limite de identidade; não significa que um filho writer
+   sobreviveu.
+   Se um daemon executa sob um wrapper ou supervisor, registre seus descendentes
+   ACP antes de uma parada ordenada e inclua-os na operação de parada/fence. Isso
+   permite que o encerramento normal os recupere e limita este caminho manual a
+   saídas genuinamente não graciosas.
 3. Inspecione o registro exato e quaisquer artefatos associados de
    reivindicação/aposentadoria com um mantenedor. Determine se a última
    transcrição e prova de handoff são autoritativas. Não edite campos de

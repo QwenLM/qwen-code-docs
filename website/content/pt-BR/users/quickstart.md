@@ -78,7 +78,7 @@ O menu de primeira execução permite conectar um provedor de modelo. Escolha um
 
 > [!note]
 >
-> Quando você autenticar o Qwen Code pela primeira vez com sua conta Qwen, um workspace chamado ".qwen" é criado automaticamente para você. Este workspace oferece rastreamento e gerenciamento centralizado de custos para todo o uso do Qwen Code em sua organização.
+> O Qwen Code armazena sua configuração e personalizações em diretórios `.qwen`: `~/.qwen/` para configurações de usuário (por exemplo, `settings.json`) e comandos personalizados globais, e `<project>/.qwen/` para arquivos específicos do projeto, como comandos personalizados e resumos.
 
 > [!tip]
 >
@@ -228,7 +228,7 @@ Aqui estão os comandos mais importantes para uso diário:
 | `/doctor`           | Verificar autenticação e ambiente atuais            | `/doctor`                     |
 | `/help`             | Exibir ajuda para comandos disponíveis              | `/help` ou `/?`               |
 | `/compress`         | Substituir histórico de chat por resumo para economizar Tokens | `/compress`                   |
-| `/clear`            | Limpar conteúdo da tela do terminal                 | `/clear` (atalho: `Ctrl+L`)   |
+| `/clear`            | Limpar histórico de conversas e liberar contexto    | `/clear` (aliases: `reset`, `new`) |
 | `/theme`            | Alterar tema visual do Qwen Code                     | `/theme`                      |
 | `/language`         | Visualizar ou alterar configurações de idioma        | `/language`                   |
 | → `ui [idioma]`     | Definir idioma da interface                         | `/language ui zh-CN`          |
