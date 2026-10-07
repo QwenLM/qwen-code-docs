@@ -410,7 +410,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/daemon/15-channel-adapters/</loc>
-<lastmod>2026-09-23T22:58:44.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -560,7 +560,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -716,7 +716,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/configuration/settings/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -811,6 +811,12 @@
 <priority>0.6</priority>
 </url>
 <url>
+<loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/channels/email/</loc>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/channels/feishu/</loc>
 <lastmod>2026-09-23T22:58:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
@@ -830,7 +836,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/channels/overview/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -842,7 +848,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/channels/qqbot/</loc>
-<lastmod>2026-09-23T22:58:44.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -986,7 +992,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/sandbox/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1874,7 +1880,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/conversations-recovery/</loc>
-<lastmod>2026-09-08T01:49:47.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1951,8 +1957,14 @@
 <priority>0.6</priority>
 </url>
 <url>
+<loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/channels/email/</loc>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/channels/feishu/</loc>
-<lastmod>2026-08-07T21:26:35.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1988,7 +2000,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/channels/telegram/</loc>
-<lastmod>2026-08-07T21:26:35.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2240,7 +2252,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/quickstart/</loc>
-<lastmod>2026-09-18T07:57:50.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3008,7 +3020,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/conversations-recovery/</loc>
-<lastmod>2026-09-08T01:49:47.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3085,6 +3097,12 @@
 <priority>0.6</priority>
 </url>
 <url>
+<loc>https://QwenLM.github.io/qwen-code-docs/de/users/features/channels/email/</loc>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/features/channels/feishu/</loc>
 <lastmod>2026-08-07T21:26:35.000Z</lastmod>
 <changefreq>weekly</changefreq>
@@ -3122,7 +3140,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/features/channels/telegram/</loc>
-<lastmod>2026-08-07T21:26:35.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3374,7 +3392,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/quickstart/</loc>
-<lastmod>2026-09-18T07:57:50.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4219,6 +4237,12 @@
 <priority>0.6</priority>
 </url>
 <url>
+<loc>https://QwenLM.github.io/qwen-code-docs/fr/users/features/channels/email/</loc>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/features/channels/feishu/</loc>
 <lastmod>2026-08-07T21:26:35.000Z</lastmod>
 <changefreq>weekly</changefreq>
@@ -4256,7 +4280,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/features/channels/telegram/</loc>
-<lastmod>2026-08-07T21:26:35.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4532,7 +4556,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/quickstart/</loc>
-<lastmod>2026-09-18T07:57:50.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5300,7 +5324,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/conversations-recovery/</loc>
-<lastmod>2026-09-08T01:49:47.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5377,6 +5401,12 @@
 <priority>0.6</priority>
 </url>
 <url>
+<loc>https://QwenLM.github.io/qwen-code-docs/ru/users/features/channels/email/</loc>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/features/channels/feishu/</loc>
 <lastmod>2026-08-08T22:52:46.000Z</lastmod>
 <changefreq>weekly</changefreq>
@@ -5414,7 +5444,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/features/channels/telegram/</loc>
-<lastmod>2026-08-08T22:52:46.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5666,7 +5696,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/quickstart/</loc>
-<lastmod>2026-09-18T07:57:50.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6458,7 +6488,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/conversations-recovery/</loc>
-<lastmod>2026-09-08T01:49:47.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6535,8 +6565,14 @@
 <priority>0.6</priority>
 </url>
 <url>
+<loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/channels/email/</loc>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/channels/feishu/</loc>
-<lastmod>2026-08-07T21:26:35.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6572,7 +6608,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/channels/telegram/</loc>
-<lastmod>2026-08-07T21:26:35.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6824,7 +6860,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/quickstart/</loc>
-<lastmod>2026-09-18T07:57:50.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7592,7 +7628,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/conversations-recovery/</loc>
-<lastmod>2026-09-08T01:49:47.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7669,6 +7705,12 @@
 <priority>0.6</priority>
 </url>
 <url>
+<loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/features/channels/email/</loc>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/features/channels/feishu/</loc>
 <lastmod>2026-08-08T22:52:46.000Z</lastmod>
 <changefreq>weekly</changefreq>
@@ -7706,7 +7748,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/features/channels/telegram/</loc>
-<lastmod>2026-08-08T22:52:46.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7958,7 +8000,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/quickstart/</loc>
-<lastmod>2026-09-18T07:57:50.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8702,7 +8744,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ko/users/conversations-recovery/</loc>
-<lastmod>2026-09-08T01:49:47.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8779,8 +8821,14 @@
 <priority>0.6</priority>
 </url>
 <url>
+<loc>https://QwenLM.github.io/qwen-code-docs/ko/users/features/channels/email/</loc>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ko/users/features/channels/feishu/</loc>
-<lastmod>2026-08-07T21:26:35.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8810,7 +8858,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ko/users/features/channels/qqbot/</loc>
-<lastmod>2026-09-10T04:57:47.000Z</lastmod>
+<lastmod>2026-10-03T23:00:02.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
