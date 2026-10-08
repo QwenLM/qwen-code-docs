@@ -33,7 +33,7 @@ Adicione um canal ao `~/.qwen/settings.json`:
     "dws-work": {
       "type": "dws",
       "profile": "profile-name-or-corp-id",
-      "senderPolicy": "pairing",
+      "privatePolicy": "pairing",
       "groupPolicy": "pairing",
       "watchTodos": true,
       "startReaction": "🤔",
@@ -55,7 +55,7 @@ O modo de aprovação YOLO está disponível para bots de resposta que devem exe
   "channels": {
     "dws-answers": {
       "type": "dws",
-      "senderPolicy": "pairing",
+      "privatePolicy": "pairing",
       "groupPolicy": "pairing",
       "approvalMode": "yolo",
       "cwd": "/path/to/answer-bot"
@@ -66,15 +66,15 @@ O modo de aprovação YOLO está disponível para bots de resposta que devem exe
 
 O modo YOLO aprova automaticamente toda chamada de ferramenta. Use-o apenas para uma conta e workspace de bot confiáveis.
 
-`senderPolicy` e `groupPolicy` têm padrão `pairing` para um canal DWS gerenciado recém-criado. `dmPolicy` tem padrão `open`, incluindo configurações existentes que o omitem. Aprove um usuário ou grupo com o código retornado pelo canal:
+Novos canais DWS gerenciados têm como padrão `privatePolicy: "pairing"` e `groupPolicy: "pairing"`. Aprove um usuário ou grupo com o código retornado pelo canal:
 
 ```bash
 qwen channel pairing approve dws-work CODE
 ```
 
-`senderPolicy` controla remetentes de mensagens diretas, autores de notificações de documentos, criadores de todos nativos e remetentes em grupos `open` ou `allowlist`. `groupPolicy` controla conversas em grupo. Um grupo pareado aprovado segue o comportamento compartilhado do canal e autoriza seus membros; grupos open e allowlist também precisam passar pelo `senderPolicy`.
+`privatePolicy` controla mensagens diretas, autores de notificações de documentos e criadores de todos nativos. Threads de documentos e todos nativos são solicitações pessoais; `groups.senders` nunca se aplica a eles. `groupPolicy` controla a admissão em grupos, e `groups["*"].senders` ou uma substituição por grupo controla quais membros podem iniciar tarefas. Os membros do grupo têm padrão `open`, independentemente do acesso privado. O gerenciamento de sessão compartilhada requer `operators` explícitos; consulte [Shared-Session Operators](./overview.md#shared-session-operators).
 
-O acesso a grupo e mensagem direta pode ser configurado independentemente. Para um canal somente de grupo, defina `dmPolicy: "disabled"` e escolha um `groupPolicy` habilitado. Para um canal somente de mensagem direta, defina `groupPolicy: "disabled"` e `dmPolicy: "open"`. O acesso a mensagem direta também controla as notificações de documento. O polling de todos nativos permanece controlado separadamente por `watchTodos`.
+Para um canal somente de grupo, defina `privatePolicy: "disabled"` e habilite `groupPolicy`. Para um canal somente pessoal, defina `groupPolicy: "disabled"` e habilite `privatePolicy`. O acesso privado desabilitado impede que mensagens diretas, notificações de documentos e todos nativos iniciem tarefas; `watchTodos` habilita separadamente o polling de todos. `senderPolicy` e `dmPolicy` obsoletos permanecem apenas como fallbacks de política privada; consulte [Private Policy](./overview.md#private-policy).
 
 Fontes de chat desabilitadas não são inscritas nem consultadas via polling, e suas mensagens não podem iniciar novas tarefas por meio de callbacks atrasados ou replay persistido. O trabalho pendente e os cursores de histórico são mantidos: após reabilitar uma fonte, o mecanismo de recuperação existente pode processar mensagens mais antigas, incluindo mensagens do intervalo desabilitado. A autorização de remetente, o pareamento de grupo e os requisitos de menção ainda se aplicam.
 
@@ -104,7 +104,7 @@ Não há lista de observação de documentos ou base de conhecimento. Para inici
 
 O canal extrai o ID do documento, a chave do comentário e a solicitação dessa notificação. Ele lê o documento referenciado para contexto, adiciona a reação de início configurada enquanto a tarefa é executada, e responde ao comentário original do documento. O stream de eventos DWS em tempo real é usado quando contém o cartão; uma verificação incremental de histórico a cada cinco segundos cobre cartões omitidos pelo stream de eventos atual.
 
-Comentários que não geram uma notificação são ignorados por design. Mensagens de notificação duplicadas para o mesmo comentário de documento são executadas apenas uma vez. Tarefas de documento seguem o `senderPolicy` e suportam `approvalMode` `default`, `plan` ou `yolo`; `default` é usado quando omitido.
+Comentários que não geram uma notificação são ignorados por design. Mensagens de notificação duplicadas para o mesmo comentário de documento são executadas apenas uma vez. Tarefas de documento seguem `privatePolicy` e suportam `approvalMode` `default`, `plan` ou `yolo`; `default` é usado quando omitido.
 
 ## Alterações em Todos Nativos
 
@@ -112,7 +112,7 @@ Defina `watchTodos: true` para fazer polling dos todos nativos pendentes do perf
 
 A primeira varredura bem-sucedida estabelece uma linha de base e não inicia todos históricos. Varreduras posteriores executam uma tarefa quando um todo é recém-atribuído, reaberto ou seus campos acionáveis mudam, incluindo título, prioridade, prazo ou responsáveis. A resposta final é adicionada como um comentário no todo de origem. Metadados apenas de comentário e timestamps de modificação são excluídos da detecção de mudanças para que a própria resposta do canal não possa disparar um loop. Conclusão ou remoção retira o todo do conjunto pendente; reabri-lo cria um novo gatilho.
 
-Todos nativos seguem o `senderPolicy` usando a identidade do criador do todo. Sob `pairing`, o canal adiciona um comentário com código de pareamento e mantém o todo pendente; após o criador ser aprovado localmente, uma varredura posterior pode processar o todo inalterado. O polling é executado a cada 30 segundos e permanece com escopo na organização atual do perfil fixado.
+Todos nativos seguem `privatePolicy` usando a identidade do criador do todo. Sob `pairing`, o canal adiciona um comentário com código de pareamento e mantém o todo pendente; após o criador ser aprovado localmente, uma varredura posterior pode processar o todo inalterado. O polling é executado a cada 30 segundos e permanece com escopo na organização atual do perfil fixado.
 
 ## Iniciando e Verificando
 

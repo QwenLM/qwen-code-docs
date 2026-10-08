@@ -32,7 +32,7 @@ Ajoutez un canal à `~/.qwen/settings.json` :
     "dws-work": {
       "type": "dws",
       "profile": "profile-name-or-corp-id",
-      "senderPolicy": "pairing",
+      "privatePolicy": "pairing",
       "groupPolicy": "pairing",
       "watchTodos": true,
       "startReaction": "🤔",
@@ -54,7 +54,7 @@ Le mode d'approbation YOLO est disponible pour les bots de réponse qui doivent 
   "channels": {
     "dws-answers": {
       "type": "dws",
-      "senderPolicy": "pairing",
+      "privatePolicy": "pairing",
       "groupPolicy": "pairing",
       "approvalMode": "yolo",
       "cwd": "/path/to/answer-bot"
@@ -65,15 +65,15 @@ Le mode d'approbation YOLO est disponible pour les bots de réponse qui doivent 
 
 Le mode YOLO approuve automatiquement chaque appel d'outil. Utilisez-le uniquement pour un compte bot et un workspace de confiance.
 
-`senderPolicy` et `groupPolicy` sont par défaut à `pairing` pour un canal DWS nouvellement géré. `dmPolicy` est par défaut à `open`, y compris pour les configurations existantes qui l'omettent. Approuvez un utilisateur ou un groupe avec le code renvoyé par le canal :
+Les nouveaux canaux DWS gérés ont par défaut `privatePolicy: "pairing"` et `groupPolicy: "pairing"`. Approuvez un utilisateur ou un groupe avec le code renvoyé par le canal :
 
 ```bash
 qwen channel pairing approve dws-work CODE
 ```
 
-`senderPolicy` contrôle les expéditeurs de messages directs, les auteurs de notifications de document, les créateurs de todos natifs et les expéditeurs dans les groupes `open` ou `allowlist`. `groupPolicy` contrôle les conversations de groupe. Un groupe appairé approuvé suit le comportement partagé du canal et autorise ses membres ; les groupes open et allowlist doivent également passer `senderPolicy`.
+`privatePolicy` contrôle les messages directs, les auteurs de notifications de document et les créateurs de todos natifs. Les fils de discussion de documents et les todos natifs sont des demandes personnelles ; `groups.senders` ne s'applique jamais à eux. `groupPolicy` contrôle l'admission dans les groupes, et `groups["*"].senders` ou un override par groupe contrôle quels membres peuvent démarrer des tâches. Les membres du groupe ont par défaut `open`, indépendamment de l'accès privé. La gestion de session partagée nécessite des `operators` explicites ; voir [Shared-Session Operators](./overview.md#shared-session-operators).
 
-L'accès aux groupes et aux messages directs peut être configuré indépendamment. Pour un canal réservé aux groupes, définissez `dmPolicy: "disabled"` et choisissez un `groupPolicy` activé. Pour un canal réservé aux messages directs, définissez `groupPolicy: "disabled"` et `dmPolicy: "open"`. L'accès aux messages directs contrôle également les notifications de document. Le polling des todos natifs reste contrôlé séparément par `watchTodos`.
+Pour un canal réservé aux groupes, définissez `privatePolicy: "disabled"` et activez `groupPolicy`. Pour un canal réservé à un usage personnel, définissez `groupPolicy: "disabled"` et activez `privatePolicy`. L'accès privé désactivé empêche les messages directs, les notifications de document et les todos natifs de démarrer des tâches ; `watchTodos` active séparément le polling des todos. Les `senderPolicy` et `dmPolicy` obsolètes restent des fallbacks de politique privée uniquement ; voir [Private Policy](./overview.md#private-policy).
 
 Les sources de chat désactivées ne sont ni abonnées ni interrogées par polling, et leurs messages ne peuvent pas démarrer de nouvelles tâches via des callbacks tardifs ou une relecture persistée. Le travail en attente et les curseurs d'historique sont conservés : après la réactivation d'une source, le mécanisme de récupération existant peut traiter les messages plus anciens, y compris les messages de l'intervalle désactivé. L'autorisation d'expéditeur, l'appairage de groupe et les exigences de mention s'appliquent toujours.
 
@@ -103,7 +103,7 @@ Il n'y a pas de liste de surveillance de documents ou de base de connaissances. 
 
 Le canal extrait l'ID du document, la clé de commentaire et la requête depuis cette notification. Il lit le document référencé pour le contexte, ajoute la réaction de démarrage configurée pendant l'exécution de la tâche, et répond au commentaire de document d'origine. Le flux d'événements DWS en temps réel est utilisé lorsqu'il contient la carte ; une vérification incrémentale de l'historique toutes les cinq secondes couvre les cartes omises par le flux d'événements actuel.
 
-Les commentaires qui ne génèrent pas de notification sont ignorés par conception. Les messages de notification en double pour le même commentaire de document ne s'exécutent qu'une seule fois. Les tâches de document suivent `senderPolicy` et supportent `approvalMode` `default`, `plan` ou `yolo` ; `default` est utilisé lorsqu'il est omis.
+Les commentaires qui ne génèrent pas de notification sont ignorés par conception. Les messages de notification en double pour le même commentaire de document ne s'exécutent qu'une seule fois. Les tâches de document suivent `privatePolicy` et supportent `approvalMode` `default`, `plan` ou `yolo` ; `default` est utilisé lorsqu'il est omis.
 
 ## Modifications de todos natifs
 
@@ -111,7 +111,7 @@ Définissez `watchTodos: true` pour poller les todos natifs en attente du profil
 
 Le premier scan réussi établit une baseline et ne démarre pas les todos historiques. Les scans ultérieurs exécutent une tâche lorsqu'un todo est nouvellement assigné, rouvert, ou que ses champs actionnables changent, y compris son titre, sa priorité, sa date limite ou ses assignés. La réponse finale est ajoutée en tant que commentaire sur le todo d'origine. Les métadonnées de commentaire uniquement et les horodatages de modification sont exclus de la détection de changements afin que la propre réponse du canal ne puisse pas déclencher une boucle. L'achèvement ou la suppression retire le todo de l'ensemble en attente ; le rouvrir crée un nouveau déclencheur.
 
-Les todos natifs suivent `senderPolicy` en utilisant l'identité du créateur du todo. Sous `pairing`, le canal ajoute un commentaire de code d'appairage et maintient le todo en attente ; après que le créateur est approuvé localement, un poll ultérieur peut traiter le todo inchangé. Le polling s'exécute toutes les 30 secondes et reste limité à l'organisation actuelle du profil épinglé.
+Les todos natifs suivent `privatePolicy` en utilisant l'identité du créateur du todo. Sous `pairing`, le canal ajoute un commentaire de code d'appairage et maintient le todo en attente ; après que le créateur est approuvé localement, un poll ultérieur peut traiter le todo inchangé. Le polling s'exécute toutes les 30 secondes et reste limité à l'organisation actuelle du profil épinglé.
 
 ## Démarrage et vérification
 
