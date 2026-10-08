@@ -32,7 +32,7 @@ dws auth status --format json
     "dws-work": {
       "type": "dws",
       "profile": "profile-name-or-corp-id",
-      "senderPolicy": "pairing",
+      "privatePolicy": "pairing",
       "groupPolicy": "pairing",
       "watchTodos": true,
       "startReaction": "🤔",
@@ -54,7 +54,7 @@ dws auth status --format json
   "channels": {
     "dws-answers": {
       "type": "dws",
-      "senderPolicy": "pairing",
+      "privatePolicy": "pairing",
       "groupPolicy": "pairing",
       "approvalMode": "yolo",
       "cwd": "/path/to/answer-bot"
@@ -65,15 +65,15 @@ dws auth status --format json
 
 YOLO モードはすべてのツール呼び出しを自動承認します。信頼されたボットアカウントとワークスペースでのみ使用してください。
 
-新しく管理される DWS チャネルの `senderPolicy` と `groupPolicy` のデフォルトは `pairing` です。`dmPolicy` のデフォルトは `open` で、これを省略している既存の設定も含まれます。チャネルが返したコードを使用して、ユーザーまたはグループを承認します。
+新しく管理される DWS チャネルのデフォルトは `privatePolicy: "pairing"` と `groupPolicy: "pairing"` です。チャネルが返したコードを使用して、ユーザーまたはグループを承認します。
 
 ```bash
 qwen channel pairing approve dws-work CODE
 ```
 
-`senderPolicy` は、ダイレクトメッセージの送信者、ドキュメント通知の作成者、ネイティブ Todo の作成者、および `open` または `allowlist` グループ内の送信者を制御します。`groupPolicy` はグループ会話を制御します。承認されたペアリンググループは共有チャネルの動作に従い、そのメンバーを承認します。open と allowlist グループは `senderPolicy` も通過する必要があります。
+`privatePolicy` はダイレクトメッセージ、ドキュメント通知の作成者、およびネイティブ Todo の作成者を制御します。ドキュメントスレッドとネイティブ Todo は個人のリクエストです。`groups.senders` はこれらに適用されません。`groupPolicy` はグループの受け入れを制御し、`groups["*"].senders` またはグループごとのオーバーライドがどのメンバーがタスクを開始できるかを制御します。グループメンバーのデフォルトは `open` で、プライベートアクセスとは独立しています。共有セッション管理には明示的な `operators` が必要です。[共有セッションオペレーター](./overview.md#shared-session-operators)を参照してください。
 
-グループとダイレクトメッセージのアクセスは独立して設定できます。グループ専用チャネルの場合は `dmPolicy: "disabled"` を設定し、有効な `groupPolicy` を選択します。ダイレクトメッセージ専用チャネルの場合は `groupPolicy: "disabled"` と `dmPolicy: "open"` を設定します。ダイレクトメッセージのアクセスはドキュメント通知も制御します。ネイティブ Todo のポーリングは `watchTodos` によって別途制御されます。
+グループ専用チャネルの場合は `privatePolicy: "disabled"` を設定し、`groupPolicy` を有効にします。個人専用チャネルの場合は `groupPolicy: "disabled"` を設定し、`privatePolicy` を有効にします。無効化されたプライベートアクセスは、ダイレクトメッセージ、ドキュメント通知、およびネイティブ Todo によるタスク開始を防ぎます。`watchTodos` は Todo ポーリングを別途制御します。非推奨の `senderPolicy` と `dmPolicy` はプライベートポリシーのフォールバックとしてのみ残っています。[プライベートポリシー](./overview.md#private-policy)を参照してください。
 
 無効化されたチャットソースはサブスクライブもポーリングもされず、そのメッセージは遅延コールバックや永続化されたリプレイを通じて新しいタスクを開始できません。保留中の作業と履歴カーソルは保持されます。ソースを再度有効化すると、既存の回復メカニズムが無効化期間中のメッセージを含む古いメッセージを処理する場合があります。送信者の認可、グループのペアリング、およびメンションの要件は引き続き適用されます。
 

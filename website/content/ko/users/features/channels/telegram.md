@@ -15,7 +15,7 @@
 
 ## 사용자 ID 찾기
 
-`senderPolicy: "allowlist"` 또는 `"pairing"`을 사용하려면 Telegram 사용자 ID(숫자 ID, 사용자명이 아님)가 필요합니다.
+`privatePolicy: "allowlist"` 또는 `"pairing"`을 사용하려면 Telegram 사용자 ID(숫자 ID, 사용자명이 아님)가 필요합니다.
 
 가장 쉬운 방법:
 
@@ -32,7 +32,7 @@
     "my-telegram": {
       "type": "telegram",
       "token": "$TELEGRAM_BOT_TOKEN",
-      "senderPolicy": "allowlist",
+      "privatePolicy": "allowlist",
       "allowedUsers": ["YOUR_USER_ID"],
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
@@ -74,7 +74,7 @@ Telegram 그룹에서 봇을 사용하려면:
 2. BotFather에서 **privacy mode를 비활성화**하세요: `/mybots` → 봇 선택 → Bot Settings → Group Privacy → Turn Off
 3. 봇을 그룹에 추가하세요. 이미 그룹에 있었다면 **제거했다가 다시 추가**하세요 (Telegram은 봇이 참여할 때의 privacy 설정을 캐시합니다)
 4. `groupPolicy: "allowlist"`를 사용하는 경우, 그룹의 chat ID를 구성의 `groups`에 추가하세요
-5. `groupPolicy: "pairing"`을 사용하는 경우, 응답이 시작되기 전에 그룹의 페어링 요청을 한 번 승인하세요. 그룹이 승인되면 **해당 그룹의 모든 멤버**가 봇을 사용할 수 있습니다. `senderPolicy`와 `allowedUsers`는 승인된 그룹의 멤버를 제한하지 않습니다.
+5. `groupPolicy: "pairing"`을 사용하는 경우, 응답이 시작되기 전에 그룹의 페어링 요청을 한 번 승인하세요. 그룹이 승인되면 기본적으로 **해당 그룹의 모든 멤버**가 봇을 사용할 수 있습니다(그룹의 `senders: "allowlist"`와 `allowedUsers`로 제한 가능); `privatePolicy`와 최상위 `allowedUsers`는 승인된 그룹의 멤버를 제한하지 않습니다.
 
 기본적으로 봇은 그룹에서 응답하기 위해 @멘션이나 답장을 요구합니다. 특정 그룹에 대해 `"requireMention": false`를 설정하면 모든 메시지에 응답합니다(전용 작업 그룹에 유용). 자세한 내용은 [그룹 채팅](./overview#group-chats)을 참조하세요.
 
@@ -90,7 +90,7 @@ Telegram 그룹에서 봇을 사용하려면:
 
 - **간결한 지시 사용** — Telegram은 4096자 메시지 제한이 있습니다. "keep responses short"와 같은 지시를 추가하면 에이전트가 범위 내에 머무는 데 도움이 됩니다.
 - **`sessionScope: "user"` 사용** — 각 사용자에게 고유한 대화를 제공합니다. 새로 시작하려면 `/clear`를 사용하세요.
-- **액세스 제한** — 고정된 사용자 집합에 대해 `senderPolicy: "allowlist"`를 사용하거나, 새 사용자가 CLI에서 승인하는 코드로 액세스를 요청하려면 `"pairing"`을 사용하세요. 자세한 내용은 [DM 페어링](./overview#dm-pairing)을 참조하세요.
+- **액세스 제한** — 고정된 사용자 집합에 대해 `privatePolicy: "allowlist"`를 사용하거나, 새 사용자가 CLI에서 승인하는 코드로 액세스를 요청하려면 `"pairing"`을 사용하세요. 자세한 내용은 [DM 페어링](./overview#dm-pairing)을 참조하세요.
 
 ## 메시지 포맷
 
@@ -101,7 +101,7 @@ Telegram 그룹에서 봇을 사용하려면:
 ### 봇이 응답하지 않음
 
 - 봇 토큰이 올바르고 환경 변수가 설정되어 있는지 확인하세요
-- `senderPolicy: "allowlist"`를 사용하는 경우 사용자 ID가 `allowedUsers`에 있는지, 또는 `"pairing"`을 사용하는 경우 승인을 받았는지 확인하세요
+- `privatePolicy: "allowlist"`를 사용하는 경우 사용자 ID가 `allowedUsers`에 있는지, 또는 `"pairing"`을 사용하는 경우 승인을 받았는지 확인하세요
 - 터미널 출력에서 오류를 확인하세요
 
 ### 봇이 그룹에서 응답하지 않음

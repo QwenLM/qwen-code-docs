@@ -26,11 +26,13 @@
 
 ### 1. 关闭你不使用的功能
 
-每个注册了工具的功能都要在每个请求中为该工具的 schema 付费。最大的单项内置条目属于可选功能，因此不使用 workflow、goal、定时任务或 review 工具的部署，关闭这些功能比任何提示词编辑都能节省更多。这也会从子代理中移除该工具，而下一个手段不一定能做到这一点。
+每个向模型声明的工具都会将其 schema 加入每个请求。关闭具有大型���驻工具的可选功能因此可以节省请求 token。延迟工具改为贡献简短的目录条目以及后续发现或调用的成本。禁用功能还会从子代理中移除其工具，而下一个手段并不总是能做到这一点。
 
 ### 2. 将 eager 工具集保持在真正使用的范围内
 
-`tools.eager` 是一个允许列表，列出的内置工具的 schema 会保留在初始请求中。其余工具变为**延迟加载**：仍然注册、仍然列在 `/tools` 中、仍然可调用——模型在确实需要时通过 `tool_search` 加载它。
+`tools.eager` 是一个允许列表，列出的内置工具的 schema 会保留在初始请求中。其余工具变为**延迟加载**：仍然注册、仍然列在 `/tools` 中、仍然可调用——模型在确实需要时通过 `tool_search` → `tool_call` 桥接来访问它们。
+
+根据正确的基线来衡量这个允许列表。默认按需加载的工具已经不在第一个请求中了，而且自从 `tools.toolSearch.threshold` 开始默认为 `0` 后，没有任何东西会把它们预加载回来，所以允许列表的节省只来自于它扣留的默认 eager 工具的 schema——而不是整个内置工具集。在你实际运行的版本上重新取一次 `/context` 读数，再为你的列表赋予一个数字。
 
 ```jsonc
 {
@@ -51,11 +53,13 @@
 使用之前需要了解四件事：
 
 - **它不是禁用。** 被降级的工具仍然可以访问。如果你的目的是移除一个工具，请使用整工具级别的 `permissions.deny` 规则或 `tools.disabled`。
-- **某些工具不受影响**，无论列表如何设置都保持正常的加载行为：`tool_search`、`structured_output`、plan 模式生命周期工具（`enter_plan_mode`、`exit_plan_mode`、`ask_user_question`）、`task_stop`、MCP 工具（`mcp__*`）以及 Computer Use 工具（`computer_use__*`）。`task_stop` 和 Computer Use 系列默认就是按需加载的，因此对它们做门控不会节省任何东西；MCP 工具由 `tools.toolSearch.*` 以及每个服务器的 `includeTools` / `excludeTools` 过滤器管理，而前三个工具唯一能移除它们的方式是 `permissions.deny`。
+- **某些工具不受影响**，无论列表如何设置都保持正常的加载行为：`tool_search` 和 `tool_call`（到达被扣留工具的两半桥接）、`structured_output`、plan 模式生命周期工具（`enter_plan_mode`、`exit_plan_mode`、`ask_user_question`）、`task_stop`、MCP 工具（`mcp__*`）以及 Computer Use 工具（`computer_use__*`）。`task_stop` 和 Computer Use 系列默认就是按需加载的，因此对它们做门控不会节省任何东西；MCP 工具由 `tools.toolSearch.*` 以及每个服务器的 `includeTools` / `excludeTools` 过滤器管理；而 `tools.eager` 中的任何设置都无法移除其余工具中的任何一个——那需要整工具级别的 `permissions.deny` 规则、`tools.disabled` 条目或 `--exclude-tools`——对于桥接对，`tools.toolSearch.enabled: false` 可以同时移除两半。移除桥接的一半并不是退出允许列表的中性方式：每个普通延迟工具（所有 MCP 工具、按需加载的 Computer Use 系列）随后会被强制声明到每个请求中，而被扣留的工具不会提供给模型也无法通过桥接加载回来——它仍然注册，因此按名称直接调用仍会经过正常审批。
 - **`permissions.allow` 不会节省任何东西。** 它纯粹是自动审批：它从不降级、隐藏或移除工具。审批模式也不会。
-- **它需要 `tool_search` 保持开启。** 如果 ToolSearch 未注册——`tools.toolSearch.enabled: false`、一条 `tool_search` 的 deny 规则，或者 DeepSeek 模型的自动退出——允许列表仍然会扣留 schema，但没有任何东西能把它们加载回来，被降级的工具在该会话中将无法访问。
+- **它需要桥接的两半。** 被扣留的工具通过 `tool_search` 审查并通过 `tool_call` 调用；单独的 `tool_search` 只能读取它无法调用的 schema。如果任一半未注册——`tools.toolSearch.enabled: false` 同时拒绝两者；`tool_search`/`tool_call` 的 deny 规则、`--exclude-tools` 条目或 `tools.disabled` 条目移除其中一个——允许列表仍然扣留 schema，没有任何东西能把它们加载回来，被降级的工具不会提供给模型用于该会话（会记录一条警告）；它们仍然注册，因此按名称直接调用仍会经过正常审批。普通延迟工具在这种情况下会回退为急切声明；你用 `tools.eager` 降级的工具则不会。
 
 `tools.visible` 是一个逃生舱口，用于你希望某个工具即使默认延迟加载也要在开始时声明的情况。
+
+Agent 和 Goal 协调（`agent`、`list_agents`、`get_goal`、`update_goal` 和 `propose_goal`）默认延迟加载；无需 `tools.eager` 配置。模型看到的是简短的发现条目而非完整 schema。首次使用需要通过桥接发现，因此要对比整个任务成本和成功委派/Goal 完成情况以及第一个请求。这些是普通延迟工具：`tools.visible`、预加载和上述不完整桥接的急切回退仍然适用。预加载对整个延迟候选池是全有或全无的，这五个声明都很大，所以曾经在会话开始时揭示所有延迟工具的 `tools.toolSearch.threshold` 现在可能一个都揭示不了。改动任一项后重新测量 `/context`。
 
 ### 3. 将场景指导从上下文文件移到 skill 中
 
@@ -65,16 +69,17 @@
 
 ### 4. 系统提示词，最后考虑
 
-基础提示词已经是常驻类别中最小的，其中大约三分之一是不能编辑的安全和权限文本。它现在也只描述会话实际声明的工具，因此裁剪工具集也会让它稍微缩小一些。用 `--system-prompt` 整体替换它是可行的，也是本页风险最高的变更；如果你这样做，请在每次升级时 diff 上游提示词。
+基础提示词已经是常驻类别中最小的，其中大约三分之一是不能编辑的安全和权限文本。它的门控工具指导跟随已声明的集合，bridge-reachable Agent 例外；这些条目中提到的其他工具仍然需要声明。因此裁剪工具集也可以缩小该指导。用 `--system-prompt` 整体替换它是可行的，也是本页风险最高的变更；如果你这样做，请在每次升级时 diff 上游提示词。
 
 ## 陷阱
 
 - **子代理也会获得延迟工具。** 没有声明显式工具列表的子代理会接收所有已注册工具的 schema，包括延迟工具，并且不经过 ToolSearch。`tools.eager` 和 `permissions.deny` 是唯一能影响它的调节手段；预加载阈值对它无效。
-- **后台 memory 代理需要六个工具**（`read_file`、`grep_search`、`glob`、`run_shell_command`、`write_file`、`edit`）。拒绝其中任何一个都会让它静默降级，而不是报错。
+- **后台 memory 代理需要其完整的工具列表，且两个列表不同。** 项目 Dream worker 需要六个工具（`read_file`、`grep_search`、`glob`、`run_shell_command`、`write_file`、`edit`）；自动提取需要五个——相同的集合但不包括 `run_shell_command`，它设计上就拒绝该工具。拒绝其中任何一个代理实际持有的工具都会让它静默降级而非报错。因此不要为了移除其声明而全局拒绝 `run_shell_command`：Dream 仍然需要它。
+- **后台 memory 代理需要其完整的工具列表，且两个列表不同。** 项目 Dream worker 需要六个工具（`read_file`、`grep_search`、`glob`、`run_shell_command`、`write_file`、`edit`）；自动提取需要五个——相同的集合但不包括 `run_shell_command`，它设计上就拒绝该工具。拒绝其中任何一个代理实际持有的工具都会让它静默降级而非报错。因此不要为了移除其声明而全局拒绝 `run_shell_command`：Dream 仍然需要它。
 - **Token 可能只是移动而非消失。** 拿走 `grep_search` 和 `glob`，模型可能会通过 shell 使用 `grep` 和 `find`，其输出会进入对话。新输出在首次发送时会增加输入 token；包含它的未变更历史在后续请求中可能会命中提供商的前缀缓存。通过每个任务的总输入 token、提供商报告的缓存和未缓存输入以及实际账单来评判变更，而不是仅看前缀。
 - **恢复的会话会重新发送所需内容。** 出现在恢复会话历史中的被降级工具会自动恢复其 schema；被拒绝的工具则不会。
-- **在会话中途揭示的延迟工具会使前缀缓存失效。** 函数声明位于前缀的最前面，因此一次揭示就会重写它，整个提示词在该轮次都要重新计算。预加载延迟集（`tools.toolSearch.threshold`）可以避免这种情况，代价是每个轮次都要携带这些 schema；`threshold: 0` 只有在会话确实从不需要它们时才划算。
-- **前缀缓存模型会反转权衡。** 对于折扣依赖于稳定前缀的模型，保持前缀不变比让它更小更有价值；DeepSeek 模型因此自动退出 ToolSearch。
+- **揭示被扣留的工具不再重写前缀——但过去会，而旧建议假设它仍会如此。** 发现通过 `tool_search` → `tool_call` 桥接进行，这使已声明的工具列表保持字节稳定，因此提示词缓存前缀在会话中途发现后仍然存活；代价是在被扣留工具首次使用前多一次往返。这就是 `tools.toolSearch.threshold` 现在默认为 `0` 的原因：每轮携带延迟集不再是权衡中更便宜的一方。只有为了在确定需要它们的会话中为*普通*延迟工具（MCP 工具和按需加载的内置工具）赢回那次往返时才提高阈值——它永远不会预加载你用 `tools.eager` 降级的工具；那些工具在任何阈值下都留在桥接后面。预加载还在会话启动时运行，而 MCP 服务器通常在之后连接，因此新启动时无论阈值如何都不声明 MCP 工具；它们从下一个会话启动（在 CLI 中，`/clear` 之后）到达预加载，或在 `QWEN_CODE_LEGACY_MCP_BLOCKING=1` 下立即到达。
+- **前缀缓存模型会反转权衡。** 对于折扣依赖于稳定前缀的模型，曾经保持声明列表不变比保持它更小更重要——这就是为什么某些部署手动禁用了 ToolSearch。揭示被扣留的工具现在使该列表保持字节稳定，因此那个特定原因已经失效——只有一个例外，在 `tool_search` 描述本身中说明：工具集刷新可能仍会在实时历史包含对它的直接调用时重新声明被扣留的工具，而那确实会移动前缀。前缀稳定性仍然反对任何其他在会话中途重写前缀的操作，例如在轮次之间编辑上下文文件。
 - **作用域会泄漏。** 设置适用于读取它们的每个客户端（CLI、Web Shell、serve），因此按部署划分的工具集需要自己的设置作用域。
 
 ## 验证节省效果

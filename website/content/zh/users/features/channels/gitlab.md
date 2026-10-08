@@ -26,7 +26,13 @@
       "type": "gitlab",
       "token": "$GITLAB_TOKEN",
       "pollInterval": 60000,
-      "senderPolicy": "open",
+      "operators": ["operator-gitlab-username"],
+      "groups": {
+        "*": {
+          "senders": "allowlist",
+          "allowedUsers": ["operator-gitlab-username"]
+        }
+      },
       "sessionScope": "chat_thread",
       "cwd": "/path/to/your/project",
       "groupPolicy": "open",
@@ -63,7 +69,6 @@ export GITLAB_TOKEN="glpat-your_token_here"
 | `baseUrl`                | `https://gitlab.com`      | GitLab 实例 URL                                        |
 | `action_prompt_template` | （处理时必需）            | 将 GitLab 操作名称映射到元数据模板                     |
 | `groupPolicy`            | `"disabled"`              | 必须为 `"open"`、`"allowlist"`（需列出项目）或 `"pairing"`（需批准项目） |
-| `senderPolicy`           | `"allowlist"`             | 谁可以触发 bot                                         |
 
 ## action_prompt_template
 
@@ -128,11 +133,13 @@ Project: owner/repo | URL: https://gitlab.com/owner/repo | Author: alice | Type:
 
 ## ⚠️ 安全性
 
-在**公共项目**上，设置 `senderPolicy: "open"` 允许**任何 GitLab 用户**通过 @提及 bot 来提交 prompt，驱动你 `cwd` 中的 agent。
+在**公共项目**上，设置 `groups: { "*": { "senders": "open" } }` 允许**任何 GitLab 用户**通过 @提及 bot 来提交 prompt，驱动你 `cwd` 中的 agent。
 
-在公共项目上始终使用 `senderPolicy: "allowlist"` 并显式设置 `allowedUsers`。
+在公共项目上始终使用 `groups["*"].senders: "allowlist"` 并显式设置群组 `allowedUsers`。
 
-注意，在 `groupPolicy: "pairing"` 下，访问权限按项目授予：一旦项目被批准，**任何 GitLab 用户**都可以通过该项目的 issue 和 merge request 驱动 bot。所有 GitLab 流量都是群组流量，因此 `senderPolicy` 和 `allowedUsers` 不会限制已批准项目的成员。批准以项目路径（`owner/repo`）为键，重命名或转移时会发生变化——在任何项目重命名、转移或删除后，撤销过期的群组批准。
+所有 GitLab 流量都是群组流量。群组成员默认为 `open`；将 `groups["*"].senders` 设置为 `allowlist` 并填充其 `allowedUsers` 以限制作者。Private policy 和 user pairing 永远不会限制仓库成员。为共享会话管理显式设置 `operators`。
+
+注意，在 `groupPolicy: "pairing"` 下，访问权限按项目授予：一旦项目被批准，**任何 GitLab 用户**默认都可以通过该项目的 issue 和 merge request 驱动 bot。所有 GitLab 流量都是群组流量，因此 `privatePolicy` 和顶层 `allowedUsers` 不会限制已批准项目的成员；在该项目的 `groups` 条目上设置 `senders: "allowlist"` 和 `allowedUsers` 来缩小范围。批准以项目路径（`owner/repo`）为键，重命名或转移时会发生变化——在任何项目重命名、转移或删除后，撤销过期的群组批准。
 
 ## 提及检测
 

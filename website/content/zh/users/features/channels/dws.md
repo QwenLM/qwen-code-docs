@@ -32,7 +32,7 @@ dws auth status --format json
     "dws-work": {
       "type": "dws",
       "profile": "profile-name-or-corp-id",
-      "senderPolicy": "pairing",
+      "privatePolicy": "pairing",
       "groupPolicy": "pairing",
       "watchTodos": true,
       "startReaction": "🤔",
@@ -54,7 +54,7 @@ YOLO 审批模式适用于无需交互确认即可运行工具调用的应答机
   "channels": {
     "dws-answers": {
       "type": "dws",
-      "senderPolicy": "pairing",
+      "privatePolicy": "pairing",
       "groupPolicy": "pairing",
       "approvalMode": "yolo",
       "cwd": "/path/to/answer-bot"
@@ -65,13 +65,13 @@ YOLO 审批模式适用于无需交互确认即可运行工具调用的应答机
 
 YOLO 模式自动批准每个工具调用。请仅在受信任的机器人账号和工作区中使用。
 
-对于新托管的 DWS 频道，`senderPolicy` 和 `groupPolicy` 默认为 `pairing`。`dmPolicy` 默认为 `open`，包括省略它的已有配置。使用频道返回的码批准用户或群组：
+新托管的 DWS 频道默认 `privatePolicy: "pairing"` 和 `groupPolicy: "pairing"`。使用频道返回的码批准用户或群组：
 
 ```bash
 qwen channel pairing approve dws-work CODE
 ```
 
-`senderPolicy` 控制私聊发送者、文档通知作者、原生待办创建者以及 `open` 或 `allowlist` 群组中的发送者。`groupPolicy` 控制群聊。已批准的配对群组遵循共享频道行为并授权其成员；open 和 allowlist 群组还必须通过 `senderPolicy`。
+`privatePolicy` 控制私聊消息、文档通知作者和原生待办创建者。文档线程和原生待办属于个人请求；`groups.senders` 不适用于它们。`groupPolicy` 控制群组准入，`groups["*"].senders` 或按群组覆盖控制哪些成员可以启动任务。群组成员默认为 `open`，与私聊访问独立。共享会话管理需要显式 `operators`；参见[共享会话 Operators](./overview.md#shared-session-operators)。
 
 `groups` 控制提及行为。具体的群组 ID 会覆盖 `"*"`。当 `requireMention: true` 时，只有 @消息才会唤醒频道。当 `requireMention: false` 时，在群组和发送者策略通过后，普通消息也会被接收。
 
@@ -99,7 +99,7 @@ qwen channel pairing approve dws-work CODE
 
 频道从该通知中提取文档 ID、评论键和请求内容。它会读取被引用的文档作为上下文，在任务运行时添加配置的起始反应，并在原始文档评论下回复。当实时 DWS 事件流包含该卡片时使用实时流；每五秒的增量历史检查覆盖当前事件流遗漏的卡片。
 
-不会生成通知的评论会被有意忽略。同一文档评论的重复通知消息只执行一次。文档任务遵循 `senderPolicy`，并支持 `approvalMode` `default`、`plan` 或 `yolo`；省略时使用 `default`。
+不会生成通知的评论会被有意忽略。同一文档评论的重复通知消息只执行一次。文档任务遵循 `privatePolicy`，并支持 `approvalMode` `default`、`plan` 或 `yolo`；省略时使用 `default`。
 
 ## 原生待办变更
 
@@ -107,9 +107,9 @@ qwen channel pairing approve dws-work CODE
 
 首次成功扫描会建立基线，不会启动历史待办。后续扫描在待办被新分配、重新打开或其可操作字段（包括标题、优先级、截止日期或执行者）发生变更时运行任务。最终响应会作为评论添加到原始待办上。仅评论的元数据和修改时间戳被排除在变更检测之外，因此频道自身的响应不会触发循环。完成或移除会将待办从待处理集中删除；重新打开会创建新的触发。
 
-原生待办使用待办创建者身份遵循 `senderPolicy`。在 `pairing` 下，频道添加一条配对码评论并保持待办为待处理状态；创建者在本地被批准后，后续轮询可以处理未变更的待办。轮询每 30 秒运行一次，并限定在固定 profile 的当前组织范围内。
+原生待办使用待办创建者身份遵循 `privatePolicy`。在 `pairing` 下，频道添加一条配对码评论并保持待办为待处理状态；创建者在本地被批准后，后续轮询可以处理未变更的待办。轮询每 30 秒运行一次，并限定在固定 profile 的当前组织范围内。
 
-群组和私聊访问可以独立配置。对于仅群聊频道，设置 `dmPolicy: "disabled"` 并选择一个已启用的 `groupPolicy`。对于仅私聊频道，设置 `groupPolicy: "disabled"` 和 `dmPolicy: "open"`。私聊访问同时控制文档通知。原生待办轮询仍由 `watchTodos` 单独控制。
+对于仅群聊频道，设置 `privatePolicy: "disabled"` 并启用 `groupPolicy`。对于仅私聊频道，设置 `groupPolicy: "disabled"` 并启用 `privatePolicy`。禁用私聊访问可阻止私聊消息、文档通知和原生待办启动任务；`watchTodos` 单独控制待办轮询。已弃用的 `senderPolicy` 和 `dmPolicy` 仅作为私聊策略的回退保留；参见[私聊策略](./overview.md#private-policy)。
 
 已禁用的聊天源不会被订阅或轮询，其消息也无法通过延迟回调或持久化重放启动新任务。待处理的工作和历史游标会被保留：重新启用某个源后，现有的恢复机制可能会处理较旧的消息，包括禁用期间收到的消息。发送者授权、群组配对和提及要求仍然适用。
 

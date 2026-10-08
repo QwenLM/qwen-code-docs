@@ -32,7 +32,7 @@ Füge einen Channel zu `~/.qwen/settings.json` hinzu:
     "dws-work": {
       "type": "dws",
       "profile": "profile-name-or-corp-id",
-      "senderPolicy": "pairing",
+      "privatePolicy": "pairing",
       "groupPolicy": "pairing",
       "watchTodos": true,
       "startReaction": "🤔",
@@ -54,7 +54,7 @@ Der YOLO-Genehmigungsmodus ist für Antwort-Bots verfügbar, die Tool-Aufrufe oh
   "channels": {
     "dws-answers": {
       "type": "dws",
-      "senderPolicy": "pairing",
+      "privatePolicy": "pairing",
       "groupPolicy": "pairing",
       "approvalMode": "yolo",
       "cwd": "/path/to/answer-bot"
@@ -65,13 +65,17 @@ Der YOLO-Genehmigungsmodus ist für Antwort-Bots verfügbar, die Tool-Aufrufe oh
 
 Der YOLO-Modus genehmigt jeden Tool-Aufruf automatisch. Verwende ihn nur für einen vertrauenswürdigen Bot-Account und Workspace.
 
-`senderPolicy` und `groupPolicy` sind standardmäßig `pairing` für einen neu verwalteten DWS-Channel. Genehmige einen Benutzer oder eine Gruppe mit dem vom Channel zurückgegebenen Code:
+Neue verwaltete DWS-Channel sind standardmäßig auf `privatePolicy: "pairing"` und `groupPolicy: "pairing"` gesetzt. Genehmige einen Benutzer oder eine Gruppe mit dem vom Channel zurückgegebenen Code:
 
 ```bash
 qwen channel pairing approve dws-work CODE
 ```
 
-`senderPolicy` steuert Direktnachrichten-Absender, Autoren von Dokument-Benachrichtigungen, Ersteller nativer Todos und Absender in `open`- oder `allowlist`-Gruppen. `groupPolicy` steuert Gruppenkonversationen. Eine genehmigte Pairing-Gruppe folgt dem gemeinsamen Channel-Verhalten und autorisiert ihre Mitglieder; offene und Allowlist-Gruppen müssen zusätzlich die `senderPolicy` passieren.
+`privatePolicy` steuert Direktnachrichten, Autoren von Dokument-Benachrichtigungen und Ersteller nativer Todos. Dokument-Threads und native Todos sind persönliche Anfragen; `groups.senders` wird darauf nie angewendet. `groupPolicy` steuert den Gruppenzugang, und `groups["*"].senders` oder eine gruppenweise Überschreibung steuert, welche Mitglieder Tasks starten dürfen. Gruppenmitglieder sind standardmäßig `open`, unabhängig vom privaten Zugang. Das Management gemeinsamer Sessions erfordert explizite `operators`; siehe [Shared-Session Operators](./overview.md#shared-session-operators).
+
+`groups` steuert das Erwähnungsverhalten. Eine konkrete Gruppen-ID überschreibt `"*"`. Mit `requireMention: true` weckt nur eine @-Nachricht den Channel. Mit `requireMention: false` werden auch gewöhnliche Nachrichten empfangen, nachdem die Gruppen- und Absender-Richtlinien bestanden sind.
+
+Deaktivierte Chat-Quellen werden nicht abonniert oder abgefragt, und ihre Nachrichten können über späte Rückrufe oder persistiertes Replay keine neuen Tasks starten. Ausstehende Arbeiten und History-Cursor werden beibehalten: Nach dem Wiederaktivieren einer Quelle kann der vorhandene Wiederherstellungsmechanismus ältere Nachrichten verarbeiten, einschließlich Nachrichten aus dem deaktivierten Intervall. Absenderautorisierung, Gruppen-Pairing und Erwähnungsanforderungen gelten weiterhin.
 
 `groups` steuert das Erwähnungsverhalten. Eine konkrete Gruppen-ID überschreibt `"*"`. Mit `requireMention: true` weckt nur eine @-Nachricht den Channel. Mit `requireMention: false` werden auch gewöhnliche Nachrichten empfangen, nachdem die Gruppen- und Absender-Richtlinien bestanden sind.
 
@@ -91,7 +95,7 @@ Es gibt keine Dokument- oder Wissensbasis-Watchlist. Um eine Dokument-Aufgabe zu
 
 Der Channel extrahiert die Dokument-ID, den Kommentar-Schlüssel und die Anfrage aus dieser Benachrichtigung. Er liest das referenzierte Dokument für den Kontext, fügt die konfigurierte Startreaktion hinzu, während die Aufgabe läuft, und antwortet auf den ursprünglichen Dokumentkommentar. Der Echtzeit-DWS-Event-Stream wird verwendet, wenn er die Karte enthält; eine fünfsekündige inkrementelle Historienprüfung deckt Karten ab, die vom aktuellen Event-Stream weggelassen werden.
 
-Kommentare, die keine Benachrichtigung erzeugen, werden by Design ignoriert. Doppelte Benachrichtigungsnachrichten für denselben Dokumentkommentar werden nur einmal ausgeführt. Dokument-Aufgaben folgen der `senderPolicy` und unterstützen `approvalMode` `default`, `plan` oder `yolo`; `default` wird verwendet, wenn nichts angegeben ist.
+Kommentare, die keine Benachrichtigung erzeugen, werden by Design ignoriert. Doppelte Benachrichtigungsnachrichten für denselben Dokumentkommentar werden nur einmal ausgeführt. Dokument-Aufgaben folgen `privatePolicy` und unterstützen `approvalMode` `default`, `plan` oder `yolo`; `default` wird verwendet, wenn nichts angegeben ist.
 
 ## Native Todo-Änderungen
 
@@ -99,7 +103,7 @@ Setze `watchTodos: true`, um die ausstehenden nativen Todos des ausgewählten DW
 
 Der erste erfolgreiche Scan erstellt eine Basislinie und startet keine historischen Todos. Spätere Scans starten eine Aufgabe, wenn ein Todo neu zugewiesen, wiedereröffnet wird oder sich seine handlungsfähigen Felder ändern, einschließlich Titel, Priorität, Deadline oder Assignees. Die endgültige Antwort wird als Kommentar zum ursprünglichen Todo hinzugefügt. Rein kommentarbasierte Metadaten und Änderungszeitstempel werden von der Änderungserkennung ausgeschlossen, sodass die eigene Antwort des Channels keinen Loop auslösen kann. Abschluss oder Entfernung entfernt das Todo aus der ausstehenden Menge; Wiedereröffnung erzeugt einen neuen Trigger.
 
-Native Todos folgen der `senderPolicy` unter Verwendung der Todo-Ersteller-Identität. Unter `pairing` fügt der Channel einen Pairing-Code-Kommentar hinzu und hält das Todo ausstehend; nachdem der Ersteller lokal genehmigt wurde, kann ein späterer Poll das unveränderte Todo verarbeiten. Das Polling läuft alle 30 Sekunden und bleibt auf die aktuelle Organisation des gepinnten Profils beschränkt.
+Native Todos folgen `privatePolicy` unter Verwendung der Todo-Ersteller-Identität. Unter `pairing` fügt der Channel einen Pairing-Code-Kommentar hinzu und hält das Todo ausstehend; nachdem der Ersteller lokal genehmigt wurde, kann ein späterer Poll das unveränderte Todo verarbeiten. Das Polling läuft alle 30 Sekunden und bleibt auf die aktuelle Organisation des gepinnten Profils beschränkt.
 
 ## Starten und Verifizieren
 
@@ -117,14 +121,12 @@ qwen serve --workspace /path/to/your/project --channel dws-work
 
 Führe nicht beide Formen gleichzeitig aus, da sie sich die Channel-Service-Lease teilen.
 
-Für die lokale Verifizierung sende eine Direktnachricht von einem anderen Account, genehmige das Pairing falls erforderlich, und stelle sicher, dass die konfigurierte Startreaktion erscheint, während die Aufgabe läuft. Wenn eine Endreaktion konfiguriert ist, stelle sicher, dass sie die Startreaktion nach Abschluss, Fehlschlag oder Abbruch der Aufgabe ersetzt; ein weggelassener oder leerer Wert deaktiviert die Endreaktion.
+Für die lokale Verifizierung sende eine Direktnachricht von einem anderen Account, genehmige das Pairing falls erforderlich, und stelle sicher, dass die konfigurierte Startreaktion erscheint, während die Aufgabe läuft. Wenn eine Endreaktion konfiguriert ist, stelle sicher, dass sie die Startreaktion nach Abschluss der Aufgabe ersetzt. Füge dann einen Dokumentkommentar mit aktivierter @Erwähnungs-Benachrichtigung hinzu. Der Channel sollte auf die Benachrichtigungsnachricht reagieren, das Dokument lesen und die endgültige Antwort unter dem ursprünglichen Kommentar veröffentlichen. Ein Kommentar mit deaktivierter Benachrichtigung sollte keine Aufgabe erzeugen.
 
-### IM-Zustellung von IM-Antworten
+#### IM-Antwortzustellung
 
 Eine abgeschlossene Gruppen-@- oder Direktnachrichten-Antwort wird vor dem ersten Sendeversuch checkpointed und im Hintergrund retryt, ohne die Aufgabe erneut auszuführen. Der Backoff beginnt bei fünf Sekunden, verdoppelt sich und ist bei fünf Minuten gedeckelt. Eine Antwort wird nach 16 fehlgeschlagenen Zustellversuchen aufgegeben. Lokale Verschiebungen durch einen getrennten Channel oder eine nicht lesbare Pairing-Genehmigung verwenden ein separates Limit von 32 aufeinanderfolgenden Prüfungen, sodass sie das Transport-Versuchsbudget nicht verbrauchen. Eine Antwort wird sofort verworfen, wenn die Absender-, Gruppen- oder Direktnachrichten-Autorisierung endgültig widerrufen wird. Die Queue hält bis zu 100 Antworten und entfernt beim Vollsein den ältesten Eintrag unabhängig von dessen Versuchszähler; ein Wechsel des konfigurierten DWS-Profils leert die Queue. Diese Verwerfungen werden auf der Channel-Stderr berichtet, nicht als Chat-Benachrichtigungen gesendet.
 
 Gereihte IM-Antworten länger als 12.000 Codepoints werden gekürzt, wobei `[Response truncated for DWS delivery.]` an die Nachricht angehängt wird, die der Empfänger sieht. Dokumentkommentar- und Native-Todo-Kommentar-Antworten nutzen diesen gereihten Retry- oder Kürzungspfad nicht: Jeder Turn macht einen Kommentar-Sende-Aufruf, unbekannte Ausgänge werden verschluckt, und endgültige Fehlschläge werden an die bestehende Inbound-Turn-Retry-Policy weitergeleitet. Die Endreaktion markiert den Aufgabenabschluss, nicht die Antwortzustellung, daher kann eine erneut versuchte IM-Antwort eintreffen, nachdem diese Reaktion erscheint.
-
-Füge dann einen Dokumentkommentar mit aktivierter @Erwähnungs-Benachrichtigung hinzu. Der Channel sollte auf die Benachrichtigungsnachricht reagieren, das Dokument lesen und die endgültige Antwort unter dem ursprünglichen Kommentar veröffentlichen. Ein Kommentar mit deaktivierter Benachrichtigung sollte keine Aufgabe erzeugen.
 
 Der Channel ignoriert Events von Absender-IDs, die DWS als den authentifizierten Account identifiziert, was Antwort- und Pairing-Loops verhindert, ohne die Identität aus dem Nachrichtentext abzuleiten. Das Starten der IM-Quellen erfordert diese autoritative Selbst-Identität: Wenn der authentifizierte Account keine openDingTalkId bereitstellt und keine frühere Session unter demselben Profil eine aufgezeichnet hat, verweigert der Channel die Verbindung. Ein Reconnect, der die ID vorübergehend verliert, behält die Filterung auf den zuvor aufgezeichneten Selbst-Absender-IDs bei.
