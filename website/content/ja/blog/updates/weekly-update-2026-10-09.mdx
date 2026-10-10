@@ -1,0 +1,240 @@
+---
+title: "Qwen Code 週報：Qwen Live が登場、ログイン済みのウェブページを操作できる、メール 1 通で仕事を頼める"
+date: "2026-10-09"
+description: "この 2 週間で v0.24.5 ～ v0.25.0 の 4 つの正式版をリリースし、467 件の PR がマージされました。Qwen Live が登場し、Web Shell とデスクトップ版の両方で使えます。会話中は画面共有もでき、いま画面で起きていることを見せられます。Qwen Code はあなたがよく使う Chrome に入ってページ移動・入力・送信をこなし、すべてバックグラウンドで完了します。Email Channel が加わり、メール 1 通で手元にないパソコンに仕事を出せます。/batch-api は繰り返し作業を通常価格の半額でバックグラウンドに回します。Trajectory タブは 1 ラウンドの時間を 3 本に広げ、どの区間が異常かを一目で見せます。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i4/O1CN01lbIFfL9IVfI2jBZY_!!6000000004512-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 週報：Qwen Live が登場、ログイン済みのウェブページを操作できる、メール 1 通で仕事を頼める"
+  date="2026-10-09"
+  author="Qwen Team"
+/>
+
+Qwen Code はこの 2 週間で v0.24.5 ～ v0.25.0 の 4 つの正式版をリリースし、467 件の PR がマージされました。
+
+**Qwen Live が使えるようになりました。** 声で話しかけると、音声で返ってきます。会話中は画面共有もでき、いま画面で起きていることを見せられます。
+
+**Qwen Code がログイン済みのウェブページを操作できます。** いつも使っている Chrome に入ってページ移動・入力・送信をこなし、すべてバックグラウンドで完結するので、パソコンを使うじゃまになりません。
+
+**メール 1 通で仕事が出せます。** 手元にそのパソコンがないとき、スマホのメールアプリで一言伝えれば、そこで動いている Qwen Code が片付けて、結果を返信で知らせてくれます。
+
+**まとめ作業は /batch-api で半額バックグラウンドに。** やりたいことを伝えると、まず課金されない計画を出し、うなずいてはじめて預かります。数時間後、結果はファイルとして手元に届きます。
+
+**1 ラウンドが遅い・高いと感じたら Trajectory タブ。** Model requests、Tool calls、Subagent requests を 3 本に広げるので、異常に長い区間が一目で見えます。
+
+## ✨ 新機能
+
+### Qwen Live が登場
+
+Qwen Live が使えるようになりました。Web Shell とデスクトップ版の両方です。左のサイドバーで Live アイコンを選ぶと、右側に Qwen Live のカードが開きます——スイッチをオンにし、百炼の DashScope Realtime API キーを貼り付けて Save を押すだけ。詳しくは PR [#12529](https://github.com/QwenLM/qwen-code/pull/12529)
+
+有効にしたら、Live ページで「Open Live Voice」を押すか、入力欄の右下にあるリアルタイム音声ボタンを押すと、話し始められます。返答は音声で届きます。詳しくは PR [#12189](https://github.com/QwenLM/qwen-code/pull/12189)
+
+会話の最中は「画面共有」も使えます。画面で起きていることを Qwen Code 自身が見たうえで、映っているエラーメッセージの意味をそのまま質問できます。詳しくは PR [#12378](https://github.com/QwenLM/qwen-code/pull/12378)、[#12623](https://github.com/QwenLM/qwen-code/pull/12623)
+
+こんなことに使えます：
+
+- キーボードがふさがっているとき、次の手順を声で伝える
+- 画面に読めないエラーが出たら、画面共有して相手にも見てもらったうえで意見をもらう
+- 1 ラウンドで何文も往復するやり取りを、話し終えるだけで済ませる
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/1F3KFsZOqMXmhec9Na_kiKvxTYR2jK6KRXbb39DZwGc.mp4" controls></video>
+
+### Qwen Code がログイン済みのウェブページを操作できる
+
+Qwen Code は、いつも使っている Chrome に入って仕事ができます。開いているタブもログイン済みのアカウントもそのまま使い、ページ移動・入力・送信を済ませ、結果のページは手元に残します。「開いているレポートを読んで、今日の注文をまとめて」と一言頼むだけでかまいません。詳しくは PR [#11242](https://github.com/QwenLM/qwen-code/pull/11242)
+
+使う前に Chrome ウェブストアから [Qwen Code 拡張機能](https://chromewebstore.google.com/detail/qwen-code/hdhmmjclhibojdddmancfgbkleahfaph) を追加しておいてください。以後は会話で用件を言うだけです。Mac と Linux で使えますが、Windows はまだ未対応です。詳しくは PR [#12510](https://github.com/QwenLM/qwen-code/pull/12510)
+
+作業はすべてバックグラウンドで完結し、Chrome が前面に出てこないのでパソコンの利用をじゃましません。複数のセッションで同時に使っても、それぞれ別のタブグループで、互いに干渉しません。詳しくは PR [#12229](https://github.com/QwenLM/qwen-code/pull/12229)
+
+こんなことに使えます：
+
+- ログイン済みの管理画面を読ませ、今日の数字を取り出して手元の表と突き合わせる
+- 経費精算やチケットがいくつかのページに散っているとき、一言で一つずつ入力して送信させる
+- ページでしか見えないフロー（承認待ちキューや ToDo 一覧）を見張らせて、対応が必要なものを絞り込む
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/DW9eJ4RWbkPUYkmGDWRRkl6x7Ecw2WObB9Cbi-LHP9w.mp4" controls></video>
+
+### メール 1 通で仕事を頼める
+
+用が思い浮かんでも、Qwen Code が動いているパソコンに届かないことがある——手が届かないのです。そこで Email Channel が加わりました。メール 1 通送るだけでいいです。
+
+スマホの好きなメールアプリで一言伝えれば、そのパソコンの Qwen Code が作業し、終わった結果を返信 1 通で知らせてくれます。どこか気になるなら、その返信に一言足すだけで、これまでどこまで進んだかを踏まえて続けます。ユーザーから届いた障害報告メールやシステムのアラートも、そのままこのアドレスに転送して引き受けさせられます。
+
+使うには、Qwen Code にメールアカウントを 1 つ割り当て、さらに自分のメールアドレスを許可リストに書きます。あなたからのメールだけが作業を起動します。
+
+こんなことに使えます：
+
+- 通勤中に 1 通送っておけば、作業を前もって進めてくれ、席に着いたら結果を見るだけ
+- 障害報告メールをそのまま転送すると、添付のログを読んで最初の判断を返す
+- アラートメールが出た直後に Qwen Code が先に調べ始め、原因を返信してくる
+
+詳しくは PR [#12939](https://github.com/QwenLM/qwen-code/pull/12939)
+
+### /batch-api：まとめ作業を半額でバックグラウンドに
+
+手がつけられていない小さな作業が数百個溜まることがあります。ディレクトリまるごとのドキュメント翻訳、数十枚のチケットからの項目抽出、1 本ごとの要約作成。1 通ずつ出すと、待ち時間だけで会話を埋め、コストも膨らみます。
+
+`/batch-api` の後に用件を 1 文書くと、まず数件を見本で確認し、計画を 1 枚出します——合計何件か、どこに書き出すか、Token はだいたい幾らか。この段階では課金されません。うなずいてはじめて実際に預けます。以後はバックグラウンドで通常価格の半額の課金で走り、数十分から数時間後、結果は指定した場所にファイルとして落ちていきます。そのあいだ、今の会話は普通に働けます。
+
+```text
+/batch-api docs/zh の Markdown ドキュメントを英語に翻訳し、同じファイル名で docs/en に書き出して
+```
+
+1 ラウンドで終わり、内容が互いに無関係なまとめ作業に向いています。何往復も議論が必要な仕事は、従来どおり会話で進めてください。
+
+こんなことに使えます：
+
+- ドキュメントディレクトリまるごと英語訳し、一度預けて数時間後に受け取る
+- ログやチケットから項目抽出をまとめ、1 回のジョブにして走らせる
+- 数百件のユーザーフィードバックを一つずつ分類してタグ付けし、一度預ける
+
+詳しくは PR [#12492](https://github.com/QwenLM/qwen-code/pull/12492)
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/1uQFAitIk8GrISYqFv-tMJ-8-6DhUg8iJecvVHpl78o.mp4" controls></video>
+
+### Trajectory タブ：1 ラウンドが遅いのか高いのか、時間がどこへ消えたか見える
+
+1 ラウンド走らせて「長い」と感じても、分かるのは長いことだけです。モデルがなかなか応答しなかったのか、出力が多すぎたのか、途中でどのツールが詰まったのかは分かりませんでした。
+
+右側パネルの Trajectory タブは、時間を 3 本に広げます——Model requests、Tool calls、Subagent requests がそれぞれ 1 本です。異常に長い区間は一目で見え、詰め込みすぎた時間帯は区間を広げて見られます。詳しくは PR [#12524](https://github.com/QwenLM/qwen-code/pull/12524)、[#12557](https://github.com/QwenLM/qwen-code/pull/12557)
+
+怪しい区間は軸上で選択すると、その時間帯に起きたことだけが残ります。1 件を選ぶと、何を読み、何を返し、Token をいくらか費やしたかが下に展開され、そのままコピーできます。詳しくは PR [#12543](https://github.com/QwenLM/qwen-code/pull/12543)、[#12971](https://github.com/QwenLM/qwen-code/pull/12971)
+
+軸には Real time という表示もあり、ただ待っていた時間まで数え入れたうえで、「経過時間と実際に走っていた時間」の 2 つの数を示します——1 ラウンドが手元の時間をどれだけ奪ったかはここで確認します。詳しくは PR [#12607](https://github.com/QwenLM/qwen-code/pull/12607)
+
+終わったラウンドは折りたためるので、長い会話を先頭から追い直さなくて済みます。詳しくは PR [#13081](https://github.com/QwenLM/qwen-code/pull/13081)
+
+こんなことに使えます：
+
+- 遅いと感じたら軸を見て決める——モデルを替えるのか、あのツールを調べるのか
+- 長い会話で特定の区間に戻りたいとき、選択してそこだけ表示し、終わったラウンドは畳む
+- ある操作が誤った疑いが出たら、入出力と消費 Token をその場で確認する
+
+![Web Shell 右側の Trajectory パネル。横軸に Model requests・Tool calls・Subagent requests の 3 本が並ぶ](https://img.alicdn.com/imgextra/i2/O1CN01eOdRy4W4jKK7nW9B_!!6000000004272-2-tps-3841-2160.png)
+
+### Channel：1 つのボットを使い分け、個別とグループの許可を分離、長い会話は自動で新しいものへ
+
+**1 つのボットのまま、受け口を使い分けられます。** メッセージの先頭に別のプレフィックスを付けると、通る会話も依頼条件も分かれます。一方ではコードレビューを、もう一方ではリポジトリの質問応答を——2 本は混ざらず、接続をもう 1 本開く必要もありません。グループで @ したあとにプレフィックスを付けても大丈夫です。詳しくは PR [#12595](https://github.com/QwenLM/qwen-code/pull/12595)
+
+**個別で話せる人とグループで使える人を、別々に決められます。** グループは全面開放したまま、個別は許可リストの数人だけに限る——両方は互いに影響しません。詳しくは PR [#12547](https://github.com/QwenLM/qwen-code/pull/12547)、[#12475](https://github.com/QwenLM/qwen-code/pull/12475)
+
+**グループの長い会話は自動で切り替わります。** スレッドが延び続け、最終的に 1 通も出せなくなると、壊れるのはその会話だけです。DingTalk であるスレッドは 8,577 件まで溜まったことがあります。いま上限を設定でき、到達したら新しい会話に自動で切り替わり、グループ内にも一言知らせます。詳しくは PR [#12616](https://github.com/QwenLM/qwen-code/pull/12616)
+
+### Web Shell：サイドバー再配置、長い会話の履歴検索、1 リポジトリの複数作業コピーなど
+
+**サイドバーを作り直しました。** 左に細いナビゲーションが増え、Channel や音声はそれぞれの入口を持ち、バージョン番号と使わない操作は「その他」に収納しました。詳しくは PR [#12943](https://github.com/QwenLM/qwen-code/pull/12943)
+
+**長い会話でも検索できます。** 前に言った 1 文や貼ったコードを探すとき、キーワードで検索すると該当メッセージに飛びます。それより前のメッセージをスクロールで遡る必要はなく、検索すれば見つかります。詳しくは PR [#12234](https://github.com/QwenLM/qwen-code/pull/12234)
+
+**「ついでに一言」が表面に出ました。** メインの作業が動いている最中に小さな質問を挟みたいとき、入力欄の「+」メニューに項目があり、押すと書き上げてくれます。回答は隣のパネルに出るので、メインの作業は邪魔されません。詳しくは PR [#12775](https://github.com/QwenLM/qwen-code/pull/12775)
+
+**1 つのリポジトリで複数の作業コピーを開けます。** 前回のブランチツリーに続けて、Git のダイアログに Worktree タブが増えました。セッションが自分専用のコピーを使い、編集が互いに影響しません。どれがセッションで動き中か、どれに未コミットの変更があるかが一目で見え、押せば切り替わります。詳しくは PR [#12154](https://github.com/QwenLM/qwen-code/pull/12154)、[#11816](https://github.com/QwenLM/qwen-code/pull/11816)
+
+![Web Shell のサイドバー新ナビゲーション、左下の検索入口、入力欄の「+」メニューにある「ついでに一言」](https://img.alicdn.com/imgextra/i4/O1CN01AoFuuHb4MgI7nW9B_!!6000000005620-2-tps-3841-2160.png)
+
+## 📊 その他の新機能
+
+**コミットも任せられます。** `/commit` と打つと、どのファイルを変えたかを見て、リポジトリの履歴の書き方に倣ったコミットメッセージを作り、今回に入れるべきファイルだけ加えます。`.env` のように秘密情報を置いているファイルは直接拒否します。コミットを作るだけで、push は自分の手で。範囲を絞りたいときは後ろに一文足してください。たとえば `/commit only stage the parser changes` のように。詳しくは PR [#10586](https://github.com/QwenLM/qwen-code/pull/10586)
+
+**1 文が何をしたか見られます。** Web Shell で自分が送ったメッセージにマウスを乗せると、コピーボタンの隣にレンチのアイコンが出て、押すと「ツール呼び出し」タブが開きます。そのラウンドで読んだファイル、実行したコマンド、変更した場所が 1 件ずつ並び、展開すると結果と差分が見えます。前のラウンドも照会できます。詳しくは PR [#12466](https://github.com/QwenLM/qwen-code/pull/12466)
+
+**`/advisor` が手動レビューから自発的な相談に変わりました。** オンにすると、作業するモデルが手を動かす前と成果を出す準備の 2 つの場面で、自分でアドバイザーに問いに行きます。意見は会話に戻ってきてから作業を継続します。派遣したサブ Agent も相談できます。1 回の相談ごとに Token を追加で費やし、その会話はアドバイザーのモデルに見せるので、信頼できるものを選んでください。詳しくは PR [#9636](https://github.com/QwenLM/qwen-code/pull/9636)、[#12688](https://github.com/QwenLM/qwen-code/pull/12688)
+
+**新しいモデルの接続で、入力がずいぶん減ります。** コンテキストウィンドウの大きさ、一度に出せる量、画像を受け付けるか——これらを Qwen Code が自分で判断します。モデル一覧を組み込んであり、毎日バックグラウンドで更新し、オフラインでも使えます。自分で入力した値は引き続き優先されます。詳しくは PR [#11959](https://github.com/QwenLM/qwen-code/pull/11959)
+
+**外部メモリへの接続が簡単になりました。** セッションをまたいで覚えてさせたいとき、アドレスとキーを 1 つ渡すだけで、拡張機能のインストールもサービス登録も不要です。検索はデフォルトで使えます。外に書き込むにはスイッチを 1 つ追加でオンにする必要があり、オンにすると何が保存されるか毎回確認できます。詳しくは PR [#12891](https://github.com/QwenLM/qwen-code/pull/12891)
+
+**メモリが増えても全部は広げません。** オンにすると、今の質問に関係する数件だけをコンテキストに拾い、全文が見たくなったら取りに行きます。メモリが数十〜百個のファイルになったとき、節約が大きいです。詳しくは PR [#10183](https://github.com/QwenLM/qwen-code/pull/10183)
+
+**QQ ボットが画像と動画を受け取れるようになりました。** グループで送られた画像や短い動画をそのまま読めるので、文章に書き直す必要はありません。詳しくは PR [#12850](https://github.com/QwenLM/qwen-code/pull/12850)
+
+## 👏 体験改善
+
+**起動してから入力できるまでが倍速になりました。** 何もないパソコンで `qwen` を叩いてから入力できるまでの待ち時間が約 2.5 秒——うち最初の 2 秒はターミナルが真っ白でした。この待ち時間が半分になり、メモリ使用量も 575 MB から約 6 割減りました。詳しくは PR [#12622](https://github.com/QwenLM/qwen-code/pull/12622)、[#12602](https://github.com/QwenLM/qwen-code/pull/12602)、[#12603](https://github.com/QwenLM/qwen-code/pull/12603)
+
+**設定パネルの中国語表記を埋めました。** 表示言語に中国語を選ぶと、画面全体が中国語になります。詳しくは PR [#12783](https://github.com/QwenLM/qwen-code/pull/12783)
+
+**Channel のグループ発言者とセッション管理者をポップアップで変更できます。** 設定ファイルを開いて手で打ち込む必要がなくなりました。詳しくは PR [#12535](https://github.com/QwenLM/qwen-code/pull/12535)
+
+**画面がすっきりしました。** 空のパラメータ行を消し、統計ページの先頭を整え、生のデータは詳細に収納しました。詳しくは PR [#12601](https://github.com/QwenLM/qwen-code/pull/12601)、[#13091](https://github.com/QwenLM/qwen-code/pull/13091)
+
+**スキルの中身を変えたら、リロードで反映されます。** 詳しくは PR [#12182](https://github.com/QwenLM/qwen-code/pull/12182)
+
+## 🔧 重要な修正
+
+| 修正 | あなたへの影響 | PR |
+|------|-----------|-----|
+| **スラッシュコマンドで起動したワークフローが結果を返す** | `/<ワークフロー名>` で走らせても会話に何も出ず、結果は `/workflows` を自分で開いて見るしかありませんでした。今は完了も失敗も会話に知らせてきます | [#12415](https://github.com/QwenLM/qwen-code/pull/12415) |
+| **リアルタイム音声中に New task を押すと通常のタスクが開く** | 音声会話中に通常のタスクを開きたくて New task を押すと、新しい音声セッションを作ろうとして「Live Voice is unavailable.」を出し、何も作られませんでした。今は押した意味どおりに動きます | [#12516](https://github.com/QwenLM/qwen-code/pull/12516), [#12519](https://github.com/QwenLM/qwen-code/pull/12519), [#12626](https://github.com/QwenLM/qwen-code/pull/12626) |
+| **新規ファイルだけの Worktree が自動削除されない** | 自分が書いた未コミットのファイルしかない Worktree が「不要なディレクトリ」としてファイルごと消され、戻せませんでした。今は中身があれば保持します | [#12739](https://github.com/QwenLM/qwen-code/pull/12739), [#12785](https://github.com/QwenLM/qwen-code/pull/12785) |
+| **自動更新後も検索が使える** | 自動更新が組み込みの検索ツールを壊し、何を検索してもヒットしませんでした。今は直っています | [#12673](https://github.com/QwenLM/qwen-code/pull/12673), [#12892](https://github.com/QwenLM/qwen-code/pull/12892) |
+| **統計レポートを切ったのが本当に効く** | 設定で利用統計をオフにしても、拡張機能のイベント、再接続のコマンド、プロキシ経由の送信がまだ飛んでいました。今はこれらもスイッチに従います | [#12604](https://github.com/QwenLM/qwen-code/pull/12604), [#12857](https://github.com/QwenLM/qwen-code/pull/12857), [#12789](https://github.com/QwenLM/qwen-code/pull/12789), [#13023](https://github.com/QwenLM/qwen-code/pull/13023) |
+| **補助モデルへのリクエストに認証情報を送らない** | 別のアドレスへリクエストするとき、URL にアカウント情報が混ざることがありました。今は送る前に消します | [#12862](https://github.com/QwenLM/qwen-code/pull/12862) |
+| **メモリパネルが読めない `QWEN.md` を上書きしない** | グローバル `QWEN.md` が読み込めないとき、パネルは空の内容として保存していました。今は読めなければ保存しません | [#13154](https://github.com/QwenLM/qwen-code/pull/13154) |
+| **スマホでソフトキーボードが入力欄を覆わない** | スマホでの入力時、キーボードが入力欄やツールボタンを押し出して操作できませんでした。今は普通に操作できます | [#12462](https://github.com/QwenLM/qwen-code/pull/12462) |
+| **macOS デスクトップ版の右側パネルがタイトルバーに隠れない** | 右側パネルの上端が macOS のタイトルバーに覆われ、ボタンが見切れていました。今は場所を譲ります | [#12876](https://github.com/QwenLM/qwen-code/pull/12876) |
+| **独立セッションが履歴をまた読める** | セッションを開いても空で、以前のコンテンツが読めませんでした。今は復元します | [#12615](https://github.com/QwenLM/qwen-code/pull/12615) |
+| **Windows でコマンド出力の中国語が文字化けしない** | 中国語の出力で表示が乱れていました。今はシステムのエンコーディングで解釈し、乱れません | [#12731](https://github.com/QwenLM/qwen-code/pull/12731) |
+| **Linux で貼り付け失敗の理由が分かる** | クリップボードが使えないか問い合わせが失敗したとき、無反応でした。貼れなかったのか環境が非対応なのか分からず、今は明確に知らせます | [#12489](https://github.com/QwenLM/qwen-code/pull/12489), [#12508](https://github.com/QwenLM/qwen-code/pull/12508), [#12504](https://github.com/QwenLM/qwen-code/pull/12504), [#12666](https://github.com/QwenLM/qwen-code/pull/12666) |
+| **貼り直した画像が最新扱いにならない** | 貼り直すと古い画像が最新として扱われていました。今は 1 枚ずつ識別子を持ちます | [#12549](https://github.com/QwenLM/qwen-code/pull/12549) |
+| **Channel が超長いメッセージで接続を切らない** | 通知 1 件が大きすぎると接続ごと切っていましたが、今はその 1 件だけ捨てて接続は保ちます | [#11925](https://github.com/QwenLM/qwen-code/pull/11925) |
+| **`/context` の見積もりがウィンドウを超えない** | 推定値がコンテキストウィンドウより大きくなっていました。今はウィンドウ内に収めます | [#13246](https://github.com/QwenLM/qwen-code/pull/13246) |
+
+## 👥 コントリビューター
+
+| コントリビューター | 貢献内容 | 参考 PR リンク |
+|--------|---------|-------------|
+| **[@yiliang114](https://github.com/yiliang114)** | AI がコミットメッセージを作る /commit、まとめジョブ /batch-api、外部メモリを本体パッケージに同梱、1 回きりの呼び出しの起動高速化、Linux の貼り付け失敗の理由表示、モデル能力の自動判定 | [#10586](https://github.com/QwenLM/qwen-code/pull/10586), [#12492](https://github.com/QwenLM/qwen-code/pull/12492), [#12891](https://github.com/QwenLM/qwen-code/pull/12891), [#12602](https://github.com/QwenLM/qwen-code/pull/12602), [#12489](https://github.com/QwenLM/qwen-code/pull/12489), [#11959](https://github.com/QwenLM/qwen-code/pull/11959) |
+| **[@wenshao](https://github.com/wenshao)** | バックグラウンドサービスの安定化、レビュー結論をファイル単位で記録し履歴を直しても有効、サイドバーでワンクリック更新・再起動、Git ダイアログで Worktree を管理、「+」メニューに「ついでに一言」を追加 | [#9661](https://github.com/QwenLM/qwen-code/pull/9661), [#12154](https://github.com/QwenLM/qwen-code/pull/12154), [#12734](https://github.com/QwenLM/qwen-code/pull/12734), [#12775](https://github.com/QwenLM/qwen-code/pull/12775), [#9273](https://github.com/QwenLM/qwen-code/pull/9273), [#13211](https://github.com/QwenLM/qwen-code/pull/13211) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | バックグラウンドサービスの接続検証と安全側の受け、Linux でサンドボックスが使えないときの別方式実行、システムプロンプトの軽量化、設定パネルの中国語表記を補完、セッション復元時に承認モードを保持 | [#12278](https://github.com/QwenLM/qwen-code/pull/12278), [#12360](https://github.com/QwenLM/qwen-code/pull/12360), [#12783](https://github.com/QwenLM/qwen-code/pull/12783), [#12918](https://github.com/QwenLM/qwen-code/pull/12918), [#12506](https://github.com/QwenLM/qwen-code/pull/12506) |
+| **[@qqqys](https://github.com/qqqys)** | Trajectory のタイムライン、拡大縮小と折りたたみができる Trajectory グラフ、プレフィックスでメッセージを別々の会話に振り分け、個別とグループのアクセス許可を分離、リアルタイム音声に画面共有を追加 | [#12524](https://github.com/QwenLM/qwen-code/pull/12524), [#12557](https://github.com/QwenLM/qwen-code/pull/12557), [#13081](https://github.com/QwenLM/qwen-code/pull/13081), [#12595](https://github.com/QwenLM/qwen-code/pull/12595), [#12547](https://github.com/QwenLM/qwen-code/pull/12547), [#12623](https://github.com/QwenLM/qwen-code/pull/12623) |
+| **[@tanzhenxin](https://github.com/tanzhenxin)** | 起動から入力できるまでの時間を半減、メモリ使用量を約 6 割削減、ブラウザ自動化の実行環境を同梱、Code Mode の並行処理と自由入力、フルアクセスでワークスペース外のディレクトリも許可 | [#12622](https://github.com/QwenLM/qwen-code/pull/12622), [#12548](https://github.com/QwenLM/qwen-code/pull/12548), [#13150](https://github.com/QwenLM/qwen-code/pull/13150), [#13151](https://github.com/QwenLM/qwen-code/pull/13151), [#12927](https://github.com/QwenLM/qwen-code/pull/12927), [#12510](https://github.com/QwenLM/qwen-code/pull/12510) |
+| **[@callmeYe](https://github.com/callmeYe)** | セッション作成時にモデルと推理強度を選べる、拡張機能リストの読み込み高速化、詰まったストリーミングメッセージの自動終了、セッション作成失敗の理由が見える | [#12308](https://github.com/QwenLM/qwen-code/pull/12308), [#12640](https://github.com/QwenLM/qwen-code/pull/12640), [#12439](https://github.com/QwenLM/qwen-code/pull/12439), [#12331](https://github.com/QwenLM/qwen-code/pull/12331) |
+| **[@dvd233](https://github.com/dvd233)** | MCP の登録と状態検出の複数の修正、読み取り専用コマンドの判定網羅、MCP 検出で無関係なサービスを起動しない | [#12205](https://github.com/QwenLM/qwen-code/pull/12205), [#12221](https://github.com/QwenLM/qwen-code/pull/12221), [#12256](https://github.com/QwenLM/qwen-code/pull/12256), [#12500](https://github.com/QwenLM/qwen-code/pull/12500), [#12268](https://github.com/QwenLM/qwen-code/pull/12268) |
+| 🆕 **[@yc2bgr8](https://github.com/yc2bgr8)** | /clear などのコマンド説明を訂正、ツールの提案で登録済みプレフィックスを優先、バックグラウンドサービスの設定問題 2 箇所、メモリ読み込み上限の目印を保持 | [#12555](https://github.com/QwenLM/qwen-code/pull/12555), [#12743](https://github.com/QwenLM/qwen-code/pull/12743), [#12893](https://github.com/QwenLM/qwen-code/pull/12893), [#12788](https://github.com/QwenLM/qwen-code/pull/12788) |
+| **[@jabrailkhalil](https://github.com/jabrailkhalil)** | スマホでローカルのファイルを選べる、マイク権限を用途に応じて絞る、IPv6 のローカルアドレスにも接続、オフライン再試行後にログイン状態を保持 | [#12126](https://github.com/QwenLM/qwen-code/pull/12126), [#12127](https://github.com/QwenLM/qwen-code/pull/12127), [#12963](https://github.com/QwenLM/qwen-code/pull/12963), [#13176](https://github.com/QwenLM/qwen-code/pull/13176) |
+| **[@qwen-code-dev-bot](https://github.com/qwen-code-dev-bot)** | グループメンバーと送信者のルールを分離、公開依存の変動後にオープンソースライセンス宣言を補填、CI の一時的な失敗を自動リトライ | [#12475](https://github.com/QwenLM/qwen-code/pull/12475), [#12479](https://github.com/QwenLM/qwen-code/pull/12479), [#12772](https://github.com/QwenLM/qwen-code/pull/12772), [#12764](https://github.com/QwenLM/qwen-code/pull/12764) |
+| 🆕 **[@BlackishGreen33](https://github.com/BlackishGreen33)** | 🎉 初貢献：スキルのスイッチを押したときのフィードバック、MCP 承認ポップアップに空のタイトルを出さない、ワークフロー再読み込みの中国語ドキュメントを補完 | [#12641](https://github.com/QwenLM/qwen-code/pull/12641), [#12644](https://github.com/QwenLM/qwen-code/pull/12644), [#12625](https://github.com/QwenLM/qwen-code/pull/12625) |
+| 🆕 **[@holny](https://github.com/holny)** | 🎉 初貢献：ワークフロー宣言の前にコメントを書ける、サイドバーを畳んだあと余白が残らない、Linux の貼り付け失敗の理由を明確に | [#12217](https://github.com/QwenLM/qwen-code/pull/12217), [#12453](https://github.com/QwenLM/qwen-code/pull/12453), [#12504](https://github.com/QwenLM/qwen-code/pull/12504) |
+| **[@XIQIXIQIXIQI](https://github.com/XIQIXIQIXIQI)** | 定期ジョブのプロンプトを保持、指定ワークスペースへ復元、設定を失ったあと自分が起こしたバックグラウンドプロセスを掃除 | [#8838](https://github.com/QwenLM/qwen-code/pull/8838), [#9050](https://github.com/QwenLM/qwen-code/pull/9050), [#11071](https://github.com/QwenLM/qwen-code/pull/11071) |
+| **[@ytahdn](https://github.com/ytahdn)** | 質問ごとにそのラウンドの操作を見る、スマホアクセスは手動オンに、分割画面の入力欄を簡素化、サイドバー新ナビゲーションと Live 設定の集約 | [#12466](https://github.com/QwenLM/qwen-code/pull/12466), [#12537](https://github.com/QwenLM/qwen-code/pull/12537), [#12943](https://github.com/QwenLM/qwen-code/pull/12943) |
+| **[@destire-mio](https://github.com/destire-mio)** | Email Channel を追加、スラッシュコマンドで起動したワークフローが完了を返す | [#12939](https://github.com/QwenLM/qwen-code/pull/12939), [#12415](https://github.com/QwenLM/qwen-code/pull/12415) |
+| **[@kabishou11](https://github.com/kabishou11)** | 長すぎる通知はその 1 件だけ捨てて接続を保持、ツールスケジューリングの安定化 | [#11925](https://github.com/QwenLM/qwen-code/pull/11925), [#12069](https://github.com/QwenLM/qwen-code/pull/12069) |
+| **[@Lilian0122](https://github.com/Lilian0122)** | ホスト側がモデル管理の入口を制御、ページとセッションが同じ遷移方式を共有 | [#12345](https://github.com/QwenLM/qwen-code/pull/12345), [#12499](https://github.com/QwenLM/qwen-code/pull/12499) |
+| **[@samuelhsin](https://github.com/samuelhsin)** | 現在のセッション内検索、MCP アプリのウィンドウ制限を緩和、ツール呼び出しの由来分離 | [#12234](https://github.com/QwenLM/qwen-code/pull/12234), [#12258](https://github.com/QwenLM/qwen-code/pull/12258) |
+| **[@yar3333](https://github.com/yar3333)** | VS Code 拡張でメッセージ編集後の位置が正しい、編集は前の処理が確定してから送信 | [#12502](https://github.com/QwenLM/qwen-code/pull/12502), [#12711](https://github.com/QwenLM/qwen-code/pull/12711) |
+| **[@ZijianZhang989](https://github.com/ZijianZhang989)** | アドバイザーが作業中に自発的に相談へ行く、メモリは必要分の構造化取り出しに対応 | [#9636](https://github.com/QwenLM/qwen-code/pull/9636), [#10183](https://github.com/QwenLM/qwen-code/pull/10183) |
+| 🆕 **[@Andrea-Bruno](https://github.com/Andrea-Bruno)** | 🎉 初貢献：既存の会話から答えを探してから調査に入る | [#12580](https://github.com/QwenLM/qwen-code/pull/12580) |
+| 🆕 **[@banned2054](https://github.com/banned2054)** | 🎉 初貢献：セッション書き出しで由来の目印を保持し、元のセッションと突き合わせられる | [#12118](https://github.com/QwenLM/qwen-code/pull/12118) |
+| **[@barry166](https://github.com/barry166)** | デスクトップ版で、どの依存関係のバージョン指定が足りないかをエラーで示す | [#12684](https://github.com/QwenLM/qwen-code/pull/12684) |
+| **[@dreamWB](https://github.com/dreamWB)** | ホスト側が必要な成果物プレビューだけ接続できる | [#12588](https://github.com/QwenLM/qwen-code/pull/12588) |
+| **[@Eric-GoodBoy-Tech](https://github.com/Eric-GoodBoy-Tech)** | QQ ボットが送られてきた画像と動画を受け取れる | [#12850](https://github.com/QwenLM/qwen-code/pull/12850) |
+| **[@jkxiao](https://github.com/jkxiao)** | スキル更新後に変更済み内容を読み込める | [#12182](https://github.com/QwenLM/qwen-code/pull/12182) |
+| 🆕 **[@JuampiHernandez](https://github.com/JuampiHernandez)** | 🎉 初貢献：Web 検索のプロバイダー一覧に Firecrawl を追加 | [#12646](https://github.com/QwenLM/qwen-code/pull/12646) |
+| **[@LaZzyMan](https://github.com/LaZzyMan)** | Computer Use のフローを統一、古い GPU のパソコンでもスクリーンショット可能 | [#12386](https://github.com/QwenLM/qwen-code/pull/12386) |
+| 🆕 **[@liwenjie200543](https://github.com/liwenjie200543)** | 安全でないダウンロードアドレスは拒否し、明確なエラーを出す | [#12697](https://github.com/QwenLM/qwen-code/pull/12697) |
+| 🆕 **[@niheaven](https://github.com/niheaven)** | 🎉 初貢献：Windows でディレクトリが使用中のときコピーで拡張ファイルを差し替える | [#11889](https://github.com/QwenLM/qwen-code/pull/11889) |
+| **[@now-ing](https://github.com/now-ing)** | Web Shell の重複計算を削減、各画面が同じデータを共有 | [#10865](https://github.com/QwenLM/qwen-code/pull/10865) |
+| **[@pomelo-nwu](https://github.com/pomelo-nwu)** | Claude 系モデルで、thinking の中身を複数ラウンド間で保持 | [#12621](https://github.com/QwenLM/qwen-code/pull/12621) |
+| 🆕 **[@pratikgx](https://github.com/pratikgx)** | 🎉 初貢献：ドキュメントサイトの切れたリンクを修正 | [#12717](https://github.com/QwenLM/qwen-code/pull/12717) |
+| **[@PratikWayase](https://github.com/PratikWayase)** | Hook の有効状態を名前で判定 | [#11965](https://github.com/QwenLM/qwen-code/pull/11965) |
+| 🆕 **[@sherxlg-gif](https://github.com/sherxlg-gif)** | 設定コメント 1 箇所を訂正し、誤った設定を書かずに済むように | [#12163](https://github.com/QwenLM/qwen-code/pull/12163) |
+| 🆕 **[@Shizoqua](https://github.com/Shizoqua)** | 🎉 初貢献：`/context` の使用量見積もりを修正 | [#13246](https://github.com/QwenLM/qwen-code/pull/13246) |
+| 🆕 **[@sxh313](https://github.com/sxh313)** | コメントとコードの不一致を修正 | [#11950](https://github.com/QwenLM/qwen-code/pull/11950) |
+| **[@Theater-ahyeon](https://github.com/Theater-ahyeon)** | CI とリリースが使う設定を開発者ドキュメントに追加 | [#11129](https://github.com/QwenLM/qwen-code/pull/11129) |
+| **[@TianYuan1024](https://github.com/TianYuan1024)** | 一重引用符内のバックスラッシュをそのまま解釈、コマンド分割でエスケープを誤読しない | [#11765](https://github.com/QwenLM/qwen-code/pull/11765) |
+| **[@water-in-stone](https://github.com/water-in-stone)** | ブランチごとのセッションが独立した作業コピーを使える | [#11816](https://github.com/QwenLM/qwen-code/pull/11816) |
+
+<Callout type="info">
+  **アップグレード方法**：`npm i @qwen-code/qwen-code@latest -g` を実行すると最新バージョンにアップグレードできます。
+</Callout>
+
+ご意見・ご要望は [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) までお気軽にどうぞ！
