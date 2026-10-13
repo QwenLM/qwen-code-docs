@@ -59,7 +59,7 @@ export QQ_APP_SECRET=<your-app-secret>
       "appID": "YOUR_APP_ID",
       "appSecret": "$QQ_APP_SECRET",
       "sandbox": false,
-      "senderPolicy": "open",
+      "privatePolicy": "open",
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "instructions": "你是一个通过 QQ Bot 对话的 AI 助手。回复控制在 2000 字符以内。",
@@ -81,7 +81,7 @@ export QQ_APP_SECRET=<your-app-secret>
 | `sandbox`     | `false`   | 设为 `true` 以使用 QQ 沙箱 API 环境（`sandbox.api.sgroup.qq.com`）   |
 
 所有标准频道选项（见[频道概览](./overview#options)）同样支持：
-`senderPolicy`、`allowedUsers`、`sessionScope`、`cwd`、`instructions`、`groupPolicy`、`groups`、`dispatchMode`。
+`privatePolicy`、`allowedUsers`、`sessionScope`、`cwd`、`instructions`、`groupPolicy`、`groups`、`dispatchMode`。
 
 ## 运行
 
@@ -102,7 +102,7 @@ qwen channel start
 1. 在频道配置中将 `groupPolicy` 设置为 `"allowlist"`、`"pairing"` 或 `"open"`
 2. 通过 QQ Bot 开放平台后台或让群管理员邀请，将机器人添加到 QQ 群
 3. 群成员必须 **@提及** 机器人才能触发回复
-4. 如果使用 `groupPolicy: "pairing"`，请在回复开始前批准该群组的配对请求。注意，一旦群组被批准，**该群组的任何成员**都可以使用机器人；`senderPolicy` 和 `allowedUsers` 不会限制已批准群组的成员。
+4. 如果使用 `groupPolicy: "pairing"`，请在回复开始前批准该群组的配对请求。注意，一旦群组被批准，**该群组的任何成员**默认都可以使用机器人（可通过群组的 `senders: "allowlist"` 和 `allowedUsers` 进行限制）；`privatePolicy` 和顶层的 `allowedUsers` 不会限制已批准群组的成员。
 
 QQ Bot API V2 仅投递 @提及 了机器人的群消息——机器人看不到所有群消息。默认情况下 `requireMention` 为 `true`，在 QQ 上应保持此设置。
 
@@ -115,6 +115,37 @@ QQ Bot 频道支持 Markdown 格式（`msg_type=2`）。智能体的 Markdown �
 如果 QQ 服务器因任何原因拒绝 Markdown 消息，频道会自动以纯文本重试——因此即使机器人的 Markdown 能力在服务端受限，消息也始终能送达。
 
 这与微信频道相反（微信会去除所有 Markdown）。在 QQ 频道中，你可以让智能体自由使用 Markdown。
+
+## 图片与视频
+
+用户可以向机器人发送图片和视频。图片会作为视觉输入传递给智能体，因此智能体能看到图片本身——截图、错误信息和图表都可以——同时该文件也会保存到临时本地路径，以备模型无法处理图片时使用。视频会保存到临时本地路径，并告知智能体该路径。
+
+媒体消息不需要任何文本——纯图片或纯视频消息即可开始一个轮次，频道会使用 `(image)` 或 `(video)` 作为占位符。当消息包含文本时，该文本会作为说明文字保留。
+
+- 图片限制为 8 MB，视频限制为 20 MB，每条消息最多处理五个附件。超出限制的内容会被跳过并记录到频道的 stderr。
+- 下载的文件不会被删除。它们保留在系统临时目录下，由系统按自己的计划清理。
+
+图片输入需要支持图片的模型。当模型是多模态但未被按名称识别时，需声明该能力。该字段应放在提供该模型的 provider 条目上，因为顶层的 `model.generationConfig` 值对于 provider 支持的模型会被忽略：
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "your-model-id",
+        "baseUrl": "https://example.invalid/v1",
+        "generationConfig": {
+          "modalities": { "image": true }
+        }
+      }
+    ]
+  }
+}
+```
+
+使用纯文本模型时，智能体会收到"不支持的图片"提示以及保存的路径，而非图片本身。
+
+不支持向 QQ 发送图片或视频。
 
 ## Token 管理
 
@@ -135,7 +166,7 @@ Token 刷新会跨越 WebSocket 重连持续进行——只要 AppID 和 AppSecr
 - **自由使用 Markdown** — 与微信不同，QQ 原生渲染 Markdown。加粗、代码块、列表和链接均有效。
 - **回复控制在 2000 字符以内** — 超过长度限制的回复会自动拆分。在指令中添加长度提示有助于智能体保持简洁。
 - **沙箱用于测试** — 设置 `"sandbox": true` 在开发阶段使用沙箱 API，不会影响生产消息。
-- **限制访问** — 使用 `senderPolicy: "allowlist"` 限制为固定的 QQ 用户，或使用 `"pairing"` 通过 CLI 批准新用户。详见[私聊配对](./overview#dm-pairing)。
+- **限制访问** — 使用 `privatePolicy: "allowlist"` 限制为固定的 QQ 用户，或使用 `"pairing"` 通过 CLI 批准新用户。详见[私聊配对](./overview#dm-pairing)。
 
 ## 与 Telegram 的主要区别
 
@@ -154,7 +185,7 @@ Token 刷新会跨越 WebSocket 重连持续进行——只要 AppID 和 AppSecr
 
 - 检查终端输出中的错误
 - 确认频道正在运行（`qwen channel status`）
-- 如果使用了 `senderPolicy: "allowlist"`，请确认你的 QQ 用户 ID 在 `allowedUsers` 中
+- 如果使用了 `privatePolicy: "allowlist"`，请确认你的 QQ 用户 ID 在 `allowedUsers` 中
 - 首次启动时终端会显示二维码——用你的 QQ 应用扫描
 
 ### 机器人在群中不响应

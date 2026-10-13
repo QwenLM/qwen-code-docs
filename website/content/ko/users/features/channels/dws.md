@@ -33,7 +33,7 @@ dws auth status --format json
     "dws-work": {
       "type": "dws",
       "profile": "profile-name-or-corp-id",
-      "senderPolicy": "pairing",
+      "privatePolicy": "pairing",
       "groupPolicy": "pairing",
       "watchTodos": true,
       "startReaction": "🤔",
@@ -55,7 +55,7 @@ YOLO 승인 모드는 대화형 확인 없이 도구 호출을 실행해야 하�
   "channels": {
     "dws-answers": {
       "type": "dws",
-      "senderPolicy": "pairing",
+      "privatePolicy": "pairing",
       "groupPolicy": "pairing",
       "approvalMode": "yolo",
       "cwd": "/path/to/answer-bot"
@@ -66,15 +66,15 @@ YOLO 승인 모드는 대화형 확인 없이 도구 호출을 실행해야 하�
 
 YOLO 모드는 모든 도구 호출을 자동 승인합니다. 신뢰할 수 있는 봇 계정과 워크스페이스에만 사용하세요.
 
-`senderPolicy`와 `groupPolicy`는 새로 관리되는 DWS 채널에서 기본값이 `pairing`입니다. `dmPolicy`는 생략된 기존 구성을 포함하여 기본값이 `open`입니다. 채널이 반환한 코드로 사용자 또는 그룹을 승인하세요:
+새로 관리되는 DWS 채널은 기본적으로 `privatePolicy: "pairing"`과 `groupPolicy: "pairing"`을 사용합니다. 채널이 반환한 코드로 사용자 또는 그룹을 승인하세요:
 
 ```bash
 qwen channel pairing approve dws-work CODE
 ```
 
-`senderPolicy`는 직접 메시지 발신자, 문서 알림 작성자, 네이티브 todo 생성자, `open` 또는 `allowlist` 그룹의 발신자를 제어합니다. `groupPolicy`는 그룹 대화를 제어합니다. 승인된 pairing 그룹은 공유 채널 동작을 따르며 해당 멤버를 인증합니다. open과 allowlist 그룹은 `senderPolicy`도 통과해야 합니다.
+`privatePolicy`는 직접 메시지, 문서 알림 작성자, 네이티브 todo 생성자를 제어합니다. 문서 스레드와 네이티브 todo는 개인 요청이며 `groups.senders`는 이들에 적용되지 않습니다. `groupPolicy`는 그룹 가입을 제어하며, `groups["*"].senders` 또는 그룹별 재정의는 어떤 멤버가 작업을 시작할 수 있는지 제어합니다. 그룹 멤버는 개인 액세스와 독립적으로 기본적으로 `open`입니다. 공유 세션 관리에는 명시적 `operators`가 필요합니다. [공유 세션 운영자](./overview.md#shared-session-operators)를 참조하세요.
 
-그룹 및 직접 메시지 액세스는 독립적으로 구성할 수 있습니다. 그룹 전용 채널의 경우 `dmPolicy: "disabled"`를 설정하고 활성화된 `groupPolicy`를 선택하세요. 직접 메시지 전용 채널의 경우 `groupPolicy: "disabled"`와 `dmPolicy: "open"`을 설정하세요. 직접 메시지 액세스는 문서 알림도 제어합니다. 네이티브 todo 폴링은 `watchTodos`에 의해 별도로 제어됩니다.
+그룹 전용 채널의 경우 `privatePolicy: "disabled"`를 설정하고 `groupPolicy`를 활성화하세요. 개인 전용 채널의 경우 `groupPolicy: "disabled"`를 설정하고 `privatePolicy`를 활성화하세요. 비활성화된 개인 액세스는 직접 메시지, 문서 알림, 네이티브 todo가 작업을 시작하는 것을 방지합니다. `watchTodos`는 todo 폴링을 별도로 활성화합니다. 지원 중단된 `senderPolicy`와 `dmPolicy`는 개인 정책 폴백으로만 남아 있습니다. [개인 정책](./overview.md#private-policy)을 참조하세요.
 
 비활성화된 채팅 소스는 구독되거나 폴링되지 않으며, 해당 메시지는 지연 콜백이나 지속된 리플레이를 통해 새 작업을 시작할 수 없습니다. 보류 중인 작업과 히스토리 커서는 유지됩니다. 소스를 다시 활성화하면 기존 복구 메커니즘이 비활성화 구간의 메시지를 포함하여 이전 메시지를 처리할 수 있습니다. 발신자 인증, 그룹 pairing 및 언급 요구 사항은 계속 적용됩니다.
 
@@ -104,7 +104,7 @@ qwen channel pairing approve dws-work CODE
 
 채널은 해당 알림에서 문서 ID, 댓글 키 및 요청을 추출합니다. 참조된 문서를 읽어서 컨텍스트로 사용하고, 작업이 실행되는 동안 구성된 시작 리액션을 추가하며, 원본 문서 댓글에 답글을 답니다. 실시간 DWS 이벤트 스트림은 카드가 포함된 경우 사용되며, 5초 증분 기록 확인은 현재 이벤트 스트림에서 누락된 카드를 커버합니다.
 
-알림을 생성하지 않는 댓글은 의도적으로 무시됩니다. 동일한 문서 댓글에 대한 중복 알림 메시지는 한 번만 실행됩니다. 문서 작업은 `senderPolicy`를 따르며 `approvalMode` `default`, `plan` 또는 `yolo`를 지원합니다. 생략되면 `default`가 사용됩니다.
+알림을 생성하지 않는 댓글은 의도적으로 무시됩니다. 동일한 문서 댓글에 대한 중복 알림 메시지는 한 번만 실행됩니다. 문서 작업은 `privatePolicy`를 따르며 `approvalMode` `default`, `plan` 또는 `yolo`를 지원합니다. 생략되면 `default`가 사용됩니다.
 
 ## 네이티브 Todo 변경
 
@@ -112,7 +112,7 @@ qwen channel pairing approve dws-work CODE
 
 첫 번째 성공적인 스캔은 기준선을 설정하며 과거 todo를 처리하지 않습니다. 이후 스캔은 todo가 새로 할당되거나, 다시 열리거나, 제목, 우선순위, 마감일, 할당자 등 실행 가능한 필드가 변경될 때 작업을 실행합니다. 최종 응답은 원본 todo에 댓글로 추가됩니다. 댓글 전용 메타데이터와 수정 타임스탬프는 변경 감지에서 제외되므로 채널 자체의 응답이 루프를 트리거하지 않습니다. 완료 또는 제거는 보류 집합에서 todo를 삭제하며, 다시 열면 새 트리거가 생성됩니다.
 
-네이티브 todo는 todo 생성자 ID를 기준으로 `senderPolicy`를 따릅니다. `pairing`에서 채널은 pairing 코드 댓글을 하나 추가하고 todo를 보류 상태로 유지합니다. 생성자가 로컬에서 승인되면 이후 폴링에서 변경되지 않은 todo를 처리할 수 있습니다. 폴링은 30초마다 실행되며 고정된 프로필의 현재 조직으로 범위가 유지됩니다.
+네이티브 todo는 todo 생성자 ID를 사용하여 `privatePolicy`를 따릅니다. `pairing`에서 채널은 pairing 코드 댓글을 하나 추가하고 todo를 보류 상태로 유지합니다. 생성자가 로컬에서 승인되면 이후 폴링에서 변경되지 않은 todo를 처리할 수 있습니다. 폴링은 30초마다 실행되며 고정된 프로필의 현재 조직으로 범위가 유지됩니다.
 
 ## 시작 및 확인
 

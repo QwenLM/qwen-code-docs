@@ -26,7 +26,13 @@
       "type": "gitlab",
       "token": "$GITLAB_TOKEN",
       "pollInterval": 60000,
-      "senderPolicy": "open",
+      "operators": ["operator-gitlab-username"],
+      "groups": {
+        "*": {
+          "senders": "allowlist",
+          "allowedUsers": ["operator-gitlab-username"]
+        }
+      },
       "sessionScope": "chat_thread",
       "cwd": "/path/to/your/project",
       "groupPolicy": "open",
@@ -63,7 +69,6 @@ export GITLAB_TOKEN="glpat-your_token_here"
 | `baseUrl`                | `https://gitlab.com`      | GitLab インスタンスの URL                                    |
 | `action_prompt_template` | (処理に必要)              | GitLab アクション名とメタデータテンプレートをマッピングする  |
 | `groupPolicy`            | `"disabled"`              | `"open"`、リストしたプロジェクトの `"allowlist"`、または承認済みプロジェクトの `"pairing"` が必要 |
-| `senderPolicy`           | `"allowlist"`             | ボットをトリガーできるユーザー                               |
 
 ## action_prompt_template
 
@@ -128,11 +133,13 @@ Project: owner/repo | URL: https://gitlab.com/owner/repo | Author: alice | Type:
 
 ## ⚠️ セキュリティ
 
-**パブリックプロジェクト**で `senderPolicy: "open"` を設定すると、ボットを @メンションした**任意の GitLab ユーザー**が `cwd` のエージェントを駆動するプロンプトを送信できます。
+**パブリックプロジェクト**で `groups: { "*": { "senders": "open" } }` を設定すると、ボットを @メンションした**任意の GitLab ユーザー**が `cwd` のエージェントを駆動するプロンプトを送信できます。
 
-パブリックプロジェクトでは、常に `senderPolicy: "allowlist"` を明示的な `allowedUsers` とともに使用してください。
+パブリックプロジェクトでは、常に `groups["*"].senders: "allowlist"` を明示的なグループの `allowedUsers` とともに使用してください。
 
-`groupPolicy: "pairing"` では、アクセスはプロジェクトごとに付与されます。プロジェクトが承認されると、**任意の GitLab ユーザー**がそのプロジェクトの issue と merge request を通じてボットを操作できます。GitLab のすべてのトラフィックはグループトラフィックであるため、`senderPolicy` と `allowedUsers` は承認済みプロジェクトのメンバーを制限しません。承認はプロジェクトパス（`owner/repo`）でキー付けされ、リネームまたは移転時に変更されます。プロジェクトのリネーム、移転、削除後は古いグループ承認を取り消してください。
+すべての GitLab トラフィックはグループトラフィックです。グループメンバーのデフォルトは `open` です。`groups["*"].senders` を `allowlist` に設定し、`allowedUsers` を入力して作成者を制限してください。プライベートポリシーとユーザーペアリングはリポジトリメンバーを制限しません。共有セッション管理のため `operators` を明示的に設定してください。
+
+`groupPolicy: "pairing"` では、アクセスはプロジェクトごとに付与されます。プロジェクトが承認されると、**任意の GitLab ユーザー**がデフォルトでそのプロジェクトの issue や merge request を通じてボットを操作できます。すべての GitLab トラフィックはグループトラフィックであるため、`privatePolicy` とトップレベルの `allowedUsers` は承認済みプロジェクトのメンバーを制限しません。そのプロジェクトの `groups` エントリーで `senders: "allowlist"` と `allowedUsers` を設定して絞り込んでください。承認はプロジェクトパス（`owner/repo`）でキー付けされており、リネームや移転で変更されるため、プロジェクトのリネーム、移転、削除後は古いグループ承認を取り消してください。
 
 ## メンションの検出
 

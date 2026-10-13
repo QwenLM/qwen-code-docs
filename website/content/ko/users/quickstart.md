@@ -10,7 +10,7 @@
 
 - **터미널** 또는 명령 프롬프트가 열려 있어야 합니다
 - 작업할 코드 프로젝트
-- Alibaba Cloud ModelStudio([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/))의 API 키, 또는 Alibaba Cloud Coding Plan([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) / [intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)) 구독
+- Alibaba Cloud ModelStudio([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/))의 API 키, 또는 Alibaba Cloud Token Plan([Beijing](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) 구독
 
 ## 1단계: Qwen Code 설치
 
@@ -69,7 +69,6 @@ qwen
 첫 실행 메뉴에서 모델 제공자를 연결할 수 있습니다. 다음 중 하나를 선택하세요:
 
 - **Alibaba ModelStudio** — 권장 설정. 하위 메뉴를 엽니다:
-  - **Coding Plan**: 개인 개발자용, 주간 할당량 포함 및 다양한 모델 옵션. 설정 방법은 [Coding Plan 가이드](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index)([intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index))를 참조하세요.
   - **Token Plan**: 사용량 기반 과금, 전용 엔드포인트, 팀 및 기업 대상. 설정 방법은 [Token Plan 가이드](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856)([intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model))를 참조하세요.
   - **Standard API Key**: Alibaba Cloud ModelStudio([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/))의 기존 API 키로 연결합니다. 자세한 내용은 API 설정 가이드([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721))를 참조하세요.
 - **Third-party Providers** — 내장 제공자(DeepSeek, Grok, MiniMax, Z.AI, Kimi, Idealab, ModelScope, OpenRouter, Requesty 등)를 선택하고 API 키로 연결합니다.
@@ -79,7 +78,7 @@ qwen
 
 > [!note]
 >
-> Qwen 계정으로 Qwen Code를 처음 인증하면 ".qwen"이라는 작업 공간이 자동으로 생성됩니다. 이 작업 공간은 조직 내 모든 Qwen Code 사용에 대한 중앙 집중식 비용 추적 및 관리를 제공합니다.
+> Qwen Code는 설정과 커스터마이징을 `.qwen` 디렉토리에 저장합니다: `~/.qwen/`은 사용자 수준 설정(예: `settings.json`) 및 전역 커스텀 명령어를 위한 것이고, `<project>/.qwen/`은 커스텀 명령어나 요약과 같은 프로젝트별 파일을 위한 것입니다.
 
 > [!tip]
 >
@@ -229,7 +228,7 @@ review my changes and suggest improvements
 | `/doctor`             | 현재 인증 및 환경 확인                           | `/doctor`                     |
 | `/help`               | 사용 가능한 명령어의 도움말 정보 표시             | `/help` 또는 `/?`             |
 | `/compress`           | 토큰 절약을 위해 채팅 기록을 요약으로 대체       | `/compress`                   |
-| `/clear`              | 터미널 화면 내용 지우기                          | `/clear` (단축키: `Ctrl+L`)   |
+| `/clear`              | 대화 기록을 지우고 컨텍스트 확보                 | `/clear` (별칭: `reset`, `new`) |
 | `/theme`              | Qwen Code 시각적 테마 변경                       | `/theme`                      |
 | `/language`           | 언어 설정 보기 또는 변경                         | `/language`                   |
 | → `ui [language]`     | UI 인터페이스 언어 설정                          | `/language ui zh-CN`          |

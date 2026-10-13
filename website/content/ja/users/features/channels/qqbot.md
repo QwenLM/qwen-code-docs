@@ -29,7 +29,7 @@ qwen channel start my-qq
 
 ### 手動設定（開発者ポータル）
 
-QQ Bot Open Platform の開発者ポータルにアプリを登録している場合は、そこから取得した認証情報を使用することもできます。
+[QQ Bot Open Platform](https://q.qq.com/) の開発者ポータルにアプリを登録している場合は、そこから取得した認証情報を使用することもできます。
 
 ```json
 {
@@ -59,7 +59,7 @@ export QQ_APP_SECRET=<your-app-secret>
       "appID": "YOUR_APP_ID",
       "appSecret": "$QQ_APP_SECRET",
       "sandbox": false,
-      "senderPolicy": "open",
+      "privatePolicy": "open",
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "instructions": "你是一个通过 QQ Bot 对话的 AI 助手。回复控制在 2000 字符以内。",
@@ -80,7 +80,7 @@ export QQ_APP_SECRET=<your-app-secret>
 | `appSecret`  | —          | QQ Bot AppSecret。`$ENV_VAR` 構文をサポート。省略すると QR コードログインが使用されます。 |
 | `sandbox`    | `false`    | `true` に設定すると、QQ サンドボックス API 環境（`sandbox.api.sgroup.qq.com`）が使用されます。 |
 
-すべての標準チャンネルオプション（[チャンネル概要](./overview#options) を参照）もサポートされています: `senderPolicy`, `allowedUsers`, `sessionScope`, `cwd`, `instructions`, `groupPolicy`, `groups`, `dispatchMode`。
+すべての標準チャンネルオプション（[チャンネル概要](./overview#options) を参照）もサポートされています: `privatePolicy`, `allowedUsers`, `sessionScope`, `cwd`, `instructions`, `groupPolicy`, `groups`, `dispatchMode`。
 
 ## 実行
 
@@ -101,7 +101,7 @@ QQ グループでボットを使用するには:
 1. チャンネル設定で `groupPolicy` を `"allowlist"`、`"pairing"`、または `"open"` に設定します
 2. QQ Bot Open Platform のダッシュボードから、またはグループ管理者に招待してもらって、ボットを QQ グループに追加します
 3. グループメンバーは応答をトリガーするためにボットを **@メンション** する必要があります
-4. `groupPolicy: "pairing"` を使用している場合、応答が開始される前にグループのペアリングリクエストを一度承認してください。グループが承認されると、**そのグループのどのメンバーでも**ボットを使用できることに注意してください。`senderPolicy` と `allowedUsers` は、承認されたグループのメンバーを制限しません。
+4. `groupPolicy: "pairing"` を使用している場合、応答が開始される前にグループのペアリングリクエストを一度承認してください。グループが承認されると、**そのグループのどのメンバーでも**デフォルトでボットを使用できることに注意してください（グループの `senders: "allowlist"` と `allowedUsers` で制限）。`privatePolicy` と最上位の `allowedUsers` は、承認されたグループのメンバーを制限しません。
 
 QQ Bot API V2 は、ボットを @メンションしたグループメッセージのみを配信します。ボットはすべてのグループメッセージを認識しません。デフォルトでは `requireMention` は `true` であり、QQ ではそのままにしておく必要があります。
 
@@ -114,6 +114,37 @@ QQ Bot チャンネルは Markdown 書式（`msg_type=2`）をサポートして
 何らかの理由で QQ サーバーが Markdown メッセージを拒否した場合、チャンネルは自動的にプレーンテキストとして再試行します。そのため、ボットの Markdown 機能がサーバー側で制限されていても、メッセージは常に配信されます。
 
 これは、すべての Markdown を削除する WeChat チャンネルとは逆です。QQ チャンネルでは、エージェントに完全な Markdown を使用させることができます。
+
+## 画像と動画
+
+ユーザーはボットに画像や動画を送信できます。画像は vision input としてエージェントに渡されるため、エージェントは画像自体を認識します — スクリーンショット、エラーメッセージ、図表などすべて機能します — また、同じファイルはモデルが画像を受け取れない場合のために一時的なローカルパスにも保存されます。動画は一時的なローカルパスに保存され、そのパスがエージェントに伝えられます。
+
+メディアメッセージにテキストは不要です。画像のみまたは動画のみのメッセージでもターンが開始され、チャンネルはプレースホルダーとして `(image)` または `(video)` を使用します。メッセージにテキストが含まれている場合、そのテキストがキャプションとして保持されます。
+
+- 画像は 8 MB、動画は 20 MB に制限されており、1メッセージあたり最大5つの添付ファイルまで処理されます。それより大きいものはスキップされ、チャンネルの stderr にログが記録されます。
+- ダウンロードされたファイルは削除されません。システムの一時ディレクトリに保持され、システムのスケジュールに従ってクリアされます。
+
+画像入力には画像を受け付けるモデルが必要です。モデルがマルチモーダルだが名前で認識されない場合は、機能を宣言してください。このフィールドはモデルを提供するプロバイダーエントリに配置する必要があります。トップレベルの `model.generationConfig` の値はプロバイダーバックモデルでは無視されるためです。
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "your-model-id",
+        "baseUrl": "https://example.invalid/v1",
+        "generationConfig": {
+          "modalities": { "image": true }
+        }
+      }
+    ]
+  }
+}
+```
+
+テキストのみのモデルでは、エージェントは画像の代わりに「サポートされていない画像」のメモと保存されたパスを受け取ります。
+
+QQ に画像や動画を送信することはサポートされていません。
 
 ## トークン管理
 
@@ -134,7 +165,7 @@ QQ Bot チャンネルは Markdown 書式（`msg_type=2`）をサポートして
 - **Markdown を自由に使う** — WeChat とは異なり、QQ は Markdown をネイティブにレンダリングします。太字、コードブロック、リスト、リンクがすべて機能します。
 - **応答は2000文字以内に抑える** — 長い応答は自動的に分割されます。指示に長さのヒントを追加すると、エージェントが簡潔さを保つのに役立ちます。
 - **テスト用サンドボックス** — 開発中にサンドボックス API を使用するには `"sandbox": true` を設定します。本番メッセージには影響しません。
-- **アクセス制限** — 固定の QQ ユーザーセットには `senderPolicy: "allowlist"` を、CLI から新しいユーザーを承認するには `"pairing"` を使用します。詳細は [DM ペアリング](./overview#dm-pairing) を参照してください。
+- **アクセス制限** — 固定の QQ ユーザーセットには `privatePolicy: "allowlist"` を、CLI から新しいユーザーを承認するには `"pairing"` を使用します。詳細は [DM ペアリング](./overview#dm-pairing) を参照してください。
 
 ## Telegram との主な違い
 
@@ -153,7 +184,7 @@ QQ Bot チャンネルは Markdown 書式（`msg_type=2`）をサポートして
 
 - ターミナル出力でエラーを確認
 - チャンネルが実行中であることを確認（`qwen channel status`）
-- `senderPolicy: "allowlist"` を使用している場合、QQ ユーザー ID が `allowedUsers` に含まれていることを確認
+- `privatePolicy: "allowlist"` を使用している場合、QQ ユーザー ID が `allowedUsers` に含まれていることを確認
 - 初回起動時、ターミナルに QR コードが表示されます。QQ アプリでスキャンしてください。
 
 ### グループ内でボットが応答しない

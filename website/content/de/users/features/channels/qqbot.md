@@ -59,7 +59,7 @@ export QQ_APP_SECRET=<dein-app-secret>
       "appID": "YOUR_APP_ID",
       "appSecret": "$QQ_APP_SECRET",
       "sandbox": false,
-      "senderPolicy": "open",
+      "privatePolicy": "open",
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "instructions": "你是一个通过 QQ Bot 对话的 AI 助手。回复控制在 2000 字符以内。",
@@ -81,7 +81,7 @@ export QQ_APP_SECRET=<dein-app-secret>
 | `sandbox`   | `false`  | Setze auf `true`, um die QQ-Sandbox-API-Umgebung zu verwenden (`sandbox.api.sgroup.qq.com`) |
 
 Alle standardmäßigen Channel-Optionen (siehe [Channel-Übersicht](./overview#options)) werden ebenfalls unterstützt:
-`senderPolicy`, `allowedUsers`, `sessionScope`, `cwd`, `instructions`, `groupPolicy`, `groups`, `dispatchMode`.
+`privatePolicy`, `allowedUsers`, `sessionScope`, `cwd`, `instructions`, `groupPolicy`, `groups`, `dispatchMode`.
 
 ## Ausführung
 
@@ -102,7 +102,7 @@ Um den Bot in QQ-Gruppen zu nutzen:
 1. Setze `groupPolicy` auf `"allowlist"`, `"pairing"` oder `"open"` in deiner Channel-Konfiguration
 2. Füge den Bot über das QQ Bot Open Platform Dashboard oder durch Einladung eines Gruppenadministrators zu einer QQ-Gruppe hinzu
 3. Gruppenmitglieder müssen den Bot **@erwähnen**, um eine Antwort auszulösen
-4. Wenn du `groupPolicy: "pairing"` verwendest, genehmige die Pairing-Anfrage der Gruppe einmal, bevor Antworten gesendet werden. Beachte, dass nach der Genehmigung einer Gruppe **jedes Mitglied dieser Gruppe** den Bot verwenden kann; `senderPolicy` und `allowedUsers` beschränken nicht die Mitglieder einer genehmigten Gruppe.
+4. Wenn du `groupPolicy: "pairing"` verwendest, genehmige die Pairing-Anfrage der Gruppe einmal, bevor Antworten gesendet werden. Beachte, dass nach der Genehmigung einer Gruppe **jedes Mitglied dieser Gruppe** den Bot standardmäßig verwenden kann (einschränkbar über `senders: "allowlist"` und `allowedUsers` der Gruppe); `privatePolicy` und die `allowedUsers` der obersten Ebene beschränken nicht die Mitglieder einer genehmigten Gruppe.
 
 Die QQ Bot API V2 liefert nur Gruppennachrichten, die den Bot @erwähnen – der Bot sieht nicht alle Gruppennachrichten. Standardmäßig ist `requireMention` auf `true` gesetzt; für QQ sollte dieser Wert auch so bleiben.
 
@@ -115,6 +115,37 @@ Der QQ Bot-Channel unterstützt Markdown-Formatierung (`msg_type=2`). Die Markdo
 Falls der QQ-Server eine Markdown-Nachricht aus irgendeinem Grund ablehnt, sendet der Channel sie automatisch als Klartext erneut – deine Nachrichten kommen also immer durch, selbst wenn die Markdown-Fähigkeit des Bots serverseitig eingeschränkt ist.
 
 Dies ist das Gegenteil des WeChat-Channels, der alle Markdown-Formatierung entfernt. Du kannst dem Agent im QQ-Channel die vollständige Markdown-Nutzung gestatten.
+
+## Bilder und Videos
+
+Benutzer können Bilder und Videos an den Bot senden. Ein Bild wird als Vision-Input an den Agent übergeben, sodass der Agent das Bild selbst sieht – Screenshots, Fehlermeldungen und Diagramme funktionieren alle – und dieselbe Datei wird zusätzlich in einem temporären lokalen Pfad gespeichert für den Fall, dass das Modell keine Bilder verarbeiten kann. Ein Video wird in einem temporären lokalen Pfad gespeichert und dem Agent wird dieser Pfad mitgeteilt.
+
+Eine Media-Nachricht benötigt keinen Text – eine reine Bild- oder Videonachricht startet einen Turn, und der Channel verwendet `(image)` oder `(video)` als Platzhalter. Wenn die Nachricht Text enthält, wird dieser als Caption beibehalten.
+
+- Bilder sind auf 8 MB und Videos auf 20 MB begrenzt, und es werden höchstens fünf Anhänge pro Nachricht verarbeitet. Alles, was größer ist, wird übersprungen und im stderr des Channels protokolliert.
+- Heruntergeladene Dateien werden nicht gelöscht. Sie verbleiben im temporären Systemverzeichnis, das vom System nach eigenem Zeitplan bereinigt wird.
+
+Bild-Input erfordert ein Modell, das Bilder akzeptiert. Deklariere die Capability, wenn das Modell multimodal ist, aber nicht namentlich erkannt wird. Das Feld gehört zum Provider-Eintrag, der das Modell bereitstellt, da ein `model.generationConfig`-Wert der obersten Ebene für Provider-gestützte Modelle ignoriert wird:
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "your-model-id",
+        "baseUrl": "https://example.invalid/v1",
+        "generationConfig": {
+          "modalities": { "image": true }
+        }
+      }
+    ]
+  }
+}
+```
+
+Bei einem reinen Textmodell erhält der Agent eine "unsupported image"-Notiz sowie den gespeicherten Pfad statt des Bildes.
+
+Das Zurücksenden von Bildern oder Videos an QQ wird nicht unterstützt.
 
 ## Token-Verwaltung
 
@@ -135,7 +166,7 @@ Die Token-Erneuerung läuft über WebSocket-Wiederverbindungen hinweg weiter –
 - **Nutze Markdown frei** – Anders als WeChat rendert QQ Markdown nativ. Fettschrift, Codeblöcke, Listen und Links funktionieren alle.
 - **Halte Antworten unter 2000 Zeichen** – Längere Antworten werden automatisch aufgeteilt. Ein Hinweis zur Zeichenbegrenzung in deinen Anweisungen hilft dem Agent, präzise zu bleiben.
 - **Sandbox zum Testen** – Setze `"sandbox": true`, um während der Entwicklung die Sandbox-API zu verwenden. Produktionsnachrichten werden nicht beeinträchtigt.
-- **Zugriff einschränken** – Verwende `senderPolicy: "allowlist"` für einen festen Benutzerkreis oder `"pairing"`, um neue Benutzer über die CLI zu genehmigen. Siehe [DM-Pairing](./overview#dm-pairing) für Details.
+- **Zugriff einschränken** – Verwende `privatePolicy: "allowlist"` für einen festen Benutzerkreis oder `"pairing"`, um neue Benutzer über die CLI zu genehmigen. Siehe [DM-Pairing](./overview#dm-pairing) für Details.
 
 ## Hauptunterschiede zu Telegram
 
@@ -154,7 +185,7 @@ Die Token-Erneuerung läuft über WebSocket-Wiederverbindungen hinweg weiter –
 
 - Überprüfe die Terminalausgabe auf Fehler
 - Stelle sicher, dass der Channel läuft (`qwen channel status`)
-- Wenn `senderPolicy: "allowlist"` verwendet wird, stelle sicher, dass deine QQ-Benutzer-ID in `allowedUsers` enthalten ist
+- Wenn `privatePolicy: "allowlist"` verwendet wird, stelle sicher, dass deine QQ-Benutzer-ID in `allowedUsers` enthalten ist
 - Beim ersten Start erscheint ein QR-Code im Terminal – scanne ihn mit deiner QQ-App
 
 ### Bot antwortet nicht in Gruppen

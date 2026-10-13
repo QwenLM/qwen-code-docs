@@ -59,10 +59,10 @@ export QQ_APP_SECRET=<votre-secret-d'application>
       "appID": "YOUR_APP_ID",
       "appSecret": "$QQ_APP_SECRET",
       "sandbox": false,
-      "senderPolicy": "open",
+      "privatePolicy": "open",
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
-      "instructions": "Vous êtes un assistant IA qui dialogue via QQ Bot. Limitez vos réponses à 2000 caractères.",
+      "instructions": "你是一个通过 QQ Bot 对话的 AI 助手。回复控制在 2000 字符以内。",
       "groupPolicy": "disabled",
       "groups": {
         "*": { "requireMention": true }
@@ -81,7 +81,7 @@ export QQ_APP_SECRET=<votre-secret-d'application>
 | `sandbox`   | `false`    | Définir sur `true` pour utiliser l'environnement API sandbox QQ (`sandbox.api.sgroup.qq.com`) |
 
 Toutes les options standard des canaux (voir [Présentation des canaux](./overview#options)) sont également prises en charge :
-`senderPolicy`, `allowedUsers`, `sessionScope`, `cwd`, `instructions`, `groupPolicy`, `groups`, `dispatchMode`.
+`privatePolicy`, `allowedUsers`, `sessionScope`, `cwd`, `instructions`, `groupPolicy`, `groups`, `dispatchMode`.
 
 ## Exécution
 
@@ -102,7 +102,7 @@ Pour utiliser le bot dans des groupes QQ :
 1. Définissez `groupPolicy` sur `"allowlist"`, `"pairing"` ou `"open"` dans la configuration de votre canal
 2. Ajoutez le bot à un groupe QQ via le tableau de bord de la plateforme ouverte QQ Bot, ou demandez à un administrateur du groupe de l'inviter
 3. Les membres du groupe doivent **mentionner** le bot avec @ pour déclencher une réponse
-4. Si vous utilisez `groupPolicy: "pairing"`, approuvez la demande d'appairage du groupe une fois avant que les réponses ne commencent. Notez qu'une fois qu'un groupe est approuvé, **tout membre de ce groupe** peut utiliser le bot ; `senderPolicy` et `allowedUsers` ne filtrent pas les membres d'un groupe approuvé.
+4. Si vous utilisez `groupPolicy: "pairing"`, approuvez la demande d'appairage du groupe une fois avant que les réponses ne commencent. Notez qu'une fois qu'un groupe est approuvé, **tout membre de ce groupe** peut utiliser le bot par défaut (restreindre avec `senders: "allowlist"` et `allowedUsers` du groupe) ; `privatePolicy` et `allowedUsers` de niveau supérieur ne filtrent pas les membres d'un groupe approuvé.
 
 L'API QQ Bot V2 ne délivre que les messages de groupe qui mentionnent le bot — le bot ne voit pas tous les messages du groupe. Par défaut, `requireMention` est `true` et doit rester ainsi pour QQ.
 
@@ -116,6 +116,37 @@ Si le serveur QQ rejette un message Markdown pour une raison quelconque, le cana
 
 C'est l'inverse du canal WeChat, qui supprime tout le Markdown. Vous pouvez laisser l'agent utiliser pleinement le Markdown avec le canal QQ.
 
+## Images et vidéos
+
+Les utilisateurs peuvent envoyer des images et des vidéos au bot. Une image est transmise à l'agent en tant qu'entrée visuelle, ce qui permet à l'agent de voir l'image elle-même — captures d'écran, messages d'erreur et diagrammes fonctionnent tous — et le même fichier est également enregistré dans un chemin temporaire local pour le cas où le modèle ne peut pas traiter les images. Une vidéo est enregistrée dans un chemin temporaire local et l'agent reçoit ce chemin.
+
+Un message média n'a pas besoin de texte — un message avec uniquement une image ou une vidéo démarre un tour, et le canal utilise `(image)` ou `(vidéo)` comme placeholder. Lorsque le message contient du texte, ce texte est conservé comme légende.
+
+- Les images sont limitées à 8 Mo et les vidéos à 20 Mo, et au maximum cinq pièces jointes par message sont traitées. Tout élément plus volumineux est ignoré et journalisé dans le stderr du canal.
+- Les fichiers téléchargés ne sont pas supprimés. Ils restent dans le répertoire temporaire du système, que le système nettoie selon sa propre planification.
+
+L'entrée d'image nécessite un modèle qui accepte les images. Déclarez la capacité lorsque le modèle est multimodal mais non reconnu par son nom. Le champ doit être placé sur l'entrée du fournisseur qui fournit le modèle, car une valeur `model.generationConfig` de niveau supérieur est ignorée pour les modèles adossés à un fournisseur :
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "your-model-id",
+        "baseUrl": "https://example.invalid/v1",
+        "generationConfig": {
+          "modalities": { "image": true }
+        }
+      }
+    ]
+  }
+}
+```
+
+Avec un modèle textuel uniquement, l'agent reçoit une note « image non prise en charge » ainsi que le chemin enregistré au lieu de l'image.
+
+Renvoyer des images ou des vidéos vers QQ n'est pas pris en charge.
+
 ## Gestion des jetons
 
 Les jetons d'accès expirent après environ 2 heures. Le canal les rafraîchit automatiquement à 80 % de leur durée de vie (généralement ~1,6 heure). Si un rafraîchissement échoue, il réessaie après 60 secondes.
@@ -127,15 +158,15 @@ Le rafraîchissement des jetons se poursuit même après une reconnexion WebSock
 - **Reconnexion automatique :** En cas de déconnexion WebSocket, le canal réessaie avec un backoff exponentiel (jusqu'à 20 tentatives, 30 secondes max entre les tentatives)
 - **Reprise de session :** Si la WebSocket se coupe brièvement, le canal utilise l'opcode `RESUME` de QQ pour restaurer la session sans perdre les messages en cours
 - **Continuité du contexte entre serveurs :** Les sessions de chat et l'état de routage sont persistés sur le disque. Si le démon redémarre, les conversations reprennent là où elles se sont arrêtées
-- **Surveillance des battements de cœur :** Les délais d'attente HEARTBEAT_ACK sont détectés et forcent une reconnexion pour éviter les connexions zombies
+- **Surveillance du heartbeat :** Les délais d'attente HEARTBEAT_ACK sont détectés et forcent une reconnexion pour éviter les connexions zombies
 - **Déduplication des messages :** Les messages rejoués après une reconnexion sont détectés et ignorés
 
 ## Conseils
 
 - **Utilisez Markdown librement** — Contrairement à WeChat, QQ rend le Markdown nativement. Le gras, les blocs de code, les listes et les liens fonctionnent tous.
-- **Limitez les réponses à 2000 caractères** — Les réponses plus longues sont automatiquement fractionnées. Ajouter une indication de longueur dans vos instructions aide l'agent à rester concis.
+- **Limitez les réponses à 2000 caractères** — Les réponses plus longues sont automatiquement divisées en chunks. Ajouter une indication de longueur dans vos instructions aide l'agent à rester concis.
 - **Sandbox pour les tests** — Définissez `"sandbox": true` pour utiliser l'API sandbox pendant le développement. Aucun message de production ne sera affecté.
-- **Restreindre l'accès** — Utilisez `senderPolicy: "allowlist"` pour un ensemble fixe d'utilisateurs QQ, ou `"pairing"` pour approuver de nouveaux utilisateurs depuis la CLI. Voir [Appairage MP](./overview#dm-pairing) pour plus de détails.
+- **Restreindre l'accès** — Utilisez `privatePolicy: "allowlist"` pour un ensemble fixe d'utilisateurs QQ, ou `"pairing"` pour approuver de nouveaux utilisateurs depuis la CLI. Voir [Appairage MP](./overview#dm-pairing) pour plus de détails.
 
 ## Différences clés avec Telegram
 
@@ -154,7 +185,7 @@ Le rafraîchissement des jetons se poursuit même après une reconnexion WebSock
 
 - Vérifiez la sortie du terminal pour les erreurs
 - Vérifiez que le canal est en cours d'exécution (`qwen channel status`)
-- Si vous utilisez `senderPolicy: "allowlist"`, assurez-vous que votre ID utilisateur QQ se trouve dans `allowedUsers`
+- Si vous utilisez `privatePolicy: "allowlist"`, assurez-vous que votre ID utilisateur QQ se trouve dans `allowedUsers`
 - Au premier démarrage, un code QR apparaît dans le terminal — scannez-le avec votre application QQ
 
 ### Le bot ne répond pas dans les groupes

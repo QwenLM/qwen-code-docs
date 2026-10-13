@@ -59,7 +59,7 @@ export QQ_APP_SECRET=<seu-app-secret>
       "appID": "YOUR_APP_ID",
       "appSecret": "$QQ_APP_SECRET",
       "sandbox": false,
-      "senderPolicy": "open",
+      "privatePolicy": "open",
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "instructions": "你是一个通过 QQ Bot 对话的 AI 助手。回复控制在 2000 字符以内。",
@@ -81,7 +81,7 @@ export QQ_APP_SECRET=<seu-app-secret>
 | `sandbox`   | `false`  | Defina como `true` para usar o ambiente de API sandbox do QQ (`sandbox.api.sgroup.qq.com`) |
 
 Todas as opções padrão de canal (veja [Visão Geral do Canal](./overview#options)) também são suportadas:
-`senderPolicy`, `allowedUsers`, `sessionScope`, `cwd`, `instructions`, `groupPolicy`, `groups`, `dispatchMode`.
+`privatePolicy`, `allowedUsers`, `sessionScope`, `cwd`, `instructions`, `groupPolicy`, `groups`, `dispatchMode`.
 
 ## Execução
 
@@ -102,7 +102,7 @@ Para usar o bot em grupos do QQ:
 1. Defina `groupPolicy` como `"allowlist"`, `"pairing"` ou `"open"` na configuração do canal
 2. Adicione o bot a um grupo do QQ através do painel do QQ Bot Open Platform ou peça para um administrador do grupo convidá-lo
 3. Os membros do grupo devem **@mencionar** o bot para acionar uma resposta
-4. Se estiver usando `groupPolicy: "pairing"`, aprove a solicitação de pareamento do grupo uma vez antes que as respostas comecem. Note que uma vez que um grupo é aprovado, **qualquer membro daquele grupo** pode usar o bot; `senderPolicy` e `allowedUsers` não controlam os membros de um grupo aprovado.
+4. Se estiver usando `groupPolicy: "pairing"`, aprove a solicitação de pareamento do grupo uma vez antes que as respostas comecem. Note que uma vez que um grupo é aprovado, **qualquer membro daquele grupo** pode usar o bot por padrão (restrinja com `senders: "allowlist"` do grupo e `allowedUsers`); `privatePolicy` e o `allowedUsers` do nível superior não controlam os membros de um grupo aprovado.
 
 A API QQ Bot V2 só entrega mensagens de grupo que @mencionam o bot — o bot não vê todas as mensagens do grupo. Por padrão, `requireMention` é `true` e deve permanecer assim para o QQ.
 
@@ -115,6 +115,37 @@ O canal QQ Bot suporta formatação Markdown (`msg_type=2`). As respostas Markdo
 Se o servidor QQ rejeitar uma mensagem Markdown por qualquer motivo, o canal automaticamente a reenvia como texto simples — então suas mensagens sempre passam, mesmo que a capacidade Markdown do bot seja restrita no lado do servidor.
 
 Isso é o oposto do canal WeChat, que remove todo Markdown. Você pode deixar o agente usar Markdown completo com o canal QQ.
+
+## Imagens e Vídeos
+
+Usuários podem enviar imagens e vídeos para o bot. Uma imagem é passada ao agente como entrada visual, então o agente vê a imagem em si — capturas de tela, mensagens de erro e diagramas funcionam — e o mesmo arquivo também é salvo em um caminho temporário local para o caso de o modelo não aceitar imagens. Um vídeo é salvo em um caminho temporário local e o agente recebe esse caminho.
+
+Uma mensagem de mídia não precisa de texto — uma mensagem apenas com imagem ou apenas com vídeo inicia um turno, e o canal usa `(image)` ou `(video)` como marcador. Quando a mensagem contém texto, esse texto é mantido como legenda.
+
+- Imagens são limitadas a 8 MB e vídeos a 20 MB, e no máximo cinco anexos por mensagem são processados. Qualquer coisa maior é ignorada e registrada no stderr do canal.
+- Arquivos baixados não são excluídos. Eles permanecem no diretório temporário do sistema, que o sistema limpa em sua própria programação.
+
+A entrada de imagem requer um modelo que aceite imagens. Declare a capability quando o modelo for multimodal mas não reconhecido pelo nome. O campo pertence à entrada do provedor que serve o modelo, porque um valor `model.generationConfig` no nível superior é ignorado para modelos de provedores:
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "your-model-id",
+        "baseUrl": "https://example.invalid/v1",
+        "generationConfig": {
+          "modalities": { "image": true }
+        }
+      }
+    ]
+  }
+}
+```
+
+Com um modelo apenas de texto, o agente recebe uma nota de "imagem não suportada" mais o caminho salvo em vez da imagem.
+
+Enviar imagens ou vídeos de volta para o QQ não é suportado.
 
 ## Gerenciamento de Tokens
 
@@ -135,7 +166,7 @@ A renovação do token continua mesmo durante reconexões WebSocket — o canal 
 - **Use Markdown à vontade** — Ao contrário do WeChat, o QQ renderiza Markdown nativamente. Negrito, blocos de código, listas e links funcionam.
 - **Mantenha respostas abaixo de 2000 caracteres** — Respostas mais longas são automaticamente divididas em partes. Adicionar uma dica de tamanho às suas instruções ajuda o agente a ser conciso.
 - **Sandbox para testes** — Defina `"sandbox": true` para usar a API sandbox durante o desenvolvimento. Nenhuma mensagem de produção será afetada.
-- **Restrinja o acesso** — Use `senderPolicy: "allowlist"` para um conjunto fixo de usuários QQ, ou `"pairing"` para aprovar novos usuários pelo CLI. Veja [Pareamento DM](./overview#dm-pairing) para detalhes.
+- **Restrinja o acesso** — Use `privatePolicy: "allowlist"` para um conjunto fixo de usuários QQ, ou `"pairing"` para aprovar novos usuários pelo CLI. Veja [Pareamento DM](./overview#dm-pairing) para detalhes.
 
 ## Principais Diferenças do Telegram
 
@@ -154,7 +185,7 @@ A renovação do token continua mesmo durante reconexões WebSocket — o canal 
 
 - Verifique a saída do terminal em busca de erros
 - Confirme que o canal está em execução (`qwen channel status`)
-- Se estiver usando `senderPolicy: "allowlist"`, certifique-se de que seu ID de usuário QQ está em `allowedUsers`
+- Se estiver usando `privatePolicy: "allowlist"`, certifique-se de que seu ID de usuário QQ está em `allowedUsers`
 - Na primeira inicialização, um QR code aparecerá no terminal — escaneie-o com seu aplicativo QQ
 
 ### O bot não responde em grupos
@@ -177,4 +208,4 @@ A renovação do token continua mesmo durante reconexões WebSocket — o canal 
 ### Token expirou após longa inatividade
 
 - Se o canal ficar offline por mais de 2 horas, o token de acesso terá expirado. O canal obtém um token novo na reconexão — nenhuma ação necessária
-- Se o próprio AppSecret for inválido (por exemplo, rotacionado no portal do desenvolvedor), atualize o campo `appSecret` ou exclua `~/.qwen/channels/<nome>-credentials.json` para reativar o login via QR code.
+- Se o próprio AppSecret for inválido (por exemplo, rotacionado no portal do desenvolvedor), atualize o campo `appSecret` ou exclua `~/.qwen/channels/<name>-credentials.json` para reativar o login via QR code.
