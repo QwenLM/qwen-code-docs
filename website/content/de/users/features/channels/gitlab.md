@@ -26,7 +26,13 @@ Füge den Channel zu `~/.qwen/settings.json` hinzu:
       "type": "gitlab",
       "token": "$GITLAB_TOKEN",
       "pollInterval": 60000,
-      "senderPolicy": "open",
+      "operators": ["operator-gitlab-username"],
+      "groups": {
+        "*": {
+          "senders": "allowlist",
+          "allowedUsers": ["operator-gitlab-username"]
+        }
+      },
       "sessionScope": "chat_thread",
       "cwd": "/path/to/your/project",
       "groupPolicy": "open",
@@ -63,7 +69,6 @@ Für self-hosted Instanzen setze `baseUrl`:
 | `baseUrl`                | `https://gitlab.com`        | GitLab-Instanz-URL                                        |
 | `action_prompt_template` | (erforderlich für Verarbeitung) | Bildet GitLab-Aktionsnamen auf Metadaten-Templates ab  |
 | `groupPolicy`            | `"disabled"`                | Muss `"open"`, `"allowlist"` mit dem aufgelisteten Projekt oder `"pairing"` mit genehmigtem Projekt sein |
-| `senderPolicy`           | `"allowlist"`               | Wer den Bot auslösen kann                                 |
 
 ## action_prompt_template
 
@@ -128,11 +133,13 @@ Du brauchst **keine** `%body%`-Variable — der Kommentar-/Beschreibungstext ist
 
 ## ⚠️ Sicherheit
 
-Bei einem **öffentlichen Projekt** erlaubt `senderPolicy: "open"` **jedem GitLab-Benutzer**, der den Bot @erwähnt, Prompts einzureichen, die den Agenten in deinem `cwd` steuern.
+Bei einem **öffentlichen Projekt** erlaubt das Setzen von `groups: { "*": { "senders": "open" } }` **jedem GitLab-Benutzer**, der den Bot @erwähnt, Prompts einzureichen, die den Agenten in deinem `cwd` steuern.
 
-Verwende immer `senderPolicy: "allowlist"` mit expliziten `allowedUsers` bei öffentlichen Projekten.
+Verwende immer `groups["*"].senders: "allowlist"` mit expliziten Gruppen-`allowedUsers` bei öffentlichen Projekten.
 
-Beachte, dass unter `groupPolicy: "pairing"` der Zugriff pro Projekt gewährt wird: Sobald ein Projekt genehmigt ist, kann **jeder GitLab-Benutzer** den Bot über die Issues und Merge Requests dieses Projekts steuern. Der gesamte GitLab-Traffic ist Gruppen-Traffic, daher beschränken `senderPolicy` und `allowedUsers` nicht die Mitglieder eines genehmigten Projekts. Genehmigungen werden über den Projektpfad (`owner/repo`) geführt, der sich bei Umbenennung oder Transfer ändert — widerrufe veraltete Gruppen-Genehmigungen nach jeder Projekt-Umbenennung, jedem Transfer oder jeder Löschung.
+Der gesamte GitLab-Traffic ist Gruppen-Traffic. Gruppenmitglieder sind standardmäßig `open`; setze `groups["*"].senders` auf `allowlist` und fülle seine `allowedUsers`, um Autoren einzuschränken. Private Policy und User-Pairing beschränken niemals Repository-Mitglieder. Setze `operators` explizit für Shared-Session-Management.
+
+Beachte, dass unter `groupPolicy: "pairing"` der Zugriff pro Projekt gewährt wird: Sobald ein Projekt genehmigt ist, kann **jeder GitLab-Benutzer** standardmäßig den Bot über die Issues und Merge Requests dieses Projekts steuern. Der gesamte GitLab-Traffic ist Gruppen-Traffic, daher beschränken `privatePolicy` und die Top-Level-`allowedUsers` nicht die Mitglieder eines genehmigten Projekts; setze `senders: "allowlist"` mit `allowedUsers` beim `groups`-Eintrag dieses Projekts, um ihn einzuschränken. Genehmigungen werden über den Projektpfad (`owner/repo`) geführt, der sich bei Umbenennung oder Transfer ändert — widerrufe veraltete Gruppen-Genehmigungen nach jeder Projekt-Umbenennung, jedem Transfer oder jeder Löschung.
 
 ## Erwähnungserkennung
 

@@ -1,6 +1,3 @@
----
-title: GitLab
----
 
 # GitLab
 
@@ -30,7 +27,13 @@ title: GitLab
       "type": "gitlab",
       "token": "$GITLAB_TOKEN",
       "pollInterval": 60000,
-      "senderPolicy": "open",
+      "operators": ["operator-gitlab-username"],
+      "groups": {
+        "*": {
+          "senders": "allowlist",
+          "allowedUsers": ["operator-gitlab-username"]
+        }
+      },
       "sessionScope": "chat_thread",
       "cwd": "/path/to/your/project",
       "groupPolicy": "open",
@@ -67,7 +70,6 @@ export GITLAB_TOKEN="glpat-your_token_here"
 | `baseUrl`              | `https://gitlab.com`      | GitLab 인스턴스 URL                                 |
 | `action_prompt_template` | (처리에 필수)            | GitLab 작업 이름을 메타데이터 템플릿에 매핑          |
 | `groupPolicy`          | `"disabled"`              | `"open"`, 프로젝트가 나열된 `"allowlist"` 또는 프로젝트가 승인된 `"pairing"`이어야 함 |
-| `senderPolicy`         | `"allowlist"`             | 봇을 트리거할 수 있는 사용자                        |
 
 ## action_prompt_template
 
@@ -132,9 +134,11 @@ Project: owner/repo | URL: https://gitlab.com/owner/repo | Author: alice | Type:
 
 ## ⚠️ 보안
 
-**공개 프로젝트**에서 `senderPolicy: "open"`을 설정하면 봇을 @mention하는 **모든 GitLab 사용자**가 `cwd`에서 에이전트를 구동하는 프롬프트를 제출할 수 있습니다.
+**공개 프로젝트**에서 `groups: { "*": { "senders": "open" } }`을 설정하면 봇을 @mention하는 **모든 GitLab 사용자**가 `cwd`에서 에이전트를 구동하는 프롬프트를 제출할 수 있습니다.
 
-공개 프로젝트에서는 항상 명시적 `allowedUsers`가 있는 `senderPolicy: "allowlist"`를 사용하세요.
+공개 프로젝트에서는 항상 `groups["*"].senders: "allowlist"`를 명시적 그룹 `allowedUsers`와 함께 사용하세요.
+
+모든 GitLab 트래픽은 그룹 트래픽입니다. 그룹 멤버는 기본적으로 `open`으로 설정되므로, 작성자를 제한하려면 `groups["*"].senders`를 `allowlist`로 설정하고 `allowedUsers`를 채우세요. 개인 정책 및 사용자 페어링은 저장소 멤버를 제한하지 않습니다. 공유 세션 관리를 위해 `operators`를 명시적으로 설정하세요.
 
 `groupPolicy: "pairing"` 아래에서는 프로젝트 단위로 접근이 부여됩니다: 프로젝트가 승인되면 **모든 GitLab 사용자**가 해당 프로젝트의 이슈와 merge request를 통해 봇을 구동할 수 있습니다. 모든 GitLab 트래픽은 그룹 트래픽이므로 `senderPolicy`와 `allowedUsers`는 승인된 프로젝트의 멤버를 제한하지 않습니다. 승인은 프로젝트 경로(`owner/repo`)를 기준으로 저장되며, 이름 변경이나 이전 시 변경됩니다 — 프로젝트 이름 변경, 이전 또는 삭제 후 오래된 그룹 승인을 취소하세요.
 

@@ -42,13 +42,16 @@ gh auth login --hostname github.example.com
       "useLocalGh": true,
       "pollInterval": 60000,
       "reasonFilter": ["mention", "review_requested", "assign"],
-      "senderPolicy": "allowlist",
-      "allowedUsers": ["operator-github-username"],
+      "operators": ["operator-github-username"],
       "sessionScope": "chat_thread",
       "cwd": "/path/to/your/project",
       "groupPolicy": "open",
       "groups": {
-        "*": { "requireMention": true }
+        "*": {
+          "requireMention": true,
+          "senders": "allowlist",
+          "allowedUsers": ["operator-github-username"]
+        }
       }
     }
   }
@@ -61,7 +64,7 @@ gh auth login --hostname github.example.com
 export GITHUB_TOKEN="ghp_your_token_here"
 ```
 
-认证账户无法触发自身的 channel。如果该账户需要操作 channel，请认证一个单独的 bot 账户，并仅将操作员账户放入 `allowedUsers`。启动时会拒绝仅包含认证账户的允许列表，并在其与其他操作员同时出现时发出警告。
+认证账户无法触发自身的 channel。如果该账户需要操作 channel，请认证一个单独的 bot 账户，并将其用户名放入群组 `allowedUsers` 和显式 `operators` 列表中。当群组允许列表包含无法触发任务的认证账户时，启动时会发出警告；请在群组允许列表中使用不同的账户。
 
 ### GitHub Enterprise
 
@@ -84,7 +87,6 @@ export GITHUB_TOKEN="ghp_your_token_here"
 | `pollInterval`            | `60000`                  | 轮询间隔（毫秒）                                                                            |
 | `baseUrl`                 | `https://api.github.com` | API base URL（用于 GHE）                                                                    |
 | `groupPolicy`             | `"disabled"`             | 必须为 `"open"`、`"allowlist"`（需在 `groups` 中列出仓库 `owner/repo`）或 `"pairing"`（需批准仓库）才能接收通知 |
-| `senderPolicy`            | `"allowlist"`            | 谁可以触发 bot                                                                              |
 | `groups.*.requireMention` | `true`                   | 普通评论需要 @提及；定向通知原因仍会运行                                                    |
 | `reasonFilter`            | 未设置                   | 可选的 GitHub 通知原因允许列表                                                              |
 
@@ -96,13 +98,15 @@ export GITHUB_TOKEN="ghp_your_token_here"
 
 ## ⚠️ 安全性
 
-在**公共仓库**上，设置 `senderPolicy: "open"` 允许**任何 GitHub 用户**触发支持的通知原因来提交 prompt，驱动你 `cwd` 中的 agent。这包括读取代码、消耗 token、发布评论以及（根据权限策略）运行工具。
+在**公共仓库**上，设置 `groups: { "*": { "senders": "open" } }` 允许触发支持的通知原因的**任何 GitHub 用户**提交 prompt，驱动你 `cwd` 中的 agent。这包括读取代码、消耗 token、发布评论以及（根据权限策略）运行工具。
 
-在公共仓库上始终使用 `senderPolicy: "allowlist"` 并显式设置 `allowedUsers`。
+在公共仓库上始终使用 `groups["*"].senders: "allowlist"` 并显式设置群组 `allowedUsers`。
 
-允许列表和配对条目遵循**用户名**，而非不可变的账户 ID。如果允许列表中的用户重命名了其 GitHub 账户，请移除旧条目——GitHub 会释放旧用户名供任何人认领，新的持有者将继承允许列表/配对授权。
+所有 GitHub 流量都是群组流量。群组成员默认为 `open`；将 `groups["*"].senders` 设为 `allowlist` 并填充其 `allowedUsers` 以限制作者。私有策略和用户配对永远不会限制仓库成员。显式设置 `operators` 以进行共享会话管理。
 
-注意，在 `groupPolicy: "pairing"` 下，访问权限按仓库授予：一旦仓库被批准，**任何 GitHub 用户**都可以通过该仓库的 issue 和 pull request 驱动 bot。所有 GitHub 流量都是群组流量，因此 `senderPolicy` 和 `allowedUsers` 不会限制已批准仓库的成员。批准以仓库全名（`owner/repo`）为键，重命名或转移时会发生变化——在任何仓库重命名、转移或删除后，撤销过期的群组批准。
+群组成员允许列表和操作员列表遵循**用户名**，而非不可变的账户 ID。如果列表中的用户重命名了其 GitHub 账户，请移除旧条目——GitHub 会释放旧用户名供任何人认领，新的持有者将继承该授权。
+
+注意，在 `groupPolicy: "pairing"` 下，访问权限按仓库授予：一旦仓库被批准，**任何 GitHub 用户**默认都可以通过该仓库的 issue 和 pull request 驱动 bot。所有 GitHub 流量都是群组流量，因此 `privatePolicy` 和顶层 `allowedUsers` 不会限制已批准仓库的成员；在该仓库的 `groups` 条目上设置 `senders: "allowlist"` 和 `allowedUsers` 可以缩小范围。批准以仓库全名（`owner/repo`）为键，重命名或转移时会发生变化——在任何仓库重命名、转移或删除后，撤销过期的群组批准。
 
 ## 提及检测
 

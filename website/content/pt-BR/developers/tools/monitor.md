@@ -16,7 +16,7 @@ O monitor é executado em segundo plano, para que o agente possa continuar traba
 - `description` (string, opcional): Uma breve descrição do que o monitor está observando. O texto de exibição é truncado para 80 caracteres.
 - `max_events` (number, opcional): Pare após este número de eventos de notificação. Deve ser um número inteiro positivo. O padrão é `1000`; o máximo é `10000` (valores fora desse intervalo são rejeitados, não ajustados silenciosamente).
 - `idle_timeout_ms` (number, opcional): Pare se o comando não produzir saída por esse número de milissegundos. Deve ser um número inteiro positivo. O padrão é `300000` (5 minutos); o máximo é `600000` (10 minutos), e valores fora desse intervalo são rejeitados.
-- `directory` (string, opcional): Um caminho absoluto para executar o comando. Deve resolver (após canonicalização de links simbólicos) dentro de um dos diretórios de espaço de trabalho registrados e não deve estar dentro do diretório user-skills. Se omitido, o Qwen Code usa a raiz do projeto.
+- `directory` (string, opcional): Um caminho absoluto para executar o comando. Deve resolver (após canonicalização de links simbólicos) dentro de um dos diretórios de workspace registrados e não deve estar dentro do diretório user-skills. Se omitido, o Qwen Code usa a raiz do projeto.
 
 ## Como usar `monitor` com o Qwen Code
 
@@ -68,7 +68,7 @@ monitor(
 )
 ```
 
-Executar a partir de um diretório de espaço de trabalho específico:
+Executar a partir de um diretório de workspace específico:
 
 ```
 monitor(
@@ -92,8 +92,9 @@ Não adicione `&` a comandos monitor. Um `&` no final, como `tail -f log &`, é 
 
 ## Notas importantes
 
+- **Falhas de inicialização:** Uma admissão rejeitada ou uma falha de inicialização relatada pela chamada inicial do monitor retorna um erro de ferramenta com a mensagem completa de falha e qualquer orientação de recuperação. No modo de código, `await tools.monitor(...)` rejeita para que os chamadores possam tratar a falha com `try`/`catch`. Erros recebidos após o reconhecimento inicial são relatados por meio do status e das notificações do monitor.
 - **Comportamento de parada automática:** Monitores param automaticamente quando atingem `max_events`, quando `idle_timeout_ms` expira sem saída, ou quando o comando subjacente é encerrado por conta própria. O status do monitor reflete o resultado do comando, não um erro da ferramenta: uma saída limpa (`código 0`) se torna `completed`, um código de saída diferente de zero se torna `failed` com a mensagem `Exit code N`, e a terminação por sinal se torna `failed` com a mensagem `Killed by signal SIG`. Comandos não podem ser interativos porque o stdin está fechado. Quando um monitor para, o Qwen Code envia `SIGTERM` para o grupo de processos do comando e escala para `SIGKILL` após cerca de 200 ms. No Windows, usa `taskkill /f /t`. Se o próprio processo do Qwen Code for morto à força, travar ou ficar sem memória, o grupo de processos destacado não é limpo automaticamente; recupere parando o monitor com `task_stop` antes de sair ou terminando o grupo de processos manualmente.
 - **Limite de concorrência:** O Qwen Code permite até 16 monitores em execução por sessão CLI como um único pool compartilhado. Monitores iniciados por subagentes contam para o mesmo limite que monitores iniciados pelo agente principal. Pare um monitor existente antes de iniciar outro se o limite for atingido.
 - **Manipulação de saída:** Stdout e stderr são mesclados em um único fluxo de notificação sem prefixo de fluxo. Linhas vazias são ignoradas, caracteres de controle e cores ANSI são removidos, e linhas individuais com mais de 2000 caracteres são truncadas. Saída de alto volume é limitada com uma rajada de 5 eventos e cerca de 1 evento por segundo depois disso; linhas além do limite são descartadas, não armazenadas em buffer. A saída do monitor flui para o contexto do agente como conteúdo `<task-notification>`. Tags estruturais de notificação são desarmadas, mas o modelo ainda lê o texto de cada linha, portanto evite monitorar fluxos onde terceiros possam escrever, a menos que você confie que o modelo ignorará instruções incorporadas.
 - **Permissões:** `monitor` tem seu próprio limite de permissão e regras de permissão, como `Monitor(git status)`. Comandos somente leitura são automaticamente permitidos; comandos que modificam estado exigem aprovação do usuário; comandos contendo substituição de comando (`$(...)`, crases, `<(...)`, ou `>(...)`) são rejeitados imediatamente. As configurações `tools.core` e `tools.exclude` para `run_shell_command` não se aplicam a `monitor`.
-- **Restrição de espaço de trabalho:** O `directory` opcional deve ser um caminho absoluto que resolva dentro de um diretório de espaço de trabalho registrado e fora do diretório user-skills. Links simbólicos que apontam para fora do espaço de trabalho são rejeitados.
+- **Restrição de workspace:** O `directory` opcional deve ser um caminho absoluto que resolva dentro de um diretório de workspace registrado e fora do diretório user-skills. Links simbólicos que apontam para fora do workspace são rejeitados.

@@ -42,13 +42,16 @@ gh auth login --hostname github.example.com
       "useLocalGh": true,
       "pollInterval": 60000,
       "reasonFilter": ["mention", "review_requested", "assign"],
-      "senderPolicy": "allowlist",
-      "allowedUsers": ["operator-github-username"],
+      "operators": ["operator-github-username"],
       "sessionScope": "chat_thread",
       "cwd": "/path/to/your/project",
       "groupPolicy": "open",
       "groups": {
-        "*": { "requireMention": true }
+        "*": {
+          "requireMention": true,
+          "senders": "allowlist",
+          "allowedUsers": ["operator-github-username"]
+        }
       }
     }
   }
@@ -61,7 +64,7 @@ gh auth login --hostname github.example.com
 export GITHUB_TOKEN="ghp_your_token_here"
 ```
 
-認証アカウントは自身のチャネルをトリガーできません。そのアカウントでチャネルを操作する必要がある場合は、別のボットアカウントを認証し、`allowedUsers` にはオペレーターアカウントのみを設定してください。起動時に、認証アカウントのみの許可リストは拒否され、他のオペレーターと一緒に含まれている場合は警告が表示されます。
+認証アカウントは自身のチャネルをトリガーできません。そのアカウントでチャネルを操作する必要がある場合は、別のボットアカウントを認証し、そのユーザー名をグループの `allowedUsers` と明示的な `operators` リストに追加してください。起動時に、グループの許可リストに認証アカウントが含まれていると警告が表示されます。認証アカウントはタスクをトリガーできないため、グループの許可リストでは別のアカウントを使用してください。
 
 ### GitHub Enterprise
 
@@ -83,8 +86,7 @@ GitHub Enterprise Server の場合は、`baseUrl` を設定します。
 | `useLocalGh`              | `false`                  | デーモンホストのアカウント全体の GitHub CLI 認証を明示的に再利用する                         |
 | `pollInterval`            | `60000`                  | ポーリング間隔（ミリ秒）                                                                    |
 | `baseUrl`                 | `https://api.github.com` | API ベース URL（GHE 用）                                                                    |
-| `groupPolicy`             | `"disabled"`             | 通知を流すには `"open"`、`groups` にリポジトリ（`owner/repo`）をリストした `"allowlist"`、またはリポジトリを承認済みの `"pairing"` が必要 |
-| `senderPolicy`            | `"allowlist"`            | ボットをトリガーできるユーザー                                                              |
+| `groupPolicy`             | `"disabled"`             | 通知を流すには `"open"`、`groups` にリポジトリ（`owner/repo`）をリストした `"allowlist"`、または通知を流すためにリポジトリを承認済みの `"pairing"` が必要 |
 | `groups.*.requireMention` | `true`                   | 通常のコメントに @メンションを要求する。通知理由が直接指定されている場合は引き続き実行される |
 | `reasonFilter`            | 未設定                   | 処理する GitHub 通知理由のオプションの許可リスト                                            |
 
@@ -96,13 +98,15 @@ GitHub Enterprise Server の場合は、`baseUrl` を設定します。
 
 ## ⚠️ セキュリティ
 
-**パブリックリポジトリ**で `senderPolicy: "open"` を設定すると、サポートされている通知理由をトリガーする **任意の GitHub ユーザー**が、`cwd` でエージェントを操作するプロンプトを送信できるようになります。これにはコードの読み取り、トークンの消費、コメントの投稿、および（権限ポリシーに応じて）ツールの実行が含まれます。
+**パブリックリポジトリ**で `groups: { "*": { "senders": "open" } }` を設定すると、サポートされている通知理由をトリガーする **任意の GitHub ユーザー**が、`cwd` でエージェントを操作するプロンプトを送信できるようになります。これにはコードの読み取り、トークンの消費、コメントの投稿、および（権限ポリシーに応じて）ツールの実行が含まれます。
 
-パブリックリポジトリでは、常に `senderPolicy: "allowlist"` を明示的な `allowedUsers` とともに使用してください。
+パブリックリポジトリでは、常に `groups["*"].senders: "allowlist"` を明示的なグループの `allowedUsers` とともに使用してください。
 
-許可リストとペアリングのエントリは、不変のアカウント ID ではなく**ユーザー名**に従います。許可されたユーザーが GitHub アカウント名を変更した場合、古いエントリを削除してください。GitHub は古いユーザー名を誰でも取得できるようにリリースするため、新しい保持者が許可リスト/ペアリングの認証を継承してしまいます。
+すべての GitHub トラフィックはグループトラフィックです。グループメンバーのデフォルトは `open` です。`groups["*"].senders` を `allowlist` に設定し、`allowedUsers` を入力して作成者を制限してください。プライベートポリシーとユーザーペアリングは、リポジトリメンバーを制限することはありません。共有セッション管理のために `operators` を明示的に設定してください。
 
-`groupPolicy: "pairing"` では、アクセスはリポジトリごとに付与されます。リポジトリが承認されると、**任意の GitHub ユーザー**がそのリポジトリの issue とプルリクエストを通じてボットを操作できます。GitHub のすべてのトラフィックはグループトラフィックであるため、`senderPolicy` と `allowedUsers` は承認済みリポジトリのメンバーを制限しません。承認はリポジトリの完全名（`owner/repo`）でキー付けされ、リネームまたは移転時に変更されます。リポジトリのリネーム、移転、削除後は古いグループ承認を取り消してください。
+グループメンバーの許可リストとオペレーターリストは、不変のアカウント ID ではなく**ユーザー名**に従います。リストされたユーザーが GitHub アカウント名を変更した場合、古いエントリを削除してください。GitHub は古いユーザー名を誰でも取得できるようにリリースするため、新しい保持者がその認証を継承してしまいます。
+
+`groupPolicy: "pairing"` では、アクセスはリポジトリごとに付与されます。リポジトリが承認されると、デフォルトでは**任意の GitHub ユーザー**がそのリポジトリの issue とプルリクエストを通じてボットを操作できます。すべての GitHub トラフィックはグループトラフィックであるため、`privatePolicy` とトップレベルの `allowedUsers` は承認済みリポジトリのメンバーを制限しません。そのリポジトリの `groups` エントリで `senders: "allowlist"` と `allowedUsers` を設定して絞り込んでください。承認はリポジトリの完全名（`owner/repo`）でキー付けされ、リネームまたは移転時に変更されます。リポジトリのリネーム、移転、削除後は古いグループ承認を取り消してください。
 
 ## メンション検出
 
