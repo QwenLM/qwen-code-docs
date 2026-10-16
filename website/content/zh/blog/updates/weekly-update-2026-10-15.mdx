@@ -1,0 +1,211 @@
+---
+title: "Qwen Code 周报：你开的几个 Qwen Code 一个页面同时连着，项目里的文件点开就能看，补的话当场送到"
+date: "2026-10-15"
+description: "本周发布 v0.25.1、v0.25.2 两个正式版本，371 个 PR 合入。新增 Agent Collaboration，把 Claude Code、Codex @ 进当前对话当队友，回答直接落在你这段对话里，也能放到另一台电脑上跑；你保存过的几个 Qwen Code 能在同一个页面里同时连着，来回切换都在页面里完成；Web Shell 一堆更新：右侧能直接翻项目里的文件、Markdown 和图片 Excel 点开就看、本地文件拖进去就上传、它正在回答时你补的话点「立即发送」当场送到、等你批准等你回答时还会发提醒；启动时能点名去掉某一个 MCP 服务。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i1/O1CN01BYqgp4M1CRG2jBZY_!!6000000007925-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 周报：你开的几个 Qwen Code 一个页面同时连着，项目里的文件点开就能看，补的话当场送到"
+  date="2026-10-15"
+  author="Qwen Team"
+/>
+
+Qwen Code 本周发布 v0.25.1、v0.25.2 两个正式版本，371 个 PR 合入。
+
+**Agent Collaboration：把 Claude Code、Codex @ 进对话里当队友。** 它的回答直接出现在你当前这段对话里，还能放到另一台电脑上去跑。
+
+**你开的几个 Qwen Code，一个页面同时连着。** 侧栏一个 Qwen Code 占一组，各组下面列的是它当下真实的会话和工作区，来回切换都在页面里完成。
+
+**Web Shell：文件点开就能看，补的话当场送到，等你点头时会提醒你。** 右侧能翻整个工作区，本地文件拖进去就上传；回答到一半时补的话点「立即发送」当场送到，发错的取消后退回输入框；它停下来等你的时候还会发通知喊你回来。
+
+**不想用某个 MCP 服务，启动时点名去掉就行。** `qwen --disable-mcp-server <名字>` 只管这一次，不动你的设置文件。
+
+## ✨ 新增特性
+
+### Agent Collaboration：把 Claude Code、Codex @ 进对话里当队友
+
+一件事想拆开同时办——比如让它改代码，同时叫另一个程序来复核。以前你 @ 一个 Agent，它另开一条话题、把你最近说的几句话复制过去、再把你带到那个新页面上，主对话里收不到它的回复。
+
+现在 @ 它，它就在你当前这段对话里回答：带名字、走到哪一步、用了哪些工具、花了多少 token，要跑命令照样弹给你批。这个 Agent 不必是 Qwen Code——你装了 Claude Code 或者 Codex，也能 @ 进来使唤。详见 PR [#13467](https://github.com/QwenLM/qwen-code/pull/13467)
+
+它也可以在另一台电脑上干活：那边开着 Qwen Code 的服务，把它加进来当帮手，重活就派到那台机器上跑，那台机器重启之后自己接回来。还能 @ 一个组：组长负责把活拆开派给组员，组员干完回它。详见 PR [#13583](https://github.com/QwenLM/qwen-code/pull/13583)
+
+它和派子代理的分工是：子代理是它自己派出去办一件小事、只向它汇报；@ 进来的这个在你眼前说话，可以是别的厂商的程序，也可以在另一台机器上。
+
+这项还在实验阶段，默认关着：在设置里打开「启用 Agent 协作」，重启后生效。队友要先建：在左侧「智能体」页新建一个。之后在任何对话里 @ 它的名字，就能叫它来。
+
+你能用它做什么：
+
+- 一边让它改代码，一边 @ 另一个 Agent 复核，两条线在同一段对话里看得清
+- 把编译、跑测试这类重活派给另一台机器，自己这边继续干活
+- 让不同厂商的程序搭同一个组，各干各擅长的那一段
+
+![在「智能体」页新建一个叫 reviewer 的帮手，回到对话里 @ 它，它带着名字和 ReadFile 步骤直接回在当前这段对话里](https://img.alicdn.com/imgextra/i3/O1CN01nZHvJWBQd2I5qXns_!!6000000004221-1-tps-2880-1800.gif)
+
+### 你开的几个 Qwen Code，一个页面同时连着
+
+有人手边一台笔记本、一台专门跑编译的电脑、还有一台挂着长活儿；也有人就一台电脑，给每个项目单开一个 Qwen Code Web Shell，不想几个活儿搅在一处。以前一个浏览器页面只认其中一个，要看另一个得让页面整个重新加载，中间闪一下，你在这边写到一半的东西也丢了。
+
+现在保存过的几个同时连着。侧栏一个 Qwen Code 占一组，每组下面列的是它当下的会话和工作区；输入框里挑工作区时，各组的目录也按组分着放；切到另一组在页面里就完成了。详见 PR [#13739](https://github.com/QwenLM/qwen-code/pull/13739)、[#13677](https://github.com/QwenLM/qwen-code/pull/13677)
+
+要用它，被连的那台得先允许你这个页面连进来：起 `qwen serve` 时带上 `--allow-origin`，填你在浏览器地址栏看到的页面地址。
+
+你能用它做什么：
+
+- 编译那台在跑长活儿，你在自己电脑上盯着它到哪一步
+- 一台电脑上给几个项目各开一个，几个活儿不搅在一处，一个页面看全
+- 从笔记本换到台式机，接着派活
+
+![Web Shell 侧栏里两组 Qwen Code 并列，第二组 127.0.0.1:4171 标着 connected，下面列出它当下的会话和工作区](https://img.alicdn.com/imgextra/i1/O1CN013gKPf9c85bL5qXns_!!6000000000032-0-tps-2880-1800.jpg)
+
+### 不想用某个 MCP 服务，启动时点名去掉
+
+接了 MCP 服务的人大概都碰过：某一个服务今天出问题，工具报错、或者拖慢启动，你想的只是「这一次先别带上它」。以前只有一刀切的做法，把设置里来的服务连同本地配置一起关掉。
+
+现在可以在启动时点名：
+
+```text
+qwen --disable-mcp-server github
+```
+
+要一次关掉几个，这个参数可以重复写，也可以写成 `--disable-mcp-server github,postgres`。它只管这一次启动，你的配置文件不动。详见 PR [#14003](https://github.com/QwenLM/qwen-code/pull/14003)
+
+你能用它做什么：
+
+- 怀疑某个服务出问题，先关掉它试一次，看是不是它
+- 启动被某个服务拖慢，这一次先不带上它
+- 同一份代码，一轮专跑数据库、一轮专跑网页，各带各的服务
+
+[📸 待截图：带上排除某个服务的参数启动后，`/mcp` 里那个服务显示为未启用]
+
+### Web Shell：项目里的文件点开就能看，补的话当场送到，等你点头时会提醒你
+
+**项目里的文件在右侧就能翻。** 整棵工作区的目录树摆在这里，点开一个文件，内容就在旁边：Markdown、网页、图片、Excel 都直接看得了，也能复制路径、下载、引用。详见 PR [#13878](https://github.com/QwenLM/qwen-code/pull/13878)、[#13664](https://github.com/QwenLM/qwen-code/pull/13664)
+
+**本地的文件拖进去就上传。** 拖进哪个文件夹就传到哪个文件夹，在桌面版里也一样。详见 PR [#14145](https://github.com/QwenLM/qwen-code/pull/14145)、[#14053](https://github.com/QwenLM/qwen-code/pull/14053)
+
+**排队的消息立刻插入，取消后退回输入框。** 它正在回答时发送的内容先排队，急着让它收到可以点「立即发送」立刻插入；AI 还没输出时按停止，那句话退回输入框，改好再发。详见 PR [#13681](https://github.com/QwenLM/qwen-code/pull/13681)、[#13488](https://github.com/QwenLM/qwen-code/pull/13488)
+
+**它停下来等你的时候会发通知。** 要你放行一个操作、或者要你回答它反问的那道题，这两种时候以前没有任何动静；现在只要页面切到后台，就会弹一条通知，点一下回到那条会话。详见 PR [#13832](https://github.com/QwenLM/qwen-code/pull/13832)
+
+**有子代理或者后台任务在跑时，聊天区顶部的列表样式的图标会亮一个闪点。** 不用打开面板也看得见。详见 PR [#14048](https://github.com/QwenLM/qwen-code/pull/14048)
+
+![Web Shell 右侧 Files 面板展开整个工作区的文件树（Filter files 搜索框、data/tests 目录与各类型文件），底部排队中的消息旁标出「立即发送」按钮](https://img.alicdn.com/imgextra/i1/O1CN01e27zKWHeHTH4s7X6_!!6000000007916-0-tps-2400-1616.jpg)
+
+## 📊 更多新功能
+
+**连着查了很多次还没给你结果，会被提醒交结论。** 读文件、搜代码这类只读动作跑到一定次数，下一轮它会收到一句提醒：把手上查到的用起来、把你要的东西往前推一步，或者讲清卡在哪；本来就是让你摸清情况的，就把结论和还没弄明白的问题说出来。详见 PR [#13601](https://github.com/QwenLM/qwen-code/pull/13601)
+
+**MCP 服务带来的界面想往对话里发内容，得先经你确认。** 有些 MCP 服务不只给工具，还会在对话里给你一块能点的界面。这块界面要替你发一段话时，Qwen Code 先把完整内容、它从哪儿来、要发进哪段对话摊给你，你点确认才真的发出去。详见 PR [#13958](https://github.com/QwenLM/qwen-code/pull/13958)
+
+**工作流里每个 agent 干了什么，点它的节点就能看到。** 对话里的工作流卡片、Tasks 页或者工作流页上点一个 agent，右侧面板打开它这一次的经过：给它下的提示、跑过哪些工具、正在输出什么、走到哪一步。详见 PR [#14175](https://github.com/QwenLM/qwen-code/pull/14175)
+
+**动手之前的那道检查，能改它这一次要执行的参数。** 你在设置里配的 hook 就是这种检查：它要用某个工具之前先跑一遍。这一遍交回来的新参数会先重新校验、再走一遍权限和确认，然后才真的动手。详见 PR [#13442](https://github.com/QwenLM/qwen-code/pull/13442)
+
+**顺带的一问，能开到另一份工作区。** 主任务正在回答时，`/btw side` 可以在它所属的另一份工作区里单独建一条对话，不跟主任务混在同一段。详见 PR [#13468](https://github.com/QwenLM/qwen-code/pull/13468)
+
+**Claude 格式插件自带的命令，现在真能跑了。** 这类命令是一段代码，不是给模型的提示词：以前敲它等于跟模型说了句话，现在插件在本地跑完直接返回结果，不花 token。要在设置里打开 `experimental.mods`、工作区受信任，且只在 `qwen -p '…'` 这种跑一次出结果的用法里生效，交互界面和 Web Shell 暂不支持。只实现了 Mod 接口的一部分，现成的不保证个个能跑。详见 PR [#13843](https://github.com/QwenLM/qwen-code/pull/13843)、[#13890](https://github.com/QwenLM/qwen-code/pull/13890)、[#13915](https://github.com/QwenLM/qwen-code/pull/13915)、[#13950](https://github.com/QwenLM/qwen-code/pull/13950)
+
+## 👏 体验优化
+
+**新建任务那一页，还没开口就能用右侧的文件、终端和网页预览。** 顶部换成一条精简的工具栏；每个工作区这套布局各自记住，刷新、切会话都不丢。你发出第一句话时，连标签页、排列顺序、面板宽窄和全屏一起交给新建的那条会话。详见 PR [#14159](https://github.com/QwenLM/qwen-code/pull/14159)
+
+**轨迹页签能搜、能筛、能往前翻。** 搜工具名、模型名或者一段记录文本都能跳过去，也可以只看某一类记录、只看失败或成功的。更早的记录能一段段翻过去，翻完回到最新那份——搜索和统计只算你当前翻到的这一段。中途断线重连，你停在哪儿、选了哪条、筛着什么、滚到哪儿，都不丢。详见 PR [#13264](https://github.com/QwenLM/qwen-code/pull/13264)、[#13716](https://github.com/QwenLM/qwen-code/pull/13716)、[#13952](https://github.com/QwenLM/qwen-code/pull/13952)
+
+**回答里选中一段，能挑怎么复制。** 鼠标划一段，菜单里给你两个选择：纯文本，或者带原本写法的 Markdown——标题、列表、代码、表格都跟着走。详见 PR [#13833](https://github.com/QwenLM/qwen-code/pull/13833)
+
+**上下文用了多少，点一下开在右侧，不再往对话里堆卡片。** 以前点输入框上那个圆环，对话里会落一张 Context Usage 卡片，卡片上的明细又落一张；现在两个都开在右侧面板，每条会话各留一份。想让它留在对话里，敲 `/context`。详见 PR [#14086](https://github.com/QwenLM/qwen-code/pull/14086)
+
+**又宽又长的表格能全屏看。** 点表格上的 Fullscreen 铺满整个窗口，按 Esc 或者退出按钮出来；你排的序、筛的条件、列设置、读到第几行都还在。详见 PR [#13589](https://github.com/QwenLM/qwen-code/pull/13589)
+
+**排在队里的话，还没发出去就能就地删掉。** 带着附件传到一半的那句也能删，中间那份文件跟着清干净。详见 PR [#13594](https://github.com/QwenLM/qwen-code/pull/13594)
+
+**把这一轮收起来，后台跑完的结果跟着一起藏。** 后台任务的产出卡片和完成通知一起收进折叠里。详见 PR [#13825](https://github.com/QwenLM/qwen-code/pull/13825)
+
+**语音输入的提示有中文，出了错能关掉。** 报错和「没听到声音」这类提示跟着界面语言显示；点提示右上角的关闭，麦克风回到待用，可以直接再试一次。详见 PR [#13938](https://github.com/QwenLM/qwen-code/pull/13938)
+
+**要一份独立副本，选中 Worktree 就定了。** 在 Git 对话框里点它，直接选定、菜单收起；等你发出第一句话，它才按建会话的流程起名字、建出那份副本，之前随时能改回去。详见 PR [#13607](https://github.com/QwenLM/qwen-code/pull/13607)
+
+**图标统一到现行的品牌标。** 换的地方包括 Web Shell 的浏览器标签小图、侧栏标志、浏览器通知图标，以及桌面版的启动图和应用图标。详见 PR [#14052](https://github.com/QwenLM/qwen-code/pull/14052)
+
+## 🔧 重要修复
+
+| 修复 | 对你的影响 | PR |
+|------|-----------|-----|
+| **重新打开长会话不再是白屏** | 会话越长，重开时越容易整片空白、什么都不显示，现在只把屏幕上那一段真正画出来，屏幕外的位置由占位撑住，滚动条仍然对得上整段会话；某一条显示不出来也只塌成一行，不再把整个界面带走 | [#13669](https://github.com/QwenLM/qwen-code/pull/13669) |
+| **上下方向键又是翻你说过的话** | 输入框空着按上箭头本该翻历史，前几版里它被拿去滚屏幕了，跟你以为的相反；现在回到翻历史，想让方向键滚屏幕可以在设置里单独打开这个行为 | [#14016](https://github.com/QwenLM/qwen-code/pull/14016) |
+| **输入框的光标不再看着像消失** | 光标一直在闪，灭的那半秒你以为是没了，现在钉成常亮的方块 | [#13693](https://github.com/QwenLM/qwen-code/pull/13693) |
+| **带不可见文件头标记的配置能读进来** | Windows 上的编辑器存出来的配置开头多一个看不见的标记，MCP 配置、从 Claude 导入的配置、自定义命令、LSP 配置都会解析失败，现在都能正常读 | [#13596](https://github.com/QwenLM/qwen-code/pull/13596)、[#13711](https://github.com/QwenLM/qwen-code/pull/13711)、[#13945](https://github.com/QwenLM/qwen-code/pull/13945)、[#13946](https://github.com/QwenLM/qwen-code/pull/13946) |
+| **仓库上面目录的说明文件不再混进来** | 上层目录里的 `QWEN.md`、`AGENTS.md` 会跟着下面每个仓库一起进请求，现在向上找在 Git 根就停住，仓库里面的嵌套说明照常加载 | [#13381](https://github.com/QwenLM/qwen-code/pull/13381) |
+| **微信 Channel 扫码登录能出码了** | 生成登录二维码的请求少了必需的请求头，扫码时微信提示接口版本要升级，始终登不进来，现在补上了 | [#13482](https://github.com/QwenLM/qwen-code/pull/13482) |
+| **装扩展不再卡在没法输入的账号密码提示上** | 扩展仓库要认证又没配好时，启动会停在 `Username for 'https://github.com':` 上，那个提示既打不进字也跳不过；现在立刻报错 | [#13454](https://github.com/QwenLM/qwen-code/pull/13454) |
+| **Windows 上 hook 不再把你的终端最小化** | 按企业管控方式写的命令会把整个终端窗口缩掉，每调一次工具缩一次，在受管电脑上还删不掉它；现在 hook 用自己的隐形窗口跑 | [#13670](https://github.com/QwenLM/qwen-code/pull/13670) |
+| **本地模型超出上下文时会先压缩再往下走** | 提示词超过本地 llama.cpp 服务真正的上下文上限时，会话一直卡在同一个报错上出不来；现在认得这句话，也会按服务报回来的实际上限来算要压掉多少 | [#13421](https://github.com/QwenLM/qwen-code/pull/13421)、[#13788](https://github.com/QwenLM/qwen-code/pull/13788) |
+| **产物卡片按文件名显示，断线重连也不丢** | 录进会话的文件显示模型起的那串标题，跟磁盘上的名字对不上；短暂断连时已经出现的卡片还会整片消失。改过的文件现在也能下载 | [#13672](https://github.com/QwenLM/qwen-code/pull/13672)、[#13714](https://github.com/QwenLM/qwen-code/pull/13714)、[#13718](https://github.com/QwenLM/qwen-code/pull/13718) |
+| **`/workflows` 能看到跑完的结果和失败** | 跑完之后这个视图只有状态、耗时、agent 数和 token，看不到产出、也不知道哪步子任务挂了；现在把产出、报出来的失败和挂掉的 agent 都列出来 | [#13646](https://github.com/QwenLM/qwen-code/pull/13646) |
+| **Browser Use 在 Windows 上直说不支持** | 以前提示你去装一个装不上的东西，现在明确告知不支持并说明要在 macOS 或 Linux 上用；连不上宿主时也不再让你干等 | [#13675](https://github.com/QwenLM/qwen-code/pull/13675)、[#13699](https://github.com/QwenLM/qwen-code/pull/13699) |
+| **按需起来的 MCP 服务带得出自己的工具** | 有的服务是靠读一个资源才被拉起来的，起来之后只服务了那一次读，工具没被发现，表现为这个服务「没有工具」；现在会补一次发现 | [#13806](https://github.com/QwenLM/qwen-code/pull/13806)、[#13828](https://github.com/QwenLM/qwen-code/pull/13828) |
+| **一个 MCP 服务的许可不会串到另一个** | 给某个服务写的放行规则，可能通过撞名的写法让另一个服务也被放行，现在按服务注册时的原始身份判定 | [#12531](https://github.com/QwenLM/qwen-code/pull/12531) |
+| **反复被拦的破坏性命令会来问你** | 自动模式下同一类命令连续被拦到第三次、或者整场会话累计到二十次，会走到需要你本人点头的确认 | [#13636](https://github.com/QwenLM/qwen-code/pull/13636) |
+| **改文件时不会吃掉紧邻的空行** | 按大致位置改一段内容时，紧邻的空行会被一起删掉、行边界算错，现在按整行的匹配来改 | [#13484](https://github.com/QwenLM/qwen-code/pull/13484) |
+| **带中文和表情的 @ 文件引用不再丢字** | 输入 @ 引用文件时，路径里有中文或者表情会被从中间截断，剩下几个字符丢掉 | [#13866](https://github.com/QwenLM/qwen-code/pull/13866) |
+| **设置里不再列出已经停用的内置模型** | 那个模型已经不能用了，列表里还留着，选了也是白选；现在收起来，正在用它的会话仍然看得到自己跑的是哪个 | [#13971](https://github.com/QwenLM/qwen-code/pull/13971) |
+| **关了自动更新就真的不会装** | 在非交互用法里让它更新时绕过了那个开关，会自己检查并装上；现在两条路都认这个设置 | [#13665](https://github.com/QwenLM/qwen-code/pull/13665) |
+| **回答末尾残留的思考标记清掉了** | 正文最后挂着一个空的收尾标记 | [#13600](https://github.com/QwenLM/qwen-code/pull/13600) |
+| **写进参数里的工具调用不会被误执行** | 一段调用形式的文字被写在某个参数值里时，会被当成真的调用派出去；反过来整段写成函数调用样子的又留在回答文本里不动 | [#13515](https://github.com/QwenLM/qwen-code/pull/13515)、[#13437](https://github.com/QwenLM/qwen-code/pull/13437) |
+| **VS Code 插件里的对话不再挤占存储** | 对话内容存在插件的全局记录里，攒多了会顶到容量上限，现在一份对话单独存成一个文件 | [#14285](https://github.com/QwenLM/qwen-code/pull/14285) |
+| **起不来的时候会报错而不是直接退出** | 该拉起的子进程没起来时，命令行静默退出，你什么提示都看不到 | [#13077](https://github.com/QwenLM/qwen-code/pull/13077) |
+| **批准之后跟着对应的操作走** | 你答完一个问题，界面跳去的是别的操作；现在落到它对应的那一条 | [#13609](https://github.com/QwenLM/qwen-code/pull/13609) |
+| **Linux 桌面包自带的运行环境不再被弄坏** | 打成 AppImage 的那份包，自带的运行环境被替换掉，装上起来来就跑不起来 | [#13695](https://github.com/QwenLM/qwen-code/pull/13695) |
+
+## 👥 贡献者
+
+| 贡献者 | 贡献内容 | 参考 PR 链接 |
+|--------|---------|-------------|
+| **[@wenshao](https://github.com/wenshao)** | 队列消息「立即发送」、发错那句取消后退回输入框、表格全屏查看、次要工作区的顺带一问、选 Worktree 直接生效，以及托管运行时的成套记录与恢复 | [#13681](https://github.com/QwenLM/qwen-code/pull/13681), [#13488](https://github.com/QwenLM/qwen-code/pull/13488), [#13589](https://github.com/QwenLM/qwen-code/pull/13589), [#13468](https://github.com/QwenLM/qwen-code/pull/13468), [#13607](https://github.com/QwenLM/qwen-code/pull/13607), [#13265](https://github.com/QwenLM/qwen-code/pull/13265) |
+| **[@yiliang114](https://github.com/yiliang114)** | 对话里 @ 一个帮手（可跨程序、跨机器、可组队）、一个页面同时连几个 Qwen Code、侧栏一组一个、启动时点名排除 MCP 服务、只读翻找收口提醒、微信登录出码、Windows 上 hook 用隐形窗口跑、破坏性命令连拒后转人工、MCP 许可按服务原始身份判定、思考标记残留清理、Browser Use 的报错与等待收口 | [#13467](https://github.com/QwenLM/qwen-code/pull/13467), [#13583](https://github.com/QwenLM/qwen-code/pull/13583), [#13739](https://github.com/QwenLM/qwen-code/pull/13739), [#13677](https://github.com/QwenLM/qwen-code/pull/13677), [#14003](https://github.com/QwenLM/qwen-code/pull/14003), [#13601](https://github.com/QwenLM/qwen-code/pull/13601), [#13482](https://github.com/QwenLM/qwen-code/pull/13482), [#13670](https://github.com/QwenLM/qwen-code/pull/13670), [#13636](https://github.com/QwenLM/qwen-code/pull/13636), [#12531](https://github.com/QwenLM/qwen-code/pull/12531) |
+| 🆕 **[@dakjdakd](https://github.com/dakjdakd)** | 🎉 首次贡献：带中文和表情的 @ 文件引用保住整串路径、Python 在 Windows 上找到该用的命令、释放销毁之后才建起来的连接 | [#13866](https://github.com/QwenLM/qwen-code/pull/13866), [#13862](https://github.com/QwenLM/qwen-code/pull/13862), [#13864](https://github.com/QwenLM/qwen-code/pull/13864) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | 一次完整读取守住同一个已打开的文件、保存设置时保留文件权限、托管运行时的会话生命周期与持久化收口 | [#13776](https://github.com/QwenLM/qwen-code/pull/13776), [#13293](https://github.com/QwenLM/qwen-code/pull/13293), [#13750](https://github.com/QwenLM/qwen-code/pull/13750), [#14069](https://github.com/QwenLM/qwen-code/pull/14069) |
+| **[@qqqys](https://github.com/qqqys)** | Mods 插件自带命令可执行、TypeScript 写法与配置校验、hook 改写入参并重新校验、轨迹搜索筛选与更早窗口、工作流详情列出产出与失败、点开工作流里的 agent、MCP App 消息提交前先审阅 | [#13843](https://github.com/QwenLM/qwen-code/pull/13843), [#13890](https://github.com/QwenLM/qwen-code/pull/13890), [#13442](https://github.com/QwenLM/qwen-code/pull/13442), [#13264](https://github.com/QwenLM/qwen-code/pull/13264), [#13716](https://github.com/QwenLM/qwen-code/pull/13716), [#14175](https://github.com/QwenLM/qwen-code/pull/14175), [#13958](https://github.com/QwenLM/qwen-code/pull/13958), [#13646](https://github.com/QwenLM/qwen-code/pull/13646) |
+| **[@ytahdn](https://github.com/ytahdn)** | Web Shell 工作区文件浏览与预览、拖进文件树上传、Excel 只读预览、等批准等回答时发提醒、选中回答按原样复制、后台结果随步骤折叠、语音输入提示本地化 | [#13878](https://github.com/QwenLM/qwen-code/pull/13878), [#14145](https://github.com/QwenLM/qwen-code/pull/14145), [#13664](https://github.com/QwenLM/qwen-code/pull/13664), [#13832](https://github.com/QwenLM/qwen-code/pull/13832), [#13833](https://github.com/QwenLM/qwen-code/pull/13833), [#13825](https://github.com/QwenLM/qwen-code/pull/13825), [#13938](https://github.com/QwenLM/qwen-code/pull/13938) |
+| **[@Bug-killer-prog](https://github.com/Bug-killer-prog)** | MCP 配置与导入配置的不可见文件头标记、TOML 命令转换同样的标记、Windows 上 vim 模式粘贴、设置里收掉已停用的内置模型 | [#13596](https://github.com/QwenLM/qwen-code/pull/13596), [#13711](https://github.com/QwenLM/qwen-code/pull/13711), [#13975](https://github.com/QwenLM/qwen-code/pull/13975), [#13198](https://github.com/QwenLM/qwen-code/pull/13198), [#13971](https://github.com/QwenLM/qwen-code/pull/13971) |
+| **[@chiga0](https://github.com/chiga0)** | 重开长会话只画屏幕上那一段、上下方向键回到翻输入历史、输入框光标钉成常亮、弹窗位置与补全截断对齐 | [#13669](https://github.com/QwenLM/qwen-code/pull/13669), [#14016](https://github.com/QwenLM/qwen-code/pull/14016), [#13693](https://github.com/QwenLM/qwen-code/pull/13693), [#12559](https://github.com/QwenLM/qwen-code/pull/12559) |
+| 🆕 **[@GoldArowana](https://github.com/GoldArowana)** | 🎉 首次贡献：改文件保住紧邻的空行、按预算停住长记录的读取、监控起不来时报成工具错误、代码块围栏只在成对行识别 | [#13484](https://github.com/QwenLM/qwen-code/pull/13484), [#13486](https://github.com/QwenLM/qwen-code/pull/13486), [#13460](https://github.com/QwenLM/qwen-code/pull/13460), [#13331](https://github.com/QwenLM/qwen-code/pull/13331) |
+| **[@pomelo-nwu](https://github.com/pomelo-nwu)** | 点上下文圆环开在右侧面板、桌面版接住从系统拖进来的文件、图标换成现行品牌标 | [#14086](https://github.com/QwenLM/qwen-code/pull/14086), [#14053](https://github.com/QwenLM/qwen-code/pull/14053), [#14052](https://github.com/QwenLM/qwen-code/pull/14052) |
+| **[@jabrailkhalil](https://github.com/jabrailkhalil)** | 飞书消息里的文字保住、写入失败的文件清理干净 | [#13337](https://github.com/QwenLM/qwen-code/pull/13337), [#13147](https://github.com/QwenLM/qwen-code/pull/13147) |
+| **[@Shizoqua](https://github.com/Shizoqua)** | TOML 自定义命令与 `.lsp.json` 带文件头标记也能读、`/context` 明细里每个 MCP 工具的读数与总行对得上 | [#13945](https://github.com/QwenLM/qwen-code/pull/13945), [#13946](https://github.com/QwenLM/qwen-code/pull/13946), [#13390](https://github.com/QwenLM/qwen-code/pull/13390) |
+| **[@zjgzx1988](https://github.com/zjgzx1988)** | 产物卡片按文件名显示、本地发布的文件不落成长期副本、产物说明从工具描述里挪出来 | [#13672](https://github.com/QwenLM/qwen-code/pull/13672), [#12395](https://github.com/QwenLM/qwen-code/pull/12395), [#14206](https://github.com/QwenLM/qwen-code/pull/14206) |
+| 🆕 **[@zonemeen](https://github.com/zonemeen)** | 🎉 首次贡献：容器测试的端口冲突修好、检查用的镜像清理收口 | [#13569](https://github.com/QwenLM/qwen-code/pull/13569), [#13686](https://github.com/QwenLM/qwen-code/pull/13686) |
+| 🆕 **[@fengyue-xve](https://github.com/fengyue-xve)** | 🎉 首次贡献：非交互用法里的更新也认自动更新开关、这一轮的工具结果归一个地方管 | [#13665](https://github.com/QwenLM/qwen-code/pull/13665), [#13666](https://github.com/QwenLM/qwen-code/pull/13666) |
+| 🆕 **[@LUOSENGWA](https://github.com/LUOSENGWA)** | 🎉 首次贡献：某些网络下连接被重置的排障条目、补齐待发送提示事件的说明 | [#13235](https://github.com/QwenLM/qwen-code/pull/13235), [#13281](https://github.com/QwenLM/qwen-code/pull/13281) |
+| 🆕 **[@agammann](https://github.com/agammann)** | 🎉 首次贡献：说明文件向上找到 Git 根就停住 | [#13381](https://github.com/QwenLM/qwen-code/pull/13381) |
+| **[@Andrea-Bruno](https://github.com/Andrea-Bruno)** | 前台子代理按模型设并发上限 | [#12461](https://github.com/QwenLM/qwen-code/pull/12461) |
+| 🆕 **[@beibeihk](https://github.com/beibeihk)** | 🎉 首次贡献：记忆索引超预算时整条跳过，后面的完整条目仍按序可用 | [#13315](https://github.com/QwenLM/qwen-code/pull/13315) |
+| **[@callmeYe](https://github.com/callmeYe)** | 扩展目录按有界批次并行加载 | [#13379](https://github.com/QwenLM/qwen-code/pull/13379) |
+| 🆕 **[@drakeo338](https://github.com/drakeo338)** | 🎉 首次贡献：子进程起不来时报错而不是直接退出 | [#13077](https://github.com/QwenLM/qwen-code/pull/13077) |
+| 🆕 **[@hahahahahayesyeseys](https://github.com/hahahahahayesyeseys)** | 🎉 首次贡献：Linux 桌面包保住自带的运行环境 | [#13695](https://github.com/QwenLM/qwen-code/pull/13695) |
+| 🆕 **[@Jay0130-a](https://github.com/Jay0130-a)** | 🎉 首次贡献：桌面版更新说明锚到上一次桌面版 | [#13960](https://github.com/QwenLM/qwen-code/pull/13960) |
+| 🆕 **[@jayfeng7](https://github.com/jayfeng7)** | 🎉 首次贡献：一轮还没收尾就被回收的情况补上测试 | [#13257](https://github.com/QwenLM/qwen-code/pull/13257) |
+| 🆕 **[@loglapa](https://github.com/loglapa)** | 🎉 首次贡献：把历史返回的大小边界钉住 | [#14111](https://github.com/QwenLM/qwen-code/pull/14111) |
+| 🆕 **[@MohammedAlkindi](https://github.com/MohammedAlkindi)** | 🎉 首次贡献：斜杠命令把自己派发的那一下算清楚 | [#12960](https://github.com/QwenLM/qwen-code/pull/12960) |
+| 🆕 **[@pulkitchowdry](https://github.com/pulkitchowdry)** | 🎉 首次贡献：联网搜索的服务清单里加入 SerpApi | [#13104](https://github.com/QwenLM/qwen-code/pull/13104) |
+| **[@shenyankm](https://github.com/shenyankm)** | 编辑器侧只声明自己支持的动态注册能力 | [#13494](https://github.com/QwenLM/qwen-code/pull/13494) |
+| 🆕 **[@shpaker](https://github.com/shpaker)** | 🎉 首次贡献：桌面版「最新版」的更新说明指向当前这一版 | [#13900](https://github.com/QwenLM/qwen-code/pull/13900) |
+| **[@sxh313](https://github.com/sxh313)** | 纯文本的工具预览里不再带终端控制符 | [#12751](https://github.com/QwenLM/qwen-code/pull/12751) |
+| **[@tonydzi](https://github.com/tonydzi)** | Linux 桌面发布腿锁定系统库底线 | [#13616](https://github.com/QwenLM/qwen-code/pull/13616) |
+| 🆕 **[@yanyukang2003-ux](https://github.com/yanyukang2003-ux)** | 🎉 首次贡献：`mcp add` 里逗号分隔的工具清单能拆开 | [#12985](https://github.com/QwenLM/qwen-code/pull/12985) |
+| 🆕 **[@Zhangchenhao-111](https://github.com/Zhangchenhao-111)** | 🎉 首次贡献：说清各语言 SDK 里空白工具名单的含义 | [#13949](https://github.com/QwenLM/qwen-code/pull/13949) |
+| 🆕 **[@ZedingZhang](https://github.com/ZedingZhang)** | 🎉 首次贡献：查不到的工具发布回执返回 404 | [#13602](https://github.com/QwenLM/qwen-code/pull/13602) |
+| **[@qwen-code-dev-bot](https://github.com/qwen-code-dev-bot)** | 自动检查里的偶发失败自动重试、发布环节的磁盘回收与闸门、npm 包体积上限上调 | [#13512](https://github.com/QwenLM/qwen-code/pull/13512), [#13481](https://github.com/QwenLM/qwen-code/pull/13481), [#14066](https://github.com/QwenLM/qwen-code/pull/14066) |
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！
