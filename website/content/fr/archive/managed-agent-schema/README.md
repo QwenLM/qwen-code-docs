@@ -1,0 +1,12 @@
+# Migrations archivées de la base de données Managed Agent
+
+
+Ces fichiers décrivent la base de données retirée à 63 tables au commit source `18f80f56666a347a2b67b2ef98099cc58356b253`. Ce sont des références historiques et se situent en dehors des classpaths d'exécution et de test. Les migrations Java archivées et les témoins de mise à niveau ne sont pas exécutés par le nouvel environnement.
+
+La seule baseline active est [`V1__managed_schema.sql`](../../../packages/managed-agent-server/src/main/resources/db/managed-schema/V1__managed_schema.sql). Managed Server et Runtime Broker consomment cette même ressource versionnée et requièrent une base de données vide ou une baseline complète à 32 tables vérifiée structurellement. Un catalogue legacy, partiel, étranger ou uniquement historique est rejeté avant les écritures d'initialisation. La réinitialisation valide le catalogue ; elle ne le complète ni ne le répare.
+
+Il n'y a pas de migration des anciennes données ni de mise à niveau sur place. Conservez l'ancien environnement et l'ancienne base de données pour les lectures historiques, arrêtez les nouvelles admissions et finalisez le travail en cours avant la bascule, et créez de nouvelles Sessions uniquement dans le nouvel environnement. Un rollback après l'existence de nouvelles données doit préserver et servir ces enregistrements depuis la nouvelle base de données.
+
+Les tests archivés préservent les preuves de l'algorithme de migration retiré. Les remplacements actifs vérifient l'initialisation fraîche, l'immutabilité des lignes existantes, les colonnes variant typées, l'unicité des Hooks et l'admission indexée, ainsi que le rejet des anciens catalogues. Le `schema.sql` dupliqué du Broker a été supprimé plutôt que conservé comme une autre autorité de schéma.
+
+Le SQL de rétention V69 du PR #13642 et `RuntimeBrokerRetentionLegacyUpgradeTest.java` préservent les anciennes preuves de mise à niveau des index de rétention/reçus depuis le head `db4c37064b9f34d2aa879b23b0e894fbed0281e1`. Ils sont uniquement archivés : la baseline V1 active à 32 tables fournit les index de rétention, et son test de remplacement vérifie la parité du catalogue frais et l'immutabilité des reçus lors d'initialisations répétées. V69 n'est pas une migration active ni une réservation de version.

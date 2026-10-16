@@ -62,6 +62,16 @@ id de evento no `DaemonSessionClient` e reconecta o stream por padrão.
 Chamadores podem desativar isso com `autoReconnect={false}` para testes ou
 gerenciamento personalizado de conexão.
 
+### Removendo anexos do compositor
+
+No compositor do Web Shell desktop, quando o corpo do texto está vazio e o cursor
+está no início sem seleção, Backspace ou Delete primeiro remove uma tag de
+contexto removível usando a ordem existente dessa tecla. Se nenhuma tag de
+contexto removível permanecer, remove o último anexo de arquivo ou a última
+imagem colada quando não há arquivos. Anexos de arquivo e imagem são mantidos
+enquanto o corpo do texto não estiver vazio. Anexos também podem ser removidos
+usando seus botões individuais de remoção.
+
 ## Formas de Implantação no Navegador
 
 ### POC Local de Mesma Origem

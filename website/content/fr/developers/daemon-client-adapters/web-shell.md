@@ -62,6 +62,16 @@ dernier event id sur `DaemonSessionClient`, et reconnecte le flux par défaut.
 Les appelants peuvent désactiver cela avec `autoReconnect={false}` pour les tests
 ou une gestion personnalisée de la connexion.
 
+### Suppression des pièces jointes du composer
+
+Dans le composer du Web Shell desktop, lorsque le corps de texte est vide et que le caret
+est à son début sans sélection, Backspace ou Delete supprime d'abord une
+balise de contexte supprimable en utilisant l'ordre existant de cette touche. Si aucune balise de contexte
+supprimable ne reste, il supprime la dernière pièce jointe de fichier, ou la dernière image collée
+lorsqu'il n'y a pas de fichiers. Les pièces jointes de fichiers et d'images sont conservées tant que le
+corps de texte n'est pas vide. Les pièces jointes peuvent aussi être supprimées via leurs boutons de suppression
+individuels.
+
 ## Formes de déploiement navigateur
 
 ### POC local même origine

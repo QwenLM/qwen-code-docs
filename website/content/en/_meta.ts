@@ -23,4 +23,6 @@ export default {
     type: 'page',
     title: 'Blog',
   },
+  'archive': 'archive',
+  'evaluation': 'Qwen Code Evaluation',
 };

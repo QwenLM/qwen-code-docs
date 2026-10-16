@@ -60,6 +60,10 @@ Der Provider erstellt oder hängt eine Daemon-Session an, abonniert SSE, speiche
 auf dem `DaemonSessionClient` und verbindet den Stream standardmäßig erneut. Caller können dies
 mit `autoReconnect={false}` für Tests oder benutzerdefiniertes Verbindungsmanagement deaktivieren.
 
+### Composer-Anhänge entfernen
+
+Im Desktop-WebShell-Composer entfernt Backspace oder Delete zuerst einen entfernbaren Kontext-Tag in der bestehenden Reihenfolge des Keys, wenn der Textbereich leer ist, sich der Cursor am Anfang befindet und keine Auswahl vorhanden ist. Wenn kein entfernter Kontext-Tag mehr vorhanden ist, wird der letzte Dateianhang entfernt, oder das letzte eingefügte Bild, wenn keine Dateien vorhanden sind. Datei- und Bildanhänge bleiben erhalten, solange der Textbereich nicht leer ist. Anhänge können auch über ihre individuellen Entfernen-Schaltflächen entfernt werden.
+
 ## Browser-Deployment-Formen
 
 ### Same-Origin lokaler POC
