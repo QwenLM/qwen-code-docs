@@ -1,7 +1,7 @@
 ---
-title: "Qwen Code 周报：你开的几个 Qwen Code 一个页面同时连着，项目里的文件点开就能看，补的话当场送到"
+title: "Qwen Code 周报：@ Claude Code、Codex 当队友，一个页面连几个 Qwen Code 项目，启动时点名去掉 MCP 服务"
 date: "2026-10-15"
-description: "本周发布 v0.25.1、v0.25.2 两个正式版本，371 个 PR 合入。新增 Agent Collaboration，把 Claude Code、Codex @ 进当前对话当队友，回答直接落在你这段对话里，也能放到另一台电脑上跑；你保存过的几个 Qwen Code 能在同一个页面里同时连着，来回切换都在页面里完成；Web Shell 一堆更新：右侧能直接翻项目里的文件、Markdown 和图片 Excel 点开就看、本地文件拖进去就上传、它正在回答时你补的话点「立即发送」当场送到、等你批准等你回答时还会发提醒；启动时能点名去掉某一个 MCP 服务。"
+description: "本周发布 v0.25.1、v0.25.2 两个正式版本，371 个 PR 合入。新增 Agent Collaboration，把 Claude Code、Codex @ 进当前对话当队友，回答直接落在你这段对话里，也能放到另一台电脑上跑；你保存过的几个 Qwen Code 能在同一个页面里同时连着，来回切换都在页面里完成；启动时能点名去掉某一个 MCP 服务。"
 author: "Qwen Team"
 tags: ["Product Updates", "release", "weekly"]
 image: "https://img.alicdn.com/imgextra/i1/O1CN01BYqgp4M1CRG2jBZY_!!6000000007925-2-tps-1344-576.png"
@@ -11,7 +11,7 @@ import { BlogPostHeader } from '@/components/blog-post-header'
 import { Callout } from 'nextra/components'
 
 <BlogPostHeader
-  title="Qwen Code 周报：你开的几个 Qwen Code 一个页面同时连着，项目里的文件点开就能看，补的话当场送到"
+  title="Qwen Code 周报：@ Claude Code、Codex 当队友，一个页面连几个 Qwen Code 项目，启动时点名去掉 MCP 服务"
   date="2026-10-15"
   author="Qwen Team"
 />
@@ -21,8 +21,6 @@ Qwen Code 本周发布 v0.25.1、v0.25.2 两个正式版本，371 个 PR 合入�
 **Agent Collaboration：把 Claude Code、Codex @ 进对话里当队友。** 它的回答直接出现在你当前这段对话里，还能放到另一台电脑上去跑。
 
 **你开的几个 Qwen Code，一个页面同时连着。** 侧栏一个 Qwen Code 占一组，各组下面列的是它当下真实的会话和工作区，来回切换都在页面里完成。
-
-**Web Shell：文件点开就能看，补的话当场送到，等你点头时会提醒你。** 右侧能翻整个工作区，本地文件拖进去就上传；回答到一半时补的话点「立即发送」当场送到，发错的取消后退回输入框；它停下来等你的时候还会发通知喊你回来。
 
 **不想用某个 MCP 服务，启动时点名去掉就行。** `qwen --disable-mcp-server <名字>` 只管这一次，不动你的设置文件。
 
@@ -82,7 +80,7 @@ qwen --disable-mcp-server github
 - 启动被某个服务拖慢，这一次先不带上它
 - 同一份代码，一轮专跑数据库、一轮专跑网页，各带各的服务
 
-[📸 待截图：带上排除某个服务的参数启动后，`/mcp` 里那个服务显示为未启用]
+![启动时用 `--disable-mcp-server` 点名排除某个 MCP 服务](https://img.alicdn.com/imgextra/i3/O1CN01eTCrgCnavhE3thAe_!!6000000000173-1-tps-1920-1080.gif)
 
 ### Web Shell：项目里的文件点开就能看，补的话当场送到，等你点头时会提醒你
 
