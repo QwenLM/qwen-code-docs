@@ -16,7 +16,7 @@ Le monitor s'exécute en arrière-plan, l'agent peut donc continuer à travaille
 - `description` (chaîne, facultatif) : brève description de ce que le monitor surveille. Le texte affiché est tronqué à 80 caractères.
 - `max_events` (nombre, facultatif) : arrêt après ce nombre d'événements de notification. Doit être un entier positif. Par défaut `1000` ; maximum `10000` (les valeurs hors de cette plage sont rejetées, pas silencieusement ramenées à la limite).
 - `idle_timeout_ms` (nombre, facultatif) : arrêt si la commande ne produit aucune sortie pendant ce nombre de millisecondes. Doit être un entier positif. Par défaut `300000` (5 minutes) ; maximum `600000` (10 minutes), et les valeurs hors de cette plage sont rejetées.
-- `directory` (chaîne, facultatif) : chemin absolu dans lequel exécuter la commande. Doit résoudre (après canonicalisation des liens symboliques) dans un des répertoires de l'espace de travail enregistrés, et ne doit pas être dans le répertoire des compétences utilisateur. Si omis, Qwen Code utilise la racine du projet.
+- `directory` (chaîne, facultatif) : chemin absolu dans lequel exécuter la commande. Doit résoudre (après canonicalisation des liens symboliques) dans un des répertoires de workspace enregistrés, et ne doit pas être dans le répertoire des compétences utilisateur. Si omis, Qwen Code utilise la racine du projet.
 
 ## Utiliser `monitor` avec Qwen Code
 
@@ -68,7 +68,7 @@ monitor(
 )
 ```
 
-Exécuter depuis un répertoire spécifique de l'espace de travail :
+Exécuter depuis un répertoire spécifique du workspace :
 
 ```
 monitor(
@@ -92,8 +92,9 @@ N'ajoutez pas `&` aux commandes monitor. Un `&` final, par exemple `tail -f log 
 
 ## Notes importantes
 
+- **Échecs de démarrage :** une admission rejetée ou un échec de démarrage signalé par l'appel initial du monitor renvoie une erreur d'outil avec le message d'échec complet et tout conseil de récupération. En mode code, `await tools.monitor(...)` rejette l'appel afin que les appelants puissent gérer l'échec avec `try`/`catch`. Les erreurs reçues après l'accusé de réception initial sont signalées via le statut du monitor et les notifications.
 - **Comportement d'arrêt automatique :** les monitors s'arrêtent automatiquement lorsqu'ils atteignent `max_events`, lorsque `idle_timeout_ms` s'écoule sans sortie, ou lorsque la commande sous-jacente se termine d'elle-même. Le statut d'un monitor reflète le résultat de la commande, pas une erreur d'outil : une sortie propre (code 0) devient `completed`, un code de sortie non nul devient `failed` avec le message `Exit code N`, et une terminaison par signal devient `failed` avec le message `Killed by signal SIG`. Les commandes ne peuvent pas être interactives car stdin est fermé. Lorsqu'un monitor s'arrête, Qwen Code envoie `SIGTERM` au groupe de processus de la commande et passe à `SIGKILL` après environ 200 ms. Sous Windows, il utilise `taskkill /f /t`. Si le processus Qwen Code lui-même est tué brutalement, plante ou manque de mémoire, le groupe de processus détaché n'est pas nettoyé automatiquement ; récupérez-le en arrêtant le monitor avec `task_stop` avant de quitter ou en terminant le groupe de processus manuellement.
 - **Limite de concurrence :** Qwen Code autorise jusqu'à 16 monitors en cours par session CLI, sous forme d'un seul pool partagé. Les monitors démarrés par des sous-agents comptent dans le même plafond que ceux démarrés par l'agent principal. Arrêtez un monitor existant avant d'en lancer un autre si la limite est atteinte.
 - **Gestion de la sortie :** stdout et stderr sont fusionnés en un seul flux de notifications sans préfixe de flux. Les lignes vides sont ignorées, les caractères ANSI de couleur et de contrôle sont supprimés, et les lignes individuelles de plus de 2000 caractères sont tronquées. La sortie à volume élevé est limitée en débit avec une salve de 5 événements et environ 1 événement par seconde ensuite ; les lignes au-delà de la limite sont abandonnées, pas mises en mémoire tampon. La sortie du monitor arrive dans le contexte de l'agent sous forme de contenu `<task-notification>`. Les balises structurelles de notification sont désactivées, mais le modèle lit toujours le texte de chaque ligne, évitez donc de surveiller des flux auxquels des parties externes peuvent écrire, à moins que vous ne fassiez confiance au modèle pour ignorer les instructions intégrées.
-- **Permissions :** `monitor` a sa propre limite de permissions et ses propres règles de permission, comme `Monitor(git status)`. Les commandes en lecture seule sont automatiquement autorisées ; les commandes qui modifient l'état nécessitent l'approbation de l'utilisateur ; les commandes contenant de la substitution de commande (`$(...)`, backticks, `<(...)>` ou `>(...)>)` sont rejetées d'office. Les paramètres `tools.core` et `tools.exclude` pour `run_shell_command` ne s'appliquent pas à `monitor`.
-- **Restriction d'espace de travail :** le paramètre facultatif `directory` doit être un chemin absolu qui résout dans un répertoire d'espace de travail enregistré et en dehors du répertoire des compétences utilisateur. Les liens symboliques pointant hors de l'espace de travail sont rejetés.
+- **Permissions :** `monitor` a sa propre limite de permissions et ses propres règles de permission, comme `Monitor(git status)`. Les commandes en lecture seule sont automatiquement autorisées ; les commandes qui modifient l'état nécessitent l'approbation de l'utilisateur ; les commandes contenant de la substitution de commande (`$(...)`, backticks, `<(...)` ou `>(...)` sont rejetées d'office. Les paramètres `tools.core` et `tools.exclude` pour `run_shell_command` ne s'appliquent pas à `monitor`.
+- **Restriction workspace :** le paramètre facultatif `directory` doit être un chemin absolu qui résout dans un répertoire de workspace enregistré et en dehors du répertoire des compétences utilisateur. Les liens symboliques pointant hors du workspace sont rejetés.

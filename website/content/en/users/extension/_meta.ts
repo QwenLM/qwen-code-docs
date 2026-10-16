@@ -7,4 +7,5 @@ export default {
   'extension-releasing': {
     display: 'hidden',
   },
+  'mods': 'Experimental Mod commands',
 };
