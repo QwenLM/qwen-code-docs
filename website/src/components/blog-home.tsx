@@ -16,7 +16,7 @@ export const BlogHome = async ({ lang = "zh" }: { lang?: string }) => {
     <div className="relative overflow-x-clip pt-4 pb-20">
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-24 right-[-6rem] h-[30rem] w-[30rem] rounded-full bg-violet-500/[0.06] blur-3xl dark:bg-violet-500/[0.09]"
+        className="pointer-events-none absolute -top-24 right-[-6rem] h-[30rem] w-[30rem] rounded-full bg-brand-500/[0.06] blur-3xl dark:bg-brand-500/[0.09]"
       />
       <div className="relative mx-auto max-w-[90rem] px-6 md:px-8">
         <header className="mb-12">

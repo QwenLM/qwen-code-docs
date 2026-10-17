@@ -180,7 +180,7 @@ export function MobileMenu({ lang }: { lang: string }) {
         aria-label={t("menu")}
         aria-expanded={open}
         aria-controls="qwen-mobile-drawer"
-        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
       >
         <Menu className="h-5 w-5" />
       </button>
@@ -220,7 +220,7 @@ export function MobileMenu({ lang }: { lang: string }) {
               type="button"
               onClick={() => setOpen(false)}
               aria-label={t("close")}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             >
               <X className="h-5 w-5" />
             </button>
@@ -238,7 +238,7 @@ export function MobileMenu({ lang }: { lang: string }) {
                       className={cn(
                         "flex items-center gap-3 rounded-md px-3 py-2.5 text-base transition-colors",
                         active
-                          ? "bg-violet-500/10 font-semibold text-violet-600 dark:text-violet-400"
+                          ? "bg-brand-500/10 font-semibold text-brand-600 dark:text-brand-400"
                           : "text-foreground hover:bg-accent"
                       )}
                     >
@@ -290,7 +290,7 @@ export function MobileMenu({ lang }: { lang: string }) {
                       <span className="text-base">{language.flag}</span>
                       {language.name}
                       {active && (
-                        <span className="ml-auto text-violet-600 dark:text-violet-400">
+                        <span className="ml-auto text-brand-600 dark:text-brand-400">
                           ✓
                         </span>
                       )}

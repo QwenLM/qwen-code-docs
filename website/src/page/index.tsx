@@ -9,7 +9,7 @@ import { withBasePath } from "@/lib/utils";
 
 const Index = () => {
   return (
-    <div className='min-h-screen bg-background text-foreground selection:bg-violet-500/30 font-sans transition-colors duration-300'>
+    <div className='min-h-screen bg-background text-foreground selection:bg-brand-500/30 font-sans transition-colors duration-300'>
       <CustomNavbar
         logo={
           <>

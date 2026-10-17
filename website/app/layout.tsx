@@ -87,7 +87,7 @@ export const metadata: Metadata = {
   },
   manifest: withBasePath("/site.webmanifest"),
   other: {
-    "msapplication-TileColor": "#fff",
+    "msapplication-TileColor": "#082DFF",
   },
 };
 
@@ -106,8 +106,8 @@ const RootLayout: FC<LayoutProps> = ({ children }) => {
         //   light: "rgb(254, 252, 232)",
         // }}
         color={{
-          hue: { dark: 248, light: 248 },
-          saturation: { dark: 74, light: 74 },
+          hue: { dark: 231, light: 231 },
+          saturation: { dark: 100, light: 100 },
         }}
       />
       <body className={jetbrainsMono.variable}>
