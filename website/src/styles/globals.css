@@ -60,9 +60,9 @@
   letter-spacing: 0.05em;
 }
 
-/* Modern purple theme inspired by Claude Code and Mastra */
+/* Brand-blue theme anchored on the logo colour #082DFF */
 .gradient-text {
-  background-image: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 50%, #7c3aed 100%);
+  background-image: linear-gradient(135deg, #98b9ff 0%, #265dff 50%, #082dff 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -84,7 +84,7 @@
 .gradient-border {
   position: relative;
   background: linear-gradient(var(--background), var(--background)) padding-box,
-              linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(124, 58, 237, 0.1)) border-box;
+              linear-gradient(135deg, rgba(38, 93, 255, 0.3), rgba(8, 45, 255, 0.1)) border-box;
   border: 1px solid transparent;
 }
 
@@ -104,7 +104,7 @@
   position: absolute;
   width: 50vw;
   height: 50vw;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(38, 93, 255, 0.15) 0%, transparent 70%);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -120,18 +120,18 @@
   color: transparent;
 }
 
-/* Purple glow effect */
+/* Brand-blue glow effect */
 .terminal-glow {
-  text-shadow: 0 0 5px #8b5cf6, 0 0 10px #8b5cf6, 0 0 15px #8b5cf6;
+  text-shadow: 0 0 5px #265dff, 0 0 10px #265dff, 0 0 15px #265dff;
 }
 
-/* Modern hero background with purple accents */
+/* Modern hero background with brand-blue accents */
 .hero-gradient {
   background: linear-gradient(
     135deg,
     hsl(var(--background)) 0%,
     hsl(var(--background) / 0.98) 25%,
-    hsl(262 75% 50% / 0.03) 50%,
+    hsl(231 100% 52% / 0.03) 50%,
     hsl(var(--background) / 0.98) 75%,
     hsl(var(--background)) 100%
   );
@@ -139,15 +139,15 @@
 
 /* Claude Code inspired button styles */
 .btn-primary-gradient {
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #265dff 0%, #082dff 100%);
   border: none;
   transition: all 0.3s ease;
 }
 
 .btn-primary-gradient:hover {
-  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  background: linear-gradient(135deg, #082dff 0%, #060ee9 100%);
   transform: translateY(-1px);
-  box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 10px 25px rgba(38, 93, 255, 0.3);
 }
 
 /* Comparison table enhancements */
@@ -187,7 +187,7 @@
 
 /* Feature status indicators */
 .feature-badge-qwen {
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #265dff 0%, #082dff 100%);
   color: white;
   font-weight: 500;
 }
@@ -198,7 +198,7 @@
   font-weight: 500;
 }
 
-/* Scanline effect for terminal aesthetic with purple tint */
+/* Scanline effect for terminal aesthetic with brand-blue tint */
 .scanlines::before {
   content: "";
   position: absolute;
@@ -206,7 +206,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(transparent 50%, rgba(97, 92, 237, 0.02) 51%);
+  background: linear-gradient(transparent 50%, rgba(8, 45, 255, 0.02) 51%);
   background-size: 100% 2px;
   pointer-events: none;
   z-index: 1;
@@ -217,6 +217,21 @@
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
+  /* Brand scale anchored on the logo blue #082DFF (brand-600).
+     Derived from Tailwind's violet lightness/chroma curve, re-hued to the
+     brand hue and gamut-clipped, so existing accent weights map 1:1. */
+  --color-brand-50: #eff4ff;
+  --color-brand-100: #e1ebff;
+  --color-brand-200: #c6d8ff;
+  --color-brand-300: #98b9ff;
+  --color-brand-400: #5f8fff;
+  --color-brand-500: #265dff;
+  --color-brand-600: #082dff;
+  --color-brand-700: #060ee9;
+  --color-brand-800: #0405c1;
+  --color-brand-900: #03079c;
+  --color-brand-950: #010061;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

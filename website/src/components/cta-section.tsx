@@ -14,7 +14,7 @@ export const CTASection = () => {
   return (
     <section className='py-32 bg-background relative overflow-hidden'>
       {/* Background Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-violet-600/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-brand-600/10 rounded-full blur-[120px] pointer-events-none" />
       
       <div className='container mx-auto px-6 relative z-10'>
         <div className='max-w-4xl mx-auto text-center'>
@@ -31,7 +31,7 @@ export const CTASection = () => {
           <div className='flex flex-col sm:flex-row gap-4 justify-center items-center mb-20'>
             <Button
               size='lg'
-              className='rounded-full px-10 h-14 text-lg bg-violet-600 hover:bg-violet-700 text-white transition-all hover:scale-105 shadow-xl shadow-violet-500/20 border-none'
+              className='rounded-full px-10 h-14 text-lg bg-brand-600 hover:bg-brand-700 text-white transition-all hover:scale-105 shadow-xl shadow-brand-500/20 border-none'
             >
               Get Started Free <ArrowRight className='w-5 h-5 ml-2' />
             </Button>

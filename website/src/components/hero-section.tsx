@@ -33,7 +33,7 @@ export const HeroSection = () => {
   return (
     <section className='relative min-h-screen flex flex-col items-center pt-20 pb-20 overflow-hidden'>
       {/* Background Effects */}
-      <div className='absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(262_75%_50%/0.15),transparent_70%)]' />
+      <div className='absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(231_100%_52%/0.15),transparent_70%)]' />
       <div className='hero-glow opacity-50' />
 
       <div className='container mx-auto px-6 text-center relative z-10 max-w-5xl flex-grow flex flex-col items-center justify-center'>
@@ -58,7 +58,7 @@ export const HeroSection = () => {
               onClick={() => setPlatform("linux")}
               className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
                 platform === "linux"
-                  ? "bg-violet-500 text-white"
+                  ? "bg-brand-500 text-white"
                   : "bg-muted text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -68,7 +68,7 @@ export const HeroSection = () => {
               onClick={() => setPlatform("windows")}
               className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
                 platform === "windows"
-                  ? "bg-violet-500 text-white"
+                  ? "bg-brand-500 text-white"
                   : "bg-muted text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -77,13 +77,13 @@ export const HeroSection = () => {
           </div>
 
           {/* Command Display */}
-          <div className="flex items-center gap-3 px-5 py-3 bg-muted/50 backdrop-blur-sm border border-border rounded-full font-mono text-sm hover:border-violet-500/30 transition-colors group max-w-2xl">
-            <Terminal className="w-4 h-4 text-violet-500 flex-shrink-0" />
+          <div className="flex items-center gap-3 px-5 py-3 bg-muted/50 backdrop-blur-sm border border-border rounded-full font-mono text-sm hover:border-brand-500/30 transition-colors group max-w-2xl">
+            <Terminal className="w-4 h-4 text-brand-500 flex-shrink-0" />
             <code className="text-foreground truncate">{installCommands[platform]}</code>
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0 hover:bg-violet-500/10 hover:text-violet-500 ml-2 flex-shrink-0"
+              className="h-6 w-6 p-0 hover:bg-brand-500/10 hover:text-brand-500 ml-2 flex-shrink-0"
               onClick={handleCopy}
             >
               {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
@@ -94,7 +94,7 @@ export const HeroSection = () => {
         {/* Action Button */}
         <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
           <NextLink href="/en/users/overview">
-            <Button size="lg" className="bg-violet-600 hover:bg-violet-700 text-white rounded-full px-8 h-12 text-base transition-all hover:scale-105 shadow-xl shadow-violet-500/20">
+            <Button size="lg" className="bg-brand-600 hover:bg-brand-700 text-white rounded-full px-8 h-12 text-base transition-all hover:scale-105 shadow-xl shadow-brand-500/20">
               View Documentation <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
           </NextLink>

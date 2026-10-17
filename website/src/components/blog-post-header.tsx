@@ -22,7 +22,7 @@ export const BlogPostHeader: React.FC<BlogPostHeaderProps> = ({
       <div className="max-w-4xl">
         <div className="flex flex-wrap gap-2 mb-6">
           {tags?.map(tag => (
-            <Badge key={tag} variant="secondary" className="bg-violet-500/10 text-violet-500 border-none px-3 py-1">
+            <Badge key={tag} variant="secondary" className="bg-brand-500/10 text-brand-500 border-none px-3 py-1">
               {tag}
             </Badge>
           ))}
@@ -34,11 +34,11 @@ export const BlogPostHeader: React.FC<BlogPostHeaderProps> = ({
 
         <div className="flex items-center gap-6 text-sm text-muted-foreground mb-12 py-6 border-y border-border/50">
           <div className="flex items-center gap-2">
-            <User className="w-4 h-4 text-violet-500" />
+            <User className="w-4 h-4 text-brand-500" />
             <span className="font-medium text-foreground">{author}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-violet-500" />
+            <Calendar className="w-4 h-4 text-brand-500" />
             <span>{date}</span>
           </div>
         </div>

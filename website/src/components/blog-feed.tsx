@@ -30,7 +30,7 @@ const CATEGORY_GLYPHS: Record<string, string> = {
 
 function NewBadge() {
   return (
-    <span className="shrink-0 rounded bg-violet-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400">
+    <span className="shrink-0 rounded bg-brand-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
       NEW
     </span>
   );
@@ -39,7 +39,7 @@ function NewBadge() {
 function CategoryTag({ post, lang }: { post: BlogPost; lang: string }) {
   const info = getCategoryInfo(post.category, lang);
   return (
-    <span className="code-font shrink-0 text-xs text-violet-600 dark:text-violet-400">
+    <span className="code-font shrink-0 text-xs text-brand-600 dark:text-brand-400">
       {info.title}
     </span>
   );
@@ -50,7 +50,7 @@ function Cover({ post, className }: { post: BlogPost; className?: string }) {
     return (
       <div
         className={cn(
-          "aspect-[2.35/1] overflow-hidden bg-muted/40 transition-colors group-hover:border-violet-500/40 dark:group-hover:border-violet-400/40",
+          "aspect-[2.35/1] overflow-hidden bg-muted/40 transition-colors group-hover:border-brand-500/40 dark:group-hover:border-brand-400/40",
           className
         )}
       >
@@ -66,11 +66,11 @@ function Cover({ post, className }: { post: BlogPost; className?: string }) {
   return (
     <div
       className={cn(
-        "flex aspect-[2.35/1] items-center justify-center bg-gradient-to-br from-violet-500/[0.07] to-violet-500/[0.02] bg-[radial-gradient(circle,rgb(139_92_246/0.10)_1px,transparent_1px)] [background-size:auto,14px_14px] transition-colors group-hover:border-violet-500/40 dark:group-hover:border-violet-400/40",
+        "flex aspect-[2.35/1] items-center justify-center bg-gradient-to-br from-brand-500/[0.07] to-brand-500/[0.02] bg-[radial-gradient(circle,rgb(139_92_246/0.10)_1px,transparent_1px)] [background-size:auto,14px_14px] transition-colors group-hover:border-brand-500/40 dark:group-hover:border-brand-400/40",
         className
       )}
     >
-      <span className="code-font text-3xl text-violet-500/30 select-none">
+      <span className="code-font text-3xl text-brand-500/30 select-none">
         {CATEGORY_GLYPHS[post.category] || ">_"}
       </span>
     </div>
@@ -96,7 +96,7 @@ export function HeroPost({ post, lang }: { post: BlogPost; lang: string }) {
           {isNew && <NewBadge />}
         </div>
         <h2 className="mt-3 text-3xl font-bold leading-[1.15] tracking-tight text-balance md:text-[2.6rem] md:leading-[1.1]">
-          <span className="transition-colors group-hover:text-violet-600 dark:group-hover:text-violet-400">
+          <span className="transition-colors group-hover:text-brand-600 dark:group-hover:text-brand-400">
             {post.title}
           </span>
         </h2>
@@ -130,7 +130,7 @@ function ArticleCard({ post, lang }: { post: BlogPost; lang: string }) {
         <CategoryTag post={post} lang={lang} />
         {isNew && <NewBadge />}
       </div>
-      <h3 className="mt-1.5 text-lg font-bold leading-snug line-clamp-2 transition-colors group-hover:text-violet-600 dark:group-hover:text-violet-400">
+      <h3 className="mt-1.5 text-lg font-bold leading-snug line-clamp-2 transition-colors group-hover:text-brand-600 dark:group-hover:text-brand-400">
         {post.title}
       </h3>
       <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground line-clamp-2">
@@ -169,7 +169,7 @@ function FilterPill({
       className={cn(
         "rounded-full border px-3.5 py-1.5 text-[13px] font-semibold transition-colors duration-200",
         active
-          ? "border-transparent bg-violet-700 text-white dark:bg-violet-400 dark:text-violet-950"
+          ? "border-transparent bg-brand-700 text-white dark:bg-brand-400 dark:text-brand-950"
           : "border-border/60 text-muted-foreground hover:border-foreground/30 hover:text-foreground"
       )}
     >
@@ -265,7 +265,7 @@ export function BlogFeed({
           <button
             type="button"
             onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-            className="group inline-flex items-center gap-2 rounded-full border border-border/60 px-6 py-2.5 text-sm font-semibold text-muted-foreground transition-colors duration-200 hover:border-violet-500/50 hover:text-violet-600 dark:hover:text-violet-400"
+            className="group inline-flex items-center gap-2 rounded-full border border-border/60 px-6 py-2.5 text-sm font-semibold text-muted-foreground transition-colors duration-200 hover:border-brand-500/50 hover:text-brand-600 dark:hover:text-brand-400"
           >
             {getBlogText("loadMore", lang)}
             <span className="code-font text-xs opacity-70">{remaining}</span>
@@ -295,7 +295,7 @@ function WeeklyHighlightRow({ post, lang }: { post: BlogPost; lang: string }) {
           <CategoryTag post={post} lang={lang} />
           {isNew && <NewBadge />}
         </div>
-        <h3 className="mt-1.5 text-lg font-bold leading-snug line-clamp-2 transition-colors group-hover:text-violet-600 dark:group-hover:text-violet-400 sm:text-xl">
+        <h3 className="mt-1.5 text-lg font-bold leading-snug line-clamp-2 transition-colors group-hover:text-brand-600 dark:group-hover:text-brand-400 sm:text-xl">
           {post.title}
         </h3>
         <time
@@ -324,8 +324,8 @@ export function RecentUpdates({
     <section className="mb-16">
       <div className="mb-1 flex items-center gap-3">
         <span aria-hidden className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-500 opacity-60 [animation-duration:2s] motion-reduce:animate-none" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-600 dark:bg-violet-400" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-500 opacity-60 [animation-duration:2s] motion-reduce:animate-none" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-600 dark:bg-brand-400" />
         </span>
         <h2 className="text-lg font-bold">
           {getBlogText("recentUpdates", lang)}

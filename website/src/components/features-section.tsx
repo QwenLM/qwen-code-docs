@@ -51,14 +51,14 @@ export const FeaturesSection = () => {
       />
 
       {/* Decorative blobs */}
-      <div className='absolute top-0 right-0 w-[600px] h-[600px] bg-violet-600/10 rounded-full blur-[120px] -mr-64 -mt-64 pointer-events-none' />
+      <div className='absolute top-0 right-0 w-[600px] h-[600px] bg-brand-600/10 rounded-full blur-[120px] -mr-64 -mt-64 pointer-events-none' />
       <div className='absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-600/5 rounded-full blur-[100px] -ml-48 -mb-48 pointer-events-none' />
 
       <div className='container mx-auto px-6 relative z-10'>
         <div className='text-center mb-20'>
-          <div className='inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 mb-6 group cursor-default'>
-            <span className='w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse' />
-            <span className='text-xs font-semibold text-violet-400 tracking-wider uppercase'>
+          <div className='inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 mb-6 group cursor-default'>
+            <span className='w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse' />
+            <span className='text-xs font-semibold text-brand-400 tracking-wider uppercase'>
               Ecosystem
             </span>
           </div>
@@ -77,10 +77,10 @@ export const FeaturesSection = () => {
           {features.map((feature, index) => (
             <div
               key={index}
-              className='group relative p-[1px] rounded-3xl overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-violet-500/10'
+              className='group relative p-[1px] rounded-3xl overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-brand-500/10'
             >
               {/* Animated Gradient Border */}
-              <div className='absolute inset-0 bg-gradient-to-br from-white/10 to-transparent group-hover:from-violet-500/40 group-hover:to-blue-500/40 transition-all duration-700' />
+              <div className='absolute inset-0 bg-gradient-to-br from-white/10 to-transparent group-hover:from-brand-500/40 group-hover:to-blue-500/40 transition-all duration-700' />
 
               <div className='relative h-full bg-card/80 backdrop-blur-sm rounded-[23px] p-10 flex flex-col items-start border border-border'>
                 {/* Icon with glow */}
@@ -95,7 +95,7 @@ export const FeaturesSection = () => {
                   </div>
                 </div>
 
-                <h3 className='text-2xl font-bold mb-4 text-card-foreground group-hover:text-violet-400 transition-colors duration-300'>
+                <h3 className='text-2xl font-bold mb-4 text-card-foreground group-hover:text-brand-400 transition-colors duration-300'>
                   {feature.title}
                 </h3>
 
@@ -108,7 +108,7 @@ export const FeaturesSection = () => {
                     Advantage 0{index + 1}
                   </span>
                   <div className='h-1 w-24 bg-muted/30 rounded-full overflow-hidden'>
-                    <div className='h-full bg-gradient-to-r from-violet-500 to-blue-500 w-0 group-hover:w-full transition-all duration-1000 ease-out' />
+                    <div className='h-full bg-gradient-to-r from-brand-500 to-blue-500 w-0 group-hover:w-full transition-all duration-1000 ease-out' />
                   </div>
                 </div>
               </div>

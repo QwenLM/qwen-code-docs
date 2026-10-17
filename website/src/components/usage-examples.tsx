@@ -45,7 +45,7 @@ export const UsageExamples = () => {
           {scenarios.map((scenario, index) => (
             <div
               key={index}
-              className='group p-8 rounded-3xl bg-card border border-border hover:border-violet-500/20 transition-all duration-300 shadow-sm flex flex-col items-center text-center'
+              className='group p-8 rounded-3xl bg-card border border-border hover:border-brand-500/20 transition-all duration-300 shadow-sm flex flex-col items-center text-center'
             >
               <div className={`w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-8 group-hover:scale-110 transition-transform`}>
                 <scenario.icon className={`w-7 h-7 ${scenario.color}`} />

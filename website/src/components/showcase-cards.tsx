@@ -87,7 +87,7 @@ const ShowcaseCardItem = ({
 }) => (
   <Link href={card.link} className="group text-left w-full h-full block">
     <div
-      className="cursor-pointer text-left w-full h-full flex flex-col overflow-hidden rounded-2xl border border-border bg-card hover:border-violet-300 dark:hover:border-violet-700 transition-all duration-300 hover:shadow-lg dark:hover:shadow-xl active:scale-[0.98]"
+      className="cursor-pointer text-left w-full h-full flex flex-col overflow-hidden rounded-2xl border border-border bg-card hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300 hover:shadow-lg dark:hover:shadow-xl active:scale-[0.98]"
     >
       {/* Image - direct display without gradient wrapper */}
       <div className="relative aspect-video overflow-hidden shrink-0">
@@ -108,7 +108,7 @@ const ShowcaseCardItem = ({
               key={`${card.id}-cat-${index}`}
               className={`px-2.5 py-1 rounded-full text-xs font-medium ${
                 index === 0
-                  ? "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+                  ? "bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300"
                   : "bg-muted text-muted-foreground"
               }`}
             >
@@ -118,7 +118,7 @@ const ShowcaseCardItem = ({
         </div>
 
         {/* Title */}
-        <h3 className="text-base md:text-lg font-semibold text-foreground group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors mb-2 line-clamp-1">
+        <h3 className="text-base md:text-lg font-semibold text-foreground group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors mb-2 line-clamp-1">
           {card.title}
         </h3>
 
@@ -129,7 +129,7 @@ const ShowcaseCardItem = ({
 
         {/* View tutorial link */}
         <span
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-600 dark:text-violet-400 group-hover:text-violet-700 dark:group-hover:text-violet-300 transition-colors mt-auto"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 dark:text-brand-400 group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors mt-auto"
         >
           查看教程
           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
@@ -157,7 +157,7 @@ const SearchBar = ({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full pl-11 pr-4 py-3 rounded-xl border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all shadow-sm"
+      className="w-full pl-11 pr-4 py-3 rounded-xl border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all shadow-sm"
     />
   </div>
 );
@@ -190,7 +190,7 @@ const CategoryFilter = ({
               onClick={() => onToggleFilter(item)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                 isActive
-                  ? "bg-violet-600 text-white shadow-sm hover:bg-violet-700"
+                  ? "bg-brand-600 text-white shadow-sm hover:bg-brand-700"
                   : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted border border-border"
               }`}
             >
@@ -220,12 +220,12 @@ const LearningPathCard = ({ path }: { path: LearningPath }) => {
     : path.icon;
 
   return (
-    <div className="flex flex-col h-full p-6 rounded-2xl border border-border bg-card hover:border-violet-300 dark:hover:border-violet-700 transition-all duration-300 hover:shadow-lg dark:hover:shadow-xl">
+    <div className="flex flex-col h-full p-6 rounded-2xl border border-border bg-card hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300 hover:shadow-lg dark:hover:shadow-xl">
       {/* Header */}
       <div className="flex items-start gap-4 mb-5">
-        <div className="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
+        <div className="w-12 h-12 rounded-xl bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center shrink-0">
           {typeof IconComponent === 'function' ? (
-            <IconComponent className="w-6 h-6 text-violet-600 dark:text-violet-400" />
+            <IconComponent className="w-6 h-6 text-brand-600 dark:text-brand-400" />
           ) : (
             <span className="text-2xl">{path.icon}</span>
           )}
@@ -245,7 +245,7 @@ const LearningPathCard = ({ path }: { path: LearningPath }) => {
         <ul className="space-y-3.5">
           {(path.items || path.steps)?.map((item: any, index: number) => (
             <li key={index} className="flex items-start gap-3">
-              <span className="text-xs font-mono text-violet-600 dark:text-violet-400 w-6 shrink-0 pt-0.5">
+              <span className="text-xs font-mono text-brand-600 dark:text-brand-400 w-6 shrink-0 pt-0.5">
                 {String(index + 1).padStart(2, '0')}
               </span>
               {'link' in item ? (

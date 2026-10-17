@@ -244,7 +244,7 @@ const HeroSection = ({
               {video.link && (
                 <a
                   href={video.link}
-                  className="inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-violet-600 dark:hover:text-violet-400 transition-colors group/link"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-brand-600 dark:hover:text-brand-400 transition-colors group/link"
                 >
                   {texts.heroCta}
                   <ArrowRight className="w-3.5 h-3.5 group-hover/link:translate-x-0.5 transition-transform" />
@@ -320,7 +320,7 @@ const FeatureVideoCard = ({
           {video.category}
         </Badge>
       </div>
-      <h3 className="text-sm md:text-base font-semibold text-foreground group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors line-clamp-1 mb-1.5">
+      <h3 className="text-sm md:text-base font-semibold text-foreground group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors line-clamp-1 mb-1.5">
         {video.title}
       </h3>
       <p className="text-xs md:text-sm text-muted-foreground line-clamp-2 leading-relaxed">
@@ -330,7 +330,7 @@ const FeatureVideoCard = ({
       {video.link && texts && (
         <a
           href={video.link}
-          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-violet-600 dark:hover:text-violet-400 transition-colors mt-auto pt-3"
+          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-brand-600 dark:hover:text-brand-400 transition-colors mt-auto pt-3"
           onClick={(event) => event.stopPropagation()}
         >
           {texts.viewTutorial}
@@ -392,7 +392,7 @@ const ScenarioVideoCard = ({
           levels={difficultyLevels}
         />
       </div>
-      <h3 className="text-sm md:text-base font-semibold text-foreground group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors line-clamp-1 mb-1.5">
+      <h3 className="text-sm md:text-base font-semibold text-foreground group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors line-clamp-1 mb-1.5">
         {video.title}
       </h3>
       <p className="text-xs md:text-sm text-muted-foreground line-clamp-2 leading-relaxed">
@@ -402,7 +402,7 @@ const ScenarioVideoCard = ({
       {video.link && (
         <a
           href={video.link}
-          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-violet-600 dark:hover:text-violet-400 transition-colors mt-auto pt-3"
+          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-brand-600 dark:hover:text-brand-400 transition-colors mt-auto pt-3"
           onClick={(event) => event.stopPropagation()}
         >
           {texts.viewTutorial}
@@ -440,8 +440,8 @@ const LatestVideosSection = ({
         {/* Section header */}
         <div className="mb-10 md:mb-14 max-w-2xl">
           <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-4 h-4 text-violet-600 dark:text-violet-400" />
-            <p className="text-sm font-medium tracking-wider uppercase text-violet-600 dark:text-violet-400">
+            <Sparkles className="w-4 h-4 text-brand-600 dark:text-brand-400" />
+            <p className="text-sm font-medium tracking-wider uppercase text-brand-600 dark:text-brand-400">
               {texts.latestSectionTitle}
             </p>
           </div>
@@ -636,16 +636,16 @@ const TabbedContentSection = ({
     <section id="all-videos" className="w-full border-t border-border/50">
       <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-16 md:py-24">
         <Tabs defaultValue="scenarios" className="w-full">
-          <TabsList className="mb-10 bg-violet-100 dark:bg-violet-950/40 p-1 rounded-xl h-auto border border-violet-200 dark:border-violet-800/50">
+          <TabsList className="mb-10 bg-brand-100 dark:bg-brand-950/40 p-1 rounded-xl h-auto border border-brand-200 dark:border-brand-800/50">
             <TabsTrigger
               value="scenarios"
-              className="px-5 py-2.5 text-sm font-medium rounded-lg text-violet-700 dark:text-violet-300 data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-violet-500/25 transition-all duration-200"
+              className="px-5 py-2.5 text-sm font-medium rounded-lg text-brand-700 dark:text-brand-300 data-[state=active]:bg-brand-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-brand-500/25 transition-all duration-200"
             >
               {texts.scenarioTabLabel}
             </TabsTrigger>
             <TabsTrigger
               value="features"
-              className="px-5 py-2.5 text-sm font-medium rounded-lg text-violet-700 dark:text-violet-300 data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-violet-500/25 transition-all duration-200"
+              className="px-5 py-2.5 text-sm font-medium rounded-lg text-brand-700 dark:text-brand-300 data-[state=active]:bg-brand-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-brand-500/25 transition-all duration-200"
             >
               {texts.featureTabLabel}
             </TabsTrigger>
@@ -654,7 +654,7 @@ const TabbedContentSection = ({
           <TabsContent value="features">
             {/* Section header for features */}
             <div className="mb-10 md:mb-14 max-w-2xl">
-              <p className="text-sm font-medium tracking-wider uppercase text-violet-600 dark:text-violet-400 mb-3">
+              <p className="text-sm font-medium tracking-wider uppercase text-brand-600 dark:text-brand-400 mb-3">
                 {texts.featureSectionTitle}
               </p>
               <h2 className="text-2xl md:text-4xl font-bold tracking-tighter leading-none mb-4 text-foreground">
@@ -672,7 +672,7 @@ const TabbedContentSection = ({
           <TabsContent value="scenarios">
             {/* Section header for scenarios */}
             <div className="mb-10 md:mb-14 max-w-2xl">
-              <p className="text-sm font-medium tracking-wider uppercase text-violet-600 dark:text-violet-400 mb-3">
+              <p className="text-sm font-medium tracking-wider uppercase text-brand-600 dark:text-brand-400 mb-3">
                 {texts.scenarioSectionTitle}
               </p>
               <h2 className="text-2xl md:text-4xl font-bold tracking-tighter leading-none mb-4 text-foreground">
@@ -845,7 +845,7 @@ export const VideoShowcase = ({
                   href={selectedVideo.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-base font-medium text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors group"
+                  className="inline-flex items-center gap-2 text-base font-medium text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors group"
                 >
                   {texts.viewTutorial}
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />

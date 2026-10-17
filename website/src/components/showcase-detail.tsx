@@ -97,7 +97,7 @@ function ShowcaseDetailHeader({
             {features.map((feature, index) => (
               <span
                 key={index}
-                className="px-2.5 py-1 rounded-md bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 text-sm font-medium"
+                className="px-2.5 py-1 rounded-md bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 text-sm font-medium"
               >
                 {feature}
               </span>
@@ -140,7 +140,7 @@ function ShowcaseDetailHeader({
             {steps.map((step, index) => (
               <div
                 key={index}
-                className="border-l-4 border-violet-500 pl-5 py-3 bg-muted/30 rounded-r-lg"
+                className="border-l-4 border-brand-500 pl-5 py-3 bg-muted/30 rounded-r-lg"
               >
                 <h3 className="text-lg font-semibold mb-2 text-foreground">
                   {index + 1}. {step.title}
@@ -177,7 +177,7 @@ function ShowcaseDetailFooter({
               <Link
                 key={index}
                 href={caseItem.link}
-                className="block border border-border rounded-lg overflow-hidden hover:border-violet-300 dark:hover:border-violet-700 hover:shadow-lg transition-all"
+                className="block border border-border rounded-lg overflow-hidden hover:border-brand-300 dark:hover:border-brand-700 hover:shadow-lg transition-all"
               >
                 {caseItem.thumbnail && (
                   <img
@@ -197,11 +197,11 @@ function ShowcaseDetailFooter({
 
       {/* CTA */}
       {ctaText && (
-        <div className="text-center py-8 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 rounded-xl">
+        <div className="text-center py-8 bg-gradient-to-r from-brand-50 to-brand-100 dark:from-brand-900/20 dark:to-brand-950/20 rounded-xl">
           <p className="text-lg font-medium mb-4 text-foreground">{ctaText}</p>
           <Link
             href="/zh/docs/getting-started/installation"
-            className="inline-block px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-medium transition-colors shadow-sm hover:shadow-md"
+            className="inline-block px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-lg font-medium transition-colors shadow-sm hover:shadow-md"
           >
             开始使用 Qwen Code
           </Link>
