@@ -1,0 +1,106 @@
+# 托管代理参考部署
+
+
+托管代理参考发行版是实验性的。其接受的初始拓扑结构为：一台可信 Linux 主机上的一个 Java 控制平面及其内嵌的 Runtime Broker、一个 MySQL 数据库，以及一个兼容的 Qwen Hosted Harness。每个发行版中的兼容性清单对该发行版具有权威性。
+
+## 验证与解压
+
+从同一个 GitHub prerelease 下载归档文件、分离清单以及 `SHA256SUMS.txt`。在解压前进行验证：
+
+```bash
+sha256sum --check SHA256SUMS.txt
+tar -xzf qwen-managed-agent-reference-<version>.tar.gz
+cd qwen-managed-agent-reference-<version>
+sha256sum --check SHA256SUMS
+```
+
+检查 `manifest.json`。确认 `source.revision` 是已审核的版本，`compatibility.qwenCodeVersion` 与 CLI/Harness 安装版本匹配，且 `compatibility.databaseSchema.latestMigrationVersion` 对目标数据库可接受。如果任何校验和或兼容性检查失败，则该发行版无效。
+
+## 前置条件
+
+- 可信应用主机上的 Linux。
+- JDK 21 或更高版本。
+- 与 `compatibility.node` 匹配的 Node.js 以及与 `compatibility.qwenCodeVersion` 匹配的 Qwen Code。
+- MySQL 8，搭配空数据库或此前由较旧兼容参考发行版管理的数据库。
+- 用于 Runtime 状态和授权 Workspace 的私有持久化目录。
+- 稳定的数据库凭据、Runtime 凭据密钥和 Harness token，存储在归档文件之外。
+
+Java 归档文件不包含 npm CLI。请单独安装或构建精确兼容的 Qwen Code 版本，并定位其 `dist/cli.js` 以供 Runtime worker 使用。
+
+## 启动 Hosted Harness
+
+选择一个 token 和 capability digest，并将相同的值提供给 Harness 和 Java 服务：
+
+```bash
+export QWEN_MANAGED_AGENT_HARNESS_TOKEN='<private-random-token>'
+export QWEN_MANAGED_AGENT_CAPABILITY_DIGEST='sha256:<64-hex-digest>'
+
+QWEN_SERVER_TOKEN="$QWEN_MANAGED_AGENT_HARNESS_TOKEN" \
+QWEN_HOSTED_HARNESS_CAPABILITY_DIGEST="$QWEN_MANAGED_AGENT_CAPABILITY_DIGEST" \
+qwen serve --profile hosted-harness --port 4170 --hostname 127.0.0.1 --no-web
+```
+
+将 Harness 保持在 loopback 上。记录其报告的端口；当请求的端口已被占用时，`--port` 可能会自动递增。
+
+## 启动 Java 控制平面
+
+在另一个终端中，配置相同的 Harness 和数据库：
+
+```bash
+export SPRING_DATASOURCE_URL='jdbc:mysql://127.0.0.1:3306/qwen_managed_agent'
+export SPRING_DATASOURCE_USERNAME='qwen'
+export SPRING_DATASOURCE_PASSWORD='<private-password>'
+export QWEN_MANAGED_AGENT_HARNESS_ENABLED='true'
+export QWEN_MANAGED_AGENT_HARNESS_BASE_URL='http://127.0.0.1:4170'
+export QWEN_MANAGED_AGENT_HARNESS_TOKEN='<private-random-token>'
+export QWEN_MANAGED_AGENT_CAPABILITY_DIGEST='sha256:<64-hex-digest>'
+
+bin/qwen-managed-agent-server
+```
+
+启动器使用此归档文件中的服务端 JAR。Spring Flyway 在服务就绪前执行正向数据库迁移。等待以下命令返回成功：
+
+```bash
+curl --fail http://127.0.0.1:8080/actuator/health
+```
+
+此基础配置支持纯文本 Hosted Session。除非配置了签名或认证入口，否则请将监听器保持在 loopback 上。完整的认证、API 和 capability 配置打包在 `docs/server-reference.md` 中。
+
+## 启用已接受的本地进程工具路径
+
+工具执行需要现有的 fail closed Runtime 和 Workspace 设置。至少需配置：
+
+```bash
+export QWEN_MANAGED_AGENT_RUNTIME_BROKER_ENABLED='true'
+export QWEN_MANAGED_AGENT_RUNTIME_BROKER_TOKEN='<private-random-token>'
+export QWEN_MANAGED_AGENT_RUNTIME_CREDENTIAL_KEY_ID='reference-v1'
+export QWEN_MANAGED_AGENT_RUNTIME_CREDENTIAL_KEY='<base64-encoded-32-byte-key>'
+export QWEN_MANAGED_AGENT_RUNTIME_STATE_DIRECTORY='/var/lib/qwen-managed-agent/runtime'
+export QWEN_MANAGED_AGENT_NODE_EXECUTABLE='/usr/bin/node'
+export QWEN_MANAGED_AGENT_RUNTIME_WORKER_ENTRY='/opt/qwen-code/dist/cli.js'
+export QWEN_MANAGED_AGENT_WORKSPACE_ID='reference-workspace'
+export QWEN_MANAGED_AGENT_WORKSPACE_CWD='/srv/qwen-workspace'
+export QWEN_MANAGED_AGENT_RUNTIME_VERIFIED_WORKSPACE_RECOVERY_ENABLED='true'
+```
+
+在准入文件、Shell 或子 Git worktree 工作之前，完成 `docs/server-reference.md` 中"Verified physical Workspace recovery"部分描述的原生存储注册和挂载身份验证。未注册或存在歧义的挂载必须保持不可用。公共 Shell 和 v2 capability 通告在其单独资质认证完成之前保持禁用。
+
+## 升级
+
+1. 下载并验证新归档文件，阅读两份清单。在操作运行中的部署之前，确认新的 Qwen Code/Harness、Java、协议和数据库要求。
+2. 停止新的入站流量。根据部署现有的 drain 流程等待已准入的工作完成。
+3. 备份 MySQL、`QWEN_MANAGED_AGENT_RUNTIME_STATE_DIRECTORY`、Runtime 凭据密钥以及精确的旧发行版。升级期间不要轮换凭据密钥。
+4. 停止 Java 服务和 Hosted Harness。保留 Workspace 和持久化 Runtime 状态。
+5. 安装清单兼容的 Qwen Code/Harness，并使用现有 token 和 capability digest 启动。
+6. 使用相同的数据库和持久化设置启动新的 `bin/qwen-managed-agent-server`。Flyway 将正向迁移 schema。
+7. 要求 actuator 健康检查通过，读取现有 Session 和历史记录，然后在重新开放入站流量之前完成一个新的无工具轮次。在启用任何可选工具 capability 之前重新进行资质认证。
+
+不支持数据库降级。如果在流量恢复之前启动或验证失败，请修正配置并使用同一构件重试。要回退到清单中 schema 范围较旧的版本，请在接受任何新写入之前同时恢复升级前的数据库和 Runtime 状态备份；切勿假设性地对已迁移的数据库运行旧版服务端。
+
+## 操作员恢复
+
+`bin/qwen-managed-agent-operator-recovery` 启动单独打包的恢复入口点。除非设置了恢复专用环境变量，否则该入口点处于禁用状态，且不会启动 HTTP 服务或 worker。请遵循 `docs/hosted-workspace-recovery.md`；切勿推断物理停止或删除持久化行来绕过安全围栏。
+
+## 范围边界
+
+本发行版不认证多个 Java 控制平面、跨主机接管、公共 CSI、Kubernetes 退役、公共 Shell、v2 通告或稳定的生产支持。这些能力需要单独的发行版证据。

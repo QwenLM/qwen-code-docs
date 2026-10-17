@@ -34,7 +34,7 @@ cd your-project
 qwen
 ```
 
-Beim ersten Start werden Sie aufgefordert, einen Modellanbieter zu verbinden. Das Menü bietet **Alibaba ModelStudio** (die offiziell empfohlene Einrichtung), **Drittanbieter** (integrierte Anbieter wie DeepSeek, MiniMax, Z.AI, Kimi und OpenRouter, verbunden mit einem API-Key) und **Benutzerdefinierter Anbieter** (ein lokaler Server, Proxy oder nicht unterstützter Anbieter). Für den [Alibaba Cloud Token Plan](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) ([intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) wählen Sie **Alibaba ModelStudio → Token Plan**; um einen ModelStudio API-Key zu verwenden, wählen Sie **Alibaba ModelStudio → Standard API Key** und folgen Sie der API-Einrichtungsanleitung ([Peking](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)). Dann beginnen wir mit dem Verständnis Ihrer Codebasis. Versuchen Sie einen dieser Befehle:
+Beim ersten Start werden Sie aufgefordert, einen Modellanbieter zu verbinden. Das Menü bietet **QwenCloud** (die offiziell empfohlene Einrichtung), **Alibaba ModelStudio**, **Drittanbieter** (integrierte Anbieter wie DeepSeek, MiniMax, Z.AI, Kimi und OpenRouter, verbunden mit einem API-Key) und **Benutzerdefinierter Anbieter** (ein lokaler Server, Proxy oder nicht unterstützter Anbieter). Für einen QwenCloud-Key wählen Sie **QwenCloud → Token Plan** oder **QwenCloud → Standard API Key** und wählen dann die Plattform (China oder International) — siehe [Authentifizierung](./configuration/auth). Für den [Alibaba Cloud Token Plan](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) ([intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) wählen Sie **Alibaba ModelStudio → Token Plan**; um einen ModelStudio API-Key zu verwenden, wählen Sie **Alibaba ModelStudio → Standard API Key** und folgen Sie der API-Einrichtungsanleitung ([Peking](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)). Dann beginnen wir mit dem Verständnis Ihrer Codebasis. Versuchen Sie einen dieser Befehle:
 
 ```
 what does this project do?
@@ -52,9 +52,6 @@ Sie werden aufgefordert, sich bei der ersten Verwendung anzumelden. Das war's! [
 >
 > **Neue VS Code-Erweiterung (Beta)**: Bevorzugen Sie eine grafische Oberfläche? Unsere neue **VS Code-Erweiterung** bietet eine benutzerfreundliche native IDE-Erfahrung, ohne dass Sie sich mit dem Terminal auskennen müssen. Installieren Sie sie einfach aus dem Marketplace und beginnen Sie direkt in Ihrer Seitenleiste mit Qwen Code zu codieren. Laden Sie jetzt den [Qwen Code Companion](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion) herunter und installieren Sie ihn.
 
-> [!note]
->
-> **Placeholder for next note** Unsere neue **VS Code-Erweiterung** bietet eine benutzerfreundliche native IDE-Erfahrung, ohne dass Sie sich mit dem Terminal auskennen müssen. Installieren Sie sie einfach aus dem Marketplace und beginnen Sie direkt in Ihrer Seitenleiste mit Qwen Code zu codieren. Laden Sie jetzt den [Qwen Code Companion](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion) herunter und installieren Sie ihn.
 
 ## Was Qwen Code für Sie tut
 

@@ -31,4 +31,5 @@ export default {
     display: 'hidden',
   },
   'hosted-workspace-recovery': 'Hosted Workspace operator recovery',
+  'managed-agent-reference-deployment': 'Managed Agent Reference Deployment',
 };

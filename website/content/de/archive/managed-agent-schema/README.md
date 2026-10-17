@@ -1,0 +1,12 @@
+# Archivierte Managed-Agent-Datenbankmigrationen
+
+
+Diese Dateien beschreiben die stillgelegte 63-Tabellen-Datenbank beim Source-Commit `18f80f56666a347a2b67b2ef98099cc58356b253`. Sie dienen als historische Referenz und liegen außerhalb der Runtime- und Test-Classpaths. Die archivierten Java-Migrationen und Upgrade-Witnesses werden von der neuen Umgebung nicht ausgeführt.
+
+Die einzige aktive Baseline ist [`V1__managed_schema.sql`](../../../packages/managed-agent-server/src/main/resources/db/managed-schema/V1__managed_schema.sql). Managed Server und Runtime Broker konsumieren dieselbe versionierte Ressource und erfordern eine leere Datenbank oder eine strukturell verifizierte vollständige 32-Tabellen-Baseline. Ein veralteter, unvollständiger, fremder oder nur historischer Katalog wird vor den Initialisierungsschreibvorgängen zurückgewiesen. Die Reinitialisierung validiert den Katalog; sie füllt ihn nicht nach und repariert ihn nicht.
+
+Es gibt keine Altdatenmigration oder In-Place-Upgrade. Behalten Sie die alte Umgebung und Datenbank für historische Lesezugriffe, stoppen Sie neue Admissions und schließen Sie laufende Arbeiten vor dem Umstieg ab, und erstellen Sie neue Sessions nur in der neuen Umgebung. Ein Rollback nach Vorhandensein neuer Daten muss diese Datensätze bewahren und aus der neuen Datenbank bereitstellen.
+
+Die archivierten Tests bewahren die Nachweise des stillgelegten Migrationsalgorithmus. Aktive Ersatztests verifizieren frische Initialisierung, unveränderliche bestehende Zeilen, typisierte Varianten-Spalten, Hook-Eindeutigkeit und indizierte Admission sowie die Zurückweisung alter Kataloge. Die duplizierte Broker-`schema.sql` wurde entfernt, anstatt sie als weitere Schema-Autorität beizubehalten.
+
+Das PR #13642 Retention-V69-SQL und `RuntimeBrokerRetentionLegacyUpgradeTest.java` bewahren die früheren Nachweise für Retention-Index/Receipt-Upgrades vom Head `db4c37064b9f34d2aa879b23b0e894fbed0281e1`. Sie sind ausschließlich archiviert: Die aktive 32-Tabellen-V1-Baseline liefert die Retention-Indizes, und ihr Ersatztest verifiziert frische Katalogparität und unveränderliche Receipts bei wiederholter Initialisierung. V69 ist keine aktive Migration oder Versionsreservierung.
