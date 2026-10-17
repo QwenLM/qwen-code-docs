@@ -97,6 +97,40 @@ Avant d'admettre du travail fichier, Shell, ou Git enfant, complétez l'enregist
 
 La rétrogradation de la base de données n'est pas prise en charge. Si le démarrage ou la validation échoue avant la reprise du trafic, corrigez la configuration et réessayez avec le même artefact. Pour revenir à une version dont le manifeste a une plage de schéma plus ancienne, restaurez la sauvegarde de la base de données et de l'état du Runtime d'avant la mise à niveau ensemble avant d'accepter toute nouvelle écriture ; ne lancez jamais un ancien serveur contre une base de données migrée par supposition.
 
+## Rotation de la clé d'identification du Runtime
+
+Faites tourner la clé d'identification séparément d'une mise à niveau de la distribution. Sauvegardez la base de données et les clés actuelles, puis configurez la nouvelle paire active et conservez l'ancienne paire sous `previous-credential-keys` :
+
+```yaml
+qwen:
+  managed-agent:
+    runtime-broker:
+      credential-key-id: reference-v2
+      credential-key: <base64-encoded-32-byte-v2-key>
+      previous-credential-keys:
+        '[reference-v1]': <base64-encoded-32-byte-v1-key>
+```
+
+Entourez chaque clé de map de `[ ... ]`. Le binder relâché de Spring normalise les clés simples — un ID tel que `legacy/v1`, `legacy:v1` ou `legacy v1` se lie sous la forme `legacyv1`, qu'il soit entre guillemets dans le YAML ou non — le ring ne correspond alors jamais à l'ID de clé persisté et les lignes écrites sous cet ID restent illisibles même si la clé est configurée. La forme entre crochets préserve l'ID exact.
+
+Redémarrez le plan de contrôle Java unique, vérifiez que les bindings existants se chargent, et vérifiez que les nouvelles lignes de binding enregistrent `reference-v2`. Les nouveaux secrets utilisent uniquement la clé active ; les anciennes lignes restent chiffrées sous leur ID de clé enregistré. Le serveur ne rechiffre pas les anciennes lignes à la lecture, et supprimer une clé encore référencée rend ces lignes illisibles.
+
+Retirez `reference-v1` uniquement lorsqu'aucune ligne persistée ne le référence. `ma_runtime_binding.credential_key_id` et `ma_runtime_binding.runtime_credential_key_id` sont les seules références persistées ; les deux stockent des octets UTF-8. Sélectionnez-les sans `CONVERT` afin que la déduplication reste exacte au niveau des octets, tout comme la sélection de clé : une valeur convertie porte la collation par défaut du jeu de caractères et fusionnerait deux ID qui ne diffèrent que par la casse ou l'accent, masquant une clé que des lignes référencent encore.
+
+```sql
+SELECT DISTINCT credential_key_id AS key_id
+FROM ma_runtime_binding WHERE credential_key_id IS NOT NULL
+UNION
+SELECT DISTINCT runtime_credential_key_id AS key_id
+FROM ma_runtime_binding WHERE runtime_credential_key_id IS NOT NULL;
+```
+
+Le résultat liste les ID de clé que les lignes persistées nécessitent encore : attendez-vous uniquement à l'ID actif (`reference-v2`). Tant que `reference-v1` apparaît, cette clé doit rester configurée.
+
+Le key ring est une map et ne peut pas être fourni via une variable d'environnement `QWEN_MANAGED_AGENT_*` : le binding relâché résout silencieusement une forme env-var en un ring vide ou mal clé, sans erreur de démarrage. Configurez `previous-credential-keys` dans un `application.yml` que le processus serveur charge effectivement. La distribution de référence ne fournit aucun fichier de configuration, et Spring résout un `application.yml` externe par rapport au répertoire de travail du processus (`./` et `./config/`), et non par rapport à la racine de la distribution ; `bin/qwen-managed-agent-server` transmet ses arguments à la JVM, donc `--spring.config.additional-location=file:<absolute-path>` fixe l'emplacement. Un déploiement qui repose uniquement sur des variables d'environnement démarre avec un ring vide, donc faire tourner `credential-key-id` sans configuration de la clé précédente rend les lignes écrites sous celle-ci illisibles.
+
+Le point d'entrée de récupération opérateur et les mains de maintenance CSI/migration configurent toujours une seule paire de clés d'identification et ne lisent pas `previous-credential-keys`. Pour récupérer un binding écrit sous une clé précédente, lancez ce point d'entrée avec la clé précédente configurée comme sa paire de clés d'identification active.
+
 ## Récupération opérateur
 
 `bin/qwen-managed-agent-operator-recovery` démarre le point d'entrée de récupération empaqueté séparément. Il est désactivé sauf si l'environnement spécifique à la récupération est défini et ne démarre pas le service HTTP ni le worker. Suivez `docs/hosted-workspace-recovery.md` ; ne déduisez jamais un arrêt physique ni ne supprimez de lignes durables pour contourner une barrière de sécurité.

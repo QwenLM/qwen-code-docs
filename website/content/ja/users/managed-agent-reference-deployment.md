@@ -1,7 +1,7 @@
 # Managed Agent リファレンスデプロイメント
 
 
-Managed Agent リファレンス配布は実験的なものです。受け入れられる初期トポロジは、1つの信頼された Linux ホスト上で 1つの Java コントロールプレーンとその組み込み Runtime Broker、1つの MySQL データベース、そして 1つの互換性のある Qwen Hosted Harness です。各リリースの互換性マニフェストが、そのリリースに対して権限を持ちます。
+Managed Agent リファレンス配布は実験的なものです。受け入れられる初期トポロジは、1つの信頼された Linux ホスト上で 1つの Java コントロールプレーンとその組み込み Runtime Broker、1つの MySQL データベース、そして 1つの互換性のある Qwen Hosted Harness です。各リリースの互換性マニフェストが、そのリリースにおいて正式な情報源となります。
 
 ## 検証と展開
 
@@ -23,9 +23,9 @@ sha256sum --check SHA256SUMS
 - `compatibility.node` に一致する Node.js と `compatibility.qwenCodeVersion` に一致する Qwen Code。
 - MySQL 8 と、空のデータベース、または古い互換性のあるリファレンス配布によって以前に管理されていたデータベース。
 - Runtime 状態および認可された ワークスペース 用のプライベートで永続的なディレクトリ。
-- アーカイブの外部に保存された、安定したデータベース認証情報、Runtime 認証キー、および Harness トークン。
+- アーカイブの外部に保存された、安定したデータベース認証情報、Runtime 認証キーリング、および Harness トークン。
 
-Java アーカイブには npm CLI が含まれていません。互換性のある正確な Qwen Code リビジョンを別途インストールまたはビルドし、Runtime ワーカー用にその `dist/cli.js` を配置します。
+Java アーカイブには npm CLI が含まれていません。互換性のある正確な Qwen Code リビジョンを別途インストールまたはビルドし、Runtime ワーカー用にその `dist/cli.js` を特定します。
 
 ## Hosted Harness の起動
 
@@ -40,7 +40,7 @@ QWEN_HOSTED_HARNESS_CAPABILITY_DIGEST="$QWEN_MANAGED_AGENT_CAPABILITY_DIGEST" \
 qwen serve --profile hosted-harness --port 4170 --hostname 127.0.0.1 --no-web
 ```
 
-Harness をループバック上に保持します。レポートされるポートを記録します。要求されたポートが既に占有されている場合、`--port` は前進することがあります。
+Harness をループバック上に保持します。レポートされるポートを記録します。要求されたポートが既に占有されている場合、`--port` はずれることがあります。
 
 ## Java コントロールプレーンの起動
 
@@ -66,7 +66,7 @@ curl --fail http://127.0.0.1:8080/actuator/health
 
 この基本構成はテキストのみの Hosted Session をサポートします。署名付きまたは認証されたイングレスが設定されていない限り、リスナーをループバック上に保持します。完全な認証、API、およびケイパビリティ設定は `docs/server-reference.md` としてバンドルされています。
 
-## 受け入れられたローカルプロセストーンパスの有効化
+## 受け入れられたローカルプロセスのツールパスの有効化
 
 ツール実行には、既存の fail closed（失敗時は拒否） Runtime と ワークスペース 設定が必要です。最低限、以下を設定します。
 
@@ -89,13 +89,47 @@ export QWEN_MANAGED_AGENT_RUNTIME_VERIFIED_WORKSPACE_RECOVERY_ENABLED='true'
 
 1. 新しいアーカイブをダウンロードして検証し、両方のマニフェストを読みます。実行中のデプロイメントに触れる前に、新しい Qwen Code/Harness、Java、プロトコル、およびデータベースの要件を確認します。
 2. 新しいイングレスを停止します。デプロイメントの既存の drain 手順に従って、受け入れられたワークが落ち着くのを待ちます。
-3. MySQL、`QWEN_MANAGED_AGENT_RUNTIME_STATE_DIRECTORY`、Runtime 認証キー、および正確な古い配布をバックアップします。アップグレード中に認証キーをローテーションしないでください。
+3. MySQL、`QWEN_MANAGED_AGENT_RUNTIME_STATE_DIRECTORY`、Runtime 認証キーリング全体、および正確な古い配布をバックアップします。アップグレード中に認証キーをローテーションしないでください。
 4. Java サービスと Hosted Harness を停止します。ワークスペース と永続的な Runtime 状態を保持します。
 5. マニフェスト互換の Qwen Code/Harness をインストールし、既存のトークンとケイパビリティダイジェストで起動します。
 6. 同じデータベースと永続的な設定で新しい `bin/qwen-managed-agent-server` を起動します。Flyway がスキーマをフォワードマイグレーションします。
 7. 正常な actuator レスポンスを要求し、既存の Session と履歴を読み取り、イングレスを再開する前に新しいツールなしの Turn を 1つ完了します。オプションのツールケイパビリティは、有効化する前に再 qualification します。
 
 データベースのダウングレードはサポートされていません。トラフィックが再開される前に起動または検証が失敗した場合、設定を修正して同じアーティファクトを再試行します。マニフェストが古いスキーマ範囲を持つバージョンに戻るには、新しい書き込みを受け入れる前に、アップグレード前のデータベースと Runtime 状態のバックアップを一緒に復元します。移行されたデータベースに対して古いサーバーを決して想定で実行しないでください。
+
+## Runtime 認証キーのローテーション
+
+配布のアップグレードとは別に認証キーをローテーションします。データベースと現在のキーをバックアップし、新しいアクティブなペアを設定して、古いペアを `previous-credential-keys` の下に保持します。
+
+```yaml
+qwen:
+  managed-agent:
+    runtime-broker:
+      credential-key-id: reference-v2
+      credential-key: <base64-encoded-32-byte-v2-key>
+      previous-credential-keys:
+        '[reference-v1]': <base64-encoded-32-byte-v1-key>
+```
+
+すべてのマップキーを `[ ... ]` で囲みます。Spring の relaxed binder はプレーンなキーを正規化します — `legacy/v1`、`legacy:v1`、`legacy v1` などの ID は、YAML で引用符で囲まれているかどうかに関係なく `legacyv1` としてバインドされます — そのため、キーリングは永続化されたキー ID と決して一致せず、その ID で書き込まれた行はキーが設定されていても読み取り不能なままになります。ブラケット形式は正確な ID を保持します。
+
+単一の Java コントロールプレーンを再起動し、既存のバインディングがロードされることを確認し、新しいバインディング行に `reference-v2` が記録されることを確認します。新しいシークレットはアクティブなキーのみを使用します。古い行は記録されたキー ID の下で暗号化されたままです。サーバーは読み取り時に古い行を再暗号化せず、まだ参照されているキーを削除すると、それらの行が読み取り不能になります。
+
+`reference-v1` の廃止は、永続化された行がそれを参照しなくなった時点でのみ行います。`ma_runtime_binding.credential_key_id` と `ma_runtime_binding.runtime_credential_key_id` が唯一の永続化された参照であり、両方とも UTF-8 バイトを格納します。`CONVERT` なしでそれらを選択します。これにより、キー選択と同じ方法で、デデュプリケーションがバイト単位で正確に保たれます。変換された値は文字セットのデフォルトの照合順序を持ち、大文字と小文字またはアクセントのみが異なる 2 つの ID をマージして、行がまだ参照しているキーを隠してしまう可能性があります。
+
+```sql
+SELECT DISTINCT credential_key_id AS key_id
+FROM ma_runtime_binding WHERE credential_key_id IS NOT NULL
+UNION
+SELECT DISTINCT runtime_credential_key_id AS key_id
+FROM ma_runtime_binding WHERE runtime_credential_key_id IS NOT NULL;
+```
+
+結果は、永続化された行がまだ必要としているキー ID を一覧表示します。アクティブな ID (`reference-v2`) のみを期待します。`reference-v1` が表示されている間、そのキーは設定されたままにする必要があります。
+
+キーリングはマップであり、`QWEN_MANAGED_AGENT_*` 環境変数を通じて提供することはできません。relaxed binding は環境変数形式を空または誤ったキーのリングにサイレントに解決し、起動エラーは発生しません。サーバープロセスが実際にロードする `application.yml` で `previous-credential-keys` を設定します。リファレンス配布には設定ファイルが付属しておらず、Spring は外部の `application.yml` を配布ルートではなくプロセスの作業ディレクトリ（`./` および `./config/`）に対して解決します。`bin/qwen-managed-agent-server` はその引数を JVM に転送するため、`--spring.config.additional-location=file:<absolute-path>` で場所を固定します。環境変数のみに依存するデプロイメントは空のリングで起動するため、前のキーの設定なしに `credential-key-id` をローテーションすると、その ID で書き込まれた行が読み取り不能になります。
+
+オペレーターリカバリーエントリーと CSI/マイグレーションメンテナンスメインは、引き続き単一の認証キーペアを設定し、`previous-credential-keys` を読み取りません。以前のキーで書き込まれたバインディングをリカバリーするには、そのエントリーを、以前のキーをアクティブな認証ペアとして設定して起動します。
 
 ## オペレーターリカバリー
 

@@ -97,6 +97,40 @@ Antes de admitir trabalho de arquivo, Shell ou Git filho, conclua o registro de 
 
 Downgrade de banco de dados não é suportado. Se a inicialização ou validação falhar antes do tráfego ser retomado, corrija a configuração e tente novamente o mesmo artefato. Para retornar a uma versão cujo manifesto tenha um intervalo de schema mais antigo, restaure o backup do banco de dados pré-atualização e do estado do Runtime juntos antes de aceitar qualquer nova escrita; nunca execute um servidor mais antigo contra um banco de dados migrado por suposição.
 
+## Rotacionar a chave de credencial do Runtime
+
+Rotacione a chave de credencial separadamente de uma atualização de distribuição. Faça backup do banco de dados e das chaves atuais, configure o novo par ativo e mantenha o par antigo em `previous-credential-keys`:
+
+```yaml
+qwen:
+  managed-agent:
+    runtime-broker:
+      credential-key-id: reference-v2
+      credential-key: <base64-encoded-32-byte-v2-key>
+      previous-credential-keys:
+        '[reference-v1]': <base64-encoded-32-byte-v1-key>
+```
+
+Envolva cada chave de mapa em `[ ... ]`. O relaxed binder do Spring normaliza chaves simples — um ID como `legacy/v1`, `legacy:v1` ou `legacy v1` é vinculado como `legacyv1` esteja ele entre aspas no YAML ou não — então o ring nunca corresponde ao ID da chave persistida e as linhas escritas sob esse ID permanecem ilegíveis mesmo que a chave esteja configurada. A forma com colchetes preserva o ID exato.
+
+Reinicie o plano de controle Java único, verifique se as vinculações existentes carregam e verifique se as novas linhas de vinculação registram `reference-v2`. Novos segredos usam apenas a chave ativa; linhas antigas permanecem criptografadas sob seu ID de chave registrado. O servidor não recriptografa linhas antigas na leitura, e remover uma chave ainda referenciada torna essas linhas ilegíveis.
+
+Aposente `reference-v1` apenas quando nenhuma linha persistida o referenciar. `ma_runtime_binding.credential_key_id` e `ma_runtime_binding.runtime_credential_key_id` são as únicas referências persistidas; ambas armazenam bytes UTF-8. Selecione-os sem `CONVERT` para que a desduplicação permaneça exata em bytes, da mesma forma que a seleção de chave é: um valor convertido carrega o collation padrão do conjunto de caracteres e mesclaria dois IDs que diferem apenas em maiúsculas/minúsculas ou acento, ocultando uma chave que as linhas ainda referenciam.
+
+```sql
+SELECT DISTINCT credential_key_id AS key_id
+FROM ma_runtime_binding WHERE credential_key_id IS NOT NULL
+UNION
+SELECT DISTINCT runtime_credential_key_id AS key_id
+FROM ma_runtime_binding WHERE runtime_credential_key_id IS NOT NULL;
+```
+
+O resultado lista os IDs de chave que as linhas persistidas ainda requerem: espere apenas o ID ativo (`reference-v2`). Enquanto `reference-v1` aparecer, essa chave deve permanecer configurada.
+
+O key ring é um mapa e não pode ser fornecido através de uma variável de ambiente `QWEN_MANAGED_AGENT_*`: o relaxed binding resolve silenciosamente uma forma de variável de ambiente para um ring vazio ou com chaves incorretas, sem erro de inicialização. Configure `previous-credential-keys` em um `application.yml` que o processo do servidor realmente carregue. A distribuição de referência não inclui arquivo de configuração, e o Spring resolve um `application.yml` externo em relação ao diretório de trabalho do processo (`./` e `./config/`), não em relação à raiz da distribuição; `bin/qwen-managed-agent-server` encaminha seus argumentos para a JVM, então `--spring.config.additional-location=file:<absolute-path>` fixa a localização. Uma implantação que depende apenas de variáveis de ambiente inicia com um ring vazio, então rotacionar `credential-key-id` sem configurar a chave anterior torna as linhas escritas sob ela ilegíveis.
+
+O entry point de recuperação do operador e os mains de manutenção de CSI/migração ainda configuram um único par de chaves de credencial e não leem `previous-credential-keys`. Para recuperar uma vinculação escrita sob uma chave anterior, inicie esse entry point com a chave anterior configurada como seu par de credencial ativo.
+
 ## Recuperação do operador
 
 `bin/qwen-managed-agent-operator-recovery` inicia o entry point de recuperação empacotado separadamente. Ele está desabilitado a menos que o ambiente específico de recuperação esteja configurado e não inicia o serviço HTTP nem o worker. Siga `docs/hosted-workspace-recovery.md`; nunca inferir parada física ou excluir linhas duráveis para remover uma cerca de segurança.

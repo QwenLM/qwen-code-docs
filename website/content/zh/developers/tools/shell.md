@@ -15,19 +15,19 @@
 - `command`（string，必填）：要执行的确切 shell 命令。
 - `description`（string，可选）：命令用途的简短描述，将展示给用户。
 - `directory`（string，可选）：执行命令的目录（相对于项目根目录）。如果未提供，则命令在项目根目录中运行。
-- `is_background`（boolean，必填）：是否在后台运行命令。此参数是必需的，以确保对命令执行模式做出明确决策。对于应继续运行而不阻塞后续命令的长时间运行进程（如开发服务器、watcher 或守护进程），请设置为 true。对于应在继续之前完成的一次性命令，请设置为 false。
+- `is_background`（boolean，可选）：是否在后台运行命令。如果未指定，默认为 `false`（前台执行）。对于应继续运行而不阻塞后续命令的长时间运行进程（如开发服务器、watcher 或守护进程），请设置为 true。
 
 ## 如何在 Qwen Code 中使用 `run_shell_command`
 
-使用 `run_shell_command` 时，命令将作为子进程执行。你可以使用 `is_background` 参数，或通过显式向命令添加 `&` 来控制命令在后台还是前台运行。该工具返回有关执行的详细信息，包括：
+使用 `run_shell_command` 时，命令将作为子进程执行。是否在后台还是前台运行由 `is_background` 参数控制。当 `is_background: true` 时不要添加尾部 `&`：托管的后台路径本身就是后台化机制，工具会拒绝该调用而不是执行命令。该工具返回有关执行的详细信息，包括：
 
-### 必需的后台参数
+### `is_background` 参数
 
-对于所有命令执行，`is_background` 参数是**必填**的。这种设计确保 LLM（和用户）必须明确决定每个命令是在后台还是前台运行，从而促进有意图且可预测的命令执行行为。通过强制要求此参数，我们避免了意外回退到前台执行的情况，这在处理长时间运行的进程时可能会阻塞后续操作。
+`is_background` 是可选的——工具的 schema 仅要求 `command`——省略时命令在前台运行。因此需要显式做出决定的是另一种情况：不会自行停止的命令必须标记为 `is_background: true`，因为让它留在前台会阻塞轮次直到超时。
 
 ### 后台与前台执行
 
-该工具根据你的明确选择智能处理后台和前台执行：
+该工具根据该参数处理后台和前台执行：
 
 **在以下情况使用后台执行（`is_background: true`）：**
 
@@ -37,13 +37,9 @@
 - Web 服务器：`python -m http.server`、`php -S localhost:8000`
 - 预期无限期运行直到手动停止的任何命令
 
-**在以下情况使用前台执行（`is_background: false`）：**
+**对于**会自行完成的命令，使用前台执行（默认方式），如构建、安装、git 操作和测试运行。
 
-- 一次性命令：`ls`、`cat`、`grep`
-- 构建命令：`npm run build`、`make`
-- 安装命令：`npm install`、`pip install`
-- Git 操作：`git commit`、`git push`
-- 测试运行：`npm test`、`pytest`
+文件读取和搜索根本不适合使用此工具的前台执行：应使用专用工具（`read_file`、`grep_search`、`glob`），而不是该工具自身描述中已排除的 `cat`、`grep` 或 `find`。
 
 ### 执行信息
 
@@ -64,7 +60,7 @@
 run_shell_command(command="Your commands.", description="Your description of the command.", directory="Your execution directory.", is_background=false)
 ```
 
-**注意：** `is_background` 参数是必需的，并且必须为每次命令执行显式指定。
+**注意：** `is_background` 是可选的。省略时命令在前台运行，因此需要显式设置为 `true` 的情况是不会自行停止的命令。
 
 ## `run_shell_command` 示例
 
@@ -86,11 +82,7 @@ run_shell_command(command="./my_script.sh", directory="scripts", description="Ru
 run_shell_command(command="npm run dev", description="Start development server in background", is_background=true)
 ```
 
-启动后台服务器（使用显式 & 的替代方法）：
-
-```bash
-run_shell_command(command="npm run dev &", description="Start development server in background", is_background=false)
-```
+注意：显式的 `&` 不是托管的后台机制。当 `is_background: true` 时，工具会在命令运行前拒绝带有尾部 `&` 的调用；当 `is_background=false` 时，shell 会分离进程，因此调用返回但进程未被追踪——它没有后台任务条目，`task_stop` 也无法触及它。对于应在后台运行的命令，始终使用 `is_background=true`。
 
 在前台运行构建命令：
 
@@ -170,8 +162,8 @@ run_shell_command(command="docker-compose up", description="Start all services",
 
 - **安全性：** 执行命令时要小心，尤其是那些由用户输入构造的命令，以防止安全漏洞。
 - **错误处理：** 检查 `Stderr`、`Error` 和 `Exit Code` 字段以确定命令是否成功执行。
-- **后台进程：** 当 `is_background=true` 或命令包含 `&` 时，工具将立即返回，进程将在后台继续运行。`Background PIDs` 字段将包含后台进程的进程 ID。
-- **后台执行选择：** `is_background` 参数是必需的，并提供对执行模式的显式控制。你也可以向命令添加 `&` 以进行手动后台执行，但仍必须指定 `is_background` 参数。该参数提供了更清晰的意图，并自动处理后台执行设置。
+- **后台进程：** 只有 `is_background=true` 会启动受追踪的后台进程：工具立即返回 shell id 和 PID，进程继续运行。shell 级别的 `&` 不会创建受追踪的后台进程——当 `is_background: true` 时工具会拒绝尾部 `&`，当 `is_background=false` 时 shell 会分离命令而工具不会追踪它。
+- **后台执行选择：** `is_background` 参数是可选的（schema 仅要求 `command`）；对于不会自行停止的命令，请设置 `is_background: true`，因为让它留在前台会阻塞轮次直到超时。使用 `is_background` 而不是 shell 级别的 `&`；它提供更清晰的意图，且工具会管理后台执行设置。
 - **命令描述：** 使用 `is_background=true` 时，命令描述将包含一个 `[background]` 指示器，以清楚地显示执行模式。
 
 ## 环境变量

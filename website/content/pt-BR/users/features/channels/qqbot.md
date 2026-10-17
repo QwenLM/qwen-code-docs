@@ -116,13 +116,17 @@ Se o servidor QQ rejeitar uma mensagem Markdown por qualquer motivo, o canal aut
 
 Isso é o oposto do canal WeChat, que remove todo Markdown. Você pode deixar o agente usar Markdown completo com o canal QQ.
 
-## Imagens e Vídeos
+## Imagens, Vídeos e Arquivos
 
-Usuários podem enviar imagens e vídeos para o bot. Uma imagem é passada ao agente como entrada visual, então o agente vê a imagem em si — capturas de tela, mensagens de erro e diagramas funcionam — e o mesmo arquivo também é salvo em um caminho temporário local para o caso de o modelo não aceitar imagens. Um vídeo é salvo em um caminho temporário local e o agente recebe esse caminho.
+Usuários podem enviar imagens, vídeos, arquivos e mensagens de voz para o bot. Uma imagem é passada ao agente como entrada visual, então o agente vê a imagem em si — capturas de tela, mensagens de erro e diagramas funcionam — e o mesmo arquivo também é salvo em um caminho temporário local para o caso de o modelo não aceitar imagens. Um vídeo, um arquivo ou uma mensagem de voz é salvo em um caminho temporário local e o agente recebe esse caminho.
 
-Uma mensagem de mídia não precisa de texto — uma mensagem apenas com imagem ou apenas com vídeo inicia um turno, e o canal usa `(image)` ou `(video)` como marcador. Quando a mensagem contém texto, esse texto é mantido como legenda.
+Uma mensagem de mídia não precisa de texto — uma mensagem apenas com imagem, vídeo, arquivo ou áudio inicia um turno, e o canal usa `(image)`, `(video)`, `(file)` ou `(voice)` como marcador. Quando a mensagem contém texto, esse texto é mantido como legenda.
 
-- Imagens são limitadas a 8 MB e vídeos a 20 MB, e no máximo cinco anexos por mensagem são processados. Qualquer coisa maior é ignorada e registrada no stderr do canal.
+Um arquivo é qualquer coisa que a plataforma entrega como `content_type: file` — documentos Word, PDFs, planilhas, arquivos compactados, código-fonte. O QQ não reporta tipo MIME para um arquivo, então o canal mantém a extensão do próprio remetente (restrita a letras e dígitos, com fallback para `.bin` quando não há extensão) e salva os bytes em `channel-files/<uuid>/` no diretório temporário do sistema; a ferramenta de leitura do agente usa essa extensão para decidir como abrir o documento.
+
+Uma mensagem de voz chega como `content_type: voice`. Junto com a URL SILK original, o QQ fornece `voice_wav_url` — o mesmo áudio já convertido para WAV — e o canal prefere esta opção; quando a plataforma não envia uma, o canal usa a URL original como fallback. Os bytes são salvos em `channel-files/<uuid>/` como `qq_voice.wav`, ou `qq_voice.silk` quando a URL SILK original foi usada, e o agente recebe esse caminho. O texto ASR da plataforma não é usado; o agente trabalha com o arquivo de áudio salvo.
+
+- Imagens são limitadas a 8 MB e vídeos, arquivos e mensagens de voz a 20 MB, e no máximo cinco anexos por mensagem são processados. Qualquer coisa maior é ignorada e registrada no stderr do canal.
 - Arquivos baixados não são excluídos. Eles permanecem no diretório temporário do sistema, que o sistema limpa em sua própria programação.
 
 A entrada de imagem requer um modelo que aceite imagens. Declare a capability quando o modelo for multimodal mas não reconhecido pelo nome. O campo pertence à entrada do provedor que serve o modelo, porque um valor `model.generationConfig` no nível superior é ignorado para modelos de provedores:
@@ -145,7 +149,7 @@ A entrada de imagem requer um modelo que aceite imagens. Declare a capability qu
 
 Com um modelo apenas de texto, o agente recebe uma nota de "imagem não suportada" mais o caminho salvo em vez da imagem.
 
-Enviar imagens ou vídeos de volta para o QQ não é suportado.
+Enviar imagens, vídeos, arquivos ou mensagens de voz de volta para o QQ não é suportado.
 
 ## Gerenciamento de Tokens
 
@@ -166,7 +170,7 @@ A renovação do token continua mesmo durante reconexões WebSocket — o canal 
 - **Use Markdown à vontade** — Ao contrário do WeChat, o QQ renderiza Markdown nativamente. Negrito, blocos de código, listas e links funcionam.
 - **Mantenha respostas abaixo de 2000 caracteres** — Respostas mais longas são automaticamente divididas em partes. Adicionar uma dica de tamanho às suas instruções ajuda o agente a ser conciso.
 - **Sandbox para testes** — Defina `"sandbox": true` para usar a API sandbox durante o desenvolvimento. Nenhuma mensagem de produção será afetada.
-- **Restrinja o acesso** — Use `privatePolicy: "allowlist"` para um conjunto fixo de usuários QQ, ou `"pairing"` para aprovar novos usuários pelo CLI. Veja [Pareamento DM](./overview#dm-pairing) para detalhes.
+- **Restrinja o acesso** — Use `privatePolicy: "allowlist"` para um conjunto fixo de usuários QQ, ou `"pairing"` para aprovar novos usuários pelo CLI. Veja [Pareamento de DM](./overview#dm-pairing) para detalhes.
 
 ## Principais Diferenças do Telegram
 
