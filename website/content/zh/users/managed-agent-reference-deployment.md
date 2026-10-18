@@ -23,7 +23,7 @@ sha256sum --check SHA256SUMS
 - 与 `compatibility.node` 匹配的 Node.js 以及与 `compatibility.qwenCodeVersion` 匹配的 Qwen Code。
 - MySQL 8，搭配空数据库或此前由较旧兼容参考发行版管理的数据库。
 - 用于 Runtime 状态和授权 Workspace 的私有持久化目录。
-- 稳定的数据库凭据、Runtime 凭据密钥和 Harness token，存储在归档文件之外。
+- 稳定的数据库凭据、Runtime 凭据密钥环和 Harness token，存储在归档文件之外。
 
 Java 归档文件不包含 npm CLI。请单独安装或构建精确兼容的 Qwen Code 版本，并定位其 `dist/cli.js` 以供 Runtime worker 使用。
 
@@ -96,6 +96,40 @@ export QWEN_MANAGED_AGENT_RUNTIME_VERIFIED_WORKSPACE_RECOVERY_ENABLED='true'
 7. 要求 actuator 健康检查通过，读取现有 Session 和历史记录，然后在重新开放入站流量之前完成一个新的无工具轮次。在启用任何可选工具 capability 之前重新进行资质认证。
 
 不支持数据库降级。如果在流量恢复之前启动或验证失败，请修正配置并使用同一构件重试。要回退到清单中 schema 范围较旧的版本，请在接受任何新写入之前同时恢复升级前的数据库和 Runtime 状态备份；切勿假设性地对已迁移的数据库运行旧版服务端。
+
+## 轮换 Runtime 凭据密钥
+
+轮换凭据密钥应独立于发行版升级进行。先备份数据库和当前密钥，然后配置新的活动密钥对，并将旧密钥对保留在 `previous-credential-keys` 下：
+
+```yaml
+qwen:
+  managed-agent:
+    runtime-broker:
+      credential-key-id: reference-v2
+      credential-key: <base64-encoded-32-byte-v2-key>
+      previous-credential-keys:
+        '[reference-v1]': <base64-encoded-32-byte-v1-key>
+```
+
+每个 map key 都必须用 `[ ... ]` 包裹。Spring 的宽松绑定会规范化普通 key——诸如 `legacy/v1`、`legacy:v1` 或 `legacy v1` 这样的 ID 无论是否在 YAML 中加引号，都会被绑定为 `legacyv1`——导致密钥环永远无法匹配已持久化的 key ID，该 ID 下写入的行即使配置了密钥也仍然无法读取。方括号形式可保留精确的 ID。
+
+重启唯一的 Java 控制平面，验证现有绑定可以加载，并验证新的绑定行记录的是 `reference-v2`。新密钥仅使用活动密钥；旧行仍在其记录的 key ID 下加密。服务端不会在读取时重新加密旧行，移除仍在被引用的密钥会使这些行无法读取。
+
+仅当没有已持久化的行引用 `reference-v1` 时才将其退役。`ma_runtime_binding.credential_key_id` 和 `ma_runtime_binding.runtime_credential_key_id` 是仅有的持久化引用；两者都存储 UTF-8 字节。查询时不要使用 `CONVERT`，以便去重保持字节级精确，与密钥选择的方式一致：转换后的值会携带字符集的默认排序规则，会将仅大小写或重音不同的两个 ID 合并，从而隐藏行仍在引用的密钥。
+
+```sql
+SELECT DISTINCT credential_key_id AS key_id
+FROM ma_runtime_binding WHERE credential_key_id IS NOT NULL
+UNION
+SELECT DISTINCT runtime_credential_key_id AS key_id
+FROM ma_runtime_binding WHERE runtime_credential_key_id IS NOT NULL;
+```
+
+结果列出已持久化行仍然需要的 key ID：预期只有活动 ID（`reference-v2`）。只要 `reference-v1` 出现，该密钥就必须保持配置。
+
+密钥环是一个 map，不能通过 `QWEN_MANAGED_AGENT_*` 环境变量提供：宽松绑定会静默地将环境变量形式解析为空或错误 key 的密钥环，且不会报启动错误。请在服务端进程实际加载的 `application.yml` 中配置 `previous-credential-keys`。参考发行版不附带配置文件，Spring 根据进程工作目录（`./` 和 `./config/`）解析外部 `application.yml`，而非发行版根目录；`bin/qwen-managed-agent-server` 会将其参数转发给 JVM，因此 `--spring.config.additional-location=file:<absolute-path>` 可固定配置位置。仅依赖环境变量的部署启动时密钥环为空，因此在未配置旧密钥的情况下轮换 `credential-key-id` 会使该密钥下写入的行无法读取。
+
+操作员恢复入口和 CSI/迁移维护入口仍然配置单个凭据密钥对，不读取 `previous-credential-keys`。要恢复在旧密钥下写入的绑定，请以旧密钥配置为活动凭据对来启动该入口。
 
 ## 操作员恢复
 

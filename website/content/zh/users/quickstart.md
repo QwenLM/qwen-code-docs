@@ -10,7 +10,7 @@
 
 - 一个打开的 **终端** 或命令提示符
 - 一个可供操作的项目代码
-- 来自阿里云模型即服务的 API key（[国内站](https://bailian.console.aliyun.com/) / [国际站](https://modelstudio.console.alibabacloud.com/)），或阿里云 Token 计划（[国内站](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [国际站](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)）订阅
+- 来自千问AI平台 / QwenCloud（[国内站](https://platform.qianwenai.com/docs/developer-guides/administration/api-keys) / [国际站](https://docs.qwencloud.com/developer-guides/administration/api-keys)）的 API key 或 Token 计划订阅（推荐设置），或来自阿里云模型即服务（[国内站](https://bailian.console.aliyun.com/) / [国际站](https://modelstudio.console.alibabacloud.com/)）的 API key，或阿里云 Token 计划（[国内站](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [国际站](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)）订阅
 
 ## 第一步：安装 Qwen Code
 
@@ -68,7 +68,13 @@ qwen
 
 首次运行时的菜单会让你连接一个模型提供商。请从以下选项中选择：
 
-- **阿里云模型即服务** — 推荐的设置方式。打开子菜单：
+- **QwenCloud** — 推荐的设置方式。打开子菜单：
+  - **Token 计划**：订阅制，每月提供 Credit 配额，使用专有端点（提供个人版和团队版）。
+  - **标准 API Key**：按量付费，使用现有平台 API key 进行连接。
+
+  无论哪种方式，你都需要明确选择平台（国内站或国际站），因此 UI 语言不会决定你的端点。详情请参阅[身份认证 → 选项 1：QwenCloud](./configuration/auth)。
+
+- **阿里云模型即服务** — 打开子菜单：
   - **Token 计划**：按用量计费，使用专有端点，适用于团队和企业。请参阅 [Token 计划指南](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856)（[国际站](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)）了解设置说明。
   - **标准 API Key**：使用阿里云模型即服务（[国内站](https://bailian.console.aliyun.com/) / [国际站](https://modelstudio.console.alibabacloud.com/)）的现有 API key 进行连接。详情请参阅 API 设置指南（[国内站](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [国际站](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)）。
 - **第三方提供商** — 选择内置提供商（DeepSeek、Grok、MiniMax、Z.AI、Kimi、Idealab、ModelScope、OpenRouter、Requesty 等），并通过 API key 连接。

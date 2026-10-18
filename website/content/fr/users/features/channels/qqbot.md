@@ -116,13 +116,17 @@ Si le serveur QQ rejette un message Markdown pour une raison quelconque, le cana
 
 C'est l'inverse du canal WeChat, qui supprime tout le Markdown. Vous pouvez laisser l'agent utiliser pleinement le Markdown avec le canal QQ.
 
-## Images et vidéos
+## Images, vidéos et fichiers
 
-Les utilisateurs peuvent envoyer des images et des vidéos au bot. Une image est transmise à l'agent en tant qu'entrée visuelle, ce qui permet à l'agent de voir l'image elle-même — captures d'écran, messages d'erreur et diagrammes fonctionnent tous — et le même fichier est également enregistré dans un chemin temporaire local pour le cas où le modèle ne peut pas traiter les images. Une vidéo est enregistrée dans un chemin temporaire local et l'agent reçoit ce chemin.
+Les utilisateurs peuvent envoyer des images, des vidéos, des fichiers et des messages vocaux au bot. Une image est transmise à l'agent en tant qu'entrée visuelle, ce qui permet à l'agent de voir l'image elle-même — captures d'écran, messages d'erreur et diagrammes fonctionnent tous — et le même fichier est également enregistré dans un chemin temporaire local pour le cas où le modèle ne peut pas traiter les images. Une vidéo, un fichier ou un message vocal est enregistré dans un chemin temporaire local et l'agent reçoit ce chemin.
 
-Un message média n'a pas besoin de texte — un message avec uniquement une image ou une vidéo démarre un tour, et le canal utilise `(image)` ou `(vidéo)` comme placeholder. Lorsque le message contient du texte, ce texte est conservé comme légende.
+Un message média n'a pas besoin de texte — un message avec uniquement une image, une vidéo, un fichier ou un message vocal démarre un tour, et le canal utilise `(image)`, `(vidéo)`, `(fichier)` ou `(vocal)` comme placeholder. Lorsque le message contient du texte, ce texte est conservé comme légende.
 
-- Les images sont limitées à 8 Mo et les vidéos à 20 Mo, et au maximum cinq pièces jointes par message sont traitées. Tout élément plus volumineux est ignoré et journalisé dans le stderr du canal.
+Un fichier est tout ce que la plateforme délivre avec `content_type: file` — documents Word, PDF, tableurs, archives, fichiers sources. QQ ne rapporte pas de type MIME pour un fichier, donc le canal conserve l'extension de l'expéditeur (restreinte aux lettres et chiffres, avec `.bin` comme fallback s'il n'y en a pas) et enregistre les octets sous `channel-files/<uuid>/` dans le répertoire temporaire du système ; l'outil de lecture de l'agent utilise cette extension pour décider comment ouvrir le document.
+
+Un message vocal arrive avec `content_type: voice`. En plus de l'URL SILK originale, QQ fournit `voice_wav_url` — le même audio déjà converti en WAV — et le canal le préfère ; lorsque la plateforme n'en envoie pas, le canal revient à l'URL originale. Les octets sont enregistrés sous `channel-files/<uuid>/` en tant que `qq_voice.wav`, ou `qq_voice.silk` lorsque l'URL SILK originale a été utilisée, et l'agent reçoit ce chemin. Le texte ASR de la plateforme n'est pas utilisé ; l'agent travaille à partir du fichier audio enregistré.
+
+- Les images sont limitées à 8 Mo et les vidéos, fichiers et messages vocaux à 20 Mo, et au maximum cinq pièces jointes par message sont traitées. Tout élément plus volumineux est ignoré et journalisé dans le stderr du canal.
 - Les fichiers téléchargés ne sont pas supprimés. Ils restent dans le répertoire temporaire du système, que le système nettoie selon sa propre planification.
 
 L'entrée d'image nécessite un modèle qui accepte les images. Déclarez la capacité lorsque le modèle est multimodal mais non reconnu par son nom. Le champ doit être placé sur l'entrée du fournisseur qui fournit le modèle, car une valeur `model.generationConfig` de niveau supérieur est ignorée pour les modèles adossés à un fournisseur :
@@ -145,7 +149,7 @@ L'entrée d'image nécessite un modèle qui accepte les images. Déclarez la cap
 
 Avec un modèle textuel uniquement, l'agent reçoit une note « image non prise en charge » ainsi que le chemin enregistré au lieu de l'image.
 
-Renvoyer des images ou des vidéos vers QQ n'est pas pris en charge.
+Renvoyer des images, vidéos, fichiers ou messages vocaux vers QQ n'est pas pris en charge.
 
 ## Gestion des jetons
 

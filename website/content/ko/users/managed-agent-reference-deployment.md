@@ -67,7 +67,8 @@ curl --fail http://127.0.0.1:8080/actuator/health
 이 기본 구성은 텍스트 전용 Hosted Session을 지원합니다. 서명된 또는 인증된 인그레스가 구성되지 않는 한 리스너를 루프백에 유지합니다. 완전한 인증, API 및 capability 구성은 `docs/server-reference.md`에 번들되어 있습니다.
 
 ## 허용된 로컬 프로세스 도구 경로 활성화
-\도구 실행에는 기존 fail-closed Runtime 및 Workspace 설정이 필요합니다. 최소한 다음을 구성합니다:
+
+도구 실행에는 기존 fail-closed Runtime 및 Workspace 설정이 필요합니다. 최소한 다음을 구성합니다:
 
 ```bash
 export QWEN_MANAGED_AGENT_RUNTIME_BROKER_ENABLED='true'
@@ -95,6 +96,40 @@ export QWEN_MANAGED_AGENT_RUNTIME_VERIFIED_WORKSPACE_RECOVERY_ENABLED='true'
 7. 정상적인 actuator 응답을 확인하고, 기존 Session과 히스토리를 읽은 다음, 인그레스를 다시 열기 전에 새로운 도구 없는 Turn 하나를 완료합니다. 선택적 도구 capability는 활성화 전에 다시 자격을 확인합니다.
 
 데이터베이스 다운그레이드는 지원되지 않습니다. 트래픽이 재개되기 전에 시작 또는 유효성 검사가 실패하면 구성을 수정하고 동일한 아티팩트를 다시 시도합니다. 매니페스트의 스키마 범위가 더 오래된 버전으로 돌아가려면 새 쓰기를 허용하기 전에 업그레이드 전 데이터베이스와 Runtime 상태 백업을 함께 복원합니다. 마이그레이션된 데이터베이스에 대해 이전 서버를 임의로 실행하지 않습니다.
+
+## Runtime 자격 증명 키 교체
+
+배포 업그레이드와 별도로 자격 증명 키를 교체합니다. 데이터베이스와 현재 키를 백업한 다음, 새 활성 쌍을 구성하고 `previous-credential-keys` 아래에 이전 쌍을 유지합니다:
+
+```yaml
+qwen:
+  managed-agent:
+    runtime-broker:
+      credential-key-id: reference-v2
+      credential-key: <base64-encoded-32-byte-v2-key>
+      previous-credential-keys:
+        '[reference-v1]': <base64-encoded-32-byte-v1-key>
+```
+
+모든 맵 키를 `[ ... ]`로 감쌉니다. Spring의 relaxed binder는 일반 키를 정규화합니다 — `legacy/v1`, `legacy:v1` 또는 `legacy v1`과 같은 ID는 YAML에서 따옴표로 묶었는지 여부에 관계없이 `legacyv1`로 바인딩됩니다 — 따라서 키 링이 영구화된 키 ID와 일치하지 않게 되어, 키가 구성되어 있어도 해당 ID로 작성된 행은 읽을 수 없게 됩니다. 대괄호 형식은 정확한 ID를 보존합니다.
+
+단일 Java 컨트롤 플레인을 재시작하고 기존 바인딩이 로드되는지 확인하며, 새 바인딩 행에 `reference-v2`가 기록되는지 확인합니다. 새 시크릿은 활성 키만 사용합니다. 이전 행은 기록된 키 ID로 암호화된 상태로 유지됩니다. 서버는 읽기 시 이전 행을 다시 암호화하지 않으며, 여전히 참조되는 키를 제거하면 해당 행을 읽을 수 없게 됩니다.
+
+영구화된 행이 참조하지 않을 때만 `reference-v1`을 폐기합니다. `ma_runtime_binding.credential_key_id`와 `ma_runtime_binding.runtime_credential_key_id`가 유일한 영구 참조이며, 둘 다 UTF-8 바이트를 저장합니다. `CONVERT` 없이 선택해야 중복 제거가 바이트 단위로 정확해집니다. 키 선택 방식도 동일합니다. 변환된 값은 문자 세트의 기본 콜레이션을 따르므로 대소문자 또는 악센트만 다른 두 ID를 병합하여 행이 여전히 참조하는 키를 숨길 수 있습니다.
+
+```sql
+SELECT DISTINCT credential_key_id AS key_id
+FROM ma_runtime_binding WHERE credential_key_id IS NOT NULL
+UNION
+SELECT DISTINCT runtime_credential_key_id AS key_id
+FROM ma_runtime_binding WHERE runtime_credential_key_id IS NOT NULL;
+```
+
+결과는 영구화된 행이 여전히 필요로 하는 키 ID를 나열합니다. 활성 ID(`reference-v2`)만 예상됩니다. `reference-v1`이 나타나는 동안에는 해당 키가 구성된 상태로 유지되어야 합니다.
+
+키 링은 맵이며 `QWEN_MANAGED_AGENT_*` 환경 변수를 통해 제공할 수 없습니다. relaxed binding은 환경 변수 형식을 빈 키 또는 잘못된 키의 링으로 조용히 해석하며 시작 오류가 발생하지 않습니다. 서버 프로세스가 실제로 로드하는 `application.yml`에서 `previous-credential-keys`를 구성합니다. 참조 배포본은 구성 파일과 함께 제공되지 않으며, Spring은 외부 `application.yml`을 배포 루트가 아닌 프로세스 작업 디렉토리(`./` 및 `./config/`)에 대해 해석합니다. `bin/qwen-managed-agent-server`는 인수를 JVM으로 전달하므로 `--spring.config.additional-location=file:<absolute-path>`로 위치를 고정합니다. 환경 변수에만 의존하는 배포는 빈 링으로 시작하므로, 이전 키 구성 없이 `credential-key-id`를 교체하면 해당 키로 작성된 행을 읽을 수 없게 됩니다.
+
+운영자 복구 진입점과 CSI/마이그레이션 유지보수 메인도 단일 자격 증명 키 쌍을 구성하며 `previous-credential-keys`를 읽지 않습니다. 이전 키로 작성된 바인딩을 복구하려면, 이전 키를 활성 자격 증명 쌍으로 구성하여 해당 진입점을 실행합니다.
 
 ## 운영자 복구
 

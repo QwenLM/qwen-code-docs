@@ -23,7 +23,7 @@ Prüfen Sie `manifest.json`. Stellen Sie sicher, dass `source.revision` der übe
 - Node.js passend zu `compatibility.node` und Qwen Code passend zu `compatibility.qwenCodeVersion`.
 - MySQL 8 mit einer leeren Datenbank oder einer Datenbank, die zuvor von einer älteren kompatiblen Referenzdistribution verwaltet wurde.
 - Private, persistente Verzeichnisse für den Runtime-Zustand und den autorisierten Workspace.
-- Stabile Datenbank-Zugangsdaten, Runtime-Credential-Key und Harness-Token, außerhalb des Archivs gespeichert.
+- Stabile Datenbank-Zugangsdaten, Runtime-Credential-Key-Ring und Harness-Token, außerhalb des Archivs gespeichert.
 
 Das Java-Archiv enthält nicht die npm-CLI. Installieren oder bauen Sie die exakte kompatible Qwen-Code-Revision separat und ermitteln Sie den Pfad zu `dist/cli.js` für die Runtime-Worker.
 
@@ -64,7 +64,7 @@ Der Launcher verwendet das Server-JAR in diesem Archiv. Spring Flyway führt die
 curl --fail http://127.0.0.1:8080/actuator/health
 ```
 
-Diese Basiskonfiguration unterstützt textbasierte Hosted Sessions. Betreiben Sie den Listener auf Loopback, sofern kein signierter oder authentifizierter Ingress konfiguriert ist. Die vollständige Authentifizierungs-, API- und Capability-Konfiguration ist in `docs/server-reference.md` gebündelt.
+Diese Basiskonfiguration unterstützt Text-only Hosted Sessions. Betreiben Sie den Listener auf Loopback, sofern kein signierter oder authentifizierter Ingress konfiguriert ist. Die vollständige Authentifizierungs-, API- und Capability-Konfiguration ist in `docs/server-reference.md` gebündelt.
 
 ## Akzeptierten lokalen Prozess-Tool-Pfad aktivieren
 
@@ -83,19 +83,53 @@ export QWEN_MANAGED_AGENT_WORKSPACE_CWD='/srv/qwen-workspace'
 export QWEN_MANAGED_AGENT_RUNTIME_VERIFIED_WORKSPACE_RECOVERY_ENABLED='true'
 ```
 
-Bevor Sie Datei-, Shell- oder untergeordnete Git-Arbeit zulassen, schließen Sie die native Storage-Registrierung und Mount-Identity-Verifizierung ab, wie unter „Verified physical Workspace recovery" in `docs/server-reference.md` beschrieben. Ein nicht registrierter oder mehrdeutiger Mount muss nicht verfügbar bleiben. Öffentliche Shell- und v2-Capability-Anzeige bleiben deaktiviert, bis ihre separate Qualifizierung abgeschlossen ist.
+Bevor Sie Datei-, Shell- oder untergeordnete Git-Arbeit zulassen, schließen Sie die native Storage-Registrierung und Mount-Identity-Verifizierung ab, wie unter „Verified physical Workspace recovery" in `docs/server-reference.md` beschrieben. Ein nicht registrierter oder mehrdeutiger Mount muss unverfügbar bleiben. Öffentliche Shell- und v2-Capability-Anzeige bleiben deaktiviert, bis ihre separate Qualifizierung abgeschlossen ist.
 
 ## Upgrade
 
 1. Laden Sie das neue Archiv herunter, überprüfen Sie es und lesen Sie beide Manifeste. Bestätigen Sie die neuen Qwen-Code/Harness-, Java-, Protokoll- und Datenbankanforderungen, bevor Sie das laufende Deployment antasten.
 2. Stoppen Sie neuen Ingress. Warten Sie, bis zugelassene Arbeit gemäß dem bestehenden Drain-Verfahren des Deployments abgeschlossen ist.
-3. Sichern Sie MySQL, `QWEN_MANAGED_AGENT_RUNTIME_STATE_DIRECTORY`, den Runtime-Credential-Key und die exakte alte Distribution. Rotieren Sie den Credential-Key nicht während des Upgrades.
+3. Sichern Sie MySQL, `QWEN_MANAGED_AGENT_RUNTIME_STATE_DIRECTORY`, den vollständigen Runtime-Credential-Key-Ring und die exakte alte Distribution. Rotieren Sie den Credential-Key nicht während des Upgrades.
 4. Stoppen Sie den Java-Service und den Hosted Harness. Bewahren Sie den Workspace und den persistenten Runtime-Zustand auf.
 5. Installieren Sie die manifestkompatible Qwen-Code/Harness-Version und starten Sie sie mit dem bestehenden Token und Capability-Digest.
 6. Starten Sie den neuen `bin/qwen-managed-agent-server` mit denselben Datenbank- und persistenten Einstellungen. Flyway migriert das Schema vorwärts.
-7. Fordern Sie eine gesunde Actuator-Antwort an, lesen Sie eine bestehende Session und Historie, und schließen Sie einen neuen No-Tool-Turn ab, bevor Sie den Ingress wieder öffnen. Qualifizieren Sie jede optionale Tool-Capability erneut, bevor Sie sie aktivieren.
+7. Verifizieren Sie eine gesunde Actuator-Antwort, lesen Sie eine bestehende Session und Historie, und schließen Sie einen neuen No-Tool-Turn ab, bevor Sie den Ingress wieder öffnen. Qualifizieren Sie jede optionale Tool-Capability erneut, bevor Sie sie aktivieren.
 
 Ein Datenbank-Downgrade wird nicht unterstützt. Wenn der Start oder die Validierung vor der Wiederaufnahme des Traffics fehlschlägt, korrigieren Sie die Konfiguration und wiederholen Sie dasselbe Artefakt. Um zu einer Version zurückzukehren, deren Manifest einen älteren Schema-Bereich aufweist, stellen Sie das Pre-Upgrade-Datenbank- und Runtime-Zustands-Backup gemeinsam wieder her, bevor Sie neue Writes akzeptieren; führen Sie niemals einen älteren Server gegen eine migrierte Datenbank aus, nur aufgrund einer Annahme.
+
+## Runtime-Credential-Key rotieren
+
+Rotieren Sie den Credential-Key separat von einem Distributions-Upgrade. Sichern Sie die Datenbank und die aktuellen Keys, konfigurieren Sie dann das neue aktive Paar und behalten Sie das alte Paar unter `previous-credential-keys`:
+
+```yaml
+qwen:
+  managed-agent:
+    runtime-broker:
+      credential-key-id: reference-v2
+      credential-key: <base64-encoded-32-byte-v2-key>
+      previous-credential-keys:
+        '[reference-v1]': <base64-encoded-32-byte-v1-key>
+```
+
+Umschließen Sie jeden Map-Key in `[ ... ]`. Springs Relaxed Binder normalisiert einfache Keys – eine ID wie `legacy/v1`, `legacy:v1` oder `legacy v1` wird als `legacyv1` gebunden, unabhängig davon, ob sie im YAML gequoted ist oder nicht – sodass der Ring dann niemals mit der persistierten Key-ID übereinstimmt und Zeilen, die unter dieser ID geschrieben wurden, nicht lesbar bleiben, obwohl der Key konfiguriert ist. Die Klammerform bewahrt die exakte ID.
+
+Starten Sie die einzelne Java-Control-Plane neu, verifizieren Sie, dass bestehende Bindungen geladen werden, und verifizieren Sie, dass neue Bindungszeilen `reference-v2` aufzeichnen. Neue Secrets verwenden nur den aktiven Key; alte Zeilen bleiben unter ihrer aufgezeichneten Key-ID verschlüsselt. Der Server verschlüsselt alte Zeilen beim Lesen nicht neu, und das Entfernen eines noch referenzierten Keys macht diese Zeilen nicht lesbar.
+
+Ziehen Sie `reference-v1` nur zurück, wenn keine persistierte Zeile darauf verweist. `ma_runtime_binding.credential_key_id` und `ma_runtime_binding.runtime_credential_key_id` sind die einzigen persistierten Referenzen; beide speichern UTF-8-Bytes. Selektieren Sie sie ohne `CONVERT`, sodass die Deduplizierung byte-exakt bleibt, genauso wie die Key-Selektion: ein konvertierter Wert trägt die Standard-Collation des Zeichensatzes und würde zwei IDs zusammenführen, die sich nur in Groß-/Kleinschreibung oder Akzent unterscheiden, wodurch ein Key verborgen wird, auf den Zeilen noch verweisen.
+
+```sql
+SELECT DISTINCT credential_key_id AS key_id
+FROM ma_runtime_binding WHERE credential_key_id IS NOT NULL
+UNION
+SELECT DISTINCT runtime_credential_key_id AS key_id
+FROM ma_runtime_binding WHERE runtime_credential_key_id IS NOT NULL;
+```
+
+Das Ergebnis listet die Key-IDs auf, die persistierte Zeilen noch benötigen: erwarten Sie nur die aktive ID (`reference-v2`). Solange `reference-v1` erscheint, muss dieser Key konfiguriert bleiben.
+
+Der Key-Ring ist eine Map und kann nicht über eine `QWEN_MANAGED_AGENT_*`-Umgebungsvariable bereitgestellt werden: Relaxed Binding löst eine Env-Var-Form still zu einem leeren oder falsch-gekeyten Ring auf, ohne Startfehler. Konfigurieren Sie `previous-credential-keys` in einer `application.yml`, die der Serverprozess tatsächlich lädt. Die Referenz-Distribution liefert keine Konfigurationsdatei aus, und Spring löst eine externe `application.yml` gegen das Prozess-Arbeitsverzeichnis auf (`./` und `./config/`), nicht gegen das Distributions-Root; `bin/qwen-managed-agent-server` leitet seine Argumente an die JVM weiter, sodass `--spring.config.additional-location=file:<absolute-path>` den Ort festlegt. Ein Deployment, das sich nur auf Umgebungsvariablen verlässt, startet mit einem leeren Ring, sodass das Rotieren von `credential-key-id` ohne Konfiguration des vorherigen Keys Zeilen, die darunter geschrieben wurden, nicht lesbar macht.
+
+Der Operator-Recovery-Entry und die CSI/Migration-Maintenance-Mains konfigurieren weiterhin ein einzelnes Credential-Key-Paar und lesen `previous-credential-keys` nicht. Um eine Bindung wiederherzustellen, die unter einem vorherigen Key geschrieben wurde, starten Sie diesen Entry mit dem vorherigen Key, der als sein aktives Credential-Paar konfiguriert ist.
 
 ## Operator-Recovery
 
