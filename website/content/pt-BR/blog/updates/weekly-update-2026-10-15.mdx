@@ -1,0 +1,209 @@
+---
+title: "Qwen Code Semanal: chame o Claude Code e o Codex para a conversa com um @, vários projetos Qwen Code ligados numa página só, um servidor MCP de fora ao iniciar"
+date: "2026-10-15"
+description: "Nesta semana saíram duas versões oficiais, v0.25.1 e v0.25.2, com 371 PRs integrados. Chegou o Agent Collaboration: você chama o Claude Code ou o Codex para a conversa atual com um @, a resposta cai direto nela, e o trabalho ainda pode rodar em outro computador. Vários Qwen Code que você salvou ficam conectados ao mesmo tempo na mesma página, e você alterna entre eles sem sair dela. Dá para excluir um servidor MCP específico já na inicialização."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i1/O1CN01BYqgp4M1CRG2jBZY_!!6000000007925-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Semanal: chame o Claude Code e o Codex para a conversa com um @, vários projetos Qwen Code ligados numa página só, um servidor MCP de fora ao iniciar"
+  date="2026-10-15"
+  author="Qwen Team"
+/>
+
+O Qwen Code lançou duas versões oficiais nesta semana, v0.25.1 e v0.25.2, com 371 PRs integrados.
+
+**Agent Collaboration: @ o Claude Code e o Codex na conversa como colegas.** A resposta dele aparece direto na conversa em que você está, e dá para mandar o trabalho rodar em outro computador.
+
+**Vários Qwen Code abertos, todos conectados numa página só.** Cada Qwen Code ocupa um grupo na barra lateral, e dentro de cada grupo estão as sessões e os workspaces reais dele naquele momento; você alterna entre eles sem sair da página.
+
+**Não quer um servidor MCP? Exclua ele ao iniciar.** `qwen --disable-mcp-server <nome>` vale só para aquela execução e não mexe no seu arquivo de configuração.
+
+## ✨ Novidades
+
+### Agent Collaboration: @ o Claude Code e o Codex na conversa como colegas
+
+Dá para dividir uma tarefa em partes e tocar todas ao mesmo tempo — por exemplo, deixar ele mexer no código e chamar outro programa para revisar. Antes, quando você @ um Agent, ele abria uma conversa à parte, copiava as suas últimas frases para lá e ainda te levava para aquela página nova, e a conversa principal nunca recebia a resposta dele.
+
+Agora, quando você @ ele, ele responde na própria conversa em que você está: com nome, em que passo está, quais ferramentas usou e quantos tokens gastou; se precisar rodar um comando, a aprovação continua aparecendo para você. Esse Agent não precisa ser o Qwen Code — se você tem o Claude Code ou o Codex instalado, também pode @ ele. Veja o PR [#13467](https://github.com/QwenLM/qwen-code/pull/13467)
+
+Ele também pode trabalhar em outro computador: deixe o serviço do Qwen Code rodando lá, adicione ele como colega e o trabalho pesado vai para aquela máquina; se ela reiniciar, a tarefa volta sozinha. Dá para @ um grupo inteiro: o líder divide o trabalho e distribui entre os membros, e cada membro devolve a ele quando termina. Veja o PR [#13583](https://github.com/QwenLM/qwen-code/pull/13583)
+
+A divisão em relação ao subagente é esta: o subagente ele mesmo despacha para resolver algo pequeno, e o subagente só presta conta a ele; quem entra pelo @ fala na sua frente, pode ser um programa de outro fornecedor e pode rodar em outra máquina.
+
+Isso ainda está em fase experimental e desligado por padrão: ative `Enable Agent Collaboration` nas configurações e reinicie. O colega precisa ser criado antes: crie um na página `Agents`, à esquerda. Depois é só @ o nome dele em qualquer conversa para chamá-lo.
+
+Na prática:
+
+- Enquanto ele mexe no código, você @ outro Agent para revisar — as duas linhas ficam claras na mesma conversa
+- Mande o trabalho pesado, como compilar e rodar testes, para outra máquina e continue do seu lado
+- Monte um grupo com programas de fornecedores diferentes, cada um na parte em que é bom
+
+![Um colega chamado reviewer criado na página Agents; de volta à conversa, você @ ele e a resposta cai direto na conversa atual, com o nome e a etapa ReadFile](https://img.alicdn.com/imgextra/i3/O1CN01nZHvJWBQd2I5qXns_!!6000000004221-1-tps-2880-1800.gif)
+
+### Vários Qwen Code abertos, todos conectados numa página só
+
+Tem gente com um notebook à mão, uma máquina só para compilar e outra segurando uma tarefa longa. Tem também quem use uma máquina só e abra um Qwen Code Web Shell por projeto, sem querer misturar as coisas. Antes, uma página do navegador reconhecia apenas um deles. Para ver outro, era recarregar a página inteira: um flash no meio e o que você estava escrevendo ali se perdia.
+
+Agora todos os que você salvou ficam conectados ao mesmo tempo. Cada Qwen Code ocupa um grupo na barra lateral, e dentro do grupo aparecem as sessões e os workspaces dele naquele momento; quando você escolhe o workspace na caixa de entrada, as pastas também ficam separadas por grupo; trocar de grupo acontece dentro da própria página. Veja os PRs [#13739](https://github.com/QwenLM/qwen-code/pull/13739), [#13677](https://github.com/QwenLM/qwen-code/pull/13677)
+
+Para usar, a máquina conectada precisa liberar a sua página: inicie o `qwen serve` com `--allow-origin` e informe o endereço da página que aparece na barra do navegador.
+
+Na prática:
+
+- A máquina de compilação está com uma tarefa longa: acompanhe do seu computador até onde ela chegou
+- Abra um por projeto na mesma máquina: nada se mistura e você vê tudo numa página só
+- Troque do notebook para o desktop e continue distribuindo o trabalho
+
+![Dois grupos de Qwen Code lado a lado na barra lateral do Web Shell; o segundo, 127.0.0.1:4171, está marcado como connected, com as sessões e os workspaces dele listados abaixo](https://img.alicdn.com/imgextra/i1/O1CN013gKPf9c85bL5qXns_!!6000000000032-0-tps-2880-1800.jpg)
+
+### Não quer um servidor MCP? Exclua ele ao iniciar
+
+Quem usa servidor MCP já passou por isso: um deles dá problema no dia, as ferramentas dão erro ou a inicialização fica lenta, e você só queria não carregar ele desta vez. Antes existia só o tudo-ou-nada: desligar os servidores vindos das configurações junto com a configuração local.
+
+Agora você chama pelo nome na hora de iniciar:
+
+```text
+qwen --disable-mcp-server github
+```
+
+Para excluir vários de uma vez, repita o parâmetro ou escreva `--disable-mcp-server github,postgres`. Vale só para aquela inicialização; o seu arquivo de configuração fica intacto. Veja o PR [#14003](https://github.com/QwenLM/qwen-code/pull/14003)
+
+Na prática:
+
+- Suspeita de um servidor: exclua ele e rode uma vez para ver se é ele mesmo
+- A inicialização está lenta por causa de um servidor: não carregue ele desta vez
+- No mesmo código, uma rodada só de banco de dados e outra só de web, cada uma com os seus servidores
+
+![Um servidor MCP de fora na inicialização com `--disable-mcp-server`](https://img.alicdn.com/imgextra/i3/O1CN01eTCrgCnavhE3thAe_!!6000000000173-1-tps-1920-1080.gif)
+
+### Web Shell: os arquivos do projeto abrem com um clique, a mensagem extra entra na hora e ele avisa quando precisa do seu OK
+
+**Os arquivos do projeto ficam no painel direito.** A árvore de diretórios do workspace inteiro aparece ali; clique em um arquivo e o conteúdo abre ao lado: Markdown, página web, imagem e Excel abrem direto. Dá também para copiar o caminho, baixar e referenciar. Veja os PRs [#13878](https://github.com/QwenLM/qwen-code/pull/13878), [#13664](https://github.com/QwenLM/qwen-code/pull/13664)
+
+**Arraste um arquivo local para fazer o upload.** Ele vai para a pasta onde você soltou, e no desktop funciona igual. Veja os PRs [#14145](https://github.com/QwenLM/qwen-code/pull/14145), [#14053](https://github.com/QwenLM/qwen-code/pull/14053)
+
+**Mensagem na fila pode entrar na hora, e cancelar devolve ela para a caixa de entrada.** O que você envia enquanto ele está respondendo fica na fila. Clique em `Send now` para ela entrar imediatamente. Se você parar antes de a IA produzir saída, a frase volta para a caixa de entrada: edite e reenvie. Veja os PRs [#13681](https://github.com/QwenLM/qwen-code/pull/13681), [#13488](https://github.com/QwenLM/qwen-code/pull/13488)
+
+**Ele manda notificação quando para esperando você.** São dois casos: liberar uma operação ou responder à pergunta que ele fez. Antes, nenhum dos dois dava sinal; agora, se a página estiver em segundo plano, aparece uma notificação e um clique te leva de volta àquela sessão. Veja o PR [#13832](https://github.com/QwenLM/qwen-code/pull/13832)
+
+**Quando há um subagente ou uma tarefa em segundo plano rodando, o ícone de lista no topo do chat ganha um ponto piscando.** Você vê sem abrir o painel. Veja o PR [#14048](https://github.com/QwenLM/qwen-code/pull/14048)
+
+![O painel Files do Web Shell, à direita, com a árvore do workspace inteiro aberta (a busca Filter files, as pastas data/tests e arquivos de vários tipos); embaixo, ao lado da mensagem que está na fila, aparece o botão Send now](https://img.alicdn.com/imgextra/i1/O1CN01e27zKWHeHTH4s7X6_!!6000000007916-0-tps-2400-1616.jpg)
+
+## 📊 Mais funcionalidades
+
+**Muitas buscas seguidas sem te dar resultado viram um lembrete para concluir.** Quando as ações somente leitura — ler arquivo, buscar código — chegam a certa quantidade, ele recebe um aviso na rodada seguinte: use o que já encontrou, avance no que você pediu ou diga onde travou; se o objetivo era mesmo entender a situação, entregue a conclusão e as perguntas que ainda não têm resposta. Veja o PR [#13601](https://github.com/QwenLM/qwen-code/pull/13601)
+
+**Interface de servidor MCP precisa do seu OK antes de enviar mensagem.** Alguns servidores MCP não trazem só ferramentas: mostram uma interface clicável dentro da conversa. Quando essa interface quer enviar uma frase por você, o Qwen Code apresenta primeiro o conteúdo inteiro, de onde ele vem e em qual conversa vai cair. Só sai depois do seu clique em confirmar. Veja o PR [#13958](https://github.com/QwenLM/qwen-code/pull/13958)
+
+**Clique no nó de um agent do workflow e veja o que ele fez.** Na conversa, na página Tasks ou na página do workflow, clicar em um agent abre no painel direito o histórico daquela execução: o prompt que ele recebeu, quais ferramentas rodou, o que está saindo agora e em que passo está. Veja o PR [#14175](https://github.com/QwenLM/qwen-code/pull/14175)
+
+**A checagem antes da ação pode trocar os parâmetros daquela execução.** O hook que você definiu nas configurações é esse tipo de checagem: roda antes de ele usar determinada ferramenta. Os parâmetros novos que ela devolve são revalidados e passam de novo por permissão e confirmação antes de qualquer execução de fato. Veja o PR [#13442](https://github.com/QwenLM/qwen-code/pull/13442)
+
+**A pergunta lateral pode ir para outro workspace.** Com a tarefa principal respondendo, `/btw side` cria uma conversa à parte em outro workspace ao qual ela pertence, sem misturar com a tarefa principal. Veja o PR [#13468](https://github.com/QwenLM/qwen-code/pull/13468)
+
+**Comando embutido em plugin no formato Claude agora roda de verdade.** Esse tipo de comando é código, não prompt para o modelo: antes, digitá-lo era o mesmo que falar uma frase com o modelo; agora o plugin executa localmente e devolve o resultado direto, sem gastar token. Exige `experimental.mods` ligado nas configurações e um workspace confiável, e só funciona no uso de execução única `qwen -p '…'` — a interface interativa e o Web Shell ainda não suportam. Só parte da interface Mod foi implementada, então não dá para garantir que todo comando pronto funcione. Veja os PRs [#13843](https://github.com/QwenLM/qwen-code/pull/13843), [#13890](https://github.com/QwenLM/qwen-code/pull/13890), [#13915](https://github.com/QwenLM/qwen-code/pull/13915), [#13950](https://github.com/QwenLM/qwen-code/pull/13950)
+
+## 👏 Melhorias de experiência
+
+**Na página de nova tarefa, arquivos, terminal e prévia web do painel direito já funcionam antes de você enviar qualquer coisa.** O topo virou uma barra de ferramentas enxuta; cada workspace guarda o próprio layout, que sobrevive a recarregar a página e a trocar de sessão. Quando você envia a primeira frase, abas, ordem, largura dos painéis e tela cheia vão junto para a sessão que acabou de nascer. Veja o PR [#14159](https://github.com/QwenLM/qwen-code/pull/14159)
+
+**A aba Trajectory busca, filtra e carrega registros mais antigos.** Busque pelo nome de uma ferramenta, pelo nome de um modelo ou por um trecho do histórico e ela salta para lá; dá para ver só um tipo de registro, ou só os que falharam e os que deram certo. O histórico anterior vem em lotes, e ao terminá-los você volta para a parte mais recente — busca e estatísticas contam só o lote carregado. Se a conexão cair e voltar no meio, você mantém onde estava, a entrada selecionada, o filtro e a posição de rolagem. Veja os PRs [#13264](https://github.com/QwenLM/qwen-code/pull/13264), [#13716](https://github.com/QwenLM/qwen-code/pull/13716), [#13952](https://github.com/QwenLM/qwen-code/pull/13952)
+
+**Selecione um trecho da resposta e escolha como copiar.** Passe o mouse sobre um trecho e o menu oferece duas opções: texto puro ou Markdown com a formatação original — títulos, listas, código e tabelas vêm junto. Veja o PR [#13833](https://github.com/QwenLM/qwen-code/pull/13833)
+
+**O uso de contexto abre no painel direito em vez de empilhar cartão na conversa.** Antes, clicar no anel da caixa de entrada deixava um cartão Context Usage na conversa, e os detalhes dele deixavam outro; agora os dois abrem no painel direito, um por sessão. Se quiser o cartão dentro da conversa, digite `/context`. Veja o PR [#14086](https://github.com/QwenLM/qwen-code/pull/14086)
+
+**Tabela grande pode ocupar a tela inteira.** Clique em Fullscreen na tabela para ela cobrir a janela toda; saia com Esc ou pelo botão de sair. A ordenação, o filtro, as colunas e a linha em que você estava ficam como estavam. Veja o PR [#13589](https://github.com/QwenLM/qwen-code/pull/13589)
+
+**Dá para apagar uma mensagem da fila antes dela sair.** Vale também para a que está no meio do upload de um anexo: o arquivo temporário é limpo junto. Veja o PR [#13594](https://github.com/QwenLM/qwen-code/pull/13594)
+
+**Dobrar a rodada esconde também o que terminou em segundo plano.** Os cartões de resultado e os avisos de conclusão das tarefas em segundo plano entram na dobra junto. Veja o PR [#13825](https://github.com/QwenLM/qwen-code/pull/13825)
+
+**Os avisos da entrada de voz agora saem em chinês, e o erro pode ser fechado.** Avisos de erro e de "não ouvi voz nenhuma" seguem o idioma da interface; clique em fechar no canto superior direito e o microfone volta a ficar pronto — é só tentar de novo. Veja o PR [#13938](https://github.com/QwenLM/qwen-code/pull/13938)
+
+**Quer uma cópia de trabalho independente: basta escolher Worktree.** Clique nele no diálogo do Git e a escolha é confirmada na hora, com o menu fechando. A cópia só é nomeada e criada no fluxo de abertura de sessão quando você envia a primeira frase; antes disso, dá para voltar atrás a qualquer momento. Veja o PR [#13607](https://github.com/QwenLM/qwen-code/pull/13607)
+
+**Todos os ícones foram unificados na marca atual.** Entram nessa troca o ícone da aba do navegador no Web Shell, o logotipo da barra lateral, o ícone das notificações do navegador, a tela de inicialização e os ícones do aplicativo no desktop. Veja o PR [#14052](https://github.com/QwenLM/qwen-code/pull/14052)
+
+## 🔧 Correções importantes
+
+| Correção | Impacto para você | PR |
+|------|-----------|-----|
+| **Reabrir uma sessão longa não dá mais tela em branco** | Quanto mais longa a sessão, mais fácil ela reabrir toda em branco, sem mostrar nada. Agora só o trecho visível na tela é de fato renderizado, as posições fora da tela ficam com espaço reservado e a barra de rolagem continua batendo com a sessão inteira; uma entrada que não consiga aparecer encolhe para uma linha só, sem derrubar a interface | [#13669](https://github.com/QwenLM/qwen-code/pull/13669) |
+| **As setas para cima e para baixo voltaram a navegar o que você já falou** | Com a caixa de entrada vazia, a seta para cima deveria navegar o histórico; nas últimas versões ela estava rolando a tela, o contrário do que você esperava. Agora voltou a navegar o histórico, e quem quiser que as setas rolem a tela encontra essa opção nas configurações | [#14016](https://github.com/QwenLM/qwen-code/pull/14016) |
+| **O cursor da caixa de entrada não parece mais sumir** | Ele ficava piscando, e no meio segundo em que apagava você achava que tinha sumido; agora é um bloco sempre aceso | [#13693](https://github.com/QwenLM/qwen-code/pull/13693) |
+| **Configuração com marca de cabeçalho invisível volta a ser lida** | Editores no Windows salvam a configuração com uma marca invisível no começo, e aí a configuração de MCP, a importada do Claude, os comandos personalizados e a configuração de LSP falhavam ao ser interpretadas. Agora todas leem normalmente | [#13596](https://github.com/QwenLM/qwen-code/pull/13596), [#13711](https://github.com/QwenLM/qwen-code/pull/13711), [#13945](https://github.com/QwenLM/qwen-code/pull/13945), [#13946](https://github.com/QwenLM/qwen-code/pull/13946) |
+| **Arquivos de instrução dos diretórios acima do repositório não entram mais** | `QWEN.md` e `AGENTS.md` de um diretório superior entravam em cada requisição junto com cada repositório abaixo. Agora a busca para cima para na raiz do Git, e as instruções aninhadas dentro do repositório continuam carregando | [#13381](https://github.com/QwenLM/qwen-code/pull/13381) |
+| **O login por QR Code no Channel do WeChat gera o código** | A requisição do QR Code de login estava sem um cabeçalho obrigatório: ao escanear, o WeChat dizia que a versão da interface precisava de atualização e o login nunca passava. O cabeçalho foi adicionado | [#13482](https://github.com/QwenLM/qwen-code/pull/13482) |
+| **Instalar extensão não trava mais num prompt de usuário e senha que não aceita digitação** | Quando o repositório de extensões pedia autenticação sem estar configurada, a inicialização parava em `Username for 'https://github.com':`, um prompt em que você não consegue digitar nem pular. Agora ele devolve erro na hora | [#13454](https://github.com/QwenLM/qwen-code/pull/13454) |
+| **No Windows, o hook não minimiza mais o seu terminal** | Comandos escritos no estilo de gestão corporativa encolhiam a janela do terminal inteira, uma vez a cada chamada de ferramenta, e em máquina gerenciada não dava para desfazer. Agora o hook roda na sua própria janela invisível | [#13670](https://github.com/QwenLM/qwen-code/pull/13670) |
+| **Com modelo local, estourar o contexto comprime antes de continuar** | Quando o prompt passava do limite real de contexto do serviço llama.cpp local, a sessão ficava presa no mesmo erro sem saída. Agora ele reconhece essa mensagem e calcula quanto comprimir usando o limite que o serviço devolve | [#13421](https://github.com/QwenLM/qwen-code/pull/13421), [#13788](https://github.com/QwenLM/qwen-code/pull/13788) |
+| **Cartão de artefato mostra o nome do arquivo e não some na reconexão** | Um arquivo gravado durante a sessão mostrava o título inventado pelo modelo, que não batia com o nome no disco; numa queda curta de conexão, os cartões que já tinham aparecido somiam juntos. Agora arquivo alterado também pode ser baixado | [#13672](https://github.com/QwenLM/qwen-code/pull/13672), [#13714](https://github.com/QwenLM/qwen-code/pull/13714), [#13718](https://github.com/QwenLM/qwen-code/pull/13718) |
+| **`/workflows` mostra o resultado final e as falhas** | Depois de terminar, aquela visão só tinha status, tempo, número de agents e tokens: não dava para ver a produção nem qual subtask caiu. Agora ela lista o que foi produzido, os erros reportados e os agents que falharam | [#13646](https://github.com/QwenLM/qwen-code/pull/13646) |
+| **Browser Use diz de frente que não é suportado no Windows** | Antes ele sugeria instalar algo que não instala; agora informa que não há suporte e que é preciso usar macOS ou Linux. Quando não consegue falar com o host, também não te deixa mais esperando à toa | [#13675](https://github.com/QwenLM/qwen-code/pull/13675), [#13699](https://github.com/QwenLM/qwen-code/pull/13699) |
+| **Servidor MCP que sobe sob demanda traz as próprias ferramentas** | Alguns servidores são iniciados quando um recurso é lido: depois de subir, atendiam só aquela leitura, as ferramentas não eram descobertas e o servidor parecia "sem ferramentas". Agora uma descoberta é feita em seguida | [#13806](https://github.com/QwenLM/qwen-code/pull/13806), [#13828](https://github.com/QwenLM/qwen-code/pull/13828) |
+| **A permissão de um servidor MCP não vale para outro** | Uma regra de liberação escrita para um servidor podia, por coincidência de nome, liberar outro também. Agora a decisão usa a identidade original com que cada servidor foi registrado | [#12531](https://github.com/QwenLM/qwen-code/pull/12531) |
+| **Comando destrutivo barrado várias vezes passa a perguntar para você** | No modo automático, quando o mesmo tipo de comando é barrado três vezes seguidas, ou vinte vezes ao longo da sessão, a decisão chega para a sua aprovação | [#13636](https://github.com/QwenLM/qwen-code/pull/13636) |
+| **Editar arquivo não come mais a linha em branco vizinha** | Uma edição por posição aproximada removia junto as linhas em branco vizinhas e errava o limite da linha. Agora a correspondência é feita linha inteira | [#13484](https://github.com/QwenLM/qwen-code/pull/13484) |
+| **Referência @ de arquivo com chinês e emoji não perde texto** | Ao digitar @ para referenciar um arquivo, um caminho com caracteres chineses ou emoji era cortado no meio e alguns caracteres do fim se perdiam | [#13866](https://github.com/QwenLM/qwen-code/pull/13866) |
+| **A configuração não lista mais modelo embutido desativado** | O modelo já não podia ser usado e continuava na lista — escolher não levava a nada. Agora ele sai da lista, e a sessão que ainda o usa continua vendo que modelo está rodando | [#13971](https://github.com/QwenLM/qwen-code/pull/13971) |
+| **Atualização automática desligada não instala mais** | Pedir a atualização no uso não interativo ignorava o interruptor: ele checava e instalava sozinho. Agora os dois caminhos respeitam a configuração | [#13665](https://github.com/QwenLM/qwen-code/pull/13665) |
+| **Sumiu o marcador de raciocínio que sobrava no fim da resposta** | Ficava um marcador de fechamento vazio pendurado no final do texto | [#13600](https://github.com/QwenLM/qwen-code/pull/13600) |
+| **Chamada de ferramenta escrita dentro de um parâmetro não executa por engano** | Um texto em forma de chamada, escrito como valor de parâmetro, era despachado como chamada de verdade; e um trecho inteiro escrito como chamada de função ficava parado no texto da resposta | [#13515](https://github.com/QwenLM/qwen-code/pull/13515), [#13437](https://github.com/QwenLM/qwen-code/pull/13437) |
+| **As conversas do plug-in do VS Code não apertam mais o armazenamento** | O conteúdo das conversas ficava no registro global do plug-in e, acumulando, batia no limite de capacidade. Cada conversa agora é um arquivo separado | [#14285](https://github.com/QwenLM/qwen-code/pull/14285) |
+| **Quando não sobe, ele dá erro em vez de sair quieto** | Se o processo filho que deveria ser levantado não subia, a linha de comando encerrava sem aviso e você não via nada | [#13077](https://github.com/QwenLM/qwen-code/pull/13077) |
+| **Depois de aprovar, ele segue a operação certa** | Você respondia uma pergunta e a interface ia para outra operação; agora ela cai na que corresponde àquela resposta | [#13609](https://github.com/QwenLM/qwen-code/pull/13609) |
+| **O ambiente de execução do pacote desktop do Linux não é mais danificado** | No pacote montado como AppImage, o ambiente de execução que vinha junto era substituído, e a instalação não conseguia iniciar | [#13695](https://github.com/QwenLM/qwen-code/pull/13695) |
+
+## 👥 Contribuidores
+
+| Contribuidor | Contribuição | PRs de referência |
+|--------|---------|-------------|
+| **[@wenshao](https://github.com/wenshao)** | botão `Send now` nas mensagens da fila, frase cancelada voltando para a caixa de entrada, tabela em tela cheia, pergunta lateral no workspace secundário, escolha de Worktree valendo na hora, e o conjunto de registro e restauração do runtime gerenciado | [#13681](https://github.com/QwenLM/qwen-code/pull/13681), [#13488](https://github.com/QwenLM/qwen-code/pull/13488), [#13589](https://github.com/QwenLM/qwen-code/pull/13589), [#13468](https://github.com/QwenLM/qwen-code/pull/13468), [#13607](https://github.com/QwenLM/qwen-code/pull/13607), [#13265](https://github.com/QwenLM/qwen-code/pull/13265) |
+| **[@yiliang114](https://github.com/yiliang114)** | @ de um colega dentro da conversa (entre programas, entre máquinas, em grupo), vários Qwen Code conectados numa página só, um grupo por Qwen Code na barra lateral, exclusão de servidor MCP na inicialização, lembrete para concluir depois de muitas buscas somente leitura, QR Code do login do WeChat, hook em janela invisível no Windows, comando destrutivo rejeitado em série passando para aprovação humana, permissão de MCP decidida pela identidade original do servidor, limpeza do marcador de raciocínio sobrando, e erros e esperas do Browser Use encerrados | [#13467](https://github.com/QwenLM/qwen-code/pull/13467), [#13583](https://github.com/QwenLM/qwen-code/pull/13583), [#13739](https://github.com/QwenLM/qwen-code/pull/13739), [#13677](https://github.com/QwenLM/qwen-code/pull/13677), [#14003](https://github.com/QwenLM/qwen-code/pull/14003), [#13601](https://github.com/QwenLM/qwen-code/pull/13601), [#13482](https://github.com/QwenLM/qwen-code/pull/13482), [#13670](https://github.com/QwenLM/qwen-code/pull/13670), [#13636](https://github.com/QwenLM/qwen-code/pull/13636), [#12531](https://github.com/QwenLM/qwen-code/pull/12531) |
+| 🆕 **[@dakjdakd](https://github.com/dakjdakd)** | 🎉 Primeira contribuição: referência @ de arquivo com chinês e emoji preservando o caminho inteiro, Python encontrando o comando certo no Windows, e conexões abertas depois da liberação e destruição | [#13866](https://github.com/QwenLM/qwen-code/pull/13866), [#13862](https://github.com/QwenLM/qwen-code/pull/13862), [#13864](https://github.com/QwenLM/qwen-code/pull/13864) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | leitura completa mantendo o mesmo arquivo aberto, permissões do arquivo preservadas ao salvar a configuração, e o ciclo de vida e a persistência de sessão no runtime gerenciado fechados | [#13776](https://github.com/QwenLM/qwen-code/pull/13776), [#13293](https://github.com/QwenLM/qwen-code/pull/13293), [#13750](https://github.com/QwenLM/qwen-code/pull/13750), [#14069](https://github.com/QwenLM/qwen-code/pull/14069) |
+| **[@qqqys](https://github.com/qqqys)** | comandos embutidos do plugin Mods executando, escrita em TypeScript e validação de configuração, hook alterando parâmetros e revalidando, busca e filtro na trajetória com lote mais antigo, detalhes do workflow listando produção e falhas, clique para abrir um agent do workflow, e mensagem do MCP App revisada antes de sair | [#13843](https://github.com/QwenLM/qwen-code/pull/13843), [#13890](https://github.com/QwenLM/qwen-code/pull/13890), [#13442](https://github.com/QwenLM/qwen-code/pull/13442), [#13264](https://github.com/QwenLM/qwen-code/pull/13264), [#13716](https://github.com/QwenLM/qwen-code/pull/13716), [#14175](https://github.com/QwenLM/qwen-code/pull/14175), [#13958](https://github.com/QwenLM/qwen-code/pull/13958), [#13646](https://github.com/QwenLM/qwen-code/pull/13646) |
+| **[@ytahdn](https://github.com/ytahdn)** | navegação e prévia de arquivos do workspace no Web Shell, upload arrastando para a árvore de arquivos, prévia somente leitura de Excel, aviso quando ele espera aprovação ou resposta, seleção da resposta copiada como está, resultado de segundo plano entrando na dobra da rodada e avisos da entrada de voz localizados | [#13878](https://github.com/QwenLM/qwen-code/pull/13878), [#14145](https://github.com/QwenLM/qwen-code/pull/14145), [#13664](https://github.com/QwenLM/qwen-code/pull/13664), [#13832](https://github.com/QwenLM/qwen-code/pull/13832), [#13833](https://github.com/QwenLM/qwen-code/pull/13833), [#13825](https://github.com/QwenLM/qwen-code/pull/13825), [#13938](https://github.com/QwenLM/qwen-code/pull/13938) |
+| **[@Bug-killer-prog](https://github.com/Bug-killer-prog)** | marca de cabeçalho invisível na configuração de MCP e na importada, a mesma marca na conversão de comandos TOML, colar no modo vim no Windows e retirada dos modelos embutidos desativados da lista de configurações | [#13596](https://github.com/QwenLM/qwen-code/pull/13596), [#13711](https://github.com/QwenLM/qwen-code/pull/13711), [#13975](https://github.com/QwenLM/qwen-code/pull/13975), [#13198](https://github.com/QwenLM/qwen-code/pull/13198), [#13971](https://github.com/QwenLM/qwen-code/pull/13971) |
+| **[@chiga0](https://github.com/chiga0)** | reabrir sessão longa renderizando só o trecho visível na tela, setas de novo navegando o histórico de digitação, cursor da caixa de entrada sempre aceso, e posição de popup e corte de sugestões alinhados | [#13669](https://github.com/QwenLM/qwen-code/pull/13669), [#14016](https://github.com/QwenLM/qwen-code/pull/14016), [#13693](https://github.com/QwenLM/qwen-code/pull/13693), [#12559](https://github.com/QwenLM/qwen-code/pull/12559) |
+| 🆕 **[@GoldArowana](https://github.com/GoldArowana)** | 🎉 Primeira contribuição: linhas em branco vizinhas preservadas ao editar arquivo, leitura de registros longos limitada pelo orçamento, monitor que não sobe reportado como erro de ferramenta e cercas de bloco de código reconhecidas só em pares | [#13484](https://github.com/QwenLM/qwen-code/pull/13484), [#13486](https://github.com/QwenLM/qwen-code/pull/13486), [#13460](https://github.com/QwenLM/qwen-code/pull/13460), [#13331](https://github.com/QwenLM/qwen-code/pull/13331) |
+| **[@pomelo-nwu](https://github.com/pomelo-nwu)** | clique no anel de contexto abrindo no painel direito, desktop recebendo arquivos arrastados do sistema e ícones trocados pela marca atual | [#14086](https://github.com/QwenLM/qwen-code/pull/14086), [#14053](https://github.com/QwenLM/qwen-code/pull/14053), [#14052](https://github.com/QwenLM/qwen-code/pull/14052) |
+| **[@jabrailkhalil](https://github.com/jabrailkhalil)** | texto das mensagens do Feishu preservado e arquivos com falha de gravação limpos | [#13337](https://github.com/QwenLM/qwen-code/pull/13337), [#13147](https://github.com/QwenLM/qwen-code/pull/13147) |
+| **[@Shizoqua](https://github.com/Shizoqua)** | comandos personalizados TOML e `.lsp.json` legíveis mesmo com marca de cabeçalho, e os números de cada ferramenta MCP nos detalhes de `/context` batendo com a linha do total | [#13945](https://github.com/QwenLM/qwen-code/pull/13945), [#13946](https://github.com/QwenLM/qwen-code/pull/13946), [#13390](https://github.com/QwenLM/qwen-code/pull/13390) |
+| **[@zjgzx1988](https://github.com/zjgzx1988)** | cartão de artefato pelo nome do arquivo, arquivo publicado localmente sem virar cópia permanente, e a descrição do artefato saindo de dentro da descrição da ferramenta | [#13672](https://github.com/QwenLM/qwen-code/pull/13672), [#12395](https://github.com/QwenLM/qwen-code/pull/12395), [#14206](https://github.com/QwenLM/qwen-code/pull/14206) |
+| 🆕 **[@zonemeen](https://github.com/zonemeen)** | 🎉 Primeira contribuição: conflito de porta nos testes de container resolvido e limpeza das imagens usadas nas checagens | [#13569](https://github.com/QwenLM/qwen-code/pull/13569), [#13686](https://github.com/QwenLM/qwen-code/pull/13686) |
+| 🆕 **[@fengyue-xve](https://github.com/fengyue-xve)** | 🎉 Primeira contribuição: a atualização no uso não interativo também respeita o interruptor de atualização automática, e os resultados das ferramentas da rodada ficam sob um único dono | [#13665](https://github.com/QwenLM/qwen-code/pull/13665), [#13666](https://github.com/QwenLM/qwen-code/pull/13666) |
+| 🆕 **[@LUOSENGWA](https://github.com/LUOSENGWA)** | 🎉 Primeira contribuição: item de solução de problemas para conexão resetada em algumas redes e documentação do evento de aviso pendente completada | [#13235](https://github.com/QwenLM/qwen-code/pull/13235), [#13281](https://github.com/QwenLM/qwen-code/pull/13281) |
+| 🆕 **[@agammann](https://github.com/agammann)** | 🎉 Primeira contribuição: a busca por arquivos de instrução para na raiz do Git | [#13381](https://github.com/QwenLM/qwen-code/pull/13381) |
+| **[@Andrea-Bruno](https://github.com/Andrea-Bruno)** | limite de concorrência por modelo para subagentes em primeiro plano | [#12461](https://github.com/QwenLM/qwen-code/pull/12461) |
+| 🆕 **[@beibeihk](https://github.com/beibeihk)** | 🎉 Primeira contribuição: índice de memória fora do orçamento é pulado por inteiro, e as entradas completas seguintes continuam disponíveis na ordem | [#13315](https://github.com/QwenLM/qwen-code/pull/13315) |
+| **[@callmeYe](https://github.com/callmeYe)** | diretórios de extensões carregando em paralelo por lotes limitados | [#13379](https://github.com/QwenLM/qwen-code/pull/13379) |
+| 🆕 **[@drakeo338](https://github.com/drakeo338)** | 🎉 Primeira contribuição: erro explícito quando o processo filho não sobe, em vez de encerrar quieto | [#13077](https://github.com/QwenLM/qwen-code/pull/13077) |
+| 🆕 **[@hahahahahayesyeseys](https://github.com/hahahahahayesyeseys)** | 🎉 Primeira contribuição: o pacote desktop do Linux mantém o ambiente de execução que vem nele | [#13695](https://github.com/QwenLM/qwen-code/pull/13695) |
+| 🆕 **[@Jay0130-a](https://github.com/Jay0130-a)** | 🎉 Primeira contribuição: notas de atualização do desktop ancoradas na versão desktop anterior | [#13960](https://github.com/QwenLM/qwen-code/pull/13960) |
+| 🆕 **[@jayfeng7](https://github.com/jayfeng7)** | 🎉 Primeira contribuição: teste para o caso de uma rodada recolhida antes de fechar | [#13257](https://github.com/QwenLM/qwen-code/pull/13257) |
+| 🆕 **[@loglapa](https://github.com/loglapa)** | 🎉 Primeira contribuição: limite de tamanho da resposta do histórico fixado | [#14111](https://github.com/QwenLM/qwen-code/pull/14111) |
+| 🆕 **[@MohammedAlkindi](https://github.com/MohammedAlkindi)** | 🎉 Primeira contribuição: comando slash contabilizando direito a própria chamada que ele dispara | [#12960](https://github.com/QwenLM/qwen-code/pull/12960) |
+| 🆕 **[@pulkitchowdry](https://github.com/pulkitchowdry)** | 🎉 Primeira contribuição: SerpApi adicionada à lista de serviços de busca na web | [#13104](https://github.com/QwenLM/qwen-code/pull/13104) |
+| **[@shenyankm](https://github.com/shenyankm)** | o lado do editor declara só as capacidades de registro dinâmico que ele suporta | [#13494](https://github.com/QwenLM/qwen-code/pull/13494) |
+| 🆕 **[@shpaker](https://github.com/shpaker)** | 🎉 Primeira contribuição: as notas da versão "mais recente" do desktop apontam para a versão atual | [#13900](https://github.com/QwenLM/qwen-code/pull/13900) |
+| **[@sxh313](https://github.com/sxh313)** | prévia de ferramenta em texto puro sem caracteres de controle de terminal | [#12751](https://github.com/QwenLM/qwen-code/pull/12751) |
+| **[@tonydzi](https://github.com/tonydzi)** | a etapa de lançamento desktop do Linux fixa a versão mínima das bibliotecas do sistema | [#13616](https://github.com/QwenLM/qwen-code/pull/13616) |
+| 🆕 **[@yanyukang2003-ux](https://github.com/yanyukang2003-ux)** | 🎉 Primeira contribuição: lista de ferramentas separada por vírgula em `mcp add` sendo dividida | [#12985](https://github.com/QwenLM/qwen-code/pull/12985) |
+| 🆕 **[@Zhangchenhao-111](https://github.com/Zhangchenhao-111)** | 🎉 Primeira contribuição: deixado claro o que significa uma lista de ferramentas vazia nos SDKs de cada linguagem | [#13949](https://github.com/QwenLM/qwen-code/pull/13949) |
+| 🆕 **[@ZedingZhang](https://github.com/ZedingZhang)** | 🎉 Primeira contribuição: recibo de publicação de ferramenta não encontrada devolve 404 | [#13602](https://github.com/QwenLM/qwen-code/pull/13602) |
+| **[@qwen-code-dev-bot](https://github.com/qwen-code-dev-bot)** | nova tentativa automática em falha intermitente nas checagens, liberação de disco e barreiras na etapa de lançamento e limite de tamanho do pacote npm aumentado | [#13512](https://github.com/QwenLM/qwen-code/pull/13512), [#13481](https://github.com/QwenLM/qwen-code/pull/13481), [#14066](https://github.com/QwenLM/qwen-code/pull/14066) |
+
+<Callout type="info">
+  **Como atualizar**: execute `npm i @qwen-code/qwen-code@latest -g` para atualizar para a versão mais recente.
+</Callout>
+
+Se tiver dúvidas ou sugestões, fique à vontade para enviar feedback pelos [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
