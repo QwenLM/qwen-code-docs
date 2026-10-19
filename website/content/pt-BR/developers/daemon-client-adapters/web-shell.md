@@ -97,6 +97,13 @@ ser servido pelo daemon. O daemon rejeita intencionalmente requisições de
 
 ## Responsabilidades de Renderização
 
+O Web Shell destaca tokens slash no início de linhas, como `/review`, nas
+mensagens do usuário com o mesmo tratamento azul e negrito do compositor.
+O destaque é derivado do texto gravado, portanto também se aplica ao reabrir
+uma sessão. É um indício de sintaxe, não confirmação de que um comando existe
+ou foi executado. O texto da mensagem, URLs clicáveis e chips de referência
+anotados são preservados.
+
 O modelo de transcrição compartilhado é semântico, não visual. Clientes de UI
 decidem como renderizar:
 
@@ -112,7 +119,7 @@ e ter a sensação de um terminal com layout monoespaçado, histórico de scroll
 entrada de prompt, atalhos e blocos de streaming, mas não é um proxy PTY bruto
 e não requer renderização Ink no lado do servidor.
 
-## Segurança de Merge
+## Segurança de Mesclagem
 
 - O TUI nativo do `qwen` permanece direto e inalterado.
 - Caminhos `--acp`, de canal e de IDE permanecem inalterados por padrão.

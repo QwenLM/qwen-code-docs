@@ -98,6 +98,12 @@ de navigateur avec une `Origin` arbitraire.
 
 ## Responsabilités de rendu
 
+Web Shell met en surbrillance les tokens slash en début de ligne tels que `/review` dans les
+messages utilisateur avec le même traitement bleu et gras que le composer. La surbrillance est
+dérivée du texte enregistré, elle s'applique donc aussi lors de la réouverture d'une session.
+C'est un indice syntaxique, pas une confirmation qu'une commande existe ou a été exécutée.
+Le texte du message, les URL cliquables et les chips de référence annotés sont conservés.
+
 Le modèle de transcription partagé est sémantique, pas visuel. Les clients UI
 décident comment effectuer le rendu :
 

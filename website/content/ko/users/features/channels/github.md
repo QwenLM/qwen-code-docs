@@ -43,13 +43,16 @@ gh auth login --hostname github.example.com
       "useLocalGh": true,
       "pollInterval": 60000,
       "reasonFilter": ["mention", "review_requested", "assign"],
-      "senderPolicy": "allowlist",
-      "allowedUsers": ["operator-github-username"],
+      "operators": ["operator-github-username"],
       "sessionScope": "chat_thread",
       "cwd": "/path/to/your/project",
       "groupPolicy": "open",
       "groups": {
-        "*": { "requireMention": true }
+        "*": {
+          "requireMention": true,
+          "senders": "allowlist",
+          "allowedUsers": ["operator-github-username"]
+        }
       }
     }
   }
@@ -62,7 +65,7 @@ gh auth login --hostname github.example.com
 export GITHUB_TOKEN="ghp_your_token_here"
 ```
 
-인증된 계정은 자체 채널을 트리거할 수 없습니다. 해당 계정이 채널을 작동해야 하는 경우 별도의 봇 계정을 인증하고 `allowedUsers`에 운영자 계정만 넣으세요. 시작 시 인증된 계정만 포함된 허용 목록은 거부되며 다른 운영자와 함께 나타날 때 경고합니다.
+인증된 계정은 자체 채널을 트리거할 수 없습니다. 해당 계정이 채널을 작동해야 하는 경우 별도의 봇 계정을 인증하고 그룹 `allowedUsers` 및 명시적 `operators` 목록에 사용자 이름을 넣으세요. 시작 시 그룹 허용 목록에 인증된 계정이 포함되면 경고가 표시되는데, 이 계정은 작업을 트리거할 수 없습니다. 그룹 허용 목록에서 다른 계정을 사용하세요.
 
 ### GitHub Enterprise
 
@@ -84,9 +87,10 @@ GitHub Enterprise Server의 경우 `baseUrl`을 설정하세요:
 | `useLocalGh`            | `false`                  | 데몬 호스트의 계정 전체 GitHub CLI 인증을 명시적으로 재사용                                    |
 | `pollInterval`          | `60000`                  | 폴 간격(ms)                                                                                    |
 | `baseUrl`               | `https://api.github.com` | API 기본 URL(GHE용)                                                                           |
-| `groupPolicy`           | `"disabled"`             | 알림이 흐르려면 `"open"`, `groups`에 저장소(`owner/repo`)가 나열된 `"allowlist"` 또는 저장소가 승인된 `"pairing"`이어야 함 |
-| `senderPolicy`          | `"allowlist"`            | 봇을 트리거할 수 있는 사용자                                                                 |
-| `groups.*.requireMention` | `true`                 | 일반 댓글에 @mention 필요. 직접 알림 이유는 계속 실행                                         |
+| `groupPolicy`             | `"disabled"`             | 알림이 흐르려면 `"open"`, `groups`에 저장소(`owner/repo`)가 나열된 `"allowlist"` 또는 저장소가 승인된 `"pairing"`이어야 함 |
+| `groups.*.requireMention` | `true`                   | 일반 댓글에 @mention 필요. 직접 알림 이유는 계속 실행                                                                 |
+| `groups.*.senders`        | `"open"`                 | 그룹 멤버의 기본 전송 정책. 댓글 작성자를 제한하려면 `"allowlist"`로 설정                                                        |
+| `groups.*.allowedUsers`   | 설정 안 됨               | `senders`가 `"allowlist"`일 때 허용되는 GitHub 사용자 이름 목록                                                    |
 | `reasonFilter`          | 설정 안 됨               | 처리할 GitHub 알림 이유의 선택적 허용 목록                                                    |
 
 `reasonFilter`를 사용하여 `ci_activity`나 `state_change` 같은 시끄러운 알림 클래스를 제거하세요. `groups.*.requireMention`을 대체하기 위해 `reasonFilter: ["mention"]`을 사용하지 마세요. GitHub의 `mention` 이유는 스레드 수준에서 고정되어 있으므로 실제 새 @mention이 나중에 `comment`, `subscribed`, `author` 또는 다른 이유로 도착할 수 있으며 건너뛰어집니다.
@@ -97,13 +101,15 @@ GitHub Enterprise Server의 경우 `baseUrl`을 설정하세요:
 
 ## ⚠️ 보안
 
-**공개 저장소**에서 `senderPolicy: "open"`을 설정하면 지원되는 알림 이유를 트리거하는 **모든 GitHub 사용자**가 `cwd`에서 에이전트를 구동하는 프롬프트를 제출할 수 있습니다. 여기에는 코드 읽기, 토큰 소비, 댓글 게시 및(권한 정책의 적용을 받으며) 도구 실행이 포함됩니다.
+**공개 저장소**에서 `groups: { "*": { "senders": "open" } }`을 설정하면 지원되는 알림 이유를 트리거하는 **모든 GitHub 사용자**가 `cwd`에서 에이전트를 구동하는 프롬프트를 제출할 수 있습니다. 여기에는 코드 읽기, 토큰 소비, 댓글 게시 및(권한 정책의 적용을 받으며) 도구 실행이 포함됩니다.
 
-공개 저장소에서는 항상 명시적 `allowedUsers`가 있는 `senderPolicy: "allowlist"`를 사용하세요.
+공개 저장소에서는 항상 명시적 그룹 `allowedUsers`와 함께 `groups["*"].senders: "allowlist"`를 사용하세요.
 
-허용 목록 및 페어링 항목은 변경 불가능한 계정 ID가 아닌 **사용자 이름**을 따릅니다. 허용 목록에 있는 사용자가 GitHub 계정 이름을 변경하면 오래된 항목을 제거하세요. GitHub는 이전 사용자 이름을 누구나 사용할 수 있도록 해제하며 새 소유자가 허용 목록/페어링 권한을 상속합니다.
+모든 GitHub 트래픽은 그룹 트래픽입니다. 그룹 멤버는 기본적으로 `open`입니다. 작성자를 제한하려면 `groups["*"].senders`를 `allowlist`로 설정하고 `allowedUsers`를 채우세요. 비공개 정책과 사용자 페어링은 저장소 멤버를 제한하지 않습니다. 공유 세션 관리를 위해 `operators`를 명시적으로 설정하세요.
 
-`groupPolicy: "pairing"` 아래에서는 저장소 단위로 접근이 부여됩니다: 저장소가 승인되면 **모든 GitHub 사용자**가 해당 저장소의 이슈와 pull request를 통해 봇을 구동할 수 있습니다. 모든 GitHub 트래픽은 그룹 트래픽이므로 `senderPolicy`와 `allowedUsers`는 승인된 저장소의 멤버를 제한하지 않습니다. 승인은 저장소 전체 이름(`owner/repo`)을 기준으로 저장되며, 이름 변경이나 이전 시 변경됩니다 — 저장소 이름 변경, 이전 또는 삭제 후 오래된 그룹 승인을 취소하세요.
+그룹 멤버 허용 목록과 운영자 목록은 변경 불가능한 계정 ID가 아닌 **사용자 이름**을 따릅니다. 목록에 있는 사용자가 GitHub 계정 이름을 변경하면 오래된 항목을 제거하세요. GitHub는 이전 사용자 이름을 누구나 사용할 수 있도록 해제하며 새 소유자가 해당 권한을 상속합니다.
+
+`groupPolicy: "pairing"` 아래에서는 접근이 저장소 단위로 부여됩니다: 저장소가 승인되면 기본적으로 **모든 GitHub 사용자**가 해당 저장소의 이슈와 pull request를 통해 봇을 구동할 수 있습니다. 모든 GitHub 트래픽은 그룹 트래픽이므로 `privatePolicy`와 최상위 `allowedUsers`는 승인된 저장소의 멤버를 제한하지 않습니다. 해당 저장소의 `groups` 항목에 `senders: "allowlist"`와 `allowedUsers`를 설정하여 제한하세요. 승인은 저장소 전체 이름(`owner/repo`)을 기준으로 키화되며, 이름 변경이나 이전 시 변경됩니다 — 저장소 이름 변경, 이전 또는 삭제 후 오래된 그룹 승인을 취소하세요.
 
 ## Mention 감지
 
