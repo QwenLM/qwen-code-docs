@@ -129,11 +129,13 @@ FROM ma_runtime_binding WHERE runtime_credential_key_id IS NOT NULL;
 
 密钥环是一个 map，不能通过 `QWEN_MANAGED_AGENT_*` 环境变量提供：宽松绑定会静默地将环境变量形式解析为空或错误 key 的密钥环，且不会报启动错误。请在服务端进程实际加载的 `application.yml` 中配置 `previous-credential-keys`。参考发行版不附带配置文件，Spring 根据进程工作目录（`./` 和 `./config/`）解析外部 `application.yml`，而非发行版根目录；`bin/qwen-managed-agent-server` 会将其参数转发给 JVM，因此 `--spring.config.additional-location=file:<absolute-path>` 可固定配置位置。仅依赖环境变量的部署启动时密钥环为空，因此在未配置旧密钥的情况下轮换 `credential-key-id` 会使该密钥下写入的行无法读取。
 
-操作员恢复入口和 CSI/迁移维护入口仍然配置单个凭据密钥对，不读取 `previous-credential-keys`。要恢复在旧密钥下写入的绑定，请以旧密钥配置为活动凭据对来启动该入口。
+成功配置密钥环后，服务端和恢复入口会在每个 protector 实例启动时记录一次已解析的活动 ID 和已配置的 ID。这些 ID 本身不是密钥材料，已经和密文一起存储；诊断信息会对控制字符和非 ASCII 字符进行 JSON 转义，保留空格和大小写，且永远不会包含密钥材料、密文或 token。在使用轮换后的部署前，需要将已配置的 ID 与退役查询返回的精确 ID 进行对比。不可用密钥错误会列出请求的、活动的和已配置的 ID，因此即使存在静默规范化或拼写错误的映射，也能在不暴露密钥的前提下定位问题。该诊断不能证明所有已存储的行都可以被解密。
 
 ## 操作员恢复
 
 `bin/qwen-managed-agent-operator-recovery` 启动单独打包的恢复入口点。除非设置了恢复专用环境变量，否则该入口点处于禁用状态，且不会启动 HTTP 服务或 worker。请遵循 `docs/hosted-workspace-recovery.md`；切勿推断物理停止或删除持久化行来绕过安全围栏。
+
+操作员恢复入口读取与服务端相同的活动密钥对和 `previous-credential-keys` map。恢复时加载相同的外部 YAML，例如使用 `SPRING_CONFIG_ADDITIONAL_LOCATION=file:<absolute-path>/application.yml`，并保持新密钥为活动密钥，同时保留绑定仍在引用的每一个密钥。CSI/迁移维护主入口（包括 CSI Hosted 探针）仍然读取单个凭据密钥对；启动这些入口时，以加密其目标绑定的密钥作为活动密钥对。
 
 ## 范围边界
 

@@ -112,22 +112,22 @@ gha-creds-*.json
 
 - <a name="__input_qwen_api_key"></a><a href="#user-content-__input_qwen_api_key"><code>qwen*api_key</code></a>: *(Optional)\_ Qwen API 的 API key。
 
-- <a name="__input_qwen_cli_version"></a><a href="#user-content-__input_qwen_cli_version"><code>qwen*cli_version</code></a>: *(Optional, default: `latest`)\_ 要安装的 Qwen Code CLI 版本。可以是 "latest"、"preview"、"nightly"、特定版本号，或 git 分支、标签、提交。有关更多信息，请参阅 [Qwen Code CLI releases](https://github.com/QwenLM/qwen-code-action/blob/main/docs/releases.md)。
+- <a name="__input_qwen_cli_version"></a><a href="#user-content-__input_qwen_cli_version"><code>qwen*cli_version</code></a>: *(Optional, default: `latest`)\_ 要安装的 Qwen Code CLI 版本。可以是 "latest"、"preview"、"nightly"、特定版本号，或 git 分支、标签、提交。有关更多信息，请参阅 [Qwen Code CLI releases](https://github.com/QwenLM/qwen-code/releases)。
 
 - <a name="__input_qwen_debug"></a><a href="#user-content-__input_qwen_debug"><code>qwen*debug</code></a>: *(Optional)\_ 启用调试日志和输出流。
 
 - <a name="__input_qwen_model"></a><a href="#user-content-__input_qwen_model"><code>qwen*model</code></a>: *(Optional)\_ 与 Qwen Code 一起使用的模型。
 
-- <a name="__input_prompt"></a><a href="#user-content-__input_prompt"><code>prompt</code></a>: _(Optional, default: `You are a helpful assistant.`)_ 传递给 Qwen Code CLI 的 [`--prompt` 参数](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#command-line-arguments) 的字符串。
+- <a name="__input_prompt"></a><a href="#user-content-__input_prompt"><code>prompt</code></a>: _(Optional, default: `You are a helpful assistant.`)_ 传递给 Qwen Code CLI 的 [`--prompt` 参数](./configuration/settings.md#command-line-arguments-table) 的字符串。
 
 - <a name="__input_settings"></a><a href="#user-content-__input_settings"><code>settings</code></a>: _(Optional)_ 写入 `.qwen/settings.json` 以配置 CLI _项目_ 设置的 JSON 字符串。
-  有关更多详细信息，请参阅[设置文件](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#settings-files)文档。
+  有关更多详细信息，请参阅[设置文件](./configuration/settings.md#settings-files)文档。
 
 - <a name="__input_use_qwen_code_assist"></a><a href="#user-content-__input_use_qwen_code_assist"><code>use*qwen_code_assist</code></a>: *(Optional, default: `false`)\_ 是否使用 Code Assist 进行 Qwen Code 模型访问，而不是使用默认的 Qwen Code API key。
-  有关更多信息，请参阅 [Qwen Code CLI 文档](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/authentication.md)。
+  有关更多信息，请参阅 [Qwen Code CLI 文档](./configuration/auth.md)。
 
 - <a name="__input_use_vertex_ai"></a><a href="#user-content-__input_use_vertex_ai"><code>use*vertex_ai</code></a>: *(Optional, default: `false`)\_ 是否使用 Vertex AI 进行 Qwen Code 模型访问，而不是使用默认的 Qwen Code API key。
-  有关更多信息，请参阅 [Qwen Code CLI 文档](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/authentication.md)。
+  有关更多信息，请参阅 [Qwen Code CLI 文档](./configuration/auth.md)。
 
 - <a name="__input_extensions"></a><a href="#user-content-__input_extensions"><code>extensions</code></a>: _(Optional)_ 要安装的 Qwen Code CLI 扩展列表。
 
@@ -218,6 +218,7 @@ Qwen Code CLI 可以通过扩展来增加额外功能。
 ## 自定义
 
 在仓库根目录创建 QWEN.md 文件，为 [Qwen Code CLI](./common-workflow) 提供特定于项目的上下文和指令。这有助于定义编码规范、架构模式或模型在特定仓库中应遵循的其他指南。
+
 ## 参与贡献
 
 欢迎参与贡献！请查阅 Qwen Code CLI **贡献指南**，了解更多入门详情。
@@ -228,4 +229,4 @@ Qwen Code CLI 可以通过扩展来增加额外功能。
 [Qwen Code CLI]: https://github.com/QwenLM/qwen-code-action/
 [variables]: https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-variables#creating-configuration-variables-for-a-repository
 [GitHub CLI]: https://docs.github.com/en/github-cli/github-cli
-[QWEN.md]: https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#context-files-hierarchical-instructional-context
+[QWEN.md]: ./configuration/settings.md#context-files-hierarchical-instructional-context

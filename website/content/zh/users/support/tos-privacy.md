@@ -16,7 +16,7 @@ Qwen Code 支持四种认证方式来访问 AI 模型。你的认证方式决定
 | 认证方式                | 提供商              | 服务条款                                                        | 隐私声明                                                        |
 | :---------------------- | :------------------ | :-------------------------------------------------------------- | :-------------------------------------------------------------- |
 | Qwen OAuth              | Qwen AI             | [Qwen 服务条款](https://qwen.ai/termsservice)                   | [Qwen 隐私政策](https://qwen.ai/privacypolicy)                  |
-| 阿里云百炼计划          | 阿里云              | 参见[下方详情](#2-如果你使用的是阿里云百炼计划)                | 参见[下方详情](#2-如果你使用的是阿里云百炼计划)                |
+| 阿里云百炼计划          | 阿里云              | 参见[下方详情](#2-if-you-are-using-alibaba-cloud-coding-plan)                | 参见[下方详情](#2-if-you-are-using-alibaba-cloud-coding-plan)                |
 | API Key                 | 多种提供商          | 取决于你选择的 API 提供商（OpenAI、Anthropic 等）               | 取决于你选择的 API 提供商                                       |
 | Vertex AI               | Google Cloud        | [Google Cloud 服务条款](https://cloud.google.com/terms)         | [Google Cloud 隐私声明](https://cloud.google.com/privacy)       |
 
@@ -84,7 +84,7 @@ Qwen Code Chrome 扩展将 Chrome 连接到运行在你计算机上的 Qwen Code
 
 ### 浏览器数据的有限使用
 
-Qwen Code 对通过 Chrome 扩展接收的数据的使用和传输遵循 [Chrome Web Store 用户数据政策](https://developer.chrome.com/docs/webstore/program-policies/user-data)，包括其有限使用要求。浏览器数据用于提供扩展的单一用途：将 Chrome 连接到 Qwen Code 以进行用户请求的浏览器协助。这些数据不会被出售、用于广告，或用于确定信用worthiness或贷款资格。传输仅限于提供该功能，包括由你配置的 AI 提供商进行的处理，以及该政策允许的其他用途。
+Qwen Code 对通过 Chrome 扩展接收的数据的使用和传输遵循 [Chrome Web Store 用户数据政策](https://developer.chrome.com/docs/webstore/program-policies/user-data-faq)，包括其有限使用要求。浏览器数据用于提供扩展的单一用途：将 Chrome 连接到 Qwen Code 以进行用户请求的浏览器协助。这些数据不会被出售、用于广告，或用于确定信用状况或贷款资格。传输仅限于提供该功能，包括由你配置的 AI 提供商进行的处理，以及该政策允许的其他用途。
 
 有关浏览器数据处理的问题，请通过 [Qwen Code issue tracker](https://github.com/QwenLM/qwen-code/issues) 联系团队。仅分享解释问题所需的详细信息；从公开报告中移除凭证和私密页面内容。
 

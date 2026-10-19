@@ -83,7 +83,7 @@ export QWEN_MANAGED_AGENT_WORKSPACE_CWD='/srv/qwen-workspace'
 export QWEN_MANAGED_AGENT_RUNTIME_VERIFIED_WORKSPACE_RECOVERY_ENABLED='true'
 ```
 
-ファイル、Shell、または子 Git ワークを受け入れる前に、`docs/server-reference.md` の「Verified physical Workspace recovery」で説明されているネイティブストレージ登録とマウントID検証を完了します。未登録または曖昧なマウントは利用できないままである必要があります。Public Shell と v2 ケイパビリティアドバタイズメントは、それぞれの個別 qualification が完了するまで無効のままです。
+ファイル、Shell、または子 Git ワークを受け入れる前に、`docs/server-reference.md` の「Verified physical Workspace recovery」で説明されているネイティブストレージ登録とマウントID検証を完了します。未登録または曖昧なマウントは利用できないままである必要があります。Public Shell と v2 ケイパビリティアドバタイズメントは、それぞれの個別の審査が完了するまで無効のままです。
 
 ## アップグレード
 
@@ -93,7 +93,7 @@ export QWEN_MANAGED_AGENT_RUNTIME_VERIFIED_WORKSPACE_RECOVERY_ENABLED='true'
 4. Java サービスと Hosted Harness を停止します。ワークスペース と永続的な Runtime 状態を保持します。
 5. マニフェスト互換の Qwen Code/Harness をインストールし、既存のトークンとケイパビリティダイジェストで起動します。
 6. 同じデータベースと永続的な設定で新しい `bin/qwen-managed-agent-server` を起動します。Flyway がスキーマをフォワードマイグレーションします。
-7. 正常な actuator レスポンスを要求し、既存の Session と履歴を読み取り、イングレスを再開する前に新しいツールなしの Turn を 1つ完了します。オプションのツールケイパビリティは、有効化する前に再 qualification します。
+7. 正常な actuator レスポンスを要求し、既存の Session と履歴を読み取り、イングレスを再開する前に新しいツールなしの Turn を 1つ完了します。オプションのツールケイパビリティは、有効化する前に再審査します。
 
 データベースのダウングレードはサポートされていません。トラフィックが再開される前に起動または検証が失敗した場合、設定を修正して同じアーティファクトを再試行します。マニフェストが古いスキーマ範囲を持つバージョンに戻るには、新しい書き込みを受け入れる前に、アップグレード前のデータベースと Runtime 状態のバックアップを一緒に復元します。移行されたデータベースに対して古いサーバーを決して想定で実行しないでください。
 
@@ -129,7 +129,9 @@ FROM ma_runtime_binding WHERE runtime_credential_key_id IS NOT NULL;
 
 キーリングはマップであり、`QWEN_MANAGED_AGENT_*` 環境変数を通じて提供することはできません。relaxed binding は環境変数形式を空または誤ったキーのリングにサイレントに解決し、起動エラーは発生しません。サーバープロセスが実際にロードする `application.yml` で `previous-credential-keys` を設定します。リファレンス配布には設定ファイルが付属しておらず、Spring は外部の `application.yml` を配布ルートではなくプロセスの作業ディレクトリ（`./` および `./config/`）に対して解決します。`bin/qwen-managed-agent-server` はその引数を JVM に転送するため、`--spring.config.additional-location=file:<absolute-path>` で場所を固定します。環境変数のみに依存するデプロイメントは空のリングで起動するため、前のキーの設定なしに `credential-key-id` をローテーションすると、その ID で書き込まれた行が読み取り不能になります。
 
-オペレーターリカバリーエントリーと CSI/マイグレーションメンテナンスメインは、引き続き単一の認証キーペアを設定し、`previous-credential-keys` を読み取りません。以前のキーで書き込まれたバインディングをリカバリーするには、そのエントリーを、以前のキーをアクティブな認証ペアとして設定して起動します。
+オペレーターリカバリーエントリーは、サーバーと同じアクティブなペアと `previous-credential-keys` マップを読み取ります。リカバリーには同じ外部 YAML をロードします（例: `SPRING_CONFIG_ADDITIONAL_LOCATION=file:<absolute-path>/application.yml`）。バインディングでまだ参照されているすべてのキーを保持しつつ、新しいキーをアクティブなままにします。CSI/マイグレーションメンテナンスメイン（CSI Hosted プローブを含む）は引き続き単一の認証キーペアを読み取ります。それらのエントリーを起動する際は、ターゲットのバインディングを暗号化したキーをアクティブなペアとして使用します。
+
+キーリングの設定が成功した後、サーバーとリカバリーエントリーは、プロテクターインスタンスごとに 1回、解決されたアクティブ ID と設定済み ID をログに出力します。これらの ID は ciphertext の傍らに既に保存されている非秘密の識別子です。診断では非 ASCII 文字と制御文字を JSON エスケープし、スペースと大文字小文字を保持しますが、キーマテリアル、ciphertext、トークンは決して含まれません。設定済み ID を廃止クエリが返す正確な ID と比較してから、ローテーション済みのデプロイメントを使用します。利用不可キーのエラーは、要求された ID、アクティブな ID、および設定済み ID を表示するため、サイレントに正規化されたマップやタイプミスのあるマップを秘密を露呈させることなく特定できます。この診断は、保存済みのすべての行を復号できることを証明するものではありません。
 
 ## オペレーターリカバリー
 

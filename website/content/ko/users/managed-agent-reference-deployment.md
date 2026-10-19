@@ -129,7 +129,7 @@ FROM ma_runtime_binding WHERE runtime_credential_key_id IS NOT NULL;
 
 키 링은 맵이며 `QWEN_MANAGED_AGENT_*` 환경 변수를 통해 제공할 수 없습니다. relaxed binding은 환경 변수 형식을 빈 키 또는 잘못된 키의 링으로 조용히 해석하며 시작 오류가 발생하지 않습니다. 서버 프로세스가 실제로 로드하는 `application.yml`에서 `previous-credential-keys`를 구성합니다. 참조 배포본은 구성 파일과 함께 제공되지 않으며, Spring은 외부 `application.yml`을 배포 루트가 아닌 프로세스 작업 디렉토리(`./` 및 `./config/`)에 대해 해석합니다. `bin/qwen-managed-agent-server`는 인수를 JVM으로 전달하므로 `--spring.config.additional-location=file:<absolute-path>`로 위치를 고정합니다. 환경 변수에만 의존하는 배포는 빈 링으로 시작하므로, 이전 키 구성 없이 `credential-key-id`를 교체하면 해당 키로 작성된 행을 읽을 수 없게 됩니다.
 
-운영자 복구 진입점과 CSI/마이그레이션 유지보수 메인도 단일 자격 증명 키 쌍을 구성하며 `previous-credential-keys`를 읽지 않습니다. 이전 키로 작성된 바인딩을 복구하려면, 이전 키를 활성 자격 증명 쌍으로 구성하여 해당 진입점을 실행합니다.
+운영자 복구 진입점은 서버와 동일한 활성 쌍 및 `previous-credential-keys` 맵을 읽습니다. 복구에 동일한 외부 YAML을 로드하고(예: `SPRING_CONFIG_ADDITIONAL_LOCATION=file:<absolute-path>/application.yml`), 새 키를 활성 상태로 유지하면서 바인딩이 여전히 참조하는 모든 키를 보존합니다. CSI/마이그레이션 유지보수 메인은 CSI Hosted 프로브를 포함하여 여전히 단일 자격 증명 키 쌍을 읽습니다. 해당 진입점들은 대상 바인딩을 암호화한 키를 활성 쌍으로 사용하여 시작합니다.
 
 ## 운영자 복구
 

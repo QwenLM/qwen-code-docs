@@ -112,22 +112,22 @@ gha-creds-*.json
 
 - <a name="__input_qwen_api_key"></a><a href="#user-content-__input_qwen_api_key"><code>qwen*api_key</code></a>: *(オプション)\_ Qwen API の API キー。
 
-- <a name="__input_qwen_cli_version"></a><a href="#user-content-__input_qwen_cli_version"><code>qwen*cli_version</code></a>: *(オプション、デフォルト: `latest`)\_ インストールする Qwen Code CLI のバージョン。"latest"、"preview"、"nightly"、特定のバージョン番号、または git ブランチ、タグ、コミットを指定できます。詳細については、[Qwen Code CLI releases](https://github.com/QwenLM/qwen-code-action/blob/main/docs/releases.md) を参照してください。
+- <a name="__input_qwen_cli_version"></a><a href="#user-content-__input_qwen_cli_version"><code>qwen*cli_version</code></a>: *(オプション、デフォルト: `latest`)\_ インストールする Qwen Code CLI のバージョン。"latest"、"preview"、"nightly"、特定のバージョン番号、または git ブランチ、タグ、コミットを指定できます。詳細については、[Qwen Code CLI releases](https://github.com/QwenLM/qwen-code/releases) を参照してください。
 
 - <a name="__input_qwen_debug"></a><a href="#user-content-__input_qwen_debug"><code>qwen*debug</code></a>: *(オプション)\_ デバッグログと出力ストリーミングを有効にします。
 
 - <a name="__input_qwen_model"></a><a href="#user-content-__input_qwen_model"><code>qwen*model</code></a>: *(オプション)\_ Qwen Code で使用するモデル。
 
-- <a name="__input_prompt"></a><a href="#user-content-__input_prompt"><code>prompt</code></a>: _(オプション、デフォルト: `You are a helpful assistant.`)_ Qwen Code CLI の [`--prompt` 引数](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#command-line-arguments) に渡される文字列。
+- <a name="__input_prompt"></a><a href="#user-content-__input_prompt"><code>prompt</code></a>: _(オプション、デフォルト: `You are a helpful assistant.`)_ Qwen Code CLI の [`--prompt` argument](./configuration/settings.md#command-line-arguments-table) に渡される文字列。
 
 - <a name="__input_settings"></a><a href="#user-content-__input_settings"><code>settings</code></a>: _(オプション)_ CLI の _プロジェクト_ 設定を構成するために `.qwen/settings.json` に書き込まれる JSON 文字列。
-  詳細については、[設定ファイル](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#settings-files) のドキュメントを参照してください。
+  詳細については、[settings files](./configuration/settings.md#settings-files) のドキュメントを参照してください。
 
 - <a name="__input_use_qwen_code_assist"></a><a href="#user-content-__input_use_qwen_code_assist"><code>use*qwen_code_assist</code></a>: *(オプション、デフォルト: `false`)\_ デフォルトの Qwen Code API キーの代わりに、Qwen Code モデルアクセスに Code Assist を使用するかどうか。
-  詳細については、[Qwen Code CLI のドキュメント](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/authentication.md) を参照してください。
+  詳細については、[Qwen Code CLI documentation](./configuration/auth.md) を参照してください。
 
 - <a name="__input_use_vertex_ai"></a><a href="#user-content-__input_use_vertex_ai"><code>use*vertex_ai</code></a>: *(オプション、デフォルト: `false`)\_ デフォルトの Qwen Code API キーの代わりに、Qwen Code モデルアクセスに Vertex AI を使用するかどうか。
-  詳細については、[Qwen Code CLI のドキュメント](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/authentication.md) を参照してください。
+  詳細については、[Qwen Code CLI documentation](./configuration/auth.md) を参照してください。
 
 - <a name="__input_extensions"></a><a href="#user-content-__input_extensions"><code>extensions</code></a>: _(オプション)_ インストールする Qwen Code CLI 拡張機能のリスト。
 
@@ -228,4 +228,4 @@ Qwen Code CLI は、拡張機能を通じて追加の機能で拡張できます
 [Qwen Code CLI]: https://github.com/QwenLM/qwen-code-action/
 [variables]: https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-variables#creating-configuration-variables-for-a-repository
 [GitHub CLI]: https://docs.github.com/en/github-cli/github-cli
-[QWEN.md]: https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#context-files-hierarchical-instructional-context
+[QWEN.md]: ./configuration/settings.md#context-files-hierarchical-instructional-context
