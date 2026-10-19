@@ -5,7 +5,7 @@
 
 ## Qwen Code バージョン別のスコア
 
-![Qwen Code バージョン別の平均 SWE-bench Verified スコア。76.40% から 77.80% の範囲。](../.github/assets/qwen-code-avg-score-trend.svg)
+![Qwen Code バージョン別の平均 SWE-bench Verified スコア。76.40% から 77.80% の範囲。](https://github.com/QwenLM/qwen-code/raw/main/.github/assets/qwen-code-avg-score-trend.svg)
 
 | バージョン | 平均スコア | パス率 | pass @3 | pass^3 |
 | ---------- | ---------: | ------: | ------: | ------: |

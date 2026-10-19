@@ -382,6 +382,19 @@ function normalizeRelativeLinks(text) {
   );
 }
 
+// Only docs/ is mirrored: link images outside it to the upstream file.
+function linkImagesOutsideDocs(text, rel) {
+  const raw = `${OPTS.repo.replace(/\.git$/, "")}/raw/${OPTS.branch}`;
+  return mapOutsideFences(text, (line) =>
+    line.replace(/(!\[[^\]]*\]\()(\.[^)\s]*)/g, (m, open, target) => {
+      const docsRel = path.posix.join(path.posix.dirname(rel), target);
+      if (!docsRel.startsWith("../")) return m;
+      const repoRel = path.posix.join(OPTS.docsPath, docsRel);
+      return repoRel.startsWith("../") ? m : `${open}${raw}/${repoRel}`;
+    })
+  );
+}
+
 // A page with a locale sibling opens with a switcher such as
 // `[English](./x.md) | [简体中文](./x.zh-CN.md)`. The sibling is not mirrored
 // (see LOCALE_SIBLING), so the link would 404, and the line's CJK text fails
@@ -518,7 +531,10 @@ async function cmdSyncEn() {
     const dest = path.join(enDir, relInContent(f));
     const srcPath = path.join(OPTS.tempDir, f);
     const normalized = dropLocaleSwitcher(
-      normalizeRelativeLinks(fs.readFileSync(srcPath, "utf8"))
+      linkImagesOutsideDocs(
+        normalizeRelativeLinks(fs.readFileSync(srcPath, "utf8")),
+        relInContent(f)
+      )
     );
     if (fs.existsSync(dest) && fs.readFileSync(dest, "utf8") === normalized)
       continue;

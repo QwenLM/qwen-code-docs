@@ -5,7 +5,7 @@ Esta avaliação compara sete versões do Qwen Code no SWE-bench Verified usando
 
 ## Pontuações por versão do Qwen Code
 
-![Pontuações médias no SWE-bench Verified por versão do Qwen Code, variando de 76,40% a 77,80%.](../.github/assets/qwen-code-avg-score-trend.svg)
+![Pontuações médias no SWE-bench Verified por versão do Qwen Code, variando de 76,40% a 77,80%.](https://github.com/QwenLM/qwen-code/raw/main/.github/assets/qwen-code-avg-score-trend.svg)
 
 | Versão | Pontuação média | Taxa de aprovação | pass @3 | pass^3 |
 | ------- | --------: | --------: | -----: | -----: |

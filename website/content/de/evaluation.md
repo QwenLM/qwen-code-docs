@@ -7,7 +7,7 @@ des gleichen Qwen 3.7 Max-Modells und der gleichen Konfiguration. Die Durchschni
 
 ## Ergebnisse nach Qwen Code-Version
 
-![Durchschnittliche SWE-bench-Verified-Ergebnisse nach Qwen Code-Version, von 76,40 % bis 77,80 %.](../.github/assets/qwen-code-avg-score-trend.svg)
+![Durchschnittliche SWE-bench-Verified-Ergebnisse nach Qwen Code-Version, von 76,40 % bis 77,80 %.](https://github.com/QwenLM/qwen-code/raw/main/.github/assets/qwen-code-avg-score-trend.svg)
 
 | Version | Ø Ergebnis | Bestehensrate | pass @3 | pass^3 |
 | ------- | --------: | --------: | -----: | -----: |
