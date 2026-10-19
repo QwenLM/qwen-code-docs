@@ -7,8 +7,6 @@ the same Qwen 3.7 Max model and configuration. Average scores range from
 
 ## Scores by Qwen Code Version
 
-![Average SWE-bench Verified scores by Qwen Code version, ranging from 76.40% to 77.80%.](../.github/assets/qwen-code-avg-score-trend.svg)
-
 | Version | Avg Score | Pass Rate | pass@3 | pass^3 |
 | ------- | --------: | --------: | -----: | -----: |
 | 0.0.14  |    77.80% |     84.6% |  84.6% |  69.2% |
