@@ -5,6 +5,8 @@
 
 ## Qwen Code 버전별 점수
 
+![Qwen Code 버전별 SWE-bench Verified 평균 점수, 76.40%에서 77.80% 범위.](https://github.com/QwenLM/qwen-code/raw/main/.github/assets/qwen-code-avg-score-trend.svg)
+
 | Version | Avg Score | Pass Rate | pass @3 | pass^3 |
 | ------- | --------: | --------: | -----: | -----: |
 | 0.0.14  |    77.80% |     84.6% |  84.6% |  69.2% |

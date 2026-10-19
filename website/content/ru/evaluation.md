@@ -5,6 +5,8 @@
 
 ## Результаты по версиям Qwen Code
 
+![Средние результаты SWE-bench Verified по версиям Qwen Code, в диапазоне от 76,40% до 77,80%.](https://github.com/QwenLM/qwen-code/raw/main/.github/assets/qwen-code-avg-score-trend.svg)
+
 | Версия | Ср. результат | Доля прохождений | pass @3 | pass^3 |
 | ------- | --------: | --------: | -----: | -----: |
 | 0.0.14  |    77.80% |     84.6% |  84.6% |  69.2% |

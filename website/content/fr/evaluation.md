@@ -7,6 +7,8 @@ le même modèle et la même configuration Qwen 3.7 Max. Les scores moyens vont 
 
 ## Scores par version de Qwen Code
 
+![Scores moyens SWE-bench Verified par version de Qwen Code, allant de 76,40 % à 77,80 %.](https://github.com/QwenLM/qwen-code/raw/main/.github/assets/qwen-code-avg-score-trend.svg)
+
 | Version | Score moyen | Taux de réussite | pass @3 | pass^3 |
 | ------- | --------: | --------: | -----: | -----: |
 | 0.0.14  |    77.80% |     84.6% |  84.6% |  69.2% |

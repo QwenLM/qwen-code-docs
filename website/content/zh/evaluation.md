@@ -5,6 +5,8 @@
 
 ## 各 Qwen Code 版本得分
 
+![各 Qwen Code 版本的 SWE-bench Verified 平均分，范围从 76.40% 到 77.80%。](https://github.com/QwenLM/qwen-code/raw/main/.github/assets/qwen-code-avg-score-trend.svg)
+
 | 版本 | 平均分 | 通过率 | pass @3 | pass^3 |
 | ------- | --------: | --------: | -----: | -----: |
 | 0.0.14  |    77.80% |     84.6% |  84.6% |  69.2% |

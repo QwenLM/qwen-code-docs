@@ -604,3 +604,63 @@ test("sync-en lists new upstream pages in _meta.ts and skips locale siblings", (
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("sync-en links images outside docs/ to the upstream file", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "qwen-orchestrator-test-"));
+  // Named like the default repo URL, whose `.git` the link drops.
+  const upstream = path.join(root, "upstream.git");
+  const contentDir = path.join(root, "website", "content");
+
+  try {
+    fs.mkdirSync(path.join(upstream, "docs", "users"), { recursive: true });
+    fs.writeFileSync(
+      path.join(upstream, "docs", "evaluation.md"),
+      "![chart](../.github/assets/chart.svg)\n" +
+        "![local](./assets/local.png) [readme](../README.md)\n" +
+        "```md\n![chart](../.github/assets/chart.svg)\n```\n"
+    );
+    fs.writeFileSync(
+      path.join(upstream, "docs", "users", "nested.md"),
+      '![chart](../../.github/assets/chart.svg "Trend") ![gone](../../../gone.svg)\n'
+    );
+    const git = (...args: string[]) =>
+      execFileSync("git", ["-C", upstream, ...args], { stdio: "ignore" });
+    git("init", "-q", "-b", "main");
+    git("add", ".");
+    git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "docs");
+
+    const result = spawnSync(
+      process.execPath,
+      [
+        orchestrator,
+        "sync-en",
+        "--repo",
+        upstream,
+        "--temp-dir",
+        path.join(root, "clone"),
+        "--content-dir",
+        contentDir,
+        "--baseline",
+        path.join(root, "website", "last-sync.json"),
+      ],
+      { encoding: "utf8" }
+    );
+
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    const chart = `${path.join(root, "upstream")}/raw/main/.github/assets/chart.svg`;
+    // Images inside docs/, plain links, fenced examples, and paths that leave
+    // the repository keep their target.
+    assert.equal(
+      fs.readFileSync(path.join(contentDir, "en", "evaluation.md"), "utf8"),
+      `![chart](${chart})\n` +
+        "![local](./assets/local.png) [readme](../README.md)\n" +
+        "```md\n![chart](../.github/assets/chart.svg)\n```\n"
+    );
+    assert.equal(
+      fs.readFileSync(path.join(contentDir, "en", "users", "nested.md"), "utf8"),
+      `![chart](${chart} "Trend") ![gone](../../../gone.svg)\n`
+    );
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
