@@ -81,9 +81,11 @@ export const metadata: Metadata = {
     title: "Qwen Code",
   },
   icons: {
-    icon: [{ url: withBasePath("/favicon.png"), type: "image/png" }],
-    shortcut: [withBasePath("/favicon.png")],
-    apple: [{ url: withBasePath("/favicon.png"), type: "image/png" }],
+    // Versioned: browsers keep the pre-rebrand mark in their favicon cache
+    // indefinitely, so a new URL is the only reliable way to force a refetch.
+    icon: [{ url: withBasePath("/favicon.png?v=2"), type: "image/png" }],
+    shortcut: [withBasePath("/favicon.png?v=2")],
+    apple: [{ url: withBasePath("/favicon.png?v=2"), type: "image/png" }],
   },
   manifest: withBasePath("/site.webmanifest"),
   other: {
