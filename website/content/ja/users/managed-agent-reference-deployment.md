@@ -58,13 +58,44 @@ export QWEN_MANAGED_AGENT_CAPABILITY_DIGEST='sha256:<64-hex-digest>'
 bin/qwen-managed-agent-server
 ```
 
-ランチャーはこのアーカイブ内のサーバー JAR を使用します。Spring Flyway は、サービスが準備完了になる前にフォワードデータベースマイグレーションを適用します。以下を待ちます。
+環境変数として表現できない設定（Runtime 認証キーリングなど）は `config/application.yml` に記述します。バンドルされたテンプレートから開始し、ファイルをプライベートに保ちます。
+
+```bash
+cp config/application.example.yml config/application.yml
+chmod 600 config/application.yml
+```
+
+両方のランチャーは、そのファイルが存在する場合に自動的にロードします。ランチャーはこのアーカイブ内のサーバー JAR を使用します。Spring Flyway は、サービスが準備完了になる前にフォワードデータベースマイグレーションを適用します。以下を待ちます。
 
 ```bash
 curl --fail http://127.0.0.1:8080/actuator/health
 ```
 
 この基本構成はテキストのみの Hosted Session をサポートします。署名付きまたは認証されたイングレスが設定されていない限り、リスナーをループバック上に保持します。完全な認証、API、およびケイパビリティ設定は `docs/server-reference.md` としてバンドルされています。
+
+## 認証のブートストラップ
+
+`bin/qwen-managed-agent-bootstrap` は、共有 Harness トークンとケイパビリティダイジェスト、broker トークン、Runtime 認証キーを生成します。モード 0600 で `config/harness.env`、`config/server.env`、`config/application.yml` を書き込み、`--force` が指定されない限り既存ファイルの上書きを拒否し、パスのみを出力します。
+
+```bash
+bin/qwen-managed-agent-bootstrap
+```
+
+生成された `harness.env` と `server.env` はシェルでソース可能であり、systemd の `EnvironmentFile` としても有効です。systemd レイアウト用に `--directory /etc/qwen-managed-agent` を渡し、`SPRING_DATASOURCE_PASSWORD` を入力し、所有権をサービスアカウントに調整します。
+
+## 起動前チェック
+
+初回起動前および各新しいアーティファクトのインストール後に、バンドルされたランチャーを `--check` で実行します。これは同じ設定（`config/application.yml` と環境変数）をバインドし、リスナーを起動せず、入力ごとに行を 1つ出力します。
+
+```bash
+bin/qwen-managed-agent-server --check
+```
+
+これは JDK、設定ファイルとそのパーミッション、認証キーリング、起動プロパティの検証、認証/バインドの組み合わせ、Harness の到達可能性、ワークスペース ファイルと Shell のクロス設定（マウント、作成ルートまたは SSH ノードの要件を含む）、broker 認証情報とディレクトリ、ワークスペース `cwd`、空きポート、MySQL 接続性、`performance_schema` グラント、および `manifest.json` に対する Flyway バージョンをカバーします。`WARN` と `SKIP` は失敗になりません。`FAIL` は終了コード 1 で終了します。ポートチェックは設定されたアドレスをバインドするため、事前にサービスを停止します。このコマンドは Harness ケイパビリティダイジェストまたはネイティブワークスペース ストレージ登録を検証しません。
+
+## systemd
+
+この配布には、受け入れられたシングルホストトポロジ用の `systemd/` ユニットと環境テンプレートが含まれています。コントロールプレーンユニットは `KillMode=process` を使用するため、Runtime ワーカーは Broker の再起動後も生存します。Harness ユニットは `KillMode=mixed` を使用するため、そのツールプロセスは Harness とともに終了します。それらをインストールするには `systemd/README.md` に従ってください。
 
 ## 受け入れられたローカルプロセスのツールパスの有効化
 
@@ -90,7 +121,7 @@ export QWEN_MANAGED_AGENT_RUNTIME_VERIFIED_WORKSPACE_RECOVERY_ENABLED='true'
 1. 新しいアーカイブをダウンロードして検証し、両方のマニフェストを読みます。実行中のデプロイメントに触れる前に、新しい Qwen Code/Harness、Java、プロトコル、およびデータベースの要件を確認します。
 2. 新しいイングレスを停止します。デプロイメントの既存の drain 手順に従って、受け入れられたワークが落ち着くのを待ちます。
 3. MySQL、`QWEN_MANAGED_AGENT_RUNTIME_STATE_DIRECTORY`、Runtime 認証キーリング全体、および正確な古い配布をバックアップします。アップグレード中に認証キーをローテーションしないでください。
-4. Java サービスと Hosted Harness を停止します。ワークスペース と永続的な Runtime 状態を保持します。
+4. Java サービスと Hosted Harness を停止します。ワークスペース と永続的な Runtime 状態を保持します。同梱のコントロールプレーンユニットは `KillMode=process` を使用するため、`systemctl stop` では Runtime ワーカーが実行中のままになります。新しいバージョンを起動する前に、`systemctl kill --kill-whom=all -s TERM qwen-managed-agent-server` でそれらを回収します。
 5. マニフェスト互換の Qwen Code/Harness をインストールし、既存のトークンとケイパビリティダイジェストで起動します。
 6. 同じデータベースと永続的な設定で新しい `bin/qwen-managed-agent-server` を起動します。Flyway がスキーマをフォワードマイグレーションします。
 7. 正常な actuator レスポンスを要求し、既存の Session と履歴を読み取り、イングレスを再開する前に新しいツールなしの Turn を 1つ完了します。オプションのツールケイパビリティは、有効化する前に再審査します。
@@ -127,7 +158,7 @@ FROM ma_runtime_binding WHERE runtime_credential_key_id IS NOT NULL;
 
 結果は、永続化された行がまだ必要としているキー ID を一覧表示します。アクティブな ID (`reference-v2`) のみを期待します。`reference-v1` が表示されている間、そのキーは設定されたままにする必要があります。
 
-キーリングはマップであり、`QWEN_MANAGED_AGENT_*` 環境変数を通じて提供することはできません。relaxed binding は環境変数形式を空または誤ったキーのリングにサイレントに解決し、起動エラーは発生しません。サーバープロセスが実際にロードする `application.yml` で `previous-credential-keys` を設定します。リファレンス配布には設定ファイルが付属しておらず、Spring は外部の `application.yml` を配布ルートではなくプロセスの作業ディレクトリ（`./` および `./config/`）に対して解決します。`bin/qwen-managed-agent-server` はその引数を JVM に転送するため、`--spring.config.additional-location=file:<absolute-path>` で場所を固定します。環境変数のみに依存するデプロイメントは空のリングで起動するため、前のキーの設定なしに `credential-key-id` をローテーションすると、その ID で書き込まれた行が読み取り不能になります。
+キーリングはマップであり、`QWEN_MANAGED_AGENT_*` 環境変数を通じて提供することはできません。relaxed binding は環境変数形式を空または誤ったキーのリングにサイレントに解決し、起動エラーは発生しません。`previous-credential-keys` は `config/application.yml` で設定します。この配布には `config/application.example.yml` が同梱されており、両方のランチャーはそのファイルが存在する場合に `SPRING_CONFIG_ADDITIONAL_LOCATION=file:<distribution-root>/config/application.yml` をエクスポートするため、場所はプロセスの作業ディレクトリに依存せず、コマンドの位置引数にオプションが追加されることもありません。変数が既に設定されている場合、ランチャーは代わりにそれを有効にします。環境変数のみに依存するデプロイメントは空のリングで起動するため、前のキーの設定なしに `credential-key-id` をローテーションすると、その ID で書き込まれた行が読み取り不能になります。明示的な `--spring.config.additional-location` コマンドライン引数はこの環境変数のデフォルトより優先されます。両方が存在する場合、コマンドラインの値が勝ち、バンドルされた `config/application.yml` はロードされません。
 
 オペレーターリカバリーエントリーは、サーバーと同じアクティブなペアと `previous-credential-keys` マップを読み取ります。リカバリーには同じ外部 YAML をロードします（例: `SPRING_CONFIG_ADDITIONAL_LOCATION=file:<absolute-path>/application.yml`）。バインディングでまだ参照されているすべてのキーを保持しつつ、新しいキーをアクティブなままにします。CSI/マイグレーションメンテナンスメイン（CSI Hosted プローブを含む）は引き続き単一の認証キーペアを読み取ります。それらのエントリーを起動する際は、ターゲットのバインディングを暗号化したキーをアクティブなペアとして使用します。
 

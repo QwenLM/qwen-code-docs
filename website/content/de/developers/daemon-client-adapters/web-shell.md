@@ -62,7 +62,7 @@ mit `autoReconnect={false}` für Tests oder benutzerdefiniertes Verbindungsmanag
 
 ### Composer-Anhänge entfernen
 
-Im Desktop-WebShell-Composer entfernt Backspace oder Delete zuerst einen entfernbaren Kontext-Tag in der bestehenden Reihenfolge des Keys, wenn der Textbereich leer ist, sich der Cursor am Anfang befindet und keine Auswahl vorhanden ist. Wenn kein entfernter Kontext-Tag mehr vorhanden ist, wird der letzte Dateianhang entfernt, oder das letzte eingefügte Bild, wenn keine Dateien vorhanden sind. Datei- und Bildanhänge bleiben erhalten, solange der Textbereich nicht leer ist. Anhänge können auch über ihre individuellen Entfernen-Schaltflächen entfernt werden.
+Im Desktop-WebShell-Composer entfernt Backspace oder Delete zuerst einen entfernbaren Kontext-Tag in der bestehenden Reihenfolge des Keys, wenn der Textbereich leer ist, sich der Cursor am Anfang befindet und keine Auswahl vorhanden ist. Wenn kein entfernbarer Kontext-Tag mehr vorhanden ist, wird der letzte Dateianhang entfernt, oder das letzte eingefügte Bild, wenn keine Dateien vorhanden sind. Datei- und Bildanhänge bleiben erhalten, solange der Textbereich nicht leer ist. Anhänge können auch über ihre individuellen Entfernen-Schaltflächen entfernt werden.
 
 ## Browser-Deployment-Formen
 
@@ -87,6 +87,8 @@ Daemon-Routen durch die gleiche Origin proxyen oder vom Daemon bereitgestellt we
 Daemon weist willkürliche Browser-Origin-Anfragen absichtlich zurück.
 
 ## Rendering-Verantwortlichkeiten
+
+WebShell hebt zeilenführende Slash-Tokens wie `/review` in Benutzernachrichten mit der gleichen blauen, fetten Darstellung wie im Composer hervor. Das Highlighting wird aus dem aufgezeichneten Text abgeleitet, daher gilt es auch beim erneuten Öffnen einer Session. Es ist ein Syntax-Hinweis, keine Bestätigung, dass ein Befehl existiert oder ausgeführt wurde. Nachrichtentext, klickbare URLs und annotierte Referenz-Chips bleiben erhalten.
 
 Das gemeinsame Transkript-Modell ist semantisch, nicht visuell. UI-Clients entscheiden, wie sie
 rendern:

@@ -58,13 +58,44 @@ export QWEN_MANAGED_AGENT_CAPABILITY_DIGEST='sha256:<64-hex-digest>'
 bin/qwen-managed-agent-server
 ```
 
-启动器使用此归档文件中的服务端 JAR。Spring Flyway 在服务就绪前执行正向数据库迁移。等待以下命令返回成功：
+无法以环境变量形式表达的设置（如 Runtime 凭据密钥环）应放在 `config/application.yml` 中。从捆绑的模板开始，并保持该文件私有：
+
+```bash
+cp config/application.example.yml config/application.yml
+chmod 600 config/application.yml
+```
+
+两个启动器在文件存在时都会自动加载它。启动器使用此归档文件中的服务端 JAR。Spring Flyway 在服务就绪前执行正向数据库迁移。等待以下命令返回成功：
 
 ```bash
 curl --fail http://127.0.0.1:8080/actuator/health
 ```
 
 此基础配置支持纯文本 Hosted Session。除非配置了签名或认证入口，否则请将监听器保持在 loopback 上。完整的认证、API 和 capability 配置打包在 `docs/server-reference.md` 中。
+
+## 引导凭据
+
+`bin/qwen-managed-agent-bootstrap` 生成共享的 Harness token 和 capability digest、broker token 以及 Runtime 凭据密钥。它以 0600 模式写入 `config/harness.env`、`config/server.env` 和 `config/application.yml`，除非给出 `--force`，否则拒绝覆盖现有文件，并且仅打印路径：
+
+```bash
+bin/qwen-managed-agent-bootstrap
+```
+
+生成的 `harness.env` 和 `server.env` 可通过 shell source 加载，也是有效的 systemd `EnvironmentFile`。传入 `--directory /etc/qwen-managed-agent` 以使用 systemd 布局，填写 `SPRING_DATASOURCE_PASSWORD`，并将所有权调整为服务账户。
+
+## 预检
+
+在首次启动前以及安装每个新构件后，使用 `--check` 运行捆绑的启动器。它绑定相同的配置（`config/application.yml` 加环境变量），不启动任何监听器，并为每个输入打印一行：
+
+```bash
+bin/qwen-managed-agent-server --check
+```
+
+它涵盖 JDK、配置文件及其权限、凭据密钥环、启动属性验证、认证/绑定组合、Harness 可达性、Workspace 文件和 Shell 交叉设置（包括挂载、创建根或 SSH 节点要求）、broker 凭据和目录、Workspace `cwd`、可用端口和 MySQL 连接性、`performance_schema` 授权以及针对 `manifest.json` 的 Flyway 版本。`WARN` 和 `SKIP` 不会失败；任何 `FAIL` 都会以退出码 1 退出。端口检查会绑定配置的地址，因此请先停止服务。该命令不验证 Harness capability digest 或原生 Workspace 存储注册。
+
+## systemd
+
+该发行版包含针对已接受的单主机拓扑的 `systemd/` 单元和环境模板。控制平面单元使用 `KillMode=process`，以便 Runtime worker 在 Broker 重启后继续存活；Harness 单元使用 `KillMode=mixed`，以便其工具进程随它一起终止。按照 `systemd/README.md` 安装它们。
 
 ## 启用已接受的本地进程工具路径
 
@@ -90,7 +121,7 @@ export QWEN_MANAGED_AGENT_RUNTIME_VERIFIED_WORKSPACE_RECOVERY_ENABLED='true'
 1. 下载并验证新归档文件，阅读两份清单。在操作运行中的部署之前，确认新的 Qwen Code/Harness、Java、协议和数据库要求。
 2. 停止新的入站流量。根据部署现有的 drain 流程等待已准入的工作完成。
 3. 备份 MySQL、`QWEN_MANAGED_AGENT_RUNTIME_STATE_DIRECTORY`、Runtime 凭据密钥以及精确的旧发行版。升级期间不要轮换凭据密钥。
-4. 停止 Java 服务和 Hosted Harness。保留 Workspace 和持久化 Runtime 状态。
+4. 停止 Java 服务和 Hosted Harness。保留 Workspace 和持久化 Runtime 状态。随附的控制平面单元使用 `KillMode=process`，因此 `systemctl stop` 会使 Runtime worker 继续运行；在启动新版本之前，使用 `systemctl kill --kill-whom=all -s TERM qwen-managed-agent-server` 收割它们。
 5. 安装清单兼容的 Qwen Code/Harness，并使用现有 token 和 capability digest 启动。
 6. 使用相同的数据库和持久化设置启动新的 `bin/qwen-managed-agent-server`。Flyway 将正向迁移 schema。
 7. 要求 actuator 健康检查通过，读取现有 Session 和历史记录，然后在重新开放入站流量之前完成一个新的无工具轮次。在启用任何可选工具 capability 之前重新进行资质认证。
@@ -127,7 +158,7 @@ FROM ma_runtime_binding WHERE runtime_credential_key_id IS NOT NULL;
 
 结果列出已持久化行仍然需要的 key ID：预期只有活动 ID（`reference-v2`）。只要 `reference-v1` 出现，该密钥就必须保持配置。
 
-密钥环是一个 map，不能通过 `QWEN_MANAGED_AGENT_*` 环境变量提供：宽松绑定会静默地将环境变量形式解析为空或错误 key 的密钥环，且不会报启动错误。请在服务端进程实际加载的 `application.yml` 中配置 `previous-credential-keys`。参考发行版不附带配置文件，Spring 根据进程工作目录（`./` 和 `./config/`）解析外部 `application.yml`，而非发行版根目录；`bin/qwen-managed-agent-server` 会将其参数转发给 JVM，因此 `--spring.config.additional-location=file:<absolute-path>` 可固定配置位置。仅依赖环境变量的部署启动时密钥环为空，因此在未配置旧密钥的情况下轮换 `credential-key-id` 会使该密钥下写入的行无法读取。
+密钥环是一个 map，不能通过 `QWEN_MANAGED_AGENT_*` 环境变量提供：宽松绑定会静默地将环境变量形式解析为空或错误 key 的密钥环，且不会报启动错误。在 `config/application.yml` 中配置 `previous-credential-keys`。该发行版附带 `config/application.example.yml`，并且当该文件存在时，两个启动器都会导出 `SPRING_CONFIG_ADDITIONAL_LOCATION=file:<distribution-root>/config/application.yml`，因此位置不再依赖于进程工作目录，也不会在命令的位置参数中添加任何选项。当该变量已设置时，启动器会保持其生效。仅依赖环境变量的部署启动时密钥环为空，因此在未配置旧密钥的情况下轮换 `credential-key-id` 会使该密钥下写入的行无法读取。显式的 `--spring.config.additional-location` 命令行参数优先于此环境默认值；当两者同时存在时，命令行值获胜，捆绑的 `config/application.yml` 不会被加载。
 
 成功配置密钥环后，服务端和恢复入口会在每个 protector 实例启动时记录一次已解析的活动 ID 和已配置的 ID。这些 ID 本身不是密钥材料，已经和密文一起存储；诊断信息会对控制字符和非 ASCII 字符进行 JSON 转义，保留空格和大小写，且永远不会包含密钥材料、密文或 token。在使用轮换后的部署前，需要将已配置的 ID 与退役查询返回的精确 ID 进行对比。不可用密钥错误会列出请求的、活动的和已配置的 ID，因此即使存在静默规范化或拼写错误的映射，也能在不暴露密钥的前提下定位问题。该诊断不能证明所有已存储的行都可以被解密。
 
@@ -135,7 +166,7 @@ FROM ma_runtime_binding WHERE runtime_credential_key_id IS NOT NULL;
 
 `bin/qwen-managed-agent-operator-recovery` 启动单独打包的恢复入口点。除非设置了恢复专用环境变量，否则该入口点处于禁用状态，且不会启动 HTTP 服务或 worker。请遵循 `docs/hosted-workspace-recovery.md`；切勿推断物理停止或删除持久化行来绕过安全围栏。
 
-操作员恢复入口读取与服务端相同的活动密钥对和 `previous-credential-keys` map。恢复时加载相同的外部 YAML，例如使用 `SPRING_CONFIG_ADDITIONAL_LOCATION=file:<absolute-path>/application.yml`，并保持新密钥为活动密钥，同时保留绑定仍在引用的每一个密钥。CSI/迁移维护主入口（包括 CSI Hosted 探针）仍然读取单个凭据密钥对；启动这些入口时，以加密其目标绑定的密钥作为活动密钥对。
+操作员恢复入口读取与服务端相同的活动密钥对和 `previous-credential-keys` map。其启动器以相同方式加载 `config/application.yml`；当文件位于其他位置时，设置 `SPRING_CONFIG_ADDITIONAL_LOCATION=file:<absolute-path>/application.yml`。保持新密钥为活动密钥，同时保留绑定仍在引用的每一个密钥。CSI/迁移维护主入口（包括 CSI Hosted 探针）仍然读取单个凭据密钥对；启动这些入口时，以加密其目标绑定的密钥作为活动密钥对。
 
 ## 范围边界
 
