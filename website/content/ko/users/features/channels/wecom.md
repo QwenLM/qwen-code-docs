@@ -2,6 +2,8 @@
 
 이 가이드에서는 WeCom 지능형 로봇(企业微信智能机器人)과 함께 Qwen Code를 설정하는 방법을 다룹니다.
 
+Corp ID, Agent ID, Token, EncodingAESKey를 사용하는 자체 구축 애플리케이션의 경우, 별도의 [WeCom Callback 채널](./wecom-callback)을 사용하세요.
+
 ## 사전 준비 사항
 
 - WeCom 조직 계정

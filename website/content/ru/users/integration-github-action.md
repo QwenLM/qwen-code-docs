@@ -112,19 +112,19 @@ gha-creds-*.json
 
 - <a name="__input_qwen_api_key"></a><a href="#user-content-__input_qwen_api_key"><code>qwen*api_key</code></a>: *(Optional)\_ API key для Qwen API.
 
-- <a name="__input_qwen_cli_version"></a><a href="#user-content-__input_qwen_cli_version"><code>qwen*cli_version</code></a>: *(Optional, default: `latest`)\_ Версия устанавливаемого Qwen Code CLI. Может быть "latest", "preview", "nightly", конкретный номер версии, git-ветка, тег или коммит. Дополнительную информацию см. в разделе [Qwen Code CLI releases](https://github.com/QwenLM/qwen-code-action/blob/main/docs/releases.md).
+- <a name="__input_qwen_cli_version"></a><a href="#user-content-__input_qwen_cli_version"><code>qwen*cli_version</code></a>: *(Optional, default: `latest`)\_ Версия устанавливаемого Qwen Code CLI. Может быть "latest", "preview", "nightly", конкретный номер версии, git-ветка, тег или коммит. Дополнительную информацию см. в разделе [Qwen Code CLI releases](https://github.com/QwenLM/qwen-code/releases).
 
 - <a name="__input_qwen_debug"></a><a href="#user-content-__input_qwen_debug"><code>qwen*debug</code></a>: *(Optional)\_ Включить логирование отладки и потоковую передачу вывода.
 
 - <a name="__input_qwen_model"></a><a href="#user-content-__input_qwen_model"><code>qwen*model</code></a>: *(Optional)\_ Модель для использования с Qwen Code.
 
-- <a name="__input_prompt"></a><a href="#user-content-__input_prompt"><code>prompt</code></a>: _(Optional, default: `You are a helpful assistant.`)_ Строка, передаваемая в [`--prompt` аргумент](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#command-line-arguments) Qwen Code CLI.
+- <a name="__input_prompt"></a><a href="#user-content-__input_prompt"><code>prompt</code></a>: _(Optional, default: `You are a helpful assistant.`)_ Строка, передаваемая в [`--prompt` argument](./configuration/settings.md#command-line-arguments-table) Qwen Code CLI.
 
-- <a name="__input_settings"></a><a href="#user-content-__input_settings"><code>settings</code></a>: _(Optional)_ JSON-строка, записываемая в `.qwen/settings.json` для настройки _проектных_ параметров CLI. Подробнее см. в документации по [файлам настроек](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#settings-files).
+- <a name="__input_settings"></a><a href="#user-content-__input_settings"><code>settings</code></a>: _(Optional)_ JSON-строка, записываемая в `.qwen/settings.json` для настройки _проектных_ параметров CLI. Подробнее см. в документации по [settings files](./configuration/settings.md#settings-files).
 
-- <a name="__input_use_qwen_code_assist"></a><a href="#user-content-__input_use_qwen_code_assist"><code>use*qwen_code_assist</code></a>: *(Optional, default: `false`)\_ Использовать ли Code Assist для доступа к моделям Qwen Code вместо стандартного Qwen Code API key. Дополнительную информацию см. в [документации Qwen Code CLI](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/authentication.md).
+- <a name="__input_use_qwen_code_assist"></a><a href="#user-content-__input_use_qwen_code_assist"><code>use*qwen_code_assist</code></a>: *(Optional, default: `false`)\_ Использовать ли Code Assist для доступа к моделям Qwen Code вместо стандартного Qwen Code API key. Дополнительную информацию см. в [Qwen Code CLI documentation](./configuration/auth.md).
 
-- <a name="__input_use_vertex_ai"></a><a href="#user-content-__input_use_vertex_ai"><code>use*vertex_ai</code></a>: *(Optional, default: `false`)\_ Использовать ли Vertex AI для доступа к моделям Qwen Code вместо стандартного Qwen Code API key. Дополнительную информацию см. в [документации Qwen Code CLI](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/authentication.md).
+- <a name="__input_use_vertex_ai"></a><a href="#user-content-__input_use_vertex_ai"><code>use*vertex_ai</code></a>: *(Optional, default: `false`)\_ Использовать ли Vertex AI для доступа к моделям Qwen Code вместо стандартного Qwen Code API key. Дополнительную информацию см. в [Qwen Code CLI documentation](./configuration/auth.md).
 
 - <a name="__input_extensions"></a><a href="#user-content-__input_extensions"><code>extensions</code></a>: _(Optional)_ Список расширений Qwen Code CLI для установки.
 
@@ -215,6 +215,7 @@ Qwen Code CLI можно расширить дополнительным фун�
 ## Кастомизация
 
 Создайте файл QWEN.md в корне вашего репозитория, чтобы предоставить специфичный для проекта контекст и инструкции для [Qwen Code CLI](./common-workflow). Это полезно для определения соглашений по написанию кода, архитектурных паттернов или других правил, которым модель должна следовать в данном репозитории.
+
 ## Участие в разработке
 
 Будем рады вашему вкладу! Ознакомьтесь с **руководством по участию в разработке** Qwen Code CLI, чтобы узнать подробнее о том, как начать.
@@ -225,4 +226,4 @@ Qwen Code CLI можно расширить дополнительным фун�
 [Qwen Code CLI]: https://github.com/QwenLM/qwen-code-action/
 [variables]: https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-variables#creating-configuration-variables-for-a-repository
 [GitHub CLI]: https://docs.github.com/en/github-cli/github-cli
-[QWEN.md]: https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#context-files-hierarchical-instructional-context
+[QWEN.md]: ./configuration/settings.md#context-files-hierarchical-instructional-context

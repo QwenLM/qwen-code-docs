@@ -31,10 +31,10 @@
       "clientId": "$DINGTALK_CLIENT_ID",
       "clientSecret": "$DINGTALK_CLIENT_SECRET",
       "useConnectionManager": true,
-      "senderPolicy": "open",
+      "privatePolicy": "open",
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
-      "instructions": "你是一个通过钉钉响应的简洁编码助手。",
+      "instructions": "You are a concise coding assistant responding via DingTalk.",
       "groupPolicy": "open",
       "atSender": true,
       "groups": {
@@ -97,7 +97,7 @@ export DINGTALK_CLIENT_SECRET=<your-app-secret>
 
 ### Turn 输出模式
 
-[共享的 `outputMode` 设置](https://qwenlm.github.io/qwen-code-docs/en/users/features/channels/overview/#turn-output-mode) 控制 DingTalk 何时投递助手结果。DingTalk 是目前唯一集成此策略的适配器。默认值为 `per_turn`，包括省略 `outputMode` 时：
+[共享的 `outputMode` 设置](./overview#turn-output-mode) 控制 DingTalk 何时投递助手结果。DingTalk 是目前唯一集成此策略的适配器。默认值为 `per_turn`，包括省略 `outputMode` 时：
 
 - `per_task`：等待主任务及其关联的后台任务和通知完成，然后投递一个最终结果卡片，包含该任务最后一个非空助手回复。
 - `per_response`：每个完整的助手回复都有自己独立的结果卡片。Token 片段更新当前卡片，不会创建新卡片。后台助手回复也会单独投递。
@@ -229,7 +229,7 @@ qwen channel start
 ## 提示
 
 - **使用钉钉 markdown 感知指令**——钉钉支持标题、粗体、链接、代码块和表格。由于窄屏可能会水平滚动，请保持表格紧凑。
-- **限制访问**——在组织环境下，`senderPolicy: "open"` 可能可以接受。如需更严格的控制，使用 `"allowlist"` 或 `"pairing"`。参见[私聊配对](./overview#dm-pairing)了解详情。
+- **限制访问**——在组织环境下，`privatePolicy: "open"` 可能可以接受。如需更严格的控制，使用 `"allowlist"` 或 `"pairing"`。参见[私聊配对](./overview#dm-pairing)了解详情。
 - **引用消息**——引用（回复）用户消息会将引用的文本作为上下文提供给代理。富文本引用保留其文本顺序并附加嵌入的图片。如果引用的消息是图片、文件、音频或视频消息，机器人会以与直接发送时相同的方式下载并附加它。暂不支持引用机器人回复。
 
 ## 故障排查

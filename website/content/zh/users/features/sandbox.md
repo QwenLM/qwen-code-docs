@@ -1,6 +1,55 @@
 # 沙箱
 
-本文档说明如何在沙箱中运行 Qwen Code，以降低工具执行 shell 命令或修改文件时的风险。
+本文档说明 Linux 上的工具执行限制以及现有的整个 CLI 沙箱方法。
+
+## Linux 工具执行沙箱
+
+在 Linux 上，将 `bwrap`（Bubblewrap）安装在 `/usr/bin/bwrap`（受支持的系统路径）以获得最强的支持边界，然后在**用户**设置（`~/.qwen/settings.json`，或 `QWEN_HOME` 选择的目录）或管理员**系统**设置中启用工具执行沙箱：
+
+```json
+{
+  "tools": {
+    "executionSandbox": {
+      "backend": "auto",
+      "filesystem": "workspace-write",
+      "network": "closed"
+    }
+  }
+}
+```
+
+`filesystem` 和 `network` 是必需的。`backend` 默认为 `auto`，会首先尝试 bwrap。当 bwrap 不可用且 `network` 为 `open` 时，`auto` 可以在具有 Landlock ABI 3 或更高版本的内核上使用捆绑的 Landlock 助手。将 `backend` 设置为 `bwrap` 或 `landlock` 以要求使用该确切实现。Landlock 无法强制执行 `network: closed` 或隐藏显式屏蔽的路径。任一要求都会在命令启动前拒绝 Landlock；自动回退永远不会丢弃剩余的路径掩码。使用 `read-only` 拒绝工作区写入，或使用 `workspace-write` 允许在当前规范工作区内写入。每个命令还会获得私有临时空间。普通的 `includeDirectories` 设置不会授予写入权限。保持工作区与 Qwen 安装、用户配置和运行时状态目录分离。
+
+CLI、模型传输、身份验证和会话存储保留在宿主机上。Shell、终端 `!`、提示 shell 插值、Monitor、Read/Write/Edit 以及受支持的嵌套进程内 Agent/Code Mode 调用使用相同的运行时策略。使用 bwrap 时，`network: closed` 会阻止命令的普通宿主/外部 IP 连接，而 `open` 则共享宿主网络。读取仍然很广泛：此模式不会隐藏宿主机密，也不会承诺隔离路径名 Unix 套接字和宿主服务。审批和 YOLO 不会扩展文件系统或网络策略。标准流是调用者显式提供的能力：已连接的套接字、TTY 或字符设备即使在 `network: closed` 下仍然可用。封闭网络不会撤销那些现有的描述符；当不需要该访问时，避免将宿主服务连接作为 stdin 提供。宿主支持的文件和命名 FIFO stdin 需要捆绑的 Linux x64/arm64 输入助手，并通过私有 Unix 流套接字复制，其写入端已关闭；常规文件偏移量仅通过从该套接字消耗的字节数推进，空闲的 FIFO 写入器不会延迟命令完成。直接读取 fd 0：此输入是套接字而不是 FIFO，不支持通过 `/dev/stdin` 或 `/proc/self/fd/0` 重新打开。SIGINT/SIGTERM 取消命令但仍会排空已接受的 stdout/stderr 字节；关闭的输出会以退出码 141 停止该流，而另一个有效输出继续排空。
+
+Landlock 报告 `partial` 强制执行，因为它限制路径名读取、写入和目录变更，但不创建 PID 或网络命名空间，并且目前无法限制每个元数据操作，包括 `chmod`、`chown`、扩展属性和时间戳。Landlock 命令可以看到宿主进程并使用宿主网络。分离的后代保留 Landlock 文件系统限制，但不会获得 bwrap 的 PID 命名空间生命周期边界。打开的文件描述符保留其现有访问权限。Qwen Code 通过私有只读套接字流式传输宿主支持的文件和命名 FIFO stdin，而不是将这些描述符传递给有效载荷；套接字、字符设备和匿名管道可以共享。输出标准流仍然是调用者的显式目标。执行状态描述符在有效载荷 exec 时关闭。
+
+Landlock 还具有更窄的可写设备表面：它授予对 `/dev/null` 的写入，但不创建 bwrap 的私有 `/dev` 和 `/proc` 挂载。打开 `/dev/full` 或 `/dev/tty` 进行写入以及在 `/dev/shm` 中创建文件被拒绝，因此需要这些操作的程序可能会失败。使用通过 `TMPDIR`、`TMP` 和 `TEMP` 公开的私有临时目录来存储临时文件。已打开的、调用者提供的标准流保留其现有访问权限。启动时的 Landlock 策略探测需要 `/usr/bin/true`；缺少它的宿主即使其内核支持 Landlock 也会使探测失败。
+
+工作区设置无法启用、禁用或修改此策略，即使在受信任的项目中也是如此。有效优先级是系统优先于用户优先于系统默认值，选择完整的策略对象。值必须是字面量；环境替换、未知字段和不完整的对象会被拒绝。`--bare` 和 `--safe-mode` 保留操作员限制。更改需要新的运行时。格式错误或不可读的系统默认、用户或系统设置文件现在会阻止启动（配置退出码 52），而不是将未知策略静默重置为空设置。错误会指明文件和修复操作。修复其 JSON 对象或恢复读取访问权限，然后重启。用户 `.corrupted` 副本仅供参考；原始操作员文件永远不会被清除。仅限工作区的恢复仍然可用，无需操作员限制。格式错误的链接工作区设置（包括链接的 `.qwen` 目录或硬链接文件）需要手动修复；自动恢复会在更改原始文件或之前的损坏副本之前拒绝。有效的链接 JSON 仍然可读。
+
+此初始公共模式支持普通的无头 CLI 和两个终端 UI。ACP、`qwen serve` 和 Web 终端明确拒绝它。MCP/LSP、可执行 hook/extension、worktree/arena 管理、外部代理、speculative execution、文件检查点、自动 skill/memory 维护以及未移植的进程或变更工具被禁用或拒绝。普通的同工作区进程内代理无法添加 hook、MCP 服务器、外部执行器或 worktree 隔离。自定义状态命令、外部 Markdown/图像渲染器、IDE 检测和连接、文件恢复以及宿主 Git diff 预览被禁用。仅限对话的回退仍然可用。
+
+显式操作员诊断（如 `/doctor`、通过 `/memory` 打开或编辑文件和文件夹，以及通过 `/skills` 更改设置）仍然是受信任的宿主操作。这些管理命令不会作为模型可调用的命令公开。选择 skill 会填充输入字段；提交 `/skill-name` 当前会在准备参数或更新使用记录之前报告不支持的模式错误。skill 命令执行和模型 Skill 工具在其准备写入被限制之前仍然不可用。即使更改已保存的设置，自动 memory 和 skill 维护在此运行时中仍然禁用。
+
+在运行任务之前检查和验证活动边界：
+
+```bash
+qwen sandbox
+qwen sandbox --verify
+qwen sandbox -- sh -c 'printf "confined command\n"'
+qwen -y -p "Update the project and run its tests"
+```
+
+链接的 Git worktree 仅获得对已准入工作区的写入权限。该工作区之外的 Git 公共目录和 worktree 元数据保持只读；此模式不会隐式授权更改另一个 checkout 的仓库元数据。需要这些写入的操作可能会被拒绝。
+
+报告会指明工具边界、请求/有效的后端、强制执行级别、适用时的 Landlock ABI、工作区、文件系统和命令网络策略。`--verify` 检查工作区写入、对宿主机上已知可写文件的拒绝、预期的私有或共享 PID 命名空间身份，以及选定的网络命名空间。通过的后端探测建立准入，而不是在所有继承的环境设置下经过身份验证的完整会话可行性。之后运行普通任务以测试其所需的工具和服务。如果验证无法创建其宿主侧临时装置，请检查 `TMPDIR` 和目录权限；这与边界拒绝不同。后端设置错误在有效载荷执行之前失败，并且永远不会在宿主机上重新运行命令。单命令子命令转发字面参数和重定向的 stdin，同时逐字节保留 stdout 和 stderr；使用终端 `!` 进行交互式 PTY 命令。
+
+### 从整个 CLI bwrap 迁移
+
+替换 `--sandbox bwrap` 并移除 `tools.sandbox: "bwrap"`、`QWEN_SANDBOX=bwrap`、`QWEN_SANDBOX_NET` 和 `QWEN_SANDBOX_PROXY_COMMAND`，然后按上述方式配置 `tools.executionSandbox`。从旧沙箱外部的 shell 重启；继承的 `SANDBOX=bwrap` 会被拒绝。`proxied` 不是受支持的网络策略。不要将此模式与 Docker、Podman、Seatbelt 或继承的整个 CLI 沙箱标记结合使用。旧的 bwrap 设置会产生显式迁移错误。
+
+下面的 Docker、Podman 和 macOS Seatbelt 方法仍然在现有环境中运行整个 CLI。
 
 ## 前提条件
 
@@ -98,6 +147,8 @@ qwen -p "运行测试套件"
 > [!important]
 >
 > 如果设置了 `QWEN_SANDBOX`，它将**覆盖** CLI 标志和 `settings.json`。
+
+`--sandbox` 和 `-s` 接受可选值：`true`、`false`、`docker`、`podman` 或 `sandbox-exec`。对于带提示的自动选择，使用 `qwen --sandbox=true "query"` 或 `qwen --sandbox -p "query"`。与旧的仅布尔值解析器不同，`qwen --sandbox "query"` 现在将 `query` 视为后端值并拒绝未知后端。`--` 之前的选项即使在后置词之后也使用相同的语法；在提示中使用字面选项文本请使用 `-p "..."`。`--` 停止选项解析，但其尾部标记不会作为默认命令提示转发。会话沙箱标志在管理子命令上不被接受，其 `-s` 别名保留自己的含义。
 
 ### 配置沙箱镜像（Docker/Podman）
 
