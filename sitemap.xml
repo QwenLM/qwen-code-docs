@@ -488,7 +488,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/daemon-rest-api-reference/</loc>
-<lastmod>2026-10-20T01:40:47.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -542,7 +542,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/development/telemetry/</loc>
-<lastmod>2026-10-20T01:40:47.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -578,7 +578,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/</loc>
-<lastmod>2026-10-20T01:40:47.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -740,7 +740,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/configuration/settings/</loc>
-<lastmod>2026-10-20T01:40:47.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -788,7 +788,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/extension/mods/</loc>
-<lastmod>2026-10-19T01:37:02.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -866,7 +866,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/channels/overview/</loc>
-<lastmod>2026-10-18T03:02:46.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -889,8 +889,14 @@
 <priority>0.6</priority>
 </url>
 <url>
+<loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/channels/wecom-callback/</loc>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/channels/wecom/</loc>
-<lastmod>2026-09-23T22:58:44.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1154,7 +1160,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/qwen-serve/</loc>
-<lastmod>2026-10-08T01:08:54.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1982,7 +1988,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/approval-mode/</loc>
-<lastmod>2026-09-02T02:00:01.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2012,7 +2018,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/channels/dingtalk/</loc>
-<lastmod>2026-09-19T15:37:23.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2071,8 +2077,14 @@
 <priority>0.6</priority>
 </url>
 <url>
+<loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/channels/wecom-callback/</loc>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/channels/wecom/</loc>
-<lastmod>2026-09-23T22:58:44.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2204,7 +2216,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/sandbox/</loc>
-<lastmod>2026-08-07T00:26:19.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3248,7 +3260,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/features/channels/wecom/</loc>
-<lastmod>2026-09-23T22:58:44.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5624,7 +5636,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/features/channels/wecom/</loc>
-<lastmod>2026-09-23T22:58:44.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5840,7 +5852,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/integration-github-action/</loc>
-<lastmod>2026-08-06T21:54:36.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6416,7 +6428,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/developers/daemon-ui/sidebar-customization/</loc>
-<lastmod>2026-09-10T12:37:12.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6734,7 +6746,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/approval-mode/</loc>
-<lastmod>2026-09-02T02:00:01.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6819,6 +6831,12 @@
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/channels/telegram/</loc>
 <lastmod>2026-10-03T23:00:02.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
+<loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/channels/wecom-callback/</loc>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7112,7 +7130,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/support/troubleshooting/</loc>
-<lastmod>2026-09-08T01:49:47.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8000,7 +8018,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/features/channels/wecom/</loc>
-<lastmod>2026-09-23T22:58:44.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8930,7 +8948,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ko/developers/tools/shell/</loc>
-<lastmod>2026-09-22T00:05:29.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -9152,7 +9170,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ko/users/features/channels/wecom/</loc>
-<lastmod>2026-09-23T22:58:44.000Z</lastmod>
+<lastmod>2026-10-21T01:47:44.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
