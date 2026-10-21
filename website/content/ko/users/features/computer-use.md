@@ -1,92 +1,81 @@
 # Computer Use
 
-Qwen Code에는 모델이 데스크톱 애플리케이션을 조작하는 방법을 가르치는 `computer-use` skill이 있으며, 별도로 설치되는 두 패키지를 통해 동작합니다:
+Computer Use는 독립 실행형 Node REPL MCP 서버를 통해 동작합니다. 첫 `js` 호출은 전역 `cua`를 로드하고 현재 플랫폼의 문서를 표시합니다. Computer Use와 Browser Use는 더 이상 번들 skill을 필요로 하지 않습니다.
 
 ```text
-bundled computer-use skill
-  -> @qwen-code/node-repl-mcp
-  -> @qwen-code/cua-sdk/computer-use
-  -> native cua-driver accessibility backend
+Qwen Code / any MCP client
+  -> @qwen-code/node-repl-mcp (js, js_reset)
+  -> @qwen-code/cua-sdk/runtime
+     -> native Qwen CUA Driver (desktop applications)
+     -> @qwen-code/browser-use (Qwen browser extension)
 ```
 
-Qwen Code는 MCP 서버, SDK 또는 네이티브 드라이버를 번들하지 않습니다. skill은 외부 패키지가 누락되어 있을 때 자동으로 설치합니다.
+## 설정
 
-> [!warning]
->
-> Computer Use는 애플리케이션 UI를 읽고 마우스 및 키보드 입력을 제어할 수 있습니다.
-> 신뢰할 수 있는 환경에서만 사용하고 MCP 승인을 신중하게 확인하세요.
-
-## 자동 설정
-
-Node.js 22 이상이 필요하며 npm도 필요합니다.
-
-처음 사용 시 skill이 다음 명령을 직접 실행합니다:
+Node.js 22 이상과 npm이 필요합니다. MCP 서버를 등록한 다음 Qwen Code를 재시작하세요:
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.7
-npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.11
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.26.0
 ```
 
-MCP 서버가 처음 추가된 후 Qwen Code를 재시작하세요. 그런 다음 skill이 `node_repl`을 통해 데스크톱 작업을 계속합니다.
+서버는 일치하는 SDK와 브라우저 SDK를 의존성으로 설치합니다. 네이티브 SDK 페이로드는 현재 플랫폼에 맞게 다운로드되며 해당 릴리스의 SHA-256 체크섬에 대해 검증됩니다. npm 패키지 외부에 캐시되므로 워크스페이스 SDK 부트스트랩 명령이 필요하지 않습니다. 버전 0.26.0은 릴리스가 게시될 때까지 로컬 개발 대상입니다.
 
-SDK 설치는 `package.json`과 lockfile을 변경하지 않지만, 워크스페이스의 `node_modules`에는 씁니다. postinstall 스크립트가 현재 플랫폼의 네이티브 페이로드를 다운로드하고 검증합니다.
-
-MCP 구성이나 워크스페이스 SDK 설치를 제거하면 실행 경로가 비활성화됩니다. 레거시 폴백은 없습니다.
-
-## 사용
-
-Qwen Code에게 데스크톱 작업에 `$computer-use`를 사용하도록 요청하세요. 부트스트랩 후 macOS에서 앱 워크플로를 사용합니다:
-
-1. `computer.getApp(nameOrIdentifierOrPath)`로 애플리케이션을 바인딩합니다;
-2. 간결한 접근성 텍스트를 위해 `app.getState()`를 읽고, 이후 자동 증분 업데이트를 수행합니다;
-3. 해당 텍스트의 짧은 요소 ID를 사용하여 하나 이상의 동작을 수행합니다;
-4. 다음 동작을 결정하기 전에 최신 상태를 가져옵니다.
-5. 다른 영구 상태가 필요하지 않을 때만 SDK 클라이언트를 닫고 REPL을 초기화합니다.
-
-드라이버는 관찰 diff를 계산하는 유일한 구성 요소입니다. 모델 코드는 타입화된 SDK 메서드를 사용하며 임의의 드라이버 도구 이름을 디스패치하지 않습니다. 앱 핸들은 현재 창과 대화 상자를 추적하고, 내부적으로 네이티브 요소 ID를 유지하며, 입력을 네이티브 드라이버에 위임합니다. 모델 코드는 포그라운드/백그라운드 모드를 선택하지 않습니다. 확인되지 않은 동작은 리플레이되지 않습니다. `getState()`는 발견된 중지된 앱을 열 수 있으며, 동작은 앱을 재시작하지 않습니다. 기존 정확 창 API는 Windows와 Linux에서 계속 사용 가능합니다.
+## 애플리케이션 작업
 
 ```js
-const app = await computer.getApp('Microsoft Excel');
-nodeRepl.write((await app.getState()).text);
-// Use an element ID from the returned state.
+var app = await cua.getApp('Microsoft Excel');
+// Use a short ID from the automatically displayed AX state.
 await app.click(37);
 await app.typeText('hello');
-nodeRepl.write((await app.getState()).text);
+await app.getAXState();
 ```
 
-요소 ID를 재사용하기 전에 대화 상자를 열거나 닫은 후 상태를 새로고침하세요. 각 App 상태 새로고침은 내부적으로 현재 스크린샷을 캡처합니다. 기본 반환은 숨겨진 상태로 유지하며, 모델이 이미지가 필요할 때 `app.getState({ includeScreenshot: true })`로 명시적으로 요청하세요.
+`getApp`은 이미지 없이 전체 AX 텍스트를 표시합니다. `getAXState`는 이후 diff를 표시합니다. `getScreenshot`은 현재 창만 캡처하고, `getAXStateAndScreenshot`은 둘 다 캡처합니다. 관찰은 문자열을 반환하며 자체적으로 표시합니다. `{emit:false}`는 출력을 억제합니다. `{x,y}` 좌표를 사용하기 전에 스냅샷을 요청하세요. 이 좌표는 해당 창의 현재 스크린샷에서 픽셀입니다.
 
-## 권한
+드라이버는 애플리케이션/창을 확인하고, 현재 짧은 ID와 좌표를 소유하며, 입력 전달 방식을 선택합니다. macOS는 접근성과 directed 이벤트를 사용합니다. Windows와 Linux는 백그라운드 전달을 먼저 시도하고, 아무것도 전송되지 않았음을 증명하는 거부 후에만 포그라운드 입력을 사용합니다. 포그라운드 입력은 물리적 사용자 활동이 감지되면 중단되며, 사용자가 다른 곳으로 전환하지 않은 경우에만 이전 애플리케이션을 복원합니다. 전달 확인이 UI 변경을 증명하지는 않습니다: 재시도 전에 관찰하세요.
 
-Node REPL은 일반적인 Node.js 권한으로 모델이 작성한 JavaScript를 실행하는 MCP 서버입니다. 호출은 Qwen Code의 일반 [MCP 승인 흐름](./approval-mode.md)을 따릅니다. SDK는 네이티브 인증도 강제합니다.
+Linux는 XWayland 아래의 X11 애플리케이션을 포함한 X11을 지원합니다. 네이티브 Wayland 애플리케이션은 지원되지 않습니다. DISPLAY, XAUTHORITY 및 데스크톱 접근성 세션 버스를 서버에 전달하세요.
 
-macOS에서 접근성 관찰과 입력에는 Accessibility 권한이 필요합니다. 스크린샷은 추가로 Screen Recording 권한이 필요합니다. macOS는 권한 부여를 Qwen Code를 실행한 터미널이나 IDE에 귀속시킬 수 있습니다. Windows와 Linux는 플랫폼별 접근성 및 입력 기능을 사용합니다.
+## 데스크톱 및 브라우저 작업
 
-## 원격 세션에서 눈앞의 컴퓨터 사용
+전체 화면 작업에 명시적 데스크톱 인터페이스를 사용하세요:
 
-Qwen Code가 헤드리스 모드 머신(개발 박스, 서버)에서 실행될 때에도, skill이 사용자가 앉은 데스크톱을 계속 제어할 수 있습니다. 해당 컴퓨터가 자신의 `node_repl`을 하나의 원격 세션에 빌려줍니다. 현재 macOS에서 동작합니다.
+```js
+await cua.desktop.getScreenshot();
+await cua.desktop.click({ x: 300, y: 200 }, { key: 'shift' });
+```
 
-컴퓨터에서 한 번만 설정하면 됩니다:
+데스크톱 좌표는 최신 기본 디스플레이 스크린샷의 픽셀입니다. 데스크톱 입력은 보이는 포그라운드 데스크톱을 제어하며 실제 포인터를 이동할 수 있습니다. 고정된 키의 경우 항상 `cua.desktop.keyDown(key)` 및 `keyUp(key)`과 함께 `try/finally`를 사용하세요. 고정된 키는 호출 세션에 속하며 정상적인 리셋/종료 시 해제됩니다. 키를 고정하는 동안, 코드와 데스크톱 포인터 작업에 `keyDown/keyUp`을 사용하고 명시적 수정자는 사용하지 마세요. 텍스트, 일반 단축키 또는 애플리케이션 입력 전에 이들을 해제하세요. 급격한 OS 프로세스 종료 정리는 보장할 수 없습니다.
+
+```js
+var browser = await cua.getBrowser('Chrome');
+// Browser documentation and tabs are displayed on first selection.
+var tab = await cua.getTab('TAB_ID', { browser: 'Chrome' });
+await tab.playwright.domSnapshot();
+```
+
+`getBrowser`, `getTab`, `createBrowserTab`은 기존 저장소 browser-use SDK 핸들을 반환합니다. 선택된 브라우저의 런타임 문서를 따르고 이전에처럼 Qwen 브라우저 확장 프로그램을 연결하세요. 이 통합은 브라우저 창 API, DOM diff 또는 새로운 Windows 지원을 추가하지 않습니다.
+
+## 권한 및 라이프사이클
+
+서버는 일반적인 Node.js 권한으로 JavaScript를 실행하며 클라이언트의 MCP 승인 흐름을 따릅니다. macOS에서 입력/AX 관찰에는 Accessibility가 필요하고 스크린샷에는 Screen Recording이 필요합니다. 문서 저장/Finder 이름 변경을 위해 Automation이 요청될 수 있습니다. 권한은 호스트 프로세스의 OS 책임 체인에 속합니다. Windows에서 일반적인 설치된 데몬은 기존 UAC/logon-task 경로를 사용하며, 해당 데몬이 시작하는 애플리케이션은 일반 사용자 무결성에서 자체 토큰에서 파생된 토큰을 사용합니다. UIAccess는 선택 사항입니다: `CUA_DRIVER_USE_UIACCESS=1`을 명시적으로 설정하면 Program Files 아래에 신뢰할 수 있는 서명된 작업자가 필요하며 사용 불가능하면 실패합니다. 기본 npm 설치는 해당 작업자를 스테이징하지 않으며 서명을 요구하지 않습니다.
+
+`js`는 한 번의 호출로 완료되며 기본 30초 타임아웃을 가집니다. 타임아웃은 외부 효과를 남길 수 있습니다: 재시도 전에 관찰하세요. `js_reset`은 바인딩을 폐기하고 소유한 네이티브/브라우저 세션을 정상적으로 닫습니다. 컨텍스트 압축 후 계속하기 전에 `cua.rewriteDocumentation()`을 호출하세요.
+
+## 원격 데스크톱 릴레이
+
+기존 macOS 데스크톱 릴레이 설정의 경우, 일치하는 서버를 설치하세요:
 
 ```bash
-npx -y @qwen-code/node-repl-mcp@0.1.7 desktop-relay install
+npx -y @qwen-code/node-repl-mcp@0.26.0 desktop-relay install
 ```
 
-이 명령은 `~/.qwen/desktop-relay` 아래에 `node_repl`과 SDK를 설치하고 `127.0.0.1:47821`에 launchd 소켓을 등록합니다. 백그라운드에서 실행되는 것은 없습니다. launchd는 연결이 발생할 때만 단기 프로세스를 시작합니다.
+이것은 `127.0.0.1:47821`의 기존 로컬 launchd 소켓을 사용합니다. 보안 Web Shell에서 **Use this computer**를 선택한 다음 **Connect this computer**를 선택하세요. 데스크톱은 각 연결에 대해 프롬프트를 표시합니다. 원격 데몬은 `QWEN_SERVE_CLIENT_MCP_OVER_WS=1`을 활성화해야 합니다.
 
-- **Web Shell에서.** 원격 데몬은 `QWEN_SERVE_CLIENT_MCP_OVER_WS=1`로 실행되어야 하며, Web Shell은 보안 페이지(https 또는 SSH 터널을 통한 `http://localhost`)여야 합니다. 세션에서 사이드바 하단의 **Use this computer**를 선택한 다음 **Connect this computer**를 선택합니다.
+## 직접 MCP 및 문제 해결
 
-컴퓨터의 대화 상자가 모든 연결을 허용할지 묻습니다. 허용된 세션은 로컬 Computer Use와 마찬가지로 사용자의 권한으로 컴퓨터에서 코드를 실행하고 화면을 보고 제어할 수 있습니다. 연결을 해제하거나 세션이 종료될 때까지입니다. macOS는 처음 Accessibility와 Screen Recording 아래에서 `node`를 허용할지 묻습니다.
+`qwen-cua-driver mcp`는 동일한 19개의 네이티브 Computer Use 작업을 직접 노출합니다. 앱 호출은 `app`을 사용하고, 데스크톱 가능한 호출은 대신 `scope:"desktop"`을 사용합니다. `key_down/key_up`는 데스크톱 전용입니다. 고급 네이티브 도구는 호스트 옵트인 `CUA_DRIVER_EXTRA_TOOLS=1`을 통해 계속 사용 가능합니다.
 
-## 문제 해결
+서버를 사용할 수 없으면 `qwen mcp list`를 확인하고 추가 후 클라이언트를 재시작하세요. 캡처가 실패하면 현재 데스크톱 세션과 OS 권한을 확인하세요. 네이티브 다운로드가 실패하면 정확한 릴리스 버전/체크섬 자산을 확인하거나 `QWEN_CUA_SDK_NATIVE_DIR`을 통해 로컬에서 빌드한 일치하는 페이로드를 제공하세요. 잠긴 데스크톱은 GUI 수락 증거를 제공할 수 없습니다.
 
-- 자동 설정 후에도 `node_repl`을 사용할 수 없으면, Qwen Code를 재시작하고 `qwen mcp list`로 서버를 확인하세요.
-- 자동 설정 후에도 SDK 가져오기가 실패하면, Qwen Code가 패키지가 설치된 워크스페이스에서 실행 중인지 확인하세요.
-- 타임아웃, 취소, 초기화 또는 커널 크래시 후, SDK 클라이언트를 다시 부트스트랩하고 새 상태를 요청하세요.
-
-## 참고 자료
-
-- [스킬](./skills.md)
-- [MCP 서버](./mcp.md)
-- [승인 모드](./approval-mode.md)
-- [샌드박싱](./sandbox.md)
+[MCP 서버](./mcp.md), [승인 모드](./approval-mode.md) 및 [샌드박싱](./sandbox.md)을 참조하세요.

@@ -44,7 +44,7 @@ qwen serve --profile hosted-harness --port 4170 --hostname 127.0.0.1 --no-web
 
 ## 启动 Java 控制平面
 
-在另一个终端中，配置相同的 Harness 和数据库：
+在另一个终端中，配置相同的 Harness、数据库以及现有的 Workspace 目录：
 
 ```bash
 export SPRING_DATASOURCE_URL='jdbc:mysql://127.0.0.1:3306/qwen_managed_agent'
@@ -54,6 +54,7 @@ export QWEN_MANAGED_AGENT_HARNESS_ENABLED='true'
 export QWEN_MANAGED_AGENT_HARNESS_BASE_URL='http://127.0.0.1:4170'
 export QWEN_MANAGED_AGENT_HARNESS_TOKEN='<private-random-token>'
 export QWEN_MANAGED_AGENT_CAPABILITY_DIGEST='sha256:<64-hex-digest>'
+export QWEN_MANAGED_AGENT_WORKSPACE_CWD='/srv/qwen-workspace'
 
 bin/qwen-managed-agent-server
 ```
@@ -70,6 +71,8 @@ chmod 600 config/application.yml
 ```bash
 curl --fail http://127.0.0.1:8080/actuator/health
 ```
+
+启用的 Harness 会开启 Managed Session Store。Store 的基础 URL 默认使用此服务端的明文 loopback 监听器。其 workspace ID 默认使用 Runtime Broker 从 `QWEN_MANAGED_AGENT_WORKSPACE_CWD` 派生的 ID，因此在启用下方工具路径时身份保持一致。已设置 `QWEN_MANAGED_AGENT_WORKSPACE_ID` 的部署必须保留它：未绑定的 Session 根据该 ID 解析其 Store 作用域。仅当 Harness 通过其他地址访问此服务端，或监听器提供 TLS 时，才设置 `QWEN_MANAGED_AGENT_SESSION_STORE_BASE_URL`。
 
 此基础配置支持纯文本 Hosted Session。除非配置了签名或认证入口，否则请将监听器保持在 loopback 上。完整的认证、API 和 capability 配置打包在 `docs/server-reference.md` 中。
 
@@ -109,8 +112,6 @@ export QWEN_MANAGED_AGENT_RUNTIME_CREDENTIAL_KEY='<base64-encoded-32-byte-key>'
 export QWEN_MANAGED_AGENT_RUNTIME_STATE_DIRECTORY='/var/lib/qwen-managed-agent/runtime'
 export QWEN_MANAGED_AGENT_NODE_EXECUTABLE='/usr/bin/node'
 export QWEN_MANAGED_AGENT_RUNTIME_WORKER_ENTRY='/opt/qwen-code/dist/cli.js'
-export QWEN_MANAGED_AGENT_WORKSPACE_ID='reference-workspace'
-export QWEN_MANAGED_AGENT_WORKSPACE_CWD='/srv/qwen-workspace'
 export QWEN_MANAGED_AGENT_RUNTIME_VERIFIED_WORKSPACE_RECOVERY_ENABLED='true'
 ```
 
@@ -160,13 +161,13 @@ FROM ma_runtime_binding WHERE runtime_credential_key_id IS NOT NULL;
 
 密钥环是一个 map，不能通过 `QWEN_MANAGED_AGENT_*` 环境变量提供：宽松绑定会静默地将环境变量形式解析为空或错误 key 的密钥环，且不会报启动错误。在 `config/application.yml` 中配置 `previous-credential-keys`。该发行版附带 `config/application.example.yml`，并且当该文件存在时，两个启动器都会导出 `SPRING_CONFIG_ADDITIONAL_LOCATION=file:<distribution-root>/config/application.yml`，因此位置不再依赖于进程工作目录，也不会在命令的位置参数中添加任何选项。当该变量已设置时，启动器会保持其生效。仅依赖环境变量的部署启动时密钥环为空，因此在未配置旧密钥的情况下轮换 `credential-key-id` 会使该密钥下写入的行无法读取。显式的 `--spring.config.additional-location` 命令行参数优先于此环境默认值；当两者同时存在时，命令行值获胜，捆绑的 `config/application.yml` 不会被加载。
 
+操作员恢复入口读取与服务端相同的活动密钥对和 `previous-credential-keys` map。其启动器以相同方式加载 `config/application.yml`；当文件位于其他位置时，设置 `SPRING_CONFIG_ADDITIONAL_LOCATION=file:<absolute-path>/application.yml`。保持新密钥为活动密钥，同时保留绑定仍在引用的每一个密钥。CSI/迁移维护主入口（包括 CSI Hosted 探针）仍然读取单个凭据密钥对；启动这些入口时，以加密其目标绑定的密钥作为活动密钥对。
+
 成功配置密钥环后，服务端和恢复入口会在每个 protector 实例启动时记录一次已解析的活动 ID 和已配置的 ID。这些 ID 本身不是密钥材料，已经和密文一起存储；诊断信息会对控制字符和非 ASCII 字符进行 JSON 转义，保留空格和大小写，且永远不会包含密钥材料、密文或 token。在使用轮换后的部署前，需要将已配置的 ID 与退役查询返回的精确 ID 进行对比。不可用密钥错误会列出请求的、活动的和已配置的 ID，因此即使存在静默规范化或拼写错误的映射，也能在不暴露密钥的前提下定位问题。该诊断不能证明所有已存储的行都可以被解密。
 
 ## 操作员恢复
 
 `bin/qwen-managed-agent-operator-recovery` 启动单独打包的恢复入口点。除非设置了恢复专用环境变量，否则该入口点处于禁用状态，且不会启动 HTTP 服务或 worker。请遵循 `docs/hosted-workspace-recovery.md`；切勿推断物理停止或删除持久化行来绕过安全围栏。
-
-操作员恢复入口读取与服务端相同的活动密钥对和 `previous-credential-keys` map。其启动器以相同方式加载 `config/application.yml`；当文件位于其他位置时，设置 `SPRING_CONFIG_ADDITIONAL_LOCATION=file:<absolute-path>/application.yml`。保持新密钥为活动密钥，同时保留绑定仍在引用的每一个密钥。CSI/迁移维护主入口（包括 CSI Hosted 探针）仍然读取单个凭据密钥对；启动这些入口时，以加密其目标绑定的密钥作为活动密钥对。
 
 ## 范围边界
 

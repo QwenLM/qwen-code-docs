@@ -1,91 +1,81 @@
 # Computer Use
 
-Qwen Code inclut un skill `computer-use` qui apprend au modèle à piloter les applications de bureau via deux packages installés séparément :
+Computer Use s'exécute via le serveur MCP Node REPL autonome. Son premier appel `js` charge le `cua` global et affiche la documentation pour la plateforme courante. Computer Use et Browser Use ne nécessitent plus de skills bundleés.
 
 ```text
-bundled computer-use skill
-  -> @qwen-code/node-repl-mcp
-  -> @qwen-code/cua-sdk/computer-use
-  -> native cua-driver accessibility backend
+Qwen Code / n'importe quel client MCP
+  -> @qwen-code/node-repl-mcp (js, js_reset)
+  -> @qwen-code/cua-sdk/runtime
+     -> Qwen CUA Driver natif (applications de bureau)
+     -> @qwen-code/browser-use (extension de navigateur Qwen)
 ```
 
-Qwen Code ne bundle pas le serveur MCP, le SDK ni le driver natif. Le skill installe automatiquement les packages externes lorsqu'ils sont manquants.
+## Configuration
 
-> [!warning]
->
-> Computer Use peut lire l'UI des applications et contrôler les entrées souris et clavier. Utilisez-le uniquement dans des environnements fiables et vérifiez attentivement les approbations MCP.
-
-## Configuration automatique
-
-Node.js 22 ou ultérieur et npm sont requis.
-
-Lors de sa première utilisation, le skill exécute lui-même ces commandes :
+Node.js 22 ou ultérieur et npm sont requis. Enregistrez le serveur MCP, puis redémarrez Qwen Code :
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.7
-npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.11
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.26.0
 ```
 
-Redémarrez Qwen Code après l'ajout initial du serveur MCP. Le skill reprend alors la tâche de bureau via `node_repl`.
+Le serveur installe le SDK correspondant et le SDK navigateur comme dépendances. Le payload du SDK natif est téléchargé pour la plateforme courante et vérifié par rapport aux checksums SHA-256 de la release correspondante. Il est mis en cache en dehors du package npm ; aucune commande de bootstrap SDK du workspace n'est nécessaire. La version 0.26.0 est une cible de développement local jusqu'à ce que sa release soit publiée.
 
-L'installation du SDK laisse `package.json` et le lockfile inchangés, mais écrit dans le `node_modules` du workspace. Son postinstall télécharge et vérifie le payload natif pour la plateforme courante.
-
-Supprimer la configuration MCP ou l'installation du SDK dans le workspace désactive le chemin d'exécution ; il n'y a pas de fallback hérité.
-
-## Utilisation
-
-Demandez à Qwen Code d'utiliser `$computer-use` pour la tâche de bureau. Après le bootstrap, il utilise le workflow app sur macOS :
-
-1. lie l'application avec `computer.getApp(nameOrIdentifierOrPath)` ;
-2. lit `app.getState()` pour un texte d'accessibilité compact, suivi de mises à jour incrémentales automatiques ;
-3. effectue une ou plusieurs actions en utilisant les IDs d'éléments courts dans ce texte ;
-4. récupère le dernier état avant de décider quoi faire ensuite ; et
-5. ferme le client SDK et réinitialise le REPL uniquement lorsqu'aucun autre état persistant n'est nécessaire.
-
-Le driver est le seul composant qui calcule les diffs d'observation. Le code du modèle utilise les méthodes typées du SDK et ne dispatche pas de noms d'outils du driver arbitraires. Le handle d'app suit la fenêtre courante et les dialogues, conserve l'identité des éléments natifs en interne, et délègue les entrées au driver natif. Le code du modèle ne choisit pas les modes foreground/background. Les actions non confirmées ne sont pas rejouées. `getState()` peut ouvrir une application arrêtée découverte ; les actions ne la redémarrent jamais. Les APIs exact-window existantes restent disponibles sur Windows et Linux.
+## Tâches applicatives
 
 ```js
-const app = await computer.getApp('Microsoft Excel');
-nodeRepl.write((await app.getState()).text);
-// Use an element ID from the returned state.
+var app = await cua.getApp('Microsoft Excel');
+// Utilisez un ID court de l'état AX affiché automatiquement.
 await app.click(37);
 await app.typeText('hello');
-nodeRepl.write((await app.getState()).text);
+await app.getAXState();
 ```
 
-Actualisez l'état après avoir ouvert ou fermé une boîte de dialogue avant de réutiliser les IDs d'éléments. Chaque actualisation de l'état App capture le screenshot courant en interne. Le retour par défaut le garde masqué ; demandez-le explicitement avec `app.getState({ includeScreenshot: true })` lorsque le modèle a besoin de l'image.
+`getApp` affiche le texte AX complet sans image. `getAXState` affiche les diffs ultérieurs. `getScreenshot` capture uniquement la fenêtre courante ; `getAXStateAndScreenshot` capture les deux. Les observations retournent des chaînes et s'affichent elles-mêmes ; `{emit:false}` supprime la sortie. Demandez un screenshot avant d'utiliser les coordonnées `{x,y}`, qui sont des pixels dans le screenshot courant de cette fenêtre.
 
-## Permissions
+Le driver résout les applications/fenêtres, possède les IDs courts et coordonnées courants, et choisit la livraison des entrées. macOS utilise l'accessibilité et les événements dirigés. Windows et Linux essaient d'abord la livraison en arrière-plan et n'utilisent les entrées au premier plan qu'après un refus qui prouve que rien n'a été envoyé. Les entrées au premier plan s'arrêtent lorsque l'activité physique de l'utilisateur est détectée ; elles restaurent l'application précédente uniquement si l'utilisateur n'est pas passé ailleurs. Un accusé de réception de dispatch ne prouve pas que l'UI a changé : observez avant de réessayer.
 
-Le Node REPL est un serveur MCP qui exécute du JavaScript écrit par le modèle avec les autorisations ordinaires de Node.js. Ses appels suivent le [flux d'approbation MCP](./approval-mode.md) normal de Qwen Code. Le SDK applique également l'autorisation native.
+Linux prend en charge X11, y compris les applications X11 sous XWayland. Les applications Wayland natives ne sont pas prises en charge. Passez DISPLAY, XAUTHORITY et le bus de session d'accessibilité du bureau au serveur.
 
-Sur macOS, l'observation de l'accessibilité et les entrées nécessitent la permission Accessibility. Les captures d'écran nécessitent en plus la permission Screen Recording. macOS peut attribuer l'octroi au terminal ou à l'IDE qui a lancé Qwen Code. Windows et Linux utilisent leurs facilités d'accessibilité et d'entrée propres à chaque plateforme.
+## Tâches de bureau et de navigateur
 
-## Utiliser l'ordinateur devant vous depuis une session distante
+Utilisez l'interface de bureau explicite pour les tâches plein écran :
 
-Lorsque Qwen Code s'exécute sur une machine headless (une machine de dev, un serveur), le skill peut toujours piloter le bureau auquel vous êtes assis : cet ordinateur prête son propre `node_repl` à une session distante. Cela fonctionne sur macOS aujourd'hui.
+```js
+await cua.desktop.getScreenshot();
+await cua.desktop.click({ x: 300, y: 200 }, { key: 'shift' });
+```
 
-Configurez-le une seule fois sur votre ordinateur :
+Les coordonnées du bureau sont des pixels dans le dernier screenshot de l'affichage principal. Les entrées du bureau contrôlent le bureau visible au premier plan et peuvent déplacer le pointeur réel. Pour les touches maintenues, utilisez toujours `try/finally` avec `cua.desktop.keyDown(key)` et `keyUp(key)`. Les touches maintenues appartiennent à la session appelante et sont libérées lors d'un reset/graceful end. Tout en maintenant les touches, utilisez `keyDown/keyUp` pour les accords et les actions de pointeur de bureau sans modificateurs explicites ; relâchez-les avant le texte, les raccourcis ordinaires ou les entrées applicatives. La terminaison abrupte du processus OS ne peut pas garantir le nettoyage.
+
+```js
+var browser = await cua.getBrowser('Chrome');
+// La documentation du navigateur et les onglets sont affichés lors de la première sélection.
+var tab = await cua.getTab('TAB_ID', { browser: 'Chrome' });
+await tab.playwright.domSnapshot();
+```
+
+`getBrowser`, `getTab`, et `createBrowserTab` retournent les handles du SDK browser-use du navigateur existant. Suivez la documentation du runtime du navigateur sélectionné et connectez l'extension de navigateur Qwen comme auparavant. L'intégration n'ajoute aucune API de fenêtres de navigateur, diff DOM ou support Windows.
+
+## Permissions et cycle de vie
+
+Le serveur exécute JavaScript avec les permissions ordinaires de Node.js et suit le flux d'approbation MCP du client. Sur macOS, Accessibility est requis pour l'observation des entrées/AX et Screen Recording pour les screenshots ; Automation peut être demandé pour la sauvegarde de documents/le renommage Finder. Les octrois appartiennent à la chaîne de responsabilité OS du processus hôte. Sur Windows, le démon installé normal utilise le chemin UAC/tâche de connexion existant ; les applications qu'il lance utilisent un token dérivé de son propre token à l'intégrité utilisateur normal. UIAccess est optionnel : définir explicitement `CUA_DRIVER_USE_UIACCESS=1` requiert un worker signé fiable sous Program Files et échoue si indisponible. L'installation npm par défaut ne stage pas ce worker ni ne requiert sa signature.
+
+`js` se complète en un appel et a un timeout par défaut de 30 secondes. Un timeout peut laisser des effets externes ; observez avant de réessayer. `js_reset` écarte les bindings et ferme gracieusement la session native/navigateur possédée. Après la compaction de contexte, appelez `cua.rewriteDocumentation()` avant de continuer.
+
+## Relais de bureau à distance
+
+Pour une configuration de relais de bureau macOS existante, installez son serveur correspondant :
 
 ```bash
-npx -y @qwen-code/node-repl-mcp@0.1.7 desktop-relay install
+npx -y @qwen-code/node-repl-mcp@0.26.0 desktop-relay install
 ```
 
-Cela installe `node_repl` et le SDK sous `~/.qwen/desktop-relay` et enregistre un socket launchd sur `127.0.0.1:47821`. Rien ne s'exécute en arrière-plan ; launchd ne démarre un processus de courte durée que lorsque quelque chose se connecte.
+Cela utilise le socket launchd local existant à `127.0.0.1:47821`. Dans un Web Shell sécurisé, choisissez **Use this computer**, puis **Connect this computer**. Le bureau demande pour chaque connexion. Le démon distant doit activer `QWEN_SERVE_CLIENT_MCP_OVER_WS=1`.
 
-- **Depuis le Web Shell.** Le démon distant doit s'exécuter avec `QWEN_SERVE_CLIENT_MCP_OVER_WS=1`, et le Web Shell doit être une page sécurisée (https, ou `http://localhost` via un tunnel SSH). Dans une session, choisissez **Use this computer** dans le pied de page de la barre latérale, puis **Connect this computer**.
+## MCP direct et dépannage
 
-Une boîte de dialogue sur votre ordinateur vous demande d'autoriser chaque connexion. Une session autorisée peut exécuter du code sur votre ordinateur avec vos permissions, voir et contrôler son écran, tout comme le Computer Use local, jusqu'à ce que vous la déconnectiez ou qu'elle se termine. macOS demande d'autoriser `node` pour Accessibility et Screen Recording la première fois.
+`qwen-cua-driver mcp` expose les 19 opérations Computer Use natives directement. Les appels applicatifs utilisent `app` ; les appels capables de bureau utilisent `scope:"desktop"` à la place. `key_down/key_up` sont bureau uniquement. Les outils natifs avancés restent disponibles via l'opt-in hôte `CUA_DRIVER_EXTRA_TOOLS=1`.
 
-## Dépannage
+Si le serveur est indisponible, vérifiez `qwen mcp list` et redémarrez le client après l'avoir ajouté. Si la capture échoue, vérifiez la session de bureau courante et les permissions OS. Si le téléchargement natif échoue, vérifiez la version/checksum exacte de la release ou fournissez un payload correspondant construit localement via `QWEN_CUA_SDK_NATIVE_DIR`. Un bureau verrouillé ne peut pas fournir de preuve d'acceptation GUI.
 
-- Si `node_repl` est toujours indisponible après la configuration automatique, redémarrez Qwen Code et vérifiez le serveur avec `qwen mcp list`.
-- Si l'import du SDK échoue toujours après la configuration automatique, confirmez que Qwen Code s'exécute depuis le workspace où le package a été installé.
-- Après un timeout, une annulation, une réinitialisation ou un crash du noyau, bootstrappez à nouveau le client SDK et demandez un état frais.
-
-## Voir aussi
-
-- [Skills](./skills.md)
-- [Serveurs MCP](./mcp.md)
-- [Mode d'approbation](./approval-mode.md)
-- [Sandboxing](./sandbox.md)
+Voir [Serveurs MCP](./mcp.md), [Mode d'approbation](./approval-mode.md) et [Sandboxing](./sandbox.md).

@@ -22,6 +22,14 @@ qwen board claim <task-id> --board orders --as web
 qwen board done <task-id> --board orders --as web --note "status is numeric"
 ```
 
+작업을 생성할 때 `--owner`를 사용하여 제안된 소유자를 기록합니다:
+
+```bash
+qwen board task "check the API response" --board orders --as api --owner web
+```
+
+작업은 여전히 `pending` 상태이며, 제안은 소유자를 예약하지 않습니다. 어떤 행위자도 소유자를 대체하고 상태를 `in_progress`로 변경하여 가져올 수 있습니다. 일단 `in_progress`가 되면, 다른 행위자는 가져올 수 없습니다.
+
 `--as`는 작업과 함께 기록되는 레이블이며, 인증이 아닙니다. 멤버십 목록, 참여 명령어, 하트비트, 또는 예약된 참여자 이름은 없습니다.
 
 보드 이름은 대소문자를 구분하지 않고 매칭되므로, `Orders`와 `orders`는 대소문자 구분 없는 파일 시스템(APFS, NTFS)과 대소문자 구분 파일 시스템(ext4) 모두에서 동일한 보드입니다.
