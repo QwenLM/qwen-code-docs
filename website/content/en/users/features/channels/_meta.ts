@@ -11,4 +11,5 @@ export default {
   gitlab: 'GitLab',
   plugins: 'Plugins',
   'email': 'Email',
+  'wecom-callback': 'WeCom Callback',
 };

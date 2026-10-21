@@ -2,6 +2,9 @@
 
 Este guia aborda a configuração do Qwen Code com um robô inteligente do WeCom.
 
+Para um aplicativo próprio usando Corp ID, Agent ID, Token e EncodingAESKey,
+use o [canal WeCom Callback](./wecom-callback) separado.
+
 ## Pré-requisitos
 
 - Uma conta de organização do WeCom

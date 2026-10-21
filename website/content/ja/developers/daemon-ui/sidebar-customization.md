@@ -4,14 +4,14 @@
 
 ## サイドバーの有効化
 
-サイドバーは**デフォルトで無効**です。`sidebar` prop を渡して有効化します。
+サイドバーはデフォルトで**Homeのみ**です: 下部に折りたたみコントロール付きの300pxセッションカラムです。`sidebar` を省略するか、`true` または `{}` を渡すとこのデフォルトが使用されます。非表示にするには `sidebar={false}` または `{ enabled: false }` を渡します。
 
 ```tsx
 import { WebShellWithProviders } from '@qwen-code/web-shell';
 
 <WebShellWithProviders
   baseUrl="http://localhost:4170"
-  sidebar={true} // simple enable
+  sidebar={true} // Home-only default
   // or with fine-grained options:
   // sidebar={{ enabled: true, defaultCollapsed: false, ... }}
 />;
@@ -19,26 +19,9 @@ import { WebShellWithProviders } from '@qwen-code/web-shell';
 
 ## レイアウト概要
 
-```
-┌─────────────────────────────────────┐
-│ ① ブランディング (topRow)            │  ✅ カスタマイズ可
-├─────────────────────────────────────┤
-│ ② プライマリナビゲーション            │  ✅ カスタマイズ可
-│    [＋ New task]  [🧩 Plugins]      │
-│    [📅 Scheduled] [🎯 Goals]        │
-│    [custom render...]               │
-├─────────────────────────────────────┤
-│ ③ プロジェクトヘッダー               │  ✅ 表示/非表示
-│    📁 Projects ▼ [🔍] [＋]          │
-│    Session list entries...          │
-│    📦 Archived sessions             │
-├─────────────────────────────────────┤
-│ ④ フッターアクションバー             │  ✅ カスタマイズ可
-│    [⚙ Settings] v0.19 [☀] [▦] [◧] │
-├─────────────────────────────────────┤
-│ ⑤ リサイズハンドル                   │  ❌ カスタマイズ不可
-└─────────────────────────────────────┘
-```
+Homeのみのホストでは、ブランディング、New task、プロジェクト、アーカイブされたセッション、折りたたみコントロールが1つのカラムに表示されます。利用可能な別のプライマリエントリまたはフッターアクションを設定すると、デフォルトの300pxセカンダリカラムの横に56pxのアイコンレールが追加されます。プライマリエントリはレールに配置され、フッターアクションとバージョンは More に表示されます。カスタムレンダラーは広いHomeカラムに残ります。公開のレイアウトオプションはありません。
+
+**破壊的変更:** 以前は、`sidebar` を省略するとサイドバーが非表示になり、サイドバーが有効な状態でナビゲーション/フッターのアイテムリストを省略するとすべての組み込みアイテムが公開されていました。ホストは以前の非表示デフォルトを維持するために `sidebar={false}` を渡すか、必要なエントリを明示的にリストする必要があります。スタンドアロンWeb Shellはフルメニューを明示的に設定します。`branding.hideWhenCompact` のデフォルトは `false` になりました。コンパクトドロワーで非表示のブランドを維持するには `true` に設定します。
 
 ## カスタマイズ可能な領域
 
@@ -47,7 +30,7 @@ import { WebShellWithProviders } from '@qwen-code/web-shell';
 ```ts
 interface WebShellSidebarBranding {
   render?: () => ReactNode; // replace the entire branding row
-  hideWhenCompact?: boolean; // hide when sidebar is collapsed (default: true)
+  hideWhenCompact?: boolean; // hide branding in the compact drawer (default: false)
 }
 ```
 
@@ -56,9 +39,9 @@ interface WebShellSidebarBranding {
 | `undefined`（デフォルト）         | 解決されたブランド: `brand` prop → デーモン `GET /brand` → 組み込みの Qwen ロゴ + "Qwen Code" テキスト |
 | `false`                          | ブランディング行全体を非表示                                |
 | `{ render: () => <MyHeader /> }` | カスタムコンテンツで全面置換                                |
-| `{ hideWhenCompact: false }`     | 折りたたみアイコンレールモードでもブランディングを表示      |
+| `{ hideWhenCompact: false }`     | コンパクトドロワーでもブランディングを表示（デフォルト）    |
 
-デフォルト行はデータ駆動であり、固定ではありません。`ui.brand` 設定を配信するデーモンはテキストを変更し、マークを差し替えます。また、埋め込みホストはシェルコンポーネントの `brand` prop で両方をオーバーライドできます（`onBrandResolved` はホスト自身のクローム用の結果を報告します）。`branding.render` は引き続き最高優先度のオーバーライドであり、prop やデーモンで解決された値に優先します。
+デフォルト行はデータ駆動であり、固定ではありません。`ui.brand` 設定を配信するデーモンはテキストを変更し、マークを差し替えます。また、埋め込みホストはシェルコンポーネントの `brand` prop で両方をオーバーライドできます（`onBrandResolved` はホスト自身のクローム用の結果を報告します）。`branding.render` は引き続き最高優先度のオーバーライドであり、prop やデーモンで解決された値に優先します（以前と同様です）。
 
 ```tsx
 sidebar={{
@@ -79,27 +62,31 @@ sidebar={{
 type WebShellSidebarPrimaryNavItem =
   | 'newTask' // ✏️ New Task button
   | 'plugins' // 🧩 Plugins button
+  | 'channels' // Channel sessions and settings
+  | 'live' // Live sessions and settings; requires showLive
+  | 'workflows' // Requires workflow support
+  | 'managed' // Requires a managed-agent provider
   | 'scheduledTasks' // 📅 Scheduled Tasks button
   | 'goals'; // 🎯 Goals button
 
 interface WebShellSidebarPrimaryNavOptions {
-  items?: readonly WebShellSidebarPrimaryNavItem[]; // which built-in buttons to show (default: all)
+  items?: readonly WebShellSidebarPrimaryNavItem[]; // which built-in buttons to show (default: ['newTask'])
   render?: () => ReactNode; // additional custom content after built-in buttons
 }
 ```
 
 プライマリナビゲーション領域には、`items` で制御される組み込みボタンが含まれます。
 
-- `items` を指定しない場合、すべてのボタンが表示される
-- `items` を指定した場合、リストされたボタンのみ表示される
-- カスタムコンテンツは `render()` で組み込みボタンの後に追加できる
+- `items` を指定しない場合は New task のみ表示されます。Home は常に存在します
+- `items` を指定した場合、リストされたボタンのみ表示されます
+- カスタムコンテンツは `render()` で組み込みボタンの後に追加できます
 
-| 値                                         | 効果                                       |
-| ------------------------------------------ | ------------------------------------------ |
-| `undefined`（デフォルト）                   | すべての組み込みボタンを表示                |
-| `{ items: ['plugins'] }`                   | Plugins ボタンのみ                          |
-| `{ items: ['plugins', 'scheduledTasks'] }` | Plugins + Scheduled Tasks                  |
-| `{ items: [], render: () => ... }`         | 組み込みをすべて非表示、カスタムコンテンツのみ |
+| 値                                         | 効果                                                |
+| ------------------------------------------ | --------------------------------------------------- |
+| `undefined`（デフォルト）                   | New task を含む Home                                 |
+| `{ items: ['plugins'] }`                   | Home と Plugins。New task ボタンなし                 |
+| `{ items: ['plugins', 'scheduledTasks'] }` | Home + Plugins + Scheduled Tasks                     |
+| `{ items: [], render: () => ... }`         | カスタムコンテンツを含む Home。組み込みプライマリボタンなし |
 
 ```tsx
 sidebar={{
@@ -119,26 +106,30 @@ sidebar={{
 ```ts
 type WebShellSidebarFooterItem =
   | 'settings' // ⚙ Settings panel
+  | 'update' // Update action when supported
+  | 'localFiles' // Local-files bridge when available
+  | 'desktopRelay' // Use this computer through the existing desktop relay
+  | 'workspacesOverview' // Workspace management when unlocked
   | 'version' // version label (e.g. "v0.19.10")
   | 'theme' // ☀/🌙 light/dark toggle
   | 'sessionsOverview' // ▦ session overview panel
-  | 'splitView' // ◧ split view (large screens only)
+  | 'splitView' // ◧ split view (shell containers at least 1024px wide)
   | 'daemonStatus' // 📊 daemon status panel
   | 'collapse'; // ◁/▷ collapse/expand toggle
 
 interface WebShellSidebarFooterOptions {
-  items?: readonly WebShellSidebarFooterItem[]; // which built-in items to show (default: all)
-  render?: () => ReactNode; // custom content rendered on the left side, before built-in items
+  items?: readonly WebShellSidebarFooterItem[]; // which built-in items to show (default: ['collapse'])
+  render?: () => ReactNode; // custom content in the Home footer
 }
 ```
 
-| 値                                           | 効果                    |
-| -------------------------------------------- | ----------------------- |
-| `undefined`（デフォルト）                     | すべてのアイテムを表示   |
-| `false`                                      | フッターは非表示。モバイルドロワーはクローズコントロールのみ保持     |
+| 値                                           | 効果                                                                    |
+| -------------------------------------------- | ----------------------------------------------------------------------- |
+| `undefined`（デフォルト）                     | 折りたたみ/展開のみ                                                      |
+| `false`                                      | フッター非表示。モバイルドロワーはクローズコントロールのみ保持            |
 | `{ items: ['settings', 'theme', 'collapse'] }` | リストされたアイテムのみ表示。モバイルドロワーは常にクローズコントロールを保持 |
 
-フッターは狭い幅に自動適応します。一定の閾値以下ではラベルが非表示になり、バージョン表示も削除されます。
+レールレイアウトでは、フッターアクションとバージョンは More に表示され、折りたたみ/展開コントロールのみがレール下部に残ります。Homeのみのモードでは、既存のコンパクトフッター動作が維持されます。
 
 ```tsx
 sidebar={{
@@ -146,7 +137,7 @@ sidebar={{
 }}
 ```
 
-`render()` によるカスタムコンテンツは、フッターの左側、組み込みアイテムより前に表示されます。
+`render()` によるカスタムコンテンツは、広いHomeフッターに表示されます。
 
 ```tsx
 sidebar={{
@@ -161,13 +152,13 @@ sidebar={{
 }}
 ```
 
-**注:** `'scheduledTasks'` と `'goals'` はプライマリナビゲーション領域（②）に移動されており、デフォルトで表示されます。これらは `footer.items` ではなく `primaryNav.items` で制御されます。
+**注:** `'scheduledTasks'` と `'goals'` はプライマリナビゲーション領域（②）に移動されており、埋め込みホストでは明示的な設定が必要です。これらは `footer.items` ではなく `primaryNav.items` で制御されます。
 
 ### その他のトップレベルオプション
 
 ```ts
 interface WebShellSidebarOptions {
-  enabled?: boolean; // show/hide sidebar (default: true when passed)
+  enabled?: boolean; // show/hide sidebar (default: true, including when sidebar is omitted)
   defaultCollapsed?: boolean; // initial collapsed state (persisted in localStorage)
   showCompactToggle?: boolean; // show the collapse button in the chat area (default: true)
   showSessionSourceSwitch?: boolean; // show the Tasks/Channels switch (default: true)
@@ -190,7 +181,7 @@ sidebar={{
 }}
 ```
 
-これにより Tasks/Channels スイッチが削除され、アクティブ、アーカイブ、プライマリ、セカンダリのすべてのセッションクエリが `sourceType: "default"` に固定されます。このオプションを省略すると、現在のスイッチとチャネルセッションへのアクセスは変更されません。
+これにより Tasks/Channels スイッチが削除され、アクティブ、アーカイブ、プライマリ、セカンダリのすべてのセッションクエリが `sourceType: "default"` に固定されます。このオプションを省略すると、チャネルセッションへのアクセスが維持されます。専用 Channels レールエントリが利用可能な場合、それはソースタブを置き換えます。そうでない場合、タブは残ります。
 
 ### Live コンバセーション — `showLive`
 
@@ -201,8 +192,11 @@ Live コンバセーションは、デフォルトでは埋め込みホストか
 ```tsx
 sidebar={{
   showLive: true,
+  primaryNav: { items: ['newTask', 'live'] },
 }}
 ```
+
+`live` プライマリエントリがない場合、`showLive: true` は Home の既存 Live グループと Experimental 配下の設定を保持します。エントリがある場合、Live は独自のセッションカラムと設定ページを開きます。
 
 ### ③ プロジェクトヘッダー — `hideProjectHeader`
 
@@ -284,8 +278,9 @@ sidebar={{
 
 ### ⑤ リサイズハンドル
 
-- 右端のドラッグハンドルでサイドバー幅をリサイズ
-- 幅は localStorage に永続化される
+- サイドバー幅をリサイズするための右端のドラッグハンドル
+- 幅は localStorage にサイドバーの合計幅として永続化されます。デフォルトは Homeのみで300px、レール付きで356pxです。復元された幅は Homeのみで最小220px、レール付きで276pxにクランプされます。古い値が56px blindly 増加されることはありません。折りたたみ閾値以下にドラッグしてもサイドバーは折りたたまれます。
+- 環境パネルのドックブレークポイントはレールの56pxを無視します（メッセージ領域がそれらを譲るため）、パネルは Homeのみのサイドバーと同じウィンドウ幅でドッキングを続けます（例: 1440pxウィンドウ）。
 - 設定不可
 
 ## ランタイム動作 prop
@@ -303,13 +298,15 @@ sidebar={{
 
 ## 折りたたみ状態とモバイル状態
 
-| 状態       | 動作                                                    |
-| ---------- | ------------------------------------------------------- |
-| 展開状態    | テキストラベル付きの完全なサイドバー                       |
-| 折りたたみ  | アイコンレールモード（ロゴ、ペンアイコン、アクションアイコンのみ） |
-| モバイル    | ドロワーはコンテナの 70% を使用（幅制限あり）。バックドロップとフッターのクローズコントロール付き |
+| 状態       | 動作                                                                                                             |
+| ---------- | ---------------------------------------------------------------------------------------------------------------- |
+| 展開状態    | テキストラベル付きの完全なサイドバー                                                                                |
+| 折りたたみ  | Homeのみ: 既存の56pxストリップとホバーセッション。レール付き: 56pxプライマリレールのみ                              |
+| モバイル    | ドロワーは幅制限内でコンテナの70%を使用し、バックドロップと所有カラム下部のクローズコントロール付き                   |
 
 折りたたみ状態は `qwen-code-web-shell-sidebar-collapsed` キーで `localStorage` に永続化されます。
+
+サイドバー、そのコンパクトドロワー、および空のチャットのウェルカムクロームはシェルコンテナ幅（760pxでコンパクト）に従います。チャットメッセージコンテンツはビューポートベースのブレークポイントを保持します。スプリット可用性は1024pxを使用し、スプリットサイドバールームは1200pxを使用します。キーボード折りたたみは、非表示のセカンダリカラムからフォーカスをレールコントロールに移動します。
 
 リサイズされたデスクトップ幅は展開レイアウトでのみ復元されます。モバイルドロワーを開閉しても、その幅や永続化されたデスクトップの折りたたみ設定は上書きされません。
 
@@ -322,5 +319,5 @@ sidebar={{
 | WorkspaceSection     | `packages/web-shell/client/components/sidebar/WorkspaceSection.tsx`         |
 | Sidebar styles       | `packages/web-shell/client/components/sidebar/WebShellSidebar.module.css`   |
 | App integration      | `packages/web-shell/client/App.tsx`（`WebShellSidebar` を検索）              |
-| Entry point (dev)    | `packages/web-shell/client/main.tsx`（`sidebar: { enabled: true, showLive: true }`） |
+| Entry point (dev)    | `packages/web-shell/client/main.tsx`（明示的なプライマリおよびフッターアイテムリスト） |
 

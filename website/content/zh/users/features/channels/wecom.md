@@ -2,6 +2,8 @@
 
 本指南介绍如何将 Qwen Code 与 WeCom 智能机器人（企业微信智能机器人）配合使用。
 
+如果使用 Corp ID、Agent ID、Token 和 EncodingAESKey 的自建应用，请使用单独的 [WeCom Callback channel](./wecom-callback)。
+
 ## 前提条件
 
 - 一个 WeCom 组织账号

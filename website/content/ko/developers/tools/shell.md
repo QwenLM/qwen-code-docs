@@ -16,19 +16,19 @@ Windows에서는 명령이 `cmd.exe /c`로 실행됩니다. 다른 플랫폼에�
 - `command` (string, 필수): 실행할 정확한 셸 명령.
 - `description` (string, 선택 사항): 명령의 목적에 대한 간단한 설명으로, 사용자에게 표시됩니다.
 - `directory` (string, 선택 사항): 명령을 실행할 디렉토리(프로젝트 루트 기준). 제공되지 않으면 명령은 프로젝트 루트에서 실행됩니다.
-- `is_background` (boolean, 필수): 명령을 백그라운드에서 실행할지 여부. 이 매개변수는 명령 실행 모드에 대한 명시적 의사 결정을 보장하기 위해 필요합니다. 개발 서버, 감시자 또는 데몬과 같이 추가 명령을 차단하지 않고 계속 실행되어야 하는 장기간 실행 프로세스의 경우 true로 설정합니다. 진행하기 전에 완료되어야 하는 일회성 명령의 경우 false로 설정합니다.
+- `is_background` (boolean, 선택 사항): 명령을 백그라운드에서 실행할지 여부. 지정하지 않으면 기본값은 `false`(포그라운드 실행)입니다. 추가 명령을 차단하지 않고 계속 실행되어야 하는 개발 서버, 감시자 또는 데몬과 같은 장기간 실행 프로세스의 경우 true로 설정합니다.
 
 ## Qwen Code에서 `run_shell_command` 사용 방법
 
-`run_shell_command`를 사용할 때, 명령은 서브프로세스로 실행됩니다. `is_background` 매개변수를 사용하거나 명령에 명시적으로 `&`를 추가하여 명령이 백그라운드에서 실행될지 포그라운드에서 실행될지 제어할 수 있습니다. 이 도구는 실행에 대한 자세한 정보를 반환합니다:
+`run_shell_command`를 사용할 때, 명령은 서브프로세스로 실행됩니다. 백그라운드에서 실행될지 포그라운드에서 실행될지는 `is_background` 매개변수에 의해 제어됩니다. `is_background: true`일 때 뒤에 `&`를 추가하지 마십시오: 관리되는 백그라운드 경로가 자체적으로 백그라운딩 메커니즘이며, 도구는 명령을 실행하는 대신 호출을 거부합니다. 이 도구는 실행에 대한 자세한 정보를 반환합니다:
 
-### 필수 백그라운드 매개변수
+### `is_background` 매개변수
 
-`is_background` 매개변수는 모든 명령 실행에 대해 **필수**입니다. 이 설계는 LLM(및 사용자)이 각 명령이 백그라운드에서 실행될지 포그라운드에서 실행될지 명시적으로 결정하도록 하여, 의도적이고 예측 가능한 명령 실행 동작을 촉진합니다. 이 매개변수를 필수로 함으로써 장기간 실행 프로세스를 처리할 때 의도하지 않은 포그라운드 실행 폴백을 방지하여 후속 작업을 차단할 수 있습니다.
+`is_background`는 선택 사항입니다 — 도구의 스키마는 `command`만 요구하며 — 생략하면 명령이 포그라운드에서 실행됩니다. 따라서 명시적이어야 하는 결정은 반대쪽입니다: 스스로 중지되지 않는 명령은 `is_background: true`로 표시해야 합니다. 포그라운드에 두면 타임아웃될 때까지 턴이 차단되기 때문입니다.
 
 ### 백그라운드 vs 포그라운드 실행
 
-이 도구는 명시적 선택에 따라 백그라운드와 포그라운드 실행을 지능적으로 처리합니다:
+이 도구는 해당 매개변수에 따라 백그라운드 및 포그라운드 실행을 처리합니다:
 
 **백그라운드 실행 사용 (`is_background: true`):**
 
@@ -36,15 +36,11 @@ Windows에서는 명령이 `cmd.exe /c`로 실행됩니다. 다른 플랫폼에�
 - 빌드 감시자: `npm run watch`, `webpack --watch`
 - 데이터베이스 서버: `mongod`, `mysql`, `redis-server`
 - 웹 서버: `python -m http.server`, `php -S localhost:8000`
-- 수동으로 중지될 때까지 무기한 실행될 것으로 예상되는 모든 명령
+- 수동으로 중지될 때까지 무한정 실행될 것으로 예상되는 모든 명령
 
-**포그라운드 실행 사용 (`is_background: false`):**
+**포그라운드 실행 사용(기본값):** 빌드, 설치, git 작업, 테스트 실행과 같이 자체적으로 완료되는 명령의 경우.
 
-- 일회성 명령: `ls`, `cat`, `grep`
-- 빌드 명령: `npm run build`, `make`
-- 설치 명령: `npm install`, `pip install`
-- Git 작업: `git commit`, `git push`
-- 테스트 실행: `npm test`, `pytest`
+파일 읽기 및 검색은 이 도구의 포그라운드 후보가 전혀 아닙니다: 도구의 설명에서도 제외하는 `cat`, `grep`, `find` 대신 전용 도구(`read_file`, `grep_search`, `glob`)를 사용하십시오.
 
 ### 실행 정보
 
@@ -65,7 +61,7 @@ Windows에서는 명령이 `cmd.exe /c`로 실행됩니다. 다른 플랫폼에�
 run_shell_command(command="Your commands.", description="Your description of the command.", directory="Your execution directory.", is_background=false)
 ```
 
-**참고:** `is_background` 매개변수는 필수이며 모든 명령 실행에 대해 명시적으로 지정해야 합니다.
+**참고:** `is_background`는 선택 사항입니다. 생략하면 명령이 포그라운드에서 실행되므로 명시적 `true`가 필요한 경우는 스스로 중지되지 않는 명령입니다.
 
 ## `run_shell_command` 예시
 
@@ -87,11 +83,7 @@ run_shell_command(command="./my_script.sh", directory="scripts", description="Ru
 run_shell_command(command="npm run dev", description="Start development server in background", is_background=true)
 ```
 
-백그라운드 서버 시작(명시적 &를 사용한 대안):
-
-```bash
-run_shell_command(command="npm run dev &", description="Start development server in background", is_background=false)
-```
+참고: 명시적 `&`는 관리되는 백그라운드 메커니즘이 아닙니다. `is_background: true`일 때 도구는 명령이 실행되기 전에 순수한 후행 `&`를 거부하며, `is_background=false`일 때 셸이 프로세스를 분리하므로 호출이 반환되어도 프로세스가 추적되지 않습니다 — 백그라운드 작업 항목이 없으며 `task_stop`이 도달할 수 없습니다. 백그라운드에서 실행되어야 하는 명령에는 항상 `is_background=true`를 사용하십시오.
 
 포그라운드에서 빌드 명령 실행:
 
@@ -171,8 +163,8 @@ run_shell_command(command="docker-compose up", description="Start all services",
 
 - **보안:** 특히 사용자 입력에서 구성된 명령을 실행할 때 보안 취약점을 방지하기 위해 주의하세요.
 - **오류 처리:** 명령이 성공적으로 실행되었는지 확인하려면 `Stderr`, `Error` 및 `Exit Code` 필드를 확인하세요.
-- **백그라운드 프로세스:** `is_background=true`일 때 또는 명령에 `&`가 포함되어 있을 때, 도구는 즉시 반환되고 프로세스는 백그라운드에서 계속 실행됩니다. `Background PIDs` 필드에는 백그라운드 프로세스의 프로세스 ID가 포함됩니다.
-- **백그라운드 실행 선택:** `is_background` 매개변수는 필수이며 실행 모드에 대한 명시적 제어를 제공합니다. 수동 백그라운드 실행을 위해 명령에 `&`를 추가할 수도 있지만, `is_background` 매개변수는 여전히 지정해야 합니다. 이 매개변수는 더 명확한 의도를 제공하며 백그라운드 실행 설정을 자동으로 처리합니다.
+- **백그라운드 프로세스:** `is_background=true`만 추적되는 백그라운드 프로세스를 시작합니다: 도구는 셸 ID와 PID를 즉시 반환하고 프로세스는 계속 실행됩니다. 셸 레벨의 `&`는 백그라운드 프로세스를 생성하지 않습니다 — `is_background: true`일 때 도구는 순수한 후행 `&`를 거부하며, `is_background=false`일 때 셸은 도구가 추적하지 없이 명령을 분리합니다.
+- **백그라운드 실행 선택:** `is_background` 매개변수는 선택 사항입니다(스키마는 `command`만 요구함). 스스로 중지되지 않는 명령에 대해 `is_background: true`를 설정하십시오. 포그라운드에 두면 타임아웃될 때까지 턴이 차단됩니다. 셸 레벨의 `&` 대신 `is_background`를 사용하십시오. 더 명확한 의도를 제공하며 도구가 백그라운드 실행 설정을 관리합니다.
 - **명령 설명:** `is_background=true`를 사용할 때, 명령 설명에 실행 모드를 명확히 표시하는 `[background]` 표시기가 포함됩니다.
 
 ## 환경 변수
