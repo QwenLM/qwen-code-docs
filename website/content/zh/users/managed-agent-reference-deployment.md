@@ -102,7 +102,7 @@ bin/qwen-managed-agent-server --check
 
 ## 启用已接受的本地进程工具路径
 
-工具执行需要现有的 fail closed Runtime 和 Workspace 设置。至少需配置：
+工具执行需要现有的 fail closed（失败即拒绝）Runtime 和 Workspace 设置。至少需配置：
 
 ```bash
 export QWEN_MANAGED_AGENT_RUNTIME_BROKER_ENABLED='true'

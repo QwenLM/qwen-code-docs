@@ -6,6 +6,8 @@ Geplante Tasks ermöglichen es Qwen Code, einen Prompt automatisch in einem best
 
 Tasks sind sitzungsgebunden: Sie existieren nur im aktuellen Qwen Code-Prozess und verschwinden beim Beenden. Es wird nichts auf die Festplatte geschrieben.
 
+Messaging-Channels verwenden einen separaten persistenten Scheduler, sodass Ergebnisse nach dem aktuellen Turn zurück an den ursprünglichen Chat gepusht werden können. Siehe [Scheduled Channel Loops](./channels/overview#scheduled-channel-loops) für die Channel-Befehle, das Persistenzverhalten und die Einschränkungen bei der Zustellung.
+
 > **Tip:** Geplante Tasks sind standardmäßig aktiviert. Um sie zu deaktivieren, setze `experimental.cron: false` in deinen [Einstellungen](../configuration/settings.md) oder setze `QWEN_CODE_DISABLE_CRON=1` in deiner Umgebung.
 
 ## Einen wiederkehrenden Prompt mit /loop planen
@@ -80,6 +82,20 @@ prüfe in 45 Minuten, ob die Integrationstests bestanden haben
 
 Qwen Code legt die Ausführungszeit mithilfe eines Cron-Ausdrucks auf eine bestimmte Minute und Stunde fest und bestätigt, wann er ausgeführt wird.
 
+## Session nur bei Änderungen aufwecken
+
+Ein wiederkehrender Task kann ein **Gate** tragen: ein Shell-Befehl, der bei jeder Ausführung außerhalb des Modells läuft. Wenn er nichts ausgibt und mit 0 endet, wird die Ausführung übersprungen – kein Turn wird ausgeführt und nichts wird zur Konversation hinzugefügt. Wenn er eine Ausgabe erzeugt, wird der Prompt des Tasks mit dieser Ausgabe ausgeführt, die als vom Befehl erzeugte Daten markiert ist. Ein Befehl, der fehlschlägt, Binärdaten ausgibt oder länger als 60 Sekunden läuft, wird einmalig gemeldet und dann still gezählt, bis er wieder erfolgreich ist; `CronList` zeigt den Zählerstand.
+
+Verwende ein Gate für Watcher, die normalerweise still sind, mit einem Befehl, der seinen eigenen Cursor verwaltet und nur das ausgibt, was sich geändert hat:
+
+```text
+every 2 minutes, run ./check-pr.sh 15057 as a gate; when it prints something, handle the events it lists
+```
+
+Qwen Code ruft `CronCreate` mit `gate: "./check-pr.sh 15057"` auf und bestätigt den Befehl auf die gleiche Weise wie einen `Monitor`-Befehl: einmalig, wenn der Task erstellt wird, mit der Option, ihn immer zuzulassen. Der Befehl wird dann unbeaufsichtigt aus dem Projektverzeichnis mit der Umgebung der Session ausgeführt. Ein dauerhaftes gated Task funktioniert nach einem Neustart weiter, wenn der Befehl read-only ist, eine gespeicherte `Monitor(...)`- oder `Bash(...)`-Regel ihn zulässt oder die Session im Auto- oder Yolo-Modus läuft; andernfalls meldet die nächste Ausführung die hinzuzufügende Regel, anstatt den Befehl auszuführen. Eine Deny-Regel für den Befehl stoppt das Gate in jedem Modus.
+
+Formuliere einen gated Prompt als Anweisungen ("for each event in the gate output, …"), nicht als Slash-Befehl. Ein Gate ist noch nicht verfügbar für Tasks, die an die aktuelle Daemon-Konversation gebunden sind (`sessionMode: "current"`). In einem `qwen serve`-Daemon fordert "Run now" bei einem gated Task das Modell auf, zunächst das Gate selbst auszuführen und dem Task nur zu folgen, wenn der Befehl mit 0 endet und etwas ausgibt.
+
 ## Geplante Tasks verwalten
 
 Bitte Qwen Code in natürlicher Sprache, Tasks aufzulisten oder abzubrechen, oder referenziere die zugrunde liegenden Tools direkt.
@@ -96,15 +112,15 @@ Unter der Haube verwendet Qwen Code diese Tools:
 
 | Tool         | Zweck                                                                                                           |
 | :----------- | :-------------------------------------------------------------------------------------------------------------- |
-| `CronCreate` | Plant einen neuen Task. Akzeptiert einen 5-feldrigen Cron-Ausdruck, den auszuführenden Prompt und ob er wiederkehrend oder einmalig ausgeführt wird. |
-| `CronList`   | Listet alle geplanten Tasks mit ihren IDs, Zeitplänen und Prompts auf.                                          |
+| `CronCreate` | Plant einen neuen Task. Akzeptiert einen 5-feldrigen Cron-Ausdruck, den auszuführenden Prompt, ob er wiederkehrend oder einmalig ausgeführt wird, und einen optionalen Gate-Befehl. |
+| `CronList`   | Listet alle geplanten Tasks mit ihren IDs, Zeitplänen, Prompts sowie dem Gate und seinen jüngsten Ergebnissen auf, wenn eines gesetzt ist. |
 | `CronDelete` | Bricht einen Task anhand der ID ab.                                                                             |
 
 Jeder geplante Task hat eine 8-stellige ID, die du an `CronDelete` übergeben kannst. Eine Sitzung kann bis zu 50 geplante Tasks gleichzeitig enthalten.
 
 ## Wie geplante Tasks ausgeführt werden
 
-Der Scheduler prüft jede Sekunde auf fällige Tasks und reiht sie ein, wenn die Sitzung im Leerlauf ist. Ein geplanter Prompt wird zwischen deinen Zügen ausgelöst, nicht während Qwen Code mitten in einer Antwort ist. Wenn Qwen Code beschäftigt ist, wenn ein Task fällig wird, wartet der Prompt, bis der aktuelle Zug beendet ist.
+Der Scheduler prüft jede Sekunde auf fällige Tasks und reiht sie ein, wenn die Sitzung im Leerlauf ist. Ein geplanter Prompt wird zwischen deinen Zügen ausgelöst, nicht während Qwen Code mitten in einer Antwort ist. Wenn Qwen Code beschäftigt ist, wenn ein Task fällig wird, wartet der Prompt, bis der aktuelle Zug beendet ist. Ein gated Task führt zunächst seinen Gate-Befehl aus und wird nur in die Warteschlange gestellt, wenn der Befehl eine Ausgabe erzeugt.
 
 Alle Zeiten werden in deiner lokalen Zeitzone interpretiert. Ein Cron-Ausdruck wie `0 9 * * *` bedeutet 9 Uhr morgens dort, wo du Qwen Code ausführst, nicht UTC.
 

@@ -82,6 +82,20 @@ in 45 minutes, check whether the integration tests passed
 
 Qwen Code fixe l'heure de déclenchement à une minute et une heure spécifiques à l'aide d'une expression cron et confirme quand il se déclenchera.
 
+## Réveiller la session uniquement en cas de changement
+
+Une tâche récurrente peut embarquer une **gate** : une commande shell qui s'exécute à chaque déclenchement, en dehors du modèle. Si elle n'affiche rien et sort avec 0, le déclenchement est ignoré — aucun tour ne s'exécute et rien n'est ajouté à la conversation. Si elle affiche du contenu, le prompt de la tâche s'exécute avec cette sortie jointe et marquée comme des données produites par la commande. Une commande qui échoue, affiche des données binaires ou s'exécute pendant plus de 60 secondes est signalée une fois, puis comptée silencieusement jusqu'à ce qu'elle réussisse à nouveau ; `CronList` affiche le compteur.
+
+Utilisez une gate pour les surveillances généralement silencieuses, avec une commande qui maintient son propre curseur et n'affiche que ce qui a changé :
+
+```text
+every 2 minutes, run ./check-pr.sh 15057 as a gate; when it prints something, handle the events it lists
+```
+
+Qwen Code appelle `CronCreate` avec `gate: "./check-pr.sh 15057"` et confirme la commande de la même manière qu'une commande `Monitor` : une seule fois, lors de la création de la tâche, avec l'option de toujours l'autoriser. La commande s'exécute ensuite sans surveillance depuis le répertoire du projet avec l'environnement de la session. Une tâche durable avec gate continue de fonctionner après un redémarrage lorsque la commande est en lecture seule, qu'une règle `Monitor(...)` ou `Bash(...)` sauvegardée l'autorise, ou que la session s'exécute en mode auto ou yolo ; sinon le prochain déclenchement signale la règle à ajouter au lieu d'exécuter la commande. Une règle de refus pour la commande arrête la gate dans tous les modes.
+
+Rédigez un prompt avec gate sous forme d'instructions (« for each event in the gate output, … »), et non comme un slash command. Une gate n'est pas encore disponible pour les tâches liées à la conversation actuelle du démon (`sessionMode: "current"`). Dans un démon `qwen serve`, « Run now » sur une tâche avec gate demande au modèle d'exécuter la gate lui-même d'abord et de suivre la tâche uniquement lorsque la commande sort avec 0 et affiche quelque chose.
+
 ## Gérer les tâches planifiées
 
 Demandez à Qwen Code en langage naturel de lister ou d'annuler des tâches, ou référencez directement les outils sous-jacents.
@@ -98,15 +112,15 @@ Sous le capot, Qwen Code utilise ces outils :
 
 | Outil | Objectif |
 | :--- | :--- |
-| `CronCreate` | Planifier une nouvelle tâche. Accepte une expression cron à 5 champs, le prompt à exécuter, et s'il est récurrent ou à déclenchement unique. |
-| `CronList` | Lister toutes les tâches planifiées avec leurs IDs, planifications et prompts. |
+| `CronCreate` | Planifier une nouvelle tâche. Accepte une expression cron à 5 champs, le prompt à exécuter, et s'il est récurrent ou à déclenchement unique, ainsi qu'une commande gate optionnelle. |
+| `CronList` | Lister toutes les tâches planifiées avec leurs IDs, planifications, prompts, ainsi que la gate et ses résultats récents lorsqu'une gate est définie. |
 | `CronDelete` | Annuler une tâche par son ID. |
 
 Chaque tâche planifiée possède un ID de 8 caractères que vous pouvez passer à `CronDelete`. Une session peut contenir jusqu'à 50 tâches planifiées à la fois.
 
 ## Fonctionnement de l'exécution des tâches planifiées
 
-Le planificateur vérifie chaque seconde les tâches échues et les met en file d'attente lorsque la session est inactive. Un prompt planifié se déclenche entre vos tours, et non pendant que Qwen Code est en train de répondre. Si Qwen Code est occupé lorsqu'une tâche arrive à échéance, le prompt attend la fin du tour en cours.
+Le planificateur vérifie chaque seconde les tâches échues et les met en file d'attente lorsque la session est inactive. Un prompt planifié se déclenche entre vos tours, et non pendant que Qwen Code est en train de répondre. Si Qwen Code est occupé lorsqu'une tâche arrive à échéance, le prompt attend la fin du tour en cours. Une tâche avec gate exécute d'abord sa commande gate et n'est mise en file d'attente que lorsque la commande affiche une sortie.
 
 Toutes les heures sont interprétées dans votre fuseau horaire local. Une expression cron comme `0 9 * * *` signifie 9h du matin où que vous exécutiez Qwen Code, et non UTC.
 

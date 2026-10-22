@@ -56,10 +56,30 @@
   - 答：仅在使用缓存 token 时才会显示缓存 token 信息。此功能适用于 API key 用户（例如，阿里云百炼 API key 或 Google Cloud Vertex AI）。你仍然可以使用 `/stats` 命令查看总 token 使用情况。
 
 - **问：某个自定义项（扩展、hook、skill、MCP server 或 subagent）似乎破坏了 Qwen Code。我该如何隔离它？**
-  - 答：使用 `--safe-mode` 标志启动 Qwen Code，以在本次会话中禁用所有自定义项——上下文文件、hooks、extensions、skills、MCP servers、自定义 subagents（仅加载内置 subagents）、权限规则、来自设置的审批模式覆盖、内存功能和沙盒设置。注意：CLI 标志 `--yolo` 和 `--approval-mode` 在安全模式下仍然生效。如果在安全模式下问题消失，请逐个重新启用你的自定义项以找出罪魁祸首。
+  - 答：使用 `--safe-mode` 标志启动 Qwen Code，以在本次会话中禁用所有自定义项——上下文文件、hooks、extensions、skills、MCP servers、自定义 subagents（仅加载内置 subagents）、权限规则、来自设置的审批模式覆盖、内存功能、跨会话消息传递和沙盒设置。注意：CLI 标志 `--yolo` 和 `--approval-mode` 在安全模式下仍然生效。如果在安全模式下问题消失，请逐个重新启用你的自定义项以找出罪魁祸首。
     - 示例：`qwen --safe-mode`
     - 替代方案：如果 CLI 无法接受标志，请设置环境变量 `QWEN_CODE_SAFE_MODE=true`。
     - 注意：此处的"MCP servers"指在 `settings.json` / 项目 `.mcp.json` 中配置的服务器 —— 即本地、环境状态，正是安全模式旨在隔离的对象。你为当前调用显式提供的 MCP 服务器（嵌入 ACP 客户端的 `session/new` `mcpServers`，或 `--mcp-config`）不属于本地/环境状态，在安全模式下仍然有效。
+
+## 附件上传在反向代理后返回 HTTP 413
+
+代理可能在请求到达 `qwen serve` 之前就拒绝它，即使附件在守护进程的 8 MiB 文件限制之内。仅提高守护进程的请求体限制不会改变代理的限制。
+
+请使用支持 `session_attachment_chunk_upload` 的守护进程和 TypeScript SDK/Web Shell 构建版本。超过 512 KiB 的附件将以 512 KiB 的请求分块上传，不会改变其字节或图像质量。较旧的守护进程保留单次请求上传路径。如果你管理该代理，也可以提高其请求体限制以容纳原始附件请求。限制低于 512 KiB 的代理仍需更改配置。
+
+附件限制仍为 8 MiB。如果上传超时或守护进程重启，请从 UI 重试附件。已完成但其响应丢失的上传可能仍保留在会话的附件中；取消不会移除已完成的文件。
+
+## 某些网络上的连接重置（TLS 栈选择性中间盒）
+
+- **现象：** 在某些运营商或企业网络上，到 API 端点的 HTTPS 连接在 TLS ClientHello 之后立即被重置（TCP RST）。Qwen Code 会持续重试（`ECONNRESET` 是可重试的传输错误），直到预算耗尽，然后显示通用连接错误——而 `curl`、Python 和其他工具在同一台机器和同一网络上的同一时刻正常工作。
+- **原因：** 某些中间盒根据 TLS ClientHello 指纹过滤连接，并重置特定 TLS 栈代生成的连接。在受影响的链路上，OpenSSL 3.0 时代的栈和 Electron/BoringSSL（VS Code 扩展和守护进程使用）会被重置，而 OpenSSL 3.5 代的栈——包括当前的 Node.js 构建——可以正常连接。
+- **解决方案：** 使用 3.5 代 TLS 栈进行连接：
+  - **CLI：** 使用受支持的 Node.js 行的最新构建（当前 Node 22/24/25 构建均附带 3.5 代 OpenSSL）。同一主版本的较旧构建可能仍在使用受影响的代——请更新而非固定到旧次版本。
+  - **VS Code 扩展 / 守护进程：** 扩展运行在 Electron 的 TLS 栈上，无法在客户端更改。运行一个小型本地中继——一个在 3.5 代栈上的本地进程——并通过模型基础 URL 覆盖（`settings.json` 中的自定义端点，或 CLI 的 `--openaiBaseUrl`）将 Qwen Code 指向它，这样 TLS 出站将使用较新的栈。
+- **如何与不稳定网络区分：**
+  - 重置是确定性的——每次尝试都立即失败，跨重试亦然，且不会随时间恢复；
+  - 在同一台机器和同一时刻，其他 TLS 栈可以成功连接同一端点；
+  - 固定 TLS 版本或更改 DNS 解析无济于事。
 
 ## 常见错误信息及解决方案
 
@@ -100,10 +120,10 @@
 - **问题：tmux 中的触控板滚动会更改提示历史记录，而不是滚动对话**
   - **现象：** 在 tmux 会话中，触控板或滚轮滚动可能会循环浏览之前的提示，类似于按 `Up Arrow` 或 `Down Arrow`。
   - **原因：** tmux 可以将滚轮手势转换为普通的箭头键序列。当 qwen-code 接收到这些序列时，无法将它们与真实的箭头键按下区分开来。
-  - **解决方案：** 如果屏幕阅读器模式已关闭，请确保 `ui.useTerminalBuffer` 已启用；然后使用 `Shift+Up` / `Shift+Down`，或者在 tmux 将滚轮事件转发给应用时使用鼠标滚轮（需要 `ui.mouseTracking`）。如果你倾向于使用宿主机回滚，请调整 tmux 中针对滚轮事件的鼠标绑定。
+  - **解决方案：** 如果屏幕阅读器模式已关闭，请确保 `ui.useTerminalBuffer` 已启用；然后使用 `Shift+Up` / `Shift+Down`，或者在 tmux 将滚轮事件转发给应用时使用鼠标滚轮（需要 `ui.mouseTracking`）。要在编辑器为空时将普通的 `Up Arrow` / `Down Arrow` 交给视口，请将 `ui.arrowKeysScrollTranscript` 设置为 `true`；此时输入历史可通过 `Ctrl+P` / `Ctrl+N` 访问。如果你倾向于使用宿主机回滚，请调整 tmux 中针对滚轮事件的鼠标绑定。
 
 - **问题：右键无反应、链接无法打开、或终端中无法选择文本**
-  - **现象：** 当 Qwen Code 运行时，原生右键上下文菜单、OSC 8 超链接点击（Ctrl+Click 或直接点击 URL）以及终端原生的文本选择停止工作。
+  - **现象：** 当 Qwen Code 运行时，原生右键上下文菜单、OSC 8 超链接点击以及终端原生的文本选择停止工作。
   - **原因：** 当 `ui.mouseTracking` 启用（默认）时，Qwen Code 通过 SGR 鼠标跟踪捕获所有鼠标事件，以支持应用内文本选择、点击定位、行悬停、历史项切换和视口滚动。终端将每个鼠标事件转发给应用，而不是原生处理。Qwen Code 在跟踪开启时提供自己的替代行为：单击可打开 http(s) OSC 8 超链接，右键单击链接或文本选择可打开应用内上下文菜单。
   - **解决方案：** 如果你倾向于使用终端的原生处理方式，请在 `settings.json` 中设置 `"ui.mouseTracking": false`。这将关闭所有应用内鼠标交互，包括应用内链接打开和上下文菜单。在虚拟化历史记录（`ui.useTerminalBuffer: true`，默认）中，滚轮将不再滚动对话记录 —— 请使用 `Shift+↑/↓`、`PgUp/PgDn` 或 `Ctrl+Home/End` 代替。要同时恢复终端原生回滚，请设置 `"ui.useTerminalBuffer": false`。需要重启。
 
@@ -115,6 +135,18 @@
   - `QWEN_CODE_IDE_SERVER_PORT`
 - 如果在容器中运行，请验证 `host.docker.internal` 是否可以解析。否则，请适当映射宿主机。
 - 使用 `/ide install` 重新安装 companion，并在命令面板中使用“Qwen Code: Run”来验证其是否启动。
+
+## 某些网络上的连接重置（TLS 栈选择性中间盒）
+
+- **现象：** 在某些运营商或企业网络上，到 API 端点的 HTTPS 连接在 TLS ClientHello 之后立即被重置（TCP RST）。Qwen Code 会持续重试（`ECONNRESET` 是可重试的传输错误），直到预算耗尽，然后显示通用连接错误——而 `curl`、Python 和其他工具在同一台机器和同一网络上的同一时刻正常工作。
+- **原因：** 某些中间盒根据 TLS ClientHello 指纹过滤连接，并重置特定 TLS 栈代生成的连接。在受影响的链路上，OpenSSL 3.0 时代的栈和 Electron/BoringSSL（VS Code 扩展和守护进程使用）会被重置，而 OpenSSL 3.5 代的栈——包括当前的 Node.js 构建——可以正常连接。
+- **解决方案：** 使用 3.5 代 TLS 栈进行连接：
+  - **CLI：** 使用受支持的 Node.js 行的最新构建（当前 Node 22/24/25 构建均附带 3.5 代 OpenSSL）。同一主版本的较旧构建可能仍在使用受影响的代——请更新而非固定到旧次版本。
+  - **VS Code 扩展 / 守护进程：** 扩展运行在 Electron 的 TLS 栈上，无法在客户端更改。运行一个小型本地中继——一个在 3.5 代栈上的本地进程——并通过模型基础 URL 覆盖（`settings.json` 中的自定义端点，或 CLI 的 `--openaiBaseUrl`）将 Qwen Code 指向它，这样 TLS 出站将使用较新的栈。
+- **如何与不稳定网络区分：**
+  - 重置是确定性的——每次尝试都立即失败，跨重试亦然，且不会随时间恢复；
+  - 在同一台机器和同一时刻，其他 TLS 栈可以成功连接同一端点；
+  - 固定 TLS 版本或更改 DNS 解析无济于事。
 
 ## 退出码
 
