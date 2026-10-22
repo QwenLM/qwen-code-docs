@@ -22,6 +22,14 @@ qwen board claim <task-id> --board orders --as web
 qwen board done <task-id> --board orders --as web --note "status is numeric"
 ```
 
+Utilisez `--owner` lors de la création d'une tâche pour enregistrer un propriétaire suggéré :
+
+```bash
+qwen board task "check the API response" --board orders --as api --owner web
+```
+
+La tâche est toujours `pending`, et la suggestion ne la réserve pas. N'importe quel acteur peut la revendiquer, remplaçant le propriétaire et changeant son statut à `in_progress`. Une fois qu'elle est `in_progress`, un acteur différent ne peut pas la revendiquer.
+
 `--as` est une étiquette enregistrée avec l'action, pas une authentification. Il n'y a pas de liste de membres, de commande join, de heartbeat, ni de nom de participant réservé.
 
 Les noms de board sont comparés sans tenir compte de la casse, donc `Orders` et `orders` désignent le même board sur un système de fichiers insensible à la casse (APFS, NTFS) comme sur un système sensible à la casse (ext4).

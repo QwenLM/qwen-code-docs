@@ -29,6 +29,18 @@ qwen board claim <task-id> --board orders --as web
 qwen board done <task-id> --board orders --as web --note "status is numeric"
 ```
 
+Verwende `--owner` beim Erstellen eines Tasks, um einen vorgeschlagenen Owner
+zu notieren:
+
+```bash
+qwen board task "check the API response" --board orders --as api --owner web
+```
+
+Der Task ist weiterhin `pending`, und der Vorschlag reserviert ihn nicht. Jeder
+Akteur kann ihn claimen, ersetzt dabei den Owner und ändert den Status auf
+`in_progress`. Sobald er `in_progress` ist, kann ein anderer Akteur ihn nicht
+mehr claimen.
+
 `--as` ist ein Label, das mit der Aktion aufgezeichnet wird, keine
 Authentifizierung. Es gibt keine Mitgliedsliste, keinen Join-Befehl, keinen
 Heartbeat und keinen reservierten Teilnehmername.

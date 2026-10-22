@@ -15,14 +15,22 @@ qwen board task "check the API response" --board orders --as api
 qwen board show --board orders
 ```
 
-最初のコマンドはタスク ID を出力します。別のエージェントがそれを claim して完了できます：
+最初のコマンドはタスク ID を出力します。別のエージェントがそれをクレームして完了できます：
 
 ```bash
 qwen board claim <task-id> --board orders --as web
 qwen board done <task-id> --board orders --as web --note "status is numeric"
 ```
 
-`--as` はアクションと共に記録されるラベルであり、認証ではありません。メンバーシップリスト、join コマンド、heartbeat、または予約された参加者名はありません。
+タスク作成時に `--owner` を使用すると、推奨オーナーを記録できます：
+
+```bash
+qwen board task "check the API response" --board orders --as api --owner web
+```
+
+タスクは引き続き `pending` 状態であり、この提案は予約にはなりません。どのアクターもそれをクレームでき、オーナーを置き換えてステータスを `in_progress` に変更します。いったん `in_progress` になると、別のアクターはそれをクレームできません。
+
+`--as` はアクションと共に記録されるラベルであり、認証ではありません。メンバーシップリスト、参加コマンド、heartbeat、または予約された参加者名はありません。
 
 ボード名は大文字小文字を区別せずにマッチされるため、`Orders` と `orders` は大文字小文字を折りたたむファイルシステム（APFS、NTFS）でも大文字小文字を区別するファイルシステム（ext4）でも同じボードになります。
 

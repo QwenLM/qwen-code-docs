@@ -1,91 +1,81 @@
 # Computer Use
 
-Qwen Code 包含一个 `computer-use` skill，通过两个独立安装的包来教模型如何操作桌面应用：
+Computer Use 通过独立的 Node REPL MCP server 运行。其首次 `js` 调用会加载全局 `cua` 并显示当前平台的文档。Computer Use 和 Browser Use 不再需要捆绑 skill。
 
 ```text
-bundled computer-use skill
-  -> @qwen-code/node-repl-mcp
-  -> @qwen-code/cua-sdk/computer-use
-  -> native cua-driver accessibility backend
+Qwen Code / any MCP client
+  -> @qwen-code/node-repl-mcp (js, js_reset)
+  -> @qwen-code/cua-sdk/runtime
+     -> native Qwen CUA Driver (desktop applications)
+     -> @qwen-code/browser-use (Qwen browser extension)
 ```
 
-Qwen Code 不捆绑 MCP server、SDK 或原生驱动。skill 会在缺少这些外部包时自动安装。
+## 安装
 
-> [!warning]
->
-> Computer Use 可以读取应用 UI 并控制鼠标和键盘输入。请仅在受信任的环境中使用，并仔细审查 MCP 审批。
-
-## 自动设置
-
-需要 Node.js 22 或更高版本以及 npm。
-
-首次使用时，skill 会自行运行以下命令：
+需要 Node.js 22 或更高版本以及 npm。注册 MCP server，然后重启 Qwen Code：
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.1.7
-npm install --no-save --package-lock=false @qwen-code/cua-sdk@0.20.11
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.26.0
 ```
 
-MCP server 首次添加后请重启 Qwen Code。skill 随后通过 `node_repl` 继续执行桌面任务。
+该 server 会将匹配的 SDK 和浏览器 SDK 作为依赖安装。原生 SDK payload 会为当前平台下载，并根据对应发布的 SHA-256 校验和进行验证。它被缓存在 npm 包之外；无需工作区 SDK 引导命令。版本 0.26.0 是本地开发目标，直到其正式发布。
 
-SDK 安装不会修改 `package.json` 和 lockfile，但会写入工作区的 `node_modules`。其 postinstall 会下载并验证当前平台的原生 payload。
-
-移除 MCP 配置或工作区中的 SDK 安装即可禁用该执行路径；没有旧版回退。
-
-## 使用
-
-要求 Qwen Code 使用 `$computer-use` 执行桌面任务。引导完成后，它在 macOS 上使用 app 工作流：
-
-1. 通过 `computer.getApp(nameOrIdentifierOrPath)` 绑定应用；
-2. 读取 `app.getState()` 获取紧凑的辅助功能文本，随后进行自动增量更新；
-3. 使用该文本中的短元素 ID 执行一个或多个操作；
-4. 在决定下一步操作之前获取最新状态；并
-5. 仅在没有其他持久状态需要时，才关闭 SDK 客户端并重置 REPL。
-
-驱动是唯一计算观察差异的组件。模型代码使用类型化的 SDK 方法，不会分发任意的驱动工具名称。app 句柄跟踪当前窗口和对话框，在内部保留原生元素标识，并将输入委托给原生驱动。模型代码不选择前台/后台模式。未确认的操作不会被重放。`getState()` 可以打开已发现的已停止应用；操作永远不会重启它。现有的精确窗口 API 在 Windows 和 Linux 上仍然可用。
+## 应用任务
 
 ```js
-const app = await computer.getApp('Microsoft Excel');
-nodeRepl.write((await app.getState()).text);
-// Use an element ID from the returned state.
+var app = await cua.getApp('Microsoft Excel');
+// Use a short ID from the automatically displayed AX state.
 await app.click(37);
 await app.typeText('hello');
-nodeRepl.write((await app.getState()).text);
+await app.getAXState();
 ```
 
-在重新使用元素 ID 之前，打开或关闭对话框后请刷新状态。每次 App 状态刷新都会在内部捕获当前截图。默认返回会隐藏截图；当模型需要图像时，通过 `app.getState({ includeScreenshot: true })` 显式请求。
+`getApp` 显示完整的 AX 文本，不包含图像。`getAXState` 显示后续差异。`getScreenshot` 仅捕获当前窗口；`getAXStateAndScreenshot` 两者都捕获。观察结果返回字符串并自行显示；`{emit:false}` 会抑制输出。在使用 `{x,y}` 坐标之前先请求截图，这些坐标是该窗口当前截图中的像素。
 
-## 权限
+驱动负责解析应用/窗口、管理当前短 ID 和坐标，并选择输入传递方式。macOS 使用辅助功能和定向事件。Windows 和 Linux 优先尝试后台传递，仅在拒绝证明未发送任何内容时才使用前台输入。当检测到物理用户活动时，前台输入会停止；仅当用户未切换到其他地方时才恢复先前的应用。调度确认并不能证明 UI 已改变：重试前请先观察。
 
-Node REPL 是一个 MCP server，以普通 Node.js 权限执行模型编写的 JavaScript。其调用遵循 Qwen Code 正常的[MCP 审批流程](./approval-mode.md)。SDK 还会强制执行原生授权。
+Linux 支持 X11，包括 XWayland 下的 X11 应用。不支持原生 Wayland 应用。需将 DISPLAY、XAUTHORITY 以及桌面辅助功能会话总线传递给 server。
 
-在 macOS 上，辅助功能观察和输入需要 Accessibility 权限。截屏还需要 Screen Recording 权限。macOS 可能会将授权归因于启动 Qwen Code 的终端或 IDE。Windows 和 Linux 使用各自平台的辅助功能和输入机制。
+## 桌面与浏览器任务
 
-## 从远程会话使用面前的计算机
+对于全屏任务，使用显式桌面接口：
 
-当 Qwen Code 在无头机器（开发机、服务器）上运行时，skill 仍然可以驱动你所在的桌面：该计算机将其 `node_repl` 借给一个远程会话。目前在 macOS 上可用。
+```js
+await cua.desktop.getScreenshot();
+await cua.desktop.click({ x: 300, y: 200 }, { key: 'shift' });
+```
 
-在你的计算机上一次性设置：
+桌面坐标是最新主显示器截图中的像素。桌面输入控制可见的前台桌面，并可以移动真实指针。对于持续按住的键，始终使用 `try/finally` 配合 `cua.desktop.keyDown(key)` 和 `keyUp(key)`。持续按住的键属于调用会话，并在优雅重置/结束时释放。在按住键期间，对和弦与桌面指针操作使用 `keyDown/keyUp`，不带显式修饰符；在文本、普通快捷键或应用输入之前释放它们。突然的 OS 进程终止无法保证清理。
+
+```js
+var browser = await cua.getBrowser('Chrome');
+// Browser documentation and tabs are displayed on first selection.
+var tab = await cua.getTab('TAB_ID', { browser: 'Chrome' });
+await tab.playwright.domSnapshot();
+```
+
+`getBrowser`、`getTab` 和 `createBrowserTab` 返回现有仓库的 browser-use SDK 句柄。请遵循所选浏览器的运行时文档，并像之前一样连接 Qwen 浏览器扩展。该集成不添加浏览器窗口 API、DOM 差异或新的 Windows 支持。
+
+## 权限与生命周期
+
+该 server 以普通 Node.js 权限执行 JavaScript，并遵循客户端的 MCP 审批流程。在 macOS 上，输入/AX 观察需要 Accessibility，截图需要 Screen Recording；文档保存/Finder 重命名可能会请求 Automation。授权归属于宿主进程的 OS 责任链。在 Windows 上，常规安装的守护进程使用现有的 UAC/登录任务路径；其启动的应用使用源自自身令牌的普通用户完整性令牌。UIAccess 是可选的：显式设置 `CUA_DRIVER_USE_UIACCESS=1` 需要 Program Files 下受信任的签名工作进程，不可用时会失败。默认 npm 安装不会暂存该工作进程，也不要求其签名。
+
+`js` 在一次调用中完成，默认超时为 30 秒。超时可能产生外部影响；重试前请先观察。`js_reset` 丢弃绑定并优雅关闭所属的原生/浏览器会话。上下文压缩后，在继续之前调用 `cua.rewriteDocumentation()`。
+
+## 远程桌面中继
+
+对于现有的 macOS 桌面中继设置，安装其匹配的 server：
 
 ```bash
-npx -y @qwen-code/node-repl-mcp@0.1.7 desktop-relay install
+npx -y @qwen-code/node-repl-mcp@0.26.0 desktop-relay install
 ```
 
-这会在 `~/.qwen/desktop-relay` 下安装 `node_repl` 和 SDK，并在 `127.0.0.1:47821` 上注册一个 launchd socket。后台没有运行的进程；launchd 只在有连接时启动一个短生命周期的进程。
+这使用现有的本地 launchd socket `127.0.0.1:47821`。在安全的 Web Shell 中，选择 **Use this computer**，然后 **Connect this computer**。桌面会提示每个连接。远程守护进程必须启用 `QWEN_SERVE_CLIENT_MCP_OVER_WS=1`。
 
-- **从 Web Shell。** 远程守护进程必须使用 `QWEN_SERVE_CLIENT_MCP_OVER_WS=1` 运行，Web Shell 必须是安全页面（https，或通过 SSH 隧道的 `http://localhost`）。在会话中，在侧边栏页脚选择 **使用此计算机**，然后 **连接此计算机**。
+## 直接 MCP 与故障排除
 
-你计算机上的对话框会要求你允许每个连接。被允许的会话可以在你的计算机上以你的权限运行代码，并查看和控制其屏幕，就像本地 Computer Use 一样，直到你断开连接或它结束。macOS 首次会要求允许 `node` 使用辅助功能和屏幕录制权限。
+`qwen-cua-driver mcp` 直接公开相同的 19 个原生 Computer Use 操作。应用调用使用 `app`；桌面能力的调用使用 `scope:"desktop"`。`key_down/key_up` 仅限桌面。高级原生工具通过宿主可选的 `CUA_DRIVER_EXTRA_TOOLS=1` 仍然可用。
 
-## 故障排除
+如果 server 不可用，请检查 `qwen mcp list` 并在添加后重启客户端。如果捕获失败，请检查当前桌面会话和 OS 权限。如果原生下载失败，请检查确切的发布版本/校验和资源，或通过 `QWEN_CUA_SDK_NATIVE_DIR` 提供本地构建的匹配 payload。锁定的桌面无法提供 GUI 接受证据。
 
-- 如果自动设置后 `node_repl` 仍不可用，请重启 Qwen Code 并使用 `qwen mcp list` 验证 server。
-- 如果自动设置后 SDK 导入仍然失败，请确认 Qwen Code 运行在安装该包的工作区中。
-- 超时、取消、重置或内核崩溃后，请重新引导 SDK 客户端并请求最新状态。
-
-## 另请参阅
-
-- [Skills](./skills.md)
-- [MCP servers](./mcp.md)
-- [审批模式](./approval-mode.md)
-- [沙箱](./sandbox.md)
+另请参阅 [MCP servers](./mcp.md)、[审批模式](./approval-mode.md) 和 [沙箱](./sandbox.md)。

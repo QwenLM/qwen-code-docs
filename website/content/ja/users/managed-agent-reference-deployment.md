@@ -44,7 +44,7 @@ Harness をループバック上に保持します。レポートされるポー
 
 ## Java コントロールプレーンの起動
 
-別のターミナルで、同じ Harness とデータベースを設定します。
+別のターミナルで、同じ Harness、データベース、および既存の Workspace ディレクトリを設定します。
 
 ```bash
 export SPRING_DATASOURCE_URL='jdbc:mysql://127.0.0.1:3306/qwen_managed_agent'
@@ -54,6 +54,7 @@ export QWEN_MANAGED_AGENT_HARNESS_ENABLED='true'
 export QWEN_MANAGED_AGENT_HARNESS_BASE_URL='http://127.0.0.1:4170'
 export QWEN_MANAGED_AGENT_HARNESS_TOKEN='<private-random-token>'
 export QWEN_MANAGED_AGENT_CAPABILITY_DIGEST='sha256:<64-hex-digest>'
+export QWEN_MANAGED_AGENT_WORKSPACE_CWD='/srv/qwen-workspace'
 
 bin/qwen-managed-agent-server
 ```
@@ -70,6 +71,8 @@ chmod 600 config/application.yml
 ```bash
 curl --fail http://127.0.0.1:8080/actuator/health
 ```
+
+有効化された Harness は Managed Session Store をオンにします。Store のベース URL はデフォルトでこのサーバーのプレーンテキストループバックリスナーになります。その workspace ID はデフォルトで Runtime Broker が `QWEN_MANAGED_AGENT_WORKSPACE_CWD` から派生するものになるため、以下のツールパスが有効化されても ID は同じままになります。すでに `QWEN_MANAGED_AGENT_WORKSPACE_ID` を設定しているデプロイメントはそれを保持する必要があります。未バインドの Session はその ID から Store スコープを解決します。`QWEN_MANAGED_AGENT_SESSION_STORE_BASE_URL` は、Harness が別のアドレスを通じてこのサーバーに到達する場合、またはリスナーが TLS を提供する場合にのみ設定します。
 
 この基本構成はテキストのみの Hosted Session をサポートします。署名付きまたは認証されたイングレスが設定されていない限り、リスナーをループバック上に保持します。完全な認証、API、およびケイパビリティ設定は `docs/server-reference.md` としてバンドルされています。
 
@@ -109,8 +112,6 @@ export QWEN_MANAGED_AGENT_RUNTIME_CREDENTIAL_KEY='<base64-encoded-32-byte-key>'
 export QWEN_MANAGED_AGENT_RUNTIME_STATE_DIRECTORY='/var/lib/qwen-managed-agent/runtime'
 export QWEN_MANAGED_AGENT_NODE_EXECUTABLE='/usr/bin/node'
 export QWEN_MANAGED_AGENT_RUNTIME_WORKER_ENTRY='/opt/qwen-code/dist/cli.js'
-export QWEN_MANAGED_AGENT_WORKSPACE_ID='reference-workspace'
-export QWEN_MANAGED_AGENT_WORKSPACE_CWD='/srv/qwen-workspace'
 export QWEN_MANAGED_AGENT_RUNTIME_VERIFIED_WORKSPACE_RECOVERY_ENABLED='true'
 ```
 
@@ -160,7 +161,7 @@ FROM ma_runtime_binding WHERE runtime_credential_key_id IS NOT NULL;
 
 キーリングはマップであり、`QWEN_MANAGED_AGENT_*` 環境変数を通じて提供することはできません。relaxed binding は環境変数形式を空または誤ったキーのリングにサイレントに解決し、起動エラーは発生しません。`previous-credential-keys` は `config/application.yml` で設定します。この配布には `config/application.example.yml` が同梱されており、両方のランチャーはそのファイルが存在する場合に `SPRING_CONFIG_ADDITIONAL_LOCATION=file:<distribution-root>/config/application.yml` をエクスポートするため、場所はプロセスの作業ディレクトリに依存せず、コマンドの位置引数にオプションが追加されることもありません。変数が既に設定されている場合、ランチャーは代わりにそれを有効にします。環境変数のみに依存するデプロイメントは空のリングで起動するため、前のキーの設定なしに `credential-key-id` をローテーションすると、その ID で書き込まれた行が読み取り不能になります。明示的な `--spring.config.additional-location` コマンドライン引数はこの環境変数のデフォルトより優先されます。両方が存在する場合、コマンドラインの値が勝ち、バンドルされた `config/application.yml` はロードされません。
 
-オペレーターリカバリーエントリーは、サーバーと同じアクティブなペアと `previous-credential-keys` マップを読み取ります。リカバリーには同じ外部 YAML をロードします（例: `SPRING_CONFIG_ADDITIONAL_LOCATION=file:<absolute-path>/application.yml`）。バインディングでまだ参照されているすべてのキーを保持しつつ、新しいキーをアクティブなままにします。CSI/マイグレーションメンテナンスメイン（CSI Hosted プローブを含む）は引き続き単一の認証キーペアを読み取ります。それらのエントリーを起動する際は、ターゲットのバインディングを暗号化したキーをアクティブなペアとして使用します。
+オペレーターリカバリーエントリーは、サーバーと同じアクティブなペアと `previous-credential-keys` マップを読み取ります。そのランチャーも同じ方法で `config/application.yml` をロードします。ファイルが別の場所にある場合は、`SPRING_CONFIG_ADDITIONAL_LOCATION=file:<absolute-path>/application.yml` を設定します。バインディングでまだ参照されているすべてのキーを保持しつつ、新しいキーをアクティブなままにします。CSI/マイグレーションメンテナンスメイン（CSI Hosted プローブを含む）は引き続き単一の認証キーペアを読み取ります。それらのエントリーを起動する際は、ターゲットのバインディングを暗号化したキーをアクティブなペアとして使用します。
 
 キーリングの設定が成功した後、サーバーとリカバリーエントリーは、プロテクターインスタンスごとに 1回、解決されたアクティブ ID と設定済み ID をログに出力します。これらの ID は ciphertext の傍らに既に保存されている非秘密の識別子です。診断では非 ASCII 文字と制御文字を JSON エスケープし、スペースと大文字小文字を保持しますが、キーマテリアル、ciphertext、トークンは決して含まれません。設定済み ID を廃止クエリが返す正確な ID と比較してから、ローテーション済みのデプロイメントを使用します。利用不可キーのエラーは、要求された ID、アクティブな ID、および設定済み ID を表示するため、サイレントに正規化されたマップやタイプミスのあるマップを秘密を露呈させることなく特定できます。この診断は、保存済みのすべての行を復号できることを証明するものではありません。
 

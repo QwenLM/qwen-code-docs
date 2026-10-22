@@ -22,6 +22,14 @@ qwen board claim <task-id> --board orders --as web
 qwen board done <task-id> --board orders --as web --note "status is numeric"
 ```
 
+创建任务时使用 `--owner` 可以记录建议的所有者：
+
+```bash
+qwen board task "check the API response" --board orders --as api --owner web
+```
+
+任务仍处于 `pending` 状态，该建议不会预留任务。任何操作者都可以认领，替换所有者并将状态改为 `in_progress`。一旦变为 `in_progress`，其他操作者就无法再认领。
+
 `--as` 只是一个随操作记录的标签，不是身份验证。没有成员列表、加入命令、心跳机制，也没有预留的参与者名称。
 
 Board 名称不区分大小写，因此 `Orders` 和 `orders` 在大小写折叠的文件系统（APFS、NTFS）和大小写敏感的文件系统（ext4）上都是同一个 board。
