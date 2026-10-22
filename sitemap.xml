@@ -542,7 +542,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/development/telemetry/</loc>
-<lastmod>2026-10-21T01:47:44.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -578,7 +578,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/</loc>
-<lastmod>2026-10-21T01:47:44.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -608,7 +608,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/sdk-typescript/</loc>
-<lastmod>2026-10-14T00:03:15.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -710,7 +710,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/common-workflow/</loc>
-<lastmod>2026-10-19T01:37:02.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -740,7 +740,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/configuration/settings/</loc>
-<lastmod>2026-10-21T01:47:44.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -794,7 +794,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/agent-board/</loc>
-<lastmod>2026-09-16T05:10:45.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -926,7 +926,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/computer-use/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1136,7 +1136,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/managed-agent-reference-deployment/</loc>
-<lastmod>2026-10-20T01:40:47.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1160,7 +1160,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/qwen-serve/</loc>
-<lastmod>2026-10-21T01:47:44.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1185,6 +1185,12 @@
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/support/troubleshooting/</loc>
 <lastmod>2026-10-14T00:03:15.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
+<loc>https://QwenLM.github.io/qwen-code-docs/en/users/workflow-intent/</loc>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1982,7 +1988,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/agent-board/</loc>
-<lastmod>2026-09-16T05:10:45.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2000,7 +2006,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/auto-mode/</loc>
-<lastmod>2026-09-02T02:00:01.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2114,7 +2120,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/computer-use/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2324,7 +2330,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/managed-agent-reference-deployment/</loc>
-<lastmod>2026-10-20T01:40:47.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2373,6 +2379,12 @@
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/support/troubleshooting/</loc>
 <lastmod>2026-09-08T01:49:47.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
+<loc>https://QwenLM.github.io/qwen-code-docs/zh/users/workflow-intent/</loc>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3164,7 +3176,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/features/agent-board/</loc>
-<lastmod>2026-09-16T05:10:45.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3290,7 +3302,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/features/computer-use/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3549,6 +3561,12 @@
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/support/troubleshooting/</loc>
 <lastmod>2026-09-08T01:49:47.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
+<loc>https://QwenLM.github.io/qwen-code-docs/de/users/workflow-intent/</loc>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4340,7 +4358,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/features/agent-board/</loc>
-<lastmod>2026-09-16T05:10:45.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4436,7 +4454,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/features/channels/wecom/</loc>
-<lastmod>2026-09-23T22:58:44.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4466,7 +4484,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/features/computer-use/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4749,6 +4767,12 @@
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/support/troubleshooting/</loc>
 <lastmod>2026-09-08T01:49:47.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
+<loc>https://QwenLM.github.io/qwen-code-docs/fr/users/workflow-intent/</loc>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5540,7 +5564,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/features/agent-board/</loc>
-<lastmod>2026-09-16T05:10:45.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5666,7 +5690,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/features/computer-use/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5925,6 +5949,12 @@
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/support/troubleshooting/</loc>
 <lastmod>2026-09-08T01:49:47.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
+<loc>https://QwenLM.github.io/qwen-code-docs/ru/users/workflow-intent/</loc>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6740,7 +6770,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/agent-board/</loc>
-<lastmod>2026-09-16T05:10:45.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6842,7 +6872,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/channels/wecom/</loc>
-<lastmod>2026-09-23T22:58:44.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6872,7 +6902,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/computer-use/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7082,7 +7112,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/managed-agent-reference-deployment/</loc>
-<lastmod>2026-10-20T01:40:47.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7131,6 +7161,12 @@
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/support/troubleshooting/</loc>
 <lastmod>2026-10-21T01:47:44.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
+<loc>https://QwenLM.github.io/qwen-code-docs/ja/users/workflow-intent/</loc>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7922,7 +7958,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/features/agent-board/</loc>
-<lastmod>2026-09-16T05:10:45.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8048,7 +8084,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/features/computer-use/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8307,6 +8343,12 @@
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/support/troubleshooting/</loc>
 <lastmod>2026-09-08T01:49:47.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
+<loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/workflow-intent/</loc>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -9074,7 +9116,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ko/users/features/agent-board/</loc>
-<lastmod>2026-09-16T05:10:45.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -9194,7 +9236,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ko/users/features/computer-use/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -9453,6 +9495,12 @@
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ko/users/support/troubleshooting/</loc>
 <lastmod>2026-09-08T01:49:47.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
+<loc>https://QwenLM.github.io/qwen-code-docs/ko/users/workflow-intent/</loc>
+<lastmod>2026-10-22T01:42:24.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
