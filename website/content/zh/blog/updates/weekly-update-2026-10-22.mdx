@@ -84,23 +84,23 @@ Qwen Code 本周发布 v0.25.3、v0.26.0 两个正式版本，436 个 PR 合入�
 
 **`/auth` 第一屏多了「千问AI平台 / QwenCloud」。** 从这两个平台来的，现在在 `/auth` 第一屏就能选到对应的官方服务商，国内和国际分开选，按量付费和订阅两种 key 各走各的。详见 PR [#14073](https://github.com/QwenLM/qwen-code/pull/14073)
 
-**它反复做同一件事时，默认先提醒而不是直接停下。** 一条命令、一次读文件连着重复到一定次数，以前这一轮会被掐断；现在默认改成提醒它换个办法、接着往下跑，想让它自动停可以在设置里选那种模式。提醒模式下它会继续花时间也继续花 token，任务上设的预算仍然管用。详见 PR [#15016](https://github.com/QwenLM/qwen-code/pull/15016)
-
 **自建 Managed Agent 服务的用户，可以更方便地管理项目和任务。** 那些会话现在和你自己电脑上的会话并排摆在 Web Shell 首页，用同一个输入框和批准卡片。本期还能直接选已有的项目目录，新建会话时带上已启用的技能，运行中调整执行权限，手动改会话名称；普通托管会话也能同时用同一个项目目录，文件由这些会话共享。这些能力需要对应的部署支持。详见 PR [#14316](https://github.com/QwenLM/qwen-code/pull/14316)、[#14970](https://github.com/QwenLM/qwen-code/pull/14970)、[#14930](https://github.com/QwenLM/qwen-code/pull/14930)、[#14920](https://github.com/QwenLM/qwen-code/pull/14920)、[#14987](https://github.com/QwenLM/qwen-code/pull/14987)、[#15026](https://github.com/QwenLM/qwen-code/pull/15026)
-
-**Claude 格式插件自带的命令，终端里也能敲了。** 上周它只在跑一次出结果的用法里生效，现在终端里能直接敲，不发起模型请求。插件在模型要用某个工具之前插手的那一层也开到了交互会话里，可以改写这一次调用，也可以拦下来。这项默认关着，设置里有 Mods 开关，改完重启生效。详见 PR [#14268](https://github.com/QwenLM/qwen-code/pull/14268)、[#14565](https://github.com/QwenLM/qwen-code/pull/14565)、[#14889](https://github.com/QwenLM/qwen-code/pull/14889)
-
-**后台跑着的命令，能直接看到它输出到什么地步了。** 任务详情里有输出的最后一段、输出多大、最后一次写是什么时候，加上占了多少内存、开始和结束时间，内容也能一键复制。详见 PR [#14831](https://github.com/QwenLM/qwen-code/pull/14831)
 
 **QQ 机器人收得到文件了。** 单聊或者群里 @ 它，丢一份 Word、PDF 或者表格过去，它存下来照着读、照着答。详见 PR [#14343](https://github.com/QwenLM/qwen-code/pull/14343)
 
 **企业微信的自建应用能接进来。** 同事在企业自建的应用里发一句话交代任务，Qwen Code 收到去办，办完用这个应用的身份回信。详见 PR [#13976](https://github.com/QwenLM/qwen-code/pull/13976)
+
+**Claude 格式插件自带的命令，终端里也能敲了。** 上周它只在跑一次出结果的用法里生效，现在终端里能直接敲，不发起模型请求。插件在模型要用某个工具之前插手的那一层也开到了交互会话里，可以改写这一次调用，也可以拦下来。这项默认关着，设置里有 Mods 开关，改完重启生效。详见 PR [#14268](https://github.com/QwenLM/qwen-code/pull/14268)、[#14565](https://github.com/QwenLM/qwen-code/pull/14565)、[#14889](https://github.com/QwenLM/qwen-code/pull/14889)
+
+**后台跑着的命令，能直接看到它输出到什么地步了。** 任务详情里有输出的最后一段、输出多大、最后一次写是什么时候，加上占了多少内存、开始和结束时间，内容也能一键复制。详见 PR [#14831](https://github.com/QwenLM/qwen-code/pull/14831)
 
 ## 👏 体验优化
 
 **首页折叠起来的内容，鼠标停上去能先预览。** 详见 PR [#14826](https://github.com/QwenLM/qwen-code/pull/14826)
 
 **表格的排序、筛选和复制更顺手。** 宽表格上那套高级控件和复制出口这一轮一起打磨过。详见 PR [#14707](https://github.com/QwenLM/qwen-code/pull/14707)
+
+**Qwen Code 反复做同一件事时会先提醒，不再掐断这一轮。** 一条命令或一次读文件重复到一定次数，现在默认提醒它换个办法接着跑；想让它自动停，设置里可以选。详见 PR [#15016](https://github.com/QwenLM/qwen-code/pull/15016)
 
 **手机上的输入框少掉两个方向键。** 输入框上方那两个翻历史的方向键收掉了，历史搜索还在原处能用。详见 PR [#14220](https://github.com/QwenLM/qwen-code/pull/14220)
 
