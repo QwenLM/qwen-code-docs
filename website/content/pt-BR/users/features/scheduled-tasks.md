@@ -82,6 +82,20 @@ em 45 minutos, verifique se os testes de integração passaram
 
 O Qwen Code fixa o horário de execução em um minuto e hora específicos usando uma expressão cron e confirma quando ela será executada.
 
+## Despertar a sessão somente quando algo mudou
+
+Uma tarefa recorrente pode carregar um **gate**: um comando shell executado a cada disparo, fora do modelo. Se não imprimir nada e sair com 0, o disparo é ignorado — nenhum turno é executado e nada é adicionado à conversa. Se imprimir saída, o prompt da tarefa é executado com essa saída anexada e marcada como dados produzidos pelo comando. Um comando que falha, imprime dados binários ou executa por mais de 60 segundos é reportado uma vez, depois contado silenciosamente até ter sucesso novamente; `CronList` mostra a contagem.
+
+Use um gate para monitoramentos que geralmente são silenciosos, com um comando que mantém seu próprio cursor e imprime apenas o que mudou:
+
+```text
+every 2 minutes, run ./check-pr.sh 15057 as a gate; when it prints something, handle the events it lists
+```
+
+O Qwen Code chama `CronCreate` com `gate: "./check-pr.sh 15057"` e confirma o comando da mesma forma que confirma um comando `Monitor`: uma vez, quando a tarefa é criada, com a opção de sempre permiti-lo. O comando então executa sem supervisão do diretório do projeto com o ambiente da sessão. Uma tarefa durável com gate continua funcionando após uma reinicialização quando o comando é somente leitura, uma regra salva de `Monitor(...)` ou `Bash(...)` o permite, ou a sessão está em modo auto ou yolo; caso contrário, a próxima execução reporta a regra a ser adicionada em vez de executar o comando. Uma regra de negação para o comando interrompe o gate em qualquer modo.
+
+Escreva um prompt com gate como instruções ("para cada evento na saída do gate, …"), não como um comando slash. Um gate ainda não está disponível para tarefas vinculadas à conversa atual do daemon (`sessionMode: "current"`). Em um daemon `qwen serve`, "Executar agora" em uma tarefa com gate pede ao modelo para executar o próprio gate primeiro e seguir a tarefa apenas quando o comando sair com 0 e imprimir algo.
+
 ## Gerenciar tarefas agendadas
 
 Peça ao Qwen Code em linguagem natural para listar ou cancelar tarefas, ou referencie as ferramentas subjacentes diretamente.
@@ -98,15 +112,15 @@ Por baixo dos panos, o Qwen Code usa estas ferramentas:
 
 | Ferramenta   | Propósito                                                                                                       |
 | :----------- | :-------------------------------------------------------------------------------------------------------------- |
-| `CronCreate` | Agenda uma nova tarefa. Aceita uma expressão cron de 5 campos, o prompt a ser executado e se ela é recorrente ou de execução única. |
-| `CronList`   | Lista todas as tarefas agendadas com seus IDs, programações e prompts.                                          |
+| `CronCreate` | Agenda uma nova tarefa. Aceita uma expressão cron de 5 campos, o prompt a ser executado, se ela é recorrente ou de execução única e um comando de gate opcional. |
+| `CronList`   | Lista todas as tarefas agendadas com seus IDs, programações, prompts e o gate e seus resultados recentes quando houver um definido. |
 | `CronDelete` | Cancela uma tarefa pelo ID.                                                                                     |
 
 Cada tarefa agendada tem um ID de 8 caracteres que você pode passar para `CronDelete`. Uma sessão pode conter até 50 tarefas agendadas de uma vez.
 
 ## Como as tarefas agendadas são executadas
 
-O agendador verifica a cada segundo se há tarefas vencidas e as enfileira quando a sessão está ociosa. Um prompt agendado é executado entre as suas interações, não enquanto o Qwen Code está no meio de uma resposta. Se o Qwen Code estiver ocupado quando uma tarefa vencer, o prompt aguarda até que o turno atual termine.
+O agendador verifica a cada segundo se há tarefas vencidas e as enfileira quando a sessão está ociosa. Um prompt agendado é executado entre as suas interações, não enquanto o Qwen Code está no meio de uma resposta. Se o Qwen Code estiver ocupado quando uma tarefa vencer, o prompt aguarda até que o turno atual termine. Uma tarefa com gate executa primeiro o comando de gate e só é enfileirada quando o comando produz saída.
 
 Todos os horários são interpretados no seu fuso horário local. Uma expressão cron como `0 9 * * *` significa 9h da manhã onde quer que você esteja executando o Qwen Code, não UTC.
 

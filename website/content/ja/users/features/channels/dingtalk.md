@@ -31,7 +31,7 @@ DingTalk Stream モードはアウトバウンドの WebSocket 接続を使用�
       "clientId": "$DINGTALK_CLIENT_ID",
       "clientSecret": "$DINGTALK_CLIENT_SECRET",
       "useConnectionManager": true,
-      "senderPolicy": "open",
+      "privatePolicy": "open",
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "instructions": "You are a concise coding assistant responding via DingTalk.",
@@ -97,7 +97,7 @@ export DINGTALK_CLIENT_SECRET=<your-app-secret>
 
 ### ターン出力モード
 
-[共有の `outputMode` 設定](https://qwenlm.github.io/qwen-code-docs/en/users/features/channels/overview/#turn-output-mode) は、DingTalk がアシスタントの結果をいつ配信するかを制御します。現在、このポリシーと統合されているアダプターは DingTalk のみです。デフォルトは `per_turn` で、`outputMode` が省略されている場合も同様です。
+[共有の `outputMode` 設定](./overview#turn-output-mode) は、DingTalk がアシスタントの結果をいつ配信するかを制御します。現在、このポリシーと統合されているアダプターは DingTalk のみです。デフォルトは `per_turn` で、`outputMode` が省略されている場合も同様です。
 
 - `per_task`: メインタスクとそれに関連するバックグラウンドタスクおよび通知が完了するまで待機し、タスクの最後の空でないアシスタントの応答を含む 1 つの最終結果カードを配信します。
 - `per_response`: 完了した各アシスタントの応答がそれぞれ独自の完了結果カードを受け取ります。トークンチャンクは現在のカードを更新し、新しいカードは作成しません。バックグラウンドのアシスタント応答も個別に配信されます。
@@ -191,6 +191,8 @@ DingTalk ボットは DM とグループ会話の両方で動作します。グ�
 
 `"atSender": true` を設定すると、ボットがグループメッセージのトリガーとなったメンバーを @メンションします。デフォルトではオフで、DingTalk スタッフ ID を持つエージェントの応答にのみ適用されます。応答はメンションの有無に関わらず DingTalk markdown として送信され、メンションプレフィックスは最初のメッセージチャンクに含まれます。
 
+Qwen Code は正規のメッセージを構築する際に DingTalk から提供されたテキスト内容を保持し、先頭のメンションを自ら削除することはありません。プレーンテキストのコールバックで DingTalk がボットのメンションを省略する場合でも、`/clear` や `!command` などの本文は引き続きそのコマンドマーカーで始まり、通常のローカルコマンドのルールに従います。リッチテキストのコールバックが可能であるように、コールバックが先頭のボットメンションを保持する場合、` @Bot /clear` や ` @Bot !command` は正規のテキストが `/` や `!` で始まらないため、通常のエージェント入力のままとなります。`isInAtList` は引き続き、グループメッセージがボットに宛てられたかどうかを判定します。
+
 ### グループの会話 ID を確認する
 
 DingTalk ではグループを識別するために `conversationId` が使用されます。グループにメッセージが送信されたときにチャンネルサービスのログで確認できます。ログ出力内の `conversationId` フィールドを探してください。
@@ -229,7 +231,7 @@ DingTalk ではグループを識別するために `conversationId` が使用�
 ## ヒント
 
 - **DingTalk Markdown に対応した指示を設定する** — DingTalk は見出し、太字、リンク、コードブロック、テーブルをサポートします。狭い画面では横スクロールする可能性があるため、テーブルはコンパクトに保ってください。
-- **アクセスを制限する** — 組織のコンテキストでは `senderPolicy: "open"` が許容される場合があります。より厳密に制御するには `"allowlist"` または `"pairing"` を使用してください。詳細は [DM ペアリング](./overview#dm-pairing) を参照してください。
+- **アクセスを制限する** — 組織のコンテキストでは `privatePolicy: "open"` が許容される場合があります。より厳密に制御するには `"allowlist"` または `"pairing"` を使用してください。詳細は [DM ペアリング](./overview#dm-pairing) を参照してください。
 - **参照メッセージ** — ユーザーのメッセージに引用（返信）すると、その引用テキストがエージェントのコンテキストとして含まれます。リッチテキストの引用はテキストの順序を保持し、埋め込み画像を添付します。引用されたメッセージが画像、ファイル、音声、または動画メッセージの場合、ボットは直接送信された場合と同じ方法でそれをダウンロードして添付します。ボットの応答の引用はまだサポートされていません。
 
 ## トラブルシューティング
@@ -254,4 +256,4 @@ DingTalk ではグループを識別するために `conversationId` が使用�
 
 ### "Unable to process this message"
 
-返信は失敗のカテゴリを特定し、次のステップを提案します。問題が続く場合は、返信に表示されている参照をボット管理者に伝えてください。同じ参照がチャンネルプロセスログの詳細エラーの横に表示されます。
+返信は失敗のカテゴリを特定し、次のステップを提案します。問題が続く場合は、返信に表示されている参照をボット管理者に渡してください。同じ参照がチャンネルプロセスログ内の詳細エラーの横にも表示されます。

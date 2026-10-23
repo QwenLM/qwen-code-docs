@@ -4,14 +4,14 @@
 
 ## 启用侧边栏
 
-侧边栏**默认禁用**。传递 `sidebar` prop 以启用：
+侧边栏默认为**仅 Home**：一个 300px 的会话列，底部带有折叠控件。省略 `sidebar`、传递 `true` 或传递 `{}` 均使用此默认值。传递 `sidebar={false}` 或 `{ enabled: false }` 以隐藏它。
 
 ```tsx
 import { WebShellWithProviders } from '@qwen-code/web-shell';
 
 <WebShellWithProviders
   baseUrl="http://localhost:4170"
-  sidebar={true} // 简单启用
+  sidebar={true} // Home-only 默认
   // 或使用细粒度选项：
   // sidebar={{ enabled: true, defaultCollapsed: false, ... }}
 />;
@@ -19,26 +19,9 @@ import { WebShellWithProviders } from '@qwen-code/web-shell';
 
 ## 布局概览
 
-```
-┌─────────────────────────────────────┐
-│ ① 品牌区（topRow）                   │  ✅ 可自定义
-├─────────────────────────────────────┤
-│ ② 主导航                             │  ✅ 可自定义
-│    [＋ 新任务]  [🧩 插件]            │
-│    [📅 定时任务] [🎯 目标]           │
-│    [自定义渲染...]                    │
-├─────────────────────────────────────┤
-│ ③ 项目头部                           │  ✅ 显示/隐藏
-│    📁 项目 ▼ [🔍] [＋]              │
-│    会话列表条目...                    │
-│    📦 已归档会话                      │
-├─────────────────────────────────────┤
-│ ④ 底部操作栏                         │  ✅ 可自定义
-│    [⚙ 设置] v0.19 [☀] [▦] [◧]      │
-├─────────────────────────────────────┤
-│ ⑤ 拖拽手柄                           │  ❌ 不可自定义
-└─────────────────────────────────────┘
-```
+仅 Home 的宿主在一个列中显示品牌区、新任务、项目、已归档会话和折叠控件。配置另一个可用的主入口或底部操作会在默认的 300px 次级列旁添加一个 56px 的图标栏。主入口位于图标栏中；底部操作和版本位于"更多"中。自定义渲染器仍保留在宽大的 Home 列中。没有公开的布局选项。
+
+**破坏性变更：** 此前省略 `sidebar` 会隐藏侧边栏，并且在启用侧边栏时省略导航/底部项列表会暴露所有内置项。宿主现在必须传递 `sidebar={false}` 以保留以前的隐藏默认值，或显式列出所需的条目。独立 Web Shell 显式配置其完整菜单。`branding.hideWhenCompact` 现在默认为 `false`；将其设置为 `true` 以在紧凑抽屉中保留隐藏的品牌区。
 
 ## 可自定义区域
 
@@ -47,7 +30,7 @@ import { WebShellWithProviders } from '@qwen-code/web-shell';
 ```ts
 interface WebShellSidebarBranding {
   render?: () => ReactNode; // 替换整个品牌行
-  hideWhenCompact?: boolean; // 侧边栏折叠时隐藏（默认：true）
+  hideWhenCompact?: boolean; // 在紧凑抽屉中隐藏品牌区（默认：false）
 }
 ```
 
@@ -56,7 +39,7 @@ interface WebShellSidebarBranding {
 | `undefined`（默认）                | 已解析品牌：`brand` prop → daemon `GET /brand` → 内置 Qwen logo + "Qwen Code" 文本 |
 | `false`                            | 完全隐藏品牌行                                    |
 | `{ render: () => <MyHeader /> }`   | 使用自定义内容完全替换                            |
-| `{ hideWhenCompact: false }`       | 在折叠的图标栏模式下保持品牌区可见                |
+| `{ hideWhenCompact: false }`     | 在紧凑抽屉中保持品牌区可见（默认）                                  |
 
 默认行是数据驱动的，而非固定不变：提供 `ui.brand` 配置的 daemon 会替换文本和标识，嵌入宿主可以通过 shell 组件的 `brand` prop 覆盖两者（`onBrandResolved` 会向宿主自身的 chrome 报告解析结果）。`branding.render` 仍然是最高优先级的覆盖——它优先于 prop 和 daemon 解析的值，与之前完全一致。
 
@@ -79,27 +62,31 @@ sidebar={{
 type WebShellSidebarPrimaryNavItem =
   | 'newTask' // ✏️ 新任务按钮
   | 'plugins' // 🧩 插件按钮
+  | 'channels' // Channel 会话和设置
+  | 'live' // Live 会话和设置；需要 showLive
+  | 'workflows' // 需要 workflow 支持
+  | 'managed' // 需要托管代理提供者
   | 'scheduledTasks' // 📅 定时任务按钮
   | 'goals'; // 🎯 目标按钮
 
 interface WebShellSidebarPrimaryNavOptions {
-  items?: readonly WebShellSidebarPrimaryNavItem[]; // 显示哪些内置按钮（默认：全部）
+  items?: readonly WebShellSidebarPrimaryNavItem[]; // 显示哪些内置按钮（默认：['newTask']）
   render?: () => ReactNode; // 内置按钮之后的额外自定义内容
 }
 ```
 
 主导航区域包含由 `items` 控制的内置按钮：
 
-- 未指定 `items` 时默认显示所有按钮
+- 未指定 `items` 时仅显示新任务；Home 始终存在
 - 提供 `items` 时仅显示列出的按钮
 - 可通过 `render()` 在内置按钮之后添加自定义内容
 
-| 值                                         | 效果                                   |
-| ------------------------------------------ | -------------------------------------- |
-| `undefined`（默认）                        | 显示所有内置按钮                       |
-| `{ items: ['plugins'] }`                   | 仅插件按钮                             |
-| `{ items: ['plugins', 'scheduledTasks'] }` | 插件 + 定时任务                        |
-| `{ items: [], render: () => ... }`         | 隐藏所有内置按钮，仅显示自定义内容     |
+| 值                                      | 效果                                                |
+| ------------------------------------------ | ----------------------------------------------------- |
+| `undefined`（默认）                      | Home 和新任务                                    |
+| `{ items: ['plugins'] }`                   | Home 和插件；无新任务按钮                  |
+| `{ items: ['plugins', 'scheduledTasks'] }` | Home + 插件 + 定时任务                      |
+| `{ items: [], render: () => ... }`         | Home 和自定义内容；无内置主导航按钮 |
 
 ```tsx
 sidebar={{
@@ -119,26 +106,30 @@ sidebar={{
 ```ts
 type WebShellSidebarFooterItem =
   | 'settings' // ⚙ 设置面板
+  | 'update' // 受支持时的更新操作
+  | 'localFiles' // 可用时的本地文件桥接
+  | 'desktopRelay' // 通过现有桌面 relay 使用此电脑
+  | 'workspacesOverview' // 解锁时的 workspace 管理
   | 'version' // 版本标签（例如 "v0.19.10"）
   | 'theme' // ☀/🌙 亮色/暗色切换
   | 'sessionsOverview' // ▦ 会话概览面板
-  | 'splitView' // ◧ 分屏视图（仅大屏幕）
+  | 'splitView' // ◧ 分屏视图（shell 容器至少 1024px 宽）
   | 'daemonStatus' // 📊 daemon 状态面板
   | 'collapse'; // ◁/▷ 折叠/展开切换
 
 interface WebShellSidebarFooterOptions {
-  items?: readonly WebShellSidebarFooterItem[]; // 显示哪些内置项（默认：全部）
-  render?: () => ReactNode; // 在左侧、内置项之前渲染的自定义内容
+  items?: readonly WebShellSidebarFooterItem[]; // 显示哪些内置项（默认：['collapse']）
+  render?: () => ReactNode; // Home 底部栏中的自定义内容
 }
 ```
 
-| 值                                             | 效果                                                                     |
-| ---------------------------------------------- | ------------------------------------------------------------------------ |
-| `undefined`（默认）                            | 显示所有项                                                               |
-| `false`                                        | 完全隐藏底部栏；移动端抽屉仅保留关闭控件                                 |
-| `{ items: ['settings', 'theme', 'collapse'] }` | 仅显示列出的项；移动端抽屉始终保留关闭控件                               |
+| 值                                          | 效果                                                                    |
+| ---------------------------------------------- | ------------------------------------------------------------------------- |
+| `undefined`（默认）                          | 仅折叠/展开                                                      |
+| `false`                                        | 底部栏隐藏；移动端抽屉仅保留关闭控件             |
+| `{ items: ['settings', 'theme', 'collapse'] }` | 仅显示列出的项；移动端抽屉始终保留关闭控件 |
 
-底部栏会自动适应窄宽度：标签会被隐藏，版本信息在某些阈值以下会被移除。
+在图标栏布局中，底部操作和版本出现在"更多"中；仅折叠/展开控件保留在图标栏底部。仅 Home 模式保留现有的紧凑底部栏行为。
 
 ```tsx
 sidebar={{
@@ -146,7 +137,7 @@ sidebar={{
 }}
 ```
 
-通过 `render()` 添加的自定义内容出现在底部栏的左侧，在内置项之前：
+通过 `render()` 添加的自定义内容出现在宽大的 Home 底部栏中：
 
 ```tsx
 sidebar={{
@@ -161,13 +152,13 @@ sidebar={{
 }}
 ```
 
-**注意：** `'scheduledTasks'` 和 `'goals'` 已移至主导航区域（②），默认显示。它们由 `primaryNav.items` 控制，而非 `footer.items`。
+**注意：** `'scheduledTasks'` 和 `'goals'` 已移至主导航区域（②），需要在嵌入宿主中显式配置。它们由 `primaryNav.items` 控制，而非 `footer.items`。
 
 ### 其他顶级选项
 
 ```ts
 interface WebShellSidebarOptions {
-  enabled?: boolean; // 显示/隐藏侧边栏（传入时为 true）
+  enabled?: boolean; // 显示/隐藏侧边栏（默认：true，包括省略 sidebar 时）
   defaultCollapsed?: boolean; // 初始折叠状态（持久化到 localStorage）
   showCompactToggle?: boolean; // 在聊天区域显示折叠按钮（默认：true）
   showSessionSourceSwitch?: boolean; // 显示 Tasks/Channels 切换（默认：true）
@@ -190,7 +181,7 @@ sidebar={{
 }}
 ```
 
-这会移除 Tasks/Channels 切换，并将所有活跃、已归档、主会话和次级会话查询固定为 `sourceType: "default"`。省略该选项则保持当前的切换和 channel-session 访问不变。
+这会移除 Tasks/Channels 切换，并将所有活跃、已归档、主会话和次级会话查询固定为 `sourceType: "default"`。省略该选项则保留 channel-session 访问。当有专用的 Channels 图标栏入口时，它会替换来源标签页；否则标签页保留。
 
 ### Live 会话 — `showLive`
 
@@ -201,8 +192,11 @@ Live 会话默认对嵌入宿主隐藏。当宿主需要暴露 daemon 拥有的 
 ```tsx
 sidebar={{
   showLive: true,
+  primaryNav: { items: ['newTask', 'live'] },
 }}
 ```
+
+没有 `live` 主入口时，`showLive: true` 会在 Home 和"实验性"设置下保留现有的 Live 分组和设置。有该入口时，Live 会打开自己的会话列和设置页。
 
 ### ③ 项目头部 — `hideProjectHeader`
 
@@ -255,7 +249,7 @@ interface WebShellSidebarSessionActionsOptions {
 | `{ inlineItems: [] }`                    | 完全没有内联按钮                           |
 | `{ inlineItems: ['rename', 'export'] }` | Rename + export 作为内联按钮 |
 
-当没有启用下拉项时，下拉触发器（⋮）会自动隐藏。内联按钮仅在其能力条件和 `items` 都包含它们时才会显示。Archive 在当前会话以及任何正在运行实时轮次的会话上会被禁用，因为 daemon 在归档时会关闭实时会话。
+当没有启用下拉项时，下拉触发器（⋮）会自动隐藏。内联按钮仅在其能力条件和 `items` 都包含它们时才会显示。Archive 在当前会话以及任何正在运行轮次的会话上会被禁用，因为 daemon 在归档时会关闭实时会话。
 
 ```tsx
 sidebar={{
@@ -285,7 +279,8 @@ sidebar={{
 ### ⑤ 拖拽手柄
 
 - 右侧边缘的拖拽手柄，用于调整侧边栏宽度
-- 宽度持久化到 localStorage
+- 宽度持久化到 localStorage 中，作为侧边栏总宽度。默认值为 300px（仅 Home）和 356px（有图标栏时）。恢复的宽度被限制为至少 220px（仅 Home）或 276px（有图标栏时）；旧值不会盲目增加 56px。拖拽到折叠阈值以下仍会折叠侧边栏。
+- 环境面板的 dock 断点忽略图标栏的 56px（消息区域会让出这些空间），因此面板保持在仅 Home 侧边栏相同的窗口宽度处 dock——例如 1440px 的窗口。
 - 不可配置
 
 ## 运行时行为 props
@@ -305,11 +300,13 @@ sidebar={{
 
 | 状态     | 行为                                               |
 | -------- | -------------------------------------------------- |
-| 展开     | 带有文本标签的完整侧边栏                           |
-| 折叠     | 图标栏模式（仅 logo、笔图标、操作图标）            |
-| 移动端   | 抽屉使用其容器的 70% 宽度，在宽度限制内，带有背景遮罩和底部栏关闭控件 |
+| 展开  | 带有文本标签的完整侧边栏                                                                                        |
+| 折叠 | 仅 Home：现有的 56px 条带和 hover 会话；有图标栏时：仅 56px 主图标栏                             |
+| 移动端  | 抽屉使用其容器的 70%，在宽度限制内，带有背景遮罩和所属列底部的关闭控件 |
 
 折叠状态持久化在 `localStorage` 中，键名为 `qwen-code-web-shell-sidebar-collapsed`。
+
+侧边栏、其紧凑抽屉和空聊天欢迎界面遵循 shell 容器宽度（760px 时紧凑）；聊天消息内容保留基于视口的断点。分屏可用性使用 1024px，分屏侧边栏空间使用 1200px。键盘折叠会将焦点从隐藏的次级列移到图标栏控件。
 
 调整后的桌面端宽度仅在展开布局中恢复。打开或关闭移动端抽屉不会覆盖该宽度或持久化的桌面端折叠偏好。
 
@@ -322,4 +319,4 @@ sidebar={{
 | WorkspaceSection    | `packages/web-shell/client/components/sidebar/WorkspaceSection.tsx`       |
 | Sidebar styles      | `packages/web-shell/client/components/sidebar/WebShellSidebar.module.css` |
 | App integration     | `packages/web-shell/client/App.tsx`（搜索 `WebShellSidebar`）             |
-| Entry point (dev)   | `packages/web-shell/client/main.tsx`（`sidebar: { enabled: true, showLive: true }`） |
+| Entry point (dev)   | `packages/web-shell/client/main.tsx`（显式的主导航和底部项列表） |
