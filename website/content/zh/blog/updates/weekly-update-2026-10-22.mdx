@@ -40,6 +40,8 @@ Qwen Code 本周发布 v0.25.3、v0.26.0 两个正式版本，436 个 PR 合入�
 - 调整项目人手与任务安排，估算工期和成本
 - 对比服务器配置，估算不同访问量下的容量和费用
 
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/AAGkhay4wuNcYgLTqiLWOUrSu1epuPargx9LGAZzF8Y.mp4" controls></video>
+
 ### 工作流：进入项目子目录，也能用同一套工作流程
 
 一个项目可能分成前端、后端和多个组件目录。如果你已经在项目根目录保存了检查代码、运行测试等工作流，现在进入下面的子目录启动 Qwen Code，也能找到并运行这些流程。
@@ -51,6 +53,8 @@ Qwen Code 本周发布 v0.25.3、v0.26.0 两个正式版本，436 个 PR 合入�
 - 在不同组件目录里，复用项目统一的代码检查流程
 - 修改后端代码后，运行仓库保存的测试流程
 - 编写项目文档时，使用上层目录保存的文档检查流程
+
+![在项目子目录里启动 Qwen Code，根目录存好的检查流程照样出现在工作流列表里](https://img.alicdn.com/imgextra/i2/O1CN01PWEPrhHn0lJ7nW9B_!!6000000003778-2-tps-3841-2160.png)
 
 ### qwen daemon：Web Shell 管理，一组命令搞定
 
@@ -70,6 +74,8 @@ Qwen Code 本周发布 v0.25.3、v0.26.0 两个正式版本，436 个 PR 合入�
 - 查看多个本地服务的状态，定位需要处理的那一个
 - 按记录的启动配置重启指定服务
 
+![在终端里用 qwen daemon start 把服务放到后台，再另开一个终端用 status 查看它的状态](https://img.alicdn.com/imgextra/i4/O1CN015EshdwuaPaE7nW9B_!!6000000003381-2-tps-3841-2160.png)
+
 ### Web Shell：文件和执行记录，在界面里看得更清楚
 
 **PDF 和 Word 文件在界面里直接看。** 从 `@` 引用、右侧 Files 或者产物卡片里打开，PDF 走浏览器自带的阅读器，Word 文件在这几个入口里同样能预览。详见 PR [#14825](https://github.com/QwenLM/qwen-code/pull/14825)、[#14868](https://github.com/QwenLM/qwen-code/pull/14868)
@@ -79,6 +85,8 @@ Qwen Code 本周发布 v0.25.3、v0.26.0 两个正式版本，436 个 PR 合入�
 **轨迹面板能暂停。** 翻看之前的记录时会自动暂停，画面就停在你看的那几行；想接着看最新的，点「跳到最新」刷新。点列表里的任意一行，能看到这条记录的详情。详见 PR [#14723](https://github.com/QwenLM/qwen-code/pull/14723)、[#14984](https://github.com/QwenLM/qwen-code/pull/14984)
 
 **其他改进。** 对话里可以选中某一句和它的回复一起删掉，也能挑着删几处（[#14297](https://github.com/QwenLM/qwen-code/pull/14297)）；它正在做和刚做完的事，连同每一步耗时收进一个能收起的「最近执行」区（[#14071](https://github.com/QwenLM/qwen-code/pull/14071)）；「会话 Token 消耗」面板里，总览留着输入、输出和缓存这几项，下面能分开看各模型、主 Agent 和子 Agent 各用了多少；鼠标停在模型名旁的 Info 图标上，还能看到这个模型第一个字多久出来、每秒输出多少（[#14728](https://github.com/QwenLM/qwen-code/pull/14728)、[#14648](https://github.com/QwenLM/qwen-code/pull/14648)）。
+
+![在 Web Shell 右侧面板里打开项目文件，切到轨迹页签看它每一步花了多久](https://img.alicdn.com/imgextra/i4/O1CN011HVsNLd8EyF7nW9B_!!6000000005070-2-tps-3841-2160.png)
 
 ## 📊 更多新功能
 
