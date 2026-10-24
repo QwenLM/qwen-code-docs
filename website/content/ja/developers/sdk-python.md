@@ -26,6 +26,8 @@ pip install --pre qwen-code-sdk
 ```
 
 `qwen` が `PATH` にない場合は、`path_to_qwen_executable` を明示的に渡してください。
+Windows では、SDK は npm の `qwen.cmd` シムを実効子の `PATH` 経由でのみ検出し、拡張子なしのシェルシムや起動不可能な `PATHEXT` 関連付けは無視します。カレントディレクトリ内のコマンドは、そのディレクトリが `PATH` に明示的に含まれている場合にのみ考慮されます。
+`env` オプションを通じて参照パスをオーバーライドできます。Windows の環境変数名は大文字と小文字を区別しないため、`PATH`、`Path`、`path` は同等です。実行中の Windows シムを閉じると、システムの `taskkill` ユーティリティを通じて CLI プロセスツリーが停止されます。プロセス終了と stderr クリーンアップの待機には上限のタイムアウトがあります。
 
 SDK コードを書く前に、同じシェルで CLI が動作することを確認してください:
 
@@ -123,7 +125,7 @@ with query_sync(
 
 ### `Query`
 
-- Async iterable over SDK messages
+- SDK メッセージの非同期イテラブル
 - `close()`
 - `interrupt()`
 - `set_model(model)`
@@ -147,7 +149,7 @@ with query_sync(
 | `append_system_prompt`     | `str`                                                      | システムプロンプトに追加の指示を追記します。                                                                 |
 | `debug`                    | `bool`                                                     | `stderr` フックがない場合、CLI の stderr を stderr に転送します。                                                      |
 | `max_session_turns`        | `int`                                                      | CLI がセッションを終了するまでの最大ターン数。                                                                  |
-| `core_tools`               | `list[str]`                                                | 使用可能なツールセットを制限します。                                                                                |
+| `core_tools`               | `list[str]`                                                | 空でないコアツールの許可リスト。省略されたリストまたは空のリストは未指定となります。`core_tools=[]` はツールを無効化しません。 |
 | `exclude_tools`            | `list[str]`                                                | 一致するツールを除外します。                                                                                         |
 | `allowed_tools`            | `list[str]`                                                | コールバック承認なしで一致するツールを許可します。                                                                 |
 | `auth_type`                | `openai`, `anthropic`, `qwen-oauth`, `gemini`, `vertex-ai` | CLI に渡す認証モード。                                                                          |

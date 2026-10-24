@@ -84,7 +84,7 @@ Chrome의 확장 프로그램 관리자에서 확장 프로그램을 비활성�
 
 ### 브라우저 데이터의 제한적 사용
 
-Qwen Code의 Chrome 확장 프로그램을 통해 수신한 데이터의 사용 및 전송은 [Chrome Web Store 사용자 데이터 정책](https://developer.chrome.com/docs/webstore/program-policies/user-data)을 준수하며, 제한적 사용 요구사항도 포함됩니다. 브라우저 데이터는 확장 프로그램의 단일 목적, 즉 Chrome을 Qwen Code에 연결하여 사용자가 요청한 브라우저 지원을 제공하는 데 사용됩니다. 이 데이터는 판매되거나 광고에 사용되거나 신용도 또는 대출 적격성 판단에 사용되지 않습니다. 전송은 해당 기능을 제공하는 것(구성한 AI 제공자의 처리 포함) 및 해당 정책에서 허용하는 기타 용도로 제한됩니다.
+Qwen Code의 Chrome 확장 프로그램을 통해 수신한 데이터의 사용 및 전송은 [Chrome Web Store 사용자 데이터 정책](https://developer.chrome.com/docs/webstore/program-policies/user-data-faq)을 준수하며, 제한적 사용 요구사항도 포함됩니다. 브라우저 데이터는 확장 프로그램의 단일 목적, 즉 Chrome을 Qwen Code에 연결하여 사용자가 요청한 브라우저 지원을 제공하는 데 사용됩니다. 이 데이터는 판매되거나 광고에 사용되거나 신용도 또는 대출 적격성 판단에 사용되지 않습니다. 전송은 해당 기능을 제공하는 것(구성한 AI 제공자의 처리 포함) 및 해당 정책에서 허용하는 기타 용도로 제한됩니다.
 
 브라우저 데이터 처리에 대한 질문은 [Qwen Code 이슈 트래커](https://github.com/QwenLM/qwen-code/issues)를 통해 팀에 문의하세요. 질문을 설명하는 데 필요한 세부 정보만 공유하고, 공개 보고서에서 자격 증명 및 비공개 페이지 내용은 제거하세요.
 

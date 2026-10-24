@@ -115,7 +115,7 @@ export QWEN_MANAGED_AGENT_RUNTIME_WORKER_ENTRY='/opt/qwen-code/dist/cli.js'
 export QWEN_MANAGED_AGENT_RUNTIME_VERIFIED_WORKSPACE_RECOVERY_ENABLED='true'
 ```
 
-在准入文件、Shell 或子 Git worktree 工作之前，完成 `docs/server-reference.md` 中"Verified physical Workspace recovery"部分描述的原生存储注册和挂载身份验证。未注册或存在歧义的挂载必须保持不可用。公共 Shell 和 v2 capability 通告在其单独资质认证完成之前保持禁用。
+在准入文件、Shell 或子 Git worktree 工作之前，完成 `docs/server-reference.md` 中"Verified physical Workspace recovery"部分描述的原生存储注册和挂载身份验证。未注册或存在歧义的挂载必须保持不可用。公共 Shell 执行默认保持禁用。Shell 生命周期 v2 默认通告；显式的生命周期列表会替换默认值，空列表则禁用它。MCP 生命周期仍需显式包含。Capability 通告不构成部署资质认证。
 
 ## 升级
 
