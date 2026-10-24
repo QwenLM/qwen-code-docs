@@ -116,13 +116,13 @@ Falls der QQ-Server eine Markdown-Nachricht aus irgendeinem Grund ablehnt, sende
 
 Dies ist das Gegenteil des WeChat-Channels, der alle Markdown-Formatierung entfernt. Du kannst dem Agent im QQ-Channel die vollständige Markdown-Nutzung gestatten.
 
-## Bilder und Videos
+## Bilder, Videos und Dateien
 
-Benutzer können Bilder und Videos an den Bot senden. Ein Bild wird als Vision-Input an den Agent übergeben, sodass der Agent das Bild selbst sieht – Screenshots, Fehlermeldungen und Diagramme funktionieren alle – und dieselbe Datei wird zusätzlich in einem temporären lokalen Pfad gespeichert für den Fall, dass das Modell keine Bilder verarbeiten kann. Ein Video wird in einem temporären lokalen Pfad gespeichert und dem Agent wird dieser Pfad mitgeteilt.
+Benutzer können Bilder, Videos, Dateien und Sprachnachrichten an den Bot senden. Ein Bild wird als Vision-Input an den Agent übergeben, sodass der Agent das Bild selbst sieht – Screenshots, Fehlermeldungen und Diagramme funktionieren alle – und dieselbe Datei wird zusätzlich in einem temporären lokalen Pfad gespeichert für den Fall, dass das Modell keine Bilder verarbeiten kann. Ein Video, eine Datei oder eine Sprachnachricht wird in einem temporären lokalen Pfad gespeichert und dem Agent wird dieser Pfad mitgeteilt.
 
-Eine Media-Nachricht benötigt keinen Text – eine reine Bild- oder Videonachricht startet einen Turn, und der Channel verwendet `(image)` oder `(video)` als Platzhalter. Wenn die Nachricht Text enthält, wird dieser als Caption beibehalten.
+Eine Media-Nachricht benötigt keinen Text – eine reine Bild-, Video-, Datei- oder Sprachnachricht startet einen Turn, und der Channel verwendet `(image)`, `(video)`, `(file)` oder `(voice)` als Platzhalter. Wenn die Nachricht Text enthält, wird dieser als Caption beibehalten.
 
-- Bilder sind auf 8 MB und Videos auf 20 MB begrenzt, und es werden höchstens fünf Anhänge pro Nachricht verarbeitet. Alles, was größer ist, wird übersprungen und im stderr des Channels protokolliert.
+- Bilder sind auf 8 MB und Videos, Dateien und Sprachnachrichten auf 20 MB begrenzt, und es werden höchstens fünf Anhänge pro Nachricht verarbeitet. Alles, was größer ist, wird übersprungen und im stderr des Channels protokolliert.
 - Heruntergeladene Dateien werden nicht gelöscht. Sie verbleiben im temporären Systemverzeichnis, das vom System nach eigenem Zeitplan bereinigt wird.
 
 Bild-Input erfordert ein Modell, das Bilder akzeptiert. Deklariere die Capability, wenn das Modell multimodal ist, aber nicht namentlich erkannt wird. Das Feld gehört zum Provider-Eintrag, der das Modell bereitstellt, da ein `model.generationConfig`-Wert der obersten Ebene für Provider-gestützte Modelle ignoriert wird:
@@ -145,7 +145,7 @@ Bild-Input erfordert ein Modell, das Bilder akzeptiert. Deklariere die Capabilit
 
 Bei einem reinen Textmodell erhält der Agent eine "unsupported image"-Notiz sowie den gespeicherten Pfad statt des Bildes.
 
-Das Zurücksenden von Bildern oder Videos an QQ wird nicht unterstützt.
+Das Zurücksenden von Bildern, Videos, Dateien oder Sprachnachrichten an QQ wird nicht unterstützt.
 
 ## Token-Verwaltung
 

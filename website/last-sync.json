@@ -1,6 +1,6 @@
 {
-  "commit": "7547326f3a746c0897e61815a70ff0bf9dc9a3b3",
-  "timestamp": "2026-10-22T23:23:46.671Z",
+  "commit": "5a0be334326566bec502a0cfcaf35c11557247d3",
+  "timestamp": "2026-10-24T00:08:39.895Z",
   "files": {
     "docs/developers/contributing.md": {
       "langs": {
@@ -125,10 +125,10 @@
     },
     "docs/developers/sdk-python.md": {
       "langs": {
-        "zh": "b30a2bf962b49fc3ef49fc755a731f80ae2bb84d1fc63dad557ddc11347b222f",
+        "zh": "2912c8d6e877c8865bfafda23f20c788c6395f1c058a9107ea0414ff864170e3",
         "de": "b30a2bf962b49fc3ef49fc755a731f80ae2bb84d1fc63dad557ddc11347b222f",
         "fr": "b30a2bf962b49fc3ef49fc755a731f80ae2bb84d1fc63dad557ddc11347b222f",
-        "ja": "b30a2bf962b49fc3ef49fc755a731f80ae2bb84d1fc63dad557ddc11347b222f",
+        "ja": "2912c8d6e877c8865bfafda23f20c788c6395f1c058a9107ea0414ff864170e3",
         "ru": "b30a2bf962b49fc3ef49fc755a731f80ae2bb84d1fc63dad557ddc11347b222f",
         "pt-BR": "b30a2bf962b49fc3ef49fc755a731f80ae2bb84d1fc63dad557ddc11347b222f",
         "ko": "b30a2bf962b49fc3ef49fc755a731f80ae2bb84d1fc63dad557ddc11347b222f"
@@ -324,7 +324,7 @@
     "docs/users/features/channels/qqbot.md": {
       "langs": {
         "zh": "a4eee375839bf2960037532ad03f04a157af11c00529df2ef628ac4313471493",
-        "de": "3b3ab0aa6fc0344a7fab814779046864681828ead857487776812245a53c99f8",
+        "de": "a4eee375839bf2960037532ad03f04a157af11c00529df2ef628ac4313471493",
         "fr": "a4eee375839bf2960037532ad03f04a157af11c00529df2ef628ac4313471493",
         "ja": "a4eee375839bf2960037532ad03f04a157af11c00529df2ef628ac4313471493",
         "ru": "a4eee375839bf2960037532ad03f04a157af11c00529df2ef628ac4313471493",
@@ -538,7 +538,7 @@
         "ja": "311d1d9acbf1fe2b0a40875e82be7d675286bcd72bac079bed9543a7480a4975",
         "ru": "0f2ad39172c5b60f47e06bb544bcc40fbb9bf6a4e1196a7aef12d49bde14b6d8",
         "pt-BR": "0f2ad39172c5b60f47e06bb544bcc40fbb9bf6a4e1196a7aef12d49bde14b6d8",
-        "ko": "0f2ad39172c5b60f47e06bb544bcc40fbb9bf6a4e1196a7aef12d49bde14b6d8"
+        "ko": "311d1d9acbf1fe2b0a40875e82be7d675286bcd72bac079bed9543a7480a4975"
       }
     },
     "docs/developers/architecture.md": {
@@ -763,7 +763,7 @@
     },
     "docs/developers/tools/file-system.md": {
       "langs": {
-        "zh": "54d9bd14d55b899da3e5939676d93219b33c4b4eba94f981f75cb9915e2feb04",
+        "zh": "a2576031bf830386ff000ae773f2d484a47129a36879cc16ed4849523cd2eb86",
         "fr": "54d9bd14d55b899da3e5939676d93219b33c4b4eba94f981f75cb9915e2feb04",
         "ja": "54d9bd14d55b899da3e5939676d93219b33c4b4eba94f981f75cb9915e2feb04",
         "ru": "54d9bd14d55b899da3e5939676d93219b33c4b4eba94f981f75cb9915e2feb04",
@@ -787,7 +787,7 @@
       "langs": {
         "zh": "729f9a1b5ee7a05c2e5913a759e4f4acb35351808060cfe2c7cd47285f67203d",
         "fr": "729f9a1b5ee7a05c2e5913a759e4f4acb35351808060cfe2c7cd47285f67203d",
-        "ja": "729f9a1b5ee7a05c2e5913a759e4f4acb35351808060cfe2c7cd47285f67203d",
+        "ja": "2b5124f55172f3d8273d0c75a5a7dfc59837a1e79dd90e67e0484ed4dfae9d5a",
         "ru": "729f9a1b5ee7a05c2e5913a759e4f4acb35351808060cfe2c7cd47285f67203d",
         "pt-BR": "729f9a1b5ee7a05c2e5913a759e4f4acb35351808060cfe2c7cd47285f67203d",
         "de": "729f9a1b5ee7a05c2e5913a759e4f4acb35351808060cfe2c7cd47285f67203d",
@@ -906,13 +906,13 @@
     },
     "docs/users/features/scheduled-tasks.md": {
       "langs": {
-        "zh": "24fbf69d62d21e3a96a38b12ca168b388600673ddece5aac2fd51a2fbd455a98",
+        "zh": "154f36fb012768034daecae2ab035abd5f8bccbf1ad75733d4295feef83f3c3a",
         "de": "24fbf69d62d21e3a96a38b12ca168b388600673ddece5aac2fd51a2fbd455a98",
         "fr": "24fbf69d62d21e3a96a38b12ca168b388600673ddece5aac2fd51a2fbd455a98",
-        "ja": "24fbf69d62d21e3a96a38b12ca168b388600673ddece5aac2fd51a2fbd455a98",
-        "ru": "24fbf69d62d21e3a96a38b12ca168b388600673ddece5aac2fd51a2fbd455a98",
+        "ja": "154f36fb012768034daecae2ab035abd5f8bccbf1ad75733d4295feef83f3c3a",
+        "ru": "154f36fb012768034daecae2ab035abd5f8bccbf1ad75733d4295feef83f3c3a",
         "pt-BR": "24fbf69d62d21e3a96a38b12ca168b388600673ddece5aac2fd51a2fbd455a98",
-        "ko": "24fbf69d62d21e3a96a38b12ca168b388600673ddece5aac2fd51a2fbd455a98"
+        "ko": "154f36fb012768034daecae2ab035abd5f8bccbf1ad75733d4295feef83f3c3a"
       }
     },
     "docs/users/features/skills.md": {
@@ -1194,7 +1194,7 @@
       "langs": {
         "ja": "bac332f429e9ad205c8d846efdda3858aaced6d5681abfba4ebfb67758e4f6b0",
         "zh": "bac332f429e9ad205c8d846efdda3858aaced6d5681abfba4ebfb67758e4f6b0",
-        "fr": "4e6074917b200a183bc8f69174faedad8df47757ec226827fbe39063b46c51bb",
+        "fr": "bac332f429e9ad205c8d846efdda3858aaced6d5681abfba4ebfb67758e4f6b0",
         "ru": "bac332f429e9ad205c8d846efdda3858aaced6d5681abfba4ebfb67758e4f6b0",
         "pt-BR": "4e6074917b200a183bc8f69174faedad8df47757ec226827fbe39063b46c51bb",
         "ko": "bac332f429e9ad205c8d846efdda3858aaced6d5681abfba4ebfb67758e4f6b0",
@@ -1511,11 +1511,11 @@
     },
     "docs/users/managed-agent-reference-deployment.md": {
       "langs": {
-        "zh": "8a589bc811b2ff1b62b2674d0ac08577f585c323fa30a0db59a748867fc92f6f",
+        "zh": "a6cf426046a099dfc4c84d06852f1b0fa3bcb25f125dabb7a11d0251448aa94a",
         "de": "295649941c85e98fdbe9abe84d3109fe7415ab7a7d752e3f7eade0cadbfeb625",
         "fr": "295649941c85e98fdbe9abe84d3109fe7415ab7a7d752e3f7eade0cadbfeb625",
-        "ru": "295649941c85e98fdbe9abe84d3109fe7415ab7a7d752e3f7eade0cadbfeb625",
-        "ja": "8a589bc811b2ff1b62b2674d0ac08577f585c323fa30a0db59a748867fc92f6f",
+        "ru": "a6cf426046a099dfc4c84d06852f1b0fa3bcb25f125dabb7a11d0251448aa94a",
+        "ja": "a6cf426046a099dfc4c84d06852f1b0fa3bcb25f125dabb7a11d0251448aa94a",
         "pt-BR": "295649941c85e98fdbe9abe84d3109fe7415ab7a7d752e3f7eade0cadbfeb625",
         "ko": "295649941c85e98fdbe9abe84d3109fe7415ab7a7d752e3f7eade0cadbfeb625"
       }

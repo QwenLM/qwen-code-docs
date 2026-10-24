@@ -27,6 +27,9 @@ pip install --pre qwen-code-sdk
 ```
 
 如果 `qwen` 不在 `PATH` 中，请显式传递 `path_to_qwen_executable`。
+在 Windows 上，SDK 仅通过有效的子 `PATH` 发现 npm 的 `qwen.cmd` shim，会忽略无扩展名的 shell shim 以及不可启动的 `PATHEXT` 关联。仅当当前目录被显式包含在 `PATH` 中时，才会考虑该目录中的命令。
+你可以通过 `env` 选项覆盖查找路径；Windows 环境变量名不区分大小写，因此 `PATH`、`Path` 和 `path` 是等价的。
+关闭正在运行的 Windows shim 会通过系统 `taskkill` 工具终止其 CLI 进程树；进程退出和 stderr 清理等待具有有限的超时时间。
 
 在编写 SDK 代码之前，请确保 CLI 在同一个 shell 中可用：
 
@@ -148,7 +151,7 @@ with query_sync(
 | `append_system_prompt`        | `str`                                                       | 在系统提示词后追加额外指令。                                                                 |
 | `debug`                       | `bool`                                                      | 当没有 `stderr` 钩子时，将 CLI 的 stderr 转发到 stderr。                                     |
 | `max_session_turns`           | `int`                                                       | CLI 结束会话前的最大轮数。                                                                   |
-| `core_tools`                  | `list[str]`                                                 | 限制可用的工具集。                                                                           |
+| `core_tools`                  | `list[str]`                                                 | 非空的核心工具允许列表。省略或空列表表示未指定；`core_tools=[]` 不会禁用工具。               |
 | `exclude_tools`               | `list[str]`                                                 | 排除匹配的工具。                                                                             |
 | `allowed_tools`               | `list[str]`                                                 | 允许匹配的工具无需回调审批。                                                                 |
 | `auth_type`                   | `openai`, `anthropic`, `qwen-oauth`, `gemini`, `vertex-ai`  | 传递给 CLI 的认证模式。                                                                      |

@@ -18,6 +18,8 @@ Qwen Code は2つの方法でウェブ検索を提供します。
 | Alibaba ModelStudio → **Standard API Key**                                                                                 | on                                              |
 | Alibaba ModelStudio → **Token Plan**                                                                                       | on                                              |
 | Alibaba ModelStudio → **Coding Plan**                                                                                      | off — この API に対してエンドポイントが検証されていません |
+| QwenCloud → **Standard API Key**                                                                                           | on                                              |
+| QwenCloud → **Token Plan**                                                                                                 | on                                              |
 | 認識された DashScope Responses ホスト上の OpenAI 互換 `modelProviders` または Custom Provider エントリ（直接キー付き） | on                                              |
 | サードパーティプロバイダー（OpenRouter、DeepSeek、ModelScope など）、他のホスト上のカスタムエンドポイント、ローカルモデル                 | off                                             |
 
@@ -158,6 +160,162 @@ export DASHSCOPE_API_KEY=sk-...        # または WEB_SEARCH_API_KEY を設定
   }
 }
 ```
+
+---
+
+### Firecrawl
+
+Firecrawl が提供する公式ホスト型 MCP サーバーで、ウェブ検索、ページスクレイピング、ウェブサイトのクロールとマッピング、ブラウザ操作、ファイル解析を提供します。検索結果には各ページのコンテンツが Markdown として含まれるため、モデルは別の fetch ステップなしでソースを読み取れます。ホスト型サーバーは検索、スクレイピング、解析には API キーなしで動作します。検索クエリ、読み取りを依頼した URL、および解析したファイルは Firecrawl に送信されます。
+
+- **ドキュメント:** https://docs.firecrawl.dev/mcp-server
+- **料金:** 検索、スクレイピング、解析には API キー不要（IP ごとに1日あたりの制限あり）。より高い制限には有料プラン
+- **API キーの取得:** https://www.firecrawl.dev/app/api-keys
+- **最適な用途:** モデルが検索で見つけたページも読む必要があるウェブ検索、API キーなしで MCP ウェブ検索を試す場合
+
+#### 利用可能なツール
+
+- `firecrawl_search` — ウェブ検索。オプションで各結果のページコンテンツを Markdown として返します
+- `firecrawl_scrape` — 単一ページをクリーンな Markdown として取得
+- `firecrawl_parse` — ローカルファイル（PDF、Word、スプレッドシートなど）を Markdown に変換
+
+API キーがあれば、サーバーはウェブサイトのマッピングとクロール、ページとのインタラクション（クリック、入力、ナビゲート）、GitHub issues やドキュメントなどの開発者ソースの検索も提供します。
+
+#### セットアップ
+
+**方法 1: CLI コマンド（リモート MCP）**
+
+```bash
+qwen mcp add firecrawl \
+  -t http \
+  "https://mcp.firecrawl.dev/v2/mcp" \
+  -H "Authorization: Bearer ${FIRECRAWL_API_KEY}"
+```
+
+キーなしで試す場合は、`-H` 行を省略してください。1日あたりの IP 制限内で `firecrawl_search`、`firecrawl_scrape`、`firecrawl_parse` が使用できます。
+
+**方法 2: `settings.json`（リモート MCP）**
+
+```json
+{
+  "mcpServers": {
+    "firecrawl": {
+      "httpUrl": "https://mcp.firecrawl.dev/v2/mcp",
+      "headers": {
+        "Authorization": "Bearer ${FIRECRAWL_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+`${FIRECRAWL_API_KEY}` を実際の API キーに置き換えるか、環境変数として設定してください。キーが空の場合でもサーバーは接続されますが、キー不要の3つのツールのみを提供します。
+
+**方法 3: `settings.json`（ローカル NPX）**
+
+```json
+{
+  "mcpServers": {
+    "firecrawl-mcp": {
+      "command": "npx",
+      "args": ["-y", "firecrawl-mcp @latest"],
+      "env": {
+        "FIRECRAWL_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+---
+
+### SerpApi
+
+SerpApi が提供する公式ホスト型 MCP サーバーで、Google、Baidu、Bing などの検索エンジンからリアルタイムの構造化検索結果を単一のツールで提供します。検索クエリとそのパラメータは SerpApi に送信されます。
+
+- **ドキュメント:** https://serpapi.com/integrations/mcp
+- **料金:** 有料（無料プランあり）
+- **API キーの取得:** https://serpapi.com/manage-api-key
+- **最適な用途:** 幅広い検索エンジンからの構造化結果
+
+#### 利用可能なツール
+
+- `search` — ウェブ検索。オプションで結果を Markdown として返します
+
+#### セットアップ
+
+**方法 1: CLI コマンド**
+
+```bash
+qwen mcp add serpapi \
+  -t http \
+  "https://mcp.serpapi.com/mcp" \
+  -H "Authorization: Bearer ${SERPAPI_API_KEY}"
+```
+
+**方法 2: `settings.json`**
+
+```json
+{
+  "mcpServers": {
+    "serpapi": {
+      "httpUrl": "https://mcp.serpapi.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${SERPAPI_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+`${SERPAPI_API_KEY}` を実際の API キーに置き換えるか、環境変数として設定してください。キーは検索時にのみ必要です。有効な API キーがなくてもサーバーは接続され、ツールが一覧表示されますが、`search` はエラーを返します。
+
+---
+
+### looot
+
+looot が提供するホスト型 MCP サーバーで、ウェブ検索、Google SERP 結果、ニュース検索、ウェブページ読み取りを提供します。検索クエリと読み取りを依頼した URL は looot に送信されます。
+
+- **ドキュメント:** https://docs.looot.ai
+- **料金:** 有料（前払い残高、無料枠なし）
+- **API キーの取得:** https://looot.ai
+- **最適な用途:** ウェブ検索、Google SERP とニュース結果、ページをテキストとして読み取り
+
+#### 利用可能なツール
+
+- `web_search` — ウェブ検索
+- `google_search_results` — Google SERP 結果
+- `news_search` — ニュース検索
+- `read_web_page` — 単一ページをテキストとして読み取り
+
+サーバーは企業情報とメールの検索も公開しています。
+
+#### セットアップ
+
+**方法 1: CLI コマンド（リモート MCP）**
+
+```bash
+qwen mcp add looot \
+  -t http \
+  "https://api.looot.ai/mcp" \
+  -H "Authorization: Bearer ${LOOOT_API_KEY}"
+```
+
+**方法 2: `settings.json`（リモート MCP）**
+
+```json
+{
+  "mcpServers": {
+    "looot": {
+      "httpUrl": "https://api.looot.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer ${LOOOT_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+`${LOOOT_API_KEY}` を実際の API キーに置き換えるか、環境変数として設定してください。
 
 ---
 

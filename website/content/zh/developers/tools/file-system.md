@@ -223,6 +223,7 @@ grep_search(pattern="function", glob="*.js", limit=10)
   - 如果 `old_string` 为空且 `file_path` 不存在，则创建一个包含 `new_string` 的新文件。
   - 如果提供了 `old_string`，则读取 `file_path` 并尝试查找恰好一次出现，除非 `replace_all` 为 true。
   - 如果匹配是唯一的（或 `replace_all` 为 true），则将文本替换为 `new_string`。
+  - 对于基于行的模糊匹配，计数和替换使用行边界处所选磁盘文本的相同完整出现。较长行的缩进后缀和前缀会被排除；字面子字符串编辑保留其现有行为。
   - **增强可靠性（多阶段编辑校正）：** 为了显著提高编辑的成功率，特别是当模型提供的 `old_string` 可能不够精确时，该工具包含一个多阶段编辑校正机制。
     - 如果初始的 `old_string` 未找到或匹配多个位置，该工具可以利用 Qwen 模型迭代地优化 `old_string`（以及可能的 `new_string`）。
     - 此自校正过程试图识别模型打算修改的唯一片段，使 `edit` 操作即使在初始上下文略微不完美的情况下也更加稳健。

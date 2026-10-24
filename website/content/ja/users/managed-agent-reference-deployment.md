@@ -84,7 +84,7 @@ curl --fail http://127.0.0.1:8080/actuator/health
 bin/qwen-managed-agent-bootstrap
 ```
 
-生成された `harness.env` と `server.env` はシェルでソース可能であり、systemd の `EnvironmentFile` としても有効です。systemd レイアウト用に `--directory /etc/qwen-managed-agent` を渡し、`SPRING_DATASOURCE_PASSWORD` を入力し、所有権をサービスアカウントに調整します。
+トークンとダイジェストは `harness.env` にのみ書き込まれます。`server.env` は `QWEN_MANAGED_AGENT_HARNESS_CREDENTIALS_FILE` を通じてそのファイルを参照し、コントロールプレーンは両方の値をそこから読み取ります。そのファイルが `QWEN_MANAGED_AGENT_HARNESS_TOKEN` または `QWEN_MANAGED_AGENT_CAPABILITY_DIGEST` と同時に設定されている場合、起動を拒否するため、ローテーションでは 1つのファイルのみを変更します。生成された `harness.env` と `server.env` はシェルでソース可能であり、systemd の `EnvironmentFile` としても有効です。systemd レイアウト用に `--directory /etc/qwen-managed-agent` を渡し、`SPRING_DATASOURCE_PASSWORD` を入力し、所有権をサービスアカウントに調整します。
 
 ## 起動前チェック
 
@@ -115,7 +115,7 @@ export QWEN_MANAGED_AGENT_RUNTIME_WORKER_ENTRY='/opt/qwen-code/dist/cli.js'
 export QWEN_MANAGED_AGENT_RUNTIME_VERIFIED_WORKSPACE_RECOVERY_ENABLED='true'
 ```
 
-ファイル、Shell、または子 Git ワークを受け入れる前に、`docs/server-reference.md` の「Verified physical Workspace recovery」で説明されているネイティブストレージ登録とマウントID検証を完了します。未登録または曖昧なマウントは利用できないままである必要があります。Public Shell と v2 ケイパビリティアドバタイズメントは、それぞれの個別の審査が完了するまで無効のままです。
+ファイル、Shell、または子 Git ワークを受け入れる前に、`docs/server-reference.md` の「Verified physical Workspace recovery」で説明されているネイティブストレージ登録とマウントID検証を完了します。未登録または曖昧なマウントは利用できないままである必要があります。Public Shell の実行はデフォルトで無効のままです。Shell ライフサイクル v2 はデフォルトでアドバタイズされます。明示的なライフサイクルリストがデフォルトを置き換え、空のリストはそれを無効にします。MCP ライフサイクルには引き続き明示的な包含が必要です。ケイパビリティのアドバタイズメントはデプロイメントの適格性を確立するものではありません。
 
 ## アップグレード
 

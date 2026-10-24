@@ -42,13 +42,16 @@ Ajoutez le canal à `~/.qwen/settings.json` :
       "useLocalGh": true,
       "pollInterval": 60000,
       "reasonFilter": ["mention", "review_requested", "assign"],
-      "senderPolicy": "allowlist",
-      "allowedUsers": ["operator-github-username"],
+      "operators": ["operator-github-username"],
       "sessionScope": "chat_thread",
       "cwd": "/path/to/your/project",
       "groupPolicy": "open",
       "groups": {
-        "*": { "requireMention": true }
+        "*": {
+          "requireMention": true,
+          "senders": "allowlist",
+          "allowedUsers": ["operator-github-username"]
+        }
       }
     }
   }
@@ -61,7 +64,7 @@ Pour remplacer l'authentification locale `gh` par un PAT, ajoutez `"token": "$GI
 export GITHUB_TOKEN="ghp_your_token_here"
 ```
 
-Le compte authentifié ne peut pas déclencher son propre canal. Si ce compte doit opérer le canal, authentifiez un compte bot séparé et ne mettez que les comptes opérateurs dans `allowedUsers`. Le démarrage rejette une allowlist ne contenant que le compte authentifié et avertit lorsqu'il apparaît avec d'autres opérateurs.
+Le compte authentifié ne peut pas déclencher son propre canal. Si ce compte doit opérer le canal, authentifiez un compte bot séparé et mettez leurs noms d'utilisateur dans les listes `allowedUsers` du groupe et `operators` explicites. Le démarrage avertit lorsqu'une allowlist de groupe contient le compte authentifié, qui ne peut pas déclencher de tâches ; utilisez un compte différent dans l'allowlist du groupe.
 
 ### GitHub Enterprise
 
@@ -84,7 +87,6 @@ L'authentification locale `gh` nécessite un `baseUrl` HTTPS afin que le credent
 | `pollInterval`            | `60000`                  | Intervalle de polling en ms                                                                   |
 | `baseUrl`                 | `https://api.github.com` | URL de base de l'API (pour GHE)                                                               |
 | `groupPolicy`             | `"disabled"`             | Doit être `"open"`, `"allowlist"` avec le dépôt (`owner/repo`) listé dans `groups`, ou `"pairing"` avec le dépôt approuvé pour que les notifications circulent |
-| `senderPolicy`            | `"allowlist"`            | Qui peut déclencher le bot                                                                    |
 | `groups.*.requireMention` | `true`                   | Exiger les @mentions pour les commentaires ordinaires ; les raisons de notification dirigées s'exécutent toujours |
 | `reasonFilter`            | non défini               | Allowlist optionnelle de raisons de notification GitHub à traiter                             |
 
@@ -96,13 +98,15 @@ Les notifications filtrées sont marquées comme lues uniquement après que tout
 
 ## ⚠️ Sécurité
 
-Sur un **dépôt public**, définir `senderPolicy: "open"` permet à **tout utilisateur GitHub** qui déclenche une raison de notification supportée de soumettre des prompts qui pilotent l'agent dans votre `cwd`. Cela inclut la lecture de code, la dépense de tokens, la publication de commentaires et (selon la politique de permissions) l'exécution d'outils.
+Sur un **dépôt public**, définir `groups: { "*": { "senders": "open" } }` permet à **tout utilisateur GitHub** qui déclenche une raison de notification supportée de soumettre des prompts qui pilotent l'agent dans votre `cwd`. Cela inclut la lecture de code, la dépense de tokens, la publication de commentaires et (selon la politique de permissions) l'exécution d'outils.
 
-Utilisez toujours `senderPolicy: "allowlist"` avec des `allowedUsers` explicites sur les dépôts publics.
+Utilisez toujours `groups["*"].senders: "allowlist"` avec des `allowedUsers` de groupe explicites sur les dépôts publics.
 
-Les entrées d'allowlist et de pairing suivent le **nom d'utilisateur**, pas l'ID de compte immuable. Si un utilisateur en allowlist renomme son compte GitHub, supprimez l'entrée obsolète — GitHub libère l'ancien nom d'utilisateur pour que n'importe qui d'autre puisse se l'approprier, et le nouveau titulaire hériterait de l'autorisation d'allowlist/pairing.
+Tout le trafic GitHub est du trafic de groupe. Les membres du groupe sont par défaut `open` ; définissez `groups["*"].senders` sur `allowlist` et remplissez ses `allowedUsers` pour restreindre les auteurs. La politique privée et le pairing d'utilisateurs ne restreignent jamais les membres du dépôt. Définissez `operators` explicitement pour la gestion des sessions partagées.
 
-Notez que sous `groupPolicy: "pairing"`, l'accès est accordé par dépôt : une fois qu'un dépôt est approuvé, **tout utilisateur GitHub** peut piloter le bot via les issues et pull requests de ce dépôt. Tout le trafic GitHub est du trafic de groupe, donc `senderPolicy` et `allowedUsers` ne filtrent pas les membres d'un dépôt approuvé. Les approbations sont indexées par le nom complet du dépôt (`owner/repo`), qui change en cas de renommage ou de transfert — révoquez les approbations de groupe obsolètes après tout renommage, transfert ou suppression de dépôt.
+Les allowlists de membres de groupe et les listes d'opérateurs suivent le **nom d'utilisateur**, pas l'ID de compte immuable. Si un utilisateur listé renomme son compte GitHub, supprimez l'entrée obsolète — GitHub libère l'ancien nom d'utilisateur pour que n'importe qui d'autre puisse se l'approprier, et le nouveau titulaire hériterait de cette autorisation.
+
+Notez que sous `groupPolicy: "pairing"`, l'accès est accordé par dépôt : une fois qu'un dépôt est approuvé, **tout utilisateur GitHub** peut par défaut piloter le bot via les issues et pull requests de ce dépôt. Tout le trafic GitHub est du trafic de groupe, donc `privatePolicy` et les `allowedUsers` de premier niveau ne filtrent pas les membres d'un dépôt approuvé ; définissez `senders: "allowlist"` avec `allowedUsers` sur l'entrée `groups` de ce dépôt pour restreindre l'accès. Les approbations sont indexées par le nom complet du dépôt (`owner/repo`), qui change en cas de renommage ou de transfert — révoquez les approbations de groupe obsolètes après tout renommage, transfert ou suppression de dépôt.
 
 ## Détection des mentions
 
