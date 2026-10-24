@@ -1,0 +1,168 @@
+---
+title: "Qwen Code Weekly: Change a Number on the Card and the Result Recalculates, Saved Workflows Work from Any Subdirectory, One Command Group Runs Web Shell"
+date: "2026-10-22"
+description: "Two stable releases this week, v0.25.3 and v0.26.0, with 436 PRs merged. Want to try a few numbers and see what shifts? Have Qwen Code build an interactive card — edit a number or a ratio and the result recalculates. Workflows you saved at the project root are found and run when you start a session in a directory below it. New qwen daemon commands start the local Web Shell services, check them, read their logs, and restart them. If you run your own Managed Agent service, projects and sessions are easier to manage. A self-built WeCom app can be connected now, and the QQ bot receives files."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i3/O1CN01f83xFmOPKCG2jBZY_!!6000000007494-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Weekly: Change a Number on the Card and the Result Recalculates, Saved Workflows Work from Any Subdirectory, One Command Group Runs Web Shell"
+  date="2026-10-22"
+  author="Qwen Team"
+/>
+
+Qwen Code shipped two stable releases this week — v0.25.3 and v0.26.0 — with 436 PRs merged.
+
+**The answer comes back as a card you can keep editing.** Trying a few numbers to see what changes? Type new values straight into the card and the total recalculates.
+
+**A workflow saved at the project root runs from any subdirectory.** A project split into front end, back end, and component directories still hands you the code checks and test runs you saved up top, even when you start Qwen Code deeper down.
+
+**One `qwen daemon` command group runs Web Shell.** Start it, check status, read logs, stop it, restart it — all in one place.
+
+## ✨ New Features
+
+### Interactive Cards: Adjust the Numbers, Compare the Results Side by Side
+
+Some questions only come out right after you try a few variations. Qwen Code now builds an interactive card for exactly that: adjust a number or a ratio, and the matching result shows up immediately. See PR [#14338](https://github.com/QwenLM/qwen-code/pull/14338)
+
+Planning a team dinner, for instance — ask for a cost card, then fill in headcount, price per person, and the venue fee. More people, change the headcount. Different restaurant, change the per-person price. The total recalculates every time, instead of you sending a message and waiting for a fresh answer.
+
+This is off by default. To use it, turn on Generated UI in the experimental settings and restart. The built-in version doesn't cover managed, remote, or sandbox sessions yet. See PR [#14888](https://github.com/QwenLM/qwen-code/pull/14888)
+
+What you can do:
+
+- Compare apartment options across rent, commute time, and transit cost
+- Move people between tasks and get the schedule and cost back
+- Weigh server configs and see the capacity and cost at different traffic levels
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/AAGkhay4wuNcYgLTqiLWOUrSu1epuPargx9LGAZzF8Y.mp4" controls></video>
+
+### Workflows: Saved at the Root, Usable from Any Subdirectory
+
+A project is often split into a front end, a back end, and several component directories. Save code checks or test runs at the project root, and Qwen Code now finds and runs them when you start a session in a directory below.
+
+Say you're changing a page in the front-end directory and want to run the project's saved check — it's already in the current session's workflow list. The update searches upward from the directory you're in, through trusted directories inside the same Git repository. That covers local terminal sessions and ordinary Web Shell sessions. See PRs [#14369](https://github.com/QwenLM/qwen-code/pull/14369), [#14646](https://github.com/QwenLM/qwen-code/pull/14646)
+
+What you can do:
+
+- Run the project's one code check from each component directory
+- Change back-end code, then run the test workflow the repo already holds
+- Use the doc check saved a level up while you write project docs
+
+![Start Qwen Code in a subdirectory and the checks you saved at the project root are still in the workflow list](https://img.alicdn.com/imgextra/i2/O1CN01PWEPrhHn0lJ7nW9B_!!6000000003778-2-tps-3841-2160.png)
+
+### qwen daemon: Web Shell Managed by One Command Group
+
+Last week Web Shell learned to connect to several Qwen Code instances in one page. This week adds managing the local services behind them.
+
+Starting Web Shell, checking status, and restarting all sit under `qwen daemon`.
+
+Run `qwen daemon start` and the service comes up in the background with its address returned. `qwen daemon status` lists what's running, `qwen daemon logs` shows the logs, and `qwen daemon stop` shuts a named service down. See PRs [#14739](https://github.com/QwenLM/qwen-code/pull/14739), [#14869](https://github.com/QwenLM/qwen-code/pull/14869)
+
+Troubleshooting? `qwen daemon status --detail` adds the version, uptime, session count, and issue count. Starting a service from a script and connecting right away? `qwen daemon start --wait` holds until the runtime is ready before your script moves on. See PRs [#14902](https://github.com/QwenLM/qwen-code/pull/14902), [#14914](https://github.com/QwenLM/qwen-code/pull/14914)
+
+`qwen daemon restart --port <port>` restarts one local HTTP service and restores the workspace and Web Shell settings recorded when it started. See PR [#14929](https://github.com/QwenLM/qwen-code/pull/14929)
+
+What you can do:
+
+- Start the local service, then keep working in the same terminal
+- Check several local services at once and find the one that needs you
+- Restart one service the way it was originally started
+
+![Run qwen daemon start in one terminal to keep the service in the background, then open a second terminal and check it with status](https://img.alicdn.com/imgextra/i4/O1CN015EshdwuaPaE7nW9B_!!6000000003381-2-tps-3841-2160.png)
+
+### Web Shell: Files and Run History, Easier to See
+
+**PDF and Word files open inside the interface.** Reach them from an `@` reference, the Files panel on the right, or an artifact card. PDFs use the reader your browser already has; Word files preview from those same entry points. See PRs [#14825](https://github.com/QwenLM/qwen-code/pull/14825), [#14868](https://github.com/QwenLM/qwen-code/pull/14868)
+
+**The file tree creates and deletes.** Click the directory name beside the chat title and the workspace file tree opens on the right. Create files and folders there. Deleting a file asks once; deleting a folder asks again, because everything inside goes with it. See PRs [#14344](https://github.com/QwenLM/qwen-code/pull/14344), [#14169](https://github.com/QwenLM/qwen-code/pull/14169), [#14158](https://github.com/QwenLM/qwen-code/pull/14158)
+
+**The Trajectory tab pauses when you scroll back.** Reading earlier records stops the view on the lines you're looking at. Hit Jump to latest to catch up again. Click any row and that record's details open. See PRs [#14723](https://github.com/QwenLM/qwen-code/pull/14723), [#14984](https://github.com/QwenLM/qwen-code/pull/14984)
+
+**Other improvements.** Select one exchange — a message and its reply — and delete it, or pick several and delete those ([#14297](https://github.com/QwenLM/qwen-code/pull/14297)). What it's doing now and what it just finished, with the time each step took, sits in one collapsible Recent activity section ([#14071](https://github.com/QwenLM/qwen-code/pull/14071)). In the session token usage panel, the overview keeps input, output, and cache, and below it you can split out what each model, the main agent, and the sub-agents used; hover the Info icon beside a model name for its time to first token and how much it outputs per second ([#14728](https://github.com/QwenLM/qwen-code/pull/14728), [#14648](https://github.com/QwenLM/qwen-code/pull/14648)).
+
+![Open a project file in the right panel of Web Shell, then switch to the Trajectory tab to see how long each step took](https://img.alicdn.com/imgextra/i4/O1CN011HVsNLd8EyF7nW9B_!!6000000005070-2-tps-3841-2160.png)
+
+## 📊 More New Features
+
+**`/auth` opens with 千问AI平台 / QwenCloud.** Sessions from these two platforms now find the matching provider on the first `/auth` screen, picked separately for domestic and international, with pay-as-you-go and subscription keys each on their own path. See PR [#14073](https://github.com/QwenLM/qwen-code/pull/14073)
+
+**Run your own Managed Agent service? Projects and sessions are easier to manage.** Those sessions now sit on the Web Shell home page beside the ones on your own computer, using the same composer and the same approval cards. This release adds picking an existing project directory, carrying the enabled skills into a new session, adjusting execution permissions while a session runs, and renaming a session by hand. Ordinary managed sessions can share one project directory too, and the files in it are shared between them. Each of these needs support from the matching deployment. See PRs [#14316](https://github.com/QwenLM/qwen-code/pull/14316), [#14970](https://github.com/QwenLM/qwen-code/pull/14970), [#14930](https://github.com/QwenLM/qwen-code/pull/14930), [#14920](https://github.com/QwenLM/qwen-code/pull/14920), [#14987](https://github.com/QwenLM/qwen-code/pull/14987), [#15026](https://github.com/QwenLM/qwen-code/pull/15026)
+
+**The QQ bot takes files now.** In a direct message or an @ in a group, send it a Word file, a PDF, or a spreadsheet — it saves the file, reads it, and answers from it. See PR [#14343](https://github.com/QwenLM/qwen-code/pull/14343)
+
+**Connect a self-built WeCom app.** A colleague drops a task into the app your company built itself; Qwen Code picks it up, does the work, and replies under that app's identity. See PR [#13976](https://github.com/QwenLM/qwen-code/pull/13976)
+
+**Commands that ship inside Claude-format plugins now run in the terminal.** Last week they only took effect in one-shot usage. Type one in the terminal and it runs, with no request to the model. The layer where a plugin steps in before the model uses a tool is open to interactive sessions too: it can rewrite that call or block it. This is off by default — there's a Mods switch in settings, and it takes effect after a restart. See PRs [#14268](https://github.com/QwenLM/qwen-code/pull/14268), [#14565](https://github.com/QwenLM/qwen-code/pull/14565), [#14889](https://github.com/QwenLM/qwen-code/pull/14889)
+
+**See how far a background command has gotten.** The task detail now shows the tail of its output, how much output there is, and when it last wrote, along with the memory it holds and its start and end times. The content copies with one click. See PR [#14831](https://github.com/QwenLM/qwen-code/pull/14831)
+
+## 👏 Experience Improvements
+
+**Hover a collapsed item on the home page to preview it.** See PR [#14826](https://github.com/QwenLM/qwen-code/pull/14826)
+
+**Sorting, filtering, and copying on tables feel smoother.** The advanced controls on wide tables and the copy options all got attention this round. See PR [#14707](https://github.com/QwenLM/qwen-code/pull/14707)
+
+**Repeating itself gets it a reminder, not a cut turn.** Once a command or a file read repeats past a certain count, the default is to remind it to try another way and keep going. Want an automatic stop? Choose that in settings. See PR [#15016](https://github.com/QwenLM/qwen-code/pull/15016)
+
+**Two fewer keys above the composer on mobile.** The up and down arrows for paging through history are gone; history search still works where it always did. See PR [#14220](https://github.com/QwenLM/qwen-code/pull/14220)
+
+**The browser tab icon shows up on dark tabs.** Against a dark tab background it was nearly invisible before. See PR [#14417](https://github.com/QwenLM/qwen-code/pull/14417)
+
+**Refresh the model list from the picker itself.** Clicking the model picker pulls a fresh list, and the refresh shows as a small icon beside the search box. See PRs [#14685](https://github.com/QwenLM/qwen-code/pull/14685), [#14983](https://github.com/QwenLM/qwen-code/pull/14983)
+
+**`Ctrl+V` pastes text in the Linux terminal.** Text or a link off the clipboard goes straight into the composer; images are still handled as attachments. See PR [#14172](https://github.com/QwenLM/qwen-code/pull/14172)
+
+## 🔧 Important Fixes
+
+| Fix | What it means for you | PR |
+|------|-----------|-----|
+| **System prompts mixed into the message you sent** | The terminal interface folded a few one-off prompts into the text you were sending — out to the model, into history, and back in the composer when you cancelled. Those prompts now stay on the model's side and your text goes out untouched | [#14740](https://github.com/QwenLM/qwen-code/pull/14740) |
+| **Chinese and emoji cut in half in long replies** | A Chinese character or an emoji is two code units wide, so cutting by length could land in the middle and leave garbage at the end. Truncation now backs off to a whole-character boundary | [#14744](https://github.com/QwenLM/qwen-code/pull/14744) |
+| **Reopening a session after `/compress` stops asking** | When the compression carried a file or an image, restore read that content as a message you hadn't finished and asked, for nothing, whether to continue. Retries keep that context now too | [#14702](https://github.com/QwenLM/qwen-code/pull/14702) |
+| **Long content stops losing most of itself** | A fetched web page was pre-split once per page and split again for the preview, so barely any of the body survived. When the content was JSON, the part shown to the model was squeezed far below what it should be. Both get their full size now, and complete text reads back in | [#14547](https://github.com/QwenLM/qwen-code/pull/14547), [#14546](https://github.com/QwenLM/qwen-code/pull/14546) |
+| **A file it edits gets a card too** | Uploading a file and having it change that file produced no card; a card that already existed stayed on the old content after the edit. Creates and edits now go through one registration, and the card lands in the turn that changed it | [#14292](https://github.com/QwenLM/qwen-code/pull/14292) |
+| **Computer Use on Linux runs on X11 only** | Native Wayland support is out, so Linux needs an X11 environment to use it. The input and screenshot instability got fixed in the same pass | [#14846](https://github.com/QwenLM/qwen-code/pull/14846) |
+| **Requests with Claude-family models stop getting rejected by strict proxies** | Unsigned thinking content from history went out as-is, and strict compatibility proxies failed it. An empty signature is added before sending now | [#13676](https://github.com/QwenLM/qwen-code/pull/13676) |
+| **DeepSeek thinking levels matched across the two routes** | The official API and the Alibaba MaaS compatibility endpoint disagreed on which levels exist and what format to send, so one model behaved differently in each. Both now line up with the levels the model actually supports | [#14689](https://github.com/QwenLM/qwen-code/pull/14689) |
+| **Dialogs over the mobile sidebar drawer scroll** | On narrow screens the sidebar is a drawer, and opening it locked background scrolling, so a dialog sitting on top wouldn't move. The dialog scrolls on its own now | [#14217](https://github.com/QwenLM/qwen-code/pull/14217) |
+| **Web Shell stops flashing a credential form at startup** | While it validated the credentials passed in at boot, the interface drew the server-address and token form, then pulled it away. That stretch now shows a neutral connecting state | [#14770](https://github.com/QwenLM/qwen-code/pull/14770) |
+| **The last attachment deletes with an empty composer** | With the text cleared and one file or one pasted image left, Backspace and Delete did nothing to it. They work now | [#13947](https://github.com/QwenLM/qwen-code/pull/13947) |
+| **Invisible control characters cleared from approval cards** | The description text on an approval card never stripped the unseen control characters, so they sat in what you read before approving. They're cleared with it now | [#13972](https://github.com/QwenLM/qwen-code/pull/13972) |
+| **Formatting holds when a long group message splits** | DingTalk and WeCom split long messages into pieces that cut straight through whole links, table rows, and code fences. Those structures stay in one block now | [#14043](https://github.com/QwenLM/qwen-code/pull/14043) |
+| **Email Channel comes back after a drop** | When the server marked that connection stale, several different cases were handled the same way and never reconnected. Each case re-registers on its own now | [#13768](https://github.com/QwenLM/qwen-code/pull/13768) |
+| **Deleting a scheduled task leaves running work alone** | The schedule cancels at once, but that task's own session waits until the work it holds is finished before closing. Work in progress and sessions being restored aren't dropped | [#14276](https://github.com/QwenLM/qwen-code/pull/14276) |
+| **One oversized tool batch no longer stalls the whole session** | When the batch went past its limit, the entire session sat still. Its results get answered first now, and the turn carries on | [#14452](https://github.com/QwenLM/qwen-code/pull/14452) |
+| **Short terminal windows stop cutting dialogs off** | OpenTUI hook bodies and sandbox-change prompts couldn't scroll or back out in a short window, or after a resize. Keyboard scrolling and step-by-step exit both work now | [#14933](https://github.com/QwenLM/qwen-code/pull/14933) |
+| **A directory picker that won't come up on Linux says why** | With no display to reach, the message read as though you'd pressed cancel, and no error came through. It's reported as a display failure now | [#14923](https://github.com/QwenLM/qwen-code/pull/14923) |
+| **Over-budget memory instruction files report the real reason** | The prompt couldn't tell too many entries from one entry too long, and didn't say which entry got dropped. It names the limit it hit and what was lost | [#14841](https://github.com/QwenLM/qwen-code/pull/14841) |
+| **Turning on output speed actually shows a speed** | The setting for tokens per second was on, yet the interface never displayed a rate. It shows estimated t/s now | [#14294](https://github.com/QwenLM/qwen-code/pull/14294) |
+| **The badge on a sidebar session row stops jumping on hover** | When the row's action buttons floated out, the PR badge got pushed sideways. Space is reserved for them now, so nothing moves on hover in or out | [#14994](https://github.com/QwenLM/qwen-code/pull/14994) |
+
+## 👥 Contributors
+
+| Contributor | Contributions | PR Links |
+|--------|---------|-------------|
+| 🆕 **[@Jun516](https://github.com/Jun516)** | 🎉 First contribution: spells out that telemetry reporting encodes as JSON, tightens what the MCP permission prefix and the history allow actually mean, explains why the VS Code webview can't use the same-origin exemption, and how to read "suggested owner" on the board | [#14664](https://github.com/QwenLM/qwen-code/pull/14664), [#14683](https://github.com/QwenLM/qwen-code/pull/14683), [#14684](https://github.com/QwenLM/qwen-code/pull/14684), [#14967](https://github.com/QwenLM/qwen-code/pull/14967) |
+| **[@zonemeen](https://github.com/zonemeen)** | Records the thinking depth each model request used in telemetry, stops the VS Code extension's background process from reading browser-only APIs, and adds guards around keyless membership checks and ID filtering in the checks | [#14718](https://github.com/QwenLM/qwen-code/pull/14718), [#14304](https://github.com/QwenLM/qwen-code/pull/14304), [#14989](https://github.com/QwenLM/qwen-code/pull/14989) |
+| **[@Bug-killer-prog](https://github.com/Bug-killer-prog)** | Clears the invisible control characters out of the description text on approval cards, and fixes the right-edge padding on the label-only chip above the composer | [#13972](https://github.com/QwenLM/qwen-code/pull/13972), [#13968](https://github.com/QwenLM/qwen-code/pull/13968) |
+| 🆕 **[@4ekuct25](https://github.com/4ekuct25)** | 🎉 First contribution: adds an empty signature to unsigned thinking content in history, so strict compatibility proxies stop rejecting the request | [#13676](https://github.com/QwenLM/qwen-code/pull/13676) |
+| 🆕 **[@BigDaddy1337](https://github.com/BigDaddy1337)** | 🎉 First contribution: Web Shell no longer flashes the credential form while it validates the credentials passed in at boot | [#14770](https://github.com/QwenLM/qwen-code/pull/14770) |
+| **[@Eric-GoodBoy-Tech](https://github.com/Eric-GoodBoy-Tech)** | The QQ bot receives files and voice messages | [#14343](https://github.com/QwenLM/qwen-code/pull/14343) |
+| **[@L4XB](https://github.com/L4XB)** | Writes the permission fields in the design doc to match what actually happens, and fixes a stale reference | [#11774](https://github.com/QwenLM/qwen-code/pull/11774) |
+| 🆕 **[@cenab](https://github.com/cenab)** | 🎉 First contribution: describes the safe-mode tool instructions as they really apply to models with a small context | [#14445](https://github.com/QwenLM/qwen-code/pull/14445) |
+| 🆕 **[@walidboulanouar](https://github.com/walidboulanouar)** | 🎉 First contribution: adds looot to the web search service list | [#13999](https://github.com/QwenLM/qwen-code/pull/13999) |
+| 🆕 **[@x-lixu](https://github.com/x-lixu)** | 🎉 First contribution: lists the voice front end qwen-audio-agent on the ecosystem page | [#8630](https://github.com/QwenLM/qwen-code/pull/8630) |
+| **[@ZedingZhang](https://github.com/ZedingZhang)** | Turns a delete failure caused by a non-empty directory into a retry during test teardown | [#14636](https://github.com/QwenLM/qwen-code/pull/14636) |
+| **[@Zhangchenhao-111](https://github.com/Zhangchenhao-111)** | Deletes the last attachment when the composer text is cleared | [#13947](https://github.com/QwenLM/qwen-code/pull/13947) |
+
+<Callout type="info">
+  **Upgrade**: Run `npm i @qwen-code/qwen-code@latest -g` to upgrade to the latest version.
+</Callout>
+
+If you have questions or feedback, feel free to open an issue on [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
