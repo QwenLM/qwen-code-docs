@@ -42,8 +42,9 @@ página na mesma alteração.
 ### Contagens de retry
 
 `QWEN_CI_VITEST_RETRY` e `QWEN_RELEASE_VITEST_RETRY` são passados ao Vitest
-como `--retry=<n>` no step principal de teste do CI (`npm run test:ci:workspaces`
-e `npm run test:scripts`) e na lane de release
+como `--retry=<n>` no step principal de teste do CI (o `test:ci` de cada
+workspace, que esse step executa em duas lanes concorrentes, e
+`npm run test:scripts:unit`) e na lane de release
 (`npm run test:release:workspaces`) respectivamente. As duas lanes têm
 variáveis separadas para que possam ser ajustadas independentemente.
 
@@ -77,6 +78,14 @@ reservado nos workflows de CI e release não a consomem; eles usam seus próprio
 limites do Vitest. O smoke E2E da Web Shell está fixado em `ubuntu-latest`,
 então o limite não se aplica a ele. Em runners hospedados pelo GitHub, a
 variável é ignorada e o Vitest usa seus próprios valores padrão.
+
+Cada execução do Vitest aplica o limite por conta própria. O step principal de
+teste de workspace do CI executa duas lanes ao mesmo tempo
+(`.github/scripts/ci/run-unit-test-lanes.sh`): o limite restringe cada execução
+do Vitest na lane principal, e a suite do web-shell na lane lateral executa com
+metade do limite, no mínimo 1, então no pico o step executa o limite mais essa
+metade. Em runners hospedados pelo GitHub, essa suite da lane lateral executa
+com 2 workers.
 
 ### Variáveis relacionadas fora da execução de testes
 

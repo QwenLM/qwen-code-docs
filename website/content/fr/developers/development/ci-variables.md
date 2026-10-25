@@ -46,9 +46,10 @@ workflows et mettez à jour cette page dans le même changement.
 
 `QWEN_CI_VITEST_RETRY` et `QWEN_RELEASE_VITEST_RETRY` sont passés à Vitest
 sous la forme `--retry=<n>` dans l'étape de test CI principale
-(`npm run test:ci:workspaces` et `npm run test:scripts`) et sur la lane de
-release (`npm run test:release:workspaces`) respectivement. Les deux lanes ont
-des variables séparées afin de pouvoir être ajustées indépendamment.
+(`test:ci` de chaque workspace, que cette étape exécute dans deux lanes
+concurrentes, et `npm run test:scripts:unit`) et sur la lane de release
+(`npm run test:release:workspaces`) respectivement. Les deux lanes ont des
+variables séparées afin de pouvoir être ajustées indépendamment.
 
 Vitest relance les tests en échec au sein du même run. Cela peut aider en cas
 de contentions intermittentes, mais un échec qui récupère dans le budget de
@@ -80,6 +81,14 @@ consomment pas ; ils utilisent leurs propres limites Vitest. Le smoke E2E
 web-shell est épinglé sur `ubuntu-latest`, la limite ne peut donc pas
 s'appliquer. Sur les runners hébergés par GitHub, la variable est ignorée et
 Vitest utilise ses propres valeurs par défaut.
+
+Chaque exécution de Vitest applique la limite individuellement. L'étape de
+test workspace CI principale exécute deux lanes en même temps
+(`.github/scripts/ci/run-unit-test-lanes.sh`) : la limite borne chaque
+exécution Vitest dans la lane principale, et la suite web-shell dans la lane
+secondaire s'exécute avec la moitié de la limite, au minimum 1, donc à son
+pic l'étape exécute la limite plus cette moitié. Sur les runners hébergés par
+GitHub, cette suite de la lane secondaire s'exécute avec 2 workers.
 
 ### Variables associées hors exécution de tests
 

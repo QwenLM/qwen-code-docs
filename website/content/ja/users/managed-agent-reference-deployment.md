@@ -40,7 +40,7 @@ QWEN_HOSTED_HARNESS_CAPABILITY_DIGEST="$QWEN_MANAGED_AGENT_CAPABILITY_DIGEST" \
 qwen serve --profile hosted-harness --port 4170 --hostname 127.0.0.1 --no-web
 ```
 
-Harness をループバック上に保持します。レポートされるポートを記録します。要求されたポートが既に占有されている場合、`--port` はずれることがあります。
+Harness をループバック上に保持します。Hosted Harness プロファイルは別のポートに移動しません。`--port` が使用中の場合、Harness は起動に失敗し、そのポート名を出力します。
 
 ## Java コントロールプレーンの起動
 
@@ -78,13 +78,17 @@ curl --fail http://127.0.0.1:8080/actuator/health
 
 ## 認証のブートストラップ
 
-`bin/qwen-managed-agent-bootstrap` は、共有 Harness トークンとケイパビリティダイジェスト、broker トークン、Runtime 認証キーを生成します。モード 0600 で `config/harness.env`、`config/server.env`、`config/application.yml` を書き込み、`--force` が指定されない限り既存ファイルの上書きを拒否し、パスのみを出力します。
+`bin/qwen-managed-agent-bootstrap` は、共有 Harness トークンとケイパビリティダイジェスト、broker トークン、Runtime 認証キー、およびデータベースパスワードを生成します。モード 0600 で `config/harness.env`、`config/server.env`、`config/application.yml`、および `config/mysql-setup.sql` を書き込み、`--force` が指定されない限り既存ファイルの上書きを拒否し、パスのみを出力します。
 
 ```bash
 bin/qwen-managed-agent-bootstrap
 ```
 
-トークンとダイジェストは `harness.env` にのみ書き込まれます。`server.env` は `QWEN_MANAGED_AGENT_HARNESS_CREDENTIALS_FILE` を通じてそのファイルを参照し、コントロールプレーンは両方の値をそこから読み取ります。そのファイルが `QWEN_MANAGED_AGENT_HARNESS_TOKEN` または `QWEN_MANAGED_AGENT_CAPABILITY_DIGEST` と同時に設定されている場合、起動を拒否するため、ローテーションでは 1つのファイルのみを変更します。生成された `harness.env` と `server.env` はシェルでソース可能であり、systemd の `EnvironmentFile` としても有効です。systemd レイアウト用に `--directory /etc/qwen-managed-agent` を渡し、`SPRING_DATASOURCE_PASSWORD` を入力し、所有権をサービスアカウントに調整します。
+トークンとダイジェスト、およびツールパス用の Broker URL とトークンは `harness.env` にのみ書き込まれます。`server.env` は `QWEN_MANAGED_AGENT_HARNESS_CREDENTIALS_FILE` を通じてそのファイルを参照し、コントロールプレーンはそこからそれらを読み取ります。そのファイルが `QWEN_MANAGED_AGENT_HARNESS_TOKEN` または `QWEN_MANAGED_AGENT_CAPABILITY_DIGEST` と同時に設定されている場合、またはファイルの Broker トークンが `QWEN_MANAGED_AGENT_RUNTIME_BROKER_TOKEN` と同時に設定されている場合に起動を拒否するため、ローテーションでは 1つのファイルのみを変更します。生成された `harness.env` と `server.env` はシェルでソース可能であり、systemd の `EnvironmentFile` としても有効です。
+
+`mysql-setup.sql` は `qwen_managed_agent` データベースと、`server.env` が参照する `qwen` アカウントを `localhost` と `127.0.0.1` の両方に対して作成し、Flyway が必要とする `performance_schema` グラントを付与します。MySQL 管理者として一度だけ実行します（例: `mysql -u root < config/mysql-setup.sql`）。実行後に削除してください。パスワードは `server.env` に保持されます。失敗する最初のステートメントで停止するため、既存のデータベースやアカウントを変更することはありません。コンテナ内の MySQL は `127.0.0.1` ではなくゲートウェイアドレスを参照します。そのホスト用にアカウントを作成してください。
+
+systemd レイアウトの場合は、root として `--directory /etc/qwen-managed-agent --service-user qwen-managed-agent` を指定して実行します。そのアカウントが `harness.env` と `application.yml` を所有し、`server.env` は `0640 root:qwen-managed-agent`、新しいディレクトリは `0750 root:qwen-managed-agent` となり、`mysql-setup.sql` は root のままです。ブートストラップは存在しないアカウントやアカウントがアクセスできないディレクトリを拒否します。`server.env` は `QWEN_MANAGED_AGENT_SERVICE_USER` も記録するため、プレフライトはそのアカウントとしてファイルアクセスをチェックします（root として実行されている場合でも）。
 
 ## 起動前チェック
 
@@ -94,7 +98,7 @@ bin/qwen-managed-agent-bootstrap
 bin/qwen-managed-agent-server --check
 ```
 
-これは JDK、設定ファイルとそのパーミッション、認証キーリング、起動プロパティの検証、認証/バインドの組み合わせ、Harness の到達可能性、ワークスペース ファイルと Shell のクロス設定（マウント、作成ルートまたは SSH ノードの要件を含む）、broker 認証情報とディレクトリ、ワークスペース `cwd`、空きポート、MySQL 接続性、`performance_schema` グラント、および `manifest.json` に対する Flyway バージョンをカバーします。`WARN` と `SKIP` は失敗になりません。`FAIL` は終了コード 1 で終了します。ポートチェックは設定されたアドレスをバインドするため、事前にサービスを停止します。このコマンドは Harness ケイパビリティダイジェストまたはネイティブワークスペース ストレージ登録を検証しません。
+これは JDK、サービスアカウント、設定ファイルとそのパーミッション、認証キーリング、起動プロパティの検証、認証/バインドの組み合わせ、Harness の到達可能性、ワークスペース ファイルと Shell のクロス設定（マウント、作成ルートまたは SSH ノードの要件を含む）、broker 認証情報とディレクトリ、ワークスペース `cwd`、空きポート、MySQL 接続性、`performance_schema` グラント、および `manifest.json` に対する Flyway バージョンをカバーします。`WARN` と `SKIP` は失敗になりません。`FAIL` は終了コード 1 で終了します。ポートチェックは設定されたアドレスをバインドするため、事前にサービスを停止します。このコマンドは Harness ケイパビリティダイジェストまたはネイティブワークスペース ストレージ登録を検証しません。
 
 ## systemd
 
@@ -106,6 +110,7 @@ bin/qwen-managed-agent-server --check
 
 ```bash
 export QWEN_MANAGED_AGENT_RUNTIME_BROKER_ENABLED='true'
+# Omit when harness.env carries QWEN_MANAGED_RUNTIME_BROKER_TOKEN, as the bootstrap's does.
 export QWEN_MANAGED_AGENT_RUNTIME_BROKER_TOKEN='<private-random-token>'
 export QWEN_MANAGED_AGENT_RUNTIME_CREDENTIAL_KEY_ID='reference-v1'
 export QWEN_MANAGED_AGENT_RUNTIME_CREDENTIAL_KEY='<base64-encoded-32-byte-key>'
@@ -115,19 +120,21 @@ export QWEN_MANAGED_AGENT_RUNTIME_WORKER_ENTRY='/opt/qwen-code/dist/cli.js'
 export QWEN_MANAGED_AGENT_RUNTIME_VERIFIED_WORKSPACE_RECOVERY_ENABLED='true'
 ```
 
+Hosted Harness は、コマンドラインでも上記のコントロールプレーンの変数でもない、自身の環境を通じて同じ Broker に到達します。`QWEN_MANAGED_RUNTIME_BROKER_URL='http://127.0.0.1:4182'` と `QWEN_MANAGED_RUNTIME_BROKER_TOKEN` を `harness.env` または Harness を起動する環境に設定します。`qwen serve` は読み取り後に両方を環境から削除するため、Harness が起動するプロセスはトークンを継承せず、コントロールプレーンは `QWEN_MANAGED_RUNTIME_BROKER_` 変数を Runtime ワーカーから除外します。ブートストラップのファイルでは `harness.env` がすでに両方を保持しており、コントロールプレーンはそのファイルから Broker トークンを取得するため、`QWEN_MANAGED_AGENT_RUNTIME_BROKER_TOKEN` は未設定のままにします。両方のコピーを設定すると起動が拒否されます。2つの Harness 行は一緒に設定するか、まったく設定しないかのいずれかであり、それぞれプレーンな `KEY=value` 行として記述します。起動は、どちらか一方のみが含まれる行、どちらかが空の行、`export KEY=value` のような systemd が無視する行を含むファイルを拒否します。これは Harness も拒否します。プレフライトの `broker-url` 行は Harness の URL パーサーと同じ方法でファイルの URL を読み取るため、`http://127.1:4182` は `http://127.0.0.1:4182` として扱われます。その URL が Broker 自身の `http` 上のリスナーを参照している場合にパスします。Harness が URL を拒否する場合（`http` または `https` オリジンである必要があり、プレーンな `http` はループバックインターフェースでのみ使用可能）、および `https` 上のリスナーを参照している場合（プレーン HTTP の Broker は受け入れ不可）に失敗します。URL が別のアドレスまたはポートを参照している場合に警告します。これはプロキシのみがフォワードできるものです。ループバック外の特定のアドレスにバインドされた Broker（`QWEN_MANAGED_AGENT_RUNTIME_BROKER_ALLOW_NON_LOOPBACK=true` が必要）は常にその方法で到達されます。`0.0.0.0` にバインドされた Broker もその設定が必要ですが、ループバックも提供するため、Harness は `http://127.0.0.1:4182` で直接ダイヤルし、行はパスします。`http://[::1]:4182` のような IPv6 URL はそこで警告します。そのバインドはコントロールプレーンの JVM が両方のファミリーでリッスンしている場合にのみ IPv6 を取りますが、`-Djava.net.preferIPv4Stack=true` の下ではそうではないためです。ファイルに Broker URL がない場合にも警告します。これは、自身の環境またはコマンドラインを通じてペアを与えられた Harness がプレフライトに表示するものです。そこでは警告は予想されており、ペアをファイルに移動するには `server.env` から `QWEN_MANAGED_AGENT_RUNTIME_BROKER_TOKEN` を削除することを意味します。
+
 ファイル、Shell、または子 Git ワークを受け入れる前に、`docs/server-reference.md` の「Verified physical Workspace recovery」で説明されているネイティブストレージ登録とマウントID検証を完了します。未登録または曖昧なマウントは利用できないままである必要があります。Public Shell の実行はデフォルトで無効のままです。Shell ライフサイクル v2 はデフォルトでアドバタイズされます。明示的なライフサイクルリストがデフォルトを置き換え、空のリストはそれを無効にします。MCP ライフサイクルには引き続き明示的な包含が必要です。ケイパビリティのアドバタイズメントはデプロイメントの適格性を確立するものではありません。
 
 ## アップグレード
 
 1. 新しいアーカイブをダウンロードして検証し、両方のマニフェストを読みます。実行中のデプロイメントに触れる前に、新しい Qwen Code/Harness、Java、プロトコル、およびデータベースの要件を確認します。
 2. 新しいイングレスを停止します。デプロイメントの既存の drain 手順に従って、受け入れられたワークが落ち着くのを待ちます。
-3. MySQL、`QWEN_MANAGED_AGENT_RUNTIME_STATE_DIRECTORY`、Runtime 認証キーリング全体、および正確な古い配布をバックアップします。アップグレード中に認証キーをローテーションしないでください。
+3. MySQL、`QWEN_MANAGED_AGENT_RUNTIME_STATE_DIRECTORY`、Runtime 認証キーリング全体、オペレーターが所有する `server.env` と `harness.env`、および正確な古い配布をバックアップします。アップグレード中に認証キーをローテーションしないでください。
 4. Java サービスと Hosted Harness を停止します。ワークスペース と永続的な Runtime 状態を保持します。同梱のコントロールプレーンユニットは `KillMode=process` を使用するため、`systemctl stop` では Runtime ワーカーが実行中のままになります。新しいバージョンを起動する前に、`systemctl kill --kill-whom=all -s TERM qwen-managed-agent-server` でそれらを回収します。
-5. マニフェスト互換の Qwen Code/Harness をインストールし、既存のトークンとケイパビリティダイジェストで起動します。
+5. マニフェスト互換の Qwen Code/Harness をインストールし、既存のトークンとケイパビリティダイジェストで起動します。ツールパスホストでは、まず `harness.env` の `QWEN_HOSTED_HARNESS_BROKER_ARGS` 行を `QWEN_MANAGED_RUNTIME_BROKER_URL` と `QWEN_MANAGED_RUNTIME_BROKER_TOKEN` で置き換えます。その行を読むものはもういないため、これらがないと Harness は Broker なしで起動します。`server.env` が Harness を有効にし、`harness.env` を認証情報ファイルとして参照している場合（ブートストラップのファイルと同様）、`server.env` から `QWEN_MANAGED_AGENT_RUNTIME_BROKER_TOKEN` も削除します。コントロールプレーンは `harness.env` からトークンを取得し、両方のコピーを保持すると起動が拒否されます。以前の配布は新しい行のどちらも読まず、削除されたトークンなしで Broker を起動することを拒否するため、そこへのロールバックはステップ 3 のバックアップから両方のファイルを復元します。
 6. 同じデータベースと永続的な設定で新しい `bin/qwen-managed-agent-server` を起動します。Flyway がスキーマをフォワードマイグレーションします。
 7. 正常な actuator レスポンスを要求し、既存の Session と履歴を読み取り、イングレスを再開する前に新しいツールなしの Turn を 1つ完了します。オプションのツールケイパビリティは、有効化する前に再審査します。
 
-データベースのダウングレードはサポートされていません。トラフィックが再開される前に起動または検証が失敗した場合、設定を修正して同じアーティファクトを再試行します。マニフェストが古いスキーマ範囲を持つバージョンに戻るには、新しい書き込みを受け入れる前に、アップグレード前のデータベースと Runtime 状態のバックアップを一緒に復元します。移行されたデータベースに対して古いサーバーを決して想定で実行しないでください。
+データベースのダウングレードはサポートされていません。トラフィックが再開される前に起動または検証が失敗した場合、設定を修正して同じアーティファクトを再試行します。マニフェストが古いスキーマ範囲を持つバージョンに戻るには、新しい書き込みを受け入れる前に、アップグレード前のデータベースと Runtime 状態のバックアップを一緒に復元します。移行されたデータベースに対して古いサーバーを決して想定で実行しないでください。以前の配布への復帰は、同じバックアップから `server.env` と `harness.env` も復元します。ステップ 5 がそれらを新しいバージョン用に書き換えるためです。
 
 ## Runtime 認証キーのローテーション
 

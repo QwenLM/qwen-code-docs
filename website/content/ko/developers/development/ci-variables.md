@@ -19,7 +19,7 @@ CI 및 릴리스 파이프라인의 여러 설정은 GitHub Actions 저장소 �
 
 ### 재시도 횟수
 
-`QWEN_CI_VITEST_RETRY`와 `QWEN_RELEASE_VITEST_RETRY`는 Vitest에 `--retry=<n>`으로 전달됩니다. 각각 메인 CI 테스트 단계(`npm run test:ci:workspaces` 및 `npm run test:scripts`)와 릴리스 레인(`npm run test:release:workspaces`)에서 사용됩니다. 두 레인은 독립적으로 조정할 수 있도록 별도의 변수를 사용합니다.
+`QWEN_CI_VITEST_RETRY`와 `QWEN_RELEASE_VITEST_RETRY`는 Vitest에 `--retry=<n>`으로 전달됩니다. 각각 메인 CI 테스트 단계(모든 워크스페이스의 `test:ci` - 해당 단계가 두 개의 동시 레인으로 실행 - 및 `npm run test:scripts:unit`)와 릴리스 레인(`npm run test:release:workspaces`)에서 사용됩니다. 두 레인은 독립적으로 조정할 수 있도록 별도의 변수를 사용합니다.
 
 Vitest는 동일한 실행 내에서 실패한 테스트를 다시 실행합니다. 이는 간헐적인 경합 상황에 도움이 될 수 있지만, 재시도 예산 내에서 복구된 실패는 체크를 성공으로 만들고 flaky-rerun 추적기에 실패로 기록되지 않습니다. flaky 테스트 스위트를 덮기 위해 재시도를 사용하기보다 예산을 낮게 유지하십시오. 두 변수 모두 리터럴 값 `off`를 받을 수 있으며, 이 경우 `--retry=0`을 전달하는 대신 `--retry` 플래그 자체를 생략합니다(`--retry=0`은 워크스페이스 자체의 Vitest 설정보다 우선하여 의도적인 재시도 정책을 비활성화할 수 있습니다).
 
@@ -30,6 +30,8 @@ Vitest는 동일한 실행 내에서 실패한 테스트를 다시 실행합니�
 ### 자체 호스팅 runner의 Vitest worker cap
 
 `QWEN_CI_VITEST_MAX_WORKERS`는 아래 나열된 단계에서 Vitest 프로세스 수를 제한합니다(`VITEST_MAX_THREADS` / `VITEST_MAX_FORKS`, 대응되는 최솟값은 `1`로 강제됨). 이름이 `ecs-qwen-`으로 시작하는 예약된 자체 호스팅 runner에 적용됩니다. 이 변수는 메인 CI 워크스페이스 테스트 단계와 릴리스의 `workspace_tests` 및 `quality_scripts` 단계에서만 내보내집니다. CI 및 릴리스 워크플로에서 동일한 예약된 풀을 사용하는 다른 Vitest 통합 테스트는 이 변수를 사용하지 않고 자체 Vitest 제한을 사용합니다. web-shell E2E 스모크 테스트는 `ubuntu-latest`로 고정되어 있으므로 이 cap이 적용되지 않습니다. GitHub 호스팅 runner에서는 이 변수가 무시되고 Vitest가 자체 기본값을 사용합니다.
+
+각 Vitest 실행은 자체적으로 cap을 적용합니다. 메인 CI 워크스페이스 테스트 단계는 두 개의 레인을 동시에 실행합니다(`.github/scripts/ci/run-unit-test-lanes.sh`). cap은 메인 레인의 각 Vitest 실행에 적용되며, 사이드 레인의 web-shell 스위트는 cap의 절반(최소 1)으로 실행되므로, 피크 시 이 단계는 cap과 그 절반의 합만큼 실행됩니다. GitHub 호스팅 runner에서 사이드 레인 스위트는 2개의 worker로 실행됩니다.
 
 ### 테스트 실행 외의 관련 변수
 
