@@ -18,6 +18,8 @@ Qwen Code 提供两种网络搜索方式：
 | 阿里巴巴 ModelStudio → **标准 API Key**                                                                                    | 开启                                                |
 | 阿里巴巴 ModelStudio → **Token Plan**                                                                                      | 开启                                                |
 | 阿里巴巴 ModelStudio → **Coding Plan**                                                                                     | 关闭 —— 其端点未针对此 API 进行验证                  |
+| QwenCloud → **标准 API Key**                                                                                               | 开启                                                |
+| QwenCloud → **Token Plan**                                                                                                 | 开启                                                |
 | 在已识别的 DashScope Responses 主机上，带有直接密钥的 OpenAI 兼容 `modelProviders` 或 Custom Provider 条目                   | 开启                                                |
 | 第三方 provider（OpenRouter、DeepSeek、ModelScope 等）、其他主机上的自定义端点、本地模型                                       | 关闭                                                |
 
@@ -80,7 +82,7 @@ export DASHSCOPE_API_KEY=sk-...        # 或者设置 WEB_SEARCH_API_KEY
 
 - 选择器必须解析到一个通过 `envKey` 携带直接 API key 的 DashScope 兼容 `modelProviders` 条目。你的主模型可以是任何 provider——只有搜索侧请求需要 DashScope 条目。Qwen OAuth 无法支持此工具。
 - 哪些 provider 可以激活该工具在启动时决定。一旦激活，搜索后端会在下一次搜索时跟随当前选定的模型；切换到不支持的 provider 会使该次调用失败，而从工具不存在的会话切换过来仍需要重启才能注册它。
-- 自动主机检测有意只接受已知的 DashScope 区域、Token Plan MaaS 和阿里巴巴内部主机。通用的 `*.alicloudapi.com` 网关和 `DASHSCOPE_PROXY_BASE_URL` 被排除，因为不确定它们是否会转发 Responses 搜索工具。
+- 自动主机检测有意只接受已知的 DashScope 区域主机、Model Studio 和 QwenCloud MaaS 主机（包括其 `token-plan.` 订阅子域名）以及阿里巴巴内部主机。通用的 `*.alicloudapi.com` 网关和 `DASHSCOPE_PROXY_BASE_URL` 被排除，因为不确定它们是否会转发 Responses 搜索工具。
 - 如果显式启用但配置错误，工具将保持关闭状态，启动通知会说明哪个条件失败。自动激活永远不会发出通知。
 - 搜索使用你的 DashScope 密钥计费（`usage.x_tools` 计数）。Auto 审批模式（默认）让分类器无需提示即可批准搜索；在 `default` 审批模式下，工具会询问，使用"始终允许"批准会持久化一个标准的 `WebSearch` 权限规则，与其他工具一样。
 - 没有客户端模型白名单；Responses 端点不支持的模型会在首次使用时明确报错。
@@ -300,5 +302,161 @@ qwen mcp add web-search-prime \
 ```
 
 将 `${GLM_API_KEY}` 替换为你的实际智谱AI API Key，或者将其设置为环境变量。
+
+---
+
+### Firecrawl
+
+Firecrawl 官方托管 MCP 服务器，提供网络搜索、页面抓取、网站爬取与地图生成、浏览器交互以及文件解析功能。搜索结果可以包含每个页面的 Markdown 内容，因此模型无需单独的获取步骤即可阅读其来源。托管服务器在进行搜索、抓取和解析时无需 API key。搜索查询、你要求它读取的 URL 以及你解析的任何文件都会被发送到 Firecrawl。
+
+- **文档：** https://docs.firecrawl.dev/mcp-server
+- **费用：** 搜索、抓取和解析无需 API key（每 IP 每日限额）；付费计划可获得更高限额
+- **获取 API Key：** https://www.firecrawl.dev/app/api-keys
+- **适用场景：** 模型需要同时阅读搜索到的页面内容的网络搜索，以及无需 API key 试用 MCP 网络搜索
+
+#### 可用工具
+
+- `firecrawl_search` — 网络搜索，可选择将每个结果的页面内容以 Markdown 返回
+- `firecrawl_scrape` — 将单个页面转换为干净的 Markdown
+- `firecrawl_parse` — 将本地文件（PDF、Word、电子表格等）转换为 Markdown
+
+使用 API key 后，服务器还提供网站地图生成与爬取、页面交互（点击、输入、导航）以及搜索 GitHub issues 和文档等开发者来源的工具。
+
+#### 设置
+
+**方法 1：CLI 命令（远程 MCP）**
+
+```bash
+qwen mcp add firecrawl \
+  -t http \
+  "https://mcp.firecrawl.dev/v2/mcp" \
+  -H "Authorization: Bearer ${FIRECRAWL_API_KEY}"
+```
+
+要在没有 key 的情况下试用，请省略 `-H` 行。你可以在每 IP 每日限额内使用 `firecrawl_search`、`firecrawl_scrape` 和 `firecrawl_parse`。
+
+**方法 2：`settings.json`（远程 MCP）**
+
+```json
+{
+  "mcpServers": {
+    "firecrawl": {
+      "httpUrl": "https://mcp.firecrawl.dev/v2/mcp",
+      "headers": {
+        "Authorization": "Bearer ${FIRECRAWL_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+将 `${FIRECRAWL_API_KEY}` 替换为你的实际 API key，或者将其设置为环境变量。如果 key 为空，服务器仍会连接，但仅提供三个无需 key 的工具。
+
+**方法 3：`settings.json`（本地 NPX）**
+
+```json
+{
+  "mcpServers": {
+    "firecrawl-mcp": {
+      "command": "npx",
+      "args": ["-y", "firecrawl-mcp @latest"],
+      "env": {
+        "FIRECRAWL_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+---
+
+### SerpApi
+
+SerpApi 官方托管 MCP 服务器，通过单一工具提供来自 Google、百度、Bing 等搜索引擎的实时结构化搜索结果。搜索查询及其参数会被发送到 SerpApi。
+
+- **文档：** https://serpapi.com/integrations/mcp
+- **费用：** 付费（提供免费计划）
+- **获取 API Key：** https://serpapi.com/manage-api-key
+- **适用场景：** 从多种搜索引擎中获取结构化结果
+
+#### 可用工具
+
+- `search` — 网络搜索，可选择将结果以 Markdown 返回
+
+#### 设置
+
+**方法 1：CLI 命令**
+
+```bash
+qwen mcp add serpapi \
+  -t http \
+  "https://mcp.serpapi.com/mcp" \
+  -H "Authorization: Bearer ${SERPAPI_API_KEY}"
+```
+
+**方法 2：`settings.json`**
+
+```json
+{
+  "mcpServers": {
+    "serpapi": {
+      "httpUrl": "https://mcp.serpapi.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${SERPAPI_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+将 `${SERPAPI_API_KEY}` 替换为你的实际 API key，或者将其设置为环境变量。该 key 仅在搜索时需要。没有有效的 API key，服务器仍会连接并列出其工具，但 `search` 会返回错误。
+
+---
+
+### looot
+
+looot 提供的托管 MCP 服务器，支持网络搜索、Google SERP 结果、新闻搜索和网页阅读。搜索查询以及你要求它读取的 URL 会被发送到 looot。
+
+- **文档：** https://docs.looot.ai
+- **费用：** 付费（预付费余额，无免费套餐）
+- **获取 API Key：** https://looot.ai
+- **适用场景：** 网络搜索、Google SERP 和新闻结果，以及将页面作为文本阅读
+
+#### 可用工具
+
+- `web_search` — 网络搜索
+- `google_search_results` — Google SERP 结果
+- `news_search` — 新闻搜索
+- `read_web_page` — 将单个页面作为文本阅读
+
+该服务器还提供公司和邮箱查询功能。
+
+#### 设置
+
+**方法 1：CLI 命令（远程 MCP）**
+
+```bash
+qwen mcp add looot \
+  -t http \
+  "https://api.looot.ai/mcp" \
+  -H "Authorization: Bearer ${LOOOT_API_KEY}"
+```
+
+**方法 2：`settings.json`（远程 MCP）**
+
+```json
+{
+  "mcpServers": {
+    "looot": {
+      "httpUrl": "https://api.looot.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer ${LOOOT_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+将 `${LOOOT_API_KEY}` 替换为你的实际 API key，或者将其设置为环境变量。
 
 ---

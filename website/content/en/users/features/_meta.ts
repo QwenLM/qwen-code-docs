@@ -39,4 +39,5 @@ export default {
   tips: 'Contextual Tips',
   'batch': 'Batch Mode (DashScope)',
   'mem0': 'Mem0',
+  'autofix-pr': 'Autofix a Pull Request',
 };

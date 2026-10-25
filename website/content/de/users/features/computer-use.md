@@ -20,6 +20,8 @@ qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.26.0
 
 Der Server installiert das passende SDK und das Browser-SDK als Dependencies. Die native SDK-Payload wird für die aktuelle Plattform heruntergeladen und gegen die SHA-256-Checksummen des zugehörigen Releases verifiziert. Sie wird außerhalb des npm-Pakets zwischengespeichert; es wird kein SDK-Bootstrap-Befehl im Workspace benötigt. Version 0.26.0 ist ein lokales Entwicklungsziel, bis deren Release veröffentlicht wird.
 
+Windows verwendet standardmäßig die gewöhnliche Eingabezustellung und installiert keinen UIAccess-Worker. Die Entscheidung für UIAccess mit `CUA_DRIVER_USE_UIACCESS=1` erfordert einen signierten Worker unter `Program Files\Qwen\CuaDriver`; installiere das SDK von einem erhöhten Terminal mit gesetzter Variable. Ein unsignierter Worker kann UIAccess nicht aktivieren; umgehe nicht die Signaturprüfung. Ältere unsignierte Releases benötigen ein neues signiertes Driver-Release für UIAccess, keine Neuinstallation derselben Version.
+
 ## Anwendungsaufgaben
 
 ```js
@@ -60,7 +62,7 @@ await tab.playwright.domSnapshot();
 
 Der Server führt JavaScript mit den normalen Node.js-Berechtigungen aus und folgt dem MCP-Genehmigungsfluss des Clients. Unter macOS wird Accessibility für Eingabe/AX-Beobachtung benötigt und Screen Recording für Screenshots; Automation kann für Dokumentenspeicherung/Finder-Umbenennung angefragt werden. Genehmigungen gehören zur OS-Verantwortungskette des Host-Prozesses. Unter Windows verwendet der normale installierte Daemon den bestehenden UAC/Logon-Task-Pfad; Anwendungen, die er startet, verwenden ein von seinem eigenen Token abgeleitetes Token mit Normal-User-Integrität. UIAccess ist optional: `CUA_DRIVER_USE_UIACCESS=1` explizit zu setzen erfordert einen vertrauenswürdigen, signierten Worker unter Program Files und schlägt fehl, wenn nicht verfügbar. Die Standard-npm-Installation installiert diesen Worker nicht und verlangt dessen Signatur nicht.
 
-`js` completes in einem Aufruf und hat standardmäßig ein 30-Sekunden-Timeout. Ein Timeout kann externe Effekte hinterlassen; beobachte vor einem erneuten Versuch. `js_reset` verwirft Bindungen und schließt die besitzende native/Browser-Session sauber. Nach Compaction des Kontexts, rufe `cua.rewriteDocumentation()` auf, bevor du fortfährst.
+`js` wird in einem Aufruf abgeschlossen und hat standardmäßig ein 30-Sekunden-Timeout. Ein Timeout kann externe Effekte hinterlassen; beobachte vor einem erneuten Versuch. `js_reset` verwirft Bindungen und schließt die besitzende native/Browser-Session sauber. Nach Compaction des Kontexts, rufe `cua.rewriteDocumentation()` auf, bevor du fortfährst.
 
 ## Remote-Desktop-Relay
 

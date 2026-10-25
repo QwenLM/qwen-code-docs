@@ -570,6 +570,25 @@ what are the limitations of Qwen Code?
 > - 提出具体问题以获得详细答案
 > - Qwen Code 可以解释复杂功能，如 MCP 集成、企业配置和高级工作流
 
+## 在 monorepo 中重用已保存的工作流
+
+启用 [`tools.workflowsEnabled`](./configuration/settings.md) 后，本地终端、无头或直接 ACP 会话可以使用来自同一 Git 仓库中受信任父目录的已保存工作流。例如，当你在 `repo/packages/app` 中启动 Qwen Code 时，名为 `review` 的工作流按以下顺序选择：
+
+```text
+repo/packages/app/.qwen/workflows/review.js
+repo/packages/.qwen/workflows/review.js
+repo/.qwen/workflows/review.js
+~/.qwen/workflows/review.js
+```
+
+最近的定义优先。父级发现在最接近的 Git 根处停止，包括 worktree 或子模块根。Git 仓库外的目录保留其自己的项目和用户工作流。扩展工作流保留其限定名称，例如 `gcp:review`。
+
+文件夹信任遵循操作员的设置；工作区设置无法启用或禁用此祖先检查。启用文件夹信任时，当前目标及其每个父级必须被已保存的文件夹信任规则信任。仅信任当前目录不会授予对其父级的访问权限；未知或被拒绝的父级会停止向根目录的搜索。仅 IDE 信任不会授予父级访问权限。对文件夹信任文件的更改在下一次发现或脚本查找时生效，因此先前列出的命令无法使用其缓存路径读取信任已被撤销的父级。刷新命令列表或启动新会话以查看已添加或删除的命令。禁用文件夹信任时，本地会话允许在 Git 边界内进行父级发现。在 POSIX 系统上，此禁用模式仍排除其目录、`.qwen` 或工作流目录对所有人可写的父级。Windows 权限位不描述 ACL，因此此 POSIX 权限检查不适用于那里。
+
+父工作流仍需要通常的工作流审批，这会识别所选脚本。内容更改会使固定到脚本摘要的审批失效。运行父级的工作流会保留会话的工作目录，保存到项目范围会写入当前会话的 `.qwen/workflows/` 目录。
+
+守护进程管理的 ACP 子级、Web Shell、托管会话和受限会话不会选择父级发现。父目录及其工作流文件必须是普通目录和文件；符号链接无法授予对父工作流的访问权限。
+
 ## 强制基于证据的结论
 
 当 Qwen Code 执行高风险工作时——代码审查、事故排查、审计或调查生产数据——一个自信但错误的结论比没有结论的代价更大。你可以在 QWEN.md 中编码团队的验证策略（参见[记忆](./features/memory.md)），这样它就适用于每个会话，而无需更改任何人的默认设置。
@@ -601,3 +620,7 @@ what are the limitations of Qwen Code?
 > - 保持规则具体且可操作："用查询结果支持每个声明"比"小心"更有效。
 > - 保持策略简短——当 QWEN.md 简洁时，它被更可靠地遵循（参见[记忆](./features/memory.md)）。
 > - 根据你的技术栈调整规则：命名你的团队视为权威来源的实际查询工具、仪表板或日志命令。
+
+## 为单个人类轮次建议工作流
+
+在支持的人类提交中使用 `ultracode` 或现有的 `workflow` 关键字来为该轮次建议工作流工具。有关入口点、SDK 选择和设置，请参见[工作流意图](./workflow-intent.md)（[简体中文](./workflow-intent.zh-CN.md)）。

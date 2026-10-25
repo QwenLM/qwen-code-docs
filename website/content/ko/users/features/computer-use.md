@@ -20,6 +20,8 @@ qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.26.0
 
 서버는 일치하는 SDK와 브라우저 SDK를 의존성으로 설치합니다. 네이티브 SDK 페이로드는 현재 플랫폼에 맞게 다운로드되며 해당 릴리스의 SHA-256 체크섬에 대해 검증됩니다. npm 패키지 외부에 캐시되므로 워크스페이스 SDK 부트스트랩 명령이 필요하지 않습니다. 버전 0.26.0은 릴리스가 게시될 때까지 로컬 개발 대상입니다.
 
+Windows는 기본적으로 일반 입력 전달을 사용하며 UIAccess 작업자를 설치하지 않습니다. `CUA_DRIVER_USE_UIACCESS=1`로 UIAccess를 옵트인하려면 `Program Files\Qwen\CuaDriver` 아래에 서명된 작업자가 필요합니다. 해당 변수가 설정된 상태에서 관리자 권한 터미널에서 SDK를 설치하세요. 서명되지 않은 작업자는 UIAccess를 활성화할 수 없습니다; 서명 검사를 우회하지 마세요. 이전 서명되지 않은 릴리스는 UIAccess를 위해 같은 버전을 다시 설치하는 것이 아니라 새로운 서명된 드라이버 릴리스가 필요합니다.
+
 ## 애플리케이션 작업
 
 ```js

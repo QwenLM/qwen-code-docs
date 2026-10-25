@@ -20,6 +20,8 @@ qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.26.0
 
 该 server 会将匹配的 SDK 和浏览器 SDK 作为依赖安装。原生 SDK payload 会为当前平台下载，并根据对应发布的 SHA-256 校验和进行验证。它被缓存在 npm 包之外；无需工作区 SDK 引导命令。版本 0.26.0 是本地开发目标，直到其正式发布。
 
+Windows 默认使用普通输入传递，不会安装 UIAccess worker。通过 `CUA_DRIVER_USE_UIACCESS=1` 启用 UIAccess 需要在 `Program Files\Qwen\CuaDriver` 下放置签名的 worker；请在设置该变量的提升权限终端中安装 SDK。未签名的 worker 无法启用 UIAccess；请勿绕过签名检查。较早的未签名发布版本需要新的签名 driver 发布才能使用 UIAccess，而非重新安装同一版本。
+
 ## 应用任务
 
 ```js
