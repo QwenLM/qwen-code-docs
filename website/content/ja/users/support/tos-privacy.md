@@ -90,7 +90,7 @@ Qwen Code の Chrome 拡張機能を通じて受信したデータの使用と�
 
 ## 使用統計とテレメトリー
 
-Qwen Code は、ユーザー体験と製品品質を向上させるために、匿名の使用統計と [テレメトリー](../../developers/development/telemetry) データを収集することがあります。このデータ収集はオプションであり、設定を通じて制御できます。
+Qwen Code は、ユーザー体験と製品品質を向上させるために、匿名の使用統計と [テレメトリー](../../developers/development/telemetry) データを収集することがあります。使用統計はデフォルトですべての認証方法で有効になっています。このデータ収集はオプションであり、設定を通じて無効にできます。
 
 ### 収集されるデータ
 
@@ -102,10 +102,19 @@ Qwen Code は、ユーザー体験と製品品質を向上させるために、�
 
 ### 認証方法ごとのデータ収集
 
-- **Qwen OAuth:** 使用統計は Qwen のプライバシーポリシーに準拠します。Qwen Code の設定からオプトアウトできます。
-- **Alibaba Cloud Coding Plan:** 使用統計は Alibaba Cloud のプライバシーポリシーに準拠します。Qwen Code の設定からオプトアウトできます。
-- **API Key:** Qwen Code が追加でデータを収集することはありません。選択した API プロバイダーが収集するデータのみが対象です。
-- **Vertex AI:** 使用統計は Google Cloud のプライバシーポリシーに準拠します。Qwen Code が Google Cloud の収集するデータ以外を追加で収集することはありません。
+Qwen Code の使用統計設定は、Qwen OAuth、Alibaba Cloud Coding Plan、独自の API キー、Vertex AI など、すべての認証方法に適用されます。有効にすると、これらのイベントは Alibaba Cloud RUM 収集エンドポイントに送信され、選択した AI プロバイダーが独自のプライバシーポリシーの下で収集するデータとは独立しています。
+
+オプトアウトするには、Qwen Code の設定で以下を設定してください。
+
+```json
+{
+  "privacy": {
+    "usageStatisticsEnabled": false
+  }
+}
+```
+
+`QWEN_USAGE_STATISTICS_ENABLED` 環境変数を `false` に設定することもできます。環境変数は設定よりも優先されます。収集されるフィールドと設定の詳細については、[使用統計](../configuration/settings.md#usage-statistics) を参照してください。
 
 ## よくある質問（FAQ）
 

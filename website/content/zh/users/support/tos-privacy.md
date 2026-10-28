@@ -90,7 +90,7 @@ Qwen Code 对通过 Chrome 扩展接收的数据的使用和传输遵循 [Chrome
 
 ## 使用统计与遥测
 
-Qwen Code 可能会收集匿名的使用统计和[遥测](../../developers/development/telemetry)数据，以改善用户体验和产品质量。此数据收集为可选功能，可通过配置设置进行控制。
+Qwen Code 可能会收集匿名的使用统计和[遥测](../../developers/development/telemetry)数据，以改善用户体验和产品质量。使用统计默认对所有认证方式启用。此数据收集为可选功能，可通过配置设置禁用。
 
 ### 收集哪些数据
 
@@ -102,10 +102,19 @@ Qwen Code 可能会收集匿名的使用统计和[遥测](../../developers/devel
 
 ### 按认证方式的数据收集
 
-- **Qwen OAuth：** 使用统计受 Qwen 隐私政策约束。你可以通过 Qwen Code 的配置设置选择退出。
-- **阿里云百炼计划：** 使用统计受阿里云隐私政策约束。你可以通过 Qwen Code 的配置设置选择退出。
-- **API Key：** Qwen Code 不会额外收集数据，但你的 API 提供商可能收集数据。
-- **Vertex AI：** 使用统计受 Google Cloud 隐私政策约束。Qwen Code 不会额外收集数据，仅 Google Cloud 可能收集数据。
+Qwen Code 的使用统计设置适用于所有认证方式：Qwen OAuth、阿里云百炼计划、你自己的 API key 和 Vertex AI。启用后，这些事件会发送到阿里云 RUM 收集端点，与你选择的 AI 提供商根据其自身隐私政策收集的数据相互独立。
+
+如需退出，请在 Qwen Code 设置中进行如下配置：
+
+```json
+{
+  "privacy": {
+    "usageStatisticsEnabled": false
+  }
+}
+```
+
+你也可以将 `QWEN_USAGE_STATISTICS_ENABLED` 环境变量设置为 `false`。环境变量的优先级高于设置项。有关收集字段和配置详情，请参见[使用统计](../configuration/settings.md#usage-statistics)。
 
 ## 常见问题解答（FAQ）
 

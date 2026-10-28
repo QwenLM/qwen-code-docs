@@ -40,7 +40,7 @@ QWEN_HOSTED_HARNESS_CAPABILITY_DIGEST="$QWEN_MANAGED_AGENT_CAPABILITY_DIGEST" \
 qwen serve --profile hosted-harness --port 4170 --hostname 127.0.0.1 --no-web
 ```
 
-将 Harness 保持在 loopback 上。记录其报告的端口；当请求的端口已被占用时，`--port` 可能会自动递增。
+将 Harness 保持在 loopback 上。Hosted Harness profile 不会切换到其他端口：当 `--port` 被占用时，Harness 会启动失败并指出该端口。
 
 ## 启动 Java 控制平面
 
@@ -78,13 +78,17 @@ curl --fail http://127.0.0.1:8080/actuator/health
 
 ## 引导凭据
 
-`bin/qwen-managed-agent-bootstrap` 生成共享的 Harness token 和 capability digest、broker token 以及 Runtime 凭据密钥。它以 0600 模式写入 `config/harness.env`、`config/server.env` 和 `config/application.yml`，除非给出 `--force`，否则拒绝覆盖现有文件，并且仅打印路径：
+`bin/qwen-managed-agent-bootstrap` 生成共享的 Harness token 和 capability digest、broker token、Runtime 凭据密钥以及数据库密码。它以 0600 模式写入 `config/harness.env`、`config/server.env`、`config/application.yml` 和 `config/mysql-setup.sql`，除非给出 `--force`，否则拒绝覆盖现有文件，并且仅打印路径：
 
 ```bash
 bin/qwen-managed-agent-bootstrap
 ```
 
-生成的 `harness.env` 和 `server.env` 可通过 shell source 加载，也是有效的 systemd `EnvironmentFile`。传入 `--directory /etc/qwen-managed-agent` 以使用 systemd 布局，填写 `SPRING_DATASOURCE_PASSWORD`，并将所有权调整为服务账户。
+token 和 digest，以及工具路径的 Broker URL 和 token，仅写入 `harness.env`：`server.env` 通过 `QWEN_MANAGED_AGENT_HARNESS_CREDENTIALS_FILE` 引用该文件，控制平面从中读取。当该文件与 `QWEN_MANAGED_AGENT_HARNESS_TOKEN` 或 `QWEN_MANAGED_AGENT_CAPABILITY_DIGEST` 同时设置时，或者当该文件中的 Broker token 与 `QWEN_MANAGED_AGENT_RUNTIME_BROKER_TOKEN` 同时设置时，它拒绝启动，因此轮换只需更改一个文件。生成的 `harness.env` 和 `server.env` 可通过 shell source 加载，也是有效的 systemd `EnvironmentFile`。
+
+`mysql-setup.sql` 创建 `qwen_managed_agent` 数据库和 `server.env` 中指定的 `qwen` 账户，同时为 `localhost` 和 `127.0.0.1` 创建，并授予 Flyway 所需的 `performance_schema` 权限。以 MySQL 管理员身份运行一次，例如 `mysql -u root < config/mysql-setup.sql`，然后删除它；`server.env` 保留密码。它在第一条失败的语句处停止，因此永远不会更改现有的数据库或账户。容器中的 MySQL 看到的是网关地址而不是 `127.0.0.1`；请为该主机创建账户。
+
+对于 systemd 布局，以 root 身份运行并传入 `--directory /etc/qwen-managed-agent --service-user qwen-managed-agent`。该账户随后拥有 `harness.env` 和 `application.yml`，`server.env` 为 `0640 root:qwen-managed-agent`，新目录为 `0750 root:qwen-managed-agent`，而 `mysql-setup.sql` 仍归 root 所有。bootstrap 拒绝不存在的账户，或账户无法进入的目录。`server.env` 还记录 `QWEN_MANAGED_AGENT_SERVICE_USER`，因此预检会以该账户身份检查文件访问权限，即使以 root 身份运行也是如此。
 
 ## 预检
 
@@ -94,7 +98,7 @@ bin/qwen-managed-agent-bootstrap
 bin/qwen-managed-agent-server --check
 ```
 
-它涵盖 JDK、配置文件及其权限、凭据密钥环、启动属性验证、认证/绑定组合、Harness 可达性、Workspace 文件和 Shell 交叉设置（包括挂载、创建根或 SSH 节点要求）、broker 凭据和目录、Workspace `cwd`、可用端口和 MySQL 连接性、`performance_schema` 授权以及针对 `manifest.json` 的 Flyway 版本。`WARN` 和 `SKIP` 不会失败；任何 `FAIL` 都会以退出码 1 退出。端口检查会绑定配置的地址，因此请先停止服务。该命令不验证 Harness capability digest 或原生 Workspace 存储注册。
+它涵盖 JDK、服务账户、配置文件及其权限、凭据密钥环、启动属性验证、认证/绑定组合、Harness 可达性、Workspace 文件和 Shell 交叉设置（包括挂载、创建根或 SSH 节点要求）、broker 凭据和目录、Workspace `cwd`、可用端口和 MySQL 连接性、`performance_schema` 授权以及针对 `manifest.json` 的 Flyway 版本。`WARN` 和 `SKIP` 不会失败；任何 `FAIL` 都会以退出码 1 退出。端口检查会绑定配置的地址，因此请先停止服务。该命令不验证 Harness capability digest 或原生 Workspace 存储注册。
 
 ## systemd
 
@@ -106,6 +110,7 @@ bin/qwen-managed-agent-server --check
 
 ```bash
 export QWEN_MANAGED_AGENT_RUNTIME_BROKER_ENABLED='true'
+# Omit when harness.env carries QWEN_MANAGED_RUNTIME_BROKER_TOKEN, as the bootstrap's does.
 export QWEN_MANAGED_AGENT_RUNTIME_BROKER_TOKEN='<private-random-token>'
 export QWEN_MANAGED_AGENT_RUNTIME_CREDENTIAL_KEY_ID='reference-v1'
 export QWEN_MANAGED_AGENT_RUNTIME_CREDENTIAL_KEY='<base64-encoded-32-byte-key>'
@@ -115,15 +120,17 @@ export QWEN_MANAGED_AGENT_RUNTIME_WORKER_ENTRY='/opt/qwen-code/dist/cli.js'
 export QWEN_MANAGED_AGENT_RUNTIME_VERIFIED_WORKSPACE_RECOVERY_ENABLED='true'
 ```
 
+Hosted Harness 通过自己的环境（而非命令行或上述控制平面的变量）访问同一个 Broker：设置 `QWEN_MANAGED_RUNTIME_BROKER_URL='http://127.0.0.1:4182'` 和 `QWEN_MANAGED_RUNTIME_BROKER_TOKEN` 为 `harness.env` 中的 Broker token，或者在启动 Harness 的任何环境中设置。`qwen serve` 在读取后会从环境中移除这两者，因此 Harness 启动的任何进程都不会继承该 token，并且控制平面会将 `QWEN_MANAGED_RUNTIME_BROKER_` 变量排除在 Runtime worker 之外。使用 bootstrap 的文件时，`harness.env` 已包含这两者，控制平面从该文件获取 Broker token，因此保持 `QWEN_MANAGED_AGENT_RUNTIME_BROKER_TOKEN` 未设置；同时设置两份副本会拒绝启动。这两行 Harness 变量必须一起设置或都不设置，每行都是普通的 `KEY=value` 行：启动拒绝只包含其中一行或任一行为空的文件，Harness 也会拒绝，以及 `export KEY=value` 形式的行（systemd 会忽略）。预检的 `broker-url` 行以 Harness 的 URL 解析器相同的方式读取文件中的 URL，因此 `http://127.1:4182` 等同于 `http://127.0.0.1:4182`。当该 URL 通过 `http` 指向 Broker 自己的监听器时通过。当 Harness 会拒绝该 URL 时失败（必须是 `http` 或 `https` origin，且纯 `http` 仅允许在 loopback 接口上使用），以及当它通过 `https` 指向监听器时失败（纯 HTTP 的 Broker 无法接受）。当 URL 指向其他地址或端口时警告（只有代理可以转发）；绑定到 loopback 之外特定地址的 Broker 需要 `QWEN_MANAGED_AGENT_RUNTIME_BROKER_ALLOW_NON_LOOPBACK=true`，总是这样访问。绑定到 `0.0.0.0` 的 Broker 也需要该设置，但仍然服务 loopback，Harness 在 `http://127.0.0.1:4182` 直接拨号，该行通过。IPv6 URL 如 `http://[::1]:4182` 在那里警告，因为该绑定仅在控制平面的 JVM 监听两个协议族时采用 IPv6，而在 `-Djava.net.preferIPv4Stack=true` 下不会。当文件没有 Broker URL 时也警告，这就是通过自己的环境或命令行获得该对的 Harness 在预检中的样子；那里的警告是预期的，将该对移入文件意味着从 `server.env` 中删除 `QWEN_MANAGED_AGENT_RUNTIME_BROKER_TOKEN`。
+
 在准入文件、Shell 或子 Git worktree 工作之前，完成 `docs/server-reference.md` 中"Verified physical Workspace recovery"部分描述的原生存储注册和挂载身份验证。未注册或存在歧义的挂载必须保持不可用。公共 Shell 执行默认保持禁用。Shell 生命周期 v2 默认通告；显式的生命周期列表会替换默认值，空列表则禁用它。MCP 生命周期仍需显式包含。Capability 通告不构成部署资质认证。
 
 ## 升级
 
 1. 下载并验证新归档文件，阅读两份清单。在操作运行中的部署之前，确认新的 Qwen Code/Harness、Java、协议和数据库要求。
 2. 停止新的入站流量。根据部署现有的 drain 流程等待已准入的工作完成。
-3. 备份 MySQL、`QWEN_MANAGED_AGENT_RUNTIME_STATE_DIRECTORY`、Runtime 凭据密钥以及精确的旧发行版。升级期间不要轮换凭据密钥。
+3. 备份 MySQL、`QWEN_MANAGED_AGENT_RUNTIME_STATE_DIRECTORY`、完整的 Runtime 凭据密钥环、操作员拥有的 `server.env` 和 `harness.env`，以及精确的旧发行版。发行版升级期间不要轮换凭据密钥。
 4. 停止 Java 服务和 Hosted Harness。保留 Workspace 和持久化 Runtime 状态。随附的控制平面单元使用 `KillMode=process`，因此 `systemctl stop` 会使 Runtime worker 继续运行；在启动新版本之前，使用 `systemctl kill --kill-whom=all -s TERM qwen-managed-agent-server` 收割它们。
-5. 安装清单兼容的 Qwen Code/Harness，并使用现有 token 和 capability digest 启动。
+5. 安装清单兼容的 Qwen Code/Harness，并使用现有 token 和 capability digest 启动。在工具路径主机上，首先将 `harness.env` 中的任何 `QWEN_HOSTED_HARNESS_BROKER_ARGS` 行替换为 `QWEN_MANAGED_RUNTIME_BROKER_URL` 和 `QWEN_MANAGED_RUNTIME_BROKER_TOKEN`：没有代码再读取该行，因此没有它们 Harness 启动时不带 Broker。当 `server.env` 启用 Harness 并将 `harness.env` 指定为其凭据文件时（如 bootstrap 的文件那样），还要从 `server.env` 中删除 `QWEN_MANAGED_AGENT_RUNTIME_BROKER_TOKEN`；控制平面随后从 `harness.env` 获取 token，保留两份副本会拒绝启动。之前的发行版不读取任何新行，并且在没有已删除 token 的情况下拒绝启动其 Broker，因此回退到它会从步骤 3 的备份恢复这两个文件。
 6. 使用相同的数据库和持久化设置启动新的 `bin/qwen-managed-agent-server`。Flyway 将正向迁移 schema。
 7. 要求 actuator 健康检查通过，读取现有 Session 和历史记录，然后在重新开放入站流量之前完成一个新的无工具轮次。在启用任何可选工具 capability 之前重新进行资质认证。
 

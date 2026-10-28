@@ -19,7 +19,7 @@ Die Workflow-Dateien sind die maßgebliche Quelle für diese Stellschrauben, und
 
 ### Retry-Anzahlen
 
-`QWEN_CI_VITEST_RETRY` und `QWEN_RELEASE_VITEST_RETRY` werden im Haupt-CI-Test-Schritt (`npm run test:ci:workspaces` und `npm run test:scripts`) bzw. auf der Release-Lane (`npm run test:release:workspaces`) als `--retry=<n>` an Vitest übergeben. Die beiden Lanes haben separate Variablen, damit sie unabhängig voneinander angepasst werden können.
+`QWEN_CI_VITEST_RETRY` und `QWEN_RELEASE_VITEST_RETRY` werden im Haupt-CI-Test-Schritt (jedes Workspace-`test:ci`, den dieser Schritt in zwei parallelen Lanes ausführt, und `npm run test:scripts:unit`) bzw. auf der Release-Lane (`npm run test:release:workspaces`) als `--retry=<n>` an Vitest übergeben. Die beiden Lanes haben separate Variablen, damit sie unabhängig voneinander angepasst werden können.
 
 Vitest führt fehlgeschlagene Tests innerhalb desselben Runs erneut aus. Das kann bei intermittierenden contention-bedingten Fehlern helfen, aber ein Fehler, der sich innerhalb des Retry-Budgets erholt, setzt den Check auf grün und wird vom Flaky-Rerun-Tracker nicht als Fehlschlag erfasst. Halte das Budget knapp, statt mit Retries eine fehleranfällige Suite zu überdecken. Beide Variablen akzeptieren auch den Literalwert `off`, der das `--retry`-Flag vollständig weglässt, statt `--retry=0` zu übergeben (ein Kommandozeilen-`--retry=0` hat Vorrang vor der Vitest-Konfiguration des Workspace und würde eine beabsichtigte Retry-Richtlinie deaktivieren).
 
@@ -30,6 +30,8 @@ Vitest führt fehlgeschlagene Tests innerhalb desselben Runs erneut aus. Das kan
 ### Vitest-Worker-Limit auf Self-Hosted Runnern
 
 `QWEN_CI_VITEST_MAX_WORKERS` begrenzt die Vitest-Prozesse in den unten aufgeführten Schritten (`VITEST_MAX_THREADS` / `VITEST_MAX_FORKS`, wobei das zugehörige Minimum auf `1` erzwungen wird) auf den reservierten Self-Hosted Runnern, deren Name mit `ecs-qwen-` beginnt. Die Variable wird nur vom Haupt-CI-Workspace-Test-Schritt und den Release-Schritten `workspace_tests` und `quality_scripts` exportiert; andere Integrationstests, die Vitest verwenden und auf denselben reservierten Pool in den CI- und Release-Workflows treffen, verbrauchen sie nicht – sie verwenden ihre eigenen Vitest-Limits. Der WebShell-E2E-Smoke ist auf `ubuntu-latest` gepinnt, daher kann das Limit dort nicht greifen. Auf GitHub-hosted Runnern wird die Variable ignoriert und Vitest verwendet seine eigenen Standardwerte.
+
+Jeder Vitest-Run wendet das Limit eigenständig an. Der Haupt-CI-Workspace-Test-Schritt führt zwei Lanes gleichzeitig aus (`.github/scripts/ci/run-unit-test-lanes.sh`): Das Limit begrenzt jeden Vitest-Run in der Haupt-Lane, und die WebShell-Suite in der Neben-Lane läuft mit der Hälfte des Limits, mindestens 1, sodass der Schritt auf seinem Höhepunkt das Limit plus dieser Hälfte ausführt. Auf GitHub-hosted Runnern läuft diese Neben-Lane-Suite mit 2 Workern.
 
 ### Verwandte Variablen außerhalb der Testausführung
 

@@ -4,7 +4,8 @@
 
 ```text
 /autofix-pr [<pr-number>|<pr-url>] [--once] [--every <minutes>] [--no-reply] [--yes] [instructions...]
-/autofix-pr status
+/autofix-pr status [<pr-number>]
+/autofix-pr resume [<pr-number>]
 /autofix-pr stop [<pr-number>]
 ```
 
@@ -18,11 +19,12 @@
 ## 开始之前
 
 - `gh` 已登录，并且对 PR 分支有推送权限：对同仓库 PR 有写权限，或者是你自己的 fork，或者是允许维护者编辑的 fork。
-- 你在 PR 仓库的一个 clone 中运行，且该 clone 有一个对应的 git remote。
-- 在默认的[审批模式](./approval-mode.md)下，每条 shell 命令都会先征求确认：helper 调用（包括 push）、`gh pr view`，以及每次修复运行的命令。这适合你随时关注的监视场景。如果要让它无人值守运行，选择一个允许命令直接执行的模式，例如 [Auto Mode](./auto-mode.md)，并注意修复会运行仓库自身的构建和测试命令。该 skill 本身只授予以下权限：读取 `.qwen/tmp/` 下自己的文件、在其中写入修复简报和回复计划，以及列出已调度的任务。这些文件位于 clone 的主 worktree 中；如果会话在关联的 worktree 中启动，读写这些文件同样需要确认。
+- 你在 PR 仓库的一个 clone 中运行，且该 clone 有一个对应的 git remote。在守护进程会话（`qwen serve`、Web Shell）中，该 clone 必须位于会话的工作目录内：守护进程只在那里运行修复 agent 的命令，因此 `prepare` 会拒绝 clone 不在其中的 PR。在那里的监视是一个绑定到其会话的持久调度任务：守护进程保持该会话常驻而不是在空闲时回收它，任务会出现在 Scheduled tasks 页面上，因此关闭浏览器标签不会结束监视——`/autofix-pr stop` 才会。该任务在守护进程重启后会被重新激活；重启会丢弃 gate 的进程内审批，因此 gate 随后需要一个审批模式或一条允许其无人值守运行的已保存规则，而第一次被阻止的触发会指明要添加的规则。一个守护进程对话承载一个调度任务，因此在那里的第二个监视需要自己的对话。重启还会丢弃会话为该监视确认的内容：在 `/autofix-pr resume <n>` 再次确认之前，它的 helper 和修复会像 shell 命令一样遵循审批模式。
+- 该 skill 通过 `autofix_pr` 工具运行其 helper。在你于本会话中启动或恢复的监视上，一轮的 helper——包括推送和回复——无需询问即可运行。启动或恢复监视、对其进行调度，以及从另一个会话接管——`/autofix-pr stop <n>` 指定 PR 即属于此类——每次仍然需要询问（在 [Auto Mode](./auto-mode.md) 中由其分类器决定，但启动始终由你确认），`gh pr view` 和创建调度任务也是如此。拒绝 shell 命令的规则（例如 `Bash` 或 `Bash(qwen autofix-pr *)`）同样会拒绝该工具的调用，针对它的询问规则会让调用继续询问，而你拒绝规则中的 `AutofixPr(command:push)` 会阻止所有推送。你在 shell 工具上设置的 PreToolUse hook 看不到这些调用；请在 `autofix_pr` 上设置。在带有 push 或 sync 会运行的 git hook（`pre-push`、`post-checkout`、`post-merge`、`reference-transaction`）的 clone 中——worktree 内的 hook 路径（例如 husky 的），或者运行 PR 中文件所指定的内容的 hook 管理器（例如 pre-commit 或 lefthook）——`sync` 和 `push` 也会询问，除非修复无需询问即可运行（见下文）。对于 git 目录位于 worktree 内（而非 clone 自身）的子模块的 worktree 的每个 helper 也是如此，而针对 shell 命令的询问规则在这里同样适用。该 skill 还授予读取 `.qwen/tmp/` 下自身文件的权限、在其中写入其修复简报、回复计划和你的指令，以及列出调度任务。这些文件位于 clone 的主 worktree 中；从链接 worktree 中启动的会话读写这些文件同样需要询问。
+- 启动问题还提供**启动，修复无需询问即可运行**：修复 agent 的命令——PR worktree 中的构建、测试、提交——随后在该监视期间无需询问即可运行，但需再经过一个确认对话框（拒绝该对话框会取消启动；请再次运行 `/autofix-pr <n>`）。它的 agent 会像 [YOLO](./approval-mode.md) 会话那样运行：使用你的 `git` 和 `gh` 凭据，能够访问 worktree 之外的文件，绕过你的询问规则；你的拒绝规则仍然生效。这种状态持续到监视被停止、以普通的**启动**（或 `--yes`）重新启动，或者会话退出或被清除；`/autofix-pr resume` 会再次询问。选择普通的**启动**，则在默认的[审批模式](./approval-mode.md)下，它的每条命令都会先询问，这适合你持续关注的监视。接管监视和 `/autofix-pr resume` 会提供相同的选择。只有你能回答该对话框：没有已保存的规则、[Auto Mode](./auto-mode.md) 的分类器或 `--yes` 可以代替，并且在不受信任的文件夹中以及通过 stream-json 驱动 Qwen Code 的程序会被拒绝。在 `autofix_pr` 工具不可用的环境中（你设置中的工具允许列表可能会将其排除），helper 通过 shell 运行，并且每个都会先询问。
 - 如果 PR 的作者无法向仓库推送，那么它实际上是在运行别人的代码，而你的 `gh` 和 `git` 凭据在修复验证时是可访问的。这样的 PR 永远不会被监视：只提供 `--once` 选项，并且在确认提示中会明确说明，且 `--yes` 不会跳过该确认。
 
-启动时，它会请求一次确认，告知将推送到哪里以及将在 PR 上回复。
+启动时，它会请求一次确认，告知将推送到哪里、将在 PR 上回复，以及修复是否可以无需询问即运行其命令。
 
 ## 检查做什么
 
@@ -34,7 +36,13 @@
 4. 提交以 PR 头部的 fast-forward 方式推送，绝不强制推送。如果期间有人推送了，会先合并他们的工作。
 5. 它处理的每个 review thread 都会收到回复——`Fixed in <sha>: …`、`Not changed: …` 或 `Needs a human decision: …`——每次推送会附带一条总结评论。
 
-一轮过程永远不会向你提问。需要人工处理的内容会在 PR 上回复 "Needs a human decision" 并在会话中报告。
+一轮过程永远不会向你提问。需要人工处理的内容会在 PR 上回复 "Needs a human decision"，在会话中报告，并由 `/autofix-pr status` 列出。
+
+## 状态和恢复
+
+`/autofix-pr status` 列出该 clone 的每个监视，无论由哪个会话运行：PR 及其分支、head、已使用的推送、其 gate 最后一次检查的时间和最后一轮运行的时间、是否由本会话运行，以及哪些内容在等待人工处理。它只读取监视的文件，不向 GitHub 发起任何请求。
+
+当运行它的会话退出时，监视结束——在守护进程会话中，其任务是持久的并绑定到该会话，因此守护进程保持其常驻并且监视在守护进程重启后仍然存在——其调度任务默认在 7 天后过期（`experimental.cronRecurringMaxAgeDays` 设置，或 `QWEN_CODE_CRON_MAX_AGE_DAYS`）。其状态文件会保留。`/autofix-pr resume` 会在当前会话中重新启动本会话未运行的每个监视——或者你指定的那个——使用其启动时的间隔、`--no-reply` 和指令，并保留其推送、历史和配额。它会为所有这些请求一次确认，然后对每个运行一轮并重新调度。在守护进程会话中，一个对话承载一个调度任务，因此请逐个对话恢复其他监视。如果另一个会话仍在运行其中一个，该会话的任务会在下一次触发时停止；未指定 PR 时，`resume` 会跳过另一个会话最近检查过的监视，并说明原因。在其会话未运行期间 PR 被合并或关闭的监视会被其轮次移除。以 `--once` 启动的监视，或者 `stop` 在保留其 worktree 的情况下结束的监视，可以通过 `/autofix-pr <n>` 重新启动。
 
 ## 哪些反馈会被采纳
 
@@ -58,18 +66,20 @@
 
 ## 停止和文件
 
-`/autofix-pr stop <n>` 会删除调度任务并移除 worktree、其分支和状态文件；gate 游标和 PR 历史会保留，因此后续的监视不会重复回复相同的评论。如果 worktree 中仍有未推送的工作，它会被保留，报告会说明原因；`qwen autofix-pr cleanup <n> --force` 可以丢弃它。调度任务默认在 7 天后过期（`experimental.cronRecurringMaxAgeDays` 设置，或 `QWEN_CODE_CRON_MAX_AGE_DAYS`），届时监视结束且不会生成报告；重新启动即可继续。会话退出时监视也会结束；其状态文件会保留，归属于该会话。在新会话中启动 `/autofix-pr <n>`——或在 `/clear` 或 `/resume` 之后——会提议接管该监视，保留其推送记录和配额。
+`/autofix-pr stop <n>` 会删除调度任务并移除 worktree、其分支和状态文件；gate 游标和 PR 历史会保留，因此后续的监视不会重复回复相同的评论。如果 worktree 中仍有未推送的工作，它会被保留，报告会说明原因；监视无论如何已经结束，而 `qwen autofix-pr cleanup <n> --force` 会丢弃这些工作。`/autofix-pr stop <n>` 同样会停止另一个会话留下的监视；不带参数的 `/autofix-pr stop` 会让另一个会话仍在运行的监视保持不变，而指定其 PR 则会结束它。调度任务默认在 7 天后过期（`experimental.cronRecurringMaxAgeDays` 设置，或 `QWEN_CODE_CRON_MAX_AGE_DAYS`），届时监视结束且不会生成报告；重新启动即可继续。任务已过期或终端会话已退出的监视会在没有报告的情况下结束；`/autofix-pr resume` 会重新启动它（见上文）。在新会话中启动 `/autofix-pr <n>`——或在 `/clear` 或 `/resume` 之后——同样会提议接管该监视，保留其推送记录和配额。
 
 文件位于 clone 主 worktree 的 `.qwen/tmp/` 下：
 
 | 文件                                       | 内容                                                              |
 | ------------------------------------------ | ----------------------------------------------------------------- |
 | `autofix-pr-<n>/`                          | PR worktree                                                       |
-| `autofix-pr-<n>-state.json`                | 监视状态：已知 head、推送记录、已处理的 id                        |
+| `autofix-pr-<n>-state.json`                | 监视：已知 head、推送记录、已处理的 id、其调度任务                |
+| `autofix-pr-<n>-gate.checked`              | 监视自身的 gate 最后一次检查 PR 的时间                            |
 | `autofix-pr-<n>-gate.json`                 | gate 探针的游标                                                   |
 | `autofix-pr-<n>-snapshot.json`             | 最近一轮的 PR 快照，由该轮读取                                    |
 | `autofix-pr-<n>-replies.json`              | 哪些 bot 评论回复了哪条，以 GitHub 所述为准                       |
 | `autofix-pr-<n>-history-*.json`            | 该 PR 早期监视发布和处理的内容，由 `stop` 保留                    |
+| `autofix-pr-<n>-instructions.txt`          | 每轮使用的你的指令                                                |
 | `autofix-pr-<n>-*.log`、`*.md`、`*.json`   | CI 日志、修复简报和回复计划                                       |
 
 设计文档位于 [`docs/design/2026-10-21-autofix-pr-command.md`](../../design/2026-10-21-autofix-pr-command.md)。
