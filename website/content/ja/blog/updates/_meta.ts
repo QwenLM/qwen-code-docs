@@ -1,5 +1,6 @@
 export default {
   index: { display: 'hidden' },
+  'weekly-update-2026-10-22': '10-22 製品アップデート',
   'weekly-update-2026-10-15': '10-15 製品アップデート',
   'weekly-update-2026-10-09': '10-09 製品アップデート',
   'weekly-update-2026-09-24': '09-24 製品アップデート',
