@@ -66,7 +66,7 @@
 
 ## 停止和文件
 
-`/autofix-pr stop <n>` 会删除调度任务并移除 worktree、其分支和状态文件；gate 游标和 PR 历史会保留，因此后续的监视不会重复回复相同的评论。如果 worktree 中仍有未推送的工作，它会被保留，报告会说明原因；监视无论如何已经结束，而 `qwen autofix-pr cleanup <n> --force` 会丢弃这些工作。`/autofix-pr stop <n>` 同样会停止另一个会话留下的监视；不带参数的 `/autofix-pr stop` 会让另一个会话仍在运行的监视保持不变，而指定其 PR 则会结束它。调度任务默认在 7 天后过期（`experimental.cronRecurringMaxAgeDays` 设置，或 `QWEN_CODE_CRON_MAX_AGE_DAYS`），届时监视结束且不会生成报告；重新启动即可继续。任务已过期或终端会话已退出的监视会在没有报告的情况下结束；`/autofix-pr resume` 会重新启动它（见上文）。在新会话中启动 `/autofix-pr <n>`——或在 `/clear` 或 `/resume` ���后——同样会提议接管该监视，保留其推送记录和配额。
+`/autofix-pr stop <n>` 会删除调度任务并移除 worktree、其分支和状态文件；gate 游标和 PR 历史会保留，因此后续的监视不会重复回复相同的评论。如果 worktree 中仍有未推送的工作，它会被保留，报告会说明原因；监视无论如何已经结束，而 `qwen autofix-pr cleanup <n> --force` 会丢弃这些工作。`/autofix-pr stop <n>` 同样会停止另一个会话留下的监视；不带参数的 `/autofix-pr stop` 会让另一个会话仍在运行的监视保持不变，而指定其 PR 则会结束它。调度任务默认在 7 天后过期（`experimental.cronRecurringMaxAgeDays` 设置，或 `QWEN_CODE_CRON_MAX_AGE_DAYS`），届时监视结束且不会生成报告；重新启动即可继续。任务已过期或终端会话已退出的监视会在没有报告的情况下结束；`/autofix-pr resume` 会重新启动它（见上文）。在新会话中启动 `/autofix-pr <n>`——或在 `/clear` 或 `/resume` 之后——同样会提议接管该监视，保留其推送记录和配额。
 
 文件位于 clone 主 worktree 的 `.qwen/tmp/` 下：
 

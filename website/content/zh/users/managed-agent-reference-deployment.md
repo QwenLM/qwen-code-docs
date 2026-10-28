@@ -25,8 +25,6 @@ sha256sum --check SHA256SUMS
 - 用于 Runtime 状态和授权 Workspace 的私有持久化目录。
 - 稳定的数据库凭据、Runtime 凭据密钥环和 Harness token，存储在归档文件之外。
 
-## 启动 Hosted Harness
-
 Java 归档文件不包含 npm CLI。请单独安装或构建精确兼容的 Qwen Code 版本，并定位其 `dist/cli.js` 以供 Runtime worker 使用。
 
 ## 启动 Hosted Harness

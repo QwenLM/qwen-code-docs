@@ -76,9 +76,11 @@
 | `autofix-pr-<n>/`                        | worktree PR                                                     |
 | `autofix-pr-<n>-state.json`              | наблюдение: известная голова, пуши, обработанные id             |
 | `autofix-pr-<n>-gate.json`               | курсор зонда гейта                                              |
+| `autofix-pr-<n>-gate.checked`            | когда собственный гейт наблюдения последний раз проверял PR     |
 | `autofix-pr-<n>-snapshot.json`           | снимок последнего раунда PR, читаемый раундом                   |
 | `autofix-pr-<n>-replies.json`            | какие комментарии бота отвечают другому, как сказал GitHub      |
 | `autofix-pr-<n>-history-*.json`          | что более ранние наблюдения PR постили и обработали, сохраняется при `stop` |
+| `autofix-pr-<n>-instructions.txt`        | ваши инструкции для каждого раунда                              |
 | `autofix-pr-<n>-*.log`, `*.md`, `*.json` | логи CI, описания исправлений и планы ответов                   |
 
 Дизайн описан в [`docs/design/2026-10-21-autofix-pr-command.md`](../../design/2026-10-21-autofix-pr-command.md).
