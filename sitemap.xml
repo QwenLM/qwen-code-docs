@@ -518,7 +518,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/development/ci-variables/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -584,7 +584,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/</loc>
-<lastmod>2026-10-24T02:01:57.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -746,7 +746,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/configuration/settings/</loc>
-<lastmod>2026-10-25T01:51:54.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -794,7 +794,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/extension/mods/</loc>
-<lastmod>2026-10-25T01:51:54.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -824,7 +824,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/autofix-pr/</loc>
-<lastmod>2026-10-25T01:51:54.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -932,7 +932,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/commands/</loc>
-<lastmod>2026-10-25T01:51:54.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -980,7 +980,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/hooks/</loc>
-<lastmod>2026-10-16T22:49:49.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1148,7 +1148,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/managed-agent-reference-deployment/</loc>
-<lastmod>2026-10-24T02:01:57.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1196,7 +1196,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/support/tos-privacy/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1622,7 +1622,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/developers/daemon/11-capabilities-versioning/</loc>
-<lastmod>2026-09-22T00:05:29.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1730,7 +1730,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/developers/development/ci-variables/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2036,7 +2036,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/autofix-pr/</loc>
-<lastmod>2026-10-25T01:51:54.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2360,7 +2360,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/managed-agent-reference-deployment/</loc>
-<lastmod>2026-10-24T02:01:57.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2408,7 +2408,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/support/tos-privacy/</loc>
-<lastmod>2026-10-19T01:37:02.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2936,7 +2936,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/developers/development/ci-variables/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4136,7 +4136,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/developers/development/ci-variables/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4442,7 +4442,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/features/autofix-pr/</loc>
-<lastmod>2026-10-25T01:51:54.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5360,7 +5360,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/developers/development/ci-variables/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5666,7 +5666,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/features/autofix-pr/</loc>
-<lastmod>2026-10-25T01:51:54.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6452,7 +6452,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/developers/daemon/11-capabilities-versioning/</loc>
-<lastmod>2026-09-22T00:05:29.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6560,7 +6560,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/developers/development/ci-variables/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7214,7 +7214,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/managed-agent-reference-deployment/</loc>
-<lastmod>2026-10-24T02:01:57.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7262,7 +7262,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/support/tos-privacy/</loc>
-<lastmod>2026-10-18T03:02:46.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7790,7 +7790,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/developers/development/ci-variables/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8096,7 +8096,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/features/autofix-pr/</loc>
-<lastmod>2026-10-25T01:51:54.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8996,7 +8996,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ko/developers/development/ci-variables/</loc>
-<lastmod>2026-10-01T14:31:10.000Z</lastmod>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -9267,6 +9267,12 @@
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ko/users/features/auto-mode/</loc>
 <lastmod>2026-09-02T02:00:01.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
+<loc>https://QwenLM.github.io/qwen-code-docs/ko/users/features/autofix-pr/</loc>
+<lastmod>2026-10-28T07:33:00.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
