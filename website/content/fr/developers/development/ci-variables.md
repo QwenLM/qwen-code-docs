@@ -84,11 +84,12 @@ Vitest utilise ses propres valeurs par défaut.
 
 Chaque exécution de Vitest applique la limite individuellement. L'étape de
 test workspace CI principale exécute deux lanes en même temps
-(`.github/scripts/ci/run-unit-test-lanes.sh`) : la limite borne chaque
-exécution Vitest dans la lane principale, et la suite web-shell dans la lane
-secondaire s'exécute avec la moitié de la limite, au minimum 1, donc à son
-pic l'étape exécute la limite plus cette moitié. Sur les runners hébergés par
-GitHub, cette suite de la lane secondaire s'exécute avec 2 workers.
+(`.github/scripts/ci/run-unit-test-lanes.sh`) : la lane principale exécute
+les suites CLI et core à la limite, et la lane secondaire exécute les suites
+des autres workspaces et `npm run test:scripts:unit` à la moitié de la
+limite, au minimum 1, donc à son pic l'étape exécute la limite plus cette
+moitié. Sur les runners hébergés par GitHub, les exécutions Vitest de la lane
+secondaire utilisent 2 workers.
 
 ### Variables associées hors exécution de tests
 

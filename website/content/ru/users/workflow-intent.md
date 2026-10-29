@@ -1,6 +1,9 @@
 # Запрос workflow на один ход
 
 
+Для сохранения предпочтения между обычными отправками см.
+[session Workflow mode](./workflow-mode.md).
+
 При включённой опции `tools.workflowsEnabled` добавьте `ultracode` или существующее
 ключевое слово `workflow` в сообщение пользователя, чтобы предложить использование
 Workflow tool для этого хода. Например: `ultracode: audit these three modules`.

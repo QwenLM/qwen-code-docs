@@ -1,6 +1,9 @@
 # 1 ターンのワークフローをリクエストする
 
 
+通常の送信をまたいで保存された設定については、
+[session Workflow mode](./workflow-mode.md) を参照してください。
+
 `tools.workflowsEnabled` が有効な状態で、人間の送信に `ultracode` または既存の
 `workflow` キーワードを含めると、そのターンで Workflow ツールを使用することを提案します。例: `ultracode: audit these three modules`。
 モデルがワークフローがリクエストに適しているかどうかを判断します。キーワードはワークフローを開始したり、権限を変更したり、モデルを選択したり、effort を変更したりすることはありません。

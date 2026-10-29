@@ -31,7 +31,7 @@ Vitest는 동일한 실행 내에서 실패한 테스트를 다시 실행합니�
 
 `QWEN_CI_VITEST_MAX_WORKERS`는 아래 나열된 단계에서 Vitest 프로세스 수를 제한합니다(`VITEST_MAX_THREADS` / `VITEST_MAX_FORKS`, 대응되는 최솟값은 `1`로 강제됨). 이름이 `ecs-qwen-`으로 시작하는 예약된 자체 호스팅 runner에 적용됩니다. 이 변수는 메인 CI 워크스페이스 테스트 단계와 릴리스의 `workspace_tests` 및 `quality_scripts` 단계에서만 내보내집니다. CI 및 릴리스 워크플로에서 동일한 예약된 풀을 사용하는 다른 Vitest 통합 테스트는 이 변수를 사용하지 않고 자체 Vitest 제한을 사용합니다. web-shell E2E 스모크 테스트는 `ubuntu-latest`로 고정되어 있으므로 이 cap이 적용되지 않습니다. GitHub 호스팅 runner에서는 이 변수가 무시되고 Vitest가 자체 기본값을 사용합니다.
 
-각 Vitest 실행은 자체적으로 cap을 적용합니다. 메인 CI 워크스페이스 테스트 단계는 두 개의 레인을 동시에 실행합니다(`.github/scripts/ci/run-unit-test-lanes.sh`). cap은 메인 레인의 각 Vitest 실행에 적용되며, 사이드 레인의 web-shell 스위트는 cap의 절반(최소 1)으로 실행되므로, 피크 시 이 단계는 cap과 그 절반의 합만큼 실행됩니다. GitHub 호스팅 runner에서 사이드 레인 스위트는 2개의 worker로 실행됩니다.
+각 Vitest 실행은 자체적으로 cap을 적용합니다. 메인 CI 워크스페이스 테스트 단계는 두 개의 레인을 동시에 실행합니다(`.github/scripts/ci/run-unit-test-lanes.sh`). 메인 레인은 CLI 및 core 스위트를 cap으로 실행하고, 사이드 레인은 다른 워크스페이스의 스위트와 `npm run test:scripts:unit`을 cap의 절반(최소 1)으로 실행하므로, 피크 시 이 단계는 cap과 그 절반의 합만큼 실행됩니다. GitHub 호스팅 runner에서 사이드 레인의 Vitest 실행은 2개의 worker를 사용합니다.
 
 ### 테스트 실행 외의 관련 변수
 

@@ -1,6 +1,9 @@
 # Demander un workflow pour un tour
 
 
+Pour une préférence enregistrée entre les soumissions ordinaires, consultez
+[session Workflow mode](./workflow-mode.md).
+
 Avec `tools.workflowsEnabled` activé, incluez `ultracode` ou le mot-clé
 `workflow` existant dans une soumission humaine pour suggérer l'utilisation
 de l'outil Workflow pour ce tour. Par exemple : `ultracode: audit these three modules`.

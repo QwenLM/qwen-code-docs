@@ -34,4 +34,5 @@ export default {
   'managed-agent-reference-deployment': 'Managed Agent Reference Deployment',
   'workflow-intent': 'Request a workflow for one turn',
   'managed-local-serve': 'Run Managed Sessions locally',
+  'workflow-mode': 'Session Workflow mode',
 };

@@ -173,7 +173,7 @@ mvn -f packages/sdk-java/qwencode/pom.xml -DskipTests -Dgpg.skip=true install
 mvn -f packages/managed-agent-server/pom.xml verify
 npm run package:managed-runtime -- \
   --target darwin-arm64 \
-  --server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha.jar \
+  --server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha-exec.jar \
   --jre-home /verified/java-21-home \
   --out-dir /output/managed-runtime
 ```
@@ -191,7 +191,7 @@ npm run package:managed-runtime -- \
 ```sh
 npm run package:managed-runtime -- \
   --target darwin-arm64 \
-  --server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha.jar \
+  --server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha-exec.jar \
   --without-jre \
   --out-dir /output/managed-runtime
 ```
@@ -203,7 +203,7 @@ npm run package:managed-runtime -- \
 npm run package:standalone -- \
   --target darwin-arm64 \
   --node-archive /verified/node-v22-darwin-arm64.tar.gz \
-  --managed-server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha.jar \
+  --managed-server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha-exec.jar \
   --managed-jre-home /verified/java-21-home \
   --out-dir /output/managed-local
 ```
@@ -234,17 +234,21 @@ Java 主版本或服务器校验和会在子进程启动前失败。仅缺失的
 CLI 发布标签构建，使用该确切源代码修订版的 SDK 和服务器。
 手动运行必须从 `main` 分发，默认为试运行。它会验证
 CLI 和 Java 模块，构建 `central-release` profile，并将
-JAR 和校验和保留为工作流制品，不更改公共仓库。
+JAR 和校验和保留为工作流制品，不更改公共仓库。工作流在存在时选择 `-exec.jar` 构建输出，对于旧标签回退到主 JAR；公共版本化 JAR 名称保持不变。
 
 验证试运行后，发布运维人员可以通过受保护的 `production-release` 环境对同一标签运行
 `dry_run=false`。
-工作流将服务器制品版本设置为 CLI 版本，向 Maven Central 发布
-`com.alibaba:qwen-managed-agent-server:<cli-version>`，附带
-源码、Javadoc 和签名，并通过该 GitHub Release 和现有的版本化 OSS 镜像分发相同的主 JAR 及其
-`.sha256`。
-辅助运维 JAR 不会附加到 Central 发布。现有
+工作流将服务器制品版本设置为 CLI 版本，通过该 GitHub Release 和
+现有的版本化 OSS 镜像发布已验证的可执行 JAR 及其 `.sha256`，并对照暂存字节检查两个公共下载通道。现有
 资产逐字节比较，不会被不同内容替换。
 已发布的 CLI 发布事件也会自动运行此工作流。
+
+运行时分发需要现有的 OSS 上传凭据和 GitHub
+发布访问权限。它不需要 Central 发布凭据或 GPG 私钥，
+也不会检查、发布或等待 Central 上的服务器坐标。
+Maven 仍然会构建并完整验证 SDK 和服务器，包括正常的
+依赖解析。现有的 `central-release` profile 可以在需要时
+单独用于签名的 Maven 发布；该操作不会阻塞运行时交付。
 
 CLI 从 OSS/GitHub 下载，而非 Maven Central。它不会将
 SDK 作为独立的用户依赖解析：可执行服务器 JAR 包含其 Java

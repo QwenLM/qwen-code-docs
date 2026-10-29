@@ -29,7 +29,9 @@ Vitest 在同一次运行中重跑失败的测试。这有助于应对偶发的�
 
 ### 自托管 runner 上的 Vitest worker 上限
 
-`QWEN_CI_VITEST_MAX_WORKERS` 限制以下步骤中的 Vitest 进程数（每次 Vitest 运行独立应用此上限）（`VITEST_MAX_THREADS` / `VITEST_MAX_FORKS`，匹配的最小值强制为 `1`），适用于名称以 `ecs-qwen-` 开头的 reserved 自托管 runner。该变量仅由主 CI 工作区测试步骤以及发布的 `workspace_tests` 和 `quality_scripts` 步骤导出；CI 和发布工作流中落在同一 reserved 资源池上的其他使用 Vitest 的集成测试不消费此变量，它们使用各自的 Vitest 限制。主 CI 工作区测试步骤同时运行两个通道（`.github/scripts/ci/run-unit-test-lanes.sh`）：上限约束主通道中的每个 Vitest 运行，而侧通道中 web-shell 的测试套件以上限的一半运行（至少为 1），因此在峰值时该步骤运行上限加上一半的数量。在 GitHub 托管的 runner 上，侧通道的测试套件以 2 个 worker 运行。web-shell E2E smoke 固定使用 `ubuntu-latest`，因此此上限不适用于它。在 GitHub 托管的 runner 上，此变量被忽略，Vitest 使用其自身默认值。
+`QWEN_CI_VITEST_MAX_WORKERS` 限制以下步骤中在名称以 `ecs-qwen-` 开头的 reserved 自托管 runner 上的 Vitest 进程数（`VITEST_MAX_THREADS` / `VITEST_MAX_FORKS`，匹配的最小值强制为 `1`）。该变量仅由主 CI 工作区测试步骤以及发布的 `workspace_tests` 和 `quality_scripts` 步骤导出；CI 和发布工作流中落在同一 reserved 资源池上的其他使用 Vitest 的集成测试不消费此变量；它们使用各自的 Vitest 限制。web-shell E2E smoke 固定使用 `ubuntu-latest`，因此此上限不适用于它。在 GitHub 托管的 runner 上，此变量被忽略，Vitest 使用其自身默认值。
+
+每次 Vitest 运行独立应用此上限。主 CI 工作区测试步骤同时运行两个通道（`.github/scripts/ci/run-unit-test-lanes.sh`）：主通道以该上限运行 CLI 和 core 套件，侧通道以该上限的一半（至少为 1）运行其他工作区的套件和 `npm run test:scripts:unit`，因此在峰值时该步骤运行上限数加上该一半数量。在 GitHub 托管的 runner 上，侧通道的 Vitest 运行使用 2 个 worker。
 
 ### 测试执行之外的相关变量
 

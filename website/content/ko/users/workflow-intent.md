@@ -1,6 +1,9 @@
 # 한 턴에 대한 워크플로우 요청
 
 
+일반 제출에 걸쳐 저장된 기본 설정의 경우,
+[세션 Workflow 모드](./workflow-mode.md)를 참조하십시오.
+
 `tools.workflowsEnabled`가 활성화된 상태에서, 인간 제출에 `ultracode` 또는 기존
 `workflow` 키워드를 포함하면 해당 턴에 Workflow 도구를 사용하도록 제안합니다. 예를 들어: `ultracode: audit these three modules`.
 모델이 워크플로우가 요청에 적합한지 판단합니다. 키워드가 워크플로우를 시작하거나, 권한을 변경하거나, 모델을 선택하거나, 노력 수준을 변경하지는 않습니다.

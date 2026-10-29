@@ -1,6 +1,9 @@
 # 为单轮请求工作流
 
 
+对于跨普通提交的已保存偏好，请参见
+[会话 Workflow 模式](./workflow-mode.md)。
+
 在 `tools.workflowsEnabled` 启用的情况下，在用户提交中包含 `ultracode` 或已有的
 `workflow` 关键字，可以建议该轮次使用 Workflow 工具。例如：`ultracode: audit these three modules`。
 模型会自行判断该请求是否适合使用工作流。该关键字不会
@@ -12,7 +15,7 @@
 粘贴到编辑器中的文本视为人类输入；附件展开
 和 Hook 添加的上下文则不算。
 
-Recall 的历史记录和 Ink Vim 寄存器粘贴仍属于未知输入，包括
+召回的历史记录和 Ink Vim 寄存器粘贴仍属于未知输入，包括
 清空缓冲区或禁用 Vim 之后的情况。新输入的 Vim 插入模式内容
 仍可激活该提醒。
 
