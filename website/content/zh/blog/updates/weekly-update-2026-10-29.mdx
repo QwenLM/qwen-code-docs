@@ -1,0 +1,172 @@
+---
+title: "Qwen Code 周报：PR 提交后自动跟进，定时任务加了道闸门，后台会话在终端里接着聊"
+date: "2026-10-29"
+description: "本周发布 v0.26.1、v0.26.2、v0.26.3 三个正式版本，357 个 PR 合入。新增 /autofix-pr 命令：PR 提上去之后交给它盯着，构建挂了、有人留了意见、跟主干冲突，它自己修、验证、推上去并在 PR 里回复。定时任务可以配一道闸门，到点先由它看一眼有没有新情况，没事的那一轮整个跳过，省下的都是 token。后台跑着的会话，在终端里用 qwen attach 就能接回去继续说。交互卡片上调好的参数能直接交给原来那段对话接着往下问。Web Shell 侧栏多了「最近会话」，工作区能排序、能粘一个仓库地址新建。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i3/O1CN01cdttKfLazLE2jBZY_!!6000000006180-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 周报：PR 提交后自动跟进，定时任务加了道闸门，后台会话在终端里接着聊"
+  date="2026-10-29"
+  author="Qwen Team"
+/>
+
+Qwen Code 本周发布 v0.26.1、v0.26.2、v0.26.3 三个正式版本，357 个 PR 合入。
+
+**PR 交上去之后，`/autofix-pr` 接着管。** 在你自己电脑上每两分钟看一趟：构建挂了、同事留了意见、跟主干冲突，它修好、验证过再推上去，还在 PR 里逐条回复。
+
+**定时任务到点先看一眼。** 有没有新情况由一道闸门先判断，没变化这一轮整个跳过，省下的都是 token。
+
+**跑在后台的那段会话，另开一个终端用 `qwen attach` 接回去。** 上午让它改一个大项目，改到一半你把那个窗口关了；服务还在跑，下午另开终端接进去，还能继续对话。
+
+## ✨ 新增特性
+
+### PR 自动跟进：修复检查失败，处理评审反馈
+
+PR 提上去之后，CI 有没有挂、同事留了什么意见、跟主干有没有冲突，都得你回来盯着处理。现在运行 `/autofix-pr <PR 编号>`，Qwen Code 就在你本地守着这个 PR，出了问题自己修。
+
+比如 lint 挂了，它去读那条 job 的日志，改完用仓库自己的检查验一遍，验过了才提交推上去，再在 PR 里回一句改了什么。改动都在单独一份工作副本里做，你正在写的目录不动；它每隔两分钟看一眼，只看新出现的变化。详见 PR [#15385](https://github.com/QwenLM/qwen-code/pull/15385)、[#15057](https://github.com/QwenLM/qwen-code/pull/15057)
+
+这次还补齐了持续使用的操作：`/autofix-pr status` 查看状态，`/autofix-pr resume <PR 编号>` 在后续会话中恢复跟进。选了自动执行的监视，修复能在后台跑，普通启动仍遵循审批设置。详见 PR [#15510](https://github.com/QwenLM/qwen-code/pull/15510)、[#15548](https://github.com/QwenLM/qwen-code/pull/15548)、[#15578](https://github.com/QwenLM/qwen-code/pull/15578)
+
+Web Shell 新增「PR 监视」页面，能看到各项目的监视状态、推送次数和需要人工决定的事项。由当前 Web Shell 会话运行的监视，可以从页面进入原对话或发起停止。启动前，如果 PR 分支还有未提交改动或未推送提交，会先停下来说明情况。详见 PR [#15668](https://github.com/QwenLM/qwen-code/pull/15668)、[#15736](https://github.com/QwenLM/qwen-code/pull/15736)
+
+你能用它做什么：
+
+- 下班前把 PR 提上去，第二天早上看它已经把挂掉的检查改掉推上去了
+- 同事逐条留的 review 意见都有回应，改不了的标出来等人定
+- 主干更新导致冲突时，它先把别人的工作合进来，再跑一遍仓库的检查
+
+[🎥]
+
+### 定时任务的闸门：配条检查命令，有变化才轮到模型干活
+
+你可能让它每隔几分钟看一眼有没有新情况：PR 的构建挂没挂、有没有新 issue 提过来。到点是到了，可十次里八次什么都没有，那一轮对话还是照样跑一遍，最后回你一句“没事”。
+
+现在可以给这类循环任务配一道闸门：一段你自己指定的小检查，每次到点先跑它，这一步只是一条普通命令。检查没发现什么，这一趟就到此为止；真发现了，它才接着往下处理，检查看到的东西一起交给它。比如你让它每两分钟盯一次构建，配一条只查构建结果的脚本：构建好好的，这一趟什么都不发生；挂了，那行结果交给它，它去读日志、去修。详见 PR [#15069](https://github.com/QwenLM/qwen-code/pull/15069)
+
+闸门这条命令得你来给，规矩是没事别出声、有事才打印，所以它通常是一段小脚本；你也可以先让 Qwen Code 帮你把这段脚本写出来，再挂到任务上。
+
+在 Web Shell 的定时任务表单里填的就是这道闸门，任务卡片上能看到它最近的结果；点「立即运行」会先把闸门跑一遍，有输出才执行任务。上面那个盯 PR 的功能，靠的就是这道闸门。详见 PR [#15211](https://github.com/QwenLM/qwen-code/pull/15211)
+
+你能用它做什么：
+
+- 每十分钟看一眼构建结果，挂了的那一次才让它去修
+- 盯有没有新提过来的 issue，有了再让它去读、去归类
+- 把这类十趟有八趟没动静的活挂上去，省下来的都是 token
+
+[🎥]
+
+### qwen attach：后台跑着的那段会话，在终端里接回去继续说
+
+上周补齐了 `qwen daemon` 这一组管理命令，本地服务能在后台一直跑着。服务里的会话也一样——你把创建它的那个终端窗口关掉、拿去干别的，它还在原地。当时想回去接着说，只能开浏览器的 Web Shell。
+
+现在在终端里运行 `qwen attach --session <会话编号>` 就能重新加入那段会话：之前你和它说过的照常显示出来，你在终端敲的每一行都当作新的一句话发过去，答完再给你一个新的输入位置。比如上午起的服务，下午另开一个终端接上去接着问。详见 PR [#15209](https://github.com/QwenLM/qwen-code/pull/15209)
+
+会话编号在 Web Shell 那条会话的地址里，`/session/` 后面那一串。接进去看到的是它的输出流和一个打字的地方，平时你在终端里用惯的补全、翻历史、审批卡片，这个窗口里没有。
+
+你能用它做什么：
+
+- 让它改一个大项目，中途你把那个终端窗口关了；回来接上去，问一句改到哪了
+- 在 Web Shell 里发起的长任务，想补一句「记得把文档也更新」，切回终端就能说
+- 服务跑在开发机上，SSH 登录进去，在那台机器的终端里接回这段会话看进度、发话
+
+[🎥]
+
+### Web Shell：会话和工作区，在侧栏里更好找、更好管
+
+**侧栏多了一栏「最近会话」。** 项目里的对话和没挂工作区的对话按最近活动合在一起排。多个项目一起跑时，会话可以统一在最近会话中查看了。详见 PR [#14904](https://github.com/QwenLM/qwen-code/pull/14904)
+
+**对话派 Agent 干的活能折叠在该对话下面。** 后台跑的 agent、顺手开的支线任务、单独开会话跑的定时任务，这些会话挂在派它的那条下面。同一件事的几条摆在一起，主会话和它派出去的分支一眼分得清。详见 PR [#15714](https://github.com/QwenLM/qwen-code/pull/15714)
+
+**工作区能排序，也能粘贴 Git 地址新建。** 工作区菜单里多了「上移」和「下移」，天天用的项目固定排在最上面，更易找。添加新项目时可以选择 Git 仓库，地址粘进去，代码拉下来直接进那个工作区。详见 PR [#15360](https://github.com/QwenLM/qwen-code/pull/15360)、[#15361](https://github.com/QwenLM/qwen-code/pull/15361)
+
+**工作区要再带上别的目录，在设置里就能改。** 设置里新增「工作区目录」，能列能加能删，加进来的路径对这个工作区所有在跑的会话立刻生效。详见 PR [#15393](https://github.com/QwenLM/qwen-code/pull/15393)
+
+**其他改进。** 新会话的名字直接用你问 AI 的第一句话（[#15689](https://github.com/QwenLM/qwen-code/pull/15689)）；归档的对话挪进设置里单独一处，按工作区分组、能按来源筛（[#15557](https://github.com/QwenLM/qwen-code/pull/15557)）；一条回复能整条复制成两种格式，「复制内容」给纯文本，「复制 Markdown」给原始源码（[#15345](https://github.com/QwenLM/qwen-code/pull/15345)）；回答用什么语言，在设置面板里界面语言旁边就能看到也能选（[#15363](https://github.com/QwenLM/qwen-code/pull/15363)）。
+
+## 📊 更多新功能
+
+**交互卡片调好的参数，能直接交回对话接着问。** 卡片算完就停在那儿，想拿这组数字继续问模型得自己抄一遍发出去。现在卡片上多了一个动作，把应用生效的这组参数交回原来那段对话，发之前给你看一份冻结好的清单，确认了才发。详见 PR [#15333](https://github.com/QwenLM/qwen-code/pull/15333)
+
+**从 Codex 攒下来的记忆能导进来。** 先看一份预览，挑哪几段、落到哪个范围，后台用这个工作区配好的模型整理，整理完进 Qwen Code 自己的记忆，照常检索、取用、遗忘。命令行上跑 `qwen memory import codex`，可以先加 `--dry-run`。详见 PR [#14281](https://github.com/QwenLM/qwen-code/pull/14281)
+
+**在自己电脑上一条命令把本地服务和托管 Agent 一起起起来。** 运行 `qwen serve --managed --open`，普通会话和托管会话在同一个界面里，数据库自带。要 Node.js 22 以上和 Java 21；这条是实验性的，只面向你自己这一台电脑。详见 PR [#14928](https://github.com/QwenLM/qwen-code/pull/14928)
+
+**托管的 Agent 会话，跑着的时候能插话，权限也能按会话配。** 它正在干活时你打进去的话和引用的文件会排队，到安全的节点再交给模型，排着的还能改和撤。空闲时也能单独给这个会话写允许、要问、拒绝规则，或者选 Auto 审批。详见 PR [#15449](https://github.com/QwenLM/qwen-code/pull/15449)、[#15448](https://github.com/QwenLM/qwen-code/pull/15448)
+
+**托管会话多了传文件、抓网页、写待办，新建的默认能把活派给子代理。** 从浏览器把一个文件传进选定的工作区（8 MB 以内），路径直接插进会话里；它现在还能抓公开的网页、维护自己的待办清单。详见 PR [#15586](https://github.com/QwenLM/qwen-code/pull/15586)、[#15313](https://github.com/QwenLM/qwen-code/pull/15313)、[#15089](https://github.com/QwenLM/qwen-code/pull/15089)、[#15171](https://github.com/QwenLM/qwen-code/pull/15171)
+
+**联网搜索能加上自己网关的域名。** 把模型流量都走自建网关的团队，以前搜索这块认不出自家域名，不改源码就没有别的路可走；现在加一条配置就行，整个域名和它下面的子域都能对上。详见 PR [#15638](https://github.com/QwenLM/qwen-code/pull/15638)
+
+## 👏 体验优化
+
+**Workflow 模式能记在会话里。** 用 `--workflow-mode on` 或者 `/workflows mode on` 打开之后，这个会话后面的每一轮都带着这条指引；恢复、分叉、回退、清空各有各的行为，切换没成功会退回原来的状态。两种终端界面都会显示当前是不是这个模式，在 Docker 沙箱里跑时这个开关也跟着进去。详见 PR [#15422](https://github.com/QwenLM/qwen-code/pull/15422)、[#15743](https://github.com/QwenLM/qwen-code/pull/15743)
+
+**另一套终端界面（OpenTUI）这一轮补齐了不少。** 输入框空着时按下空格就能开始说话，转写、取消、麦克风授权提示、录音状态都接上了；退出再进来能看到之前录下的文字、图片和工具结果，回退时对话、下一次请求和草稿一起回到那个点；检查点在真正批准改动的那一刻落盘；扩展的「发现」和「来源」两栏走通到安装完成；跑它也不需要你自己在电脑上装 Bun 了。详见 PR [#15617](https://github.com/QwenLM/qwen-code/pull/15617)、[#15384](https://github.com/QwenLM/qwen-code/pull/15384)、[#15389](https://github.com/QwenLM/qwen-code/pull/15389)、[#15671](https://github.com/QwenLM/qwen-code/pull/15671)、[#14959](https://github.com/QwenLM/qwen-code/pull/14959)
+
+**上下文快满时，一批工具结果按剩余额度来收。** 这一批合起来分剩下的空间，该保护的文字、图片和结构先扣掉，完整的原文照样落盘可取；空间放不下那句完整的截断提示时，这一批留给正常的压缩处理。详见 PR [#13599](https://github.com/QwenLM/qwen-code/pull/13599)
+
+**一百万 token 上下文的模型认得出来了。** qwen4 这一代和邀请制的 qwen-latest-series 这些名字现在按一百万的窗口算，不再落回较小的默认窗口。详见 PR [#15758](https://github.com/QwenLM/qwen-code/pull/15758)、[#15762](https://github.com/QwenLM/qwen-code/pull/15762)
+
+**设置里列出的模型都是服务商现在真供的。** 以前清单里有已经下架的名字，有选了关闭思考其实关不掉的模型，贴给 DeepSeek 的图片还会被当成不支持，这三处都改对了。用标准 API Key 接 Alibaba ModelStudio，填好密钥和区域就能直接选你账号能用的模型。详见 PR [#15184](https://github.com/QwenLM/qwen-code/pull/15184)、[#15189](https://github.com/QwenLM/qwen-code/pull/15189)、[#15164](https://github.com/QwenLM/qwen-code/pull/15164)
+
+## 🔧 重要修复
+
+| 修复 | 对你的影响 | PR |
+|------|-----------|-----|
+| **VS Code 里选中聊天记录能复制了** | 在消息记录里选中一段文字按 `Ctrl+C` 或右键复制，高亮还在但剪贴板没动过（没选中时反而会被清空）；现在选中的内容真的进剪贴板 | [#15403](https://github.com/QwenLM/qwen-code/pull/15403) |
+| **没发出去的图片和文件切页面不丢了** | 打了字还没发、切到别的会话或者刷新页面，图和文件跟着草稿一起留着；同一个会话的主视图和分屏共用这一份草稿 | [#15025](https://github.com/QwenLM/qwen-code/pull/15025)、[#15303](https://github.com/QwenLM/qwen-code/pull/15303) |
+| **费用估算把思考用的 token 算了两遍** | 接口没回总 token 时，思考部分被重复计入，费用看着比实际高；现在每份响应先单独算清，再累加到总数上 | [#15464](https://github.com/QwenLM/qwen-code/pull/15464) |
+| **会话多了改名不卡了** | 侧栏里会话攒了几百条之后，改一个名字要重画整片列表、打字跟不上；现在输入只重画那个输入框 | [#15688](https://github.com/QwenLM/qwen-code/pull/15688) |
+| **交互卡片不再谎报“算好了”** | 改了卡片上的数字，后台回一句处理完就显示成已经算好，其实那次改动可能被丢掉或没人接手；现在这几种情况分开显示，被跳过的那次后面就算成功也还看得见 | [#15004](https://github.com/QwenLM/qwen-code/pull/15004) |
+| **翻一页、切个会话，卡片还在原样** | 在同一页面里翻历史、切会话、点新建任务、主视图和分屏来回切，卡片上填的、算出来的都会重置；现在保持原样 | [#15611](https://github.com/QwenLM/qwen-code/pull/15611) |
+| **画坏的卡片不再直接推给你** | 卡片本身有错——写法不对、一开始算就出错、要点的地方不存在——你拿到手就是一张坏卡片；现在先自己跑一遍，带着行列号退回给模型改好再给 | [#15790](https://github.com/QwenLM/qwen-code/pull/15790) |
+| **会话跑着时新生成的卡片，马上就能动手** | 结果一到也显示成要重新打开的占位样子，刷新页面才能操作；现在结果一到就能直接操作 | [#15787](https://github.com/QwenLM/qwen-code/pull/15787) |
+| **显示不了卡片的界面不再收到卡片** | 在终端和命令行单次运行里，模型会说“卡片准备好了，去拖上面的滑块”，可那边根本没有卡片；现在只给能显示卡片的界面 | [#15720](https://github.com/QwenLM/qwen-code/pull/15720) |
+| **窄屏上产物卡片不叠在一起了** | 手机上长长的文件信息挤出自己的格子，下载和打开按钮压在上面的文字；现在这两个按钮挪到文件信息下面 | [#15300](https://github.com/QwenLM/qwen-code/pull/15300) |
+| **技能装失败会告诉你为什么** | 弹窗里原先只说没装上；现在写明是哪一类问题（格式、字段、名称对不上、包结构、路径不安全），后面跟着中英文的下一步建议 | [#15013](https://github.com/QwenLM/qwen-code/pull/15013) |
+| **插件提的确认不再被自动点头** | 你开着自动批准时，插件自己提的确认请求会被自动放行；现在这类请求一定弹给你回答，弹窗里写明是哪个插件提的 | [#15306](https://github.com/QwenLM/qwen-code/pull/15306) |
+| **思考内容和回复的先后不再被压平** | 思考和回复一段段交替出现时，终端和回放里顺序被打乱；现在保持成有先后的内容，后面的还在往外流时，前面完成的摘要照样能展开看 | [#15621](https://github.com/QwenLM/qwen-code/pull/15621) |
+| **参数被截断的编辑不再写进文件** | 模型输出撞到长度上限、编辑参数只传了一半时，那半个请求照样落盘；现在按终端那套同样的规则判定并拒掉，报错文字也一致 | [#15346](https://github.com/QwenLM/qwen-code/pull/15346) |
+| **参数里引用了别处调用标记，不再连累整批工具调用** | 一个参数值里正好带着另一段调用的标记时，整个工具调用被判坏丢掉；现在外层这个完整的调用能救出来，坏的那块单独拒绝 | [#13579](https://github.com/QwenLM/qwen-code/pull/13579) |
+| **sed 里方括号中的反斜杠读错** | `s/[ \t]*$//` 这类写法被当成 JavaScript 的转义读，替换范围跑偏、该删的空格没删掉；现在方括号内外走同一套，`\t` 这类转义直接交回真 sed 执行 | [#13557](https://github.com/QwenLM/qwen-code/pull/13557) |
+| **Local Control 端口被占时能自己换一个** | 首选端口被别人占着时启动直接失败；现在用系统分配的空闲端口重试一次，配对地址、跨域来源和状态都按实际绑上的那个给 | [#12352](https://github.com/QwenLM/qwen-code/pull/12352) |
+| **QQ 群里几个群共用了同一段会话** | 机器人按话题范围配置时，不同群的对话串进一个会话里；现在恢复成每个群各一段。这是一处行为变更 | [#13882](https://github.com/QwenLM/qwen-code/pull/13882) |
+| **换过目录的会话不再被当成中断过** | 目录刷新带进去的那些内部记录被当成你还没说完的话，恢复时白问你一次要不要继续；现在只有真正没答完的提示和待处理的工具调用才算 | [#15012](https://github.com/QwenLM/qwen-code/pull/15012) |
+| **OpenTUI 里取消之后重试会丢东西** | 重试时准备好的文件和图片没了，已经取消掉的命令还能在历史写完那一刻执行出去；现在这两条都修了 | [#15283](https://github.com/QwenLM/qwen-code/pull/15283) |
+| **Linux 上图形界面连不通却还推荐原生选目录弹窗** | 没接上图形界面时，选目录的按钮照样摆出来，点开只会失败；现在启动时会先确认那个显示真能连上才给按钮 | [#15434](https://github.com/QwenLM/qwen-code/pull/15434) |
+| **服务商返回的图片和 PDF 送不到模型那边** | 工具读出来的图片和 PDF 此前过不去；现在能送了，图片按原有的安全处理走，PDF 给原始内容或者抽出的文字 | [#13606](https://github.com/QwenLM/qwen-code/pull/13606) |
+| **VS Code 里编辑被拒绝之后卡在编辑态** | 改一条消息被拒绝之后界面停在编辑状态，下一条普通的话发不出去；现在被拒就退出编辑，改得成功时原来的回退目标还在 | [#15439](https://github.com/QwenLM/qwen-code/pull/15439) |
+| **托管会话界面上的控件收拢了** | 改名挪进侧栏每一条会话自己的菜单；MCP 和扩展统一从 Plugins 那一处管；新建任务时重复显示目录、模型、运行时的那一行去掉了。会话跑起来之后再改工作目录这条路下线（新建时选目录照旧）——这是一处行为变更 | [#15616](https://github.com/QwenLM/qwen-code/pull/15616) |
+
+## 👥 贡献者
+
+| 贡献者 | 贡献内容 | 参考 PR 链接 |
+|--------|---------|-------------|
+| **[@deggs7](https://github.com/deggs7)** | 侧栏新增「最近会话」一栏、归档的对话挪进设置、建群入口收进工作区菜单、隐藏加载提示语时状态栏跟着简化 | [#14904](https://github.com/QwenLM/qwen-code/pull/14904), [#15557](https://github.com/QwenLM/qwen-code/pull/15557), [#15320](https://github.com/QwenLM/qwen-code/pull/15320), [#15423](https://github.com/QwenLM/qwen-code/pull/15423) |
+| **[@Jun516](https://github.com/Jun516)** | 重开会话详情的焦点交接、运行中标题的转圈提示各补一处检查 | [#15351](https://github.com/QwenLM/qwen-code/pull/15351), [#15371](https://github.com/QwenLM/qwen-code/pull/15371) |
+| 🆕 **[@sxl-lucky7](https://github.com/sxl-lucky7)** | 🎉 首次贡献：定时任务闸门首次运行的示例改对、几种登录方式下的用量统计说清楚 | [#15452](https://github.com/QwenLM/qwen-code/pull/15452), [#15554](https://github.com/QwenLM/qwen-code/pull/15554) |
+| 🆕 **[@Aling33](https://github.com/Aling33)** | 🎉 首次贡献：Java SDK 的检查跑挂时保住失败报告和 SQL 原因 | [#14910](https://github.com/QwenLM/qwen-code/pull/14910) |
+| **[@barry166](https://github.com/barry166)** | JUnit 报告的上传路径钉住 | [#15502](https://github.com/QwenLM/qwen-code/pull/15502) |
+| **[@CanReader](https://github.com/CanReader)** | 网页视图里 html 语言属性的转义钉住 | [#10492](https://github.com/QwenLM/qwen-code/pull/10492) |
+| **[@Eric-GoodBoy-Tech](https://github.com/Eric-GoodBoy-Tech)** | QQ 机器人按话题配置时恢复成每个群各一段会话 | [#13882](https://github.com/QwenLM/qwen-code/pull/13882) |
+| 🆕 **[@EthDing](https://github.com/EthDing)** | 🎉 首次贡献：磁盘写满那几条日志按预期捕获 | [#8549](https://github.com/QwenLM/qwen-code/pull/8549) |
+| **[@he-yufeng](https://github.com/he-yufeng)** | 把权限控制的用例从共享的记忆状态里隔离出来 | [#11401](https://github.com/QwenLM/qwen-code/pull/11401) |
+| **[@jabrailkhalil](https://github.com/jabrailkhalil)** | 飞书收到的附件从进来到落地的整条生命周期补上用例 | [#13278](https://github.com/QwenLM/qwen-code/pull/13278) |
+| **[@MohammedAlkindi](https://github.com/MohammedAlkindi)** | sed 模拟把方括号里的反斜杠读错的问题改掉 | [#13557](https://github.com/QwenLM/qwen-code/pull/13557) |
+| **[@shpaker](https://github.com/shpaker)** | 补写 `.agents/skills` 和 `skills.directories` 两处说明 | [#15086](https://github.com/QwenLM/qwen-code/pull/15086) |
+| **[@Sumire-no-kai](https://github.com/Sumire-no-kai)** | Local Control 端口被占时改用系统分配的可用端口 | [#12352](https://github.com/QwenLM/qwen-code/pull/12352) |
+| **[@waybarrios](https://github.com/waybarrios)** | sed 读不懂的长选项钉住不自己接管 | [#15223](https://github.com/QwenLM/qwen-code/pull/15223) |
+| **[@yar3333](https://github.com/yar3333)** | VS Code 里选中聊天记录时复制不再丢选区 | [#15403](https://github.com/QwenLM/qwen-code/pull/15403) |
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！
