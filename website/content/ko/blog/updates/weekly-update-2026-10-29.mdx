@@ -1,0 +1,174 @@
+---
+title: "Qwen Code 주간 업데이트: PR은 /autofix-pr이 맡고, 예약 작업엔 게이트를 달고, 백그라운드 세션은 터미널에서 이어갑니다"
+date: "2026-10-29"
+description: "이번 주 v0.26.1, v0.26.2, v0.26.3 세 개의 정식 버전을 출시하고 PR 357개를 병합했습니다. /autofix-pr에 PR을 넘기면 그 뒤를 알아서 챙깁니다 — 빌드가 깨지거나 리뷰 의견이 달리거나 main 브랜치와 충돌하면 고치고 확인한 뒤 밀어 올리고, PR에 조항별로 답을 달아 둡니다. 예약 작업에는 게이트를 걸 수 있습니다. 정각에 게이트가 먼저 상황을 살펴보고 바뀐 게 없으면 그 라운드를 통째로 건너뛰니, 아낀 양은 전부 token입니다. 백그라운드에 남은 세션은 터미널에서 qwen attach로 다시 붙어 말을 잇습니다. 인터랙티브 카드에서 맞춰 둔 값은 원래 대화로 돌려 보내 그대로 더 물어봅니다. Web Shell 사이드바에 Recent sessions 칸이 생기고, 워크스페이스는 순서를 바꿀 수 있고 Git 주소를 붙여 넣어 새로 만듭니다."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i3/O1CN01cdttKfLazLE2jBZY_!!6000000006180-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 주간 업데이트: PR은 /autofix-pr이 맡고, 예약 작업엔 게이트를 달고, 백그라운드 세션은 터미널에서 이어갑니다"
+  date="2026-10-29"
+  author="Qwen Team"
+/>
+
+Qwen Code는 이번 주 v0.26.1, v0.26.2, v0.26.3 세 개의 정식 버전을 출시하고 PR 357개를 병합했습니다.
+
+**PR을 넘기면 `/autofix-pr`이 이어받습니다.** 본인 PC에서 2분마다 한 번씩 살펴봅니다. 빌드가 깨졌거나, 동료가 리뷰 의견을 남겼거나, main 브랜치와 충돌하면 스스로 고치고 확인한 뒤 밀어 올리고, PR에는 조항별로 답을 달아 둡니다.
+
+**예약 작업은 정각에 먼저 한 번 살핍니다.** 게이트가 새 상황이 있는지 먼저 판단하고, 바뀐 게 없으면 그 라운드를 통째로 건너뜁니다. 아낀 것은 전부 token입니다.
+
+**백그라운드에 남아 도는 세션은 터미널을 하나 더 열어 `qwen attach`로 다시 붙습니다.** 오전에 큰 프로젝트 수정을 시키다가 그 창을 닫았어도 서비스는 계속 돌아갑니다. 오후에 터미널을 새로 열어 들어가면 대화가 그대로 이어집니다.
+
+## ✨ 새로운 기능
+
+### PR 자동 팔로업: 검사 실패를 고치고 리뷰 의견을 처리합니다
+
+PR을 올린 뒤에도 CI가 깨졌는지, 동료가 어떤 리뷰 의견을 남겼는지, main 브랜치와 충돌하는지까지 본인이 직접 다시 확인하고 처리해야 합니다. 이제 `/autofix-pr <PR 번호>`를 실행하면 Qwen Code가 본인 PC에서 그 PR을 맡고, 문제가 생기면 스스로 고칩니다.
+
+예를 들어 lint가 깨지면 해당 job의 로그를 읽고, 고친 뒤 저장소 자체 검사로 한 번 확인합니다. 통과해야 커밋해서 밀어 올리고, PR에는 무엇을 고쳤는지 한 줄 남깁니다. 변경은 따로 만든 worktree에서 하니 한창 작업 중인 디렉터리는 건드리지 않습니다. 2분마다 한 번씩 보되, 새로 생긴 변화만 봅니다. 관련 PR: [#15385](https://github.com/QwenLM/qwen-code/pull/15385), [#15057](https://github.com/QwenLM/qwen-code/pull/15057)
+
+오래 쓰는 동작도 이번에 채웠습니다. `/autofix-pr status`로 상태를 보고, `/autofix-pr resume <PR 번호>`로 이후에 연 세션에서 팔로업을 이어갑니다. 자동 실행을 고른 감시는 수정이 백그라운드로 돌아가고, 일반 실행은 승인 설정을 그대로 따릅니다. 관련 PR: [#15510](https://github.com/QwenLM/qwen-code/pull/15510), [#15548](https://github.com/QwenLM/qwen-code/pull/15548), [#15578](https://github.com/QwenLM/qwen-code/pull/15578)
+
+Web Shell에 `PR watch` 페이지가 생겼습니다. 프로젝트별 감시 상태와 push 횟수, 사람이 판단해야 할 항목을 한 화면에 봅니다. 감시가 지금 이 Web Shell 세션에서 돌아간다면 페이지에서 원본 대화로 들어가거나 멈추면 됩니다. 시작 전에 PR 브랜치에 커밋되지 않은 변화나 밀리지 않은 커밋이 남아 있으면 일단 멈추고 그 사정을 알려 줍니다. 관련 PR: [#15668](https://github.com/QwenLM/qwen-code/pull/15668), [#15736](https://github.com/QwenLM/qwen-code/pull/15736)
+
+이렇게 활용할 수 있습니다:
+
+- 퇴근 전에 PR을 올려 두면 다음 날 아침, 깨진 검사가 이미 고쳐져 밀려 있습니다
+- 동료가 조항별로 남긴 리뷰 의견에 전부 답이 달리고, 고칠 수 없는 것은 표시해 사람의 판단을 기다립니다
+- main 브랜치가 업데이트돼 충돌이 나면 다른 사람의 작업을 먼저 병합한 뒤 저장소 검사를 한 번 더 돌립니다
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/lHYiheFEEj4h06BqKKRsNerhB4iCljq_A56bQT_m2rc.mp4" controls></video>
+
+### 예약 작업의 게이트: 검사 명령을 걸어 두고, 바뀐 게 있을 때만 모델이 움직입니다
+
+몇 분마다 새 움직임이 있는지 확인시켜 두는 경우가 있습니다. PR 빌드가 깨졌는지 보거나, 새로 올라온 issue가 있는지 보는 일입니다. 정각은 정확히 돌아오지만 열 번 중 여덟 번은 아무 일도 없어서, 그 라운드 대화는 매번 그대로 한 바퀴 돈 뒤 "괜찮습니다" 한 마디만 남깁니다.
+
+이제 이런 반복 작업에 게이트를 겁니다. 게이트는 본인이 정한 작은 점검 하나인데, 시간이 돌아올 때마다 이 명령부터 실행합니다 — 이 단계는 평범한 명령 한 줄일 뿐입니다. 점검에서 나올 게 없으면 그 회차는 거기서 멈추고, 뭔가 나오면 그제야 절차를 이어 가며 점검이 본 내용까지 함께 넘깁니다. 예를 들어 2분마다 빌드를 보게 하고 빌드 결과만 확인하는 스크립트를 걸어 두면, 빌드가 멀쩡한 회차는 아무 일도 일어나지 않고, 깨진 회차는 그 결과 줄을 넘겨받아 로그를 읽고 고치러 갑니다. 관련 PR: [#15069](https://github.com/QwenLM/qwen-code/pull/15069)
+
+게이트 명령은 본인이 직접 줘야 합니다. 규칙은 '이상 없을 때는 조용, 이상 있을 때만 출력'이라 보통 짧은 스크립트로 두게 됩니다. 스크립트가 없다면 Qwen Code에게 먼저 쓰게 한 뒤 작업에 걸면 됩니다.
+
+Web Shell의 예약 작업 폼에서 넣는 값이 바로 이 게이트이고, 작업 카드에는 게이트의 최근 결과가 뜹니다. `Run now`를 누르면 게이트부터 한 번 돌리고, 출력이 있어야 작업을 실행합니다. 위에서 PR을 지켜 주는 기능도 이 게이트 위에 올라가 있습니다. 관련 PR: [#15211](https://github.com/QwenLM/qwen-code/pull/15211)
+
+이렇게 활용할 수 있습니다:
+
+- 10분마다 빌드 결과를 확인하고, 깨진 회차에만 수리를 맡깁니다
+- 새로 올라온 issue를 지켜보다가 발견된 순간에만 읽고 분류하게 합니다
+- 열 번 중 여덟 번 조용한 이런 작업을 걸어 두면 남는 것이 전부 token입니다
+
+![Web Shell의 예약 작업에 게트를 걸어 두면 최근 결과가 작업 카드에 보입니다](https://img.alicdn.com/imgextra/i1/O1CN01G4sIZgRXYmI7nW9B_!!6000000005503-2-tps-3841-2160.png)
+
+### qwen attach: 백그라운드에 남은 세션, 터미널에서 다시 붙어 말을 잇습니다
+
+지난주 `qwen daemon` 관리 명령이 갖춰지면서 로컬 서비스를 백그라운드에 계속 띄워 둘 수 있었습니다. 서비스 안의 세션도 마찬가지입니다. 만든 터미널 창을 닫고 다른 데로 가도 세션은 그 자리에 있습니다. 이어 말하려면 브라우저의 Web Shell을 열어야 했습니다.
+
+이제 터미널에서 `qwen attach --session <세션 ID>`를 실행하면 그 세션에 다시 들어갑니다. 앞서 나눈 대화는 그대로 보이고, 터미널에 치는 한 줄씩은 새 발화로 나가며, 답이 끝나면 입력 자리가 다시 옵니다. 오전에 띄운 서비스를 오후에 터미널을 하나 더 열어 이어서 물어 보면 됩니다. 관련 PR: [#15209](https://github.com/QwenLM/qwen-code/pull/15209)
+
+세션 번호는 Web Shell에서 그 세션 주소의 `/session/` 다음에 오는 문자열입니다. 붙으면 출력 흐름과 입력 자리만 보입니다. 평소 터미널에서 익숙하게 쓰던 자동 완성, 기록 넘김, 승인 카드는 이 창에 없습니다.
+
+이렇게 활용할 수 있습니다:
+
+- 큰 프로젝트 수정을 시키던 중에 터미널 창을 닫았으면, 다시 붙어서 어디까지 됐는지 물어보면 됩니다
+- Web Shell에서 시작한 긴 작업에 "문서도 업데이트해 주세요" 한 줄을 보태고 싶으면 터미널로 돌아와 치면 됩니다
+- 서비스를 개발 PC에 띄워 둔 경우, SSH로 들어가 그 PC의 터미널에서 세션에 붙어 진행 상황을 보고 한 마디를 더 보냅니다
+
+![다른 터미널에서 qwen attach로 백그라운드에 남은 세션에 다시 붙기](https://img.alicdn.com/imgextra/i2/O1CN01Mv8j2zQoN9G7nW9B_!!6000000004138-2-tps-3841-2160.png)
+
+### Web Shell: 사이드바에서 세션과 워크스페이스를 더 쉽게 찾고 관리합니다
+
+**사이드바에 `Recent sessions` 칸이 생겼습니다.** 프로젝트 안의 대화와 워크스페이스에 붙지 않은 대화가 최근 활동 기준으로 한 목록에 합쳐 정렬됩니다. 여러 프로젝트를 함께 돌릴 때 세션을 Recent sessions에서 한곳으로 봅니다. 관련 PR: [#14904](https://github.com/QwenLM/qwen-code/pull/14904)
+
+**대화가 Agent에게 시킨 일은 그 대화 아래 접힙니다.** 백그라운드로 도는 Agent, 김에 연 하위 작업, 세션을 따로 열어 도는 예약 작업이 자신을 보낸 대화 아래에 걸립니다. 한 일에 쓰인 항목이 나란히 놓으니 부모 세션과 Agent가 나눠 보낸 작업이 한눈에 구분됩니다. 관련 PR: [#15714](https://github.com/QwenLM/qwen-code/pull/15714)
+
+**워크스페이스는 순서를 바꿀 수 있고 Git 주소로 새로 만들 수도 있습니다.** 워크스페이스 메뉴에 `Move up`과 `Move down`이 생겨 매일 쓰는 프로젝트를 맨 위에 고정해 찾기 쉽게 둡니다. 새 프로젝트를 추가할 때 Git 저장소를 고르고 주소를 붙여 넣으면 코드를 받아 그대로 그 워크스페이스로 들어갑니다. 관련 PR: [#15360](https://github.com/QwenLM/qwen-code/pull/15360), [#15361](https://github.com/QwenLM/qwen-code/pull/15361)
+
+**다른 디렉터리를 워크스페이스에 더 붙이려면 설정에서 고르세요.** 설정에 `Workspace directories`가 새로 생겨 목록과 추가, 삭제가 전부 되고, 추가한 경로는 그 워크스페이스에서 돌아가는 모든 세션에 즉시 반영됩니다. 관련 PR: [#15393](https://github.com/QwenLM/qwen-code/pull/15393)
+
+**그 외 개선.** 새 세션 이름은 AI에게 처음 물은 한 문장을 그대로 씁니다 ([#15689](https://github.com/QwenLM/qwen-code/pull/15689)); 보관 처리한 대화는 설정의 별도 칸으로 옮겨 워크스페이스별 그룹과 출처별 필터를 붙였습니다 ([#15557](https://github.com/QwenLM/qwen-code/pull/15557)); 한 답을 통째로 두 가지 형태로 복사하는데 `Copy content`는 평문, `Copy Markdown`은 원본 소스입니다 ([#15345](https://github.com/QwenLM/qwen-code/pull/15345)); 답변에 쓸 언어가 설정 패널에서 인터페이스 언어 옆에 보이고, 거기서 함께 고릅니다 ([#15363](https://github.com/QwenLM/qwen-code/pull/15363)).
+
+![Web Shell 사이드바의 세션과 워크스페이스 – 순서 바꾸기 저장소 추가](https://img.alicdn.com/imgextra/i3/O1CN01TwbPuPYQocH7nW9B_!!6000000007877-2-tps-3841-2160.png)
+
+## 📊 그 외 새로운 기능
+
+**인터랙티브 카드에서 맞춰 둔 값을 대화로 돌려 보내 이어 물어봅니다.** 카드는 계산을 마친 자리에 멈춰 있고, 같은 숫자로 모델에게 더 물어보려면 직접 옮겨 적어 보내야 했습니다. 이제 카드에 동작이 하나 늘어, 적용된 값을 원래 대화로 되돌려 보냅니다. 보내기 전에 고정해 둔 목록을 보여 주고, 확인해야 나갑니다. 관련 PR: [#15333](https://github.com/QwenLM/qwen-code/pull/15333)
+
+**Codex에 쌓아 둔 기억을 들여옵니다.** 미리보기를 먼저 보고, 어떤 구간을 어떤 범위에 둘지 고르면, 그 워크스페이스에 설정된 모델이 백그라운드에서 정리합니다. 정리가 끝나면 Qwen Code 자기 기억에 들어와 평소대로 검색하고, 쓰고, 잊습니다. 명령줄에서는 `qwen memory import codex`를 실행하고, 앞에 `--dry-run`을 달아 미리 볼 수도 있습니다. 관련 PR: [#14281](https://github.com/QwenLM/qwen-code/pull/14281)
+
+**본인 PC에서 명령 한 줄로 로컬 서비스와 Managed Agent를 함께 띄웁니다.** `qwen serve --managed --open`을 실행하면 일반 세션과 Managed 세션이 같은 화면에 뜨고, 데이터베이스까지 딸려 나옵니다. Node.js 22 이상과 Java 21이 필요합니다. 실험적인 기능이고, 본인 PC 1대 전용입니다. 관련 PR: [#14928](https://github.com/QwenLM/qwen-code/pull/14928)
+
+**돌아가는 Managed Agent 세션에 말을 보태도 되고, 권한도 세션별로 정합니다.** 일이 진행 중일 때 친 문장과 참조한 파일은 줄에 섰다가 안전한 지점에서 모델에 전달됩니다. 줄에 선 항목은 고치거나 취소하면 됩니다. 대기 중에도 그 세션에만 쓰는 허용 · 확인 요청 · 거부 규칙을 적거나 Auto 승인을 고릅니다. 관련 PR: [#15449](https://github.com/QwenLM/qwen-code/pull/15449), [#15448](https://github.com/QwenLM/qwen-code/pull/15448)
+
+**Managed 세션에 파일 전송, 웹페이지 수집, 할 일 적기가 늘고, 새로 만드는 세션은 기본으로 서브 Agent에 일을 맡깁니다.** 브라우저에서 고른 워크스페이스로 파일을 하나 올리면(8 MB 이내), 경로가 곧바로 세션에 들어갑니다. 이제 공개 웹페이지를 가져오고 자기 할 일 목록도 관리합니다. 관련 PR: [#15586](https://github.com/QwenLM/qwen-code/pull/15586), [#15313](https://github.com/QwenLM/qwen-code/pull/15313), [#15089](https://github.com/QwenLM/qwen-code/pull/15089), [#15171](https://github.com/QwenLM/qwen-code/pull/15171)
+
+**웹 검색에 자체 게이트웨이 도메인을 등록합니다.** 모델 트래픽을 자체 구축 게이트웨이로 보내는 팀은 그동안 검색에서 자기 도메인을 알아보지 못해, 소스를 고치지 않는 한 다른 방법이 없었습니다. 이제 설정 한 줄로 그 도메인과 아래 모든 하위 도메인을 인식합니다. 관련 PR: [#15638](https://github.com/QwenLM/qwen-code/pull/15638)
+
+## 👏 사용성 개선
+
+**Workflow 모드를 세션에 기억시킵니다.** `--workflow-mode on` 또는 `/workflows mode on`으로 켜면 그 세션의 이후 라운드에 이 지침이 계속 붙습니다. 복원, 분기, 되돌리기, 비우기 각각 동작이 정해져 있고, 전환에 실패하면 원래 상태로 돌아갑니다. 두 터미널 화면 모두 지금 모드인지 표시하고, Docker 샌드박스에서 돌릴 때 이 스위치도 함께 들어갑니다. 관련 PR: [#15422](https://github.com/QwenLM/qwen-code/pull/15422), [#15743](https://github.com/QwenLM/qwen-code/pull/15743)
+
+**다른 터미널 화면(OpenTUI)도 이번 라운드에 꽤 채워졌습니다.** 입력창이 비어 있을 때 띄어쓰기를 누르면 말 시작이 되고, 전사와 취소, 마이크 허용 안내, 녹음 상태가 다 이어집니다. 빠져나왔다 다시 들어오면 앞서 녹음한 문장과 이미지, 도구 결과가 보이고, 되돌리면 대화와 다음 요청, 초안이 그 지점으로 함께 돌아갑니다. 체크포인트는 변경을 실제로 승인하는 순간 디스크에 기록됩니다. 확장의 `Discover`와 `Sources` 두 칸은 설치 완료까지 이어지고, 본인 PC에 Bun을 따로 깔지 않아도 돌아갑니다. 관련 PR: [#15617](https://github.com/QwenLM/qwen-code/pull/15617), [#15384](https://github.com/QwenLM/qwen-code/pull/15384), [#15389](https://github.com/QwenLM/qwen-code/pull/15389), [#15671](https://github.com/QwenLM/qwen-code/pull/15671), [#14959](https://github.com/QwenLM/qwen-code/pull/14959)
+
+**컨텍스트가 가득 찰 무렵이면 도구 결과 여러 건을 남은 용량에 맞춰 정리합니다.** 같은 그룹이 남은 공간을 함께 나누고, 지켜야 할 문장과 이미지, 구조를 먼저 빼 두며, 원문 전체는 그대로 디스크에 저장해 나중에 꺼냅니다. 잘렸다는 안내 한 줄을 담을 자리가 없으면 그 그룹은 일반 압축 처리에 넘깁니다. 관련 PR: [#13599](https://github.com/QwenLM/qwen-code/pull/13599)
+
+**100만 token 컨텍스트 모델을 알아봅니다.** qwen4 세대와 초대제 qwen-latest-series 이름이 이제 100만 창으로 계산되고, 더 작은 기본 창으로 내려가지 않습니다. 관련 PR: [#15758](https://github.com/QwenLM/qwen-code/pull/15758), [#15762](https://github.com/QwenLM/qwen-code/pull/15762)
+
+**설정에 뜨는 모델은 서비스 제공자가 지금 실제로 서비스하는 것들입니다.** 목록에 이미 종료된 이름이 섞여 있었고, thinking 끄기를 고르면서도 실제로 꺼지지 않는 모델이 있었으며, DeepSeek에 붙여 넣은 이미지가 미지원으로 처리되던 세 곳을 바로잡았습니다. 표준 API Key로 Alibaba ModelStudio를 연결하면 key와 리전만 채우고 계정에서 쓸 수 있는 모델을 그대로 고르면 됩니다. 관련 PR: [#15184](https://github.com/QwenLM/qwen-code/pull/15184), [#15189](https://github.com/QwenLM/qwen-code/pull/15189), [#15164](https://github.com/QwenLM/qwen-code/pull/15164)
+
+## 🔧 주요 수정 사항
+
+| 수정 사항 | 사용자에게 미치는 영향 | PR |
+|------|-----------|-----|
+| **VS Code에서 고른 대화 내용이 복사됩니다** | 메시지 기록에서 텍스트를 골라 `Ctrl+C`나 우클릭 복사를 하면 하이라이트만 남고 클립보드는 그대로였고, 고른 게 없으면 오히려 비워졌습니다. 이제 선택한 내용이 실제로 클립보드에 들어갑니다 | [#15403](https://github.com/QwenLM/qwen-code/pull/15403) |
+| **아직 보내지 않은 이미지와 파일이 화면을 바꿔도 남습니다** | 문장을 치고 아직 안 보내는 사이에 다른 세션으로 넘기거나 페이지를 새로고침하면 이미지와 파일이 사라졌습니다. 이제 초안과 함께 그대로 남고, 같은 세션의 메인 화면과 분할 화면이 이 초안을 같이 씁니다 | [#15025](https://github.com/QwenLM/qwen-code/pull/15025), [#15303](https://github.com/QwenLM/qwen-code/pull/15303) |
+| **비용 추산에서 thinking token을 두 번 세지 않습니다** | 응답에 총 token이 없으면 thinking 부분이 중복 계산돼 비용이 실제보다 더 비싸 보였습니다. 이제 응답별로 따로 계산한 뒤 합계에 더합니다 | [#15464](https://github.com/QwenLM/qwen-code/pull/15464) |
+| **세션이 많아도 이름 바꾸기가 느려지지 않습니다** | 사이드바에 세션이 수백 개 쌓이면 이름 하나로 목록 전체를 다시 그려 타이핑이 따라가지 못했습니다. 이제 입력할 때는 입력창만 다시 그립니다 | [#15688](https://github.com/QwenLM/qwen-code/pull/15688) |
+| **인터랙티브 카드가 '계산 끝났습니다'를 함 띄우지 않습니다** | 카드의 숫자를 고쳤을 때 백그라운드가 한 번 처리했다고 이미 계산된 것처럼 표시했습니다. 실제로는 그 변경이 사라지거나 아무도 받지 못한 경우도 있었습니다. 이제 상태를 나눠 보이고, 건너뛴 회차는 뒤에 성공해도 계속 보입니다 | [#15004](https://github.com/QwenLM/qwen-code/pull/15004) |
+| **기록을 넘기거나 세션을 바꿔도 카드가 그대로입니다** | 한 페이지에서 기록 넘김, 세션 전환, 새 작업 만들기, 메인과 분할 화면을 오가면 카드에 채운 값과 계산 결과가 초기화됐습니다. 이제 그대로 유지됩니다 | [#15611](https://github.com/QwenLM/qwen-code/pull/15611) |
+| **망가진 카드를 그대로 넘기지 않습니다** | 카드 자체에 결함 — 표기 오류, 첫 계산부터 실패, 눌러야 할 자리가 없음 — 이 있으면 그 카드를 그냥 받았습니다. 이제 먼저 한 번 돌려 보고, 행과 열 번호를 달아 모델에 되돌려 고친 뒤에 넘깁니다 | [#15790](https://github.com/QwenLM/qwen-code/pull/15790) |
+| **돌아가는 세션에서 새로 만들어진 카드를 바로 만집니다** | 결과가 도착해도 다시 열어야 하는 자리 표시로 뜨고, 새로고침해야 조작이 됐습니다. 이제 결과가 도착하면 곧바로 조작됩니다 | [#15787](https://github.com/QwenLM/qwen-code/pull/15787) |
+| **카드를 띄울 수 없는 화면에는 카드를 보내지 않습니다** | 터미널과 명령줄 한 번 실행에서 모델이 "카드가 준비됐으니 위 슬라이더를 옮겨 보세요"라고 말했지만 정작 카드는 없었습니다. 이제 카드를 표시하는 화면에만 보냅니다 | [#15720](https://github.com/QwenLM/qwen-code/pull/15720) |
+| **좁은 화면에서 산출물 카드가 겹치지 않습니다** | 휴대폰에서 긴 파일 정보가 자기 칸을 밀어내고, 다운로드와 열기 단추가 위 문장을 덮었습니다. 이제 두 단추가 파일 정보 아래로 내려갑니다 | [#15300](https://github.com/QwenLM/qwen-code/pull/15300) |
+| **스킬 설치가 실패하면 이유를 알려 줍니다** | 팝업에 '설치되지 않았다'만 떴습니다. 이제 어떤 종류 문제인지(형식, 항목, 이름 불일치, 패키지 구조, 안전하지 않은 경로)를 명시하고, 뒤이어 한국어와 영어로 다음 단계 안내를 붙입니다 | [#15013](https://github.com/QwenLM/qwen-code/pull/15013) |
+| **플러그인이 올린 확인이 자동으로 통과되지 않습니다** | 자동 승인을 켜 두면 플러그인 스스로 요청한 확인이 그냥 허용됐습니다. 이제 이런 요청은 반드시 사용자에게 묻고, 팝업에 어느 플러그인의 요청인지 적습니다 | [#15306](https://github.com/QwenLM/qwen-code/pull/15306) |
+| **thinking과 답변의 앞뒤가 섞이지 않습니다** | thinking과 답변이 번갈아 나올 때 터미널과 재생 화면에서 순서가 뒤섞였습니다. 이제 앞뒤가 유지되고, 뒤가 아직 흐르는 동안 앞의 완성된 요약은 펼쳐 봅니다 | [#15621](https://github.com/QwenLM/qwen-code/pull/15621) |
+| **인자가 잘린 편집을 파일에 쓰지 않습니다** | 모델 출력이 길이 상한에 닿아 편집 인자가 반만 넘어왔을 때도 그 요청대로 저장됐습니다. 이제 터미널과 같은 규칙으로 판정해 거부하고, 오류 문구도 맞췄습니다 | [#15346](https://github.com/QwenLM/qwen-code/pull/15346) |
+| **인자에 다른 호출 표식이 섞여도 배치 전체를 버리지 않습니다** | 값 하나에 다른 호출의 표식이 들어 있으면 도구 호출 전체가 잘못된 것으로 폐기됐습니다. 이제 바깥의 완전한 호출은 살리고, 망가진 조각만 따로 거부합니다 | [#13579](https://github.com/QwenLM/qwen-code/pull/13579) |
+| **sed 대괄호 안의 역슬래시를 바로잡습니다** | `s/[ \t]*$//` 같은 표기를 JavaScript 이스케이프로 읽어 치환 범위가 어긋나 지워야 할 공백이 남았습니다. 이제 대괄호 안팎을 같은 규칙으로 읽고, `\t` 같은 이스케이프는 실제 sed에 넘겨 실행합니다 | [#13557](https://github.com/QwenLM/qwen-code/pull/13557) |
+| **Local Control 포트가 막히면 다른 포트를 잡습니다** | 선호 포트가 이미 쓰이는 중이면 시작이 그대로 실패했습니다. 이제 운영체제가 배분한 여유 포트로 한 번 더 시도하고, 페어링 주소와 cross-origin, 상태까지 실제로 연결된 값으로 돌려줍니다 | [#12352](https://github.com/QwenLM/qwen-code/pull/12352) |
+| **QQ 그룹 여러 개가 한 세션을 같이 쓰지 않습니다** | 봇을 topic 범위로 설정하면 다른 그룹의 대화가 한 세션으로 섞였습니다. 이제 그룹마다 각자 한 세션입니다. 동작 변경입니다 | [#13882](https://github.com/QwenLM/qwen-code/pull/13882) |
+| **디렉터리를 바꾼 세션을 중단된 것으로 보지 않습니다** | 디렉터리 갱신이 가져온 내부 기록을 아직 끝내지 못한 발화로 취급해, 복원할 때마다 헛되이 계속 여부를 물었습니다. 이제 정말 끝나지 않은 알림과 처리 중인 도구 호출만 대상입니다 | [#15012](https://github.com/QwenLM/qwen-code/pull/15012) |
+| **OpenTUI에서 취소 후 재시도에 항목이 사라지지 않습니다** | 재시도할 때 준비한 파일과 이미지가 없어졌고, 이미 취소한 명령이 기록이 끝나는 순간 실행되기도 했습니다. 이제 두 길을 모두 막았습니다 | [#15283](https://github.com/QwenLM/qwen-code/pull/15283) |
+| **Linux에서 그래픽 화면에 못 붙으면 디렉터리 선택을 권하지 않습니다** | 그래픽 화면에 연결되지 않은 상태에서도 디렉터리 선택 단추는 그대로 나갔고, 누르면 실패만 했습니다. 이제 시작할 때 그 디스플레이에 실제로 붙는지 확인한 뒤 단추를 보여 줍니다 | [#15434](https://github.com/QwenLM/qwen-code/pull/15434) |
+| **서비스 제공자가 돌려 준 이미지와 PDF가 모델에 갑니다** | 도구로 읽은 이미지와 PDF는 그동안 넘어가지 못했습니다. 이제 보냅니다. 이미지는 기존대로 안전 처리를 거치고, PDF는 원본 내용이나 추출한 텍스트로 넘깁니다 | [#13606](https://github.com/QwenLM/qwen-code/pull/13606) |
+| **VS Code에서 편집이 거부되면 편집 상태를 벗어납니다** | 문장 수정이 거부된 뒤 화면이 편집 상태에 남아 다음 일반 발화가 나가지 못했습니다. 이제 거부되면 편집을 끝내고, 수정에 성공하면 원래 되돌림 대상이 그대로 남습니다 | [#15439](https://github.com/QwenLM/qwen-code/pull/15439) |
+| **Managed 세션 화면의 컨트롤을 한곳으로 모았습니다** | 이름 바꾸기는 사이드바의 각 세션 메뉴로 옮기고, MCP와 확장은 `Plugins` 한 곳에서 관리하며, 새 작업을 만들 때 디렉터리와 모델, 런타임이 반복해 뜨던 줄은 없앴습니다. 세션이 돌아간 뒤 작업 디렉터리를 바꾸는 길은 사라졌습니다(만들 때 고르는 길은 그대로) — 동작 변경입니다 | [#15616](https://github.com/QwenLM/qwen-code/pull/15616) |
+
+## 👥 기여자
+
+| 기여자 | 기여 내용 | 참고 PR 링크 |
+|--------|---------|-------------|
+| **[@deggs7](https://github.com/deggs7)** | 사이드바에 `Recent sessions` 칸 추가, 보관 대화를 설정으로 옮김, 그룹 만들기 진입점을 워크스페이스 메뉴로 모음, 로딩 안내를 숨기면 상태 표시줄도 함께 간소화 | [#14904](https://github.com/QwenLM/qwen-code/pull/14904), [#15557](https://github.com/QwenLM/qwen-code/pull/15557), [#15320](https://github.com/QwenLM/qwen-code/pull/15320), [#15423](https://github.com/QwenLM/qwen-code/pull/15423) |
+| **[@Jun516](https://github.com/Jun516)** | 세션 상세를 다시 열 때 포커스 넘김, 돌아가는 제목의 로딩 표식에 검사를 하나씩 보탬 | [#15351](https://github.com/QwenLM/qwen-code/pull/15351), [#15371](https://github.com/QwenLM/qwen-code/pull/15371) |
+| 🆕 **[@sxl-lucky7](https://github.com/sxl-lucky7)** | 🎉 첫 기여: 예약 작업 게이트의 첫 실행 예시를 바로잡고, 로그인 방식별 사용량 집계를 분명히 정리 | [#15452](https://github.com/QwenLM/qwen-code/pull/15452), [#15554](https://github.com/QwenLM/qwen-code/pull/15554) |
+| 🆕 **[@Aling33](https://github.com/Aling33)** | 🎉 첫 기여: Java SDK 검사가 깨져도 실패 보고서와 SQL 원인을 보존 | [#14910](https://github.com/QwenLM/qwen-code/pull/14910) |
+| **[@barry166](https://github.com/barry166)** | JUnit 보고서의 업로드 경로를 고정 | [#15502](https://github.com/QwenLM/qwen-code/pull/15502) |
+| **[@CanReader](https://github.com/CanReader)** | 웹 뷰에서 html lang 속성 이스케이프를 고정 | [#10492](https://github.com/QwenLM/qwen-code/pull/10492) |
+| **[@Eric-GoodBoy-Tech](https://github.com/Eric-GoodBoy-Tech)** | QQ 봇을 topic 범위로 설정할 때 그룹마다 한 세션으로 복구 | [#13882](https://github.com/QwenLM/qwen-code/pull/13882) |
+| 🆕 **[@EthDing](https://github.com/EthDing)** | 🎉 첫 기여: 디스크가 가득 찬 상황의 로그를 의도대로 잡아 둠 | [#8549](https://github.com/QwenLM/qwen-code/pull/8549) |
+| **[@he-yufeng](https://github.com/he-yufeng)** | 권한 제어 테스트 케이스를 공유 memory 상태에서 격리 | [#11401](https://github.com/QwenLM/qwen-code/pull/11401) |
+| **[@jabrailkhalil](https://github.com/jabrailkhalil)** | Feishu로 받은 첨부가 들어와 저장되는 전 생명주기에 테스트 보강 | [#13278](https://github.com/QwenLM/qwen-code/pull/13278) |
+| **[@MohammedAlkindi](https://github.com/MohammedAlkindi)** | sed 흉내가 대괄호 안의 역슬래시를 잘못 읽던 문제 수정 | [#13557](https://github.com/QwenLM/qwen-code/pull/13557) |
+| **[@shpaker](https://github.com/shpaker)** | `.agents/skills`와 `skills.directories` 두 곳 안내를 보충 | [#15086](https://github.com/QwenLM/qwen-code/pull/15086) |
+| **[@Sumire-no-kai](https://github.com/Sumire-no-kai)** | Local Control 포트가 막히면 운영체제가 준 사용 가능한 포트로 교체 | [#12352](https://github.com/QwenLM/qwen-code/pull/12352) |
+| **[@waybarrios](https://github.com/waybarrios)** | sed가 이해하지 못하는 긴 옵션을 스스로 넘겨 받지 않도록 고정 | [#15223](https://github.com/QwenLM/qwen-code/pull/15223) |
+| **[@yar3333](https://github.com/yar3333)** | VS Code에서 대화 내용을 고른 뒤 복사해도 선택 영역이 유지됨 | [#15403](https://github.com/QwenLM/qwen-code/pull/15403) |
+
+<Callout type="info">
+  **업데이트 방법**: `npm i @qwen-code/qwen-code@latest -g`를 실행하면 최신 버전으로 업데이트할 수 있습니다.
+</Callout>
+
+문제나 제안이 있으면 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)에 알려 주세요!
