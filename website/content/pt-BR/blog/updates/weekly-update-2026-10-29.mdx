@@ -1,0 +1,174 @@
+---
+title: "Entregue o PR ao Qwen Code, coloque uma catraca nas tarefas agendadas e volte para a sessão em segundo plano pelo terminal"
+date: "2026-10-29"
+description: "Nesta semana saíram três versões oficiais, v0.26.1, v0.26.2 e v0.26.3, com 357 PRs integrados. Depois de abrir o PR, rode /autofix-pr: ele olha a cada 2 minutos no seu próprio computador, corrige o build que caiu, os comentários de review e o conflito com o branch principal, valida, envia e responde no PR. As tarefas agendadas ganharam uma catraca: uma checagem roda primeiro e, sem novidade, a rodada inteira é pulada — o que sobra é token. Uma sessão que ficou em segundo plano volta a ser sua no terminal com qwen attach. Os parâmetros ajustados num cartão interativo voltam para a conversa de origem. A lateral do Web Shell ganhou a aba Recent sessions, e os workspaces agora se ordenam e se criam colando um endereço Git."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i3/O1CN01cdttKfLazLE2jBZY_!!6000000006180-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Entregue o PR ao Qwen Code, coloque uma catraca nas tarefas agendadas e volte para a sessão em segundo plano pelo terminal"
+  date="2026-10-29"
+  author="Qwen Team"
+/>
+
+O Qwen Code lançou três versões oficiais nesta semana: v0.26.1, v0.26.2 e v0.26.3, com 357 PRs integrados.
+
+**Abriu o PR, `/autofix-pr` assume.** No seu próprio computador ele olha a cada 2 minutos: se o build caiu, se um colega deixou comentário de review, se apareceu conflito com o branch principal — ele corrige, valida, envia o commit e responde cada ponto no PR.
+
+**Tarefa agendada olha antes de rodar.** Uma catraca decide primeiro se existe novidade; sem mudança, a rodada inteira é pulada, e o que sobra é token.
+
+**A sessão que ficou em segundo plano volta ao terminal com `qwen attach`.** De manhã você pede uma mudança num projeto grande e, no meio, fecha a janela; o serviço continua de pé. À tarde abre outro terminal, entra na sessão e a conversa segue.
+
+## ✨ Novidades
+
+### Acompanhamento automático de PR: ele corrige o que falhou nas checagens e responde o review
+
+Depois de abrir o PR, as checagens do CI, os comentários de review e o conflito com o branch principal ficavam esperando você voltar e resolver. Agora rode `/autofix-pr <número do PR>` e o Qwen Code fica de plantão nesse PR, no seu computador, corrigindo o que aparecer.
+
+Caiu o lint? Ele lê o log daquele job, mexe no código, roda as checagens do próprio repositório para conferir e só então commita e envia. Depois escreve no PR o que mudou. Tudo acontece num worktree separado; o diretório onde você está trabalhando não é tocado. Ele confere a cada 2 minutos e olha apenas o que surgiu de novo. Veja os PRs [#15385](https://github.com/QwenLM/qwen-code/pull/15385), [#15057](https://github.com/QwenLM/qwen-code/pull/15057)
+
+Também entraram os comandos que faltavam para manter isso rodando: `/autofix-pr status` mostra o estado, `/autofix-pr resume <número do PR>` retoma o acompanhamento numa sessão seguinte. Na watch iniciada em modo automático, as correções rodam em segundo plano; nas iniciadas normalmente, continua valendo a sua configuração de aprovação. Veja os PRs [#15510](https://github.com/QwenLM/qwen-code/pull/15510), [#15548](https://github.com/QwenLM/qwen-code/pull/15548), [#15578](https://github.com/QwenLM/qwen-code/pull/15578)
+
+O Web Shell ganhou a página **PR watch**. Ali você vê o estado da watch de cada projeto, quantas vezes ela enviou commit e o que espera uma decisão sua. Se a watch foi iniciada pela própria sessão do Web Shell, dá para abrir a conversa de origem ou parar por ali mesmo. Antes de começar, se o branch do PR ainda tiver alteração não commitada ou commit não enviado, ele para e explica a situação. Veja os PRs [#15668](https://github.com/QwenLM/qwen-code/pull/15668), [#15736](https://github.com/QwenLM/qwen-code/pull/15736)
+
+Na prática:
+
+- Abra o PR antes de encerrar o dia e, na manhã seguinte, encontre as checagens que tinham caído já corrigidas e enviadas
+- Cada comentário de review de um colega recebe resposta; o que ele não resolve fica marcado para a sua decisão
+- Quando uma atualização no branch principal gera conflito, ele primeiro integra o trabalho dos outros e depois roda as checagens do repositório de novo
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/lHYiheFEEj4h06BqKKRsNerhB4iCljq_A56bQT_m2rc.mp4" controls></video>
+
+### A catraca das tarefas agendadas: configure uma checagem e o modelo só entra quando muda algo
+
+Você pode pedir que ele dê uma olhada a cada poucos minutos para ver se apareceu novidade: se o build do PR caiu, se chegou issue novo. O horário chega, mas em oito de cada dez rodadas não tem nada — e a conversa roda do mesmo jeito, só para responder no final “nada demais”.
+
+Agora esse tipo de tarefa recorrente pode ter uma catraca: uma checagem curta, definida por você, que roda primeiro em cada disparo, e nessa etapa é só um comando comum. Se a checagem não achar nada, a rodada para ali. Se achar, ele segue trabalhando e recebe junto aquilo que a checagem viu. Por exemplo, para monitorar o build a cada 2 minutos, configure um script que consulta só o resultado dele: build saudável, nada acontece naquela passada; build quebrado, a linha do resultado vai para ele, que lê o log e corrige. Veja o PR [#15069](https://github.com/QwenLM/qwen-code/pull/15069)
+
+O comando da catraca é você quem fornece. A regra é ficar quieto quando não tem nada e só imprimir quando tem, então normalmente é um script pequeno. Dá para pedir ao Qwen Code que escreva esse script para você e depois ligá-lo na tarefa.
+
+É essa catraca que você preenche no formulário de tarefa agendada do Web Shell, e o cartão da tarefa mostra o resultado mais recente dela. Clicar em “Run now” roda a catraca primeiro; se ele imprimir alguma coisa, a tarefa executa. A watch de PR descrita logo acima funciona em cima dessa catraca. Veja o PR [#15211](https://github.com/QwenLM/qwen-code/pull/15211)
+
+Na prática:
+
+- Consulte o resultado do build a cada 10 minutos e deixe ele corrigir só quando cair
+- Acompanhe a chegada de issue novo e, quando aparecer um, mande ele ler e classificar
+- Coloque ali aquele trabalho que passava oito de cada dez rodadas sem achar nada: o que você economiza é token
+
+![Uma catraca em uma tarefa agendada no Web Shell; o último resultado aparece no cartão da tarefa](https://img.alicdn.com/imgextra/i1/O1CN01G4sIZgRXYmI7nW9B_!!6000000005503-2-tps-3841-2160.png)
+
+### qwen attach: a conversa que ficou em segundo plano continua no terminal
+
+Na semana passada entraram os comandos `qwen daemon`, e o serviço local pode ficar rodando em segundo plano o tempo todo. As sessões dentro dele acompanham: você fecha a janela do terminal que criou a sessão e vai fazer outra coisa, ela continua lá. Para voltar à conversa, até então só havia o Web Shell no navegador.
+
+Agora rodar `qwen attach --session <ID da sessão>` no terminal recoloca você dentro daquela sessão: o que vocês já conversaram aparece normalmente, cada linha que você digita sai como uma mensagem nova, e depois da resposta surge um novo campo de entrada. Exemplo: o serviço subiu de manhã; à tarde você abre outro terminal, entra na sessão e continua perguntando. Veja o PR [#15209](https://github.com/QwenLM/qwen-code/pull/15209)
+
+O ID da sessão está no endereço daquela sessão no Web Shell, no trecho depois de `/session/`. Lá dentro você recebe o fluxo de saída e um lugar para digitar. Autocomplete, histórico e cartão de aprovação, aquilo que você já usa no terminal, não existem nessa janela.
+
+Na prática:
+
+- Peça uma mudança num projeto grande, feche a janela no meio; volte, entre na sessão e pergunte onde ela parou
+- A tarefa longa que você iniciou no Web Shell ainda aceita aquele lembrete de “atualiza a documentação também”: basta voltar ao terminal
+- O serviço roda num computador de desenvolvimento? Entre por SSH e recupere a sessão no terminal dele para ver o progresso e mandar mensagem
+
+![Voltar a uma conversa em segundo plano pelo terminal com qwen attach](https://img.alicdn.com/imgextra/i2/O1CN01Mv8j2zQoN9G7nW9B_!!6000000004138-2-tps-3841-2160.png)
+
+### Web Shell: encontre e organize sessões e workspaces na lateral
+
+**A lateral ganhou a aba “Recent sessions”.** As conversas dentro de projetos e as conversas sem workspace aparecem juntas, ordenadas pela atividade mais recente. Com vários projetos rodando ao mesmo tempo, é ali que você encontra todas as sessões. Veja o PR [#14904](https://github.com/QwenLM/qwen-code/pull/14904)
+
+**O trabalho que um agent fez fica dobrado embaixo da conversa que o chamou.** Sessão de agent em segundo plano, tarefa paralela aberta no impulso e tarefa agendada em sessão própria ficam penduradas na conversa que as criou. As partes de um mesmo assunto ficam juntas, e você separa a sessão principal dos ramos que ela criou num relance. Veja o PR [#15714](https://github.com/QwenLM/qwen-code/pull/15714)
+
+**Workspace se ordena e se cria colando um endereço Git.** O menu de workspace ganhou “Move up” e “Move down”, então os projetos do dia a dia ficam sempre no topo e são mais fáceis de achar. Para adicionar um projeto, escolha repositório Git e cole o endereço: o código é baixado e você entra direto naquele workspace. Veja os PRs [#15360](https://github.com/QwenLM/qwen-code/pull/15360), [#15361](https://github.com/QwenLM/qwen-code/pull/15361)
+
+**O workspace pode enxergar outros diretórios, e isso muda nas configurações.** Entrou “Workspace directories” nas configurações, com lista, adição e remoção. Cada caminho novo vale na hora para todas as sessões em execução daquele workspace. Veja o PR [#15393](https://github.com/QwenLM/qwen-code/pull/15393)
+
+**Outras melhorias.** Uma sessão nova recebe como nome a sua primeira pergunta para a IA ([#15689](https://github.com/QwenLM/qwen-code/pull/15689)); as conversas arquivadas ganharam um lugar próprio dentro das configurações, agrupadas por workspace e com filtro por origem ([#15557](https://github.com/QwenLM/qwen-code/pull/15557)); uma resposta pode ser copiada inteira em dois formatos — “Copy content” leva o texto puro, “Copy Markdown” leva o código fonte ([#15345](https://github.com/QwenLM/qwen-code/pull/15345)); o idioma das respostas aparece e se escolhe no painel de configurações, ao lado do idioma da interface ([#15363](https://github.com/QwenLM/qwen-code/pull/15363)).
+
+![Sessões e workspaces na lateral do Web Shell, com reordenar e adicionar por URL Git](https://img.alicdn.com/imgextra/i3/O1CN01TwbPuPYQocH7nW9B_!!6000000007877-2-tps-3841-2160.png)
+
+## 📊 Mais funcionalidades
+
+**Os parâmetros ajustados num cartão interativo voltam para a conversa.** O cartão parava no resultado: para continuar perguntando com aqueles números, era preciso copiá-los e colar numa mensagem nova. Agora o cartão tem uma ação que devolve a conversa de origem o conjunto de parâmetros aplicado. Antes do envio você recebe uma lista congelada para conferir, e o envio sai depois da sua confirmação. Veja o PR [#15333](https://github.com/QwenLM/qwen-code/pull/15333)
+
+**A memória que você acumulou no Codex entra aqui.** Primeiro aparece uma prévia: escolha quais trechos entram e em qual escopo. O ajuste acontece em segundo plano, com o modelo configurado para aquele workspace. No fim, o conteúdo vira memória do próprio Qwen Code e passa a ser recuperado, usado e esquecido como qualquer outra. No terminal, rode `qwen memory import codex`; se quiser só ver o que aconteceria, acrescente `--dry-run`. Veja o PR [#14281](https://github.com/QwenLM/qwen-code/pull/14281)
+
+**Um comando levanta o serviço local e o Managed Agent no seu computador.** Rode `qwen serve --managed --open` e sessões comuns e sessões gerenciadas aparecem na mesma interface, com banco de dados incluso. Precisa de Node.js 22 ou mais e Java 21. Isso é experimental e é só para o seu computador. Veja o PR [#14928](https://github.com/QwenLM/qwen-code/pull/14928)
+
+**Na sessão gerenciada você pode falar no meio do trabalho, e a permissão é por sessão.** Enquanto ele trabalha, o que você digita e os arquivos que você referencia entram numa fila e chegam ao modelo no próximo ponto seguro; o que está na fila ainda dá para editar ou retirar. Com ele parado, você pode escrever regras de permitir, perguntar e negar só para aquela sessão, ou escolher a aprovação Auto. Veja os PRs [#15449](https://github.com/QwenLM/qwen-code/pull/15449), [#15448](https://github.com/QwenLM/qwen-code/pull/15448)
+
+**Sessão gerenciada ganha envio de arquivo, leitura de página web e lista de tarefas, e as novas já delegam para subagents.** Do navegador, envie um arquivo para o workspace escolhido (até 8 MB) e o caminho entra direto na conversa. Ele também consegue buscar páginas públicas e manter a própria lista de tarefas. Veja os PRs [#15586](https://github.com/QwenLM/qwen-code/pull/15586), [#15313](https://github.com/QwenLM/qwen-code/pull/15313), [#15089](https://github.com/QwenLM/qwen-code/pull/15089), [#15171](https://github.com/QwenLM/qwen-code/pull/15171)
+
+**A busca na web aceita o domínio do seu próprio gateway.** Times que mandam todo o tráfego de modelo por um gateway construído por eles mesmos ficavam sem busca: o recurso não reconhecia o domínio próprio, e sem mexer no código não havia outro caminho. Agora basta adicionar uma configuração, e o domínio inteiro mais os subdomínios dele passam a ser reconhecidos. Veja o PR [#15638](https://github.com/QwenLM/qwen-code/pull/15638)
+
+## 👏 Melhorias de experiência
+
+**O modo workflow fica na sessão.** Depois de ligar com `--workflow-mode on` ou `/workflows mode on`, cada rodada seguinte daquela sessão carrega a diretriz. Restaurar, bifurcar, retroceder e limpar têm comportamento próprio, e uma troca que não fecha volta ao estado anterior. As duas interfaces de terminal mostram se o modo está ativo, e na sandbox Docker o interruptor vai junto. Veja os PRs [#15422](https://github.com/QwenLM/qwen-code/pull/15422), [#15743](https://github.com/QwenLM/qwen-code/pull/15743)
+
+**A outra interface de terminal (OpenTUI) recebeu um lote de ajustes nesta rodada.** Com a caixa de entrada vazia, apertar espaço começa a ditar: transcrição, cancelamento, pedido de autorização do microfone e estado de gravação estão ligados. Sair e voltar mostra o texto, as imagens e os resultados de ferramenta já gravados; ao retroceder, a conversa, a próxima requisição e o rascunho voltam juntos àquele ponto. O checkpoint grava no disco no momento em que a alteração é aprovada de verdade. As abas de extensões “Discover” e “Sources” funcionam até a instalação terminar. E rodar o OpenTUI não exige mais que você instale o Bun no seu computador. Veja os PRs [#15617](https://github.com/QwenLM/qwen-code/pull/15617), [#15384](https://github.com/QwenLM/qwen-code/pull/15384), [#15389](https://github.com/QwenLM/qwen-code/pull/15389), [#15671](https://github.com/QwenLM/qwen-code/pull/15671), [#14959](https://github.com/QwenLM/qwen-code/pull/14959)
+
+**Perto de lotar o contexto, um lote de resultados de ferramenta é tratado pelo espaço que sobra.** O lote divide a sobra entre si; texto, imagem e estrutura que precisam ser preservados saem descontados primeiro, e o conteúdo completo continua gravado em disco e disponível. Quando não cabe o aviso de truncamento por extenso, o lote fica para a compactação normal. Veja o PR [#13599](https://github.com/QwenLM/qwen-code/pull/13599)
+
+**Os modelos com contexto de um milhão de token são reconhecidos.** Nomes da geração qwen4 e da série qwen-latest-series, essa por convite, agora contam com a janela de um milhão, em vez de voltar para a janela padrão menor. Veja os PRs [#15758](https://github.com/QwenLM/qwen-code/pull/15758), [#15762](https://github.com/QwenLM/qwen-code/pull/15762)
+
+**As configurações só listam modelos que o provedor entrega hoje.** Antes havia nome já retirado do ar, modelo que não desligava o raciocínio mesmo com a opção marcada e imagem colada para o DeepSeek tratada como não suportada; os três casos foram corrigidos. Para conectar no Alibaba ModelStudio com API Key padrão, preencha a chave e a região e escolha direto um modelo disponível na sua conta. Veja os PRs [#15184](https://github.com/QwenLM/qwen-code/pull/15184), [#15189](https://github.com/QwenLM/qwen-code/pull/15189), [#15164](https://github.com/QwenLM/qwen-code/pull/15164)
+
+## 🔧 Correções importantes
+
+| Correção | Impacto para você | PR |
+|------|-----------|-----|
+| **Seleção no histórico do VS Code vai para a área de transferência** | Você marca um trecho do registro de mensagens, aperta `Ctrl+C` ou copia pelo botão direito, o destaque continua lá e a área de transferência não muda nada (sem seleção, ela era limpa). Agora o que você selecionou entra de fato | [#15403](https://github.com/QwenLM/qwen-code/pull/15403) |
+| **Imagem e arquivo ainda não enviados não somem ao trocar de página** | Você escreveu, não enviou, e mudou de sessão ou atualizou a página: os anexos ficam junto com o rascunho. A view principal e a tela dividida da mesma sessão compartilham esse mesmo rascunho | [#15025](https://github.com/QwenLM/qwen-code/pull/15025), [#15303](https://github.com/QwenLM/qwen-code/pull/15303) |
+| **A estimativa de custo parou de contar duas vezes o token de raciocínio** | Quando a resposta não trazia o total de tokens, a parte de raciocínio entrava duplicada e o custo parecia maior que o real. Cada resposta agora fecha a própria conta antes de somar no total | [#15464](https://github.com/QwenLM/qwen-code/pull/15464) |
+| **Renomear sessão não trava mais quando a lateral está cheia** | Com centenas de sessões na lateral, mudar um nome redesenhava a lista inteira e a digitação não acompanhava. Agora só o campo de entrada é redesenhado | [#15688](https://github.com/QwenLM/qwen-code/pull/15688) |
+| **O cartão interativo para de dizer que calculou quando não calculou** | Você mexia num número, o backend respondia que tinha processado e a interface mostrava como se o resultado estivesse atualizado, quando aquela alteração podia ter sido descartada ou ficar sem atendimento. Os casos agora aparecem separados, e a rodada pulada continua visível mesmo se depois der certo | [#15004](https://github.com/QwenLM/qwen-code/pull/15004) |
+| **O cartão sobrevive a rolar o histórico, trocar de sessão e dividir a tela** | Abrir histórico na mesma página, mudar de sessão, clicar em nova tarefa ou alternar entre tela principal e dividida zerava o que você preencheu e o que foi calculado. Agora fica como estava | [#15611](https://github.com/QwenLM/qwen-code/pull/15611) |
+| **Cartão quebrado não chega mais na sua tela** | Quando o próprio cartão tinha erro — sintaxe inválida, falha já no cálculo inicial, um ponto de interação inexistente — você recebia algo quebrado. Agora ele roda uma primeira vez, devolve ao modelo com linha e coluna do problema e só aparece depois de corrigido | [#15790](https://github.com/QwenLM/qwen-code/pull/15790) |
+| **Cartão gerado durante uma sessão já nasce utilizável** | O resultado chegava aparecendo como um placeholder que precisava reabrir, e só depois de atualizar a página dava para mexer. Agora a interação funciona assim que o resultado chega | [#15787](https://github.com/QwenLM/qwen-code/pull/15787) |
+| **Interface que não mostra cartão para de receber cartão** | No terminal e na execução única de linha de comando, o modelo dizia “o cartão está pronto, arraste os controles aí em cima” onde não existia cartão nenhum. Agora o cartão só vai para interface que renderiza cartão | [#15720](https://github.com/QwenLM/qwen-code/pull/15720) |
+| **No celular os cartões de artefato não se sobrepõem mais** | Em tela estreita, as informações longas do arquivo vazavam da própria caixa e os botões de baixar e abrir ficavam por cima do texto. Agora os dois botões aparecem abaixo das informações do arquivo | [#15300](https://github.com/QwenLM/qwen-code/pull/15300) |
+| **Falha ao instalar uma habilidade agora diz o motivo** | O popup só avisava que não tinha instalado. Agora ele aponta a categoria do problema (formato, campo, nome que não bate, estrutura do pacote, caminho inseguro) e traz depois uma sugestão de próximo passo, em chinês e inglês | [#15013](https://github.com/QwenLM/qwen-code/pull/15013) |
+| **Confirmação pedida por plugin não passa mais sozinha** | Com a aprovação automática ligada, o pedido de confirmação que vinha do próprio plugin era liberado sozinho. Agora esse tipo de pedido sempre aparece para você responder, e o popup diz qual plugin pediu | [#15306](https://github.com/QwenLM/qwen-code/pull/15306) |
+| **Raciocínio e resposta mantêm a ordem entre si** | Quando os dois se intercalavam em trechos, terminal e reprodução embaralhavam a sequência. Agora o conteúdo mantém o encadeamento, e o resumo já concluído continua abrível para leitura enquanto a parte seguinte ainda está saindo | [#15621](https://github.com/QwenLM/qwen-code/pull/15621) |
+| **Edição com parâmetro truncado não escreve no arquivo** | Quando a saída do modelo batia no limite de tamanho e o parâmetro da edição chegava pela metade, aquele request incompleto era gravado do mesmo jeito. Agora vale a mesma regra do terminal, a edição é recusada e o erro vem com o mesmo texto | [#15346](https://github.com/QwenLM/qwen-code/pull/15346) |
+| **Um marcador de outra chamada dentro de um parâmetro não derruba o lote inteiro** | Se um valor de parâmetro carregava exatamente o marcador de outra chamada, a leitura de ferramenta inteira era descartada como inválida. Agora a chamada externa é salva, e só a parte ruim é rejeitada | [#13579](https://github.com/QwenLM/qwen-code/pull/13579) |
+| **O sed interno lia errado a barra invertida entre colchetes** | Um trecho como `s/[ \t]*$//` era lido como escape de JavaScript, o intervalo da substituição saía torto e o espaço que devia sumir ficava lá. Agora dentro e fora do colchete seguem a mesma regra, e escapes como `\t` voltam para o sed de verdade | [#13557](https://github.com/QwenLM/qwen-code/pull/13557) |
+| **Local Control troca de porta quando a preferida está ocupada** | A partida falhava se outra pessoa já usava a porta escolhida. Agora ele tenta de novo com uma porta livre cedida pelo sistema, e o endereço de pareamento, as origens de CORS e o status mostram a porta realmente usada | [#12352](https://github.com/QwenLM/qwen-code/pull/12352) |
+| **Grupos do QQ voltam a ter cada um a sua conversa** | Com o bot configurado por escopo de tópico, conversas de grupos diferentes caíam na mesma sessão. Agora cada grupo tem a própria. Isso é uma mudança de comportamento | [#13882](https://github.com/QwenLM/qwen-code/pull/13882) |
+| **Sessão que trocou de diretório não parece mais cortada no meio** | Os registros internos trazidos pelo refresh do diretório eram lidos como uma frase sua incompleta, e a retomada perguntava à toa se devia continuar. Agora só uma pergunta realmente não respondida, ou uma chamada de ferramenta pendente, dispara a retomada | [#15012](https://github.com/QwenLM/qwen-code/pull/15012) |
+| **Cancelar e tentar de novo no OpenTUI para de perder coisa** | Na nova tentativa, o arquivo e a imagem já preparados desapareciam, e um comando já cancelado ainda conseguia executar na hora em que o histórico era escrito. Os dois foram corrigidos | [#15283](https://github.com/QwenLM/qwen-code/pull/15283) |
+| **No Linux, o seletor nativo de pasta só aparece quando tem como usar** | Sem acesso à interface gráfica, o botão de escolher pasta continuava na tela e falhava ao clicar. Agora a partida confere se aquela interface de exibição realmente responde antes de oferecer o botão | [#15434](https://github.com/QwenLM/qwen-code/pull/15434) |
+| **Imagem e PDF vindos de uma ferramenta chegam ao modelo** | Antes esse conteúdo não passava. Agora passa: a imagem segue o tratamento de segurança que já existia, e o PDF vai como conteúdo bruto ou como texto extraído | [#13606](https://github.com/QwenLM/qwen-code/pull/13606) |
+| **Editar uma mensagem e ser recusado não deixa o VS Code preso no modo de edição** | Depois de recusar a edição, a interface parava em estado de edição e a sua próxima mensagem normal não saía. Agora a recusa encerra a edição, e uma edição aceita mantém o alvo de retrocesso original | [#15439](https://github.com/QwenLM/qwen-code/pull/15439) |
+| **Os controles da sessão gerenciada foram reunidos** | Renomear passou para o menu de cada sessão na lateral; MCP e extensões se administram num lugar só, em Plugins; na criação de tarefa sumiu a linha repetida de diretório, modelo e runtime. Mudar o diretório de trabalho de uma sessão que já está rodando saiu — escolher o diretório na criação continua igual. Isso é uma mudança de comportamento | [#15616](https://github.com/QwenLM/qwen-code/pull/15616) |
+
+## 👥 Contribuidores
+
+| Contribuidor | Contribuição | PRs de referência |
+|--------|---------|-------------|
+| **[@deggs7](https://github.com/deggs7)** | nova aba “Recent sessions” na lateral, conversas arquivadas levadas para as configurações, atalho de criação de grupo reunido no menu do workspace e barra de status simplificada quando o aviso de carregamento fica oculto | [#14904](https://github.com/QwenLM/qwen-code/pull/14904), [#15557](https://github.com/QwenLM/qwen-code/pull/15557), [#15320](https://github.com/QwenLM/qwen-code/pull/15320), [#15423](https://github.com/QwenLM/qwen-code/pull/15423) |
+| **[@Jun516](https://github.com/Jun516)** | uma checagem a mais na passagem de foco ao reabrir os detalhes da sessão e outra no indicador giratório do título enquanto a sessão roda | [#15351](https://github.com/QwenLM/qwen-code/pull/15351), [#15371](https://github.com/QwenLM/qwen-code/pull/15371) |
+| 🆕 **[@sxl-lucky7](https://github.com/sxl-lucky7)** | 🎉 Primeira contribuição: corrige o exemplo da primeira execução da catraca das tarefas agendadas e esclarece a contagem de uso nos diferentes modos de login | [#15452](https://github.com/QwenLM/qwen-code/pull/15452), [#15554](https://github.com/QwenLM/qwen-code/pull/15554) |
+| 🆕 **[@Aling33](https://github.com/Aling33)** | 🎉 Primeira contribuição: quando as checagens do Java SDK quebram, o relatório de falha e o motivo em SQL são preservados | [#14910](https://github.com/QwenLM/qwen-code/pull/14910) |
+| **[@barry166](https://github.com/barry166)** | fixa o caminho de upload do relatório JUnit | [#15502](https://github.com/QwenLM/qwen-code/pull/15502) |
+| **[@CanReader](https://github.com/CanReader)** | fixa o escape do atributo de idioma html na view web | [#10492](https://github.com/QwenLM/qwen-code/pull/10492) |
+| **[@Eric-GoodBoy-Tech](https://github.com/Eric-GoodBoy-Tech)** | restaura uma conversa por grupo no bot do QQ quando a configuração é por escopo de tópico | [#13882](https://github.com/QwenLM/qwen-code/pull/13882) |
+| 🆕 **[@EthDing](https://github.com/EthDing)** | 🎉 Primeira contribuição: as linhas de log de disco cheio passam a ser capturadas como o esperado | [#8549](https://github.com/QwenLM/qwen-code/pull/8549) |
+| **[@he-yufeng](https://github.com/he-yufeng)** | isola os casos de teste do controle de permissão do estado de memória compartilhado | [#11401](https://github.com/QwenLM/qwen-code/pull/11401) |
+| **[@jabrailkhalil](https://github.com/jabrailkhalil)** | cobre com testes o ciclo inteiro de um anexo recebido no Feishu, da entrada até a gravação em disco | [#13278](https://github.com/QwenLM/qwen-code/pull/13278) |
+| **[@MohammedAlkindi](https://github.com/MohammedAlkindi)** | corrige a leitura errada da barra invertida entre colchetes no simulador de sed | [#13557](https://github.com/QwenLM/qwen-code/pull/13557) |
+| **[@shpaker](https://github.com/shpaker)** | escreve as duas explicações que faltavam, de `.agents/skills` e `skills.directories` | [#15086](https://github.com/QwenLM/qwen-code/pull/15086) |
+| **[@Sumire-no-kai](https://github.com/Sumire-no-kai)** | usa uma porta livre cedida pelo sistema quando a porta do Local Control está ocupada | [#12352](https://github.com/QwenLM/qwen-code/pull/12352) |
+| **[@waybarrios](https://github.com/waybarrios)** | fixa as opções longas que o sed não entende, sem assumir o processamento delas | [#15223](https://github.com/QwenLM/qwen-code/pull/15223) |
+| **[@yar3333](https://github.com/yar3333)** | ao copiar a seleção do histórico de mensagens no VS Code, a seleção deixa de ser perdida | [#15403](https://github.com/QwenLM/qwen-code/pull/15403) |
+
+<Callout type="info">
+  **Como atualizar**: execute `npm i @qwen-code/qwen-code@latest -g` para atualizar para a versão mais recente.
+</Callout>
+
+Se tiver dúvidas ou sugestões, fique à vontade para enviar feedback pelos [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
