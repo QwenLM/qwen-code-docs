@@ -3,6 +3,7 @@ export default {
   commands: '命令',
   'cross-session-protocol': '跨会话协议',
   'code-review': '代码审查',
+  'autofix-pr': '自动修复 Pull Request',
   'followup-suggestions': '后续建议',
   'tool-use-summaries': '工具使用摘要',
   'sub-agents': '子智能体',

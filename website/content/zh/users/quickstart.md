@@ -1,5 +1,7 @@
 # 快速入门
 
+**开发预览：** 已启用的开发版本支持通过 [Qwen Account with Subscription](./configuration/auth.md) 使用 Plus/Pro 会员登录。普通发布版本继续使用下方提供商。
+
 > 👏 欢迎使用 Qwen Code！
 
 本快速入门指南将帮助你在几分钟内开始使用 AI 辅助编程。通过本指南，你将了解如何将 Qwen Code 用于常见的开发任务。
@@ -10,7 +12,7 @@
 
 - 一个打开的 **终端** 或命令提示符
 - 一个可供操作的项目代码
-- 来自千问AI平台 / QwenCloud（[国内站](https://platform.qianwenai.com/docs/developer-guides/administration/api-keys) / [国际站](https://docs.qwencloud.com/developer-guides/administration/api-keys)）的 API key 或 Token 计划订阅（推荐设置），或来自阿里云模型即服务（[国内站](https://bailian.console.aliyun.com/) / [国际站](https://modelstudio.console.alibabacloud.com/)）的 API key，或阿里云 Token 计划（[国内站](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [国际站](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)）订阅
+- 来自千问AI平台 / QwenCloud（[国内站](https://platform.qianwenai.com/docs/developer-guides/administration/api-keys) / [国际站](https://docs.qwencloud.com/developer-guides/administration/api-keys)）的 API key 或 Token 计划订阅（推荐设置），或来自阿里云模型即服务（[国内站](https://bailian.console.aliyun.com/) / [国际站](https://modelstudio.console.alibabacloud.com/)）的 API key，或阿里云 Token 计划（[国内站](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [国际站](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)）订阅；在已启用的开发版本中，也可使用有效的 Plus/Pro Qwen 账号
 
 ## 第一步：安装 Qwen Code
 
@@ -66,21 +68,24 @@ qwen
 /auth
 ```
 
-首次运行时的菜单会让你连接一个模型提供商。请从以下选项中选择：
+首次运行时的菜单支持账号登录或连接模型提供商：
 
-- **QwenCloud** — 推荐的设置方式。打开子菜单：
+- **Qwen Account with Subscription（Qwen 账号登录，开发预览）** — 在已启用的开发版本中，通过有效的 Plus 或 Pro 账号在浏览器登录并授权，无需填写 API Key。详见[身份验证](./configuration/auth.md)。
+
+- **QwenCloud** — 推荐的 API Key 接入方式。打开子菜单：
   - **Token 计划**：订阅制，每月提供 Credit 配额，使用专有端点（提供个人版和团队版）。
   - **标准 API Key**：按量付费，使用现有平台 API key 进行连接。
 
   无论哪种方式，你都需要明确选择平台（国内站或国际站），因此 UI 语言不会决定你的端点。详情请参阅[身份认证 → 选项 1：QwenCloud](./configuration/auth)。
 
 - **阿里云模型即服务** — 打开子菜单：
+  - **Coding Plan**：使用阿里云 Coding Plan API Key，配置方法见[身份验证](./configuration/auth.md)。
   - **Token 计划**：按用量计费，使用专有端点，适用于团队和企业。请参阅 [Token 计划指南](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856)（[国际站](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)）了解设置说明。
   - **标准 API Key**：使用阿里云模型即服务（[国内站](https://bailian.console.aliyun.com/) / [国际站](https://modelstudio.console.alibabacloud.com/)）的现有 API key 进行连接。详情请参阅 API 设置指南（[国内站](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [国际站](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)）。
 - **第三方提供商** — 选择内置提供商（DeepSeek、Grok、MiniMax、Z.AI、Kimi、Idealab、ModelScope、OpenRouter、Requesty 等），并通过 API key 连接。
 - **自定义提供商** — 手动连接本地服务器、代理或不受支持的提供商。
 
-> ⚠️ **注意**：Qwen OAuth 已于 2026 年 4 月 15 日停用。如果你之前使用的是 Qwen OAuth，请切换到上述方法之一。
+之前使用旧免费 Qwen OAuth 额度的用户，请参阅[迁移说明](./configuration/auth.md#从旧免费-qwen-oauth-迁移)。
 
 > [!note]
 >
@@ -227,19 +232,19 @@ Qwen Code 将：
 
 以下是日常使用中最常用的命令：
 
-| 命令                  | 作用                                           | 示例                           |
-| --------------------- | ---------------------------------------------- | ------------------------------ |
-| `qwen`                | 启动 Qwen Code                                 | `qwen`                         |
-| `/auth`               | 更改身份认证方式（会话中）                     | `/auth`                        |
-| `/doctor`             | 检查当前身份认证和环境                         | `/doctor`                      |
-| `/help`               | 显示可用命令的帮助信息                         | `/help` 或 `/?`                |
-| `/compress`           | 用摘要替换聊天历史以节省 Token                 | `/compress`                    |
-| `/clear`              | 清除对话历史并释放上下文                               | `/clear`（别名：`reset`、`new`）   |
-| `/theme`              | 更改 Qwen Code 的视觉主题                      | `/theme`                       |
-| `/language`           | 查看或更改语言设置                             | `/language`                    |
-| → `ui [语言]`         | 设置 UI 界面语言                              | `/language ui zh-CN`           |
-| → `output [语言]`     | 设置 LLM 输出语言                            | `/language output Chinese`       |
-| `/quit`               | 立即退出 Qwen Code                             | `/quit` 或 `/exit`             |
+| 命令              | 作用                           | 示例                             |
+| ----------------- | ------------------------------ | -------------------------------- |
+| `qwen`            | 启动 Qwen Code                 | `qwen`                           |
+| `/auth`           | 更改身份认证方式（会话中）     | `/auth`                          |
+| `/doctor`         | 检查当前身份认证和环境         | `/doctor`                        |
+| `/help`           | 显示可用命令的帮助信息         | `/help` 或 `/?`                  |
+| `/compress`       | 用摘要替换聊天历史以节省 Token | `/compress`                      |
+| `/clear`          | 清除对话历史并释放上下文       | `/clear`（别名：`reset`、`new`） |
+| `/theme`          | 更改 Qwen Code 的视觉主题      | `/theme`                         |
+| `/language`       | 查看或更改语言设置             | `/language`                      |
+| → `ui [语言]`     | 设置 UI 界面语言               | `/language ui zh-CN`             |
+| → `output [语言]` | 设置 LLM 输出语言              | `/language output Chinese`       |
+| `/quit`           | 立即退出 Qwen Code             | `/quit` 或 `/exit`               |
 
 参见 [CLI 参考](./features/commands) 获取完整命令列表。
 
