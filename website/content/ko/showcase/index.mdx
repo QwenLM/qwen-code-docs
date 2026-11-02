@@ -2028,6 +2028,19 @@ export const showcaseItems = [
     model: "qwen3.8-max",
     overview: "Web Shell을 계속 쓰려면 로컬 서버가 백그라운드에서 돌아가야 하고, 실행과 상태 확인과 로그와 재시작이 여러 곳에 흩어져 있었습니다. 이제 `qwen daemon` 명령어가 이 관리를 한곳에 모읍니다. 명령어 한 줄로 서버를 백그라운드에 넣고 접속 주소를 받을 수 있습니다.",
     steps: [{ title: "qwen daemon 명령어로 로컬 서버 관리", description: "`qwen daemon`이 로컬 서버의 관리를 한곳에 모읍니다:\n- `qwen daemon start` 서버를 백그라운드에 실행하고 접속 주소를 돌려줍니다. 스크립트에서 띄운 직후 연결해야 하면 `--wait`를 붙이세요\n- `qwen daemon status --detail` 버전과 실행 시간과 세션 수와 문제 수를 확인합니다\n- `qwen daemon logs` 로그를 살펴봅니다\n- `qwen daemon stop` 지정한 서버를 정지합니다\n- `qwen daemon restart --port <포트>` 기록된 설정대로 재시작하고 워크스페이스와 Web Shell 설정까지 함께 복원합니다", command: "qwen daemon start\nqwen daemon status --detail\nqwen daemon logs\nqwen daemon stop\nqwen daemon restart --port <포트>" }]
+  },
+  // === 10월 29일 주간 리포트 데모 ===
+  {
+    id: "autofix-pr-watch",
+    title: "올려 둔 PR은 /autofix-pr에 맡기기",
+    description: "PR watches 페이지에서 검사 실패와 리뷰 의견을 고쳐 push할 때까지 봅니다.",
+    category: "기능 업데이트",
+    features: ["GitHub", "Web Shell"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000000257/O1CN015oVF7OzrEvF7nOLE_!!6000000000257-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/lHYiheFEEj4h06BqKKRsNerhB4iCljq_A56bQT_m2rc.mp4",
+    model: "qwen3.8-max",
+    overview: "PR을 올리고 나면 실패한 검사, 새로 달린 리뷰 의견, 메인 브랜치와의 충돌을 하나씩 다시 들여다보고 손으로 고쳐야 했습니다. 이제 `/autofix-pr`를 실행해 이 일을 Qwen Code에 맡기면 로컬에서 정해진 주기로 살펴보고, 스스로 고쳐 확인까지 마친 다음 push하고 PR에 답까지 남깁니다.",
+    steps: [{ title: "PR을 올리고 확인 시작", description: "본인 저장소에 PR을 하나 올리세요. 그다음 터미널이나 Web Shell에서 `/autofix-pr <PR 번호>`를 실행하면 이 PR을 맡아 주기적으로 상태를 확인합니다.", command: "/autofix-pr <PR 번호>" },{ title: "어디까지 고쳤는지 확인", description: "Qwen Code는 격리된 worktree에서 고치므로 지금 작성 중인 디렉터리는 건드리지 않습니다. `status`로 이 PR이 어디까지 왔는지 확인하고, 나중에 여는 세션에서는 `resume`으로 같은 작업을 다시 시작할 수 있습니다.", command: "/autofix-pr status\n/autofix-pr resume <PR 번호>" },{ title: "PR watches 페이지에서 확인과 중단", description: "Web Shell의 PR watches 페이지에서는 프로젝트별 실행 상태와 push 횟수와 사람이 직접 결정해야 할 항목을 확인할 수 있습니다. 지금 세션에서 돌린 것은 이 페이지에서 원래 대화로 들어가거나 멈출 수 있습니다." }],
   }
 ];
 

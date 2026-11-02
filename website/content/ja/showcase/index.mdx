@@ -2651,6 +2651,23 @@ export const showcaseItems = [
       { title: "一連のコマンドでローカルサービスを管理する", description: "`qwen daemon` がローカルサービスの日常管理を 1 組のコマンドにまとめます。\n- `qwen daemon start` はサービスをバックグラウンドに置いてアクセスアドレスを返します。スクリプトで起動後すぐ接続するなら `--wait` を付けます\n- `qwen daemon status --detail` はバージョン・稼働時間・会話数・問題数を表示します\n- `qwen daemon logs` はログを確認します\n- `qwen daemon stop` は指定したサービスを停止します\n- `qwen daemon restart --port <ポート>` は記録済みの設定どおりに再起動し、ワークスペースと Web Shell の設定も復旧します", command: "qwen daemon start\nqwen daemon status --detail\nqwen daemon logs\nqwen daemon stop\nqwen daemon restart --port <ポート>" },
     ],
   },
+  // === 10月29日ウィークリーデモ ===
+  {
+    id: "autofix-pr-watch",
+    title: "/autofix-pr に PR の面倒をまとめて任せる",
+    description: "落ちたチェックもレビュー意見も、PR watches ページで直して push するまで見られます。",
+    category: "新機能",
+    features: ["GitHub", "Web Shell"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000000257/O1CN015oVF7OzrEvF7nOLE_!!6000000000257-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/lHYiheFEEj4h06BqKKRsNerhB4iCljq_A56bQT_m2rc.mp4",
+    model: "qwen3.8-max",
+    overview: "PR を出したあと、チェックが落ちていないか、レビュー意見が付いていないか、メインブランチとコンフリクトしていないかを見返し、直して push して返信するまでを毎回自分でやっていました。今は /autofix-pr に預けておけば、Qwen Code がローカルで定期的に PR を見張り、落ちたチェックも意見もコンフリクトも自分で直し、検証を通過させてから push し、PR にも返信を残します。",
+    steps: [
+      { title: "PR を出したら見張りを始める", description: "自分のリポジトリで PR を 1 本作り、ターミナルか Web Shell で `/autofix-pr <PR 番号>` を実行すると、その PR の見張りが始まります。", command: "/autofix-pr <PR 番号>" },
+      { title: "どこまで直したかを見る", description: "修正は専用の worktree で進むため、編集中のディレクトリはそのまま使えます。`status` でこの PR がどこまで進んだか分かり、あとから別の会話に切り替えても `resume` で同じ見張りを再開できます。", command: "/autofix-pr status\n/autofix-pr resume <PR 番号>" },
+      { title: "PR watches ページで追う", description: "Web Shell の「PR watches」ページでは、プロジェクトごとの見張り状態、push した回数、人の判断が要る項目を一覧できます。今の会話で動かしている見張りは、このページから元の会話に戻ったり、停止したりできます。" },
+    ],
+  },
 ]
 
 
