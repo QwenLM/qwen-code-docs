@@ -3,7 +3,6 @@ export default {
   commands: 'Commands',
   'cross-session-protocol': 'Cross-Session Protocol',
   'code-review': 'Code Review',
-  'autofix-pr': 'Autofix a Pull Request',
   'followup-suggestions': 'Followup Suggestions',
   'tool-use-summaries': 'Tool-Use Summaries',
   'sub-agents': 'SubAgents',
@@ -38,6 +37,6 @@ export default {
   'terminal-images': 'Terminal Images',
   worktree: 'Worktrees',
   tips: 'Contextual Tips',
-  batch: 'Batch Mode (DashScope)',
-  mem0: 'Mem0',
+  'batch': 'Batch Mode (DashScope)',
+  'mem0': 'Mem0',
 };

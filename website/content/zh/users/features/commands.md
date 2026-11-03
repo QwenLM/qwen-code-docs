@@ -4,11 +4,11 @@
 
 Qwen Code 命令通过特定前缀触发，分为以下三类：
 
-| 前缀类型         | 功能描述                        | 典型使用场景                       |
-| ---------------- | ------------------------------- | ---------------------------------- |
-| 斜杠命令 (`/`)   | 对 Qwen Code 本身进行元级别控制 | 管理会话、修改设置、获取帮助       |
-| At 命令 (`@`)    | 快速将本地文件内容注入对话      | 允许 AI 分析指定文件或目录下的代码 |
-| 感叹号命令 (`!`) | 直接与系统 Shell 交互           | 执行 `git status`、`ls` 等系统命令 |
+| 前缀类型                | 功能描述                                | 典型使用场景                                                 |
+| -------------------------- | --------------------------------------------------- | ---------------------------------------------------------------- |
+| 斜杠命令 (`/`)       | 对 Qwen Code 本身进行元级别控制              | 管理会话、修改设置、获取帮助              |
+| At 命令 (`@`)          | 快速将本地文件内容注入对话 | 允许 AI 分析指定文件或目录下的代码 |
+| 感叹号命令 (`!`) | 直接与系统 Shell 交互                | 执行 `git status`、`ls` 等系统命令          |
 
 ## 1. 斜杠命令 (`/`)
 
@@ -18,22 +18,21 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 这些命令可帮助你保存、恢复和总结工作进度。
 
-| 命令             | 描述                                            | 使用示例                                                      |
-| ---------------- | ----------------------------------------------- | ------------------------------------------------------------- |
+| 命令          | 描述                                                              | 使用示例                                                |
+| ---------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------- |
 | `/init`          | 分析当前目录并创建初始上下文文件                | `/init`                                                       |
-| `/summary`       | 根据对话历史生成项目摘要                        | `/summary` 或 `/summary docs/my-summary.md`                   |
-| `/compress`      | 用摘要替换聊天历史以节省 Tokens                 | `/compress` 或 `/summarize`                                   |
+| `/summary`       | 根据对话历史生成项目摘要                   | `/summary` 或 `/summary docs/my-summary.md`                   |
+| `/compress`      | 用摘要替换聊天历史以节省 Tokens                         | `/compress` 或 `/summarize`                                   |
 | `/compress-fast` | 无需 AI 的快速压缩 — 剥离旧的工具输出和思考过程 | `/compress-fast`                                              |
-| `/resume`        | 恢复之前的对话会话                              | `/resume` 或 `/continue`                                      |
-| `/recap`         | 立即生成单行会话回顾                            | `/recap`                                                      |
-| `/restore`       | 将项目文件还原到工具调用运行前的检查点          | `/restore` (list) 或 `/restore <ID>`                          |
-| `/delete`        | 删除之前的会话                                  | `/delete`                                                     |
-| `/branch`        | 将当前对话分叉到新会话中                        | `/branch`                                                     |
-| `/fork`          | 生成一个继承完整对话的后台代理                  | `/fork <directive>`                                           |
-| `/rewind`        | 将对话回退到之前的某个轮次                      | `/rewind` 或 `/rollback`                                      |
-| `/export`        | 将会话历史导出到文件                            | `/export html`, `/export md`, `/export json`, `/export jsonl` |
-| `/rename`        | 重命名或标记当前会话                            | `/rename My Feature` 或 `/tag`                                |
-| `/commit`        | 由 AI 起草提交说明并创建 git 提交               | `/commit` 或 `/commit only stage the parser changes`          |
+| `/resume`        | 恢复之前的对话会话                                   | `/resume` 或 `/continue`                                      |
+| `/recap`         | 立即生成单行会话回顾                                    | `/recap`                                                      |
+| `/restore`       | 将项目文件还原到工具调用运行前的检查点            | `/restore` (list) 或 `/restore <ID>`                          |
+| `/delete`        | 删除之前的会话                                                | `/delete`                                                     |
+| `/branch`        | 将当前对话分叉到新会话中                         | `/branch`                                                     |
+| `/fork`          | 生成一个继承完整对话的后台代理                         | `/fork <directive>`                                           |
+| `/rewind`        | 将对话回退到之前的某个轮次                             | `/rewind` 或 `/rollback`                                      |
+| `/export`        | 将会话历史导出到文件                                           | `/export html`, `/export md`, `/export json`, `/export jsonl` |
+| `/rename`        | 重命名或标记当前会话                                        | `/rename My Feature` 或 `/tag`                                |
 
 > [!note]
 >
@@ -51,33 +50,33 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 用于调整界面外观和工作环境的命令。
 
-| 命令                 | 描述                                                                                                                          | 使用示例                                                                          |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `/clear`             | 清除对话历史并释放上下文                                                                                                      | `/clear`, `/reset`, `/new`                                                        |
-| `/context`           | 显示上下文窗口使用情况明细                                                                                                    | `/context`                                                                        |
-| → `detail`           | 显示各项上下文使用情况明细                                                                                                    | `/context detail`                                                                 |
-| `/history`           | 控制历史记录显示偏好和可见性                                                                                                  | `/history collapse-on-resume`, `/history expand-on-resume`, `/history expand-now` |
+| 命令              | 描述                                                                                                                                                                       | 使用示例                                                                    |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `/clear`             | 清除对话历史并释放上下文                                                                                                                                    | `/clear`, `/reset`, `/new`                                                        |
+| `/context`           | 显示上下文窗口使用情况明细                                                                                                                                               | `/context`                                                                        |
+| → `detail`           | 显示各项上下文使用情况明细                                                                                                                                             | `/context detail`                                                                 |
+| `/history`           | 控制历史记录显示偏好和可见性                                                                                                                                | `/history collapse-on-resume`, `/history expand-on-resume`, `/history expand-now` |
 | `/diff`              | 打开交互式 diff 查看器，显示未提交的更改和每个轮次的 diff。使用 ←/→ 在当前 git diff 和各个对话轮次之间切换，使用 ↑/↓ 浏览文件 | `/diff`                                                                           |
-| `/log`               | 打开工作区的 commit 历史查看器（仅限 Web Shell）                                                                              | `/log`                                                                            |
-| `/theme`             | 更改 Qwen Code 视觉主题                                                                                                       | `/theme`                                                                          |
-| `/vim`               | 开启/关闭输入区域的 Vim 编辑模式                                                                                              | `/vim`                                                                            |
-| `/voice`             | 切换语音听写输入                                                                                                              | `/voice`, `/voice hold`, `/voice tap`, `/voice off`, `/voice status`              |
-| `/directory`         | 管理多目录支持工作区                                                                                                          | `/dir add ./src,./tests`, `/dir show`                                             |
-| `/cd`                | 将会话移动到新的工作目录                                                                                                      | `/cd ../other-project`                                                            |
-| `/editor`            | 打开对话框以选择支持的编辑器                                                                                                  | `/editor`                                                                         |
-| `/statusline`        | 打开交互式 [status line](./status-line.md) 预设对话框                                                                         | `/statusline`                                                                     |
-| `/statusline <text>` | 通过代理生成命令模式 [status line](./status-line.md)                                                                          | `/statusline show model and git branch`                                           |
-| `/terminal-setup`    | 配置终端多行输入快捷键                                                                                                        | `/terminal-setup`                                                                 |
+| `/log`               | 打开工作区的 commit 历史查看器（仅限 Web Shell）                                                                                                                   | `/log`                                                                            |
+| `/theme`             | 更改 Qwen Code 视觉主题                                                                                                                                                     | `/theme`                                                                          |
+| `/vim`               | 开启/关闭输入区域的 Vim 编辑模式                                                                                                                                           | `/vim`                                                                            |
+| `/voice`             | 切换语音听写输入                                                                                                                                                      | `/voice`, `/voice hold`, `/voice tap`, `/voice off`, `/voice status`              |
+| `/directory`         | 管理多目录支持工作区                                                                                                                                          | `/dir add ./src,./tests`, `/dir show`                                             |
+| `/cd`                | 将会话移动到新的工作目录                                                                                                                                      | `/cd ../other-project`                                                            |
+| `/editor`            | 打开对话框以选择支持的编辑器                                                                                                                                            | `/editor`                                                                         |
+| `/statusline`        | 打开交互式 [status line](./status-line.md) 预设对话框                                                                                                                 | `/statusline`                                                                     |
+| `/statusline <text>` | 通过代理生成命令模式 [status line](./status-line.md)                                                                                                                  | `/statusline show model and git branch`                                           |
+| `/terminal-setup`    | 配置终端多行输入快捷键                                                                                                                                | `/terminal-setup`                                                                 |
 
 ### 1.3 语言设置
 
 专门用于控制界面和输出语言的命令。
 
-| 命令                  | 描述               | 使用示例                   |
-| --------------------- | ------------------ | -------------------------- |
+| 命令               | 描述                      | 使用示例             |
+| --------------------- | -------------------------------- | -------------------------- |
 | `/language`           | 查看或更改语言设置 | `/language`                |
-| → `ui [language]`     | 设置 UI 界面语言   | `/language ui zh-CN`       |
-| → `output [language]` | 设置 LLM 输出语言  | `/language output Chinese` |
+| → `ui [language]`     | 设置 UI 界面语言        | `/language ui zh-CN`       |
+| → `output [language]` | 设置 LLM 输出语言          | `/language output Chinese` |
 
 - 可用的内置 UI 语言：`zh-CN`（简体中文）、`en-US`（英语）、`ru-RU`（俄语）、`de-DE`（德语）、`ja-JP`（日语）、`pt-BR`（葡萄牙语 - 巴西）、`fr-FR`（法语）、`ca-ES`（加泰罗尼亚语）
 - 输出语言示例：`Chinese`、`English`、`Japanese` 等。
@@ -86,53 +85,52 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 用于管理 AI 工具和模型的命令。
 
-| 命令                  | 描述                                                                             | 使用示例                                                                                                  |
-| --------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `/mcp`                | 列出已配置的 MCP 服务器和工具                                                    | `/mcp`, `/mcp desc`, `/mcp nodesc`, `/mcp schema`                                                         |
-| `/import-config`      | 从 Claude 配置中导入 MCP 服务器                                                  | `/import-config all`, `/import-config claude-code`, `/import-config claude-desktop --scope user\|project` |
-| `/tools`              | 显示当前可用的工具列表                                                           | `/tools`, `/tools desc`                                                                                   |
-| `/skills`             | 打开 Skills 面板以浏览、搜索、切换和启动 skills                                  | `/skills`, `/<skill-name>`                                                                                |
-| `/learn`              | 从文件、目录、URL、视频或文本创建可复用的项目 skill                              | `/learn https://docs.example.com/api`, `/learn ./tutorial.mp4 focus on deployment`                        |
-| `/curator`            | 检查、固定、归档或恢复不活跃的项目自动 skills                                    | `/curator`, `/curator run --dry-run`, `/curator pin <directory>`, `/curator restore <directory>`          |
-| `/plan`               | 切换到计划模式或退出计划模式                                                     | `/plan`, `/plan <task>`, `/plan exit`                                                                     |
-| `/approval-mode`      | 更改工具审批模式（仅限当前会话）                                                 | `/approval-mode`, `/approval-mode auto-edit`                                                              |
-| → `plan`              | 仅分析，不执行（安全审查）                                                       | `/approval-mode plan`                                                                                     |
-| → `default`           | 编辑需要审批（日常使用）                                                         | `/approval-mode default`                                                                                  |
-| → `auto-edit`         | 自动批准编辑（受信任环境）                                                       | `/approval-mode auto-edit`                                                                                |
-| → `auto`              | 分类器评估审批（自主）                                                           | `/approval-mode auto`                                                                                     |
-| → `yolo`              | 自动批准所有操作（快速原型开发）                                                 | `/approval-mode yolo`                                                                                     |
-| `/peers`              | 查看被保留的 peer 消息；管理受信任的控制器                                       | `/peers`, `/peers accept <id>`, `/peers deny all`, `/peers controllers`, `/peers revoke <id>`             |
-| `/model`              | 切换当前会话使用的模型                                                           | `/model`, `/model <model-id>` (立即切换)                                                                  |
-| `/model --fast`       | 为提示建议设置更轻量的模型                                                       | `/model --fast qwen3-coder-flash`                                                                         |
-| `/model --voice`      | 设置用于语音转录的模型                                                           | `/model --voice <model-id>`                                                                               |
-| `/model --vision`     | 设置 vision-bridge 模型，用于为纯文本主模型转录图像                              | `/model --vision <model-id>`                                                                              |
-| `/model --compaction` | 设置用于聊天压缩的模型                                                           | `/model --compaction <model-id>`, `/model --compaction clear`                                             |
-| `/model --image`      | 为内置图片生成工具设置具备图片生成能力的模型                                     | `/model --image <model-id>`                                                                               |
-| `/effort`             | 设置具备思考能力的模型的推理 effort                                              | `/effort` (打开选择器), `/effort high` (low/medium/high/xhigh/max；根据提供商进行映射和限制)              |
-| `/output-style`       | 选择影响回复撰写方式的输出风格                                                   | `/output-style` (打开选择器), `/output-style Concise`, `/output-style default` (无风格)                   |
-| `/extensions`         | 管理扩展                                                                         | `/extensions list`, `/extensions manage`                                                                  |
-| → `list`              | 列出已安装的扩展                                                                 | `/extensions list`                                                                                        |
-| → `manage`            | 管理已安装的扩展（交互式）                                                       | `/extensions manage`                                                                                      |
-| → `explore`           | 在浏览器中打开扩展页面                                                           | `/extensions explore <Gemini\|ClaudeCode>`                                                                |
-| → `install`           | 从 git 仓库或路径安装扩展                                                        | `/extensions install <repo-or-path>`                                                                      |
-| `/memory`             | 打开 Memory Manager 对话框                                                       | `/memory`                                                                                                 |
-| `/remember`           | 保存持久化 memory                                                                | `/remember Prefer terse responses`                                                                        |
-| `/forget`             | 从 auto-memory 中移除匹配的条目                                                  | `/forget <query>`                                                                                         |
-| `/dream`              | 手动运行 auto-memory 整合                                                        | `/dream`                                                                                                  |
-| `/hooks`              | 管理 Qwen Code hooks                                                             | `/hooks`, `/hooks list`                                                                                   |
-| `/reload-plugins`     | 从磁盘重新加载扩展变更（命令、skills、agents、workflows、hooks、MCP/LSP 服务器） | `/reload-plugins`                                                                                         |
-| `/permissions`        | 管理权限规则                                                                     | `/permissions`                                                                                            |
-| `/agents`             | 管理 subagents                                                                   | `/agents manage`, `/agents create`                                                                        |
-| `/arena`              | 管理 Arena 会话                                                                  | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (别名 `choose`)                           |
-| `/goal`               | 设置 Goal — 持续工作直到验证器确认目标已达成（参见 [Goals](./goals.md)）         | `/goal <objective>`, `/goal edit <objective>`, `/goal pause`, `/goal resume`, `/goal clear`               |
-| `/tasks`              | 列出后台任务                                                                     | `/tasks`                                                                                                  |
-| `/workflows`          | 检查 workflow 运行；协作式暂停/恢复后台运行                                      | `/workflows`, `/workflows <runId>`, `/workflows p <runId>`                                                |
-| `/lsp`                | 显示 LSP 服务器状态                                                              | `/lsp`                                                                                                    |
-| `/trust`              | 管理文件夹信任设置                                                               | `/trust`                                                                                                  |
-
+| 命令           | 描述                                                                      | 使用示例                                                                                            |
+| ----------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `/mcp`            | 列出已配置的 MCP 服务器和工具                                            | `/mcp`, `/mcp desc`, `/mcp nodesc`, `/mcp schema`                                                         |
+| `/import-config`  | 从 Claude 配置中导入 MCP 服务器                                           | `/import-config all`, `/import-config claude-code`, `/import-config claude-desktop --scope user\|project` |
+| `/tools`          | 显示当前可用的工具列表                                            | `/tools`, `/tools desc`                                                                                   |
+| `/skills`         | 打开 Skills 面板以浏览、搜索、切换和启动 skills               | `/skills`, `/<skill-name>`                                                                                |
+| `/learn`          | 从文件、目录、URL、视频或文本创建可复用的项目 skill             | `/learn https://docs.example.com/api`, `/learn ./tutorial.mp4 focus on deployment`                        |
+| `/curator`        | 检查、固定、归档或恢复不活跃的项目自动 skills                  | `/curator`, `/curator run --dry-run`, `/curator pin <directory>`, `/curator restore <directory>`          |
+| `/plan`           | 切换到计划模式或退出计划模式                                            | `/plan`, `/plan <task>`, `/plan exit`                                                                     |
+| `/approval-mode`  | 更改工具审批模式（仅限当前会话）                             | `/approval-mode`, `/approval-mode auto-edit`                                                              |
+| → `plan`          | 仅分析，不执行（安全审查）                                      | `/approval-mode plan`                                                                                     |
+| → `default`       | 编辑需要审批（日常使用）                                           | `/approval-mode default`                                                                                  |
+| → `auto-edit`     | 自动批准编辑（受信任环境）                                         | `/approval-mode auto-edit`                                                                                |
+| → `auto`          | 分类器评估审批（自主）                                       | `/approval-mode auto`                                                                                     |
+| → `yolo`          | 自动批准所有操作（快速原型开发）                                      | `/approval-mode yolo`                                                                                     |
+| `/peers`              | 查看被保留的 peer 消息；管理受信任的控制器                                 | `/peers`, `/peers accept <id>`, `/peers deny all`, `/peers controllers`, `/peers revoke <id>`             |
+| `/model`          | 切换当前会话使用的模型                                             | `/model`, `/model <model-id>` (立即切换)                                                        |
+| `/model --fast`   | 为提示建议设置更轻量的模型                                       | `/model --fast qwen3-coder-flash`                                                                         |
+| `/model --voice`  | 设置用于语音转录的模型                                       | `/model --voice <model-id>`                                                                               |
+| `/model --vision` | 设置 vision-bridge 模型，用于为纯文本主模型转录图像 | `/model --vision <model-id>`                                                                              |
+| `/model --compaction` | 设置用于聊天压缩的模型                                                                 | `/model --compaction <model-id>`, `/model --compaction clear`                                             |
+| `/model --image`  | 为内置图片生成工具设置具备图片生成能力的模型                                               | `/model --image <model-id>`                                                                               |
+| `/effort`         | 设置具备思考能力的模型的推理 effort                                 | `/effort` (打开选择器), `/effort high` (low/medium/high/xhigh/max；根据提供商进行映射和限制)       |
+| `/output-style`       | 选择影响回复撰写方式的输出风格                         | `/output-style` (打开选择器), `/output-style Concise`, `/output-style default` (无风格)               |
+| `/extensions`     | 管理扩展                                                                | `/extensions list`, `/extensions manage`                                                                  |
+| → `list`          | 列出已安装的扩展                                                        | `/extensions list`                                                                                        |
+| → `manage`        | 管理已安装的扩展（交互式）                                        | `/extensions manage`                                                                                      |
+| → `explore`       | 在浏览器中打开扩展页面                                                  | `/extensions explore <Gemini\|ClaudeCode>`                                                                |
+| → `install`       | 从 git 仓库或路径安装扩展                                     | `/extensions install <repo-or-path>`                                                                      |
+| `/memory`         | 打开 Memory Manager 对话框                                                   | `/memory`                                                                                                 |
+| `/remember`       | 保存持久化 memory                                                            | `/remember Prefer terse responses`                                                                        |
+| `/forget`         | 从 auto-memory 中移除匹配的条目                                         | `/forget <query>`                                                                                         |
+| `/dream`          | 手动运行 auto-memory 整合                                           | `/dream`                                                                                                  |
+| `/hooks`          | 管理 Qwen Code hooks                                                           | `/hooks`, `/hooks list`                                                                                   |
+| `/reload-plugins` | 从磁盘重新加载扩展变更（命令、skills、agents、hooks、MCP/LSP 服务器）           | `/reload-plugins`                                                                                         |
+| `/permissions`    | 管理权限规则                                                          | `/permissions`                                                                                            |
+| `/agents`         | 管理 subagents                                                                 | `/agents manage`, `/agents create`                                                                        |
+| `/arena`          | 管理 Arena 会话                                                            | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (别名 `choose`)                          |
+| `/goal`               | 设置 Goal — 持续工作直到验证器确认目标已达成（参见 [Goals](./goals.md)）      | `/goal <objective>`, `/goal edit <objective>`, `/goal pause`, `/goal resume`, `/goal clear`               |
+| `/tasks`          | 列出后台任务                                                            | `/tasks`                                                                                                  |
+| `/workflows`      | 检查 workflow 运行；协作式暂停/恢复后台运行                                  | `/workflows`, `/workflows <runId>`, `/workflows p <runId>`                                                |
+| `/lsp`            | 显示 LSP 服务器状态                                                           | `/lsp`                                                                                                    |
+| `/trust`          | 管理文件夹信任设置                                                     | `/trust`                                                                                                  |
 > [!warning]
 >
-> 仅从你信任的来源安装扩展（`/extensions install`）。扩展可以捆绑 MCP 服务器、skill 和命令，它们以与 Qwen Code 本身相同的权限运行——它们可以访问你的文件、API key 和对话数据。扩展也能提供 workflow 脚本；这些脚本在无法直接访问文件或 shell 的 workflow 沙箱中运行，通过启动的子代理执行操作，并经过 Workflow 工具审批。`/extensions install` 不会提示确认。
+> 仅从你信任的来源安装扩展（`/extensions install`）。扩展可以捆绑 MCP 服务器、skill 和命令，它们以与 Qwen Code 本身相同的权限运行——它们可以访问你的文件、API key 和对话数据。`/extensions install` 不会提示确认。
 
 > [!warning]
 >
@@ -142,34 +140,29 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 >
 > `/workflows`、`/lsp` 和 `/trust` 仅在其对应功能启用时才会注册——分别通过用户/系统作用域的 `tools.workflowsEnabled` 设置或 `QWEN_CODE_ENABLE_WORKFLOWS=1` 环境变量、`--experimental-lsp` CLI 标志和 `security.folderTrust.enabled` 设置。`tools.workflowsEnabled` 的工作区值会被忽略。禁用时它们不会出现，并会报告未知命令。同样，`/dream` 和 `/forget` 仅在托管 auto-memory 可用时才会注册；不可用时它们不会出现。
 
-> [!note]
->
-> 已安装扩展中的 Skill 也可作为斜杠命令调用，名称包含所属扩展，例如 `/rust:pdf`。`/pdf` 不是它的别名；若另有名为 pdf 的 Skill，裸命令会执行另一个 Skill。`slashCommands.disabled` 会同时检查带扩展名和裸名称，因此旧的禁用配置仍然有效。详见[扩展 Skill 的命名方式](./skills.md#扩展-skills-的命名方式)。
-
 ### 1.5 内置 Skills
 
 这些命令调用内置的 skill，提供专门的工作流。
 
-| 命令          | 描述                                           | 使用示例                                                                                  |
-| ------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `/review`     | 多代理代码审查（high effort 下 12 个并行代理） | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low`                 |
-| `/coordinate` | 协调只读 worker 和一个可选的 worktree writer   | `/coordinate investigate and fix the authentication regression`                           |
-| `/loop`       | 按定期计划运行 prompt                          | `/loop 5m check the build`                                                                |
-| `/goal-draft` | 将模糊意图转化为可验证的 `/goal` 目标          | `/goal-draft make the auth tests pass`                                                    |
-| `/autofix-pr` | 持续检查 PR 并修复 CI、评审反馈和冲突          | `/autofix-pr 123`、`/autofix-pr 123 --once`、`/autofix-pr resume`、`/autofix-pr stop 123` |
-| `/simplify`   | 审查最近的更改并直接应用安全的清理编辑         | `/simplify`, `/simplify focus on duplication`                                             |
-| `/qc-helper`  | 回答有关 Qwen Code 使用和配置的问题            | `/qc-helper how do I configure MCP?`                                                      |
+| 命令         | 描述                                                        | 使用示例                                          |
+| ------------ | ----------------------------------------------------------- | ------------------------------------------------- |
+| `/review`    | 多代理代码审查（high effort 下 12 个并行代理）         | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
+| `/coordinate`| 协调只读 worker 和一个可选的 worktree writer            | `/coordinate investigate and fix the authentication regression`           |
+| `/loop`       | 按定期计划运行 prompt                                       | `/loop 5m check the build`                                                |
+| `/goal-draft` | 将模糊意图转化为可验证的 `/goal` 目标                       | `/goal-draft make the auth tests pass`                                    |
+| `/simplify`   | 审查最近的更改并直接应用安全的清理编辑                      | `/simplify`, `/simplify focus on duplication`                             |
+| `/qc-helper` | 回答有关 Qwen Code 使用和配置的问题                         | `/qc-helper how do I configure MCP?`              |
 
-`/review` 详见[代码审查](./code-review.md)，`/autofix-pr` 详见[自动修复 Pull Request](./autofix-pr.md)。
+有关 `/review` 的完整文档，请参阅 [Code Review](./code-review.md)。
 
 ### 1.6 侧边提问 (`/btw`)
 
 `/btw` 命令允许你快速提出侧边问题，而不会中断或影响主对话流。
 
-| 命令                   | 描述                   |
-| ---------------------- | ---------------------- |
-| `/btw <your question>` | 提出一个快速的侧边问题 |
-| `?btw <your question>` | 侧边问题的替代语法     |
+| 命令                   | 描述                                |
+| ---------------------- | ----------------------------------- |
+| `/btw <your question>` | 提出一个快速的侧边问题            |
+| `?btw <your question>` | 侧边问题的替代语法                |
 
 **工作原理：**
 
@@ -181,11 +174,11 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 **键盘快捷键（交互模式）：**
 
-| 快捷键               | 操作                             |
-| -------------------- | -------------------------------- |
-| `Escape`             | 取消（加载中时）或关闭（完成后） |
-| `Space` 或 `Enter`   | 关闭答案（当输入为空时）         |
-| `Ctrl+C` 或 `Ctrl+D` | 取消正在进行的侧边问题           |
+| 快捷键               | 操作                                                |
+| -------------------- | --------------------------------------------------- |
+| `Escape`             | 取消（加载中时）或关闭（完成后）                    |
+| `Space` 或 `Enter`   | 关闭答案（当输入为空时）                            |
+| `Ctrl+C` 或 `Ctrl+D` | 取消正在进行的侧边问题                            |
 
 **示例：**
 
@@ -220,11 +213,11 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 **支持的执行模式：**
 
-| 模式                 | 行为                                     |
-| -------------------- | ---------------------------------------- |
-| Interactive          | 在 Composer 上方显示，支持 Markdown 渲染 |
-| Non-interactive      | 返回文本结果：`btw> question\nanswer`    |
-| ACP (Agent Protocol) | 返回 `stream_messages` 异步生成器        |
+| 模式                 | 行为                                         |
+| -------------------- | -------------------------------------------- |
+| Interactive          | 在 Composer 上方显示，支持 Markdown 渲染     |
+| Non-interactive      | 返回文本结果：`btw> question\nanswer`        |
+| ACP (Agent Protocol) | 返回 `stream_messages` 异步生成器            |
 
 > [!tip]
 >
@@ -234,10 +227,10 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 `/advisor` 命令对目前为止的对话进行独立的只读审查，并返回结构化的第二意见——不会执行任务，也不会中断主对话。
 
-| 命令               | 描述                   |
-| ------------------ | ---------------------- |
-| `/advisor`         | 审查上面的对话         |
-| `/advisor <focus>` | 将审查聚焦于特定关注点 |
+| 命令               | 描述                           |
+| ------------------ | ------------------------------ |
+| `/advisor`         | 审查上面的对话                 |
+| `/advisor <focus>` | 将审查聚焦于特定关注点         |
 
 **工作原理：**
 
@@ -280,10 +273,10 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 **支持的执行模式：**
 
-| 模式                 | 行为                   |
-| -------------------- | ---------------------- |
-| Interactive          | 在对话中渲染四部分审查 |
-| ACP (Agent Protocol) | 将审查作为消息结果返回 |
+| 模式                 | 行为                                            |
+| -------------------- | ----------------------------------------------- |
+| Interactive          | 在对话中渲染四部分审查                          |
+| ACP (Agent Protocol) | 将审查作为消息结果返回                          |
 
 > [!tip]
 >
@@ -297,9 +290,9 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 `/recap` 命令会生成当前会话的简短"上次离开时"摘要，以便你可以恢复旧对话，而无需向上翻阅数页历史记录。
 
-| 命令     | 描述                   |
-| -------- | ---------------------- |
-| `/recap` | 生成并显示单行会话回顾 |
+| 命令     | 描述                                     |
+| -------- | ---------------------------------------- |
+| `/recap` | 生成并显示单行会话回顾                   |
 
 **工作原理：**
 
@@ -343,14 +336,14 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 **键盘快捷键：**
 
-| 按键      | 操作                                 |
-| --------- | ------------------------------------ |
-| `←` / `→` | 在来源之间切换（Current / T1 / T2…） |
-| `↑` / `↓` | 浏览文件列表                         |
-| `j` / `k` | 浏览文件列表（vim 风格）             |
-| Enter     | 查看所选文件的内联 diff              |
-| `←` / Esc | 从内联 diff 视图返回文件列表         |
-| Esc       | 关闭对话框                           |
+| 按键      | 操作                                      |
+| --------- | ----------------------------------------- |
+| `←` / `→` | 在来源之间切换（Current / T1 / T2…）      |
+| `↑` / `↓` | 浏览文件列表                              |
+| `j` / `k` | 浏览文件列表（vim 风格）                  |
+| Enter     | 查看所选文件的内联 diff                   |
+| `←` / Esc | 从内联 diff 视图返回文件列表              |
+| Esc       | 关闭对话框                                |
 
 **示例：**
 
@@ -435,35 +428,32 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 用于获取信息和执行系统设置的命令。
 
-| 命令             | 描述                                                                              | 使用示例                                                                            |
-| ---------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `/help`          | 显示可用命令的帮助信息                                                            | `/help` 或 `/?`                                                                     |
-| `/status`        | 显示版本信息                                                                      | `/status` 或 `/about`                                                               |
-| `/status paths`  | 显示当前会话文件和日志路径                                                        | `/status paths`                                                                     |
-| `/stats`         | 打开交互式使用统计仪表板（Session、Activity 和 Efficiency 标签页）                | `/stats` 或 `/usage`                                                                |
-| `/stats model`   | 显示每个模型的 token 细分和预估成本                                               | `/stats model`                                                                      |
-| `/stats tools`   | 显示每个工具的调用次数                                                            | `/stats tools`                                                                      |
-| `/stats skills`  | 显示当前实时会话中每个 skill 的调用次数（仅限实时；不包括跨会话的每日/每月活动）  | `/stats skills`                                                                     |
-| `/stats daily`   | 显示每日 token 使用统计                                                           | `/stats daily`（别名 `day`），`/stats day [YYYY-MM-DD]`                             |
-| `/stats monthly` | 显示每月 token 使用统计                                                           | `/stats monthly`（别名 `month`），`/stats month [YYYY-MM]`                          |
-| `/stats export`  | 将使用统计导出为 CSV 或 JSON                                                      | `/stats export <daily\|monthly> [date\|month] [--format csv\|json] [--output path]` |
-| `/settings`      | 打开设置编辑器                                                                    | `/settings`                                                                         |
-| `/config`        | 通过点路径键获取或设置任何配置（写入用户设置）                                    | `/config`（列出所有），`/config <key>`，`/config <key>=<value>`                     |
-| `/auth`          | 更改身份验证方法                                                                  | `/auth`、`/connect`、`/login`                                                       |
-| `/logout`        | 退出当前 Qwen 会员账号（开发版终端）                                              | `/logout`                                                                           |
-| `/upgrade`       | 打开 Qwen 会员套餐页（开发版终端，需使用 Qwen 会员登录）                          | `/upgrade`                                                                          |
-| `/doctor`        | 运行安装和环境诊断                                                                | `/doctor`、`/doctor memory`                                                         |
-| → `memory`       | 显示当前进程内存诊断                                                              | `/doctor memory [--json] [--sample] [--snapshot]`                                   |
-| → `cpu-profile`  | 记录 CPU profile 以供 Chrome DevTools 分析                                        | `/doctor cpu-profile [--duration <seconds>]`                                        |
-| → `rollback`     | 将独立 CLI 二进制文件回滚到上一版本（仅限独立安装；对于对话历史请使用 `/rewind`） | `/doctor rollback`                                                                  |
-| `/docs`          | 在浏览器中打开完整的 Qwen Code 文档                                               | `/docs`                                                                             |
-| `/ide`           | 管理 IDE 集成                                                                     | `/ide status`、`/ide install`、`/ide enable`、`/ide disable`                        |
-| `/insight`       | 从聊天历史生成编程洞察                                                            | `/insight`                                                                          |
-| `/setup-github`  | 设置 GitHub Actions                                                               | `/setup-github`                                                                     |
-| `/bug`           | 提交关于 Qwen Code 的问题                                                         | `/bug Button click unresponsive`                                                    |
-| `/copy`          | 复制到剪贴板：回复（倒数第 N 个）、代码（按语言）、LaTeX 或 Mermaid               | `/copy`、`/copy 2`、`/copy python`、`/copy latex`、`/copy mermaid`                  |
-| `/quit`          | 立即退出 Qwen Code                                                                | `/quit` 或 `/exit`                                                                  |
-
+| 命令             | 描述                                                                                                                         | 使用示例                                                                            |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `/help`          | 显示可用命令的帮助信息                                                                                                       | `/help` 或 `/?`                                                                     |
+| `/status`        | 显示版本信息                                                                                                                 | `/status` 或 `/about`                                                               |
+| `/status paths`  | 显示当前会话文件和日志路径                                                                                                   | `/status paths`                                                                     |
+| `/stats`         | 打开交互式使用统计仪表板（Session、Activity 和 Efficiency 标签页）                                                           | `/stats` 或 `/usage`                                                                |
+| `/stats model`   | 显示每个模型的 token 细分和预估成本                                                                                          | `/stats model`                                                                      |
+| `/stats tools`   | 显示每个工具的调用次数                                                                                                       | `/stats tools`                                                                      |
+| `/stats skills`  | 显示当前实时会话中每个 skill 的调用次数（仅限实时；不包括跨会话的每日/每月活动）                                             | `/stats skills`                                                                     |
+| `/stats daily`   | 显示每日 token 使用统计                                                                                                      | `/stats daily`（别名 `day`），`/stats day [YYYY-MM-DD]`                             |
+| `/stats monthly` | 显示每月 token 使用统计                                                                                                      | `/stats monthly`（别名 `month`），`/stats month [YYYY-MM]`                          |
+| `/stats export`  | 将使用统计导出为 CSV 或 JSON                                                                                                 | `/stats export <daily\|monthly> [date\|month] [--format csv\|json] [--output path]` |
+| `/settings`      | 打开设置编辑器                                                                                                               | `/settings`                                                                         |
+| `/config`        | 通过点路径键获取或设置任何配置（写入用户设置）                                                                               | `/config`（列出所有），`/config <key>`，`/config <key>=<value>`                     |
+| `/auth`          | 更改身份验证方法                                                                                                             | `/auth`、`/connect`、`/login`                                                       |
+| `/doctor`        | 运行安装和环境诊断                                                                                                           | `/doctor`、`/doctor memory`                                                         |
+| → `memory`       | 显示当前进程内存诊断                                                                                                         | `/doctor memory [--json] [--sample] [--snapshot]`                                   |
+| → `cpu-profile`  | 记录 CPU profile 以供 Chrome DevTools 分析                                                                                   | `/doctor cpu-profile [--duration <seconds>]`                                        |
+| → `rollback`     | 将独立 CLI 二进制文件回滚到上一版本（仅限独立安装；对于对话历史请使用 `/rewind`）                                            | `/doctor rollback`                                                                  |
+| `/docs`          | 在浏览器中打开完整的 Qwen Code 文档                                                                                          | `/docs`                                                                             |
+| `/ide`           | 管理 IDE 集成                                                                                                                | `/ide status`、`/ide install`、`/ide enable`、`/ide disable`                        |
+| `/insight`       | 从聊天历史生成编程洞察                                                                                                       | `/insight`                                                                          |
+| `/setup-github`  | 设置 GitHub Actions                                                                                                          | `/setup-github`                                                                     |
+| `/bug`           | 提交关于 Qwen Code 的问题                                                                                                    | `/bug Button click unresponsive`                                                    |
+| `/copy`          | 复制到剪贴板：回复（倒数第 N 个）、代码（按语言）、LaTeX 或 Mermaid                                                          | `/copy`、`/copy 2`、`/copy python`、`/copy latex`、`/copy mermaid`                  |
+| `/quit`          | 立即退出 Qwen Code                                                                                                           | `/quit` 或 `/exit`                                                                  |
 > [!warning]
 >
 > `/doctor memory --snapshot` 会生成一个 V8 堆快照，其中可能包含当前会话的提示词、文件内容、API 密钥和工具返回结果。请在分享该文件前仔细检查。
@@ -474,22 +464,22 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 ### 1.11 常用快捷键
 
-| 快捷键             | 功能         | 说明                                           |
-| ------------------ | ------------ | ---------------------------------------------- |
-| `Ctrl/cmd+L`       | 清屏         | 仅清除可见屏幕（不会像 `/clear` 那样重置会话） |
-| `Ctrl/cmd+T`       | 切换工具描述 | MCP 工具管理                                   |
-| `Ctrl/cmd+C`×2     | 退出确认     | 安全退出机制                                   |
-| `Ctrl/cmd+Z`       | 撤销输入     | 文本编辑                                       |
-| `Ctrl/cmd+Shift+Z` | 重做输入     | 文本编辑                                       |
+| 快捷键             | 功能                  | 说明                                                                      |
+| ------------------ | --------------------- | ------------------------------------------------------------------------- |
+| `Ctrl/cmd+L`       | 清屏                | 仅清除可见屏幕（不会像 `/clear` 那样重置会话）                            |
+| `Ctrl/cmd+T`       | 切换工具描述          | MCP 工具管理                                                              |
+| `Ctrl/cmd+C`×2     | 退出确认              | 安全退出机制                                                              |
+| `Ctrl/cmd+Z`       | 撤销输入              | 文本编辑                                                                  |
+| `Ctrl/cmd+Shift+Z` | 重做输入              | 文本编辑                                                                  |
 
 ### 1.12 身份验证命令
 
 在 Qwen Code 会话中使用 `/auth` 来配置身份验证。使用 `/doctor` 检查当前的身份验证和环境状态。
 
-| 命令      | 说明                                             |
-| --------- | ------------------------------------------------ |
-| `/auth`   | 交互式配置身份验证（别名：`/connect`、`/login`） |
-| `/doctor` | 显示身份验证和环境检查                           |
+| 命令      | 说明                                                                   |
+| --------- | ---------------------------------------------------------------------- |
+| `/auth`   | 交互式配置身份验证（别名：`/connect`、`/login`）                       |
+| `/doctor` | 显示身份验证和环境检查                                                 |
 
 > [!note]
 >
@@ -499,24 +489,22 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 @ 命令用于快速将本地文件或目录内容添加到对话中。
 
-| 命令格式            | 说明                         | 示例                                 |
-| ------------------- | ---------------------------- | ------------------------------------ |
-| `@<file path>`      | 注入指定文件的内容           | `@src/main.py 请解释这段代码`        |
-| `@<directory path>` | 递归读取目录下的所有文本文件 | `@docs/ 总结该文档的内容`            |
-| 单独的 `@`          | 用于讨论 `@` 符号本身时使用  | `@ 这个符号在编程中是用来做什么的？` |
+| 命令格式            | 说明                                   | 示例                                             |
+| ------------------- | -------------------------------------- | ------------------------------------------------ |
+| `@<file path>`      | 注入指定文件的内容                     | `@src/main.py 请解释这段代码`                    |
+| `@<directory path>` | 递归读取目录下的所有文本文件           | `@docs/ 总结该文档的内容`                        |
+| 单独的 `@`          | 用于讨论 `@` 符号本身时使用            | `@ 这个符号在编程中是用来做什么的？`             |
 
 注意：路径中的空格需要使用反斜杠进行转义（例如：`@My\ Documents/file.txt`）
-
-交互式输入中的 `@` 补全支持 Unicode 文件名，包括 emoji。提示词其他位置的 emoji 不会改变补全使用的文件路径。
 
 ## 3. 感叹号命令（`!`）- Shell 命令执行
 
 感叹号命令允许你直接在 Qwen Code 中执行系统命令。
 
-| 命令格式           | 说明                                                 | 示例                             |
-| ------------------ | ---------------------------------------------------- | -------------------------------- |
-| `!<shell command>` | 在子 Shell 中执行命令                                | `!ls -la`、`!git status`         |
-| 单独的 `!`         | 切换 Shell 模式，任何输入都会直接作为 Shell 命令执行 | `!`(进入) → 输入命令 → `!`(退出) |
+| 命令格式             | 说明                                                     | 示例                                 |
+| -------------------- | -------------------------------------------------------- | ------------------------------------ |
+| `!<shell command>`   | 在子 Shell 中执行命令                                    | `!ls -la`、`!git status`             |
+| 单独的 `!`           | 切换 Shell 模式，任何输入都会直接作为 Shell 命令执行     | `!`(进入) → 输入命令 → `!`(退出)     |
 
 环境变量：通过 `!` 执行的命令会设置 `QWEN_CODE=1` 环境变量。
 
@@ -530,11 +518,11 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 ### 快速概览
 
-| 功能     | 说明                                       | 优势                 | 优先级 | 适用场景                 |
-| -------- | ------------------------------------------ | -------------------- | ------ | ------------------------ |
-| 命名空间 | 子目录创建以冒号命名的命令                 | 更好的命令组织       |        |                          |
-| 全局命令 | `~/.qwen/commands/`                        | 在所有项目中可用     | 低     | 个人常用命令，跨项目使用 |
-| 项目命令 | `<project root directory>/.qwen/commands/` | 项目专属，可版本控制 | 高     | 团队共享，项目专属命令   |
+| 功能             | 说明                                     | 优势                                   | 优先级 | 适用场景                                             |
+| ---------------- | ---------------------------------------- | -------------------------------------- | ------ | ---------------------------------------------------- |
+| 命名空间         | 子目录创建以冒号命名的命令               | 更好的命令组织                         |        |                                                      |
+| 全局命令         | `~/.qwen/commands/`                      | 在所有项目中可用                       | 低     | 个人常用命令，跨项目使用                             |
+| 项目命令         | `<project root directory>/.qwen/commands/` | 项目专属，可版本控制                   | 高     | 团队共享，项目专属命令                               |
 
 优先级规则：项目命令 > 用户命令（同名时使用项目命令）
 
@@ -542,10 +530,10 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 #### 文件路径到命令名的映射表
 
-| 文件位置                                 | 生成的命令    | 调用示例           |
-| ---------------------------------------- | ------------- | ------------------ |
-| `~/.qwen/commands/test.md`               | `/test`       | `/test 参数`       |
-| `<project>/.qwen/commands/git/commit.md` | `/git:commit` | `/git:commit 信息` |
+| 文件位置                               | 生成的命令      | 调用示例              |
+| -------------------------------------- | --------------- | --------------------- |
+| `~/.qwen/commands/test.md`             | `/test`         | `/test 参数`          |
+| `<project>/.qwen/commands/git/commit.md` | `/git:commit`   | `/git:commit 信息`    |
 
 命名规则：路径分隔符（`/` 或 `\`）转换为冒号（`:`）
 
@@ -562,10 +550,10 @@ description: 可选的描述（在 /help 中显示）
 使用 {{args}} 进行参数注入。
 ```
 
-| 字段          | 是否必填 | 说明                        | 示例                                 |
-| ------------- | -------- | --------------------------- | ------------------------------------ |
-| `description` | 可选     | 命令描述（在 /help 中显示） | `description: 代码分析工具`          |
-| 提示词正文    | 必填     | 发送给模型的提示词内容      | frontmatter 之后的任意 Markdown 内容 |
+| 字段          | 是否必填 | 说明                                   | 示例                                       |
+| ------------- | -------- | -------------------------------------- | ------------------------------------------ |
+| `description` | 可选     | 命令描述（在 /help 中显示）            | `description: 代码分析工具`                |
+| 提示词正文    | 必填     | 发送给模型的提示词内容                 | frontmatter 之后的任意 Markdown 内容       |
 
 ### TOML 文件格式（已弃用）
 
@@ -573,50 +561,50 @@ description: 可选的描述（在 /help 中显示）
 >
 > **已弃用：** TOML 格式仍受支持，但将在未来版本中移除。请迁移到 Markdown 格式。
 
-| 字段          | 是否必填 | 说明                        | 示例                              |
-| ------------- | -------- | --------------------------- | --------------------------------- |
-| `prompt`      | 必填     | 发送给模型的提示词内容      | `prompt = "请分析代码：{{args}}"` |
-| `description` | 可选     | 命令描述（在 /help 中显示） | `description = "代码分析工具"`    |
+| 字段          | 是否必填 | 说明                                   | 示例                                       |
+| ------------- | -------- | -------------------------------------- | ------------------------------------------ |
+| `prompt`      | 必填     | 发送给模型的提示词内容                 | `prompt = "请分析代码：{{args}}"`          |
+| `description` | 可选     | 命令描述（在 /help 中显示）            | `description = "代码分析工具"`             |
 
 ### 参数处理机制
 
-| 处理方式       | 语法         | 适用场景           | 安全特性            |
-| -------------- | ------------ | ------------------ | ------------------- |
-| 上下文感知注入 | `{{args}}`   | 需要精确控制参数   | 自动进行 Shell 转义 |
-| 默认参数处理   | 无特殊标记   | 简单命令，追加参数 | 原样追加            |
-| Shell 命令注入 | `!{command}` | 需要动态内容       | 执行前需要确认      |
+| 处理方式                 | 语法               | 适用场景                             | 安全特性                               |
+| ------------------------ | ------------------ | ------------------------------------ | -------------------------------------- |
+| 上下文感知注入           | `{{args}}`         | 需要精确控制参数                     | 自动进行 Shell 转义                    |
+| 默认参数处理             | 无特殊标记         | 简单命令，追加参数                   | 原样追加                               |
+| Shell 命令注入           | `!{command}`       | 需要动态内容                         | 执行前需要确认                         |
 
 #### 1. 上下文感知注入（`{{args}}`）
 
-| 场景            | TOML 配置                               | 调用方式              | 实际效果              |
-| --------------- | --------------------------------------- | --------------------- | --------------------- |
-| 原始注入        | `prompt = "Fix: {{args}}"`              | `/fix "Button issue"` | `Fix: "Button issue"` |
-| 在 Shell 命令中 | `prompt = "Search: !{grep {{args}} .}"` | `/search "hello"`     | 执行 `grep "hello" .` |
+| 场景             | TOML 配置                             | 调用方式              | 实际效果               |
+| ---------------- | ------------------------------------- | --------------------- | ---------------------- |
+| 原始注入         | `prompt = "Fix: {{args}}"`            | `/fix "Button issue"` | `Fix: "Button issue"`  |
+| 在 Shell 命令中  | `prompt = "Search: !{grep {{args}} .}"` | `/search "hello"`     | 执行 `grep "hello" .`  |
 
 #### 2. 默认参数处理
 
-| 输入情况 | 处理方式                             | 示例                            |
-| -------- | ------------------------------------ | ------------------------------- |
-| 有参数   | 追加到提示词末尾（用两个换行符分隔） | `/cmd 参数` → 原始提示词 + 参数 |
-| 无参数   | 原样发送提示词                       | `/cmd` → 原始提示词             |
+| 输入情况   | 处理方式                                         | 示例                                         |
+| ---------- | ------------------------------------------------ | -------------------------------------------- |
+| 有参数     | 追加到提示词末尾（用两个换行符分隔）             | `/cmd 参数` → 原始提示词 + 参数              |
+| 无参数     | 原样发送提示词                                   | `/cmd` → 原始提示词                          |
 
 🚀 动态内容注入
 
-| 注入类型   | 语法           | 处理顺序 | 用途             |
-| ---------- | -------------- | -------- | ---------------- |
-| 文件内容   | `@{file path}` | 首先处理 | 注入静态参考文件 |
-| Shell 命令 | `!{command}`   | 中间处理 | 注入动态执行结果 |
-| 参数替换   | `{{args}}`     | 最后处理 | 注入用户参数     |
+| 注入类型       | 语法             | 处理顺序   | 用途                             |
+| -------------- | ---------------- | ---------- | -------------------------------- |
+| 文件内容       | `@{file path}`   | 首先处理   | 注入静态参考文件                 |
+| Shell 命令     | `!{command}`     | 中间处理   | 注入动态执行结果                 |
+| 参数替换       | `{{args}}`       | 最后处理   | 注入用户参数                     |
 
 #### 3. Shell 命令执行（`!{...}`）
 
-| 操作                    | 用户交互    |
-| ----------------------- | ----------- |
-| 1. 解析命令和参数       | -           |
-| 2. 自动 Shell 转义      | -           |
-| 3. 显示确认对话框       | ✅ 用户确认 |
-| 4. 执行命令             | -           |
-| 5. 将输出注入到提示词中 | -           |
+| 操作                          | 用户交互             |
+| ----------------------------- | -------------------- |
+| 1. 解析命令和参数             | -                    |
+| 2. 自动 Shell 转义            | -                    |
+| 3. 显示确认对话框             | ✅ 用户确认          |
+| 4. 执行命令                   | -                    |
+| 5. 将输出注入到提示词中       | -                    |
 
 示例：生成 Git Commit 信息
 
@@ -634,12 +622,12 @@ description: 基于暂存区的更改生成 Commit 信息
 
 #### 4. 文件内容注入（`@{...}`）
 
-| 文件类型   | 支持状态      | 处理方式             |
-| ---------- | ------------- | -------------------- |
-| 文本文件   | ✅ 完全支持   | 直接注入内容         |
-| 图片/PDF   | ✅ 多模态支持 | 编码并注入           |
-| 二进制文件 | ⚠️ 有限支持   | 可能会被跳过或截断   |
-| 目录       | ✅ 递归注入   | 遵循 .gitignore 规则 |
+| 文件类型   | 支持状态             | 处理方式                  |
+| ---------- | -------------------- | ------------------------- |
+| 文本文件   | ✅ 完全支持          | 直接注入内容              |
+| 图片/PDF   | ✅ 多模态支持        | 编码并注入                |
+| 二进制文件 | ⚠️ 有限支持          | 可能会被跳过或截断        |
+| 目录       | ✅ 递归注入          | 遵循 .gitignore 规则      |
 
 示例：代码审查命令
 
@@ -657,12 +645,12 @@ description: 基于最佳实践的代码审查
 
 #### "纯函数重构"命令创建步骤表
 
-| 操作            | 命令/代码                                 |
-| --------------- | ----------------------------------------- |
-| 1. 创建目录结构 | `mkdir -p ~/.qwen/commands/refactor`      |
-| 2. 创建命令文件 | `touch ~/.qwen/commands/refactor/pure.md` |
-| 3. 编辑命令内容 | 参考下方的完整代码。                      |
-| 4. 测试命令     | `@file.js` → `/refactor:pure`             |
+| 操作                        | 命令/代码                                 |
+| --------------------------- | ----------------------------------------- |
+| 1. 创建目录结构             | `mkdir -p ~/.qwen/commands/refactor`      |
+| 2. 创建命令文件             | `touch ~/.qwen/commands/refactor/pure.md` |
+| 3. 编辑命令内容             | 参考下方的完整代码。                      |
+| 4. 测试命令                 | `@file.js` → `/refactor:pure`             |
 
 ```markdown
 ---
@@ -681,21 +669,20 @@ description: 将代码重构为纯函数
 
 #### 命令设计建议表
 
-| 实践要点 | 推荐做法               | 避免做法                 |
-| -------- | ---------------------- | ------------------------ |
-| 命令命名 | 使用命名空间进行组织   | 避免使用过于通用的名称   |
-| 参数处理 | 明确使用 `{{args}}`    | 依赖默认追加（容易混淆） |
-| 错误处理 | 利用 Shell 错误输出    | 忽略执行失败             |
-| 文件组织 | 在目录中按功能进行组织 | 所有命令都放在根目录     |
-| 描述字段 | 始终提供清晰的描述     | 依赖自动生成的描述       |
-
+| 实践要点       | 推荐做法                          | 避免做法                                  |
+| -------------- | --------------------------------- | ----------------------------------------- |
+| 命令命名       | 使用命名空间进行组织              | 避免使用过于通用的名称                    |
+| 参数处理       | 明确使用 `{{args}}`               | 依赖默认追加（容易混淆）                  |
+| 错误处理       | 利用 Shell 错误输出               | 忽略执行失败                              |
+| 文件组织       | 在目录中按功能进行组织            | 所有命令都放在根目录                      |
+| 描述字段       | 始终提供清晰的描述                | 依赖自动生成的描述                        |
 #### 安全特性提醒表
 
-| 安全机制   | 防护效果     | 用户操作     |
-| ---------- | ------------ | ------------ |
-| Shell 转义 | 防止命令注入 | 自动处理     |
-| 执行确认   | 避免误执行   | 对话框确认   |
-| 错误报告   | 帮助诊断问题 | 查看错误信息 |
+| 安全机制 | 防护效果 | 用户操作 |
+| ---------------------- | -------------------------- | ---------------------- |
+| Shell 转义 | 防止命令注入 | 自动处理 |
+| 执行确认 | 避免误执行 | 对话框确认 |
+| 错误报告 | 帮助诊断问题 | 查看错误信息 |
 
 ## 5. CLI 子命令
 
@@ -703,11 +690,11 @@ description: 将代码重构为纯函数
 
 ### 会话管理
 
-| 命令                        | 描述                         | 使用示例                                                                         |
-| --------------------------- | ---------------------------- | -------------------------------------------------------------------------------- |
-| `qwen sessions list`        | 列出最近的对话会话           | `qwen sessions list`, `qwen sessions list --json --limit 50`                     |
-| `qwen sessions ps`          | 列出当前正在运行的交互式会话 | `qwen sessions ps`, `qwen sessions ps --json`                                    |
-| `qwen sessions controllers` | 管理受信任的控制器 token     | `qwen sessions controllers add --label <name>`, `qwen sessions controllers list` |
+| 命令                 | 描述                             | 使用示例                                                       |
+| -------------------- | -------------------------------- | -------------------------------------------------------------- |
+| `qwen sessions list` | 列出最近的对话会话               | `qwen sessions list`, `qwen sessions list --json --limit 50`   |
+| `qwen sessions ps`   | 列出当前正在运行的交互式会话     | `qwen sessions ps`, `qwen sessions ps --json`                  |
+| `qwen sessions controllers` | 管理受信任的控制器 token            | `qwen sessions controllers add --label <name>`, `qwen sessions controllers list` |
 
 #### `qwen sessions list`
 
@@ -715,10 +702,10 @@ description: 将代码重构为纯函数
 
 **标志：**
 
-| 标志      | 类型   | 默认值  | 描述                                         |
-| --------- | ------ | ------- | -------------------------------------------- |
-| `--json`  | 布尔   | `false` | 以 JSON Lines 格式输出（每行一个 JSON 对象） |
-| `--limit` | number | `20`    | 要显示的最大会话数                           |
+| 标志 | 类型 | 默认值 | 描述 |
+| --------- | ------- | ------- | ----------------------------------------------- |
+| `--json` | 布尔 | `false` | 以 JSON Lines 格式输出（每行一个 JSON 对象） |
+| `--limit` | number | `20` | 要显示的最大会话数 |
 
 **人类可读输出（默认）：**
 
@@ -749,72 +736,67 @@ qwen sessions list --json | jq .
 
 #### `qwen sessions ps`
 
-列出当前机器上可见的 Qwen Code 会话记录。`sessions list` 读取已保存的对话轨迹，回答“做过什么”；本命令同时显示实时进程注册表，以及 Agent View 标记为 `managed` 的记录。被终止会话留下的注册表记录会在发现时清理。managed 记录是持久化管理信息，不能证明 worker 仍在运行。一次性 `qwen -p` 不注册，也不会显示。
+列出当前在此机器上注册的 Qwen Code 会话。
+`sessions list` 遍历已保存的对话记录（"我做过什么"）；而此命令
+遍历实时进程注册表（"此刻正在运行什么"）。被终止会话
+留下的记录会在发现时被清理。一次性的 `qwen -p` 运行永远不会注册，
+因此永远不会显示。
 
 **标志：**
 
-| 标志     | 类型    | 默认值  | 描述                                |
-| -------- | ------- | ------- | ----------------------------------- |
-| `--json` | boolean | `false` | 输出 JSON Lines，每行一个 JSON 对象 |
+| 标志     | 类型    | 默认值  | 描述                                            |
+| -------- | ------- | ------- | ----------------------------------------------- |
+| `--json` | 布尔    | `false` | 以 JSON Lines 格式输出（每行一个 JSON 对象）    |
 
-**默认可读输出：**
+**人类可读输出（默认）：**
 
-表格列为 NAME、KIND、PID、AGE、DIRECTORY。
-
-KIND 表示注册来源：终端会话为 `tui`，语音前端、中继等非 Qwen Code 会话程序为 `external`，由其他程序驱动的会话为 `headless` 或 `serve`。一个 `qwen --acp` 子进程在同一进程中托管多个会话，所以多行可共用 PID；daemon 启动它时为 serve，客户端直接驱动时为 headless，每个会话单独注册。与 NAME、DIRECTORY 一样，KIND 是进程自报信息，所有字段均由被描述进程写入，不决定会话权限。Agent View 的 managed 记录将 KIND 显示为 managed，PID、AGE 显示为 `-`；即使同一会话另有实时注册表记录，也保留独立行。记录格式及注册自有程序的方法见[跨会话协议](./cross-session-protocol.md)。
+包含以下列的表格：NAME、KIND、PID、AGE、DIRECTORY。
 
 **JSON 输出（`--json`）：**
 
-stdout 输出 JSON Lines，managed 记录在前，注册表记录保持原有结构：
+在 stdout 输出 JSON Lines，最新的会话排在前面。每行是一个包含以下字段的 JSON 对象：
 
 ```
 schemaVersion, pid, procStart, pidNs, sessionId, cwd, name, startedAt,
-qwenVersion, kind, ipcPath (when peer messaging is available)
+qwenVersion, kind, ipcPath (当 peer 消息可用时)
 ```
 
-managed 记录仅包含有来源依据的数据：
+不会向 stdout 写入其他内容——空列表完全不输出任何内容——因此 `qwen sessions ps --json | jq .` 可以安全地用于脚本。
 
-```
-sessionId, cwd, managed: true
-```
-
-stdout 不写入其他内容；空列表不输出，因此可安全使用 `qwen sessions ps --json | jq .`。如果无法读取 supervisor 存储，仍输出注册表记录，并将原因写入 stderr。
-
-JSON 是原始数据，字段按记录原样输出，不做终端净化。请将其视为数据，在终端展示前净化。
+JSON 输出是原始数据：字段值按记录原样发出，不经过终端净化。请将它们视为数据，在终端中渲染前进行净化处理。
 
 **示例：**
 
 ```bash
-# Show the other live sessions
+# 显示其他活跃会话
 qwen sessions ps
 
-# Which directories have a visible session record?
-# Note: `jq -r` renders the raw recorded value in your terminal (see the
-# raw-data note above); pipe through a sanitizer if the path is untrusted.
+# 哪些目录当前正在使用中？
+# 注意：`jq -r` 会在终端中渲染原始记录值（参见上方
+# 原始数据说明）；如果路径不受信任，请通过净化器管道处理。
 qwen sessions ps --json | jq -r .cwd
-```
 
 ## 6. 向另一个运行中的会话发送消息
 
-同一机器上的两个交互式会话可以互发消息。功能**默认开启**：同一用户在机器上的其他会话能够发现该会话，收到的消息会先经过下述审查规则，再交给模型。若要让会话不可见且不可达，请在 `settings.json` 中关闭并重启：
+同一台机器上的两个交互式会话可以互相发送消息。此功能是实验性的，**默认关闭**；在 `settings.json` 中开启并重启：
 
 ```json
-{ "agents": { "crossSessionMessaging": false } }
+{ "agents": { "crossSessionMessaging": true } }
 ```
 
-开启后，模型通过 `list_agents` 发现其他会话，它们在 sessions 下以 `qwen sessions ps --json` 记录的 name 显示，表格视图可能截断长名称。调用 `send_message` 时以该名称作为 to。重名时会显示简短 `[ref]`，发送必须使用 `name [ref]`；有歧义的裸名称会被拒绝。list_agents 的 self 字段还会报告本会话名称。`to: "*"` 始终只表示当前 Agent Team 的队友，不会发给其他会话。
+开启后，一个会话中的模型可以通过 `list_agents` 发现其他会话——每个会话都出现在 `sessions` 下，带有 `qwen sessions ps --json` 记录的 `name`（表格视图可能会截断长名称）——并使用 `send_message` 以该名称作为 `to` 来寻址。当两个会话共享同一个名称时，`list_agents` 会为每个会话显示一个简短的 `[ref]`，发送时必须包含它（`name [ref]`）；可能指向任一会话的裸名称会被拒绝而不是猜测。`list_agents` 还会在 `self` 下报告会话自身的名称，而 `to: "*"` 仍然表示"我的 Agent Team teammates"，永远不会到达其他会话。
 
-接收方会明确知道消息来自另一个会话，而非其用户，消息不携带你在对方会话中的授权；接收方只能按自身权限处理。用户可通过 `agents.crossSessionInbound`（accept、hold、refuse）选择策略。未设置时，仅在双方审查类别相同时投递：双方都逐操作审查（default 或 plan），或双方都处于部分操作无需逐次审查的模式（auto-edit、auto、yolo）。不同类别或未声明类别的发送方，其消息会被保留待审查，双向规则相同。逐操作提示保护的是操作，而不是模型被消息说服的内容，因此逐操作审查的会话会保留无人监督模型写来的消息。接收会话可通过 `/peers` 查看和放行；仅因模式不同而保留的消息，会在双方模式一致后自动放行。
+消息到达另一个会话时，会标记为来自另一个会话，而不是来自其用户，并且在那里不携带你的任何权限：接收会话只会在其自身的权限设置内对其采取行动。其用户可以使用 `agents.crossSessionInbound`（`accept`、`hold` 或 `refuse`）选择传入消息的处理方式。未设置时，只有当两个会话处于同一审查类别时，消息才会被传递：双方都审查每个操作（默认或 plan 模式），或者双方都处于无需逐次审查即可应用某些操作的模式（auto-edit、auto 或 yolo）。来自另一类别的会话、或未声明自身所属类别的发送方的消息，会被保留以待审查——双向皆如此。审查每个操作的会话会保留来自不审查操作的会话的消息，因为该消息是由无人监督的模型编写的，而逐次操作提示保护的是操作本身，而非会话被说服去做的事。保留的消息会在接收会话中使用 `/peers` 列出并释放，仅因模式差异而被保留的消息会在双方模式一致后自动释放。
 
-仓库只能让其中的会话更谨慎，不能放宽操作者的设置。工作区 `.qwen/settings.json` 可将入站策略设为 hold/refuse，或将消息开关设为 false，覆盖用户级较宽松值。会放宽操作者设置的工作区值会被忽略并警告：例如 accept，或在用户/系统已关闭时设为 true。其他作用域未设置开关时，工作区 true 只是重复默认值，会静默丢弃。有效值若无法识别，所有消息会保留。系统设置仍按通用规则优先于这些设置。
+仓库可以使其内部打开的会话更加谨慎，而绝不会更宽松：工作区 `.qwen/settings.json` 可以将 `agents.crossSessionInbound` 设置为 `hold` 或 `refuse`，或将 `agents.crossSessionMessaging` 设置为 `false`，该值会覆盖用户设置中较宽松的值。会放宽你设置的工作区值（`accept`，或开关的 `true`）会被忽略并给出警告，CLI 无法识别的值在作为有效值时会保留所有消息。系统设置会覆盖以上所有，正如它对每个设置所做的那样。
 
-保留不会无限等待。无人决定的消息按 `agents.crossSessionHeldExpiry` 过期，可选 1m、5m、10m、never，默认五分钟；发送方会获知没有决定。缩短设置也适用于已经等待的消息。
+保留不会无限等待。无人决定的消息会在 `agents.crossSessionHeldExpiry`（`1m`、`5m`、`10m` 或 `never`，默认为 5 分钟）后过期，发送会话会被告知未做出任何决定。缩短该设置会影响已在等待的消息。
 
-如果运行时目录缺失、归其他用户所有或只读，导致收件箱无法绑定，会先尝试临时目录下的私有目录，仍失败才以无收件箱方式启动。启动时和 `/peers` 都会说明原因及需修改的项，通常是 `XDG_RUNTIME_DIR` 或 `TMPDIR`。
+如果会话无法绑定其收件箱——运行时目录缺失、被其他用户拥有、或为只读（如在容器内可能发生的情况）——它会先尝试临时目录下的私有目录，只有当这也失败时，才会以无收件箱的方式启动。发生这种情况时，会话会在启动时说明，`/peers` 也会重复说明原因及需要更改的内容（通常是 `XDG_RUNTIME_DIR` 或 `TMPDIR`）。
 
-共享运行时目录的容器中，进程 ID 可能重复，从而推导出同一收件箱地址。后启动的会话会选择邻近地址，不接管已有地址，保证两者可达。peer 从注册表读取地址，不自行推导，因此不受影响。
+两个会话也可能解析到相同的收件箱地址，因为地址是按进程 id 为键的，而进程 id 在共享运行时目录的容器之间会重复。第二个启动的会话会取一个相邻的地址，而不是接管正在使用的地址，这样两者都不会变得不可达。Peer 不受影响：它们从会话注册表中读取会话的地址，而不是自行推导。
 
-`send_message` 仅确认消息已交给对方会话。后续保留、人工拒绝、策略拒绝、丢弃、过期、地址错误或保留后放行等结果，会以回执 `Message to <name>: …` 出现在发送会话记录中。地址易主时需重新列出代理。declined 表示有人审查后拒绝，refused 表示策略为 refuse、无人看到消息，dropped 表示收件箱在审查前就拒绝消息。首次丢弃立即回复，其余每隔几秒合并为回执，并列出代表的消息，避免逐条刷屏。发送方模型不会收到这些通知；对方回复则作为跨会话消息到达。
+`send_message` 调用仅确认消息已传递给另一个会话。它的后续情况会作为回执稍后到达：如果它被保留、拒绝、refused、过期或地址错误（地址已变更——再次列出代理）——或在保留后释放——发送会话的记录中会出现通知（`Message to <name>: …`）。Declined、refused 和 dropped 是三种不同的结果：declined 表示有人审查了消息并拒绝，refused 表示该会话的 `agents.crossSessionInbound` 是 `refuse` 且根本没有人看到它，dropped 表示其收件箱在上述任何情况发生之前就拒绝了该消息（见下文）。第一次 dropped 会立即回复，其余的会每隔几秒合并到一条回执中，每条回执会指明它所代表的消息，因此一批 dropped 只需几行而不是每条一行。发送它的模型不会被告知；如果另一个会话回复，回复会作为跨会话消息到达。
 
 ### 泛洪保护
 
@@ -826,9 +808,15 @@ qwen sessions ps --json | jq -r .cwd
 
 ### 收件箱认证与脚本注入
 
+每个会话的收件箱都需要一个每会话 token：连接必须在其第一行出示 token，然后才会读取任何消息，会话通过它们互相发现的相同注册表记录自动交换 token。不支持 token 的构建版本中的会话可以从较新版本接收，但其发往较新版本的消息会被丢弃。
+
+会话会将自己的收件箱地址和 token 作为 `QWEN_CODE_MESSAGING_SOCKET` 和 `QWEN_CODE_MESSAGING_TOKEN` 导出给子进程，因此会话运行的脚本或 hook 可以向其发送消息。这是一个第二位的、_子级_ token，永远不会在任何地方发布：只有会话启动的进程才能持有它，因此携带该 token 到达的消息会被识别为会话自身的，而不是其他会话的。
+
+### 收件箱认证与脚本注入
+
 每个会话的收件箱都需要一个每会话 token：连接必须在其第一行出示 token，然后才会读取任何消息，会话通过它们互相发现的相同注册表记录自动交换 token。不支持 token 的旧版本构建的会话可以从较新版本接收，但其发往较新版本的消息会被丢弃。
 
-会话会将自己的收件箱地址和 token 作为 `QWEN_CODE_MESSAGING_SOCKET` 和 `QWEN_CODE_MESSAGING_TOKEN` 导出给子进程，因此会话运行的脚本或 hook 可以向其发送消息。这是一个第二位的*子级* token，永远不会在任何地方发布：只有会话启动的进程才能持有它，因此携带该 token 到达的消息会被识别为会话自身的，而不是其他会话的。
+会话会将自己的收件箱地址和 token 作为 `QWEN_CODE_MESSAGING_SOCKET` 和 `QWEN_CODE_MESSAGING_TOKEN` 导出给子进程，因此会话运行的脚本或 hook 可以向其发送消息。这是一个第二位的_子级_ token，永远不会在任何地方发布：只有会话启动的进程才能持有它，因此携带该 token 到达的消息会被识别为会话自身的，而不是其他会话的。
 
 ```bash
 { printf '%s\n' \
@@ -837,7 +825,7 @@ qwen sessions ps --json | jq -r .cwd
 } | socat - UNIX-CONNECT:"$QWEN_CODE_MESSAGING_SOCKET"
 ```
 
-为每次注入赋予一个新的 `msgId`。接收端网关会记住它已处理过的 id，因此重用 id 的 hook 在第一次会被传递，之后每次运行都会被静默去重。重复相同的*文本*没有问题——上面的重复检查不适用于会话自身的进程——但速率限制仍然适用，因此循环中的 hook 会像其他泛洪一样被丢弃。
+为每次注入赋予一个新的 `msgId`。接收端网关会记住它已处理过的 id，因此重用 id 的 hook 在第一次会被传递，之后每次运行都会被静默去重。重复相同的_文本_没有问题——上面的重复检查不适用于会话自身的进程——但速率限制仍然适用，因此循环中的 hook 会像其他泛洪一样被丢弃。
 
 注入的消息仍然会经过入站网关，并被标记为非来自用户，但网关知道它来自会话自身的进程：在模式一致性的默认情况下，它会被直接传递而不经过审查（处于相同位置的 peer 会被保留），而显式的 `agents.crossSessionInbound` 为 `hold` 或 `refuse` 时，会像对待其他消息一样对其生效。模型会将其视为 `<cross_session_message from="own process" origin="own-process">`，并附有通知说明它来自会话运行的脚本或 hook，而非来自用户。
 
@@ -881,7 +869,7 @@ qwen sessions controllers remove c_1a2b # 撤销一个
 
 发送给它们的消息会被拒绝而不是保留。保留是向人提出的问题，而没有人会代表被驱动的会话监视保留消息列表；发送方会立即被告知，而不是等待过期。保留的消息应该在哪里为这些会话 surfaced 尚未确定。
 
-会话默认注册，除非自身设置关闭 `agents.crossSessionMessaging`，或使用 `--bare`、`--safe-mode` 启动；这两个模式无论设置值如何都会关闭消息功能。关闭后会话保持不可见，避免公布一个永远不会应答的地址。
+会话只有在其自身设置中 `agents.crossSessionMessaging` 开启时才会注册。关闭时它会保持不可见，因为列出没有人可以发消息的会话的唯一目的就是宣传一个永远不会应答的地址。
 
 ### 不是 Qwen Code 会话的程序
 
@@ -890,3 +878,4 @@ qwen sessions controllers remove c_1a2b # 撤销一个
 [Cross-Session Protocol](./cross-session-protocol.md) 是编写此类程序的契约：记录 schema 和如何判断活跃性、socket 路径和帧格式、认证行、每个帧字段、回执状态及其转换，以及接收方在模型看到消息之前对消息的处理。
 
 Node 程序不必手动编写所有这些：` @qwen-code/sdk/peer` 实现了该契约。`PeerEndpoint.start({ name })` 发布记录并绑定收件箱，`list()` 和 `send()` 按名称寻址会话，`onMessage` 接收它们发送的内容。
+```

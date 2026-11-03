@@ -1,107 +1,38 @@
 # 身份验证
 
-Qwen Code 的 `/auth` 菜单支持以下登录方式，其中 Qwen 账号登录目前仅在开发版本中开放。请根据你的账号或 API Key 选择对应的选项：
+Qwen Code 首次运行时的 `/auth` 菜单包含三个顶级选项。请根据你运行 CLI 的方式选择对应的选项：
 
-- **Qwen Account with Subscription（Qwen 账号登录，开发预览）**：使用有效的 Plus 或 Pro 会员账号，在浏览器中登录并授权，无需填写 API Key。
-- **QwenCloud**：官方推荐的 API Key 接入方式。选择 **Token Plan** 或 **Standard API Key**，再选择 **China — 千问AI平台** 或 **International — QwenCloud**。两种接入方式均可在无需额外配置的情况下启用内置的 [`web_search` 工具](../../developers/tools/web-search.md)。
-- **Alibaba ModelStudio**：打开子菜单后可选择 **Coding Plan**（面向个人开发者 · 包含每周配额）、**Token Plan**（面向团队和企业 · 按量计费并提供专属 endpoint）或 **Standard API Key**（使用现有的 ModelStudio API key 进行连接）。Token Plan 和 Standard API Key 还可在无需额外配置的情况下启用内置的 [`web_search` 工具](../../developers/tools/web-search.md)。
+- **Alibaba ModelStudio**：官方推荐的配置方式。打开子菜单后可选择 **Coding Plan**（面向个人开发者 · 包含每周配额）、**Token Plan**（面向团队和企业 · 按量计费并提供专属 endpoint）或 **Standard API Key**（使用现有的 ModelStudio API key 进行连接）。Token Plan 和 Standard API Key 还可在无需额外配置的情况下启用内置的 [`web_search` 工具](../../developers/tools/web-search.md)。
 - **Third-party Providers**：选择内置的 provider 并使用 API key 进行连接（DeepSeek、Grok、MiniMax、Z.AI、Kimi、Idealab、ModelScope、OpenRouter、Requesty）。
 - **Custom Provider**：手动连接本地服务器、代理或不支持的 provider —— 支持 OpenAI、Anthropic、Gemini 及其他兼容的 endpoint。
 
-## Qwen Account with Subscription（开发预览）
+> [!note]
+>
+> **Qwen OAuth** 不再是可选的对话框条目 —— 其免费套餐已于 2026-04-15 停止服务。以下内容仅作为硬编码的已废弃 provider 保留在文档中。
 
-该功能当前仅在连接预发服务的开发版本中开放，普通发布版本尚未启用。在 `qwen-code` 源码仓库运行 `npm run dev` 会自动设置已有的 `DEV=true` 开发标记，它不是 OAuth 参数。VS Code 和桌面端的开发宿主需使用重新构建的本地 daemon，并继承相同的开发环境。
+## 选项 1：Qwen OAuth（已停用）
 
-在 `/auth` 或图形界面的身份验证弹窗中选择 **Qwen Account with Subscription**。Qwen Code 会打开浏览器，供你登录并授权设备；浏览器未打开时可手动访问显示的链接。此方式需要有效的 **Plus 或 Pro** 会员，不恢复旧 Qwen OAuth 的免费额度。
+> [!warning]
+>
+> Qwen OAuth 免费套餐已于 2026-04-15 停用。现有的缓存 token 可能还会短暂生效，但新请求将被拒绝。请切换到 Alibaba Cloud Coding Plan、[OpenRouter](https://openrouter.ai)、[Fireworks AI](https://app.fireworks.ai) 或其他 provider。运行 `qwen` 并使用 `/auth` 进行配置。
 
-Free、Go 账号会进入 Qwen Code 专属套餐购买页。客户端最多自动检查会员生效状态 120 秒；会员尚未生效时仍保留登录态。等待期间可使用 **View Plans（查看套餐）** 查看套餐，或 **Switch Provider（切换提供商）** 选择其他提供商。等待超时或会员查询遇到可重试错误时，可使用界面提供的 **Retry Connection（重试连接）** 再次查询。关闭弹窗不会退出账号。会员查询失败不代表支付失败；会员生效后自动继续模型配置。
+- **工作原理**：首次启动时，Qwen Code 会打开浏览器登录页面。完成登录后，凭据会被缓存在本地，通常无需再次登录。
+- **要求**：一个 `qwen.ai` 账号 + 网络连接（至少首次登录时需要）。
+- **优势**：无需管理 API key，凭据自动刷新。
+- **费用与配额**：免费套餐已于 2026-04-15 停用。
 
-可用模型来自会员服务，客户端不按固定模型名单过滤。首次连接时，Qwen Code 会从返回的列表中选择默认模型；当前认证方式仍为 Qwen Subscription 时，会保留仍然可用的已选模型。CLI 使用 `/model`，VS Code 和桌面端使用模型选择器及刷新操作。网络或服务异常、空响应可以使用上次成功加载的列表；没有缓存时需重试。HTTP 403 会展示服务端错误说明，不返回缓存模型。已选模型下线时需要重新选择，不自动替换。
-
-使用相同有效 Qwen 配置目录的本地客户端可以复用凭证；远程或隔离 daemon 可能使用不同目录。凭证会按需自动刷新，无法刷新时重新登录。开发版本的会员会话支持通过预发 MCP 服务使用内置 `web_search`，复用当前登录凭证，无需单独填写搜索密钥；显式搜索配置及工具权限仍然生效。详见[网络搜索](../../developers/tools/web-search.md)。
-
-### 退出或切换账号
-
-在开发版终端中运行 `/logout`，然后在身份验证菜单选择 **Qwen Account with Subscription**，并在浏览器中授权目标账号。退出会删除本地会员凭证并撤销刷新令牌；如果远端撤销失败，本地退出仍然生效，并显示警告。请等待当前回复完成后再退出。API Key 配置会保留；仅切换到 API Key 提供商时，使用 `/auth` 即可，无需退出会员账号。
-
-## ☁️ 选项 1：QwenCloud
-
-这是官方平台入口，适用于千问AI平台（国内站）或 QwenCloud（国际站）提供的 API Key。
-
-- **工作原理**：先选接入方式，再明确选择平台，界面语言不会决定端点。输入该平台签发的密钥后，Qwen Code 会配置匹配的端点。
-- **接入方式**：**Token Plan**（按月提供 Credit 配额的订阅，使用专用端点，含个人版和团队版）或 **Standard API Key**（按量付费）。Coding Plan 属于 Alibaba ModelStudio，见选项 2。
-- **要求**：Token Plan 控制台生成的 `sk-sp-` 密钥，或平台 API Key 页面生成的按量付费密钥（`sk-` 或 `sk-ws-`）。
-- **优势**：两种方式均可启用内置 [`web_search` 工具](../../developers/tools/web-search.md)，无需额外配置。
-
-| 平台                      | 接入方式         | 端点                                                          | API Key                                                                                 |
-| ------------------------- | ---------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| China — 千问AI平台        | Standard API Key | `https://maas.qianwenaiapi.com/compatible-mode/v1`            | [API Key](https://platform.qianwenai.com/docs/developer-guides/administration/api-keys) |
-| China — 千问AI平台        | Token Plan       | `https://token-plan.maas.qianwenaiapi.com/compatible-mode/v1` | [Token Plan](https://platform.qianwenai.com/docs/token-plan/overview)                   |
-| International — QwenCloud | Standard API Key | `https://maas.qwencloudapi.com/compatible-mode/v1`            | [API Key](https://docs.qwencloud.com/developer-guides/administration/api-keys)          |
-| International — QwenCloud | Token Plan       | `https://token-plan.maas.qwencloudapi.com/compatible-mode/v1` | [Token Plan](https://docs.qwencloud.com/token-plan/overview)                            |
-
-### 交互式配置
-
-在终端运行 `qwen`，再运行 `/auth`，选择 **QwenCloud**，从子菜单选择 **Token Plan** 或 **Standard API Key**。明确选择平台（**China — 千问AI平台** 或 **International — QwenCloud**），然后填写 API Key。
-
-### 无头或脚本化配置
-
-CI、容器或脚本请使用环境变量配置平台，无需执行交互式 `/auth` 流程。
+启动 CLI 并按照浏览器流程操作：
 
 ```bash
-# Pay-as-you-go (Standard API Key), International
-export QWENCLOUD_API_KEY="sk-your-api-key"
-export OPENAI_BASE_URL="https://maas.qwencloudapi.com/compatible-mode/v1"
-export OPENAI_MODEL="qwen3.8-max"
+qwen
 ```
 
-```bash
-# Token Plan, China
-export QWENCLOUD_TOKEN_PLAN_API_KEY="sk-sp-your-api-key"
-export OPENAI_BASE_URL="https://token-plan.maas.qianwenaiapi.com/compatible-mode/v1"
-export OPENAI_MODEL="qwen3.8-max"
-```
-
-### 替代方案：通过 `settings.json` 配置
-
-若要跳过交互式 `/auth`，可将以下内容加入 `~/.qwen/settings.json`：
-
-```json
-{
-  "modelProviders": {
-    "openai": [
-      {
-        "id": "qwen3.8-max",
-        "name": "qwen3.8-max (QwenCloud)",
-        "baseUrl": "https://maas.qwencloudapi.com/compatible-mode/v1",
-        "description": "qwen3.8-max from QwenCloud Standard API Key",
-        "envKey": "QWENCLOUD_API_KEY"
-      }
-    ]
-  },
-  "env": {
-    "QWENCLOUD_API_KEY": "sk-your-api-key"
-  },
-  "security": {
-    "auth": {
-      "selectedType": "openai"
-    }
-  },
-  "model": {
-    "name": "qwen3.8-max"
-  }
-}
-```
+Qwen OAuth 已不再作为 `/auth` 对话框中的可选条目；请运行 `/auth` 并选择当前的可用选项（Alibaba ModelStudio、Third-party Providers 或 Custom Provider）。
 
 > [!note]
 >
-> `capabilities` 不会从模型名称推导。因此手动填写的条目若未声明推理能力，`/effort` 会显示通用档位，而不是 QwenCloud 预设的 `low` / `medium` / `xhigh`。需要预设档位时，请使用 `/auth` 安装提供商。
-
-与其他提供商专用密钥一样，只有 `settings.json` 中的提供商条目将 `QWENCLOUD_API_KEY` 或 `QWENCLOUD_TOKEN_PLAN_API_KEY` 声明为 `envKey` 后，它们才会生效。若仅通过环境变量选择 OpenAI 兼容认证，请改为导出 `OPENAI_API_KEY`。
-
-> [!note]
->
-> QwenCloud 与 Alibaba ModelStudio 使用独立入口、环境变量和端点。选择 QwenCloud 不会重写或删除已保存的 ModelStudio 凭据、端点或模型选择。
+> 在非交互式或无头环境（例如 CI、SSH、容器）中，通常**无法**完成 OAuth 浏览器登录流程。
+> 在这些情况下，请使用 Alibaba Cloud Coding Plan 或 API Key 身份验证方式。
 
 ## 💳 选项 2：Alibaba Cloud Coding Plan
 
@@ -114,10 +45,10 @@ export OPENAI_MODEL="qwen3.8-max"
 
 Alibaba Cloud Coding Plan 在两个区域可用：
 
-| 区域                         | 控制台 URL                                                                   |
-| ---------------------------- | ---------------------------------------------------------------------------- |
-| Aliyun ModelStudio (Beijing) | [bailian.console.aliyun.com](https://bailian.console.aliyun.com)             |
-| Alibaba Cloud (intl)         | [bailian.console.alibabacloud.com](https://bailian.console.alibabacloud.com) |
+| 区域 | 控制台 URL |
+| --- | --- |
+| Aliyun ModelStudio (Beijing) | [bailian.console.aliyun.com](https://bailian.console.aliyun.com) |
+| Alibaba Cloud (intl) | [bailian.console.alibabacloud.com](https://bailian.console.alibabacloud.com) |
 
 ### 交互式配置
 
@@ -183,9 +114,9 @@ export OPENAI_MODEL="qwen3-coder-plus"
 
 Token Plan 在两个区域可用，每个区域都有其专属的 endpoint：
 
-| 区域           | Endpoint                                                                 | 控制台 URL                                                                                          |
-| -------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| 中国（北京）   | `https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1`     | [bailian.console.aliyun.com](https://bailian.console.aliyun.com/cn-beijing)                         |
+| 区域 | Endpoint | 控制台 URL |
+| --- | --- | --- |
+| 中国（北京） | `https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1` | [bailian.console.aliyun.com](https://bailian.console.aliyun.com/cn-beijing) |
 | 新加坡（国际） | `https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1` | [modelstudio.console.alibabacloud.com](https://modelstudio.console.alibabacloud.com/ap-southeast-1) |
 
 ### 交互式配置
@@ -280,29 +211,29 @@ export OPENAI_MODEL="qwen3.7-plus"
 
 各字段的作用：
 
-| 字段                         | 描述                                                                                                                  |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `modelProviders`             | 声明可用的模型及其连接方式。键（`openai`、`anthropic`、`gemini`）代表 API 协议。                                      |
-| `env`                        | 将 API key 直接存储在 `settings.json` 中作为后备方案（优先级最低 —— shell `export` 和 `.env` 文件优先级更高）。       |
+| 字段 | 描述 |
+| --- | --- |
+| `modelProviders` | 声明可用的模型及其连接方式。键（`openai`、`anthropic`、`gemini`）代表 API 协议。 |
+| `env` | 将 API key 直接存储在 `settings.json` 中作为后备方案（优先级最低 —— shell `export` 和 `.env` 文件优先级更高）。 |
 | `security.auth.selectedType` | 告诉 Qwen Code 在启动时使用哪种协议（例如 `openai`、`anthropic`、`gemini`）。如果没有此项，你需要交互式运行 `/auth`。 |
-| `model.name`                 | Qwen Code 启动时激活的默认模型。必须与 `modelProviders` 中的某个 `id` 值匹配。                                        |
+| `model.name` | Qwen Code 启动时激活的默认模型。必须与 `modelProviders` 中的某个 `id` 值匹配。 |
 
 保存文件后，直接运行 `qwen` 即可 —— 无需进行交互式 `/auth` 配置。
 
 > [!tip]
 >
-> 以下部分将更详细地解释每个部分。如果上面的快速示例已经满足你的需求，可以直接跳到[安全注意事项](#安全注意事项)。
+> 以下部分将更详细地解释每个部分。如果上面的快速示例已经满足你的需求，可以直接跳到[安全注意事项](#security-notes)。
 
 核心概念是 **Model Providers**（`modelProviders`）：Qwen Code 支持多种 API 协议，而不仅仅是 OpenAI。你可以通过编辑 `~/.qwen/settings.json` 来配置可用的 provider 和模型，然后在运行时使用 `/model` 命令在它们之间切换。
 
 #### 支持的协议
 
-| 协议         | `modelProviders` 键 | 环境变量                                                                                                                                               | Providers                                                                                          |
-| ------------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| OpenAI 兼容  | `openai`            | `OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_MODEL`（别名：`QWEN_MODEL`）                                                                              | OpenAI、Azure OpenAI、OpenRouter、Requesty、ModelScope、Alibaba Cloud、任何兼容 OpenAI 的 endpoint |
-| Anthropic    | `anthropic`         | `ANTHROPIC_API_KEY`、`ANTHROPIC_BASE_URL`、`ANTHROPIC_MODEL`                                                                                           | Anthropic Claude                                                                                   |
-| Google GenAI | `gemini`            | `GEMINI_API_KEY`、`GEMINI_MODEL`                                                                                                                       | Google Gemini                                                                                      |
-| Vertex AI    | `vertex-ai`         | `GOOGLE_API_KEY` + `GOOGLE_MODEL`（设置 `GOOGLE_GENAI_USE_VERTEXAI=true`）或 `GOOGLE_CLOUD_PROJECT` + `GOOGLE_MODEL`（无 key ADC）；使用 `gemini` 协议 | Google Vertex AI                                                                                   |
+| 协议 | `modelProviders` 键 | 环境变量 | Providers |
+| --- | --- | --- | --- |
+| OpenAI 兼容 | `openai` | `OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_MODEL`（别名：`QWEN_MODEL`） | OpenAI、Azure OpenAI、OpenRouter、Requesty、ModelScope、Alibaba Cloud、任何兼容 OpenAI 的 endpoint |
+| Anthropic | `anthropic` | `ANTHROPIC_API_KEY`、`ANTHROPIC_BASE_URL`、`ANTHROPIC_MODEL` | Anthropic Claude |
+| Google GenAI | `gemini` | `GEMINI_API_KEY`、`GEMINI_MODEL` | Google Gemini |
+| Vertex AI | `vertex-ai` | `GOOGLE_API_KEY` + `GOOGLE_MODEL`（设置 `GOOGLE_GENAI_USE_VERTEXAI=true`）或 `GOOGLE_CLOUD_PROJECT` + `GOOGLE_MODEL`（无 key ADC）；使用 `gemini` 协议 | Google Vertex AI |
 
 #### 步骤 1：在 `~/.qwen/settings.json` 中配置模型和 provider
 
@@ -345,22 +276,22 @@ export OPENAI_MODEL="qwen3.7-plus"
 
 > [!tip]
 >
-> 别忘了在配置 `modelProviders` 的同时设置 `env`、`security.auth.selectedType` 和 `model.name` —— 请参考[上面的完整示例](#推荐通过-settingsjson-进行单文件配置)。
+> 别忘了在配置 `modelProviders` 的同时设置 `env`、`security.auth.selectedType` 和 `model.name` —— 请参考[上面的完整示例](#recommended-one-file-setup-via-settingsjson)。
 
 **`ModelConfig` 字段（`modelProviders` 中的每个条目）：**
 
-| 字段               | 必填 | 描述                                                                                                 |
-| ------------------ | ---- | ---------------------------------------------------------------------------------------------------- |
-| `id`               | 是   | 发送给 API 的模型 ID（例如 `gpt-4o`、`claude-sonnet-4-20250514`）                                    |
-| `wireApi`          | 否   | OpenAI 兼容的请求格式：`chat-completions` 或 `responses`。省略则继承 provider 协议。                 |
-| `name`             | 否   | `/model` 选择器中的显示名称（默认为 `id`）                                                           |
-| `envKey`           | 否   | API key 的环境变量名（例如 `OPENAI_API_KEY`）；可选/推荐 —— 省略时默认为该身份验证类型的默认环境变量 |
-| `baseUrl`          | 否   | API endpoint 覆盖（适用于代理或自定义 endpoint）                                                     |
-| `generationConfig` | 否   | 微调 `timeout`、`maxRetries`、`samplingParams` 等。                                                  |
+| 字段 | 必填 | 描述 |
+| --- | --- | --- |
+| `id` | 是 | 发送给 API 的模型 ID（例如 `gpt-4o`、`claude-sonnet-4-20250514`） |
+| `wireApi` | 否 | OpenAI 兼容的请求格式：`chat-completions` 或 `responses`。省略则继承 provider 协议。 |
+| `name` | 否 | `/model` 选择器中的显示名称（默认为 `id`） |
+| `envKey` | 否 | API key 的环境变量名（例如 `OPENAI_API_KEY`）；可选/推荐 —— 省略时默认为该身份验证类型的默认环境变量 |
+| `baseUrl` | 否 | API endpoint 覆盖（适用于代理或自定义 endpoint） |
+| `generationConfig` | 否 | 微调 `timeout`、`maxRetries`、`samplingParams` 等。 |
 
 > [!note]
 >
-> 在 `settings.json` 中使用 `env` 字段时，凭据将以明文形式存储。为了更高的安全性，建议使用 `.env` 文件或 shell `export` —— 请参阅[步骤 2](#步骤-2设置环境变量)。
+> 在 `settings.json` 中使用 `env` 字段时，凭据将以明文形式存储。为了更高的安全性，建议使用 `.env` 文件或 shell `export` —— 请参阅[步骤 2](#step-2-set-environment-variables)。
 
 有关完整的 `modelProviders` schema 以及 `generationConfig`、`customHeaders` 和 `extra_body` 等高级选项，请参阅 [Model Providers Reference](./model-providers.md)。
 
@@ -419,16 +350,16 @@ Qwen Code 会自动加载它找到的**第一个** `.env` 文件（变量**不�
 }
 ```
 
-这就是上面[单文件配置示例](#推荐通过-settingsjson-进行单文件配置)中使用的方法。将所有内容保存在一个地方很方便，但请注意 `settings.json` 可能会被共享或同步 —— 对于敏感密钥，建议使用 `.env` 文件。
+这就是上面[单文件配置示例](#recommended-one-file-setup-via-settingsjson)中使用的方法。将所有内容保存在一个地方很方便，但请注意 `settings.json` 可能会被共享或同步 —— 对于敏感密钥，建议使用 `.env` 文件。
 
 **优先级总结：**
 
-| 优先级    | 来源                           | 覆盖行为                                 |
-| --------- | ------------------------------ | ---------------------------------------- |
-| 1（最高） | CLI 参数（`--openai-api-key`） | 始终生效                                 |
-| 2         | 系统环境变量（`export`、内联） | 覆盖 `.env` 和 `settings.json` → `env`   |
-| 3         | `.env` 文件                    | 仅在系统环境变量中未设置时生效           |
-| 4（最低） | `settings.json` → `env`        | 仅在系统环境变量或 `.env` 中未设置时生效 |
+| 优先级 | 来源 | 覆盖行为 |
+| --- | --- | --- |
+| 1（最高） | CLI 参数（`--openai-api-key`） | 始终生效 |
+| 2 | 系统环境变量（`export`、内联） | 覆盖 `.env` 和 `settings.json` → `env` |
+| 3 | `.env` 文件 | 仅在系统环境变量中未设置时生效 |
+| 4（最低） | `settings.json` → `env` | 仅在系统环境变量或 `.env` 中未设置时生效 |
 
 #### 步骤 3：使用 `/model` 切换模型
 
@@ -452,26 +383,20 @@ qwen --model "qwen3-coder-plus"
 qwen --model "qwen3.5-plus"
 ```
 
-## 从旧免费 Qwen OAuth 迁移
-
-旧免费 Qwen OAuth 额度已于 2026-04-15 停用。在开发版本中，可通过有效的 Plus 或 Pro 会员使用 **Qwen Account with Subscription**，这不会恢复旧免费额度。普通发布版本可通过 `/auth` 选择 QwenCloud、Alibaba ModelStudio 或其他 API Key 提供商。
-
-CI 等无头环境请配置 API Key 提供商，避免依赖交互式浏览器授权。
-
 ## 已移除的 `qwen auth` CLI 命令
 
 独立的 `qwen auth` CLI 命令已被移除。请使用以下替代方案：
 
-| 以前的用例                     | 替代方案                                                                                    |
-| ------------------------------ | ------------------------------------------------------------------------------------------- |
-| 交互式身份验证配置             | 运行 `qwen`，然后使用 `/auth`                                                               |
-| Coding Plan 配置               | 使用 `/auth`，或设置 `BAILIAN_CODING_PLAN_API_KEY` 及 Coding Plan base URL                  |
-| Token Plan 配置                | 使用 `/auth`，或设置 `BAILIAN_TOKEN_PLAN_API_KEY` 及对应区域的 Token Plan base URL          |
-| OpenRouter 配置                | 使用 `/auth`，或设置 `OPENROUTER_API_KEY` 和 `OPENAI_BASE_URL=https://openrouter.ai/api/v1` |
-| Requesty 配置                  | 使用 `/auth`，或设置 `REQUESTY_API_KEY` 和 `OPENAI_BASE_URL=https://router.requesty.ai/v1`  |
-| API key 或自定义 provider 配置 | 配置 `~/.qwen/settings.json`、`.env` 或 provider 特定的环境变量                             |
-| 检查当前身份验证               | 在 Qwen Code 中运行 `/doctor`                                                               |
-| OAuth 浏览器流程               | 交互式运行 `qwen` 并使用 `/auth`；OAuth 无法仅通过环境变量配置                              |
+| 以前的用例 | 替代方案 |
+| --- | --- |
+| 交互式身份验证配置 | 运行 `qwen`，然后使用 `/auth` |
+| Coding Plan 配置 | 使用 `/auth`，或设置 `BAILIAN_CODING_PLAN_API_KEY` 及 Coding Plan base URL |
+| Token Plan 配置 | 使用 `/auth`，或设置 `BAILIAN_TOKEN_PLAN_API_KEY` 及对应区域的 Token Plan base URL |
+| OpenRouter 配置 | 使用 `/auth`，或设置 `OPENROUTER_API_KEY` 和 `OPENAI_BASE_URL=https://openrouter.ai/api/v1` |
+| Requesty 配置 | 使用 `/auth`，或设置 `REQUESTY_API_KEY` 和 `OPENAI_BASE_URL=https://router.requesty.ai/v1` |
+| API key 或自定义 provider 配置 | 配置 `~/.qwen/settings.json`、`.env` 或 provider 特定的环境变量 |
+| 检查当前身份验证 | 在 Qwen Code 中运行 `/doctor` |
+| OAuth 浏览器流程 | 交互式运行 `qwen` 并使用 `/auth`；OAuth 无法仅通过环境变量配置 |
 
 像 `qwen auth status` 这样的旧版调用现在会打印移除通知及这些迁移路径，其中包括包含两个区域 base URL 的 Token Plan 条目。
 

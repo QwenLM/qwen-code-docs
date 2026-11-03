@@ -1,9 +1,5 @@
 # Visual Studio Code
 
-## Qwen Subscription 开发预览
-
-本地 daemon 开启开发能力后，身份验证弹窗会提供 **Qwen Account with Subscription**。在浏览器授权有效的 Plus/Pro 账号后，使用现有模型选择器。网络或服务异常、空响应可以使用上次成功加载的列表；没有缓存时需重试。HTTP 403 会展示服务端错误说明，不返回缓存模型。该接入仍需原生宿主验收，普通发布版本尚未启用。详见[身份验证](./configuration/auth.md)。
-
 > VS Code 扩展（Beta 版）让你通过原生图形界面直接在 IDE 中实时查看 Qwen 的更改，让你更轻松地访问和使用 Qwen Code。
 
 <br/>
