@@ -2651,6 +2651,23 @@ export const showcaseItems = [
       { title: "Управляйте локальной службой одной группой команд", description: "`qwen daemon` собирает повседневную работу с локальной службой в одной группе команд:\n- `qwen daemon start` поднимает службу в фоне и возвращает адрес доступа; добавьте `--wait`, если скрипту нужно сразу подключиться\n- `qwen daemon status --detail` показывает версию, время работы, число диалогов и число проблем\n- `qwen daemon logs` открывает логи\n- `qwen daemon stop` останавливает выбранную службу\n- `qwen daemon restart --port <порт>` перезапускает по сохранённой конфигурации — workspace и настройки Web Shell возвращаются вместе с ней", command: "qwen daemon start\nqwen daemon status --detail\nqwen daemon logs\nqwen daemon stop\nqwen daemon restart --port <порт>" },
     ],
   },
+  // === Демо из еженедельника от 29 октября ===
+  {
+    id: "autofix-pr-watch",
+    title: "Отдайте PR под слежение /autofix-pr",
+    description: "На странице PR watches в Web Shell видно, как он чинит упавшие проверки и замечания ревью и пушит.",
+    category: "Новые функции",
+    features: ["GitHub", "Web Shell"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000000257/O1CN015oVF7OzrEvF7nOLE_!!6000000000257-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/lHYiheFEEj4h06BqKKRsNerhB4iCljq_A56bQT_m2rc.mp4",
+    model: "qwen3.8-max",
+    overview: "PR открыт, и дальше за ним нужно следить самому: упали ли проверки, что написали в ревью, не появился ли конфликт с основной веткой. Теперь это отдаёте `/autofix-pr`: он следит за PR прямо у вас на машине, чинит упавшие проверки, замечания ревью и конфликты, проверяет результат, пушит и отвечает в PR.",
+    steps: [
+      { title: "Откройте PR и запустите слежение", description: "Создайте PR в своём репозитории и выполните `/autofix-pr <номер PR>` в терминале или в Web Shell — дальше за ним будет следить Qwen Code.", command: "/autofix-pr <номер PR>" },
+      { title: "Смотрите, до чего он уже дошёл", description: "Правки идут в отдельном worktree — ваш рабочий каталог остаётся нетронутым. `status` показывает, как далеко продвинулось слежение за этим PR, а `resume` продолжает его уже в новой сессии.", command: "/autofix-pr status\n/autofix-pr resume <номер PR>" },
+      { title: "Следите за всем на странице PR watches", description: "Страница PR watches в Web Shell собирает статус слежения по каждому проекту, число пушей и случаи, где нужно ваше решение. Если слежение ведёт текущая сессия, оттуда же можно перейти в тот диалог или остановить его." },
+    ],
+  },
 ]
 
 <VideoShowcaseIndex

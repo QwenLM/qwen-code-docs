@@ -2651,6 +2651,23 @@ export const showcaseItems = [
       { title: "Reprendre le service local en main", description: "`qwen daemon` tient la gestion quotidienne du service local :\n- `qwen daemon start` met le service en arrière-plan et renvoie son adresse d'accès ; dans un script qui enchaîne sur la connexion, ajoutez `--wait`\n- `qwen daemon status --detail` affiche la version, le temps de fonctionnement, le nombre de sessions et le nombre de problèmes\n- `qwen daemon logs` lit le journal\n- `qwen daemon stop` arrête le service désigné\n- `qwen daemon restart --port <port>` le relance avec la configuration enregistrée, et les espaces de travail comme les réglages de Web Shell reviennent avec", command: "qwen daemon start\nqwen daemon status --detail\nqwen daemon logs\nqwen daemon stop\nqwen daemon restart --port <port>" },
     ],
   },
+  // === Démos du weekly du 29 octobre ===
+  {
+    id: "autofix-pr-watch",
+    title: "Confier une PR à /autofix-pr",
+    description: "Dans Web Shell, la page « PR watches » montre /autofix-pr corriger les checks et les avis de revue.",
+    category: "Nouveautés",
+    features: ["GitHub", "Web Shell"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000000257/O1CN015oVF7OzrEvF7nOLE_!!6000000000257-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/lHYiheFEEj4h06BqKKRsNerhB4iCljq_A56bQT_m2rc.mp4",
+    model: "qwen3.8-max",
+    overview: "Une PR posée, il faut revenir dessus : les vérifications sont-elles vertes, que reproche la revue, la branche a-t-elle divergé de la branche principale. `/autofix-pr` s'en charge depuis votre machine : il repasse régulièrement, corrige les échecs, les avis et les conflits, vérifie ce qu'il a touché, puis pousse et répond dans la PR.",
+    steps: [
+      { title: "Lancer le suivi après l'ouverture de la PR", description: "Ouvrez une PR dans votre propre dépôt, puis lancez `/autofix-pr <numéro du PR>` dans le terminal ou dans Web Shell : cette PR lui est confiée.", command: "/autofix-pr <numéro du PR>" },
+      { title: "Voir où il en est", description: "Il corrige dans un worktree isolé : le dossier où vous écrivez ne bouge pas. `status` dit où en est cette PR, et `resume` relance le suivi dans une session reprise plus tard.", command: "/autofix-pr status\n/autofix-pr resume <numéro du PR>" },
+      { title: "Suivre le tout depuis Web Shell", description: "La page « PR watches », le tableau de suivi des PR, affiche l'état de chaque projet, le nombre de fois où il a poussé et les points qui attendent votre arbitrage. Un suivi lancé par la session en cours s'y reprend ou s'y arrête." },
+    ],
+  },
 ]
 
 

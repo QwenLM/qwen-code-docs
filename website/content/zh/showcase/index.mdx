@@ -2651,6 +2651,23 @@ export const showcaseItems = [
       { title: "用一组命令管本地服务", description: "`qwen daemon` 把本地服务的日常管理收进一组命令：\n- `qwen daemon start` 把服务放到后台并返回访问地址，脚本里起完要连上就加 `--wait`\n- `qwen daemon status --detail` 看版本、运行时长、会话数量和问题数量\n- `qwen daemon logs` 翻日志\n- `qwen daemon stop` 停掉指定服务\n- `qwen daemon restart --port <端口>` 按记录的配置重启，工作区和 Web Shell 设置跟着恢复", command: "qwen daemon start\nqwen daemon status --detail\nqwen daemon logs\nqwen daemon stop\nqwen daemon restart --port <端口>" },
     ],
   },
+  // === 10月29日周报演示 ===
+  {
+    id: "autofix-pr-watch",
+    title: "把 PR 交给 /autofix-pr 跟进",
+    description: "在 Web Shell 的 PR 监视页，看着它把挂掉的检查和评审意见改掉推上去。",
+    category: "功能更新",
+    features: ["GitHub", "Web Shell"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000000257/O1CN015oVF7OzrEvF7nOLE_!!6000000000257-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/lHYiheFEEj4h06BqKKRsNerhB4iCljq_A56bQT_m2rc.mp4",
+    model: "qwen3.8-max",
+    overview: "PR 提上去之后，检查挂没挂、别人留了什么意见、跟主干冲没冲突，都得回来盯着处理。现在运行 /autofix-pr，把这件事交给 Qwen Code：它在本地定期看一趟，挂了、有意见、有冲突都自己改掉，验证过再推上去并在 PR 里回复。",
+    steps: [
+      { title: "提 PR 后启动跟进", description: "在你自己的仓库里提一个 PR，然后在终端或 Web Shell 运行 `/autofix-pr <PR 编号>` 让它盯着这个 PR。", command: "/autofix-pr <PR 编号>" },
+      { title: "看它改到哪一步", description: "它改的是单独一份工作副本，你正在写的目录不动。用 `status` 看这个 PR 跟进到哪一步了，换到之后的会话还能用 `resume` 重开这段跟进。", command: "/autofix-pr status\n/autofix-pr resume <PR 编号>" },
+      { title: "在 PR 监视页跟进", description: "Web Shell 的「PR 监视」页能看到各项目的监视状态、推送次数和需要人工决定的事项；由当前会话跑的监视，可以从这一页进入原对话或者发起停止。" },
+    ],
+  },
 ]
 
 

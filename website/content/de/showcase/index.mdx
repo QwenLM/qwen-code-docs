@@ -2651,6 +2651,23 @@ export const showcaseItems = [
       { title: "Den lokalen Dienst mit einer Befehlsgruppe verwalten", description: "`qwen daemon` bündelt den Alltag des lokalen Dienstes in einer Befehlsgruppe:\n- `qwen daemon start` stellt den Dienst in den Hintergrund und gibt die Zugriffsadresse zurück; hängen Sie `--wait` an, wenn ein Skript direkt danach verbinden soll\n- `qwen daemon status --detail` zeigt Version, Laufzeit, Sitzungszahl und Anzahl der Probleme\n- `qwen daemon logs` blättert durch die Logs\n- `qwen daemon stop` beendet den genannten Dienst\n- `qwen daemon restart --port <Port>` startet mit der gespeicherten Konfiguration neu; Workspaces und die Web-Shell-Einstellungen kommen zurück", command: "qwen daemon start\nqwen daemon status --detail\nqwen daemon logs\nqwen daemon stop\nqwen daemon restart --port <Port>" },
     ],
   },
+  // === 29.10. Weekly-Demos ===
+  {
+    id: "autofix-pr-watch",
+    title: "Einen PR an /autofix-pr abgeben",
+    description: "Auf der PR-watches-Seite zusehen, wie kaputte Checks und Review-Kommentare gefixt und gepusht werden.",
+    category: "Neue Funktionen",
+    features: ["GitHub", "Web Shell"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000000257/O1CN015oVF7OzrEvF7nOLE_!!6000000000257-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/lHYiheFEEj4h06BqKKRsNerhB4iCljq_A56bQT_m2rc.mp4",
+    model: "qwen3.8-max",
+    overview: "Ein PR ist gestellt, aber selten fertig: Checks schlagen fehl, Reviewer melden sich, der Hauptbranch zieht davon. `/autofix-pr` nimmt Ihnen das ab. Qwen Code sieht regelmäßig nach, repariert, was ansteht, verifiziert die Änderung und pusht sie – samt Antwort im PR.",
+    steps: [
+      { title: "Den Watch für den PR starten", description: "Stellen Sie den PR in Ihrem eigenen Repository. Starten Sie dann `/autofix-pr <PR-Nummer>` im Terminal oder in Web Shell – ab da kümmert sich Qwen Code um diesen PR.", command: "/autofix-pr <PR-Nummer>" },
+      { title: "Zusehen, wie weit Qwen Code ist", description: "Qwen Code arbeitet in einem eigenen Git-Worktree, Ihr Verzeichnis bleibt dabei unberührt. `status` zeigt, wie weit der Watch bei diesem PR ist. Auch in einer späteren Sitzung setzen Sie ihn mit `resume` fort.", command: "/autofix-pr status\n/autofix-pr resume <PR-Nummer>" },
+      { title: "Alle Watches in Web Shell verfolgen", description: "Die Seite „PR watches“ in Web Shell zeigt pro Projekt den Status der Watches, die Zahl der Pushes und die Punkte, die Sie selbst entscheiden müssen. Bei einem Watch aus Ihrer laufenden Sitzung springen Sie von dort in die Konversation oder beenden ihn." },
+    ],
+  },
 ]
 
 

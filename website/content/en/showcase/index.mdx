@@ -2651,6 +2651,23 @@ export const showcaseItems = [
       { title: "Run the service from one command group", description: "`qwen daemon` covers the day-to-day service commands:\n- `qwen daemon start` runs the service in the background and returns its address; add `--wait` in a script so it only continues once the service is ready\n- `qwen daemon status --detail` shows version, uptime, session count and problem count\n- `qwen daemon logs` reads the log\n- `qwen daemon stop` stops a given service\n- `qwen daemon restart --port <port>` restarts it with the workspace and Web Shell settings it recorded", command: "qwen daemon start\nqwen daemon status --detail\nqwen daemon logs\nqwen daemon stop\nqwen daemon restart --port <port>" },
     ],
   },
+  // === Oct 29 weekly demos ===
+  {
+    id: "autofix-pr-watch",
+    title: "Set /autofix-pr to watch your PR",
+    description: "Watch /autofix-pr fix failing checks and review comments on a PR from the PR watches page in Web Shell.",
+    category: "What's New",
+    features: ["GitHub", "Web Shell"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000000257/O1CN015oVF7OzrEvF7nOLE_!!6000000000257-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/lHYiheFEEj4h06BqKKRsNerhB4iCljq_A56bQT_m2rc.mp4",
+    model: "qwen3.8-max",
+    overview: "Once a PR is up, you keep coming back to it — failed checks, review comments, a conflict with the base branch. `/autofix-pr` puts that in Qwen Code's hands: it checks the PR on a schedule, fixes what broke, verifies it, then pushes and replies on the PR.",
+    steps: [
+      { title: "Open the PR, then start the watch", description: "Send a PR from a repository you own, then run `/autofix-pr <PR number>` in the terminal or Web Shell to put that PR under watch.", command: "/autofix-pr <PR number>" },
+      { title: "See how far it has got", description: "It edits in its own git worktree, so the directory you're working in stays untouched. `/autofix-pr status` reports where this PR's watch has reached, and `/autofix-pr resume <PR number>` starts the same watch up again in a later session.", command: "/autofix-pr status\n/autofix-pr resume <PR number>" },
+      { title: "Follow it from the PR watches page", description: "The `PR watches` page in Web Shell lists each project's watch status, how many pushes it has made and the items that need a human call. For a watch running out of your current session, this page is where you go back into that conversation or tell it to stop." },
+    ],
+  },
 ]
 
 

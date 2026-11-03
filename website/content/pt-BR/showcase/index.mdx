@@ -2651,6 +2651,23 @@ export const showcaseItems = [
       { title: "Administre o serviço local por comandos", description: "`qwen daemon` reúne a rotina do serviço local num conjunto de comandos:\n- `qwen daemon start` coloca o serviço em segundo plano e devolve o endereço de acesso; em script que vai se conectar logo em seguida, adicione `--wait`\n- `qwen daemon status --detail` mostra versão, tempo de execução, quantidade de sessões e de problemas\n- `qwen daemon logs` abre os logs\n- `qwen daemon stop` encerra o serviço escolhido\n- `qwen daemon restart --port <porta>` reinicia com a configuração registrada e recupera os workspaces e as configurações do Web Shell", command: "qwen daemon start\nqwen daemon status --detail\nqwen daemon logs\nqwen daemon stop\nqwen daemon restart --port <porta>" },
     ],
   },
+  // === Demos do weekly de 29 de outubro ===
+  {
+    id: "autofix-pr-watch",
+    title: "Deixe o /autofix-pr acompanhar o seu PR",
+    description: "Ele corrige checks quebrados e observações da revisão, e você acompanha tudo pela página PR watches.",
+    category: "Novidades",
+    features: ["GitHub", "Web Shell"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000000257/O1CN015oVF7OzrEvF7nOLE_!!6000000000257-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/lHYiheFEEj4h06BqKKRsNerhB4iCljq_A56bQT_m2rc.mp4",
+    model: "qwen3.8-max",
+    overview: "Depois que o PR sobe, você fica voltando para ver se os checks passaram, se chegou comentário de revisão e se apareceu conflito com a main. Com o `/autofix-pr`, quem volta é o Qwen Code: ele olha o PR na sua máquina de tempos em tempos, corrige o que falhou, valida antes de enviar de novo e responde no próprio PR.",
+    steps: [
+      { title: "Crie o PR e inicie o acompanhamento", description: "Abra um PR no seu repositório e rode `/autofix-pr <número do PR>` no terminal ou no Web Shell. Ele passa a cuidar daquele PR.", command: "/autofix-pr <número do PR>" },
+      { title: "Veja o que ele já mudou", description: "Os ajustes ficam num worktree separado, e o diretório onde você trabalha segue intacto. Use `status` para ver em que ponto o PR chegou. Numa sessão depois, `resume` retoma o acompanhamento do mesmo PR.", command: "/autofix-pr status\n/autofix-pr resume <número do PR>" },
+      { title: "Acompanhe pela página PR watches", description: "A página PR watches (monitoramento de PRs) do Web Shell mostra o estado de cada projeto, o número de pushes e o que precisa de decisão sua. Para o acompanhamento rodado pela sessão atual, dá para abrir a conversa de origem ou encerrar por ali mesmo." },
+    ],
+  },
 ]
 
 <VideoShowcaseIndex
