@@ -1,0 +1,79 @@
+---
+title: "Qwen Code をターミナルの外へ：デスクトップ版と Web Shell の使い方"
+date: "2026-11-02"
+description: "ターミナルを使わない 2 つのインターフェース。デスクトップ版はインストールパッケージをダウンロードして起動、Web Shell はローカルでサービスを立ててブラウザから使います。"
+author: "Qwen Team"
+tags: ["Tutorial", "Quickstart"]
+image: "https://img.alicdn.com/imgextra/i1/O1CN01BJUpDxk8RTG2jBZY_!!6000000003061-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader
+  title="Qwen Code をターミナルの外へ：デスクトップ版と Web Shell の使い方"
+  date="2026-11-02"
+  author="Qwen Team"
+/>
+
+[クイックスタート](/ja/blog/quickstart/getting-started)の記事では、Qwen Code はターミナルの中のインターフェースでした。この記事が扱うのは残り 2 つ：**デスクトップ版**と、ブラウザの中の **Web Shell** です。
+
+## 2 つの使い方の違い
+
+| 使い方 | どちらを選ぶ |
+| --- | --- |
+| アプリアイコンをワンクリックで起動して使う | デスクトップ版 |
+| CLI をインストールし、起動コマンドを入力してブラウザで使う | Web Shell |
+
+できることも見た目も、2 つは同じです。Web Shell のほうが軽量で、デスクトップ版はインストールパッケージのダウンロードが必要です。
+
+## デスクトップ版
+
+[Qwen Code Desktop 最新版](https://github.com/QwenLM/qwen-code/releases/tag/desktop-latest) から、お使いのプラットフォーム向けのパッケージをダウンロードします。macOS、Windows、Linux すべて揃っています。インストールしたら起動するだけですぐ対話でき、新しいバージョンは自動的にダウンロード・インストールされます。
+
+![Qwen Code デスクトップ版](https://img.alicdn.com/imgextra/i3/O1CN01qgbh0E6t5mD7o1Mj_!!6000000007102-2-tps-3845-2160.png)
+
+## Web Shell
+
+Qwen Code に作業させたいプロジェクトのディレクトリに移動します：
+
+```bash
+cd your-project
+qwen serve --open
+```
+
+ブラウザが `http://127.0.0.1:4170/` を自動的に開きます。
+
+画面は左にセッション一覧と追加済みのプロジェクト、中央に対話、右にプロジェクトのファイルと変更内容が表示されます。
+
+プロジェクトを追加しても、サービスを新たに立てる必要はありません。サイドバーの「Add workspace」をクリックするだけです。追加したプロジェクトはそれぞれ自分のディレクトリを扱い、どれに切り替えてもそのまま対話して作業できます。
+
+コマンドでまとめたい場合は、起動時に複数のディレクトリをまとめて指定できます：
+
+```bash
+qwen serve --workspace ~/code/site --workspace ~/code/api
+```
+
+Web Shell をアプリとしてパソコンにインストールすることもできます。ブラウザのアドレスバーの右側にインストールの項目が出るので、クリックすれば専用アイコンと独立ウィンドウが備わり、接続先は起動中のサービスがそのままです。
+
+1 つのインターフェースで、複数のマシン上の Qwen Code に同時接続できます。
+
+![Qwen Code Web Shell](https://img.alicdn.com/imgextra/i1/O1CN01Pv6PASJbbDD7o1Mj_!!6000000003585-2-tps-3845-2160.png)
+
+## サービスを管理するコマンド
+
+`qwen serve` はターミナルウィンドウを占有します。ウィンドウを閉じるとサービスも止まります。バックグラウンドで動かし続けたい場合は、このコマンドを使います：
+
+```bash
+qwen daemon start      # バックグラウンドで起動し、アクセス URL を表示
+qwen daemon status     # このパソコンでいくつ動いているか確認
+qwen daemon logs       # ログを確認
+qwen daemon stop       # 指定したサービスを停止
+```
+
+考え方はずっと動き続ける印刷サービスのデーモンと同じです。パソコンの印刷サービスは常に起動していて、いつ印刷してもすぐに受け付けます。ブラウザのページを閉じても、タスクは走り続けます。
+
+![qwen daemon start でサービスをバックグラウンドに移し、別のターミナルで status から状態を確認する様子](https://img.alicdn.com/imgextra/i4/O1CN015EshdwuaPaE7nW9B_!!6000000003381-2-tps-3841-2160.png)
+
+## 次のステップ
+
+スマホで Qwen Code を使いたい方は、こちらをご覧ください：[Qwen Code をポケットの中へ](/ja/blog/quickstart/feat-qwen-serve-mobile)

@@ -1,0 +1,79 @@
+---
+title: "Qwen Code를 터미널 밖으로: 데스크톱 앱과 Web Shell로 쓰기"
+date: "2026-11-02"
+description: "터미널 없이 쓰는 두 화면. 하나는 설치 파일을 내려받는 데스크톱 앱, 다른 하나는 로컬에서 띄워 브라우저로 여는 Web Shell입니다."
+author: "Qwen Team"
+tags: ["Tutorial", "Quickstart"]
+image: "https://img.alicdn.com/imgextra/i1/O1CN01BJUpDxk8RTG2jBZY_!!6000000003061-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader
+  title="Qwen Code를 터미널 밖으로: 데스크톱 앱과 Web Shell로 쓰기"
+  date="2026-11-02"
+  author="Qwen Team"
+/>
+
+[빠른 시작](/ko/blog/quickstart/getting-started) 글에서 Qwen Code는 터미널 속 화면이었습니다. 이 글은 나머지 두 화면, **데스크톱 앱**과 **브라우저의 Web Shell**을 다룹니다.
+
+## 두 가지 사용법의 차이
+
+| 이렇게 쓰고 싶다면 | 고를 화면 |
+| --- | --- |
+| 앱 아이콘을 눌러 바로 연다 | 데스크톱 앱 |
+| CLI를 설치하고 시작 명령을 쳐서 브라우저에서 연다 | Web Shell |
+
+두 화면으로 할 수 있는 일은 같고, 모양도 같습니다. Web Shell은 더 가볍고, 데스크톱 앱은 설치 파일을 내려받아야 합니다.
+
+## 데스크톱 앱
+
+[Qwen Code 데스크톱 최신 릴리스](https://github.com/QwenLM/qwen-code/releases/tag/desktop-latest)에서 본인 컴퓨터에 맞는 설치 파일을 내려받으세요. macOS, Windows, Linux 다 있습니다. 설치하고 열면 바로 대화가 시작되고, 새 버전은 알아서 내려받아 설치됩니다.
+
+![Qwen Code 데스크톱 앱](https://img.alicdn.com/imgextra/i3/O1CN01qgbh0E6t5mD7o1Mj_!!6000000007102-2-tps-3845-2160.png)
+
+## Web Shell 서비스
+
+Qwen Code에게 일을 시킬 프로젝트 디렉터리로 이동합니다:
+
+```bash
+cd your-project
+qwen serve --open
+```
+
+브라우저가 `http://127.0.0.1:4170/`을 알아서 엽니다.
+
+화면 왼쪽에는 세션 목록과 추가한 프로젝트, 가운데에는 대화, 오른쪽에는 프로젝트 파일과 파일 변경 내용이 있습니다.
+
+프로젝트를 더 올려도 서비스를 새로 띄울 필요는 없습니다. 사이드바에서 **"Add workspace"**를 누르면 끝입니다. 여러 개를 추가하면 각자 자기 디렉터리를 쓰고, 원하는 프로젝트로 전환하면 그 자리에서 대화하며 일을 진행할 수 있습니다.
+
+명령이 편하다면 서비스를 시작할 때 디렉터리를 여러 개 함께 지정해도 됩니다:
+
+```bash
+qwen serve --workspace ~/code/site --workspace ~/code/api
+```
+
+Web Shell 창을 컴퓨터에 설치해 쓸 수도 있습니다. 브라우저 주소창 오른쪽에 설치 항목이 뜨는데, 한 번 누르면 전용 아이콘과 독립 창이 생깁니다. 연결되는 곳은 아까 띄운 그 서비스 그대로입니다.
+
+이 화면 하나로 여러 컴퓨터의 Qwen Code에 동시에 붙을 수 있습니다.
+
+![Qwen Code Web Shell](https://img.alicdn.com/imgextra/i1/O1CN01Pv6PASJbbDD7o1Mj_!!6000000003585-2-tps-3845-2160.png)
+
+## 서비스 관리 명령
+
+`qwen serve`는 터미널 창 하나를 계속 잡아먹고, 창을 닫으면 서비스가 멈춥니다. 백그라운드에서 돌리려면 이 명령을 쓰세요:
+
+```bash
+qwen daemon start      # 백그라운드로 띄우고 접속 주소도 알려 준다
+qwen daemon status     # 이 컴퓨터에서 몇 개가 도는지 확인
+qwen daemon logs       # 로그 확인
+qwen daemon stop       # 지정한 서비스 정지
+```
+
+인쇄 서비스와 같은 이치입니다. 컴퓨터의 인쇄 서비스는 늘 켜져 있어서 언제 인쇄를 눌러도 바로 이어집니다. 여기서는 웹 페이지를 닫아도 작업은 계속 돌아갑니다.
+
+![qwen daemon start로 서비스를 백그라운드에 올린 뒤 다른 터미널에서 status로 상태를 확인하는 화면](https://img.alicdn.com/imgextra/i4/O1CN015EshdwuaPaE7nW9B_!!6000000003381-2-tps-3841-2160.png)
+
+## 다음 단계
+
+스마트폰에서 Qwen Code를 쓰고 싶다면 [Qwen Code를 주머니에](/ko/blog/quickstart/feat-qwen-serve-mobile)를 이어서 보세요.

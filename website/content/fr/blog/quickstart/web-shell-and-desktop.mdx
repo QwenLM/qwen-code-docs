@@ -1,0 +1,79 @@
+---
+title: "Sortez Qwen Code du terminal : application desktop et Web Shell"
+date: "2026-11-02"
+description: "Deux interfaces sans terminal : l'application desktop à télécharger, ou le Web Shell lancé en local puis ouvert dans le navigateur."
+author: "Qwen Team"
+tags: ["Tutorial", "Quickstart"]
+image: "https://img.alicdn.com/imgextra/i1/O1CN01BJUpDxk8RTG2jBZY_!!6000000003061-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader
+  title="Sortez Qwen Code du terminal : application desktop et Web Shell"
+  date="2026-11-02"
+  author="Qwen Team"
+/>
+
+Dans l'article [Démarrage rapide](/fr/blog/quickstart/getting-started), Qwen Code s'utilisait depuis le terminal. Voici les deux autres interfaces : **l'application desktop** et **le Web Shell**, dans le navigateur.
+
+## Choisir entre les deux
+
+| Besoin | Quelle interface |
+| --- | --- |
+| Un clic sur l'icône de l'app et ça s'ouvre | Application desktop |
+| Une commande de lancement, puis le navigateur | Web Shell |
+
+Les deux savent faire la même chose et se ressemblent. Le Web Shell reste plus léger ; l'application desktop demande un téléchargement.
+
+## Installer l'application desktop
+
+Téléchargez le paquet de votre plateforme sur la page [Qwen Code Desktop (dernière version)](https://github.com/QwenLM/qwen-code/releases/tag/desktop-latest). macOS, Windows et Linux sont disponibles. Installée, l'app lance la conversation directement et récupère seule les nouvelles versions.
+
+![L'application desktop Qwen Code](https://img.alicdn.com/imgextra/i3/O1CN01qgbh0E6t5mD7o1Mj_!!6000000007102-2-tps-3845-2160.png)
+
+## Lancer le Web Shell
+
+Placez-vous dans le répertoire du projet où vous voulez faire travailler Qwen Code :
+
+```bash
+cd your-project
+qwen serve --open
+```
+
+Le navigateur ouvre `http://127.0.0.1:4170/` tout seul.
+
+À gauche, la liste des sessions et vos projets ; au centre, la conversation ; à droite, les fichiers du projet et les modifications apportées.
+
+Pour ajouter un projet, pas besoin de relancer le service : cliquez sur **« Add workspace »** dans la barre latérale. Chaque projet garde son propre répertoire. Basculez sur celui qui vous intéresse et discutez avec lui.
+
+Si vous préférez le terminal, vous pouvez passer plusieurs répertoires dès le lancement :
+
+```bash
+qwen serve --workspace ~/code/site --workspace ~/code/api
+```
+
+Le Web Shell s'installe aussi sur l'ordinateur. Une entrée d'installation apparaît à droite de la barre d'adresse du navigateur : un clic, et l'interface a sa propre icône, sa propre fenêtre, et reste branchée sur le service en cours.
+
+Une même interface peut se connecter à Qwen Code sur plusieurs machines à la fois.
+
+![Le Web Shell de Qwen Code](https://img.alicdn.com/imgextra/i1/O1CN01Pv6PASJbbDD7o1Mj_!!6000000003585-2-tps-3845-2160.png)
+
+## Gérer le service en arrière-plan
+
+`qwen serve` occupe la fenêtre du terminal : vous la fermez, le service s'arrête. Pour le laisser tourner derrière, utilisez ces commandes :
+
+```bash
+qwen daemon start      # démarre en arrière-plan et affiche l'adresse d'accès
+qwen daemon status     # combien de services tournent sur cette machine
+qwen daemon logs       # consulter les journaux
+qwen daemon stop       # arrêter un service précis
+```
+
+Le principe du service d'impression : le service de votre ordinateur reste ouvert, et n'importe quelle impression se branche dessus à tout moment. Vous fermez la page web, la tâche continue de tourner.
+
+![qwen daemon start place le service en arrière-plan ; un autre terminal le vérifie avec status](https://img.alicdn.com/imgextra/i4/O1CN015EshdwuaPaE7nW9B_!!6000000003381-2-tps-3841-2160.png)
+
+## Aller plus loin
+
+Envie d'utiliser Qwen Code sur votre téléphone ? Voir : [Gardez Qwen Code dans la poche](/fr/blog/quickstart/feat-qwen-serve-mobile)
