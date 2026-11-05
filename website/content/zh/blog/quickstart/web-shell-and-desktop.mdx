@@ -1,0 +1,79 @@
+---
+title: "把 Qwen Code 从终端搬出来：桌面端和 Web Shell 怎么用"
+date: "2026-11-02"
+description: "两个不用终端的界面：一个下载 Qwen Code 安装包，一个本地启动后浏览器使用。"
+author: "Qwen Team"
+tags: ["Tutorial", "Quickstart"]
+image: "https://img.alicdn.com/imgextra/i1/O1CN01BJUpDxk8RTG2jBZY_!!6000000003061-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader
+  title="把 Qwen Code 从终端搬出来：桌面端和 Web Shell 怎么用"
+  date="2026-11-02"
+  author="Qwen Team"
+/>
+
+[快速入门](/zh/blog/quickstart/getting-started)那篇里，Qwen Code 是终端中的一个界面。这篇讲另外两个：**桌面端**和**浏览器里的 Web Shell**。
+
+## 两种用法的差别
+
+| 用法 | 选哪个 |
+| --- | --- |
+| App 图标一键打开使用 | 桌面端 |
+| 装完 CLI 输入启动指令后打开浏览器使用 | Web Shell |
+
+两个界面能做的事一样，长得也一样。Web Shell 更轻便，桌面端需下载安装包。
+
+## 桌面端应用
+
+到 [Qwen Code Desktop 最新版](https://github.com/QwenLM/qwen-code/releases/tag/desktop-latest) 下载对应平台的安装包，macOS、Windows、Linux 都有。装完打开就能对话，新版本会自动下载并安装。
+
+![Qwen Code 桌面端](https://img.alicdn.com/imgextra/i3/O1CN01qgbh0E6t5mD7o1Mj_!!6000000007102-2-tps-3845-2160.png)
+
+## Web Shell 服务
+
+进入想让 Qwen Code 干活的项目目录：
+
+```bash
+cd your-project
+qwen serve --open
+```
+
+浏览器会自己打开 `http://127.0.0.1:4170/`。
+
+界面左边是会话列表和你添加的项目，中间是对话，右边可查看项目文件和文件改动。
+
+想添加更多项目，不用新起服务，在侧栏点**添加工作区**即可。加进来的几个项目各管各的目录，切到哪一个，就能直接对话干活。
+
+要是习惯用命令，起服务时也可以一次带上几个目录：
+
+```bash
+qwen serve --workspace ~/code/site --workspace ~/code/api
+```
+
+也可以把 Web Shell 窗口装到电脑上：浏览器地址栏右边会出现安装入口，点一下就有自己的图标、开独立窗口，连的还是刚跑着的那个服务。
+
+一个界面可以同时连好几台机器上的 Qwen Code。
+
+![Qwen Code Web Shell](https://img.alicdn.com/imgextra/i1/O1CN01Pv6PASJbbDD7o1Mj_!!6000000003585-2-tps-3845-2160.png)
+
+## 管理服务的指令
+
+`qwen serve` 占着那个终端窗口，窗口一关服务就停。想让它在后台跑着，用这组命令：
+
+```bash
+qwen daemon start      # 后台起来，把访问地址打给你
+qwen daemon status     # 看这台电脑上有几个在跑
+qwen daemon logs       # 看日志
+qwen daemon stop       # 停掉指定服务
+```
+
+跟打印服务一个道理：你电脑上的打印服务一直开着，什么时候点打印都接得上。网页关掉，任务继续跑。
+
+![用 qwen daemon start 把服务放到后台，再另开一个终端用 status 查看它的状态](https://img.alicdn.com/imgextra/i4/O1CN015EshdwuaPaE7nW9B_!!6000000003381-2-tps-3841-2160.png)
+
+## 接下来
+
+想在手机上使用 Qwen Code，详见：[把 Qwen Code 揣进兜里](/zh/blog/quickstart/feat-qwen-serve-mobile)
