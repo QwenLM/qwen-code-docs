@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, ARM64, qwen-docs]
 
     steps:
       - name: Checkout
@@ -31,14 +31,10 @@ jobs:
           fetch-depth: 0
           filter: blob:none
 
-      - name: Install Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          # Restores ~/.npm keyed on the lockfile, so `npm ci` below resolves
-          # from cache instead of re-downloading the whole tree every run.
-          cache: npm
-          cache-dependency-path: website/package-lock.json
+      - name: Check installed Node.js
+        run: |
+          node --version
+          node -e "if (Number(process.versions.node.split('.')[0]) !== 22) process.exit(1)"
 
       # Persistent webpack cache (see scripts/clean-next.mjs): warm cache
       # cuts the compile phase from ~4-5min to ~1min.
@@ -46,9 +42,9 @@ jobs:
         uses: actions/cache@v5
         with:
           path: website/.next/cache
-          key: next-${{ runner.os }}-${{ hashFiles('website/package-lock.json') }}-${{ github.sha }}
+          key: next-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('website/package-lock.json') }}-${{ github.sha }}
           restore-keys: |
-            next-${{ runner.os }}-${{ hashFiles('website/package-lock.json') }}-
+            next-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('website/package-lock.json') }}-
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
@@ -58,10 +54,7 @@ jobs:
         run: npm run build
         working-directory: ./website
         env:
-          # Full multi-locale docs set is memory-heavy to statically export.
-          # Node 22 (above) is far more memory-efficient than the previous
-          # Node 18 (local full build peaks ~5.8GB); 12GB heap on the 16GB
-          # runner leaves comfortable headroom for future growth.
+          # Bound the heap while sharing the ECS host with other runners.
           NODE_OPTIONS: --max-old-space-size=12288
 
       - name: Deploy to GitHub Pages

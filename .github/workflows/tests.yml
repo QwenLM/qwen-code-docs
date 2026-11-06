@@ -49,18 +49,25 @@ concurrency:
 jobs:
   website:
     name: Website unit tests
-    runs-on: ubuntu-latest
+    # Fork PRs run outside the persistent hosts used for translation and deploys.
+    runs-on: ${{ fromJSON(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && '["ubuntu-latest"]' || '["self-hosted", "linux", "ARM64", "qwen-docs"]') }}
     timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
       - name: Install Node.js
+        if: runner.environment == 'github-hosted'
         uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: website/package-lock.json
+
+      - name: Check installed Node.js
+        run: |
+          node --version
+          node -e "if (Number(process.versions.node.split('.')[0]) !== 22) process.exit(1)"
 
       # `npm ci`, not `npm install`: tsx is a devDependency the test script
       # needs on PATH, and a partial install is exactly how `npm test` ends up
@@ -78,18 +85,24 @@ jobs:
   # that guards a generated `_meta.ts` from taking the site down lives here.
   translator:
     name: Translator unit tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: ${{ fromJSON(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && '["ubuntu-latest"]' || '["self-hosted", "linux", "ARM64", "qwen-docs"]') }}
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
       - name: Install Node.js
+        if: runner.environment == 'github-hosted'
         uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: translator/package-lock.json
+
+      - name: Check installed Node.js
+        run: |
+          node --version
+          node -e "if (Number(process.versions.node.split('.')[0]) !== 22) process.exit(1)"
 
       - name: Install dependencies
         working-directory: ./translator

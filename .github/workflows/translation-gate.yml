@@ -44,16 +44,22 @@ jobs:
     # the source can never advance. Re-checking that output here would report
     # the improvement as a failure and turn the nightly's own PR red.
     if: ${{ github.event.pull_request.head.repo.full_name != github.repository || !startsWith(github.head_ref, 'automation/daily-translation-') }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.full_name != github.repository && '["ubuntu-latest"]' || '["self-hosted", "linux", "ARM64", "qwen-docs"]') }}
     timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
       - name: Install Node.js
+        if: runner.environment == 'github-hosted'
         uses: actions/setup-node@v6
         with:
           node-version: 22
+
+      - name: Check installed Node.js
+        run: |
+          node --version
+          node -e "if (Number(process.versions.node.split('.')[0]) !== 22) process.exit(1)"
 
       - name: Check the pages this PR changes
         env:
