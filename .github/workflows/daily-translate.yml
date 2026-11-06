@@ -61,7 +61,7 @@ env:
 jobs:
   translate:
     name: Sync, translate & publish review branch
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, ARM64, qwen-docs]
     timeout-minutes: 360
     env:
       # The Beijing MaaS endpoint can exceed Node's 250 ms per-address limit.
@@ -122,15 +122,10 @@ jobs:
             | awk '{sub("refs/heads/", "", $2); print $2}')
           echo "exists=${pending}" >> "$GITHUB_OUTPUT"
 
-      - name: Install Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          # Restores ~/.npm keyed on the lockfile. Benefits the global qwen
-          # CLI install below; website dependencies are installed by
-          # deploy-docs.yml after the generated PR is merged.
-          cache: npm
-          cache-dependency-path: website/package-lock.json
+      - name: Check installed Node.js
+        run: |
+          node --version
+          node -e "if (Number(process.versions.node.split('.')[0]) !== 22) process.exit(1)"
 
       - name: Install qwen CLI
         if: steps.pending.outputs.exists != 'true'
@@ -390,7 +385,7 @@ jobs:
 
   report-failure:
     name: Report scheduled failure
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, ARM64, qwen-docs]
     needs: translate
     # Scheduled failures are otherwise invisible:
     # GitHub only emails the workflow author on cron-triggered failures, and
