@@ -19,7 +19,8 @@ name: Daily Incremental Translation
 # - Secret   TRANSLATE_CODING_PLAN_API_KEY : a cloud-reachable model API key
 # - Variable TRANSLATE_BASE_URL (optional): OpenAI-compatible endpoint,
 #   defaults to https://coding.dashscope.aliyuncs.com/v1
-# - Variable QWEN_MODEL (optional): model id, defaults to qwen3.7-plus
+# - Secret or variable QWEN_MODEL (optional): model id; the secret takes
+#   precedence, followed by the variable, then qwen3.7-plus
 # - Variable TRANSLATE_DAILY_LIMIT (optional): max files translated per
 #   language per run, defaults to 20
 #
@@ -56,7 +57,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  QWEN_MODEL: ${{ vars.QWEN_MODEL || 'qwen3.7-plus' }}
+  QWEN_MODEL: ${{ secrets.QWEN_MODEL || vars.QWEN_MODEL || 'qwen3.7-plus' }}
 
 jobs:
   translate:
