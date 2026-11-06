@@ -1,15 +1,14 @@
 # Qwen Code 概要
 
-[![@qwen-code/qwen-code downloads](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code)
-[![@qwen-code/qwen-code version](https://img.shields.io/npm/v/@qwen-code/qwen-code.svg)](https://www.npmjs.com/package/@qwen-code/qwen-code)
+[![@qwen-code/qwen-code ダウンロード数](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code) [![@qwen-code/qwen-code バージョン](https://img.shields.io/npm/v/@qwen-code/qwen-code.svg)](https://www.npmjs.com/package/@qwen-code/qwen-code)
 
-> Qwen Code について学びましょう。Qwen のエージェンティックコーディングツールはターミナル上で動作し、アイデアをこれまで以上に素早くコードに変えます。
+> Qwen Code について学びましょう。これは Qwen のエージェント型コーディングツールで、ターミナル上で動作し、アイデアをコードに変換するプロセスをかつてないほど高速化します。
 
 ## 30秒で始める
 
 ### Qwen Code をインストール:
 
-推奨されるインストーラは、お使いのプラットフォームでスタンドアロンアーカイブが利用可能な場合、それを使用します。npm にフォールバックする場合、Node.js 22 以降と npm が PATH 上で利用可能である必要があります。
+推奨インストーラーは、プラットフォーム向けにスタンドアロンアーカイブが利用可能な場合、それを使用します。npm にフォールバックする場合、PATH 上に Node.js 22 以降と npm が利用可能である必要があります。
 
 **Linux / macOS**
 
@@ -25,9 +24,9 @@ irm https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-q
 
 > [!note]
 >
-> インストール後、`qwen` がすぐに PATH 上で利用可能にならない場合は、ターミナルを再起動することを推奨します。インストールに失敗した場合は、クイックスタートガイドの[手動インストール](./quickstart#manual-installation)を参照してください。オフラインインストールの場合は、リリースアーカイブをダウンロードし、`--archive PATH` を指定してインストーラを実行してください。`SHA256SUMS` はアーカイブと同じ場所に置いてください。
+> インストール後、`qwen` が PATH 上で即座に利用できない場合は、ターミナルの再起動を推奨します。インストールが失敗した場合は、クイックスタートガイドの[手動インストール](./quickstart#manual-installation)を参照してください。オフラインインストールの場合は、リリースアーカイブをダウンロードし、`--archive PATH` を指定してインストーラーを実行してください。`SHA256SUMS` はアーカイブと同じ場所に配置してください。
 
-### Qwen Code を使い始める:
+### Qwen Code の使用を開始:
 
 ```bash
 cd your-project
@@ -38,7 +37,11 @@ qwen
 
 Qwen のサブスクリプションを使用するには、[**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code) を選択して Qwen アカウントでサインインします。**Plus または Pro サブスクリプション**で **Qwen Code and Agent** にアクセスできます。まだサブスクリプションをお持ちでない場合は、[**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) で Plus または Pro をサブスクリプションしてから Qwen Code に戻り、[**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code) を選択してください。
 
-**QwenCloud** キーの場合は、**QwenCloud → Token Plan** または **QwenCloud → Standard API Key** を選択し、プラットフォーム (中国またはインターナショナル) を選択してください — [認証](https://qwenlm.github.io/qwen-code-docs/en/users/configuration/auth/) を参照。[Alibaba Cloud Token Plan](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) ([intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) の場合は、**Alibaba ModelStudio → Token Plan** を選択してください。ModelStudio API キーを使用する場合は、**Alibaba ModelStudio → Standard API Key** を選択し、API セットアップガイド ([北京](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)) に従ってください。それでは、コードベースを理解することから始めましょう。次のコマンドのいずれかを試してみてください:
+QwenCloud キーの場合、**QwenCloud → Token Plan** または **QwenCloud → Standard API Key** を選択し、プラットフォーム（中国または国際）を選択してください。詳細は [認証](https://qwenlm.github.io/qwen-code-docs/en/users/configuration/auth/) を参照してください。
+
+[Alibaba Cloud Token Plan](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) ([intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) の場合、**Alibaba ModelStudio → Token Plan** を選択してください。ModelStudio API キーを使用する場合は、**Alibaba ModelStudio → Standard API Key** を選択し、API セットアップガイド ([北京](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)) に従ってください。
+
+次に、コードベースを理解することから始めましょう。以下のコマンドのいずれかをお試しください:
 
 ```
 what does this project do?

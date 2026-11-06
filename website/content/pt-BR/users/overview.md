@@ -1,15 +1,14 @@
 # Visão geral do Qwen Code
 
-[![@qwen-code/qwen-code downloads](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code)
-[![@qwen-code/qwen-code version](https://img.shields.io/npm/v/@qwen-code/qwen-code.svg)](https://www.npmjs.com/package/@qwen-code/qwen-code)
+[![@qwen-code/qwen-code downloads](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code) [![@qwen-code/qwen-code version](https://img.shields.io/npm/v/@qwen-code/qwen-code.svg)](https://www.npmjs.com/package/@qwen-code/qwen-code)
 
-> Conheça o Qwen Code, a ferramenta de codificação agêntica do Qwen que vive no seu terminal e ajuda você a transformar ideias em código mais rápido do que nunca.
+> Conheça o Qwen Code, a ferramenta de codificação agêntica da Qwen que vive no seu terminal e ajuda você a transformar ideias em código mais rápido do que nunca.
 
-## Primeiros passos em 30 segundos
+## Comece em 30 segundos
 
-### Instalar o Qwen Code:
+### Instale o Qwen Code:
 
-O instalador recomendado usa um arquivo standalone quando disponível para sua plataforma. Se ele recorrer ao npm, o Node.js 22 ou superior com npm deve estar disponível no PATH.
+O instalador recomendado usa um arquivo compactado independente quando disponível para sua plataforma. Se ele recorrer ao npm, o Node.js 22 ou posterior com npm deve estar disponível no PATH.
 
 **Linux / macOS**
 
@@ -25,16 +24,24 @@ irm https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-q
 
 > [!note]
 >
-> É recomendado reiniciar o terminal após a instalação se `qwen` não estiver imediatamente disponível no PATH. Se a instalação falhar, consulte [Instalação Manual](./quickstart#manual-installation) no guia de início rápido. Para instalação offline, baixe um arquivo de release e execute o instalador com `--archive PATH`; mantenha `SHA256SUMS` ao lado do arquivo.
+> Recomenda-se reiniciar o terminal após a instalação se o `qwen` não estiver imediatamente disponível no PATH. Se a instalação falhar, consulte [Instalação Manual](./quickstart#manual-installation) no guia de Início Rápido. Para instalação offline, baixe um arquivo compactado da versão e execute o instalador com `--archive PATH`; mantenha `SHA256SUMS` ao lado do arquivo compactado.
 
-### Começar a usar o Qwen Code:
+### Comece a usar o Qwen Code:
 
 ```bash
 cd your-project
 qwen
 ```
 
-No primeiro uso, você será solicitado a conectar um provedor de modelo. O menu oferece **QwenCloud** (a configuração oficial recomendada), **Alibaba ModelStudio**, **Provedores Terceiros** (provedores integrados como DeepSeek, MiniMax, Z.AI, Kimi e OpenRouter, conectados com uma chave de API) e **Provedor Personalizado** (um servidor local, proxy ou provedor não suportado). Para obter uma chave do QwenCloud, escolha **QwenCloud → Token Plan** ou **QwenCloud → Standard API Key** e depois escolha a plataforma (China ou Internacional) — consulte [Authentication](./configuration/auth). Para o [Alibaba Cloud Token Plan](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) ([intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)), escolha **Alibaba ModelStudio → Token Plan**; para usar uma chave de API do ModelStudio, escolha **Alibaba ModelStudio → Standard API Key** e siga o guia de configuração da API ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)). Em seguida, vamos começar entendendo sua base de código. Tente um destes comandos:
+Na primeira execução, você será solicitado a conectar um provedor de modelo. O menu oferece [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code) (use uma assinatura Qwen Plus ou Pro de [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code)), **QwenCloud** (a configuração oficial recomendada), **Alibaba ModelStudio**, **Third-party Providers** (provedores integrados como DeepSeek, MiniMax, Z.AI, Kimi e OpenRouter, conectados com uma chave de API) e **Custom Provider** (um servidor local, proxy ou provedor não suportado).
+
+Para usar sua assinatura Qwen, escolha [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code) e faça login com sua conta Qwen. Uma **assinatura Plus ou Pro** desbloqueia o acesso ao **Qwen Code e Agent**. Se você ainda não tem uma assinatura, visite [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) para assinar o Plus ou Pro, depois retorne ao Qwen Code e selecione [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code).
+
+Para uma chave QwenCloud, escolha **QwenCloud → Token Plan** ou **QwenCloud → Standard API Key** e então selecione a plataforma (China ou Internacional) — veja [Autenticação](https://qwenlm.github.io/qwen-code-docs/en/users/configuration/auth/).
+
+Para o [Alibaba Cloud Token Plan](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) ([intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)), escolha **Alibaba ModelStudio → Token Plan**; para usar uma chave de API do ModelStudio, escolha **Alibaba ModelStudio → Standard API Key** e siga o guia de configuração da API ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)).
+
+Então, vamos começar entendendo sua base de código. Experimente um destes comandos:
 
 ```
 what does this project do?

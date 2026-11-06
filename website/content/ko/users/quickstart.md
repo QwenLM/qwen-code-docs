@@ -1,16 +1,20 @@
-# Quickstart
+# 빠른 시작
 
 > 👏 Qwen Code에 오신 것을 환영합니다!
 
 이 Quickstart 가이드는 몇 분 안에 AI 기반 코딩 지원을 사용할 수 있도록 도와드립니다. 완료 후 Qwen Code를 일반적인 개발 작업에 사용하는 방법을 이해하게 됩니다.
 
-## 시작하기 전에
+## **시작하기 전에**
 
 다음 사항이 준비되어 있는지 확인하세요:
 
-- **터미널** 또는 명령 프롬프트가 열려 있어야 합니다
+- 터미널 또는 명령 프롬프트가 열려 있어야 합니다
 - 작업할 코드 프로젝트
-- Alibaba Cloud ModelStudio([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/))의 API 키, 또는 Alibaba Cloud Token Plan([Beijing](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) 구독
+- **다음 중 하나**:
+  - [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code)의 **Plus 또는 Pro 구독**이 포함된 Qwen 계정 — **Qwen Code 및 Agent**에 대한 액세스 권한이 부여됩니다
+  - Qianwen AI Platform / **QwenCloud**([중국](https://platform.qianwenai.com/docs/developer-guides/administration/api-keys) / [국제](https://docs.qwencloud.com/developer-guides/administration/api-keys))의 API 키 또는 Token Plan 구독 — 권장 설정
+  - **Alibaba Cloud ModelStudio**의 API 키 ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/))
+  - **Alibaba Cloud Token Plan** ([Beijing](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) 구독
 
 ## 1단계: Qwen Code 설치
 
@@ -57,24 +61,30 @@ brew install qwen-code
 `qwen` 명령어로 대화형 세션을 시작하면 인증을 구성하라는 메시지가 표시됩니다:
 
 ```bash
-# 첫 사용 시 인증 설정 메시지가 표시됩니다
+# You'll be prompted to set up authentication on first use
 qwen
 ```
 
 ```bash
-# 또는 언제든지 /auth를 실행하여 인증 방법을 변경하세요
+# Or run /auth anytime to change authentication method
 /auth
 ```
 
 첫 실행 메뉴에서 모델 제공자를 연결할 수 있습니다. 다음 중 하나를 선택하세요:
 
-- **Alibaba ModelStudio** — 권장 설정. 하위 메뉴를 엽니다:
+- [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code) — Qwen 계정으로 로그인하여 **Plus 또는 Pro 구독**으로 **Qwen Code 및 Agent**에 액세스합니다. 아직 구독이 없는 경우 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code)에서 Plus 또는 Pro에 가입한 후 Qwen Code로 돌아와 [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code)을 선택하세요.
+- **QwenCloud** — 권장 설정입니다. 하위 메뉴가 열립니다:
+  - **Token Plan**: 전용 엔드포인트에서 월간 Credit 할당량이 포함된 구독 (Personal 및 Team 에디션).
+  - **Standard API Key**: 종량제 방식으로 기존 플랫폼 API 키로 연결합니다.
+
+  어떤 방식을 선택하든 플랫폼(중국 또는 국제)을 명시적으로 선택하게 되므로 UI 언어가 엔드포인트를 결정하지 않습니다. 자세한 내용은 [인증 → 옵션 2: QwenCloud](./configuration/auth)를 참조하세요.
+
+- **Alibaba ModelStudio** — 하위 메뉴가 열립니다:
+  - **Coding Plan**: Alibaba Cloud Coding Plan API 키로 연결합니다. 설정 방법은 [인증](./configuration/auth.md#-option-3-alibaba-cloud-coding-plan)을 참조하세요.
   - **Token Plan**: 사용량 기반 과금, 전용 엔드포인트, 팀 및 기업 대상. 설정 방법은 [Token Plan 가이드](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856)([intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model))를 참조하세요.
   - **Standard API Key**: Alibaba Cloud ModelStudio([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/))의 기존 API 키로 연결합니다. 자세한 내용은 API 설정 가이드([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721))를 참조하세요.
 - **Third-party Providers** — 내장 제공자(DeepSeek, Grok, MiniMax, Z.AI, Kimi, Idealab, ModelScope, OpenRouter, Requesty 등)를 선택하고 API 키로 연결합니다.
 - **Custom Provider** — 로컬 서버, 프록시 또는 지원되지 않는 제공자를 수동으로 연결합니다.
-
-> ⚠️ **참고**: Qwen OAuth는 2026년 4월 15일에 서비스가 중단되었습니다. 이전에 Qwen OAuth를 사용하고 있었다면 위의 방법 중 하나로 전환해 주세요.
 
 > [!note]
 >
@@ -84,14 +94,14 @@ qwen
 >
 > 인증을 구성하려면 Qwen Code를 시작한 후 `/auth`를 실행하세요. `/doctor`를 사용하면 언제든지 현재 구성을 확인할 수 있습니다. 자세한 내용은 [인증](./configuration/auth) 페이지를 참조하세요.
 
-## 3단계: 첫 세션 시작
+## 3단계: 첫 세션 시작하기
 
-원하는 프로젝트 디렉토리에서 터미널을 열고 Qwen Code를 시작하세요:
+임의의 프로젝트 디렉터리에서 터미널을 열고 Qwen Code를 시작합니다:
 
 ```bash
-# 선택 사항
+# optional
 cd /path/to/your/project
-# qwen 시작
+# start qwen
 qwen
 ```
 

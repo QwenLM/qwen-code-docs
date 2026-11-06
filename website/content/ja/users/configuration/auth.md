@@ -1,40 +1,119 @@
 # 認証
 
-Qwen Code の初回起動時に表示される `/auth` メニューには、3つのトップレベルオプションがあります。CLI の実行方法に合わせて選択してください。
+Qwen Code の初回実行時の `/auth` メニューには、5 つのトップレベルオプションがあります。CLI の実行方法に合ったものを選択してください:
 
-- **Alibaba ModelStudio**: 公式推奨セットアップ。**Coding Plan**（個人開発者向け・週間クォータ含む）、**Token Plan**（チーム・企業向け・専用エンドポイントでの従量課金）、または **Standard API Key**（既存の ModelStudio API キーで接続）のサブメニューを開きます。Token Plan と Standard API Key は、追加の設定なしで組み込みの [`web_search` ツール](../../developers/tools/web-search.md)も有効にします。
+- [**サブスクリプション付き Qwen アカウント**](https://chat.qwen.ai/?memberPlan=qwen_code): **Qwen OAuth** を通じて Qwen アカウントでサインインし、[**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) の **Plus または Pro サブスクリプション**を使用して **Qwen Code and Agent** にアクセスします。まだサブスクリプションがない場合は、[**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) にアクセスして Plus または Pro に登録し、その後 Qwen Code に戻って [**サブスクリプション付き Qwen アカウント**](https://chat.qwen.ai/?memberPlan=qwen_code) を選択してください。
+- **QwenCloud**: 公式推奨セットアップ。**Token Plan** (専用エンドポイントでの月額クレジットクォータ付きサブスクリプション · Personal および Team エディション) または **Standard API Key** (従量課金) のサブメニューを開きます。その後、プラットフォームを明示的に選択します — **中国 — 千问AI平台** または **国際 — QwenCloud** — これにより、UI 言語がエンドポイントを決定することはありません。両方のアクセス方法では、追加のセットアップなしで組み込みの [`web_search` ツール](https://qwenlm.github.io/qwen-code-docs/en/developers/tools/web-search/) も有効になります。
+- **Alibaba ModelStudio**: **Coding Plan** (個人開発者向け · 週次クォータ含む)、**Token Plan** (チームおよび企業向け · 専用エンドポイントでの使用量ベース課金)、または **Standard API Key** (既存の ModelStudio API キーで接続) のサブメニューを開きます。Token Plan と Standard API Key では、追加のセットアップなしで組み込みの [`web_search` ツール](https://qwenlm.github.io/qwen-code-docs/en/developers/tools/web-search/) も有効になります。保存された ModelStudio の認証情報、エンドポイント、モデルは変更なく動作し続けます。
 - **Third-party Providers**: 組み込みプロバイダーを選択し、API キーで接続します（DeepSeek、Grok、MiniMax、Z.AI、Kimi、Idealab、ModelScope、OpenRouter、Requesty）。
 - **Custom Provider**: ローカルサーバー、プロキシ、またはサポートされていないプロバイダーに手動で接続します。OpenAI、Anthropic、Gemini、およびその他の互換エンドポイントをサポートします。
 
-> [!note]
->
-> **Qwen OAuth** は選択可能なダイアログエントリではなくなりました。無料枠は 2026-04-15 に廃止されました。以下には、ハードコードされた廃止プロバイダーとしてのみドキュメント化されています。
+## **オプション 1: Qwen OAuth —** [**サブスクリプション付き Qwen アカウント**](https://chat.qwen.ai/?memberPlan=qwen_code)
 
-## オプション 1: Qwen OAuth（廃止）
+Qwen OAuth を使用すると、Qwen アカウントでサインインし、[**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) の **Plus または Pro サブスクリプション**を利用して **Qwen Code and Agent** にアクセスできます。初回実行メニューまたは `/auth` ダイアログで [**サブスクリプション付き Qwen アカウント**](https://chat.qwen.ai/?memberPlan=qwen_code) を選択して開始してください。
 
-> [!warning]
->
-> Qwen OAuth の無料枠は 2026-04-15 に廃止されました。既存のキャッシュされたトークンは短時間動作し続ける場合がありますが、新しいリクエストは拒否されます。Alibaba Cloud Coding Plan、[OpenRouter](https://openrouter.ai)、[Fireworks AI](https://app.fireworks.ai)、または別のプロバイダーに切り替えてください。`qwen` を実行し、`/auth` を使用して設定してください。
+- **仕組み**: [**サブスクリプション付き Qwen アカウント**](https://chat.qwen.ai/?memberPlan=qwen_code) を選択し、ブラウザのサインインフローに従って、Qwen アカウントで Qwen Code を認可します。
+- **要件**: [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) のアクティブな **Plus または Pro サブスクリプション**を持つ Qwen アカウントとインターネット接続。
+- **利点**: API キーを手動で設定せずに、Qwen サブスクリプションを通じて **Qwen Code and Agent** にアクセスできます。
+- **コストとクォータ**: 使用量はサブスクリプションプランの対象となります。Plus および Pro プランの詳細については [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) をご覧ください。
 
-- **仕組み**: 初回起動時、Qwen Code はブラウザのログインページを開きます。ログインが完了すると、認証情報がローカルにキャッシュされるため、通常は再度ログインする必要はありません。
-- **要件**: `qwen.ai` アカウントとインターネットアクセス（少なくとも初回ログイン時）。
-- **メリット**: API キーの管理が不要で、認証情報が自動的に更新されます。
-- **コストとクォータ**: 無料枠は 2026-04-15 時点で廃止されました。
+### **インタラクティブセットアップ**
 
-CLI を起動し、ブラウザのフローに従います。
+1. まだサブスクリプションがない場合は、[**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) にアクセスして **Plus または Pro** に登録してください。すでにアクティブなサブスクリプションがある場合は、次のステップに進んでください。
+2. ターミナルで Qwen Code を起動します:
+
+   ```bash
+   qwen
+   ```
+
+3. 初回実行メニューで [**サブスクリプション付き Qwen アカウント**](https://chat.qwen.ai/?memberPlan=qwen_code) を選択します。Qwen Code が既に実行中の場合は、`/auth` を入力して認証メニューを開き、同じオプションを選択してください。
+4. [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) で**サブスクリプションに登録した際に使用したのと同じ Qwen アカウント**を使用して、ブラウザのサインインと認可フローを完了します。
+5. Qwen Code に戻り、サブスクリプションを使って作業を開始します。
+
+CI や無人コンテナなど、ブラウザのサインインフローを完了できない非インタラクティブ環境では、代わりに API キーベースの認証方法を使用してください。
+
+## ☁️ オプション 2: QwenCloud
+
+公式プラットフォームエントリー。API キーが 千问AI平台 (中国) または QwenCloud (国際) から提供される場合、これを選択します。
+
+- **仕組み**: アクセス方法を選択し、次にプラットフォームを明示的に選択します — UI 言語がエンドポイントを決定することはありません。そのプラットフォームが発行したキーを入力すると、Qwen Code は対応するエンドポイントを設定します。
+- **アクセス方法**: **Token Plan** (専用エンドポイントでの月額クレジットクォータ付きサブスクリプション; Personal および Team エディション) または **Standard API Key** (従量課金)。Coding Plan はここでは提供され _ません_ — これは Alibaba ModelStudio の製品です。オプション 3 を参照してください。
+- **要件**: Token Plan コンソールから生成された Token Plan キー (接頭辞 `sk-sp-`)、またはプラットフォームの API キーページからの従量課金キー (接頭辞 `sk-` または `sk-ws-`)。
+- **利点**: 両方のアクセス方法では、追加のセットアップなしで組み込みの [`web_search` ツール](../../developers/tools/web-search.md) が有効になります。
+
+| プラットフォーム                  | アクセス方法    | エンドポイント                                                      | API キー                                                                                  |
+| ------------------------- | ---------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| 中国 — 千问AIプラットフォーム | 標準APIキー | `https://maas.qianwenaiapi.com/compatible-mode/v1` | [APIキー](https://platform.qianwenai.com/docs/developer-guides/administration/api-keys) |
+| 中国 — 千问AIプラットフォーム | トークンプラン | `https://token-plan.maas.qianwenaiapi.com/compatible-mode/v1` | [トークンプラン](https://platform.qianwenai.com/docs/token-plan/overview) |
+| 国際版 — QwenCloud | 標準APIキー | `https://maas.qwencloudapi.com/compatible-mode/v1` | [APIキー](https://docs.qwencloud.com/developer-guides/administration/api-keys) |
+| 国際版 — QwenCloud | トークンプラン | `https://token-plan.maas.qwencloudapi.com/compatible-mode/v1` | [トークンプラン](https://docs.qwencloud.com/token-plan/overview) |
+
+### インタラクティブセットアップ
+
+ターミナルで`qwen`を入力してQwen Codeを起動し、`/auth`コマンドを実行して**QwenCloud**を選択し、サブメニューから**トークンプラン**または**標準APIキー**を選択します。プラットフォーム（**中国 — 千问AIプラットフォーム**または**国際版 — QwenCloud**）を選択してから、APIキーを入力してください。
+
+Qwen Codeは起動時に保存されたキーを使用してエンドポイントのモデルリストを確認します。詳細は[組み込みプロバイダーの更新](#built-in-provider-updates)を参照してください。
+
+### ヘッドレスまたはスクリプトによるセットアップ
+
+CI、コンテナ、スクリプトでは、対話型の`/auth`フローの代わりに環境変数を使用してプラットフォームを設定してください。
 
 ```bash
-qwen
+# Pay-as-you-go (Standard API Key), International
+export QWENCLOUD_API_KEY="sk-your-api-key"
+export OPENAI_BASE_URL="https://maas.qwencloudapi.com/compatible-mode/v1"
+export OPENAI_MODEL="qwen3.8-max"
 ```
 
-Qwen OAuth は `/auth` ダイアログの選択可能なエントリとして提供されなくなりました。代わりに `/auth` を実行し、現在のオプション（Alibaba ModelStudio、Third-party Providers、または Custom Provider）のいずれかを選択してください。
+```bash
+# Token Plan, China
+export QWENCLOUD_TOKEN_PLAN_API_KEY="sk-sp-your-api-key"
+export OPENAI_BASE_URL="https://token-plan.maas.qianwenaiapi.com/compatible-mode/v1"
+export OPENAI_MODEL="qwen3.8-max"
+```
+
+### 代替案: `settings.json` による設定
+
+インタラクティブな `/auth` フローをスキップしたい場合は、以下を `~/.qwen/settings.json` に追加します。
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "qwen3.8-max",
+        "name": "qwen3.8-max (QwenCloud)",
+        "baseUrl": "https://maas.qwencloudapi.com/compatible-mode/v1",
+        "description": "qwen3.8-max from QwenCloud Standard API Key",
+        "envKey": "QWENCLOUD_API_KEY"
+      }
+    ]
+  },
+  "env": {
+    "QWENCLOUD_API_KEY": "sk-your-api-key"
+  },
+  "security": {
+    "auth": {
+      "selectedType": "openai"
+    }
+  },
+  "model": {
+    "name": "qwen3.8-max"
+  }
+}
+```
 
 > [!note]
 >
-> 非対話型またはヘッドレス環境（CI、SSH、コンテナなど）では、通常、OAuth ブラウザログインフローを完了**できません**。
-> このような場合は、Alibaba Cloud Coding Plan または API キー認証方法を使用してください。
+> `capabilities`はモデル名から推論されない唯一のプロバイダースタンプであるため、手動で記述したエントリは推論宣言なしで解決され、`/effort`はQwenCloudのカレーテッドな`low` / `medium` / `xhigh`ではなく汎用ティアリストを提供します。カレーテッドセットを使用する場合は、`/auth`を使用してプロバイダーをインストールしてください。
 
-## 💳 オプション 2: Alibaba Cloud Coding Plan
+他のプロバイダー固有のキーと同様に、`QWENCLOUD_API_KEY`と`QWENCLOUD_TOKEN_PLAN_API_KEY`は`settings.json`プロバイダーエントリがそれらを`envKey`として宣言した場合にのみ有効になります。環境変数のみでOpenAI互換認証を選択する場合は、代わりに`OPENAI_API_KEY`をエクスポートしてください。
+
+> [!note]
+>
+> QwenCloudとAlibaba ModelStudioは、個別の環境変数キーとエンドポイントを持つ別々のエントリです。QwenCloudを選択しても、保存されたModelStudioの認証情報、エンドポイント、モデル選択が書き換えられたり削除されたりすることはありません。
+
+## 💳 オプション3: Alibaba Cloud Coding Plan [#-option-3-alibaba-cloud-coding-plan]
 
 多様なモデルオプションと高い利用クォータで、予測可能なコストにしたい場合はこれを使用します。
 
@@ -47,18 +126,20 @@ Alibaba Cloud Coding Plan は 2 つのリージョンで利用可能です。
 
 | リージョン                       | コンソール URL                                                                  |
 | ---------------------------- | ---------------------------------------------------------------------------- |
-| Aliyun ModelStudio (Beijing) | [bailian.console.aliyun.com](https://bailian.console.aliyun.com)             |
-| Alibaba Cloud (intl)         | [bailian.console.alibabacloud.com](https://bailian.console.alibabacloud.com) |
+| Aliyun ModelStudio (北京) | [bailian.console.aliyun.com](https://bailian.console.aliyun.com) |
+| Alibaba Cloud (国際版) | [bailian.console.alibabacloud.com](https://bailian.console.alibabacloud.com) |
 
 ### インタラクティブセットアップ
 
 ターミナルに `qwen` と入力して Qwen Code を起動し、`/auth` コマンドを実行して **Alibaba ModelStudio** を選択し、サブメニューから **Coding Plan** を選択します。リージョンを選択し、`sk-sp-xxxxxxxxx` キーを入力します。
 
+Qwen Codeは起動時に保存されたキーを使用してエンドポイントのモデルリストを確認します。詳細は[組み込みプロバイダーの更新](#built-in-provider-updates)を参照してください。
+
 認証後、`/model` コマンドを使用して、Alibaba Cloud Coding Plan でサポートされているすべてのモデル（qwen3.5-plus、qwen3.6-plus、qwen3.7-plus、qwen3-coder-plus、qwen3-coder-next、qwen3-max-2026-01-23、glm-5、glm-4.7、kimi-k2.5、MiniMax-M2.5 など）を切り替えます。
 
 ### ヘッドレスまたはスクリプトによるセットアップ
 
-CI、コンテナ、またはスクリプトの場合は、削除された `qwen auth coding-plan` コマンドの代わりに、環境変数または `settings.json` を使用して Coding Plan を設定します。
+CI、コンテナ、スクリプトでは、削除された`qwen auth coding-plan`コマンドの代わりに環境変数または`settings.json`を使用してCoding Planを設定してください。
 
 ```bash
 export BAILIAN_CODING_PLAN_API_KEY="sk-sp-xxxxxxxxx"
@@ -103,7 +184,7 @@ export OPENAI_MODEL="qwen3-coder-plus"
 >
 > Coding Plan は、標準の Dashscope エンドポイントとは異なる専用エンドポイント（`https://coding.dashscope.aliyuncs.com/v1`）を使用します。必ず正しい `baseUrl` を使用してください。
 
-## 🪙 オプション 3: Alibaba Cloud Token Plan
+## 🪙 オプション4: Alibaba Cloud Token Plan
 
 チームや企業が専用 ModelStudio エンドポイントでの従量課金を希望する場合はこれを使用します。
 
@@ -121,13 +202,15 @@ Token Plan は 2 つのリージョンで利用可能で、それぞれに専用
 
 ### インタラクティブセットアップ
 
-ターミナルに `qwen` と入力して Qwen Code を起動し、`/auth` コマンドを実行して **Alibaba ModelStudio** を選択し、サブメニューから **Token Plan** を選択します。リージョン（**中国（北京）** または **シンガポール（国際）**）を選択し、API キーを入力します。ウィザードは最終ステップ（ステップ 3/3 · モデル ID）を表示し、そこで設定するモデル ID を選択します。エンドポイントで提供されるモデルがそこで提示され、明示的に選択した場合にのみ適用されます。Token Plan API キーにはプレフィックスの要件はありません（`sk-sp-` で始まる Coding Plan キーとは異なります）。
+ターミナルで`qwen`を入力してQwen Codeを起動し、`/auth`コマンドを実行して**Alibaba ModelStudio**を選択し、サブメニューから**トークンプラン**を選択します。地域（**中国 (北京)**または**シンガポール (国際版)**）を選択してから、APIキーを入力します。その後、ウィザードの最終ステップ（Step 3/3 · モデルID）が表示され、設定するモデルIDを選択できます。ここで、エンドポイントが提供するモデルが提示され、明示的に選択した場合のみ適用されます。ModelStudioトークンプランのAPIキーには接頭辞要件がありませんが、Coding Planのキーは`sk-sp-`で始まり、オプション2の別のQwenCloudトークンプランのキーも`sk-sp-`で始まります。
 
 認証後、`/model` コマンドを使用して、Token Plan 用に設定されたモデルを閲覧・切り替えできます。モデルラインアップは時間とともに進化するため、ここでは意図的に一覧にしていません。エンドポイントからのモデル検出は上記の `/auth` 設定ステップで行われます（エンドポイント自身のリストがそこで提示され、明示的に選択する必要があります）。`/model` はプラン用に設定されたモデルを表示します。
 
+Qwen Codeはまた、[組み込みプロバイダーの更新](#built-in-provider-updates)に記載されているように、起動時に保存されたAPIキーを使用してエンドポイントのモデルリストを確認します。
+
 ### ヘッドレスまたはスクリプトによるセットアップ
 
-CI、コンテナ、またはスクリプトの場合は、インタラクティブな `/auth` フローの代わりに、環境変数または `settings.json` を使用して Token Plan を設定します。
+CI、コンテナ、スクリプトでは、対話型の`/auth`フローの代わりに環境変数または`settings.json`を使用してトークンプランを設定してください。
 
 ```bash
 export BAILIAN_TOKEN_PLAN_API_KEY="your-api-key"
@@ -174,11 +257,11 @@ export OPENAI_MODEL="qwen3.7-plus"
 >
 > Token Plan は、標準の DashScope エンドポイントとは異なるリージョン固有の専用エンドポイント（`*.maas.aliyuncs.com`）を使用します。`baseUrl` がサブスクリプションのリージョンと一致していることを確認してください。
 
-## 🚀 オプション 4: API キー（柔軟）
+## 🚀 オプション5: APIキー（柔軟）
 
 OpenAI、Anthropic、Google、Azure OpenAI、OpenRouter、Requesty、ModelScope、またはセルフホスト型エンドポイントなどのサードパーティプロバイダーに接続したい場合はこれを使用します。複数のプロトコルとプロバイダーをサポートします。
 
-### 推奨: `settings.json` による 1 ファイルセットアップ
+### 推奨: `settings.json` による 1 ファイルセットアップ [#recommended-one-file-setup-via-settingsjson]
 
 API キー認証を開始する最も簡単な方法は、すべてを単一の `~/.qwen/settings.json` ファイルに記述することです。以下は、すぐに使用できる完全な例です。
 
@@ -216,7 +299,7 @@ API キー認証を開始する最も簡単な方法は、すべてを単一の 
 | `modelProviders`             | 利用可能なモデルと、それらへの接続方法を宣言します。キー（`openai`、`anthropic`、`gemini`）は API プロトコルを表します。              |
 | `env`                        | フォールバックとして API キーを `settings.json` に直接保存します（最低優先度 — シェルの `export` や `.env` ファイルが優先されます）。                  |
 | `security.auth.selectedType` | 起動時に Qwen Code が使用するプロトコル（`openai`、`anthropic`、`gemini` など）を指定します。これがない場合、インタラクティブに `/auth` を実行する必要があります。 |
-| `model.name`                 | Qwen Code の起動時にアクティブ化するデフォルトモデル。`modelProviders` の `id` 値のいずれかと一致する必要があります。                                |
+| `model.name` | Qwen Code起動時にアクティブ化するデフォルトモデル。`modelProviders`内の`id`値のいずれかと一致する必要があります。 |
 
 ファイルを保存したら、`qwen` を実行するだけです。インタラクティブな `/auth` 設定は必要ありません。
 
@@ -237,7 +320,7 @@ API キー認証を開始する最も簡単な方法は、すべてを単一の 
 
 #### ステップ 1: `~/.qwen/settings.json` でモデルとプロバイダーを設定する
 
-各プロトコルで利用可能なモデルを定義します。各モデルエントリには少なくとも `id` が必要です。`envKey`（API キーを保持する環境変数名）は任意ですが推奨されます。省略した場合、認証タイプのデフォルトの環境変数キー（例: `openai` の場合は `OPENAI_API_KEY`）にフォールバックします。
+各プロトコルで利用可能なモデルを定義します。各モデルエントリには少なくとも`id`が必要であり、`envKey`（APIキーを保持する環境変数名）は任意ですが推奨されます。省略した場合は、認証タイプのデフォルト環境変数キー（例：`openai`の場合は`OPENAI_API_KEY`）にフォールバックします。
 
 > [!important]
 >
@@ -276,7 +359,7 @@ API キー認証を開始する最も簡単な方法は、すべてを単一の 
 
 > [!tip]
 >
-> `modelProviders` と一緒に `env`、`security.auth.selectedType`、`model.name` も設定することを忘れないでください。参考例は[上記の完全な例](#recommended-one-file-setup-via-settingsjson)を参照してください。
+> `modelProviders`に加えて`env`、`security.auth.selectedType`、`model.name`も設定することを忘れないでください。参考のために[上記の完全な例](#recommended-one-file-setup-via-settingsjson)を参照してください。
 
 **`ModelConfig` フィールド（`modelProviders` 内の各エントリ）:**
 
@@ -291,11 +374,11 @@ API キー認証を開始する最も簡単な方法は、すべてを単一の 
 
 > [!note]
 >
-> `settings.json` の `env` フィールドを使用する場合、認証情報は平文で保存されます。セキュリティを高めるには、`.env` ファイルまたはシェルの `export` を優先してください。[ステップ 2](#step-2-set-environment-variables) を参照してください。
+> `settings.json`内の`env`フィールドを使用する場合、認証情報は平文で保存されます。セキュリティ向上のため、`.env`ファイルまたはシェル`export`の使用をお勧めします。詳細は[ステップ2](#step-2-set-environment-variables)を参照してください。
 
 完全な `modelProviders` スキーマや `generationConfig`、`customHeaders`、`extra_body` などの高度なオプションについては、[Model Providers Reference](./model-providers.md) を参照してください。
 
-#### ステップ 2: 環境変数を設定する
+#### ステップ 2: 環境変数を設定する [#step-2-set-environment-variables]
 
 Qwen Code は環境変数（モデル設定の `envKey` で指定）から API キーを読み取ります。提供方法には複数の方法があり、以下に**優先度の高い順**に示します。
 
@@ -334,7 +417,7 @@ Qwen Code は、見つかった**最初の** `.env` ファイルを自動的に�
 
 > [!tip]
 >
-> 他のツールとの競合を避けるため、`.env` よりも `.qwen/.env` をお勧めします。Qwen Code の動作に干渉しないように、一部の変数（`DEBUG` や `DEBUG_MODE` など）はプロジェクトレベルの `.env` ファイルから除外されています。
+> 他のツールとの競合を避けるため、`.env`よりも`.qwen/.env`の使用が推奨されます。一部の環境変数（`DEBUG`や`DEBUG_MODE`など）は、Qwen Codeの動作に干渉しないようプロジェクトレベルの`.env`ファイルから除外されています。
 
 **3. `settings.json` → `env` フィールド（最低優先度）**
 
@@ -371,17 +454,29 @@ Qwen Code を起動したら、`/model` コマンドを使用して設定され�
 
 ピッカーには `modelProviders` 設定のすべてのモデルが表示され、プロトコル（`openai`、`anthropic`、`gemini` など）ごとにグループ化されます。選択内容はセッションをまたいで保持されます。
 
-コマンドライン引数で直接モデルを切り替えることもできます。これは複数のターミナルで作業する際に便利です。
+コマンドライン引数でモデルを直接切り替えることもできます。これは複数のターミナル間で作業する場合に便利です。
 
 ```bash
-# 1つのターミナルで
+# In one terminal
 
 qwen --model "qwen3-coder-plus"
 
-# 別のターミナルで
+# In another terminal
 
 qwen --model "qwen3.5-plus"
 ```
+
+## 組み込みプロバイダーの更新 [#built-in-provider-updates]
+
+組み込みモデルリストを持つインストール済みプロバイダーでは、新しいプリセットがリリースされた際に**Built-in Provider Update**（組み込みプロバイダーの更新）が提供されることがあります。
+
+QwenCloud（Token PlanおよびStandard API Key）とAlibaba ModelStudio（Coding Plan、Token PlanおよびStandard API Key）も起動時に`/models`を確認します。この確認には、`/auth`によって保存されたプロバイダー固有のAPIキー環境変数（例えば`BAILIAN_TOKEN_PLAN_API_KEY`）を使用し、`settings.env`からの値も含めます。CLIフラグ、`OPENAI_API_KEY`、または汎用認証設定を通じてのみ提供されたキーはこの確認を有効にしません。汎用キーは他のプロバイダーのエンドポイントに転送されません。
+
+検出が成功すると、あなたのキーで提供されている組み込みモデルに更新が限定され、ユーザーが追加したモデルは保持されます。また、プラン切り替え後など、プリセットのリリースなしに提供されるセットが変更された場合にも更新が提供されることがあります。検出のみでは選択中のモデルが維持されますが、一度他へ切り替えると、後の起動時チェックでその削除が提案されることがあります。フィルタリングによりインストールすべき組み込みモデルが残らない場合、既存のプロバイダー設定がプロンプトなしで保持されます。提供されるセットのみが変更された場合、更新は新たに提供されるモデルのみを追加するため、`/auth`中に除外したモデルは再び追加されません。何も変更されない場合、プロンプトなしでチェック結果が記録されます。
+
+検出が利用不可、失敗、またはどの組み込みモデルとも一致しない場合、プリセット更新は完全な組み込みリストを使用します。すでに最新の状態にあるインストールは変更されません。検出機能のないプロバイダーは引き続き組み込みリストを使用します。
+
+**Later**（後で）を選択すると、同じバージョンまたは提供セットについて24時間後に再確認が行われます。異なる変更であれば引き続きプロンプトが表示されます。更新、スキップ、またはより新しい決定のサイレント記録により、以前の保留状態がクリアされます。**Skip**（スキップ）を選択すると、保持されているモデルを含む設定が維持されます。スキップされたプリセットバージョンは、より新しいものがリリースされるまで再度提供されず、スキップされた提供セットは、変更されるまで再度提供されません。
 
 ## 削除された `qwen auth` CLI コマンド
 
@@ -400,7 +495,7 @@ qwen --model "qwen3.5-plus"
 
 `qwen auth status` などのレガシーな呼び出しは、これらの移行パスをまとめた削除通知を出力するようになりました。Token Plan のエントリには両リージョンのベース URL が含まれます。
 
-## セキュリティに関する注意事項
+## セキュリティに関する注意事項 [#security-notes]
 
 - API キーをバージョン管理にコミットしないでください。
 - プロジェクトローカルのシークレットには `.qwen/.env` を優先してください（また、Git の管理外に置いてください）。

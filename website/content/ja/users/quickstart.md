@@ -4,13 +4,17 @@
 
 このクイックスタートガイドでは、数分でAIを活用したコーディング支援を使い始めることができます。最後まで読めば、一般的な開発タスクで Qwen Code を使用する方法を理解できるでしょう。
 
-## 始める前に
+## **始める前に**
 
 以下が必要です：
 
-- **ターミナル** またはコマンドプロンプトが開いていること
+- ターミナルまたはコマンドプロンプトを開いていること
 - 作業するコードプロジェクト
-- 千问AI平台 / QwenCloud（[China](https://platform.qianwenai.com/docs/developer-guides/administration/api-keys) / [International](https://docs.qwencloud.com/developer-guides/administration/api-keys)）の API キーまたは Token Plan サブスクリプション（推奨セットアップ）、または Alibaba Cloud ModelStudio の API キー（[Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)）、または Alibaba Cloud Token Plan（[Beijing](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)）のサブスクリプション
+- **以下のいずれか**:
+  - [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) の **Plus または Pro サブスクリプション**を持つ Qwen アカウント。これにより **Qwen Code and Agent** へのアクセスが解放されます
+  - 千问AI平台 / **QwenCloud** ([中国](https://platform.qianwenai.com/docs/developer-guides/administration/api-keys) / [国際](https://docs.qwencloud.com/developer-guides/administration/api-keys)) の API キーまたは Token Plan サブスクリプション — 推奨されるセットアップ
+  - **Alibaba Cloud ModelStudio** ([北京](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)) の API キー
+  - **Alibaba Cloud Token Plan** ([北京](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) サブスクリプション
 
 ## ステップ1: Qwen Code のインストール
 
@@ -57,30 +61,30 @@ brew install qwen-code
 `qwen` コマンドでインタラクティブセッションを開始すると、認証の設定を求められます：
 
 ```bash
-# 初回使用時に認証の設定を求められます
+# You'll be prompted to set up authentication on first use
 qwen
 ```
 
 ```bash
-# または、いつでも /auth を実行して認証方法を変更できます
+# Or run /auth anytime to change authentication method
 /auth
 ```
 
-初回起動時のメニューでは、モデルプロバイダーを選択できます。以下から選択してください：
+初回起動メニューでモデルプロバイダーを接続できます。次の中から選択してください:
 
-- **QwenCloud** — 推奨される設定です。サブメニューが開きます：
-  - **Token Plan**: 専用エンドポイントでの月額クレジットクォータ付きサブスクリプション（Personal および Team エディション）。
-  - **Standard API Key**: 従量課金制。既存のプラットフォーム API キーで接続します。
+- [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code) — Qwen アカウントでサインインし、**Plus または Pro サブスクリプション**で **Qwen Code and Agent** にアクセスします。まだサブスクリプションがない場合は、[**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) で Plus または Pro に登録してから Qwen Code に戻り、[**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code) を選択してください。
+- **QwenCloud** — 推奨されるセットアップ。サブメニューが開きます:
+  - **Token Plan**: 専用エンドポイントでの月間クレジットクォータ付きサブスクリプション (Personal および Team エディション)。
+  - **Standard API Key**: 従量課金制で、既存のプラットフォーム API キーで接続します。
 
-  どちらの場合も、プラットフォーム（China または International）を明示的に選択するため、UI 言語によってエンドポイントが決定されることはありません。詳細は [Authentication → Option 1: QwenCloud](./configuration/auth) を参照してください。
+  どちらの場合も、プラットフォーム (中国または国際) を明示的に選択するため、UI の言語によってエンドポイントが決まることはありません。詳細は [Authentication → Option 2: QwenCloud](./configuration/auth) を参照してください。
 
 - **Alibaba ModelStudio** — サブメニューが開きます：
+  - **Coding Plan**: Alibaba Cloud Coding Plan API キーで接続します。セットアップについては [Authentication](./configuration/auth.md#-option-3-alibaba-cloud-coding-plan) を参照してください。
   - **Token Plan**: 専用エンドポイントを使用した従量課金制で、チームや企業向けです。設定手順については [Token Plan ガイド](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856)（[intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)）を参照してください。
   - **Standard API Key**: 既存の Alibaba Cloud ModelStudio（[Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)）の API キーを接続します。詳細は API 設定ガイド（[Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)）を参照してください。
 - **Third-party Providers** — 内蔵プロバイダー（DeepSeek、Grok、MiniMax、Z.AI、Kimi、Idealab、ModelScope、OpenRouter、Requesty など）を選択し、API キーで接続します。
 - **Custom Provider** — ローカルサーバー、プロキシ、またはサポートされていないプロバイダーを手動で接続します。
-
-> ⚠️ **注意**: Qwen OAuth は2026年4月15日に廃止されました。以前 Qwen OAuth を使用していた場合は、上記のいずれかの方法に切り替えてください。
 
 > [!note]
 >
@@ -90,14 +94,14 @@ qwen
 >
 > 認証を設定するには、Qwen Code を起動して `/auth` を実行します。現在の設定はいつでも `/doctor` で確認できます。詳細は [認証](./configuration/auth) ページを参照してください。
 
-## ステップ3: 最初のセッションを開始
+## ステップ 3: 最初のセッションを開始する
 
-任意のプロジェクトディレクトリでターミナルを開き、Qwen Code を起動します：
+任意のプロジェクトディレクトリでターミナルを開き、Qwen Code を起動します:
 
 ```bash
-# オプション
+# optional
 cd /path/to/your/project
-# qwen を起動
+# start qwen
 qwen
 ```
 

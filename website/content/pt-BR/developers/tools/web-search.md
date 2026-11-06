@@ -2,12 +2,12 @@
 
 O Qwen Code oferece pesquisa na web de duas formas:
 
-1. **Ferramenta integrada `web_search`** — suportada pelo search server-side da DashScope Responses API. Ativada por padrão na inicialização para configurações ModelStudio e OpenAI-compatíveis com DashScope suportadas; sem provedor extra ou configuração MCP.
+1. **Ferramenta `web_search` integrada** — baseada na busca no lado do servidor da API Responses do DashScope ou, para sessões de Assinatura Qwen, no serviço de busca MCP da Qwen. Ativada após o login na assinatura Plus/Pro e habilitada por padrão na inicialização para configurações compatíveis com ModelStudio e OpenAI via DashScope; sem necessidade de provedor adicional ou configuração de MCP.
 2. **Integrações MCP (Model Context Protocol)** — conecte qualquer serviço de busca externo (Tavily, GLM e outros). Use esta opção quando seu provedor não puder suportar a ferramenta integrada.
 
-## `web_search` integrado
+## `web_search` integrado [#built-in-web_search]
 
-A ferramenta integrada emite uma requisição de busca autônoma para um pequeno modelo auxiliar com as ferramentas `web_search` (e `web_extractor`) server-side do DashScope, e retorna os achados narrados mais URLs de origem.
+Para o DashScope, a ferramenta integrada emite uma solicitação de busca autônoma para um modelo auxiliar pequeno com ferramentas `web_search` (e `web_extractor`) no lado do servidor, e retorna os achados narrados mais as URLs das fontes. Com [Conta Qwen com Assinatura](../../users/configuration/auth.md), ela usa o serviço de busca MCP da Qwen e suas credenciais de login atuais. Não é necessária uma chave de API de busca separada, um modelo auxiliar ou configuração `mcpServers`. `webExtractor` se aplica apenas à busca do DashScope.
 
 ### Quando ela se ativa sozinha
 
@@ -15,13 +15,16 @@ Se você não configurou nada em `tools.webSearch`, a ferramenta é registrada s
 
 | Como você fez login                                                                                                  | Busca integrada                                 |
 | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code) — **Plus ou Pro**                             | ativado                                              |
 | Alibaba ModelStudio → **Chave de API Padrão**                                                                        | ativada                                         |
 | Alibaba ModelStudio → **Token Plan**                                                                                 | ativada                                         |
 | Alibaba ModelStudio → **Coding Plan**                                                                                | desativada — seu endpoint não é verificado para esta API |
+| QwenCloud → **Chave de API Padrão**                                                                                           | ativado                                              |
+| QwenCloud → **Plano de Tokens**                                                                                                 | ativado                                              |
 | Uma entrada `modelProviders` compatível com OpenAI ou Provedor Personalizado em um host reconhecido de DashScope Responses, com uma chave direta | ativada                                         |
 | Provedores de terceiros (OpenRouter, DeepSeek, ModelScope, …), endpoints personalizados em outros hosts, modelos locais | desativada                                      |
 
-Buscas são cobradas na mesma chave do seu modelo principal. O tratamento de permissões segue o modo de aprovação ativo e as regras; no modo de aprovação `default`, a primeira busca pede confirmação. Quando seu provedor não pode suportar a ferramenta, ela simplesmente não aparece na inicialização — nenhum aviso de inicialização.
+As buscas do DashScope cobram a mesma chave que seu modelo principal; as buscas por assinatura reutilizam suas credenciais de login da Qwen. O tratamento de permissões segue o modo de aprovação ativo e as regras; no modo de aprovação `default`, a primeira busca solicita confirmação. Quando seu provedor não pode suportar a ferramenta, ela simplesmente não aparece na inicialização — sem aviso na inicialização.
 
 Para desativá-la:
 
@@ -32,6 +35,8 @@ Para desativá-la:
 ou `ENABLE_WEB_SEARCH=false`. O modo bare e o modo safe sempre a desativam.
 
 ### Configurando-a explicitamente
+
+Esta seção configura a busca do DashScope. A busca por assinatura reutiliza suas credenciais de associação e não requer configuração adicional. Configurações explícitas de busca ainda têm precedência sobre a busca automática por assinatura.
 
 Aponte a ferramenta para um ModelStudio Standard/Token Plan ou outra entrada verificada de DashScope Responses. Isso é útil quando seu modelo principal está em outro provedor e você também tem uma chave DashScope suportada separada. Hosts do Coding Plan são excluídos da ativação automática porque as ferramentas de busca Responses não são verificadas neles. Você pode ativar explicitamente com `tools.webSearch.model`; se o endpoint não as servir, a primeira busca falha de forma explícita. Use um provedor de busca MCP se não quiser depender desse caminho não verificado.
 
@@ -61,28 +66,30 @@ Aponte a ferramenta para um ModelStudio Standard/Token Plan ou outra entrada ver
 | `tools.webSearch.model`        | `WEB_SEARCH_MODEL`     | Seletor do modelo de busca para o caminho explícito (`modelId` ou `authType:modelId`). Com `WEB_SEARCH_BASE_URL`, é o id simples do modelo para aquele endpoint; caso contrário, deve corresponder a uma entrada `modelProviders` compatível com DashScope declarada. O caminho automático usa `qwen3.8-flash`. |
 | `tools.webSearch.webExtractor` | `WEB_SEARCH_EXTRACTOR` | Permite que o agente de busca abra páginas de resultado para respostas melhor fundamentadas (padrão `true`; cobrado separadamente pelo DashScope).                                                                                                                                                                |
 | `tools.webSearch.timeoutMs`     | `WEB_SEARCH_TIMEOUT_MS`      | Orçamento de tempo total para uma busca, em milissegundos (padrão `120000`, máximo `600000`; outros valores voltam ao padrão). Uma busca que esgota o tempo retorna o que chegou como resultado parcial quando pelo menos uma chamada de busca foi concluída; se o orçamento expira antes da primeira chamada de busca terminar, a ferramenta reporta um erro de timeout, porque narração sem busca executada não é evidência auditável. Um limite de execução por ferramenta (`QWEN_CODE_TOOL_EXECUTION_TIMEOUT_MS`) abaixo desse orçamento dispara primeiro e descarta o resultado parcial; mantenha-o acima de `timeoutMs`. |
+| `tools.webSearch.allowedHosts`  | `WEB_SEARCH_ALLOWED_HOSTS`   | Sufixos de host adicionais confiáveis para um backend de busca configurado explicitamente — um host exato, ou qualquer subdomínio de um sufixo listado (separados por vírgula na variável de ambiente). Vazio por padrão, então o comportamento permanece inalterado a menos que definido. Apenas o backend `WEB_SEARCH_BASE_URL` e o caminho `modelProviders` consultam isso; a derivação automática nunca faz isso, então um host personalizado é usado apenas onde sua própria configuração o nomeia. O host configurado recebe a chave de API. As entradas são aparadas e convertidas para minúsculas, e entradas sem ponto são ignoradas.                                                 |
 | `tools.webSearch.maxPerSession` | `WEB_SEARCH_MAX_PER_SESSION` | Máximo de chamadas `web_search` em uma sessão (padrão `200`, máximo `10000`; outros valores voltam ao padrão). A contagem é compartilhada com subagentes e reinicia quando a sessão muda (`/clear`, `/resume`, ramificação). Quando atingido, buscas adicionais são ignoradas e o modelo é instruído a continuar com o que já coletou.                                                                                                                  |
 
 ### Configuração apenas por env (sem settings.json)
 
-Para ambientes onde você não pode escrever um arquivo de configurações (contêineres travados, CI apenas com injeção de env), a ferramenta pode ser configurada inteiramente através de variáveis de ambiente — sem entrada `modelProviders` necessária:
+Para ambientes onde você não pode escrever um arquivo de configurações (contêineres restritos, CI com injeção apenas via variáveis de ambiente), a ferramenta pode ser configurada inteiramente através de variáveis de ambiente — nenhuma entrada `modelProviders` é necessária:
 
 ```bash
 export ENABLE_WEB_SEARCH=true
 export WEB_SEARCH_MODEL=qwen3.8-flash
 export WEB_SEARCH_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-export DASHSCOPE_API_KEY=sk-...        # ou defina WEB_SEARCH_API_KEY em vez disso
+export WEB_SEARCH_ALLOWED_HOSTS=llm-gw.example.com   # only for a gateway host
+export DASHSCOPE_API_KEY=sk-...        # or set WEB_SEARCH_API_KEY instead
 ```
 
-`WEB_SEARCH_BASE_URL` espelha o `baseUrl` de uma entrada `modelProviders` e deve ser um endpoint compatível com DashScope; quando definido, tem precedência sobre a resolução de `modelProviders` e `WEB_SEARCH_MODEL` é usado como o id de modelo DashScope simples. A chave de API é lida de `WEB_SEARCH_API_KEY` se definida, caso contrário de `DASHSCOPE_API_KEY`. Configuração incorreta ainda aparece como um aviso de inicialização.
+`WEB_SEARCH_BASE_URL` espelha o `baseUrl` de uma entrada `modelProviders` e deve ser um endpoint compatível com DashScope; quando definido, ele tem precedência sobre a resolução `modelProviders` e `WEB_SEARCH_MODEL` é usado como o id do modelo DashScope simples. A chave da API é lida de `WEB_SEARCH_API_KEY` se definida, caso contrário, de `DASHSCOPE_API_KEY`. Se o endpoint for um gateway em seu próprio domínio, liste esse host em `WEB_SEARCH_ALLOWED_HOSTS` (ou `tools.webSearch.allowedHosts`) — caso contrário, a lista incorporada é a única aceita pela verificação. Uma configuração incorreta ainda aparece como um aviso na inicialização.
 
 Notas:
 
-- O seletor deve resolver para uma entrada `modelProviders` compatível com DashScope portando uma chave de API direta via `envKey`. Seu modelo principal pode ser qualquer provedor — apenas a requisição do lado da busca precisa de uma entrada DashScope. Qwen OAuth não pode suportar a ferramenta.
-- Quais provedores podem ativar a ferramenta é decidido na inicialização. Uma vez ativa, o backend de busca segue o modelo atualmente selecionado na próxima busca; mudar para um provedor não suportado faz aquela invocação falhar, enquanto mudar de uma sessão onde a ferramenta estava ausente ainda exige uma reinicialização para registrá-la.
-- A detecção automática de host aceita intencionalmente apenas hosts regionais conhecidos do DashScope, Token Plan MaaS e hosts internos Alibaba. Gateways genéricos `*.alicloudapi.com` e `DASHSCOPE_PROXY_BASE_URL` são excluídos porque não se sabe se encaminham as ferramentas de busca Responses.
+- Para busca explícita do DashScope, o seletor deve resolver para uma entrada `modelProviders` compatível com DashScope carregando uma chave de API direta via `envKey`. Seu modelo principal pode ser de qualquer provedor. O provedor legado gratuito Qwen OAuth não pode suportar este caminho; a busca por Assinatura Qwen usa o serviço MCP separado descrito acima.
+- O registro da busca é reavaliado após mudanças bem-sucedidas de autenticação. Entrar na Assinatura Qwen habilita a busca na sessão atual sem reiniciar. Desativação explícita, modo seguro/bare e regras de permissão de ferramentas ainda se aplicam.
+- A detecção automática de host aceita intencionalmente apenas hosts regionais conhecidos do DashScope, Model Studio e hosts MaaS da QwenCloud (incluindo seus subdomínios de assinatura `token-plan.`), além de hosts internos da Alibaba. Gateways genéricos `*.alicloudapi.com`, `DASHSCOPE_PROXY_BASE_URL` e qualquer host que você tenha adicionado apenas em `allowedHosts` são excluídos desse caminho automático, pois ele é executado sem sua intervenção e poderia entregar a chave do seu provedor principal a um host não declarado. Para um gateway que você declara explicitamente, liste-o em `tools.webSearch.allowedHosts` e aponte `WEB_SEARCH_BASE_URL` (ou uma entrada `modelProviders`) para ele.
 - Se habilitada explicitamente mas mal configurada, a ferramenta permanece desligada e um aviso de inicialização explica qual condição falhou. A ativação automática nunca emite um aviso.
-- Buscas cobram sua chave DashScope (`usage.x_tools` conta). O modo de aprovação automática (o padrão) permite que o classificador aprove buscas sem prompt; no modo de aprovação `default`, a ferramenta pergunta, e aprovar com "sempre permitir" persiste uma regra de permissão `WebSearch` padrão, como outras ferramentas.
+- As buscas no DashScope cobram sua chave DashScope (`usage.x_tools` conta). O modo de aprovação automática (padrão) permite que o classificador aprove buscas sem solicitar confirmação; no modo de aprovação `default`, a ferramenta pergunta, e aprovar com "permitir sempre" persiste uma regra de permissão padrão `WebSearch`, como ocorre com outras ferramentas.
 - Não há lista de permissão de modelo no lado do cliente; um modelo que o endpoint Responses não serve falha de forma explícita no primeiro uso.
 - Uma busca que excede seu orçamento de tempo retorna o que chegou como resultado parcial quando pelo menos uma chamada de busca foi concluída; se o orçamento expira antes da primeira chamada de busca terminar, a ferramenta reporta um erro de timeout, porque narração sem busca executada não é evidência auditável. Quando uma chamada de busca foi concluída mas a resposta narrada nunca chegou, o resultado carrega no máximo 6.000 caracteres do texto da página que o agente havia lido, rotulado como conteúdo bruto de página.
 - O limite por sessão conta chamadas da ferramenta `web_search`, não as buscas que uma chamada executa internamente, e uma chamada que falha ainda conta porque a requisição foi enviada. Uma chamada ignorada não é um erro: ela informa ao modelo que o orçamento foi usado e para pedir que você aumente `tools.webSearch.maxPerSession` se mais buscas forem genuinamente necessárias.
@@ -163,7 +170,7 @@ A ferramenta `web_search` integrada original (multi-provedor Tavily/Google/GLM/D
 
 ## Serviços de Pesquisa na Web MCP Suportados
 
-### Alibaba Cloud Bailian WebSearch
+### WebSearch da Alibaba Cloud Bailian
 
 O serviço oficial de pesquisa na web MCP fornecido pela plataforma Alibaba Cloud Bailian, alimentado pelo DashScope. Se você tem uma chave DashScope, prefira a ferramenta `web_search` integrada acima — ela usa um caminho de busca mais forte que este serviço MCP.
 
@@ -262,7 +269,7 @@ Substitua `${TAVILY_API_KEY}` pela sua chave de API real, ou defina-a como uma v
 
 ### GLM WebSearch Prime (ZhipuAI)
 
-O serviço oficial de pesquisa na web MCP Remoto fornecido pela ZhipuAI (智谱AI), desenvolvido para usuários do GLM Coding Plan. Oferece pesquisa na web em tempo real, incluindo notícias, preços de ações, clima e muito mais.
+O serviço Remote MCP oficial de busca na web fornecido pela ZhipuAI (智谱AI), projetado para usuários do GLM Coding Plan. Fornece busca na web em tempo real, incluindo notícias, preços de ações, clima e muito mais.
 
 - **Documentação:** https://docs.bigmodel.cn/cn/coding-plan/mcp/search-mcp-server
 - **Custo:** Incluso na assinatura do GLM Coding Plan (Lite: 100 chamadas/mês, Pro: 1.000/mês, Max: 4.000/mês)
@@ -300,5 +307,161 @@ qwen mcp add web-search-prime \
 ```
 
 Substitua `${GLM_API_KEY}` pela sua chave de API ZhipuAI real, ou defina-a como uma variável de ambiente.
+
+---
+
+### Firecrawl
+
+O servidor MCP hospedado oficial da Firecrawl, fornecendo busca na web, scraping de páginas, crawling e mapeamento de sites, interação com navegador e análise de arquivos. Os resultados da busca podem incluir o conteúdo de cada página em Markdown, permitindo que o modelo leia suas fontes sem uma etapa separada de fetch. O servidor hospedado funciona sem chave de API para busca, scraping e análise. As consultas de busca, as URLs que você solicita para leitura e os arquivos analisados são enviados à Firecrawl.
+
+- **Documentação:** https://docs.firecrawl.dev/mcp-server
+- **Custo:** Nenhuma chave de API necessária para busca, scraping e análise (limite diário por IP); planos pagos para limites maiores
+- **Obter Chave de API:** https://www.firecrawl.dev/app/api-keys
+- **Ideal para:** Busca na web onde o modelo também precisa ler as páginas encontradas, e para testar a busca na web via MCP sem uma chave de API
+
+#### Ferramentas Disponíveis
+
+- `firecrawl_search` — Busca na web, opcionalmente retornando o conteúdo da página de cada resultado em Markdown
+- `firecrawl_scrape` — Obter uma única página em Markdown limpo
+- `firecrawl_parse` — Converter um arquivo local (PDF, Word, planilha e outros) para Markdown
+
+Com uma chave de API, o servidor também oferece ferramentas para mapear e rastrear sites, interagir com páginas (clicar, digitar, navegar) e buscar fontes de desenvolvedores, como issues e docs do GitHub.
+
+#### Configuração
+
+**Método 1: Comando CLI (MCP Remoto)**
+
+```bash
+qwen mcp add firecrawl \
+  -t http \
+  "https://mcp.firecrawl.dev/v2/mcp" \
+  -H "Authorization: Bearer ${FIRECRAWL_API_KEY}"
+```
+
+Para experimentar sem uma chave, omita a linha `-H`. Você obtém `firecrawl_search`, `firecrawl_scrape` e `firecrawl_parse` dentro de um limite diário por IP.
+
+**Método 2: `settings.json` (MCP Remoto)**
+
+```json
+{
+  "mcpServers": {
+    "firecrawl": {
+      "httpUrl": "https://mcp.firecrawl.dev/v2/mcp",
+      "headers": {
+        "Authorization": "Bearer ${FIRECRAWL_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+Substitua `${FIRECRAWL_API_KEY}` pela sua chave de API real ou defina-a como uma variável de ambiente. Se a chave estiver vazia, o servidor ainda se conecta, mas oferece apenas as três ferramentas sem chave.
+
+**Método 3: `settings.json` (NPX Local)**
+
+```json
+{
+  "mcpServers": {
+    "firecrawl-mcp": {
+      "command": "npx",
+      "args": ["-y", "firecrawl-mcp@latest"],
+      "env": {
+        "FIRECRAWL_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+---
+
+### SerpApi
+
+O servidor MCP hospedado oficial da SerpApi, fornecendo resultados de busca estruturados em tempo real do Google, Baidu, Bing e outros mecanismos de busca através de uma única ferramenta. As consultas de busca e seus parâmetros são enviados à SerpApi.
+
+- **Documentação:** https://serpapi.com/integrations/mcp
+- **Custo:** Pago (plano gratuito disponível)
+- **Obter Chave de API:** https://serpapi.com/manage-api-key
+- **Ideal para:** Resultados estruturados de uma ampla escolha de mecanismos de busca
+
+#### Ferramentas Disponíveis
+
+- `search` — Busca na web, opcionalmente retornando resultados em Markdown
+
+#### Configuração
+
+**Método 1: Comando CLI**
+
+```bash
+qwen mcp add serpapi \
+  -t http \
+  "https://mcp.serpapi.com/mcp" \
+  -H "Authorization: Bearer ${SERPAPI_API_KEY}"
+```
+
+**Método 2: `settings.json`**
+
+```json
+{
+  "mcpServers": {
+    "serpapi": {
+      "httpUrl": "https://mcp.serpapi.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${SERPAPI_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+Substitua `${SERPAPI_API_KEY}` pela sua chave de API real ou defina-a como uma variável de ambiente. A chave é necessária apenas para buscas. Sem uma chave de API válida, o servidor ainda se conecta e lista suas ferramentas, mas `search` retorna um erro.
+
+---
+
+### looot
+
+Um servidor MCP hospedado da looot com busca na web, resultados SERP do Google, busca de notícias e leitura de páginas da web. As consultas de busca e as URLs que você solicita para leitura são enviadas à looot.
+
+- **Documentação:** https://docs.looot.ai
+- **Custo:** Pago (saldo pré-pago, sem nível gratuito)
+- **Obter Chave de API:** https://looot.ai
+- **Ideal para:** Busca na web, resultados SERP do Google e notícias, e leitura de uma página como texto
+
+#### Ferramentas Disponíveis
+
+- `web_search` — Busca na web
+- `google_search_results` — Resultados SERP do Google
+- `news_search` — Busca de notícias
+- `read_web_page` — Ler uma única página como texto
+
+O servidor também expõe buscas de empresas e e-mails.
+
+#### Configuração
+
+**Método 1: Comando CLI (MCP Remoto)**
+
+```bash
+qwen mcp add looot \
+  -t http \
+  "https://api.looot.ai/mcp" \
+  -H "Authorization: Bearer ${LOOOT_API_KEY}"
+```
+
+**Método 2: `settings.json` (MCP Remoto)**
+
+```json
+{
+  "mcpServers": {
+    "looot": {
+      "httpUrl": "https://api.looot.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer ${LOOOT_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+Substitua `${LOOOT_API_KEY}` pela sua chave de API real, ou defina-a como uma variável de ambiente.
 
 ---

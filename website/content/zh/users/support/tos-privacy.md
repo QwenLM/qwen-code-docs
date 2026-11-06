@@ -6,34 +6,36 @@ Qwen Code 是一款由 Qwen Code 团队维护的开源 AI 编程助手工具。�
 
 Qwen Code 支持四种认证方式来访问 AI 模型。你的认证方式决定了哪些服务条款与隐私政策适用于你的使用场景：
 
-1. **Qwen OAuth** — 使用你的 qwen.ai 账号登录（免费套餐已于 2026-04-15 停用）
+1. [**Qwen 账户订阅**](https://chat.qwen.ai/?memberPlan=qwen_code) **(Qwen OAuth)** — 使用您的 Qwen 账户以及来自 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) 的有效 **Plus 或 Pro 订阅**登录
 2. **阿里云百炼计划** — 使用来自阿里云的 API key
 3. **API Key** — 携带你自己的 API key
 4. **Vertex AI** — 使用 Google Cloud Vertex AI
 
 不同认证方式可能适用不同的服务条款与隐私声明，具体取决于底层的服务提供商。
 
-| 认证方式                | 提供商              | 服务条款                                                        | 隐私声明                                                        |
-| :---------------------- | :------------------ | :-------------------------------------------------------------- | :-------------------------------------------------------------- |
-| Qwen OAuth              | Qwen AI             | [Qwen 服务条款](https://qwen.ai/termsservice)                   | [Qwen 隐私政策](https://qwen.ai/privacypolicy)                  |
-| 阿里云百炼计划          | 阿里云              | 参见[下方详情](#2-if-you-are-using-alibaba-cloud-coding-plan)                | 参见[下方详情](#2-if-you-are-using-alibaba-cloud-coding-plan)                |
-| API Key                 | 多种提供商          | 取决于你选择的 API 提供商（OpenAI、Anthropic 等）               | 取决于你选择的 API 提供商                                       |
-| Vertex AI               | Google Cloud        | [Google Cloud 服务条款](https://cloud.google.com/terms)         | [Google Cloud 隐私声明](https://cloud.google.com/privacy)       |
+[Qwen 账户订阅](https://chat.qwen.ai/?memberPlan=qwen_code)与已停用的旧版免费 Qwen OAuth 额度不同，后者已于 2026-04-15 停止服务。
 
-## 1. 如果你使用的是 Qwen OAuth 认证
+| 认证方法                                                                     | 提供商            | 服务条款                                                           | 隐私声明                                                           |
+| :--------------------------------------------------------------------------- | :---------------- | :----------------------------------------------------------------- | :----------------------------------------------------------------- |
+| [Qwen 账户订阅](https://chat.qwen.ai/?memberPlan=qwen_code)                                                         | Qwen AI           | [Qwen 服务条款](https://qwen.ai/termsservice)                                               | [Qwen 隐私政策](https://qwen.ai/privacypolicy)                                               |
+| Alibaba Cloud Coding Plan                                                    | Alibaba Cloud     | 参见[下方详情](#2-if-you-are-using-alibaba-cloud-coding-plan)                                                | 参见[下方详情](#2-if-you-are-using-alibaba-cloud-coding-plan)                                                |
+| API Key                                                                      | 各种提供商        | 取决于您选择的 API 提供商（OpenAI、Anthropic 等）                  | 取决于您选择的 API 提供商                                          |
+| Vertex AI                                                                    | Google Cloud      | [Google Cloud 服务条款](https://cloud.google.com/terms)                                       | [Google Cloud 隐私政策](https://cloud.google.com/privacy)                                       |
 
-当你使用 qwen.ai 账号进行认证时，适用以下服务条款与隐私声明文档：
+## 1. 如果您正在使用 [Qwen 账户订阅](https://chat.qwen.ai/?memberPlan=qwen_code)
+
+当您通过 [**Qwen 账户订阅**](https://chat.qwen.ai/?memberPlan=qwen_code) 使用 Qwen 账户进行身份验证时，适用以下服务条款和隐私声明文档：
 
 - **服务条款：** 你的使用受 [Qwen 服务条款](https://qwen.ai/termsservice) 约束。
 - **隐私声明：** 关于数据收集与使用的说明见 [Qwen 隐私政策](https://qwen.ai/privacypolicy)。
 
-有关认证设置、配额及支持功能的详细信息，请参见[认证设置](../configuration/settings)。
+有关身份验证设置、配额和支持功能的详细信息，请参阅[身份验证设置](../configuration/auth.md)。
 
-## 2. 如果你使用的是阿里云百炼计划
+## 2. 如果你使用的是阿里云百炼计划 [#2-if-you-are-using-alibaba-cloud-coding-plan]
 
 当你使用来自阿里云的 API key 进行认证时，适用阿里云相应的服务条款与隐私声明。
 
-阿里云百炼计划支持两个区域：
+Alibaba Cloud Coding Plan 在两个区域可用：
 
 - **阿里云百炼（aliyun.com）** — [bailian.console.aliyun.com](https://bailian.console.aliyun.com)
 - **Alibaba Cloud（alibabacloud.com）** — [bailian.console.alibabacloud.com](https://bailian.console.alibabacloud.com)
@@ -102,7 +104,7 @@ Qwen Code 可能会收集匿名的使用统计和[遥测](../../developers/devel
 
 ### 按认证方式的数据收集
 
-Qwen Code 的使用统计设置适用于所有认证方式：Qwen OAuth、阿里云百炼计划、你自己的 API key 和 Vertex AI。启用后，这些事件会发送到阿里云 RUM 收集端点，与你选择的 AI 提供商根据其自身隐私政策收集的数据相互独立。
+Qwen Code 的使用统计设置适用于所有身份验证方法：[Qwen 账户订阅](https://chat.qwen.ai/?memberPlan=qwen_code)、Alibaba Cloud Coding Plan、您自己的 API Key 以及 Vertex AI。启用后，这些事件将发送到 Alibaba Cloud RUM 收集端点，独立于您所选择的 AI 提供商根据其自身隐私政策收集的数据。
 
 如需退出，请在 Qwen Code 设置中进行如下配置：
 
@@ -122,7 +124,7 @@ Qwen Code 的使用统计设置适用于所有认证方式：Qwen OAuth、阿里
 
 你的代码（包括提示词和回答）是否会被用于训练 AI 模型，取决于你的认证方式以及具体使用的 AI 服务提供商：
 
-- **Qwen OAuth：** 数据使用受 [Qwen 隐私政策](https://qwen.ai/privacypolicy) 约束。请参考其政策，了解关于数据收集与模型训练实践的具体细节。
+- [**Qwen 账户订阅**](https://chat.qwen.ai/?memberPlan=qwen_code)：数据使用受 [Qwen 隐私政策](https://qwen.ai/privacypolicy) 约束。关于数据收集和模型训练实践的具体细节，请参阅其政策。
 
 - **阿里云百炼计划：** 数据使用受阿里云隐私政策约束。请参考其政策，了解关于数据收集与模型训练实践的具体细节。
 
@@ -153,7 +155,7 @@ Qwen Code 的使用统计设置适用于所有认证方式：Qwen OAuth、阿里
 
 ### 3. 如何在不同的认证方式之间切换？
 
-你可以在 Qwen OAuth、阿里云百炼计划、你自己的 API key 以及 Vertex AI 之间随时切换：
+您可以随时在 [Qwen 账户订阅](https://chat.qwen.ai/?memberPlan=qwen_code)、Alibaba Cloud Coding Plan、您自己的 API Key 和 Vertex AI 之间切换：
 
 1. **启动时**：在提示时选择你偏好的认证方式
 2. **在 CLI 中**：使用 `/auth` 命令重新配置认证方式

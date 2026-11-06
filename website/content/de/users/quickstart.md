@@ -4,13 +4,17 @@
 
 Diese Schnellstart-Anleitung bringt dich in nur wenigen Minuten dazu, KI-gestützte Code-Unterstützung zu nutzen. Am Ende wirst du verstehen, wie du Qwen Code für typische Entwicklungsaufgaben einsetzt.
 
-## Bevor du beginnst
+## **Bevor Sie beginnen**
 
 Stelle sicher, dass du Folgendes hast:
 
-- Ein **Terminal** oder eine Eingabeaufforderung geöffnet
+- Ein Terminal oder eine Eingabeaufforderung ist geöffnet
 - Ein Code-Projekt, mit dem du arbeiten kannst
-- Einen API-Key von Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)) oder ein Alibaba Cloud Token Plan ([Beijing](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) Abonnement
+- **Eines der Folgenden**:
+  - Ein Qwen-Konto mit einem **Plus- oder Pro-Abo** von [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code), das den Zugriff auf **Qwen Code und Agent** freischaltet
+  - Ein API-Schlüssel oder ein Token Plan-Abo von Qianwen AI Platform / **QwenCloud** ([China](https://platform.qianwenai.com/docs/developer-guides/administration/api-keys) / [International](https://docs.qwencloud.com/developer-guides/administration/api-keys)) — die empfohlene Einrichtung
+  - Ein API-Schlüssel von **Alibaba Cloud ModelStudio** ([Peking](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/))
+  - Ein **Alibaba Cloud Token Plan**-Abo ([Peking](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model))
 
 ## Schritt 1: Qwen Code installieren
 
@@ -57,24 +61,30 @@ brew install qwen-code
 Wenn du eine interaktive Sitzung mit dem Befehl `qwen` startest, wirst du aufgefordert, die Authentifizierung zu konfigurieren:
 
 ```bash
-# Du wirst bei der ersten Nutzung zur Authentifizierung aufgefordert
+# You'll be prompted to set up authentication on first use
 qwen
 ```
 
 ```bash
-# Oder führe jederzeit /auth aus, um die Authentifizierungsmethode zu ändern
+# Or run /auth anytime to change authentication method
 /auth
 ```
 
-Das Menü beim ersten Start ermöglicht dir die Verbindung mit einem Modellanbieter. Wähle eine der folgenden Optionen:
+Das Menü beim ersten Start ermöglicht es Ihnen, einen Modellanbieter zu verbinden. Wählen Sie eines der Folgenden:
 
-- **Alibaba ModelStudio** – die empfohlene Einrichtung. Öffnet ein Untermenü:
+- [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code) — Melden Sie sich mit Ihrem Qwen-Konto an, um über Ihr **Plus- oder Pro-Abo** auf **Qwen Code and Agent** zuzugreifen. Wenn Sie noch kein Abo haben, besuchen Sie [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code), um Plus oder Pro abzuschließen, kehren Sie dann zu Qwen Code zurück und wählen Sie [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code).
+- **QwenCloud** — die empfohlene Einrichtung. Öffnet ein Untermenü:
+  - **Token Plan**: Abo mit monatlichem Kreditkontingent auf einem dedizierten Endpunkt (Personal- und Team-Editionen).
+  - **Standard API Key**: Pay-as-you-go, Verbindung mit einem vorhandenen Plattform-API-Schlüssel.
+
+  In beiden Fällen wählen Sie anschließend die Plattform explizit aus (China oder International), sodass die UI-Sprache nie Ihren Endpunkt bestimmt. Details finden Sie unter [Authentication → Option 2: QwenCloud](./configuration/auth).
+
+- **Alibaba ModelStudio** — öffnet ein Untermenü:
+  - **Coding Plan**: Verbindung mit einem Alibaba Cloud Coding Plan API-Schlüssel. Siehe [Authentication](./configuration/auth.md#-option-3-alibaba-cloud-coding-plan) für die Einrichtung.
   - **Token Plan**: nutzungsbasierte Abrechnung mit einem dedizierten Endpunkt, gedacht für Teams und Unternehmen. Siehe den [Token Plan Guide](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) ([intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) für Einrichtungsanweisungen.
   - **Standard API Key**: Verbinde einen vorhandenen API-Key von Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)). Siehe den API-Einrichtungsleitfaden ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)) für Details.
 - **Drittanbieter** – Wähle einen integrierten Anbieter (DeepSeek, Grok, MiniMax, Z.AI, Kimi, Idealab, ModelScope, OpenRouter, Requesty und weitere) und verbinde ihn mit einem API-Key.
 - **Eigener Anbieter** – Verbinde manuell einen lokalen Server, Proxy oder nicht unterstützten Anbieter.
-
-> ⚠️ **Hinweis**: Qwen OAuth wurde am 15. April 2026 eingestellt. Wenn du zuvor Qwen OAuth verwendet hast, wechsle bitte zu einer der oben genannten Methoden.
 
 > [!note]
 >
@@ -84,145 +94,145 @@ Das Menü beim ersten Start ermöglicht dir die Verbindung mit einem Modellanbie
 >
 > Um die Authentifizierung zu konfigurieren, starte Qwen Code und führe `/auth` aus. Mit `/doctor` kannst du jederzeit deine aktuelle Konfiguration überprüfen. Weitere Details findest du auf der Seite [Authentifizierung](./configuration/auth).
 
-## Schritt 3: Deine erste Sitzung starten
+## Schritt 3: Starten Sie Ihre erste Sitzung
 
-Öffne dein Terminal in einem beliebigen Projektverzeichnis und starte Qwen Code:
+Öffnen Sie Ihr Terminal in einem beliebigen Projektverzeichnis und starten Sie Qwen Code:
 
 ```bash
 # optional
-cd /pfad/zu/deinem/projekt
-# qwen starten
+cd /path/to/your/project
+# start qwen
 qwen
 ```
 
 Du siehst den Qwen Code-Willkommensbildschirm mit deinen Sitzungsinformationen, letzten Unterhaltungen und aktuellen Updates. Gib `/help` ein, um verfügbare Befehle zu sehen.
 
-## Mit Qwen Code chatten
+## Chatten mit Qwen Code
 
-### Stelle deine erste Frage
+### Stellen Sie Ihre erste Frage
 
-Qwen Code analysiert deine Dateien und gibt eine Zusammenfassung. Du kannst auch spezifischere Fragen stellen:
-
-```
-erkläre die Ordnerstruktur
-```
-
-Du kannst Qwen Code auch nach seinen eigenen Fähigkeiten fragen:
+Qwen Code analysiert Ihre Dateien und stellt eine Zusammenfassung bereit. Sie können auch spezifischere Fragen stellen:
 
 ```
-was kann Qwen Code?
+explain the folder structure
+```
+
+Sie können Qwen Code auch nach seinen eigenen Fähigkeiten befragen:
+
+```
+what can Qwen Code do?
 ```
 
 > [!note]
 >
-> Qwen Code liest deine Dateien bei Bedarf – du musst keinen Kontext manuell hinzufügen. Qwen Code hat außerdem Zugriff auf seine eigene Dokumentation und kann Fragen zu seinen Funktionen und Fähigkeiten beantworten.
+> Qwen Code liest Ihre Dateien bei Bedarf – Sie müssen den Kontext nicht manuell hinzufügen. Qwen Code hat auch Zugriff auf seine eigene Dokumentation und kann Fragen zu seinen Funktionen und Fähigkeiten beantworten.
 
-### Deine erste Code-Änderung vornehmen
+### Führen Sie Ihre erste Codeänderung durch
 
-Jetzt lassen wir Qwen Code echte Programmierarbeit erledigen. Versuche eine einfache Aufgabe:
+Lassen Sie uns nun Qwen Code tatsächliche Codierungsaufgaben durchführen lassen. Versuchen Sie eine einfache Aufgabe:
 
 ```
-füge eine Hallo-Welt-Funktion zur Hauptdatei hinzu
+add a hello world function to the main file
 ```
 
 Qwen Code wird:
 
-1. Die entsprechende Datei finden
-2. Dir die vorgeschlagenen Änderungen anzeigen
-3. Dich um Zustimmung bitten
-4. Die Bearbeitung durchführen
+1. Die geeignete Datei finden
+2. Ihnen die vorgeschlagenen Änderungen anzeigen
+3. Um Ihre Genehmigung bitten
+4. Die Änderung vornehmen
 
 > [!note]
 >
-> Qwen Code fragt immer um Erlaubnis, bevor Dateien geändert werden. Du kannst einzelne Änderungen genehmigen oder für eine Sitzung den Modus „Alle akzeptieren" aktivieren.
+> Qwen Code bittet immer um Erlaubnis, bevor Dateien geändert werden. Sie können einzelne Änderungen genehmigen oder den Modus "Alle akzeptieren" für eine Sitzung aktivieren.
 
 ### Git mit Qwen Code verwenden
 
-Qwen Code macht Git-Operationen gesprächig:
+Qwen Code macht Git-Operationen konversationell:
 
 ```
-welche Dateien habe ich geändert?
-```
-
-```
-committe meine Änderungen mit einer aussagekräftigen Nachricht
-```
-
-Du kannst auch komplexere Git-Operationen anfordern:
-
-```
-erzeuge einen neuen Branch namens feature/quickstart
+what files have I changed?
 ```
 
 ```
-zeige mir die letzten 5 Commits
+commit my changes with a descriptive message
+```
+
+Sie können auch komplexere Git-Operationen anfordern:
+
+```
+create a new branch called feature/quickstart
 ```
 
 ```
-hilf mir, Merge-Konflikte zu lösen
+show me the last 5 commits
+```
+
+```
+help me resolve merge conflicts
 ```
 
 ### Einen Fehler beheben oder eine Funktion hinzufügen
 
-Qwen Code ist versiert im Debugging und der Implementierung neuer Funktionen.
+Qwen Code ist im Debugging und bei der Funktionsimplementierung sehr kompetent.
 
-Beschreibe in natürlicher Sprache, was du möchtest:
-
-```
-füge dem Benutzerregistrierungsformular eine Eingabevalidierung hinzu
-```
-
-Oder behebe vorhandene Probleme:
+Beschreiben Sie, was Sie möchten, in natürlicher Sprache:
 
 ```
-es gibt einen Fehler, bei dem Benutzer leere Formulare abschicken können – behebe ihn
+add input validation to the user registration form
+```
+
+Oder beheben Sie vorhandene Probleme:
+
+```
+there's a bug where users can submit empty forms - fix it
 ```
 
 Qwen Code wird:
 
-- Den relevanten Code finden
+- Den relevanten Code lokalisieren
 - Den Kontext verstehen
 - Eine Lösung implementieren
-- Tests ausführen, falls vorhanden
+- Tests ausführen, falls verfügbar
 
-### Andere typische Arbeitsabläufe testen
+### Andere gängige Workflows testen
 
-Es gibt viele Möglichkeiten, mit Qwen Code zu arbeiten:
+Es gibt zahlreiche Möglichkeiten, mit Qwen Code zu arbeiten:
 
-**Code umstrukturieren**
+**Code refaktorisieren**
 
 ```
-strukturiere das Authentifizierungsmodul um, sodass es async/await statt Callbacks verwendet
+refactor the authentication module to use async/await instead of callbacks
 ```
 
 **Tests schreiben**
 
 ```
-schreibe Komponententests für die Rechnerfunktionen
+write unit tests for the calculator functions
 ```
 
 **Dokumentation aktualisieren**
 
 ```
-aktualisiere die README mit Installationsanweisungen
+update the README with installation instructions
 ```
 
 **Code-Review**
 
 ```
-überprüfe meine Änderungen und schlage Verbesserungen vor
+review my changes and suggest improvements
 ```
 
 > [!tip]
 >
-> **Denk daran**: Qwen Code ist dein KI-basierter Programmierpartner. Sprich mit ihm wie mit einem hilfreichen Kollegen – beschreibe, was du erreichen möchtest, und er wird dir helfen, dorthin zu gelangen.
+> **Merken**: Qwen Code ist Ihr KI-Pair-Programmierer. Sprechen Sie mit ihm wie mit einem hilfsbereiten Kollegen – beschreiben Sie, was Sie erreichen möchten, und es hilft Ihnen dabei.
 
 ## Wichtige Befehle
 
-Hier sind die wichtigsten Befehle für die tägliche Nutzung:
+Hier sind die wichtigsten Befehle für den täglichen Gebrauch:
 
-| Befehl               | Funktion                                            | Beispiel                      |
-| -------------------- | --------------------------------------------------- | ----------------------------- |
+| Befehl                | Funktion                                         | Beispiel                           |
+| --------------------- | ------------------------------------------------ | ---------------------------------- |
 | `qwen`               | Qwen Code starten                                   | `qwen`                        |
 | `/auth`              | Authentifizierungsmethode ändern (in der Sitzung)   | `/auth`                       |
 | `/doctor`            | Aktuelle Authentifizierung und Umgebung prüfen      | `/doctor`                     |
@@ -231,42 +241,42 @@ Hier sind die wichtigsten Befehle für die tägliche Nutzung:
 | `/clear`             | Gesprächsverlauf löschen und Kontext freigeben          | `/clear` (Aliase: `reset`, `new`) |
 | `/theme`             | Visuelles Design von Qwen Code ändern               | `/theme`                      |
 | `/language`          | Spracheinstellungen anzeigen oder ändern            | `/language`                   |
-| → `ui [Sprache]`     | Sprache der Benutzeroberfläche festlegen            | `/language ui de-DE`          |
-| → `output [Sprache]` | Ausgabesprache des LLM festlegen                    | `/language output German`     |
+| → `ui [language]`     | UI-Sprache festlegen                             | `/language ui zh-CN`               |
+| → `output [language]` | LLM-Ausgabesprache festlegen                     | `/language output Chinese`         |
 | `/quit`              | Qwen Code sofort beenden                            | `/quit` oder `/exit`          |
 
 Eine vollständige Liste der Befehle findest du in der [CLI-Referenz](./features/commands).
 
-## Tipps für Einsteiger
+## Profi-Tipps für Anfänger
 
-**Sei präzise in deinen Anfragen**
+**Seien Sie spezifisch bei Ihren Anfragen**
 
-- Statt: „behebe den Fehler"
-- Besser: „behebe den Login-Fehler, bei dem Benutzer nach Eingabe falscher Anmeldedaten einen leeren Bildschirm sehen"
+- Statt: "den Fehler beheben"
+- Versuchen Sie: "beheben Sie den Login-Fehler, bei dem Benutzer nach Eingabe falscher Anmeldedaten einen leeren Bildschirm sehen"
 
-**Verwende Schritt-für-Schritt-Anleitungen**
+**Verwenden Sie schrittweise Anweisungen**
 
-- Zerlege komplexe Aufgaben in Schritte:
-
-```
-1. erstelle eine neue Datenbanktabelle für Benutzerprofile
-2. erstelle einen API-Endpunkt, um Benutzerprofile abzurufen und zu aktualisieren
-3. erstelle eine Webseite, auf der Benutzer ihre Informationen sehen und bearbeiten können
-```
-
-**Lass Qwen Code zuerst erkunden**
-
-- Bevor du Änderungen vornimmst, lass Qwen Code deinen Code verstehen:
+- Teilen Sie komplexe Aufgaben in Schritte auf:
 
 ```
-analysiere das Datenbankschema
+1. create a new database table for user profiles
+2. create an API endpoint to get and update user profiles
+3. build a webpage that allows users to see and edit their information
+```
+
+**Lassen Sie Qwen Code zuerst erkunden**
+
+- Bevor Sie Änderungen vornehmen, lassen Sie Qwen Code Ihren Code verstehen:
+
+```
+analyze the database schema
 ```
 
 ```
-erzeuge ein Dashboard, das die Produkte anzeigt, die am häufigsten von unseren UK-Kunden zurückgegeben werden
+build a dashboard showing products that are most frequently returned by our UK customers
 ```
 
-**Spare Zeit mit Shortcuts**
+**Sparen Sie Zeit mit Shortcuts**
 
 - Drücke `?`, um alle verfügbaren Tastenkombinationen zu sehen
 - Verwende Tab für die Befehlsvervollständigung

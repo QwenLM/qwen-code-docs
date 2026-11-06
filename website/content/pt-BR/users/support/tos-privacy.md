@@ -6,36 +6,38 @@ O Qwen Code é uma ferramenta assistente de codificação de IA de código abert
 
 O Qwen Code suporta quatro métodos de autenticação para acessar modelos de IA. Seu método de autenticação determina quais termos de serviço e políticas de privacidade se aplicam ao seu uso:
 
-1. **Qwen OAuth** — Faça login com sua conta qwen.ai (camada gratuita descontinuada em 15/04/2026)
+1. [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code) **(Qwen OAuth)** — Faça login com sua conta Qwen e uma **assinatura Plus ou Pro** ativa do [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code)
 2. **Alibaba Cloud Coding Plan** — Use uma chave de API da Alibaba Cloud
 3. **API Key** — Use sua própria chave de API
 4. **Vertex AI** — Use o Google Cloud Vertex AI
 
 Para cada método de autenticação, diferentes Termos de Serviço e Avisos de Privacidade podem ser aplicados, dependendo do provedor de serviço subjacente.
 
-| Método de Autenticação     | Provedor          | Termos de Serviço                                                   | Aviso de Privacidade                                                     |
-| :------------------------- | :---------------- | :------------------------------------------------------------------ | :----------------------------------------------------------------------- |
-| Qwen OAuth                | Qwen AI           | [Termos de Serviço do Qwen](https://qwen.ai/termsservice)           | [Política de Privacidade do Qwen](https://qwen.ai/privacypolicy)         |
-| Alibaba Cloud Coding Plan | Alibaba Cloud     | Veja [detalhes abaixo](#2-se-voc%C3%AA-est%C3%A1-usando-o-alibaba-cloud-coding-plan) | Veja [detalhes abaixo](#2-se-voc%C3%AA-est%C3%A1-usando-o-alibaba-cloud-coding-plan) |
-| API Key                   | Vários Provedores | Depende do provedor de API escolhido (OpenAI, Anthropic, etc.)      | Depende do provedor de API escolhido                                     |
-| Vertex AI                 | Google Cloud      | [Termos do Google Cloud](https://cloud.google.com/terms)            | [Privacidade do Google Cloud](https://cloud.google.com/privacy)          |
+A [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code) é separada da antiga cota gratuita do Qwen OAuth, que foi descontinuada em 2026-04-15.
 
-## 1. Se você está usando autenticação Qwen OAuth
+| Método de Autenticação                                                       | Provedor          | Termos de Serviço                                                  | Aviso de Privacidade                                               |
+| :--------------------------------------------------------------------------- | :---------------- | :----------------------------------------------------------------- | :----------------------------------------------------------------- |
+| [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code) | Qwen AI           | [Termos de Serviço da Qwen](https://qwen.ai/termsservice)              | [Política de Privacidade da Qwen](https://qwen.ai/privacypolicy)               |
+| Alibaba Cloud Coding Plan                                                    | Alibaba Cloud     | Veja [detalhes abaixo](#2-if-you-are-using-alibaba-cloud-coding-plan) | Veja [detalhes abaixo](#2-if-you-are-using-alibaba-cloud-coding-plan) |
+| Chave de API                                                                 | Vários Provedores | Depende do provedor de API escolhido (OpenAI, Anthropic, etc.)    | Depende do provedor de API escolhido                              |
+| Vertex AI                                                                    | Google Cloud      | [Termos do Google Cloud](https://cloud.google.com/terms)               | [Privacidade do Google Cloud](https://cloud.google.com/privacy)           |
 
-Quando você se autentica usando sua conta qwen.ai, estes documentos de Termos de Serviço e Aviso de Privacidade se aplicam:
+## 1. Se você estiver usando a [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code)
+
+Quando você se autentica usando sua conta Qwen através da [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code), estes documentos de Termos de Serviço e Aviso de Privacidade se aplicam:
 
 - **Termos de Serviço:** Seu uso é regido pelos [Termos de Serviço do Qwen](https://qwen.ai/termsservice).
 - **Aviso de Privacidade:** A coleta e o uso de seus dados são descritos na [Política de Privacidade do Qwen](https://qwen.ai/privacypolicy).
 
-Para detalhes sobre configuração de autenticação, cotas e recursos suportados, consulte [Configuração de Autenticação](../configuration/settings).
+Para detalhes sobre configuração de autenticação, cotas e recursos suportados, veja [Configuração de Autenticação](../configuration/auth.md).
 
-## 2. Se você está usando o Alibaba Cloud Coding Plan
+## 2. Se você está usando o Alibaba Cloud Coding Plan [#2-if-you-are-using-alibaba-cloud-coding-plan]
 
 Quando você se autentica usando uma chave de API da Alibaba Cloud, os Termos de Serviço e o Aviso de Privacidade aplicáveis da Alibaba Cloud vigoram.
 
 O Alibaba Cloud Coding Plan está disponível em duas regiões:
 
-- **阿里云百炼 (aliyun.com)** — [bailian.console.aliyun.com](https://bailian.console.aliyun.com)
+- **Alibaba Cloud Bailian (aliyun.com)** — [bailian.console.aliyun.com](https://bailian.console.aliyun.com)
 - **Alibaba Cloud (alibabacloud.com)** — [bailian.console.alibabacloud.com](https://bailian.console.alibabacloud.com)
 
 > [!important]
@@ -84,13 +86,13 @@ Você pode desativar ou desinstalar a extensão do Chrome no gerenciador de exte
 
 ### Uso limitado dos dados do navegador
 
-O uso e a transferência de dados recebidos pela extensão do Chrome pelo Qwen Code seguem a [Política de Dados do Usuário da Chrome Web Store](https://developer.chrome.com/docs/webstore/program-policies/user-data), incluindo seus requisitos de Uso Limitado. Os dados do navegador são usados para fornecer o propósito único da extensão: conectar o Chrome ao Qwen Code para assistência de navegador solicitada pelo usuário. Eles não são vendidos, usados para publicidade ou usados para determinar capacidade de crédito ou elegibilidade para empréstimos. As transferências são limitadas a fornecer essa funcionalidade, incluindo o processamento pelo provedor de IA que você configurar, e outros usos permitidos por essa política.
+O uso e a transferência de dados recebidos pelo Qwen Code por meio da extensão do Chrome estão em conformidade com a [Política de Dados do Usuário da Chrome Web Store](https://developer.chrome.com/docs/webstore/program-policies/user-data-faq), incluindo seus requisitos de Uso Limitado. Os dados do navegador são usados para fornecer o único propósito da extensão: conectar o Chrome ao Qwen Code para assistência no navegador solicitada pelo usuário. Eles não são vendidos, usados para publicidade ou para determinar elegibilidade de crédito ou empréstimo. As transferências são limitadas ao fornecimento dessa funcionalidade, incluindo processamento pelo provedor de IA que você configurar, e outros usos permitidos por essa política.
 
 Para perguntas sobre o tratamento de dados do navegador, entre em contato com a equipe pelo [rastreador de issues do Qwen Code](https://github.com/QwenLM/qwen-code/issues). Compartilhe apenas os detalhes necessários para explicar a pergunta; remova credenciais e conteúdo de páginas privadas dos relatórios públicos.
 
 ## Estatísticas de Uso e Telemetria
 
-O Qwen Code pode coletar estatísticas de uso anônimas e dados de [telemetria](../../developers/development/telemetry) para melhorar a experiência do usuário e a qualidade do produto. Esta coleta de dados é opcional e pode ser controlada através das configurações.
+O Qwen Code pode coletar estatísticas de uso anônimas e dados de [telemetria](../../developers/development/telemetry) para melhorar a experiência do usuário e a qualidade do produto. As estatísticas de uso estão habilitadas por padrão para todos os métodos de autenticação. Essa coleta de dados é opcional e pode ser desativada através das configurações.
 
 ### Quais Dados São Coletados
 
@@ -102,10 +104,19 @@ Quando ativada, o Qwen Code pode coletar:
 
 ### Coleta de Dados por Método de Autenticação
 
-- **Qwen OAuth:** As estatísticas de uso são regidas pela política de privacidade do Qwen. Você pode desativá-las através das configurações do Qwen Code.
-- **Alibaba Cloud Coding Plan:** As estatísticas de uso são regidas pela política de privacidade da Alibaba Cloud. Você pode desativá-las através das configurações do Qwen Code.
-- **API Key:** Nenhum dado adicional é coletado pelo Qwen Code além daquilo que seu provedor de API escolhido coleta.
-- **Vertex AI:** As estatísticas de uso são regidas pela política de privacidade do Google Cloud. Nenhum dado adicional é coletado pelo Qwen Code além daquilo que o Google Cloud coleta.
+A configuração de estatísticas de uso do Qwen Code se aplica a todos os métodos de autenticação: [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code), Alibaba Cloud Coding Plan, sua própria chave de API e Vertex AI. Quando habilitado, esses eventos são enviados para um endpoint de coleta RUM da Alibaba Cloud, independentemente dos dados que seu provedor de IA escolhido coleta sob sua própria política de privacidade.
+
+Para recusar, defina o seguinte nas configurações do seu Qwen Code:
+
+```json
+{
+  "privacy": {
+    "usageStatisticsEnabled": false
+  }
+}
+```
+
+Você também pode definir a variável de ambiente `QWEN_USAGE_STATISTICS_ENABLED` como `false`. A variável de ambiente tem precedência sobre a configuração. Veja [Estatísticas de Uso](../configuration/settings.md#usage-statistics) para os campos coletados e detalhes de configuração.
 
 ## Perguntas Frequentes (FAQ)
 
@@ -113,7 +124,7 @@ Quando ativada, o Qwen Code pode coletar:
 
 Se seu código, incluindo prompts e respostas, é usado para treinar modelos de IA depende do seu método de autenticação e do provedor de serviço de IA específico que você utiliza:
 
-- **Qwen OAuth**: O uso de dados é regido pela [Política de Privacidade do Qwen](https://qwen.ai/privacypolicy). Consulte a política deles para obter detalhes específicos sobre coleta de dados e práticas de treinamento de modelos.
+- [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code): O uso de dados é regido pela [Política de Privacidade da Qwen](https://qwen.ai/privacypolicy). Consulte a política deles para detalhes específicos sobre práticas de coleta de dados e treinamento de modelos.
 
 - **Alibaba Cloud Coding Plan**: O uso de dados é regido pela política de privacidade da Alibaba Cloud. Consulte a política deles para obter detalhes específicos sobre coleta de dados e práticas de treinamento de modelos.
 
@@ -144,7 +155,7 @@ A configuração de Estatísticas de Uso controla apenas a coleta de dados pelo 
 
 ### 3. Como faço para alternar entre os métodos de autenticação?
 
-Você pode alternar entre Qwen OAuth, Alibaba Cloud Coding Plan, sua própria chave de API e Vertex AI a qualquer momento:
+Você pode alternar entre [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code), Alibaba Cloud Coding Plan, sua própria chave de API e Vertex AI a qualquer momento:
 
 1. **Durante a inicialização**: Escolha seu método de autenticação preferido quando solicitado
 2. **Dentro da CLI**: Use o comando `/auth` para reconfigurar seu método de autenticação
