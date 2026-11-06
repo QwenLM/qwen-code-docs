@@ -2,7 +2,7 @@
 
 Qwen Code는 휴대 가능한 [Agent Plugins v1](https://agent-plugins.org/) 패키지를 네이티브로 로드합니다. 패키지는 표준 `plugin.json`, `mcp.json`, `SKILL.md` 파일을 그대로 유지합니다. 설치 시 `qwen-extension.json`이 생성되거나 휴대 가능한 파일이 다시 작성되지 않습니다.
 
-기존 확장 명령어를 로컬 디렉토리, 링크, 아카이브, Git 저장소, 아카이브 URL 또는 스코프된 npm 패키지와 함께 사용합니다:
+기존 확장 명령어를 로컬 디렉토리, 링크, 아카이브, Git 저장소, 아카이브 URL 또는 npm 패키지와 함께 사용합니다:
 
 ```bash
 qwen extensions install ./my-agent-plugin
