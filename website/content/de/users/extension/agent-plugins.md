@@ -2,7 +2,7 @@
 
 Qwen Code lädt portable [Agent Plugins v1](https://agent-plugins.org/)-Pakete nativ. Das Paket behält seine Standarddateien `plugin.json`, `mcp.json` und `SKILL.md`: Die Installation erzeugt keine `qwen-extension.json` und schreibt portable Dateien nicht um.
 
-Verwende die bestehenden Erweiterungs-Befehle mit einem lokalen Verzeichnis, Link, Archiv, Git-Repository, Archiv-URL oder gescopeten npm-Paket:
+Verwende die bestehenden Erweiterungs-Befehle mit einem lokalen Verzeichnis, Link, Archiv, Git-Repository, Archiv-URL oder npm-Paket:
 
 ```bash
 qwen extensions install ./my-agent-plugin
@@ -28,8 +28,8 @@ Das Root-Manifest muss auf das kanonische v1-Schema verweisen:
 | Stdio-MCP-Server                             | Ja                                       |
 | Streamable-HTTP-MCP-Server                   | Ja                                       |
 | Legacy-HTTP+SSE-MCP-Server                   | Nein; der Eintrag wird übersprungen      |
-| Workflows                                    | Nein; das Verzeichnis wird ignoriert       |
 | Commands, Agents und Hooks                   | Nein; diese Verzeichnisse werden ignoriert |
+| Workflows                                    | Nein; das Verzeichnis wird ignoriert       |
 | Qwen-Kontext, Einstellungen, Channels und Apps | Nein                                   |
 | `extensions.*`-Client-Namespaces             | Nein; nicht implementierte Namespaces werden ignoriert |
 

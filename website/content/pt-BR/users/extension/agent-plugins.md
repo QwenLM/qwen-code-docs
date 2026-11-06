@@ -2,7 +2,7 @@
 
 O Qwen Code carrega nativamente pacotes portáteis do [Agent Plugins v1](https://agent-plugins.org/). O pacote mantém seus arquivos padrão `plugin.json`, `mcp.json` e `SKILL.md`: a instalação não gera `qwen-extension.json` nem reescreve arquivos portáteis.
 
-Use os comandos de extensão existentes com um diretório local, link, arquivo, repositório Git, URL de arquivo ou pacote npm com escopo:
+Use os comandos de extensão existentes com um diretório local, link, arquivo, repositório Git, URL de arquivo ou pacote npm:
 
 ```bash
 qwen extensions install ./my-agent-plugin

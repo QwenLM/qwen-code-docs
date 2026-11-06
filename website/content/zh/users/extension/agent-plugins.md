@@ -5,7 +5,7 @@ Qwen Code 原生加载可移植的 [Agent Plugins v1](https://agent-plugins.org/
 也不会重写可移植文件。
 
 使用现有的扩展命令，支持本地目录、链接、归档、
-Git 仓库、归档 URL 或 scoped npm 包：
+Git 仓库、归档 URL 或 npm 包：
 
 ```bash
 qwen extensions install ./my-agent-plugin

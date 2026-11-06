@@ -78,10 +78,25 @@ to it. On GitHub-hosted runners
 the variable is ignored and Vitest uses its own defaults.
 
 Each Vitest run applies the cap on its own. The main CI workspace-test step
-runs two lanes at once (`.github/scripts/ci/run-unit-test-lanes.sh`): the cap
-bounds each Vitest run in the main lane, and web-shell's suite in the side lane
-runs at half the cap, at least 1, so at its peak the step runs the cap plus that
-half. On GitHub-hosted runners that side-lane suite runs at 2 workers.
+runs two lanes at once (`.github/scripts/ci/run-unit-test-lanes.sh`): the main
+lane runs the CLI and core suites at the cap, and the side lane runs the other
+workspaces' suites and `npm run test:scripts:unit` at half the cap, at least 1,
+so at its peak the step runs the cap plus that half. On GitHub-hosted runners
+the side lane's Vitest runs use 2 workers.
+
+The step runs in eight shards (`Linux unit tests (shard N/8)`), each passing
+`--shard=N/8` to every one of those Vitest runs. The shards apply the cap on
+their own too, so the pool sees up to eight such steps at once. They install
+without the `prepare` build and unpack the tree `test_build` built once.
+`Test (ubuntu-latest, Node 22.x)` passes only when the build and every shard
+pass.
+
+`test_build` and the web-shell smoke shards build through
+`scripts/ci-build-cache.mjs`. A pull request restores the newest cached
+build and rebuilds only the workspaces whose inputs changed: a workspace's
+tracked files other than tests, the root files, `patches/` and `scripts/`
+outside `scripts/tests/`, and the workspaces it depends on. A push to `main`
+always builds from scratch and saves that build.
 
 ### Related variables outside test execution
 

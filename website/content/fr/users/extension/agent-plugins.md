@@ -2,7 +2,7 @@
 
 Qwen Code charge nativement les packages portables [Agent Plugins v1](https://agent-plugins.org/). Le package conserve ses fichiers standard `plugin.json`, `mcp.json` et `SKILL.md` : l'installation ne génère pas de `qwen-extension.json` et ne réécrit pas les fichiers portables.
 
-Utilisez les commandes d'extension existantes avec un répertoire local, un lien, une archive, un dépôt Git, une URL d'archive ou un package npm scopé :
+Utilisez les commandes d'extension existantes avec un répertoire local, un lien, une archive, un dépôt Git, une URL d'archive ou un package npm :
 
 ```bash
 qwen extensions install ./my-agent-plugin
@@ -38,7 +38,7 @@ Un skill invalide est ignoré sans désactiver les skills valides frères. Le
 champ expérimental `allowed-tools` est reconnu comme une chaîne mais n'accorde
 pas d'outils Qwen pré-approuvés.
 
-Pour les serveurs MCP stdio, Qwen Code expande `${PLUGIN_ROOT}` et `${PLUGIN_DATA}`
+Pour les serveurs MCP stdio, Qwen Code développe `${PLUGIN_ROOT}` et `${PLUGIN_DATA}`
 une fois dans `args`, les valeurs d'environnement et `cwd`. `PLUGIN_DATA` est un
 répertoire accessible en écriture par installation dont le contenu persiste à travers les mises à jour et réinstallations.
 Les endpoints MCP distants doivent utiliser HTTPS, à l'exception des endpoints HTTP en loopback.

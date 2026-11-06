@@ -1,6 +1,9 @@
 # Solicitar um workflow para um turno
 
 
+Para uma preferência salva entre submissões ordinárias, consulte
+[session Workflow mode](./workflow-mode.md).
+
 Com `tools.workflowsEnabled` habilitado, inclua `ultracode` ou a palavra-chave
 existente `workflow` em uma submissão humana para sugerir o uso da ferramenta
 Workflow para esse turno. Por exemplo: `ultracode: audit these three modules`.

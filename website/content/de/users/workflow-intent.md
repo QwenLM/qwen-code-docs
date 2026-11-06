@@ -1,6 +1,9 @@
 # Workflow für einen Turn anfordern
 
 
+Für eine gespeicherte Präferenz über normale Eingaben hinweg, siehe
+[session Workflow mode](./workflow-mode.md).
+
 Wenn `tools.workflowsEnabled` aktiviert ist, füge `ultracode` oder das vorhandene
 `workflow`-Keyword in eine menschliche Eingabe ein, um die Verwendung des
 Workflow-Tools für diesen Turn vorzuschlagen. Beispiel: `ultracode: audit these three modules`.

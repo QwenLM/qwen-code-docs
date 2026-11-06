@@ -1,6 +1,9 @@
 # Request a workflow for one turn
 
 
+For a saved preference across ordinary submissions, see
+[session Workflow mode](./workflow-mode.md).
+
 With `tools.workflowsEnabled` enabled, include `ultracode` or the existing
 `workflow` keyword in a human submission to suggest using the Workflow tool
 for that turn. For example: `ultracode: audit these three modules`.

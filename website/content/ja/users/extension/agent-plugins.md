@@ -2,7 +2,7 @@
 
 Qwen Code は、ポータブルな [Agent Plugins v1](https://agent-plugins.org/) パッケージをネイティブに読み込みます。パッケージは標準の `plugin.json`、`mcp.json`、`SKILL.md` ファイルをそのまま保持します。インストール時に `qwen-extension.json` が生成されたり、ポータブルファイルが書き換えられたりすることはありません。
 
-既存の拡張機能コマンドをローカルディレクトリ、リンク、アーカイブ、Git リポジトリ、アーカイブ URL、またはスコープ付き npm パッケージに対して使用します。
+既存の拡張機能コマンドをローカルディレクトリ、リンク、アーカイブ、Git リポジトリ、アーカイブ URL、または npm パッケージに対して使用します。
 
 ```bash
 qwen extensions install ./my-agent-plugin
