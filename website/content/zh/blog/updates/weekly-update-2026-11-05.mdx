@@ -1,0 +1,153 @@
+---
+title: "Qwen Code 周报：远程连接更方便，GitHub 动态推进会话，会话状态更清楚"
+date: "2026-11-05"
+description: "本周发布 v0.26.4~v0.26.7。远程连接新增独立开关，GitHub 动态自动推进会话，Web Shell 会话状态更清楚。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i2/O1CN01BK4pMROPGtK2jBZY_!!6000000004241-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 周报：远程连接更方便，GitHub 动态推进会话，会话状态更清楚"
+  date="2026-11-05"
+  author="Qwen Team"
+/>
+
+Qwen Code 本周发布 v0.26.4～v0.26.7 四个正式版本。
+
+**远程连接加了独立开关，用起来更方便。** 现在在 **设置 → 连接** 里打开 **允许远程连接**，同一网络下就能连上另一台电脑。
+
+**GitHub 事件自动推进你的会话。** 频道绑上仓库之后，新 commit、新 review、CI 挂了这些动态直接涌进绑定 PR 的会话。
+
+**Web Shell 的状态也看得更清楚。** 频道的事件能集中查看，侧栏上哪个会话在跑、哪个在等你一眼就知道。
+
+## ✨ 新增特性
+
+### 远程连接：同网络下，用另一台设备接着工作
+
+把几台 Qwen Code 连到一个页面里，之前被连那台启动时需要带上 `--hostname 0.0.0.0`，现在当电脑都处在同一网络环境下时，在 **设置 → 连接** 里填入地址和 Bearer token，就能连上另一台电脑了。
+
+本周在 **设置** → **连接** 里加了一个 **允许远程连接** 开关，打开后会生成连接地址和一串 Bearer token，在另一台电脑输入后无需重启即可连上，也可随时关掉。详见 PR [#15887](https://github.com/QwenLM/qwen-code/pull/15887)、[#16199](https://github.com/QwenLM/qwen-code/pull/16199)
+
+你能用它做什么：
+
+- 换一台电脑，继续原来的对话
+- 离开工位后，远程回复追问或处理审批
+- 临时开放远程访问，结束后在设置里关闭
+
+### GitHub 仓库的动态，自动推进你的会话里
+
+频道绑了 GitHub 仓库之后，仓库那边新 commit、新 review、CI 挂了，都会自动推给频道里绑着这个 PR 的会话。Qwen Code 看到了就接着处理，比如构建挂了去读日志修。回复默认不公开，你确认了才发到 PR 下面。详见 PR [#16117](https://github.com/QwenLM/qwen-code/pull/16117)、[#16258](https://github.com/QwenLM/qwen-code/pull/16258)
+
+频道编辑器里还可以直接配 GitHub 仓库的访问权限、@ 行为和通知频率，不用再去设置文件里手写。事件里提到的 PR 和 Issue 编号会自动变成可点击的链接。详见 PR [#16149](https://github.com/QwenLM/qwen-code/pull/16149)、[#16096](https://github.com/QwenLM/qwen-code/pull/16096)、[#16226](https://github.com/QwenLM/qwen-code/pull/16226)
+
+你能用它做什么：
+
+- PR 的 CI 挂了，失败日志直接推进会话，不用自己去翻
+- 同事 review 了你的 PR，意见出现在聊天界面里
+- 新仓库要跟踪，编辑器里填个地址就行
+
+### Web Shell：频道动态和会话状态，在界面里看得更清楚
+
+**频道事件能集中查看了。** 频道里每天有事在发生：GitHub 有 commit、定时任务跑完、会话回了消息。现在频道页面多了「事件」栏，所有活动按时间排成一条线，能按频道筛，时间线自己刷新。详见 PR [#16106](https://github.com/QwenLM/qwen-code/pull/16106)
+
+**Token 用量面板能拆条看了。** 以前只列每类用了多少，现在每条请求单独拆开：输出速度多快、首次响应要等多久、成功还是失败，不同模型有不同颜色。点开某一条能看到失败的具体原因。详见 PR [#16108](https://github.com/QwenLM/qwen-code/pull/16108)、[#16111](https://github.com/QwenLM/qwen-code/pull/16111)
+
+**侧栏会话多了状态标记。** 以前侧栏里的会话列表只是一个个名字，看不出里面在发生什么。现在每条会话旁边多了状态标记：正在跑的有个转圈，等着你批准的有个橙色提示，出错了有条红杠。把标记点开，能看到是谁在等、哪条提示刚答完。没读过的消息数也标出来了，还能一键全部标为已读或归档。详见 PR [#16022](https://github.com/QwenLM/qwen-code/pull/16022)
+
+**会话并排显示。** 会话右键菜单多了「加到分屏」，直接把两条会话左右摆开对照着看。详见 PR [#15956](https://github.com/QwenLM/qwen-code/pull/15956)
+
+**其他改进。** Workflow 模式的开关收进了输入框旁边的「+」菜单，打开时会有一个标签可以点关掉（[#16107](https://github.com/QwenLM/qwen-code/pull/16107)、[#15779](https://github.com/QwenLM/qwen-code/pull/15779)）。复制图片地址到输入框自动变成附件，截屏也能直接粘贴（[#16179](https://github.com/QwenLM/qwen-code/pull/16179)）。
+
+## 📊 更多新功能
+
+**交互卡片默认开启。** 之前交互卡片得去设置里开，现在装好就能用——让它算房贷、比方案，对话里直接拖滑块看结果。调好参数点「保留」还能交回对话接着聊。详见 PR [#15856](https://github.com/QwenLM/qwen-code/pull/15856)
+
+**从网上下载的项目先让你信任了才跑 hooks。** 陌生项目里带的 hooks、权限规则和语言服务器，得先弹确认框、你点了「信任」之后才会生效。自己电脑上本地新建的项目不受影响。详见 PR [#16182](https://github.com/QwenLM/qwen-code/pull/16182)、[#16196](https://github.com/QwenLM/qwen-code/pull/16196)
+
+**/verify-pr 能在 Docker 里跑不信任的代码。** 一条命令在本地起一个容器，把 PR 的代码放进去跑验证，模型密钥留在你机器上不过去。详见 PR [#16077](https://github.com/QwenLM/qwen-code/pull/16077)
+
+**桌面端支持 Fedora 44 和 RHEL 10。** 用这两个系统的，从 GitHub Releases 直接下 rpm 包安装。详见 PR [#16060](https://github.com/QwenLM/qwen-code/pull/16060)
+
+**QQ 群管理操作也能交给 AI 了。** 频道把自己的管理工具暴露给里面跑的会话，群里的撤回消息、踢人、审批加群这些操作，AI 都能替你执行。配哪些工具在频道设置里用 `moderationTools` 控制。详见 PR [#14348](https://github.com/QwenLM/qwen-code/pull/14348)
+
+**托管 Agent 从头部署只要跑一条 Helm 命令。** 把 Helm chart 配好，MySQL 和网关都自己带好。详见 PR [#15492](https://github.com/QwenLM/qwen-code/pull/15492)
+
+**归档的对话能从设置里直接恢复。** 点进设置 → 归档，每条旁边多了「恢复」和「导出」按钮，不用翻到那条会话再点恢复。详见 PR [#15872](https://github.com/QwenLM/qwen-code/pull/15872)
+
+**技能打字时能看到剩下的参数提示。** 打完 `/qwencode-weekly` 之后，后面要填什么参数始终浮在那里；填完一个，提示缩成下一个。详见 PR [#15930](https://github.com/QwenLM/qwen-code/pull/15930)
+
+**升级命令支持指定版本。** 运行 `qwen update --target-version <版本号>` 直接装到指定的版本，不用先连 npm registry 查有没有新版；想降级或重装同一个版本也可以。详见 PR [#11486](https://github.com/QwenLM/qwen-code/pull/11486)
+
+## 👏 体验优化
+
+**/autofix-pr 更稳了：落后主干自己合、能在检出里一起改、能说清管几轮。** 分支落后主干导致 CI 红时，它先把主干合进来再跑检查，省了手动 rebase。加 `--in-place` 就在你当前检出里干活，你在旁边看着一起改。在 PR 里写 `@qwen-code /takeover for N` 能说清管几轮，修完自动放手。详见 PR [#15922](https://github.com/QwenLM/qwen-code/pull/15922)、[#15929](https://github.com/QwenLM/qwen-code/pull/15929)、[#15388](https://github.com/QwenLM/qwen-code/pull/15388)
+
+**长回答可以滚着看了。** `/btw` 答得特别长的时候，现在固定在一个有滚动条的框里，用鼠标滚轮、键盘上下键或 PageUp/PageDown 都能翻。详见 PR [#15982](https://github.com/QwenLM/qwen-code/pull/15982)
+
+**Web Shell 一键更新支持 pnpm、yarn、bun。** 以前只有 npm 能点更新，现在这几种包管理器都能一键升，检测到不支持时给出手动步骤。详见 PR [#15849](https://github.com/QwenLM/qwen-code/pull/15849)
+
+**状态栏能看见有几个后台 agent 在跑。** 桌面端和 Web Shell 底部的任务标记上会实时显示正在运行的 agent 数量。详见 PR [#14002](https://github.com/QwenLM/qwen-code/pull/14002)
+
+**代码跳转失败时给个明确的说法。** 没有可用的语言服务器时，以前默默返回空结果，现在会告诉你当前没有可用的语言服务器。详见 PR [#15946](https://github.com/QwenLM/qwen-code/pull/15946)
+
+**上下文内存文件在面板里能点开预览。** AGENTS.md 这类文件，点了就能看内容。详见 PR [#15932](https://github.com/QwenLM/qwen-code/pull/15932)
+
+**没有工作区的会话列表空着时那一栏整个藏起来。** 以前空栏占着地方，现在像已固定一样，空着就整栏不显示。详见 PR [#15916](https://github.com/QwenLM/qwen-code/pull/15916)
+
+## 🔧 重要修复
+
+| 修复 | 对你的影响 | PR |
+|------|-----------|-----|
+| **Claude Opus 5.5、Sonnet 5.5 这几款模型不能用了** | 这几款模型因为不支持强制 tool choice 会报错，现在跳过那个请求正常调用 | [#15558](https://github.com/QwenLM/qwen-code/pull/15558) |
+| **OpenRouter 上带 exacto 标记的模型 token 窗口被缩小了** | 比如 `qwen/qwen3-coder:exacto` 本来有 262,144 token 窗口，只给了默认 200K；现在恢复完整窗口 | [#16165](https://github.com/QwenLM/qwen-code/pull/16165) |
+| **MCP 服务器里两个工具同名时整台服务器的工具都被丢掉了** | 一个名字冲突就导致整台服务器的工具全被跳过；现在只跳过重名的那一个 | [#15757](https://github.com/QwenLM/qwen-code/pull/15757) |
+| **macOS 桌面端的终端命令很多调不了** | 桌面端起的 daemon 缺系统路径，用 Homebrew 装的工具找不到；现在补上了 `~/.local/bin` 等路径 | [#15190](https://github.com/QwenLM/qwen-code/pull/15190) |
+| **VS Code 里周一清早的会话还搁在"本周"里** | 一周从周日算起，周一清早上周的会话还挂在"本周"下；现在按日历周从周一开始算 | [#16097](https://github.com/QwenLM/qwen-code/pull/16097) |
+| **/context 里超过一百万 token 的模型显示成一长串数字** | 比如 1,000,000 被显示为 `1000000` 而不是 `1.0M`；现在正常显示 | [#13237](https://github.com/QwenLM/qwen-code/pull/13237) |
+| **Windows 更新安装时文件被占用导致失败** | 更新版本时 installer 先去关掉还在跑的 node.exe，再替换文件 | [#16071](https://github.com/QwenLM/qwen-code/pull/16071) |
+| **Anthropic 兼容接口的超时时间真按你配的来** | 在设置里把请求超时改长了，但请求还是提前中断；现在读你配的那个值 | [#16193](https://github.com/QwenLM/qwen-code/pull/16193) |
+| **`git commit --amend` 这类松散写法也能正确给 AI 改动打标记** | 以前只认一种写法，少个横杠、多个空格就不算了 | [#16073](https://github.com/QwenLM/qwen-code/pull/16073) |
+| **grep 加 -n 或 --line-number 时不再被当成要读文件** | `grep -n` 被当成了可能读文件，弹个权限确认；现在识别为纯标志参数 | [#14383](https://github.com/QwenLM/qwen-code/pull/14383) |
+| **OAuth 令牌刷新锁不会被退出进程误删了** | 开了好几个终端同时用同一个 provider 时，其中一个退了不会删掉所有活跃的刷新锁 | [#15661](https://github.com/QwenLM/qwen-code/pull/15661) |
+| **Kimi K3 认出它的一百万 token 窗口** | K3 默认按一百万算，只有 k3-256k 保持 256K | [#16048](https://github.com/QwenLM/qwen-code/pull/16048) |
+| **Sandbox 截图用等宽字体，代码看起来清晰了** | capture card 截出来的代码之前字体不对，现在装了 DejaVu Sans Mono | [#16032](https://github.com/QwenLM/qwen-code/pull/16032) |
+| **Web Shell 粘贴图片时不给错误提示了** | 以前不管粘贴成不成功都不出声，现在图片地址能下载就挂附件，不行就提示 | [#16179](https://github.com/QwenLM/qwen-code/pull/16179) |
+| **Shell 权限检查不再把重定向（`2>&1`）当成写文件** | fd 复制被误判为写操作，弹确认框；现在正确识别 | [#15681](https://github.com/QwenLM/qwen-code/pull/15681) |
+
+## 👥 贡献者
+
+| 贡献者 | 贡献内容 | 参考 PR 链接 |
+|--------|---------|-------------|
+| **[@4ekuct25](https://github.com/4ekuct25)** | 会话总览和分屏快捷键、会话菜单加「加入分屏」、状态栏显示后台 agent 数量、macOS 桌面端补全 PATH、独立会话进会话总览、分屏清除已离开的会话、浮动审批卡片滚动、目标卡片俄语界面 | [#14179](https://github.com/QwenLM/qwen-code/pull/14179), [#15956](https://github.com/QwenLM/qwen-code/pull/15956), [#14002](https://github.com/QwenLM/qwen-code/pull/14002), [#15190](https://github.com/QwenLM/qwen-code/pull/15190), [#13679](https://github.com/QwenLM/qwen-code/pull/13679), [#14577](https://github.com/QwenLM/qwen-code/pull/14577), [#14621](https://github.com/QwenLM/qwen-code/pull/14621), [#13685](https://github.com/QwenLM/qwen-code/pull/13685) |
+| **[@2SinceJuly](https://github.com/2SinceJuly)** | /btw 长回答滚动视口、模型清单为空时「新建会话」仍可点、MCP 重名工具不拖垮整份清单、OAuth 刷新锁只在自己持有时删除、无导航栏时插件页返回按钮、宿主加载等待稳定 | [#15982](https://github.com/QwenLM/qwen-code/pull/15982), [#15835](https://github.com/QwenLM/qwen-code/pull/15835), [#15757](https://github.com/QwenLM/qwen-code/pull/15757), [#15661](https://github.com/QwenLM/qwen-code/pull/15661), [#15651](https://github.com/QwenLM/qwen-code/pull/15651), [#15639](https://github.com/QwenLM/qwen-code/pull/15639) |
+| **[@he-yufeng](https://github.com/he-yufeng)** | 缺 ICU 数据的 Node 启动错误提示、思考与工具调用的清理保持相邻、恢复会话带分支点、关闭配置时停掉会话语言服务器 | [#11753](https://github.com/QwenLM/qwen-code/pull/11753), [#11684](https://github.com/QwenLM/qwen-code/pull/11684), [#13814](https://github.com/QwenLM/qwen-code/pull/13814), [#14778](https://github.com/QwenLM/qwen-code/pull/14778) |
+| **[@Shizoqua](https://github.com/Shizoqua)** | OpenRouter exacto 标记恢复完整 token 窗口、/context 百万级 token 用 m 显示 | [#16165](https://github.com/QwenLM/qwen-code/pull/16165), [#13237](https://github.com/QwenLM/qwen-code/pull/13237) |
+| **[@Andrea-Bruno](https://github.com/Andrea-Bruno)** | 无响应体的 400 改成重试 | [#15821](https://github.com/QwenLM/qwen-code/pull/15821) |
+| **[@Eric-GoodBoy-Tech](https://github.com/Eric-GoodBoy-Tech)** | 频道把自己的管理工具暴露给它跑的会话，QQ 群新增撤回等作 | [#14348](https://github.com/QwenLM/qwen-code/pull/14348) |
+| **[@haomint](https://github.com/haomint)** | 消息被安全模式压住时在多处指引界面说明原因 | [#13948](https://github.com/QwenLM/qwen-code/pull/13948) |
+| **[@jabrailkhalil](https://github.com/jabrailkhalil)** | 记忆索引写入时报告被省略的条目 | [#14937](https://github.com/QwenLM/qwen-code/pull/14937) |
+| **[@kabishou11](https://github.com/kabishou11)** | grep -n 当标志处理，文件读取仍在检查范围内 | [#14383](https://github.com/QwenLM/qwen-code/pull/14383) |
+| **[@Sumire-no-kai](https://github.com/Sumire-no-kai)** | 会话生命周期上的竞态不再保留每份结果 | [#15347](https://github.com/QwenLM/qwen-code/pull/15347) |
+| **[@yar3333](https://github.com/yar3333)** | Electron 里用 Node 模式跑内置的交互卡片服务 | [#16064](https://github.com/QwenLM/qwen-code/pull/16064) |
+| **[@zonemeen](https://github.com/zonemeen)** | 宿主测试共享截止时间，CI 重试到上限就退出 | [#14752](https://github.com/QwenLM/qwen-code/pull/14752) |
+| 🆕 **[@Adkid-Zephyr](https://github.com/Adkid-Zephyr)** | 🎉 首次贡献：不再向 Claude 系列模型传它不支持的强制工具选择 | [#15558](https://github.com/QwenLM/qwen-code/pull/15558) |
+| 🆕 **[@ifan855](https://github.com/ifan855)** | 🎉 首次贡献：工具卡片 diff 长行换成换行，不做横向滚动条 | [#13272](https://github.com/QwenLM/qwen-code/pull/13272) |
+| 🆕 **[@indexGin](https://github.com/indexGin)** | 🎉 首次贡献：审查分页嵌套数组的请求固定成用例 | [#12560](https://github.com/QwenLM/qwen-code/pull/12560) |
+| 🆕 **[@jianyx1](https://github.com/jianyx1)** | 🎉 首次贡献：验证报告绑定到它自己那一轮的快照 | [#15746](https://github.com/QwenLM/qwen-code/pull/15746) |
+| 🆕 **[@projekt11th](https://github.com/projekt11th)** | 🎉 首次贡献：没有就绪的语言服务器时拒绝代码导航查询 | [#15946](https://github.com/QwenLM/qwen-code/pull/15946) |
+| 🆕 **[@RunMintOn](https://github.com/RunMintOn)** | 🎉 首次贡献：钩子错误文本脱敏按具体值钉成用例 | [#11785](https://github.com/QwenLM/qwen-code/pull/11785) |
+| 🆕 **[@Suaroman](https://github.com/Suaroman)** | 🎉 首次贡献：2>&1 这类文件描述符复制不再当成写文件 | [#15681](https://github.com/QwenLM/qwen-code/pull/15681) |
+| 🆕 **[@suzhiguo7](https://github.com/suzhiguo7)** | 🎉 首次贡献：循环提醒在模型接受那一刻送达 | [#15559](https://github.com/QwenLM/qwen-code/pull/15559) |
+| 🆕 **[@tneemo](https://github.com/tneemo)** | 🎉 首次贡献：已加载为上下文的文件不再重复导入记忆 | [#15687](https://github.com/QwenLM/qwen-code/pull/15687) |
+| 🆕 **[@TYY-2005](https://github.com/TYY-2005)** | 🎉 首次贡献：补上持久权限规则删除后的用例 | [#13818](https://github.com/QwenLM/qwen-code/pull/13818) |
+| 🆕 **[@wang1408](https://github.com/wang1408)** | 🎉 首次贡献：托管 Agent 同级调用绑定补断言 | [#15995](https://github.com/QwenLM/qwen-code/pull/15995) |
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！
