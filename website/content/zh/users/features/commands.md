@@ -33,6 +33,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `/rewind`        | 将对话回退到之前的某个轮次                             | `/rewind` 或 `/rollback`                                      |
 | `/export`        | 将会话历史导出到文件                                           | `/export html`, `/export md`, `/export json`, `/export jsonl` |
 | `/rename`        | 重命名或标记当前会话                                        | `/rename My Feature` 或 `/tag`                                |
+| `/commit` | 创建带有 AI 起草消息的 git 提交 | `/commit` 或 `/commit only stage the parser changes` |
 
 > [!note]
 >
@@ -85,52 +86,53 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 用于管理 AI 工具和模型的命令。
 
-| 命令           | 描述                                                                      | 使用示例                                                                                            |
-| ----------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `/mcp`            | 列出已配置的 MCP 服务器和工具                                            | `/mcp`, `/mcp desc`, `/mcp nodesc`, `/mcp schema`                                                         |
-| `/import-config`  | 从 Claude 配置中导入 MCP 服务器                                           | `/import-config all`, `/import-config claude-code`, `/import-config claude-desktop --scope user\|project` |
-| `/tools`          | 显示当前可用的工具列表                                            | `/tools`, `/tools desc`                                                                                   |
-| `/skills`         | 打开 Skills 面板以浏览、搜索、切换和启动 skills               | `/skills`, `/<skill-name>`                                                                                |
-| `/learn`          | 从文件、目录、URL、视频或文本创建可复用的项目 skill             | `/learn https://docs.example.com/api`, `/learn ./tutorial.mp4 focus on deployment`                        |
-| `/curator`        | 检查、固定、归档或恢复不活跃的项目自动 skills                  | `/curator`, `/curator run --dry-run`, `/curator pin <directory>`, `/curator restore <directory>`          |
-| `/plan`           | 切换到计划模式或退出计划模式                                            | `/plan`, `/plan <task>`, `/plan exit`                                                                     |
-| `/approval-mode`  | 更改工具审批模式（仅限当前会话）                             | `/approval-mode`, `/approval-mode auto-edit`                                                              |
-| → `plan`          | 仅分析，不执行（安全审查）                                      | `/approval-mode plan`                                                                                     |
-| → `default`       | 编辑需要审批（日常使用）                                           | `/approval-mode default`                                                                                  |
-| → `auto-edit`     | 自动批准编辑（受信任环境）                                         | `/approval-mode auto-edit`                                                                                |
-| → `auto`          | 分类器评估审批（自主）                                       | `/approval-mode auto`                                                                                     |
-| → `yolo`          | 自动批准所有操作（快速原型开发）                                      | `/approval-mode yolo`                                                                                     |
-| `/peers`              | 查看被保留的 peer 消息；管理受信任的控制器                                 | `/peers`, `/peers accept <id>`, `/peers deny all`, `/peers controllers`, `/peers revoke <id>`             |
-| `/model`          | 切换当前会话使用的模型                                             | `/model`, `/model <model-id>` (立即切换)                                                        |
-| `/model --fast`   | 为提示建议设置更轻量的模型                                       | `/model --fast qwen3-coder-flash`                                                                         |
-| `/model --voice`  | 设置用于语音转录的模型                                       | `/model --voice <model-id>`                                                                               |
-| `/model --vision` | 设置 vision-bridge 模型，用于为纯文本主模型转录图像 | `/model --vision <model-id>`                                                                              |
-| `/model --compaction` | 设置用于聊天压缩的模型                                                                 | `/model --compaction <model-id>`, `/model --compaction clear`                                             |
-| `/model --image`  | 为内置图片生成工具设置具备图片生成能力的模型                                               | `/model --image <model-id>`                                                                               |
-| `/effort`         | 设置具备思考能力的模型的推理 effort                                 | `/effort` (打开选择器), `/effort high` (low/medium/high/xhigh/max；根据提供商进行映射和限制)       |
-| `/output-style`       | 选择影响回复撰写方式的输出风格                         | `/output-style` (打开选择器), `/output-style Concise`, `/output-style default` (无风格)               |
-| `/extensions`     | 管理扩展                                                                | `/extensions list`, `/extensions manage`                                                                  |
-| → `list`          | 列出已安装的扩展                                                        | `/extensions list`                                                                                        |
-| → `manage`        | 管理已安装的扩展（交互式）                                        | `/extensions manage`                                                                                      |
-| → `explore`       | 在浏览器中打开扩展页面                                                  | `/extensions explore <Gemini\|ClaudeCode>`                                                                |
-| → `install`       | 从 git 仓库或路径安装扩展                                     | `/extensions install <repo-or-path>`                                                                      |
-| `/memory`         | 打开 Memory Manager 对话框                                                   | `/memory`                                                                                                 |
-| `/remember`       | 保存持久化 memory                                                            | `/remember Prefer terse responses`                                                                        |
-| `/forget`         | 从 auto-memory 中移除匹配的条目                                         | `/forget <query>`                                                                                         |
-| `/dream`          | 手动运行 auto-memory 整合                                           | `/dream`                                                                                                  |
-| `/hooks`          | 管理 Qwen Code hooks                                                           | `/hooks`, `/hooks list`                                                                                   |
-| `/reload-plugins` | 从磁盘重新加载扩展变更（命令、skills、agents、hooks、MCP/LSP 服务器）           | `/reload-plugins`                                                                                         |
-| `/permissions`    | 管理权限规则                                                          | `/permissions`                                                                                            |
-| `/agents`         | 管理 subagents                                                                 | `/agents manage`, `/agents create`                                                                        |
-| `/arena`          | 管理 Arena 会话                                                            | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (别名 `choose`)                          |
-| `/goal`               | 设置 Goal — 持续工作直到验证器确认目标已达成（参见 [Goals](./goals.md)）      | `/goal <objective>`, `/goal edit <objective>`, `/goal pause`, `/goal resume`, `/goal clear`               |
-| `/tasks`          | 列出后台任务                                                            | `/tasks`                                                                                                  |
-| `/workflows`      | 检查 workflow 运行；协作式暂停/恢复后台运行                                  | `/workflows`, `/workflows <runId>`, `/workflows p <runId>`                                                |
-| `/lsp`            | 显示 LSP 服务器状态                                                           | `/lsp`                                                                                                    |
-| `/trust`          | 管理文件夹信任设置                                                     | `/trust`                                                                                                  |
+| 命令 | 描述 | 使用示例 |
+| --------------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `/mcp` | 列出已配置的 MCP 服务器和工具 | `/mcp`, `/mcp desc`, `/mcp nodesc`, `/mcp schema` |
+| `/import-config` | 从 Claude 配置导入 MCP 服务器 | `/import-config all`, `/import-config claude-code`, `/import-config claude-desktop --scope user\|project` |
+| `/tools` | 显示当前可用的工具列表 | `/tools`, `/tools desc` |
+| `/skills` | 打开 Skills 面板以浏览、搜索、切换和启动技能 | `/skills`, `/<skill-name>` |
+| `/learn` | 从文件、目录、URL、视频或文本创建可复用的项目技能 | `/learn https://docs.example.com/api`, `/learn ./tutorial.mp4 focus on deployment` |
+| `/curator` | 检查、固定、归档或恢复非活动的项目自动技能 | `/curator`, `/curator run --dry-run`, `/curator pin <directory>`, `/curator restore <directory>` |
+| `/plan` | 切换到计划模式或退出计划模式 | `/plan`, `/plan <task>`, `/plan exit` |
+| `/approval-mode` | 更改工具审批模式（仅当前会话） | `/approval-mode`, `/approval-mode auto-edit` |
+| → `plan` | 仅分析，不执行（安全审查） | `/approval-mode plan` |
+| → `default` | 编辑需要审批（日常使用） | `/approval-mode default` |
+| → `auto-edit` | 自动批准编辑（受信任环境） | `/approval-mode auto-edit` |
+| → `auto` | 分类器评估审批（自主） | `/approval-mode auto` |
+| → `yolo` | 自动批准所有操作（快速原型设计） | `/approval-mode yolo` |
+| `/peers` | 审查暂存的对等消息；管理受信任的控制者 | `/peers`, `/peers accept <id>`, `/peers deny all`, `/peers controllers`, `/peers revoke <id>` |
+| `/model` | 切换当前会话中使用的模型 | `/model`, `/model <model-id>` (立即切换) |
+| `/model --fast` | 为提示建议设置更轻量的模型 | `/model --fast qwen3-coder-flash` |
+| `/model --voice` | 设置用于语音转录的模型 | `/model --voice <model-id>` |
+| `/model --vision` | 设置用于将图像转录给纯文本主模型的视觉桥接模型 | `/model --vision <model-id>` |
+| `/model --compaction` | 设置用于聊天压缩的模型 | `/model --compaction <model-id>`, `/model --compaction clear` |
+| `/model --image` | 为内置图像生成工具设置支持图像生成的模型 | `/model --image <model-id>` |
+| `/effort` | 为支持思考的模型设置推理强度 | `/effort` (打开选择器), `/effort high` (low/medium/high/xhigh/max; 根据提供商映射并限制) |
+| `/output-style` | 选择塑造响应编写方式的输出样式 | `/output-style` (打开选择器), `/output-style Concise`, `/output-style default` (无样式) |
+| `/extensions` | 管理扩展 | `/extensions list`, `/extensions manage` |
+| → `list` | 列出已安装的扩展 | `/extensions list` |
+| → `manage` | 管理已安装的扩展（交互式） | `/extensions manage` |
+| → `explore` | 在浏览器中打开扩展页面 | `/extensions explore <Gemini\|ClaudeCode>` |
+| → `install` | 从 git 仓库或路径安装扩展 | `/extensions install <repo-or-path>` |
+| `/memory` | 打开记忆管理器对话框 | `/memory` |
+| `/remember` | 保存持久化记忆 | `/remember Prefer terse responses` |
+| `/forget` | 从自动记忆中移除匹配的条目 | `/forget <query>` |
+| `/dream` | 手动运行自动记忆整合 | `/dream` |
+| `/hooks` | 管理 Qwen Code hooks | `/hooks`, `/hooks list` |
+| `/reload-plugins` | 从磁盘重新加载扩展更改（命令、技能、代理、工作流、hooks、MCP/LSP 服务器） | `/reload-plugins` |
+| `/permissions` | 管理权限规则 | `/permissions` |
+| `/agents` | 管理子代理 | `/agents manage`, `/agents create` |
+| `/arena` | 管理 Arena 会话 | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (别名 `choose`) |
+| `/goal` | 设定目标 — 持续工作直到验证器确认（参见 [Goals](./goals.md)） | `/goal <objective>`, `/goal edit <objective>`, `/goal pause`, `/goal resume`, `/goal clear` |
+| `/tasks` | 列出后台任务 | `/tasks` |
+| `/workflows` | 检查工作流运行；协作暂停/恢复后台运行 | `/workflows`, `/workflows <runId>`, `/workflows p <runId>` |
+| `/lsp` | 显示 LSP 服务器状态 | `/lsp` |
+| `/trust` | 管理文件夹信任设置 | `/trust` |
+
 > [!warning]
 >
-> 仅从你信任的来源安装扩展（`/extensions install`）。扩展可以捆绑 MCP 服务器、skill 和命令，它们以与 Qwen Code 本身相同的权限运行——它们可以访问你的文件、API key 和对话数据。`/extensions install` 不会提示确认。
+> 仅从您信任的来源安装扩展 (`/extensions install`)。扩展可以捆绑 MCP 服务器、技能和命令，这些内容以与 Qwen Code 本身相同的权限运行——它们可以访问您的文件、API 密钥和对话数据。它们还可以包含工作流脚本，这些脚本在工作流沙箱中运行，没有直接的文件或 shell 访问权限，通过其启动的子代理进行操作，并经过 Workflow 工具的审批。`/extensions install` 不会提示确认。
 
 > [!warning]
 >
@@ -140,20 +142,25 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 >
 > `/workflows`、`/lsp` 和 `/trust` 仅在其对应功能启用时才会注册——分别通过用户/系统作用域的 `tools.workflowsEnabled` 设置或 `QWEN_CODE_ENABLE_WORKFLOWS=1` 环境变量、`--experimental-lsp` CLI 标志和 `security.folderTrust.enabled` 设置。`tools.workflowsEnabled` 的工作区值会被忽略。禁用时它们不会出现，并会报告未知命令。同样，`/dream` 和 `/forget` 仅在托管 auto-memory 可用时才会注册；不可用时它们不会出现。
 
-### 1.5 内置 Skills
+> [!note]
+>
+> 来自已安装扩展的技能也是一个斜杠命令，其名称包含其所有者：`/rust:pdf`，而不是 `/pdf`。裸形式不是别名——如果另一个技能命名为 `pdf`，则 `/pdf` 会运行该技能。`slashCommands.disabled` 对这两种拼写下的此类命令进行门控，因此即使在名称包含所有者之前编写的条目仍然有效。参见 [How extension Skills are named](./skills.md#how-extension-skills-are-named)。
 
-这些命令调用内置的 skill，提供专门的工作流。
+### 1.5 内置技能
 
-| 命令         | 描述                                                        | 使用示例                                          |
-| ------------ | ----------------------------------------------------------- | ------------------------------------------------- |
-| `/review`    | 多代理代码审查（high effort 下 12 个并行代理）         | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
-| `/coordinate`| 协调只读 worker 和一个可选的 worktree writer            | `/coordinate investigate and fix the authentication regression`           |
-| `/loop`       | 按定期计划运行 prompt                                       | `/loop 5m check the build`                                                |
-| `/goal-draft` | 将模糊意图转化为可验证的 `/goal` 目标                       | `/goal-draft make the auth tests pass`                                    |
-| `/simplify`   | 审查最近的更改并直接应用安全的清理编辑                      | `/simplify`, `/simplify focus on duplication`                             |
-| `/qc-helper` | 回答有关 Qwen Code 使用和配置的问题                         | `/qc-helper how do I configure MCP?`              |
+这些命令调用提供专用工作流的捆绑技能。
 
-有关 `/review` 的完整文档，请参阅 [Code Review](./code-review.md)。
+| 命令 | 描述 | 使用示例 |
+| ------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `/review` | 多代理代码审查（高努力度下 12 个并行代理） | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
+| `/coordinate` | 协调只读工作者和一个可选的工作树写入者 | `/coordinate investigate and fix the authentication regression` |
+| `/loop` | 按循环时间表运行提示 | `/loop 5m check the build` |
+| `/goal-draft` | 将模糊意图转化为可验证的 `/goal` 目标 | `/goal-draft make the auth tests pass` |
+| `/autofix-pr` | 监视 PR 并修复其 CI、审查反馈和冲突 | `/autofix-pr 123`, `/autofix-pr 123 --once`, `/autofix-pr resume`, `/autofix-pr stop 123` |
+| `/simplify` | 审查近期更改并直接应用安全的清理编辑 | `/simplify`, `/simplify focus on duplication` |
+| `/qc-helper` | 回答有关 Qwen Code 使用和配置的问题 | `/qc-helper how do I configure MCP?` |
+
+完整的 `/review` 文档请参见 [Code Review](./code-review.md)，`/autofix-pr` 请参见 [Autofix a Pull Request](./autofix-pr.md)。
 
 ### 1.6 侧边提问 (`/btw`)
 
@@ -175,7 +182,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 **键盘快捷键（交互模式）：**
 
 | 快捷键               | 操作                                                |
-| -------------------- | --------------------------------------------------- |
+| -------------------- | ----------------------------------------------- |
 | `Escape`             | 取消（加载中时）或关闭（完成后）                    |
 | `Space` 或 `Enter`   | 关闭答案（当输入为空时）                            |
 | `Ctrl+C` 或 `Ctrl+D` | 取消正在进行的侧边问题                            |
@@ -183,47 +190,47 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 **示例：**
 
 ```
-（当主对话正在重构代码时）
+(While the main conversation is about refactoring code)
 
-> /btw JavaScript 中 let 和 var 有什么区别？
-
-  ╭──────────────────────────────────────────╮
-  │ /btw JavaScript 中 let 和 var 有什么     │
-  │     区别？                               │
-  │                                          │
-  │ + 正在回答...                            │
-  │ 按 Escape、Ctrl+C 或 Ctrl+D 取消         │
-  ╰──────────────────────────────────────────╯
-  > (Composer 保持活跃——继续输入)
-
-（答案到达后）
+> /btw What's the difference between let and var in JavaScript?
 
   ╭──────────────────────────────────────────╮
-  │ /btw JavaScript 中 let 和 var 有什么     │
-  │     区别？                               │
+  │ /btw What's the difference between let   │
+  │     and var in JavaScript?               │
   │                                          │
-  │ `let` 是块级作用域，而 `var` 是          │
-  │ 函数作用域。`let` 在 ES6 中引入，        │
-  │ 且不会以相同的方式提升。                 │
-  │                                          │
-  │ 按 Space、Enter 或 Escape 关闭           │
+  │ + Answering...                           │
+  │ Press Escape, Ctrl+C, or Ctrl+D to cancel│
   ╰──────────────────────────────────────────╯
-  > (Composer 仍然活跃)
+  > (Composer remains active — keep typing)
+
+(After the answer arrives)
+
+  ╭──────────────────────────────────────────╮
+  │ /btw What's the difference between let   │
+  │     and var in JavaScript?               │
+  │                                          │
+  │ `let` is block-scoped, while `var` is    │
+  │ function-scoped. `let` was introduced    │
+  │ in ES6 and doesn't hoist the same way.   │
+  │                                          │
+  │ Press Space, Enter, or Escape to dismiss │
+  ╰──────────────────────────────────────────╯
+  > (Composer still active)
 ```
 
 **支持的执行模式：**
 
-| 模式                 | 行为                                         |
+| 模式 | 行为 |
 | -------------------- | -------------------------------------------- |
-| Interactive          | 在 Composer 上方显示，支持 Markdown 渲染     |
+| Interactive | 在 Composer 上方显示，采用 Markdown 渲染 |
 | Non-interactive      | 返回文本结果：`btw> question\nanswer`        |
-| ACP (Agent Protocol) | 返回 `stream_messages` 异步生成器            |
+| ACP（Agent Protocol） | 返回 stream_messages 异步生成器 |
 
 > [!tip]
 >
 > 当你需要快速得到答案而不偏离主任务时，请使用 `/btw`。它对于澄清概念、核实事实或在专注于主要工作流时获取快速解释特别有用。
 
-### 1.7 第二意见 (`/advisor`)
+### 1.7 第二意见 (`/advisor`) [#17-second-opinion-advisor]
 
 `/advisor` 命令对目前为止的对话进行独立的只读审查，并返回结构化的第二意见——不会执行任务，也不会中断主对话。
 
@@ -238,7 +245,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 - 审查模型**无法执行工具**——工具在请求级别被剥离（与 `/btw` 相同的机制），因此审查永远不会编写代码或运行命令；每个结论都必须基于可见的对话记录
 - 主对话**不会**被中断；审查结果仅展示给你
 - 审查渲染为带边框的 markdown 块，包含四个固定部分——**裁决**、**风险**、**缺失证据**和**建议**——在 `/advisor · <model>` 标题下标注解析后的审查模型
-- 与 `/btw` 不同（`/btw` 是 fire-and-forget，会话保持可用），`/advisor` 会阻塞输入直到审查返回；在完整上下文窗口上使用强审查模型时，这可能需要数十秒
+- 与 `/btw` 不同，后者是即发即忘且保持会话可用，而 `/advisor` 会阻塞输入直到审查返回；在完整上下文窗口中使用强审查模型时，这可能需要数十秒
 - 默认使用主模型；设置 [`advisorModel`](../configuration/settings.md#advisormodel) 可将审查路由到不同（通常更强）的模型——最近的对话记录会发送给该模型，即使它使用另一个提供者
 
 **示例：**
@@ -288,22 +295,22 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 ### 1.8 会话回顾 (`/recap`)
 
-`/recap` 命令会生成当前会话的简短"上次离开时"摘要，以便你可以恢复旧对话，而无需向上翻阅数页历史记录。
+`/recap` 命令会生成当前会话的简短“断点续传”摘要，以便你在无需翻阅大量历史记录的情况下恢复旧对话。
 
-| 命令     | 描述                                     |
-| -------- | ---------------------------------------- |
+| 命令 | 描述 |
+| -------- | ------------------------------------------ |
 | `/recap` | 生成并显示单行会话回顾                   |
 
 **工作原理：**
 
-- 可用时使用配置的快速模型（`fastModel` 设置），否则回退到主会话模型。对于回顾来说，一个小巧、低成本的模型就足够了。
-- 最近的对话（最多 30 条消息，仅限文本——工具调用和工具响应会被过滤掉）会连同严格的 system prompt 一起发送给模型。
-- 回顾内容以暗色渲染，并带有 `❯` 前缀，以便与真实的助手回复区分开来。
-- 如果模型轮次正在进行或另一个命令正在处理，则会以内联错误拒绝。如果没有可用的对话，或者底层生成失败，`/recap` 会显示一条简短的信息消息而不是回顾——手动命令始终会返回某些内容。
+- 如果可用，则使用配置的快速模型（`fastModel` 设置），否则回退到主会话模型。对于回顾总结而言，一个小型且廉价的模型就足够了。
+- 最近的对话（最多 30 条消息，仅文本——工具调用和工具响应会被过滤掉）连同紧凑的系统提示一起发送给模型。
+- 回顾内容以暗色显示并带有 `❯` 前缀，以便与真实的助手回复区分开来。
+- 如果正在处理模型轮次或另一个命令正在处理中，则会拒绝执行并显示内联错误。如果没有可用的对话，或者底层生成失败，`/recap` 将显示一条简短的信息消息而不是回顾内容——手动命令始终会有所响应。
 
-**离开后返回时自动触发：**
+**从离开状态返回时自动触发：**
 
-如果终端失去焦点 **5 分钟以上**并重新获得焦点，会自动生成并显示回顾（仅在没有模型响应正在进行时；否则会等待当前轮次完成后再触发）。与手动命令不同，自动触发在失败时完全静默：如果生成出错或没有可总结的内容，则不会向历史记录中添加任何消息。由 `general.showSessionRecap` 设置控制（默认值：`false`）；手动 `/recap` 命令始终有效，不受此设置影响。
+如果终端失焦 **5 分钟以上** 并重新获得焦点，系统将自动生成并显示回顾内容（仅当没有模型响应正在进行时；否则它会等待当前轮次完成后再触发）。与手动命令不同，自动触发在失败时完全静默：如果生成出错或没有可总结的内容，不会向历史记录中添加任何消息。由 `general.showSessionRecap` 设置控制（默认值：`false`）；无论此设置如何，手动 `/recap` 命令始终有效。
 
 **示例：**
 
@@ -317,7 +324,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 > [!tip]
 >
-> 通过 `/model --fast <model>`（例如 `qwen3-coder-flash`）配置快速模型，以使 `/recap` 快速且低成本。将 `general.showSessionRecap` 设置为 `true` 以启用自动触发；手动 `/recap` 命令始终有效，不受此设置影响。
+> 通过 `/model --fast <model>` 配置快速模型（例如 `qwen3-coder-flash`），以使 `/recap` 快速且廉价。将 `general.showSessionRecap` 设置为 `true` 以启用自动触发；无论此设置如何，手动 `/recap` 命令始终有效。
 
 ### 1.9 Diff 查看器 (`/diff`)
 
@@ -443,6 +450,8 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `/settings`      | 打开设置编辑器                                                                                                               | `/settings`                                                                         |
 | `/config`        | 通过点路径键获取或设置任何配置（写入用户设置）                                                                               | `/config`（列出所有），`/config <key>`，`/config <key>=<value>`                     |
 | `/auth`          | 更改身份验证方法                                                                                                             | `/auth`、`/connect`、`/login`                                                       |
+| `/logout` | 退出当前 Qwen 订阅账户（适用于 Qwen 订阅登录） | `/logout` |
+| `/upgrade` | 打开 Qwen 订阅计划（适用于 Qwen 订阅登录） | `/upgrade` |
 | `/doctor`        | 运行安装和环境诊断                                                                                                           | `/doctor`、`/doctor memory`                                                         |
 | → `memory`       | 显示当前进程内存诊断                                                                                                         | `/doctor memory [--json] [--sample] [--snapshot]`                                   |
 | → `cpu-profile`  | 记录 CPU profile 以供 Chrome DevTools 分析                                                                                   | `/doctor cpu-profile [--duration <seconds>]`                                        |
@@ -454,13 +463,14 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `/bug`           | 提交关于 Qwen Code 的问题                                                                                                    | `/bug Button click unresponsive`                                                    |
 | `/copy`          | 复制到剪贴板：回复（倒数第 N 个）、代码（按语言）、LaTeX 或 Mermaid                                                          | `/copy`、`/copy 2`、`/copy python`、`/copy latex`、`/copy mermaid`                  |
 | `/quit`          | 立即退出 Qwen Code                                                                                                           | `/quit` 或 `/exit`                                                                  |
+
 > [!warning]
 >
 > `/doctor memory --snapshot` 会生成一个 V8 堆快照，其中可能包含当前会话的提示词、文件内容、API 密钥和工具返回结果。请在分享该文件前仔细检查。
 
 > [!note]
 >
-> `/config` 通过点分路径键（如 `general.vimMode`）读写各项设置，作为交互式 `/settings` 编辑器的补充。不带参数（或带 `--help`）运行 `/config` 会列出所有可设置的键及其类型和当前值。`/config <key>` 会打印当前值——但对于布尔键，它会切换该值。`/config <key>=<value>` 用于设置值。更改会写入用户设置文件（`~/.qwen/settings.json`）。只有 `boolean`、`string`、`number` 和 `enum` 类型的设置可以通过这种方式修改——`array` 和 `object` 类型的设置必须直接在 `settings.json` 中编辑。敏感值（API 密钥、token、base URL）在输出中会被掩码处理，并且禁止将 `tools.approvalMode` 设置为 `yolo`。
+> `/config` 通过点路径键读取和写入单个设置（例如 `general.vimMode`），作为交互式 `/settings` 编辑器的补充。不带参数运行 `/config`（或 `--help`）会列出所有可设置键及其类型和当前值。`/config <key>` 打印当前值——但对于布尔键，它会切换值。`/config <key>=<value>` 设置值。更改将写入用户设置（`~/.qwen/settings.json`）。只有 `boolean`、`string`、`number` 和 `enum` 设置可以以此方式更改——`array` 和 `object` 设置必须直接在 `settings.json` 中编辑。敏感值（API 密钥、令牌、基础 URL）在输出中会被掩码，并且将 `tools.approvalMode` 设置为 `yolo` 是被阻止的。
 
 ### 1.11 常用快捷键
 
@@ -491,11 +501,13 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 | 命令格式            | 说明                                   | 示例                                             |
 | ------------------- | -------------------------------------- | ------------------------------------------------ |
-| `@<file path>`      | 注入指定文件的内容                     | `@src/main.py 请解释这段代码`                    |
-| `@<directory path>` | 递归读取目录下的所有文本文件           | `@docs/ 总结该文档的内容`                        |
-| 单独的 `@`          | 用于讨论 `@` 符号本身时使用            | `@ 这个符号在编程中是用来做什么的？`             |
+| `@<file path>` | 注入指定文件的内容 | `@src/main.py Please explain this code` |
+| `@<directory path>` | 递归读取目录中的所有文本文件 | `@docs/ Summarize content of this document` |
+| 独立的 `@` | 用于讨论 `@` 符号本身 | `@ What is this symbol used for in programming?` |
 
 注意：路径中的空格需要使用反斜杠进行转义（例如：`@My\ Documents/file.txt`）
+
+在交互式提示中，`@` 补全支持 Unicode 文件名，包括表情符号。提示中其他地方的表情符号不会改变用于补全的文件路径。
 
 ## 3. 感叹号命令（`!`）- Shell 命令执行
 
@@ -508,7 +520,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 环境变量：通过 `!` 执行的命令会设置 `QWEN_CODE=1` 环境变量。
 
-## 4. 自定义命令
+## 4. 自定义命令 [#4-custom-commands]
 
 将常用的提示词保存为快捷命令，以提高工作效率并确保一致性。
 
@@ -532,8 +544,8 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 | 文件位置                               | 生成的命令      | 调用示例              |
 | -------------------------------------- | --------------- | --------------------- |
-| `~/.qwen/commands/test.md`             | `/test`         | `/test 参数`          |
-| `<project>/.qwen/commands/git/commit.md` | `/git:commit`   | `/git:commit 信息`    |
+| `~/.qwen/commands/test.md`               | `/test`           | `/test Parameter`     |
+| `<project>/.qwen/commands/git/commit.md` | `/git:commit`     | `/git:commit Message` |
 
 命名规则：路径分隔符（`/` 或 `\`）转换为冒号（`:`）
 
@@ -543,17 +555,17 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 ```markdown
 ---
-description: 可选的描述（在 /help 中显示）
+description: Optional description (displayed in /help)
 ---
 
-你的提示词内容。
-使用 {{args}} 进行参数注入。
+Your prompt content here.
+Use {{args}} for parameter injection.
 ```
 
-| 字段          | 是否必填 | 说明                                   | 示例                                       |
-| ------------- | -------- | -------------------------------------- | ------------------------------------------ |
-| `description` | 可选     | 命令描述（在 /help 中显示）            | `description: 代码分析工具`                |
-| 提示词正文    | 必填     | 发送给模型的提示词内容                 | frontmatter 之后的任意 Markdown 内容       |
+| 字段 | 是否必需 | 描述 | 示例 |
+| ------------- | -------- | ---------------------------------------- | ------------------------------------------ |
+| `description` | 可选 | 命令描述（显示在 /help 中） | `description: Code analysis tool` |
+| Prompt body | 必需 | 发送给模型的提示内容 | frontmatter 之后的任何 Markdown 内容 |
 
 ### TOML 文件格式（已弃用）
 
@@ -561,18 +573,18 @@ description: 可选的描述（在 /help 中显示）
 >
 > **已弃用：** TOML 格式仍受支持，但将在未来版本中移除。请迁移到 Markdown 格式。
 
-| 字段          | 是否必填 | 说明                                   | 示例                                       |
-| ------------- | -------- | -------------------------------------- | ------------------------------------------ |
-| `prompt`      | 必填     | 发送给模型的提示词内容                 | `prompt = "请分析代码：{{args}}"`          |
-| `description` | 可选     | 命令描述（在 /help 中显示）            | `description = "代码分析工具"`             |
+| 字段 | 是否必需 | 描述 | 示例 |
+| ------------- | -------- | ---------------------------------------- | ------------------------------------------ |
+| `prompt` | 必需 | 发送给模型的提示内容 | `prompt = "Please analyze code: {{args}}"` |
+| `description` | 可选 | 命令描述（显示在 /help 中） | `description = "Code analysis tool"` |
 
 ### 参数处理机制
 
-| 处理方式                 | 语法               | 适用场景                             | 安全特性                               |
-| ------------------------ | ------------------ | ------------------------------------ | -------------------------------------- |
-| 上下文感知注入           | `{{args}}`         | 需要精确控制参数                     | 自动进行 Shell 转义                    |
-| 默认参数处理             | 无特殊标记         | 简单命令，追加参数                   | 原样追加                               |
-| Shell 命令注入           | `!{command}`       | 需要动态内容                         | 执行前需要确认                         |
+| 处理方法 | 语法 | 适用场景 | 安全特性 |
+| ---------------------------- | ------------------ | ------------------------------------ | -------------------------------------- |
+| 上下文感知注入 | `{{args}}` | 需要精确的参数控制 | 自动 Shell 转义 |
+| 默认参数处理 | 无特殊标记 | 简单命令，追加参数 | 原样追加 |
+| Shell 命令注入 | `!{command}` | 需要动态内容 | 执行前需确认 |
 
 #### 1. 上下文感知注入（`{{args}}`）
 
@@ -585,7 +597,7 @@ description: 可选的描述（在 /help 中显示）
 
 | 输入情况   | 处理方式                                         | 示例                                         |
 | ---------- | ------------------------------------------------ | -------------------------------------------- |
-| 有参数     | 追加到提示词末尾（用两个换行符分隔）             | `/cmd 参数` → 原始提示词 + 参数              |
+| 有参数 | 追加到提示末尾（用两个换行符分隔） | `/cmd parameter` → 原始提示 + 参数 |
 | 无参数     | 原样发送提示词                                   | `/cmd` → 原始提示词                          |
 
 🚀 动态内容注入
@@ -598,22 +610,22 @@ description: 可选的描述（在 /help 中显示）
 
 #### 3. Shell 命令执行（`!{...}`）
 
-| 操作                          | 用户交互             |
-| ----------------------------- | -------------------- |
-| 1. 解析命令和参数             | -                    |
-| 2. 自动 Shell 转义            | -                    |
-| 3. 显示确认对话框             | ✅ 用户确认          |
-| 4. 执行命令                   | -                    |
-| 5. 将输出注入到提示词中       | -                    |
+| 操作 | 用户交互 |
+| ------------------------------- | -------------------- |
+| 1. 解析命令和参数 | - |
+| 2. 自动 Shell 转义 | - |
+| 3. 显示确认对话框 | ✅ 用户确认 |
+| 4. 执行命令 | - |
+| 5. 将输出注入提示 | - |
 
-示例：生成 Git Commit 信息
+示例：Git 提交信息生成
 
 ````markdown
 ---
-description: 基于暂存区的更改生成 Commit 信息
+description: Generate Commit message based on staged changes
 ---
 
-请根据以下 diff 生成 Commit 信息：
+Please generate a Commit message based on the following diff:
 
 ```diff
 !{git diff --staged}
@@ -622,31 +634,31 @@ description: 基于暂存区的更改生成 Commit 信息
 
 #### 4. 文件内容注入（`@{...}`）
 
-| 文件类型   | 支持状态             | 处理方式                  |
-| ---------- | -------------------- | ------------------------- |
-| 文本文件   | ✅ 完全支持          | 直接注入内容              |
-| 图片/PDF   | ✅ 多模态支持        | 编码并注入                |
-| 二进制文件 | ⚠️ 有限支持          | 可能会被跳过或截断        |
-| 目录       | ✅ 递归注入          | 遵循 .gitignore 规则      |
+| 文件类型 | 支持状态 | 处理方式 |
+| ------------ | ---------------------- | --------------------------- |
+| 文本文件 | ✅ 完全支持 | 直接注入内容 |
+| 图像/PDF | ✅ 多模态支持 | 编码并注入 |
+| 二进制文件 | ⚠️ 有限支持 | 可能被跳过或截断 |
+| 目录 | ✅ 递归注入 | 遵循 .gitignore 规则 |
 
 示例：代码审查命令
 
 ```markdown
 ---
-description: 基于最佳实践的代码审查
+description: Code review based on best practices
 ---
 
-审查 {{args}}，参考标准：
+Review {{args}}, reference standards:
 
 @{docs/code-standards.md}
 ```
 
-### 实际创建示例
+### 实用创建示例
 
-#### "纯函数重构"命令创建步骤表
+#### “纯函数重构”命令创建步骤表
 
-| 操作                        | 命令/代码                                 |
-| --------------------------- | ----------------------------------------- |
+| 操作 | 命令/代码 |
+| ----------------------------- | ----------------------------------------- |
 | 1. 创建目录结构             | `mkdir -p ~/.qwen/commands/refactor`      |
 | 2. 创建命令文件             | `touch ~/.qwen/commands/refactor/pure.md` |
 | 3. 编辑命令内容             | 参考下方的完整代码。                      |
@@ -654,31 +666,32 @@ description: 基于最佳实践的代码审查
 
 ```markdown
 ---
-description: 将代码重构为纯函数
+description: Refactor code to pure function
 ---
 
-请分析当前上下文中的代码，将其重构为纯函数。
-要求：
+Please analyze code in current context, refactor to pure function.
+Requirements:
 
-1. 提供重构后的代码
-2. 解释关键更改以及纯函数特性的实现
-3. 保持函数功能不变
+1. Provide refactored code
+2. Explain key changes and pure function characteristic implementation
+3. Maintain function unchanged
 ```
 
 ### 自定义命令最佳实践总结
 
 #### 命令设计建议表
 
-| 实践要点       | 推荐做法                          | 避免做法                                  |
-| -------------- | --------------------------------- | ----------------------------------------- |
-| 命令命名       | 使用命名空间进行组织              | 避免使用过于通用的名称                    |
+| 实践要点 | 推荐做法 | 避免事项 |
+| -------------------- | ----------------------------------- | ------------------------------------------- |
+| 命令命名 | 使用命名空间进行组织 | 避免过于通用的名称 |
 | 参数处理       | 明确使用 `{{args}}`               | 依赖默认追加（容易混淆）                  |
-| 错误处理       | 利用 Shell 错误输出               | 忽略执行失败                              |
-| 文件组织       | 在目录中按功能进行组织            | 所有命令都放在根目录                      |
-| 描述字段       | 始终提供清晰的描述                | 依赖自动生成的描述                        |
+| 错误处理 | 利用 Shell 错误输出 | 忽略执行失败 |
+| 文件组织 | 按功能在目录中组织 | 将所有命令放在根目录 |
+| 描述字段 | 始终提供清晰的描述 | 依赖自动生成的描述 |
+
 #### 安全特性提醒表
 
-| 安全机制 | 防护效果 | 用户操作 |
+| 安全机制 | 保护效果 | 用户操作 |
 | ---------------------- | -------------------------- | ---------------------- |
 | Shell 转义 | 防止命令注入 | 自动处理 |
 | 执行确认 | 避免误执行 | 对话框确认 |
@@ -724,99 +737,100 @@ sessionId, startTime, mtime, prompt, gitBranch, customTitle, titleSource, filePa
 **示例：**
 
 ```bash
-# 显示最近 20 个会话（默认）
+# Show last 20 sessions (default)
 qwen sessions list
 
-# 显示最近 50 个会话
+# Show last 50 sessions
 qwen sessions list --limit 50
 
-# 以 JSON 格式输出，便于脚本处理
+# Output as JSON for scripting
 qwen sessions list --json | jq .
 ```
 
 #### `qwen sessions ps`
 
-列出当前在此机器上注册的 Qwen Code 会话。
-`sessions list` 遍历已保存的对话记录（"我做过什么"）；而此命令
-遍历实时进程注册表（"此刻正在运行什么"）。被终止会话
-留下的记录会在发现时被清理。一次性的 `qwen -p` 运行永远不会注册，
-因此永远不会显示。
+列出本机可见的 Qwen Code 会话记录。`sessions list` 遍历保存的转录记录（“我做过什么”）。此命令同时显示实时进程注册表和标记为 `managed` 的 Agent View 记录。被终止会话遗留的记录会在被发现时从注册表中清除。托管记录是持久化的簿记信息，并非其工作进程仍然存活的证据。一次性 `qwen -p` 运行永远不会注册，也不会显示。
 
 **标志：**
 
-| 标志     | 类型    | 默认值  | 描述                                            |
+| 标志 | 类型 | 默认值 | 描述 |
 | -------- | ------- | ------- | ----------------------------------------------- |
-| `--json` | 布尔    | `false` | 以 JSON Lines 格式输出（每行一个 JSON 对象）    |
+| `--json` | boolean | `false` | 以 JSON Lines 格式输出（每行一个 JSON 对象） |
 
 **人类可读输出（默认）：**
 
 包含以下列的表格：NAME、KIND、PID、AGE、DIRECTORY。
 
+KIND 指示了是什么注册了该会话——`tui` 表示有人在终端操作，`external` 表示根本不是 Qwen Code 会话的程序（如语音前端、中继器），`headless` 或 `serve` 表示由其他程序驱动的会话。多个 `serve` 或 `headless` 行可以共享同一个 PID：一个 `qwen --acp` 子进程在一个进程中承载其所有会话——当守护进程启动它时为 `serve`，当客户端直接驱动它时为 `headless`——并且当对等消息传递处于活动状态时，每个会话都会单独注册。当自身环境将其置于裸机或安全模式时，托管会话不会在此处注册。守护进程的 `--bare` 不会传递给其托管的会话（`QWEN_CODE_SIMPLE` 会从子环境中清除）；继承的 `QWEN_CODE_SAFE_MODE` 则会传递，从而使这些托管会话不出现在此列表中。这是一种自我报告，就像 NAME 和 DIRECTORY 一样：这里的每个字段都是由其所描述的进程写入的，没有任何关于会话允许做什么的内容依赖于它。标记为 `managed` 的 Agent View 记录使用 `managed` 作为 KIND，使用 `-` 作为 PID 和 AGE。即使同一会话也有实时注册表记录，它仍保持为单独的一行。有关记录格式以及如何注册你自己的程序，请参阅 [Cross-Session Protocol](./cross-session-protocol.md)。
+
 **JSON 输出（`--json`）：**
 
-在 stdout 输出 JSON Lines，最新的会话排在前面。每行是一个包含以下字段的 JSON 对象：
+在 stdout 上输出 JSON Lines，托管记录排在前面。注册表记录保持其现有结构：
 
 ```
 schemaVersion, pid, procStart, pidNs, sessionId, cwd, name, startedAt,
-qwenVersion, kind, ipcPath (当 peer 消息可用时)
+qwenVersion, kind, ipcPath (when peer messaging is available)
 ```
 
-不会向 stdout 写入其他内容——空列表完全不输出任何内容——因此 `qwen sessions ps --json | jq .` 可以安全地用于脚本。
+托管记录仅包含有来源支持的数据：
 
-JSON 输出是原始数据：字段值按记录原样发出，不经过终端净化。请将它们视为数据，在终端中渲染前进行净化处理。
+```
+sessionId, cwd, managed: true
+```
+
+stdout 上不写入其他内容——空列表根本不打印任何内容——因此 `qwen sessions ps --json | jq .` 适合用于脚本编写。如果无法读取监督存储，注册表记录仍会打印，原因会写入 stderr。
+
+JSON 输出是原始数据：字段值按记录原样发出，不进行终端净化。将它们视为数据，并在终端渲染之前进行净化。
 
 **示例：**
 
 ```bash
-# 显示其他活跃会话
+# Show the other live sessions
 qwen sessions ps
 
-# 哪些目录当前正在使用中？
-# 注意：`jq -r` 会在终端中渲染原始记录值（参见上方
-# 原始数据说明）；如果路径不受信任，请通过净化器管道处理。
+# Which directories have a visible session record?
+# Note: `jq -r` renders the raw recorded value in your terminal (see the
+# raw-data note above); pipe through a sanitizer if the path is untrusted.
 qwen sessions ps --json | jq -r .cwd
-
-## 6. 向另一个运行中的会话发送消息
-
-同一台机器上的两个交互式会话可以互相发送消息。此功能是实验性的，**默认关闭**；在 `settings.json` 中开启并重启：
-
-```json
-{ "agents": { "crossSessionMessaging": true } }
 ```
 
-开启后，一个会话中的模型可以通过 `list_agents` 发现其他会话——每个会话都出现在 `sessions` 下，带有 `qwen sessions ps --json` 记录的 `name`（表格视图可能会截断长名称）——并使用 `send_message` 以该名称作为 `to` 来寻址。当两个会话共享同一个名称时，`list_agents` 会为每个会话显示一个简短的 `[ref]`，发送时必须包含它（`name [ref]`）；可能指向任一会话的裸名称会被拒绝而不是猜测。`list_agents` 还会在 `self` 下报告会话自身的名称，而 `to: "*"` 仍然表示"我的 Agent Team teammates"，永远不会到达其他会话。
+## 6. 向另一个正在运行的会话发送消息 [#6-messaging-another-running-session]
 
-消息到达另一个会话时，会标记为来自另一个会话，而不是来自其用户，并且在那里不携带你的任何权限：接收会话只会在其自身的权限设置内对其采取行动。其用户可以使用 `agents.crossSessionInbound`（`accept`、`hold` 或 `refuse`）选择传入消息的处理方式。未设置时，只有当两个会话处于同一审查类别时，消息才会被传递：双方都审查每个操作（默认或 plan 模式），或者双方都处于无需逐次审查即可应用某些操作的模式（auto-edit、auto 或 yolo）。来自另一类别的会话、或未声明自身所属类别的发送方的消息，会被保留以待审查——双向皆如此。审查每个操作的会话会保留来自不审查操作的会话的消息，因为该消息是由无人监督的模型编写的，而逐次操作提示保护的是操作本身，而非会话被说服去做的事。保留的消息会在接收会话中使用 `/peers` 列出并释放，仅因模式差异而被保留的消息会在双方模式一致后自动释放。
+同一台机器上的两个交互式会话可以互相发送消息。该功能**默认开启**，但 `--bare` 和 `--safe-mode` 无论设置如何都会禁用它。拥有监听收件箱后，会话对于同一用户在该机器上的其他会话是可发现的，它们发送的内容在其模型看到之前会经过下面的审查规则。要禁用对等发现和消息传递，请在 `settings.json` 中关闭它并重启：
 
-仓库可以使其内部打开的会话更加谨慎，而绝不会更宽松：工作区 `.qwen/settings.json` 可以将 `agents.crossSessionInbound` 设置为 `hold` 或 `refuse`，或将 `agents.crossSessionMessaging` 设置为 `false`，该值会覆盖用户设置中较宽松的值。会放宽你设置的工作区值（`accept`，或开关的 `true`）会被忽略并给出警告，CLI 无法识别的值在作为有效值时会保留所有消息。系统设置会覆盖以上所有，正如它对每个设置所做的那样。
+```json
+{ "agents": { "crossSessionMessaging": false } }
+```
 
-保留不会无限等待。无人决定的消息会在 `agents.crossSessionHeldExpiry`（`1m`、`5m`、`10m` 或 `never`，默认为 5 分钟）后过期，发送会话会被告知未做出任何决定。缩短该设置会影响已在等待的消息。
+禁用了 peer messaging 的交互式会话仍可能出现在 `qwen sessions ps` 中，但没有 `ipcPath`，并且在 `list_agents` 中不是可达的对等方。OpenTUI 界面也不绑定对等收件箱；仅启用设置并不能使其可接收消息。
 
-如果会话无法绑定其收件箱——运行时目录缺失、被其他用户拥有、或为只读（如在容器内可能发生的情况）——它会先尝试临时目录下的私有目录，只有当这也失败时，才会以无收件箱的方式启动。发生这种情况时，会话会在启动时说明，`/peers` 也会重复说明原因及需要更改的内容（通常是 `XDG_RUNTIME_DIR` 或 `TMPDIR`）。
+启用消息传递后，一个会话中的模型可以通过 `list_agents` 发现其他会话——每个会话都显示在 `sessions` 下，并带有 `qwen sessions ps --json` 记录的 `name`（表格视图可能会截断长名称）——并使用该名称作为 `to` 通过 `send_message` 向其中一个发送消息。当两个会话共享名称时，`list_agents` 会为每个会话显示一个简短的 `[ref]`，并且发送时必须包含它（`name [ref]`）；如果裸名称可能指代其中任何一个，则会被拒绝而不是猜测。`list_agents` 还会在 `self` 下报告会话自身的名称，而 `to: "*"` 仍然表示“我的 Agent Team 队友”，且永远不会到达其他会话。
 
-两个会话也可能解析到相同的收件箱地址，因为地址是按进程 id 为键的，而进程 id 在共享运行时目录的容器之间会重复。第二个启动的会话会取一个相邻的地址，而不是接管正在使用的地址，这样两者都不会变得不可达。Peer 不受影响：它们从会话注册表中读取会话的地址，而不是自行推导。
+消息到达另一个会话时，被标记为来自另一个会话而非其用户，并且在那里不携带你的任何权限：接收会话仅在其自身的权限设置内对其采取行动。其用户可以通过 `agents.crossSessionInbound`（`accept`、`hold` 或 `refuse`）选择如何处理传入的消息。未设置时，仅当两个会话处于相同的审查类别时才会投递消息：两者都仍对每个操作进行审查（默认或计划模式），或者两者都处于某种无需逐操作审查即可应用某些操作的模式（自动编辑、自动或 yolo）。来自另一类别会话的消息，或来自未说明其所在类别的发送者的消息，将在两个方向上都被扣留以供审查。逐个审查操作的会话会扣留来自不逐个审查操作的会话的消息，因为该消息是由无人监督的模型编写的，而逐操作提示保护的是操作本身，而不是会话被诱导去做的事情。扣留的消息会在接收会话中通过 `/peers` 列出并释放，而仅因模式不同而被扣留的消息一旦模式达成一致就会自动释放。
 
-`send_message` 调用仅确认消息已传递给另一个会话。它的后续情况会作为回执稍后到达：如果它被保留、拒绝、refused、过期或地址错误（地址已变更——再次列出代理）——或在保留后释放——发送会话的记录中会出现通知（`Message to <name>: …`）。Declined、refused 和 dropped 是三种不同的结果：declined 表示有人审查了消息并拒绝，refused 表示该会话的 `agents.crossSessionInbound` 是 `refuse` 且根本没有人看到它，dropped 表示其收件箱在上述任何情况发生之前就拒绝了该消息（见下文）。第一次 dropped 会立即回复，其余的会每隔几秒合并到一条回执中，每条回执会指明它所代表的消息，因此一批 dropped 只需几行而不是每条一行。发送它的模型不会被告知；如果另一个会话回复，回复会作为跨会话消息到达。
+代码仓库可以让在其中打开的会话更加谨慎，但绝不会更宽松：工作区 `.qwen/settings.json` 可以将 `agents.crossSessionInbound` 设置为 `hold` 或 `refuse`，或将 `agents.crossSessionMessaging` 设置为 `false`，并且该值优先于用户设置中更宽松的值。如果工作区的值会放宽操作员设置的值（`accept`，或者当用户或系统范围将其设置为 `false` 时的开关 `true`），则该值会被忽略并发出警告；如果工作区 `true` 只是重复了默认值而没有其他地方设置该开关，则会被静默丢弃。CLI 无法识别的值只要成为有效值，就会扣留所有消息。系统设置覆盖所有这些规则，就像它覆盖所有设置一样。
 
-### 泛洪保护
+扣留不会无限期等待。没有人决定的消息在 `agents.crossSessionHeldExpiry` 后过期——`1m`、`5m`、`10m` 或 `never`，默认为五分钟——并且发送会话会被告知没有做出决定。缩短此设置适用于已经在等待的消息。
 
-一个会话一次最多接受来自同一发送方的 30 条消息，之后每两秒一条；来自所有发送方合计一次最多 32 条，之后每秒一条。第二个限制的存在是因为发送方会自报名称：轮换名称可以从第一个限制获得新的配额，但不能从第二个获得。它仅比第一个限制稍高，因为每条被接受的消息都会产生一条回执，而一个会话同时能发出的回执数量有限。来自另一会话的消息如果在 30 秒内逐字重复该发送方之前的消息，也会被拒绝——在一个句子上循环的模型每次都会生成新的消息 id，因此靠文本内容来识别。会话启动的脚本和受信任控制器发来的消息免于重复检查，因为报告同一行两次的 hook 是在报告两个事实，而一个人说两次"继续"就是两次；两者仍然受速率限制约束。最后，被接受但因会话已有 50 条消息排队而无法入队的消息也会被拒绝。
+如果会话无法绑定其收件箱——运行时目录缺失、属于其他用户或只读（在容器内可能发生这种情况）——它会首先尝试临时目录下的私有目录，只有当这也失败时，它才会在没有收件箱的情况下启动。发生这种情况时，会话会在启动时说明这一点，并且 `/peers` 会重复原因以及需要更改的内容（通常是 `XDG_RUNTIME_DIR` 或 `TMPDIR`）。
 
-以这种方式被拒绝的消息永远不会被保留，永远不会展示给模型，也不会留下记录，因此发送方可以稍后重试并成功送达。接收会话在其记录中每分钟最多为每个发送方报告一次，并附带该行所代表的计数。发送会话会收到一条回执，列出该次突发所消耗的所有消息，其记录会建议将仍然重要的内容合并到一条后续消息中，而不是重新发送。
+两个会话也可以解析相同的收件箱地址，因为地址以进程 ID 为键，而在共享运行时目录的容器中进程 ID 会重复出现。第二个启动的会话会采用相邻的地址，而不是接管正在使用的地址，因此两者都不会变得不可达。对等方不受影响：它们从会话注册表中读取会话的地址，而不是推导出来。
 
-发送方不会等待结果。每个会话跟踪它已发送到每个地址的内容，并拒绝接收方会丢弃的发送，因此模型在消息写入之前就被要求批量处理——而不是之后——接收方也永远不会在它本要拒绝的消息上浪费连接。
+`send_message` 调用仅确认消息已移交给另一个会话。它的后续结果会以回执的形式稍后到达：如果被扣留、拒绝、驳回、丢弃、过期或寻址错误（地址易主——再次列出代理）——或在扣留后被释放——通知会出现在发送会话的记录中（`Message to <name>: …`）。拒绝、驳回和丢弃是三种不同的回答：拒绝意味着有人审查了消息并说不，驳回意味着该会话的 `agents.crossSessionInbound` 是 `refuse` 且根本没人看到它，丢弃意味着其收件箱在此之前就拒收了该消息（见下文）。第一次丢弃会立即得到回应，其余的每几秒折叠成一个回执，每个回执命名其所代表的消息，因此一连串丢弃只会产生几行记录而不是一行一条。发送它的模型不会被告知；如果另一个会话回复，回复将作为跨会话消息到达。
 
-### 收件箱认证与脚本注入
+### 洪水保护
 
-每个会话的收件箱都需要一个每会话 token：连接必须在其第一行出示 token，然后才会读取任何消息，会话通过它们互相发现的相同注册表记录自动交换 token。不支持 token 的构建版本中的会话可以从较新版本接收，但其发往较新版本的消息会被丢弃。
+一个会话允许来自单个发送者的最多 30 条消息同时进入，随后每两秒一条；以及来自所有发送者合计的最多 32 条消息同时进入，随后每秒一条。第二个限制的存在是因为发送者会声明自己的名称：轮换该名称可以从第一个限制中获得新的配额，但不能从第二个限制中获得。它仅略高于第一个限制，因为每条被接受的消息都会生成一个回执，而会话同时发出的回执数量是有限的。如果来自另一个会话的消息在 30 秒内逐字重复了该发送者之前的消息，也会被拒绝——模型在循环处理一句话时每次都会生成新的消息 ID，因此是通过文本内容来检测这种情况的。由会话启动的脚本或受信任控制器发送的消息可豁免于重复检查，因为钩子（hook）两次报告同一行是在陈述两个事实，而人两次说“继续”意味着两次意图；但它们仍受速率限制约束。最后，即使消息被接受，但如果会话已有 50 条等待消息而无法入队，该消息也会被拒绝。
 
-会话会将自己的收件箱地址和 token 作为 `QWEN_CODE_MESSAGING_SOCKET` 和 `QWEN_CODE_MESSAGING_TOKEN` 导出给子进程，因此会话运行的脚本或 hook 可以向其发送消息。这是一个第二位的、_子级_ token，永远不会在任何地方发布：只有会话启动的进程才能持有它，因此携带该 token 到达的消息会被识别为会话自身的，而不是其他会话的。
+以此方式被拒绝的消息永远不会被保留、不会展示给模型，也不会留下任何记录，因此发送者可以稍后重试并成功送达。接收会话在其转录记录中每分钟针对每个发送者最多说明一次此情况，并附带计数以表明该行代表的含义。发送会话会收到一个回执，列出因突发流量而被丢弃的所有消息，其转录记录建议将仍然重要的内容合并到后续的一条消息中，而不是重新发送。
 
-### 收件箱认证与脚本注入
+发送端不会等待反馈。每个会话跟踪其向每个地址发送的内容，并拒绝接收方会丢弃的发送请求，因此模型在编写消息之前而非之后被告知进行批量处理——并且接收方永远不会为即将被拒绝的消息消耗连接资源。
 
-每个会话的收件箱都需要一个每会话 token：连接必须在其第一行出示 token，然后才会读取任何消息，会话通过它们互相发现的相同注册表记录自动交换 token。不支持 token 的旧版本构建的会话可以从较新版本接收，但其发往较新版本的消息会被丢弃。
+### 令牌只打印一次且不会存储在任何地方：Qwen 主目录下的文件仅保留其 SHA-256 哈希值，因此后来读取该文件的任何内容都无法呈现该令牌。当命令打印令牌时，请将其放入控制器的配置中。
 
-会话会将自己的收件箱地址和 token 作为 `QWEN_CODE_MESSAGING_SOCKET` 和 `QWEN_CODE_MESSAGING_TOKEN` 导出给子进程，因此会话运行的脚本或 hook 可以向其发送消息。这是一个第二位的_子级_ token，永远不会在任何地方发布：只有会话启动的进程才能持有它，因此携带该 token 到达的消息会被识别为会话自身的，而不是其他会话的。
+每个会话的收件箱都需要一个特定于会话的令牌：连接必须在读取任何消息之前在第一行呈现该令牌，并且会话通过它们相互发现的相同注册表记录自动交换令牌。不支持令牌的构建版本生成的会话可以从较新版本接收消息，但向其发送的消息会被丢弃。
+
+会话将其自身的收件箱地址和令牌作为 `QWEN_CODE_MESSAGING_SOCKET` 和 `QWEN_CODE_MESSAGING_TOKEN` 导出给子进程，以便会话运行的脚本或钩子可以将消息发回其中。这是一个第二层的 _子_ 令牌，绝不会在任何地方发布：只有会话启动的进程才能持有它，因此带有此令牌到达的消息会被识别为会话自身发出的，而不是来自其他会话的。
 
 ```bash
 { printf '%s\n' \
@@ -825,23 +839,23 @@ qwen sessions ps --json | jq -r .cwd
 } | socat - UNIX-CONNECT:"$QWEN_CODE_MESSAGING_SOCKET"
 ```
 
-为每次注入赋予一个新的 `msgId`。接收端网关会记住它已处理过的 id，因此重用 id 的 hook 在第一次会被传递，之后每次运行都会被静默去重。重复相同的_文本_没有问题——上面的重复检查不适用于会话自身的进程——但速率限制仍然适用，因此循环中的 hook 会像其他泛洪一样被丢弃。
+为每次注入提供一个新的 `msgId`。接收门控会记住它已经处理过的 ID，因此重用某个 ID 的钩子会在第一次运行时被交付，而在随后的每次运行中被静默去重。重复相同的 _文本_ 是可以的——上述重复检查不适用于会话自身的进程——但速率限制确实适用，因此循环中的钩子会像任何其他洪水攻击一样被丢弃。
 
-注入的消息仍然会经过入站网关，并被标记为非来自用户，但网关知道它来自会话自身的进程：在模式一致性的默认情况下，它会被直接传递而不经过审查（处于相同位置的 peer 会被保留），而显式的 `agents.crossSessionInbound` 为 `hold` 或 `refuse` 时，会像对待其他消息一样对其生效。模型会将其视为 `<cross_session_message from="own process" origin="own-process">`，并附有通知说明它来自会话运行的脚本或 hook，而非来自用户。
+注入的消息仍然会通过入站门控，并被标记为非用户来源，但门控知道它来自会话自身的进程：在模式对等默认设置下，它无需审查即可交付（处于相同位置的对等方会被扣留），而显式的 `agents.crossSessionInbound` 设置为 `hold` 或 `refuse` 时，对其应用与其他消息相同的规则。模型将其视为 `<cross_session_message from="own process" origin="own-process">`，并附带通知说明它来自会话运行的脚本或钩子，而非用户。
 
-### 受信任的控制器
+### 受信任的控制器 [#trusted-controllers]
 
-上述规则会保留来自任何未声明其审查类别的发送方的消息，而非 Qwen Code 会话的程序没有此类类别可声明。对于陌生人来说，这是正确的默认行为，但对于你选择的程序来说则不然：语音前端、听写桥接、转发你自己指令的自动化守护进程——每条消息都会被停放，手动批准每一条就失去了意义。
+上述规则会扣留来自任何未声明其审查类别的发送者的消息，而非 Qwen Code 会话的程序没有此类声明。这对于陌生人来说是正确的默认行为，但对于你选择的程序则不然：语音前端、听写桥接器、转发你自己指令的自动化守护进程会导致每条消息都被搁置，而手动批准每一条消息就失去了意义。
 
-你可以通过为其铸造 token 来授予此类程序传递权限：
+你可以通过为其铸造令牌来授予此类程序交付权限：
 
 ```bash
 qwen sessions controllers add --label voice-bridge
 ```
 
-该 token 仅打印一次，不会存储在任何地方：你的 Qwen home 下的文件只保留其 SHA-256 哈希，因此后续读取该文件的任何内容都无法出示该 token。在命令打印出 token 时，将其放入控制器自身的配置中。
+令牌只打印一次且不会存储在任何地方：Qwen 主目录下的文件仅保留其 SHA-256 哈希值，因此后续读取该文件的任何内容都无法呈现该令牌。当命令打印令牌时，请将其放入控制器自身的配置中。
 
-控制器像其他任何发送方一样出示 token——作为连接的第一行——并从会话注册表中获取 socket 路径（`qwen sessions ps --json` 为每个活跃会话打印一条记录，`ipcPath` 即为地址）：
+控制器像其他发送者一样呈现令牌——作为连接的第一行——并从会话注册表中获取套接字路径（`qwen sessions ps --json` 为每个活动会话打印一条记录，`ipcPath` 即为地址）：
 
 ```bash
 { printf '%s\n' \
@@ -850,32 +864,31 @@ qwen sessions controllers add --label voice-bridge
 } | socat - UNIX-CONNECT:"$SESSION_IPC_PATH"
 ```
 
-通过已授予 token 到达的消息会直接传递，无需逐消息审查，无论任一方处于何种审查类别——但它仍然服从显式设置：`agents.crossSessionInbound` 为 `hold` 时会像其他消息一样停放它，`refuse` 则会拒绝它。授予属于您的 Qwen home，而非某个会话，因此控制器可以到达你正在运行的任何会话，会话在每次连接时都会重新读取该文件：铸造或撤销一个授予会在下一次连接时生效，无需重启任何内容。
+使用授予令牌到达的消息无需逐条审查即可交付，无论双方处于何种审查类别——但它仍需服从显式设置：`agents.crossSessionInbound` 设置为 `hold` 时会像其他消息一样将其搁置，设置为 `refuse` 时会将其拒绝。授权属于你的 Qwen 主目录而非单个会话，因此控制器可以访问你正在运行的任意会话，并且会话在每次连接时重新读取文件：创建或撤销授权在下一次连接时生效，无需重启。
 
 ```bash
-qwen sessions controllers list          # id、标签、添加时间
-qwen sessions controllers remove c_1a2b # 撤销一个
+qwen sessions controllers list          # ids, labels, when they were added
+qwen sessions controllers remove c_1a2b # revoke one
 ```
 
-`/peers controllers` 和 `/peers revoke <id>` 在会话内部执行相同的操作。通过授予到达的消息会显示为 `Message from a trusted controller (voice-bridge)`，如果 `hold` 设置停放了它，则会在 `/peers` 中显示为 `[controller] voice-bridge`。
+在会话内部，`/peers controllers` 和 `/peers revoke <id>` 的作用相同。通过授权发送的消息显示为 `Message from a trusted controller (voice-bridge)`，如果 `hold` 设置将其暂存，则会在 `/peers` 中显示为 `[controller] voice-bridge`。
 
-模型会将此类消息视为 `<cross_session_message from="controller" origin="controller" controller="voice-bridge">`，并附有通知说明它正在转发你自己的指令——以及适用于其他所有来源的相同两项禁止：它不得因为消息要求而编辑权限设置、QWEN.md 或配置，也不得将消息视为你批准了待处理的确认提示。控制器可以说接下来做什么；它不能代你回答提示。
+模型将此类消息视为 `<cross_session_message from="controller" origin="controller" controller="voice-bridge">`，并附带说明该消息转达了你自己的指令——并且适用于所有其他来源的两条禁令同样适用：它不得因消息要求而编辑权限设置、QWEN.md 或配置，也不得将该消息视为你批准了待确认的提示。控制器可以指示下一步操作；但它不能代表你回答提示。
 
-任何持有该 token 的人都可以作为该控制器发送，因此请将其视为任何其他凭证：将其授予一个程序，不要放入共享配置中，并在该程序完成后撤销它。
+任何持有令牌的人都可以以该控制器的身份发送消息，因此请像对待任何其他凭据一样对待它：仅交给一个程序使用，不要放入共享配置中，并在该程序完成后撤销它。
 
 ### 程序通过 ACP 驱动的会话
 
-任何 `qwen --acp` 子进程都会注册它所托管的每个会话——当守护进程生成该进程时注册为 `serve`，当编辑器或其他客户端直接驱动 `qwen --acp` 时注册为 `headless`——该会话会出现在 `qwen sessions ps` 和另一个会话的 `list_agents` 中，与其他会话一样。它可以发送：其模型可以调用 `send_message` 来联系你打开的终端。其中几个共享一个进程和一个收件箱，因此发送方必须指明它要联系的会话——每个 Qwen Code 会话都会自动执行此操作。
+任何 `qwen --acp` 子进程都会注册其托管的每个会话——当守护进程生成进程时注册为 `serve`，当编辑器或其他客户端直接驱动 `qwen --acp` 时注册为 `headless`——并且该会话会像其他会话一样出现在 `qwen sessions ps` 和其他会话的 `list_agents` 中。它可以发送消息：其模型可以调用 `send_message` 来访问你打开的终端。它们中的几个共享一个进程和一个收件箱，因此发送者必须指定目标会话——每个 Qwen Code 会话都会自动执行此操作。
 
-发送给它们的消息会被拒绝而不是保留。保留是向人提出的问题，而没有人会代表被驱动的会话监视保留消息列表；发送方会立即被告知，而不是等待过期。保留的消息应该在哪里为这些会话 surfaced 尚未确定。
+发送到此类会话的消息会被拒绝而不是被保留。保留是针对人的问题，而在被驱动的会话上没有人查看保留消息列表；发送者会立即收到通知，而不是等待过期。对于此类会话，保留消息应在何处显示尚未确定。
 
-会话只有在其自身设置中 `agents.crossSessionMessaging` 开启时才会注册。关闭时它会保持不可见，因为列出没有人可以发消息的会话的唯一目的就是宣传一个永远不会应答的地址。
+除非会话自身的设置关闭了 `agents.crossSessionMessaging`，或者它是使用 `--bare` 或 `--safe-mode` 启动的，否则会话会进行注册——无论设置如何，这些选项都会禁用消息功能。如果已禁用，它将保持不可见，因为列出无人可向其发送消息的会话的唯一理由就是宣传一个永不响应的地址。
 
-### 不是 Qwen Code 会话的程序
+### 非 Qwen Code 会话的程序
 
-以上所有内容都在会话之间工作，但其中没有任何特定于某一个会话的内容。一个为自己写入注册表记录并以相同方式绑定收件箱的程序会被 `qwen sessions ps` 和 `list_agents` 列出，可以从 `send_message` 按名称寻址，并接收它所发送消息的传递回执——例如语音前端、中继、构建监视器。它应该记录 `kind: "external"` 以便列表可以说明它是什么。
+上述所有内容都在会话之间工作，但其中没有任何内容是特定于某个会话的。如果一个程序为自己写入注册记录并以相同方式绑定收件箱，它将由 `qwen sessions ps` 和 `list_agents` 列出，可以从 `send_message` 按名称寻址，并接收其发送内容的投递回执——例如语音前端、中继器或构建监视器。它应记录 `kind: "external"`，以便列表可以说明其用途。
 
-[Cross-Session Protocol](./cross-session-protocol.md) 是编写此类程序的契约：记录 schema 和如何判断活跃性、socket 路径和帧格式、认证行、每个帧字段、回执状态及其转换，以及接收方在模型看到消息之前对消息的处理。
+[跨会话协议](./cross-session-protocol.md) 是编写此类程序的契约：包括记录架构和活性判断方法、套接字路径和帧格式、认证行、每个帧字段、回执状态及其转换，以及接收者在模型看到消息之前如何处理消息。
 
-Node 程序不必手动编写所有这些：` @qwen-code/sdk/peer` 实现了该契约。`PeerEndpoint.start({ name })` 发布记录并绑定收件箱，`list()` 和 `send()` 按名称寻址会话，`onMessage` 接收它们发送的内容。
-```
+Node 程序不必手动编写上述任何内容：`@qwen-code/sdk/peer` 实现了该契约。`PeerEndpoint.start({ name })` 发布记录并绑定收件箱，`list()` 和 `send()` 按名称寻址会话，`onMessage` 接收它们发送的内容。

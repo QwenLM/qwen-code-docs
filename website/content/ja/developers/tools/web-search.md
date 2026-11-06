@@ -2,12 +2,12 @@
 
 Qwen Code は2つの方法でウェブ検索を提供します。
 
-1. **ビルトインの `web_search` ツール** — DashScope Responses API のサーバーサイド検索を使用します。サポートされている ModelStudio および OpenAI 互換の DashScope 構成では起動時にデフォルトで有効です。追加のプロバイダーや MCP の設定は不要です。
+1. **組み込み `web_search` ツール** — DashScope Responses API のサーバー側検索、または Qwen サブスクリプション セッションの場合は Qwen MCP 検索サービスによってバックエンドされます。Plus/Pro サブスクリプションへのサインイン後に有効になり、対応する ModelStudio および OpenAI 互換の DashScope 構成では起動時にデフォルトでオンになります。追加のプロバイダーや MCP の設定は不要です。
 2. **MCP (Model Context Protocol) 統合** — 外部の検索サービス（Tavily、GLM など）を接続します。プロバイダーがビルトインツールをサポートできない場合に使用してください。
 
-## ビルトインの `web_search`
+## ビルトインの `web_search` [#built-in-web_search]
 
-ビルトインツールは、DashScope のサーバーサイド `web_search`（および `web_extractor`）ツールを使用して、小さな補助モデルに自己完結型の検索リクエストを発行し、ナレーションされた結果とソース URL を返します。
+DashScope では、組み込みツールが自己完結型の検索リクエストを小さな補助モデルに送信し、サーバー側の `web_search` (および `web_extractor`) ツールを使用します。ナレーション付きの調査結果とソース URL を返します。[Qwen アカウント（サブスクリプション付き）](../../users/configuration/auth.md) を使用すると、Qwen MCP 検索サービスと現在のログイン資格情報を利用します。個別の検索 API キー、補助モデル、または `mcpServers` の設定は必要ありません。`webExtractor` は DashScope 検索にのみ適用されます。
 
 ### 自動的に有効になる条件
 
@@ -15,15 +15,16 @@ Qwen Code は2つの方法でウェブ検索を提供します。
 
 | サインイン方法                                                                                                          | ビルトイン検索                                  |
 | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| Alibaba ModelStudio → **Standard API Key**                                                                                 | on                                              |
-| Alibaba ModelStudio → **Token Plan**                                                                                       | on                                              |
+| [Qwen アカウント（サブスクリプション付き）](https://chat.qwen.ai/?memberPlan=qwen_code) — **Plus または Pro**                             | オン                                              |
+| Alibaba ModelStudio → **標準 API キー**                                                                                 | オン                                              |
+| Alibaba ModelStudio → **Token Plan**                                                                                       | オン                                              |
 | Alibaba ModelStudio → **Coding Plan**                                                                                      | off — この API に対してエンドポイントが検証されていません |
-| QwenCloud → **Standard API Key**                                                                                           | on                                              |
-| QwenCloud → **Token Plan**                                                                                                 | on                                              |
+| QwenCloud → **標準 API キー**                                                                                           | オン                                              |
+| QwenCloud → **Token Plan**                                                                                                 | オン                                              |
 | 認識された DashScope Responses ホスト上の OpenAI 互換 `modelProviders` または Custom Provider エントリ（直接キー付き） | on                                              |
 | サードパーティプロバイダー（OpenRouter、DeepSeek、ModelScope など）、他のホスト上のカスタムエンドポイント、ローカルモデル                 | off                                             |
 
-検索はメインモデルと同じキーで課金されます。権限の処理はアクティブな承認モードとルールに従います。`default` 承認モードでは、最初の検索時に確認が求められます。プロバイダーがツールをサポートできない場合、起動時に表示されなくなるだけです — 起動時の警告はありません。
+DashScope 検索はメイン モデルと同じキーに対して課金されます。サブスクリプション検索は Qwen のログイン資格情報を再利用します。権限処理はアクティブな承認モードとルールに従います。`default` 承認モードでは、最初の検索で確認を求められます。プロバイダーがツールをサポートできない場合、起動時に表示されません — 起動時の警告はありません。
 
 オフにする方法:
 
@@ -34,6 +35,8 @@ Qwen Code は2つの方法でウェブ検索を提供します。
 または `ENABLE_WEB_SEARCH=false`。ベアモードとセーフモードでは常に無効になります。
 
 ### 明示的な設定
+
+このセクションでは DashScope 検索を設定します。サブスクリプション検索はメンバーシップの資格情報を再利用するため、追加の設定は不要です。明示的な検索設定は、自動サブスクリプション検索よりも優先されます。
 
 ツールを ModelStudio Standard/Token Plan または別の検証済み DashScope Responses エントリに向けます。これは、メインモデルが別のプロバイダーで動作していて、サポートされている別の DashScope キーを持っている場合に便利です。Coding Plan ホストは、Responses 検索ツールがそこで検証されていないため、自動アクティベーションから除外されています。`tools.webSearch.model` で明示的にオプトインできます。エンドポイントがそれらを提供しない場合、最初の検索時に明示的に失敗します。その検証されていないパスに依存したくない場合は、MCP 検索プロバイダーを使用してください。
 
@@ -63,28 +66,30 @@ Qwen Code は2つの方法でウェブ検索を提供します。
 | `tools.webSearch.model`        | `WEB_SEARCH_MODEL`        | 明示的パスの検索モデルセレクター（`modelId` または `authType:modelId`）。`WEB_SEARCH_BASE_URL` と共に、そのエンドポイントのプレーンなモデル ID です。それ以外の場合は、宣言された DashScope 互換の `modelProviders` エントリと一致する必要があります。自動パスは `qwen3.8-flash` を使用します。 |
 | `tools.webSearch.webExtractor` | `WEB_SEARCH_EXTRACTOR`    | 検索エージェントが結果ページを開いてより的確な回答を得られるようにします（デフォルト `true`。DashScope により別途課金されます）。                                         |
 | `tools.webSearch.timeoutMs`    | `WEB_SEARCH_TIMEOUT_MS`   | 1回の検索の合計時間予算（ミリ秒単位、デフォルト `120000`、最大 `600000`。その他の値はデフォルトに戻ります）。時間切れになった検索は、少なくとも1回の検索呼び出しが完了していれば、到着したものを部分的な結果として返します。最初の検索呼び出しが完了する前に予算が尽きた場合、ツールは代わりにタイムアウトエラーを報告します。実行された検索なしのナレーションは監査可能な証拠ではないためです。この予算より低い値のツールごとの実行上限（`QWEN_CODE_TOOL_EXECUTION_TIMEOUT_MS`）が先に発生し、部分的な結果を破棄します。`timeoutMs` より大きい値に設定してください。 |
+| `tools.webSearch.allowedHosts`  | `WEB_SEARCH_ALLOWED_HOSTS`   | 明示的に設定した検索バックエンドに対して信頼される追加のホストサフィックス — 完全一致のホスト、またはリストされたサフィックスの任意のサブドメイン（環境変数内でカンマ区切り）。デフォルトでは空のため、設定しない限り動作は変わりません。`WEB_SEARCH_BASE_URL` バックエンドと `modelProviders` パスでのみ参照されます。自動導出では決して参照されないため、カスタム ホストは独自の構成で名前が指定されている場合にのみ使用されます。設定されたホストには API キーが渡されます。エントリはトリミングされ小文字化され、ドットを含まないエントリは無視されます。                                                 |
 | `tools.webSearch.maxPerSession`| `WEB_SEARCH_MAX_PER_SESSION` | 1セッションあたりの `web_search` 呼び出しの最大数（デフォルト `200`、最大 `10000`。その他の値はデフォルトに戻ります）。このカウントはサブエージェントと共有され、セッションが変更されるとリセットされます（`/clear`、`/resume`、分岐）。上限に達すると、それ以降の検索はスキップされ、収集したもので続行するようモデルに指示されます。 |
 
 ### 環境変数のみの設定（settings.json なし）
 
-設定ファイルを書き込めない環境（ロックダウンされたコンテナ、環境変数注入のみの CI）では、このツールは環境変数のみで完全に設定できます — `modelProviders` のエントリは不要です。
+設定ファイルを書き込めない環境（ロックダウンされたコンテナ、環境変数の注入のみを行う CI など）では、ツールを完全に環境変数で構成できます。`modelProviders` エントリは不要です。
 
 ```bash
 export ENABLE_WEB_SEARCH=true
 export WEB_SEARCH_MODEL=qwen3.8-flash
 export WEB_SEARCH_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-export DASHSCOPE_API_KEY=sk-...        # または WEB_SEARCH_API_KEY を設定
+export WEB_SEARCH_ALLOWED_HOSTS=llm-gw.example.com   # only for a gateway host
+export DASHSCOPE_API_KEY=sk-...        # or set WEB_SEARCH_API_KEY instead
 ```
 
-`WEB_SEARCH_BASE_URL` は `modelProviders` エントリの `baseUrl` をミラーし、DashScope 互換のエンドポイントである必要があります。これが設定されている場合、`modelProviders` の解決よりも優先され、`WEB_SEARCH_MODEL` はプレーンな DashScope モデル ID として使用されます。API キーは `WEB_SEARCH_API_KEY` が設定されていればそこから、そうでなければ `DASHSCOPE_API_KEY` から読み取られます。設定ミスは起動時の通知として表示されます。
+`WEB_SEARCH_BASE_URL` は `modelProviders` エントリの `baseUrl` に対応し、DashScope 互換のエンドポイントである必要があります。これが設定されている場合、`modelProviders` の解決より優先され、`WEB_SEARCH_MODEL` が通常の DashScope モデル ID として使用されます。API キーは、`WEB_SEARCH_API_KEY` が設定されていればそこから読み込まれ、そうでなければ `DASHSCOPE_API_KEY` から読み込まれます。エンドポイントが独自ドメイン上のゲートウェイである場合は、そのホストを `WEB_SEARCH_ALLOWED_HOSTS` （または `tools.webSearch.allowedHosts` ）にリストしてください。それ以外の場合、組み込みのリストのみがチェックによって受け入れられます。誤った設定は、起動時の通知として表示されます。
 
-注意:
+備考:
 
-- セレクターは `envKey` 経由で直接 API キーを持つ DashScope 互換の `modelProviders` エントリに解決される必要があります。メインモデルはどのプロバイダーでも構いません — 検索サイドのリクエストのみが DashScope エントリを必要とします。Qwen OAuth はこのツールをサポートできません。
-- どのプロバイダーがツールをアクティベートできるかは起動時に決定されます。一度アクティブになると、検索バックエンドは次の検索時に現在選択されているモデルに従います。サポートされていないプロバイダーに切り替えると、その呼び出しは失敗します。ツールが存在しなかったセッションから切り替えた場合でも、登録するには再起動が必要です。
-- 自動ホスト検出は、既知の DashScope リージョナルホスト、Token Plan MaaS、および Alibaba 内部ホストのみを意図的に受け入れます。汎用の `*.alicloudapi.com` ゲートウェイと `DASHSCOPE_PROXY_BASE_URL` は、Responses 検索ツールをフォワードすることが知られていないため、除外されます。
-- 明示的に有効化されているが設定が誤っている場合、ツールはオフのままで、起動時の通知にどの条件が失敗したかが説明されます。自動アクティベーションは通知を発しません。
-- 検索は DashScope キーで課金されます（`usage.x_tools` カウント）。自動承認モード（デフォルト）では、クラシファイアがプロンプトなしで検索を承認します。`default` 承認モードではツールが確認を求め、「常に許可」で承認すると、他のツールと同様に標準の `WebSearch` 権限ルールが永続化されます。
+- 明示的な DashScope 検索では、セレクターが `envKey` を介して直接の API キーを持つ DashScope 互換の `modelProviders` エントリに解決される必要があります。メイン モデルは任意のプロバイダーでも構いません。レガシーの無料 Qwen OAuth プロバイダーはこのパスをサポートできません。Qwen サブスクリプション検索は上記の個別の MCP サービスを使用します。
+- 認証の変更が成功した後、検索の登録は再評価されます。Qwen サブスクリプションへのサインインにより、再起動せずに現在のセッションで検索が有効になります。明示的な無効化、ベア/セーフ モード、およびツールの権限ルールは引き続き適用されます。
+- 自動ホスト検出は、既知の DashScope リージョン別ホスト、Model Studio および QwenCloud MaaS ホスト（それらの `token-plan.` サブスクリプションサブドメインを含む）、および内部 Alibaba ホストのみを意図的に受け入れます。汎用的な `*.alicloudapi.com` ゲートウェイ、`DASHSCOPE_PROXY_BASE_URL`、および `allowedHosts` に追加しただけのホストは、その自動パスから除外されます。これはユーザーの関与なしに実行されるため、誰も宣言していないホストにメインプロバイダーのキーを渡してしまう可能性があるからです。宣言したゲートウェイを使用する場合は、`tools.webSearch.allowedHosts` にリストし、`WEB_SEARCH_BASE_URL`（または `modelProviders` エントリ）をそちらに向けます。
+- 明示的に有効化されているが設定が誤っている場合、ツールはオフのままになり、どの条件が失敗したかを説明する起動時の通知が表示されます。自動有効化では通知は出力されません。
+- DashScope 検索は DashScope キーに対して課金されます（`usage.x_tools` も対象です）。自動承認モード（デフォルト）では、分類器がプロンプトなしで検索を承認できます。`default` 承認モードではツールが確認を求め、「常に許可」で承認すると、他のツールと同様に標準的な `WebSearch` 権限ルールが永続化されます。
 - クライアントサイドのモデル許可リストはありません。Responses エンドポイントが提供しないモデルは、初回使用時に明示的に失敗します。
 - 時間予算を超えた検索は、少なくとも1回の検索呼び出しが完了していれば、到着したものを部分的な結果として返します。最初の検索呼び出しが完了する前に予算が尽きた場合、ツールは代わりにタイムアウトエラーを報告します。実行された検索なしのナレーションは監査可能な証拠ではないためです。検索呼び出しは完了したがナレーションされた回答が届かなかった場合、結果にはエージェントが読み取ったページテキストの最大6,000文字が生のページコンテンツとして含まれます。
 - セッションごとの上限は `web_search` ツール呼び出しの数をカウントします。1回の呼び出しが内部で実行する検索の数ではありません。失敗した呼び出しも、リクエストが送信されたためカウントされます。スキップされた呼び出しはエラーではありません。予算が使用済みであることをモデルに伝え、本当に追加の検索が必要な場合は `tools.webSearch.maxPerSession` を上げるようユーザーに依頼するように指示します。
@@ -101,12 +106,12 @@ export DASHSCOPE_API_KEY=sk-...        # または WEB_SEARCH_API_KEY を設定
 
 | 削除された項目                                                           | 対応方法                                                        |
 | ----------------------------------------------------------------------- | --------------------------------------------------------------- |
-| `settings.json` の `webSearch` ブロック                                  | 代わりに `mcpServers` で MCP サーバーを設定してください（下記参照）|
-| `settings.json` の `advanced.tavilyApiKey`                               | [Tavily MCP サーバー](#tavily-websearch) を使用してください      |
+| `settings.json` の `webSearch` ブロック                                   | MCP サーバーを代わりに `mcpServers` で設定します（下記参照）     |
+| `settings.json` の `advanced.tavilyApiKey`                             | [Tavily MCP サーバー](#tavily-websearch) を使用                  |
 | 環境変数 `TAVILY_API_KEY`                                                | [Tavily MCP サーバー](#tavily-websearch) を使用してください      |
 | ウェブ検索用の `DASHSCOPE_API_KEY`                                       | [ビルトイン `web_search` ツール](#built-in-web_search) を使用してください |
 | ウェブ検索用の `GLM_API_KEY`                                             | [GLM WebSearch Prime MCP](#glm-websearch-prime-zhipuai) を使用してください |
-| CLI フラグ `--tavily-api-key` / `--glm-api-key` / `--dashscope-api-key`  | `settings.json` の `mcpServers` を使用して設定してください       |
+| `--tavily-api-key` / `--glm-api-key` / `--dashscope-api-key` CLI フラグ | `settings.json` の `mcpServers` を通じて設定                   |
 
 ### 移行例
 
@@ -163,169 +168,13 @@ export DASHSCOPE_API_KEY=sk-...        # または WEB_SEARCH_API_KEY を設定
 
 ---
 
-### Firecrawl
-
-Firecrawl が提供する公式ホスト型 MCP サーバーで、ウェブ検索、ページスクレイピング、ウェブサイトのクロールとマッピング、ブラウザ操作、ファイル解析を提供します。検索結果には各ページのコンテンツが Markdown として含まれるため、モデルは別の fetch ステップなしでソースを読み取れます。ホスト型サーバーは検索、スクレイピング、解析には API キーなしで動作します。検索クエリ、読み取りを依頼した URL、および解析したファイルは Firecrawl に送信されます。
-
-- **ドキュメント:** https://docs.firecrawl.dev/mcp-server
-- **料金:** 検索、スクレイピング、解析には API キー不要（IP ごとに1日あたりの制限あり）。より高い制限には有料プラン
-- **API キーの取得:** https://www.firecrawl.dev/app/api-keys
-- **最適な用途:** モデルが検索で見つけたページも読む必要があるウェブ検索、API キーなしで MCP ウェブ検索を試す場合
-
-#### 利用可能なツール
-
-- `firecrawl_search` — ウェブ検索。オプションで各結果のページコンテンツを Markdown として返します
-- `firecrawl_scrape` — 単一ページをクリーンな Markdown として取得
-- `firecrawl_parse` — ローカルファイル（PDF、Word、スプレッドシートなど）を Markdown に変換
-
-API キーがあれば、サーバーはウェブサイトのマッピングとクロール、ページとのインタラクション（クリック、入力、ナビゲート）、GitHub issues やドキュメントなどの開発者ソースの検索も提供します。
-
-#### セットアップ
-
-**方法 1: CLI コマンド（リモート MCP）**
-
-```bash
-qwen mcp add firecrawl \
-  -t http \
-  "https://mcp.firecrawl.dev/v2/mcp" \
-  -H "Authorization: Bearer ${FIRECRAWL_API_KEY}"
-```
-
-キーなしで試す場合は、`-H` 行を省略してください。1日あたりの IP 制限内で `firecrawl_search`、`firecrawl_scrape`、`firecrawl_parse` が使用できます。
-
-**方法 2: `settings.json`（リモート MCP）**
-
-```json
-{
-  "mcpServers": {
-    "firecrawl": {
-      "httpUrl": "https://mcp.firecrawl.dev/v2/mcp",
-      "headers": {
-        "Authorization": "Bearer ${FIRECRAWL_API_KEY}"
-      }
-    }
-  }
-}
-```
-
-`${FIRECRAWL_API_KEY}` を実際の API キーに置き換えるか、環境変数として設定してください。キーが空の場合でもサーバーは接続されますが、キー不要の3つのツールのみを提供します。
-
-**方法 3: `settings.json`（ローカル NPX）**
-
-```json
-{
-  "mcpServers": {
-    "firecrawl-mcp": {
-      "command": "npx",
-      "args": ["-y", "firecrawl-mcp @latest"],
-      "env": {
-        "FIRECRAWL_API_KEY": "your-api-key-here"
-      }
-    }
-  }
-}
-```
-
----
-
-### SerpApi
-
-SerpApi が提供する公式ホスト型 MCP サーバーで、Google、Baidu、Bing などの検索エンジンからリアルタイムの構造化検索結果を単一のツールで提供します。検索クエリとそのパラメータは SerpApi に送信されます。
-
-- **ドキュメント:** https://serpapi.com/integrations/mcp
-- **料金:** 有料（無料プランあり）
-- **API キーの取得:** https://serpapi.com/manage-api-key
-- **最適な用途:** 幅広い検索エンジンからの構造化結果
-
-#### 利用可能なツール
-
-- `search` — ウェブ検索。オプションで結果を Markdown として返します
-
-#### セットアップ
-
-**方法 1: CLI コマンド**
-
-```bash
-qwen mcp add serpapi \
-  -t http \
-  "https://mcp.serpapi.com/mcp" \
-  -H "Authorization: Bearer ${SERPAPI_API_KEY}"
-```
-
-**方法 2: `settings.json`**
-
-```json
-{
-  "mcpServers": {
-    "serpapi": {
-      "httpUrl": "https://mcp.serpapi.com/mcp",
-      "headers": {
-        "Authorization": "Bearer ${SERPAPI_API_KEY}"
-      }
-    }
-  }
-}
-```
-
-`${SERPAPI_API_KEY}` を実際の API キーに置き換えるか、環境変数として設定してください。キーは検索時にのみ必要です。有効な API キーがなくてもサーバーは接続され、ツールが一覧表示されますが、`search` はエラーを返します。
-
----
-
-### looot
-
-looot が提供するホスト型 MCP サーバーで、ウェブ検索、Google SERP 結果、ニュース検索、ウェブページ読み取りを提供します。検索クエリと読み取りを依頼した URL は looot に送信されます。
-
-- **ドキュメント:** https://docs.looot.ai
-- **料金:** 有料（前払い残高、無料枠なし）
-- **API キーの取得:** https://looot.ai
-- **最適な用途:** ウェブ検索、Google SERP とニュース結果、ページをテキストとして読み取り
-
-#### 利用可能なツール
-
-- `web_search` — ウェブ検索
-- `google_search_results` — Google SERP 結果
-- `news_search` — ニュース検索
-- `read_web_page` — 単一ページをテキストとして読み取り
-
-サーバーは企業情報とメールの検索も公開しています。
-
-#### セットアップ
-
-**方法 1: CLI コマンド（リモート MCP）**
-
-```bash
-qwen mcp add looot \
-  -t http \
-  "https://api.looot.ai/mcp" \
-  -H "Authorization: Bearer ${LOOOT_API_KEY}"
-```
-
-**方法 2: `settings.json`（リモート MCP）**
-
-```json
-{
-  "mcpServers": {
-    "looot": {
-      "httpUrl": "https://api.looot.ai/mcp",
-      "headers": {
-        "Authorization": "Bearer ${LOOOT_API_KEY}"
-      }
-    }
-  }
-}
-```
-
-`${LOOOT_API_KEY}` を実際の API キーに置き換えるか、環境変数として設定してください。
-
----
-
-## サポートされている MCP ウェブ検索サービス
+## サポートされている MCP Web Search サービス
 
 ### Alibaba Cloud Bailian WebSearch
 
-Alibaba Cloud Bailian プラットフォームが提供する公式ウェブ検索 MCP サービスで、DashScope を搭載しています。DashScope キーをお持ちの場合は、上記のビルトイン `web_search` ツールを優先してください — この MCP サービスよりも強力な検索パスを使用します。
+Alibaba Cloud Bailian プラットフォームによって提供される公式の web search MCP サービスで、DashScope によって駆動されています。DashScope キーがある場合は、上記の組み込み `web_search` ツールを優先してください。この MCP サービスよりも強力な検索パスを使用します。
 
-- **MCP Marketplace:** https://bailian.console.aliyun.com/cn-beijing?tab=mcp#/mcp-market/detail/WebSearch
+- **MCP マーケットプレイス:** https://bailian.console.aliyun.com/cn-beijing?tab=mcp#/mcp-market/detail/WebSearch
 - **料金:** 有料（Alibaba Cloud DashScope 経由で請求）
 - **API キーの取得:** https://help.aliyun.com/zh/model-studio/get-api-key
 - **最適な用途:** 中国語のクエリ、中国のウェブコンテンツへのアクセス、Alibaba Cloud エコシステムとの統合
@@ -418,7 +267,7 @@ qwen mcp add tavily \
 
 ---
 
-### GLM WebSearch Prime（ZhipuAI）
+### GLM WebSearch Prime（ZhipuAI） [#glm-websearch-prime-zhipuai]
 
 ZhipuAI（智谱AI）が提供する公式ウェブ検索リモート MCP サービスで、GLM Coding Plan ユーザー向けに設計されています。ニュース、株価、天気などを含むリアルタイムウェブ検索を提供します。
 
@@ -458,5 +307,161 @@ qwen mcp add web-search-prime \
 ```
 
 `${GLM_API_KEY}` を実際の ZhipuAI API キーに置き換えるか、環境変数として設定してください。
+
+---
+
+### Firecrawl
+
+Firecrawl による公式のホスト型 MCP サーバーで、web search、ページスクレイピング、ウェブサイトクロールとマッピング、ブラウザインタラクション、ファイル解析を提供します。検索結果には各ページのコンテンツを Markdown として含めることができるため、モデルは個別の fetch ステップなしでソースを読むことができます。ホスト型サーバーは、search、scrape、parse において API キーなしで動作します。検索クエリ、読み取りを依頼した URL、解析したファイルは Firecrawl に送信されます。
+
+- **ドキュメント:** https://docs.firecrawl.dev/mcp-server
+- **コスト:** search、scrape、parse には API キー不要（IP ごとの日次制限あり）。より高い制限のための有料プランあり
+- **API キー取得:** https://www.firecrawl.dev/app/api-keys
+- **適している用途:** モデルが見つけたページも読む必要がある web search、および API キーなしでの MCP web search の試行
+
+#### 利用可能なツール
+
+- `firecrawl_search` — Web search、オプションで各結果のページコンテンツを Markdown として返す
+- `firecrawl_scrape` — 単一のページをクリーンな Markdown として取得
+- `firecrawl_parse` — ローカルファイル（PDF、Word、スプレッドシートなど）を Markdown に変換
+
+API キーを使用すると、サーバーはウェブサイトのマッピングとクロール、ページとのインタラクション（クリック、入力、ナビゲーション）、GitHub issue やドキュメントなどの開発者向けソースの検索を行うためのツールも提供します。
+
+#### セットアップ
+
+**方法 1: CLI コマンド（リモート MCP）**
+
+```bash
+qwen mcp add firecrawl \
+  -t http \
+  "https://mcp.firecrawl.dev/v2/mcp" \
+  -H "Authorization: Bearer ${FIRECRAWL_API_KEY}"
+```
+
+キーなしで試すには、`-H` 行を省略してください。IP ごとの日次制限内で `firecrawl_search`、`firecrawl_scrape`、`firecrawl_parse` が利用可能になります。
+
+**方法 2: `settings.json`（リモート MCP）**
+
+```json
+{
+  "mcpServers": {
+    "firecrawl": {
+      "httpUrl": "https://mcp.firecrawl.dev/v2/mcp",
+      "headers": {
+        "Authorization": "Bearer ${FIRECRAWL_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+`${FIRECRAWL_API_KEY}` を実際の API キーに置き換えるか、環境変数として設定してください。キーが空の場合、サーバーは接続しますが、3 つのキーレスツールのみを提供します。
+
+**方法 3: `settings.json`（ローカル NPX）**
+
+```json
+{
+  "mcpServers": {
+    "firecrawl-mcp": {
+      "command": "npx",
+      "args": ["-y", "firecrawl-mcp@latest"],
+      "env": {
+        "FIRECRAWL_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+---
+
+### SerpApi
+
+SerpApi による公式のホスト型 MCP サーバーで、Google、Baidu、Bing などの検索エンジンからのリアルタイム構造化検索結果を単一のツールを通じて提供します。検索クエリとそのパラメータは SerpApi に送信されます。
+
+- **ドキュメント:** https://serpapi.com/integrations/mcp
+- **コスト:** 有料（無料プランあり）
+- **API キー取得:** https://serpapi.com/manage-api-key
+- **適している用途:** 幅広い選択肢のある検索エンジンからの構造化結果
+
+#### 利用可能なツール
+
+- `search` — Web search、オプションで結果を Markdown として返す
+
+#### セットアップ
+
+**方法 1: CLI コマンド**
+
+```bash
+qwen mcp add serpapi \
+  -t http \
+  "https://mcp.serpapi.com/mcp" \
+  -H "Authorization: Bearer ${SERPAPI_API_KEY}"
+```
+
+**方法 2: `settings.json`**
+
+```json
+{
+  "mcpServers": {
+    "serpapi": {
+      "httpUrl": "https://mcp.serpapi.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${SERPAPI_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+`${SERPAPI_API_KEY}` を実際の API キーに置き換えるか、環境変数として設定してください。キーは検索時にのみ必要です。有効な API キーがない場合、サーバーは接続してツールをリストしますが、`search` はエラーを返します。
+
+---
+
+### looot
+
+loootによるホスト型MCPサーバー。Web検索、Google SERP結果、ニュース検索、Webページの読み取りに対応しています。検索クエリおよび読み取りを依頼したURLはloootに送信されます。
+
+- **ドキュメント:** https://docs.looot.ai
+- **コスト:** 有料（プリペイド残高、無料枠なし）
+- **APIキーの取得:** https://looot.ai
+- **最適な用途:** Web検索、Google SERPおよびニュース結果、ページをテキストとして読み取る場合
+
+#### 利用可能なツール
+
+- `web_search` — Web検索
+- `google_search_results` — Google SERP結果
+- `news_search` — ニュース検索
+- `read_web_page` — 単一のページをテキストとして読み取る
+
+このサーバーでは、企業およびメールアドレスの検索機能も提供されています。
+
+#### セットアップ
+
+**方法 1: CLI コマンド（リモート MCP）**
+
+```bash
+qwen mcp add looot \
+  -t http \
+  "https://api.looot.ai/mcp" \
+  -H "Authorization: Bearer ${LOOOT_API_KEY}"
+```
+
+**方法 2: `settings.json`（リモート MCP）**
+
+```json
+{
+  "mcpServers": {
+    "looot": {
+      "httpUrl": "https://api.looot.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer ${LOOOT_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+`${LOOOT_API_KEY}`を実際のAPIキーに置き換えるか、環境変数として設定してください。
 
 ---

@@ -1,15 +1,14 @@
 # Qwen Code 개요
 
-[![@qwen-code/qwen-code downloads](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code)
-[![@qwen-code/qwen-code version](https://img.shields.io/npm/v/@qwen-code/qwen-code.svg)](https://www.npmjs.com/package/@qwen-code/qwen-code)
+[![@qwen-code/qwen-code 다운로드](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code) [![@qwen-code/qwen-code 버전](https://img.shields.io/npm/v/@qwen-code/qwen-code.svg)](https://www.npmjs.com/package/@qwen-code/qwen-code)
 
-> 터미널에서 작동하며 아이디어를 그 어느 때보다 빠르게 구현할 수 있도록 도와주는 Qwen의 에이전트 기반 코딩 도구인 Qwen Code에 대해 알아보세요.
+> 터미널에서 실행되어 아이디어를 그 어느 때보다 빠르게 코드로 변환하는 Qwen의 에이전트형 코딩 도구인 Qwen Code에 대해 알아보세요.
 
 ## 30초 만에 시작하기
 
 ### Qwen Code 설치:
 
-권장 설치 방법은 플랫폼에서 사용 가능한 경우 독립 실행형 아카이브를 사용하는 것입니다. npm으로 대체될 경우, PATH에 Node.js 22 이상이 npm과 함께 사용 가능해야 합니다.
+권장 설치 프로그램은 플랫폼에 독립형 아카이브가 있는 경우 이를 사용합니다. npm으로 대체되는 경우 PATH에 Node.js 22 이상과 npm이 있어야 합니다.
 
 **Linux / macOS**
 
@@ -25,7 +24,7 @@ irm https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-q
 
 > [!note]
 >
-> 설치 후 `qwen`이 즉시 PATH에서 사용할 수 없으면 터미널을 재시작하는 것이 좋습니다. 설치에 실패하면 Quickstart 가이드의 [수동 설치](./quickstart#manual-installation)를 참조하세요. 오프라인 설치의 경우 릴리스 아카이브를 다운로드하고 `--archive PATH` 옵션으로 설치 프로그램을 실행하세요. 아카이브 옆에 `SHA256SUMS` 파일을 유지하세요.
+> 설치 후 `qwen`이 PATH에서 즉시 사용할 수 없는 경우 터미널을 재시작하는 것이 좋습니다. 설치가 실패한 경우 빠른 시작 가이드의 [수동 설치](./quickstart#manual-installation)를 참조하세요. 오프라인 설치를 위해 릴리스 아카이브를 다운로드하고 `--archive PATH`와 함께 설치 프로그램을 실행하세요. `SHA256SUMS`을 아카이브 옆에 보관합니다.
 
 ### Qwen Code 사용 시작:
 
@@ -34,7 +33,15 @@ cd your-project
 qwen
 ```
 
-처음 실행하면 모델 제공자를 연결하라는 메시지가 표시됩니다. 메뉴에는 **QwenCloud**(공식 권장 설정), **Alibaba ModelStudio**, **Third-party Providers**(DeepSeek, MiniMax, Z.AI, Kimi, OpenRouter 등 API 키로 연결되는 내장 제공자), **Custom Provider**(로컬 서버, 프록시 또는 지원되지 않는 제공자)가 제공됩니다. QwenCloud 키를 받으려면 **QwenCloud → Token Plan** 또는 **QwenCloud → Standard API Key**를 선택한 후 플랫폼(중국 또는 인터내셔널)을 선택하세요. 자세한 내용은 [Authentication](./configuration/auth)을 참조하세요. [Alibaba Cloud Token Plan](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856)([intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model))의 경우 **Alibaba ModelStudio → Token Plan**을 선택하고, ModelStudio API 키를 사용하려면 **Alibaba ModelStudio → Standard API Key**를 선택한 후 API 설정 가이드([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721))를 따르세요. 그런 다음 코드베이스를 이해하는 것부터 시작해 봅시다. 다음 명령어 중 하나를 시도해 보세요:
+첫 실행 시 모델 제공업체 연결을 요청받습니다. 메뉴에는 [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code) ([**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code)에서 Qwen Plus 또는 Pro 구독 사용), **QwenCloud** (공식 권장 설정), **Alibaba ModelStudio**, **타사 제공업체** (API 키로 연결된 DeepSeek, MiniMax, Z.AI, Kimi 및 OpenRouter와 같은 내장 제공업체), 그리고 **사용자 지정 제공업체** (로컬 서버, 프록시 또는 지원되지 않는 제공업체)가 제공됩니다.
+
+Qwen 구독을 사용하려면 [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code)을 선택하고 Qwen 계정으로 로그인하세요. **Plus 또는 Pro 구독**은 **Qwen Code 및 Agent**에 대한 접근 권한을 해제합니다. 아직 구독이 없다면 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code)를 방문하여 Plus 또는 Pro에 가입한 후 Qwen Code로 돌아와 [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code)을 선택하세요.
+
+QwenCloud 키를 사용하려면 **QwenCloud → Token Plan** 또는 **QwenCloud → Standard API Key**를 선택한 다음 플랫폼(중국 또는 국제)을 선택하세요 — [인증](https://qwenlm.github.io/qwen-code-docs/en/users/configuration/auth/)을 참조하세요.
+
+[Alibaba Cloud Token Plan](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) ([intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model))을 사용하려면 **Alibaba ModelStudio → Token Plan**을 선택하세요. ModelStudio API 키를 사용하려면 **Alibaba ModelStudio → Standard API Key**를 선택하고 API 설정 가이드([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721))를 따르세요.
+
+그럼 코드베이스를 이해하는 것부터 시작해 봅시다. 다음 명령어 중 하나를 시도해 보세요:
 
 ```
 what does this project do?

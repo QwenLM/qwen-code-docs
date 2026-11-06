@@ -2,40 +2,42 @@
 
 Qwen Code は、Qwen Code チームがメンテナンスするオープンソースの AI コーディングアシスタントツールです。このドキュメントは、Qwen Code の認証方法と AI モデルサービスを使用する際に適用される利用規約とプライバシーポリシーを説明します。
 
-## 認証方法の確認方法
+## 認証方法の判定方法
 
 Qwen Code は、AI モデルにアクセスするための4つの認証方法をサポートしています。認証方法によって、利用に適用される利用規約とプライバシーポリシーが異なります。
 
-1. **Qwen OAuth** — qwen.ai アカウントでログイン（無料ティアは2026年4月15日に終了）
+1. [**Qwen アカウント（サブスクリプション付き）**](https://chat.qwen.ai/?memberPlan=qwen_code) **(Qwen OAuth)** — [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) の有効な **Plus または Pro サブスクリプション** を持つ Qwen アカウントでログイン
 2. **Alibaba Cloud Coding Plan** — Alibaba Cloud の API キーを使用
 3. **API Key** — 独自の API キーを使用
 4. **Vertex AI** — Google Cloud Vertex AI を使用
 
 各認証方法によって、適用される利用規約とプライバシー通知は、基盤となるサービスプロバイダーにより異なる場合があります。
 
-| 認証方法 | プロバイダー | 利用規約 | プライバシー通知 |
-| :--- | :--- | :--- | :--- |
-| Qwen OAuth | Qwen AI | [Qwen 利用規約](https://qwen.ai/termsservice) | [Qwen プライバシーポリシー](https://qwen.ai/privacypolicy) |
-| Alibaba Cloud Coding Plan | Alibaba Cloud | [下記の詳細を参照](#2-if-you-are-using-alibaba-cloud-coding-plan) | [下記の詳細を参照](#2-if-you-are-using-alibaba-cloud-coding-plan) |
-| API Key | 各種プロバイダー | 選択した API プロバイダー（OpenAI、Anthropic など）に依存 | 選択した API プロバイダーに依存 |
-| Vertex AI | Google Cloud | [Google Cloud 利用規約](https://cloud.google.com/terms) | [Google Cloud プライバシー](https://cloud.google.com/privacy) |
+[Qwen アカウント（サブスクリプション付き）](https://chat.qwen.ai/?memberPlan=qwen_code) は、2026-04-15 に廃止された従来の無料 Qwen OAuth 枠とは別物です。
 
-## 1. Qwen OAuth 認証を使用する場合
+| 認証方法                                                                 | プロバイダー        | 利用規約                                                           | プライバシー通知                                                   |
+| :--------------------------------------------------------------------------- | :---------------- | :----------------------------------------------------------------- | :----------------------------------------------------------------- |
+| [Qwen アカウント（サブスクリプション付き）](https://chat.qwen.ai/?memberPlan=qwen_code)                         | Qwen AI             | [Qwen 利用規約](https://qwen.ai/termsservice)                                               | [Qwen プライバシーポリシー](https://qwen.ai/privacypolicy)                                   |
+| Alibaba Cloud Coding Plan                                                | Alibaba Cloud       | [詳細はこちら](#2-if-you-are-using-alibaba-cloud-coding-plan)                                                | [詳細はこちら](#2-if-you-are-using-alibaba-cloud-coding-plan)                                                |
+| API キー                                                                 | 各種プロバイダー    | 選択した API プロバイダー (OpenAI, Anthropic など) に依存          | 選択した API プロバイダーに依存                                    |
+| Vertex AI                                                                | Google Cloud        | [Google Cloud 利用規約](https://cloud.google.com/terms)                                       | [Google Cloud プライバシー](https://cloud.google.com/privacy)                                   |
 
-qwen.ai アカウントを使用して認証する場合、以下の利用規約とプライバシー通知が適用されます。
+## 1. [Qwen アカウント（サブスクリプション付き）](https://chat.qwen.ai/?memberPlan=qwen_code) を使用している場合
+
+[**Qwen アカウント（サブスクリプション付き）**](https://chat.qwen.ai/?memberPlan=qwen_code) を通じて Qwen アカウントで認証する場合、これらの利用規約およびプライバシー通知が適用されます:
 
 - **利用規約:** あなたの利用は [Qwen 利用規約](https://qwen.ai/termsservice) に準拠します。
 - **プライバシー通知:** あなたのデータの収集と使用については、[Qwen プライバシーポリシー](https://qwen.ai/privacypolicy) に記載されています。
 
-認証設定、割り当て量、サポートされる機能の詳細については、[認証設定](../configuration/settings) を参照してください。
+認証設定、クォータ、サポートされる機能の詳細については、[認証セットアップ](../configuration/auth.md) を参照してください。
 
-## 2. Alibaba Cloud Coding Plan を使用する場合
+## 2. Alibaba Cloud Coding Plan を使用する場合 [#2-if-you-are-using-alibaba-cloud-coding-plan]
 
 Alibaba Cloud の API キーを使用して認証する場合、Alibaba Cloud の該当する利用規約とプライバシー通知が適用されます。
 
 Alibaba Cloud Coding Plan は2つのリージョンで利用可能です。
 
-- **阿里云百炼 (aliyun.com)** — [bailian.console.aliyun.com](https://bailian.console.aliyun.com)
+- **Alibaba Cloud Bailian (aliyun.com)** — [bailian.console.aliyun.com](https://bailian.console.aliyun.com)
 - **Alibaba Cloud (alibabacloud.com)** — [bailian.console.alibabacloud.com](https://bailian.console.alibabacloud.com)
 
 > [!important]
@@ -102,7 +104,7 @@ Qwen Code は、ユーザー体験と製品品質を向上させるために、�
 
 ### 認証方法ごとのデータ収集
 
-Qwen Code の使用統計設定は、Qwen OAuth、Alibaba Cloud Coding Plan、独自の API キー、Vertex AI など、すべての認証方法に適用されます。有効にすると、これらのイベントは Alibaba Cloud RUM 収集エンドポイントに送信され、選択した AI プロバイダーが独自のプライバシーポリシーの下で収集するデータとは独立しています。
+Qwen Code の使用統計設定は、すべての認証方法 ([Qwen アカウント（サブスクリプション付き）](https://chat.qwen.ai/?memberPlan=qwen_code), Alibaba Cloud Coding Plan, 独自 API キー, Vertex AI) に適用されます。有効化すると、これらのイベントは Alibaba Cloud RUM コレクションエンドポイントに送信され、選択した AI プロバイダーが独自のプライバシーポリシーに基づいて収集するデータとは独立しています。
 
 オプトアウトするには、Qwen Code の設定で以下を設定してください。
 
@@ -122,7 +124,7 @@ Qwen Code の使用統計設定は、Qwen OAuth、Alibaba Cloud Coding Plan、�
 
 プロンプトや回答を含むコードが AI モデルのトレーニングに使用されるかどうかは、認証方法と使用する AI サービスプロバイダーによって異なります。
 
-- **Qwen OAuth**: データ使用は [Qwen のプライバシーポリシー](https://qwen.ai/privacypolicy) に準拠します。データ収集とモデルトレーニングの慣行に関する具体的な詳細については、Qwen のポリシーを参照してください。
+- [**Qwen アカウント（サブスクリプション付き）**](https://chat.qwen.ai/?memberPlan=qwen_code): データの使用は [Qwen プライバシーポリシー](https://qwen.ai/privacypolicy) に準拠します。データ収集やモデル訓練に関する具体的な詳細については、同社のポリシーを参照してください。
 
 - **Alibaba Cloud Coding Plan**: データ使用は Alibaba Cloud のプライバシーポリシーに準拠します。データ収集とモデルトレーニングの慣行に関する具体的な詳細については、Alibaba Cloud のポリシーを参照してください。
 
@@ -153,7 +155,7 @@ Qwen Code の使用統計設定は、Qwen OAuth、Alibaba Cloud Coding Plan、�
 
 ### 3. 認証方法を切り替えるにはどうすればよいですか？
 
-Qwen OAuth、Alibaba Cloud Coding Plan、独自の API キー、Vertex AI の間はいつでも切り替えることができます。
+[Qwen アカウント（サブスクリプション付き）](https://chat.qwen.ai/?memberPlan=qwen_code), Alibaba Cloud Coding Plan, 独自 API キー, Vertex AI 間をいつでも切り替えることができます:
 
 1. **起動時:** プロンプトが表示されたら、希望の認証方法を選択します。
 2. **CLI 内:** `/auth` コマンドを使用して認証方法を再設定します。

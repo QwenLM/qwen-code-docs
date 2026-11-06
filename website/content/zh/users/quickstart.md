@@ -4,13 +4,17 @@
 
 本快速入门指南将帮助你在几分钟内开始使用 AI 辅助编程。通过本指南，你将了解如何将 Qwen Code 用于常见的开发任务。
 
-## 开始之前
+## **开始之前**
 
 请确保你已准备好：
 
-- 一个打开的 **终端** 或命令提示符
+- 已打开终端或命令提示符
 - 一个可供操作的项目代码
-- 来自千问AI平台 / QwenCloud（[国内站](https://platform.qianwenai.com/docs/developer-guides/administration/api-keys) / [国际站](https://docs.qwencloud.com/developer-guides/administration/api-keys)）的 API key 或 Token 计划订阅（推荐设置），或来自阿里云模型即服务（[国内站](https://bailian.console.aliyun.com/) / [国际站](https://modelstudio.console.alibabacloud.com/)）的 API key，或阿里云 Token 计划（[国内站](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [国际站](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)）订阅
+- **以下任一选项**：
+  - 拥有来自 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) 的 **Plus 或 Pro 订阅**的 Qwen 账户，可解锁对 **Qwen Code 和 Agent** 的访问权限
+  - 来自千问AI平台 / **QwenCloud** ([中国](https://platform.qianwenai.com/docs/developer-guides/administration/api-keys) / [国际](https://docs.qwencloud.com/developer-guides/administration/api-keys)) 的 API 密钥或 Token Plan 订阅 — 推荐设置
+  - 来自 **阿里云 ModelStudio** ([北京](https://bailian.console.aliyun.com/) / [国际](https://modelstudio.console.alibabacloud.com/)) 的 API 密钥
+  - **阿里云 Token Plan** ([北京](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [国际](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) 订阅
 
 ## 第一步：安装 Qwen Code
 
@@ -32,7 +36,7 @@ irm https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-q
 
 > [!note]
 >
-> 建议安装后重启终端，以确保环境变量生效。
+> 建议在安装后重启终端，以确保环境变量生效。
 
 ### 手动安装
 
@@ -57,30 +61,30 @@ brew install qwen-code
 当你使用 `qwen` 命令启动交互式会话时，会提示你配置身份认证：
 
 ```bash
-# 首次使用时，系统会提示你配置身份认证
+# You'll be prompted to set up authentication on first use
 qwen
 ```
 
 ```bash
-# 或随时运行 /auth 更改认证方式
+# Or run /auth anytime to change authentication method
 /auth
 ```
 
-首次运行时的菜单会让你连接一个模型提供商。请从以下选项中选择：
+首次运行菜单允许您连接模型提供商。请选择以下之一：
 
-- **QwenCloud** — 推荐的设置方式。打开子菜单：
-  - **Token 计划**：订阅制，每月提供 Credit 配额，使用专有端点（提供个人版和团队版）。
-  - **标准 API Key**：按量付费，使用现有平台 API key 进行连接。
+- [**带订阅的 Qwen 账户**](https://chat.qwen.ai/?memberPlan=qwen_code) — 使用您的 Qwen 账户登录，通过 **Plus 或 Pro 订阅**访问 **Qwen Code 和 Agent**。如果您还没有订阅，请访问 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) 订阅 Plus 或 Pro，然后返回 Qwen Code 并选择 [**带订阅的 Qwen 账户**](https://chat.qwen.ai/?memberPlan=qwen_code)。
+- **QwenCloud** — 推荐设置。打开子菜单：
+  - **Token Plan**：在专用端点上具有每月 Credit 配额的订阅（个人版和团队版）。
+  - **标准 API 密钥**：按量付费，使用现有的平台 API 密钥进行连接。
 
-  无论哪种方式，你都需要明确选择平台（国内站或国际站），因此 UI 语言不会决定你的端点。详情请参阅[身份认证 → 选项 1：QwenCloud](./configuration/auth)。
+  无论哪种方式，您都需要明确选择平台（中国或国际），因此 UI 语言不会决定您的端点。有关详细信息，请参阅[认证 → 选项 2：QwenCloud](./configuration/auth)。
 
 - **阿里云模型即服务** — 打开子菜单：
+  - **Coding Plan**：使用阿里云 Coding Plan API 密钥进行连接。有关设置，请参阅[认证](./configuration/auth.md#-option-3-alibaba-cloud-coding-plan)。
   - **Token 计划**：按用量计费，使用专有端点，适用于团队和企业。请参阅 [Token 计划指南](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856)（[国际站](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)）了解设置说明。
   - **标准 API Key**：使用阿里云模型即服务（[国内站](https://bailian.console.aliyun.com/) / [国际站](https://modelstudio.console.alibabacloud.com/)）的现有 API key 进行连接。详情请参阅 API 设置指南（[国内站](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [国际站](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)）。
 - **第三方提供商** — 选择内置提供商（DeepSeek、Grok、MiniMax、Z.AI、Kimi、Idealab、ModelScope、OpenRouter、Requesty 等），并通过 API key 连接。
 - **自定义提供商** — 手动连接本地服务器、代理或不受支持的提供商。
-
-> ⚠️ **注意**：Qwen OAuth 已于 2026 年 4 月 15 日停用。如果你之前使用的是 Qwen OAuth，请切换到上述方法之一。
 
 > [!note]
 >
@@ -90,145 +94,145 @@ qwen
 >
 > 要配置身份认证，启动 Qwen Code 并运行 `/auth`。随时运行 `/doctor` 检查当前配置。详情请参阅[身份认证](./configuration/auth)页面。
 
-## 第三步：开始你的第一个会话
+## 步骤 3：开始您的第一次会话
 
-在任意项目目录中打开终端，启动 Qwen Code：
+在任何项目目录中打开终端并启动 Qwen Code：
 
 ```bash
-# 可选
+# optional
 cd /path/to/your/project
-# 启动 Qwen
+# start qwen
 qwen
 ```
 
 你将看到 Qwen Code 欢迎界面，包含会话信息、最近对话和最新更新。输入 `/help` 查看可用命令。
 
-## 与 Qwen Code 对话
+## 与 Qwen Code 聊天
 
-### 提出你的第一个问题
+### 提出您的第一个问题
 
-Qwen Code 会分析你的文件并给出摘要。你也可以提出更具体的问题：
-
-```
-解释一下文件夹结构
-```
-
-你还可以询问 Qwen Code 自身的能力：
+Qwen Code 将分析您的文件并提供摘要。您也可以提出更具体的问题：
 
 ```
-Qwen Code 能做什么？
+explain the folder structure
+```
+
+您还可以询问 Qwen Code 关于其自身功能的问题：
+
+```
+what can Qwen Code do?
 ```
 
 > [!note]
 >
-> Qwen Code 会根据需要读取你的文件，无需手动添加上下文。Qwen Code 也可以访问自己的文档，回答关于其功能和能力的问题。
+> Qwen Code 会根据需要读取您的文件 - 您不必手动添加上下文。Qwen Code 还可以访问其自身的文档，并能回答有关其功能和能力的问题。
 
-### 进行你的第一次代码修改
+### 进行您的第一次代码更改
 
-现在让 Qwen Code 做一些实际的编码工作。尝试一个简单的任务：
+现在让我们让 Qwen Code 执行一些实际的编码工作。尝试一个简单的任务：
 
 ```
-在主文件中添加一个 hello world 函数
+add a hello world function to the main file
 ```
 
 Qwen Code 将：
 
 1. 找到合适的文件
-2. 展示提议的修改
-3. 征求你的批准
-4. 执行编辑
+2. 向您显示拟议的更改
+3. 请求您的批准
+4. 进行编辑
 
 > [!note]
 >
-> Qwen Code 在修改文件前总会请求权限。你可以逐个批准更改，也可以在会话中启用“全部接受”模式。
+> Qwen Code 在修改文件之前始终会请求许可。您可以批准单个更改，或在会话期间启用“全部接受”模式。
 
-### 使用 Git 与 Qwen Code 协作
+### 结合 Git 使用 Qwen Code
 
-Qwen Code 让 Git 操作变得自然对话化：
-
-```
-我改动了哪些文件？
-```
+Qwen Code 使 Git 操作变得对话化：
 
 ```
-提交我的更改，附上描述性信息
-```
-
-你也可以提示更复杂的 Git 操作：
-
-```
-创建一个名为 feature/quickstart 的新分支
+what files have I changed?
 ```
 
 ```
-让我看看最近 5 次提交
+commit my changes with a descriptive message
+```
+
+您也可以提示执行更复杂的 Git 操作：
+
+```
+create a new branch called feature/quickstart
 ```
 
 ```
-帮我解决合并冲突
+show me the last 5 commits
 ```
 
-### 修复 Bug 或添加功能
+```
+help me resolve merge conflicts
+```
+
+### 修复错误或添加功能
 
 Qwen Code 擅长调试和功能实现。
 
-用自然语言描述你的需求：
+用自然语言描述您的需求：
 
 ```
-在用户注册表单中添加输入验证
+add input validation to the user registration form
 ```
 
 或者修复现有问题：
 
 ```
-有个 bug，用户能提交空表单——修复它
+there's a bug where users can submit empty forms - fix it
 ```
 
 Qwen Code 将：
 
 - 定位相关代码
 - 理解上下文
-- 实现解决方案
-- 运行测试（如果可用）
+- 实施解决方案
+- 如果可用，则运行测试
 
 ### 尝试其他常见工作流程
 
-与 Qwen Code 协作的方式有很多：
+有多种方式使用 Qwen Code：
 
 **重构代码**
 
 ```
-重构认证模块，使用 async/await 替代回调
+refactor the authentication module to use async/await instead of callbacks
 ```
 
 **编写测试**
 
 ```
-为计算器函数编写单元测试
+write unit tests for the calculator functions
 ```
 
 **更新文档**
 
 ```
-更新 README，添加安装说明
+update the README with installation instructions
 ```
 
 **代码审查**
 
 ```
-审查我的更改并提出改进建议
+review my changes and suggest improvements
 ```
 
 > [!tip]
 >
-> **请记住**：Qwen Code 是你的 AI 编程搭档。像与乐于助人的同事交流一样——描述你想实现的目标，它会帮你达成。
+> **记住**：Qwen Code 是你的 AI 结对编程伙伴。像对待一位乐于助人的同事那样与它交流——描述你想要实现的目标，它会帮助你达成。
 
 ## 常用命令
 
-以下是日常使用中最常用的命令：
+以下是日常使用中最重要的一些命令：
 
-| 命令                  | 作用                                           | 示例                           |
-| --------------------- | ---------------------------------------------- | ------------------------------ |
+| 命令               | 功能说明                                     | 示例                            |
+| --------------------- | ------------------------------------------------ | ---------------------------------- |
 | `qwen`                | 启动 Qwen Code                                 | `qwen`                         |
 | `/auth`               | 更改身份认证方式（会话中）                     | `/auth`                        |
 | `/doctor`             | 检查当前身份认证和环境                         | `/doctor`                      |
@@ -237,42 +241,42 @@ Qwen Code 将：
 | `/clear`              | 清除对话历史并释放上下文                               | `/clear`（别名：`reset`、`new`）   |
 | `/theme`              | 更改 Qwen Code 的视觉主题                      | `/theme`                       |
 | `/language`           | 查看或更改语言设置                             | `/language`                    |
-| → `ui [语言]`         | 设置 UI 界面语言                              | `/language ui zh-CN`           |
-| → `output [语言]`     | 设置 LLM 输出语言                            | `/language output Chinese`       |
+| → `ui [language]`     | 设置界面语言                        | `/language ui zh-CN`               |
+| → `output [language]` | 设置 LLM 输出语言                          | `/language output Chinese`         |
 | `/quit`               | 立即退出 Qwen Code                             | `/quit` 或 `/exit`             |
 
 参见 [CLI 参考](./features/commands) 获取完整命令列表。
 
-## 给初学者的实用建议
+## 新手进阶技巧
 
-**具体描述你的需求**
+**请求要具体明确**
 
-- 不要说：“修复这个 bug”
-- 可以尝试：“修复登录 bug，用户输入错误密码后看到空白页面”
+- 不要说：“修复 bug”
+- 试着说：“修复用户输入错误凭据后登录页面显示空白屏幕的 bug”
 
-**分步骤说明**
+**使用分步指令**
 
-- 将复杂任务分解成步骤：
-
-```
-1. 为用户资料表创建一个新的数据库表
-2. 创建一个获取和更新用户资料的 API 端点
-3. 构建一个允许用户查看和编辑信息的网页
-```
-
-**让 Qwen Code 先探索**
-
-- 在做出更改前，让 Qwen Code 理解你的代码：
+- 将复杂任务分解为步骤：
 
 ```
-分析数据库架构
+1. create a new database table for user profiles
+2. create an API endpoint to get and update user profiles
+3. build a webpage that allows users to see and edit their information
+```
+
+**先让 Qwen Code 探索代码**
+
+- 在进行修改之前，先让 Qwen Code 理解你的代码：
+
+```
+analyze the database schema
 ```
 
 ```
-构建一个仪表板，显示我们英国客户最常退货的产品
+build a dashboard showing products that are most frequently returned by our UK customers
 ```
 
-**使用快捷键节省时间**
+**利用快捷键节省时间**
 
 - 按 `?` 查看所有可用的键盘快捷键
 - 使用 Tab 进行命令补全

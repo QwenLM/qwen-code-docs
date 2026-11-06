@@ -2,12 +2,12 @@
 
 Qwen Code 提供两种网络搜索方式：
 
-1. **内置 `web_search` 工具** —— 由 DashScope Responses API 的服务端搜索提供支持。默认在启动时为支持的 ModelStudio 和 OpenAI 兼容 DashScope 配置开启；无需额外的 provider 或 MCP 设置。
+1. **内置 `web_search` 工具** — 由 DashScope Responses API 服务端搜索支持，或在 Qwen 订阅会话中由 Qwen MCP 搜索服务支持。在登录 Plus/Pro 订阅后启用，并在启动时默认开启（适用于支持的 ModelStudio 和 OpenAI 兼容的 DashScope 配置）；无需额外的提供商或 MCP 设置。
 2. **MCP（模型上下文协议）集成** —— 连接任何外部搜索服务（Tavily、GLM 等）。当你的 provider 无法支持内置工具时使用此方式。
 
-## 内置 `web_search`
+## 内置 `web_search` [#built-in-web_search]
 
-内置工具会向一个小型辅助模型发出独立的搜索请求，该模型使用 DashScope 的服务端 `web_search`（和 `web_extractor`）工具，并返回带来源 URL 的叙述性搜索结果。
+对于 DashScope，内置工具向一个小型辅助模型发出自包含的搜索请求，该模型使用服务端 `web_search`（以及 `web_extractor`）工具，并返回叙述性发现结果及源 URL。使用 [带订阅的 Qwen 账户](../../users/configuration/auth.md) 时，它使用 Qwen MCP 搜索服务和您当前的登录凭据。无需单独的搜索 API 密钥、辅助模型或 `mcpServers` 配置。`webExtractor` 仅适用于 DashScope 搜索。
 
 ### 自动开启条件
 
@@ -15,6 +15,7 @@ Qwen Code 提供两种网络搜索方式：
 
 | 登录方式                                                                                                                   | 内置搜索                                            |
 | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| [带订阅的 Qwen 账户](https://chat.qwen.ai/?memberPlan=qwen_code) — **Plus 或 Pro**                             | 开启                                              |
 | 阿里巴巴 ModelStudio → **标准 API Key**                                                                                    | 开启                                                |
 | 阿里巴巴 ModelStudio → **Token Plan**                                                                                      | 开启                                                |
 | 阿里巴巴 ModelStudio → **Coding Plan**                                                                                     | 关闭 —— 其端点未针对此 API 进行验证                  |
@@ -23,7 +24,7 @@ Qwen Code 提供两种网络搜索方式：
 | 在已识别的 DashScope Responses 主机上，带有直接密钥的 OpenAI 兼容 `modelProviders` 或 Custom Provider 条目                   | 开启                                                |
 | 第三方 provider（OpenRouter、DeepSeek、ModelScope 等）、其他主机上的自定义端点、本地模型                                       | 关闭                                                |
 
-搜索使用与主模型相同的密钥计费。权限处理遵循当前的审批模式和规则；在 `default` 审批模式下，首次搜索会请求确认。当你的 provider 无法支持该工具时，它不会在启动时出现——没有启动警告。
+DashScope 搜索与您的主模型使用相同的密钥计费；订阅搜索复用您的 Qwen 登录凭据。权限处理遵循当前激活的审批模式和规则；在 `default` 审批模式下，首次搜索会请求确认。当您的提供商无法支持该工具时，它在启动时根本不会出现——没有启动警告。
 
 要关闭它：
 
@@ -34,6 +35,8 @@ Qwen Code 提供两种网络搜索方式：
 或 `ENABLE_WEB_SEARCH=false`。Bare mode 和 safe mode 始终禁用它。
 
 ### 显式配置
+
+本节配置 DashScope 搜索。订阅搜索复用您的会员凭据，无需额外设置。显式搜索设置仍优先于自动订阅搜索。
 
 将工具指向 ModelStudio 标准/Token Plan 或其他经过验证的 DashScope Responses 条目。当你的主模型运行在另一个 provider 上，并且你还持有单独的受支持 DashScope 密钥时，这很有用。Coding Plan 主机被排除在自动激活之外，因为 Responses 搜索工具未在那里进行验证。你可以使用 `tools.webSearch.model` 显式选择加入；如果端点不提供这些工具，首次搜索会明确失败。如果你不想依赖该未验证路径，请使用 MCP 搜索 provider。
 
@@ -63,28 +66,30 @@ Qwen Code 提供两种网络搜索方式：
 | `tools.webSearch.model`        | `WEB_SEARCH_MODEL`     | 显式路径的搜索模型选择器（`modelId` 或 `authType:modelId`）。配合 `WEB_SEARCH_BASE_URL` 使用时，它是该端点的纯模型 id；否则必须匹配已声明的 DashScope 兼容 `modelProviders` 条目。自动路径使用 `qwen3.8-flash`。                                                              |
 | `tools.webSearch.webExtractor` | `WEB_SEARCH_EXTRACTOR` | 允许搜索代理打开结果页面以获得更有依据的回答（默认 `true`；由 DashScope 单独计费）。                                                                                                                                                                                          |
 | `tools.webSearch.timeoutMs`     | `WEB_SEARCH_TIMEOUT_MS`      | 单次搜索的总时间预算，单位为毫秒（默认 `120000`，最大值 `600000`；其他值回退到默认值）。超时的搜索在至少一次搜索调用完成后，将已到达的内容作为部分结果返回；如果预算在首次搜索调用完成前耗尽，工具会报告超时错误，因为没有执行搜索的叙述不构成可审计的证据。低于此预算的单工具执行上限（`QWEN_CODE_TOOL_EXECUTION_TIMEOUT_MS`）会先触发并丢弃部分结果；请保持它高于 `timeoutMs`。 |
+| `tools.webSearch.allowedHosts`  | `WEB_SEARCH_ALLOWED_HOSTS`   | 信任用于您显式配置的搜索后端的其他主机后缀——精确的主机名，或所列后缀的任何子域名（在环境变量中以逗号分隔）。默认为空，因此除非设置，否则行为不变。只有 `WEB_SEARCH_BASE_URL` 后端和 `modelProviders` 路径会参考它；自动推导从不参考它，因此自定义主机仅在您的配置明确指定时才使用。配置的主机会接收 API 密钥。条目会被修剪并转换为小写，且不含点的条目会被忽略。                                                 |
 | `tools.webSearch.maxPerSession` | `WEB_SEARCH_MAX_PER_SESSION` | 单个会话中最大的 `web_search` 调用次数（默认 `200`，最大值 `10000`；其他值回退到默认值）。该计数与子代理共享，并在会话变更时重置（`/clear`、`/resume`、分支）。达到上限后，后续搜索会被跳过，并告知模型使用已收集的内容继续。                                                                                                                                                              |
 
 ### 仅环境变量配置（无需 settings.json）
 
-对于无法写入设置文件的环境（受限容器、仅支持环境变量注入的 CI），该工具可以完全通过环境变量配置——无需 `modelProviders` 条目：
+对于无法写入设置文件的环境（锁定容器、仅通过环境变量注入的 CI），可以完全通过环境变量配置该工具——无需 `modelProviders` 条目：
 
 ```bash
 export ENABLE_WEB_SEARCH=true
 export WEB_SEARCH_MODEL=qwen3.8-flash
 export WEB_SEARCH_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-export DASHSCOPE_API_KEY=sk-...        # 或者设置 WEB_SEARCH_API_KEY
+export WEB_SEARCH_ALLOWED_HOSTS=llm-gw.example.com   # only for a gateway host
+export DASHSCOPE_API_KEY=sk-...        # or set WEB_SEARCH_API_KEY instead
 ```
 
-`WEB_SEARCH_BASE_URL` 对应 `modelProviders` 条目的 `baseUrl`，必须是一个 DashScope 兼容的端点；当设置此变量时，它会优先于 `modelProviders` 解析，并且 `WEB_SEARCH_MODEL` 会被用作纯 DashScope 模型 id。API key 优先从 `WEB_SEARCH_API_KEY` 读取，否则从 `DASHSCOPE_API_KEY` 读取。配置错误仍会以启动通知的形式呈现。
+`WEB_SEARCH_BASE_URL` 对应 `modelProviders` 中的 `baseUrl`，且必须是兼容 DashScope 的端点；设置后，其优先级高于 `modelProviders` 解析，并将 `WEB_SEARCH_MODEL` 用作普通的 DashScope 模型 ID。如果设置了 `WEB_SEARCH_API_KEY`，则从中读取 API 密钥，否则从 `DASHSCOPE_API_KEY` 读取。如果端点是位于您自己域名上的网关，请在 `WEB_SEARCH_ALLOWED_HOSTS`（或 `tools.webSearch.allowedHosts`）中列出该主机——否则内置列表是检查所接受的唯一内容。配置错误仍会在启动时显示通知。
 
-注意事项：
+注意：
 
-- 选择器必须解析到一个通过 `envKey` 携带直接 API key 的 DashScope 兼容 `modelProviders` 条目。你的主模型可以是任何 provider——只有搜索侧请求需要 DashScope 条目。Qwen OAuth 无法支持此工具。
-- 哪些 provider 可以激活该工具在启动时决定。一旦激活，搜索后端会在下一次搜索时跟随当前选定的模型；切换到不支持的 provider 会使该次调用失败，而从工具不存在的会话切换过来仍需要重启才能注册它。
-- 自动主机检测有意只接受已知的 DashScope 区域主机、Model Studio 和 QwenCloud MaaS 主机（包括其 `token-plan.` 订阅子域名）以及阿里巴巴内部主机。通用的 `*.alicloudapi.com` 网关和 `DASHSCOPE_PROXY_BASE_URL` 被排除，因为不确定它们是否会转发 Responses 搜索工具。
+- 对于显式 DashScope 搜索，选择器必须解析为携带直接 API 密钥（通过 `envKey`）的 DashScope 兼容 `modelProviders` 条目。您的主模型可以是任何提供商。遗留的免费 Qwen OAuth 提供商无法支持此路径；Qwen 订阅搜索使用上述单独的 MCP 服务。
+- 成功身份验证更改后会重新评估搜索注册。登录 Qwen 订阅会在当前会话中启用搜索而无需重启。显式禁用、裸机/安全模式以及工具权限规则仍然适用。
+- 自动主机检测有意只接受已知的 DashScope 区域主机、Model Studio 和 QwenCloud MaaS 主机（包括其 `token-plan.` 订阅子域名）以及内部 Alibaba 主机。通用 `*.alicloudapi.com` 网关、`DASHSCOPE_PROXY_BASE_URL` 以及您仅添加到 `allowedHosts` 的任何主机都被排除在该自动路径之外，因为它在没有您参与的情况下运行，否则会将您主提供商的密钥交给无人声明的主机。对于您确实声明的网关，请在 `tools.webSearch.allowedHosts` 中列出它，并将 `WEB_SEARCH_BASE_URL`（或 `modelProviders` 条目）指向它。
 - 如果显式启用但配置错误，工具将保持关闭状态，启动通知会说明哪个条件失败。自动激活永远不会发出通知。
-- 搜索使用你的 DashScope 密钥计费（`usage.x_tools` 计数）。Auto 审批模式（默认）让分类器无需提示即可批准搜索；在 `default` 审批模式下，工具会询问，使用"始终允许"批准会持久化一个标准的 `WebSearch` 权限规则，与其他工具一样。
+- DashScope 搜索对您的 DashScope 密钥计费（`usage.x_tools` 计入）。自动审批模式（默认）允许分类器批准搜索而不提示；在 `default` 审批模式下，工具会询问，并且使用“始终允许”批准会持久化标准的 `WebSearch` 权限规则，就像其他工具一样。
 - 没有客户端模型白名单；Responses 端点不支持的模型会在首次使用时明确报错。
 - 超过时间预算的搜索在至少一次搜索调用完成后，将已到达的内容作为部分结果返回；如果预算在首次搜索调用完成前耗尽，工具会报告超时错误，因为没有执行搜索的叙述不构成可审计的证据。当搜索调用已完成但叙述性回答未到达时，结果最多包含代理已读取的 6,000 个字符的页面文本，标记为原始页面内容。
 - 每会话上限计算的是 `web_search` 工具调用次数，而非单次调用内部运行的搜索次数，失败的调用也计入，因为请求已发送。被跳过的调用不是错误：它会告知模型预算已用完，并建议在确实需要更多搜索时提高 `tools.webSearch.maxPerSession`。
@@ -101,12 +106,12 @@ export DASHSCOPE_API_KEY=sk-...        # 或者设置 WEB_SEARCH_API_KEY
 
 | 已移除                                                                 | 操作指南                                                        |
 | ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `settings.json` 中的 `webSearch` 块                                    | 改为在 `mcpServers` 中配置 MCP 服务器（见下文）                    |
-| `settings.json` 中的 `advanced.tavilyApiKey`                           | 使用 [Tavily MCP 服务器](#tavily-websearch)                        |
+| `settings.json` 中的 `webSearch` 块                                   | 改为在 `mcpServers` 中配置 MCP 服务器（见下文）     |
+| `advanced.tavilyApiKey` 在 `settings.json` 中 | 使用 [Tavily MCP 服务器](#tavily-websearch) |
 | 环境变量 `TAVILY_API_KEY`                                              | 使用 [Tavily MCP 服务器](#tavily-websearch)                        |
 | 用于网络搜索的 `DASHSCOPE_API_KEY`                                     | 使用[内置 `web_search` 工具](#built-in-web_search)            |
 | 用于网络搜索的 `GLM_API_KEY`                                          | 使用 [GLM WebSearch Prime MCP](#glm-websearch-prime-zhipuai)       |
-| CLI 标志 `--tavily-api-key` / `--glm-api-key` / `--dashscope-api-key` | 通过 `settings.json` 中的 `mcpServers` 配置                        |
+| `--tavily-api-key` / `--glm-api-key` / `--dashscope-api-key` CLI 标志 | 通过 `settings.json` 中的 `mcpServers` 进行配置 |
 
 ### 迁移示例
 
@@ -262,7 +267,7 @@ qwen mcp add tavily \
 
 ---
 
-### GLM WebSearch Prime（智谱AI）
+### GLM WebSearch Prime（智谱AI） [#glm-websearch-prime-zhipuai]
 
 智谱AI 提供的官方网络搜索远程 MCP 服务，专为 GLM 编程计划用户设计。提供实时网络搜索，包括新闻、股票价格、天气等。
 
@@ -359,7 +364,7 @@ qwen mcp add firecrawl \
   "mcpServers": {
     "firecrawl-mcp": {
       "command": "npx",
-      "args": ["-y", "firecrawl-mcp @latest"],
+      "args": ["-y", "firecrawl-mcp@latest"],
       "env": {
         "FIRECRAWL_API_KEY": "your-api-key-here"
       }
@@ -372,7 +377,7 @@ qwen mcp add firecrawl \
 
 ### SerpApi
 
-SerpApi 官方托管 MCP 服务器，通过单一工具提供来自 Google、百度、Bing 等搜索引擎的实时结构化搜索结果。搜索查询及其参数会被发送到 SerpApi。
+由 SerpApi 提供的官方托管 MCP 服务器，通过单一工具提供来自 Google、百度、Bing 等搜索引擎的实时结构化搜索结果。搜索查询及其参数将发送至 SerpApi。
 
 - **文档：** https://serpapi.com/integrations/mcp
 - **费用：** 付费（提供免费计划）

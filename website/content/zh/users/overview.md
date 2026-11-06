@@ -1,15 +1,14 @@
 # Qwen Code 概述
 
-[![@qwen-code/qwen-code downloads](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code)
-[![@qwen-code/qwen-code version](https://img.shields.io/npm/v/@qwen-code/qwen-code.svg)](https://www.npmjs.com/package/@qwen-code/qwen-code)
+[![@qwen-code/qwen-code 下载量](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code) [![@qwen-code/qwen-code 版本](https://img.shields.io/npm/v/@qwen-code/qwen-code.svg)](https://www.npmjs.com/package/@qwen-code/qwen-code)
 
-> 了解 Qwen Code，它是 Qwen 的智能编码工具，运行在你的终端中，帮助你比以往更快地将想法转化为代码。
+> 了解 Qwen Code，这是 Qwen 的智能编码工具，运行于您的终端中，助您比以往更快地将想法转化为代码。
 
 ## 30 秒快速上手
 
 ### 安装 Qwen Code：
 
-推荐的安装程序会优先使用适合你平台的独立归档文件。如果回退到 npm，则 PATH 上必须提供 Node.js 22 或更高版本及 npm。
+推荐的安装程序在您的平台有独立归档文件时会使用它。如果回退到 npm，则 PATH 中必须包含 Node.js 22 或更高版本以及 npm。
 
 **Linux / macOS**
 
@@ -25,7 +24,7 @@ irm https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-q
 
 > [!note]
 >
-> 如果安装后 `qwen` 未立即在 PATH 中可用，建议重启终端。如果安装失败，请参考快速入门指南中的[手动安装](./quickstart#manual-installation)。对于离线安装，请下载发布归档文件并使用 `--archive PATH` 运行安装程序；将 `SHA256SUMS` 文件放在归档文件旁边。
+> 如果安装后 `qwen` 未立即出现在 PATH 中，建议重启终端。如果安装失败，请参阅快速入门指南中的[手动安装](./quickstart#manual-installation)。对于离线安装，请下载发布归档文件并使用 `--archive PATH` 运行安装程序；将 `SHA256SUMS` 保留在归档文件旁边。
 
 ### 开始使用 Qwen Code：
 

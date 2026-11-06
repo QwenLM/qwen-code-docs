@@ -33,6 +33,7 @@ Ces commandes vous aident à sauvegarder, restaurer et résumer l'avancement du 
 | `/rewind`        | Rembobiner la conversation à un tour précédent                                   | `/rewind` ou `/rollback`                                      |
 | `/export`        | Exporter l'historique de la session vers un fichier                                           | `/export html`, `/export md`, `/export json`, `/export jsonl` |
 | `/rename`        | Renommer ou taguer la session actuelle                                        | `/rename My Feature` ou `/tag`                                |
+| `/commit`        | Créer un commit git avec un message rédigé par l'IA                           | `/commit` ou `/commit only stage the parser changes`          |
 
 > [!note]
 >
@@ -85,53 +86,53 @@ Commandes spécifiquement dédiées au contrôle de la langue de l'interface et 
 
 Commandes pour gérer les outils et les modèles d'IA.
 
-| Commande           | Description                                                                      | Exemples d'utilisation                                                                                            |
-| ----------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `/mcp`            | Lister les serveurs et outils MCP configurés                                            | `/mcp`, `/mcp desc`, `/mcp nodesc`, `/mcp schema`                                                         |
-| `/import-config`  | Importer les serveurs MCP depuis les configurations Claude                                           | `/import-config all`, `/import-config claude-code`, `/import-config claude-desktop --scope user\|project` |
-| `/tools`          | Afficher la liste des outils actuellement disponibles                                            | `/tools`, `/tools desc`                                                                                   |
-| `/skills`             | Ouvrir le panneau des skills pour parcourir, rechercher, activer/désactiver et lancer des skills                    | `/skills`, `/<skill-name>`                                                                                |
-| `/learn`              | Créer un skill de projet réutilisable à partir d'un fichier, répertoire, URL, vidéo ou texte                        | `/learn https://docs.example.com/api`, `/learn ./tutorial.mp4 focus on deployment`                        |
-| `/curator`            | Inspecter, épingler, archiver ou restaurer les auto-skills de projet inactifs                                       | `/curator`, `/curator run --dry-run`, `/curator pin <directory>`, `/curator restore <directory>`          |
-| `/plan`               | Passer en mode plan ou quitter le mode plan                                                                         | `/plan`, `/plan <task>`, `/plan exit`                                                                     |
-| `/approval-mode`  | Changer le mode d'approbation des outils (session actuelle uniquement)                             | `/approval-mode`, `/approval-mode auto-edit`                                                              |
-| → `plan`          | Analyse uniquement, pas d'exécution (revue sécurisée)                                      | `/approval-mode plan`                                                                                     |
-| → `default`       | Exiger une approbation pour les modifications (usage quotidien)                                           | `/approval-mode default`                                                                                  |
-| → `auto-edit`     | Approuver automatiquement les modifications (environnement de confiance)                                         | `/approval-mode auto-edit`                                                                                |
-| → `auto`          | Approbation évaluée par classifieur (autonome)                                       | `/approval-mode auto`                                                                                     |
-| → `yolo`          | Tout approuver automatiquement (prototypage rapide)                                      | `/approval-mode yolo`                                                                                     |
-| `/peers`              | Examiner les messages peer en attente ; gérer les contrôleurs fiables                                 | `/peers`, `/peers accept <id>`, `/peers deny all`, `/peers controllers`, `/peers revoke <id>`             |
-| `/model`          | Changer de modèle utilisé dans la session actuelle                                             | `/model`, `/model <model-id>` (changement immédiat)                                                        |
-| `/model --fast`   | Définir un modèle plus léger pour les suggestions de prompt                                       | `/model --fast qwen3-coder-flash`                                                                         |
-| `/model --voice`  | Définir le modèle utilisé pour la transcription vocale                                       | `/model --voice <model-id>`                                                                               |
+| Commande               | Description                                                                                      | Exemples d'utilisation                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `/mcp`                | Lister les serveurs et outils MCP configurés                                                            | `/mcp`, `/mcp desc`, `/mcp nodesc`, `/mcp schema`                                                         |
+| `/import-config`      | Importer des serveurs MCP depuis les configurations Claude                                                           | `/import-config all`, `/import-config claude-code`, `/import-config claude-desktop --scope user\|project` |
+| `/tools`              | Afficher la liste actuelle des outils disponibles                                                            | `/tools`, `/tools desc`                                                                                   |
+| `/skills`             | Ouvrir le panneau Skills pour parcourir, rechercher, activer/désactiver et lancer des skills                               | `/skills`, `/<skill-name>`                                                                                |
+| `/learn`              | Créer une skill de projet réutilisable à partir d'un fichier, d'un répertoire, d'une URL, d'une vidéo ou d'un texte                      | `/learn https://docs.example.com/api`, `/learn ./tutorial.mp4 focus on deployment`                        |
+| `/curator`            | Inspecter, épingler, archiver ou restaurer les auto-skills de projet inactives                                   | `/curator`, `/curator run --dry-run`, `/curator pin <directory>`, `/curator restore <directory>`          |
+| `/plan`               | Passer en mode plan ou quitter le mode plan                                                            | `/plan`, `/plan <task>`, `/plan exit`                                                                     |
+| `/approval-mode`      | Changer le mode d'approbation des outils (session actuelle uniquement)                                             | `/approval-mode`, `/approval-mode auto-edit`                                                              |
+| → `plan`              | Analyse uniquement, aucune exécution (revue sécurisée)                                                      | `/approval-mode plan`                                                                                     |
+| → `default`           | Exiger une approbation pour les modifications (usage quotidien)                                                           | `/approval-mode default`                                                                                  |
+| → `auto-edit`         | Approuver automatiquement les modifications (environnement de confiance)                                                         | `/approval-mode auto-edit`                                                                                |
+| → `auto`              | Approbation évaluée par classifieur (autonome)                                                       | `/approval-mode auto`                                                                                     |
+| → `yolo`              | Tout approuver automatiquement (prototypage rapide)                                                      | `/approval-mode yolo`                                                                                     |
+| `/peers`              | Examiner les messages entre pairs en attente ; gérer les contrôleurs de confiance                                            | `/peers`, `/peers accept <id>`, `/peers deny all`, `/peers controllers`, `/peers revoke <id>`             |
+| `/model`              | Changer le modèle utilisé dans la session actuelle                                                             | `/model`, `/model <model-id>` (changer immédiatement)                                                        |
+| `/model --fast`       | Définir un modèle plus léger pour les suggestions de prompts                                                       | `/model --fast qwen3-coder-flash`                                                                         |
+| `/model --voice`      | Définir le modèle utilisé pour la transcription vocale                                                       | `/model --voice <model-id>`                                                                               |
 | `/model --vision`     | Définir le modèle vision-bridge utilisé pour transcrire les images pour un modèle principal textuel                 | `/model --vision <model-id>`                                                                              |
-| `/model --compaction` | Définir le modèle utilisé pour la compression du chat                                                                | `/model --compaction <model-id>`, `/model --compaction clear`                                             |
-| `/model --image`      | Définir un modèle capable de générer des images pour l'outil de génération d'images intégré                          | `/model --image <model-id>`                                                                               |
-| `/effort`             | Définir l'effort de raisonnement pour les modèles capables de réflexion                                              | `/effort` (ouvre le sélecteur), `/effort high` (low/medium/high/xhigh/max ; mappé et plafonné par fournisseur)       |
-| `/output-style`       | Choisir le style de sortie qui détermine la forme des réponses                                         | `/output-style` (ouvre le sélecteur), `/output-style Concise`, `/output-style default` (pas de style)               |
-| `/extensions`     | Gérer les extensions                                                                | `/extensions list`, `/extensions manage`                                                                  |
-| → `list`          | Lister les extensions installées                                                        | `/extensions list`                                                                                        |
-| → `manage`        | Gérer les extensions installées (interactif)                                        | `/extensions manage`                                                                                      |
-| → `explore`       | Ouvrir la page des extensions dans le navigateur                                                  | `/extensions explore <Gemini\|ClaudeCode>`                                                                |
-| → `install`       | Installer une extension depuis un dépôt git ou un chemin                                     | `/extensions install <repo-or-path>`                                                                      |
-| `/memory`         | Ouvrir la boîte de dialogue du gestionnaire de mémoire                                                   | `/memory`                                                                                                 |
-| `/remember`       | Sauvegarder une mémoire durable                                                            | `/remember Prefer terse responses`                                                                        |
-| `/forget`         | Supprimer les entrées correspondantes de l'auto-mémoire                                         | `/forget <query>`                                                                                         |
-| `/dream`          | Exécuter manuellement la consolidation de l'auto-mémoire                                           | `/dream`                                                                                                  |
-| `/hooks`              | Gérer les hooks de Qwen Code                                                                | `/hooks`, `/hooks list`                                                                                   |
-| `/reload-plugins`     | Recharger les modifications d'extensions (commandes, skills, agents, hooks, serveurs MCP/LSP) depuis le disque | `/reload-plugins`                                                                                         |
-| `/permissions`        | Gérer les règles de permissions                                                             | `/permissions`                                                                                            |
-| `/agents`         | Gérer les sous-agents                                                                 | `/agents manage`, `/agents create`                                                                        |
-| `/arena`          | Gérer les sessions Arena                                                            | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (alias `choose`)                          |
-| `/goal`               | Définir un objectif — continuer à travailler jusqu'à ce qu'un vérificateur le confirme (voir [Goals](./goals.md))      | `/goal <objective>`, `/goal edit <objective>`, `/goal pause`, `/goal resume`, `/goal clear`               |
-| `/tasks`              | Lister les tâches en arrière-plan                                                                 | `/tasks`                                                                                                  |
-| `/workflows`      | Inspecter les exécutions de workflow ; mettre en pause/reprendre coopérativement une exécution en arrière-plan | `/workflows`, `/workflows <runId>`, `/workflows p <runId>`                                                |
-| `/lsp`            | Afficher le statut du serveur LSP                                                           | `/lsp`                                                                                                    |
-| `/trust`          | Gérer les paramètres de confiance des dossiers                                                     | `/trust`                                                                                                  |
+| `/model --compaction` | Définir le modèle utilisé pour la compression du chat                                                          | `/model --compaction <model-id>`, `/model --compaction clear`                                             |
+| `/model --image`      | Définir un modèle capable de générer des images pour l'outil intégré de génération d'images                     | `/model --image <model-id>`                                                                               |
+| `/effort`             | Définir le niveau d'effort de raisonnement pour les modèles capables de réflexion                                                 | `/effort` (ouvre le sélecteur), `/effort high` (low/medium/high/xhigh/max ; mappé et limité par fournisseur)       |
+| `/output-style`       | Choisir le style de sortie qui façonne la rédaction des réponses                                    | `/output-style` (ouvre le sélecteur), `/output-style Concise`, `/output-style default` (aucun style)               |
+| `/extensions`         | Gérer les extensions                                                                                | `/extensions list`, `/extensions manage`                                                                  |
+| → `list`              | Lister les extensions installées                                                                        | `/extensions list`                                                                                        |
+| → `manage`            | Gérer les extensions installées (interactif)                                                        | `/extensions manage`                                                                                      |
+| → `explore`           | Ouvrir la page des extensions dans le navigateur                                                                  | `/extensions explore <Gemini\|ClaudeCode>`                                                                |
+| → `install`           | Installer une extension depuis un dépôt Git ou un chemin                                                     | `/extensions install <repo-or-path>`                                                                      |
+| `/memory`             | Ouvrir la boîte de dialogue du Gestionnaire de mémoire                                                                   | `/memory`                                                                                                 |
+| `/remember`           | Sauvegarder une mémoire durable                                                                            | `/remember Prefer terse responses`                                                                        |
+| `/forget`             | Supprimer les entrées correspondantes de la mémoire automatique                                                         | `/forget <query>`                                                                                         |
+| `/dream`              | Exécuter manuellement la consolidation de la mémoire automatique                                                           | `/dream`                                                                                                  |
+| `/hooks`              | Gérer les hooks Qwen Code                                                                           | `/hooks`, `/hooks list`                                                                                   |
+| `/reload-plugins`     | Recharger les modifications des extensions (commandes, compétences, agents, workflows, hooks, serveurs MCP/LSP) depuis le disque | `/reload-plugins`                                                                                         |
+| `/permissions`        | Gérer les règles de permission                                                                          | `/permissions`                                                                                            |
+| `/agents`             | Gérer les sous-agents                                                                                 | `/agents manage`, `/agents create`                                                                        |
+| `/arena`              | Gérer les sessions Arena                                                                            | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (alias `choose`)                          |
+| `/goal`               | Définir un Objectif — continuer à travailler jusqu'à ce qu'un vérificateur le confirme (voir [Objectifs](./goals.md))                 | `/goal <objective>`, `/goal edit <objective>`, `/goal pause`, `/goal resume`, `/goal clear`               |
+| `/tasks`              | Lister les tâches en arrière-plan                                                                            | `/tasks`                                                                                                  |
+| `/workflows`          | Inspecter les exécutions de workflow ; mettre en pause/reprendre coopérativement une exécution en arrière-plan                               | `/workflows`, `/workflows <runId>`, `/workflows p <runId>`                                                |
+| `/lsp`                | Afficher le statut du serveur LSP                                                                | `/lsp`                                                                                                    |
+| `/trust`              | Gérer les paramètres de confiance des dossiers                                                   | `/trust`                                                                                                  |
 
 > [!warning]
 >
-> Installez uniquement des extensions (`/extensions install`) provenant de sources fiables. Les extensions peuvent inclure des serveurs MCP, des skills et des commandes qui s'exécutent avec les mêmes permissions que Qwen Code lui-même — elles peuvent accéder à vos fichiers, clés API et données de conversation. `/extensions install` ne demande pas de confirmation.
+> Installez uniquement des extensions (`/extensions install`) provenant de sources fiables. Les extensions peuvent inclure des serveurs MCP, des compétences et des commandes qui s'exécutent avec les mêmes autorisations que Qwen Code lui-même — elles peuvent accéder à vos fichiers, clés API et données de conversation. Elles peuvent également contenir des scripts de workflow, qui s'exécutent dans le bac à sable de workflow sans accès direct aux fichiers ou au shell, agissent via les sous-agents qu'ils lancent, et passent par l'approbation de l'outil Workflow. `/extensions install` ne demande pas de confirmation.
 
 > [!warning]
 >
@@ -141,20 +142,25 @@ Commandes pour gérer les outils et les modèles d'IA.
 >
 > `/workflows`, `/lsp` et `/trust` ne sont enregistrés que lorsque leur fonctionnalité est activée — respectivement via le paramètre `tools.workflowsEnabled` (portée utilisateur/système) ou la variable d'environnement `QWEN_CODE_ENABLE_WORKFLOWS=1`, le flag CLI `--experimental-lsp` et le paramètre `security.folderTrust.enabled`. Les valeurs workspace pour `tools.workflowsEnabled` sont ignorées. Lorsqu'ils sont désactivés, ils n'apparaîtront pas et signaleront une commande inconnue. De même, `/dream` et `/forget` ne sont enregistrés que lorsque l'auto-mémoire managée est disponible ; sans elle, ils n'apparaîtront pas.
 
-### 1.5 Skills intégrées
+> [!note]
+>
+> Une compétence issue d'une extension installée est aussi une commande slash, et son nom porte son propriétaire : `/rust:pdf`, et non `/pdf`. La forme simple n'est pas un alias — si une autre compétence est nommée `pdf`, `/pdf` exécute cette compétence à la place. `slashCommands.disabled` contrôle une telle commande quelle que soit l'orthographe utilisée, afin qu'une entrée écrite avant que le nom ne porte le propriétaire reste effective. Voir [Comment les compétences d'extension sont nommées](./skills.md#how-extension-skills-are-named).
 
-Ces commandes invoquent des skills intégrées qui fournissent des workflows spécialisés.
+### 1.5 Compétences intégrées
 
-| Commande     | Description                                                 | Exemples d'utilisation                            |
-| ------------ | ----------------------------------------------------------- | ------------------------------------------------- |
-| `/review`    | Revue de code multi-agents (12 agents parallèles à effort élevé) | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
-| `/coordinate` | Coordonner des workers en lecture seule et un writer worktree optionnel | `/coordinate investigate and fix the authentication regression`           |
-| `/loop`       | Exécute un prompt de manière récurrente                          | `/loop 5m check the build`                                                |
-| `/goal-draft` | Transformer une intention floue en objectif `/goal` vérifiable   | `/goal-draft make the auth tests pass`                                    |
-| `/simplify`   | Révise les modifications récentes et applique directement des edits de nettoyage sûrs | `/simplify`, `/simplify focus on duplication`                 |
-| `/qc-helper` | Répond aux questions sur l'utilisation et la configuration de Qwen Code | `/qc-helper how do I configure MCP?`              |
+Ces commandes invoquent des compétences incluses qui fournissent des workflows spécialisés.
 
-Consultez [Code Review](./code-review.md) pour la documentation complète de `/review`.
+| Commande      | Description                                                     | Exemples d'utilisation                                                                  |
+| ------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `/review`     | Revue de code multi-agents (12 agents parallèles en effort élevé)| `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low`                 |
+| `/coordinate` | Coordonner des workers en lecture seule et un writer optionnel dans un worktree | `/coordinate investigate and fix the authentication regression`                           |
+| `/loop`       | Exécuter une invite selon un horaire récurrent                  | `/loop 5m check the build`                                                                |
+| `/goal-draft` | Transformer une intention floue en objectif `/goal` vérifiable    | `/goal-draft make the auth tests pass`                                                    |
+| `/autofix-pr` | Surveiller une PR et corriger son CI, les retours de revue et les conflits | `/autofix-pr 123`, `/autofix-pr 123 --once`, `/autofix-pr resume`, `/autofix-pr stop 123` |
+| `/simplify`   | Examiner les modifications récentes et appliquer directement des nettoyages sûrs | `/simplify`, `/simplify focus on duplication`                                             |
+| `/qc-helper`  | Répondre aux questions sur l'utilisation et la configuration de Qwen Code | `/qc-helper how do I configure MCP?`                                                      |
+
+Voir [Revue de code](./code-review.md) pour la documentation complète de `/review`, et [Correction automatique d'une Pull Request](./autofix-pr.md) pour `/autofix-pr`.
 
 ### 1.6 Question annexe (`/btw`)
 
@@ -162,8 +168,8 @@ La commande `/btw` vous permet de poser des questions annexes rapides sans inter
 
 | Commande               | Description                           |
 | ---------------------- | ------------------------------------- |
-| `/btw <votre question>` | Pose une question annexe rapide       |
-| `?btw <votre question>`| Syntaxe alternative pour les questions annexes |
+| `/btw <your question>` | Poser une question rapide en marge             |
+| `?btw <your question>` | Syntaxe alternative pour les questions marginales |
 
 **Fonctionnement :**
 
@@ -224,7 +230,7 @@ La commande `/btw` vous permet de poser des questions annexes rapides sans inter
 >
 > Utilisez `/btw` lorsque vous avez besoin d'une réponse rapide sans perdre le fil de votre tâche principale. C'est particulièrement utile pour clarifier des concepts, vérifier des faits ou obtenir des explications rapides tout en restant concentré sur votre workflow principal.
 
-### 1.7 Second avis (`/advisor`)
+### 1.7 Second avis (`/advisor`) [#17-second-opinion-advisor]
 
 La commande `/advisor` exécute une revue indépendante et en lecture seule de la conversation jusqu'à ce point et renvoie un second avis structuré — sans effectuer la tâche ni interrompre la conversation principale.
 
@@ -289,22 +295,22 @@ La revue s'affiche dans une boîte encadrée dont l'en-tête nomme le modèle re
 
 ### 1.8 Récapitulatif de session (`/recap`)
 
-La commande `/recap` génère un court résumé "où vous en étiez" de la session en cours, afin que vous puissiez reprendre une ancienne conversation sans avoir à faire défiler des pages d'historique.
+La commande `/recap` génère un court résumé « où vous en étiez » de la session actuelle, afin que vous puissiez reprendre une ancienne conversation sans faire défiler des pages d'historique.
 
-| Commande | Description                                |
+| Commande  | Description                                |
 | -------- | ------------------------------------------ |
 | `/recap` | Génère et affiche un récapitulatif de session sur une ligne |
 
 **Fonctionnement :**
 
-- Utilise le modèle rapide configuré (paramètre `fastModel`) lorsqu'il est disponible, sinon revient au modèle de session principal. Un modèle petit et peu coûteux suffit pour un récapitulatif.
-- La conversation récente (jusqu'à 30 messages, texte uniquement — les appels d'outils et les réponses d'outils sont filtrés) est envoyée au modèle avec un system prompt strict.
-- Le récapitulatif est rendu en couleur atténuée avec un préfixe `❯` pour le distinguer des vraies réponses de l'assistant.
-- Refuse avec une erreur inline si un tour de modèle est en cours ou si une autre commande est en cours de traitement. S'il n'y a pas de conversation utilisable, ou si la génération sous-jacente échoue, `/recap` affiche un court message d'information au lieu d'un récapitulatif — la commande manuelle répond toujours avec quelque chose.
+- Utilise le modèle rapide configuré (paramètre `fastModel`) lorsqu'il est disponible, sinon utilise le modèle principal de la session. Un petit modèle peu coûteux suffit pour un récapitulatif.
+- La conversation récente (jusqu'à 30 messages, texte uniquement — les appels et réponses aux outils sont filtrés) est envoyée au modèle avec une invite système concise.
+- Le récapitulatif est affiché dans une couleur atténuée avec un préfixe `❯` afin de se distinguer des vraies réponses de l'assistant.
+- Refuse avec une erreur en ligne si un tour du modèle est en cours ou si une autre commande est en traitement. S'il n'y a pas de conversation utilisable, ou si la génération sous-jacente échoue, `/recap` affiche un court message d'information au lieu d'un récapitulatif — la commande manuelle répond toujours par quelque chose.
 
-**Déclenchement automatique au retour après une absence :**
+**Déclenchement automatique lors du retour après une absence :**
 
-Si le terminal perd le focus pendant **5 minutes ou plus** et le récupère, un récapitulatif est généré et affiché automatiquement (uniquement lorsqu'aucune réponse de modèle n'est en cours ; sinon, il attend la fin du tour en cours puis se déclenche). Contrairement à la commande manuelle, le déclenchement automatique est totalement silencieux en cas d'échec : si la génération échoue ou s'il n'y a rien à résumer, aucun message n'est ajouté à l'historique. Contrôlé par le paramètre `general.showSessionRecap` (par défaut : `false`) ; la commande manuelle `/recap` fonctionne toujours indépendamment de ce paramètre.
+Si le terminal est flou pendant **plus de 5 minutes** et qu'il redevient actif, un récapitulatif est généré et affiché automatiquement (uniquement lorsqu'aucune réponse du modèle n'est en cours ; sinon il attend la fin du tour actuel puis s'exécute). Contrairement à la commande manuelle, le déclencheur automatique est totalement silencieux en cas d'échec : si la génération échoue ou s'il n'y a rien à résumer, aucun message n'est ajouté à l'historique. Contrôlé par le paramètre `general.showSessionRecap` (par défaut : `false`) ; la commande manuelle `/recap` fonctionne toujours indépendamment de ce paramètre.
 
 **Exemple :**
 
@@ -318,7 +324,7 @@ Si le terminal perd le focus pendant **5 minutes ou plus** et le récupère, un 
 
 > [!tip]
 >
-> Configurez un modèle rapide via `/model --fast <model>` (par ex. `qwen3-coder-flash`) pour rendre `/recap` rapide et peu coûteux. Définissez `general.showSessionRecap` sur `true` pour activer le déclenchement automatique ; la commande manuelle `/recap` fonctionne toujours indépendamment de ce paramètre.
+> Configurez un modèle rapide via `/model --fast <model>` (par ex. `qwen3-coder-flash`) pour rendre `/recap` rapide et peu coûteux. Définissez `general.showSessionRecap` sur `true` pour activer le déclencheur automatique ; la commande manuelle `/recap` fonctionne toujours indépendamment de ce paramètre.
 
 ### 1.9 Visionneuse de diff (`/diff`)
 
@@ -444,6 +450,8 @@ Commandes pour obtenir des informations et configurer le système.
 | `/settings`      | Ouvre l'éditeur de paramètres                                                                                                  | `/settings`                                                                         |
 | `/config`        | Obtient ou définit n'importe quel paramètre par sa clé dot-path (écrit dans les paramètres utilisateur)                        | `/config` (liste tout), `/config <key>`, `/config <key>=<value>`                    |
 | `/auth`          | Change la méthode d'authentification                                                                                           | `/auth`, `/connect`, `/login`                                                       |
+| `/logout`        | Se déconnecter du compte Qwen Subscription actif (disponible avec la connexion Qwen Subscription)                                      | `/logout`                                                                           |
+| `/upgrade`       | Ouvrir les plans d'abonnement Qwen (disponibles avec la connexion Qwen Subscription)                                                          | `/upgrade`                                                                          |
 | `/doctor`        | Exécute les diagnostics d'installation et d'environnement                                                                      | `/doctor`, `/doctor memory`                                                         |
 | → `memory`       | Affiche les diagnostics de mémoire du processus en cours                                                                       | `/doctor memory [--json] [--sample] [--snapshot]`                                   |
 | → `cpu-profile`  | Enregistre un profil CPU pour l'analyse dans Chrome DevTools                                                                   | `/doctor cpu-profile [--duration <seconds>]`                                        |
@@ -493,11 +501,13 @@ Les commandes @ sont utilisées pour ajouter rapidement le contenu d'un fichier 
 
 | Format de la commande | Description                                  | Exemples                                         |
 | ------------------- | -------------------------------------------- | ------------------------------------------------ |
-| `@<chemin du fichier>`      | Injecter le contenu du fichier spécifié             | `@src/main.py Veuillez expliquer ce code`          |
-| `@<chemin du répertoire>` | Lire récursivement tous les fichiers texte du répertoire | `@docs/ Résumer le contenu de ce document`      |
-| `@` seul      | Utilisé lorsqu'on parle du symbole `@` lui-même       | `@ À quoi sert ce symbole en programmation ?` |
+| `@<file path>`      | Injecter le contenu d'un fichier spécifié             | `@src/main.py Please explain this code`          |
+| `@<directory path>` | Lire récursivement tous les fichiers texte dans un répertoire | `@docs/ Summarize content of this document`      |
+| `@` autonome      | Utilisé lors de la discussion sur le symbole `@` lui-même       | `@ What is this symbol used for in programming?` |
 
 Note : Les espaces dans les chemins doivent être échappés avec un antislash (par ex. `@My\ Documents/file.txt`)
+
+Dans l'invite interactive, la complétion `@` prend en charge les noms de fichiers Unicode, y compris les emojis. Les emojis ailleurs dans l'invite ne modifient pas le chemin de fichier utilisé pour la complétion.
 
 ## 3. Commandes avec point d'exclamation (`!`) - Exécution de commandes Shell
 
@@ -505,12 +515,12 @@ Les commandes avec point d'exclamation vous permettent d'exécuter des commandes
 
 | Format de la commande     | Description                                                        | Exemples                               |
 | ------------------ | ------------------------------------------------------------------ | -------------------------------------- |
-| `!<commande shell>` | Exécuter la commande dans un sous-Shell                                       | `!ls -la`, `!git status`               |
+| `!<shell command>` | Exécuter une commande dans un sous-Shell                                       | `!ls -la`, `!git status`               |
 | `!` seul     | Basculer en mode Shell, toute saisie est exécutée directement comme commande Shell | `!`(entrée) → Saisir la commande → `!`(sortie) |
 
 Variables d'environnement : Les commandes exécutées via `!` définiront la variable d'environnement `QWEN_CODE=1`.
 
-## 4. Commandes personnalisées
+## 4. Commandes personnalisées [#4-custom-commands]
 
 Enregistrez les prompts fréquemment utilisés comme commandes raccourcies pour améliorer l'efficacité du travail et garantir la cohérence.
 
@@ -524,7 +534,7 @@ Enregistrez les prompts fréquemment utilisés comme commandes raccourcies pour 
 | ---------------- | ------------------------------------------ | -------------------------------------- | -------- | ---------------------------------------------------- |
 | Espace de noms (Namespace)        | Un sous-répertoire crée des commandes nommées avec des deux-points  | Meilleure organisation des commandes            |          |                                                      |
 | Commandes globales  | `~/.qwen/commands/`                        | Disponibles dans tous les projets              | Basse      | Commandes personnelles fréquemment utilisées, utilisation multi-projets |
-| Commandes de projet | `<répertoire racine du projet>/.qwen/commands/` | Spécifiques au projet, contrôlables par version | Haute     | Partage en équipe, commandes spécifiques au projet              |
+| Commandes de projet | `<project root directory>/.qwen/commands/` | Spécifiques au projet, versionnables | Élevée     | Partage en équipe, commandes spécifiques au projet              |
 
 Règles de priorité : Commandes de projet > Commandes utilisateur (la commande de projet est utilisée en cas de noms identiques)
 
@@ -534,67 +544,67 @@ Règles de priorité : Commandes de projet > Commandes utilisateur (la commande 
 
 | Emplacement du fichier                            | Commande générée | Exemple d'appel          |
 | ---------------------------------------- | ----------------- | --------------------- |
-| `~/.qwen/commands/test.md`               | `/test`           | `/test Paramètre`     |
-| `<projet>/.qwen/commands/git/commit.md` | `/git:commit`     | `/git:commit Message` |
+| `~/.qwen/commands/test.md`               | `/test`           | `/test Parameter`     |
+| `<project>/.qwen/commands/git/commit.md` | `/git:commit`     | `/git:commit Message` |
 
 Règles de nommage : Le séparateur de chemin (`/` ou `\`) est converti en deux-points (`:`)
 
 ### Spécification du format de fichier Markdown (Recommandé)
 
-Les commandes personnalisées utilisent des fichiers Markdown avec un frontmatter YAML optionnel :
+Les commandes personnalisées utilisent des fichiers Markdown avec un frontmatter YAML facultatif :
 
 ```markdown
 ---
-description: Description optionnelle (affichée dans /help)
+description: Optional description (displayed in /help)
 ---
 
-Votre contenu de prompt ici.
-Utilisez {{args}} pour l'injection de paramètres.
+Your prompt content here.
+Use {{args}} for parameter injection.
 ```
 
-| Champ         | Obligatoire | Description                              | Exemple                                    |
+| Champ         | Requis | Description                              | Exemple                                    |
 | ------------- | -------- | ---------------------------------------- | ------------------------------------------ |
-| `description` | Optionnel | Description de la commande (affichée dans /help) | `description: Outil d'analyse de code`          |
-| Corps du prompt   | Obligatoire | Contenu du prompt envoyé au modèle             | Tout contenu Markdown après le frontmatter |
+| `description` | Facultatif | Description de la commande (affichée dans /help) | `description: Code analysis tool`          |
+| Corps du prompt   | Requis | Contenu du prompt envoyé au modèle             | Tout contenu Markdown après le frontmatter |
 
 ### Format de fichier TOML (Obsolète)
 
 > [!warning]
 >
-> **Obsolète :** Le format TOML est toujours pris en charge mais sera supprimé dans une future version. Veuillez migrer vers le format Markdown.
+> **Obsolète :** Le format TOML est encore pris en charge mais sera supprimé dans une future version. Veuillez migrer vers le format Markdown.
 
-| Champ         | Obligatoire | Description                              | Exemple                                    |
+| Champ         | Requis | Description                              | Exemple                                    |
 | ------------- | -------- | ---------------------------------------- | ------------------------------------------ |
-| `prompt`      | Obligatoire | Contenu du prompt envoyé au modèle             | `prompt = "Veuillez analyser le code : {{args}}"` |
-| `description` | Optionnel | Description de la commande (affichée dans /help) | `description = "Outil d'analyse de code"`       |
+| `prompt`      | Requis | Contenu du prompt envoyé au modèle             | `prompt = "Please analyze code: {{args}}"` |
+| `description` | Facultatif | Description de la commande (affichée dans /help) | `description = "Code analysis tool"`       |
 
 ### Mécanisme de traitement des paramètres
 
 | Méthode de traitement            | Syntaxe             | Scénarios applicables                 | Fonctionnalités de sécurité                      |
 | ---------------------------- | ------------------ | ------------------------------------ | -------------------------------------- |
-| Injection contextuelle      | `{{args}}`         | Nécessite un contrôle précis des paramètres       | Échappement Shell automatique               |
-| Traitement des paramètres par défaut | Aucun marquage spécial | Commandes simples, ajout de paramètres | Ajout tel quel                           |
-| Injection de commande Shell      | `!{command}`       | Nécessite du contenu dynamique                 | Confirmation d'exécution requise avant |
+| Injection contextuelle      | `{{args}}`         | Besoin d'un contrôle précis des paramètres       | Échappement Shell automatique               |
+| Traitement par défaut des paramètres | Aucune marque spéciale | Commandes simples, ajout de paramètres | Ajout tel quel                           |
+| Injection de commande Shell      | `!{command}`       | Besoin de contenu dynamique                 | Confirmation d'exécution requise avant |
 
 #### 1. Injection contextuelle (`{{args}}`)
 
 | Scénario         | Configuration TOML                      | Méthode d'appel           | Effet réel            |
 | ---------------- | --------------------------------------- | --------------------- | ------------------------ |
-| Injection brute    | `prompt = "Fix: {{args}}"`              | `/fix "Problème de bouton"` | `Fix: "Problème de bouton"`    |
+| Injection brute    | `prompt = "Fix: {{args}}"`              | `/fix "Button issue"` | `Fix: "Button issue"`    |
 | Dans une commande Shell | `prompt = "Search: !{grep {{args}} .}"` | `/search "hello"`     | Exécute `grep "hello" .` |
 
 #### 2. Traitement des paramètres par défaut
 
 | Situation d'entrée | Méthode de traitement                                      | Exemple                                        |
 | --------------- | ------------------------------------------------------ | ---------------------------------------------- |
-| Avec paramètres  | Ajout à la fin du prompt (séparé par deux sauts de ligne) | `/cmd paramètre` → Prompt original + paramètre |
+| A des paramètres  | Ajouter à la fin du prompt (séparés par deux sauts de ligne) | `/cmd parameter` → Prompt original + paramètre |
 | Sans paramètres   | Envoi du prompt tel quel                                      | `/cmd` → Prompt original                       |
 
 🚀 Injection de contenu dynamique
 
 | Type d'injection        | Syntaxe         | Ordre de traitement    | Objectif                          |
 | --------------------- | -------------- | ------------------- | -------------------------------- |
-| Contenu de fichier          | `@{chemin du fichier}` | Traité en premier     | Injecter des fichiers de référence statiques    |
+| Contenu de fichier          | `@{file path}` | Traité en premier     | Injecter des fichiers de référence statiques    |
 | Commandes Shell        | `!{command}`   | Traité au milieu | Injecter des résultats d'exécution dynamiques |
 | Remplacement de paramètres | `{{args}}`     | Traité en dernier      | Injecter des paramètres utilisateur           |
 
@@ -605,17 +615,17 @@ Utilisez {{args}} pour l'injection de paramètres.
 | 1. Analyser la commande et les paramètres | -                    |
 | 2. Échappement Shell automatique     | -                    |
 | 3. Afficher la boîte de dialogue de confirmation     | ✅ Confirmation utilisateur |
-| 4. Exécuter la commande              | -                    |
-| 5. Injecter la sortie dans le prompt      | -                    |
+| 4. Exécuter la commande         | -                    |
+| 5. Injecter la sortie dans l'invite | -                    |
 
 Exemple : Génération de message de commit Git
 
 ````markdown
 ---
-description: Générer un message de commit basé sur les modifications indexées
+description: Generate Commit message based on staged changes
 ---
 
-Veuillez générer un message de commit basé sur le diff suivant :
+Please generate a Commit message based on the following diff:
 
 ```diff
 !{git diff --staged}
@@ -624,30 +634,30 @@ Veuillez générer un message de commit basé sur le diff suivant :
 
 #### 4. Injection de contenu de fichier (`@{...}`)
 
-| Type de fichier    | Statut de support         | Méthode de traitement           |
+| Type de fichier | Statut de prise en charge | Méthode de traitement       |
 | ------------ | ---------------------- | --------------------------- |
-| Fichiers texte   | ✅ Support complet        | Injection directe du contenu     |
-| Images/PDF   | ✅ Support multi-modal | Encodage et injection           |
-| Fichiers binaires | ⚠️ Support limité     | Peut être ignoré ou tronqué |
-| Répertoire    | ✅ Injection récursive | Suit les règles de .gitignore     |
+| Fichiers texte  | ✅ Prise en charge complète | Injection directe du contenu |
+| Images/PDF      | ✅ Prise en charge multimodale | Encodage et injection        |
+| Fichiers binaires | ⚠️ Prise en charge limitée | Peut être ignoré ou tronqué  |
+| Répertoire      | ✅ Injection récursive     | Suit les règles .gitignore   |
 
 Exemple : Commande de revue de code
 
 ```markdown
 ---
-description: Revue de code basée sur les bonnes pratiques
+description: Code review based on best practices
 ---
 
-Réviser {{args}}, standards de référence :
+Review {{args}}, reference standards:
 
 @{docs/code-standards.md}
 ```
 
-### Exemple de création pratique
+### Exemple pratique de création
 
-#### Tableau des étapes de création de la commande "Refactoring en fonction pure"
+#### Tableau des étapes de création de la commande « Refactorisation en fonction pure »
 
-| Opération                     | Commande/Code                              |
+| Opération                       | Commande/Code                              |
 | ----------------------------- | ----------------------------------------- |
 | 1. Créer la structure de répertoires | `mkdir -p ~/.qwen/commands/refactor`      |
 | 2. Créer le fichier de commande        | `touch ~/.qwen/commands/refactor/pure.md` |
@@ -656,35 +666,36 @@ Réviser {{args}}, standards de référence :
 
 ```markdown
 ---
-description: Refactorer le code en fonction pure
+description: Refactor code to pure function
 ---
 
-Veuillez analyser le code dans le contexte actuel, refactorer en fonction pure.
-Exigences :
+Please analyze code in current context, refactor to pure function.
+Requirements:
 
-1. Fournir le code refactorisé
-2. Expliquer les changements clés et l'implémentation des caractéristiques des fonctions pures
-3. Maintenir la fonction inchangée
+1. Provide refactored code
+2. Explain key changes and pure function characteristic implementation
+3. Maintain function unchanged
 ```
 
 ### Résumé des bonnes pratiques pour les commandes personnalisées
 
-#### Tableau des recommandations pour la conception des commandes
+#### Tableau des recommandations de conception de commandes
 
-| Points de pratique      | Approche recommandée                | À éviter                                       |
+| Points de pratique      | Approche recommandée                | À éviter                                      |
 | -------------------- | ----------------------------------- | ------------------------------------------- |
-| Nommage des commandes       | Utiliser des espaces de noms pour l'organisation     | Éviter les noms trop génériques                  |
+| Nommage des commandes   | Utiliser des espaces de noms pour l'organisation | Éviter les noms trop génériques               |
 | Traitement des paramètres | Utiliser clairement `{{args}}`              | S'appuyer sur l'ajout par défaut (facile à confondre) |
-| Gestion des erreurs       | Utiliser la sortie d'erreur Shell          | Ignorer l'échec d'exécution                    |
-| Organisation des fichiers    | Organiser par fonction dans des répertoires | Toutes les commandes dans le répertoire racine              |
-| Champ de description    | Toujours fournir une description claire    | S'appuyer sur la description générée automatiquement          |
-#### Tableau récapitulatif des fonctionnalités de sécurité
+| Gestion des erreurs     | Exploiter la sortie d'erreur Shell  | Ignorer l'échec d'exécution                   |
+| Organisation des fichiers | Organiser par fonction dans des répertoires | Toutes les commandes dans le répertoire racine |
+| Champ Description     | Toujours fournir une description claire | Se fier à la description générée automatiquement |
 
-| Mécanisme de sécurité    | Effet de protection          | Opération utilisateur    |
-| ------------------------ | ---------------------------- | ------------------------ |
-| Échappement Shell        | Prévention de l'injection de commandes | Traitement automatique |
-| Confirmation d'exécution | Évite l'exécution accidentelle | Confirmation par dialogue |
-| Rapport d'erreur         | Aide au diagnostic des problèmes | Affichage des informations d'erreur |
+#### Tableau de rappel des fonctionnalités de sécurité
+
+| Mécanisme de sécurité     | Effet de protection          | Opération utilisateur         |
+| ---------------------- | -------------------------- | ---------------------- |
+| Échappement Shell         | Empêche l'injection de commande | Traitement automatique        |
+| Confirmation d'exécution  | Évite l'exécution accidentelle | Confirmation par dialogue     |
+| Rapport d'erreur          | Aide au diagnostic des problèmes | Consulter les informations d'erreur |
 
 ## 5. Sous-commandes CLI
 
@@ -726,169 +737,100 @@ L'indication « has more sessions » est émise via stderr afin que le piping ve
 **Exemples :**
 
 ```bash
-# Affiche les 20 dernières sessions (par défaut)
+# Show last 20 sessions (default)
 qwen sessions list
 
-# Affiche les 50 dernières sessions
+# Show last 50 sessions
 qwen sessions list --limit 50
 
-# Sortie au format JSON pour les scripts
+# Output as JSON for scripting
 qwen sessions list --json | jq .
 ```
 
 #### `qwen sessions ps`
 
-Liste les sessions interactives Qwen Code en cours d'exécution sur cette machine. `sessions list` parcourt les transcriptions sauvegardées (« sur quoi ai-je travaillé ») ; celui-ci parcourt le registre des processus actifs (« qu'est-ce qui tourne en ce moment »). Les enregistrements laissés par une session tuée sont balayés au fur et à mesure. Les sessions headless (`qwen -p`) ne s'enregistrent pas dans le registre des processus actifs, elles ne sont donc pas affichées.
+Liste les enregistrements de sessions Qwen Code visibles sur cette machine. `sessions list` parcourt les transcriptions sauvegardées (« sur quoi ai-je travaillé »). Cette commande affiche à la fois le registre des processus actifs et les enregistrements Agent View marqués `managed`. Les enregistrements laissés par une session tuée sont nettoyés du registre dès qu'ils sont trouvés. Un enregistrement géré est une tenue de livres persistante, non une preuve que son worker est encore vivant. Une exécution unique `qwen -p` ne s'enregistre jamais et n'est pas affichée.
 
 **Options :**
 
-| Option   | Type    | Défaut | Description                                     |
+| Option     | Type    | Défaut | Description                                     |
 | -------- | ------- | ------- | ----------------------------------------------- |
-| `--json` | boolean | `false` | Sortie au format JSON Lines (un objet JSON par ligne) |
+| `--json` | booléen | `false` | Sortie au format JSON Lines (un objet JSON par ligne) |
 
 **Sortie lisible par l'homme (par défaut) :**
 
 Un tableau avec les colonnes : NAME, KIND, PID, AGE, DIRECTORY.
 
-KIND indique ce qui a enregistré la session — `tui` pour quelqu'un devant un terminal, `external` pour un programme qui n'est pas du tout une session Qwen Code (un front-end vocal, un relay), et `headless` ou `serve` pour une session pilotée par un autre programme. Plusieurs lignes `serve` ou `headless` peuvent partager un même PID : un enfant `qwen --acp` héberge toutes ses sessions dans un seul processus — `serve` quand le démon l'a engendré, `headless` quand un client le pilote directement — et chacune s'enregistre séparément. C'est un auto-rapport, comme NAME et DIRECTORY : chaque champ ici a été écrit par le processus qu'il décrit, et rien de ce qu'une session est autorisée à faire n'en dépend. Voir [Cross-Session Protocol](./cross-session-protocol.md) pour le format d'enregistrement et comment enregistrer votre propre programme.
+KIND indique ce qui a enregistré la session — `tui` pour quelqu'un devant un terminal, `external` pour un programme qui n'est pas du tout une session Qwen Code (une interface vocale, un relais), et `headless` ou `serve` pour une session pilotée par un autre programme. Plusieurs lignes `serve` ou `headless` peuvent partager un même PID : un enfant `qwen --acp` héberge toutes ses sessions dans un seul processus — `serve` lorsque le démon l'a lancé, `headless` lorsqu'un client le pilote directement — et chacun d'eux s'enregistre séparément lorsque la messagerie entre pairs est active. Une session hébergée ne s'enregistre pas ici si son propre environnement la place en mode nu ou sécurisé. Le `--bare` d'un démon n'atteint pas les sessions qu'il héberge (`QWEN_CODE_SIMPLE` est retiré de l'environnement de l'enfant) ; un `QWEN_CODE_SAFE_MODE` hérité atteint ces sessions, les gardant hors de cette liste. C'est une auto-déclaration, comme NAME et DIRECTORY : chaque champ ici a été écrit par le processus qu'il décrit, et rien de ce qu'une session est autorisée à faire n'en dépend. Un enregistrement Agent View marqué `managed` utilise `managed` pour KIND et `-` pour PID et AGE. Il reste une ligne distincte lorsque la même session possède également un enregistrement actif dans le registre. Voir [Protocole inter-sessions](./cross-session-protocol.md) pour le format d'enregistrement et pour savoir comment enregistrer votre propre programme.
 
 **Sortie JSON (`--json`) :**
 
-Génère des JSON Lines sur stdout, la session la plus récente en premier. Chaque ligne est un objet JSON contenant les champs suivants :
+Affiche des lignes JSON sur stdout avec les enregistrements gérés en premier. Les enregistrements du registre conservent leur structure existante :
 
 ```
 schemaVersion, pid, procStart, pidNs, sessionId, cwd, name, startedAt,
-qwenVersion, kind, ipcPath (lorsque la messagerie entre pairs est disponible)
+qwenVersion, kind, ipcPath (when peer messaging is available)
 ```
 
-Rien d'autre n'est écrit sur stdout — un listing vide n'imprime rien du tout — donc `qwen sessions ps --json | jq .` est sûr pour les scripts.
+Un enregistrement géré contient uniquement des données issues de sources fiables :
 
-La sortie JSON est des données brutes : les valeurs des champs sont émises exactement telles qu'enregistrées, sans assainissement de terminal. Traitez-les comme des données, et assainissez-les avant de les afficher dans un terminal.
+```
+sessionId, cwd, managed: true
+```
+
+Rien d'autre n'est écrit sur stdout — une liste vide n'affiche rien du tout — donc `qwen sessions ps --json | jq .` est sûr à utiliser dans des scripts. Si le magasin du superviseur ne peut pas être lu, les enregistrements du registre s'affichent quand même et la raison est écrite sur stderr.
+
+La sortie JSON est des données brutes : les valeurs des champs sont émises exactement telles qu'enregistrées, sans assainissement pour le terminal. Traitez-les comme des données, et assainissez-les avant de les afficher dans un terminal.
 
 **Exemples :**
 
 ```bash
-# Afficher les autres sessions live
+# Show the other live sessions
 qwen sessions ps
 
-# Quels répertoires sont occupés en ce moment ?
-# Note : `jq -r` affiche la valeur brute enregistrée dans votre terminal (voir
-# la note sur les données brutes ci-dessus) ; faites passer par un assainisseur si le chemin n'est pas fiable.
+# Which directories have a visible session record?
+# Note: `jq -r` renders the raw recorded value in your terminal (see the
+# raw-data note above); pipe through a sanitizer if the path is untrusted.
 qwen sessions ps --json | jq -r .cwd
 ```
 
-## 6. Envoyer des messages à une autre session en cours
+## 6. Envoyer des messages à une autre session active [#6-messaging-another-running-session]
 
-Deux sessions interactives sur la même machine peuvent s'envoyer des
-messages. Cette fonctionnalité est expérimentale et **désactivée par
-défaut** ; activez-la dans `settings.json` et redémarrez :
+Deux sessions interactives sur la même machine peuvent s'envoyer des messages mutuellement. La fonctionnalité est **activée par défaut**, mais `--bare` et `--safe-mode` la désactivent indépendamment du paramètre. Avec une boîte de réception à l'écoute, une session est découvrable par les autres sessions du même utilisateur sur la machine, et ce qu'elles lui envoient passe par les règles de revue ci-dessous avant que son modèle n'en voie quoi que ce soit. Pour désactiver la découverte et la messagerie entre pairs, désactivez-la dans `settings.json` et redémarrez :
 
 ```json
-{ "agents": { "crossSessionMessaging": true } }
+{ "agents": { "crossSessionMessaging": false } }
 ```
 
-Une fois activée, le modèle d'une session peut découvrir les autres avec
-`list_agents` — chacune apparaît sous `sessions` avec le `name` que
-`qwen sessions ps --json` enregistre (la vue tableau peut tronquer les
-noms longs) — et en adresser une avec `send_message` en utilisant
-ce nom comme `to`. Lorsque deux sessions partagent le même nom,
-`list_agents` affiche chacune avec un court `[ref]` et l'envoi doit
-l'inclure (`name [ref]`) ; un nom nu qui pourrait correspondre à l'une
-ou l'autre est refusé plutôt que deviné. `list_agents` rapporte
-également le nom de la session elle-même sous `self`, et `to: "*"`
-signifie toujours « mes coéquipiers Agent Team » et n'atteint jamais
-d'autres sessions.
+Une session interactive avec la messagerie entre pairs désactivée peut toujours apparaître dans `qwen sessions ps`, mais n'a pas de `ipcPath` et n'est pas un pair accessible dans `list_agents`. L'interface OpenTUI ne lie pas non plus de boîte de réception entre pairs ; activer le paramètre seul ne la rend pas capable de recevoir des messages.
 
-Un message arrive dans l'autre session marqué comme provenant d'une
-autre session, pas de son utilisateur, et ne porte aucune de votre
-autorité : la session réceptrice n'agit dessus que dans le cadre de ses
-propres paramètres de permissions. Son utilisateur peut choisir ce qui
-arrive aux messages entrants avec `agents.crossSessionInbound`
-(`accept`, `hold` ou `refuse`). Lorsque ce n'est pas défini, un message
-n'est délivré que lorsque les deux sessions sont dans la même classe de
-review : les deux reviewent chaque action (mode default ou plan), ou les
-deux sont dans un mode qui applique certaines actions sans review par
-action (auto-edit, auto ou yolo). Un message provenant d'une session de
-l'autre classe, ou d'un expéditeur qui n'indique pas dans quelle classe
-il se trouve, est mis en attente pour review — dans les deux directions.
-Une session qui review chaque action met en attente un message provenant
-d'une session qui ne le fait pas, car ce message a été écrit par un
-modèle que personne ne surveillait, et les prompts par action protègent
-les actions, pas ce qu'on dit à la session. Les messages en attente sont
-listés et libérés avec `/peers` dans la session réceptrice, et un
-message mis en attente uniquement parce que les modes différaient est
-libéré de lui-même une fois qu'ils s'accordent.
+Avec la messagerie active, le modèle d'une session peut découvrir les autres avec `list_agents` — chacun apparaît sous `sessions` avec le `name` que `qwen sessions ps --json` enregistre (la vue tableau peut tronquer les noms longs) — et adresser l'un d'eux avec `send_message` en utilisant ce nom comme `to`. Lorsque deux sessions partagent un nom, `list_agents` affiche chacune avec un court `[ref]` et l'envoi doit l'inclure (`name [ref]`) ; un nom simple qui pourrait désigner l'une ou l'autre est refusé plutôt que deviné. `list_agents` rapporte également le nom propre de la session sous `self`, et `to: "*"` signifie toujours « mes coéquipiers Agent Team » et n'atteint jamais les autres sessions.
 
-Un dépôt peut rendre les sessions qui y sont ouvertes plus prudentes,
-jamais moins : un `.qwen/settings.json` de workspace peut définir
-`agents.crossSessionInbound` à `hold` ou `refuse`, ou
-`agents.crossSessionMessaging` à `false`, et cette valeur l'emporte sur
-une valeur plus permissive dans vos paramètres utilisateur. Une valeur
-de workspace qui assouplirait votre paramètre (`accept`, ou `true` pour
-le switch) est ignorée avec un avertissement, et une valeur que le CLI
-ne reconnaît pas met en attente chaque message lorsqu'elle est la valeur
-effective. Les paramètres système l'emportent sur tout cela, comme pour
-chaque paramètre.
+Un message arrive dans l'autre session marqué comme provenant d'une autre session, et non de son utilisateur, et ne porte aucune de vos autorisations là-bas : la session réceptrice agit dessus uniquement selon ses propres paramètres d'autorisation. Son utilisateur peut choisir ce qui arrive aux messages entrants avec `agents.crossSessionInbound` (`accept`, `hold` ou `refuse`). Lorsqu'il n'est pas défini, un message n'est livré que si les deux sessions sont dans la même classe de revue : les deux examinent encore chaque action (mode par défaut ou plan), ou les deux sont dans un mode qui applique certaines actions sans revue par action (auto-edit, auto ou yolo). Un message provenant d'une session de l'autre classe, ou d'un expéditeur qui n'indique pas sa classe, est mis en attente pour revue — dans les deux sens. Une session qui examine chaque action met en attente un message provenant d'une qui ne le fait pas, car ce message a été écrit par un modèle que personne ne surveillait, et les invites par action protègent les actions, pas ce vers quoi la session est entraînée. Les messages en attente sont listés et libérés avec `/peers` dans la session réceptrice, et un message retenu uniquement parce que les modes différaient est libéré automatiquement dès qu'ils s'accordent.
 
-Une mise en attente n'attend pas indéfiniment. Un message sur lequel
-personne ne se décide expire après
-`agents.crossSessionHeldExpiry` — `1m`, `5m`, `10m` ou `never`, cinq
-minutes par défaut — et la session expéditrice est informée qu'aucune
-décision n'a été prise. Raccourcir le paramètre s'applique aux messages
-déjà en attente.
+Un dépôt peut rendre les sessions ouvertes dedans plus prudentes, jamais moins : un espace de travail `.qwen/settings.json` peut définir `agents.crossSessionInbound` sur `hold` ou `refuse`, ou `agents.crossSessionMessaging` sur `false`, et cette valeur prime sur une valeur plus permissive dans vos paramètres utilisateur. Une valeur d'espace de travail qui assouplirait une valeur définie par l'opérateur (`accept`, ou `true` pour le commutateur lorsqu'une portée utilisateur ou système l'a défini sur `false`) est ignorée avec un avertissement ; un `true` d'espace de travail où rien d'autre n'a défini le commutateur se contente de répéter la valeur par défaut et est supprimé silencieusement. Une valeur que la CLI ne reconnaît pas met tous les messages en attente chaque fois qu'elle est la valeur effective. Les paramètres système prévalent sur tout cela, comme pour tous les paramètres.
 
-Si la session ne peut pas binder sa boîte de réception — le répertoire
-runtime est manquant, appartient à un autre utilisateur, ou est en
-lecture seule, comme cela peut être le cas dans un conteneur — elle
-essaie d'abord un répertoire privé sous le répertoire temporaire, et
-seulement si cela échoue aussi, elle démarre sans boîte de réception.
-Lorsque cela se produit, la session le signale au démarrage, et `/peers`
-répète la raison et quoi modifier (généralement `XDG_RUNTIME_DIR` ou
-`TMPDIR`).
+Une mise en attente n'attend pas indéfiniment. Un message sur lequel personne ne décide expire après `agents.crossSessionHeldExpiry` — `1m`, `5m`, `10m` ou `never`, cinq minutes par défaut — et la session émettrice est informée qu'aucune décision n'est venue. Raccourcir le paramètre s'applique aux messages déjà en attente.
 
-Deux sessions peuvent aussi résoudre la même adresse de boîte de
-réception, car l'adresse est indexée par l'id de processus et les ids de
-processus se répètent à travers les conteneurs qui partagent un
-répertoire runtime. La session qui démarre en deuxième prend une adresse
-voisine au lieu de prendre celle en cours d'utilisation, ainsi aucune ne
-devient injoignable. Les pairs ne sont pas affectés : ils lisent
-l'adresse d'une session depuis le registre de sessions plutôt que de la
-dériver.
+Si la session ne peut pas lier sa boîte de réception — le répertoire d'exécution est manquant, appartient à un autre utilisateur, ou est en lecture seule, comme cela peut être le cas dans un conteneur — elle essaie d'abord un répertoire privé sous le répertoire temporaire, et ne démarre sans boîte de réception que si cela échoue aussi. Dans ce cas, la session le signale au démarrage, et `/peers` répète la raison et ce qu'il faut changer (généralement `XDG_RUNTIME_DIR` ou `TMPDIR`).
 
-L'appel `send_message` confirme uniquement que le message a été remis à
-l'autre session. Ce qu'il est advenu arrive plus tard sous forme de
-reçu : s'il a été mis en attente, décliné, refusé, abandonné, a expiré, ou était
-mal adressé (l'adresse a changé de titulaire — listez à nouveau les
-agents) — ou libéré après une mise en attente — une notification
-apparaît dans la transcription de la session expéditrice (`Message to
-<name>: …`). Décliné, refusé et abandonné sont trois réponses différentes : décliné signifie que quelqu'un a examiné le message et a dit non, refusé signifie que le `agents.crossSessionInbound` de cette session est `refuse` et personne ne l'a vu du tout, et abandonné signifie que sa boîte de réception a rejeté le message avant tout cela (voir ci-dessous). Le premier abandon est répondu immédiatement et les autres sont regroupés dans un reçu toutes les quelques secondes, chacun nommant les messages qu'il représente, donc une série d'entre eux ne coûte que quelques lignes plutôt qu'une ligne chacun. Le modèle qui l'a envoyé n'en est pas informé ; si l'autre session répond, la réponse arrive comme un message inter-sessions.
+Deux sessions peuvent aussi résoudre la même adresse de boîte de réception, car l'adresse est indexée par identifiant de processus et les identifiants de processus se répètent entre les conteneurs partageant un répertoire d'exécution. La session démarrant en second prend une adresse voisine au lieu de prendre celle en cours d'utilisation, afin que ni l'une ni l'autre ne devienne inaccessible. Les pairs ne sont pas affectés : ils lisent l'adresse d'une session depuis le registre des sessions plutôt que de la dériver.
+
+L'appel `send_message` confirme seulement que le message a été remis à l'autre session. Ce qu'il est devenu arrive plus tard sous forme de reçu : s'il a été mis en attente, refusé, rejeté, abandonné, expiré ou mal adressé (l'adresse a changé de main — relister les agents) — ou libéré après une mise en attente — une notification apparaît dans le transcript de la session émettrice (`Message to <name>: …`). Refusé, rejeté et abandonné sont trois réponses différentes : refusé signifie que quelqu'un a examiné le message et dit non, rejeté signifie que le `agents.crossSessionInbound` de cette session est `refuse` et que personne ne l'a vu du tout, et abandonné signifie que sa boîte de réception a écarté le message avant tout cela (voir ci-dessous). Le premier abandon reçoit une réponse immédiate et les suivants sont regroupés dans un reçu toutes les quelques secondes, chacun nommant les messages qu'il représente, ainsi une série coûte quelques lignes plutôt qu'une ligne chacune. Le modèle qui l'a envoyé n'est pas informé ; si l'autre session répond, la réponse arrive comme un message inter-session.
 
 ### Protection contre les inondations
 
-Une session accepte jusqu'à 30 messages d'un seul expéditeur d'un coup puis un toutes les deux secondes, et jusqu'à 32 d'un coup de tous les expéditeurs réunis puis un par seconde. La seconde limite existe car un expéditeur se nomme lui-même : faire tourner ce nom obtient un nouveau quota de la première limite mais pas de la seconde. Elle est à peine au-dessus de la première car chaque message accepté génère un reçu, et une session ne peut en envoyer qu'un certain nombre à la fois. Un message provenant d'une autre session qui répète le message précédent de cet expéditeur mot pour mot dans les 30 secondes est également rejeté — un modèle qui boucle sur une phrase génère un nouvel id de message à chaque fois, c'est donc le texte qui le détecte. Les messages provenant d'un script démarré par la session et d'un contrôleur fiable sont exemptés de la vérification de répétition, car un hook qui rapporte la même ligne deux fois rapporte deux faits et une personne qui dit « continue » deux fois le signifie deux fois ; les deux sont toujours soumis aux limites de débit. Enfin, un message qui est accepté mais ne peut pas être mis en file d'attente car la session en a déjà 50 en attente est également rejeté.
+Une session accepte jusqu'à 30 messages à la fois d'un expéditeur, puis un toutes les deux secondes, et jusqu'à 32 à la fois de tous les expéditeurs combinés, puis un par seconde. La deuxième limite existe car l'expéditeur s'identifie lui-même : faire tourner ce nom obtient une nouvelle allocation de la première limite mais pas de la deuxième. Elle est à peine supérieure à la première car chaque message accepté génère un accusé de réception, et une session ne peut en envoyer qu'un nombre limité à la fois. Un message provenant d'une autre session qui répète mot pour mot le message précédent de cet expéditeur dans les 30 secondes est également rejeté — un modèle bouclant sur une phrase génère un nouvel identifiant de message à chaque fois, c'est donc le texte qui permet de le détecter. Les messages provenant d'un script lancé par la session et d'un contrôleur de confiance sont exemptés de la vérification de répétition, car un hook signalant deux fois la même ligne signale deux faits distincts et une personne disant « continue » deux fois le signifie deux fois ; ils restent toutefois soumis aux limites de débit. Enfin, un message accepté mais impossible à mettre en file d'attente car la session a déjà 50 messages en attente est également rejeté.
 
-Un message rejeté de cette façon n'est jamais mis en attente, jamais montré au modèle, et ne laisse aucune trace, donc l'expéditeur peut réessayer plus tard et arriver à destination. La session réceptrice l'indique dans sa transcription au plus une fois par minute par expéditeur, avec un compteur de ce que cette ligne représente. La session expéditrice reçoit un seul reçu nommant chaque message que la rafale lui a coûté, et sa transcription dit de regrouper ce qui compte encore dans un message ultérieur plutôt que de renvoyer.
+Un message rejeté ainsi n'est jamais conservé, jamais présenté au modèle, et ne laisse aucune trace, afin que l'expéditeur puisse réessayer plus tard avec succès. La session réceptrice le mentionne dans son transcript au maximum une fois par minute par expéditeur, avec un compteur indiquant ce que cette ligne représente. La session émettrice reçoit un seul accusé de réception nommant chaque message que la rafale lui a coûté, et son transcript indique de regrouper ce qui compte encore dans un seul message ultérieur plutôt que de renvoyer séparément.
 
-Le côté expéditeur n'attend pas pour le savoir. Chaque session suit ce qu'elle a envoyé à chaque adresse et refuse un envoi que le récepteur rejetterait, donc le modèle est informé de regrouper avant que le message ne soit écrit plutôt qu'après — et le récepteur ne dépense jamais de connexion sur un message qu'il allait rejeter.
+Le côté émetteur n'attend pas pour savoir si le message a été accepté. Chaque session suit ce qu'elle a envoyé à chaque adresse et refuse un envoi que le récepteur aurait rejeté, afin que le modèle soit invité à grouper avant que le message ne soit écrit plutôt qu'après — et le récepteur ne consomme jamais une connexion pour un message qu'il allait rejeter.
 
 ### Authentification de la boîte de réception et injection scriptée
 
-La boîte de réception de chaque session nécessite un token par session :
-une connexion doit le présenter sur sa première ligne avant qu'un
-message ne soit lu, et les sessions échangent les tokens automatiquement
-via les mêmes enregistrements du registre par lesquels elles se
-découvrent. Les sessions d'une build sans support des tokens peuvent
-recevoir d'une plus récente, mais leurs envois vers celle-ci sont
-abandonnés.
+La boîte de réception de chaque session nécessite un jeton spécifique à la session : une connexion doit le présenter sur sa première ligne avant qu'un message ne soit lu, et les sessions échangent automatiquement des jetons via les mêmes enregistrements de registre qui leur permettent de se découvrir mutuellement. Les sessions issues d'une version sans prise en charge des jetons peuvent recevoir d'une version plus récente, mais leurs envois vers celle-ci sont ignorés.
 
-Une session exporte sa propre adresse de boîte de réception et un token
-aux processus enfants comme `QWEN_CODE_MESSAGING_SOCKET` et
-`QWEN_CODE_MESSAGING_TOKEN`, afin qu'un script ou un hook exécuté par la
-session puisse lui renvoyer un message. C'est un deuxième token
-_enfant_ qui n'est jamais publié nulle part : seuls les processus que la
-session a démarrés peuvent le détenir, donc un message qui arrive avec
-celui-ci est reconnu comme provenant de la session elle-même plutôt que
-d'une autre session.
+Une session exporte sa propre adresse de boîte de réception et un jeton vers les processus enfants sous forme de `QWEN_CODE_MESSAGING_SOCKET` et `QWEN_CODE_MESSAGING_TOKEN`, afin qu'un script ou un hook exécuté par la session puisse lui renvoyer un message. Il s'agit d'un second jeton _enfant_ qui n'est jamais publié ailleurs : seuls les processus lancés par la session peuvent le détenir, de sorte qu'un message arrivant avec ce jeton est reconnu comme provenant de la session elle-même plutôt que d'une autre session.
 
 ```bash
 { printf '%s\n' \
@@ -897,49 +839,23 @@ d'une autre session.
 } | socat - UNIX-CONNECT:"$QWEN_CODE_MESSAGING_SOCKET"
 ```
 
-Donnez à chaque injection un `msgId` frais. La passerelle réceptrice se
-souvient des ids qu'elle a déjà traités, donc un hook qui en réutilise
-un est délivré la première fois et silencieusement dédupliqué à chaque
-exécution suivante. Répéter le même _texte_ est acceptable — la vérification de répétition ci-dessus ne s'applique pas aux propres processus d'une session — mais les limites de débit s'appliquent, donc un hook dans une boucle est rejeté comme n'importe quelle autre inondation.
+Donnez à chaque injection un nouveau `msgId`. La porte de réception mémorise les identifiants déjà traités, de sorte qu'un hook réutilisant l'un d'eux est livré la première fois puis silencieusement dédupliqué lors de chaque exécution suivante. Répéter le même _texte_ est acceptable — la vérification de répétition ci-dessus ne s'applique pas aux propres processus de la session — mais les limites de débit s'appliquent, de sorte qu'un hook dans une boucle est rejeté comme tout autre flux excessif.
 
-Un message injecté passe toujours par la passerelle entrante et est
-marqué comme ne provenant pas de l'utilisateur, mais la passerelle sait
-qu'il provient du propre processus de la session : selon la parité de
-mode par défaut, il est délivré sans review (un pair dans la même
-position serait mis en attente), tandis qu'un
-`agents.crossSessionInbound` explicite de `hold` ou `refuse` s'applique
-à lui comme à n'importe quoi d'autre. Le modèle le voit comme
-`<cross_session_message from="own process" origin="own-process">` avec
-une notification indiquant qu'il provient d'un script ou d'un hook
-exécuté par la session, pas de l'utilisateur.
+Un message injecté passe toujours par la porte d'entrée et est marqué comme ne provenant pas de l'utilisateur, mais la porte sait qu'il provient du propre processus de la session : sous le défaut de parité de mode, il est livré sans examen (un pair dans la même situation serait retenu), tandis qu'un `agents.crossSessionInbound` explicite de `hold` ou `refuse` s'applique à lui comme à tout autre élément. Le modèle le voit comme `<cross_session_message from="own process" origin="own-process">` avec une note indiquant qu'il provient d'un script ou d'un hook exécuté par la session, et non de l'utilisateur.
 
-### Contrôleurs fiables
+### Contrôleurs fiables [#trusted-controllers]
 
-La règle ci-dessus met en attente un message de tout expéditeur qui
-n'indique pas dans quelle classe de review il se trouve, et un programme
-qui n'est pas une session Qwen Code n'en a pas à indiquer. C'est le bon
-comportement par défaut pour un inconnu, mais pas pour un programme que
-vous avez choisi : un front-end vocal, un bridge de dictée, un démon
-d'automatisation relayant vos propres instructions verrait chaque
-message mis en attente, et approuver chacun à la main va à l'encontre de
-l'objectif.
+La règle ci-dessus retient un message de tout expéditeur qui n'indique pas dans quelle classe d'examen il se trouve, et un programme qui n'est pas une session Qwen Code n'en a aucune à indiquer. C'est le défaut approprié pour un inconnu, mais pas pour un programme que vous avez choisi : une interface vocale, un pont de dictée, un démon d'automatisation relayant vos propres instructions verrait chaque message mis en attente, et approuver chacun manuellement annulerait l'intérêt.
 
-Vous accordez à un tel programme la délivrance en lui créant un token :
+Vous accordez la livraison à un tel programme en lui émettant un jeton :
 
 ```bash
 qwen sessions controllers add --label voice-bridge
 ```
 
-Le token est affiché une seule fois et n'est stocké nulle part : le
-fichier sous votre répertoire Qwen ne conserve que son hash SHA-256,
-donc rien de ce qui lit ultérieurement ce fichier ne peut présenter le
-token. Placez-le dans la configuration du contrôleur lorsque la
-commande l'affiche.
+Le jeton est imprimé une seule fois et n'est stocké nulle part : le fichier sous votre répertoire personnel Qwen ne conserve que son empreinte SHA-256, de sorte que rien de ce qui lit ensuite ce fichier ne peut présenter le jeton. Placez-le dans la configuration propre du contrôleur lorsque la commande l'imprime.
 
-Un contrôleur présente le token comme tout autre expéditeur — comme
-première ligne de la connexion — et prend le chemin du socket depuis le
-registre de sessions (`qwen sessions ps --json` affiche un
-enregistrement par session active, `ipcPath` étant l'adresse) :
+Un contrôleur présente le jeton comme tout autre expéditeur — sur la première ligne de la connexion — et récupère le chemin de la socket depuis le registre des sessions (`qwen sessions ps --json` imprime un enregistrement par session active, `ipcPath` étant l'adresse) :
 
 ```bash
 { printf '%s\n' \
@@ -948,54 +864,31 @@ enregistrement par session active, `ipcPath` étant l'adresse) :
 } | socat - UNIX-CONNECT:"$SESSION_IPC_PATH"
 ```
 
-Un message qui arrive avec un token accordé est délivré sans review par
-message, quelle que soit la classe de review de l'un ou l'autre côté —
-mais il cède toujours devant un paramètre explicite : un
-`agents.crossSessionInbound` à `hold` le met en attente comme n'importe
-quoi d'autre, et `refuse` le rejette. Les accords appartiennent à votre
-répertoire Qwen plutôt qu'à une session, donc un contrôleur atteint
-toutes les sessions que vous exécutez, et les sessions relisent le
-fichier à chaque connexion : créer ou révoquer un accord prend effet à
-la prochaine connexion, sans rien à redémarrer.
+Un message arrivant avec un jeton accordé est livré sans examen par message, quelle que soit la classe d'examen des deux côtés — mais il cède toujours devant un paramètre explicite : un `agents.crossSessionInbound` de `hold` le met en attente comme tout autre élément, et `refuse` le rejette. Les accords appartiennent à votre répertoire personnel Qwen plutôt qu'à une seule session, de sorte qu'un contrôleur atteint les sessions que vous exécutez, et les sessions relisent le fichier à chaque connexion : créer ou révoquer un accord prend effet à la connexion suivante, sans rien à redémarrer.
 
 ```bash
-qwen sessions controllers list          # ids, labels, date d'ajout
-qwen sessions controllers remove c_1a2b # révoquer un accord
+qwen sessions controllers list          # ids, labels, when they were added
+qwen sessions controllers remove c_1a2b # revoke one
 ```
 
-`/peers controllers` et `/peers revoke <id>` font la même chose depuis
-une session. Un message arrivé via un accord est affiché comme `Message
-from a trusted controller (voice-bridge)`, et apparaît dans `/peers`
-comme `[controller] voice-bridge` si un paramètre `hold` l'a mis en
-attente.
+`/peers controllers` et `/peers revoke <id>` font la même chose depuis une session. Un message reçu via un jeton d'accès est affiché comme `Message from a trusted controller (voice-bridge)`, et apparaît dans `/peers` sous forme de `[controller] voice-bridge` si un paramètre `hold` l'a mis en attente.
 
-Le modèle voit un tel message comme
-`<cross_session_message from="controller" origin="controller" controller="voice-bridge">`,
-avec une notification indiquant qu'il relaye vos propres instructions —
-et les mêmes deux interdictions qui s'appliquent à chaque autre origine
-: il ne peut pas modifier les paramètres de permissions, QWEN.md ou la
-config parce que le message le demande, et il ne peut pas traiter le
-message comme une approbation de votre part d'un prompt de confirmation
-en attente. Un contrôleur peut dire quoi faire ensuite ; il ne peut pas
-répondre à un prompt en votre nom.
+Le modèle voit ce message comme `<cross_session_message from="controller" origin="controller" controller="voice-bridge">`, avec une mention indiquant qu'il relaie vos propres instructions — ainsi que les deux mêmes interdictions qui s'appliquent à toute autre origine : il ne peut pas modifier les paramètres d'autorisation, QWEN.md ou la configuration parce que le message l'a demandé, et il ne peut pas considérer le message comme votre approbation d'une invite de confirmation en attente. Un contrôleur peut dire quoi faire ensuite ; il ne peut pas répondre à une invite à votre place.
 
-Quiconque détient le token peut envoyer en tant que ce contrôleur,
-traitez-le donc comme tout autre identifiant : donnez-le à un seul
-programme, gardez-le hors des configs partagées, et révoquez-le lorsque
-ce programme a terminé.
+Toute personne détenant le jeton peut envoyer des messages en tant que ce contrôleur, traitez-le donc comme n'importe quel autre identifiant : donnez-le à un seul programme, évitez de le placer dans une configuration partagée, et révoquez-le lorsque le programme a terminé.
 
 ### Sessions pilotées par un programme via ACP
 
-Tout enfant `qwen --acp` enregistre chaque session qu'il héberge — en tant que `serve` quand le démon a engendré le processus, en tant que `headless` quand un éditeur ou un autre client pilote `qwen --acp` directement — et la session apparaît dans `qwen sessions ps` et dans le `list_agents` d'une autre session comme n'importe laquelle. Elle peut envoyer : son modèle peut appeler `send_message` pour atteindre un terminal que vous avez ouvert. Plusieurs d'entre eux partagent un processus et une boîte de réception, donc un expéditeur doit nommer la session qu'il vise — chaque session Qwen Code le fait automatiquement.
+Chaque processus enfant `qwen --acp` enregistre chaque session qu'il héberge — comme `serve` lorsque le démon a lancé le processus, comme `headless` lorsqu'un éditeur ou un autre client pilote directement `qwen --acp` — et la session apparaît dans `qwen sessions ps` et dans le `list_agents` d'une autre session comme n'importe quelle autre. Elle peut envoyer : son modèle peut appeler `send_message` pour atteindre un terminal ouvert par vous. Plusieurs d'entre eux partagent un seul processus et une seule boîte de réception, donc un expéditeur doit nommer la session visée — chaque session Qwen Code le fait automatiquement.
 
-Les messages envoyés _à_ l'une d'elles sont refusés plutôt que mis en attente. Une mise en attente est une question posée à une personne, et personne ne surveille une liste de messages en attente pour le compte d'une session pilotée ; un expéditeur est informé immédiatement au lieu d'attendre l'expiration. L'endroit où un message en attente devrait apparaître pour ces sessions n'est pas encore fixé.
+Les messages envoyés _à_ une telle session sont refusés plutôt que mis en attente. La mise en attente est une question posée à une personne, et personne ne surveille une liste de messages en attente pour le compte d'une session pilotée ; un expéditeur est informé immédiatement au lieu d'attendre l'expiration. L'endroit où un message mis en attente devrait apparaître pour ces sessions n'est pas encore défini.
 
-Une session ne s'enregistre que tant que son propre paramètre `agents.crossSessionMessaging` est actif. Sans cela, elle reste invisible, car la seule raison de lister une session à laquelle personne ne peut envoyer des messages serait d'annoncer une adresse qui ne répond jamais.
+Une session s'enregistre sauf si ses propres paramètres désactivent `agents.crossSessionMessaging`, ou si elle a été lancée avec `--bare` ou `--safe-mode` — ceux-ci désactivent la messagerie quel que soit le réglage. Désactivée, elle reste invisible, car la seule raison de lister une session que personne ne peut contacter serait de publier une adresse qui ne répond jamais.
 
 ### Programmes qui ne sont pas des sessions Qwen Code
 
-Tout ce qui précède fonctionne entre sessions, mais rien n'y est spécifique à une seule. Un programme qui écrit un enregistrement de registre pour lui-même et lie une boîte de réception de la même manière est listé par `qwen sessions ps` et par `list_agents`, peut être adressé par nom depuis `send_message`, et reçoit des accusés de réception pour ce qu'il envoie — un front-end vocal, un relay, un surveillant de build. Il doit enregistrer `kind: "external"` pour qu'un listing puisse dire ce qu'il est.
+Tout ce qui précède fonctionne entre les sessions, mais rien de tout cela n'est spécifique à une session. Un programme qui écrit un enregistrement de registre pour lui-même et lie une boîte de réception de la même manière est listé par `qwen sessions ps` et par `list_agents`, peut être adressé par nom depuis `send_message`, et reçoit des accusés de réception pour ce qu'il envoie — une interface vocale, un relais, un surveillant de build. Il doit enregistrer `kind: "external"` afin qu'une liste puisse indiquer ce qu'il est.
 
-[Cross-Session Protocol](./cross-session-protocol.md) est le contrat pour en écrire un : le schéma d'enregistrement et comment la vitalité est jugée, les chemins de socket et le framing, la ligne d'authentification, chaque champ de trame, les états de reçu et leurs transitions, et ce qu'un récepteur fait d'un message avant que son modèle ne le voie.
+[Protocole Inter-Sessions](./cross-session-protocol.md) est le contrat pour en écrire un : le schéma d'enregistrement et la méthode de jugement de la vivacité, les chemins de socket et le cadrage, la ligne d'authentification, chaque champ de trame, les états d'accusé de réception et leurs transitions, et ce qu'un destinataire fait avec un message avant que son modèle ne le voie.
 
-Un programme Node n'a pas besoin d'écrire tout cela à la main : ` @qwen-code/sdk/peer` implémente le contrat. `PeerEndpoint.start({ name })` publie l'enregistrement et lie la boîte de réception, `list()` et `send()` adressent les sessions par nom, et `onMessage` reçoit ce qu'elles envoient.
+Un programme Node n'a pas besoin d'écrire tout cela à la main : `@qwen-code/sdk/peer` implémente le contrat. `PeerEndpoint.start({ name })` publie l'enregistrement et lie la boîte de réception, `list()` et `send()` adressent les sessions par nom, et `onMessage` reçoit ce qu'ils envoient.

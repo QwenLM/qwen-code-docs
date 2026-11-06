@@ -4,13 +4,17 @@
 
 Ce guide de démarrage rapide vous permettra d'utiliser l'assistance au codage basée sur l'IA en quelques minutes. À la fin, vous comprendrez comment utiliser Qwen Code pour les tâches de développement courantes.
 
-## Avant de commencer
+## **Avant de commencer**
 
 Assurez-vous d'avoir :
 
-- Un **terminal** ou une invite de commande ouvert
+- Un terminal ou une invite de commandes ouvert
 - Un projet de code avec lequel travailler
-- Une clé API d'Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)), ou un abonnement Alibaba Cloud Token Plan ([Beijing](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model))
+- **L'une des options suivantes** :
+  - Un compte Qwen avec un **abonnement Plus ou Pro** depuis [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code), qui débloque l'accès à **Qwen Code et Agent**
+  - Une clé API ou un abonnement Token Plan depuis la plateforme IA Qwen / **QwenCloud** ([Chine](https://platform.qianwenai.com/docs/developer-guides/administration/api-keys) / [International](https://docs.qwencloud.com/developer-guides/administration/api-keys)) — configuration recommandée
+  - Une clé API depuis **Alibaba Cloud ModelStudio** ([Pékin](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/))
+  - Un abonnement **Token Plan Alibaba Cloud** ([Pékin](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model))
 
 ## Étape 1 : Installer Qwen Code
 
@@ -68,13 +72,19 @@ qwen
 
 Le menu de première exécution vous permet de connecter un fournisseur de modèle. Choisissez parmi :
 
-- **Alibaba ModelStudio** — la configuration recommandée. Ouvre un sous-menu :
+- [**Compte Qwen avec Abonnement**](https://chat.qwen.ai/?memberPlan=qwen_code) — connectez-vous avec votre compte Qwen pour accéder à **Qwen Code et Agent** avec votre **abonnement Plus ou Pro**. Si vous n'avez pas encore d'abonnement, visitez [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) pour souscrire à Plus ou Pro, puis revenez sur Qwen Code et sélectionnez [**Compte Qwen avec Abonnement**](https://chat.qwen.ai/?memberPlan=qwen_code).
+- **QwenCloud** — configuration recommandée. Ouvre un sous-menu :
+  - **Token Plan** : abonnement avec un quota mensuel de Crédits sur un endpoint dédié (éditions Personnelles et Équipes).
+  - **Clé API Standard** : paiement à l'usage, connexion avec une clé API de plateforme existante.
+
+  Dans les deux cas, vous choisissez ensuite explicitement la plateforme (Chine ou International), afin que la langue de l'interface ne détermine jamais votre endpoint. Voir [Authentification → Option 2 : QwenCloud](./configuration/auth) pour plus de détails.
+
+- **Alibaba ModelStudio** — ouvre un sous-menu :
+  - **Coding Plan** : connexion avec une clé API du Coding Plan d'Alibaba Cloud. Voir [Authentification](./configuration/auth.md#-option-3-alibaba-cloud-coding-plan) pour la configuration.
   - **Token Plan** : facturation à l'utilisation avec un point de terminaison dédié, destiné aux équipes et aux entreprises. Voir le [guide Token Plan](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) ([intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) pour les instructions de configuration.
   - **Standard API Key** : connectez-vous avec une clé API existante d'Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)). Voir le guide de configuration de l'API ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)) pour plus de détails.
 - **Fournisseurs tiers** — choisissez un fournisseur intégré (DeepSeek, Grok, MiniMax, Z.AI, Kimi, Idealab, ModelScope, OpenRouter, Requesty, et plus) et connectez-vous avec une clé API.
 - **Fournisseur personnalisé** — connectez manuellement un serveur local, un proxy ou un fournisseur non pris en charge.
-
-> ⚠️ **Note** : Qwen OAuth a été interrompu le 15 avril 2026. Si vous utilisiez auparavant Qwen OAuth, veuillez passer à l'une des méthodes ci-dessus.
 
 > [!note]
 >

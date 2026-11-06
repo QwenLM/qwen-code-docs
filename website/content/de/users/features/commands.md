@@ -33,6 +33,7 @@ Diese Befehle helfen dir, den Arbeitsfortschritt zu speichern, wiederherzustelle
 | `/rewind` | Konversation auf einen vorherigen Turn zurückspulen | `/rewind` oder `/rollback` |
 | `/export` | Sitzungsverlauf in eine Datei exportieren | `/export html`, `/export md`, `/export json`, `/export jsonl` |
 | `/rename` | Die aktuelle Sitzung umbenennen oder taggen | `/rename My Feature` oder `/tag` |
+| `/commit`        | Erstellen eines Git-Commits mit einer KI-generierten Nachricht           | `/commit` oder `/commit only stage the parser changes`          |
 
 > [!note]
 >
@@ -50,7 +51,7 @@ Diese Befehle helfen dir, den Arbeitsfortschritt zu speichern, wiederherzustelle
 
 Befehle zum Anpassen der Benutzeroberfläche und der Arbeitsumgebung.
 
-| Befehl | Beschreibung | Nutzungsbeispiele |
+| Befehl               | Beschreibung                                                                                                                                                                      | Verwendungsbeispiele                                                              |
 | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | `/clear` | Konversationsverlauf löschen und Kontext freigeben | `/clear`, `/reset`, `/new` |
 | `/context` | Aufschlüsselung der Kontextfenster-Nutzung anzeigen | `/context` |
@@ -58,7 +59,7 @@ Befehle zum Anpassen der Benutzeroberfläche und der Arbeitsumgebung.
 | `/history` | Einstellungen für die Verlaufsanzeige und Sichtbarkeit steuern | `/history collapse-on-resume`, `/history expand-on-resume`, `/history expand-now` |
 | `/diff` | Öffnet einen interaktiven Diff-Viewer, der uncommitted Änderungen und Diffs pro Turn anzeigt. Verwende ←/→, um zwischen dem aktuellen Git-Diff und einzelnen Konversations-Turns zu wechseln, ↑/↓, um Dateien zu durchsuchen | `/diff` |
 | `/log` | Öffnet einen Commit-Verlauf-Viewer für den Workspace (nur Web Shell) | `/log` |
-| `/theme` | Visuelles Theme von Qwen Code ändern | `/theme` |
+| `/theme`             | Ändern des visuellen Themas von Qwen Code                                                                                                                                         | `/theme`                                                                          |
 | `/vim` | Vim-Bearbeitungsmodus im Eingabebereich ein-/ausschalten | `/vim` |
 | `/voice` | Spracheingabe per Diktat umschalten | `/voice`, `/voice hold`, `/voice tap`, `/voice off`, `/voice status` |
 | `/directory` | Workspace mit Unterstützung für mehrere Verzeichnisse verwalten | `/dir add ./src,./tests`, `/dir show` |
@@ -85,52 +86,53 @@ Befehle speziell zur Steuerung der Sprachen für Benutzeroberfläche und Ausgabe
 
 Befehle zur Verwaltung von KI-Tools und -Modellen.
 
-| Befehl | Beschreibung | Nutzungsbeispiele |
-| ----------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `/mcp` | Konfigurierte MCP-Server und -Tools auflisten | `/mcp`, `/mcp desc`, `/mcp nodesc`, `/mcp schema` |
-| `/import-config` | MCP-Server aus Claude-Konfigurationen importieren | `/import-config all`, `/import-config claude-code`, `/import-config claude-desktop --scope user\|project` |
-| `/tools` | Aktuell verfügbare Tool-Liste anzeigen | `/tools`, `/tools desc` |
-| `/skills` | Das Skills-Panel öffnen, um Skills zu durchsuchen, zu suchen, umzuschalten und zu starten | `/skills`, `/<skill-name>` |
-| `/learn` | Einen wiederverwendbaren Projekt-Skill aus einer Datei, einem Verzeichnis, einer URL, einem Video oder Text erstellen | `/learn https://docs.example.com/api`, `/learn ./tutorial.mp4 focus on deployment` |
-| `/curator` | Inaktive Projekt-Auto-Skills inspizieren, pinnen, archivieren oder wiederherstellen | `/curator`, `/curator run --dry-run`, `/curator pin <directory>`, `/curator restore <directory>` |
-| `/plan` | In den Plan-Modus wechseln oder den Plan-Modus beenden | `/plan`, `/plan <task>`, `/plan exit` |
-| `/approval-mode` | Den Genehmigungsmodus ändern (nur aktuelle Sitzung) | `/approval-mode`, `/approval-mode auto-edit` |
-| → `plan` | Nur Analyse, keine Ausführung (sichere Überprüfung) | `/approval-mode plan` |
-| → `default` | Genehmigung für Änderungen erforderlich (tägliche Nutzung) | `/approval-mode default` |
-| → `auto-edit` | Änderungen automatisch genehmigen (vertrauenswürdige Umgebung) | `/approval-mode auto-edit` |
-| → `auto` | Vom Classifier bewertete Genehmigung (autonom) | `/approval-mode auto` |
-| → `yolo` | Alles automatisch genehmigen (schnelles Prototyping) | `/approval-mode yolo` |
-| `/peers` | Zurückgehaltene Peer-Nachrichten prüfen; vertrauenswürdige Controller verwalten | `/peers`, `/peers accept <id>`, `/peers deny all`, `/peers controllers`, `/peers revoke <id>` |
-| `/model` | In der aktuellen Sitzung verwendetes Modell wechseln | `/model`, `/model <model-id>` (sofortiger Wechsel) |
-| `/model --fast` | Ein leichteres Modell für Prompt-Vorschläge festlegen | `/model --fast qwen3-coder-flash` |
-| `/model --voice` | Das für die Sprachtranskription verwendete Modell festlegen | `/model --voice <model-id>` |
-| `/model --vision` | Das Vision-Bridge-Modell festlegen, das verwendet wird, um Bilder für ein reines Text-Hauptmodell zu transkribieren | `/model --vision <model-id>` |
-| `/model --compaction` | Das für die Chat-Komprimierung verwendete Modell festlegen | `/model --compaction <model-id>`, `/model --compaction clear` |
-| `/model --image` | Ein Modell mit Bildgenerierungsfähigkeit für das integrierte Bildgenerierungs-Tool festlegen | `/model --image <model-id>` |
-| `/effort` | Reasoning-Aufwand für denkfähige Modelle festlegen | `/effort` (öffnet Picker), `/effort high` (low/medium/high/xhigh/max; wird je nach Provider gemappt und begrenzt) |
-| `/output-style` | Wähle den Ausgabestil, der bestimmt, wie Antworten formuliert werden | `/output-style` (öffnet Picker), `/output-style Concise`, `/output-style default` (kein Stil) |
-| `/extensions` | Extensions verwalten | `/extensions list`, `/extensions manage` |
-| → `list` | Installierte Extensions auflisten | `/extensions list` |
-| → `manage` | Installierte Extensions verwalten (interaktiv) | `/extensions manage` |
-| → `explore` | Extensions-Seite im Browser öffnen | `/extensions explore <Gemini\|ClaudeCode>` |
-| → `install` | Eine Extension aus einem Git-Repo oder Pfad installieren | `/extensions install <repo-or-path>` |
-| `/memory` | Den Memory-Manager-Dialog öffnen | `/memory` |
-| `/remember` | Einen dauerhaften Memory-Eintrag speichern | `/remember Prefer terse responses` |
-| `/forget` | Passende Einträge aus dem Auto-Memory entfernen | `/forget <query>` |
-| `/dream` | Auto-Memory-Konsolidierung manuell ausführen | `/dream` |
-| `/hooks` | Qwen Code-Hooks verwalten | `/hooks`, `/hooks list` |
-| `/reload-plugins` | Extension-Änderungen (Befehle, Skills, Agenten, Hooks, MCP/LSP-Server) von der Festplatte neu laden | `/reload-plugins` |
-| `/permissions` | Berechtigungsregeln verwalten | `/permissions` |
-| `/agents` | Subagenten verwalten | `/agents manage`, `/agents create` |
-| `/arena` | Arena-Sitzungen verwalten | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (Alias `choose`) |
-| `/goal` | Ein Ziel festlegen – weiterarbeiten, bis ein Verifizierer es bestätigt (siehe [Goals](./goals.md)) | `/goal <objective>`, `/goal edit <objective>`, `/goal pause`, `/goal resume`, `/goal clear` |
-| `/tasks` | Hintergrundtasks auflisten | `/tasks` |
-| `/workflows` | Workflow-Ausführungen inspizieren; einen Hintergrundlauf kooperativ pausieren/fortsetzen | `/workflows`, `/workflows <runId>`, `/workflows p <runId>` |
-| `/lsp` | LSP-Server-Status anzeigen | `/lsp` |
-| `/trust` | Einstellungen für die Ordner-Vertrauenswürdigkeit verwalten | `/trust` |
+| Befehl                | Beschreibung                                                                                      | Verwendungsbeispiele                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `/mcp`                | Auflisten konfigurierter MCP-Server und Tools                                                     | `/mcp`, `/mcp desc`, `/mcp nodesc`, `/mcp schema`                                                         |
+| `/import-config`      | Importieren von MCP-Servern aus Claude-Konfigurationen                                            | `/import-config all`, `/import-config claude-code`, `/import-config claude-desktop --scope user\|project` |
+| `/tools`              | Anzeigen der aktuell verfügbaren Tool-Liste                                                       | `/tools`, `/tools desc`                                                                                   |
+| `/skills`             | Öffnen des Skills-Panels zum Durchsuchen, Suchen, Umschalten und Starten von Skills                | `/skills`, `/<skill-name>`                                                                                |
+| `/learn`              | Erstellen eines wiederverwendbaren Projekt-Skills aus einer Datei, einem Verzeichnis, einer URL, einem Video oder Text | `/learn https://docs.example.com/api`, `/learn ./tutorial.mp4 focus on deployment`                        |
+| `/curator`            | Überprüfen, Pinnen, Archivieren oder Wiederherstellen inaktiver automatischer Projekt-Skills       | `/curator`, `/curator run --dry-run`, `/curator pin <directory>`, `/curator restore <directory>`          |
+| `/plan`               | Wechseln in den Planungsmodus oder Beenden des Planungsmodus                                       | `/plan`, `/plan <task>`, `/plan exit`                                                                     |
+| `/approval-mode`      | Ändern des Tool-Genehmigungsmodus (nur aktuelle Sitzung)                                          | `/approval-mode`, `/approval-mode auto-edit`                                                              |
+| → `plan`              | Nur Analyse, keine Ausführung (sichere Überprüfung)                                               | `/approval-mode plan`                                                                                     |
+| → `default`           | Genehmigung für Bearbeitungen erforderlich (tägliche Nutzung)                                     | `/approval-mode default`                                                                                  |
+| → `auto-edit`         | Automatische Genehmigung von Bearbeitungen (vertrauenswürdiges Umgebung)                          | `/approval-mode auto-edit`                                                                                |
+| → `auto`              | Genehmigung durch Klassifizierungsbewertung (autonom)                                             | `/approval-mode auto`                                                                                     |
+| → `yolo`              | Alles automatisch genehmigen (schnelles Prototyping)                                              | `/approval-mode yolo`                                                                                     |
+| `/peers`              | Überprüfen angehaltener Peer-Nachrichten; Verwalten vertrauenswürdiger Controller                  | `/peers`, `/peers accept <id>`, `/peers deny all`, `/peers controllers`, `/peers revoke <id>`             |
+| `/model`              | Wechseln des in der aktuellen Sitzung verwendeten Modells                                         | `/model`, `/model <model-id>` (sofortiger Wechsel)                                                        |
+| `/model --fast`       | Festlegen eines leichteren Modells für Prompt-Vorschläge                                          | `/model --fast qwen3-coder-flash`                                                                         |
+| `/model --voice`      | Legt das Modell für die Sprachtranskription fest                                                       | `/model --voice <model-id>`                                                                               |
+| `/model --vision`     | Legt das Vision-Bridge-Modell fest, das Bilder für ein rein textbasiertes Hauptmodell transkribiert                 | `/model --vision <model-id>`                                                                              |
+| `/model --compaction` | Legt das Modell für die Chat-Komprimierung fest                                                          | `/model --compaction <model-id>`, `/model --compaction clear`                                             |
+| `/model --image`      | Legt ein bildgenerierungsfähiges Modell für das integrierte Bildgenerierungstool fest                     | `/model --image <model-id>`                                                                               |
+| `/effort`             | Legt den Reasoning-Aufwand für denkfähige Modelle fest                                                 | `/effort` (öffnet Auswahl), `/effort high` (low/medium/high/xhigh/max; wird pro Anbieter zugeordnet & begrenzt)       |
+| `/output-style`       | Wählt den Ausgabestil aus, der bestimmt, wie Antworten geschrieben werden                                    | `/output-style` (öffnet Auswahl), `/output-style Concise`, `/output-style default` (kein Stil)               |
+| `/extensions`         | Verwaltet Erweiterungen                                                                                | `/extensions list`, `/extensions manage`                                                                  |
+| → `list`              | Listet installierte Erweiterungen auf                                                                        | `/extensions list`                                                                                        |
+| → `manage`            | Verwaltet installierte Erweiterungen (interaktiv)                                                        | `/extensions manage`                                                                                      |
+| → `explore`           | Öffnet die Erweiterungsseite im Browser                                                                  | `/extensions explore <Gemini\|ClaudeCode>`                                                                |
+| → `install`           | Installiert eine Erweiterung aus einem Git-Repo oder Pfad                                                     | `/extensions install <repo-or-path>`                                                                      |
+| `/memory`             | Öffnet den Memory-Manager-Dialog                                                                   | `/memory`                                                                                                 |
+| `/remember`           | Speichert einen dauerhaften Speicher                                                                        | `/remember Prefer terse responses`                                                                        |
+| `/forget`             | Entfernt passende Einträge aus dem Auto-Speicher                                                         | `/forget <query>`                                                                                         |
+| `/dream`              | Führt die Konsolidierung des Auto-Speichers manuell durch                                                           | `/dream`                                                                                                  |
+| `/hooks`              | Verwaltet Qwen Code Hooks                                                                           | `/hooks`, `/hooks list`                                                                                   |
+| `/reload-plugins`     | Lädt Änderungen an Erweiterungen (Befehle, Skills, Agents, Workflows, Hooks, MCP/LSP-Server) von der Disk neu | `/reload-plugins`                                                                                         |
+| `/permissions`        | Verwaltet Berechtigungsregeln                                                                          | `/permissions`                                                                                            |
+| `/agents`             | Verwaltet Subagents                                                                                 | `/agents manage`, `/agents create`                                                                        |
+| `/arena`              | Verwaltet Arena-Sitzungen                                                                            | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (Alias `choose`)                          |
+| `/goal`               | Ziel setzen — weiterarbeiten, bis ein Verifizierer es bestätigt (siehe [Ziele](./goals.md))                 | `/goal <objective>`, `/goal edit <objective>`, `/goal pause`, `/goal resume`, `/goal clear`               |
+| `/tasks`              | Hintergrund-Tasks auflisten                                                                            | `/tasks`                                                                                                  |
+| `/workflows`          | Workflow-Ausführungen inspizieren; eine Hintergrund-Ausführung kooperativ pausieren/fortsetzen                               | `/workflows`, `/workflows <runId>`, `/workflows p <runId>`                                                |
+| `/lsp`                | LSP-Serverstatus anzeigen                                                                           | `/lsp`                                                                                                    |
+| `/trust`              | Einstellungen für Ordnervertrauen verwalten                                                                     | `/trust`                                                                                                  |
+
 > [!warning]
 >
-> Installiere Erweiterungen (`/extensions install`) nur aus Quellen, denen du vertraust. Erweiterungen können MCP-Server, Skills und Commands bündeln, die mit denselben Berechtigungen wie Qwen Code selbst ausgeführt werden – sie können auf deine Dateien, API-Keys und Konversationsdaten zugreifen. `/extensions install` fordert keine Bestätigung an.
+> Installieren Sie nur Erweiterungen (`/extensions install`) aus vertrauenswürdigen Quellen. Erweiterungen können MCP-Server, Skills und Befehle bündeln, die mit denselben Berechtigungen wie Qwen Code selbst ausgeführt werden — sie haben Zugriff auf Ihre Dateien, API-Schlüssel und Konversationsdaten. Sie können auch Workflow-Skripte enthalten, die in der Workflow-Sandbox ohne direkten Datei- oder Shell-Zugriff ausgeführt werden, über die von ihnen gestarteten Subagents handeln und die Genehmigung des Workflow-Tools durchlaufen. `/extensions install` fragt nicht nach Bestätigung.
 
 > [!warning]
 >
@@ -148,16 +150,17 @@ Befehle zur Verwaltung von KI-Tools und -Modellen.
 
 Diese Befehle rufen gebündelte Skills auf, die spezialisierte Workflows bereitstellen.
 
-| Befehl       | Beschreibung                                                | Anwendungsbeispiele                               |
-| ------------ | ----------------------------------------------------------- | ------------------------------------------------- |
-| `/review`    | Multi-Agent-Code-Review (12 parallele Agenten bei hohem Aufwand) | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
-| `/coordinate` | Read-only-Worker und einen optionalen Worktree-Writer koordinieren | `/coordinate investigate and fix the authentication regression`           |
-| `/loop`      | Einen Prompt nach einem wiederkehrenden Zeitplan ausführen  | `/loop 5m check the build`                        |
-| `/goal-draft` | Eine vage Intention in ein überprüfbares `/goal`-Ziel verwandeln | `/goal-draft make the auth tests pass`            |
-| `/simplify`  | Kürzliche Änderungen prüfen und sichere Bereinigungs-Edits direkt anwenden | `/simplify`, `/simplify focus on duplication`     |
-| `/qc-helper` | Beantwortet Fragen zur Nutzung und Konfiguration von Qwen Code | `/qc-helper how do I configure MCP?`              |
+| Befehl       | Beschreibung                                                   | Verwendungsbeispiele                                                                            |
+| ------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `/review`     | Multi-Agenten-Code-Review (12 parallele Agenten bei hohem Aufwand)   | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low`                 |
+| `/coordinate` | Koordiniert schreibgeschützte Worker und einen optionalen Worktree-Writer | `/coordinate investigate and fix the authentication regression`                           |
+| `/loop`       | Führt einen Prompt nach einem wiederkehrenden Zeitplan aus                          | `/loop 5m check the build`                                                                |
+| `/goal-draft` | Wandelt eine vage Absicht in ein verifizierbares `/goal`-Ziel um    | `/goal-draft make the auth tests pass`                                                    |
+| `/autofix-pr` | Überwacht einen PR und behebt CI-Fehler, Review-Feedback und Konflikte      | `/autofix-pr 123`, `/autofix-pr 123 --once`, `/autofix-pr resume`, `/autofix-pr stop 123` |
+| `/simplify`   | Überprüft kürzliche Änderungen und wendet sichere Aufräum-Bearbeitungen direkt an   | `/simplify`, `/simplify focus on duplication`                                             |
+| `/qc-helper`  | Beantwortet Fragen zur Nutzung und Konfiguration von Qwen Code      | `/qc-helper how do I configure MCP?`                                                      |
 
-Siehe [Code Review](./code-review.md) für die vollständige `/review`-Dokumentation.
+Siehe [Code Review](./code-review.md) für vollständige `/review`-Dokumentation und [Autofix a Pull Request](./autofix-pr.md) für `/autofix-pr`.
 
 ### 1.6 Zwischenfrage (`/btw`)
 
@@ -165,8 +168,8 @@ Der Befehl `/btw` ermöglicht es dir, schnelle Zwischenfragen zu stellen, ohne d
 
 | Befehl                 | Beschreibung                          |
 | ---------------------- | ------------------------------------- |
-| `/btw <deine frage>`   | Eine schnelle Zwischenfrage stellen   |
-| `?btw <deine frage>`   | Alternative Syntax für Zwischenfragen |
+| `/btw <your question>` | Stellt eine kurze Nebenfrage             |
+| `?btw <your question>` | Alternative Syntax für Nebenfragen |
 
 **Funktionsweise:**
 
@@ -179,7 +182,7 @@ Der Befehl `/btw` ermöglicht es dir, schnelle Zwischenfragen zu stellen, ohne d
 **Tastenkürzel (Interaktiver Modus):**
 
 | Tastenkürzel           | Aktion                                                |
-| -------------------- | --------------------------------------------------- |
+| -------------------- | -------------------------------------------------------- |
 | `Escape`             | Abbrechen (während des Ladens) oder Ausblenden (nach Abschluss) |
 | `Space` oder `Enter` | Antwort ausblenden (wenn die Eingabe leer ist)      |
 | `Ctrl+C` oder `Ctrl+D` | Eine laufende Zwischenfrage abbrechen               |
@@ -221,7 +224,7 @@ Der Befehl `/btw` ermöglicht es dir, schnelle Zwischenfragen zu stellen, ohne d
 | -------------------- | -------------------------------------------- |
 | Interactive          | Wird über dem Composer mit Markdown-Rendering angezeigt |
 | Non-interactive      | Gibt Textergebnis zurück: `btw> question\nanswer` |
-| ACP (Agent Protocol) | Gibt `stream_messages` Async-Generator zurück |
+| ACP (Agent Protocol) | Gibt stream_messages async generator zurück      |
 
 > [!tip]
 >
@@ -292,22 +295,22 @@ Die Überprüfung wird in einem gerahmten Block gerendert, dessen Header das auf
 
 ### 1.8 Session Recap (`/recap`)
 
-Der Befehl `/recap` erstellt eine kurze "Wo du stehengeblieben bist"-Zusammenfassung der aktuellen Session, damit du eine alte Konversation fortsetzen kannst, ohne seitenweise durch den Verlauf scrollen zu müssen.
+Der Befehl `/recap` erzeugt eine kurze "Wo du aufgehört hast"-Zusammenfassung der aktuellen Sitzung, damit du eine alte Konversation fortsetzen kannst, ohne durch Seiten von Verlauf zu scrollen.
 
-| Befehl   | Beschreibung                               |
+| Befehl  | Beschreibung                                |
 | -------- | ------------------------------------------ |
 | `/recap` | Generiert und zeigt eine einzeilige Session-Zusammenfassung |
 
 **Funktionsweise:**
 
-- Verwendet das konfigurierte Fast Model (Einstellung `fastModel`), falls verfügbar, und fällt andernfalls auf das Haupt-Sessionsmodell zurück. Ein kleines, günstiges Modell reicht für ein Recap völlig aus.
-- Die aktuelle Konversation (bis zu 30 Nachrichten, nur Text – Tool-Calls und Tool-Antworten werden herausgefiltert) wird mit einem strikten System-Prompt an das Modell gesendet.
-- Das Recap wird in gedimmter Farbe mit einem `❯`-Präfix gerendert, damit es sich von echten Assistant-Antworten abhebt.
-- Lehnt mit einem Inline-Fehler ab, wenn ein Model-Turn gerade läuft oder ein anderer Befehl verarbeitet wird. Wenn keine nutzbare Konversation vorhanden ist oder die zugrunde liegende Generierung fehlschlägt, zeigt `/recap` eine kurze Info-Nachricht anstelle eines Recaps – der manuelle Befehl antwortet immer mit irgendetwas.
+- Verwendet das konfigurierte schnelle Modell (Einstellung `fastModel`), wenn verfügbar, und fällt auf das Haupt-Sitzungsmodell zurück. Ein kleines, günstiges Modell reicht für eine Zusammenfassung aus.
+- Die jüngste Konversation (bis zu 30 Nachrichten, nur Text – Tool-Aufrufe und Tool-Antworten werden herausgefiltert) wird mit einem prägnanten System-Prompt an das Modell gesendet.
+- Die Zusammenfassung wird in gedämpfter Farbe mit dem Präfix `❯` dargestellt, um sich von echten Assistentenantworten abzuheben.
+- Lehnt mit einer Inline-Fehlermeldung ab, wenn ein Modell-Durchlauf läuft oder ein anderer Befehl verarbeitet wird. Wenn keine nutzbare Konversation vorhanden ist oder die zugrunde liegende Generierung fehlschlägt, zeigt `/recap` stattdessen eine kurze Info-Nachricht anstelle einer Zusammenfassung – der manuelle Befehl antwortet immer mit etwas.
 
-**Auto-Trigger bei Rückkehr aus Abwesenheit:**
+**Automatische Auslösung bei Rückkehr nach Abwesenheit:**
 
-Wenn das Terminal für **mehr als 5 Minuten** den Fokus verliert und wieder fokussiert wird, wird automatisch ein Recap generiert und angezeigt (nur, wenn gerade keine Modellantwort läuft; andernfalls wartet es, bis der aktuelle Turn abgeschlossen ist, und wird dann ausgelöst). Im Gegensatz zum manuellen Befehl ist der Auto-Trigger bei Fehlern völlig still: Wenn die Generierung fehlschlägt oder es nichts zusammenzufassen gibt, wird keine Nachricht zum Verlauf hinzugefügt. Gesteuert wird dies durch die Einstellung `general.showSessionRecap` (Standard: `false`); der manuelle Befehl `/recap` funktioniert immer, unabhängig von dieser Einstellung.
+Wenn das Terminal **5+ Minuten** lang unscharf war und wieder fokussiert wird, wird automatisch eine Zusammenfassung generiert und angezeigt (nur wenn keine Modellantwort läuft; sonst wartet sie, bis der aktuelle Durchlauf beendet ist, und feuert dann). Im Gegensatz zum manuellen Befehl ist der automatische Auslöser bei Fehlern vollständig still: Wenn die Generierung Fehler wirft oder nichts zusammengefasst werden kann, wird kein Eintrag zur Historie hinzugefügt. Gesteuert durch die Einstellung `general.showSessionRecap` (Standard: `false`); der manuelle Befehl `/recap` funktioniert unabhängig von dieser Einstellung immer.
 
 **Beispiel:**
 
@@ -321,9 +324,9 @@ Wenn das Terminal für **mehr als 5 Minuten** den Fokus verliert und wieder foku
 
 > [!tip]
 >
-> Konfiguriere ein Fast Model über `/model --fast <model>` (z. B. `qwen3-coder-flash`), um `/recap` schnell und kostengünstig zu machen. Setze `general.showSessionRecap` auf `true`, um den Auto-Trigger zu aktivieren; der manuelle Befehl `/recap` funktioniert immer, unabhängig von dieser Einstellung.
+> Konfiguriere ein schnelles Modell über `/model --fast <model>` (z. B. `qwen3-coder-flash`), um `/recap` schnell und günstig zu machen. Setze `general.showSessionRecap` auf `true`, um den automatischen Auslöser zu aktivieren; der manuelle Befehl `/recap` funktioniert unabhängig von dieser Einstellung immer.
 
-### 1.9 Diff Viewer (`/diff`)
+### 1.9 Diff-Viewer (`/diff`)
 
 Der Befehl `/diff` öffnet einen interaktiven Diff-Viewer, der uncommitted Änderungen und Diffs pro Turn anzeigt. Verwende ←/→, um zwischen dem aktuellen Git-Diff und einzelnen Konversations-Turns zu wechseln, ↑/↓, um durch Dateien zu navigieren, und Enter, um Inline-Diffs anzuzeigen.
 
@@ -447,6 +450,8 @@ Befehle zum Abrufen von Informationen und Vornehmen von Systemeinstellungen.
 | `/settings`      | Öffnet den Einstellungs-Editor                                                                                                 | `/settings`                                                                         |
 | `/config`        | Ruft jede Einstellung über den Dot-Path-Key ab oder setzt sie (schreibt in die Benutzereinstellungen)                          | `/config` (alle auflisten), `/config <key>`, `/config <key>=<value>`                 |
 | `/auth`          | Ändert die Authentifizierungsmethode                                                                                           | `/auth`, `/connect`, `/login`                                                       |
+| `/logout`        | Abmelden vom aktiven Qwen Subscription-Konto (verfügbar mit Qwen Subscription-Anmeldung)                                      | `/logout`                                                                           |
+| `/upgrade`       | Qwen-Abonnementpläne öffnen (verfügbar mit Qwen Subscription-Anmeldung)                                                          | `/upgrade`                                                                          |
 | `/doctor`        | Führt Installations- und Umgebungsdiagnosen aus                                                                                | `/doctor`, `/doctor memory`                                                         |
 | → `memory`       | Zeigt die aktuelle Prozess-Speicherdiagnose an                                                                                 | `/doctor memory [--json] [--sample] [--snapshot]`                                   |
 | → `cpu-profile`  | Erstellt ein CPU-Profil für die Chrome DevTools-Analyse                                                                        | `/doctor cpu-profile [--duration <seconds>]`                                        |
@@ -458,6 +463,7 @@ Befehle zum Abrufen von Informationen und Vornehmen von Systemeinstellungen.
 | `/bug`           | Reicht ein Issue zu Qwen Code ein                                                                                              | `/bug Button click unresponsive`                                                    |
 | `/copy`          | Kopiert in die Zwischenablage: Antwort (N-letzte), Code (nach Sprache), LaTeX oder Mermaid                                     | `/copy`, `/copy 2`, `/copy python`, `/copy latex`, `/copy mermaid`                  |
 | `/quit`          | Beendet Qwen Code sofort                                                                                                       | `/quit` oder `/exit`                                                                |
+
 > [!warning]
 >
 > `/doctor memory --snapshot` schreibt einen V8-Heap-Snapshot, der Prompts, Dateiinhalte, API-Keys und Tool-Ergebnisse der aktuellen Sitzung enthalten kann. Überprüfe die Datei, bevor du sie teilst.
@@ -501,6 +507,8 @@ Verwende `/auth` innerhalb einer Qwen Code-Sitzung, um die Authentifizierung zu 
 
 Hinweis: Leerzeichen in Pfaden müssen mit einem Backslash maskiert werden (z. B. `@My\ Documents/file.txt`)
 
+In der interaktiven Eingabeaufforderung unterstützt die Vervollständigung von `@` Unicode-Dateinamen, einschließlich Emojis. Emojis an anderer Stelle in der Eingabeaufforderung ändern nicht den für die Vervollständigung verwendeten Dateipfad.
+
 ## 3. Ausrufezeichen-Befehle (`!`) - Shell-Befehlsausführung
 
 Ausrufezeichen-Befehle ermöglichen es dir, Systembefehle direkt in Qwen Code auszuführen.
@@ -512,7 +520,7 @@ Ausrufezeichen-Befehle ermöglichen es dir, Systembefehle direkt in Qwen Code au
 
 Umgebungsvariablen: Über `!` ausgeführte Befehle setzen die Umgebungsvariable `QWEN_CODE=1`.
 
-## 4. Benutzerdefinierte Befehle
+## 4. Benutzerdefinierte Befehle [#4-custom-commands]
 
 Speichere häufig verwendete Prompts als Shortcut-Befehle, um die Arbeitseffizienz zu steigern und Konsistenz sicherzustellen.
 
@@ -541,17 +549,17 @@ Prioritätsregeln: Projekt-Befehle > Benutzer-Befehle (Projekt-Befehl wird verwe
 
 Benennungsregeln: Pfadtrennzeichen (`/` oder `\`) wird in einen Doppelpunkt (`:`) umgewandelt
 
-### Markdown-Dateiformat-Spezifikation (Empfohlen)
+### Markdown-Dateiformatspezifikation (Empfohlen)
 
 Benutzerdefinierte Befehle verwenden Markdown-Dateien mit optionalem YAML-Frontmatter:
 
 ```markdown
 ---
-description: Optionale Beschreibung (wird in /help angezeigt)
+description: Optional description (displayed in /help)
 ---
 
-Dein Prompt-Inhalt hier.
-Verwende {{args}} für die Parameter-Injektion.
+Your prompt content here.
+Use {{args}} for parameter injection.
 ```
 
 | Feld         | Erforderlich | Beschreibung                              | Beispiel                                    |
@@ -604,20 +612,20 @@ Verwende {{args}} für die Parameter-Injektion.
 
 | Vorgang                       | Benutzerinteraktion     |
 | ------------------------------- | -------------------- |
-| 1. Befehl und Parameter parsen | -                    |
-| 2. Automatisches Shell-Escaping     | -                    |
+| 1. Befehl und Parameter analysieren | -                    |
+| 2. Automatische Shell-Escapierung     | -                    |
 | 3. Bestätigungsdialog anzeigen     | ✅ Benutzerbestätigung |
 | 4. Befehl ausführen              | -                    |
-| 5. Ausgabe in Prompt injizieren      | -                    |
+| 5. Ausgabe in Eingabeaufforderung injizieren      | -                    |
 
-Beispiel: Git-Commit-Message-Generierung
+Beispiel: Git-Commit-Nachrichtengenerierung
 
 ````markdown
 ---
-description: Generiert eine Commit-Message basierend auf gestageten Änderungen
+description: Generate Commit message based on staged changes
 ---
 
-Bitte generiere eine Commit-Message basierend auf dem folgenden Diff:
+Please generate a Commit message based on the following diff:
 
 ```diff
 !{git diff --staged}
@@ -626,28 +634,28 @@ Bitte generiere eine Commit-Message basierend auf dem folgenden Diff:
 
 #### 4. Dateiinhalt-Injektion (`@{...}`)
 
-| Dateityp    | Support-Status         | Verarbeitungsmethode           |
+| Dateityp    | Unterstützungsstatus         | Verarbeitungsmethode           |
 | ------------ | ---------------------- | --------------------------- |
-| Textdateien   | ✅ Voller Support        | Inhalt direkt injizieren     |
-| Bilder/PDF   | ✅ Multimodaler Support | Kodieren und injizieren           |
-| Binärdateien | ⚠️ Eingeschränkter Support     | Können übersprungen oder gekürzt werden |
-| Verzeichnis    | ✅ Rekursive Injektion | Folgt den .gitignore-Regeln     |
+| Textdateien   | ✅ Vollständige Unterstützung        | Inhalt direkt injizieren     |
+| Bilder/PDF   | ✅ Multimodale Unterstützung | Kodieren und injizieren           |
+| Binärdateien | ⚠️ Begrenzte Unterstützung     | Kann übersprungen oder gekürzt werden |
+| Verzeichnis    | ✅ Rekursive Injektion | Folgt .gitignore-Regeln     |
 
 Beispiel: Code-Review-Befehl
 
 ```markdown
 ---
-description: Code-Review basierend auf Best Practices
+description: Code review based on best practices
 ---
 
-Reviewe {{args}}, Referenzstandards:
+Review {{args}}, reference standards:
 
 @{docs/code-standards.md}
 ```
 
 ### Praktisches Erstellungsbeispiel
 
-#### Schrittetabelle für die Erstellung des "Pure Function Refactoring"-Befehls
+#### Schritte-Tabelle zur Erstellung des "Pure Function Refactoring"-Befehls
 
 | Vorgang                     | Befehl/Code                              |
 | ----------------------------- | ----------------------------------------- |
@@ -658,37 +666,38 @@ Reviewe {{args}}, Referenzstandards:
 
 ```markdown
 ---
-description: Code in eine Pure Function refaktorisieren
+description: Refactor code to pure function
 ---
 
-Bitte analysiere den Code im aktuellen Kontext und refaktoriere ihn zu einer Pure Function.
-Anforderungen:
+Please analyze code in current context, refactor to pure function.
+Requirements:
 
-1. Refaktorisierten Code bereitstellen
-2. Wichtige Änderungen und die Implementierung der Pure-Function-Charakteristika erklären
-3. Funktion unverändert lassen
+1. Provide refactored code
+2. Explain key changes and pure function characteristic implementation
+3. Maintain function unchanged
 ```
 
 ### Zusammenfassung der Best Practices für benutzerdefinierte Befehle
 
-#### Empfehlungstabelle für das Befehlsdesign
+#### Tabelle der Empfehlungen zur Befehlsgestaltung
 
-| Praxispunkte      | Empfohlener Ansatz                | Vermeiden                                       |
+| Praxispunkte      | Empfohlener Ansatz                | Zu vermeiden                                       |
 | -------------------- | ----------------------------------- | ------------------------------------------- |
-| Befehlsbenennung       | Namespaces zur Organisation verwenden     | Übermäßig generische Namen vermeiden                  |
+| Befehlsbenennung       | Namensräume zur Organisation verwenden     | Übermäßig generische Namen vermeiden                  |
 | Parameterverarbeitung | `{{args}}` explizit verwenden              | Sich auf das Standard-Anhängen verlassen (leicht verwirrend) |
 | Fehlerbehandlung       | Shell-Fehlerausgabe nutzen          | Ausführungsfehler ignorieren                    |
-| Dateiorganisation    | Nach Funktion in Verzeichnissen organisieren | Alle Befehle im Stammverzeichnis              |
-| Beschreibungsfeld    | Immer eine klare Beschreibung angeben    | Sich auf automatisch generierte Beschreibungen verlassen          |
-#### Zusammenfassung der Sicherheitsfunktionen
+| Dateiorganisation    | Nach Funktion in Verzeichnissen organisieren | Alle Befehle im Wurzelverzeichnis              |
+| Beschreibungsfeld    | Immer klare Beschreibung bereitstellen    | Auf automatisch generierte Beschreibung verlassen          |
 
-| Sicherheitsmechanismus   | Schutzwirkung                | Benutzeraktion           |
-| ------------------------ | ---------------------------- | ------------------------ |
-| Shell Escaping           | Verhindert Command Injection | Automatische Verarbeitung|
-| Ausführungsbestätigung   | Verhindert versehentliche Ausführung | Bestätigung im Dialog  |
-| Fehlerausgabe            | Hilft bei der Diagnose von Problemen | Fehlerinformationen anzeigen |
+#### Erinnerungstabelle zu Sicherheitsfunktionen
 
-## 5. CLI-Subbefehle
+| Sicherheitsmechanismus     | Schutzwirkung          | Benutzeraktion         |
+| ---------------------- | -------------------------- | ---------------------- |
+| Shell-Escapierung         | Verhindert Befehlsinjektion  | Automatische Verarbeitung   |
+| Ausführungsbestätigung | Vermeiden versehentlicher Ausführung | Dialog-Bestätigung    |
+| Fehlerberichterstattung        | Hilft bei der Diagnose von Problemen       | Anzeige von Fehlerinformationen |
+
+## 5. CLI-Unterbefehle
 
 Diese Befehle werden in der Shell als `qwen <subcommand>` ausgeführt, bevor eine interaktive Sitzung gestartet wird.
 
@@ -728,218 +737,100 @@ Der Hinweis "has more sessions" wird über stderr ausgegeben, sodass das Piping 
 **Beispiele:**
 
 ```bash
-# Zeigt die letzten 20 Sitzungen an (Standard)
+# Show last 20 sessions (default)
 qwen sessions list
 
-# Zeigt die letzten 50 Sitzungen an
+# Show last 50 sessions
 qwen sessions list --limit 50
 
-# Ausgabe als JSON für Skripte
+# Output as JSON for scripting
 qwen sessions list --json | jq .
 ```
 
 #### `qwen sessions ps`
 
-Zeigt die interaktiven Qwen Code-Sitzungen an, die gerade auf diesem
-Rechner laufen. `sessions list` durchsucht gespeicherte Transkripte ("woran
-habe ich gearbeitet"); dies durchsucht das Live-Prozess-Register ("was läuft
-gerade"). Zurückgelassene Records einer beendeten Sitzung werden beim
-Auffinden bereinigt. Headless-Sitzungen (`qwen -p`) registrieren sich nicht
-im Live-Prozess-Register und werden daher nicht angezeigt.
+Listet die Qwen Code Sitzungsdatensätze auf, die auf diesem Rechner sichtbar sind. `sessions list` durchsucht gespeicherte Transkripte ("woran habe ich gearbeitet"). Dieser Befehl zeigt sowohl die Live-Prozess-Registrierung als auch Agent View-Datensätze, die mit `managed` markiert sind. Datensätze, die von einer beendeten Sitzung übrig geblieben sind, werden aus der Registrierung entfernt, sobald sie gefunden werden. Ein verwalteter Datensatz ist eine persistente Buchführung, kein Beweis dafür, dass sein Worker noch lebt. Eine einmalige `qwen -p`-Ausführung registriert sich nie und wird nicht angezeigt.
 
 **Flags:**
 
-| Flag     | Typ     | Standardwert | Beschreibung                                  |
-| -------- | ------- | ------------ | --------------------------------------------- |
-| `--json` | boolean | `false`      | Ausgabe als JSON Lines (ein JSON-Objekt pro Zeile) |
+| Flag     | Typ    | Standard | Beschreibung                                     |
+| -------- | ------- | ------- | ----------------------------------------------- |
+| `--json` | boolean | `false` | Ausgabe als JSON Lines (ein JSON-Objekt pro Zeile) |
 
 **Menschenlesbare Ausgabe (Standard):**
 
 Eine Tabelle mit den Spalten: NAME, KIND, PID, AGE, DIRECTORY.
 
-KIND beschreibt, was die Session registriert hat – `tui` für jemanden an einem Terminal, `external` für ein Programm, das gar keine Qwen Code-Session ist (ein Voice-Frontend, ein Relay), und `headless` oder `serve` für eine Session, die von einem anderen Programm gesteuert wird. Mehrere `serve`- oder `headless`-Zeilen können sich eine PID teilen: ein `qwen --acp`-Kind hostet alle seine Sessions in einem Prozess – `serve`, wenn der Daemon es gespawnt hat, `headless`, wenn ein Client es direkt steuert – und jede davon registriert sich separat. Es ist ein Self-Report, wie NAME und DIRECTORY: jedes Feld hier wurde von dem Prozess geschrieben, den es beschreibt, und nichts darüber, was eine Session tun darf, hängt davon ab. Siehe [Cross-Session Protocol](./cross-session-protocol.md) für das Record-Format und wie man ein eigenes Programm registriert.
+KIND gibt an, was die Sitzung registriert hat — `tui` für jemanden am Terminal, `external` für ein Programm, das gar keine Qwen Code Sitzung ist (eine Voice-Oberfläche, ein Relay), und `headless` oder `serve` für eine Sitzung, die von einem anderen Programm gesteuert wird. Mehrere `serve`- oder `headless`-Zeilen können sich eine PID teilen: Ein `qwen --acp`-Kind hostet alle seine Sitzungen in einem Prozess — `serve` wenn der Daemon es gestartet hat, `headless` wenn ein Client es direkt steuert — und jede davon registriert sich separat, wenn Peer-Messaging aktiv ist. Eine gehostete Sitzung registriert sich hier nicht, wenn ihre eigene Umgebung sie im Bare- oder Safe-Modus startet. Die `--bare` eines Daemons erreicht die gehosteten Sitzungen nicht (`QWEN_CODE_SIMPLE` wird aus der Kind-Umgebung entfernt); ein geerbtes `QWEN_CODE_SAFE_MODE` tut dies jedoch und hält diese gehosteten Sitzungen aus dieser Auflistung heraus. Es ist eine Selbstauskunft, wie NAME und DIRECTORY: Jedes Feld hier wurde von dem Prozess geschrieben, den es beschreibt, und nichts darüber, was eine Sitzung tun darf, hängt davon ab. Ein Agent View-Datensatz, der mit `managed` markiert ist, verwendet `managed` für KIND und `-` für PID und AGE. Er bleibt eine separate Zeile, wenn dieselbe Sitzung auch einen Live-Registrierungsdatensatz hat. Siehe [Cross-Session Protocol](./cross-session-protocol.md) für das Datensatzformat und dafür, wie du ein eigenes Programm registrierst.
 
 **JSON-Ausgabe (`--json`):**
 
-Gibt JSON Lines auf stdout aus, neueste Sitzung zuerst. Jede Zeile ist ein
-JSON-Objekt mit den folgenden Feldern:
+Gibt JSON Lines auf stdout aus, wobei verwaltete Datensätze zuerst kommen. Registrierungsdatensätze behalten ihr bestehendes Format:
 
 ```
 schemaVersion, pid, procStart, pidNs, sessionId, cwd, name, startedAt,
-qwenVersion, kind, ipcPath (wenn Peer-Messaging verfügbar ist)
+qwenVersion, kind, ipcPath (when peer messaging is available)
 ```
 
-Nichts anderes wird auf stdout geschrieben – eine leere Auflistung gibt
-überhaupt nichts aus – daher ist `qwen sessions ps --json | jq .` sicher
-zum Skripten.
+Eine verwaltete Aufzeichnung enthält nur quellengestützte Daten:
 
-JSON-Ausgabe sind Rohdaten: Feldwerte werden genau wie aufgezeichnet
-ausgegeben, ohne Terminal-Sanitization. Behandle sie als Daten und
-sanitiere sie vor dem Rendern in einem Terminal.
+```
+sessionId, cwd, managed: true
+```
+
+Nichts anderes wird auf stdout geschrieben – eine leere Liste druckt gar nichts – daher ist `qwen sessions ps --json | jq .` sicher für Skripting geeignet. Wenn der Supervisor-Store nicht gelesen werden kann, werden Registrierungsdatensätze trotzdem ausgegeben und der Grund wird auf stderr geschrieben.
+
+JSON-Ausgabe ist Rohdaten: Feldwerte werden genau so ausgegeben, wie sie aufgezeichnet wurden, ohne Terminal-Bereinigung. Behandle sie als Daten und bereinige sie vor der Darstellung im Terminal.
 
 **Beispiele:**
 
 ```bash
-# Zeigt die anderen Live-Sitzungen
+# Show the other live sessions
 qwen sessions ps
 
-# Welche Verzeichnisse sind gerade belegt?
-# Hinweis: `jq -r` gibt den rohen aufgezeichneten Wert in deinem Terminal
-# aus (siehe Rohdaten-Hinweis oben); pipe durch einen Sanitizer, wenn der
-# Pfad nicht vertrauenswürdig ist.
+# Which directories have a visible session record?
+# Note: `jq -r` renders the raw recorded value in your terminal (see the
+# raw-data note above); pipe through a sanitizer if the path is untrusted.
 qwen sessions ps --json | jq -r .cwd
 ```
 
-## 6. Nachrichten an eine andere laufende Session senden
+## 6. Messaging einer anderen laufenden Sitzung [#6-messaging-another-running-session]
 
-Zwei interaktive Sessions auf demselben Rechner können sich gegenseitig
-Nachrichten senden. Die Funktion ist experimentell und **standardmäßig
-ausgeschaltet**; aktiviere sie in `settings.json` und starte neu:
+Zwei interaktive Sitzungen auf demselben Rechner können sich gegenseitig Nachrichten senden. Die Funktion ist **standardmäßig aktiviert**, aber `--bare` und `--safe-mode` deaktivieren sie unabhängig von der Einstellung. Mit einem lauschenden Posteingang ist eine Sitzung für andere Sitzungen desselben Benutzers auf dem Rechner auffindbar, und was sie senden, durchläuft die unten stehenden Prüfregeln, bevor das Modell irgendetwas davon sieht. Um Peer-Erkennung und Messaging zu deaktivieren, schalte es in `settings.json` aus und starte neu:
 
 ```json
-{ "agents": { "crossSessionMessaging": true } }
+{ "agents": { "crossSessionMessaging": false } }
 ```
 
-Sobald aktiviert, kann das Modell in einer Session die anderen mit
-`list_agents` entdecken – jede erscheint unter `sessions` mit dem `name`,
-den `qwen sessions ps --json` aufzeichnet (die Tabellenansicht kann lange
-Namen abschneiden) – und eine mit `send_message` adressieren, wobei
-dieser Name als `to` verwendet wird. Wenn zwei Sessions denselben Namen
-teilen, zeigt `list_agents` jede mit einem kurzen `[ref]` an, und der
-Send-Vorgang muss dieses einbeziehen (`name [ref]`); ein bloßer Name, der
-beides bedeuten könnte, wird abgelehnt, statt geraten.
-`list_agents` meldet auch den eigenen Namen der Session unter `self`, und
-`to: "*"` bedeutet weiterhin "meine Agent-Team-Mitglieder" und erreicht
-nie andere Sessions.
+Eine interaktive Sitzung mit deaktiviertem Peer-Messaging kann weiterhin in `qwen sessions ps` erscheinen, hat aber keinen `ipcPath` und ist kein erreichbarer Peer in `list_agents`. Die OpenTUI-Oberfläche bindet ebenfalls keinen Peer-Posteingang; das Aktivieren der Einstellung allein macht sie nicht nachrichtenfähig.
 
-Eine Nachricht kommt in der anderen Session als von einer anderen Session
-kommend an, nicht vom Benutzer, und trägt keine deiner Autorität dort:
-Die empfangende Session handelt nur innerhalb ihrer eigenen
-Berechtigungseinstellungen. Ihr Benutzer kann entscheiden, was mit
-eingehenden Nachrichten geschieht, mittels
-`agents.crossSessionInbound` (`accept`, `hold` oder `refuse`). Wenn nicht
-gesetzt, wird eine Nachricht nur zugestellt, wenn beide Sessions in
-derselben Review-Klasse sind: beide überprüfen jede Aktion (Default- oder
-Plan-Modus), oder beide sind in einem Modus, der einige Aktionen ohne
-Review pro Aktion anwendet (auto-edit, auto oder yolo). Eine Nachricht
-von einer Session in der anderen Klasse, oder von einem Absender, der
-nicht angibt, in welcher Klasse er sich befindet, wird zur Überprüfung
-zurückgehalten – in beide Richtungen. Eine Session, die jede Aktion
-überprüft, hält eine Nachricht von einer zurück, die es nicht tut, denn
-diese Nachricht wurde von einem Modell geschrieben, das niemand
-beobachtete, und die Prompts pro Aktion bewachen Aktionen, nicht wozu
-die Session überredet wird. Zurückgehaltene Nachrichten werden mit
-`/peers` in der empfangenden Session aufgelistet und freigegeben, und
-eine Nachricht, die nur wegen unterschiedlicher Modi zurückgehalten
-wurde, wird automatisch freigegeben, sobald sie übereinstimmen.
+Bei aktivierter Nachrichtenübermittlung kann das Modell in einer Sitzung die anderen mit `list_agents` entdecken — jeder erscheint unter `sessions` mit dem `name`, den `qwen sessions ps --json` aufzeichnet (die Tabellenansicht kann lange Namen kürzen) — und adressiert einen mit `send_message` unter Verwendung dieses Namens als `to`. Wenn zwei Sitzungen denselben Namen teilen, zeigt `list_agents` jeden mit einem kurzen `[ref]` an, und die Sendung muss diesen enthalten (`name [ref]`); ein bloßer Name, der beide meinen könnte, wird abgelehnt statt geraten. `list_agents` meldet auch den eigenen Namen der Sitzung unter `self`, und `to: "*"` bedeutet weiterhin "meine Agent Team-Mitglieder" und erreicht niemals andere Sitzungen.
 
-Ein Repository kann darin geöffnete Sessions vorsichtiger machen, nie
-weniger: Eine Workspace-`.qwen/settings.json` kann
-`agents.crossSessionInbound` auf `hold` oder `refuse` setzen, oder
-`agents.crossSessionMessaging` auf `false`, und dieser Wert gewinnt über
-einem lockereren in deinen Benutzereinstellungen. Ein Workspace-Wert,
-der deine Einstellung lockern würde (`accept`, oder `true` für den
-Schalter), wird mit einer Warnung ignoriert, und ein Wert, den die CLI
-nicht erkennt, hält jede Nachricht, wenn er der effektive Wert ist.
-Systemeinstellungen überschreiben all dies, wie bei jeder Einstellung.
+Eine Nachricht trifft in der anderen Sitzung markiert als von einer anderen Sitzung kommend ein, nicht von deren Benutzer, und trägt dort keine Ihrer Berechtigungen: Die empfangende Sitzung handelt nur innerhalb ihrer eigenen Berechtigungseinstellungen darauf. Ihr Benutzer kann mit `agents.crossSessionInbound` (`accept`, `hold` oder `refuse`) wählen, was mit eingehenden Nachrichten geschieht. Wenn nicht festgelegt, wird eine Nachricht nur zugestellt, wenn sich beide Sitzungen in derselben Prüfklasse befinden: Beide prüfen noch jede Aktion (Standard- oder Planmodus), oder beide sind in einem Modus, der einige Aktionen ohne Einzelprüfung anwendet (auto-edit, auto oder yolo). Eine Nachricht aus einer Sitzung der anderen Klasse oder von einem Absender, der seine Klasse nicht angibt, wird zur Prüfung zurückgehalten — in beide Richtungen. Eine Sitzung, die jede Aktion prüft, hält eine Nachricht von einer zurück, die dies nicht tut, weil diese Nachricht von einem Modell geschrieben wurde, das niemand beobachtete, und die Einzelaktions-Prompts schützen Aktionen, nicht das, wozu die Sitzung überredet wird. Zurückgehaltene Nachrichten werden in der empfangenden Sitzung mit `/peers` aufgelistet und freigegeben, und eine Nachricht, die nur wegen unterschiedlicher Modi zurückgehalten wurde, wird automatisch freigegeben, sobald sie übereinstimmen.
 
-Eine Zurückhaltung wartet nicht ewig. Eine Nachricht, über die niemand
-entscheidet, läuft nach `agents.crossSessionHeldExpiry` ab – `1m`,
-`5m`, `10m` oder `never`, standardmäßig fünf Minuten – und der sendenden
-Session wird mitgeteilt, dass keine Entscheidung getroffen wurde. Eine
-Verkürzung der Einstellung gilt auch für bereits wartende Nachrichten.
+Ein Repository kann Sitzungen, die darin geöffnet werden, vorsichtiger machen, niemals weniger: Ein Workspace-`.qwen/settings.json` kann `agents.crossSessionInbound` auf `hold` oder `refuse` setzen, oder `agents.crossSessionMessaging` auf `false`, und dieser Wert hat Vorrang vor einem lockereren in Ihren Benutzereinstellungen. Ein Workspace-Wert, der einen vom Operator gesetzten Wert lockern würde (`accept`, oder `true` für den Schalter, wenn ein Benutzer- oder Systembereich ihn auf `false` gesetzt hat), wird mit einer Warnung ignoriert; ein Workspace-`true`, bei dem nichts anderes den Schalter gesetzt hat, wiederholt lediglich den Standardwert und wird stillschweigend verworfen. Ein Wert, den die CLI nicht erkennt, hält jede Nachricht zurück, wann immer er der wirksame Wert ist. Systemeinstellungen setzen all dies außer Kraft, wie bei jeder Einstellung.
 
-Wenn die Session ihren Posteingang nicht binden kann – das
-Runtime-Verzeichnis fehlt, gehört einem anderen Benutzer oder ist
-schreibgeschützt, wie in einem Container – versucht sie zuerst ein
-privates Verzeichnis unter dem Temp-Verzeichnis, und nur wenn das
-ebenfalls fehlschlägt, startet sie ohne. Wenn das passiert, meldet die
-Session dies beim Start, und `/peers` wiederholt den Grund und was zu
-ändern ist (normalerweise `XDG_RUNTIME_DIR` oder `TMPDIR`).
+Ein Rückhalt wartet nicht ewig. Eine Nachricht, über die niemand entscheidet, verfällt nach `agents.crossSessionHeldExpiry` — `1m`, `5m`, `10m` oder `never`, standardmäßig fünf Minuten — und der sendenden Sitzung wird mitgeteilt, dass keine Entscheidung erging. Das Verkürzen der Einstellung gilt auch für bereits wartende Nachrichten.
 
-Zwei Sessions können auch dieselbe Posteingangsadresse auflösen, denn
-die Adresse ist nach Prozess-ID gekeyt, und Prozess-IDs wiederholen sich
-über Container, die ein Runtime-Verzeichnis teilen. Die zweitstartende
-Session nimmt eine benachbarte Adresse, statt die gerade verwendete zu
-übernehmen, sodass keine unerreichbar wird. Peers sind davon
-unbetroffen: Sie lesen die Adresse einer Session aus der
-Session-Registry, statt sie abzuleiten.
+Wenn die Sitzung ihren Posteingang nicht binden kann — das Laufzeitverzeichnis fehlt, gehört einem anderen Benutzer oder ist schreibgeschützt, wie es in einem Container sein kann — versucht sie zuerst ein privates Verzeichnis unter dem Temp-Verzeichnis, und startet nur dann ohne eines, wenn auch das fehlschlägt. Wenn dies passiert, teilt die Sitzung dies beim Start mit, und `/peers` wiederholt den Grund und was zu ändern ist (normalerweise `XDG_RUNTIME_DIR` oder `TMPDIR`).
 
-Der `send_message`-Aufruf bestätigt nur, dass die Nachricht an die
-andere Session übergeben wurde. Was daraus wurde, kommt später als
-Quittung: Wenn sie zurückgehalten, abgelehnt, verweigert, abgelaufen
-oder falsch adressiert war (die Adresse hat den Besitzer gewechselt –
-liste die Agenten erneut auf) – oder nach einer Zurückhaltung
-freigegeben – erscheint ein Hinweis im Transkript der sendenden Session
-(`Message to <name>: …`). Abgelehnt, verweigert und verworfen sind drei unterschiedliche
-Antworten: Abgelehnt bedeutet, dass jemand die Nachricht überprüft und
-nein gesagt hat, verweigert bedeutet, dass `agents.crossSessionInbound`
-dieser Session `refuse` ist und niemand sie überhaupt gesehen hat, und
-verworfen bedeutet, dass ihr Posteingang die Nachricht vor alledem
-abgewiesen hat (siehe unten). Der erste Verwurf wird sofort beantwortet
-und die restlichen werden alle paar Sekunden in eine Quittung
-zusammengefasst, die jeweils die Nachrichten nennt, für die sie steht,
-sodass eine Serie davon nur eine Handvoll Zeilen kostet statt eine pro
-Nachricht. Das Modell, das sie gesendet hat, wird nicht informiert; wenn
-die andere Session antwortet, kommt die Antwort als
-Cross-Session-Nachricht an.
+Zwei Sitzungen können auch dieselbe Posteingangsadresse auflösen, da die Adresse nach Prozess-ID indiziert ist und Prozess-IDs sich über Container hinweg wiederholen, die ein Laufzeitverzeichnis teilen. Die zweite startende Sitzung nimmt stattdessen eine benachbarte Adresse, um die belegte nicht zu übernehmen, sodass keine unerreichbar wird. Peers sind unaffected: Sie lesen die Adresse einer Sitzung aus der Sitzungsregistrierung, statt sie abzuleiten.
 
-### Flood-Schutz
+Der `send_message`-Aufruf bestätigt nur, dass die Nachricht an die andere Sitzung übergeben wurde. Was daraus wurde, kommt später als Beleg: Wenn sie zurückgehalten, abgelehnt, verweigert, verworfen, verfallen oder falsch adressiert war (die Adresse wechselte die Hände — listen Sie die Agents erneut auf) — oder nach einem Rückhalt freigegeben wurde — erscheint ein Hinweis im Transkript der sendenden Sitzung (`Message to <name>: …`). Abgelehnt, verweigert und verworfen sind drei verschiedene Antworten: abgelehnt bedeutet, dass jemand die Nachricht prüfte und nein sagte, verweigert bedeutet, dass der `agents.crossSessionInbound` dieser Sitzung `refuse` ist und niemand sie überhaupt sah, und verworfen bedeutet, dass ihr Posteingang die Nachricht vor alledem abwies (siehe unten). Der erste Verwurf wird sofort beantwortet und die übrigen werden alle paar Sekunden in einen Beleg zusammengefasst, der jeweils die Nachrichten nennt, für die er steht, sodass eine Serie davon einige Zeilen kostet statt eine pro Stück. Dem Modell, das sie sandte, wird nichts gesagt; wenn die andere Sitzung antwortet, kommt die Antwort als sitzungsübergreifende Nachricht.
 
-Eine Session akzeptiert bis zu 30 Nachrichten auf einmal von einem
-Absender und danach eine alle zwei Sekunden, sowie bis zu 32 auf einmal
-von allen Absendern zusammen und danach eine pro Sekunde. Das zweite
-Limit existiert, weil ein Absender sich selbst benennt: Rotieren des
-Namens bringt eine frische Zuteilung vom ersten Limit, aber nicht vom
-zweiten. Es liegt knapp über dem ersten, weil jede akzeptierte Nachricht
-eine Quittung erzeugt, und eine Session kann nur so viele davon
-gleichzeitig verschicken. Eine Nachricht von einer anderen Session, die
-die vorherige Nachricht desselben Absenders Wort für Wort innerhalb von
-30 Sekunden wiederholt, wird ebenfalls abgewiesen – ein Modell, das auf
-einem Satz schleift, prägt jedes Mal eine frische Nachrichten-ID, also
-fängt es der Text ab. Nachrichten von einem Skript, das die Session
-gestartet hat, und von einem vertrauenswürdigen Controller sind von der
-Wiederholungsprüfung ausgenommen, denn ein Hook, der dieselbe Zeile
-zweimal meldet, meldet zwei Fakten, und eine Person, die zweimal
-„continue" sagt, meint es zweimal; beide unterliegen weiterhin den
-Ratenlimits. Schließlich wird eine Nachricht, die akzeptiert wird, aber
-nicht gequeut werden kann, weil die Session bereits 50 wartende hat,
-ebenfalls abgewiesen.
+### Schutz gegen Überflutung
 
-Eine Nachricht, die auf diese Weise abgewiesen wird, wird niemals
-zurückgehalten, niemals dem Modell gezeigt, und hinterlässt keinen
-Record, sodass der Absender es später erneut versuchen und landen kann.
-Die empfangende Session meldet dies in ihrem Transkript höchstens einmal
-pro Minute pro Absender, mit einem Zähler für das, wofür die Zeile
-steht. Die sendende Session bekommt eine Quittung, die jede Nachricht
-nennt, die der Burst gekostet hat, und ihr Transkript sagt, sie soll das
-noch Relevante in eine spätere Nachricht zusammenfassen, statt erneut zu
-senden.
+Eine Sitzung akzeptiert bis zu 30 Nachrichten gleichzeitig von einem Absender und dann eine alle zwei Sekunden sowie bis zu 32 gleichzeitig von allen Absendern zusammen und dann eine pro Sekunde. Das zweite Limit existiert, weil sich ein Absender selbst benennt: Durch das Rotieren dieses Namens erhält man ein neues Kontingent für das erste Limit, aber nicht für das zweite. Es liegt knapp über dem ersten, da jede akzeptierte Nachricht eine Empfangsbestätigung auslöst und eine Sitzung nur eine begrenzte Anzahl solcher Bestätigungen gleichzeitig senden kann. Eine Nachricht aus einer anderen Sitzung, die die vorherige Nachricht desselben Absenders innerhalb von 30 Sekunden wortwörtlich wiederholt, wird ebenfalls abgewiesen – ein Modell, das in einer Schleife bei einem Satz hängt, erzeugt jedes Mal eine neue Nachrichten-ID, daher ist der Text entscheidend für die Erkennung. Nachrichten von einem Skript, das die Sitzung gestartet hat, und von einem vertrauenswürdigen Controller sind von der Wiederholungsprüfung ausgenommen, da ein Hook, der dieselbe Zeile zweimal meldet, zwei Fakten meldet, und wenn eine Person zweimal "continue" sagt, meint sie es auch zweimal; beide unterliegen weiterhin den Ratenlimits. Schließlich wird auch eine Nachricht abgewiesen, die zwar akzeptiert wurde, aber nicht in die Warteschlange gestellt werden kann, weil die Sitzung bereits 50 wartende Nachrichten enthält.
 
-Die sendende Seite wartet nicht, um es herauszufinden. Jede Session
-verfolgt, was sie an jede Adresse gesendet hat, und verweigert einen
-Send, den der Empfänger verwerfen würde, sodass das Modell gesagt
-bekommt, es soll batchen, bevor die Nachricht geschrieben wird, statt
-danach – und der Empfänger gibt niemals eine Verbindung für eine
-Nachricht aus, die er abweisen würde.
+Eine auf diese Weise abgewiesene Nachricht wird niemals gespeichert, niemals dem Modell angezeigt und hinterlässt keine Aufzeichnung, sodass der Absender es später erneut versuchen und Erfolg haben kann. Die empfangende Sitzung vermerkt dies höchstens einmal pro Minute pro Absender in ihrem Transkript, mit einer Zählung dessen, wofür diese Zeile steht. Die sendende Sitzung erhält eine Empfangsbestätigung, die jede Nachricht auflistet, die der Burst gekostet hat, und ihr Transkript weist an, was noch relevant ist, in einer späteren Nachricht zusammenzufassen, anstatt sie erneut zu senden.
 
-### Posteingang-Authentifizierung und skriptete Injektion
+Die sendende Seite wartet nicht auf eine Rückmeldung. Jede Sitzung verfolgt, was sie an jede Adresse gesendet hat, und lehnt einen Sendevorgang ab, den der Empfänger verwerfen würde, sodass das Modell angewiesen wird, Nachrichten zu bündeln, bevor die Nachricht geschrieben wird, und nicht danach – und der Empfänger verwendet niemals eine Verbindung für eine Nachricht, die er ohnehin ablehnen würde.
 
-Der Posteingang jeder Session erfordert ein Session-spezifisches Token:
-Eine Verbindung muss es in ihrer ersten Zeile präsentieren, bevor eine
-Nachricht gelesen wird, und Sessions tauschen Token automatisch über
-dieselben Registry-Einträge aus, durch die sie sich gegenseitig
-entdecken. Sessions von einem Build ohne Token-Support können von einem
-neueren empfangen, aber ihre Sendungen an dieses werden verworfen.
+### Inbox-Authentifizierung und skriptgesteuerte Injektion
 
-Eine Session exportiert ihre eigene Posteingangsadresse und ein Token an
-Kindprozesse als `QWEN_CODE_MESSAGING_SOCKET` und
-`QWEN_CODE_MESSAGING_TOKEN`, sodass ein Skript oder Hook, den die
-Session ausführt, eine Nachricht zurück in sie senden kann. Dies ist ein
-zweites, _Kind_-Token, das nirgendwo veröffentlicht wird: Nur Prozesse,
-die die Session gestartet hat, können es halten, sodass eine Nachricht,
-die damit ankommt, als eigene der Session erkannt wird, statt als die
-einer anderen Session.
+Der Posteingang jeder Sitzung erfordert ein sitzungsspezifisches Token: Eine Verbindung muss es in ihrer ersten Zeile angeben, bevor irgendeine Nachricht gelesen wird, und Sitzungen tauschen Tokens automatisch über dieselben Registrierungsdatensätze aus, über die sie sich gegenseitig entdecken. Sitzungen aus einem Build ohne Token-Unterstützung können von einer neueren Sitzung empfangen, aber ihre Sendeversuche an diese werden verworfen.
+
+Eine Sitzung exportiert ihre eigene Posteingangsadresse und ein Token als Kindprozesse unter `QWEN_CODE_MESSAGING_SOCKET` und `QWEN_CODE_MESSAGING_TOKEN`, sodass ein Skript oder Hook, den die Sitzung ausführt, eine Nachricht zurücksenden kann. Dies ist ein zweites, _Kind_-Token, das nirgendwo veröffentlicht wird: Nur Prozesse, die die Sitzung gestartet hat, können es besitzen, sodass eine Nachricht, die damit eintrifft, als eigene Nachricht der Sitzung erkannt wird und nicht als Nachricht einer anderen Sitzung.
 
 ```bash
 { printf '%s\n' \
@@ -948,50 +839,23 @@ einer anderen Session.
 } | socat - UNIX-CONNECT:"$QWEN_CODE_MESSAGING_SOCKET"
 ```
 
-Gib jeder Injektion eine frische `msgId`. Das empfangende Gate merkt
-sich die IDs, die es bereits verarbeitet hat, sodass ein Hook, der eine
-wiederverwendet, beim ersten Mal zugestellt und bei jedem weiteren Lauf
-still dedupliziert wird.
+Geben Sie jeder Injektion eine neue `msgId`. Das empfangende Gate merkt sich die IDs, die es bereits bearbeitet hat, sodass ein Hook, der eine ID wiederverwendet, beim ersten Mal zugestellt und bei jedem weiteren Lauf stillschweigend dedupliziert wird. Die Wiederholung desselben _Textes_ ist in Ordnung – die oben genannte Wiederholungsprüfung gilt nicht für die eigenen Prozesse einer Sitzung –, aber die Ratenlimits gelten weiterhin, sodass ein Hook in einer Schleife wie jeder andere Flood verworfen wird.
 
-Eine injizierte Nachricht durchläuft immer noch das eingehende Gate und
-wird als nicht vom Benutzer kommend markiert, aber das Gate weiß, dass
-sie vom eigenen Prozess der Session kam: Unter dem
-Modus-Übereinstimmungs-Standard wird sie ohne Überprüfung zugestellt
-(ein Peer in derselben Position würde zurückgehalten), während ein
-explizites `agents.crossSessionInbound` von `hold` oder `refuse` dafür
-gilt wie für alles andere. Das Modell sieht sie als
-`<cross_session_message from="own process" origin="own-process">` mit
-einem Hinweis, dass sie von einem Skript oder Hook stammt, den die
-Session ausgeführt hat, nicht vom Benutzer.
+Eine injizierte Nachricht durchläuft weiterhin das eingehende Gate und wird als nicht vom Benutzer stammend markiert, aber das Gate weiß, dass sie vom eigenen Prozess der Sitzung stammt: Unter der Standard-Einstellung zur Modus-Parität wird sie ohne Überprüfung zugestellt (ein Peer in derselben Position würde angehalten), während eine explizite `agents.crossSessionInbound` von `hold` oder `refuse` darauf angewendet wird wie auf alles andere. Das Modell sieht sie als `<cross_session_message from="own process" origin="own-process">` mit einem Hinweis, dass sie von einem Skript oder Hook stammt, den die Sitzung ausgeführt hat, und nicht vom Benutzer.
 
-### Vertrauenswürdige Controller
+### Vertrauenswürdige Controller [#trusted-controllers]
 
-Die Regel oben hält eine Nachricht von jedem Absender zurück, der nicht
-angibt, in welcher Review-Klasse er sich befindet, und ein Programm, das
-keine Qwen Code-Session ist, hat keine zu sagen. Das ist die richtige
-Voreinstellung für einen Fremden, aber nicht für ein Programm, das du
-gewählt hast: Ein Voice-Frontend, eine Diktierbrücke, ein
-Automatisierungs-Daemon, der deine eigenen Anweisungen weiterleitet,
-würde jede Nachricht parken, und jede einzelne manuell zu genehmigen
-macht den Sinn zunichte.
+Die obige Regel hält eine Nachricht von jedem Absender an, der nicht angibt, welcher Überprüfungsklasse er angehört, und ein Programm, das keine Qwen Code-Sitzung ist, hat keine solche Angabe. Das ist der richtige Standard für einen Fremden, aber nicht für ein Programm, das Sie ausgewählt haben: Ein Sprach-Frontend, eine Diktierbrücke, ein Automatisierungs-Daemon, der Ihre eigenen Anweisungen weiterleitet, würde jede Nachricht parken lassen, und jede einzelne manuell zu genehmigen, widerspricht dem Zweck.
 
-Du gewährst einem solchen Programm die Zustellung, indem du ein Token
-für es erstellst:
+Sie gewähren einem solchen Programm Zustellung, indem Sie ihm ein Token ausstellen:
 
 ```bash
 qwen sessions controllers add --label voice-bridge
 ```
 
-Das Token wird einmal ausgegeben und nirgendwo gespeichert: Die Datei
-unter deinem Qwen-Home enthält nur seinen SHA-256-Hash, sodass nichts,
-was diese Datei später liest, das Token präsentieren kann. Trage es in
-die eigene Konfiguration des Controllers ein, wenn der Befehl es
-ausgibt.
+Das Token wird einmal gedruckt und nirgends gespeichert: Die Datei unter Ihrem Qwen-Home-Basisverzeichnis behält nur seinen SHA-256-Hash, sodass nichts, das diese Datei später liest, das Token präsentieren kann. Fügen Sie es in die Konfiguration des Controllers selbst ein, wenn der Befehl es druckt.
 
-Ein Controller präsentiert das Token wie jeder andere Absender – als
-erste Zeile der Verbindung – und nimmt den Socket-Pfad aus der
-Session-Registry (`qwen sessions ps --json` gibt einen Datensatz pro
-Live-Session aus, `ipcPath` ist die Adresse):
+Ein Controller präsentiert das Token so wie jeder andere Absender – als erste Zeile der Verbindung – und bezieht den Socket-Pfad aus der Sitzungsregistrierung (`qwen sessions ps --json` druckt einen Datensatz pro aktiver Sitzung, wobei `ipcPath` die Adresse ist):
 
 ```bash
 { printf '%s\n' \
@@ -1000,85 +864,31 @@ Live-Session aus, `ipcPath` ist die Adresse):
 } | socat - UNIX-CONNECT:"$SESSION_IPC_PATH"
 ```
 
-Eine Nachricht, die mit einem gewährten Token ankommt, wird ohne Review
-pro Nachricht zugestellt, unabhängig davon, in welcher Review-Klasse
-sich jede Seite befindet – aber sie weicht weiterhin einer expliziten
-Einstellung: Ein `agents.crossSessionInbound` von `hold` parkt sie wie
-alles andere, und `refuse` weist sie ab. Grants gehören zu deinem
-Qwen-Home statt zu einer Session, sodass ein Controller die Sessions
-erreicht, die du ausführst, und Sessions lesen die Datei bei jeder
-Verbindung neu: Ein Token zu erstellen oder zu widerrufen, wird bei der
-nächsten Verbindung wirksam, ohne dass etwas neu gestartet werden muss.
+Eine Nachricht, die auf einem gewährten Token eintrifft, wird ohne nachrichtenspezifische Überprüfung zugestellt, unabhängig davon, in welcher Überprüfungsklasse sich beide Seiten befinden – aber sie weicht dennoch einer expliziten Einstellung: Ein `agents.crossSessionInbound` von `hold` parkt sie wie alles andere, und `refuse` weist sie ab. Gewährung gehören zu Ihrem Qwen-Home-Basisverzeichnis und nicht zu einer einzelnen Sitzung, sodass ein Controller jede Sitzung erreicht, die Sie ausführen, und Sitzungen lesen die Datei bei jeder Verbindung neu: Das Ausstellen oder Widerrufen einer Gewährung tritt bei der nächsten Verbindung in Kraft, ohne dass etwas neu gestartet werden muss.
 
 ```bash
-qwen sessions controllers list          # IDs, Labels, wann sie hinzugefügt wurden
-qwen sessions controllers remove c_1a2b # eines widerrufen
+qwen sessions controllers list          # ids, labels, when they were added
+qwen sessions controllers remove c_1a2b # revoke one
 ```
 
-`/peers controllers` und `/peers revoke <id>` tun dasselbe innerhalb
-einer Session. Eine Nachricht, die durch einen Grant kam, wird als
-`Message from a trusted controller (voice-bridge)` angezeigt, und
-erscheint in `/peers` als `[controller] voice-bridge`, wenn eine
-`hold`-Einstellung sie geparkt hat.
+`/peers controllers` und `/peers revoke <id>` tun dasselbe innerhalb einer Sitzung. Eine Nachricht, die über eine Berechtigung empfangen wurde, wird als `Message from a trusted controller (voice-bridge)` angezeigt und erscheint in `/peers` als `[controller] voice-bridge`, wenn eine `hold`-Einstellung sie geparkt hat.
 
-Das Modell sieht eine solche Nachricht als
-`<cross_session_message from="controller" origin="controller" controller="voice-bridge">`,
-mit einem Hinweis, dass sie deine eigenen Anweisungen weiterleitet – und
-dieselben zwei Verbote, die für jeden anderen Ursprung gelten: Sie darf
-nicht Berechtigungseinstellungen, QWEN.md oder Konfiguration bearbeiten,
-weil die Nachricht es verlangt, und sie darf die Nachricht nicht als
-deine Genehmigung eines ausstehenden Bestätigungs-Prompts behandeln. Ein
-Controller kann sagen, was als nächstes zu tun ist; er kann keinen
-Prompt in deinem Namen beantworten.
+Das Modell sieht eine solche Nachricht als `<cross_session_message from="controller" origin="controller" controller="voice-bridge">` mit dem Hinweis, dass sie Ihre eigenen Anweisungen weiterleitet – und es gelten dieselben beiden Verbote wie für alle anderen Ursprünge: Es darf keine Berechtigungseinstellungen, QWEN.md oder Konfigurationen bearbeiten, nur weil die Nachricht dies verlangt, und es darf die Nachricht nicht so behandeln, als hätten Sie eine ausstehende Bestätigungsanfrage genehmigt. Ein Controller kann sagen, was als Nächstes zu tun ist; er kann aber nicht eine Anfrage an Ihrer Stelle beantworten.
 
-Jeder, der das Token hält, kann als dieser Controller senden, behandle
-es also wie jede andere Anmeldeinformation: Gib es einem Programm, halte
-es aus geteilter Konfiguration heraus, und widerrufe es, wenn das
-Programm fertig ist.
+Jeder, der das Token besitzt, kann als dieser Controller senden, daher sollte es wie jedes andere Zugangsdatum behandelt werden: Übergeben Sie es nur einem Programm, halten Sie es aus geteilten Konfigurationen fern und widerrufen Sie es, wenn das Programm fertig ist.
 
-### Sessions, die ein Programm über ACP steuert
+### Sitzungen, die von einem Programm über ACP gesteuert werden
 
-Jedes `qwen --acp`-Kind registriert jede Session, die es hostet – als
-`serve`, wenn der Daemon den Prozess gespawnt hat, als `headless`, wenn
-ein Editor oder ein anderer Client `qwen --acp` direkt steuert – und die
-Session erscheint in `qwen sessions ps` und im `list_agents` einer
-anderen Session wie jede andere. Sie kann senden: ihr Modell kann
-`send_message` aufrufen, um ein Terminal zu erreichen, das du offen hast.
-Mehrere davon teilen sich einen Prozess und einen Posteingang, also muss
-ein Absender die Session benennen, die er meint – jede Qwen Code-Session
-tut das automatisch.
+Jedes `qwen --acp`-Kind registriert jede von ihm gehostete Sitzung – als `serve`, wenn der Daemon den Prozess gestartet hat, als `headless`, wenn ein Editor oder ein anderer Client `qwen --acp` direkt steuert – und die Sitzung erscheint in `qwen sessions ps` und im `list_agents` einer anderen Sitzung wie jede andere auch. Sie kann senden: Ihr Modell kann `send_message` aufrufen, um ein Terminal zu erreichen, das Sie geöffnet haben. Mehrere davon teilen sich einen Prozess und einen Posteingang, daher muss ein Absender die gemeinte Sitzung benennen – jede Qwen Code-Sitzung tut dies automatisch.
 
-Nachrichten, die _an_ eine solche gesendet werden, werden abgelehnt
-statt zurückgehalten. Zurückhaltung ist eine Frage an einen Menschen,
-und niemand beobachtet eine Liste zurückgehaltener Nachrichten für eine
-gesteuerte Session; ein Absender wird stattdessen sofort benachrichtigt,
-statt ein Ablaufen abzuwarten. Wo eine zurückgehaltene Nachricht für
-diese Sessions auftauchen sollte, ist noch nicht geklärt.
+Nachrichten, die _an_ eine solche Sitzung gesendet werden, werden abgelehnt statt gehalten. Das Halten ist eine Frage an eine Person, und niemand beobachtet eine Liste gehaltener Nachrichten im Auftrag einer gesteuerten Sitzung; ein Absender wird sofort informiert, statt auf einen Ablauf zu warten. Wo eine gehaltene Nachricht für diese Sitzungen erscheinen sollte, ist noch nicht geklärt.
 
-Eine Session registriert sich nur, solange ihre eigenen Einstellungen
-`agents.crossSessionMessaging` aktiviert haben. Mit ausgeschaltetem
-bleibt sie unsichtbar, denn der einzige Grund, eine Session aufzulisten,
-die niemand ansprechen kann, wäre, eine Adresse zu bewerben, die
-niemals antwortet.
+Eine Sitzung registriert sich, es sei denn, ihre eigenen Einstellungen schalten `agents.crossSessionMessaging` aus, oder sie wurde mit `--bare` oder `--safe-mode` gestartet – diese schalten die Messaging-Funktion unabhängig von der Einstellung aus. Wenn deaktiviert, bleibt sie unsichtbar, denn der einzige Grund, eine Sitzung aufzulisten, die niemand anschreiben kann, wäre, eine Adresse zu bewerben, die nie antwortet.
 
-### Programme, die keine Qwen Code-Sessions sind
+### Programme, die keine Qwen Code-Sitzungen sind
 
-Alles oben funktioniert zwischen Sessions, aber nichts davon ist
-spezifisch für eine. Ein Programm, das einen Registry-Eintrag für sich
-selbst schreibt und einen Posteingang auf dieselbe Weise bindet, wird
-von `qwen sessions ps` und von `list_agents` aufgelistet, kann namentlich
-von `send_message` adressiert werden, und empfängt Zustellquittungen für
-das, was es sendet – ein Voice-Frontend, ein Relay, ein Build-Watcher. Es
-sollte `kind: "external"` aufzeichnen, damit eine Auflistung sagen kann,
-was es ist.
+Alles oben Genannte funktioniert zwischen Sitzungen, aber nichts davon ist spezifisch für eine Sitzung. Ein Programm, das einen Registrierungseintrag für sich selbst schreibt und einen Posteingang auf dieselbe Weise bindet, wird von `qwen sessions ps` und von `list_agents` aufgelistet, kann von `send_message` aus namentlich angesprochen werden und erhält Zustellbestätigungen für das, was es sendet – eine Sprachfront-End, ein Relay, ein Build-Watcher. Es sollte `kind: "external"` erfassen, damit eine Auflistung angeben kann, was es ist.
 
-[Cross-Session Protocol](./cross-session-protocol.md) ist der Vertrag,
-um eines zu schreiben: das Record-Schema und wie Liveness beurteilt
-wird, die Socket-Pfade und das Framing, die Auth-Zeile, jedes
-Frame-Feld, die Quittungs-Zustände und ihre Übergänge, und was ein
-Empfänger mit einer Nachricht tut, bevor sein Modell sie sieht.
+[Cross-Session Protocol](./cross-session-protocol.md) ist der Vertrag für die Implementierung eines solchen Programms: das Datenschema und wie die Aktivität beurteilt wird, die Socket-Pfade und das Framing, die Authentifizierungszeile, jedes Frame-Feld, die Zustände der Bestätigungen und deren Übergänge sowie was ein Empfänger mit einer Nachricht tut, bevor sein Modell sie sieht.
 
-Ein Node-Programm muss nichts davon von Hand schreiben:
-` @qwen-code/sdk/peer` implementiert den Vertrag. `PeerEndpoint.start({ name })`
-publiziert den Record und bindet den Posteingang, `list()` und `send()` adressieren
-Sessions nach Name, und `onMessage` empfängt, was sie senden.
+Ein Node-Programm muss nichts davon manuell implementieren: `@qwen-code/sdk/peer` setzt den Vertrag um. `PeerEndpoint.start({ name })` veröffentlicht den Eintrag und bindet den Posteingang, `list()` und `send()` adressieren Sitzungen nach Namen, und `onMessage` empfängt, was sie senden.

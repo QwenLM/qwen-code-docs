@@ -4,7 +4,7 @@ Qwen Code vous permet de configurer plusieurs fournisseurs de modèles via le pa
 
 ## Vue d'ensemble
 
-Utilisez `modelProviders` pour déclarer des modèles par id de fournisseur entre lesquels le sélecteur `/model` peut basculer. Chaque clé est un id de fournisseur et sa valeur est **un tableau de définitions de modèles** (`ModelConfig[]`). Pour les fournisseurs intégrés, la clé doit être un type d'authentification valide (`openai`, `openai-responses`, `anthropic`, `gemini`, `vertex-ai`) ; un id de fournisseur personnalisé (par ex. `idealab`) est autorisé tant que vous le mappez à un protocole via le paramètre de niveau supérieur [`providerProtocol`](#custom-provider-ids-providerprotocol). Chaque entrée de modèle nécessite un `id` ; `envKey` est **facultatif mais recommandé** (lorsqu'il est omis, il revient à la clé d'environnement par défaut du type d'authentification, par ex. `OPENAI_API_KEY` pour `openai`), avec des champs facultatifs `name`, `description`, `baseUrl` et `generationConfig`. Les identifiants ne sont jamais enregistrés dans les paramètres ; le runtime les lit depuis `process.env[envKey]`. Les modèles Qwen OAuth restent codés en dur et ne peuvent pas être remplacés.
+Utilisez `modelProviders` pour déclarer les modèles par identifiant de fournisseur que le sélecteur `/model` peut basculer. Chaque clé est un identifiant de fournisseur et sa valeur est **un tableau de définitions de modèles** (`ModelConfig[]`). Pour les fournisseurs intégrés, la clé doit être un type d'authentification valide (`openai`, `anthropic`, `gemini`, `vertex-ai`) ; un identifiant de fournisseur personnalisé (par ex. `idealab`) est autorisé tant que vous le mappez à un protocole via le paramètre de niveau supérieur [`providerProtocol`](#custom-provider-ids-providerprotocol). Chaque entrée de modèle nécessite un `id` ; `envKey` est **facultatif et recommandé** (en cas d'omission, il revient à la clé d'environnement par défaut du type d'authentification, par ex. `OPENAI_API_KEY` pour `openai`), avec des champs facultatifs `name`, `description`, `baseUrl` et `generationConfig`. Les identifiants ne sont jamais persistés dans les paramètres ; le runtime les lit depuis `process.env[envKey]`. Les anciens modèles Qwen OAuth gratuits restent codés en dur et ne peuvent pas être remplacés.
 
 > [!note]
 >
@@ -12,29 +12,23 @@ Utilisez `modelProviders` pour déclarer des modèles par id de fournisseur entr
 
 > [!note]
 >
-> Seule la commande `/model` expose les types d'authentification non par défaut. Anthropic, Gemini, etc., doivent être définis via `modelProviders`. La commande `/auth` liste trois options de premier niveau : **Alibaba ModelStudio** (avec Coding Plan, Token Plan et Standard API Key dans son sous-menu), **Third-party Providers** et **Custom Provider**. (Qwen OAuth n'est plus une entrée de dialogue sélectionnable ; son niveau gratuit a été interrompu le 15 avril 2026.)
+> Configurez les fournisseurs de clés API via `modelProviders`, puis sélectionnez-les avec `/model`. Pour la connexion au compte Qwen, choisissez [**Compte Qwen avec Abonnement**](https://chat.qwen.ai/?memberPlan=qwen_code) dans `/auth` ; aucune configuration manuelle de clé API ou de `modelProviders` n'est nécessaire. Utilisez `/model` pour choisir parmi les modèles disponibles avec votre abonnement. Voir [Authentification](./auth.md) pour les instructions de connexion.
 
 > [!note]
 >
-> **Unicité des modèles :** Les modèles au sein du même `authType` sont identifiés de manière unique par la combinaison de `id` + `baseUrl`. Cela signifie que vous pouvez définir le même ID de modèle (par ex. `"gpt-4o"`) plusieurs fois sous un seul `authType`, tant que chaque entrée a une `baseUrl` différente — par exemple, l'une pointant directement vers OpenAI et l'autre vers un point de terminaison proxy. Si deux entrées partagent le même `id` et la même `baseUrl` (ou si les deux omettent `baseUrl`), la première occurrence l'emporte et les doublons suivants sont ignorés avec un avertissement.
+> **Unicité des modèles :** Les modèles sont identifiés par leur protocole API effectif, `id`, et leur `baseUrl` configuré. Vous pouvez définir le même modèle et URL avec à la fois `wireApi: "chat-completions"` et `wireApi: "responses"`, ou utiliser des URLs différentes pour le même modèle et l'API. Si les entrées partagent ces trois valeurs, la première occurrence gagne et les doublons suivants sont ignorés avec un avertissement.
 
 > [!note]
 >
-> **Rechargement à chaud vs redémarrage :** les modifications de `modelProviders` dans `settings.json` sont prises en compte par une session interactive en cours d'exécution sans redémarrage (le file watcher applique un debounce d'environ 300 ms ; rouvrez `/model` pour voir les nouvelles entrées, la sélection actuelle est conservée). `providerProtocol` est lu une seule fois au démarrage et **nécessite un redémarrage**.
+> **Rechargement à chaud vs. redémarrage :** Les modifications de `modelProviders` dans `settings.json` sont prises en compte par une session interactive en cours sans redémarrage (le surveillant de fichiers débounce ~300ms ; rouvrez `/model` pour voir les nouvelles entrées, la sélection actuelle est conservée). Modifier le `wireApi` du modèle actif crée une route différente ; sélectionnez cette route explicitement ou redémarrez pour l'utiliser. Des modifications d'API invalides laissent le registre précédent utilisable. `providerProtocol` est lu une seule fois au démarrage et **nécessite un redémarrage**.
 
 ### Routes de génération d'images
 
-Définissez `supportsImageGeneration: true` lorsqu'une route peut être utilisée par l'outil intégré
-`image_gen`. Cette capacité est indépendante de la prise en charge de l'entrée d'images telle que
-`capabilities.vision` ou `generationConfig.modalities.image`.
+Définissez `supportsImageGeneration: true` lorsqu'une route peut être utilisée par l'outil intégré `image_gen`. Cette capacité est indépendante de la prise en charge des entrées d'image telles que `capabilities.vision` ou `generationConfig.modalities.image`.
 
-Utilisez `imageOnly: true` lorsque la route est dédiée à la génération d'images et ne doit
-pas apparaître dans les sélecteurs de modèles ordinaires. Pour des raisons de rétrocompatibilité,
-`imageOnly: true` implique également la capacité de génération d'images, donc les paramètres
-existants n'ont pas besoin d'être migrés.
+Utilisez `imageOnly: true` lorsque la route est dédiée à la génération d'images et ne doit pas apparaître dans les sélecteurs de modèles ordinaires. Pour la compatibilité ascendante, `imageOnly: true` implique également la capacité de génération d'images, de sorte que les paramètres existants n'ont pas besoin d'être migrés.
 
-Une route à double rôle peut être sélectionnée comme modèle principal et via
-`/model --image` :
+Une route à double rôle peut être sélectionnée à la fois comme modèle principal et via `/model --image` :
 
 ```json
 {
@@ -51,8 +45,7 @@ Une route à double rôle peut être sélectionnée comme modèle principal et v
 }
 ```
 
-Une route image dédiée définit les deux champs. La forme legacy avec seulement
-`imageOnly: true` reste valide :
+Une route d'image dédiée définit les deux champs. La forme héritée avec uniquement `imageOnly: true` reste valide :
 
 ```json
 {
@@ -64,10 +57,66 @@ Une route image dédiée définit les deux champs. La forme legacy avec seulemen
 }
 ```
 
-La route sélectionnée doit déclarer une `baseUrl` HTTPS explicite et un `envKey` non vide.
-La génération d'images utilise le même endpoint et le même identifiant que la route ;
-si le chat et la génération d'images nécessitent des endpoints ou des identifiants différents,
-configurez plutôt deux routes.
+La route sélectionnée doit déclarer un `baseUrl` HTTPS explicite et un `envKey` non vide. La génération d'images utilise le même point de terminaison et les mêmes identifiants que la route ; si le chat et la génération d'images nécessitent des points de terminaison ou des identifiants différents, configurez deux routes distinctes.
+
+### Routes Live Voice
+
+Définissez `realtimeOnly: true` sur une route qui parle le protocole DashScope Realtime (parole-à-parole). Une telle route n'est jamais proposée comme modèle de chat, rapide, vision, voix ou image ; elle ne peut être choisie que comme modèle Live Voice via `experimental.liveVoice.model` (un `modelId`, ou `provider:modelId` lorsque le même id existe sous plusieurs fournisseurs).
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "qwen3.5-omni-plus-realtime",
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "envKey": "DASHSCOPE_API_KEY",
+        "realtimeOnly": true
+      }
+    ]
+  },
+  "experimental": {
+    "liveVoice": {
+      "enabled": true,
+      "model": "qwen3.5-omni-plus-realtime",
+      "voice": "Tina"
+    }
+  }
+}
+```
+
+Lorsque le modèle sélectionné nomme une route `realtimeOnly`, Live Voice lit la clé API via le `envKey` de la route (environnement du processus d'abord, puis le bloc `env` de `settings.json`) et dérive le point de terminaison WebSocket de son `baseUrl` (`https://<host>/compatible-mode/v1` devient `wss://<host>/api-ws/v1/realtime`). La route doit déclarer à la fois `baseUrl` et `envKey`, et l'hôte doit être un point de terminaison DashScope.
+
+Deux règles sont délibérées :
+
+- Les paramètres de l'espace de travail ne sont jamais consultés, seuls ceux au niveau utilisateur et système le sont. Le `.qwen/settings.json` d'un projet ne peut pas ajouter ni rediriger une route Live Voice.
+- Un sélecteur `modelId` **nu** qui ne correspond à aucune route `realtimeOnly` utilise les champs autonomes `experimental.liveVoice.endpoint` et `experimental.liveVoice.apiKey` comme auparavant, afin que les configurations existantes continuent de fonctionner sans changement. Un sélecteur `provider:modelId` dont le fournisseur existe mais n'a pas une telle route constitue une erreur : une route supprimée ou mal saisie ne retombe jamais silencieusement sur une clé stockée.
+- Tant qu'une route est sélectionnée, `experimental.liveVoice.apiKey` et `experimental.liveVoice.endpoint` sont inutilisés, et l'API de configuration refuse d'en enregistrer de nouveaux.
+
+Sur le chemin autonome, les paramètres Qwen Live de Web Shell définissent directement le point de terminaison et le modèle. Entrez l'URL de base compatible OpenAI de la région ou du domaine dédié auquel votre clé appartient, tel que `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` ; laissé vide, Live utilise Pékin (`https://dashscope.aliyuncs.com/compatible-mode/v1`), et une clé provenant d'ailleurs est rejetée avec `401`. L'URL de base est stockée telle quelle et convertie en `wss://<host>/api-ws/v1/realtime` lors du démarrage d'un appel ; l'hôte doit être un point de terminaison DashScope ou `*.maas.aliyuncs.com`. Lorsque Live Voice est activé, un nouveau point de terminaison est vérifié par une poignée de main Realtime avant d'être enregistré.
+
+## Remplacer les capacités de raisonnement [#override-reasoning-capabilities]
+
+Définissez `capabilities.reasoning` sur une entrée de modèle pour remplacer son format de raisonnement, ses niveaux d'effort proposés et sa valeur par défaut. Les modèles connus héritent des champs omis du catalogue du fournisseur au point de terminaison sélectionné ; par exemple, `"capabilities": { "reasoning": { "defaultEffort": "medium" } }` fait qu'une route DashScope `qwen3.8-max` utilise medium lorsqu'aucun effort explicite n'est sélectionné. Pour un alias inconnu, déclarez les trois champs :
+
+```json
+{
+  "id": "company-model-v2",
+  "baseUrl": "https://gateway.example.com/v1",
+  "envKey": "COMPANY_MODEL_API_KEY",
+  "capabilities": {
+    "reasoning": {
+      "profile": "openai-effort",
+      "efforts": ["low", "medium", "high"],
+      "defaultEffort": "medium"
+    }
+  }
+}
+```
+
+`efforts` remplace le sous-ensemble pris en charge de `low/medium/high/xhigh/max`. Une valeur par défaut explicite doit appartenir à ce sous-ensemble. Les profils réutilisent les formats existants : Chat accepte `openai-effort`, `openai-reasoning`, `deepseek-openai`, `dashscope-effort`, `dashscope-thinking` et `qwen-chat-template` ; Responses accepte `openai-reasoning` ; Anthropic accepte `anthropic-manual`, `anthropic-adaptive` et `deepseek-anthropic` ; Gemini/Vertex utilise `gemini`. Les deux profils à bascule uniquement omettent `efforts` et `defaultEffort`. Gemini utilise low/medium/high. Un profil adaptatif sélectionne la réflexion adaptative même lorsqu'un budget manuel hérité est configuré. Les déclarations complètes de capacités existantes continuent de fonctionner.
+
+Les modifications du raisonnement s'appliquent avant la prochaine invite utilisateur. Ses requêtes, tentatives et agents enfants partagent la configuration de raisonnement capturée. Les mises à jour invalides conservent la configuration précédente et journalisent l'erreur modèle/champ. Les déclarations invalides dans de nouvelles sessions reviennent en toute sécurité au comportement existant du modèle. Les choix explicites de l'utilisateur et les remplacements natifs du fournisseur dans `reasoning`, `samplingParams` et `extra_body` conservent leur priorité existante ; une valeur par défaut du modèle n'est pas enregistrée comme un choix utilisateur. Ce mécanisme ne modifie pas les cycles de vie des points de terminaison, des identifiants ou des modèles d'images.
 
 ## Exemples de configuration par type d'authentification
 
@@ -75,15 +124,13 @@ Vous trouverez ci-dessous des exemples de configuration complets pour différent
 
 ### Types d'authentification pris en charge
 
-Les clés de l'objet `modelProviders` doivent être des valeurs `authType` valides. Les types d'authentification actuellement pris en charge sont :
+Utilisez l'un des identifiants de fournisseur intégrés ci-dessous, ou mappez un identifiant personnalisé avec `providerProtocol` :
 
-| Type d'auth.       | Description                                                                                                                                     |
+| Protocole effectif | Description                                                                                                                                     |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `openai`           | API compatibles avec OpenAI (OpenAI, Azure OpenAI, serveurs d'inférence locaux comme vLLM/Ollama)                                               |
-| `openai-responses` | API `/v1/responses` d'OpenAI (relecture native du raisonnement via `reasoning.encrypted_content`, pas le format Chat Completions utilisé par `openai`) |
+| `openai`           | API compatibles OpenAI. Par défaut Chat Completions ; définissez le `wireApi` d'un modèle sur `responses` pour l'API Responses.                             |
 | `anthropic`  | API Anthropic Claude                                                                                                                            |
 | `gemini`     | API Google Gemini                                                                                                                               |
-| `qwen-oauth` | Qwen OAuth (codé en dur, ne peut pas être remplacé dans `modelProviders`)                                                                       |
 | `vertex-ai`  | Google Vertex AI (utilise le protocole `gemini` et le SDK `@google/genai` en mode Vertex AI ; sa sélection définit `GOOGLE_GENAI_USE_VERTEXAI=true`) |
 
 > [!note]
@@ -92,9 +139,9 @@ Les clés de l'objet `modelProviders` doivent être des valeurs `authType` valid
 > [!warning]
 > Un id de fournisseur qui n'est ni un protocole intégré ni mappé via `providerProtocol` (par ex. une faute de frappe comme `"openai-custom"`) ne peut pas être routé, donc son entrée entière est **ignorée** avec un avertissement — ses modèles n'apparaîtront simplement pas dans le sélecteur `/model`. Utilisez l'une des valeurs de type d'authentification prises en charge ci-dessus pour les fournisseurs intégrés, ou ajoutez un mapping [`providerProtocol`](#custom-provider-ids-providerprotocol) pour un id personnalisé.
 
-### Ids de fournisseurs personnalisés (`providerProtocol`)
+### Ids de fournisseurs personnalisés (`providerProtocol`) [#custom-provider-ids-providerprotocol]
 
-Les ids de fournisseurs intégrés (`openai`, `openai-responses`, `gemini`, `anthropic`, `vertex-ai`, `qwen-oauth`) sont routés automatiquement vers leur protocole SDK. Pour utiliser un id de fournisseur **personnalisé** — par exemple pour regrouper plusieurs endpoints compatibles OpenAI sous un nom plus convivial — déclarez-le sous `modelProviders` et mappez-le à un protocole intégré avec le paramètre de niveau supérieur `providerProtocol` :
+Les identifiants de fournisseurs intégrés (`openai`, `gemini`, `anthropic`, `vertex-ai`, `qwen-oauth`) sont routés automatiquement vers leur protocole SDK. Pour utiliser un identifiant de fournisseur **personnalisé** — par exemple pour regrouper plusieurs points de terminaison compatibles OpenAI sous un nom plus convivial — déclarez-le sous `modelProviders` et mappez-le vers un protocole intégré avec le paramètre de niveau supérieur `providerProtocol` :
 
 ```json
 {
@@ -115,11 +162,40 @@ Les ids de fournisseurs intégrés (`openai`, `openai-responses`, `gemini`, `ant
 
 Sans une entrée `providerProtocol` correspondante, un id de fournisseur personnalisé est ignoré (voir l'avertissement ci-dessus).
 
+### Sélectionner l'API OpenAI
+
+Définissez `wireApi` à côté de `id`, `envKey` et `baseUrl` sur un modèle compatible OpenAI :
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "my-model",
+        "wireApi": "responses",
+        "envKey": "OPENAI_API_KEY",
+        "baseUrl": "https://api.openai.com/v1"
+      }
+    ]
+  },
+  "security": { "auth": { "selectedType": "openai" } },
+  "model": { "name": "my-model" }
+}
+```
+
+Les valeurs prises en charge sont `chat-completions` et `responses`. Omettre `wireApi` utilise Chat Completions pour `openai`, y compris pour les fournisseurs personnalisés mappés vers `openai`. Les autres valeurs, ou `wireApi` sur un modèle Anthropic, Gemini, Vertex AI ou Qwen OAuth, constituent des erreurs de configuration.
+
+Utilisez `openai` avec le `wireApi` par modèle pour les nouvelles configurations. Le format `modelProviders.openai-responses` et les mappings `providerProtocol` vers `openai-responses` publiés dans v0.23.3 restent lisibles. Les mappings de fournisseurs explicites ont priorité sur les noms de buckets ; un `wireApi` explicite a priorité sur l'un ou l'autre des protocoles OpenAI. Le chargement ne réécrit pas les paramètres ni ne modifie les références aux identifiants. La reconfiguration écrit les routes sélectionnées dans le nouveau format et supprime uniquement leurs entrées correspondantes dans l'ancienne portée inscriptible ; les entrées sous un identifiant de fournisseur contenant un point sont laissées en place, et les modèles, points de terminaison, API et portées non liés restent inchangés. `api` n'est pas un alias de `wireApi`.
+
+`wireApi` est une métadonnée de routage locale ; elle n'appartient ni à `generationConfig` ni à `extra_body` et n'est pas envoyée dans le corps de la requête. Une nouvelle configuration personnalisée partage un seul emplacement d'identifiant pour le même point de terminaison OpenAI entre les deux API, donc la rotation de cette clé met à jour les deux routes. Les modèles configurés manuellement peuvent utiliser des références `envKey` explicites distinctes lorsque des identifiants indépendants sont nécessaires. Dans `/auth` → Custom Provider, sélectionnez OpenAI-compatible puis le format d'API.
+
+Au démarrage, `selectedType: "openai"` peut résoudre un modèle explicitement configuré avec `wireApi: "responses"` lorsqu'il n'y a pas de route Chat correspondante sur le point d'accès configuré sélectionné. Le sélecteur de modèles et les sessions enregistrées conservent le protocole effectif (`openai` ou `openai-responses`) afin que les deux routes puissent être sélectionnées et reprises indépendamment. Aucune détection de point d'accès ni repli automatique ne se produit en cas d'échec d'une requête API.
+
 ### Transports utilisés pour les requêtes API
 
-Qwen Code envoie des requêtes à chaque fournisseur via un SDK officiel, sauf pour `openai-responses`, qui communique avec le point de terminaison via HTTP/SSE direct :
+Le protocole de modèle effectif détermine le transport. Les deux API OpenAI utilisent le groupe de fournisseurs `openai` ; `wireApi` sélectionne Chat Completions ou Responses :
 
-| Type d'auth.       | Transport                                                                                                           |
+| Protocole effectif | Transport                                                                                                          |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------- |
 | `openai`           | [`openai`](https://www.npmjs.com/package/openai) - SDK officiel OpenAI pour Node.js                                 |
 | `openai-responses` | Appels HTTP/SSE directs vers `/v1/responses` (pas de SDK) ; les embeddings utilisent [`openai`](https://www.npmjs.com/package/openai) |
@@ -127,7 +203,7 @@ Qwen Code envoie des requêtes à chaque fournisseur via un SDK officiel, sauf p
 | `gemini`     | [`@google/genai`](https://www.npmjs.com/package/@google/genai) - SDK officiel Google GenAI      |
 | `qwen-oauth` | [`openai`](https://www.npmjs.com/package/openai) avec un fournisseur personnalisé (compatible DashScope) |
 
-Cela signifie que la `baseUrl` que vous configurez doit être compatible avec le format d'API attendu par le SDK correspondant. Par exemple, lors de l'utilisation du type d'authentification `openai`, le point de terminaison doit accepter les requêtes au format de l'API OpenAI.
+Cela signifie que le `baseUrl` que vous configurez doit être compatible avec le format d'API attendu par le transport correspondant. Par exemple, `wireApi: "responses"` nécessite un point d'accès compatible avec Responses.
 
 ### Fournisseurs compatibles avec OpenAI (`openai`)
 
@@ -217,9 +293,11 @@ Ce type d'authentification prend en charge non seulement l'API officielle d'Open
 }
 ```
 
-### API OpenAI Responses (`openai-responses`)
+Lorsque vous dirigez une entrée vers une passerelle hébergée compatible OpenAI, définissez `baseUrl` sur la racine `/v1` de l'API (par exemple, `https://gateway.example.com/v1`) plutôt que sur le chemin complet `/v1/chat/completions` — le SDK ajoute lui-même le chemin de la requête.
 
-Ce type d'authentification cible le point de terminaison `/v1/responses` d'OpenAI plutôt que Chat Completions. Lorsque le point de terminaison retourne un raisonnement chiffré avec du texte de pensée visible, il effectue une relecture du raisonnement des tours précédents entre les tours et via `--resume` grâce à `reasoning.encrypted_content`. Les points de terminaison compatibles qui streament `response.reasoning_text.delta` affichent également leur raisonnement, mais les points de terminaison sans `encrypted_content` ne peuvent pas retransmettre l'état de raisonnement opaque. Utilisez `reasoning.effort` (et non `extra_body.enable_thinking`, utilisé par les wires Chat Completions) pour contrôler l'intensité du raisonnement.
+### API OpenAI Responses (`openai-responses`) [#openai-responses-api-openai-responses]
+
+Utilisez `openai` avec `wireApi: "responses"` pour cibler le point d'accès `/v1/responses` d'OpenAI. Lorsque le point d'accès renvoie un raisonnement chiffré avec du texte de pensée visible, il rejoue le raisonnement des tours précédents entre les tours et `--resume` via `reasoning.encrypted_content`. Les points d'accès compatibles qui diffusent `response.reasoning_text.delta` affichent également leur raisonnement, mais les points d'accès sans `encrypted_content` ne peuvent pas rejouer l'état opaque du raisonnement. Utilisez `reasoning.effort` (et non `extra_body.enable_thinking`, utilisé par les connexions Chat Completions) pour contrôler l'intensité du raisonnement.
 
 ```json
 {
@@ -227,9 +305,10 @@ Ce type d'authentification cible le point de terminaison `/v1/responses` d'OpenA
     "OPENAI_API_KEY": "sk-your-actual-openai-key-here"
   },
   "modelProviders": {
-    "openai-responses": [
+    "openai": [
       {
         "id": "gpt-5.1",
+        "wireApi": "responses",
         "name": "GPT-5.1 (Responses API)",
         "envKey": "OPENAI_API_KEY",
         "baseUrl": "https://api.openai.com/v1",
@@ -253,6 +332,8 @@ Ce type d'authentification cible le point de terminaison `/v1/responses` d'OpenA
 > `extra_body` sur ce wire est en remplissage uniquement : une clé n'est écrite dans le corps de la requête que lorsque la requête générée n'a pas de valeur pour celle-ci, donc il ne peut pas écraser un champ que le pipeline a déjà défini (`model`, `input`, `reasoning`, `temperature`, `max_output_tokens`, ...). La clé legacy `enable_thinking` est la seule exception même à cette règle — elle est supprimée plutôt que transmise (ce n'est pas un champ de l'API Responses), et traduite en `reasoning.effort: "medium"` lorsqu'aucun `reasoning` explicite n'est défini. Définissez `reasoning.effort` directement au lieu de `extra_body.enable_thinking` pour ce fournisseur.
 
 ### Anthropic (`anthropic`)
+
+Claude Opus 5.5, Sonnet 5.5, Fable 5.1 et Mythos 5.1 rejettent la sélection forcée d'outils. Pour les requêtes latérales structurées, Qwen Code utilise la sélection automatique d'outils avec une instruction de réponse schématique explicite sur ces modèles. Les modèles qui prennent en charge la sélection forcée la conservent. La sélection automatique ne garantit pas un appel d'outil ; les requêtes latérales JSON peuvent également lire un objet JSON brut à partir du texte de la réponse, sans balises Markdown ni prose environnante. Voir [les restrictions de choix d'outils d'Anthropic](https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools#forcing-tool-use).
 
 ```json
 {
@@ -403,26 +484,21 @@ La plupart des serveurs d'inférence locaux (vLLM, Ollama, LM Studio, etc.) four
 }
 ```
 
-Pour les serveurs locaux en file d'attente ou lents compatibles OpenAI, `streamIdleTimeoutMs`
-contrôle la durée pendant laquelle ce modèle peut rester silencieux entre les chunks streamés. Il
-remplace la valeur globale de `QWEN_STREAM_IDLE_TIMEOUT_MS` pour l'entrée de fournisseur
-sélectionnée ; définissez-le à `0` pour désactiver la garde d'inactivité. Le plafond
-séparé de durée de vie du flux de 15 minutes s'applique toujours sauf si `QWEN_STREAM_MAX_LIFETIME_MS` est augmenté
-ou désactivé.
+Pour les serveurs locaux compatibles OpenAI mis en file d'attente ou lents, `streamIdleTimeoutMs` contrôle la durée pendant laquelle ce modèle peut rester silencieux entre les fragments diffusés. Il remplace la valeur globale `QWEN_STREAM_IDLE_TIMEOUT_MS` pour l'entrée du fournisseur sélectionné ; définissez-la sur `0` pour désactiver la protection contre l'inactivité. La limite séparée de durée de vie du flux de 15 minutes s'applique toujours sauf si `QWEN_STREAM_MAX_LIFETIME_MS` est augmenté ou désactivé.
 
-Pour les serveurs locaux qui ne nécessitent pas d'authentification, vous pouvez utiliser n'importe quelle valeur fictive pour la clé API :
+Pour les serveurs locaux qui n'exigent pas d'authentification, vous pouvez utiliser n'importe quelle valeur fictive pour la clé API :
 
 ```bash
-# Pour Ollama (aucune authentification requise)
+# For Ollama (no auth required)
 export OLLAMA_API_KEY="ollama"
 
-# Pour vLLM (si aucune authentification n'est configurée)
+# For vLLM (if no auth is configured)
 export VLLM_API_KEY="not-needed"
 ```
 
 > [!note]
 >
-> Le paramètre `extra_body` est **uniquement pris en charge pour les fournisseurs compatibles avec OpenAI** (`openai`, `openai-responses`, `qwen-oauth`). Il est ignoré pour les fournisseurs Anthropic et Gemini. Sur `openai-responses`, la clé `enable_thinking` est traduite plutôt que transmise — voir la note [API OpenAI Responses](#openai-responses-api-openai-responses).
+> Le paramètre `extra_body` est **pris en charge uniquement pour les fournisseurs compatibles OpenAI** (`openai`, `qwen-oauth`). Il est ignoré pour les fournisseurs Anthropic et Gemini. Sur `openai-responses`, la clé `enable_thinking` est traduite plutôt que transmise — voir la note sur [l'API OpenAI Responses](#openai-responses-api-openai-responses).
 
 > [!note]
 >
@@ -430,7 +506,7 @@ export VLLM_API_KEY="not-needed"
 >
 > - **Option 1 : Utiliser un fichier `.env`** (recommandé pour des raisons de sécurité) :
 >   ```bash
->   # ~/.qwen/.env (ou racine du projet)
+>   # ~/.qwen/.env (or project root)
 >   OPENAI_API_KEY=sk-your-actual-key-here
 >   ```
 >   Assurez-vous d'ajouter `.env` à votre `.gitignore` pour éviter de committer accidentellement des secrets.
@@ -444,9 +520,27 @@ export VLLM_API_KEY="not-needed"
 >   ```
 >
 > Chaque exemple de fournisseur inclut un champ `env` pour illustrer comment la clé API doit être configurée.
-## Alibaba Cloud Coding Plan
 
-Alibaba Cloud Coding Plan fournit un ensemble préconfiguré de modèles Qwen optimisés pour les tâches de codage. Cette fonctionnalité est disponible pour les utilisateurs disposant d'un accès API à Alibaba Cloud Coding Plan et offre une expérience de configuration simplifiée avec des mises à jour automatiques de la configuration des modèles.
+#### Qwen3.x servi sous un nom de modèle personnalisé
+
+Le contrôle de la réflexion et la fenêtre de contexte sont déduits à partir de l'identifiant du modèle. Si un serveur vLLM ou SGLang expose un modèle Qwen3.x sous un identifiant qui ne commence pas par `qwen` (par exemple `--served-model-name chat`), aucune de ces règles ne s'applique : les requêtes annexes telles que le classificateur d'autorisations en mode automatique maintiennent la réflexion activée, et la fenêtre de contexte revient à la valeur par défaut de 200K. Déclarez les deux dans l'entrée du modèle, comme décrit dans [Override reasoning capabilities](#override-reasoning-capabilities) :
+
+```json
+{
+  "id": "chat",
+  "name": "Qwen3.6 35B A3B (vLLM)",
+  "envKey": "VLLM_API_KEY",
+  "baseUrl": "http://localhost:8000/v1",
+  "capabilities": { "reasoning": { "profile": "qwen-chat-template" } },
+  "generationConfig": { "contextWindowSize": 262144 }
+}
+```
+
+`qwen-chat-template` envoie `chat_template_kwargs.enable_thinking`, que ces serveurs transmettent au gabarit de chat Qwen ; un champ `enable_thinking` de premier niveau n'est pas lu par eux. Définissez `contextWindowSize` sur la longueur maximale du modèle côté serveur (vLLM l'indique sous `max_model_len` dans `/v1/models`). Qwen Code envoie les définitions des outils dans chaque requête, donc le serveur doit également avoir l'appel d'outils et un analyseur de raisonnement activés ; sur vLLM, cela correspond à `--enable-auto-tool-choice`, un `--tool-call-parser` pour le modèle (par exemple `qwen3_xml`) et `--reasoning-parser qwen3`. Les noms des analyseurs changent entre les versions du serveur, consultez donc la documentation de votre serveur.
+
+## Plan de codage Alibaba Cloud
+
+Le Coding Plan d'Alibaba Cloud fournit un ensemble préconfiguré de modèles Qwen optimisés pour les tâches de codage. Cette fonctionnalité est disponible pour les utilisateurs disposant d'un accès API au Coding Plan d'Alibaba Cloud et offre une expérience de configuration simplifiée avec des mises à jour automatiques de la configuration des modèles.
 
 ### Vue d'ensemble
 
@@ -509,11 +603,9 @@ Les configurations des modèles Coding Plan sont versionnées. Lorsque Qwen Code
 
 - Remplacer les configurations existantes des modèles Coding Plan par les dernières versions
 - Préserver toutes les configurations de modèles personnalisées que vous avez ajoutées manuellement
-- Laisser votre modèle sélectionné inchangé ; s'il ne fait plus partie de la configuration
-  mise à jour, utilisez `/model` pour en choisir un autre
+- Laissez votre modèle sélectionné inchangé ; s'il ne figure plus dans la configuration mise à jour, utilisez `/model` pour en choisir un nouveau
 
-Le processus de mise à jour actualise les configurations et les fonctionnalités des modèles sans
-modifier votre modèle sélectionné.
+Le processus de mise à jour actualise les configurations des modèles et les fonctionnalités sans modifier votre modèle sélectionné.
 
 ### Configuration manuelle (Avancé)
 
@@ -560,7 +652,7 @@ Les valeurs effectives d'authentification/modèle/identifiants sont choisies par
 | Paramètres (`settings.json`) | `security.auth.selectedType`        | `model.name`                                    | `security.auth.apiKey`                                | `security.auth.baseUrl`                                | —                      | —                                 |
 | Par défaut / calculé       | Repli vers `AuthType.QWEN_OAUTH`    | Valeur par défaut intégrée (OpenAI ⇒ `qwen3.5-plus`) | —                                                     | —                                                      | —                      | `Config.getProxy()` si configuré  |
 
-\*Lorsqu'ils sont présents, les indicateurs d'authentification CLI remplacent les paramètres. Sinon, `security.auth.selectedType` ou la valeur par défaut implicite détermine le type d'authentification. Qwen OAuth et OpenAI sont les seuls types d'authentification exposés sans configuration supplémentaire.
+\*Lorsqu'il est présent, les indicateurs d'authentification CLI remplacent les paramètres. Sinon, `security.auth.selectedType` ou la valeur par défaut implicite détermine le type d'authentification. Consultez [Authentication](./auth.md) pour connaître les options de connexion. Le fournisseur Qwen OAuth gratuit hérité est distinct de [Qwen Account with Subscription](https://chat.qwen.ai/?memberPlan=qwen_code).
 
 > [!note]
 >
@@ -583,19 +675,14 @@ La résolution de la configuration suit un modèle d'empilement strict avec une 
    - Tous les champs **non définis** par le fournisseur sont définis sur `undefined` (non hérités des paramètres)
    - Cela garantit que les configurations du fournisseur agissent comme un « paquet scellé » complet et autonome
 
-   Si un modèle est listé dans `modelProviders`, placez tous les paramètres
-   de génération spécifiques au modèle dans l'entrée du fournisseur correspondante. Les valeurs
-   `model.generationConfig` de niveau supérieur, y compris `contextWindowSize`,
-   `modalities`, `customHeaders` et `extra_body`, sont ignorées pour les modèles
-   du fournisseur. Configurez ces champs sous
-   `modelProviders[authType][].generationConfig` pour qu'ils s'appliquent.
+   Si un modèle est répertorié dans `modelProviders`, placez tous les paramètres de génération spécifiques au modèle dans l'entrée du fournisseur correspondante. Les valeurs `model.generationConfig` de premier niveau, y compris `contextWindowSize`, `modalities`, `customHeaders` et `extra_body`, sont ignorées pour les modèles fournis par un fournisseur. Configurez ces champs sous `modelProviders[authType][].generationConfig` pour qu'ils soient appliqués.
 
 2. **Lorsqu'AUCUN modèle modelProvider n'est sélectionné** (par exemple, en utilisant `--model` avec un ID de modèle brut, ou en utilisant directement CLI/env/paramètres) :
    - La résolution passe aux couches inférieures
    - Les champs sont remplis depuis CLI → env → paramètres → valeurs par défaut
    - Cela crée un **modèle d'exécution** (voir la section suivante)
 
-### Priorité par champ pour le generationConfig
+### Précédence par champ pour `generationConfig`
 
 | Priorité | Source                                        | Comportement                                                                                             |
 | -------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
@@ -604,12 +691,9 @@ La résolution de la configuration suit un modèle d'empilement strict avec une 
 | 3        | `settings.model.generationConfig`             | Utilisé uniquement pour les **modèles d'exécution** (lorsqu'aucun modèle de fournisseur n'est sélectionné) |
 | 4        | Valeurs par défaut du générateur de contenu   | Valeurs par défaut spécifiques au fournisseur (ex. OpenAI vs Gemini) - uniquement pour les modèles d'exécution |
 
-### Valeurs dynamiques dans `customHeaders`
+### Valeurs dynamiques dans `customHeaders` [#dynamic-values-in-customheaders]
 
-Une valeur `customHeaders` peut contenir le placeholder `${session_id}`, qui est
-développé à chaque requête avec l'ID de session Qwen Code en cours. Utilisez-le pour les passerelles
-qui nécessitent un identifiant stable par conversation — OpenCode Go, par exemple,
-rejette les requêtes sans `x-opencode-session` :
+Une valeur `customHeaders` peut contenir l'espace réservé `${session_id}`, qui est développé à chaque requête avec l'identifiant de session Qwen Code actuel. Utilisez-le pour les passerelles qui exigent un identifiant stable par conversation — OpenCode Go, par exemple, rejette les requêtes sans `x-opencode-session` :
 
 ```json
 {
@@ -621,12 +705,9 @@ rejette les requêtes sans `x-opencode-session` :
 }
 ```
 
-Comme la valeur est résolue à chaque requête plutôt qu'intégrée dans le client SDK,
-`/new` et `/resume` la renouvellent sans redémarrage.
+Comme la valeur est résolue à chaque requête plutôt que figée dans le client SDK, `/new` et `/resume` font tourner cette valeur sans redémarrage.
 
-⚠️ **Deux étapes sont nécessaires.** L'entrée de fournisseur ci-dessus n'est que la moitié du travail — un
-placeholder est inerte tant que vous n'activez pas également
-[`outboundCorrelation.allowDynamicHeaderValues`](./settings.md#outboundcorrelation) :
+⚠️ **Deux étapes sont nécessaires.** L'entrée du fournisseur ci-dessus n'en constitue que la moitié — un espace réservé reste inerte tant que vous n'activez pas également [`outboundCorrelation.allowDynamicHeaderValues`](./settings.md#outboundcorrelation) :
 
 ```json
 {
@@ -636,19 +717,13 @@ placeholder est inerte tant que vous n'activez pas également
 }
 ```
 
-Tant que ce n'est pas fait, une valeur contenant un placeholder est **supprimée** au lieu d'être envoyée,
-et Qwen Code affiche un avertissement au démarrage nommant l'en-tête et ce paramètre.
-L'en-tête n'est jamais envoyé avec un `${session_id}` littéral.
+Tant que ce n'est pas fait, une valeur contenant un espace réservé est **supprimée** plutôt qu'envoyée, et Qwen Code affiche un avertissement au démarrage indiquant le nom de l'en-tête et ce paramètre. L'en-tête n'est jamais envoyé avec un `${session_id}` littéral dedans.
 
-Le switch est global car il s'agit d'une décision de consentement, séparée de _où_ la
-valeur va : une valeur développée transporte l'état de session live à quiconque la reçoit,
-et le switch contrôle uniquement si `${session_id}` peut être développé. Il n'identifie pas
-quelle source de paramètres a fourni l'en-tête.
+**Un en-tête est réservé.** Sur les points de terminaison MaaS de QwenCloud — les entrées `/auth` `China — Qianwen AI Platform` et `International — QwenCloud` — Qwen Code possède `X-DashScope-Source-Config` et y écrit la valeur d'attribution première partie. Une entrée portant ce nom — quelle que soit sa casse — est supprimée avant la construction de la requête, donc un espace réservé `${session_id}` ne survit jamais et `allowDynamicHeaderValues` ne change rien à cela. L'en-tête lui-même est toujours envoyé ; seule votre valeur est remplacée. Voir [`customHeaders`](./settings.md#model) pour la même règle énoncée du côté des paramètres.
 
-**Note de confidentialité :** l'ID de session est un identifiant stable pendant toute la durée d'une
-conversation, donc tout hôte auquel vous l'envoyez peut regrouper chaque requête de cette
-conversation. Quels sont ces hôtes dépend des entrées de fournisseur qui portent
-l'en-tête — il n'y a pas de liste d'hôtes séparée à synchroniser avec votre `baseUrl`.
+Le commutateur est global car il s'agit d'une décision de consentement, distincte de _l'endroit_ où va la valeur : une valeur développée transporte l'état de session en direct vers quiconque la reçoit, et le commutateur contrôle uniquement si `${session_id}` peut être développé. Il n'identifie pas quelle source de paramètres a fourni l'en-tête.
+
+**Note sur la confidentialité :** l'identifiant de session est un identifiant stable pour la durée d'une conversation, donc tout hôte auquel vous l'envoyez peut regrouper toutes les requêtes de cette conversation. Quels hôtes sont concernés dépend des entrées de fournisseur qui portent l'en-tête — il n'y a pas de liste d'hôtes séparée à maintenir en synchronisation avec votre `baseUrl`.
 
 ### Traitement atomique des champs
 
@@ -659,8 +734,9 @@ Les champs suivants sont traités comme des objets atomiques : les valeurs du fo
 - `extra_body` - Paramètres supplémentaires du corps de la requête
 
 ### Exemple
+
 ```jsonc
-// Paramètres utilisateur (~/.qwen/settings.json)
+// User settings (~/.qwen/settings.json)
 {
   "model": {
     "generationConfig": {
@@ -670,7 +746,7 @@ Les champs suivants sont traités comme des objets atomiques : les valeurs du fo
   }
 }
 
-// Configuration de modelProviders
+// modelProviders configuration
 {
   "modelProviders": {
     "openai": [{
@@ -685,13 +761,13 @@ Les champs suivants sont traités comme des objets atomiques : les valeurs du fo
 }
 ```
 
-Lorsque `gpt-4o` est sélectionné depuis `modelProviders` :
+Lorsque `gpt-4o` est sélectionné dans modelProviders :
 
-- `timeout` = 60000 (provenant du provider, écrase les paramètres)
-- `samplingParams.temperature` = 0.2 (provenant du provider, remplace complètement l'objet settings)
-- `samplingParams.max_tokens` = **undefined** (non défini dans le provider, et la couche provider n'hérite pas des paramètres — les champs sont explicitement définis sur undefined s'ils ne sont pas fournis)
+- `timeout` = 60000 (provenant du fournisseur, remplace les paramètres)
+- `samplingParams.temperature` = 0.2 (provenant du fournisseur, remplace complètement l'objet de paramètres)
+- `samplingParams.max_tokens` = **undefined** (non défini dans le fournisseur, et la couche fournisseur n'hérite pas des paramètres — les champs sont explicitement définis sur undefined s'ils ne sont pas fournis)
 
-Lors de l'utilisation d'un modèle brut via `--model gpt-4` (ne provenant pas de `modelProviders`, crée un Runtime Model) :
+Lors de l'utilisation d'un modèle brut via `--model gpt-4` (non issu de modelProviders, crée un Runtime Model) :
 
 - `timeout` = 30000 (provenant des paramètres)
 - `samplingParams.temperature` = 0.5 (provenant des paramètres)
@@ -713,11 +789,12 @@ Le champ optionnel `reasoning` sous `generationConfig` contrôle l'intensité av
         "baseUrl": "https://api.deepseek.com/v1",
         "envKey": "DEEPSEEK_API_KEY",
         "generationConfig": {
-          // L'échelle à quatre niveaux :
-          //   'low'    | 'medium' — mappé côté serveur à 'high' sur DeepSeek
-          //   'high'   — intensité de raisonnement par défaut
-          //   'max'    — niveau extra-fort spécifique à DeepSeek
-          // Ou définir sur `false` pour désactiver complètement le raisonnement.
+          // The effort tiers:
+          //   'low'    — lightest reasoning
+          //   'medium' | 'xhigh' — mapped to 'high' on DeepSeek
+          //   'high'   — default reasoning intensity
+          //   'max'    — DeepSeek-specific extra-strong tier
+          // Or set `false` to disable reasoning entirely.
           "reasoning": { "effort": "max" },
         },
       },
@@ -726,24 +803,24 @@ Le champ optionnel `reasoning` sous `generationConfig` contrôle l'intensité av
 }
 ```
 
-### Comportement par provider
+### Comportement par fournisseur
 
-| Protocole / provider                          | Format réseau                                                           | Notes                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| -------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **OpenAI / DashScope** (famille `qwen3.8-max`) | Paramètre de corps plat `reasoning_effort: <effort>`                     | Les niveaux de `/effort` sont transmis tels quels pour tout id de modèle commençant par `qwen3.8-max` (y compris les snapshots datés et les alias `-latest`) ; DashScope applique tout mappage spécifique au modèle. L'échelle de cette famille s'arrête à `xhigh`, donc un `max` configuré est limité à `xhigh` (journalisé une fois) plutôt qu'envoyé et rejeté. Un `reasoning_effort` explicite dans `samplingParams` ou `extra_body` est un remplacement verbatim et n'est pas limité. Lorsque `reasoning_effort` et `thinking_budget` sont en conflit, la précédence normale `extra_body` > `samplingParams` > `reasoning` ne conserve que le champ prioritaire ; une paire explicite de même couche conserve `reasoning_effort`, ce qui correspond au comportement du fournisseur avant la résolution inter-couches. Si un champ statique l'emporte, `/effort` signale ce champ au lieu d'impliquer que le niveau demandé est effectif. Lorsqu'un niveau d'effort l'emporte, un `enable_thinking` conflictuel est également abandonné. Un `enable_thinking: false` explicite dans `extra_body` est honoré au lieu d'être abandonné : il remplace le niveau configuré comme `reasoning_effort: 'none'`, l'un des rares endroits où `extra_body` ne l'emporte pas tel quel. Les autres modèles Qwen continuent de mapper un effort sélectionné vers `enable_thinking: true` ; un override `reasoning_effort` y passe sauf s'il entre en conflit avec un `thinking_budget` (une paire que DashScope rejette), auquel cas le `reasoning_effort` inerte est abandonné et `enable_thinking` et `thinking_budget` survivent. |
-| **OpenAI / DeepSeek** (`api.deepseek.com`)   | Paramètre de corps plat `reasoning_effort: <effort>`                     | Lorsque `reasoning.effort` est défini dans la forme de configuration imbriquée, il est réécrit en `reasoning_effort` plat et `'low'`/`'medium'` sont normalisés en `'high'`, `'xhigh'` en `'max'` — reflétant la [rétrocompatibilité côté serveur](https://api-docs.deepseek.com/zh-cn/api/create-chat-completion) de DeepSeek. Les overrides de `samplingParams.reasoning_effort` ou `extra_body.reasoning_effort` de haut niveau ignorent cette normalisation et sont envoyés tels quels. `max` est accepté uniquement sur un vrai nom d'hôte DeepSeek ; un modèle nommé `deepseek` sur un autre hôte conserve le plafond générique `xhigh`, correspondant à la condition de nom d'hôte sur le reshaping lui-même. |
-| **OpenAI / Z.ai** (`z.ai`, `bigmodel.cn`)     | Paramètre de corps plat `reasoning_effort: <effort>`                     | GLM-5.2+ sur un hôte Z.ai prend l'échelle complète, `max` inclus, et le `reasoning.effort` imbriqué est réécrit en champ plat. Les anciens ids GLM, et un modèle `glm-*` atteint sur un autre hôte, conservent le plafond générique `xhigh` : le nom du modèle seul ne dit rien de ce que cet endpoint accepte. |
-| **OpenAI** (autres serveurs compatibles)         | GPT-5 / GPT-6 Astra connus : `reasoning_effort` plat ; autres modèles : `reasoning` imbriqué     | L'effort GPT est limité dans les deux sens au sous-ensemble pris en charge pour le modèle connu. GPT-5.6 et GPT-6 Astra autorisent `max`, tandis que les modèles antérieurs ont des plafonds plus bas. Les niveaux en dessous du plancher du modèle sont remontés : GPT-5 Pro accepte uniquement `high` ; GPT-5.2 Pro, GPT-5.4 Pro et GPT-5.5 Pro remontent `low` à `medium`. OpenRouter conserve le `reasoning` imbriqué. Les noms de modèles inconnus conservent le plafond générique `xhigh` et la forme imbriquée. Les valeurs de raisonnement explicites dans `samplingParams` / `extra_body` contournent la limite du niveau configuré. |
-| **OpenAI Responses** (`openai-responses`)     | `reasoning: { effort, summary: "auto" }` plus `include: ["reasoning.encrypted_content"]` | Chaque niveau est transmis tel quel sans limitation. `extra_body.enable_thinking: true` est traduit en `reasoning: { effort: "medium" }` lorsqu'aucun `reasoning` explicite n'est défini (et n'est jamais transmis lui-même — il n'a pas de sens sur ce wire) ; préférez définir `reasoning.effort` directement. |
-| **Anthropic** (vrai `api.anthropic.com`)     | `output_config: { effort }` plus l'en-tête bêta `effort-2025-11-24` | Le vrai Anthropic accepte uniquement `'low'`/`'medium'`/`'high'`. `'max'` est **limité à `'high'`** avec une ligne `debugLogger.warn` (une fois par générateur) ; si vous voulez une intensité maximale, changez le baseURL pour un point de terminaison compatible DeepSeek qui le prend en charge.                                                                                                                                                                                  |
-| **Anthropic** (`api.deepseek.com/anthropic`) | Même `output_config: { effort }` + en-tête bêta                       | `'max'` est transmis sans modification.                                                                                                                                                                                                                                                                                                                                                                                             |
-| **Gemini** (`@google/genai`)                 | `thinkingConfig: { includeThoughts: true, thinkingLevel }`           | `'low'` → `LOW`, `'high'`/`'max'` → `HIGH`, autres → `THINKING_LEVEL_UNSPECIFIED` (Gemini n'a pas de niveau `MAX`).                                                                                                                                                                                                                                                                                                                    |
+| Protocole / fournisseur                         | Forme sur le fil                                                                         | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **OpenAI / DashScope** (famille `qwen3.8-max`) | Paramètre de corps plat `reasoning_effort: <effort>` | Les paliers `/effort` sont transmis pour tout identifiant de modèle commençant par `qwen3.8-max` (y compris les instantanés datés et les alias `-latest`), les préversions `qwen-latest-series-invite-*` sur invitation uniquement, et la famille `qwen4*` (insensible à la casse) ; DashScope applique toute correspondance spécifique au modèle. L'échelle de cette famille s'arrête à `xhigh`, donc un `max` configuré est plafonné à `xhigh` (journalisé une fois) plutôt que d'être envoyé et rejeté. Un `reasoning_effort` explicite dans `samplingParams` ou `extra_body` est une substitution verbatim et n'est pas plafonné. En cas de conflit entre `reasoning_effort` et `thinking_budget`, la priorité normale `extra_body` > `samplingParams` > `reasoning` ne conserve que le champ de plus haute priorité ; une paire explicite au même niveau conserve `reasoning_effort`, correspondant au comportement du fournisseur avant la résolution inter-niveaux. Si un champ statique l'emporte, `/effort` signale ce champ au lieu de laisser entendre que le palier demandé est effectif. Lorsqu'un palier d'effort l'emporte, un `enable_thinking` conflictuel est également supprimé. Un `enable_thinking: false` explicite dans `extra_body` est honoré plutôt que supprimé : il remplace le palier configuré comme `reasoning_effort: 'none'`, l'un des rares cas où `extra_body` ne l'emporte pas verbatim. Les autres modèles Qwen continuent de mapper un effort sélectionné vers `enable_thinking: true` ; une substitution `reasoning_effort` passe en l'état sauf si elle entre en conflit avec un `thinking_budget` (une paire que DashScope rejette), auquel cas le `reasoning_effort` inerte est supprimé et à la fois `enable_thinking` et `thinking_budget` subsistent. |
+| **OpenAI / DeepSeek** (`api.deepseek.com`) | Paramètre de corps plat `reasoning_effort: <effort>` | Lorsque `reasoning.effort` est défini dans la forme de configuration imbriquée, il est réécrit en `reasoning_effort` plat ; pour les modèles DeepSeek intégrés, `'low'`, `'high'` et `'max'` passent en l'état et `'medium'`/`'xhigh'` sont normalisés vers `'high'` — reflétant le [mappage d'effort](https://api-docs.deepseek.com/guides/thinking_mode) de DeepSeek. Ce passage en l'état et cette normalisation décrivent le point de terminaison officiel : sur MaaS et les hôtes tiers, les identifiants exacts `deepseek-v4-pro` / `deepseek-v4-flash` n'offrent que `high`/`max` (un `low` configuré est élevé à `high`, et `xhigh` se normalise vers `max`), tandis que les nouveaux alias Flash (`deepseek-v4.1-flash*`) conservent `low`/`high`/`max` avec `xhigh → high`. Les substitutions `samplingParams.reasoning_effort` ou `extra_body.reasoning_effort` de premier niveau ignorent cette normalisation et sont envoyées verbatim. `max` est accepté sur un vrai nom d'hôte DeepSeek et sur tout identifiant de modèle `deepseek-v4*` (insensible à la casse, y compris les instantanés datés), qui est reconnu sur tout hôte compatible OpenAI (les passerelles tierces obtiennent le contrat style MaaS `enable_thinking`) ; les autres modèles nommés `deepseek` sur un autre hôte conservent le plafond générique `xhigh`, correspondant à la restriction par nom d'hôte lors de la restructuration elle-même. |
+| **OpenAI / Z.ai** (`z.ai`, `bigmodel.cn`)     | Paramètre de corps plat `reasoning_effort: <effort>`                                         | GLM-5.2+ sur un hôte Z.ai accepte l'échelle complète, y compris `max`, et le champ imbriqué `reasoning.effort` est réécrit vers le champ plat. Les identifiants GLM plus anciens, ainsi qu'un modèle `glm-*` atteint sur tout autre hôte, conservent la limite générique `xhigh` : le nom du seul modèle ne dit rien de ce que cet endpoint accepte.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| **OpenAI** (autres serveurs compatibles)         | GPT-5 / GPT-6 Astra connus : plat `reasoning_effort` ; autres modèles : imbriqué `reasoning`     | L'effort GPT est limité dans les deux sens au sous-ensemble pris en charge pour le modèle connu. GPT-5.6 et GPT-6 Astra permettent `max`, tandis que les modèles antérieurs ont des plafonds plus bas. Les niveaux inférieurs au plancher du modèle sont relevés : GPT-5 Pro n'accepte que `high` ; GPT-5.2 Pro, GPT-5.4 Pro et GPT-5.5 Pro relèvent `low` à `medium`. OpenRouter conserve l'imbriqué `reasoning`. Les noms de modèles inconnus conservent le plafond générique `xhigh` et la forme imbriquée. Les valeurs de raisonnement explicites dans `samplingParams` / `extra_body` contournent la limitation du niveau configuré.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **OpenAI Responses** (`openai-responses`)     | `reasoning: { effort, summary: "auto" }` plus `include: ["reasoning.encrypted_content"]` | Chaque niveau est transmis tel quel sans limitation. `extra_body.enable_thinking: true` est traduit en `reasoning: { effort: "medium" }` lorsqu'aucune valeur explicite `reasoning` n'est définie (et n'est jamais transmise elle-même — elle n'a pas de signification sur ce canal) ; il est préférable de définir directement `reasoning.effort`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **Anthropic** (vrai `api.anthropic.com`)      | `output_config: { effort }` plus l'en-tête bêta `effort-2025-11-24`                     | Le vrai Anthropic n'accepte que `'low'`/`'medium'`/`'high'`. `'max'` est **limité à `'high'`** avec une ligne `debugLogger.warn` (une fois par générateur) ; si vous souhaitez un effort maximal, changez le baseURL pour un point de terminaison compatible DeepSeek qui le prend en charge.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| **Anthropic** (`api.deepseek.com/anthropic`)  | Même `output_config: { effort }` + en-tête beta                                           | `'low'`, `'high'` et `'max'` passent sans modification ; `'medium'`/`'xhigh'` sont mappés vers `'high'`, correspondant au mapping côté serveur de DeepSeek.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Gemini** (`@google/genai`)                  | `thinkingConfig: { includeThoughts: true, thinkingLevel }`                               | `'low'` → `LOW`, `'high'`/`'max'` → `HIGH`, autres → `THINKING_LEVEL_UNSPECIFIED` (Gemini n'a pas de niveau `MAX`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
 ### `reasoning: false`
 
 Définir `reasoning: false` (le booléen littéral) désactive explicitement la réflexion sur les modèles qui prennent en charge la désactivation — utile pour les requêtes secondaires peu coûteuses qui ne bénéficient pas du raisonnement. Ceci est également respecté au niveau de la requête via `request.config.thinkingConfig.includeThoughts: false` pour les appels ponctuels (par ex. génération de suggestions).
 
-Sur un baseURL `api.deepseek.com`, le pipeline OpenAI émet le champ explicite `thinking: { type: 'disabled' }` requis par DeepSeek V4+ — la valeur par défaut côté serveur est `'enabled'`, donc omettre simplement `reasoning_effort` paierait tout de même la latence/coût de la réflexion. Les backends DeepSeek auto-hébergés (sglang/vllm) et les autres serveurs compatibles OpenAI ne reçoivent **pas** ce champ ; si vous devez désactiver la réflexion sur ceux-ci, injectez `thinking: { type: 'disabled' }` (ou tout autre paramètre exposé par votre framework d'inférence) via `samplingParams`/`extra_body`.
+Sur une baseURL `api.deepseek.com`, le pipeline OpenAI émet le champ explicite `thinking: { type: 'disabled' }` requis par DeepSeek V4+ — la valeur par défaut côté serveur est `'enabled'`, donc omettre simplement `reasoning_effort` entraînerait toujours une latence/coût de réflexion. Les backends DeepSeek auto-hébergés (sglang/vllm) et les autres serveurs compatibles OpenAI ne reçoivent **pas** ce champ ; si vous devez désactiver la réflexion sur ceux-ci, injectez `thinking: { type: 'disabled' }` (ou tout paramètre exposé par votre framework d'inférence) via `samplingParams`/`extra_body`. Tout identifiant de modèle `deepseek-v4*` (insensible à la casse) constitue l'exception : sur tout hôte tiers compatible OpenAI, il suit le contrat MaaS et reçoit `enable_thinking: false` lorsque la réflexion est désactivée. Sur toute route nouvellement reconnue (un hôte tiers, ou un nouvel alias sur un hôte établi), une déclaration héritée `capabilities.reasoning` sans profil de raisonnement conserve sa propre sémantique de transmission : le normaliseur intégré se retire et n'aplatit ni ne remappe les efforts déclarés ou statiques. Une déclaration doit nommer le paramètre que le modèle lit dans `disableField` (`thinking`, `enable_thinking`, ou `reasoning_effort`) ; celle qui l'omette ne résout aucune capacité, donc aucun champ de désactivation n'est émis et la valeur par défaut du serveur (réflexion activée) s'applique.
 
 Pour les modèles GPT connus qui permettent la désactivation, les points de terminaison non-OpenRouter reçoivent `reasoning_effort: 'none'` ; OpenRouter reçoit à la place `reasoning: { enabled: false }` imbriqué. Les modèles à réflexion obligatoire rejettent la désactivation dans les contrôles de modèle et omettent les valeurs de désactivation non prises en charge des requêtes, donc `reasoning: false` ne peut pas désactiver leur réflexion. Une capacité de raisonnement explicite du modèle l'emporte sur la liste de niveaux intégrée et sélectionne le champ de désactivation natif ; OpenRouter conserve son comportement de désactivation au niveau du fournisseur. L'ensemble obligatoire intégré est `gpt-5`, `gpt-5-mini`, `gpt-5-nano`, `gpt-5-pro`, `gpt-5.1-codex`, `gpt-5.1-codex-max`, `gpt-5.2-codex`, `gpt-5.3-codex`, `gpt-5.2-pro`, `gpt-5.4-pro`, `gpt-5.5-pro` et `gpt-6-astra`.
 
@@ -757,7 +834,7 @@ Sur un baseURL `openrouter.ai`, le pipeline OpenAI émet le champ `reasoning: { 
 >
 > Les modèles GPT-5 connus et GPT-6 Astra conservent l'effort configuré aux côtés de clés d'échantillage non liées. Par exemple, `{ samplingParams: { temperature: 0.5 }, reasoning: { effort: 'max' } }` envoie `temperature: 0.5` et `reasoning_effort: 'xhigh'` plat sur GPT-5.4, ou `'max'` sur GPT-5.6 / GPT-6 Astra. Sur un baseURL `openrouter.ai`, le même niveau limité est envoyé sous forme de `reasoning: { effort }` imbriqué à la place. Sur les points de terminaison non-OpenRouter, les remplacements plats explicites l'emportent ; les placeholders plats null ou vides permettent le niveau configuré. Sur OpenRouter, un remplacement plat d'échantillage supprime l'effort imbriqué configuré sauf si des capacités de modèle explicites l'injectent ; un remplacement plat extra-body uniquement ne remplace pas l'effort imbriqué configuré.
 >
-> Les modèles Qwen DashScope sont une autre exception : leur fournisseur lit `reasoning` directement et le mappe à `reasoning_effort` ou `enable_thinking`. Sur la famille qwen3.8-max, les champs `samplingParams` spécifiques au fournisseur l'emportent toujours lorsque les paramètres réseau sont en conflit ; sur les anciens modèles qwen hybrides, un niveau d'effort configuré se réduit à `enable_thinking: true`, ce qui écrase une valeur `samplingParams.enable_thinking`.
+> Les modèles Qwen DashScope constituent une autre exception : leur fournisseur lit directement `reasoning` et le mappe vers `reasoning_effort` ou `enable_thinking`. Sur les familles à effort hiérarchisé (`qwen3.8-max`, `qwen-latest-series-invite-*`, `qwen4*`), les champs spécifiques au fournisseur `samplingParams` ont toujours la priorité lorsque les paramètres de transmission entrent en conflit ; sur les hybrides qwen plus anciens, un niveau d'effort configuré se réduit à `enable_thinking: true`, ce qui écrase une valeur `samplingParams.enable_thinking`.
 >
 > Pour les autres modèles, incluez le knob de raisonnement du fournisseur directement lorsque vous utilisez `samplingParams` — pour DeepSeek c'est `samplingParams.reasoning_effort`. Les modèles GPT connus mappent l'effort configuré automatiquement ; n'ajoutez un remplacement brut que lorsque vous contournez intentionnellement ce mappage. Le `reasoning` imbriqué brut, y compris `null`, reste un remplacement d'objet entier tandis que le raisonnement est activé. La désactivation via `reasoning: false` ou `includeThoughts: false` au niveau de la requête supprime la valeur imbriquée, y compris les remplacements bruts dans les deux couches. Les requêtes GPT non-OpenRouter envoient alors `reasoning_effort: 'none'` lorsque la désactivation est autorisée ; OpenRouter utilise son champ de désactivation imbriqué à la place. Les modèles à réflexion obligatoire ne reçoivent ni substitut. En dehors d'OpenRouter, sa signification dépend de la passerelle, donc les contrôles de modèle affichent la valeur par défaut du modèle. Tout remplacement brut qui bloque un niveau configuré fait échouer un changement explicite de niveau sans enregistrer de préférence. Le switch de réflexion restaure les valeurs brutes configurées par défaut après la désactivation uniquement lorsqu'elles permettent la réflexion. Si l'état brut ou la valeur par défaut de raisonnement configurée est désactivée, le switch de réflexion ne peut pas être activé et la préférence enregistrée est conservée. Cela s'applique également lorsque des capacités explicites omettent un niveau par défaut ou n'exposent qu'un toggle de réflexion. Une commande par défaut explicite réinitialise toujours la préférence. Supprimez le remplacement brut bloquant pour choisir un niveau différent.
 >
@@ -789,8 +866,8 @@ Qwen Code fait la distinction entre deux types de configurations de modèle :
 
 - Créé dynamiquement lors de l'utilisation d'IDs de modèle bruts via CLI (`--model`), variables d'environnement ou paramètres
 - Non défini dans `modelProviders`
-- La configuration est construite en « projetant » à travers les couches de résolution (CLI → env → paramètres → défauts)
-- Capturé automatiquement en tant que **RuntimeModelSnapshot** lorsqu'une configuration complète est détectée
+- La configuration est construite en « projetant » à travers les couches de résolution (CLI → env → settings → valeurs par défaut)
+- Automatiquement capturé comme un **RuntimeModelSnapshot** lorsqu'une configuration complète est détectée
 - Permet la réutilisation sans ressaisir les identifiants
 
 ### Cycle de vie du RuntimeModelSnapshot
@@ -798,15 +875,15 @@ Qwen Code fait la distinction entre deux types de configurations de modèle :
 Lorsque vous configurez un modèle sans utiliser `modelProviders`, Qwen Code crée automatiquement un RuntimeModelSnapshot pour préserver votre configuration :
 
 ```bash
-# Ceci crée un RuntimeModelSnapshot avec l'ID : $runtime|openai|my-custom-model
+# This creates a RuntimeModelSnapshot with ID: $runtime|openai|my-custom-model
 qwen --auth-type openai --model my-custom-model --openai-api-key $KEY --openai-base-url https://api.example.com/v1
 ```
 
 Le snapshot :
 
 - Capture l'ID du modèle, la clé API, l'URL de base et la configuration de génération
-- Persiste à travers les sessions (stocké en mémoire pendant l'exécution)
-- Apparaît dans la liste de commandes `/model` en tant qu'option runtime
+- Persiste entre les sessions (stocké en mémoire pendant l'exécution)
+- Apparaît dans la liste des commandes `/model` comme une option d'exécution
 - Peut être activé en utilisant `/model $runtime|openai|my-custom-model`
 
 ### Différences clés

@@ -1,10 +1,10 @@
 # 模型提供商
 
-Qwen Code 允许你通过 `settings.json` 中的 `modelProviders` 设置来配置多个模型提供商。这使你能够使用 `/model` 命令在不同的 AI 模型和提供商之间进行切换。
+Qwen Code 允许你通过 `settings.json` 中的 `modelProviders` 设置来配置多个模型提供商。这使你能够使用 `/model` 命令在不同的 AI 模型和提供商之间切换。
 
 ## 概述
 
-使用 `modelProviders` 按 provider id 声明 `/model` 选择器可切换的模型。每个键是一个 provider id，其值是**一个模型定义数组**（`ModelConfig[]`）。对于内置 provider，键必须是有效的 auth type（`openai`、`anthropic`、`gemini`、`vertex-ai`）；自定义 provider id（例如 `idealab`）也是允许的，只要你通过顶层的 [`providerProtocol`](#自定义 provider-idproviderprotocol) 设置将其映射到某个协议。每个模型条目需要一个 `id`；`envKey` 是**可选但推荐**的（如果省略，将回退到该 auth type 的默认环境变量键，例如 `openai` 对应 `OPENAI_API_KEY`），此外还有可选的 `name`、`description`、`baseUrl` 和 `generationConfig`。凭据永远不会持久化在设置中；运行时会从 `process.env[envKey]` 读取它们。Qwen OAuth 模型保持硬编码，无法被覆盖。
+使用 `modelProviders` 为每个提供商 ID 声明模型，以便 `/model` 选择器可以在这些模型之间切换。每个键是一个提供商 ID，其值是 **一个模型定义数组**（`ModelConfig[]`）。对于内置提供商，该键必须是有效的身份验证类型（`openai`、`anthropic`、`gemini`、`vertex-ai`）；自定义提供商 ID（例如 `idealab`）也是允许的，只要你能通过顶层 [`providerProtocol`](#custom-provider-ids-providerprotocol) 设置将其映射到某个协议即可。每个模型条目都需要一个 `id`；`envKey` 是 **可选且推荐** 的（如果省略，则回退到身份验证类型的默认环境变量键，例如 `openai` 对应 `OPENAI_API_KEY`），此外还有可选的 `name`、`description`、`baseUrl` 和 `generationConfig`。凭据绝不会保存在设置中；运行时从 `process.env[envKey]` 读取它们。遗留的免费 Qwen OAuth 模型仍然是硬编码的，无法被覆盖。
 
 > [!note]
 >
@@ -12,23 +12,23 @@ Qwen Code 允许你通过 `settings.json` 中的 `modelProviders` 设置来配�
 
 > [!note]
 >
-> 只有 `/model` 命令会暴露非默认的 auth type。Anthropic、Gemini 等必须通过 `modelProviders` 进行定义。`/auth` 命令列出三个顶级选项：**Alibaba ModelStudio**（子菜单中包含 Coding Plan、Token Plan 和 Standard API Key）、**Third-party Providers** 和 **Custom Provider**。（Qwen OAuth 不再是可选的对话框条目；其免费套餐已于 2026-04-15 停止服务。）
+> 通过 `modelProviders` 配置 API 密钥提供商，然后使用 `/model` 进行选择。对于 Qwen 账户登录，请在 `/auth` 中选择 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code)；无需 API 密钥或手动 `modelProviders` 配置。使用 `/model` 从你的订阅可用的模型中进行选择。有关登录说明，请参阅 [Authentication](./auth.md)。
 
 > [!note]
 >
-> **模型唯一性：** 同一 `authType` 内的模型通过 `id` + `baseUrl` 的组合进行唯一标识。这意味着你可以在单个 `authType` 下多次定义相同的模型 ID（例如 `"gpt-4o"`），只要每个条目具有不同的 `baseUrl` —— 例如，一个直接指向 OpenAI，另一个指向代理端点。如果两个条目具有相同的 `id` 和相同的 `baseUrl`（或都省略了 `baseUrl`），则第一个出现的条目生效，后续的重复项将被跳过并附带警告。
+> **模型唯一性：** 模型由其有效 API 协议、`id` 和配置的 `baseUrl` 标识。你可以同时使用 `wireApi: "chat-completions"` 和 `wireApi: "responses"` 定义相同的模型和 URL，也可以为同一模型和 API 使用不同的 URL。如果条目共享这三个值，则首次出现的条目生效，后续重复项将被跳过并发出警告。
 
 > [!note]
 >
-> **热重载 vs. 重启：** 在 `settings.json` 中编辑 `modelProviders` 会被正在运行的交互式会话自动获取，无需重启（文件监听器有约 300ms 的防抖；重新打开 `/model` 即可查看新条目，当前选择会保留）。`providerProtocol` 仅在启动时读取一次，**需要重启**。
+> **热重载与重启：** 在 `settings.json` 中对 `modelProviders` 进行的编辑会被正在运行的交互式会话拾取而无需重启（文件监视器有约 300ms 的去抖动延迟；重新打开 `/model` 以查看新条目，当前选择会保留）。更改活动模型的 `wireApi` 会创建不同的路由；请显式选择该路由或重启以使用它。无效的 API 编辑会使之前的注册表保持可用。`providerProtocol` 仅在启动时读取一次，并且 **需要重启**。
 
 ### 图像生成路由
 
-当某个路由可供内置 `image_gen` 工具使用时，请设置 `supportsImageGeneration: true`。此能力独立于 `capabilities.vision` 或 `generationConfig.modalities.image` 等图像输入支持。
+当路由可供内置 `image_gen` 工具使用时，设置 `supportsImageGeneration: true`。此功能独立于图像输入支持（如 `capabilities.vision` 或 `generationConfig.modalities.image`）。
 
-当路由专用于图像生成且不应出现在普通模型选择器中时，请设置 `imageOnly: true`。为保持向后兼容，`imageOnly: true` 也会隐式启用图像生成能力，因此现有设置无需迁移。
+当路由专用于图像生成且不得出现在普通模型选择器中时，使用 `imageOnly: true`。为了向后兼容，`imageOnly: true` 也隐含了图像生成功能，因此现有设置无需迁移。
 
-双用途路由既可选作主模型，也可通过 `/model --image` 选择：
+双角色路由既可以作为主模型选择，也可以通过 `/model --image` 选择：
 
 ```json
 {
@@ -45,7 +45,7 @@ Qwen Code 允许你通过 `settings.json` 中的 `modelProviders` 设置来配�
 }
 ```
 
-专用图像路由需要同时设置这两个字段。只包含 `imageOnly: true` 的旧格式仍然有效：
+专用图像路由会设置这两个字段。仅包含 `imageOnly: true` 的旧格式仍然有效：
 
 ```json
 {
@@ -57,31 +57,89 @@ Qwen Code 允许你通过 `settings.json` 中的 `modelProviders` 设置来配�
 }
 ```
 
-所选路由必须声明明确的 HTTPS `baseUrl` 和非空 `envKey`。图像生成使用该路由相同的端点和凭据；如果聊天与图像生成需要不同的端点或凭据，请配置两个路由。
+所选路由必须声明显式的 HTTPS `baseUrl` 和非空的 `envKey`。图像生成使用该路由相同的端点和凭据；如果聊天和图像生成需要不同的端点或凭据，请配置两个路由。
 
-## 各 Auth Type 的配置示例
+### Live Voice 路由
 
-以下是针对不同认证类型的全面配置示例，展示了可用的参数及其组合。
+在支持 DashScope Realtime（语音到语音）协议的路由上设置 `realtimeOnly: true`。此类路由绝不会作为聊天、快速、视觉、语音或图像模型提供；它只能通过 `experimental.liveVoice.model` 作为 Live Voice 模型选择（即 `modelId`，或者当同一 ID 存在于多个提供商下时为 `provider:modelId`）。
 
-### 支持的 Auth Type
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "qwen3.5-omni-plus-realtime",
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "envKey": "DASHSCOPE_API_KEY",
+        "realtimeOnly": true
+      }
+    ]
+  },
+  "experimental": {
+    "liveVoice": {
+      "enabled": true,
+      "model": "qwen3.5-omni-plus-realtime",
+      "voice": "Tina"
+    }
+  }
+}
+```
 
-`modelProviders` 对象的键必须是有效的 `authType` 值。当前支持的 auth type 包括：
+当所选模型指定了 `realtimeOnly` 路由时，Live Voice 通过该路由的 `envKey` 读取 API 密钥（首先检查进程环境，然后检查 `settings.json` 的 `env` 块），并从其 `baseUrl` 派生 WebSocket 端点（`https://<host>/compatible-mode/v1` 变为 `wss://<host>/api-ws/v1/realtime`）。该路由必须同时声明 `baseUrl` 和 `envKey`，且主机必须是 DashScope 端点。
 
-| Auth Type    | 描述                                                                                                                                          |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `openai`     | 兼容 OpenAI 的 API（OpenAI、Azure OpenAI、vLLM/Ollama 等本地推理服务器）                                                                      |
-| `anthropic`  | Anthropic Claude API                                                                                                                          |
-| `gemini`     | Google Gemini API                                                                                                                             |
-| `qwen-oauth` | Qwen OAuth（硬编码，无法在 `modelProviders` 中覆盖）                                                                                          |
-| `vertex-ai`  | Google Vertex AI（在 Vertex AI 模式下使用 `gemini` 协议和 `@google/genai` SDK；选择它会设置 `GOOGLE_GENAI_USE_VERTEXAI=true`）                |
+以下两条规则是有意设计的：
+
+- 工作区设置永远不会被查阅，仅查阅用户级和系统级设置。项目的 `.qwen/settings.json` 无法添加或重定向 Live Voice 路由。
+- 匹配不到任何 `realtimeOnly` 路由的 **裸** `modelId` 像以前一样使用独立的 `experimental.liveVoice.endpoint` 和 `experimental.liveVoice.apiKey` 字段，因此现有设置保持不变即可正常工作。如果 `provider:modelId` 选择器指定的提供商存在但没有这样的路由，则视为错误：已删除或拼写错误的路由不会静默回退到存储的密钥。
+- 当选择了某个路由时，`experimental.liveVoice.apiKey` 和 `experimental.liveVoice.endpoint` 未被使用，并且设置 API 拒绝存储新的值。
+
+在独立路径上，Web Shell 的 Qwen Live 设置直接设置端点和模型。输入你的密钥所属区域或专用域的 OpenAI 兼容基础 URL，例如 `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`；如果留空，Live 将使用北京（`https://dashscope.aliyuncs.com/compatible-mode/v1`），来自其他地方的密钥将被拒绝并显示 `401`。基础 URL 按原样存储，并在调用开始时转换为 `wss://<host>/api-ws/v1/realtime`；主机必须是 DashScope 或 `*.maas.aliyuncs.com` 端点。当 Live Voice 开启时，新端点在保存前会通过 Realtime 握手进行检查。
+
+## 覆盖推理能力 [#override-reasoning-capabilities]
+
+在模型条目上设置 `capabilities.reasoning` 以覆盖其推理格式、提供的努力层级和默认值。已知模型从所选端点的提供商目录继承省略的字段；例如，`"capabilities": { "reasoning": { "defaultEffort": "medium" } }` 使 DashScope `qwen3.8-max` 路由在未选择明确努力层级时使用 medium。对于未知别名，需声明所有三个字段：
+
+```json
+{
+  "id": "company-model-v2",
+  "baseUrl": "https://gateway.example.com/v1",
+  "envKey": "COMPANY_MODEL_API_KEY",
+  "capabilities": {
+    "reasoning": {
+      "profile": "openai-effort",
+      "efforts": ["low", "medium", "high"],
+      "defaultEffort": "medium"
+    }
+  }
+}
+```
+
+`efforts` 替换 `low/medium/high/xhigh/max` 的支持子集。显式默认值必须属于该子集。配置文件复用现有格式：Chat 接受 `openai-effort`、`openai-reasoning`、`deepseek-openai`、`dashscope-effort`、`dashscope-thinking` 和 `qwen-chat-template`；Responses 接受 `openai-reasoning`；Anthropic 接受 `anthropic-manual`、`anthropic-adaptive` 和 `deepseek-anthropic`；Gemini/Vertex 使用 `gemini`。两个仅切换的配置文件省略 `efforts` 和 `defaultEffort`。Gemini 使用 low/medium/high。自适应配置文件即使配置了旧版手动预算也会选择自适应思考。现有的完整能力声明继续有效。
+
+推理更改在下一次用户提示之前应用。其请求、重试和子代理共享捕获的推理配置。无效的更新保留之前的配置并记录模型/字段错误。新会话中的无效声明会安全地回退到现有的模型行为。`reasoning`、`samplingParams` 和 `extra_body` 中的显式用户选择和提供商原生覆盖保持其现有优先级；模型默认值不会作为用户选择保存。此机制不改变端点、凭据或图像模型的生命周期。
+
+## 以下是针对不同认证类型的全面配置示例，展示了可用参数及其组合。
+
+支持的认证类型
+
+### 支持的认证类型
+
+使用以下内置提供商 ID 之一，或通过 `providerProtocol` 映射自定义 ID：
+
+| 有效协议 | 描述 |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `openai` | OpenAI 兼容 API。默认为 Chat Completions；将模型的 `wireApi` 设置为 `responses` 以使用 Responses API。 |
+| `anthropic` | Google Gemini API |
+| `gemini` | Google Gemini API |
+| `vertex-ai` | Google Vertex AI（在 Vertex AI 模式下使用 `gemini` 协议和 `@google/genai` SDK；选择此项会设置 `GOOGLE_GENAI_USE_VERTEXAI=true`） |
 
 > [!note]
 > Vertex AI 条目可以使用 **Application Default Credentials** 进行认证。设置 `GOOGLE_CLOUD_PROJECT`（以及可选的 `GOOGLE_CLOUD_LOCATION`，默认为 `global`），并让 `envKey` 以及解析器读取的所有其他密钥来源保持未设置：`GOOGLE_API_KEY`、`settings.security.auth.apiKey` 和 CLI 密钥参数。任何传入 Vertex 条目的 API key 都会使 Google SDK 切换到 Vertex Express 模式，从而忽略项目、区域和 ADC 凭据。声明了 `envKey` 的条目绝不会转而使用 ADC，因此变量注入失败后会继续针对该变量报错，而不会静默改用其他主体进行认证。
 
 > [!warning]
-> 既不是内置协议也未通过 `providerProtocol` 映射的 provider id（例如拼写错误如 `"openai-custom"`）无法被路由，因此其整个条目会被**跳过**并附带警告——其模型不会出现在 `/model` 选择器中。内置 provider 请使用上面列出的受支持 auth type 值之一，自定义 id 请添加 [`providerProtocol`](#自定义-provider-idproviderprotocol) 映射。
+> 既不是内置协议也未通过 `providerProtocol` 映射的提供商 ID（例如拼写错误如 `"openai-custom"`）无法被路由，因此其整个条目会被**跳过**并显示警告——其模型不会出现在 `/model` 选择器中。对于内置提供商，请使用上述支持的身份验证类型值之一，或为自定义 ID 添加 [`providerProtocol`](#custom-provider-ids-providerprotocol) 映射。
 
-### 自定义 provider id（`providerProtocol`）
+### 自定义 provider id（`providerProtocol`） [#custom-provider-ids-providerprotocol]
 
 内置 provider id（`openai`、`gemini`、`anthropic`、`vertex-ai`、`qwen-oauth`）会自动路由到其对应的 SDK 协议。要使用**自定义** provider id——例如将多个兼容 OpenAI 的端点归组到一个更友好的名称下——请在 `modelProviders` 中声明它，并通过顶层的 `providerProtocol` 设置将其映射到内置协议：
 
@@ -104,18 +162,48 @@ Qwen Code 允许你通过 `settings.json` 中的 `modelProviders` 设置来配�
 
 如果没有匹配的 `providerProtocol` 条目，自定义 provider id 会被跳过（见上方警告）。
 
-### 用于 API 请求的 SDK
+### 选择 OpenAI API
 
-Qwen Code 使用以下官方 SDK 向各个提供商发送请求：
+在 OpenAI 兼容模型上，将 `wireApi` 与 `id`、`envKey` 和 `baseUrl` 一起设置：
 
-| Auth Type    | SDK 包                                                                                              |
-| ------------ | --------------------------------------------------------------------------------------------------- |
-| `openai`     | [`openai`](https://www.npmjs.com/package/openai) - 官方 OpenAI Node.js SDK                          |
-| `anthropic`  | [`@anthropic-ai/sdk`](https://www.npmjs.com/package/@anthropic-ai/sdk) - 官方 Anthropic SDK         |
-| `gemini`     | [`@google/genai`](https://www.npmjs.com/package/@google/genai) - 官方 Google GenAI SDK              |
-| `qwen-oauth` | 使用自定义提供商（兼容 DashScope）的 [`openai`](https://www.npmjs.com/package/openai)               |
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "my-model",
+        "wireApi": "responses",
+        "envKey": "OPENAI_API_KEY",
+        "baseUrl": "https://api.openai.com/v1"
+      }
+    ]
+  },
+  "security": { "auth": { "selectedType": "openai" } },
+  "model": { "name": "my-model" }
+}
+```
 
-这意味着你配置的 `baseUrl` 必须与相应 SDK 预期的 API 格式兼容。例如，使用 `openai` auth type 时，端点必须接受 OpenAI API 格式的请求。
+支持的值为 `chat-completions` 和 `responses`。省略 `wireApi` 时，对 `openai` 使用 Chat Completions，包括映射到 `openai` 的自定义提供商。其他值，或在 Anthropic、Gemini、Vertex AI 或 Qwen OAuth 模型上使用 `wireApi`，均属于配置错误。
+
+对于新配置，请使用 `openai` 配合每个模型的 `wireApi`。v0.23.3 版本中发布的 `modelProviders.openai-responses` 格式和 `providerProtocol` 到 `openai-responses` 的映射仍然可读。显式提供商映射优先于存储桶名称；显式 `wireApi` 优先于任一 OpenAI 协议。加载过程不会重写设置或更改凭据引用。重新配置将以新格式写入选定的路由，并仅移除可写范围内匹配的旧条目；包含点的提供商 ID 下的条目保持不变，无关的模型、端点、API 和作用域也保持不变。`api` 不是 `wireApi` 的别名。
+
+`wireApi` 是本地路由元数据；它不属于 `generationConfig` 或 `extra_body`，也不会包含在请求体中。新的自定义设置在两个 API 之间共享同一 OpenAI 端点的一个凭据槽位，因此轮换该密钥会同时更新两条路由。手动配置的模型在需要独立凭据时可以使用不同的显式 `envKey` 引用。在 `/auth` → Custom Provider 中，选择 OpenAI-compatible，然后选择 API 格式。
+
+启动时，当所选配置端点上没有匹配的 Chat 路由时，`selectedType: "openai"` 可以解析显式配置了 `wireApi: "responses"` 的模型。模型选择器和记录的会话保留有效协议（`openai` 或 `openai-responses`），以便可以独立选择和恢复这两条路由。当 API 请求失败时，不会进行端点检测或自动回退。
+
+### 用于 API 请求的传输方式
+
+有效模型协议决定传输方式。两种 OpenAI API 都使用 `openai` 提供商组；`wireApi` 选择 Chat Completions 或 Responses：
+
+| 有效协议 | 传输方式 |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `openai` | [`openai`](https://www.npmjs.com/package/openai) - 官方 OpenAI Node.js SDK |
+| `openai-responses` | 直接 HTTP/SSE 调用 `/v1/responses`（无 SDK）；嵌入使用 [`openai`](https://www.npmjs.com/package/openai) |
+| `anthropic` | [`@anthropic-ai/sdk`](https://www.npmjs.com/package/@anthropic-ai/sdk) - 官方 Google GenAI SDK |
+| `gemini` | [`@google/genai`](https://www.npmjs.com/package/@google/genai) 配合自定义提供商（DashScope 兼容） |
+| `qwen-oauth` | 带有自定义提供商（DashScope 兼容）的 [`openai`](https://www.npmjs.com/package/openai) |
+
+这意味着你配置的 `baseUrl` 应与相应传输方式预期的 API 格式兼容。例如，`wireApi: "responses"` 需要一个兼容 Responses 的端点。
 
 ### 兼容 OpenAI 的提供商 (`openai`)
 
@@ -205,7 +293,47 @@ Qwen Code 使用以下官方 SDK 向各个提供商发送请求：
 }
 ```
 
+当指向托管的 OpenAI 兼容网关时，将 `baseUrl` 设置为 API 的 `/v1` 根路径（例如 `https://gateway.example.com/v1`），而不是完整的 `/v1/chat/completions` 路径——SDK 会自动追加请求路径。
+
+### OpenAI Responses API (`openai-responses`)
+
+使用 `openai` 配合 `wireApi: "responses"` 以定位 OpenAI 的 `/v1/responses` 端点。当端点返回带有可见思维文本的加密推理时，它会跨轮次重放先前轮次的推理并通过 `reasoning.encrypted_content` 进行 `--resume`。流式传输 `response.reasoning_text.delta` 的兼容端点也会显示其推理内容，但没有 `encrypted_content` 的端点无法重放不透明的推理状态。使用 `reasoning.effort`（而不是 Chat Completions 线路使用的 `extra_body.enable_thinking`）来控制推理强度。
+
+```json
+{
+  "env": {
+    "OPENAI_API_KEY": "sk-your-actual-openai-key-here"
+  },
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "gpt-5.1",
+        "wireApi": "responses",
+        "name": "GPT-5.1 (Responses API)",
+        "envKey": "OPENAI_API_KEY",
+        "baseUrl": "https://api.openai.com/v1",
+        "generationConfig": {
+          "timeout": 60000,
+          "reasoning": {
+            "effort": "high"
+          },
+          "samplingParams": {
+            "temperature": 0.7,
+            "max_tokens": 4096
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+> [!note]
+> 此处的 `extra_body` 仅用于填充：只有当生成的请求中没有该键的值时，才会将其写入请求体，因此它无法覆盖流水线已设置的字段（`model`、`input`、`reasoning`、`temperature`、`max_output_tokens` 等）。遗留的 `enable_thinking` 键是唯一的例外——它会被移除而不是转发（因为它不是 Responses API 字段），并且在未显式设置 `reasoning` 时转换为 `reasoning.effort: "medium"`。对于此提供商，请直接设置 `reasoning.effort` 而不是 `extra_body.enable_thinking`。
+
 ### Anthropic (`anthropic`)
+
+Claude Opus 5.5、Sonnet 5.5、Fable 5.1 和 Mythos 5.1 拒绝强制工具选择。对于这些模型上的结构化侧查询，Qwen Code 使用自动工具选择以及显式的模式响应指令。支持强制选择的模型保留此功能。自动选择不保证工具调用；JSON 侧查询也可以从响应文本中读取原始 JSON 对象，而不包含 Markdown 围栏或周围文字。参见 [Anthropic 的工具选择限制](https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools#forcing-tool-use)。
 
 ```json
 {
@@ -356,9 +484,9 @@ Qwen Code 使用以下官方 SDK 向各个提供商发送请求：
 }
 ```
 
-对于有排队或响应较慢的本地 OpenAI 兼容服务器，`streamIdleTimeoutMs` 控制所选模型在流式数据块之间最多可保持静默多久。它会覆盖所选 provider 条目的全局 `QWEN_STREAM_IDLE_TIMEOUT_MS` 值；设为 `0` 可禁用空闲保护。除非提高或禁用 `QWEN_STREAM_MAX_LIFETIME_MS`，否则独立的 15 分钟流生命周期上限仍然生效。
+对于排队或缓慢的本地 OpenAI 兼容服务器，`streamIdleTimeoutMs` 控制该模型在流式传输块之间可以保持沉默的时间长度。它覆盖了所选提供商条目的全局 `QWEN_STREAM_IDLE_TIMEOUT_MS` 值；将其设置为 `0` 可禁用空闲保护。除非提高或禁用 `QWEN_STREAM_MAX_LIFETIME_MS`，否则单独的 15 分钟流生命周期上限仍然适用。
 
-对于不需要身份验证的本地服务器，你可以为 API key 使用任何占位符值：
+对于不需要身份验证的本地服务器，您可以为 API 密钥使用任何占位符值：
 
 ```bash
 # For Ollama (no auth required)
@@ -370,7 +498,7 @@ export VLLM_API_KEY="not-needed"
 
 > [!note]
 >
-> `extra_body` 参数**仅受兼容 OpenAI 的提供商**（`openai`、`qwen-oauth`）**支持**。对于 Anthropic 和 Gemini 提供商，该参数会被忽略。
+> `extra_body` 参数**仅支持 OpenAI 兼容提供商**（`openai`、`qwen-oauth`）。它在 Anthropic 和 Gemini 提供商中被忽略。在 `openai-responses` 上，`enable_thinking` 键被转换而非转发——请参阅 [OpenAI Responses API](#openai-responses-api-openai-responses) 说明。
 
 > [!note]
 >
@@ -378,11 +506,11 @@ export VLLM_API_KEY="not-needed"
 >
 > - **选项 1：使用 `.env` 文件**（出于安全考虑推荐）：
 >   ```bash
->   # ~/.qwen/.env（或项目根目录）
+>   # ~/.qwen/.env (or project root)
 >   OPENAI_API_KEY=sk-your-actual-key-here
 >   ```
 >   请务必将 `.env` 添加到你的 `.gitignore` 中，以防止意外提交密钥。
-> - **选项 2：使用 `settings.json` 中的 `env` 字段**（如上述示例所示）：
+> - **选项 2：在 `settings.json` 中使用 `env` 字段**（如上述示例所示）：
 >   ```json
 >   {
 >     "env": {
@@ -392,9 +520,27 @@ export VLLM_API_KEY="not-needed"
 >   ```
 >
 > 每个提供商示例都包含一个 `env` 字段，以说明应如何配置 API key。
+
+#### 以自定义模型名称提供的 Qwen3.x
+
+思考控制和上下文窗口是根据模型 ID 推断的。如果 vLLM 或 SGLang 服务器以不以 `qwen` 开头的 ID（例如 `--served-model-name chat`）暴露 Qwen3.x 模型，则两者均不适用：自动模式权限分类器等侧请求会保持思考开启状态，且上下文窗口回退到默认的 200K。请在模型条目中声明这两项，如 [覆盖推理能力](#override-reasoning-capabilities) 中所述：
+
+```json
+{
+  "id": "chat",
+  "name": "Qwen3.6 35B A3B (vLLM)",
+  "envKey": "VLLM_API_KEY",
+  "baseUrl": "http://localhost:8000/v1",
+  "capabilities": { "reasoning": { "profile": "qwen-chat-template" } },
+  "generationConfig": { "contextWindowSize": 262144 }
+}
+```
+
+`qwen-chat-template` 发送 `chat_template_kwargs.enable_thinking`，这些服务器将其传递给 Qwen 聊天模板；它们不会读取顶层的 `enable_thinking` 字段。将 `contextWindowSize` 设置为服务器的最大模型长度（vLLM 在 `/v1/models` 中将其报告为 `max_model_len`）。Qwen Code 在每个请求中都发送工具定义，因此服务器还需要启用工具调用和推理解析器；在 vLLM 上，这包括 `--enable-auto-tool-choice`、模型的 `--tool-call-parser`（例如 `qwen3_xml`）以及 `--reasoning-parser qwen3`。解析器名称在不同服务器版本之间可能会变化，请查阅您服务器的文档。
+
 ## 阿里云 Coding Plan
 
-阿里云 Coding Plan 提供了一组针对编码任务优化的预配置 Qwen 模型。此功能面向拥有阿里云 Coding Plan API 访问权限的用户开放，并提供简化的设置体验以及自动更新模型配置的功能。
+阿里云 Coding Plan 提供了一组针对编码任务优化的预配置 Qwen 模型。此功能适用于拥有阿里云 Coding Plan API 访问权限的用户，并提供简化的设置体验及自动模型配置更新。
 
 ### 概述
 
@@ -438,7 +584,7 @@ export VLLM_API_KEY="not-needed"
 
 ### API Key 存储
 
-当你通过 `/auth` 命令配置 Coding Plan 时，API key 会使用保留的环境变量名 `BAILIAN_CODING_PLAN_API_KEY` 进行存储。默认情况下，它存储在你的 `settings.json` 文件的 `env` 字段中。
+当您通过 `/auth` 命令配置 Coding Plan 时，API 密钥使用保留的环境变量名 `BAILIAN_CODING_PLAN_API_KEY` 存储。默认情况下，它存储在您的 `settings.json` 文件的 `env` 字段中。
 
 > [!warning]
 >
@@ -453,13 +599,13 @@ export VLLM_API_KEY="not-needed"
 
 ### 自动更新
 
-Coding Plan 模型配置具有版本控制。当 Qwen Code 检测到模型模板有新版本时，会提示你进行更新。接受更新将会：
+Coding Plan 模型配置是有版本的。当 Qwen Code 检测到较新版本的模型模板时，系统将提示您进行更新。接受更新将：
 
-- 将现有的 Coding Plan 模型配置替换为最新版本
-- 保留你手动添加的任何自定义模型配置
-- 保持你选中的模型不变；如果它不再存在于更新后的配置中，请使用 `/model` 选择新模型
+- 用最新版本替换现有的 Coding Plan 模型配置
+- 保留您手动添加的任何自定义模型配置
+- 保持所选模型不变；如果它不再存在于更新后的配置中，请使用 `/model` 选择一个新的模型
 
-更新过程会刷新模型配置和功能，而不会改变你选中的模型。
+更新过程会刷新模型配置和功能，而不会更改您选择的模型。
 
 ### 手动配置（高级）
 
@@ -506,7 +652,7 @@ Coding Plan 模型配置具有版本控制。当 Qwen Code 检测到模型模板
 | 设置（`settings.json`） | `security.auth.selectedType`        | `model.name`                                    | `security.auth.apiKey`                                | `security.auth.baseUrl`                                | —                      | —                                 |
 | 默认 / 计算值         | 回退到 `AuthType.QWEN_OAUTH` | 内置默认值（OpenAI ⇒ `qwen3.5-plus`）      | —                                                     | —                                                      | —                      | 如果配置了则使用 `Config.getProxy()` |
 
-\*当存在时，CLI auth flags 会覆盖设置。否则，由 `security.auth.selectedType` 或隐式默认值决定 auth type。Qwen OAuth 和 OpenAI 是唯一无需额外配置即可使用的 auth types。
+\*存在时，CLI 认证标志覆盖设置。否则，`security.auth.selectedType` 或隐式默认值决定认证类型。有关登录选项，请参阅[认证](./auth.md)。遗留的免费 Qwen OAuth 提供商与 [订阅版 Qwen 账户](https://chat.qwen.ai/?memberPlan=qwen_code)是分开的。
 
 > [!note]
 >
@@ -514,40 +660,40 @@ Coding Plan 模型配置具有版本控制。当 Qwen Code 检测到模型模板
 
 > [!warning]
 >
-> **弃用 `security.auth.apiKey` 和 `security.auth.baseUrl`：** 通过 `settings.json` 中的 `security.auth.apiKey` 和 `security.auth.baseUrl` 直接配置 API credentials 已被弃用。这些设置在历史版本中用于通过 UI 输入的 credentials，但 credential 输入流程已在 0.10.1 版本中移除。这些字段将在未来的版本中完全移除。**强烈建议迁移到 `modelProviders`** 以进行所有模型和 credential 配置。在 `modelProviders` 中使用 `envKey` 引用环境变量来进行安全的 credential 管理，而不是在设置文件中硬编码 credentials。
+> **弃用 `security.auth.apiKey` 和 `security.auth.baseUrl`：** 通过在 `settings.json` 中的 `security.auth.apiKey` 和 `security.auth.baseUrl` 直接配置 API 凭证已被弃用。这些设置在历史版本中用于通过 UI 输入的凭证，但凭证输入流程已在 0.10.1 版本中移除。这些字段将在未来版本中完全移除。**强烈建议迁移到 `modelProviders`** 以进行所有模型和凭证配置。请在 `modelProviders` 中使用 `envKey` 引用环境变量以实现安全的凭证管理，而不是在设置文件中硬编码凭证。
 
 ## Generation Config 分层：不可穿透的 Provider 层
 
-配置解析遵循严格的分层模型，其中有一条关键规则：**`modelProvider` 层是不可穿透的**。
+配置解析遵循严格的分层模型，其中有一条关键规则：**modelProvider 层是不可渗透的**。
 
 ### 工作原理
 
-1. **当选择了 `modelProvider` 模型时**（例如，通过 `/model` 命令选择 provider 配置的模型）：
+1. **当选择了 modelProvider 模型时**（例如，通过 `/model` 命令选择由 provider 配置的模型）：
    - 来自 provider 的整个 `generationConfig` 将被**原子地**应用
-   - **Provider 层完全不可穿透**——较低层（CLI、env、settings）根本不参与 `generationConfig` 解析
+   - **provider 层是完全不可渗透的** —— 下层（CLI、环境变量、设置）完全不参与 generationConfig 的解析
    - `modelProviders[].generationConfig` 中定义的所有字段均使用 provider 的值
    - Provider **未定义**的所有字段均设置为 `undefined`（不从 settings 继承）
-   - 这确保了 provider 配置作为一个完整、自包含的“密封包”运行
+   - 这确保了 provider 配置作为一个完整、自包含的“密封包”发挥作用
 
-   如果模型列在 `modelProviders` 中，请将该模型的所有特定于模型的 generation 设置放在匹配的 provider 条目中。对于 provider 模型，顶层的 `model.generationConfig` 值（包括 `contextWindowSize`、`modalities`、`customHeaders` 和 `extra_body`）将被忽略。请在 `modelProviders[authType][].generationConfig` 下配置这些字段以使其生效。
+   如果某个模型列在 `modelProviders` 中，请将该模型的所有特定生成设置放在匹配的提供商条目中。对于提供商模型，顶层的 `model.generationConfig` 值（包括 `contextWindowSize`、`modalities`、`customHeaders` 和 `extra_body`）会被忽略。请将那些字段配置在 `modelProviders[authType][].generationConfig` 下才能生效。
 
-2. **当未选择 `modelProvider` 模型时**（例如，将 `--model` 与原始模型 ID 一起使用，或直接使用 CLI/env/settings）：
-   - 解析会穿透到较低层
-   - 字段按 CLI → env → settings → defaults 的顺序填充
-   - 这将创建一个 **Runtime Model**（见下一节）
+2. **当未选择任何 modelProvider 模型时**（例如，使用带有原始模型 ID 的 `--model`，或直接使用 CLI/环境变量/设置）：
+   - 解析会向下传递到较低层
+   - 字段按 CLI → 环境变量 → 设置 → 默认值的顺序填充
+   - 这会创建一个 **运行时模型**（Runtime Model，见下一节）
 
 ### `generationConfig` 的逐字段优先级
 
 | 优先级 | 来源                                        | 行为                                                                                                 |
 | -------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | 1        | 编程覆盖                        | 运行时 `/model`、`/auth` 更改                                                                        |
-| 2        | `modelProviders[authType][].generationConfig` | **不可穿透层** - 完全替换所有 `generationConfig` 字段；较低层不参与 |
+| 2 | `modelProviders[authType][].generationConfig` | **不可渗透层** - 完全替换所有 generationConfig 字段；下层不参与 |
 | 3        | `settings.model.generationConfig`             | 仅用于 **Runtime Models**（未选择 provider 模型时）                                    |
 | 4        | Content-generator 默认值                    | Provider 特定默认值（例如 OpenAI 与 Gemini）- 仅用于 Runtime Models                            |
 
-### `customHeaders` 中的动态值
+### `customHeaders` 中的动态值 [#dynamic-values-in-customheaders]
 
-`customHeaders` 的值可以包含占位符 `${session_id}`，它会在每次请求时扩展为当前 Qwen Code 会话 ID。可用于要求每个对话具有稳定标识符的网关——例如 OpenCode Go 会拒绝缺少 `x-opencode-session` 的请求：
+`customHeaders` 的值可能包含占位符 `${session_id}`，该占位符会在每个请求中使用当前的 Qwen Code 会话 ID 进行展开。请将其用于需要稳定每对话标识符的网关——例如，OpenCode Go 会拒绝没有 `x-opencode-session` 的请求：
 
 ```json
 {
@@ -559,10 +705,9 @@ Coding Plan 模型配置具有版本控制。当 Qwen Code 检测到模型模板
 }
 ```
 
-由于该值是在每次请求时解析的，而非烘焙到 SDK 客户端中，`/new` 和 `/resume` 可以在不重启的情况下轮换它。
+由于该值是逐个请求解析的，而不是固化在 SDK 客户端中，因此 `/new` 和 `/resume` 可以在无需重启的情况下轮换它。
 
-⚠️ **需要两个步骤。** 上面的 provider 条目只是一半——占位符本身是惰性的，你还需要开启
-[`outboundCorrelation.allowDynamicHeaderValues`](./settings.md#outboundcorrelation)：
+⚠️ **需要两个步骤。** 上面的提供商条目只是其中一半——占位符在您同时开启 [`outboundCorrelation.allowDynamicHeaderValues`](./settings.md#outboundcorrelation) 之前是无效的：
 
 ```json
 {
@@ -572,23 +717,26 @@ Coding Plan 模型配置具有版本控制。当 Qwen Code 检测到模型模板
 }
 ```
 
-在此之前，包含占位符的值会被**丢弃**而不会发送，Qwen Code 会在启动时打印一条警告，指明该 header 和此设置名。该 header 绝不会带着字面量 `${session_id}` 被发出。
+在您执行此操作之前，包含占位符的值将被**丢弃**而不是发送，并且 Qwen Code 会在启动时打印一条警告，指明该标头名称和此设置。该标头永远不会带有字面量 `${session_id}` 发送。
 
-该开关是全局的，因为它是一个同意决策，独立于值被发送到_哪里_：扩展后的值会将实时会话状态带给接收方，而该开关仅控制 `${session_id}` 是否可以被扩展。它不会标识是哪个设置源提供了该 header。
+**保留一个标头。** 在 QwenCloud MaaS 端点——即 `/auth` 条目 `China — 千问AI平台` 和 `International — QwenCloud`——上，Qwen Code 拥有 `X-DashScope-Source-Config` 并将第一方归因值写入其中。该名称下的任何条目（无论大小写如何）都会在构建请求之前被移除，因此其中的 `${session_id}` 占位符永远不会存活，且 `allowDynamicHeaderValues` 也不会改变这一点。该标头本身仍会被发送；只有您的值会被替换。有关从设置角度陈述的相同规则，请参阅 [`customHeaders`](./settings.md#model)。
 
-**隐私说明：** 会话 ID 在对话生命周期内是一个稳定的标识符，因此你发送到的任何 host 都可以将该对话的每个请求归组。具体是哪些 host 由哪些 provider 条目携带该 header 决定——没有单独的 host 列表需要与你的 `baseUrl` 保持同步。
+该开关是全局性的，因为它是一个同意决策，与值去向_哪里_无关：展开的值会将实时会话状态携带给接收者，而该开关仅控制是否允许展开 `${session_id}`。它并不识别是哪个设置源提供了该标头。
+
+**隐私说明：** 会话 ID 是对话生命周期内的稳定标识符，因此您发送它的任何主机都可以对该对话的所有请求进行分组。哪些主机接收它取决于哪些提供商条目携带了该标头——没有单独的主机列表需要与您的 `baseUrl` 保持同步。
 
 ### 原子字段处理
 
-以下字段被视为原子对象——provider 的值将完全替换整个对象，不会发生合并：
+以下字段被视为原子对象 - provider 值完全替换整个对象，不发生合并：
 
 - `samplingParams` - Temperature、top_p、max_tokens 等。
-- `customHeaders` - 自定义 HTTP headers（可能包含 `${session_id}`；参见[动态值](#customheaders-中的动态值)）
+- `customHeaders` - 自定义 HTTP 标头（可能包含 `${session_id}`；参见 [动态值](#dynamic-values-in-customheaders)）
 - `extra_body` - 额外的请求体参数
 
 ### 示例
+
 ```jsonc
-// 用户设置 (~/.qwen/settings.json)
+// User settings (~/.qwen/settings.json)
 {
   "model": {
     "generationConfig": {
@@ -598,7 +746,7 @@ Coding Plan 模型配置具有版本控制。当 Qwen Code 检测到模型模板
   }
 }
 
-// modelProviders 配置
+// modelProviders configuration
 {
   "modelProviders": {
     "openai": [{
@@ -613,23 +761,23 @@ Coding Plan 模型配置具有版本控制。当 Qwen Code 检测到模型模板
 }
 ```
 
-当从 `modelProviders` 中选择 `gpt-4o` 时：
+当从 modelProviders 中选择 `gpt-4o` 时：
 
-- `timeout` = 60000（来自 provider，覆盖 settings）
-- `samplingParams.temperature` = 0.2（来自 provider，完全替换 settings 对象）
-- `samplingParams.max_tokens` = **undefined**（未在 provider 中定义，且 provider 层不会从 settings 继承——如果未提供，字段会被显式设置为 undefined）
+- `timeout` = 60000（来自 provider，覆盖设置）
+- `samplingParams.temperature` = 0.2（来自 provider，完全替换设置对象）
+- `samplingParams.max_tokens` = **undefined**（未在 provider 中定义，且 provider 层不从设置继承——如果未提供，字段显式设置为 undefined）
 
-当通过 `--model gpt-4` 使用原始模型时（不来自 `modelProviders`，会创建一个 Runtime Model）：
+当通过 `--model gpt-4` 使用原始模型时（非来自 modelProviders，创建运行时模型）：
 
-- `timeout` = 30000（来自 settings）
-- `samplingParams.temperature` = 0.5（来自 settings）
-- `samplingParams.max_tokens` = 1000（来自 settings）
+- `timeout` = 30000（来自设置）
+- `samplingParams.temperature` = 0.5（来自设置）
+- `samplingParams.max_tokens` = 1000（来自设置）
 
 `modelProviders` 本身的合并策略是 REPLACE（替换）：项目设置中的整个 `modelProviders` 将覆盖用户设置中的相应部分，而不是将两者合并。
 
-## Reasoning / thinking 配置
+## 推理 / 思考配置
 
-`generationConfig` 下的可选 `reasoning` 字段控制模型在响应前进行推理的积极程度。Anthropic 和 Gemini 转换器始终遵循该字段。OpenAI 兼容管道也会遵循，**除非**设置了 `generationConfig.samplingParams` —— 请参阅下面的“与 `samplingParams` 的交互”注意事项。
+`generationConfig` 下的可选 `reasoning` 字段控制模型在响应前推理的激进程度。Anthropic 和 Gemini 转换器始终遵循它。OpenAI 兼容管道也遵循它，**除非**设置了 `generationConfig.samplingParams`。已知的 GPT-5 模型和 GPT-6 Astra 是例外：无关的采样键不会抑制配置的 effort。参见下方的“与 `samplingParams` 的交互”。
 
 ```jsonc
 {
@@ -641,11 +789,12 @@ Coding Plan 模型配置具有版本控制。当 Qwen Code 检测到模型模板
         "baseUrl": "https://api.deepseek.com/v1",
         "envKey": "DEEPSEEK_API_KEY",
         "generationConfig": {
-          // 四级强度：
-          //   'low'    | 'medium' — 在 DeepSeek 服务端会映射为 'high'
-          //   'high'   — 默认推理强度
-          //   'max'    — DeepSeek 特有的超强级别
-          // 或者设置为 `false` 以完全禁用推理。
+          // The effort tiers:
+          //   'low'    — lightest reasoning
+          //   'medium' | 'xhigh' — mapped to 'high' on DeepSeek
+          //   'high'   — default reasoning intensity
+          //   'max'    — DeepSeek-specific extra-strong tier
+          // Or set `false` to disable reasoning entirely.
           "reasoning": { "effort": "max" },
         },
       },
@@ -654,41 +803,46 @@ Coding Plan 模型配置具有版本控制。当 Qwen Code 检测到模型模板
 }
 ```
 
-### 各 provider 的行为
+### 各 provider 行为
 
-| 协议 / provider | 网络请求结构 | 备注 |
-| --- | --- | --- |
-| **OpenAI / DashScope**（`qwen3.8-max` 系列） | 扁平的 `reasoning_effort: <effort>` body 参数 | 对于任何以 `qwen3.8-max` 开头的模型 id（包括带日期的快照和 `-latest` 别名），`/effort` 级别会直接传递；DashScope 会应用模型特定的映射。该系列的级别上限为 `xhigh`，因此配置的 `max` 会被截断为 `xhigh`（记录一次日志），而不是发送后被拒绝。`samplingParams` 或 `extra_body` 中显式设置的 `reasoning_effort` 是原样覆盖值，不会被截断。当 `reasoning_effort` 和 `thinking_budget` 冲突时，正常的 `extra_body` > `samplingParams` > `reasoning` 优先级仅保留更高优先级的字段；显式的同层对保留 `reasoning_effort`，与 provider 在跨层解析之前的行为一致。如果静态字段胜出，`/effort` 会报告该字段，而不会暗示请求的级别已生效。当 effort 级别胜出时，冲突的 `enable_thinking` 也会被丢弃。`extra_body` 中显式的 `enable_thinking: false` 会被遵从而非丢弃：它会以 `reasoning_effort: 'none'` 覆盖配置的级别，这是 `extra_body` 少数不按原样生效的地方之一。其他 Qwen 模型继续将所选级别映射为 `enable_thinking: true`；`reasoning_effort` 覆盖会在那里原样传递，除非它与 `thinking_budget` 冲突（DashScope 会拒绝该组合），此时无效的 `reasoning_effort` 会被丢弃，`enable_thinking` 和 `thinking_budget` 均保留。 |
-| **OpenAI / DeepSeek** (`api.deepseek.com`) | 扁平的 `reasoning_effort: <effort>` body 参数 | 当在嵌套配置中设置 `reasoning.effort` 时，它会被重写为扁平的 `reasoning_effort`，并且 `'low'`/`'medium'` 会被规范化为 `'high'`，`'xhigh'` 规范化为 `'max'` —— 这反映了 DeepSeek 的[服务端向后兼容](https://api-docs.deepseek.com/zh-cn/api/create-chat-completion)机制。顶层的 `samplingParams.reasoning_effort` 或 `extra_body.reasoning_effort` 覆盖会跳过此规范化并原样发送。只有真实的 DeepSeek 主机名才接受 `max`；其他主机上名为 `deepseek` 的模型仍使用通用的 `xhigh` 上限，与重构逻辑本身基于主机名的判断一致。 |
-| **OpenAI / Z.ai** (`z.ai`、`bigmodel.cn`) | 扁平的 `reasoning_effort: <effort>` body 参数 | Z.ai 主机上的 GLM-5.2+ 支持完整级别，包括 `max`，嵌套的 `reasoning.effort` 会被重写为扁平字段。较旧的 GLM id，以及通过任何其他主机访问的 `glm-*` 模型，仍使用通用的 `xhigh` 上限：单凭模型名称无法说明该端点接受什么参数。 |
-| **OpenAI**（其他兼容服务器） | `reasoning: { effort, ... }` 直接传递 | 配置的 `max` 会被截断为 `xhigh`（记录一次日志），因为 `max` 是厂商扩展，而非通用 OpenAI 级别的一部分。当 provider 需要不同结构时，请通过 `samplingParams` 设置（例如 GPT-5/o-series 的 `samplingParams.reasoning_effort`）；显式的 `samplingParams` / `extra_body` 值不会被截断。 |
-| **Anthropic**（真实的 `api.anthropic.com`） | `output_config: { effort }` 加上 `effort-2025-11-24` beta header | 真实的 Anthropic 仅接受 `'low'`/`'medium'`/`'high'`。`'max'` 会被**截断为 `'high'`** 并输出一行 `debugLogger.warn`（每个 generator 一次）；如果你需要最大强度，请将 baseURL 切换为支持该强度的 DeepSeek 兼容端点。 |
-| **Anthropic** (`api.deepseek.com/anthropic`) | 相同的 `output_config: { effort }` + beta header | `'max'` 会原样传递。 |
-| **Gemini** (`@google/genai`) | `thinkingConfig: { includeThoughts: true, thinkingLevel }` | `'low'` → `LOW`，`'high'`/`'max'` → `HIGH`，其他 → `THINKING_LEVEL_UNSPECIFIED`（Gemini 没有 `MAX` 级别）。 |
+| 协议 / provider | 线格式 (Wire shape) | 备注 |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **OpenAI / DashScope** (`qwen3.8-max` 系列) | 扁平的 `reasoning_effort: <effort>` body 参数 | 对于以 `qwen3.8-max` 开头的任何模型 ID（包括带日期的快照和 `-latest` 别名）、仅限邀请的 `qwen-latest-series-invite-*` 预览版以及 `qwen4*` 系列（均不区分大小写），会透传 `/effort` 层级；DashScope 应用特定于模型的映射。该系列的阶梯止于 `xhigh`，因此配置的 `max` 会被钳制为 `xhigh`（记录一次日志）而不是发送后被拒绝。在 `samplingParams` 或 `extra_body` 中显式指定 `reasoning_effort` 是逐字覆盖，不会被钳制。当 `reasoning_effort` 和 `thinking_budget` 冲突时，正常的 `extra_body` > `samplingParams` > `reasoning` 优先级仅保留更高优先级的字段；同一层级的显式配对保留 `reasoning_effort`，这与跨层解析之前提供者的行为一致。如果静态字段胜出，`/effort` 将报告该字段，而不是暗示请求的层级有效。当 effort 层级胜出时，冲突的 `enable_thinking` 也会被丢弃。在 `extra_body` 中显式指定的 `enable_thinking: false` 会被尊重而不是被丢弃：它作为 `reasoning_effort: 'none'` 覆盖配置的层级，这是 `extra_body` 不会逐字胜出的少数情况之一。其他 Qwen 模型继续将选定的 effort 映射到 `enable_thinking: true`；除非与 `thinking_budget` 冲突（DashScope 拒绝的一对），否则 `reasoning_effort` 覆盖在那里透传，在这种情况下，无效的 `reasoning_effort` 被丢弃，而 `enable_thinking` 和 `thinking_budget` 都保留。 |
+| **OpenAI / DeepSeek** (`api.deepseek.com`) | 扁平的 `reasoning_effort: <effort>` body 参数 | 当在嵌套配置形状中设置 `reasoning.effort` 时，它会被重写为扁平的 `reasoning_effort`；对于内置的 DeepSeek 模型，`'low'`、`'high'` 和 `'max'` 透传，而 `'medium'`/`'xhigh'` 被规范化为 `'high'` —— 镜像了 DeepSeek 的 [effort mapping](https://api-docs.deepseek.com/guides/thinking_mode)。这种透传和规范化描述了官方端点：在 MaaS 和第三方主机上，确切的 `deepseek-v4-pro` / `deepseek-v4-flash` ID 仅提供 `high`/`max`（配置的 `low` 被提升到 `high`，且 `xhigh` 规范化为 `max`），而较新的 Flash 别名 (`deepseek-v4.1-flash*`) 保留 `low`/`high`/`max` 并带有 `xhigh → high`。顶层的 `samplingParams.reasoning_effort` 或 `extra_body.reasoning_effort` 覆盖跳过此规范化并逐字发送。`max` 在真实的 DeepSeek 主机名上和任何 `deepseek-v4*` 模型 ID 上都被接受（不区分大小写，包括带日期的快照），这在任何 OpenAI 兼容的主机上都能被识别（第三方网关获得 MaaS 风格的 `enable_thinking` 契约）；另一主机上的其他 `deepseek` 命名模型保持通用的 `xhigh` 上限，匹配重塑本身的 hostname 门控。 |
+| **OpenAI / Z.ai** (`z.ai`, `bigmodel.cn`) | 扁平的 `reasoning_effort: <effort>` body 参数 | Z.ai 主机上的 GLM-5.2+ 采用完整阶梯，包括 `max`，且嵌套的 `reasoning.effort` 被重写为扁平字段。较旧的 GLM ID，以及在任何其他主机上访问到的 `glm-*` 模型，保持通用的 `xhigh` 上限：仅凭模型名称无法说明该端点接受什么。 |
+| **OpenAI** (其他兼容服务器) | 已知的 GPT-5 / GPT-6 Astra: 扁平的 `reasoning_effort`; 其他模型: 嵌套的 `reasoning` | GPT effort 在两个方向上都被钳制到已知模型支持的子集。GPT-5.6 和 GPT-6 Astra 允许 `max`，而较早的模型具有较低的上限。低于模型下限的层级会被提升：GPT-5 Pro 仅接受 `high`；GPT-5.2 Pro、GPT-5.4 Pro 和 GPT-5.5 Pro 将 `low` 提升到 `medium`。OpenRouter 保留嵌套的 `reasoning`。未知的模型名称保持通用的 `xhigh` 上限和嵌套形状。在 `samplingParams` / `extra_body` 中的显式推理值绕过配置的层级钳制。 |
+| **OpenAI Responses** (`openai-responses`) | `reasoning: { effort, summary: "auto" }` 加上 `include: ["reasoning.encrypted_content"]` | 每个层级都逐字透传，没有钳制。当未设置显式的 `reasoning` 时，`extra_body.enable_thinking: true` 被翻译为 `reasoning: { effort: "medium" }`（并且它本身永远不会被转发——在此线路上没有意义）；建议直接设置 `reasoning.effort`。 |
+| **Anthropic** (真实的 `api.anthropic.com`) | `output_config: { effort }` 加上 `effort-2025-11-24` beta header | 真实的 Anthropic 仅接受 `'low'`/`'medium'`/`'high'`。`'max'` 被 **钳制为 `'high'`** 并伴随一条 `debugLogger.warn` 行（每个生成器一次）；如果你想要最大 effort，请将 baseURL 切换到支持它的 DeepSeek 兼容端点。 |
+| **Anthropic** (`api.deepseek.com/anthropic`) | 相同的 `output_config: { effort }` + beta header | `'low'`、`'high'` 和 `'max'` 不变地透传；`'medium'`/`'xhigh'` 被映射到 `'high'`，匹配 DeepSeek 的服务端映射。 |
+| **Gemini** (`@google/genai`) | `thinkingConfig: { includeThoughts: true, thinkingLevel }` | `'low'` → `LOW`, `'high'`/`'max'` → `HIGH`, 其他 → `THINKING_LEVEL_UNSPECIFIED` (Gemini 没有 `MAX` 层级)。 |
 
 ### `reasoning: false`
 
-设置 `reasoning: false`（字面量布尔值）会在所有 provider 上显式禁用思考功能——这对于不需要推理的低成本辅助查询非常有用。在请求级别，也可以通过 `request.config.thinkingConfig.includeThoughts: false` 来遵循此设置，用于一次性调用（例如建议生成）。
+显式设置 `reasoning: false`（字面布尔值）会在支持禁用思考的模型上禁用思考——这对于不需要推理的廉价侧查询很有用。这也通过 `request.config.thinkingConfig.includeThoughts: false` 在请求级别得到尊重，用于一次性调用（例如建议生成）。
 
-在 `api.deepseek.com` baseURL 下，OpenAI 管道会发出 DeepSeek V4+ 所需的显式 `thinking: { type: 'disabled' }` 字段 —— 服务端默认值为 `'enabled'`，因此仅仅省略 `reasoning_effort` 仍然会产生思考的延迟/成本。自托管的 DeepSeek 后端（sglang/vllm）和其他 OpenAI 兼容服务器**不会**接收此字段；如果你需要在这些后端上禁用思考，请通过 `samplingParams`/`extra_body` 注入 `thinking: { type: 'disabled' }`（或你的推理框架暴露的任何控制参数）。
+在 `api.deepseek.com` baseURL 上，OpenAI 管道发出 DeepSeek V4+ 所需的显式 `thinking: { type: 'disabled' }` 字段——服务端默认值是 `'enabled'`，因此仅仅省略 `reasoning_effort` 仍然会产生思考延迟/成本。自托管的 DeepSeek 后端 (sglang/vllm) 和其他 OpenAI 兼容服务器 **不会** 接收此字段；如果你需要在这些服务器上禁用思考，请通过 `samplingParams`/`extra_body` 注入 `thinking: { type: 'disabled' }`（或你的推理框架暴露的任何旋钮）。任何 `deepseek-v4*` 模型 ID（不区分大小写）都是例外：在任何第三方 OpenAI 兼容主机上，它遵循 MaaS 契约，并在禁用思考时接收 `enable_thinking: false`。在任何新识别的路由上（第三方主机，或已建立主机上的新别名），没有推理配置文件的遗留 `capabilities.reasoning` 声明保持其自身的线路语义：内置规范化器退让，既不扁平化也不重新分层声明的或静态的 effort。声明必须命名模型在 `disableField` 中读取的旋钮（`thinking`、`enable_thinking` 或 `reasoning_effort`）；省略它的声明根本不会解析任何能力，因此不会发出禁用字段，并且应用服务端默认值（开启思考）。
 
-在 `openrouter.ai` baseURL 下，禁用推理时，OpenAI 管道会发送 OpenRouter 的 provider 级 `reasoning: { enabled: false }` 字段。其他 OpenAI 兼容服务器不会收到这一 OpenRouter 专用字段；请通过 `samplingParams`/`extra_body` 使用它们各自的原生禁用参数。
+对于允许禁用的已知 GPT 模型，非 OpenRouter 端点接收 `reasoning_effort: 'none'`；OpenRouter 改为接收嵌套的 `reasoning: { enabled: false }`。强制思考模型在模型控制中拒绝 off，并从请求中省略不支持的禁用值，因此 `reasoning: false` 无法关闭它们的思考。显式的模型推理能力优先于内置层级列表并选择原生禁用字段；OpenRouter 保持其提供者级别的禁用行为。内置的强制集合是 `gpt-5`、`gpt-5-mini`、`gpt-5-nano`、`gpt-5-pro`、`gpt-5.1-codex`、`gpt-5.1-codex-max`、`gpt-5.2-codex`、`gpt-5.3-codex`、`gpt-5.2-pro`、`gpt-5.4-pro`、`gpt-5.5-pro` 和 `gpt-6-astra`。
+
+在 `openrouter.ai` baseURL 上，当禁用推理时，OpenAI 管道发出 OpenRouter 的提供者级别 `reasoning: { enabled: false }` 字段。强制思考模型不会接收此禁用字段。其他 OpenAI 兼容服务器不会自动接收此 OpenRouter 特定字段；使用其原生禁用旋钮。
 
 ### 与 `samplingParams` 的交互（仅限 OpenAI 兼容）
 
 > [!warning]
 >
-> 当在 OpenAI 兼容 provider 上设置了 `generationConfig.samplingParams` 时，管道会将这些键**原样**发送到网络，并完全跳过单独的 `reasoning` 注入。因此，像 `{ samplingParams: { temperature: 0.5 }, reasoning: { effort: 'max' } }` 这样的配置会在 OpenAI/DeepSeek 请求中静默丢弃 reasoning 字段。放在 `samplingParams` 内的 `reasoning` 对象是你自己的值，会原样发送：上述 effort 上限只适用于管道从 `/effort` 注入的级别。
+> 除了已知的 GPT 模型和具有显式推理能力的模型外，当在 OpenAI 兼容的提供商上设置 `generationConfig.samplingParams` 时，管道会将这些键**原样**发送到网络，并完全跳过单独的 `reasoning` 注入。因此，像 `{ samplingParams: { temperature: 0.5 }, reasoning: { effort: 'max' } }` 这样的配置会在 OpenAI/DeepSeek 请求中静默丢弃 reasoning 字段。放置在 `samplingParams` 内部的 `reasoning` 对象是您自己的值，在启用推理时保持不变地发送：上述努力程度上限仅适用于管道从 `/effort` 注入的层级。
 >
-> DashScope Qwen 模型是一个例外：其 provider 直接读取 `reasoning` 并将其映射为 `reasoning_effort` 或 `enable_thinking`。在 qwen3.8-max 系列上，当网络参数冲突时，provider 特定的 `samplingParams` 字段仍然优先；在旧版 qwen 混合模型上，配置的 effort 级别会折叠为 `enable_thinking: true`，这会覆盖 `samplingParams.enable_thinking` 的值。
+> 已知的 GPT-5 模型和 GPT-6 Astra 在保留配置的 effort 的同时也保留无关的采样键。例如，在 GPT-5.4 上，`{ samplingParams: { temperature: 0.5 }, reasoning: { effort: 'max' } }` 发送 `temperature: 0.5` 和平坦的 `reasoning_effort: 'xhigh'`，或在 GPT-5.6 / GPT-6 Astra 上发送 `'max'`。在 `openrouter.ai` baseURL 上，相同的钳制层级作为嵌套的 `reasoning: { effort }` 发送。在非 OpenRouter 端点上，显式的平坦 reasoning 覆盖优先；空值或空字符串的平坦占位符允许配置的层级。在 OpenRouter 上，除非显式模型能力注入它，否则采样的平坦覆盖会抑制配置的嵌套 effort；仅存在于 extra-body 中的平坦覆盖不会替换配置的嵌套 effort。
 >
-> 如果你设置了 `samplingParams`，请直接将推理控制参数包含在其中 —— 对于 DeepSeek，它是 `samplingParams.reasoning_effort`；对于 GPT-5/o-series，它是 `samplingParams.reasoning_effort`（其扁平字段）或 `samplingParams.reasoning`（嵌套对象）。对于 OpenRouter 和其他 provider，字段名称会有所不同；请查阅 provider 文档。
+> DashScope Qwen 模型是另一个例外：其提供商直接读取 `reasoning` 并将其映射到 `reasoning_effort` 或 `enable_thinking`。在分层 effort 系列（`qwen3.8-max`、`qwen-latest-series-invite-*`、`qwen4*`）中，当网络参数冲突时，提供商特定的 `samplingParams` 字段仍然优先；在较旧的 qwen 混合模型中，配置的 effort 层级会坍缩为 `enable_thinking: true`，这会覆盖 `samplingParams.enable_thinking` 值。
 >
-> Anthropic 和 Gemini 转换器不受影响 —— 无论是否设置 `samplingParams`，它们始终直接读取 `reasoning.effort`。
+> 对于其他模型，在使用 `samplingParams` 时直接包含提供商的 reasoning 旋钮——对于 DeepSeek，这是 `samplingParams.reasoning_effort`。已知的 GPT 模型会自动映射配置的 effort；只有在故意绕过该映射时才添加原始覆盖。包括 `null` 在内的原始嵌套 `reasoning` 在启用推理时仍作为整个对象的覆盖。通过 `reasoning: false` 或请求级 `includeThoughts: false` 禁用会移除嵌套值，包括任一层中的原始覆盖。如果允许禁用，非 OpenRouter GPT 请求随后发送 `reasoning_effort: 'none'`；OpenRouter 使用其嵌套禁用字段代替。强制思考模型既不接受替代方案。在 OpenRouter 之外，其含义取决于网关，因此模型控件显示模型默认值。任何阻止配置层级的原始覆盖都会导致显式层级更改失败且不保存偏好设置。仅在允许思考时，思考开关才会在禁用后恢复配置的原始默认值。如果原始状态或配置的 reasoning 默认值为关闭，则无法打开思考开关，且保留已保存的偏好设置。这也适用于显式能力省略默认层级或仅暴露思考切换的情况。显式的默认命令仍会重置偏好设置。移除阻止性的原始覆盖以选择不同的层级。
+>
+> Anthropic 和 Gemini 转换器不受影响——无论 `samplingParams` 如何，它们始终直接读取 `reasoning.effort`。
 
 ### `budget_tokens`
 
-你可以通过在 `effort` 旁边包含 `budget_tokens` 来固定精确的思考 token 预算：
+您可以通过在 `effort` 旁边包含 `budget_tokens` 来固定确切的思考令牌预算：
 
 ```jsonc
 "reasoning": { "effort": "high", "budget_tokens": 50000 }
@@ -700,7 +854,7 @@ Coding Plan 模型配置具有版本控制。当 Qwen Code 检测到模型模板
 
 Qwen Code 区分两种类型的模型配置：
 
-### Provider Model
+### 提供商模型
 
 - 在 `modelProviders` 配置中定义
 - 拥有完整、原子的配置包
@@ -708,34 +862,34 @@ Qwen Code 区分两种类型的模型配置：
 - 出现在 `/model` 命令列表中，并带有完整的元数据（名称、描述、能力）
 - 推荐用于多模型工作流和保持团队一致性
 
-### Runtime Model
+### 运行时模型
 
 - 当通过 CLI (`--model`)、环境变量或设置使用原始模型 ID 时动态创建
 - 未在 `modelProviders` 中定义
-- 配置是通过“投影”解析层（CLI → env → settings → defaults）构建的
-- 当检测到完整配置时，会自动捕获为 **RuntimeModelSnapshot**
-- 允许重复使用而无需重新输入凭据
+- 配置是通过解析层（CLI → env → settings → defaults）进行“投影”构建的
+- 检测到完整配置时自动捕获为 **RuntimeModelSnapshot**
+- 允许重用而无需重新输入凭据
 
 ### RuntimeModelSnapshot 生命周期
 
-当你不使用 `modelProviders` 配置模型时，Qwen Code 会自动创建一个 RuntimeModelSnapshot 来保留你的配置：
+当您在不使用 `modelProviders` 的情况下配置模型时，Qwen Code 会自动创建一个 RuntimeModelSnapshot 以保留您的配置：
 
 ```bash
-# 这会创建一个 ID 为 $runtime|openai|my-custom-model 的 RuntimeModelSnapshot
+# This creates a RuntimeModelSnapshot with ID: $runtime|openai|my-custom-model
 qwen --auth-type openai --model my-custom-model --openai-api-key $KEY --openai-base-url https://api.example.com/v1
 ```
 
-该快照：
+快照：
 
-- 捕获模型 ID、API key、base URL 和 generation config
-- 跨会话持久化（在运行期间存储在内存中）
+- 捕获模型 ID、API 密钥、基础 URL 和生成配置
+- 跨会话持久化（在运行时存储在内存中）
 - 作为运行时选项出现在 `/model` 命令列表中
 - 可以使用 `/model $runtime|openai|my-custom-model` 切换至该模型
 
 ### 主要区别
 
 | 方面 | Provider Model | Runtime Model |
-| --- | --- | --- |
+| ----------------------- | --------------------------------- | ------------------------------------------ |
 | 配置来源 | 设置中的 `modelProviders` | CLI、env、settings 层 |
 | 配置原子性 | 完整、不可穿透的包 | 分层，每个字段独立解析 |
 | 可重用性 | 始终在 `/model` 列表中可用 | 捕获为快照，完整时显示 |
@@ -747,11 +901,11 @@ qwen --auth-type openai --model my-custom-model --openai-api-key $KEY --openai-b
 - **使用 Provider Models**：当你有团队共享的标准模型、需要一致的配置，或者想要防止意外覆盖时。
 - **使用 Runtime Models**：当你快速测试新模型、使用临时凭据，或处理临时端点时。
 
-## 选择持久化与建议
+## 选择持久化和推荐
 
 > [!important]
 >
-> 尽可能在用户作用域的 `~/.qwen/settings.json` 中定义 `modelProviders`，并避免在任何作用域中持久化凭据覆盖。将 provider 目录保留在用户设置中，可以防止项目作用域和用户作用域之间的合并/覆盖冲突，并确保 `/auth` 和 `/model` 的更新始终写回一致的作用域。
+> 尽可能在用户范围的 `~/.qwen/settings.json` 中定义 `modelProviders`，并避免在任何范围中持久化凭据覆盖。将提供商目录保留在用户设置中可防止项目和用户范围之间的合并/覆盖冲突，并确保 `/auth` 和 `/model` 更新始终写回一致的范围。
 
 - `/model` 和 `/auth` 会将 `model.name`（如适用）和 `security.auth.selectedType` 持久化到已定义 `modelProviders` 的最近可写作用域；否则它们会回退到用户作用域。这使工作区/用户文件与活动的 provider 目录保持同步。
 - 如果没有 `modelProviders`，解析器会混合 CLI/env/settings 层，从而创建 Runtime Models。这对于单 provider 设置来说没问题，但在频繁切换时会很繁琐。当多模型工作流很常见时，请定义 provider 目录，以便切换保持原子性、来源可追溯且可调试。
