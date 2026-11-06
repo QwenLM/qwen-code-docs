@@ -6,7 +6,9 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 # Only the newest deploy matters: a push that arrives while an older
 # build is still running makes that older build pure waste (~8min of
@@ -18,6 +20,9 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: [self-hosted, linux, ARM64, qwen-docs]
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout
@@ -57,8 +62,11 @@ jobs:
           # Bound the heap while sharing the ECS host with other runners.
           NODE_OPTIONS: --max-old-space-size=12288
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Upload website artifact
+        uses: actions/upload-pages-artifact@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./website/out
+          path: ./website/out
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
