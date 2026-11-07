@@ -21,7 +21,7 @@ export function isWithinDays(dateStr: string, days: number): boolean {
   return Date.now() - date.getTime() < days * 24 * 60 * 60 * 1000;
 }
 
-const BASE_PATH = process.env.NODE_ENV === "production" ? "/qwen-code-docs" : "";
+const BASE_PATH = process.env.NODE_ENV === "production" ? "/qwen-code-docs/1.x" : "";
 
 export function normalizeHref(href: string): string {
   return href.replace(BASE_PATH, "").replace(/\/$/, "");

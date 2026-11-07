@@ -5,7 +5,7 @@ export const FontLoader = () => {
   useEffect(() => {
     // 根据环境设置字体路径前缀
     const isProduction = process.env.NODE_ENV === "production";
-    const fontPrefix = isProduction ? "/qwen-code-docs" : "";
+    const fontPrefix = isProduction ? "/qwen-code-docs/1.x" : "";
 
     // 创建字体样式
     const fontStyles = `

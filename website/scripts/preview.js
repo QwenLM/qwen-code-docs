@@ -10,7 +10,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const BASE_PATH = '/qwen-code-docs';
+const BASE_PATH = '/qwen-code-docs/1.x';
 const PORT = 3001;
 const OUT_DIR = path.join(__dirname, '..', 'out');
 

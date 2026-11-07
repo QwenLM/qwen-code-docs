@@ -24,7 +24,7 @@ export const generateStaticParams = async () => {
   });
 };
 
-const LOCALES = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR", "ko"];
+const LOCALES = ["en", "zh"];
 
 // OG 图片映射
 const OG_IMAGE_MAP = {
@@ -43,10 +43,10 @@ function getSiteUrl() {
   const ghRepo = process.env.GITHUB_REPOSITORY;
   if (ghRepo && ghRepo.includes("/")) {
     const [owner, repo] = ghRepo.split("/");
-    if (owner && repo) return `https://${owner}.github.io/${repo}`;
+    if (owner && repo) return `https://${owner}.github.io/${repo}/1.x`;
   }
 
-  return "https://qwenlm.github.io/qwen-code-docs";
+  return "https://qwenlm.github.io/qwen-code-docs/1.x";
 }
 
 function getOgImage(mdxPath) {
