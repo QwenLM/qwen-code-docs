@@ -12,7 +12,8 @@ permissions:
 
 jobs:
   dispatch:
-    runs-on: ubuntu-latest
+    # GitHub-hosted runners never pick up jobs here; use the docs host pool.
+    runs-on: [self-hosted, linux, ARM64, qwen-docs]
     steps:
       - name: Dispatch deploy-docs.yml on main
         run: gh workflow run deploy-docs.yml --repo "$GITHUB_REPOSITORY" --ref main
