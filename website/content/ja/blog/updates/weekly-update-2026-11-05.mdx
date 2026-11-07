@@ -1,0 +1,170 @@
+---
+title: "Qwen Code 週報：リモート接続がもっと手軽に、GitHub の動きが会話を自動で進める、セッションの状態がひと目でわかる"
+date: "2026-11-05"
+description: "今週は v0.26.4〜v0.26.7 の 4 つの正式版をリリース。リモート接続に独立したスイッチが付き、GitHub のイベントが会話を自動で進め、Web Shell のセッション状態がより明確になりました。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i2/O1CN01BK4pMROPGtK2jBZY_!!6000000004241-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 週報：リモート接続がもっと手軽に、GitHub の動きが会話を自動で進める、セッションの状態がひと目でわかる"
+  date="2026-11-05"
+  author="Qwen Team"
+/>
+
+Qwen Code は今週、v0.26.4〜v0.26.7 の 4 つの正式版をリリースしました。
+
+**リモート接続に独立したスイッチが付きました。** 「設定 → 接続」で「リモート接続を許可」をオンにすると、同じネットワーク内の別のパソコンから接続できます。
+
+**GitHub のイベントが会話を自動で進めます。** チャンネルにリポジトリを紐づけておくと、新しいコミット、レビュー、CI の失敗といった動きが、その PR に紐づいた会話へ直接届きます。
+
+**Web Shell の状態もより明確になりました。** チャンネルのイベントをまとめて確認でき、サイドバーではどの会話が動いていて、どれが承認待ちかが一目でわかります。
+
+## ✨ 新機能
+
+### リモート接続：同じネットワーク内の別の端末から作業を続ける
+
+複数の Qwen Code をひとつの画面にまとめるには、これまで接続先の起動時に `--hostname 0.0.0.0` が必要でした。今回から、同じネットワーク内であれば「設定 → 接続」にアドレスと Bearer トークンを入力するだけで、別のパソコンに接続できます。
+
+今週、「設定」→「接続」に「リモート接続を許可」スイッチを追加しました。オンにすると接続アドレスと Bearer トークンが生成され、別のパソコンから入力すれば再起動なしで接続でき、いつでもオフにできます。詳しくは PR [#15887](https://github.com/QwenLM/qwen-code/pull/15887)、[#16199](https://github.com/QwenLM/qwen-code/pull/16199)
+
+こんなことに使えます：
+
+- パソコンを替えて、それまでの会話を続ける
+- 席を離れたあとも、リモートでフォローアップに返事したり、承認を処理したり
+- 一時的にリモートアクセスを開放し、用が済んだら設定で閉じる
+
+
+
+
+![リモート接続](https://img.alicdn.com/imgextra/i4/O1CN01WL5kej9I8kI4s7XG_!!6000000004481-2-tps-2400-1626.png)
+
+### GitHub リポジトリの動きを、会話へ自動で届ける
+
+チャンネルに GitHub リポジトリを紐づけると、新しいコミット、レビュー、CI の失敗が、その PR に紐づいた会話へ自動で届きます。Qwen Code はそれを受け取って続きを処理します——ビルドが落ちればログを読んで修正する、といった具合です。返信はデフォルトでは非公開で、あなたが確認してから PR に投稿されます。詳しくは PR [#16117](https://github.com/QwenLM/qwen-code/pull/16117)、[#16258](https://github.com/QwenLM/qwen-code/pull/16258)
+
+チャンネルエディターでは、GitHub リポジトリのアクセス権、@ メンションの挙動、通知の頻度を直接設定できます。設定ファイルを手で書く必要はありません。イベント内の PR 番号や Issue 番号は自動でクリック可能なリンクになります。詳しくは PR [#16149](https://github.com/QwenLM/qwen-code/pull/16149)、[#16096](https://github.com/QwenLM/qwen-code/pull/16096)、[#16226](https://github.com/QwenLM/qwen-code/pull/16226)
+
+こんなことに使えます：
+
+- PR の CI が落ちたら、失敗ログがそのまま会話に入る——自分で探しに行かなくていい
+- 同僚が PR をレビューしたら、そのコメントがチャット画面に現れる
+- 新しいリポジトリを追跡したければ、エディターに URL を入れるだけ
+
+
+
+
+![GitHub の動き](https://img.alicdn.com/imgextra/i2/O1CN01HhyTIFzowNI2vGtw_!!6000000004881-2-tps-1440-900.png)
+
+### Web Shell：チャンネルの動きとセッションの状態を画面で把握
+
+**チャンネルのイベントをまとめて確認できるようになりました。** チャンネルでは日々さまざまなことが起きています——GitHub のコミット、定期ジョブの完了、会話からの返信。チャンネルページに「イベント」欄が増え、すべてのアクティビティが時系列で並び、チャンネルごとに絞り込め、タイムラインは自動更新されます。詳しくは PR [#16106](https://github.com/QwenLM/qwen-code/pull/16106)
+
+**トークン使用量パネルがリクエスト単位で見られます。** これまでは種類ごとの合計だけでしたが、リクエスト 1 件ずつに分解——出力速度、初回応答までの時間、成功か失敗か、モデルごとに異なる色で表示されます。クリックすれば失敗の具体的な理由も確認できます。詳しくは PR [#16108](https://github.com/QwenLM/qwen-code/pull/16108)、[#16111](https://github.com/QwenLM/qwen-code/pull/16111)
+
+**サイドバーの会話に状態マークが付きました。** これまでのサイドバーは会話の名前が並ぶだけで、中で何が起きているかわかりませんでした。各会話の横に状態表示が付き、実行中はスピナー、承認待ちはオレンジの表示、エラーは赤いライン——マークを開けば、誰が待っているか、どのプロンプトに答え終わったかがわかります。未読メッセージ数も表示され、ワンクリックで全件既読やアーカイブもできます。詳しくは PR [#16022](https://github.com/QwenLM/qwen-code/pull/16022)
+
+**会話を左右に並べて表示。** 会話の右クリックメニューに「分割表示に追加」が増え、2 つの会話を左右に並べて見比べられます。詳しくは PR [#15956](https://github.com/QwenLM/qwen-code/pull/15956)
+
+**その他の改善。** Workflow モードのスイッチは入力欄横の「+」メニューに収まり、オンにするとタブが現れてクリックでオフにできます（[#16107](https://github.com/QwenLM/qwen-code/pull/16107)、[#15779](https://github.com/QwenLM/qwen-code/pull/15779)）。画像の URL を入力欄にコピーすると自動で添付ファイルになり、スクリーンショットの貼り付けにも対応します（[#16179](https://github.com/QwenLM/qwen-code/pull/16179)）。
+
+
+
+
+![Web Shell](https://img.alicdn.com/imgextra/i4/O1CN01OCPVFkYeCmG7nW9B_!!6000000007271-2-tps-3841-2160.png)
+
+## 📊 その他の新機能
+
+**インタラクティブカードがデフォルトで有効に。** これまでは設定でオンにする必要がありましたが、インストール直後から使えます——ローン計算やプラン比較も、会話の中でスライダーを動かして
+
+結果を見られます。パラメータを調整して「保持」を押せば、その値を会話に戻して続けて質問できます。詳しくは PR [#15856](https://github.com/QwenLM/qwen-code/pull/15856)
+
+**ダウンロードしたプロジェクトは、信頼してから hooks が動きます。** 見知らぬプロジェクトに含まれる hooks、権限ルール、言語サーバーは、確認ダイアログであなたが「信頼」を押してから有効になります。自分のパソコンで新規作成したローカルプロジェクトは影響を受けません。詳しくは PR [#16182](https://github.com/QwenLM/qwen-code/pull/16182)、[#16196](https://github.com/QwenLM/qwen-code/pull/16196)
+
+**/verify-pr が Docker 内で信頼できないコードを実行。** コマンド 1 つでローカルにコンテナを起動し、PR のコードを中に入れて検証——モデルの API キーはあなたのマシンに残り、コンテナには渡りません。詳しくは PR [#16077](https://github.com/QwenLM/qwen-code/pull/16077)
+
+**デスクトップ版が Fedora 44 と RHEL 10 に対応。** これらのシステムをお使いなら、GitHub Releases から rpm パッケージを直接ダウンロードしてインストールできます。詳しくは PR [#16060](https://github.com/QwenLM/qwen-code/pull/16060)
+
+**QQ グループの管理操作も AI に任せられます。** チャンネルが自分の管理ツールを内部の会話に公開——メッセージの取り消し、メンバーのキック、参加申請の承認といった操作を、AI が代行できます。どのツールを使えるかは、チャンネル設定の `moderationTools` で制御します。詳しくは PR [#14348](https://github.com/QwenLM/qwen-code/pull/14348)
+
+**Managed Agent を Helm コマンド 1 本でデプロイ。** Helm chart を設定すれば、MySQL もゲートウェイも自動で付いてきます。詳しくは PR [#15492](https://github.com/QwenLM/qwen-code/pull/15492)
+
+**アーカイブした会話を設定から直接復元。** 「設定 → アーカイブ」を開くと、各アイテムの横に「復元」と「エクスポート」ボタンが表示されます。その会話を開かなくても操作できます。詳しくは PR [#15872](https://github.com/QwenLM/qwen-code/pull/15872)
+
+**スキル入力中に残りのパラメータ候補が表示されます。** `/qwencode-weekly` まで打つと、続けて入力すべきパラメータが常に浮かんで表示され、ひとつ埋めると次の候補に縮みます。詳しくは PR [#15930](https://github.com/QwenLM/qwen-code/pull/15930)
+
+**アップグレードコマンドでバージョン指定が可能に。** `qwen update --target-version <バージョン番号>` を実行すると、指定したバージョンを直接インストールします。npm registry に新版があるか確認する手間が省け、ダウングレードや同じバージョンの再インストールもできます。詳しくは PR [#11486](https://github.com/QwenLM/qwen-code/pull/11486)
+
+## 👏 体験改善
+
+**/autofix-pr がより安定：main から遅れていれば自動マージ、現在のチェックアウト内で修正、担当ラウンド数を明示。** ブランチが main に遅れて CI が落ちているときは、まず main を取り込んでからチェックを走らせるため、手動 rebase が不要です。`--in-place` を付けるとあなたの現在のチェックアウト内で作業し、隣で一緒に修正を進められます。PR に `@qwen-code /takeover for N` と書けば担当ラウンド数を指定でき、修復が終われば自動で手放します。詳しくは PR [#15922](https://github.com/QwenLM/qwen-code/pull/15922)、[#15929](https://github.com/QwenLM/qwen-code/pull/15929)、[#15388](https://github.com/QwenLM/qwen-code/pull/15388)
+
+**長い回答をスクロールで読めます。** `/btw` の回答が長くなったとき、スクロールバー付きの固定領域に表示——マウスホイール、キーボードの上下キー、PageUp/PageDown で移動できます。詳しくは PR [#15982](https://github.com/QwenLM/qwen-code/pull/15982)
+
+**Web Shell のワンクリック更新が pnpm、yarn、bun に対応。** これまでは npm のみでしたが、これらのパッケージマネージャーでもワンクリック更新が可能に。未対応が検出された場合は手動の手順を表示します。詳しくは PR [#15849](https://github.com/QwenLM/qwen-code/pull/15849)
+
+**ステータスバーでバックグラウンド Agent の実行数がわかります。** デスクトップ版と Web Shell の下部にあるタスク表示に、実行中の Agent 数がリアルタイムで表示されます。詳しくは PR [#14002](https://github.com/QwenLM/qwen-code/pull/14002)
+
+**コードジャンプの失敗時に理由を明示。** 利用可能な言語サーバーがないとき、これまでは空の結果が返るだけでしたが、現在は「利用可能な言語サーバーがありません」と伝えます。詳しくは PR [#15946](https://github.com/QwenLM/qwen-code/pull/15946)
+
+**コンテキストメモリファイルをパネル内でプレビュー。** AGENTS.md などのファイルをクリックすると内容を確認できます。詳しくは PR [#15932](https://github.com/QwenLM/qwen-code/pull/15932)
+
+**ワークスペースのない会話一覧が空のとき、その欄全体を非表示に。** これまでは空欄が場所を取っていましたが、ピン留めと同じ扱いで、空なら欄ごと表示しません。詳しくは PR [#15916](https://github.com/QwenLM/qwen-code/pull/15916)
+
+## 🔧 重要な修正
+
+| 修正 | あなたへの影響 | PR |
+|------|-----------|-----|
+| **Claude Opus 5.5、Sonnet 5.5 が使えなくなっていた** | これらのモデルは強制ツール選択（tool choice）に対応しておらずエラーになっていましたが、そのリクエストをスキップして通常通り呼び出します | [#15558](https://github.com/QwenLM/qwen-code/pull/15558) |
+| **OpenRouter の exacto 付きモデルでトークンウィンドウが縮小されていた** | たとえば `qwen/qwen3-coder:exacto` は本来 262,144 トークンのウィンドウがあるのに、デフォルトの 200K が割り当てられていました。本来のウィンドウに戻ります | [#16165](https://github.com/QwenLM/qwen-code/pull/16165) |
+| **MCP サーバー内で同名ツールがあると、そのサーバーの全ツールが失われていた** | 名前の衝突ひとつでサーバー全体のツールがスキップされていましたが、重複したものだけをスキップします | [#15757](https://github.com/QwenLM/qwen-code/pull/15757) |
+| **macOS デスクトップ版で多くのターミナルコマンドが使えなかった** | デスクトップ版が起動する daemon にシステムパスが不足し、Homebrew で入れたツールが見つかりませんでした。`~/.local/bin` などのパスを補完しました | [#15190](https://github.com/QwenLM/qwen-code/pull/15190) |
+| **VS Code で月曜朝の会話が「今週」に残っていた** | 週の起点が日曜だったため、月曜朝の先週の会話が「今週」に表示。カレンダー週に合わせて月曜起点に修正 | [#16097](https://github.com/QwenLM/qwen-code/pull/16097) |
+| **/context で 100 万トークンを超えるモデルが長い数字のまま表示されていた** | 1,000,000 が `1000000` と表示され `1.0M` になっていませんでした。正常に表示されます | [#13237](https://github.com/QwenLM/qwen-code/pull/13237) |
+| **Windows の更新インストール時にファイルが使用中で失敗** | バージョン更新時に、installer がまず実行中の node.exe を終了させてからファイルを置き換えます | [#16071](https://github.com/QwenLM/qwen-code/pull/16071) |
+| **Anthropic 互換インターフェースのタイムアウトが設定どおり適用される** | 設定でリクエストタイムアウトを延ばしても途中で切れていました。設定値を読み取るように修正 | [#16193](https://github.com/QwenLM/qwen-code/pull/16193) |
+| **`git commit --amend` のようなゆるい書き方でも AI の変更が正しくマークされる** | これまでは決まった書き方しか認識せず、ハイフン不足やスペースの違いで無視されていました | [#16073](https://github.com/QwenLM/qwen-code/pull/16073) |
+| **grep に -n や --line-number を付けてもファイル読み取り扱いされなくなった** | `grep -n` がファイル読み取りとみなされ権限確認が出ていました。純粋なフラグ引数として認識します | [#14383](https://github.com/QwenLM/qwen-code/pull/14383) |
+| **OAuth トークンのリフレッシュロックが終了プロセスで誤削除されなくなった** | 同じプロバイダーで複数ターミナルを開いているとき、ひとつを終了しても有効なリフレッシュロックはすべて保持されます | [#15661](https://github.com/QwenLM/qwen-code/pull/15661) |
+| **Kimi K3 が 100 万トークンウィンドウを正しく認識** | K3 はデフォルトで 100 万トークンとして計算。k3-256k のみ 256K のまま | [#16048](https://github.com/QwenLM/qwen-code/pull/16048) |
+| **Sandbox のスクリーンショットが等幅フォントになり、コードが見やすく** | capture card のスクリーンショットでフォントが適切でなかったのを、DejaVu Sans Mono を導入して修正 | [#16032](https://github.com/QwenLM/qwen-code/pull/16032) |
+| **Web Shell で画像貼り付け時にエラー表示が出る** | これまでは成功しても失敗しても何も表示されませんでした。画像 URL がダウンロード可能なら添付、不可ならエラーを表示します | [#16179](https://github.com/QwenLM/qwen-code/pull/16179) |
+| **シェル権限チェックでリダイレクト（`2>&1`）をファイル書き込み扱いしなくなった** | fd の複製が書き込み操作と誤判定され確認ダイアログが出ていました。正しく識別します | [#15681](https://github.com/QwenLM/qwen-code/pull/15681) |
+
+## 👥 コントリビューター
+
+| コントリビューター | 貢献内容 | 参考 PR リンク |
+|--------|---------|-------------|
+| **[@4ekuct25](https://github.com/4ekuct25)** | セッション概要と分割表示のショートカット、会話メニューに「分割表示に追加」、ステータスバーにバックグラウンド Agent 数、macOS デスクトップ版の PATH 補完、独立会話をセッション概要に表示、分割表示で退出済み会話をクリア、フローティング承認カードのスクロール、ゴールカードのロシア語 UI | [#14179](https://github.com/QwenLM/qwen-code/pull/14179), [#15956](https://github.com/QwenLM/qwen-code/pull/15956), [#14002](https://github.com/QwenLM/qwen-code/pull/14002), [#15190](https://github.com/QwenLM/qwen-code/pull/15190), [#13679](https://github.com/QwenLM/qwen-code/pull/13679), [#14577](https://github.com/QwenLM/qwen-code/pull/14577), [#14621](https://github.com/QwenLM/qwen-code/pull/14621), [#13685](https://github.com/QwenLM/qwen-code/pull/13685) |
+| **[@2SinceJuly](https://github.com/2SinceJuly)** | /btw 長回答のスクロールビューポート、モデル一覧が空でも「新規会話」をクリック可能に、MCP 同名ツールがリスト全体を巻き込まないよう修正、OAuth リフレッシュロックを自分の持つ分だけ削除、ナビゲーションバーなし時のプラグインページ戻るボタン、ホスト読み込みの安定待機 | [#15982](https://github.com/QwenLM/qwen-code/pull/15982), [#15835](https://github.com/QwenLM/qwen-code/pull/15835), [#15757](https://github.com/QwenLM/qwen-code/pull/15757), [#15661](https://github.com/QwenLM/qwen-code/pull/15661), [#15651](https://github.com/QwenLM/qwen-code/pull/15651), [#15639](https://github.com/QwenLM/qwen-code/pull/15639) |
+| **[@he-yufeng](https://github.com/he-yufeng)** | ICU データ不足時の Node 起動エラー表示、思考とツール呼び出しのクリーンアップで隣接を保持、ブランチポイント付きの会話復元、設定を閉じたときに会話の言語サーバーを停止 | [#11753](https://github.com/QwenLM/qwen-code/pull/11753), [#11684](https://github.com/QwenLM/qwen-code/pull/11684), [#13814](https://github.com/QwenLM/qwen-code/pull/13814), [#14778](https://github.com/QwenLM/qwen-code/pull/14778) |
+| **[@Shizoqua](https://github.com/Shizoqua)** | OpenRouter exacto 付きモデルのトークンウィンドウを本来のサイズに復元、/context で 100 万超トークンを M 単位で表示 | [#16165](https://github.com/QwenLM/qwen-code/pull/16165), [#13237](https://github.com/QwenLM/qwen-code/pull/13237) |
+| **[@Andrea-Bruno](https://github.com/Andrea-Bruno)** | レスポンスボディのない 400 エラーをリトライに変更 | [#15821](https://github.com/QwenLM/qwen-code/pull/15821) |
+| **[@Eric-GoodBoy-Tech](https://github.com/Eric-GoodBoy-Tech)** | チャンネルが自身の管理ツールを内部会話に公開、QQ グループに取り消しなどの操作を追加 | [#14348](https://github.com/QwenLM/qwen-code/pull/14348) |
+| **[@haomint](https://github.com/haomint)** | セーフモードでメッセージが抑止されたとき、複数箇所で UI に理由を表示 | [#13948](https://github.com/QwenLM/qwen-code/pull/13948) |
+| **[@jabrailkhalil](https://github.com/jabrailkhalil)** | メモリインデックス書き込み時に省略されたエントリを報告 | [#14937](https://github.com/QwenLM/qwen-code/pull/14937) |
+| **[@kabishou11](https://github.com/kabishou11)** | grep -n をフラグとして扱い、ファイル読み取りは引き続きチェック対象に | [#14383](https://github.com/QwenLM/qwen-code/pull/14383) |
+| **[@Sumire-no-kai](https://github.com/Sumire-no-kai)** | 会話ライフサイクル上の競合で全結果を保持しないよう修正 | [#15347](https://github.com/QwenLM/qwen-code/pull/15347) |
+| **[@yar3333](https://github.com/yar3333)** | Electron 内で Node モードを使って組み込みのインタラクティブカードサービスを実行 | [#16064](https://github.com/QwenLM/qwen-code/pull/16064) |
+| **[@zonemeen](https://github.com/zonemeen)** | ホストテストの共有期限、CI のリトライ上限到達時に終了 | [#14752](https://github.com/QwenLM/qwen-code/pull/14752) |
+| 🆕 **[@Adkid-Zephyr](https://github.com/Adkid-Zephyr)** | 🎉 初コントリビュート：Claude 系モデルに非対応の強制ツール選択を送らないよう修正 | [#15558](https://github.com/QwenLM/qwen-code/pull/15558) |
+| 🆕 **[@ifan855](https://github.com/ifan855)** | 🎉 初コントリビュート：ツールカード diff の長い行を折り返し、横スクロールバーを廃止 | [#13272](https://github.com/QwenLM/qwen-code/pull/13272) |
+| 🆕 **[@indexGin](https://github.com/indexGin)** | 🎉 初コントリビュート：レビューのページネーションでネスト配列のリクエストをテストケースとして固定 | [#12560](https://github.com/QwenLM/qwen-code/pull/12560) |
+| 🆕 **[@jianyx1](https://github.com/jianyx1)** | 🎉 初コントリビュート：検証レポートを自身のラウンドのスナップショットに紐付け | [#15746](https://github.com/QwenLM/qwen-code/pull/15746) |
+| 🆕 **[@projekt11th](https://github.com/projekt11th)** | 🎉 初コントリビュート：利用可能な言語サーバーがない場合にコードナビゲーションを拒否 | [#15946](https://github.com/QwenLM/qwen-code/pull/15946) |
+| 🆕 **[@RunMintOn](https://github.com/RunMintOn)** | 🎉 初コントリビュート：フックエラーテキストのサニタイズを具体値でテストケース化 | [#11785](https://github.com/QwenLM/qwen-code/pull/11785) |
+| 🆕 **[@Suaroman](https://github.com/Suaroman)** | 🎉 初コントリビュート：2>&1 のような fd 複製をファイル書き込み扱いしないよう修正 | [#15681](https://github.com/QwenLM/qwen-code/pull/15681) |
+| 🆕 **[@suzhiguo7](https://github.com/suzhiguo7)** | 🎉 初コントリビュート：ループリマインダーをモデルが受け取った瞬間に配信 | [#15559](https://github.com/QwenLM/qwen-code/pull/15559) |
+| 🆕 **[@tneemo](https://github.com/tneemo)** | 🎉 初コントリビュート：すでにコンテキストとして読み込んだファイルをメモリに重複インポートしない | [#15687](https://github.com/QwenLM/qwen-code/pull/15687) |
+| 🆕 **[@TYY-2005](https://github.com/TYY-2005)** | 🎉 初コントリビュート：永続的な権限ルール削除後のテストケースを追加 | [#13818](https://github.com/QwenLM/qwen-code/pull/13818) |
+| 🆕 **[@wang1408](https://github.com/wang1408)** | 🎉 初コントリビュート：Managed Agent の同一レベル呼び出しバインドにアサーションを追加 | [#15995](https://github.com/QwenLM/qwen-code/pull/15995) |
+
+<Callout type="info">
+  **アップグレード方法**：`npm i @qwen-code/qwen-code@latest -g` を実行すると最新バージョンにアップグレードできます。
+</Callout>
+
+ご意見・ご要望は [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) までお気軽にどうぞ！

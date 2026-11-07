@@ -1,0 +1,168 @@
+---
+title: "Qwen Code Wochenbericht: Remote-Verbindung mit eigenem Schalter, GitHub-Events treiben deine Session, Session-Status immer im Blick"
+date: "2026-11-05"
+description: "Diese Woche erscheinen v0.26.4 bis v0.26.7. Die Remote-Verbindung bekommt einen eigenen Schalter, GitHub-Events schieben automatisch in die Session, und im Web Shell siehst du genau, was läuft."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i2/O1CN01BK4pMROPGtK2jBZY_!!6000000004241-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Wochenbericht: Remote-Verbindung mit eigenem Schalter, GitHub-Events treiben deine Session, Session-Status immer im Blick"
+  date="2026-11-05"
+  author="Qwen Team"
+/>
+
+Qwen Code liefert diese Woche vier Stable-Releases aus — v0.26.4 bis v0.26.7.
+
+**Die Remote-Verbindung hat jetzt einen eigenen Schalter, kein Neustart mehr nötig.** Geh in **Settings → Connections**, schalte **Allow remote connections** ein — schon erreichst du Qwen Code von einem anderen Rechner im selben Netzwerk.
+
+**GitHub-Events schieben deine Session automatisch weiter.** Bindest du ein Repository an einen Channel, kommen neue Commits, Reviews und fehlgeschlagene CI-Läufe direkt in die Session, die an den PR gebunden ist.
+
+**Der Session-Status im Web Shell ist jetzt auf einen Blick sichtbar.** Channel-Events laufen zentral zusammen, und in der Sidebar siehst du sofort, welche Session gerade arbeitet und welche auf dich wartet.
+
+## ✨ Neue Features
+
+### Remote-Verbindung: Am anderen Rechner weitermachen, ohne Neustart
+
+Früher musstest du Qwen Code mit `--hostname 0.0.0.0` starten, um von einem anderen Gerät darauf zuzugreifen. Jetzt reicht ein Schalter: In **Settings → Connections** schaltest du **Allow remote connections** ein. Qwen Code zeigt dir eine Verbindungsadresse und ein Bearer-Token an — beides gibst du auf dem anderen Rechner ein, und die Verbindung steht. Schaltest du den Schalter wieder aus, ist der Zugang sofort dicht. Kein Neustart. Siehe PR [#15887](https://github.com/QwenLM/qwen-code/pull/15887), [#16199](https://github.com/QwenLM/qwen-code/pull/16199)
+
+Was du damit machen kannst:
+
+- Arbeitsrechner verlassen und vom Laptop aus dieselbe Session weiternutzen
+- Unterwegs eine Rückfrage beantworten oder eine Freigabe erteilen
+- Remote-Zugang für einen Abend aufmachen und danach in den Settings wieder schließen
+
+
+
+
+![Remote-Verbindungen](https://img.alicdn.com/imgextra/i4/O1CN01WL5kej9I8kI4s7XG_!!6000000004481-2-tps-2400-1626.png)
+
+### GitHub-Events: Dein Repository meldet sich selbst in der Session
+
+Bindest du ein GitHub-Repository an einen Channel, laufen neue Commits, Reviews und fehlgeschlagene CI-Jobs automatisch in die Session ein, die mit dem PR verknüpft ist. Qwen Code reagiert darauf: Build rot? Er liest das Log und repariert. Die Antwort bleibt erstmal privat — erst wenn du sie freigibst, erscheint sie im PR. Siehe PR [#16117](https://github.com/QwenLM/qwen-code/pull/16117), [#16258](https://github.com/QwenLM/qwen-code/pull/16258)
+
+Im Channel-Editor richtest du Zugriffsrechte, @-Verhalten und Benachrichtigungsfrequenz für das Repository direkt ein — kein Griff mehr in die Konfigurationsdatei. PR- und Issue-Nummern in Events werden automatisch zu klickbaren Links. Siehe PR [#16149](https://github.com/QwenLM/qwen-code/pull/16149), [#16096](https://github.com/QwenLM/qwen-code/pull/16096), [#16226](https://github.com/QwenLM/qwen-code/pull/16226)
+
+Was du damit machen kannst:
+
+- CI deines PRs schlägt fehl — das Fehlerlog erscheint in der Session, du musst nicht selbst danach suchen
+- Ein Kollege reviewed deinen PR — seine Anmerkungen landen im Chat
+- Neues Repository zum Verfolgen? Adresse in den Channel-Editor eintippen, fertig
+
+
+
+
+![GitHub-Ereignisse](https://img.alicdn.com/imgextra/i2/O1CN01HhyTIFzowNI2vGtw_!!6000000004881-2-tps-1440-900.png)
+
+### Web Shell: Channel-Events und Session-Status auf einen Blick
+
+**Channel-Events laufen zentral zusammen.** In einem Channel passiert ständig etwas: GitHub hat einen Commit, ein geplanter Job ist durch, eine Session hat geantwortet. Jetzt hat jede Channel-Seite eine „Events“-Spalte — alle Aktivitäten als Zeitstrahl, filterbar nach Channel, mit automatischer Aktualisierung. Siehe PR [#16106](https://github.com/QwenLM/qwen-code/pull/16106)
+
+**Token-Nutzung bis auf die einzelne Anfrage aufgeschlüsselt.** Bisher stand da nur eine Summe pro Kategorie. Jetzt siehst du jede Anfrage einzeln: Ausgabegeschwindigkeit, Wartezeit bis zur ersten Antwort, Erfolg oder Fehler — verschiedene Modelle in verschiedenen Farben. Ein Klick auf einen Eintrag zeigt die genaue Fehlerursache. Siehe PR [#16108](https://github.com/QwenLM/qwen-code/pull/16108), [#16111](https://github.com/QwenLM/qwen-code/pull/16111)
+
+**Session-Status in der Sidebar.** Früher war die Session-Liste nur eine Namensliste — was drin passiert, hast du nicht gesehen. Jetzt trägt jede Session ein Statussymbol: ein drehender Kreis, wenn sie läuft, ein oranger Punkt, wenn sie auf deine Freigabe wartet, ein roter Strich bei einem Fehler. Klickst du das Symbol an, siehst du, wer wartet und welche Antwort gerade fertig wurde. Ungelesene Nachrichten zählt ein Badge mit, und du markierst alle auf einmal als gelesen oder archivierst sie. Siehe PR [#16022](https://github.com/QwenLM/qwen-code/pull/16022)
+
+**Sessions nebeneinander.** Rechtsklick auf eine Session, „Add to split view“ — schon liegen zwei Gespräche Seite an Seite zum Vergleichen. Siehe PR [#15956](https://github.com/QwenLM/qwen-code/pull/15956)
+
+**Weitere Verbesserungen.** Der Workflow-Modus-Schalter ist ins „+“-Menü neben dem Eingabefeld gewandert; ein Label zeigt den aktiven Modus, du klickst es zum Ausschalten ([#16107](https://github.com/QwenLM/qwen-code/pull/16107), [#15779](https://github.com/QwenLM/qwen-code/pull/15779)). Kopierst du eine Bild-URL ins Eingabefeld, wird sie automatisch zum Anhang; Screenshots fügst du direkt per Paste ein ([#16179](https://github.com/QwenLM/qwen-code/pull/16179)).
+
+
+
+
+![Web Shell](https://img.alicdn.com/imgextra/i4/O1CN01OCPVFkYeCmG7nW9B_!!6000000007271-2-tps-3841-2160.png)
+
+## 📊 Weitere neue Features
+
+**Interaktive Karten sind ab sofort Standard.** Bisher musstest du sie erst in d
+
+en Settings aktivieren. Jetzt sind sie direkt nach der Installation da — lass dir einen Kredit ausrechnen, vergleiche Optionen und zieh im Gespräch die Regler. Stehen die Werte, klickst du „Keep“ und sie fließen zurück in die Unterhaltung. Siehe PR [#15856](https://github.com/QwenLM/qwen-code/pull/15856)
+
+**Heruntergeladene Projekte fragen vor Hooks, Permission-Regeln und Language-Servern.** Kommt ein Projekt aus dem Netz, zeigt Qwen Code einen Bestätigungsdialog. Erst nach deinem Klick auf „Trust“ laufen die mitgebrachten Hooks, Permission-Regeln und Language-Server. Lokal von dir angelegte Projekte sind davon nicht betroffen. Siehe PR [#16182](https://github.com/QwenLM/qwen-code/pull/16182), [#16196](https://github.com/QwenLM/qwen-code/pull/16196)
+
+**`/verify-pr` führt nicht vertrauenswürdigen Code im Docker-Container aus.** Ein Befehl, ein lokaler Container, der PR-Code rein, die Prüfung läuft — deine Modell-Keys bleiben auf deinem Rechner. Siehe PR [#16077](https://github.com/QwenLM/qwen-code/pull/16077)
+
+**Desktop-App jetzt für Fedora 44 und RHEL 10.** Auf diesen Systemen lädst du das rpm-Paket direkt von GitHub Releases. Siehe PR [#16060](https://github.com/QwenLM/qwen-code/pull/16060)
+
+**QQ-Gruppen-Moderation übernimmt die KI.** Ein Channel stellt seine Moderationswerkzeuge den darin laufenden Sessions zur Verfügung: Nachrichten zurückziehen, Mitglieder entfernen, Beitrittsanfragen bearbeiten — die KI führt es aus. Welche Werkzeuge freigegeben sind, steuerst du mit `moderationTools` in den Channel-Settings. Siehe PR [#14348](https://github.com/QwenLM/qwen-code/pull/14348)
+
+**Managed Agent von Null auf laufend mit einem Helm-Befehl.** Helm-Chart konfigurieren, MySQL und Gateway sind an Bord. Siehe PR [#15492](https://github.com/QwenLM/qwen-code/pull/15492)
+
+**Archivierte Gespräche stellst du direkt aus den Settings wieder her.** Unter Settings → Archive hat jeder Eintrag jetzt einen „Restore“- und einen „Export“-Button — du musst nicht mehr erst zum Gespräch navigieren. Siehe PR [#15872](https://github.com/QwenLM/qwen-code/pull/15872)
+
+**Skill-Parameter siehst du beim Tippen.** Tippst du `/qwencode-weekly`, schwebt die Liste der noch fehlenden Parameter über der Eingabe. Ist einer gefüllt, rückt der nächste nach. Siehe PR [#15930](https://github.com/QwenLM/qwen-code/pull/15930)
+
+**Update-Befehl mit Zielversion.** `qwen update --target-version <Versionsnummer>` installiert direkt die angegebene Version — ohne vorher die npm-Registry abzufragen. Downgrade oder Neuinstallation derselben Version geht auch. Siehe PR [#11486](https://github.com/QwenLM/qwen-code/pull/11486)
+
+## 👏 Verbesserte Erfahrungen
+
+**`/autofix-pr` hält deinen Branch aktuell und arbeitet direkt in deinem Checkout.** Hängt dein Branch hinter `main` und die CI schlägt fehl, merged er selbstständig `main` ein, bevor er die Checks erneut anstößt — kein manuelles Rebase. Mit `--in-place` läuft er in deinem aktuellen Checkout, du schaust zu und greifst ein. Im PR steuerst du mit `@qwen-code /takeover for N`, wie viele Runden er übernimmt; danach gibt er automatisch wieder ab. Siehe PR [#15922](https://github.com/QwenLM/qwen-code/pull/15922), [#15929](https://github.com/QwenLM/qwen-code/pull/15929), [#15388](https://github.com/QwenLM/qwen-code/pull/15388)
+
+**Lange Antworten bekommst du in einem scrollbaren Fenster.** Wenn `/btw` ausführlich antwortet, erscheint der Text in einem Feld mit Scrollbalken — Mausrad, Pfeiltasten und PageUp/PageDown funktionieren. Siehe PR [#15982](https://github.com/QwenLM/qwen-code/pull/15982)
+
+**Web Shell: Ein-Klick-Update jetzt für pnpm, yarn und bun.** Bisher nur npm. Jetzt aktualisierst du mit jedem dieser Paketmanager per Knopfdruck. Erkennt er einen nicht unterstützten, zeigt er die manuellen Schritte an. Siehe PR [#15849](https://github.com/QwenLM/qwen-code/pull/15849)
+
+**Die Statusleiste zeigt die Zahl der laufenden Hintergrund-Agents.** Im Desktop-Client und im Web Shell siehst du am Task-Symbol in der Fußzeile in Echtzeit, wie viele Agents gerade arbeiten. Siehe PR [#14002](https://github.com/QwenLM/qwen-code/pull/14002)
+
+**Code-Navigation sagt, wenn kein Language-Server da ist.** Bisher kam bei fehlendem Language-Server einfach ein leeres Ergebnis. Jetzt meldet Qwen Code: Kein Language-Server verfügbar. Siehe PR [#15946](https://github.com/QwenLM/qwen-code/pull/15946)
+
+**Kontextdateien im Panel anklicken und lesen.** Dateien wie AGENTS.md öffnest du direkt aus dem Panel — ein Klick, und der Inhalt erscheint. Siehe PR [#15932](https://github.com/QwenLM/qwen-code/pull/15932)
+
+**Leere Session-Listen ohne Workspace verschwinden komplett.** Eine leere Spalte nahm bisher Platz weg, ohne etwas zu zeigen. Jetzt blendet sie sich aus, solange sie leer ist. Siehe PR [#15916](https://github.com/QwenLM/qwen-code/pull/15916)
+
+## 🔧 Wichtige Fixes
+
+| Fix | Was es für dich bedeutet | PR |
+|------|-----------|-----|
+| **Claude Opus 5.5 und Sonnet 5.5 laufen wieder** | Diese Modelle warfen einen Fehler, weil sie kein erzwungenes Tool-Choice unterstützen. Jetzt überspringt Qwen Code diese Anfrage und ruft sie normal auf | [#15558](https://github.com/QwenLM/qwen-code/pull/15558) |
+| **OpenRouter-Modelle mit exacto-Kennzeichnung bekommen ihr volles Token-Fenster** | `qwen/qwen3-coder:exacto` hat 262.144 Token, bekam aber nur 200K. Jetzt gilt wieder das volle Fenster | [#16165](https://github.com/QwenLM/qwen-code/pull/16165) |
+| **Zwei gleichnamige Tools auf einem MCP-Server legen nicht mehr alles lahm** | Eine Namenskollision ließ bisher sämtliche Tools des Servers ausfallen. Jetzt überspringt Qwen Code nur das doppelte Tool | [#15757](https://github.com/QwenLM/qwen-code/pull/15757) |
+| **Terminal-Befehle im macOS-Desktop laufen wieder** | Dem Desktop-Daemon fehlten Systempfade — mit Homebrew installierte Tools fand er nicht. Jetzt sind `~/.local/bin` und weitere Pfade ergänzt | [#15190](https://github.com/QwenLM/qwen-code/pull/15190) |
+| **Montagmorgen hängen die Sessions nicht mehr in „Diese Woche“** | Die Woche begann bei Sonntag — Sessions vom Montag landeten in „Letzte Woche“. Jetzt startet die Kalenderwoche am Montag | [#16097](https://github.com/QwenLM/qwen-code/pull/16097) |
+| **Modelle mit über einer Million Token zeigt `/context` lesbar an** | 1.000.000 erschien als `1000000` statt `1.0M`. Jetzt stimmt die Anzeige | [#13237](https://github.com/QwenLM/qwen-code/pull/13237) |
+| **Windows-Update scheitert nicht mehr an belegten Dateien** | Der Installer beendet jetzt laufende node.exe-Prozesse, bevor er Dateien ersetzt | [#16071](https://github.com/QwenLM/qwen-code/pull/16071) |
+| **Das Zeitlimit für Anthropic-kompatible Schnittstellen gilt wirklich** | Du hast in den Settings ein längeres Timeout gesetzt, die Anfrage brach trotzdem vorher ab. Jetzt liest Qwen Code deinen Wert | [#16193](https://github.com/QwenLM/qwen-code/pull/16193) |
+| **`git commit --amend` und andere Schreibweisen markieren KI-Änderungen korrekt** | Bisher zählte nur eine einzige Schreibweise. Weniger Bindestriche oder Leerzeichen — jetzt erkennt Qwen Code alle gängigen Varianten | [#16073](https://github.com/QwenLM/qwen-code/pull/16073) |
+| **`grep -n` oder `--line-number` löst keine Datei-Lese-Bestätigung mehr aus** | `grep -n` wurde als möglicher Lesezugriff interpretiert. Jetzt erkennt Qwen Code diese Flags als reine Anzeigeoption | [#14383](https://github.com/QwenLM/qwen-code/pull/14383) |
+| **OAuth-Refresh-Lock überlebt das Schließen eines Terminals** | Mehrere offene Terminals mit demselben Anbieter: Schließt du eines, löscht das nicht mehr alle aktiven Refresh-Locks | [#15661](https://github.com/QwenLM/qwen-code/pull/15661) |
+| **Kimi K3 bekommt sein Millionen-Token-Fenster** | K3 läuft standardmäßig mit einer Million Token, nur k3-256k bleibt bei 256K | [#16048](https://github.com/QwenLM/qwen-code/pull/16048) |
+| **Sandbox-Screenshots mit lesbarer Monospace-Schrift** | Die Capture-Card lieferte Code in einer unpassenden Schriftart. Jetzt ist DejaVu Sans Mono installiert | [#16032](https://github.com/QwenLM/qwen-code/pull/16032) |
+| **Bild-Paste im Web Shell gibt Rückmeldung** | Bisher blieb es still, egal ob das Einfügen klappte. Jetzt: URL ladbar → Bild als Anhang; nicht ladbar → Fehlermeldung | [#16179](https://github.com/QwenLM/qwen-code/pull/16179) |
+| **Shell-Permission-Check hält `2>&1` nicht mehr für eine Dateioperation** | fd-Umleitung wurde als Schreibzugriff gewertet. Jetzt erkennt Qwen Code sie korrekt | [#15681](https://github.com/QwenLM/qwen-code/pull/15681) |
+
+## 👥 Contributors
+
+| Contributor | Contributions | PR Links |
+|--------|---------|-------------|
+| **[@4ekuct25](https://github.com/4ekuct25)** | Session-Übersicht und Split-Shortcuts, „Add to split view“ im Session-Menü, Agent-Zähler in der Statusleiste, macOS-Desktop-PATH ergänzt, eigene Sessions in der Übersicht, verlassene Sessions aus dem Split räumen, schwebende Freigabe-Karten scrollbar, Goal-Karten in russischer Oberfläche | [#14179](https://github.com/QwenLM/qwen-code/pull/14179), [#15956](https://github.com/QwenLM/qwen-code/pull/15956), [#14002](https://github.com/QwenLM/qwen-code/pull/14002), [#15190](https://github.com/QwenLM/qwen-code/pull/15190), [#13679](https://github.com/QwenLM/qwen-code/pull/13679), [#14577](https://github.com/QwenLM/qwen-code/pull/14577), [#14621](https://github.com/QwenLM/qwen-code/pull/14621), [#13685](https://github.com/QwenLM/qwen-code/pull/13685) |
+| **[@2SinceJuly](https://github.com/2SinceJuly)** | /btw-Langantworten mit scrollbarem Viewport, „New Session“ klickbar bei leerer Modellliste, MCP-Namenskollision legt nicht mehr alle Tools lahm, OAuth-Refresh-Lock nur vom eigenen Inhaber gelöscht, Zurück-Button auf Plugin-Seiten ohne Navbar, Host-Ladezustand stabilisiert | [#15982](https://github.com/QwenLM/qwen-code/pull/15982), [#15835](https://github.com/QwenLM/qwen-code/pull/15835), [#15757](https://github.com/QwenLM/qwen-code/pull/15757), [#15661](https://github.com/QwenLM/qwen-code/pull/15661), [#15651](https://github.com/QwenLM/qwen-code/pull/15651), [#15639](https://github.com/QwenLM/qwen-code/pull/15639) |
+| **[@he-yufeng](https://github.com/he-yufeng)** | Node-Startfehler bei fehlenden ICU-Daten mit Hinweis, Thinking- und Tool-Call-Bereinigung hält Nachbarn zusammen, Session-Wiederherstellung mit Branch-Punkt, Language-Server einer Session beim Schließen der Konfiguration stoppen | [#11753](https://github.com/QwenLM/qwen-code/pull/11753), [#11684](https://github.com/QwenLM/qwen-code/pull/11684), [#13814](https://github.com/QwenLM/qwen-code/pull/13814), [#14778](https://github.com/QwenLM/qwen-code/pull/14778) |
+| **[@Shizoqua](https://github.com/Shizoqua)** | OpenRouter-exacto-Modelle mit vollem Token-Fenster, /context zeigt Millionen-Token als „M“ | [#16165](https://github.com/QwenLM/qwen-code/pull/16165), [#13237](https://github.com/QwenLM/qwen-code/pull/13237) |
+| **[@Andrea-Bruno](https://github.com/Andrea-Bruno)** | 400-Fehler ohne Response-Body wird wiederholt statt abgebrochen | [#15821](https://github.com/QwenLM/qwen-code/pull/15821) |
+| **[@Eric-GoodBoy-Tech](https://github.com/Eric-GoodBoy-Tech)** | Channel-Moderationstools für Sessions freigegeben, QQ-Gruppe: Nachrichten zurückziehen und weitere Aktionen | [#14348](https://github.com/QwenLM/qwen-code/pull/14348) |
+| **[@haomint](https://github.com/haomint)** | Sicherheitsmodus blockiert Nachricht — Ursache an mehreren Stellen in der Oberfläche erklärt | [#13948](https://github.com/QwenLM/qwen-code/pull/13948) |
+| **[@jabrailkhalil](https://github.com/jabrailkhalil)** | Memory-Index meldet beim Schreiben ausgelassene Einträge | [#14937](https://github.com/QwenLM/qwen-code/pull/14937) |
+| **[@kabishou11](https://github.com/kabishou11)** | grep -n als Flag behandelt, Datei-Lese-Check bleibt bestehen | [#14383](https://github.com/QwenLM/qwen-code/pull/14383) |
+| **[@Sumire-no-kai](https://github.com/Sumire-no-kai)** | Race-Condition im Session-Lebenszyklus behält nicht mehr jedes Ergebnis | [#15347](https://github.com/QwenLM/qwen-code/pull/15347) |
+| **[@yar3333](https://github.com/yar3333)** | Interaktive Karten im Electron-Node-Modus ausgeführt | [#16064](https://github.com/QwenLM/qwen-code/pull/16064) |
+| **[@zonemeen](https://github.com/zonemeen)** | Host-Tests mit geteiltem Timeout, CI bricht nach maximalen Wiederholungen ab | [#14752](https://github.com/QwenLM/qwen-code/pull/14752) |
+| 🆕 **[@Adkid-Zephyr](https://github.com/Adkid-Zephyr)** | 🎉 Erster Beitrag: Erzwungenes Tool-Choice nicht mehr an Claude-Modelle gesendet | [#15558](https://github.com/QwenLM/qwen-code/pull/15558) |
+| 🆕 **[@ifan855](https://github.com/ifan855)** | 🎉 Erster Beitrag: Tool-Card-Diff mit Zeilenumbruch statt horizontalem Scrollbalken bei langen Zeilen | [#13272](https://github.com/QwenLM/qwen-code/pull/13272) |
+| 🆕 **[@indexGin](https://github.com/indexGin)** | 🎉 Erster Beitrag: Review-Paginierung für verschachtelte Arrays als Testfall fixiert | [#12560](https://github.com/QwenLM/qwen-code/pull/12560) |
+| 🆕 **[@jianyx1](https://github.com/jianyx1)** | 🎉 Erster Beitrag: Prüfbericht an den Snapshot der eigenen Runde gebunden | [#15746](https://github.com/QwenLM/qwen-code/pull/15746) |
+| 🆕 **[@projekt11th](https://github.com/projekt11th)** | 🎉 Erster Beitrag: Code-Navigation lehnt ab, wenn kein Language-Server bereit ist | [#15946](https://github.com/QwenLM/qwen-code/pull/15946) |
+| 🆕 **[@RunMintOn](https://github.com/RunMintOn)** | 🎉 Erster Beitrag: Hook-Fehlertext wird anhand konkreter Werte bereinigt, als Testfall fixiert | [#11785](https://github.com/QwenLM/qwen-code/pull/11785) |
+| 🆕 **[@Suaroman](https://github.com/Suaroman)** | 🎉 Erster Beitrag: `2>&1` und ähnliche fd-Duplikationen nicht mehr als Dateioperation gewertet | [#15681](https://github.com/QwenLM/qwen-code/pull/15681) |
+| 🆕 **[@suzhiguo7](https://github.com/suzhiguo7)** | 🎉 Erster Beitrag: Loop-Erinnerung kommt genau in dem Moment, in dem das Modell sie akzeptiert | [#15559](https://github.com/QwenLM/qwen-code/pull/15559) |
+| 🆕 **[@tneemo](https://github.com/tneemo)** | 🎉 Erster Beitrag: Bereits als Kontext geladene Dateien nicht doppelt in den Memory-Import | [#15687](https://github.com/QwenLM/qwen-code/pull/15687) |
+| 🆕 **[@TYY-2005](https://github.com/TYY-2005)** | 🎉 Erster Beitrag: Testfall für das Löschen persistenter Permission-Regeln ergänzt | [#13818](https://github.com/QwenLM/qwen-code/pull/13818) |
+| 🆕 **[@wang1408](https://github.com/wang1408)** | 🎉 Erster Beitrag: Assertion für gleichrangige Aufrufe im Managed Agent ergänzt | [#15995](https://github.com/QwenLM/qwen-code/pull/15995) |
+
+<Callout type="info">
+  **Update**: Führe `npm i @qwen-code/qwen-code@latest -g` aus, um auf die neueste Version zu aktualisieren.
+</Callout>
+
+Bei Fragen oder Feedback erreichst du uns wie immer auf [GitHub Issues](https://github.com/QwenLM/qwen-code/issues).
