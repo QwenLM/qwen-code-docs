@@ -232,6 +232,8 @@ protected override async pushProactive(
 
 일반 데몬 전달이 다른 대상 형태를 허용하는 경우 `supportsProactiveDeliveryTarget()`을 사용하고, 웹훅 전달이 루프 및 백그라운드 결과와 다른 경우 `supportsProactiveWebhookTarget()`을 사용하세요. 지원되지 않는 대상은 다른 대화로 폴백하는 대신 거부된 채로 두세요.
 
+`onResponseChunk`에서 청크를 스트리밍하는 어댑터는 `isProactivePromptTurn(sessionId)`도 확인해야 합니다: 이 값은 루프 및 웹훅 턴에 대해 `true`이며, `ChannelBase`는 해당 결과를 `pushProactive`를 통해 한 번에 전체적으로 전달하고 `onResponseComplete`를 호출하지 않습니다. 해당 턴에 대해 점진적 출력을 게시하면 동일한 텍스트가 두 번 게시되므로, 청크 플러싱 싱크는 이를 억제해야 합니다.
+
 **미디어** — `envelope.attachments`에 이미지/파일을 채우세요. 위의 [첨부 파일](#attachments)을 참조하세요.
 
 ## 레퍼런스 구현

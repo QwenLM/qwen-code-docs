@@ -12,13 +12,23 @@ Qwen Code / any MCP client
 
 ## 安装
 
-需要 Node.js 22 或更高版本以及 npm。注册 MCP server，然后重启 Qwen Code：
+本检出记录了即将发布的 CUA 0.27.0 版本。以下安装命令需要其原生 GitHub Release（`cua-driver-rs-v0.27.0`）及匹配的 npm 包已发布；合并这些源不会发布它们。在发布之前，请使用[本地开发设置](https://github.com/QwenLM/qwen-code/blob/890cb0349a259761a571da889f4fe1cccc6ed108/packages/node-repl/README.md#local-development-and-environment)来测试仓库构建。
+
+需要 Node.js 22 或更高版本以及 npm。发布后，注册 MCP server，然后重启 Qwen Code：
 
 ```bash
 qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.26.0
 ```
 
-该 server 会将匹配的 SDK 和浏览器 SDK 作为依赖安装。原生 SDK payload 会为当前平台下载，并根据对应发布的 SHA-256 校验和进行验证。它被缓存在 npm 包之外；无需工作区 SDK 引导命令。版本 0.26.0 是本地开发目标，直到其正式发布。
+该 server 会将匹配的 SDK 和浏览器 SDK 作为依赖安装。原生 SDK payload 会为当前平台下载，并根据对应发布的 SHA-256 校验和进行验证。它被缓存在 npm 包之外；它被缓存在 npm 包之外；无需工作区 SDK 引导命令。
+
+Windows 默认使用普通输入传递，不会安装 UIAccess
+worker。通过 `CUA_DRIVER_USE_UIACCESS=1` 启用 UIAccess 需要在
+`Program Files\Qwen\CuaDriver` 下放置签名的
+worker；请在设置该变量的提升权限
+终端中安装 SDK。未签名的 worker 无法启用 UIAccess；
+请勿绕过签名检查。较早的未签名发布版本需要新的签名
+driver 发布才能使用 UIAccess，而非重新安装同一版本。版本 0.27.0 是本地开发目标，直到其正式发布。
 
 Windows 默认使用普通输入传递，不会安装 UIAccess worker。通过 `CUA_DRIVER_USE_UIACCESS=1` 启用 UIAccess 需要在 `Program Files\Qwen\CuaDriver` 下放置签名的 worker；请在设置该变量的提升权限终端中安装 SDK。未签名的 worker 无法启用 UIAccess；请勿绕过签名检查。较早的未签名发布版本需要新的签名 driver 发布才能使用 UIAccess，而非重新安装同一版本。
 
@@ -63,6 +73,12 @@ await tab.playwright.domSnapshot();
 该 server 以普通 Node.js 权限执行 JavaScript，并遵循客户端的 MCP 审批流程。在 macOS 上，输入/AX 观察需要 Accessibility，截图需要 Screen Recording；文档保存/Finder 重命名可能会请求 Automation。授权归属于宿主进程的 OS 责任链。在 Windows 上，常规安装的守护进程使用现有的 UAC/登录任务路径；其启动的应用使用源自自身令牌的普通用户完整性令牌。UIAccess 是可选的：显式设置 `CUA_DRIVER_USE_UIACCESS=1` 需要 Program Files 下受信任的签名工作进程，不可用时会失败。默认 npm 安装不会暂存该工作进程，也不要求其签名。
 
 `js` 在一次调用中完成，默认超时为 30 秒。超时可能产生外部影响；重试前请先观察。`js_reset` 丢弃绑定并优雅关闭所属的原生/浏览器会话。上下文压缩后，在继续之前调用 `cua.rewriteDocumentation()`。
+
+原生 agent cursor 默认启用。在 macOS 上，本地 PiP 会在操作之间刷新会话中最近两个已授权观察的窗口。无边框窗口起始于右下角附近；拖动卡片或其 Move 预览手柄可重新定位。悬停会显示浮动控件并将后方卡片前置。关闭它会停止该预览；后续的授权观察可以再次创建它。该图像不会将输入转发到目标。重置会关闭所属的 cursor 和预览。添加 `--no-overlay` 或 `--no-pip` 到 server 参数可禁用任一表面。PiP 仅限 macOS。
+
+要在不更改 MCP 注册的情况下禁用 PiP，请在 `~/.cua-driver/config.json` 中设置 `"experimental_pip": false`，保留其其他键，然后重启所属的 MCP server 或运行时。这个现有的键为了兼容性而保留。server 的 `--no-pip` 参数也会禁用 PiP，并优先于文件。
+
+在共享或录制桌面时（包括全屏演示期间），其他人可能会看到预览。为了持久选择退出，请在共享前禁用 PiP 并重启其所属运行时；仅关闭当前面板无法阻止后续观察重新创建它。共享不会被自动检测到。
 
 ## 远程桌面中继
 

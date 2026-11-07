@@ -4,7 +4,11 @@ La fonctionnalité Dossiers de confiance est un paramètre de sécurité qui vou
 
 ## Activation de la fonctionnalité
 
-La fonctionnalité Dossiers de confiance est **désactivée par défaut**. Pour l'utiliser, vous devez d'abord l'activer dans vos paramètres.
+La fonctionnalité Dossiers de confiance est **désactivée par défaut**. Tant qu'elle est désactivée, chaque dossier est considéré comme fiable, donc le `.qwen/settings.json` d'un projet est chargé sans aucune invite. Les serveurs MCP de projet et les [hooks](../features/hooks.md#approving-project-hooks) de projet demandent toujours votre approbation la première fois qu'ils sont détectés et à chaque modification, sauf si vous exécutez en mode YOLO (pour les serveurs MCP, YOLO depuis n'importe quelle source ; pour les hooks, uniquement `--yolo` ou `--approval-mode yolo` en ligne de commande). D'autres configurations de projet peuvent exécuter des commandes sans demander (par exemple un `ui.statusLine` de `type: "command"`). Pour être interrogé avant qu'une configuration de projet ne soit lue, activez la fonctionnalité dans vos paramètres.
+
+La confiance de dossier désactivée n'autorise pas les hooks de frontmatter de skill/sous-agent de projet, les attributions automatiques d'outils de skill de projet, ni les serveurs `.lsp.json` de workspace.
+Celles-ci nécessitent que la confiance de dossier soit activée et accordée, ou un signal de confiance de workspace IDE affirmatif. Les autres hooks de fichier de paramètres suivent leur propre politique
+de chargement ; voir [Hooks](../features/hooks.md).
 
 Ajoutez ce qui suit à votre fichier `settings.json` utilisateur :
 

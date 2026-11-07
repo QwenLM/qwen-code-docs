@@ -83,6 +83,14 @@ npm install -g @qwen-code/qwen-code@nightly
 
 릴리스 워크플로의 어느 단계라도 실패하면 저장소에 `bug` 라벨과 유형별 실패 라벨(예: `nightly-failure`, `preview-failure`)이 포함된 새 이슈가 자동으로 생성됩니다. 이슈에는 쉬운 디버깅을 위해 실패한 워크플로 실행에 대한 링크가 포함됩니다.
 
+### 릴리스가 큐에 대기할 때
+
+`Publish Release`는 GitHub 호스트 러너에서 실행되며 ECS 풀로 이동할 수 없습니다. [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/)은 클라우드 호스트 러너만 지원하므로 자체 호스트 게시자는 인증에 실패하고 provenance를 생성하지 않습니다. `audio-capture-prebuilds.yml`의 macOS 및 Windows 레그도 네이티브 툴체인에 대해 빌드하므로 호스트로 실행되며, Linux 레그만 `ecs-qwen-release-host`를 선택합니다.
+
+호스트 동시성은 계정 전체에 적용되며 PR 리뷰, 자동 수정, 분류 자동화와 공유되므로 이러한 호스트 단계는 해당 트래픽 뒤에 큐에 대기합니다. 큐에 대기된 단계는 실패한 릴리스가 아닙니다. GitHub이 아직 러너를 할당하지 않았으며, 로그가 여전히 비어 있고, `timeout-minutes`는 실행되기 시작해야 카운트됩니다. 2026-11-01에 게시가 러너를 2시간 33분 대기한 후 5분 37초 만에 완료된 반면, 주변 nightly는 빌드 완료 후 3~4초 만에 디스패치되었습니다. 수동 릴리스가 시간에 민감한 경우 nightly를 사용하거나 Asia/Shanghai 업무 시간 피크 시간대 외에 디스패치하는 것이 좋습니다.
+
+풀 분석 및 호스트 러너에서 이미 이동된 릴리스 작업에 대한 자세한 내용은 [Release runner slots](../../design/2026-10-28-release-queue-optimization.md)을 참조하십시오.
+
 ## 릴리스 유효성 검증
 
 새 릴리스를 푸시한 후 패키지가 예상대로 작동하는지 확인하기 위해 스모크 테스트를 수행해야 합니다. 패키지를 로컬에 설치하고 올바르게 작동하는지 확인하기 위한 테스트 세트를 실행하면 됩니다.

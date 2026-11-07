@@ -15,19 +15,19 @@ Unter Windows werden Befehle mit `cmd.exe /c` ausgeführt. Auf anderen Plattform
 - `command` (string, erforderlich): Der genaue Shell-Befehl, der ausgeführt werden soll.
 - `description` (string, optional): Eine kurze Beschreibung des Zwecks des Befehls, die dem Benutzer angezeigt wird.
 - `directory` (string, optional): Das Verzeichnis (relativ zum Projektstammverzeichnis), in dem der Befehl ausgeführt werden soll. Wenn nicht angegeben, wird der Befehl im Projektstammverzeichnis ausgeführt.
-- `is_background` (boolean, erforderlich): Gibt an, ob der Befehl im Hintergrund ausgeführt werden soll. Dieser Parameter ist erforderlich, um eine explizite Entscheidung über den Befehlsausführungsmodus zu gewährleisten. Setze ihn auf `true` für langlaufende Prozesse wie Development-Server, Watcher oder Daemons, die ohne Blockierung weiterer Befehle weiterlaufen sollen. Setze ihn auf `false` für einmalige Befehle, die abgeschlossen sein müssen, bevor fortgefahren wird.
+- `is_background` (boolean, optional): Gibt an, ob der Befehl im Hintergrund ausgeführt werden soll. Wenn nicht angegeben, ist der Standardwert `false` (Vordergrundausführung). Setze ihn auf `true` für langlaufende Prozesse wie Development-Server, Watcher oder Daemons, die ohne Blockierung weiterer Befehle weiterlaufen sollen.
 
 ## Verwendung von `run_shell_command` mit Qwen Code
 
-Bei der Verwendung von `run_shell_command` wird der Befehl als Subprozess ausgeführt. Du kannst mit dem Parameter `is_background` oder durch explizites Hinzufügen von `&` zu Befehlen steuern, ob Befehle im Hintergrund oder Vordergrund ausgeführt werden. Das Tool gibt detaillierte Informationen über die Ausführung zurück, einschließlich:
+Bei der Verwendung von `run_shell_command` wird der Befehl als Subprozess ausgeführt. Ob er im Hintergrund oder im Vordergrund läuft, wird durch den Parameter `is_background` gesteuert. Füge kein nachgestelltes `&` hinzu, wenn `is_background: true` ist: Der verwaltete Hintergrundpfad ist selbst der Hintergrundmechanismus, und das Tool lehnt den Aufruf ab, anstatt ihn auszuführen. Das Tool gibt detaillierte Informationen über die Ausführung zurück, einschließlich:
 
-### Erforderlicher Background-Parameter
+### Der Parameter `is_background`
 
-Der Parameter `is_background` ist für alle Befehlsausführungen **erforderlich**. Dieses Design stellt sicher, dass die LLM (und die Benutzer) explizit entscheiden müssen, ob jeder Befehl im Hintergrund oder Vordergrund ausgeführt werden soll, was ein absichtliches und vorhersehbares Verhalten bei der Befehlsausführung fördert. Durch die Pflichtangabe dieses Parameters vermeiden wir ein unbeabsichtigtes Fallback auf die Vordergrundausführung, was bei langlaufenden Prozessen nachfolgende Operationen blockieren könnte.
+`is_background` ist optional — das Schema des Tools erfordert nur `command` — und wenn er weggelassen wird, läuft der Befehl im Vordergrund. Die explizite Entscheidung ist daher die andere: Ein Befehl, der nicht von selbst stoppt, muss mit `is_background: true` gekennzeichnet werden, denn wenn er im Vordergrund bleibt, blockiert er den Turn, bis er ein Timeout erreicht.
 
 ### Hintergrund- vs. Vordergrundausführung
 
-Das Tool verarbeitet die Hintergrund- und Vordergrundausführung intelligent basierend auf deiner expliziten Auswahl:
+Das Tool verarbeitet die Hintergrund- und Vordergrundausführung basierend auf diesem Parameter:
 
 **Verwende die Hintergrundausführung (`is_background: true`) für:**
 
@@ -37,13 +37,9 @@ Das Tool verarbeitet die Hintergrund- und Vordergrundausführung intelligent bas
 - Webserver: `python -m http.server`, `php -S localhost:8000`
 - Jeden Befehl, der unbegrenzt laufen soll, bis er manuell gestoppt wird
 
-**Verwende die Vordergrundausführung (`is_background: false`) für:**
+**Verwende die Vordergrundausführung (der Standard) für** Befehle, die von selbst abgeschlossen werden, wie Builds, Installationen, Git-Operationen und Testausführungen.
 
-- Einmalige Befehle: `ls`, `cat`, `grep`
-- Build-Befehle: `npm run build`, `make`
-- Installationsbefehle: `npm install`, `pip install`
-- Git-Operationen: `git commit`, `git push`
-- Testausführungen: `npm test`, `pytest`
+Das Lesen und Durchsuchen von Dateien sind überhaupt keine Vordergrundkandidaten für dieses Tool: Verwende stattdessen die dedizierten Tools (`read_file`, `grep_search`, `glob`) anstelle von `cat`, `grep` oder `find`, was die eigene Beschreibung des Tools ausschließt.
 
 ### Ausführungsinformationen
 
@@ -64,7 +60,7 @@ Verwendung:
 run_shell_command(command="Deine Befehle.", description="Deine Beschreibung des Befehls.", directory="Dein Ausführungsverzeichnis.", is_background=false)
 ```
 
-**Hinweis:** Der Parameter `is_background` ist erforderlich und muss bei jeder Befehlsausführung explizit angegeben werden.
+**Hinweis:** `is_background` ist optional. Wenn du ihn weglässt, wird der Befehl im Vordergrund ausgeführt, daher ist der Fall, der ein explizites `true` benötigt, ein Befehl, der nicht von selbst stoppt.
 
 ## `run_shell_command`-Beispiele
 
@@ -86,11 +82,7 @@ Einen Background-Development-Server starten (empfohlener Ansatz):
 run_shell_command(command="npm run dev", description="Development-Server im Hintergrund starten", is_background=true)
 ```
 
-Einen Background-Server starten (Alternative mit explizitem &):
-
-```bash
-run_shell_command(command="npm run dev &", description="Development-Server im Hintergrund starten", is_background=false)
-```
+Hinweis: Ein explizites `&` ist kein verwalteter Hintergrundmechanismus. Mit `is_background: true` lehnt das Tool ein nacktes nachgestelltes `&` ab, bevor der Befehl ausgeführt wird; mit `is_background=false` trennt die Shell den Prozess, sodass der Aufruf zurückkehrt, ohne dass der Prozess verfolgt wird — er hat keinen Hintergrund-Task-Eintrag und `task_stop` kann ihn nicht erreichen. Verwende immer `is_background=true` für einen Befehl, der im Hintergrund laufen soll.
 
 Einen Build-Befehl im Vordergrund ausführen:
 
@@ -170,8 +162,8 @@ Wenn ein interaktiver Befehl ausgeführt wird, kannst du aus Qwen Code Eingaben 
 
 - **Sicherheit:** Sei vorsichtig bei der Ausführung von Befehlen, insbesondere bei solchen, die aus Benutzereingaben konstruiert werden, um Sicherheitslücken zu vermeiden.
 - **Fehlerbehandlung:** Überprüfe die Felder `Stderr`, `Error` und `Exit Code`, um festzustellen, ob ein Befehl erfolgreich ausgeführt wurde.
-- **Hintergrundprozesse:** Wenn `is_background=true` ist oder ein Befehl `&` enthält, kehrt das Tool sofort zurück und der Prozess läuft im Hintergrund weiter. Das Feld `Background PIDs` enthält die Prozess-ID des Hintergrundprozesses.
-- **Wahl der Hintergrundausführung:** Der Parameter `is_background` ist erforderlich und bietet eine explizite Kontrolle über den Ausführungsmodus. Du kannst dem Befehl auch `&` für eine manuelle Hintergrundausführung hinzufügen, aber der Parameter `is_background` muss dennoch angegeben werden. Der Parameter sorgt für eine klarere Absicht und übernimmt automatisch die Einrichtung der Hintergrundausführung.
+- **Hintergrundprozesse:** Nur `is_background=true` startet einen verfolgten Hintergrundprozess: Das Tool kehrt sofort mit der Shell-ID und PID zurück, und der Prozess läuft weiter. Ein `&` auf Shell-Ebene erstellt keinen solchen — mit `is_background: true` lehnt das Tool ein nacktes nachgestelltes `&` ab, und mit `is_background=false` trennt die Shell den Befehl, ohne dass das Tool ihn verfolgt.
+- **Wahl der Hintergrundausführung:** Der Parameter `is_background` ist optional (das Schema erfordert nur `command`); setze `is_background: true` für einen Befehl, der nicht von selbst stoppt, denn wenn er im Vordergrund bleibt, blockiert er den Turn, bis er ein Timeout erreicht. Verwende `is_background` anstelle von `&` auf Shell-Ebene; es bietet klarere Absicht und das Tool verwaltet die Einrichtung der Hintergrundausführung.
 - **Befehlsbeschreibungen:** Bei Verwendung von `is_background=true` enthält die Befehlsbeschreibung einen `[background]`-Indikator, um den Ausführungsmodus deutlich anzuzeigen.
 
 ## Umgebungsvariablen

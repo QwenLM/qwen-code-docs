@@ -12,13 +12,15 @@ Qwen Code / qualquer cliente MCP
 
 ## Configuração
 
+Este checkout documenta a próxima release CUA 0.27.0. Os comandos de instalação abaixo requerem sua GitHub Release nativa (`cua-driver-rs-v0.27.0`) e pacotes npm correspondentes para serem publicados; fazer merge dessas fontes não os publica. Antes da publicação, use a [configuração de desenvolvimento local](https://github.com/QwenLM/qwen-code/blob/890cb0349a259761a571da889f4fe1cccc6ed108/packages/node-repl/README.md#local-development-and-environment) para testar um build do repositório.
+
 Node.js 22 ou posterior e npm são necessários. Registre o servidor MCP e reinicie o Qwen Code:
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.26.0
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.27.0
 ```
 
-O servidor instala o SDK correspondente e o SDK do navegador como dependências. O payload do SDK nativo é baixado para a plataforma atual e verificado em relação aos checksums SHA-256 da release correspondente. Ele é armazenado em cache fora do pacote npm; nenhum comando de bootstrap de SDK do workspace é necessário. A versão 0.26.0 é um alvo de desenvolvimento local até que sua release seja publicada.
+O servidor instala o SDK correspondente e o SDK do navegador como dependências. O payload do SDK nativo é baixado para a plataforma atual e verificado em relação aos checksums SHA-256 da release correspondente. Ele é armazenado em cache fora do pacote npm; nenhum comando de bootstrap de SDK do workspace é necessário. A versão 0.27.0 é um alvo de desenvolvimento local até que sua release seja publicada.
 
 O Windows usa entrega de entrada comum por padrão e não instala um worker UIAccess. Optar por UIAccess com `CUA_DRIVER_USE_UIACCESS=1` requer um worker assinado em `Program Files\Qwen\CuaDriver`; instale o SDK a partir de um terminal elevado com essa variável definida. Um worker não assinado não pode habilitar UIAccess; não ignore a verificação de assinatura. Releases antigos não assinados precisam de uma nova release assinada do driver para UIAccess, não de uma reinstalação da mesma versão.
 
@@ -64,19 +66,25 @@ O servidor executa JavaScript com permissões ordinárias do Node.js e segue o f
 
 `js` completa em uma chamada e tem um timeout padrão de 30 segundos. Um timeout pode deixar efeitos externos; observe antes de tentar novamente. `js_reset` descarta bindings e fecha graciosamente a sessão nativa/do navegador proprietária. Após a compactação do contexto, chame `cua.rewriteDocumentation()` antes de continuar.
 
+O cursor do agente nativo é habilitado por padrão. No macOS, um PiP local atualiza as duas janelas autorizadas observadas mais recentemente da sessão mesmo entre ações. A janela sem borda começa perto do canto inferior direito; arraste um cartão ou sua alça de visualização Mover para reposicioná-la. Passar o mouse revela controles flutuantes e traz um cartão traseiro para frente. Feche-a para parar essa visualização; uma observação autorizada posterior pode criá-la novamente. A imagem não encaminha entrada para o alvo. O reset fecha o cursor e a visualização proprietários. Adicione `--no-overlay` ou `--no-pip` aos argumentos do servidor para desabilitar qualquer superfície. O PiP é exclusivo do macOS.
+
+Para desabilitar o PiP sem alterar o registro do MCP, defina `"experimental_pip": false` em `~/.cua-driver/config.json`, preservando suas outras chaves, e reinicie o servidor MCP ou runtime proprietário. Esta chave existente é retida para compatibilidade. O argumento `--no-pip` do servidor também desabilita o PiP e tem precedência sobre o arquivo.
+
+A visualização pode ser visível para outros quando você compartilha ou grava a desktop, incluindo durante uma apresentação em tela cheia. Para um opt-out persistente, desabilite o PiP e reinicie seu runtime proprietário antes de compartilhar; fechar o painel atual sozinho não impede que uma observação posterior o recrie. O compartilhamento não é detectado automaticamente.
+
 ## Relay de desktop remoto
 
 Para uma configuração existente de relay de desktop macOS, instale seu servidor correspondente:
 
 ```bash
-npx -y @qwen-code/node-repl-mcp@0.26.0 desktop-relay install
+npx -y @qwen-code/node-repl-mcp@0.27.0 desktop-relay install
 ```
 
 Isso usa o socket launchd local existente em `127.0.0.1:47821`. Em uma Web Shell segura, escolha **Use this computer** e depois **Connect this computer**. O desktop solicita cada conexão. O daemon remoto deve habilitar `QWEN_SERVE_CLIENT_MCP_OVER_WS=1`.
 
 ## MCP direto e solução de problemas
 
-`qwen-cua-driver mcp` expõe as mesmas 19 operações nativas do Computer Use diretamente. As chamadas de aplicativo usam `app`; as chamadas compatíveis com desktop usam `scope:"desktop"`. `key_down/key_up` são apenas de desktop. As ferramentas nativas avançadas permanecem disponíveis através do opt-in do host `CUA_DRIVER_EXTRA_TOOLS=1`.
+`qwen-cua-driver mcp` expõe as mesmas 19 operações nativas do Computer Use diretamente. As chamadas de aplicativo usam `app`; as chamadas compatíveis com desktop usam `scope:"desktop"` diretamente. `key_down/key_up` são apenas de desktop. As ferramentas nativas avançadas permanecem disponíveis através do opt-in do host `CUA_DRIVER_EXTRA_TOOLS=1`.
 
 Se o servidor estiver indisponível, verifique `qwen mcp list` e reinicie o cliente após adicioná-lo. Se a captura falhar, verifique a sessão de desktop atual e as permissões do SO. Se o download nativo falhar, verifique a versão/checksum exata da release ou forneça um payload correspondente construído localmente através de `QWEN_CUA_SDK_NATIVE_DIR`. Um desktop bloqueado não pode fornecer evidência de aceitação de GUI.
 

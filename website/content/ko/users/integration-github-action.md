@@ -112,22 +112,22 @@ gha-creds-*.json
 
 - <a name="__input_qwen_api_key"></a><a href="#user-content-__input_qwen_api_key"><code>qwen*api_key</code></a>: *(Optional)\_ Qwen API의 API 키.
 
-- <a name="__input_qwen_cli_version"></a><a href="#user-content-__input_qwen_cli_version"><code>qwen*cli_version</code></a>: *(Optional, default: `latest`)\_ 설치할 Qwen Code CLI의 버전. "latest", "preview", "nightly", 특정 버전 번호, 또는 git 브랜치, 태그, 커밋이 될 수 있습니다. 자세한 내용은 [Qwen Code CLI releases](https://github.com/QwenLM/qwen-code-action/blob/main/docs/releases.md)를 참조하세요.
+- <a name="__input_qwen_cli_version"></a><a href="#user-content-__input_qwen_cli_version"><code>qwen*cli_version</code></a>: *(Optional, default: `latest`)\_ 설치할 Qwen Code CLI의 버전. "latest", "preview", "nightly", 특정 버전 번호, 또는 git 브랜치, 태그, 커밋이 될 수 있습니다. 자세한 내용은 [Qwen Code CLI releases](https://github.com/QwenLM/qwen-code/releases)를 참조하세요.
 
 - <a name="__input_qwen_debug"></a><a href="#user-content-__input_qwen_debug"><code>qwen*debug</code></a>: *(Optional)\_ 디버그 로깅 및 출력 스트리밍을 활성화합니다.
 
 - <a name="__input_qwen_model"></a><a href="#user-content-__input_qwen_model"><code>qwen*model</code></a>: *(Optional)\_ Qwen Code와 함께 사용할 모델.
 
-- <a name="__input_prompt"></a><a href="#user-content-__input_prompt"><code>prompt</code></a>: _(Optional, default: `You are a helpful assistant.`)_ Qwen Code CLI의 [`--prompt` 인수](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#command-line-arguments)에 전달되는 문자열.
+- <a name="__input_prompt"></a><a href="#user-content-__input_prompt"><code>prompt</code></a>: _(Optional, default: `You are a helpful assistant.`)_ Qwen Code CLI의 [`--prompt` 인수](./configuration/settings.md#command-line-arguments-table)에 전달되는 문자열.
 
 - <a name="__input_settings"></a><a href="#user-content-__input_settings"><code>settings</code></a>: _(Optional)_ CLI의 _프로젝트_ 설정을 구성하기 위해 `.qwen/settings.json`에 쓰이는 JSON 문자열.
-  자세한 내용은 [설정 파일](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#settings-files) 문서를 참조하세요.
+  자세한 내용은 [설정 파일](./configuration/settings.md#settings-files) 문서를 참조하세요.
 
 - <a name="__input_use_qwen_code_assist"></a><a href="#user-content-__input_use_qwen_code_assist"><code>use*qwen_code_assist</code></a>: *(Optional, default: `false`)\_ 기본 Qwen Code API 키 대신 Qwen Code 모델 접근에 Code Assist를 사용할지 여부.
-  자세한 내용은 [Qwen Code CLI 문서](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/authentication.md)를 참조하세요.
+  자세한 내용은 [Qwen Code CLI 문서](./configuration/auth.md)를 참조하세요.
 
 - <a name="__input_use_vertex_ai"></a><a href="#user-content-__input_use_vertex_ai"><code>use*vertex_ai</code></a>: *(Optional, default: `false`)\_ 기본 Qwen Code API 키 대신 Qwen Code 모델 접근에 Vertex AI를 사용할지 여부.
-  자세한 내용은 [Qwen Code CLI 문서](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/authentication.md)를 참조하세요.
+  자세한 내용은 [Qwen Code CLI 문서](./configuration/auth.md)를 참조하세요.
 
 - <a name="__input_extensions"></a><a href="#user-content-__input_extensions"><code>extensions</code></a>: _(Optional)_ 설치할 Qwen Code CLI 확장 목록.
 
@@ -228,4 +228,4 @@ Qwen Code CLI는 확장을 통해 추가 기능으로 확장할 수 있습니다
 [Qwen Code CLI]: https://github.com/QwenLM/qwen-code-action/
 [variables]: https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-variables#creating-configuration-variables-for-a-repository
 [GitHub CLI]: https://docs.github.com/en/github-cli/github-cli
-[QWEN.md]: https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#context-files-hierarchical-instructional-context
+[QWEN.md]: ./configuration/settings.md#context-files-hierarchical-instructional-context

@@ -77,7 +77,7 @@ Java 会在下载 JAR 之前产生安装/配置错误；Qwen 不会下载 Java�
 重试策略处理；请使用启动器打印的浏览器地址。
 
 这一条命令会同时启动普通守护进程和 Managed Agent。同一个
-WebShell 在 Projects 下统一列出普通和 Managed 的工作区与会话，Managed 工作区带有 Managed 标签，没有执行模式选项卡。新任务遵循所选工作区或对话。本地会话使用
+WebShell 在 Workspaces 下统一列出普通和 Managed 的工作区与会话，Managed 工作区带有 Managed 标签，没有执行模式选项卡。新会话遵循所选工作区或对话。本地会话使用
 运行命令时所在的目录，而 Managed 会话使用其
 应用创建的 Workspaces 或显式导入的本地项目。两者使用
 同一个已认证的浏览器来源；
@@ -85,7 +85,7 @@ WebShell 在 Projects 下统一列出普通和 Managed 的工作区与会话，M
 
 在 **Add workspace** 中，提交前选择 **Local (daemon)** 或 **Managed (Managed Agent)**。
 默认选择当前对话的服务。
-工作区行和 **New task** 显示该服务，新任务继承
+工作区行和 **New session** 显示该服务，新会话继承
 所选工作区。守护进程现有的 SSH 工作区支持仍然
 可用；Managed SSH 注册未集成到此共享对话框中。
 
@@ -128,16 +128,13 @@ Java 还持有排他的数据库文件锁。私有服务端口
 启动时通过现有的幂等 Workspace API 创建应用拥有的默认 Workspace 及其 OWNER 授权。
 要使用现有的本地项目，
 打开 **Workspace → Choose existing directory**，浏览或输入其绝对
-路径，然后添加该文件夹。服务会自动注册其父目录并授予 OWNER
-访问权限，保留现有文件不动。新任务在
-所选项目中启动。你也可以创建一个空的 Workspace。
+路径，然后添加该文件夹。服务授予 OWNER 访问权限并保留现有文件不动。新任务在所选项目中启动。新导入的是共享外部目录：独立的本地安装可以导入同一个项目，无需转移其父目录或替换现有的全局存储标记。父目录在每个安装中仍然是共享的导航和 worktree 布局边界。你也可以创建一个空的 Workspace。
 
 启动目录对本地会话仍然可用，不会被自动导入。
 `--workspace` 在 Managed 本地模式下仍然不受支持；在
-UI 中选择项目。`.qwen-managed-storage.json` 维护标记保留在
-Git worktree 之外；不要编辑、删除、暂存或提交它。导入的
-项目文件保留在私有 Managed 数据目录之外，需要自行
-备份。
+UI 中选择项目。新导入的元数据对安装私有，位于 `runtime/imported-projects/<storage ID>/.qwen-managed-storage.json` 下；将其与完整的 Managed 数据目录一起保留。现有导入和应用拥有的存储保留其早期的标记约定；不要编辑、删除、暂存或提交这些标记。导入的项目文件保留在私有 Managed 数据目录之外，需要自行备份。
+
+共享项目允许与独立终端相同的编辑冲突。使用独立的 worktree 来隔离编辑。对于新的共享导入，整存储迁移、物理恢复和独占文件历史回退不可用；此安装自己的 Runtime 进程的恢复仍然可用。早期导入不会自动转换。参见[共享项目设计](../design/2026-10-28-managed-local-shared-projects.md)。
 
 本地会话历史继续使用普通 Qwen 存储。它与
 Managed 数据目录分开，不包含在仅 Managed 的备份中。
@@ -234,17 +231,14 @@ Java 主版本或服务器校验和会在子进程启动前失败。仅缺失的
 CLI 发布标签构建，使用该确切源代码修订版的 SDK 和服务器。
 手动运行必须从 `main` 分发，默认为试运行。它会验证
 CLI 和 Java 模块，构建 `central-release` profile，并将
-JAR 和校验和保留为工作流制品，不更改公共仓库。
+JAR 和校验和保留为工作流制品，不更改公共仓库。工作流在存在时选择 `-exec.jar` 构建输出，对于旧标签回退到主 JAR；公共版本化 JAR 名称保持不变。
 
 验证试运行后，发布运维人员可以通过受保护的 `production-release` 环境对同一标签运行
 `dry_run=false`。
-工作流将服务器制品版本设置为 CLI 版本，向 Maven Central 发布
-`com.alibaba:qwen-managed-agent-server:<cli-version>`，附带
-源码、Javadoc 和签名，并通过该 GitHub Release 和现有的版本化 OSS 镜像分发相同的主 JAR 及其
-`.sha256`。
-辅助运维 JAR 不会附加到 Central 发布。现有
-资产逐字节比较，不会被不同内容替换。
+工作流将服务器制品版本设置为 CLI 版本，通过该 GitHub Release 和现有的版本化 OSS 镜像发布经验证的可执行 JAR 及其 `.sha256`，并对照暂存的字节检查两个公共下载通道。现有资产逐字节比较，不会被不同内容替换。
 已发布的 CLI 发布事件也会自动运行此工作流。
+
+运行时分发需要现有的 OSS 上传凭据和 GitHub 发布访问权限。它不需要 Central 发布凭据或 GPG 私钥，也不检查、发布或等待 Central 上的服务器坐标。Maven 仍然构建并完全验证 SDK 和服务器，包括正常的依赖解析。现有的 `central-release` profile 可以在需要时单独用于签名的 Maven 发布；该操作不会阻塞运行时交付。
 
 CLI 从 OSS/GitHub 下载，而非 Maven Central。它不会将
 SDK 作为独立的用户依赖解析：可执行服务器 JAR 包含其 Java

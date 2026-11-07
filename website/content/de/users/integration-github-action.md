@@ -112,22 +112,22 @@ Dieser Typ von Action kann verwendet werden, um einen allgemeinen, konversatione
 
 - <a name="__input_qwen_api_key"></a><a href="#user-content-__input_qwen_api_key"><code>qwen*api_key</code></a>: *(Optional)\_ Der API Key für die Qwen API.
 
-- <a name="__input_qwen_cli_version"></a><a href="#user-content-__input_qwen_cli_version"><code>qwen*cli_version</code></a>: *(Optional, Standard: `latest`)\_ Die Version der zu installierenden Qwen Code CLI. Kann "latest", "preview", "nightly", eine spezifische Versionsnummer oder ein Git-Branch, -Tag oder -Commit sein. Weitere Informationen findest du unter [Qwen Code CLI releases](https://github.com/QwenLM/qwen-code-action/blob/main/docs/releases.md).
+- <a name="__input_qwen_cli_version"></a><a href="#user-content-__input_qwen_cli_version"><code>qwen*cli_version</code></a>: *(Optional, Standard: `latest`)\_ Die Version der zu installierenden Qwen Code CLI. Kann "latest", "preview", "nightly", eine spezifische Versionsnummer oder ein Git-Branch, -Tag oder -Commit sein. Weitere Informationen findest du unter [Qwen Code CLI releases](https://github.com/QwenLM/qwen-code/releases).
 
 - <a name="__input_qwen_debug"></a><a href="#user-content-__input_qwen_debug"><code>qwen*debug</code></a>: *(Optional)\_ Aktiviert Debug-Logging und Output-Streaming.
 
 - <a name="__input_qwen_model"></a><a href="#user-content-__input_qwen_model"><code>qwen*model</code></a>: *(Optional)\_ Das Modell, das mit Qwen Code verwendet werden soll.
 
-- <a name="__input_prompt"></a><a href="#user-content-__input_prompt"><code>prompt</code></a>: _(Optional, Standard: `You are a helpful assistant.`)_ Ein String, der an das [`--prompt`-Argument](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#command-line-arguments) der Qwen Code CLI übergeben wird.
+- <a name="__input_prompt"></a><a href="#user-content-__input_prompt"><code>prompt</code></a>: _(Optional, Standard: `You are a helpful assistant.`)_ Ein String, der an das [`--prompt`-Argument](./configuration/settings.md#command-line-arguments-table) der Qwen Code CLI übergeben wird.
 
 - <a name="__input_settings"></a><a href="#user-content-__input_settings"><code>settings</code></a>: _(Optional)_ Ein JSON-String, der in `.qwen/settings.json` geschrieben wird, um die _Projekt_-Einstellungen der CLI zu konfigurieren.
-  Weitere Details findest du in der Dokumentation zu [settings files](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#settings-files).
+  Weitere Details findest du in der Dokumentation zu [settings files](./configuration/settings.md#settings-files).
 
 - <a name="__input_use_qwen_code_assist"></a><a href="#user-content-__input_use_qwen_code_assist"><code>use*qwen_code_assist</code></a>: *(Optional, Standard: `false`)\_ Ob Code Assist für den Zugriff auf das Qwen Code-Modell anstelle des Standard-Qwen-Code-API-Keys verwendet werden soll.
-  Weitere Informationen findest du in der [Qwen Code CLI-Dokumentation](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/authentication.md).
+  Weitere Informationen findest du in der [Qwen Code CLI-Dokumentation](./configuration/auth.md).
 
 - <a name="__input_use_vertex_ai"></a><a href="#user-content-__input_use_vertex_ai"><code>use*vertex_ai</code></a>: *(Optional, Standard: `false`)\_ Ob Vertex AI für den Zugriff auf das Qwen Code-Modell anstelle des Standard-Qwen-Code-API-Keys verwendet werden soll.
-  Weitere Informationen findest du in der [Qwen Code CLI-Dokumentation](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/authentication.md).
+  Weitere Informationen findest du in der [Qwen Code CLI-Dokumentation](./configuration/auth.md).
 
 - <a name="__input_extensions"></a><a href="#user-content-__input_extensions"><code>extensions</code></a>: _(Optional)_ Eine Liste der zu installierenden Qwen Code CLI-Erweiterungen.
 
@@ -228,4 +228,4 @@ Beiträge sind willkommen! Weitere Informationen zum Einstieg findest du im **Co
 [Qwen Code CLI]: https://github.com/QwenLM/qwen-code-action/
 [variables]: https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-variables#creating-configuration-variables-for-a-repository
 [GitHub CLI]: https://docs.github.com/en/github-cli/github-cli
-[QWEN.md]: https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#context-files-hierarchical-instructional-context
+[QWEN.md]: ./configuration/settings.md#context-files-hierarchical-instructional-context

@@ -12,7 +12,7 @@ Chaque requête envoyée par une session transporte le même préfixe avant tout
 
 `/context` affiche la répartition par catégorie ; `detail` ajoute des lignes par élément — chaque outil intégré, chaque outil MCP, chaque fichier de contexte, chaque skill listé — afin que vous puissiez voir quelle entrée unique est la plus coûteuse. Consultez-le au **premier tour** d'une session, où la conversation est encore vide et tout ce que vous voyez est du préfixe.
 
-Les catégories sont ce que `/context` rapporte, plus deux lignes de comptabilité : `startupContext` (le bloc d'environnement envoyé en premier tour utilisateur) et un résiduel explicite pour tout ce que les catégories n'attribuent pas, afin que les parties totalisent toujours le total.
+Les catégories et les détails par élément sont des estimations locales indépendantes, y compris `messages`, qui est mesuré à partir du contenu de la conversation. `startupContext` couvre le bloc d'environnement envoyé en premier tour utilisateur. Ces estimations ne sont pas mises à l'échelle ni plafonnées pour correspondre au total d'entrée de la dernière requête, donc leur somme peut être supérieure ou inférieure à ce total. Le total, la capacité disponible et le niveau de compaction conservent leur propre source d'utilisation.
 
 ## Utiliser le coût au repos, pas le pourcentage de la fenêtre
 
@@ -47,6 +47,8 @@ Chaque outil déclaré au modèle ajoute son schéma à chaque requête. Désact
   },
 }
 ```
+
+Mesurez l'allowlist par rapport à la bonne base de référence. Les outils qui sont à la demande par _leur propre_ défaut sont déjà absents de la première requête, et depuis que `tools.toolSearch.threshold` a commencé à valoir `0` par défaut, rien ne les précharge, donc l'économie d'une allowlist n'est que les schémas des outils eager par défaut qu'elle retient — pas toute la surface intégrée. Reprenez une lecture `/context` fraîche sur la version que vous exécutez réellement avant d'attribuer un chiffre à votre liste.
 
 Quatre choses à savoir avant de l'utiliser :
 

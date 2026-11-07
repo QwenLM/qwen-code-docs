@@ -1,6 +1,55 @@
 # Sandbox
 
-Dieses Dokument erklärt, wie Sie Qwen Code in einer Sandbox ausführen, um das Risiko zu verringern, wenn Tools Shell-Befehle ausführen oder Dateien ändern.
+Dieses Dokument erläutert die Tool-Ausführungsisolierung unter Linux und die vorhandenen Whole-CLI-Sandbox-Methoden.
+
+## Linux-Tool-Ausführungssandbox
+
+Unter Linux installieren Sie `bwrap` (Bubblewrap) unter `/usr/bin/bwrap` (dem unterstützten Systempfad) für die stärkste unterstützte Grenze und aktivieren dann die Tool-Ausführungssandbox in Ihren **Benutzer**-Einstellungen (`~/.qwen/settings.json` oder dem von `QWEN_HOME` ausgewählten Verzeichnis) oder den **System**-Einstellungen des Administrators:
+
+```json
+{
+  "tools": {
+    "executionSandbox": {
+      "backend": "auto",
+      "filesystem": "workspace-write",
+      "network": "closed"
+    }
+  }
+}
+```
+
+`filesystem` und `network` sind erforderlich. `backend` ist standardmäßig `auto` und versucht zuerst bwrap. Wenn bwrap nicht verfügbar ist und `network` auf `open` gesetzt ist, kann `auto` den mitgelieferten Landlock-Helper auf Kerneln mit Landlock ABI 3 oder neuer verwenden. Setzen Sie `backend` auf `bwrap` oder `landlock`, um genau diese Implementierung zu erfordern. Landlock kann `network: closed` nicht erzwingen oder explizit maskierte Pfade ausblenden. Jede dieser Anforderungen lehnt Landlock ab, bevor ein Befehl startet; der automatische Fallback verwirft niemals eine verbleibende Pfadmaske. Verwenden Sie `read-only`, um Workspace-Schreibzugriffe zu verweigern, oder `workspace-write`, um Schreibzugriffe im aktuellen kanonischen Workspace zu erlauben. Jeder Befehl erhält außerdem privaten temporären Bereich. Normale `includeDirectories`-Einstellungen gewähren keinen Schreibzugriff. Halten Sie den Workspace getrennt von den Qwen-Installations-, Benutzerkonfigurations- und Laufzeitstatusverzeichnissen.
+
+Die CLI, der Modelltransport, die Authentifizierung und der Session-Speicher verbleiben auf dem Host. Shell, Terminal-`!`, Prompt-Shell-Interpolation, Monitor, Read/Write/Edit und unterstützte verschachtelte In-Process-Agent/Code-Mode-Aufrufe verwenden dieselbe Laufzeitrichtlinie. Mit bwrap blockiert `network: closed` normale Host/externe IP-Verbindungen von Befehlen, während `open` das Host-Netzwerk teilt. Lesezugriffe bleiben breit: Dieser Modus versteckt keine Host-Secrets und verspricht nicht, Pfadnamen-Unix-Sockets und Host-Dienste zu isolieren. Genehmigung und YOLO erweitern die Dateisystem- oder Netzwerkrichtlinie nicht. Standard-Streams sind explizit vom Aufrufer bereitgestellte Fähigkeiten: Ein bereits verbundener Socket, TTY oder Zeichengerät bleibt auch bei `network: closed` verwendbar. Geschlossenes Networking widerruft diese bestehenden Deskriptoren nicht; vermeiden Sie es, eine Host-Dienst-Verbindung als stdin bereitzustellen, wenn dieser Zugriff nicht gewünscht ist. Host-gestützte Datei- und Named-FIFO-stdin benötigen den mitgelieferten Linux-x64/arm64-Input-Helper und werden über einen privaten Unix-Stream-Socket kopiert, dessen Schreibhälfte geschlossen ist; reguläre Datei-Offsets rücken nur um die aus diesem Socket verbrauchten Bytes vor, und ein inaktiver FIFO-Schreiber verzögert den Befehlsabschluss nicht. Lesen Sie fd 0 direkt: Diese Eingabe ist ein Socket statt eines FIFO, und das erneute Öffnen über `/dev/stdin` oder `/proc/self/fd/0` wird nicht unterstützt. SIGINT/SIGTERM brechen den Befehl ab, lassen aber akzeptierte stdout/stderr-Bytes abfließen; eine geschlossene Ausgabe stoppt diesen Stream mit Exit 141, während die andere gültige Ausgabe abfließt.
+
+Landlock meldet `partial` Durchsetzung, weil es Pfadnamen-Lese-, Schreib- und Verzeichnisänderungen einschränkt, aber keine PID- oder Netzwerk-Namespaces erstellt und derzeit nicht jede Metadatenoperation einschränken kann, einschließlich `chmod`, `chown`, erweiterter Attribute und Zeitstempel. Ein Landlock-Befehl kann Host-Prozesse sehen und verwendet Host-Networking. Abgetrennte Nachfahren behalten die Landlock-Dateisystem-Einschränkungen, erhalten aber nicht die PID-Namespace-Lebensdauergrenze von bwrap. Offene Dateideskriptoren behalten ihren bestehenden Zugriff. Qwen Code streamt host-gestützte Datei- und Named-FIFO-stdin über einen privaten schreibgeschützten Socket, anstatt diese Deskriptoren an die Nutzlast zu übergeben; Sockets, Zeichengeräte und anonyme Pipes können geteilt werden. Ausgabe-Standard-Streams bleiben die expliziten Ziele des Aufrufers. Der Ausführungsstatus-Deskriptor wird bei der Payload-Ausführung geschlossen.
+
+Landlock hat auch eine schmälere beschreibbare Geräteoberfläche: Es gewährt Schreibzugriffe auf `/dev/null`, erstellt aber nicht die privaten `/dev`- und `/proc`-Mounts von bwrap. Das Öffnen von `/dev/full` oder `/dev/tty` zum Schreiben und das Erstellen von Dateien in `/dev/shm` wird verweigert, daher können Programme, die diese Operationen benötigen, fehlschlagen. Verwenden Sie das private temporäre Verzeichnis, das über `TMPDIR`, `TMP` und `TEMP` verfügbar gemacht wird, für temporäre Dateien. Bereits offene, vom Aufrufer bereitgestellte Standard-Streams behalten ihren bestehenden Zugriff. Der Landlock-Richtlinien-Test beim Start benötigt `/usr/bin/true`; ein Host, dem es fehlt, schlägt beim Test fehl, selbst wenn sein Kernel Landlock unterstützt.
+
+Workspace-Einstellungen können diese Richtlinie nicht aktivieren, deaktivieren oder ändern, selbst in einem vertrauenswürdigen Projekt. Die effektive Priorität ist System vor Benutzer vor SystemDefaults, wobei ein vollständiges Richtlinienobjekt ausgewählt wird. Werte müssen Literale sein; Umgebungssubstitutionen, unbekannte Felder und unvollständige Objekte werden abgelehnt. `--bare` und `--safe-mode` behalten die Operator-Einschränkung bei. Änderungen erfordern eine neue Laufzeit. Eine fehlerhafte oder unlesbare SystemDefaults-, Benutzer- oder System-Einstellungsdatei blockiert jetzt den Start (Konfigurations-Exit-Code 52), anstatt unbekannte Richtlinien still auf leere Einstellungen zurückzusetzen. Der Fehler benennt die Datei und die Reparaturaktion. Reparieren Sie deren JSON-Objekt oder stellen Sie den Lesezugriff wieder her, dann starten Sie neu. Eine Benutzer-`.corrupted`-Kopie ist nur eine Referenz; die ursprüngliche Operator-Datei wird niemals gelöscht. Die nur-Workspace-Wiederherstellung bleibt ohne Operator-Einschränkung verfügbar. Fehlerhafte verlinkte Workspace-Einstellungen (einschließlich eines verlinkten `.qwen`-Verzeichnisses oder einer hart verlinkten Datei) erfordern manuelle Reparatur; die automatische Wiederherstellung verweigert vor dem Ändern des Originals oder einer früheren Korruptionskopie. Gültige verlinkte JSON bleibt lesbar.
+
+Dieser anfängliche öffentliche Modus unterstützt die normale Headless-CLI und beide Terminal-UIs. ACP, `qwen serve` und Web-Terminals lehnen ihn explizit ab. MCP/LSP, ausführbare Hooks/Extensions, Worktree/Arena-Management, externe Agenten, spekulative Ausführung, Datei-Checkpoints, automatische Skill/Memory-Wartung und nicht portierte Prozess- oder Mutations-Tools werden deaktiviert oder abgelehnt. Normale In-Process-Agenten im selben Workspace können keine Hooks, MCP-Server, externe Executoren oder Worktree-Isolation hinzufügen. Benutzerdefinierte Statusbefehle, externe Markdown/Bild-Renderer, IDE-Erkennung und -Verbindung, Dateiwiederherstellung und Host-Git-Diff-Vorschauen sind deaktiviert. Nur-Konversations-Rewind bleibt verfügbar.
+
+Explizite Operator-Diagnosen wie `/doctor`, das Öffnen oder Bearbeiten von Dateien und Ordnern über `/memory` und das Ändern von Einstellungen über `/skills` bleiben vertrauenswürdige Host-Aktionen. Diese Verwaltungsbefehle werden nicht als modellaufrufbare Befehle bereitgestellt. Das Auswählen eines Skills füllt das Eingabefeld; das Einreichen von `/skill-name` meldet derzeit einen Unsupported-Mode-Fehler, bevor Argumente vorbereitet oder Nutzungsdatensätze aktualisiert werden. Skill-Befehlsausführung und das Modell-Skill-Tool bleiben nicht verfügbar, bis ihre Vorbereitungsschreibvorgänge eingeschränkt sind. Automatische Memory- und Skill-Wartung bleibt in dieser Laufzeit deaktiviert, selbst wenn Sie ihre gespeicherten Einstellungen ändern.
+
+Untersuchen und überprüfen Sie die aktive Grenze, bevor Sie eine Aufgabe ausführen:
+
+```bash
+qwen sandbox
+qwen sandbox --verify
+qwen sandbox -- sh -c 'printf "confined command\n"'
+qwen -y -p "Update the project and run its tests"
+```
+
+Verlinkte Git-Worktrees erhalten Schreibzugriff nur auf den zugelassenen Workspace. Git-Common-Directory- und Worktree-Metadaten außerhalb dieses Workspaces bleiben schreibgeschützt; dieser Modus autorisiert nicht implizit das Ändern der Repository-Metadaten eines anderen Checkouts. Operationen, die diese Schreibvorgänge erfordern, können abgelehnt werden.
+
+Der Bericht benennt die Tool-Grenze, angeforderten/effektiven Backend, Durchsetzungsebene, Landlock-ABI falls zutreffend, Workspace, Dateisystem- und Befehls-Netzwerkrichtlinie. `--verify` prüft Workspace-Schreibvorgänge, Ablehnung gegen eine auf dem Host bekannt schreibbare Datei, die erwartete private oder geteilte PID-Namespace-Identität und den ausgewählten Netzwerk-Namespace. Eine bestandene Backend-Prüfung stellt die Zulassung fest, nicht die authentifizierte vollständige Session-Tauglichkeit unter allen geerbten Umgebungseinstellungen. Führen Sie danach eine normale Aufgabe aus, um ihre benötigten Tools und Dienste zu testen. Wenn die Überprüfung ihr hostseitiges temporäres Fixture nicht erstellen kann, überprüfen Sie `TMPDIR` und Verzeichnisberechtigungen; dies ist getrennt von einer Grenzablehnung. Backend-Einrichtungsfehler schlagen vor der Payload-Ausführung fehl und führen den Befehl niemals erneut auf dem Host aus. Der Ein-Befehl-Unterbefehl leitet wörtliche Argumente und umgeleitete stdin weiter, während stdout und stderr Byte für Byte erhalten bleiben; verwenden Sie Terminal-`!` für interaktive PTY-Befehle.
+
+### Migration von der Whole-CLI-bwrap
+
+Ersetzen Sie `--sandbox bwrap` und entfernen Sie `tools.sandbox: "bwrap"`, `QWEN_SANDBOX=bwrap`, `QWEN_SANDBOX_NET` und `QWEN_SANDBOX_PROXY_COMMAND`, dann konfigurieren Sie `tools.executionSandbox` wie oben. Starten Sie aus einer Shell außerhalb der alten Sandbox neu; geerbtes `SANDBOX=bwrap` wird abgelehnt. `proxied` ist keine unterstützte Netzwerkrichtlinie. Kombinieren Sie diesen Modus nicht mit Docker, Podman, Seatbelt oder einem geerbten Whole-CLI-Sandbox-Marker. Alte bwrap-Einstellungen erzeugen einen expliziten Migrationsfehler.
+
+Die Docker-, Podman- und macOS-Seatbelt-Methoden unten führen weiterhin die gesamte CLI in ihrer bestehenden Umgebung aus.
 
 ## Voraussetzungen
 
@@ -98,6 +147,8 @@ qwen -p "run the test suite"
 > [!important]
 >
 > Wenn `QWEN_SANDBOX` gesetzt ist, **überschreibt** es das CLI-Flag und die `settings.json`.
+
+`--sandbox` und `-s` akzeptieren einen optionalen Wert: `true`, `false`, `docker`, `podman` oder `sandbox-exec`. Für automatische Auswahl mit Prompt verwenden Sie `qwen --sandbox=true "query"` oder `qwen --sandbox -p "query"`. Im Gegensatz zum alten rein-booleschen Parser behandelt `qwen --sandbox "query"` jetzt `query` als Backend-Wert und lehnt ein unbekanntes Backend ab. Optionen vor `--` verwenden dieselbe Grammatik auch nach positionalen Wörtern; verwenden Sie `-p "..."` für wörtlichen Optionstext innerhalb eines Prompts. `--` stoppt die Optionsverarbeitung, aber seine nachfolgenden Token werden nicht als Prompt für den Standardbefehl weitergeleitet. Session-Sandbox-Flags werden bei Verwaltungs-Unterbefehlen nicht akzeptiert, deren `-s`-Aliase ihre eigene Bedeutung behalten.
 
 ### Sandbox-Image konfigurieren (Docker/Podman)
 

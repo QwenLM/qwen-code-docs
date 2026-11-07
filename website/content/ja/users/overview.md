@@ -33,9 +33,9 @@ cd your-project
 qwen
 ```
 
-初回起動時に、モデルプロバイダーに接続するよう促されます。メニューには [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code) ([**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) の Qwen Plus または Pro サブスクリプションを使用)、**QwenCloud** (公式の推奨セットアップ)、**Alibaba ModelStudio**、**Third-party Providers** (DeepSeek、MiniMax、Z.AI、Kimi、OpenRouter などのビルトインプロバイダー。API キーで接続)、**Custom Provider** (ローカルサーバー、プロキシ、または未サポートのプロバイダー) が用意されています。
+初回起動時に、モデルプロバイダーに接続するよう促されます。メニューには [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) ([**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)) の Qwen Plus または Pro サブスクリプションを使用)、**QwenCloud** (公式の推奨セットアップ)、**Alibaba ModelStudio**、**Third-party Providers** (DeepSeek、MiniMax、Z.AI、Kimi、OpenRouter などのビルトインプロバイダー。API キーで接続)、**Custom Provider** (ローカルサーバー、プロキシ、または未サポートのプロバイダー) が用意されています。
 
-Qwen のサブスクリプションを使用するには、[**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code) を選択して Qwen アカウントでサインインします。**Plus または Pro サブスクリプション**で **Qwen Code and Agent** にアクセスできます。まだサブスクリプションをお持ちでない場合は、[**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) で Plus または Pro をサブスクリプションしてから Qwen Code に戻り、[**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code) を選択してください。
+Qwen のサブスクリプションを使用するには、[**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) を選択して Qwen アカウントでサインインします。**Plus または Pro サブスクリプション**で **Qwen Code and Agent** にアクセスできます。まだサブスクリプションをお持ちでない場合は、[**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) で Plus または Pro をサブスクリプションしてから Qwen Code に戻り、[**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) を選択してください。
 
 QwenCloud キーの場合、**QwenCloud → Token Plan** または **QwenCloud → Standard API Key** を選択し、プラットフォーム（中国または国際）を選択してください。詳細は [認証](https://qwenlm.github.io/qwen-code-docs/en/users/configuration/auth/) を参照してください。
 

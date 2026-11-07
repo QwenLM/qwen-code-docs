@@ -310,18 +310,18 @@ Parameters:
 
 ## 安全性
 
-默认情况下，LSP 服务器仅在可信工作区中启动。这是因为语言服务器以您的用户权限运行，并且可以执行代码。
+语言服务器以您的用户权限运行，并且可以执行代码。由工作区的 `.lsp.json` 配置的服务器需要**显式文件夹信任**，包括其可执行文件可用性探测和热重载。在用户设置中启用 `security.folderTrust.enabled` 并信任该目录，或通过 IDE 授予工作区信任。禁用文件夹信任不会授权工作区 LSP 配置，即使在 YOLO 模式下也是如此。
 
 ### 信任控制
 
-- **可信工作区**：如果已配置，则 LSP 服务器启动
-- **不可信工作区**：除非在服务器配置中设置了 `trustRequired: false`，否则 LSP 服务器不会启动
+- **显式信任的工作区**：如果已配置，工作区 LSP 服务器将启动。
+- **无显式信任**：工作区 `.lsp.json` 服务器会被跳过。仓库无法通过设置 `trustRequired: false` 或声明扩展源来覆盖此设置。
 
-要将工作区标记为可信，请使用 `/trust` 命令。
+在用户设置中启用文件夹信任后，使用启动信任对话框或 `/trust` 来信任目录。更改 CLI 的信任决定后需要重启。
 
 ### 按服务器信任覆盖
 
-您可以在特定服务器的配置中覆盖信任要求：
+已安装的扩展保留其现有的信任策略。当主机允许在不受信任的工作区中进行 LSP 发现时，扩展可以声明 `trustRequired: false`。此覆盖在工作区 `.lsp.json` 中被忽略：
 
 ```json
 {
@@ -410,10 +410,10 @@ LSP: enabled, status unavailable
 需要注意的常见错误消息：
 
 ```text
-command path is unsafe        -> 命令路径不安全 -> 相对路径转义了工作区，请使用绝对路径或添加到 PATH
-command not found             -> 命令未找到 -> 服务器二进制文件未安装或不在 PATH 中
-requires trusted workspace    -> 需要可信工作区 -> 请先运行 /trust
-LSP connection closed         -> LSP 连接已关闭 -> 服务器已启动，但在回复初始化之前退出或关闭了 stdio
+command path is unsafe        -> 相对路径转义工作区，使用绝对路径或添加到 PATH
+command not found             -> 服务器二进制文件未安装或不在 PATH 中
+requires trusted workspace    -> 请先运行 /trust
+LSP connection closed         -> 服务器已启动，但在回复初始化之前退出或关闭了 stdio
 ```
 
 对于 clangd 启动失败，请直接从项目根目录验证服务器：

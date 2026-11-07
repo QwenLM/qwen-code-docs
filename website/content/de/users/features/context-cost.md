@@ -12,7 +12,7 @@ Jede Anfrage, die eine Session sendet, trägt dasselbe Präfix vor der eigentlic
 
 `/context` gibt die Aufschlüsselung nach Kategorie aus; `detail` fügt Zeilen pro Element hinzu — jedes eingebaute Tool, jedes MCP-Tool, jede Kontextdatei, jeder gelistete Skill — sodass sichtbar wird, welcher einzelne Eintrag der teure ist. Das Ergebnis sollte im **ersten Turn** einer Session gelesen werden, wo die Konversation noch leer ist und alles Sichtbare Präfix ist.
 
-Die Kategorien sind das, was `/context` ausgibt, plus zwei Buchhaltungszeilen: `startupContext` (der Umgebungsblock, der als erster User-Turn gesendet wird) und ein expliziter Restposten für alles, was die Kategorien nicht zuordnen, sodass die Teile immer zur Gesamtsumme addieren.
+Die Kategorien und Details pro Element sind unabhängige lokale Schätzungen, einschließlich `messages`, das aus dem Konversationsinhalt gemessen wird. `startupContext` deckt den Umgebungsblock ab, der als erster User-Turn gesendet wird. Diese Schätzungen werden nicht skaliert oder gedeckelt, um zum Input-Total der letzten Anfrage zu passen, sodass ihre Summe höher oder niedriger als dieses Total sein kann. Das Total, die verfügbare Kapazität und die Compaction-Stufe behalten ihre eigene Nutzungsquelle.
 
 ## Idle-Kosten verwenden, nicht Prozent des Fensters
 

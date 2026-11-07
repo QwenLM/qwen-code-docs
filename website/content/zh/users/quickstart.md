@@ -11,7 +11,7 @@
 - 已打开终端或命令提示符
 - 一个可供操作的项目代码
 - **以下任一选项**：
-  - 拥有来自 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) 的 **Plus 或 Pro 订阅**的 Qwen 账户，可解锁对 **Qwen Code 和 Agent** 的访问权限
+  - 拥有来自 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) 的 **Plus 或 Pro 订阅**的 Qwen 账户，可解锁对 **Qwen Code 和 Agent** 的访问权限
   - 来自千问AI平台 / **QwenCloud** ([中国](https://platform.qianwenai.com/docs/developer-guides/administration/api-keys) / [国际](https://docs.qwencloud.com/developer-guides/administration/api-keys)) 的 API 密钥或 Token Plan 订阅 — 推荐设置
   - 来自 **阿里云 ModelStudio** ([北京](https://bailian.console.aliyun.com/) / [国际](https://modelstudio.console.alibabacloud.com/)) 的 API 密钥
   - **阿里云 Token Plan** ([北京](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [国际](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) 订阅
@@ -72,7 +72,7 @@ qwen
 
 首次运行菜单允许您连接模型提供商。请选择以下之一：
 
-- [**带订阅的 Qwen 账户**](https://chat.qwen.ai/?memberPlan=qwen_code) — 使用您的 Qwen 账户登录，通过 **Plus 或 Pro 订阅**访问 **Qwen Code 和 Agent**。如果您还没有订阅，请访问 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) 订阅 Plus 或 Pro，然后返回 Qwen Code 并选择 [**带订阅的 Qwen 账户**](https://chat.qwen.ai/?memberPlan=qwen_code)。
+- [**带订阅的 Qwen 账户**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) — 使用您的 Qwen 账户登录，通过 **Plus 或 Pro 订阅**访问 **Qwen Code 和 Agent**。如果您还没有订阅，请访问 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) 订阅 Plus 或 Pro，然后返回 Qwen Code 并选择 [**带订阅的 Qwen 账户**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)。
 - **QwenCloud** — 推荐设置。打开子菜单：
   - **Token Plan**：在专用端点上具有每月 Credit 配额的订阅（个人版和团队版）。
   - **标准 API 密钥**：按量付费，使用现有的平台 API 密钥进行连接。
@@ -94,7 +94,7 @@ qwen
 >
 > 要配置身份认证，启动 Qwen Code 并运行 `/auth`。随时运行 `/doctor` 检查当前配置。详情请参阅[身份认证](./configuration/auth)页面。
 
-## 步骤 3：开始您的第一次会话
+## 第三步：开始您的第一次会话
 
 在任何项目目录中打开终端并启动 Qwen Code：
 

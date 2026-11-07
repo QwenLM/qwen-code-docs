@@ -11,7 +11,7 @@
 - ターミナルまたはコマンドプロンプトを開いていること
 - 作業するコードプロジェクト
 - **以下のいずれか**:
-  - [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) の **Plus または Pro サブスクリプション**を持つ Qwen アカウント。これにより **Qwen Code and Agent** へのアクセスが解放されます
+  - [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) の **Plus または Pro サブスクリプション**を持つ Qwen アカウント。これにより **Qwen Code and Agent** へのアクセスが解放されます
   - 千问AI平台 / **QwenCloud** ([中国](https://platform.qianwenai.com/docs/developer-guides/administration/api-keys) / [国際](https://docs.qwencloud.com/developer-guides/administration/api-keys)) の API キーまたは Token Plan サブスクリプション — 推奨されるセットアップ
   - **Alibaba Cloud ModelStudio** ([北京](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)) の API キー
   - **Alibaba Cloud Token Plan** ([北京](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) サブスクリプション
@@ -72,7 +72,7 @@ qwen
 
 初回起動メニューでモデルプロバイダーを接続できます。次の中から選択してください:
 
-- [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code) — Qwen アカウントでサインインし、**Plus または Pro サブスクリプション**で **Qwen Code and Agent** にアクセスします。まだサブスクリプションがない場合は、[**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) で Plus または Pro に登録してから Qwen Code に戻り、[**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code) を選択してください。
+- [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) — Qwen アカウントでサインインし、**Plus または Pro サブスクリプション**で **Qwen Code and Agent** にアクセスします。まだサブスクリプションがない場合は、[**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) で Plus または Pro に登録してから Qwen Code に戻り、[**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) を選択してください。
 - **QwenCloud** — 推奨されるセットアップ。サブメニューが開きます:
   - **Token Plan**: 専用エンドポイントでの月間クレジットクォータ付きサブスクリプション (Personal および Team エディション)。
   - **Standard API Key**: 従量課金制で、既存のプラットフォーム API キーで接続します。

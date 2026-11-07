@@ -123,7 +123,7 @@ jobs:
 
 ## 通过 npm 注册表发布
 
-你可以将 Qwen Code 扩展发布为带命名空间的 npm 包（例如 `@your-org/my-extension`）。这适用于以下情况：
+你可以将 Qwen Code 扩展发布为带命名空间或不带命名空间的 npm 包（例如 `@your-org/my-extension` 或 `my-extension`）。这适用于以下情况：
 
 - 你的团队已在使用 npm 进行包分发
 - 你需要借助现有认证基础设施支持私有注册表
@@ -161,7 +161,7 @@ npm publish --registry https://your-registry.com
 
 ### 安装
 
-用户使用带命名空间的包名进行安装：
+用户使用包名进行安装：
 
 ```bash
 # 安装最新版本
