@@ -94,7 +94,7 @@ export class MyChannel extends ChannelBase {
 
 ほとんどのアダプターは `options` を変更せずにそのまま渡す必要があります。アダプターが独自の `SessionRouter` を作成し、そのルーターを `super()` に渡す場合は、`ChannelBaseOptions` で `registerBridgeEvents: true` を設定し、`ChannelBase` が `toolCall` および `sessionDied` イベントを直接受信できるようにします。チャネルゲートウェイによって提供されるルーターの場合は、設定しないままにします。
 
-アダプターがシェルコマンドまたは BTW サイドクエスションの動作を公開する場合は、有効にする前に `bridge.shellCommand` / `bridge.btw` メソッドがそれぞれ存在することを確認してください。デーモン管理ワーカーは、デーモンが対応する `session_shell_command` / `session_btw` ケイパビリティをアドバタイズしない限り、それらのオプションメソッドを省略します。
+アダプターがシェルコマンドまたは BTW サイドクエスションの動作を公開する場合は、有効にする前に `bridge.shellCommand` / `bridge.btw` メソッドがそれぞれ存在することを確認してください。デーモン管理ワーカーは、デーモンが対応する `session_shell_command` / `session_btw` ケイパビリティをアドバタイズしない限り、それらのオプションメソッドを省略します。これらのチャネルアダプターメソッドは、既存の JSON サイドクエスション API をカバーします。SSE を使用する直接デーモンクライアントは、`streamSessionBtw` を呼び出す前に `session_btw_stream` を個別に確認する必要があります。デーモンは、登録されたすべてのランタイム ACP セッションブリッジが `generateSessionBtwStream` を実装している場合にのみこれをアドバタイズします。既存の `bridge.btw` アダプターコントラクトはストリーミングサポートを意味するものではありません。
 
 ## エンベロープ
 
@@ -231,6 +231,8 @@ protected override async pushProactive(
 ```
 
 汎用デーモン配信が異なるターゲット形状を受け入れる場合は `supportsProactiveDeliveryTarget()` を使用し、Webhook 配信がループやバックグラウンドの結果と異なる場合は `supportsProactiveWebhookTarget()` を使用します。サポートされていないターゲットは、別の会話にフォールバックするのではなく、拒否されたままにしてください。
+
+`onResponseChunk` からチャンクをストリーミングするアダプターは、`isProactivePromptTurn(sessionId)` も確認する必要があります。これはループおよび Webhook ターンで `true` となり、その結果は `ChannelBase` によって `pushProactive` を介して一度に完全に配信され、`onResponseComplete` が呼び出されることはありません。それらのターンに対して段階的な出力を投稿すると同じテキストが 2 回投稿されることになるため、チャンクフラッシングシンクはそれらを抑制する必要があります。
 
 **メディア** — `envelope.attachments` に画像/ファイルを入力します。上記の[添付ファイル](#attachments)を参照してください。
 

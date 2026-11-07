@@ -65,7 +65,7 @@ Für self-hosted Instanzen setze `baseUrl`:
 | Option                   | Standard                    | Beschreibung                                              |
 | ------------------------ | --------------------------- | --------------------------------------------------------- |
 | `token`                  | (erforderlich)              | PAT mit `read_api` + `api` Scopes                         |
-| `pollInterval`           | `60000`                     | Poll-Intervall in ms                                      |
+| `pollInterval`           | `60000`                     | Poll-Intervall in ms, auf maximal `86400000` (ein Tag) begrenzt |
 | `baseUrl`                | `https://gitlab.com`        | GitLab-Instanz-URL                                        |
 | `action_prompt_template` | (erforderlich für Verarbeitung) | Bildet GitLab-Aktionsnamen auf Metadaten-Templates ab  |
 | `groupPolicy`            | `"disabled"`                | Muss `"open"`, `"allowlist"` mit dem aufgelisteten Projekt oder `"pairing"` mit genehmigtem Projekt sein |

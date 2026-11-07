@@ -35,6 +35,8 @@ Adicione um canal ao `~/.qwen/settings.json`:
       "profile": "profile-name-or-corp-id",
       "privatePolicy": "pairing",
       "groupPolicy": "pairing",
+      "quotePrivateReply": false,
+      "quoteGroupReply": false,
       "watchTodos": true,
       "startReaction": "🤔",
       "endReaction": "赞",
@@ -89,6 +91,12 @@ Mensagens diretas ordinárias são recuperadas da mesma forma: uma verificação
 `startReaction` é o caractere de emoji ou o nome de reação do DingTalk adicionado enquanto uma tarefa aceita está em execução; um valor omitido ou vazio usa o padrão `🤔`. `endReaction` substitui a reação de início após a tarefa ser concluída, falhar ou ser cancelada; um valor omitido ou vazio desativa a reação de término.
 
 ### Entrega de Respostas IM
+
+`quotePrivateReply` e `quoteGroupReply` controlam independentemente se a resposta final do agente cita a mensagem privada ou de grupo de origem. Ambos são booleanos opcionais com padrão `false`, então novas respostas são mensagens ordinárias a menos que a citação esteja habilitada. Para manter o comportamento anterior de resposta em grupo, defina `quoteGroupReply: true`. O formulário de gerenciamento do canal expõe ambas as configurações como interruptores.
+
+Quando a citação está habilitada, a resposta referencia a mensagem que acionou a resposta. Se o ID da mensagem original ou o ID do remetente não estiverem disponíveis, o canal envia uma mensagem ordinária em vez disso. Esses interruptores não alteram mensagens proativas, confirmações de comandos, respostas a comentários de documentos, comentários de todos ou o contexto citado incluído nas mensagens recebidas.
+
+Cada resposta concluída mantém a escolha de citação capturada quando entra na fila de entrega, incluindo entre retries e reinícios. Mudanças de configuração se aplicam a respostas recém-enfileiradas; respostas enfileiradas por versões mais antigas mantêm seu comportamento de envio original. Atualizações de configuração gerenciada usam o fluxo de recarga de canal existente; reinicie um canal standalone após editar seu arquivo de configurações.
 
 Uma resposta de grupo com @ ou mensagem direta concluída é salva em checkpoint antes do primeiro envio e tentada novamente em segundo plano sem reexecutar a tarefa. O backoff começa em cinco segundos, dobra progressivamente e atinge o limite de cinco minutos. Uma resposta é abandonada após 16 tentativas de entrega com falha. Adiamentos locais causados por um canal desconectado ou uma aprovação de pareamento ilegível usam um limite separado de 32 verificações consecutivas, para que não consumam o orçamento de tentativas de transporte. Uma resposta é descartada imediatamente quando a autorização do remetente, do grupo ou da mensagem direta é revogada de forma definitiva. A fila comporta até 100 respostas e remove a entrada mais antiga independentemente da contagem de tentativas quando cheia; trocar o perfil DWS configurado limpa a fila. Esses descartes são reportados no stderr do canal, não enviados como notificações de chat.
 

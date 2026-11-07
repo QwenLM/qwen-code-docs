@@ -65,7 +65,7 @@ export GITLAB_TOKEN="glpat-your_token_here"
 | 选项                     | 默认值                    | 描述                                                   |
 | ------------------------ | ------------------------- | ------------------------------------------------------ |
 | `token`                  | （必需）                  | 具有 `read_api` + `api` scope 的 PAT                   |
-| `pollInterval`           | `60000`                   | 轮询间隔（毫秒）                                       |
+| `pollInterval`           | `60000`                   | 轮询间隔（毫秒），上限为 `86400000`（一天）            |
 | `baseUrl`                | `https://gitlab.com`      | GitLab 实例 URL                                        |
 | `action_prompt_template` | （处理时必需）            | 将 GitLab 操作名称映射到元数据模板                     |
 | `groupPolicy`            | `"disabled"`              | 必须为 `"open"`、`"allowlist"`（需列出项目）或 `"pairing"`（需批准项目） |

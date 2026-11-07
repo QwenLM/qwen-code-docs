@@ -94,7 +94,7 @@ export class MyChannel extends ChannelBase {
 
 大多数 adapter 应原样传递 `options`。如果 adapter 创建了自己 `SessionRouter` 并将该 router 传递给 `super()`，请在 `ChannelBaseOptions` 中设置 `registerBridgeEvents: true`，以便 `ChannelBase` 仍然能直接接收 `toolCall` 和 `sessionDied` 事件。对于由 channel gateway 提供的 router，请保持未设置状态。
 
-如果你的 adapter 暴露了 shell 命令或 BTW 侧问行为，请在启用前检查相应的 `bridge.shellCommand` / `bridge.btw` 方法是否存在。除非守护进程通告了匹配的 `session_shell_command` / `session_btw` 能力，否则由守护进程管理的 worker 会省略这些可选方法。
+如果你的 adapter 暴露了 shell 命令或 BTW 侧问行为，请在启用前检查相应的 `bridge.shellCommand` / `bridge.btw` 方法是否存在。除非守护进程通告了匹配的 `session_shell_command` / `session_btw` 能力，否则由守护进程管理的 worker 会省略这些可选方法。这些 channel adapter 方法涵盖了现有的 JSON 侧问 API。使用 SSE 的直接守护进程客户端在调用 `streamSessionBtw` 之前必须单独检查 `session_btw_stream`；仅当每个已注册的运行时 ACP 会话桥接都实现了 `generateSessionBtwStream` 时，守护进程才会通告它。现有的 `bridge.btw` adapter 契约不意味着支持流式传输。
 
 ## Envelope
 
@@ -231,6 +231,8 @@ protected override async pushProactive(
 ```
 
 当通用 daemon 投递接受不同的目标形状时使用 `supportsProactiveDeliveryTarget()`，当 webhook 投递与循环和后台结果不同时使用 `supportsProactiveWebhookTarget()`。保持不支持的目标被拒绝，而不是回退到另一个对话。
+
+从 `onResponseChunk` 流式传输块的 adapter 还必须查阅 `isProactivePromptTurn(sessionId)`：对于循环和 webhook 轮次，该值为 `true`，`ChannelBase` 会通过 `pushProactive` 一次性完整交付其结果，并且从不调用 `onResponseComplete`。为这些轮次发布渐进式输出会重复发布相同的文本，因此块刷新接收器必须抑制它们。
 
 **媒体** — 使用图片/文件填充 `envelope.attachments`。请参阅上文的 [附件](#附件)。
 

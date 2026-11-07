@@ -29,7 +29,15 @@ Vitest 在同一次运行中重跑失败的测试。这有助于应对偶发的�
 
 ### 自托管 runner 上的 Vitest worker 上限
 
-`QWEN_CI_VITEST_MAX_WORKERS` 限制以下步骤中的 Vitest 进程数（每次 Vitest 运行独立应用此上限）（`VITEST_MAX_THREADS` / `VITEST_MAX_FORKS`，匹配的最小值强制为 `1`），适用于名称以 `ecs-qwen-` 开头的 reserved 自托管 runner。该变量仅由主 CI 工作区测试步骤以及发布的 `workspace_tests` 和 `quality_scripts` 步骤导出；CI 和发布工作流中落在同一 reserved 资源池上的其他使用 Vitest 的集成测试不消费此变量，它们使用各自的 Vitest 限制。主 CI 工作区测试步骤同时运行两个通道（`.github/scripts/ci/run-unit-test-lanes.sh`）：上限约束主通道中的每个 Vitest 运行，而侧通道中 web-shell 的测试套件以上限的一半运行（至少为 1），因此在峰值时该步骤运行上限加上一半的数量。在 GitHub 托管的 runner 上，侧通道的测试套件以 2 个 worker 运行。web-shell E2E smoke 固定使用 `ubuntu-latest`，因此此上限不适用于它。在 GitHub 托管的 runner 上，此变量被忽略，Vitest 使用其自身默认值。
+`QWEN_CI_VITEST_MAX_WORKERS` 限制以下步骤中列出的 Vitest 进程数（`VITEST_MAX_THREADS` / `VITEST_MAX_FORKS`，匹配的最小值强制为 `1`），适用于名称以 `ecs-qwen-` 开头的 reserved 自托管 runner。该变量仅由主 CI 工作区测试步骤以及发布的 `workspace_tests` 和 `quality_scripts` 步骤导出；CI 和发布工作流中落在同一 reserved 资源池上的其他使用 Vitest 的集成测试不消费此变量，它们使用各自的 Vitest 限制。web-shell E2E smoke 运行在 ARM64 资源池上，使用自己的两个 Playwright worker，因此此上限不适用于它。在 GitHub 托管的 runner 上，此变量被忽略，Vitest 使用其自身默认值。
+
+每次 Vitest 运行独立应用此上限。主 CI 工作区测试步骤同时运行两个通道（`.github/scripts/ci/run-unit-test-lanes.sh`）：主通道以上限运行 CLI 和 core 套件，侧通道以上限的一半（至少为 1）运行其他工作区的套件和 `npm run test:scripts:unit`，因此在峰值时该步骤运行上限加上该一半的数量。在 GitHub 托管的 runner 上，侧通道的 Vitest 运行使用 2 个 worker。
+
+该步骤分为八个分片（`Linux unit tests (shard N/8)`），每个分片向每次 Vitest 运行传递 `--shard=N/8`。分片也独立应用此上限，因此资源池最多同时看到八个这样的步骤。它们不执行 `prepare` 构建就安装，并解包 `test_build` 一次性构建的树。`Test (ubuntu-latest, Node 22.x)` 仅在构建和所有分片都通过时才通过。
+
+`test_build` 是唯一执行构建的作业。它通过 `scripts/ci-build-cache.mjs` 构建：pull request 恢复其 base commit 的 `main` push 保存的构建（`key --at <base>`），回退到最新的缓存构建，并仅重建输入发生变化的工作区：工作区中除测试外的跟踪文件、根文件、`scripts/tests/` 之外的 `patches/` 和 `scripts/`，以及它依赖的工作区。推送到 `main` 总是从头构建并保存该构建。缓存键不携带 CPU 架构信息：标记为 x64 的资源池包含 ARM64 主机，且唯一的架构特定输出（bundle 的 opentui 原生库）在每次恢复和解包后会为主机重新复制（`ci-build-cache.mjs host-assets`）。
+
+单元测试分片、三个 `Integration Tests (no-AK, shard N/3)` 分片和四个 web-shell smoke 分片都解包那一棵树。`test_build` 还运行读取该树的检查：serve fast-path bundle 闭合、core 子路径导出和 settings-schema 新鲜度检查（`Lint & Static` 曾经为之构建的内容）。`Integration Tests (no-AK, No Sandbox)` 仅在构建和所有集成分片都通过时才通过。Draft pull request 跳过集成分片和浏览器 smoke；将其标记为 ready for review 会启动包含它们的运行。仅限于 `packages/managed-agent-server/` 或 `packages/sdk-java/` 的变更（TypeScript 套件读取的文件除外）被归类为 `java_only`：`Lint & Static` 运行其负载加上命名这些树的 `scripts/tests` 套件，TypeScript 构建和测试通道跳过。
 
 ### 测试执行之外的相关变量
 

@@ -65,7 +65,7 @@ Pour les instances auto-hébergées, définissez `baseUrl` :
 | Option                   | Défaut                    | Description                                                |
 | ------------------------ | ------------------------- | ---------------------------------------------------------- |
 | `token`                  | (requis)                  | PAT avec les scopes `read_api` + `api`                     |
-| `pollInterval`           | `60000`                   | Intervalle de polling en ms                                |
+| `pollInterval`           | `60000`                   | Intervalle de polling en ms, plafonné à `86400000` (un jour) maximum |
 | `baseUrl`                | `https://gitlab.com`      | URL de l'instance GitLab                                   |
 | `action_prompt_template` | (requis pour le traitement) | Associe les noms d'actions GitLab à des templates de métadonnées |
 | `groupPolicy`            | `"disabled"`              | Doit être `"open"`, `"allowlist"` avec le projet listé, ou `"pairing"` avec le projet approuvé |

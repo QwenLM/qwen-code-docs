@@ -1,6 +1,3 @@
----
-title: Extension Releasing
----
 
 # 확장 릴리스
 
@@ -127,7 +124,7 @@ jobs:
 
 ## npm 레지스트리를 통한 릴리스
 
-Qwen Code 확장을 스코프된 npm 패키지(예: `@your-org/my-extension`)로 게시할 수 있습니다. 다음 경우에 적합합니다:
+Qwen Code 확장을 스코프되거나 스코프되지 않은 npm 패키지(예: `@your-org/my-extension` 또는 `my-extension`)로 게시할 수 있습니다. 다음 경우에 적합합니다:
 
 - 팀이 이미 패키지 배포에 npm을 사용하는 경우
 - 기존 인증 인프라가 있는 프라이빗 레지스트리 지원이 필요한 경우
@@ -165,7 +162,7 @@ npm publish --registry https://your-registry.com
 
 ### 설치
 
-사용자는 스코프된 패키지 이름을 사용하여 확장을 설치합니다:
+사용자는 패키지 이름을 사용하여 확장을 설치합니다:
 
 ```bash
 # 최신 버전 설치

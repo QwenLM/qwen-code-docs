@@ -65,7 +65,7 @@ export GITLAB_TOKEN="glpat-your_token_here"
 | オプション               | デフォルト                | 説明                                                         |
 | ------------------------ | ------------------------- | ------------------------------------------------------------ |
 | `token`                  | (必須)                    | `read_api` + `api` スコープを持つ PAT                        |
-| `pollInterval`           | `60000`                   | ポーリング間隔（ミリ秒）                                     |
+| `pollInterval`           | `60000`                   | ポーリング間隔（ミリ秒）。最大値は `86400000`（1 日）に制限されます |
 | `baseUrl`                | `https://gitlab.com`      | GitLab インスタンスの URL                                    |
 | `action_prompt_template` | (処理に必要)              | GitLab アクション名とメタデータテンプレートをマッピングする  |
 | `groupPolicy`            | `"disabled"`              | `"open"`、リストしたプロジェクトの `"allowlist"`、または承認済みプロジェクトの `"pairing"` が必要 |

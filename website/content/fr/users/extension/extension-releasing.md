@@ -123,7 +123,7 @@ jobs:
 
 ## Mise à disposition via le registre npm
 
-Vous pouvez publier des extensions Qwen Code en tant que paquets npm scopés (par exemple `@votre-org/mon-extension`). Cela convient parfaitement lorsque :
+Vous pouvez publier des extensions Qwen Code en tant que paquets npm scopés ou non scopés (par exemple `@votre-org/mon-extension` ou `mon-extension`). Cela convient parfaitement lorsque :
 
 - Votre équipe utilise déjà npm pour la distribution de paquets
 - Vous avez besoin d'un support de registre privé avec une infrastructure d'authentification existante

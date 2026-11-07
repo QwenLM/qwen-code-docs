@@ -22,7 +22,7 @@ qwen serve --no-web --port 4170 \
 在另一个终端中：
 
 ```bash
-npm install @qwen-code/sdk
+npm install @qwen-code/sdk@0.1.12
 ```
 
 ## Hello 守护进程
@@ -189,7 +189,7 @@ for await (const event of client.subscribeEvents(session.sessionId, {
 }
 ```
 
-守护进程在每个会话的环形缓冲区中保留最近的 8000 个事件；超出该窗口的间隙将无法重新传递。
+守护进程在每个会话中最多保留 8000 个事件，同时受默认的 8 MiB 环形缓冲区字节预算限制（包含最新的完整命令快照）。单个过大的最新事件或快照是例外。超出保留窗口的间隙需要重新同步；当两个限制都制约了所需的重连历史时，请同时增加 `--event-ring-size` 和 `--event-ring-max-bytes`。
 
 ## 权限投票
 

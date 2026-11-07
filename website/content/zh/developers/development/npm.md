@@ -83,6 +83,14 @@ npm install -g @qwen-code/qwen-code@nightly
 
 如果发布工作流中的任何步骤失败，它会自动在仓库中创建一个新 issue，带有 `bug` 标签和特定于类型的失败标签（例如 `nightly-failure`、`preview-failure`）。该 issue 会包含指向失败工作流运行的链接，便于调试。
 
+### 当发布在队列中等待时
+
+`Publish Release` 在 GitHub 托管的 runner 上运行，无法迁移到 ECS 池：[npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) 仅支持云托管 runner，因此自托管发布器会认证失败且无法生成来源证明。`audio-capture-prebuilds.yml` 的 macOS 和 Windows 构建任务同样采用托管方式，因为它们需要针对原生工具链进行构建；只有其 Linux 构建任务选择了 `ecs-qwen-release-host`。
+
+托管并发是账户级别的，与 PR 审查、自动修复和分类自动化共享，因此这些托管步骤会排在这些流量之后。排队的步骤并不意味着发布失败：GitHub 尚未为其分配 runner，其日志仍为空，并且 `timeout-minutes` 只有在实际开始运行后才开始计时。在 2026-11-01，一次发布等待了 2 小时 33 分钟才获得 runner，然后仅用 5 分 37 秒就完成了，而它周围的 nightly 构建在构建完成后 3-4 秒就被调度执行。当手动发布对时间敏感时，优先选择 nightly，或在 Asia/Shanghai 工作日高峰时段之外进行调度。
+
+参见 [Release runner slots](../../design/2026-10-28-release-queue-optimization.md) 了解池分析以及哪些发布作业已经迁移到托管 runner 之外。
+
 ## 发布验证
 
 推送新版本后，应执行冒烟测试以确保包能按预期工作。可以通过在本地安装包并运行一组测试来验证其功能是否正常。

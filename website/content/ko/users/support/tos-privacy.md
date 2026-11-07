@@ -6,38 +6,38 @@ Qwen Code는 Qwen Code 팀에서 관리하는 오픈소스 AI 코딩 어시스�
 
 Qwen Code는 AI 모델에 접근하기 위해 네 가지 인증 방법을 지원합니다. 인증 방법에 따라 적용되는 서비스 약관과 개인정보 보호 정책이 달라집니다:
 
-1. [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code) **(Qwen OAuth)** — [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code)의 활성 **Plus 또는 Pro 구독**과 함께 Qwen 계정으로 로그인
+1. [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) **(Qwen OAuth)** — [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)의 활성 **Plus 또는 Pro 구독**과 함께 Qwen 계정으로 로그인
 2. **Alibaba Cloud Coding Plan** — Alibaba Cloud의 API 키 사용
 3. **API Key** — 자체 API 키 지참
 4. **Vertex AI** — Google Cloud Vertex AI 사용
 
 각 인증 방법에 대해 기본 서비스 제공업체에 따라 다른 서비스 약관과 개인정보 보호 안내가 적용될 수 있습니다.
 
-[구독이 포함된 Qwen 계정](https://chat.qwen.ai/?memberPlan=qwen_code)은 2026-04-15에 중단된 기존 무료 Qwen OAuth 할당량과 별개입니다.
+[구독이 포함된 Qwen 계정](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)은 2026-04-15에 중단된 기존 무료 Qwen OAuth 할당량과 별개입니다.
 
 | 인증 방법                                                        | 제공자          | 서비스 약관                                                   | 개인정보 처리방침                                                     |
 | :--------------------------------------------------------------------------- | :---------------- | :----------------------------------------------------------------- | :----------------------------------------------------------------- |
-| [구독이 포함된 Qwen 계정](https://chat.qwen.ai/?memberPlan=qwen_code) | Qwen AI           | [Qwen 서비스 약관](https://qwen.ai/termsservice)              | [Qwen 개인정보 처리방침](https://qwen.ai/privacypolicy)               |
+| [구독이 포함된 Qwen 계정](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) | Qwen AI           | [Qwen 서비스 약관](https://qwen.ai/termsservice)              | [Qwen 개인정보 처리방침](https://qwen.ai/privacypolicy)               |
 | Alibaba Cloud Coding Plan                                                    | Alibaba Cloud     | [아래 세부 정보](#2-if-you-are-using-alibaba-cloud-coding-plan) 참조 | [아래 세부 정보](#2-if-you-are-using-alibaba-cloud-coding-plan) 참조 |
-| API 키                                                                      | 다양한 제공자 | 선택한 API 제공자(OpenAI, Anthropic 등)에 따라 다름      | 선택한 API 제공자에 따라 다름                                |
+| API Key                                                                                                       | 다양한 제공자 | 선택한 API 제공자(OpenAI, Anthropic 등)에 따라 다름      | 선택한 API 제공자에 따라 다름                                |
 | Vertex AI                                                                    | Google Cloud      | [Google Cloud 약관](https://cloud.google.com/terms)               | [Google Cloud 개인정보 처리방침](https://cloud.google.com/privacy)           |
 
-## 1. [구독이 포함된 Qwen 계정](https://chat.qwen.ai/?memberPlan=qwen_code)을 사용하는 경우
+## 1. [구독이 포함된 Qwen 계정](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)을 사용하는 경우
 
-[**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code)을 통해 Qwen 계정으로 인증하는 경우, 다음 서비스 약관 및 개인정보 처리방침 문서가 적용됩니다:
+[**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)을 통해 Qwen 계정으로 인증하는 경우, 다음 서비스 약관 및 개인정보 처리방침 문서가 적용됩니다:
 
 - **서비스 약관:** 사용은 [Qwen 서비스 약관](https://qwen.ai/termsservice)의 적용을 받습니다.
 - **개인정보 보호 안내:** 데이터 수집 및 사용은 [Qwen 개인정보 보호 정책](https://qwen.ai/privacypolicy)에 설명되어 있습니다.
 
 인증 설정, 할당량 및 지원 기능에 대한 자세한 내용은 [인증 설정](../configuration/auth.md)을 참조하세요.
 
-## 2. Alibaba Cloud Coding Plan을 사용하는 경우 [#2-if-you-are-using-alibaba-cloud-coding-plan]
+## 2. Alibaba Cloud Coding Plan을 사용하는 경우
 
 Alibaba Cloud의 API 키로 인증할 때 적용되는 Alibaba Cloud의 서비스 약관 및 개인정보 보호 안내가 적용됩니다.
 
 Alibaba Cloud Coding Plan은 두 지역에서 사용 가능합니다:
 
-- **Alibaba Cloud Bailian (aliyun.com)** — [bailian.console.aliyun.com](https://bailian.console.aliyun.com)
+- **阿里云百炼 (aliyun.com)** — [bailian.console.aliyun.com](https://bailian.console.aliyun.com)
 - **Alibaba Cloud (alibabacloud.com)** — [bailian.console.alibabacloud.com](https://bailian.console.alibabacloud.com)
 
 > [!important]
@@ -104,7 +104,7 @@ Qwen Code는 사용자 경험 및 제품 품질 향상을 위해 익명 사용 �
 
 ### 인증 방법별 데이터 수집
 
-Qwen Code의 사용 통계 설정은 [구독이 포함된 Qwen 계정](https://chat.qwen.ai/?memberPlan=qwen_code), Alibaba Cloud Coding Plan, 자체 API 키 및 Vertex AI를 포함한 모든 인증 방법에 적용됩니다. 활성화되면 이러한 이벤트는 선택한 AI 제공자가 자체 개인정보 처리방침에 따라 수집하는 데이터와 독립적으로 Alibaba Cloud RUM 수집 엔드포인트로 전송됩니다.
+Qwen Code의 사용 통계 설정은 [구독이 포함된 Qwen 계정](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli), Alibaba Cloud Coding Plan, 자체 API 키 및 Vertex AI를 포함한 모든 인증 방법에 적용됩니다. 활성화되면 이러한 이벤트는 선택한 AI 제공자가 자체 개인정보 처리방침에 따라 수집하는 데이터와 독립적으로 Alibaba Cloud RUM 수집 엔드포인트로 전송됩니다.
 
 수집을 옵트아웃하려면 Qwen Code 설정에서 다음을 지정하세요:
 
@@ -124,7 +124,7 @@ Qwen Code의 사용 통계 설정은 [구독이 포함된 Qwen 계정](https://c
 
 코드(프롬프트 및 답변 포함)가 AI 모델 학습에 사용되는지는 인증 방법과 사용하는 특정 AI 서비스 제공업체에 따라 다릅니다:
 
-- [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code): 데이터 사용은 [Qwen 개인정보 처리방침](https://qwen.ai/privacypolicy)에 따릅니다. 데이터 수집 및 모델 학습 관행에 대한 구체적인 세부 정보는 해당 정책을 참조하세요.
+- [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli): 데이터 사용은 [Qwen 개인정보 처리방침](https://qwen.ai/privacypolicy)에 따릅니다. 데이터 수집 및 모델 학습 관행에 대한 구체적인 세부 정보는 해당 정책을 참조하세요.
 
 - **Alibaba Cloud Coding Plan**: 데이터 사용은 Alibaba Cloud의 개인정보 보호 정책의 적용을 받습니다. 데이터 수집 및 모델 학습 실무에 대한 구체적인 세부 정보는 해당 정책을 참조하세요.
 
@@ -155,7 +155,7 @@ Qwen Code의 사용 통계 설정은 [구독이 포함된 Qwen 계정](https://c
 
 ### 3. 인증 방법 간 전환은 어떻게 하나요?
 
-[구독이 포함된 Qwen 계정](https://chat.qwen.ai/?memberPlan=qwen_code), Alibaba Cloud Coding Plan, 자체 API 키 및 Vertex AI 간에 언제든지 전환할 수 있습니다:
+[구독이 포함된 Qwen 계정](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli), Alibaba Cloud Coding Plan, 자체 API 키 및 Vertex AI 간에 언제든지 전환할 수 있습니다:
 
 1. **시작 시**: 프롬프트가 표시될 때 선호하는 인증 방법을 선택하세요
 2. **CLI 내에서**: `/auth` 명령어를 사용하여 인증 방법을 재구성하세요

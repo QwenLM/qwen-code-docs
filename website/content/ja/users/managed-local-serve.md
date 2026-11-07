@@ -79,8 +79,8 @@ JAR をダウンロードする前にインストール/設定エラーが発生
 再試行に従います。ランチャーによって表示されるブラウザアドレスを使用してください。
 
 この 1 つのコマンドで通常のデーモンと Managed Agent の両方が開始されます。同じ
-WebShell は Projects の下に通常のワークスペースとセッション、および Managed ワークスペースとセッションを一緒に表示し、
-Managed ワークスペースには Managed ラベルが付き、実行モードタブはありません。新しいタスクは選択された
+WebShell は Workspaces の下に通常のワークスペースと Managed ワークスペースおよびセッションを一緒に表示し、
+Managed ワークスペースには Managed ラベルが付き、実行モードタブはありません。新しいセッションは選択された
 ワークスペースまたは会話に従います。ローカルセッションは
 コマンドを実行したディレクトリを使用し、Managed セッションはアプリケーションで作成された
 ワークスペースまたは明示的にインポートされたローカルプロジェクトを使用します。両方とも
@@ -89,7 +89,7 @@ Managed ワークスペースには Managed ラベルが付き、実行モード
 
 **Add workspace** で、**Local (daemon)** または **Managed (Managed Agent)** を
 送信前に選択してください。選択はデフォルトで現在の会話のサービスになります。
-ワークスペース行と **New task** にはそのサービスが表示され、新しいタスクは
+ワークスペース行と **New session** にはそのサービスが表示され、新しいセッションは
 選択されたワークスペースを継承します。デーモンの既存の SSH ワークスペースサポートは
 引き続き利用可能です。Managed SSH 登録はこの共有ダイアログには統合されていません。
 
@@ -134,14 +134,16 @@ OWNER 権限が作成されます。既存のローカルプロジェクトを�
 **Workspace → Choose existing directory** を開き、その絶対
 パスを参照または入力してから、フォルダを追加します。サービスはその親を登録し、OWNER
 アクセスを自動的に付与し、既存のファイルをそのまま保持します。新しいタスクは
-選択されたプロジェクトで開始されます。空のワークスペースを作成することもできます。
+選択されたプロジェクトで開始されます。新しいインポートは共有外部ディレクトリです。独立したローカルインストールは、親を転送したり既存のグローバルストレージマーカーを置き換えたりせずに、同じプロジェクトをインポートできます。親は各インストール内で共有ナビゲーションおよびワークツリーレイアウト境界のままです。空のワークスペースを作成することもできます。
 
 起動ディレクトリはローカルセッションで引き続き利用可能であり、自動的に
 インポートされません。`--workspace` は Managed local モードではサポートされていません。UI で
-プロジェクトを選択してください。`.qwen-managed-storage.json` メンテナンスマーカーは
+プロジェクトを選択してください。新しいインポートメタデータは `runtime/imported-projects/<storage ID>/.qwen-managed-storage.json` の下のインストールにプライベートです。完全な Managed データディレクトリと一緒に保持してください。既存のインポートとアプリケーション所有のストレージは以前のマーカー契約を保持します。`.qwen-managed-storage.json` メンテナンスマーカーは
 Git ワークツリーの外部に保持されます。編集、削除、スタッシュ、コミットしないでください。インポートされた
 プロジェクトファイルはプライベート Managed データディレクトリの外部に残り、独自の
 バックアップが必要です。
+
+共有プロジェクトは、独立したターミナルと同じ編集競合を許可します。編集を分離するには独立したワークツリーを使用してください。新しい共有インポートでは、ストレージ全体の移行、物理回復、および排他的なファイル履歴の rewind は利用できません。このインストール自身の Runtime プロセスの回復は引き続き利用可能です。以前のインポートは自動的には変換されません。[共有プロジェクト設計](../design/2026-10-28-managed-local-shared-projects.md)を参照してください。
 
 ローカルセッション履歴は通常の Qwen ストレージを引き続き使用します。これは Managed データディレクトリとは
 別であり、Managed のみのバックアップには含まれません。
@@ -178,7 +180,7 @@ mvn -f packages/sdk-java/qwencode/pom.xml -DskipTests -Dgpg.skip=true install
 mvn -f packages/managed-agent-server/pom.xml verify
 npm run package:managed-runtime -- \
   --target darwin-arm64 \
-  --server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha.jar \
+  --server-jar packages/managed-agent-server/server/target/qwen-managed-agent-server-0.1.0-alpha-exec.jar \
   --jre-home /verified/java-21-home \
   --out-dir /output/managed-runtime
 ```
@@ -186,7 +188,7 @@ npm run package:managed-runtime -- \
 ランタイムビルダーにはこのチェックアウトからの一致するサーバー JAR、Java ランタイム、CLI
 バージョンのみが必要です。ビルド済みの CLI アセットや Node
 アーカイブは必要ありません。デフォルトでは
-CLI の `dist/` アセット外の `packages/managed-agent-server/target/managed-runtime` に
+CLI の `dist/` アセット外の `packages/managed-agent-server/server/target/managed-runtime` に
 書き込みます。ランタイムアーカイブとアーカイブごとの `.sha256` ファイルを出力します。
 通常の CLI は個別にビルド/リリースされます。
 
@@ -196,7 +198,7 @@ CLI の `dist/` アセット外の `packages/managed-agent-server/target/managed
 ```sh
 npm run package:managed-runtime -- \
   --target darwin-arm64 \
-  --server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha.jar \
+  --server-jar packages/managed-agent-server/server/target/qwen-managed-agent-server-0.1.0-alpha-exec.jar \
   --without-jre \
   --out-dir /output/managed-runtime
 ```
@@ -208,7 +210,7 @@ npm run package:managed-runtime -- \
 npm run package:standalone -- \
   --target darwin-arm64 \
   --node-archive /verified/node-v22-darwin-arm64.tar.gz \
-  --managed-server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha.jar \
+  --managed-server-jar packages/managed-agent-server/server/target/qwen-managed-agent-server-0.1.0-alpha-exec.jar \
   --managed-jre-home /verified/java-21-home \
   --out-dir /output/managed-local
 ```
@@ -244,17 +246,17 @@ CLI リリースタグからビルドし、その正確なソースリビジョ�
 ドライランを検証した後、リリースオペレーターは保護された `production-release` 環境を介して
 `dry_run=false` で同じタグを実行できます。
 ワークフローはサーバーアーティファクトバージョンを CLI バージョンに設定し、
-`com.alibaba:qwen-managed-agent-server:<cli-version>` をソース、Javadoc、署名付きで
-Maven Central に公開し、同じプライマリ JAR とその
-`.sha256` をその GitHub Release および既存のバージョン付き OSS ミラーを通じて配布します。
-補助オペレーター JAR は Central 公開には添付されません。既存
+検証済みの実行可能 JAR とその `.sha256` をその GitHub Release および既存のバージョン付き OSS ミラーを通じて公開し、
+両方のパブリックダウンロードチャネルをステージされたバイトに対してチェックします。既存
 アセットはバイト単位で比較され、異なるコンテンツで置き換えられることはありません。
 公開された CLI リリースイベントもこのワークフローを自動的に実行します。
+
+ランタイム配布には既存の OSS アップロードクレデンシャルと GitHub リリースアクセスが必要です。Central 公開クレデンシャルや GPG 秘密鍵は必要なく、Central でサーバー座標をチェック、公開、待機することはありません。Maven は引き続き SDK とサーバーを完全にビルドおよび検証し、通常の依存関係解決を含みます。既存の `central-release` プロファイルは、必要に応じて署名付き Maven 公開に個別に使用できます。その操作はランタイム配信を制限しません。
 
 CLI は Maven Central ではなく OSS/GitHub からダウンロードします。
 SDK を別のユーザー依存関係として解決しません。実行可能なサーバー JAR にはその Java
 依存関係が含まれています。ランタイムアセットは初回使用ダウンロードが成功する前に、
-正確な CLI リクエストに対して存在する必要があります。この PR のローカル検証はそれらの
+正確な CLI リリースに対して存在する必要があります。この PR のローカル検証はそれらの
 アセットを公開せず、本番リリース環境をバイパスしません。
 
 所有権境界と検証基準については、バイリンガルの[設計](../design/2026-10-20-managed-local-serve.md)を

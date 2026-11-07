@@ -76,7 +76,7 @@ Le diagramme montre les principaux chemins de production. Certains adaptateurs d
 | `packages/web-templates`                                                                                   | Templates web empaquetés sous forme de chaînes JavaScript et CSS intégrables.                                                                                                                                 |
 | `packages/audio-capture`                                                                                   | Capture native du microphone pour la saisie vocale.                                                                                                                                                       |
 | `packages/channels`                                                                                        | Le runtime de canal partagé et les adaptateurs de plateforme pour les services de messagerie.                                                                                                                         |
-| `packages/desktop-shell`, `packages/vscode-ide-companion`, `packages/chrome-extension`, `packages/zed-extension` | Surfaces produit et éditeur qui adaptent Qwen Code à leurs environnements hôtes.                                                                                                                     |
+| `packages/desktop`, `packages/vscode-ide-companion`, `packages/chrome-extension`, `packages/zed-extension` | Surfaces produit et éditeur qui adaptent Qwen Code à leurs environnements hôtes.                                                                                                                     |
 | `packages/sdk-java`, `packages/sdk-python`                                                                 | Clients programmatiques spécifiques à un langage.                                                                                                                                                          |
 | `packages/cua-driver`, `packages/mobile-mcp`                                                               | Intégrations computer-use et appareils mobiles exposées via des frontières compatibles MCP.                                                                                                           |
 | `integration-tests`                                                                                        | Couverture de bout en bout pour le CLI, l'interactif, le SDK, la sandbox, les hooks et le comportement du terminal.                                                                                                             |
@@ -94,8 +94,7 @@ La majeure partie du code se trouve dans les workspaces npm sous `packages/`. Un
 La présentation reste en dehors du runtime core :
 
 - le TUI Ink rend les sessions interactives locales ;
-- `packages/webui` adapte l'état du démon aux providers et hooks React ;
-- `packages/web-shell` fournit l'expérience de terminal dans le navigateur ;
+- `packages/web-shell` adapte l'état du démon aux providers et hooks React et fournit l'expérience navigateur ;
 - les packages IDE et canal traduisent les événements spécifiques à l'hôte en contrats partagés de client ou de bridge.
 
 ### Runtime core

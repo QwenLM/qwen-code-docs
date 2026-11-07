@@ -11,7 +11,7 @@
 - Открытый терминал или командная строка
 - Проект с кодом для работы
 - **Одно из следующего**:
-  - Учетная запись Qwen с подпиской **Plus или Pro** на [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code), которая открывает доступ к **Qwen Code и Agent**
+  - Учетная запись Qwen с подпиской **Plus или Pro** на [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli), которая открывает доступ к **Qwen Code и Agent**
   - API-ключ или подписка Token Plan от платформы Qwen AI / **QwenCloud** ([Китай](https://platform.qianwenai.com/docs/developer-guides/administration/api-keys) / [Международная версия](https://docs.qwencloud.com/developer-guides/administration/api-keys)) — рекомендуемая настройка
   - API-ключ от **Alibaba Cloud ModelStudio** ([Пекин](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/))
   - Подписка **Alibaba Cloud Token Plan** ([Пекин](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model))
@@ -72,7 +72,7 @@ qwen
 
 Меню первого запуска позволяет подключить провайдера модели. Выберите один из вариантов:
 
-- [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code) — войдите в свою учетную запись Qwen, чтобы получить доступ к **Qwen Code и Agent** с вашей подпиской **Plus или Pro**. Если у вас еще нет подписки, посетите [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code), чтобы оформить Plus или Pro, затем вернитесь в Qwen Code и выберите [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code).
+- [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) — войдите в свою учетную запись Qwen, чтобы получить доступ к **Qwen Code и Agent** с вашей подпиской **Plus или Pro**. Если у вас еще нет подписки, посетите [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli), чтобы оформить Plus или Pro, затем вернитесь в Qwen Code и выберите [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli).
 - **QwenCloud** — рекомендуемая настройка. Открывает подменю:
   - **Token Plan**: подписка с ежемесячной квотой кредитов на выделенной конечной точке (версии Personal и Team).
   - **Standard API Key**: оплата по мере использования, подключение с существующим API-ключом платформы.
