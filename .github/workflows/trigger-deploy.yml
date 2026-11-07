@@ -1,0 +1,20 @@
+# GitHub Pages serves one artifact per repository, so 1.x cannot deploy on its
+# own without replacing the 0.26 site. Instead, hand off to deploy-docs.yml on
+# main, which builds both branches and publishes them together.
+name: Trigger docs deploy
+
+on:
+  push:
+    branches: [1.x]
+
+permissions:
+  actions: write
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch deploy-docs.yml on main
+        run: gh workflow run deploy-docs.yml --repo "$GITHUB_REPOSITORY" --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}

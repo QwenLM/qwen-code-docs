@@ -22,7 +22,7 @@ type LayoutProps = Readonly<{
   }>;
 }>;
 
-const LOCALES = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR", "ko"];
+const LOCALES = ["en", "zh"];
 
 const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
   const { lang } = await params;
@@ -92,16 +92,10 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
       // banner={banner}
       navbar={navbar}
       footer={null}
-      docsRepositoryBase='https://github.com/QwenLM/qwen-code/blob/main/docs'
+      docsRepositoryBase='https://github.com/QwenLM/qwen-code-docs/blob/1.x/website'
       i18n={[
         { locale: "en", name: "English" },
         { locale: "zh", name: "中文" },
-        { locale: "de", name: "Deutsch" },
-        { locale: "fr", name: "Français" },
-        { locale: "ru", name: "Русский" },
-        { locale: "ja", name: "日本語" },
-        { locale: "pt-BR", name: "Português (BR)" },
-        { locale: "ko", name: "한국어" },
       ]}
       search={false}
       sidebar={{ defaultMenuCollapseLevel: 2 }}

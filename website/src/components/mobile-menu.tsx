@@ -7,8 +7,6 @@ import {
   BookOpen,
   Github,
   Menu,
-  Newspaper,
-  Sparkles,
   X,
 } from "lucide-react";
 import cn from "clsx";
@@ -167,8 +165,6 @@ export function MobileMenu({ lang }: { lang: string }) {
 
   const links = [
     { href: `/${lang}/users/overview`, label: t("docs"), Icon: BookOpen },
-    { href: `/${lang}/blog`, label: t("blog"), Icon: Newspaper },
-    { href: `/${lang}/showcase`, label: t("showcase"), Icon: Sparkles },
   ];
 
   return (

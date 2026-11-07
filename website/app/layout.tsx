@@ -32,10 +32,10 @@ function getSiteUrl(): string {
   const ghRepo = process.env.GITHUB_REPOSITORY; // e.g. owner/repo
   if (ghRepo && ghRepo.includes("/")) {
     const [owner, repo] = ghRepo.split("/");
-    if (owner && repo) return `https://${owner}.github.io/${repo}`;
+    if (owner && repo) return `https://${owner}.github.io/${repo}/1.x`;
   }
 
-  return "https://qwenlm.github.io/qwen-code-docs";
+  return "https://qwenlm.github.io/qwen-code-docs/1.x";
 }
 
 export const metadata: Metadata = {
@@ -46,16 +46,10 @@ export const metadata: Metadata = {
   },
   description: DESCRIPTION,
   metadataBase: new URL(getSiteUrl()),
+  // 1.x is a preview; keep it out of search results until it replaces 0.26.
   robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-      "max-video-preview": -1,
-    },
+    index: false,
+    follow: false,
   },
   openGraph: {
     type: "website",

@@ -9,12 +9,6 @@ import cn from "clsx";
 export const languages = [
   { locale: "en", name: "English", flag: "🇺🇸" },
   { locale: "zh", name: "中文", flag: "🇨🇳" },
-  { locale: "de", name: "Deutsch", flag: "🇩🇪" },
-  { locale: "fr", name: "Français", flag: "🇫🇷" },
-  { locale: "ru", name: "Русский", flag: "🇷🇺" },
-  { locale: "ja", name: "日本語", flag: "🇯🇵" },
-  { locale: "pt-BR", name: "Português (BR)", flag: "🇧🇷" },
-  { locale: "ko", name: "한국어", flag: "🇰🇷" },
 ];
 
 const languageLocales = languages.map((language) => language.locale);

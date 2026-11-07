@@ -61,7 +61,8 @@ function parseFrontmatter(content) {
 }
 
 function generateShowcaseData() {
-  const files = fs.readdirSync(SHOWCASE_DIR).filter(
+  // 1.x has no showcase pages yet; emit an empty list instead of failing.
+  const files = (fs.existsSync(SHOWCASE_DIR) ? fs.readdirSync(SHOWCASE_DIR) : []).filter(
     (f) => f.endsWith(".mdx") && f !== "index.mdx"
   );
 

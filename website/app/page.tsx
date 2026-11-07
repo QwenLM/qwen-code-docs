@@ -1,14 +1,8 @@
-import type { Metadata } from "next";
+import { withBasePath } from "../src/lib/utils";
 
-const REDIRECT_URL = "https://qwen.ai/qwencode";
+const REDIRECT_URL = withBasePath("/en/");
 
-export const metadata: Metadata = {
-  alternates: {
-    canonical: REDIRECT_URL,
-  },
-};
-
-export default function RedirectToQwenCode() {
+export default function RedirectToEnglish() {
   return (
     <>
       <meta httpEquiv="refresh" content={`0;url=${REDIRECT_URL}`} />
