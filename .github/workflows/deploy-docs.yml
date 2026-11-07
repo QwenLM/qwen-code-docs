@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+  # The 1.x preview docs live on the 1.x branch and are published under /1.x/.
+  # Pages serves a single artifact, so a push to 1.x cannot deploy on its own
+  # without replacing this site; its trigger-deploy.yml dispatches this
+  # workflow on main instead.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -19,6 +24,7 @@ concurrency:
 
 jobs:
   build-and-deploy:
+    if: github.ref == 'refs/heads/main'
     runs-on: [self-hosted, linux, ARM64, qwen-docs]
     environment:
       name: github-pages
@@ -61,6 +67,71 @@ jobs:
         env:
           # Bound the heap while sharing the ECS host with other runners.
           NODE_OPTIONS: --max-old-space-size=12288
+
+      # ---- 1.x preview docs, published under /1.x/ ----
+      # main is rebuilt on every run as before. 1.x is cached by its HEAD sha,
+      # so a run triggered by main does not rebuild an unchanged 1.x, and a
+      # broken 1.x falls back to its last good build instead of blocking main.
+      - name: Resolve 1.x head
+        id: v1
+        run: |
+          sha="$(git ls-remote origin refs/heads/1.x | cut -f1)"
+          echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+          [ -n "$sha" ] || echo "::notice::No 1.x branch; deploying without /1.x/."
+
+      - name: Restore 1.x build
+        id: v1-cache
+        if: steps.v1.outputs.sha != ''
+        uses: actions/cache/restore@v5
+        with:
+          path: .deploy-1x/out
+          key: site-1x-${{ steps.v1.outputs.sha }}
+          restore-keys: |
+            site-1x-
+
+      - name: Checkout 1.x
+        if: steps.v1.outputs.sha != '' && steps.v1-cache.outputs.cache-hit != 'true'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.v1.outputs.sha }}
+          path: .deploy-1x/src
+
+      - name: Build 1.x
+        id: v1-build
+        if: steps.v1.outputs.sha != '' && steps.v1-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        working-directory: .deploy-1x/src/website
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+          rm -rf ../../out
+          mv out ../../out
+
+      - name: Save 1.x build
+        if: steps.v1-build.outcome == 'success'
+        uses: actions/cache/save@v5
+        with:
+          path: .deploy-1x/out
+          key: site-1x-${{ steps.v1.outputs.sha }}
+
+      - name: Add 1.x to the site
+        if: steps.v1.outputs.sha != ''
+        env:
+          BUILD_OUTCOME: ${{ steps.v1-build.outcome }}
+          SHA: ${{ steps.v1.outputs.sha }}
+        run: |
+          if [ "$BUILD_OUTCOME" = failure ]; then
+            echo "::warning title=1.x build failed::1.x@${SHA} did not build; deploying the previous 1.x build if one exists."
+          fi
+          if [ -e website/out/1.x ]; then
+            echo "::error::The main build already contains /1.x/; refusing to overwrite it."
+            exit 1
+          fi
+          if [ -d .deploy-1x/out ]; then
+            cp -R .deploy-1x/out website/out/1.x
+          else
+            echo "::warning::No 1.x build available; deploying without /1.x/."
+          fi
 
       - name: Upload website artifact
         uses: actions/upload-pages-artifact@v4
