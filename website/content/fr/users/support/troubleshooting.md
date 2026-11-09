@@ -9,12 +9,6 @@ Ce guide fournit des solutions aux problèmes courants et des conseils de débog
 
 ## Erreurs d'authentification ou de connexion
 
-- **Erreur : `Qwen OAuth free tier was discontinued on 2026-04-15`**
-  - **Cause :** Qwen OAuth n'est plus disponible depuis le 15 avril 2026.
-  - **Solution :** Passez à une autre méthode d'authentification. Exécutez `qwen` → `/auth` et choisissez l'une des options suivantes :
-    - **API Key** : Utilisez une API key d'Alibaba Cloud Model Studio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)). Consultez le guide de configuration de l'API ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)).
-    - **Alibaba Cloud Coding Plan** : Abonnez-vous pour un tarif mensuel fixe avec des quotas plus élevés. Consultez le guide du Coding Plan ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) / [intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)).
-
 - **Erreur : `UNABLE_TO_GET_ISSUER_CERT_LOCALLY`, `UNABLE_TO_VERIFY_LEAF_SIGNATURE` ou `unable to get local issuer certificate`**
   - **Cause :** Vous êtes peut-être sur un réseau d'entreprise avec un pare-feu qui intercepte et inspecte le trafic SSL/TLS. Cela nécessite souvent qu'un certificat CA racine personnalisé soit approuvé par Node.js.
   - **Solution :** Définissez la variable d'environnement `NODE_EXTRA_CA_CERTS` avec le chemin absolu de votre fichier de certificat CA racine d'entreprise.

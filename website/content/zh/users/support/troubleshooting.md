@@ -9,12 +9,6 @@
 
 ## 身份验证或登录错误
 
-- **错误：`Qwen OAuth free tier was discontinued on 2026-04-15`**
-  - **原因：** 自 2026 年 4 月 15 日起，Qwen OAuth 已不再可用。
-  - **解决方案：** 切换到其他身份验证方法。运行 `qwen` → `/auth` 并选择以下选项之一：
-    - **API Key**：使用来自阿里云百炼的 API key（[北京](https://bailian.console.aliyun.com/) / [国际](https://modelstudio.console.alibabacloud.com/)）。请参阅 API 设置指南（[北京](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [国际](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)）。
-    - **阿里云 Coding Plan**：以固定月费订阅，享受更高配额。请参阅 Coding Plan 指南（[北京](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) / [国际](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)）。
-
 - **错误：`UNABLE_TO_GET_ISSUER_CERT_LOCALLY`、`UNABLE_TO_VERIFY_LEAF_SIGNATURE` 或 `unable to get local issuer certificate`**
   - **原因：** 你可能处于带有防火墙的企业网络中，该防火墙会拦截并检查 SSL/TLS 流量。这通常需要 Node.js 信任自定义的根 CA 证书。
   - **解决方案：** 将 `NODE_EXTRA_CA_CERTS` 环境变量设置为企业根 CA 证书文件的绝对路径。
