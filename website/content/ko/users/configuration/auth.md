@@ -2,32 +2,32 @@
 
 Qwen Code의 첫 실행 `/auth` 메뉴에는 다섯 가지 최상위 옵션이 있습니다. CLI를 실행하려는 방식에 맞는 항목을 선택하세요:
 
-- [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code): [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code)에서 **Plus 또는 Pro 구독**으로 **Qwen Code 및 Agent**에 접근하기 위해 **Qwen OAuth**를 통해 Qwen 계정으로 로그인합니다. 아직 구독이 없다면, [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code)를 방문하여 Plus 또는 Pro에 가입한 후 Qwen Code로 돌아와 [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code)을 선택하세요.
+- [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli): [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)에서 **Plus 또는 Pro 구독**으로 **Qwen Code 및 Agent**에 접근하기 위해 **Qwen OAuth**를 통해 Qwen 계정으로 로그인합니다. 아직 구독이 없다면, [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)를 방문하여 Plus 또는 Pro에 가입한 후 Qwen Code로 돌아와 [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)을 선택하세요.
 - **QwenCloud**: 공식적으로 권장되는 설정입니다. **Token Plan**(월간 Credit 할당량이 있는 구독 · 전용 엔드포인트, Personal 및 Team 에디션) 또는 **Standard API Key**(종량제)이 포함된 하위 메뉴가 열립니다. 그런 다음 플랫폼을 명시적으로 선택합니다 — **China — Qianwen AI Platform** 또는 **International — QwenCloud** — UI 언어가 엔드포인트를 결정하지 않도록 합니다. 두 접근 방법 모두 추가 설정 없이 내장된 [`web_search` 도구](https://qwenlm.github.io/qwen-code-docs/en/developers/tools/web-search/)를 활성화합니다.
 - **Alibaba ModelStudio**: **Coding Plan**(개인 개발자용 · 주간 할당량 포함), **Token Plan**(팀 및 기업용 · 사용량 기반 과금 및 전용 엔드포인트) 또는 **Standard API Key**(기존 ModelStudio API 키로 연결)가 포함된 하위 메뉴가 열립니다. Token Plan과 Standard API Key도 추가 설정 없이 내장된 [`web_search` 도구](https://qwenlm.github.io/qwen-code-docs/en/developers/tools/web-search/)를 활성화합니다. 저장된 ModelStudio 자격 증명, 엔드포인트 및 모델은 변경되지 않고 계속 작동합니다.
 - **Third-party Providers**: 내장 제공자를 선택하고 API 키로 연결합니다(DeepSeek, Grok, MiniMax, Z.AI, Idealab, ModelScope, OpenRouter, Requesty).
 - **Custom Provider**: 로컬 서버, 프록시 또는 지원되지 않는 제공자를 수동으로 연결합니다 — OpenAI, Anthropic, Gemini 및 기타 호환 엔드포인트를 지원합니다.
 
-## **옵션 1: Qwen OAuth —** [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code)
+## **옵션 1: Qwen OAuth —** [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)
 
-Qwen OAuth를 사용하면 Qwen 계정으로 로그인하고 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code)의 **Plus 또는 Pro 구독**을 사용하여 **Qwen Code 및 Agent**에 접근할 수 있습니다. 첫 실행 메뉴나 `/auth` 대화 상자를 열고 시작하려면 [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code)을 선택하세요.
+Qwen OAuth를 사용하면 Qwen 계정으로 로그인하고 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)의 **Plus 또는 Pro 구독**을 사용하여 **Qwen Code 및 Agent**에 접근할 수 있습니다. 첫 실행 메뉴나 `/auth` 대화 상자를 열고 시작하려면 [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)을 선택하세요.
 
-- **작동 방식**: [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code)을 선택하고 브라우저 로그인 절차를 따라 Qwen 계정으로 Qwen Code를 인증하세요.
-- **요구 사항**: [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code)의 활성 **Plus 또는 Pro 구독**이 있는 Qwen 계정과 인터넷 접속 환경.
+- **작동 방식**: [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)을 선택하고 브라우저 로그인 절차를 따라 Qwen 계정으로 Qwen Code를 인증하세요.
+- **요구 사항**: [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)의 활성 **Plus 또는 Pro 구독**이 있는 Qwen 계정과 인터넷 접속 환경.
 - **혜택**: API 키를 수동으로 구성하지 않고도 Qwen 구독을 통해 **Qwen Code 및 Agent**에 접근할 수 있습니다.
-- **비용 및 할당량**: 사용량은 구독 플랜에 따릅니다. Plus 및 Pro 플랜 세부 정보는 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code)에서 확인하세요.
+- **비용 및 할당량**: 사용량은 구독 플랜에 따릅니다. Plus 및 Pro 플랜 세부 정보는 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)에서 확인하세요.
 
 ### **대화형 설정**
 
-1. 아직 구독이 없다면 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code)를 방문하여 **Plus 또는 Pro**에 가입하세요. 이미 활성 구독이 있다면 다음 단계로 진행하세요.
+1. 아직 구독이 없다면 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)를 방문하여 **Plus 또는 Pro**에 가입하세요. 이미 활성 구독이 있다면 다음 단계로 진행하세요.
 2. 터미널에서 Qwen Code를 시작하세요:
 
    ```bash
    qwen
    ```
 
-3. 첫 실행 메뉴에서 [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code)을 선택하세요. Qwen Code가 이미 실행 중이라면 `/auth`을 입력하여 인증 메뉴를 열고 동일한 옵션을 선택하세요.
-4. [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code)에서 **구독할 때 사용한 것과 동일한 Qwen 계정**을 사용하여 브라우저 로그인 및 인증 절차를 완료하세요.
+3. 첫 실행 메뉴에서 [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)을 선택하세요. Qwen Code가 이미 실행 중이라면 `/auth`을 입력하여 인증 메뉴를 열고 동일한 옵션을 선택하세요.
+4. [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)에서 **구독할 때 사용한 것과 동일한 Qwen 계정**을 사용하여 브라우저 로그인 및 인증 절차를 완료하세요.
 5. Qwen Code로 돌아가 구독을 사용하여 작업을 시작하세요.
 
 CI나 무인 컨테이너처럼 브라우저 로그인 절차를 완료할 수 없는 비대화형 환경에서는 대신 API 키 기반 인증 방법을 사용하세요.

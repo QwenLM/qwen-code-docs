@@ -15,7 +15,7 @@ DashScope의 경우 내장 도구는 서버 측 `web_search`(및 `web_extractor`
 
 | 로그인 방법                                                                                                                 | 내장 검색                                         |
 | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| [구독이 포함된 Qwen 계정](https://chat.qwen.ai/?memberPlan=qwen_code) — **Plus 또는 Pro**                             | 켜짐                                              |
+| [구독이 포함된 Qwen 계정](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) — **Plus 또는 Pro**                             | 켜짐                                              |
 | Alibaba ModelStudio → **표준 API 키**                                                                                        | 켜짐                                              |
 | Alibaba ModelStudio → **토큰 플랜**                                                                                          | 켜짐                                              |
 | Alibaba ModelStudio → **코딩 플랜**                                                                                          | 꺼짐 — 이 API에 대해 엔드포인트가 검증되지 않음   |

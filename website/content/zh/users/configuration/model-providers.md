@@ -12,7 +12,7 @@ Qwen Code 允许你通过 `settings.json` 中的 `modelProviders` 设置来配�
 
 > [!note]
 >
-> 通过 `modelProviders` 配置 API 密钥提供商，然后使用 `/model` 进行选择。对于 Qwen 账户登录，请在 `/auth` 中选择 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code)；无需 API 密钥或手动 `modelProviders` 配置。使用 `/model` 从你的订阅可用的模型中进行选择。有关登录说明，请参阅 [Authentication](./auth.md)。
+> 通过 `modelProviders` 配置 API 密钥提供商，然后使用 `/model` 进行选择。对于 Qwen 账户登录，请在 `/auth` 中选择 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)；无需 API 密钥或手动 `modelProviders` 配置。使用 `/model` 从你的订阅可用的模型中进行选择。有关登录说明，请参阅 [Authentication](./auth.md)。
 
 > [!note]
 >
@@ -652,7 +652,7 @@ Coding Plan 模型配置是有版本的。当 Qwen Code 检测到较新版本的
 | 设置（`settings.json`） | `security.auth.selectedType`        | `model.name`                                    | `security.auth.apiKey`                                | `security.auth.baseUrl`                                | —                      | —                                 |
 | 默认 / 计算值         | 回退到 `AuthType.QWEN_OAUTH` | 内置默认值（OpenAI ⇒ `qwen3.5-plus`）      | —                                                     | —                                                      | —                      | 如果配置了则使用 `Config.getProxy()` |
 
-\*存在时，CLI 认证标志覆盖设置。否则，`security.auth.selectedType` 或隐式默认值决定认证类型。有关登录选项，请参阅[认证](./auth.md)。遗留的免费 Qwen OAuth 提供商与 [订阅版 Qwen 账户](https://chat.qwen.ai/?memberPlan=qwen_code)是分开的。
+\*存在时，CLI 认证标志覆盖设置。否则，`security.auth.selectedType` 或隐式默认值决定认证类型。有关登录选项，请参阅[认证](./auth.md)。遗留的免费 Qwen OAuth 提供商与 [订阅版 Qwen 账户](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)是分开的。
 
 > [!note]
 >

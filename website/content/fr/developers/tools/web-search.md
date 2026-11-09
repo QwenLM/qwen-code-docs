@@ -15,7 +15,7 @@ Si vous n'avez rien configuré sous `tools.webSearch`, l'outil s'enregistre lors
 
 | Mode de connexion                                                                                                          | Recherche intégrée                              |
 | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| [Compte Qwen avec Abonnement](https://chat.qwen.ai/?memberPlan=qwen_code) — **Plus ou Pro**                             | activé                                              |
+| [Compte Qwen avec Abonnement](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) — **Plus ou Pro**                             | activé                                              |
 | Alibaba ModelStudio → **Clé API standard**                                                                                 | activée                                         |
 | Alibaba ModelStudio → **Token Plan**                                                                                       | activée                                         |
 | Alibaba ModelStudio → **Coding Plan**                                                                                      | désactivée — son point de terminaison n'est pas vérifié pour cette API |

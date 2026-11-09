@@ -790,9 +790,15 @@ Stage 1.5에서 `qwen --serve`(TUI 프로세스가 동일한 HTTP 서버를 공�
 
 데몬이 원격 포드(사용자와 디스플레이 공유 없음)에서 실행되는 경우, 클라이언트는 HTTP를 통해 OAuth 디바이스 플로우를 트리거할 수 있습니다. 데몬이 자체적으로 IdP를 폴링하며; 사용자의 역할은 브라우저가 있는 장치에서 URL을 여는 것뿐입니다.
 
+새로 설정할 때는 Plus 또는 Pro 구독이 있는 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)을 사용하세요. 구독과 브라우저 인증에 동일한 Qwen 계정을 사용하세요.
+
+1. `POST /auth/subscription/flows?paywallScene=cli`로 로그인을 시작하고 응답의 `id`를 보관합니다.
+2. `GET /auth/subscription/flows/:id`을 폴링합니다. `authorizationUrl`가 반환되면 브라우저에서 열어 로그인을 완료합니다.
+3. 상태가 `ready`가 되면 구독을 사용할 워크스페이스에 대해 `POST /workspaces/:workspace/auth/subscription`를 호출합니다.
+
 > [!note]
 >
-> Qwen OAuth 무료 티어는 2026-04-15에 중단되었습니다. 아래 `qwen-oauth` 예시는 디바이스 플로우 프로토콜 형태와 레거시 제공자 식별자를 문서화합니다; 새로운 설정은 현재 지원되는 인증 제공자를 사용해야 합니다.
+> Qwen OAuth 무료 사용은 2026년 4월 15일에 종료되었습니다. 아래의 `qwen-oauth` 예시는 기존 디바이스 인증 프로토콜을 설명하기 위한 참고 자료입니다.
 
 ```bash
 # 1. Start a flow. The daemon contacts the IdP, returns a code + URL.
@@ -803,8 +809,8 @@ curl -X POST http://127.0.0.1:4170/workspace/auth/device-flow \
 # → 201 {
 #     "deviceFlowId": "fa07c61b-…",
 #     "userCode": "USER-1",
-#     "verificationUri": "https://chat.qwen.ai/api/v1/oauth2/device",
-#     "verificationUriComplete": "https://chat.qwen.ai/...?user_code=USER-1",
+#     "verificationUri": "https://chat.qwen.ai/api/v1/oauth2/device?entry=qwen_code&paywallScene=cli",
+#     "verificationUriComplete": "https://chat.qwen.ai/...?user_code=USER-1&entry=qwen_code&paywallScene=cli",
 #     "expiresAt": 1700000600000,
 #     "intervalMs": 5000,
 #     "attached": false

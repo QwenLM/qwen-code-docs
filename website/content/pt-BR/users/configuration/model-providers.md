@@ -12,7 +12,7 @@ Use `modelProviders` para declarar modelos por ID de provedor que o seletor `/mo
 
 > [!note]
 >
-> Configure provedores de chave de API através de `modelProviders`, então selecione-os com `/model`. Para entrar na conta Qwen, escolha [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code) em `/auth`; nenhuma chave de API ou configuração manual de `modelProviders` é necessária. Use `/model` para escolher entre os modelos disponíveis com sua assinatura. Veja [Autenticação](./auth.md) para instruções de login.
+> Configure provedores de chave de API através de `modelProviders`, então selecione-os com `/model`. Para entrar na conta Qwen, escolha [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) em `/auth`; nenhuma chave de API ou configuração manual de `modelProviders` é necessária. Use `/model` para escolher entre os modelos disponíveis com sua assinatura. Veja [Autenticação](./auth.md) para instruções de login.
 
 > [!note]
 >
@@ -652,7 +652,7 @@ Os valores efetivos de auth/model/credential são escolhidos por campo usando a 
 | Configurações (`settings.json`)   | `security.auth.selectedType`        | `model.name`                                    | `security.auth.apiKey`                               | `security.auth.baseUrl`                                | —                      | —                                 |
 | Padrão / computado                | Fallback para `AuthType.QWEN_OAUTH` | Padrão integrado (OpenAI ⇒ `qwen3.5-plus`)      | —                                                    | —                                                      | —                      | `Config.getProxy()` se configurado |
 
-\*Quando presentes, os sinalizadores de autenticação da CLI substituem as configurações. Caso contrário, `security.auth.selectedType` ou o padrão implícito determinam o tipo de autenticação. Veja [Autenticação](./auth.md) para opções de login. O provedor legado gratuito Qwen OAuth é separado da [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code).
+\*Quando presentes, os sinalizadores de autenticação da CLI substituem as configurações. Caso contrário, `security.auth.selectedType` ou o padrão implícito determinam o tipo de autenticação. Veja [Autenticação](./auth.md) para opções de login. O provedor legado gratuito Qwen OAuth é separado da [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli).
 
 > [!note]
 >

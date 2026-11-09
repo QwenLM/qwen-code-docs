@@ -790,9 +790,15 @@ Cada runtime de workspace ativo mantém **um limite de bridge**. A produção te
 
 Quando o daemon roda em um pod remoto (sem display compartilhado com você), um cliente pode acionar um fluxo de dispositivo OAuth via HTTP. O daemon consulta o IdP por conta própria; seu trabalho é apenas abrir uma URL em qualquer dispositivo que tenha um navegador.
 
+Em novas configurações, use [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) com uma assinatura Plus ou Pro. Use a mesma conta Qwen para a assinatura e para a autorização no navegador.
+
+1. Inicie o login com `POST /auth/subscription/flows?paywallScene=cli` e guarde o `id` da resposta.
+2. Consulte `GET /auth/subscription/flows/:id` periodicamente. Quando `authorizationUrl` estiver disponível, abra o endereço e conclua o login no navegador.
+3. Quando o status chegar a `ready`, chame `POST /workspaces/:workspace/auth/subscription` para o espaço de trabalho que usará a assinatura.
+
 > [!note]
 >
-> A camada gratuita do Qwen OAuth foi descontinuada em 2026-04-15. Os exemplos `qwen-oauth` abaixo documentam o formato do protocolo de fluxo de dispositivo e o identificador de provedor legado; novas configurações devem usar um provedor de autenticação atualmente suportado.
+> A modalidade gratuita do Qwen OAuth foi encerrada em 15 de abril de 2026. Os exemplos de `qwen-oauth` abaixo servem como referência do protocolo antigo de autorização de dispositivo.
 
 ```bash
 # 1. Start a flow. The daemon contacts the IdP, returns a code + URL.
@@ -803,8 +809,8 @@ curl -X POST http://127.0.0.1:4170/workspace/auth/device-flow \
 # → 201 {
 #     "deviceFlowId": "fa07c61b-…",
 #     "userCode": "USER-1",
-#     "verificationUri": "https://chat.qwen.ai/api/v1/oauth2/device",
-#     "verificationUriComplete": "https://chat.qwen.ai/...?user_code=USER-1",
+#     "verificationUri": "https://chat.qwen.ai/api/v1/oauth2/device?entry=qwen_code&paywallScene=cli",
+#     "verificationUriComplete": "https://chat.qwen.ai/...?user_code=USER-1&entry=qwen_code&paywallScene=cli",
 #     "expiresAt": 1700000600000,
 #     "intervalMs": 5000,
 #     "attached": false

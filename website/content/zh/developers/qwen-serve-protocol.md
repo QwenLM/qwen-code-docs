@@ -3770,7 +3770,9 @@ SSE 级别的 `id:` / `event:` 行重复了 `envelope.id` / `envelope.type` 以�
 
 > [!note]
 >
-> Qwen OAuth 免费层级已于 2026-04-15 停止服务。在本协议中将 `qwen-oauth` 视为遗留的 v1 提供商标识符；新客户端应在有可用选项时优先选择当前支持的认证提供商。
+> 新接入请使用 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)。`GET /auth/subscription?paywallScene=cli` 返回购买链接 `plansUrl`。浏览器授权由 `POST /auth/subscription/flows?paywallScene=cli` 单独发起，再通过 `GET /auth/subscription/flows/:id` 获取 `authorizationUrl`。
+>
+> Qwen OAuth 免费额度已于 2026-04-15 停止提供。`qwen-oauth` 是下方路由的旧版 v1 提供方标识。
 
 **运行时局部性。** 守护进程从不启动浏览器——即使它可以。客户端决定是否本地调用 `open(verificationUri)`；在无头 Pod（标准模式 B 部署）上，用户在拥有浏览器的任何设备上打开 URL。有关推荐的 UX，请参阅 `docs/users/qwen-serve.md`。
 
@@ -3796,8 +3798,8 @@ SSE 级别的 `id:` / `event:` 行重复了 `envelope.id` / `envelope.type` 以�
   "providerId": "qwen-oauth",
   "status": "pending",
   "userCode": "USER-1",
-  "verificationUri": "https://chat.qwen.ai/api/v1/oauth2/device",
-  "verificationUriComplete": "https://chat.qwen.ai/api/v1/oauth2/device?user_code=USER-1",
+  "verificationUri": "https://chat.qwen.ai/api/v1/oauth2/device?entry=qwen_code&paywallScene=cli",
+  "verificationUriComplete": "https://chat.qwen.ai/api/v1/oauth2/device?user_code=USER-1&entry=qwen_code&paywallScene=cli",
   "expiresAt": 1700000600000,
   "intervalMs": 5000,
   "attached": false

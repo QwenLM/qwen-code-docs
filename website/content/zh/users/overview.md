@@ -33,9 +33,9 @@ cd your-project
 qwen
 ```
 
-首次启动时，系统会提示你连接一个模型提供商。菜单提供 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code)（使用来自 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) 的 Qwen Plus 或 Pro 订阅）、**QwenCloud**（官方推荐的设置方式）、**Alibaba ModelStudio**、**第三方提供商**（内置提供商，如 DeepSeek、MiniMax、Z.AI、Kimi 和 OpenRouter，通过 API key 连接）以及 **自定义提供商**（本地服务器、代理或不支持的提供商）。
+首次启动时，系统会提示你连接一个模型提供商。菜单提供 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)（使用来自 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) 的 Qwen Plus 或 Pro 订阅）、**QwenCloud**（官方推荐的设置方式）、**Alibaba ModelStudio**、**第三方提供商**（内置提供商，如 DeepSeek、MiniMax、Z.AI、Kimi 和 OpenRouter，通过 API key 连接）以及 **自定义提供商**（本地服务器、代理或不支持的提供商）。
 
-要使用你的 Qwen 订阅，请选择 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code) 并使用你的 Qwen 账户登录。**Plus 或 Pro 订阅**可解锁对 **Qwen Code and Agent** 的访问。如果你还没有订阅，请访问 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) 订阅 Plus 或 Pro，然后返回 Qwen Code 并选择 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code)。
+要使用你的 Qwen 订阅，请选择 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) 并使用你的 Qwen 账户登录。**Plus 或 Pro 订阅**可解锁对 **Qwen Code and Agent** 的访问。如果你还没有订阅，请访问 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) 订阅 Plus 或 Pro，然后返回 Qwen Code 并选择 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)。
 
 如需 QwenCloud 密钥，请选择 **QwenCloud → Token Plan** 或 **QwenCloud → Standard API Key**，然后选择平台（中国区或国际版）— 请参阅[身份验证](https://qwenlm.github.io/qwen-code-docs/en/users/configuration/auth/)。
 

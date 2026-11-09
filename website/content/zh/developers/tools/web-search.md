@@ -15,7 +15,7 @@ Qwen Code 提供两种网络搜索方式：
 
 | 登录方式                                                                                                                   | 内置搜索                                            |
 | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| [带订阅的 Qwen 账户](https://chat.qwen.ai/?memberPlan=qwen_code) — **Plus 或 Pro**                             | 开启                                              |
+| [带订阅的 Qwen 账户](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) — **Plus 或 Pro**                             | 开启                                              |
 | 阿里巴巴 ModelStudio → **标准 API Key**                                                                                    | 开启                                                |
 | 阿里巴巴 ModelStudio → **Token Plan**                                                                                      | 开启                                                |
 | 阿里巴巴 ModelStudio → **Coding Plan**                                                                                     | 关闭 —— 其端点未针对此 API 进行验证                  |
