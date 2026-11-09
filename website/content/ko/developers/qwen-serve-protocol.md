@@ -3770,7 +3770,9 @@ SSE 수준의 `id:` / `event:` 줄은 EventSource 호환성을 위해 `envelope.
 
 > [!note]
 >
-> Qwen OAuth 무료 티어는 2026-04-15에 중단되었습니다. 이 프로토콜에서 `qwen-oauth`을 레거시 v1 제공자 식별자로 취급하십시오. 새로운 클라이언트는 현재 지원되는 인증 제공자가 있을 경우 이를 우선적으로 사용해야 합니다.
+> 새로 연동할 때는 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)을 사용하세요. `GET /auth/subscription?paywallScene=cli`는 구매 링크를 `plansUrl`로 반환합니다. `POST /auth/subscription/flows?paywallScene=cli`로 브라우저 로그인을 별도로 시작한 뒤, `GET /auth/subscription/flows/:id`을 폴링하여 `authorizationUrl`를 가져옵니다.
+>
+> Qwen OAuth 무료 사용은 2026년 4월 15일에 종료되었습니다. `qwen-oauth`는 아래 경로의 기존 v1 제공자 식별자입니다.
 
 **런타임 위치.** 데몬은 가능하더라도 브라우저를 실행하지 않습니다. 클라이언트가 로컬에서 `open(verificationUri)`을 호출할지 여부를 결정합니다. 헤드리스 포드(표준 모드 B 배포)에서는 사용자가 브라우저가 있는 장치에서 URL을 엽니다. 권장 UX는 `docs/users/qwen-serve.md`을 참조하세요.
 
@@ -3796,8 +3798,8 @@ SSE 수준의 `id:` / `event:` 줄은 EventSource 호환성을 위해 `envelope.
   "providerId": "qwen-oauth",
   "status": "pending",
   "userCode": "USER-1",
-  "verificationUri": "https://chat.qwen.ai/api/v1/oauth2/device",
-  "verificationUriComplete": "https://chat.qwen.ai/api/v1/oauth2/device?user_code=USER-1",
+  "verificationUri": "https://chat.qwen.ai/api/v1/oauth2/device?entry=qwen_code&paywallScene=cli",
+  "verificationUriComplete": "https://chat.qwen.ai/api/v1/oauth2/device?user_code=USER-1&entry=qwen_code&paywallScene=cli",
   "expiresAt": 1700000600000,
   "intervalMs": 5000,
   "attached": false

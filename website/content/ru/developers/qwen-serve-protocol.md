@@ -3770,7 +3770,9 @@ data: {"v":1,"type":"client_evicted","data":{"reason":"queue_bytes_overflow","dr
 
 > [!note]
 >
-> Бесплатный уровень Qwen OAuth был прекращен 15.04.2026. Рассматривайте `qwen-oauth` как идентификатор провайдера устаревшей версии протокола v1; новым клиентам следует предпочесть актуально поддерживаемый провайдер авторизации, если он доступен.
+> Для новых интеграций используйте [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli). `GET /auth/subscription?paywallScene=cli` возвращает ссылку на покупку в поле `plansUrl`. Отдельно запустите вход в браузере через `POST /auth/subscription/flows?paywallScene=cli`, затем опрашивайте `GET /auth/subscription/flows/:id`, чтобы получить `authorizationUrl`.
+>
+> Бесплатный тариф Qwen OAuth закрыт 15 апреля 2026 года. `qwen-oauth` — прежний идентификатор провайдера v1 для описанных ниже маршрутов.
 
 **Локальность выполнения.** Демон никогда не запускает браузер — даже если может. Клиент решает, вызывать ли `open(verificationUri)` локально; на headless-подке (каноническое развертывание Mode B) пользователь открывает URL на любом устройстве, где у него есть браузер. См. `docs/users/qwen-serve.md` для рекомендуемого UX.
 
@@ -3796,8 +3798,8 @@ data: {"v":1,"type":"client_evicted","data":{"reason":"queue_bytes_overflow","dr
   "providerId": "qwen-oauth",
   "status": "pending",
   "userCode": "USER-1",
-  "verificationUri": "https://chat.qwen.ai/api/v1/oauth2/device",
-  "verificationUriComplete": "https://chat.qwen.ai/api/v1/oauth2/device?user_code=USER-1",
+  "verificationUri": "https://chat.qwen.ai/api/v1/oauth2/device?entry=qwen_code&paywallScene=cli",
+  "verificationUriComplete": "https://chat.qwen.ai/api/v1/oauth2/device?user_code=USER-1&entry=qwen_code&paywallScene=cli",
   "expiresAt": 1700000600000,
   "intervalMs": 5000,
   "attached": false

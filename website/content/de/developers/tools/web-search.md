@@ -15,7 +15,7 @@ Wenn Sie unter `tools.webSearch` nichts konfiguriert haben, wird das Tool regist
 
 | Wie Sie sich angemeldet haben                                                                                                  | Integrierte Suche                               |
 | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- |
-| [Qwen Account with Subscription](https://chat.qwen.ai/?memberPlan=qwen_code) — **Plus oder Pro**                             | aktiviert                                              |
+| [Qwen Account with Subscription](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) — **Plus oder Pro**                             | aktiviert                                              |
 | Alibaba ModelStudio → **Standard-API-Schlüssel**                                                                               | ein                                             |
 | Alibaba ModelStudio → **Token Plan**                                                                                           | ein                                             |
 | Alibaba ModelStudio → **Coding Plan**                                                                                          | aus — sein Endpunkt ist für diese API nicht verifiziert |

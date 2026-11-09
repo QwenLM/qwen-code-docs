@@ -11,7 +11,7 @@ Certifique-se de ter:
 - Um terminal ou prompt de comando aberto
 - Um projeto de código para trabalhar
 - **Uma das seguintes opções**:
-  - Uma conta Qwen com uma **assinatura Plus ou Pro** do [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code), que desbloqueia o acesso ao **Qwen Code e Agent**
+  - Uma conta Qwen com uma **assinatura Plus ou Pro** do [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli), que desbloqueia o acesso ao **Qwen Code e Agent**
   - Uma chave de API ou assinatura Token Plan da plataforma Qianwen AI / **QwenCloud** ([China](https://platform.qianwenai.com/docs/developer-guides/administration/api-keys) / [Internacional](https://docs.qwencloud.com/developer-guides/administration/api-keys)) — a configuração recomendada
   - Uma chave de API do **Alibaba Cloud ModelStudio** ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/))
   - Uma assinatura do **Alibaba Cloud Token Plan** ([Beijing](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model))
@@ -72,7 +72,7 @@ qwen
 
 O menu de primeira execução permite conectar um provedor de modelo. Escolha uma das opções:
 
-- [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code) — faça login com sua conta Qwen para acessar o **Qwen Code e Agent** com sua **assinatura Plus ou Pro**. Se você ainda não tem uma assinatura, visite [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) para assinar o Plus ou Pro, depois retorne ao Qwen Code e selecione [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code).
+- [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) — faça login com sua conta Qwen para acessar o **Qwen Code e Agent** com sua **assinatura Plus ou Pro**. Se você ainda não tem uma assinatura, visite [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) para assinar o Plus ou Pro, depois retorne ao Qwen Code e selecione [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli).
 - **QwenCloud** — a configuração recomendada. Abre um sub-menu:
   - **Token Plan**: assinatura com cota mensal de Créditos em um endpoint dedicado (edições Pessoal e Equipe).
   - **Chave de API Padrão**: pagamento por uso, conecte-se com uma chave de API existente da plataforma.

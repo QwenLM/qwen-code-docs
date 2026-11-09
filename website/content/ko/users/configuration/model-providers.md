@@ -12,7 +12,7 @@ Qwen Code에서는 `settings.json`의 `modelProviders` 설정을 통해 여러 �
 
 > [!note]
 >
-> `modelProviders`를 통해 API 키 제공자를 구성한 후 `/model`로 선택합니다. Qwen 계정 로그인의 경우 `/auth`에서 [**구독 포함 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code)을 선택하세요. API 키나 수동 `modelProviders` 구성이 필요하지 않습니다. 구독으로 사용 가능한 모델 중에서 선택하려면 `/model`를 사용하세요. 로그인 지침은 [인증](./auth.md)을 참조하십시오.
+> `modelProviders`를 통해 API 키 제공자를 구성한 후 `/model`로 선택합니다. Qwen 계정 로그인의 경우 `/auth`에서 [**구독 포함 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)을 선택하세요. API 키나 수동 `modelProviders` 구성이 필요하지 않습니다. 구독으로 사용 가능한 모델 중에서 선택하려면 `/model`를 사용하세요. 로그인 지침은 [인증](./auth.md)을 참조하십시오.
 
 > [!note]
 >
@@ -652,7 +652,7 @@ Coding Plan 모델을 수동으로 구성하려면 다른 OpenAI 호환 제공�
 | 설정 (`settings.json`)          | `security.auth.selectedType`        | `model.name`                                    | `security.auth.apiKey`                            | `security.auth.baseUrl`                            | —                      | —                                 |
 | 기본값 / 계산됨                 | `AuthType.QWEN_OAUTH`로 폴백        | 내장 기본값(OpenAI ⇒ `qwen3.5-plus`)            | —                                                 | —                                                  | —                      | 구성된 경우 `Config.getProxy()`   |
 
-\*이(가) 존재하면 CLI 인증 플래그가 설정을 재정의합니다. 그렇지 않은 경우 `security.auth.selectedType` 또는 암시적 기본값이 인증 유형을 결정합니다. 로그인 옵션은 [인증](./auth.md)을(를) 참조하세요. 레거시 무료 Qwen OAuth 제공자는 [구독이 포함된 Qwen 계정](https://chat.qwen.ai/?memberPlan=qwen_code)과 별개입니다.
+\*이(가) 존재하면 CLI 인증 플래그가 설정을 재정의합니다. 그렇지 않은 경우 `security.auth.selectedType` 또는 암시적 기본값이 인증 유형을 결정합니다. 로그인 옵션은 [인증](./auth.md)을(를) 참조하세요. 레거시 무료 Qwen OAuth 제공자는 [구독이 포함된 Qwen 계정](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)과 별개입니다.
 
 > [!note]
 >

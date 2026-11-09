@@ -2,32 +2,32 @@
 
 O menu `/auth` da primeira execução do Qwen Code possui cinco opções de nível superior. Escolha a que corresponde à forma como você deseja executar o CLI:
 
-- [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code): faça login com sua conta Qwen por meio do **Qwen OAuth** para acessar o **Qwen Code e Agent** com sua **assinatura Plus ou Pro** do [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code). Se você ainda não tem uma assinatura, visite [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) para assinar o Plus ou Pro, depois retorne ao Qwen Code e selecione [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code).
+- [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli): faça login com sua conta Qwen por meio do **Qwen OAuth** para acessar o **Qwen Code e Agent** com sua **assinatura Plus ou Pro** do [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli). Se você ainda não tem uma assinatura, visite [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) para assinar o Plus ou Pro, depois retorne ao Qwen Code e selecione [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli).
 - **QwenCloud**: configuração oficial recomendada. Abre um submenu com **Token Plan** (assinatura com cota mensal de Créditos · endpoint dedicado, edições Personal e Team) ou **Standard API Key** (pague pelo uso). Em seguida, escolha explicitamente a plataforma — **China — Plataforma AI Qianwen** ou **International — QwenCloud** — para que o idioma da interface nunca determine seu endpoint. Ambos os métodos de acesso também habilitam a ferramenta integrada [`web_search`](https://qwenlm.github.io/qwen-code-docs/en/developers/tools/web-search/) sem configuração adicional.
 - **Alibaba ModelStudio**: abre um submenu com **Coding Plan** (para desenvolvedores individuais · cota semanal incluída), **Token Plan** (para equipes e empresas · cobrança baseada em uso com endpoint dedicado) ou **Standard API Key** (conecte-se com uma chave de API existente do ModelStudio). O Token Plan e a Standard API Key também habilitam a ferramenta integrada [`web_search`](https://qwenlm.github.io/qwen-code-docs/en/developers/tools/web-search/) sem configuração adicional. Credenciais, endpoints e modelos salvos do ModelStudio continuam funcionando inalterados.
 - **Third-party Providers**: escolha um provedor integrado e conecte-se com uma API key (DeepSeek, Grok, MiniMax, Z.AI, Kimi, Idealab, ModelScope, OpenRouter, Requesty).
 - **Custom Provider**: conecte manualmente um servidor local, proxy ou provedor não suportado — suporta OpenAI, Anthropic, Gemini e outros endpoints compatíveis.
 
-## **Opção 1: Qwen OAuth —** [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code)
+## **Opção 1: Qwen OAuth —** [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)
 
-O Qwen OAuth permite que você faça login com sua conta Qwen e use sua **assinatura Plus ou Pro** do [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) para acessar o **Qwen Code e Agent**. No menu da primeira execução ou no diálogo `/auth`, escolha [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code) para começar.
+O Qwen OAuth permite que você faça login com sua conta Qwen e use sua **assinatura Plus ou Pro** do [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) para acessar o **Qwen Code e Agent**. No menu da primeira execução ou no diálogo `/auth`, escolha [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) para começar.
 
-- **Como funciona**: selecione [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code) e siga o fluxo de login no navegador para autorizar o Qwen Code com sua conta Qwen.
-- **Requisitos**: uma conta Qwen com uma **assinatura Plus ou Pro** ativa do [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) e acesso à internet.
+- **Como funciona**: selecione [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) e siga o fluxo de login no navegador para autorizar o Qwen Code com sua conta Qwen.
+- **Requisitos**: uma conta Qwen com uma **assinatura Plus ou Pro** ativa do [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) e acesso à internet.
 - **Benefícios**: acesse o **Qwen Code e Agent** através da sua assinatura Qwen sem configurar manualmente uma chave de API.
-- **Custo e cota**: o uso está sujeito ao seu plano de assinatura. Visite [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) para detalhes dos planos Plus e Pro.
+- **Custo e cota**: o uso está sujeito ao seu plano de assinatura. Visite [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) para detalhes dos planos Plus e Pro.
 
 ### **Configuração interativa**
 
-1. Se você ainda não tem uma assinatura, visite [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) e assine o **Plus ou Pro**. Se você já tem uma assinatura ativa, continue com a próxima etapa.
+1. Se você ainda não tem uma assinatura, visite [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) e assine o **Plus ou Pro**. Se você já tem uma assinatura ativa, continue com a próxima etapa.
 2. Inicie o Qwen Code no seu terminal:
 
    ```bash
    qwen
    ```
 
-3. No menu da primeira execução, escolha [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code). Se o Qwen Code já estiver em execução, digite `/auth` para abrir o menu de autenticação e selecione a mesma opção.
-4. Conclua o fluxo de login e autorização no navegador usando a **mesma conta Qwen que você usou para assinar** em [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code).
+3. No menu da primeira execução, escolha [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli). Se o Qwen Code já estiver em execução, digite `/auth` para abrir o menu de autenticação e selecione a mesma opção.
+4. Conclua o fluxo de login e autorização no navegador usando a **mesma conta Qwen que você usou para assinar** em [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli).
 5. Retorne ao Qwen Code para começar a trabalhar com sua assinatura.
 
 Para ambientes não interativos onde você não pode concluir o fluxo de login no navegador, como CI ou contêineres desassistidos, use um método de autenticação baseado em chave de API.

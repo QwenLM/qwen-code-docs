@@ -15,7 +15,7 @@ DashScope では、組み込みツールが自己完結型の検索リクエス�
 
 | サインイン方法                                                                                                          | ビルトイン検索                                  |
 | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| [Qwen アカウント（サブスクリプション付き）](https://chat.qwen.ai/?memberPlan=qwen_code) — **Plus または Pro**                             | オン                                              |
+| [Qwen アカウント（サブスクリプション付き）](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) — **Plus または Pro**                             | オン                                              |
 | Alibaba ModelStudio → **標準 API キー**                                                                                 | オン                                              |
 | Alibaba ModelStudio → **Token Plan**                                                                                       | オン                                              |
 | Alibaba ModelStudio → **Coding Plan**                                                                                      | off — この API に対してエンドポイントが検証されていません |

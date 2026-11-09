@@ -790,9 +790,15 @@ curl "http://127.0.0.1:4170/session/$SESSION_ID/transcript?limit=100"
 
 当守护进程在远程 Pod 上运行（与你没有共享显示）时，客户端可以通过 HTTP 触发 OAuth 设备流程。守护进程自己轮询 IdP；你的工作只是在任何具有浏览器的设备上打开一个 URL。
 
+新接入请使用 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)，并开通 Plus 或 Pro 订阅。购买订阅和浏览器授权时使用同一个 Qwen 账户。
+
+1. 调用 `POST /auth/subscription/flows?paywallScene=cli` 发起登录，保存响应中的 `id`。
+2. 轮询 `GET /auth/subscription/flows/:id`。返回 `authorizationUrl` 后，在浏览器中打开该地址并完成登录。
+3. 流程进入 `ready` 后，调用 `POST /workspaces/:workspace/auth/subscription`，为需要使用订阅的工作区激活。
+
 > [!note]
 >
-> Qwen OAuth 免费层级已于 2026-04-15 停止。下面的 `qwen-oauth` 示例记录了设备流程协议形状和遗留提供方标识符；新设置应使用当前支持的身份验证提供方。
+> Qwen OAuth 免费额度已于 2026-04-15 停止提供。下方的 `qwen-oauth` 示例供查阅旧版设备授权协议。
 
 ```bash
 # 1. Start a flow. The daemon contacts the IdP, returns a code + URL.
@@ -803,8 +809,8 @@ curl -X POST http://127.0.0.1:4170/workspace/auth/device-flow \
 # → 201 {
 #     "deviceFlowId": "fa07c61b-…",
 #     "userCode": "USER-1",
-#     "verificationUri": "https://chat.qwen.ai/api/v1/oauth2/device",
-#     "verificationUriComplete": "https://chat.qwen.ai/...?user_code=USER-1",
+#     "verificationUri": "https://chat.qwen.ai/api/v1/oauth2/device?entry=qwen_code&paywallScene=cli",
+#     "verificationUriComplete": "https://chat.qwen.ai/...?user_code=USER-1&entry=qwen_code&paywallScene=cli",
 #     "expiresAt": 1700000600000,
 #     "intervalMs": 5000,
 #     "attached": false
