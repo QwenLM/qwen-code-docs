@@ -7,4 +7,8 @@ export default {
     type: 'page',
     title: 'User Guide',
   },
+  developers: {
+    type: 'page',
+    title: 'Developer Guide',
+  },
 };

@@ -7,4 +7,8 @@ export default {
     type: 'page',
     title: '用户指南',
   },
+  developers: {
+    type: 'page',
+    title: '开发指南',
+  },
 };
