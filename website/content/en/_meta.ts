@@ -1,10 +1,14 @@
 export default {
-  index: {
-    type: 'page',
-    display: 'hidden',
+  "index": {
+    "type": "page",
+    "display": "hidden"
   },
-  users: {
-    type: 'page',
-    title: 'User Guide',
+  "users": {
+    "type": "page",
+    "title": "User Guide"
   },
+  "developers": {
+    "type": "page",
+    "title": "Developer Guide"
+  }
 };

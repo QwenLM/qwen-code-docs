@@ -1,0 +1,1 @@
+export default { contributing: "Contributing" };
