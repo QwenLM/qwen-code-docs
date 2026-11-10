@@ -1,1 +1,3 @@
-export default { contributing: "Contributing" };
+export default {
+  contributing: 'Contributing',
+};

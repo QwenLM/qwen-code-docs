@@ -1,47 +1,47 @@
 export default {
-  "Get started": {
-    "type": "separator",
-    "title": "开始使用"
+  'Get started': {
+    type: 'separator',
+    title: '开始使用',
   },
-  "overview": "概览",
-  "installation": "安装与更新",
-  "quickstart": "快速开始",
-  "authentication": "登录认证",
-  "Configure": {
-    "type": "separator",
-    "title": "配置与权限"
+  overview: '概览',
+  installation: '安装与更新',
+  quickstart: '快速开始',
+  authentication: '登录认证',
+  Configure: {
+    type: 'separator',
+    title: '配置与权限',
   },
-  "models": "模型与提供商",
-  "settings": "设置",
-  "permissions": "权限与信任",
-  "Work in a project": {
-    "type": "separator",
-    "title": "项目中的工作"
+  models: '模型与提供商',
+  settings: '设置',
+  permissions: '权限与信任',
+  'Work in a project': {
+    type: 'separator',
+    title: '项目中的工作',
   },
-  "terminal": "终端交互",
-  "context-memory": "上下文与记忆",
-  "sessions": "会话与恢复",
-  "workspaces": "目录与 Worktree",
-  "planning": "规划与目标",
-  "subagents": "子 Agent",
-  "tasks-workflows": "后台任务与工作流",
-  "Extend and automate": {
-    "type": "separator",
-    "title": "扩展与自动化"
+  terminal: '终端交互',
+  'context-memory': '上下文与记忆',
+  sessions: '会话与恢复',
+  workspaces: '目录与 Worktree',
+  planning: '规划与目标',
+  subagents: '子 Agent',
+  'tasks-workflows': '后台任务与工作流',
+  'Extend and automate': {
+    type: 'separator',
+    title: '扩展与自动化',
   },
-  "skills": "Skills",
-  "custom-commands": "自定义命令",
-  "plugins": "插件与市场",
-  "mcp": "MCP",
-  "hooks": "Hooks",
-  "headless": "非交互脚本",
-  "Reference and support": {
-    "type": "separator",
-    "title": "参考与支持"
+  skills: 'Skills',
+  'custom-commands': '自定义命令',
+  plugins: '插件与市场',
+  mcp: 'MCP',
+  hooks: 'Hooks',
+  headless: '非交互脚本',
+  'Reference and support': {
+    type: 'separator',
+    title: '参考与支持',
   },
-  "cli-reference": "CLI 参考",
-  "settings-reference": "设置参考",
-  "hooks-reference": "Hook 参考",
-  "troubleshooting": "排错",
-  "data-privacy": "数据与隐私"
+  'cli-reference': 'CLI 参考',
+  'settings-reference': '设置参考',
+  'hooks-reference': 'Hook 参考',
+  troubleshooting: '排错',
+  'data-privacy': '数据与隐私',
 };

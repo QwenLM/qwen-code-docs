@@ -1,47 +1,47 @@
 export default {
-  "Get started": {
-    "type": "separator",
-    "title": "Get started"
+  'Get started': {
+    type: 'separator',
+    title: 'Get started',
   },
-  "overview": "Overview",
-  "installation": "Installation and updates",
-  "quickstart": "Quickstart",
-  "authentication": "Authentication",
-  "Configure": {
-    "type": "separator",
-    "title": "Configure"
+  overview: 'Overview',
+  installation: 'Installation and updates',
+  quickstart: 'Quickstart',
+  authentication: 'Authentication',
+  Configure: {
+    type: 'separator',
+    title: 'Configure',
   },
-  "models": "Models and providers",
-  "settings": "Settings",
-  "permissions": "Permissions and trust",
-  "Work in a project": {
-    "type": "separator",
-    "title": "Work in a project"
+  models: 'Models and providers',
+  settings: 'Settings',
+  permissions: 'Permissions and trust',
+  'Work in a project': {
+    type: 'separator',
+    title: 'Work in a project',
   },
-  "terminal": "Terminal interaction",
-  "context-memory": "Context and memory",
-  "sessions": "Sessions and recovery",
-  "workspaces": "Directories and worktrees",
-  "planning": "Plans and goals",
-  "subagents": "Subagents",
-  "tasks-workflows": "Background tasks and workflows",
-  "Extend and automate": {
-    "type": "separator",
-    "title": "Extend and automate"
+  terminal: 'Terminal interaction',
+  'context-memory': 'Context and memory',
+  sessions: 'Sessions and recovery',
+  workspaces: 'Directories and worktrees',
+  planning: 'Plans and goals',
+  subagents: 'Subagents',
+  'tasks-workflows': 'Background tasks and workflows',
+  'Extend and automate': {
+    type: 'separator',
+    title: 'Extend and automate',
   },
-  "skills": "Skills",
-  "custom-commands": "Custom commands",
-  "plugins": "Plugins and marketplaces",
-  "mcp": "MCP",
-  "hooks": "Hooks",
-  "headless": "Headless scripting",
-  "Reference and support": {
-    "type": "separator",
-    "title": "Reference and support"
+  skills: 'Skills',
+  'custom-commands': 'Custom commands',
+  plugins: 'Plugins and marketplaces',
+  mcp: 'MCP',
+  hooks: 'Hooks',
+  headless: 'Headless scripting',
+  'Reference and support': {
+    type: 'separator',
+    title: 'Reference and support',
   },
-  "cli-reference": "CLI reference",
-  "settings-reference": "Settings reference",
-  "hooks-reference": "Hook reference",
-  "troubleshooting": "Troubleshooting",
-  "data-privacy": "Data and privacy"
+  'cli-reference': 'CLI reference',
+  'settings-reference': 'Settings reference',
+  'hooks-reference': 'Hook reference',
+  troubleshooting: 'Troubleshooting',
+  'data-privacy': 'Data and privacy',
 };
