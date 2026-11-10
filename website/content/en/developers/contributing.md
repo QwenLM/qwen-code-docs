@@ -1,5 +1,13 @@
 # Contributing to Qwen Code
 
+## Preview status and community contributions
+
+Qwen Code 1.x is in Preview and evolving rapidly. We aim to maintain compatibility with existing features and interfaces, but some interfaces, configuration options, and behaviors may change before the release stabilizes. Please review the release notes before upgrading.
+
+To focus on this phase of development, we are temporarily not accepting community pull requests. We expect to open PR contributions after December 2026 and will announce the details in this repository. In the meantime, issues and suggestions are welcome.
+
+The development and verification instructions below are available for local development. Once community PR contributions open, use the checklist below to prepare your submission.
+
 Start with a small, reproducible issue or a focused change. Describe the current behavior, expected behavior, and how to verify the change. Keep unrelated formatting and refactors out of a behavioral fix.
 
 ## Source layout

@@ -4,7 +4,7 @@ Start with the exact command, version, working directory, and error message. Cha
 
 ## The command is missing or the wrong version starts
 
-Run `qwen --version` and inspect your shell's executable lookup. Open a new terminal after changing PATH. If several installations coexist, verify the resolved executable before changing settings. The Preview distribution method is still being finalized; follow the instructions accompanying your actual build.
+Run `qwen --version` and inspect your shell's executable lookup. Open a new terminal after changing PATH. If several installations coexist, verify the resolved executable before changing settings. See [installation and updates](/en/users/installation/) for installation instructions.
 
 ## Startup reports a settings error
 

@@ -15,7 +15,7 @@ qwen
 
 Use `/auth` to connect an account or provider and `/model` to select a model. Ask: “Explain this project's entry points and test commands. Do not edit files yet.” Then request a small change with an explicit verification step. Read the proposed permissions before approving tools; use `/diff` to inspect changes.
 
-The public installation method is awaiting confirmation. See [installation](/en/users/installation/) for the current distribution boundary and [quickstart](/en/users/quickstart/) for the first task.
+See [installation](/en/users/installation/) for installation commands and [quickstart](/en/users/quickstart/) for your first task.
 
 ## Find the right guide
 

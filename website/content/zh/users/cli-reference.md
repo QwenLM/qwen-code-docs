@@ -136,4 +136,4 @@ qwen --version
 | `qwen update` | `--check` | [Installation](/zh/users/installation/) |
 | `qwen rollback` | `--to` | [Installation](/zh/users/installation/) |
 
-更新和回退依赖安装状态及可用发行源。本文不将尚未确认的公开分发方式视为已发布能力。有关脚本输入输出见[非交互模式](/zh/users/headless/)。
+更新和回退依赖安装状态及可用发行源。安装方法见[安装与更新](/zh/users/installation/)。有关脚本输入输出见[非交互模式](/zh/users/headless/)。

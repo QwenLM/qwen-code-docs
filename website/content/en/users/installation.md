@@ -1,12 +1,22 @@
 # Installation and updates
 
-> The distribution method for Qwen Code 1.0 Preview is being finalized. Public installation commands, download locations, and supported release artifacts will be added when the release is available.
+## Install Qwen Code
 
-This guide describes how to verify an installation and how the update commands work in builds that include a configured release source. It does not establish that a public Preview package is already available.
+**Windows (PowerShell):**
+
+```powershell
+irm https://qwen-code.oss-accelerate.aliyuncs.com/install.ps1 | iex
+```
+
+**Linux / macOS:**
+
+```sh
+curl -fsSL 'https://qwen-code.oss-accelerate.aliyuncs.com/install.sh' | bash
+```
 
 ## Verify the executable
 
-After obtaining the Preview build through its release instructions, open a new terminal and run:
+After installation, open a new terminal and run:
 
 ```sh
 qwen --version
@@ -15,7 +25,7 @@ qwen --help
 
 Check the version before following this documentation. An older installation may use different settings, authentication flows, or commands. If the command cannot be found, check that the directory containing the executable is on your shell's PATH. If multiple installations exist, check which executable your shell resolves before changing configuration.
 
-The examples in this documentation use the executable name `qwen`. They do not imply a particular package manager or installation mechanism.
+The examples in this documentation use the executable name `qwen`.
 
 ## Check for an update
 

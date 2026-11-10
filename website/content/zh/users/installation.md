@@ -1,12 +1,22 @@
 # 安装与更新
 
-> Qwen Code 1.0 Preview 的发行方式正在确认中。版本发布时，将补充公开安装命令、下载位置及实际提供的发行产物。
+## 安装 Qwen Code
 
-本页介绍安装后的验证方法，以及配置了发行源的构建中可用的更新命令。这不代表公开 Preview 安装包已经发布。
+**Windows (PowerShell):**
+
+```powershell
+irm https://qwen-code.oss-accelerate.aliyuncs.com/install.ps1 | iex
+```
+
+**Linux / macOS:**
+
+```sh
+curl -fsSL 'https://qwen-code.oss-accelerate.aliyuncs.com/install.sh' | bash
+```
 
 ## 验证可执行程序
 
-按照 Preview 版本的发行说明获取程序后，打开新终端并执行：
+安装完成后，打开新终端并执行：
 
 ```sh
 qwen --version
@@ -15,7 +25,7 @@ qwen --help
 
 使用本文档前先核对版本。旧版本的配置、认证流程和命令可能不同。如果找不到命令，请检查可执行程序所在目录是否已加入当前 shell 的 PATH。如果机器上有多份安装，请先确认 shell 实际启动的是哪一份，再排查配置。
 
-本文档使用 `qwen` 作为可执行程序名称，不以此指定包管理器或安装方式。
+本文档使用 `qwen` 作为可执行程序名称。
 
 ## 检查更新
 

@@ -136,4 +136,4 @@ The following groups expose these actions. Read their `--help` output for argume
 | `qwen update` | `--check` | [Installation](/en/users/installation/) |
 | `qwen rollback` | `--to` | [Installation](/en/users/installation/) |
 
-Update and rollback depend on installation state and an available release source. Public distribution remains unconfirmed. See [headless mode](/en/users/headless/) for scripted input and output.
+Update and rollback depend on installation state and an available release source. See [installation and updates](/en/users/installation/) for installation instructions. See [headless mode](/en/users/headless/) for scripted input and output.
