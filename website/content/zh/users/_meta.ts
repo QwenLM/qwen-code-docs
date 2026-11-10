@@ -6,12 +6,12 @@ export default {
   overview: '概览',
   installation: '安装与更新',
   quickstart: '快速开始',
-  authentication: '登录认证',
+  authentication: '登录与认证',
   Configure: {
     type: 'separator',
     title: '配置与权限',
   },
-  models: '模型与提供商',
+  models: '模型与服务商',
   settings: '设置',
   permissions: '权限与信任',
   'Work in a project': {
@@ -42,6 +42,6 @@ export default {
   'cli-reference': 'CLI 参考',
   'settings-reference': '设置参考',
   'hooks-reference': 'Hook 参考',
-  troubleshooting: '排错',
+  troubleshooting: '故障排查',
   'data-privacy': '数据与隐私',
 };

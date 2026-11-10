@@ -77,7 +77,7 @@ printf '%s\n' '{"type":"user","message":{"content":"Explain the repository struc
 
 `--max-output-tokens` 限制模型输出 token，不是总费用或任务耗时上限。`--max-model-request-retries` 控制 provider 请求重试次数。需要总时限时，在外层任务运行器设置超时；有副作用的任务不要盲目重跑。
 
-## 排错
+## 故障排查
 
 - **提示登录：**任务执行前配置所选认证方式，不要通过模拟输入终端登录对话框传递密钥。
 - **项目或配置不对：**检查进程目录、`--cwd`、`--config-dir` 和设置来源。

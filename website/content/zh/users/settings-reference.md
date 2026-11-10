@@ -87,7 +87,7 @@
 | `plugins.enabled` | array | `[]` | 是 | 已废弃：请改用顶层 `enabledPlugins`。仅为迁移保留。 |
 | `plugins.disabled` | array | `[]` | 是 | 已废弃：请改用顶层 `enabledPlugins` 并将值设为 `false`。仅为迁移保留。 |
 | `plugins.autoUpdate` | boolean | `true` | 否 | 插件自动更新 |
-| `disableAllHooks` | boolean | `false` | 否 | 禁用全部用户 Hooks |
+| `disableAllHooks` | boolean | `false` | 否 | 为 true 时，无论各项单独设置如何，禁用全部 Hook 和 statusLine 执行。顶层总开关。 |
 | `allowedHttpHookUrls` | array | 未设置 / 由运行时决定 | 是 | 允许的 HTTP Hook URL 规则 |
 | `hooksConfig.enabled` | boolean | `true` | 是 | 启用 Hook 系统 |
 | `hooksConfig.notifications` | boolean | `false` | 否 | 显示 Hook 通知 |

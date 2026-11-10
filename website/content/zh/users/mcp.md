@@ -73,7 +73,7 @@ qwen --mcp-config ./mcp-for-task.json --strict-mcp-config
 
 `mcp-for-task.json` 使用上面的 `mcpServers` 结构。`--mcp-config` 接受 JSON 文件或内联 JSON，可重复指定。`--strict-mcp-config` 只使用显式提供的 MCP 配置，不再加载常规服务器来源。工具访问范围仍需通过权限及工具配置单独限制。
 
-## 排错
+## 故障排查
 
 - **Stdio 无法启动：**独立运行程序，检查绝对路径、运行时依赖和环境；stdout 必须承载 MCP 协议，诊断输出应写入 stderr。
 - **HTTP 连接或认证失败：**检查 URL、传输类型、代理和服务认证；普通网页不是 MCP 端点。

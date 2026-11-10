@@ -5,11 +5,11 @@
 - [概览](/zh/users/overview/)
 - [安装与更新](/zh/users/installation/)
 - [快速开始](/zh/users/quickstart/)
-- [登录认证](/zh/users/authentication/)
+- [登录与认证](/zh/users/authentication/)
 
 ## 配置与权限
 
-- [模型与提供商](/zh/users/models/)
+- [模型与服务商](/zh/users/models/)
 - [设置](/zh/users/settings/)
 - [权限与信任](/zh/users/permissions/)
 
@@ -37,7 +37,7 @@
 - [CLI 参考](/zh/users/cli-reference/)
 - [设置参考](/zh/users/settings-reference/)
 - [Hook 参考](/zh/users/hooks-reference/)
-- [排错](/zh/users/troubleshooting/)
+- [故障排查](/zh/users/troubleshooting/)
 - [数据与隐私](/zh/users/data-privacy/)
 
 ## 参与开发

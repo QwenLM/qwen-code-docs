@@ -17,7 +17,7 @@ qwen --version
 | 语法 | 用途 |
 | --- | --- |
 | `-d, --debug` | 调试模式 |
-| `-m, --model <model>` | 本次会话的模型 |
+| `-m, --model <model>` | 本次会话的模型。默认模型和新模型使用模型名，自定义模型使用 modelID |
 | `--reasoning-effort <level>` | 推理强度 |
 | `--thinking <mode>` | 思考模式：auto/adaptive/enabled/disabled |
 | `--thinking-budget <tokens>` | 固定思考 token 预算，并启用 thinking |
@@ -27,7 +27,7 @@ qwen --version
 | `-w, --cwd <dir>` | 启动前切换目录 |
 | `--config-dir <dir>` | 本次用户配置根目录 |
 | `--worktree [name]` | 启动新的 Git worktree，可指定名称 |
-| `--permission-mode <mode>` | 权限模式 |
+| `--permission-mode <mode>` | 权限模式：default、accept_edits、bypass_permissions、dont_ask、auto（受策略约束） |
 | `--dangerously-skip-permissions` | 跳过普通授权请求；不可跳过的检查仍适用 |
 | `--allowed-mcp-server-names <name>` | 允许的 MCP 服务名，可重复 |
 | `--tools <tools...>` | 限制内置工具；空字符串禁用全部，default 使用全部 |
@@ -56,10 +56,10 @@ qwen --version
 | `--max-model-request-retries <count>` | 模型请求最大重试次数 |
 | `--mcp-config <config>` | MCP 配置 JSON 或文件 |
 | `--strict-mcp-config` | 仅使用显式 MCP 配置 |
-| `--setting-sources <source>` | 启用的设置来源 |
+| `--setting-sources <source>` | 要加载的设置来源（user、project、local） |
 | `--settings <json>` | 本次覆盖设置：JSON 或文件 |
 
-`--help` 与 `--version` 由命令框架提供。工具允许规则不会替代项目信任或组织限制。`--dangerously-skip-permissions` 会跳过普通权限确认，应先阅读[权限](/zh/users/permissions/)。模型是否支持思考与上下文参数取决于所选模型。
+`--help` 与 `--version` 由命令框架提供。工具允许规则不会替代项目信任或组织限制。跳过审批时，不可跳过的检查仍会执行。使用 `--dangerously-skip-permissions` 前，应先阅读[权限](/zh/users/permissions/)。模型是否支持思考与上下文参数取决于所选模型。
 
 ## 交互式斜杠命令
 
@@ -115,7 +115,7 @@ qwen --version
 | `/usage` | 查看本次会话用量 |
 | `/vim` | 切换 Vim 模式 |
 | `/workflows` | 浏览 Workflow 任务 |
-| `/auth` | 连接或切换账号/提供商；别名 `/connect`、`/login` |
+| `/auth` | 连接或切换账号/服务商；别名 `/connect`、`/login` |
 | `/logout` | 退出当前账号登录；别名 `/signout` |
 | `/terminal-setup` | 在支持的交互终端中配置终端集成 |
 

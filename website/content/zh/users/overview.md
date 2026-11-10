@@ -13,7 +13,7 @@ cd my-project
 qwen
 ```
 
-通过 `/auth` 连接账号或提供商，再用 `/model` 选择模型。可以先提问：“解释项目入口和测试命令，先不要修改文件。”随后提出一个范围明确的小改动，并要求执行对应验证。批准工具操作前阅读权限提示，通过 `/diff` 查看改动。
+通过 `/auth` 连接账号或服务商，再用 `/model` 选择模型。可以先提问：“解释项目入口和测试命令，先不要修改文件。”随后提出一个范围明确的小改动，并要求执行对应验证。批准工具操作前阅读权限提示，通过 `/diff` 查看改动。
 
 安装命令见[安装与更新](/zh/users/installation/)，首次使用步骤见[快速开始](/zh/users/quickstart/)。
 
@@ -21,7 +21,7 @@ qwen
 
 | 需求 | 文档 |
 | --- | --- |
-| 连接账号、API 和模型 | [登录认证](/zh/users/authentication/)、[模型配置](/zh/users/models/) |
+| 连接账号、API 和模型 | [登录与认证](/zh/users/authentication/)、[模型配置](/zh/users/models/) |
 | 设置项目行为与操作权限 | [设置](/zh/users/settings/)、[权限](/zh/users/permissions/) |
 | 提高终端使用效率 | [终端交互](/zh/users/terminal/)、[上下文与记忆](/zh/users/context-memory/) |
 | 恢复、分支与回退 | [会话](/zh/users/sessions/)、[工作目录](/zh/users/workspaces/) |
@@ -30,7 +30,7 @@ qwen
 | 连接工具与事件自动化 | [MCP](/zh/users/mcp/)、[Hooks](/zh/users/hooks/) |
 | 从脚本调用 CLI | [非交互模式](/zh/users/headless/) |
 | 查找准确语法 | [CLI 参考](/zh/users/cli-reference/)、[设置参考](/zh/users/settings-reference/)、[Hook 参考](/zh/users/hooks-reference/) |
-| 排查问题与检查本地数据 | [排错](/zh/users/troubleshooting/)、[数据与隐私](/zh/users/data-privacy/) |
+| 排查问题与检查本地数据 | [故障排查](/zh/users/troubleshooting/)、[数据与隐私](/zh/users/data-privacy/) |
 
 ## Preview 范围
 

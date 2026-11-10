@@ -72,7 +72,7 @@ qwen skills uninstall review-tests --scope project
 
 开发本地 Skill 时可以使用链接，它引用源目录。确认安装前应阅读指令及脚本；`--consent` 跳过安装确认，仅应在完成审阅后使用。
 
-## 排错
+## 故障排查
 
 - **`/skills` 中没有出现：**检查 `SKILL.md` 文件名、YAML 语法、项目信任、作用域和加载诊断；`SKILL.md` 必须位于自己的命名目录中。
 - **列表中存在但斜杠补全不显示：**检查 `user-invocable`、禁用状态和完整命名空间。
