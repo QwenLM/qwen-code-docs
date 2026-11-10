@@ -63,6 +63,8 @@ maxTurns: 12
 
 `memory: user` 使用 `~/.qwen/agent-memory/<agent-name>/`；`project` 使用 `.qwen/agent-memory/<agent-name>/`；`local` 使用 `.qwen/agent-memory-local/<agent-name>/`。目录包含 `MEMORY.md` 入口及可选主题文件。不希望共享的项目记忆可选 `local`，并将私有本地数据排除在版本控制之外。
 
+只有开启自动记忆（`autoMemoryEnabled` / `autoMemoryUserScopeEnabled`；非交互运行还需设置 `QWEN_MEMORY_HEADLESS=1`）时，Agent 记忆才会生效，否则忽略 `memory` 字段。详见[上下文与记忆](/zh/users/context-memory/)。
+
 记忆支持可能在应用拒绝规则前补充维护记忆所需的文件工具。请检查最终权限，不要默认记忆只读。
 
 若需要继承当前完整对话的后台工作者，而非普通专门角色，请参阅 [`/subtask` 与任务管理](/zh/users/tasks-workflows/)。

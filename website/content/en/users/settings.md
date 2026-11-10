@@ -15,6 +15,8 @@ The merge order is defaults → user → trusted project → trusted local → f
 
 Project and local settings are excluded when the project is not trusted. A project cannot grant itself trust through its own settings. Explicit `--settings` input still applies. See [Permissions](/en/users/permissions/).
 
+Non-interactive runs skip the trust check: with `-p`, piped or redirected input or output, `CI=true`, or `GITHUB_ACTIONS=true`, the working directory is treated as trusted and its project and local settings load. In automation against a repository whose configuration you have not reviewed, pass `--setting-sources user`.
+
 Add local settings and files containing secrets to your project's ignore rules as appropriate. A filename containing “local” is not by itself a Git exclusion.
 
 ## Start with a small configuration
@@ -63,15 +65,15 @@ Settings values can reference environment variables, for example `"${MODEL_API_K
 
 Settings expansion occurs **before** the settings service loads a `.env` file. Therefore, do not rely on a variable defined only in a newly loaded `.env` file to resolve a settings placeholder during that load. Hook placeholders are preserved for hook-specific handling.
 
-The environment-file lookup is limited:
+Qwen Code loads one environment file per session:
 
-- A trusted, non-home project may load `<project>/.qwen/.env` when project or local settings sources are enabled.
-- The user configuration directory's `.env` is the fallback.
+- If `<project>/.qwen/.env` exists, it is loaded. This does not depend on project trust or `--setting-sources`.
+- Otherwise, the user configuration directory's `.env` is loaded.
 - Parent directories and ordinary project-root `.env` files are not searched.
 - Existing environment variables take precedence.
-- An untrusted project's environment file is not loaded.
+- In an untrusted project, the project `.env` cannot set variables that change which programs run: the shell prefix and Git Bash path, and on Windows also `PATH`, `BASH_PATH`, `GIT_BASH`, `GIT_HOME`, and `SYSTEMROOT`. Other variables in the file still load.
 
-Disabling all disk setting sources does not by itself disable the user environment-file fallback.
+Disabling all disk setting sources does not disable environment-file loading. Do not put values in a project `.env` that you would not want applied in every session in that directory.
 
 ## Apply and diagnose changes
 

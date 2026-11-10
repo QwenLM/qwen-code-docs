@@ -56,6 +56,6 @@ Two settings control the scopes:
 }
 ```
 
-These settings require a restart. If omitted, the runtime determines the defaults; do not assume automatic memory is enabled in every installation. `/memory` shows the overview, and `/memory manage` opens automatic-memory file management when the feature is enabled. If it reports that memory is disabled, review the settings and restart.
+These settings require a restart. If omitted, both scopes are on in interactive sessions. In `--print` and other headless runs, automatic memory is off unless `QWEN_MEMORY_HEADLESS=1` is set; `QWEN_MEMORY_PROJECT` and `QWEN_MEMORY_USER` then override each scope for those runs. `/memory` shows the overview, and `/memory manage` opens automatic-memory file management when the feature is enabled. If it reports that memory is disabled, review the settings and restart.
 
 Review saved information periodically, especially before sharing a workspace. Memory is contextual guidance, not a guarantee that every past fact will be remembered or remain correct. Agent-specific persistent memory is described in [subagents](/en/users/subagents/).

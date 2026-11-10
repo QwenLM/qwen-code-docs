@@ -17,7 +17,7 @@ Logs can contain paths, errors, tool activity, and session details. Inspect and 
 
 ## Usage statistics and Privacy Mode
 
-`privacy.usageStatisticsEnabled` defaults to `true`. Set it to `false` to enable Privacy Mode:
+`privacy.usageStatisticsEnabled` defaults to `true` and controls usage statistics. Set it to `false` to enable Privacy Mode:
 
 ```json
 {
@@ -27,7 +27,7 @@ Logs can contain paths, errors, tool activity, and session details. Inspect and 
 }
 ```
 
-Privacy Mode reduces telemetry attributes. It does **not** mean all network traffic or all telemetry stops: common attributes can still include session ID, a random installation ID, interactive-mode status, and a privacy-mode indicator. Authentication, model requests, enabled integrations, and local logging are separate from this setting. Do not use it as an offline-mode switch.
+The public Qwen Code build does not install a usage-telemetry exporter. Privacy Mode does **not** stop other network traffic: authentication, model requests, update checks, enabled integrations, and local logging are separate from this setting. Do not use it as an offline-mode switch.
 
 ## Retention
 

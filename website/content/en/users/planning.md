@@ -22,13 +22,13 @@ Review the resulting plan and its assumptions before moving to implementation. R
 
 ## Set a goal
 
-Define an outcome and, optionally, a turn limit:
+Define an outcome and, optionally, a different turn limit:
 
 ```text
 /goal Implement pagination and verify the relevant tests --turns 20
 ```
 
-The command registers the goal and immediately starts work. A turn limit is a limit on goal turns, not tokens, money, or wall-clock time. The displayed status tracks turns used and elapsed time. A positive integer sets a limit; `--turns -1` explicitly requests unlimited turns. When a finite limit is exhausted, the goal is automatically paused.
+The command registers the goal and immediately starts work. A turn limit is a limit on goal turns, not tokens, money, or wall-clock time. The displayed status tracks turns used and elapsed time. Without `--turns`, the goal gets the default limit of 100 turns. A positive integer sets a different limit; `--turns -1` explicitly requests unlimited turns. When a finite limit is exhausted, the goal is automatically paused.
 
 | Command | Purpose |
 | --- | --- |

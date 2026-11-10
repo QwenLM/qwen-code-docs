@@ -47,7 +47,7 @@ qwen --version
 | `--input-format <format>` | 输入格式 |
 | `--max-output-tokens <size>` | 最大输出 token 数 |
 | `-p, --print` | 打印模式，处理请求后退出 |
-| `--no-session-persistence` | 不持久化本次会话 |
+| `--no-session-persistence` | 不持久化本次会话：会话不会写入磁盘，之后也无法恢复（仅在 `--print` 下可用） |
 | `--agent <name>` | 使用指定 Agent |
 | `--agents <json>` | JSON 格式 Agent 定义 |
 | `--append-system-prompt <text>` | 追加系统提示 |
@@ -77,7 +77,7 @@ qwen --version
 | `/context-window` | 设置当前模型上下文窗口 |
 | `/continue` | 继续当前项目最近会话 |
 | `/copy` | 复制最近回答；/copy N 复制倒数第 N 条 |
-| `/corgi` | 切换 corgi 模式 |
+| `/crontab` | 管理定时循环和 cron 任务 |
 | `/diff` | 查看未提交 Git 差异 |
 | `/editor` | 设置外部编辑器 |
 | `/effort` | 设置推理强度 |
@@ -87,15 +87,16 @@ qwen --version
 | `/hooks` | 管理 Hooks |
 | `/init` | 分析项目并生成上下文指令文件 |
 | `/insights` | 分析本地会话并生成报告 |
-| `/marketplace` | 管理插件市场 |
 | `/mcp` | 管理 MCP 服务 |
 | `/memory` | 管理记忆 |
 | `/model` | 选择或配置模型 |
 | `/new` | 开始新对话 |
 | `/output-style` | 配置下一次对话的输出风格 |
+| `/peers` | 列出同级会话，查看被暂存的跨会话消息 |
 | `/permissions` | 管理权限 |
 | `/plan` | 切换规划模式 |
 | `/plugins` | 管理插件 |
+| `/profile` | 查看或控制运行时性能分析（诊断用） |
 | `/quit` | 退出 |
 | `/release-notes` | 查看近期版本说明 |
 | `/rename` | 重命名会话 |

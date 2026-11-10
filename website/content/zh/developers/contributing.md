@@ -45,7 +45,7 @@ cd packages/core
 npx vitest run path/to/affected.test.ts
 ```
 
-将示例路径替换为验证当前行为的实际测试。CLI 界面测试应直接用 `npx vitest run` 指定文件。根目录测试命令只负责阻止错误调用，不会运行测试。慢测试可能需要按包配置设置 `QODER_RUN_SLOW_TESTS=1`；这是源码开发中保留的兼容环境变量。
+将示例路径替换为验证当前行为的实际测试。CLI 界面测试应直接用 `npx vitest run` 指定文件。根目录测试命令只负责阻止错误调用，不会运行测试。慢测试默认不运行，列在 `packages/core/vitest.config.ts` 和 `packages/cli/vitest.config.ts` 的 `slowTests` 中。如需单独运行，使用 `QWEN_RUN_SLOW_TESTS=1 npx vitest run <file>`。
 
 PR 描述应说明执行了什么、能证明什么。类型检查不能验证终端渲染，打包成功不能验证安装，静态审查不能验证真实模型请求。依赖问题导致测试未运行时，不应写成测试通过。
 

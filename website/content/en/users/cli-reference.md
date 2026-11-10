@@ -77,7 +77,7 @@ The command framework also provides `--help` and `--version`. Tool allow rules d
 | `/context-window` | Set context window for the current model |
 | `/continue` | Continue the most recent session for the current project |
 | `/copy` | Copy the last assistant response to clipboard, or /copy N for the Nth-latest |
-| `/corgi` | Toggles corgi mode |
+| `/crontab` | Manage scheduled loops and cron jobs |
 | `/diff` | Show uncommitted git changes |
 | `/editor` | Set external editor preference |
 | `/effort` | Set reasoning effort for the current model |
@@ -87,15 +87,16 @@ The command framework also provides `--help` and `--version`. Tool allow rules d
 | `/hooks` | Open hooks management panel |
 | `/init` | Analyzes the project and creates a tailored context file |
 | `/insights` | Generate a report analyzing your sessions |
-| `/marketplace` | Manage plugin marketplaces |
 | `/mcp` | Manage configured Model Context Protocol (MCP) servers |
 | `/memory` | Commands for interacting with memory |
 | `/model` | Set or manage model configuration |
 | `/new` | Start a new conversation |
 | `/output-style` | Configure the output style for the next conversation |
+| `/peers` | List peer sessions and review held cross-session messages |
 | `/permissions` | Manage permissions |
 | `/plan` | Toggle Plan Mode (enter when off, exit when on) |
 | `/plugins` | Manage plugins |
+| `/profile` | Inspect or control runtime profiling (diagnostics) |
 | `/quit` | Exit the application |
 | `/release-notes` | Show recent release notes |
 | `/rename` | Rename the current conversation |
@@ -120,7 +121,7 @@ The command framework also provides `--help` and `--version`. Tool allow rules d
 
 Common aliases include `/summarize` and `/compress` for `/compact`, `/checkpoint` for `/rewind`, `/bg` and `/background` for `/tasks`, `/config` for `/settings`, and `/exit` for `/quit`.
 
-This list does not imply every command is enabled in every environment: planning and agents can be disabled; `/subtask` requires an initial turn and does not allow a nested fork; `/terminal-setup` is not for ACP sessions. Skills, plugins, and workflows can register more commands; inspect them with `/commands`.
+This list does not imply every command is enabled in every environment: planning and agents can be disabled; `/subtask` requires an initial turn and does not allow a nested fork; `/terminal-setup` is not for ACP sessions. Plugin marketplaces are managed from `/plugins` or `qwen plugins marketplace`. Skills, plugins, and workflows can register more commands; inspect them with `/commands`.
 
 ## Shell subcommands
 

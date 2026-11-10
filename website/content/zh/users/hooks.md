@@ -83,4 +83,4 @@ Stop Hook 应避免反复否决同一完成状态却不给出可满足的条件�
 - **找不到程序：**检查 PATH 和解释器，自动化场景优先使用明确路径。
 - **结果格式错误：**移除 stdout 中的横幅和日志，将 stdin 作为完整 JSON 文档解析。
 - **耗时异常：**设置合适超时，检查网络与模型依赖，只有确需顺序时才启用顺序执行。
-- **旧配置未更新：**用 `/hooks` 检查当前配置；`qwen hooks migrate --help` 说明支持的旧格式迁移方式，替换前审阅迁移结果。
+- **旧配置未更新：**用 `/hooks` 检查当前配置；`qwen hooks migrate --from-claude` 将 Claude Code 的 Hook 配置导入 `.qwen/settings.json`，替换前审阅迁移结果。

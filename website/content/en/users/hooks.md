@@ -83,4 +83,4 @@ Stop hooks must avoid repeatedly rejecting the same completion without a path to
 - **Executable cannot be found:** verify PATH and interpreter availability; prefer explicit paths for automation.
 - **Invalid result:** remove banners and logging from stdout; parse stdin as one JSON document.
 - **Unexpected delays:** set a suitable timeout, check network/model dependencies, and avoid sequential execution unless ordered checks are required.
-- **Old configuration:** `/hooks` helps inspect current hooks; `qwen hooks migrate --help` describes migration of supported older hook formats. Review changes before replacing your configuration.
+- **Old configuration:** `/hooks` helps inspect current hooks; `qwen hooks migrate --from-claude` imports Claude Code hook configuration into `.qwen/settings.json`. Review changes before replacing your configuration.

@@ -50,7 +50,7 @@ A tool absent from the available tool set cannot be restored solely by adding an
 
 ## Update or rollback fails
 
-Check the current version, network, and whether your build has a configured release source. `qwen update --check` checks without installing. Rollback requires an explicit available target version. Keep the full error message, but remove credentials or signed download parameters before sharing it.
+Check the current version, network, and whether your build has a configured release source. `qwen update --check` checks without installing. `qwen rollback` without `--to` returns to the locally recorded previous version; if none is recorded, pass `--to '<version>'` with an older available version. Update and rollback commands apply only to native installations. Keep the full error message, but remove credentials or signed download parameters before sharing it.
 
 ## Gather a useful issue report
 

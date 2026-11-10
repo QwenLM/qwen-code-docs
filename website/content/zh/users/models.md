@@ -61,7 +61,11 @@ qwen --model gateway/your-model-id
 
 ## 声明模型限制
 
-每个模型可以配置 `displayName`、`contextWindow`、`maxOutputTokens` 和 `maxTokensField`。最后一个字段接受 `max_tokens` 或 `max_completion_tokens`。
+每个模型可以配置 `displayName`、`contextWindow`、`maxOutputTokens`、`maxTokensField` 和 `capabilities`。`maxTokensField` 接受 `max_tokens` 或 `max_completion_tokens`。
+
+`capabilities` 声明模型支持的能力：`tools`（默认 `true`）、`vision`（默认 `false`）、`cacheControl` 和 `thinking`。`thinking` 是一个对象，其中 `modes` 列出 `enabled` 和/或 `adaptive`，还可以设置 `preferredMode` 和 `supportsEffort`。未声明 `capabilities.thinking` 的自定义模型不启用思考，下文的思考和推理强度选项对它不生效。
+
+模型条目不接受 `temperature`、`maxTokens` 等生成参数，请在 `model.preferences["<provider>/<model>"]` 下设置。
 
 应按照实际模型服务填写限制。自定义模型未声明上下文窗口时会使用估算的回退值，它不是已经核验的服务限制。填写更大的上下文窗口不会扩大服务端容量。
 

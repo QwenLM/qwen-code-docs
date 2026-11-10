@@ -16,16 +16,16 @@
 | 键 | 类型 | 缺省 | 重启 | 用途 |
 | --- | --- | --- | --- | --- |
 | `model.name` | string | 未设置 / 由运行时决定 | 否 | 默认模型标识 |
-| `model.reasoningEffort` | enum | 未设置 / 由运行时决定 | 否 | 模型推理强度 |
-| `model.contextWindow` | number | 未设置 / 由运行时决定 | 否 | 模型上下文窗口 |
+| `model.reasoningEffort` | enum | 未设置 / 由运行时决定 | 否 | 已废弃：已迁移到 `model.preferences[modelId].reasoning.effort`。支持推理强度档位的模型使用的推理强度。 |
+| `model.contextWindow` | number | 未设置 / 由运行时决定 | 否 | 已废弃：已迁移到 `model.preferences[modelId].contextWindow`。支持上下文窗口选项的模型使用的上下文窗口（token 数）。 |
 | `outputStyle` | string | 未设置 / 由运行时决定 | 是 | 输出风格 |
 | `language` | string | 未设置 / 由运行时决定 | 是 | 偏好的回复语言 |
 | `agent` | 'string' as const | 未设置 / 由运行时决定 | 是 | 默认 Agent |
 | `general.maxAttempts` | number | 由 CLI 宿主注入 | 否 | 主模型请求最大尝试次数（含首次） |
 | `general.retryFetchErrors` | boolean | `true` | 否 | 重试符合条件的 fetch 错误 |
 | `output.format` | enum | `text` | 否 | 默认输出格式 |
-| `autoMemoryEnabled` | boolean | 未设置 / 由运行时决定 | 是 | 项目自动记忆 |
-| `autoMemoryUserScopeEnabled` | boolean | 未设置 / 由运行时决定 | 是 | 用户级自动记忆 |
+| `autoMemoryEnabled` | boolean | 未设置 / 由运行时决定 | 是 | 项目自动记忆。未设置时，交互会话中默认开启；非交互运行默认关闭，设置 `QWEN_MEMORY_HEADLESS=1` 可开启。 |
+| `autoMemoryUserScopeEnabled` | boolean | 未设置 / 由运行时决定 | 是 | 用户级自动记忆。未设置时，交互会话中默认开启；非交互运行默认关闭，设置 `QWEN_MEMORY_HEADLESS=1` 可开启。 |
 
 
 ## 权限与信任
@@ -84,8 +84,8 @@
 | `skills.loadFromAgentsDirectory` | boolean | `true` | 是 | 从兼容 agents 目录加载 Skills |
 | `skills.disabled` | array | `[]` | 是 | 禁用的 Skills |
 | `skills.disableShellExecution` | boolean | `false` | 否 | 禁止 Skill Shell 执行 |
-| `plugins.enabled` | array | `[]` | 是 | 启用的插件 |
-| `plugins.disabled` | array | `[]` | 是 | 禁用的插件 |
+| `plugins.enabled` | array | `[]` | 是 | 已废弃：请改用顶层 `enabledPlugins`。仅为迁移保留。 |
+| `plugins.disabled` | array | `[]` | 是 | 已废弃：请改用顶层 `enabledPlugins` 并将值设为 `false`。仅为迁移保留。 |
 | `plugins.autoUpdate` | boolean | `true` | 否 | 插件自动更新 |
 | `disableAllHooks` | boolean | `false` | 否 | 禁用全部用户 Hooks |
 | `allowedHttpHookUrls` | array | 未设置 / 由运行时决定 | 是 | 允许的 HTTP Hook URL 规则 |
@@ -134,11 +134,11 @@
 | `general.sessionRetention.maxCount` | number | 未设置 / 由运行时决定 | 否 | 按数量清理的目标上限；不适用于所有对话 JSONL |
 | `general.sessionRetention.minRetention` | string | 由 CLI 宿主注入 | 否 | 最短保留期保护 |
 | `advanced.useProxyFromEnvironment` | boolean | `true` | 是 | 读取环境中的代理配置 |
-| `advanced.excludedEnvVars` | array | `['DEBUG', 'DEBUG_MODE']` | 否 | 不从 dotenv 导入的变量 |
+| `advanced.excludedEnvVars` | array | `['DEBUG', 'DEBUG_MODE']` | 否 | `qwen mcp list` 启动 MCP 服务器时不传递的环境变量。会话和 `.env` 加载不使用此设置。 |
 
 
 ## 复杂配置与高级边界
 
 `providers`、`mcpServers`、`hooks`、`permissions`、插件市场及 Agent 定义有各自结构，不能用上述标量表替代。按[模型](/zh/users/models/)、[MCP](/zh/users/mcp/)、[Hooks](/zh/users/hooks/)、[权限](/zh/users/permissions/)、[插件](/zh/users/plugins/)和[子 Agent](/zh/users/subagents/)中的示例配置。
 
-源码的 `schemas/settings.schema.json` 提供完整机器可读定义；它也包含宿主集成、兼容和实验字段，不应把字段存在解释为稳定公开功能承诺。不要复制陌生的内部设置来绕过功能限制。模型覆盖、团队协议、调试与运行时注入字段不在本页的用户配置承诺内。
+配置 schema 定义在源码文件 `packages/resource/src/settings/settingsSchema.ts` 中；它也包含宿主集成、兼容和实验字段（源码仓库中的 `schemas/settings.schema.json` 是为另一个产品构建生成的，不适用于 Qwen Code），不应把字段存在解释为稳定公开功能承诺。不要复制陌生的内部设置来绕过功能限制。模型覆盖、团队协议、调试与运行时注入字段不在本页的用户配置承诺内。

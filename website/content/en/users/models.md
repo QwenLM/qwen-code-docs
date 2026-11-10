@@ -61,7 +61,11 @@ A generic custom endpoint may use an empty `apiKey` string if it does not requir
 
 ## Describe model limits
 
-Each model can specify `displayName`, `contextWindow`, `maxOutputTokens`, and `maxTokensField`. The last field accepts `max_tokens` or `max_completion_tokens`.
+Each model can specify `displayName`, `contextWindow`, `maxOutputTokens`, `maxTokensField`, and `capabilities`. `maxTokensField` accepts `max_tokens` or `max_completion_tokens`.
+
+`capabilities` declares what the model supports: `tools` (default `true`), `vision` (default `false`), `cacheControl`, and `thinking`. `thinking` is an object whose `modes` lists `enabled` and/or `adaptive`; it can also set `preferredMode` and `supportsEffort`. A custom model without `capabilities.thinking` has thinking disabled, so the thinking and reasoning-effort options below have no effect for it.
+
+Generation parameters such as `temperature` or `maxTokens` are not accepted on a model entry. Set them under `model.preferences["<provider>/<model>"]`.
 
 Set limits according to the actual model service. An omitted context window for a custom model uses an estimated fallback; it is not a verified service limit. Declaring a larger context window does not increase the server's capacity.
 

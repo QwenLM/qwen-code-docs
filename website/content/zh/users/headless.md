@@ -9,7 +9,7 @@ qwen -p "Explain the purpose of this repository. Do not modify files."
 qwen -p --cwd /path/to/project "Summarize the public interfaces."
 ```
 
-提示词是位置参数；`-p` 是模式开关，不消费提示词。没有 `-p` 时，位置参数会作为交互会话的初始提示。也可以通过管道传入纯文本：
+提示词是位置参数；`-p` 是模式开关，不消费提示词。没有 `-p` 时，只有 stdin 和 stdout 都是终端，位置参数才会作为交互会话的初始提示；输入或输出被管道或重定向，以及设置了 `CI=true` 或 `GITHUB_ACTIONS=true` 时，以非交互方式运行。脚本中请显式使用 `-p`。也可以通过管道传入纯文本：
 
 ```bash
 git diff --no-ext-diff | qwen -p "Review this diff for correctness and missing tests."
@@ -31,6 +31,17 @@ qwen -p --output-format stream-json "Explain the test layout." > events.jsonl
 ```
 
 JSON 输出是 CLI 的结果封装，不保证模型答案本身符合你的应用 JSON Schema。应按所选格式解析 stdout，并检查进程退出状态。流式输出应逐行解析，根据 `type` 分发，并处理最终 `result` 与错误字段。不能假设每个事件都有文本，也不能把整个流当作一个 JSON 文档解析。Preview 集成应兼容新增字段和事件类型。
+
+| 退出码 | 含义 |
+| --- | --- |
+| `0` | 成功 |
+| `1` | 运行结束，但结果为失败 |
+| `41` | 认证错误 |
+| `42` | 输入错误 |
+| `52` | 配置错误 |
+| `130` | 已取消 |
+
+非交互运行会把当前目录视为可信，因此会加载项目配置、Hook 和项目 MCP 服务器。详见[权限](/zh/users/permissions/)。
 
 POSIX Shell 中可保留失败状态：
 

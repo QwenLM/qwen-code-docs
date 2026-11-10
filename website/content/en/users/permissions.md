@@ -57,7 +57,9 @@ Use `--allowed-mcp-server-names` when you need to limit MCP servers for a launch
 
 ## Workspace trust
 
-Untrusted project and local settings are excluded from the normal settings merge. Their project environment file is also excluded. User configuration remains independent. An explicit `--settings` file is an intentional override and is not protected by the project-trust filter.
+Untrusted project and local settings are excluded from the normal settings merge. The project `.qwen/.env` file is still read, but variables that control which programs run (the shell prefix, the Git Bash path, and on Windows `PATH` and related variables) are ignored for an untrusted project. User configuration remains independent. An explicit `--settings` file is an intentional override and is not protected by the project-trust filter.
+
+Non-interactive runs treat the working directory as trusted. With `-p`, piped or redirected input or output, `CI=true`, or `GITHUB_ACTIONS=true`, project and local settings, hooks, and project MCP servers load without a trust decision. Only automate repositories whose configuration you have reviewed, or pass `--setting-sources user`.
 
 Use the trust and directory controls in `/permissions` to review directories beyond the current workspace. `/add-dir` and `--add-dir` add workspace directories; granting access to an additional directory broadens the files available for the task.
 

@@ -16,7 +16,7 @@ For a remote Streamable HTTP server:
 qwen mcp add --scope user --transport http team-tools https://mcp.example.com/mcp
 ```
 
-Replace paths and URLs with your server's values. Stdio is the default transport; `sse`, `http`, and `ws` are also accepted. Additional arguments after the executable are passed to it. Use `--` to separate server arguments when they could be interpreted as CLI flags, and inspect `qwen mcp add --help` for available options.
+Replace paths and URLs with your server's values. Without `--transport`, an argument that looks like a URL (starting with `http://`, `https://`, or `localhost`, or ending in `/sse` or `/mcp`) uses `http`; anything else uses stdio. Pass `--transport sse` or `--transport ws` explicitly for those transports. Additional arguments after the executable are passed to it. Use `--` to separate server arguments when they could be interpreted as CLI flags, and inspect `qwen mcp add --help` for available options.
 
 ```bash
 qwen mcp list
@@ -38,7 +38,7 @@ In an interactive session, `/mcp` inspects the configured servers and their stat
 
 `--config-dir` changes the user configuration root. New project additions use `.mcp.json`; older entries in `.qwen/settings.json` are also read, with `.mcp.json` taking precedence within project configuration. Local and project scope cannot be written while the working directory is the user's home directory.
 
-Project servers are subject to project trust and server approval. Do not treat a checked-in `.mcp.json` as permission to execute every command it contains. `qwen mcp reset-project-choices` resets remembered project server choices. Keep local settings out of version control.
+In interactive sessions, project servers are subject to project trust and server approval. Non-interactive runs (`-p`, piped input or output, CI) start project servers that have not been rejected without asking. Do not treat a checked-in `.mcp.json` as permission to execute every command it contains. `qwen mcp reset-project-choices` resets remembered project server choices. Keep local settings out of version control.
 
 Example `.mcp.json`:
 

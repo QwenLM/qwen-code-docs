@@ -63,6 +63,8 @@ The effective tool set also depends on caller visibility, foreground/background 
 
 `memory: user` stores memory under `~/.qwen/agent-memory/<agent-name>/`; `project` uses `.qwen/agent-memory/<agent-name>/`; `local` uses `.qwen/agent-memory-local/<agent-name>/`. These locations contain a `MEMORY.md` entrypoint and optional topic files. Use `local` for project-specific memory you do not intend to share, and exclude private local data from version control.
 
+Agent memory takes effect only when automatic memory is enabled (`autoMemoryEnabled` / `autoMemoryUserScopeEnabled`; headless runs also need `QWEN_MEMORY_HEADLESS=1`). Otherwise the `memory` field is ignored. See [context and memory](/en/users/context-memory/).
+
 Memory support can add the file tools needed to maintain it before deny rules are applied. Review the final permissions rather than assuming memory is read-only.
 
 For a background worker that inherits the full current conversation instead of using a normal specialized definition, see [`/subtask` and task management](/en/users/tasks-workflows/).

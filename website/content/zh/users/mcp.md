@@ -16,7 +16,7 @@ qwen mcp add --scope user local-tools /absolute/path/to/mcp-server
 qwen mcp add --scope user --transport http team-tools https://mcp.example.com/mcp
 ```
 
-请替换为实际路径和 URL。默认传输为 stdio，也接受 `sse`、`http` 和 `ws`。可执行文件后的参数会传给服务器；与 CLI 参数可能混淆时，使用 `--` 分隔服务器参数。完整选项见 `qwen mcp add --help`。
+请替换为实际路径和 URL。未指定 `--transport` 时，形如 URL 的参数（以 `http://`、`https://` 或 `localhost` 开头，或以 `/sse`、`/mcp` 结尾）使用 `http`，其他参数使用 stdio。使用 `sse` 或 `ws` 时需显式传入 `--transport sse` 或 `--transport ws`。可执行文件后的参数会传给服务器；与 CLI 参数可能混淆时，使用 `--` 分隔服务器参数。完整选项见 `qwen mcp add --help`。
 
 ```bash
 qwen mcp list
@@ -38,7 +38,7 @@ qwen mcp remove team-tools
 
 `--config-dir` 改变用户配置根目录。新增项目服务器写入 `.mcp.json`；仍会读取 `.qwen/settings.json` 中的旧配置，项目配置内同名时 `.mcp.json` 优先。当前目录为用户主目录时，不能写入 local 或 project 作用域。
 
-项目服务器受项目信任和服务器批准控制。仓库中提交了 `.mcp.json`，不代表其中所有命令都已获准执行。`qwen mcp reset-project-choices` 可以重置记住的项目服务器选择。本地配置应排除在版本控制之外。
+在交互会话中，项目服务器受项目信任和服务器批准控制。非交互运行（`-p`、管道输入输出、CI）会直接启动未被拒绝的项目服务器，不再询问。仓库中提交了 `.mcp.json`，不代表其中所有命令都已获准执行。`qwen mcp reset-project-choices` 可以重置记住的项目服务器选择。本地配置应排除在版本控制之外。
 
 `.mcp.json` 示例：
 

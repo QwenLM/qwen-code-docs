@@ -32,7 +32,7 @@ Place supporting material beside `SKILL.md`, for example `references/checklist.m
 
 The user root follows `--config-dir` when configured. Additional workspace directories may also contribute project skills. Project trust, disabled skills, administration settings, and name conflicts can affect which skills are available. The optional `.agents/skills` compatibility directory is controlled by configuration; it is not required for Qwen Code skills.
 
-Choose unique command names. Nested paths create namespaces: `.qwen/skills/team/review-tests/SKILL.md` is `/team:review-tests`. Plugin skills are prefixed by the plugin name. Use the displayed name in `/skills`, particularly when more than one source defines a skill.
+Choose unique command names. Category folders under `skills/` are scanned, but a skill is named after its own folder: `.qwen/skills/team/review-tests/SKILL.md` is `/review-tests`. Colon-separated names apply to files under `.qwen/commands/` and to plugin skills, which are prefixed by the plugin name. Use the displayed name in `/skills`, particularly when more than one source defines a skill.
 
 ## Frontmatter
 

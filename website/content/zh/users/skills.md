@@ -32,7 +32,7 @@ disable-model-invocation: true
 
 配置 `--config-dir` 后，用户目录随之改变。附加工作区目录也可能提供项目 Skill。项目信任、禁用状态、管理设置和同名冲突都会影响可用列表。兼容目录 `.agents/skills` 由配置开关控制，不是使用 Qwen Code Skill 的必要条件。
 
-建议使用不冲突的命令名。嵌套目录形成命名空间：`.qwen/skills/team/review-tests/SKILL.md` 对应 `/team:review-tests`。插件 Skill 带插件名前缀。存在多个同名来源时，以 `/skills` 显示的完整名称为准。
+建议使用不冲突的命令名。`skills/` 下的分类目录会被扫描，但 Skill 以自身所在目录命名：`.qwen/skills/team/review-tests/SKILL.md` 对应 `/review-tests`。冒号形式的名称只用于 `.qwen/commands/` 下的文件和插件 Skill（带插件名前缀）。存在多个同名来源时，以 `/skills` 显示的完整名称为准。
 
 ## Frontmatter 字段
 

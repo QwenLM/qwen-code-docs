@@ -45,7 +45,7 @@ cd packages/core
 npx vitest run path/to/affected.test.ts
 ```
 
-Replace the example path with an existing test for the changed behavior. For CLI UI tests, use `npx vitest run` with an explicit path. The root test command is a guard, not a test runner. Slow tests may require `QODER_RUN_SLOW_TESTS=1` as documented in the package configuration; this compatibility environment variable remains a source-level development detail.
+Replace the example path with an existing test for the changed behavior. For CLI UI tests, use `npx vitest run` with an explicit path. The root test command is a guard, not a test runner. Slow tests are excluded by default; they are listed under `slowTests` in `packages/core/vitest.config.ts` and `packages/cli/vitest.config.ts`. To run one directly, use `QWEN_RUN_SLOW_TESTS=1 npx vitest run <file>`.
 
 Include what you ran and what it establishes in the PR description. A typecheck does not verify terminal rendering, a packaging build does not verify installation, and static review does not verify a real provider request. Do not claim tests passed if dependencies prevented them from running.
 

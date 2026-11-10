@@ -9,7 +9,7 @@ qwen -p "Explain the purpose of this repository. Do not modify files."
 qwen -p --cwd /path/to/project "Summarize the public interfaces."
 ```
 
-The prompt is positional; `-p` is a mode switch, not an option that consumes the prompt. Without `-p`, a positional prompt starts an interactive session. You can pipe plain-text input:
+The prompt is positional; `-p` is a mode switch, not an option that consumes the prompt. Without `-p`, a positional prompt starts an interactive session only when stdin and stdout are both terminals; piped or redirected runs and runs with `CI=true` or `GITHUB_ACTIONS=true` execute headless. Use `-p` explicitly in scripts. You can pipe plain-text input:
 
 ```bash
 git diff --no-ext-diff | qwen -p "Review this diff for correctness and missing tests."
@@ -31,6 +31,17 @@ qwen -p --output-format stream-json "Explain the test layout." > events.jsonl
 ```
 
 JSON output is a CLI result envelope, not a guarantee that the model's answer itself follows an application-defined JSON schema. Parse stdout as the selected format and check the process exit status. For streaming, parse each complete line, dispatch on `type`, and handle the final `result` and error fields. Do not assume every event contains text or concatenate the entire stream into one JSON document. Preview consumers should tolerate additional fields and event types.
+
+| Exit code | Meaning |
+| --- | --- |
+| `0` | Success |
+| `1` | The run finished with a failed result |
+| `41` | Authentication error |
+| `42` | Input error |
+| `52` | Configuration error |
+| `130` | Cancelled |
+
+Non-interactive runs treat the working directory as trusted, so project settings, hooks, and project MCP servers load. See [Permissions](/en/users/permissions/).
 
 A POSIX shell wrapper can preserve failure status:
 

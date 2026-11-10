@@ -24,8 +24,8 @@ Defaults describe source definitions; unset values may be resolved by the host, 
 | `general.maxAttempts` | number | Provided by CLI host | No | Maximum main-model request attempts, including the initial attempt. |
 | `general.retryFetchErrors` | boolean | `true` | No | Retry on "exception TypeError: fetch failed sending request" errors. |
 | `output.format` | enum | `text` | No | The format of the CLI output. Can be `text` or `json`. |
-| `autoMemoryEnabled` | boolean | Unset / runtime-dependent | Yes | Automatically save and load reusable information for the current project. When unset, the QCS rollout default applies. |
-| `autoMemoryUserScopeEnabled` | boolean | Unset / runtime-dependent | Yes | Automatically save and load reusable information shared across projects. When unset, the QCS rollout default applies. |
+| `autoMemoryEnabled` | boolean | Unset / runtime-dependent | Yes | Automatically save and load reusable information for the current project. When unset, it is on in interactive sessions; headless runs keep it off unless `QWEN_MEMORY_HEADLESS=1` is set. |
+| `autoMemoryUserScopeEnabled` | boolean | Unset / runtime-dependent | Yes | Automatically save and load reusable information shared across projects. When unset, it is on in interactive sessions; headless runs keep it off unless `QWEN_MEMORY_HEADLESS=1` is set. |
 
 
 ## Permissions and trust
@@ -134,11 +134,11 @@ Defaults describe source definitions; unset values may be resolved by the host, 
 | `general.sessionRetention.maxCount` | number | Unset / runtime-dependent | No | Maximum number of count-limited cleanup targets to keep. Transcript JSONL files ignore this setting and are deleted only by maxAge. |
 | `general.sessionRetention.minRetention` | string | Provided by CLI host | No | Minimum retention period used as a deletion safety limit. |
 | `advanced.useProxyFromEnvironment` | boolean | `true` | Yes | Whether the CLI, including SDK integrations, automatically uses HTTPS_PROXY, https_proxy, HTTP_PROXY, or http_proxy when no explicit startup proxy is supplied. |
-| `advanced.excludedEnvVars` | array | `['DEBUG', 'DEBUG_MODE']` | No | Environment variables to exclude from project context. |
+| `advanced.excludedEnvVars` | array | `['DEBUG', 'DEBUG_MODE']` | No | Environment variables withheld from MCP servers started by `qwen mcp list`. Sessions and `.env` loading do not use this setting. |
 
 
 ## Structured configuration and advanced boundaries
 
 `providers`, `mcpServers`, `hooks`, `permissions`, marketplace entries, and agent definitions have structured formats. Use the examples in [models](/en/users/models/), [MCP](/en/users/mcp/), [hooks](/en/users/hooks/), [permissions](/en/users/permissions/), [plugins](/en/users/plugins/), and [subagents](/en/users/subagents/).
 
-The source file `schemas/settings.schema.json` contains machine-readable definitions, including host integrations, compatibility fields, and experiments. A schema entry does not establish a stable public feature contract. Do not copy unknown internal settings to bypass feature restrictions. Model overrides, team protocols, debugging, and runtime-injected fields are outside this page's user configuration contract.
+The settings schema is defined in the source file `packages/resource/src/settings/settingsSchema.ts`, including host integrations, compatibility fields, and experiments. (`schemas/settings.schema.json` in the source repository is generated for a different product build; do not use it for Qwen Code.) A schema entry does not establish a stable public feature contract. Do not copy unknown internal settings to bypass feature restrictions. Model overrides, team protocols, debugging, and runtime-injected fields are outside this page's user configuration contract.

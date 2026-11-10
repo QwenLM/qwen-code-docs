@@ -41,6 +41,8 @@ This checks availability without installing an update. To apply an available upd
 qwen update
 ```
 
+`qwen update` and `qwen rollback` manage native installations only. If you installed through npm (`@qwen-code/qwen-code`) or Homebrew (`qwen-code`), update with that package manager.
+
 Restart Qwen Code after an update. An already running process continues using the code it loaded at startup. A build without a configured release source does not silently poll an assumed download service.
 
 ## Automatic updates
@@ -60,13 +62,19 @@ Set both values to `false` to disable both automatic installation and update not
 
 ## Roll back
 
-When a compatible target version is available from the configured release source:
+Return to the version that was active before the last update:
+
+```sh
+qwen rollback
+```
+
+This uses the previous version stored locally at the last update and does not contact the release source. It fails if no previous 1.x version from the same channel is recorded; in that case, specify a target:
 
 ```sh
 qwen rollback --to '<version>'
 ```
 
-Replace `<version>` with an actual available version older than the active version; rollback rejects the current or a newer version. A successful rollback pauses automatic updates for 24 hours. Rollback changes the installed program; it is not a backup or restore operation for project files, settings, or conversation data.
+Replace `<version>` with an actual version older than the active version; rollback rejects the current or a newer version. A version not stored locally is downloaded from the configured release source. A successful rollback pauses automatic updates for 24 hours. Rollback changes the installed program; it is not a backup or restore operation for project files, settings, or conversation data.
 
 If an update or rollback fails, retain the error message and the current version. Check the release source and network access before retrying. Do not repeatedly change credentials to address a download failure.
 
