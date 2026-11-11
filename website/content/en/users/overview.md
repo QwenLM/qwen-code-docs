@@ -1,5 +1,12 @@
 # Qwen Code overview
 
+> [!NOTE]
+> **Qwen Code 1.0 Preview**
+>
+> Qwen Code 1.0 Preview brings together the agent harness capabilities of Qoder and Qwen Code in an open-source release.
+>
+> **Using 1.0 Preview? [Read the Preview documentation →](https://qwenlm.github.io/qwen-code-docs/1.x/en/users/overview/)**
+
 [![@qwen-code/qwen-code downloads](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code)
 [![@qwen-code/qwen-code version](https://img.shields.io/npm/v/@qwen-code/qwen-code.svg)](https://www.npmjs.com/package/@qwen-code/qwen-code)
 
@@ -79,3 +86,4 @@ You'll be prompted to log in on first use. That's it! [Continue with Quickstart 
 - **Works in your terminal**: Not another chat window. Not another IDE. Qwen Code meets you where you already work, with the tools you already love.
 - **Takes action**: Qwen Code can directly edit files, run commands, and create commits. Need more? [MCP](./features/mcp) lets Qwen Code read your design docs in Google Drive, update your tickets in Jira, or use _your_ custom developer tooling.
 - **Unix philosophy**: Qwen Code is composable and scriptable. `tail -f app.log | qwen -p "Slack me if you see any anomalies appear in this log stream"` _works_. Your CI can run `qwen -p "If there are new text strings, translate them into French and raise a PR for @lang-fr-team to review"`.
+
