@@ -17,7 +17,7 @@ Qwen Code は、AI モデルにアクセスするための4つの認証方法を
 
 | 認証方法                                                                 | プロバイダー        | 利用規約                                                           | プライバシー通知                                                   |
 | :--------------------------------------------------------------------------- | :---------------- | :----------------------------------------------------------------- | :----------------------------------------------------------------- |
-| [Qwen アカウント（サブスクリプション付き）](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) | Qwen AI           | [Qwen 利用規約](https://qwen.ai/termsservice)              | [Qwen プライバシーポリシー](https://qwen.ai/privacypolicy)               |
+| [Qwen アカウント（サブスクリプション付き）](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)                         | Qwen AI             | [Qwen 利用規約](https://qwen.ai/termsservice)                                               | [Qwen プライバシーポリシー](https://qwen.ai/privacypolicy)                                   |
 | Alibaba Cloud Coding Plan                                                | Alibaba Cloud       | [詳細はこちら](#2-if-you-are-using-alibaba-cloud-coding-plan)                                                | [詳細はこちら](#2-if-you-are-using-alibaba-cloud-coding-plan)                                                |
 | API キー                                                                 | 各種プロバイダー    | 選択した API プロバイダー (OpenAI, Anthropic など) に依存          | 選択した API プロバイダーに依存                                    |
 | Vertex AI                                                                | Google Cloud        | [Google Cloud 利用規約](https://cloud.google.com/terms)                                       | [Google Cloud プライバシー](https://cloud.google.com/privacy)                                   |
@@ -31,13 +31,13 @@ Qwen Code は、AI モデルにアクセスするための4つの認証方法を
 
 認証設定、クォータ、サポートされる機能の詳細については、[認証セットアップ](../configuration/auth.md) を参照してください。
 
-## 2. Alibaba Cloud Coding Plan を使用する場合
+## 2. Alibaba Cloud Coding Plan を使用する場合 [#2-if-you-are-using-alibaba-cloud-coding-plan]
 
 Alibaba Cloud の API キーを使用して認証する場合、Alibaba Cloud の該当する利用規約とプライバシー通知が適用されます。
 
 Alibaba Cloud Coding Plan は2つのリージョンで利用可能です。
 
-- **阿里云百炼 (aliyun.com)** — [bailian.console.aliyun.com](https://bailian.console.aliyun.com)
+- **Alibaba Cloud Bailian (aliyun.com)** — [bailian.console.aliyun.com](https://bailian.console.aliyun.com)
 - **Alibaba Cloud (alibabacloud.com)** — [bailian.console.alibabacloud.com](https://bailian.console.alibabacloud.com)
 
 > [!important]

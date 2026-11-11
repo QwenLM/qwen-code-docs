@@ -6,25 +6,25 @@ O Qwen Code é uma ferramenta assistente de codificação de IA de código abert
 
 O Qwen Code suporta quatro métodos de autenticação para acessar modelos de IA. Seu método de autenticação determina quais termos de serviço e políticas de privacidade se aplicam ao seu uso:
 
-1. [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code) **(Qwen OAuth)** — Faça login com sua conta Qwen e uma **assinatura Plus ou Pro** ativa do [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code)
+1. [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) **(Qwen OAuth)** — Faça login com sua conta Qwen e uma **assinatura Plus ou Pro** ativa do [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)
 2. **Alibaba Cloud Coding Plan** — Use uma chave de API da Alibaba Cloud
 3. **API Key** — Use sua própria chave de API
 4. **Vertex AI** — Use o Google Cloud Vertex AI
 
 Para cada método de autenticação, diferentes Termos de Serviço e Avisos de Privacidade podem ser aplicados, dependendo do provedor de serviço subjacente.
 
-A [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code) é separada da antiga cota gratuita do Qwen OAuth, que foi descontinuada em 2026-04-15.
+A [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) é separada da antiga cota gratuita do Qwen OAuth, que foi descontinuada em 2026-04-15.
 
 | Método de Autenticação                                                       | Provedor          | Termos de Serviço                                                  | Aviso de Privacidade                                               |
 | :--------------------------------------------------------------------------- | :---------------- | :----------------------------------------------------------------- | :----------------------------------------------------------------- |
-| [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code) | Qwen AI           | [Termos de Serviço da Qwen](https://qwen.ai/termsservice)              | [Política de Privacidade da Qwen](https://qwen.ai/privacypolicy)               |
+| [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) | Qwen AI           | [Termos de Serviço da Qwen](https://qwen.ai/termsservice)              | [Política de Privacidade da Qwen](https://qwen.ai/privacypolicy)               |
 | Alibaba Cloud Coding Plan                                                    | Alibaba Cloud     | Veja [detalhes abaixo](#2-if-you-are-using-alibaba-cloud-coding-plan) | Veja [detalhes abaixo](#2-if-you-are-using-alibaba-cloud-coding-plan) |
 | Chave de API                                                                 | Vários Provedores | Depende do provedor de API escolhido (OpenAI, Anthropic, etc.)    | Depende do provedor de API escolhido                              |
 | Vertex AI                                                                    | Google Cloud      | [Termos do Google Cloud](https://cloud.google.com/terms)               | [Privacidade do Google Cloud](https://cloud.google.com/privacy)           |
 
-## 1. Se você estiver usando a [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code)
+## 1. Se você estiver usando a [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)
 
-Quando você se autentica usando sua conta Qwen através da [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code), estes documentos de Termos de Serviço e Aviso de Privacidade se aplicam:
+Quando você se autentica usando sua conta Qwen através da [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli), estes documentos de Termos de Serviço e Aviso de Privacidade se aplicam:
 
 - **Termos de Serviço:** Seu uso é regido pelos [Termos de Serviço do Qwen](https://qwen.ai/termsservice).
 - **Aviso de Privacidade:** A coleta e o uso de seus dados são descritos na [Política de Privacidade do Qwen](https://qwen.ai/privacypolicy).
@@ -104,7 +104,7 @@ Quando ativada, o Qwen Code pode coletar:
 
 ### Coleta de Dados por Método de Autenticação
 
-A configuração de estatísticas de uso do Qwen Code se aplica a todos os métodos de autenticação: [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code), Alibaba Cloud Coding Plan, sua própria chave de API e Vertex AI. Quando habilitado, esses eventos são enviados para um endpoint de coleta RUM da Alibaba Cloud, independentemente dos dados que seu provedor de IA escolhido coleta sob sua própria política de privacidade.
+A configuração de estatísticas de uso do Qwen Code se aplica a todos os métodos de autenticação: [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli), Alibaba Cloud Coding Plan, sua própria chave de API e Vertex AI. Quando habilitado, esses eventos são enviados para um endpoint de coleta RUM da Alibaba Cloud, independentemente dos dados que seu provedor de IA escolhido coleta sob sua própria política de privacidade.
 
 Para recusar, defina o seguinte nas configurações do seu Qwen Code:
 
@@ -124,7 +124,7 @@ Você também pode definir a variável de ambiente `QWEN_USAGE_STATISTICS_ENABLE
 
 Se seu código, incluindo prompts e respostas, é usado para treinar modelos de IA depende do seu método de autenticação e do provedor de serviço de IA específico que você utiliza:
 
-- [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code): O uso de dados é regido pela [Política de Privacidade da Qwen](https://qwen.ai/privacypolicy). Consulte a política deles para detalhes específicos sobre práticas de coleta de dados e treinamento de modelos.
+- [**Conta Qwen com Assinatura**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli): O uso de dados é regido pela [Política de Privacidade da Qwen](https://qwen.ai/privacypolicy). Consulte a política deles para detalhes específicos sobre práticas de coleta de dados e treinamento de modelos.
 
 - **Alibaba Cloud Coding Plan**: O uso de dados é regido pela política de privacidade da Alibaba Cloud. Consulte a política deles para obter detalhes específicos sobre coleta de dados e práticas de treinamento de modelos.
 
@@ -155,7 +155,7 @@ A configuração de Estatísticas de Uso controla apenas a coleta de dados pelo 
 
 ### 3. Como faço para alternar entre os métodos de autenticação?
 
-Você pode alternar entre [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code), Alibaba Cloud Coding Plan, sua própria chave de API e Vertex AI a qualquer momento:
+Você pode alternar entre [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli), Alibaba Cloud Coding Plan, sua própria chave de API e Vertex AI a qualquer momento:
 
 1. **Durante a inicialização**: Escolha seu método de autenticação preferido quando solicitado
 2. **Dentro da CLI**: Use o comando `/auth` para reconfigurar seu método de autenticação

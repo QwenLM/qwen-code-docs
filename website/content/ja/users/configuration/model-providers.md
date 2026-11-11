@@ -12,7 +12,7 @@ Qwen Code では、`settings.json` の `modelProviders` 設定を通じて複数
 
 > [!note]
 >
-> API キープロバイダーを `modelProviders` を通じて構成し、`/model` で選択します。Qwen アカウントへのサインインの場合は、[**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code) を `/auth` で選択してください。API キーや手動での `modelProviders` 構成は不要です。サブスクリプションで利用可能なモデルから選択するために `/model` を使用します。サインイン手順については [Authentication](./auth.md) を参照してください。
+> API キープロバイダーを `modelProviders` を通じて構成し、`/model` で選択します。Qwen アカウントへのサインインの場合は、[**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) を `/auth` で選択してください。API キーや手動での `modelProviders` 構成は不要です。サブスクリプションで利用可能なモデルから選択するために `/model` を使用します。サインイン手順については [Authentication](./auth.md) を参照してください。
 
 > [!note]
 >
@@ -652,7 +652,7 @@ Coding Plan モデルを手動で構成したい場合は、他の OpenAI 互換
 | 設定（`settings.json`）    | `security.auth.selectedType`        | `model.name`                                    | `security.auth.apiKey`                                | `security.auth.baseUrl`                                | —                      | —                                 |
 | デフォルト / 計算値        | `AuthType.QWEN_OAUTH` にフォールバック | 組み込みのデフォルト（OpenAI ⇒ `qwen3.5-plus`） | —                                                     | —                                                      | —                      | 設定されている場合 `Config.getProxy()` |
 
-\* CLI 認証フラグが存在する場合は、設定よりも優先されます。それ以外の場合は、`security.auth.selectedType` または暗黙的なデフォルトによって認証タイプが決まります。サインインオプションについては [Authentication](./auth.md) を参照してください。レガシーな無料の Qwen OAuth プロバイダーは、[Qwen Account with Subscription](https://chat.qwen.ai/?memberPlan=qwen_code) とは別物です。
+\* CLI 認証フラグが存在する場合は、設定よりも優先されます。それ以外の場合は、`security.auth.selectedType` または暗黙的なデフォルトによって認証タイプが決まります。サインインオプションについては [Authentication](./auth.md) を参照してください。レガシーな無料の Qwen OAuth プロバイダーは、[Qwen Account with Subscription](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) とは別物です。
 
 > [!note]
 >

@@ -12,7 +12,7 @@ Qwen Code позволяет настроить несколько провай�
 
 > [!note]
 >
-> Настройте провайдеры API-ключей через `modelProviders`, затем выберите их с помощью `/model`. Для входа в аккаунт Qwen выберите [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code) в `/auth`; API-ключ или ручная конфигурация `modelProviders` не требуются. Используйте `/model` для выбора из моделей, доступных с вашей подпиской. См. [Аутентификация](./auth.md) для инструкций по входу.
+> Настройте провайдеры API-ключей через `modelProviders`, затем выберите их с помощью `/model`. Для входа в аккаунт Qwen выберите [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) в `/auth`; API-ключ или ручная конфигурация `modelProviders` не требуются. Используйте `/model` для выбора из моделей, доступных с вашей подпиской. См. [Аутентификация](./auth.md) для инструкций по входу.
 
 > [!note]
 >
@@ -652,7 +652,7 @@ Alibaba Cloud Coding Plan поддерживает два региона:
 | Настройки (`settings.json`) | `security.auth.selectedType`        | `model.name`                                    | `security.auth.apiKey`                                | `security.auth.baseUrl`                                | —                      | —                                 |
 | По умолчанию / вычисляемые | Откат к `AuthType.QWEN_OAUTH`       | Встроенное значение по умолчанию (OpenAI ⇒ `qwen3.5-plus`) | —                                                     | —                                                      | —                      | `Config.getProxy()`, если настроено |
 
-\*Если присутствует, флаги аутентификации CLI переопределяют настройки. В противном случае тип аутентификации определяется через `security.auth.selectedType` или неявное значение по умолчанию. См. [Аутентификация](./auth.md) для вариантов входа. Устаревший бесплатный провайдер Qwen OAuth отделен от [Аккаунта Qwen с подпиской](https://chat.qwen.ai/?memberPlan=qwen_code).
+\*Если присутствует, флаги аутентификации CLI переопределяют настройки. В противном случае тип аутентификации определяется через `security.auth.selectedType` или неявное значение по умолчанию. См. [Аутентификация](./auth.md) для вариантов входа. Устаревший бесплатный провайдер Qwen OAuth отделен от [Аккаунта Qwen с подпиской](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli).
 
 > [!note]
 >

@@ -2,32 +2,32 @@
 
 Qwen Code 首次运行时的 `/auth` 菜单包含五个顶级选项。请选择符合您 CLI 使用方式的选项：
 
-- [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code)：通过 **Qwen OAuth** 登录您的 Qwen 账户，以使用来自 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) 的 **Plus 或 Pro 订阅**访问 **Qwen Code and Agent**。如果您尚未订阅，请访问 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) 订阅 Plus 或 Pro，然后返回 Qwen Code 并选择 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code)。
+- [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)：通过 **Qwen OAuth** 登录您的 Qwen 账户，以使用来自 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) 的 **Plus 或 Pro 订阅**访问 **Qwen Code and Agent**。如果您尚未订阅，请访问 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) 订阅 Plus 或 Pro，然后返回 Qwen Code 并选择 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)。
 - **QwenCloud**：官方推荐设置。打开子菜单，可选择 **Token Plan**（带有每月 Credit 配额的订阅 · 专用端点，个人版和团队版）或 **Standard API Key**（按量付费）。随后需明确选择平台 — **China — 千问AI平台** 或 **International — QwenCloud** — 因此界面语言不会决定您的端点。这两种访问方式也无需额外设置即可启用内置的 [`web_search` tool](https://qwenlm.github.io/qwen-code-docs/en/developers/tools/web-search/)。
 - **Alibaba ModelStudio**：打开子菜单，可选择 **Coding Plan**（面向个人开发者 · 包含每周配额）、**Token Plan**（面向团队和企业 · 基于用量的计费及专用端点）或 **Standard API Key**（使用现有的 ModelStudio API key 连接）。Token Plan 和 Standard API Key 也无需额外设置即可启用内置的 [`web_search` tool](https://qwenlm.github.io/qwen-code-docs/en/developers/tools/web-search/)。已保存的 ModelStudio 凭证、端点和模型保持不变且继续有效。
 - **Third-party Providers**：选择内置的 provider 并使用 API key 进行连接（DeepSeek、Grok、MiniMax、Z.AI、Kimi、Idealab、ModelScope、OpenRouter、Requesty）。
 - **Custom Provider**：手动连接本地服务器、代理或不支持的 provider —— 支持 OpenAI、Anthropic、Gemini 及其他兼容的 endpoint。
 
-## **选项 1：Qwen OAuth —** [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code)
+## **选项 1：Qwen OAuth —** [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)
 
-Qwen OAuth 允许您使用 Qwen 账户登录，并利用来自 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) 的 **Plus 或 Pro 订阅**访问 **Qwen Code and Agent**。在首次运行菜单或 `/auth` 对话框中，选择 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code) 开始使用。
+Qwen OAuth 允许您使用 Qwen 账户登录，并利用来自 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) 的 **Plus 或 Pro 订阅**访问 **Qwen Code and Agent**。在首次运行菜单或 `/auth` 对话框中，选择 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) 开始使用。
 
-- **工作原理**：选择 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code)，并按照浏览器登录流程授权 Qwen Code 使用您的 Qwen 账户。
-- **要求**：拥有来自 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) 的有效 **Plus 或 Pro 订阅**的 Qwen 账户以及互联网连接。
+- **工作原理**：选择 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)，并按照浏览器登录流程授权 Qwen Code 使用您的 Qwen 账户。
+- **要求**：拥有来自 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) 的有效 **Plus 或 Pro 订阅**的 Qwen 账户以及互联网连接。
 - **优势**：通过 Qwen 订阅访问 **Qwen Code and Agent**，无需手动配置 API key。
-- **费用与配额**：使用情况受限于您的订阅计划。请访问 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) 查看 Plus 和 Pro 计划详情。
+- **费用与配额**：使用情况受限于您的订阅计划。请访问 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) 查看 Plus 和 Pro 计划详情。
 
 ### **交互式设置**
 
-1. 如果您尚未订阅，请访问 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) 并订阅 **Plus 或 Pro**。如果您已有有效订阅，请继续下一步。
+1. 如果您尚未订阅，请访问 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) 并订阅 **Plus 或 Pro**。如果您已有有效订阅，请继续下一步。
 2. 在终端中启动 Qwen Code：
 
    ```bash
    qwen
    ```
 
-3. 在首次运行菜单中，选择 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code)。如果 Qwen Code 已在运行，请输入 `/auth` 打开认证菜单并选择相同的选项。
-4. 完成浏览器登录和授权流程，使用您在 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) **订阅时使用的同一个 Qwen 账户**。
+3. 在首次运行菜单中，选择 [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)。如果 Qwen Code 已在运行，请输入 `/auth` 打开认证菜单并选择相同的选项。
+4. 完成浏览器登录和授权流程，使用您在 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) **订阅时使用的同一个 Qwen 账户**。
 5. 返回 Qwen Code 并开始使用您的订阅进行工作。
 
 对于无法完成浏览器登录流程的非交互式环境（如 CI 或无人值守容器），请使用基于 API key 的身份验证方法。

@@ -9,12 +9,6 @@
 
 ## 인증 또는 로그인 오류
 
-- **오류: `Qwen OAuth free tier was discontinued on 2026-04-15`**
-  - **원인:** Qwen OAuth는 2026년 4월 15일부터 더 이상 사용할 수 없습니다.
-  - **해결 방법:** 다른 인증 방법으로 전환하세요. `qwen` → `/auth`를 실행하고 다음 중 하나를 선택하세요:
-    - **API Key**: Alibaba Cloud Model Studio의 API 키를 사용하세요([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)). API 설정 가이드([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721))를 참조하세요.
-    - **Alibaba Cloud Coding Plan**: 고정 월 요금제로 더 높은 할당량을 사용하세요. Coding Plan 가이드([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) / [intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index))를 참조하세요.
-
 - **오류: `UNABLE_TO_GET_ISSUER_CERT_LOCALLY`, `UNABLE_TO_VERIFY_LEAF_SIGNATURE` 또는 `unable to get local issuer certificate`**
   - **원인:** SSL/TLS 트래픽을 가로채고 검사하는 방화벽이 있는 기업 네트워크에 있을 수 있습니다. 이 경우 Node.js에서 커스텀 루트 CA 인증서를 신뢰하도록 설정해야 합니다.
   - **해결 방법:** `NODE_EXTRA_CA_CERTS` 환경 변수를 기업 루트 CA 인증서 파일의 절대 경로로 설정하세요.

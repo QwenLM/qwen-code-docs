@@ -9,12 +9,6 @@
 
 ## 認証またはログインエラー
 
-- **エラー: `Qwen OAuth free tier was discontinued on 2026-04-15`**
-  - **原因:** Qwen OAuth は 2026 年 4 月 15 日をもって利用できなくなりました。
-  - **解決策:** 別の認証方法に切り替えてください。`qwen` → `/auth` を実行し、以下のいずれかを選択します。
-    - **API Key**: Alibaba Cloud Model Studio の API key を使用します（[北京](https://bailian.console.aliyun.com/) / [国際](https://modelstudio.console.alibabacloud.com/)）。API セットアップガイド（[北京](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [国際](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)）を参照してください。
-    - **Alibaba Cloud Coding Plan**: 月額固定料金でより多くのクォータを利用できるサブスクリプションです。Coding Plan ガイド（[北京](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) / [国際](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)）を参照してください。
-
 - **エラー: `UNABLE_TO_GET_ISSUER_CERT_LOCALLY`、`UNABLE_TO_VERIFY_LEAF_SIGNATURE`、または `unable to get local issuer certificate`**
   - **原因:** SSL/TLS トラフィックを傍受・検査するファイアウォールを備えた企業ネットワーク上にいる可能性があります。この場合、Node.js がカスタムルート CA 証明書を信頼するように設定する必要がよくあります。
   - **解決策:** `NODE_EXTRA_CA_CERTS` 環境変数に、企業ルート CA 証明書ファイルの絶対パスを設定します。

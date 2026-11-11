@@ -15,7 +15,7 @@ Se você não configurou nada em `tools.webSearch`, a ferramenta é registrada s
 
 | Como você fez login                                                                                                  | Busca integrada                                 |
 | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code) — **Plus ou Pro**                             | ativado                                              |
+| [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) — **Plus ou Pro**                             | ativado                                              |
 | Alibaba ModelStudio → **Chave de API Padrão**                                                                        | ativada                                         |
 | Alibaba ModelStudio → **Token Plan**                                                                                 | ativada                                         |
 | Alibaba ModelStudio → **Coding Plan**                                                                                | desativada — seu endpoint não é verificado para esta API |

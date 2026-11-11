@@ -2,32 +2,32 @@
 
 Das `/auth`-Menü beim ersten Start von Qwen Code enthält fünf Hauptoptionen. Wählen Sie die Option, die Ihrem gewünschten CLI-Nutzungsmodell entspricht:
 
-- [**Qwen-Konto mit Abonnement**](https://chat.qwen.ai/?memberPlan=qwen_code): Melden Sie sich über **Qwen OAuth** mit Ihrem Qwen-Konto an, um auf **Qwen Code und Agent** mit Ihrem **Plus- oder Pro-Abonnement** von [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) zuzugreifen. Falls Sie noch kein Abonnement haben, besuchen Sie [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code), um Plus oder Pro zu abonnieren, kehren Sie dann zu Qwen Code zurück und wählen Sie [**Qwen-Konto mit Abonnement**](https://chat.qwen.ai/?memberPlan=qwen_code).
+- [**Qwen-Konto mit Abonnement**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli): Melden Sie sich über **Qwen OAuth** mit Ihrem Qwen-Konto an, um auf **Qwen Code und Agent** mit Ihrem **Plus- oder Pro-Abonnement** von [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) zuzugreifen. Falls Sie noch kein Abonnement haben, besuchen Sie [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli), um Plus oder Pro zu abonnieren, kehren Sie dann zu Qwen Code zurück und wählen Sie [**Qwen-Konto mit Abonnement**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli).
 - **QwenCloud**: Offiziell empfohlene Einrichtung. Öffnet ein Untermenü mit **Token Plan** (Abonnement mit monatlichem Credit-Kontingent · dedizierter Endpunkt, Personal- und Team-Editionen) oder **Standard-API-Schlüssel** (nutzungsbasierte Bezahlung). Sie wählen anschließend die Plattform explizit aus — **China — Qianwen AI Platform** oder **International — QwenCloud** — damit die UI-Sprache Ihren Endpunkt nicht bestimmt. Beide Zugriffsmethoden aktivieren auch das integrierte [`web_search`-Tool](https://qwenlm.github.io/qwen-code-docs/en/developers/tools/web-search/) ohne zusätzliche Einrichtung.
 - **Alibaba ModelStudio**: Öffnet ein Untermenü mit **Coding Plan** (für individuelle Entwickler · wöchentliches Kontingent enthalten), **Token Plan** (für Teams und Unternehmen · nutzungsbasierte Abrechnung mit dediziertem Endpunkt) oder **Standard-API-Schlüssel** (Verbindung mit einem vorhandenen ModelStudio-API-Schlüssel). Token Plan und Standard-API-Schlüssel aktivieren auch das integrierte [`web_search`-Tool](https://qwenlm.github.io/qwen-code-docs/en/developers/tools/web-search/) ohne zusätzliche Einrichtung. Gespeicherte ModelStudio-Anmeldedaten, Endpunkte und Modelle funktionieren unverändert weiter.
 - **Third-party Providers**: Wähle einen integrierten Provider und verbinde dich mit einem API Key (DeepSeek, Grok, MiniMax, Z.AI, Kimi, Idealab, ModelScope, OpenRouter, Requesty).
 - **Custom Provider**: Verbinde manuell einen lokalen Server, Proxy oder nicht unterstützten Provider – unterstützt OpenAI, Anthropic, Gemini und andere kompatible Endpunkte.
 
-## **Option 1: Qwen OAuth —** [**Qwen-Konto mit Abonnement**](https://chat.qwen.ai/?memberPlan=qwen_code)
+## **Option 1: Qwen OAuth —** [**Qwen-Konto mit Abonnement**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)
 
-Mit Qwen OAuth können Sie sich mit Ihrem Qwen-Konto anmelden und Ihr **Plus- oder Pro-Abonnement** von [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) nutzen, um auf **Qwen Code und Agent** zuzugreifen. Wählen Sie im Menü für den ersten Start oder im `/auth`-Dialog [**Qwen-Konto mit Abonnement**](https://chat.qwen.ai/?memberPlan=qwen_code) aus, um zu beginnen.
+Mit Qwen OAuth können Sie sich mit Ihrem Qwen-Konto anmelden und Ihr **Plus- oder Pro-Abonnement** von [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) nutzen, um auf **Qwen Code und Agent** zuzugreifen. Wählen Sie im Menü für den ersten Start oder im `/auth`-Dialog [**Qwen-Konto mit Abonnement**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) aus, um zu beginnen.
 
-- **Funktionsweise**: Wählen Sie [**Qwen-Konto mit Abonnement**](https://chat.qwen.ai/?memberPlan=qwen_code) aus und folgen Sie dem Browser-Anmeldeablauf, um Qwen Code mit Ihrem Qwen-Konto zu autorisieren.
-- **Voraussetzungen**: Ein Qwen-Konto mit einem aktiven **Plus- oder Pro-Abonnement** von [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) und Internetzugang.
+- **Funktionsweise**: Wählen Sie [**Qwen-Konto mit Abonnement**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) aus und folgen Sie dem Browser-Anmeldeablauf, um Qwen Code mit Ihrem Qwen-Konto zu autorisieren.
+- **Voraussetzungen**: Ein Qwen-Konto mit einem aktiven **Plus- oder Pro-Abonnement** von [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) und Internetzugang.
 - **Vorteile**: Zugriff auf **Qwen Code und Agent** über Ihr Qwen-Abonnement, ohne manuell einen API-Schlüssel konfigurieren zu müssen.
-- **Kosten & Kontingent**: Die Nutzung unterliegt Ihrem Abonnementplan. Besuchen Sie [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) für Details zu den Plus- und Pro-Plänen.
+- **Kosten & Kontingent**: Die Nutzung unterliegt Ihrem Abonnementplan. Besuchen Sie [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) für Details zu den Plus- und Pro-Plänen.
 
 ### **Interaktive Einrichtung**
 
-1. Falls Sie noch kein Abonnement haben, besuchen Sie [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) und abonnieren Sie **Plus oder Pro**. Wenn Sie bereits ein aktives Abonnement haben, fahren Sie mit dem nächsten Schritt fort.
+1. Falls Sie noch kein Abonnement haben, besuchen Sie [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) und abonnieren Sie **Plus oder Pro**. Wenn Sie bereits ein aktives Abonnement haben, fahren Sie mit dem nächsten Schritt fort.
 2. Starten Sie Qwen Code in Ihrem Terminal:
 
    ```bash
    qwen
    ```
 
-3. Wählen Sie im Menü für den ersten Start [**Qwen-Konto mit Abonnement**](https://chat.qwen.ai/?memberPlan=qwen_code). Falls Qwen Code bereits läuft, geben Sie `/auth` ein, um das Authentifizierungsmenü zu öffnen, und wählen Sie dieselbe Option.
-4. Schließen Sie den Anmelde- und Autorisierungsprozess im Browser mit dem **gleichen Qwen-Konto ab, das Sie für das Abonnement bei** [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) verwendet haben.
+3. Wählen Sie im Menü für den ersten Start [**Qwen-Konto mit Abonnement**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli). Falls Qwen Code bereits läuft, geben Sie `/auth` ein, um das Authentifizierungsmenü zu öffnen, und wählen Sie dieselbe Option.
+4. Schließen Sie den Anmelde- und Autorisierungsprozess im Browser mit dem **gleichen Qwen-Konto ab, das Sie für das Abonnement bei** [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) verwendet haben.
 5. Kehren Sie zu Qwen Code zurück, um mit Ihrem Abonnement zu arbeiten.
 
 In nicht-interaktiven Umgebungen, in denen der Browser-Anmeldeablauf nicht abgeschlossen werden kann, wie z. B. CI oder unbeaufsichtigte Container, verwenden Sie stattdessen eine API-Schlüssel-basierte Authentifizierungsmethode.

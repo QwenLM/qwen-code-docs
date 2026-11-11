@@ -11,7 +11,7 @@
 - 터미널 또는 명령 프롬프트가 열려 있어야 합니다
 - 작업할 코드 프로젝트
 - **다음 중 하나**:
-  - [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code)의 **Plus 또는 Pro 구독**이 포함된 Qwen 계정 — **Qwen Code 및 Agent**에 대한 액세스 권한이 부여됩니다
+  - [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)의 **Plus 또는 Pro 구독**이 포함된 Qwen 계정 — **Qwen Code 및 Agent**에 대한 액세스 권한이 부여됩니다
   - Qianwen AI Platform / **QwenCloud**([중국](https://platform.qianwenai.com/docs/developer-guides/administration/api-keys) / [국제](https://docs.qwencloud.com/developer-guides/administration/api-keys))의 API 키 또는 Token Plan 구독 — 권장 설정
   - **Alibaba Cloud ModelStudio**의 API 키 ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/))
   - **Alibaba Cloud Token Plan** ([Beijing](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) 구독
@@ -72,7 +72,7 @@ qwen
 
 첫 실행 메뉴에서 모델 제공자를 연결할 수 있습니다. 다음 중 하나를 선택하세요:
 
-- [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code) — Qwen 계정으로 로그인하여 **Plus 또는 Pro 구독**으로 **Qwen Code 및 Agent**에 액세스합니다. 아직 구독이 없는 경우 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code)에서 Plus 또는 Pro에 가입한 후 Qwen Code로 돌아와 [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code)을 선택하세요.
+- [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) — Qwen 계정으로 로그인하여 **Plus 또는 Pro 구독**으로 **Qwen Code 및 Agent**에 액세스합니다. 아직 구독이 없는 경우 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)에서 Plus 또는 Pro에 가입한 후 Qwen Code로 돌아와 [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)을 선택하세요.
 - **QwenCloud** — 권장 설정입니다. 하위 메뉴가 열립니다:
   - **Token Plan**: 전용 엔드포인트에서 월간 Credit 할당량이 포함된 구독 (Personal 및 Team 에디션).
   - **Standard API Key**: 종량제 방식으로 기존 플랫폼 API 키로 연결합니다.

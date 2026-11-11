@@ -790,9 +790,15 @@ curl "http://127.0.0.1:4170/session/$SESSION_ID/transcript?limit=100"
 
 Когда демон работает на удаленном поде (без общего дисплея с вами), клиент может инициировать OAuth device flow по HTTP. Сам демон опрашивает IdP; ваша задача — просто открыть URL на любом устройстве с браузером.
 
+Для новой настройки используйте [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) с подпиской Plus или Pro. Используйте одну и ту же учетную запись Qwen для подписки и авторизации в браузере.
+
+1. Начните вход с помощью `POST /auth/subscription/flows?paywallScene=cli` и сохраните `id` из ответа.
+2. Опрашивайте `GET /auth/subscription/flows/:id`. Когда появится `authorizationUrl`, откройте этот адрес и завершите вход в браузере.
+3. Когда статус изменится на `ready`, вызовите `POST /workspaces/:workspace/auth/subscription` для рабочего пространства, в котором будет использоваться подписка.
+
 > [!note]
 >
-> Бесплатный уровень Qwen OAuth был прекращен 2026-04-15. Примеры `qwen-oauth` ниже документируют формат протокола device-flow и идентификатор устаревшего провайдера; новые конфигурации должны использовать поддерживаемый в настоящее время провайдер аутентификации.
+> Бесплатный тариф Qwen OAuth закрыт 15 апреля 2026 года. Примеры `qwen-oauth` ниже приведены для справки по прежнему протоколу авторизации устройств.
 
 ```bash
 # 1. Start a flow. The daemon contacts the IdP, returns a code + URL.
@@ -803,8 +809,8 @@ curl -X POST http://127.0.0.1:4170/workspace/auth/device-flow \
 # → 201 {
 #     "deviceFlowId": "fa07c61b-…",
 #     "userCode": "USER-1",
-#     "verificationUri": "https://chat.qwen.ai/api/v1/oauth2/device",
-#     "verificationUriComplete": "https://chat.qwen.ai/...?user_code=USER-1",
+#     "verificationUri": "https://chat.qwen.ai/api/v1/oauth2/device?entry=qwen_code&paywallScene=cli",
+#     "verificationUriComplete": "https://chat.qwen.ai/...?user_code=USER-1&entry=qwen_code&paywallScene=cli",
 #     "expiresAt": 1700000600000,
 #     "intervalMs": 5000,
 #     "attached": false

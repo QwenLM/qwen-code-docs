@@ -12,7 +12,7 @@ Verwenden Sie `modelProviders`, um Modelle pro Anbieter-ID zu deklarieren, zwisc
 
 > [!note]
 >
-> Konfigurieren Sie API-Schlüssel-Anbieter über `modelProviders` und wählen Sie sie dann mit `/model` aus. Für die Anmeldung mit dem Qwen-Konto wählen Sie [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code) in `/auth`; es sind kein API-Schlüssel oder manuelle `modelProviders`-Konfiguration erforderlich. Verwenden Sie `/model`, um aus den mit Ihrem Abonnement verfügbaren Modellen zu wählen. Siehe [Authentication](./auth.md) für Anmeldeanweisungen.
+> Konfigurieren Sie API-Schlüssel-Anbieter über `modelProviders` und wählen Sie sie dann mit `/model` aus. Für die Anmeldung mit dem Qwen-Konto wählen Sie [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) in `/auth`; es sind kein API-Schlüssel oder manuelle `modelProviders`-Konfiguration erforderlich. Verwenden Sie `/model`, um aus den mit Ihrem Abonnement verfügbaren Modellen zu wählen. Siehe [Authentication](./auth.md) für Anmeldeanweisungen.
 
 > [!note]
 >
@@ -652,7 +652,7 @@ Die effektiven Auth-/Modell-/Credential-Werte werden feldweise anhand der folgen
 | Einstellungen (`settings.json`) | `security.auth.selectedType`        | `model.name`                                    | `security.auth.apiKey`                            | `security.auth.baseUrl`                            | —                      | —                                 |
 | Standard / berechnet       | Fällt auf `AuthType.QWEN_OAUTH` zurück | Eingebauter Standard (OpenAI ⇒ `qwen3.5-plus`) | —                                                 | —                                                  | —                      | `Config.getProxy()`, falls konfiguriert |
 
-\*Wenn vorhanden, überschreiben CLI-Auth-Flags die Einstellungen. Andernfalls bestimmen `security.auth.selectedType` oder der implizite Standard den Auth-Typ. Siehe [Authentifizierung](./auth.md) für Anmeldeoptionen. Der Legacy-freie Qwen OAuth Provider ist getrennt vom [Qwen Account mit Abonnement](https://chat.qwen.ai/?memberPlan=qwen_code).
+\*Wenn vorhanden, überschreiben CLI-Auth-Flags die Einstellungen. Andernfalls bestimmen `security.auth.selectedType` oder der implizite Standard den Auth-Typ. Siehe [Authentifizierung](./auth.md) für Anmeldeoptionen. Der Legacy-freie Qwen OAuth Provider ist getrennt vom [Qwen Account mit Abonnement](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli).
 
 > [!note]
 >

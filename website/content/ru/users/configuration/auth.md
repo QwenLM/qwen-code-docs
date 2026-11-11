@@ -2,32 +2,32 @@
 
 Меню `/auth` при первом запуске Qwen Code содержит пять основных опций. Выберите ту, которая соответствует вашему способу запуска CLI:
 
-- [**Qwen Account с подпиской**](https://chat.qwen.ai/?memberPlan=qwen_code): войдите в свою учетную запись Qwen через **Qwen OAuth**, чтобы получить доступ к **Qwen Code и Agent** с вашей **подпиской Plus или Pro** на [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code). Если у вас еще нет подписки, посетите [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code), чтобы оформить подписку Plus или Pro, затем вернитесь в Qwen Code и выберите [**Qwen Account с подпиской**](https://chat.qwen.ai/?memberPlan=qwen_code).
+- [**Qwen Account с подпиской**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli): войдите в свою учетную запись Qwen через **Qwen OAuth**, чтобы получить доступ к **Qwen Code и Agent** с вашей **подпиской Plus или Pro** на [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli). Если у вас еще нет подписки, посетите [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli), чтобы оформить подписку Plus или Pro, затем вернитесь в Qwen Code и выберите [**Qwen Account с подпиской**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli).
 - **QwenCloud**: официально рекомендуемая настройка. Открывает подменю с **Token Plan** (подписка с ежемесячной квотой кредитов · выделенная конечная точка, редакции Personal и Team) или **Standard API Key** (оплата по мере использования). Затем вы явно выбираете платформу — **China — Qianwen AI Platform** или **International — QwenCloud** — так что язык интерфейса никогда не определяет вашу конечную точку. Оба способа доступа также включают встроенный инструмент [`web_search`](https://qwenlm.github.io/qwen-code-docs/en/developers/tools/web-search/) без дополнительной настройки.
 - **Alibaba ModelStudio**: открывает подменю с **Coding Plan** (для индивидуальных разработчиков · включена недельная квота), **Token Plan** (для команд и компаний · тарификация по использованию с выделенной конечной точкой) или **Standard API Key** (подключение с существующим ключом API ModelStudio). Token Plan и Standard API Key также включают встроенный инструмент [`web_search`](https://qwenlm.github.io/qwen-code-docs/en/developers/tools/web-search/) без дополнительной настройки. Сохраненные учетные данные, конечные точки и модели ModelStudio продолжают работать без изменений.
 - **Third-party Providers**: выберите встроенного провайдера и подключитесь с помощью API-ключа (DeepSeek, Grok, MiniMax, Z.AI, Kimi, Idealab, ModelScope, OpenRouter, Requesty).
 - **Custom Provider**: вручную подключите локальный сервер, прокси или неподдерживаемого провайдера — поддерживаются OpenAI, Anthropic, Gemini и другие совместимые эндпоинты.
 
-## **Вариант 1: Qwen OAuth —** [**Qwen Account с подпиской**](https://chat.qwen.ai/?memberPlan=qwen_code)
+## **Вариант 1: Qwen OAuth —** [**Qwen Account с подпиской**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)
 
-Qwen OAuth позволяет войти в свою учетную запись Qwen и использовать вашу **подписку Plus или Pro** с [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) для доступа к **Qwen Code и Agent**. В меню первого запуска или в диалоге `/auth` выберите [**Qwen Account с подпиской**](https://chat.qwen.ai/?memberPlan=qwen_code), чтобы начать.
+Qwen OAuth позволяет войти в свою учетную запись Qwen и использовать вашу **подписку Plus или Pro** с [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) для доступа к **Qwen Code и Agent**. В меню первого запуска или в диалоге `/auth` выберите [**Qwen Account с подпиской**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli), чтобы начать.
 
-- **Как это работает**: выберите [**Qwen Account с подпиской**](https://chat.qwen.ai/?memberPlan=qwen_code) и следуйте инструкциям по входу через браузер, чтобы авторизовать Qwen Code со своей учетной записью Qwen.
-- **Требования**: учетная запись Qwen с активной **подпиской Plus или Pro** на [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) и доступ в интернет.
+- **Как это работает**: выберите [**Qwen Account с подпиской**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) и следуйте инструкциям по входу через браузер, чтобы авторизовать Qwen Code со своей учетной записью Qwen.
+- **Требования**: учетная запись Qwen с активной **подпиской Plus или Pro** на [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) и доступ в интернет.
 - **Преимущества**: доступ к **Qwen Code и Agent** через вашу подписку Qwen без ручной настройки ключа API.
-- **Стоимость и квота**: использование зависит от вашего плана подписки. Посетите [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) для получения информации о планах Plus и Pro.
+- **Стоимость и квота**: использование зависит от вашего плана подписки. Посетите [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) для получения информации о планах Plus и Pro.
 
 ### **Интерактивная настройка**
 
-1. Если у вас еще нет подписки, посетите [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) и оформите подписку **Plus или Pro**. Если у вас уже есть активная подписка, переходите к следующему шагу.
+1. Если у вас еще нет подписки, посетите [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) и оформите подписку **Plus или Pro**. Если у вас уже есть активная подписка, переходите к следующему шагу.
 2. Запустите Qwen Code в терминале:
 
    ```bash
    qwen
    ```
 
-3. В меню первого запуска выберите [**Qwen Account с подпиской**](https://chat.qwen.ai/?memberPlan=qwen_code). Если Qwen Code уже запущен, введите `/auth`, чтобы открыть меню аутентификации, и выберите ту же опцию.
-4. Завершите процесс входа и авторизации в браузере, используя **ту же учетную запись Qwen, которую вы использовали для оформления подписки на** [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code).
+3. В меню первого запуска выберите [**Qwen Account с подпиской**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli). Если Qwen Code уже запущен, введите `/auth`, чтобы открыть меню аутентификации, и выберите ту же опцию.
+4. Завершите процесс входа и авторизации в браузере, используя **ту же учетную запись Qwen, которую вы использовали для оформления подписки на** [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli).
 5. Вернитесь в Qwen Code, чтобы начать работу с вашей подпиской.
 
 Для неинтерактивных сред, где невозможно завершить процесс входа через браузер, таких как CI или контейнеры без сопровождения, используйте метод аутентификации на основе ключа API.

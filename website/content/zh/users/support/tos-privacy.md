@@ -17,7 +17,7 @@ Qwen Code 支持四种认证方式来访问 AI 模型。你的认证方式决定
 
 | 认证方法                                                                     | 提供商            | 服务条款                                                           | 隐私声明                                                           |
 | :--------------------------------------------------------------------------- | :---------------- | :----------------------------------------------------------------- | :----------------------------------------------------------------- |
-| [Qwen 账户订阅](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) | Qwen AI           | [Qwen 服务条款](https://qwen.ai/termsservice)                                               | [Qwen 隐私政策](https://qwen.ai/privacypolicy)                                               |
+| [Qwen 账户订阅](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)                                                         | Qwen AI           | [Qwen 服务条款](https://qwen.ai/termsservice)                                               | [Qwen 隐私政策](https://qwen.ai/privacypolicy)                                               |
 | Alibaba Cloud Coding Plan                                                    | Alibaba Cloud     | 参见[下方详情](#2-if-you-are-using-alibaba-cloud-coding-plan)                                                | 参见[下方详情](#2-if-you-are-using-alibaba-cloud-coding-plan)                                                |
 | API Key                                                                      | 各种提供商        | 取决于您选择的 API 提供商（OpenAI、Anthropic 等）                  | 取决于您选择的 API 提供商                                          |
 | Vertex AI                                                                    | Google Cloud      | [Google Cloud 服务条款](https://cloud.google.com/terms)                                       | [Google Cloud 隐私政策](https://cloud.google.com/privacy)                                       |
@@ -31,7 +31,7 @@ Qwen Code 支持四种认证方式来访问 AI 模型。你的认证方式决定
 
 有关身份验证设置、配额和支持功能的详细信息，请参阅[身份验证设置](../configuration/auth.md)。
 
-## 2. 如果你使用的是阿里云百炼计划
+## 2. 如果你使用的是阿里云百炼计划 [#2-if-you-are-using-alibaba-cloud-coding-plan]
 
 当你使用来自阿里云的 API key 进行认证时，适用阿里云相应的服务条款与隐私声明。
 

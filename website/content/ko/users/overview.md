@@ -33,9 +33,9 @@ cd your-project
 qwen
 ```
 
-첫 실행 시 모델 제공업체 연결을 요청받습니다. 메뉴에는 [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code) ([**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code)에서 Qwen Plus 또는 Pro 구독 사용), **QwenCloud** (공식 권장 설정), **Alibaba ModelStudio**, **타사 제공업체** (API 키로 연결된 DeepSeek, MiniMax, Z.AI, Kimi 및 OpenRouter와 같은 내장 제공업체), 그리고 **사용자 지정 제공업체** (로컬 서버, 프록시 또는 지원되지 않는 제공업체)가 제공됩니다.
+첫 실행 시 모델 제공업체 연결을 요청받습니다. 메뉴에는 [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) ([**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)에서 Qwen Plus 또는 Pro 구독 사용), **QwenCloud** (공식 권장 설정), **Alibaba ModelStudio**, **타사 제공업체** (API 키로 연결된 DeepSeek, MiniMax, Z.AI, Kimi 및 OpenRouter와 같은 내장 제공업체), 그리고 **사용자 지정 제공업체** (로컬 서버, 프록시 또는 지원되지 않는 제공업체)가 제공됩니다.
 
-Qwen 구독을 사용하려면 [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code)을 선택하고 Qwen 계정으로 로그인하세요. **Plus 또는 Pro 구독**은 **Qwen Code 및 Agent**에 대한 접근 권한을 해제합니다. 아직 구독이 없다면 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code)를 방문하여 Plus 또는 Pro에 가입한 후 Qwen Code로 돌아와 [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code)을 선택하세요.
+Qwen 구독을 사용하려면 [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)을 선택하고 Qwen 계정으로 로그인하세요. **Plus 또는 Pro 구독**은 **Qwen Code 및 Agent**에 대한 접근 권한을 해제합니다. 아직 구독이 없다면 [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)를 방문하여 Plus 또는 Pro에 가입한 후 Qwen Code로 돌아와 [**구독이 포함된 Qwen 계정**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)을 선택하세요.
 
 QwenCloud 키를 사용하려면 **QwenCloud → Token Plan** 또는 **QwenCloud → Standard API Key**를 선택한 다음 플랫폼(중국 또는 국제)을 선택하세요 — [인증](https://qwenlm.github.io/qwen-code-docs/en/users/configuration/auth/)을 참조하세요.
 

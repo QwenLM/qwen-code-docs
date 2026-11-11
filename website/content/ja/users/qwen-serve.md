@@ -790,9 +790,15 @@ Stage 1.5 で `qwen --serve`（TUI プロセスが同じ HTTP サーバーを共
 
 デーモンがリモートポッド上で実行されている場合 (あなたとディスプレイを共有していない)、クライアントは HTTP を介して OAuth デバイスフローをトリガーできます。デーモン自体が IdP をポーリングします。あなたの仕事は、ブラウザを持つ任意のデバイスで URL を開くだけです。
 
+新規セットアップでは、Plus または Pro を契約した [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) を使用してください。契約時とブラウザ認証時には同じ Qwen アカウントを使用します。
+
+1. `POST /auth/subscription/flows?paywallScene=cli` でサインインを開始し、レスポンスの `id` を保持します。
+2. `GET /auth/subscription/flows/:id` をポーリングします。`authorizationUrl` が返されたらブラウザで開き、サインインを完了します。
+3. ステータスが `ready` になったら、サブスクリプションを使用するワークスペースに対して `POST /workspaces/:workspace/auth/subscription` を呼び出します。
+
 > [!note]
 >
-> Qwen OAuth 無料枠は 2026-04-15 に廃止されました。以下の `qwen-oauth` の例はデバイスフロープロトコルの形状とレガシープロバイダー識別子を文書化したものであり、新しいセットアップは現在サポートされている認証プロバイダーを使用すべきです。
+> Qwen OAuth の無料枠は 2026 年 4 月 15 日に終了しました。以下の `qwen-oauth` の例は、従来のデバイス認証プロトコルの参考情報です。
 
 ```bash
 # 1. Start a flow. The daemon contacts the IdP, returns a code + URL.
@@ -803,8 +809,8 @@ curl -X POST http://127.0.0.1:4170/workspace/auth/device-flow \
 # → 201 {
 #     "deviceFlowId": "fa07c61b-…",
 #     "userCode": "USER-1",
-#     "verificationUri": "https://chat.qwen.ai/api/v1/oauth2/device",
-#     "verificationUriComplete": "https://chat.qwen.ai/...?user_code=USER-1",
+#     "verificationUri": "https://chat.qwen.ai/api/v1/oauth2/device?entry=qwen_code&paywallScene=cli",
+#     "verificationUriComplete": "https://chat.qwen.ai/...?user_code=USER-1&entry=qwen_code&paywallScene=cli",
 #     "expiresAt": 1700000600000,
 #     "intervalMs": 5000,
 #     "attached": false

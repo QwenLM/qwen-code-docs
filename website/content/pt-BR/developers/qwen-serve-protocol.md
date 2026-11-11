@@ -3770,7 +3770,9 @@ Tag de capacidade: `auth_device_flow` (sempre anunciado). Provedores suportados 
 
 > [!note]
 >
-> O nível gratuito Qwen OAuth foi descontinuado em 2026-04-15. Trate `qwen-oauth` como o identificador de provedor legado v1 neste protocolo; novos clientes devem preferir um provedor de autenticação atualmente suportado quando disponível.
+> Em novas integrações, use [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli). `GET /auth/subscription?paywallScene=cli` retorna o link de compra em `plansUrl`. Inicie o login no navegador separadamente com `POST /auth/subscription/flows?paywallScene=cli` e consulte `GET /auth/subscription/flows/:id` até obter `authorizationUrl`.
+>
+> A modalidade gratuita do Qwen OAuth foi encerrada em 15 de abril de 2026. `qwen-oauth` é o identificador antigo do provedor v1 para as rotas abaixo.
 
 **Localidade em tempo de execução.** O daemon nunca abre um navegador — mesmo que possa. O cliente decide se chama `open(verificationUri)` localmente; em um pod headless (a implantação canônica do Modo B) o usuário abre a URL em qualquer dispositivo que tenha um navegador. Veja `docs/users/qwen-serve.md` para a UX recomendada.
 
@@ -3796,8 +3798,8 @@ Resposta (`201` início novo, `200` tomada de posse idempotente):
   "providerId": "qwen-oauth",
   "status": "pending",
   "userCode": "USER-1",
-  "verificationUri": "https://chat.qwen.ai/api/v1/oauth2/device",
-  "verificationUriComplete": "https://chat.qwen.ai/api/v1/oauth2/device?user_code=USER-1",
+  "verificationUri": "https://chat.qwen.ai/api/v1/oauth2/device?entry=qwen_code&paywallScene=cli",
+  "verificationUriComplete": "https://chat.qwen.ai/api/v1/oauth2/device?user_code=USER-1&entry=qwen_code&paywallScene=cli",
   "expiresAt": 1700000600000,
   "intervalMs": 5000,
   "attached": false

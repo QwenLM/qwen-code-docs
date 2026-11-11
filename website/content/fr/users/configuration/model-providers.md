@@ -12,7 +12,7 @@ Utilisez `modelProviders` pour déclarer les modèles par identifiant de fournis
 
 > [!note]
 >
-> Configurez les fournisseurs de clés API via `modelProviders`, puis sélectionnez-les avec `/model`. Pour la connexion au compte Qwen, choisissez [**Compte Qwen avec Abonnement**](https://chat.qwen.ai/?memberPlan=qwen_code) dans `/auth` ; aucune configuration manuelle de clé API ou de `modelProviders` n'est nécessaire. Utilisez `/model` pour choisir parmi les modèles disponibles avec votre abonnement. Voir [Authentification](./auth.md) pour les instructions de connexion.
+> Configurez les fournisseurs de clés API via `modelProviders`, puis sélectionnez-les avec `/model`. Pour la connexion au compte Qwen, choisissez [**Compte Qwen avec Abonnement**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) dans `/auth` ; aucune configuration manuelle de clé API ou de `modelProviders` n'est nécessaire. Utilisez `/model` pour choisir parmi les modèles disponibles avec votre abonnement. Voir [Authentification](./auth.md) pour les instructions de connexion.
 
 > [!note]
 >
@@ -652,7 +652,7 @@ Les valeurs effectives d'authentification/modèle/identifiants sont choisies par
 | Paramètres (`settings.json`) | `security.auth.selectedType`        | `model.name`                                    | `security.auth.apiKey`                                | `security.auth.baseUrl`                                | —                      | —                                 |
 | Par défaut / calculé       | Repli vers `AuthType.QWEN_OAUTH`    | Valeur par défaut intégrée (OpenAI ⇒ `qwen3.5-plus`) | —                                                     | —                                                      | —                      | `Config.getProxy()` si configuré  |
 
-\*Lorsqu'il est présent, les indicateurs d'authentification CLI remplacent les paramètres. Sinon, `security.auth.selectedType` ou la valeur par défaut implicite détermine le type d'authentification. Consultez [Authentication](./auth.md) pour connaître les options de connexion. Le fournisseur Qwen OAuth gratuit hérité est distinct de [Qwen Account with Subscription](https://chat.qwen.ai/?memberPlan=qwen_code).
+\*Lorsqu'il est présent, les indicateurs d'authentification CLI remplacent les paramètres. Sinon, `security.auth.selectedType` ou la valeur par défaut implicite détermine le type d'authentification. Consultez [Authentication](./auth.md) pour connaître les options de connexion. Le fournisseur Qwen OAuth gratuit hérité est distinct de [Qwen Account with Subscription](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli).
 
 > [!note]
 >

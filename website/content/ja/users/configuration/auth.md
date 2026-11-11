@@ -2,32 +2,32 @@
 
 Qwen Code の初回実行時の `/auth` メニューには、5 つのトップレベルオプションがあります。CLI の実行方法に合ったものを選択してください:
 
-- [**サブスクリプション付き Qwen アカウント**](https://chat.qwen.ai/?memberPlan=qwen_code): **Qwen OAuth** を通じて Qwen アカウントでサインインし、[**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) の **Plus または Pro サブスクリプション**を使用して **Qwen Code and Agent** にアクセスします。まだサブスクリプションがない場合は、[**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) にアクセスして Plus または Pro に登録し、その後 Qwen Code に戻って [**サブスクリプション付き Qwen アカウント**](https://chat.qwen.ai/?memberPlan=qwen_code) を選択してください。
+- [**サブスクリプション付き Qwen アカウント**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli): **Qwen OAuth** を通じて Qwen アカウントでサインインし、[**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) の **Plus または Pro サブスクリプション**を使用して **Qwen Code and Agent** にアクセスします。まだサブスクリプションがない場合は、[**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) にアクセスして Plus または Pro に登録し、その後 Qwen Code に戻って [**サブスクリプション付き Qwen アカウント**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) を選択してください。
 - **QwenCloud**: 公式推奨セットアップ。**Token Plan** (専用エンドポイントでの月額クレジットクォータ付きサブスクリプション · Personal および Team エディション) または **Standard API Key** (従量課金) のサブメニューを開きます。その後、プラットフォームを明示的に選択します — **中国 — 千问AI平台** または **国際 — QwenCloud** — これにより、UI 言語がエンドポイントを決定することはありません。両方のアクセス方法では、追加のセットアップなしで組み込みの [`web_search` ツール](https://qwenlm.github.io/qwen-code-docs/en/developers/tools/web-search/) も有効になります。
 - **Alibaba ModelStudio**: **Coding Plan** (個人開発者向け · 週次クォータ含む)、**Token Plan** (チームおよび企業向け · 専用エンドポイントでの使用量ベース課金)、または **Standard API Key** (既存の ModelStudio API キーで接続) のサブメニューを開きます。Token Plan と Standard API Key では、追加のセットアップなしで組み込みの [`web_search` ツール](https://qwenlm.github.io/qwen-code-docs/en/developers/tools/web-search/) も有効になります。保存された ModelStudio の認証情報、エンドポイント、モデルは変更なく動作し続けます。
 - **Third-party Providers**: 組み込みプロバイダーを選択し、API キーで接続します（DeepSeek、Grok、MiniMax、Z.AI、Kimi、Idealab、ModelScope、OpenRouter、Requesty）。
 - **Custom Provider**: ローカルサーバー、プロキシ、またはサポートされていないプロバイダーに手動で接続します。OpenAI、Anthropic、Gemini、およびその他の互換エンドポイントをサポートします。
 
-## **オプション 1: Qwen OAuth —** [**サブスクリプション付き Qwen アカウント**](https://chat.qwen.ai/?memberPlan=qwen_code)
+## **オプション 1: Qwen OAuth —** [**サブスクリプション付き Qwen アカウント**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)
 
-Qwen OAuth を使用すると、Qwen アカウントでサインインし、[**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) の **Plus または Pro サブスクリプション**を利用して **Qwen Code and Agent** にアクセスできます。初回実行メニューまたは `/auth` ダイアログで [**サブスクリプション付き Qwen アカウント**](https://chat.qwen.ai/?memberPlan=qwen_code) を選択して開始してください。
+Qwen OAuth を使用すると、Qwen アカウントでサインインし、[**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) の **Plus または Pro サブスクリプション**を利用して **Qwen Code and Agent** にアクセスできます。初回実行メニューまたは `/auth` ダイアログで [**サブスクリプション付き Qwen アカウント**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) を選択して開始してください。
 
-- **仕組み**: [**サブスクリプション付き Qwen アカウント**](https://chat.qwen.ai/?memberPlan=qwen_code) を選択し、ブラウザのサインインフローに従って、Qwen アカウントで Qwen Code を認可します。
-- **要件**: [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) のアクティブな **Plus または Pro サブスクリプション**を持つ Qwen アカウントとインターネット接続。
+- **仕組み**: [**サブスクリプション付き Qwen アカウント**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) を選択し、ブラウザのサインインフローに従って、Qwen アカウントで Qwen Code を認可します。
+- **要件**: [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) のアクティブな **Plus または Pro サブスクリプション**を持つ Qwen アカウントとインターネット接続。
 - **利点**: API キーを手動で設定せずに、Qwen サブスクリプションを通じて **Qwen Code and Agent** にアクセスできます。
-- **コストとクォータ**: 使用量はサブスクリプションプランの対象となります。Plus および Pro プランの詳細については [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) をご覧ください。
+- **コストとクォータ**: 使用量はサブスクリプションプランの対象となります。Plus および Pro プランの詳細については [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) をご覧ください。
 
 ### **インタラクティブセットアップ**
 
-1. まだサブスクリプションがない場合は、[**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) にアクセスして **Plus または Pro** に登録してください。すでにアクティブなサブスクリプションがある場合は、次のステップに進んでください。
+1. まだサブスクリプションがない場合は、[**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) にアクセスして **Plus または Pro** に登録してください。すでにアクティブなサブスクリプションがある場合は、次のステップに進んでください。
 2. ターミナルで Qwen Code を起動します:
 
    ```bash
    qwen
    ```
 
-3. 初回実行メニューで [**サブスクリプション付き Qwen アカウント**](https://chat.qwen.ai/?memberPlan=qwen_code) を選択します。Qwen Code が既に実行中の場合は、`/auth` を入力して認証メニューを開き、同じオプションを選択してください。
-4. [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code) で**サブスクリプションに登録した際に使用したのと同じ Qwen アカウント**を使用して、ブラウザのサインインと認可フローを完了します。
+3. 初回実行メニューで [**サブスクリプション付き Qwen アカウント**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) を選択します。Qwen Code が既に実行中の場合は、`/auth` を入力して認証メニューを開き、同じオプションを選択してください。
+4. [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) で**サブスクリプションに登録した際に使用したのと同じ Qwen アカウント**を使用して、ブラウザのサインインと認可フローを完了します。
 5. Qwen Code に戻り、サブスクリプションを使って作業を開始します。
 
 CI や無人コンテナなど、ブラウザのサインインフローを完了できない非インタラクティブ環境では、代わりに API キーベースの認証方法を使用してください。

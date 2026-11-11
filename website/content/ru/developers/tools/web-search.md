@@ -15,7 +15,7 @@ Qwen Code поддерживает веб-поиск двумя способам
 
 | Способ входа                                                                                                                 | Встроенный поиск                                |
 | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| [Аккаунт Qwen с подпиской](https://chat.qwen.ai/?memberPlan=qwen_code) — **Plus или Pro**                             | включено                                              |
+| [Аккаунт Qwen с подпиской](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) — **Plus или Pro**                             | включено                                              |
 | Alibaba ModelStudio → **Standard API Key**                                                                                   | включён                                         |
 | Alibaba ModelStudio → **Token Plan**                                                                                         | включён                                         |
 | Alibaba ModelStudio → **Coding Plan**                                                                                        | выключен — его эндпоинт не проверен для этого API |
