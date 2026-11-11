@@ -4,7 +4,9 @@
 
 ## 启用该功能
 
-“受信任的文件夹”功能**默认处于禁用状态**。要使用它，你首先需要在设置中启用它。
+“受信任的文件夹”功能**默认处于禁用状态**。禁用时，每个文件夹都被视为受信任，因此项目的 `.qwen/settings.json` 会在没有任何提示的情况下加载。项目 MCP 服务器和项目 [hooks](../features/hooks.md#approving-project-hooks) 在首次遇到或发生变更时仍会要求你批准，除非你在 YOLO 模式下运行（对于 MCP 服务器，任何来源的 YOLO 都生效；对于 hooks，仅命令行中的 `--yolo` 或 `--approval-mode yolo` 生效）。其他项目配置可以在不询问的情况下运行命令（例如 `type: "command"` 的 `ui.statusLine`）。要在读取任何项目配置之前都被询问，请在设置中启用该功能。
+
+禁用文件夹信任不会授权项目 skill/subagent frontmatter hooks、项目 skill 自动工具授予，或工作区 `.lsp.json` 服务器。这些需要启用并授予文件夹信任，或肯定的 IDE 工作区信任信号。其他设置文件 hooks 遵循其自己的加载策略；参见 [Hooks](../features/hooks.md)。
 
 在你的用户 `settings.json` 文件中添加以下内容：
 

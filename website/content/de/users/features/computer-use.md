@@ -12,13 +12,15 @@ Qwen Code / beliebiger MCP-Client
 
 ## Setup
 
+Dieses Checkout dokumentiert das kommende CUA 0.27.0-Release. Die folgenden Installationsbefehle erfordern, dass dessen natives GitHub Release (`cua-driver-rs-v0.27.0`) und die passenden npm-Pakete veröffentlicht werden; das Zusammenführen dieser Quellen veröffentlicht sie nicht. Verwende vor der Veröffentlichung das [lokale Entwicklungs-Setup](https://github.com/QwenLM/qwen-code/blob/890cb0349a259761a571da889f4fe1cccc6ed108/packages/node-repl/README.md#local-development-and-environment), um einen Repository-Build zu testen.
+
 Node.js 22 oder höher und npm werden benötigt. Registriere den MCP-Server und starte dann Qwen Code neu:
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.26.0
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.27.0
 ```
 
-Der Server installiert das passende SDK und das Browser-SDK als Dependencies. Die native SDK-Payload wird für die aktuelle Plattform heruntergeladen und gegen die SHA-256-Checksummen des zugehörigen Releases verifiziert. Sie wird außerhalb des npm-Pakets zwischengespeichert; es wird kein SDK-Bootstrap-Befehl im Workspace benötigt. Version 0.26.0 ist ein lokales Entwicklungsziel, bis deren Release veröffentlicht wird.
+Der Server installiert das passende SDK und das Browser-SDK als Dependencies. Die native SDK-Payload wird für die aktuelle Plattform heruntergeladen und gegen die SHA-256-Checksummen des zugehörigen Releases verifiziert. Sie wird außerhalb des npm-Pakets zwischengespeichert; es wird kein SDK-Bootstrap-Befehl im Workspace benötigt. Version 0.27.0 ist ein lokales Entwicklungsziel, bis deren Release veröffentlicht wird.
 
 Windows verwendet standardmäßig die gewöhnliche Eingabezustellung und installiert keinen UIAccess-Worker. Die Entscheidung für UIAccess mit `CUA_DRIVER_USE_UIACCESS=1` erfordert einen signierten Worker unter `Program Files\Qwen\CuaDriver`; installiere das SDK von einem erhöhten Terminal mit gesetzter Variable. Ein unsignierter Worker kann UIAccess nicht aktivieren; umgehe nicht die Signaturprüfung. Ältere unsignierte Releases benötigen ein neues signiertes Driver-Release für UIAccess, keine Neuinstallation derselben Version.
 
@@ -64,12 +66,18 @@ Der Server führt JavaScript mit den normalen Node.js-Berechtigungen aus und fol
 
 `js` wird in einem Aufruf abgeschlossen und hat standardmäßig ein 30-Sekunden-Timeout. Ein Timeout kann externe Effekte hinterlassen; beobachte vor einem erneuten Versuch. `js_reset` verwirft Bindungen und schließt die besitzende native/Browser-Session sauber. Nach Compaction des Kontexts, rufe `cua.rewriteDocumentation()` auf, bevor du fortfährst.
 
+Der native Agent-Cursor ist standardmäßig aktiviert. Unter macOS aktualisiert ein lokales PiP die zwei zuletzt beobachteten, autorisierten Fenster der Session, auch zwischen Aktionen. Das randlose Fenster startet in der Nähe der unteren rechten Ecke; ziehe eine Karte oder deren Move-Vorschau-Handle, um es neu zu positionieren. Hover zeigt schwebende Steuerungen und bringt eine hintere Karte nach vorne. Schließe es, um diese Vorschau zu stoppen; eine spätere autorisierte Beobachtung kann sie erneut erstellen. Das Bild leitet keine Eingabe an das Ziel weiter. Reset schließt den besitzenden Cursor und die Vorschau. Füge `--no-overlay` oder `--no-pip` zu den Server-Argumenten hinzu, um eine der beiden Oberflächen zu deaktivieren. PiP ist nur auf macOS verfügbar.
+
+Um PiP zu deaktivieren, ohne die MCP-Registrierung zu ändern, setze `"experimental_pip": false` in `~/.cua-driver/config.json`, behalte dessen andere Keys bei, und starte dann den besitzenden MCP-Server oder die Runtime neu. Dieser vorhandene Key wird aus Kompatibilitätsgründen beibehalten. Das `--no-pip`-Argument des Servers deaktiviert PiP ebenfalls und hat Vorrang vor der Datei.
+
+Die Vorschau kann für andere sichtbar sein, wenn du den Desktop teilst oder aufnimmst, einschließlich während einer Vollbild-Präsentation. Für ein dauerhaftes Opt-out deaktiviere PiP und starte die besitzende Runtime vor dem Teilen neu; das Schließen des aktuellen Panels allein verhindert nicht, dass eine spätere Beobachtung sie erneut erstellt. Teilen wird nicht automatisch erkannt.
+
 ## Remote-Desktop-Relay
 
 Für ein bestehendes macOS-Desktop-Relay-Setup installiere den zugehörigen Server:
 
 ```bash
-npx -y @qwen-code/node-repl-mcp@0.26.0 desktop-relay install
+npx -y @qwen-code/node-repl-mcp@0.27.0 desktop-relay install
 ```
 
 Dies verwendet den bestehenden lokalen launchd-Socket unter `127.0.0.1:47821`. Wähle in einer sicheren Web Shell **Use this computer** und dann **Connect this computer**. Der Desktop fragt bei jeder Verbindung nach. Der Remote-Daemon muss `QWEN_SERVE_CLIENT_MCP_OVER_WS=1` aktiviert haben.

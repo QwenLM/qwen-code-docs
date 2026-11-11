@@ -19,7 +19,7 @@ Qwen Code는 AI 모델에 접근하기 위해 네 가지 인증 방법을 지원
 | :--------------------------------------------------------------------------- | :---------------- | :----------------------------------------------------------------- | :----------------------------------------------------------------- |
 | [구독이 포함된 Qwen 계정](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) | Qwen AI           | [Qwen 서비스 약관](https://qwen.ai/termsservice)              | [Qwen 개인정보 처리방침](https://qwen.ai/privacypolicy)               |
 | Alibaba Cloud Coding Plan                                                    | Alibaba Cloud     | [아래 세부 정보](#2-if-you-are-using-alibaba-cloud-coding-plan) 참조 | [아래 세부 정보](#2-if-you-are-using-alibaba-cloud-coding-plan) 참조 |
-| API 키                                                                      | 다양한 제공자 | 선택한 API 제공자(OpenAI, Anthropic 등)에 따라 다름      | 선택한 API 제공자에 따라 다름                                |
+| API Key                                                                                                       | 다양한 제공자 | 선택한 API 제공자(OpenAI, Anthropic 등)에 따라 다름      | 선택한 API 제공자에 따라 다름                                |
 | Vertex AI                                                                    | Google Cloud      | [Google Cloud 약관](https://cloud.google.com/terms)               | [Google Cloud 개인정보 처리방침](https://cloud.google.com/privacy)           |
 
 ## 1. [구독이 포함된 Qwen 계정](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)을 사용하는 경우
@@ -31,13 +31,13 @@ Qwen Code는 AI 모델에 접근하기 위해 네 가지 인증 방법을 지원
 
 인증 설정, 할당량 및 지원 기능에 대한 자세한 내용은 [인증 설정](../configuration/auth.md)을 참조하세요.
 
-## 2. Alibaba Cloud Coding Plan을 사용하는 경우 [#2-if-you-are-using-alibaba-cloud-coding-plan]
+## 2. Alibaba Cloud Coding Plan을 사용하는 경우
 
 Alibaba Cloud의 API 키로 인증할 때 적용되는 Alibaba Cloud의 서비스 약관 및 개인정보 보호 안내가 적용됩니다.
 
 Alibaba Cloud Coding Plan은 두 지역에서 사용 가능합니다:
 
-- **Alibaba Cloud Bailian (aliyun.com)** — [bailian.console.aliyun.com](https://bailian.console.aliyun.com)
+- **阿里云百炼 (aliyun.com)** — [bailian.console.aliyun.com](https://bailian.console.aliyun.com)
 - **Alibaba Cloud (alibabacloud.com)** — [bailian.console.alibabacloud.com](https://bailian.console.alibabacloud.com)
 
 > [!important]

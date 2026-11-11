@@ -12,7 +12,7 @@ Toda requisição que uma sessão envia carrega o mesmo prefixo antes de qualque
 
 `/context` exibe o detalhamento por categoria; `detail` adiciona linhas por item — cada ferramenta nativa, cada ferramenta MCP, cada arquivo de contexto, cada skill listada — para que você possa ver qual entrada individual é a mais cara. Consulte no **primeiro turno** de uma sessão, onde a conversa ainda está vazia e tudo que você vê é prefixo.
 
-As categorias são o que `/context` reporta, mais duas linhas de contabilidade: `startupContext` (o bloco de ambiente enviado como primeiro turno do usuário) e um residual explícito para o que as categorias não atribuem, de modo que as partes sempre somam o total.
+As categorias e os detalhes por item são estimativas locais independentes, incluindo `messages`, que é medido a partir do conteúdo da conversa. `startupContext` cobre o bloco de ambiente enviado como o primeiro turno do usuário. Essas estimativas não são dimensionadas ou limitadas para corresponder ao total de entrada da última requisição, então sua soma pode ser maior ou menor que esse total. O total, a capacidade disponível e o nível de compactação mantêm sua própria fonte de uso.
 
 ## Use o custo ocioso, não a porcentagem da janela
 

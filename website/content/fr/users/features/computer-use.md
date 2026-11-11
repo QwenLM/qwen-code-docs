@@ -12,13 +12,15 @@ Qwen Code / n'importe quel client MCP
 
 ## Configuration
 
+Ce checkout documente la prochaine release CUA 0.27.0. Les commandes d'installation ci-dessous nécessitent que sa release GitHub native (`cua-driver-rs-v0.27.0`) et les packages npm correspondants soient publiés ; fusionner ces sources ne les publie pas. Avant la publication, utilisez la [configuration de développement local](https://github.com/QwenLM/qwen-code/blob/890cb0349a259761a571da889f4fe1cccc6ed108/packages/node-repl/README.md#local-development-and-environment) pour tester un build du repository.
+
 Node.js 22 ou ultérieur et npm sont requis. Enregistrez le serveur MCP, puis redémarrez Qwen Code :
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.26.0
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.27.0
 ```
 
-Le serveur installe le SDK correspondant et le SDK navigateur comme dépendances. Le payload du SDK natif est téléchargé pour la plateforme courante et vérifié par rapport aux checksums SHA-256 de la release correspondante. Il est mis en cache en dehors du package npm ; aucune commande de bootstrap SDK du workspace n'est nécessaire. La version 0.26.0 est une cible de développement local jusqu'à ce que sa release soit publiée.
+Le serveur installe le SDK correspondant et le SDK navigateur comme dépendances. Le payload du SDK natif est téléchargé pour la plateforme courante et vérifié par rapport aux checksums SHA-256 de la release correspondante. Il est mis en cache en dehors du package npm ; aucune commande de bootstrap SDK du workspace n'est nécessaire. La version 0.27.0 est une cible de développement local jusqu'à ce que sa release soit publiée.
 
 Windows utilise la livraison d'entrées ordinaire par défaut et n'installe pas de worker UIAccess.
 L'opt-in à UIAccess avec `CUA_DRIVER_USE_UIACCESS=1` nécessite un worker signé
@@ -69,12 +71,18 @@ Le serveur exécute JavaScript avec les permissions ordinaires de Node.js et sui
 
 `js` se termine en un seul appel et a un timeout par défaut de 30 secondes. Un timeout peut avoir des effets externes ; observez avant de réessayer. `js_reset` écarte les bindings et ferme gracieusement la session native/navigateur possédée. Après la compaction de contexte, appelez `cua.rewriteDocumentation()` avant de continuer.
 
+Le curseur d'agent natif est activé par défaut. Sur macOS, un PiP local rafraîchit les deux fenêtres autorisées les plus récemment observées de la session, même entre les actions. La fenêtre sans bordure démarre près du coin inférieur droit ; faites glisser une carte ou sa poignée Move preview pour la repositionner. Le survol révèle des contrôles flottants et amène une carte arrière vers l'avant. Fermez-la pour arrêter cet aperçu ; une observation autorisée ultérieure peut la recréer. L'image ne transmet pas les entrées à la cible. Le reset ferme le curseur possédé et l'aperçu. Ajoutez `--no-overlay` ou `--no-pip` aux arguments du serveur pour désactiver l'une ou l'autre surface. PiP est uniquement sur macOS.
+
+Pour désactiver PiP sans modifier l'enregistrement MCP, définissez `"experimental_pip": false` dans `~/.cua-driver/config.json`, en préservant ses autres clés, puis redémarrez le serveur MCP ou le runtime possédé. Cette clé existante est conservée pour la compatibilité. L'argument `--no-pip` du serveur désactive également PiP et prend le pas sur le fichier.
+
+L'aperçu peut être visible par d'autres lorsque vous partagez ou enregistrez le bureau, y compris lors d'une présentation plein écran. Pour un opt-out persistant, désactivez PiP et redémarrez son runtime possédé avant le partage ; fermer le panneau actuel seul n'empêche pas une observation ultérieure de le recréer. Le partage n'est pas détecté automatiquement.
+
 ## Relais de bureau à distance
 
 Pour une configuration de relais de bureau macOS existante, installez son serveur correspondant :
 
 ```bash
-npx -y @qwen-code/node-repl-mcp@0.26.0 desktop-relay install
+npx -y @qwen-code/node-repl-mcp@0.27.0 desktop-relay install
 ```
 
 Cela utilise le socket launchd local existant à `127.0.0.1:47821`. Dans un Web Shell sécurisé, choisissez **Use this computer**, puis **Connect this computer**. Le bureau demande une confirmation pour chaque connexion. Le démon distant doit activer `QWEN_SERVE_CLIENT_MCP_OVER_WS=1`.

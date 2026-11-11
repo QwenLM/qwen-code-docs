@@ -4,7 +4,9 @@ O recurso Pastas Confiáveis é uma configuração de segurança que permite con
 
 ## Habilitando o Recurso
 
-O recurso Pastas Confiáveis está **desabilitado por padrão**. Para usá-lo, você deve primeiro habilitá-lo nas suas configurações.
+O recurso Pastas Confiáveis está **desabilitado por padrão**. Enquanto estiver desabilitado, toda pasta é considerada confiável, então o `.qwen/settings.json` de um projeto é carregado sem qualquer prompt. Os servidores MCP do projeto e os [hooks](../features/hooks.md#approving-project-hooks) do projeto ainda solicitam sua aprovação na primeira vez que são vistos e sempre que são alterados, a menos que você execute no modo YOLO (para servidores MCP, YOLO de qualquer fonte; para hooks, apenas `--yolo` ou `--approval-mode yolo` na linha de comando). Outras configurações do projeto podem executar comandos sem perguntar (por exemplo, um `ui.statusLine` com `type: "command"`). Para ser consultado antes que qualquer configuração do projeto seja lida, habilite o recurso nas suas configurações.
+
+A confiança de pasta desabilitada não autoriza hooks de frontmatter de skill/subagente do projeto, concessões automáticas de ferramentas de skill do projeto ou servidores `.lsp.json` do workspace. Estes requerem que a confiança de pasta esteja habilitada e concedida, ou um sinal afirmativo de confiança de workspace da IDE. Outros hooks do arquivo de configurações seguem sua própria política de carregamento; consulte [Hooks](../features/hooks.md).
 
 Adicione o seguinte ao seu arquivo `settings.json` de usuário:
 

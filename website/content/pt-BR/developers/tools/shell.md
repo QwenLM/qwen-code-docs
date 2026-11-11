@@ -15,19 +15,19 @@ No Windows, os comandos são executados com `cmd.exe /c`. Em outras plataformas,
 - `command` (string, obrigatório): O comando shell exato a ser executado.
 - `description` (string, opcional): Uma breve descrição do propósito do comando, que será mostrada ao usuário.
 - `directory` (string, opcional): O diretório (relativo à raiz do projeto) no qual o comando será executado. Se não for fornecido, o comando será executado na raiz do projeto.
-- `is_background` (boolean, obrigatório): Indica se o comando deve ser executado em segundo plano. Este parâmetro é obrigatório para garantir uma decisão explícita sobre o modo de execução do comando. Defina como `true` para processos de longa duração, como servidores de desenvolvimento, watchers ou daemons que devem continuar rodando sem bloquear comandos subsequentes. Defina como `false` para comandos pontuais que devem ser concluídos antes de prosseguir.
+- `is_background` (boolean, opcional): Indica se o comando deve ser executado em segundo plano. Se não especificado, o padrão é `false` (execução em primeiro plano). Defina como `true` para processos de longa duração, como servidores de desenvolvimento, watchers ou daemons que devem continuar rodando sem bloquear comandos subsequentes.
 
 ## Como usar `run_shell_command` com o Qwen Code
 
-Ao usar `run_shell_command`, o comando é executado como um subprocesso. Você pode controlar se os comandos são executados em segundo plano ou em primeiro plano usando o parâmetro `is_background`, ou adicionando `&` explicitamente aos comandos. A ferramenta retorna informações detalhadas sobre a execução, incluindo:
+Ao usar `run_shell_command`, o comando é executado como um subprocesso. Se é executado em segundo plano ou em primeiro plano é controlado pelo parâmetro `is_background`. Não adicione `&` no final quando `is_background: true`: o caminho gerenciado de segundo plano é o próprio mecanismo de execução em segundo plano, e a ferramenta rejeita a chamada em vez de executá-la. A ferramenta retorna informações detalhadas sobre a execução, incluindo:
 
-### Parâmetro de Segundo Plano Obrigatório
+### O Parâmetro `is_background`
 
-O parâmetro `is_background` é **obrigatório** para todas as execuções de comandos. Esse design garante que o LLM (e os usuários) decida explicitamente se cada comando deve ser executado em segundo plano ou em primeiro plano, promovendo um comportamento de execução de comandos intencional e previsível. Ao tornar este parâmetro obrigatório, evitamos o fallback não intencional para a execução em primeiro plano, o que poderia bloquear operações subsequentes ao lidar com processos de longa duração.
+`is_background` é opcional — o schema da ferramenta requer apenas `command` — e quando omitido, o comando é executado em primeiro plano. A decisão que precisa ser explícita é, portanto, a outra: um comando que não vai parar por si só deve ser marcado como `is_background: true`, porque deixá-lo em primeiro plano bloqueia o turno até que expire o tempo limite.
 
 ### Execução em Segundo Plano vs Primeiro Plano
 
-A ferramenta lida de forma inteligente com a execução em segundo plano e em primeiro plano com base na sua escolha explícita:
+A ferramenta lida com a execução em segundo plano e em primeiro plano com base nesse parâmetro:
 
 **Use execução em segundo plano (`is_background: true`) para:**
 
@@ -37,13 +37,7 @@ A ferramenta lida de forma inteligente com a execução em segundo plano e em pr
 - Servidores web: `python -m http.server`, `php -S localhost:8000`
 - Qualquer comando que se espera rodar indefinidamente até ser parado manualmente
 
-**Use execução em primeiro plano (`is_background: false`) para:**
-
-- Comandos pontuais: `ls`, `cat`, `grep`
-- Comandos de build: `npm run build`, `make`
-- Comandos de instalação: `npm install`, `pip install`
-- Operações do Git: `git commit`, `git push`
-- Execuções de testes: `npm test`, `pytest`
+**Use execução em primeiro plano (o padrão) para** comandos que terminam por si só, como builds, instalações, operações git e execuções de testes.
 
 ### Informações de Execução
 
@@ -64,7 +58,7 @@ Uso:
 run_shell_command(command="Your commands.", description="Your description of the command.", directory="Your execution directory.", is_background=false)
 ```
 
-**Nota:** O parâmetro `is_background` é obrigatório e deve ser especificado explicitamente para cada execução de comando.
+**Nota:** `is_background` é opcional. Omiti-lo executa o comando em primeiro plano, então o caso que precisa de um `true` explícito é um comando que não vai parar por si só.
 
 ## Exemplos de `run_shell_command`
 
@@ -86,11 +80,7 @@ Iniciar um servidor de desenvolvimento em segundo plano (abordagem recomendada):
 run_shell_command(command="npm run dev", description="Start development server in background", is_background=true)
 ```
 
-Iniciar um servidor em segundo plano (alternativa com & explícito):
-
-```bash
-run_shell_command(command="npm run dev &", description="Start development server in background", is_background=false)
-```
+Nota: um `&` explícito não é um mecanismo de segundo plano gerenciado. Com `is_background: true` a ferramenta rejeita um `&` no final antes do comando ser executado; com `is_background=false` o shell destaca o processo, então a chamada retorna sem que o processo seja rastreado — não tem entrada de tarefa em segundo plano e `task_stop` não pode alcançá-lo. Sempre use `is_background=true` para um comando que deve ser executado em segundo plano.
 
 Executar um comando de build em primeiro plano:
 
@@ -170,8 +160,8 @@ Quando um comando interativo está em execução, você pode enviar entradas par
 
 - **Segurança:** Tenha cuidado ao executar comandos, especialmente aqueles construídos a partir da entrada do usuário, para evitar vulnerabilidades de segurança.
 - **Tratamento de erros:** Verifique os campos `Stderr`, `Error` e `Exit Code` para determinar se um comando foi executado com sucesso.
-- **Processos em segundo plano:** Quando `is_background=true` ou quando um comando contém `&`, a ferramenta retornará imediatamente e o processo continuará rodando em segundo plano. O campo `Background PIDs` conterá o ID do processo em segundo plano.
-- **Escolhas de execução em segundo plano:** O parâmetro `is_background` é obrigatório e fornece controle explícito sobre o modo de execução. Você também pode adicionar `&` ao comando para execução manual em segundo plano, mas o parâmetro `is_background` ainda deve ser especificado. O parâmetro fornece uma intenção mais clara e lida automaticamente com a configuração da execução em segundo plano.
+- **Processos em segundo plano:** Apenas `is_background=true` inicia um processo em segundo plano rastreado: a ferramenta retorna imediatamente com o id do shell e o PID, e o processo continua executando. Um `&` no nível do shell não cria um — com `is_background: true` a ferramenta rejeita um `&` no final, e com `is_background=false` o shell destaca o comando sem que a ferramenta o rastreie.
+- **Escolhas de execução em segundo plano:** O parâmetro `is_background` é opcional (o schema requer apenas `command`); defina `is_background: true` para um comando que não vai parar por si só, porque deixá-lo em primeiro plano bloqueia o turno até que expire o tempo limite. Use `is_background` em vez de `&` no nível do shell; isso fornece intenção mais clara e a ferramenta gerencia a configuração da execução em segundo plano.
 - **Descrições de comandos:** Ao usar `is_background=true`, a descrição do comando incluirá um indicador `[background]` para mostrar claramente o modo de execução.
 
 ## Variáveis de Ambiente

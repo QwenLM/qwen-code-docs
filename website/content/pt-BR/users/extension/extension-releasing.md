@@ -123,7 +123,7 @@ jobs:
 
 ## Lançamento via registro npm
 
-Você pode publicar extensões Qwen Code como pacotes npm com escopo (por exemplo, `@sua-org/minha-extensao`). Isso é uma boa opção quando:
+Você pode publicar extensões Qwen Code como pacotes npm com escopo ou sem escopo (por exemplo, `@sua-org/minha-extensao` ou `minha-extensao`). Isso é uma boa opção quando:
 
 - Sua equipe já usa npm para distribuição de pacotes
 - Você precisa de suporte a registro privado com infraestrutura de autenticação existente
@@ -161,7 +161,7 @@ npm publish --registry https://seu-registro.com
 
 ### Instalação
 
-Usuários instalam sua extensão usando o nome do pacote com escopo:
+Usuários instalam sua extensão usando o nome do pacote:
 
 ```bash
 # Instalar a versão mais recente
