@@ -5,9 +5,7 @@ description: "This week shipped v0.26.4 through v0.26.7. Remote connections now 
 author: "Qwen Team"
 tags: ["Product Updates", "release", "weekly"]
 image: "https://img.alicdn.com/imgextra/i2/O1CN01BK4pMROPGtK2jBZY_!!6000000004241-2-tps-1344-576.png"
----
-
-import { BlogPostHeader } from '@/components/blog-post-header'
+---import { BlogPostHeader } from '@/components/blog-post-header'
 import { Callout } from 'nextra/components'
 
 <BlogPostHeader
@@ -79,9 +77,7 @@ What you can do:
 
 ## 📊 More New Features
 
-**Interactive cards, on by default.** Interactive cards used to need a trip to setti
-
-ngs to turn on. Now they're ready right after install — have it calculate a mortgage or compare options, drag the sliders right in the conversation and see the results. Tune the parameters and click Keep to hand them back to the conversation and keep talking. See PR [#15856](https://github.com/QwenLM/qwen-code/pull/15856)
+**Interactive cards, on by default.** Interactive cards used to need a trip to settings to turn on. Now they're ready right after install — have it calculate a mortgage or compare options, drag the sliders right in the conversation and see the results. Tune the parameters and click Keep to hand them back to the conversation and keep talking. See PR [#15856](https://github.com/QwenLM/qwen-code/pull/15856)
 
 **Downloaded projects: hooks wait for your trust.** Hooks, permission rules, and language servers that come with an unfamiliar project stay dormant until a confirmation dialog appears and you click Trust. Projects you create yourself on your own machine are unaffected. See PR [#16182](https://github.com/QwenLM/qwen-code/pull/16182), [#16196](https://github.com/QwenLM/qwen-code/pull/16196)
 
@@ -104,6 +100,8 @@ ngs to turn on. Now they're ready right after install — have it calculate a mo
 **/autofix-pr is more solid: merges main when behind, works in your own checkout, takes a clear number of rounds.** When a branch falls behind main and CI goes red, it merges main in first and re-runs checks — no manual rebase needed. Add `--in-place` to work inside your current checkout so you can watch and edit alongside it. Write `@qwen-code /takeover for N` in the PR to tell it how many rounds to run, and it lets go automatically when done. See PR [#15922](https://github.com/QwenLM/qwen-code/pull/15922), [#15929](https://github.com/QwenLM/qwen-code/pull/15929), [#15388](https://github.com/QwenLM/qwen-code/pull/15388)
 
 **Long answers now scroll.** When `/btw` comes back with a wall of text, it stays in a fixed box with a scrollbar — use the mouse wheel, arrow keys, or PageUp/PageDown. See PR [#15982](https://github.com/QwenLM/qwen-code/pull/15982)
+
+**DeepSeek V4, qwen4 and the latest-series models can set a thinking depth too.** These generations had no selectable thinking depth before, and DeepSeek V4.1 Flash behind Alibaba's proxy had no default either; each tier is now assigned per model, and turning thinking off still uses the existing switch. See PR [#15987](https://github.com/QwenLM/qwen-code/pull/15987), [#15828](https://github.com/QwenLM/qwen-code/pull/15828)
 
 **Web Shell one-click update supports pnpm, yarn, and bun.** Before, only npm had the button. Now all three get one-click upgrades, and when it detects an unsupported package manager it gives you the manual steps. See PR [#15849](https://github.com/QwenLM/qwen-code/pull/15849)
 

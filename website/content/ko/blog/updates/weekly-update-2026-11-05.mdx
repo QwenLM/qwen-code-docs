@@ -105,6 +105,8 @@ Qwen Code는 이번 주 v0.26.4부터 v0.26.7까지 네 개의 정식 버전을 
 
 **긴 답변을 스크롤로 봅니다.** `/btw` 답변이 길어지면 이제 스크롤 막대가 있는 고정된 영역에 표시됩니다. 마우스 휠, 키보드 위아래 키, PageUp/PageDown으로 넘길 수 있습니다. 관련 PR: [#15982](https://github.com/QwenLM/qwen-code/pull/15982)
 
+**DeepSeek V4, qwen4, latest-series 계열 모델도 사고 깊이를 설정할 수 있습니다.** 이 세대 모델에는 선택 가능한 사고 깊이가 없었고, Alibaba 프록시를 거치는 DeepSeek V4.1 Flash에는 기본값도 없었습니다. 이제 모델별로 각 단계가 지정되며, 사고를 끄는 것은 기존 스위치를 그대로 사용합니다. 자세한 내용은 PR [#15987](https://github.com/QwenLM/qwen-code/pull/15987), [#15828](https://github.com/QwenLM/qwen-code/pull/15828)
+
 **Web Shell 한 번 업데이트가 pnpm, yarn, bun도 지원합니다.** 전에는 npm만 한 번에 업데이트할 수 있었지만, 이제 여러 패키지 관리자 모두 한 번에 올릴 수 있습니다. 지원하지 않는 환경이면 수동 단계를 안내합니다. 관련 PR: [#15849](https://github.com/QwenLM/qwen-code/pull/15849)
 
 **상태 표시줄에서 백그라운드 agent 개수를 봅니다.** 데스크톱과 Web Shell 하단의 작업 표식에 현재 실행 중인 agent 수가 실시간으로 표시됩니다. 관련 PR: [#14002](https://github.com/QwenLM/qwen-code/pull/14002)

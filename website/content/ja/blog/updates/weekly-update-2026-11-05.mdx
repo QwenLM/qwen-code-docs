@@ -105,6 +105,8 @@ Qwen Code は今週、v0.26.4〜v0.26.7 の 4 つの正式版をリリースし�
 
 **長い回答をスクロールで読めます。** `/btw` の回答が長くなったとき、スクロールバー付きの固定領域に表示——マウスホイール、キーボードの上下キー、PageUp/PageDown で移動できます。詳しくは PR [#15982](https://github.com/QwenLM/qwen-code/pull/15982)
 
+**DeepSeek V4、qwen4、latest-series 系のモデルでも思考の深さを設定できるようになりました。** これら世代のモデルには選択できる思考深度がなく、Alibaba のプロキシ経由の DeepSeek V4.1 Flash には既定値もありませんでした。現在はモデルごとに各段階が用意され、思考をオフにするのは従来のスイッチのままです。詳しくは PR [#15987](https://github.com/QwenLM/qwen-code/pull/15987)、[#15828](https://github.com/QwenLM/qwen-code/pull/15828)
+
 **Web Shell のワンクリック更新が pnpm、yarn、bun に対応。** これまでは npm のみでしたが、これらのパッケージマネージャーでもワンクリック更新が可能に。未対応が検出された場合は手動の手順を表示します。詳しくは PR [#15849](https://github.com/QwenLM/qwen-code/pull/15849)
 
 **ステータスバーでバックグラウンド Agent の実行数がわかります。** デスクトップ版と Web Shell の下部にあるタスク表示に、実行中の Agent 数がリアルタイムで表示されます。詳しくは PR [#14002](https://github.com/QwenLM/qwen-code/pull/14002)

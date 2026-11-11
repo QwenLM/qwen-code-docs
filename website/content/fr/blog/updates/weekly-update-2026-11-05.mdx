@@ -5,9 +5,7 @@ description: "Cette semaine, quatre versions stables v0.26.4 à v0.26.7. La conn
 author: "Qwen Team"
 tags: ["Product Updates", "release", "weekly"]
 image: "https://img.alicdn.com/imgextra/i2/O1CN01BK4pMROPGtK2jBZY_!!6000000004241-2-tps-1344-576.png"
----
-
-import { BlogPostHeader } from '@/components/blog-post-header'
+---import { BlogPostHeader } from '@/components/blog-post-header'
 import { Callout } from 'nextra/components'
 
 <BlogPostHeader
@@ -79,9 +77,7 @@ Ce que vous pouvez en faire :
 
 ## 📊 Autres nouvelles fonctionnalités
 
-**Les cartes interactives sont actives par défaut.** Avant, il fallai
-
-t les activer dans les paramètres. Maintenant, elles sont disponibles dès l'installation — demandez-lui de calculer un prêt, de comparer des options, et glissez les curseurs dans la conversation pour voir le résultat. Une fois les paramètres réglés, « Conserver » renvoie les valeurs dans la conversation pour continuer. Voir cette PR [#15856](https://github.com/QwenLM/qwen-code/pull/15856)
+**Les cartes interactives sont actives par défaut.** Avant, il fallait les activer dans les paramètres. Maintenant, elles sont disponibles dès l'installation — demandez-lui de calculer un prêt, de comparer des options, et glissez les curseurs dans la conversation pour voir le résultat. Une fois les paramètres réglés, « Conserver » renvoie les valeurs dans la conversation pour continuer. Voir cette PR [#15856](https://github.com/QwenLM/qwen-code/pull/15856)
 
 **Un projet téléchargé demande votre confiance avant d'exécuter ses hooks.** Les hooks, règles de permissions et serveurs de langage fournis par un projet inconnu ne prennent effet qu'après une boîte de confirmation et votre clic sur « Faire confiance ». Les projets créés localement sur votre machine ne sont pas concernés. Voir les PR [#16182](https://github.com/QwenLM/qwen-code/pull/16182), [#16196](https://github.com/QwenLM/qwen-code/pull/16196)
 
@@ -104,6 +100,8 @@ t les activer dans les paramètres. Maintenant, elles sont disponibles dès l'in
 **`/autofix-pr` plus robuste : fusion automatique du tronc, travail dans la copie de travail, nombre de tours réglable.** Quand la branche est en retard sur le tronc et que le CI casse, il fusionne d'abord le tronc avant de relancer les vérifications — plus de rebase manuel. Ajoutez `--in-place` pour qu'il travaille dans votre copie de travail, vous suivez et modifiez en parallèle. Écrivez `@qwen-code /takeover for N` dans un PR pour fixer le nombre de tours, il rend la main une fois terminé. Voir les PR [#15922](https://github.com/QwenLM/qwen-code/pull/15922), [#15929](https://github.com/QwenLM/qwen-code/pull/15929), [#15388](https://github.com/QwenLM/qwen-code/pull/15388)
 
 **Les réponses longues sont déroulables.** Quand `/btw` répond longuement, le contenu s'affiche dans un cadre avec barre de défilement : molette, flèches haut/bas ou PageUp/PageDown pour naviguer. Voir cette PR [#15982](https://github.com/QwenLM/qwen-code/pull/15982)
+
+**DeepSeek V4, qwen4 et les modèles latest-series peuvent aussi définir une profondeur de réflexion.** Ces générations n'avaient aucune profondeur de réflexion sélectionnable, et DeepSeek V4.1 Flash derrière le proxy Alibaba n'avait pas non plus de valeur par défaut ; chaque palier est désormais attribué par modèle, et désactiver la réflexion passe toujours par l'interrupteur existant. Voir les PR [#15987](https://github.com/QwenLM/qwen-code/pull/15987), [#15828](https://github.com/QwenLM/qwen-code/pull/15828)
 
 **La mise à jour en un clic du Web Shell prend en charge pnpm, yarn et bun.** Avant, seul npm bénéficiait du bouton de mise à jour. Désormais, tous ces gestionnaires de paquets sont couverts ; si le vôtre n'est pas détecté, les étapes manuelles s'affichent. Voir cette PR [#15849](https://github.com/QwenLM/qwen-code/pull/15849)
 

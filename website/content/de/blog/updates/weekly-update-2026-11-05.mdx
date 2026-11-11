@@ -5,9 +5,7 @@ description: "Diese Woche erscheinen v0.26.4 bis v0.26.7. Die Remote-Verbindung 
 author: "Qwen Team"
 tags: ["Product Updates", "release", "weekly"]
 image: "https://img.alicdn.com/imgextra/i2/O1CN01BK4pMROPGtK2jBZY_!!6000000004241-2-tps-1344-576.png"
----
-
-import { BlogPostHeader } from '@/components/blog-post-header'
+---import { BlogPostHeader } from '@/components/blog-post-header'
 import { Callout } from 'nextra/components'
 
 <BlogPostHeader
@@ -77,9 +75,7 @@ Was du damit machen kannst:
 
 ## 📊 Weitere neue Features
 
-**Interaktive Karten sind ab sofort Standard.** Bisher musstest du sie erst in d
-
-en Settings aktivieren. Jetzt sind sie direkt nach der Installation da — lass dir einen Kredit ausrechnen, vergleiche Optionen und zieh im Gespräch die Regler. Stehen die Werte, klickst du „Keep“ und sie fließen zurück in die Unterhaltung. Siehe PR [#15856](https://github.com/QwenLM/qwen-code/pull/15856)
+**Interaktive Karten sind ab sofort Standard.** Bisher musstest du sie erst in den Settings aktivieren. Jetzt sind sie direkt nach der Installation da — lass dir einen Kredit ausrechnen, vergleiche Optionen und zieh im Gespräch die Regler. Stehen die Werte, klickst du „Keep“ und sie fließen zurück in die Unterhaltung. Siehe PR [#15856](https://github.com/QwenLM/qwen-code/pull/15856)
 
 **Heruntergeladene Projekte fragen vor Hooks, Permission-Regeln und Language-Servern.** Kommt ein Projekt aus dem Netz, zeigt Qwen Code einen Bestätigungsdialog. Erst nach deinem Klick auf „Trust“ laufen die mitgebrachten Hooks, Permission-Regeln und Language-Server. Lokal von dir angelegte Projekte sind davon nicht betroffen. Siehe PR [#16182](https://github.com/QwenLM/qwen-code/pull/16182), [#16196](https://github.com/QwenLM/qwen-code/pull/16196)
 
@@ -102,6 +98,8 @@ en Settings aktivieren. Jetzt sind sie direkt nach der Installation da — lass 
 **`/autofix-pr` hält deinen Branch aktuell und arbeitet direkt in deinem Checkout.** Hängt dein Branch hinter `main` und die CI schlägt fehl, merged er selbstständig `main` ein, bevor er die Checks erneut anstößt — kein manuelles Rebase. Mit `--in-place` läuft er in deinem aktuellen Checkout, du schaust zu und greifst ein. Im PR steuerst du mit `@qwen-code /takeover for N`, wie viele Runden er übernimmt; danach gibt er automatisch wieder ab. Siehe PR [#15922](https://github.com/QwenLM/qwen-code/pull/15922), [#15929](https://github.com/QwenLM/qwen-code/pull/15929), [#15388](https://github.com/QwenLM/qwen-code/pull/15388)
 
 **Lange Antworten bekommst du in einem scrollbaren Fenster.** Wenn `/btw` ausführlich antwortet, erscheint der Text in einem Feld mit Scrollbalken — Mausrad, Pfeiltasten und PageUp/PageDown funktionieren. Siehe PR [#15982](https://github.com/QwenLM/qwen-code/pull/15982)
+
+**Auch DeepSeek V4, qwen4 und die latest-series-Modelle lassen sich jetzt in der Denktiefe einstellen.** Diese Generationen hatten bisher keine wählbare Denktiefe, und DeepSeek V4.1 Flash über den Alibaba-Proxy hatte auch keinen Standardwert; jetzt ist jede Stufe pro Modell gesetzt, und zum Ausschalten des Denkens dient weiterhin der vorhandene Schalter. Siehe PR [#15987](https://github.com/QwenLM/qwen-code/pull/15987), [#15828](https://github.com/QwenLM/qwen-code/pull/15828)
 
 **Web Shell: Ein-Klick-Update jetzt für pnpm, yarn und bun.** Bisher nur npm. Jetzt aktualisierst du mit jedem dieser Paketmanager per Knopfdruck. Erkennt er einen nicht unterstützten, zeigt er die manuellen Schritte an. Siehe PR [#15849](https://github.com/QwenLM/qwen-code/pull/15849)
 

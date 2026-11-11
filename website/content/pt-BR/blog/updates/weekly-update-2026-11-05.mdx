@@ -5,9 +5,7 @@ description: "Esta semana saíram as versões v0.26.4 a v0.26.7. A conexão remo
 author: "Qwen Team"
 tags: ["Product Updates", "release", "weekly"]
 image: "https://img.alicdn.com/imgextra/i2/O1CN01BK4pMROPGtK2jBZY_!!6000000004241-2-tps-1344-576.png"
----
-
-import { BlogPostHeader } from '@/components/blog-post-header'
+---import { BlogPostHeader } from '@/components/blog-post-header'
 import { Callout } from 'nextra/components'
 
 <BlogPostHeader
@@ -79,9 +77,7 @@ Na prática:
 
 ## 📊 Mais funcionalidades
 
-**Cartão interativo vem ligado por padrão.** Antes era preciso ativar nas configu
-
-rações; agora já chega funcionando. Peça para calcular uma prestação ou comparar cenários, e você mexe nos controles direto na conversa. Ajustou os parâmetros? Clique em "Manter" e eles voltam para a conversa, que continua de onde parou. Veja o PR [#15856](https://github.com/QwenLM/qwen-code/pull/15856).
+**Cartão interativo vem ligado por padrão.** Antes era preciso ativar nas configurações; agora já chega funcionando. Peça para calcular uma prestação ou comparar cenários, e você mexe nos controles direto na conversa. Ajustou os parâmetros? Clique em "Manter" e eles voltam para a conversa, que continua de onde parou. Veja o PR [#15856](https://github.com/QwenLM/qwen-code/pull/15856).
 
 **Projeto baixado da internet só roda hooks depois que você confia nele.** Hooks, regras de permissão e servidores de linguagem de um projeto desconhecido só entram em ação depois que você clica em "Confiar" na janela de confirmação. Projetos criados localmente no seu computador não são afetados. Veja os PRs [#16182](https://github.com/QwenLM/qwen-code/pull/16182) e [#16196](https://github.com/QwenLM/qwen-code/pull/16196).
 
@@ -104,6 +100,8 @@ rações; agora já chega funcionando. Peça para calcular uma prestação ou co
 **O `/autofix-pr` ficou mais robusto: mescla o branch principal quando fica atrasado, trabalha no seu checkout e aceita limite de rodadas.** Se o branch ficou atrás do principal e o CI quebrou por isso, ele primeiro integra o principal e depois roda as checagens — nada de rebase manual. Com `--in-place`, ele trabalha direto no seu checkout, e você acompanha e edita junto. Escreva `@qwen-code /takeover for N` no PR para definir quantas rodadas ele pode executar; quando acaba, ele solta sozinho. Veja os PRs [#15922](https://github.com/QwenLM/qwen-code/pull/15922), [#15929](https://github.com/QwenLM/qwen-code/pull/15929) e [#15388](https://github.com/QwenLM/qwen-code/pull/15388).
 
 **Respostas longas agora têm rolagem.** Quando o `/btw` responde com muito texto, o conteúdo fica numa caixa com barra de rolagem; dá para navegar com o scroll do mouse, as setas do teclado ou PageUp/PageDown. Veja o PR [#15982](https://github.com/QwenLM/qwen-code/pull/15982).
+
+**DeepSeek V4, qwen4 e os modelos latest-series também aceitam profundidade de raciocínio.** Essas gerações não tinham profundidade de raciocínio selecionável, e o DeepSeek V4.1 Flash por trás do proxy da Alibaba também não tinha valor padrão; agora cada nível é definido por modelo, e desligar o raciocínio continua usando o interruptor existente. Veja os PRs [#15987](https://github.com/QwenLM/qwen-code/pull/15987), [#15828](https://github.com/QwenLM/qwen-code/pull/15828)
 
 **A atualização com um clique no Web Shell agora aceita pnpm, yarn e bun.** Antes só o npm tinha o botão de atualizar; agora todos esses gerenciadores de pacote são suportados. Se o seu não for reconhecido, aparece o passo a passo manual. Veja o PR [#15849](https://github.com/QwenLM/qwen-code/pull/15849).
 
