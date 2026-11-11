@@ -1,5 +1,12 @@
 # Qwen Code 概述
 
+> [!NOTE]
+> **Qwen Code 1.0 Preview**
+>
+> Qwen Code 1.0 Preview 融合了 Qoder 与 Qwen Code 的 Agent 运行框架（Harness）能力，并以开源形式发布。
+>
+> **正在使用 1.0 Preview？[前往对应版本的文档 →](https://qwenlm.github.io/qwen-code-docs/1.x/zh/users/overview/)**
+
 [![@qwen-code/qwen-code 下载量](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code) [![@qwen-code/qwen-code 版本](https://img.shields.io/npm/v/@qwen-code/qwen-code.svg)](https://www.npmjs.com/package/@qwen-code/qwen-code)
 
 > 了解 Qwen Code，这是 Qwen 的智能编码工具，运行于您的终端中，助您比以往更快地将想法转化为代码。
