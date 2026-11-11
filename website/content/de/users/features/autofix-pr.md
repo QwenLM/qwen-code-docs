@@ -37,6 +37,28 @@ Eine Beobachtung ist ein [geplanter Task](./scheduled-tasks.md), dessen Gate bei
 
 Eine Runde fragt dich niemals etwas. Was eine Person braucht, wird auf dem PR als „Needs a human decision" beantwortet und in der Session gemeldet.
 
+## Status und Fortsetzen
+
+`/autofix-pr status` listet jede Beobachtung des Clones auf, unabhängig davon, welche Session sie ausführt: den PR und seinen Branch, den Head, die verwendeten Pushes, wann das Gate zuletzt geprüft und die letzte Runde gelaufen ist, ob diese Session sie ausführt und was auf eine Person wartet. Es liest nur die Dateien der Beobachtungen und fragt GitHub nichts.
+
+Eine Beobachtung endet, wenn die Session endet, die sie ausgeführt hat – in einer Daemon-Session ist ihr Task dauerhaft und an diese Session gebunden, sodass der Daemon sie resident hält und die Beobachtung einen Daemon-Neustart übersteht –, und ihr geplanter Task läuft standardmäßig nach 7 Tagen ab (Einstellung `experimental.cronRecurringMaxAgeDays` oder `QWEN_CODE_CRON_MAX_AGE_DAYS`). Die Zustandsdatei bleibt. `/autofix-pr resume` startet in der aktuellen Session jede Beobachtung neu, die diese Session nicht ausführt – oder die von dir genannte –, mit dem Intervall, `--no-reply` und den Anweisungen, mit denen sie gestartet wurde, und behält ihre Pushes, Historie und Budgets. Es fragt einmal für alle, führt dann von jeder eine Runde aus und plant sie erneut ein. In einer Daemon-Session trägt eine Unterhaltung genau einen geplanten Task, also setze die übrigen eine Unterhaltung nach der anderen fort. Läuft eine davon noch in einer anderen Session, stoppt der Task dieser Session beim nächsten Feuern; ohne genannten PR lässt `resume` eine Beobachtung aus, die eine andere Session kürzlich geprüft hat, und sagt das. Eine Beobachtung, deren PR gemergt oder geschlossen wurde, während keine Session sie ausführte, wird von ihrer Runde entfernt. Eine Beobachtung, die mit `--once` gestartet oder durch `stop` beendet wurde, während ihr Worktree erhalten blieb, wird mit `/autofix-pr <n>` erneut gestartet.
+
+### In der Web Shell
+
+Die Web Shell zeigt denselben Zustand, gelesen aus denselben Dateien:
+
+- **PR-Beobachtungen** in der Seitenleiste listet die Beobachtungen jedes Arbeitsbereichs auf, den die Web Shell erreichen kann. Für jede Beobachtung zeigt sie den PR (als Link), wo die Beobachtung steht, ihre Pushes, wann das Gate zuletzt geprüft und die letzte Runde gelaufen ist, und was auf dich wartet:
+  - beobachtet;
+  - repariert im Hintergrund, und wie lange schon;
+  - eine liegen gebliebene Hintergrund-Reparatur, die die nächste Runde wiederholt;
+  - seit Längerem nicht geprüft;
+  - der PR wurde gemergt oder geschlossen;
+  - gestoppt.
+- Auf der Seite **Geplante Tasks** zeigt die Karte des Tasks einer Beobachtung denselben Zustand unter dem Task.
+- **Session öffnen** springt zu der Unterhaltung, die die Beobachtung ausführt.
+- **Beobachtung stoppen** sendet `/autofix-pr stop <n>` an diese Unterhaltung, genau als hättest du es dort getippt, und es fragt, was es dort fragen würde.
+- Beide Buttons erscheinen nur für eine Beobachtung, die von einer Unterhaltung dieser Web Shell ausgeführt wird. Eine im Terminal gestartete Beobachtung wird dort gestoppt. Eine, die keine Session mehr ausführt, wird mit `/autofix-pr stop <n>` oder `/autofix-pr resume <n>` in einer Session ihres Arbeitsbereichs aufgeräumt oder neu gestartet.
+
 ## Wessen Feedback zählt
 
 Kommentare werden bearbeitet, wenn ihr Autor ein Owner, Member oder Collaborator des Repositorys ist, der PR-Autor oder ein Bot (Reviews und Review-Threads). Kommentare von allen anderen werden aufgelistet und niemals bearbeitet oder beantwortet. Ein Bot wird in dem Kommentar gehört, der einen Thread eröffnet, oder in einem Review, nicht in seinen Antworten, die jemandem antworten. Ein Workflow, den GitHub nicht starten konnte (etwa eine ungültige Workflow-Datei), hat kein Log, aus dem behoben werden könnte, und wird als von einem Menschen zu entscheiden beantwortet. Jeder Kommentar, Review und jedes CI-Log wird als Daten behandelt: ein vertrauenswürdiger Autor entscheidet, welches Feedback adressiert wird, niemals das Tool. Eine Anfrage, Secrets preiszugeben, Tests oder CI-Checks zu schwächen, Force-Push durchzuführen oder unverwandten Code zu ändern, wird mit „Needs a human decision" beantwortet.
@@ -53,9 +75,11 @@ Kommentare werden bearbeitet, wenn ihr Autor ein Owner, Member oder Collaborator
 | Limit | Wert | Dann |
 | --------------------------------------- | ---- | ------------------------ |
 | Pushes pro Beobachtung | 10 | die Beobachtung stoppt |
+| Pushes, die einen fehlgeschlagenen Check rot lassen | 3 | bleibt bei einer Person, bis er grün ist oder jemand anderes pusht |
 | Re-Runs eines fehlgeschlagenen Checks pro Head | 1 | der nächste Fehlschlag ist real |
 | Versuche pro Review-Kommentar | 1 | wird nicht erneut angeboten |
 | Pushes von jemand anderem innerhalb einer Runde | 2 | die Beobachtung stoppt |
+| Minuten, die eine Hintergrund-Reparatur laufen darf | 30 | ihr Agent wird gestoppt |
 
 ## Stoppen und Dateien
 

@@ -167,7 +167,6 @@ Ordre de priorité (du plus élevé au plus bas) :
 
 Les images personnalisées sont gérées par l'utilisateur. Reconstruisez-les avec une installation de Qwen Code à jour pour recevoir le handoff de mise à jour sécurisée ; les images plus anciennes peuvent encore utiliser leur updater in-process d'origine.
 
-### Profils Seatbelt macOS
 
 ### Profils Seatbelt macOS
 
