@@ -22,7 +22,9 @@ limite de workers dans `release.yml` (`QWEN_CI_VITEST_MAX_WORKERS` avec la
 garde `ecs-qwen-`), `scripts/tests/no-ak-integration-ci.test.js` épingle
 l'expression de limite de workers dans `ci.yml`, et
 `scripts/tests/release-workflow.test.js` épingle les expressions de retry et
-de timeout de test de workspace de `release.yml`.
+de timeout de test de workspace de `release.yml`. `scripts/tests/package-scripts.test.js`
+vérifie également les valeurs par défaut documentées et les emplacements de workflow
+par rapport aux deux workflows.
 `scripts/tests/package-scripts.test.js` vérifie également les valeurs par
 défaut documentées et les emplacements de workflow par rapport aux deux
 workflows. Comme cette garde s'exécute sur la lane CI complète
@@ -33,6 +35,7 @@ request avec `npm run test:scripts` (ou
 Si les docs et les workflows divergent un jour, faites confiance aux
 workflows et mettez à jour cette page dans le même changement.
 
+
 ## Variables
 
 | Variable                                 | Défaut | Utilisée dans            | Contrôle                                                                                       |
@@ -42,6 +45,7 @@ workflows et mettez à jour cette page dans le même changement.
 | `QWEN_RELEASE_WORKSPACE_TIMEOUT_MINUTES` | `45`   | `release.yml`            | Timeout de job de chaque shard de test workspace de release                                    |
 | `QWEN_CI_VITEST_MAX_WORKERS`             | `4`    | `ci.yml`, `release.yml`  | Limite de workers pour les tests unitaires CI principaux et les tests workspace/qualité de release sur les runners réservés |
 
+
 ### Nombre de retries
 
 `QWEN_CI_VITEST_RETRY` et `QWEN_RELEASE_VITEST_RETRY` sont passés à Vitest
@@ -50,6 +54,7 @@ sous la forme `--retry=<n>` dans l'étape de test CI principale
 concurrentes, et `npm run test:scripts:unit`) et sur la lane de release
 (`npm run test:release:workspaces`) respectivement. Les deux lanes ont des
 variables séparées afin de pouvoir être ajustées indépendamment.
+
 
 Vitest relance les tests en échec au sein du même run. Cela peut aider en cas
 de contentions intermittentes, mais un échec qui récupère dans le budget de
@@ -78,8 +83,8 @@ test workspace CI principale et les étapes `workspace_tests` et
 `quality_scripts` de release ; les autres tests d'intégration exécutant Vitest
 qui arrivent dans le même pool réservé dans les workflows CI et release ne la
 consomment pas ; ils utilisent leurs propres limites Vitest. Le smoke E2E
-web-shell est épinglé sur `ubuntu-latest`, la limite ne peut donc pas
-s'appliquer. Sur les runners hébergés par GitHub, la variable est ignorée et
+web-shell s'exécute sur le pool ARM64 avec ses deux workers Playwright
+propres, donc la limite ne s'applique pas à lui. Sur les runners hébergés par GitHub, la variable est ignorée et
 Vitest utilise ses propres valeurs par défaut.
 
 Chaque exécution de Vitest applique la limite individuellement. L'étape de
@@ -88,7 +93,55 @@ test workspace CI principale exécute deux lanes en même temps
 exécution Vitest dans la lane principale, et la suite web-shell dans la lane
 secondaire s'exécute avec la moitié de la limite, au minimum 1, donc à son
 pic l'étape exécute la limite plus cette moitié. Sur les runners hébergés par
-GitHub, cette suite de la lane secondaire s'exécute avec 2 workers.
+GitHub, la variable est ignorée et Vitest utilise ses propres valeurs par
+défaut.
+
+Chaque exécution de Vitest applique la limite individuellement. L'étape de
+test workspace CI principale exécute deux lanes en même temps
+(`.github/scripts/ci/run-unit-test-lanes.sh`) : la lane principale exécute
+les suites CLI et core à la limite, et la lane secondaire exécute les suites
+des autres workspaces et `npm run test:scripts:unit` à la moitié de la
+limite, au minimum 1, donc à son pic l'étape exécute la limite plus cette
+moitié. Sur les runners hébergés par GitHub, les exécutions Vitest de la
+lane secondaire utilisent 2 workers.
+
+L'étape s'exécute en deux shards (`Linux unit tests (shard N/2)`), chacun
+passant `--shard=N/2` à chacune de ces exécutions Vitest. Les shards
+appliquent aussi la limite individuellement, donc le pool voit jusqu'à deux
+telles étapes en même temps. Ils s'installent sans le build `prepare` et
+dépaquettent l'arborescence construite une seule fois par `test_build`.
+`Test (ubuntu-latest, Node 22.x)` passe uniquement quand le build et tous
+les shards passent.
+
+`test_build` est le seul job qui construit. Il construit via
+`scripts/ci-build-cache.mjs` : une pull request restaure le build que le
+push `main` de son commit de base a sauvegardé (`key --at <base>`), avec un
+fallback vers le build caché le plus récent, et ne reconstruit que les
+workspaces dont les entrées ont changé : les fichiers suivis d'un workspace
+hors tests, les fichiers racine, `patches/` et `scripts/` hors
+`scripts/tests/`, et les workspaces dont il dépend. Un push sur `main`
+construit toujours from scratch et sauvegarde ce build. La clé de cache ne
+porte pas d'architecture CPU : le pool labellisé x64 inclut des hôtes ARM64,
+et la seule sortie spécifique à l'architecture, la bibliothèque native
+opentui du bundle, est recopiée pour l'hôte après chaque restauration et
+dépaquetage (`ci-build-cache.mjs host-assets`).
+
+Les shards de tests unitaires, les deux shards `Integration Tests (no-AK,
+shard N/2)` et les deux shards de smoke web-shell dépaquettent tous cette
+arborescence unique. `test_build` exécute également les vérifications qui
+la lisent, le bundle serve fast-path, les exports de sous-chemin core et la
+vérification de fraîcheur du schéma de paramètres, que `Lint & Static`
+construisait auparavant.
+`Integration Tests (no-AK, No Sandbox)` passe uniquement quand le build et
+tous les shards d'intégration passent. Une pull request draft évite les
+shards d'intégration et le smoke navigateur ; la marquer prête pour review
+démarre l'exécution qui les inclut. Un changement limité à
+`packages/managed-agent-server/` ou `packages/sdk-java/` (sauf les fichiers
+lus par les suites TypeScript) est classifié comme `java_only` : `Lint &
+Static` exécute son payload plus les suites `scripts/tests` qui nomment ces
+arborescences, et les lanes de build et test TypeScript évitent.
+
+### Variables associées hors exécution de tests
 
 ### Variables associées hors exécution de tests
 

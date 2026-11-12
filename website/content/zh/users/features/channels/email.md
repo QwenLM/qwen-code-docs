@@ -29,6 +29,8 @@
 
 运行 `qwen channel start agent-mail`。密码字段支持现有的 `$ENV_VAR` 引用；请勿在设置中保留明文密码。适配器会禁用协议日志，并在不暴露凭据的情况下报告连接失败。
 
+同一个 channel 可以在 Web Shell 的 channel 管理器中创建和编辑,该管理器会将其与其他已配置的 channel 一起列出。由于每封电子邮件投递都是一次直接对话,因此编辑器不会显示此 channel 的群组策略、允许的群组 ID 或群组成员控制;保存时,`settings.json` 中已存在的 `groupPolicy` 或 `groups` 条目将保持不变。
+
 Implicit TLS 默认使用 IMAP 端口 993 和 SMTP 端口 465。如需 STARTTLS，将 `imapSecure` 或 `smtpSecure` 设为 `false`；默认端口分别变为 143 和 587。STARTTLS 和证书验证始终为强制要求。必要时可覆盖 `imapPort` 和 `smtpPort`。对于私有 CA，请在启动 Qwen Code 之前配置 Node 的 `NODE_EXTRA_CA_CERTS`。
 
 | 选项                  | 默认值     | 含义                                                               |

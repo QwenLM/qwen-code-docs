@@ -11,15 +11,15 @@ import { WebShellWithProviders } from '@qwen-code/web-shell';
 
 <WebShellWithProviders
   baseUrl="http://localhost:4170"
-  sidebar={true} // Home-only 默认
-  // 或使用细粒度选项：
+  sidebar={true} // Home-only default
+  // or with fine-grained options:
   // sidebar={{ enabled: true, defaultCollapsed: false, ... }}
 />;
 ```
 
 ## 布局概览
 
-仅 Home 的宿主在一个列中显示品牌区、新任务、项目、已归档会话和折叠控件。配置另一个可用的主入口或底部操作会在默认的 300px 次级列旁添加一个 56px 的图标栏。主入口位于图标栏中；底部操作和版本位于"更多"中。自定义渲染器仍保留在宽大的 Home 列中。没有公开的布局选项。
+仅 Home 的宿主在一个列中显示品牌区、New session、workspaces、已归档会话和折叠控件。配置另一个可用的主入口或底部操作会在默认的 300px 次级列旁添加一个 56px 的图标栏。主入口位于图标栏中；底部操作和版本位于"更多"中。自定义渲染器仍保留在宽大的 Home 列中。没有公开的布局选项。
 
 **破坏性变更：** 此前省略 `sidebar` 会隐藏侧边栏，并且在启用侧边栏时省略导航/底部项列表会暴露所有内置项。宿主现在必须传递 `sidebar={false}` 以保留以前的隐藏默认值，或显式列出所需的条目。独立 Web Shell 显式配置其完整菜单。`branding.hideWhenCompact` 现在默认为 `false`；将其设置为 `true` 以在紧凑抽屉中保留隐藏的品牌区。
 
@@ -29,8 +29,8 @@ import { WebShellWithProviders } from '@qwen-code/web-shell';
 
 ```ts
 interface WebShellSidebarBranding {
-  render?: () => ReactNode; // 替换整个品牌行
-  hideWhenCompact?: boolean; // 在紧凑抽屉中隐藏品牌区（默认：false）
+  render?: () => ReactNode; // replace the entire branding row
+  hideWhenCompact?: boolean; // hide branding in the compact drawer (default: false)
 }
 ```
 
@@ -60,41 +60,41 @@ sidebar={{
 
 ```ts
 type WebShellSidebarPrimaryNavItem =
-  | 'newTask' // ✏️ 新任务按钮
-  | 'plugins' // 🧩 插件按钮
-  | 'channels' // Channel 会话和设置
-  | 'live' // Live 会话和设置；需要 showLive
-  | 'workflows' // 需要 workflow 支持
-  | 'managed' // 需要托管代理提供者
-  | 'scheduledTasks' // 📅 定时任务按钮
-  | 'goals'; // 🎯 目标按钮
+  | 'newTask' // ✏️ New session button
+  | 'plugins' // 🧩 Plugins button
+  | 'channels' // Channel sessions and settings
+  | 'live' // Live sessions and settings; requires showLive
+  | 'workflows' // Requires workflow support
+  | 'managed' // Requires a managed-agent provider
+  | 'scheduledTasks' // 📅 Scheduled Tasks button
+  | 'goals'; // 🎯 Goals button
 
 interface WebShellSidebarPrimaryNavOptions {
-  items?: readonly WebShellSidebarPrimaryNavItem[]; // 显示哪些内置按钮（默认：['newTask']）
-  render?: () => ReactNode; // 内置按钮之后的额外自定义内容
+  items?: readonly WebShellSidebarPrimaryNavItem[]; // which built-in buttons to show (default: ['newTask'])
+  render?: () => ReactNode; // additional custom content after built-in buttons
 }
 ```
 
 主导航区域包含由 `items` 控制的内置按钮：
 
-- 未指定 `items` 时仅显示新任务；Home 始终存在
+- 未指定 `items` 时仅显示 New session；Home 始终存在
 - 提供 `items` 时仅显示列出的按钮
 - 可通过 `render()` 在内置按钮之后添加自定义内容
 
 | 值                                      | 效果                                                |
 | ------------------------------------------ | ----------------------------------------------------- |
-| `undefined`（默认）                      | Home 和新任务                                    |
-| `{ items: ['plugins'] }`                   | Home 和插件；无新任务按钮                  |
-| `{ items: ['plugins', 'scheduledTasks'] }` | Home + 插件 + 定时任务                      |
+| `undefined`（默认）                      | Home 和 New session                                 |
+| `{ items: ['plugins'] }`                   | Home 和 Plugins；无 New session 按钮               |
+| `{ items: ['plugins', 'scheduledTasks'] }` | Home + Plugins + Scheduled Tasks                      |
 | `{ items: [], render: () => ... }`         | Home 和自定义内容；无内置主导航按钮 |
 
 ```tsx
 sidebar={{
   primaryNav: {
-    items: ['plugins', 'scheduledTasks'],  // 隐藏 newTask 和 goals
+    items: ['plugins', 'scheduledTasks'],  // hide newTask and goals
     render: () => (
       <button onClick={() => console.log('custom action')}>
-        🔗 数据同步
+        🔗 Data Sync
       </button>
     ),
   },
@@ -105,21 +105,21 @@ sidebar={{
 
 ```ts
 type WebShellSidebarFooterItem =
-  | 'settings' // ⚙ 设置面板
-  | 'update' // 受支持时的更新操作
-  | 'localFiles' // 可用时的本地文件桥接
-  | 'desktopRelay' // 通过现有桌面 relay 使用此电脑
-  | 'workspacesOverview' // 解锁时的 workspace 管理
-  | 'version' // 版本标签（例如 "v0.19.10"）
-  | 'theme' // ☀/🌙 亮色/暗色切换
-  | 'sessionsOverview' // ▦ 会话概览面板
-  | 'splitView' // ◧ 分屏视图（shell 容器至少 1024px 宽）
-  | 'daemonStatus' // 📊 daemon 状态面板
-  | 'collapse'; // ◁/▷ 折叠/展开切换
+  | 'settings' // ⚙ Settings panel
+  | 'update' // Update action when supported
+  | 'localFiles' // Local-files bridge when available
+  | 'desktopRelay' // Use this computer through the existing desktop relay
+  | 'workspacesOverview' // Workspace management when unlocked
+  | 'version' // version label (e.g. "v0.19.10")
+  | 'theme' // ☀/🌙 light/dark toggle
+  | 'sessionsOverview' // ▦ session overview panel
+  | 'splitView' // ◧ split view (shell containers at least 1024px wide)
+  | 'daemonStatus' // 📊 daemon status panel
+  | 'collapse'; // ◁/▷ collapse/expand toggle
 
 interface WebShellSidebarFooterOptions {
-  items?: readonly WebShellSidebarFooterItem[]; // 显示哪些内置项（默认：['collapse']）
-  render?: () => ReactNode; // Home 底部栏中的自定义内容
+  items?: readonly WebShellSidebarFooterItem[]; // which built-in items to show (default: ['collapse'])
+  render?: () => ReactNode; // custom content in the Home footer
 }
 ```
 
@@ -133,7 +133,7 @@ interface WebShellSidebarFooterOptions {
 
 ```tsx
 sidebar={{
-  footer: { items: ['theme', 'collapse'] },  // 极简底部栏
+  footer: { items: ['theme', 'collapse'] },  // minimal footer
 }}
 ```
 
@@ -145,7 +145,7 @@ sidebar={{
     items: ['collapse'],
     render: () => (
       <button onClick={() => openHelpCenter()}>
-        ❓ 帮助
+        ❓ Help
       </button>
     ),
   },
@@ -158,14 +158,14 @@ sidebar={{
 
 ```ts
 interface WebShellSidebarOptions {
-  enabled?: boolean; // 显示/隐藏侧边栏（默认：true，包括省略 sidebar 时）
-  defaultCollapsed?: boolean; // 初始折叠状态（持久化到 localStorage）
-  showCompactToggle?: boolean; // 在聊天区域显示折叠按钮（默认：true）
-  showSessionSourceSwitch?: boolean; // 显示 Tasks/Channels 切换（默认：true）
-  showLive?: boolean; // 显示 daemon 拥有的 Live 会话（默认：false）
+  enabled?: boolean; // show/hide sidebar (default: true, including when sidebar is omitted)
+  defaultCollapsed?: boolean; // initial collapsed state (persisted in localStorage)
+  showCompactToggle?: boolean; // show the collapse button in the chat area (default: true)
+  showSessionSourceSwitch?: boolean; // show the Tasks/Channels switch (default: true)
+  showLive?: boolean; // show daemon-owned Live conversations (default: false)
   branding?: false | WebShellSidebarBranding;
   primaryNav?: WebShellSidebarPrimaryNavOptions;
-  hideProjectHeader?: boolean; // 隐藏"项目"头部行（默认：false = 显示）
+  hideProjectHeader?: boolean; // hide "Workspaces" header row (default: false = shown)
   sessionActions?: WebShellSidebarSessionActionsOptions;
   footer?: false | WebShellSidebarFooterOptions;
 }
@@ -198,13 +198,13 @@ sidebar={{
 
 没有 `live` 主入口时，`showLive: true` 会在 Home 和"实验性"设置下保留现有的 Live 分组和设置。有该入口时，Live 会打开自己的会话列和设置页。
 
-### ③ 项目头部 — `hideProjectHeader`
+### ③ Workspace Header — `hideProjectHeader`
 
-控制"项目"头部行的可见性（包含折叠切换、搜索图标和添加 workspace 按钮的那一行）。默认为 `false`（显示）。
+控制 "Workspaces" 头部行的可见性（包含折叠切换、搜索图标和添加 workspace 按钮的那一行）。默认为 `false`（显示）。
 
 ```tsx
 sidebar={{
-  hideProjectHeader: true,  // 隐藏"项目 ▼ [🔍] [＋]"行
+  hideProjectHeader: true,  // hide the "工作区 ▼ [🔍] [＋]" row
 }}
 ```
 
@@ -214,13 +214,14 @@ sidebar={{
 
 ```ts
 type WebShellSidebarSessionActionItem =
-  | 'details' // 📝 详情（下拉子菜单）
-  | 'rename' // ✏️ 重命名（下拉菜单）
-  | 'group' // 📁 分组/移动到文件夹（下拉菜单）
-  | 'export' // 📤 导出聊天记录（下拉菜单）
-  | 'delete' // 🗑 删除会话（下拉菜单）
-  | 'pin' // 📌 置顶/取消置顶（内联按钮）
-  | 'archive'; // 📦 归档（下拉菜单）
+  | 'details' // 📝 Details (dropdown sub-menu)
+  | 'rename' // ✏️ Rename (dropdown menu)
+  | 'group' // 📁 Group/Move to folder (dropdown menu)
+  | 'export' // 📤 Export chat history (dropdown menu)
+  | 'delete' // 🗑 Delete session (dropdown menu)
+  | 'pin' // 📌 Pin/Unpin (inline button)
+  | 'archive' // 📦 Archive (dropdown menu)
+  | 'split'; // ◫ Add to Split View (dropdown menu)
 
 /** Subset with working inline (hover-button) handlers. */
 type WebShellSidebarSessionInlineActionItem =
@@ -230,39 +231,43 @@ type WebShellSidebarSessionInlineActionItem =
   | 'delete';
 
 interface WebShellSidebarSessionActionsOptions {
-  items?: readonly WebShellSidebarSessionActionItem[]; // 显示哪些操作（默认：全部）
-  inlineItems?: readonly WebShellSidebarSessionInlineActionItem[]; // 哪些项作为内联按钮显示（默认：['pin']）
+  items?: readonly WebShellSidebarSessionActionItem[]; // which actions to show (default: all)
+  inlineItems?: readonly WebShellSidebarSessionInlineActionItem[]; // which items appear as inline buttons (default: ['pin'])
 }
 ```
 
 控制会话行上显示哪些操作按钮：
 
 - **`items`**：所有操作的主控（包括内联和下拉）。如果某项不在 `items` 中，则在各处隐藏。
-- **`inlineItems`**：控制哪些项作为**内联按钮**（hover 时）显示。默认为 `['pin']`。只有具有可用内联处理程序的项才能使用：`'pin'`、`'rename'`、`'export'`、`'delete'`。`'details'`、`'group'` 和 `'archive'` 仅支持下拉。
+- **`inlineItems`**：控制哪些项作为**内联按钮**（hover 时）显示。默认为 `['pin']`。只有具有可用内联处理程序的项才能使用：`'pin'`、`'rename'`、`'export'`、`'delete'`。`'details'`、`'group'`、`'archive'` 和 `'split'` 在标准行上仅支持下拉。
 
-**可见性优先级**：`items` AND 该项的内置条件 AND `inlineItems` 三者都必须通过，内联按钮才会显示。例如，`delete` 作为内联按钮需要 `items` 包含 `'delete'` AND `inlineItems` 包含 `'delete'`。
+设置中的已归档行使用 Export conversation 和 Restore 作为内联按钮，Rename 和 Delete 在 More 中。它们的操作仍遵循 `items` 和内置可用性限制；`inlineItems` 不会改变此布局。现有样式在 hover 或键盘焦点时显示这些按钮，并在触摸设备上保持可见。
+
+**标准行上的可见性优先级**：`items` AND 该项的内置条件 AND `inlineItems` 三者都必须通过，内联按钮才会显示。例如，`delete` 作为内联按钮需要 `items` 包含 `'delete'` AND `inlineItems` 包含 `'delete'`。
 
 | 值                                       | 效果                                       |
 | ---------------------------------------- | ------------------------------------------ |
 | `undefined`（默认）                      | 显示所有操作，仅 pin 作为内联按钮           |
 | `{ inlineItems: ['pin', 'delete'] }`     | Pin + delete 作为内联按钮                  |
-| `{ inlineItems: [] }`                    | 完全没有内联按钮                           |
+| `{ inlineItems: [] }`                    | 标准行上无内联按钮                         |
 | `{ inlineItems: ['rename', 'export'] }` | Rename + export 作为内联按钮 |
 
 当没有启用下拉项时，下拉触发器（⋮）会自动隐藏。内联按钮仅在其能力条件和 `items` 都包含它们时才会显示。Archive 在当前会话以及任何正在运行轮次的会话上会被禁用，因为 daemon 在归档时会关闭实时会话。
 
+`'split'` 与其他项一样默认启用，但仅在宿主连接了 `onAddSessionToSplitView` 时生效。侧边栏还会读取其 `splitSessionIds` prop 来判断容量：已在分屏中打开的会话会将该项渲染为禁用状态并附带说明性标题，面板数量达到上限时以及分屏关闭时的当前会话也是如此。
+
 ```tsx
 sidebar={{
   sessionActions: {
-    items: ['details', 'rename', 'export', 'delete', 'pin'],  // 显示哪些操作（主控）
-    inlineItems: ['pin', 'delete'],  // pin + delete 作为内联按钮
+    items: ['details', 'rename', 'export', 'delete', 'pin'],  // which actions to show (master control)
+    inlineItems: ['pin', 'delete'],  // pin + delete as inline buttons
   },
 }}
 ```
 
 ## 不可自定义区域
 
-### 项目 / Workspaces（会话列表内部）
+### Workspaces（会话列表内部）
 
 当会话列表可见时，以下子区域会被渲染但**不可单独自定义**：
 

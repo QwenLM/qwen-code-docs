@@ -200,7 +200,7 @@ for await (const event of client.subscribeEvents(session.sessionId, {
 }
 ```
 
-Le démon conserve les 8000 derniers événements par session dans un tampon circulaire ; les écarts au-delà de cette fenêtre ne pourront pas être redistribués.
+Le démon conserve jusqu'à 8000 événements par session, également contraints par le budget par défaut de 8 MiB du tampon circulaire incluant le dernier snapshot complet de commande. Un seul événement ou snapshot récent de taille excessive fait exception. Les écarts au-delà de la fenêtre conservée nécessitent une resynchronisation ; augmentez à la fois `--event-ring-size` et `--event-ring-max-bytes` lorsque les deux limites contraignent l'historique de reconnexion requis.
 
 ## Vote sur les permissions
 

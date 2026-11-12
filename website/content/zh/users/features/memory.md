@@ -1,9 +1,10 @@
 # 记忆
 
-每次 Qwen Code 会话都从一个全新的上下文窗口开始。有两种机制可以在会话之间传递知识，让你不必每次都重新解释：
+每次 Qwen Code 会话都从一个全新的上下文窗口开始。有三种机制可以在会话之间传递知识，让你不必每次都重新解释：
 
 - **QWEN.md** — 由_你_编写一次，Qwen 在每次会话中都会读取的指令
 - **自动记忆** — Qwen 根据从你这里学到的内容自己编写的笔记
+- **外部记忆（`context_search`）** — 一个可选的 MCP 工具，Qwen 按需调用它来搜索 Mem0 或本地会话索引
 
 ---
 
@@ -77,6 +78,8 @@ See @README.md for project overview.
 
 这与 QWEN.md 不同：你不是编写者，Qwen 才是。
 
+当一轮对话回复了由 [channel](./channels/overview)（GitHub、Telegram、钉钉及其他渠道）转发的消息时，Qwen 不会执行提取，也不会调度[定期清理](#定期清理)：发送者通常不是你，而在每条转发消息后都进行提取会为每条消息增加模型调用。在同时接受你自己提示的会话中（例如绑定到 pull request 的会话），你下一条提示后的提取仍会读取最近的对话，因此其中仍在的转发消息仍可被学习。记忆召回不受影响：对频道消息的回复可以利用已保存的内容。频道聊天在[频道记忆](./channels/overview#channel-memory)中保留持久上下文。
+
 ### Qwen 保存什么
 
 Qwen 会寻找四种值得记住的内容：
@@ -99,6 +102,10 @@ Qwen 不会保存所有内容——只保存下次真正有用的内容。
 `MEMORY.md` 是一个紧凑的索引，而非完整的记忆存储。其生成的正文和加载到提示中的部分共享 200 行和 25,000 个 UTF-16 代码单元的限制；截断通知会单独添加。在提示预算计算之前，行尾会被规范化。在大小压力下，完整的普通条目（最多 150 个代码单元）会优先于较长的条目获得空间，保留的条目保持其原始顺序。无法容纳的条目会被整体跳过，因此其 Markdown 链接永远不会从中间被切断。将详细信息保留在链接的主题文件中。
 
 当重建省略条目时，保存的警告会报告丢弃的数量以及每个限制的最多三个名称：主题文件扫描上限和索引正文预算。这些计数保持分开，因为一个分组的团队条目可以代表多个文件。当索引被加载到提示中时，只要警告是文件的最后一段，它仍然可见。在尾部警告之上插入新的索引指针以保留它。从索引中省略不会删除链接的主题文件。对于索引正文压力，合并主题文件或移除过时的主题文件，或缩短它们的 frontmatter 名称和描述。过长的链接已经没有描述：改为缩短其主题文件路径或 frontmatter 名称。仅编辑生成的索引无法在下一次重建中保留。对于文件数量扫描上限，合并主题文件或移除过时的主题文件；仅编辑生成的索引不会减少扫描的文件数量。
+
+对于部分加载的索引，警告会区分行预算和字符预算。即使没有条目超过普通行长度，缩短描述也有助于缓解总字符预算。对于匹配生成格式的条目，该建议涵盖了名称和链接，包括分组链接；当这些链接本身已消耗预算时，应修剪或合并条目。手动编辑的格式或可作为描述文本的分组后缀会给出可能的修复建议，但不保证缩短后一定能容纳。如果超出条目数量限制，仍必须修剪或合并条目：缩短描述不会减少条目数量。当两个预算都超出时，将索引减少到 200 条可能仍需要更短的描述或更少的条目才能满足字符预算；警告会报告实际候选数量。将每条缩短到 150 个单元并不总能满足 25,000 单元的总限制。
+
+一个有界的、单段的尾部写入器通知会被排除在提示预算计算之外。当所有保存的条目都能容纳时，Qwen 会保留该通知，而不会声称在加载时省略了更多条目。重新生成饱和的索引可以重新填充由更短描述释放的空间，因此保存文件的大小不必立即缩小。对于项目、用户和团队记忆，编辑主题文件的 `description` frontmatter 并检查重新生成的索引。空描述可以回退到记忆类型，因此缩短 frontmatter 并不能保证每个条目都能容纳。直接编辑索引行可能会被下一次托管写入覆盖。即使链接超过 150 个单元，也要保持完整的链接目标 intact；缩短显示元数据或修剪/合并主题文件，而不是切断链接。
 
 #### 固定记忆
 
@@ -272,3 +279,58 @@ Qwen 会定期遍历其保存的记忆，以删除重复项并清理过时的条
 如果自动记忆已开启，但 Qwen 似乎无法在会话之间记住内容，请尝试运行 `/dream` 强制执行一次清理。同时检查 `/memory` 以确认两个开关都已启用。
 
 对于你始终希望 Qwen 记住的内容，请将它们添加到 QWEN.md 中——自动记忆是尽力而为的，而 QWEN.md 是有保证的。
+
+---
+
+## 外部记忆（`context_search`）
+
+除了 `QWEN.md` 和自动记忆之外，Qwen Code 还可以通过 `context_search` MCP 工具查询外部记忆服务和本地会话索引。与 `QWEN.md` 和自动记忆不同，`context_search` 由模型按需调用——不会在每轮自动召回或发送任何内容：
+
+- **Mem0（内置适配器）：** 在 `~/.qwen/settings.json` 中配置 `memory.mem0` 以连接到 Mem0 Platform V3、PolarDB 或自托管 Mem0 OSS。参见 [Mem0](./mem0.md) 了解设置和可选的写入确认。
+- **External Context MCP Profile v1 服务器：** 任何实现 `context_search({ query })` 契约的 stdio 或 HTTP MCP 服务器都可以通过 `qwen mcp add` 或 `settings.json` 中的 `mcpServers` 注册（设置 `"includeTools": ["context_search"]` 以便仅对 Profile v1 服务器暴露 `context_search`）。
+
+每个条目注册自己的服务器，并且可以同时激活多个——Qwen 分别暴露每个服务器的 `context_search`（例如 `mcp__external-context__context_search` 和 `mcp__deja-context__context_search`），模型在它们之间进行选择，因此只启用你希望搜索的语料库，或在请求中指定后端名称。
+
+无论你使用哪个后端，`context_search` 返回的匹配项都会被添加到 Qwen 的上下文中并发送到为该会话配置的模型提供商，除非你允许，否则调用需要审批——本地索引保持搜索在本地进行，而不是结果。在自动模式下，查询和有界的参数副本也会发送到分类模型。
+
+### deja-vu
+
+一个本地 CLI 和 MCP 服务器，使用本地 BM25 搜索对编码代理（Qwen Code、Claude Code、Codex、Cursor 等）已经写入磁盘的会话记录建立索引，构建或查询索引无需模型调用或 API 密钥。
+
+- **仓库：** https://github.com/vshulcz/deja-vu
+- **成本：** 免费开源（MIT）
+- **最适合：** 在同一台机器上搜索跨 Qwen Code 和其他本地编码代理的过往会话
+
+#### 可用工具
+
+- `context_search` — 搜索已索引的本地会话记录（`deja mcp --context-search`）
+
+#### 设置
+
+1. 安装 `deja` 二进制文件（例如 `brew install deja-vu`、`npm install -g @vshulcz/deja-vu`，或从 [GitHub releases](https://github.com/vshulcz/deja-vu/releases) 下载）并构建初始索引（`deja index`）。
+2. 使用以下任一方法注册服务器：
+
+**方法 1：CLI 命令**
+
+```bash
+qwen mcp add deja-context deja mcp --context-search --timeout 8000 --include-tools context_search
+```
+
+**方法 2：`settings.json`**
+
+```json
+{
+  "mcpServers": {
+    "deja-context": {
+      "command": "deja",
+      "args": ["mcp", "--context-search"],
+      "timeout": 8000,
+      "includeTools": ["context_search"]
+    }
+  }
+}
+```
+
+3. 重启 Qwen Code 以便在会话启动时加载新的 MCP 服务器，然后运行 `/mcp` 确认 `deja-context` 已连接（参见 [MCP Servers](./mcp.md)）。
+
+稍后要删除服务器，运行 `qwen mcp remove deja-context`（或从 `~/.qwen/settings.json` 的 `mcpServers` 中删除 `deja-context` 条目）并重启 Qwen Code。

@@ -171,6 +171,8 @@ Auto-Edit Mode は、Qwen Code にファイル編集を自動的に承認し、�
 
 自動承認される編集ツールには `edit`、`write_file`、`notebook_edit` が含まれます。
 
+[`permissions.ask`](../configuration/settings.md#permissions) ルールに一致する呼び出しは、このモードでも Auto Mode と同様に確認を求められます。これはサブエージェントにも適用されます。サブエージェントは、信頼されたフォルダーでセッションが Ask Permissions モードの場合、デフォルトで Auto-Edit で実行されます。フォアグラウンドサブエージェントはインラインで確認を求め、バックグラウンドサブエージェントは確認を求められないため、呼び出しは拒否されます。
+
 ### Auto-Accept Edits Mode を使用するタイミング
 
 - **日々の開発**: ほとんどのコーディングタスクに最適

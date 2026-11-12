@@ -120,14 +120,16 @@ Batch завершается, записывает результаты и вы�
 (например, `!qwen batch collect <task-id>`), чтобы не тратить ход модели:
 
 ```bash
-qwen batch check                         # проверить настройку; ничего не оплачивается
-qwen batch collect <task-id> [--wait [--timeout <s>]]   # проверить и записать целевые файлы
-qwen batch retry <task-id>               # отправить повторно только элементы с ошибкой
-qwen batch retry <task-id> --max-output-tokens 8192  # включить усечённые
-qwen batch list                          # все записанные задачи с их проектом
-qwen batch cancel <task-id>              # частичные результаты всё равно оплачиваются
-qwen batch clean <task-id>               # удалить локальную запись (ничего не отменяет)
+qwen batch check                         # verify setup; nothing is billed
+qwen batch collect <task-id> [--wait [--timeout <s>]]   # validate + write target files
+qwen batch retry <task-id>               # resubmit only the failed items
+qwen batch retry <task-id> --max-output-tokens 8192  # include truncated ones
+qwen batch list                          # every recorded task, with its project
+qwen batch cancel <task-id>              # partial results are still billed
+qwen batch clean <task-id>               # delete the local record (cancels nothing)
 ```
+
+`check` сообщает о лимите выходных данных, замороженном из настроек выбранной модели, включая `max_tokens`, `max_completion_tokens` и `max_new_tokens`. Если лимит выходных данных не установлен, сообщается `provider default`. `maxOutputTokens` плана может переопределить этот лимит для запуска.
 
 `collect` сообщает по каждому элементу:
 

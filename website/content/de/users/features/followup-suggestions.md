@@ -47,6 +47,7 @@ Der Daemon erfordert zusätzlich:
 - Der Turn wurde sauber beendet, das heißt sein Stoppgrund ist `end_turn` – ein abgebrochener, abgelehnter oder gekürzter Turn erhält keinen Vorschlag
 - Automatische Turns werden nicht vom Todo-Stop-Guard gehalten, und kein vorgemerkter Prompt wartet auf Ausführung
 - Der neueste Eintrag im Gesprächsverlauf ist eine Modellantwort
+- Ein Channel hat den Turn nicht gesendet: Ein Turn eines Channels, einschließlich eines Turns, der an eine an einen Pull Request gebundene Session ausgeliefert wird, erhält keinen
 
 Da die daemon-seitige Generierung für jeden mit der Session verbundenen Client erfolgt, geschieht sie auch für Clients, die das Ergebnis nicht rendern können. Ein solcher Client – ein Headless- oder SDK-Konsument einer Daemon-Session, der nicht dem eigenen nicht-interaktiven Modus des CLI oben entspricht – sollte `ui.enableFollowupSuggestions` auf `false` setzen, um die LLM-Kosten pro Turn für verworfene Ausgaben zu vermeiden.
 
@@ -115,11 +116,11 @@ Das schnelle Modell wird auch in der `/about`-Ausgabe unter „Fast Model“ ang
 
 Vorschläge durchlaufen Qualitätsfilter, um sicherzustellen, dass sie nützlich sind:
 
-- Müssen 2–12 Wörter (CJK: 2–30 Zeichen) und insgesamt unter 100 Zeichen lang sein
+- Müssen 2–12 Wörter (CJK: 2–30 Zeichen) und insgesamt unter 100 Zeichen lang sein. Thai-, Lao-, Khmer- und Myanmar-Text, der ohne Leerzeichen geschrieben wird, wird stattdessen durch Wörterbuch-basierte Wortsegmentierung gezählt (bis zu 12 Wörter oder bis zu 60 Zeichen bei Node-Builds ohne vollständiges ICU)
 - Dürfen nicht bewertend sein („sieht gut aus“, „danke“)
 - Dürfen keine KI-Stimme verwenden („Lassen Sie mich…“, „Ich werde…“)
 - Dürfen keine mehreren Sätze sein oder Formatierungen enthalten (Markdown, Zeilenumbrüche)
 - Dürfen keine Metakommentare sein („nichts vorzuschlagen“, „Stille“)
 - Dürfen keine Fehlermeldungen oder vorangestellten Bezeichnungen sein („Vorschlag: …“)
-- Ein-Wort-Vorschläge sind nur für gängige Befehle erlaubt (yes, commit, push usw.)
+- Ein-Wort-Vorschläge sind nur für gängige Befehle erlaubt (yes, commit, push usw.). Ein einzelnes Wort in Thai, Lao, Khmer oder Myanmar ist erlaubt
 - Slash-Befehle (z. B. `/commit`) sind als Ein-Wort-Vorschläge immer erlaubt

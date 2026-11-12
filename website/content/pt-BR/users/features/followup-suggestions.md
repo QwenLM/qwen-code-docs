@@ -47,6 +47,7 @@ O daemon adicionalmente requer:
 - O turno terminou corretamente, ou seja, seu motivo de parada é `end_turn` — um turno cancelado, recusado ou truncado não recebe sugestão
 - Os turnos automáticos não estão sendo retidos pelo todo stop guard, e nenhum prompt enfileirado está aguardando execução
 - A entrada mais recente no histórico da conversa é uma resposta do modelo
+- Um canal não enviou o turno: um turno de um canal, incluindo um entregue a uma sessão vinculada a um pull request, não recebe sugestão
 
 Como a geração no lado do daemon ocorre para cada cliente conectado à sessão, ela também ocorre para clientes que não conseguem exibir o resultado. Um cliente assim — um consumidor headless ou SDK de uma sessão do daemon, que não é o modo não interativo do CLI mencionado acima — deve definir `ui.enableFollowupSuggestions` como `false` para evitar o custo de LLM por turno para uma saída que descarta.
 
@@ -115,11 +116,11 @@ O modelo rápido também é mostrado na saída de `/about` em "Fast Model".
 
 As sugestões passam por filtros de qualidade para garantir que sejam úteis:
 
-- Devem ter de 2 a 12 palavras (CJK: de 2 a 30 caracteres), no máximo 100 caracteres no total
+- Devem ter de 2 a 12 palavras (CJK: de 2 a 30 caracteres), no máximo 100 caracteres no total. Textos em tailandês, laosiano, khmer e birmanês escritos sem espaços são contados por segmentação de palavras por dicionário (até 12 palavras, ou até 60 caracteres em builds Node sem ICU completo)
 - Não podem ser avaliativas ("parece bom", "obrigado")
 - Não podem usar voz de IA ("Deixe-me...", "Eu vou...")
 - Não podem ter múltiplas frases ou conter formatação (markdown, quebras de linha)
 - Não podem ser metacomentários ("nada a sugerir", "silêncio")
 - Não podem ser mensagens de erro ou rótulos prefixados ("Sugestão: ...")
-- Sugestões de uma palavra só são permitidas para comandos comuns (yes, commit, push, etc.)
+- Em scripts delimitados por espaços, sugestões de uma palavra só são permitidas para comandos comuns (yes, commit, push, etc.). Uma palavra em tailandês, laosiano, khmer ou birmanês é permitida
 - Comandos slash (ex.: `/commit`) são sempre permitidos como sugestões de uma palavra

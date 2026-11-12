@@ -29,6 +29,8 @@
 
 `qwen channel start agent-mail`를 실행합니다. 비밀번호 필드는 기존 `$ENV_VAR` 참조를 지원합니다. 평문 비밀번호는 설정에 보관하지 마십시오. 어댑터는 프로토콜 로깅을 비활성화하고 자격 증명 없이 연결 실패를 보고합니다.
 
+같은 채널을 Web Shell의 채널 관리자를 통해서도 생성하고 편집할 수 있으며, 다른 구성된 채널들과 함께 나열됩니다. 모든 이메일 전달은 직접 대화이므로, 편집기는 이 채널에 대해 그룹 정책, 허용된 그룹 ID, 또는 그룹 멤버 제어를 표시하지 않습니다. `settings.json`에 이미 존재하는 `groupPolicy` 또는 `groups` 항목은 저장 시 변경되지 않고 그대로 유지됩니다.
+
 암시적 TLS는 기본적으로 IMAP 포트 993과 SMTP 포트 465를 사용합니다. STARTTLS의 경우 `imapSecure` 또는 `smtpSecure`를 `false`로 설정하면 기본 포트가 각각 143과 587로 변경됩니다. STARTTLS와 인증서 검증은 여전히 필수입니다. 필요에 따라 `imapPort`와 `smtpPort`를 재정의하십시오. 비공개 CA의 경우 Qwen Code를 시작하기 전에 Node의 `NODE_EXTRA_CA_CERTS`를 구성하십시오.
 
 | 옵션                  | 기본값     | 의미                                                               |

@@ -104,7 +104,7 @@ export GITLAB_TOKEN="glpat-your_token_here"
 
 | 变量            | 值                                |
 | --------------- | --------------------------------- |
-| `%project%`     | 项目路径（例如 `owner/repo`）     |
+| `%project%`     | 项目路径（例如 `group/project`，或子群组中的项目 `group/subgroup/project`） |
 | `%project_url%` | 完整项目 URL                      |
 | `%author%`      | Todo 作者用户名                   |
 | `%target_type%` | `Issue` 或 `MergeRequest`         |
@@ -123,7 +123,7 @@ export GITLAB_TOKEN="glpat-your_token_here"
 ```
 [alice] please fix this bug
 
-Project: owner/repo | URL: https://gitlab.com/owner/repo | Author: alice | Type: Issue | IID: 42 | Title: Test Issue | Description: ... | TodoID: 100
+Project: group/project | URL: https://gitlab.com/group/project | Author: alice | Type: Issue | IID: 42 | Title: Test Issue | Description: ... | TodoID: 100
 ```
 
 - 第 1 行：`[sender]` 前缀 + `envelope.text`（已去除 `@bot`）
@@ -139,7 +139,7 @@ Project: owner/repo | URL: https://gitlab.com/owner/repo | Author: alice | Type:
 
 所有 GitLab 流量都是群组流量。群组成员默认为 `open`；将 `groups["*"].senders` 设置为 `allowlist` 并填充其 `allowedUsers` 以限制作者。Private policy 和 user pairing 永远不会限制仓库成员。为共享会话管理显式设置 `operators`。
 
-注意，在 `groupPolicy: "pairing"` 下，访问权限按项目授予：一旦项目被批准，**任何 GitLab 用户**默认都可以通过该项目的 issue 和 merge request 驱动 bot。所有 GitLab 流量都是群组流量，因此 `privatePolicy` 和顶层 `allowedUsers` 不会限制已批准项目的成员；在该项目的 `groups` 条目上设置 `senders: "allowlist"` 和 `allowedUsers` 来缩小范围。批准以项目路径（`owner/repo`）为键，重命名或转移时会发生变化——在任何项目重命名、转移或删除后，撤销过期的群组批准。
+注意，在 `groupPolicy: "pairing"` 下，访问权限按项目授予：一旦项目被批准，**任何 GitLab 用户**默认都可以通过该项目的 issue 和 merge request 驱动 bot。所有 GitLab 流量都是群组流量，因此 `privatePolicy` 和顶层 `allowedUsers` 不会限制已批准项目的成员；在该项目的 `groups` 条目上设置 `senders: "allowlist"` 和 `allowedUsers` 来缩小范围。批准以项目路径（`group/project`）为键，重命名或转移时会发生变化——在任何项目重命名、转移或删除后，撤销过期的群组批准。群组键按不区分大小写方式匹配（GitLab 路由不区分大小写），因此配置的 `group/project` 也会匹配 API 报告的规范拼写 `Group/Project`。
 
 ## 提及检测
 

@@ -94,7 +94,7 @@ export class MyChannel extends ChannelBase {
 
 La plupart des adaptateurs doivent transmettre les `options` sans les modifier. Si un adaptateur crée son propre `SessionRouter` et passe ce routeur à `super()`, définissez `registerBridgeEvents: true` dans `ChannelBaseOptions` afin que `ChannelBase` reçoive toujours directement les événements `toolCall` et `sessionDied`. Laissez cette option non définie pour les routeurs fournis par la passerelle de canal.
 
-Si votre adaptateur expose un comportement de commande shell ou de question secondaire, vérifiez que la méthode correspondante `bridge.shellCommand` / `bridge.btw` existe avant de l'activer. Les workers gérés par un daemon omettent ces méthodes optionnelles sauf si le daemon annonce la capacité correspondante `session_shell_command` / `session_btw`.
+Si votre adaptateur expose un comportement de commande shell ou de question secondaire, vérifiez que la méthode correspondante `bridge.shellCommand` / `bridge.btw` existe avant de l'activer. Les workers gérés par un daemon omettent ces méthodes optionnelles sauf si le daemon annonce la capacité correspondante `session_shell_command` / `session_btw`. Ces méthodes de l'adaptateur de canal couvrent l'API JSON existante pour les questions secondaires. Les clients directs du démon qui utilisent SSE doivent vérifier séparément `session_btw_stream` avant d'appeler `streamSessionBtw` ; le démon l'annonce uniquement lorsque chaque bridge de session ACP du runtime enregistré implémente `generateSessionBtwStream`. Le contrat d'adaptateur `bridge.btw` existant n'implique pas la prise en charge du streaming.
 
 ## L'Envelope
 
@@ -229,6 +229,8 @@ protected override async pushProactive(
   );
 }
 ```
+
+Un adaptateur qui diffuse des chunks depuis `onResponseChunk` doit également consulter `isProactivePromptTurn(sessionId)` : cette méthode retourne `true` pour les tours de boucle et webhook, dont `ChannelBase` livre le résultat une seule fois, en intégralité, via `pushProactive` et pour lesquels il n'appelle jamais `onResponseComplete`. Publier une sortie progressive pour ces tours posterait le même texte deux fois, donc un sink de vidage de chunks doit les supprimer.
 
 Utilisez `supportsProactiveDeliveryTarget()` lorsque la livraison générique du démon accepte une forme de cible différente, et `supportsProactiveWebhookTarget()` lorsque la livraison webhook diffère des boucles et des résultats en arrière-plan. Gardez les cibles non prises en charge rejetées plutôt que de revenir à une autre conversation.
 

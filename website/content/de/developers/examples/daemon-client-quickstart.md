@@ -201,7 +201,7 @@ for await (const event of client.subscribeEvents(session.sessionId, {
 }
 ```
 
-Der Daemon speichert die letzten 8000 Ereignisse pro Session in einem Ringpuffer; Lücken jenseits dieses Fensters können nicht erneut zugestellt werden.
+Der Daemon speichert bis zu 8000 Ereignisse pro Session, zusätzlich begrenzt durch das Standard-Ring-Byte-Budget von 8 MiB einschließlich des neuesten vollständigen Command-Snapshots. Ein einzelnes übergroßes neuestes Ereignis oder Snapshot bildet die Ausnahme. Lücken jenseits des aufbewahrten Fensters erfordern einen Resync; erhöhe sowohl `--event-ring-size` als auch `--event-ring-max-bytes`, wenn beide Limits die benötigte Wiederverbindungs-Historie begrenzen.
 
 ## Abstimmung über Berechtigungen
 

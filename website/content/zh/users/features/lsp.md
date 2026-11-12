@@ -15,11 +15,17 @@ Qwen Code 中的 LSP 支持通过连接到理解您代码的语言服务器来�
 
 ## 快速入门
 
-LSP 是 Qwen Code 的一项实验性功能。要启用它，请使用 `--experimental-lsp` 命令行标志：
+LSP 是 Qwen Code 的一项实验性功能。要启用它，请在用户 `settings.json` 中设置 `tools.lspEnabled`：
 
-```bash
-qwen --experimental-lsp
+```json
+{
+  "tools": {
+    "lspEnabled": true
+  }
+}
 ```
+
+接受命令行标志的宿主可以使用 `--experimental-lsp` —— 两者等效，而 `QWEN_CODE_ENABLE_LSP=1` / `QWEN_CODE_DISABLE_LSP=1` 会覆盖两者（禁用优先）。只有操作员的环境或 home 作用域的 `.env` 可以设置这两个变量；项目 `.env` 或 `settings.env` 的值会被静默忽略。该设置仅在启动时读取，因此更改它需要重启；它从用户、系统和系统默认作用域生效，从不会从工作区 `.qwen/settings.json` 生效，因为启用它会让会话以您的权限生成语言服务器。LSP 在安全模式（`--safe-mode` / `QWEN_CODE_SAFE_MODE=1`）、裸模式、只读代理宿主、SSH 工作区和临时工作区中会被直接拒绝，因为这些模式不信任声明服务器的工作区内容。声明服务器仍然是工作区/扩展的决策。
 
 LSP 服务器由配置驱动。您必须在 `.lsp.json`（或通过扩展）中定义它们，Qwen Code 才能启动它们。
 
@@ -34,7 +40,8 @@ LSP 服务器由配置驱动。您必须在 `.lsp.json`（或通过扩展）中�
 | Go                  | gopls                      | `go install golang.org/x/tools/gopls@latest`                                   |
 | Rust                | rust-analyzer              | [安装指南](https://rust-analyzer.github.io/manual.html#installation)           |
 | C/C++               | clangd                     | 通过包管理器安装 LLVM/clangd                                                   |
-| Java                | jdtls                      | 安装 JDTLS 和 JDK                                                              |
+| Java                  | jdtls                      | 安装 JDTLS 和 JDK                                                             |
+| C#                    | roslyn-language-server     | `dotnet tool install --global roslyn-language-server --prerelease` (.NET 10+)  |
 
 ## 配置
 
@@ -99,6 +106,50 @@ LSP 服务器由配置驱动。您必须在 `.lsp.json`（或通过扩展）中�
   }
 }
 ```
+
+### C# (Roslyn) 配置
+
+依赖项：
+
+- .NET 10 运行时或更高版本（`dotnet --version`）。
+- `roslyn-language-server` 全局工具：
+  `dotnet tool install --global roslyn-language-server --prerelease`。请参阅
+  [Roslyn language server README](https://github.com/dotnet/roslyn/blob/main/src/LanguageServer/roslyn-language-server/README.md)
+  了解当前的前提条件和选项。
+
+示例：
+
+```json
+{
+  "csharp": {
+    "command": "roslyn-language-server",
+    "args": ["--stdio", "--autoLoadProjects"],
+    "extensionToLanguage": {
+      ".cs": "csharp"
+    }
+  }
+}
+```
+
+在 Windows 上，全局工具作为 `cmd` shim 安装在
+`%USERPROFILE%\.dotnet\tools` 下。Qwen Code 不使用 shell 启动服务器，因此
+裸 `roslyn-language-server` 可以被 `where` 找到但无法生成。请在那里使用
+shell 形式：
+
+```json
+{
+  "csharp": {
+    "command": "cmd",
+    "args": ["/c", "roslyn-language-server", "--stdio", "--autoLoadProjects"],
+    "extensionToLanguage": {
+      ".cs": "csharp"
+    }
+  }
+}
+```
+
+`%USERPROFILE%\.dotnet\tools\.store\roslyn-language-server\<version>\...`
+下真实可执行文件的绝对路径也可以工作。
 
 ### 配置选项
 
@@ -340,10 +391,10 @@ Parameters:
 
 ### 服务器无法启动
 
-1. **验证 `--experimental-lsp` 标志**：确保在启动 Qwen Code 时使用了该标志
+1. **验证 LSP 已启用**：使用 `tools.lspEnabled` 设置（用户、系统或系统默认作用域）或 `--experimental-lsp` 标志；`QWEN_CODE_ENABLE_LSP=1` / `QWEN_CODE_DISABLE_LSP=1` 会覆盖两者（禁用优先）。安全模式（`--safe-mode`、`QWEN_CODE_SAFE_MODE=1`）和 `--bare` 拒绝 LSP，并且 `/lsp` 不会在其中注册
 2. **检查服务器是否已安装**：手动运行命令（例如 `clangd --version`）进行验证
 3. **检查命令**：服务器二进制文件必须位于系统 `PATH` 中，或指定为绝对路径（例如 `/opt/llvm/bin/clangd`）。会阻止转义工作区的相对路径
-4. **检查工作区信任**：工作区必须被 LSP 信任（使用 `/trust`）
+4. **检查工作区信任**：工作区声明的服务器仅在显式信任的文件夹中启动 —— 启用 `security.folderTrust.enabled` 并使用 `/trust` 信任该文件夹，或连接报告工作区为受信任的 IDE。IDE 报告不受信任的工作区（VS Code 受限模式）也会跳过它，并且在文件夹信任关闭且没有 IDE 信任的情况下，服务器会被跳过而不是准入。IDE 检查会在 `.lsp.json` 更改时重新评估，跳过仅出现在 `--debug` 日志中，显示为 `requires trusted workspace, skipping`
 5. **检查日志**：使用 `--debug` 启动 Qwen Code，然后在调试日志中搜索与 LSP 相关的条目（参见下面的调试部分）
 6. **检查进程**：运行 `ps aux | grep <server-name>` 以验证服务器进程是否在运行
 
@@ -361,10 +412,10 @@ Parameters:
 
 ### 调试
 
-LSP 没有单独的调试标志。将 Qwen Code 的正常调试模式与 LSP 功能标志一起使用：
+LSP 没有单独的调试标志。通过设置（或标志）启用 LSP，然后开启 Qwen Code 的常规调试模式：
 
 ```bash
-qwen --experimental-lsp --debug
+qwen --debug
 ```
 
 调试日志写入会话调试日志目录。要检查 LSP 相关的条目：
@@ -453,18 +504,19 @@ ps aux | grep clangd   # 或 typescript-language-server, jdtls 等
 
 ### 问：如何启用 LSP？
 
-在启动 Qwen Code 时使用 `--experimental-lsp` 标志：
+使用 `tools.lspEnabled` 设置（用户、系统或系统默认作用域）或 `--experimental-lsp` 标志。`QWEN_CODE_ENABLE_LSP=1` 和 `QWEN_CODE_DISABLE_LSP=1` 会覆盖两者（禁用优先）；工作区作用域的值会被忽略。
 
-```bash
-qwen --experimental-lsp
+```jsonc
+// ~/.qwen/settings.json (user scope)
+{ "tools": { "lspEnabled": true } }
 ```
 
 ### 问：如何知道哪些语言服务器在运行？
 
-使用已启用 LSP 和调试模式启动 Qwen Code：
+使用已启用 LSP（设置或标志）和调试模式启动 Qwen Code：
 
 ```bash
-qwen --experimental-lsp --debug
+qwen --debug
 ```
 
 然后运行 `/status` 查看简短摘要，运行 `/lsp` 查看各服务器状态，或检查调试日志：
@@ -479,7 +531,7 @@ grep -E "LSP|Native LSP|<server-name>" ~/.qwen/debug/latest
 rg "LSP|Native LSP|<server-name>" "$QWEN_RUNTIME_DIR/debug/latest"
 ```
 
-LSP 使用 Qwen Code 的正常 `--debug` 模式；没有单独的 LSP 调试标志。
+LSP 使用 Qwen Code 的常规 `--debug` 模式；没有单独的 LSP 调试标志。
 
 ### 问：我可以对同一文件类型使用多个语言服务器吗？
 

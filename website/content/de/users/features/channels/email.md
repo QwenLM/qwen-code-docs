@@ -29,6 +29,8 @@ Aktiviere IMAP und SMTP für das Postfach und exportiere dessen Zugangsdaten in 
 
 Führe `qwen channel start agent-mail` aus. Passwortfelder unterstützen die bestehenden `$ENV_VAR`-Referenzen; halte Klartext-Passwörter aus den Einstellungen heraus. Der Adapter deaktiviert die Protokollprotokollierung und meldet Verbindungsfehler ohne Offenlegung der Zugangsdaten.
 
+Der gleiche Channel kann im Channel-Manager der WebShell erstellt und bearbeitet werden, der ihn zusammen mit den anderen konfigurierten Channels auflistet. Da jede E-Mail-Zustellung eine direkte Konversation ist, zeigt der Editor keine Gruppenrichtlinie, erlaubte Gruppen-IDs oder Gruppenmitglied-Steuerungen für diesen Channel; ein bereits in `settings.json` vorhandener `groupPolicy`- oder `groups`-Eintrag bleibt beim Speichern unverändert.
+
 Implizites TLS verwendet standardmäßig IMAP-Port 993 und SMTP-Port 465. Für STARTTLS setze `imapSecure` oder `smtpSecure` auf `false`; die Standardports werden dann 143 bzw. 587. STARTTLS und Zertifikatsverifikation bleiben obligatorisch. Überschreibe `imapPort` und `smtpPort` bei Bedarf. Für eine private CA konfiguriere Nodes `NODE_EXTRA_CA_CERTS` vor dem Start von Qwen Code.
 
 | Option                | Standard   | Bedeutung                                                               |

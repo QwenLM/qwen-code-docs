@@ -104,7 +104,7 @@ Seules les clés présentes dans `action_prompt_template` sont traitées. Les ac
 
 | Variable        | Valeur                              |
 | --------------- | ----------------------------------- |
-| `%project%`     | Chemin du projet (par ex. `owner/repo`) |
+| `%project%`     | Chemin du projet (par ex. `group/project`, ou `group/subgroup/project` pour un projet dans un sous-groupe) |
 | `%project_url%` | URL complète du projet              |
 | `%author%`      | Nom d'utilisateur de l'auteur du todo |
 | `%target_type%` | `Issue` ou `MergeRequest`           |
@@ -123,7 +123,7 @@ Le template est rendu dans `envelope.metadata` (contexte structuré). Le texte d
 ```
 [alice] please fix this bug
 
-Project: owner/repo | URL: https://gitlab.com/owner/repo | Author: alice | Type: Issue | IID: 42 | Title: Test Issue | Description: ... | TodoID: 100
+Project: group/project | URL: https://gitlab.com/group/project | Author: alice | Type: Issue | IID: 42 | Title: Test Issue | Description: ... | TodoID: 100
 ```
 
 - Ligne 1 : préfixe `[sender]` + `envelope.text` (avec `@bot` supprimé)
@@ -139,7 +139,7 @@ Utilisez toujours `groups["*"].senders: "allowlist"` avec des `allowedUsers` de 
 
 Tout le trafic GitLab est du trafic de groupe. Les membres du groupe sont par défaut en mode `open` ; définissez `groups["*"].senders` sur `allowlist` et remplissez ses `allowedUsers` pour restreindre les auteurs. La politique privée et l'appairage utilisateur ne restreignent jamais les membres du dépôt. Définissez explicitement `operators` pour la gestion de session partagée.
 
-Notez que sous `groupPolicy: "pairing"`, l'accès est accordé par projet : une fois qu'un projet est approuvé, **tout utilisateur GitLab** peut par défaut piloter le bot via les issues et merge requests de ce projet. Tout le trafic GitLab est du trafic de groupe, donc `privatePolicy` et `allowedUsers` au niveau supérieur ne filtrent pas les membres d'un projet approuvé ; définissez `senders: "allowlist"` avec `allowedUsers` sur l'entrée `groups` de ce projet pour restreindre l'accès. Les approbations sont indexées par le chemin du projet (`owner/repo`), qui change en cas de renommage ou de transfert — révoquez les approbations de groupe obsolètes après tout renommage, transfert ou suppression de projet.
+Notez que sous `groupPolicy: "pairing"`, l'accès est accordé par projet : une fois qu'un projet est approuvé, **tout utilisateur GitLab** peut par défaut piloter le bot via les issues et merge requests de ce projet. Tout le trafic GitLab est du trafic de groupe, donc `privatePolicy` et `allowedUsers` au niveau supérieur ne filtrent pas les membres d'un projet approuvé ; définissez `senders: "allowlist"` avec `allowedUsers` sur l'entrée `groups` de ce projet pour restreindre l'accès. Les approbations sont indexées par le chemin du projet (`group/project`), qui change en cas de renommage ou de transfert — révoquez les approbations de groupe obsolètes après tout renommage, transfert ou suppression de projet. Les clés de groupe sont comparées sans casse (le routage GitLab est insensible à la casse), donc un `group/project` configuré correspond également à l'orthographe canonique `Group/Project` rapportée par l'API.
 
 ## Détection des mentions
 

@@ -40,8 +40,8 @@ Batch 선택이 없으면 이전 동작이 유지됩니다: Batch는 메인 모�
 ## `/batch-api`
 
 ```text
-/batch-api translate the Markdown docs in docs/zh into English,
-writing them to docs/en with the same file names
+/batch-api docs/zh의 Markdown 문서를 영어로 번역하여
+같은 파일 이름으로 docs/en에 작성합니다
 ```
 
 에이전트는 `qwen batch check`를 실행하고, 작업이 적합한지 확인하고, 작은 샘플을 읽고, `.qwen/batch/plans/`에 계획을 작성하고 미리봅니다 — 아무것도 업로드되거나 청구되지 않습니다:
@@ -100,4 +100,6 @@ qwen batch clean <task-id>               # delete the local record (cancels noth
 - `clean`은 batch가 아직 실행 중이거나 수집되지 않은 결과가 있을 수 있는 경우 `--force`를 전달하지 않는 한 거부됩니다.
 - 대상은 프로젝트 내부 및 숨겨진 경로 외부(`.git/`, `.github/`, `.qwen/`, … 모든 깊이)에 있어야 합니다: 결과는 계획을 승인한 후 수 시간에 걸쳐 작성됩니다. 미리보기에 대상 디렉토리가 나열됩니다.
 
-설계: [`docs/design/2026-09-23-batch-api-design.md`](../../design/2026-09-23-batch-api-design.md). 오프라인 종단 점검(가짜 Batch API, 실제 빌드된 CLI)은 [`docs/verification/batch-api/`](../../verification/batch-api/README.md)에 있습니다.
+설계: [`docs/design/2026-09-23-batch-api-design.md`](../../design/2026-09-23-batch-api-design.md).
+오프라인 종단 점검(가짜 Batch API, 실제 빌드된 CLI)은
+[`docs/verification/batch-api/`](../../verification/batch-api/README.md)에 있습니다.

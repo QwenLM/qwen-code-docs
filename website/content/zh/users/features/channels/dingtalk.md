@@ -2,6 +2,8 @@
 
 本指南介绍如何在钉钉（DingTalk）上设置 Qwen Code 频道。
 
+如需向自定义群机器人发送通知或定时结果，但不使用应用机器人，请使用 [DingTalk Webhook 发送](./dingtalk-webhook)。以下设置针对的是应用机器人的会话集成。
+
 ## 前置条件
 
 - 一个钉钉组织账号
@@ -190,6 +192,8 @@ qwen channel start
 默认情况下，机器人在群聊中需要 @提及（`requireMention: true`）。将特定群组的 `"requireMention": false` 可使其响应所有消息。参见[群聊](./overview#group-chats)了解完整详情。
 
 设置 `"atSender": true` 可使机器人在回复时 @提及触发其响应的群成员。默认关闭，且仅适用于具有钉钉员工 ID 的代理回复。无论是否带有提及，回复均以钉钉 markdown 发送；提及前缀包含在第一条消息块中。
+
+Qwen Code 在构建规范消息时会保留钉钉提供的文本内容；它不会自行移除开头的提及。当钉钉在纯文本回调中省略机器人提及时，诸如 `/clear` 或 `!command` 的正文仍以该命令标记开头，并遵循正常的本地命令规则。当回调保留开头的机器人提及时（如富文本回调可能做的那样），` @Bot /clear` 和 ` @Bot !command` 仍然是普通的代理输入，因为规范文本并非以 `/` 或 `!` 开头。`isInAtList` 继续用于判断群消息是否寻址了机器人。
 
 ### 查找群聊的 Conversation ID
 

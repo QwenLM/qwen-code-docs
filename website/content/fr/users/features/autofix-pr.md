@@ -1,6 +1,6 @@
 # Corriger automatiquement une pull request
 
-`/autofix-pr` surveille une de vos pull requests depuis une session Qwen Code locale et corrige ce qui se présente : échecs de vérifications CI, retours de review de personnes fiables, et conflits de merge. Chaque correction est réalisée et vérifiée dans un worktree dédié, poussée vers la branche de la PR et répondue sur la PR, sous votre propre identité git et `gh`. Elle s'arrête d'elle-même quand la PR est mergée ou fermée.
+`/autofix-pr` surveille une de vos pull requests depuis une session Qwen Code locale et corrige ce qui se présente : échecs de vérifications CI, retours de review de personnes fiables, et conflits de merge. Chaque correction est réalisée et vérifiée dans un worktree dédié, poussée vers la branche de la PR et répondue sur la PR, sous votre propre identité git et `gh`. Elle s'arrête d'elle-même quand la PR est mergée ou fermée. Elle prépare la PR pour le merge et la maintient en état, et rien de plus : elle n'approuve jamais une PR, ne change pas son état de review, ne la merge ni ne la ferme, et n'active pas l'auto-merge. Les reviews et vérifications du dépôt décident toujours, et le merge reste le vôtre — combinez la surveillance avec l'auto-merge du dépôt pour merger dès qu'elles passent.
 
 ```text
 /autofix-pr [<pr-number>|<pr-url>] [--once] [--every <minutes>] [--no-reply] [--yes] [instructions...]
@@ -24,17 +24,17 @@
 - La question de démarrage propose aussi **Démarrer, les corrections s'exécutent sans demander** : les commandes de l'agent de correction — builds, tests, commits dans le worktree de la PR — s'exécutent alors sans demander pour cette surveillance, après une boîte de dialogue supplémentaire qui le confirme (refuser cette boîte de dialogue annule le démarrage ; relancez `/autofix-pr <n>`). Son agent s'exécute comme le ferait celui d'une session [YOLO](./approval-mode.md) : avec vos identifiants `git` et `gh`, capable d'atteindre des fichiers en dehors du worktree, au-delà de vos règles de demande ; vos règles de refus s'appliquent toujours. Cela dure jusqu'à ce que la surveillance soit arrêtée, redémarrée avec **Démarrer** simple (ou `--yes`), ou que la session se termine ou soit effacée ; `/autofix-pr resume` demande à nouveau. Choisissez **Démarrer** simple, et dans le [mode d'approbation](./approval-mode.md) par défaut chacune de ses commandes demande d'abord, ce qui convient à une surveillance que vous gardez à l'œil. Reprendre une surveillance et `/autofix-pr resume` offrent le même choix. Seul vous répondez à cette boîte de dialogue : aucune règle enregistrée, le classificateur du [Auto Mode](./auto-mode.md) ou `--yes` ne le fait, et le choix est refusé dans un dossier non fiable et à un programme pilotant Qwen Code via stream-json. Là où l'outil `autofix_pr` n'est pas disponible (une liste d'outils autorisés dans vos paramètres peut l'exclure), les assistants s'exécutent via le shell et chacun demande d'abord.
 - Une PR dont l'auteur ne peut pas pousser vers le dépôt exécute le code de quelqu'un d'autre, avec vos identifiants `gh` et `git` à portée, quand une correction est vérifiée. Une telle PR n'est jamais surveillée : seul `--once` est proposé, après une confirmation qui l'indique et que `--yes` ne passe pas.
 
-Au démarrage, il demande une fois de confirmer où il poussera et qu'il répondra sur la PR, et si les corrections peuvent exécuter leurs commandes sans demander.
+Au démarrage, il demande une fois de confirmer où il poussera et qu'il répondra sur la PR, et si les corrections peuvent exécuter leurs commandes sans demander. La même question indique qu'elle prépare la PR pour le merge et rien de plus : elle n'approuve jamais, ne change pas l'état de review, ne merge pas et n'active pas l'auto-merge.
 
 ## Ce qu'une vérification fait
 
 Une surveillance est une [tâche planifiée](./scheduled-tasks.md) dont la gate exécute `qwen autofix-pr snapshot <n> --gate` à chaque déclenchement, en dehors du modèle. La sonde n'affiche que ce qui a changé depuis son dernier lancement, donc une PR calme ne coûte aucun tour de modèle. Quand quelque chose a changé, un tour s'exécute :
 
 1. Une PR mergée ou fermée termine la surveillance. Un push de quelqu'un d'autre est adopté d'abord.
-2. Les vérifications échouées, les nouveaux commentaires des auteurs fiables et un conflit de merge vont à un seul agent de correction, travaillant dans le worktree de la PR. Pour une vérification échouée, il lit le log du job ; un échec en dehors de la PR (réseau, runner) est relancé une fois au lieu d'être corrigé.
+2. Les vérifications échouées, les nouveaux commentaires des auteurs fiables et un conflit de merge vont à un seul agent de correction, travaillant dans le worktree de la PR — en arrière-plan quand les corrections s'exécutent sans demander. Pour une vérification échouée, il lit le log du job ; un échec en dehors de la PR (réseau, runner) est relancé une fois au lieu d'être corrigé.
 3. L'agent vérifie son changement avec les vérifications du dépôt lui-même et ne commit que quand elles passent.
 4. Les commits sont poussés en fast-forward du head de la PR, jamais en force. Si quelqu'un a poussé entre-temps, son travail est mergé d'abord.
-5. Chaque fil de review traité reçoit une réponse — `Fixed in <sha>: …`, `Not changed: …` ou `Needs a human decision: …` — et chaque push reçoit un commentaire de résumé.
+5. Chaque fil de review traité reçoit une réponse — `Fixed in <sha>: …`, `Not changed: …` ou `Needs a human decision: …` — et chaque push reçoit un commentaire de résumé. Un tour qui n'a rien poussé mais a laissé quelque chose pour une personne publie un résumé aussi, indiquant ce qu'il a tenté et ce qui le bloque, afin que la PR montre que la surveillance s'est arrêtée au lieu de devenir silencieuse. Celui-ci est publié une fois par head, et à nouveau seulement quand un tour ultérieur laisse quelque chose de nouveau pour vous.
 
 Un tour ne vous demande jamais rien. Ce qui nécessite une personne est répondu sur la PR comme "Needs a human decision", signalé dans la session et listé par `/autofix-pr status`.
 
@@ -43,6 +43,22 @@ Un tour ne vous demande jamais rien. Ce qui nécessite une personne est répondu
 `/autofix-pr status` liste chaque surveillance du clone, quelle que soit la session qui l'exécute : la PR et sa branche, le head, les pushes utilisés, quand sa gate a vérifié pour la dernière fois et quand son dernier tour s'est exécuté, si cette session l'exécute, et ce qui attend une personne. Il ne lit que les fichiers des surveillances et ne demande rien à GitHub.
 
 Une surveillance se termine quand la session qui l'exécutait se termine — dans une session démon sa tâche est durable et liée à cette session, donc le démon la garde résidente et la surveillance survit à un redémarrage du démon — et sa tâche planifiée expire après 7 jours par défaut (le paramètre `experimental.cronRecurringMaxAgeDays`, ou `QWEN_CODE_CRON_MAX_AGE_DAYS`). Son fichier d'état reste. `/autofix-pr resume` redémarre, dans la session courante, chaque surveillance que cette session n'exécute pas — ou celle que vous nommez — avec l'intervalle, `--no-reply` et les instructions avec lesquels elle a été démarrée, et ses pushes, son historique et ses budgets conservés. Il demande une fois pour toutes, puis exécute un tour de chacune et la re-planifie. Dans une session démon une conversation porte une tâche planifiée, donc reprenez les autres une conversation à la fois. Si une autre session en exécute encore une, la tâche de cette session s'arrête à son prochain déclenchement ; sans PR nommée, `resume` exclut une surveillance qu'une autre session a vérifiée récemment, et l'indique. Une surveillance dont la PR a été mergée ou fermée pendant qu'aucune session ne l'exécutait est supprimée par son tour. Une surveillance démarrée avec `--once`, ou une que `stop` a terminée en conservant son worktree, est redémarrée avec `/autofix-pr <n>`.
+
+### Dans le Web Shell
+
+Le Web Shell affiche le même état, lu depuis les mêmes fichiers :
+
+- **PR watches**, dans la barre latérale, liste les surveillances de chaque workspace que le Web Shell peut atteindre. Pour chaque surveillance, il affiche la PR (un lien), où en est la surveillance, ses pushes, quand sa gate a vérifié pour la dernière fois et quand son dernier tour s'est exécuté, et ce qui vous attend :
+  - en surveillance ;
+  - correction en arrière-plan, et depuis combien de temps ;
+  - une correction en arrière-plan abandonnée, que le prochain tour refera ;
+  - non vérifiée récemment ;
+  - la PR mergée ou fermée ;
+  - arrêtée.
+- Sur la page **Scheduled tasks**, la carte de la tâche d'une surveillance affiche le même état sous la tâche.
+- **Open session** va à la conversation qui exécute la surveillance.
+- **Stop watch** envoie `/autofix-pr stop <n>` à cette conversation, exactement comme si vous le tapiez là, et il demande ce qu'il demanderait là-bas.
+- Les deux boutons apparaissent seulement pour une surveillance exécutée par une conversation de ce Web Shell. Une surveillance exécutée depuis un terminal est arrêtée dans ce terminal. Une qu'aucune session n'exécute plus est nettoyée, ou redémarrée, avec `/autofix-pr stop <n>` ou `/autofix-pr resume <n>` dans une session de son workspace.
 
 ## Les retours qui comptent
 
@@ -60,9 +76,11 @@ Les commentaires sont pris en compte quand leur auteur est propriétaire, membre
 | Limite                                | Valeur | Ensuite                     |
 | ------------------------------------- | ------ | --------------------------- |
 | Pushes par surveillance               | 10     | la surveillance s'arrête    |
+| Pushes qui laissent une vérification échouée en rouge | 3 | laissés pour une personne jusqu'à ce qu'elle passe ou que quelqu'un d'autre pousse |
 | Relances d'une vérification échouée sur un head | 1  | le prochain échec est réel  |
 | Tentatives par commentaire de review  | 1      | non proposé à nouveau       |
 | Pushes de quelqu'un d'autre dans un tour | 2   | la surveillance s'arrête    |
+| Minutes qu'une correction en arrière-plan peut s'exécuter | 30 | son agent est arrêté |
 
 ## Arrêt et fichiers
 
@@ -80,6 +98,8 @@ Les fichiers vivent sous `.qwen/tmp/` du worktree principal du clone :
 | `autofix-pr-<n>-replies.json`            | quels commentaires de bot répondent à un autre, tel que GitHub l'indique |
 | `autofix-pr-<n>-history-*.json`          | ce que les surveillances précédentes de la PR ont publié et traité, conservé par `stop` |
 | `autofix-pr-<n>-instructions.txt`        | vos instructions pour chaque tour                                 |
+| `autofix-pr-<n>-fix.json`                | la correction en cours en arrière-plan, actualisée pendant son exécution |
+| `autofix-pr-<n>-fix-snapshot.json`       | le snapshot depuis lequel la dernière correction en arrière-plan a travaillé |
 | `autofix-pr-<n>-*.log`, `*.md`, `*.json` | logs CI, briefs de correction et plans de réponse                 |
 
 La conception est dans [`docs/design/2026-10-21-autofix-pr-command.md`](../../design/2026-10-21-autofix-pr-command.md).

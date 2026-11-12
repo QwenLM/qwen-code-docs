@@ -203,7 +203,7 @@ for await (const event of client.subscribeEvents(session.sessionId, {
 }
 ```
 
-O daemon retém os últimos 8000 eventos por sessão em um buffer circular; lacunas além dessa janela não poderão ser reentregues.
+O daemon retém até 8000 eventos por sessão, também limitado pelo orçamento padrão de 8 MiB para o buffer circular, incluindo o snapshot completo de comando mais recente. Um único evento ou snapshot novo e grande demais é a exceção. Lacunas além da janela retida exigem ressincronização; aumente tanto `--event-ring-size` quanto `--event-ring-max-bytes` quando ambos os limites restringirem o histórico de reconexão necessário.
 
 ## Votação em permissões
 

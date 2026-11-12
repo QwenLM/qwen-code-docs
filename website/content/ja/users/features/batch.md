@@ -80,6 +80,8 @@ qwen batch cancel <task-id>              # 部分的な結果でも請求され�
 qwen batch clean <task-id>               # ローカルレコードを削除（何もキャンセルしません）
 ```
 
+`check` は、選択したモデルの設定からフリーズされた出力上限を報告します。これには `max_tokens`、`max_completion_tokens`、`max_new_tokens` が含まれます。出力上限が設定されていない場合は `provider default` を報告します。プランの `maxOutputTokens` は、ランに対してその上限をオーバーライドできます。
+
 `collect` は各アイテムを次のように報告します：
 
 - **delivered** — ターゲットに書き込まれました。

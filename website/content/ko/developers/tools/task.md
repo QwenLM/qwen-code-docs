@@ -1,7 +1,3 @@
----
-title: Agent Tool
----
-
 # Agent 도구 (`agent`)
 
 이 문서는 Qwen Code의 `agent` 도구에 대해 설명합니다.
@@ -20,7 +16,7 @@ title: Agent Tool
 - `fork_turns` (string, 선택 사항): `subagent_type="fork"`인 경우에만 유효. 생략하거나 `all`을 사용하여 전체 부모 대화를 포함하거나, `"3"`과 같은 양의 정수 문자열을 사용하여 최근 세 번의 실제 사용자 턴만 포함합니다. 도구 응답과 순수 시스템 리마인드는 턴으로 계산되지 않습니다.
 - `fork_tools` (string 배열, 선택 사항): `subagent_type="fork"`인 경우에만 유효. 실행을 정확한 정규 도구 이름 또는 MCP 서버 패턴으로 제한하면서 포크의 현재 모델 표시 도구 선언을 변경하지 않아 프롬프트 캐시 공유를 가능하게 합니다. 항목에 주변 공백이 있을 수 없으며, 와일드카드는 `mcp__*` 또는 `mcp__github__read_*`와 같은 뒤따르는 MCP 도구 접두사 패턴으로 제한됩니다. Fork는 `ask_user_question`을 절대 실행하지 않습니다. `fork_tools`를 생략하면 다른 모든 상속된 도구를 허용하고, 빈 배열을 사용하면 모든 도구 호출을 거부합니다.
 - `fork_profile` (string, 선택 사항): `subagent_type="fork"`인 경우에만 유효. 활성 프로젝트 루트에서 최대 64 KiB의 frontmatter 전용 일반 `.qwen/fork-profiles/<name>.md`를 로드하고 필수 `tools` 배열과 최대 200자의 선택적 `promptHint`를 적용합니다. 파일은 프로젝트 프로파일 디렉토리 밖으로 해석될 수 없습니다. `fork_profile`은 `fork_tools` 또는 이름 있는 팀원과 함께 사용할 수 없으며, safe mode나 bare mode에서는 사용할 수 없습니다.
-- `run_in_background` (boolean, 선택 사항): 최상위 일반 에이전트의 경우 기본값은 `true`. 일반 에이전트의 결과를 인라인으로 기다리려면 `false`로 설정합니다. 헤드리스 포크는 항상 백그라운드에서 실행됩니다. 중첩 에이전트는 `run_in_background`이 명시적으로 `true`가 아닌 한 포그라운드에서 실행되며, 중첩 에이전트는 백그라운드 완료 알림을 받을 수 없으므로 `true`는 거부됩니다. 호출자 소유 `working_dir` 실행은 포그라운드에서 실행됩니다: 명시적 `run_in_background: true` 요청은 거부되며, 구성된 백그라운드 기본값(서브에이전트 정의의 `background: true`)은 최상위에서 거부되고 중첩 시 포그라운드로 다운그레이드됩니다.
+- `run_in_background` (boolean, 선택 사항): 최상위 일반 에이전트의 경우, 생략 시 정의의 `background` 필드를 사용하고 그 다음 `agents.defaultBackground`를 사용합니다(기본값: `true`; 재시작 필요). 명시적 인수는 두 값 모두를 재정의합니다. 일반 에이전트의 결과를 인라인으로 기다리려면 `false`로 설정합니다. 헤드리스 포크는 항상 백그라운드에서 실행됩니다. 중첩 에이전트는 `run_in_background`이 명시적으로 `true`가 아닌 한 포그라운드에서 실행되며, 중첩 에이전트는 백그라운드 완료 알림을 받을 수 없으므로 `true`는 거부됩니다. 호출자 소유 `working_dir` 실행은 포그라운드에서 실행됩니다: 명시적 `run_in_background: true` 요청은 거부되며, 구성된 백그라운드 기본값(서브에이전트 정의의 `background: true`)은 최상위에서 거부되고 중첩 시 포그라운드로 다운그레이드됩니다.
 - `isolation` (string, 선택 사항): `"worktree"`로 설정하여 Qwen Code가 생성하고 관리하는 격리된 git worktree에서 명시적으로 이름 지정된 비-fork 에이전트를 실행합니다.
 - `working_dir` (string, 선택 사항): 명시적으로 이름 지정된 비-fork 에이전트를 현재 리포지토리 내의 기존 등록된 git worktree에 고정합니다. 이름 없는 실행은 호출자가 worktree 라이프사이클을 소유하므로 포그라운드에서 실행됩니다(`run_in_background` 참조); 여기에 고정된 이름 있는 팀원은 동시에 실행되며 worktree가 제거되기 전에 종료되어야 합니다. `working_dir`과 `isolation`이 모두 제공되면 `working_dir`이 우선합니다.
 
@@ -32,7 +28,7 @@ Agent 도구를 사용하면 서브에이전트는:
 
 1. 작업 프롬프트와 포크의 경우 선택된 부모 대화 컨텍스트를 받습니다
 2. 사용 가능한 도구를 사용하여 작업을 실행합니다
-3. 기본적으로 완료 알림을 보고하거나, 일반 에이전트가 포그라운드에서 실행될 때 최종 결과 메시지를 반환합니다
+3. 백그라운드에서 실행될 때 완료 알림을 보고하거나, 일반 에이전트가 포그라운드에서 실행될 때 최종 결과 메시지를 반환합니다; 최상위 일반 에이전트의 기본값은 `agents.defaultBackground`를 통해 구성할 수 있습니다
 4. 보존된 상태가 계속을 지원하는 경우 백그라운드 실행 후에도 주소 지정 가능한 상태로 유지됩니다
 
 사용법:
@@ -106,7 +102,7 @@ agent(
 ### 병렬 작업 실행
 
 ```
-# 코드 리뷰와 테스트 실행을 병렬로 시작
+# Launch code review and test execution in parallel
 agent(
   description="Code review",
   prompt="Review the recent changes in the user management module for code quality, security issues, and best practices compliance.",

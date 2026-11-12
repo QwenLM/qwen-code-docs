@@ -80,6 +80,8 @@ qwen batch cancel <task-id>              # partial results are still billed
 qwen batch clean <task-id>               # delete the local record (cancels nothing)
 ```
 
+`check` meldet die eingefrorene Ausgabegrenze aus den Einstellungen des ausgewählten Modells, einschließlich `max_tokens`, `max_completion_tokens` und `max_new_tokens`. Es meldet `provider default`, wenn keine Ausgabegrenze festgelegt ist. Das `maxOutputTokens` eines Plans kann diese Grenze für einen Run überschreiben.
+
 `collect` meldet jedes Element als:
 
 - **delivered** — geschrieben an sein Ziel;

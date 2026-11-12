@@ -10,6 +10,24 @@ Les canaux de messagerie utilisent un planificateur persistant séparé afin que
 
 > **Astuce :** Les tâches planifiées sont activées par défaut. Pour les désactiver, définissez `experimental.cron: false` dans vos [paramètres](../configuration/settings.md), ou définissez `QWEN_CODE_DISABLE_CRON=1` dans votre environnement.
 
+## Workspace dans le Web Shell
+
+La page **Scheduled Tasks** affiche le workspace de chaque tâche sur sa carte. Lors de la création ou de la modification d'une tâche, le champ **Workspace** indique où elle s'exécute. Avec un seul workspace, ce champ est en lecture seule ; si un Web Shell intégré a un workspace fixé par son hôte, il affiche également **Fixed by host**. Survolez l'étiquette du workspace pour voir son chemin complet.
+
+Avec plusieurs workspaces, choisissez un workspace lors de la création d'une tâche. Une tâche existante reste dans son workspace d'origine. Les étiquettes de workspace nécessitent des informations de workspace provenant du démon ou de l'hôte ; une étiquette manquante ne signifie pas que la tâche s'exécute sans workspace.
+
+## Livrer les résultats des tâches du Web Shell à un canal
+
+Dans `qwen serve`, ouvrez **Scheduled Tasks** et créez ou modifiez une tâche dans son workspace. Choisissez une destination d'exécution persistante (une session dédiée, ou la session actuelle lorsqu'elle est disponible), puis choisissez un **Delivery Channel**, un type de destination utilisateur ou chat, et un ID de destination. Les contacts observés récents sont des suggestions optionnelles ; vérifiez le nom du canal, son type et l'ID brut avant d'en sélectionner un. Vous pouvez également saisir directement un ID. Si un ID contient des espaces au début ou à la fin, le formulaire vous avertit et propose **Remove surrounding whitespace** ; il ne modifie jamais l'ID automatiquement. Le canal configuré doit prendre en charge l'envoi vers cette destination.
+
+La livraison est désactivée par défaut. Configurer un canal seul n'active pas la livraison pour une tâche. Lorsqu'elle est activée, la réponse finale d'une exécution planifiée réussie est envoyée via le canal sélectionné ; cela ne garantit pas la réception ni n'ajoute de tentatives durables ou d'alertes d'échec. La carte de tâche affiche une ligne de livraison uniquement lorsqu'elle a une destination enregistrée.
+
+Pour supprimer la livraison, modifiez la tâche et sélectionnez **Delivery off** sous **Delivery Channel**. Modifier d'autres champs préserve la cible enregistrée, y compris une cible qui n'est plus trouvée dans les contacts récents. Les échecs de chargement ou les canaux manquants ne l'effacent pas. Changer le workspace lors de la création d'une tâche réinitialise la destination brouillon ; une tâche existante reste dans son workspace d'origine.
+
+Si la prise en charge de la livraison devient indisponible après avoir changé une destination, choisissez **Discard delivery changes** pour restaurer la destination d'origine et continuer à modifier les autres champs de la tâche. Pour une nouvelle tâche, cela supprime la destination brouillon. La sauvegarde laisse alors toute configuration de livraison existante inchangée.
+
+Les tâches qui créent une nouvelle session pour chaque exécution (`per_run`) ne prennent pas en charge la livraison. Passer à ce mode maintient votre destination brouillon visible et vous demande de désactiver explicitement la livraison ou de revenir à un mode persistant avant de sauvegarder. Les contrôles de livraison nécessitent la capacité `channel_delivery` du démon ; les destinations existantes restent visibles avec les anciens démons, mais ne peuvent pas y être modifiées.
+
 ## Planifier un prompt récurrent avec /loop
 
 Le [skill intégré](./skills.md) `/loop` est le moyen le plus rapide de planifier un prompt récurrent. Passez un intervalle optionnel et un prompt, et Qwen Code configure une tâche cron qui s'exécute en arrière-plan tant que la session reste ouverte.

@@ -15,12 +15,12 @@ For each authentication method, different Terms of Service and Privacy Notices m
 
 [Qwen Account with Subscription](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) is separate from the legacy free Qwen OAuth allowance, which was discontinued on 2026-04-15.
 
-| Authentication Method                                                        | Provider          | Terms of Service                                                   | Privacy Notice                                                     |
-| :--------------------------------------------------------------------------- | :---------------- | :----------------------------------------------------------------- | :----------------------------------------------------------------- |
+| Authentication Method                                                                                         | Provider          | Terms of Service                                                   | Privacy Notice                                                     |
+| :------------------------------------------------------------------------------------------------------------ | :---------------- | :----------------------------------------------------------------- | :----------------------------------------------------------------- |
 | [Qwen Account with Subscription](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) | Qwen AI           | [Qwen Terms of Service](https://qwen.ai/termsservice)              | [Qwen Privacy Policy](https://qwen.ai/privacypolicy)               |
-| Alibaba Cloud Coding Plan                                                    | Alibaba Cloud     | See [details below](#2-if-you-are-using-alibaba-cloud-coding-plan) | See [details below](#2-if-you-are-using-alibaba-cloud-coding-plan) |
-| API Key                                                                      | Various Providers | Depends on your chosen API provider (OpenAI, Anthropic, etc.)      | Depends on your chosen API provider                                |
-| Vertex AI                                                                    | Google Cloud      | [Google Cloud Terms](https://cloud.google.com/terms)               | [Google Cloud Privacy](https://cloud.google.com/privacy)           |
+| Alibaba Cloud Coding Plan                                                                                     | Alibaba Cloud     | See [details below](#2-if-you-are-using-alibaba-cloud-coding-plan) | See [details below](#2-if-you-are-using-alibaba-cloud-coding-plan) |
+| API Key                                                                                                       | Various Providers | Depends on your chosen API provider (OpenAI, Anthropic, etc.)      | Depends on your chosen API provider                                |
+| Vertex AI                                                                                                     | Google Cloud      | [Google Cloud Terms](https://cloud.google.com/terms)               | [Google Cloud Privacy](https://cloud.google.com/privacy)           |
 
 ## 1. If you are using [Qwen Account with Subscription](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)
 

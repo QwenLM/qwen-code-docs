@@ -19,7 +19,7 @@ import { WebShellWithProviders } from '@qwen-code/web-shell';
 
 ## レイアウト概要
 
-Homeのみのホストでは、ブランディング、New task、プロジェクト、アーカイブされたセッション、折りたたみコントロールが1つのカラムに表示されます。利用可能な別のプライマリエントリまたはフッターアクションを設定すると、デフォルトの300pxセカンダリカラムの横に56pxのアイコンレールが追加されます。プライマリエントリはレールに配置され、フッターアクションとバージョンは More に表示されます。カスタムレンダラーは広いHomeカラムに残ります。公開のレイアウトオプションはありません。
+Homeのみのホストでは、ブランディング、New session、ワークスペース、アーカイブされたセッション、折りたたみコントロールが1つのカラムに表示されます。利用可能な別のプライマリエントリまたはフッターアクションを設定すると、デフォルトの300pxセカンダリカラムの横に56pxのアイコンレールが追加されます。プライマリエントリはレールに配置され、フッターアクションとバージョンは More に表示されます。カスタムレンダラーは広いHomeカラムに残ります。公開のレイアウトオプションはありません。
 
 **破壊的変更:** 以前は、`sidebar` を省略するとサイドバーが非表示になり、サイドバーが有効な状態でナビゲーション/フッターのアイテムリストを省略するとすべての組み込みアイテムが公開されていました。ホストは以前の非表示デフォルトを維持するために `sidebar={false}` を渡すか、必要なエントリを明示的にリストする必要があります。スタンドアロンWeb Shellはフルメニューを明示的に設定します。`branding.hideWhenCompact` のデフォルトは `false` になりました。コンパクトドロワーで非表示のブランドを維持するには `true` に設定します。
 
@@ -60,7 +60,7 @@ sidebar={{
 
 ```ts
 type WebShellSidebarPrimaryNavItem =
-  | 'newTask' // ✏️ New Task button
+  | 'newTask' // ✏️ New session button
   | 'plugins' // 🧩 Plugins button
   | 'channels' // Channel sessions and settings
   | 'live' // Live sessions and settings; requires showLive
@@ -77,14 +77,14 @@ interface WebShellSidebarPrimaryNavOptions {
 
 プライマリナビゲーション領域には、`items` で制御される組み込みボタンが含まれます。
 
-- `items` を指定しない場合は New task のみ表示されます。Home は常に存在します
+- `items` を指定しない場合は New session のみ表示されます。Home は常に存在します
 - `items` を指定した場合、リストされたボタンのみ表示されます
 - カスタムコンテンツは `render()` で組み込みボタンの後に追加できます
 
 | 値                                         | 効果                                                |
 | ------------------------------------------ | --------------------------------------------------- |
-| `undefined`（デフォルト）                   | New task を含む Home                                 |
-| `{ items: ['plugins'] }`                   | Home と Plugins。New task ボタンなし                 |
+| `undefined`（デフォルト）                   | New session を含む Home                                 |
+| `{ items: ['plugins'] }`                   | Home と Plugins。New session ボタンなし                 |
 | `{ items: ['plugins', 'scheduledTasks'] }` | Home + Plugins + Scheduled Tasks                     |
 | `{ items: [], render: () => ... }`         | カスタムコンテンツを含む Home。組み込みプライマリボタンなし |
 
@@ -165,7 +165,7 @@ interface WebShellSidebarOptions {
   showLive?: boolean; // show daemon-owned Live conversations (default: false)
   branding?: false | WebShellSidebarBranding;
   primaryNav?: WebShellSidebarPrimaryNavOptions;
-  hideProjectHeader?: boolean; // hide "Projects" header row (default: false = shown)
+  hideProjectHeader?: boolean; // hide "Workspaces" header row (default: false = shown)
   sessionActions?: WebShellSidebarSessionActionsOptions;
   footer?: false | WebShellSidebarFooterOptions;
 }
@@ -185,7 +185,7 @@ sidebar={{
 
 ### Live コンバセーション — `showLive`
 
-Live コンバセーションは、デフォルトでは埋め込みホストから非表示です。ホストがデーモン所有の Live グループを公開する必要がある場合はオプトインしてください。
+Live コンバセーションは、デフォルトでは埋め込みホストから非表示です。ホストがデーモン所有の Live コンバセーションを公開する必要がある場合はオプトインしてください。
 
 以前のリリースでは明示的なオプションなしでこのグループが表示されていたため、これに依存するホストはアップグレード時に `showLive: true` を設定する必要があります。
 
@@ -198,13 +198,13 @@ sidebar={{
 
 `live` プライマリエントリがない場合、`showLive: true` は Home の既存 Live グループと Experimental 配下の設定を保持します。エントリがある場合、Live は独自のセッションカラムと設定ページを開きます。
 
-### ③ プロジェクトヘッダー — `hideProjectHeader`
+### ③ ワークスペースヘッダー — `hideProjectHeader`
 
-「Projects」ヘッダー行（折りたたみトグル、検索アイコン、ワークスペース追加ボタンを含む行）の表示/非表示を制御します。デフォルトは `false`（表示）です。
+「Workspaces」ヘッダー行（折りたたみトグル、検索アイコン、ワークスペース追加ボタンを含む行）の表示/非表示を制御します。デフォルトは `false`（表示）です。
 
 ```tsx
 sidebar={{
-  hideProjectHeader: true,  // hide the "项目 ▼ [🔍] [＋]" row
+  hideProjectHeader: true,  // hide the "工作区 ▼ [🔍] [＋]" row
 }}
 ```
 
@@ -220,7 +220,8 @@ type WebShellSidebarSessionActionItem =
   | 'export' // 📤 Export chat history (dropdown menu)
   | 'delete' // 🗑 Delete session (dropdown menu)
   | 'pin' // 📌 Pin/Unpin (inline button)
-  | 'archive'; // 📦 Archive (dropdown menu)
+  | 'archive' // 📦 Archive (dropdown menu)
+  | 'split'; // ◫ Add to Split View (dropdown menu)
 
 /** Subset with working inline (hover-button) handlers. */
 type WebShellSidebarSessionInlineActionItem =
@@ -238,18 +239,22 @@ interface WebShellSidebarSessionActionsOptions {
 セッション行に表示されるアクションボタンを制御します。
 
 - **`items`**: すべてのアクション（インラインおよびドロップダウン）のマスター制御。`items` に含まれないアイテムは全域で非表示になります。
-- **`inlineItems`**: **インラインボタン**（ホバー時）として表示されるアイテムを制御します。デフォルトは `['pin']` です。インラインハンドラーが動作するアイテムのみ使用可能です: `'pin'`、`'rename'`、`'export'`、`'delete'`。`'details'`、`'group'`、`'archive'` はドロップダウン専用です。
+- **`inlineItems`**: **インラインボタン**（ホバー時）として表示されるアイテムを制御します。デフォルトは `['pin']` です。インラインハンドラーが動作するアイテムのみ使用可能です: `'pin'`、`'rename'`、`'export'`、`'delete'`。`'details'`、`'group'`、`'archive'`、`'split'` は標準行ではドロップダウン専用です。
 
 **表示優先度**: インラインボタンを表示するには、`items` とアイテムの組み込み条件と `inlineItems` のすべてを満たす必要があります。たとえば、`delete` をインラインで表示するには、`items` に `'delete'` が含まれ、かつ `inlineItems` に `'delete'` が含まれている必要があります。
+
+設定内のアーカイブ行では、Export conversation と Restore がインラインボタンとして使用され、Rename と Delete は More に配置されます。これらのアクションも `items` と組み込みの可用性制限に従い、`inlineItems` はこのレイアウトを変更しません。既存のスタイルは、ホバーまたはキーボードフォーカスでこれらのボタンを表示し、タッチデバイス上でも表示を維持します。
 
 | 値                                       | 効果                                         |
 | ---------------------------------------- | -------------------------------------------- |
 | `undefined`（デフォルト）                 | すべてのアクションを表示、pin のみインライン |
 | `{ inlineItems: ['pin', 'delete'] }`     | Pin + delete をインラインボタンとして表示       |
-| `{ inlineItems: [] }`                    | インラインボタンをすべて非表示                  |
+| `{ inlineItems: [] }`                    | 標準行ではインラインボタンなし                  |
 | `{ inlineItems: ['rename', 'export'] }` | Rename + export をインラインボタンとして表示    |
 
 ドロップダウンアイテムが有効になっていない場合、ドロップダウントリガー（⋮）は自動的に非表示になります。インラインボタンは、ケーパビリティ条件と `items` の両方を満たす場合にのみ表示されます。アーカイブは、現在のセッションおよび実行中のターンを持つセッションでは無効になります。デーモンはアーカイブ時にライブセッションをクローズするためです。
+
+`'split'` は他のアイテムと同様にデフォルトで有効ですが、ホストが `onAddSessionToSplitView` を配線した場合にのみ効果を持ちます。サイドバーはキャパシティのために `splitSessionIds` prop も読み取ります。スプリットで既に開いているセッションは、説明付きのタイトルでアイテムを無効にしてレンダリングします。ペイン制限の場合や、スプリットが閉じられている間の現在のセッションも同様です。
 
 ```tsx
 sidebar={{
@@ -262,7 +267,7 @@ sidebar={{
 
 ## カスタマイズ不可の領域
 
-### プロジェクト / ワークスペース（セッションリスト内）
+### ワークスペース（セッションリスト内）
 
 セッションリストが表示されている場合、以下のサブ領域は描画されますが**個別にカスタマイズはできません**。
 

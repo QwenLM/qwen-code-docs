@@ -31,13 +31,13 @@ Lorsque vous vous authentifiez via votre compte Qwen par [**Compte Qwen avec abo
 
 Pour plus de détails sur la configuration de l'authentification, les quotas et les fonctionnalités prises en charge, voir [Configuration de l'authentification](../configuration/auth.md).
 
-## 2. Si vous utilisez Alibaba Cloud Coding Plan [#2-if-you-are-using-alibaba-cloud-coding-plan]
+## 2. Si vous utilisez Alibaba Cloud Coding Plan
 
 Lorsque vous vous authentifiez avec une clé API d'Alibaba Cloud, les conditions d'utilisation et l'avis de confidentialité applicables d'Alibaba Cloud s'appliquent.
 
 Alibaba Cloud Coding Plan est disponible dans deux régions :
 
-- **Alibaba Cloud Bailian (aliyun.com)** — [bailian.console.aliyun.com](https://bailian.console.aliyun.com)
+- **阿里云百炼 (aliyun.com)** — [bailian.console.aliyun.com](https://bailian.console.aliyun.com)
 - **Alibaba Cloud (alibabacloud.com)** — [bailian.console.alibabacloud.com](https://bailian.console.alibabacloud.com)
 
 > [!important]
@@ -134,7 +134,7 @@ Que votre code, y compris les invites et les réponses, soit utilisé pour entra
 
 **Important :** Qwen Code lui-même n'utilise pas vos invites, votre code ou vos réponses pour l'entraînement des modèles. Toute utilisation des données à des fins d'entraînement serait régie par les politiques du fournisseur de services IA avec lequel vous vous authentifiez.
 
-### 2. Que sont les statistiques d'utilisation et que contrôle le paramètre de désinscription ?
+### 2. Que sont les statistiques d'utilisation et que contrôle le paramètre d'opt-out ?
 
 Le paramètre **Statistiques d'utilisation** contrôle la collecte facultative de données par Qwen Code pour améliorer l'expérience utilisateur et la qualité du produit.
 
