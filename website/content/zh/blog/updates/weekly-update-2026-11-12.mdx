@@ -1,7 +1,7 @@
 ---
 title: "Qwen Code 周报：Qwen 订阅登录即用，微信/QQ/邮箱快捷接入，GitHub 只收选中仓库动态"
 date: "2026-11-12"
-description: "本周发布 v0.26.8~v0.27.2。Qwen 订阅账号可在 CLI、VS Code、桌面端登录使用；微信、QQ、邮箱频道能在 Web Shell 里配置并扫码登录；GitHub 频道支持仓库白名单/黑名单过滤；Web Shell 新增问答热力图与用量条，会话支持批量整理。"
+description: "本周发布 v0.26.8~v0.27.2。Qwen 订阅账号可在 CLI、VS Code、桌面端登录使用；微信、QQ 能在 Web Shell 里配置并扫码登录，邮箱填服务器和账号接入；GitHub 频道支持仓库白名单/黑名单过滤；Web Shell 新增问答热力图与用量条，会话支持批量整理。"
 author: "Qwen Team"
 tags: ["Product Updates", "release", "weekly"]
 image: "https://img.alicdn.com/imgextra/i3/O1CN01Ef5Q2Vdbv3J2jBZY_!!6000000006919-2-tps-1344-576.png"
@@ -28,7 +28,7 @@ Qwen Code 本周发布 v0.26.8～v0.27.2 五个正式版本。
 
 ### Qwen Code 支持 Qwen 订阅账号登录
 
-如果你的 Qwen 账号已有 Plus 或 Pro 订阅，可以在终端、VS Code 或桌面端用该账号登录。终端里运行 /auth，选择 Qwen 会员账号，再到浏览器完成授权。登录后，客户端会加载订阅可用的模型，也可以使用内置的网页搜索。
+如果你的 Qwen 账号已有 Plus 或 Pro 订阅，可以在终端、VS Code 或桌面端用该账号登录。终端里运行 `/auth`，选择 Qwen 会员账号，再到浏览器完成授权。登录后，客户端会加载订阅可用的模型，也可以使用内置的网页搜索。
 
 你能用它做什么：
 
@@ -65,8 +65,6 @@ GitHub 频道会把仓库动态自动送进会话：有人开 PR、留评论、C
 - 无关仓库的 PR 不再排队占 agent，你关心的仓库处理更快
 
 详见 PR [#16493](https://github.com/QwenLM/qwen-code/pull/16493)
-
-[📸 截图占位：频道编辑器里的仓库过滤设置]
 
 ### Web Shell：问答和用量看得更清楚，会话能批量整理
 
@@ -145,7 +143,7 @@ GitHub 频道会把仓库动态自动送进会话：有人开 PR、留评论、C
 | **[@ZedingZhang](https://github.com/ZedingZhang)** | 子代理前后台默认可配置、审查产物按名校验并给出格式、独立会话分配后刷新 | [#15178](https://github.com/QwenLM/qwen-code/pull/15178), [#14824](https://github.com/QwenLM/qwen-code/pull/14824), [#15311](https://github.com/QwenLM/qwen-code/pull/15311) |
 | **[@BigDaddy1337](https://github.com/BigDaddy1337)** | LSP 用户级设置开关、工具卡片展开看参数与结果 | [#14613](https://github.com/QwenLM/qwen-code/pull/14613), [#15435](https://github.com/QwenLM/qwen-code/pull/15435) |
 | **[@Eric-GoodBoy-Tech](https://github.com/Eric-GoodBoy-Tech)** | QQ 主动群消息投递、可选转发机器人消息 | [#15635](https://github.com/QwenLM/qwen-code/pull/15635), [#15904](https://github.com/QwenLM/qwen-code/pull/15904) |
-| **[@jabrailkhalil](https://github.com/jabrairkhalil)** | 记忆读取建议匹配索引预算、清理重试串行化 | [#15368](https://github.com/QwenLM/qwen-code/pull/15368), [#15482](https://github.com/QwenLM/qwen-code/pull/15482) |
+| **[@jabrailkhalil](https://github.com/jabrailkhalil)** | 记忆读取建议匹配索引预算、清理重试串行化 | [#15368](https://github.com/QwenLM/qwen-code/pull/15368), [#15482](https://github.com/QwenLM/qwen-code/pull/15482) |
 | **[@Jun516](https://github.com/Jun516)** | 批量推理按提供商报告输出预算、内联重命名时底栏按钮稳定 | [#15181](https://github.com/QwenLM/qwen-code/pull/15181), [#15182](https://github.com/QwenLM/qwen-code/pull/15182) |
 | **[@lorenzozanee](https://github.com/lorenzozanee)** | 不保存被拒的 daemon 地址凭据、桌面端已发布探测加固 | [#12285](https://github.com/QwenLM/qwen-code/pull/12285), [#12184](https://github.com/QwenLM/qwen-code/pull/12184) |
 | **[@TianYuan1024](https://github.com/TianYuan1024)** | 项目 hooks 先弹批准框、fork PR 的 Ctrl+C 与 Java 堆失败修复 | [#14748](https://github.com/QwenLM/qwen-code/pull/14748), [#16150](https://github.com/QwenLM/qwen-code/pull/16150) |
