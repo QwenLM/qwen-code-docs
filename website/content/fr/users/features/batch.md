@@ -140,12 +140,12 @@ qwen batch clean <task-id>               # delete the local record (cancels noth
 
 `collect` rapporte chaque élément comme :
 
-- **delivered** — écrit dans sa cible ;
-- **held** — la source a changé après la soumission (`retry` le resoumet par
+- **livré** — écrit dans sa cible ;
+- **retenu** — la source a changé après la soumission (`retry` le resoumet par
   rapport à la nouvelle source), ou la cible existe déjà avec un contenu
   différent (résolvez-le et relancez `collect` ; aucune nouvelle requête n'est
   faite) ;
-- **failed** — tronqué, vide, un appel d'outil, ou une erreur fournisseur ;
+- **échoué** — tronqué, vide, un appel d'outil, ou une erreur fournisseur ;
   `retry` resoumet ceux-ci, les éléments tronqués uniquement avec un
   `--max-output-tokens` plus grand.
 

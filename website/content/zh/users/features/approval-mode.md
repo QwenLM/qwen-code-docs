@@ -171,6 +171,8 @@ Auto-Edit 模式指示 Qwen Code 自动审批文件编辑，同时要求对 Shel
 
 自动审批的编辑工具包括 `edit`、`write_file` 和 `notebook_edit`。
 
+匹配 [`permissions.ask`](../configuration/settings.md#permissions) 规则的调用在此模式下仍会要求确认，与 Auto 模式相同。这也适用于子代理：当会话处于 trusted folder 中的 Ask Permissions 模式时，子代理默认在 Auto-Edit 中运行——前台子代理会内联询问，而后台子代理无法询问，其调用会被拒绝。
+
 ### 何时使用 Auto-Edit 模式
 
 - **日常开发**：非常适合大多数编码任务

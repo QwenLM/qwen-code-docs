@@ -172,6 +172,8 @@ Auto-Edit Mode는 Qwen Code에게 파일 편집을 자동으로 승인하면서 
 
 자동 승인되는 편집 도구에는 `edit`, `write_file`, `notebook_edit`이 포함됩니다.
 
+[`permissions.ask`](../configuration/settings.md#permissions) 규칙과 일치하는 호출은 이 모드에서도 확인을 요청하며, Auto Mode와 동일하게 동작합니다. 이는 서브에이전트에도 적용됩니다. 신뢰할 수 있는 폴더에서 세션이 Ask Permissions 모드일 때 서브에이전트는 기본적으로 Auto-Edit로 실행됩니다. 포그라운드 서브에이전트는 인라인으로 요청하고, 요청할 수 없는 백그라운드 서브에이전트는 호출이 거부됩니다.
+
 ### Auto-Accept Edits Mode를 사용할 때
 
 - **일상 개발**: 대부분의 코딩 작업에 적합

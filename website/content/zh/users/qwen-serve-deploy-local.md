@@ -1,8 +1,8 @@
-# `qwen serve` 的本地启动模板（v0.16-alpha）
+# `qwen serve` 的本地启动模板
 
-用于在开发者工作站上将 `qwen serve` 作为长期后台进程运行的参考模板。与 [v0.16-alpha 已知限制](./qwen-serve.md#v016-alpha-known-limits) 搭配使用——仅限本地、单用户、自带 bearer token。容器化/多主机/TLS 前端部署推迟至 v0.16.x。
+用于在开发者工作站上将 `qwen serve` 作为长期后台进程运行的参考模板。对于普通的本地后台使用，请从[主指南](./qwen-serve.md#inspect-and-control-a-local-daemon)中内置的 `qwen daemon start` 生命周期命令开始。当你需要服务管理器监督、重启后自动启动或自定义日志设置时，使用这些模板。在将监听器暴露到回环地址之外之前，请查阅[部署和安全说明](./qwen-serve.md#deployment-and-security-notes)。
 
-> **目标读者**：希望守护进程在重启后仍能运行、日志持久保存、并且有清晰的“失败自动重启”机制的内测开发者。如果你只需要守护进程存在于单个 shell 会话期间，直接用 `qwen serve`（前台运行，Ctrl-C 停止）即可。
+> **目标读者**：希望守护进程在重启后仍能运行、日志持久保存、并且有清晰的“失败自动重启”机制的开发者。如果你只需要守护进程存在于单个 shell 会话期间，直接用 `qwen serve`（前台运行，Ctrl-C 停止）即可；如果你只需要一个分离的本地进程，`qwen daemon start` 更简单。
 
 ## 生成 bearer token（一次性操作）
 
@@ -12,7 +12,7 @@ chmod 600 ~/.qwen-serve-token
 export QWEN_SERVER_TOKEN="$(cat ~/.qwen-serve-token)"
 ```
 
-路径/文件名由你自行选择；v0.16-alpha 不会自动生成或定位 token 文件（推迟至 v0.16.x）。请参阅用户指南中的[身份验证](./qwen-serve.md#authentication)章节了解标准 BYO 设置。
+上述路径和文件名是这些服务管理器模板的示例，并非 Qwen Code 自动发现的内置位置。通过 `qwen daemon start` 启动的守护进程可以选择使用内置的 `--save-token` sidecar 和 `qwen daemon token` 命令；参见 [Inspect and control a local daemon](./qwen-serve.md#inspect-and-control-a-local-daemon)。下面的 systemd 和 launchd 模板仍然显式传递 token，因为它们直接调用 `qwen serve`。token 选择规则参见[身份验证](./qwen-serve.md#authentication)。
 
 > **将 `export` 限制在当前 shell 会话内。** 不要将其添加到 `~/.bashrc` / `~/.zshrc` —— 在 profile 级别导出会将 bearer token 暴露给从该 shell 启动的每个进程（IDE 子进程、浏览器调试器、来自不相关项目的 `npm` 脚本）。对于长期运行的环境，请使用下面的 systemd `EnvironmentFile=` / launchd `EnvironmentVariables` 机制 —— 两者都将 token 范围限定在守护进程本身。
 
@@ -231,13 +231,12 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
 
 在**单个守护进程生命周期内**，客户端断开连接可以通过 SSE `Last-Event-ID` 恢复，具体见用户指南中的[持久性模型](./qwen-serve.md#durability-model)章节 —— 重放环位于内存中。
 
-守护进程**重启**会丢弃所有内存中的会话；客户端重新连接并从头开始。会话内容（提示词、工具调用、对话历史）的跨重启持久性**不**在 v0.16-alpha 中。
+守护进程**重启**会中断所有正在进行的实时会话并清除内存中的重放环。持久化的会话内容仍保留在磁盘上，可以针对新的守护进程进程加载，遵循相同的工作区绑定规则。可用的恢复路径参见[加载和恢复持久化会话](./qwen-serve.md#loading-and-resuming-a-persisted-session)。
 
-## 超出范围（推迟至 v0.16.x 或更晚）
+## 范围及相关部署指南
 
-- **容器化部署** —— Dockerfile、docker-compose、Kubernetes 清单、nginx + TLS 反向代理、多实例 token 隔离。推迟至 v0.16.x，届时将有一个企业试点项目；否则文档会因无人验证而过时。
-- **跨主机联邦 / 单主机上的多守护进程协调** —— 一个守护进程可以托管多个已注册的工作区运行时，但守护进程之间不会协调。实例路径 token 键控 + 过期 token 清理推迟至 v0.16.x。
-- **通用守护进程 token 存储** —— Local Control 使用可撤销的守护进程所有的配对 token，但长期运行时 token 存储仍为自带 token。持久化 token 存储基础设施推迟至 v0.16.x。
+- **容器和反向代理** —— 本页仅提供本地服务管理器模板。有关监听器、浏览器来源和证书要求，参见 [Remote Web Shell and phone access](./qwen-serve.md#remote-web-shell-and-phone-access) 和 [HTTPS / TLS](./qwen-serve.md#https--tls-for-mobile--cross-device-access)。多租户部署需要外部编排器，为独立的安全主体运行单独的守护进程。
+- **跨主机联邦 / 多守护进程协调** —— 一个守护进程可以托管多个已注册的工作区运行时，但守护进程之间不会协调会话状态。
 - **Windows 原生服务**（`nssm`、服务控制管理器包装器）—— 目前请使用 [WSL2](https://learn.microsoft.com/en-us/windows/wsl/) 并参考上面的 systemd 章节。
 
-请参阅主用户指南中的 [v0.16-alpha 已知限制](./qwen-serve.md#v016-alpha-known-limits) 提醒，了解完整的推迟功能列表，以及 [#4175](https://github.com/QwenLM/qwen-code/issues/4175) 了解 v0.16-alpha 发布跟踪问题。
+参见主用户指南中的[部署和安全说明](./qwen-serve.md#deployment-and-security-notes)以及[身份验证](./qwen-serve.md#authentication)，了解当前的安全模型和 token 选项。

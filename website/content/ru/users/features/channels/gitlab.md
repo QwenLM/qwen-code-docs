@@ -104,7 +104,7 @@ export GITLAB_TOKEN="glpat-your_token_here"
 
 | Переменная      | Значение                                |
 | --------------- | --------------------------------------- |
-| `%project%`     | Путь проекта (например, `owner/repo`)   |
+| `%project%`     | Путь проекта (например, `group/project` или `group/subgroup/project` для проекта в подгруппе) |
 | `%project_url%` | Полный URL проекта                      |
 | `%author%`      | Имя пользователя автора todo            |
 | `%target_type%` | `Issue` или `MergeRequest`              |
@@ -123,7 +123,7 @@ export GITLAB_TOKEN="glpat-your_token_here"
 ```
 [alice] please fix this bug
 
-Project: owner/repo | URL: https://gitlab.com/owner/repo | Author: alice | Type: Issue | IID: 42 | Title: Test Issue | Description: ... | TodoID: 100
+Project: group/project | URL: https://gitlab.com/group/project | Author: alice | Type: Issue | IID: 42 | Title: Test Issue | Description: ... | TodoID: 100
 ```
 
 - Строка 1: префикс `[sender]` + `envelope.text` (с удалённым `@bot`)
@@ -139,7 +139,7 @@ Project: owner/repo | URL: https://gitlab.com/owner/repo | Author: alice | Type:
 
 Весь трафик GitLab — это групповой трафик. Участники группы по умолчанию имеют политику `open`; установите `groups["*"].senders` в `allowlist` и заполните `allowedUsers` для ограничения авторов. Приватная политика и сопряжение пользователей никогда не ограничивают участников репозитория. Укажите `operators` явно для управления общими сессиями.
 
-Обратите внимание, что при `groupPolicy: "pairing"` доступ предоставляется для каждого проекта: после одобрения проекта **любой пользователь GitLab** может по умолчанию управлять ботом через issues и merge requests этого проекта. Весь трафик GitLab — это групповой трафик, поэтому `privatePolicy` и `allowedUsers` верхнего уровня не ограничивают участников одобренного проекта; установите `senders: "allowlist"` с `allowedUsers` в записи `groups` этого проекта для сужения доступа. Одобрения привязаны к пути проекта (`owner/repo`), который меняется при переименовании или переносе — отзовите устаревшие групповые одобрения после любого переименования, переноса или удаления проекта.
+Обратите внимание, что при `groupPolicy: "pairing"` доступ предоставляется для каждого проекта: после одобрения проекта **любой пользователь GitLab** может по умолчанию управлять ботом через issues и merge requests этого проекта. Весь трафик GitLab — это групповой трафик, поэтому `privatePolicy` и `allowedUsers` верхнего уровня не ограничивают участников одобренного проекта; установите `senders: "allowlist"` с `allowedUsers` в записи `groups` этого проекта для сужения доступа. Одобрения привязаны к пути проекта (`group/project`), который меняется при переименовании или переносе — отзовите устаревшие групповые одобрения после любого переименования, переноса или удаления проекта. Ключи групп сопоставляются без учёта регистра (маршрутизация GitLab не чувствительна к регистру), поэтому настроенный `group/project` также соответствует каноническому написанию `Group/Project`, возвращаемому API.
 
 ## Обнаружение упоминаний
 

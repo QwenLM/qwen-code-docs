@@ -104,7 +104,7 @@ export GITLAB_TOKEN="glpat-your_token_here"
 
 | 変数            | 値                                |
 | --------------- | --------------------------------- |
-| `%project%`     | プロジェクトパス（例: `owner/repo`） |
+| `%project%`     | プロジェクトパス（例: `group/project`、またはサブグループ内のプロジェクトの場合は `group/subgroup/project`） |
 | `%project_url%` | プロジェクトの完全な URL          |
 | `%author%`      | Todo の作成者ユーザー名           |
 | `%target_type%` | `Issue` または `MergeRequest`     |
@@ -123,7 +123,7 @@ export GITLAB_TOKEN="glpat-your_token_here"
 ```
 [alice] please fix this bug
 
-Project: owner/repo | URL: https://gitlab.com/owner/repo | Author: alice | Type: Issue | IID: 42 | Title: Test Issue | Description: ... | TodoID: 100
+Project: group/project | URL: https://gitlab.com/group/project | Author: alice | Type: Issue | IID: 42 | Title: Test Issue | Description: ... | TodoID: 100
 ```
 
 - 1行目: `[sender]` プレフィックス + `envelope.text`（`@bot` を除去済み）
@@ -139,7 +139,7 @@ Project: owner/repo | URL: https://gitlab.com/owner/repo | Author: alice | Type:
 
 すべての GitLab トラフィックはグループトラフィックです。グループメンバーのデフォルトは `open` です。`groups["*"].senders` を `allowlist` に設定し、`allowedUsers` を入力して作成者を制限してください。プライベートポリシーとユーザーペアリングはリポジトリメンバーを制限しません。共有セッション管理のため `operators` を明示的に設定してください。
 
-`groupPolicy: "pairing"` では、アクセスはプロジェクトごとに付与されます。プロジェクトが承認されると、**任意の GitLab ユーザー**がデフォルトでそのプロジェクトの issue や merge request を通じてボットを操作できます。すべての GitLab トラフィックはグループトラフィックであるため、`privatePolicy` とトップレベルの `allowedUsers` は承認済みプロジェクトのメンバーを制限しません。そのプロジェクトの `groups` エントリーで `senders: "allowlist"` と `allowedUsers` を設定して絞り込んでください。承認はプロジェクトパス（`owner/repo`）でキー付けされており、リネームや移転で変更されるため、プロジェクトのリネーム、移転、削除後は古いグループ承認を取り消してください。
+`groupPolicy: "pairing"` では、アクセスはプロジェクトごとに付与されます。プロジェクトが承認されると、**任意の GitLab ユーザー**がデフォルトでそのプロジェクトの issue や merge request を通じてボットを操作できます。すべての GitLab トラフィックはグループトラフィックであるため、`privatePolicy` とトップレベルの `allowedUsers` は承認済みプロジェクトのメンバーを制限しません。そのプロジェクトの `groups` エントリーで `senders: "allowlist"` と `allowedUsers` を設定して絞り込んでください。承認はプロジェクトパス（`group/project`）でキー付けされており、リネームや移転で変更されるため、プロジェクトのリネーム、移転、削除後は古いグループ承認を取り消してください。
 
 ## メンションの検出
 

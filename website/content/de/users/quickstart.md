@@ -4,11 +4,11 @@
 
 Diese Schnellstart-Anleitung bringt dich in nur wenigen Minuten dazu, KI-gestützte Code-Unterstützung zu nutzen. Am Ende wirst du verstehen, wie du Qwen Code für typische Entwicklungsaufgaben einsetzt.
 
-## **Bevor Sie beginnen**
+## **Bevor du beginnst**
 
 Stelle sicher, dass du Folgendes hast:
 
-- Ein Terminal oder eine Eingabeaufforderung ist geöffnet
+- Ein offenes Terminal oder eine Eingabeaufforderung
 - Ein Code-Projekt, mit dem du arbeiten kannst
 - **Eines der Folgenden**:
   - Ein Qwen-Konto mit einem **Plus- oder Pro-Abo** von [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli), das den Zugriff auf **Qwen Code und Agent** freischaltet
@@ -70,19 +70,19 @@ qwen
 /auth
 ```
 
-Das Menü beim ersten Start ermöglicht es Ihnen, einen Modellanbieter zu verbinden. Wählen Sie eines der Folgenden:
+Das Menü beim ersten Start ermöglicht es dir, einen Modellanbieter zu verbinden. Wähle eines der Folgenden:
 
-- [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) — Melden Sie sich mit Ihrem Qwen-Konto an, um über Ihr **Plus- oder Pro-Abo** auf **Qwen Code and Agent** zuzugreifen. Wenn Sie noch kein Abo haben, besuchen Sie [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli), um Plus oder Pro abzuschließen, kehren Sie dann zu Qwen Code zurück und wählen Sie [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli).
+- [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) — Melde dich mit deinem Qwen-Konto an, um über dein **Plus- oder Pro-Abo** auf **Qwen Code and Agent** zuzugreifen. Wenn du noch kein Abo hast, besuche [**chat.qwen.ai**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli), um Plus oder Pro abzuschließen, kehre dann zu Qwen Code zurück und wähle [**Qwen Account with Subscription**](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli).
 - **QwenCloud** — die empfohlene Einrichtung. Öffnet ein Untermenü:
   - **Token Plan**: Abo mit monatlichem Kreditkontingent auf einem dedizierten Endpunkt (Personal- und Team-Editionen).
   - **Standard API Key**: Pay-as-you-go, Verbindung mit einem vorhandenen Plattform-API-Schlüssel.
 
-  In beiden Fällen wählen Sie anschließend die Plattform explizit aus (China oder International), sodass die UI-Sprache nie Ihren Endpunkt bestimmt. Details finden Sie unter [Authentication → Option 2: QwenCloud](./configuration/auth).
+  In beiden Fällen wählst du anschließend die Plattform explizit aus (China oder International), sodass die UI-Sprache nie deinen Endpunkt bestimmt. Details findest du unter [Authentication → Option 2: QwenCloud](./configuration/auth).
 
 - **Alibaba ModelStudio** — öffnet ein Untermenü:
-  - **Coding Plan**: Verbindung mit einem Alibaba Cloud Coding Plan API-Schlüssel. Siehe [Authentication](./configuration/auth.md#-option-3-alibaba-cloud-coding-plan) für die Einrichtung.
+  - **Coding Plan**: Verbinde mit einem Alibaba Cloud Coding Plan API-Schlüssel. Siehe [Authentication](./configuration/auth.md#-option-3-alibaba-cloud-coding-plan) für die Einrichtung.
   - **Token Plan**: nutzungsbasierte Abrechnung mit einem dedizierten Endpunkt, gedacht für Teams und Unternehmen. Siehe den [Token Plan Guide](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=3028856) ([intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model)) für Einrichtungsanweisungen.
-  - **Standard API Key**: Verbinde einen vorhandenen API-Key von Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)). Siehe den API-Einrichtungsleitfaden ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)) für Details.
+  - **Standard API Key**: Verbinde mit einem vorhandenen API-Key von Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)). Siehe den API-Einrichtungsleitfaden ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)) für Details.
 - **Drittanbieter** – Wähle einen integrierten Anbieter (DeepSeek, Grok, MiniMax, Z.AI, Kimi, Idealab, ModelScope, OpenRouter, Requesty und weitere) und verbinde ihn mit einem API-Key.
 - **Eigener Anbieter** – Verbinde manuell einen lokalen Server, Proxy oder nicht unterstützten Anbieter.
 
@@ -94,9 +94,9 @@ Das Menü beim ersten Start ermöglicht es Ihnen, einen Modellanbieter zu verbin
 >
 > Um die Authentifizierung zu konfigurieren, starte Qwen Code und führe `/auth` aus. Mit `/doctor` kannst du jederzeit deine aktuelle Konfiguration überprüfen. Weitere Details findest du auf der Seite [Authentifizierung](./configuration/auth).
 
-## Schritt 3: Starten Sie Ihre erste Sitzung
+## Schritt 3: Starte deine erste Sitzung
 
-Öffnen Sie Ihr Terminal in einem beliebigen Projektverzeichnis und starten Sie Qwen Code:
+Öffne dein Terminal in einem beliebigen Projektverzeichnis und starte Qwen Code:
 
 ```bash
 # optional
@@ -109,15 +109,15 @@ Du siehst den Qwen Code-Willkommensbildschirm mit deinen Sitzungsinformationen, 
 
 ## Chatten mit Qwen Code
 
-### Stellen Sie Ihre erste Frage
+### Stelle deine erste Frage
 
-Qwen Code analysiert Ihre Dateien und stellt eine Zusammenfassung bereit. Sie können auch spezifischere Fragen stellen:
+Qwen Code analysiert deine Dateien und stellt eine Zusammenfassung bereit. Du kannst auch spezifischere Fragen stellen:
 
 ```
 explain the folder structure
 ```
 
-Sie können Qwen Code auch nach seinen eigenen Fähigkeiten befragen:
+Du kannst Qwen Code auch nach seinen eigenen Fähigkeiten fragen:
 
 ```
 what can Qwen Code do?
@@ -125,11 +125,11 @@ what can Qwen Code do?
 
 > [!note]
 >
-> Qwen Code liest Ihre Dateien bei Bedarf – Sie müssen den Kontext nicht manuell hinzufügen. Qwen Code hat auch Zugriff auf seine eigene Dokumentation und kann Fragen zu seinen Funktionen und Fähigkeiten beantworten.
+> Qwen Code liest deine Dateien bei Bedarf – du musst den Kontext nicht manuell hinzufügen. Qwen Code hat auch Zugriff auf seine eigene Dokumentation und kann Fragen zu seinen Funktionen und Fähigkeiten beantworten.
 
-### Führen Sie Ihre erste Codeänderung durch
+### Nimm deine erste Codeänderung vor
 
-Lassen Sie uns nun Qwen Code tatsächliche Codierungsaufgaben durchführen lassen. Versuchen Sie eine einfache Aufgabe:
+Lass uns nun Qwen Code tatsächliche Codierungsaufgaben durchführen lassen. Versuche eine einfache Aufgabe:
 
 ```
 add a hello world function to the main file
@@ -138,13 +138,13 @@ add a hello world function to the main file
 Qwen Code wird:
 
 1. Die geeignete Datei finden
-2. Ihnen die vorgeschlagenen Änderungen anzeigen
-3. Um Ihre Genehmigung bitten
+2. Dir die vorgeschlagenen Änderungen anzeigen
+3. Um deine Genehmigung bitten
 4. Die Änderung vornehmen
 
 > [!note]
 >
-> Qwen Code bittet immer um Erlaubnis, bevor Dateien geändert werden. Sie können einzelne Änderungen genehmigen oder den Modus "Alle akzeptieren" für eine Sitzung aktivieren.
+> Qwen Code bittet immer um Erlaubnis, bevor Dateien geändert werden. Du kannst einzelne Änderungen genehmigen oder den Modus "Alle akzeptieren" für eine Sitzung aktivieren.
 
 ### Git mit Qwen Code verwenden
 
@@ -158,7 +158,7 @@ what files have I changed?
 commit my changes with a descriptive message
 ```
 
-Sie können auch komplexere Git-Operationen anfordern:
+Du kannst auch komplexere Git-Operationen anfordern:
 
 ```
 create a new branch called feature/quickstart
@@ -176,13 +176,13 @@ help me resolve merge conflicts
 
 Qwen Code ist im Debugging und bei der Funktionsimplementierung sehr kompetent.
 
-Beschreiben Sie, was Sie möchten, in natürlicher Sprache:
+Beschreibe, was du möchtest, in natürlicher Sprache:
 
 ```
 add input validation to the user registration form
 ```
 
-Oder beheben Sie vorhandene Probleme:
+Oder behebe vorhandene Probleme:
 
 ```
 there's a bug where users can submit empty forms - fix it
@@ -225,7 +225,7 @@ review my changes and suggest improvements
 
 > [!tip]
 >
-> **Merken**: Qwen Code ist Ihr KI-Pair-Programmierer. Sprechen Sie mit ihm wie mit einem hilfsbereiten Kollegen – beschreiben Sie, was Sie erreichen möchten, und es hilft Ihnen dabei.
+> **Merken**: Qwen Code ist dein KI-Pair-Programmierer. Sprich mit ihm wie mit einem hilfsbereiten Kollegen – beschreibe, was du erreichen möchtest, und es hilft dir dabei.
 
 ## Wichtige Befehle
 
@@ -249,14 +249,14 @@ Eine vollständige Liste der Befehle findest du in der [CLI-Referenz](./features
 
 ## Profi-Tipps für Anfänger
 
-**Seien Sie spezifisch bei Ihren Anfragen**
+**Sei spezifisch bei deinen Anfragen**
 
 - Statt: "den Fehler beheben"
-- Versuchen Sie: "beheben Sie den Login-Fehler, bei dem Benutzer nach Eingabe falscher Anmeldedaten einen leeren Bildschirm sehen"
+- Versuche: "behebe den Login-Fehler, bei dem Benutzer nach Eingabe falscher Anmeldedaten einen leeren Bildschirm sehen"
 
-**Verwenden Sie schrittweise Anweisungen**
+**Verwende schrittweise Anweisungen**
 
-- Teilen Sie komplexe Aufgaben in Schritte auf:
+- Teile komplexe Aufgaben in Schritte auf:
 
 ```
 1. create a new database table for user profiles
@@ -264,9 +264,9 @@ Eine vollständige Liste der Befehle findest du in der [CLI-Referenz](./features
 3. build a webpage that allows users to see and edit their information
 ```
 
-**Lassen Sie Qwen Code zuerst erkunden**
+**Lass Qwen Code zuerst erkunden**
 
-- Bevor Sie Änderungen vornehmen, lassen Sie Qwen Code Ihren Code verstehen:
+- Bevor du Änderungen vornimmst, lass Qwen Code deinen Code verstehen:
 
 ```
 analyze the database schema
@@ -276,7 +276,7 @@ analyze the database schema
 build a dashboard showing products that are most frequently returned by our UK customers
 ```
 
-**Sparen Sie Zeit mit Shortcuts**
+**Spare Zeit mit Shortcuts**
 
 - Drücke `?`, um alle verfügbaren Tastenkombinationen zu sehen
 - Verwende Tab für die Befehlsvervollständigung

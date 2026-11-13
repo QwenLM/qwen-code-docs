@@ -80,6 +80,8 @@ qwen batch cancel <task-id>              # partial results are still billed
 qwen batch clean <task-id>               # delete the local record (cancels nothing)
 ```
 
+`check` 报告从所选模型设置中冻结的输出上限，包括 `max_tokens`、`max_completion_tokens` 和 `max_new_tokens`。未设置输出上限时报告 `provider default`。计划的 `maxOutputTokens` 可以在单次运行时覆盖该上限。
+
 `collect` 将每个项目报告为：
 
 - **delivered** — 已写入目标位置；
@@ -99,6 +101,8 @@ qwen batch clean <task-id>               # delete the local record (cancels noth
 - 远程清理失败不会阻止 `retry`、`cancel` 或 `clean`；后续的 `collect` 会重试它。提供商无法完整提供（一次重新下载后）或已不再拥有的结果文件会导致受影响的项目失败，而不是让任务卡住。
 - 当批处理可能仍在运行或持有未收集的结果时，`clean` 会拒绝，除非你传递 `--force`。
 - 目标必须保持在项目内且在任何隐藏路径之外（`.git/`、`.github/`、`.qwen/` 等，任意深度）：结果会在你批准计划后数小时写入。预览会列出目标目录。
+
+`check` 报告从所选模型设置中冻结的输出上限，包括 `max_tokens`、`max_completion_tokens` 和 `max_new_tokens`。未设置输出上限时报告 `provider default`。计划的 `maxOutputTokens` 可以在单次运行时覆盖该上限。
 
 设计文档：[`docs/design/2026-09-23-batch-api-design.md`](../../design/2026-09-23-batch-api-design.md)。
 离线端到端检查（伪造的 Batch API，真实的已构建 CLI）位于 [`docs/verification/batch-api/`](../../verification/batch-api/README.md)。

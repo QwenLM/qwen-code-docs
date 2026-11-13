@@ -41,4 +41,5 @@ export default {
   'mem0': 'Mem0',
   'autofix-pr': 'Autofix a Pull Request',
   'file-changed-hooks': 'FileChanged hooks',
+  'session-overview': 'Session Overview',
 };

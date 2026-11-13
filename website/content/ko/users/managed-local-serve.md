@@ -59,12 +59,12 @@ Java는 JAR 다운로드 전에 설치/구성 오류를 발생시키며, Qwen은
 점유된 공개 포트는 일반 데몬의 유계된 근접 포트 재시도를 따릅니다. 런처가 출력한 브라우저 주소를 사용하십시오.
 
 이 하나의 명령으로 일반 데몬과 Managed Agent가 모두 시작됩니다. 동일한
-WebShell은 일반 및 Managed 워크스페이스와 세션을 Projects 아래에 함께 나열하며, Managed 워크스페이스에는 Managed 라벨이 표시되고 실행 모드 탭은 없습니다. 새 작업은 선택한 워크스페이스나 대화를 따릅니다. 로컬 세션은 명령을 실행한 디렉토리를 사용하고, Managed 세션은 애플리케이션이 생성한 Workspaces 또는 명시적으로 가져온 로컬 프로젝트를 사용합니다. 둘 다 동일한 인증된 브라우저 origin을 사용하므로
+WebShell은 일반 및 Managed 워크스페이스와 세션을 Workspaces 아래에 함께 나열하며, Managed 워크스페이스에는 Managed 라벨이 표시되고 실행 모드 탭은 없습니다. 새 세션은 선택한 워크스페이스나 대화를 따릅니다. 로컬 세션은 명령을 실행한 디렉토리를 사용하고, Managed 세션은 애플리케이션이 생성한 Workspaces 또는 명시적으로 가져온 로컬 프로젝트를 사용합니다. 둘 다 동일한 인증된 브라우저 origin을 사용하므로
 두 번째 데몬 명령이나 브라우저 페이지가 필요하지 않습니다.
 
 **Add workspace**에서 제출하기 전에 **Local (daemon)** 또는 **Managed (Managed Agent)**를
 선택하십시오. 선택은 기본적으로 현재 대화의 서비스로 설정됩니다.
-워크스페이스 행과 **New task**는 해당 서비스를 표시하며, 새 작업은 선택한 워크스페이스를 상속합니다. 데몬의 기존 SSH 워크스페이스 지원은 계속 사용 가능하며, Managed SSH 등록은 이 공유 대화 상자에 통합되지 않습니다.
+워크스페이스 행과 **New session**은 해당 서비스를 표시하며, 새 세션은 선택한 워크스페이스를 상속합니다. 데몬의 기존 SSH 워크스페이스 지원은 계속 사용 가능하며, Managed SSH 등록은 이 공유 대화 상자에 통합되지 않습니다.
 
 터미널은 토큰 프래그먼트가 포함된 브라우저 URL을 출력합니다. 이를 로컬 비밀번호로 취급하십시오. 브라우저는 토큰을 사용하여 모든 API 요청을 인증하며, Java 서명 키와 내부 자격 증명은 브라우저에 전달되지 않습니다. 리스너는 루프백 전용입니다. 헤드리스 머신의 경우 `--open`을 생략하고 해당 머신에서 출력된 URL을 열거나 직접 관리하는 인증된 터널을 사용하십시오.
 
@@ -87,9 +87,11 @@ qwen serve --managed --managed-data-dir /absolute/private/data --open
 디렉토리는 모든 Git worktree 외부에 있어야 합니다. 한 번에 하나의 런처만 사용할 수 있으며, Java도 배타적인 데이터베이스 파일 잠금을 유지합니다. 개인 서비스 포트와 자격 증명은 재시작 시에도 안정적으로 유지됩니다. 다른 애플리케이션이 점유한 개인 포트는 시작 실패를 유발합니다. 지속된 사실을 편집하기보다는 다른 새로운 데이터 디렉토리를 선택하거나 충돌하는 서비스를 중지하십시오.
 
 시작 시 기존 멱등 Workspace API를 통해 애플리케이션 소유의 기본 워크스페이스와 OWNER 권한이 생성됩니다. 기존 로컬 프로젝트를 사용하려면
-**Workspace → Choose existing directory**를 열고 절대 경로를 탐색하거나 입력한 후 폴더를 추가하십시오. 서비스가 부모를 등록하고 OWNER 접근 권한을 자동으로 부여하며 기존 파일을 그대로 유지합니다. 새 작업은 선택한 프로젝트에서 시작됩니다. 빈 워크스페이스를 생성할 수도 있습니다.
+**Workspace → Choose existing directory**를 열고 절대 경로를 탐색하거나 입력한 후 폴더를 추가하십시오. 서비스가 OWNER 접근 권한을 부여하고 기존 파일을 그대로 유지합니다. 새 작업은 선택한 프로젝트에서 시작됩니다. 새 가져오기는 공유되는 외부 디렉토리입니다: 독립적인 로컬 설치는 부모를 전송하거나 기존 전역 스토리지 마커를 교체하지 않고도 동일한 프로젝트를 가져올 수 있습니다. 부모는 각 설치 내에서 공유 탐색 및 worktree 레이아웃 경계로 남습니다. 빈 워크스페이스를 생성할 수도 있습니다.
 
-시작 디렉토리는 로컬 세션에서 계속 사용 가능하며 자동으로 가져오지지 않습니다. `--workspace`는 Managed 로컬 모드에서 지원되지 않습니다. UI에서 프로젝트를 선택하십시오. `.qwen-managed-storage.json` 유지 관리 마커는 Git worktree 외부에 유지됩니다. 편집, 삭제, 스태시 또는 커밋하지 마십시오. 가져온 프로젝트 파일은 개인 Managed 데이터 디렉토리 외부에 유지되며 자체 백업이 필요합니다.
+시작 디렉토리는 로컬 세션에서 계속 사용 가능하며 자동으로 가져오지지 않습니다. `--workspace`는 Managed 로컬 모드에서 지원되지 않습니다. UI에서 프로젝트를 선택하십시오. 새 가져오기 메타데이터는 `runtime/imported-projects/<storage ID>/.qwen-managed-storage.json` 아래에서 설치에 비공개이며, 완전한 Managed 데이터 디렉토리와 함께 보존하십시오. 기존 가져오기 및 애플리케이션 소유 스토리지는 이전 마커 계약을 유지합니다. 해당 마커를 편집, 삭제, 스태시 또는 커밋하지 마십시오. 가져온 프로젝트 파일은 개인 Managed 데이터 디렉토리 외부에 유지되며 자체 백업이 필요합니다.
+
+공유 프로젝트는 독립 터미널과 동일한 편집 충돌을 허용합니다. 편집을 격리하려면 독립 worktree를 사용하십시오. 전체 스토리지 마이그레이션, 물리적 복구 및 배타적 파일 기록 되감기는 새로운 공유 가져오기에 사용할 수 없습니다. 이 설치의 자체 런타임 프로세스 복구는 계속 사용할 수 있습니다. 이전 가져오기는 자동으로 변환되지 않습니다. [공유 프로젝트 디자인](../design/2026-10-28-managed-local-shared-projects.md)을 참조하십시오.
 
 로컬 세션 기록은 계속 일반 Qwen 스토리지를 사용합니다. Managed 데이터 디렉토리와 분리되어 있으며 Managed 전용 백업에 포함되지 않습니다.
 
@@ -111,19 +113,19 @@ mvn -f packages/sdk-java/qwencode/pom.xml -DskipTests -Dgpg.skip=true install
 mvn -f packages/managed-agent-server/pom.xml verify
 npm run package:managed-runtime -- \
   --target darwin-arm64 \
-  --server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha.jar \
+  --server-jar packages/managed-agent-server/server/target/qwen-managed-agent-server-0.1.0-alpha-exec.jar \
   --jre-home /verified/java-21-home \
   --out-dir /output/managed-runtime
 ```
 
-런타임 빌더는 이 체크아웃의 일치하는 서버 JAR, Java 런타임 및 CLI 버전만 필요로 합니다. 빌드된 CLI 자산이나 Node 아카이브가 필요하지 않습니다. 기본적으로 CLI의 `dist/` 자산 외부인 `packages/managed-agent-server/target/managed-runtime`에 씁니다. 런타임 아카이브와 아카이브별 `.sha256` 파일을 생성합니다. 일반 CLI는 별도로 빌드/릴리스됩니다.
+런타임 빌더는 이 체크아웃의 일치하는 서버 JAR, Java 런타임 및 CLI 버전만 필요로 합니다. 빌드된 CLI 자산이나 Node 아카이브가 필요하지 않습니다. 기본적으로 CLI의 `dist/` 자산 외부인 `packages/managed-agent-server/server/target/managed-runtime`에 씁니다. 런타임 아카이브와 아카이브별 `.sha256` 파일을 생성합니다. 일반 CLI는 별도로 빌드/릴리스됩니다.
 
 경량 런타임은 `--jre-home` 대신 `--without-jre`를 사용하여 동일한 서버 JAR로 빌드하십시오:
 
 ```sh
 npm run package:managed-runtime -- \
   --target darwin-arm64 \
-  --server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha.jar \
+  --server-jar packages/managed-agent-server/server/target/qwen-managed-agent-server-0.1.0-alpha-exec.jar \
   --without-jre \
   --out-dir /output/managed-runtime
 ```
@@ -134,7 +136,7 @@ npm run package:managed-runtime -- \
 npm run package:standalone -- \
   --target darwin-arm64 \
   --node-archive /verified/node-v22-darwin-arm64.tar.gz \
-  --managed-server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha.jar \
+  --managed-server-jar packages/managed-agent-server/server/target/qwen-managed-agent-server-0.1.0-alpha-exec.jar \
   --managed-jre-home /verified/java-21-home \
   --out-dir /output/managed-local
 ```
@@ -149,7 +151,7 @@ npm run package:standalone -- \
 
 `Release Managed server runtime` 워크플로는 이미 게시된 CLI 릴리스 태그에서 빌드되며, 해당 소스 수정의 SDK와 서버를 사용합니다. 수동 실행은 `main`에서 디스패치되어야 하며 기본값은 모의 실행입니다. CLI와 Java 모듈을 검증하고, `central-release` 프로필을 빌드하며, JAR과 체크섬을 워크플로 아티팩트로 유지하면서 공개 저장소를 변경하지 않습니다.
 
-모의 실행을 검증한 후, 릴리스 운영자는 보호된 `production-release` 환경을 통해 `dry_run=false`로 동일한 태그를 실행할 수 있습니다. 워크플로는 서버 아티팩트 버전을 CLI 버전으로 설정하고, 소스, Javadoc 및 서명과 함께 `com.alibaba:qwen-managed-agent-server:<cli-version>`를 Maven Central에 게시하며, 동일한 기본 JAR과 `.sha256`을 해당 GitHub Release 및 기존 버전 OSS 미러를 통해 배포합니다. 보조 운영자 JAR은 Central 게시에 첨부되지 않습니다. 기존 자산은 바이트 단위로 비교되며 다른 내용으로 교체되지 않습니다. 게시된 CLI 릴리스 이벤트도 이 워크플로를 자동으로 실행합니다.
+모의 실행을 검증한 후, 릴리스 운영자는 보호된 `production-release` 환경을 통해 `dry_run=false`로 동일한 태그를 실행할 수 있습니다. 워크플로는 서버 아티팩트 버전을 CLI 버전으로 설정하고, 검증된 실행 가능한 JAR과 `.sha256`을 해당 GitHub Release 및 기존 버전 OSS 미러를 통해 게시하며, 스테이징된 바이트에 대해 두 공개 다운로드 채널을 모두 확인합니다. 기존 자산은 바이트 단위로 비교되며 다른 내용으로 교체되지 않습니다. 게시된 CLI 릴리스 이벤트도 이 워크플로를 자동으로 실행합니다.
 
 CLI는 Maven Central이 아닌 OSS/GitHub에서 다운로드합니다. SDK를 별도의 사용자 종속성으로 해결하지 않습니다. 실행 가능한 서버 JAR에 Java 종속성이 포함되어 있습니다. 런타임 자산은 첫 사용 다운로드가 성공하기 전에 정확한 CLI 릴리스에 대해 존재해야 합니다. 이 PR의 로컬 검증은 해당 자산을 게시하거나 프로덕션 릴리스 환경을 우회하지 않습니다.
 

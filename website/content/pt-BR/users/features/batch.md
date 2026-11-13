@@ -80,6 +80,8 @@ qwen batch cancel <task-id>              # partial results are still billed
 qwen batch clean <task-id>               # delete the local record (cancels nothing)
 ```
 
+`check` relata o limite de saída congelado das configurações do modelo selecionado, incluindo `max_tokens`, `max_completion_tokens` e `max_new_tokens`. Ele relata `provider default` quando nenhum limite de saída está definido. O `maxOutputTokens` de um plano pode sobrescrever esse limite para uma execução.
+
 `collect` relata cada item como:
 
 - **delivered** — escrito em seu destino;

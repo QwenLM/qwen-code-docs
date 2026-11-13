@@ -15,11 +15,17 @@ Qwen Code の LSP サポートは、コードを理解する言語サーバー�
 
 ## クイックスタート
 
-LSP は Qwen Code の実験的機能です。有効にするには、`--experimental-lsp` コマンドラインフラグを使用します：
+LSP は Qwen Code の実験的機能です。有効にするには、ユーザーの `settings.json` で `tools.lspEnabled` を設定します：
 
-```bash
-qwen --experimental-lsp
+```json
+{
+  "tools": {
+    "lspEnabled": true
+  }
+}
 ```
+
+コマンドラインフラグを受け付けるホストでは、代わりに `--experimental-lsp` を使用できます — 両者は同等であり、`QWEN_CODE_ENABLE_LSP=1` / `QWEN_CODE_DISABLE_LSP=1` が両方をオーバーライドします（無効が優先）。これらの 2 つの変数を設定できるのは、オペレーターの環境またはホームスコープの `.env` のみです。プロジェクトの `.env` や `settings.env` の値はサイレントに無視されます。この設定は起動時にのみ読み込まれるため、変更には再起動が必要です。ユーザー、システム、システムデフォルトのスコープから尊重されますが、ワークスペースの `.qwen/settings.json` からは決して尊重されません。これは、有効にするとセッションが自身の権限で言語サーバーを生成できるようになるためです。LSP は、セーフモード（`--safe-mode` / `QWEN_CODE_SAFE_MODE=1`）、ベアモード、読み取り専用エージェントホスト、SSH ワークスペース、および暫定ワークスペースでは完全に拒否されます。これらのモードはサーバーを宣言するワークスペースの内容を信頼しないためです。サーバーの宣言はワークスペース/拡張機能の決定のままです。
 
 LSP サーバーは設定駆動型です。Qwen Code がそれらを起動するには、`.lsp.json`（または拡張機能経由）で定義する必要があります。
 
@@ -35,6 +41,7 @@ LSP サーバーは設定駆動型です。Qwen Code がそれらを起動する
 | Rust                 | rust-analyzer             | [インストールガイド](https://rust-analyzer.github.io/manual.html#installation)   |
 | C/C++                | clangd                    | パッケージマネージャー経由で LLVM/clangd をインストール                           |
 | Java                 | jdtls                     | JDTLS と JDK をインストール                                                       |
+| C#                   | roslyn-language-server     | `dotnet tool install --global roslyn-language-server --prerelease` (.NET 10+)  |
 
 ## 設定
 
@@ -99,6 +106,46 @@ LSP サーバーは設定駆動型です。Qwen Code がそれらを起動する
   }
 }
 ```
+
+### C#（Roslyn）の設定
+
+依存関係：
+
+- .NET 10 ランタイム以降（`dotnet --version`）。
+- `roslyn-language-server` グローバルツール：
+  `dotnet tool install --global roslyn-language-server --prerelease`。現在の前提条件とオプションについては
+  [Roslyn language server README](https://github.com/dotnet/roslyn/blob/main/src/LanguageServer/roslyn-language-server/README.md)
+  を参照してください。
+
+例：
+
+```json
+{
+  "csharp": {
+    "command": "roslyn-language-server",
+    "args": ["--stdio", "--autoLoadProjects"],
+    "extensionToLanguage": {
+      ".cs": "csharp"
+    }
+  }
+}
+```
+
+Windows では、グローバルツールは `%USERPROFILE%\.dotnet\tools` 下に `cmd` シムとしてインストールされます。Qwen Code はシェルなしでサーバーを起動するため、単独の `roslyn-language-server` は `where` で見つかりますが生成に失敗します。その場合はシェル形式を使用してください：
+
+```json
+{
+  "csharp": {
+    "command": "cmd",
+    "args": ["/c", "roslyn-language-server", "--stdio", "--autoLoadProjects"],
+    "extensionToLanguage": {
+      ".cs": "csharp"
+    }
+  }
+}
+```
+
+`%USERPROFILE%\.dotnet\tools\.store\roslyn-language-server\<version>\...` 下にある実際の実行ファイルへの絶対パスも同様に機能します。
 
 ### 設定オプション
 
@@ -340,10 +387,10 @@ Parameters:
 
 ### サーバーが起動しない
 
-1. **`--experimental-lsp` フラグを確認**：Qwen Code 起動時にフラグを使用していることを確認してください
+1. **LSP が有効になっていることを確認**：`tools.lspEnabled` 設定（ユーザー、システム、またはシステムデフォルトのスコープ）または `--experimental-lsp` フラグを使用します。`QWEN_CODE_ENABLE_LSP=1` / `QWEN_CODE_DISABLE_LSP=1` が両方をオーバーライドします（無効が優先）。セーフモード（`--safe-mode`、`QWEN_CODE_SAFE_MODE=1`）と `--bare` は LSP を拒否し、`/lsp` はそこでは登録されません
 2. **サーバーがインストールされているか確認**：コマンドを手動で実行（例：`clangd --version`）して確認してください
 3. **コマンドを確認**：サーバーバイナリがシステムの `PATH` にあるか、絶対パス（例：`/opt/llvm/bin/clangd`）で指定されている必要があります。ワークスペース外への相対パスはブロックされます
-4. **ワークスペースの信頼を確認**：LSP を使用するにはワークスペースが信頼されている必要があります（`/trust` を使用）
+4. **ワークスペースの信頼を確認**：ワークスペースで宣言されたサーバーは、明示的に信頼されたフォルダ内でのみ起動します。`security.folderTrust.enabled` を有効にし、`/trust` でフォルダを信頼するか、ワークスペースを信頼済みとして報告する IDE を接続してください。信頼されていないワークスペースの IDE 報告（VS Code 制限モード）も同様にスキップします。フォルダ信頼がオフで IDE 信頼もない場合、サーバーは受け入れられずスキップされます。IDE チェックは `.lsp.json` が変更されたときに再評価され、スキップは `--debug` ログにのみ `requires trusted workspace, skipping` として表示されます
 5. **ログを確認**：`--debug` フラグを付けて Qwen Code を起動し、デバッグログ内の LSP 関連エントリを検索してください（下記のデバッグセクションを参照）
 6. **プロセスを確認**：`ps aux | grep <サーバー名>` を実行してサーバープロセスが動作しているか確認してください
 
@@ -361,10 +408,10 @@ Parameters:
 
 ### デバッグ
 
-LSP に専用のデバッグフラグはありません。Qwen Code の通常のデバッグモードを LSP 機能フラグと一緒に使用します：
+LSP には専用のデバッグフラグはありません。設定（またはフラグ）を通じて LSP を有効にし、次に Qwen Code の通常のデバッグモードをオンにします：
 
 ```bash
-qwen --experimental-lsp --debug
+qwen --debug
 ```
 
 デバッグログはセッションのデバッグログディレクトリに書き込まれます。LSP 関連のエントリを確認するには：
@@ -453,18 +500,19 @@ ps aux | grep clangd   # または typescript-language-server、jdtls など
 
 ### Q: LSP を有効にするにはどうすればよいですか？
 
-Qwen Code 起動時に `--experimental-lsp` フラグを使用します：
+`tools.lspEnabled` 設定（ユーザー、システム、またはシステムデフォルトのスコープ）または `--experimental-lsp` フラグを使用します。`QWEN_CODE_ENABLE_LSP=1` と `QWEN_CODE_DISABLE_LSP=1` が両方をオーバーライドします（無効が優先）。ワークスペーススコープの値は無視されます。
 
-```bash
-qwen --experimental-lsp
+```jsonc
+// ~/.qwen/settings.json（ユーザー スコープ）
+{ "tools": { "lspEnabled": true } }
 ```
 
 ### Q: どの言語サーバーが実行されているかを確認するにはどうすればよいですか？
 
-LSP とデバッグモードを有効にして Qwen Code を起動します：
+LSP を有効にして（設定またはフラグ）、デバッグモードをオンにして Qwen Code を起動します：
 
 ```bash
-qwen --experimental-lsp --debug
+qwen --debug
 ```
 
 その後、`/status` で短いサマリー、`/lsp` でサーバーごとのステータスを確認するか、デバッグログを調べます：

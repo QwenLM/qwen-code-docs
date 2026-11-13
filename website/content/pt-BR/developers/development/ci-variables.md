@@ -87,6 +87,15 @@ metade do limite, no mínimo 1, então no pico o step executa o limite mais essa
 metade. Em runners hospedados pelo GitHub, essa suite da lane lateral executa
 com 2 workers.
 
+Cada execução do Vitest aplica o limite por conta própria. O step principal de teste de workspace do CI executa duas lanes ao mesmo tempo (`.github/scripts/ci/run-unit-test-lanes.sh`): a lane principal executa as suites da CLI e do core no limite, e a lane lateral executa as suites dos outros workspaces e `npm run test:scripts:unit` com metade do limite, no mínimo 1, então no pico o step executa o limite mais essa metade. Em runners hospedados pelo GitHub, as execuções do Vitest da lane lateral usam 2 workers.
+
+O step é executado em dois shards (`Linux unit tests (shard N/2)`), cada um passando `--shard=N/2` para cada uma dessas execuções do Vitest. Os shards também aplicam o limite por conta própria, então o pool vê até dois desses steps ao mesmo tempo. Eles instalam sem o build `prepare` e desempacotam a árvore que o `test_build` construiu uma vez. `Test (ubuntu-latest, Node 22.x)` passa somente quando o build e todos os shards passam.
+
+`test_build` é o único job que faz o build. Ele faz o build através de `scripts/ci-build-cache.mjs`: um pull request restaura o build que o push do commit base dele na `main` salvou (`key --at <base>`), com fallback para o build cacheado mais recente, e reconstrói somente os workspaces cujas entradas mudaram: os arquivos rastreados de um workspace exceto testes, os arquivos raiz, `patches/` e `scripts/` fora de `scripts/tests/`, e os workspaces dos quais ele depende. Um push para `main` sempre faz o build do zero e salva esse build. A chave do cache não carrega arquitetura de CPU: o pool rotulado como x64 inclui hosts ARM64, e a única saída específica de arquitetura, a biblioteca nativa opentui do bundle, é recopiada para o host após cada restauração e desempacotamento (`ci-build-cache.mjs host-assets`).
+
+Os shards de teste unitário, os dois shards de `Integration Tests (no-AK, shard N/2)` e os dois shards de smoke do web-shell desempacotam essa única árvore. `test_build` também executa as verificações que leem essa árvore, o closure do bundle fast-path de serve, as exportações de subpath do core e a verificação de freshness do schema de configurações, que o `Lint & Static` costumava construir.
+`Integration Tests (no-AK, No Sandbox)` passa somente quando o build e todos os shards de integração passam. Um pull request draft pula os shards de integração e o smoke do browser; marcá-lo como pronto para revisão inicia a execução que os inclui. Uma mudança confinada a `packages/managed-agent-server/` ou `packages/sdk-java/` (exceto os arquivos que as suites TypeScript leem) é classificada como `java_only`: `Lint & Static` executa seu payload mais as suites `scripts/tests` que nomeiam essas árvores, e as lanes de build e teste TypeScript pulam.
+
 ### Variáveis relacionadas fora da execução de testes
 
 `release.yml` também expõe `QWEN_RELEASE_STATIC_TIMEOUT_MINUTES` (padrão `60`,
@@ -94,4 +103,4 @@ controlando a lane de lint `quality_static`) e
 `QWEN_RELEASE_BUILD_TIMEOUT_MINUTES` (padrão `45`, controlando a lane de
 empacotamento `quality_build`). Como elas governam lint estático e builds de
 artefatos em vez de execução de testes, estão fora do escopo de execução de
-testes desta página.
+testes desta página. página.

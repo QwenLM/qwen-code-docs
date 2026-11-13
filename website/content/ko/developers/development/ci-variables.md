@@ -29,9 +29,15 @@ Vitest는 동일한 실행 내에서 실패한 테스트를 다시 실행합니�
 
 ### 자체 호스팅 runner의 Vitest worker cap
 
-`QWEN_CI_VITEST_MAX_WORKERS`는 아래 나열된 단계에서 Vitest 프로세스 수를 제한합니다(`VITEST_MAX_THREADS` / `VITEST_MAX_FORKS`, 대응되는 최솟값은 `1`로 강제됨). 이름이 `ecs-qwen-`으로 시작하는 예약된 자체 호스팅 runner에 적용됩니다. 이 변수는 메인 CI 워크스페이스 테스트 단계와 릴리스의 `workspace_tests` 및 `quality_scripts` 단계에서만 내보내집니다. CI 및 릴리스 워크플로에서 동일한 예약된 풀을 사용하는 다른 Vitest 통합 테스트는 이 변수를 사용하지 않고 자체 Vitest 제한을 사용합니다. web-shell E2E 스모크 테스트는 `ubuntu-latest`로 고정되어 있으므로 이 cap이 적용되지 않습니다. GitHub 호스팅 runner에서는 이 변수가 무시되고 Vitest가 자체 기본값을 사용합니다.
+`QWEN_CI_VITEST_MAX_WORKERS`는 아래 나열된 단계에서 Vitest 프로세스 수를 제한합니다(`VITEST_MAX_THREADS` / `VITEST_MAX_FORKS`, 대응되는 최솟값은 `1`로 강제됨). 이름이 `ecs-qwen-`으로 시작하는 예약된 자체 호스팅 runner에 적용됩니다. 이 변수는 메인 CI 워크스페이스 테스트 단계와 릴리스의 `workspace_tests` 및 `quality_scripts` 단계에서만 내보내집니다. CI 및 릴리스 워크플로에서 동일한 예약된 풀을 사용하는 다른 Vitest 통합 테스트는 이 변수를 사용하지 않고 자체 Vitest 제한을 사용합니다. web-shell E2E 스모크는 ARM64 풀에서 자체 Playwright worker 2개로 실행되므로 이 cap이 적용되지 않습니다. GitHub 호스팅 runner에서는 이 변수가 무시되고 Vitest가 자체 기본값을 사용합니다.
 
-각 Vitest 실행은 자체적으로 cap을 적용합니다. 메인 CI 워크스페이스 테스트 단계는 두 개의 레인을 동시에 실행합니다(`.github/scripts/ci/run-unit-test-lanes.sh`). cap은 메인 레인의 각 Vitest 실행에 적용되며, 사이드 레인의 web-shell 스위트는 cap의 절반(최소 1)으로 실행되므로, 피크 시 이 단계는 cap과 그 절반의 합만큼 실행됩니다. GitHub 호스팅 runner에서 사이드 레인 스위트는 2개의 worker로 실행됩니다.
+각 Vitest 실행은 자체적으로 cap을 적용합니다. 메인 CI 워크스페이스 테스트 단계는 두 개의 레인을 동시에 실행합니다(`.github/scripts/ci/run-unit-test-lanes.sh`): 메인 레인은 CLI와 코어 스위트를 cap으로 실행하고, 사이드 레인은 다른 워크스페이스의 스위트와 `npm run test:scripts:unit`을 cap의 절반(최소 1)으로 실행하므로, 피크 시 이 단계는 cap과 그 절반의 합만큼 실행됩니다. GitHub 호스팅 runner에서 사이드 레인의 Vitest 실행은 2개의 worker를 사용합니다.
+
+이 단계는 두 개의 샤드(`Linux unit tests (shard N/2)`)로 실행되며, 각 샤드는 모든 Vitest 실행에 `--shard=N/2`를 전달합니다. 샤드도 자체적으로 cap을 적용하므로, 풀에서는 최대 두 개의 이런 단계를 동시에 볼 수 있습니다. 이들은 `prepare` 빌드 없이 설치하며 `test_build`가 한 번 빌드한 트리를 풀어 사용합니다. `Test (ubuntu-latest, Node 22.x)`는 빌드와 모든 샤드가 통과될 때만 성공합니다.
+
+`test_build`는 유일하게 빌드를 수행하는 잡입니다. `scripts/ci-build-cache.mjs`를 통해 빌드합니다: pull request는 베이스 커밋의 `main` 푸시가 저장한 빌드를 복원하고(`key --at <base>`), 최신 캐시된 빌드로 폴백하며, 입력이 변경된 워크스페이스만 재빌드합니다: 워크스페이스의 추적 파일 중 테스트를 제외한 파일, 루트 파일, `scripts/tests/` 외부의 `patches/` 및 `scripts/`, 그리고 의존하는 워크스페이스입니다. `main`으로의 푸시는 항상 처음부터 빌드하고 해당 빌드를 저장합니다. 캐시 키에 CPU 아키텍처가 포함되지 않습니다: x64 레이블 풀에 ARM64 호스트가 포함되어 있으며, 아키텍처별 유일한 산출물인 번들의 opentui 네이티브 라이브러리는 복원 및 풀기 후마다 호스트용으로 다시 복사됩니다(`ci-build-cache.mjs host-assets`).
+
+단위 테스트 샤드, 두 개의 `Integration Tests (no-AK, shard N/2)` 샤드, 두 개의 web-shell 스모크 샤드 모두 이 단일 트리를 풀어 사용합니다. `test_build`는 이를 읽는 체크도 실행합니다: serve fast-path 번들 클로저, 코어 서브패스 익스포트, 설정 스키마 최신성 체크이며, 이는 이전에 `Lint & Static`이 빌드하던 것입니다. `Integration Tests (no-AK, No Sandbox)`는 빌드와 모든 통합 샤드가 통과될 때만 성공합니다. Draft pull request는 통합 샤드와 브라우저 스모크를 건너뛰며, ready for review로 표시하면 이들을 포함하는 실행이 시작됩니다. `packages/managed-agent-server/` 또는 `packages/sdk-java/`에만 국한된 변경(TypeScript 스위트가 읽는 파일 제외)은 `java_only`로 분류됩니다: `Lint & Static`은 해당 페이로드와 해당 트리를 명명하는 `scripts/tests` 스위트를 실행하고, TypeScript 빌드 및 테스트 레인은 건너뜁니다.
 
 ### 테스트 실행 외의 관련 변수
 

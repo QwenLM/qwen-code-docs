@@ -19,7 +19,7 @@ A [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code&entry=q
 | :--------------------------------------------------------------------------- | :---------------- | :----------------------------------------------------------------- | :----------------------------------------------------------------- |
 | [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) | Qwen AI           | [Termos de Serviço da Qwen](https://qwen.ai/termsservice)              | [Política de Privacidade da Qwen](https://qwen.ai/privacypolicy)               |
 | Alibaba Cloud Coding Plan                                                    | Alibaba Cloud     | Veja [detalhes abaixo](#2-if-you-are-using-alibaba-cloud-coding-plan) | Veja [detalhes abaixo](#2-if-you-are-using-alibaba-cloud-coding-plan) |
-| Chave de API                                                                 | Vários Provedores | Depende do provedor de API escolhido (OpenAI, Anthropic, etc.)    | Depende do provedor de API escolhido                              |
+| API Key                                                                                                            | Vários Provedores | Depende do provedor de API escolhido (OpenAI, Anthropic, etc.)    | Depende do provedor de API escolhido                              |
 | Vertex AI                                                                    | Google Cloud      | [Termos do Google Cloud](https://cloud.google.com/terms)               | [Privacidade do Google Cloud](https://cloud.google.com/privacy)           |
 
 ## 1. Se você estiver usando a [Conta Qwen com Assinatura](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli)

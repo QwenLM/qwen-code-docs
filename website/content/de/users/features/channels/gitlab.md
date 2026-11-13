@@ -104,7 +104,7 @@ Nur in `action_prompt_template` vorhandene Schlüssel werden verarbeitet. Nicht 
 
 | Variable        | Wert                               |
 | --------------- | ---------------------------------- |
-| `%project%`     | Projektpfad (z. B. `owner/repo`)   |
+| `%project%`     | Projektpfad (z. B. `group/project` oder `group/subgroup/project` für ein Projekt in einer Untergruppe) |
 | `%project_url%` | Vollständige Projekt-URL           |
 | `%author%`      | Todo-Autor-Benutzername            |
 | `%target_type%` | `Issue` oder `MergeRequest`        |
@@ -123,7 +123,7 @@ Das Template wird in `envelope.metadata` gerendert (strukturierter Kontext). Der
 ```
 [alice] please fix this bug
 
-Project: owner/repo | URL: https://gitlab.com/owner/repo | Author: alice | Type: Issue | IID: 42 | Title: Test Issue | Description: ... | TodoID: 100
+Project: group/project | URL: https://gitlab.com/group/project | Author: alice | Type: Issue | IID: 42 | Title: Test Issue | Description: ... | TodoID: 100
 ```
 
 - Zeile 1: `[sender]`-Präfix + `envelope.text` (mit entferntem `@bot`)
@@ -139,7 +139,7 @@ Verwende immer `groups["*"].senders: "allowlist"` mit expliziten Gruppen-`allowe
 
 Der gesamte GitLab-Traffic ist Gruppen-Traffic. Gruppenmitglieder sind standardmäßig `open`; setze `groups["*"].senders` auf `allowlist` und fülle seine `allowedUsers`, um Autoren einzuschränken. Private Policy und User-Pairing beschränken niemals Repository-Mitglieder. Setze `operators` explizit für Shared-Session-Management.
 
-Beachte, dass unter `groupPolicy: "pairing"` der Zugriff pro Projekt gewährt wird: Sobald ein Projekt genehmigt ist, kann **jeder GitLab-Benutzer** standardmäßig den Bot über die Issues und Merge Requests dieses Projekts steuern. Der gesamte GitLab-Traffic ist Gruppen-Traffic, daher beschränken `privatePolicy` und die Top-Level-`allowedUsers` nicht die Mitglieder eines genehmigten Projekts; setze `senders: "allowlist"` mit `allowedUsers` beim `groups`-Eintrag dieses Projekts, um ihn einzuschränken. Genehmigungen werden über den Projektpfad (`owner/repo`) geführt, der sich bei Umbenennung oder Transfer ändert — widerrufe veraltete Gruppen-Genehmigungen nach jeder Projekt-Umbenennung, jedem Transfer oder jeder Löschung.
+Beachte, dass unter `groupPolicy: "pairing"` der Zugriff pro Projekt gewährt wird: Sobald ein Projekt genehmigt ist, kann **jeder GitLab-Benutzer** standardmäßig den Bot über die Issues und Merge Requests dieses Projekts steuern. Der gesamte GitLab-Traffic ist Gruppen-Traffic, daher beschränken `privatePolicy` und die Top-Level-`allowedUsers` nicht die Mitglieder eines genehmigten Projekts; setze `senders: "allowlist"` mit `allowedUsers` beim `groups`-Eintrag dieses Projekts, um ihn einzuschränken. Genehmigungen werden über den Projektpfad (`group/project`) geführt, der sich bei Umbenennung oder Transfer ändert — widerrufe veraltete Gruppen-Genehmigungen nach jeder Projekt-Umbenennung, jedem Transfer oder jeder Löschung. Gruppen-Schlüssel werden case-insensitive matched (GitLab-Routing ist case-insensitive), sodass ein konfigurierter `group/project`-Schlüssel auch zur kanonischen `Group/Project`-Schreibweise passt, die von der API gemeldet wird.
 
 ## Erwähnungserkennung
 

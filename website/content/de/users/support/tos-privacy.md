@@ -31,13 +31,13 @@ Wenn Sie sich über Ihr Qwen-Konto durch [**Qwen-Konto mit Abonnement**](https:/
 
 Details zur Einrichtung der Authentifizierung, zu Kontingenten und unterstützten Funktionen finden Sie unter [Einrichtung der Authentifizierung](../configuration/auth.md).
 
-## 2. Wenn Sie den Alibaba Cloud Coding Plan verwenden [#2-if-you-are-using-alibaba-cloud-coding-plan]
+## 2. Wenn Sie den Alibaba Cloud Coding Plan verwenden
 
 Wenn Sie sich mit einem API-Key von Alibaba Cloud authentifizieren, gelten die entsprechenden Nutzungsbedingungen und Datenschutzerklärungen von Alibaba Cloud.
 
 Der Alibaba Cloud Coding Plan ist in zwei Regionen verfügbar:
 
-- **Alibaba Cloud Bailian (aliyun.com)** – [bailian.console.aliyun.com](https://bailian.console.aliyun.com)
+- **阿里云百炼 (aliyun.com)** – [bailian.console.aliyun.com](https://bailian.console.aliyun.com)
 - **Alibaba Cloud (alibabacloud.com)** – [bailian.console.alibabacloud.com](https://bailian.console.alibabacloud.com)
 
 > [!important]
@@ -74,7 +74,7 @@ Diese Funktionen unterstützen die Browseraufgaben und Webentwicklungsarbeit, di
 
 ### Lokale Verarbeitung und KI-Anbieter
 
-Die Erweiterung sendet Browserbefehle und -ergebnisse an Qwen Code auf demselben Computer. Qwen Code kann diese Ergebnisse in den Konversationskontext einbeziehen und an den für diese Sitzung konfigurierten KI-Anbieter übertragen. Die Datenschutz-, Aufbewahrungs- und Modelltrainingsbedingungen des Anbieters gelten, wie elsewhere in dieser Datenschutzerklärung beschrieben. Die lokale Verbindung der Erweiterung ist ein Teil dieses Datenflusses; die nachfolgende Verarbeitung kann bei Ihrem gewählten KI-Anbieter stattfinden.
+Die Erweiterung sendet Browserbefehle und -ergebnisse an Qwen Code auf demselben Computer. Qwen Code kann diese Ergebnisse in den Konversationskontext einbeziehen und an den für diese Sitzung konfigurierten KI-Anbieter übertragen. Die Datenschutz-, Aufbewahrungs- und Modelltrainingsbedingungen des Anbieters gelten, wie andernorts in dieser Datenschutzerklärung beschrieben. Die lokale Verbindung der Erweiterung ist ein Teil dieses Datenflusses; die nachfolgende Verarbeitung kann bei Ihrem gewählten KI-Anbieter stattfinden.
 
 ### Gespeicherte Daten und Benutzersteuerung
 

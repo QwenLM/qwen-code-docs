@@ -104,7 +104,7 @@ Apenas as chaves presentes em `action_prompt_template` são processadas. Ações
 
 | Variável        | Valor                              |
 | --------------- | ---------------------------------- |
-| `%project%`     | Caminho do projeto (ex.: `owner/repo`) |
+| `%project%`     | Caminho do projeto (ex.: `group/project`, ou `group/subgroup/project` para um projeto em um subgrupo) |
 | `%project_url%` | URL completa do projeto            |
 | `%author%`      | Username do autor do todo          |
 | `%target_type%` | `Issue` ou `MergeRequest`          |
@@ -123,7 +123,7 @@ O template é renderizado em `envelope.metadata` (contexto estruturado). O texto
 ```
 [alice] please fix this bug
 
-Project: owner/repo | URL: https://gitlab.com/owner/repo | Author: alice | Type: Issue | IID: 42 | Title: Test Issue | Description: ... | TodoID: 100
+Project: group/project | URL: https://gitlab.com/group/project | Author: alice | Type: Issue | IID: 42 | Title: Test Issue | Description: ... | TodoID: 100
 ```
 
 - Linha 1: prefixo `[sender]` + `envelope.text` (com `@bot` removido)
@@ -139,7 +139,7 @@ Sempre use `groups["*"].senders: "allowlist"` com `allowedUsers` explícito do g
 
 Todo o tráfego do GitLab é tráfego de grupo. Membros do grupo usam `open` por padrão; defina `groups["*"].senders` como `allowlist` e popule seu `allowedUsers` para restringir autores. A política privada e o pareamento de usuários nunca restringem membros do repositório. Defina `operators` explicitamente para gerenciamento de sessão compartilhada.
 
-Note que sob `groupPolicy: "pairing"`, o acesso é concedido por projeto: uma vez que um projeto é aprovado, **qualquer usuário do GitLab** pode controlar o bot através das issues e merge requests daquele projeto. Todo o tráfego do GitLab é tráfego de grupo, então `privatePolicy` e o `allowedUsers` de nível superior não controlam os membros de um projeto aprovado; defina `senders: "allowlist"` com `allowedUsers` na entrada `groups` daquele projeto para restringir. As aprovações são indexadas pelo caminho do projeto (`owner/repo`), que muda em renomeações ou transferências — revogue aprovações de grupo obsoletas após qualquer renomeação, transferência ou exclusão de projeto.
+Note que sob `groupPolicy: "pairing"`, o acesso é concedido por projeto: uma vez que um projeto é aprovado, **qualquer usuário do GitLab** pode controlar o bot através das issues e merge requests daquele projeto. Todo o tráfego do GitLab é tráfego de grupo, então `privatePolicy` e o `allowedUsers` de nível superior não controlam os membros de um projeto aprovado; defina `senders: "allowlist"` com `allowedUsers` na entrada `groups` daquele projeto para restringir. As aprovações são indexadas pelo caminho do projeto (`group/project`), que muda em renomeações ou transferências — revogue aprovações de grupo obsoletas após qualquer renomeação, transferência ou exclusão de projeto. As chaves de grupo são comparadas sem distinção entre maiúsculas e minúsculas (o roteamento do GitLab não diferencia maiúsculas de minúsculas), portanto, um `group/project` configurado também corresponde à grafia canônica `Group/Project` reportada pela API.
 
 ## Detecção de Menção
 

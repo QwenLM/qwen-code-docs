@@ -12,4 +12,5 @@ export default {
   plugins: 'Plugins',
   'email': 'Email',
   'wecom-callback': 'WeCom Callback',
+  'dingtalk-webhook': 'DingTalk Webhook Sending',
 };

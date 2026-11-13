@@ -123,7 +123,7 @@ jobs:
 
 ## Veröffentlichung über die npm-Registry
 
-Sie können Qwen Code-Erweiterungen als gescopte npm-Pakete veröffentlichen (z. B. `@your-org/my-extension`). Dies ist eine gute Wahl, wenn:
+Sie können Qwen Code-Erweiterungen als gescopte oder ungescopte npm-Pakete veröffentlichen (z. B. `@your-org/my-extension` oder `my-extension`). Dies ist eine gute Wahl, wenn:
 
 - Ihr Team bereits npm zur Paketverteilung verwendet
 - Sie Unterstützung für private Registries mit vorhandener Authentifizierungsinfrastruktur benötigen
@@ -161,7 +161,7 @@ npm publish --registry https://your-registry.com
 
 ### Installation
 
-Benutzer installieren Ihre Erweiterung mit dem gescopten Paketnamen:
+Benutzer installieren Ihre Erweiterung mit dem Paketnamen:
 
 ```bash
 # Neueste Version installieren

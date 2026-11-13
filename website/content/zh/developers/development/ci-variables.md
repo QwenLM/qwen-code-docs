@@ -33,11 +33,11 @@ Vitest 在同一次运行中重跑失败的测试。这有助于应对偶发的�
 
 每次 Vitest 运行独立应用此上限。主 CI 工作区测试步骤同时运行两个通道（`.github/scripts/ci/run-unit-test-lanes.sh`）：主通道以上限运行 CLI 和 core 套件，侧通道以上限的一半（至少为 1）运行其他工作区的套件和 `npm run test:scripts:unit`，因此在峰值时该步骤运行上限加上该一半的数量。在 GitHub 托管的 runner 上，侧通道的 Vitest 运行使用 2 个 worker。
 
-该步骤分为八个分片（`Linux unit tests (shard N/8)`），每个分片向每次 Vitest 运行传递 `--shard=N/8`。分片也独立应用此上限，因此资源池最多同时看到八个这样的步骤。它们不执行 `prepare` 构建就安装，并解包 `test_build` 一次性构建的树。`Test (ubuntu-latest, Node 22.x)` 仅在构建和所有分片都通过时才通过。
+该步骤分为两个分片（`Linux unit tests (shard N/2)`），每个分片向每次 Vitest 运行传递 `--shard=N/2`。分片也独立应用此上限，因此资源池最多同时看到两个这样的步骤。它们不执行 `prepare` 构建就安装，并解包 `test_build` 一次性构建的树。`Test (ubuntu-latest, Node 22.x)` 仅在构建和所有分片都通过时才通过。
 
 `test_build` 是唯一执行构建的作业。它通过 `scripts/ci-build-cache.mjs` 构建：pull request 恢复其 base commit 的 `main` push 保存的构建（`key --at <base>`），回退到最新的缓存构建，并仅重建输入发生变化的工作区：工作区中除测试外的跟踪文件、根文件、`scripts/tests/` 之外的 `patches/` 和 `scripts/`，以及它依赖的工作区。推送到 `main` 总是从头构建并保存该构建。缓存键不携带 CPU 架构信息：标记为 x64 的资源池包含 ARM64 主机，且唯一的架构特定输出（bundle 的 opentui 原生库）在每次恢复和解包后会为主机重新复制（`ci-build-cache.mjs host-assets`）。
 
-单元测试分片、三个 `Integration Tests (no-AK, shard N/3)` 分片和四个 web-shell smoke 分片都解包那一棵树。`test_build` 还运行读取该树的检查：serve fast-path bundle 闭合、core 子路径导出和 settings-schema 新鲜度检查（`Lint & Static` 曾经为之构建的内容）。`Integration Tests (no-AK, No Sandbox)` 仅在构建和所有集成分片都通过时才通过。Draft pull request 跳过集成分片和浏览器 smoke；将其标记为 ready for review 会启动包含它们的运行。仅限于 `packages/managed-agent-server/` 或 `packages/sdk-java/` 的变更（TypeScript 套件读取的文件除外）被归类为 `java_only`：`Lint & Static` 运行其负载加上命名这些树的 `scripts/tests` 套件，TypeScript 构建和测试通道跳过。
+单元测试分片、两个 `Integration Tests (no-AK, shard N/2)` 分片和两个 web-shell smoke 分片都解包那一棵树。`test_build` 还运行读取该树的检查：serve fast-path bundle 闭合、core 子路径导出和 settings-schema 新鲜度检查（`Lint & Static` 曾经为之构建的内容）。`Integration Tests (no-AK, No Sandbox)` 仅在构建和所有集成分片都通过时才通过。Draft pull request 跳过集成分片和浏览器 smoke；将其标记为 ready for review 会启动包含它们的运行。仅限于 `packages/managed-agent-server/` 或 `packages/sdk-java/` 的变更（TypeScript 套件读取的文件除外）被归类为 `java_only`：`Lint & Static` 运行其负载加上命名这些树的 `scripts/tests` 套件，TypeScript 构建和测试通道跳过。
 
 ### 测试执行之外的相关变量
 

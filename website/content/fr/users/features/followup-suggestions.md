@@ -47,6 +47,7 @@ Le démon exige en plus :
 - Le tour s'est terminé proprement, c'est-à-dire que sa raison d'arrêt est `end_turn` — un tour annulé, refusé ou tronqué n'obtient pas de suggestion
 - Les tours automatiques ne sont pas retenus par le garde d'arrêt todo, et aucun prompt en file d'attente n'attend d'être exécuté
 - L'entrée la plus récente dans l'historique de la conversation est une réponse du modèle
+- Un channel n'a pas envoyé le tour : un tour d'un channel, y compris celui livré à une session liée à une pull request, n'en génère pas
 
 Parce que la génération côté démon a lieu pour chaque client attaché à la session, elle a lieu aussi pour les clients qui ne peuvent pas afficher le résultat. Un tel client — un consommateur headless ou SDK d'une session démon, ce qui n'est pas le mode non interactif du CLI mentionné ci-dessus — devrait définir `ui.enableFollowupSuggestions` à `false` pour éviter de payer le coût LLM par tour pour une sortie qu'il rejette.
 
@@ -115,11 +116,11 @@ Le modèle rapide est également affiché dans la sortie `/about` sous « Fast M
 
 Les suggestions passent par des filtres de qualité pour garantir leur utilité :
 
-- Doivent contenir 2 à 12 mots (CJK : 2 à 30 caractères), moins de 100 caractères au total
+- Doivent contenir 2 à 12 mots (CJK : 2 à 30 caractères), moins de 100 caractères au total. Le texte thaï, lao, khmer et birman écrit sans espaces est compté par segmentation dictionary word (jusqu'à 12 mots, ou jusqu'à 60 caractères sur les builds Node sans ICU complet)
 - Ne peuvent pas être évaluatives (« looks good », « thanks »)
 - Ne peuvent pas utiliser le ton d'un assistant vocal (« Let me... », « I'll... »)
 - Ne peuvent pas contenir plusieurs phrases ou du formatage (markdown, sauts de ligne)
 - Ne peuvent pas être des méta-commentaires (« nothing to suggest », « silence »)
 - Ne peuvent pas être des messages d'erreur ou des libellés préfixés (« Suggestion: ... »)
-- Les suggestions d'un seul mot ne sont autorisées que pour les commandes courantes (yes, commit, push, etc.)
+- Dans les scripts délimités par des espaces, les suggestions d'un seul mot ne sont autorisées que pour les commandes courantes (yes, commit, push, etc.). Un seul mot en thaï, lao, khmer ou birman est autorisé
 - Les commandes slash (par exemple `/commit`) sont toujours autorisées comme suggestions d'un seul mot

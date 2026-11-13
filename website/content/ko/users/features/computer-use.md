@@ -12,13 +12,15 @@ Qwen Code / any MCP client
 
 ## 설정
 
+이 체크아웃은 곧 출시될 CUA 0.27.0 릴리스를 문서화합니다. 아래의 설치 명령은 네이티브 GitHub 릴리스(`cua-driver-rs-v0.27.0`)와 일치하는 npm 패키지가 게시되어야 합니다; 이러한 소스를 병합한다고 해서 게시되는 것은 아닙니다. 게시 전에는 [로컬 개발 설정](https://github.com/QwenLM/qwen-code/blob/890cb0349a259761a571da889f4fe1cccc6ed108/packages/node-repl/README.md#local-development-and-environment)을 사용하여 저장소 빌드를 테스트하세요.
+
 Node.js 22 이상과 npm이 필요합니다. MCP 서버를 등록한 다음 Qwen Code를 재시작하세요:
 
 ```bash
-qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.26.0
+qwen mcp add --scope user node-repl npx -y @qwen-code/node-repl-mcp@0.27.0
 ```
 
-서버는 일치하는 SDK와 브라우저 SDK를 의존성으로 설치합니다. 네이티브 SDK 페이로드는 현재 플랫폼에 맞게 다운로드되며 해당 릴리스의 SHA-256 체크섬에 대해 검증됩니다. npm 패키지 외부에 캐시되므로 워크스페이스 SDK 부트스트랩 명령이 필요하지 않습니다. 버전 0.26.0은 릴리스가 게시될 때까지 로컬 개발 대상입니다.
+서버는 일치하는 SDK와 브라우저 SDK를 의존성으로 설치합니다. 네이티브 SDK 페이로드는 현재 플랫폼에 맞게 다운로드되며 해당 릴리스의 SHA-256 체크섬에 대해 검증됩니다. npm 패키지 외부에 캐시되므로 워크스페이스 SDK 부트스트랩 명령이 필요하지 않습니다. 버전 0.27.0은 릴리스가 게시될 때까지 로컬 개발 대상입니다.
 
 Windows는 기본적으로 일반 입력 전달을 사용하며 UIAccess 작업자를 설치하지 않습니다. `CUA_DRIVER_USE_UIACCESS=1`로 UIAccess를 옵트인하려면 `Program Files\Qwen\CuaDriver` 아래에 서명된 작업자가 필요합니다. 해당 변수가 설정된 상태에서 관리자 권한 터미널에서 SDK를 설치하세요. 서명되지 않은 작업자는 UIAccess를 활성화할 수 없습니다; 서명 검사를 우회하지 마세요. 이전 서명되지 않은 릴리스는 UIAccess를 위해 같은 버전을 다시 설치하는 것이 아니라 새로운 서명된 드라이버 릴리스가 필요합니다.
 
@@ -64,12 +66,18 @@ await tab.playwright.domSnapshot();
 
 `js`는 한 번의 호출로 완료되며 기본 30초 타임아웃을 가집니다. 타임아웃은 외부 효과를 남길 수 있습니다: 재시도 전에 관찰하세요. `js_reset`은 바인딩을 폐기하고 소유한 네이티브/브라우저 세션을 정상적으로 닫습니다. 컨텍스트 압축 후 계속하기 전에 `cua.rewriteDocumentation()`을 호출하세요.
 
+네이티브 에이전트 커서는 기본적으로 활성화됩니다. macOS에서 로컬 PiP는 작업 사이에서도 세션의 가장 최근에 관찰된 두 개의 권한 있는 창을 새로 고칩니다. 테두리 없는 창은 오른쪽 하단 근처에서 시작되며, 카드 또는 이동 미리보기 핸들을 드래그하여 위치를 변경할 수 있습니다. 호버하면 부동 컨트롤이 표시되고 뒷면 카드가 앞으로 가져와집니다. 이를 닫으면 해당 미리보기가 중지되며, 나중에 권한 있는 관찰이 다시 생성할 수 있습니다. 이미지는 대상에 입력을 전달하지 않습니다. 리셋은 소유한 커서와 미리보기를 닫습니다. 서버 인수에 `--no-overlay` 또는 `--no-pip`을 추가하여 각 표면을 비활성화하세요. PiP는 macOS 전용입니다.
+
+MCP 등록을 변경하지 않고 PiP를 비활성화하려면 `~/.cua-driver/config.json`에서 `"experimental_pip": false`를 설정하고 다른 키는 유지한 다음, 소유한 MCP 서버나 런타임을 재시작하세요. 이 기존 키는 호환성을 위해 유지됩니다. 서버의 `--no-pip` 인수도 PiP를 비활성화하며 파일보다 우선합니다.
+
+미리보기는 데스크톱을 공유하거나 기록할 때, 특히 전체 화면 프레젠테이션 중에 다른 사람에게 보일 수 있습니다. 영구적인 옵트아웃의 경우, 공유 전에 PiP를 비활성화하고 소유한 런타임을 재시작하세요; 현재 패널을 닫는 것만으로는 나중에 관찰이 다시 생성되는 것을 방지하지 못합니다. 공유는 자동으로 감지되지 않습니다.
+
 ## 원격 데스크톱 릴레이
 
 기존 macOS 데스크톱 릴레이 설정의 경우, 일치하는 서버를 설치하세요:
 
 ```bash
-npx -y @qwen-code/node-repl-mcp@0.26.0 desktop-relay install
+npx -y @qwen-code/node-repl-mcp@0.27.0 desktop-relay install
 ```
 
 이것은 `127.0.0.1:47821`의 기존 로컬 launchd 소켓을 사용합니다. 보안 Web Shell에서 **Use this computer**를 선택한 다음 **Connect this computer**를 선택하세요. 데스크톱은 각 연결에 대해 프롬프트를 표시합니다. 원격 데몬은 `QWEN_SERVE_CLIENT_MCP_OVER_WS=1`을 활성화해야 합니다.

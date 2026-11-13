@@ -10,6 +10,24 @@ Os canais de mensagens usam um agendador persistente separado para que os result
 
 > **Dica:** As tarefas agendadas são habilitadas por padrão. Para desabilitá-las, defina `experimental.cron: false` nas suas [configurações](../configuration/settings.md) ou defina `QWEN_CODE_DISABLE_CRON=1` no seu ambiente.
 
+## Workspace na Web Shell
+
+A página **Tarefas Agendadas** mostra o workspace de cada tarefa em seu cartão. Ao criar ou editar uma tarefa, o campo **Workspace** mostra onde ela é executada. Com um único workspace, este campo é somente leitura; se uma Web Shell incorporada tem um workspace fixado pelo seu host, ele também exibe **Fixado pelo host**. Passe o mouse sobre o rótulo do workspace para ver seu caminho completo.
+
+Com múltiplos workspaces, escolha um workspace ao criar uma tarefa. Uma tarefa existente permanece em seu workspace original. Os rótulos de workspace requerem informações de workspace do daemon ou host; um rótulo ausente não significa que a tarefa é executada sem um workspace.
+
+## Entregar resultados de tarefas da Web Shell a um Canal
+
+No `qwen serve`, abra **Tarefas Agendadas** e crie ou edite uma tarefa em seu workspace. Escolha um destino de execução persistente (uma sessão dedicada, ou a sessão atual quando disponível), depois escolha um **Canal de Entrega**, um tipo de destino de usuário ou chat, e um ID de destino. Contatos recentes observados são sugestões opcionais; verifique o nome do Canal, tipo e ID bruto antes de selecionar um. Você também pode inserir um ID diretamente. Se um ID tiver espaços em branco no início ou no final, o formulário avisa e oferece **Remover espaços em branco ao redor**; ele nunca altera o ID automaticamente. O Canal configurado deve suportar o envio para esse destino.
+
+A entrega está desativada por padrão. Configurar um Canal sozinho não habilita a entrega para nenhuma tarefa. Quando habilitada, a resposta final de uma execução agendada concluída com sucesso é enviada através do Canal selecionado; isso não garante o recebimento nem adiciona tentativas duráveis ou alertas de falha. O cartão da tarefa exibe uma linha de entrega apenas quando tem um destino salvo.
+
+Para remover a entrega, edite a tarefa e selecione **Entrega desativada** em **Canal de Entrega**. Editar outros campos preserva o destino salvo, incluindo um destino não encontrado mais recente nos contatos recentes. Falhas de carregamento ou Canais ausentes não o limpam. Alterar o workspace ao criar uma tarefa redefine o destino rascunho; uma tarefa existente permanece em seu workspace original.
+
+Se o suporte de entrega ficar indisponível após você alterar um destino, escolha **Descartar alterações de entrega** para restaurar o destino original e continuar editando os outros campos da tarefa. Em uma nova tarefa, isso remove o destino rascunho. Salvar então deixa qualquer configuração de entrega existente inalterada.
+
+Tarefas que criam uma nova sessão para cada execução (`per_run`) não suportam entrega. Mudar para esse modo mantém seu destino rascunho visível e pede que você desative explicitamente a entrega ou retorne a um modo persistente antes de salvar. Os controles de entrega requerem a capability `channel_delivery` do daemon; destinos existentes permanecem visíveis com daemons mais antigos, mas não podem ser alterados lá.
+
 ## Agendar um prompt recorrente com /loop
 
 A [skill integrada](./skills.md) `/loop` é a maneira mais rápida de agendar um prompt recorrente. Passe um intervalo opcional e um prompt, e o Qwen Code configurará um cron job que é executado em segundo plano enquanto a sessão permanecer aberta.
