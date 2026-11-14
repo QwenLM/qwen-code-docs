@@ -1,0 +1,176 @@
+---
+title: "Qwen Code 週報：Qwen サブスクリプションでログインしてすぐ使える、WeChat・QQ・メールを手軽に接続、GitHub は選んだリポジトリの動きだけ届く"
+date: "2026-11-12"
+description: "今週は v0.26.8〜v0.27.2 の 5 つの正式版をリリース。Qwen サブスクリプションのアカウントで CLI、VS Code、デスクトップ版にログインしてそのまま使えます。WeChat と QQ は Web Shell で設定して QR コードをスキャン、メールはサーバーとアカウント情報を入力して接続。GitHub チャンネルはリポジトリのホワイトリスト／ブラックリストで絞り込めます。Web Shell には質問と回答のヒートマップと使用量バーが増え、会話はまとめて整理できます。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i3/O1CN01Ef5Q2Vdbv3J2jBZY_!!6000000006919-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 週報：Qwen サブスクリプションでログインしてすぐ使える、WeChat・QQ・メールを手軽に接続、GitHub は選んだリポジトリの動きだけ届く"
+  date="2026-11-12"
+  author="Qwen Team"
+/>
+
+Qwen Code は今週、v0.26.8〜v0.27.2 の 5 つの正式版をリリースしました。
+
+**Qwen サブスクリプションのアカウントでログインしてすぐ使えます。** CLI、VS Code、デスクトップ版のいずれにも Plus/Pro サブスクリプションでログインでき、サブスクリプション内のモデルでチャットや Web 検索をそのまま使えます。
+
+**WeChat、QQ、メールは Web Shell で設定できます。** WeChat と QQ はページ上の QR コードをスマホでスキャンしてログイン。メールはサーバーとアカウント情報を入力するだけで接続できます。
+
+**GitHub チャンネルはリポジトリ単位で動きを絞り込めます。** ホワイトリストは記載したリポジトリだけを受け取り、ブラックリストは記載したリポジトリを除外します。
+
+## ✨ 新機能
+
+### Qwen サブスクリプションのアカウントで Qwen Code にログイン
+
+Qwen アカウントに Plus または Pro サブスクリプションがあれば、そのアカウントでターミナル、VS Code、デスクトップ版にログインできます。ターミナルで `/auth` を実行し、「Qwen Account with Subscription」を選んで、ブラウザで認証を完了します。ログイン後はサブスクリプションで使えるモデルが読み込まれ、組み込みの Web 検索も使えます。
+
+こんなことに使えます：
+
+- サブスクリプションのモデルでそのまま作業でき、使用量はサブスクリプションに計上されます
+- ターミナル、VS Code、デスクトップ版に同じアカウントでログインすれば、モデルも同じです
+- API の設定なしで、Qwen のサブスクリプション契約後すぐに Qwen Code で使えます
+
+詳しくは PR [#16378](https://github.com/QwenLM/qwen-code/pull/16378)
+
+![Qwen サブスクリプションでログインした後のアカウントとモデル一覧](https://img.alicdn.com/imgextra/i2/O1CN01yN4UdkxBF2G7nW9B_!!6000000007738-2-tps-3841-2160.png)
+
+### Web Shell で WeChat、QQ、メールのチャンネルを設定
+
+Web Shell のチャンネル管理に WeChat、QQ、メールの 3 プラットフォームが加わりました。WeChat と QQ はページに QR コードが表示され、スマホでスキャンするだけでログインできます。メールはサーバーアドレスとアカウント情報を入力すれば接続できます。これで Telegram 以外の主要チャットプラットフォームはすべて Web Shell で設定できます。
+
+こんなことに使えます：
+
+- Web Shell の QR コードをスマホでスキャンして、個人 WeChat のチャットや QQ を接続
+- チャンネル管理でメールチャンネルを追加・編集し、メールで会話を開始できる送信者を指定
+- チャンネルのペアリング解除も Web Shell でワンクリック管理
+
+詳しくは PR [#16736](https://github.com/QwenLM/qwen-code/pull/16736)、[#16724](https://github.com/QwenLM/qwen-code/pull/16724)、[#16746](https://github.com/QwenLM/qwen-code/pull/16746)
+
+![Web Shell の WeChat チャンネルの QR コードログイン画面](https://img.alicdn.com/imgextra/i1/O1CN01ldag0pIAw9J4s7XG_!!6000000004740-2-tps-2400-1626.png)
+
+### GitHub チャンネルの動きをリポジトリ単位で絞り込む
+
+GitHub チャンネルはリポジトリの動きを自動で会話に届けます。PR の作成、コメント、CI の完了を Agent が引き継いで処理します。受け取る範囲はリポジトリ単位で選べます。ホワイトリストは記載したリポジトリだけを受け取り、ブラックリストは記載したリポジトリ以外をすべて受け取ります。除外された動きはそのままスキップ。会話に入るのは受け取り対象のリポジトリの動きだけで、処理もその分だけです。
+
+こんなことに使えます：
+
+- 組織に数百のリポジトリがあっても、自分が担当する 2 つだけを記載すれば、その動きだけ届きます
+- しばらく追わないリポジトリはブラックリストに入れておき、担当になったら戻せます
+- 無関係なリポジトリの PR が Agent の行列に並ばなくなり、気になるリポジトリの処理が速くなります
+
+詳しくは PR [#16493](https://github.com/QwenLM/qwen-code/pull/16493)
+
+![チャンネルエディターのリポジトリフィルター設定](https://img.alicdn.com/imgextra/i4/O1CN01NAru06FwyBE7o1Mj_!!6000000003227-2-tps-3845-2160.png)
+
+### Web Shell：質問と使用量を画面で把握、会話はまとめて整理
+
+**質問と回答のヒートマップ。** 数日かかる長いタスクでも、ヒートマップボタンから日付別のカレンダーを開けます。色の濃さがその日の質問と回答の回数に対応し、日付をクリックするとその日の最初の質問と回答へ直接ジャンプします。詳しくは PR [#16037](https://github.com/QwenLM/qwen-code/pull/16037)
+
+**入力欄の下に使用量バー。** ターン数、出力速度、合計トークン、キャッシュヒット率が入力欄の下に 1 行で表示されます。詳しくは PR [#16815](https://github.com/QwenLM/qwen-code/pull/16815)
+
+**会話をまとめてピン留め・アーカイブ。** サイドバーに複数選択スイッチが増え、会話を選んでワンクリックでピン留めやアーカイブができます。詳しくは PR [#16702](https://github.com/QwenLM/qwen-code/pull/16702)
+
+**わからない選択肢は詳細を質問。** AI が選択式の質問を出したとき、問題パネルの「Ask for details」ボタンから枝分かれのタスクを開き、各選択肢の意味、違い、影響、推奨を確認できます。詳しくは PR [#16458](https://github.com/QwenLM/qwen-code/pull/16458)
+
+**その他の改善。** ワークスペースはワンクリックで全部折りたたみ・展開でき、タイトルをつかんでドラッグで並べ替えられます（[#16197](https://github.com/QwenLM/qwen-code/pull/16197)）。バックグラウンドタスクが承認を待っているときは、デスクトップ通知やターミナルのベルで知らせ、別のウィンドウで作業中でも気づけます（[#16800](https://github.com/QwenLM/qwen-code/pull/16800)）。MCP 呼び出しなどのツールカードは、展開するとパラメータと完全な結果がそのまま表示されます（[#15435](https://github.com/QwenLM/qwen-code/pull/15435)）。スキルページから ZIP 圧縮パッケージを直接アップロードしてスキルをインストールできます（[#16424](https://github.com/QwenLM/qwen-code/pull/16424)）。
+
+![Web Shell のサイドバー複数選択と入力欄下の使用量バー](https://img.alicdn.com/imgextra/i2/O1CN01kYhxxjdH7KK7o1Mj_!!6000000001014-2-tps-3845-2160.png)
+
+## 📊 その他の新機能
+
+**定期ジョブの配信先チャンネルを選べます。** Web Shell で定期ジョブを作成するとき、結果を送るチャンネルを指定できます。詳しくは PR [#16524](https://github.com/QwenLM/qwen-code/pull/16524)
+
+**QQ グループへ自分からメッセージを送れます。** 定期ジョブ、webhook、バックグラウンドタスクの結果を、QQ グループへの自発的なグループメッセージとして送れます。オプションの `forwardBotMessages` スイッチをオンにすると、グループ内の他のボットのメッセージも会話に転送されます。詳しくは PR [#15635](https://github.com/QwenLM/qwen-code/pull/15635)、[#15904](https://github.com/QwenLM/qwen-code/pull/15904)
+
+**ファイル変更フック。** ローカル会話に `FileChanged` フックが増えました。監視しているファイルやディレクトリの作成・変更・削除で、設定したフックが発火します。他のプログラムによる変更も通知されます。詳しくは PR [#13969](https://github.com/QwenLM/qwen-code/pull/13969)
+
+**Mods プラグインに 3 つの機能。** `$.store` でプラグインのデータをセッションをまたいで保存。`ui.render` はターミナルに表示される返信テキストだけを書き換え、保存・コピーされるテキストは元のまま。`$.model.complete` は 1 回限りのテキスト補完を実行します。詳しくは PR [#16791](https://github.com/QwenLM/qwen-code/pull/16791)、[#16794](https://github.com/QwenLM/qwen-code/pull/16794)、[#16737](https://github.com/QwenLM/qwen-code/pull/16737)
+
+**PR に紐づいた会話は新しいコメントを自動で受け取ります。** 会話を PR に紐づけると、その PR の新しいコメントが自動で会話に届きます。通常のコメントもインラインレビューコメントも対象で、@ メンションなしで受け取れます。詳しくは PR [#16602](https://github.com/QwenLM/qwen-code/pull/16602)
+
+## 👏 体験改善
+
+**/btw のついで質問：フォローアップと同時質問に対応。** 新しいついで質問を始めると、回答済みのついで質問も一緒に渡され、前の回答の続きを聞けます。同時にいくつも聞いても、それぞれ独立して回答されます。詳しくは PR [#16408](https://github.com/QwenLM/qwen-code/pull/16408)
+
+**起動時に使用中の Shell を AI に伝えます。** 会話の冒頭に、コマンドを実行する Shell（bash、cmd.exe など）が明記されます。AI はシステムから構文を推測する必要がなく、Windows でもコマンドの書き間違いが減ります。詳しくは PR [#16491](https://github.com/QwenLM/qwen-code/pull/16491)
+
+**会話の自動タイトルは会話の言語に合わせます。** 中国語の会話には中国語のタイトルを生成し、言語ごとに揃えます。詳しくは PR [#16806](https://github.com/QwenLM/qwen-code/pull/16806)
+
+**Goal のチェック結果の理由は会話の言語で表示。** 合格・却下の理由を、会話の出力言語で表示します。詳しくは PR [#15806](https://github.com/QwenLM/qwen-code/pull/15806)
+
+**タイ語、ラオ語、クメール語、ビルマ語のフォローアップ提案はその言語のまま。** これらの言語でチャットすると、フォローアップ提案も同じ言語で生成されます。詳しくは PR [#16341](https://github.com/QwenLM/qwen-code/pull/16341)
+
+**実験的なコードインテリジェンス（LSP）を設定で有効化。** ユーザーレベルの設定で `tools.lspEnabled` を true にするだけで有効になります。コマンドライン引数は不要で、引数を渡せないデスクトップ版などのクライアントでも、定義ジャンプ、参照検索、診断を使えます。デフォルトはオフです。詳しくは PR [#14613](https://github.com/QwenLM/qwen-code/pull/14613)
+
+**サブ Agent のフォアグラウンド／バックグラウンド既定を全体で設定。** `agents.defaultBackground` を false にすると、サブ Agent はフォアグラウンドで実行され、完了を待って結果を現在のターンに直接返します。チャンネルやボットなど、1 ターン内で結果が必要な場面に向いています。再起動後に有効になります。詳しくは PR [#15178](https://github.com/QwenLM/qwen-code/pull/15178)
+
+**マネージドセッションは複数の質問を同時に保持。** マネージドセッションが出した複数の質問は同時に並べられ、どの順序でも回答できます。詳しくは PR [#16484](https://github.com/QwenLM/qwen-code/pull/16484)
+
+**チャンネルイベントから会話へ直接ジャンプ。** チャンネルイベントのタイムラインの項目をクリックすると、対応する会話に直接移動します。詳しくは PR [#16375](https://github.com/QwenLM/qwen-code/pull/16375)
+
+## 🔧 重要な修正
+
+| 修正 | あなたへの影響 | PR |
+|------|-----------|-----|
+| **Ctrl+C で止めたコマンドが「完了」と報告されていた** | 「中断」と報告し、出力済みの内容を保持します。AI は途中まで実行したコマンドも中断として正しく扱います | [#15836](https://github.com/QwenLM/qwen-code/pull/15836) |
+| **sed の置換が Windows の改行や中国語ファイルでエラー** | CRLF 改行や Unicode を含むファイルでは置換が失敗し、内容が壊れることもありました。正しく処理するようになりました | [#15701](https://github.com/QwenLM/qwen-code/pull/15701) |
+| **バックグラウンドワークフローの承認リクエストが見えないまま停滞** | バックグラウンドタスクの詳細を開いて承認を促すため、タスクはすぐに続行できます | [#16432](https://github.com/QwenLM/qwen-code/pull/16432) |
+| **サブスクリプションログイン後にモデルを切り替えられなかった** | モデル切り替えが復活し、会話の復元ロジックも揃えました | [#16738](https://github.com/QwenLM/qwen-code/pull/16738) |
+| **VS Code でモデルプロバイダーを設定すると他のモデル設定を上書き** | 選択したモデル名とアドレスだけを書き込み、他のモデル設定は保持します | [#15829](https://github.com/QwenLM/qwen-code/pull/15829) |
+| **100 件を超える会話の一括削除がそのまま失敗** | 一括削除は分割して送信し、失敗した項目は残して再試行できます | [#14637](https://github.com/QwenLM/qwen-code/pull/14637) |
+| **UI 言語の翻訳欠落で Web Shell がクラッシュ** | 翻訳のない文言は英語で表示します | [#15474](https://github.com/QwenLM/qwen-code/pull/15474) |
+| **デスクトップ版で保存した Web ページプレビューが開けなかった** | 保存済みの Web ページプレビューが正常に表示されます | [#14597](https://github.com/QwenLM/qwen-code/pull/14597) |
+| **一部のオープンソースビジョンモデルが画像を受け取れなかった** | 内蔵カタログに登録されたモデルだけが画像入力を受け付けていました。未登録のサイズ、Ollama の別名、Llama 3.2 Vision、Llama 4、LLaVA、Pixtral、Mistral Small 3.1/3.2 も画像を正常に受け取れます | [#16311](https://github.com/QwenLM/qwen-code/pull/16311)、[#16309](https://github.com/QwenLM/qwen-code/pull/16309)、[#16247](https://github.com/QwenLM/qwen-code/pull/16247) |
+| **入力欄の改行中に上下キーで未送信の下書きが消えていた** | 長い段落の改行後に上下キーを押すと履歴メッセージが出て、未送信の内容を上書きしていました。上下キーはまず自分のテキスト内を移動し、下書きは保持されます | [#14909](https://github.com/QwenLM/qwen-code/pull/14909) |
+| **チャートのレンダリング失敗でブロック全体が使用不能に** | データが読める場合はデータテーブルにフォールバックして表示します | [#16021](https://github.com/QwenLM/qwen-code/pull/16021) |
+| **Linux でプロセス番号の再利用により古い会話を実行中と誤判定** | プロセスの起動マーカーを検証するため、再利用されたプロセス番号も正しく識別します | [#16128](https://github.com/QwenLM/qwen-code/pull/16128) |
+| **`$'...'` 形式のコマンドがセキュリティチェックで誤判定** | ANSI-C エスケープと末尾の `-c` を正しく解析。自己終了保護とファイル権限チェックの誤ブロックを解消しました | [#16540](https://github.com/QwenLM/qwen-code/pull/16540) |
+| **アイドル時に /branch、/cd、/fork などがブロックされていた** | アイドル状態のコマンドが正常に実行されます | [#16731](https://github.com/QwenLM/qwen-code/pull/16731) |
+| **Claude 系モデルの回答拒否時に曖昧な安全メッセージだけ表示** | 具体的な拒否理由を表示します | [#16079](https://github.com/QwenLM/qwen-code/pull/16079) |
+
+## 👥 コントリビューター
+
+| コントリビューター | 貢献内容 | 参考 PR リンク |
+|--------|---------|-------------|
+| **[@2SinceJuly](https://github.com/2SinceJuly)** | sed 置換の CRLF・Unicode 対応、キャンセルしたコマンドを中断として報告、VS Code で他のモデル設定を保持、起動コンテキストに現在の shell を明記、キャッシュ書き込みトークン統計の修正、リリースボットは失敗時のみ issue を作成、serve の調整とプローブのテスト | [#15701](https://github.com/QwenLM/qwen-code/pull/15701), [#15836](https://github.com/QwenLM/qwen-code/pull/15836), [#15829](https://github.com/QwenLM/qwen-code/pull/15829), [#16491](https://github.com/QwenLM/qwen-code/pull/16491), [#16454](https://github.com/QwenLM/qwen-code/pull/16454), [#15852](https://github.com/QwenLM/qwen-code/pull/15852), [#16568](https://github.com/QwenLM/qwen-code/pull/16568) |
+| **[@jianyx1](https://github.com/jianyx1)** | 会話一括削除の分割送信、改行中の下書き保持、マネージド承認と TUI ワークスペースのテスト強化 | [#14637](https://github.com/QwenLM/qwen-code/pull/14637), [#14909](https://github.com/QwenLM/qwen-code/pull/14909), [#15994](https://github.com/QwenLM/qwen-code/pull/15994), [#16033](https://github.com/QwenLM/qwen-code/pull/16033) |
+| **[@Shizoqua](https://github.com/Shizoqua)** | Hugging Face TGI のコンテキスト超過時の圧縮トリガー、Qwen2-VL/Qwen2.5-VL/QVQ の画像受け取り、Ollama 名義の Qwen VL の画像受け取り、Llama/LLaVA/Pixtral/Mistral ビジョンモデルの画像受け取り | [#16245](https://github.com/QwenLM/qwen-code/pull/16245), [#16247](https://github.com/QwenLM/qwen-code/pull/16247), [#16309](https://github.com/QwenLM/qwen-code/pull/16309), [#16311](https://github.com/QwenLM/qwen-code/pull/16311) |
+| **[@4ekuct25](https://github.com/4ekuct25)** | UI 言語の翻訳欠落時に英語へフォールバック、Goal チェックの理由を会話の言語に合わせる、サイドバーテストのフィクスチャ統合 | [#15474](https://github.com/QwenLM/qwen-code/pull/15474), [#15806](https://github.com/QwenLM/qwen-code/pull/15806), [#16016](https://github.com/QwenLM/qwen-code/pull/16016) |
+| **[@ZedingZhang](https://github.com/ZedingZhang)** | サブ Agent のフォアグラウンド／バックグラウンド既定を設定可能に、レビュー成果物を名前で検証して形式を提示、独立会話の割り当て後に更新 | [#15178](https://github.com/QwenLM/qwen-code/pull/15178), [#14824](https://github.com/QwenLM/qwen-code/pull/14824), [#15311](https://github.com/QwenLM/qwen-code/pull/15311) |
+| **[@BigDaddy1337](https://github.com/BigDaddy1337)** | LSP のユーザーレベル設定スイッチ、ツールカード展開でパラメータと結果を表示 | [#14613](https://github.com/QwenLM/qwen-code/pull/14613), [#15435](https://github.com/QwenLM/qwen-code/pull/15435) |
+| **[@Eric-GoodBoy-Tech](https://github.com/Eric-GoodBoy-Tech)** | QQ グループへの自発メッセージ配信、ボットメッセージの転送をオプション化 | [#15635](https://github.com/QwenLM/qwen-code/pull/15635), [#15904](https://github.com/QwenLM/qwen-code/pull/15904) |
+| **[@jabrailkhalil](https://github.com/jabrailkhalil)** | メモリ読み取り提案をインデックス予算に合わせる、クリーンアップ再試行の直列化 | [#15368](https://github.com/QwenLM/qwen-code/pull/15368), [#15482](https://github.com/QwenLM/qwen-code/pull/15482) |
+| **[@Jun516](https://github.com/Jun516)** | バッチ推論のプロバイダー別出力予算報告、インライン改名時の下部バーボタンの安定化 | [#15181](https://github.com/QwenLM/qwen-code/pull/15181), [#15182](https://github.com/QwenLM/qwen-code/pull/15182) |
+| **[@lorenzozanee](https://github.com/lorenzozanee)** | 拒否された daemon アドレスの資格情報は保存対象外に、デスクトップ版の公開済みプローブを強化 | [#12285](https://github.com/QwenLM/qwen-code/pull/12285), [#12184](https://github.com/QwenLM/qwen-code/pull/12184) |
+| **[@TianYuan1024](https://github.com/TianYuan1024)** | プロジェクト hooks の承認ダイアログを先に表示、fork PR の Ctrl+C と Java ヒープ失敗の修正 | [#14748](https://github.com/QwenLM/qwen-code/pull/14748), [#16150](https://github.com/QwenLM/qwen-code/pull/16150) |
+| **[@zonemeen](https://github.com/zonemeen)** | デスクトップ版で保存済み Web ページプレビューを復元、独立会話にファイル変更を表示 | [#14597](https://github.com/QwenLM/qwen-code/pull/14597), [#15070](https://github.com/QwenLM/qwen-code/pull/15070) |
+| **[@Bug-killer-prog](https://github.com/Bug-killer-prog)** | SDK 会話起動タイムアウトのオーバーフローをクランプ | [#14676](https://github.com/QwenLM/qwen-code/pull/14676) |
+| **[@cactuser-Lu](https://github.com/cactuser-Lu)** | 独立会話の再読み込みを種別ごとにルーティング | [#12384](https://github.com/QwenLM/qwen-code/pull/12384) |
+| **[@dakjdakd](https://github.com/dakjdakd)** | Web ターミナルのバックプレッシャーを未処理入力で計算 | [#14313](https://github.com/QwenLM/qwen-code/pull/14313) |
+| **[@GoldArowana](https://github.com/GoldArowana)** | Live 通話失敗後の停止状態の収束 | [#13835](https://github.com/QwenLM/qwen-code/pull/13835) |
+| **[@hahahahahayesyeseys](https://github.com/hahahahahayesyeseys)** | 双方向混在の Markdown テキストを分離 | [#14035](https://github.com/QwenLM/qwen-code/pull/14035) |
+| **[@he-yufeng](https://github.com/he-yufeng)** | ブラウザ拡張の再接続バックオフを再起動をまたいで保持 | [#14022](https://github.com/QwenLM/qwen-code/pull/14022) |
+| **[@liwenjie200543](https://github.com/liwenjie200543)** | 無効になった REPLACE マージ戦略宣言のクリーンアップ | [#12613](https://github.com/QwenLM/qwen-code/pull/12613) |
+| **[@loglapa](https://github.com/loglapa)** | LSP 診断の帰属を明確にする拡張 | [#14117](https://github.com/QwenLM/qwen-code/pull/14117) |
+| **[@Oscar-Williams](https://github.com/Oscar-Williams)** | ACP ブリッジのバックグラウンド活動テスト | [#12243](https://github.com/QwenLM/qwen-code/pull/12243) |
+| **[@tonydzi](https://github.com/tonydzi)** | MCP 読み取りタイムアウト警告に上限の出所を明記 | [#13312](https://github.com/QwenLM/qwen-code/pull/13312) |
+| 🆕 **[@521Peter](https://github.com/521Peter)** | 🎉 初コントリビュート：tools.core 移行のツールブリッジ要件ドキュメント | [#16750](https://github.com/QwenLM/qwen-code/pull/16750) |
+| 🆕 **[@brainsparker](https://github.com/brainsparker)** | 🎉 初コントリビュート：Web 検索 MCP リストに You.com の無料サービスを追加 | [#14000](https://github.com/QwenLM/qwen-code/pull/14000) |
+| 🆕 **[@everyoneexe](https://github.com/everyoneexe)** | 🎉 初コントリビュート：バックグラウンドメモリエージェント停止時に理由を報告 | [#13466](https://github.com/QwenLM/qwen-code/pull/13466) |
+| 🆕 **[@fede-kamel](https://github.com/fede-kamel)** | 🎉 初コントリビュート：OCI Generative AI 接続ドキュメント | [#16345](https://github.com/QwenLM/qwen-code/pull/16345) |
+| 🆕 **[@sanchitmonga22](https://github.com/sanchitmonga22)** | 🎉 初コントリビュート：Wally 接続ドキュメント | [#16529](https://github.com/QwenLM/qwen-code/pull/16529) |
+| 🆕 **[@spped2000](https://github.com/spped2000)** | 🎉 初コントリビュート：タイ語など 4 言語のフォローアップ提案をその言語のままに、カスタムモデル名で Qwen3.x を動かす設定ドキュメント | [#16341](https://github.com/QwenLM/qwen-code/pull/16341), [#16342](https://github.com/QwenLM/qwen-code/pull/16342) |
+| 🆕 **[@vshulcz](https://github.com/vshulcz)** | 🎉 初コントリビュート：外部 context_search MCP の設定ドキュメント | [#16041](https://github.com/QwenLM/qwen-code/pull/16041) |
+| 🆕 **[@xxwtiancai](https://github.com/xxwtiancai)** | 🎉 初コントリビュート：headless は結果を先に出力してからメモリをクリーンアップ、同等モデルセレクターの圧縮キャッシュ共有、マネージド初回の自動セッション作成、更新と書き込みシールのテスト | [#13885](https://github.com/QwenLM/qwen-code/pull/13885), [#15318](https://github.com/QwenLM/qwen-code/pull/15318), [#14561](https://github.com/QwenLM/qwen-code/pull/14561), [#14482](https://github.com/QwenLM/qwen-code/pull/14482) |
+
+<Callout type="info">
+  **アップグレード方法**：`npm i @qwen-code/qwen-code@latest -g` を実行すると最新バージョンにアップグレードできます。
+</Callout>
+
+ご意見・ご要望は [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) までお気軽にどうぞ！

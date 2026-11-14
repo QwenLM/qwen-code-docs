@@ -1,0 +1,176 @@
+---
+title: "Qwen Code: use a assinatura Qwen, conecte WeChat/QQ/e-mail no Web Shell e filtre o GitHub por repositório"
+date: "2026-11-12"
+description: "Nesta semana saíram as versões v0.26.8 a v0.27.2. A conta Qwen com assinatura pode ser usada no CLI, no VS Code e no desktop; WeChat e QQ são configurados no Web Shell com login por QR code, e o e-mail conecta com o servidor e a conta; o canal do GitHub ganha filtro de repositórios por whitelist/blacklist; o Web Shell ganha mapa de calor de perguntas e respostas e barra de uso, e as conversas podem ser organizadas em lote."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i3/O1CN01Ef5Q2Vdbv3J2jBZY_!!6000000006919-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code: use a assinatura Qwen, conecte WeChat/QQ/e-mail no Web Shell e filtre o GitHub por repositório"
+  date="2026-11-12"
+  author="Qwen Team"
+/>
+
+O Qwen Code lançou cinco versões oficiais nesta semana: de v0.26.8 a v0.27.2.
+
+**Entre com a conta Qwen e use a assinatura.** CLI, VS Code e desktop aceitam login com assinatura Plus/Pro: você conversa e busca na web usando os modelos da assinatura.
+
+**WeChat, QQ e e-mail agora são configurados no Web Shell.** WeChat e QQ fazem login por QR code na própria página; no e-mail, basta preencher o servidor e a conta.
+
+**O canal do GitHub filtra as atualizações por repositório.** A whitelist recebe só os repositórios listados; a blacklist exclui os listados.
+
+## ✨ Novidades
+
+### Faça login com a assinatura Qwen
+
+Se a sua conta Qwen já tem uma assinatura Plus ou Pro, entre com ela no terminal, no VS Code ou no desktop. No terminal, rode `/auth`, escolha a conta de membro Qwen e conclua a autorização no navegador. Depois do login, o cliente carrega os modelos disponíveis na assinatura, e a busca na web integrada também fica disponível.
+
+Na prática:
+
+- Use os modelos da assinatura direto no trabalho; o consumo sai da assinatura
+- Entre com a mesma conta no terminal, no VS Code e no desktop: os modelos são os mesmos
+- Sem configurar API: assinou o Qwen, já usa no Qwen Code
+
+Veja o PR [#16378](https://github.com/QwenLM/qwen-code/pull/16378).
+
+![Conta e lista de modelos após o login com assinatura Qwen](https://img.alicdn.com/imgextra/i2/O1CN01yN4UdkxBF2G7nW9B_!!6000000007738-2-tps-3841-2160.png)
+
+### Configure WeChat, QQ e e-mail no Web Shell
+
+O gerenciamento de Channels do Web Shell agora inclui WeChat, QQ e e-mail. WeChat e QQ mostram o QR code na própria página: escaneie com o celular e pronto. No e-mail, preencha o endereço do servidor e os dados da conta. Com isso, todas as principais plataformas de chat, exceto Telegram, podem ser configuradas no Web Shell.
+
+Na prática:
+
+- Escaneie o QR code no Web Shell com o celular e conecte as conversas privadas do WeChat pessoal ou vincule o QQ
+- Adicione ou edite o Email Channel no gerenciamento de Channels e escolha quais remetentes podem iniciar conversas por e-mail
+- Desfaça o pareamento de qualquer canal com um clique no Web Shell
+
+Veja os PRs [#16736](https://github.com/QwenLM/qwen-code/pull/16736), [#16724](https://github.com/QwenLM/qwen-code/pull/16724) e [#16746](https://github.com/QwenLM/qwen-code/pull/16746).
+
+![Página de login por QR code do canal WeChat no Web Shell](https://img.alicdn.com/imgextra/i1/O1CN01ldag0pIAw9J4s7XG_!!6000000004740-2-tps-2400-1626.png)
+
+### Filtre as atualizações do GitHub por repositório
+
+O canal do GitHub envia as atualizações do repositório direto para a conversa: alguém abre um PR, deixa um comentário, o CI termina — o agent assume a partir dali. Agora você escolhe o escopo: a whitelist recebe só os repositórios listados; a blacklist recebe todos, exceto os listados. As atualizações excluídas são puladas: não entram na conversa nem consomem processamento.
+
+Na prática:
+
+- Sua organização tem centenas de repositórios? Liste só os dois que você cuida e receba apenas as atualizações deles
+- Coloque na blacklist os repositórios que você não acompanha agora e readicione quando assumir
+- PRs de repositórios sem relação não ocupam mais a fila do agent; os repositórios que importam são processados mais rápido
+
+Veja o PR [#16493](https://github.com/QwenLM/qwen-code/pull/16493).
+
+![Configurações de filtro de repositórios no editor de Channels](https://img.alicdn.com/imgextra/i4/O1CN01NAru06FwyBE7o1Mj_!!6000000003227-2-tps-3845-2160.png)
+
+### Web Shell: perguntas e uso mais visíveis, conversas organizadas em lote
+
+**Um mapa de calor organiza as perguntas e respostas por dia.** Tarefas longas rodam por vários dias, e revisitar um dia específico agora leva um clique: o botão de mapa de calor abre um calendário em que a intensidade da cor corresponde ao número de perguntas e respostas do dia. Clique em um dia e vá direto à primeira pergunta e resposta dele. Veja o PR [#16037](https://github.com/QwenLM/qwen-code/pull/16037).
+
+**A barra de uso fica abaixo da caixa de entrada.** Uma linha de números mostra o número de turnos, a velocidade de saída, o total de tokens e a taxa de acerto de cache, sem abrir o painel de uso de token. Veja o PR [#16815](https://github.com/QwenLM/qwen-code/pull/16815).
+
+**Fixe e arquive conversas em lote.** A lateral ganhou um interruptor de seleção múltipla: marque as conversas e fixe ou arquive com um clique, sem organizar uma por uma nem abrir a visão geral das conversas. Veja o PR [#16702](https://github.com/QwenLM/qwen-code/pull/16702).
+
+**Peça detalhes sobre as opções que você não entendeu.** Quando a IA faz uma pergunta de múltipla escolha, o painel de perguntas ganha o botão "Pedir detalhes". Ele abre uma tarefa à parte que explica o significado, as diferenças, os impactos e a recomendação de cada opção. Veja o PR [#16458](https://github.com/QwenLM/qwen-code/pull/16458).
+
+**Outras melhorias.** Recolha ou expanda todos os workspaces com um clique e reordene arrastando pelo título ([#16197](https://github.com/QwenLM/qwen-code/pull/16197)); quando uma tarefa em segundo plano espera sua aprovação, o desktop mostra uma notificação ou o terminal toca um sino — você não perde nada mesmo em outra janela ([#16800](https://github.com/QwenLM/qwen-code/pull/16800)); cartões de ferramenta, como chamadas MCP, mostram os parâmetros e o resultado completo ao expandir ([#15435](https://github.com/QwenLM/qwen-code/pull/15435)); e a página de habilidades aceita upload direto de habilidades empacotadas em ZIP ([#16424](https://github.com/QwenLM/qwen-code/pull/16424)).
+
+![Seleção múltipla na lateral do Web Shell e barra de uso abaixo da caixa de entrada](https://img.alicdn.com/imgextra/i2/O1CN01kYhxxjdH7KK7o1Mj_!!6000000001014-2-tps-3845-2160.png)
+
+## 📊 Mais funcionalidades
+
+**Tarefas agendadas escolhem o canal de entrega.** Ao criar uma tarefa agendada no Web Shell, escolha em qual canal o resultado será entregue. Veja o PR [#16524](https://github.com/QwenLM/qwen-code/pull/16524).
+
+**O grupo QQ recebe mensagens proativas.** Resultados de tarefas agendadas, webhooks e tarefas em segundo plano agora chegam ao grupo QQ como mensagens proativas. Um interruptor opcional, `forwardBotMessages`, também encaminha à conversa as mensagens que outros bots enviam no grupo. Veja os PRs [#15635](https://github.com/QwenLM/qwen-code/pull/15635) e [#15904](https://github.com/QwenLM/qwen-code/pull/15904).
+
+**A sessão local ganha o hook de alteração de arquivos.** O `FileChanged` dispara o hook que você configurou quando um arquivo ou diretório monitorado é criado, modificado ou excluído — inclusive quando a mudança vem de outro programa. Veja o PR [#13969](https://github.com/QwenLM/qwen-code/pull/13969).
+
+**Plugins Mods ganham três novas capacidades.** `$.store` guarda os dados do plugin entre sessões; `ui.render` reescreve o texto da resposta exibido no terminal, e o texto armazenado e copiado permanece original; `$.model.complete` roda uma completação de texto pontual. Veja os PRs [#16791](https://github.com/QwenLM/qwen-code/pull/16791), [#16794](https://github.com/QwenLM/qwen-code/pull/16794) e [#16737](https://github.com/QwenLM/qwen-code/pull/16737).
+
+**Comentários do PR vinculado chegam sozinhos à conversa.** Com a conversa vinculada a um PR, os novos comentários do PR chegam automaticamente a ela — comentários comuns e comentários de review inline, sem precisar de @. Veja o PR [#16602](https://github.com/QwenLM/qwen-code/pull/16602).
+
+## 👏 Melhorias de experiência
+
+**A pergunta lateral do `/btw` aceita continuação e várias ao mesmo tempo.** Ao fazer uma nova pergunta lateral, as perguntas laterais já respondidas vêm junto: você continua a conversa a partir das respostas anteriores. Várias perguntas ao mesmo tempo recebem respostas independentes, sem interromper umas às outras. Veja o PR [#16408](https://github.com/QwenLM/qwen-code/pull/16408).
+
+**A sessão informa à IA qual shell está em uso.** bash, cmd.exe e outros shells são indicados no início da sessão: a IA não precisa adivinhar a sintaxe pelo sistema, e os comandos saem com menos erros no Windows. Veja o PR [#16491](https://github.com/QwenLM/qwen-code/pull/16491).
+
+**Os títulos automáticos seguem o idioma da conversa.** Conversas em chinês geram títulos em chinês — cada idioma fica no seu. Veja o PR [#16806](https://github.com/QwenLM/qwen-code/pull/16806).
+
+**Os motivos da verificação do Goal seguem o idioma da conversa.** A aprovação ou a rejeição é explicada no idioma de saída da conversa. Veja o PR [#15806](https://github.com/QwenLM/qwen-code/pull/15806).
+
+**Sugestões de acompanhamento em tailandês, laosiano, khmer e birmanês ficam no mesmo idioma.** Ao conversar em um desses idiomas, as sugestões de acompanhamento também são geradas nele. Veja o PR [#16341](https://github.com/QwenLM/qwen-code/pull/16341).
+
+**A inteligência de código experimental (LSP) pode ser ativada nas configurações.** Defina `tools.lspEnabled` como true nas configurações do usuário e pronto: sem flag de linha de comando, clientes que não recebem parâmetros, como o desktop, também ganham ir para a definição, encontrar referências e diagnósticos. Vem desligado por padrão. Veja o PR [#14613](https://github.com/QwenLM/qwen-code/pull/14613).
+
+**Configure globalmente se os subagentes rodam em primeiro ou segundo plano.** Com `agents.defaultBackground` em false, os subagentes rodam em primeiro plano e devolvem o resultado direto no turno atual — ideal para canais e bots, que precisam do resultado na mesma rodada. A mudança vale depois de reiniciar. Veja o PR [#15178](https://github.com/QwenLM/qwen-code/pull/15178).
+
+**Sessões gerenciadas seguram várias perguntas ao mesmo tempo.** As perguntas feitas por uma sessão gerenciada podem coexistir, e você responde em qualquer ordem. Veja o PR [#16484](https://github.com/QwenLM/qwen-code/pull/16484).
+
+**Os eventos do canal abrem a conversa correspondente.** Clique em um item da linha do tempo de eventos do canal e vá direto à conversa correspondente. Veja o PR [#16375](https://github.com/QwenLM/qwen-code/pull/16375).
+
+## 🔧 Correções importantes
+
+| Correção | Impacto para você | PR |
+|------|-----------|-----|
+| **Comando interrompido com Ctrl+C era reportado como "concluído"** | Agora é reportado como "interrompido": a saída já produzida é preservada, e a IA não trata um comando pela metade como sucesso | [#15836](https://github.com/QwenLM/qwen-code/pull/15836) |
+| **Substituição com sed falhava com quebras de linha do Windows e arquivos em chinês** | Em arquivos com CRLF ou Unicode, a substituição falhava ou corrompia o conteúdo; agora é tratada corretamente | [#15701](https://github.com/QwenLM/qwen-code/pull/15701) |
+| **Pedido de aprovação de workflow em segundo plano ficava preso sem ninguém ver** | Agora os detalhes da tarefa em segundo plano abrem para você aprovar, e a tarefa não fica mais esperando à toa | [#16432](https://github.com/QwenLM/qwen-code/pull/16432) |
+| **Troca de modelo parava de funcionar após login com assinatura** | A troca de modelos volta a funcionar, e a lógica de restauração da sessão foi alinhada | [#16738](https://github.com/QwenLM/qwen-code/pull/16738) |
+| **Configurar um provedor de modelo no VS Code sobrescrevia as configurações dos outros modelos** | Agora só o nome e o endereço do modelo escolhido são gravados; as demais configurações de modelo são preservadas | [#15829](https://github.com/QwenLM/qwen-code/pull/15829) |
+| **Excluir mais de 100 conversas de uma vez falhava direto** | A exclusão em lote agora é enviada em partes; os itens que falham são mantidos para nova tentativa | [#14637](https://github.com/QwenLM/qwen-code/pull/14637) |
+| **Web Shell travava quando faltava tradução no idioma da interface** | Os textos sem tradução voltam a aparecer em inglês | [#15474](https://github.com/QwenLM/qwen-code/pull/15474) |
+| **Prévia de página web salva no desktop não abria** | As prévias de página web salvas voltam a ser exibidas normalmente | [#14597](https://github.com/QwenLM/qwen-code/pull/14597) |
+| **Alguns modelos de visão de código aberto não recebiam imagens** | Antes, só os modelos registrados no catálogo interno recebiam entrada de imagem; agora tamanhos não registrados, aliases do Ollama e também Llama 3.2 Vision, Llama 4, LLaVA, Pixtral e Mistral Small 3.1/3.2 recebem imagens normalmente | [#16311](https://github.com/QwenLM/qwen-code/pull/16311), [#16309](https://github.com/QwenLM/qwen-code/pull/16309), [#16247](https://github.com/QwenLM/qwen-code/pull/16247) |
+| **Setas para cima/baixo na caixa de entrada descartavam o rascunho não enviado ao quebrar linha** | Depois de uma linha longa quebrada, as setas para cima/baixo puxavam mensagens do histórico e sobrescreviam o conteúdo não enviado; agora as setas primeiro se movem dentro do seu próprio texto, e o rascunho não se perde | [#14909](https://github.com/QwenLM/qwen-code/pull/14909) |
+| **Falha na renderização de gráfico deixava o bloco inteiro inutilizável** | Quando os dados são legíveis, a exibição recorre a uma tabela de dados | [#16021](https://github.com/QwenLM/qwen-code/pull/16021) |
+| **No Linux, reuso de número de processo fazia uma sessão antiga parecer ainda em execução** | Agora o marcador de início do processo é verificado, e números de processo reciclados não reportam atividade falsa | [#16128](https://github.com/QwenLM/qwen-code/pull/16128) |
+| **Comandos com a sintaxe `$'...'` eram reprovados pela verificação de segurança** | As sequências de escape ANSI-C e o `-c` final agora são analisados corretamente, e a proteção contra auto-kill e a verificação de permissões de arquivo não bloqueiam mais por engano | [#16540](https://github.com/QwenLM/qwen-code/pull/16540) |
+| **Comandos como /branch, /cd e /fork eram bloqueados quando ociosos** | Esses comandos de estado ocioso agora executam normalmente | [#16731](https://github.com/QwenLM/qwen-code/pull/16731) |
+| **Modelos Claude mostravam apenas um aviso de segurança genérico ao recusar uma resposta** | Agora o motivo específico da recusa é exibido | [#16079](https://github.com/QwenLM/qwen-code/pull/16079) |
+
+## 👥 Contribuidores
+
+| Contribuidor | Contribuição | PRs de referência |
+|--------|---------|-------------|
+| **[@2SinceJuly](https://github.com/2SinceJuly)** | substituição com sed compatível com CRLF e Unicode, comando cancelado reportado como interrompido, VS Code preserva as configurações dos outros modelos, contexto de inicialização indica o shell atual, correção da contagem de tokens de escrita em cache, bot de release abre issue só em falha, testes de sondagem de reconciliação do serve | [#15701](https://github.com/QwenLM/qwen-code/pull/15701), [#15836](https://github.com/QwenLM/qwen-code/pull/15836), [#15829](https://github.com/QwenLM/qwen-code/pull/15829), [#16491](https://github.com/QwenLM/qwen-code/pull/16491), [#16454](https://github.com/QwenLM/qwen-code/pull/16454), [#15852](https://github.com/QwenLM/qwen-code/pull/15852), [#16568](https://github.com/QwenLM/qwen-code/pull/16568) |
+| **[@jianyx1](https://github.com/jianyx1)** | exclusão em lote de conversas enviada em partes, rascunho preservado ao quebrar linha, reforço dos testes de aprovação gerenciada e de workspace TUI | [#14637](https://github.com/QwenLM/qwen-code/pull/14637), [#14909](https://github.com/QwenLM/qwen-code/pull/14909), [#15994](https://github.com/QwenLM/qwen-code/pull/15994), [#16033](https://github.com/QwenLM/qwen-code/pull/16033) |
+| **[@Shizoqua](https://github.com/Shizoqua)** | estouro de contexto no Hugging Face TGI dispara compressão, Qwen2-VL/Qwen2.5-VL/QVQ recebem imagens, Qwen VL com nome Ollama recebe imagens, modelos de visão Llama/LLaVA/Pixtral/Mistral recebem imagens | [#16245](https://github.com/QwenLM/qwen-code/pull/16245), [#16247](https://github.com/QwenLM/qwen-code/pull/16247), [#16309](https://github.com/QwenLM/qwen-code/pull/16309), [#16311](https://github.com/QwenLM/qwen-code/pull/16311) |
+| **[@4ekuct25](https://github.com/4ekuct25)** | texto sem tradução no idioma da interface volta para o inglês, motivos da verificação do Goal seguem o idioma da conversa, consolidação das fixtures de teste da lateral | [#15474](https://github.com/QwenLM/qwen-code/pull/15474), [#15806](https://github.com/QwenLM/qwen-code/pull/15806), [#16016](https://github.com/QwenLM/qwen-code/pull/16016) |
+| **[@ZedingZhang](https://github.com/ZedingZhang)** | padrão de primeiro/segundo plano dos subagentes configurável, artefatos de revisão validados por nome com formato indicado, atualização após atribuição de conversa independente | [#15178](https://github.com/QwenLM/qwen-code/pull/15178), [#14824](https://github.com/QwenLM/qwen-code/pull/14824), [#15311](https://github.com/QwenLM/qwen-code/pull/15311) |
+| **[@BigDaddy1337](https://github.com/BigDaddy1337)** | interruptor de LSP nas configurações do usuário, cartão de ferramenta expandido mostra parâmetros e resultado | [#14613](https://github.com/QwenLM/qwen-code/pull/14613), [#15435](https://github.com/QwenLM/qwen-code/pull/15435) |
+| **[@Eric-GoodBoy-Tech](https://github.com/Eric-GoodBoy-Tech)** | entrega de mensagens proativas no grupo QQ, encaminhamento opcional de mensagens de bots | [#15635](https://github.com/QwenLM/qwen-code/pull/15635), [#15904](https://github.com/QwenLM/qwen-code/pull/15904) |
+| **[@jabrailkhalil](https://github.com/jabrailkhalil)** | sugestões de leitura de memória respeitam o orçamento do índice, serialização das novas tentativas de limpeza | [#15368](https://github.com/QwenLM/qwen-code/pull/15368), [#15482](https://github.com/QwenLM/qwen-code/pull/15482) |
+| **[@Jun516](https://github.com/Jun516)** | inferência em lote reporta o orçamento de saída por provedor, botões da barra inferior estáveis durante a renomeação inline | [#15181](https://github.com/QwenLM/qwen-code/pull/15181), [#15182](https://github.com/QwenLM/qwen-code/pull/15182) |
+| **[@lorenzozanee](https://github.com/lorenzozanee)** | credenciais de endereço de daemon recusado não são salvas, reforço da sondagem da versão publicada no desktop | [#12285](https://github.com/QwenLM/qwen-code/pull/12285), [#12184](https://github.com/QwenLM/qwen-code/pull/12184) |
+| **[@TianYuan1024](https://github.com/TianYuan1024)** | hooks de projeto abrem a caixa de aprovação antes, correção de Ctrl+C e de falha de heap Java em PR de fork | [#14748](https://github.com/QwenLM/qwen-code/pull/14748), [#16150](https://github.com/QwenLM/qwen-code/pull/16150) |
+| **[@zonemeen](https://github.com/zonemeen)** | desktop restaura a prévia de página web salva, conversa independente mostra as alterações de arquivos | [#14597](https://github.com/QwenLM/qwen-code/pull/14597), [#15070](https://github.com/QwenLM/qwen-code/pull/15070) |
+| **[@Bug-killer-prog](https://github.com/Bug-killer-prog)** | limitação do estouro de timeout na inicialização de sessão do SDK | [#14676](https://github.com/QwenLM/qwen-code/pull/14676) |
+| **[@cactuser-Lu](https://github.com/cactuser-Lu)** | recarregamento da conversa independente roteado por tipo de origem | [#12384](https://github.com/QwenLM/qwen-code/pull/12384) |
+| **[@dakjdakd](https://github.com/dakjdakd)** | backpressure do terminal web calculado pela entrada pendente | [#14313](https://github.com/QwenLM/qwen-code/pull/14313) |
+| **[@GoldArowana](https://github.com/GoldArowana)** | convergência do estado de parada após falha na chamada Live | [#13835](https://github.com/QwenLM/qwen-code/pull/13835) |
+| **[@hahahahahayesyeseys](https://github.com/hahahahahayesyeseys)** | isolamento de texto Markdown com direção mista | [#14035](https://github.com/QwenLM/qwen-code/pull/14035) |
+| **[@he-yufeng](https://github.com/he-yufeng)** | backoff de reconexão da extensão de navegador preservado entre reinícios | [#14022](https://github.com/QwenLM/qwen-code/pull/14022) |
+| **[@liwenjie200543](https://github.com/liwenjie200543)** | limpeza de declarações obsoletas da estratégia de merge REPLACE | [#12613](https://github.com/QwenLM/qwen-code/pull/12613) |
+| **[@loglapa](https://github.com/loglapa)** | extensões com atribuição clara dos diagnósticos LSP | [#14117](https://github.com/QwenLM/qwen-code/pull/14117) |
+| **[@Oscar-Williams](https://github.com/Oscar-Williams)** | testes de atividade em segundo plano da ponte ACP | [#12243](https://github.com/QwenLM/qwen-code/pull/12243) |
+| **[@tonydzi](https://github.com/tonydzi)** | aviso de timeout de leitura MCP indica a origem do limite | [#13312](https://github.com/QwenLM/qwen-code/pull/13312) |
+| 🆕 **[@521Peter](https://github.com/521Peter)** | 🎉 Primeira contribuição: documentação dos requisitos de ponte de ferramentas da migração tools.core | [#16750](https://github.com/QwenLM/qwen-code/pull/16750) |
+| 🆕 **[@brainsparker](https://github.com/brainsparker)** | 🎉 Primeira contribuição: lista de MCP de busca na web ganha o serviço gratuito You.com | [#14000](https://github.com/QwenLM/qwen-code/pull/14000) |
+| 🆕 **[@everyoneexe](https://github.com/everyoneexe)** | 🎉 Primeira contribuição: agente de memória em segundo plano reporta o motivo ao parar | [#13466](https://github.com/QwenLM/qwen-code/pull/13466) |
+| 🆕 **[@fede-kamel](https://github.com/fede-kamel)** | 🎉 Primeira contribuição: documentação de integração do OCI Generative AI | [#16345](https://github.com/QwenLM/qwen-code/pull/16345) |
+| 🆕 **[@sanchitmonga22](https://github.com/sanchitmonga22)** | 🎉 Primeira contribuição: documentação de integração do Wally | [#16529](https://github.com/QwenLM/qwen-code/pull/16529) |
+| 🆕 **[@spped2000](https://github.com/spped2000)** | 🎉 Primeira contribuição: sugestões de acompanhamento em tailandês e outros três idiomas permanecem no idioma original, documentação de configuração para rodar Qwen3.x com nomes de modelo personalizados | [#16341](https://github.com/QwenLM/qwen-code/pull/16341), [#16342](https://github.com/QwenLM/qwen-code/pull/16342) |
+| 🆕 **[@vshulcz](https://github.com/vshulcz)** | 🎉 Primeira contribuição: documentação de configuração do MCP externo context_search | [#16041](https://github.com/QwenLM/qwen-code/pull/16041) |
+| 🆕 **[@xxwtiancai](https://github.com/xxwtiancai)** | 🎉 Primeira contribuição: resultado headless é emitido antes da limpeza de memória, seletores de modelo equivalentes compartilham o cache de compressão, primeira criação automática de sessão gerenciada, testes de renovação e de selagem de escrita | [#13885](https://github.com/QwenLM/qwen-code/pull/13885), [#15318](https://github.com/QwenLM/qwen-code/pull/15318), [#14561](https://github.com/QwenLM/qwen-code/pull/14561), [#14482](https://github.com/QwenLM/qwen-code/pull/14482) |
+
+<Callout type="info">
+  **Como atualizar**: execute `npm i @qwen-code/qwen-code@latest -g` para atualizar para a versão mais recente.
+</Callout>
+
+Se tiver dúvidas ou sugestões, fique à vontade para enviar feedback pelos [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
