@@ -38,7 +38,16 @@ parcourt trois couches dans l'ordre :
 
 Le classificateur utilise votre modèle rapide configuré
 (`/model --fast`). Si aucun modèle rapide n'est configuré, le modèle de la session
-principale est utilisé à la place.
+principale est utilisé à la place. Si l'Étape 1 du modèle rapide atteint sa limite de temps
+et que le modèle de session a un identifiant configuré différent, le Mode Auto demande au
+modèle de session une révision indépendante complète avant de basculer vers
+l'approbation manuelle. L'action en attente et la session restent en Mode Auto.
+
+Cette révision reçoit le même contexte filtré et la même politique, avec une nouvelle
+limite de temps utilisant `permissions.autoMode.classifier.timeouts.stage2Ms` (30 secondes
+par défaut). Avec le budget par défaut de 10 secondes pour l'Étape 1, le repli peut ajouter
+jusqu'à 30 secondes de temps de requête. Il ne réessaie pas un blocage de politique déjà
+terminé, et l'annulation par l'utilisateur arrête la révision.
 
 > [!tip]
 >
@@ -210,16 +219,21 @@ souhaitez des raisons dans une autre langue, ajoutez un hint comme
 
 Le Mode Auto vous protège contre les blocages :
 
-- Si l'API du classificateur est inaccessible, expire (timeout), dépasse sa fenêtre de contexte
-  ou renvoie une réponse invalide, l'action en cours bascule immédiatement vers
-  l'approbation manuelle. La confirmation recommande le mode par défaut (Default Mode) et propose
-  **Passer en mode par défaut et autoriser une fois** à côté de Autoriser une fois et Rejeter.
+- Une limite de temps sur l'Étape 1 du modèle rapide déclenche d'abord la révision distincte
+  par le modèle de session décrite ci-dessus. Si cette révision échoue également ou expire,
+  ou si les identifiants configurés du modèle rapide et du modèle de session correspondent,
+  l'action bascule vers l'approbation manuelle. Les autres échecs du classificateur (erreurs API,
+  débordement de contexte, réponses invalides ou échec de la révision de l'Étape 2) basculent
+  encore directement. La confirmation recommande le Mode par défaut et propose
+  **Passer en Mode par défaut et autoriser une fois** à côté de Autoriser une fois et Rejeter.
   Le changement affecte uniquement la session d'exécution en cours ; il ne modifie pas
   vos paramètres sauvegardés.
 
-- Après **3 blocages consécutifs par la politique**, le prochain appel d'outil bascule vers
-  l'invite d'approbation manuelle standard. Cela couvre le cas où l'agent
-  continue d'essayer des variantes mineures d'une commande interdite.
+- Après **3 blocages consécutifs** — les blocages par la politique du classificateur et les
+  blocages déterministes de commandes destructrices comptent tous deux — l'appel qui atteint
+  le troisième blocage bascule vers l'invite d'approbation manuelle standard. Cela couvre le cas
+  où l'agent continue d'essayer des variantes mineures d'une commande interdite, ou continue
+  de réémettre une commande que la garde destructive refuse.
 - Après **2 résultats consécutifs indisponibles** (échecs de l'API du classificateur),
   les appels suivants ignorent le classificateur connu comme défaillant et passent directement
   à l'approbation manuelle. Le premier résultat indisponible demande déjà une approbation ;
@@ -244,6 +258,16 @@ langage naturel. Exemples :
 
 - `"Construction des images Docker pour ce projet (docker build ...)"`
 - `"Exécution des migrations de base de données sur la base de données de test locale"`
+
+**"Classificateur du Mode Auto indisponible"**
+
+L'API du classificateur n'a pas répondu. Causes possibles :
+
+- Problème réseau entre vous et le point de terminaison du modèle.
+- Le modèle rapide configuré n'est plus disponible — vérifiez `/model --fast`.
+- La transcription est trop longue et dépasse la fenêtre de contexte du modèle rapide.
+
+Pendant le diagnostic, revenez au Mode par défaut : `/approval-mode default`.
 
 **"Repli vers l'approbation manuelle"**
 
@@ -293,9 +317,11 @@ renforcée au fil du temps.
 
 **Le Mode Auto envoie-t-il mon code à un tiers ?**
 
-Le Mode Auto réutilise votre configuration de modèle existante — le même point de terminaison que
-l'agent principal. Si vous avez configuré Qwen Code pour utiliser un modèle auto-hébergé,
-le classificateur s'exécute également sur ce point de terminaison.
+Le Mode Auto utilise le point de terminaison configuré pour votre modèle rapide, ou votre modèle
+de session lorsqu'aucun modèle rapide n'est configuré ou qu'une limite de temps de l'Étape 1
+déclenche la révision par le modèle de session. Configurez les deux modèles avec votre point de
+terminaison auto-hébergé si la classification doit y rester. Le repli utilise le même contexte
+filtré ; il n'ajoute pas les résultats des outils ni le contenu complet des conversations.
 
 **Mes secrets / contenus `.env` atteindront-ils le classificateur ?**
 

@@ -29,6 +29,8 @@ Ative IMAP e SMTP para a caixa de correio e exporte suas credenciais para o ambi
 
 Execute `qwen channel start agent-mail`. Os campos de senha aceitam as referências `$ENV_VAR` existentes; mantenha senhas em texto fora das configurações. O adapter desativa o log de protocolo e reporta falhas de conexão sem expor credenciais.
 
+O mesmo canal pode ser criado e editado no gerenciador de canais do Web Shell, que o lista junto com os outros canais configurados. Como cada entrega de e-mail é uma conversa direta, o editor não mostra política de grupo, IDs de grupo permitidos ou controles de membros de grupo para este canal; uma entrada `groupPolicy` ou `groups` já presente em `settings.json` não é alterada ao salvar.
+
 TLS implícito usa por padrão a porta 993 do IMAP e a porta 465 do SMTP. Para STARTTLS, defina `imapSecure` ou `smtpSecure` como `false`; as portas padrão passam a ser 143 e 587, respectivamente. STARTTLS e verificação de certificado permanecem obrigatórios. Substitua `imapPort` e `smtpPort` quando necessário. Para uma CA privada, configure `NODE_EXTRA_CA_CERTS` do Node antes de iniciar o Qwen Code.
 
 | Opção | Padrão | Significado |

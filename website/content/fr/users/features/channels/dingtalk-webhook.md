@@ -46,6 +46,16 @@ Une instance nommée représente un groupe configuré. Créez des instances supp
 pour d'autres groupes. La mise à jour de l'URL d'une instance change la destination pour les livraisons
 futures qui la référencent.
 
+## Utiliser Web Shell
+
+Dans Channels, choisissez DingTalk et sa méthode d'envoi par webhook. Enregistrez l'URL du webhook et le secret de signature optionnel, puis démarrez le canal. Les paramètres de réception, de pairing et de session agent ne s'appliquent pas à cette méthode.
+
+Un statut prêt/connecté signifie que les ressources d'envoi locales sont prêtes ; cela ne vérifie pas les identifiants distants.
+
+Dans Scheduled Tasks, choisissez une tâche persistante et sélectionnez ce canal comme destination de livraison. Web Shell remplit automatiquement la destination configurée ; aucun contact observé ni ID utilisateur/chat manuel n'est nécessaire. Les restrictions de livraison par exécution existantes restent en vigueur.
+
+Les mêmes contrôles sont disponibles dans le Web Shell partagé utilisé par `WebShellWithProviders`, lorsque l'hôte active Channels et Scheduled Tasks et fournit un workspace de démon ordinaire.
+
 ## Livraison API explicite
 
 Les livraisons Notify et les livraisons explicites de prompt/planifiées utilisent le format de cible

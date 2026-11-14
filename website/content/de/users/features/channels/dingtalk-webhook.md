@@ -46,6 +46,24 @@ Eine benannte Instanz repräsentiert eine konfigurierte Gruppe. Erstelle zusätz
 für andere Gruppen. Das Ändern der URL einer Instanz ändert das Ziel für zukünftige
 Deliveries, die sie referenzieren.
 
+## Web Shell verwenden
+
+Wähle in Channels DingTalk und dessen Webhook-Versandmethode. Speichere die Webhook-
+URL und das optionale Signing-Secret, und starte dann den Channel. Empfangs-, Pairing- und
+Agent-Session-Einstellungen gelten nicht für diese Methode.
+
+Ein Ready/Connected-Status bedeutet, dass lokale Versandressourcen bereit sind;
+er verifiziert keine Remote-Anmeldedaten.
+
+Wähle in Scheduled Tasks eine persistente Aufgabe und wähle diesen Channel als
+Delivery-Ziel. Web Shell füllt das konfigurierte Ziel automatisch aus;
+keine beobachteten Kontakte oder manuelle Benutzer-/Chat-ID werden benötigt. Bestehende pro-Run-Delivery-
+Einschränkungen bleiben in Kraft.
+
+Dieselben Steuerungen sind in der gemeinsamen Web Shell verfügbar, die von
+`WebShellWithProviders` verwendet wird, wenn der Host Channels und Scheduled Tasks aktiviert und
+einen gewöhnlichen Daemon-Workspace bereitstellt.
+
 ## Explizite API-Delivery
 
 Notify und explizite Prompt-/Scheduled-Delivery verwenden das bestehende Channel-Ziel-
@@ -76,7 +94,7 @@ das Signing-Secret bleiben in der Channel-Konfiguration.
   Gewöhnlicher Text wird ebenfalls akzeptiert. Der Adapter bewahrt das mitgelieferte Markdown,
   einschließlich Tabellensyntax; das Rendering übernimmt der DingTalk-Client.
 - Er empfängt keine Nachrichten, führt keine eingehenden Webhook-Aufgaben aus und ermöglicht keine Channel-Loops.
-- Prüft sowohl HTTP-Status als auch DingTanks Business-Response. Abgewiesene Signaturen,
+- Prüft sowohl HTTP-Status als auch DingTalks Business-Response. Abgewiesene Signaturen,
   Anmeldedaten, Sicherheitsregeln und Rate-Limits sind Fehler mit bereinigten Fehlermeldungen.
 - Kein automatischer Retry. Ein Timeout kann dazu führen, dass die Remote-Annahme unbekannt bleibt.
 - Verwendet die Workspace-Proxy-Konfiguration, einschließlich `NO_PROXY`-Ausnahmen.

@@ -171,6 +171,8 @@ O modo Auto-Edit instrui o Qwen Code a aprovar automaticamente as edições de a
 
 As ferramentas de edição aprovadas automaticamente incluem `edit`, `write_file` e `notebook_edit`.
 
+Uma chamada que corresponda a uma regra [`permissions.ask`](../configuration/settings.md#permissions) ainda solicita confirmação neste modo, assim como no modo Auto. Isso também se aplica a subagentes, que executam em Auto-Edit por padrão quando a sessão está no modo Ask Permissions em uma pasta confiável: um subagente em primeiro plano solicita inline, e um subagente em segundo plano, que não pode solicitar, tem a chamada negada.
+
 ### Quando usar o modo Auto-Accept Edits
 
 - **Desenvolvimento diário**: Ideal para a maioria das tarefas de codificação
@@ -245,7 +247,7 @@ Você pode personalizar o julgamento do classificador via hints em linguagem nat
 - **Regras rígidas permanecem em vigor**: as regras `permissions.deny` bloqueiam ações antes que o classificador seja executado.
 - **Regras de permissão muito amplas são removidas no modo Auto**: por exemplo, `permissions.allow: ["Bash"]` (permitir todos os comandos shell) anula o classificador; entrar no modo Auto desativa temporariamente essas regras para que o classificador possa fazer seu trabalho. As regras são restauradas quando você sai do modo Auto. As configurações no disco nunca são modificadas.
 - **Fail-closed**: quando a API do classificador está inacessível, a ação é bloqueada em vez de permitida. Após duas chamadas consecutivas indisponíveis, a próxima chamada de ferramenta volta para a aprovação manual.
-- **Proteção contra loop**: após três bloqueios consecutivos por política, a próxima chamada também volta para a aprovação manual para que o agente não fique preso em um ciclo de uma abordagem sem saída.
+- **Proteção contra loop**: após três bloqueios consecutivos — bloqueios por política do classificador e bloqueios determinísticos de comandos destrutivos contam — a chamada que atinge o terceiro bloqueio também volta para a aprovação manual para que o agente não fique preso em um ciclo de uma abordagem sem saída.
 
 ### Exemplo
 

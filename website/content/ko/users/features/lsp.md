@@ -15,11 +15,17 @@ Qwen Code의 LSP 지원은 코드를 이해하는 언어 서버에 연결하여 
 
 ## 빠른 시작
 
-LSP는 Qwen Code의 실험적 기능입니다. 활성화하려면 `--experimental-lsp` 명령줄 플래그를 사용하세요:
+LSP는 Qwen Code의 실험적 기능입니다. 활성화하려면 사용자 `settings.json`에서 `tools.lspEnabled`를 설정하세요:
 
-```bash
-qwen --experimental-lsp
+```json
+{
+  "tools": {
+    "lspEnabled": true
+  }
+}
 ```
+
+명령줄 플래그를 받는 호스트는 대신 `--experimental-lsp`를 사용할 수 있습니다 — 두 가지는 동일하며, `QWEN_CODE_ENABLE_LSP=1` / `QWEN_CODE_DISABLE_LSP=1`이 둘 다 재정의합니다(비활성화가 우선). 이 두 변수는 운영자의 환경이나 홈 범위의 `.env`에서만 설정할 수 있습니다; 프로젝트 `.env`나 `settings.env` 값은 자동으로 무시됩니다. 이 설정은 시작 시에만 읽히므로 변경하려면 재시작이 필요합니다; 사용자, 시스템 및 시스템 기본 범위에서 적용되며, 워크스페이스 `.qwen/settings.json`에서는 적용되지 않습니다. 이를 활성화하면 세션이 사용자의 권한으로 언어 서버를 생성할 수 있기 때문입니다. LSP는 안전 모드(`--safe-mode` / `QWEN_CODE_SAFE_MODE=1`), 베어 모드, 읽기 전용 에이전트 호스트, SSH 워크스페이스 및 임시 워크스페이스에서는 완전히 거부됩니다. 해당 모드들은 서버를 선언하는 워크스페이스 내용을 신뢰하지 않기 때문입니다. 서버 선언은 워크스페이스/확장 결정으로 유지됩니다.
 
 LSP 서버는 구성 기반입니다. Qwen Code가 시작하려면 `.lsp.json`(또는 확장)에 정의해야 합니다.
 
@@ -35,6 +41,7 @@ LSP 서버는 구성 기반입니다. Qwen Code가 시작하려면 `.lsp.json`(�
 | Rust                  | rust-analyzer             | [설치 가이드](https://rust-analyzer.github.io/manual.html#installation)         |
 | C/C++                 | clangd                    | 패키지 관리자를 통해 LLVM/clangd 설치                                           |
 | Java                  | jdtls                     | JDTLS 및 JDK 설치                                                              |
+| C#                    | roslyn-language-server     | `dotnet tool install --global roslyn-language-server --prerelease` (.NET 10+)  |
 
 ## 구성
 
@@ -99,6 +106,47 @@ LSP 서버는 구성 기반입니다. Qwen Code가 시작하려면 `.lsp.json`(�
   }
 }
 ```
+
+### C# (Roslyn) 구성
+
+종속성:
+
+- .NET 10 런타임 이상 (`dotnet --version`).
+- `roslyn-language-server` 전역 도구:
+  `dotnet tool install --global roslyn-language-server --prerelease`. 현재 사전 요구 사항 및 옵션은
+  [Roslyn language server README](https://github.com/dotnet/roslyn/blob/main/src/LanguageServer/roslyn-language-server/README.md)를
+  참조하세요.
+
+예시:
+
+```json
+{
+  "csharp": {
+    "command": "roslyn-language-server",
+    "args": ["--stdio", "--autoLoadProjects"],
+    "extensionToLanguage": {
+      ".cs": "csharp"
+    }
+  }
+}
+```
+
+Windows에서 전역 도구는 `%USERPROFILE%\.dotnet\tools` 아래에 `cmd` 심으로 설치됩니다. Qwen Code는 셸 없이 서버를 시작하므로,
+단순한 `roslyn-language-server`는 `where`로 발견되지만 생성에 실패합니다. 거기서는 셸 형식을 사용하세요:
+
+```json
+{
+  "csharp": {
+    "command": "cmd",
+    "args": ["/c", "roslyn-language-server", "--stdio", "--autoLoadProjects"],
+    "extensionToLanguage": {
+      ".cs": "csharp"
+    }
+  }
+}
+```
+
+`%USERPROFILE%\.dotnet\tools\.store\roslyn-language-server\<version>\...` 아래의 실제 실행 파일에 대한 절대 경로도 작동합니다.
 
 ### 구성 옵션
 
@@ -310,18 +358,18 @@ Parameters:
 
 ## 보안
 
-LSP 서버는 기본적으로 신뢰할 수 있는 작업 공간에서만 시작됩니다. 언어 서버는 사용자 권한으로 실행되며 코드를 실행할 수 있기 때문입니다.
+언어 서버는 사용자 권한으로 실행되며 코드를 실행할 수 있습니다. 워크스페이스의 `.lsp.json`으로 구성된 서버는 실행 파일 가용성 probing 및 핫 리로드를 포함하여 **명시적 폴더 신뢰**가 필요합니다. 사용자 설정에서 `security.folderTrust.enabled`를 활성화하고 디렉토리를 신뢰하거나, IDE를 통해 워크스페이스 신뢰를 부여하세요. 폴더 신뢰를 비활성화하면 YOLO 모드에서도 워크스페이스 LSP 구성이 승인되지 않습니다.
 
 ### 신뢰 제어
 
-- **신뢰할 수 있는 작업 공간**: 구성된 경우 LSP 서버가 시작됩니다
-- **신뢰할 수 없는 작업 공간**: 서버 구성에서 `trustRequired: false`를 설정하지 않으면 LSP 서버가 시작되지 않습니다
+- **명시적으로 신뢰된 워크스페이스**: 구성된 경우 워크스페이스 LSP 서버가 시작됩니다.
+- **명시적 신뢰 없음**: 워크스페이스 `.lsp.json` 서버는 건너뛰어집니다. 저장소는 `trustRequired: false`를 설정하거나 확장 소스를 선언하여 이를 재정의할 수 없습니다.
 
-작업 공간을 신뢰 가능한 것으로 표시하려면 `/trust` 명령어를 사용하세요.
+사용자 설정에서 폴더 신뢰를 활성화한 후, 시작 신뢰 대화상자나 `/trust`를 사용하여 디렉토리를 신뢰하세요. CLI의 신뢰 결정을 변경한 후 재시작하세요.
 
 ### 서버별 신뢰 오버라이드
 
-구성에서 특정 서버의 신뢰 요구 사항을 오버라이드할 수 있습니다:
+설치된 확장은 기존 신뢰 정책을 유지합니다. 호스트가 신뢰할 수 없는 워크스페이스에서 LSP 검색을 허용할 때 확장은 `trustRequired: false`를 선언할 수 있습니다. 이 재정의는 워크스페이스 `.lsp.json`에서 무시됩니다:
 
 ```json
 {
@@ -340,10 +388,10 @@ LSP 서버는 기본적으로 신뢰할 수 있는 작업 공간에서만 시작
 
 ### 서버가 시작되지 않음
 
-1. **`--experimental-lsp` 플래그 확인**: Qwen Code 시작 시 플래그를 사용하고 있는지 확인하세요
+1. **LSP 활성화 확인**: 사용자, 시스템 또는 시스템 기본 범위에서 `tools.lspEnabled` 설정을 사용하거나 `--experimental-lsp` 플래그를 사용하세요; `QWEN_CODE_ENABLE_LSP=1` / `QWEN_CODE_DISABLE_LSP=1`이 둘 다 재정의합니다(비활성화가 우선). 안전 모드(`--safe-mode`, `QWEN_CODE_SAFE_MODE=1`)와 `--bare`는 LSP를 거부하며, 거기서는 `/lsp`가 등록되지 않습니다
 2. **서버 설치 확인**: 명령어를 수동으로 실행하여 확인하세요 (예: `clangd --version`)
 3. **명령어 확인**: 서버 바이너리가 시스템 `PATH`에 있거나 절대 경로로 지정되어야 합니다 (예: `/opt/llvm/bin/clangd`). 작업 공간을 벗어나는 상대 경로는 차단됩니다
-4. **작업 공간 신뢰 확인**: LSP를 위해 작업 공간이 신뢰되어야 합니다 (`/trust` 사용)
+4. **워크스페이스 신뢰 확인**: 워크스페이스에서 선언된 서버는 명시적으로 신뢰된 폴더에서만 시작됩니다 — `security.folderTrust.enabled`를 활성화하고 `/trust`로 폴더를 신뢰하거나, 워크스페이스를 신뢰된 것으로 보고하는 IDE를 연결하세요. 신뢰할 수 없는 워크스페이스라는 IDE 보고(VS Code 제한 모드)도 이를 건너뛰며, 폴더 신뢰가 꺼져 있고 IDE 신뢰가 없으면 서버는 승인되지 않고 건너뛰어집니다. IDE 검사는 `.lsp.json`이 변경될 때 재평가되며, 건너뛰기는 `--debug` 로그에서만 `requires trusted workspace, skipping`으로 나타납니다
 5. **로그 확인**: `--debug`로 Qwen Code를 시작한 후 디버그 로그에서 LSP 관련 항목을 검색하세요 (아래 디버깅 섹션 참조)
 6. **프로세스 확인**: `ps aux | grep <server-name>`을 실행하여 서버 프로세스가 실행 중인지 확인하세요
 
@@ -361,10 +409,10 @@ LSP 서버는 기본적으로 신뢰할 수 있는 작업 공간에서만 시작
 
 ### 디버깅
 
-LSP에는 별도의 디버그 플래그가 없습니다. Qwen Code의 일반 디버그 모드와 LSP 기능 플래그를 함께 사용하세요:
+LSP에는 별도의 디버그 플래그가 없습니다. 설정(또는 플래그)을 통해 LSP를 활성화한 다음 Qwen Code의 일반 디버그 모드를 켜세요:
 
 ```bash
-qwen --experimental-lsp --debug
+qwen --debug
 ```
 
 디버그 로그는 세션 디버그 로그 디렉토리에 기록됩니다. LSP 관련 항목을 확인하려면:
@@ -453,18 +501,19 @@ ps aux | grep clangd   # 또는 typescript-language-server, jdtls 등
 
 ### Q: LSP를 어떻게 활성화하나요?
 
-Qwen Code 시작 시 `--experimental-lsp` 플래그를 사용하세요:
+사용자, 시스템 또는 시스템 기본 범위에서 `tools.lspEnabled` 설정을 사용하거나 `--experimental-lsp` 플래그를 사용하세요. `QWEN_CODE_ENABLE_LSP=1`과 `QWEN_CODE_DISABLE_LSP=1`이 둘 다 재정의합니다(비활성화가 우선); 워크스페이스 범위 값은 무시됩니다.
 
-```bash
-qwen --experimental-lsp
+```jsonc
+// ~/.qwen/settings.json (사용자 범위)
+{ "tools": { "lspEnabled": true } }
 ```
 
 ### Q: 어떤 언어 서버가 실행 중인지 어떻게 알 수 있나요?
 
-LSP와 디버그 모드를 활성화하여 Qwen Code를 시작하세요:
+LSP가 활성화된 상태(설정 또는 플래그)와 디버그 모드를 켜고 Qwen Code를 시작하세요:
 
 ```bash
-qwen --experimental-lsp --debug
+qwen --debug
 ```
 
 그런 다음 짧은 요약을 위해 `/status`, 서버별 상태를 위해 `/lsp`를 실행하거나 디버그 로그를 확인하세요:

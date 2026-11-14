@@ -171,6 +171,8 @@ Le mode Auto-Edit demande à Qwen Code d'approuver automatiquement les modificat
 
 Les outils d'édition approuvés automatiquement incluent `edit`, `write_file`, et `notebook_edit`.
 
+Un appel qui correspond à une règle [`permissions.ask`](../configuration/settings.md#permissions) demande toujours une confirmation dans ce mode, comme en mode Auto. Cela s'applique également aux sous-agents, qui s'exécutent en mode Auto-Edit par défaut lorsque la session est en mode Ask Permissions dans un dossier fiable : un sous-agent au premier plan demande en ligne, et un sous-agent en arrière-plan, qui ne peut pas demander, voit son appel refusé.
+
 ### Quand utiliser le mode Auto-Accept Edits
 
 - **Développement quotidien** : Idéal pour la plupart des tâches de codage
@@ -245,7 +247,7 @@ Vous pouvez personnaliser le jugement du classificateur via des hints en langage
 - **Les règles strictes restent en vigueur** : les règles `permissions.deny` bloquent les actions avant même que le classificateur ne s'exécute.
 - **Les règles allow trop larges sont désactivées en mode Auto** : par exemple, `permissions.allow: ["Bash"]` (autoriser toutes les commandes shell) contourne le classificateur ; l'entrée en mode Auto désactive temporairement ces règles pour que le classificateur puisse faire son travail. Les règles sont restaurées lorsque vous quittez le mode Auto. Les paramètres sur le disque ne sont jamais modifiés.
 - **Échec fermé (Fail-closed)** : lorsque l'API du classificateur est inaccessible, l'action est bloquée plutôt qu'autorisée. Après deux appels consécutifs indisponibles, l'appel d'outil suivant revient à une approbation manuelle.
-- **Garde de boucle (Loop guard)** : après trois blocages consécutifs par la politique, l'appel suivant revient également à une approbation manuelle afin que l'agent ne reste pas bloqué dans une approche sans issue.
+- **Garde de boucle (Loop guard)** : après trois blocages consécutifs — les blocages par la politique du classificateur et les blocages déterministes de commandes destructrices comptent tous deux — l'appel qui atteint le troisième blocage revient également à une approbation manuelle afin que l'agent ne reste pas bloqué dans une approche sans issue.
 
 ### Exemple
 

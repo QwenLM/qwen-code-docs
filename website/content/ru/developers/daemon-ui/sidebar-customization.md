@@ -226,6 +226,7 @@ sidebar={{
 type WebShellSidebarSessionActionItem =
   | 'details' // 📝 Details (dropdown sub-menu)
   | 'rename' // ✏️ Rename (dropdown menu)
+  | 'bindPr' // 🔗 Bind a GitHub PR (dropdown menu)
   | 'group' // 📁 Group/Move to folder (dropdown menu)
   | 'export' // 📤 Export chat history (dropdown menu)
   | 'delete' // 🗑 Delete session (dropdown menu)
@@ -249,7 +250,8 @@ interface WebShellSidebarSessionActionsOptions {
 Управляет тем, какие кнопки действий отображаются в строках сессий:
 
 - **`items`**: Главный переключатель всех действий (и inline, и dropdown). Если элемента нет в `items`, он скрыт везде.
-- **`inlineItems`**: Управляет тем, какие элементы отображаются как **inline-кнопки** (при наведении) на стандартных строках сессий. По умолчанию `['pin']`. Можно использовать только элементы с работающими inline-обработчиками: `'pin'`, `'rename'`, `'export'`, `'delete'`. `'details'`, `'group'`, `'archive'` и `'split'` доступны только через dropdown на стандартных строках.
+- **`inlineItems`**: Управляет тем, какие элементы отображаются как **inline-кнопки** (при наведении) на стандартных строках сессий. По умолчанию `['pin']`. Можно использовать только элементы с работающими inline-обработчиками: `'pin'`, `'rename'`, `'export'`, `'delete'`. `'details'`, `'bindPr'`, `'group'`, `'archive'` и `'split'` доступны только через dropdown на стандартных строках.
+- **Встроенное условие `bindPr`**: показывается только когда сессия поддерживает мутацию метаданных — текущая сессия в первичном или заблокированном рабочем пространстве, или любая другая сессия с возможностью (capability) `workspace_session_metadata` (плюс `workspace_qualified_rest_core`, если эта сессия находится в заблокированном или ограниченном вторичном рабочем пространстве) — и строка не является отдельной сессией (включая строки недавних) — отдельные маршруты метаданных принимают только отображаемое имя. Это не зависит от элемента `rename`: хост может разрешить `bindPr` без `rename`.
 
 Архивные строки в Settings используют Export conversation и Restore как inline-кнопки, а Rename и Delete в More. Их действия по-прежнему подчиняются `items` и встроенным ограничениям доступности; `inlineItems` не меняет этот макет. Существующие стили показывают эти кнопки при наведении или фокусе клавиатурой и держат их видимыми на сенсорных устройствах.
 
@@ -274,11 +276,17 @@ interface WebShellSidebarSessionActionsOptions {
 split, показывает элемент отключённым с пояснительным заголовком, как и
 случай с лимитом панелей и текущая сессия, пока split закрыт.
 
+`'split'` по умолчанию включён, как и другие элементы, но действует только
+когда хост подключает `onAddSessionToSplitView`. Sidebar также читает свой
+проп `splitSessionIds` для определения ёмкости: сессия, уже открытая в
+split, показывает элемент отключённым с пояснительным заголовком, как и
+случай с лимитом панелей и текущая сессия, пока split закрыт.
+
 ```tsx
 sidebar={{
   sessionActions: {
-    items: ['details', 'rename', 'export', 'delete', 'pin'],  // which actions to show (master control)
-    inlineItems: ['pin', 'delete'],  // pin + delete as inline buttons
+    items: ['details', 'rename', 'export', 'delete', 'pin'],  // какие действия показывать (главный переключатель)
+    inlineItems: ['pin', 'delete'],  // pin + delete как inline-кнопки
   },
 }}
 ```

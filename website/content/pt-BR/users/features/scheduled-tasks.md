@@ -18,7 +18,11 @@ Com múltiplos workspaces, escolha um workspace ao criar uma tarefa. Uma tarefa 
 
 ## Entregar resultados de tarefas da Web Shell a um Canal
 
-No `qwen serve`, abra **Tarefas Agendadas** e crie ou edite uma tarefa em seu workspace. Escolha um destino de execução persistente (uma sessão dedicada, ou a sessão atual quando disponível), depois escolha um **Canal de Entrega**, um tipo de destino de usuário ou chat, e um ID de destino. Contatos recentes observados são sugestões opcionais; verifique o nome do Canal, tipo e ID bruto antes de selecionar um. Você também pode inserir um ID diretamente. Se um ID tiver espaços em branco no início ou no final, o formulário avisa e oferece **Remover espaços em branco ao redor**; ele nunca altera o ID automaticamente. O Canal configurado deve suportar o envio para esse destino.
+No `qwen serve`, abra **Tarefas Agendadas** e crie ou edite uma tarefa em seu workspace. Escolha um destino de execução persistente (uma sessão dedicada, ou a sessão atual quando disponível), depois escolha um **Canal de Entrega**.
+
+Para Canais com um destino configurado, como [webhooks do DingTalk](./channels/dingtalk-webhook.md), selecionar o Canal usa esse destino sem exigir um tipo ou ID. Se o destino salvo de uma tarefa existente for diferente, o formulário o preserva e oferece **Usar destino configurado** para substituí-lo explicitamente.
+
+Para outros Canais, escolha um tipo de destino de usuário ou chat e um ID de destino. Contatos recentes observados são sugestões opcionais; verifique o nome do Canal, tipo e ID bruto antes de selecionar um. Você também pode inserir um ID diretamente. Se um ID tiver espaços em branco no início ou no final, o formulário avisa e oferece **Remover espaços em branco ao redor**; ele nunca altera o ID automaticamente. O Canal configurado deve suportar o envio para esse destino.
 
 A entrega está desativada por padrão. Configurar um Canal sozinho não habilita a entrega para nenhuma tarefa. Quando habilitada, a resposta final de uma execução agendada concluída com sucesso é enviada através do Canal selecionado; isso não garante o recebimento nem adiciona tentativas duráveis ou alertas de falha. O cartão da tarefa exibe uma linha de entrega apenas quando tem um destino salvo.
 

@@ -50,10 +50,19 @@ Dieser Leitfaden bietet Lösungen für häufige Probleme und Tipps zur Fehlerbeh
   - A: Informationen zu zwischengespeicherten Tokens werden nur angezeigt, wenn auch tatsächlich zwischengespeicherte Tokens verwendet werden. Diese Funktion ist für API-Key-Nutzer verfügbar (z. B. Alibaba Cloud Model Studio API key oder Google Cloud Vertex AI). Du kannst dir deine gesamte Token-Nutzung weiterhin mit dem Befehl `/stats` anzeigen lassen.
 
 - **F: Eine Anpassung (Extension, Hook, Skill, MCP-Server oder Subagent) scheint Qwen Code zu beeinträchtigen. Wie kann ich die Ursache isolieren?**
-  - A: Starte Qwen Code mit dem `--safe-mode`-Flag, um alle Anpassungen für die Sitzung zu deaktivieren – Kontextdateien, Hooks, Extensions, Skills, MCP-Server, benutzerdefinierte Subagents (nur integrierte Subagents werden geladen), Berechtigungsregeln, aus den Einstellungen übernommene Approval-Mode-Overrides, Speicherfunktionen und Sandbox-Einstellungen. Hinweis: Die CLI-Flags `--yolo` und `--approval-mode` sind im Safe Mode weiterhin wirksam. Wenn das Problem im Safe Mode nicht mehr auftritt, aktiviere deine Anpassungen nacheinander wieder, um den Verursacher zu finden.
+  - A: Starte Qwen Code mit dem `--safe-mode`-Flag, um alle Anpassungen für die Sitzung zu deaktivieren – Kontextdateien, Hooks, Extensions, Skills, MCP-Server, benutzerdefinierte Subagents (nur integrierte Subagents werden geladen), Berechtigungsregeln, aus den Einstellungen übernommene Approval-Mode-Overrides, Speicherfunktionen, Cross-Session-Messaging, LSP und Sandbox-Einstellungen. Hinweis: Die CLI-Flags `--yolo` und `--approval-mode` sind im Safe Mode weiterhin wirksam. Wenn das Problem im Safe Mode nicht mehr auftritt, aktiviere deine Anpassungen nacheinander wieder, um den Verursacher zu finden.
     - Beispiel: `qwen --safe-mode`
     - Alternative: Setze die Umgebungsvariable `QWEN_CODE_SAFE_MODE=true`, wenn die CLI keine Flags akzeptieren kann.
+    - Hinweis: Im Gegensatz zum Flag wird eine exportierte `QWEN_CODE_SAFE_MODE`-Variable an Kindprozesse vererbt. Ein `qwen serve`-Daemon oder ein aus dieser Shell gestarteter Editor hostet jede seiner Sessions im Safe Mode, sodass diese Sessions ebenfalls unterdrückt werden: Sie schreiben keinen Session-Datensatz, und andere Sessions können sie weder auflisten noch ihnen Nachrichten senden. Hebe die Variable für den Daemon auf, anstatt sie in der Shell, die ihn startet, exportiert zu lassen.
     - Hinweis: „MCP-Server" bezieht sich hier auf Server, die in `settings.json` / `.mcp.json` des Projekts konfiguriert sind — lokaler, ambienter Zustand, gegen den der Safe Mode isolieren soll. MCP-Server, die du explizit für den aktuellen Aufruf bereitstellst (die `mcpServers` eines Embedding-ACP-Clients bei `session/new` oder `--mcp-config`), sind kein lokaler/ambienter Zustand und werden auch im Safe Mode berücksichtigt.
+
+## Attachment-Upload gibt HTTP 413 hinter einem Reverse Proxy zurück
+
+Ein Proxy kann eine Anfrage ablehnen, bevor sie `qwen serve` erreicht, selbst wenn das Attachment innerhalb des 8-MiB-Dateilimits des Daemons liegt. Nur das Daemon-Body-Limit zu erhöhen, ändert nichts am Proxy-Limit.
+
+Verwende einen Daemon- und TypeScript-SDK/WebShell-Build, der `session_attachment_chunk_upload` unterstützt. Attachments größer als 512 KiB werden dann in 512-KiB-Requests hochgeladen, ohne ihre Bytes oder Bildqualität zu ändern. Ältere Daemons behalten den Single-Request-Upload-Pfad. Wenn du den Proxy betreibst, kannst du auch dessen Request-Body-Limit erhöhen, um die ursprüngliche Attachment-Anfrage zu bedienen. Proxies mit Limits unter 512 KiB benötigen weiterhin eine Konfigurationsänderung.
+
+Das Attachment-Limit bleibt bei 8 MiB. Wenn ein Upload abläuft oder der Daemon neu startet, wiederhole den Attachment-Versuch aus der UI. Ein abgeschlossener Upload, dessen Response verloren ging, kann in den Attachments der Session verbleiben; Abbrüche entfernen keine bereits abgeschlossene Datei.
 
 ## Häufige Fehlermeldungen und Lösungen
 
@@ -94,12 +103,12 @@ Dieser Leitfaden bietet Lösungen für häufige Probleme und Tipps zur Fehlerbeh
 - **Trackpad-Scrollen in tmux ändert die Prompt-Historie, anstatt durch die Konversation zu scrollen**
   - **Problem:** In einer tmux-Sitzung kann das Scrollen mit dem Trackpad oder Mausrad durch vorherige Prompts blättern, ähnlich wie das Drücken von `Pfeil nach oben` oder `Pfeil nach unten`.
   - **Ursache:** tmux kann Radgesten in einfache Pfeiltasten-Sequenzen übersetzen. Diese Sequenzen sind für qwen-code nicht mehr von echten Pfeiltastendrücken zu unterscheiden.
-  - **Lösung:** Wenn der Screen-Reader-Modus deaktiviert ist, stelle sicher, dass `ui.useTerminalBuffer` aktiviert ist; verwende dann `Shift+Up` / `Shift+Down` oder das Mausrad, wenn tmux Mausrad-Ereignisse an die App weiterleitet (erfordert `ui.mouseTracking`). Wenn du den Host-Scrollback bevorzugst, passe deine tmux-Maus-Bindings für Mausrad-Ereignisse an.
+  - **Lösung:** Wenn der Screen-Reader-Modus deaktiviert ist, stelle sicher, dass `ui.useTerminalBuffer` aktiviert ist; verwende dann `Shift+Up` / `Shift+Down` oder das Mausrad, wenn tmux Mausrad-Ereignisse an die App weiterleitet (erfordert `ui.mouseTracking`). Um einfache `Pfeil nach oben` / `Pfeil nach unten` an den Viewport weiterzugeben, während der Composer leer ist, setze `ui.arrowKeysScrollTranscript` auf `true`; die Eingabe-Historie ist dann über `Strg+P` / `Strg+N` erreichbar. Wenn du den Host-Scrollback bevorzugst, passe deine tmux-Maus-Bindings für Mausrad-Ereignisse an.
 
 - **Rechtsklick funktioniert nicht, Links öffnen sich nicht oder Text kann im Terminal nicht ausgewählt werden**
-  - **Problem:** Native Rechtsklick-Kontextmenüs, OSC-8-Hyperlink-Klicks (Strg+Klick oder einfacher Klick auf URLs) und die native Textauswahl des Terminals funktionieren nicht, während Qwen Code läuft.
+  - **Problem:** Native Rechtsklick-Kontextmenüs, OSC-8-Hyperlink-Klicks und die native Textauswahl des Terminals funktionieren nicht, während Qwen Code läuft.
   - **Ursache:** Wenn `ui.mouseTracking` aktiviert ist (Standard), erfasst Qwen Code alle Mausereignisse über SGR-Maus-Tracking, um die In-App-Textauswahl, Klick-zum-Positionieren, Zeilen-Hover, History-Item-Toggling und Viewport-Scrolling zu ermöglichen. Das Terminal leitet jedes Mausereignis an die App weiter, anstatt es nativ zu verarbeiten. Qwen Code liefert eigene Ersetzungen, während das Tracking aktiv ist: Ein einfacher Klick öffnet einen http(s) OSC 8-Hyperlink, und ein Rechtsklick auf einen Link oder eine Textauswahl öffnet ein In-App-Kontextmenü.
-  - **Lösung:** Setze `"ui.mouseTracking": false` in deiner `settings.json`, um native Rechtsklick-Menüs und anklickbare URL-Links wiederherzustellen. Dadurch wird jegliche In-App-Mausinteraktion deaktiviert, einschließlich des In-App-Link-Öffnens und des Kontextmenüs. In der Virtualized History (`ui.useTerminalBuffer: true`, Standard) scrollt das Mausrad dann nicht mehr durch das Transkript. Verwende stattdessen `Shift+↑/↓`, `PgUp/PgDn` oder `Ctrl+Home/End`. Um auch den nativen Terminal-Scrollback wiederherzustellen, setze `"ui.useTerminalBuffer": false`. Erfordert Neustart.
+  - **Lösung:** Wenn du die native Verarbeitung des Terminals bevorzugst, setze `"ui.mouseTracking": false` in deiner `settings.json`. Dadurch wird jegliche In-App-Mausinteraktion deaktiviert, einschließlich des In-App-Link-Öffnens und des Kontextmenüs. In der Virtualized History (`ui.useTerminalBuffer: true`, Standard) scrollt das Mausrad dann nicht mehr durch das Transkript. Verwende stattdessen `Shift+↑/↓`, `PgUp/PgDn` oder `Ctrl+Home/End`. Um auch den nativen Terminal-Scrollback wiederherzustellen, setze `"ui.useTerminalBuffer": false`. Erfordert Neustart.
 
 ## IDE Companion verbindet nicht
 
@@ -109,6 +118,18 @@ Dieser Leitfaden bietet Lösungen für häufige Probleme und Tipps zur Fehlerbeh
   - `QWEN_CODE_IDE_SERVER_PORT`
 - Wenn es in einem Container ausgeführt wird, überprüfe, ob `host.docker.internal` aufgelöst wird. Andernfalls mappe den Host entsprechend.
 - Installiere den Companion mit `/ide install` neu und verwende „Qwen Code: Run“ in der Command Palette, um zu überprüfen, ob er gestartet wird.
+
+## Verbindungsabbrüche auf manchen Netzwerken (TLS-Stack-selektive Middleboxes)
+
+- **Problem:** Auf manchen Carrier- oder Unternehmensnetzwerken werden HTTPS-Verbindungen zu API-Endpunkten unmittelbar nach dem TLS-ClientHello zurückgesetzt (TCP RST). Qwen Code versucht es immer wieder (`ECONNRESET` ist ein wiederholbarer Transportfehler), bis das Budget erschöpft ist, und zeigt dann einen generischen Verbindungsfehler an – während `curl`, Python und andere Tools auf demselben Rechner und Netzwerk im selben Moment einwandfrei funktionieren.
+- **Ursache:** Manche Middleboxes filtern Verbindungen nach dem TLS-ClientHello-Fingerprint und setzen solche zurück, die von bestimmten TLS-Stack-Generationen emittiert werden. Auf betroffenen Links werden OpenSSL-3.0-Ära-Stacks und Electron/BoringSSL (verwendet von der VS-Code-Extension und dem Daemon) zurückgesetzt, während OpenSSL-3.5-Generation-Stacks – einschließlich aktueller Node.js-Builds – sich normal verbinden.
+- **Lösung:** Stelle die Verbindung mit einem 3.5-Generation-TLS-Stack her:
+  - **CLI:** Verwende einen aktuellen Build einer unterstützten Node.js-Linie (aktuelle Node 22/24/25-Builds liefern alle einen 3.5-Generation-OpenSSL aus). Ältere Builds derselben Major-Version können noch auf einer betroffenen Generation sein – aktualisiere, anstatt auf eine alte Minor-Version zu pinnen.
+  - **VS-Code-Extension / Daemon:** Die Extension läuft auf Electrons TLS-Stack und kann ihn clientseitig nicht ändern. Betreibe ein kleines lokales Relay – einen lokalen Prozess auf einem 3.5-Generation-Stack – und richte Qwen Code über das Model-Base-URL-Override darauf aus (der benutzerdefinierte Endpunkt in `settings.json` oder `--openaiBaseUrl` für die CLI), sodass der TLS-Egress mit dem neueren Stack erfolgt.
+- **So unterscheidest du das von einem instabilen Netzwerk:**
+  - Der Abbruch ist deterministisch – jeder Versuch schlägt sofort fehl, über alle Retries hinweg, und erholt sich nicht im Laufe der Zeit;
+  - auf demselben Rechner und im selben Moment funktionieren andere TLS-Stacks gegen denselben Endpunkt;
+  - das Pinnen von TLS-Versionen oder das Ändern der DNS-Auflösung hilft nicht.
 
 ## Exit Codes
 

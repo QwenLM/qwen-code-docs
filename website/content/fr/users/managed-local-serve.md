@@ -79,7 +79,7 @@ Un port public occupé suit la tentative de port proche bornée du démon ordina
 utilisez l'adresse navigateur imprimée par le lanceur.
 
 Cette commande unique démarre à la fois le démon ordinaire et Managed Agent. Le même
-WebShell liste les workspaces et sessions ordinaires et Managed ensemble sous Projets, avec un label Managed sur les workspaces Managed et sans onglets de mode d'exécution. Nouvelle tâche suit le workspace ou la conversation sélectionné. Les sessions locales utilisent
+WebShell liste les workspaces et sessions ordinaires et Managed ensemble sous Workspaces, avec un label Managed sur les workspaces Managed et sans onglets de mode d'exécution. Nouvelle session suit le workspace ou la conversation sélectionnée. Les sessions locales utilisent
 le répertoire où vous avez exécuté la commande, tandis que les sessions Managed utilisent leurs
 Workspaces créés par l'application ou des projets locaux explicitement importés. Les deux utilisent
 la même origine navigateur authentifiée ;
@@ -110,12 +110,12 @@ l'approbation avant une action qui la nécessite.
 
 Après un redémarrage, continuer une Session existante peut attendre que son bail
 d'écriture SQL précédent expire (60 secondes par défaut). Conservez le répertoire de données original
-et réessayez après cet intervalle ; redémarrer les processus ne efface pas la propriété.
+et réessayez après cet intervalle ; redémarrer les processus n'efface pas la propriété.
 
 ## Workspaces et données persistantes
 
 Le répertoire de données privé par défaut est `<Qwen home>/managed-local`, normalement
-`~/.qwen/managed-local`. Override avec :
+`~/.qwen/managed-local`. Remplacez avec :
 
 ```sh
 qwen serve --managed --managed-data-dir /absolute/private/data --open
@@ -130,16 +130,11 @@ ou arrêtez le service en conflit plutôt que de modifier les faits persistés.
 Le démarrage crée un Workspace par défaut possédé par l'application et son OWNER grant
 via l'API Workspace idempotente existante. Pour utiliser un projet local existant,
 ouvrez **Workspace → Choisir un répertoire existant**, parcourez ou entrez son chemin
-absolu, puis ajoutez le dossier. Le service enregistre son parent et accorde l'accès OWNER
-automatiquement, en conservant les fichiers existants. Les nouvelles tâches démarrent dans le
-projet sélectionné. Vous pouvez également créer un Workspace vide.
+absolu, puis ajoutez le dossier. Le service accorde l'accès OWNER et conserve les fichiers existants en place. Les nouvelles tâches démarrent dans le projet sélectionné. Les nouveaux imports sont des répertoires externes partagés : des installations locales indépendantes peuvent importer le même projet sans transférer son parent ni remplacer un marqueur de stockage global existant. Le parent reste la limite partagée de navigation et de disposition worktree dans chaque installation. Vous pouvez également créer un Workspace vide.
 
 Le répertoire de lancement reste disponible pour les sessions Local et n'est pas importé
 automatiquement. `--workspace` reste non supporté en mode Managed local ; sélectionnez
-le projet dans l'UI. Le marqueur de maintenance `.qwen-managed-storage.json` est
-conservé en dehors des worktrees Git ; ne le modifiez pas, supprimez, stash ou commitez pas. Les fichiers
-de projet importés restent en dehors du répertoire de données Managed privé et nécessitent leur
-propre sauvegarde.
+le projet dans l'UI. Les nouvelles métadonnées d'import sont privées à l'installation sous `runtime/imported-projects/<storage ID>/.qwen-managed-storage.json` ; préservez-les avec le répertoire de données Managed complet. Les imports existants et le stockage possédé par l'application conservent leur contrat de marqueur antérieur ; ne modifiez pas, ne supprimez pas, ne stash ou ne commitez pas ces marqueurs. Les fichiers de projet importés restent en dehors du répertoire de données Managed privé et nécessitent leur propre sauvegarde.
 
 L'historique de session Local continue d'utiliser le stockage Qwen ordinaire. Il est séparé
 du répertoire de données Managed et n'est pas inclus dans une sauvegarde Managed uniquement.
@@ -175,7 +170,7 @@ mvn -f packages/sdk-java/qwencode/pom.xml -DskipTests -Dgpg.skip=true install
 mvn -f packages/managed-agent-server/pom.xml verify
 npm run package:managed-runtime -- \
   --target darwin-arm64 \
-  --server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha.jar \
+  --server-jar packages/managed-agent-server/server/target/qwen-managed-agent-server-0.1.0-alpha-exec.jar \
   --jre-home /verified/java-21-home \
   --out-dir /output/managed-runtime
 ```
@@ -183,7 +178,7 @@ npm run package:managed-runtime -- \
 Le builder de runtime a uniquement besoin du JAR serveur correspondant, du runtime Java et de la version CLI
 de ce checkout. Il ne nécessite pas d'assets CLI construits ni d'archive Node.
 Par défaut il écrit dans
-`packages/managed-agent-server/target/managed-runtime`, en dehors des assets CLI
+`packages/managed-agent-server/server/target/managed-runtime`, en dehors des assets CLI
 `dist/`. Il émet l'archive runtime et un fichier `.sha256` par archive. Le
 CLI normal est construit/publié séparément.
 
@@ -193,7 +188,7 @@ au lieu de `--jre-home` :
 ```sh
 npm run package:managed-runtime -- \
   --target darwin-arm64 \
-  --server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha.jar \
+  --server-jar packages/managed-agent-server/server/target/qwen-managed-agent-server-0.1.0-alpha-exec.jar \
   --without-jre \
   --out-dir /output/managed-runtime
 ```
@@ -205,7 +200,7 @@ Le builder léger n'a besoin d'aucune entrée Java. Pour une distribution compl�
 npm run package:standalone -- \
   --target darwin-arm64 \
   --node-archive /verified/node-v22-darwin-arm64.tar.gz \
-  --managed-server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha.jar \
+  --managed-server-jar packages/managed-agent-server/server/target/qwen-managed-agent-server-0.1.0-alpha-exec.jar \
   --managed-jre-home /verified/java-21-home \
   --out-dir /output/managed-local
 ```
@@ -237,16 +232,25 @@ déjà publié, en utilisant le SDK et le serveur depuis cette révision source 
 exécution manuelle doit être dispatchée depuis `main` et par défaut en dry run. Il vérifie
 le module CLI et Java, construit le profil `central-release`, et conserve le
 JAR et la somme de contrôle comme artifacts de workflow sans modifier les dépôts publics.
+Le workflow sélectionne le build `-exec.jar` lorsqu'il est présent et revient au
+JAR principal pour les tags plus anciens ; le nom public versionné du JAR reste inchangé.
 
 Après avoir vérifié le dry run, les opérateurs de release peuvent exécuter le même tag avec
 `dry_run=false` via l'environnement protégé `production-release`. Le
 workflow définit la version d'artifact serveur à la version CLI, publie
-`com.alibaba:qwen-managed-agent-server:<cli-version>` sur Maven Central avec
-les sources, Javadoc et signatures, et distribue le même JAR principal plus son
-`.sha256` via cette GitHub Release et le miroir OSS versionné existant.
-Les JARs auxiliaires d'opérateur ne sont pas attachés à la publication Central. Les assets
-existants sont comparés octet par octet et ne sont jamais remplacés par du contenu différent.
+le JAR exécutable vérifié plus son `.sha256` via cette GitHub Release et le
+miroir OSS versionné existant, et vérifie les deux canaux de téléchargement publics par rapport
+aux bytes stagés. Les assets existants sont comparés octet par octet et ne sont jamais remplacés
+par du contenu différent.
 Les événements de release CLI publiés exécutent également ce workflow automatiquement.
+
+La distribution runtime nécessite les identifiants d'upload OSS existants et l'accès
+aux releases GitHub. Elle n'a pas besoin des identifiants de publication Central ni d'une clé
+privée GPG, et ne vérifie, ne publie ni n'attend la coordonnée serveur sur Central.
+Maven construit et vérifie entièrement le SDK et le serveur, y compris la résolution
+de dépendances normale. Le profil `central-release` existant peut
+être utilisé séparément pour la publication Maven signée lorsque nécessaire ; cette opération
+ne bloque pas la livraison runtime.
 
 Le CLI télécharge depuis OSS/GitHub, pas Maven Central. Il ne résout pas le
 SDK comme une dépendance utilisateur séparée : le JAR serveur exécutable inclut ses dépendances
@@ -256,5 +260,7 @@ assets ni ne contourne l'environnement de release de production.
 
 Voir le [design](../design/2026-10-20-managed-local-serve.md) bilingue pour
 les limites de propriété et les critères de validation, et la
+[référence serveur Java](../../packages/managed-agent-server/README.md) pour
+les déploiements MySQL orientés opérateur., et la
 [référence serveur Java](../../packages/managed-agent-server/README.md) pour
 les déploiements MySQL orientés opérateur.
