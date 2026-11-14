@@ -83,6 +83,14 @@ Todo lançamento agendado ou manual segue estas etapas:
 
 Se alguma etapa do workflow de lançamento falhar, ele criará automaticamente uma nova issue no repositório com os rótulos `bug` e um rótulo de falha específico do tipo (ex.: `nightly-failure`, `preview-failure`). A issue conterá um link para a execução do workflow que falhou para facilitar a depuração.
 
+### Quando um lançamento fica na fila
+
+O `Publish Release` é executado em um runner hospedado pelo GitHub e não pode ser movido para os pools ECS: o [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) suporta apenas runners hospedados em nuvem, então um publicador auto-hospedado falharia na autenticação e não emitiria proveniência. As etapas macOS e Windows do `audio-capture-prebuilds.yml` também são hospedadas, porque compilam contra toolchains nativos; apenas suas etapas Linux selecionam `ecs-qwen-release-host`.
+
+A concorrência hospedada é compartilhada em toda a conta com a automação de revisão de PR, autofix e triagem, então essas etapas hospedadas entram na fila atrás desse tráfego. Uma etapa na fila não é um lançamento com falha: o GitHub ainda não atribuiu um runner a ela, seu log ainda está vazio, e `timeout-minutes` só começa a contar quando ela é executada. Em 2026-11-01, uma publicação esperou 2h33m por um runner e então terminou em 5m37s, enquanto os nightlies ao redor foram despachados 3–4s após o término de suas compilações. Prefira o nightly, ou faça o despacho fora do pico de horário comercial de Asia/Shanghai, quando um lançamento manual for sensível ao tempo.
+
+Veja [Release runner slots](../../design/2026-10-28-release-queue-optimization.md) para a análise do pool e quais jobs de lançamento já foram movidos dos runners hospedados.
+
 ## Validação de Lançamento
 
 Após enviar um novo lançamento, testes de fumaça devem ser realizados para garantir que os pacotes estão funcionando conforme esperado. Isso pode ser feito instalando os pacotes localmente e executando um conjunto de testes para verificar se estão funcionando corretamente.
@@ -221,6 +229,6 @@ Isso informa ao NPM que qualquer pasta dentro do diretório `packages` é um pac
 
 ### Benefícios dos Workspaces
 
-- **Gerenciamento Simplificado de Dependências**: Executar `npm install` a partir da raiz do projeto instalará todas as dependências para todos os pacotes no workspace e os vinculará. Isso significa que você não precisa executar `npm install` no diretório de cada pacote.
-- **Vinculação Automática**: Pacotes dentro do workspace podem depender uns dos outros. Quando você executa `npm install`, o NPM criará automaticamente symlinks entre os pacotes. Isso significa que, quando você faz alterações em um pacote, as alterações ficam imediatamente disponíveis para outros pacotes que dependem dele.
+- **Gerenciamento Simplificado de Dependências**: Executar `corepack pnpm install --frozen-lockfile` a partir da raiz do projeto instala as dependências de cada pacote no workspace e vincula os pacotes entre si, para que você não precise instalar no diretório de cada pacote.
+- **Vinculação Automática**: Pacotes dentro do workspace podem depender uns dos outros. Quando você instala a partir da raiz, o pnpm cria symlinks entre os pacotes. Isso significa que, quando você faz alterações em um pacote, as alterações ficam imediatamente disponíveis para outros pacotes que dependem dele.
 - **Execução Simplificada de Scripts**: Você pode executar scripts em qualquer pacote a partir da raiz do projeto usando a flag `--workspace`. Por exemplo, para executar o script `build` no pacote `cli`, você pode executar `npm run build --workspace @qwen-code/qwen-code`.

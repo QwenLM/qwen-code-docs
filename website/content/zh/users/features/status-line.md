@@ -90,8 +90,8 @@
 | `context-remaining` | | 剩余上下文窗口百分比（例如 `Context 65.7% left`） |
 | `total-input-tokens` | | 会话中累计使用的输入 token（例如 `30.0k total in`） |
 | `total-output-tokens` | | 会话中累计使用的输出 token（例如 `5.0k total out`） |
-| `current-dir` | 是 | 当前工作目录 |
-| `project-name` | | 项目名称（工作目录的 basename） |
+| `current-dir` | | 当前工作目录 |
+| `project-name` | 是 | 项目名称（工作目录的 basename） |
 | `pull-request-number` | | 当前分支的未合并 PR 编号（需要 `gh` CLI） |
 | `branch-changes` | | 会话文件变更统计（例如 `+120 -30`） |
 | `context-used` | 是 | 已使用的上下文窗口百分比（例如 `Context 34.3% used`） |

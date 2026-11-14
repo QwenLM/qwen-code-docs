@@ -26,6 +26,9 @@ pip install --pre qwen-code-sdk
 ```
 
 `qwen`이 `PATH`에 없으면 `path_to_qwen_executable`을 명시적으로 전달하세요.
+Windows에서는 SDK가 npm의 `qwen.cmd` 심을 유효한 자식 `PATH`를 통해서만 발견하며, 확장자 없는 셸 심과 실행할 수 없는 `PATHEXT` 연관은 무시합니다. 현재 디렉토리의 명령은 해당 디렉토리가 `PATH`에 명시적으로 포함된 경우에만 고려됩니다.
+`env` 옵션을 통해 조회 경로를 재정의할 수 있습니다. Windows 환경 변수 이름은 대소문자를 구분하지 않으므로 `PATH`, `Path`, `path`는 동일합니다.
+실행 중인 Windows 심을 종료하면 시스템 `taskkill` 유틸리티를 통해 CLI 프로세스 트리가 중지되며, 프로세스 종료 및 stderr 정리 대기는 제한된 타임아웃을 가집니다.
 
 SDK 코드를 작성하기 전에, 같은 셸에서 CLI가 작동하는지 확인하세요:
 
@@ -147,7 +150,7 @@ with query_sync(
 | `append_system_prompt`     | `str`                                                      | 시스템 프롬프트에 추가 지시를 덧붙입니다.                                                                                |
 | `debug`                    | `bool`                                                     | `stderr` hook이 없을 때 CLI stderr를 stderr로 전달합니다.                                                            |
 | `max_session_turns`        | `int`                                                      | CLI가 세션을 종료하기 전 최대 턴 수.                                                                                  |
-| `core_tools`               | `list[str]`                                                | 사용 가능한 도구 세트를 제한합니다.                                                                                     |
+| `core_tools`               | `list[str]`                                                | 비어 있지 않은 core-tool 허용 목록. 생략되거나 빈 목록은 지정되지 않은 것으로 간주되며, `core_tools=[]`는 도구를 비활성화하지 않습니다.                  |
 | `exclude_tools`            | `list[str]`                                                | 일치하는 도구를 제외합니다.                                                                                          |
 | `allowed_tools`            | `list[str]`                                                | 콜백 승인 없이 일치하는 도구를 허용합니다.                                                                                |
 | `auth_type`                | `openai`, `anthropic`, `qwen-oauth`, `gemini`, `vertex-ai` | CLI에 전달할 인증 모드.                                                                                             |
@@ -156,7 +159,7 @@ with query_sync(
 | `continue_session`         | `bool`                                                     | 최신 CLI 세션을 계속합니다.                                                                                          |
 | `session_id`               | UUID 문자열                                                 | 알려진 id로 세션을 시작하거나 연관시킵니다.                                                                               |
 | `timeout`                  | 매핑                                                        | 초 단위의 타임아웃.                                                                                               |
-| `stderr`                   | 콜백                                                        | CLI stderr 라인을 받습니다.                                                                                          |
+| `stderr`                   | callable                                                   | CLI stderr 라인을 받습니다.                                                                                          |
 
 요청에서 `resume`, `continue_session`, `session_id` 중 하나만 사용하세요.
 이 세션 옵션들을 조합하면 SDK가 `ValidationError`를 발생시킵니다.

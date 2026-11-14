@@ -79,7 +79,7 @@ Uma porta pública ocupada segue a tentativa limitada de porta próxima do daemo
 use o endereço do navegador impresso pelo launcher.
 
 Este único comando inicia tanto o daemon comum quanto o Managed Agent. O mesmo
-WebShell lista workspaces e sessões comuns e gerenciadas juntas em Projects, com um rótulo Managed nos workspaces gerenciados e sem abas de modo de execução. Nova tarefa segue o workspace ou a conversa selecionada. Sessões locais usam
+WebShell lista workspaces e sessões comuns e gerenciadas juntas em Workspaces, com um rótulo Managed nos workspaces gerenciados e sem abas de modo de execução. Nova sessão segue o workspace ou a conversa selecionada. Sessões locais usam
 o diretório onde você executou o comando, enquanto sessões gerenciadas usam seus
 Workspaces criados pela aplicação ou projetos locais importados explicitamente. Ambos usam
 a mesma origem de navegador autenticada;
@@ -87,7 +87,7 @@ você não precisa de um segundo comando daemon ou página de navegador.
 
 Em **Add workspace**, escolha **Local (daemon)** ou **Managed (Managed Agent)**
 antes de enviar. A escolha padrão é o serviço da conversa atual.
-As linhas de workspace e **New task** mostram esse serviço, e novas tarefas herdam o
+As linhas de workspace e **New session** mostram esse serviço, e novas sessões herdam o
 workspace selecionado. O suporte existente de workspace SSH do daemon permanece
 disponível; o registro SSH do Managed não está integrado a este diálogo compartilhado.
 
@@ -130,16 +130,13 @@ ou pare o serviço conflitante em vez de editar fatos persistidos.
 A inicialização cria um Workspace padrão de propriedade da aplicação e sua concessão OWNER
 por meio da API idempotente existente de Workspace. Para usar um projeto local existente,
 abra **Workspace → Choose existing directory**, navegue ou insira seu caminho
-absoluto, e adicione a pasta. O serviço registra seu diretório pai e concede acesso
-OWNER automaticamente, mantendo os arquivos existentes no lugar. Novas tarefas começam no
-projeto selecionado. Você também pode criar um Workspace vazio.
+absoluto, e adicione a pasta. O serviço concede acesso OWNER e mantém os arquivos existentes no lugar. Novas tarefas começam no projeto selecionado. Novas importações são diretórios externos compartilhados: instalações locais independentes podem importar o mesmo projeto sem transferir seu pai ou substituir um marcador de armazenamento global existente. O pai permanece o limite compartilhado de navegação e layout de worktree dentro de cada instalação. Você também pode criar um Workspace vazio.
 
 O diretório de lançamento permanece disponível para sessões locais e não é importado
 automaticamente. `--workspace` permanece não suportado no modo Managed local; selecione
-o projeto na UI. O marcador de manutenção `.qwen-managed-storage.json` é
-mantido fora de worktrees Git; não edite, exclua, faça stash ou commit dele. Arquivos de projetos
-importados ficam fora do diretório de dados privado do Managed e requerem seu
-próprio backup.
+o projeto na UI. Novos metadados de importação são privados da instalação em `runtime/imported-projects/<storage ID>/.qwen-managed-storage.json`; preserve-o com o diretório de dados completo do Managed. Importações existentes e armazenamento de propriedade da aplicação retêm seu contrato de marcador anterior; não edite, exclua, faça stash ou commit desses marcadores. Arquivos de projetos importados ficam fora do diretório de dados privado do Managed e requerem seu próprio backup.
+
+Projetos compartilhados permitem os mesmos conflitos de edição que terminais independentes. Use worktrees independentes para isolar edições. Migração de armazenamento inteiro, recuperação física e rebobinamento exclusivo de histórico de arquivos não estão disponíveis para novas importações compartilhadas; a recuperação dos processos Runtime desta instalação permanece disponível. Importações anteriores não são convertidas automaticamente. Veja o [design de projeto compartilhado](../design/2026-10-28-managed-local-shared-projects.md).
 
 O histórico de sessões locais continua a usar o armazenamento comum do Qwen. Ele é separado
 do diretório de dados do Managed e não está incluído em um backup apenas do Managed.
@@ -175,7 +172,7 @@ mvn -f packages/sdk-java/qwencode/pom.xml -DskipTests -Dgpg.skip=true install
 mvn -f packages/managed-agent-server/pom.xml verify
 npm run package:managed-runtime -- \
   --target darwin-arm64 \
-  --server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha.jar \
+  --server-jar packages/managed-agent-server/server/target/qwen-managed-agent-server-0.1.0-alpha-exec.jar \
   --jre-home /verified/java-21-home \
   --out-dir /output/managed-runtime
 ```
@@ -183,7 +180,7 @@ npm run package:managed-runtime -- \
 O construtor de runtime precisa apenas do JAR do servidor correspondente, do runtime Java e da versão da CLI
 deste checkout. Ele não requer assets da CLI construídos nem um arquivo
 Node. Por padrão, ele escreve em
-`packages/managed-agent-server/target/managed-runtime`, fora dos
+`packages/managed-agent-server/server/target/managed-runtime`, fora dos
 assets `dist/` da CLI. Ele emite o arquivo de runtime e um arquivo `.sha256` por arquivo. A
 CLI normal é construída/lançada separadamente.
 
@@ -193,7 +190,7 @@ em vez de `--jre-home`:
 ```sh
 npm run package:managed-runtime -- \
   --target darwin-arm64 \
-  --server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha.jar \
+  --server-jar packages/managed-agent-server/server/target/qwen-managed-agent-server-0.1.0-alpha-exec.jar \
   --without-jre \
   --out-dir /output/managed-runtime
 ```
@@ -204,7 +201,7 @@ Isso emite `qwen-code-managed-runtime-lite-darwin-arm64.tar.gz` e seu checksum. 
 npm run package:standalone -- \
   --target darwin-arm64 \
   --node-archive /verified/node-v22-darwin-arm64.tar.gz \
-  --managed-server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha.jar \
+  --managed-server-jar packages/managed-agent-server/server/target/qwen-managed-agent-server-0.1.0-alpha-exec.jar \
   --managed-jre-home /verified/java-21-home \
   --out-dir /output/managed-local
 ```
@@ -235,17 +232,16 @@ O workflow `Release Managed server runtime` constrói a partir de uma tag de lan
 já publicada, usando o SDK e o servidor a partir dessa revisão de fonte exata. Uma
 execução manual deve ser disparada a partir de `main` e usa dry run por padrão. Ela verifica
 a CLI e o módulo Java, constrói o perfil `central-release` e retém o
-JAR e o checksum como artifacts do workflow sem alterar repositórios públicos.
+JAR e o checksum como artifacts do workflow sem alterar repositórios públicos. O workflow seleciona o build de saída `-exec.jar` quando presente e faz fallback para o JAR principal em tags mais antigas; o nome público versionado do JAR permanece inalterado.
 
 Após verificar o dry run, operadores de lançamento podem executar a mesma tag com
 `dry_run=false` através do ambiente protegido `production-release`. O
 workflow define a versão do artifact do servidor como a versão da CLI, publica
-`com.alibaba:qwen-managed-agent-server:<cli-version>` no Maven Central com
-fontes, Javadoc e assinaturas, e distribui o mesmo JAR primário mais seu
-`.sha256` através daquele GitHub Release e do espelho OSS versionado existente.
-JARs auxiliares do operador não são anexados à publicação no Central. Assets
+o JAR executável verificado mais seu `.sha256` através daquele GitHub Release e do espelho OSS versionado existente, e verifica ambos os canais públicos de download em relação aos bytes em staged. Assets
 existentes são comparados byte a byte e nunca substituídos por conteúdo diferente.
 Eventos de lançamento da CLI publicados também executam este workflow automaticamente.
+
+A distribuição de runtime requer as credenciais existentes de upload do OSS e acesso ao release do GitHub. Não precisa de credenciais de publicação no Central nem de chave privada GPG, e não verifica, publica ou aguarda a coordenada do servidor no Central. O Maven ainda constrói e verifica completamente o SDK e o servidor, incluindo resolução normal de dependências. O perfil existente `central-release` pode ser usado separadamente para publicação Maven assinada quando necessário; essa operação não bloqueia a entrega do runtime.
 
 A CLI faz download do OSS/GitHub, não do Maven Central. Ela não resolve o
 SDK como uma dependência separada do usuário: o JAR executável do servidor inclui suas dependências

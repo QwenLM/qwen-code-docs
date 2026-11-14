@@ -171,6 +171,8 @@ Der Auto-Edit-Modus weist Qwen Code an, Dateiänderungen automatisch zu genehmig
 
 Zu den automatisch genehmigten Edit-Tools gehören `edit`, `write_file` und `notebook_edit`.
 
+Ein Aufruf, der einer [`permissions.ask`](../configuration/settings.md#permissions)-Regel entspricht, erfordert auch in diesem Modus eine Bestätigung, genau wie im Auto-Modus. Das gilt auch für Subagenten, die standardmäßig im Auto-Edit-Modus laufen, wenn die Session sich im Ask Permissions-Modus in einem vertrauenswürdigen Ordner befindet: ein Foreground-Subagent fragt inline, und ein Hintergrund-Subagent, der nicht fragen kann, bekommt den Aufruf verweigert.
+
 ### Wann du den Auto-Accept Edits-Modus verwenden solltest
 
 - **Tägliche Entwicklung**: Ideal für die meisten Coding-Aufgaben

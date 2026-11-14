@@ -41,7 +41,16 @@ percorre três camadas em ordem:
 
 O classificador usa o seu modelo rápido configurado
 (`/model --fast`). Se nenhum modelo rápido estiver configurado, o modelo da sessão
-principal é usado.
+principal é usado em vez dele. Se o Estágio 1 do modelo rápido atingir seu prazo limite e
+o modelo da sessão tiver um identificador configurado diferente, o Modo Auto solicita ao
+modelo da sessão uma revisão independente completa antes de retornar para
+aprovação manual. A ação pendente e a sessão permanecem no Modo Auto.
+
+Esta revisão recebe o mesmo contexto filtrado e política, com um novo
+prazo limite usando `permissions.autoMode.classifier.timeouts.stage2Ms` (30 segundos
+por padrão). Com o orçamento padrão do Estágio 1 de 10 segundos, o fallback pode adicionar
+até 30 segundos de tempo de requisição. Ele não tenta novamente um bloqueio de política já
+concluído, e o cancelamento do usuário interrompe a revisão.
 
 > [!tip]
 >
@@ -214,16 +223,21 @@ deseja motivos em outro idioma, adicione uma dica como
 
 O Modo Auto protege você de ficar travado:
 
-- Se a API do classificador estiver inacessível, expirar o tempo limite, exceder sua janela de contexto
-  ou retornar uma resposta inválida, a ação atual retorna imediatamente para
-  aprovação manual. A confirmação recomenda o Modo Padrão e oferece
+- Um prazo limite do Estágio 1 do modelo rápido primeiro recebe a revisão distinta do modelo da sessão
+  descrita acima. Se essa revisão também falhar ou expirar, ou se os identificadores
+  configurados do modelo rápido e da sessão forem iguais, a ação retorna para
+  aprovação manual. Outras falhas do classificador (erros de API, estouro de contexto,
+  respostas inválidas ou uma revisão do Estágio 2 falha) ainda retornam diretamente. A
+  confirmação recomenda o Modo Padrão e oferece
   **Mudar para o Modo Padrão e permitir uma vez** junto com Permitir uma vez e Rejeitar.
   A mudança afeta apenas a sessão de execução atual; não altera suas
   configurações salvas.
 
-- Após **3 bloqueios consecutivos por política**, a próxima chamada de ferramenta retorna ao
-  prompt padrão de aprovação manual. Isso captura o caso em que o
-  agente continua tentando variantes menores de um comando proibido.
+- Após **3 bloqueios consecutivos** — bloqueios por política do classificador e bloqueios
+  determinísticos de comandos destrutivos ambos contam — a chamada que atinge o terceiro
+  bloqueio retorna ao prompt padrão de aprovação manual. Isso captura o caso em que o
+  agente continua tentando variantes menores de um comando proibido, ou
+  continua reemitindo um comando que a guarda destrutiva recusa.
 - Após **2 resultados consecutivos de indisponibilidade** (falhas na API do classificador),
   as chamadas seguintes ignoram o classificador quebrado e vão direto para a aprovação
   manual. O primeiro resultado de indisponibilidade já pede confirmação; o limite evita
@@ -307,9 +321,11 @@ refinada ao longo do tempo.
 
 **O Modo Auto envia meu código para terceiros?**
 
-O Modo Auto reutiliza sua configuração de modelo existente — o mesmo endpoint do
-agente principal. Se você configurou o Qwen Code para usar um modelo auto-hospedado,
-o classificador também é executado nesse endpoint.
+O Modo Auto usa o endpoint configurado para o seu modelo rápido, ou o modelo da sessão
+quando nenhum modelo rápido está configurado ou um tempo limite do Estágio 1 aciona a
+revisão do modelo da sessão. Configure ambos os modelos com seu endpoint auto-hospedado
+se a classificação deve permanecer lá. O fallback usa o mesmo contexto filtrado;
+não adiciona resultados de ferramentas ou conteúdos completos da conversa.
 
 **Meus segredos / conteúdos de `.env` chegarão ao classificador?**
 
