@@ -1,9 +1,10 @@
 # Memory
 
-各 Qwen Code セッションは、新しいコンテキストウィンドウから始まります。毎回同じことを説明しなくて済むように、セッションをまたいで知識を保持する2つの仕組みがあります。
+各 Qwen Code セッションは、新しいコンテキストウィンドウから始まります。毎回同じことを説明しなくて済むように、セッションをまたいで知識を保持する3つの仕組みがあります。
 
 - **QWEN.md** — _あなた_ が一度書けば、Qwen が毎セッション読み取る指示
 - **Auto-memory** — Qwen があなたから学んだことに基づいて自ら書き留めるメモ
+- **External memory (`context_search`)** — Mem0 またはローカルのセッションインデックスを検索するために、Qwen がオンデマンドで呼び出すオプションの MCP ツール
 
 ---
 
@@ -76,6 +77,8 @@ QWEN.md の任意の場所で `@path/to/file` を使用します。相対パス�
 Auto-memory はバックグラウンドで実行されます。各会話の後、Qwen は学んだ有用な情報（あなたの好み、与えたフィードバック、プロジェクトのコンテキストなど）を静かに保存し、あなたが繰り返し説明することなく、将来のセッションでそれらを使用できるようにします。
 
 これは QWEN.md とは異なります。あなたが書くのではなく、Qwen が書きます。
+
+[チャネル](./channels/overview)（GitHub、Telegram、DingTalk など）経由で中継されたメッセージに回答するターンが終了した場合、Qwen は抽出を実行せず、[定期的なクリーンアップ](#定期的なクリーンアップ)もスケジュールしません。送信者はあなたではないことが多く、中継されたメッセージごとに抽出を行うと、各メッセージにモデル呼び出しが追加されるためです。あなた自身のプロンプトも受け取るセッション（プルリクエストにバインドされたセッションなど）では、あなたの次のプロンプト後の抽出でも最近の会話が読み取られるため、まだそこにある中継されたメッセージからも学習できます。メモリの呼び出しは影響を受けません。チャネルメッセージへの返信は、すでに保存されている内容を利用できます。チャネルチャットは、[チャネルメモリ](./channels/overview#チャネルメモリ)に永続的なコンテキストを保持します。
 
 ### Qwen が保存する内容
 
@@ -247,6 +250,61 @@ Qwen が自動的に拾うのを待たずに、すぐに auto-memory に保存�
 ```
 /dream
 ```
+
+---
+
+## External Memory (`context_search`)
+
+`QWEN.md` と auto-memory に加えて、Qwen Code は `context_search` MCP ツールを通じて外部メモリサービスやローカルのセッションインデックスをクエリできます。`QWEN.md` や auto-memory と異なり、`context_search` はモデルによってオンデマンドで呼び出されます。各ターンで自動的に呼び出されたり送信されたりすることはありません。
+
+- **Mem0（組み込みアダプター）:** `~/.qwen/settings.json` の `memory.mem0` を設定して、Mem0 Platform V3、PolarDB、またはセルフホストの Mem0 OSS に接続します。セットアップとオプションの書き込み確認については [Mem0](./mem0.md) を参照してください。
+- **External Context MCP Profile v1 サーバー:** `context_search({ query })` 契約を実装する stdio または HTTP MCP サーバーは、`qwen mcp add` または `settings.json` の `mcpServers` で登録できます（Profile v1 サーバーに対して `context_search` のみを公開するには `"includeTools": ["context_search"]` を設定します）。
+
+各エントリは独自のサーバーを登録し、同時に複数のサーバーをアクティブにできます。Qwen は各サーバーの `context_search` を個別に公開し（例: `mcp__external-context__context_search` と `mcp__deja-context__context_search`）、モデルがそれらの間で選択するため、検索したいコーパスのみを有効にするか、リクエストでバックエンドを指定してください。
+
+どのバックエンドを使用する場合でも、`context_search` が返すマッチは Qwen のコンテキストに追加され、セッション用に設定されたモデルプロバイダーに送信されます。また、呼び出しは承認が必要ですが、許可すればスキップできます。ローカルインデックスは検索をローカルに保ちますが、結果まではローカルに保ちません。オートモードでは、クエリと制限された引数のコピーもクラシファイアモデルに送信されます。
+
+### deja-vu
+
+ローカル CLI および MCP サーバーで、コーディングエージェント（Qwen Code、Claude Code、Codex、Cursor など）がすでにディスクに書き込んだセッションのトランスクリプトを、ローカルの BM25 検索でインデックス化します。インデックスの構築やクエリにモデル呼び出しや API キーは不要です。
+
+- **リポジトリ:** https://github.com/vshulcz/deja-vu
+- **コスト:** 無料、オープンソース（MIT）
+- **最適な用途:** 同じマシン上の Qwen Code および他のローカルコーディングエージェントの過去のセッションを検索
+
+#### 利用可能なツール
+
+- `context_search` — インデックス化されたローカルのセッションのトランスクリプトを検索（`deja mcp --context-search`）
+
+#### セットアップ
+
+1. `deja` バイナリをインストールし（例: `brew install deja-vu`、`npm install -g @vshulcz/deja-vu`、または [GitHub releases](https://github.com/vshulcz/deja-vu/releases) から）、初期インデックスを構築します（`deja index`）。
+2. 以下のいずれかの方法でサーバーを登録します。
+
+**方法 1: CLI コマンド**
+
+```bash
+qwen mcp add deja-context deja mcp --context-search --timeout 8000 --include-tools context_search
+```
+
+**方法 2: `settings.json`**
+
+```json
+{
+  "mcpServers": {
+    "deja-context": {
+      "command": "deja",
+      "args": ["mcp", "--context-search"],
+      "timeout": 8000,
+      "includeTools": ["context_search"]
+    }
+  }
+}
+```
+
+3. Qwen Code を再起動して、セッション開始時に新しい MCP サーバーがロードされるようにし、`/mcp` を実行して `deja-context` が接続されていることを確認します（[MCP サーバー](./mcp.md)を参照）。
+
+後でサーバーを削除するには、`qwen mcp remove deja-context` を実行し（または `~/.qwen/settings.json` の `mcpServers` から `deja-context` エントリを削除）、Qwen Code を再起動します。
 
 ---
 

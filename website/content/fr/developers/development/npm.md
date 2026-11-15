@@ -83,6 +83,14 @@ Chaque publication planifiée ou manuelle suit ces étapes :
 
 Si une étape du workflow de publication échoue, cela créera automatiquement un nouveau problème (issue) dans le dépôt avec les étiquettes `bug` et une étiquette d'échec spécifique au type (par exemple, `nightly-failure`, `preview-failure`). Le problème contiendra un lien vers l'exécution du workflow ayant échoué pour faciliter le débogage.
 
+### Quand une publication reste dans la file d'attente
+
+`Publish Release` s'exécute sur un runner hébergé par GitHub et ne peut pas basculer vers les pools ECS : [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) ne prend en charge que les runners hébergés dans le cloud, donc un publisher auto-hébergé échouerait à s'authentifier et n'émettrait aucune provenance. Les étapes macOS et Windows de `audio-capture-prebuilds.yml` sont également hébergées car elles compilent avec des toolchains natives ; seules les étapes Linux sélectionnent `ecs-qwen-release-host`.
+
+La concurrence hébergée est partagée au niveau du compte avec l'automatisation de review de PR, d'autofix et de triage, donc ces étapes hébergées font la file derrière ce trafic. Une étape en file d'attente n'est pas un échec de publication : GitHub ne lui a pas encore assigné de runner, son log est toujours vide, et `timeout-minutes` ne commence à compter qu'une fois qu'elle s'exécute. Le 2026-11-01, une publication a attendu 2h33m pour un runner puis s'est terminée en 5m37s, tandis que les nightlies autour ont été dispatchées 3-4s après la fin de leur build. Préférez le nightly, ou dispatchez en dehors des heures de pointe de la journée de travail Asia/Shanghai, quand une publication manuelle est sensible au timing.
+
+Voir [Release runner slots](../../design/2026-10-28-release-queue-optimization.md) pour l'analyse des pools et pour savoir quels jobs de publication ont déjà été déplacés hors des runners hébergés.
+
 ## Validation de la publication
 
 Après avoir poussé une nouvelle publication, des tests de fumée doivent être effectués pour s'assurer que les paquets fonctionnent comme prévu. Cela peut être fait en installant les paquets localement et en exécutant une série de tests pour vérifier leur bon fonctionnement.

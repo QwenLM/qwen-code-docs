@@ -216,6 +216,7 @@ sidebar={{
 type WebShellSidebarSessionActionItem =
   | 'details' // 📝 Details (dropdown sub-menu)
   | 'rename' // ✏️ Rename (dropdown menu)
+  | 'bindPr' // 🔗 Bind a GitHub PR (dropdown menu)
   | 'group' // 📁 Group/Move to folder (dropdown menu)
   | 'export' // 📤 Export chat history (dropdown menu)
   | 'delete' // 🗑 Delete session (dropdown menu)
@@ -239,7 +240,8 @@ interface WebShellSidebarSessionActionsOptions {
 控制会话行上显示哪些操作按钮：
 
 - **`items`**：所有操作的主控（包括内联和下拉）。如果某项不在 `items` 中，则在各处隐藏。
-- **`inlineItems`**：控制哪些项作为**内联按钮**（hover 时）显示。默认为 `['pin']`。只有具有可用内联处理程序的项才能使用：`'pin'`、`'rename'`、`'export'`、`'delete'`。`'details'`、`'group'`、`'archive'` 和 `'split'` 在标准行上仅支持下拉。
+- **`inlineItems`**：控制哪些项作为**内联按钮**（hover 时）显示。默认为 `['pin']`。只有具有可用内联处理程序的项才能使用：`'pin'`、`'rename'`、`'export'`、`'delete'`。`'details'`、`'bindPr'`、`'group'`、`'archive'` 和 `'split'` 在标准行上仅支持下拉。
+- **`bindPr` 内置条件**：仅当会话支持元数据变更时显示——主 workspace 或已锁定 workspace 中的当前会话，或任何其他具有 `workspace_session_metadata` 能力的会话（如果该会话位于已锁定或受限的次级 workspace 中，还需 `workspace_qualified_rest_core`）——并且该行不是独立会话（包括最近会话行）——独立元数据路由仅接受显示名称。它独立于 `rename` 项：宿主可以在不包含 `rename` 的情况下白名单 `bindPr`。
 
 设置中的已归档行使用 Export conversation 和 Restore 作为内联按钮，Rename 和 Delete 在 More 中。它们的操作仍遵循 `items` 和内置可用性限制；`inlineItems` 不会改变此布局。现有样式在 hover 或键盘焦点时显示这些按钮，并在触摸设备上保持可见。
 

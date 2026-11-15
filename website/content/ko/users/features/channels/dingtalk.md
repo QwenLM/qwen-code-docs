@@ -3,6 +3,8 @@
 
 이 가이드는 DingTalk(钉钉)에 Qwen Code 채널을 설정하는 방법을 다룹니다.
 
+애플리케이션 봇 없이 사용자 지정 그룹 로봇에 알림이나 예약 결과를 전송하려면 [DingTalk Webhook Sending](./dingtalk-webhook)을 사용하세요. 아래 설정은 애플리케이션 봇의 대화형 통합을 위한 것입니다.
+
 ## 사전 요구 사항
 
 - DingTalk 조직 계정
@@ -32,7 +34,7 @@ DingTalk Stream 모드는 아웃바운드 WebSocket 연결을 사용하므로 �
       "clientId": "$DINGTALK_CLIENT_ID",
       "clientSecret": "$DINGTALK_CLIENT_SECRET",
       "useConnectionManager": true,
-      "senderPolicy": "open",
+      "privatePolicy": "open",
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "instructions": "You are a concise coding assistant responding via DingTalk.",
@@ -98,7 +100,7 @@ export DINGTALK_CLIENT_SECRET=<your-app-secret>
 
 ### 턴 출력 모드
 
-[공유 `outputMode` 설정](https://qwenlm.github.io/qwen-code-docs/en/users/features/channels/overview/#turn-output-mode)은 DingTalk이 어시스턴트 결과를 언제 전달하는지를 제어합니다. DingTalk은 현재 이 정책과 통합된 유일한 어댑터입니다. 기본값은 `per_turn`이며, `outputMode`가 생략된 경우에도 동일합니다:
+[공유 `outputMode` 설정](./overview#turn-output-mode)은 DingTalk이 어시스턴트 결과를 언제 전달하는지를 제어합니다. DingTalk은 현재 이 정책과 통합된 유일한 어댑터입니다. 기본값은 `per_turn`이며, `outputMode`가 생략된 경우에도 동일합니다:
 
 - `per_task`: 메인 작업과 연관된 배경 작업 및 알림이 완료될 때까지 기다린 다음, 작업의 마지막 비어 있지 않은 어시스턴트 응답을 포함하는 하나의 최종 결과 카드를 전달합니다.
 - `per_response`: 각 완전한 어시스턴트 응답이 자체 완료 결과 카드를 받습니다. 토큰 청크는 현재 카드를 업데이트하며 새 카드를 생성하지 않습니다. 배경 어시스턴트 응답도 별도로 전달됩니다.
@@ -230,7 +232,7 @@ DingTalk은 그룹을 식별하기 위해 `conversationId`를 사용합니다. �
 ## 팁
 
 - **DingTalk markdown 인식 지시 사용** — DingTalk은 제목, 굵은 텍스트, 링크, 코드 블록 및 테이블을 지원합니다. 좁은 화면에서 수평 스크롤이 될 수 있으므로 테이블을 간결하게 유지하세요.
-- **접근 제한** — 조직 컨텍스트에서 `senderPolicy: "open"`이 허용될 수 있습니다. 더 엄격한 제어를 위해 `"allowlist"` 또는 `"pairing"`을 사용하세요. 자세한 내용은 [DM Pairing](./overview#dm-pairing)을 참조하세요.
+- **접근 제한** — 조직 컨텍스트에서 `privatePolicy: "open"`이 허용될 수 있습니다. 더 엄격한 제어를 위해 `"allowlist"` 또는 `"pairing"`을 사용하세요. 자세한 내용은 [DM Pairing](./overview#dm-pairing)을 참조하세요.
 - **참조된 메시지** — 사용자 메시지를 인용(답글)하면 인용된 텍스트가 에이전트의 컨텍스트로 포함됩니다. 리치 텍스트 인용은 텍스트 순서를 유지하고 임베디된 사진을 첨부합니다. 인용된 메시지가 사진, 파일, 오디오 또는 비디오 메시지인 경우, 봇이 직접 보냈을 때와 동일한 방식으로 다운로드하여 첨부합니다. 봇 응답 인용은 아직 지원되지 않습니다.
 
 ## 문제 해결

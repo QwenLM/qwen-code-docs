@@ -50,10 +50,18 @@ Este guia fornece soluções para problemas comuns e dicas de depuração, inclu
   - R: As informações de tokens em cache só são exibidas quando os tokens em cache estão sendo usados. Este recurso está disponível para usuários de API key (por exemplo, API key do Alibaba Cloud Model Studio ou Google Cloud Vertex AI). Você ainda pode visualizar seu uso total de tokens usando o comando `/stats`.
 
 - **P: Uma personalização (extensão, hook, skill, servidor MCP ou subagente) parece estar quebrando o Qwen Code. Como isolar o problema?**
-  - R: Inicie o Qwen Code com a flag `--safe-mode` para desativar todas as personalizações — arquivos de contexto, hooks, extensões, skills, servidores MCP, subagentes personalizados (apenas subagentes integrados são carregados), regras de permissão, substituições de modo de aprovação originadas de configurações, recursos de memória e configurações de sandbox — para a sessão. Observação: as flags de CLI `--yolo` e `--approval-mode` ainda têm efeito no modo seguro. Se o problema desaparecer no modo seguro, reative suas personalizações uma de cada vez para encontrar o culpado.
+  - R: Inicie o Qwen Code com a flag `--safe-mode` para desativar todas as personalizações — arquivos de contexto, hooks, extensões, skills, servidores MCP, subagentes personalizados (apenas subagentes integrados são carregados), regras de permissão, substituições de modo de aprovação originadas de configurações, recursos de memória, mensagens entre sessões, LSP e configurações de sandbox — para a sessão. Observação: as flags de CLI `--yolo` e `--approval-mode` ainda têm efeito no modo seguro. Se o problema desaparecer no modo seguro, reative suas personalizações uma de cada vez para encontrar o culpado.
     - Exemplo: `qwen --safe-mode`
     - Alternativa: defina a variável de ambiente `QWEN_CODE_SAFE_MODE=true` se a CLI não puder aceitar flags.
     - Observação: "servidores MCP" aqui significa servidores configurados em `settings.json` / `.mcp.json` do projeto — estado local e ambiente contra o qual o modo seguro foi projetado para isolar. Servidores MCP que você fornece explicitamente para a invocação atual (o `mcpServers` do `session/new` de um cliente ACP embedding, ou `--mcp-config`) não são estado local/ambiente e ainda são respeitados no modo seguro.
+
+## Upload de anexo retorna HTTP 413 atrás de um proxy reverso
+
+Um proxy pode rejeitar uma solicitação antes que ela chegue ao `qwen serve`, mesmo quando o anexo está dentro do limite de 8 MiB do daemon. Aumentar apenas o limite de corpo do daemon não altera o limite do proxy.
+
+Use uma compilação do daemon e TypeScript SDK/Web Shell que suporte `session_attachment_chunk_upload`. Anexos maiores que 512 KiB serão então enviados em solicitações de 512 KiB sem alterar seus bytes ou qualidade de imagem. Daemons mais antigos mantêm o caminho de upload de solicitação única. Se você opera o proxy, também pode aumentar seu limite de corpo de solicitação para acomodar a solicitação de anexo original. Proxies com limites abaixo de 512 KiB ainda precisam de uma alteração de configuração.
+
+O limite de anexo permanece em 8 MiB. Se um upload expirar ou o daemon reiniciar, tente o anexo novamente a partir da UI. Um upload concluído cuja resposta foi perdida pode permanecer nos anexos da sessão; o cancelamento não remove um arquivo que já foi concluído.
 
 ## Mensagens de erro comuns e soluções
 
@@ -109,6 +117,18 @@ Este guia fornece soluções para problemas comuns e dicas de depuração, inclu
   - `QWEN_CODE_IDE_SERVER_PORT`
 - Se estiver executando em um contêiner, verifique se `host.docker.internal` é resolvido. Caso contrário, mapeie o host adequadamente.
 - Reinstale o companion com `/ide install` e use “Qwen Code: Run” na Paleta de Comandos para verificar se ele é iniciado.
+
+## Resets de conexão em algumas redes (middleboxes seletivos por pilha TLS)
+
+- **Problema:** Em algumas redes de operadoras ou corporativas, as conexões HTTPS com endpoints de API são resetadas (TCP RST) imediatamente após o TLS ClientHello. O Qwen Code continua tentando (`ECONNRESET` é um erro de transporte retryable) até que o orçamento se esgote, e então exibe um erro genérico de conexão — enquanto `curl`, Python e outras ferramentas funcionam normalmente na mesma máquina e rede no mesmo momento.
+- **Causa:** Alguns middleboxes filtram conexões por fingerprint do TLS ClientHello e resetam aqueles emitidos por gerações específicas de pilhas TLS. Nos links afetados, as pilhas da era OpenSSL 3.0 e Electron/BoringSSL (usadas pela extensão do VS Code e pelo daemon) são resetadas, enquanto as pilhas da geração OpenSSL 3.5 — incluindo as compilações atuais do Node.js — conectam normalmente.
+- **Solução:** Faça a conexão com uma pilha TLS da geração 3.5:
+  - **CLI:** use uma compilação atualizada de uma linha suportada do Node.js (as compilações atuais do Node 22/24/25 todas vêm com OpenSSL da geração 3.5). Compilações mais antigas do mesmo major podem ainda estar em uma geração afetada — atualize em vez de fixar em um minor antigo.
+  - **Extensão do VS Code / daemon:** a extensão é executada na pilha TLS do Electron e não pode alterá-la no lado do cliente. Execute um pequeno relay local — um processo local em uma pilha da geração 3.5 — e aponte o Qwen Code para ele através da substituição da URL base do modelo (o endpoint personalizado no `settings.json`, ou `--openaiBaseUrl` para a CLI), para que a saída TLS aconteça com a pilha mais nova.
+- **Como distinguir isso de uma rede instável:**
+  - o reset é determinístico — cada tentativa falha imediatamente, através de retries, e não se recupera ao longo do tempo;
+  - na mesma máquina e momento, outras pilhas TLS têm sucesso no mesmo endpoint;
+  - fixar versões TLS ou alterar a resolução DNS não ajuda.
 
 ## Códigos de saída
 

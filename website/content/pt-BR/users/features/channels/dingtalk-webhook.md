@@ -46,6 +46,24 @@ Cada instância nomeada representa um grupo configurado. Crie instâncias adicio
 para outros grupos. Atualizar a URL de uma instância altera o destino para entregas
 futuras que a referenciam.
 
+## Usar o Web Shell
+
+Em Channels, escolha DingTalk e seu método de envio via webhook. Salve a URL
+do webhook e o segredo de assinatura opcional, depois inicie o Channel. Configurações
+de recebimento, pareamento e sessão de agente não se aplicam a este método.
+
+Um status ready/connected significa que os recursos locais de envio estão prontos;
+não verifica credenciais remotas.
+
+Em Scheduled Tasks, escolha uma tarefa persistente e selecione este Channel como
+destino de entrega. O Web Shell preenche o destino configurado automaticamente;
+nenhum contato observado ou ID de usuário/chat manual é necessário. As restrições
+de entrega por execução existentes permanecem em vigor.
+
+Os mesmos controles estão disponíveis no Web Shell compartilhado usado por
+`WebShellWithProviders`, quando o host habilita Channels e Scheduled Tasks e
+fornece um workspace daemon comum.
+
 ## Entrega explícita via API
 
 Notificações e entrega explícita de prompt/agendada usam o formato de destino de Channel

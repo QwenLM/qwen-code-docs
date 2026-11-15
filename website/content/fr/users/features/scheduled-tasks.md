@@ -18,7 +18,11 @@ Avec plusieurs workspaces, choisissez un workspace lors de la création d'une t�
 
 ## Livrer les résultats des tâches du Web Shell à un canal
 
-Dans `qwen serve`, ouvrez **Scheduled Tasks** et créez ou modifiez une tâche dans son workspace. Choisissez une destination d'exécution persistante (une session dédiée, ou la session actuelle lorsqu'elle est disponible), puis choisissez un **Delivery Channel**, un type de destination utilisateur ou chat, et un ID de destination. Les contacts observés récents sont des suggestions optionnelles ; vérifiez le nom du canal, son type et l'ID brut avant d'en sélectionner un. Vous pouvez également saisir directement un ID. Si un ID contient des espaces au début ou à la fin, le formulaire vous avertit et propose **Remove surrounding whitespace** ; il ne modifie jamais l'ID automatiquement. Le canal configuré doit prendre en charge l'envoi vers cette destination.
+Dans `qwen serve`, ouvrez **Scheduled Tasks** et créez ou modifiez une tâche dans son workspace. Choisissez une destination d'exécution persistante (une session dédiée, ou la session actuelle lorsqu'elle est disponible), puis choisissez un **Delivery Channel**.
+
+Pour les canaux avec une destination configurée, comme les [webhooks DingTalk](./channels/dingtalk-webhook.md), la sélection du canal utilise cette destination sans nécessiter de type ni d'ID. Si la destination enregistrée d'une tâche existante diffère, le formulaire la préserve et propose **Use configured destination** pour la remplacer explicitement.
+
+Pour les autres canaux, choisissez un type de destination utilisateur ou chat et un ID de destination. Les contacts observés récents sont des suggestions optionnelles ; vérifiez le nom du canal, son type et l'ID brut avant d'en sélectionner un. Vous pouvez également saisir directement un ID. Si un ID contient des espaces au début ou à la fin, le formulaire vous avertit et propose **Remove surrounding whitespace** ; il ne modifie jamais l'ID automatiquement. Le canal configuré doit prendre en charge l'envoi vers cette destination.
 
 La livraison est désactivée par défaut. Configurer un canal seul n'active pas la livraison pour une tâche. Lorsqu'elle est activée, la réponse finale d'une exécution planifiée réussie est envoyée via le canal sélectionné ; cela ne garantit pas la réception ni n'ajoute de tentatives durables ou d'alertes d'échec. La carte de tâche affiche une ligne de livraison uniquement lorsqu'elle a une destination enregistrée.
 

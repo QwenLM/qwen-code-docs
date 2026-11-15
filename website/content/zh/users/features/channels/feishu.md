@@ -2,6 +2,10 @@
 
 本指南介绍如何在飞书（Lark）上设置 Qwen Code 频道。
 
+如需在不使用应用机器人的情况下将任务结果发送到群组，请使用
+[飞书 Webhook 发送](./feishu-webhook)。该自定义机器人集成与本指南的应用机器人事件连接是独立的：默认使用出站
+WebSocket，或在设置 `webhookPort` 时使用 HTTP webhook。
+
 ## 前置条件
 
 - 一个飞书企业账号

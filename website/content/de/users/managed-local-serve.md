@@ -80,7 +80,7 @@ Ein belegter öffentlicher Port folgt der begrenzten Nearby-Port-Retry-Logik des
 verwenden Sie die vom Launcher ausgegebene Browser-Adresse.
 
 Dieser eine Befehl startet sowohl den gewöhnlichen Daemon als auch den Managed Agent. Dieselbe
-WebShell listet gewöhnliche und Managed-Workspaces und -Sessions gemeinsam unter Projects auf, mit einem Managed-Label auf Managed-Workspaces und ohne Ausführungsmodus-Tabs. Neue Tasks folgen dem ausgewählten Workspace oder der Konversation. Lokale Sessions verwenden
+WebShell listet gewöhnliche und Managed-Workspaces und -Sessions gemeinsam unter Workspaces auf, mit einem Managed-Label auf Managed-Workspaces und ohne Ausführungsmodus-Tabs. Neue Session folgt dem ausgewählten Workspace oder der Konversation. Lokale Sessions verwenden
 das Verzeichnis, in dem Sie den Befehl ausgeführt haben, während Managed-Sessions ihre
 anwendungsseitig erstellten Workspaces oder explizit importierte lokale Projekte verwenden. Beide verwenden
 dieselbe authentifizierte Browser-Origin;
@@ -88,7 +88,7 @@ Sie benötigen keinen zweiten Daemon-Befehl oder eine zweite Browser-Seite.
 
 Wählen Sie in **Add workspace** vor dem Absenden **Local (daemon)** oder **Managed (Managed Agent)**.
 Die Auswahl standardisiert auf den Service der aktuellen Konversation.
-Workspace-Zeilen und **New task** zeigen diesen Service, und neue Tasks erben den
+Workspace-Zeilen und **New session** zeigen diesen Service, und neue Sessions erben den
 ausgewählten Workspace. Die bestehende SSH-Workspace-Unterstützung des Daemons bleibt
 verfügbar; die Managed-SSH-Registrierung ist nicht in diesen gemeinsamen Dialog integriert.
 
@@ -131,16 +131,13 @@ oder stoppen Sie den konfliktverursachenden Service, statt persistierte Fakten z
 Der Start erstellt einen anwendungseigenen Standard-Workspace und dessen OWNER-Grant
 über die bestehende idempotente Workspace-API. Um ein bestehendes lokales Projekt zu verwenden,
 öffnen Sie **Workspace → Choose existing directory**, durchsuchen oder geben Sie dessen absoluten
-Pfad ein, und fügen Sie dann den Ordner hinzu. Der Service registriert dessen Elternverzeichnis und gewährt automatisch OWNER-Zugriff,
-wobei bestehende Dateien erhalten bleiben. Neue Tasks starten im
-ausgewählten Projekt. Sie können auch einen leeren Workspace erstellen.
+Pfad ein, und fügen Sie dann den Ordner hinzu. Der Service gewährt OWNER-Zugriff und behält bestehende Dateien bei. Neue Tasks starten im ausgewählten Projekt. New imports sind gemeinsame externe Verzeichnisse: unabhängige lokale Installationen können das gleiche Projekt importieren, ohne dessen Elternverzeichnis zu übertragen oder einen bestehenden globalen Storage-Marker zu ersetzen. Das Elternverzeichnis bleibt die gemeinsame Navigations- und Worktree-Layout-Grenze innerhalb jeder Installation. Sie können auch einen leeren Workspace erstellen.
 
 Das Startverzeichnis bleibt für lokale Sessions verfügbar und wird nicht automatisch importiert.
 `--workspace` bleibt im Managed-local-Modus nicht unterstützt; wählen Sie
-das Projekt in der UI. Der `.qwen-managed-storage.json`-Wartungsmarker wird
-außerhalb von Git-Worktrees gehalten; bearbeiten, löschen, stashen oder committen Sie ihn nicht. Importierte
-Projektdateien bleiben außerhalb des privaten Managed-Datenverzeichnisses und benötigen
-ein eigenes Backup.
+das Projekt in der UI. New-Import-Metadaten sind installationsprivat unter `runtime/imported-projects/<storage ID>/.qwen-managed-storage.json`; bewahren Sie sie mit dem vollständigen Managed-Datenverzeichnis auf. Bestehende Importe und anwendungseigener Storage behalten ihren früheren Marker-Vertrag; bearbeiten, löschen, stashen oder committen Sie diese Marker nicht. Importierte Projektdateien bleiben außerhalb des privaten Managed-Datenverzeichnisses und benötigen ihr eigenes Backup.
+
+Gemeinsam genutzte Projekte erlauben dieselbearbeitungskonflikte wie unabhängige Terminals. Verwenden Sie unabhängige Worktrees, um Bearbeitungen zu isolieren. Whole-Storage-Migration, physische Wiederherstellung und exklusiver Datei-History-Rewind sind für neue gemeinsame Importe nicht verfügbar; die Wiederherstellung der eigenen Runtime-Prozesse dieser Installation bleibt verfügbar. Frühere Importe werden nicht automatisch konvertiert. Siehe das [Shared-Project-Design](../design/2026-10-28-managed-local-shared-projects.md).
 
 Die lokale Session-History verwendet weiterhin den gewöhnlichen Qwen-Speicher. Sie ist getrennt
 vom Managed-Datenverzeichnis und ist in einem rein Managed-Backup nicht enthalten.
@@ -176,14 +173,14 @@ mvn -f packages/sdk-java/qwencode/pom.xml -DskipTests -Dgpg.skip=true install
 mvn -f packages/managed-agent-server/pom.xml verify
 npm run package:managed-runtime -- \
   --target darwin-arm64 \
-  --server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha.jar \
+  --server-jar packages/managed-agent-server/server/target/qwen-managed-agent-server-0.1.0-alpha-exec.jar \
   --jre-home /verified/java-21-home \
   --out-dir /output/managed-runtime
 ```
 
 Der Runtime-Builder benötigt nur das passende Server-JAR, die Java-Runtime und die CLI-Version
 aus diesem Checkout. Er benötigt keine gebauten CLI-Assets oder ein Node-Archiv. Standardmäßig schreibt er nach
-`packages/managed-agent-server/target/managed-runtime`, außerhalb der CLI-
+`packages/managed-agent-server/server/target/managed-runtime`, außerhalb der CLI-
 `dist/`-Assets. Er gibt das Runtime-Archiv und eine `.sha256`-Datei pro Archiv aus. Die
 normale CLI wird separat gebaut/veröffentlicht.
 
@@ -193,7 +190,7 @@ statt `--jre-home`:
 ```sh
 npm run package:managed-runtime -- \
   --target darwin-arm64 \
-  --server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha.jar \
+  --server-jar packages/managed-agent-server/server/target/qwen-managed-agent-server-0.1.0-alpha-exec.jar \
   --without-jre \
   --out-dir /output/managed-runtime
 ```
@@ -205,7 +202,7 @@ Der Lightweight-Builder benötigt keine Java-Eingabe. Für eine optionale vollst
 npm run package:standalone -- \
   --target darwin-arm64 \
   --node-archive /verified/node-v22-darwin-arm64.tar.gz \
-  --managed-server-jar packages/managed-agent-server/target/qwen-managed-agent-server-0.1.0-alpha.jar \
+  --managed-server-jar packages/managed-agent-server/server/target/qwen-managed-agent-server-0.1.0-alpha-exec.jar \
   --managed-jre-home /verified/java-21-home \
   --out-dir /output/managed-local
 ```
@@ -240,13 +237,10 @@ JAR und die Checksumme als Workflow-Artefakte, ohne öffentliche Repositories zu
 
 Nach der Verifizierung des Dry-Runs können Release-Operatoren den gleichen Tag mit
 `dry_run=false` über die geschützte `production-release`-Umgebung ausführen. Der
-Workflow setzt die Server-Artefaktversion auf die CLI-Version, veröffentlicht
-`com.alibaba:qwen-managed-agent-server:<cli-version>` auf Maven Central mit
-Sources, Javadoc und Signaturen, und verteilt das gleiche primäre JAR samt seiner
-`.sha256` über dieses GitHub Release und den bestehenden versionierten OSS-Mirror.
-Auxiliary-Operator-JARs werden nicht an die Central-Veröffentlichung angehängt. Bestehende
-Assets werden Byte für Byte verglichen und nie durch unterschiedliche Inhalte ersetzt.
+Workflow setzt die Server-Artefaktversion auf die CLI-Version, veröffentlicht das verifizierte ausführbare JAR plus seine `.sha256` über dieses GitHub Release und den bestehenden versionierten OSS-Mirror und prüft beide öffentlichen Download-Kanäle gegen die gestagten Bytes. Bestehende Assets werden Byte für Byte verglichen und nie durch unterschiedliche Inhalte ersetzt.
 Veröffentlichte CLI-Release-Events führen diesen Workflow ebenfalls automatisch aus.
+
+Runtime-Distribution benötigt die bestehenden OSS-Upload-Credentials und GitHub-Release-Zugang. Sie benötigt keine Central-Publishing-Credentials oder einen GPG-Private-Key und prüft, veröffentlicht oder wartet nicht auf die Server-Koordinate auf Central. Maven baut und verifiziert weiterhin SDK und Server vollständig, einschließlich normaler Dependency-Resolution. Das bestehende `central-release`-Profil kann separat für signierte Maven-Publikation verwendet werden, wenn erforderlich; dieser Vorgang blockiert nicht die Runtime-Auslieferung.
 
 Die CLI lädt von OSS/GitHub herunter, nicht von Maven Central. Sie löst das
 SDK nicht als separate Benutzerabhängigkeit auf: das ausführbare Server-JAR enthält seine Java-Abhängigkeiten.

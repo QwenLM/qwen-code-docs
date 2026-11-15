@@ -50,10 +50,19 @@ Ce guide fournit des solutions aux problèmes courants et des conseils de débog
   - R : Les informations sur les tokens mis en cache ne sont affichées que lorsque des tokens en cache sont utilisés. Cette fonctionnalité est disponible pour les utilisateurs d'API key (par exemple, l'API key d'Alibaba Cloud Model Studio ou Google Cloud Vertex AI). Vous pouvez toujours consulter votre utilisation totale de tokens avec la commande `/stats`.
 
 - **Q : Une personnalisation (extension, hook, skill, serveur MCP ou subagent) semble casser Qwen Code. Comment l'isoler ?**
-  - R : Démarrez Qwen Code avec le flag `--safe-mode` pour désactiver toutes les personnalisations — fichiers de contexte, hooks, extensions, skills, serveurs MCP, subagents personnalisés (seuls les subagents intégrés se chargent), règles de permission, remplacements du mode d'approbation provenant des paramètres, fonctionnalités de mémoire et paramètres de sandbox — pour la session. Remarque : les flags CLI `--yolo` et `--approval-mode` prennent toujours effet en mode sans échec. Si le problème disparaît en mode sans échec, réactivez vos personnalisations une par une pour trouver le coupable.
+  - R : Démarrez Qwen Code avec le flag `--safe-mode` pour désactiver toutes les personnalisations — fichiers de contexte, hooks, extensions, skills, serveurs MCP, subagents personnalisés (seuls les subagents intégrés se chargent), règles de permission, remplacements du mode d'approbation provenant des paramètres, fonctionnalités de mémoire, messagerie inter-sessions, LSP et paramètres de sandbox — pour la session. Remarque : les flags CLI `--yolo` et `--approval-mode` prennent toujours effet en mode sans échec. Si le problème disparaît en mode sans échec, réactivez vos personnalisations une par une pour trouver le coupable.
     - Exemple : `qwen --safe-mode`
     - Alternative : définissez la variable d'environnement `QWEN_CODE_SAFE_MODE=true` si la CLI ne peut pas accepter de flags.
+    - Remarque : contrairement au flag, une variable `QWEN_CODE_SAFE_MODE` exportée est héritée par les processus enfants. Un démon `qwen serve` ou un éditeur démarré depuis ce shell héberge chacune de ses sessions en mode sans échec, de sorte que ces sessions sont également supprimées : elles n'écrivent aucun enregistrement de session, et les autres sessions ne peuvent ni les lister ni leur envoyer de messages. Désactivez la variable pour le démon plutôt que de la laisser exportée dans le shell qui le démarre.
     - Remarque : « serveurs MCP » désigne ici les serveurs configurés dans `settings.json` / `.mcp.json` du projet — un état local et ambiant que le mode sans échec est conçu pour isoler. Les serveurs MCP que vous fournissez explicitement pour l'invocation en cours (le `mcpServers` de `session/new` d'un client ACP d'embedding, ou `--mcp-config`) ne sont pas un état local/ambiant et restent honorés en mode sans échec.
+
+## L'upload de pièces jointes renvoie HTTP 413 derrière un proxy inverse
+
+Un proxy peut rejeter une requête avant qu'elle n'atteigne `qwen serve`, même lorsque la pièce jointe est dans la limite de 8 MiB du démon. Augmenter uniquement une limite de corps du démon ne modifie pas la limite du proxy.
+
+Utilisez un démon et une build TypeScript SDK/Web Shell qui supporte `session_attachment_chunk_upload`. Les pièces jointes dépassant 512 KiB sont alors uploadées en requêtes de 512 KiB sans modifier leurs octets ni leur qualité d'image. Les démons plus anciens conservent le chemin d'upload en requête unique. Si vous opérez le proxy, vous pouvez également augmenter sa limite de corps de requête pour accommoder la requête de pièce jointe originale. Les proxys avec des limites inférieures à 512 KiB nécessitent toujours un changement de configuration.
+
+La limite de pièces jointes reste à 8 MiB. Si un upload expire ou si le démon redémarre, réessayez la pièce jointe depuis l'UI. Un upload terminé dont la réponse a été perdue peut rester dans les pièces jointes de la session ; l'annulation ne supprime pas un fichier qui est déjà terminé.
 
 ## Messages d'erreur courants et solutions
 
@@ -109,6 +118,18 @@ Ce guide fournit des solutions aux problèmes courants et des conseils de débog
   - `QWEN_CODE_IDE_SERVER_PORT`
 - Si vous exécutez dans un conteneur, vérifiez que `host.docker.internal` se résout. Sinon, mappez l'hôte de manière appropriée.
 - Réinstallez le companion avec `/ide install` et utilisez "Qwen Code: Run" dans la palette de commandes pour vérifier qu'il se lance.
+
+## Réinitialisations de connexion sur certains réseaux (middleboxes sélectifs selon la pile TLS)
+
+- **Problème :** Sur certains réseaux opérateur ou d'entreprise, les connexions HTTPS vers les points de terminaison d'API sont réinitialisées (TCP RST) immédiatement après le TLS ClientHello. Qwen Code continue de réessayer (`ECONNRESET` est une erreur de transport réessayable) jusqu'à épuisement du budget, puis affiche une erreur de connexion générique — alors que `curl`, Python et d'autres outils fonctionnent normalement sur la même machine et le même réseau au même moment.
+- **Cause :** Certains middleboxes filtrent les connexions par empreinte TLS ClientHello et réinitialisent celles émises par des générations particulières de piles TLS. Sur les liens affectés, les piles OpenSSL 3.0 et Electron/BoringSSL (utilisées par l'extension VS Code et le démon) sont réinitialisées, tandis que les piles OpenSSL 3.5 — y compris les builds actuelles de Node.js — se connectent normalement.
+- **Solution :** Établissez la connexion avec une pile TLS de génération 3.5 :
+  - **CLI :** utilisez une build à jour d'une ligne Node.js supportée (les builds actuelles de Node 22/24/25 embarquent toutes une OpenSSL de génération 3.5). Les builds plus anciennes de la même majeure peuvent encore être sur une génération affectée — mettez à jour plutôt que de figer sur une mineure ancienne.
+  - **Extension VS Code / démon :** l'extension fonctionne sur la pile TLS d'Electron et ne peut pas la changer côté client. Lancez un petit relais local — un processus local sur une pile de génération 3.5 — et pointez Qwen Code dessus via la surcharge d'URL de base du modèle (le point de terminaison personnalisé dans `settings.json`, ou `--openaiBaseUrl` pour la CLI), afin que la sortie TLS se fasse avec la pile plus récente.
+- **Comment distinguer cela d'un réseau instable :**
+  - la réinitialisation est déterministe — chaque tentative échoue immédiatement, à travers les retries, et ne récupère pas avec le temps ;
+  - sur la même machine et au même moment, d'autres piles TLS réussissent vers le même point de terminaison ;
+  - fixer les versions TLS ou changer la résolution DNS n'aide pas.
 
 ## Codes de sortie
 

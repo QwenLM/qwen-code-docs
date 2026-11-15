@@ -314,7 +314,7 @@ SDK 提供了两个关键接口来处理来自 CLI 的事件和内容：
 - `permissionMode`：控制工具执行的权限模式
 - `env`：传递给 CLI 进程的环境变量
 - `maxSessionTurns`：限制会话中的对话轮次
-- `coreTools`：AI 可用的核心工具列表
+- `coreTools`：核心工具的非空白名单。省略或空列表视为未指定；空列表不会禁用工具。MCP 和其他非核心工具有独立的注册和权限规则。使用 `excludeTools` 显式排除指定工具；`allowedTools` 控制审批而非注册。
 - `excludeTools`：要从可用工具中排除的工具列表
 - `allowedTools`：预先批准无需额外确认即可使用的工具列表
 - `authType`：会话使用的认证类型

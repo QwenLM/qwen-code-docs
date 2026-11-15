@@ -10,6 +10,28 @@ Messaging-Channels verwenden einen separaten persistenten Scheduler, sodass Erge
 
 > **Tip:** Geplante Tasks sind standardmäßig aktiviert. Um sie zu deaktivieren, setze `experimental.cron: false` in deinen [Einstellungen](../configuration/settings.md) oder setze `QWEN_CODE_DISABLE_CRON=1` in deiner Umgebung.
 
+## Workspace in Web Shell
+
+Die Seite **Scheduled Tasks** zeigt den Workspace jedes Tasks auf seiner Karte an. Beim Erstellen oder Bearbeiten eines Tasks zeigt das Feld **Workspace**, wo er ausgeführt wird. Bei einem einzigen Workspace ist dieses Feld schreibgeschützt; wenn eine eingebettete WebShell einen vom Host festgelegten Workspace hat, wird zusätzlich **Fixed by host** angezeigt. Fahre mit der Maus über das Workspace-Label, um den vollständigen Pfad zu sehen.
+
+Bei mehreren Workspaces wähle beim Erstellen eines Tasks einen Workspace aus. Ein bestehender Task verbleibt in seinem ursprünglichen Workspace. Workspace-Labels benötigen Workspace-Informationen vom Daemon oder Host; ein fehlendes Label bedeutet nicht, dass der Task ohne Workspace ausgeführt wird.
+
+## WebShell-Task-Ergebnisse an einen Channel zustellen
+
+Öffne in `qwen serve` die Seite **Scheduled Tasks** und erstelle oder bearbeite einen Task in seinem Workspace. Wähle ein persistentes Run-Ziel (eine dedizierte Session oder, wenn verfügbar, die aktuelle Session) und dann einen **Delivery Channel**.
+
+Bei Channels mit einem konfigurierten Ziel, wie [DingTalk-Webhooks](./channels/dingtalk-webhook.md), verwendet die Auswahl des Channels dieses Ziel, ohne dass ein Typ oder eine ID angegeben werden muss. Wenn das gespeicherte Ziel eines bestehenden Tasks abweicht, bewahrt das Formular es auf und bietet **Use configured destination** an, um es explizit zu ersetzen.
+
+Bei anderen Channels wähle einen User- oder Chat-Zieltyp und eine Ziel-ID. Kürzlich gesehene Kontakte sind optionale Vorschläge; prüfe Channel-Name, Typ und rohe ID, bevor du einen auswählst. Du kannst auch direkt eine ID eingeben. Wenn eine ID führende oder nachfolgende Leerzeichen enthält, warnt dich das Formular und bietet **Remove surrounding whitespace** an; es ändert die ID niemals automatisch. Der konfigurierte Channel muss das Senden an dieses Ziel unterstützen.
+
+Delivery ist standardmäßig deaktiviert. Die Konfiguration eines Channels allein aktiviert keine Zustellung für einen Task. Wenn aktiviert, wird die abschließende Antwort eines erfolgreich abgeschlossenen geplanten Runs über den ausgewählten Channel gesendet; dies garantiert keinen Empfang und fügt keine dauerhaften Wiederholungen oder Fehlerbenachrichtigungen hinzu. Die Task-Karte zeigt eine Delivery-Zeile nur an, wenn ein gespeichertes Ziel vorhanden ist.
+
+Um die Zustellung zu entfernen, bearbeite den Task und wähle **Delivery off** unter **Delivery Channel**. Das Bearbeiten anderer Felder bewahrt das gespeicherte Ziel auf, einschließlich eines Ziels, das nicht mehr in den kürzlich gesehene Kontakten gefunden wird. Ladefehler oder fehlende Channels löschen es nicht. Das Ändern des Workspaces beim Erstellen eines Tasks setzt das Entwurfsziel zurück; ein bestehender Task verbleibt in seinem ursprünglichen Workspace.
+
+Wenn die Delivery-Unterstützung nach dem Ändern eines Ziels nicht mehr verfügbar ist, wähle **Discard delivery changes**, um das ursprüngliche Ziel wiederherzustellen und die Bearbeitung der anderen Felder des Tasks fortzusetzen. Bei einem neuen Task entfernt dies das Entwurfsziel. Das Speichern lässt dann jede bestehende Delivery-Konfiguration unverändert.
+
+Tasks, die für jeden Run eine neue Session erstellen (`per_run`), unterstützen keine Zustellung. Der Wechsel in diesen Modus hält dein Entwurfsziel sichtbar und fordert dich auf, die Zustellung explizit zu deaktivieren oder vor dem Speichern in einen persistenten Modus zurückzukehren. Delivery-Steuerungen erfordern die `channel_delivery`-Capability des Daemons; bestehende Ziele bleiben bei älteren Daemons sichtbar, können dort aber nicht geändert werden.
+
 ## Einen wiederkehrenden Prompt mit /loop planen
 
 Die `/loop` [integrierte Skill](./skills.md) ist der schnellste Weg, um einen wiederkehrenden Prompt zu planen. Übergib ein optionales Intervall und einen Prompt, und Qwen Code richtet einen Cron-Job ein, der im Hintergrund ausgeführt wird, während die Sitzung geöffnet bleibt.

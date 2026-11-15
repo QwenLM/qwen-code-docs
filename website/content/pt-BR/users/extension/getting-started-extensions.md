@@ -68,10 +68,13 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
-const server = new McpServer({
-  name: 'prompt-server',
-  version: '1.0.0',
-});
+const server = new McpServer(
+  {
+    name: 'prompt-server',
+    version: '1.0.0',
+  },
+  { maxToolInputElements: 100_000 },
+);
 
 // Registra uma nova ferramenta chamada 'fetch_posts'
 server.registerTool(

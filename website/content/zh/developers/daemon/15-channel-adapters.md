@@ -81,6 +81,7 @@ abstract class ChannelBase {
 | 飞书 | `packages/channels/feishu/src/FeishuAdapter.ts` | 飞书/Lark Stream WebSocket（默认）或 HTTP webhook | 通过 Lark SDK 作为交互卡片发送；webhook 模式需要 `encryptKey` 进行 HMAC 签名验证。 |
 | GitHub | `packages/channels/github/src/GithubAdapter.ts` | GitHub Notifications API 轮询（`@octokit/rest`） | 扩展 `PollingChannelBase`；基于游标的评论窗口去重；通过 Issues API 发布评论。 |
 | GitLab | `packages/channels/gitlab/src/GitlabAdapter.ts` | GitLab Todos API 轮询（`@gitbeaker/rest`） | 扩展 `PollingChannelBase`；直接分发 `todo.body`；`action_prompt_template` 配置驱动事件过滤和元数据渲染。 |
+| Email | `packages/channels/email/src/email-channel.ts` | IMAP 轮询 + SMTP over TLS | 发送者作用域的线程；持久化准入声明；受限的回复/主动接收者。 |
 
 每个适配器实现：
 
@@ -98,8 +99,8 @@ abstract class ChannelBase {
 | **微信** | HTTP 长轮询 | `senderWxid`（群组可选 `groupWxid`） | 带有回复 token 的纯文本提示 | 同上 |
 | **Telegram** | Bot API 长轮询 | `from.id`（群组可选 `chat.id`） | 内联键盘按钮 | 同上 |
 | **飞书** | WebSocket 流 / HTTP webhook | `sender.open_id`（群组可选 `chat_id`） | 交互卡片按钮 | 同上 |
-| **GitHub** | Notifications API 轮询 | 数字 `user.id`（不可变；login 在连接时解析） | 错误评论 + 重新 @提及 | `senderPolicy: 'allowlist' \| 'open'` |
-| **GitLab** | Todos API 轮询 | `author.username`（小写化） | 日志 + 重新 @提及 | `senderPolicy: 'allowlist' \| 'open'` |
+| **GitHub** | Notifications API 轮询 | 数字 `user.id`（不可变；login 在连接时解析） | 错误评论 + 重新 @提及 | `groups["*"].senders: 'allowlist' \| 'open'` |
+| **GitLab** | Todos API 轮询 | `author.username`（小写化） | 日志 + 重新 @提及 | `groups["*"].senders: 'allowlist' \| 'open'` |
 
 > **注意：** “权限 UX”列描述了各平台的原生交互方式，但目前尚未接入——`AcpBridge.requestPermission` 当前会自动批准所有请求（`packages/channels/base/src/AcpBridge.ts`），并且 `ChannelConfig.approvalMode` 已声明但尚未被读取。交互式批准功能已在计划中（Phase 5）。
 
@@ -160,7 +161,11 @@ sequenceDiagram
     D-->>SC: SSE: permission_request
     SC-->>BR: DaemonEvent
     alt config.approvalMode == 'auto'
-        BR->>SC: session.respondToPermission({...})
+        alt daemon advertises session_permission_vote
+            BR->>SC: session.respondToSessionPermission({...})
+        else host does not advertise it
+            BR->>SC: session.respondToPermission({...})
+        end
     else 'prompt'
         BR-->>AD: 触发 'permissionRequest'（渲染聊天原生 UI）
         AD->>BR: 用户选择选项 → respondToPermission
@@ -176,7 +181,7 @@ sequenceDiagram
 
 ### 运行时选择与设置重新加载
 
-长生命周期的 `ChannelWorkerManager` 持有已提交的 daemon 选择和按工作区分组的 supervisor。显式的 `--channel` 选择具有最高优先级并保持 fail-fast。在无标志启动时，恢复每个可信已注册工作区自身的 `serve.channels` 设置；这会动态加载渠道运行时、保留服务 pidfile、解析工作区所属关系，并启动所选的 worker。列出名称的工作区打破原本模糊的所属关系平局，非主工作区贡献的无法解析的名称会被丢弃并记录日志，而不是让整个恢复失败。`all` 保持仅主工作区。在两种启动来源均缺失的情况下，第一个严格门控的 `PUT /workspace/channel` 执行惰性初始化。`GET /workspace/channel` 读取管理器快照，`DELETE /workspace/channel` 幂等地停止它。SDK 辅助方法有 `getChannelWorkerControl()`、`setChannelWorkerSelection()` 和 `stopChannelWorker()`；CLI 入口是 `qwen channel set` 以及远程 `status` 和 `stop` 变体。
+长生命周期的 `ChannelWorkerManager` 持有已提交的 daemon 选择和按工作区分组的 supervisor。显式的 `--channel` 选择具有最高优先级并保持 fail-fast。在无标志启动时，恢复每个可信已注册工作区自身的 `serve.channels` 设置；这会动态加载渠道运行时、保留服务 pidfile、解析工作区所属关系，并启动所选的 worker。列出名称的工作区打破原本模糊的所属关系平局，非主工作区贡献的无法解析的名称会被丢弃并记录日志，而不是让整个恢复失败。`all` 保持仅主工作区。启动后注册的可信非主工作区在每个 daemon 运行期间恢复其自身的名称一次——当它被移除并重新注册时不会再次恢复，当其信任被重新具体化时也不会，并且在显式 `--channel` 选择下完全不会恢复（后续注册永远不会扩展该选择），在 `DELETE /workspace/channel` 停止托管之后也不会恢复，直到 `PUT /workspace/channel` 再次提交。注册不会等待该恢复，恢复会将工作区的名称一次性添加到已提交的选择中，每次一个延迟恢复。在缺少所有这些来源（显式 `--channel`、启动时的 `serve.channels` 恢复、或配置了自身 `serve.channels` 的工作区注册）的情况下，第一个严格门控的 `PUT /workspace/channel` 执行惰性初始化。`GET /workspace/channel` 读取管理器快照，`DELETE /workspace/channel` 幂等地停止它。SDK 辅助方法有 `getChannelWorkerControl()`、`setChannelWorkerSelection()` 和 `stopChannelWorker()`；CLI 入口是 `qwen channel set` 以及远程 `status` 和 `stop` 变体。
 
 存储的启动名称必须非空，前后无空白，且不包含不安全的控制字符或不可见字符。无效条目会逐个跳过并按数组索引记录日志；守护进程不会将其裁剪为另一个实例名称，也不会重写设置。worker 参数使用 `--channel=<value>`，这会保留名称中的前导短横线。渠道管理继续报告持久化的启动设置和实际运行时状态。
 
@@ -187,6 +192,8 @@ sequenceDiagram
 如果替换失败，新启动的 worker 会被停止，旧 worker 会在请求返回前恢复。无法在 SIGTERM 和 SIGKILL 后观察到退出的 supervisor 会保留其子引用并导致停止失败；管理器保留 PID 租约，永远不会启动第二个 worker。Webhook 配置和路由仅在选择提交成功时才会变更。运行时选择是进程本地的，在 daemon 重启时消失。
 
 适配器 `connect()` 失败与 worker 生命周期错误分开报告。worker 通过启动 IPC 发送每个有界的、凭证已编辑的失败，并在尝试下一个适配器之前等待 supervisor 确认。部分连接的 worker 保持运行并在其快照中暴露 `startupFailures`。如果动态尝试中的每个适配器都失败，`502 channel_worker_start_failed` 响应携带带工作区注释的尝试失败信息，而 `state` 反映回滚结果；后续 GET 响应不保留尝试信息。显式 `--channel` 启动且没有已连接的适配器仍然快速失败。源自设置的启动失败会被记录日志，并允许守护进程在清理成功后继续，但受全局运行时启动超时的限制。可选的适配器 `code` 仅用于诊断，当前 `phase` 为 `connect`。
+
+显式的 `DELETE /workspaces/:workspace/channels/:name` 也可以收敛一个 Channel，当其配置在工作区的已解析设置作用域中缺失时；`DELETE` 契约的这一扩展在 `channel_delete_config_loss_convergence` 能力标签下公布。收敛要求 Worker 解析的合并设置视图（系统 + 用户 + 工作区作用域）不再持有该 Channel 的有效配置条目——读取视图过滤掉的条目（例如旧版标量值）不运行任何内容并计为已丢失。然后运行时必须已稳定，并且要么对该 Channel 保持沉默（没有已提交的选择也没有 Worker），要么在所选工作区中确认恰好一个已提交的 Worker 所有者；当所有者存在时，在移除该作用域中持有的持久化启动选择之前先停止它。停止后重新读取合并视图，因此在此期间如果配置在另一个作用域中重新出现，则会以 `channel_settings_conflict` 失败而不是收敛。在另一个作用域中持久化的启动选择（例如主工作区的文件）不会被移除。如果合并视图仍然在所选工作区的渠道设置作用域不拥有的作用域中持有该 Channel 的配置（仅在用户作用域配置而所选工作区是项目目录），则报告 `channel_instance_not_found` 且运行时保持原样；目录为用户主目录的工作区将其渠道设置作用域解析为共享用户文件，因此用户作用域的 Channel 在那里配置，显式 `DELETE` 会移除它。仍在启动或调和的 Worker 管理器读取为沉默但不是它，因此在转换期间到达的删除会以 `channel_service_conflict` 拒绝，并且可以在管理器稳定后重试；未知的、模糊的、未提交的或外部的运行时所有权以相同方式被拒绝。修订检查和 Worker 停止失败仍然适用。如果配置、启动选择和运行时都缺失，则删除是幂等的。读取缺失的配置不会触发清理。剩余的已提交 Channel 仍必须通过现有的管理器调和解析；如果另一个所选 Channel 也丢失了其配置，则删除可能失败而不收敛目标。当两个所选 Channel 都丢失了其配置时，每个 `DELETE` 都会失败并返回 `channel_workspace_mismatch` 并命名另一个；先停止所有 Channel 托管（`DELETE /workspace/channel`）可以让两个删除都收敛。
 
 ## 依赖
 

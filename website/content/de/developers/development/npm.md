@@ -83,6 +83,14 @@ Jedes geplante oder manuelle Release durchläuft die folgenden Schritte:
 
 Wenn ein Schritt im Release-Workflow fehlschlägt, wird automatisch ein neues Issue im Repository mit den Labels `bug` und einem typspezifischen Fehlerlabel (z. B. `nightly-failure`, `preview-failure`) erstellt. Das Issue enthält einen Link zum fehlgeschlagenen Workflow-Lauf zur einfachen Fehlersuche.
 
+### Wenn ein Release in der Warteschlange wartet
+
+`Publish Release` läuft auf einem GitHub-gehosteten Runner und kann nicht in die ECS-Pools verschoben werden: [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) unterstützt nur Cloud-gehostete Runner, daher würde ein selbst gehosteter Publisher bei der Authentifizierung fehlschlagen und keine Provenienz ausgeben. Die macOS- und Windows-Steps von `audio-capture-prebuilds.yml` sind ebenfalls gehostet, da sie gegen native Toolchains bauen; nur die Linux-Steps wählen `ecs-qwen-release-host`.
+
+Die gehostete Concurrency ist accountweit und wird mit der PR-Review-, Autofix- und Triage-Automatisierung geteilt, sodass diese gehosteten Steps hinter diesem Traffic in der Warteschlange stehen. Ein Step in der Warteschlange ist kein fehlgeschlagenes Release: GitHub hat ihm noch keinen Runner zugewiesen, sein Log ist noch leer, und `timeout-minutes` beginnt erst zu zählen, wenn er läuft. Am 2026-11-01 wartete ein Publish 2h33m auf einen Runner und wurde dann in 5m37s abgeschlossen, während die Nightlies in der Umgebung 3–4s nach ihrem Build-Abschluss versandt wurden. Bevorzugen Sie das Nightly, oder verschieben Sie den Versand außerhalb der Asia/Shanghai-Hauptgeschäftszeit, wenn ein manuelles Release zeitkritisch ist.
+
+Siehe [Release-Runner-Slots](../../design/2026-10-28-release-queue-optimization.md) für die Pool-Analyse und welche Release-Jobs bereits von gehosteten Runnern verschoben wurden.
+
 ## Release-Validierung
 
 Nach dem Veröffentlichen eines neuen Releases sollte ein Smoke-Test durchgeführt werden, um sicherzustellen, dass die Pakete wie erwartet funktionieren. Dies kann durch lokales Installieren der Pakete und Ausführen einer Reihe von Tests erfolgen.

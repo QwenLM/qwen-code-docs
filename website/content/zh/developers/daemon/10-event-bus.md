@@ -22,7 +22,7 @@
 | 常量                                   | 值          | 用途                                                                                                 |
 | -------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------- |
 | `EVENT_SCHEMA_VERSION`                 | `1`         | 印在每个 `BridgeEvent.v` 上；在发生破坏性帧更改时递增。                                              |
-| `DEFAULT_RING_SIZE`                    | `8000`      | 每个会话的重放环。操作员可通过 `--event-ring-size` 覆盖。                                            |
+| `DEFAULT_RING_SIZE`                    | `8000`      | 每个会话的重放环计数上限。同时也受 `--event-ring-max-bytes` 限制。                                   |
 | `DEFAULT_MAX_QUEUED`                   | `256`       | 每个订阅者的实时帧积压上限。                                                                         |
 | `DEFAULT_MAX_QUEUED_BYTES`             | `2 MiB`     | 每个订阅者的实时序列化字节积压上限。                                                                 |
 | `DEFAULT_MAX_SUBSCRIBERS`              | `64`        | 每个会话的订阅者上限。                                                                               |
@@ -65,7 +65,7 @@ interface SubscribeOptions {
 - **`liveCount` 和 `liveBytes` 作为字段维护**，而不是从 `forcedInBuf` 位置派生。当 `slow_client_warning` 开始在流中间强制推送时（警告进入队列的**末尾**，而不是像重放那样进入开头），早期基于位置的启发式方法失效了。每个条目的 `forced` 标签与位置无关；实时条目还存储其序列化字节估计值，因此排空队列会减少 `liveBytes`。
 - **序列化字节是延迟估计的。** `push()` 仅在事件将被缓冲时计算 `Buffer.byteLength(JSON.stringify(event), 'utf8')`。如果订阅者已经在等待 `next()`，则直接传递事件，不计算字节估计值。如果序列化失败，守护进程会发出尽力而为的 stderr 诊断信息，并且该事件会跳过字节计算，同时保留 `publish()` 的不抛出异常契约；它仍然计入实时帧上限。
 
-`push(value, getBytes)` 返回接受/拒绝结果，而不是阻塞或抛出异常。帧溢出会以 `queue_overflow` 拒绝；字节溢出会以 `queue_bytes_overflow` 拒绝。当实时队列为空时，允许单个超大事件，但其后的第二个实时事件会驱逐订阅者。`forcePush(value)` 绕过这两个上限。`close({drain?: boolean})` 默认排空挂起的项；中止路径传递 `drain: false` 以立即丢弃它们。
+`push(value, getBytes, fallback?)` 返回接受/拒绝结果，而不是阻塞或抛出异常。帧溢出会以 `queue_overflow` 拒绝。空的实时队列允许一个超大事件原样进入。对于可能超出字节上限的非空队列，可选的 fallback 可以提供一个更小的副本：MCP App 的 `tool_call` / `tool_call_update` 帧会将整个 `rawOutput.html` 丢弃为 `''`，同时保留必需的非空 `fallbackText`。如果该副本能够放入，订阅者保持连接；否则字节溢出会以 `queue_bytes_overflow` 拒绝。缺失或为空的文本 fallback 不符合降级条件。直接传递和重放环保留原始帧；压缩重放窗口有其独立的预算策略。被接受的副本保留已发布的 id，因此排队的订阅者可能收到与环中该 id 对应的负载不同的内容。在该 id 之后恢复不会重新传递它；需要该文档的客户端必须显式地重新分页获取持久化的转录（受其分页预算限制）。`forcePush(value)` 绕过这两个上限。`close({drain?: boolean})` 默认排空挂起的项；中止路径传递 `drain: false` 以立即丢弃它们。
 
 ## 工作流
 
@@ -192,7 +192,8 @@ sequenceDiagram
 
 ## 配置
 
-- `--event-ring-size <n>` — 每个 session 的 ring 深度；软上限为 `MAX_EVENT_RING_SIZE = 1_000_000`。
+- `--event-ring-size <n>` — 每个会话的环计数上限，默认 8000；软上限为 `MAX_EVENT_RING_SIZE = 1_000_000`。
+- `--event-ring-max-bytes <n>` — 每个会话的序列化环字节预算，包括最新的全量命令快照。默认为 `8388608`（8 MiB）；正安全整数上限为 `268435456`（256 MiB），无无限标记。保留在任一限制先生效时停止，但至少最新的环事件能在超大事件或快照中幸存。当两个限制都约束所需的重新连接窗口时，同时增加两个限制。
 - `GET /session/:id/events` 上的订阅者 `?maxQueued=N` 查询参数，范围 `[16, 2048]`。SDK 客户端在启用前会预检 `caps.features.slow_client_warning`。
 - `EventBus(..., { maxQueuedBytes })` 构造函数选项仅用于测试或嵌入式调用方。默认值为 2 MiB，无效值会抛出 `TypeError`。故意不提供 `?maxQueuedBytes` 查询参数。
 - `BridgeOptions.eventRingSize`（覆盖嵌入式使用的 daemon 默认值）。
@@ -239,9 +240,9 @@ daemon 的 `EventBus` 会从 ring buffer 中重放所有 `id > Last-Event-ID` �
 | 场景                                       | 行为                                                                                                                                                                |
 | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 缺失 `Last-Event-ID`                       | 仅实时流；无重放。与 resume 之前的客户端向后兼容。                                                                                                                  |
-| `Last-Event-ID: 0`                         | 从头开始重放整个 ring buffer（受 `--event-ring-size` 限制，默认 8000）。                                                                                            |
+| `Last-Event-ID: 0`                         | 从头开始重放整个环缓冲区（最多 `--event-ring-size`，默认 8000，受 `--event-ring-max-bytes` 默认 8 MiB 以及单最新事件/快照例外限制）。                                                                            |
 | `Last-Event-ID: N` 且 `ring[0].id <= N+1`  | 连续重放 `id > N` 的事件，然后进入实时推送。                                                                                                                        |
-| `Last-Event-ID: N` 且 `ring[0].id > N+1`   | 检测到间隙 — 在重放剩余后缀之前发出 `state_resync_required`（`reason: 'ring_evicted'`）。SDK 必须调用 `loadSession` 来恢复完整状态。                                |
+| `Last-Event-ID: N` 且 `ring[0].id > N+1`   | 检测到间隙 — 在重放幸存后缀之前发出 `state_resync_required`（`reason: 'ring_evicted'`）。SDK 必须调用 `loadSession` 来恢复有界的重放快照窗口；如果较旧的内存重放条目已被丢弃，返回的 `compactedReplay` 可能以 `history_truncated` 开头。 |
 | `Last-Event-ID: N` 且 `N >= nextId`        | Epoch 重置（daemon 重启）— 发出 `state_resync_required`（`reason: 'epoch_reset'`），然后进行完整的 ring 重放。                                                      |
 
 ### 校验规则

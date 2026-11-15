@@ -18,7 +18,8 @@
 | `/workspace/preflight`                      | ルート -> `DaemonStatusProvider`                | 構造化された準備状態セル: Node バージョン、CLI エントリ、ripgrep、git、npm。子プロセスが起動すると ACP レベルのセルも追加されます。                                                                                                                                                                       |
 | `/workspace/env`                            | ルート -> `DaemonStatusProvider`                | デーモンプロセスの環境変数スナップショット。シークレット環境変数は存在のみを報告し、プロキシ URL の認証情報は削除されます。                                                                                                                                                                                    |
 | `/workspace/mcp`                            | ルート -> bridge extMethod                      | プール、予算、拒否のスナップショット。                                                                                                                                                                                                                                                       |
-| `/workspace/skills`, `/workspace/providers` | ルート                                         | ACP 側のライブスナップショット。セッションが存在しない場合は空のアイドルデータを返します。                                                                                                                                                                                                                   |
+| `/workspace/skills`                 | Route -> retained daemon observation                       | ウォームリードは、保持されたデーモンローカルのカタログを `snapshot.ageMs` とともに即座に返します。バックグラウンドの再検証がそれを更新します。コールドリードは ACP を待機し、次にデーモンローカルの列挙を行います。利用できないソースは `errors` 付きの `initialized: false` を報告します。                                                                                                      |
+| `/workspace/providers`              | Route -> daemon-local provider (bridge extMethod fallback) | ワークスペースの設定/環境からのカタログとデフォルトモデルのスナップショット。子プロセスの生存状態に依存せず、`acpChannelLive` がそれを報告します。`initialized` は成功時に `true` となり、設定やモデル設定を解決できない場合は `errors` エントリ付きで `false` となります。                                                                                            |
 | セッションごとの SSE                             | `GET /session/:id/events`                      | リアルタイムイベントストリーム。                                                                                                                                                                                                                                                                   |
 | Web Shell UI                                | `GET /` (`packages/cli/src/serve/web-shell-static.ts`) | バンドルされた Web Shell アセットから提供されるブラウザ UI: チャット、セッションリスト、ワークスペースインスペクター、権限 UX。ループバックでは、`http://127.0.0.1:4170/` が SDK コードを書かずにエンドツーエンドの検証を最も迅速に行うパスです。登録ルールは [`02-serve-runtime.md`](./02-serve-runtime.md) にあります。 |
 | `PermissionAuditRing`                       | `permission-audit.ts`                          | 512 件の権限決定を保持するインメモリ FIFO。                                                                                                                                                                                                                                               |
@@ -137,6 +138,13 @@ curl -s 'http://127.0.0.1:4170/daemon/status?detail=full' | \
 ```
 
 `stable` が通常のオーナーです。`fallback` は別のデーモンが stable ファミリを所有していることを意味し、`stderr-only` はファイルログが無効または利用できないことを意味します。意図的な同時実行下では `fallback/ok` が想定されます。`daemon_log_degraded` 警告はパスを含みません。実際のパスとロガーの問題コードについてはフル詳細をリクエストしてください。`runId` を使用して、stable ファイル内の再起動を分離します。
+
+新しい OTel メトリクス名:
+
+- `qwen-code.daemon.event_loop.lag`、`stat=mean|p50|p99|max` を持つミリ秒単位のゲージ。
+- `qwen-code.acp.event_loop.lag`、`stat=mean|p50|p99|max` を持つミリ秒単位のゲージ。
+- `qwen-code.daemon.prompt.queue_wait`、ミリ秒単位のヒストグラム。
+- `qwen-code.daemon.pipe.message_bytes`、`direction=inbound|outbound` を持つバイト単位のヒストグラム。
 
 ### 11. デーモンはメモリプレッシャー下にあるか？
 

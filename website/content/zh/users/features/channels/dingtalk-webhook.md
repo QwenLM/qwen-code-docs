@@ -40,6 +40,24 @@ qwen serve --channel team-notices
 
 一个命名实例代表一个已配置的群组。为其他群组创建额外实例。更新实例的 URL 会改变引用它的后续发送的目标地址。
 
+## 使用 Web Shell
+
+在 Channels 中，选择 DingTalk 及其 webhook 发送方式。保存 webhook
+URL 和可选的加签密钥，然后启动 Channel。接收、配对和
+代理会话设置不适用于此方式。
+
+就绪/已连接状态表示本地发送资源已就绪；
+它不会验证远程凭据。
+
+在定时任务中，选择持久任务并选择此 Channel 作为
+发送目标。Web Shell 会自动填充配置的目标；
+无需观察到的联系人或手动用户/聊天 ID。现有的每次运行发送
+限制仍然有效。
+
+`WebShellWithProviders` 使用的共享 Web Shell 中也提供相同的控制，
+当宿主启用 Channels 和定时任务并提供
+普通守护进程工作区时。
+
 ## 显式 API 发送
 
 Notify 和显式提示/定时发送使用现有的 Channel 目标格式。此适配器将 `chat/default` 定义为唯一的逻辑目标：

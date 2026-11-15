@@ -25,4 +25,5 @@ export default {
   },
   'archive': 'archive',
   'evaluation': 'Qwen Code Evaluation',
+  'performance': 'performance',
 };

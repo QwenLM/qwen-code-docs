@@ -7,14 +7,14 @@ externen Injection-Point.
 
 ## Sidebar aktivieren
 
-Die Sidebar ist **standardmäßig deaktiviert**. Übergib die `sidebar`-Prop zum Aktivieren:
+Die Sidebar ist standardmäßig **Home only**: eine 300px Session-Spalte mit einem Einklapp-Control unten. Das Weglassen von `sidebar`, das Übergeben von `true` oder `{}` verwendet diesen Standard. Übergib `sidebar={false}` oder `{ enabled: false }` um sie auszublenden.
 
 ```tsx
 import { WebShellWithProviders } from '@qwen-code/web-shell';
 
 <WebShellWithProviders
   baseUrl="http://localhost:4170"
-  sidebar={true} // einfaches Aktivieren
+  sidebar={true} // Home-only-Standard
   // oder mit fein abgestimmten Optionen:
   // sidebar={{ enabled: true, defaultCollapsed: false, ... }}
 />;
@@ -22,26 +22,9 @@ import { WebShellWithProviders } from '@qwen-code/web-shell';
 
 ## Layout-Übersicht
 
-```
-┌─────────────────────────────────────┐
-│ ① Branding (topRow)                 │  ✅ anpassbar
-├─────────────────────────────────────┤
-│ ② Primäre Navigation                │  ✅ anpassbar
-│    [＋ Neue Aufgabe] [🧩 Plugins]      │
-│    [📅 Geplant] [🎯 Ziele]        │
-│    [custom render...]               │
-├─────────────────────────────────────┤
-│ ③ Projekt-Header                    │  ✅ ein-/ausblendbar
-│    📁 Projekte ▼ [🔍] [＋]          │
-│    Session-Listeneinträge…          │
-│    📦 Archivierte Sessions          │
-├─────────────────────────────────────┤
-│ ④ Footer-Action-Leiste              │  ✅ anpassbar
-│    [⚙ Einstellungen] v0.19 [☀] [▦] [◧] │
-├─────────────────────────────────────┤
-│ ⑤ Resize-Handle                     │  ❌ nicht anpassbar
-└─────────────────────────────────────┘
-```
+Home-only-Hosts zeigen Branding, Neue Session, Workspaces, archivierte Sessions und das Einklapp-Control in einer Spalte. Die Konfiguration eines anderen verfügbaren primären Entry oder Footer-Action fügt eine 56px Icon-Rail neben der standardmäßigen 300px sekundären Spalte hinzu. Primäre Entries leben in der Rail; Footer-Actions und Version leben in More. Custom Renderer bleiben in der breiten Home-Spalte. Es gibt keine öffentliche Layout-Option.
+
+**Breaking Change:** Früher hat das Weglassen von `sidebar` die Sidebar ausgeblendet, und das Weglassen der Navigations-/Footer-Item-Listen hat alle eingebauten Elemente angezeigt, wenn die Sidebar aktiviert war. Hosts müssen jetzt `sidebar={false}` übergeben, um den früheren Standard "ausgeblendet" beizubehalten, oder explizit die benötigten Entries auflisten. Standalone Web Shell konfiguriert sein vollständiges Menü explizit. `branding.hideWhenCompact` ist jetzt standardmäßig `false`; setze es auf `true`, um eine ausgeblendete Marke im kompakten Drawer beizubehalten.
 
 ## Anpassbare Bereiche
 
@@ -50,7 +33,7 @@ import { WebShellWithProviders } from '@qwen-code/web-shell';
 ```ts
 interface WebShellSidebarBranding {
   render?: () => ReactNode; // ersetzt die gesamte Branding-Zeile
-  hideWhenCompact?: boolean; // ausblenden wenn die Sidebar eingeklappt ist (Standard: true)
+  hideWhenCompact?: boolean; // Branding im kompakten Drawer ausblenden (Standard: false)
 }
 ```
 
@@ -59,7 +42,7 @@ interface WebShellSidebarBranding {
 | `undefined` (Standard)             | Aufgelöste Marke: `brand`-Prop → Daemon `GET /brand` → eingebautes Qwen-Logo + "Qwen Code"-Text |
 | `false`                            | Branding-Zeile vollständig ausgeblendet                      |
 | `{ render: () => <MyHeader /> }`   | Vollständiger Ersatz durch benutzerdefinierten Inhalt        |
-| `{ hideWhenCompact: false }`       | Branding im eingeklappten Icon-Rail-Modus sichtbar lassen    |
+| `{ hideWhenCompact: false }`     | Branding im kompakten Drawer sichtbar lassen (der Standard)                                  |
 
 Die Standardzeile ist datengesteuert, nicht fest: Ein Daemon, der eine
 `ui.brand`-Konfiguration bereitstellt, benennt den Text um und tauscht das
@@ -86,29 +69,33 @@ sidebar={{
 
 ```ts
 type WebShellSidebarPrimaryNavItem =
-  | 'newTask' // ✏️ Neue-Aufgabe-Button
+  | 'newTask' // ✏️ Neue-Session-Button
   | 'plugins' // 🧩 Plugins-Button
+  | 'channels' // Channel-Sessions und Einstellungen
+  | 'live' // Live-Sessions und Einstellungen; erfordert showLive
+  | 'workflows' // Erfordert Workflow-Unterstützung
+  | 'managed' // Erfordert einen Managed-Agent-Provider
   | 'scheduledTasks' // 📅 Geplante-Tasks-Button
   | 'goals'; // 🎯 Ziele-Button
 
 interface WebShellSidebarPrimaryNavOptions {
-  items?: readonly WebShellSidebarPrimaryNavItem[]; // welche eingebauten Buttons angezeigt werden (Standard: alle)
+  items?: readonly WebShellSidebarPrimaryNavItem[]; // welche eingebauten Buttons angezeigt werden (Standard: ['newTask'])
   render?: () => ReactNode; // zusätzlicher benutzerdefinierter Inhalt nach den eingebauten Buttons
 }
 ```
 
 Der primäre Navigationsbereich enthält eingebaute Buttons, die über `items` gesteuert werden:
 
-- Alle Buttons werden standardmäßig angezeigt, wenn `items` nicht angegeben ist
+- Nur Neue Session wird angezeigt, wenn `items` nicht angegeben ist; Home existiert immer
 - Nur die aufgeführten Buttons werden angezeigt, wenn `items` angegeben ist
 - Benutzerdefinierter Inhalt kann über `render()` nach den eingebauten Buttons hinzugefügt werden
 
 | Wert                                       | Effekt                                     |
 | ------------------------------------------ | ------------------------------------------ |
-| `undefined` (Standard)                     | Alle eingebauten Buttons angezeigt          |
-| `{ items: ['plugins'] }`                   | Nur Plugins-Button                         |
-| `{ items: ['plugins', 'scheduledTasks'] }` | Plugins + Geplante Tasks                   |
-| `{ items: [], render: () => ... }`         | Alle eingebauten ausblenden, nur benutzerdefinierter Inhalt |
+| `undefined` (Standard)                     | Home mit Neue Session                      |
+| `{ items: ['plugins'] }`                   | Home und Plugins; kein Neue-Session-Button |
+| `{ items: ['plugins', 'scheduledTasks'] }` | Home + Plugins + Geplante Tasks            |
+| `{ items: [], render: () => ... }`         | Home mit benutzerdefiniertem Inhalt; keine eingebauten primären Buttons |
 
 ```tsx
 sidebar={{
@@ -128,27 +115,30 @@ sidebar={{
 ```ts
 type WebShellSidebarFooterItem =
   | 'settings' // ⚙ Einstellungsbereich
+  | 'update' // Update-Action wenn unterstützt
+  | 'localFiles' // Local-Files-Bridge wenn verfügbar
+  | 'desktopRelay' // Diesen Computer über das bestehende Desktop-Relay nutzen
+  | 'workspacesOverview' // Workspace-Verwaltung wenn freigeschaltet
   | 'version' // Versionsbezeichnung (z. B. "v0.19.10")
   | 'theme' // ☀/🌙 Hell/Dunkel-Umschalter
-  | 'sessionsOverview' // ▦ Session-Übersichtsbereich
-  | 'splitView' // ◧ Split-View (nur große Screens)  
-  | 'daemonStatus' // 📊 Daemon-Statusbereich
-  | 'collapse'; // ◁/▷ Umschalter zum Ein-/Ausklappen
+  | 'sessionsOverview' // ▦ Session-Übersichtspanel
+  | 'splitView' // ◧ Split-View (Shell-Container mindestens 1024px breit)
+  | 'daemonStatus' // 📊 Daemon-Statuspanel
+  | 'collapse'; // ◁/▷ Einklapp-/Erweiter-Umschalter
 
 interface WebShellSidebarFooterOptions {
-  items?: readonly WebShellSidebarFooterItem[]; // welche eingebauten Elemente angezeigt werden (Standard: alle)
-  render?: () => ReactNode; // benutzerdefinierter Inhalt, der auf der linken Seite vor den eingebauten Elementen gerendert wird
+  items?: readonly WebShellSidebarFooterItem[]; // welche eingebauten Elemente angezeigt werden (Standard: ['collapse'])
+  render?: () => ReactNode; // benutzerdefinierter Inhalt im Home-Footer
 }
 ```
 
 | Wert                                         | Effekt                         |
 | -------------------------------------------- | ------------------------------ |
-| `undefined` (Standard)                       | Alle Elemente angezeigt                                                           |
+| `undefined` (Standard)                       | Nur Einklappen/Erweitern                                                  |
 | `false`                                      | Footer ausgeblendet; der Mobile-Drawer behält nur seine Schließen-Steuerung |
 | `{ items: ['settings', 'theme', 'collapse'] }` | Nur aufgeführte Elemente angezeigt; der Mobile-Drawer behält immer seine Schließen-Steuerung |
 
-Der Footer passt sich automatisch an schmale Breiten an: Labels werden ausgeblendet und die Version
-wird unter bestimmten Schwellenwerten weggelassen.
+In der Rail-Layout erscheinen Footer-Actions und Version in More; nur das Einklapp-/Erweiter-Control bleibt am Rail-Unterrand. Der Home-only-Modus behält das bestehende kompakte Footer-Verhalten.
 
 ```tsx
 sidebar={{
@@ -156,8 +146,7 @@ sidebar={{
 }}
 ```
 
-Benutzerdefinierter Inhalt über `render()` erscheint auf der linken Seite des Footers, vor
-den eingebauten Elementen:
+Benutzerdefinierter Inhalt über `render()` erscheint im breiten Home-Footer:
 
 ```tsx
 sidebar={{
@@ -173,21 +162,21 @@ sidebar={{
 ```
 
 **Hinweis:** `'scheduledTasks'` und `'goals'` wurden in den primären
-Navigationsbereich (②) verschoben und werden standardmäßig angezeigt. Sie werden über `primaryNav.items` gesteuert, nicht über
+Navigationsbereich (②) verschoben und erfordern explizite Konfiguration in eingebetteten Hosts. Sie werden über `primaryNav.items` gesteuert, nicht über
 `footer.items`.
 
 ### Weitere Top-Level-Optionen
 
 ```ts
 interface WebShellSidebarOptions {
-  enabled?: boolean; // Sidebar ein-/ausblenden (Standard: true wenn übergeben)
+  enabled?: boolean; // Sidebar ein-/ausblenden (Standard: true, auch wenn sidebar weggelassen wird)
   defaultCollapsed?: boolean; // initialer eingeklappter Zustand (in localStorage persistiert)
   showCompactToggle?: boolean; // den Einklapp-Button im Chatbereich anzeigen (Standard: true)
   showSessionSourceSwitch?: boolean; // den Tasks/Channels-Umschalter anzeigen (Standard: true)
   showLive?: boolean; // Daemon-eigene Live-Konversationen anzeigen (Standard: false)
   branding?: false | WebShellSidebarBranding;
   primaryNav?: WebShellSidebarPrimaryNavOptions;
-  hideProjectHeader?: boolean; // "Projekte"-Header-Zeile ausblenden (Standard: false = angezeigt)
+  hideProjectHeader?: boolean; // "Workspaces"-Header-Zeile ausblenden (Standard: false = angezeigt)
   sessionActions?: WebShellSidebarSessionActionsOptions;
   footer?: false | WebShellSidebarFooterOptions;
 }
@@ -205,8 +194,8 @@ sidebar={{
 ```
 
 Dies entfernt den Tasks/Channels-Umschalter und fixiert jede aktive, archivierte, primäre
-und sekundäre Session-Abfrage auf `sourceType: "default"`. Das Weglassen der Option
-beibehält den aktuellen Umschalter und den Zugriff auf Channel-Sessions unverändert.
+und sekundäre Session-Abfrage auf `sourceType: "default"`. Das Weglassen der Option behält
+den Zugriff auf Channel-Sessions. Wenn ein dedizierter Channels-Rail-Entry verfügbar ist, ersetzt er die Source-Tabs; andernfalls bleiben die Tabs erhalten.
 
 ### Live-Konversationen — `showLive`
 
@@ -219,17 +208,20 @@ die sich darauf verlassen, beim Upgrade `showLive: true` setzen.
 ```tsx
 sidebar={{
   showLive: true,
+  primaryNav: { items: ['newTask', 'live'] },
 }}
 ```
 
-### ③ Projekt-Header — `hideProjectHeader`
+Ohne den `live` primären Entry behält `showLive: true` die bestehende Live-Gruppe in Home und Einstellungen unter Experimental. Mit dem Entry öffnet Live seine eigene Session-Spalte und Einstellungsseite.
 
-Steuert die Sichtbarkeit der "Projekte"-Header-Zeile (die Zeile mit dem Einklapp-
+### ③ Workspace-Header — `hideProjectHeader`
+
+Steuert die Sichtbarkeit der "Workspaces"-Header-Zeile (die Zeile mit dem Einklapp-
 Umschalter, Suchsymbol und dem Workspace-hinzufügen-Button). Standardmäßig `false` (angezeigt).
 
 ```tsx
 sidebar={{
-  hideProjectHeader: true,  // die "项目 ▼ [🔍] [＋]"-Zeile ausblenden
+  hideProjectHeader: true,  // die "工作区 ▼ [🔍] [＋]"-Zeile ausblenden
 }}
 ```
 
@@ -242,11 +234,13 @@ die Header-Zeile mit ihren Aktionsbuttons und die Session-Suchleiste werden entf
 type WebShellSidebarSessionActionItem =
   | 'details' // 📝 Details (Dropdown-Untermenü)
   | 'rename' // ✏️ Umbenennen (Dropdown-Menü)
+  | 'bindPr' // 🔗 Ein GitHub-PR binden (Dropdown-Menü)
   | 'group' // 📁 Gruppieren/In Ordner verschieben (Dropdown-Menü)
   | 'export' // 📤 Chat-Verlauf exportieren (Dropdown-Menü)
   | 'delete' // 🗑 Session löschen (Dropdown-Menü)
   | 'pin' // 📌 Anheften/Lösen (Inline-Button)
-  | 'archive'; // 📦 Archivieren (Dropdown-Menü)
+  | 'archive' // 📦 Archivieren (Dropdown-Menü)
+  | 'split'; // ◫ Zur Split-View hinzufügen (Dropdown-Menü)
 
 /** Teilmenge mit funktionierenden Inline-(Hover-Button-)Handlern. */
 type WebShellSidebarSessionInlineActionItem =
@@ -264,21 +258,30 @@ interface WebShellSidebarSessionActionsOptions {
 Steuert, welche Aktionsbuttons auf Session-Zeilen erscheinen:
 
 - **`items`**: Hauptsteuerung für alle Aktionen (sowohl Inline als auch Dropdown). Wenn ein Element nicht in `items` ist, wird es überall ausgeblendet.
-- **`inlineItems`**: Steuert, welche Elemente als **Inline-Buttons** (beim Hovern) erscheinen. Standardmäßig `['pin']`. Nur Elemente mit funktionierenden Inline-Handlern können verwendet werden: `'pin'`, `'rename'`, `'export'`, `'delete'`. `'details'`, `'group'` und `'archive'` sind nur im Dropdown verfügbar.
+- **`inlineItems`**: Steuert, welche Elemente als **Inline-Buttons** (beim Hovern) auf Standard-Session-Zeilen erscheinen. Standardmäßig `['pin']`. Nur Elemente mit funktionierenden Inline-Handlern können verwendet werden: `'pin'`, `'rename'`, `'export'`, `'delete'`. `'details'`, `'bindPr'`, `'group'`, `'archive'` und `'split'` sind nur Dropdown-only auf Standard-Zeilen.
+- **`bindPr` eingebaute Bedingung**: wird nur angezeigt, wenn die Session Metadaten-Mutation unterstützt — die aktuelle Session in einem primären oder gesperrten Workspace, oder jede andere Session mit der `workspace_session_metadata`-Capability (plus `workspace_qualified_rest_core` wenn diese Session in einem gesperrten oder eingeschränkten sekundären Workspace ist) — und die Zeile keine alleinstehende Session ist (einschließlich Recents-Zeilen) — alleinstehende Metadaten-Routen akzeptieren nur einen Anzeigenamen. Dies ist unabhängig vom `rename`-Element: ein Host kann `bindPr` ohne `rename` whitelisten.
 
-**Sichtbarkeitspriorität**: Sowohl `items` ALS AUCH die eingebaute Bedingung des Elements ALS AUCH `inlineItems` müssen alle erfüllt sein, damit der Inline-Button angezeigt wird. Zum Beispiel erfordert `delete` als Inline, dass `items` `'delete'` enthält UND `inlineItems` `'delete'` enthält.
+Archivierte Zeilen in Einstellungen verwenden Export conversation und Restore als Inline-Buttons, mit Rename und Delete in More. Ihre Aktionen folgen weiterhin `items` und eingebauten Verfügbarkeitsbeschränkungen; `inlineItems` ändert dieses Layout nicht. Die bestehenden Styles zeigen diese Buttons beim Hovern oder Tastaturfokus und halten sie auf Touch-Geräten sichtbar.
+
+**Sichtbarkeitspriorität auf Standard-Zeilen**: Sowohl `items` ALS AUCH die eingebaute Bedingung des Elements ALS AUCH `inlineItems` müssen alle erfüllt sein, damit der Inline-Button angezeigt wird. Zum Beispiel erfordert `delete` als Inline, dass `items` `'delete'` enthält UND `inlineItems` `'delete'` enthält.
 
 | Wert                                   | Effekt                                       |
 | -------------------------------------- | -------------------------------------------- |
 | `undefined` (Standard)                 | Alle Aktionen angezeigt, nur Pin als Inline |
 | `{ inlineItems: ['pin', 'delete'] }`    | Pin + Delete als Inline-Buttons              |
-| `{ inlineItems: [] }`                  | Keine Inline-Buttons                         |
+| `{ inlineItems: [] }`                   | Keine Inline-Buttons auf Standard-Zeilen |
 | `{ inlineItems: ['rename', 'export'] }` | Umbenennen + Exportieren als Inline-Buttons |
 
 Der Dropdown-Auslöser (⋮) wird automatisch ausgeblendet, wenn keine Dropdown-Elemente
 aktiviert sind. Inline-Buttons werden nur angezeigt, wenn sowohl ihre Capability-
 Bedingung als auch `items` sie enthalten. Archivieren ist für die aktuelle Session und für jede Session mit einem laufenden Turn
 deaktiviert, da der Daemon die Live-Session beim Archivieren schließt.
+
+`'split'` ist standardmäßig aktiviert wie die anderen Elemente, aber es wird nur wirksam
+wenn der Host `onAddSessionToSplitView` verdrahtet. Die Sidebar liest auch ihre
+`splitSessionIds`-Prop für die Kapazität: eine Session, die bereits im Split geöffnet ist,
+rendert das Element deaktiviert mit einem erklärenden Titel, ebenso der
+Pane-Limit-Fall und die aktuelle Session während der Split geschlossen ist.
 
 ```tsx
 sidebar={{
@@ -291,7 +294,7 @@ sidebar={{
 
 ## Nicht anpassbare Bereiche
 
-### Projekte / Workspaces (innerhalb der Session-Liste)
+### Workspaces (innerhalb der Session-Liste)
 
 Wenn die Session-Liste sichtbar ist, werden die folgenden Unterbereiche gerendert, sind aber
 **nicht individuell anpassbar**:
@@ -309,7 +312,8 @@ Wenn die Session-Liste sichtbar ist, werden die folgenden Unterbereiche gerender
 ### ⑤ Resize-Handle
 
 - Drag-Handle an der rechten Kante zum Ändern der Sidebar-Breite
-- Breite wird in localStorage persistiert
+- Die Breite wird in localStorage als gesamte Sidebar-Breite persistiert. Standards sind 300px Home-only und 356px mit der Rail. Wiederhergestellte Breiten werden auf mindestens 220px Home-only oder 276px mit der Rail begrenzt; alte Werte werden nicht blind um 56px erhöht. Das Ziehen unter den Einklapp-Schwellenwert faltet die Sidebar immer noch ein.
+- Der Dock-Breakpoint des Umgebungspanels ignoriert die 56px der Rail (der Nachrichtenbereich gibt sie ab), sodass das Panel bei den gleichen Fensterbreiten dockt wie eine Home-only-Sidebar — z.B. ein 1440px-Fenster.
 - Nicht konfigurierbar
 
 ## Runtime-Verhaltensprops
@@ -329,14 +333,16 @@ Diese `WebShellProps` beeinflussen das Sidebar-Verhalten indirekt:
 
 | Status    | Verhalten                                                                                       |
 | --------- | ---------------------------------------------------------------------------------------------- |
-| Expanded  | Vollständige Sidebar mit Text-Labels                                                                  |
-| Collapsed | Icon-Rail-Modus (nur Logo, Stift-Symbol, Aktionssymbole)                                             |
-| Mobile    | Drawer verwendet 70% seines Containers, innerhalb der Breitenlimits, mit Backdrop- und Footer-Schließen-Steuerung |
+| Expanded  | Vollständige Sidebar mit Text-Labels                                                                                        |
+| Collapsed | Home-only: bestehender 56px-Streifen und Hover-Sessions; mit Rail: nur die 56px primäre Rail                             |
+| Mobile    | Drawer verwendet 70% seines Containers, innerhalb der Breitenlimits, mit Backdrop und einem Schließen-Control am unteren Rand der besitzenden Spalte |
 
 Der Einklapp-Status wird in `localStorage` unter dem Schlüssel
 `qwen-code-web-shell-sidebar-collapsed` persistiert.
 
-Die angepasste Desktop-Breite wird nur in ausgeklappten Layouts wiederhergestellt. Das Öffnen oder
+Die Sidebar, ihr kompakter Drawer und die Welcome-Chrome für leere Chats folgen der Shell-Container-Breite (kompakt bei 760px); Chat-Nachrichteninhalte behalten viewport-basierte Breakpoints. Split-Verfügbarkeit verwendet 1024px und Split-Sidebar-Raum verwendet 1200px. Tastatur-Einklappen verschiebt den Fokus aus der ausgeblendeten sekundären Spalte zum Rail-Control.
+
+Die resized Desktop-Breite wird nur in erweiterten Layouts wiederhergestellt. Das Öffnen oder
 Schließen des Mobile-Drawers überschreibt weder diese Breite noch die persistierte
 Desktop-Einklapp-Einstellung.
 
@@ -349,4 +355,4 @@ Desktop-Einklapp-Einstellung.
 | WorkspaceSection  | `packages/web-shell/client/components/sidebar/WorkspaceSection.tsx`       |
 | Sidebar-Styles    | `packages/web-shell/client/components/sidebar/WebShellSidebar.module.css` |
 | App-Integration   | `packages/web-shell/client/App.tsx` (nach `WebShellSidebar` suchen)         |
-| Einstiegspunkt (Dev)   | `packages/web-shell/client/main.tsx` (`sidebar: { enabled: true, showLive: true }`) |
+| Einstiegspunkt (Dev)   | `packages/web-shell/client/main.tsx` (explizite primäre und Footer-Item-Listen) |
