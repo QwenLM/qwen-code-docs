@@ -54,7 +54,7 @@ qwen extensions install <marketplace-name>:<plugin-name>
 qwen extensions install <marketplace-github-url>:<plugin-name>
 ```
 
-例えば、[f/awesome-chatgpt-prompts](https://claudemarketplaces.com/plugins/f-awesome-chatgpt-prompts) マーケットプレイスから `prompts.chat` プラグインをインストールする場合:
+例えば、[f/awesome-chatgpt-prompts](https://claudemarketplaces.com/plugins/f-prompts.chat) マーケットプレイスから `prompts.chat` プラグインをインストールする場合:
 
 ```bash
 qwen extensions install f/awesome-chatgpt-prompts:prompts.chat
@@ -101,7 +101,7 @@ Gemini 拡張機能はインストール中に自動的に Qwen Code 形式に�
 
 #### Qoder プラグインから
 
-Qwen Code は、`.qoder-plugin/plugin.json` マニフェストを含む [Qoder プラグイン](https://docs.qoder.com/en/cli/sdk/plugins)をサポートしています。既存の `qwen extensions install` コマンドで、ローカルディレクトリ、アーカイブ、Git リポジトリ、アーカイブ URL、またはスコープ付き npm パッケージをインストールします。
+Qwen Code は、`.qoder-plugin/plugin.json` マニフェストを含む [Qoder プラグイン](https://docs.qoder.com/en/cli/sdk/plugins)をサポートしています。既存の `qwen extensions install` コマンドで、ローカルディレクトリ、アーカイブ、Git リポジトリ、アーカイブ URL、または npm パッケージをインストールします。
 
 ```bash
 qwen extensions install ./sample-qoder-plugin
@@ -127,20 +127,23 @@ qwen extensions install owner/my-agent-plugin
 
 #### npm レジストリから
 
-Qwen Code は、スコープ付きパッケージ名を使用した npm レジストリからの拡張機能のインストールをサポートしています。これは、認証、バージョン管理、公開インフラがすでに整っているチームのプライベートレジストリに最適です。
+Qwen Code は、スコープ付きまたはスコープなしのパッケージ名を使用して npm レジストリから拡張機能をインストールすることをサポートしています。これは、認証、バージョン管理、公開インフラがすでに整っているプライベートレジストリを持つチームに最適です。
 
 ```bash
 # 最新バージョンをインストール
 qwen extensions install @scope/my-extension
 
+# スコープなしパッケージをインストール
+qwen extensions install my-extension
+
 # 特定のバージョンをインストール
-qwen extensions install @scope/my-extension@1.2.0
+qwen extensions install my-extension @1.2.0
 
 # カスタムレジストリからインストール
 qwen extensions install @scope/my-extension --registry https://your-registry.com
 ```
 
-`owner/repo` GitHub ショートハンド形式との曖昧さを避けるため、スコープ付きパッケージ（`@scope/package-name`）のみがサポートされています。
+`package-name` と `@scope/package-name` の両方がサポートされており、オプションで `@version` または `@tag` のサフィックスを使用できます。既存のローカルファイルとディレクトリが優先されます。ローカルソースを意図している場合は、`./my-extension` のような明示的なパスを使用してください。`owner/repo` 形式は GitHub のショートハンドのままです。
 
 **レジストリ解決** は次の優先順位に従います。
 

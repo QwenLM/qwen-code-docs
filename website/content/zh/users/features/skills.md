@@ -68,6 +68,8 @@ Skills 以包含 `SKILL.md` 文件的目录形式存储。
 mkdir -p ~/.qwen/skills/my-skill-name
 ```
 
+Qwen Code 还会从 `~/.agents/skills/` 读取个人 Skills。如果两个文件夹中存在同名 Skill，`~/.qwen/skills/` 中的 Skill 优先。
+
 个人 Skills 适用于：
 
 - 你个人的工作流和偏好
@@ -81,6 +83,8 @@ mkdir -p ~/.qwen/skills/my-skill-name
 ```bash
 mkdir -p .qwen/skills/my-skill-name
 ```
+
+Qwen Code 还会从 `.agents/skills/` 读取项目 Skills。如果两个文件夹中存在同名 Skill，`.qwen/skills/` 中的 Skill 优先。
 
 项目 Skills 适用于：
 
@@ -222,7 +226,7 @@ exit 0
 - Skill hook 的 `matcher:` 遵循与设置 hook 相同的规则（请参见 [Hooks](./hooks.md)）。省略或空的 `matcher:` 会匹配所有工具，且 matcher 不是锚定的，因此 `edit` 也会匹配 `notebook_edit`。Skill hooks 过去将其 matcher 包装在 `^…` 中以精确匹配一个工具，并在省略时不匹配任何内容：写 `^edit` 精确匹配一个工具，写排除项 `^(?!write_file).*` 在省略时不匹配任何内容。
 - `command:` 通过平台 shell 运行：macOS 和 Linux 上使用 `bash`，Windows 上如果检测到 Git Bash（通过 `MSYSTEM`/`TERM`）也使用它，否则使用 `cmd.exe` 或 PowerShell。上面的示例是 POSIX shell —— 在 `cmd.exe` 下 `$QWEN_SKILL_ROOT` 不会被展开，`.sh` 脚本也不可执行，因此 gate 会在那里 fail-open。Hook 可以设置 `shell: bash` 来强制使用 bash，但这会解析为 `PATH` 上的任何 `bash`，因此在 Windows 上（Git Bash 之外）请为你实际使用的 shell 编写 gate。
 - 禁用 hooks 的会话不会注册任何 hooks —— 包括 `disableAllHooks`、安全模式以及 ACP 客户端的 `skipHooks`。Skill 的主体及其 `allowedTools` 在这些会话中仍然有效，但其 gate 不会生效，因此你依赖 hook 强制执行的规则在那里不会被强制执行。Bare 模式更进一步：根本不会发现任何 Skills，因此既没有主体也没有 `allowedTools`。
-- **项目** Skill 的 hooks 运行仓库提供的命令，因此它们仅在 trusted folder 中注册，并且信任状态会在每次 hook 触发和每次权限决策时重新读取。当有 IDE companion 连接时，该值是实时的：撤销信任会在下一次工具调用时静默已注册的 gate —— 并暂停 Skill 的 `allowedTools` —— 无需重启。没有 IDE 连接时，该值在 CLI 启动时固定，因此通过 CLI 自身的信任对话框进行的更改会在重启时生效。授予信任永远不会追溯注册：请再次调用 Skill。
+- **项目** Skill 的 hooks 和 `allowedTools` 需要**显式文件夹信任**：在用户设置中启用 `security.folderTrust.enabled` 并信任该目录，或通过 IDE 授予工作区信任。禁用文件夹信任不会授权这些副作用，即使在 YOLO 模式下也是如此。Skill 的指令仍会加载。信任状态在每次 hook 触发或权限决策时重新读取：撤销 IDE 信任会暂停已注册的 project hooks 和授权。禁用文件夹信任时，断开 IDE 连接也会暂停它们。没有 IDE 连接时，通过 CLI 信任对话框进行的更改会在重启时生效。授予信任永远不会追溯注册：请再次调用 Skill。
 - `hooks:` 适用于项目、用户和内置 Skills。扩展提供的 Skills 不支持它；请改用扩展自身的 manifest 级别 hooks。
 - 完整的事件列表、matcher 语法和输出格式，请参见 [Hooks](./hooks.md)。
 
@@ -257,10 +261,22 @@ python scripts/helper.py input.txt
 
 Qwen Code 从以下位置发现 Skills：
 
-- 个人 Skills：`~/.qwen/skills/`
-- 项目 Skills：`.qwen/skills/`
+- 个人 Skills：`~/.qwen/skills/` 和 `~/.agents/skills/`
+- 项目 Skills：`.qwen/skills/` 和 `.agents/skills/`
+- 自定义目录：[`skills.directories`](../configuration/settings#skills) 中列出的路径，作为个人 Skills 加载
 - 扩展 Skills：由已安装扩展提供的 Skills
 - 内置 Skills：随 Qwen Code 一起提供的 Skills
+
+当两个 Skill 重名时，先找到的生效：项目，然后个人（包括自定义目录），然后扩展，然后内置。
+
+### 与其他工具共享 Skills
+
+如果你还使用其他 agent，可以保留一个单一的 skills 文件夹，而不必将 Skills 复制到 `~/.qwen/skills/`：
+
+- 将其他 agent 的文件夹添加到 `skills.directories`，例如 `["~/.claude/skills"]`。使用绝对路径或 `~` 开头的路径：相对路径会相对于工作目录解析，而不是项目根目录。这些 Skills 作为个人 Skills 加载，因此它们的 `allowedTools` 和 hooks 不受文件夹信任限制，即使受信任项目的设置添加了该目录也是如此：请仅将此指向你控制的文件夹。
+- 或者将共享 Skills 保留在 `~/.agents/skills/` 或 `.agents/skills/` 中，Qwen Code 无需任何配置即可读取。符号链接的 Skill 文件夹会被跟踪，其目标可以位于磁盘上的任何位置。
+
+Qwen Code 读取 `allowedTools` frontmatter 字段。为其他 agent 编写的 `allowed-tools` 字段会被忽略。
 
 ### 扩展 Skills
 
@@ -356,15 +372,19 @@ description: Extract text and tables from PDF files, fill forms, merge documents
 
 ### 验证文件路径
 
-- 个人 Skills：`~/.qwen/skills/<skill-name>/SKILL.md`
-- 项目 Skills：`.qwen/skills/<skill-name>/SKILL.md`
+- 个人 Skills：`~/.qwen/skills/<skill-name>/SKILL.md` 或 `~/.agents/skills/<skill-name>/SKILL.md`
+- 项目 Skills：`.qwen/skills/<skill-name>/SKILL.md` 或 `.agents/skills/<skill-name>/SKILL.md`
+- 自定义目录：`<directory>/<skill-name>/SKILL.md`（针对 `skills.directories` 中的每个条目）。嵌套更深的 Skill 不会被找到。
 
 ```bash
 # Personal
-ls ~/.qwen/skills/my-skill/SKILL.md
+ls ~/.qwen/skills/my-skill/SKILL.md ~/.agents/skills/my-skill/SKILL.md
 
 # Project
-ls .qwen/skills/my-skill/SKILL.md
+ls .qwen/skills/my-skill/SKILL.md .agents/skills/my-skill/SKILL.md
+
+# Custom directory listed in skills.directories
+ls ~/shared-skills/my-skill/SKILL.md
 ```
 
 ### 检查 YAML 语法

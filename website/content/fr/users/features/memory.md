@@ -1,9 +1,10 @@
 # Mémoire
 
-Chaque session Qwen Code démarre avec une fenêtre de contexte vierge. Deux mécanismes transmettent les connaissances d'une session à l'autre pour que vous n'ayez pas à tout réexpliquer à chaque fois :
+Chaque session Qwen Code démarre avec une fenêtre de contexte vierge. Trois mécanismes transmettent les connaissances d'une session à l'autre pour que vous n'ayez pas à tout réexpliquer à chaque fois :
 
 - **QWEN.md** — des instructions que _vous_ rédigez une seule fois et que Qwen lit à chaque session
 - **Auto-memory** — des notes que Qwen rédige lui-même en fonction de ce qu'il apprend de vous
+- **External memory (`context_search`)** — un outil MCP optionnel que Qwen appelle à la demande pour rechercher dans Mem0 ou un index de session local
 
 ---
 
@@ -77,6 +78,8 @@ L'Auto-memory s'exécute en arrière-plan. Après chacune de vos conversations, 
 
 C'est différent de QWEN.md : vous ne le rédigez pas, c'est Qwen qui le fait.
 
+Lorsqu'un tour qui répond à un message relayé par un [channel](./channels/overview) — GitHub, Telegram, DingTalk et les autres — se termine, Qwen n'exécute aucune extraction et ne planifie aucun [nettoyage périodique](#nettoyage-périodique) : l'expéditeur n'est souvent pas vous, et extraire après chaque message relayé ajouterait des appels de modèle à chacun. Dans une session qui prend également vos propres prompts, comme celle liée à une pull request, l'extraction après votre prochain prompt lit toujours la conversation récente, donc les messages relayés qui s'y trouvent encore peuvent être appris. Le rappel de mémoire n'est pas affecté : une réponse à un message de channel peut s'appuyer sur ce qui est déjà enregistré. Un chat de channel conserve le contexte durable dans [channel memory](./channels/overview#channel-memory) à la place.
+
 ### Ce que Qwen enregistre
 
 Qwen recherche quatre types d'informations qu'il vaut la peine de mémoriser :
@@ -95,6 +98,14 @@ Qwen n'enregistre pas tout — seulement les choses qui seront réellement utile
 Les fichiers de l'Auto-memory se trouvent dans `~/.qwen/projects/<project>/memory/`. Toutes les branches d'un même checkout partagent le même dossier de mémoire, ainsi ce que Qwen apprend dans une branche est disponible dans les autres. Chaque worktree git lié obtient son propre dossier de mémoire, ce qui correspond à l'isolation par worktree des chats et des autres états de session — les conventions à l'échelle du dépôt que vous voulez dans chaque worktree appartiennent dans la [mémoire d'équipe](#mémoire-déquipe-partagée-avec-les-collaborateurs).
 
 Tout ce qui est enregistré l'est en markdown brut — vous pouvez ouvrir, modifier ou supprimer n'importe quel fichier à tout moment.
+
+`MEMORY.md` est un index compact, plutôt que le store de mémoire complet. Son corps généré et la portion chargée dans les prompts partagent une limite de 200 lignes et 25 000 unités de code UTF-16 ; les avis de troncature sont ajoutés séparément. Les fins de ligne sont normalisées avant le budgétisation du prompt. Sous pression de taille, les entrées ordinaires complètes (jusqu'à 150 unités de code) obtiennent de l'espace avant les entrées plus longues, et les entrées conservées gardent leur ordre original. Une entrée qui ne peut pas tenir est sautée entièrement, donc son lien Markdown n'est jamais coupé au milieu. Gardez les détails dans les fichiers de sujet liés.
+
+Lorsqu'une reconstruction omet des entrées, l'avertissement sauvegardé rapporte le nombre supprimé et jusqu'à trois noms pour chaque limite : la limite de scan de fichiers de sujet et le budget du corps d'index. Les comptes restent séparés car une entrée d'équipe groupée peut représenter plusieurs fichiers. L'avertissement reste visible lorsque l'index est chargé dans un prompt tant qu'il est le dernier paragraphe du fichier. Insérez les nouveaux pointeurs d'index au-dessus de l'avertissement final pour le préserver. L'omission de l'index ne supprime pas les fichiers de sujet liés. Pour la pression du corps d'index, fusionnez les fichiers de sujet ou supprimez les obsolètes, ou raccourcissez leurs noms et descriptions de frontmatter. Un lien trop long n'a déjà pas de description : raccourcissez plutôt le chemin de son fichier de sujet ou son nom de frontmatter. Modifier uniquement l'index généré ne survit pas à la prochaine reconstruction. Pour la limite de scan de nombre de fichiers, fusionnez les fichiers de sujet ou supprimez les obsolètes ; modifier uniquement l'index généré ne réduit pas le nombre de fichiers scannés.
+
+L'avertissement pour un index partiellement chargé distingue les budgets de lignes et de caractères. Raccourcir les descriptions peut aider avec le budget total de caractères même lorsqu'aucune entrée ne dépasse la longueur de ligne ordinaire. Pour les entrées correspondant au format généré, ce conseil prend en compte les noms et les liens, y compris les liens groupés ; supprimez ou fusionnez les entrées lorsque ces liens seuls consomment le budget. Les formats édités manuellement ou les suffixes groupés qui pourraient plutôt être du texte de description reçoivent des remèdes possibles sans promesse que le raccourcissement tiendra. Si la limite du nombre d'entrées est dépassée, les entrées doivent quand même être supprimées ou fusionnées : raccourcir une description ne réduit pas le nombre d'entrées. Lorsque les deux budgets sont dépassés, réduire l'index à 200 entrées peut encore nécessiter des descriptions plus courtes ou moins d'entrées pour respecter le budget de caractères ; l'avertissement rapporte le nombre réel de candidats. Raccourcir à 150 unités par entrée n'est pas toujours suffisant pour respecter le total de 25 000 unités.
+
+Un avis final de writer borné et en un seul paragraphe est exclu du budgétisation du prompt. Lorsque toutes les entrées sauvegardées tiennent, Qwen préserve cet avis sans affirmer que plus d'entrées ont été omises lors du chargement. Régénérer un index saturé peut remplir l'espace libéré par des descriptions plus courtes, donc la taille du fichier sauvegardé n'a pas besoin de rétrécir immédiatement. Pour la mémoire de projet, utilisateur et d'équipe, modifiez le frontmatter `description` des fichiers de sujet et vérifiez l'index régénéré. Une description vide peut revenir au type de mémoire, donc raccourcir le frontmatter ne garantit pas que chaque entrée tiendra. Les modifications directes de lignes d'index peuvent être remplacées par la prochaine écriture gérée. Gardez les cibles de lien complètes intactes même lorsqu'un lien dépasse 150 unités ; raccourcissez plutôt les métadonnées d'affichage ou supprimez/fusionnez les fichiers de sujet au lieu de couper les liens.
 
 #### Mémoire épinglée
 
@@ -146,6 +157,24 @@ Vous pouvez également les configurer dans `~/.qwen/settings.json` (s'applique �
   }
 }
 ```
+
+### Rappel structuré (opt-in)
+
+Par défaut, Qwen lit la mémoire comme un index `MEMORY.md` plat. Le protocole structuré remplace cela par un arbre de mémoire hiérarchique, injecte uniquement le sous-arbre pertinent à votre demande actuelle, et donne à Qwen un outil `search_memory` pour extraire les entrées complètes à la demande — ce qui coûte moins de tokens une fois qu'une collection de mémoire dépasse une poignée de fichiers.
+
+Il est désactivé par défaut. Activez-le dans `settings.json` (redémarrage requis) :
+
+```json
+{
+  "memory": {
+    "enableStructuredRecall": true
+  }
+}
+```
+
+ou pour une seule exécution avec `QWEN_CODE_MEMORY_STRUCTURED_RECALL=1`.
+
+L'activer démarre une migration de métadonnées en arrière-plan : chaque fichier de mémoire gagne le frontmatter (catégorie, mots-clés, scénarios d'utilisation) dont le rappel a besoin. Il s'exécute par petits lots d'au plus 10 fichiers par tour et ne réécrit que le frontmatter, jamais le corps d'une note. Tant que le paramètre est désactivé, la migration n'est jamais planifiée, donc rien n'est réécrit et aucun appel de modèle en arrière-plan n'est effectué.
 
 ### Mémoire d'équipe (partagée avec les collaborateurs)
 
@@ -205,13 +234,19 @@ Deux choses à savoir avant de l'activer :
 
 ### `/memory`
 
-Ouvre le panneau Memory. De là, vous pouvez :
+Ouvre le panneau Memory. Dans Web Shell, les fichiers restent en lecture seule lorsque leur texte complet n'est pas disponible, y compris les fichiers qui dépassent la limite de contenu, les fichiers qui changent pendant une lecture, et les fichiers avec un byte-order mark ou un UTF-8 invalide. Si un fichier a changé pendant une lecture, sélectionnez à nouveau son onglet de mémoire pour réessayer.
+
+De là, vous pouvez :
 
 - Activer ou désactiver l'enregistrement de l'auto-memory
 - Activer ou désactiver le nettoyage périodique (dream)
 - Ouvrir votre QWEN.md personnel (`~/.qwen/QWEN.md`)
 - Ouvrir le QWEN.md du projet
 - Parcourir le dossier de l'auto-memory
+
+### `/memory migrate-team`
+
+Migre le niveau **mémoire d'équipe** (`.qwen/team-memory/`) vers le format de métadonnées structuré : chaque fichier gagne le frontmatter (nom, description, catégorie, mots-clés, scénarios d'utilisation) dont le rappel de mémoire a besoin. La mémoire personnelle et de projet est migrée automatiquement en arrière-plan une fois le [rappel structuré](#rappel-structuré-opt-in) activé ; la mémoire d'équipe est partagée via git, donc la réécriture s'exécute uniquement sur demande explicite et apparaît comme un commit vérifiable. Exécutez-le une fois par dépôt dans un workspace de confiance avec la mémoire d'équipe activée.
 
 ### `/init`
 
@@ -241,6 +276,61 @@ Exécute le nettoyage de la mémoire maintenant au lieu d'attendre la planificat
 ```
 /dream
 ```
+
+---
+
+## External Memory (`context_search`)
+
+En plus de `QWEN.md` et de l'auto-memory, Qwen Code peut interroger des services de mémoire externes et des index de session locaux via l'outil MCP `context_search`. Contrairement à `QWEN.md` et à l'auto-memory, `context_search` est appelé par le modèle à la demande — rien n'est rappelé ou envoyé automatiquement à chaque tour :
+
+- **Mem0 (adaptateur intégré) :** Configurez `memory.mem0` dans `~/.qwen/settings.json` pour vous connecter à Mem0 Platform V3, PolarDB, ou Mem0 OSS auto-hébergé. Voir [Mem0](./mem0.md) pour la configuration et la confirmation d'écriture optionnelle.
+- **Serveurs External Context MCP Profile v1 :** Tout serveur MCP stdio ou HTTP implémentant le contrat `context_search({ query })` peut être enregistré avec `qwen mcp add` ou `mcpServers` dans `settings.json` (définissez `"includeTools": ["context_search"]` pour que seul `context_search` soit exposé pour un serveur Profile v1).
+
+Chaque entrée enregistre son propre serveur, et plus d'un peut être actif à la fois — Qwen expose le `context_search` de chaque serveur séparément (par exemple, `mcp__external-context__context_search` et `mcp__deja-context__context_search`) et le modèle choisit entre eux, donc activez uniquement le corpus que vous voulez voir recherché, ou nommez le backend dans votre requête.
+
+Quel que soit le backend que vous utilisez, les correspondances que `context_search` retourne sont ajoutées au contexte de Qwen et envoyées au fournisseur de modèle configuré pour la session, et les appels sont soumis à l'approbation sauf si vous les autorisez — un index local maintient la recherche locale, pas les résultats. En Auto Mode, la requête et une copie bornée des arguments vont également au modèle classifieur.
+
+### deja-vu
+
+Un CLI local et serveur MCP qui indexe les transcriptions de session que les agents de codage (Qwen Code, Claude Code, Codex, Cursor, et d'autres) écrivent déjà sur disque en utilisant la recherche BM25 locale, sans appels de modèle ni clés API requis pour construire ou interroger l'index.
+
+- **Dépôt :** https://github.com/vshulcz/deja-vu
+- **Coût :** Gratuit et open source (MIT)
+- **Idéal pour :** Rechercher les sessions passées à travers Qwen Code et d'autres agents de codage locaux sur la même machine
+
+#### Outils disponibles
+
+- `context_search` — Rechercher les transcriptions de session locales indexées (`deja mcp --context-search`)
+
+#### Configuration
+
+1. Installez le binaire `deja` (par exemple, `brew install deja-vu`, `npm install -g @vshulcz/deja-vu`, ou depuis les [releases GitHub](https://github.com/vshulcz/deja-vu/releases)) et construisez l'index initial (`deja index`).
+2. Enregistrez le serveur en utilisant l'une des méthodes ci-dessous :
+
+**Méthode 1 : Commande CLI**
+
+```bash
+qwen mcp add deja-context deja mcp --context-search --timeout 8000 --include-tools context_search
+```
+
+**Méthode 2 : `settings.json`**
+
+```json
+{
+  "mcpServers": {
+    "deja-context": {
+      "command": "deja",
+      "args": ["mcp", "--context-search"],
+      "timeout": 8000,
+      "includeTools": ["context_search"]
+    }
+  }
+}
+```
+
+3. Redémarrez Qwen Code pour que le nouveau serveur MCP soit chargé au démarrage de la session, puis exécutez `/mcp` pour confirmer que `deja-context` est connecté (voir [MCP Servers](./mcp.md)).
+
+Pour supprimer le serveur plus tard, exécutez `qwen mcp remove deja-context` (ou supprimez l'entrée `deja-context` de `mcpServers` dans `~/.qwen/settings.json`) et redémarrez Qwen Code.
 
 ---
 

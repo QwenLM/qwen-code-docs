@@ -1,7 +1,12 @@
 
-# Feishu(비서우) / Lark
+# Feishu (Lark)
 
 이 가이드는 Feishu(飞书) / Lark에 Qwen Code 채널을 설정하는 방법을 다룹니다.
+
+애플리케이션 봇 없이 그룹에 작업 결과를 보내려면
+[Feishu Webhook Sending](./feishu-webhook)을 사용하세요. 이 커스텀 봇 통합은
+이 가이드의 애플리케이션 봇 이벤트 연결과 별개입니다: 기본적으로 아웃바운드
+WebSocket을 사용하거나, `webhookPort`가 설정되면 HTTP 웹훅을 사용합니다.
 
 ## 사전 요구 사항
 

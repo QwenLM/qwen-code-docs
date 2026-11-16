@@ -3,16 +3,16 @@
 > Starte mehrere KI-Modelle gleichzeitig, um dieselbe Aufgabe auszuführen, vergleiche ihre Lösungen nebeneinander und wähle das beste Ergebnis aus, um es in deinem Arbeitsbereich zu übernehmen.
 
 > [!warning]
-> Agent Arena ist experimentell. Es hat [bekannte Einschränkungen](#einschränkungen) in Bezug auf Anzeigemodi und Sitzungsverwaltung.
+> Agent Arena ist experimentell. Es hat [bekannte Einschränkungen](#einschränkungen) in Bezug auf Anzeigemodi und Session-Verwaltung.
 
 Agent Arena ermöglicht es dir, mehrere KI-Modelle gegeneinander antreten zu lassen, um dieselbe Aufgabe zu lösen. Jedes Modell läuft als vollständig unabhängiger Agent in einem eigenen isolierten Git-Worktree, sodass Dateioperationen sich niemals gegenseitig beeinflussen. Wenn alle Agenten fertig sind, vergleichst du die Ergebnisse und wählst einen Gewinner aus, der zurück in deinen Hauptarbeitsbereich übernommen wird.
 
-Im Gegensatz zu [Unteragenten](./sub-agents.md), die fokussierte Teilaufgaben innerhalb einer einzelnen Sitzung delegieren, sind Arena-Agenten vollständige, übergeordnete Agenteninstanzen – jede mit eigenem Modell, eigenem Kontextfenster und vollem Tool-Zugriff.
+Im Gegensatz zu [Subagenten](./sub-agents.md), die fokussierte Teilaufgaben innerhalb einer einzelnen Session delegieren, sind Arena-Agenten vollständige, übergeordnete Agenteninstanzen – jede mit eigenem Modell, eigenem Kontextfenster und vollem Tool-Zugriff.
 
 Diese Seite behandelt:
 
 - [Wann du Agent Arena verwenden solltest](#wann-du-agent-arena-verwenden-solltest)
-- [Eine Arena-Sitzung starten](#eine-arena-sitzung-starten)
+- [Eine Arena-Session starten](#eine-arena-session-starten)
 - [Interaktion mit Agenten](#interaktion-mit-agenten), einschließlich Anzeigemodi und Navigation
 - [Ergebnisse vergleichen und einen Gewinner auswählen](#ergebnisse-vergleichen-und-einen-gewinner-auswählen)
 - [Bewährte Vorgehensweisen](#bewährte-vorgehensweisen)
@@ -26,11 +26,11 @@ Agent Arena ist am effektivsten, wenn du **bewerten oder vergleichen** möchtest
 - **Ansätze erkunden**: Sieh dir an, wie verschiedene Modelle über dasselbe Problem nachdenken und es lösen – nützlich für Lernen und Erkenntnisse.
 - **Risikominimierung**: Für kritische Änderungen validierst du, dass mehrere Modelle zu einem ähnlichen Ansatz gelangen, bevor du committest.
 
-Agent Arena verbraucht deutlich mehr Tokens als eine einzelne Sitzung (jeder Agent hat sein eigenes Kontextfenster und führt eigene Modellaufrufe durch). Es funktioniert am besten, wenn der Wert des Vergleichs die Kosten rechtfertigt. Für Routineaufgaben, bei denen du deinem Standardmodell vertraust, ist eine einzelne Sitzung effizienter.
+Agent Arena verbraucht deutlich mehr Tokens als eine einzelne Sitzung (jeder Agent hat sein eigenes Kontextfenster und führt eigene Modellaufrufe durch). Es funktioniert am besten, wenn der Wert des Vergleichs die Kosten rechtfertigt. Für Routineaufgaben, bei denen du deinem Standardmodell vertraust, ist eine einzelne Session effizienter.
 
-## Eine Arena-Sitzung starten
+## Eine Arena-Session starten
 
-Verwende den Slash-Befehl `/arena`, um eine Sitzung zu starten. Gib die Modelle an, die gegeneinander antreten sollen, sowie die Aufgabe:
+Verwende den Slash-Befehl `/arena`, um eine Session zu starten. Gib die Modelle an, die gegeneinander antreten sollen, sowie die Aufgabe:
 
 ```
 /arena --models qwen3.5-plus,glm-5,kimi-k2.5 "Refactoriere das Authentifizierungsmodul zur Verwendung von JWT-Tokens"
@@ -38,9 +38,11 @@ Verwende den Slash-Befehl `/arena`, um eine Sitzung zu starten. Gib die Modelle 
 
 Wenn du `--models` weglässt, erscheint ein interaktiver Modellauswahldialog, in dem du aus deinen konfigurierten Anbietern wählen kannst.
 
+Nicht verfügbare Modelle bleiben deaktiviert und können nicht ausgewählt werden. Wähle mindestens zwei verfügbare Modelle aus, bevor du den Dialog bestätigst.
+
 ### Was passiert, wenn du startest
 
-1. **Worktree-Einrichtung**: Qwen Code erstellt isolierte Git-Worktrees für jeden Agenten unter `~/.qwen/arena/<sitzungs-id>/worktrees/<modellname>/`. Jeder Worktree spiegelt exakt den aktuellen Zustand deines Arbeitsverzeichnisses wider – einschließlich gestagter Änderungen, ungestagter Änderungen und unversionierter Dateien.
+1. **Worktree-Einrichtung**: Qwen Code erstellt isolierte Git-Worktrees für jeden Agenten unter `~/.qwen/arena/<session-id>/worktrees/<modellname>/`. Jeder Worktree spiegelt exakt den aktuellen Zustand deines Arbeitsverzeichnisses wider – einschließlich gestagter Änderungen, ungestagter Änderungen und unversionierter Dateien.
 2. **Agenten starten**: Jeder Agent startet in seinem eigenen Worktree mit vollem Tool-Zugriff und seinem konfigurierten Modell. Die Agenten werden nacheinander gestartet, führen aber parallel aus.
 3. **Ausführung**: Alle Agenten arbeiten unabhängig an der Aufgabe, ohne gemeinsamen Zustand oder Kommunikation. Du kannst ihren Fortschritt überwachen und mit jedem von ihnen interagieren.
 4. **Abschluss**: Wenn alle Agenten fertig sind (oder fehlschlagen), beginnst du mit der Ergebnisvergleichsphase.
@@ -82,7 +84,7 @@ Wenn du die Registerkarte eines Agenten betrachtest, kannst du:
 - **Tool-Aufrufe genehmigen** — wenn ein Agent eine Tool-Genehmigung anfordert, erscheint der Bestätigungsdialog in seiner Registerkarte
 - **Vollständigen Verlauf anzeigen** — scrolle durch die gesamte Unterhaltung des Agenten, einschließlich Modellausgaben, Tool-Aufrufen und Ergebnissen
 
-Jeder Agent ist eine vollwertige, unabhängige Sitzung. Alles, was du mit dem Hauptagenten tun kannst, kannst du auch mit einem Arena-Agenten tun.
+Jeder Agent ist eine vollwertige, unabhängige Session. Alles, was du mit dem Hauptagenten tun kannst, kannst du auch mit einem Arena-Agenten tun.
 
 ## Ergebnisse vergleichen und einen Gewinner auswählen
 
@@ -134,7 +136,7 @@ Arena-Agenten arbeiten unabhängig und ohne Kommunikation. Aufgaben sollten voll
 
 **Gut**: „Refaktoriere das Zahlungsmodul zur Verwendung des Strategiemusters. Aktualisiere alle Tests."
 
-**Weniger effektiv**: „Lass uns besprechen, wie wir das Zahlungsmodul verbessern können" – dies profitiert von einer Unterhaltung und eignet sich besser für eine einzelne Sitzung.
+**Weniger effektiv**: „Lass uns besprechen, wie wir das Zahlungsmodul verbessern können" – dies profitiert von einer Unterhaltung und eignet sich besser für eine einzelne Session.
 
 ### Begrenze die Anzahl der Agenten
 
@@ -166,7 +168,7 @@ Für Routineänderungen wie das Umbenennen einer Variable oder das Aktualisieren
 
 ### Worktree-Erstellung schlägt fehl
 
-- Führe `git worktree list` aus, um nach veralteten Worktrees von vorherigen Sitzungen zu suchen
+- Führe `git worktree list` aus, um nach veralteten Worktrees von vorherigen Sessions zu suchen
 - Bereinige veraltete Worktrees mit `git worktree prune`
 - Stelle sicher, dass deine Git-Version Worktrees unterstützt (`git --version`, erfordert Git 2.5+)
 
@@ -179,7 +181,7 @@ Für Routineänderungen wie das Umbenennen einer Variable oder das Aktualisieren
 ### Anwenden des Gewinners schlägt fehl
 
 - Überprüfe auf nicht committete Änderungen in deinem Hauptarbeitsverzeichnis, die möglicherweise in Konflikt stehen
-- Der Diff wird als Patch angewendet – Merge-Konflikte sind möglich, wenn sich dein Arbeitsverzeichnis während der Sitzung geändert hat
+- Der Diff wird als Patch angewendet – Merge-Konflikte sind möglich, wenn sich dein Arbeitsverzeichnis während der Session geändert hat
 
 ## Einschränkungen
 
@@ -188,7 +190,7 @@ Agent Arena ist experimentell. Aktuelle Einschränkungen:
 - **Nur In-Prozess-Modus**: Split-Pane-Anzeige via tmux oder iTerm2 ist noch nicht verfügbar. Alle Agenten laufen innerhalb eines einzelnen Terminalfensters mit Registerkartenwechsel.
 - **Keine Diff-Vorschau vor der Auswahl**: Du kannst den Unterhaltungsverlauf jedes Agenten einsehen, aber es gibt keine einheitliche Diff-Ansicht, um Lösungen nebeneinander zu vergleichen, bevor du einen Gewinner auswählst.
 - **Keine Worktree-Aufbewahrung**: Worktrees werden nach der Auswahl immer bereinigt. Es gibt keine Option, sie zur weiteren Untersuchung zu behalten.
-- **Keine Sitzungswiederaufnahme**: Arena-Sitzungen können nach dem Beenden nicht wieder aufgenommen werden. Wenn du das Terminal während einer Sitzung schließt, bleiben die Worktrees auf der Festplatte und müssen manuell mit `git worktree prune` bereinigt werden.
+- **Keine Sitzungswiederaufnahme**: Arena-Sessions können nach dem Beenden nicht wieder aufgenommen werden. Wenn du das Terminal während einer Session schließt, bleiben die Worktrees auf der Festplatte und müssen manuell mit `git worktree prune` bereinigt werden.
 - **Maximal 5 Agenten**: Die harte Grenze von 5 gleichzeitigen Agenten kann nicht geändert werden.
 - **Git-Repository erforderlich**: Arena benötigt ein Git-Repository für die Worktree-Isolation. Es kann nicht in Verzeichnissen ohne Git verwendet werden.
 
@@ -209,6 +211,6 @@ Agent Arena und die experimentelle Agent-Team-Runtime bedienen unterschiedliche 
 
 Erkunde verwandte Ansätze für parallele und delegierte Arbeit:
 
-- **Leichte Delegation**: [Unteragenten](./sub-agents.md) bearbeiten fokussierte Teilaufgaben innerhalb deiner Sitzung – besser, wenn du keinen Modellvergleich benötigst.
+- **Leichte Delegation**: [Subagenten](./sub-agents.md) bearbeiten fokussierte Teilaufgaben innerhalb deiner Session – besser, wenn du keinen Modellvergleich benötigst.
 - **Kollaborative Ausführung**: [Multi-Agent-Koordination](./multi-agent-coordination.md) verwendet Agent Team für gemeinsame Aufgaben und Teammitglied-Nachrichten.
-- **Manuelle parallele Sitzungen**: Führe mehrere Qwen Code-Sitzungen selbst in separaten Terminals mit [Git-Worktrees](https://git-scm.com/docs/git-worktree) aus, für vollständige manuelle Kontrolle.
+- **Manuelle parallele Sitzungen**: Führe mehrere Qwen Code-Sessions selbst in separaten Terminals mit [Git-Worktrees](https://git-scm.com/docs/git-worktree) aus, für vollständige manuelle Kontrolle.

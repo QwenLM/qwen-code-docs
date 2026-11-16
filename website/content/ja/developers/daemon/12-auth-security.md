@@ -27,6 +27,15 @@
 `run-qwen-serve.ts` 内:
 
 ```ts
+// A non-loopback bind with neither --token nor QWEN_SERVER_TOKEN first
+// generates an ephemeral 128-bit base64url bearer (16 random bytes, 22
+// URL-safe characters; printed once at startup, rotated per process). The
+// first refusal below therefore fires only when a token source was supplied
+// but is explicitly empty/whitespace, or when the requested hostname resolves
+// off-loopback (localhost pinned to a non-loopback address never generates).
+// Generation is loopback-suppressed, so the second refusal is a loopback-only
+// fail-fast: on a non-loopback bind the generated token already satisfies
+// --require-auth.
 if (!isLoopbackBind(opts.hostname) && !token) {
   throw new Error('Refusing to bind <host>:<port> without a bearer token. ...');
 }
@@ -37,7 +46,8 @@ if (opts.requireAuth && !token) {
 }
 ```
 
-allow-origin のワイルドカードには独自の拒否ルールがあります:
+トークンなしの allow-origin 設定はループバック HTTP(S) オリジンに限定されます。
+非 HTTP(S) エントリは既存の処理が維持されます。
 
 ```ts
 const parsed = parseAllowOriginPatterns(opts.allowOrigins);
@@ -46,19 +56,31 @@ if (parsed.allowAny && !token) {
     "Refusing to start with --allow-origin '*' but no bearer token configured. ...",
   );
 }
+if (findNonLoopbackHttpOrigin(parsed) && !token) {
+  throw new Error(
+    'Refusing to start with a non-loopback HTTP(S) --allow-origin but no bearer token configured. ...',
+  );
+}
 ```
 
-これら 3 つの拒否はすべて明示的な起動失敗であり（stderr で表示、または埋め込み側にスロー）、決して黙って行われません。#3803 の脅威モデルは、デーモンがループバックを超えて無防備にバインドされることを黙認することを明示的に禁止しています。
+これらの拒否はすべて明示的な起動失敗であり（stderr で表示されるか、埋め込み側にスローされます）、決して黙って行われることはありません。#3803 の脅威モデルは、デーモンがループバックを超えて無防備にバインドされることを黙認することを明示的に禁止しています。
+
+`runQwenServe()` は `localhost` を一度だけ解決し、そのアドレスにリスナーをピン留めし、trusted-loopback オーソリティを公開する前に実際のリスナーアドレスを検証します。結果が `127.0.0.0/8` または `::1` の外側にある場合、トークンなしの起動は失敗し、リスナーを閉じます。`createServeApp()` はソケットを所有しないため、その呼び出し元は宣言されたループバックホスト名がループバックにのみバインドされることを引き続き保証する責任があります。宣言されたループバック以外の埋め込みは、strict ルート、セッションシェル、および Local Control ペアリングマテリアルを fail closed に保持します。また、構築時に空でないトークンなしで `requireAuth: true` を拒否するため、無効な強化設定の下で非 strict ルートが誤ってオープンのままになることはありません。
 
 ### ミドルウェアチェーン（HTTP リクエスト順序）
 
 ```mermaid
 flowchart LR
-    REQ[Request] --> SO["strip same-origin Origin<br/>(Web Shell サポート)"]
+    REQ[Request] --> LS["loopback self-origin strip<br/>(server/self-origin.ts)"]
+    LS --> LOG["access-log middleware<br/>(DaemonLogger)"]
+    LOG --> TID["inbound trace-id capture"]
+    TID --> HA["hostAllowlist<br/>(loopback DNS-rebinding defense;<br/>primary gate passes through on<br/>non-loopback binds, Local Control<br/>keeps its own Host gate)"]
+    HA --> SO["remote same-origin check<br/>(credential check + Origin strip)"]
     SO --> AO["allowOriginCors<br/>(mutable allowlist: --allow-origin<br/>patterns + Local Control LAN origin)"]
-    AO --> HA["hostAllowlist"]
-    HA --> LOG["access-log middleware<br/>(DaemonLogger)"]
-    LOG --> BA["bearerAuth"]
+    AO --> H["pre-auth /health<br/>(loopback, unless --require-auth)"]
+    H --> WH{"Channel webhook?"}
+    WH -->|yes| WS["x-qwen-webhook-secret<br/>+ webhook rate/body limits"]
+    WH -->|no| BA["bearerAuth"]
     BA --> RL["rate-limit middleware<br/>(when enabled)"]
     RL --> JSON["express.json<br/>(body parser)"]
     JSON --> TEL["daemonTelemetryMiddleware<br/>(OTel span)"]
@@ -66,7 +88,9 @@ flowchart LR
     MG --> HANDLER["route handler"]
 ```
 
-`mutationGate` はルートごとのミドルウェアファクトリです（`createMutationGate` が `mutate()` を返します）。ルートは登録時に `mutate()` または `mutate({strict: true})` を呼び出します。グローバルな `app.use()` ミドルウェアではありません。アクセスログは `bearerAuth` の前に登録されるため、401 拒否もログに記録されます。レート制限は `bearerAuth` の後、かつ `express.json()` の前で実行されるため、認証済みのリクエストのみがカウントされ、制限を超えた場合は大きなボディがパースされる前に拒否されます。
+`mutationGate` はルートごとのミドルウェアファクトリです（`createMutationGate` が `mutate()` を返します）。ルートは登録時に `mutate()` または `mutate({strict: true})` を呼び出します。グローバルな `app.use()` ミドルウェアではありません。アクセスログと inbound trace-id キャプチャはオリジンウォールと同じオリジン資格情報チェックの前に登録されるため、それらの 403/401 ショートサーキットは他の拒否と同様にログに記録され、ログ行は呼び出し元の trace id に結合されます。これらはどちらも `bearerAuth` よりも前にあるため、401 拒否もログに記録されます。ループバック Host 許可リストは pre-auth health ルートより前に登録されるため、DNS リバインディング防御がそれをカバーします。pre-auth `/health` はオリジンウォールの下に配置されます（クロスオリジンのプローブは CORS ヘッダーを持ちます）。アクセスログは finish ロガーをアタッチする前にパスによって `GET /health` と `POST */heartbeat` を例外処理するため、正確なパスの `GET /health` と `POST */heartbeat` プローブはどのマウント位置でもログに記録されず、それらの例外パスでのウォール拒否も同様にログに記録されません（`HEAD /health` と `GET /health/` は他のリクエストと同様にログに記録されます）。通常の API レート制限は `bearerAuth` の後、`express.json()` の前で実行されるため、認証済みのリクエストのみがカウントされ、制限を超えた場合は大きなボディがパースされる前に拒否されます。チャネル Webhook の入力はベアラー認証の前に分岐し、独自の共有シークレットチェック、ミューテーションティアレートチェック、および 1 MiB パーサーを適用します。
+
+同一オリジン面は `server/self-origin.ts` 内の 2 つのミドルウェアで、別々にマウントされます。ループバックのみの `Origin` 削除はアクセスログより前にインストールされ（一致する `Origin` を削除するだけで、拒否することはありません）、`installRemoteSelfOriginMiddleware` は設定されたトークンを持つループバック以外のプライマリリスナー上で `allowOriginCors` の直前に実行されます。リモートの方は正規化された `Origin` を直接ソケットスキームと正規化された `Host` オーソリティに対して照合します（転送ヘッダーは参照されません）。一致する場合はベアラー認証してから `Origin` を削除するため、組み込み Web Shell の同一オリジン HTTP ミューテーションには `--allow-origin` が不要です。その pre-auth 述語（`web-shell-preauth.ts`）は、ブラウザのモジュールスクリプトフェッチが `Authorization` なしで `Origin` を持つため、シェルのエントリーポイント（`/`、`//`、`/assets*`、`/manifest.webmanifest`、`/sw.js`、`/mcp-app-sandbox`、正確な `/session/:id`、`/plugins`、`/channels`、`/live`、`/scheduled-tasks`、`/goals`、および `/settings` ドキュメントナビゲーション）を資格情報チェックから例外化します。WebSocket アップグレードと TLS フロントプロキシの `https` オリジンはカバーされません。アップグレードゲートは独自の CSWSH ポリシー（ループバックオリジン、`--allow-origin` エントリ、または Local Control リスナー独自のオリジン）を保持し、プロキシの `https` オリジンはプレーンソケットのスキームと一致することはありません。
 
 ### `bearerAuth`
 
@@ -80,7 +104,7 @@ flowchart LR
 ループバックのみ。ポートをキーとする `Set<string>` を維持します。許可されるホスト:
 
 - `localhost:<port>`、`127.0.0.1:<port>`、`[::1]:<port>`、`host.docker.internal:<port>`。
-- さらに、**ポート 80 にバインドされている場合のみ**、ポートなしの形式（`localhost`、`127.0.0.1`、`[::1]`、`host.docker.internal`）も許可します（RFC 7230 §5.4 のデフォルトポート省略による）。
+- さらに、ポート 80 または 443 にバインドされている場合に**限り**、対応するポートなしの形式も許可されます（RFC 7230 §5.4 のデフォルトポート省略による）。
 
 ホスト比較は**大文字小文字を区別しません** — Express はヘッダー名を正規化しますが、値は正規化しないため、ホストを大文字にする Docker プロキシ（`Localhost:4170`、`HOST.docker.internal`）は、完全一致比較では 403 になります。
 
@@ -90,7 +114,7 @@ flowchart LR
 
 `Origin` ヘッダーを持つリクエストをすべて拒否します。CLI/SDK は Origin を設定しません。ブラウザのみが設定します。`cors` パッケージのエラーコールバックが生成する 500 HTML ではなく、決定論的な `403 { error: 'Request denied by CORS policy' }` を返します。ランタイムアプリはこのウォールをインストールしなくなりました — 可変許可リスト上の `allowOriginCors` を実行します（下記参照）。一致しないオリジンの拒否動作は、マッチしなかったオリジンの分岐としてそこに残っています。このウォールはランタイム起動前にリクエストに応答するブートストラップアプリ（run-qwen-serve.ts）に残っています。
 
-例外: **ループバック**バインドでの Web Shell の同一オリジン XHR は、別のミドルウェア（`server/self-origin.ts` 内）で処理され、ループバックの自己オリジン（`127.0.0.1`、`localhost`、`[::1]`、`host.docker.internal`）のいずれかと一致する場合に `Origin` を削除します。ループバック以外のバインドでは、シェルの XHR は一致しない `Origin` を持つため、デーモンオリジン用に `--allow-origin` が必要です。
+例外: **ループバック**バインドでの Web Shell の同一オリジン XHR は、別のミドルウェア（`server/self-origin.ts` 内）で処理され、ループバックの自己オリジン（`127.0.0.1`、`localhost`、`[::1]`、`host.docker.internal`）または正確なバインドされたループバックアドレスのいずれかと一致する場合に `Origin` を削除します。スキーム一致のポートなしオリジンは、そのデフォルトポート（80 の `http`、443 の `https`）の場合のみ受け入れられます。ループバック以外のバインドでは、2 番目のミドルウェア（同じファイル内の `installRemoteSelfOriginMiddleware`）がシェルの XHR を代わりにカバーします。正規化された `Origin` が直接ソケットスキームと正規化された `Host` オーソリティに等しいリクエストをベアラー認証し（転送ヘッダーは信頼されません）、ウォールの前にその `Origin` を削除するため、それらのリクエストには `--allow-origin` エントリが不要です。クロスオリジンと `null` オリジンは引き続き拒否され、WebSocket アップグレードルートと TLS フロントプロキシの `https` オリジンは引き続き `--allow-origin` を必要とします（[ミドルウェアチェーン](#ミドルウェアチェーンhttp-リクエスト順序)を参照）。
 
 ### `allowOriginCors`（ランタイムアプリ、常にインストール）
 
@@ -99,7 +123,9 @@ flowchart LR
 
 - 一致する `Origin` 値には、`Access-Control-Allow-Origin`、`Access-Control-Allow-Headers`、`Access-Control-Allow-Methods` が付与されます。`OPTIONS` プリフライトは `204` を返します。
 - 一致しない `Origin` 値には、拒否モードと同じ決定論的な `403 { error: 'Request denied by CORS policy' }` が返されます。
-- `--allow-origin '*'` には `--token` が必要です。それ以外の場合は起動を拒否します。
+- `--allow-origin '*'` にはベアラートークンが必要です。ループバックバインドではトークンが設定されていない場合に起動を拒否し、ループバック以外では生成された一時的トークンがガードを満たします（拒否はループバックのみ）。
+- トークンなしでは、HTTP(S) の `--allow-origin` 値はループバックバインド上のループバックホストに限定されます。ループバック以外では生成されたトークンが同じガードを満たします。ループバック以外のブラウザオリジンは、すべての API ルートでベアラー認証されます。そうでなければ、デーモンユーザーとしてのコード実行を含む、オペレーター API 全体を実行できてしまうからです。pre-auth の例外は、Web Shell のドキュメント/アセットルートと MCP App サンドボックス（`/`、`/assets*`、`/manifest.webmanifest`、`/sw.js`、`/mcp-app-sandbox`、正確な `/session/:id` ナビゲーション）、およびチャネル Webhook の入力です。チャネル Webhook の入力は `bearerAuth` の前に分岐し、ベアラーの代わりに独自の `x-qwen-webhook-secret` で認証します。また、ループバックバインドの場合のみ `/health` も例外です（それ以外ではベアラーゲートされます）。
+- 明示的なブラウザ拡張オリジンは、トークンなしのローカル自動化パスを保持します。起動ログは、トークンなしの許可されたブラウザオリジンがフルオペレーター権限を受け取ることを記録します。
 - `parseAllowOriginPatterns()` は起動時にパターン構文を検証します。
 - `allow_origin` 機能タグは、このモードが設定されている場合のみアドバタイズされます。
 
@@ -107,19 +133,19 @@ flowchart LR
 
 ルートごとのオプトインゲート。動作マトリクス:
 
-| daemon config           | route opts      | result                           |
-| ----------------------- | --------------- | -------------------------------- |
-| `requireAuth=true`      | any             | パススルー¹                       |
-| `token` 設定済み         | any             | パススルー²                       |
-| トークンなし（ループバック開発） | `strict: false` | パススルー                        |
-| トークンなし（ループバック開発） | `strict: true`、未認証 | `401 { code: 'token_required' }` |
-| トークンなし（ループバック開発） | `strict: true`、認証済み³ | パススルー          |
+| daemon/request authority                                      | route opts      | result                           |
+| ------------------------------------------------------------- | --------------- | -------------------------------- |
+| token 設定済み                                                 | any             | パススルー¹                       |
+| trusted-loopback プライマリリスナー                            | any             | パススルー                        |
+| ペアリングされた Local Control リスナー                        | `strict: true`  | パススルー                        |
+| trusted-loopback 権限のないトークンなしプライマリリクエスト    | `strict: true`  | `401 { code: 'token_required' }` |
+| 任意のトークンなしデプロイメント                               | `strict: false` | パススルー                        |
 
-¹ `--require-auth` はトークンがある場合のみ起動するため、グローバル `bearerAuth` が既に未認証の呼び出し元を 401 にしています。
-² トークンが設定されていると、グローバル `bearerAuth` がどこでもベアラー必須を強制するため、このゲートは冗長ですが無害です。
-³ リスナースコープの資格情報で認証: Local Control LAN リスナーはトークンなしのデーモンでもペアリング資格情報を検証し、リクエストを認証済みとしてスタンプするため、strict ルートはペアリングされた LAN クライアントに対してパススルーされます。
+¹ 任意のトークン設定により、グローバル `bearerAuth` が通常の API ルートでゲートより前にベアラー認証を強制します（ループバックの `/health` は `--require-auth` が設定されていない限り例外）。チャネル Webhook の入力は、このミドルウェアの前に独自の共有シークレットで認証します。ゲートは保護するルートでは冗長ですが無害です。`--require-auth` 自体は認証ではなく、トークンがある場合にのみ有効です。
 
-`code: 'token_required'` の形式は `bearerAuth` の単なる `Unauthorized` とは異なり、SDK クライアントは汎用的な 401 の代わりに「`--token` / `--require-auth` を設定してください」というヒントを表示できます。
+trusted-loopback モードは `loopback bind && no configured token && !requireAuth` から一度だけ導出されます。プライマリリスナー経由で到着するリクエストのみを許可します。内部のベアラー認証済みマーカーをスタンプしないため、リスナー資格情報とデプロイメント権限は引き続き区別された事実として残ります。`code: 'token_required'` の形式は、strict ゲートに到達する古いデーモンとトークンなしの非 trusted 埋め込みのために保持され、SDK クライアントが汎用的な 401 の代わりに設定ヒントを表示できるようにします。設定済みトークンと Local Control 資格情報の失敗は、以前のプレーンな `401 Unauthorized` レスポンスを保持します。
+
+Local Control のステータスと enable レスポンスは、オペレーター権限を持つ呼び出し元（trusted プライマリリスナー呼び出し元、ベアラー認証されたプライマリ呼び出し元、すでにペアリングされた LAN クライアント）にのみペアリング URL と QR を公開します。ペアリングされていない LAN 呼び出し元と非 trusted 埋め込みはそれを取得できません。有効化には引き続きプライマリリスナーが必要です。LAN クライアントはペアリング後にアクセスするか、既存のルールに従って無効化をリクエストできます。
 
 **Wave 4+ の strict ルート**: `/workspace/memory`、`/workspace/agents/*`、
 `/workspace/agents/generate`、`/file/write`、`/file/edit`、
@@ -222,19 +248,21 @@ sequenceDiagram
 
 認証後、`caps.features.includes('require_auth')` でデプロイメントが強化されていることを確認できます。
 
-### Wave 4 ミューテーションゲート（トークンなしループバック）
+### trusted loopback での strict ミューテーション
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant C as Client
+    participant C as Local client
     participant BA as bearerAuth (no-op, no token)
     participant MG as mutationGate({strict: true})
     participant R as Handler
 
     C->>BA: POST /workspace/memory (no Authorization)
     BA->>MG: passthrough
-    MG-->>C: 401 { code: 'token_required', error: '...' }
+    MG->>MG: primary listener + trusted-loopback mode
+    MG->>R: next()
+    R-->>C: route result
 ```
 
 ## 状態とライフサイクル

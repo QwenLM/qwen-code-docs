@@ -2,6 +2,8 @@
 
 이 가이드에서는 WeCom 지능형 로봇(企业微信智能机器人)과 함께 Qwen Code를 설정하는 방법을 다룹니다.
 
+그룹의 메시지 푸시 URL로 작업 결과를 보내려면 지능형 로봇 자격 증명 없이 사용할 수 있는 [WeCom Webhook Sending](./wecom-webhook)을 사용하세요.
+
 Corp ID, Agent ID, Token, EncodingAESKey를 사용하는 자체 구축 애플리케이션의 경우, 별도의 [WeCom Callback 채널](./wecom-callback)을 사용하세요.
 
 ## 사전 준비 사항

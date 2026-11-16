@@ -117,6 +117,16 @@ sequenceDiagram
 
 队列尾部的失败会被**吞没（swallowed）**，这样前一个 prompt 的拒绝不会污染后续的 prompt；原始调用者仍会在其返回的 promise 中收到拒绝。缓存在 session 上的 `transportClosedReject` 会让 prompt promise 与 `channel.exited` 竞争，因此崩溃的子进程会立即暴露，而不是挂起。
 
+### Resource-link prompt 元数据
+
+当 ACP 子进程将具有非 `file://` URI 的 `resource_link` 转换为模型输入时，它会保留 ` @URI` 引用，并将客户端提供的 `name` 作为原始文件名包含在内。例如，`{ "type": "resource_link", "uri": "https://example.com/objects/7f9a2c", "name": "季度报告.csv" }` 变为：
+
+```text
+ @https://example.com/objects/7f9a2c (original filename: "季度报告.csv")
+```
+
+名称经过 JSON 引号处理，因此引号和换行符仍然是明确的元数据。空名称和没有名称的遗留输入保留仅 URI 的文本。此转换不会获取非文件资源，也不会从 URI 路径推断文件名；`file://` 链接继续通过现有的文件解析路径处理。
+
 ### 权限流程（高层）
 
 ```mermaid
@@ -235,7 +245,10 @@ sequenceDiagram
 | `getWorkspaceToolsStatus()`                                  | 返回内置工具注册表快照。                      |
 | `getWorkspaceMcpToolsStatus(serverName)`                     | 返回特定 MCP 服务器的工具。                   |
 
-`BridgeSpawnRequest.sessionScope` 已从 `'per-client'` 重命名为 `'thread'`。`BridgeRestoredSession` 现在包含 `compactedReplay`、`liveJournal` 和 `lastEventId`。这些重放字段是活跃会话的有界内存窗口，上限由 `BridgeOptions.compactedReplayMaxBytes`（默认 4 MiB，硬上限 256 MiB）控制。正在进行的 `liveJournal` 由 `BridgeOptions.maxJournalEvents`（默认 10 000 条重放条目）和 `BridgeOptions.maxJournalBytes`（默认 8 MiB 的序列化源事件）单独限制。连续的兼容文本或思考 chunk 共享一个重放条目，每个条目最多 256 个源事件；其他事件和归属边界保持不变。如果较旧的保留重放被丢弃，`compactedReplay[0]` 是无 id 的 `history_truncated` 标记；如果日志条目被丢弃，`liveJournal[0]` 携带 `scope: 'live_journal'` 的 `history_truncated` 标记。其 retained 和 truncated 计数描述的是源事件，而非重放条目。完整的持久化转录保留在磁盘上，不由此 bridge 响应暴露。
+`BridgeSpawnRequest.sessionScope` 已从 `'per-client'` 重命名为 `'thread'`。`BridgeRestoredSession` 现在包含 `compactedReplay`、`liveJournal`、可选的 `lifecycleReplay` 和 `lifecycleReplayIncomplete`，以及 `lastEventId`。生命周期补充内容在刷新持久化页面时，包含来自内存重放窗口的最多 1024 个仅元数据帧；它可能与该页面重叠。incomplete 标志为 true 表示生命周期覆盖不可用、降级或截断。补充内容和 false 标志都不承诺完整历史或当前运行状态。这些重放字段是活跃会话的有界内存窗口，上限由 `BridgeOptions.compactedReplayMaxBytes`（默认 4 MiB，硬上限 256 MiB）控制。正在进行的 `liveJournal` 由 `BridgeOptions.maxJournalEvents`（默认 10 000 条重放条目）和 `BridgeOptions.maxJournalBytes`（默认 8 MiB 的序列化源事件）单独限制。连续的兼容文本或思考 chunk 共享一个重放条目，每个条目最多 256 个源事件；其他事件和归属边界保持不变。如果较旧的保留重放被丢弃，`compactedReplay[0]` 是无 id 的 `history_truncated` 标记；如果日志条目被丢弃，`liveJournal[0]` 携带 `scope: 'live_journal'` 的 `history_truncated` 标记。其 retained 和 truncated 计数描述的是源事件，而非重放条目。完整的持久化转录保留在磁盘上，不由此 bridge 响应暴露。
+
+分页加载在前台、后台或 Goal 轮次处于活跃状态或有交互待处理时，会跳过持久化页面刷新，转而提供可用的内存重放。如果在读取期间活动开始，bridge 会保留实时重放并避免进一步的刷新读取，包括遍历空页面。截断重放窗口的分页锚点回填与此刷新保持分离。
+
 `BridgeClientRequestContext` 是贯穿 bridge 调用的请求上下文；它包含 `clientId`、`fromLoopback: boolean` 和 `promptId`。
 
 ## 注意事项与已知限制

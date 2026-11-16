@@ -124,7 +124,46 @@ Hosted Harness 通过自己的环境（而非命令行或上述控制平面的�
 
 在准入文件、Shell 或子 Git worktree 工作之前，完成 `docs/server-reference.md` 中"Verified physical Workspace recovery"部分描述的原生存储注册和挂载身份验证。未注册或存在歧义的挂载必须保持不可用。公共 Shell 执行默认保持禁用。Shell 生命周期 v2 默认通告；显式的生命周期列表会替换默认值，空列表则禁用它。MCP 生命周期仍需显式包含。Capability 通告不构成部署资质认证。
 
-## 升级
+## 运行部署
+
+### 维护命令
+
+`bin/qwen-managed-agent-admin <command> [arguments]` 通过 Spring Boot 的 `PropertiesLauncher` 从服务端 jar 运行离线维护入口点，如 `storage-registration`、`workspace-migration` 和 CSI 命令。不带参数运行可列出命令，对某个命令不带参数运行可查看其用法。与服务器启动器类似，当 `config/application.yml` 存在且未设置 `SPRING_CONFIG_ADDITIONAL_LOCATION` 时，它使用该文件。大多数打开数据库的命令使用自己的凭据而非 `server.env` 的 `SPRING_DATASOURCE_*`：Workspace 命令读取 `W1_JDBC_URL`、`W1_JDBC_USER` 和 `W1_JDBC_PASSWORD`，CSI 命令读取 `K2_JDBC_URL`、`K2_JDBC_USER` 和 `K2_JDBC_PASSWORD`。有两个例外：`operator-recovery` 和 `resident-retirement` 启动服务器的 Spring 配置并使用其数据源，因此它们从环境和 `config/application.yml` 中读取 `SPRING_DATASOURCE_URL`、`SPRING_DATASOURCE_USERNAME` 和 `SPRING_DATASOURCE_PASSWORD` 以及其他控制平面设置；使用加载了 `server.env` 的方式运行它们。`csi-protection` 不打开数据库，`resolved-configuration` 也不打开，后者打印服务器配置在当前运行环境中解析出的 Runtime 状态目录、认证模式和可信 actor header，以及控制平面的 URL、其健康端点和 Hosted Harness；升级命令以相同方式运行它来查找 Runtime 状态和这些 URL。每个命令都是一个带有自身前置条件的离线流程，随命令文档一起记录；运行前请满足这些条件。`bin/qwen-managed-agent-admin operator-recovery` 是 Hosted Shell 恢复流程的入口。
+
+### 升级
+
+在 systemd 布局中，新发行版的 `bin/qwen-managed-agent-upgrade` 分阶段运行升级。从解压并验证后的归档文件中以 root 身份运行每个阶段：
+
+```bash
+cd qwen-managed-agent-reference-<new-version>
+# 传入 backup 获得的 check 选项，如 --skip-database。
+bin/qwen-managed-agent-upgrade check
+# 停止新的入站流量并等待已准入的工作完成。
+bin/qwen-managed-agent-upgrade stop
+bin/qwen-managed-agent-upgrade backup --to /var/backups/qwen-managed-agent/<date>
+bin/qwen-managed-agent-upgrade install --backup /var/backups/qwen-managed-agent/<date>
+# check 打印的手动步骤，如为 Harness 安装 Qwen Code。
+bin/qwen-managed-agent-upgrade start
+bin/qwen-managed-agent-upgrade verify --tenant <tenant> --turn
+# 重新开放入站流量。
+```
+
+每个阶段都会重新读取单元、其环境文件和已安装的发行版，除非上一阶段将它们留在预期状态，否则拒绝继续，因此中断的升级会从失败的阶段恢复。`--server-unit` 和 `--harness-unit` 命名 `qwen-managed-agent-server` 和 `qwen-hosted-harness` 之外的单元；命令通过它们找到已安装的发行版、环境文件和服务账户。
+
+- `check` 不做任何更改。它根据 `SHA256SUMS` 验证新发行版，比较两个发行版（版本、服务端 jar 中的 Flyway 脚本、Java、Node.js 和 Qwen Code），并读取 Harness Broker 设置、单元模板、已安装 `config/` 中的操作员文件和发行版布局。其 `backup-tools` 和 `runtime-state` 行告诉 `backup` 是否会在给定选项下运行，因此也将 backup 选项传给 `check`；它打印的计划会重复这些选项。重复值中的控制字符打印在 `...'` 内，bash、ksh 和 zsh 可以读回但 POSIX `/bin/sh` 不能；对包含该拼写的计划使用这些 shell 之一。它为每个输入打印一行，并在手动步骤出现的位置打印计划，任何 FAIL 都会以退出码 1 退出。当新发行版更改或移除了已安装数据库运行过的脚本时，`database` 行失败：在首个正式发行版之前，发行版可能会就地重写其 schema 基线，这样的发行版无法在现有数据库上启动。当发行版添加了一个未排序在已安装数据库运行过的最新脚本之后的版本化脚本时，它也会失败，Flyway 拒绝应用这样的脚本。
+- `stop` 重复 `backup-tools` 之上的检查，除非通过否则不停止任何内容。`backup-tools` 和 `runtime-state` 行仅门控 `backup`，因此在 `stop` 之前用 `check` 解决它们。它停止控制平面，停止 `KillMode=process` 留在其 cgroup 中的 Runtime worker 并等待它们（`--timeout`，默认 60 秒），然后停止 Harness。它计算 cgroup systemd 名称中的 worker 数量，在统一层次结构中或在 cgroup v1 上使用 systemd 自己的名称，无法读取该 cgroup 时拒绝。一旦安装了新发行版，`stop` 会跳过检查，因此它也会停止 `start` 留下的运行中的控制平面。JVM 在 `SIGTERM` 时以退出码 143 退出，因此没有模板的 `SuccessExitStatus=143` 安装的控制平面单元在停止后显示为 `failed`；`stop` 会说明这一点，一旦模板的更改被迁移，`systemctl reset-failed` 会清除状态。
+- `backup --to <new empty directory>` 需要两个单元都已停止且没有遗留 worker，并在新发行版安装后拒绝，因为其 `from.release` 会命名新发行版。已存在的目录必须为空且属于 root。它使用 `mysqldump` 写入 `database.sql`，通过备份外临时目录中的选项文件传递单元的 `SPRING_DATASOURCE_*` 凭据，而不是在命令行上传递；`mysqldump` 不读取其他选项文件，因此 root 的 `~/.my.cnf` 无法替换它们。它写入 Runtime 状态目录的 `runtime-state.tar`、单元文件及其环境文件、Harness 凭据文件和 `SPRING_CONFIG_ADDITIONAL_LOCATION` 文件的 `configuration.tar`，以及已安装 `config/` 和发行版中任何这些文件的 `release-config.tar`，按其在发行版中的路径记录。符号链接的文件作为链接和其指向的文件一起写入。每个文件在 `0700` 目录中为 `0600`，最后写入的 `backup.json` 记录其校验和、转储所在的数据库，以及 `install` 将前一发行版留在的位置。`--mysqldump <path>` 命名另一个客户端，`--skip-database` 在数据库通过其他方式备份时跳过转储。失败的备份，或被 `SIGINT`、`SIGTERM` 或 `SIGHUP` 终止的备份，会移除其写入的内容和选项文件。`SIGKILL` 不移除任何内容；移除它留下的 `${TMPDIR:-/tmp}/qwen-managed-agent-upgrade-*` 目录，其中包含凭据。
+  - `check` 和 `backup` 从服务端自身的配置获取 Runtime 状态目录。它们以控制平面单元运行服务端的方式运行新发行版的服务端 jar：使用其账户、工作目录和环境，以及当 `SPRING_CONFIG_ADDITIONAL_LOCATION` 未设置或为空时启动器的默认 `config/application.yml`。jar 以服务端的方式准备 Spring 的环境，因此每个配置文件、导入和 profile 都算数，`SPRING_APPLICATION_JSON`、来自 `JAVA_TOOL_OPTIONS` 的系统属性和宽松名称也算，相对目录在单元的工作目录中解析。它不启动任何内容也不打开任何连接。当无法解析配置，或单元传递了启动器参数（`systemctl` 不会精确打印这些参数）时，`backup` 拒绝直到 `--runtime-state <directory>` 命名服务端使用的目录，或 `--runtime-state none` 表示不保留任何目录。没有配置的目录时，如在没有工具路径的部署上，`backup` 不归档 Runtime 状态并说明这一点。
+- `install --backup <directory>` 拒绝其他发行版的备份、已更改的备份文件、控制平面已启动过的备份，以及非单元 `SPRING_DATASOURCE_URL` 命名的数据库的备份。它将发行版复制到 `<distribution>-releases/<version>`，如 `/opt/qwen-managed-agent-releases/<version>`（`--releases` 命名另一个目录；对每个阶段传递相同的目录），从已安装 `config/` 复制操作员文件并保留其所有者和模式，并通过一次重命名将发行版路径指向新发行版。副本自身的文件，即 `SHA256SUMS` 列出的文件，使每个账户都可读，因此服务账户可以运行以限制性 umask 解压的发行版。首次运行将已安装目录移动到 `<releases>/<old version>` 并在其位置放置链接，因此单元保持其路径。前一发行版保持在原位。现有的 `<releases>/<version>`，如解压到那里的归档文件，仅在其 `SHA256SUMS` 是新发行版的且文件匹配时使用，其列出的文件以相同方式变为可读；失败的副本会被移除。首次运行的两次重命名之间的崩溃会在缺失的发行版路径旁留下 `<distribution>.upgrade-<suffix>`；每个阶段随后命名完成安装的 `mv -T`。另一步骤中被终止的安装可能在发行版目录中留下部分副本 `.<version>.partial-<suffix>`、发行版路径旁的 `<distribution>.upgrade-<suffix>` 链接，或新发行版 `config/` 中操作员文件的 `.tmp-<suffix>` 副本；`layout` 行列出它们，下一次 `install` 会移除它们。后缀是 `install` 生成的八个十六进制数字，因此操作员自己的 `<distribution>.upgrade-backup` 不会被触及。在发行版安装后再次运行，如中断的会话后，`install` 会说明这一点并指向 `start`。
+- `start` 在 `install` 之前拒绝，在 Harness Broker 设置仍需要下方步骤 5 时也拒绝。它启动 Harness，或重启早期 `start` 留下的运行中的 Harness 以便读取此后修复的内容，以服务账户和单元环境运行 `bin/qwen-managed-agent-server --check`，仅在该检查通过时启动控制平面，并等待健康的 actuator（`--timeout`，默认 300 秒；一次探测最多等待 5 秒）。Flyway 在此启动期间迁移 schema。在健康��前退出的控制平面会被停止并报告，即使是 systemd 的 `Restart=on-failure` 在再次运行时会重新启动的那个：迁移 schema 的启动期间的退出值得在 `start` 再次运行前在日志中查看。在超时时仍不健康的继续保持运行；查看其日志，然后运行 `verify`，或 `stop` 并再次 `start`。
+  - `start` 和 `verify` 以相同方式查找 Harness、控制平面及其健康端点，因此在 `server.env` 不显示的端口或地址也算：在配置文件中、在命令行上或在 `SPRING_APPLICATION_JSON` 中。Harness 在 `qwen.managed-agent.harness.base-url` 指定的位置。控制平面在 `server.port`、`server.address` 和 `server.ssl` 绑定的位置，通配符地址通过 loopback 接口访问，健康端点遵循 Spring Boot 的管理设置：`management.server.port` 将其移动到该端口，在 `management.server.address` 上和 `management.server.base-path` 下。`--server-url <url>` 命名控制平面，例如在代理后面，健康端点随后是 `<url>/actuator/health`。阶段仅检查它拨号的 URL：两者都探测健康端点，`verify --tenant` 在认证模式为 `open` 时也读取 API，以及当 `--actor` 时，服务端命名可信 actor header。0 或更小的端口没有可等待的 URL，因此阶段拒绝直到 `--server-url` 命名一个；它还拒绝 `fetch` 拒绝拨号的 URL：带区域的链路本地 IPv6 地址、Fetch 标准阻止的端口（如 6000），或没有 `http://` 或 `https://` 的 `--server-url`、带用户名或密码（拒绝时打印为 `***` 直到最后一个 ` @`）、带查询或片段（追加到其后的路径会落入其中），或带任何其他 ` @`（可能是以数字开头的密码的其余部分，在路径中将 ` @` 写为 `%40`），`check` 以相同方式判断 `--server-url`：`start` 同样拒绝不是 `http` 或 `https` 的 Harness URL，以及在 Harness 启用时服务端 Harness 连接器会拒绝的 URL：除了带主机且无凭据、查询或片段的 `http` 或 `https` URL 之外的任何内容，因为服务端用 `java.net.URI` 读取它，因此带下划线的主机名也会被拒绝；当配置无法解析时，`start` 只接受纯 `http` 或 `https` URL、`java.net.URI` 和 `fetch` 都读取的带最多五位数字端口和 URI 字符路径的主机，其余留给预检。当健康端点不报告 UP 时，`start` 和 `verify` 说明它最后回答的内容；对于此主机不信任的证书，运行命令时将 `NODE_EXTRA_CA_CERTS` 指向其 CA。当配置无法解析，或单元传递启动器参数时，它们使用 `server.env` 命名的 URL 并打印说明这一点的行。
+- `verify` 以相同方式运行 `--check --online` 并读取 actuator，等待最多 `--timeout`（默认 300 秒）的回答。使用 `--tenant <id>`，它读取租户最近的 Session 及其 Items，在 `--turn` 创建一个之前；`--turn` 创建一个 Session 并等待一个轮次，这会调用模型，在 `5xx` 回答或连接断开时轮询过去；当跳过 Session 读取时，`turn` 行会说明。没有请求超过 `--timeout`。没有 actor 的请求只列出 Workspace 之外的 Session；`--actor <id>` 通过 `QWEN_MANAGED_AGENT_TRUSTED_ACTOR_HEADER` 命名的 header 发送一个。`verify` 以 `backup` 读取 Runtime 状态目录的方式读取认证模式，签名认证跳过两种读取；改为通过入站读取 Session。
+
+该命令仅启动和停止单元。它从不停止入站流量、安装 Qwen Code、编辑环境或单元文件，或删除发行版。当 `check` 警告单元模板已更改时，将更改迁移到已安装单元并在 `start` 之前运行 `systemctl daemon-reload`。
+
+#### 手动流程
+
+其他布局遵循这些步骤。在 systemd 布局中，命令运行 `stop`、`backup`、`install`、`start` 和 `verify`，`check` 打印它留给操作员的步骤及其位置：停止和重新开放入站流量、安装 Qwen Code 以及在步骤 5 中编辑 `harness.env`，以及迁移已更改的单元模板。
 
 1. 下载并验证新归档文件，阅读两份清单。在操作运行中的部署之前，确认新的 Qwen Code/Harness、Java、协议和数据库要求。
 2. 停止新的入站流量。根据部署现有的 drain 流程等待已准入的工作完成。
@@ -136,7 +175,7 @@ Hosted Harness 通过自己的环境（而非命令行或上述控制平面的�
 
 不支持数据库降级。如果在流量恢复之前启动或验证失败，请修正配置并使用同一构件重试。要回退到清单中 schema 范围较旧的版本，请在接受任何新写入之前同时恢复升级前的数据库和 Runtime 状态备份；切勿假设性地对已迁移的数据库运行旧版服务端。
 
-## 轮换 Runtime 凭据密钥
+### 轮换 Runtime 凭据密钥
 
 轮换凭据密钥应独立于发行版升级进行。先备份数据库和当前密钥，然后配置新的活动密钥对，并将旧密钥对保留在 `previous-credential-keys` 下：
 
@@ -154,17 +193,25 @@ qwen:
 
 重启唯一的 Java 控制平面，验证现有绑定可以加载，并验证新的绑定行记录的是 `reference-v2`。新密钥仅使用活动密钥；旧行仍在其记录的 key ID 下加密。服务端不会在读取时重新加密旧行，移除仍在被引用的密钥会使这些行无法读取。
 
-仅当没有已持久化的行引用 `reference-v1` 时才将其退役。`ma_runtime_binding.credential_key_id` 和 `ma_runtime_binding.runtime_credential_key_id` 是仅有的持久化引用；两者都存储 UTF-8 字节。查询时不要使用 `CONVERT`，以便去重保持字节级精确，与密钥选择的方式一致：转换后的值会携带字符集的默认排序规则，会将仅大小写或重音不同的两个 ID 合并，从而隐藏行仍在引用的密钥。
+仅当没有已持久化的行引用 `reference-v1` 时才将其退役。Runtime 绑定、完整的 Session 模型配置和 extension 设置保留 key ID。按字节比较它们，以便大小写或重音差异不会隐藏仍然需要的密钥：
 
 ```sql
 SELECT DISTINCT credential_key_id AS key_id
 FROM ma_runtime_binding WHERE credential_key_id IS NOT NULL
 UNION
 SELECT DISTINCT runtime_credential_key_id AS key_id
-FROM ma_runtime_binding WHERE runtime_credential_key_id IS NOT NULL;
+FROM ma_runtime_binding WHERE runtime_credential_key_id IS NOT NULL
+UNION
+SELECT DISTINCT CAST(model_config_key_id AS BINARY) AS key_id
+FROM ma_session WHERE model_config_key_id IS NOT NULL
+UNION
+SELECT DISTINCT CAST(encryption_key_id AS BINARY) AS key_id
+FROM ma_extension_settings WHERE encryption_key_id IS NOT NULL;
 ```
 
-结果列出已持久化行仍然需要的 key ID：预期只有活动 ID（`reference-v2`）。只要 `reference-v1` 出现，该密钥就必须保持配置。
+结果列出已持久化行仍然需要的 key ID。保持每个返回的密钥都已配置；仅当 `reference-v1` 不在结果中时才可以将其退役。
+
+Session 模型配置只写入一次；关闭或删除 Session 会保留其行。Extension 设置保留早期修订。轮换活动密钥不会重新加密或移除这些记录，因此它们的旧 key ID 在记录保留期间会留在结果中。此流程不提供重新加密或物理清除步骤；保持所需密钥已配置，不要为了清除检查而删除行。
 
 密钥环是一个 map，不能通过 `QWEN_MANAGED_AGENT_*` 环境变量提供：宽松绑定会静默地将环境变量形式解析为空或错误 key 的密钥环，且不会报启动错误。在 `config/application.yml` 中配置 `previous-credential-keys`。该发行版附带 `config/application.example.yml`，并且当该文件存在时，两个启动器都会导出 `SPRING_CONFIG_ADDITIONAL_LOCATION=file:<distribution-root>/config/application.yml`，因此位置不再依赖于进程工作目录，也不会在命令的位置参数中添加任何选项。当该变量已设置时，启动器会保持其生效。仅依赖环境变量的部署启动时密钥环为空，因此在未配置旧密钥的情况下轮换 `credential-key-id` 会使该密钥下写入的行无法读取。显式的 `--spring.config.additional-location` 命令行参数优先于此环境默认值；当两者同时存在时，命令行值获胜，捆绑的 `config/application.yml` 不会被加载。
 
@@ -172,9 +219,9 @@ FROM ma_runtime_binding WHERE runtime_credential_key_id IS NOT NULL;
 
 成功配置密钥环后，服务端和恢复入口会在每个 protector 实例启动时记录一次已解析的活动 ID 和已配置的 ID。这些 ID 本身不是密钥材料，已经和密文一起存储；诊断信息会对控制字符和非 ASCII 字符进行 JSON 转义，保留空格和大小写，且永远不会包含密钥材料、密文或 token。在使用轮换后的部署前，需要将已配置的 ID 与退役查询返回的精确 ID 进行对比。不可用密钥错误会列出请求的、活动的和已配置的 ID，因此即使存在静默规范化或拼写错误的映射，也能在不暴露密钥的前提下定位问题。该诊断不能证明所有已存储的行都可以被解密。
 
-## 操作员恢复
+### 操作员恢复
 
-`bin/qwen-managed-agent-operator-recovery` 启动单独打包的恢复入口点。除非设置了恢复专用环境变量，否则该入口点处于禁用状态，且不会启动 HTTP 服务或 worker。请遵循 `docs/hosted-workspace-recovery.md`；切勿推断物理停止或删除持久化行来绕过安全围栏。
+`bin/qwen-managed-agent-admin operator-recovery` 从可执行服务端 jar 运行恢复入口点。除非设置了恢复专用环境变量，否则该入口点处于禁用状态，且不会启动 HTTP 服务或 worker。请遵循 `docs/hosted-workspace-recovery.md`；切勿推断物理停止或删除持久化行来绕过安全围栏。
 
 ## 范围边界
 

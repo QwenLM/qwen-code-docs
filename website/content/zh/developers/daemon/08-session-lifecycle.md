@@ -181,6 +181,31 @@ Worktree 所有权转移（`POST /session/:id/worktree-reset`，由 `session_wor
 
 `POST /session/:id/btw` 针对会话上下文提出一次性问题，且不会中断主对话流。它在缓存路径上使用 `runForkedAgent` 进行单轮、无工具的 LLM 调用，并返回 `{ sessionId, answer: string | null }`。该实现强制执行 `BTW_MAX_INPUT_LENGTH` 限制、跨会话泄漏防护以及超时处理。
 
+### 流式 BTW（`session_btw_stream` 能力标签）
+
+`POST /session/:id/btw/stream` 接受 `{ question, requestId, resume? }` 并
+发送累积的 `answer` 快照以及终止事件 `done` 或 `error`。
+在调用前请检查此独立能力；缺少该标志时使用
+现有的 JSON BTW API。流式传输开始后，错误不得触发第二次
+JSON 请求。该路由会解析活跃的会话所有者及其信任边界。
+
+断开订阅者连接不会停止 generation。复用相同的 request ID、
+问题和客户端身份以接收最新保留的快照。SDK
+会在观察到成功的 HTTP 响应之前不带 `resume` 进行重试，然后
+使用 `resume: true`；resume 时缺少保留状态会返回 410 且无法
+启动新的 generation。保留时间最长为 60 秒，运行时缓存
+最多持有 32 个条目，在需要时驱逐最早注册的终止条目。活跃条目不会被驱逐。`DELETE /session/:id/btw/stream/:requestId`
+显式取消匹配的 generation。这两个路由都不会中断主
+prompt。请参阅[线路契约](../qwen-serve-protocol.md#post-sessionidbtwstream)
+了解输入限制、截止时间及错误码。
+
+Side 请求（包括旧版 BTW、recap 和无状态 generation）计为
+本地工作，并在其结束之前阻止空闲清理或 required-idle 关闭。
+这不会改变每个路由现有的归档准入规则。流式
+BTW 仅在请求注册期间持有共享归档准入，
+因此被遗弃的订阅者无法在该 generation 生命周期内持续持有该
+准入。
+
 ### Shell 命令执行
 
 `POST /session/:id/shell` 直接在 daemon host 上执行 shell 命令，不经过 LLM 路由。它通过 `user_shell_command` / `user_shell_result` 事件在会话 SSE 总线上流式输出结果，并将命令及其结果注入 LLM 对话历史。响应格式为 `{ exitCode, output, aborted }`。对于活跃的次级工作区会话，单一 REST 路由会解析会话所有者并在该 runtime 的 bridge 上执行，因此命令在所属工作区的 cwd 中启动。该路由不提供路径沙箱。具有工作区资格的 ACP 客户端可以继续在所属工作区连接上使用 `_qwen/session/shell`。
@@ -205,6 +230,8 @@ Worktree 所有权转移（`POST /session/:id/worktree-reset`，由 `session_wor
 
 空的、损坏的和孤立的常规转录文件即使无法作为对话加载，仍然符合这些生命周期操作的条件。所有权安全检查可以有意地 fail closed 并要求操作员干预。在 writer 密封其认证的交接证明后，如果文件被更改，则会以 `SessionTranscriptChangedError` 失败，直到操作员解决密封锁和已更改的字节。超过有界所有权读取窗口的 JSON 格式首条物理记录会以 `SessionTranscriptIdentityUnavailableError` 失败，直到该记录被修复或缩减；带有非对象前缀的超大损坏记录仍然符合条件。可解析的恢复记录必须包含字符串类型的 `sessionId` 和 `cwd` 所有权字段，混合的本地/外部归档状态也会 fail closed。当宣传了 `session_storage_conflict_repair` 时，archive 和 unarchive 接受 `resolveConflicts: true`：archive 保留已归档的副本，而 unarchive 保留活跃的副本。不使用该选项时，活跃/归档冲突不会移动、删除或覆盖任何持久化副本，并会在批处理的 `errors` 数组中返回。Archive 仍然在分类冲突之前严格关闭活跃会话，这可能会将排队的记录 flush 到活跃转录中。具有工作区资格的生命周期路由现在使用 HTTP `200` 批处理信封，而不是早期的 HTTP `409 session_conflict` 响应。
 
+当宣传了 `session_archive_idle_guard` 时，archive 还会接受 `requireIdle: true`。然后所属 runtime 在进入关闭转换之前立即确认会话处于空闲状态。活跃的、未知的或不支持的工作仍保持活跃状态，并在批处理的 `errors` 数组中返回；其活跃子进程已被回收的持久化会话仍可被归档。
+
 ### 上下文使用情况（`session_context_usage` 能力标签）
 
 `GET /session/:id/context-usage` 返回结构化的上下文窗口使用情况。`?detail=true` 包含按 tool、memory 和 skill 分组的更细粒度的使用情况。
@@ -225,7 +252,7 @@ Worktree 所有权转移（`POST /session/:id/worktree-reset`，由 `session_wor
 
 ### 压缩重放
 
-`POST /session/:id/load` 现在返回一个 `BridgeRestoredSession`，其中可以包含 `compactedReplay?: BridgeEvent[]`、`liveJournal?: BridgeEvent[]` 和 `lastEventId?: number`。这些字段是守护进程为活跃会话提供的有界内存重放窗口，而非完整的转录 API。默认窗口上限为每个活跃会话 4 MiB（`--compacted-replay-max-bytes`），启动时拒绝无效上限；硬上限为 256 MiB。`compactedReplay` 由 `TurnBoundaryCompactionEngine` 生成：在 turn 边界处，它会折叠连续的 text / thought 块，将 tool-call 序列折叠为其最终状态，丢弃瞬态信号，并生成 O(turns) 级别的重放日志，而不是 O(tokens) 级别的日志（通常可减少 25-30 倍）。当较旧的保留重放从该字节窗口中被丢弃时，`compactedReplay[0]` 是一个合成的无 id `history_truncated` 标记，包含 `{reason: 'replay_window_exceeded', truncatedEvents, retainedEvents, maxBytes, truncatedTurns?, fullTranscriptAvailable: boolean}`。`fullTranscriptAvailable` 是一个能力标志：`true` 表示客户端可以使用 `GET /session/:id/transcript` 翻页获取完整的持久化转录，而 `false` 表示仅有界重放可用。客户端应将其作为状态渲染并正常应用保留的重放；它不得触发重同步循环。
+`POST /session/:id/load` 现在返回一个 `BridgeRestoredSession`，其中可以包含 `compactedReplay?: BridgeEvent[]`、`liveJournal?: BridgeEvent[]`、`lifecycleReplay?: BridgeEvent[]`、`lifecycleReplayIncomplete?: boolean` 和 `lastEventId?: number`。可选的生命周期补充在刷新持久化页面时包含来自内存重放窗口的最多 1024 个仅元数据帧，并可能与该页面重叠。不完整标志报告不可用、降级或截断的生命周期覆盖。客户端必须以幂等方式应用重放的生命周期记录，不得将 start 视为当前正在运行工作的证明；false 标志并不表示历史完整。这些字段是守护进程为活跃会话提供的有界内存重放窗口，而非完整的转录 API。默认窗口上限为每个活跃会话 4 MiB（`--compacted-replay-max-bytes`），启动时拒绝无效上限；硬上限为 256 MiB。`compactedReplay` 由 `TurnBoundaryCompactionEngine` 生成：在 turn 边界处，它会折叠连续的 text / thought 块，将 tool-call 序列折叠为其最终状态，丢弃瞬态信号，并生成 O(turns) 级别的重放日志，而不是 O(tokens) 级别的日志（通常可减少 25-30 倍）。当较旧的保留重放从该字节窗口中被丢弃时，`compactedReplay[0]` 是一个合成的无 id `history_truncated` 标记，包含 `{reason: 'replay_window_exceeded', truncatedEvents, retainedEvents, maxBytes, truncatedTurns?, fullTranscriptAvailable: boolean}`。`fullTranscriptAvailable` 是一个能力标志：`true` 表示客户端可以使用 `GET /session/:id/transcript` 翻页获取完整的持久化转录，而 `false` 表示仅有界重放可用。客户端应将其作为状态渲染并正常应用保留的重放；它不得触发重同步循环。
 
 ### ACP 子进程预热
 
@@ -238,7 +265,7 @@ Worktree 所有权转移（`POST /session/:id/worktree-reset`，由 `session_wor
 - `BridgeOptions.initializeTimeoutMs`（默认 10s）— ACP 子进程启动截止时间（Channel factory + `initialize` 握手）及默认请求超时。
 - `BridgeOptions.sessionRestoreTimeoutMs`（默认 60s）— ACP `loadSession` / `unstable_resumeSession` 截止时间。默认 60 秒；显式配置的 initialize 超时可以提高此值，但不能降低。
 - `BridgeOptions.channelIdleTimeoutMs`（未设置或 `0` 时在 runtime 工作 drain 后回收，但单纯预热会为首次使用保留；正值或活跃的 keepalive 会延迟回收，且取较长的延迟）。
-- Capability tags：`session_create`、`session_id_override`、`session_scope_override`、`session_load`、`session_resume`、`unstable_session_resume`（已弃用的别名）、`session_list`、`session_info`、`session_close`、`session_metadata`、`session_set_model`、`client_identity`、`client_heartbeat`、`session_recap`、`session_generation`、`session_btw`、`session_context_usage`、`session_tasks`、`session_monitor_tool_correlation`、`session_stats`、`session_lsp`、`session_resources`、`session_status`、`non_blocking_prompt`。
+- Capability tags：`session_create`、`session_startup_config`、`session_id_override`、`session_scope_override`、`session_load`、`session_resume`、`unstable_session_resume`（已弃用的别名）、`session_list`、`session_info`、`session_close`、`session_metadata`、`session_set_model`、`client_identity`、`client_heartbeat`、`session_recap`、`session_generation`、`session_btw`、`session_btw_stream`、`session_context_usage`、`session_tasks`、`session_monitor_tool_correlation`、`session_stats`、`session_lsp`、`session_resources`、`session_status`、`non_blocking_prompt`。
 
 ### 无状态 generation（`session_generation` 能力标签）
 

@@ -113,7 +113,7 @@ export OPENAI_MODEL="qwen3.8-max"
 >
 > QwenCloud 和 Alibaba ModelStudio 是独立的条目，拥有独立的环境变量密钥和端点。选择 QwenCloud 不会重写或删除已保存的 ModelStudio 凭据、端点或模型选择。
 
-## 💳 选项 3：Alibaba Cloud Coding Plan [#-option-3-alibaba-cloud-coding-plan]
+## 💳 选项 3：Alibaba Cloud Coding Plan
 
 如果你希望成本可预测，同时拥有丰富的模型选项和更高的使用配额，请使用此选项。
 
@@ -261,7 +261,7 @@ export OPENAI_MODEL="qwen3.7-plus"
 
 如果你希望连接到 OpenAI、Anthropic、Google、Azure OpenAI、OpenRouter、Requesty、ModelScope 等第三方 provider 或自托管 endpoint，请使用此选项。支持多种协议和 provider。
 
-### 推荐：通过 `settings.json` 进行单文件配置 [#recommended-one-file-setup-via-settingsjson]
+### 推荐：通过 `settings.json` 进行单文件配置
 
 开始使用 API Key 身份验证的最简单方法是将所有配置放在单个 `~/.qwen/settings.json` 文件中。以下是一个完整且可直接使用的示例：
 
@@ -378,7 +378,7 @@ export OPENAI_MODEL="qwen3.7-plus"
 
 有关完整的 `modelProviders` schema 以及 `generationConfig`、`customHeaders` 和 `extra_body` 等高级选项，请参阅 [Model Providers Reference](./model-providers.md)。
 
-#### 步骤 2：设置环境变量 [#step-2-set-environment-variables]
+#### 步骤 2：设置环境变量
 
 Qwen Code 从环境变量（由模型配置中的 `envKey` 指定）读取 API key。有多种方式提供这些变量，以下按**优先级从高到低**列出：
 
@@ -466,7 +466,7 @@ qwen --model "qwen3-coder-plus"
 qwen --model "qwen3.5-plus"
 ```
 
-## 内置提供商更新 [#built-in-provider-updates]
+## 内置提供商更新
 
 安装了内置模型列表的提供商，当发布较新的预设时，可能会提供 **内置提供商更新**。
 
@@ -495,7 +495,7 @@ QwenCloud（Token Plan 和标准 API Key）以及 Alibaba ModelStudio（Coding P
 
 像 `qwen auth status` 这样的旧版调用现在会打印移除通知及这些迁移路径，其中包括包含两个区域 base URL 的 Token Plan 条目。
 
-## 安全注意事项 [#security-notes]
+## 安全注意事项
 
 - 不要将 API key 提交到版本控制中。
 - 优先使用 `.qwen/.env` 存储项目本地密钥（并将其排除在 git 之外）。

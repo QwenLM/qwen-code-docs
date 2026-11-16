@@ -5,7 +5,7 @@ Qwen Code は2つの方法でウェブ検索を提供します。
 1. **組み込み `web_search` ツール** — DashScope Responses API のサーバー側検索、または Qwen サブスクリプション セッションの場合は Qwen MCP 検索サービスによってバックエンドされます。Plus/Pro サブスクリプションへのサインイン後に有効になり、対応する ModelStudio および OpenAI 互換の DashScope 構成では起動時にデフォルトでオンになります。追加のプロバイダーや MCP の設定は不要です。
 2. **MCP (Model Context Protocol) 統合** — 外部の検索サービス（Tavily、GLM など）を接続します。プロバイダーがビルトインツールをサポートできない場合に使用してください。
 
-## ビルトインの `web_search` [#built-in-web_search]
+## ビルトインの `web_search`
 
 DashScope では、組み込みツールが自己完結型の検索リクエストを小さな補助モデルに送信し、サーバー側の `web_search` (および `web_extractor`) ツールを使用します。ナレーション付きの調査結果とソース URL を返します。[Qwen アカウント（サブスクリプション付き）](../../users/configuration/auth.md) を使用すると、Qwen MCP 検索サービスと現在のログイン資格情報を利用します。個別の検索 API キー、補助モデル、または `mcpServers` の設定は必要ありません。`webExtractor` は DashScope 検索にのみ適用されます。
 
@@ -18,11 +18,11 @@ DashScope では、組み込みツールが自己完結型の検索リクエス�
 | [Qwen アカウント（サブスクリプション付き）](https://chat.qwen.ai/?memberPlan=qwen_code&entry=qwen_code&paywallScene=cli) — **Plus または Pro**                             | オン                                              |
 | Alibaba ModelStudio → **標準 API キー**                                                                                 | オン                                              |
 | Alibaba ModelStudio → **Token Plan**                                                                                       | オン                                              |
-| Alibaba ModelStudio → **Coding Plan**                                                                                      | off — この API に対してエンドポイントが検証されていません |
+| Alibaba ModelStudio → **Coding Plan**                                                                                      | オフ — この API に対してエンドポイントが検証されていません |
 | QwenCloud → **標準 API キー**                                                                                           | オン                                              |
 | QwenCloud → **Token Plan**                                                                                                 | オン                                              |
-| 認識された DashScope Responses ホスト上の OpenAI 互換 `modelProviders` または Custom Provider エントリ（直接キー付き） | on                                              |
-| サードパーティプロバイダー（OpenRouter、DeepSeek、ModelScope など）、他のホスト上のカスタムエンドポイント、ローカルモデル                 | off                                             |
+| 認識された DashScope Responses ホスト上の OpenAI 互換 `modelProviders` または Custom Provider エントリ（直接キー付き） | オン                                              |
+| サードパーティプロバイダー（OpenRouter、DeepSeek、ModelScope など）、他のホスト上のカスタムエンドポイント、ローカルモデル                 | オフ                                             |
 
 DashScope 検索はメイン モデルと同じキーに対して課金されます。サブスクリプション検索は Qwen のログイン資格情報を再利用します。権限処理はアクティブな承認モードとルールに従います。`default` 承認モードでは、最初の検索で確認を求められます。プロバイダーがツールをサポートできない場合、起動時に表示されません — 起動時の警告はありません。
 
@@ -115,7 +115,7 @@ export DASHSCOPE_API_KEY=sk-...        # or set WEB_SEARCH_API_KEY instead
 
 ### 移行例
 
-**Before（ビルトインツール経由の Tavily）:**
+**変更前（ビルトインツール経由の Tavily）:**
 
 ```json
 {
@@ -126,7 +126,7 @@ export DASHSCOPE_API_KEY=sk-...        # or set WEB_SEARCH_API_KEY instead
 }
 ```
 
-**After（MCP 経由の Tavily）:**
+**変更後（MCP 経由の Tavily）:**
 
 ```json
 {
@@ -140,7 +140,7 @@ export DASHSCOPE_API_KEY=sk-...        # or set WEB_SEARCH_API_KEY instead
 
 ---
 
-**Before（ビルトインツール経由の DashScope）:**
+**変更前（ビルトインツール経由の DashScope）:**
 
 ```json
 {
@@ -151,7 +151,7 @@ export DASHSCOPE_API_KEY=sk-...        # or set WEB_SEARCH_API_KEY instead
 }
 ```
 
-**After（MCP 経由の Alibaba Cloud Bailian WebSearch）:**
+**変更後（MCP 経由の Alibaba Cloud Bailian WebSearch）:**
 
 ```json
 {
@@ -267,7 +267,7 @@ qwen mcp add tavily \
 
 ---
 
-### GLM WebSearch Prime（ZhipuAI） [#glm-websearch-prime-zhipuai]
+### GLM WebSearch Prime（ZhipuAI）
 
 ZhipuAI（智谱AI）が提供する公式ウェブ検索リモート MCP サービスで、GLM Coding Plan ユーザー向けに設計されています。ニュース、株価、天気などを含むリアルタイムウェブ検索を提供します。
 
@@ -463,5 +463,60 @@ qwen mcp add looot \
 ```
 
 `${LOOOT_API_KEY}`を実際のAPIキーに置き換えるか、環境変数として設定してください。
+
+---
+
+### You.com
+
+You.comのホスト型MCPサーバー。無料プロファイル（`?profile=free`）はAPIキーやアカウントなしで動作し、Web検索とエージェント/MCPディスカバリーを提供します。検索クエリはYou.comに送信されます。APIキーを使用すると、読み取りを依頼したURLもYou.comに送信されます。
+
+- **ドキュメント:** https://you.com/docs/agents/mcp-server
+- **コスト:** 無料プロファイル: IPごとに1日100検索、APIキー不要。APIキーを使用すると、アカウントごとのより高い制限と`you-contents`ツールが追加されます
+- **APIキーの取得:** 無料プロファイルには不要。キー付きサーバーの場合: https://you.com/platform
+- **最適な用途:** ビルトインツールをサポートできないプロバイダー（OpenRouter、DeepSeek、ローカルモデル）で、設定なしにMCP Web検索を試す場合
+
+#### 利用可能なツール
+
+- `you-search`: URLとスニペットを含むランキング結果を返すWeb検索
+- `you-discover`: AIエージェント、MCPサーバー、スキルを検索（検索のみ、何もインストールしません）
+
+APIキーを使用すると、サーバー（`https://api.you.com/mcp`、プロファイルなし）はページコンテンツを読み取るための`you-contents`と、アカウント残高を確認するための`you-balance`も提供します。
+
+#### セットアップ
+
+**方法 1: CLI コマンド（リモート MCP、キーなし）**
+
+```bash
+qwen mcp add you -t http "https://api.you.com/mcp?profile=free"
+```
+
+**方法 2: `settings.json`（リモート MCP、キーなし）**
+
+```json
+{
+  "mcpServers": {
+    "you": {
+      "httpUrl": "https://api.you.com/mcp?profile=free"
+    }
+  }
+}
+```
+
+**方法 3: `settings.json`（リモート MCP、キーあり）**
+
+```json
+{
+  "mcpServers": {
+    "you": {
+      "httpUrl": "https://api.you.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${YDC_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+`${YDC_API_KEY}`を実際のYou.com APIキーに置き換えるか、環境変数として設定してください。
 
 ---

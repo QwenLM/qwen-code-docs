@@ -106,6 +106,8 @@ Die Einstellung `tools.shell.enableInteractiveShell` steuert, ob Shell-Befehle �
 
 Wenn die Einstellung weggelassen wird, verwenden explizite One-Shot-Prompts `child_process`; interaktive TUI-, ACP-, stream-json-Input-, stdin-only- und file-input-Sessions verwenden PTY. Unter Windows-Builds **<= 19041** (vor Windows 10 Version 2004) fällt der PTY-Modus auf `child_process` zurück, da ältere ConPTY-Implementierungen bekannte Zuverlässigkeitsprobleme aufweisen (fehlende Ausgabe, Hänger). Dies entspricht dem gleichen Cutoff, der von VS Code verwendet wird ([microsoft/vscode#123725](https://github.com/microsoft/vscode/issues/123725)). Wenn `node-pty` zur Laufzeit nicht verfügbar ist, fällt das Tool ebenfalls auf `child_process` zurück.
 
+Non-PTY-Befehle sammeln beide Output-Streams über das `close`-Event des Kindprozesses, sodass Daten, die kurz nach dem Prozessende geliefert werden, erhalten bleiben. Ein gepufferter Vordergrundbefehl wartet nach dem Exit höchstens 200 ms, wenn ein Nachkomme eine Pipe offen hält; Streaming- und Managed-Raw-Capture-Caller behalten ihre 1000-ms-Drain-Grenze. Normale Befehle kehren zurück, sobald ihre Pipes geschlossen werden. Das `ShellExecutionResult.stdoutHeldAfterExit` des Execution-Service identifiziert eine Stdout-Pipe, die bei dieser Grenze noch offen ist; dieses interne Flag wird im `run_shell_command`-Tool-Ergebnis nicht offengelegt; `&` auf Shell-Ebene bleibt unverfolgt, verwende daher `is_background: true` für verwaltete Hintergrundarbeit.
+
 Um den Standardwert explizit zu überschreiben, setze den Wert in `settings.json`:
 
 **Beispiel `settings.json`:**

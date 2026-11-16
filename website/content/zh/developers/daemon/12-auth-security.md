@@ -123,7 +123,7 @@ flowchart LR
 - 匹配的 `Origin` 值会收到 `Access-Control-Allow-Origin`、`Access-Control-Allow-Headers` 和 `Access-Control-Allow-Methods`；`OPTIONS` 预检返回 `204`。
 - 不匹配的 `Origin` 值会收到与拒绝模式相同的确定性 `403 { error: 'Request denied by CORS policy' }`。
 - `--allow-origin '*'` 需要 bearer 令牌；在回环绑定上启动时在没有配置的情况下拒绝，而在非回环绑定上生成的临时令牌满足守卫（拒绝仅限回环）。
-- 没有令牌时，HTTP(S) `--allow-origin` 值限制为回环绑定上的回环主机；在非回环绑定上生成的令牌满足相同的守卫。非回环浏览器来源在每个 API 路由上使用 bearer 进行认证，因为它否则可以行使完整的操作员 API，包括以守护进程用户身份执行代码；pre-auth 例外是 Web Shell 文档/资源路由和 MCP App 沙箱（`/`、`/assets*`、`/mcp-app-sandbox`、精确的 `/session/:id` 导航），以及 channel webhook 入口，它在 `bearerAuth` 之前分支并使用自己的 `x-qwen-webhook-secret` 而不是 bearer 进行认证，以及 — 仅在回环绑定上 — `/health`（在其他地方由 bearer 门控）。
+- 没有令牌时，HTTP(S) `--allow-origin` 值限制为回环绑定上的回环主机；在非回环绑定上生成的令牌满足相同的守卫。非回环浏览器来源在每个 API 路由上使用 bearer 进行认证，因为它否则可以行使完整的操作员 API，包括以守护进程用户身份执行代码；pre-auth 例外是 Web Shell 文档/资源路由和 MCP App 沙箱（`/`、`/assets*`、`/manifest.webmanifest`、`/sw.js`、`/mcp-app-sandbox`、精确的 `/session/:id` 导航），以及 channel webhook 入口，它在 `bearerAuth` 之前分支并使用自己的 `x-qwen-webhook-secret` 而不是 bearer 进行认证，以及 — 仅在回环绑定上 — `/health`（在其他地方由 bearer 门控）。
 - 显式浏览器扩展来源保留其无令牌的本地自动化路径。启动日志记录任何无令牌允许的浏览器来源获得完整操作员权限。
 - `parseAllowOriginPatterns()` 在启动时验证模式语法。
 - 只有在配置此模式时，才会公布 `allow_origin` 能力标签。
