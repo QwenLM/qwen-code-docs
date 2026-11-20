@@ -1,0 +1,162 @@
+---
+title: "Qwen Code 周报：新旗舰 Qwen4-Max 可用，多会话并行互不干扰，任务结果直发飞书/企微/钉钉群"
+date: "2026-11-19"
+description: "本周发布 v0.27.3~v0.28.0。通义千问新一代旗舰 Qwen4-Max 可用，最新 Qwen Code 已接入；Web Shell 新会话默认在独立工作树中运行，并行任务互不干扰；飞书、企业微信、钉钉支持群机器人 webhook 投递。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i1/O1CN01P16yy0rBwvB2jBZY_!!6000000001806-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 周报：新旗舰 Qwen4-Max 可用，多会话并行互不干扰，任务结果直发飞书/企微/钉钉群"
+  date="2026-11-19"
+  author="Qwen Team"
+/>
+
+Qwen Code 本周发布 v0.27.3～v0.28.0 三个正式版本。
+
+**新旗舰 Qwen4-Max 可用。** 通义千问新一代旗舰模型，最新 Qwen Code 已接入。
+
+**新会话默认在独立副本里干活。** 同一个项目开几个会话并行，各改各的工作树，你手上的分支和文件不受影响。
+
+**任务结果直发飞书、企业微信、钉钉群。** 群里加一个自定义机器人，把 webhook 地址填进 Web Shell，通知和定时任务结果就发到群里。
+
+## ✨ 新增特性
+
+### 新旗舰 Qwen4-Max 可用
+
+Qwen4-Max 是通义千问新一代旗舰模型：11 月 16 日正式版上架，文本、图像、视频都能处理，面向复杂推理、编程和智能体任务。
+
+Qwen Code 在本周完成了接入。无论你是通过百炼、千问 AI 平台或Qwen 订阅等渠道接入，都可以使用 Qwen4-Max；思考深度分 low、high、xhigh 三档，默认 high，也可以关闭思考。
+
+图片和视频可以直接发进对话让它理解。百炼和千问 AI 平台渠道下还有两个省 token 的设置：缓存保留时长可以从默认 5 分钟延长到 1 小时，图像精细度可以调低。
+
+你能用它做什么：
+
+- 附上设计稿截图，让它帮你搭页面
+- 发一段录屏，让它梳理 Bug 的复现步骤
+- 排查难定位的测试失败时，调高思考强度
+
+详见 PR [#17513](https://github.com/QwenLM/qwen-code/pull/17513)
+
+[📸 演示截图待补：模型列表里的 Qwen4-Max 与思考深度档位]
+
+### 新会话默认在独立工作树里运行，并行任务互不干扰
+
+同一个项目里开多个 Web Shell 会话，以前共用一个目录，几个 AI 的改动互相覆盖，还会直接落进你正在编辑的文件。现在，受信任的 Git 工作区里新建会话默认在独立的工作树里干活——工作树是同一个仓库的另一份工作副本，提交历史相通，文件各改各的。
+
+活干完了，成果有两种收法：在分支菜单里点「在此创建分支」，直接变成一个正式分支；或者点「移交到本地」，把改动带回你原来的目录。
+
+不想要默认的工作树模式，把 `worktree.defaultForNewSessions` 设为 false，便直接在当前分支上干活。
+
+你能用它做什么：
+
+- 几个需求同时开几条会话一起改，互不覆盖
+- 你在本地接着写代码，AI 在副本里改它的，两头不冲突
+- 两个会话分别试两种重构方案，进行对比
+
+详见 PR [#17228](https://github.com/QwenLM/qwen-code/pull/17228)
+
+[📸 演示截图待补：Web Shell 新会话的工作树模式与分支菜单]
+
+### 任务结果直发飞书、企业微信、钉钉群
+
+上周微信、QQ、邮箱能在 Web Shell 里配置了，这周往下补群投递：飞书、企业微信、钉钉各多了一种「Webhook（仅发送）」连接方式。在群里添加自定义机器人，把它的 webhook 地址填进 Web Shell 的频道管理，通知、任务执行结果、定时任务结果就以 Markdown 消息发进群里。
+
+这种方式只管发送，不接收群消息；要在群里和 AI 对话，用对应平台原有的机器人连接方式。
+
+你能用它做什么：
+
+- 设一个「每早 9 点汇总昨天合并的 PR」的定时任务，结果自动发进飞书项目群
+- 让 AI 每晚跑一遍回归测试，跑完把结果发到企业微信群，上班直接看
+- 给长任务设个完成通知，跑完自动发进钉钉群，同事同步看到进度
+
+详见 PR [#16804](https://github.com/QwenLM/qwen-code/pull/16804)、[#17013](https://github.com/QwenLM/qwen-code/pull/17013)、[#17224](https://github.com/QwenLM/qwen-code/pull/17224)
+
+[📸 演示截图待补：Web Shell 飞书 Webhook 配置页与群内消息效果]
+
+### Web Shell：交付前看清改了多少，跑任务时盯住后台进度
+
+**会话改了多少有变更总览了。** 会话干完活要交付，想知道一共改了多少文件、增删多少行，右侧面板多了「变更总览」：未提交的、每个绑定 PR 的、其余提交的，分开列出文件清单和行数。详见 PR [#17378](https://github.com/QwenLM/qwen-code/pull/17378)
+
+**后台任务能点徽章查看。** 输入框上方多了几个小徽章，运行中的工作流、shell、监控、后台代理各占一个，点一下跳到对应的执行视图。详见 PR [#16813](https://github.com/QwenLM/qwen-code/pull/16813)
+
+**侧栏会话能按工作区和日期筛了。** 工作区多了，侧栏能按工作区过滤；会话能按活动日期分组，先缩小范围再找会话。详见 PR [#17244](https://github.com/QwenLM/qwen-code/pull/17244)、[#17447](https://github.com/QwenLM/qwen-code/pull/17447)
+
+**其他改进。** 每条回复能看钩子触发了几次、几次被拦、花了多久（[#17015](https://github.com/QwenLM/qwen-code/pull/17015)、[#17327](https://github.com/QwenLM/qwen-code/pull/17327)）；俄语界面翻译补齐（[#17414](https://github.com/QwenLM/qwen-code/pull/17414)）；会话搜索结果更清楚，能用键盘上下选择（[#16779](https://github.com/QwenLM/qwen-code/pull/16779)）。
+
+## 📊 更多新功能
+
+**会话能把活派给另一个工作区。** Web Shell 管着多个工作区时，一个会话能把活派给另一个工作区，用那边的指令和设置去干，干完结果送回来，还能接着追问。第一次派活要你确认一下。详见 PR [#17454](https://github.com/QwenLM/qwen-code/pull/17454)、[#17484](https://github.com/QwenLM/qwen-code/pull/17484)
+
+**会话绑定 PR 能手动补，离线评论合并成摘要。** 上周绑定 PR 的会话能自动收到新评论，这周自动绑定漏掉时，输入 `/pr 编号或链接` 就能补绑，Web Shell 的会话总览和侧栏菜单里也有「绑定 PR」按钮；服务停过一段时间再启动，绑定 PR 上积压的评论合并成一条摘要送进会话。详见 PR [#16877](https://github.com/QwenLM/qwen-code/pull/16877)、[#17199](https://github.com/QwenLM/qwen-code/pull/17199)
+
+**/memory 面板能改设置了。** 终端 `/memory` 面板里能直接开关自动保存和定期清理，用户级和项目级记忆文件也能打开编辑。详见 PR [#17213](https://github.com/QwenLM/qwen-code/pull/17213)
+
+**Goals 页能看所有工作区的目标了。** 登记了多个工作区时，所有受信任工作区的目标汇总到一页，按时间排序，每张卡片标着属于哪个工作区；新建目标能选放进哪个工作区。详见 PR [#17230](https://github.com/QwenLM/qwen-code/pull/17230)
+
+**Mods 插件能改写思考内容了。** 上周插件能改写终端里显示的回复文字，这周连展开的思考块也能改写——比如让插件把思考翻译成中文，两种终端界面都支持。详见 PR [#16873](https://github.com/QwenLM/qwen-code/pull/16873)、[#17443](https://github.com/QwenLM/qwen-code/pull/17443)
+
+**Web Shell 在普通 HTTP 下正常可用。** 从另一台电脑用 http://电脑IP:端口 访问 Web Shell 时，终端标签、网页预览、本地命令这些功能都能用了。详见 PR [#17196](https://github.com/QwenLM/qwen-code/pull/17196)
+
+**GitLab 频道能在 Web Shell 里配置。** 仓库白名单支持 group/subgroup/project 这类多级项目路径。详见 PR [#16845](https://github.com/QwenLM/qwen-code/pull/16845)
+
+## 👏 体验优化
+
+**上下文压缩后，最近一次完整操作原样保留。** 对话太长触发压缩时，最近一次操作和结果原样保留，只把更早的历史做摘要。详见 PR [#17141](https://github.com/QwenLM/qwen-code/pull/17141)
+
+**切分支被未提交改动挡住，页面里就能处理。** 直接选暂存或丢弃改动再切换，不用回终端手动收拾。详见 PR [#17364](https://github.com/QwenLM/qwen-code/pull/17364)
+
+**Goals 卡片状态一眼可辨。** 运行中是蓝色，等你处理是琥珀色；设了上限的目标显示回合、token、时长的进度条；会话里的目标长文本收成一行。详见 PR [#17349](https://github.com/QwenLM/qwen-code/pull/17349)、[#17133](https://github.com/QwenLM/qwen-code/pull/17133)
+
+**用量看板打开更快。** Web Shell 状态页里的用量看板。详见 PR [#17239](https://github.com/QwenLM/qwen-code/pull/17239)
+
+**选择弹窗里当前档位有高亮。** 思考深度弹窗里一眼能看出当前选中的是哪档，模型列表和执行模式选择也一样。详见 PR [#16622](https://github.com/QwenLM/qwen-code/pull/16622)
+
+**会话改名立即生效。** 确认后新标题马上显示。详见 PR [#17006](https://github.com/QwenLM/qwen-code/pull/17006)
+
+## 🔧 重要修复
+
+| 修复 | 对你的影响 | PR |
+|------|-----------|-----|
+| **Auto 模式把「看起来相关」当成「你同意了」，危险操作自动放行** | 删除成果、丢弃改动、改写共享历史需要你明确要求才放行；auto-edit 下 `permissions.ask` 的询问规则对子代理也生效；`git commit --amend` 改为弹窗请你批准；Full Access 在批准面板里和选中后都显示红色 | [#16858](https://github.com/QwenLM/qwen-code/pull/16858)、[#16932](https://github.com/QwenLM/qwen-code/pull/16932)、[#16075](https://github.com/QwenLM/qwen-code/pull/16075)、[#16874](https://github.com/QwenLM/qwen-code/pull/16874)、[#17100](https://github.com/QwenLM/qwen-code/pull/17100) |
+| **Edit 对非 ASCII 文本与转写法的恢复匹配损坏语法** | 能恢复匹配，且不破坏转义序列 | [#17096](https://github.com/QwenLM/qwen-code/pull/17096)、[#17152](https://github.com/QwenLM/qwen-code/pull/17152) |
+| **输入框被另一个会话的未确认消息锁住** | 输入框保持可编辑，那条消息可以重试或丢弃 | [#17140](https://github.com/QwenLM/qwen-code/pull/17140) |
+| **命令进程结束后缓冲输出丢失** | 输出保留下来 | [#17112](https://github.com/QwenLM/qwen-code/pull/17112) |
+| **执行确认弹窗里命令显示不全** | 完整命令保留 | [#17361](https://github.com/QwenLM/qwen-code/pull/17361) |
+| **AUTO 模式把链接当本地文件查找** | HTTP(S) 链接不再触发文件查找，Windows 上的网络查找延迟消除 | [#17127](https://github.com/QwenLM/qwen-code/pull/17127) |
+| **微信扫码登录在二维码生成慢时中断** | 登录改用更长的超时，二维码生成花 30 秒也能完成登录 | [#16838](https://github.com/QwenLM/qwen-code/pull/16838) |
+| **Grep 不认 ripgrep 的正则写法** | 原生 ripgrep 语法可以直接用 | [#14315](https://github.com/QwenLM/qwen-code/pull/14315) |
+| **Docker/Podman 里 CLI 启动崩溃** | 自动创建沙箱主目录，缺少 $HOME 也能启动 | [#16878](https://github.com/QwenLM/qwen-code/pull/16878) |
+| **/quit 退出后进程还在** | 退出命令干净完成 | [#17148](https://github.com/QwenLM/qwen-code/pull/17148) |
+| **语音输入没等听写完就发送** | 先完成听写再发送 | [#17331](https://github.com/QwenLM/qwen-code/pull/17331) |
+| **GitHub 频道被限流后积压的回复只在启动时重试** | 运行期间也在后台重试 | [#16839](https://github.com/QwenLM/qwen-code/pull/16839) |
+| **子代理上下文用量按主会话窗口计算** | 按子代理自己的模型窗口计算，占比准确 | [#13614](https://github.com/QwenLM/qwen-code/pull/13614) |
+| **/effort 列出了当前模型不支持的档位** | 只显示当前模型支持的档位 | [#17425](https://github.com/QwenLM/qwen-code/pull/17425) |
+
+## 👥 贡献者
+
+| 贡献者 | 贡献内容 | 参考 PR 链接 |
+|--------|---------|-------------|
+| 🆕 **[@Afloat16](https://github.com/Afloat16)** | 🎉 首次贡献：Java SDK 错误关联与转录性能、SDK 超时与重连修复、CLI 任务选择、待办快照、认证对话框、shell 输出保留等多项加固 | [#17103](https://github.com/QwenLM/qwen-code/pull/17103), [#17106](https://github.com/QwenLM/qwen-code/pull/17106), [#17107](https://github.com/QwenLM/qwen-code/pull/17107), [#17109](https://github.com/QwenLM/qwen-code/pull/17109), [#17110](https://github.com/QwenLM/qwen-code/pull/17110), [#17111](https://github.com/QwenLM/qwen-code/pull/17111), [#17112](https://github.com/QwenLM/qwen-code/pull/17112), [#17113](https://github.com/QwenLM/qwen-code/pull/17113), [#17115](https://github.com/QwenLM/qwen-code/pull/17115), [#17118](https://github.com/QwenLM/qwen-code/pull/17118), [#17121](https://github.com/QwenLM/qwen-code/pull/17121), [#17122](https://github.com/QwenLM/qwen-code/pull/17122), [#17124](https://github.com/QwenLM/qwen-code/pull/17124), [#17125](https://github.com/QwenLM/qwen-code/pull/17125), [#17126](https://github.com/QwenLM/qwen-code/pull/17126) |
+| **[@2SinceJuly](https://github.com/2SinceJuly)** | agent loop 开关支持强制关闭、托管运行时延迟获取测试 | [#17048](https://github.com/QwenLM/qwen-code/pull/17048), [#16492](https://github.com/QwenLM/qwen-code/pull/16492) |
+| **[@521Peter](https://github.com/521Peter)** | Skill 端点按名称更新工作区设置的文档说明 | [#16833](https://github.com/QwenLM/qwen-code/pull/16833) |
+| **[@dakjdakd](https://github.com/dakjdakd)** | Grep 支持 ripgrep 原生正则语法 | [#14315](https://github.com/QwenLM/qwen-code/pull/14315) |
+| **[@MohammedAlkindi](https://github.com/MohammedAlkindi)** | 托管钩子描述与状态消息的验收测试 | [#17393](https://github.com/QwenLM/qwen-code/pull/17393) |
+| **[@now-ing](https://github.com/now-ing)** | 依赖剩余 CVE 审计问题清理 | [#10985](https://github.com/QwenLM/qwen-code/pull/10985) |
+| **[@Shizoqua](https://github.com/Shizoqua)** | 子代理上下文用量按自身模型窗口计算 | [#13614](https://github.com/QwenLM/qwen-code/pull/13614) |
+| **[@tonydzi](https://github.com/tonydzi)** | leader 交付与终态特征测试 | [#14855](https://github.com/QwenLM/qwen-code/pull/14855) |
+| **[@yanyukang2003-ux](https://github.com/yanyukang2003-ux)** | AUTO 模式按用户明确授权判断 | [#16858](https://github.com/QwenLM/qwen-code/pull/16858) |
+| 🆕 **[@0xvincent](https://github.com/0xvincent)** | 🎉 首次贡献：README 新增 Qwen Code 1.0 Preview 入口 | [#16872](https://github.com/QwenLM/qwen-code/pull/16872) |
+| 🆕 **[@EminBudak](https://github.com/EminBudak)** | 🎉 首次贡献：Wiro AI 接入文档 | [#16850](https://github.com/QwenLM/qwen-code/pull/16850) |
+| 🆕 **[@LubabaKhalid](https://github.com/LubabaKhalid)** | 🎉 首次贡献：更新含漏洞的依赖 | [#13169](https://github.com/QwenLM/qwen-code/pull/13169) |
+| 🆕 **[@pranavshankar1221](https://github.com/pranavshankar1221)** | 🎉 首次贡献：选择弹窗当前档位高亮 | [#16622](https://github.com/QwenLM/qwen-code/pull/16622) |
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！
