@@ -2,6 +2,9 @@
 
 Ce guide explique comment configurer Qwen Code avec un robot intelligent WeCom (企业微信智能机器人).
 
+Pour envoyer les résultats de tâches à l'URL de push de messages d'un groupe, utilisez
+[WeCom Webhook Sending](./wecom-webhook), qui ne nécessite pas d'identifiants de robot intelligent.
+
 Pour une application auto-créée utilisant Corp ID, Agent ID, Token et EncodingAESKey,
 utilisez le [canal WeCom Callback](./wecom-callback) séparé.
 

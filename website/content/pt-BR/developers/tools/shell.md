@@ -39,6 +39,8 @@ A ferramenta lida com a execução em segundo plano e em primeiro plano com base
 
 **Use execução em primeiro plano (o padrão) para** comandos que terminam por si só, como builds, instalações, operações git e execuções de testes.
 
+Leitura e pesquisa de arquivos não são candidatas a execução em primeiro plano para esta ferramenta: use as ferramentas dedicadas (`read_file`, `grep_search`, `glob`) em vez de `cat`, `grep` ou `find`, que a própria descrição da ferramenta descarta.
+
 ### Informações de Execução
 
 A ferramenta retorna informações detalhadas sobre a execução, incluindo:
@@ -103,6 +105,8 @@ Você pode configurar o comportamento da ferramenta `run_shell_command` modifica
 A configuração `tools.shell.enableInteractiveShell` controla se os comandos shell são executados via `node-pty` (PTY interativo) ou o backend simples `child_process`. Quando habilitada, sessões interativas como `vim`, `git rebase -i` e programas TUI funcionam corretamente.
 
 Quando a configuração é omitida, prompts one-shot explícitos usam `child_process`; sessões interativas de TUI, ACP, entrada stream-json, apenas stdin e entrada de arquivo usam PTY. Em builds do Windows **<= 19041** (antes da versão 2004 do Windows 10), o modo PTY faz fallback para `child_process` porque implementações mais antigas do ConPTY têm problemas conhecidos de confiabilidade (saída ausente, travamentos). Isso corresponde ao mesmo limite usado pelo VS Code ([microsoft/vscode#123725](https://github.com/microsoft/vscode/issues/123725)). Se o `node-pty` não estiver disponível em tempo de execução, a ferramenta também faz fallback para `child_process`.
+
+Comandos não-PTY coletam ambos os fluxos de saída através do evento `close` do processo filho, então dados entregues logo após a saída do processo são retidos. Um comando em buffer em primeiro plano aguarda no máximo 200 ms após a saída se um descendente mantiver um pipe aberto; chamadores de streaming e captura raw gerenciada retêm seu limite de drenagem de 1000 ms. Comandos normais retornam assim que seus pipes fecham. O `ShellExecutionResult.stdoutHeldAfterExit` do serviço de execução identifica um pipe stdout ainda aberto nesse limite; esta flag interna não é exposta no resultado da ferramenta `run_shell_command`; `&` no nível do shell permanece não rastreado, então use `is_background: true` para trabalho em segundo plano gerenciado.
 
 Para substituir explicitamente o padrão, defina o valor em `settings.json`:
 

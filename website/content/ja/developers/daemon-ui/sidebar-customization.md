@@ -216,6 +216,7 @@ sidebar={{
 type WebShellSidebarSessionActionItem =
   | 'details' // 📝 Details (dropdown sub-menu)
   | 'rename' // ✏️ Rename (dropdown menu)
+  | 'bindPr' // 🔗 Bind a GitHub PR (dropdown menu)
   | 'group' // 📁 Group/Move to folder (dropdown menu)
   | 'export' // 📤 Export chat history (dropdown menu)
   | 'delete' // 🗑 Delete session (dropdown menu)
@@ -239,7 +240,8 @@ interface WebShellSidebarSessionActionsOptions {
 セッション行に表示されるアクションボタンを制御します。
 
 - **`items`**: すべてのアクション（インラインおよびドロップダウン）のマスター制御。`items` に含まれないアイテムは全域で非表示になります。
-- **`inlineItems`**: **インラインボタン**（ホバー時）として表示されるアイテムを制御します。デフォルトは `['pin']` です。インラインハンドラーが動作するアイテムのみ使用可能です: `'pin'`、`'rename'`、`'export'`、`'delete'`。`'details'`、`'group'`、`'archive'`、`'split'` は標準行ではドロップダウン専用です。
+- **`inlineItems`**: **インラインボタン**（ホバー時）として表示されるアイテムを制御します。デフォルトは `['pin']` です。インラインハンドラーが動作するアイテムのみ使用可能です: `'pin'`、`'rename'`、`'export'`、`'delete'`。`'details'`、`'bindPr'`、`'group'`、`'archive'`、`'split'` は標準行ではドロップダウン専用です。
+- **`bindPr` の組み込み条件**: セッションがメタデータの変更をサポートしている場合にのみ表示されます — プライマリまたはロックされたワークスペースの現在のセッション、または `workspace_session_metadata` ケーパビリティを持つ他のセッション（そのセッションがロックまたは制限されたセカンダリワークスペースにある場合は `workspace_qualified_rest_core` も必要） — かつ、行がスタンドアロンセッション（最近の行を含む）ではない場合 — スタンドアロンのメタダルートは表示名のみを受け付けます。これは `rename` アイテムとは独立しています: ホストは `rename` なしで `bindPr` をホワイトリストに登録できます。
 
 **表示優先度**: インラインボタンを表示するには、`items` とアイテムの組み込み条件と `inlineItems` のすべてを満たす必要があります。たとえば、`delete` をインラインで表示するには、`items` に `'delete'` が含まれ、かつ `inlineItems` に `'delete'` が含まれている必要があります。
 

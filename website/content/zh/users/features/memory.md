@@ -257,31 +257,6 @@ Qwen 会定期遍历其保存的记忆，以删除重复项并清理过时的条
 
 ---
 
-## 故障排除
-
-### Qwen 没有遵循我的 QWEN.md
-
-打开 `/memory` 查看加载了哪些文件。如果你的文件未列出，Qwen 无法看到它——请确保它位于项目根目录或 `~/.qwen/` 中。
-
-指令越具体，效果越好：
-
-- ✓ `Use 2-space indentation for TypeScript files`
-- ✗ `Format code nicely`
-
-如果你有多个包含冲突指令的 QWEN.md 文件，Qwen 的行为可能会不一致。请检查它们并删除任何矛盾之处。
-
-### 我想看看 Qwen 保存了什么
-
-运行 `/memory` 并选择**打开自动记忆文件夹**。所有保存的记忆都是可读的 Markdown 文件，你可以浏览、编辑或删除它们。
-
-### Qwen 总是忘记事情
-
-如果自动记忆已开启，但 Qwen 似乎无法在会话之间记住内容，请尝试运行 `/dream` 强制执行一次清理。同时检查 `/memory` 以确认两个开关都已启用。
-
-对于你始终希望 Qwen 记住的内容，请将它们添加到 QWEN.md 中——自动记忆是尽力而为的，而 QWEN.md 是有保证的。
-
----
-
 ## 外部记忆（`context_search`）
 
 除了 `QWEN.md` 和自动记忆之外，Qwen Code 还可以通过 `context_search` MCP 工具查询外部记忆服务和本地会话索引。与 `QWEN.md` 和自动记忆不同，`context_search` 由模型按需调用——不会在每轮自动召回或发送任何内容：
@@ -334,3 +309,28 @@ qwen mcp add deja-context deja mcp --context-search --timeout 8000 --include-too
 3. 重启 Qwen Code 以便在会话启动时加载新的 MCP 服务器，然后运行 `/mcp` 确认 `deja-context` 已连接（参见 [MCP Servers](./mcp.md)）。
 
 稍后要删除服务器，运行 `qwen mcp remove deja-context`（或从 `~/.qwen/settings.json` 的 `mcpServers` 中删除 `deja-context` 条目）并重启 Qwen Code。
+
+---
+
+## 故障排除
+
+### Qwen 没有遵循我的 QWEN.md
+
+打开 `/memory` 查看加载了哪些文件。如果你的文件未列出，Qwen 无法看到它——请确保它位于项目根目录或 `~/.qwen/` 中。
+
+指令越具体，效果越好：
+
+- ✓ `Use 2-space indentation for TypeScript files`
+- ✗ `Format code nicely`
+
+如果你有多个包含冲突指令的 QWEN.md 文件，Qwen 的行为可能会不一致。请检查它们并删除任何矛盾之处。
+
+### 我想看看 Qwen 保存了什么
+
+运行 `/memory` 并选择**打开自动记忆文件夹**。所有保存的记忆都是可读的 Markdown 文件，你可以浏览、编辑或删除它们。
+
+### Qwen 总是忘记事情
+
+如果自动记忆已开启，但 Qwen 似乎无法在会话之间记住内容，请尝试运行 `/dream` 强制执行一次清理。同时检查 `/memory` 以确认两个开关都已启用。
+
+对于你始终希望 Qwen 记住的内容，请将它们添加到 QWEN.md 中——自动记忆是尽力而为的，而 QWEN.md 是有保证的。

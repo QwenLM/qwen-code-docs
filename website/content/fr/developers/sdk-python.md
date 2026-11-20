@@ -26,6 +26,7 @@ pip install --pre qwen-code-sdk
 ```
 
 Si `qwen` n'est pas dans le `PATH`, passez explicitement `path_to_qwen_executable`.
+Sous Windows, le SDK découvre le shim npm `qwen.cmd` uniquement via le `PATH` effectif de l'enfant, en ignorant les shims shell sans extension et les associations `PATHEXT` non exécutables. Une commande dans le répertoire courant n'est prise en compte que si ce répertoire est explicitement inclus dans le `PATH`. Vous pouvez remplacer le chemin de recherche via l'option `env` ; les noms de variables d'environnement Windows sont insensibles à la casse, donc `PATH`, `Path` et `path` sont équivalents. La fermeture d'un shim Windows en cours d'exécution arrête son arbre de processus CLI via l'utilitaire système `taskkill` ; les attentes de sortie de processus et de nettoyage stderr ont des délais limités.
 
 Avant d'écrire du code SDK, assurez-vous que la CLI fonctionne dans le même terminal :
 
@@ -147,7 +148,7 @@ with query_sync(
 | `append_system_prompt`     | `str`                                                       | Ajout d'instructions supplémentaires au prompt système.                                                         |
 | `debug`                    | `bool`                                                      | Redirection de stderr du CLI vers stderr lorsqu'aucun hook `stderr` n'existe.                                   |
 | `max_session_turns`        | `int`                                                       | Nombre maximum de tours avant que le CLI ne termine la session.                                                 |
-| `core_tools`               | `list[str]`                                                 | Restriction de l'ensemble d'outils disponibles.                                                                 |
+| `core_tools`               | `list[str]`                                                 | Liste d'autorisation d'outils core non vide. Les listes omises ou vides ne sont pas spécifiées ; `core_tools=[]` ne désactive pas les outils. |
 | `exclude_tools`            | `list[str]`                                                 | Exclusion des outils correspondants.                                                                            |
 | `allowed_tools`            | `list[str]`                                                 | Autorisation des outils correspondants sans approbation du rappel.                                              |
 | `auth_type`                | `openai`, `anthropic`, `qwen-oauth`, `gemini`, `vertex-ai` | Mode d'authentification transmis au CLI.                                                                        |

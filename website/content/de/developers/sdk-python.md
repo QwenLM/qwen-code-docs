@@ -26,6 +26,9 @@ pip install --pre qwen-code-sdk
 ```
 
 Wenn `qwen` nicht im `PATH` ist, übergebe `path_to_qwen_executable` explizit.
+Auf Windows erkennt das SDK den npm-`qwen.cmd`-Shim nur über das effektive Kind-`PATH` und ignoriert dabei Shell-Shims ohne Erweiterung und nicht startbare `PATHEXT`-Zuordnungen. Ein Befehl im aktuellen Verzeichnis wird nur berücksichtigt, wenn dieses Verzeichnis explizit in `PATH` enthalten ist.
+Du kannst den Suchpfad über die `env`-Option überschreiben; Windows-Umgebungsvariablennamen sind case-insensitive, daher sind `PATH`, `Path` und `path` äquivalent.
+Das Beenden eines laufenden Windows-Shims stoppt seinen CLI-Prozessbaum über das System-`taskkill`-Dienstprogramm; Prozessbeendigung und Stderr-Cleanup-Wartevorgänge haben begrenzte Timeouts.
 
 Bevor du SDK-Code schreibst, stelle sicher, dass die CLI in derselben Shell funktioniert:
 
@@ -147,7 +150,7 @@ with query_sync(
 | `append_system_prompt`     | `str`                                                       | Zusätzliche Anweisungen an den System-Prompt anhängen.                                                           |
 | `debug`                    | `bool`                                                      | Leite CLI stderr an stderr weiter, wenn kein `stderr`-Hook existiert.                                            |
 | `max_session_turns`        | `int`                                                       | Maximale Durchläufe, bevor die CLI die Sitzung beendet.                                                          |
-| `core_tools`               | `list[str]`                                                 | Verfügbaren Tool-Satz einschränken.                                                                               |
+| `core_tools`               | `list[str]`                                                 | Nicht-leere Core-Tool-Allowlist. Weggelassene oder leere Listen sind unspezifiziert; `core_tools=[]` deaktiviert keine Tools. |
 | `exclude_tools`            | `list[str]`                                                 | Übereinstimmende Tools ausschließen.                                                                             |
 | `allowed_tools`            | `list[str]`                                                 | Übereinstimmende Tools ohne Callback-Genehmigung zulassen.                                                       |
 | `auth_type`                | `openai`, `anthropic`, `qwen-oauth`, `gemini`, `vertex-ai` | Authentifizierungsmodus, der an die CLI übergeben wird.                                                          |

@@ -38,6 +38,8 @@ Utilisez la commande slash `/arena` pour lancer une session. Spécifiez les mod�
 
 Si vous omettez `--models`, une boîte de dialogue interactive de sélection de modèles apparaît, vous permettant de choisir parmi vos fournisseurs configurés.
 
+Les modèles indisponibles restent décochés et ne peuvent pas être sélectionnés. Choisissez au moins deux modèles disponibles avant de confirmer la boîte de dialogue.
+
 ### Ce qui se passe au démarrage
 
 1. **Configuration des worktrees** : Qwen Code crée des worktrees Git isolés pour chaque agent dans `~/.qwen/arena/<session-id>/worktrees/<model-name>/`. Chaque worktree reflète exactement l'état de votre répertoire de travail actuel, y compris les modifications indexées, non indexées et les fichiers non suivis.
@@ -201,7 +203,7 @@ Agent Arena et le runtime expérimental Agent Team répondent à des workflows m
 | **Objectif**      | Compétitif : trouver la meilleure solution à la _même_ tâche  | Collaboratif : aborder des aspects _différents_ ensemble | Parallélisation par lots : créer dynamiquement des workers pour des tâches volumineuses |
 | **Agents**        | Modèles préconfigurés en compétition indépendante      | Coéquipiers collaborant avec des rôles attribués    | Workers créés à la volée, détruits à la fin              |
 | **Communication** | Aucune communication entre agents                     | Messagerie directe de pair à pair                   | Unidirectionnelle : les résultats sont agrégés par le parent |
-| **Isolation**     | Totale : worktrees Git séparés                        | Sessions indépendantes avec liste de tâches partagée | Contexte éphémère léger par worker                       |
+| **Isolation**     | Totale : worktrees Git séparés                        | Coéquipiers in-process avec une liste de tâches partagée | Contexte éphémère léger par worker                       |
 | **Résultat**      | Une solution sélectionée appliquée à l'espace de travail | Résultats synthétisés de multiples perspectives     | Résultats agrégés du traitement parallèle                |
 | **Idéal pour**    | Benchmarking, choix entre approches de modèles        | Recherche, collaboration complexe, travail multi-couche | Opérations par lots, traitement de données, tâches map-reduce |
 

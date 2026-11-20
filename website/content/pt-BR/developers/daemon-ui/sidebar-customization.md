@@ -7,14 +7,14 @@ ponto de injeção externo.
 
 ## Ativando a sidebar
 
-A sidebar está **desativada por padrão**. Passe a prop `sidebar` para ativar:
+A sidebar tem como padrão **apenas Home**: uma coluna de sessão de 300px com um controle de recolhimento na parte inferior. Omitir `sidebar`, passar `true` ou passar `{}` usa este padrão. Passe `sidebar={false}` ou `{ enabled: false }` para ocultá-la.
 
 ```tsx
 import { WebShellWithProviders } from '@qwen-code/web-shell';
 
 <WebShellWithProviders
   baseUrl="http://localhost:4170"
-  sidebar={true} // simple enable
+  sidebar={true} // padrão apenas Home
   // or with fine-grained options:
   // sidebar={{ enabled: true, defaultCollapsed: false, ... }}
 />;
@@ -22,26 +22,9 @@ import { WebShellWithProviders } from '@qwen-code/web-shell';
 
 ## Visão geral do layout
 
-```
-┌─────────────────────────────────────┐
-│ ① Branding (topRow)                 │  ✅ customizable
-├─────────────────────────────────────┤
-│ ② Primary navigation                │  ✅ customizable
-│    [＋ New task]  [🧩 Plugins]      │
-│    [📅 Scheduled] [🎯 Goals]        │
-│    [custom render...]               │
-├─────────────────────────────────────┤
-│ ③ Project header                    │  ✅ show/hide
-│    📁 Projects ▼ [🔍] [＋]          │
-│    Session list entries...          │
-│    📦 Archived sessions             │
-├─────────────────────────────────────┤
-│ ④ Footer action bar                 │  ✅ customizable
-│    [⚙ Settings] v0.19 [☀] [▦] [◧] │
-├─────────────────────────────────────┤
-│ ⑤ Resize handle                     │  ❌ not customizable
-└─────────────────────────────────────┘
-```
+Hosts apenas-Home mostram branding, Nova sessão, workspaces, sessões arquivadas e o controle de recolhimento em uma coluna. Configurar outra entrada primária disponível ou ação de rodapé adiciona um trilho de ícones de 56px ao lado da coluna secundária padrão de 300px. As entradas primárias ficam no trilho; ações de rodapé e versão ficam em Mais. Renderizadores personalizados permanecem na coluna larga Home. Não há opção pública de layout.
+
+**Mudança incompatível:** anteriormente, um `sidebar` omitido ocultava a sidebar, e listas omitidas de itens de navegação/rodapé expunham todos os integrados quando a sidebar estava habilitada. Hosts agora devem passar `sidebar={false}` para manter o padrão oculto anterior, ou listar explicitamente as entradas que precisam. O Web Shell autônomo configura explicitamente seu menu completo. `branding.hideWhenCompact` agora tem padrão `false`; defina como `true` para preservar uma marca oculta no drawer compacto.
 
 ## Áreas personalizáveis
 
@@ -50,7 +33,7 @@ import { WebShellWithProviders } from '@qwen-code/web-shell';
 ```ts
 interface WebShellSidebarBranding {
   render?: () => ReactNode; // replace the entire branding row
-  hideWhenCompact?: boolean; // hide when sidebar is collapsed (default: true)
+  hideWhenCompact?: boolean; // hide branding in the compact drawer (default: false)
 }
 ```
 
@@ -59,7 +42,7 @@ interface WebShellSidebarBranding {
 | `undefined` (padrão)               | Marca resolvida: prop `brand` → daemon `GET /brand` → logo integrado do Qwen + texto "Qwen Code" |
 | `false`                            | Linha de branding oculta completamente                       |
 | `{ render: () => <MyHeader /> }`   | Substituição completa com conteúdo personalizado             |
-| `{ hideWhenCompact: false }`       | Manter branding visível no modo icon-rail recolhido          |
+| `{ hideWhenCompact: false }`     | Manter branding visível no drawer compacto (o padrão)                                  |
 
 A linha padrão é orientada por dados, não fixa: um daemon que serve uma
 configuração `ui.brand` renomeia o texto e troca a marca, e um host de
@@ -85,29 +68,33 @@ sidebar={{
 
 ```ts
 type WebShellSidebarPrimaryNavItem =
-  | 'newTask' // ✏️ New Task button
+  | 'newTask' // ✏️ New session button
   | 'plugins' // 🧩 Plugins button
+  | 'channels' // Channel sessions and settings
+  | 'live' // Live sessions and settings; requires showLive
+  | 'workflows' // Requires workflow support
+  | 'managed' // Requires a managed-agent provider
   | 'scheduledTasks' // 📅 Scheduled Tasks button
   | 'goals'; // 🎯 Goals button
 
 interface WebShellSidebarPrimaryNavOptions {
-  items?: readonly WebShellSidebarPrimaryNavItem[]; // which built-in buttons to show (default: all)
+  items?: readonly WebShellSidebarPrimaryNavItem[]; // which built-in buttons to show (default: ['newTask'])
   render?: () => ReactNode; // additional custom content after built-in buttons
 }
 ```
 
 A área de navegação primária contém botões integrados controlados por `items`:
 
-- Todos os botões são exibidos por padrão quando `items` não é especificado
+- Apenas Nova sessão é mostrada quando `items` não é especificado; Home sempre existe
 - Apenas os botões listados são exibidos quando `items` é fornecido
 - Conteúdo personalizado pode ser adicionado via `render()` após os botões integrados
 
-| Valor                                        | Efeito                                              |
-| -------------------------------------------- | --------------------------------------------------- |
-| `undefined` (padrão)                         | Todos os botões integrados exibidos                 |
-| `{ items: ['plugins'] }`                     | Apenas o botão Plugins                              |
-| `{ items: ['plugins', 'scheduledTasks'] }`   | Plugins + Scheduled Tasks                           |
-| `{ items: [], render: () => ... }`           | Oculta todos os integrados, apenas conteúdo custom  |
+| Valor                                      | Efeito                                                |
+| ------------------------------------------ | ----------------------------------------------------- |
+| `undefined` (padrão)                      | Home com Nova sessão                                 |
+| `{ items: ['plugins'] }`                   | Home e Plugins; sem botão Nova sessão               |
+| `{ items: ['plugins', 'scheduledTasks'] }` | Home + Plugins + Scheduled Tasks                      |
+| `{ items: [], render: () => ... }`         | Home com conteúdo personalizado; sem botões primários integrados |
 
 ```tsx
 sidebar={{
@@ -127,27 +114,30 @@ sidebar={{
 ```ts
 type WebShellSidebarFooterItem =
   | 'settings' // ⚙ Settings panel
+  | 'update' // Update action when supported
+  | 'localFiles' // Local-files bridge when available
+  | 'desktopRelay' // Use this computer through the existing desktop relay
+  | 'workspacesOverview' // Workspace management when unlocked
   | 'version' // version label (e.g. "v0.19.10")
   | 'theme' // ☀/🌙 light/dark toggle
   | 'sessionsOverview' // ▦ session overview panel
-  | 'splitView' // ◧ split view (large screens only)
+  | 'splitView' // ◧ split view (shell containers at least 1024px wide)
   | 'daemonStatus' // 📊 daemon status panel
   | 'collapse'; // ◁/▷ collapse/expand toggle
 
 interface WebShellSidebarFooterOptions {
-  items?: readonly WebShellSidebarFooterItem[]; // which built-in items to show (default: all)
-  render?: () => ReactNode; // custom content rendered on the left side, before built-in items
+  items?: readonly WebShellSidebarFooterItem[]; // which built-in items to show (default: ['collapse'])
+  render?: () => ReactNode; // custom content in the Home footer
 }
 ```
 
-| Valor                                          | Efeito                                                                      |
-| ---------------------------------------------- | --------------------------------------------------------------------------- |
-| `undefined` (padrão)                           | Todos os itens exibidos                                                     |
-| `false`                                        | Rodapé oculto; o drawer mobile mantém apenas seu controle de fechamento     |
-| `{ items: ['settings', 'theme', 'collapse'] }` | Apenas os itens listados; o drawer mobile sempre mantém seu controle de fechamento |
+| Valor                                          | Efeito                                                                    |
+| ---------------------------------------------- | ------------------------------------------------------------------------- |
+| `undefined` (padrão)                          | Apenas recolhimento/expansão                                                      |
+| `false`                                        | Rodapé oculto; o drawer mobile mantém apenas seu controle de fechamento             |
+| `{ items: ['settings', 'theme', 'collapse'] }` | Apenas os itens listados são mostrados; o drawer mobile sempre mantém seu controle de fechamento |
 
-O rodapé se adapta automaticamente a larguras reduzidas: os rótulos são
-ocultos e a versão é removida abaixo de certos limites.
+No layout em trilho, ações de rodapé e versão aparecem em Mais; apenas o controle de recolhimento/expansão permanece na base do trilho. O modo apenas-Home mantém o comportamento existente de rodapé compacto.
 
 ```tsx
 sidebar={{
@@ -155,8 +145,7 @@ sidebar={{
 }}
 ```
 
-Conteúdo personalizado via `render()` aparece no lado esquerdo do rodapé,
-antes dos itens integrados:
+Conteúdo personalizado via `render()` aparece no rodapé largo Home:
 
 ```tsx
 sidebar={{
@@ -172,21 +161,21 @@ sidebar={{
 ```
 
 **Nota:** `'scheduledTasks'` e `'goals'` foram movidos para a área de
-navegação primária (②) e são exibidos por padrão. São controlados por
-`primaryNav.items` em vez de `footer.items`.
+navegação primária (②) e requerem configuração explícita em hosts incorporados. São controlados por `primaryNav.items` em vez de
+`footer.items`.
 
 ### Outras opções de nível superior
 
 ```ts
 interface WebShellSidebarOptions {
-  enabled?: boolean; // show/hide sidebar (default: true when passed)
+  enabled?: boolean; // show/hide sidebar (default: true, including when sidebar is omitted)
   defaultCollapsed?: boolean; // initial collapsed state (persisted in localStorage)
   showCompactToggle?: boolean; // show the collapse button in the chat area (default: true)
   showSessionSourceSwitch?: boolean; // show the Tasks/Channels switch (default: true)
   showLive?: boolean; // show daemon-owned Live conversations (default: false)
   branding?: false | WebShellSidebarBranding;
   primaryNav?: WebShellSidebarPrimaryNavOptions;
-  hideProjectHeader?: boolean; // hide "Projects" header row (default: false = shown)
+  hideProjectHeader?: boolean; // hide "Workspaces" header row (default: false = shown)
   sessionActions?: WebShellSidebarSessionActionsOptions;
   footer?: false | WebShellSidebarFooterOptions;
 }
@@ -203,9 +192,9 @@ sidebar={{
 }}
 ```
 
-Isso remove o switch Tasks/Channels e fixa toda consulta de sessão ativa, arquivada,
-primária e secundária em `sourceType: "default"`. Omitir a opção mantém
-o switch atual e o acesso a sessões de canal inalterado.
+Isso remove o switch Tasks/Channels e fixa toda consulta de sessão ativa, arquivada, primária
+e secundária em `sourceType: "default"`. Omitir a opção mantém
+o acesso a sessões de canal. Quando uma entrada dedicada de trilho Canais está disponível, ela substitui as abas de origem; caso contrário, as abas permanecem.
 
 ### Live conversations — `showLive`
 
@@ -218,18 +207,20 @@ que dependem dele devem definir `showLive: true` ao atualizar.
 ```tsx
 sidebar={{
   showLive: true,
+  primaryNav: { items: ['newTask', 'live'] },
 }}
 ```
 
-### ③ Cabeçalho do Projeto — `hideProjectHeader`
+Sem a entrada primária `live`, `showLive: true` mantém o grupo Live existente em Home e configurações em Experimental. Com a entrada, Live abre sua própria coluna de sessão e página de configurações.
 
-Controla a visibilidade da linha de cabeçalho "Projects" (a linha com o
-toggle de recolhimento, ícone de busca e botão de adicionar workspace).
-O padrão é `false` (exibido).
+### ③ Cabeçalho do Workspace — `hideProjectHeader`
+
+Controla a visibilidade da linha de cabeçalho "Workspaces" (a linha com o
+toggle de recolhimento, ícone de busca e botão de adicionar workspace). O padrão é `false` (exibido).
 
 ```tsx
 sidebar={{
-  hideProjectHeader: true,  // hide the "项目 ▼ [🔍] [＋]" row
+  hideProjectHeader: true,  // hide the "工作区 ▼ [🔍] [＋]" row
 }}
 ```
 
@@ -243,11 +234,13 @@ e a barra de busca de sessões são removidas.
 type WebShellSidebarSessionActionItem =
   | 'details' // 📝 Details (dropdown sub-menu)
   | 'rename' // ✏️ Rename (dropdown menu)
+  | 'bindPr' // 🔗 Bind a GitHub PR (dropdown menu)
   | 'group' // 📁 Group/Move to folder (dropdown menu)
   | 'export' // 📤 Export chat history (dropdown menu)
   | 'delete' // 🗑 Delete session (dropdown menu)
   | 'pin' // 📌 Pin/Unpin (inline button)
-  | 'archive'; // 📦 Archive (dropdown menu)
+  | 'archive' // 📦 Archive (dropdown menu)
+  | 'split'; // ◫ Add to Split View (dropdown menu)
 
 /** Subset with working inline (hover-button) handlers. */
 type WebShellSidebarSessionInlineActionItem =
@@ -265,22 +258,31 @@ interface WebShellSidebarSessionActionsOptions {
 Controla quais botões de ação aparecem nas linhas de sessão:
 
 - **`items`**: Controle mestre para todas as ações (inline e dropdown). Se um item não está em `items`, ele é oculto em todos os lugares.
-- **`inlineItems`**: Controla quais itens aparecem como **botões inline** (ao passar o mouse). O padrão é `['pin']`. Apenas itens com handlers inline funcionais podem ser usados: `'pin'`, `'rename'`, `'export'`, `'delete'`. `'details'`, `'group'` e `'archive'` são apenas dropdown.
+- **`inlineItems`**: Controla quais itens aparecem como **botões inline** (ao passar o mouse) nas linhas de sessão padrão. O padrão é `['pin']`. Apenas itens com handlers inline funcionais podem ser usados: `'pin'`, `'rename'`, `'export'`, `'delete'`. `'details'`, `'bindPr'`, `'group'`, `'archive'` e `'split'` são apenas dropdown em linhas padrão.
+- **Condição integrada do `bindPr`**: mostrado apenas quando a sessão suporta mutação de metadados — a sessão atual em um workspace primário ou bloqueado, ou qualquer outra sessão com a capability `workspace_session_metadata` (mais `workspace_qualified_rest_core` quando essa sessão está em um workspace secundário bloqueado ou restrito) — e a linha não é uma sessão autônoma (incluindo linhas de recentes) — rotas de metadados autônomas aceitam apenas um nome de exibição. É independente do item `rename`: um host pode permitir `bindPr` sem `rename`.
 
-**Prioridade de visibilidade**: Tanto `items` quanto a condição integrada do item quanto `inlineItems` devem ser atendidos para que o botão inline apareça. Por exemplo, `delete` como inline requer que `items` inclua `'delete'` E `inlineItems` inclua `'delete'`.
+Linhas arquivadas em Configurações usam conversa Exportar e Restaurar como botões inline, com Renomear e Excluir em Mais. Suas ações ainda seguem `items` e restrições de disponibilidade integradas; `inlineItems` não altera este layout. Os estilos existentes revelam estes botões ao passar o mouse ou foco do teclado e os mantêm visíveis em dispositivos touch.
 
-| Valor                                      | Efeito                                                |
-| ------------------------------------------ | ----------------------------------------------------- |
-| `undefined` (padrão)                       | Todas as ações exibidas, apenas pin como inline       |
-| `{ inlineItems: ['pin', 'delete'] }`       | Pin + delete como botões inline                       |
-| `{ inlineItems: [] }`                      | Nenhum botão inline                                   |
-| `{ inlineItems: ['rename', 'export'] }`    | Rename + export como botões inline                    |
+**Prioridade de visibilidade em linhas padrão**: Tanto `items` E a condição integrada do item E `inlineItems` devem ser atendidos para que o botão inline apareça. Por exemplo, `delete` como inline requer que `items` inclua `'delete'` E `inlineItems` inclua `'delete'`.
+
+| Valor                                   | Efeito                             |
+| --------------------------------------- | ---------------------------------- |
+| `undefined` (padrão)                   | Todas as ações mostradas, pin como inline   |
+| `{ inlineItems: ['pin', 'delete'] }`    | Pin + delete como botões inline     |
+| `{ inlineItems: [] }`                   | Sem botões inline em linhas padrão |
+| `{ inlineItems: ['rename', 'export'] }` | Rename + export como botões inline  |
 
 O trigger do dropdown (⋮) é automaticamente oculto quando nenhum item de
 dropdown está habilitado. Os botões inline só são exibidos quando tanto sua
 condição de capability quanto `items` os incluem. Archive fica desabilitado
-na sessão atual e em qualquer sessão com um turno em execução, porque o
-daemon encerra a sessão ao vivo ao arquivá-la.
+na sessão atual e em qualquer sessão com um turno em execução, porque o daemon
+fecha a sessão ao vivo ao arquivá-la.
+
+`'split'` é habilitado por padrão como os outros itens, mas só tem efeito
+quando o host conecta `onAddSessionToSplitView`. A sidebar também lê sua
+prop `splitSessionIds` para capacidade: uma sessão que já está aberta no
+split renderiza o item desabilitado com um título explicativo, assim como o
+caso de limite de painéis e a sessão atual enquanto o split está fechado.
 
 ```tsx
 sidebar={{
@@ -293,7 +295,7 @@ sidebar={{
 
 ## Áreas não personalizáveis
 
-### Projects / Workspaces (dentro da lista de sessões)
+### Workspaces (dentro da lista de sessões)
 
 Quando a lista de sessões está visível, as seguintes subáreas são
 renderizadas, mas **não são personalizáveis individualmente**:
@@ -306,12 +308,13 @@ renderizadas, mas **não são personalizáveis individualmente**:
 | Busca / filtro          | Barra de busca integrada com matching de texto no client            |
 | Grupos de sessão        | Componente `SessionGroupSection` com 6 cores preset + hex custom    |
 | Seções de workspace     | `WorkspaceSection` por workspace do daemon, não substituível        |
-| Diálogo de workspace    | `AddWorkspaceDialog` integrado                                      |
+| Diálogo de adicionar workspace  | `AddWorkspaceDialog` integrado                                     |
 
 ### ⑤ Resize handle
 
 - Handle de arrasto na borda direita para redimensionar a largura da sidebar
-- A largura é persistida no localStorage
+- A largura é persistida no localStorage como a largura total da sidebar. Os padrões são 300px apenas-Home e 356px com o trilho. Larguras restauradas são limitadas a pelo menos 220px apenas-Home ou 276px com o trilho; valores antigos não são cegamente aumentados em 56px. Arrastar abaixo do limite de recolhimento ainda recolhe a sidebar.
+- O breakpoint de dock do painel de ambiente ignora os 56px do trilho (a área de mensagem cede a eles), então o painel continua dockando nas mesmas larguras de janela que uma sidebar apenas-Home — por exemplo, uma janela de 1440px.
 - Não é configurável
 
 ## Props de comportamento em runtime
@@ -332,15 +335,17 @@ Estas `WebShellProps` afetam o comportamento da sidebar indiretamente:
 | Estado      | Comportamento                                              |
 | ----------- | ---------------------------------------------------------- |
 | Expandido   | Sidebar completa com rótulos de texto                      |
-| Recolhido   | Modo icon-rail (logo, ícone de caneta, ícones de ação)    |
-| Mobile      | Drawer usa 70% do seu contêiner, dentro dos limites de largura, com controles de backdrop e fechamento no rodapé |
+| Recolhido | Apenas-Home: faixa existente de 56px e sessões ao passar o mouse; com trilho: apenas o trilho primário de 56px                             |
+| Mobile    | Drawer usa 70% do seu contêiner, dentro dos limites de largura, com backdrop e um controle de fechamento na base da coluna proprietária |
 
 O estado de recolhimento é persistido no `localStorage` sob a chave
 `qwen-code-web-shell-sidebar-collapsed`.
 
-A largura redimensionada do desktop é restaurada apenas em layouts expandidos.
-Abrir ou fechar o drawer mobile não sobrescreve essa largura nem a preferência
+A largura redimensionada do desktop é restaurada apenas em layouts expandidos. Abrir ou
+fechar o drawer mobile não sobrescreve essa largura nem a preferência
 persistida de recolhimento do desktop.
+
+A sidebar, seu drawer compacto e o chrome de boas-vindas do chat vazio seguem a largura do contêiner do shell (compacto em 760px); o conteúdo das mensagens do chat mantém breakpoints baseados na viewport. A disponibilidade de split usa 1024px e o espaço de split-sidebar usa 1200px. O recolhimento por teclado move o foco para fora da coluna secundária oculta para o controle do trilho.
 
 ## Localizações do código-fonte
 
@@ -351,4 +356,4 @@ persistida de recolhimento do desktop.
 | WorkspaceSection    | `packages/web-shell/client/components/sidebar/WorkspaceSection.tsx`         |
 | Estilos da sidebar  | `packages/web-shell/client/components/sidebar/WebShellSidebar.module.css`   |
 | Integração no App   | `packages/web-shell/client/App.tsx` (buscar `WebShellSidebar`)              |
-| Entry point (dev)   | `packages/web-shell/client/main.tsx` (`sidebar: { enabled: true, showLive: true }`) |
+| Entry point (dev)   | `packages/web-shell/client/main.tsx` (listas explícitas de itens primários e de rodapé) |

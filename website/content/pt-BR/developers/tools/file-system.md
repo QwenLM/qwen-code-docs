@@ -223,6 +223,7 @@ grep_search(pattern="function", glob="*.js", limit=10)
   - Se `old_string` estiver vazio e `file_path` não existir, cria um novo arquivo com `new_string` como conteúdo.
   - Se `old_string` for fornecido, lê o `file_path` e tenta encontrar exatamente uma ocorrência, a menos que `replace_all` seja verdadeiro.
   - Se a correspondência for única (ou `replace_all` for verdadeiro), substitui o texto por `new_string`.
+  - Para correspondências difusas baseadas em linha, a contagem e substituição usam as mesmas ocorrências completas do texto selecionado no disco nos limites de linha. Sufixos e prefixos indentados de linhas mais longas são excluídos; edições de substring literal mantêm seu comportamento existente.
   - **Confiabilidade Aprimorada (Correção de Edição em Múltiplos Estágios):** Para aumentar significativamente a taxa de sucesso das edições, especialmente quando o `old_string` fornecido pelo modelo pode não ser perfeitamente preciso, a ferramenta incorpora um mecanismo de correção de edição em múltiplos estágios.
     - Se o `old_string` inicial não for encontrado ou corresponder a vários locais, a ferramenta pode aproveitar o modelo Qwen para refinar iterativamente `old_string` (e potencialmente `new_string`).
     - Este processo de autocorreção tenta identificar o segmento único que o modelo pretendia modificar, tornando a operação `edit` mais robusta mesmo com contexto inicial ligeiramente imperfeito.

@@ -7,7 +7,7 @@
 
 Agent Arena permite que você coloque vários modelos de IA uns contra os outros na mesma tarefa. Cada modelo é executado como um agente totalmente independente em sua própria Git worktree isolada, para que as operações de arquivo nunca interfiram. Quando todos os agentes terminam, você compara os resultados e seleciona um vencedor para mesclar de volta ao seu workspace principal.
 
-Diferentemente dos [subagents](./sub-agents.md), que delegam subtarefas focadas dentro de uma única sessão, os agentes da Arena são instâncias de agentes completas e de alto nível — cada um com seu próprio modelo, janela de contexto e acesso total a ferramentas.
+Diferentemente dos [subagentes](./sub-agents.md), que delegam subtarefas focadas dentro de uma única sessão, os agentes da Arena são instâncias de agentes completas e de alto nível — cada um com seu próprio modelo, janela de contexto e acesso total a ferramentas.
 
 Esta página cobre:
 

@@ -435,11 +435,39 @@ OAuth 令牌会自动：
 | `cwd`                  | string                       | Stdio 传输的工作目录                                                                                                                                                                                                                             |
 | `timeout`              | number<br>(default: 600,000) | 请求超时时间（毫秒）（默认值：600,000 毫秒 = 10 分钟）                                                                                                                                                                                                 |
 | `versionNegotiation`   | `"auto" \| "legacy"`<br>(default: `"legacy"`) | 对于 Stdio 服务器，`"auto"` 会在一次性的兄弟进程上进行协议协商。默认值 `"legacy"` 仅启动会话进程。                                                                                                               |
-| `trust`                | boolean<br>(default: false)  | 当为 `true` 时，绕过该服务器的所有工具调用确认（默认值：`false`）                                                                                                                                                                              |
+| `trust`                | boolean<br>(default: false)  | 当为 `true` 时，在受信任的工作区中绕过该服务器的工具调用确认（默认值：`false`）                                                                                                                                                           |
 | `includeTools`         | array                        | 从此 MCP 服务器包含的工具名称列表。指定后，仅此处的工具将从该服务器可用（白名单行为）。如果未指定，默认启用服务器的所有工具。                                       |
 | `excludeTools`         | array                        | 从此 MCP 服务器排除的工具名称列表。此处列出的工具将对模型不可用，即使它们由服务器暴露。<br>注意：`excludeTools` 优先于 `includeTools` - 如果工具同时存在于两个列表中，它将被排除。 |
 | `targetAudience`       | string                       | 在你尝试访问的受 IAP 保护的应用程序上允许列表的 OAuth Client ID。与 `authProviderType: 'service_account_impersonation'` 一起使用。                                                                                                         |
 | `targetServiceAccount` | string                       | 要模拟的 Google Cloud Service Account 的电子邮件地址。与 `authProviderType: 'service_account_impersonation'` 一起使用。                                                                                                                              |
+
+### MCP App 资源限制
+
+MCP App 返回的打包 HTML 可能超过默认的 1 MiB，或加载时间超过默认的 10 秒。仅在 `settings.json` 中为需要更多空间的服务器进行配置：
+
+```json
+{
+  "mcpServers": {
+    "amplitude": {
+      "httpUrl": "https://mcp.amplitude.com/mcp",
+      "appResourceMaxBytes": 4194304,
+      "appResourceTimeoutMs": 120000
+    }
+  }
+}
+```
+
+Amplitude 仍然需要 OAuth 身份验证。这些设置不会启用额外的 App bridge 功能，也不保证每个 App 都兼容。
+
+- `appResourceMaxBytes`：UTF-8 字节数表示的最大解码 HTML 大小。默认为 1,048,576（1 MiB）；限制在 1–4,194,304 字节（4 MiB）之间。
+- `appResourceTimeoutMs`：资源读取截止时间，显式设置时独立于工具执行；限制在 100–120,000 毫秒之间。未覆盖时，截止时间仍为通用 `timeout` 和 10,000 毫秒中的较小值。
+- 有限值会向下取整并限制范围。非数字或非有限值会回退到默认值。在任何配置的限制下，取消仍然有效。
+
+限制失败会保留成功的工具结果，并显示带有适用配置键的警告。较大的 HTML 仍保留在模型上下文之外，同时增加保留的转录和重放大小。大小检查发生在 SDK 读取响应**之后**；它不会限制网络传输或峰值内存。这两个限制设置不会改变沙箱或 CSP。
+
+App HTML 仅在守护进程支持的 WebShell 会话和录制转录的重放中挂载。终端和无头会话会渲染回退文本，因此在这些会话中，这些键仅改变警告文本、获取成本和延迟，以及保留的转录大小。
+
+在声明服务器的同一来源中设置这些键。配置来源按优先级替换整个服务器对象，而不是合并字段，因此在另一个文件中添加的同名条目会覆盖原始服务器，而不是调整其限制。
 
 <a id="qwen-mcp-cli"></a>
 
@@ -463,7 +491,7 @@ qwen mcp add [options] <name> <commandOrUrl> [args...]
 | `-e`, `--env`               | 设置环境变量。                                          | —                                      | `-e KEY=value`                                                     |
 | `-H`, `--header`            | 为 SSE 和 HTTP 传输设置 HTTP 标头。                       | —                                      | `-H "X-Api-Key: abc123"`                                           |
 | `--timeout`                 | 设置连接超时时间（毫秒）。                             | —                                      | `--timeout 30000`                                                  |
-| `--trust`                   | 信任服务器（绕过所有工具调用确认提示）。       | — (`false`)                            | `--trust`                                                          |
+| `--trust`                   | 信任服务器；在受信任的工作区中跳过确认。         | — (`false`)                            | `--trust`                                                          |
 | `--description`             | 设置服务器的描述。                                 | —                                      | `--description "Local tools"`                                      |
 | `--include-tools`           | 要包含的工具的逗号分隔列表。                         | all tools included                     | `--include-tools mytool,othertool`                                 |
 | `--exclude-tools`           | 要排除的工具的逗号分隔列表。                         | none                                   | `--exclude-tools mytool`                                           |

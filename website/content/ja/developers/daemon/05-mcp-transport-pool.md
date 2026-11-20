@@ -288,15 +288,17 @@ W77 レース（`cb206da36`）: `createUnpooledConnection` は、`client.connect
 基盤となる MCP トランスポートがサイレントに切断された場合（明示的なクローズなしで接続が `'active'` / `'draining'` から `localStatus === DISCONNECTED` に遷移した場合）、プールはエントリを `'failed'` としてマークし、`pool.entries` から削除し、サブスクライバビューをデタッチする前に `failed` イベントを発行します。この発行前デタッチの順序が重要です。サブスクライバは、`failed` イベントを十分早く受信して、保留中の `callTool` プロミスを `MCPCallInterruptedError` にルーティングできるため、スタックした `await client.callTool(...)` がハングする代わりにクリーンに拒否されます。`forceShutdown` も同じ発行後デタッチの順序を使用します。
 ## フィンガープリントと `canonicalOAuth` の正規化
 
-プールキーは `mcp-pool-key.ts` の `fingerprint(cfg)` から取得されます。ハッシュはすべてのトランスポート定義フィールドをカバーします:
+プールキーは `mcp-pool-key.ts` の `fingerprint(cfg)` から取得されます。ハッシュはすべてのトランスポート定義フィールドと共有ツールスナップショットフィールドをカバーします:
 
-> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, versionNegotiation, oauth`
+> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, versionNegotiation, oauth, appResourceMaxBytes, appResourceTimeoutMs`
 
 セッションごとのフィルタリングとメタデータフィールド（`includeTools`、`excludeTools`、`trust`、`description`、`extensionName`、`discoveryTimeoutMs`）は除外されるため、異なるフィルタを持つセッションでも1つのエントリを共有できます。自動ネゴシエーションのオプトインは、基盤となるプロセスの接続方法を変更するため含まれます。
 
 OAuthセルについては、`canonicalOAuth(o)` はすべての `MCPOAuthConfig` フィールドをハッシュします: `clientId`、`clientSecret`、ソート済みの `scopes`、ソート済みの `audiences`、`authorizationUrl`、`tokenUrl`、`redirectUri`、`tokenParamName`、`registrationUrl`。これは認証情報分離の契約です: `clientSecret`、`audiences`、または `redirectUri` のみが異なる2つのセッション設定は異なるフィンガープリントを持ち、1つのエントリを共有できません。機密クライアントおよびマルチオーディエンストークンデプロイメントはこれに依存しています。
 
 `scopes` と `audiences` をソートすることで、呼び出し元の順序は無関係になります。明示的な `null` は正規化され、undefined フィールドは明示的な null と同じようにハッシュされます。キーには `discoveryTimeoutMs` は含まれません。同じキーで異なるタイムアウトを持つ同時の acquire 呼び出しは「先着優先」となり、pre-F2 のセッションごとのマネージャーの動作と一致します。
+
+App リソース制限はその除外の例外です。これらはディスカバリ時に消費され、セッションごとの再投影なしで共有ツールスナップショットに保存されるため、キーに含まれる必要があります。そうでなければ、2番目のセッションが最初のセッションの制限をサイレントに再利用してしまいます。同じライフサイクル（ディスカバリ時に消費され、セッションごとに再投影されない）を持つ将来のフィールドは、トランスポート定義フィールドでなくてもキーに含まれるべきです。どちらも強制された（クランプ、フロア、デフォルト）値でハッシュされます。これは `mcp-tool.ts` の読み取りサイトが適用するのと同じ正規化であり、`mcp-app-resource-limits.ts` を介して共有されます。そのため、効果的なポリシーがバイト単位で同一である設定は1つのエントリを共有します。
 
 `PoolEntry` は `cfg: MCPServerConfig` をプライベートに保持します。外部コードはトランスポートファミリが必要な場合、`entry.transportKind` ゲッターを使用する必要があります。これにより、env、ヘッダー認証、OAuth フィールドが誤ってコンシューマに漏洩するのを防ぎます。
 

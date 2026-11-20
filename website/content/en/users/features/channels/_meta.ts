@@ -14,4 +14,5 @@ export default {
   'wecom-callback': 'WeCom Callback',
   'dingtalk-webhook': 'DingTalk Webhook Sending',
   'feishu-webhook': 'Feishu Webhook Sending',
+  'wecom-webhook': 'WeCom Webhook Sending',
 };

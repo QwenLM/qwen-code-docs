@@ -80,8 +80,12 @@ export QQ_APP_SECRET=<your-app-secret>
 | ------------- | --------- | -------------------------------------------------------------------- |
 | `appID`       | —         | 来自开发者后台的 QQ Bot AppID。如省略，则使用二维码登录。            |
 | `appSecret`   | —         | QQ Bot AppSecret。支持 `$ENV_VAR` 语法。如省略，则使用二维码登录。   |
-| `sandbox`             | `false` | 设为 `true` 以使用 QQ 沙箱 API 环境（`sandbox.api.sgroup.qq.com`） |
-| `purgeLegacySessions` | `false` | 删除旧版的单作用域和用户作用域会话路由——见下文。               |
+| `sandbox`                  | `false` | 设为 `true` 以使用 QQ 沙箱 API 环境（`sandbox.api.sgroup.qq.com`）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `moderationTools`          | `false` | 向智能体暴露 QQ 群管理工具——见[群管理工具](#group-management-tools)。默认关闭；设置为 `true` 以启用。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `moderationRecallWindowMs` | `-1`    | 频道保留可被成员定向撤回解析的入站消息的时长（毫秒）。`-1` 表示无时间限制：条目按聊天上限，一旦频道跟踪超过 256 个聊天，最不活跃聊天的整个环形缓冲区可被驱逐。`0` 完全禁用成员定向撤回——会话中无法访问任何消息 id，因此只有操作员显式提供或从频道日志读取的 `message_id` 才能被传入。`N > 0` 将条目保留 N 毫秒。非整数或低于 `-1` 的值会发出警告并回退到 `-1`。 |
+| `groupAllPolicy`           | unset   | 接收普通（非 @）群消息：`"log"` 仅观察它们，`"keyword"` 或 `"all"` 允许它们启动轮次（配合 `groups: {"*": {"requireMention": false}}`）。未设置时网关仅投递 @提及和私聊消息。见[群聊](#group-chats)。                                                                                                                                                                                                                                                                                                                                                              |
+| `purgeLegacySessions`      | `false` | 删除旧版的单作用域和用户作用域会话路由——见下文。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `forwardBotMessages`       | `false` | 投递其他机器人撰写的消息，并带有 `[bot]` 发送者前缀，而不是丢弃它们——见[群聊](#group-chats)。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 所有标准频道选项（见[频道概览](./overview#options)）同样支持：
 `privatePolicy`、`allowedUsers`、`sessionScope`、`cwd`、`instructions`、`groupPolicy`、`groups`、`dispatchMode`。
@@ -109,6 +113,14 @@ qwen channel start
 
 QQ Bot API V2 仅投递 @提及 了机器人的群消息——机器人看不到所有群消息。默认情况下 `requireMention` 为 `true`，在 QQ 上应保持此设置。
 
+默认情况下，其他机器人撰写的消息会被丢弃。设置 `forwardBotMessages: true` 以改为投递它们：此类消息会以发送者行上的 `[bot]` 前缀到达模型，由模型决定是否回复有意义。机器人之间的对话是一项功能，而非缺陷，该开关是其全部边界——QQ 仅为用户撰写的消息投递消息事件（机器人自己的发送通过发送 API 的响应返回，而非作为事件），因此启用路径只能承载其他机器人的消息；启用路径上没有刻意的自动速率限制；群组的人类成员和模型自身的静默规则（`<noreply>`）是防护措施，因此启用它是操作员的明确权衡。
+
+### 定时循环与主动投递
+
+Loop、webhook 任务以及后台或命名任务的结果会作为**主动消息**投递回创建它们的聊天——QQ 发布它们时不带回复锚点，因此它们不依赖于最近的入站消息。在群组中，每次此类投递都会消耗群组的平台主动消息配额。
+
+如果群组管理员已禁用主动消息，这些投递会失败，而不是静默回退到锚定的被动回复：loop 和 webhook 目标检查会在智能体轮次之前拒绝运行，后台和命名任务的结果会在投递时被 `ACTIVE_MSG_DISABLED` 拒绝，loop 调度器会统计连续失败次数并在 5 次后自动禁用 loop。主动投递还要求聊天类型已被学习：来自机器人从未收到过消息的群组的 loop 或 webhook 目标会被拒绝而不是发送。
+
 ### 会话隔离
 
 QQ 频道默认使用 `sessionScope: "thread"`：同一群组的成员共享一个以 `<channel>:<group_openid>` 为键的对话上下文，而不同群组之间相互隔离。每条私聊获得一个以 `<channel>:<user_openid>` 为键的独立上下文。
@@ -122,6 +134,35 @@ QQ 频道默认使用 `sessionScope: "thread"`：同一群组的成员共享一�
 **从旧版 QQ 频道升级。** 默认作用域已从 `"user"` 改为 `"thread"`。（配置了 `groupAllPolicy: "keyword"` 或 `"all"` 的频道之前会被强制为 `"single"`——一个全局会话。未固定 `sessionScope` 的频道现在会解析为 `"thread"`，除非 `multiSession` 已开启，此时会解析为 `"user"`——每个发送者的会话是 `multiSession` 唯一支持的形态，因此它优先于插件默认值；对于没有 `multiSession` 的频道，实际变化是从那个全局会话变为每个群组一个会话。明确固定了 `sessionScope` 的频道不再被覆盖，因此显式的 `"user"` 现在会生效，并将群组完整消息流量按发送者分散——请手动将其改为 `"thread"`。）旧版会话路由不会被自动删除：当 `purgeLegacySessions` 关闭时，每次启动都会统计清理所覆盖的路由数量——单作用域时代的 `<channel>:__single__` 键和该频道的旧版用户作用域 `<channel>:<senderId>:<chatId>` 键——并保持它们及其守护进程侧的会话不变。`chat_thread` 时代的 `<channel>:<chatId>:<threadId>` 路由不在覆盖范围内：它既不会被统计也不会被清理。要删除被覆盖的路由，请在频道上将 `purgeLegacySessions` 设置为 `true`。启用后，每个这样的路由都会被释放，其守护进程侧的会话被丢弃，因此旧的对话映射将不再存在；只要该选项保持开启，清理就会在每次启动时运行。除非救援副本写入磁盘，否则不会删除任何内容：在第一次删除之前，频道会将即将删除的路由追加到频道状态目录中的 `<channel>-sessions-purged.json`（例如 `~/.qwen/channels/my-qq-sessions-purged.json`；频道名称中不在 `A-Za-z0-9_-` 范围内的字符会变为 `_`），如果该写入失败，则不删除任何内容并保持路由不变。该文件仅在实际发生删除时才会写入——在什么都不动的启动时永远不会写入。它是一个清理记录的 JSON 列表，每条记录包含其 `purgedAt` 时间戳、`sessionScope` 和 `routes`；每个路由携带其 `kind`、`key`、`sessionId`、`target`，以及——当路由器的持久化会话状态仍然记录了它们时——`cwd`、`turns`、`startedAt`、`isolation` 和 `workspaceCwd`。记录是追加而非覆盖的，因此早期清理的记录会在后来的清理中保留下来（一旦列表超过 20 条，最旧的记录会被丢弃）；无法读取或不包含清理记录列表的文件会在日志中报告，并被重命名为同级的 `<path>.corrupt-<timestamp>` 文件，然后才写入新记录，因此损坏的副本会被保留以供手动恢复，新记录也永远不会丢失。这只是路由元数据——不包含对话内容——因此它可以显示被删除的内容，并让你手动重新创建映射：记录中包含 `cwd` 且没有 `isolation` 的路由在恢复时会解析到同一个工作区；当记录还携带 `isolation: "worktree"` 时，`cwd` 是（通常已被移除的）每个会话的 worktree，因此请对照记录的 `workspaceCwd` 进行恢复并保持 `isolation`，以便路由器通过托管加载路径重新附加它。当路由的存储状态没有 `cwd` 时（条目缺失，或早于该字段），记录会简单地省略 `cwd` 而不是猜测，因此手动恢复这样的路由也需要频道的工作区路径。在清理之后设置 `sessionScope: "user"` **不会**自动恢复旧的对话——那些路由已经被删除，不会自动恢复。
 
 有关群组策略和提及门控的完整详情，请参见[群聊](./overview#group-chats)。
+
+## 群管理工具
+
+设置 `moderationTools: true` 后，频道会将 QQ 群管理 API 作为**该频道会话中的客户端 MCP 工具**暴露给智能体。这些工具**默认关闭**：它们具有破坏性并使用机器人自身的令牌运行，因此现有部署会保持关闭状态，直到操作员按频道启用。启用后，智能体在回答时会自行调用它们——没有需要输入的斜杠命令，也没有操作员确认步骤。平台自身的规则是唯一的限制，加上下方的成员定向撤回规则：仅当轮次自身的发送者是该成员时，或当轮次没有成员发送者时（例如操作员发起的轮次），才允许 `member_openid` 撤回。
+
+| 工具                                                        | QQ 端点                                               | 要求                                                                                                                                                         |
+| ----------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `qq_recall_message`                                         | `DELETE /v2/groups/{id}/messages/{msg_id}`            | 仅限群聊，每次调用必须指定目标（`member_openid` 或 `message_id`）。机器人必须是群管理员才能撤回其他成员的消息。机器人自身的消息无法被撤回                    |
+| `qq_get_group_info`                                         | `GET /v2/groups/{id}/info`                            | 保留——机器人应用仅限邀请（否则为 `11253`）                                                                                                                   |
+| `qq_get_bot_state`                                          | `GET /v2/groups/{id}/bot_state`                       | 保留——机器人应用仅限邀请                                                                                                                                     |
+| `qq_list_join_requests`                                     | `GET /v2/groups/{id}/join_request_list`               | 机器人是群管理员                                                                                                                                             |
+| `qq_review_join_request`                                    | `POST .../approval_join_request/{member_openid}`      | 机器人是群管理员                                                                                                                                             |
+| `qq_get_mute_status` / `qq_set_mute`                        | `GET`/`POST /v2/groups/{id}/restrict_chat_setting`    | 机器人是群管理员；每次调用最多禁言 30 天、20 个成员                                                                                                          |
+| `qq_list_join_approval_strategies`                          | `GET /v2/groups/join_approval_strategy`               | 机器人级别，非每个群组                                                                                                                                       |
+| `qq_create_join_approval_strategy`                          | `POST /v2/groups/join_approval_strategy`              | `group_openids` / `group_ids` 之一；每个机器人最多 20 个策略                                                                                                 |
+| `qq_update_join_approval_strategy`                          | `PATCH .../join_approval_strategy/{id}`               | 群组 id 必须使用创建策略时的形式                                                                                                                             |
+| `qq_delete_join_approval_strategy`                          | `DELETE .../join_approval_strategy/{id}`              | —                                                                                                                                                            |
+| `qq_execute_join_approval_strategy`                         | `POST .../join_approval_strategy/{id}/execute`        | 运行完整扫描；异步，约 10 分钟                                                                                                                               |
+| `qq_set_join_approval_whitelist`                            | `POST .../join_approval_strategy/{id}/whitelist_users` | 每次调用最多 10,000 个号码，每个策略最多 100,000 个                                                                                                          |
+| `qq_list_group_members`                                     | `GET /v2/groups/{id}/members`                         | 保留——平台上仅限邀请，每页最多 30 个成员                                                                                                                     |
+| `qq_get_group_member`                                       | `GET /v2/groups/{id}/members/{member_openid}`         | 保留——仅限邀请                                                                                                                                               |
+| `qq_kick_member`                                            | `POST /v2/groups/{id}/batch_remove_members`           | 保留——仅限邀请，最多 20 个成员，可选黑名单                                                                                                                   |
+| `qq_list_member_blacklist` / `qq_update_member_blacklist`   | `GET`/`POST /v2/groups/{id}/member_blacklist`         | 保留——仅限邀请；仍在群中的成员无法被加入黑名单                                                                                                               |
+
+"保留"工具已连接并可调用，但 QQ 开放平台目前会返回 `11253`，除非机器人应用已被加入白名单，因此智能体会报告平台的拒绝而不是假设成功。每个工具都会报告平台的错误代码及其含义，因此智能体可以区分"机器人不是群管理员"、"消息已无法被撤回"和"此应用不被允许调用此端点"。
+
+要使群操作按名称定位到成员的消息，频道会记住每个聊天的最近入站消息。`moderationRecallWindowMs` 限制条目的保留时长，默认为 `-1`（无时间限制），因此条目在按聊天上限或 256 聊天扫描驱逐之前保持可解析；重启会完全丢弃记忆，在新消息到达之前没有可按成员撤回的内容。它还仅保存网关实际投递的消息：在 `groupAllPolicy` 未设置时，机器人仅接收 @提及（和私聊消息），因此成员定向撤回只能在 `groupAllPolicy` 为 `"keyword"`、`"all"` 或 `"log"` 时触及普通成员的**非 @** 消息；网关投递的 @提及无论如何都会被跟踪。仅当 `allowMention` 启用时（默认），模型才能以完整的 `member_openid` 命名成员：在 `allowMention: false` 时，转录携带截断的发送者名称，因此只有显式的 `message_id` 有效。`member_openid` 撤回仅允许用于轮次自身的发送者，或在没有成员发送者的轮次上（例如操作员发起的轮次），因此一个成员无法通过机器人的管理员令牌审查另一个成员的消息。每次调用必须指定目标：`member_openid` 撤回该成员最近被跟踪的消息，`message_id` 撤回显式 id。没有隐式目标，该工具也永远不会撤回机器人自身的消息——因此在平台仅撤回机器人消息的私聊中不受支持。成功的撤回会报告它销毁的消息 id 并从按聊天的环形缓冲区中删除该 id，因此第二次成员定向撤回会触及上一条消息，而不是重试已销毁的消息；失败的撤回会保留条目，因此可以重试相同的目标。
+
+每个频道实例拥有自己的工具：一个桥接可以服务多个频道，工具仅提供给注册它的频道的会话，因此一个进程中的两个 QQ 频道永远不会操作彼此的聊天或凭证。
 
 ## Markdown 支持
 

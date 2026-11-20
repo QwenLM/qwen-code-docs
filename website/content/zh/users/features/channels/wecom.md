@@ -2,6 +2,8 @@
 
 本指南介绍如何将 Qwen Code 与 WeCom 智能机器人（企业微信智能机器人）配合使用。
 
+如果要将任务结果发送到群聊的消息推送 URL，请使用 [WeCom Webhook Sending](./wecom-webhook)，它不需要智能机器人凭证。
+
 如果使用 Corp ID、Agent ID、Token 和 EncodingAESKey 的自建应用，请使用单独的 [WeCom Callback channel](./wecom-callback)。
 
 ## 前提条件

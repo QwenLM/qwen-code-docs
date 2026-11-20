@@ -289,15 +289,17 @@ W77 竞态条件（`cb206da36`）：`createUnpooledConnection` 在等待 `client
 当底层 MCP 传输静默断开连接时（连接从 `'active'` / `'draining'` 跳转到 `localStatus === DISCONNECTED`，没有显式关闭），池会将条目标记为 `'failed'`，从 `pool.entries` 中驱逐它，并在分离订阅者视图之前发出 `failed` 事件。这个发出-然后-分离的顺序很重要：订阅者能够足够早地收到 `failed` 事件，将挂起的 `callTool` 承诺路由到 `MCPCallInterruptedError`，因此卡住的 `await client.callTool(...)` 能够干净地拒绝，而不是挂起。`forceShutdown` 使用相同的发出-然后-分离顺序。
 ## 指纹与 `canonicalOAuth` 规范化
 
-池键源自 `mcp-pool-key.ts` 中的 `fingerprint(cfg)`。哈希覆盖所有传输定义字段：
+池键源自 `mcp-pool-key.ts` 中的 `fingerprint(cfg)`。哈希覆盖所有传输定义字段和共享工具快照字段：
 
-> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, versionNegotiation, oauth`
+> `transport, command, args, cwd, env, url, httpUrl, tcp, headers, timeout, versionNegotiation, oauth, appResourceMaxBytes, appResourceTimeoutMs`
 
 会话级过滤和元数据字段（`includeTools`、`excludeTools`、`trust`、`description`、`extensionName`、`discoveryTimeoutMs`）不参与哈希，因此不同过滤条件的会话可以共享同一个条目。自动协商的 opt-in 被包含在内，因为它改变了底层进程的连接方式。
 
 对于 OAuth 单元，`canonicalOAuth(o)` 对每个 `MCPOAuthConfig` 字段进行哈希：`clientId`、`clientSecret`、排序后的 `scopes`、排序后的 `audiences`、`authorizationUrl`、`tokenUrl`、`redirectUri`、`tokenParamName` 和 `registrationUrl`。这是凭证隔离的契约：两个会话配置如果仅在 `clientSecret`、`audiences` 或 `redirectUri` 上不同，将产生不同的指纹，且无法共享同一个条目。机密客户端和多受众令牌部署依赖于此。
 
 对 `scopes` 和 `audiences` 进行排序，使得调用方顺序无关紧要。显式的 `null` 被规范化，以便未定义的字段与显式 null 哈希相同。该键不包括 `discoveryTimeoutMs`；使用相同键但不同超时时间的并发 `acquire` 调用遵循“先到先得”原则，与 F2 之前的按会话管理器行为一致。
+
+App 资源限制是该排除规则的例外：它们在发现时被消费并存储在共享工具快照中，无需按会话重新投影，因此必须纳入键——否则第二个会话会默默复用第一个会话的限制。任何具有相同生命周期的未来字段（在发现时消费，永不按会话重新投影）都应纳入键，即使它不是传输定义字段。两者都以其强制值（受限、下限、默认）进行哈希——与 `mcp-tool.ts` 中读取站点应用的相同规范化，通过 `mcp-app-resource-limits.ts` 共享——因此有效策略字节相同配置共享一个条目。
 
 `PoolEntry` 将 `cfg: MCPServerConfig` 保持为私有。外部代码在需要传输族时，必须使用 `entry.transportKind` 获取器。这可以防止 env、header auth 和 OAuth 字段意外泄露给消费者。
 
