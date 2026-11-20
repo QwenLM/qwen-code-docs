@@ -1,0 +1,164 @@
+---
+title: "Qwen Code 週報：新フラッグシップ Qwen4-Max に対応、並行会話は互いに干渉せず、タスク結果を Feishu・WeCom・DingTalk グループへ直接送信"
+date: "2026-11-19"
+description: "今週は v0.27.3〜v0.28.0 をリリース。Qwen の新フラッグシップ Qwen4-Max が利用可能になり、最新の Qwen Code が対応しました。Web Shell の新しい会話はデフォルトで独立したワークツリーで実行され、並行タスクは互いに干渉しません。Feishu、WeCom、DingTalk はグループボットの webhook 配信に対応しました。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i1/O1CN01P16yy0rBwvB2jBZY_!!6000000001806-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 週報：新フラッグシップ Qwen4-Max に対応、並行会話は互いに干渉せず、タスク結果を Feishu・WeCom・DingTalk グループへ直接送信"
+  date="2026-11-19"
+  author="Qwen Team"
+/>
+
+Qwen Code は今週、v0.27.3〜v0.28.0 の 3 つの正式版をリリースしました。
+
+**新フラッグシップ Qwen4-Max が使えます。** Qwen の新世代フラッグシップモデルに、最新の Qwen Code が対応しました。
+
+**新しい会話はデフォルトで独立したコピーで作業します。** 同じプロジェクトで会話をいくつも並行実行でき、それぞれ別のワークツリーで作業します。あなたが編集中のブランチとファイルはそのままです。
+
+**タスク結果を Feishu、WeCom、DingTalk のグループへ直接送れます。** グループにカスタムボットを追加し、webhook URL を Web Shell に入力するだけで、通知と定期ジョブの結果がグループに届きます。
+
+## ✨ 新機能
+
+### 新フラッグシップ Qwen4-Max に対応
+
+Qwen4-Max は Qwen の新世代フラッグシップモデルです。11 月 16 日に正式版が公開され、テキスト・画像・動画を処理できます。複雑な推論、プログラミング、エージェントタスク向けです。
+
+Qwen Code は今週対応を完了しました。Bailian、QwenCloud、Qwen サブスクリプションなど、どの接続方法でも Qwen4-Max を使えます。思考の深さは low・high・xhigh の 3 段階で、デフォルトは high。思考をオフにすることもできます。
+
+画像と動画は会話に直接送るだけで、モデルが内容を理解します。Bailian と QwenCloud の接続では、トークンを節約する設定も 2 つあります。キャッシュ保持時間はデフォルトの 5 分から 1 時間まで延長でき、画像の精細度も下げられます。
+
+こんなことに使えます：
+
+- デザイン案のスクリーンショットを添付して、ページ構築を任せる
+- 画面録画を送って、Bug の再現手順を整理してもらう
+- 原因が掴みにくいテスト失敗の調査では、思考の深さを上げる
+
+詳しくは PR [#17513](https://github.com/QwenLM/qwen-code/pull/17513)
+
+![モデル一覧の Qwen4-Max と思考の深さの段階](https://img.alicdn.com/imgextra/i4/O1CN01cXhl153mN0L7o1Mj_!!6000000001943-2-tps-3845-2160.png)
+
+### 新しい会話はデフォルトで独立したワークツリーで実行、並行タスクは互いに干渉しない
+
+信頼済みの Git ワークスペースで新しい Web Shell 会話を作ると、デフォルトで独立したワークツリーで作業します。ワークツリーは同じリポジトリのもう 1 つの作業コピーです。コミット履歴は共有し、ファイルはコピーごとに別々に編集します。同じプロジェクトで複数の会話を並行実行しても、変更は互いに独立し、あなたが編集中のファイルもそのまま保たれます。
+
+作業が終わったら、成果の受け取り方は 2 つあります。ブランチメニューの「ここでブランチを作成」を押せば、そのまま正式なブランチになります。「ローカルに引き継ぐ」を押せば、変更を元のディレクトリに持ち帰れます。
+
+デフォルトのワークツリーモードは `worktree.defaultForNewSessions` を false にすると無効になり、現在のブランチで直接作業できます。
+
+こんなことに使えます：
+
+- 複数の要件をそれぞれ別の会話で同時に進め、変更は互いに独立
+- あなたはローカルでコードを書き続け、AI はコピー側で編集。それぞれの作業が独立して進みます
+- 2 つの会話で別々のリファクタリング案を試し、結果を見比べる
+
+詳しくは PR [#17228](https://github.com/QwenLM/qwen-code/pull/17228)
+
+![Web Shell の新しい会話のワークツリーモードとブランチメニュー](https://img.alicdn.com/imgextra/i2/O1CN01Dzz4hbRKp6B7o1Mj_!!6000000003218-2-tps-3845-2160.png)
+
+### タスク結果を Feishu・WeCom・DingTalk のグループへ直接送信
+
+WeChat、QQ、メールの Web Shell 設定対応に続き、今週は Feishu、WeCom、DingTalk のグループ配信が加わりました。3 プラットフォームとも「Webhook (送信のみ)」接続を選べます。グループにカスタムボットを追加し、その webhook URL を Web Shell のチャンネル管理に入力すると、通知、タスクの実行結果、定期ジョブの結果が Markdown メッセージでグループに届きます。
+
+この方法は送信専用で、グループメッセージの受信は行いません。グループで AI と会話する場合は、各プラットフォームの既存のボット接続を使ってください。
+
+こんなことに使えます：
+
+- 「毎朝 9 時に前日マージされた PR をまとめる」定期ジョブを設定し、結果を Feishu のプロジェクトグループへ自動送信
+- AI に毎晩リグレッションテストを実行させ、結果を WeCom グループへ送信。出社したらすぐ確認できます
+- 長いタスクに完了通知を設定し、完了したら DingTalk グループへ自動送信。同僚も進捗を同時に確認できます
+
+詳しくは PR [#16804](https://github.com/QwenLM/qwen-code/pull/16804)、[#17013](https://github.com/QwenLM/qwen-code/pull/17013)、[#17224](https://github.com/QwenLM/qwen-code/pull/17224)
+
+![Web Shell の Feishu Webhook 設定画面とグループ内のメッセージ表示](https://img.alicdn.com/imgextra/i1/O1CN01cs691H8c4KK3OTaQ_!!6000000002912-2-tps-1672-942.png)
+
+### Web Shell：引き渡し前に変更量を確認、タスク実行中はバックグラウンドの進捗を把握
+
+**会話の変更量が「変更概要」でわかります。** 会話の作業を引き渡すとき、何ファイルを変更し、何行を追加・削除したかを右側パネルの「変更概要」で確認できます。未コミット分、紐づいた PR ごとの分、その他のコミット分を分けて、ファイル一覧と行数を表示します。詳しくは PR [#17378](https://github.com/QwenLM/qwen-code/pull/17378)
+
+**バックグラウンドタスクはバッジから開けます。** 入力欄の上に小さなバッジが増え、実行中のワークフロー、shell、Monitor、バックグラウンド Agent がそれぞれ 1 つずつ表示されます。クリックすると対応する実行ビューへ移動します。詳しくは PR [#16813](https://github.com/QwenLM/qwen-code/pull/16813)
+
+**サイドバーの会話をワークスペースと日付で絞り込めます。** サイドバーはワークスペースでフィルタでき、会話はアクティビティの日付でグループ化できます。範囲を絞ってから会話を探せます。詳しくは PR [#17244](https://github.com/QwenLM/qwen-code/pull/17244)、[#17447](https://github.com/QwenLM/qwen-code/pull/17447)
+
+**その他の改善。** 返信ごとにフックの発火回数、ブロックされた回数、所要時間を確認できます（[#17015](https://github.com/QwenLM/qwen-code/pull/17015)、[#17327](https://github.com/QwenLM/qwen-code/pull/17327)）。ロシア語の UI 翻訳が揃いました（[#17414](https://github.com/QwenLM/qwen-code/pull/17414)）。会話検索の結果が見やすくなり、キーボードの上下キーで選べます（[#16779](https://github.com/QwenLM/qwen-code/pull/16779)）。
+
+![Web Shell の変更概要パネルとバックグラウンドタスクのバッジ](https://img.alicdn.com/imgextra/i3/O1CN01uSlfCDtbSVG7o1Mj_!!6000000000575-2-tps-3845-2160.png)
+
+## 📊 その他の新機能
+
+**会話は別のワークスペースへ作業を任せられます。** Web Shell で複数のワークスペースを管理しているとき、ある会話から別のワークスペースへ作業を派遣できます。相手の指示と設定で作業し、完了後は結果が戻り、続けて質問もできます。最初の派遣ではあなたの確認が必要です。詳しくは PR [#17454](https://github.com/QwenLM/qwen-code/pull/17454)、[#17484](https://github.com/QwenLM/qwen-code/pull/17484)
+
+**PR の紐づけは手動で補え、溜まったコメントは要約で届きます。** PR に紐づいた会話は新しいコメントを自動で受け取ります。自動紐づけが漏れた場合は `/pr <PR 番号またはリンク>` と入力して補えます。Web Shell のセッション概要とサイドバーメニューにも「PR を紐づけ」ボタンがあります。サービスを停止した後に再起動すると、紐づいた PR に溜まっていたコメントが 1 つの要約にまとまって会話に届きます。詳しくは PR [#16877](https://github.com/QwenLM/qwen-code/pull/16877)、[#17199](https://github.com/QwenLM/qwen-code/pull/17199)
+
+**`/memory` パネルで設定を変更できます。** ターミナルの `/memory` パネルで自動保存と定期的なクリーンアップを直接オン・オフでき、ユーザーレベルとプロジェクトレベルのメモリファイルも開いて編集できます。詳しくは PR [#17213](https://github.com/QwenLM/qwen-code/pull/17213)
+
+**Goals ページに全ワークスペースの目標が集まります。** 複数のワークスペースを登録すると、信頼済みワークスペースすべての目標が 1 ページにまとまり、時系列で並びます。各カードには所属ワークスペースが表示され、新しい目標は作成時にワークスペースを選べます。詳しくは PR [#17230](https://github.com/QwenLM/qwen-code/pull/17230)
+
+**Mods プラグインが思考内容も書き換えられます。** ターミナルに表示される返信テキストに加えて、展開した思考ブロックも書き換えられます。たとえばプラグインで思考を中国語に翻訳できます。2 種類のターミナル画面の両方に対応します。詳しくは PR [#16873](https://github.com/QwenLM/qwen-code/pull/16873)、[#17443](https://github.com/QwenLM/qwen-code/pull/17443)
+
+**Web Shell は通常の HTTP でも正常に使えます。** 別のパソコンから `http://<パソコンの IP>:<ポート>` で Web Shell にアクセスしたとき、ターミナルタブ、Web ページプレビュー、ローカルコマンドがすべて使えます。詳しくは PR [#17196](https://github.com/QwenLM/qwen-code/pull/17196)
+
+**GitLab チャンネルを Web Shell で設定できます。** リポジトリのホワイトリストは `group/subgroup/project` のような多階層のプロジェクトパスに対応します。詳しくは PR [#16845](https://github.com/QwenLM/qwen-code/pull/16845)
+
+## 👏 体験改善
+
+**コンテキスト圧縮後も直近の操作はそのまま保持。** 会話が長くなり圧縮が実行されると、直近の操作とその結果はそのまま残り、要約されるのはそれより前の履歴だけです。詳しくは PR [#17141](https://github.com/QwenLM/qwen-code/pull/17141)
+
+**未コミットの変更があるブランチ切り替えも画面内で処理。** 変更を stash するか破棄するかを選んで、そのまま切り替えられます。ターミナルに戻らずに画面内で処理できます。詳しくは PR [#17364](https://github.com/QwenLM/qwen-code/pull/17364)
+
+**Goals カードの状態が一目でわかります。** 実行中は青、あなたの対応待ちは琥珀色です。上限を設定した目標にはターン数・トークン・時間のプログレスバーが表示され、会話内の目標の長いテキストは 1 行に折りたたまれます。詳しくは PR [#17349](https://github.com/QwenLM/qwen-code/pull/17349)、[#17133](https://github.com/QwenLM/qwen-code/pull/17133)
+
+**使用量ダッシュボードがより速く開きます。** Web Shell のステータスページにある使用量ダッシュボードです。詳しくは PR [#17239](https://github.com/QwenLM/qwen-code/pull/17239)
+
+**選択ダイアログで現在の段階をハイライト。** 思考の深さのダイアログで、現在選択中の段階が一目でわかります。モデル一覧と実行モードの選択も同じです。詳しくは PR [#16622](https://github.com/QwenLM/qwen-code/pull/16622)
+
+**会話の名前変更はすぐ反映。** 確定すると新しいタイトルがすぐに表示されます。詳しくは PR [#17006](https://github.com/QwenLM/qwen-code/pull/17006)
+
+## 🔧 重要な修正
+
+| 修正 | あなたへの影響 | PR |
+|------|-----------|-----|
+| **Auto モードが「関連していそう」を「同意済み」とみなし、危険な操作を自動承認していた** | 成果の削除、変更の破棄、共有履歴の書き換えは、あなたの明示的な要求があって初めて実行します。auto-edit では `permissions.ask` の確認ルールがサブ Agent にも適用されます。`git commit --amend` はダイアログでの承認制になりました。Full Access は承認パネルでも選択後も赤く表示されます | [#16858](https://github.com/QwenLM/qwen-code/pull/16858)、[#16932](https://github.com/QwenLM/qwen-code/pull/16932)、[#16075](https://github.com/QwenLM/qwen-code/pull/16075)、[#16874](https://github.com/QwenLM/qwen-code/pull/16874)、[#17100](https://github.com/QwenLM/qwen-code/pull/17100) |
+| **Edit の非 ASCII テキスト・エスケープ表記に対する回復マッチが構文を壊していた** | 回復マッチが機能し、エスケープシーケンスはそのまま保持されます | [#17096](https://github.com/QwenLM/qwen-code/pull/17096)、[#17152](https://github.com/QwenLM/qwen-code/pull/17152) |
+| **入力欄が別の会話の未確認メッセージでロックされていた** | 入力欄は編集可能なまま保たれ、そのメッセージは再試行または破棄できます | [#17140](https://github.com/QwenLM/qwen-code/pull/17140) |
+| **コマンドプロセス終了後にバッファリングされた出力が失われていた** | 出力は保持されます | [#17112](https://github.com/QwenLM/qwen-code/pull/17112) |
+| **実行確認ダイアログでコマンドが完全に表示されていなかった** | 完全なコマンドが表示されます | [#17361](https://github.com/QwenLM/qwen-code/pull/17361) |
+| **AUTO モードがリンクをローカルファイルとして検索していた** | HTTP(S) リンクはファイル検索を起動せず、Windows でのネットワーク検索の遅延も解消しました | [#17127](https://github.com/QwenLM/qwen-code/pull/17127) |
+| **WeChat の QR コードログインが、QR コード生成の遅さで中断していた** | ログインのタイムアウトを延長し、QR コード生成に 30 秒かかってもログインを完了できます | [#16838](https://github.com/QwenLM/qwen-code/pull/16838) |
+| **Grep が ripgrep の正規表現の書き方を認識しなかった** | ネイティブの ripgrep 構文をそのまま使えます | [#14315](https://github.com/QwenLM/qwen-code/pull/14315) |
+| **Docker/Podman 内で CLI の起動がクラッシュしていた** | サンドボックスのホームディレクトリを自動作成し、$HOME がなくても起動できます | [#16878](https://github.com/QwenLM/qwen-code/pull/16878) |
+| **/quit で終了してもプロセスが残っていた** | 終了コマンドがクリーンに完了します | [#17148](https://github.com/QwenLM/qwen-code/pull/17148) |
+| **音声入力が文字起こしの完了を待たずに送信されていた** | 文字起こしが完了してから送信します | [#17331](https://github.com/QwenLM/qwen-code/pull/17331) |
+| **GitHub チャンネルのレート制限後に溜まった返信が、起動時にしか再試行されていなかった** | 実行中もバックグラウンドで再試行します | [#16839](https://github.com/QwenLM/qwen-code/pull/16839) |
+| **サブ Agent のコンテキスト使用量がメイン会話のウィンドウで計算されていた** | サブ Agent 自身のモデルウィンドウで計算し、割合が正確になります | [#13614](https://github.com/QwenLM/qwen-code/pull/13614) |
+| **/effort が現在のモデル非対応の段階を表示していた** | 現在のモデルが対応する段階だけを表示します | [#17425](https://github.com/QwenLM/qwen-code/pull/17425) |
+
+## 👥 コントリビューター
+
+| コントリビューター | 貢献内容 | 参考 PR リンク |
+|--------|---------|-------------|
+| 🆕 **[@Afloat16](https://github.com/Afloat16)** | 🎉 初コントリビュート：Java SDK のエラー関連付けと転写パフォーマンス、SDK タイムアウトと再接続の修正、CLI タスク選択、TODO スナップショット、認証ダイアログ、shell 出力保持など複数の強化 | [#17103](https://github.com/QwenLM/qwen-code/pull/17103), [#17106](https://github.com/QwenLM/qwen-code/pull/17106), [#17107](https://github.com/QwenLM/qwen-code/pull/17107), [#17109](https://github.com/QwenLM/qwen-code/pull/17109), [#17110](https://github.com/QwenLM/qwen-code/pull/17110), [#17111](https://github.com/QwenLM/qwen-code/pull/17111), [#17112](https://github.com/QwenLM/qwen-code/pull/17112), [#17113](https://github.com/QwenLM/qwen-code/pull/17113), [#17115](https://github.com/QwenLM/qwen-code/pull/17115), [#17118](https://github.com/QwenLM/qwen-code/pull/17118), [#17121](https://github.com/QwenLM/qwen-code/pull/17121), [#17122](https://github.com/QwenLM/qwen-code/pull/17122), [#17124](https://github.com/QwenLM/qwen-code/pull/17124), [#17125](https://github.com/QwenLM/qwen-code/pull/17125), [#17126](https://github.com/QwenLM/qwen-code/pull/17126) |
+| **[@2SinceJuly](https://github.com/2SinceJuly)** | agent loop スイッチの強制オフ対応、マネージドランタイムの遅延取得テスト | [#17048](https://github.com/QwenLM/qwen-code/pull/17048), [#16492](https://github.com/QwenLM/qwen-code/pull/16492) |
+| **[@521Peter](https://github.com/521Peter)** | Skill エンドポイントによる名前指定でのワークスペース設定更新のドキュメント | [#16833](https://github.com/QwenLM/qwen-code/pull/16833) |
+| **[@dakjdakd](https://github.com/dakjdakd)** | Grep の ripgrep ネイティブ正規表現構文対応 | [#14315](https://github.com/QwenLM/qwen-code/pull/14315) |
+| **[@MohammedAlkindi](https://github.com/MohammedAlkindi)** | マネージドフックの説明とステータスメッセージの受け入れテスト | [#17393](https://github.com/QwenLM/qwen-code/pull/17393) |
+| **[@now-ing](https://github.com/now-ing)** | 依存関係に残る CVE 監査問題のクリーンアップ | [#10985](https://github.com/QwenLM/qwen-code/pull/10985) |
+| **[@Shizoqua](https://github.com/Shizoqua)** | サブ Agent のコンテキスト使用量を自身のモデルウィンドウで計算 | [#13614](https://github.com/QwenLM/qwen-code/pull/13614) |
+| **[@tonydzi](https://github.com/tonydzi)** | leader の引き渡しと終了状態の特性テスト | [#14855](https://github.com/QwenLM/qwen-code/pull/14855) |
+| **[@yanyukang2003-ux](https://github.com/yanyukang2003-ux)** | AUTO モードをユーザーの明示的な承認で判定 | [#16858](https://github.com/QwenLM/qwen-code/pull/16858) |
+| 🆕 **[@0xvincent](https://github.com/0xvincent)** | 🎉 初コントリビュート：README に Qwen Code 1.0 Preview の入口を追加 | [#16872](https://github.com/QwenLM/qwen-code/pull/16872) |
+| 🆕 **[@EminBudak](https://github.com/EminBudak)** | 🎉 初コントリビュート：Wiro AI 接続ドキュメント | [#16850](https://github.com/QwenLM/qwen-code/pull/16850) |
+| 🆕 **[@LubabaKhalid](https://github.com/LubabaKhalid)** | 🎉 初コントリビュート：脆弱性を含む依存関係の更新 | [#13169](https://github.com/QwenLM/qwen-code/pull/13169) |
+| 🆕 **[@pranavshankar1221](https://github.com/pranavshankar1221)** | 🎉 初コントリビュート：選択ダイアログで現在の段階をハイライト | [#16622](https://github.com/QwenLM/qwen-code/pull/16622) |
+
+<Callout type="info">
+  **アップグレード方法**：`npm i @qwen-code/qwen-code@latest -g` を実行すると最新バージョンにアップグレードできます。
+</Callout>
+
+ご意見・ご要望は [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) までお気軽にどうぞ！

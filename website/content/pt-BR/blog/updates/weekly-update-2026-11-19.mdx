@@ -1,0 +1,164 @@
+---
+title: "Qwen Code: use o novo flagship Qwen4-Max, rode sessões paralelas sem conflito e envie resultados direto para grupos do Feishu/WeCom/DingTalk"
+date: "2026-11-19"
+description: "Nesta semana saíram as versões v0.27.3 a v0.28.0. O Qwen4-Max, novo flagship da família Qwen, está disponível e o Qwen Code mais recente já o integra; novas sessões do Web Shell rodam por padrão em worktrees separados, e tarefas paralelas não interferem umas nas outras; Feishu, WeCom e DingTalk ganham entrega por webhook de bot em grupos."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i1/O1CN01P16yy0rBwvB2jBZY_!!6000000001806-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code: use o novo flagship Qwen4-Max, rode sessões paralelas sem conflito e envie resultados direto para grupos do Feishu/WeCom/DingTalk"
+  date="2026-11-19"
+  author="Qwen Team"
+/>
+
+O Qwen Code lançou três versões oficiais nesta semana: de v0.27.3 a v0.28.0.
+
+**O novo flagship Qwen4-Max está disponível.** É o modelo flagship da nova geração da família Qwen, e o Qwen Code mais recente já o integra.
+
+**Novas sessões trabalham em uma cópia separada por padrão.** Abra várias sessões do mesmo projeto em paralelo: cada uma mexe no próprio worktree, e a branch e os arquivos em que você está trabalhando ficam intactos.
+
+**Resultados de tarefas vão direto para grupos do Feishu, WeCom e DingTalk.** Adicione um bot personalizado ao grupo, cole o endereço do webhook no Web Shell, e notificações e resultados de tarefas agendadas chegam ao grupo.
+
+## ✨ Novidades
+
+### Use o novo flagship Qwen4-Max
+
+Qwen4-Max é o novo modelo flagship da família Qwen: a versão oficial saiu em 16 de novembro. Ele processa texto, imagem e vídeo, e foi feito para raciocínio complexo, programação e tarefas de agent.
+
+O Qwen Code concluiu a integração nesta semana. Você pode usar o Qwen4-Max em qualquer canal de acesso: Bailian, plataforma Qwen AI, assinatura Qwen, entre outros. A profundidade de raciocínio tem três níveis — low, high e xhigh —, o padrão é high, e dá para desligar o raciocínio.
+
+Imagens e vídeos podem ser enviados direto na conversa para ele entender. Nos canais Bailian e plataforma Qwen AI, há ainda dois ajustes que economizam tokens: a retenção de cache pode ir dos 5 minutos padrão até 1 hora, e o nível de detalhe das imagens pode ser reduzido.
+
+Na prática:
+
+- Anexe um screenshot do design e peça para ele montar a página
+- Envie uma gravação de tela e peça para ele organizar os passos de reprodução do bug
+- Suba a intensidade de raciocínio ao investigar uma falha de teste difícil de localizar
+
+Veja o PR [#17513](https://github.com/QwenLM/qwen-code/pull/17513).
+
+![Qwen4-Max na lista de modelos e os níveis de profundidade de raciocínio](https://img.alicdn.com/imgextra/i4/O1CN01cXhl153mN0L7o1Mj_!!6000000001943-2-tps-3845-2160.png)
+
+### Rode sessões paralelas em worktrees separados
+
+Em workspaces Git confiáveis, cada nova sessão do Web Shell trabalha por padrão em um worktree separado. O worktree é outra cópia de trabalho do mesmo repositório: o histórico de commits é compartilhado, e cada sessão edita os próprios arquivos. Assim, várias sessões do mesmo projeto rodam em paralelo, e as mudanças de uma não sobrescrevem as da outra nem caem nos arquivos que você está editando.
+
+Quando o trabalho termina, você recolhe o resultado de dois jeitos: clique em "Criar branch aqui" no menu de branches para transformar o trabalho em uma branch de verdade; ou clique em "Transferir para o diretório local" para levar as mudanças de volta ao seu diretório original.
+
+Prefere trabalhar direto na branch atual? Defina `worktree.defaultForNewSessions` como false e desligue o modo worktree padrão.
+
+Na prática:
+
+- Abra uma sessão para cada demanda e trabalhe em várias ao mesmo tempo, sem sobrescrever nada
+- Continue escrevendo código no seu diretório enquanto a IA edita a cópia dela: os dois lados não conflitam
+- Use duas sessões para testar duas abordagens de refatoração e compare os resultados
+
+Veja o PR [#17228](https://github.com/QwenLM/qwen-code/pull/17228).
+
+![Modo worktree das novas sessões do Web Shell e menu de branches](https://img.alicdn.com/imgextra/i2/O1CN01Dzz4hbRKp6B7o1Mj_!!6000000003218-2-tps-3845-2160.png)
+
+### Envie resultados direto para grupos do Feishu, WeCom e DingTalk
+
+Feishu, WeCom e DingTalk ganham o modo de conexão "Webhook (apenas envio)" no Web Shell, que já configurava WeChat, QQ e e-mail. Adicione um bot personalizado ao grupo e cole o endereço do webhook dele no gerenciamento de Channels: notificações, resultados de execução e resultados de tarefas agendadas chegam ao grupo como mensagens Markdown.
+
+Esse modo apenas envia: ele não recebe mensagens do grupo. Para conversar com a IA dentro do grupo, use o modo de conexão de bot original de cada plataforma.
+
+Na prática:
+
+- Crie uma tarefa agendada "resumir os PRs mesclados ontem, todo dia às 9h" e receba o resultado direto no grupo do projeto no Feishu
+- Mande a IA rodar os testes de regressão toda noite e enviar o resultado ao grupo do WeCom: você chega de manhã e já lê
+- Configure uma notificação de conclusão para tarefas longas: ao terminar, o aviso cai no grupo do DingTalk e a equipe acompanha o progresso
+
+Veja os PRs [#16804](https://github.com/QwenLM/qwen-code/pull/16804), [#17013](https://github.com/QwenLM/qwen-code/pull/17013) e [#17224](https://github.com/QwenLM/qwen-code/pull/17224).
+
+![Página de configuração do webhook do Feishu no Web Shell e mensagens no grupo](https://img.alicdn.com/imgextra/i1/O1CN01cs691H8c4KK3OTaQ_!!6000000002912-2-tps-1672-942.png)
+
+### Web Shell: veja o tamanho das mudanças antes de entregar e acompanhe o progresso em segundo plano
+
+**A sessão ganha uma visão geral de alterações.** Na hora de entregar, veja quantos arquivos mudaram e quantas linhas entraram e saíram: o painel direito agora traz a visão geral de alterações, com listas de arquivos e contagem de linhas separadas para o que não foi commitado, para cada PR vinculado e para os demais commits. Veja o PR [#17378](https://github.com/QwenLM/qwen-code/pull/17378).
+
+**Badges levam às tarefas em segundo plano.** Acima da caixa de entrada, pequenos badges mostram o que está rodando: um para workflows, um para shell, um para monitoramento e um para agents em segundo plano. Clique e vá direto à tela de execução correspondente. Veja o PR [#16813](https://github.com/QwenLM/qwen-code/pull/16813).
+
+**Filtre as sessões da lateral por workspace e data.** Com muitos workspaces, filtre a lateral por workspace; agrupe as sessões por data de atividade, afunile o escopo e encontre a sessão certa. Veja os PRs [#17244](https://github.com/QwenLM/qwen-code/pull/17244) e [#17447](https://github.com/QwenLM/qwen-code/pull/17447).
+
+**Outras melhorias.** Cada resposta mostra quantas vezes os hooks dispararam, quantas foram bloqueadas e quanto tempo levaram ([#17015](https://github.com/QwenLM/qwen-code/pull/17015), [#17327](https://github.com/QwenLM/qwen-code/pull/17327)); a tradução da interface em russo foi completada ([#17414](https://github.com/QwenLM/qwen-code/pull/17414)); os resultados de busca de sessões ficaram mais claros e aceitam seleção pelo teclado, com as setas para cima e para baixo ([#16779](https://github.com/QwenLM/qwen-code/pull/16779)).
+
+![Visão geral de alterações e badges de tarefas em segundo plano no Web Shell](https://img.alicdn.com/imgextra/i3/O1CN01uSlfCDtbSVG7o1Mj_!!6000000000575-2-tps-3845-2160.png)
+
+## 📊 Mais funcionalidades
+
+**Delegue trabalho para outro workspace.** Quando o Web Shell gerencia vários workspaces, uma sessão pode delegar uma tarefa a outro workspace, usando as instruções e configurações de lá; o resultado volta para a sessão, e você pode continuar perguntando. A primeira delegação pede sua confirmação. Veja os PRs [#17454](https://github.com/QwenLM/qwen-code/pull/17454) e [#17484](https://github.com/QwenLM/qwen-code/pull/17484).
+
+**Vincule um PR manualmente e receba comentários offline em resumo.** Se a vinculação automática deixar passar algum PR, digite `/pr <número ou link do PR>` para vincular; a visão geral de sessões e o menu da lateral do Web Shell também têm o botão "Vincular PR". Quando o serviço volta após um tempo parado, os comentários acumulados no PR vinculado chegam à sessão como um único resumo. Veja os PRs [#16877](https://github.com/QwenLM/qwen-code/pull/16877) e [#17199](https://github.com/QwenLM/qwen-code/pull/17199).
+
+**Ajuste a memória no painel `/memory`.** No terminal, o painel `/memory` liga e desliga o salvamento automático e a limpeza periódica, e abre os arquivos de memória de usuário e de projeto para edição. Veja o PR [#17213](https://github.com/QwenLM/qwen-code/pull/17213).
+
+**Veja os Goals de todos os workspaces em uma página.** Com vários workspaces registrados, os Goals de todos os workspaces confiáveis se reúnem em uma página, ordenados por data, e cada cartão indica o workspace a que pertence; ao criar um Goal, escolha em qual workspace ele entra. Veja o PR [#17230](https://github.com/QwenLM/qwen-code/pull/17230).
+
+**Plugins Mods reescrevem o raciocínio.** Além do texto da resposta exibido no terminal, os plugins Mods agora reescrevem também os blocos de raciocínio expandidos — por exemplo, traduzindo o raciocínio para chinês. As duas interfaces de terminal suportam. Veja os PRs [#16873](https://github.com/QwenLM/qwen-code/pull/16873) e [#17443](https://github.com/QwenLM/qwen-code/pull/17443).
+
+**Use o Web Shell por HTTP comum.** Ao acessar o Web Shell de outro computador por `http://<IP do computador>:<porta>`, a aba de terminal, a prévia de páginas web e os comandos locais funcionam normalmente. Veja o PR [#17196](https://github.com/QwenLM/qwen-code/pull/17196).
+
+**Configure o canal do GitLab no Web Shell.** A whitelist de repositórios aceita caminhos de projeto em vários níveis, como group/subgroup/project. Veja o PR [#16845](https://github.com/QwenLM/qwen-code/pull/16845).
+
+## 👏 Melhorias de experiência
+
+**A compactação preserva a última operação completa.** Quando a conversa fica longa e dispara a compactação, a operação mais recente e o resultado dela ficam intactos; só o histórico anterior vira resumo. Veja o PR [#17141](https://github.com/QwenLM/qwen-code/pull/17141).
+
+**Resolva mudanças não commitadas ao trocar de branch.** Escolha fazer stash ou descartar as mudanças e troque de branch direto na página, sem voltar ao terminal para arrumar na mão. Veja o PR [#17364](https://github.com/QwenLM/qwen-code/pull/17364).
+
+**Leia o status dos Goals de relance.** Cartões em execução ficam azuis; os que esperam por você ficam âmbar. Goals com limite mostram barras de progresso de turnos, tokens e tempo; na sessão, o texto longo do Goal se recolhe em uma linha. Veja os PRs [#17349](https://github.com/QwenLM/qwen-code/pull/17349) e [#17133](https://github.com/QwenLM/qwen-code/pull/17133).
+
+**O painel de uso abre mais rápido.** É o painel de uso da página de status do Web Shell. Veja o PR [#17239](https://github.com/QwenLM/qwen-code/pull/17239).
+
+**Veja o nível selecionado em destaque.** No popup de profundidade de raciocínio, o nível atual aparece destacado; a lista de modelos e a seleção de modo de execução também. Veja o PR [#16622](https://github.com/QwenLM/qwen-code/pull/16622).
+
+**Renomeie a sessão com efeito imediato.** Confirmou, o novo título aparece na hora. Veja o PR [#17006](https://github.com/QwenLM/qwen-code/pull/17006).
+
+## 🔧 Correções importantes
+
+| Correção | Impacto para você | PR |
+|------|-----------|-----|
+| **Modo Auto tratava "parece relacionado" como "você concordou" e liberava operações perigosas** | Apagar resultados, descartar mudanças e reescrever histórico compartilhado só passam com seu pedido explícito; no auto-edit, as regras de pergunta de `permissions.ask` também valem para subagentes; `git commit --amend` abre um popup pedindo sua aprovação; Full Access aparece em vermelho no painel de aprovação e depois de selecionado | [#16858](https://github.com/QwenLM/qwen-code/pull/16858), [#16932](https://github.com/QwenLM/qwen-code/pull/16932), [#16075](https://github.com/QwenLM/qwen-code/pull/16075), [#16874](https://github.com/QwenLM/qwen-code/pull/16874), [#17100](https://github.com/QwenLM/qwen-code/pull/17100) |
+| **A recuperação de correspondência do Edit corrompia a sintaxe em texto não ASCII e sequências de escape** | A correspondência é recuperada sem quebrar as sequências de escape | [#17096](https://github.com/QwenLM/qwen-code/pull/17096), [#17152](https://github.com/QwenLM/qwen-code/pull/17152) |
+| **Caixa de entrada travada por mensagem não confirmada de outra sessão** | A caixa de entrada continua editável, e a mensagem pode ser reenviada ou descartada | [#17140](https://github.com/QwenLM/qwen-code/pull/17140) |
+| **Saída em buffer perdida quando o processo do comando terminava** | A saída é preservada | [#17112](https://github.com/QwenLM/qwen-code/pull/17112) |
+| **Comando aparecia incompleto no popup de confirmação de execução** | O comando completo é preservado | [#17361](https://github.com/QwenLM/qwen-code/pull/17361) |
+| **Modo AUTO tratava links como arquivos locais** | Links HTTP(S) deixam de disparar busca de arquivos, e a latência de busca de rede no Windows desaparece | [#17127](https://github.com/QwenLM/qwen-code/pull/17127) |
+| **Login por QR code do WeChat interrompia quando o QR code demorava a gerar** | O login usa um timeout maior e conclui mesmo quando a geração do QR code leva 30 segundos | [#16838](https://github.com/QwenLM/qwen-code/pull/16838) |
+| **Grep não reconhecia a sintaxe de regex do ripgrep** | A sintaxe nativa do ripgrep pode ser usada direto | [#14315](https://github.com/QwenLM/qwen-code/pull/14315) |
+| **CLI travava ao iniciar dentro de Docker/Podman** | O diretório home do sandbox é criado automaticamente, e a inicialização funciona mesmo sem $HOME | [#16878](https://github.com/QwenLM/qwen-code/pull/16878) |
+| **Processo continuava vivo após sair com /quit** | O comando de saída termina de forma limpa | [#17148](https://github.com/QwenLM/qwen-code/pull/17148) |
+| **Entrada de voz enviava antes de a transcrição terminar** | A transcrição termina primeiro, e o envio vem depois | [#17331](https://github.com/QwenLM/qwen-code/pull/17331) |
+| **Respostas acumuladas do canal GitHub após limite de taxa só eram reenviadas na inicialização** | Agora também há novas tentativas em segundo plano durante a execução | [#16839](https://github.com/QwenLM/qwen-code/pull/16839) |
+| **Uso de contexto de subagentes calculado pela janela da sessão principal** | O cálculo usa a janela do próprio modelo do subagente, e a proporção fica correta | [#13614](https://github.com/QwenLM/qwen-code/pull/13614) |
+| **/effort listava níveis que o modelo atual não suporta** | Só os níveis suportados pelo modelo atual aparecem | [#17425](https://github.com/QwenLM/qwen-code/pull/17425) |
+
+## 👥 Contribuidores
+
+| Contribuidor | Contribuição | PRs de referência |
+|--------|---------|-------------|
+| 🆕 **[@Afloat16](https://github.com/Afloat16)** | 🎉 Primeira contribuição: associação de erros e desempenho de transcrição no SDK Java, correções de timeout e reconexão do SDK, seleção de tarefas no CLI, snapshots de Todo, diálogo de autenticação, preservação da saída do shell e outros reforços | [#17103](https://github.com/QwenLM/qwen-code/pull/17103), [#17106](https://github.com/QwenLM/qwen-code/pull/17106), [#17107](https://github.com/QwenLM/qwen-code/pull/17107), [#17109](https://github.com/QwenLM/qwen-code/pull/17109), [#17110](https://github.com/QwenLM/qwen-code/pull/17110), [#17111](https://github.com/QwenLM/qwen-code/pull/17111), [#17112](https://github.com/QwenLM/qwen-code/pull/17112), [#17113](https://github.com/QwenLM/qwen-code/pull/17113), [#17115](https://github.com/QwenLM/qwen-code/pull/17115), [#17118](https://github.com/QwenLM/qwen-code/pull/17118), [#17121](https://github.com/QwenLM/qwen-code/pull/17121), [#17122](https://github.com/QwenLM/qwen-code/pull/17122), [#17124](https://github.com/QwenLM/qwen-code/pull/17124), [#17125](https://github.com/QwenLM/qwen-code/pull/17125), [#17126](https://github.com/QwenLM/qwen-code/pull/17126) |
+| **[@2SinceJuly](https://github.com/2SinceJuly)** | interruptor do agent loop com desligamento forçado, testes de lazy fetch do runtime gerenciado | [#17048](https://github.com/QwenLM/qwen-code/pull/17048), [#16492](https://github.com/QwenLM/qwen-code/pull/16492) |
+| **[@521Peter](https://github.com/521Peter)** | documentação do endpoint de Skill para atualizar configurações do workspace por nome | [#16833](https://github.com/QwenLM/qwen-code/pull/16833) |
+| **[@dakjdakd](https://github.com/dakjdakd)** | Grep com suporte à sintaxe de regex nativa do ripgrep | [#14315](https://github.com/QwenLM/qwen-code/pull/14315) |
+| **[@MohammedAlkindi](https://github.com/MohammedAlkindi)** | testes de aceitação das descrições e mensagens de status de hooks gerenciados | [#17393](https://github.com/QwenLM/qwen-code/pull/17393) |
+| **[@now-ing](https://github.com/now-ing)** | limpeza dos problemas restantes de auditoria de CVE em dependências | [#10985](https://github.com/QwenLM/qwen-code/pull/10985) |
+| **[@Shizoqua](https://github.com/Shizoqua)** | uso de contexto de subagentes calculado pela janela do próprio modelo | [#13614](https://github.com/QwenLM/qwen-code/pull/13614) |
+| **[@tonydzi](https://github.com/tonydzi)** | testes de caracterização da entrega e do estado final do leader | [#14855](https://github.com/QwenLM/qwen-code/pull/14855) |
+| **[@yanyukang2003-ux](https://github.com/yanyukang2003-ux)** | modo AUTO decide pela autorização explícita do usuário | [#16858](https://github.com/QwenLM/qwen-code/pull/16858) |
+| 🆕 **[@0xvincent](https://github.com/0xvincent)** | 🎉 Primeira contribuição: entrada do Qwen Code 1.0 Preview no README | [#16872](https://github.com/QwenLM/qwen-code/pull/16872) |
+| 🆕 **[@EminBudak](https://github.com/EminBudak)** | 🎉 Primeira contribuição: documentação de integração do Wiro AI | [#16850](https://github.com/QwenLM/qwen-code/pull/16850) |
+| 🆕 **[@LubabaKhalid](https://github.com/LubabaKhalid)** | 🎉 Primeira contribuição: atualização de dependências com vulnerabilidades | [#13169](https://github.com/QwenLM/qwen-code/pull/13169) |
+| 🆕 **[@pranavshankar1221](https://github.com/pranavshankar1221)** | 🎉 Primeira contribuição: destaque do nível atual nos popups de seleção | [#16622](https://github.com/QwenLM/qwen-code/pull/16622) |
+
+<Callout type="info">
+  **Como atualizar**: execute `npm i @qwen-code/qwen-code@latest -g` para atualizar para a versão mais recente.
+</Callout>
+
+Se tiver dúvidas ou sugestões, fique à vontade para enviar feedback pelos [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
