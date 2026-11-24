@@ -377,7 +377,7 @@ new McpClientManager(config, toolRegistry, {
 - `McpTransportPool.acquire()`는 `attachPooledSession`과 `rollbackReservationOnSpawnFailure`를 사용하여 고속 경로 attach, 스폰 후 attach, 풀링된 spawn-in-flight catch 동작을 공유합니다. 런타임 동작은 변경되지 않으며 레이스 윈도우 불변성은 여전히 호출부에 있습니다.
 - `SessionMcpView.applyTools` / `applyPrompts`는 `compileNameFilter(cfg)`를 통해 `includeTools` / `excludeTools`를 한 번 컴파일하고 `compiledFilterAccepts(compiled, name)`로 각 도구를 확인합니다. 내보내진 `passesSessionFilter` / `passesSessionPromptFilter`도 같은 컴파일 경로를 사용합니다. `excludeTools`는 정확 매칭이며 `includeTools`는 첫 번째 `(...)` 접미사를 제거하여 `toolName(args)`가 `toolName`과 매칭됩니다.
 
-디자인 문서: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md) §6은 트랜스포트 풀 상태 머신, 재연결, 드레인, 자손 스위프 경로를 다룹니다.
+디자인 문서: [`../../design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md) §6은 트랜스포트 풀 상태 머신, 재연결, 드레인, 자손 스위프 경로를 다룹니다.
 
 ## 주의사항 및 알려진 제한
 
@@ -394,5 +394,5 @@ new McpClientManager(config, toolRegistry, {
 - `packages/core/src/tools/mcp-pool-key.ts`(`connectionIdOf`, `parseConnectionId`)
 - `packages/core/src/tools/mcp-pool-events.ts`(이벤트 타입)
 - `packages/core/src/tools/session-mcp-view.ts`(세션별 필터링 뷰)
-- F2 디자인 문서(v2.2, 32개 항목 리뷰 폴드인 변경 로그 포함): [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md). 디자인 계약을 권위 있는 자료로 간주하십시오. 이 페이지는 개발자 심층 분석입니다.
+- F2 디자인 문서(v2.2, 32개 항목 리뷰 폴드인 변경 로그 포함): [`../../design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md). 디자인 계약을 권위 있는 자료로 간주하십시오. 이 페이지는 개발자 심층 분석입니다.
 - F2 디자인 노트: 이슈 [#4175](https://github.com/QwenLM/qwen-code/issues/4175)(F2 시리즈의 커밋 4-6).

@@ -11,11 +11,11 @@
 - **감사** — 모든 접근/거부가 `PermissionAuditRing`/모니터링용 구조화 이벤트를 발생시킵니다.
 - **타입화된 에러** — HTTP 상태로 매핑되는 닫힌 `FsErrorKind` 유니언.
 
-HTTP 파일 라우트(`GET /file`, `GET /file/bytes`, `POST /file/write`, `POST /file/edit`, `GET /list`, `GET /glob`, `GET /stat`)는 이 경계를 사용하며 동일 호스트 예외를 받지 않습니다. 프로덕션 데몬에서 위임된 상태로 남는 ACP 호출은 주입된 브리지 어댑터를 통해 WFS에 도달합니다. 일반 브리지 호출자는 이러한 어댑터를 주입할 때만 WFS를 사용합니다. 프로덕션 동일 호스트 `qwen serve` 런타임은 `readTextFile: false`를 광고하므로, 모든 자식 `FileSystemService.readTextFile` 소비자는 일반 CLI 파일시스템 서비스를 사용합니다. 최종 ACP `writeTextFile` 콘텐츠 쓰기는 위임된 상태로 유지됩니다. 워크스페이스 대상은 WFS를 사용하며, 엄격한 내장 도구 마커는 데몬이 생성한 동일 호스트 어댑터에서만 외부 경로에 대해 동등한 호스트 라이터를 선택할 수 있습니다. [외부 쓰기 설계](../../design/daemon-external-tool-text-writes.md)를 참조하세요.
+HTTP 파일 라우트(`GET /file`, `GET /file/bytes`, `POST /file/write`, `POST /file/edit`, `GET /list`, `GET /glob`, `GET /stat`)는 이 경계를 사용하며 동일 호스트 예외를 받지 않습니다. 프로덕션 데몬에서 위임된 상태로 남는 ACP 호출은 주입된 브리지 어댑터를 통해 WFS에 도달합니다. 일반 브리지 호출자는 이러한 어댑터를 주입할 때만 WFS를 사용합니다. 프로덕션 동일 호스트 `qwen serve` 런타임은 `readTextFile: false`를 광고하므로, 모든 자식 `FileSystemService.readTextFile` 소비자는 일반 CLI 파일시스템 서비스를 사용합니다. 최종 ACP `writeTextFile` 콘텐츠 쓰기는 위임된 상태로 유지됩니다. 워크스페이스 대상은 WFS를 사용하며, 엄격한 내장 도구 마커는 데몬이 생성한 동일 호스트 어댑터에서만 외부 경로에 대해 동등한 호스트 라이터를 선택할 수 있습니다. [외부 쓰기 설계](https://github.com/QwenLM/qwen-code/blob/main/docs/design/daemon-external-tool-text-writes.md)를 참조하세요.
 
 이 텍스트 읽기 기능 슬라이스는 직접 `read_file`과 write, edit, notebook, sed, artifact 작업에서 사용되는 공유 사전 읽기를 포함합니다:
 
-- 의도적으로 일반 CLI 읽기 동작을 수용하며 WFS 읽기 측 보장은 수용하지 않습니다. [설계 문서](../../design/daemon-local-text-reads.md)가 포기하는 항목의 정확한 목록을 소유합니다.
+- 의도적으로 일반 CLI 읽기 동작을 수용하며 WFS 읽기 측 보장은 수용하지 않습니다. [설계 문서](https://github.com/QwenLM/qwen-code/blob/main/docs/design/daemon-local-text-reads.md)가 포기하는 항목의 정확한 목록을 소유합니다.
 - 같은 문서가 유지된 어댑터 읽기 경로가 "안전하게 실패하는" 제한된 의미를 기록합니다. 별도의 외부 쓰기 설계에서는 승인된 최종 쓰기 실패가 어떻게 닫히는지를 기록합니다.
 - 직접 외부 `read_file`은 일반 CLI 권한 규칙과 핵심 파일 작업 텔레메트리를 유지합니다.
 - HTTP 파일시스템 라우트는 워크스페이스 범위로 유지되며, 에이전트 발견 도구 동작은 이 기능에 의해 변경되지 않습니다.

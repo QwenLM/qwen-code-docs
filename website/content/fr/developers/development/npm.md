@@ -89,7 +89,7 @@ Si une étape du workflow de publication échoue, cela créera automatiquement u
 
 La concurrence hébergée est partagée au niveau du compte avec l'automatisation de review de PR, d'autofix et de triage, donc ces étapes hébergées font la file derrière ce trafic. Une étape en file d'attente n'est pas un échec de publication : GitHub ne lui a pas encore assigné de runner, son log est toujours vide, et `timeout-minutes` ne commence à compter qu'une fois qu'elle s'exécute. Le 2026-11-01, une publication a attendu 2h33m pour un runner puis s'est terminée en 5m37s, tandis que les nightlies autour ont été dispatchées 3-4s après la fin de leur build. Préférez le nightly, ou dispatchez en dehors des heures de pointe de la journée de travail Asia/Shanghai, quand une publication manuelle est sensible au timing.
 
-Voir [Release runner slots](../../design/2026-10-28-release-queue-optimization.md) pour l'analyse des pools et pour savoir quels jobs de publication ont déjà été déplacés hors des runners hébergés.
+Voir [Release runner slots](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-28-release-queue-optimization.md) pour l'analyse des pools et pour savoir quels jobs de publication ont déjà été déplacés hors des runners hébergés.
 
 ## Validation de la publication
 

@@ -89,7 +89,7 @@ npm install -g @qwen-code/qwen-code@nightly
 
 Hosted concurrency распределяется на весь аккаунт и используется совместно с автоматизацией PR review, autofix и triage, поэтому эти hosted шаги встают в очередь за этим трафиком. Шаг в очереди — это не провалившийся релиз: GitHub ещё не назначил для него runner, его лог всё ещё пуст, и `timeout-minutes` начинает отсчитываться только после запуска. 2026-11-01 публикация ожидала runner 2ч33м, а затем завершилась за 5м37с, в то время как nightly вокруг неё были отправлены через 3–4с после завершения сборки. Отдавайте предпочтение nightly или запускайте вне пиковых часов рабочего дня Asia/Shanghai, если ручной релиз чувствителен ко времени.
 
-См. [Release runner slots](../../design/2026-10-28-release-queue-optimization.md) для анализа пулов и информации о том, какие задачи релиза уже были перенесены с hosted runner'ов.
+См. [Release runner slots](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-28-release-queue-optimization.md) для анализа пулов и информации о том, какие задачи релиза уже были перенесены с hosted runner'ов.
 
 ## Валидация релиза
 

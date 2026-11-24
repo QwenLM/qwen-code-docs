@@ -633,7 +633,7 @@ Content-Type: application/json
 | `git_workspace_clone` | 守护进程主机具有 `git` 二进制文件；使用 `{ kind: "git", url, target }` 执行 `POST /workspaces` 会启动一个异步克隆任务，其路由报告进度、取消状态和标准 cwd。没有 `git` 的主机会省略该标签。 |
 | `workspace_runtime_removal` | 可移除的动态或持久化恢复的辅助运行时可以通过管理路由进行排空和移除。 |
 | `workspace_directories` | 守护进程持久化工作区设置，并且每个受信任的本地运行时都可以将其额外目录应用到其活动会话：`/workspaces/:workspace/directories` 列出、添加和移除在工作区范围内持久化的条目（`context.includeDirectories`）。即使存在该标签，SSH、托管和独立工作区也会被拒绝，而实验性的配对引擎守护进程会省略该标签和路由，因为工作区范围的变更无法到达托管子进程。 |
-| `native_directory_picker` | 守护进程主机可以打开原生操作系统目录选择器（macOS 上的 `osascript`，Windows 上的 PowerShell，带有显示器的 Linux 主机上的 `zenity`）。无头主机会省略该标签，以便客户端隐藏守护进程原生的选择器，而不是呈现一个保证失败的操作。当没有可用的选择器时，Web Shell 会隐藏“浏览”按钮；[嵌入主机目录选择器](../design/web-shell-host-directory-picker.md#public-api-and-precedence)可以在没有此标签的情况下提供该功能。 |
+| `native_directory_picker` | 守护进程主机可以打开原生操作系统目录选择器（macOS 上的 `osascript`，Windows 上的 PowerShell，带有显示器的 Linux 主机上的 `zenity`）。无头主机会省略该标签，以便客户端隐藏守护进程原生的选择器，而不是呈现一个保证失败的操作。当没有可用的选择器时，Web Shell 会隐藏“浏览”按钮；[嵌入主机目录选择器](https://github.com/QwenLM/qwen-code/blob/main/docs/design/web-shell-host-directory-picker.md#public-api-and-precedence)可以在没有此标签的情况下提供该功能。 |
 | `workspace_runtime_stop` | 守护进程拥有 ACP 进程统计、完整的独立活动和计划任务观察数据，以及支持确认停止和接收快照的运行时桥接。不支持的单个运行时在预览中被禁用。 |
 | `workspace_runtime` | 每个活动的工作区桥接都提供权威的运行时生命周期快照；混合或遗留注入的桥接会省略该标签。 |
 | `workspace_skills_config_runtime` | 每个活动工作区都支持权威的运行时生命周期以及用于技能管理和新会话编辑器的拆分配置/运行时技能路由。 |
@@ -3880,7 +3880,7 @@ SSE 级别的 `id:` / `event:` 行重复了 `envelope.id` / `envelope.type` 以�
 
 当广告该协议时，TypeScript SDK 会自动对大于 512 KiB 的附件使用此协议，每个客户端有两个并发文件和顺序分块。即使在 ACP 传输下也使用经过认证的 REST，缓存有效的发现信息 60 秒，并为较小的文件和较旧的 daemon 保留现有的原始端点。在网络错误、请求超时或 502/503/504 后，追加/完成操作最多重试两次；速率限制重试在五分钟的操作期限内遵循 `Retry-After`。模糊的创建和容量故障不会重试。失败的上传获得一次独立的两秒清理尝试。`DaemonAttachmentUploadError` 保留原因和 `httpStatus`；其 `status` 省略了上传内部的 404，以免消费者将其误认为是受支持的传统附件路由。
 
-有关生命周期和兼容性详情，请参阅 [完整设计](../design/session-attachment-chunk-upload.md)。
+有关生命周期和兼容性详情，请参阅 [完整设计](https://github.com/QwenLM/qwen-code/blob/main/docs/design/session-attachment-chunk-upload.md)。
 
 ### 模型目录重载
 

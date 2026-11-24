@@ -623,4 +623,4 @@ repo/.qwen/workflows/review.js
 
 ## 为单个人类轮次建议工作流
 
-在支持的人类提交中使用 `ultracode` 或现有的 `workflow` 关键字来为该轮次建议工作流工具。有关入口点、SDK 选择和设置，请参见[工作流意图](./workflow-intent.md)（[简体中文](./workflow-intent.zh-CN.md)）。
+在支持的人类提交中使用 `ultracode` 或现有的 `workflow` 关键字来为该轮次建议工作流工具。有关入口点、SDK 选择和设置，请参见[工作流意图](./workflow-intent.md)（[简体中文](https://github.com/QwenLM/qwen-code/blob/main/docs/users/workflow-intent.zh-CN.md)）。

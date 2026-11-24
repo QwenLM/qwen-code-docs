@@ -318,7 +318,7 @@ Repositories können den Reviewern abgegrenzte, repository-spezifische Hinweise 
 
 Eine Regel gilt, wenn eine geänderte Datei auf einen ihrer `paths`-Globs passt (`*`, `?` und `**`-Segmente; case-sensitive). Alle passenden Regeln führen ihre Hinweise zusammen: Domains und zugehörige Dateien für die Review-Agents, empfohlene Tests und erforderliche Konfigurationen für den Build-and-Test-Agenten, zusätzliche Reviewer-Rollen (nur berücksichtigt, wenn der gewählte Effort und die Topologie sie ausführen), und Proof-Boundaries, die das finale Review als unverifizierte Dimensionen offenlegt. Arrays können in beliebiger Reihenfolge geschrieben werden; doppelte Einträge werden abgelehnt.
 
-Bei PR-Reviews wird das Manifest aus der Merge-Basis gelesen, sodass der PR unter Review sich nicht selbst Hinweise zu- oder abwählen kann; lokale Reviews lesen es aus dem aktuellen Worktree. Low-Effort- und Cross-Repository-Reviews überspringen den Repository-Kontext. Der vollständige Vertrag und das Trust-Modell stehen im [Design-Doc](../../design/review-repository-context.md).
+Bei PR-Reviews wird das Manifest aus der Merge-Basis gelesen, sodass der PR unter Review sich nicht selbst Hinweise zu- oder abwählen kann; lokale Reviews lesen es aus dem aktuellen Worktree. Low-Effort- und Cross-Repository-Reviews überspringen den Repository-Kontext. Der vollständige Vertrag und das Trust-Modell stehen im [Design-Doc](https://github.com/QwenLM/qwen-code/blob/main/docs/design/review-repository-context.md).
 
 ## Issue Fidelity
 

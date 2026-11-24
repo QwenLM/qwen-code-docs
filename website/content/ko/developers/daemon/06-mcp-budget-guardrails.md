@@ -149,5 +149,5 @@ sequenceDiagram
 - `packages/core/src/tools/mcp-workspace-budget.ts`(전체 클래스)
 - `packages/core/src/tools/mcp-client-manager.ts`(`BudgetExhaustedError`, `McpBudgetEvent`, 히스테리시스 상수)
 - `packages/core/src/tools/mcp-transport-pool.ts`(`tryReserve`를 호출하는 풀의 `acquire` 사이트)
-- F2 설계 문서(v2.2): [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md) §11 — 워크스페이스 수준 예산 및 예산/지문 후속 조치에 대한 v2.2 변경 로그 항목.
+- F2 설계 문서(v2.2): [`../../design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md) §11 — 워크스페이스 수준 예산 및 예산/지문 후속 조치에 대한 v2.2 변경 로그 항목.
 - F2 설계 노트: issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) commit 6.

@@ -102,5 +102,5 @@ qwen batch clean <task-id>               # delete the local record (cancels noth
 - `clean` verweigert die Ausführung, während ein Batch noch laufen könnte oder nicht eingesammelte Ergebnisse hält, es sei denn, Sie übergeben `--force`.
 - Ziele müssen innerhalb des Projekts und außerhalb jedes versteckten Pfads bleiben (`.git/`, `.github/`, `.qwen/`, … auf beliebiger Tiefe): Ergebnisse werden Stunden nach der Genehmigung des Plans geschrieben. Die Vorschau listet die Zielverzeichnisse auf.
 
-Design: [`docs/design/2026-09-23-batch-api-design.md`](../../design/2026-09-23-batch-api-design.md).
-Eine Offline-End-to-End-Überprüfung (gefälschte Batch-API, echte gebaute CLI) befindet sich in [`docs/verification/batch-api/`](../../verification/batch-api/README.md).
+Design: [`docs/design/2026-09-23-batch-api-design.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-09-23-batch-api-design.md).
+Eine Offline-End-to-End-Überprüfung (gefälschte Batch-API, echte gebaute CLI) befindet sich in [`docs/verification/batch-api/`](https://github.com/QwenLM/qwen-code/blob/main/docs/verification/batch-api/README.md).

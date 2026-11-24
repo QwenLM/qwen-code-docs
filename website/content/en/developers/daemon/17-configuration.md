@@ -199,7 +199,7 @@ outright and leaves the create deadline at its 30-second floor, an initialize
 value at or below the 60000 default raises nothing, and a client that has not
 read capabilities uses the 70-second default, since worktree reset performs no
 preflight of its own. Load/resume follows the separate
-[restore timeout contract](../../design/2026-08-07-safe-session-restore-timeout.md#timeout-contract):
+[restore timeout contract](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-08-07-safe-session-restore-timeout.md#timeout-contract):
 automatic SDK derivation requires a cached server restore budget; without one it
 falls back to 70 seconds. Explicit request or client timeouts override that
 derivation and can shorten the budget. See the

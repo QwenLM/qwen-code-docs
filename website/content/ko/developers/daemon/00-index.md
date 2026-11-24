@@ -11,7 +11,7 @@
 | [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md)   | SDK 사용자         | 엔드투엔드 TypeScript 워크스루                       |
 | [`../daemon-client-adapters/`](../daemon-client-adapters/)                             | 어댑터 작성자      | 레거시 클라이언트 어댑터 설계 문서                     |
 | [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md)                                    | 어댑터 작성자      | 클라이언트 어댑터 설계 노트                            |
-| [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md)       | F2 유지관리자     | 워크스페이스 MCP 트랜스포트 풀 설계 v2.2               |
+| [`../../design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md)       | F2 유지관리자     | 워크스페이스 MCP 트랜스포트 풀 설계 v2.2               |
 
 **데몬을 시작하고 사용**하려면 먼저 `qwen-serve.md`를 읽으세요. **와이어 포맷에 대해 클라이언트를 구축**하려면 `qwen-serve-protocol.md`를 읽으세요. **데몬 내부를 이해, 확장 또는 디버그**하려면 이 문서 세트를 읽으세요.
 

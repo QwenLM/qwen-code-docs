@@ -326,7 +326,7 @@ Repositories can hand the reviewers bounded, repository-specific guidance by com
 
 A rule applies when any changed file matches one of its `paths` globs (`*`, `?`, and `**` segments; case-sensitive). All matching rules merge their guidance: domains and related files for the review agents, recommended tests and required configurations for the build-and-test agent, extra reviewer roles (honoured only when the chosen effort and topology run them), and proof boundaries the final review discloses as unverified dimensions. Arrays may be written in any order; duplicate entries are rejected.
 
-For PR reviews the manifest is read from the merge base, so the PR under review cannot opt itself into or out of guidance; local reviews read it from the current worktree. Low-effort and cross-repository reviews skip repository context. The full contract and trust model live in the [design doc](../../design/review-repository-context.md).
+For PR reviews the manifest is read from the merge base, so the PR under review cannot opt itself into or out of guidance; local reviews read it from the current worktree. Low-effort and cross-repository reviews skip repository context. The full contract and trust model live in the [design doc](https://github.com/QwenLM/qwen-code/blob/main/docs/design/review-repository-context.md).
 
 ## Issue Fidelity
 

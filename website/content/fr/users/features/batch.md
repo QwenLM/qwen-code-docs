@@ -192,7 +192,7 @@ supprimés.
   profondeur) : les résultats sont écrits des heures après que vous avez
   approuvé le plan. La prévisualisation liste les répertoires cibles.
 
-Conception : [`docs/design/2026-09-23-batch-api-design.md`](../../design/2026-09-23-batch-api-design.md).
+Conception : [`docs/design/2026-09-23-batch-api-design.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-09-23-batch-api-design.md).
 Une vérification bout-en-bout hors-ligne (fausse API Batch, vrai CLI compilé)
 se trouve dans
-[`docs/verification/batch-api/`](../../verification/batch-api/README.md).
+[`docs/verification/batch-api/`](https://github.com/QwenLM/qwen-code/blob/main/docs/verification/batch-api/README.md).

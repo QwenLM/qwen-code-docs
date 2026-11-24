@@ -89,7 +89,7 @@ Wenn ein Schritt im Release-Workflow fehlschlägt, wird automatisch ein neues Is
 
 Die gehostete Concurrency ist accountweit und wird mit der PR-Review-, Autofix- und Triage-Automatisierung geteilt, sodass diese gehosteten Steps hinter diesem Traffic in der Warteschlange stehen. Ein Step in der Warteschlange ist kein fehlgeschlagenes Release: GitHub hat ihm noch keinen Runner zugewiesen, sein Log ist noch leer, und `timeout-minutes` beginnt erst zu zählen, wenn er läuft. Am 2026-11-01 wartete ein Publish 2h33m auf einen Runner und wurde dann in 5m37s abgeschlossen, während die Nightlies in der Umgebung 3–4s nach ihrem Build-Abschluss versandt wurden. Bevorzugen Sie das Nightly, oder verschieben Sie den Versand außerhalb der Asia/Shanghai-Hauptgeschäftszeit, wenn ein manuelles Release zeitkritisch ist.
 
-Siehe [Release-Runner-Slots](../../design/2026-10-28-release-queue-optimization.md) für die Pool-Analyse und welche Release-Jobs bereits von gehosteten Runnern verschoben wurden.
+Siehe [Release-Runner-Slots](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-28-release-queue-optimization.md) für die Pool-Analyse und welche Release-Jobs bereits von gehosteten Runnern verschoben wurden.
 
 ## Release-Validierung
 

@@ -102,4 +102,4 @@ Os arquivos ficam em `.qwen/tmp/` do worktree principal do clone:
 | `autofix-pr-<n>-fix-snapshot.json`       | o snapshot do qual a última correção em background trabalhou          |
 | `autofix-pr-<n>-*.log`, `*.md`, `*.json`   | logs de CI, briefs de correção e planos de resposta               |
 
-O design está em [`docs/design/2026-10-21-autofix-pr-command.md`](../../design/2026-10-21-autofix-pr-command.md).
+O design está em [`docs/design/2026-10-21-autofix-pr-command.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-21-autofix-pr-command.md).

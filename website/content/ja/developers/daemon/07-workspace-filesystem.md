@@ -11,11 +11,11 @@
 - **監査** — すべてのアクセス／拒否は、`PermissionAuditRing` / モニタリングのための構造化イベントを発行します。
 - **型付きエラー** — 閉じた `FsErrorKind` ユニオンを HTTP ステータスにマッピングします。
 
-HTTP ファイルルート（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST /file/edit`、`GET /list`、`GET /glob`、`GET /stat`）はこの境界を使用します。本番デーモンでは、委譲されたままの ACP 呼び出しは注入されたブリッジアダプタを通じて WFS に到達します。汎用のブリッジ呼び出し元は、そのようなアダプタを注入する場合にのみ WFS を使用します。本番の同一ホスト `qwen serve` ランタイムは `readTextFile: false` を通知するため、すべての子プロセスの `FileSystemService.readTextFile` コンシューマーは通常の CLI ファイルシステムサービスを使用します。最終的な ACP `writeTextFile` コンテンツ書き込みは委譲されたままです。ワークスペースのターゲットは WFS を使用し、厳格な組み込みツールマーカーは、デーモンが作成した同一ホストアダプター上でのみ外部パスに対して同等のホストライターを選択する場合があります。[外部書き込みの設計ドキュメント](../../design/daemon-external-tool-text-writes.md)を参照してください。
+HTTP ファイルルート（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST /file/edit`、`GET /list`、`GET /glob`、`GET /stat`）はこの境界を使用します。本番デーモンでは、委譲されたままの ACP 呼び出しは注入されたブリッジアダプタを通じて WFS に到達します。汎用のブリッジ呼び出し元は、そのようなアダプタを注入する場合にのみ WFS を使用します。本番の同一ホスト `qwen serve` ランタイムは `readTextFile: false` を通知するため、すべての子プロセスの `FileSystemService.readTextFile` コンシューマーは通常の CLI ファイルシステムサービスを使用します。最終的な ACP `writeTextFile` コンテンツ書き込みは委譲されたままです。ワークスペースのターゲットは WFS を使用し、厳格な組み込みツールマーカーは、デーモンが作成した同一ホストアダプター上でのみ外部パスに対して同等のホストライターを選択する場合があります。[外部書き込みの設計ドキュメント](https://github.com/QwenLM/qwen-code/blob/main/docs/design/daemon-external-tool-text-writes.md)を参照してください。
 
 このテキスト読み取りケイパビリティスライスは、直接の `read_file` と、write、edit、notebook、sed、artifact 操作で使用される共有の事前読み取りをカバーします：
 
-- WFS の読み取り側の保証ではなく、通常の CLI の読み取り動作を意図的に受け入れます。[設計ドキュメント](../../design/daemon-local-text-reads.md) に、何が放棄されるかの正確なリストが記載されています。
+- WFS の読み取り側の保証ではなく、通常の CLI の読み取り動作を意図的に受け入れます。[設計ドキュメント](https://github.com/QwenLM/qwen-code/blob/main/docs/design/daemon-local-text-reads.md) に、何が放棄されるかの正確なリストが記載されています。
 - 同じドキュメントに、保持されたアダプタの読み取りパスが「fail closed」する限定的な意味が記録されています。また、別の外部書き込み設計ドキュメントに、承認された最終書き込みの失敗がどのように fail closed するかが記録されています。
 - 直接の外部 `read_file` は、通常の CLI 権限ルールとコアファイル操作テレメトリを保持します。
 - HTTP ファイルシステムルートはワークスペーススコープのままであり、エージェントの検出ツール動作はこのケイパビリティによって変更されません。

@@ -89,7 +89,7 @@ npm install -g @qwen-code/qwen-code@nightly
 
 ホステッドランナーの並行性はアカウント全体で共有され、PR レビュー、自動修正、トリアージの自動化と共有されているため、これらのホステッドステップはそれらのトラフィックの後ろでキューに入ります。キューに入ったステップは失敗したリリースではありません:GitHub がまだランナーを割り当てておらず、ログはまだ空であり、`timeout-minutes` のカウントは実行が始まってからのみ開始されます。2026-11-01 では、publish がランナーを 2 時間 33 分待機し、その後 5 分 37 秒で完了しました。その周辺の nightly はビルド完了後 3～4 秒でディスパッチされていました。手動リリースが時間的に重要な場合は、nightly を使用するか、Asia/Shanghai の業務時間ピーク外でディスパッチしてください。
 
-どのリリースジョブがすでにホステッドランナーから移動されたかを含むプール分析については、[Release runner slots](../../design/2026-10-28-release-queue-optimization.md) を参照してください。
+どのリリースジョブがすでにホステッドランナーから移動されたかを含むプール分析については、[Release runner slots](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-28-release-queue-optimization.md) を参照してください。
 
 ## リリース検証
 

@@ -318,7 +318,7 @@ Les dépôts peuvent fournir aux relecteurs des indications bornées et spécifi
 
 Une règle s'applique lorsque tout fichier modifié correspond à l'un de ses globs `paths` (`*`, `?`, et segments `**` ; sensible à la casse). Toutes les règles correspondantes fusionnent leurs indications : domaines et fichiers liés pour les agents de revue, tests recommandés et configurations requises pour l'agent build-and-test, rôles de relecteur supplémentaires (honorés uniquement quand le niveau d'effort et la topologie choisis les exécutent), et limites de preuve que la revue finale divulgue comme dimensions non vérifiées. Les tableaux peuvent être écrits dans n'importe quel ordre ; les entrées dupliquées sont rejetées.
 
-Pour les revues de PR, le manifeste est lu depuis la base de merge, afin que la PR en cours de revue ne puisse pas s'ajouter ou se retirer des indications ; les revues locales le lisent depuis le worktree actuel. Les revues à effort faible et inter-dépôts ignorent le contexte du dépôt. Le contrat complet et le modèle de confiance se trouvent dans le [document de conception](../../design/review-repository-context.md).
+Pour les revues de PR, le manifeste est lu depuis la base de merge, afin que la PR en cours de revue ne puisse pas s'ajouter ou se retirer des indications ; les revues locales le lisent depuis le worktree actuel. Les revues à effort faible et inter-dépôts ignorent le contexte du dépôt. Le contrat complet et le modèle de confiance se trouvent dans le [document de conception](https://github.com/QwenLM/qwen-code/blob/main/docs/design/review-repository-context.md).
 
 ## Fidélité aux issues
 

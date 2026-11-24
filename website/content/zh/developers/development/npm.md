@@ -89,7 +89,7 @@ npm install -g @qwen-code/qwen-code@nightly
 
 托管并发是账户级别的，与 PR 审查、自动修复和分类自动化共享，因此这些托管步骤会排在这些流量之后。排队的步骤并不意味着发布失败：GitHub 尚未为其分配 runner，其日志仍为空，并且 `timeout-minutes` 只有在实际开始运行后才开始计时。在 2026-11-01，一次发布等待了 2 小时 33 分钟才获得 runner，然后仅用 5 分 37 秒就完成了，而它周围的 nightly 构建在构建完成后 3-4 秒就被调度执行。当手动发布对时间敏感时，优先选择 nightly，或在 Asia/Shanghai 工作日高峰时段之外进行调度。
 
-参见 [Release runner slots](../../design/2026-10-28-release-queue-optimization.md) 了解池分析以及哪些发布作业已经迁移到托管 runner 之外。
+参见 [Release runner slots](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-28-release-queue-optimization.md) 了解池分析以及哪些发布作业已经迁移到托管 runner 之外。
 
 ## 发布验证
 

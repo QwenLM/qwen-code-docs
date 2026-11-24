@@ -89,7 +89,7 @@ O `Publish Release` é executado em um runner hospedado pelo GitHub e não pode 
 
 A concorrência hospedada é compartilhada em toda a conta com a automação de revisão de PR, autofix e triagem, então essas etapas hospedadas entram na fila atrás desse tráfego. Uma etapa na fila não é um lançamento com falha: o GitHub ainda não atribuiu um runner a ela, seu log ainda está vazio, e `timeout-minutes` só começa a contar quando ela é executada. Em 2026-11-01, uma publicação esperou 2h33m por um runner e então terminou em 5m37s, enquanto os nightlies ao redor foram despachados 3–4s após o término de suas compilações. Prefira o nightly, ou faça o despacho fora do pico de horário comercial de Asia/Shanghai, quando um lançamento manual for sensível ao tempo.
 
-Veja [Release runner slots](../../design/2026-10-28-release-queue-optimization.md) para a análise do pool e quais jobs de lançamento já foram movidos dos runners hospedados.
+Veja [Release runner slots](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-28-release-queue-optimization.md) para a análise do pool e quais jobs de lançamento já foram movidos dos runners hospedados.
 
 ## Validação de Lançamento
 

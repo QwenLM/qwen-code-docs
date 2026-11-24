@@ -101,4 +101,4 @@ Dateien liegen unter `.qwen/tmp/` im Haupt-Worktree des Clones:
 | `autofix-pr-<n>-fix-snapshot.json`       | der Snapshot, von dem der letzte Hintergrund-Fix ausgegangen ist    |
 | `autofix-pr-<n>-*.log`, `*.md`, `*.json` | CI-Logs, Fix-Briefe und Antwortpläne |
 
-Das Design steht in [`docs/design/2026-10-21-autofix-pr-command.md`](../../design/2026-10-21-autofix-pr-command.md).
+Das Design steht in [`docs/design/2026-10-21-autofix-pr-command.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-21-autofix-pr-command.md).

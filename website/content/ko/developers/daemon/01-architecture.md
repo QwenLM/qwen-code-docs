@@ -350,5 +350,5 @@ sequenceDiagram
 - 설계 이슈: [#3803](https://github.com/QwenLM/qwen-code/issues/3803) (데몬 설계), [#4175](https://github.com/QwenLM/qwen-code/issues/4175) (F-series 마일스톤).
 - 사용자 가이드: [`../../users/qwen-serve.md`](../../users/qwen-serve.md).
 - 와이어 프로토콜 레퍼런스: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md).
-- F2 설계 문서: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md).
+- F2 설계 문서: [`../../design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md).
 - F2 설계 노트: 이슈 [#4175](https://github.com/QwenLM/qwen-code/issues/4175) 커밋 4-6.

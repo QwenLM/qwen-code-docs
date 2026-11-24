@@ -102,4 +102,4 @@ Web Shell 显示相同的状态，从相同的文件读取：
 | `autofix-pr-<n>-fix-snapshot.json`       | 上一次后台修复所基于的快照                                        |
 | `autofix-pr-<n>-*.log`、`*.md`、`*.json`   | CI 日志、修复简报和回复计划                                       |
 
-设计文档位于 [`docs/design/2026-10-21-autofix-pr-command.md`](../../design/2026-10-21-autofix-pr-command.md)。
+设计文档位于 [`docs/design/2026-10-21-autofix-pr-command.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-21-autofix-pr-command.md)。

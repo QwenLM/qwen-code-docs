@@ -175,6 +175,6 @@ output files are deleted.
   (`.git/`, `.github/`, `.qwen/`, … at any depth): results are written hours
   after you approved the plan. The preview lists the target directories.
 
-Design: [`docs/design/2026-09-23-batch-api-design.md`](../../design/2026-09-23-batch-api-design.md).
+Design: [`docs/design/2026-09-23-batch-api-design.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-09-23-batch-api-design.md).
 An offline end-to-end check (fake Batch API, real built CLI) lives in
-[`docs/verification/batch-api/`](../../verification/batch-api/README.md).
+[`docs/verification/batch-api/`](https://github.com/QwenLM/qwen-code/blob/main/docs/verification/batch-api/README.md).

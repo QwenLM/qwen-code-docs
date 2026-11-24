@@ -104,4 +104,4 @@ Web Shell показывает то же состояние, читая те ж�
 | `autofix-pr-<n>-fix-snapshot.json`       | снимок, с которым работало последнее фоновое исправление        |
 | `autofix-pr-<n>-*.log`, `*.md`, `*.json` | логи CI, описания исправлений и планы ответов                   |
 
-Дизайн описан в [`docs/design/2026-10-21-autofix-pr-command.md`](../../design/2026-10-21-autofix-pr-command.md).
+Дизайн описан в [`docs/design/2026-10-21-autofix-pr-command.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-21-autofix-pr-command.md).

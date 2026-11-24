@@ -91,7 +91,7 @@ qwen serve --managed --managed-data-dir /absolute/private/data --open
 
 시작 디렉토리는 로컬 세션에서 계속 사용 가능하며 자동으로 가져오지지 않습니다. `--workspace`는 Managed 로컬 모드에서 지원되지 않습니다. UI에서 프로젝트를 선택하십시오. 새 가져오기 메타데이터는 `runtime/imported-projects/<storage ID>/.qwen-managed-storage.json` 아래에서 설치에 비공개이며, 완전한 Managed 데이터 디렉토리와 함께 보존하십시오. 기존 가져오기 및 애플리케이션 소유 스토리지는 이전 마커 계약을 유지합니다. 해당 마커를 편집, 삭제, 스태시 또는 커밋하지 마십시오. 가져온 프로젝트 파일은 개인 Managed 데이터 디렉토리 외부에 유지되며 자체 백업이 필요합니다.
 
-공유 프로젝트는 독립 터미널과 동일한 편집 충돌을 허용합니다. 편집을 격리하려면 독립 worktree를 사용하십시오. 전체 스토리지 마이그레이션, 물리적 복구 및 배타적 파일 기록 되감기는 새로운 공유 가져오기에 사용할 수 없습니다. 이 설치의 자체 런타임 프로세스 복구는 계속 사용할 수 있습니다. 이전 가져오기는 자동으로 변환되지 않습니다. [공유 프로젝트 디자인](../design/2026-10-28-managed-local-shared-projects.md)을 참조하십시오.
+공유 프로젝트는 독립 터미널과 동일한 편집 충돌을 허용합니다. 편집을 격리하려면 독립 worktree를 사용하십시오. 전체 스토리지 마이그레이션, 물리적 복구 및 배타적 파일 기록 되감기는 새로운 공유 가져오기에 사용할 수 없습니다. 이 설치의 자체 런타임 프로세스 복구는 계속 사용할 수 있습니다. 이전 가져오기는 자동으로 변환되지 않습니다. [공유 프로젝트 디자인](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-28-managed-local-shared-projects.md)을 참조하십시오.
 
 로컬 세션 기록은 계속 일반 Qwen 스토리지를 사용합니다. Managed 데이터 디렉토리와 분리되어 있으며 Managed 전용 백업에 포함되지 않습니다.
 
@@ -155,4 +155,4 @@ npm run package:standalone -- \
 
 CLI는 Maven Central이 아닌 OSS/GitHub에서 다운로드합니다. SDK를 별도의 사용자 종속성으로 해결하지 않습니다. 실행 가능한 서버 JAR에 Java 종속성이 포함되어 있습니다. 런타임 자산은 첫 사용 다운로드가 성공하기 전에 정확한 CLI 릴리스에 대해 존재해야 합니다. 이 PR의 로컬 검증은 해당 자산을 게시하거나 프로덕션 릴리스 환경을 우회하지 않습니다.
 
-소유권 경계 및 검증 기준에 대한 이중 언어 [디자인](../design/2026-10-20-managed-local-serve.md) 및 운영자 지향 MySQL 배포에 대한 [Java 서버 참조](../../packages/managed-agent-server/README.md)를 참조하십시오.
+소유권 경계 및 검증 기준에 대한 이중 언어 [디자인](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-20-managed-local-serve.md) 및 운영자 지향 MySQL 배포에 대한 [Java 서버 참조](../../packages/managed-agent-server/README.md)를 참조하십시오.
