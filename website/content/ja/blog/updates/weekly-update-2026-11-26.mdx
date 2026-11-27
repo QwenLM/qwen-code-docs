@@ -1,0 +1,155 @@
+---
+title: "Qwen Code 週報：別の会話に作業を任せる、定期ジョブの結果を指定アドレスへ送信、生成ファイルは Artifacts ページに集約"
+date: "2026-11-26"
+description: "今週は v0.28.3、v0.28.4、v0.28.6 をリリース。/send で別の会話に作業を渡せます。Generic Webhook が定期ジョブの結果を指定アドレスへ送信します。生成ファイルは Artifacts ページに集まり、まとめて確認できます。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i4/O1CN01uqLZqG99pZK2jBZY_!!6000000002796-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 週報：別の会話に作業を任せる、定期ジョブの結果を指定アドレスへ送信、生成ファイルは Artifacts ページに集約"
+  date="2026-11-26"
+  author="Qwen Team"
+/>
+
+Qwen Code は今週、v0.28.3、v0.28.4、v0.28.6 の 3 つの正式版をリリースしました。
+
+**別の会話に作業を任せられます。** Web Shell の `/send` で作業を別の会話へ渡すと、相手が続きを引き受け、完了後にあなたへ報告します。
+
+**定期ジョブの結果を指定アドレスへ送れます。** チャンネル管理で Generic Webhook を追加して受信アドレスを入力すると、定期ジョブの実行結果が自動で届きます。
+
+**生成ファイルは Artifacts ページに集まります。** すべての会話が生成したレポートやエクスポートファイルが Artifacts ページに集まり、会話を 1 つずつ開かずにその場でプレビュー・ダウンロードできます。
+
+## ✨ 新機能
+
+### /send でタスクを別の会話へ送る
+
+あなた自身も `/send` で作業を送れます。Web Shell で `/send さっき失敗したテストを調べて` と入力すると、同じワークスペースに新しい会話が立ち上がり、タスクを引き継ぎます。`--workspace` でワークスペースを選べます。`--session-id` で既存の会話を指定することもできます。タスクが完了すると、現在の会話が結果を伝えてくれます。
+
+AI も同じように作業を渡せます。AI が自分で開いた会話に加えて、あなたが手動で開いた会話にも作業を渡せます。YOLO モードをオンにしていれば、別のプロジェクトフォルダへの派遣も確認ダイアログなしで進みます。
+
+こんなことに使えます：
+
+- 会話 A で資料を調べ終えたら、会話 B へ送って企画書の続きを書いてもらう
+- メイン会話でコードを書き続け、テストの調査は別の会話に任せる
+- 右側パネルで進捗を見ながら、相手会話の確認リクエストや質問にその場で対応する
+
+詳しくは PR [#17539](https://github.com/QwenLM/qwen-code/pull/17539)、[#17818](https://github.com/QwenLM/qwen-code/pull/17818)
+
+[📸 デモスクリーンショット追加予定：/send の送信記録、cross-session バッジと右側パネルのリアルタイム進捗]
+
+### チャンネル：定期ジョブの結果を指定アドレスへ送信、実行中の軌道修正もその場で
+
+**定期ジョブの結果を指定アドレスへ送れます。** Feishu、WeCom、DingTalk グループへの結果送信に加え、今週はプラットフォームを問わず使える Generic Webhook が加わりました。チャンネル管理に HTTPS の受信アドレスを入力すると、通知と定期ジョブの結果がそのアドレスへ届きます。詳しくは PR [#17405](https://github.com/QwenLM/qwen-code/pull/17405)
+
+**チャンネルメッセージで実行中のタスクを軌道修正できます。** inject 配信モードを使えるのは、ターミナルで独立起動したチャンネルです。AI の作業中に届いたメッセージは現在のターンへ直接渡され、AI が途中で読んで方向を調整します。タスクの途中で気づいたことがあれば、一言送るだけで修正できます。詳しくは PR [#15634](https://github.com/QwenLM/qwen-code/pull/15634)
+
+**QQ ボットがファイルをチャットへ送れます。** QQ チャンネル設定で `fileTools` を `true` にして（デフォルトはオフ）チャンネルを再起動すると、AI がワークスペースで生成したファイル・画像・動画・音声をそのままチャットへ送れます。詳しくは PR [#15450](https://github.com/QwenLM/qwen-code/pull/15450)
+
+こんなことに使えます：
+
+- 定期ジョブの実行結果を、自分のシステムへ自動送信
+- タスクがずれたらグループで一言追加。AI がその場で方向を修正
+- QQ でそのまま作業を指示し、生成ファイルはそのチャットへ返してもらう
+
+[📸 デモスクリーンショット追加予定：Generic Webhook の設定画面と QQ で受信したファイル]
+
+### Web Shell：Artifacts ページで成果物を一括確認、入力履歴はデバイス間で共有
+
+**会話の成果物を 1 ページで閲覧・ダウンロードできます。** ローカルデプロイの Web Shell に Artifacts ページが加わりました。ワークスペース内のすべての会話が生成したレポート、エクスポート、Web ページプレビューのスナップショットが 1 ページに集まり、そのままプレビュー・ダウンロードできます。詳しくは PR [#18071](https://github.com/QwenLM/qwen-code/pull/18071)、[#17689](https://github.com/QwenLM/qwen-code/pull/17689)
+
+**入力履歴をデバイス間で共有できます。** パソコンで入力したプロンプトやコマンドを、スマホで同じワークスペースを開いて入力履歴から辿れます。スマホからパソコンへの共有も同じです。詳しくは PR [#18120](https://github.com/QwenLM/qwen-code/pull/18120)
+
+**サイドバーで各会話の状態がわかります。** 目標付きの会話には目標マークが付き、色は Goals ページと同じです。実行中は青、あなたの対応待ちは琥珀色です。前回のターンが中断された会話には Continue バッジが付き、再起動後にどの会話を再開すべきか一目でわかります。詳しくは PR [#17515](https://github.com/QwenLM/qwen-code/pull/17515)、[#18044](https://github.com/QwenLM/qwen-code/pull/18044)
+
+**スマホのフォローアップ提案をタップで選べます。** 提案は入力欄の上のタップ可能なチップになり、タップすると入力欄に入り、編集してから送信できます。詳しくは PR [#17918](https://github.com/QwenLM/qwen-code/pull/17918)
+
+**その他の改善。** Generated UI カードのボタンからテキストを直接コピーしたり、小さなファイルをダウンロードしたりできます（[#18158](https://github.com/QwenLM/qwen-code/pull/18158)）。タッチスクリーンの編集バーはスマホと iPad で 1 行表示を維持します（[#18126](https://github.com/QwenLM/qwen-code/pull/18126)）。
+
+[📸 デモスクリーンショット追加予定：Artifacts ページとサイドバーの状態マーク]
+
+## 📊 その他の新機能
+
+**繁体字中国語の UI。** Web Shell と VS Code 拡張に繁体字中国語が加わりました。言語選択で「繁體中文 [zh-TW]」を選ぶだけです。詳しくは PR [#17421](https://github.com/QwenLM/qwen-code/pull/17421)
+
+**返信の表示翻訳。** 設定で `general.displayLanguage` をオンにして簡体字中国語を選ぶと、モデルが英語で書いた返信と展開した思考が、ターミナルと Web Shell で中国語表示になります。アーカイブ、コピー、その後の会話には原文がそのまま使われます。デフォルトはオフで、ターミナルの `/settings` か Web Shell の設定ページでオンにできます。詳しくは PR [#18175](https://github.com/QwenLM/qwen-code/pull/18175)
+
+**Microsoft Teams チャンネル拡張。** `@qwen-code/channel-msteams` 拡張を別途インストールし、Azure ボットを設定すると、Teams の個人チャットとグループでボットを @ メンションして作業を指示できます。話題ごとに会話が独立して進みます。詳しくは PR [#15620](https://github.com/QwenLM/qwen-code/pull/15620)
+
+**CLI のスクリーンリーダーモード。** ターミナルにスクリーンリーダーモード（実験的）が加わりました。起動時に `--screen-reader` を付けると、返信の完了後に 1 回読み上げ、履歴はキーボードで辿れます。現在選択中の操作や承認待ちの操作も読み上げます。デフォルトのグラフィカル UI はそのままです。詳しくは PR [#17500](https://github.com/QwenLM/qwen-code/pull/17500)
+
+## 👏 体験改善
+
+**Web Shell がより速く開きます。** ターミナルは使うときに読み込み、大きな会話記録は圧縮してから転送します。履歴会話開いて内容が表示されるまでの実測時間は、約 1.3 秒から 0.8 秒に短縮されました。詳しくは PR [#17840](https://github.com/QwenLM/qwen-code/pull/17840)、[#11220](https://github.com/QwenLM/qwen-code/pull/11220)、[#18223](https://github.com/QwenLM/qwen-code/pull/18223)
+
+**バックグラウンドタスクのバッジに「何をしているか」を聞けます。** 入力欄の上の各バッジに疑問符マークが増えました。クリックすると、AI がそのタスクの内容と起動理由をわかりやすい言葉で説明し、回答は隣の質問パネルに表示されます。現在の会話とタスクはそのまま進みます。詳しくは PR [#17398](https://github.com/QwenLM/qwen-code/pull/17398)
+
+**コマンド実行中の追加メッセージにもその場で返答。** AI がコマンドを実行中にメッセージを追加すると、コマンドはバックグラウンドへ移って実行を続け、あなたのメッセージにはその場で返事が届きます。詳しくは PR [#17926](https://github.com/QwenLM/qwen-code/pull/17926)
+
+**MCP 設定の変更は即時反映。** 設定で MCP サーバーを追加・削除すると、実行中の会話に自動で反映されます。再起動は不要です。詳しくは PR [#17743](https://github.com/QwenLM/qwen-code/pull/17743)
+
+**フォローアップ提案がより速く生成されます。** 提案の生成時は会話の短い一部だけを参照します。詳しくは PR [#17532](https://github.com/QwenLM/qwen-code/pull/17532)
+
+**Mods の書き換えが Web Shell にも反映。** Web Shell でも、返信と展開した思考がプラグインによる書き換え後のテキストで表示されます。履歴、コピー、検索、ブランチには原文がそのまま使われます。`experimental.mods` をオンにする必要があります。詳しくは PR [#17718](https://github.com/QwenLM/qwen-code/pull/17718)、[#17920](https://github.com/QwenLM/qwen-code/pull/17920)
+
+**ワークフローの段階を一覧プレビュー。** ワークフローが通る段階は、開始時にすべて一覧表示されます。未実行の段階は先にマークされ、実行が進むと実際の進捗が表示され、全体がどこまで進んだか一目でわかります。ワークフローを使うには、先に環境変数 `QWEN_CODE_ENABLE_WORKFLOWS=1` で有効化する必要があります。詳しくは PR [#17782](https://github.com/QwenLM/qwen-code/pull/17782)
+
+**Gemini 4 と Kimi K3 の思考の深さが自動対応。** この 2 つのモデルを接続すると、思考の深さの段階が自動で使えるようになります。詳しくは PR [#18039](https://github.com/QwenLM/qwen-code/pull/18039)、[#18095](https://github.com/QwenLM/qwen-code/pull/18095)
+
+**フォールバックモデルへの切り替えがより速く。** `experimental.modelAvailabilityTracking` をオンにすると、このターンでキャパシティ不足により失敗したモデルはスキップし、次のフォールバックモデルを直接使います。失敗したモデルは次のターンで再試行します。デフォルトはオフです。詳しくは PR [#17377](https://github.com/QwenLM/qwen-code/pull/17377)
+
+## 🔧 重要な修正
+
+| 修正 | あなたへの影響 | PR |
+|------|-----------|-----|
+| **バックグラウンドで作業中の会話を削除できていた** | 削除ダイアログが先に止めて理由を表示します。一括削除も同じ保護を受けます | [#17713](https://github.com/QwenLM/qwen-code/pull/17713) |
+| **圧縮リクエストがモデルウィンドウを超えて失敗していた** | 収まらない要約リクエストは縮小または拒否し、コンテキスト超過エラーからは 1 回復旧できます | [#15936](https://github.com/QwenLM/qwen-code/pull/15936) |
+| **Windows パスの権限ルールが効いていなかった** | ドライブレターパスと UNC ネットワークパスが正しくマッチします。「常に許可」エントリも対象です | [#17810](https://github.com/QwenLM/qwen-code/pull/17810) |
+| **QQ の音声添付が空メッセージで届いていた** | 音声添付を正常にダウンロードし、音声として届けます | [#15339](https://github.com/QwenLM/qwen-code/pull/15339) |
+| **コードブロックのコピー内容が途中で切れていた** | コード内のフェンスに似た行はそのまま保持し、数式はコードブロック以外から抽出します | [#17578](https://github.com/QwenLM/qwen-code/pull/17578) |
+| **メモリパネルが読み込み失敗後に固まっていた** | 更新ボタンが加わり、ファイル一覧と選択中のファイルを再読み込みできます | [#17108](https://github.com/QwenLM/qwen-code/pull/17108) |
+| **コマンド移行が既存ファイルを上書きしていた** | 移行先が使用中の場合は競合を報告し、元の TOML と既存ファイルはどちらも保持されます | [#17873](https://github.com/QwenLM/qwen-code/pull/17873) |
+| **DingTalk 接続のハングがプロセス全体を巻き込んでいた** | 接続がハングしても、他のチャンネルはそのまま動き続けます | [#17773](https://github.com/QwenLM/qwen-code/pull/17773) |
+| **変更概要に他の会話のコミットが混ざっていた** | コミット統計は現在の会話自身のコミットだけを集計します | [#17514](https://github.com/QwenLM/qwen-code/pull/17514) |
+| **長い推論会話の圧縮時にフリーズしていた** | 署名なしの推論ブロックを取り除き、入力を縮小して再試行することで、圧縮が最後まで完了します | [#18209](https://github.com/QwenLM/qwen-code/pull/18209) |
+| **Kimi のコンテキスト超過エラーで自動圧縮が起動しなかった** | この種のエラーも認識して自動圧縮し、実行を継続します | [#18176](https://github.com/QwenLM/qwen-code/pull/18176) |
+| **会話削除で最後の数件の記録が失われることがあった** | 削除前に記録の書き込み完了を待ち、タイムアウト時はファイルを保持します | [#17707](https://github.com/QwenLM/qwen-code/pull/17707) |
+| **アーカイブ済み会話が古いプロセスに復活されていた** | アーカイブ後の会話はアーカイブ状態を維持し、古いレコーダーによる復活を防ぎます | [#18012](https://github.com/QwenLM/qwen-code/pull/18012) |
+| **メッセージ送信失敗後に全文を打ち直すしかなかった** | 自動で再試行し、未送信のメッセージには感嘆符マークが付きます。クリックで再送信できます | [#18177](https://github.com/QwenLM/qwen-code/pull/18177) |
+| **特大会話開けなかった** | 会話記録の上限を 1 GiB に引き上げ、長い会話も読み込んで再生できます | [#18111](https://github.com/QwenLM/qwen-code/pull/18111) |
+| **作業ディレクトリ切り替え後に MCP の承認が失われていた** | 承認済みの MCP サーバーは接続状態を維持し、承認もそのまま引き継がれます | [#18262](https://github.com/QwenLM/qwen-code/pull/18262) |
+| **使用量統計の日付がずれていた** | トークン使用量はレスポンスが実際に発生した日付で集計します | [#17902](https://github.com/QwenLM/qwen-code/pull/17902) |
+| **Grep の結果にビルド成果物が混ざっていた** | フォールバック検索は Git 管理下かつ無視対象外のファイルだけを検索します | [#17530](https://github.com/QwenLM/qwen-code/pull/17530) |
+| **macOS で Grep の初回起動が遅かった** | システムに既にある ripgrep を優先して使います | [#17698](https://github.com/QwenLM/qwen-code/pull/17698) |
+| **会話読み込み中に入力欄がロックされていた** | 下書きは先に編集でき、送信は準備完了後に有効になります | [#17842](https://github.com/QwenLM/qwen-code/pull/17842) |
+| **バックグラウンドタスク実行中の会話がサイドバーで判別できなかった** | 会話行にビジー状態のマークを表示します | [#17676](https://github.com/QwenLM/qwen-code/pull/17676) |
+| **スマホのモデル選択が 1 行に詰まって読めなかった** | ボトムドロワーに変更し、モデル名を検索でき、完全な名前を表示します | [#17401](https://github.com/QwenLM/qwen-code/pull/17401) |
+| **スマホのキーボードが送信ボタンを隠していた** | 送信ボタンは見える位置に保たれ、最初のタップで送信できます | [#17883](https://github.com/QwenLM/qwen-code/pull/17883) |
+| **iOS Safari で入力欄タップ時にページ全体がズームしていた** | フォーカスしてもページは元の倍率のままです | [#17938](https://github.com/QwenLM/qwen-code/pull/17938) |
+| **環境パネルが回答待ちの質問を隠していた** | パネルは質問の上に留まります | [#18013](https://github.com/QwenLM/qwen-code/pull/18013) |
+| **Gemini 4 Neon/Hydrogen に xhigh 段階が欠けていた** | xhigh の思考の深さを追加しました | [#18121](https://github.com/QwenLM/qwen-code/pull/18121) |
+
+## 👥 コントリビューター
+
+| コントリビューター | 貢献内容 | 参考 PR リンク |
+|--------|---------|-------------|
+| **[@Afloat16](https://github.com/Afloat16)** | SDK と CLI の複数箇所の強化：リクエストヘッダーのマージ、サブプロセスの終了待機、権限コールバックのクリーンアップ、コピー時のコード内容保持、カスタムコマンド引数のそのまま渡し、メモリパネルの更新、PR ウォッチのディープリンク認証不要など | [#17108](https://github.com/QwenLM/qwen-code/pull/17108), [#17117](https://github.com/QwenLM/qwen-code/pull/17117), [#17119](https://github.com/QwenLM/qwen-code/pull/17119), [#17367](https://github.com/QwenLM/qwen-code/pull/17367), [#17499](https://github.com/QwenLM/qwen-code/pull/17499), [#17569](https://github.com/QwenLM/qwen-code/pull/17569), [#17572](https://github.com/QwenLM/qwen-code/pull/17572), [#17576](https://github.com/QwenLM/qwen-code/pull/17576), [#17577](https://github.com/QwenLM/qwen-code/pull/17577), [#17578](https://github.com/QwenLM/qwen-code/pull/17578), [#17579](https://github.com/QwenLM/qwen-code/pull/17579), [#17580](https://github.com/QwenLM/qwen-code/pull/17580), [#17581](https://github.com/QwenLM/qwen-code/pull/17581), [#17688](https://github.com/QwenLM/qwen-code/pull/17688) |
+| 🆕 **[@Barzabel](https://github.com/Barzabel)** | 🎉 初コントリビュート：MCP ホットリロードのドキュメント修正、ついで質問の構文説明、Web Shell 検証ガイド、スキル設定とモバイルフォーカステスト | [#17743](https://github.com/QwenLM/qwen-code/pull/17743), [#17759](https://github.com/QwenLM/qwen-code/pull/17759), [#17762](https://github.com/QwenLM/qwen-code/pull/17762), [#17766](https://github.com/QwenLM/qwen-code/pull/17766), [#17828](https://github.com/QwenLM/qwen-code/pull/17828) |
+| **[@Eric-GoodBoy-Tech](https://github.com/Eric-GoodBoy-Tech)** | QQ ボットのローカルファイル送信、チャンネル inject の途中配信 | [#15450](https://github.com/QwenLM/qwen-code/pull/15450), [#15634](https://github.com/QwenLM/qwen-code/pull/15634) |
+| **[@2SinceJuly](https://github.com/2SinceJuly)** | OpenRouter のルーティングバックエンドと生成 ID の記録 | [#16495](https://github.com/QwenLM/qwen-code/pull/16495) |
+| **[@cactuser-Lu](https://github.com/cactuser-Lu)** | 画像バッチのキャンセル後にキュー内の読み込みを停止 | [#17705](https://github.com/QwenLM/qwen-code/pull/17705) |
+| 🆕 **[@jaeminbird](https://github.com/jaeminbird)** | 🎉 初コントリビュート：拡張マニフェストの UTF-8 BOM 対応 | [#15786](https://github.com/QwenLM/qwen-code/pull/15786) |
+| **[@mvanhorn](https://github.com/mvanhorn)** | QQ 音声添付の正常な配信 | [#15339](https://github.com/QwenLM/qwen-code/pull/15339) |
+| **[@now-ing](https://github.com/now-ing)** | 大きな会話記録の圧縮転送 | [#11220](https://github.com/QwenLM/qwen-code/pull/11220) |
+| **[@xxwtiancai](https://github.com/xxwtiancai)** | 出力予算による書き込み拒否時に具体的な予算名を提示 | [#16632](https://github.com/QwenLM/qwen-code/pull/16632) |
+| **[@yanyukang2003-ux](https://github.com/yanyukang2003-ux)** | 圧縮リクエストのウィンドウ超過時に縮小・拒否して回復 | [#15936](https://github.com/QwenLM/qwen-code/pull/15936) |
+
+<Callout type="info">
+  **アップグレード方法**：`npm i @qwen-code/qwen-code@latest -g` を実行すると最新バージョンにアップグレードできます。
+</Callout>
+
+ご意見・ご要望は [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) までお気軽にどうぞ！
