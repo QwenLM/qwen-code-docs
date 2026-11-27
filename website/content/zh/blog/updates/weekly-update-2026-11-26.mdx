@@ -1,0 +1,155 @@
+---
+title: "Qwen Code 周报：给另一个会话派活，定时任务结果可推送到指定地址，生成的文件集中看"
+date: "2026-11-26"
+description: "本周发布 v0.28.3、v0.28.4、v0.28.6。用 /send 给另一个会话派活；通用 Webhook 把定时任务结果推送到指定地址；生成的文件在「产物」页集中看。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://img.alicdn.com/imgextra/i4/O1CN01uqLZqG99pZK2jBZY_!!6000000002796-2-tps-1344-576.png"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 周报：给另一个会话派活，定时任务结果可推送到指定地址，生成的文件集中看"
+  date="2026-11-26"
+  author="Qwen Team"
+/>
+
+Qwen Code 本周发布 v0.28.3、v0.28.4、v0.28.6 三个正式版本。
+
+**给另一个会话派活。** 在 Web Shell 里用 `/send` 把活交给另一个会话，它接着干，干完回来向你汇报。
+
+**定时任务结果推送到指定地址。** 在频道管理里加一个通用 Webhook、填一个接收地址，定时任务跑完，结果就自动推送过去。
+
+**生成的文件集中看。** 所有会话生成的报告、导出文件都汇在「产物」页，直接预览、下载，不用挨个打开会话。
+
+## ✨ 新增特性
+
+### 用 /send 把任务交给另一个会话
+
+上周可以让 AI 向另一个工作区派活，这周你可以自己发。在 Web Shell 输入 `/send 查一下刚才失败的测试`，同一工作区会开一条新会话接手。也可以用 `--workspace` 选工作区，或用 `--session-id` 指定已有会话。任务完成后，当前会话会转述结果。
+
+AI 自己也能这么派活了：以前它只能把活交给它自己新开的会话，现在你手动开的会话它也能交过去；开了 YOLO 模式的话，往别的项目文件夹派活也不再弹窗问你。
+
+你能用它做什么：
+
+- 在 A 会话查完资料，发给 B 会话接着写方案
+- 留在主会话写代码，把测试排查交给另一条会话
+- 在右侧面板看进度，直接处理对方会话的确认请求和问题
+
+详见 PR [#17539](https://github.com/QwenLM/qwen-code/pull/17539)、[#17818](https://github.com/QwenLM/qwen-code/pull/17818)
+
+[📸 演示截图待补：/send 发送记录、跨会话徽章与右侧面板实时进度]
+
+### 频道：任务结果发进你自己的系统，QQ 能发文件了
+
+**任务结果能发进你自己的系统了。** 上周飞书、企业微信、钉钉群能收结果了，这周再加一种不挑平台的通用 Webhook（Generic Webhook）：在频道管理里填一个 HTTPS 接收地址，通知和定时任务结果就发过去。详见 PR [#17405](https://github.com/QwenLM/qwen-code/pull/17405)
+
+**频道消息能中途纠偏了。** 终端独立启动的频道可用 inject 投递模式：AI 正在干活时收到的消息直接送进当前这轮，中途就能读到并调整方向——任务干到一半发现不对，补一句话就行。详见 PR [#15634](https://github.com/QwenLM/qwen-code/pull/15634)
+
+**QQ 机器人能把文件发进聊天了。** QQ 频道配置里把 `fileTools` 设为 `true`（默认关闭）并重启频道后，AI 能把工作区里生成的文件、图片、视频、语音直接发进聊天。详见 PR [#15450](https://github.com/QwenLM/qwen-code/pull/15450)
+
+你能用它做什么：
+
+- 定时任务跑完，结果自动发进你自己的系统里
+- 任务跑偏时在群里补一句话，AI 当场改方向
+- 在 QQ 里直接派活，生成的文件原地发回聊天
+
+[📸 演示截图待补：通用 Webhook 配置页与 QQ 收到的文件]
+
+### Web Shell：会话产物一页收齐，输入历史跨设备共享
+
+**会话产物能在一页里浏览下载了。** 本地部署的 Web Shell 新增「产物」页：整个工作区里所有会话产出的报告、导出、网页预览快照汇总到一页，直接预览或下载。详见 PR [#18071](https://github.com/QwenLM/qwen-code/pull/18071)、[#17689](https://github.com/QwenLM/qwen-code/pull/17689)
+
+**输入历史能跨设备共享了。** 电脑上敲过的提示词和命令，手机上打开同一个工作区就能在输入历史里翻到，反过来也一样。详见 PR [#18120](https://github.com/QwenLM/qwen-code/pull/18120)
+
+**侧栏能认出每个会话的状态了。** 带着目标的会话显示目标记号，颜色和 Goals 页一致：运行中蓝色、等你处理琥珀色；上次回合被中断的会话显示 Continue 徽章，重启后扫一眼就知道哪几个要接着跑。详见 PR [#17515](https://github.com/QwenLM/qwen-code/pull/17515)、[#18044](https://github.com/QwenLM/qwen-code/pull/18044)
+
+**手机上的追问建议能点选了。** 建议变成输入框上方可点按的提示，点一下填进输入框，改完再发。详见 PR [#17918](https://github.com/QwenLM/qwen-code/pull/17918)
+
+**其他改进。** Generated UI 卡片里的按钮能直接复制文本或下载小文件（[#18158](https://github.com/QwenLM/qwen-code/pull/18158)）；触屏编辑栏在手机和 iPad 上保持单行（[#18126](https://github.com/QwenLM/qwen-code/pull/18126)）。
+
+[📸 演示截图待补：「产物」页与侧栏状态记号]
+
+## 📊 更多新功能
+
+**繁体中文界面。** Web Shell 和 VS Code 伴侣界面新增繁體中文，语言选择里选「繁體中文 [zh-TW]」即可。详见 PR [#17421](https://github.com/QwenLM/qwen-code/pull/17421)
+
+**显示翻译。** 设置里开启 `general.displayLanguage` 选简体中文后，模型用英文写的回复和展开的思考在终端和 Web Shell 里显示成中文；存档、复制、后续对话仍是原文。默认关闭，终端 `/settings` 或 Web Shell 设置页可开。详见 PR [#18175](https://github.com/QwenLM/qwen-code/pull/18175)
+
+**Microsoft Teams 频道扩展。** 单独安装 `@qwen-code/channel-msteams` 扩展并配好 Azure 机器人后，可在 Teams 私聊和群里 @ 机器人派活，不同话题的对话互不干扰。详见 PR [#15620](https://github.com/QwenLM/qwen-code/pull/15620)
+
+**CLI 读屏模式。** 终端新增读屏模式（实验性）：启动时加 `--screen-reader`，回复完成后播报一次，历史用键盘翻阅，当前选中的、待批准的操作都会读出来；默认图形界面不变。详见 PR [#17500](https://github.com/QwenLM/qwen-code/pull/17500)
+
+## 👏 体验优化
+
+**Web Shell 打开更快。** 终端用到时才加载，大会话记录压缩后再传；点开历史会话到看见内容，实测耗时从约 1.3 秒降到 0.8 秒。详见 PR [#17840](https://github.com/QwenLM/qwen-code/pull/17840)、[#11220](https://github.com/QwenLM/qwen-code/pull/11220)、[#18223](https://github.com/QwenLM/qwen-code/pull/18223)
+
+**后台任务徽章能问「它在干嘛」。** 上周输入框上方能点徽章看后台任务，这周每个徽章多了个问号：点一下，AI 用大白话解释这个任务在干什么、为什么启动，答案显示在旁边的问答面板，当前对话和任务照常进行。详见 PR [#17398](https://github.com/QwenLM/qwen-code/pull/17398)
+
+**排队消息不再打断正在跑的命令。** AI 正在跑一条命令时你补发一句话，命令转到后台继续跑，你的话当场得到回应。详见 PR [#17926](https://github.com/QwenLM/qwen-code/pull/17926)
+
+**MCP 配置改动即时生效。** 在设置里增删 MCP 服务器后，运行中的会话自动生效，不用重启。详见 PR [#17743](https://github.com/QwenLM/qwen-code/pull/17743)
+
+**追问建议出得更快。** 生成建议时只参考一小段对话。详见 PR [#17532](https://github.com/QwenLM/qwen-code/pull/17532)
+
+**Mods 改写进 Web Shell。** 上周 Mods 插件能改写终端里的回复和思考，这周 Web Shell 也显示改写后的文字：回复和展开的思考都按插件改写后的样子显示，历史、复制、搜索、分支仍用原文。需开启 `experimental.mods`。详见 PR [#17718](https://github.com/QwenLM/qwen-code/pull/17718)、[#17920](https://github.com/QwenLM/qwen-code/pull/17920)
+
+**工作流阶段预览。** 工作流要经过的阶段，一开始就全部列出来：没跑到的先标出来，跑到时显示实际进度，整体走到哪一眼可见。需先用环境变量 `QWEN_CODE_ENABLE_WORKFLOWS=1` 开启工作流。详见 PR [#17782](https://github.com/QwenLM/qwen-code/pull/17782)
+
+**Gemini 4、Kimi K3 思考档位自动适配。** 接入这两个模型时，思考深度档位自动可用。详见 PR [#18039](https://github.com/QwenLM/qwen-code/pull/18039)、[#18095](https://github.com/QwenLM/qwen-code/pull/18095)
+
+**备用模型切换更省时。** 开启 `experimental.modelAvailabilityTracking` 后，这轮里刚因容量不足失败的模型先跳过，直接用后面的备用模型，下一轮再试它。默认关闭。详见 PR [#17377](https://github.com/QwenLM/qwen-code/pull/17377)
+
+## 🔧 重要修复
+
+| 修复 | 对你的影响 | PR |
+|------|-----------|-----|
+| **会话还在后台干活时能被删除** | 删除弹窗先拦住并说明原因，批量删除同样受保护 | [#17713](https://github.com/QwenLM/qwen-code/pull/17713) |
+| **压缩请求超出模型窗口导致失败** | 放不下的摘要请求先缩减或拒绝，遇到上下文超长错误能恢复一次 | [#15936](https://github.com/QwenLM/qwen-code/pull/15936) |
+| **Windows 路径的权限规则不生效** | 盘符路径和 UNC 网络路径正确匹配，包括「始终允许」条目 | [#17810](https://github.com/QwenLM/qwen-code/pull/17810) |
+| **QQ 语音附件收到是空消息** | 语音附件正常下载并按语音送达 | [#15339](https://github.com/QwenLM/qwen-code/pull/15339) |
+| **复制代码块内容被截断** | 代码里形似围栏的行保留，数学公式不从代码块里提取 | [#17578](https://github.com/QwenLM/qwen-code/pull/17578) |
+| **记忆面板读取失败后卡住** | 新增刷新按钮，重读文件列表和选中文件 | [#17108](https://github.com/QwenLM/qwen-code/pull/17108) |
+| **命令迁移覆盖已有文件** | 目标位置被占用时报冲突，原 TOML 和已有文件都保留 | [#17873](https://github.com/QwenLM/qwen-code/pull/17873) |
+| **钉钉连接卡住拖住整个进程** | 连接挂起不再影响其他频道 | [#17773](https://github.com/QwenLM/qwen-code/pull/17773) |
+| **变更总览混入其他会话的提交** | 提交统计只算当前会话自己的提交 | [#17514](https://github.com/QwenLM/qwen-code/pull/17514) |
+| **长推理会话压缩时卡死** | 移除无签名推理块并以缩减输入重试，压缩能走完 | [#18209](https://github.com/QwenLM/qwen-code/pull/18209) |
+| **Kimi 上下文超长的报错不触发自动压缩** | 这类报错也能识别并自动压缩续跑 | [#18176](https://github.com/QwenLM/qwen-code/pull/18176) |
+| **删除会话可能丢最后几段记录** | 删除前等记录写完再动手，超时保留文件 | [#17707](https://github.com/QwenLM/qwen-code/pull/17707) |
+| **归档的会话被旧进程复活** | 归档后旧记录器不能再重建活动记录 | [#18012](https://github.com/QwenLM/qwen-code/pull/18012) |
+| **消息发丢后只能整段重打** | 自动重试，没送到的消息旁出现感叹号，点一下重发 | [#18177](https://github.com/QwenLM/qwen-code/pull/18177) |
+| **超大会话打不开** | 会话记录上限提到 1 GiB，长会话能加载回放 | [#18111](https://github.com/QwenLM/qwen-code/pull/18111) |
+| **切换工作目录后 MCP 批准丢失** | 已批准的 MCP 服务器不再显示断开、不用重新批准 | [#18262](https://github.com/QwenLM/qwen-code/pull/18262) |
+| **用量统计算错天** | token 用量按响应实际发生的日期记账 | [#17902](https://github.com/QwenLM/qwen-code/pull/17902) |
+| **Grep 结果混入构建产物** | 回退搜索只查 Git 跟踪和未被忽略的文件 | [#17530](https://github.com/QwenLM/qwen-code/pull/17530) |
+| **macOS 上 Grep 首次启动慢** | 优先用系统现成的 ripgrep | [#17698](https://github.com/QwenLM/qwen-code/pull/17698) |
+| **会话加载时输入框锁住** | 草稿可以先编辑，发送等就绪后开放 | [#17842](https://github.com/QwenLM/qwen-code/pull/17842) |
+| **后台任务在跑的会话侧栏看不出忙碌** | 会话行显示忙碌记号 | [#17676](https://github.com/QwenLM/qwen-code/pull/17676) |
+| **手机上选模型挤成一行看不清** | 改成底部抽屉，模型名能搜索、完整显示 | [#17401](https://github.com/QwenLM/qwen-code/pull/17401) |
+| **手机键盘挡住发送键** | 发送键留在可见位置，第一次点就能发出去 | [#17883](https://github.com/QwenLM/qwen-code/pull/17883) |
+| **iOS Safari 点输入框整页放大** | 聚焦不再触发缩放 | [#17938](https://github.com/QwenLM/qwen-code/pull/17938) |
+| **环境面板盖住待回答的问题** | 面板停在问题上方 | [#18013](https://github.com/QwenLM/qwen-code/pull/18013) |
+| **Gemini 4 Neon/Hydrogen 缺 xhigh 档** | 补上 xhigh 思考深度 | [#18121](https://github.com/QwenLM/qwen-code/pull/18121) |
+
+## 👥 贡献者
+
+| 贡献者 | 贡献内容 | 参考 PR 链接 |
+|--------|---------|-------------|
+| **[@Afloat16](https://github.com/Afloat16)** | SDK 与 CLI 多项加固：请求头合并、子进程退出等待、权限回调清理、复制保留代码内容、自定义命令参数原样、记忆面板刷新、PR 监听深链免认证等 | [#17108](https://github.com/QwenLM/qwen-code/pull/17108), [#17117](https://github.com/QwenLM/qwen-code/pull/17117), [#17119](https://github.com/QwenLM/qwen-code/pull/17119), [#17367](https://github.com/QwenLM/qwen-code/pull/17367), [#17499](https://github.com/QwenLM/qwen-code/pull/17499), [#17569](https://github.com/QwenLM/qwen-code/pull/17569), [#17572](https://github.com/QwenLM/qwen-code/pull/17572), [#17576](https://github.com/QwenLM/qwen-code/pull/17576), [#17577](https://github.com/QwenLM/qwen-code/pull/17577), [#17578](https://github.com/QwenLM/qwen-code/pull/17578), [#17579](https://github.com/QwenLM/qwen-code/pull/17579), [#17580](https://github.com/QwenLM/qwen-code/pull/17580), [#17581](https://github.com/QwenLM/qwen-code/pull/17581), [#17688](https://github.com/QwenLM/qwen-code/pull/17688) |
+| 🆕 **[@Barzabel](https://github.com/Barzabel)** | 🎉 首次贡献：MCP 热重载文档纠正、侧问语法说明、Web Shell 验证指南、技能设置与移动端焦点测试 | [#17743](https://github.com/QwenLM/qwen-code/pull/17743), [#17759](https://github.com/QwenLM/qwen-code/pull/17759), [#17762](https://github.com/QwenLM/qwen-code/pull/17762), [#17766](https://github.com/QwenLM/qwen-code/pull/17766), [#17828](https://github.com/QwenLM/qwen-code/pull/17828) |
+| **[@Eric-GoodBoy-Tech](https://github.com/Eric-GoodBoy-Tech)** | QQ 机器人发送本地文件、频道 inject 中途投递 | [#15450](https://github.com/QwenLM/qwen-code/pull/15450), [#15634](https://github.com/QwenLM/qwen-code/pull/15634) |
+| **[@2SinceJuly](https://github.com/2SinceJuly)** | 记录 OpenRouter 路由后端与生成 ID | [#16495](https://github.com/QwenLM/qwen-code/pull/16495) |
+| **[@cactuser-Lu](https://github.com/cactuser-Lu)** | 取消图片批次后停止排队读取 | [#17705](https://github.com/QwenLM/qwen-code/pull/17705) |
+| 🆕 **[@jaeminbird](https://github.com/jaeminbird)** | 🎉 首次贡献：扩展清单支持 UTF-8 BOM | [#15786](https://github.com/QwenLM/qwen-code/pull/15786) |
+| **[@mvanhorn](https://github.com/mvanhorn)** | QQ 语音附件正常送达 | [#15339](https://github.com/QwenLM/qwen-code/pull/15339) |
+| **[@now-ing](https://github.com/now-ing)** | 大会话记录压缩传输 | [#11220](https://github.com/QwenLM/qwen-code/pull/11220) |
+| **[@xxwtiancai](https://github.com/xxwtiancai)** | 输出预算拒绝写入时给出具体预算名 | [#16632](https://github.com/QwenLM/qwen-code/pull/16632) |
+| **[@yanyukang2003-ux](https://github.com/yanyukang2003-ux)** | 压缩请求超窗时缩减或拒绝并恢复 | [#15936](https://github.com/QwenLM/qwen-code/pull/15936) |
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！
