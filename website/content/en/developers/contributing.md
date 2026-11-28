@@ -51,7 +51,7 @@ New or updated design documents must include complete English (`<name>.md`) and
 Simplified Chinese (`<name>.zh-CN.md`) versions in the same directory and PR.
 Keep their structure, decisions, constraints, and acceptance criteria aligned,
 and add reciprocal language links. See the design documentation requirements
-in [English](../design/README.md) or [简体中文](../design/README.zh-CN.md).
+in [English](https://github.com/QwenLM/qwen-code/blob/main/docs/design/README.md) or [简体中文](https://github.com/QwenLM/qwen-code/blob/main/docs/design/README.zh-CN.md).
 
 #### 6. Write Clear Commit Messages and a Good PR Description
 

@@ -745,7 +745,7 @@ Daemon 进程（长时间运行的 HTTP 服务器模式）会暴露其自身的�
 
 #### GenAI 字段迁移与 ARMS 识别
 
-LLM span 现在使用标准的 `gen_ai.request.*`、`gen_ai.response.*` 和 `gen_ai.usage.*` 字段，不再具有完全等价的私有别名。请求采样属性仅以其标准名称写入；不再发出裸 `temperature`、`top_p`、`max_tokens`、penalty、choice-count 或 stop-sequence 别名。Tool span 同样使用 `gen_ai.tool.name` 而不使用 `tool.name`；blocked-on-user 和 hook span 保留 `tool.name`，因为它们不是 GenAI Tool span。无效别名 `gen_ai.usage.cached_tokens`、`gen_ai.server.time_to_first_token` 和 `gen_ai.usage.reasoning_tokens` 不再发出。使用 `gen_ai.usage.cache_read.input_tokens` 获取 provider 报告的缓存读取，使用 `gen_ai.response.time_to_first_chunk` 获取标准流式延迟。私有 `ttft_ms` Span 属性仍可用于首个用户可见输出延迟，并继续驱动 `/stats`、`sampling_ms` 和输出 token 吞吐量；`gen_ai.response.time_to_first_chunk` 是独立的测量首个规范化 chunk 延迟的标准属性。完整的版本固定合约和延迟字段记录在 [GenAI 和 ARMS 字段对齐](../../design/gen-ai-arms-field-alignment.md)中。
+LLM span 现在使用标准的 `gen_ai.request.*`、`gen_ai.response.*` 和 `gen_ai.usage.*` 字段，不再具有完全等价的私有别名。请求采样属性仅以其标准名称写入；不再发出裸 `temperature`、`top_p`、`max_tokens`、penalty、choice-count 或 stop-sequence 别名。Tool span 同样使用 `gen_ai.tool.name` 而不使用 `tool.name`；blocked-on-user 和 hook span 保留 `tool.name`，因为它们不是 GenAI Tool span。无效别名 `gen_ai.usage.cached_tokens`、`gen_ai.server.time_to_first_token` 和 `gen_ai.usage.reasoning_tokens` 不再发出。使用 `gen_ai.usage.cache_read.input_tokens` 获取 provider 报告的缓存读取，使用 `gen_ai.response.time_to_first_chunk` 获取标准流式延迟。私有 `ttft_ms` Span 属性仍可用于首个用户可见输出延迟，并继续驱动 `/stats`、`sampling_ms` 和输出 token 吞吐量；`gen_ai.response.time_to_first_chunk` 是独立的测量首个规范化 chunk 延迟的标准属性。完整的版本固定合约和延迟字段记录在 [GenAI 和 ARMS 字段对齐](https://github.com/QwenLM/qwen-code/blob/main/docs/design/gen-ai-arms-field-alignment.md)中。
 
 要使 ARMS 将导出的 span 识别为 GenAI 应用，请显式配置其 resource feature：
 

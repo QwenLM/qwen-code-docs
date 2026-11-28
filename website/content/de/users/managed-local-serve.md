@@ -137,7 +137,7 @@ Das Startverzeichnis bleibt für lokale Sessions verfügbar und wird nicht autom
 `--workspace` bleibt im Managed-local-Modus nicht unterstützt; wählen Sie
 das Projekt in der UI. New-Import-Metadaten sind installationsprivat unter `runtime/imported-projects/<storage ID>/.qwen-managed-storage.json`; bewahren Sie sie mit dem vollständigen Managed-Datenverzeichnis auf. Bestehende Importe und anwendungseigener Storage behalten ihren früheren Marker-Vertrag; bearbeiten, löschen, stashen oder committen Sie diese Marker nicht. Importierte Projektdateien bleiben außerhalb des privaten Managed-Datenverzeichnisses und benötigen ihr eigenes Backup.
 
-Gemeinsam genutzte Projekte erlauben dieselbearbeitungskonflikte wie unabhängige Terminals. Verwenden Sie unabhängige Worktrees, um Bearbeitungen zu isolieren. Whole-Storage-Migration, physische Wiederherstellung und exklusiver Datei-History-Rewind sind für neue gemeinsame Importe nicht verfügbar; die Wiederherstellung der eigenen Runtime-Prozesse dieser Installation bleibt verfügbar. Frühere Importe werden nicht automatisch konvertiert. Siehe das [Shared-Project-Design](../design/2026-10-28-managed-local-shared-projects.md).
+Gemeinsam genutzte Projekte erlauben dieselbearbeitungskonflikte wie unabhängige Terminals. Verwenden Sie unabhängige Worktrees, um Bearbeitungen zu isolieren. Whole-Storage-Migration, physische Wiederherstellung und exklusiver Datei-History-Rewind sind für neue gemeinsame Importe nicht verfügbar; die Wiederherstellung der eigenen Runtime-Prozesse dieser Installation bleibt verfügbar. Frühere Importe werden nicht automatisch konvertiert. Siehe das [Shared-Project-Design](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-28-managed-local-shared-projects.md).
 
 Die lokale Session-History verwendet weiterhin den gewöhnlichen Qwen-Speicher. Sie ist getrennt
 vom Managed-Datenverzeichnis und ist in einem rein Managed-Backup nicht enthalten.
@@ -248,7 +248,7 @@ Runtime-Assets müssen für das exakte CLI-Release existieren, bevor der
 Erstnutzungs-Download erfolgreich ist. Die lokale Validierung dieses PRs veröffentlicht diese
 Assets nicht oder umgeht die Produktions-Release-Umgebung nicht.
 
-Siehe das zweisprachige [Design](../design/2026-10-20-managed-local-serve.md) für
+Siehe das zweisprachige [Design](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-20-managed-local-serve.md) für
 Ownership-Grenzen und Validierungskriterien, und die
 [Java-Server-Referenz](../../packages/managed-agent-server/README.md) für
 Operator-orientierte MySQL-Deployments.

@@ -102,5 +102,5 @@ qwen batch clean <task-id>               # ローカルレコードを削除（�
 - `clean` はバッチがまだ実行中の可能性があるか、未収集の結果を保持している場合、`--force` を渡さない限り拒否します。
 - ターゲットはプロジェクト内かつ隠しパス（`.git/`、`.github/`、`.qwen/`、…任意の深さ）の外側に残る必要があります。結果はプランを承認してから数時間後に書き込まれます。プレビューはターゲットディレクトリをリストします。
 
-設計：[`docs/design/2026-09-23-batch-api-design.md`](../../design/2026-09-23-batch-api-design.md)。
-オフラインのエンドツーエンドチェック（フェイク Batch API、実際のビルド済み CLI）は [`docs/verification/batch-api/`](../../verification/batch-api/README.md) にあります。
+設計：[`docs/design/2026-09-23-batch-api-design.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-09-23-batch-api-design.md)。
+オフラインのエンドツーエンドチェック（フェイク Batch API、実際のビルド済み CLI）は [`docs/verification/batch-api/`](https://github.com/QwenLM/qwen-code/blob/main/docs/verification/batch-api/README.md) にあります。

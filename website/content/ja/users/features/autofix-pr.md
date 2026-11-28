@@ -104,4 +104,4 @@ Web Shell も同じファイルから読み取った同じ状態を表示しま�
 | `autofix-pr-<n>-fix-snapshot.json` | 最後のバックグラウンド修正が作業したスナップショット |
 | `autofix-pr-<n>-*.log`、`*.md`、`*.json` | CI ログ、修正ブリーフ、返信プラン |
 
-設計は [`docs/design/2026-10-21-autofix-pr-command.md`](../../design/2026-10-21-autofix-pr-command.md) にあります。
+設計は [`docs/design/2026-10-21-autofix-pr-command.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-21-autofix-pr-command.md) にあります。

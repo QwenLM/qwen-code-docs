@@ -104,5 +104,5 @@ qwen batch clean <task-id>               # delete the local record (cancels noth
 
 `check` 报告从所选模型设置中冻结的输出上限，包括 `max_tokens`、`max_completion_tokens` 和 `max_new_tokens`。未设置输出上限时报告 `provider default`。计划的 `maxOutputTokens` 可以在单次运行时覆盖该上限。
 
-设计文档：[`docs/design/2026-09-23-batch-api-design.md`](../../design/2026-09-23-batch-api-design.md)。
-离线端到端检查（伪造的 Batch API，真实的已构建 CLI）位于 [`docs/verification/batch-api/`](../../verification/batch-api/README.md)。
+设计文档：[`docs/design/2026-09-23-batch-api-design.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-09-23-batch-api-design.md)。
+离线端到端检查（伪造的 Batch API，真实的已构建 CLI）位于 [`docs/verification/batch-api/`](https://github.com/QwenLM/qwen-code/blob/main/docs/verification/batch-api/README.md)。

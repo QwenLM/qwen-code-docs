@@ -633,7 +633,7 @@ Content-Type: application/json
 | `git_workspace_clone` | デーモンホストに `git` バイナリがあります。`POST /workspaces` を `{ kind: "git", url, target }` とともに使用すると、進捗状況、キャンセル、正規化された cwd を報告する非同期クローンジョブが開始されます。`git` を持たないホストはこのタグを省略します。 |
 | `workspace_runtime_removal` | 削除可能な動的または永続性から復元されたセカンダリランタイムは、管理ルートを通じてドレインおよび削除できます。 |
 | `workspace_directories` | デーモンはワークスペース設定を永続化し、すべての信頼できるローカルランタイムはライブセッションに追加ディレクトリを適用できます。`/workspaces/:workspace/directories` はワークスペーススコープ（`context.includeDirectories`）で永続化されたエントリのリスト表示、追加、削除を行います。SSH、管理型、スタンドアロンワークスペースは、タグが存在する場合でも拒否され、実験的なペアリングエンジンデーモンは、ワークスペーススコープの変更が管理された子プロセスに到達できないため、タグとルートを省略します。 |
-| `native_directory_picker` | デーモンホストはネイティブOSディレクトリピッカーを開くことができます（macOSでは `osascript`、Windowsでは PowerShell、ディスプレイ付きLinuxホストでは `zenity`）。ヘッドレスホストはこのタグを省略するため、クライアントは確実に失敗するものを表示する代わりに、デーモンネイティブピッカーを控えます。Web Shellはピッカーが利用できない場合、[Browse]ボタンを隠します。[埋め込みホストディレクトリピッカー](../design/web-shell-host-directory-picker.md#public-api-and-precedence)がこのタグなしで提供することもできます。 |
+| `native_directory_picker` | デーモンホストはネイティブOSディレクトリピッカーを開くことができます（macOSでは `osascript`、Windowsでは PowerShell、ディスプレイ付きLinuxホストでは `zenity`）。ヘッドレスホストはこのタグを省略するため、クライアントは確実に失敗するものを表示する代わりに、デーモンネイティブピッカーを控えます。Web Shellはピッカーが利用できない場合、[Browse]ボタンを隠します。[埋め込みホストディレクトリピッカー](https://github.com/QwenLM/qwen-code/blob/main/docs/design/web-shell-host-directory-picker.md#public-api-and-precedence)がこのタグなしで提供することもできます。 |
 | `workspace_runtime_stop` | デーモンはACPプロセス会計、完全な独立アクティビティおよびスケジュールタスク観察、確認済み停止および受領スナップショットをサポートするランタイムブリッジを所有しています。サポートされていない個々のランタイムはプレビューで無効になります。 |
 | `workspace_runtime` | すべてのアクティブなワークスペースブリッジは権威あるランタイムライフサイクルスナップショットを提供します。混在またはレガシー注入ブリッジはこのタグを省略します。 |
 | `workspace_skills_config_runtime` | すべてのアクティブなワークスペースは権威あるランタイムライフサイクルと、Skills管理および新規セッションコンポーザーで使用される分割されたconfig/runtime Skillsルートをサポートします。 |
@@ -3880,7 +3880,7 @@ SSE レベルの `id:` / `event:` 行は、EventSource 互換性のために `en
 
 TypeScript SDK は、広告されている場合、512 KiB を超える添付ファイルに対してこのプロトコルを自動的に使用する。クライアントごとに 2 つの同時ファイルと連続チャンクを使用する。ACP トランスポートを使用する場合でも認証付き REST を使用し、有効なディスカバリーを 60 秒間キャッシュし、より小さいファイルや古いデーモン用に既存の raw エンドポイントを保持する。ネットワークエラー、リクエストタイムアウト、または 502/503/504 の後、追加/完了の再試行は最大 2 回行う; レート制限の再試行は 5 分の操作期限内で `Retry-After` を尊重する。曖昧な作成と容量不足による失敗は再試行されない。失敗したアップロードは、独立した 2 秒間のクリーンアップ試行を 1 回行う。`DaemonAttachmentUploadError` は原因と `httpStatus` を保持する; その `status` はアップロード内部の 404 を省略するため、コンシューマーがこれをサポートされていないレガシー添付ファイルルーティングと誤認することはない。
 
-ライフサイクルと互換性の詳細については、[完全な設計](../design/session-attachment-chunk-upload.md) を参照。
+ライフサイクルと互換性の詳細については、[完全な設計](https://github.com/QwenLM/qwen-code/blob/main/docs/design/session-attachment-chunk-upload.md) を参照。
 
 ### モデルカタログのリロード
 

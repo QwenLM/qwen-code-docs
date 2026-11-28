@@ -320,7 +320,7 @@ export QWEN_REVIEW_ASSETS_REPO=your-org/your-repo   # 你可以推送的仓库
 
 当任何已更改的文件匹配其 `paths` glob 之一时（`*`、`?` 和 `**` 片段；区分大小写），该规则生效。所有匹配的规则合并其指导：审查 agent 的域和相关文件、构建与测试 agent 的推荐测试和必需配置、额外的审查者角色（仅在所选 effort 和拓扑运行它们时生效），以及最终审查作为未验证维度披露的证明边界。数组可以按任何顺序编写；重复条目会被拒绝。
 
-对于 PR 审查，manifest 从合并基础读取，因此被审查的 PR 无法选择加入或退出指导；本地审查从当前 worktree 读取。Low-effort 和跨仓库审查跳过仓库上下文。完整契约和信任模型见[设计文档](../../design/review-repository-context.md)。
+对于 PR 审查，manifest 从合并基础读取，因此被审查的 PR 无法选择加入或退出指导；本地审查从当前 worktree 读取。Low-effort 和跨仓库审查跳过仓库上下文。完整契约和信任模型见[设计文档](https://github.com/QwenLM/qwen-code/blob/main/docs/design/review-repository-context.md)。
 
 ## Issue 保真度
 

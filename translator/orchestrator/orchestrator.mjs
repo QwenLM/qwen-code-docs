@@ -395,6 +395,22 @@ function linkImagesOutsideDocs(text, rel) {
   );
 }
 
+// Excluded pages (design docs, plans, ...) are never mirrored, so a link to one
+// 404s on the site: point it at the page upstream instead.
+function linkExcludedPages(text, rel) {
+  const blob = `${OPTS.repo.replace(/\.git$/, "")}/blob/${OPTS.branch}`;
+  return mapOutsideFences(text, (line) =>
+    line.replace(
+      /((?<!!)\[[^\]]*\]\()(\.[^)\s#]*)(#[^)\s]*)?/g,
+      (m, open, target, anchor = "") => {
+        const docsRel = path.posix.join(path.posix.dirname(rel), target);
+        if (docsRel.startsWith("../") || !isExcluded(docsRel)) return m;
+        return `${open}${blob}/${OPTS.docsPath}/${docsRel}${anchor}`;
+      }
+    )
+  );
+}
+
 // A page with a locale sibling opens with a switcher such as
 // `[English](./x.md) | [简体中文](./x.zh-CN.md)`. The sibling is not mirrored
 // (see LOCALE_SIBLING), so the link would 404, and the line's CJK text fails
@@ -530,11 +546,14 @@ async function cmdSyncEn() {
     // upstreamDocs() indexes .md only; assets are mirrored below.
     const dest = path.join(enDir, relInContent(f));
     const srcPath = path.join(OPTS.tempDir, f);
-    const normalized = dropLocaleSwitcher(
-      linkImagesOutsideDocs(
-        normalizeRelativeLinks(fs.readFileSync(srcPath, "utf8")),
-        relInContent(f)
-      )
+    const normalized = linkExcludedPages(
+      dropLocaleSwitcher(
+        linkImagesOutsideDocs(
+          normalizeRelativeLinks(fs.readFileSync(srcPath, "utf8")),
+          relInContent(f)
+        )
+      ),
+      relInContent(f)
     );
     if (fs.existsSync(dest) && fs.readFileSync(dest, "utf8") === normalized)
       continue;

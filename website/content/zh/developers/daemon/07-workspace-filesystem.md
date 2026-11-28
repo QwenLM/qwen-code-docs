@@ -11,11 +11,11 @@
 - **审计** — 每次访问/拒绝都会发出结构化事件，供 `PermissionAuditRing` / 监控使用。
 - **类型化错误** — 封闭的 `FsErrorKind` 联合类型，映射到 HTTP 状态码。
 
-HTTP 文件路由（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST /file/edit`、`GET /list`、`GET /glob`、`GET /stat`）使用此边界，且不会接收同主机例外。在生产环境的 daemon 中，仍被委托的 ACP 调用通过注入的 bridge 适配器到达 WFS；通用的 bridge 调用者仅在注入此类适配器时才使用 WFS。生产环境的同主机 `qwen serve` runtime 会广播 `readTextFile: false`，因此所有子进程的 `FileSystemService.readTextFile` 消费者使用常规 CLI 文件系统服务。最终的 ACP `writeTextFile` 内容写入仍被委托：workspace 目标使用 WFS，而严格的内置工具标记可能仅在守护进程创建的同主机适配器上为外部路径选择等效的宿主写入器。参见[外部写入设计](../../design/daemon-external-tool-text-writes.md)。
+HTTP 文件路由（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST /file/edit`、`GET /list`、`GET /glob`、`GET /stat`）使用此边界，且不会接收同主机例外。在生产环境的 daemon 中，仍被委托的 ACP 调用通过注入的 bridge 适配器到达 WFS；通用的 bridge 调用者仅在注入此类适配器时才使用 WFS。生产环境的同主机 `qwen serve` runtime 会广播 `readTextFile: false`，因此所有子进程的 `FileSystemService.readTextFile` 消费者使用常规 CLI 文件系统服务。最终的 ACP `writeTextFile` 内容写入仍被委托：workspace 目标使用 WFS，而严格的内置工具标记可能仅在守护进程创建的同主机适配器上为外部路径选择等效的宿主写入器。参见[外部写入设计](https://github.com/QwenLM/qwen-code/blob/main/docs/design/daemon-external-tool-text-writes.md)。
 
 该文本读取能力切片覆盖了直接的 `read_file` 以及 write、edit、notebook、sed 和 artifact 操作使用的共享预读取：
 
-- 它有意接受常规 CLI 读取行为而非 WFS 读取侧的保证。[设计文档](../../design/daemon-local-text-reads.md)记录了放弃的具体内容。
+- 它有意接受常规 CLI 读取行为而非 WFS 读取侧的保证。[设计文档](https://github.com/QwenLM/qwen-code/blob/main/docs/design/daemon-local-text-reads.md)记录了放弃的具体内容。
 - 同一文档记录了保留的适配器读取路径"fail closed"的有界含义；独立的外部写入设计记录了已批准的最终写入失败是如何 fail closed 的。
 - 直接的外部 `read_file` 保留正常的 CLI 权限规则和核心文件操作遥测。
 - HTTP 文件系统路由仍为 workspace 作用域，agent 发现工具的行为不受此能力影响。

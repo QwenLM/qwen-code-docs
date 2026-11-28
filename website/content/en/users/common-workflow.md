@@ -623,4 +623,4 @@ See [Where to create QWEN.md](./features/memory.md#where-to-create-qwenmd) for w
 
 ## Suggest a workflow for one human turn
 
-Use `ultracode` or the existing `workflow` keyword in a supported human submission to suggest the Workflow tool for that turn. See [workflow intent](./workflow-intent.md) ([简体中文](./workflow-intent.zh-CN.md)) for entry points, SDK opt-in, and settings.
+Use `ultracode` or the existing `workflow` keyword in a supported human submission to suggest the Workflow tool for that turn. See [workflow intent](./workflow-intent.md) ([简体中文](https://github.com/QwenLM/qwen-code/blob/main/docs/users/workflow-intent.zh-CN.md)) for entry points, SDK opt-in, and settings.

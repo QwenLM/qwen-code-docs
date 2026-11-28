@@ -319,7 +319,7 @@ Repositórios podem fornecer aos revisores orientações limitadas e específica
 
 Uma regra se aplica quando qualquer arquivo alterado corresponde a um de seus globs em `paths` (`*`, `?` e segmentos `**`; case-sensitive). Todas as regras correspondentes combinam suas orientações: domínios e arquivos relacionados para os agentes de revisão, testes recomendados e configurações obrigatórias para o agente de build-e-teste, papéis extras de revisor (honrados apenas quando o esforço e a topologia escolhidos os executam) e limites de prova que a revisão final divulga como dimensões não verificadas. Arrays podem ser escritos em qualquer ordem; entradas duplicadas são rejeitadas.
 
-Para revisões de PR, o manifesto é lido a partir da base de merge, para que o PR em revisão não possa se incluir ou excluir de orientações; revisões locais o leem a partir do worktree atual. Revisões de esforço low e entre repositórios ignoram o contexto do repositório. O contrato completo e o modelo de confiança estão no [design doc](../../design/review-repository-context.md).
+Para revisões de PR, o manifesto é lido a partir da base de merge, para que o PR em revisão não possa se incluir ou excluir de orientações; revisões locais o leem a partir do worktree atual. Revisões de esforço low e entre repositórios ignoram o contexto do repositório. O contrato completo e o modelo de confiança estão no [design doc](https://github.com/QwenLM/qwen-code/blob/main/docs/design/review-repository-context.md).
 
 ## Fidelidade da Issue
 

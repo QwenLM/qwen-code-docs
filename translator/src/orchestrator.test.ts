@@ -664,3 +664,65 @@ test("sync-en links images outside docs/ to the upstream file", () => {
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("sync-en links pages excluded from the site to the upstream file", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "qwen-orchestrator-test-"));
+  const upstream = path.join(root, "upstream.git");
+  const site = path.join(root, "website");
+  const contentDir = path.join(site, "content");
+
+  try {
+    fs.mkdirSync(path.join(upstream, "docs", "users", "features"), {
+      recursive: true,
+    });
+    fs.writeFileSync(
+      path.join(upstream, "docs", "users", "features", "code-review.md"),
+      "See the [design doc](../../design/review.md#trust-model).\n" +
+        "[batch](./batch.md) ![chart](../../design/chart.png)\n" +
+        "```md\n[design doc](../../design/review.md)\n```\n"
+    );
+    const git = (...args: string[]) =>
+      execFileSync("git", ["-C", upstream, ...args], { stdio: "ignore" });
+    git("init", "-q", "-b", "main");
+    git("add", ".");
+    git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "docs");
+
+    fs.mkdirSync(site, { recursive: true });
+    fs.writeFileSync(
+      path.join(site, "translation.config.json"),
+      JSON.stringify({ targetLanguages: [], excludeFromTranslation: ["design"] })
+    );
+
+    const result = spawnSync(
+      process.execPath,
+      [
+        orchestrator,
+        "sync-en",
+        "--repo",
+        upstream,
+        "--temp-dir",
+        path.join(root, "clone"),
+        "--content-dir",
+        contentDir,
+        "--baseline",
+        path.join(site, "last-sync.json"),
+      ],
+      { encoding: "utf8" }
+    );
+
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    const blob = `${path.join(root, "upstream")}/blob/main/docs`;
+    // Links to mirrored pages, images, and fenced examples keep their target.
+    assert.equal(
+      fs.readFileSync(
+        path.join(contentDir, "en", "users", "features", "code-review.md"),
+        "utf8"
+      ),
+      `See the [design doc](${blob}/design/review.md#trust-model).\n` +
+        "[batch](./batch.md) ![chart](../../design/chart.png)\n" +
+        "```md\n[design doc](../../design/review.md)\n```\n"
+    );
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});

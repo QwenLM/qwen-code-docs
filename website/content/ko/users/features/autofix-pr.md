@@ -102,4 +102,4 @@ Web Shell도 동일한 파일을 읽으며 같은 상태를 표시합니다:
 | `autofix-pr-<n>-fix-snapshot.json`       | 마지막 백그라운드 수정이 작업한 스냅샷                  |
 | `autofix-pr-<n>-*.log`, `*.md`, `*.json` | CI 로그, 수정 요약 및 답변 계획                               |
 
-설계 문서는 [`docs/design/2026-10-21-autofix-pr-command.md`](../../design/2026-10-21-autofix-pr-command.md)에 있습니다.
+설계 문서는 [`docs/design/2026-10-21-autofix-pr-command.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-21-autofix-pr-command.md)에 있습니다.

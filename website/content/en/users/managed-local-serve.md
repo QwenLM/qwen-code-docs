@@ -137,7 +137,7 @@ The launch directory remains available to Local sessions and is not imported
 automatically. `--workspace` remains unsupported in Managed local mode; select
 the project in the UI. New import metadata is private to the installation under `runtime/imported-projects/<storage ID>/.qwen-managed-storage.json`; preserve it with the complete Managed data directory. Existing imports and application-owned storage retain their earlier marker contract; do not edit, delete, stash or commit those markers. Imported project files stay outside the private Managed data directory and require their own backup.
 
-Shared projects allow the same editing conflicts as independent terminals. Use independent worktrees to isolate edits. Whole-storage migration, physical recovery and exclusive file-history rewind are unavailable for new shared imports; recovery of this installation's own Runtime processes remains available. Earlier imports are not converted automatically. See the [shared-project design](../design/2026-10-28-managed-local-shared-projects.md).
+Shared projects allow the same editing conflicts as independent terminals. Use independent worktrees to isolate edits. Whole-storage migration, physical recovery and exclusive file-history rewind are unavailable for new shared imports; recovery of this installation's own Runtime processes remains available. Earlier imports are not converted automatically. See the [shared-project design](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-28-managed-local-shared-projects.md).
 
 Local session history continues to use ordinary Qwen storage. It is separate
 from the Managed data directory and is not included in a Managed-only backup.
@@ -261,7 +261,7 @@ dependencies. Runtime assets must exist for the exact CLI release before the
 first-use download succeeds. This PR's local validation does not publish those
 assets or bypass the production release environment.
 
-See the bilingual [design](../design/2026-10-20-managed-local-serve.md) for
+See the bilingual [design](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-20-managed-local-serve.md) for
 ownership boundaries and validation criteria, and the
 [Java server reference](../../packages/managed-agent-server/README.md) for
 operator-oriented MySQL deployments.

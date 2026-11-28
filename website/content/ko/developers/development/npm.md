@@ -89,7 +89,7 @@ npm install -g @qwen-code/qwen-code@nightly
 
 호스트 동시성은 계정 전체에 적용되며 PR 리뷰, 자동 수정, 분류 자동화와 공유되므로 이러한 호스트 단계는 해당 트래픽 뒤에 큐에 대기합니다. 큐에 대기된 단계는 실패한 릴리스가 아닙니다. GitHub이 아직 러너를 할당하지 않았으며, 로그가 여전히 비어 있고, `timeout-minutes`는 실행되기 시작해야 카운트됩니다. 2026-11-01에 게시가 러너를 2시간 33분 대기한 후 5분 37초 만에 완료된 반면, 주변 nightly는 빌드 완료 후 3~4초 만에 디스패치되었습니다. 수동 릴리스가 시간에 민감한 경우 nightly를 사용하거나 Asia/Shanghai 업무 시간 피크 시간대 외에 디스패치하는 것이 좋습니다.
 
-풀 분석 및 호스트 러너에서 이미 이동된 릴리스 작업에 대한 자세한 내용은 [Release runner slots](../../design/2026-10-28-release-queue-optimization.md)을 참조하십시오.
+풀 분석 및 호스트 러너에서 이미 이동된 릴리스 작업에 대한 자세한 내용은 [Release runner slots](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-28-release-queue-optimization.md)을 참조하십시오.
 
 ## 릴리스 유효성 검증
 

@@ -633,7 +633,7 @@ Content-Type: application/json
 | `git_workspace_clone` | 데몬 호스트에 `git` 바이너리가 있습니다. `POST /workspaces`을(를) `{ kind: "git", url, target }`과 함께 실행하면 비동기 클론 작업을 시작하며, 해당 라우트는 진행 상황, 취소 및 표준 cwd를 보고합니다. `git`이 없는 호스트는 태그를 생략합니다. |
 | `workspace_runtime_removal` | 제거 가능한 동적 또는 복원된 영속성 보조 런타임은 관리 라우트를 통해 드레인(drain) 및 제거할 수 있습니다. |
 | `workspace_directories` | 데몬은 작업 공간 설정을 영속화하며, 모든 신뢰할 수 있는 로컬 런타임은 라이브 세션에 추가 디렉터리를 적용할 수 있습니다: `/workspaces/:workspace/directories`은 작업 공간 범위(`context.includeDirectories`)에 영속화된 항목을 나열하고, 추가하며, 제거합니다. SSH, 관리형 및 독립형 작업 공간은 태그가 존재하더라도 거부되며, 실험적인 페어링된 엔진 데몬은 작업 공간 범위의 변경 사항이 관리형 자식 프로세스에 도달할 수 없으므로 태그와 라우트를 생략합니다. |
-| `native_directory_picker` | 데몬 호스트는 네이티브 OS 디렉터리 선택기를 열 수 있습니다(macOS에서는 `osascript`, Windows에서는 PowerShell, 디스플레이가 있는 Linux 호스트에서는 `zenity`). 헤드리스 호스트는 태그를 생략하여 클라이언트가 확실한 실패를 표시하는 대신 데몬 네이티브 선택기를 숨깁니다. Web Shell은 선택기를 사용할 수 없을 때 '찾아보기(Browse)'를 숨깁니다. [임베딩 호스트 디렉터리 선택기](../design/web-shell-host-directory-picker.md#public-api-and-precedence)는 이 태그 없이도 이를 제공할 수 있습니다. |
+| `native_directory_picker` | 데몬 호스트는 네이티브 OS 디렉터리 선택기를 열 수 있습니다(macOS에서는 `osascript`, Windows에서는 PowerShell, 디스플레이가 있는 Linux 호스트에서는 `zenity`). 헤드리스 호스트는 태그를 생략하여 클라이언트가 확실한 실패를 표시하는 대신 데몬 네이티브 선택기를 숨깁니다. Web Shell은 선택기를 사용할 수 없을 때 '찾아보기(Browse)'를 숨깁니다. [임베딩 호스트 디렉터리 선택기](https://github.com/QwenLM/qwen-code/blob/main/docs/design/web-shell-host-directory-picker.md#public-api-and-precedence)는 이 태그 없이도 이를 제공할 수 있습니다. |
 | `workspace_runtime_stop` | 데몬은 ACP 프로세스 회계 처리, 완전한 독립 활동 및 예약된 작업 관찰, 그리고 확인된 중지 및 수신 확인 스냅샷을 지원하는 런타임 브리지를 소유합니다. 지원되지 않는 개별 런타임은 미리보기에서 비활성화됩니다. |
 | `workspace_runtime` | 모든 활성 작업 공간 브리지는 권위 있는(authoritative) 런타임 생명주기 스냅샷을 제공합니다. 혼합되거나 레거시 주입된 브리지는 태그를 생략합니다. |
 | `workspace_skills_config_runtime` | 모든 활성 작업 공간은 권위 있는 런타임 생명주기와 Skills 관리 및 새 세션 작성기에 사용되는 분리된 config/runtime Skills 라우트를 지원합니다. |
@@ -3880,7 +3880,7 @@ SSE 수준의 `id:` / `event:` 줄은 EventSource 호환성을 위해 `envelope.
 
 TypeScript SDK는 이 기능이 광고될 때 512 KiB보다 큰 첨부 파일에 대해 이 프로토콜을 자동으로 사용하며, 클라이언트당 두 개의 동시 파일과 순차적 청크를 사용합니다. ACP 트랜스포트에서도 인증된 REST를 사용하고, 유효한 발견(discovery) 정보를 60초 동안 캐싱하며, 더 작은 파일과 이전 버전 데몬을 위해 기존 원시(raw) 엔드포인트를 유지합니다. 네트워크 오류, 요청 시간 초과 또는 502/503/504 이후에 추가/완료 재시도는 최대 두 번 수행합니다; 속도 제한 재시도는 5분 운영 마감 시간 내에서 `Retry-After`을 준수합니다. 모호한 생성 및 용량 부족 실패는 재시도하지 않습니다. 실패한 업로드는 독립적인 2초 청소(clean-up) 시도를 한 번 가집니다. `DaemonAttachmentUploadError`은 원인(cause)과 `httpStatus`를 보존하며; 그 `status`은 업로드 내부의 404를 생략하여 소비자가 이를 지원되지 않는 레거시 첨부 파일 라우팅으로 오인하지 않도록 합니다.
 
-라이프사이클 및 호환성 세부 사항은 [전체 설계 문서](../design/session-attachment-chunk-upload.md)를 참조하세요.
+라이프사이클 및 호환성 세부 사항은 [전체 설계 문서](https://github.com/QwenLM/qwen-code/blob/main/docs/design/session-attachment-chunk-upload.md)를 참조하세요.
 
 ### 모델 카탈로그 재로드
 

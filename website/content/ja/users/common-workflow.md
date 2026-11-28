@@ -623,4 +623,4 @@ Qwen Code がコードレビュー、インシデント調査、監査、本番�
 
 ## 1 つの人間のターン用のワークフローを提案する
 
-サポートされるユーザーの入力で `ultracode` または既存の `workflow` キーワードを使用して、そのターンの Workflow ツールを提案します。エントリーポイント、SDK オプトイン、および設定については、[workflow intent](./workflow-intent.md) ([简体中文](./workflow-intent.zh-CN.md)) を参照してください。
+サポートされるユーザーの入力で `ultracode` または既存の `workflow` キーワードを使用して、そのターンの Workflow ツールを提案します。エントリーポイント、SDK オプトイン、および設定については、[workflow intent](./workflow-intent.md) ([简体中文](https://github.com/QwenLM/qwen-code/blob/main/docs/users/workflow-intent.zh-CN.md)) を参照してください。

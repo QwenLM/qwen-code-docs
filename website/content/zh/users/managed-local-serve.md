@@ -134,7 +134,7 @@ Java 还持有排他的数据库文件锁。私有服务端口
 `--workspace` 在 Managed 本地模式下仍然不受支持；在
 UI 中选择项目。新导入的元数据对安装私有，位于 `runtime/imported-projects/<storage ID>/.qwen-managed-storage.json` 下；将其与完整的 Managed 数据目录一起保留。现有导入和应用拥有的存储保留其早期的标记约定；不要编辑、删除、暂存或提交这些标记。导入的项目文件保留在私有 Managed 数据目录之外，需要自行备份。
 
-共享项目允许与独立终端相同的编辑冲突。使用独立的 worktree 来隔离编辑。对于新的共享导入，整存储迁移、物理恢复和独占文件历史回退不可用；此安装自己的 Runtime 进程的恢复仍然可用。早期导入不会自动转换。参见[共享项目设计](../design/2026-10-28-managed-local-shared-projects.md)。
+共享项目允许与独立终端相同的编辑冲突。使用独立的 worktree 来隔离编辑。对于新的共享导入，整存储迁移、物理恢复和独占文件历史回退不可用；此安装自己的 Runtime 进程的恢复仍然可用。早期导入不会自动转换。参见[共享项目设计](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-28-managed-local-shared-projects.md)。
 
 本地会话历史继续使用普通 Qwen 存储。它与
 Managed 数据目录分开，不包含在仅 Managed 的备份中。
@@ -246,7 +246,7 @@ SDK 作为独立的用户依赖解析：可执行服务器 JAR 包含其 Java
 存在于确切的 CLI 发布中。此 PR 的本地验证不会发布这些
 资产或绕过生产发布环境。
 
-请参阅双语[设计文档](../design/2026-10-20-managed-local-serve.md)了解
+请参阅双语[设计文档](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-20-managed-local-serve.md)了解
 所有权边界和验证标准，以及
 [Java 服务器参考](../../packages/managed-agent-server/README.md)了解
 面向运维的 MySQL 部署。

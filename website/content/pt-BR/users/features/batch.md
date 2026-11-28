@@ -102,5 +102,5 @@ Reexecutar `collect` é sempre seguro: itens entregues nunca são refeitos e o u
 - `clean` recusa enquanto um batch pode ainda estar em execução ou possui resultados não coletados, a menos que você passe `--force`.
 - Os destinos devem permanecer dentro do projeto e fora de qualquer caminho oculto (`.git/`, `.github/`, `.qwen/`, … em qualquer profundidade): os resultados são escritos horas após você aprovar o plano. A visualização lista os diretórios de destino.
 
-Design: [`docs/design/2026-09-23-batch-api-design.md`](../../design/2026-09-23-batch-api-design.md).
-Uma verificação offline ponta a ponta (Batch API falsa, CLI real compilado) está em [`docs/verification/batch-api/`](../../verification/batch-api/README.md).
+Design: [`docs/design/2026-09-23-batch-api-design.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-09-23-batch-api-design.md).
+Uma verificação offline ponta a ponta (Batch API falsa, CLI real compilado) está em [`docs/verification/batch-api/`](https://github.com/QwenLM/qwen-code/blob/main/docs/verification/batch-api/README.md).

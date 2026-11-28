@@ -258,7 +258,7 @@ Java. Les assets runtime doivent exister pour la release CLI exacte avant que le
 téléchargement de première utilisation ne réussisse. La validation locale de cette PR ne publie pas ces
 assets ni ne contourne l'environnement de release de production.
 
-Voir le [design](../design/2026-10-20-managed-local-serve.md) bilingue pour
+Voir le [design](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-10-20-managed-local-serve.md) bilingue pour
 les limites de propriété et les critères de validation, et la
 [référence serveur Java](../../packages/managed-agent-server/README.md) pour
 les déploiements MySQL orientés opérateur., et la

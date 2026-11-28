@@ -179,6 +179,6 @@ qwen batch clean <task-id>               # delete the local record (cancels noth
   через часы после одобрения плана. Предварительный просмотр перечисляет целевые
   каталоги.
 
-Архитектура: [`docs/design/2026-09-23-batch-api-design.md`](../../design/2026-09-23-batch-api-design.md).
+Архитектура: [`docs/design/2026-09-23-batch-api-design.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/2026-09-23-batch-api-design.md).
 Автономная сквозная проверка (фейковый Batch API, реальный собранный CLI) находится в
-[`docs/verification/batch-api/`](../../verification/batch-api/README.md).
+[`docs/verification/batch-api/`](https://github.com/QwenLM/qwen-code/blob/main/docs/verification/batch-api/README.md).
