@@ -1,5 +1,6 @@
 export default {
   index: { display: 'hidden' },
+  'weekly-update-2026-11-26': '11-26 产品周报',
   'weekly-update-2026-11-19': '11-19 产品周报',
   'weekly-update-2026-11-12': '11-12 产品周报',
   'weekly-update-2026-11-05': '11-05 产品周报',
