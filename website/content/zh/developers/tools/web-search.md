@@ -465,3 +465,58 @@ qwen mcp add looot \
 将 `${LOOOT_API_KEY}` 替换为你的实际 API key，或者将其设置为环境变量。
 
 ---
+
+### You.com
+
+You.com 的托管 MCP 服务器。免费配置文件（`?profile=free`）无需 API key 或账户即可使用，并提供网络搜索和 agent/MCP 发现功能。搜索查询会发送至 You.com。使用 API key 时，你要求它读取的 URL 也会发送至 You.com。
+
+- **文档：** https://you.com/docs/agents/mcp-server
+- **费用：** 免费配置文件：每 IP 每天 100 次搜索，无需 API key。API key 可提供更高的每账户限额，并添加 `you-contents` 工具
+- **获取 API Key：** 免费配置文件无需。对于使用 key 的服务器：https://you.com/platform
+- **适用场景：** 在无法支持内置工具的 provider（OpenRouter、DeepSeek、本地模型）上零配置试用 MCP 网络搜索
+
+#### 可用工具
+
+- `you-search`：网络搜索，返回带 URL 和摘要的排序结果
+- `you-discover`：查找 AI agent、MCP 服务器和 skill（仅搜索，不会安装任何内容）
+
+使用 API key 时，服务器（`https://api.you.com/mcp`，不带 profile）还提供 `you-contents` 用于读取页面内容，以及 `you-balance` 用于查询账户余额。
+
+#### 设置
+
+**方法 1：CLI 命令（远程 MCP，无需 key）**
+
+```bash
+qwen mcp add you -t http "https://api.you.com/mcp?profile=free"
+```
+
+**方法 2：`settings.json`（远程 MCP，无需 key）**
+
+```json
+{
+  "mcpServers": {
+    "you": {
+      "httpUrl": "https://api.you.com/mcp?profile=free"
+    }
+  }
+}
+```
+
+**方法 3：`settings.json`（远程 MCP，使用 key）**
+
+```json
+{
+  "mcpServers": {
+    "you": {
+      "httpUrl": "https://api.you.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${YDC_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+将 `${YDC_API_KEY}` 替换为你的实际 You.com API key，或者将其设置为环境变量。
+
+---

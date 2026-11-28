@@ -2,6 +2,8 @@
 
 本ガイドでは、WeCom インテリジェントロボット（企业微信智能机器人）と Qwen Code を連携させる設定方法について説明します。
 
+グループの Message Push URL にタスク結果を送信するには、インテリジェントロボットの認証情報を必要としない [WeCom Webhook Sending](./wecom-webhook) を使用してください。
+
 Corp ID、Agent ID、Token、EncodingAESKey を使用する自作アプリケーションには、別の [WeCom Callback チャネル](./wecom-callback) を使用してください。
 
 ## 前提条件

@@ -15,11 +15,17 @@ Die LSP-Unterstützung in Qwen Code funktioniert, indem sie sich mit Language Se
 
 ## Schnellstart
 
-LSP ist eine experimentelle Funktion in Qwen Code. Um sie zu aktivieren, verwenden Sie das Flag `--experimental-lsp` in der Befehlszeile:
+LSP ist eine experimentelle Funktion in Qwen Code. Um sie zu aktivieren, setzen Sie `tools.lspEnabled` in Ihrer Benutzer-`settings.json`:
 
-```bash
-qwen --experimental-lsp
+```json
+{
+  "tools": {
+    "lspEnabled": true
+  }
+}
 ```
+
+Hosts, die Befehlszeilenflags akzeptieren, können stattdessen `--experimental-lsp` verwenden – beide sind gleichwertig, und `QWEN_CODE_ENABLE_LSP=1` / `QWEN_CODE_DISABLE_LSP=1` überschreiben beide (disable gewinnt). Nur die Umgebung des Operators oder eine `.env` im Home-Verzeichnis können diese beiden Variablen setzen; eine Projekt-`.env` oder ein `settings.env`-Wert wird stillschweigend ignoriert. Die Einstellung wird nur beim Start gelesen, daher erfordert eine Änderung einen Neustart; sie wird aus den Scopes user, system und system-defaults berücksichtigt, niemals aus einer Workspace-`.qwen/settings.json`, da das Aktivieren es einer Session ermöglicht, Language Server mit Ihren eigenen Berechtigungen zu spawnen. LSP wird im Safe-Modus (`--safe-mode` / `QWEN_CODE_SAFE_MODE=1`), Bare-Modus, einem Read-Only-Agent-Host, einem SSH-Workspace und einem Provisional-Workspace komplett verweigert, da diese Modi dem Workspace-Inhalt misstrauen, der die Server deklariert. Das Deklarieren von Servern bleibt eine Workspace-/Erweiterungsentscheidung.
 
 LSP-Server werden über Konfigurationen gesteuert. Sie müssen sie in `.lsp.json` (oder über Erweiterungen) definieren, damit Qwen Code sie startet.
 
@@ -35,6 +41,7 @@ Sie müssen den Language Server für Ihre Programmiersprache installiert haben:
 | Rust                  | rust-analyzer              | [Installationsanleitung](https://rust-analyzer.github.io/manual.html#installation) |
 | C/C++                 | clangd                     | Installieren Sie LLVM/clangd über Ihren Paketmanager                            |
 | Java                  | jdtls                      | Installieren Sie JDTLS und ein JDK                                             |
+| C#                    | roslyn-language-server     | `dotnet tool install --global roslyn-language-server --prerelease` (.NET 10+)  |
 
 ## Konfiguration
 
@@ -99,6 +106,51 @@ Beispiel:
   }
 }
 ```
+
+### C# (Roslyn)-Konfiguration
+
+Abhängigkeiten:
+
+- .NET 10 Runtime oder später (`dotnet --version`).
+- Das `roslyn-language-server` Global-Tool:
+  `dotnet tool install --global roslyn-language-server --prerelease`. Siehe den
+  [Roslyn Language Server README](https://github.com/dotnet/roslyn/blob/main/src/LanguageServer/roslyn-language-server/README.md)
+  für aktuelle Voraussetzungen und Optionen.
+
+Beispiel:
+
+```json
+{
+  "csharp": {
+    "command": "roslyn-language-server",
+    "args": ["--stdio", "--autoLoadProjects"],
+    "extensionToLanguage": {
+      ".cs": "csharp"
+    }
+  }
+}
+```
+
+Unter Windows wird das Global-Tool als `cmd`-Shim unter
+`%USERPROFILE%\.dotnet\tools` installiert. Qwen Code startet Server ohne Shell, daher wird ein
+bloßes `roslyn-language-server` von `where` gefunden, aber das Spawnen schlägt fehl. Verwenden Sie dort
+die Shell-Form:
+
+```json
+{
+  "csharp": {
+    "command": "cmd",
+    "args": ["/c", "roslyn-language-server", "--stdio", "--autoLoadProjects"],
+    "extensionToLanguage": {
+      ".cs": "csharp"
+    }
+  }
+}
+```
+
+Ein absoluter Pfad zur ausführbaren Datei unter
+`%USERPROFILE%\.dotnet\tools\.store\roslyn-language-server\<version>\...`
+funktioniert ebenfalls.
 
 ### Konfigurationsoptionen
 
@@ -310,18 +362,18 @@ Arten von Code-Aktionen:
 
 ## Sicherheit
 
-LSP-Server werden standardmäßig nur in vertrauenswürdigen Arbeitsbereichen gestartet. Dies liegt daran, dass Language Server mit Ihren Benutzerberechtigungen laufen und Code ausführen können.
+Language Server laufen mit Ihren Benutzerberechtigungen und können Code ausführen. Server, die durch `.lsp.json` eines Workspaces konfiguriert werden, erfordern **explizites Ordner-Vertrauen**, einschließlich ihrer Verfügbarkeitsprüfungen für Executables und Hot-Reloads. Aktivieren Sie `security.folderTrust.enabled` in den Benutzereinstellungen und vertrauen Sie dem Verzeichnis, oder gewähren Sie Workspace-Vertrauen über Ihre IDE. Das Deaktivieren von Ordner-Vertrauen autorisiert keine Workspace-LSP-Konfigurationen, auch nicht im YOLO-Modus.
 
 ### Vertrauenskontrollen
 
-- **Vertrauenswürdiger Arbeitsbereich**: LSP-Server starten, wenn konfiguriert
-- **Nicht vertrauenswürdiger Arbeitsbereich**: LSP-Server starten nicht, es sei denn, in der Serverkonfiguration ist `trustRequired: false` gesetzt
+- **Explizit vertrauenswürdiger Workspace**: Workspace-LSP-Server starten, wenn konfiguriert.
+- **Kein explizites Vertrauen**: Workspace-`.lsp.json`-Server werden übersprungen. Das Repository kann dies nicht überschreiben, indem es `trustRequired: false` setzt oder eine Erweiterungsquelle deklariert.
 
-Um einen Arbeitsbereich als vertrauenswürdig zu markieren, verwenden Sie den Befehl `/trust`.
+Nach dem Aktivieren von Ordner-Vertrauen in den Benutzereinstellungen verwenden Sie den Startup-Vertrauensdialog oder `/trust`, um dem Verzeichnis zu vertrauen. Starten Sie nach dem Ändern der Vertrauensentscheidung der CLI neu.
 
 ### Serverspezifische Vertrauensüberschreibung
 
-Sie können die Vertrauensanforderungen für bestimmte Server in deren Konfiguration überschreiben:
+Installierte Erweiterungen behalten ihre bestehende Vertrauensrichtlinie. Eine Erweiterung kann `trustRequired: false` deklarieren, wenn der Host LSP-Discovery in nicht vertrauenswürdigen Workspaces erlaubt. Diese Überschreibung wird in Workspace-`.lsp.json` ignoriert:
 
 ```json
 {
@@ -340,10 +392,10 @@ Sie können die Vertrauensanforderungen für bestimmte Server in deren Konfigura
 
 ### Server startet nicht
 
-1. **Überprüfen Sie das Flag `--experimental-lsp`**: Stellen Sie sicher, dass Sie das Flag beim Start von Qwen Code verwenden
+1. **Überprüfen Sie, ob LSP aktiviert ist**: Verwenden Sie die Einstellung `tools.lspEnabled` (Scope user, system oder system-defaults) oder das Flag `--experimental-lsp`; `QWEN_CODE_ENABLE_LSP=1` / `QWEN_CODE_DISABLE_LSP=1` überschreiben beide (disable gewinnt). Safe-Modus (`--safe-mode`, `QWEN_CODE_SAFE_MODE=1`) und `--bare` verweigern LSP, und `/lsp` wird dort nicht registriert
 2. **Prüfen Sie, ob der Server installiert ist**: Führen Sie den Befehl manuell aus (z. B. `clangd --version`), um dies zu überprüfen
 3. **Überprüfen Sie den Befehl**: Die Server-Binärdatei muss sich in Ihrem System-`PATH` befinden oder als absoluter Pfad angegeben sein (z. B. `/opt/llvm/bin/clangd`). Relative Pfade, die den Arbeitsbereich verlassen, werden blockiert
-4. **Arbeitsbereich-Vertrauen prüfen**: Der Arbeitsbereich muss für LSP vertrauenswürdig sein (verwenden Sie `/trust`)
+4. **Arbeitsbereich-Vertrauen prüfen**: Ein vom Workspace deklarierter Server startet nur in einem explizit vertrauenswürdigen Ordner – aktivieren Sie `security.folderTrust.enabled` und vertrauen Sie dem Ordner mit `/trust`, oder verbinden Sie eine IDE, die den Workspace als vertrauenswürdig meldet. Eine IDE-Meldung eines nicht vertrauenswürdigen Workspaces (VS Code Restricted Mode) überspringt ihn ebenfalls, und bei ausgeschaltetem Ordner-Vertrauen und ohne IDE-Vertrauen wird der Server übersprungen statt zugelassen. Die IDE-Prüfung wird bei Änderungen an `.lsp.json` erneut ausgewertet, und das Überspringen erscheint nur im `--debug`-Protokoll als `requires trusted workspace, skipping`
 5. **Protokolle prüfen**: Starten Sie Qwen Code mit `--debug` und suchen Sie dann nach LSP-bezogenen Einträgen im Debug-Protokoll (siehe Abschnitt Debuggen unten)
 6. **Prozess prüfen**: Führen Sie `ps aux | grep <server-name>` aus, um zu überprüfen, ob der Serverprozess läuft
 
@@ -361,10 +413,10 @@ Sie können die Vertrauensanforderungen für bestimmte Server in deren Konfigura
 
 ### Debuggen
 
-LSP hat kein separates Debug-Flag. Verwenden Sie den normalen Debug-Modus von Qwen Code zusammen mit dem LSP-Feature-Flag:
+LSP hat kein separates Debug-Flag. Aktivieren Sie LSP über die Einstellung (oder das Flag), dann schalten Sie den normalen Debug-Modus von Qwen Code ein:
 
 ```bash
-qwen --experimental-lsp --debug
+qwen --debug
 ```
 
 Debug-Protokolle werden in das Sitzungs-Debug-Protokollverzeichnis geschrieben. Um LSP-bezogene Einträge zu überprüfen:
@@ -453,18 +505,19 @@ Erweiterungen können LSP-Serverkonfigurationen über das Feld `lspServers` in i
 
 ### F: Wie aktiviere ich LSP?
 
-Verwenden Sie das Flag `--experimental-lsp` beim Start von Qwen Code:
+Verwenden Sie die Einstellung `tools.lspEnabled` (Scope user, system oder system-defaults) oder das Flag `--experimental-lsp`. `QWEN_CODE_ENABLE_LSP=1` und `QWEN_CODE_DISABLE_LSP=1` überschreiben beide (disable gewinnt); Workspace-scoped Werte werden ignoriert.
 
-```bash
-qwen --experimental-lsp
+```jsonc
+// ~/.qwen/settings.json (user scope)
+{ "tools": { "lspEnabled": true } }
 ```
 
 ### F: Wie erfahre ich, welche Language Server laufen?
 
-Starten Sie Qwen Code mit aktiviertem LSP- und Debug-Modus:
+Starten Sie Qwen Code mit aktiviertem LSP (Einstellung oder Flag) und aktiviertem Debug-Modus:
 
 ```bash
-qwen --experimental-lsp --debug
+qwen --debug
 ```
 
 Führen Sie dann `/status` für eine kurze Zusammenfassung aus, `/lsp` für den Status pro Server, oder überprüfen Sie das Debug-Protokoll:

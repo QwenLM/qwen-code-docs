@@ -5,13 +5,13 @@
 デーモンの HTTP ファイルルートと委譲された ACP `readTextFile` / `writeTextFile` 呼び出しは `WorkspaceFileSystem` 境界（`packages/cli/src/serve/fs/`）を通過します。以下を提供します：
 
 - **パス解決** — パスを正規化し、バインドされたワークスペースから逸脱するもの（シンボリックリンク経由も含む）を拒否します。
-- **信頼ゲート** — ワークスペースが信頼されていない場合（`untrusted_workspace`）、書き込みを拒否します。
+- **信頼ゲート** — ワークスペースが信頼されていない場合（`untrusted_workspace`）、書き込み、編集、削除を拒否します。
 - **サイズ＆コンテンツポリシー** — フルスナップショット/出力上限（`MAX_READ_BYTES = 256 KiB`）、出力とスキャンコストの両方が制限されたラージテキストウィンドウ（`MAX_TEXT_SCAN_BYTES = 8 MiB`）、書き込み上限（`MAX_WRITE_BYTES = 5 MiB`）、バイナリ検出。
-- **アトミック性** — 書き込み後にリネームし、ターゲットのモードを保存、新しいファイルのデフォルトは `0o600`。
+- **アトミック性** — 書き込み後にリネームし、ターゲットのモードを保存します。新しいファイルのデフォルトは `0o600`、またはファクトリの `system` 新規ファイルモードポリシー（`QWEN_SERVE_NEW_FILE_MODE`）の下でプロセスの umask に従います。
 - **監査** — すべてのアクセス／拒否は、`PermissionAuditRing` / モニタリングのための構造化イベントを発行します。
 - **型付きエラー** — 閉じた `FsErrorKind` ユニオンを HTTP ステータスにマッピングします。
 
-HTTP ファイルルート（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST /file/edit`、`GET /list`、`GET /glob`、`GET /stat`）はこの境界を使用します。本番デーモンでは、委譲されたままの ACP 呼び出しは注入されたブリッジアダプタを通じて WFS に到達します。汎用のブリッジ呼び出し元は、そのようなアダプタを注入する場合にのみ WFS を使用します。本番の同一ホスト `qwen serve` ランタイムは `readTextFile: false` を通知するため、すべての子プロセスの `FileSystemService.readTextFile` コンシューマーは通常の CLI ファイルシステムサービスを使用します。最終的な ACP `writeTextFile` コンテンツ書き込みは委譲されたままです。ワークスペースのターゲットは WFS を使用し、厳格な組み込みツールマーカーは、デーモンが作成した同一ホストアダプター上でのみ外部パスに対して同等のホストライターを選択する場合があります。[外部書き込みの設計ドキュメント](../../design/daemon-external-tool-text-writes.md)を参照してください。
+HTTP ファイルルート（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST /file/edit`、`GET /list`、`GET /glob`、`GET /stat`）とローカルディレクトリルート（`POST /workspaces/:workspace/directory/create`、`POST /workspaces/:workspace/directory/delete`）はこの境界を使用し、同一ホスト例外を受け取りません。本番デーモンでは、委譲されたままの ACP 呼び出しは注入されたブリッジアダプタを通じて WFS に到達します。汎用のブリッジ呼び出し元は、そのようなアダプタを注入する場合にのみ WFS を使用します。本番の同一ホスト `qwen serve` ランタイムは `readTextFile: false` を通知するため、すべての子プロセスの `FileSystemService.readTextFile` コンシューマーは通常の CLI ファイルシステムサービスを使用します。最終的な ACP `writeTextFile` コンテンツ書き込みは委譲されたままです。ワークスペースのターゲットは WFS を使用し、厳格な組み込みツールマーカーは、デーモンが作成した同一ホストアダプター上でのみ外部パスに対して同等のホストライターを選択する場合があります。[外部書き込みの設計ドキュメント](../../design/daemon-external-tool-text-writes.md)を参照してください。
 
 このテキスト読み取りケイパビリティスライスは、直接の `read_file` と、write、edit、notebook、sed、artifact 操作で使用される共有の事前読み取りをカバーします：
 
@@ -27,9 +27,9 @@ HTTP ファイルルート（`GET /file`、`GET /file/bytes`、`POST /file/write
 - ユーザー指定のパスを、境界内で安全に使用できるブランド化された `ResolvedPath` 値に解決します。
 - バインドされたワークスペース外のパス（`path_outside_workspace`）と、ターゲットがシンボリックリンクであるパス（`symlink_escape`）を拒否します。
 - `MAX_READ_BYTES` を超えるフルスナップショット読み取りを拒否しつつ、出力が `MAX_READ_BYTES` に制限され、スキャンコストが `MAX_TEXT_SCAN_BYTES` に制限された明示的なウィンドウを許可します。`MAX_WRITE_BYTES` を超える書き込みとバイナリファイル（`binary_file`）を拒否します。
-- ワークスペースが信頼されていない場合（`untrusted_workspace`）、`assertTrustedForIntent(trusted, intent)` によってゲート制御される書き込み/編集を拒否します。
+- ワークスペースが信頼されていない場合（`untrusted_workspace`）、`assertTrustedForIntent(trusted, intent)` によってゲート制御される書き込み/編集/削除を拒否します。
 - `.gitignore` / `.qwenignore` パターンを `shouldIgnore` を介して尊重します。
-- アトミックな書き込み後のリネームとターゲットモードの保存を実行します。新しいファイルのデフォルトモードは `0o600` です。
+- アトミックな書き込み後のリネームとターゲットモードの保存を実行します。新しいファイルのデフォルトモードは `0o600` です（`system` 新規ファイルモードポリシーの下では umask から派生した `0o666 & ~umask`）。
 - すべての操作で `fs.access` / `fs.denied` 監査イベントを発行します。
 - すべての失敗を、種類と HTTP ステータスを持つ `FsError` にマッピングします。ルートハンドラはこれらを統一的にシリアライズします。
 
@@ -39,11 +39,11 @@ HTTP ファイルルート（`GET /file`、`GET /file/bytes`、`POST /file/write
 
 | ファイル                     | 目的                                                                                                                                                                                                                                                   |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `paths.ts`               | `canonicalizeWorkspace`、`resolveWithinWorkspace`、`hasSuspiciousPathPattern`、ブランド化された `ResolvedPath`、`Intent` ユニオン（`read \| write \| list \| stat \| glob`）。                                                                                      |
+| `paths.ts`               | `canonicalizeWorkspace`、`resolveWithinWorkspace`、`hasSuspiciousPathPattern`、ブランド化された `ResolvedPath`、`Intent` ユニオン（`read \| write \| edit \| delete \| list \| glob \| stat`）。                                                                                      |
 | `policy.ts`              | `MAX_READ_BYTES`、`MAX_TEXT_SCAN_BYTES`、`MAX_WRITE_BYTES`、`MAX_UPLOAD_BYTES`、`BINARY_PROBE_BYTES`、`assertTrustedForIntent`、`detectBinary`、`enforceReadBytesSize`、`enforceReadSize`、`enforceWriteSize`、`shouldIgnore`。                        |
 | `audit.ts`               | `FS_ACCESS_EVENT_TYPE`、`FS_DENIED_EVENT_TYPE`、`createAuditPublisher`、監査ペイロード型。                                                                                                                                                          |
 | `errors.ts`              | `FsError` クラス、`isFsError`、`FsErrorKind` ユニオン（14種類）、`FsErrorStatus` ユニオン（`400 / 403 / 404 / 409 / 413 / 422 / 500 / 503`）。                                                                                                                |
-| `workspace-file-system.ts` | `createWorkspaceFileSystemFactory`、`WorkspaceFileSystem`（読み取り/書き込み/リストを実行するオーケストレーター）、`WriteMode`、`ContentHash`、`FsEntry`、`FsStat`、`ListOptions`、`GlobOptions`、`ReadTextOptions`、`ReadBytesOptions`、`WriteTextAtomicOptions`。 |
+| `workspace-file-system.ts` | `createWorkspaceFileSystemFactory`、`WorkspaceFileSystem`（読み取り/書き込み/リストを実行し、ディレクトリの作成/削除を行うオーケストレーター）、`WriteMode`、`ContentHash`、`FsEntry`、`FsStat`、`ListOptions`、`GlobOptions`、`ReadTextOptions`、`ReadBytesOptions`、`WriteTextAtomicOptions`。 |
 
 ### `FsErrorKind` 分類
 
@@ -58,9 +58,9 @@ HTTP ファイルルート（`GET /file`、`GET /file/bytes`、`POST /file/write
 | `file_already_exists`    | 409          | 既存ファイルに対する `mode: 'create'`。                                                                                                                                                    |
 | `text_not_found`         | 422          | `POST /file/edit` の検索文字列がファイル内に見つからない。                                                                                                                                         |
 | `ambiguous_text_match`   | 422          | 1つだけ必要な場合に複数のマッチがあった。                                                                                                                                               |
-| `untrusted_workspace`    | 403          | 信頼されていないワークスペースでの書き込み試行。                                                                                                                                                    |
+| `untrusted_workspace`    | 403          | 信頼されていないワークスペースでの書き込み、編集、または削除の試行。                                                                                                                                                    |
 | `permission_denied`      | 403          | OSレベルの `EACCES` / `EPERM`。                                                                                                                                                                  |
-| `io_error`               | 503          | `ENOSPC` / `EIO` / `EBUSY` / `ETXTBSY` / `ENAMETOOLONG` / `EMFILE` / `ENFILE`。**`permission_denied` とは区別される**ため、モニタリングパイプラインが「ディスクフル」でセキュリティ対応者にページングすることはありません。 |
+| `io_error`               | 503          | `ENOSPC` / `EIO` / `EBUSY` / `ETXTBSY` / `ENAMETOOLONG` / `EMFILE` / `ENFILE`。さらに再帰ディレクトリ削除中の `ENOTEMPTY`。**`permission_denied` とは区別される**ため、モニタリングパイプラインが「ディスクフル」でセキュリティ対応者にページングすることはありません。 |
 | `internal_error`         | 500          | 境界に到達した非errnoエラー（`TypeError`、プログラマのバグ）。                                                                                                                      |
 | `parse_error`            | 400 / 422    | リクエストボディのパースエラー（400）またはサービスレベルの不変条件違反（422）。                                                                                                                       |
 
@@ -82,7 +82,7 @@ interface BridgeFileSystem {
 1. **通常ファイル以外を拒否** — ソケット / パイプ / キャラクタデバイス / procfs / sysfs エントリは、`stats.size === 0` にもかかわらず無制限のデータをストリーミングする可能性があります。インラインパスは、メッセージ内に `describeStatKind(stats)` を含めてスローします。
 2. **無制限のフルファイルバッファリングを避ける。** インラインフォールバックはバッファされた読み取りを `READ_FILE_SIZE_CAP = 100 MiB` に制限します。注入されたアダプタは代わりに、より厳格な WorkspaceFileSystem 契約を適用します。フルスナップショットは 256 KiB で停止し、それより大きい UTF-8 ファイルには有限の `limit` が必要で、inode にバインドされたハンドルからストリーミングされ、最大 256 KiB が返されます。`{ line: 1, limit: 10 }` を返すためだけに 500 MB のログ全体を読み込むことはあってはなりません。
 
-アダプタはさらに、`WorkspaceFileSystem.writeTextOverwrite`（PR 18 プリミティブ）を使用して、アトミックなテンポラリファイル・アンド・リネーム書き込みを、モード保存、`0o600` デフォルト、パスごとのロック内でのシンボリックリンク拒否とともに行います。これは、**F1 以前のインラインプロキシからの逸脱**です。以前はシンボリックリンクを解決し、そのターゲットに書き込んでいました。シンボリックリンクされた dotfile を経由して書き込んでいたエージェントは、解決されたパスを直接指定する必要があります。
+アダプタはさらに、ワークスペースの書き込みには `WorkspaceFileSystem.writeTextOverwrite`（PR 18 プリミティブ）を、厳格にマークされた外部組み込みツールの書き込みにはファクトリ所有の同等のものを使用します。どちらも、モード保存、ファクトリの `NewFileModePolicy` の下での新規ファイルモード（デフォルトは `0o600`、`system` の下では umask に従う）、共有の正規パスロック内でのシンボリックリンク拒否を伴うアトミックなテンポラリファイル・アンド・リネーム書き込みを使用します。これは、**F1 以前のインラインプロキシからの逸脱**です。以前はシンボリックリンクを解決し、そのターゲットに書き込んでいました。シンボリックリンクされた dotfile を経由して書き込んでいたエージェントは、解決されたパスを直接指定する必要があります。
 
 ### ACP ワイヤ上の FsError 保存
 
@@ -120,7 +120,7 @@ function preserveFsErrorOverAcp(err: unknown): never {
 
 ### 信頼ゲート
 
-`assertTrustedForIntent(trusted, intent)` は、呼び出し元によって注入された信頼ブール値を消費します。ポリシーレイヤーは `Config.isTrustedFolder()` を直接読み取りません。読み取り / リスト / stat / glob は常に許可されます（信頼は書き込みのみに適用されます）。信頼されていないワークスペースでの書き込みインテントは、`FsError('untrusted_workspace', ..., status: 403)` をスローします。信頼シグナルは `WorkspaceFileSystemFactoryDeps.trusted: boolean` を介して流入します。`runQwenServe` は `true` を渡します。これは、オペレーターが暗黙的に信頼するワークスペースに対してデーモンを起動するためです。`createServeApp`（`runQwenServe` なしの直接組み込み）はデフォルトで `false` になり、プロセスごとに1回警告します（[`02-serve-runtime.md`](./02-serve-runtime.md) を参照）。
+`assertTrustedForIntent(trusted, intent)` は、呼び出し元によって注入された信頼ブール値を消費します。ポリシーレイヤーは `Config.isTrustedFolder()` を直接読み取りません。読み取り / リスト / stat / glob は常に許可されます。信頼されていないワークスペースでの変更を伴うインテント（`write`、`edit`、`delete`）は、`FsError('untrusted_workspace', ..., status: 403)` をスローします。信頼シグナルは `WorkspaceFileSystemFactoryDeps.trusted: boolean` を介して流入します。`runQwenServe` は `true` を渡します。これは、オペレーターが暗黙的に信頼するワークスペースに対してデーモンを起動するためです。`createServeApp`（`runQwenServe` なしの直接組み込み）はデフォルトで `false` になり、プロセスごとに1回警告します（[`02-serve-runtime.md`](./02-serve-runtime.md) を参照）。
 
 ## ワークフロー
 
@@ -207,11 +207,19 @@ flowchart LR
 
 `FS_ACCESS_EVENT_TYPE` / `FS_DENIED_EVENT_TYPE` は、コンテキスト（`ctx`）、パス、インテント、結果、errorKind?、bytesRead/written、sha256? を運びます。
 
+### ディレクトリ変更
+
+`createDirectory(input)` と `deleteDirectory(input)` は、`POST /workspaces/:workspace/directory/create` と `POST /workspaces/:workspace/directory/delete` 経由でのみ公開されるオプションのローカルファクトリ操作です。プリフライトとして `workspace_qualified_rest_core` と、それぞれの `workspace_directory_create` または `workspace_directory_delete` ケイパビリティが必要です。両方のルートは厳格な変更権限と信頼されたアクティブな選択済みランタイムを必要とします。どちらもプライマリへのフォールバックやレガシープライマルートを提供しません。SSH ワークスペースはサポートされておらず、操作を持たないカスタムファクトリは `422` を返します。
+
+作成には既存の親が必要で、占有済みの名前では再利用や上書きではなく失敗します。削除は空または空でないディレクトリを再帰的に削除し、ワークスペースルート、通常ファイル、最終シンボリックリンクを拒否します。ネストされたシンボリックリンクエントリはターゲットを辿らずに削除されます。両方の操作は語彙的な最終名を保持しながら親を解決し、パスロックの下で信頼/ランタイム世代をチェックし、マッチした場合は無視分類を出力します。ディレクトリ作成は `sizeBytes: 0` も記録します。
+
+削除は永久的であり、失敗した場合に部分的な削除が残る可能性があります。同時の子書き込みは `ENOTEMPTY` を発生させる可能性があり、ローカルで `503 io_error` に分類されるため、呼び出し元はリトライできます。ポータブルなパスベースのチェックでは、外部ディレクトリの置換をアトミックにすることはできません。TypeScript SDK メソッドは `WorkspaceDaemonClient.createWorkspaceDirectory(path, clientId?)` と `WorkspaceDaemonClient.deleteWorkspaceDirectory(path, clientId?)` で、どちらもワークスペース修飾 REST を使用します。
+
 ## 状態とライフサイクル
 
 - ファクトリはデーモン起動時に1回構築されます（`runQwenServe` → `resolveBridgeFsFactory` → アダプタ）。
 - 各リクエストは `RequestContext` を構築し、その呼び出しのみのためにファクトリのオーケストレーターを呼び出します。長期生存するファイル単位の状態はありません。
-- パスごとのロックは、書き込み操作の期間中のみ存続します（呼び出しをまたがるロックはありません。同じパスへの同時書き込みはロック上で競合し、直列化されます）。
+- パスごとのロックは各変更操作の間存続し、同じ正規パス上の操作を直列化します。祖先パスと子孫パスを一緒にロックすることはありません。
 - 監査リングは `runQwenServe` が所有し、権限監査パブリッシャーと共有されます。
 
 ## 依存関係
@@ -231,7 +239,7 @@ flowchart LR
 | 定数                                          | `MAX_WRITE_BYTES = 5 MiB`                                             | 書き込み上限。`express.json({ limit: '10mb' })` より小さいサイズに設定。                                                         |
 | 定数                                          | `MAX_UPLOAD_BYTES = 50 MiB`                                           | `POST /file/upload` のバイナリアップロード上限。アップロードは上書きせず、占有済みの名前には自動採番します。                |
 | 定数                                          | `BINARY_PROBE_BYTES = 4096`                                           | コンテンツベースのバイナリ検出のためのサンプルサイズ。                                                                   |
-| 機能タグ                                   | `workspace_file_read`、`workspace_file_bytes`、`workspace_file_write`、`workspace_file_upload` | [`11-capabilities-versioning.md`](./11-capabilities-versioning.md) を参照。                                           |
+| 機能タグ                                   | `workspace_file_read`、`workspace_file_bytes`、`workspace_file_read_cursor`、`workspace_file_write`、`workspace_file_upload`、`workspace_file_delete`、`workspace_directory_create`、`workspace_directory_delete` | [`11-capabilities-versioning.md`](./11-capabilities-versioning.md) を参照。                                           |
 | ワークスペースファイル                                   | `.gitignore`、`.qwenignore`                                           | 無視されたパスは `shouldIgnore` から `ignored: true` として表示される。                                                     |
 
 ## 注意点と既知の制限
@@ -241,8 +249,8 @@ flowchart LR
 - **新しいファイルのモードは `0o600` がデフォルトであり、umask のデフォルトではありません。** write システムコールの `mode` 引数は umask をバイパスします。エージェントは書き込みごとのモードオーバーライドを渡せません。デーモンが作成したファイルがデーモンの umask に従うようにしたいオペレーターは、デーモンごとに `QWEN_SERVE_NEW_FILE_MODE=system` でオプトインできます（既存のファイルは引き続きモードを保持します）。[`17-configuration.md`](./17-configuration.md) を参照してください。
 - **`createServeApp` のデフォルト `trusted: false`** は、カスタム `fsFactory` や `bridge` を注入しない組み込み者に対して、ACP 書き込みを `untrusted_workspace` でサイレントに拒否します。最初の1回だけ stderr に警告が出力され、以降の呼び出し元にはリマインダーは表示されません。[`02-serve-runtime.md`](./02-serve-runtime.md) を参照してください。
 - **ラージテキストには明示的なウィンドウ引数が必要です。** `line` / `limit` / `maxBytes` のいずれか。いずれもない読み取りは `file_too_large` になります。ファイル全体を保持していると信じている呼び出し元が切り詰めて書き戻す可能性があるためです。ウィンドウは inode にバインドされたハンドルからストリーミングされ、`MAX_READ_BYTES` を超えて返すことはありません。
-- **`MAX_READ_BYTES` は読み取りが返すものを制限し、`MAX_TEXT_SCAN_BYTES` はコストを制限します。** 行オフセットはバイト0からスキャンして解決されるため、`{ line: 900_000_000, limit: 20 }` はほとんど何も返さず、それでもファイル全体を走査します。8 MiB を超えるスキャン past の読み取りは `file_too_large` で拒否されます。`readBytes` は任意のオフセットに O(1) で到達します。
-- **ストリーミングされたウィンドウは追記には耐えますが、切り詰めには耐えません。** フルスナップショットパスはファイル全体を返すため、バイト単位の安定性を要求できます。プレフィックスウィンドウはそうできません。そうでなければ、ライブログの読み取りは毎回失敗します。ストリーミングパスは inode の同一性加上「縮小しなかった」ことをアサートするため、追記は通過し、切り詰め/置換は引き続き拒否されます。`sizeBytes` は `open` 時のサイズを報告し、ウィンドウが切り取られたスナップショットを記述します。
+- **`MAX_READ_BYTES` は読み取りが返すものを制限し、`MAX_TEXT_SCAN_BYTES` はコストを制限します。** 行オフセットはバイト0からスキャンして解決されるため、`{ line: 900_000_000, limit: 20 }` はほとんど何も返さず、それでもファイル全体を走査します。8 MiB を超えるスキャンを過ぎた読み取りは `file_too_large` で拒否されます。`readBytes` は任意のオフセットに O(1) で到達します。
+- **ストリーミングされたウィンドウは追記には耐えますが、切り詰めには耐えません。** フルスナップショットパスはファイル全体を返すため、バイト単位の安定性を要求できます。プレフィックスウィンドウはそうできません。そうでなければ、ライブログの読み取りは毎回失敗します。ストリーミングパスは inode の同一性に加えて「縮小しなかった」ことをアサートするため、追記は通過し、切り詰め/置換は引き続き拒否されます。`sizeBytes` は `open` 時のサイズを報告し、ウィンドウが切り取られたスナップショットを記述します。
 - **ラージ部分的読み取りはフルファイルハッシュを省略します。** ストリーミングが EOF より前に停止した場合、`originalLineCount` は省略されます。
 - **ページングは行ではなくバイトカーソルで行われます。** コンテンツを残した読み取りは `hasMore` と、バイトオフセットが導出可能な場合は不透明な `nextCursor` を返します。そこから再開すると O(1) です。`line` で再開するとバイト0から再スキャンされ、`MAX_TEXT_SCAN_BYTES` を超えると拒否されます。カーソルは `{dev, ino, size}` を保持するため、置換または切り詰めされたファイルは誤った場所のバイトではなく `hash_mismatch` を返しますが、追記の場合は有効なままです。非 UTF-8 スナップショット読み取りは `hasMore` を報告しますがカーソルは報告しません。デコードされたテキストは UTF-8 に再エンコードされたもので、その長さがファイルオフセットにマッピングされないためです。
 - **`BridgeFileSystem` アダプタは、両方のインラインプロキシゲート（非通常ファイル拒否 + バッファサイズ上限/ストリーミング）を複製する必要があります。** アダプタが注入されると、インラインパスは完全にバイパスされます。

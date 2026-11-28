@@ -107,6 +107,8 @@ run_shell_command(command="docker-compose up", description="Start all services",
 
 설정을 생략하면 명시적 일회성 프롬프트는 `child_process`를 사용하고, 대화형 TUI, ACP, stream-json 입력, stdin 전용 및 파일 입력 세션은 PTY를 사용합니다. Windows 빌드 **<= 19041**(Windows 10 버전 2004 이전)에서는 이전 ConPTY 구현의 알려진 신뢰성 문제(출력 누락, 중단)로 인해 PTY 모드가 `child_process`로 폴백합니다. 이는 VS Code에서 사용하는 것과 동일한 기준입니다([microsoft/vscode#123725](https://github.com/microsoft/vscode/issues/123725)). 런타임에 `node-pty`를 사용할 수 없는 경우, 도구 역시 `child_process`로 폴백합니다.
 
+Non-PTY 명령은 자식 프로세스의 `close` 이벤트를 통해 두 출력 스트림을 모두 수집하므로 프로세스 종료 직후 전달된 데이터도 보존됩니다. 포그라운드 버퍼링 명령은 자손이 파이프를 열어두고 있으면 종료 후 최대 200ms까지 대기하며, 스트리밍 및 관리되는 raw-capture 호출자는 1000ms 드레인 한도를 유지합니다. 일반 명령은 파이프가 닫히는 즉시 반환됩니다. 실행 서비스의 `ShellExecutionResult.stdoutHeldAfterExit`는 해당 한도에서 아직 열려 있는 stdout 파이프를 식별합니다; 이 내부 플래그는 `run_shell_command` 도구 결과에 노출되지 않으며, 셸 레벨의 `&`는 추적되지 않으므로 관리되는 백그라운드 작업에는 `is_background: true`를 사용하십시오.
+
 기본값을 명시적으로 재정의하려면 `settings.json`에 값을 설정하세요:
 
 **`settings.json` 예시:**

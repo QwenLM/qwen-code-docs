@@ -22,7 +22,7 @@
 | 상수                                     | 값          | 용도                                                                                                 |
 | ---------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------- |
 | `EVENT_SCHEMA_VERSION`                   | `1`         | 모든 `BridgeEvent.v`에 스탬프됨. 호환성 깨지는 프레임 변경 시 증가.                                  |
-| `DEFAULT_RING_SIZE`                      | `8000`      | 세션별 리플레이 링. 운영자가 `--event-ring-size`로 재정의 가능.                                      |
+| `DEFAULT_RING_SIZE`                      | `8000`      | 세션별 리플레이 링 카운트 상한. `--event-ring-max-bytes`로도 제한됨.                                  |
 | `DEFAULT_MAX_QUEUED`                     | `256`       | 구독자별 라이브 프레임 백로그 한도.                                                                  |
 | `DEFAULT_MAX_QUEUED_BYTES`               | `2 MiB`     | 구독자별 라이브 직렬화 바이트 백로그 한도.                                                           |
 | `DEFAULT_MAX_SUBSCRIBERS`                | `64`        | 세션별 구독자 한도.                                                                                  |
@@ -65,7 +65,7 @@ interface SubscribeOptions {
 - **`liveCount`와 `liveBytes`는 필드로 유지됩니다.** `forcedInBuf` 위치에서 파생되지 않습니다. 이전 위치 기반 휴리스틱은 `slow_client_warning`이 스트림 중간에 force-push를 시작하면서 깨졌습니다(경고는 리플레이와 달리 큐의 앞이 아니라 뒤에 추가됨). 항목별 `forced` 태그는 위치와 무관하며, 라이브 항목은 직렬화 바이트 추정치도 저장하여 큐 배출 시 `liveBytes`가 감소합니다.
 - **직렬화 바이트는 지연 계산됩니다.** `push()`는 이벤트가 버퍼링될 때만 `Buffer.byteLength(JSON.stringify(event), 'utf8')`를 계산합니다. 구독자가 이미 `next()`를 대기 중이면 이벤트가 직접 전달되므로 바이트 추정치가 계산되지 않습니다. 직렬화가 실패하면 데몬이 stderr에 최선 진단을 출력하고, 해당 이벤트는 바이트 계산에서 건너뛰어지지만 `publish()`의 절대-예외-발생-안함 계약은 유지됩니다. 라이브 프레임 한도에는 여전히 포함됩니다.
 
-`push(value, getBytes)`는 차단하거나 예외를 발생시키는 대신 accepted/rejected 결과를 반환합니다. 프레임 오버플로우는 `queue_overflow`로 거부됩니다. 바이트 오버플로우는 `queue_bytes_overflow`로 거부됩니다. 라이브 큐가 비어 있을 때는 하나의 초과 크기 이벤트가 허용되지만, 그 뒤에 두 번째 라이브 이벤트가 오면 구독자가 퇴출됩니다. `forcePush(value)`는 두 한도를 모두 우회합니다. `close({drain?: boolean})`는 기본적으로 대기 항목을 배출하며, abort 경로에서는 `drain: false`를 전달하여 즉시 삭제합니다.
+`push(value, getBytes, fallback?)`는 차단하거나 예외를 발생시키는 대신 accepted/rejected 결과를 반환합니다. 프레임 오버플로우는 `queue_overflow`로 거부됩니다. 비어 있는 라이브 큐는 초과 크기 이벤트 하나를 변경 없이 허용합니다. 바이트 한도를 초과할 비어 있지 않은 큐의 경우, 선택적 fallback이 더 작은 복사본을 제공할 수 있습니다: MCP App `tool_call` / `tool_call_update` 프레임은 전체 `rawOutput.html`을 `''`로 삭제하면서 필수 비어 있지 않은 `fallbackText`는 유지합니다. 해당 복사본이 맞으면 구독자가 연결을 유지하고, 그렇지 않으면 바이트 오버플로우는 `queue_bytes_overflow`로 거부됩니다. 누락되거나 비어 있는 텍스트 fallback은 디그레이드 대상이 아닙니다. 직접 전달과 리플레이 링은 원본 프레임을 유지하며, 압축 리플레이 윈도우는 자체 독립 예산 정책을 가집니다. 허용된 복사본은 발행된 id를 유지하므로, 큐에 있는 구독자는 해당 id에서 링이 가진 것과 다른 페이로드를 받을 수 있습니다. 해당 id 이후 재개 시 재전달되지 않으며, 문서가 필요한 클라이언트는 명시적으로 영속화된 트랜스크립트를 재페이지해야 합니다(페이지 예산 적용). `forcePush(value)`는 두 한도를 모두 우회합니다. `close({drain?: boolean})`는 기본적으로 대기 항목을 배출하며, abort 경로에서는 `drain: false`를 전달하여 즉시 삭제합니다.
 
 ## 워크플로우
 
@@ -193,7 +193,8 @@ sequenceDiagram
 
 ## 설정
 
-- `--event-ring-size <n>` — 세션별 링 깊이. `MAX_EVENT_RING_SIZE = 1_000_000`으로 소프트 캡됨.
+- `--event-ring-size <n>` — 세션별 링 카운트 상한, 기본값 8000; `MAX_EVENT_RING_SIZE = 1_000_000`으로 소프트 캡됨.
+- `--event-ring-max-bytes <n>` — 최신 전체 명령 스냅샷을 포함한 세션별 직렬화 링 바이트 예산. 기본값은 `8388608`(8 MiB); `268435456`(256 MiB)까지의 양의 안전한 정수이며, 무제한 센티널은 없습니다. 보존은 먼저 도달하는 제한에서 중지되지만, 최소한 가장 최신 링 이벤트는 초과 크기 이벤트나 스냅샷에서도 생존합니다. 두 제한 모두 필요한 재연결 윈도우를 제한할 때 두 제한을 모두 증가시키십시오.
 - 구독자 `?maxQueued=N` 쿼리 파라미터(`GET /session/:id/events`), 범위 `[16, 2048]`. SDK 클라이언트는 옵트인 전 `caps.features.slow_client_warning`를 프리플라이트합니다.
 - `EventBus(..., { maxQueuedBytes })` 생성자 옵션은 테스트/임베딩 호출자만을 위한 것입니다. 기본값은 2 MiB이며 잘못된 값은 `TypeError`를 발생시킵니다. 의도적으로 `?maxQueuedBytes` 쿼리 파라미터는 없습니다.
 - `BridgeOptions.eventRingSize`(임베딩 사용 시 데몬 기본값을 재정의).
@@ -240,7 +241,7 @@ Accept: text/event-stream
 | 시나리오                                     | 동작                                                                                                                                                                                                                                                                                                   |
 | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `Last-Event-ID` 없음                         | 라이브 전용 스트림. 리플레이 없음. 재연결 지원 이전 클라이언트와 하위 호환.                                                                                                                                                                                                                             |
-| `Last-Event-ID: 0`                           | 링 버퍼 전체를 처음부터 리플레이(`--event-ring-size`로 제한, 기본값 8000).                                                                                                                                                                                                                              |
+| `Last-Event-ID: 0`                           | 링 버퍼 전체를 처음부터 리플레이(`--event-ring-size`까지, 기본값 8000, `--event-ring-max-bytes` 적용, 기본값 8 MiB, 그리고 단일-최신-이벤트/스냅샷 예외 적용).                                                                                                                                              |
 | `Last-Event-ID: N` (`ring[0].id <= N+1`)     | `id > N`인 이벤트의 연속 리플레이 후 라이브.                                                                                                                                                                                                                                                           |
 | `Last-Event-ID: N` (`ring[0].id > N+1`)      | 갭 감지됨 — 생존 접미사 리플레이 전에 `state_resync_required`(`reason: 'ring_evicted'`) 발생. SDK는 유한 리플레이 스냅샷 윈도우를 복구하기 위해 `loadSession`을 호출해야 합니다. 반환된 `compactedReplay`는 이전 인메모리 리플레이 항목이 삭제된 경우 `history_truncated`로 시작할 수 있습니다.         |
 | `Last-Event-ID: N` (`N >= nextId`)           | Epoch 리셋(데몬 재시작) — `state_resync_required`(`reason: 'epoch_reset'`) 발생 후 전체 링 리플레이.                                                                                                                                                                                                    |

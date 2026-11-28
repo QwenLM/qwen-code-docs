@@ -2,16 +2,16 @@
 
 ## 概述
 
-守护进程绝不允许 HTTP 路由或 ACP 侧的 Agent 调用直接触及宿主机文件系统。每次读取、写入、列出、glob 和 stat 操作都通过 `WorkspaceFileSystem` 边界（`packages/cli/src/serve/fs/`）进行，该边界提供以下能力：
+守护进程 HTTP 文件路由和普通的委托 ACP `readTextFile` / `writeTextFile` 调用通过 `WorkspaceFileSystem` 边界（`packages/cli/src/serve/fs/`）进行，该边界提供：
 
 - **路径解析** — 规范化路径，拒绝任何逃逸出绑定工作区的路径（包括通过符号链接逃逸）。
-- **信任门控** — 当工作区不被信任时拒绝写入（`untrusted_workspace`）。
+- **信任门控** — 当工作区不被信任时拒绝写入、编辑和删除（`untrusted_workspace`）。
 - **大小与内容策略** — 完整快照/输出上限（`MAX_READ_BYTES = 256 KiB`），大文本窗口在输出和扫描成本上均有限制（`MAX_TEXT_SCAN_BYTES = 8 MiB`），写入上限（`MAX_WRITE_BYTES = 5 MiB`），二进制文件检测。
 - **原子性** — 先写入再重命名，保留目标文件权限模式；新文件默认权限为 `0o600`，或在工厂的 `system` 新文件权限模式策略（`QWEN_SERVE_NEW_FILE_MODE`）下跟随进程 umask。
 - **审计** — 每次访问/拒绝都会发出结构化事件，供 `PermissionAuditRing` / 监控使用。
 - **类型化错误** — 封闭的 `FsErrorKind` 联合类型，映射到 HTTP 状态码。
 
-HTTP 文件路由（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST /file/edit`、`GET /list`、`GET /glob`、`GET /stat`）使用此边界，且不会接收同主机例外。在生产环境的 daemon 中，仍被委托的 ACP 调用通过注入的 bridge 适配器到达 WFS；通用的 bridge 调用者仅在注入此类适配器时才使用 WFS。生产环境的同主机 `qwen serve` runtime 会广播 `readTextFile: false`，因此所有子进程的 `FileSystemService.readTextFile` 消费者使用常规 CLI 文件系统服务。最终的 ACP `writeTextFile` 内容写入仍被委托：workspace 目标使用 WFS，而严格的内置工具标记可能仅在守护进程创建的同主机适配器上为外部路径选择等效的宿主写入器。参见[外部写入设计](../../design/daemon-external-tool-text-writes.md)。
+HTTP 文件路由（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST /file/edit`、`GET /list`、`GET /glob`、`GET /stat`）和本地目录路由（`POST /workspaces/:workspace/directory/create`、`POST /workspaces/:workspace/directory/delete`）使用此边界，且不会接收同主机例外。在生产环境的 daemon 中，仍被委托的 ACP 调用到达注入的 bridge 适配器；通用的 bridge 调用者仅在注入此类适配器时才使用 WFS。生产环境的同主机 `qwen serve` runtime 会广播 `readTextFile: false`，因此所有子进程的 `FileSystemService.readTextFile` 消费者使用常规 CLI 文件系统服务。最终的 ACP `writeTextFile` 内容写入仍被委托：workspace 目标使用 WFS，而严格的内置工具标记可能仅在守护进程创建的同主机适配器上为外部路径选择等效的宿主写入器。参见[外部写入设计](../../design/daemon-external-tool-text-writes.md)。
 
 该文本读取能力切片覆盖了直接的 `read_file` 以及 write、edit、notebook、sed 和 artifact 操作使用的共享预读取：
 
@@ -27,7 +27,7 @@ HTTP 文件路由（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST
 - 将用户提供的路径解析为具有品牌标记的 `ResolvedPath` 值，边界内的其余部分可以安全地使用这些值。
 - 拒绝超出绑定工作区的路径（`path_outside_workspace`），以及目标为符号链接的路径（`symlink_escape`）。
 - 拒绝超过 `MAX_READ_BYTES` 的完整快照读取，同时允许显式窗口（输出上限为 `MAX_READ_BYTES`，扫描成本上限为 `MAX_TEXT_SCAN_BYTES`）；拒绝超过 `MAX_WRITE_BYTES` 的写入以及二进制文件（`binary_file`）。
-- 当工作区不被信任时，拒绝写入/编辑（`untrusted_workspace`）— 通过 `assertTrustedForIntent(trusted, intent)` 门控。
+- 当工作区不被信任时，拒绝写入/编辑/删除（`untrusted_workspace`）— 通过 `assertTrustedForIntent(trusted, intent)` 门控。
 - 通过 `shouldIgnore` 遵循 `.gitignore` / `.qwenignore` 模式。
 - 执行原子性的写入-重命名操作，并保留目标文件权限模式；新文件默认权限为 `0o600`（在 `system` 新文件权限模式策略下为 umask 推导的 `0o666 & ~umask`）。
 - 每次操作均发出 `fs.access` / `fs.denied` 审计事件。
@@ -39,11 +39,11 @@ HTTP 文件路由（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST
 
 | 文件                       | 用途                                                                                                                                                                                                                         |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `paths.ts`               | `canonicalizeWorkspace`、`resolveWithinWorkspace`、`hasSuspiciousPathPattern`、品牌标记 `ResolvedPath`、`Intent` 联合类型（`read \| write \| list \| stat \| glob`）。                                                                 |
+| `paths.ts`               | `canonicalizeWorkspace`、`resolveWithinWorkspace`、`hasSuspiciousPathPattern`、品牌标记 `ResolvedPath`、`Intent` 联合类型（`read \| write \| edit \| delete \| list \| glob \| stat`）。                                                                 |
 | `policy.ts`              | `MAX_READ_BYTES`、`MAX_TEXT_SCAN_BYTES`、`MAX_WRITE_BYTES`、`MAX_UPLOAD_BYTES`、`BINARY_PROBE_BYTES`、`assertTrustedForIntent`、`detectBinary`、`enforceReadBytesSize`、`enforceReadSize`、`enforceWriteSize`、`shouldIgnore`。                          |
 | `audit.ts`               | `FS_ACCESS_EVENT_TYPE`、`FS_DENIED_EVENT_TYPE`、`createAuditPublisher`、审计载荷类型。                                                                                                                                         |
 | `errors.ts`              | `FsError` 类、`isFsError`、`FsErrorKind` 联合类型（14 种）、`FsErrorStatus` 联合类型（`400 / 403 / 404 / 409 / 413 / 422 / 500 / 503`）。                                                                                          |
-| `workspace-file-system.ts` | `createWorkspaceFileSystemFactory`、`WorkspaceFileSystem`（编排器，执行读/写/列出操作）、`WriteMode`、`ContentHash`、`FsEntry`、`FsStat`、`ListOptions`、`GlobOptions`、`ReadTextOptions`、`ReadBytesOptions`、`WriteTextAtomicOptions`。 |
+| `workspace-file-system.ts` | `createWorkspaceFileSystemFactory`、`WorkspaceFileSystem`（编排器，执行读/写/列出以及创建/删除目录操作）、`WriteMode`、`ContentHash`、`FsEntry`、`FsStat`、`ListOptions`、`GlobOptions`、`ReadTextOptions`、`ReadBytesOptions`、`WriteTextAtomicOptions`。 |
 
 ### `FsErrorKind` 分类
 
@@ -58,9 +58,9 @@ HTTP 文件路由（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST
 | `file_already_exists`    | 409       | `mode: 'create'` 但文件已存在。                                                                                                                                                          |
 | `text_not_found`         | 422       | `POST /file/edit` 的搜索字符串未在文件中找到。                                                                                                                                               |
 | `ambiguous_text_match`   | 422       | 需要恰好一个匹配时找到了多个匹配。                                                                                                                                                         |
-| `untrusted_workspace`    | 403       | 在不被信任的工作区中尝试写入。                                                                                                                                                           |
+| `untrusted_workspace`    | 403       | 在不被信任的工作区中尝试写入、编辑或删除。                                                                                                                                                           |
 | `permission_denied`      | 403       | 操作系统级别的 `EACCES` / `EPERM`。                                                                                                                                                        |
-| `io_error`               | 503       | `ENOSPC` / `EIO` / `EBUSY` / `ETXTBSY` / `ENAMETOOLONG` / `EMFILE` / `ENFILE`。**与 `permission_denied` 区分开**，这样监控流水线不会因为“磁盘已满”而去通知安全响应人员。                          |
+| `io_error`               | 503       | `ENOSPC` / `EIO` / `EBUSY` / `ETXTBSY` / `ENAMETOOLONG` / `EMFILE` / `ENFILE`，以及递归目录删除期间的 `ENOTEMPTY`。**与 `permission_denied` 区分开**，这样监控流水线不会因为“磁盘已满”而去通知安全响应人员。                          |
 | `internal_error`         | 500       | 到达边界的非 errno 错误（`TypeError`、编程错误）。                                                                                                                                          |
 | `parse_error`            | 400 / 422 | 请求体解析错误（400）或服务级不变量违反（422）。                                                                                                                                           |
 
@@ -82,7 +82,7 @@ interface BridgeFileSystem {
 1. **拒绝非普通文件** — 套接字/管道/字符设备/procfs/sysfs 条目尽管 `stats.size === 0` 也能流式传输无界数据。内联路径会抛出异常，消息中包含 `describeStatKind(stats)`。
 2. **避免无界的全文件缓冲。** 内联回退将缓冲读取上限设为 `READ_FILE_SIZE_CAP = 100 MiB`。注入的适配器则应用更严格的 WorkspaceFileSystem 契约：完整快照在 256 KiB 处停止，而较大的 UTF-8 文件需要有限的 `limit`，并从 inode 绑定的句柄流式传输，最多返回 256 KiB。它不能为了返回 `{ line: 1, limit: 10 }` 而读取整个 500 MB 的日志。
 
-适配器更进一步：它对 workspace 写入使用 `WorkspaceFileSystem.writeTextOverwrite`（PR 18 原语），对严格标记的外部内置工具写入使用工厂拥有的等效实现。两者都使用原子性的临时文件与重命名写入，保留权限模式，默认 `0o600`，并在共享的规范路径锁内拒绝符号链接。这与 **F1 之前的内联代理有所不同**，后者会解析符号链接并写入其目标——依赖通过符号链接点文件写入的 Agent 现在必须直接处理已解析的路径。
+适配器更进一步：它对 workspace 写入使用 `WorkspaceFileSystem.writeTextOverwrite`（PR 18 原语），对严格标记的外部内置工具写入使用工厂拥有的等效实现。两者都使用原子性的临时文件与重命名写入，保留权限模式，新文件权限模式遵循工厂的 `NewFileModePolicy`（默认 `0o600`；在 `system` 下跟随 umask），并在共享的规范路径锁内拒绝符号链接。这与 **F1 之前的内联代理有所不同**，后者会解析符号链接并写入其目标——依赖通过符号链接点文件写入的 Agent 现在必须直接处理已解析的路径。
 
 ### 通过 ACP 线缆保留 `FsError`
 
@@ -120,7 +120,7 @@ Agent 的 RPC 客户端现在会收到 `data.errorKind`（封闭的 `FsErrorKind
 
 ### 信任门控
 
-`assertTrustedForIntent(trusted, intent)` 消费由调用者注入的信任布尔值；策略层不直接读取 `Config.isTrustedFolder()`。读取/列出/stat/glob 始终被允许（信任仅针对写入）。在不被信任的工作区中进行写入意图会抛出 `FsError('untrusted_workspace', ..., status: 403)`。信任信号通过 `WorkspaceFileSystemFactoryDeps.trusted: boolean` 传入 — `runQwenServe` 传递 `true` 因为操作者启动守护进程时针对的工作区是隐式信任的；`createServeApp`（直接嵌入而不使用 `runQwenServe`）默认值为 `false` 并且每个进程警告一次（参见 [`02-serve-runtime.md`](./02-serve-runtime.md)）。
+`assertTrustedForIntent(trusted, intent)` 消费由调用者注入的信任布尔值；策略层不直接读取 `Config.isTrustedFolder()`。读取 / 列出 / stat / glob 始终被允许。在不被信任的工作区中，变更意图（`write`、`edit` 和 `delete`）会抛出 `FsError('untrusted_workspace', ..., status: 403)`。信任信号通过 `WorkspaceFileSystemFactoryDeps.trusted: boolean` 传入 — `runQwenServe` 传递 `true` 因为操作者启动守护进程时针对的工作区是隐式信任的；`createServeApp`（直接嵌入而不使用 `runQwenServe`）默认值为 `false` 并且每个进程警告一次（参见 [`02-serve-runtime.md`](./02-serve-runtime.md)）。
 
 ## 工作流
 
@@ -207,11 +207,19 @@ flowchart LR
 
 `FS_ACCESS_EVENT_TYPE` / `FS_DENIED_EVENT_TYPE` 携带上下文（`ctx`）、路径、意图、结果、errorKind?、读取/写入的字节数、sha256?。
 
+### 目录变更
+
+`createDirectory(input)` 和 `deleteDirectory(input)` 是可选的本地工厂操作，仅通过 `POST /workspaces/:workspace/directory/create` 和 `POST /workspaces/:workspace/directory/delete` 暴露。预检需要 `workspace_qualified_rest_core` 以及相应的 `workspace_directory_create` 或 `workspace_directory_delete` 能力。两个路由都需要严格的变更授权和受信任的活跃选中运行时；两者都不会回退到主运行时或暴露旧版主路由。不支持 SSH 工作区，没有该操作的自定义工厂返回 `422`。
+
+创建要求父目录已存在，并且在名称已被占用时失败，而非重用或覆盖。删除会递归地移除空或非空目录，拒绝工作区根目录、普通文件和最终符号链接。嵌套的符号链接条目在不跟随其目标的情况下被移除。两个操作都在保留词法最终名称的同时解析父目录，在路径锁下检查信任/运行时 generation，并在匹配时发出忽略分类；目录创建还会记录 `sizeBytes: 0`。
+
+删除是永久性的，如果失败可能会留下部分删除结果。并发的子级写入可能产生 `ENOTEMPTY`，在本地被分类为 `503 io_error`，以便调用者可以重试。基于路径的可移植检查无法使外部目录替换具有原子性。TypeScript SDK 方法为 `WorkspaceDaemonClient.createWorkspaceDirectory(path, clientId?)` 和 `WorkspaceDaemonClient.deleteWorkspaceDirectory(path, clientId?)`；两者都使用工作区限定的 REST。
+
 ## 状态与生命周期
 
 - 工厂在守护进程启动时构建一次（`runQwenServe` → `resolveBridgeFsFactory` → 适配器）。
 - 每个请求构造一个 `RequestContext` 并仅为该次调用调用工厂的编排器 — 没有长期存在的每个文件状态。
-- 每个路径的锁仅持续写入操作期间（没有跨调用的锁定；对同一路径的并发写入会在锁上竞争并顺序执行）。
+- 每个路径的锁在每次变更操作期间存在，并对同一规范路径上的操作进行序列化；它们不会将祖先路径和后代路径一起锁定。
 - 审计环由 `runQwenServe` 拥有，并与权限审计发布者共享。
 
 ## 依赖项
@@ -225,13 +233,13 @@ flowchart LR
 
 | 来源                                              | 旋钮                                                                  | 效果                                                                                                            |
 | ------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `WorkspaceFileSystemFactoryDeps.trusted: boolean` | 构造函数输入                                                          | 是否允许写入；`runQwenServe` 下默认为 `true`，`createServeApp` 下默认为 `false`（带警告）。                     |
+| `WorkspaceFileSystemFactoryDeps.trusted: boolean` | 构造函数输入                                                          | 是否允许写入、编辑和删除；`runQwenServe` 下默认为 `true`，`createServeApp` 下默认为 `false`（带警告）。                     |
 | 常量                                              | `MAX_READ_BYTES = 256 KiB`                                            | 完整快照和返回文本的上限；更大的文本需要显式窗口参数。                                                             |
 | 常量                                              | `MAX_TEXT_SCAN_BYTES = 8 MiB`                                         | 大文本读取为定位行偏移可扫描的字节数；超过则返回 `file_too_large`。                                                |
 | 常量                                              | `MAX_WRITE_BYTES = 5 MiB`                                             | 写入上限；大小低于 `express.json({ limit: '10mb' })`。                                                           |
 | 常量                                              | `MAX_UPLOAD_BYTES = 50 MiB`                                           | `POST /file/upload` 的二进制上传上限；上传不会覆盖，自动为已占用的名称编号。                                        |
 | 常量                                              | `BINARY_PROBE_BYTES = 4096`                                           | 基于内容的二进制检测采样大小。                                                                                 |
-| 能力标签                                          | `workspace_file_read`、`workspace_file_bytes`、`workspace_file_write`、`workspace_file_upload` | 参见 [`11-capabilities-versioning.md`](./11-capabilities-versioning.md)。                                       |
+| 能力标签 | `workspace_file_read`、`workspace_file_bytes`、`workspace_file_read_cursor`、`workspace_file_write`、`workspace_file_upload`、`workspace_file_delete`、`workspace_directory_create`、`workspace_directory_delete` | 参见 [`11-capabilities-versioning.md`](./11-capabilities-versioning.md)。 |
 | 工作区文件                                        | `.gitignore`、`.qwenignore`                                           | 被忽略的路径从 `shouldIgnore` 中返回 `ignored: true`。                                                          |
 
 ## 注意事项与已知限制

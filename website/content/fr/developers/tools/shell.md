@@ -106,6 +106,8 @@ Le paramètre `tools.shell.enableInteractiveShell` contrôle si les commandes sh
 
 Lorsque le paramètre est omis, les invites explicites ponctuelles utilisent `child_process` ; les sessions TUI interactives, ACP, stream-json, stdin uniquement et les sessions avec entrée fichier utilisent PTY. Sur les builds Windows **<= 19041** (avant Windows 10 version 2004), le mode PTY revient à `child_process` car les anciennes implémentations de ConPTY présentent des problèmes de fiabilité connus (sorties manquantes, blocages). Cela correspond au même seuil utilisé par VS Code ([microsoft/vscode#123725](https://github.com/microsoft/vscode/issues/123725)). Si `node-pty` n'est pas disponible au moment de l'exécution, l'outil revient également à `child_process`.
 
+Les commandes non-PTY collectent les deux flux de sortie via l'événement `close` du processus enfant, de sorte que les données livrées juste après la fin du processus sont conservées. Une commande en premier plan avec mise en mémoire tampon attend au plus 200 ms après la fin si un descendant maintient un pipe ouvert ; les appelants streaming et managed raw-capture conservent leur limite de drain de 1000 ms. Les commandes normales retournent dès que leurs pipes se ferment. Le `ShellExecutionResult.stdoutHeldAfterExit` du service d'exécution identifie un pipe stdout encore ouvert à cette limite ; cet indicateur interne n'est pas exposé dans le résultat de l'outil `run_shell_command` ; le `&` au niveau shell reste non suivi, utilisez donc `is_background: true` pour le travail en arrière-plan géré.
+
 Pour remplacer explicitement la valeur par défaut, définissez la valeur dans `settings.json` :
 
 **Exemple de `settings.json` :**

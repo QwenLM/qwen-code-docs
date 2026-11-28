@@ -35,6 +35,8 @@ página na mesma alteração.
 | Variável                                   | Padrão | Usada em                | Controla                                                                                    |
 | ------------------------------------------ | ------ | ----------------------- | ------------------------------------------------------------------------------------------- |
 | `QWEN_CI_VITEST_RETRY`                     | `2`    | `ci.yml`                | Contagem de retries para o step principal de teste de workspace e scripts do CI             |
+| `QWEN_CI_HOST_LOAD_MAX_RATIO`              | `2.0`  | `ci.yml`                | Teto de carga por CPU no qual ou acima do qual um host Linux self-hosted é recusado antes das suites unitárias |
+| `QWEN_CI_RPC_RETRY`                        | `1`    | `ci.yml`                | Re-execuções de uma suite de workspace toda verde que falhou apenas no timeout de RPC do worker do Vitest |
 | `QWEN_RELEASE_VITEST_RETRY`                | `2`    | `release.yml`           | Contagem de retries para os shards de teste de workspace do release                         |
 | `QWEN_RELEASE_WORKSPACE_TIMEOUT_MINUTES`   | `45`   | `release.yml`           | Timeout do job de cada shard de teste de workspace do release                               |
 | `QWEN_CI_VITEST_MAX_WORKERS`               | `4`    | `ci.yml`, `release.yml` | Limite de workers para testes unitários do CI principal e testes de workspace/quality do release em runners reservados |
@@ -58,6 +60,112 @@ literal `off`, que omite inteiramente a flag `--retry` em vez de passar
 própria do Vitest do workspace e desabilitaria uma política de retry
 deliberada).
 
+### Timeouts de RPC do worker em um host com contenção
+
+`QWEN_CI_RPC_RETRY` é uma alavanca diferente do `--retry`: ele re-executa uma suite
+de workspace inteira, e somente quando o relatório próprio dessa suite não mostra
+nenhum teste com falha e o orçamento de RPC worker-to-main do Vitest
+(`Timeout calling "onTaskUpdate"`) foi o único erro não tratado. Nesse pool esse
+formato é contenção de host e não uma regressão — as execuções principais
+43018456551 e 43016357976 ficaram vermelhas com 902 de 902 testes passando em
+`packages/channels/github`. A primeira tentativa mantém a chamada em lote própria
+do npm; somente os workspaces que o npm nomeia como falhos são re-executados, cada
+um isoladamente.
+
+A lane de release já concede essa mesma passagem em seus próprios shards
+(`.github/scripts/run-release-workspace-tests.sh`), e as regras de evidência são
+as que `scripts/tests/release-workflow.test.js` fixa lá: a execução deve ter
+alcançado uma contagem de aprovação, não deve ter sido morta por um sinal, e a
+contagem própria do Vitest de erros não tratados deve ser igual a quantos timeouts
+de transporte o relatório contém. Uma contagem, não o cabeçalho de crash — o
+cabeçalho é escolhido pelo produtor, então qualquer padrão sobre cabeçalhos é
+incompleto. O número de `Errors` é uma soma sobre o relatório inteiro, enquanto o
+número de transporte conta somente dentro das seções `Unhandled Errors` do Vitest
+— a saída de console de um teste também é ecoada na coluna 0, então uma cópia
+impressa não deve movê-lo — e dentro dessas seções ele corresponde à própria linha
+de cabeçalho do erro (um `Error: [vitest-worker]: Timeout calling` na coluna
+zero), nunca uma mensagem, stack ou frame de código que meramente cita o prefixo.
+A contagem verde de uma tentativa portanto não pode cobrir o crash de uma tentativa
+posterior.
+
+As lanes de Linux deliberadamente mantêm erros não tratados como fatais
+(`scripts/tests/unit-vitest-configs.test.ts`, #10438), então isso não os ignora:
+qualquer teste com falha, qualquer segundo erro não tratado, ou um processo que
+morreu antes de reportar recusa o retry. Um travamento que sobreviva a ambas as
+tentativas ainda falha. Defina `0` para fazer a primeira falha prevalecer.
+
+**A contagem é o único limite.** Uma re-execução não tem condição de tempo: uma
+revisão anterior desta lane pulava uma re-execução quando menos da metade do
+orçamento do step de teste restava, e essa guarda foi removida em vez de reparada.
+Ela recusou uma re-execução com 74% do orçamento porque adicionava o tempo
+decorrido do lote duas vezes, e uma versão correta não está disponível de dentro do
+script da lane — o step começa antes do script (`chown -R`, `mktemp`, o amostrador
+de disco), então o `SECONDS` próprio do script não é o relógio do step, e passar o
+início do step de dentro do workflow seria mais superfície nova do que a única
+truncação que evitaria. O custo aceito: uma re-execução emitida tarde o suficiente
+pode ser morta pelo `timeout-minutes: 45` do step. Quando isso acontece, o job
+falha e o log da primeira tentativa ainda está lá, porque a primeira tentativa é
+gravada em um arquivo — uma truncação que mantém a evidência, em vez de uma recusa
+que descarta um retry enquanto um quarto do orçamento está sem uso.
+
+### Admissão de carga do host
+
+`QWEN_CI_HOST_LOAD_MAX_RATIO` é o teto de carga por CPU do step
+`Host load gate (self-hosted)` nos shards de teste unitário. O gate amostra a
+média de carga de cinco minutos de `/proc/loadavg` contra `nproc`, espera até seis
+amostras com dez segundos de intervalo, e admite o job assim que uma amostra
+ultrapassa o teto. Um host ainda nesse nível ou acima falha o step antes das suites
+começarem.
+
+O gate não pode mover um job: o GitHub já o posicionou, e somente uma re-execução
+o leva para outro host. O que muda é quando o job falha. O gate de piso de disco ao
+lado admite por bytes e inodes livres, que não dizem nada sobre contenção de CPU;
+em 2026-11-11 o pool hk1 executou hosts de 64 CPUs com carga 53-98 com 28-140
+processos concorrentes do Vitest, e essa ocupação é o que esgota os orçamentos de
+teste de 60 segundos, o orçamento de RPC worker-to-main do Vitest, e o orçamento
+inteiro de 45 minutos do step de teste. Recusar custa o install já gasto e devolve
+esse orçamento, com uma mensagem que diz para re-executar em vez de uma falha de
+teste que nenhuma branch autorizou.
+
+**O gate é uma retaguarda, não um preditor.** O padrão `2.0` é calibrado contra a
+carga de cinco minutos por CPU dos shards que falharam em 2026-11-11 e de quatro
+shards que passaram no mesmo pool na mesma hora:
+
+| Shard | Host   | Na entrada | Mediana | Pico | Resultado              |
+| ----- | ------ | ---------- | ------- | ---- | ---------------------- |
+| 2/2   | hk1-4  | 1.34       | 1.43    | 1.54 | worker RPC timeout     |
+| 2/2   | hk1-30 | 1.45       | 1.42    | 1.54 | worker RPC timeout     |
+| 2/2   | hk1-29 | 0.85       | 1.42    | 1.54 | 45-minute step timeout |
+| 1/2   | hk1-7  | 0.94       | 1.40    | 1.49 | passed                 |
+| 2/2   | hk5-27 | 1.03       | 1.03    | 1.19 | passed                 |
+| 1/2   | hk2-32 | 0.75       | 0.97    | 1.18 | passed                 |
+| 1/2   | hk3-28 | 0.48       | 0.67    | 0.87 | passed                 |
+
+As faixas se sobrepõem. Um host que passou alcançou 1.49, enquanto um host que
+falhou começou em 0.85 — a ocupação cresceu durante a execução, e somente dois dos
+três hosts com falha já estavam com contenção quando suas suites começaram. Nenhum
+limiar de entrada os separa, então um teto justo o suficiente para pegar os dois
+com contenção também recusaria hosts que comprovadamente passam. `2.0` fica acima
+de cada leitura medida em um host que completou suas suites: ele recusa um host que
+nenhuma dessas amostras sobreviveu, e não teria disparado em nenhum incidente da
+tabela. Apertá-lo deve produzir falsas recusas; aumentá-lo muito mais torna o gate
+inerte.
+
+O RPC flake nessa tabela é um problema diferente e este gate não é sua correção:
+decidi-lo precisa do relatório próprio da suite, que não existe antes das suites
+executarem. #16945 adiciona uma re-execução no nível da lane exatamente para esse
+formato — um relatório todo verde cujo único erro não tratado foi o timeout de RPC
+do worker. Os dois são independentes e podem ser ajustados ou desabilitados
+separadamente.
+
+O teto é uma razão, não uma carga absoluta, porque o pool mistura tamanhos de host.
+Defina `off` para admitir todo host enquanto a frota está sendo redimensionada. O
+gate roda somente em Linux self-hosted; lanes hospedadas pelo GitHub e macOS não
+são afetadas, e uma contagem de CPU ou média de carga ilegível, ou um `awk`
+ausente, admite o job com um aviso em vez de bloquear uma lane. Um limiar
+malformado falha como o erro de configuração que é em vez de desabilitar
+silenciosamente o gate.
+
 ### Timeout de teste de workspace
 
 `QWEN_RELEASE_WORKSPACE_TIMEOUT_MINUTES` define o `timeout-minutes` no nível
@@ -75,17 +183,9 @@ forçado para `1`) nos runners self-hosted reservados cujo nome começa com
 workspace do CI e pelos steps `workspace_tests` e `quality_scripts` do release;
 outros testes de integração que executam o Vitest e caem no mesmo pool
 reservado nos workflows de CI e release não a consomem; eles usam seus próprios
-limites do Vitest. O smoke E2E da Web Shell está fixado em `ubuntu-latest`,
-então o limite não se aplica a ele. Em runners hospedados pelo GitHub, a
+limites do Vitest. O smoke E2E do web-shell roda no pool ARM64 com seus próprios dois
+workers do Playwright, então o limite não se aplica a ele. Em runners hospedados pelo GitHub, a
 variável é ignorada e o Vitest usa seus próprios valores padrão.
-
-Cada execução do Vitest aplica o limite por conta própria. O step principal de
-teste de workspace do CI executa duas lanes ao mesmo tempo
-(`.github/scripts/ci/run-unit-test-lanes.sh`): o limite restringe cada execução
-do Vitest na lane principal, e a suite do web-shell na lane lateral executa com
-metade do limite, no mínimo 1, então no pico o step executa o limite mais essa
-metade. Em runners hospedados pelo GitHub, essa suite da lane lateral executa
-com 2 workers.
 
 Cada execução do Vitest aplica o limite por conta própria. O step principal de teste de workspace do CI executa duas lanes ao mesmo tempo (`.github/scripts/ci/run-unit-test-lanes.sh`): a lane principal executa as suites da CLI e do core no limite, e a lane lateral executa as suites dos outros workspaces e `npm run test:scripts:unit` com metade do limite, no mínimo 1, então no pico o step executa o limite mais essa metade. Em runners hospedados pelo GitHub, as execuções do Vitest da lane lateral usam 2 workers.
 
@@ -103,4 +203,4 @@ controlando a lane de lint `quality_static`) e
 `QWEN_RELEASE_BUILD_TIMEOUT_MINUTES` (padrão `45`, controlando a lane de
 empacotamento `quality_build`). Como elas governam lint estático e builds de
 artefatos em vez de execução de testes, estão fora do escopo de execução de
-testes desta página. página.
+testes desta página.

@@ -1,12 +1,12 @@
 # Qwen Code Java SDK
 
-Qwen Code Java SDK는 `qwen serve`용 권장 daemon transport를 제공하며, 호환성을 위해 실험적 레거시 stdio API도 유지합니다. 두 API 모두 동일한 `com.alibaba:qwencode-sdk` 아티팩트에 포함됩니다.
+Qwen Code Java SDK는 `qwen serve`용 권장 데몬 transport를 제공하며, 호환성을 위해 실험적 레거시 stdio API도 유지합니다. 두 API 모두 동일한 `com.alibaba:qwencode-sdk` 아티팩트에 포함됩니다.
 
 ## 요구 사항
 
 - Java >= 11 (`0.1.0-alpha`용)
 - Maven >= 3.9.2 (소스에서 SDK를 빌드하거나 배포할 때)
-- daemon API용 호환 `qwen serve`, 또는 레거시 stdio API용 qwen-code >= 0.5.0
+- 데몬 API용 호환 `qwen serve`, 또는 레거시 stdio API용 qwen-code >= 0.5.0
 
 ### 종속성
 
@@ -51,9 +51,9 @@ mvn package
 mvn install
 ```
 
-### 소스에서 실제 daemon E2E 실행
+### 소스에서 실제 데몬 E2E 실행
 
-워크스페이스와 루트 CLI 번들을 모두 빌드한 후 저장소 루트에서 실제 daemon Java 통합 테스트를 실행하세요:
+워크스페이스와 루트 CLI 번들을 모두 빌드한 후 저장소 루트에서 실제 데몬 Java 통합 테스트를 실행하세요:
 
 ```bash
 npm run build
@@ -63,11 +63,11 @@ npx tsx scripts/run-java-daemon-sdk-e2e.ts
 
 `npm run build`만으로는 `dist/cli.js`가 갱신되지 않습니다. E2E 하네스는 해당 번들을 실행하며, 누락된 경우 명시적인 사전 요구사항 오류로 실패합니다.
 
-## 권장 daemon API
+## 권장 데몬 API
 
 `qwen serve`를 시작한 후 독립적인 thread-scoped 세션을 생성하세요. `promptText`는 일치하는 `turn_complete`가 올 때까지 반환하지 않으며, 불완전한 스트림은 부분 텍스트를 성공으로 반환하는 대신 `PromptOutcomeIndeterminateException`으로 실패합니다.
 
-`0.1.0-alpha`가 가정하는 수명 주기 보장을 위해서는 SDK와 동일한 소스 리비전에서 릴리스된 qwen-code 빌드를 사용하세요. daemon은 [#7386](https://github.com/QwenLM/qwen-code/pull/7386)의 멱등 per-client detach ledger, [#7400](https://github.com/QwenLM/qwen-code/pull/7400)의 per-epoch 터미널 보증, 그리고 이 릴리스의 인정된 admission 취소 및 FIFO cancel-drain fence를 포함해야 합니다. #7400 커밋만으로는 충분하지 않습니다: 동일한 와이어 daemon은 에이전트 디스패치 전에 취소를 인정하면서도 인정된 프롬프트를 중단하지 않거나, 인정되지 않은 세션 범위 취소를 대기열의 후속 프롬프트에 전달할 수 있습니다. 번들 ACP 자식은 인정된 admission 인식 취소 핸드셰이크를 하나 사용하며, 해당 확장 없는 표준 준수 커스텀 ACP 자식은 표준 `session/cancel` 알림을 하나 받습니다. 기능 협상은 오래된 동일한 와이어 daemon 빌드를 구별할 수 없으므로, SDK는 부분 출력을 성공으로 보고하는 대신 실패를 닫습니다.
+`0.1.0-alpha`가 가정하는 수명 주기 보장을 위해서는 SDK와 동일한 소스 리비전에서 릴리스된 qwen-code 빌드를 사용하세요. 데몬은 [#7386](https://github.com/QwenLM/qwen-code/pull/7386)의 멱등 per-client detach ledger, [#7400](https://github.com/QwenLM/qwen-code/pull/7400)의 per-epoch 터미널 보증, 그리고 이 릴리스의 인정된 admission 취소 및 FIFO cancel-drain fence를 포함해야 합니다. #7400 커밋만으로는 충분하지 않습니다: 동일한 와이어 데몬은 에이전트 디스패치 전에 취소를 인정하면서도 인정된 프롬프트를 중단하지 않거나, 인정되지 않은 세션 범위 취소를 대기열의 후속 프롬프트에 전달할 수 있습니다. 번들 ACP 자식은 인정된 admission 인식 취소 핸드셰이크를 하나 사용하며, 해당 확장 없는 표준 준수 커스텀 ACP 자식은 표준 `session/cancel` 알림을 하나 받습니다. 기능 협상은 오래된 동일한 와이어 daemon 빌드를 구별할 수 없으므로, SDK는 부분 출력을 성공으로 보고하는 대신 실패를 닫습니다.
 
 번들 취소 핸드셰이크는 daemon이 대기열의 후속 프롬프트를 디스패치하기 전에 대상 프롬프트 호출이 완료될 때까지 의도적으로 대기합니다. 단순히 취소를 인정하는 타임아웃은 없습니다. 그렇게 하면 늦은 세션 범위 취소가 다음 프롬프트에 도달할 수 있기 때문입니다. provider, 도구, 또는 커스텀 통합이 `AbortSignal`을 무기한으로 무시하는 경우, 취소 뮤테이션은 결과를 알 수 없는 상태로 남을 수 있으며 해당 세션을 재사용하면 안 됩니다. 호출자의 관찰 경계 내에서 수신된 정식 프롬프트 터미널을 권위 있는 것으로 간주하세요. 그렇지 않으면 관찰 실패 후 세션을 종료하거나 파괴하세요. 형제 세션을 방해하지 않으면서 끼인 공유 ACP 자식을 복구하려면 더 강력한 런타임 격리가 필요하며, 이는 이 alpha 계약의 범위를 벗어납니다.
 
@@ -104,15 +104,15 @@ Daemon은 ID를 소문자로 정규화하고 새 스레드 세션을 생성합�
 `.bearerToken(System.getenv("QWEN_SERVER_TOKEN"))`을 추가하세요.
 SDK는 REST 및 SSE 요청에 bearer를 전송하며 URL에 포함하지 않습니다.
 
-정렬된 텍스트, 사고, 도구, 사용량, 권한 및 원시 이벤트 콜백이 필요한 경우 `PromptObserver`와 함께 `startPrompt`를 사용하세요. `acceptanceFuture()`와 `completionFuture()` 뷰는 daemon admission과 신뢰할 수 있는 turn 터미널을 각각 노출합니다. `respondToPermission()`은 요청이 이미 해결되었거나 더 이상 대기 중이 아닌 경우 `false`를 반환합니다. future 뷰를 취소해도 daemon 프롬프트는 취소되지 않습니다. 세션 수준 daemon 취소 작업에는 `cancelActivePrompt()`를 사용하고 일치하는 터미널을 계속 대기하세요. 협력적 취소는 `turn_complete`와 `stopReason=cancelled`로 완료됩니다. `promptText()`는 `PromptTextResult`를 반환하므로, 취소를 구별해야 하는 호출자는 `result.getTerminal().getStopReason()`를 검사해야 합니다. 취소 중에 에이전트나 provider가 실패하면 daemon이 대신 `turn_error`를 게시할 수 있으며, 이 경우 `promptText()`가 `PromptTurnException`을 throw합니다.
+정렬된 텍스트, 사고, 도구, 사용량, 권한 및 원시 이벤트 콜백이 필요한 경우 `PromptObserver`와 함께 `startPrompt`를 사용하세요. `acceptanceFuture()`와 `completionFuture()` 뷰는 daemon admission과 신뢰할 수 있는 turn 터미널을 각각 노출합니다. `respondToPermission()`은 요청이 이미 해결되었거나 더 이상 대기 중이 아닌 경우 `false`를 반환합니다. future 뷰를 취소해도 데몬 프롬프트는 취소되지 않습니다. 세션 수준 daemon 취소 작업에는 `cancelActivePrompt()`를 사용하고 일치하는 터미널을 계속 대기하세요. 협력적 취소는 `turn_complete`와 `stopReason=cancelled`로 완료됩니다. `promptText()`는 `PromptTextResult`를 반환하므로, 취소를 구별해야 하는 호출자는 `result.getTerminal().getStopReason()`를 검사해야 합니다. 취소 중에 에이전트나 provider가 실패하면 daemon이 대신 `turn_error`를 게시할 수 있으며, 이 경우 `promptText()`가 `PromptTurnException`을 throw합니다.
 
-취소, 마감, 분해 또는 에이전트 정리가 경합할 때, daemon의 exactly-once latch는 첫 번째 정식 터미널을 게시하고 이후 후보를 억제합니다. 항상 수신된 터미널 자체에서 분기하세요. 클라이언트가 전송한 마지막 제어 뮤테이션이 터미널 종류나 오류 코드를 결정하지 않습니다.
+취소, 마감, 분해 또는 에이전트 정리가 경합할 때, 데몬의 exactly-once latch는 첫 번째 정식 터미널을 게시하고 이후 후보를 억제합니다. 항상 수신된 터미널 자체에서 분기하세요. 클라이언트가 전송한 마지막 제어 뮤테이션이 터미널 종류나 오류 코드를 결정하지 않습니다.
 
 SSE transport는 `Accept-Encoding: identity`와 `Last-Event-ID`를 전송하고, 프레이밍과 이벤트 ID를 검증하고, 리플레이를 중복 제거하며, SSE GET만 재연결합니다. 프롬프트 및 기타 뮤테이션 요청은 자동으로 재시도되지 않습니다. HTTP 408 및 5xx 프롬프트 admission, 세션 생성, 권한, 취소, 하트비트, detach 또는 delete 응답은 결과가 알려지지 않은 것으로 보고됩니다. daemon이 뮤테이션을 거부했다는 것을 증명하지 않기 때문입니다. 유한한 응답 본문과 SSE 관찰은 독립적인 마감 시간을 가집니다.
 
 생성 시 모델 선택은 이 alpha의 Java daemon SDK API에서 의도적으로 노출되지 않습니다. daemon은 거부된 `modelServiceId`를 create 응답 이전에 방출되는 SSE 이벤트로만 보고하는 반면, 이 SDK는 더 나중의 프롬프트 admission 워터마크에서 스트림을 엽니다. daemon이 결정적인 create 결과를 반환하거나 SDK가 `Last-Event-ID: 0`부터 별도의 세션 이벤트 구독을 소유할 때까지, daemon의 구성된 기본 모델을 사용하세요.
 
-`PromptRequest.Builder.deadline(Duration)`은 daemon이 강제하는 프롬프트 마감 시간을 요청하며, daemon이 `prompt_absolute_deadline`을 광고하는 경우에만 허용됩니다. 그렇지 않으면 SDK가 프롬프트를 전송하기 전에 실패합니다. 값은 1에서 2,147,483,647밀리초 사이여야 하며, daemon의 Node 타이머 범위와 일치합니다. 이는 `observationTimeout(Duration)`과 별개이며, 후자는 로컬 SSE 관찰만 제한하고 취소 뮤테이션을 전송하지 않습니다.
+`PromptRequest.Builder.deadline(Duration)`은 데몬이 강제하는 프롬프트 마감 시간을 요청하며, daemon이 `prompt_absolute_deadline`을 광고하는 경우에만 허용됩니다. 그렇지 않으면 SDK가 프롬프트를 전송하기 전에 실패합니다. 값은 1에서 2,147,483,647밀리초 사이여야 하며, daemon의 Node 타이머 범위와 일치합니다. 이는 `observationTimeout(Duration)`과 별개이며, 후자는 로컬 SSE 관찰만 제한하고 취소 뮤테이션을 전송하지 않습니다.
 
 세션을 생성하기 전에, SDK는 daemon이 REST transport와 `session_scope_override`를 광고할 것을 요구합니다. 이는 오래된 daemon이 요청된 `thread` 범위를 묵묵히 무시하고 클라이언트를 공유 세션에 연결하는 것을 방지합니다. `client_heartbeat`가 광고될 때, 열린 세션은 매 분마다 새 하트비트를 전송하여 daemon이 유휴 상태의 클라이언트를 회수하지 않도록 합니다. 이 동작을 비활성화하려면 `DaemonClient` 빌더에서 `heartbeatInterval(Duration.ZERO)`를 설정하거나, 다른 양의 간격을 선택하세요. 하트비트는 재시도되지 않습니다. 다음 예약된 하트비트는 별도의 킵얼라이브입니다. 프롬프트 관찰은 기본적으로 클라이언트당 32개의 동시 프롬프트로 제한되며 `maximumConcurrentPrompts`로 조정할 수 있습니다. Admission 및 터미널 future 콜백은 transport 워커와 분리되어 실행됩니다. 차단된 콜백은 제한된 게시 용량을 소비합니다. SSE 스트림 정리도 제한되며, 차단된 close는 해당 정리 예약을 유지합니다. 두 조건 모두 이후 `startPrompt`가 타임아웃 close를 삭제하거나 스레드와 대기 작업을 무한정 증가시키는 대신 `DaemonClientCapacityException`으로 실패할 수 있습니다.
 
@@ -197,18 +197,18 @@ public static void runStreamingExample() {
 
 `0.1.0-alpha`는 전체 아티팩트의 최소 Java 버전을 8에서 11로 올립니다. Java 8 애플리케이션은 `0.0.3-alpha`를 계속 사용해야 합니다. Logback은 더 이상 런타임 종속성이 아닙니다. 애플리케이션에서 사용하는 SLF4J provider를 추가하세요.
 
-이 alpha는 프롬프트 터미널을 증명할 수 없을 때 의도적으로 실패를 닫습니다. daemon 재시작에 걸친 exactly-once 실행, 자동 epoch 복구, 스냅샷/재동기화, 영속화된 커서, 또는 실제 프롬프트 ID 대상 취소를 보장하지 않습니다. `prompt_cancelled` 및 큐 이벤트는 참고용이며, 일치하는 `turn_complete`과 `turn_error`만 터미널입니다.
+이 alpha는 프롬프트 터미널을 증명할 수 없을 때 의도적으로 실패를 닫습니다. 데몬 재시작에 걸친 exactly-once 실행, 자동 epoch 복구, 스냅샷/재동기화, 영속화된 커서, 또는 실제 프롬프트 ID 대상 취소를 보장하지 않습니다. `prompt_cancelled` 및 큐 이벤트는 참고용이며, 일치하는 `turn_complete`과 `turn_error`만 터미널입니다.
 
-세션 생성에 모호한 transport 결과가 있는 경우, daemon은 호출자에게 ID가 전달되지 않은 세션을 유지할 수 있습니다. SDK는 생성을 재시도하지 않으며 해당 알 수 없는 세션을 detach할 수 없습니다. daemon 측 수명 주기 회수가 복구 경계입니다.
+세션 생성에 모호한 transport 결과가 있는 경우, 데몬은 호출자에게 ID가 전달되지 않은 세션을 유지할 수 있습니다. SDK는 생성을 재시도하지 않으며 해당 알 수 없는 세션을 detach할 수 없습니다. 데몬 측 수명 주기 회수가 복구 경계입니다.
 
 ## 아키텍처
 
 아티팩트는 두 개의 격리된 구현을 포함합니다:
 
-- **Daemon API**: `DaemonClient`와 `DaemonSessionClient`는 REST 뮤테이션과 재개 가능한 SSE를 사용하며, 제한된 HTTP, 프롬프트, 유지보수 및 타이머 리소스를 소유합니다.
+- **데몬 API**: `DaemonClient`와 `DaemonSessionClient`는 REST 뮤테이션과 재개 가능한 SSE를 사용하며, 제한된 HTTP, 프롬프트, 유지보수 및 타이머 리소스를 소유합니다.
 - **레거시 stdio API**: `QwenCodeCli`, `Session`, `ProcessTransport`는 기존 CLI 프로토콜 DTO와 유틸리티를 사용하여 자식 CLI 프로세스를 관리합니다.
 
-daemon 구현은 레거시 프로세스 transport, 세션 모델, DTO 또는 전역 executor를 재사용하지 않습니다.
+데몬 구현은 레거시 프로세스 transport, 세션 모델, DTO 또는 전역 executor를 재사용하지 않습니다.
 
 ## 레거시 stdio 기능
 
@@ -343,7 +343,7 @@ SDK는 다음 기본 구성으로 동시 작업을 관리하기 위해 스레드
 - **Keep-Alive Time**: 60초
 - **Queue Capacity**: 300 작업 (LinkedBlockingQueue 사용)
 - **Thread Naming**: "qwen_code_cli-pool-{number}"
-- **Daemon Threads**: true
+- **데몬 스레드**: true
 - **Rejected Execution Handler**: CallerRunsPolicy
 
 ## 오류 처리
@@ -357,7 +357,7 @@ SDK는 다양한 오류 시나리오에 대한 특정 예외 유형을 제공합
 
 ### Q: Qwen CLI를 별도로 설치해야 하나요?
 
-A: 네. daemon API는 호환 `qwen serve`가 필요하며, 레거시 stdio
+A: 네. 데몬 API는 호환 `qwen serve`가 필요하며, 레거시 stdio
 API는 qwen-code 0.5.0 이상이 필요합니다.
 
 ### Q: 어떤 Java 버전이 지원되나요?

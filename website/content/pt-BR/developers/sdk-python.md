@@ -26,6 +26,9 @@ pip install --pre qwen-code-sdk
 ```
 
 Se `qwen` não estiver no `PATH`, passe `path_to_qwen_executable` explicitamente.
+No Windows, o SDK descobre o shim `qwen.cmd` do npm apenas através do `PATH` efetivo do processo filho, ignorando shell shims sem extensão e associações `PATHEXT` não executáveis. Um comando no diretório atual é considerado apenas quando esse diretório está explicitamente incluído no `PATH`.
+Você pode substituir o caminho de busca através da opção `env`; os nomes de variáveis de ambiente do Windows não diferenciam maiúsculas de minúsculas, então `PATH`, `Path` e `path` são equivalentes.
+Fechar um shim Windows em execução interrompe sua árvore de processos CLI através do utilitário `taskkill` do sistema; as esperas de saída do processo e limpeza de stderr têm timeouts limitados.
 
 Antes de escrever código do SDK, certifique-se de que a CLI funciona no mesmo shell:
 
@@ -147,7 +150,7 @@ with query_sync(
 | `append_system_prompt`     | `str`                                                        | Adiciona instruções extras ao prompt do sistema.                                                                 |
 | `debug`                    | `bool`                                                       | Encaminha o stderr da CLI para stderr quando não há hook de `stderr`.                                                      |
 | `max_session_turns`        | `int`                                                        | Número máximo de turnos antes da CLI encerrar a sessão.                                                                  |
-| `core_tools`               | `list[str]`                                                  | Restringe o conjunto de ferramentas disponíveis.                                                                                |
+| `core_tools`               | `list[str]`                                                  | Lista de permissão de ferramentas core não vazia. Listas omitidas ou vazias não são especificadas; `core_tools=[]` não desabilita ferramentas. |
 | `exclude_tools`            | `list[str]`                                                  | Exclui ferramentas correspondentes.                                                                                         |
 | `allowed_tools`            | `list[str]`                                                  | Permite ferramentas correspondentes sem aprovação do callback.                                                                 |
 | `auth_type`                | `openai`, `anthropic`, `qwen-oauth`, `gemini`, `vertex-ai` | Modo de autenticação passado para a CLI.                                                                          |

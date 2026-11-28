@@ -41,8 +41,8 @@ stateDiagram-v2
     Live --> RestoreInProgress: POST /session/:id/load または /resume
     RestoreInProgress --> Live: restoreState がエントリにキャッシュされる
     RestoreInProgress --> Live: RestoreInProgressError (待機者を統合)
-    Live --> Closed: DELETE /session/:id (最後のクライアント)
-    Live --> Died: ACP子プロセスの終了 / channel.exited の発行
+    Live --> Closed: DELETE /session/:id (最後のクライアント) または確認済みワークスペースランタイムの停止
+    Live --> Died: 確認済みワークスペース停止外のACP子プロセスの終了 / channel.exited、またはデーモンシャットダウン
     Closed --> [*]: session_closed ターミナルフレーム
     Died --> [*]: session_died ターミナルフレーム
 ```
@@ -110,9 +110,9 @@ sequenceDiagram
 1. チャネル上のセッションごとの `pendingRestoreIds` セットを使用して、並行する復元呼び出しを統合します（`RestoreInProgressError`）。
 2. エントリに `restoreState` をキャッシュし、後からアタッチするクライアントが元の復元者と同じペイロードを取得できるようにします。
 
-永続化された Part 4A ワークツリーセッションでは、復元はこのライフサイクルの整合性ガード付き拡張となります。サイドカーは要求されたワークスペースルートを明示的に識別し、チェックアウトは対応する `.qwen/worktrees/` ディレクトリ以下に正規に包含されている必要があり、そのマーカーは復元されたセッション ID と正確に一致する内容を持つシングルリンクの通常ファイルでなければなりません。デーモンは、これらのチェックを経た後でのみ、アイドル状態の復元済み子プロセスを再配置します。アクティブな子プロセスは、報告された cwd がすでにワークツリーと等しい場合にのみ受け入れられます。報告された cwd が存在しないか他の場所にあるアクティブな子プロセスは、プロンプト実行中に再配置される代わりに fail closed となります。ただし、復元プロンプトを遅延できなかったコールドリストア（`suppressWorktreeContextRestore` がオフのため、ブリッジが質問をパークせず再発行した場合）は例外であり、pre-4B の結果を保持します。つまり、`worktreeState` なしで正規のワークツリーメタデータを返し、再配置されずにセッションは存続します。再配置および受け入れのレスポンスは、`worktreeState: "persisted-v1"` を含む正規のワークツリーメタデータを返します。`supersededBy` を持つサイドカーは復元されません。ルートは置換セッション ID とともに `409 worktree_session_superseded` を返します。この分類はマーカーの読み取り前にそのリンクのみから決定されるため、呼び出し元はその ID のロードが成功して初めてリダイレクトし、状態管理を修復します。プレコミット段階で中断された転送は、マーカーオーナーではない置換を指名します。この置換は自身を復元できず、リトライされたリセットによって回収されます。`supersedes` リンクが古いサイドカーと一致するもののマーカーが移動していない（または存在しない）復元済みの置換は、`409 worktree_reset_interrupted` を返します。その修復方法は、置換されたセッションに対してリセットをリトライすることです。一致するリンクペアがない状態でマーカーが存在しない場合は、`409 worktree_marker_missing` を返します。その修復方法は、復元の再トライではなくタスクのリセットです。どの復元パスもマーカーを再作成しないためです。中断の分類が最初にチェックされます。無効な Part 4A 状態は、既存のアタッチをデタッチするか、`requireZeroAttaches` によってコールドリストアをキルします。サイドカーが存在しない場合も同様に証明を提供しません。有効な復元ソースが Channel 所有である場合、ルートは Part 4A または分類不可能なサイドカー状態に対する ACP エージェントのベストエフォートクリーンアップを抑制し、検証失敗時に不確実なチェックアウト証拠を保持します。永続化されたソースメタデータが優先されます。存在しない場合は、load/resume リクエストが有効なソースを提供します。`workspaceCwd` を持たない構造的に有効なレガシーサイドカーは、代わりに既存のベストエフォートエージェントリストアを保持します。これは要求されたワークスペースルートまたはその Git リポジトリのトップレベルのいずれかを識別する必要があり、マーカー証明なしで包含チェックされ、エージェントによってクリーンアップされる場合があり、`worktreeState` なしで `worktree` を返す場合があります。この明示的なレガシー互換性のケースを除き、有効な復元ソースが Channel 所有でないセッションのみが、ルート検証前に既存のベストエフォートクリーンアップを保持します。
+永続化された Part 4A ワークツリーセッションでは、復元はこのライフサイクルの整合性ガード付き拡張となります。サイドカーは要求されたワークスペースルートを明示的に識別し、チェックアウトは対応する `.qwen/worktrees/` ディレクトリ以下に正規に包含されている必要があり、そのマーカーは復元されたセッション ID と正確に一致する内容を持つシングルリンクの通常ファイルでなければなりません。デーモンは、これらのチェックを経た後でのみ、アイドル状態の復元済み子プロセスを再配置します。アクティブな子プロセスは、報告された cwd がすでにワークツリーと等しい場合にのみ受け入れられます。報告された cwd が存在しないか他の場所にあるアクティブな子プロセスは、プロンプト実行中に再配置される代わりに fail closed となります。ただし、復元プロンプトを遅延できなかったコールドリストア（`suppressWorktreeContextRestore` がオフのため、ブリッジが質問をパークせず再発行した場合）は例外であり、pre-4B の結果を保持します。つまり、`worktreeState` なしで正規のワークツリーメタデータを返し、再配置されずにセッションは存続します。再配置および受け入れのレスポンスは、`worktreeState: "persisted-v1"` を含む正規のワークツリーメタデータを返します。`supersededBy` を持つサイドカーは復元されません。ルートは置換セッション ID とともに `409 worktree_session_superseded` を返します。この分類はマーカーの読み取り前にそのリンクのみから決定されるため、呼び出し元はその ID のロードが成功して初めてリダイレクトし、状態管理を修復します。プレコミット段階で中断された転送は、マーカーオーナーではない置換を指名します。この置換は自身を復元できず、リトライされたリセットによって回収されます。`supersedes` リンクが古いサイドカーと一致するもののマーカーが移動していない（または存在しない）復元済みの置換は、`409 worktree_reset_interrupted` を返します。その修復方法は、置換されたセッションに対してリセットをリトライすることです。一致するリンクペアがない状態でマーカーが存在しない場合は、`409 worktree_marker_missing` を返します。その修復方法は、復元の再トライではなくタスクのリセットです。どの復元パスもマーカーを再作成しないためです。中断の分類が最初にチェックされます。復元は、ブリッジ復元の前に、最初のサイドカー読み取りからキーイングされた、チェックアウトごとの所有権ロック（以下のリセットが保持するルートロック）を取得します。セッション自身のサイドカーに対する後のルート読み取りで、別のチェックアウトを指名する Part 4A サイドカーが見つかった場合、または最初の読み取りがロックを取得しなかった場合（サイドカーが当時存在しなかった、レガシー、または無効だったため）に任意の Part 4A サイドカーが見つかった場合は、その読み取りからの分類や証明ではなく `500` で復元が fail closed となります。マーカーが読み取られる時点でロックされたパス以外に解決されるチェックアウトも同様に失敗します。その `500` は型付きの `code` を保持せず、リトライは読み取りが一致した時点でロックの下で分類を行います。レガシーサイドカーを見つける後の読み取りはこのチェックによって拒否されません。無効な Part 4A 状態は、既存のアタッチをデタッチするか、`requireZeroAttaches` によってコールドリストアをキルします。サイドカーが存在しない場合も同様に証明を提供しません。有効な復元ソースが Channel 所有である場合、ルートは Part 4A または分類不可能なサイドカー状態に対する ACP エージェントのベストエフォートクリーンアップを抑制し、検証失敗時に不確実なチェックアウト証拠を保持します。永続化されたソースメタデータが優先されます。存在しない場合は、load/resume リクエストが有効なソースを提供します。`workspaceCwd` を持たない構造的に有効なレガシーサイドカーは、代わりに既存のベストエフォートエージェントリストアを保持します。これは要求されたワークスペースルートまたはその Git リポジトリのトップレベルのいずれかを識別する必要があり、マーカー証明なしで包含チェックされ、エージェントによってクリーンアップされる場合があり、`worktreeState` なしで `worktree` を返す場合があります。この明示的なレガシー互換性のケースを除き、有効な復元ソースが Channel 所有でないセッションのみが、ルート検証前に既存のベストエフォートクリーンアップを保持します。
 
-ワークツリー所有権の移転（`POST /session/:id/worktree-reset`、`session_worktree_reset_v1` でアドバタイズされる）は、Channel タスクのリセットのためにこのライフサイクルを拡張します。デーモンはルートワークスペースに新しいスレッドスコープの置換をスポーンし、検証済みのチェックアウト内に再配置し、サイドカーペアをリンクします（まず古いセッションに `supersededBy`、次に置換に `supersedes`）。その後、チェックアウトごとのルートロックと、プロンプトの受け入れおよびチェックアウト内で作業を開始またはセッション cwd を移動する他の7つのライター（rewind、cwd 変更、branch、fork、shell、goal control、workflow-task action）をフェンスする受け入れバリアの下で、マーカーを置換に切り替え、置換されたセッションのクライアント登録とインメモリワークツリー関連を切断します。切断は、置換されたセッションが実際に消えたかどうかを報告します。子プロセスがまだバックグラウンド作業を保持している生存者は、バリアを armed 状態のまま保持し、ログに記録され、成功レスポンスで覆い隠されるのではなく `supersededSessionLive: true` として呼び出し元に報告されます。転送中に置換されたセッションで受け入れられたフェンス済みライターは、`409 worktree_reset_active` で拒否されます。リトライがどのクラッシュウィンドウをロールバックし、どれがオペレーター修復のために fail closed となるかを含む完全な失敗分類は、`qwen-serve-protocol.md` のルートとともにドキュメント化されています。
+ワークツリー所有権の移転（`POST /session/:id/worktree-reset`、`session_worktree_reset_v1` でアドバタイズされる）は、Channel タスクのリセットのためにこのライフサイクルを拡張します。デーモンはルートワークスペースに新しいスレッドスコープの置換をスポーンし、検証済みのチェックアウト内に再配置し、サイドカーペアをリンクします（まず古いセッションに `supersededBy`、次に置換に `supersedes`）。その後、チェックアウトごとのルートロックと、プロンプトの受け入れおよびチェックアウト内で作業を開始またはセッション cwd を移動する他の7つのライター（rewind、cwd 変更、branch、fork、shell、goal control、workflow-task action）をフェンスする受け入れバリアの下で（リリースと停止パスは設計上フェンスされないままです）、マーカーを置換に切り替え、置換されたセッションのクライアント登録とインメモリワークツリー関連を切断します。切断は、置換されたセッションが実際に消えたかどうかを報告します。子プロセスがまだバックグラウンド作業を保持している生存者は、バリアを armed 状態のまま保持し、ログに記録され、成功レスポンスで覆い隠されるのではなく `supersededSessionLive: true` として呼び出し元に報告されます。転送中に置換されたセッションで受け入れられたフェンス済みライターは、`409 worktree_reset_active` で拒否されます。リトライがどのクラッシュウィンドウをロールバックし、どれがオペレーター修復のために fail closed となるかを含む完全な失敗分類は、`qwen-serve-protocol.md` のルートとともにドキュメント化されています。
 
 ### ハートビート
 
@@ -132,8 +132,8 @@ sequenceDiagram
 
 | ターミナルフレーム   | トリガー                                                                                                                                                       |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `session_closed` | `DELETE /session/:id`（client_close）またはプログラムによるクローズ。                                                                                                   |
-| `session_died`   | 何らかの理由（クラッシュ、子プロセスのキル）で `channel.exited` が発行される。OSの終了パスが使用された場合は `exitCode?` + `signalCode?` を含みます。                                |
+| `session_closed` | `DELETE /session/:id`（client_close）、プログラムによるクローズ、または確認済みワークスペースランタイムの停止（`cause: workspace_runtime_stop`）。停止関連の致命的な終了は `persistenceUnconfirmed: true` も保持します。                                                                       |
+| `session_died`   | 確認済みワークスペース停止外の `channel.exited`（クラッシュまたはデーモン開始のキル、例: unknown-close-outcome リカバリ）、またはデーモンシャットダウン（`reason: daemon_shutdown`、チャネル終了なしで発行）。OS の終了パスが使用された場合は `exitCode?` + `signalCode?` を保持します。 |
 | `client_evicted` | EventBusでのサブスクライバーごとのキューオーバーフロー（[`10-event-bus.md`](./10-event-bus.md) を参照）。セッションレベルの終了ではなく、このサブスクライバーのみがクローズされます。 |
 | `stream_error`   | SubscriberLimitExceededError またはその他のルートレベルのストリーム障害。                                                                                             |
 
@@ -181,6 +181,14 @@ sequenceDiagram
 
 `POST /session/:id/btw` は、メインの会話フローを中断することなく、セッションコンテキストに対して一度限りの質問を行います。これはキャッシュパス上で `runForkedAgent` を使用して、ツールを使用しないシングルターンの LLM 呼び出しを行い、`{ sessionId, answer: string | null }` を返します。実装では `BTW_MAX_INPUT_LENGTH`、セッション間漏洩ガード、およびタイムアウト処理が強制されます。
 
+### ストリーミング BTW（`session_btw_stream` 機能タグ）
+
+`POST /session/:id/btw/stream` は `{ question, requestId, resume? }` を受け付け、蓄積された `answer` スナップショットと終端の `done` または `error` イベントを出力します。呼び出し前にこの独立したケーパビリティを確認してください。フラグがない場合は既存の JSON BTW API が使用されます。ストリーミングが開始されると、エラーは2回目の JSON リクエストをトリガーしてはなりません。ルートはライブセッションオーナーとその信頼境界を解決します。
+
+サブスクライバーの切断は生成を継続します。同じリクエスト ID、質問、およびクライアント ID を再利用して、最新の保持されたスナップショットを受信します。SDK は、成功した HTTP レスポンスが観測されるまで `resume` なしでリトライし、その後 `resume: true` を使用します。再開時に保持された状態がない場合は 410 を返し、別の生成を開始することはできません。保持は最大 60 秒で、ランタイムキャッシュは最大 32 エントリを保持し、必要時に最も早く登録された終端エントリをエビクトします。アクティブなエントリはエビクトされません。`DELETE /session/:id/btw/stream/:requestId` は一致する生成を明示的にキャンセルします。どちらのルートもメインプロンプトを中断しません。入力制限、デッドライン、およびエラーコードについては[ワイヤ契約](../qwen-serve-protocol.md#post-sessionidbtwstream)を参照してください。
+
+サイドリクエスト（レガシー BTW、リキャップ、ステートレス生成を含む）はローカル作業としてカウントされ、解決までアイドルクリーンアップや required-idle クローズを防止します。これは各ルートの既存のアーカイブ受け入れルールを変更するものではありません。ストリーミング BTW は、リクエスト登録中にのみ共有アーカイブ受け入れを保持するため、放棄されたサブスクライバーが生成ライフタイムの間その受け入れを保持し続けることはありません。
+
 ### シェルコマンドの実行
 
 `POST /session/:id/shell` は、デーモンホスト上で直接シェルコマンドを実行し、LLM を経由しません。`user_shell_command` / `user_shell_result` イベントを介してセッション SSE バス上で出力をストリーミングし、コマンドと結果を LLM の会話履歴に注入します。レスポンスは `{ exitCode, output, aborted }` です。ライブのセカンダリワークスペースセッションの場合、単一の REST ルートはセッションオーナーを解決し、そのランタイムのブリッジ上で実行するため、コマンドは所有ワークスペースの cwd で開始されます。このルートはパスサンドボックスを提供しません。ワークスペース限定の ACP クライアントは、所有ワークスペース接続上で `_qwen/session/shell` を引き続き使用できます。
@@ -204,6 +212,8 @@ sequenceDiagram
 `POST /sessions/unarchive` は、アーカイブされた JSONL ファイルを `chats/` に戻します。これはストレージ状態の遷移に過ぎないため、クライアントはその後 `session/load` または `session/resume` を呼び出す必要があります。アーカイブされたセッションは load/resume に対して `409 session_archived` を返し、アーカイブ遷移と競合するミューテーションは `409 session_archiving` を返します。
 
 空、破損、および孤立した通常のトランスクリプトファイルは、会話としてロードできない場合でも、これらのライフサイクル操作の対象となります。所有権の安全性チェックは意図的に fail closed となり、オペレーターの介入を要求することがあります。ライターが認定ハンドオフ証明をシールした後に変更されたファイルは、オペレーターがシールされたロックと変更されたバイトを解決するまで `SessionTranscriptChangedError` で失敗します。バウンドされた所有権読み取りウィンドウを超える JSON 形式の最初の物理レコードは、レコードが修復または削減されるまで `SessionTranscriptIdentityUnavailableError` で失敗します。非オブジェクト接頭辞を持つサイズ超過の破損レコードは対象のままです。解析可能な回復レコードには文字列の `sessionId` と `cwd` 所有権フィールドを含める必要があり、ローカル/外部のアーカイブ状態が混在する場合も fail closed となります。`session_storage_conflict_repair` がアドバタイズされている場合、アーカイブとアンアーカイブは `resolveConflicts: true` を受け付けます。アーカイブはアーカイブされたコピーを保持し、アンアーカイブはアクティブなコピーを保持します。このオプションがない場合、アクティブ/アーカイブの競合はどちらの永続化されたコピーも移動、削除、上書きせず、バッチの `errors` 配列で返されます。アーカイブは引き続き、競合を分類する前にライブセッションを厳格にクローズし、キューに入れられたレコードをアクティブなトランスクリプトにフラッシュする可能性があります。ワークスペース限定のライフサイクルルートは、以前の HTTP `409 session_conflict` レスポンスの代わりに、HTTP `200` バッチエンベロープを使用するようになりました。
+
+`session_archive_idle_guard` がアドバタイズされている場合、アーカイブは `requireIdle: true` も受け付けます。所有ランタイムは、クローズ遷移に入る直前にセッションがアイドルであることを確認します。アクティブ、不明、またはサポートされていない作業はアクティブのまま残り、バッチの `errors` 配列で返されます。ライブ子プロセスがすでに回収されている永続化セッションは引き続きアーカイブできます。
 
 ### コンテキスト使用量 (`session_context_usage` capability tag)
 
@@ -238,7 +248,7 @@ sequenceDiagram
 - `BridgeOptions.initializeTimeoutMs`（デフォルト 10s）— ACP 子プロセスの起動デッドライン（Channel ファクトリ + `initialize` ハンドシェイク）およびデフォルトのリクエストタイムアウト。
 - `BridgeOptions.sessionRestoreTimeoutMs`（デフォルト 60s）— ACP `loadSession` / `unstable_resumeSession` のデッドライン。デフォルトは 60 秒で、明示的に設定された initialize タイムアウトはこれを上げることができますが、下げることはできません。
 - `BridgeOptions.channelIdleTimeoutMs`（未設定または `0` はランタイムワークの drain 後に回収。ただしプレーンなプリヒートは初回使用のために保持される。正の値またはアクティブなキープアライブは回収を遅延させ、より長い遅延が優先される）。
-- 機能タグ: `session_create`、`session_id_override`、`session_scope_override`、`session_load`、`session_resume`、`unstable_session_resume`（非推奨のエイリアス）、`session_list`、`session_info`、`session_close`、`session_metadata`、`session_set_model`、`client_identity`、`client_heartbeat`、`session_recap`、`session_generation`、`session_btw`、`session_context_usage`、`session_tasks`、`session_monitor_tool_correlation`、`session_stats`、`session_lsp`、`session_resources`、`session_status`、`non_blocking_prompt`。
+- 機能タグ: `session_create`、`session_startup_config`、`session_id_override`、`session_scope_override`、`session_load`、`session_resume`、`unstable_session_resume`（非推奨のエイリアス）、`session_list`、`session_info`、`session_close`、`session_metadata`、`session_set_model`、`client_identity`、`client_heartbeat`、`session_recap`、`session_generation`、`session_btw`、`session_btw_stream`、`session_context_usage`、`session_tasks`、`session_monitor_tool_correlation`、`session_stats`、`session_lsp`、`session_resources`、`session_status`、`non_blocking_prompt`。
 
 ### ステートレス生成（`session_generation` 機能タグ）
 

@@ -127,20 +127,23 @@ qwen extensions install owner/my-agent-plugin
 
 #### 从 npm 注册表
 
-Qwen Code 支持使用 scoped 包名从 npm 注册表安装扩展。这对于拥有私有注册表、且已有认证、版本管理和发布基础设施的团队来说非常理想。
+Qwen Code 支持使用 scoped 或 unscoped 包名从 npm 注册表安装扩展。这对于拥有私有注册表、且已有认证、版本管理和发布基础设施的团队来说非常理想。
 
 ```bash
 # 安装最新版本
 qwen extensions install @scope/my-extension
 
+# 安装 unscoped 包
+qwen extensions install my-extension
+
 # 安装特定版本
-qwen extensions install @scope/my-extension@1.2.0
+qwen extensions install my-extension @1.2.0
 
 # 从自定义注册表安装
 qwen extensions install @scope/my-extension --registry https://your-registry.com
 ```
 
-仅支持 scoped 包（`@scope/package-name`），以避免与 `owner/repo` GitHub 简写格式产生歧义。
+同时支持 `package-name` 和 `@scope/package-name`，并可附加可选的 `@version` 或 `@tag` 后缀。现有的本地文件和目录具有更高优先级；当意图使用本地来源时，请使用显式路径（如 `./my-extension`）。`owner/repo` 形式仍然作为 GitHub 简写。
 
 **注册表解析**按以下优先级顺序进行：
 

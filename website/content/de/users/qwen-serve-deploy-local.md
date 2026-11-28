@@ -1,8 +1,8 @@
-# Lokale Startvorlagen für `qwen serve` (v0.16-alpha)
+# Lokale Startvorlagen für `qwen serve`
 
-Referenzvorlagen, um `qwen serve` als langlebigen Hintergrundprozess auf einer Entwickler-Workstation auszuführen. Ergänzt die [v0.16-alpha bekannten Einschränkungen](./qwen-serve.md#v016-alpha-known-limits) – lokal, Einzelbenutzer, BYO-Bearer-Token. Containerisierte/Multi-Host/TLS-Proxy-Bereitstellungen werden auf v0.16.x verschoben.
+Referenzvorlagen zum Ausführen von `qwen serve` als langlebiger Hintergrundprozess auf einer Entwickler-Workstation. Für die gewöhnliche lokale Hintergrundnutzung beginnen Sie mit den eingebauten `qwen daemon start` Lifecycle-Befehlen im [Hauptleitfaden](./qwen-serve.md#inspect-and-control-a-local-daemon). Verwenden Sie diese Vorlagen, wenn Sie Service-Manager-Überwachung, Start nach Neustart oder ein benutzerdefiniertes Logging-Setup benötigen. Lesen Sie die [Bereitstellungs- und Sicherheitshinweise](./qwen-serve.md#deployment-and-security-notes), bevor Sie den Listener über Loopback hinaus verfügbar machen.
 
-> **Zielgruppe**: Entwickler, die den Daemon über Neustarts hinweg laufen lassen möchten, mit dauerhafter Protokollierung und sauberem `restart-on-failure`-Verhalten. Wenn der Daemon nur für die Dauer einer einzigen Shell-Sitzung benötigt wird, reicht ein einfaches `qwen serve` (Vordergrund, Strg-C zum Beenden).
+> **Zielgruppe**: Entwickler, die den Daemon über Neustarts hinweg laufen lassen möchten, mit Logs an einem dauerhaften Ort und einer sauberen `restart-on-failure`-Lösung. Wenn Sie den Daemon nur für die Dauer einer einzigen Shell-Sitzung benötigen, ist ein einfaches `qwen serve` (Vordergrund, Strg-C zum Stoppen) ausreichend; wenn Sie nur einen abgekoppelten lokalen Prozess benötigen, ist `qwen daemon start` einfacher.
 
 ## Ein Bearer-Token generieren (einmalig)
 
@@ -12,7 +12,7 @@ chmod 600 ~/.qwen-serve-token
 export QWEN_SERVER_TOKEN="$(cat ~/.qwen-serve-token)"
 ```
 
-Der Pfad/Dateiname kann frei gewählt werden; v0.16-alpha generiert oder sucht keine Token-Datei automatisch (verschoben auf v0.16.x). Siehe den Abschnitt [Authentifizierung](./qwen-serve.md#authentication) im Benutzerhandbuch für das kanonische BYO-Setup.
+Der Pfad und Dateiname oben sind Beispiele für diese Service-Manager-Vorlagen, kein eingebauter Speicherort, den Qwen Code automatisch erkennt. Daemons, die über `qwen daemon start` gestartet werden, können stattdessen den eingebauten `--save-token` Sidecar und den `qwen daemon token` Befehl verwenden; siehe [Inspect and control a local daemon](./qwen-serve.md#inspect-and-control-a-local-daemon). Die systemd- und launchd-Vorlagen unten übergeben den Token weiterhin explizit, da sie `qwen serve` direkt aufrufen. Siehe [Authentication](./qwen-serve.md#authentication) für die Token-Auswahlregeln.
 
 > **Binden Sie dieses `export` nur an die aktuelle Shell-Sitzung.** Fügen Sie es nicht in `~/.bashrc` / `~/.zshrc` ein – ein export auf Profilebene legt den Bearer-Token für jeden von dieser Shell gestarteten Prozess offen (IDE-Unterprozesse, Browser-Debugger, `npm`-Skripte aus anderen Projekten). Verwenden Sie für langlebige Setups die unten beschriebenen Mechanismen `EnvironmentFile=` (systemd) / `EnvironmentVariables` (launchd) – beide beschränken den Token auf den Daemon-Prozess.
 
@@ -23,34 +23,33 @@ Ein `export` auf Shell-Ebene deckt sowohl den Server-Start als auch die SDK-Clie
 ## Workspace-Lifecycle und Prozessgrenzen
 
 Ein Daemon kann mehrere isolierte Workspace-Runtimes unter demselben Listener hosten.
-Wiederhole `--workspace` mit absoluten Verzeichnissen, um explizite
-Startup-Runtimes zu erstellen; das erste ist primär. Primäre und andere
-explizite Startup-/statische Runtimes können ohne Neustart des Prozesses
-nicht entfernt werden.
+Wiederholen Sie `--workspace` mit absoluten Verzeichnissen, um explizite Startup-
+Runtimes zu erstellen; das erste ist primär. Primäre und andere explizite Startup-/
+statische Runtimes können ohne Neustart des Prozesses nicht entfernt werden.
 
 Zusätzliche Workspaces können auch während der Laufzeit des Daemons über
-`POST /workspaces` registriert werden. Übergib `persist: true`, um eine
-dynamische sekundäre in der Benutzer-Registrierungsdatenbank zu behalten,
-sodass sie beim nächsten Start wiederhergestellt wird. Nicht vertrauenswürdige
-Registrierungen bleiben für Diagnostik, begrenzte Dateilesungen und
-deklarierte persistierte Lesungen sichtbar, können aber keinen ACP starten.
-Dynamische und persistiert-wiederhergestellte Sekundärworkspaces sind
-entfernbar: Eine normale Entfernung wird abgelehnt, während die Runtime
-beschäftigt ist, während eine erzwungene Entfernung die Beendigung aktiver
-Ressourcen anfordert und die logische Entfernung vor dem erneuten Hinzufügen
-desselben cwd zusagt. Die Bereinigung ist begrenzt und best-effort nach dem
-Persistierungs-Commit-Punkt; Fehler werden protokolliert, anstatt die
-entfernte Runtime wiederherzustellen.
+`POST /workspaces` registriert werden. Übergeben Sie `persist: true`, um eine
+dynamische sekundäre im Benutzer-Registrierungsspeicher zu behalten, sodass sie
+beim nächsten Start wiederhergestellt wird. Nicht vertrauenswürdige Registrierungen
+bleiben für Diagnostik, begrenzte Dateilesungen und deklarierte persistierte
+Lesungen sichtbar, können aber keinen ACP starten. Dynamische und persistiert-
+wiederhergestellte Sekundärworkspaces sind entfernbar: Eine normale Entfernung
+wird abgelehnt, während die Runtime beschäftigt ist, während eine erzwungene
+Entfernung die Beendigung aktiver Ressourcen anfordert und die logische Entfernung
+zusagt, bevor dasselbe cwd erneut hinzugefügt werden kann. Die Bereinigung ist
+begrenzt und best-effort nach dem Persistierungs-Commit-Punkt; Fehler werden
+protokolliert, anstatt die entfernte Runtime wiederherzustellen.
 
-Die Runtime-Isolation umfasst cwd, Umgebung-Overlay, Dateisystem-/Trust-Grenze,
-Workspace-Services, Bridge, Voice-Lease-State, Channel-Worker und die
-ACP/MCP-Ressource-Grenze. Production versucht, das primäre ACP-Child
-vorzuwärmen und wiederholt den ersten Versuch nach einem Fehlschlag;
-vertrauenswürdige Sekundärworkspaces starten ihres bei Bedarf, und nicht
-vertrauenswürdige Sekundärworkspaces starten keinen ACP.
+Die Runtime-Isolation umfasst cwd, Umgebungs-Overlay, Dateisystem-/Trust-Grenze,
+Workspace-Services, Bridge, Voice-Lease-State, Channel-Worker und die ACP/MCP-
+Ressource-Grenze. Production versucht, das vertrauenswürdige primäre ACP-Child
+aus Kompatibilitätsgründen vorzuwärmen; vertrauenswürdige Sekundärworkspaces
+starten bei ihrem ersten Runtime-gestützten Befehl oder ihrer ersten Session,
+und nicht vertrauenswürdige Sekundärworkspaces starten keinen ACP. Legacy-primäre
+Routen behalten ihr bestehendes Kompatibilitätsverhalten.
 Authentifizierung, HTTP-Rate-Limits, Listener- und Voice-Admission-Caps,
 Gesamt-Session-Admission, Metriken, Shutdown und der Prozess-Fehlerradius
-bleiben daemon-global. Verwende separate Daemons, wenn diese Prozessgrenzen
+bleiben daemon-global. Verwenden Sie separate Daemons, wenn diese Prozessgrenzen
 unabhängig sein müssen.
 
 ## Linux: systemd-Benutzer-Unit
@@ -255,13 +254,12 @@ Die Neustart-Semantik der Dienstmanager unterscheidet sich zwischen den Vorlagen
 
 Innerhalb der **Lebensdauer eines einzelnen Daemon-Prozesses** erholen sich Client-Trennungen über SSE-`Last-Event-ID`-Resume gemäß dem Abschnitt [Durabilitätsmodell](./qwen-serve.md#durability-model) im Benutzerhandbuch – der Wiedergabe-Ring befindet sich im Arbeitsspeicher.
 
-Ein **Neustart** des Daemons verwirft alle In-Memory-Sitzungen; Clients verbinden sich neu und beginnen frisch. Die dauerhafte Speicherung von Sitzungsinhalten (Prompts, Tool-Aufrufe, Gesprächsverlauf) über Neustarts hinweg ist **NICHT** in v0.16-alpha.
+Ein **Neustart** des Daemons unterbricht jede laufende Live-Session und leert den In-Memory-Replay-Ring. Persistierte Session-Inhalte bleiben auf der Festplatte erhalten und können gegen den neuen Daemon-Prozess geladen werden, vorbehaltlich derselben Workspace-Bindungsregeln. Siehe [Loading and resuming a persisted session](./qwen-serve.md#loading-and-resuming-a-persisted-session) für die verfügbaren Wiederherstellungswege.
 
-## Außerhalb des Rahmens (verschoben auf v0.16.x oder später)
+## Umfang und verwandte Bereitstellungshinweise
 
-- **Containerisierte Bereitstellung** – Dockerfile, docker-compose, Kubernetes-Manifeste, nginx + TLS-Reverse-Proxy, Multi-Instanz-Token-Isolation. Verschiebt sich auf v0.16.x, sobald ein Enterprise-Pilot festgelegt ist; das Dokument würde sonst veralten, da es niemand validiert.
-- **Hostübergreifende Föderation / Multi-Daemon-Koordination auf einem Host** – ein Daemon kann mehrere registrierte Workspace-Runtimes hosten, aber Daemons koordinieren sich nicht untereinander. Token-Verknüpfung auf Instanzebene + Bereinigung alter Token verschiebt sich auf v0.16.x.
-- **Allgemeine Daemon-Token-Speicherung** – Local Control verwendet revokierbare, Daemon-besessene Pairing-Tokens, aber die langlebige Runtime-Token-Speicherung bleibt BYO-Token. Persistente Token-Store-Infrastruktur wird auf v0.16.x verschoben.
+- **Container und Reverse Proxies** – diese Seite bietet nur lokale Service-Manager-Vorlagen. Für Listener-, Browser-Ursprungs- und Zertifikatanforderungen siehe [Remote Web Shell and phone access](./qwen-serve.md#remote-web-shell-and-phone-access) und [HTTPS / TLS](./qwen-serve.md#https--tls-for-mobile--cross-device-access). Multi-Tenant-Bereitstellungen erfordern einen externen Orchestrator mit separaten Daemons für unabhängige Sicherheitsprinzipale.
+- **Hostübergreifende Föderation / Multi-Daemon-Koordination** – ein Daemon kann mehrere registrierte Workspace-Runtimes hosten, aber Daemons koordinieren den Session-Zustand nicht untereinander.
 - **Windows-nativer Dienst** (`nssm`, Service Control Manager-Wrapper) – verwenden Sie vorerst [WSL2](https://learn.microsoft.com/en-us/windows/wsl/) und folgen Sie dem obigen systemd-Abschnitt.
 
-Siehe den Hinweis zu den [v0.16-alpha bekannten Einschränkungen](./qwen-serve.md#v016-alpha-known-limits) im Hauptbenutzerhandbuch für die vollständige Liste der verschobenen Funktionen und [#4175](https://github.com/QwenLM/qwen-code/issues/4175) für das v0.16-alpha-Rollout-Tracking-Issue.
+Siehe die [Bereitstellungs- und Sicherheitshinweise](./qwen-serve.md#deployment-and-security-notes) und [Authentication](./qwen-serve.md#authentication) im Hauptbenutzerhandbuch für das aktuelle Sicherheitsmodell und die Token-Optionen.

@@ -31,7 +31,9 @@ Wenn du dich im Auto Mode befindest und der Agent versucht, ein Tool auszuführe
      `reason` aus.
 
 Der Klassifizierer verwendet dein konfiguriertes Fast Model
-(`/model --fast`). Wenn kein Fast Model konfiguriert ist, wird stattdessen das Haupt-Sitzungsmodell verwendet.
+(`/model --fast`). Wenn kein Fast Model konfiguriert ist, wird stattdessen das Haupt-Sitzungsmodell verwendet. Wenn die Stufe 1 des Fast Models ihre Deadline erreicht und das Sitzungsmodell einen anderen konfigurierten Identifier hat, bittet Auto Mode das Sitzungsmodell um eine vollständige unabhängige Überprüfung, bevor auf manuelle Genehmigung zurückgefallen wird. Die ausstehende Aktion und die Session verbleiben im Auto Mode.
+
+Diese Überprüfung erhält denselben gefilterten Kontext und dieselbe Richtlinie, mit einer neuen Deadline unter Verwendung von `permissions.autoMode.classifier.timeouts.stage2Ms` (standardmäßig 30 Sekunden). Bei einem Standard-Stufe-1-Budget von 10 Sekunden kann der Fallback bis zu 30 Sekunden Anfragezeit hinzufügen. Er wiederholt keine bereits abgeschlossene Policy-Blockierung, und Benutzerabbruch stoppt die Überprüfung.
 
 > [!tip]
 >
@@ -171,9 +173,9 @@ Begründungen des Klassifizierers werden vom LLM erstellt und nicht übersetzt. 
 
 Auto Mode schützt dich davor, stecken zu bleiben:
 
-- Wenn die Classifier-API nicht erreichbar ist, ein Timeout auftritt, das Kontextfenster überschritten wird oder eine ungültige Antwort zurückgegeben wird, fällt die aktuelle Aktion sofort auf die manuelle Genehmigung zurück. Die Bestätigung empfiehlt den Default Mode und bietet **Switch to Default Mode and allow once** neben Allow once und Reject an. Der Wechsel betrifft nur die aktuelle Runtime-Session; er ändert nicht deine gespeicherten Einstellungen.
+- Eine Deadline der Stufe 1 des Fast Models erhält zuerst die oben beschriebene separate Überprüfung durch das Sitzungsmodell. Wenn diese Überprüfung ebenfalls fehlschlägt oder ein Timeout auftritt, oder wenn die konfigurierten Fast- und Sitzungsmodell-Identifier übereinstimmen, fällt die Aktion auf manuelle Genehmigung zurück. Andere Klassifizierer-Fehler (API-Fehler, Kontextüberlauf, ungültige Antworten oder eine fehlgeschlagene Stufe-2-Überprüfung) fallen weiterhin direkt zurück. Die Bestätigung empfiehlt den Default Mode und bietet **Switch to Default Mode and allow once** neben Allow once und Reject an. Der Wechsel betrifft nur die aktuelle Runtime-Session; er ändert nicht deine gespeicherten Einstellungen.
 
-- Nach **3 aufeinanderfolgenden Policy-Blockierungen** fällt der nächste Tool-Aufruf auf den Standard-Prompt für manuelle Genehmigung zurück. Dies fängt den Fall ab, dass der Agent immer wieder kleine Varianten eines verbotenen Befehls ausprobiert.
+- Nach **3 aufeinanderfolgenden Blockierungen** — sowohl Klassifizierer-Policy-Blockierungen als auch deterministische Blockierungen destruktiver Befehle zählen — fällt der Aufruf, der die dritte Blockierung erreicht, auf den Standard-Prompt für manuelle Genehmigung zurück. Dies fängt den Fall ab, dass der Agent immer wieder kleine Varianten eines verbotenen Befehls ausprobiert oder einen Befehl immer wieder ausgibt, den der Destruktiv-Schutz verweigert.
 - Nach **2 aufeinanderfolgenden "unavailable"**-Ergebnissen (Classifier-API-Fehler) überspringen spätere Aufrufe den bekanntermaßen defekten Classifier und gehen direkt zur manuellen Genehmigung. Das erste "unavailable"-Ergebnis fragt bereits nach; die Schwelle verhindert wiederholtes Warten auf Classifier-Retries.
 
 Die Sitzung bleibt im Auto Mode, es sei denn, du wählst explizit die Wechsel-Option. Nur der Fallback-Aufruf durchläuft die manuelle Genehmigung. Die Zähler werden zurückgesetzt, wenn du den Fallback-Aufruf genehmigst oder den Modus wechselst.
@@ -221,7 +223,7 @@ Wenn ein bestimmtes Tool Felder offenlegt, die du lieber schwärzen möchtest, e
 
 **Sendet Auto Mode meinen Code an einen Drittanbieter?**
 
-Auto Mode verwendet deine bestehende Modellkonfiguration weiter – derselbe Endpunkt wie der Haupt-Agent. Wenn du Qwen Code so konfiguriert hast, dass es ein selbst gehostetes Modell verwendet, läuft der Klassifizierer auch gegen diesen Endpunkt.
+Auto Mode verwendet den für dein Fast Model konfigurierten Endpunkt oder dein Sitzungsmodell, wenn kein Fast Model konfiguriert ist oder ein Stufe-1-Timeout die Sitzungsmodell-Überprüfung auslöst. Konfiguriere beide Modelle mit deinem selbst gehosteten Endpunkt, wenn die Klassifizierung dort bleiben muss. Der Fallback verwendet denselben gefilterten Kontext; er fügt keine Tool-Ergebnisse oder vollständige Gesprächsinhalte hinzu.
 
 **Erreichen meine Secrets / `.env`-Inhalte den Klassifizierer?**
 

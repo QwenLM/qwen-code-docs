@@ -106,6 +106,8 @@ run_shell_command(command="docker-compose up", description="Start all services",
 
 当省略此设置时，显式一次性提示使用 `child_process`；交互式 TUI、ACP、stream-json 输入、仅 stdin 和文件输入会话使用 PTY。在 Windows 内部版本 **<= 19041**（Windows 10 版本 2004 之前）上，PTY 模式会回退到 `child_process`，因为较旧的 ConPTY 实现存在已知的可靠性问题（输出丢失、挂起）。这与 VS Code 使用的相同分界线一致（[microsoft/vscode#123725](https://github.com/microsoft/vscode/issues/123725)）。如果在运行时 `node-pty` 不可用，该工具也会回退到 `child_process`。
 
+非 PTY 命令通过子进程的 `close` 事件收集两个输出流，因此进程退出后刚刚传递的数据会被保留。前台缓冲命令在退出后最多等待 200 毫秒（如果有后代进程仍保持管道打开）；流式和托管原始捕获调用方保留其 1000 毫秒的 drain 上限。普通命令在管道关闭后立即返回。执行服务的 `ShellExecutionResult.stdoutHeldAfterExit` 标识在该上限处仍然打开的 stdout 管道；此内部标志不会在 `run_shell_command` 工具结果中暴露；shell 级别的 `&` 仍然不受追踪，因此对于托管的后台工作请使用 `is_background: true`。
+
 要显式覆盖默认值，请在 `settings.json` 中设置该值：
 
 **`settings.json` 示例：**
